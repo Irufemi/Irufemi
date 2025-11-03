@@ -302,7 +302,13 @@
       <Filter>2D</Filter>
     </ClCompile>
     <ClCompile Include="2D\NumberText.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Application\content</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\TimeDisplay.cpp">
+      <Filter>Application\content</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\ScreenSpace.cpp">
+      <Filter>Application\content</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -583,7 +589,13 @@
       <Filter>2D</Filter>
     </ClInclude>
     <ClInclude Include="2D\NumberText.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Application\content</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\TimeDisplay.h">
+      <Filter>Application\content</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\inGame\ScreenSpace.h">
+      <Filter>Application\content</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -611,12 +623,6 @@
       <Filter>Engine\shaders</Filter>
     </FxCompile>
     <FxCompile Include="resources\shaders\Region.VS.hlsl">
-      <Filter>Engine\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="resources\shaders\SpriteInstanced.PS.hlsl">
-      <Filter>Engine\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="resources\shaders\SpriteInstanced.VS.hlsl">
       <Filter>Engine\shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -8,6 +8,7 @@
 #include "2D/Sprite.h"
 #include "2D/Circle2D.h"
 #include "2D/NumberText.h"
+#include "2D/TimeDisplay.h"
 #include "3D/SphereClass.h"
 #include "3D/ObjClass.h"
 #include "3D/ParticleClass.h"
@@ -159,6 +160,9 @@ private: // メンバ変数(ゲーム部分)
     bool   resultKillManualPos_ = true;    // true のとき resultKillPos_ を固定（ImGuiで移動）
     bool   resultTimeManualPos_ = true;    // true のとき resultTimePos_ を固定（ImGuiで移動）
 
+    std::unique_ptr<TimeDisplay> timeDisplayInGame_; // 追加
+    std::unique_ptr<TimeDisplay> timeDisplayResult_; // 追加
+
 private: // メンバ変数(ゲーム内描画物)
 
     // 文字(Bullet)
@@ -175,9 +179,6 @@ private: // メンバ変数(ゲーム内描画物)
 
     // 文字(敵増える)
     std::unique_ptr<Sprite> text_addEnemy_ = nullptr;
-
-    // 文字(敵増える)
-    std::unique_ptr<Sprite> text_period_ = nullptr;
 
     // 文字(倒した敵の数)
     std::unique_ptr<Sprite> text_killEnemy_ = nullptr;

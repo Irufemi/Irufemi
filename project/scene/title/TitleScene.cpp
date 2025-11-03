@@ -9,6 +9,8 @@
 #include <algorithm> // std::clamp
 #include <cmath> // std::atan2 / std::fabs / std::lerp 等のため
 
+#include "../inGame/ScreenSpace.h"
+
 // 0..1 を滑らかに補間する（Hermite SmoothStep）。必要なら Ease 実装に差し替え可。
 static float Smooth01(float t) {
     t = std::clamp(t, 0.0f, 1.0f);
@@ -16,31 +18,6 @@ static float Smooth01(float t) {
     // もし Ease ファイルに同等の関数があるなら、以下のように中身を置き換え可能:
     // return Ease::SmoothStep(0.0f, 1.0f, t);
     // または Ease::SmootherStep(0.0f, 1.0f, t);
-}
-
-// --- ヘルパ：スクリーン→ワールド ---
-// (既存の ScreenToWorldOnZ / ScreenRadiusToWorld をそのまま使用)
-static Vector3 ScreenToWorldOnZ(const Camera* cam, const Vector2& screen, float targetZ) {
-    Matrix4x4 view = cam->GetViewMatrix();
-    Matrix4x4 proj = cam->GetPerspectiveFovMatrix();
-    Matrix4x4 vp   = cam->GetViewportMatrix();
-    Matrix4x4 vpv  = Math::Multiply(view, Math::Multiply(proj, vp));
-    Matrix4x4 inv  = Math::Inverse(vpv);
-
-    Vector3 p0 = Math::Transform(Vector3{ screen.x, screen.y, 0.0f }, inv);
-    Vector3 p1 = Math::Transform(Vector3{ screen.x, screen.y, 1.0f }, inv);
-    Vector3 dir = Math::Subtract(p1, p0);
-
-    float denom = dir.z;
-    if (std::fabs(denom) < 1e-6f) return p0;
-    float t = (targetZ - p0.z) / denom;
-    return Math::Add(p0, Math::Multiply(t, dir));
-}
-static float ScreenRadiusToWorld(const Camera* cam, const Vector2& center, float radiusPx, float targetZ) {
-    Vector3 wc = ScreenToWorldOnZ(cam, center, targetZ);
-    Vector3 wx = ScreenToWorldOnZ(cam, Vector2{ center.x + radiusPx, center.y }, targetZ);
-    Vector2 d  = Math::Subtract(Vector2{ wx.x, wx.y }, Vector2{ wc.x, wc.y });
-    return Math::Length(d);
 }
 
 // --- TitleLetter 実装（ワールド更新） ---

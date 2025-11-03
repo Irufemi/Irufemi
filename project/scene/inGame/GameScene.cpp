@@ -3,6 +3,7 @@
 
 #include "../SceneManager.h"
 #include "../SceneName.h"
+#include "ScreenSpace.h"
 #include "engine/IrufemiEngine.h"
 #include "imgui.h"
 
@@ -15,34 +16,6 @@
 static float Smooth01(float t) {
     t = std::clamp(t, 0.0f, 1.0f);
     return t * t * (3.0f - 2.0f * t);
-}
-
-// --- Player と同等のスクリーン→ワールド変換ヘルパー ---
-static Vector3 ScreenToWorldOnZ(const Camera* cam, const Vector2& screen, float targetZ) {
-    Matrix4x4 view = cam->GetViewMatrix();
-    Matrix4x4 proj = cam->GetPerspectiveFovMatrix();
-    Matrix4x4 vp = cam->GetViewportMatrix();
-    Matrix4x4 vpv = Math::Multiply(view, Math::Multiply(proj, vp));
-    Matrix4x4 inv = Math::Inverse(vpv);
-
-    Vector3 p0 = Math::Transform(Vector3{ screen.x, screen.y, 0.0f }, inv);
-    Vector3 p1 = Math::Transform(Vector3{ screen.x, screen.y, 1.0f }, inv);
-    Vector3 dir = Math::Subtract(p1, p0);
-
-    float denom = dir.z;
-    if (std::fabs(denom) < 1e-6f) {
-        return p0;
-    }
-    float t = (targetZ - p0.z) / denom;
-    return Math::Add(p0, Math::Multiply(t, dir));
-}
-
-// 画面半径[pixels]→Z=targetZ平面でのワールド半径
-static float ScreenRadiusToWorld(const Camera* cam, const Vector2& center, float radiusPx, float targetZ) {
-    Vector3 wc = ScreenToWorldOnZ(cam, center, targetZ);
-    Vector3 wx = ScreenToWorldOnZ(cam, Vector2{ center.x + radiusPx, center.y }, targetZ);
-    Vector2 d = Math::Subtract(Vector2{ wx.x, wx.y }, Vector2{ wc.x, wc.y });
-    return Math::Length(d);
 }
 
 // 初期化
@@ -220,12 +193,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         zoneCircles_[1]->SetColor(Vector4{ 1.0f, 0.95f, 0.4f, 0.20f });
         // 内側はさらに明るく（加算で強め）
         zoneCircles_[2]->SetColor(Vector4{ 1.0f, 0.95f, 0.4f, 0.35f });
-    }
-
+    }/*
     text_period_ = std::make_unique<Sprite>();
     text_period_->Initialize(camera_.get(), "resources/texture/gameText_period.png");
     text_period_->SetAnchor(0.5f, 0.5f);
-    text_period_->SetPosition(camera_->GetViewportWidth() / 2.0f, 32.0f);
+    text_period_->SetPosition(camera_->GetViewportWidth() / 2.0f, 32.0f);*/
 
     text_addEnemy_ = std::make_unique<Sprite>();
     text_addEnemy_->Initialize(camera_.get(), "resources/texture/gameText_addEnemy.png");
@@ -337,14 +309,13 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     {
         const float vw = camera_->GetViewportWidth();
-
-        gameTimerText_ = std::make_unique<NumberText>();
-        // 0..9 が横一列のフォント画像を使い、桁数は最初4桁 (XX.XX)
-        gameTimerText_->Initialize(camera_.get(), "resources/text_num.png", 32.0f, 64.0f, static_cast<size_t>(gameTimerDigits_));
-        gameTimerText_->SetTracking(0.0f);
-        gameTimerText_->SetScale(gameTimerScale_);
-        // 初期表示位置は画面上部中央（ImGuiで調整可）
-        gameTimerCenter_ = Vector2{ vw * 0.5f, 32.0f };
+        timeDisplayInGame_ = std::make_unique<TimeDisplay>();
+        timeDisplayInGame_->Initialize(engine_, camera_.get(),
+            "InGameTimer",
+            "resources/text_num.png", 32.0f, 64.0f,
+            gameTimerDigits_,
+            Vector2{ vw * 0.5f, 32.0f },
+            gameTimerScale_);
     }
 
     // === Initialize 内（coreCircle_ の直後の Sphere 初期化ブロックを差し替え） ===
@@ -358,16 +329,17 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     resultKillText_->SetScale(resultKillScale_);
 
     // 結果表示用の NumberText（生き残った秒数：小数点2桁 -> NNNN 形式で '.' は別スプライト）
-    resultTimeText_ = std::make_unique<NumberText>();
-    resultTimeText_->Initialize(camera_.get(), "resources/text_num.png", 32.0f, 64.0f, static_cast<size_t>(resultTimeDigits_));
-    resultTimeText_->SetTracking(0.0f);
-    resultTimeText_->SetScale(resultTimeScale_);
-
-    // ドット（'.'）は別スプライトで描く
-    resultDotSprite_ = std::make_unique<Sprite>();
-    resultDotSprite_->Initialize(camera_.get(), "resources/texture/gameText_period.png");
-    resultDotSprite_->SetAnchor(0.5f, 0.5f);
-    resultDotSprite_->SetSize(19.0f * resultTimeScale_, 38.0f * resultTimeScale_);
+    {
+        const float vw = camera_->GetViewportWidth();
+        timeDisplayResult_ = std::make_unique<TimeDisplay>();
+        timeDisplayResult_->Initialize(engine_, camera_.get(),
+            "ResultTimer",
+            "resources/text_num.png", 32.0f, 64.0f,
+            resultTimeDigits_,
+            Vector2{ vw * 0.5f, 530.0f },
+            resultTimeScale_);
+        // resultKillPos_/resultTimePos_ を以前に使っていたなら不要になります
+    }
 
     // --- 固定配置（ImGui を使わない前提） ---
     // 「アンカー: 中心」を満たすため、ここでは result*Pos_ に center座標を保存します。
@@ -488,13 +460,15 @@ void GameScene::Update() {
     text_slash_->Update(false);
     text_pleaseAlive_->Update(false);
     text_addEnemy_->Update(false);
-    text_period_->Update(false);
     text_rotate_->Update(true, "text_rotate_");
+    timeDisplayInGame_->Update(Timer_);
     if (resultPhase_) {
         text_killEnemy_->Update(false);
         text_aliveTime_->Update(false);
-        resultDotSprite_->Update(true, "resultDot_");
+        if (timeDisplayResult_) timeDisplayResult_->Update(Timer_);
     }
+
+
 
     // playerの座標などを描画物に反映
     player_->DrawSet();
@@ -642,7 +616,6 @@ void GameScene::Draw() {
     text_bullet_->Draw();
     text_HP_->Draw();
     text_slash_->Draw();
-    text_period_->Draw();
 
     // === Draw 内：UI 描画エリア（text_bullet_ 等を描く前）へ追加 ===
     // HPアイコン描画（表示数は coreHp_）
@@ -660,32 +633,11 @@ void GameScene::Draw() {
         }
     }
 
-    if (showGameTimer_ && gameTimerText_) {
-        // 最前面の 2D 表示状態を確実にする
+    if (showGameTimer_ && timeDisplayInGame_) {
         engine_->SetBlend(BlendMode::kBlendModeNormal);
         engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
         engine_->ApplySpritePSO();
-
-        // 残り時間（秒）を計算し、小数点以下2桁（センティ秒）に切り捨て
-        const float remaining = std::max(0.0f, gameTimeLimitSec_ - Timer_);
-        const int centis = static_cast<int>(std::floor(remaining * 100.0f + 1e-6f)); // 例: 59.987 -> 5998
-
-        // 固定桁（例: 4桁 "XXYY" = "XX.YY" 相当）。必要なら gameTimerDigits_ を使って調整。
-        const int pad = std::max(1, gameTimerDigits_);
-        char fmt[8];
-        sprintf_s(fmt, "%%0%dd", pad);
-        char buf[16];
-        sprintf_s(buf, fmt, centis); // 先頭0埋めで文字列生成（"5998", "0099", "6000" など）
-
-        // 中央基準に合わせて rightTop を算出して配置
-        const float totalW = gameTimerText_->GetWidthForDigits(static_cast<size_t>(pad));
-        const float scaledH = gameTimerText_->GetCellH() * gameTimerText_->GetScale();
-        const float rightX = gameTimerCenter_.x + totalW * 0.5f;
-        const float topY = gameTimerCenter_.y - (scaledH * 0.5f);
-        gameTimerText_->SetPosRightTop(Vector2{ rightX, topY });
-
-        // ドット '.' は別スプライトで後から描く前提なので、ここでは数字のみ描画
-        gameTimerText_->DrawString(std::string(buf));
+        timeDisplayInGame_->Draw(Timer_, true, gameTimeLimitSec_);
     }
 
     // --- 最前面にゲームオーバーパネルを描画 ---
@@ -727,7 +679,14 @@ void GameScene::Draw() {
         text_killEnemy_->Draw();
         text_aliveTime_->Draw();
 
-        // --- 倒した敵数（整数） ---
+        if (timeDisplayResult_) {
+            engine_->SetBlend(BlendMode::kBlendModeNormal);
+            engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+            engine_->ApplySpritePSO();
+            timeDisplayResult_->Draw(Timer_, false, gameTimeLimitSec_);
+        }
+
+        // --- 倒した数（既存コード） はそのまま使う（必要なら別クラス化可） ---
         if (resultKillText_ && text_killEnemy_) {
             const size_t pad = static_cast<size_t>(std::max(1, resultKillDigits_));
             const Vector2 lblPos = text_killEnemy_->GetPosition2D();
