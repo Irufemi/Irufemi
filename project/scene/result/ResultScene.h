@@ -1,17 +1,27 @@
 #pragma once
-#include "../IScene.h"
+
+#include "scene/IScene.h"
+#include <memory>
+
+class IrufemiEngine;
+class Camera;
+class Circle2D;
+class PointLightClass;
+class SpotLightClass;
 
 class ResultScene : public IScene {
 public:
-	// デストラクタ
-	~ResultScene();
-	// 初期化
-	void Initialize(IrufemiEngine* engine) override;
-	// 更新
-	void Update() override;
-	// 描画
-	void Draw() override;
+    ~ResultScene() override;
+    void Initialize(IrufemiEngine* engine) override;
+    void Update() override;
+    void Draw() override;
 
-private: // メンバ変数
-	IrufemiEngine* engine_ = nullptr;
+private:
+    IrufemiEngine* engine_ = nullptr;
+    std::unique_ptr<Camera> camera_;
+    std::unique_ptr<Circle2D> circle_;
+
+    // ワークアラウンド用ライト
+    std::unique_ptr<PointLightClass> pointLight_;
+    std::unique_ptr<SpotLightClass> spotLight_;
 };

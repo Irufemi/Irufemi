@@ -36,25 +36,17 @@ void Camera::Initialize(int window_width,int window_height) {
 void Camera::Update(const char *cameraName) {
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-
     std::string name = std::string("Camera: ") + cameraName;
 
-    //ImGui
-
-    //カメラウィンドウを作り出す
+    // ImGui（デバッグ時のみ）
     ImGui::Begin(name.c_str());
-    // translate
     ImGui::DragFloat3("translate", &translate_.x, 0.1f);
-    // rotate
     ImGui::DragFloat3("rotate", &rotate_.x, 0.1f);
-    //入力終了
     ImGui::End();
+#endif
 
-    //値に応じて行列も更新
+    // Debug/Release を問わず毎フレーム行列を更新する
     UpdateMatrix();
-
-#endif // _DEBUG
-
 }
 
 //ワールド行列の作成

@@ -70,4 +70,10 @@ public:
     void Stop(IXAudio2SourceVoice*& voice);
     void StopAll(); // 追加: 全Voice停止（Finalize内で利用）
 
+    // 追加: 重複を避けてファイルからロード or 取得（TextureManager風）
+    // key が空なら filePath をキーにする
+    std::shared_ptr<Sound> GetOrLoadSoundByFile(const std::string& filePath, const std::string& key = "");
+
+    // 追加: 指定キーを保持しているか
+    bool HasSound(const std::string& key) const;
 };

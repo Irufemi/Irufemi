@@ -3,8 +3,10 @@
 #include <cassert>
 #include <cstring>
 #include "engine/directX/DirectXCommon.h"
+#include "engine/DescriptorAllocator.h" // 追加
 #include "camera/Camera.h"
 #include "manager/TextureManager.h"
+#include "manager/DrawManager.h"
 #include "function/Function.h" // LoadObjFileM, 型定義
 #include "function/Math.h"
 #include "math/Transform.h"
@@ -14,6 +16,8 @@
 
 DirectXCommon* Region::dx_ = nullptr;
 TextureManager* Region::textureManager_ = nullptr;
+DrawManager* Region::drawManager_ = nullptr;
+DescriptorAllocator* Region::srvAllocator_ = nullptr; // 追加
 
 void Region::Initialize(
     Camera* camera,
@@ -99,32 +103,36 @@ void Region::EnsureSharedTexture(const ObjMesh& mesh) {
 
 void Region::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     const UINT stride = sizeof(InstanceData);
-    const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride); // 最低1
+    const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride);
 
-    // バッファを作り直し（Upload）
     instanceBuffer_ = dx_->CreateBufferResource(sizeInBytes);
 
-    // 初回のみディスクリプタ確保（1個固定、以後は書き換え）
+    // 初回のみ SRV スロット確保（以降は上書き再利用）
     if (instancingSrvIndex_ == UINT32_MAX) {
-        // 既存の SRV インデックス運用に合わせる（TextureManager 経由）
-        uint32_t next = textureManager_->GetSRVIndex() + 1;
-        textureManager_->AddSRVIndex();
-        instancingSrvIndex_ = next;
-
-        instancingSrvCPU_ = DirectXCommon::GetSRVCPUDescriptorHandle(instancingSrvIndex_);
-        instancingSrvGPU_ = DirectXCommon::GetSRVGPUDescriptorHandle(instancingSrvIndex_);
+        if (!srvAllocator_) {
+            OutputDebugStringA("Region::CreateOrResizeInstanceBuffer: srvAllocator_ is null\n");
+            return;
+        }
+        uint32_t idx = srvAllocator_->Allocate();
+        if (idx == DescriptorAllocator::kInvalid) {
+            OutputDebugStringA("Region::CreateOrResizeInstanceBuffer: SRV Allocate failed\n");
+            return;
+        }
+        instancingSrvIndex_ = idx;
+        instancingSrvCPU_ = srvAllocator_->GetCPUHandle(idx);
+        instancingSrvGPU_ = srvAllocator_->GetGPUHandle(idx);
     }
 
-    // SRV 描述子（StructuredBuffer）
     D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
     srv.Format = DXGI_FORMAT_UNKNOWN;
     srv.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srv.Buffer.FirstElement = 0;
-    srv.Buffer.NumElements = instanceCount;         // 要素数
-    srv.Buffer.StructureByteStride = stride;        // 構造体ストライド
+    srv.Buffer.NumElements = instanceCount;
+    srv.Buffer.StructureByteStride = stride;
     srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
+    // 同一ハンドルに上書き（再利用）
     dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srv, instancingSrvCPU_);
 }
 
@@ -193,17 +201,6 @@ void Region::Draw() {
     // インスタンスバッファ更新（毎フレームWVP再計算）
     BuildInstanceBuffer(true);
 
-    auto* cmd = dx_->GetCommandList();
-    cmd->SetGraphicsRootSignature(dx_->GetRootSignature());
+    drawManager_->DrawRegion(this);
 
-    cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    cmd->IASetVertexBuffers(0, 1, &vertexBufferView_);
-
-    cmd->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());          // PS b0
-    cmd->SetGraphicsRootConstantBufferView(3, directionalLightResource_->GetGPUVirtualAddress());  // PS b1
-    cmd->SetGraphicsRootConstantBufferView(5, cameraResource_->GetGPUVirtualAddress());            // PS b2
-    cmd->SetGraphicsRootDescriptorTable(2, textureHandle_);                                        // PS t0
-
-    cmd->SetGraphicsRootDescriptorTable(4, instancingSrvGPU_);                                     // VS t0
-    cmd->DrawInstanced(vertexCount_, static_cast<UINT>(instances_.size()), 0, 0);
 }

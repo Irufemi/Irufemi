@@ -9,12 +9,12 @@ WinApp::~WinApp() {
     Finalize();
 }
 
-bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const wchar_t* title) {
+bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::wstring& title) {
     
     hInstance_ = hInstance;
     clientWidth_ = width;
     clientHeight_ = height;
-    windowTitle_ = title ? title : L"Window";
+    windowTitle_ = title;
 
     // システムタイマーの分解能を上げる
     timeBeginPeriod(1);
@@ -28,7 +28,7 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const wchar_
 
     ///ウィンドウクラスを登録する
 
-    WNDCLASS wc{};
+    WNDCLASSW wc{};
     //ウィンドウプロシージャ
     wc.lpfnWndProc = &WinApp::WndProc;
     //ウィンドウクラス名(なんでもいい)
@@ -39,7 +39,7 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const wchar_
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 
     //ウィンドウクラスを登録する
-    ATOM atom = RegisterClass(&wc);
+    ATOM atom = RegisterClassW(&wc);
     didRegisterClass_ = (atom != 0);           // 既に登録済みなら 0（解除しない）
 
     ///ウィンドウサイズを決める
@@ -53,7 +53,7 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const wchar_
     ///ウィンドウを生成して表示
 
     //ウィンドウの生成
-    hwnd_ = CreateWindow(
+    hwnd_ = CreateWindowW(
         wc.lpszClassName,		//利用するクラス名
         windowTitle_.c_str(),			        //タイトルバーの文字(何でも良い)
         WS_OVERLAPPEDWINDOW,	//よく見るウィンドウスタイル
@@ -77,6 +77,7 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const wchar_
 
     //ウィンドウを表示する
     ShowWindow(hwnd_, SW_SHOW);
+    SetWindowTextW(hwnd_, windowTitle_.c_str());
 
     // 実クライアントサイズ
     RECT cr{};

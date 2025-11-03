@@ -2,12 +2,30 @@
 #include <cassert>
 #include <filesystem> // フォルダ内のファイルを探索するために使用
 #include <algorithm>  // 文字列を小文字に変換するために使用
+#include <Windows.h>
 
 #pragma comment (lib,"xaudio2.lib")
 #pragma comment(lib, "Mf.lib")
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "Mfreadwrite.lib")
 #pragma comment(lib, "mfuuid.lib")
+
+namespace {
+    // UTF-8 -> UTF-16
+    std::wstring ToWide(const std::string& s) {
+        if (s.empty()) return {};
+        int size = ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), nullptr, 0);
+        std::wstring w(size, L'\0');
+        ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), w.data(), size);
+        return w;
+    }
+    // パス正規化（キーとして安定化させる）
+    std::string NormalizePath(const std::string& path) {
+        std::filesystem::path p(path);
+        p.make_preferred();
+        return p.generic_string(); // すべて'/'に統一
+    }
+}
 
 AudioManager::~AudioManager() {
     Finalize();
@@ -197,4 +215,27 @@ void AudioManager::StopAll() {
         }
     }
     activeVoices_.clear();
+}
+
+bool AudioManager::HasSound(const std::string& key) const {
+    return soundRegistry_.find(key) != soundRegistry_.end();
+}
+
+std::shared_ptr<Sound> AudioManager::GetOrLoadSoundByFile(const std::string& filePath, const std::string& key) {
+    std::string normPath = NormalizePath(filePath);
+    std::string useKey = key.empty() ? normPath : key;
+
+    auto it = soundRegistry_.find(useKey);
+    if (it != soundRegistry_.end()) {
+        return it->second;
+    }
+
+    auto sound = std::make_shared<Sound>();
+    if (!sound->Load(ToWide(normPath))) {
+        // 読み込み失敗時は nullptr を返す
+        return nullptr;
+    }
+
+    soundRegistry_.emplace(useKey, sound);
+    return sound;
 }

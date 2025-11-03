@@ -48,7 +48,7 @@ public:
     ID3D12PipelineState* GetSprite(BlendMode blend, DepthWrite depth);
 
     // 
-    ID3D12PipelineState* GetBlocks(BlendMode b, DepthWrite d);
+    ID3D12PipelineState* GetRegion(BlendMode b, DepthWrite d);
 
     void ClearCache();
 

@@ -5,6 +5,7 @@
 #include "../math/Matrix4x4.h"
 
 //前方宣言
+struct Segment2D;
 struct Segment;
 struct Ray;
 struct Line;
@@ -21,10 +22,23 @@ namespace Math {
     // 加算
     Vector2 Add(const Vector2& a, const Vector2& b);
 
+    // 減算
+    Vector2 Subtract(const Vector2& a, const Vector2& b);
+
     // スカラー倍
     Vector2 Multiply(const float scalar, const Vector2 vector);
 
+    // 内積
+    float Dot(const Vector2& a, const Vector2& b);
+
+    // ノルム(長さ)
+    float Length(const Vector2& vector);
+
+    // 正規化
     Vector2 Normalize(Vector2 vector);
+
+    // 点と線分(3DのXY投影)の最近接点
+    Vector2 ClosestPoint(const Vector2& point, const Segment2D& segment);
 
     Vector2 Bezier(const Vector2& p0, const Vector2& p1, const Vector2& p2, float t);
 

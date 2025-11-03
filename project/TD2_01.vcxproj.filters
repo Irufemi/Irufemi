@@ -79,6 +79,12 @@
     <Filter Include="Engine\winApp">
       <UniqueIdentifier>{b2ee8d91-6e9d-4fe1-ac98-96b44fa3a1d2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="3D\Region">
+      <UniqueIdentifier>{9ab83aa2-3655-40ac-a5b4-0cc535a3d404}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application\content">
+      <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
@@ -250,8 +256,59 @@
     <ClCompile Include="3D\SpotLightClass.cpp">
       <Filter>3D</Filter>
     </ClCompile>
-    <ClCompile Include="3D\Region.cpp">
+    <ClCompile Include="scene\inGame\Player.cpp">
+      <Filter>Application\content</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\Bullet.cpp">
+      <Filter>Application\content</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\InGameFunction.cpp">
+      <Filter>Application\content</Filter>
+    </ClCompile>
+    <ClCompile Include="math\Vector2.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\CylinderClass.cpp">
       <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\CollisionResult.h">
+      <Filter>Application\content</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\Enemy.cpp">
+      <Filter>Application\content</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\EnemyManager.cpp">
+      <Filter>Application\content</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\TetraRegion.cpp">
+      <Filter>3D\Region</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\Region.cpp">
+      <Filter>3D\Region</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\SphereRegion.cpp">
+      <Filter>3D\Region</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\Se.cpp">
+      <Filter>audio</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\DescriptorAllocator.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\Circle2D.cpp">
+      <Filter>2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\SpriteRegion.cpp">
+      <Filter>2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\NumberText.cpp">
+      <Filter>Application\content</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\TimeDisplay.cpp">
+      <Filter>Application\content</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\ScreenSpace.cpp">
+      <Filter>Application\content</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -489,8 +546,56 @@
     <ClInclude Include="3D\SpotLightClass.h">
       <Filter>3D</Filter>
     </ClInclude>
-    <ClInclude Include="3D\Region.h">
+    <ClInclude Include="scene\inGame\Player.h">
+      <Filter>Application\content</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\inGame\Bullet.h">
+      <Filter>Application\content</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\inGame\InGameFunction.h">
+      <Filter>Application\content</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\CylinderClass.h">
       <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\inGame\Enemy.h">
+      <Filter>Application\content</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\inGame\EnemyManager.h">
+      <Filter>Application\content</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\TetraRegion.h">
+      <Filter>3D\Region</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\Region.h">
+      <Filter>3D\Region</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\SphereRegion.h">
+      <Filter>3D\Region</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\Se.h">
+      <Filter>audio</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\DescriptorAllocator.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\contents\CommonVisual.h">
+      <Filter>Application\content</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\Circle2D.h">
+      <Filter>2D</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\SpriteRegion.h">
+      <Filter>2D</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\NumberText.h">
+      <Filter>Application\content</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\TimeDisplay.h">
+      <Filter>Application\content</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\inGame\ScreenSpace.h">
+      <Filter>Application\content</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

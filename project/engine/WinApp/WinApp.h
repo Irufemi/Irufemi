@@ -13,7 +13,7 @@ public:
     ~WinApp();
 
     // 初期化（ウィンドウ生成 + COM 初期化）
-    bool Initialize(HINSTANCE hInstance, int width = 1280, int height = 720, const wchar_t* title = L"Window");
+    bool Initialize(HINSTANCE hInstance, int width = 1280, int height = 720, const std::wstring& title = L"Window");
 
     // 後始末（ウィンドウ破棄 + COM 終了）
     void Finalize();

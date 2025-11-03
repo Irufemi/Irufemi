@@ -5,13 +5,14 @@
 #include <math.h>
 #include <cmath>
 #include <algorithm> 
+#include <limits> 
 
 #include "Ease.h"
-#include "../math/shape/AABB.h"
-#include "../math/shape/LinePrimitive.h"
-#include "../math/shape/Plane.h"
-#include "../math/shape/Sphere.h"
-#include "../math/shape/Triangle.h"
+#include "math/shape/AABB.h"
+#include "math/shape/LinePrimitive.h"
+#include "math/shape/Plane.h"
+#include "math/shape/Sphere.h"
+#include "math/shape/Triangle.h"
 
 namespace Math {
 
@@ -20,10 +21,19 @@ namespace Math {
     // 加算
     Vector2 Add(const Vector2& a, const Vector2& b) { return { a.x + b.x, a.y + b.y }; }
 
+    // 減算
+    Vector2 Subtract(const Vector2& a, const Vector2& b) { return { a.x - b.x, a.y - b.y }; }
+
     // スカラー倍
     Vector2 Multiply(const float scalar, const Vector2 vector) { return { vector.x * scalar, vector.y * scalar }; }
 
+    // 内積
+    float Dot(const Vector2& a, const Vector2& b) { return a.x * b.x + a.y * b.y; }
 
+    // ノルム(長さ)
+    float Length(const Vector2& vector) { return std::sqrt(Dot(vector, vector)); }
+
+    // 正規化
     Vector2 Normalize(Vector2 vector) {
         float length = sqrtf(powf(vector.x, 2.0f) + powf(vector.y, 2.0f));
         if (length == 0.0f) {
@@ -32,6 +42,24 @@ namespace Math {
         // 長さが0の場合はゼロベクトルを返す
         Vector2 result = { vector.x / length, vector.y / length };
         return result;
+    }
+
+    // 点と線分(2D)の最近接点（Segment2D: endは終点座標）
+    Vector2 ClosestPoint(const Vector2& point, const Segment2D& segment) {
+        Vector2 ab = Subtract(segment.end, segment.origin);
+        Vector2 ap = Subtract(point, segment.origin);
+
+        float t = Dot(ap, ab) / (powf(ab.x, 2) + powf(ab.y, 2));
+
+        if (t < 0) {
+            return segment.origin;
+        }
+        if (t > 1) {
+            return segment.end;
+        } else {
+            Vector2 projection = Add(segment.origin, Multiply(t, ab));
+            return projection;
+        }
     }
 
     // 2次ベジェ曲線上の点を求める関数
@@ -183,24 +211,19 @@ namespace Math {
 
     // 4x4行列の積
     Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
-        Matrix4x4 multiplyResult{};
-        multiplyResult.m[0][0] = m1.m[0][0] * m2.m[0][0] + m1.m[0][1] * m2.m[1][0] + m1.m[0][2] * m2.m[2][0] + m1.m[0][3] * m2.m[3][0];
-        multiplyResult.m[0][1] = m1.m[0][0] * m2.m[0][1] + m1.m[0][1] * m2.m[1][1] + m1.m[0][2] * m2.m[2][1] + m1.m[0][3] * m2.m[3][1];
-        multiplyResult.m[0][2] = m1.m[0][0] * m2.m[0][2] + m1.m[0][1] * m2.m[1][2] + m1.m[0][2] * m2.m[2][2] + m1.m[0][3] * m2.m[3][2];
-        multiplyResult.m[0][3] = m1.m[1][0] * m2.m[0][3] + m1.m[0][1] * m2.m[1][3] + m1.m[0][2] * m2.m[2][3] + m1.m[0][3] * m2.m[3][3];
-        multiplyResult.m[1][0] = m1.m[1][0] * m2.m[0][0] + m1.m[1][1] * m2.m[1][0] + m1.m[1][2] * m2.m[2][0] + m1.m[1][3] * m2.m[3][0];
-        multiplyResult.m[1][1] = m1.m[1][0] * m2.m[0][1] + m1.m[1][1] * m2.m[1][1] + m1.m[1][2] * m2.m[2][1] + m1.m[1][3] * m2.m[3][1];
-        multiplyResult.m[1][2] = m1.m[1][0] * m2.m[0][2] + m1.m[1][1] * m2.m[1][2] + m1.m[1][2] * m2.m[2][2] + m1.m[1][3] * m2.m[3][2];
-        multiplyResult.m[1][3] = m1.m[1][0] * m2.m[0][3] + m1.m[1][1] * m2.m[1][3] + m1.m[1][2] * m2.m[2][3] + m1.m[1][3] * m2.m[3][3];
-        multiplyResult.m[2][0] = m1.m[2][0] * m2.m[0][0] + m1.m[2][1] * m2.m[1][0] + m1.m[2][2] * m2.m[2][0] + m1.m[2][3] * m2.m[3][0];
-        multiplyResult.m[2][1] = m1.m[2][0] * m2.m[0][1] + m1.m[2][1] * m2.m[1][1] + m1.m[2][2] * m2.m[2][1] + m1.m[2][3] * m2.m[3][1];
-        multiplyResult.m[2][2] = m1.m[2][0] * m2.m[0][2] + m1.m[2][1] * m2.m[1][2] + m1.m[2][2] * m2.m[2][2] + m1.m[2][3] * m2.m[3][2];
-        multiplyResult.m[2][3] = m1.m[2][0] * m2.m[0][3] + m1.m[2][1] * m2.m[1][3] + m1.m[2][2] * m2.m[2][3] + m1.m[2][3] * m2.m[3][3];
-        multiplyResult.m[3][0] = m1.m[3][0] * m2.m[0][0] + m1.m[3][1] * m2.m[1][0] + m1.m[3][2] * m2.m[2][0] + m1.m[3][3] * m2.m[3][0];
-        multiplyResult.m[3][1] = m1.m[3][0] * m2.m[0][1] + m1.m[3][1] * m2.m[1][1] + m1.m[3][2] * m2.m[2][1] + m1.m[3][3] * m2.m[3][1];
-        multiplyResult.m[3][2] = m1.m[3][0] * m2.m[0][2] + m1.m[3][1] * m2.m[1][2] + m1.m[3][2] * m2.m[2][2] + m1.m[3][3] * m2.m[3][2];
-        multiplyResult.m[3][3] = m1.m[3][0] * m2.m[0][3] + m1.m[3][1] * m2.m[1][3] + m1.m[3][2] * m2.m[2][3] + m1.m[3][3] * m2.m[3][3];
-        return multiplyResult;
+        Matrix4x4 r{};
+
+        for (int row = 0; row < 4; ++row) {
+            for (int col = 0; col < 4; ++col) {
+                r.m[row][col] =
+                    m1.m[row][0] * m2.m[0][col] +
+                    m1.m[row][1] * m2.m[1][col] +
+                    m1.m[row][2] * m2.m[2][col] +
+                    m1.m[row][3] * m2.m[3][col];
+            }
+        }
+
+    return r;
     }
 
     // 4x4逆行列を求める 

@@ -132,7 +132,7 @@ ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth) {
     return pso.Get();
 }
 
-ID3D12PipelineState* PSOManager::GetBlocks(BlendMode b, DepthWrite d)
+ID3D12PipelineState* PSOManager::GetRegion(BlendMode b, DepthWrite d)
 {
     // 既存のキャッシュ Key 生成を流用（Hash(blocksShaders_, b, d)）
     Key k{ Hash(blocksShaders_, b, d) };

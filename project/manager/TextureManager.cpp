@@ -7,6 +7,7 @@
 #include <format>
 #include <cstdint>
 
+#include "engine/DescriptorAllocator.h"
 #include "engine/directX/DirectXCommon.h"
 #include "externals/DirectXTex/DirectXTex.h"
 #include <externals/DirectXTex/d3dx12.h>
@@ -90,7 +91,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& 
     // 既存キー検索
     auto it = textures_.find(name);
     if (it != textures_.end()) {
-        auto h = it->second->GetTextureSrvHandleGPU();
+        D3D12_GPU_DESCRIPTOR_HANDLE h = it->second->GetTextureSrvHandleGPU();
         if (h.ptr == 0) {
             // フォールバック
             if (whiteTextureHandle.ptr != 0) return whiteTextureHandle;
@@ -102,7 +103,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& 
     auto* self = const_cast<TextureManager*>(this);
     auto tex = std::make_shared<Texture>();
     tex->Initialize(name);
-    auto handle = tex->GetTextureSrvHandleGPU();
+    D3D12_GPU_DESCRIPTOR_HANDLE handle = tex->GetTextureSrvHandleGPU();
     if (handle.ptr == 0 && whiteTextureHandle.ptr != 0) {
         handle = whiteTextureHandle;
     }
@@ -200,29 +201,42 @@ void TextureManager::CreateWhiteDummyTexture() {
     hr = dxCommon_->GetCommandList()->Reset(dxCommon_->GetCommandAllocator(), nullptr);
     if (FAILED(hr)) { OutputDebugStringA("CreateWhiteDummyTexture: Reset CommandList failed\n"); return; }
 
-    // クラス内割当を使って SRV のインデックスを取得
-    uint32_t index = AllocateSrvIndexSafe(dxCommon_);
+    // SRV 割当て
+    // ここでハンドルを外側で宣言して、以降でも参照できるようにする
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle{};
-    if (index == UINT32_MAX) {
-        OutputDebugStringA("CreateWhiteDummyTexture: SRV allocation failed, using heap start as fallback\n");
-        cpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
-        gpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
-    } else {
-        cpuHandle = DirectXCommon::GetSRVCPUDescriptorHandle(index);
-        gpuHandle = DirectXCommon::GetSRVGPUDescriptorHandle(index);
+
+    {
+        // まずアロケータ優先
+        uint32_t index = DescriptorAllocator::kInvalid;
+
+        if (Texture::GetDescriptorAllocator()) {
+            auto alloc = Texture::GetDescriptorAllocator();
+            index = alloc->Allocate();
+            if (index != DescriptorAllocator::kInvalid) {
+                cpuHandle = alloc->GetCPUHandle(index);
+                gpuHandle = alloc->GetGPUHandle(index);
+            } else {
+                OutputDebugStringA("CreateWhiteDummyTexture: allocator exhausted, using heap start fallback\n");
+                cpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
+                gpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
+            }
+        } else {
+            cpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
+            gpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
+        }
+
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MipLevels = 1;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+        dxCommon_->GetDevice()->CreateShaderResourceView(whiteTextureResource.Get(), &srvDesc, cpuHandle);
+        whiteTextureHandle = gpuHandle;
     }
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels = 1;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-    dxCommon_->GetDevice()->CreateShaderResourceView(whiteTextureResource.Get(), &srvDesc, cpuHandle);
-
-    whiteTextureHandle = gpuHandle;
-
+    // ログ（↑で確定した cpuHandle/gpuHandle を使用）
     {
         auto msg = std::format("CreateWhiteDummyTexture: created SRV cpu.ptr={:#x} gpu.ptr={:#x}\n",
             static_cast<uintptr_t>(cpuHandle.ptr),

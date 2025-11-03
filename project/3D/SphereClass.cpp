@@ -10,6 +10,8 @@
 #include "function/Math.h"
 #include <string>
 #include <algorithm>
+#include <cstdio>
+#include <Windows.h>
 
 TextureManager* SphereClass::textureManager_ = nullptr;
 DrawManager* SphereClass::drawManager_ = nullptr;
@@ -169,6 +171,19 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
             selectedTextureIndex_ = 0;
         }
 
+    } else {
+        resource_->textureHandle_.ptr = 0;
+    }
+
+    // --- 追加: 実行時チェックとフォールバック ---
+    if (resource_->textureHandle_.ptr == 0) {
+        resource_->materialData_->hasTexture = false;
+        OutputDebugStringA("[SphereClass] textureHandle is NULL -> using no-texture fallback\n");
+    } else {
+        resource_->materialData_->hasTexture = true;
+        char buf[256];
+        sprintf_s(buf, "[SphereClass] textureHandle.ptr = %llu\n", static_cast<unsigned long long>(resource_->textureHandle_.ptr));
+        OutputDebugStringA(buf);
     }
 
     resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
@@ -179,38 +194,43 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
 
 }
 
-void SphereClass::Update(const char* sphereName) {
+void SphereClass::Update(bool debug,const char* sphereName) {
 
-
+    if (debug) {
 #if defined(_DEBUG) || defined(DEVELOPMENT)
 
-    std::string name = std::string("Sphere: ") + sphereName;
+        std::string name = std::string("Sphere: ") + sphereName;
 
-    ImGui::Begin(name.c_str());
+        ImGui::Begin(name.c_str());
 
-    // 半径と中心は DebugSphereInfo で編集
-    ui_->DebugSphereInfo(info_);
+        // 半径と中心は DebugSphereInfo で編集
+        ui_->DebugSphereInfo(info_);
 
-    // 位置は Transform 側でも編集されるので同期
-    resource_->transform_.translate = info_.center;
+        // 位置は Transform 側でも編集されるので同期
+        resource_->transform_.translate = info_.center;
 
-    // scale は係数（1.0 基準）。ここで自由に非等方も可。
-    ui_->DebugTransform(resource_->transform_);
+        // scale は係数（1.0 基準）。ここで自由に非等方も可。
+        ui_->DebugTransform(resource_->transform_);
 
-    // 位置を SphereInfo に反映（半径は Transform からは変更しない）
-    info_.center = resource_->transform_.translate;
+        // 位置を SphereInfo に反映（半径は Transform からは変更しない）
+        info_.center = resource_->transform_.translate;
 
-    ui_->DebugMaterialBy3D(resource_->materialData_);
+        ui_->DebugMaterialBy3D(resource_->materialData_);
 
-    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+        ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
 
-    ui_->DebugUvTransform(resource_->uvTransform_);
+        ui_->DebugUvTransform(resource_->uvTransform_);
 
-    ui_->DebugDirectionalLight(resource_->directionalLightData_);
+        ui_->DebugDirectionalLight(resource_->directionalLightData_);
 
-    ImGui::End();
+        ImGui::End();
 
 #endif // _DEBUG
+
+    }
+
+    // Release でも必ず論理情報を実トランスフォームに反映する
+    resource_->transform_.translate = info_.center;
 
     // 実スケール = 半径 × 係数
     Vector3 effectiveScale{
@@ -240,6 +260,11 @@ void SphereClass::Update(const char* sphereName) {
         resource_->transformationMatrix_.world,
         resource_->transformationMatrix_.WorldInverseTranspose
     };
+
+    // SRVが無効なら毎フレーム保険で hasTexture をオフ
+    if (resource_->textureHandle_.ptr == 0) {
+        resource_->materialData_->hasTexture = false;
+    }
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 

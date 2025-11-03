@@ -30,5 +30,13 @@ public: // メンバ関数
     ID3D12Resource* GetResource() { return resource_.Get(); }
 
     static void SetDxCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
+
+    void SetColor(Vector4 color) { data_->color = color; }
+    void SetPos(Vector3 pos) { data_->position = pos; }
+    void SetIntensity(float intensity) { data_->intensity = intensity; }
+    void SetDirection(Vector3 direction) { data_->direction; }
+    void SetDisTance(float distance) { data_->distance = distance; }
+    void SetDecay(float decay) { data_->decay = decay; }
+    void SetCosAngle(float cosAngle) { data_->cosAngle = cosAngle; }
 };
 
