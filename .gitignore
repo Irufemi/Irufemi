@@ -319,3 +319,5 @@ DirectXGame/imgui.ini
 # DirectXTex Compiled Shaders
 **/DirectXTex/Shaders/Compiled/
 /project/externals/DirectXTex/Bin/
+/project/IrufemiEngine/logs
+/project/Application/logs
