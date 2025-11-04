@@ -42,8 +42,9 @@ PixelShaderOutput main(VertexShaderOutput input)
     // ベースカラー
 	float32_t4 baseColor = texColor * gMaterial.color;
 
-    // αカットアウト（1回に統一）
-	if (baseColor.a <= 0.5f)
+    // αカットアウト：テクスチャ使用時のみ（閾値0.5）
+    // → 無地半透明（hasTexture == 0）の場合は discard しない（加算/通常ブレンドが効く）
+	if (gMaterial.hasTexture != 0 && baseColor.a <= 0.5f)
 	{
 		discard;
 	}

@@ -1,26 +1,34 @@
 #include "ParticleClass.h"
-
 #include "Math.h"
 #include "../externals/imgui/imgui.h"
-
 #include "engine/directX/DirectXCommon.h"
-
+#include "engine/DescriptorAllocator.h" // 追加
 #include <algorithm>
 
-void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& srvDescriptorHeap, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
+DescriptorAllocator* ParticleClass::s_srvAllocator_ = nullptr; // 追加
 
+ParticleClass::~ParticleClass() {
+    if (instancingSrvIndex_ != UINT32_MAX && s_srvAllocator_ && resource_) {
+        if (auto* dx = resource_->GetDirectXCommon()) {
+            s_srvAllocator_->FreeAfterFence(instancingSrvIndex_, dx->GetFenceValue());
+        }
+        instancingSrvIndex_ = UINT32_MAX;
+        instancingSrvHandleCPU_ = {};
+        instancingSrvHandleGPU_ = {};
+    }
+}
+
+void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& /*srvDescriptorHeap*/, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
     this->camera_ = camera;
     this->textureManager_ = textureManager;
     this->ui_ = ui;
 
     useBillbord_ = true;
     isUpdate_ = true;
-
     randomEngine_.seed(seedGenerator_());
 
-    // InstancingようのParticleForGPUリソースを作る
+    // Instancing 用バッファ
     instancingResource_ = resource_->GetDirectXCommon()->CreateBufferResource(sizeof(ParticleForGPU) * kNumMaxInstance_);
-    // 書き込むためのアドレスを取得
     instancingResource_->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_));
 
 
@@ -72,11 +80,28 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap
     instancingDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
     instancingDesc.Buffer.NumElements = kNumMaxInstance_;
     instancingDesc.Buffer.StructureByteStride = sizeof(ParticleForGPU);
-    const uint32_t descriptorSizeSRV = resource_->GetDirectXCommon()->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    textureManager_->AddSRVIndex();
-    instancingSrvHandleCPU_ = DirectXCommon::GetSRVCPUDescriptorHandle(textureManager_->GetSRVIndex());
-    instancingSrvHandleGPU_ = DirectXCommon::GetSRVGPUDescriptorHandle(textureManager_->GetSRVIndex());
-    resource_->GetDirectXCommon()->GetDevice()->CreateShaderResourceView(instancingResource_.Get(), &instancingDesc, instancingSrvHandleCPU_);
+
+    // SRV スロット確保（初回のみ）
+    if (instancingSrvIndex_ == UINT32_MAX) {
+        auto* alloc = s_srvAllocator_;
+        if (!alloc) {
+            OutputDebugStringA("ParticleClass::Initialize: SRV allocator is null\n");
+        } else {
+            uint32_t idx = alloc->Allocate();
+            if (idx == DescriptorAllocator::kInvalid) {
+                OutputDebugStringA("ParticleClass::Initialize: SRV Allocate failed\n");
+            } else {
+                instancingSrvIndex_ = idx;
+                instancingSrvHandleCPU_ = alloc->GetCPUHandle(idx);
+                instancingSrvHandleGPU_ = alloc->GetGPUHandle(idx);
+            }
+        }
+    }
+
+    // 既存の静的インデックス運用は廃止。確保できている場合のみ SRV を作成
+    if (instancingSrvHandleCPU_.ptr != 0) {
+        resource_->GetDirectXCommon()->GetDevice()->CreateShaderResourceView(instancingResource_.Get(), &instancingDesc, instancingSrvHandleCPU_);
+    }
 
     // D3D12ResourceUtilを生成
     resource_ = std::make_unique<D3D12ResourceUtilParticle>();

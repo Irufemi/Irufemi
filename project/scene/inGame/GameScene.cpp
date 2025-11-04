@@ -3,11 +3,7 @@
 #include "../SceneManager.h"
 #include "../SceneName.h"
 #include "engine/IrufemiEngine.h"
-#include "externals/imgui/imgui.h"
-#include "engine/Input/InputManager.h"
-
-#include <algorithm>
-
+#include "imgui.h"
 
 // 初期化
 void GameScene::Initialize(IrufemiEngine* engine) {
@@ -25,11 +21,13 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     pointLight_ = std::make_unique <PointLightClass>();
     pointLight_->Initialize();
-    
+    pointLight_->SetPos(Vector3{ 0.0f,-5.0f,0.0f });
+
     engine_->GetDrawManager()->SetPointLightClass(pointLight_.get());
 
     spotLight_ = std::make_unique <SpotLightClass>();
     spotLight_->Initialize();
+    spotLight_->SetIntensity(0.0f);
 
     engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
@@ -47,13 +45,13 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     blocks_ = std::make_unique<Region>();
     blocks_->Initialize(camera_.get(), "block.obj");
     GenerateBlocks();
-    
+
     /// 自キャラ
     // 自キャラの生成
     player_ = std::make_shared<Player>();
     // 3Dモデルデータの生成
     modelplayer_ = std::make_unique<ObjClass>();
-    modelplayer_->Initialize(camera_.get(),"player.obj");
+    modelplayer_->Initialize(camera_.get(), "player.obj");
     // 座標をマップチップ番号で指定
     Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 18);
     // 自キャラの初期化
@@ -66,7 +64,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 void GameScene::Update() {
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-    
+
     ImGui::Begin("GameScene");
     // pointLight 
     pointLight_->Debug();
@@ -84,7 +82,6 @@ void GameScene::Update() {
 
 #endif // _DEBUG
 
-
     // 自キャラの更新
     player_->Update();
 
@@ -95,13 +92,11 @@ void GameScene::Update() {
         camera_->SetPerspectiveFovMatrix(debugCamera_->GetCamera().GetPerspectiveFovMatrix());
     } else {
         camera_->Update("Camera");
-
     }
 
-    //pが押されていたら
-    if (PressedVK('P')) {
+    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
         if (g_SceneManager) {
-            g_SceneManager->Request(SceneName::result);
+            g_SceneManager->Request(SceneName::title);
         }
     }
 
@@ -111,31 +106,30 @@ void GameScene::Update() {
 void GameScene::Draw() {
 
     // 3D
-
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
 
+    // Player
     player_->Draw();
+    
+    // Region
+    engine_->ApplyRegionPSO();
 
-
-    // ブロックの描画（Blocksが全インスタンスを描画）
-    engine_->ApplyBlocksPSO();
-    if (blocks_) { blocks_->Draw(); }
-
-    engine_->ApplyPSO();
+    // ブロック
+    blocks_->Draw();
 
     // Particle
-
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();
 
-    // 2D
+    // Sprite
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
+
 }
 
 

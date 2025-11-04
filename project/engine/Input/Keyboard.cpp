@@ -9,7 +9,10 @@ void Keyboard::Initialize() {
 
 void Keyboard::Update() {
     previousKeys_ = currentKeys_;
-    ::GetKeyboardState(currentKeys_.data());
+    if (!::GetKeyboardState(currentKeys_.data())) {
+        // エラー処理: 失敗時は currentKeys_ をクリア
+        currentKeys_.fill(0);
+    }
 }
 
 bool Keyboard::IsKeyDown(uint8_t key) const { return (currentKeys_[key] & 0x80) != 0; }

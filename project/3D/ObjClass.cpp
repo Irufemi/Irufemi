@@ -1,4 +1,7 @@
 #include "ObjClass.h"
+#include <filesystem>
+#include <algorithm>
+#include <Windows.h> // OutputDebugStringA を使う場合
 
 #include "source/Texture.h"
 #include "function/Function.h"
@@ -73,11 +76,35 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         // テクスチャ
         auto tex = std::make_unique<Texture>();
         if (!mesh.material.textureFilePath.empty()) {
-            tex->Initialize(mesh.material.textureFilePath);
+            namespace fs = std::filesystem;
+            std::string texStr = mesh.material.textureFilePath;
+
+            // 区切り文字を統一（任意）
+            std::replace(texStr.begin(), texStr.end(), '/', '\\');
+
+            // ドライブ文字のみでスラッシュがない場合は補正: "F:foo.png" -> "F:\foo.png"
+            if (texStr.size() >= 2 && texStr[1] == ':' && (texStr.size() == 2 || (texStr.size() > 2 && texStr[2] != '\\' && texStr[2] != '/'))) {
+                texStr.insert(2, "\\");
+            }
+
+            fs::path texPath(texStr);
+
+            // 既に absolute / resources/obj を含むなら prepend しない
+            bool containsResourcesObj = (texStr.find("resources\\obj") != std::string::npos) || (texStr.find("resources/obj") != std::string::npos);
+            if (!texPath.is_absolute() && !containsResourcesObj) {
+                texPath = fs::path("resources") / "obj" / texPath;
+            }
+
+            // デバッグ出力（解決結果を確認）
+            {
+                std::string msg = "[ObjClass] Resolved texture path: " + texPath.string() + "\n";
+                OutputDebugStringA(msg.c_str());
+            }
+
+            tex->Initialize(texPath.string());
             res->textureHandle_ = tex->GetTextureSrvHandleGPU();
         } else if (!res->textureHandle_.ptr) {
             res->materialData_->hasTexture = false;
-            // ダミー（白）テクスチャのSRVハンドルを取得
             res->textureHandle_ = textureManager_->GetWhiteTextureHandle();
         }
 
@@ -100,23 +127,23 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 }
 
 void ObjClass::Update(const char* objName) {
-//#if defined(_DEBUG) || defined(DEVELOPMENT)
-//    std::string name = std::string("Obj: ") + objName;
-//    ImGui::Begin(name.c_str());
-//
-//    for (size_t i = 0; i < resources_.size(); ++i) {
-//        auto& res = resources_[i];
-//        std::string meshLabel = "Mesh[" + std::to_string(i) + "]";
-//        if (ImGui::TreeNode(meshLabel.c_str())) {
-//            ui_->DebugTransform(res->transform_);
-//            ui_->DebugMaterialBy3D(res->materialData_);
-//            ui_->DebugDirectionalLight(res->directionalLightData_);
-//            ui_->DebugUvTransform(res->uvTransform_);
-//            ImGui::TreePop();
-//        }
-//    }
-//    ImGui::End();
-//#endif
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+    std::string name = std::string("Obj: ") + objName;
+    ImGui::Begin(name.c_str());
+
+    for (size_t i = 0; i < resources_.size(); ++i) {
+        auto& res = resources_[i];
+        std::string meshLabel = "Mesh[" + std::to_string(i) + "]";
+        if (ImGui::TreeNode(meshLabel.c_str())) {
+            ui_->DebugTransform(res->transform_);
+            ui_->DebugMaterialBy3D(res->materialData_);
+            ui_->DebugDirectionalLight(res->directionalLightData_);
+            ui_->DebugUvTransform(res->uvTransform_);
+            ImGui::TreePop();
+        }
+    }
+    ImGui::End();
+#endif
 
     for (auto& res : resources_) {
         res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);

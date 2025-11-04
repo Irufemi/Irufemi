@@ -36,7 +36,7 @@ public:
         ShaderSet objectShaders,         // 既存：Object3D.VS/PS など
         ShaderSet particleShaders = {}, // パーティクル専用 VS/PS（なければ空でOK）
         ShaderSet spriteShaders = {},
-        ShaderSet blocksShaders = {}
+        ShaderSet regionShaders = {}
     );
 
     // 既存シェーダで取得（メッシュ/スプライト等）
@@ -48,7 +48,7 @@ public:
     ID3D12PipelineState* GetSprite(BlendMode blend, DepthWrite depth);
 
     // 
-    ID3D12PipelineState* GetBlocks(BlendMode b, DepthWrite d);
+    ID3D12PipelineState* GetRegion(BlendMode b, DepthWrite d);
 
     void ClearCache();
 

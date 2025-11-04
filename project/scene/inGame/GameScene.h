@@ -4,50 +4,40 @@
 
 #include <memory>
 
-#include "../../3D/TriangleClass.h"
-#include "../../2D/Sprite.h"
-#include "../../3D/SphereClass.h"
-#include "../../3D/ObjClass.h"
-#include "../../3D/ParticleClass.h"
-#include "../../3D/PointLightClass.h"
-#include "../../3D/SpotLightClass.h"
-#include "../../audio/Bgm.h"
-#include "../../camera/Camera.h"
-#include "../../camera/DebugCamera.h"
+#include "3D/TriangleClass.h"
+#include "2D/Sprite.h"
+#include "2D/Circle2D.h"
+#include "2D/NumberText.h"
+#include "2D/TimeDisplay.h"
+#include "3D/SphereClass.h"
+#include "3D/ObjClass.h"
+#include "3D/Region.h"
+#include "3D/ParticleClass.h"
+#include "3D/CylinderClass.h"
+#include "3D/PointLightClass.h"
+#include "3D/SpotLightClass.h"
+#include "audio/Bgm.h"
+#include "camera/Camera.h"
+#include "camera/DebugCamera.h"
+
 
 #include "application/Player.h"
-#include "application/Blocks.h"
 #include "application/MapChipField.h"
 
-//BGM
-#include <xaudio2.h>
-
 // 前方宣言
-
 class IrufemiEngine;
 
 class InputManager;
-
 
 /// <summary>
 /// ゲーム
 /// </summary>
 class GameScene : public IScene {
-private: // メンバ変数
+private: // 関数
 
-    // カメラ
-    std::unique_ptr<Camera> camera_ = nullptr;
+    void GenerateBlocks();
 
-    // デバッグカメラ
-    std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
-
-    std::unique_ptr<PointLightClass> pointLight_ = nullptr;
-
-    std::unique_ptr<SpotLightClass> spotLight_ = nullptr;
-
-    int loadTexture = false;
-
-    bool debugMode = false;
+private: // 変数
 
     /// マップチップフィールド
     std::unique_ptr<MapChipField> mapChipField_ = nullptr;
@@ -65,6 +55,22 @@ private: // メンバ変数
     std::shared_ptr<Player> player_ = nullptr;
     // 3Dモデルデータ(自キャラ)
     std::unique_ptr<ObjClass> modelplayer_ = nullptr;
+
+private: // メンバ変数(システム)
+
+    // カメラ
+    std::unique_ptr<Camera> camera_ = nullptr;
+
+    // デバッグカメラ
+    std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
+
+    std::unique_ptr<PointLightClass> pointLight_ = nullptr;
+
+    std::unique_ptr<SpotLightClass> spotLight_ = nullptr;
+
+    int loadTexture = false;
+
+    bool debugMode = false;
 
     // ポインタ参照
 
@@ -90,6 +96,4 @@ public: // メンバ関数
     /// 描画
     /// </summary>
     void Draw() override;
-
-    void GenerateBlocks();
 };

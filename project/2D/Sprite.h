@@ -58,9 +58,9 @@ public: //メンバ関数
     ~Sprite() = default;
 
     //初期化
-    void Initialize(Camera* camera, const std::string& textureName = "uvChecker.png");
+    void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
     //更新
-    void Update();
+    void Update(const bool& debug = true, const char* spriteName = "");
     // 描画
     void Draw();
 

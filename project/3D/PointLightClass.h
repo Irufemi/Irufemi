@@ -32,6 +32,9 @@ public: // メンバ関数
 
     static void SetDxCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
 
+    void SetIntensity(const float& intensity) { data_->intensity = intensity; }
+    void SetPos(const Vector3& pos) { data_->position = pos; }
+    void SetColor(const Vector4& color) { data_->color = color; }
 
 };
 

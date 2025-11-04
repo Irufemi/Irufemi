@@ -6,11 +6,16 @@
 #include <dxgidebug.h>
 #include "3D/SphereClass.h"
 #include "2D/Sprite.h"
+#include "2D/SpriteRegion.h"
 #include "3D/ObjClass.h"
 #include "3D/TriangleClass.h"
 #include "3D/ParticleClass.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
+#include "3D/CylinderClass.h"
+#include "3D/Region.h"
+#include "3D/SphereRegion.h"
+#include "3D/TetraRegion.h" // 追加インクルード
 
 #include "source/D3D12ResourceUtil.h"
 #include "engine/directX/DirectXCommon.h"
@@ -363,6 +368,30 @@ void DrawManager::DrawSphere(SphereClass* sphere) {
 
 }
 
+void DrawManager::DrawCylinder(CylinderClass* cylinder) {
+
+    // RootSignature / IA / VB/IB 設定（省略せずそのまま）
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &cylinder->GetD3D12Resource()->vertexBufferView_);
+    dxCommon_->GetCommandList()->IASetIndexBuffer(&cylinder->GetD3D12Resource()->indexBufferView_);
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // CBV / SRV
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, cylinder->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, cylinder->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, cylinder->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, cylinder->GetD3D12Resource()->cameraResource_->GetGPUVirtualAddress());
+
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, cylinder->GetD3D12Resource()->textureHandle_);
+
+    // ←ここを直接メンバ参照から安全な VA 取得に変更
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
+
+    // Draw
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(cylinder->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
+}
+
 void DrawManager::DrawParticle(ParticleClass* resource) {
 
     /*三角形を表示しよう*/
@@ -397,6 +426,86 @@ void DrawManager::DrawParticle(ParticleClass* resource) {
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
     dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(resource->GetD3D12Resource()->indexDataList_.size()), resource->GetInstanceCount(), 0, 0, 0);
 
+}
+
+void DrawManager::DrawRegion(Region* region) {
+    if (!region) { return; }
+    if (region->GetVertexCount() == 0 || region->GetInstanceCount() == 0) { return; }
+
+    // RootSignature
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+
+    // IA
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &region->GetVertexBufferView());
+
+    // CBV (PS)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());          // PS b0
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, region->GetDirectionalLightResource()->GetGPUVirtualAddress());  // PS b1
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, region->GetCameraResource()->GetGPUVirtualAddress());            // PS b2
+
+    // SRV (PS t0 / VS t0)
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());         // PS t0
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU()); // VS t0
+
+    // オプション：ポイント/スポットライト（他描画と統一）
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
+
+    // Draw
+    dxCommon_->GetCommandList()->DrawInstanced(region->GetVertexCount(), region->GetInstanceCount(), 0, 0);
+}
+
+void DrawManager::DrawSphereRegion(SphereRegion* region) {
+    if (!region) { return; }
+    if (region->GetIndexCount() == 0 || region->GetInstanceCount() == 0) { return; }
+
+    // RootSignature
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+
+    // IA
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &region->GetVertexBufferView());
+    dxCommon_->GetCommandList()->IASetIndexBuffer(&region->GetIndexBufferView());
+
+    // CBV (PS)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());          // PS b0
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, region->GetDirectionalLightResource()->GetGPUVirtualAddress());  // PS b1
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, region->GetCameraResource()->GetGPUVirtualAddress());            // PS b2
+
+    // SRV (PS t0 / VS t0)
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());            // PS t0
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU());   // VS t0
+
+    // ライト（フォールバック込み）
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
+
+    // Draw
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(region->GetIndexCount(), region->GetInstanceCount(), 0, 0, 0);
+}
+
+void DrawManager::DrawTetraRegion(TetraRegion* region) {
+    if (!region) return;
+    if (region->GetIndexCount() == 0 || region->GetInstanceCount() == 0) return;
+
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &region->GetVertexBufferView());
+    dxCommon_->GetCommandList()->IASetIndexBuffer(&region->GetIndexBufferView());
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, region->GetDirectionalLightResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, region->GetCameraResource()->GetGPUVirtualAddress());
+
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU());
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
+
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(region->GetIndexCount(), region->GetInstanceCount(), 0, 0, 0);
 }
 
 void DrawManager::DrawByIndex(D3D12ResourceUtil* resource) {
@@ -513,4 +622,33 @@ D3D12_GPU_VIRTUAL_ADDRESS DrawManager::GetSpotLightVA() {
     return (spotLight_ && spotLight_->GetResource())
         ? spotLight_->GetResource()->GetGPUVirtualAddress()
         : gNullSpotLightVA;
+}
+
+void DrawManager::DrawSpriteRegion(SpriteRegion* region) {
+    if (!region) return;
+    auto* res = region->GetSpriteResource();
+    if (!res) return;
+    const UINT idxCount = region->GetIndexCount();
+    const UINT instCount = region->GetInstanceCountU32();
+    if (idxCount == 0 || instCount == 0) return;
+
+    // RootSignature
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+
+    // IA
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &res->vertexBufferView_);
+    dxCommon_->GetCommandList()->IASetIndexBuffer(&res->indexBufferView_);
+
+    // CBV (PS)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, res->materialResource_->GetGPUVirtualAddress());          // PS b0
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, res->directionalLightResource_->GetGPUVirtualAddress());  // PS b1
+    // 2Dでは camera CBV 未使用のため省略（必要なら SetGraphicsRootConstantBufferView(5, ...)）
+
+    // SRV (PS t0 / VS t0)
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, res->textureHandle_);              // PS t0 (テクスチャ)
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU()); // VS t0 (インスタンス)
+
+    // Draw
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(idxCount, instCount, 0, 0, 0);
 }

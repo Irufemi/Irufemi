@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <memory>
 
-#include "./engine/IrufemiEngine.h"
+#include "engine/IrufemiEngine.h"
 
 //クライアント領域のサイズ
 const int32_t kClientWidth = 1280;

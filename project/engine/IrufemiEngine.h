@@ -17,6 +17,7 @@
 #include "directX/DirectXCommon.h"
 #include "../scene/SceneManager.h"
 #include "WinApp/WinApp.h"
+#include "DescriptorAllocator.h" // 追加
 
 class IrufemiEngine {
 
@@ -62,8 +63,11 @@ private: // メンバ変数
     // ★SceneManager をエンジン内に保持
     std::unique_ptr<SceneManager> sceneManager_ = nullptr;
 
+    // DescriptorAllocator
+    std::unique_ptr<DescriptorAllocator> srvAllocator_; // 追加
+
     //画面の色
-    std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };
+    std::array<float, 4> clearColor_{ 0.8f, 0.8f, 0.8f, 1.0f };
 
     //バックバッファのインデックス
     UINT backBufferIndex_{};
@@ -132,6 +136,9 @@ public: // ゲッター
     D3D12_RECT& GetScissorRect() { return dxCommon_->GetScissorRect(); };
     PSOManager* GetPSOManager() { return dxCommon_->GetPSOManager(); }
 
+    // オプション: 取得用
+    DescriptorAllocator* GetSrvAllocator() const { return srvAllocator_.get(); }
+
 public: // セッター
     void AddFenceValue(uint32_t index) { dxCommon_->GetFenceValue() += index; }
 
@@ -143,6 +150,6 @@ public: // セッター
     void ApplyPSO();
     void ApplyParticlePSO();
     void ApplySpritePSO();
-    void ApplyBlocksPSO();
+    void ApplyRegionPSO();
 };
 

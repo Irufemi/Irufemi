@@ -12,11 +12,16 @@ class Sprite;
 class SphereClass;
 class ObjClass;
 class ParticleClass;
+class CylinderClass;
 class D3D12ResourceUtil;
+class Region;
+class SphereRegion; 
+class TetraRegion; 
 struct PointLight;
 class PointLightClass;
 struct SpotLight;
 class SpotLightClass;
+class SpriteRegion; // 追加
 
 //描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -51,9 +56,7 @@ public: //メンバ関数
         float clearDepth = 1.0f,
         uint8_t clearStencil = 0
     );
-
-    void PostDraw(
-    );
+    void PostDraw();
 
     void DrawTriangle(
         D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
@@ -67,7 +70,15 @@ public: //メンバ関数
 
     void DrawSphere(SphereClass* sphere);
 
+    void DrawCylinder(CylinderClass* cylinder);
+
     void DrawParticle(ParticleClass* resource);
+
+    void DrawRegion(Region* region);
+
+    void DrawSphereRegion(SphereRegion* region);
+
+    void DrawTetraRegion(TetraRegion* region);
 
     void DrawByIndex(D3D12ResourceUtil* resource);
 
@@ -78,4 +89,6 @@ public: //メンバ関数
 
     void SetSpotLightClass(SpotLightClass* spotLightClass) { spotLight_ = spotLightClass; }
     void SetSpotLight(SpotLight& info);
+
+    void DrawSpriteRegion(SpriteRegion* region); // 追加
 };

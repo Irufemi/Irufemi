@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Vector2.h"
 #include "../Vector3.h"
 
 struct Line {
@@ -10,6 +11,11 @@ struct Line {
 struct Ray {
 	Vector3 origin; //!< 始点
 	Vector3 diff;   //!< 終点への差分ベクトル
+};
+
+struct Segment2D {
+	Vector2 origin; //!< 始点
+	Vector2 end;   //!< 終点への差分ベクトル
 };
 
 struct Segment {
