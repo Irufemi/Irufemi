@@ -315,7 +315,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\VertexData.h" />
     <ClInclude Include="engine\PSOManager.h" />
     <ClInclude Include="3D\PointLightClass.h" />
-    <ClInclude Include="scene\contents\CommonVisual.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\IScene.h" />
     <ClInclude Include="scene\result\ResultScene.h" />
