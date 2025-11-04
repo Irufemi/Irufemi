@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../IScene.h"
+#include "scene/IScene.h"
 
 #include "audio/Bgm.h"
 #include "audio/Se.h"

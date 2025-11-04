@@ -1,55 +1,37 @@
 #pragma once
-#include "IScene.h"
-#include "SceneName.h"
 #include <functional>
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 class IrufemiEngine;
+class IScene;
 
 class SceneManager {
 public:
+    using Key = std::string;
     using Factory = std::function<std::unique_ptr<IScene>()>;
 
-    explicit SceneManager(IrufemiEngine* engine) : engine_(engine) {}
+    explicit SceneManager(IrufemiEngine* engine);
 
-    void Register(SceneName name, Factory f) { factories_[name] = std::move(f); }
+    void Register(const Key& name, Factory f);
+    void Request(const Key& next);
 
-    // シーン切替要求（次の Update 冒頭で反映）
-    void Request(SceneName next) { pending_ = next; }
-
-    // 即時切替（初期化時など）
-    bool ChangeTo(SceneName next) {
-        auto it = factories_.find(next);
-        if (it == factories_.end())
-            return false;
-
-        // 旧シーン破棄
-        current_.reset();
-
-        // 新シーン生成
-        current_ = it->second();
-        currentName_ = next;
-        current_->Initialize(engine_);
-        return true;
-    }
+    bool ChangeTo(const Key& next);
 
     void Update();
 
-    void Draw() {
-        if (current_)
-            current_->Draw();
-    }
+    void Draw();
 
-    SceneName GetCurrent() const { return currentName_; }
+    const Key& GetCurrent() const;
+
+    std::vector<Key> GetRegisteredKeys() const;
 
 private:
-    IrufemiEngine* engine_ = nullptr; // 非所有
+    IrufemiEngine* engine_ = nullptr;
     std::unique_ptr<IScene> current_{};
-    SceneName currentName_ = SceneName::CountOfSceneName;
-    SceneName pending_ = SceneName::CountOfSceneName;
-    std::unordered_map<SceneName, Factory> factories_;
+    Key currentName_{};
+    Key pending_{};
+    std::unordered_map<Key, Factory> factories_;
 };
-
-// （必要なら）どこからでも Request できるように
-extern SceneManager* g_SceneManager;

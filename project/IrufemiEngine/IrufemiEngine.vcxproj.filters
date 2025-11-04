@@ -64,15 +64,6 @@
     <Filter Include="Application\Scene">
       <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application\Scene\title">
-      <UniqueIdentifier>{8ba1e22a-fc8f-4e8d-a612-611d7405c6ef}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\Scene\inGame">
-      <UniqueIdentifier>{62ac11a7-2011-4dff-bbbf-e314a999acb5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\Scene\result">
-      <UniqueIdentifier>{43bce2a8-ec40-4e23-aed1-47df7fff3385}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\Input">
       <UniqueIdentifier>{95621e64-dbc5-4cf8-b02e-7026fe8561c9}</UniqueIdentifier>
     </Filter>
@@ -98,7 +89,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="manager\AudioManager.cpp">
       <Filter>Engine\manager</Filter>
     </ClCompile>
@@ -146,15 +136,6 @@
     </ClCompile>
     <ClCompile Include="scene\SceneManager.cpp">
       <Filter>Application\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\title\TitleScene.cpp">
-      <Filter>Application\Scene\title</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\inGame\GameScene.cpp">
-      <Filter>Application\Scene\inGame</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\result\ResultScene.cpp">
-      <Filter>Application\Scene\result</Filter>
     </ClCompile>
     <ClCompile Include="function\CompileShader.cpp">
       <Filter>Engine\function</Filter>
@@ -300,6 +281,7 @@
     <ClCompile Include="..\externals\imgui\imgui_widgets.cpp">
       <Filter>Engine\external\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\AudioManager.h">
@@ -368,9 +350,6 @@
     <ClInclude Include="scene\IScene.h">
       <Filter>Application\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="scene\SceneName.h">
-      <Filter>Application\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="engine\Log.h">
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
@@ -415,15 +394,6 @@
     </ClInclude>
     <ClInclude Include="scene\SceneManager.h">
       <Filter>Application\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\title\TitleScene.h">
-      <Filter>Application\Scene\title</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\inGame\GameScene.h">
-      <Filter>Application\Scene\inGame</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\result\ResultScene.h">
-      <Filter>Application\Scene\result</Filter>
     </ClInclude>
     <ClInclude Include="math\shape\AABB.h">
       <Filter>math\shape</Filter>

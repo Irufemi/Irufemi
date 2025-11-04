@@ -1,12 +1,12 @@
 #pragma once
 
 #include "D3DResourceLeakChecker.h"
-#include "../engine/Input/InputManager.h"
-#include "../manager/DrawManager.h"
-#include "../manager/DebugUI.h"
-#include "../manager/TextureManager.h"
-#include "../manager/AudioManager.h"
-#include "../math/BlendMode.h"
+#include "engine/Input/InputManager.h"
+#include "manager/DrawManager.h"
+#include "manager/DebugUI.h"
+#include "manager/TextureManager.h"
+#include "manager/AudioManager.h"
+#include "math/BlendMode.h"
 #include <memory>
 #include "Log.h"
 #include <Windows.h>
@@ -15,63 +15,17 @@
 #include <wrl.h>
 #include <dxgi1_6.h>
 #include "directX/DirectXCommon.h"
-#include "../scene/SceneManager.h"
+#include "scene/SceneManager.h"
 #include "WinApp/WinApp.h"
 #include "DescriptorAllocator.h" // 追加
+#include <functional>            // 追加
+#include <string>                // 追加
+#include <array>                 // 追加
+
+class SceneManager;
+class DebugUI;
 
 class IrufemiEngine {
-
-public:
-    // 状態（現在のブレンドと深度書き込み）
-    BlendMode currentBlend_ = BlendMode::kBlendModeNormal;               // 既定：通常α
-    PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable; // 既定：深度Write無効（透過系）
-
-private: // メンバ変数
-
-    // --- Debug & Logging ---
-
-    // リソース解放リークチェック
-    D3DResourceLeakChecker leakCheck_{};
-
-
-    // ログ
-    std::unique_ptr<Log> log_ = nullptr;
-
-    // WinApp
-    std::unique_ptr<WinApp> winApp_ = nullptr;
-
-    // DirectX基盤
-    std::unique_ptr<DirectXCommon> dxCommon_ = nullptr;
-
-    // --- Manager ---
-
-    // InputManager
-    std::unique_ptr <InputManager> inputManager_ = nullptr;
-
-    // DrawManager
-    std::unique_ptr <DrawManager> drawManager = nullptr;
-
-    // DebugUI
-    std::unique_ptr <DebugUI> ui = nullptr;
-
-    // TextureManager
-    std::unique_ptr <TextureManager> textureManager = nullptr;
-
-    // AudioManager
-    std::unique_ptr<AudioManager> audioManager_ = nullptr;
-
-    // ★SceneManager をエンジン内に保持
-    std::unique_ptr<SceneManager> sceneManager_ = nullptr;
-
-    // DescriptorAllocator
-    std::unique_ptr<DescriptorAllocator> srvAllocator_; // 追加
-
-    //画面の色
-    std::array<float, 4> clearColor_{ 0.8f, 0.8f, 0.8f, 1.0f };
-
-    //バックバッファのインデックス
-    UINT backBufferIndex_{};
-
 public: // メンバ関数
     // コンストラクタ
     IrufemiEngine() = default;
@@ -86,6 +40,14 @@ public: // メンバ関数
     ///  初期化
     /// </summary>
     void Initialize(const std::wstring& title, const int32_t& clientWidth = 1280, const int32_t& clientHeight = 720);
+
+    // --- Application からの注入用コールバック型とセッター ---
+    using SceneRegistrar = std::function<void(SceneManager&)>;
+
+    void SetSceneRegistrar(SceneRegistrar registrar) { sceneRegistrar_ = std::move(registrar); }
+    void SetInitialSceneName(std::string name) { initialSceneName_ = std::move(name); }
+
+private: // メンバ関数(内部処理)
 
     /// <summary>
     /// 解放
@@ -139,6 +101,9 @@ public: // ゲッター
     // オプション: 取得用
     DescriptorAllocator* GetSrvAllocator() const { return srvAllocator_.get(); }
 
+    // SceneManager参照
+    SceneManager* GetSceneManager() const { return sceneManager_.get(); }
+
 public: // セッター
     void AddFenceValue(uint32_t index) { dxCommon_->GetFenceValue() += index; }
 
@@ -151,5 +116,59 @@ public: // セッター
     void ApplyParticlePSO();
     void ApplySpritePSO();
     void ApplyRegionPSO();
+
+public:
+    // 状態（現在のブレンドと深度書き込み）
+    BlendMode currentBlend_ = BlendMode::kBlendModeNormal;               // 既定：通常α
+    PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable; // 既定：深度Write無効（透過系）
+
+private: // メンバ変数
+
+    // --- Debug & Logging ---
+
+    // リソース解放リークチェック
+    D3DResourceLeakChecker leakCheck_;
+
+    // ログ
+    std::unique_ptr<Log> log_ = nullptr;
+
+    // WinApp
+    std::unique_ptr<WinApp> winApp_ = nullptr;
+
+    // DirectX基盤
+    std::unique_ptr<DirectXCommon> dxCommon_ = nullptr;
+
+    // --- Manager ---
+
+    // InputManager
+    std::unique_ptr <InputManager> inputManager_ = nullptr;
+
+    // DrawManager
+    std::unique_ptr <DrawManager> drawManager = nullptr;
+
+    // DebugUI
+    std::unique_ptr <DebugUI> ui = nullptr;
+
+    // TextureManager
+    std::unique_ptr <TextureManager> textureManager = nullptr;
+
+    // AudioManager
+    std::unique_ptr<AudioManager> audioManager_ = nullptr;
+
+    // SceneManager
+    std::unique_ptr<SceneManager> sceneManager_ = nullptr;
+
+    // DescriptorAllocator
+    std::unique_ptr<DescriptorAllocator> srvAllocator_; // 追加
+
+    //画面の色
+    std::array<float, 4> clearColor_{ 0.8f, 0.8f, 0.8f, 1.0f };
+
+    //バックバッファのインデックス
+    UINT backBufferIndex_{};
+
+    // Application から注入
+    SceneRegistrar sceneRegistrar_{};
+    std::string initialSceneName_{};
 };
 

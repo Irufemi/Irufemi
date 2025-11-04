@@ -1,7 +1,6 @@
 #include "GameScene.h"
 
-#include "../SceneManager.h"
-#include "../SceneName.h"
+#include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
 #include "imgui.h"
 
@@ -94,10 +93,8 @@ void GameScene::Update() {
         camera_->Update("Camera");
     }
 
-    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
-        if (g_SceneManager) {
-            g_SceneManager->Request(SceneName::title);
-        }
+    if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+        engine_->GetSceneManager()->Request("Title");
     }
 
 }

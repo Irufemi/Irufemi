@@ -1,4 +1,7 @@
 #include "IrufemiEngine.h"
+
+
+
 #include "../function/Function.h"
 #include "../function/GetBackBufferIndex.h"
 
@@ -15,6 +18,7 @@
 #include "3D/SphereClass.h"
 #include "3D/TriangleClass.h"
 #include "3D/CylinderClass.h"
+#include "3D/ParticleClass.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "3D/Region.h"
@@ -25,10 +29,6 @@
 #include "source/Texture.h"
 
 #include "scene/IScene.h"
-#include "scene/title/TitleScene.h"
-#include "scene/inGame/GameScene.h"
-#include "scene/result/ResultScene.h"
-#include "scene/SceneName.h"
 #include <imgui.h>
 
 #pragma comment(lib,"Dbghelp.lib")
@@ -41,7 +41,6 @@ IrufemiEngine::~IrufemiEngine() { Finalize(); }
 
 // 初期化
 void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight) {
-
     /*CrashHandler*/
     SetUnhandledExceptionFilter(ExportDump);
 
@@ -80,7 +79,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     TetraRegion::SetDirectXCommon(dxCommon_.get());
 
     // SRV デスクリプタアロケータの作成（3）
-    // --- SRV デスクリプタアロケータを先に作る（DirectX 初期化直後） ---
     const uint32_t srvDescriptorInc = dxCommon_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     {
         ID3D12DescriptorHeap* srvHeap = dxCommon_->GetSrvDescriptorHeap();
@@ -89,22 +87,23 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         // ImGui 等が先頭を使っているなら予約
         srvAllocator_->ReservePrefix(1);
 
-        // 注入：Texture と SphereRegion（他クラスも同様に SetXXXAllocator を用意して注入）
+        // 注入
         Texture::SetDescriptorAllocator(srvAllocator_.get());
         SphereRegion::SetSrvAllocator(srvAllocator_.get());
-        Region::SetSrvAllocator(srvAllocator_.get());        
-        TetraRegion::SetSrvAllocator(srvAllocator_.get());   
-        ParticleClass::SetSrvAllocator(srvAllocator_.get()); 
+        Region::SetSrvAllocator(srvAllocator_.get());
+        TetraRegion::SetSrvAllocator(srvAllocator_.get());
+        ParticleClass::SetSrvAllocator(srvAllocator_.get());
     }
 
-    // --- ここでテクスチャ管理を初期化（注入済みなので Texture::Initialize はアロケータ経由で確保します） ---
+    // テクスチャ管理
     textureManager = std::make_unique<TextureManager>();
     textureManager->Initialize(dxCommon_.get());
     textureManager->LoadAllFromFolder("resources/");
 
-    // --- ロード後：もし ImGui など既存のSRVがあるなら走査して free-list を再構築する（任意だが推奨） ---
+    // 既存SRVの走査で free-list 再構築
     {
         ID3D12DescriptorHeap* srvHeap = dxCommon_->GetSrvDescriptorHeap();
+        const uint32_t inc = srvDescriptorInc;
         auto toIndex = [&](D3D12_GPU_DESCRIPTOR_HANDLE h)->uint32_t {
             if (h.ptr == 0) return DescriptorAllocator::kInvalid;
             const auto heapStart = srvHeap->GetGPUDescriptorHandleForHeapStart().ptr;
@@ -122,7 +121,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
             auto h = textureManager->GetTextureHandle(name);
             if (auto idx = toIndex(h); idx != DescriptorAllocator::kInvalid) used.push_back(idx);
         }
-        // 先頭予約も used に
         for (uint32_t i = 0; i < srvAllocator_->BaseIndex(); ++i) used.push_back(i);
 
         std::sort(used.begin(), used.end());
@@ -169,73 +167,52 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Region::SetTextureManager(textureManager.get());
     SphereRegion::SetTextureManager(textureManager.get());
     TetraRegion::SetTextureManager(textureManager.get());
-
 }
 
 void IrufemiEngine::Finalize() {
-
-    // できるだけ早くシーンを破棄（中でGPUリソースを持っている可能性が高い）
     if (sceneManager_) {
         sceneManager_.reset();
     }
-
-    // 入力系の解放
     if (inputManager_) {
         inputManager_.reset();
     }
-    // サウンド
     if (audioManager_) {
         audioManager_->Finalize();
         audioManager_.reset();
     }
-    // 描画
     if (drawManager) {
         drawManager->Finalize();
         drawManager.reset();
     }
-    // UI
     if (ui) {
         ui->Shutdown();
         ui.reset();
     }
-    // テクスチャ（SRV/テクスチャリソースを解放）
     if (textureManager) {
         textureManager.reset();
     }
-
     if (dxCommon_) {
         dxCommon_->Finalize(); dxCommon_.reset();
     }
-
     if (winApp_) {
         winApp_.reset();
     }
 }
 
-namespace {
-    constexpr std::array<const char*, static_cast<size_t>(SceneName::CountOfSceneName)> kSceneLabels = {
-        "Title", // SceneName::title
-        "InGame", // SceneName::inGame
-        "Result", // SceneName::result
-    };
-    static_assert(kSceneLabels.size() == static_cast<size_t>(SceneName::CountOfSceneName), "mismatch");
-} // namespace
-
 void IrufemiEngine::Execute() {
+    // SceneManager 構築（エンジンは所有のみ）
+    sceneManager_ = std::make_unique<SceneManager>(this);
+    // g_SceneManager = sceneManager_.get(); // グローバルは使用しない
 
-    // SceneManager 構築・登録
+    // Application からの登録を反映
+    if (sceneRegistrar_) {
+        sceneRegistrar_(*sceneManager_);
+    }
 
-    sceneManager_ = std::make_unique<SceneManager>(this);     // ★エンジンを渡す
-    g_SceneManager = sceneManager_.get();
-
-    // シーンを登録
-
-    sceneManager_->Register(SceneName::title, [] { return std::make_unique<TitleScene>(); });
-    sceneManager_->Register(SceneName::inGame, [] { return std::make_unique<GameScene>(); });
-    sceneManager_->Register(SceneName::result, [] { return std::make_unique<ResultScene>(); });
-
-    // 初期シーン
-    sceneManager_->ChangeTo(SceneName::title);
+    // 初期シーンが指定されていれば遷移
+    if (!initialSceneName_.empty()) {
+        sceneManager_->ChangeTo(initialSceneName_);
+    }
 
     while (winApp_->ProcessMessages()) {
         // 入力
@@ -244,17 +221,8 @@ void IrufemiEngine::Execute() {
         ui->FrameStart();
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-
         ui->FPSDebug();
-
-        // 　シーン選択UI（Requestで要求を出す）
-        ImGui::Begin("Scene Selector");
-        int idx = static_cast<int>(g_SceneManager->GetCurrent());
-        if (ImGui::Combo("Scene", &idx, kSceneLabels.data(), static_cast<int>(kSceneLabels.size()))) {
-            g_SceneManager->Request(static_cast<SceneName>(idx)); // or ChangeTo(...)
-        }
-        ImGui::End();
-
+        ui->DebugSceneSelector(sceneManager_.get());
 #endif // _DEBUG
 
         // 更新
@@ -290,13 +258,10 @@ void IrufemiEngine::ProcessFrame() {
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = GetDsvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
 
     drawManager->PreDraw(clearColor_, 1.0f, 0);
-
-
 }
 
 // フレーム終了処理
 void IrufemiEngine::EndFrame() {
-
     // 描画後処理
     ui->QueuePostDrawCommands();
     drawManager->PostDraw();

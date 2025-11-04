@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="リソース ファイル">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="camera">
+      <UniqueIdentifier>{b2d20bfd-f14e-4085-86ad-27fd4e530cb4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content">
+      <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\inGame">
+      <UniqueIdentifier>{86fe6dc3-e9e1-4808-a280-aa9dd371aaba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\title">
+      <UniqueIdentifier>{52b04192-3ea4-4077-b32c-a2d4e50999b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\result">
+      <UniqueIdentifier>{10005089-1114-4451-b83e-4c222dd4993b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="scene\inGame\GameScene.cpp">
+      <Filter>Scene\inGame</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\title\TitleScene.cpp">
+      <Filter>Scene\title</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\result\ResultScene.cpp">
+      <Filter>Scene\result</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="scene\inGame\GameScene.h">
+      <Filter>Scene\inGame</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\title\TitleScene.h">
+      <Filter>Scene\title</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\result\ResultScene.h">
+      <Filter>Scene\result</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

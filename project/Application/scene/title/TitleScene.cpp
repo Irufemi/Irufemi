@@ -1,7 +1,6 @@
 #include "TitleScene.h"
 
-#include "../SceneManager.h"
-#include "../SceneName.h"
+#include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
 #include <imgui.h>
 
@@ -46,9 +45,7 @@ void TitleScene::Update() {
 
     if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
 
-        if (g_SceneManager) {
-            g_SceneManager->Request(SceneName::inGame);
-        }
+        engine_->GetSceneManager()->Request("InGame");
     }
 }
 

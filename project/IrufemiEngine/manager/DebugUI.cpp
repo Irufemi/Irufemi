@@ -5,9 +5,9 @@
 
 /*開発のUIを出そう*/
 
-#include "../externals/imgui/imgui.h"
-#include "../externals/imgui/imgui_impl_dx12.h"
-#include "../externals/imgui/imgui_impl_win32.h"
+#include "imgui/imgui.h"
+#include "imgui_impl_dx12.h"
+#include "imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // ImGuiWindowFlags_NoDocking が未定義の場合は定義する
@@ -21,7 +21,13 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include <cmath>
 #include <numbers>
 #include <numeric> 
-#include "../manager/TextureManager.h"
+#include "manager/TextureManager.h"
+#include "scene/SceneManager.h"
+#include "math/shape/Sphere.h"
+#include "math/Transform.h"
+#include "math/DirectionalLight.h"
+#include "math/Material.h"
+#include "source/D3D12ResourceUtil.h"
 
 void DebugUI::Initialize(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const Microsoft::WRL::ComPtr<ID3D12Device>& device, HWND& hwnd, DXGI_SWAP_CHAIN_DESC1& swapChainDesc, D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc, ID3D12DescriptorHeap* srvDescriptorHeap) {
 
@@ -569,3 +575,30 @@ void DebugUI::UpdatePerfStats_(float newFrameMs) {
     size_t idx99 = static_cast<size_t>(std::clamp(std::floor((sorted.size() - 1) * 0.99f), 0.0f, (float)(sorted.size() - 1)));
     cachedP99Ms_ = sorted[idx99];
 }
+
+void DebugUI::DebugSceneSelector(SceneManager* sm) {
+    if (!sm) { return; }
+
+    const auto names = sm->GetRegisteredKeys();
+    if (names.empty()) { return; }
+
+    // 現在シーンのインデックス
+    int currentIdx = 0;
+    for (int i = 0; i < static_cast<int>(names.size()); ++i) {
+        if (names[i] == sm->GetCurrent()) { currentIdx = i; break; }
+    }
+
+    ImGui::Begin("Scene Selector");
+    if (ImGui::BeginCombo("Scene", names[currentIdx].c_str())) {
+        for (int i = 0; i < static_cast<int>(names.size()); ++i) {
+            bool selected = (i == currentIdx);
+            if (ImGui::Selectable(names[i].c_str(), selected)) {
+                sm->Request(names[i]); // 次フレーム頭で切替
+            }
+            if (selected) { ImGui::SetItemDefaultFocus(); }
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::End();
+}
+

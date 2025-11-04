@@ -6,11 +6,14 @@
 #include <cstddef>        
 
 
-#include "../source/D3D12ResourceUtil.h"
-#include "../math/shape/Sphere.h"
-
 // 前方宣言
 class TextureManager;
+class SceneManager;
+class D3D12ResourceUtil;
+struct Transform;
+struct DirectionalLight;
+struct Material;
+struct Sphere;
 
 class DebugUI{
 private: // メンバ変数
@@ -83,5 +86,8 @@ public: // メンバ関数
 
     // FPS/FrameTime オーバーレイ
     void FPSDebug();
+
+    // シーンセレクタ
+    void DebugSceneSelector(SceneManager* sm);
 };
 
