@@ -1,6 +1,6 @@
 #include "SphereRegion.h"
 #include "engine/directX/DirectXCommon.h"
-#include "camera/Camera.h"
+#include "Application/camera/Camera.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
 #include "engine/DescriptorAllocator.h" // 追加

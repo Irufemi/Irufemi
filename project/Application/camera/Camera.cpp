@@ -2,12 +2,12 @@
 
 /*開発のUIを出そう*/
 
-#include "../externals/imgui/imgui.h"
+#include <imgui.h>
 
 #include <cmath>
 #include <string>
 
-#include "../function/Math.h"
+#include "function/Math.h"
 
 //コンストラクタ
 Camera::Camera() {}

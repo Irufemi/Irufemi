@@ -1,9 +1,11 @@
 #pragma once
 
 #include "math/shape/AABB.h"
-#include "MapChipField.h" // IndexSet/Rect を参照するためヘッダで include
-#include "PlayerState.h" // unique_ptr<IPlayerState> をメンバに持つため
+#include "contents/MapChipField.h"
+#include "PlayerState.h"
 #include "math/Vector3.h"
+#include "math/Transform.h"
+#include "math/Matrix4x4.h"
 #include "3D/ObjClass.h"
 #include <cstdint>
 #include <memory>
@@ -16,18 +18,12 @@ struct IPlayerState;
 struct PlayerStateRoot;
 struct PlayerStateAttack;
 
-/// <summary>
-/// 自キャラ（State パターン導入版）
-/// - 入力/移動/重力/衝突は Player 内の共通処理
-/// - 行動（通常・攻撃など）の“意思決定と見た目”は State に分離
-/// </summary>
 class Player {
-public: // ===== Public API =====
-	// 左右向き
+public:
 	enum class LRDirection { kRight, kLeft };
 
 	// --- ライフサイクル ---
-	void Initialize(ObjClass* model, Camera* camera,InputManager *inputManager, Vector3& position);
+	void Initialize(ObjClass* model, Camera* camera, InputManager* inputManager, Vector3& position);
 	void Update();
 	void Draw();
 
@@ -37,13 +33,15 @@ public: // ===== Public API =====
 
 	// --- 状態取得（読み取り専用） ---
 	const Vector3& GetVelocity() const { return this->velocity_; }
-	const Vector3& GetTranslate() const { return model_->GetPosition(); }
+	const Vector3& GetTranslate() const { return transform_.translate; }
 	Vector3 GetWorldPosition();
 	AABB GetAABB();
 	LRDirection GetLR() const { return lrDirection_; }
 	bool IsDead() const { return isDead_; }
-	bool IsAttack() const; // 現在の状態が攻撃中か
+	bool IsAttack() const;
 	const char* GetStateName() const { return state_ ? state_->Name() : "<none>"; }
+	const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
+	const Transform& GetTransform() const { return transform_; }
 
 	// --- ステート制御 ---
 	void ChangeState(std::unique_ptr<IPlayerState> next);
@@ -84,21 +82,24 @@ private: // ===== 内部型・定数 =====
 	static inline const Vector3 kattackVelocity_{0.4f, 0.0f, 0.0f};
 
 private: // ===== データメンバ =====
-	// ステート
 	std::unique_ptr<IPlayerState> state_{};
 
-	// 移動関連
-	Vector3 velocity_{};              // 速度（フレーム単位）
-	bool onGround_ = true;                          // 接地中か
+	// 物理
+	Vector3 velocity_{}; // 速度（フレーム単位）
+	bool onGround_ = true; // 接地中か
 	LRDirection lrDirection_ = LRDirection::kRight; // 向き
-	float turnFirstRotationY_ = 0.0f;               // 旋回開始角
-	float turnTimer_ = 0.0f;                        // 旋回残り時間
+	float turnFirstRotationY_ = 0.0f; // 旋回開始角
+	float turnTimer_ = 0.0f; // 旋回残り時間
 
 	// 入力補助
-	int coyoteCounter_ = 0;     // コヨーテタイムカウンタ
+	int coyoteCounter_ = 0; // コヨーテタイムカウンタ
 	int jumpBufferCounter_ = 0; // ジャンプバッファカウンタ
 
-	// 変換・描画
+	// Transformとワールド行列
+	Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+	Matrix4x4 worldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
+
+	// 描画
 	ObjClass* model_ = nullptr;
 	Camera* camera_ = nullptr;
 	InputManager* inputManager_ = nullptr;

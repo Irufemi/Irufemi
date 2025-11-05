@@ -4,6 +4,16 @@
 #include "engine/IrufemiEngine.h"
 #include "imgui.h"
 
+
+#include "camera/Camera.h"
+#include "camera/DebugCamera.h"
+#include "camera/CameraController.h"
+
+// デストラクタ
+GameScene::~GameScene() {
+
+}
+
 // 初期化
 void GameScene::Initialize(IrufemiEngine* engine) {
 

@@ -2,7 +2,7 @@
 
 #include <d3d12.h>
 #include <string>
-#include "../camera/Camera.h"
+#include "Application/camera/Camera.h"
 #include "../source/D3D12ResourceUtil.h"
 #include <wrl.h>
 #include <cstdint>

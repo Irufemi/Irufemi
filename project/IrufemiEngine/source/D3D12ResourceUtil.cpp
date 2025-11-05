@@ -1,7 +1,7 @@
 #include "D3D12ResourceUtil.h"
 
 #include "engine/directX/DirectXCommon.h"
-#include "camera/Camera.h"
+#include "Application/camera/Camera.h"
 
 DirectXCommon* D3D12ResourceUtil::dxCommon_ = nullptr;
 DirectXCommon* D3D12ResourceUtilParticle::dxCommon_ = nullptr;

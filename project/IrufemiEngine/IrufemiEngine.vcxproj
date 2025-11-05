@@ -171,20 +171,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="..\externals\imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="..\externals\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\externals\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="2D\NumberText.cpp" />
     <ClCompile Include="2D\Sprite.cpp" />
     <ClCompile Include="3D\ObjClass.cpp" />
     <ClCompile Include="3D\ParticleClass.cpp" />
     <ClCompile Include="3D\SphereClass.cpp" />
     <ClCompile Include="3D\TriangleClass.cpp" />
-    <ClCompile Include="application\MapChipField.cpp" />
-    <ClCompile Include="application\Player.cpp" />
-    <ClCompile Include="application\PlayerState_Attack.cpp" />
-    <ClCompile Include="application\PlayerState_Root.cpp" />
     <ClCompile Include="audio\Bgm.cpp" />
     <ClCompile Include="3D\Region.cpp" />
-    <ClCompile Include="camera\Camera.cpp" />
-    <ClCompile Include="camera\DebugCamera.cpp" />
     <ClCompile Include="3D\CylinderClass.cpp" />
     <ClCompile Include="2D\Circle2D.cpp" />
     <ClCompile Include="engine\DescriptorAllocator.cpp" />
@@ -232,7 +225,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\SphereRegion.cpp" />
     <ClCompile Include="3D\TetraRegion.cpp" />
     <ClCompile Include="2D\SpriteRegion.cpp" />
-    <ClCompile Include="2D\TimeDisplay.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\externals\imgui\imconfig.h" />
@@ -243,19 +235,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="..\externals\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\externals\imgui\imstb_textedit.h" />
     <ClInclude Include="..\externals\imgui\imstb_truetype.h" />
-    <ClInclude Include="2D\NumberText.h" />
     <ClInclude Include="2D\Sprite.h" />
     <ClInclude Include="3D\ObjClass.h" />
     <ClInclude Include="3D\ParticleClass.h" />
     <ClInclude Include="3D\SphereClass.h" />
     <ClInclude Include="3D\TriangleClass.h" />
-    <ClInclude Include="application\MapChipField.h" />
-    <ClInclude Include="application\Player.h" />
-    <ClInclude Include="application\PlayerState.h" />
     <ClInclude Include="audio\Bgm.h" />
     <ClInclude Include="3D\Region.h" />
-    <ClInclude Include="camera\Camera.h" />
-    <ClInclude Include="camera\DebugCamera.h" />
     <ClInclude Include="3D\CylinderClass.h" />
     <ClInclude Include="2D\Circle2D.h" />
     <ClInclude Include="engine\DescriptorAllocator.h" />
@@ -321,7 +307,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="3D\SphereRegion.h" />
     <ClInclude Include="3D\TetraRegion.h" />
     <ClInclude Include="2D\SpriteRegion.h" />
-    <ClInclude Include="2D\TimeDisplay.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Region.VS.hlsl">

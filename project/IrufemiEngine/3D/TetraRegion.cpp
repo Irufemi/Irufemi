@@ -1,7 +1,7 @@
 #include "TetraRegion.h"
 #include "engine/directX/DirectXCommon.h"
 #include "engine/DescriptorAllocator.h" // 追加
-#include "camera/Camera.h"
+#include "Application/camera/Camera.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
 

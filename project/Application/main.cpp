@@ -27,7 +27,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         sm.Register("Title", [] { return std::make_unique<TitleScene>();  });
         sm.Register("InGame", [] { return std::make_unique<GameScene>();   });
         sm.Register("Result", [] { return std::make_unique<ResultScene>(); });
-        });
+        }
+    );
+
     engine->SetInitialSceneName("Title");
 
     engine->Execute();

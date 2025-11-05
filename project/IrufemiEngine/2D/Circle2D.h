@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include "camera/Camera.h"
+#include "Application/camera/Camera.h"
 #include "source/D3D12ResourceUtil.h"
 
 // 前方宣言

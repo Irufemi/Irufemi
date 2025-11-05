@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../source/D3D12ResourceUtil.h"
-#include "../camera/Camera.h"
+#include "Application/camera/Camera.h"
 #include "../manager/TextureManager.h"
 #include "../manager/DebugUI.h"
 #include "../math/shape/Particle.h"

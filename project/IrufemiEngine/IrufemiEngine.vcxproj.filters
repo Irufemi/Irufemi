@@ -52,17 +52,8 @@
     <Filter Include="Engine\external\imgui">
       <UniqueIdentifier>{aa3e12f4-f66b-4a84-a987-afa795c143cf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application">
-      <UniqueIdentifier>{d7a86133-db80-4dc9-b937-2a882254d929}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\shaders">
       <UniqueIdentifier>{1097d707-2383-4ee7-97c5-144b2eb06880}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\camera">
-      <UniqueIdentifier>{b2d20bfd-f14e-4085-86ad-27fd4e530cb4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application\Scene">
-      <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\Input">
       <UniqueIdentifier>{95621e64-dbc5-4cf8-b02e-7026fe8561c9}</UniqueIdentifier>
@@ -73,8 +64,8 @@
     <Filter Include="3D\Region">
       <UniqueIdentifier>{9ab83aa2-3655-40ac-a5b4-0cc535a3d404}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application\content">
-      <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -122,12 +113,6 @@
     <ClCompile Include="source\Texture.cpp">
       <Filter>Engine\source</Filter>
     </ClCompile>
-    <ClCompile Include="camera\Camera.cpp">
-      <Filter>Application\camera</Filter>
-    </ClCompile>
-    <ClCompile Include="camera\DebugCamera.cpp">
-      <Filter>Application\camera</Filter>
-    </ClCompile>
     <ClCompile Include="3D\ParticleClass.cpp">
       <Filter>3D</Filter>
     </ClCompile>
@@ -135,7 +120,7 @@
       <Filter>audio</Filter>
     </ClCompile>
     <ClCompile Include="scene\SceneManager.cpp">
-      <Filter>Application\Scene</Filter>
+      <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="function\CompileShader.cpp">
       <Filter>Engine\function</Filter>
@@ -192,7 +177,7 @@
       <Filter>Engine\Input</Filter>
     </ClCompile>
     <ClCompile Include="scene\IScene.cpp">
-      <Filter>Application\Scene</Filter>
+      <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="engine\Input\InputManager.cpp">
       <Filter>Engine\Input</Filter>
@@ -241,24 +226,6 @@
     </ClCompile>
     <ClCompile Include="2D\SpriteRegion.cpp">
       <Filter>2D</Filter>
-    </ClCompile>
-    <ClCompile Include="2D\NumberText.cpp">
-      <Filter>Application\content</Filter>
-    </ClCompile>
-    <ClCompile Include="2D\TimeDisplay.cpp">
-      <Filter>Application\content</Filter>
-    </ClCompile>
-    <ClCompile Include="application\MapChipField.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="application\Player.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="application\PlayerState_Attack.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="application\PlayerState_Root.cpp">
-      <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="..\externals\imgui\imgui.cpp">
       <Filter>Engine\external\imgui</Filter>
@@ -348,7 +315,7 @@
       <Filter>Engine\manager</Filter>
     </ClInclude>
     <ClInclude Include="scene\IScene.h">
-      <Filter>Application\Scene</Filter>
+      <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="engine\Log.h">
       <Filter>Engine\directXCommon</Filter>
@@ -374,12 +341,6 @@
     <ClInclude Include="source\Texture.h">
       <Filter>Engine\source</Filter>
     </ClInclude>
-    <ClInclude Include="camera\Camera.h">
-      <Filter>Application\camera</Filter>
-    </ClInclude>
-    <ClInclude Include="camera\DebugCamera.h">
-      <Filter>Application\camera</Filter>
-    </ClInclude>
     <ClInclude Include="engine\D3DResourceLeakChecker.h">
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
@@ -393,7 +354,7 @@
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="scene\SceneManager.h">
-      <Filter>Application\Scene</Filter>
+      <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="math\shape\AABB.h">
       <Filter>math\shape</Filter>
@@ -505,21 +466,6 @@
     </ClInclude>
     <ClInclude Include="2D\SpriteRegion.h">
       <Filter>2D</Filter>
-    </ClInclude>
-    <ClInclude Include="2D\NumberText.h">
-      <Filter>Application\content</Filter>
-    </ClInclude>
-    <ClInclude Include="2D\TimeDisplay.h">
-      <Filter>Application\content</Filter>
-    </ClInclude>
-    <ClInclude Include="application\MapChipField.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="application\Player.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="application\PlayerState.h">
-      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="..\externals\imgui\imconfig.h">
       <Filter>Engine\external\imgui</Filter>

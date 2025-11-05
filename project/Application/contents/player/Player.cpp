@@ -2,7 +2,7 @@
 #include "Player.h"
 
 #include "function/Ease.h"
-#include "MapChipField.h"
+#include "contents/MapChipField.h"
 #include "function/Math.h"
 #include "engine/Input/InputManager.h"
 #include <imgui.h>
@@ -10,40 +10,45 @@
 #include <algorithm>
 #include <cassert>
 #include <numbers>
+#include <cmath>
 
 // ===== ライフサイクル =====
-void Player::Initialize(ObjClass* model, Camera* camera,InputManager *inputManager, Vector3& position) {
+void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputManager, Vector3& position) {
 	assert(model);
 	model_ = model;
 	camera_ = camera;
 	inputManager_ = inputManager;
-	model_->SetPosition(position);
-	model_->SetRotate(Vector3{0.0f,std::numbers::pi_v<float> / 2.0f ,0.0f});
+
+	// Transform 初期化（右向きで開始）
+	transform_.translate = position;
+	transform_.rotate = Vector3{0.0f, std::numbers::pi_v<float> / 2.0f, 0.0f};
+	transform_.scale = Vector3{1.0f, 1.0f, 1.0f};
+
+	// 描画へ反映
+	model_->SetTransform(transform_);
 
 	// 初期状態は Root
 	ChangeState(MakeRootState());
 }
 
 void Player::Update() {
-#ifdef _DEBUG
+#if defined(_DEBUG) || defined(DEVELOPMENT)
 	ImGui::Begin("Player");
 	ImGui::Text("State : %s", GetStateName());
 	ImGui::Text("OnGround : %s", onGround_ ? "true" : "false");
 	ImGui::End();
 #endif
-	// ステート更新（ここで velocity_ などが変化）
-	if (state_) {
+	// ステート更新
+if (state_) {
 		state_->Update(*this);
 	}
 
-	// 共通の移動・衝突
-	BehaviorMoveUpdate();
+// 共通の移動・衝突	
+BehaviorMoveUpdate();
 }
 
 void Player::Draw() {
-	
 	model_->Draw();
-
 }
 
 // ===== ステート制御 =====
@@ -90,17 +95,17 @@ void Player::MoveInput() {
 			a.x += accel;
 			if (lrDirection_ != LRDirection::kRight) {
 				lrDirection_ = LRDirection::kRight;
-				turnFirstRotationY_ = model_->GetRotate().y;
+				turnFirstRotationY_ = transform_.rotate.y;
 				turnTimer_ = kTimeTurn;
 			}
-		} else { // left
+		} else {
 			if (velocity_.x > 0.0f) {
 				velocity_.x *= (1.0f - atten);
 			}
 			a.x -= accel;
 			if (lrDirection_ != LRDirection::kLeft) {
 				lrDirection_ = LRDirection::kLeft;
-				turnFirstRotationY_ = model_->GetRotate().y;
+				turnFirstRotationY_ = transform_.rotate.y;
 				turnTimer_ = kTimeTurn;
 			}
 		}
@@ -152,26 +157,19 @@ void Player::BehaviorMoveUpdate() {
 	ContactGround(info);
 	ContactWall(info);
 
-	// 4) 行列更新
+	// 4) 行列更新（ロジック→描画へ）
 	UpdateMatrix();
 
 	model_->Update();
 }
 
 // ===== マップ衝突 =====
-/*
- * CollisionDetection
- * 目的: 移動量を Y→X の順でクリップし、接触フラグ（天井/地面/壁）を立てる。
- * 対応: (旧) Top/Bottom/Right/Left の4関数を統合。
- */
 void Player::CollisionDetection(CollisionMapInfo& info) {
-	Vector3 base = model_->GetPosition();
+	Vector3 base = transform_.translate;
 
-	// 1) Y（天井/地面）
 	float dy = ResolveVerticalFrom(base, info.amountMove.y, info);
 	base.y += dy;
 
-	// 2) X（壁）— Y を反映した基準位置で判定
 	float dx = ResolveHorizontalFrom(base, info.amountMove.x, info);
 
 	info.amountMove = Vector3{dx, dy, 0.0f};
@@ -288,7 +286,7 @@ float Player::ResolveHorizontalFrom(const Vector3& base, float dx, CollisionMapI
 }
 
 void Player::MoveAccordingly(const CollisionMapInfo& info) {
-	model_->SetPosition(Math::Add(model_->GetPosition(), info.amountMove));
+	transform_.translate = Math::Add(transform_.translate, info.amountMove);
 }
 
 /*
@@ -353,20 +351,49 @@ void Player::ContactWall(const CollisionMapInfo& info) {
 // ===== 見た目の向き制御 =====
 void Player::TurningControl() {
 	if (turnTimer_ <= 0.0f) {
-		model_->SetRotateY((lrDirection_ == LRDirection::kRight) ? std::numbers::pi_v<float> / 2.0f : -std::numbers::pi_v<float> / 2.0f) ;
+		transform_.rotate.y = (lrDirection_ == LRDirection::kRight)
+			? std::numbers::pi_v<float> / 2.0f
+			: -std::numbers::pi_v<float> / 2.0f;
 		return;
 	}
 	// 簡易な固定Δt補間（60fps想定）
 	const float dt = 1.0f / 60.0f;
 	float t = std::clamp(1.0f - (turnTimer_ / kTimeTurn), 0.0f, 1.0f);
-	float target = (lrDirection_ == LRDirection::kRight) ? std::numbers::pi_v<float> / 2.0f : -std::numbers::pi_v<float> / 2.0f;
-	model_->SetRotateY(Lerp(turnFirstRotationY_, target, EaseOutSine(t)));
+	float target = (lrDirection_ == LRDirection::kRight)
+		? std::numbers::pi_v<float> / 2.0f
+		: -std::numbers::pi_v<float> / 2.0f;
+	transform_.rotate.y = Lerp(turnFirstRotationY_, target, EaseOutSine(t));
 	turnTimer_ = std::max(0.0f, turnTimer_ - dt);
 }
 
+/*
+ * UpdateMatrix
+ * 役割: Player 自身のワールド行列を更新し、Transform を model にセットする。
+ * 備考: 現状は Y 回転のみを考慮（本プロジェクトの使用状況に一致）。X/Z を使う場合は拡張する。
+ */
 void Player::UpdateMatrix() {
+	// S*Ry*T の簡易アフィン
+	const Vector3& s = transform_.scale;
+	const Vector3& r = transform_.rotate;
+	const Vector3& t = transform_.translate;
 
+	const float cy = std::cos(r.y);
+	const float sy = std::sin(r.y);
 
+	// 行列をゼロ初期化
+	worldMatrix_ = {};
+	// 回転(Y)とスケール
+	worldMatrix_.m[0][0] = s.x *  cy;  worldMatrix_.m[0][1] = 0.0f; worldMatrix_.m[0][2] = s.x * -sy; worldMatrix_.m[0][3] = 0.0f;
+	worldMatrix_.m[1][0] = 0.0f;       worldMatrix_.m[1][1] = s.y;  worldMatrix_.m[1][2] = 0.0f;      worldMatrix_.m[1][3] = 0.0f;
+	worldMatrix_.m[2][0] = s.z *  sy;  worldMatrix_.m[2][1] = 0.0f; worldMatrix_.m[2][2] = s.z *  cy; worldMatrix_.m[2][3] = 0.0f;
+	// 平行移動
+	worldMatrix_.m[3][0] = t.x;
+	worldMatrix_.m[3][1] = t.y;
+	worldMatrix_.m[3][2] = t.z;
+	worldMatrix_.m[3][3] = 1.0f;
+
+	// 描画側 Transform に反映
+	model_->SetTransform(transform_);
 }
 
 // ===== 幾何ユーティリティ =====
@@ -388,10 +415,10 @@ Vector3 Player::CornerPosition(const Vector3& center, Corner corner) {
 }
 
 // ===== 旧個別判定（参考用・未使用） =====
-void Player::MapCollisionTop(CollisionMapInfo& info) { (void)info; /* legacy */ }
-void Player::MapCollisionBottom(CollisionMapInfo& info) { (void)info; /* legacy */ }
-void Player::MapCollisionRight(CollisionMapInfo& info) { (void)info; /* legacy */ }
-void Player::MapCollisionLeft(CollisionMapInfo& info) { (void)info; /* legacy */ }
+void Player::MapCollisionTop(CollisionMapInfo& info) { (void)info; }
+void Player::MapCollisionBottom(CollisionMapInfo& info) { (void)info; }
+void Player::MapCollisionRight(CollisionMapInfo& info) { (void)info; }
+void Player::MapCollisionLeft(CollisionMapInfo& info) { (void)info; }
 
 // ===== OnCollision =====
 void Player::OnCollision(const Enemy* enemy) {
@@ -406,35 +433,22 @@ void Player::OnCollision(const Enemy* enemy) {
 bool Player::IsAttack() const { return state_ && state_->IsAttack(); }
 
 // ===== 位置・AABB =====
-/*
- * GetWorldPosition
- * 目的: プレイヤの“いまの”ワールド座標（中心）を返す。
- * 備考: 行列は BehaviorMoveUpdate() → UpdateMatrix() 内で更新済みなので、
- *       ここでは translation_ をそのまま返せば十分。
- */
 Vector3 Player::GetWorldPosition() {
 
 	// ワールド座標を入れる変数
 	Vector3 worldPos;
 	// ワールド行列の平行移動成分を取得(ワールド座標)
-	worldPos.x = model_->GetTransformationMatrix().world.m[3][0];
-	worldPos.y = model_->GetTransformationMatrix().world.m[3][1];
-	worldPos.z = model_->GetTransformationMatrix().world.m[3][2];
+	worldPos.x = worldMatrix_.m[3][0];
+	worldPos.y = worldMatrix_.m[3][1];
+	worldPos.z = worldMatrix_.m[3][2];
 
 	return worldPos;
 }
-/*
- * GetAABB
- * 目的: 当たり判定（AABB）を返す。X/Y は kWidth/kHeight から半径を計算。
- * Z は2D運用のため薄めに設定（必要なら調整）。
- */
+
 AABB Player::GetAABB() {
-	Vector3 worldPos = GetWorldPosition();
-
+	const Vector3 worldPos = GetWorldPosition();
 	AABB aabb;
-
 	aabb.min = {worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f};
 	aabb.max = {worldPos.x + kWidth / 2.0f, worldPos.y + kHeight / 2.0f, worldPos.z + kWidth / 2.0f};
-
 	return aabb;
 }

@@ -3,9 +3,9 @@
 #include <d3d12.h>
 #include <vector>
 #include <cstdint>
-#include "../source/D3D12ResourceUtil.h"
-#include "../camera/Camera.h"
-#include "../math/Vector2.h" 
+#include "source/D3D12ResourceUtil.h"
+#include "Application/camera/Camera.h"
+#include "math/Vector2.h" 
 #include <wrl.h>
 #include <memory>
 

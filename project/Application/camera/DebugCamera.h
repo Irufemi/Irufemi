@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../math/Vector3.h"
-#include "../math/Matrix4x4.h"
-#include "../function/Math.h"
-#include "../engine/Input/InputManager.h"
-#include "../camera/Camera.h"
+#include "math/Vector3.h"
+#include "math/Matrix4x4.h"
+#include "function/Math.h"
+#include "engine/Input/InputManager.h"
+#include "camera/Camera.h"
 
 /*デバッグカメラ*/
 

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "camera/Camera.h"
+#include "Application/camera/Camera.h"
 #include <vector>
 #include <d3d12.h>
 #include <wrl.h>

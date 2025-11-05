@@ -17,17 +17,20 @@
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "audio/Bgm.h"
-#include "camera/Camera.h"
-#include "camera/DebugCamera.h"
 
 
-#include "application/Player.h"
-#include "application/MapChipField.h"
+#include "contents/player/Player.h"
+#include "contents/MapChipField.h"
 
 // 前方宣言
 class IrufemiEngine;
 
 class InputManager;
+
+class Camera;
+class DebugCamera;
+class CameraController;
+
 
 /// <summary>
 /// ゲーム
@@ -80,7 +83,7 @@ private: // メンバ変数(システム)
 public: // メンバ関数
 
     // デストラクタ
-    ~GameScene() {}
+    ~GameScene();
 
     /// <summary>
     /// 初期化
