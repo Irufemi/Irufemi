@@ -7,7 +7,6 @@
 
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
-#include "camera/CameraController.h"
 
 // デストラクタ
 GameScene::~GameScene() {
@@ -67,6 +66,16 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     player_->Initialize(modelplayer_.get(), camera_.get(), engine->GetInputManager(), playerPosition);
     // マップチップデータのセット
     player_->SetMapChipField(mapChipField_.get());
+
+    /// カメラコントローラー
+    // カメラコントローラーの生成
+    cameraController_ = std::make_unique<CameraController>();
+    // カメラコントローラーの初期化
+    cameraController_->Initialize();
+    // 追従対象をセット
+    cameraController_->Settarget(player_.get());
+    // リセット(瞬間合わせ)
+    cameraController_->Reset();
 }
 
 // 更新
@@ -101,6 +110,8 @@ void GameScene::Update() {
         camera_->SetPerspectiveFovMatrix(debugCamera_->GetCamera().GetPerspectiveFovMatrix());
     } else {
         camera_->Update("Camera");
+        // カメラコントローラーの更新
+        cameraController_->Update(*camera_.get());
     }
 
     if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {

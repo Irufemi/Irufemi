@@ -18,6 +18,7 @@
 #include "3D/SpotLightClass.h"
 #include "audio/Bgm.h"
 
+#include "camera/CameraController.h"
 
 #include "contents/player/Player.h"
 #include "contents/MapChipField.h"
@@ -29,7 +30,6 @@ class InputManager;
 
 class Camera;
 class DebugCamera;
-class CameraController;
 
 
 /// <summary>
@@ -41,6 +41,9 @@ private: // 関数
     void GenerateBlocks();
 
 private: // 変数
+
+    // カメラコントローラー
+    std::unique_ptr<CameraController> cameraController_ = nullptr;
 
     /// マップチップフィールド
     std::unique_ptr<MapChipField> mapChipField_ = nullptr;

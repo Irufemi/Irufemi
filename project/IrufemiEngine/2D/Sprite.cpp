@@ -4,6 +4,7 @@
 #include "manager/DebugUI.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
+#include "Application/camera/Camera.h"
 #include "function/Math.h"
 #include "function/Function.h"
 #include <imgui.h>

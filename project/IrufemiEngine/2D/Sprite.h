@@ -4,7 +4,6 @@
 #include <vector>
 #include <cstdint>
 #include "source/D3D12ResourceUtil.h"
-#include "Application/camera/Camera.h"
 #include "math/Vector2.h" 
 #include <wrl.h>
 #include <memory>
@@ -13,6 +12,7 @@
 class TextureManager;
 class DrawManager;
 class DebugUI;
+class Camera;
 
 class Sprite {
 private:
