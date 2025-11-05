@@ -5,6 +5,7 @@
 #include "manager/DrawManager.h"
 #include "engine/DescriptorAllocator.h"
 #include "Application/camera/Camera.h"
+#include "function/Math.h"
 
 
 #include <algorithm>

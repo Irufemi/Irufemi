@@ -9,7 +9,6 @@
 
 #include "math/Transform.h"
 #include "2D/Sprite.h"
-#include "function/Math.h"
 
 class Camera;
 class DirectXCommon;

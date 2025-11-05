@@ -79,6 +79,9 @@ private: // ===== 内部型・定数 =====
 	static inline const float kJumpCutFactor = 0.5f;         // ジャンプ短押しカット倍率
 	static inline const int kCoyoteFrames = 6;               // コヨーテタイム（フレーム）
 	static inline const int kJumpBufferFrames = 6;           // ジャンプバッファ（フレーム）
+	// 追加: 空中で使える追加ジャンプ回数（2段ジャンプなら1）
+	static inline const int kMaxAirJumps = 1;
+
 	static inline const Vector3 kattackVelocity_{0.4f, 0.0f, 0.0f};
 
 private: // ===== データメンバ =====
@@ -94,6 +97,10 @@ private: // ===== データメンバ =====
 	// 入力補助
 	int coyoteCounter_ = 0; // コヨーテタイムカウンタ
 	int jumpBufferCounter_ = 0; // ジャンプバッファカウンタ
+
+	// 追加: 二段ジャンプ管理
+	int  airJumpsLeft_ = kMaxAirJumps;
+	bool jumpHeldPrev_ = false;
 
 	// Transformとワールド行列
 	Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
