@@ -4,6 +4,8 @@
 #include "engine/directX/DirectXCommon.h"
 #include "manager/DrawManager.h"
 #include "engine/DescriptorAllocator.h"
+#include "Application/camera/Camera.h"
+
 
 #include <algorithm>
 #include <cmath>
