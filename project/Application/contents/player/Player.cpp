@@ -21,8 +21,8 @@ void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputMana
 
     // Transform 初期化（右向きで開始）
     transform_.translate = position;
-    transform_.rotate = Vector3{0.0f, std::numbers::pi_v<float> / 2.0f, 0.0f};
-    transform_.scale = Vector3{1.0f, 1.0f, 1.0f};
+    transform_.rotate = Vector3{ 0.0f, std::numbers::pi_v<float> / 2.0f, 0.0f };
+    transform_.scale = Vector3{ 1.0f, 1.0f, 1.0f };
 
     // 追加初期化
     airJumpsLeft_ = kMaxAirJumps;
@@ -41,6 +41,7 @@ void Player::Update() {
     ImGui::Text("State : %s", GetStateName());
     ImGui::Text("OnGround : %s", onGround_ ? "true" : "false");
     ImGui::Text("AirJumpsLeft : %d", airJumpsLeft_);
+    ImGui::Text("TouchWall : %s (dir=%d, coyote=%d)", isTouchingWall_ ? "true" : "false", lastWallDir_, wallCoyoteCounter_);
     ImGui::End();
 #endif
     // ステート更新
@@ -69,8 +70,9 @@ void Player::ChangeState(std::unique_ptr<IPlayerState> next) {
 
 /*
  * MoveInput
- * 2段ジャンプ対応:
+ * 2段ジャンプ対応 + 壁ジャンプ対応:
  *  - 空中での押下エッジ(jumpTriggered)で、airJumpsLeft_ > 0 のときジャンプし、1消費
+ *  - 壁接触中(または壁コヨーテ中)の押下エッジで壁ジャンプし、二段ジャンプ回数を最大にリセット
  *  - 着地時に airJumpsLeft_ を最大にリセット（ContactGroundで実施）
  */
 void Player::MoveInput() {
@@ -123,11 +125,38 @@ void Player::MoveInput() {
         coyoteCounter_ = 0;
         jumpBufferCounter_ = 0; // 消費
     }
+    // 壁ジャンプ（空中・壁接触/壁コヨーテ中の押下エッジ）
+    else if (!onGround_ && jumpTriggered && (isTouchingWall_ || wallCoyoteCounter_ > 0)) {
+        // 壁のある側に応じて反対方向へ跳ぶ
+        const int dir = (lastWallDir_ == 0)
+            ? ((right && !left) ? +1 : (left && !right) ? -1 : +1)
+            : lastWallDir_;
+        velocity_.y = kWallJumpVertical;
+        velocity_.x = (dir > 0) ? -kWallJumpHorizontal : +kWallJumpHorizontal;
+
+        // 向きも反転
+        LRDirection newDir = (dir > 0) ? LRDirection::kLeft : LRDirection::kRight;
+        if (lrDirection_ != newDir) {
+            lrDirection_ = newDir;
+            turnFirstRotationY_ = transform_.rotate.y;
+            turnTimer_ = kTimeTurn;
+        }
+
+        // 二段ジャンプ回数をリセット（壁ジャン後に再び二段ジャン可能）
+        airJumpsLeft_ = kMaxAirJumps;
+
+        // 状態クリア
+        onGround_ = false;
+        coyoteCounter_ = 0;
+        jumpBufferCounter_ = 0;
+        isTouchingWall_ = false;
+        wallCoyoteCounter_ = 0;
+    }
     // 空中（二段）ジャンプ（押下エッジ）
     else if (!onGround_ && jumpTriggered && airJumpsLeft_ > 0) {
         velocity_.y = kJumpAcceleration;
-        --airJumpsLeft_;      // 空中ジャンプを消費
-        coyoteCounter_ = 0;   // 空中でのコヨーテは無効
+        --airJumpsLeft_;
+        coyoteCounter_ = 0;
         jumpBufferCounter_ = 0;
     }
 
@@ -156,7 +185,7 @@ void Player::MoveInput() {
 void Player::BehaviorMoveUpdate() {
     // 1) 見た目の向き補間
     TurningControl();
-    
+
     // 2) 軸分離で衝突解決
     CollisionMapInfo info{};
     info.amountMove = velocity_;
@@ -183,7 +212,7 @@ void Player::CollisionDetection(CollisionMapInfo& info) {
 
     float dx = ResolveHorizontalFrom(base, info.amountMove.x, info);
 
-    info.amountMove = Vector3{dx, dy, 0.0f};
+    info.amountMove = Vector3{ dx, dy, 0.0f };
 }
 
 /*
@@ -194,7 +223,7 @@ void Player::CollisionDetection(CollisionMapInfo& info) {
  * 対応: (旧) MapCollisionTop / MapCollisionBottom の統合。
  */
 float Player::ResolveVerticalFrom(const Vector3& base, float dy, CollisionMapInfo& info) const {
-    if (dy == 0.0f) {return 0.0f;}
+    if (dy == 0.0f) { return 0.0f; }
 
     const float hx = kWidth * 0.5f;
     const float hy = kHeight * 0.5f;
@@ -203,8 +232,8 @@ float Player::ResolveVerticalFrom(const Vector3& base, float dy, CollisionMapInf
     if (dy > 0.0f) {
         // 上昇: 新しい Y 位置で左右の「頭の点」を調べる
         const float topNew = base.y + dy + hy;
-        Vector3 pL{base.x - hx, topNew, 0.0f};
-        Vector3 pR{base.x + hx, topNew, 0.0f};
+        Vector3 pL{ base.x - hx, topNew, 0.0f };
+        Vector3 pR{ base.x + hx, topNew, 0.0f };
 
         MapChipField::IndexSet idx;
         MapChipField::Rect r;
@@ -221,8 +250,8 @@ float Player::ResolveVerticalFrom(const Vector3& base, float dy, CollisionMapInf
     } else {
         // 下降: 新しい Y 位置で左右の「足の点」を調べる
         const float botNew = base.y + dy - hy;
-        Vector3 pL{base.x - hx, botNew, 0.0f};
-        Vector3 pR{base.x + hx, botNew, 0.0f};
+        Vector3 pL{ base.x - hx, botNew, 0.0f };
+        Vector3 pR{ base.x + hx, botNew, 0.0f };
 
         MapChipField::IndexSet idx;
         MapChipField::Rect r;
@@ -248,7 +277,7 @@ float Player::ResolveVerticalFrom(const Vector3& base, float dy, CollisionMapInf
  * 対応: (旧) MapCollisionRight / MapCollisionLeft の統合。
  */
 float Player::ResolveHorizontalFrom(const Vector3& base, float dx, CollisionMapInfo& info) const {
-    if (dx == 0.0f) {return 0.0f;}
+    if (dx == 0.0f) { return 0.0f; }
 
     const float hx = kWidth * 0.5f;
     const float hy = kHeight * 0.5f;
@@ -257,8 +286,8 @@ float Player::ResolveHorizontalFrom(const Vector3& base, float dx, CollisionMapI
     if (dx > 0.0f) {
         // 右移動: 新しい X 位置で上下の「右端の点」を調べる
         const float rightNew = base.x + dx + hx;
-        Vector3 pT{rightNew, base.y + hy, 0.0f};
-        Vector3 pB{rightNew, base.y - hy, 0.0f};
+        Vector3 pT{ rightNew, base.y + hy, 0.0f };
+        Vector3 pB{ rightNew, base.y - hy, 0.0f };
 
         MapChipField::IndexSet idx;
         MapChipField::Rect r;
@@ -266,17 +295,19 @@ float Player::ResolveHorizontalFrom(const Vector3& base, float dx, CollisionMapI
             float cand = (r.left - kMBlank) - (base.x + hx);
             allowed = std::min(allowed, cand);
             info.isContactWall = true;
+            info.wallDir = +1; // 右側に壁
         }
         if (IsSolidAt(pB, &idx, &r)) {
             float cand = (r.left - kMBlank) - (base.x + hx);
             allowed = std::min(allowed, cand);
             info.isContactWall = true;
+            info.wallDir = +1; // 右側に壁
         }
     } else {
         // 左移動: 新しい X 位置で上下の「左端の点」を調べる
         const float leftNew = base.x + dx - hx;
-        Vector3 pT{leftNew, base.y + hy, 0.0f};
-        Vector3 pB{leftNew, base.y - hy, 0.0f};
+        Vector3 pT{ leftNew, base.y + hy, 0.0f };
+        Vector3 pB{ leftNew, base.y - hy, 0.0f };
 
         MapChipField::IndexSet idx;
         MapChipField::Rect r;
@@ -284,11 +315,13 @@ float Player::ResolveHorizontalFrom(const Vector3& base, float dx, CollisionMapI
             float cand = (r.right + kMBlank) - (base.x - hx);
             allowed = std::max(allowed, cand);
             info.isContactWall = true;
+            info.wallDir = -1; // 左側に壁
         }
         if (IsSolidAt(pB, &idx, &r)) {
             float cand = (r.right + kMBlank) - (base.x - hx);
             allowed = std::max(allowed, cand);
             info.isContactWall = true;
+            info.wallDir = -1; // 左側に壁
         }
     }
     return allowed;
@@ -305,10 +338,10 @@ void Player::MoveAccordingly(const CollisionMapInfo& info) {
  */
 bool Player::IsSolidAt(const Vector3& p, MapChipField::IndexSet* outIdx, MapChipField::Rect* outRect) const {
     auto idx = mapChipField_->GetMapChipIndexSetByPosition(p);
-    if (outIdx) {*outIdx = idx;}
+    if (outIdx) { *outIdx = idx; }
     MapChipType t = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
     if (t == MapChipType::kBlock) {
-        if (outRect){ *outRect = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex);}
+        if (outRect) { *outRect = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex); }
         return true;
     }
     return false;
@@ -357,6 +390,40 @@ void Player::ContactWall(const CollisionMapInfo& info) {
     if (info.isContactWall) {
         velocity_.x *= (1.0f - kAttenuationWall);
     }
+
+    // 壁接触状態と壁コヨーテ更新（空中時のみ）
+    if (!onGround_ && info.isContactWall) {
+        isTouchingWall_ = true;
+        wallCoyoteCounter_ = kWallCoyoteFrames;
+        if (info.wallDir != 0) {
+            lastWallDir_ = info.wallDir; // +1=右, -1=左
+        }
+    } else {
+        isTouchingWall_ = false;
+        if (wallCoyoteCounter_ > 0) {
+            --wallCoyoteCounter_;
+        } else {
+            lastWallDir_ = 0;
+        }
+    }
+
+    // 壁スライド（Hollow Knight 風）：壁方向入力中は落下速度を強く制限
+    // 条件: 空中 && 壁に触れている(もしくは直前まで触れていた) && 壁方向に入力
+    int wallDir = (info.wallDir != 0) ? info.wallDir : lastWallDir_; // +1=右壁, -1=左壁
+    bool pressingToward = false;
+    if (wallDir != 0 && inputManager_) {
+        if (wallDir > 0) {
+            // 右壁に接触 → 右入力が「壁方向」
+            pressingToward = inputManager_->IsKeyDown('D');
+        } else {
+            // 左壁に接触 → 左入力が「壁方向」
+            pressingToward = inputManager_->IsKeyDown('A');
+        }
+    }
+    if (!onGround_ && (isTouchingWall_ || info.isContactWall) && pressingToward && velocity_.y < 0.0f) {
+        // 例: 通常終端 -0.36f → 壁スライド中は -0.12f までに抑える
+        velocity_.y = std::max(velocity_.y, -kWallSlideMaxFallSpeed);
+    }
 }
 
 // ===== 見た目の向き制御 =====
@@ -394,9 +461,18 @@ void Player::UpdateMatrix() {
     // 行列をゼロ初期化
     worldMatrix_ = {};
     // 回転(Y)とスケール
-    worldMatrix_.m[0][0] = s.x * cy;  worldMatrix_.m[0][1] = 0.0f; worldMatrix_.m[0][2] = s.x * -sy; worldMatrix_.m[0][3] = 0.0f;
-    worldMatrix_.m[1][0] = 0.0f;       worldMatrix_.m[1][1] = s.y;  worldMatrix_.m[1][2] = 0.0f;      worldMatrix_.m[1][3] = 0.0f;
-    worldMatrix_.m[2][0] = s.z * sy;  worldMatrix_.m[2][1] = 0.0f; worldMatrix_.m[2][2] = s.z * cy; worldMatrix_.m[2][3] = 0.0f;
+    worldMatrix_.m[0][0] = s.x * cy;
+    worldMatrix_.m[0][1] = 0.0f;
+    worldMatrix_.m[0][2] = s.x * -sy;
+    worldMatrix_.m[0][3] = 0.0f;
+    worldMatrix_.m[1][0] = 0.0f;  
+    worldMatrix_.m[1][1] = s.y; 
+    worldMatrix_.m[1][2] = 0.0f;
+    worldMatrix_.m[1][3] = 0.0f;
+    worldMatrix_.m[2][0] = s.z * sy; 
+    worldMatrix_.m[2][1] = 0.0f;
+    worldMatrix_.m[2][2] = s.z * cy;
+    worldMatrix_.m[2][3] = 0.0f;
     // 平行移動
     worldMatrix_.m[3][0] = t.x;
     worldMatrix_.m[3][1] = t.y;
@@ -412,10 +488,10 @@ Vector3 Player::CornerPosition(const Vector3& center, Corner corner) {
     const float hx = kWidth * 0.5f;
     const float hy = kHeight * 0.5f;
     switch (corner) {
-    case kRightBottom: return Math::Add(center, Vector3{+hx, -hy, 0.0f});
-    case kLeftBottom:  return Math::Add(center, Vector3{-hx, -hy, 0.0f});
-    case kRightTop:    return Math::Add(center, Vector3{+hx, +hy, 0.0f});
-    case kLeftTop:     return Math::Add(center, Vector3{-hx, +hy, 0.0f});
+    case kRightBottom: return Math::Add(center, Vector3{ +hx, -hy, 0.0f });
+    case kLeftBottom:  return Math::Add(center, Vector3{ -hx, -hy, 0.0f });
+    case kRightTop:    return Math::Add(center, Vector3{ +hx, +hy, 0.0f });
+    case kLeftTop:     return Math::Add(center, Vector3{ -hx, +hy, 0.0f });
     default:           return center;
     }
 }
@@ -454,7 +530,7 @@ Vector3 Player::GetWorldPosition() {
 AABB Player::GetAABB() {
     const Vector3 worldPos = GetWorldPosition();
     AABB aabb;
-    aabb.min = {worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f};
-    aabb.max = {worldPos.x + kWidth / 2.0f, worldPos.y + kHeight / 2.0f, worldPos.z + kWidth / 2.0f};
+    aabb.min = { worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f };
+    aabb.max = { worldPos.x + kWidth / 2.0f, worldPos.y + kHeight / 2.0f, worldPos.z + kWidth / 2.0f };
     return aabb;
 }

@@ -54,7 +54,8 @@ private: // ===== 内部型・定数 =====
 		bool isContactCeiling = false;      // ↑方向（頭）で天井にヒット
 		bool isContactGround = false;       // ↓方向（足）で地面にヒット
 		bool isContactWall = false;         // ←→方向で壁にヒット
-		Vector3 amountMove{}; // 軸分離でクリップ後の最終移動量
+		int  wallDir = 0;                   // 壁の在る側: +1=右壁, -1=左壁, 0=なし
+		Vector3 amountMove{};               // 軸分離でクリップ後の最終移動量
 	};
 
 	/// <summary>プレイヤ AABB の角（X-Y 平面上）</summary>
@@ -82,6 +83,14 @@ private: // ===== 内部型・定数 =====
 	// 追加: 空中で使える追加ジャンプ回数（2段ジャンプなら1）
 	static inline const int kMaxAirJumps = 1;
 
+	// 追加: 壁ジャンプ用パラメータ
+	static inline const float kWallJumpHorizontal = 0.26f;   // 壁から離れる水平速度
+	static inline const float kWallJumpVertical = 0.28f;     // 壁ジャンの上向き速度
+	static inline const int   kWallCoyoteFrames = 6;         // 壁コヨーテ（離床後も受付）
+
+	// 壁スライド（Hollow Knight 風）
+	static inline const float kWallSlideMaxFallSpeed = 0.12f; // 壁方向入力中の最大落下速度
+
 	static inline const Vector3 kattackVelocity_{0.4f, 0.0f, 0.0f};
 
 private: // ===== データメンバ =====
@@ -98,9 +107,14 @@ private: // ===== データメンバ =====
 	int coyoteCounter_ = 0; // コヨーテタイムカウンタ
 	int jumpBufferCounter_ = 0; // ジャンプバッファカウンタ
 
-	// 追加: 二段ジャンプ管理
+	// 二段ジャンプ管理
 	int  airJumpsLeft_ = kMaxAirJumps;
 	bool jumpHeldPrev_ = false;
+
+	// 壁ジャン状態管理
+	bool isTouchingWall_ = false; // 今フレーム壁に触れている（空中）
+	int  lastWallDir_ = 0;        // 最後に触れた壁の向き: +1=右, -1=左, 0=なし
+	int  wallCoyoteCounter_ = 0;  // 壁コヨーテ残フレーム
 
 	// Transformとワールド行列
 	Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
