@@ -70,64 +70,64 @@ void Player::ChangeState(std::unique_ptr<IPlayerState> next) {
 
 /*
  * MoveInput
- * 2段ジャンプ対応 + 壁ジャンプ対応:
- *  - 空中での押下エッジ(jumpTriggered)で、airJumpsLeft_ > 0 のときジャンプし、1消費
- *  - 壁接触中(または壁コヨーテ中)の押下エッジで壁ジャンプし、二段ジャンプ回数を最大にリセット
- *  - 着地時に airJumpsLeft_ を最大にリセット（ContactGroundで実施）
+ * 入力一定速度（Hollow Knight 風）+ 二段/壁ジャン + 壁スライド
  */
 void Player::MoveInput() {
     // 入力
     const bool right = inputManager_->IsKeyDown('D');
-    const bool left = inputManager_->IsKeyDown('A');
+    const bool left  = inputManager_->IsKeyDown('A');
     const bool jumpDown = inputManager_->IsKeyDown('W');
     const bool jumpTriggered = jumpDown && !jumpHeldPrev_;
 
-    // ジャンプバッファ（押下中は都度更新）
+    // 固定Δt（60fps前提）
+    const float dt = 1.0f / 60.0f;
+
+    // ジャンプバッファ
     if (jumpDown)
         jumpBufferCounter_ = kJumpBufferFrames;
     else if (jumpBufferCounter_ > 0)
         --jumpBufferCounter_;
 
-    // 媒体（地上/空中）で係数を切替
-    const float accel = onGround_ ? kAcceleration : kAirAcceleration;
-    const float atten = onGround_ ? kAttenuation : kAirAttenuation;
-
-    // 横移動
-    if (right || left) {
-        Vector3 a{};
-        if (right) {
-            if (velocity_.x < 0.0f) { velocity_.x *= (1.0f - atten); }
-            a.x += accel;
-            if (lrDirection_ != LRDirection::kRight) {
-                lrDirection_ = LRDirection::kRight;
-                turnFirstRotationY_ = transform_.rotate.y;
-                turnTimer_ = kTimeTurn;
-            }
-        } else {
-            if (velocity_.x > 0.0f) { velocity_.x *= (1.0f - atten); }
-            a.x -= accel;
-            if (lrDirection_ != LRDirection::kLeft) {
-                lrDirection_ = LRDirection::kLeft;
-                turnFirstRotationY_ = transform_.rotate.y;
-                turnTimer_ = kTimeTurn;
-            }
-        }
-        velocity_ = Math::Add(velocity_, a);
-        velocity_.x = std::clamp(velocity_.x, -kLimitRunSpeed, kLimitRunSpeed);
-    } else {
-        velocity_.x *= (1.0f - atten);
+    // 壁ジャン直後の横入力ロックの減衰
+    if (horizontalControlLockTimer_ > 0.0f) {
+        horizontalControlLockTimer_ = std::max(0.0f, horizontalControlLockTimer_ - dt);
     }
 
-    // 地上 or コヨーテジャンプ（押下エッジ）
+    // --- 横移動（入力一定速度） ---
+    // 方向入力から目標速度を決定（地上/空中で同一）
+    int inputX = (right ? 1 : 0) - (left ? 1 : 0);
+    if (inputX != 0) {
+        // 見た目の向き更新
+        LRDirection newDir = (inputX > 0) ? LRDirection::kRight : LRDirection::kLeft;
+        if (lrDirection_ != newDir) {
+            lrDirection_ = newDir;
+            turnFirstRotationY_ = transform_.rotate.y;
+            turnTimer_ = kTimeTurn;
+        }
+    }
+
+    // 最高速に素早くスナップさせる
+    const float targetX = static_cast<float>(inputX) * kLimitRunSpeed;
+    if (horizontalControlLockTimer_ <= 0.0f) {
+        const float alpha = std::clamp(dt / kTimeToFullRun, 0.0f, 1.0f);
+        velocity_.x += (targetX - velocity_.x) * alpha;
+        velocity_.x = std::clamp(velocity_.x, -kLimitRunSpeed, kLimitRunSpeed);
+    }
+    // ロック中は壁ジャン初速を尊重（クランプのみ）
+    else {
+        velocity_.x = std::clamp(velocity_.x, -kLimitRunSpeed, kLimitRunSpeed);
+    }
+
+    // --- ジャンプ ---
+    // 地上 or コヨーテジャンプ
     if ((onGround_ || coyoteCounter_ > 0) && jumpTriggered) {
         velocity_.y = kJumpAcceleration;
         onGround_ = false;
         coyoteCounter_ = 0;
-        jumpBufferCounter_ = 0; // 消費
+        jumpBufferCounter_ = 0;
     }
-    // 壁ジャンプ（空中・壁接触/壁コヨーテ中の押下エッジ）
+    // 壁ジャンプ
     else if (!onGround_ && jumpTriggered && (isTouchingWall_ || wallCoyoteCounter_ > 0)) {
-        // 壁のある側に応じて反対方向へ跳ぶ
         const int dir = (lastWallDir_ == 0)
             ? ((right && !left) ? +1 : (left && !right) ? -1 : +1)
             : lastWallDir_;
@@ -142,8 +142,11 @@ void Player::MoveInput() {
             turnTimer_ = kTimeTurn;
         }
 
-        // 二段ジャンプ回数をリセット（壁ジャン後に再び二段ジャン可能）
+        // 壁ジャン後は二段ジャンプをリセット
         airJumpsLeft_ = kMaxAirJumps;
+
+        // 入力ロック開始（壁ジャン初速を活かす）
+        horizontalControlLockTimer_ = kWallJumpHorizLockTime;
 
         // 状態クリア
         onGround_ = false;
@@ -152,7 +155,7 @@ void Player::MoveInput() {
         isTouchingWall_ = false;
         wallCoyoteCounter_ = 0;
     }
-    // 空中（二段）ジャンプ（押下エッジ）
+    // 二段ジャンプ
     else if (!onGround_ && jumpTriggered && airJumpsLeft_ > 0) {
         velocity_.y = kJumpAcceleration;
         --airJumpsLeft_;
@@ -173,7 +176,7 @@ void Player::MoveInput() {
         velocity_.y = std::max(velocity_.y, -kLimitFallSpeed);
     }
 
-    // 押下状態の保存（エッジ検出用）
+    // 押下状態の保存
     jumpHeldPrev_ = jumpDown;
 }
 

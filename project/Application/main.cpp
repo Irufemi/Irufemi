@@ -30,7 +30,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     );
 
-    engine->SetInitialSceneName("Title");
+    engine->SetInitialSceneName("InGame");
 
     engine->Execute();
 

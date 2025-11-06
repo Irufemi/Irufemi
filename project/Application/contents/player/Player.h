@@ -47,9 +47,6 @@ public:
 	void ChangeState(std::unique_ptr<IPlayerState> next);
 
 private: // ===== 内部型・定数 =====
-	/// <summary>
-	/// マップ衝突判定で使う一時情報
-	/// </summary>
 	struct CollisionMapInfo {
 		bool isContactCeiling = false;      // ↑方向（頭）で天井にヒット
 		bool isContactGround = false;       // ↓方向（足）で地面にヒット
@@ -58,15 +55,14 @@ private: // ===== 内部型・定数 =====
 		Vector3 amountMove{};               // 軸分離でクリップ後の最終移動量
 	};
 
-	/// <summary>プレイヤ AABB の角（X-Y 平面上）</summary>
 	enum Corner { kRightBottom, kLeftBottom, kRightTop, kLeftTop, kNumCorner };
 
-	// --- チューニング用パラメータ（マリオ寄りの初期値） ---
-	static inline const float kAcceleration = 0.018f;        // 地上: 横加速度
-	static inline const float kAttenuation = 0.10f;          // 地上: 無入力減衰
-	static inline const float kLimitRunSpeed = 0.30f;        // 地上: 最高速
-	static inline const float kAirAcceleration = 0.011f;     // 空中: 横加速度
-	static inline const float kAirAttenuation = 0.02f;       // 空中: 無入力減衰
+	// --- チューニング用パラメータ ---
+	static inline const float kAcceleration = 0.018f;        // 地上: 横加速度（横移動では未使用）
+	static inline const float kAttenuation = 0.10f;          // 地上: 無入力減衰（横移動では未使用）
+	static inline const float kLimitRunSpeed = 0.20f;        // 地上/空中: 横最高速（=入力一定速度）
+	static inline const float kAirAcceleration = 0.011f;     // 空中: 横加速度（横移動では未使用）
+	static inline const float kAirAttenuation = 0.02f;       // 空中: 無入力減衰（横移動では未使用）
 	static inline const float kgravityAcceleration = 0.010f; // 重力
 	static inline const float kLimitFallSpeed = 0.36f;       // 落下終端速度
 	static inline const float kFallGravityScale = 1.2f;      // 下降時の重力倍率
@@ -78,18 +74,20 @@ private: // ===== 内部型・定数 =====
 	static inline const float kAttenuationLanding = 0.08f;   // 着地時の水平減衰
 	static inline const float kAttenuationWall = 0.25f;      // 壁接触時の水平減衰
 	static inline const float kJumpCutFactor = 0.5f;         // ジャンプ短押しカット倍率
-	static inline const int kCoyoteFrames = 6;               // コヨーテタイム（フレーム）
-	static inline const int kJumpBufferFrames = 6;           // ジャンプバッファ（フレーム）
-	// 追加: 空中で使える追加ジャンプ回数（2段ジャンプなら1）
-	static inline const int kMaxAirJumps = 1;
+	static inline const int   kCoyoteFrames = 6;             // コヨーテタイム（フレーム）
+	static inline const int   kJumpBufferFrames = 6;         // ジャンプバッファ（フレーム）
+	static inline const int   kMaxAirJumps = 1;              // 2段ジャンプ回数
 
-	// 追加: 壁ジャンプ用パラメータ
+	// 壁ジャンプ
 	static inline const float kWallJumpHorizontal = 0.26f;   // 壁から離れる水平速度
 	static inline const float kWallJumpVertical = 0.28f;     // 壁ジャンの上向き速度
-	static inline const int   kWallCoyoteFrames = 6;         // 壁コヨーテ（離床後も受付）
-
+	static inline const int   kWallCoyoteFrames = 6;         // 壁コヨーテ
 	// 壁スライド（Hollow Knight 風）
-	static inline const float kWallSlideMaxFallSpeed = 0.12f; // 壁方向入力中の最大落下速度
+	static inline const float kWallSlideMaxFallSpeed = 0.12f;// 壁方向入力中の最大落下速度
+
+	// 入力一定速度化のスナップ設定
+	static inline const float kTimeToFullRun = 0.06f;        // 最高速へ到達する時間[s]
+	static inline const float kWallJumpHorizLockTime = 0.10f;// 壁ジャン直後の横入力ロック時間[s]
 
 	static inline const Vector3 kattackVelocity_{0.4f, 0.0f, 0.0f};
 
@@ -97,24 +95,25 @@ private: // ===== データメンバ =====
 	std::unique_ptr<IPlayerState> state_{};
 
 	// 物理
-	Vector3 velocity_{}; // 速度（フレーム単位）
-	bool onGround_ = true; // 接地中か
-	LRDirection lrDirection_ = LRDirection::kRight; // 向き
-	float turnFirstRotationY_ = 0.0f; // 旋回開始角
-	float turnTimer_ = 0.0f; // 旋回残り時間
+	Vector3 velocity_{};
+	bool onGround_ = true;
+	LRDirection lrDirection_ = LRDirection::kRight;
+	float turnFirstRotationY_ = 0.0f;
+	float turnTimer_ = 0.0f;
 
 	// 入力補助
-	int coyoteCounter_ = 0; // コヨーテタイムカウンタ
-	int jumpBufferCounter_ = 0; // ジャンプバッファカウンタ
+	int coyoteCounter_ = 0;
+	int jumpBufferCounter_ = 0;
 
 	// 二段ジャンプ管理
 	int  airJumpsLeft_ = kMaxAirJumps;
 	bool jumpHeldPrev_ = false;
 
 	// 壁ジャン状態管理
-	bool isTouchingWall_ = false; // 今フレーム壁に触れている（空中）
-	int  lastWallDir_ = 0;        // 最後に触れた壁の向き: +1=右, -1=左, 0=なし
-	int  wallCoyoteCounter_ = 0;  // 壁コヨーテ残フレーム
+	bool isTouchingWall_ = false;
+	int  lastWallDir_ = 0;         // +1=右, -1=左
+	int  wallCoyoteCounter_ = 0;
+	float horizontalControlLockTimer_ = 0.0f; // 壁ジャン直後の横入力ロック
 
 	// Transformとワールド行列
 	Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
