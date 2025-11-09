@@ -173,6 +173,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="scene\inGame\GameScene.cpp" />
     <ClCompile Include="scene\result\ResultScene.cpp" />
     <ClCompile Include="scene\title\TitleScene.cpp" />
+    <ClCompile Include="contents\shieldEnemy\ShieldEnemy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">
@@ -183,13 +184,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="camera\Camera.h" />
     <ClInclude Include="camera\CameraController.h" />
     <ClInclude Include="camera\DebugCamera.h" />
-    <ClInclude Include="contents\CameraController.h" />
     <ClInclude Include="contents\MapChipField.h" />
     <ClInclude Include="contents\player\Player.h" />
     <ClInclude Include="contents\player\PlayerState.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\result\ResultScene.h" />
     <ClInclude Include="scene\title\TitleScene.h" />
+    <ClInclude Include="contents\shieldEnemy\ShieldEnemy.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
