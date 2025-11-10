@@ -6,6 +6,7 @@
 #include "manager/DebugUI.h"
 #include "manager/TextureManager.h"
 #include "manager/AudioManager.h"
+#include "manager/ModelManager.h"
 #include "math/BlendMode.h"
 #include <memory>
 #include "Log.h"
@@ -92,6 +93,7 @@ public: // ゲッター
     DebugUI* GetDebugUI() { return this->ui.get(); }
     AudioManager* GetAudioManager() { return this->audioManager_.get(); }
     TextureManager* GetTextureManager() { return this->textureManager.get(); }
+    ModelManager* GetObjModelManager() { return modelManager_.get(); }
     int32_t& GetClientWidth() { return dxCommon_->GetClientWidth(); }
     int32_t& GetClientHeight() { return dxCommon_->GetClientHeight(); }
     D3D12_VIEWPORT& GetViewport() { return dxCommon_->GetViewport(); };
@@ -159,7 +161,10 @@ private: // メンバ変数
     std::unique_ptr<SceneManager> sceneManager_ = nullptr;
 
     // DescriptorAllocator
-    std::unique_ptr<DescriptorAllocator> srvAllocator_; // 追加
+    std::unique_ptr<DescriptorAllocator> srvAllocator_;
+
+    // ModelManager
+    std::unique_ptr<ModelManager> modelManager_ = nullptr;
 
     //画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };

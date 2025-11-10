@@ -6,15 +6,17 @@
 #include <wrl.h>
 #include <d3d12.h>
 
-#include "function/Function.h"      // VertexData / ObjModel / ObjMesh / ObjMaterial など
 #include "function/Math.h"          // Math::MakeAffineMatrix ほか
 #include "math/Transform.h"         // Transform
+#include "math/VertexData.h"         // VertexData
+#include "math/ObjModel.h"         // ObjModel / ObjMesh / ObjMaterial
 
 class Camera;
 class DirectXCommon;
 class TextureManager;
 class DrawManager;
-class DescriptorAllocator; // 追加
+class ModelManager;
+class DescriptorAllocator;
 
 class Region {
 public:
@@ -38,6 +40,7 @@ public:
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
+    static void SetModelManager(ModelManager* dm) { modelManager_ = dm; }
 
     // 追加: SRV アロケータ注入
     static void SetSrvAllocator(DescriptorAllocator* alloc) { srvAllocator_ = alloc; }
@@ -70,12 +73,14 @@ private:
 private:
     static DirectXCommon*  dx_;
     static TextureManager* textureManager_;
-    static DrawManager*    drawManager_;
+    static DrawManager* drawManager_;
+    static ModelManager*    modelManager_;
     static DescriptorAllocator* srvAllocator_; // 追加
 
     Camera* camera_ = nullptr;
 
-    ObjModel objModel_{};
+    // 共有モデル参照に変更
+    std::shared_ptr<ObjModel> objModel_{};
 
     // メッシュ（単一メッシュ想定）
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;

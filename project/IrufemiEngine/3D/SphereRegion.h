@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <cassert>
 
-#include "function/Function.h"          // VertexData
+#include "math/VertexData.h"            // VertexData
 #include "function/Math.h"              // MakeAffineMatrix など
 #include "math/Transform.h"             // Transform
 #include "math/Material.h"              // Material

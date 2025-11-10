@@ -1,6 +1,8 @@
 #include "Function.h"
 #include <cassert>
 
+#include <cstdint>
+
 /*前後関係を正しくしよう*/
 
 Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, int32_t width, int32_t height) {
