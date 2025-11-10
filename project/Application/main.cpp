@@ -8,6 +8,7 @@
 #include "scene/title/TitleScene.h"
 #include "scene/inGame/GameScene.h"
 #include "scene/result/ResultScene.h"
+#include "scene/debug/DebugScene.h"
 
 //クライアント領域のサイズ
 const int32_t kClientWidth = 1280;
@@ -27,10 +28,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         sm.Register("Title", [] { return std::make_unique<TitleScene>();  });
         sm.Register("InGame", [] { return std::make_unique<GameScene>();   });
         sm.Register("Result", [] { return std::make_unique<ResultScene>(); });
+        sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
         }
     );
 
-    engine->SetInitialSceneName("InGame");
+
+
+    engine->SetInitialSceneName("Debug");
 
     engine->Execute();
 

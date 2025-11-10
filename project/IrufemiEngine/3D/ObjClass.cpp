@@ -20,7 +20,7 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 
     this->camera_ = camera;
 
-    objModel_ = LoadObjFileM("resources/obj", filename);
+    objModel_ = LoadModelFileM("resources/obj", filename);
 
     textures_.clear();
     resources_.clear();
@@ -50,11 +50,17 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         res->materialData_->uvTransform = mesh.material.uvTransform; // すでに行列
         res->materialData_->shininess = 64.0f;
 
+        // ここで α フォールバック（MTL 無しで 0 初期化のケース対策）
+        if (res->materialData_->color.w <= 0.0f) {
+            res->materialData_->color.w = 1.0f;
+        }
+
         // WVP
         res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
         res->transformationMatrix_.WVP = Math::Multiply(res->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
         res->transformationResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(TransformationMatrix));
         res->transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->transformationData_));
+
         // 法線変換用：平行移動を除いた World を使う
         Matrix4x4 worldForNormal = res->transformationMatrix_.world;
         worldForNormal.m[3][0] = 0.0f;
@@ -72,6 +78,17 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
             res->transformationMatrix_.world,
             res->transformationMatrix_.WorldInverseTranspose
         };
+
+        /*glTFを読み込んでみよう*/
+
+        /// Matrixを適用する
+
+        res->transformationData_->WVP = objModel_.rootNode.localMatrix * res->transformationMatrix_.world * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
+        res->transformationData_->world = objModel_.rootNode.localMatrix * res->transformationMatrix_.world;
+
+        // 上記のコードでは、描画時だけ適用するようになっている
+        // ゲーム中にも利用したい場合、この値をうまく扱えるようにしていく必要があるが、まずは描画時だけ適用しておいて、慣れてから対応法を考えると良い
+
 
         // テクスチャ
         auto tex = std::make_unique<Texture>();
@@ -100,10 +117,11 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
                 std::string msg = "[ObjClass] Resolved texture path: " + texPath.string() + "\n";
                 OutputDebugStringA(msg.c_str());
             }
-
             tex->Initialize(texPath.string());
             res->textureHandle_ = tex->GetTextureSrvHandleGPU();
-        } else if (!res->textureHandle_.ptr) {
+            res->materialData_->hasTexture = true;
+        } else {
+            // テクスチャ無し: hasTexture を false にして白テクスチャを SRV に設定
             res->materialData_->hasTexture = false;
             res->textureHandle_ = textureManager_->GetWhiteTextureHandle();
         }
@@ -119,6 +137,19 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         res->cameraResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(CameraForGPU));
         res->cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->cameraData_));
         res->cameraData_->worldPosition = camera_->GetTranslate();
+
+        // デバッグ出力（ここでメッシュの統計とマテリアル状態を出す）
+        {
+            char buf[256];
+            std::snprintf(buf, sizeof(buf),
+                "[ObjClass] mesh: vtx=%zu, idx=%zu, hasTex=%d, colorA=%.2f, srv=0x%llX\n",
+                res->vertexDataList_.size(),
+                res->indexDataList_.size(),
+                res->materialData_->hasTexture,
+                res->materialData_->color.w,
+                static_cast<unsigned long long>(res->textureHandle_.ptr));
+            OutputDebugStringA(buf);
+        }
 
         textures_.push_back(std::move(tex));
         resources_.push_back(std::move(res));
@@ -165,6 +196,18 @@ void ObjClass::Update(const char* objName) {
             res->transformationMatrix_.world,
             res->transformationMatrix_.WorldInverseTranspose
         };
+
+
+        /*glTFを読み込んでみよう*/
+
+        /// Matrixを適用する
+
+        res->transformationData_->WVP = objModel_.rootNode.localMatrix * res->transformationMatrix_.world * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
+        res->transformationData_->world = objModel_.rootNode.localMatrix * res->transformationMatrix_.world;
+
+        // 上記のコードでは、描画時だけ適用するようになっている
+        // ゲーム中にも利用したい場合、この値をうまく扱えるようにしていく必要があるが、まずは描画時だけ適用しておいて、慣れてから対応法を考えると良い
+
         res->materialData_->uvTransform = Math::MakeAffineMatrix(res->uvTransform_.scale, res->uvTransform_.rotate, res->uvTransform_.translate);
         res->directionalLightData_->direction = Math::Normalize(res->directionalLightData_->direction);
         res->cameraData_->worldPosition = camera_->GetTranslate();
