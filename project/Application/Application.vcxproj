@@ -176,11 +176,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="contents\shieldEnemy\ShieldEnemy.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">
-      <Project>{e7d83bab-90f9-4841-b6eb-516d3e28214f}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="camera\Camera.h" />
     <ClInclude Include="camera\CameraController.h" />
     <ClInclude Include="camera\DebugCamera.h" />
@@ -191,6 +186,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="scene\result\ResultScene.h" />
     <ClInclude Include="scene\title\TitleScene.h" />
     <ClInclude Include="contents\shieldEnemy\ShieldEnemy.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">
+      <Project>{e7d83bab-90f9-4841-b6eb-516d3e28214f}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
