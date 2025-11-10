@@ -249,6 +249,9 @@
       <Filter>Engine\external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="math\Matrix4x4.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\AudioManager.h">
@@ -490,6 +493,9 @@
     </ClInclude>
     <ClInclude Include="..\externals\imgui\imstb_truetype.h">
       <Filter>Engine\external\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="math\Node.h">
+      <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

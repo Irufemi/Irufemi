@@ -48,13 +48,11 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
             s >> position.x >> position.y >> position.z;
             position.w = 1.0f;
             positions.push_back(position);
-        } 
-        else if (identifier == "vt") {
+        } else if (identifier == "vt") {
             Vector2 texcoord;
             s >> texcoord.x >> texcoord.y;
             texcoords.push_back(texcoord);
-        } 
-        else if (identifier == "vn") {
+        } else if (identifier == "vn") {
             Vector3 normal;
             s >> normal.x >> normal.y >> normal.z;
             normals.push_back(normal);
@@ -250,17 +248,20 @@ ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filen
         objModel.meshes.push_back(currentMesh);
     }
 
+    // 手書きパーサでは階層情報はないため空 Node
+    objModel.rootNode = Node{};
+
     return objModel;
 }
 
-ModelData LoadObjFileAssimp(const std::string& directoryPath, const std::string& filename) {
+ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename) {
 
     ModelData modelData; //構築するModelData
 
     /*いろんなフォーマットのモデルが読みたい*/
 
     /// assimpでobjを読む
-    
+
     // ファイルからassimpのSceneを構築する
     // assimpのデータ構造 → https://learnopengl.com/Model-Loading/Assimp
     Assimp::Importer importer;
@@ -317,64 +318,73 @@ ModelData LoadObjFileAssimp(const std::string& directoryPath, const std::string&
         }
     }
 
+    /*glTFを読み込んでみよう*/
+
+    /// assimpでNodを解析する
+
+    modelData.rootNode = ReadNode(scene->mRootNode);
+
     return modelData;
 
 }
 
-
-ObjModel LoadObjFileAssimpM(const std::string& directoryPath, const std::string& filename) {
+// ObjModel Node 対応 Assimp 版
+ObjModel LoadModelFileM(const std::string& directoryPath, const std::string& filename) {
     ObjModel objModel;
+
+    /* いろんなフォーマットのモデルが読みたい */
+
+    /// assimpでobj(glTF等も含む汎用)を読む
 
     Assimp::Importer importer;
     const std::string filePath = directoryPath + "/" + filename;
 
-    // 三角形化 + 回り順反転 + UV反転（左手系化は手動でx *= -1）
+    // 読み込み時オプション:
+    // ・ aiProcess_Triangulate        : 非三角形ポリゴンを三角形化
+    // ・ aiProcess_FlipWindingOrder  : 三角形の並び順を逆にして表裏判定を左手系用に合わせる
+    // ・ aiProcess_FlipUVs           : UVのV(y)成分を反転 (自前で texcoord.y = 1 - y をしないため)
+    //   ※ 左手系化そのものは x 反転のみここでは手動対応。aiProcess_MakeLeftHanded は未使用。
     const unsigned int flags =
         aiProcess_Triangulate |
         aiProcess_FlipWindingOrder |
         aiProcess_FlipUVs;
 
     const aiScene* scene = importer.ReadFile(filePath.c_str(), flags);
-    assert(scene && scene->HasMeshes());
+    assert(scene && scene->HasMeshes()); // 失敗したらsceneはnullptr / メッシュが無い場合は非対応
 
-    // マテリアルをObjMaterialに変換（テクスチャ/色/不透明度/光沢など）
-    std::vector<ObjMaterial> convertedMaterials;
-    convertedMaterials.resize(scene->mNumMaterials);
+    /// material(assimpのaiMaterial)をObjMaterialへ変換
+
+    std::vector<ObjMaterial> convertedMaterials(scene->mNumMaterials);
 
     for (uint32_t i = 0; i < scene->mNumMaterials; ++i) {
         const aiMaterial* m = scene->mMaterials[i];
         ObjMaterial out{};
 
-        // デフォルト値
+        // デフォルト初期化 (※ 読み込めなかったパラメータを安全値で埋める)
         out.textureFilePath = "";
-        out.color = { 1.0f,1.0f,1.0f,1.0f };
-        out.ambient = { 0.0f,0.0f,0.0f };
-        out.specular = { 0.0f,0.0f,0.0f };
+        out.color     = { 1.0f,1.0f,1.0f,1.0f };
+        out.ambient   = { 0.0f,0.0f,0.0f };
+        out.specular  = { 0.0f,0.0f,0.0f };
         out.shininess = 32.0f;
-        out.alpha = 1.0f;
+        out.alpha     = 1.0f;
         out.enableLighting = true;
         out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0,0,0 }, { 0,0,0 });
 
-        // テクスチャ（ディフューズ）
+        // Diffuse テクスチャ (埋め込み "*0" 等は今回は未対応)
         if (m->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
             aiString texPath;
             if (m->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == aiReturn_SUCCESS) {
-                // 埋め込みテクスチャ("*0"など)はここでは未対応。外部ファイルパスのみ対応。
                 std::string p = texPath.C_Str();
                 if (!p.empty() && p[0] != '*') {
-                    // 相対パスをリソースフォルダ基準に解決
-                    out.textureFilePath = directoryPath + "/" + p;
+                    out.textureFilePath = directoryPath + "/" + p; // 相対パスを呼び出し元ディレクトリ基準で連結
                 }
             }
         }
 
-        // カラー等（取得できる場合のみ）
+        // 色/光沢/不透明度 (取得できたもののみ上書き)
         aiColor3D kd;
         if (m->Get(AI_MATKEY_COLOR_DIFFUSE, kd) == aiReturn_SUCCESS) {
-            out.color.x = kd.r;
-            out.color.y = kd.g;
-            out.color.z = kd.b;
-            out.color.w = 1.0f;
+            out.color.x = kd.r; out.color.y = kd.g; out.color.z = kd.b; out.color.w = 1.0f;
         }
         aiColor3D ka;
         if (m->Get(AI_MATKEY_COLOR_AMBIENT, ka) == aiReturn_SUCCESS) {
@@ -397,38 +407,37 @@ ObjModel LoadObjFileAssimpM(const std::string& directoryPath, const std::string&
         convertedMaterials[i] = out;
     }
 
-    // メッシュを展開（頂点三角形ストリップ → 連続三角形リスト）
+    /// mesh(aiMesh)を解析し ObjMesh を構築
+
     for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
         aiMesh* mesh = scene->mMeshes[meshIndex];
-
         ObjMesh outMesh;
-        // マテリアル割り当て
+
+        // マテリアル割り当て (安全に index 範囲内か確認)
         if (mesh->mMaterialIndex < convertedMaterials.size()) {
             outMesh.material = convertedMaterials[mesh->mMaterialIndex];
         }
 
-        // 頂点展開
-        assert(mesh->HasFaces());
-        // 法線がないモデルもあるため、生成済みでなくても安全に扱う
         const bool hasNormals = mesh->HasNormals();
-        const bool hasUV0 = mesh->HasTextureCoords(0);
+        const bool hasUV0     = mesh->HasTextureCoords(0);
 
+        // Faceごとに頂点展開（Triangulate 済みなので常に 3 インデックス）
         for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
             const aiFace& face = mesh->mFaces[faceIndex];
-            assert(face.mNumIndices == 3); // Triangulate済み
+            assert(face.mNumIndices == 3); // 念のため検証
 
             for (uint32_t e = 0; e < 3; ++e) {
                 const uint32_t idx = face.mIndices[e];
 
                 const aiVector3D& p = mesh->mVertices[idx];
-                aiVector3D n = hasNormals ? mesh->mNormals[idx] : aiVector3D(0, 1, 0);
-                aiVector3D t = hasUV0 ? mesh->mTextureCoords[0][idx] : aiVector3D(0.5f, 0.5f, 0.0f);
+                aiVector3D n = hasNormals ? mesh->mNormals[idx] : aiVector3D(0, 1, 0);              // 無い場合はY+を仮法線
+                aiVector3D t = hasUV0     ? mesh->mTextureCoords[0][idx] : aiVector3D(0.5f,0.5f,0); // 無い場合は中央UV
 
                 VertexData v{};
-                // 左手系化（x反転のみ、回り順はフラグで反転済み）
+                // 左手系化（xのみ反転。回り順は aiProcess_FlipWindingOrder で既に反転）
                 v.position = { -p.x, p.y, p.z, 1.0f };
-                v.normal = { -n.x, n.y, n.z };
-                // UVは aiProcess_FlipUVs 済み。追加の反転は不要。
+                v.normal   = { -n.x, n.y, n.z };
+                // UVは aiProcess_FlipUVs 済みなので追加の y 反転不要
                 v.texcoord = { t.x, t.y };
 
                 outMesh.vertices.push_back(v);
@@ -437,6 +446,10 @@ ObjModel LoadObjFileAssimpM(const std::string& directoryPath, const std::string&
 
         objModel.meshes.push_back(std::move(outMesh));
     }
+
+    /// Node 階層(structure)を解析 (シーンルートから再帰構築)
+
+    objModel.rootNode = ReadNode(scene->mRootNode);
 
     return objModel;
 }
@@ -467,4 +480,31 @@ bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& n
         }
     }
     return true;
+}
+
+/*glTFを読み込んでみよう*/
+
+/// 前準備
+
+Node ReadNode(aiNode* node) {
+
+    /// assimpでNodを解析する
+
+    Node result;
+    aiMatrix4x4 aiLocalMatrix = node->mTransformation; // nodeのlocalMatrixを取得
+    aiLocalMatrix.Transpose(); // 列ベクトル形式を行ベクトル形式に転置
+    //result.localMatrix.m[0][0] = aiLocalMatrix[0][0]; // 他の要素も同様に
+    for (int r = 0; r < 4; ++r) {
+        for (int c = 0; c < 4; ++c) {
+            result.localMatrix.m[r][c] = aiLocalMatrix[r][c];
+        }
+    }
+
+    result.name = node->mName.C_Str(); // Nodeを格納
+    result.children.resize(node->mNumChildren); // 子供の数だけ確保
+    for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex) {
+        // 再帰的に読んで階層構造を作っていく
+        result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
+    }
+    return result;
 }

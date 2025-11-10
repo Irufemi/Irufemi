@@ -162,7 +162,7 @@ private: // メンバ変数
     std::unique_ptr<DescriptorAllocator> srvAllocator_; // 追加
 
     //画面の色
-    std::array<float, 4> clearColor_{ 0.8f, 0.8f, 0.8f, 1.0f };
+    std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };
 
     //バックバッファのインデックス
     UINT backBufferIndex_{};

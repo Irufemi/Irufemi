@@ -10,17 +10,23 @@
 
 /*objファイルを読んでみよう*/
 
-#include "../math/ModelData.h"
-#include "../math/MaterialData.h"
+#include "math/ModelData.h"
+#include "math/MaterialData.h"
 
 #include <wrl.h>
 
-#include "../math/ObjModel.h"
+#include "math/ObjModel.h"
 
 
 /*サウンド再生*/
-#include "../math/SoundData.h"
+#include "math/SoundData.h"
 #include <xaudio2.h> 
+
+/*glTFを読み込んでみよう*/
+
+// 前準備
+
+#include <assimp/scene.h>
 
 /*ログを出そう*/
 
@@ -52,9 +58,13 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 
 ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filename);
 
-ModelData LoadObjFileAssimp(const std::string& directoryPath, const std::string& filename);
+ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
 
+// 旧名称互換: 非推奨ラッパー
 ObjModel LoadObjFileAssimpM(const std::string& directoryPath, const std::string& filename);
+
+// 新名称: Node対応 Assimp 汎用読み込み
+ObjModel LoadModelFileM(const std::string& directoryPath, const std::string& filename);
 
 // f行の頂点データを安全にパースする関数例
 bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
@@ -76,3 +86,9 @@ void SoundUnload(SoundData* soundData);
 
 //音声再生
 void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData);
+
+/*glTFを読み込んでみよう*/
+
+// 前準備
+
+Node ReadNode(aiNode* node);
