@@ -7,7 +7,7 @@
 #include "Application/camera/Camera.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
-#include "function/Function.h" // LoadObjFileM, 型定義
+#include "manager/ModelManager.h" 
 #include "function/Math.h"
 #include "math/Transform.h"
 #include "math/Material.h"   // Material
@@ -18,6 +18,7 @@ DirectXCommon* Region::dx_ = nullptr;
 TextureManager* Region::textureManager_ = nullptr;
 DrawManager* Region::drawManager_ = nullptr;
 DescriptorAllocator* Region::srvAllocator_ = nullptr; // 追加
+ModelManager* Region::modelManager_ = nullptr;        // 追加
 
 void Region::Initialize(
     Camera* camera,
@@ -25,10 +26,16 @@ void Region::Initialize(
     assert(camera);
     camera_ = camera;
 
-    // OBJ 読み込み（単一メッシュ前提）
-    objModel_ = LoadObjFileM("resources/obj", objFilename);
-    assert(!objModel_.meshes.empty() && "objModel has no mesh");
-    const auto& mesh = objModel_.meshes.front();
+    // 共有モデルの取得（注入済みならキャッシュ経由、未注入なら静的ローダのフォールバック）
+    if (modelManager_) {
+        objModel_ = modelManager_->GetModel(objFilename);
+    } else {
+        objModel_ = std::make_shared<ObjModel>(ModelManager::LoadModelFileM("resources/obj", objFilename));
+    }
+
+    assert(objModel_ && "Region::Initialize: model is null");
+    assert(!objModel_->meshes.empty() && "objModel has no mesh");
+    const auto& mesh = objModel_->meshes.front();
 
     // メッシュの VB 作成
     CreateMeshBuffers(mesh);
@@ -146,7 +153,6 @@ void Region::ClearInstances() {
     instanceDirty_ = true;
 }
 
-// 変更: force を見るように
 void Region::BuildInstanceBuffer(bool force) {
     if (instances_.empty()) { return; }
     if (!force && !instanceDirty_) { return; }
@@ -155,7 +161,7 @@ void Region::BuildInstanceBuffer(bool force) {
     const UINT stride = sizeof(InstanceData);
     const UINT sizeInBytes = stride * count;
 
-    // バッファ確保・SRV更新（要素数が変わったときだけ作り直ししたい場合は、既存サイズを保持して条件分岐）
+    // バッファ確保・SRV更新
     CreateOrResizeInstanceBuffer(count);
 
     std::vector<InstanceData> temp(count);

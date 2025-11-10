@@ -1,22 +1,182 @@
-#include "Function.h"
-
-#include "../math/Vector4.h"
-#include "../math/Vector3.h"
-#include "../math/Vector2.h"
-#include "../math/Matrix4x4.h"
-#include "../function/Math.h"
-#include <vector>
-#include <fstream>
-#include <sstream>
-#include <cassert>
-#include <map>
-
+#include "ModelManager.h"
+#include <filesystem>
+#include <Windows.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
 
-ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename) {
+//======================
+// キャッシュ系（インスタンス）
+//======================
+
+// ルートディレクトリ設定（既定: "resources/obj"）
+void ModelManager::SetRootDirectory(std::string root) {
+    std::replace(root.begin(), root.end(), '\\', '/');
+    if (!root.empty() && root.back() == '/') root.pop_back();
+    rootDir_ = std::move(root);
+}
+
+// 初期化（必要に応じて将来拡張）
+void ModelManager::Initialize() {
+    if (rootDir_.empty()) {
+        rootDir_ = "resources/obj";
+    }
+}
+
+// モデル取得（キャッシュにあれば再利用 / なければロード）
+// filename: 相対("sample/bunny.obj") / ルートを含む("resources/obj/sample/bunny.obj") 両対応
+std::shared_ptr<ObjModel> ModelManager::GetModel(const std::string& filename) {
+    const std::string key = NormalizeAndResolve(filename);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (auto it = cache_.find(key); it != cache_.end()) {
+            if (auto sp = it->second.lock()) {
+                return sp;
+            }
+        }
+    }
+
+    // ロード
+    auto pair = SplitDirectoryAndFile(key);
+    ObjModel loaded = ModelManager::LoadModelFileM(pair.first, pair.second);
+    auto shared = std::make_shared<ObjModel>(std::move(loaded));
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        cache_[key] = shared;
+    }
+
+    DebugLogLoad(key, shared->meshes.size());
+    return shared;
+}
+
+// 事前ロード（フォルダ内再帰走査）
+void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
+    namespace fs = std::filesystem;
+    const std::string rootBase = rootDir_.empty() ? "resources/obj" : rootDir_;
+    fs::path start = fs::path(rootBase) / relativeFolder;
+    if (!fs::exists(start)) { return; }
+
+    for (auto& entry : fs::recursive_directory_iterator(start)) {
+        if (!entry.is_regular_file()) continue;
+        auto p = entry.path();
+        std::string ext = p.extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        // 対応拡張子
+        if (ext == ".obj" || ext == ".gltf" || ext == ".glb") {
+            GetModel(p.string());
+        }
+    }
+}
+
+// キャッシュ内の有効キー一覧
+std::vector<std::string> ModelManager::GetCachedKeys() const {
+    std::vector<std::string> out;
+    std::lock_guard<std::mutex> lock(mutex_);
+    out.reserve(cache_.size());
+    for (auto& kv : cache_) {
+        if (!kv.second.expired()) {
+            out.push_back(kv.first);
+        }
+    }
+    return out;
+}
+
+// 弱参照のみになったエントリ削除
+void ModelManager::CollectGarbage() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = cache_.begin(); it != cache_.end();) {
+        if (it->second.expired()) {
+            it = cache_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+// 強制クリア
+void ModelManager::ClearAll() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    cache_.clear();
+}
+
+// 正規化＆ルート解決
+std::string ModelManager::NormalizeAndResolve(const std::string& filename) const {
+    std::string f = filename;
+    std::replace(f.begin(), f.end(), '\\', '/');
+    if (StartsWith(f, rootDir_ + "/")) {
+        // 既にルート含む
+    } else if (StartsWith(f, rootDir_)) {
+        // 末尾スラッシュ無しで一致
+        f = rootDir_ + "/" + f.substr(rootDir_.size());
+    } else {
+        // 相対とみなし root を前置
+        f = rootDir_ + "/" + f;
+    }
+    // 小文字化
+    std::transform(f.begin(), f.end(), f.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return f;
+}
+
+bool ModelManager::StartsWith(const std::string& s, const std::string& prefix) {
+    return s.size() >= prefix.size() &&
+        std::equal(prefix.begin(), prefix.end(), s.begin());
+}
+
+// "resources/obj/aaa/bbb.obj" → ("resources/obj/aaa", "bbb.obj")
+std::pair<std::string, std::string> ModelManager::SplitDirectoryAndFile(const std::string& full) {
+    auto pos = full.find_last_of('/');
+    if (pos == std::string::npos) return { ".", full };
+    return { full.substr(0, pos), full.substr(pos + 1) };
+}
+
+void ModelManager::DebugLogLoad(const std::string& key, size_t meshCount) {
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+    std::string msg = "[ModelManager] Loaded: " + key +
+        " meshes=" + std::to_string(meshCount) + "\n";
+    OutputDebugStringA(msg.c_str());
+#endif
+}
+
+//======================
+// 静的ロード関数群（旧 Function.h 移植）
+//======================
+
+MaterialData ModelManager::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename) {
+    // 1. 中で必要となる変数の宣言
+    // 2. ファイルを開く
+    // 3. 実際にファイルを読み、MaterialDataを構築していく
+    // 4. MaterialDataを返す
+
+    ///1.2. 必要な宣言とファイルを開く
+
+    MaterialData materialData;
+    std::string line; //ファイルから読んだ1行を格納するもの
+    std::ifstream file(directoryPath + "/" + filename); //ファイルを開く
+    assert(file.is_open()); //とりあえず開けなかったら止める
+
+    ///3. ファイルを読み、MaterialDataを構築
+
+    while (std::getline(file, line)) {
+        std::string identifier;
+        std::istringstream s(line);
+        s >> identifier;
+
+        // identifierに応じた処理
+        if (identifier == "map_Kd") {
+            std::string textureFilename;
+            s >> textureFilename;
+            //連結してファイルパスにする
+            materialData.textureFilePath = directoryPath + "/" + textureFilename;
+        }
+    }
+    return materialData;
+}
+
+ModelData ModelManager::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
     // 1. 中で必要となる変数の宣言
     // 2. ファイルを開く
     // 3. 実際にファイルを読み、ModelDataを構築していく
@@ -113,11 +273,40 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
         }
     }
 
+    modelData.rootNode = Node{};
+
     return modelData;
 }
 
+// f行の頂点データを安全にパースする関数例
+bool ModelManager::ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx) {
+    posIdx = uvIdx = normIdx = -1; // デフォルト値（0開始なら0に）
 
-ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filename) {
+    size_t firstSlash = token.find('/');
+    size_t secondSlash = token.find('/', firstSlash + 1);
+
+    // 位置インデックス
+    if (firstSlash == std::string::npos) {
+        // 例: "1"
+        if (!token.empty()) posIdx = std::stoi(token);
+    } else {
+        // 例: "1/2/3", "1//3", "1/2"
+        if (firstSlash > 0) posIdx = std::stoi(token.substr(0, firstSlash));
+        // UVインデックス
+        if (secondSlash != std::string::npos) {
+            // "1/2/3"
+            if (secondSlash > firstSlash + 1) uvIdx = std::stoi(token.substr(firstSlash + 1, secondSlash - firstSlash - 1));
+            // 法線インデックス
+            if (token.size() > secondSlash + 1) normIdx = std::stoi(token.substr(secondSlash + 1));
+        } else {
+            // "1/2"
+            if (token.size() > firstSlash + 1) uvIdx = std::stoi(token.substr(firstSlash + 1));
+        }
+    }
+    return true;
+}
+
+ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std::string& filename) {
     ObjModel objModel;
     std::vector<Vector4> positions;
     std::vector<Vector3> normals;
@@ -254,7 +443,7 @@ ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filen
     return objModel;
 }
 
-ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename) {
+ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const std::string& filename) {
 
     ModelData modelData; //構築するModelData
 
@@ -328,8 +517,13 @@ ModelData LoadModelFile(const std::string& directoryPath, const std::string& fil
 
 }
 
+ObjModel ModelManager::LoadObjFileAssimpM(const std::string& directoryPath, const std::string& filename) {
+    // 旧名称互換 → 新しい LoadModelFileM を呼ぶ
+    return LoadModelFileM(directoryPath, filename);
+}
+
 // ObjModel Node 対応 Assimp 版
-ObjModel LoadModelFileM(const std::string& directoryPath, const std::string& filename) {
+ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const std::string& filename) {
     ObjModel objModel;
 
     /* いろんなフォーマットのモデルが読みたい */
@@ -362,11 +556,11 @@ ObjModel LoadModelFileM(const std::string& directoryPath, const std::string& fil
 
         // デフォルト初期化 (※ 読み込めなかったパラメータを安全値で埋める)
         out.textureFilePath = "";
-        out.color     = { 1.0f,1.0f,1.0f,1.0f };
-        out.ambient   = { 0.0f,0.0f,0.0f };
-        out.specular  = { 0.0f,0.0f,0.0f };
+        out.color = { 1.0f,1.0f,1.0f,1.0f };
+        out.ambient = { 0.0f,0.0f,0.0f };
+        out.specular = { 0.0f,0.0f,0.0f };
         out.shininess = 32.0f;
-        out.alpha     = 1.0f;
+        out.alpha = 1.0f;
         out.enableLighting = true;
         out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0,0,0 }, { 0,0,0 });
 
@@ -419,7 +613,7 @@ ObjModel LoadModelFileM(const std::string& directoryPath, const std::string& fil
         }
 
         const bool hasNormals = mesh->HasNormals();
-        const bool hasUV0     = mesh->HasTextureCoords(0);
+        const bool hasUV0 = mesh->HasTextureCoords(0);
 
         // Faceごとに頂点展開（Triangulate 済みなので常に 3 インデックス）
         for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
@@ -431,12 +625,12 @@ ObjModel LoadModelFileM(const std::string& directoryPath, const std::string& fil
 
                 const aiVector3D& p = mesh->mVertices[idx];
                 aiVector3D n = hasNormals ? mesh->mNormals[idx] : aiVector3D(0, 1, 0);              // 無い場合はY+を仮法線
-                aiVector3D t = hasUV0     ? mesh->mTextureCoords[0][idx] : aiVector3D(0.5f,0.5f,0); // 無い場合は中央UV
+                aiVector3D t = hasUV0 ? mesh->mTextureCoords[0][idx] : aiVector3D(0.5f, 0.5f, 0); // 無い場合は中央UV
 
                 VertexData v{};
                 // 左手系化（xのみ反転。回り順は aiProcess_FlipWindingOrder で既に反転）
                 v.position = { -p.x, p.y, p.z, 1.0f };
-                v.normal   = { -n.x, n.y, n.z };
+                v.normal = { -n.x, n.y, n.z };
                 // UVは aiProcess_FlipUVs 済みなので追加の y 反転不要
                 v.texcoord = { t.x, t.y };
 
@@ -454,39 +648,12 @@ ObjModel LoadModelFileM(const std::string& directoryPath, const std::string& fil
     return objModel;
 }
 
-// f行の頂点データを安全にパースする関数例
-bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx) {
-    posIdx = uvIdx = normIdx = -1; // デフォルト値（0開始なら0に）
-
-    size_t firstSlash = token.find('/');
-    size_t secondSlash = token.find('/', firstSlash + 1);
-
-    // 位置インデックス
-    if (firstSlash == std::string::npos) {
-        // 例: "1"
-        if (!token.empty()) posIdx = std::stoi(token);
-    } else {
-        // 例: "1/2/3", "1//3", "1/2"
-        if (firstSlash > 0) posIdx = std::stoi(token.substr(0, firstSlash));
-        // UVインデックス
-        if (secondSlash != std::string::npos) {
-            // "1/2/3"
-            if (secondSlash > firstSlash + 1) uvIdx = std::stoi(token.substr(firstSlash + 1, secondSlash - firstSlash - 1));
-            // 法線インデックス
-            if (token.size() > secondSlash + 1) normIdx = std::stoi(token.substr(secondSlash + 1));
-        } else {
-            // "1/2"
-            if (token.size() > firstSlash + 1) uvIdx = std::stoi(token.substr(firstSlash + 1));
-        }
-    }
-    return true;
-}
 
 /*glTFを読み込んでみよう*/
 
 /// 前準備
 
-Node ReadNode(aiNode* node) {
+Node ModelManager::ReadNode(aiNode* node) {
 
     /// assimpでNodを解析する
 

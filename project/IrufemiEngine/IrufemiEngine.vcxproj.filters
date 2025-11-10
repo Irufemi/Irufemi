@@ -137,12 +137,6 @@
     <ClCompile Include="function\GetBackBufferIndex.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
-    <ClCompile Include="function\LoadMaterialTemplateFile.cpp">
-      <Filter>Engine\function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\LoadObjFile.cpp">
-      <Filter>Engine\function</Filter>
-    </ClCompile>
     <ClCompile Include="function\SoundLoadWave.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
@@ -251,6 +245,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math\Matrix4x4.cpp">
       <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="manager\ModelManager.cpp">
+      <Filter>Engine\manager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -496,6 +493,9 @@
     </ClInclude>
     <ClInclude Include="math\Node.h">
       <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="manager\ModelManager.h">
+      <Filter>Engine\manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,37 +1,48 @@
 #include "ObjClass.h"
 #include <filesystem>
 #include <algorithm>
-#include <Windows.h> // OutputDebugStringA を使う場合
-
+#include <Windows.h>
 #include "source/Texture.h"
 #include "function/Function.h"
 #include "function/Math.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
 #include "manager/DebugUI.h"
+#include "manager/ModelManager.h"
 #include <imgui.h>
 #include "engine/directX/DirectXCommon.h"
 
 TextureManager* ObjClass::textureManager_ = nullptr;
 DrawManager* ObjClass::drawManager_ = nullptr;
 DebugUI* ObjClass::ui_ = nullptr;
+ModelManager* ObjClass::modelManager_ = nullptr;
 
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
-
-    this->camera_ = camera;
-
-    objModel_ = LoadModelFileM("resources/obj", filename);
-
+    camera_ = camera;
     textures_.clear();
     resources_.clear();
 
-    for (const auto& mesh : objModel_.meshes) {
+    // モデル取得（キャッシュ経由）
+    if (modelManager_) {
+        objModel_ = modelManager_->GetModel(filename);
+    } else {
+        // フォールバック（旧挙動）
+        objModel_ = std::make_shared<ObjModel>(ModelManager::LoadModelFileM("resources/obj", filename));
+    }
 
+    if (!objModel_) {
+        OutputDebugStringA("[ObjClass] Initialize: model load failed.\n");
+        return;
+    }
+
+    textures_.reserve(objModel_->meshes.size());
+    resources_.reserve(objModel_->meshes.size());
+
+    for (const auto& mesh : objModel_->meshes) {
         auto res = std::make_unique<D3D12ResourceUtil>();
 
         // 頂点バッファ
         res->vertexResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(VertexData) * mesh.vertices.size());
-        res->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
         res->vertexBufferView_.BufferLocation = res->vertexResource_->GetGPUVirtualAddress();
         res->vertexBufferView_.SizeInBytes = UINT(sizeof(VertexData) * mesh.vertices.size());
         res->vertexBufferView_.StrideInBytes = sizeof(VertexData);
@@ -47,26 +58,24 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         res->materialData_->enableLighting = mesh.material.enableLighting;
         res->materialData_->hasTexture = true;
         res->materialData_->lightingMode = 2;
-        res->materialData_->uvTransform = mesh.material.uvTransform; // すでに行列
+        res->materialData_->uvTransform = mesh.material.uvTransform;
         res->materialData_->shininess = 64.0f;
 
-        // ここで α フォールバック（MTL 無しで 0 初期化のケース対策）
-        if (res->materialData_->color.w <= 0.0f) {
-            res->materialData_->color.w = 1.0f;
-        }
+        if (res->materialData_->color.w <= 0.0f) { res->materialData_->color.w = 1.0f; }
 
-        // WVP
-        res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
-        res->transformationMatrix_.WVP = Math::Multiply(res->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+        // 行列初期
+        res->transformationMatrix_.world =
+            Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
+        res->transformationMatrix_.WVP =
+            Math::Multiply(res->transformationMatrix_.world,
+                           Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
         res->transformationResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(TransformationMatrix));
         res->transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->transformationData_));
 
         // 法線変換用：平行移動を除いた World を使う
         Matrix4x4 worldForNormal = res->transformationMatrix_.world;
-        worldForNormal.m[3][0] = 0.0f;
-        worldForNormal.m[3][1] = 0.0f;
-        worldForNormal.m[3][2] = 0.0f;
-        worldForNormal.m[3][3] = 1.0f;
+        worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
 
         // 逆転置行列を計算
         res->transformationMatrix_.WorldInverseTranspose =
@@ -81,47 +90,31 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 
         /*glTFを読み込んでみよう*/
 
-        /// Matrixを適用する
-
-        res->transformationData_->WVP = objModel_.rootNode.localMatrix * res->transformationMatrix_.world * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
-        res->transformationData_->world = objModel_.rootNode.localMatrix * res->transformationMatrix_.world;
+        // 共有 rootNode の行列適用
+        res->transformationData_->WVP = objModel_->rootNode.localMatrix *
+            res->transformationMatrix_.world *
+            (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
+        res->transformationData_->world = objModel_->rootNode.localMatrix * res->transformationMatrix_.world;
 
         // 上記のコードでは、描画時だけ適用するようになっている
         // ゲーム中にも利用したい場合、この値をうまく扱えるようにしていく必要があるが、まずは描画時だけ適用しておいて、慣れてから対応法を考えると良い
 
-
         // テクスチャ
         auto tex = std::make_unique<Texture>();
         if (!mesh.material.textureFilePath.empty()) {
-            namespace fs = std::filesystem;
             std::string texStr = mesh.material.textureFilePath;
-
-            // 区切り文字を統一（任意）
             std::replace(texStr.begin(), texStr.end(), '/', '\\');
-
-            // ドライブ文字のみでスラッシュがない場合は補正: "F:foo.png" -> "F:\foo.png"
-            if (texStr.size() >= 2 && texStr[1] == ':' && (texStr.size() == 2 || (texStr.size() > 2 && texStr[2] != '\\' && texStr[2] != '/'))) {
-                texStr.insert(2, "\\");
-            }
-
+            namespace fs = std::filesystem;
             fs::path texPath(texStr);
-
-            // 既に absolute / resources/obj を含むなら prepend しない
-            bool containsResourcesObj = (texStr.find("resources\\obj") != std::string::npos) || (texStr.find("resources/obj") != std::string::npos);
-            if (!texPath.is_absolute() && !containsResourcesObj) {
+            bool containsRoot = (texStr.find("resources\\obj") != std::string::npos) ||
+                                (texStr.find("resources/obj") != std::string::npos);
+            if (!texPath.is_absolute() && !containsRoot) {
                 texPath = fs::path("resources") / "obj" / texPath;
-            }
-
-            // デバッグ出力（解決結果を確認）
-            {
-                std::string msg = "[ObjClass] Resolved texture path: " + texPath.string() + "\n";
-                OutputDebugStringA(msg.c_str());
             }
             tex->Initialize(texPath.string());
             res->textureHandle_ = tex->GetTextureSrvHandleGPU();
             res->materialData_->hasTexture = true;
         } else {
-            // テクスチャ無し: hasTexture を false にして白テクスチャを SRV に設定
             res->materialData_->hasTexture = false;
             res->textureHandle_ = textureManager_->GetWhiteTextureHandle();
         }
@@ -129,8 +122,8 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         // ライト
         res->directionalLightResource_ = res->GetDirectXCommon()->CreateBufferResource(sizeof(DirectionalLight));
         res->directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->directionalLightData_));
-        res->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
-        res->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
+        res->directionalLightData_->color = { 1,1,1,1 };
+        res->directionalLightData_->direction = { 0,-1,0 };
         res->directionalLightData_->intensity = 1.0f;
 
         // カメラ
@@ -138,63 +131,59 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         res->cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&res->cameraData_));
         res->cameraData_->worldPosition = camera_->GetTranslate();
 
-        // デバッグ出力（ここでメッシュの統計とマテリアル状態を出す）
-        {
-            char buf[256];
-            std::snprintf(buf, sizeof(buf),
-                "[ObjClass] mesh: vtx=%zu, idx=%zu, hasTex=%d, colorA=%.2f, srv=0x%llX\n",
-                res->vertexDataList_.size(),
-                res->indexDataList_.size(),
-                res->materialData_->hasTexture,
-                res->materialData_->color.w,
-                static_cast<unsigned long long>(res->textureHandle_.ptr));
-            OutputDebugStringA(buf);
-        }
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+        char buf[256];
+        std::snprintf(buf, sizeof(buf),
+            "[ObjClass] mesh vtx=%zu hasTex=%d srv=0x%llX (cached)\n",
+            res->vertexDataList_.size(),
+            res->materialData_->hasTexture,
+            static_cast<unsigned long long>(res->textureHandle_.ptr));
+        OutputDebugStringA(buf);
+#endif
 
         textures_.push_back(std::move(tex));
         resources_.push_back(std::move(res));
     }
-
 }
 
 void ObjClass::Update(const char* objName) {
 #if defined(_DEBUG) || defined(DEVELOPMENT)
     std::string name = std::string("Obj: ") + objName;
     ImGui::Begin(name.c_str());
-
     for (size_t i = 0; i < resources_.size(); ++i) {
-        auto& res = resources_[i];
+        auto& r = resources_[i];
         std::string meshLabel = "Mesh[" + std::to_string(i) + "]";
         if (ImGui::TreeNode(meshLabel.c_str())) {
-            ui_->DebugTransform(res->transform_);
-            ui_->DebugMaterialBy3D(res->materialData_);
-            ui_->DebugDirectionalLight(res->directionalLightData_);
-            ui_->DebugUvTransform(res->uvTransform_);
+            ui_->DebugTransform(r->transform_);
+            ui_->DebugMaterialBy3D(r->materialData_);
+            ui_->DebugDirectionalLight(r->directionalLightData_);
+            ui_->DebugUvTransform(r->uvTransform_);
             ImGui::TreePop();
         }
     }
     ImGui::End();
 #endif
 
-    for (auto& res : resources_) {
-        res->transformationMatrix_.world = Math::MakeAffineMatrix(res->transform_.scale, res->transform_.rotate, res->transform_.translate);
-        res->transformationMatrix_.WVP = Math::Multiply(res->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-        // 法線変換用：平行移動を除いた World を使う
-        Matrix4x4 worldForNormal = res->transformationMatrix_.world;
-        worldForNormal.m[3][0] = 0.0f;
-        worldForNormal.m[3][1] = 0.0f;
-        worldForNormal.m[3][2] = 0.0f;
-        worldForNormal.m[3][3] = 1.0f;
+    for (auto& r : resources_) {
+        r->transformationMatrix_.world =
+            Math::MakeAffineMatrix(r->transform_.scale, r->transform_.rotate, r->transform_.translate);
 
+        r->transformationMatrix_.WVP =
+            Math::Multiply(r->transformationMatrix_.world,
+                           Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+
+        Matrix4x4 worldForNormal = r->transformationMatrix_.world;
+        worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
         // 逆転置行列を計算
-        res->transformationMatrix_.WorldInverseTranspose =
+        r->transformationMatrix_.WorldInverseTranspose =
             Math::Transpose(Math::Inverse(worldForNormal));
-
+        
         // 定数バッファへ全フィールドを書き込む
-        *res->transformationData_ = {
-            res->transformationMatrix_.WVP,
-            res->transformationMatrix_.world,
-            res->transformationMatrix_.WorldInverseTranspose
+        *r->transformationData_ = {
+            r->transformationMatrix_.WVP,
+            r->transformationMatrix_.world,
+            r->transformationMatrix_.WorldInverseTranspose
         };
 
 
@@ -202,20 +191,26 @@ void ObjClass::Update(const char* objName) {
 
         /// Matrixを適用する
 
-        res->transformationData_->WVP = objModel_.rootNode.localMatrix * res->transformationMatrix_.world * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
-        res->transformationData_->world = objModel_.rootNode.localMatrix * res->transformationMatrix_.world;
-
         // 上記のコードでは、描画時だけ適用するようになっている
         // ゲーム中にも利用したい場合、この値をうまく扱えるようにしていく必要があるが、まずは描画時だけ適用しておいて、慣れてから対応法を考えると良い
 
-        res->materialData_->uvTransform = Math::MakeAffineMatrix(res->uvTransform_.scale, res->uvTransform_.rotate, res->uvTransform_.translate);
-        res->directionalLightData_->direction = Math::Normalize(res->directionalLightData_->direction);
-        res->cameraData_->worldPosition = camera_->GetTranslate();
+        // 共有 rootNode 行列適用
+        if (objModel_) {
+            r->transformationData_->WVP = objModel_->rootNode.localMatrix *
+                r->transformationMatrix_.world *
+                (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
+            r->transformationData_->world = objModel_->rootNode.localMatrix * r->transformationMatrix_.world;
+        }
+
+        r->materialData_->uvTransform =
+            Math::MakeAffineMatrix(r->uvTransform_.scale, r->uvTransform_.rotate, r->uvTransform_.translate);
+        r->directionalLightData_->direction = Math::Normalize(r->directionalLightData_->direction);
+        r->cameraData_->worldPosition = camera_->GetTranslate();
     }
 }
 
 void ObjClass::Draw() {
-    for (auto& res : resources_) {
-        drawManager_->DrawByVertex(res.get());
+    for (auto& r : resources_) {
+        drawManager_->DrawByVertex(r.get());
     }
 }

@@ -100,6 +100,13 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     textureManager->Initialize(dxCommon_.get());
     textureManager->LoadAllFromFolder("resources/");
 
+    // モデル管理
+    modelManager_ = std::make_unique<ModelManager>();
+    modelManager_->Initialize();
+    // 必要なら事前ロード（任意）: objModelManager_->PreloadAllUnder("");
+    ObjClass::SetModelManager(modelManager_.get());
+    Region::SetModelManager(modelManager_.get());
+
     // 既存SRVの走査で free-list 再構築
     {
         ID3D12DescriptorHeap* srvHeap = dxCommon_->GetSrvDescriptorHeap();
@@ -190,6 +197,9 @@ void IrufemiEngine::Finalize() {
     }
     if (textureManager) {
         textureManager.reset();
+    }
+    if (modelManager_) {
+        modelManager_.reset();
     }
     if (dxCommon_) {
         dxCommon_->Finalize(); dxCommon_.reset();

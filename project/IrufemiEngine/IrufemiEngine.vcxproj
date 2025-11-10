@@ -191,6 +191,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="math\Matrix4x4.cpp" />
     <ClCompile Include="math\Vector2.cpp" />
     <ClCompile Include="audio\Se.cpp" />
+    <ClCompile Include="manager\ModelManager.cpp" />
     <ClCompile Include="source\D3D12ResourceUtil.cpp" />
     <ClCompile Include="engine\directX\DirectXCommon.cpp" />
     <ClCompile Include="engine\IrufemiEngine.cpp" />
@@ -202,8 +203,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="function\CreateTextureResurce.cpp" />
     <ClCompile Include="function\Ease.cpp" />
     <ClCompile Include="function\GetBackBufferIndex.cpp" />
-    <ClCompile Include="function\LoadMaterialTemplateFile.cpp" />
-    <ClCompile Include="function\LoadObjFile.cpp" />
     <ClCompile Include="function\Math.cpp" />
     <ClCompile Include="function\SoundLoadWave.cpp" />
     <ClCompile Include="function\SoundPlayWave.cpp" />
@@ -298,6 +297,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="engine\PSOManager.h" />
     <ClInclude Include="3D\PointLightClass.h" />
     <ClInclude Include="math\Node.h" />
+    <ClInclude Include="manager\ModelManager.h" />
     <ClInclude Include="scene\IScene.h" />
     <ClInclude Include="scene\SceneManager.h" />
     <ClInclude Include="audio\Se.h" />
