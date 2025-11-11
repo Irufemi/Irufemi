@@ -18,11 +18,6 @@
 #include "3D/SpotLightClass.h"
 #include "audio/Bgm.h"
 
-#include "camera/CameraController.h"
-
-#include "contents/player/Player.h"
-#include "contents/MapChipField.h"
-
 // 前方宣言
 class IrufemiEngine;
 
@@ -38,29 +33,7 @@ class DebugCamera;
 class GameScene : public IScene {
 private: // 関数
 
-    void GenerateBlocks();
-
-private: // 変数
-
-    // カメラコントローラー
-    std::unique_ptr<CameraController> cameraController_ = nullptr;
-
-    /// マップチップフィールド
-    std::unique_ptr<MapChipField> mapChipField_ = nullptr;
-
-    /// ブロック
-
-    // ブロック群
-    std::unique_ptr<class Region> blocks_ = nullptr;
-    // ワールドトランスフォーム(ブロック)
-    std::vector<std::vector<Transform*>> worldtransformBlocks_;
-
-    /// 自キャラ
-
-    // 自キャラ
-    std::shared_ptr<Player> player_ = nullptr;
-    // 3Dモデルデータ(自キャラ)
-    std::unique_ptr<ObjClass> modelplayer_ = nullptr;
+private: // 変数(ゲーム)
 
 private: // メンバ変数(システム)
 

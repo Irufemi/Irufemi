@@ -31,16 +31,6 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     camera_->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });
     camera_->UpdateMatrix();
 
-    // Circle2D の初期化
-    circle_ = std::make_unique<Circle2D>();
-    circle_->Initialize(camera_.get(), "");
-    float cx = static_cast<float>(engine_->GetClientWidth()) * 0.5f;
-    float cy = static_cast<float>(engine_->GetClientHeight()) * 0.5f;
-    circle_->SetInfo({ Vector3{ cx, cy, 0.0f }, 50.0f });
-    circle_->SetUseTexture(false);
-    circle_->SetColor(Vector4{ 1.0f, 0.0f, 0.0f, 1.0f });
-
-    // ワークアラウンド：DrawManager に渡すライトを用意しておく
     pointLight_ = std::make_unique<PointLightClass>();
     pointLight_->Initialize();
     pointLight_->SetPos(Vector3{ 0.0f, 30.0f, 0.0f });
@@ -53,10 +43,9 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
 }
 
 void ResultScene::Update() {
-    if (circle_) circle_->Update("ResultCenter");
 
-    //エンターキーが押されていたら
-    if (engine_->GetInputManager()->IsKeyPressed(VK_RETURN)) {
+    //Pキーが押されていたら
+    if (engine_->GetInputManager()->IsKeyPressed('P')) {
         engine_->GetSceneManager()->Request("Title");
     }
 }
@@ -65,5 +54,4 @@ void ResultScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplySpritePSO();
-    if (circle_) circle_->Draw();
 }
