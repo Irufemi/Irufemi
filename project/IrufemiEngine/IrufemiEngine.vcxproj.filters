@@ -502,7 +502,7 @@
     <None Include="..\Application\resources\shaders\Particle.hlsli">
       <Filter>Engine\shaders</Filter>
     </None>
-    <None Include="..\Application\resources\shaders\BasicShaderHeader.hlsli">
+    <None Include="..\Application\resources\shaders\GeometryShaderHeader.hlsli">
       <Filter>Engine\shaders</Filter>
     </None>
   </ItemGroup>
@@ -526,6 +526,12 @@
       <Filter>Engine\shaders</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\Region.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.PS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
       <Filter>Engine\shaders</Filter>
     </FxCompile>
   </ItemGroup>

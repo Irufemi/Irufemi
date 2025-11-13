@@ -304,3 +304,9 @@ void IrufemiEngine::ApplyRegionPSO() {
     auto* pso = GetPSOManager()->GetRegion(currentBlend_, currentDepth_);
     drawManager->BindPSO(pso);
 }
+
+void IrufemiEngine::ApplyByGeometryShaderPSO() {
+    auto* pso = GetPSOManager()->GetByGeometryShader(currentBlend_, currentDepth_);
+    assert(pso && "ByGeometryShader PSO is null. Check PSOManager::Initialize and shader blobs.");
+    if (pso) { drawManager->BindPSO(pso); }
+}

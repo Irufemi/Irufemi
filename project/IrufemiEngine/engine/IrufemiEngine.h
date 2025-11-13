@@ -118,6 +118,7 @@ public: // セッター
     void ApplyParticlePSO();
     void ApplySpritePSO();
     void ApplyRegionPSO();
+    void ApplyByGeometryShaderPSO();
 
 public:
     // 状態（現在のブレンドと深度書き込み）

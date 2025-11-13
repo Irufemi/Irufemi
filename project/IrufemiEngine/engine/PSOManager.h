@@ -23,6 +23,7 @@ public:
     struct ShaderSet {
         Microsoft::WRL::ComPtr<IDxcBlob> vsBlob;
         Microsoft::WRL::ComPtr<IDxcBlob> psBlob;
+        Microsoft::WRL::ComPtr<IDxcBlob> gsBlob;
     };
 
     // 初期化（IrufemiEngine::Initialize から呼ぶ）
@@ -36,7 +37,8 @@ public:
         ShaderSet objectShaders,         // 既存：Object3D.VS/PS など
         ShaderSet particleShaders = {}, // パーティクル専用 VS/PS（なければ空でOK）
         ShaderSet spriteShaders = {},
-        ShaderSet regionShaders = {}
+        ShaderSet regionShaders = {},
+        ShaderSet byGeometryShaderShaders = {}
     );
 
     // 既存シェーダで取得（メッシュ/スプライト等）
@@ -50,6 +52,9 @@ public:
     // 
     ID3D12PipelineState* GetRegion(BlendMode b, DepthWrite d);
 
+    // Geometry Shader を使う PSO を取得（未設定時は object にフォールバック）
+    ID3D12PipelineState* GetByGeometryShader(BlendMode blend, DepthWrite depth);
+
     void ClearCache();
 
 private:
@@ -59,9 +64,9 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Device> device_;
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSig_;
     D3D12_INPUT_LAYOUT_DESC inputLayout_{};
-    // ★追加：要素配列を自前で所有（Initialize 時に深いコピー）
+    // 要素配列を自前で所有（Initialize 時に深いコピー）
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements_;
-    DXGI_FORMAT rtvFormat_{ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB }; // 既存に合わせる
+    DXGI_FORMAT rtvFormat_{ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB };
     DXGI_FORMAT dsvFormat_{ DXGI_FORMAT_D24_UNORM_S8_UINT };
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_{ D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE };
 
@@ -69,6 +74,7 @@ private:
     ShaderSet particleShaders_{};
     ShaderSet spriteShaders_{};
     ShaderSet blocksShaders_{};
+    ShaderSet byGeometryShaderShaders_{};
 
     struct Key {
         uint64_t hash;

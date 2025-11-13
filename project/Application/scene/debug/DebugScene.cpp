@@ -234,7 +234,7 @@ void DebugScene::Draw() {
     // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-    engine_->ApplyPSO();
+    engine_->ApplyByGeometryShaderPSO();
 
 
 

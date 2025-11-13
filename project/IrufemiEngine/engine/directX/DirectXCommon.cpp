@@ -509,6 +509,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr <IDxcBlob> regionVSBlob = CompileShader(L"resources/shaders/Region.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(regionVSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr <IDxcBlob> byGeometryShaderPSBlob = CompileShader(L"resources/shaders/ByGeometryShader.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(byGeometryShaderPSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr <IDxcBlob> byGeometryShaderGSBlob = CompileShader(L"resources/shaders/ByGeometryShader.GS.hlsl", L"gs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(byGeometryShaderGSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -522,7 +528,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     psoManager_ = std::make_unique<PSOManager>();
 
     PSOManager::ShaderSet objectShaders{
-        vertexShaderBlob,  // ← そのまま所有権を渡す（ComPtrは参照カウント）
+        vertexShaderBlob,
         pixelShaderBlob
     };
 
@@ -541,18 +547,25 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         pixelShaderBlob   // PS は既存の Object3D.PS を流用
     };
 
+    PSOManager::ShaderSet byGeometryShaders{
+        vertexShaderBlob,
+        byGeometryShaderPSBlob,
+        byGeometryShaderGSBlob
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
         rootSignature_.Get(),
         inputLayoutDesc,
-        /*RTV*/ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, // 既存と同じ
-        /*DSV*/ DXGI_FORMAT_D24_UNORM_S8_UINT,   // 既存と同じ
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,  // 既存と同じ
+        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+        DXGI_FORMAT_D24_UNORM_S8_UINT,   
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, 
         objectShaders,
-        particleShaders,     // パーティクルは未使用なら空
+        particleShaders,   
         spriteShaders,
-        blocksShaders
+        blocksShaders,
+        byGeometryShaders
     );
 
     //実際に生成
