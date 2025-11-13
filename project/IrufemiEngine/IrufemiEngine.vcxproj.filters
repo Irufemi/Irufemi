@@ -69,17 +69,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\shaders\Object3d.hlsli">
-      <Filter>Engine\shaders</Filter>
-    </None>
-    <None Include="resources\shaders\Particle.hlsli">
-      <Filter>Engine\shaders</Filter>
-    </None>
-    <None Include="resources\shaders\Object2D.hlsli">
-      <Filter>Engine\shaders</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="manager\AudioManager.cpp">
       <Filter>Engine\manager</Filter>
     </ClCompile>
@@ -499,31 +488,45 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="resources\shaders\Particle.VS.hlsl">
-      <Filter>Engine\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="resources\shaders\Object3d.PS.hlsl">
-      <Filter>Engine\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="resources\shaders\Object3d.VS.hlsl">
-      <Filter>Engine\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="resources\shaders\Particle.PS.hlsl">
-      <Filter>Engine\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="resources\shaders\Object2D.PS.hlsl">
-      <Filter>Engine\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="resources\shaders\Object2D.VS.hlsl">
-      <Filter>Engine\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="resources\shaders\Region.VS.hlsl">
-      <Filter>Engine\shaders</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="..\externals\imgui\LICENSE.txt">
       <Filter>Engine\external\imgui</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Application\resources\shaders\Object2D.hlsli">
+      <Filter>Engine\shaders</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\Object3d.hlsli">
+      <Filter>Engine\shaders</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\Particle.hlsli">
+      <Filter>Engine\shaders</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\BasicShaderHeader.hlsli">
+      <Filter>Engine\shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\Application\resources\shaders\Object2D.PS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Object2D.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Object3d.PS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Object3d.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Particle.PS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Particle.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Region.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
