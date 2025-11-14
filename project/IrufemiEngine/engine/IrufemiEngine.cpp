@@ -17,6 +17,7 @@
 #include "3D/ObjClass.h"
 #include "3D/SphereClass.h"
 #include "3D/TriangleClass.h"
+#include "3D/PlaneClass.h"
 #include "3D/CylinderClass.h"
 #include "3D/ParticleClass.h"
 #include "3D/PointLightClass.h"
@@ -148,6 +149,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetDebugUI(ui.get());
     SphereClass::SetDebugUI(ui.get());
     TriangleClass::SetDebugUI(ui.get());
+    PlaneClass::SetDebugUI(ui.get());
     CylinderClass::SetDebugUI(ui.get());
 
     // 描画
@@ -158,6 +160,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetDrawManager(drawManager.get());
     SphereClass::SetDrawManager(drawManager.get());
     TriangleClass::SetDrawManager(drawManager.get());
+    PlaneClass::SetDrawManager(drawManager.get());
     CylinderClass::SetDrawManager(drawManager.get());
     Region::SetDrawManager(drawManager.get());
     SphereRegion::SetDrawManager(drawManager.get());
@@ -170,10 +173,34 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetTextureManager(textureManager.get());
     SphereClass::SetTextureManager(textureManager.get());
     TriangleClass::SetTextureManager(textureManager.get());
+    PlaneClass::SetTextureManager(textureManager.get());
     CylinderClass::SetTextureManager(textureManager.get());
     Region::SetTextureManager(textureManager.get());
     SphereRegion::SetTextureManager(textureManager.get());
     TetraRegion::SetTextureManager(textureManager.get());
+}
+
+// クリアカラーを float 指定できる 初期化
+void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
+                               float r, float g, float b, float a) {
+    clearColor_ = { r, g, b, a };
+    // 既存の Initialize を呼ぶ（互換性維持）
+    Initialize(title, clientWidth, clientHeight);
+}
+
+// クリアカラーを std::array 指定できる 初期化
+void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
+                               const std::array<float, 4>& clearColor) {
+    clearColor_ = clearColor;
+    // 既存の Initialize を呼ぶ（互換性維持）
+    Initialize(title, clientWidth, clientHeight);
+}
+
+// 追加: Vector4 版 Initialize
+void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
+                               const Vector4& clearColor) {
+    clearColor_ = { clearColor.x, clearColor.y, clearColor.z, clearColor.w };
+    Initialize(title, clientWidth, clientHeight);
 }
 
 void IrufemiEngine::Finalize() {

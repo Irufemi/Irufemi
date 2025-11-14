@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Vector3.h"
+#include "math/Vector3.h"
 
 //平面とは無限遠平面のこと。範囲に限りがない。
 

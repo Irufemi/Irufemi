@@ -238,6 +238,9 @@
     <ClCompile Include="manager\ModelManager.cpp">
       <Filter>Engine\manager</Filter>
     </ClCompile>
+    <ClCompile Include="3D\PlaneClass.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\AudioManager.h">
@@ -485,6 +488,9 @@
     </ClInclude>
     <ClInclude Include="manager\ModelManager.h">
       <Filter>Engine\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\PlaneClass.h">
+      <Filter>3D</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
