@@ -1,7 +1,7 @@
 
 /*テクスチャを貼ろう*/
 
-#include "./Object3d.hlsli"
+#include "GeometryShaderHeader.hlsli"
 
 /*三角形の色を変えよう*/
 
@@ -101,7 +101,7 @@ ConstantBuffer<SpotLight> gSpotLight : register(b4);
 
 /*テクスチャを貼ろう*/
 
-PixelShaderOutput main(VertexShaderOutput input)
+PixelShaderOutput main(GeometryShaderOutput input)
 {
 	PixelShaderOutput output;
 	
@@ -109,7 +109,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	///Materialを拡張する
 	
-	float4 transformedUV = mul(float32_t4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
+	float4 transformedUV = mul(float32_t4(input.uv, 0.0f, 1.0f), gMaterial.uvTransform);
 	float32_t4 textureColor = gTexture.Sample(gSampler, transformedUV.xy);
 	
 	/*2値抜き*/

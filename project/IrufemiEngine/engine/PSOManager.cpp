@@ -19,7 +19,8 @@ void PSOManager::Initialize(
     ShaderSet objectShaders,
     ShaderSet particleShaders,
     ShaderSet spriteShaders,
-    ShaderSet regionShaders
+    ShaderSet regionShaders,
+    ShaderSet byGeometryShaderShaders
 )
 {
     device_ = device;
@@ -36,7 +37,7 @@ void PSOManager::Initialize(
     particleShaders_ = particleShaders; // パーティクル VS/PS（あれば）
     spriteShaders_ = spriteShaders;
     blocksShaders_ = regionShaders;
-
+    byGeometryShaderShaders_ = byGeometryShaderShaders;
 
     cache_.clear();
 }
@@ -146,6 +147,26 @@ ID3D12PipelineState* PSOManager::GetRegion(BlendMode b, DepthWrite d)
     return pso.Get();
 }
 
+ID3D12PipelineState* PSOManager::GetByGeometryShader(BlendMode blend, DepthWrite depth)
+{
+    const bool hasVS = (byGeometryShaderShaders_.vsBlob && byGeometryShaderShaders_.vsBlob->GetBufferPointer());
+    const bool hasPS = (byGeometryShaderShaders_.psBlob && byGeometryShaderShaders_.psBlob->GetBufferPointer());
+    const bool hasGS = (byGeometryShaderShaders_.gsBlob && byGeometryShaderShaders_.gsBlob->GetBufferPointer());
+    const ShaderSet& set = (hasVS && hasPS && hasGS) ? byGeometryShaderShaders_ : objectShaders_;
+
+    Key key{ Hash(set, blend, depth) };
+    if (auto it = cache_.find(key); it != cache_.end()) { return it->second.Get(); }
+
+    D3D12_BLEND_DESC bd = MakeBlend(blend);
+    D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
+
+    // ByGeometryShader は POINT トポロジを使用（他は既存の TRIANGLE のまま）
+    auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+    if (!pso) { return nullptr; }
+    cache_[key] = pso;
+    return pso.Get();
+}
+
 void PSOManager::ClearCache() { cache_.clear(); }
 
 // PSOManager.cpp に追加
@@ -159,6 +180,10 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSO(
     desc.InputLayout = inputLayout_;
     desc.VS = { shaders.vsBlob->GetBufferPointer(), shaders.vsBlob->GetBufferSize() };
     desc.PS = { shaders.psBlob->GetBufferPointer(), shaders.psBlob->GetBufferSize() };
+    // GSがある場合のみ設定
+    if (shaders.gsBlob) {
+        desc.GS = { shaders.gsBlob->GetBufferPointer(), shaders.gsBlob->GetBufferSize() };
+    }
     desc.BlendState = blendDesc;
 
     // ラスタライザ（既存エンジンのデフォルトに合わせる）
@@ -172,6 +197,42 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSO(
     desc.NumRenderTargets = 1;
     desc.RTVFormats[0] = rtvFormat_;
     desc.PrimitiveTopologyType = topology_;
+    desc.SampleDesc.Count = 1;
+    desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr) && "CreateGraphicsPipelineState failed");
+    if (FAILED(hr)) { return nullptr; }
+    return pso;
+}
+
+Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSOWithTopology(
+    const ShaderSet& shaders,
+    const D3D12_BLEND_DESC& blendDesc,
+    const D3D12_DEPTH_STENCIL_DESC& depthDesc,
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) const
+{
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.InputLayout = inputLayout_;
+    desc.VS = { shaders.vsBlob->GetBufferPointer(), shaders.vsBlob->GetBufferSize() };
+    desc.PS = { shaders.psBlob->GetBufferPointer(), shaders.psBlob->GetBufferSize() };
+    if (shaders.gsBlob) {
+        desc.GS = { shaders.gsBlob->GetBufferPointer(), shaders.gsBlob->GetBufferSize() };
+    }
+    desc.BlendState = blendDesc;
+
+    D3D12_RASTERIZER_DESC rs{};
+    rs.CullMode = D3D12_CULL_MODE_BACK;
+    rs.FillMode = D3D12_FILL_MODE_SOLID;
+    desc.RasterizerState = rs;
+
+    desc.DepthStencilState = depthDesc;
+    desc.DSVFormat = dsvFormat_;
+    desc.NumRenderTargets = 1;
+    desc.RTVFormats[0] = rtvFormat_;
+    desc.PrimitiveTopologyType = topology; // 指定トポロジ
     desc.SampleDesc.Count = 1;
     desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
@@ -278,6 +339,12 @@ uint64_t PSOManager::Hash(const ShaderSet& s, BlendMode b, DepthWrite d)
     const size_t psLen = (s.psBlob ? s.psBlob->GetBufferSize() : 0);
     h = FNV1a(&psPtr, sizeof(psPtr), h);
     h = FNV1a(&psLen, sizeof(psLen), h);
+    // GS
+    const void* gsPtr = (s.gsBlob ? s.gsBlob->GetBufferPointer() : nullptr);
+    const size_t gsLen = (s.gsBlob ? s.gsBlob->GetBufferSize() : 0);
+    h = FNV1a(&gsPtr, sizeof(gsPtr), h);
+    h = FNV1a(&gsLen, sizeof(gsLen), h);
+
     h = FNV1a(&b, sizeof(b), h);
     h = FNV1a(&d, sizeof(d), h);
     return h;

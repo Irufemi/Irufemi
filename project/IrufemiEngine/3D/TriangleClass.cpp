@@ -19,55 +19,36 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
     // D3D12ResourceUtilを生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
-    //　左下
-    resource_->vertexDataList_.push_back({ { -0.5f,-0.5f,0.0f,1.0f }, { 0.0f,1.0f } });
-    //　上
-    resource_->vertexDataList_.push_back({ { 0.0f,0.5f,0.0f,1.0f  }, { 0.5f,0.0f } });
-    //　右下
-    resource_->vertexDataList_.push_back({ { 0.5f,-0.5f,0.0f,1.0f }, { 1.0f,1.0f } });
+    // 入力頂点は1点のみ（GS で増やす）
+    resource_->vertexDataList_.clear();
+    resource_->vertexDataList_.push_back({ { 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } ,{0.0f,0.0f,-1.0f} });
 
-    for (uint32_t i = 0; i < static_cast<uint32_t>(resource_->vertexDataList_.size()); ++i) {
-        resource_->vertexDataList_[i].normal.x = resource_->vertexDataList_[i].position.x;
-        resource_->vertexDataList_[i].normal.y = resource_->vertexDataList_[i].position.y;
-        resource_->vertexDataList_[i].normal.z = resource_->vertexDataList_[i].position.z;
-    }
+    // インデックスは使わない（空でOK）
+    resource_->indexDataList_.clear();
 
-    resource_->indexDataList_.push_back(0); //　左下 
-    resource_->indexDataList_.push_back(1); //　上
-    resource_->indexDataList_.push_back(2); //　右下
-
-    // リソースのメモリを確保
+    // リソース確保と Map
     resource_->CreateResource();
-
-    // 書き込めるようにする
     resource_->Map();
 
-    //頂点バッファ
-
+    // VBV 設定とデータ転送
     resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-
     resource_->vertexBufferView_.BufferLocation = resource_->vertexResource_->GetGPUVirtualAddress();
     resource_->vertexBufferView_.StrideInBytes = sizeof(VertexData);
     resource_->vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(resource_->vertexDataList_.size());
-
     std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
 
-    resource_->indexBufferView_ = D3D12_INDEX_BUFFER_VIEW{};
-    //リソースの先頭のアドレスから使う
-    resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();
-    //使用するリソースのサイズ
-    resource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * static_cast<UINT>(resource_->indexDataList_.size());
-    //インデックスはint32_tとする
-    resource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
+    // IBV は未使用だが、0要素のままで問題なし（DrawTriangle では IB を設定しない）
+    resource_->indexBufferView_ = {};
+    if (resource_->indexResource_) {
+        resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();
+        resource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * static_cast<UINT>(resource_->indexDataList_.size());
+        resource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
+        if (!resource_->indexDataList_.empty()) {
+            std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
+        }
+    }
 
-    ///IndexResourceにデータを書き込む
-
-    //インデックスリソースにデータを書き込む
-
-    std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
-
-    //マテリアル
-
+    // マテリアル
     resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
     resource_->materialData_->enableLighting = true;
     resource_->materialData_->hasTexture = true;
@@ -75,94 +56,56 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
     resource_->materialData_->shininess = 64.0f;
 
-    //wvp
-
+    // WVP
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
-
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
 
-    // 法線変換用：平行移動を除いた World を使う
+    // 法線用行列
     Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
-    worldForNormal.m[3][0] = 0.0f;
-    worldForNormal.m[3][1] = 0.0f;
-    worldForNormal.m[3][2] = 0.0f;
-    worldForNormal.m[3][3] = 1.0f;
+    worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f; worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+    resource_->transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
-    // 逆転置行列を計算
-    resource_->transformationMatrix_.WorldInverseTranspose =
-        Math::Transpose(Math::Inverse(worldForNormal));
-
-    // 定数バッファへ全フィールドを書き込む
     *resource_->transformationData_ = {
         resource_->transformationMatrix_.WVP,
         resource_->transformationMatrix_.world,
         resource_->transformationMatrix_.WorldInverseTranspose
     };
 
+    // テクスチャ
     auto textureNames = textureManager_->GetTextureNames();
     std::sort(textureNames.begin(), textureNames.end());
     if (!textureNames.empty()) {
-
         resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
-
-        // コンボボックス用に selectedIndex を初期化
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
-        if (it != textureNames.end()) {
-            selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
-        } else {
-            selectedTextureIndex_ = 0;
-        }
-
+        selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
 
+    // ライト/カメラ
     resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
     resource_->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
     resource_->directionalLightData_->intensity = 1.0f;
-
     resource_->cameraData_->worldPosition = camera_->GetTranslate();
-
 }
 
 void TriangleClass::Update(const char* triangleName) {
-
 #if defined(_DEBUG) || defined(DEVELOPMENT)
     std::string name = std::string("Triangle: ") + triangleName;
-
-    //ImGui
-
-    //カメラウィンドウを作り出す
     ImGui::Begin(name.c_str());
-
     ui_->DebugTransform(resource_->transform_);
-
     ui_->DebugMaterialBy3D(resource_->materialData_);
-
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-
     ui_->DebugUvTransform(resource_->uvTransform_);
-
     ui_->DebugDirectionalLight(resource_->directionalLightData_);
-
-    //入力終了
     ImGui::End();
-
-#endif // _DEBUG
+#endif
 
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
 
-    // 法線変換用：平行移動を除いた World を使う
     Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
-    worldForNormal.m[3][0] = 0.0f;
-    worldForNormal.m[3][1] = 0.0f;
-    worldForNormal.m[3][2] = 0.0f;
-    worldForNormal.m[3][3] = 1.0f;
+    worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f; worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+    resource_->transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
-    // 逆転置行列を計算
-    resource_->transformationMatrix_.WorldInverseTranspose =
-        Math::Transpose(Math::Inverse(worldForNormal));
-
-    // 定数バッファへ全フィールドを書き込む
     *resource_->transformationData_ = {
         resource_->transformationMatrix_.WVP,
         resource_->transformationMatrix_.world,
@@ -170,9 +113,12 @@ void TriangleClass::Update(const char* triangleName) {
     };
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
-
     resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
-
     resource_->cameraData_->worldPosition = camera_->GetTranslate();
+}
+
+void TriangleClass::Draw() {
+    // POINTLIST で 1 点入力 → GS で生成
+    drawManager_->DrawTriangle(this);
 }
 

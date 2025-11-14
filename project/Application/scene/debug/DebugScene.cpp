@@ -31,54 +31,59 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     spotLight_->SetIntensity(0.0f);
     engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
-    isActiveObj = false;
-    isActiveSprite = false;
-    isActiveTriangle = false;
-    isActiveSphere = true;
-    isActiveStanfordBunny = false;
-    isActiveUtashTeapot = false;
-    isActiveMultiMesh = false;
-    isActiveMultiMaterial = false;
-    isActiveSuzanne = false;
+    isActiveObj_ = false;
+    isActiveSprite_ = false;
+    isActiveTriangle_ = false;
+    isActivePlane_ = true;
+    isActiveSphere_ = false;
+    isActiveStanfordBunny_ = false;
+    isActiveUtashTeapot_ = false;
+    isActiveMultiMesh_ = false;
+    isActiveMultiMaterial_ = false;
+    isActiveSuzanne_ = false;
     isActiveFence_ = false;
-    isActiveTerrain_ = true;
-    isActiveParticle = false;
+    isActiveTerrain_ = false;
+    isActiveParticle_ = false;
 
-    if (isActiveObj) {
-        obj = std::make_unique <ObjClass>();
-        obj->Initialize(camera_.get(), "sample/plane.gltf");
+    if (isActiveSprite_) {
+        sprite_ = std::make_unique <Sprite>();
+        sprite_->Initialize(camera_.get());
     }
-    if (isActiveSprite) {
-        sprite = std::make_unique <Sprite>();
-        sprite->Initialize(camera_.get());
-    }
-    if (isActiveTriangle) {
+    if (isActiveTriangle_) {
         triangle_ = std::make_unique <TriangleClass>();
         triangle_->Initialize(camera_.get());
     }
-    if (isActiveSphere) {
-        sphere = std::make_unique <SphereClass>();
-        sphere->Initialize(camera_.get());
+    if (isActivePlane_) {
+        plane_ = std::make_unique<PlaneClass>();
+        plane_->Initialize(camera_.get());
     }
-    if (isActiveStanfordBunny) {
-        stanfordBunny = std::make_unique <ObjClass>();
-        stanfordBunny->Initialize(camera_.get(), "sample/bunny.obj");
+    if (isActiveSphere_) {
+        sphere_ = std::make_unique <SphereClass>();
+        sphere_->Initialize(camera_.get());
     }
-    if (isActiveUtashTeapot) {
-        utashTeapot = std::make_unique <ObjClass>();
-        utashTeapot->Initialize(camera_.get(), "sample/teapot.obj");
+    if (isActiveObj_) {
+        obj_ = std::make_unique <ObjClass>();
+        obj_->Initialize(camera_.get(), "sample/plane.gltf");
     }
-    if (isActiveMultiMesh) {
-        multiMesh = std::make_unique <ObjClass>();
-        multiMesh->Initialize(camera_.get(), "sample/multiMesh.obj");
+    if (isActiveStanfordBunny_) {
+        stanfordBunny_ = std::make_unique <ObjClass>();
+        stanfordBunny_->Initialize(camera_.get(), "sample/bunny.obj");
     }
-    if (isActiveMultiMaterial) {
-        multiMaterial = std::make_unique <ObjClass>();
-        multiMaterial->Initialize(camera_.get(), "sample/multiMaterial.obj");
+    if (isActiveUtashTeapot_) {
+        utashTeapot_ = std::make_unique <ObjClass>();
+        utashTeapot_->Initialize(camera_.get(), "sample/teapot.obj");
     }
-    if (isActiveSuzanne) {
-        suzanne = std::make_unique <ObjClass>();
-        suzanne->Initialize(camera_.get(), "sample/suzanne.obj");
+    if (isActiveMultiMesh_) {
+        multiMesh_ = std::make_unique <ObjClass>();
+        multiMesh_->Initialize(camera_.get(), "sample/multiMesh.obj");
+    }
+    if (isActiveMultiMaterial_) {
+        multiMaterial_ = std::make_unique <ObjClass>();
+        multiMaterial_->Initialize(camera_.get(), "sample/multiMaterial.obj");
+    }
+    if (isActiveSuzanne_) {
+        suzanne_ = std::make_unique <ObjClass>();
+        suzanne_->Initialize(camera_.get(), "sample/suzanne.obj");
     }
     if (isActiveFence_) {
         fence_ = std::make_unique <ObjClass>();
@@ -88,9 +93,9 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         terrain_ = std::make_unique <ObjClass>();
         terrain_->Initialize(camera_.get(), "sample/terrain.obj");
     }
-    if (isActiveParticle) {
-        particle = std::make_unique <ParticleClass>();
-        particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
+    if (isActiveParticle_) {
+        particle_ = std::make_unique <ParticleClass>();
+        particle_->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
     }
 }
 
@@ -130,71 +135,87 @@ void DebugScene::Update() {
     ImGui::End();
 
     ImGui::Begin("Activation");
-    ImGui::Checkbox("Obj", &isActiveObj);
-    ImGui::Checkbox("Sprite", &isActiveSprite);
-    ImGui::Checkbox("Sphere", &isActiveSphere);
-    ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot);
-    ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny);
-    ImGui::Checkbox("MultiMesh", &isActiveMultiMesh);
-    ImGui::Checkbox("MultiMaterial", &isActiveMultiMaterial);
-    ImGui::Checkbox("Suzanne", &isActiveSuzanne);
+    ImGui::Checkbox("Sprite", &isActiveSprite_);
+    ImGui::Checkbox("Triangle", &isActiveTriangle_);
+    ImGui::Checkbox("Plane", &isActivePlane_);
+    ImGui::Checkbox("Sphere", &isActiveSphere_);
+    ImGui::Checkbox("Obj", &isActiveObj_);
+    ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot_);
+    ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny_);
+    ImGui::Checkbox("MultiMesh", &isActiveMultiMesh_);
+    ImGui::Checkbox("MultiMaterial", &isActiveMultiMaterial_);
+    ImGui::Checkbox("Suzanne", &isActiveSuzanne_);
     ImGui::Checkbox("Fence", &isActiveFence_);
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
-    ImGui::Checkbox("Particle", &isActiveParticle);
+    ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::End();
 
 #endif // _DEBUG
 
     // 3D
 
-    if (isActiveObj) {
-        if (!obj) {
-            obj = std::make_unique<ObjClass>();
-            obj->Initialize(camera_.get(),"sample/plane.gltf");
+    if (isActiveTriangle_) {
+        if (!triangle_) {
+            triangle_ = std::make_unique<TriangleClass>();
+            triangle_->Initialize(camera_.get());
         }
-        obj->Update("Plane");
+        triangle_->Update();
     }
-    if (isActiveSphere) {
-        if (!sphere) {
-            sphere = std::make_unique<SphereClass>();
-            sphere->Initialize(camera_.get());
+    if (isActivePlane_) {
+        if (!plane_) {
+            plane_ = std::make_unique<PlaneClass>();
+            plane_->Initialize(camera_.get());
         }
-        sphere->Update();
+        plane_->Update();
     }
-    if (isActiveUtashTeapot) {
-        if (!utashTeapot) {
-            utashTeapot = std::make_unique<ObjClass>();
-            utashTeapot->Initialize(camera_.get(),"sample/teapot.obj");
+    if (isActiveSphere_) {
+        if (!sphere_) {
+            sphere_ = std::make_unique<SphereClass>();
+            sphere_->Initialize(camera_.get());
         }
-        utashTeapot->Update("Utash Teapot");
+        sphere_->Update();
     }
-    if (isActiveStanfordBunny) {
-        if (!stanfordBunny) {
-            stanfordBunny = std::make_unique<ObjClass>();
-            stanfordBunny->Initialize(camera_.get(), "sample/bunny.obj");
+    if (isActiveObj_) {
+        if (!obj_) {
+            obj_ = std::make_unique<ObjClass>();
+            obj_->Initialize(camera_.get(), "sample/plane.gltf");
         }
-        stanfordBunny->Update("Stanford Bunny");
+        obj_->Update("Plane");
     }
-    if (isActiveMultiMesh) {
-        if (!multiMesh) {
-            multiMesh = std::make_unique<ObjClass>();
-            multiMesh->Initialize(camera_.get(), "sample/multiMesh.obj");
+    if (isActiveUtashTeapot_) {
+        if (!utashTeapot_) {
+            utashTeapot_ = std::make_unique<ObjClass>();
+            utashTeapot_->Initialize(camera_.get(), "sample/teapot.obj");
         }
-        multiMesh->Update("MultiMesh");
+        utashTeapot_->Update("Utash Teapot");
     }
-    if (isActiveMultiMaterial) {
-        if (!multiMaterial) {
-            multiMaterial = std::make_unique<ObjClass>();
-            multiMaterial->Initialize(camera_.get(), "sample/multiMaterial.obj");
+    if (isActiveStanfordBunny_) {
+        if (!stanfordBunny_) {
+            stanfordBunny_ = std::make_unique<ObjClass>();
+            stanfordBunny_->Initialize(camera_.get(), "sample/bunny.obj");
         }
-        multiMaterial->Update("MultiMaterial");
+        stanfordBunny_->Update("Stanford Bunny");
     }
-    if (isActiveSuzanne) {
-        if (!suzanne) {
-            suzanne = std::make_unique<ObjClass>();
-            suzanne->Initialize(camera_.get(), "sample/suzanne.obj");
+    if (isActiveMultiMesh_) {
+        if (!multiMesh_) {
+            multiMesh_ = std::make_unique<ObjClass>();
+            multiMesh_->Initialize(camera_.get(), "sample/multiMesh.obj");
         }
-        suzanne->Update("Suzanne");
+        multiMesh_->Update("MultiMesh");
+    }
+    if (isActiveMultiMaterial_) {
+        if (!multiMaterial_) {
+            multiMaterial_ = std::make_unique<ObjClass>();
+            multiMaterial_->Initialize(camera_.get(), "sample/multiMaterial.obj");
+        }
+        multiMaterial_->Update("MultiMaterial");
+    }
+    if (isActiveSuzanne_) {
+        if (!suzanne_) {
+            suzanne_ = std::make_unique<ObjClass>();
+            suzanne_->Initialize(camera_.get(), "sample/suzanne.obj");
+        }
+        suzanne_->Update("Suzanne");
     }
     if (isActiveFence_) {
         if (!fence_) {
@@ -210,22 +231,22 @@ void DebugScene::Update() {
         }
         terrain_->Update("Terrain");
     }
-    if (isActiveParticle) {
-        if (!particle) {
-            particle = std::make_unique <ParticleClass>();
-            particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+    if (isActiveParticle_) {
+        if (!particle_) {
+            particle_ = std::make_unique <ParticleClass>();
+            particle_->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
         }
-        particle->Update();
+        particle_->Update();
     }
 
     // 2D
 
-    if (isActiveSprite) {
-        if (!sprite) {
-            sprite = std::make_unique<Sprite>();
-            sprite->Initialize(camera_.get());
+    if (isActiveSprite_) {
+        if (!sprite_) {
+            sprite_ = std::make_unique<Sprite>();
+            sprite_->Initialize(camera_.get());
         }
-        sprite->Update();
+        sprite_->Update();
     }
 }
 
@@ -234,31 +255,37 @@ void DebugScene::Draw() {
     // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->ApplyByGeometryShaderPSO();
+
+    if (isActiveTriangle_) {
+        triangle_->Draw();
+    }
+
     engine_->ApplyPSO();
 
-
-
-    if (isActiveObj) {
-        obj->Draw();
+    if (isActivePlane_) {
+        plane_->Draw();
     }
-    if (isActiveSphere) {
-        sphere->Draw();
+    if (isActiveSphere_) {
+        sphere_->Draw();
     }
-    if (isActiveUtashTeapot) {
-        utashTeapot->Draw();
-        
+    if (isActiveObj_) {
+        obj_->Draw();
     }
-    if (isActiveStanfordBunny) {
-        stanfordBunny->Draw();
+    if (isActiveUtashTeapot_) {
+        utashTeapot_->Draw();
     }
-    if (isActiveMultiMesh) {
-        multiMesh->Draw();
+    if (isActiveStanfordBunny_) {
+        stanfordBunny_->Draw();
     }
-    if (isActiveMultiMaterial) {
-        multiMaterial->Draw();
+    if (isActiveMultiMesh_) {
+        multiMesh_->Draw();
     }
-    if (isActiveSuzanne) {
-        suzanne->Draw();
+    if (isActiveMultiMaterial_) {
+        multiMaterial_->Draw();
+    }
+    if (isActiveSuzanne_) {
+        suzanne_->Draw();
     }
     if (isActiveFence_) {
         fence_->Draw();
@@ -271,8 +298,8 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();
 
-    if (isActiveParticle) {
-        engine_->GetDrawManager()->DrawParticle(particle.get());
+    if (isActiveParticle_) {
+        engine_->GetDrawManager()->DrawParticle(particle_.get());
     }
 
     // 2D
@@ -281,7 +308,7 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
 
-    if (isActiveSprite) {
-        sprite->Draw();
+    if (isActiveSprite_) {
+        sprite_->Draw();
     }
 }

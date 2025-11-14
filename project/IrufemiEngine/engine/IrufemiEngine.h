@@ -18,10 +18,11 @@
 #include "directX/DirectXCommon.h"
 #include "scene/SceneManager.h"
 #include "WinApp/WinApp.h"
-#include "DescriptorAllocator.h" // 追加
-#include <functional>            // 追加
-#include <string>                // 追加
-#include <array>                 // 追加
+#include "DescriptorAllocator.h"
+#include <functional>
+#include <string>
+#include <array>
+#include "math/Vector4.h"
 
 class SceneManager;
 class DebugUI;
@@ -30,25 +31,35 @@ class IrufemiEngine {
 public: // メンバ関数
     // コンストラクタ
     IrufemiEngine() = default;
-
     //デストラクタ
     ~IrufemiEngine();
 
     // ループ丸ごと実行
     void Execute();
 
-    /// <summary>
+   /// <summary>
     ///  初期化
     /// </summary>
     void Initialize(const std::wstring& title, const int32_t& clientWidth = 1280, const int32_t& clientHeight = 720);
+   
+    /// 追加: クリアカラーを引数で指定できる Initialize（float RGBA）
+   void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
+                    float r, float g, float b, float a = 1.0f);
+    
+    /// 追加: クリアカラーを引数で指定できる Initialize（std::array）
+    void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
+                    const std::array<float, 4>& clearColor);
+    // 追加: Vector4 版
+    void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
+                    const Vector4& clearColor);
 
-    // --- Application からの注入用コールバック型とセッター ---
+     // --- Application からの注入用コールバック型とセッター ---
     using SceneRegistrar = std::function<void(SceneManager&)>;
-
+   
     void SetSceneRegistrar(SceneRegistrar registrar) { sceneRegistrar_ = std::move(registrar); }
     void SetInitialSceneName(std::string name) { initialSceneName_ = std::move(name); }
 
-private: // メンバ関数(内部処理)
+ private: // メンバ関数(内部処理)
 
     /// <summary>
     /// 解放
@@ -96,73 +107,80 @@ public: // ゲッター
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     int32_t& GetClientWidth() { return dxCommon_->GetClientWidth(); }
     int32_t& GetClientHeight() { return dxCommon_->GetClientHeight(); }
-    D3D12_VIEWPORT& GetViewport() { return dxCommon_->GetViewport(); };
-    D3D12_RECT& GetScissorRect() { return dxCommon_->GetScissorRect(); };
+    D3D12_VIEWPORT& GetViewport() { return dxCommon_->GetViewport(); }
+    D3D12_RECT& GetScissorRect() { return dxCommon_->GetScissorRect(); }
     PSOManager* GetPSOManager() { return dxCommon_->GetPSOManager(); }
 
     // オプション: 取得用
     DescriptorAllocator* GetSrvAllocator() const { return srvAllocator_.get(); }
-
+    
     // SceneManager参照
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
 
 public: // セッター
     void AddFenceValue(uint32_t index) { dxCommon_->GetFenceValue() += index; }
-
+    
     // セッター（引数なし描画のためのプリセット切替）
     void SetBlend(BlendMode m) { currentBlend_ = m; }
     void SetDepthWrite(PSOManager::DepthWrite w) { currentDepth_ = w; }
+
+    // 追加: クリアカラーのセッター（いつでも変更可能）
+    void SetClearColor(float r, float g, float b, float a = 1.0f) { clearColor_ = { r, g, b, a }; }
+    void SetClearColor(const std::array<float, 4>& c) { clearColor_ = c; }
+    // 追加: Vector4 版
+    void SetClearColor(const Vector4& c) { clearColor_ = { c.x, c.y, c.z, c.w }; }
 
     // 状態からPSOを適用してBind（引数なしで使うやつ）
     void ApplyPSO();
     void ApplyParticlePSO();
     void ApplySpritePSO();
     void ApplyRegionPSO();
+    void ApplyByGeometryShaderPSO();
 
 public:
     // 状態（現在のブレンドと深度書き込み）
-    BlendMode currentBlend_ = BlendMode::kBlendModeNormal;               // 既定：通常α
-    PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable; // 既定：深度Write無効（透過系）
+    BlendMode currentBlend_ = BlendMode::kBlendModeNormal;
+    PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable;
 
 private: // メンバ変数
 
     // --- Debug & Logging ---
 
     // リソース解放リークチェック
-    D3DResourceLeakChecker leakCheck_;
-
+D3DResourceLeakChecker leakCheck_;
+    
     // ログ
     std::unique_ptr<Log> log_ = nullptr;
-
+   
     // WinApp
     std::unique_ptr<WinApp> winApp_ = nullptr;
-
+    
     // DirectX基盤
     std::unique_ptr<DirectXCommon> dxCommon_ = nullptr;
-
+    
     // --- Manager ---
 
     // InputManager
     std::unique_ptr <InputManager> inputManager_ = nullptr;
-
+    
     // DrawManager
     std::unique_ptr <DrawManager> drawManager = nullptr;
-
+    
     // DebugUI
     std::unique_ptr <DebugUI> ui = nullptr;
-
+    
     // TextureManager
     std::unique_ptr <TextureManager> textureManager = nullptr;
-
+    
     // AudioManager
     std::unique_ptr<AudioManager> audioManager_ = nullptr;
-
+    
     // SceneManager
     std::unique_ptr<SceneManager> sceneManager_ = nullptr;
-
+    
     // DescriptorAllocator
     std::unique_ptr<DescriptorAllocator> srvAllocator_;
-
+    
     // ModelManager
     std::unique_ptr<ModelManager> modelManager_ = nullptr;
 
@@ -171,7 +189,7 @@ private: // メンバ変数
 
     //バックバッファのインデックス
     UINT backBufferIndex_{};
-
+    
     // Application から注入
     SceneRegistrar sceneRegistrar_{};
     std::string initialSceneName_{};
