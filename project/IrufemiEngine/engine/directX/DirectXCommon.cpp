@@ -567,10 +567,10 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         rootSignature_.Get(),
         inputLayoutDesc,
         DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-        DXGI_FORMAT_D24_UNORM_S8_UINT,   
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, 
+        DXGI_FORMAT_D24_UNORM_S8_UINT,
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
         objectShaders,
-        particleShaders,   
+        particleShaders,
         spriteShaders,
         blocksShaders,
         byGeometryShaders
@@ -673,12 +673,12 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetGPUDescriptorHandle(const Microsof
 }
 
 
-D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t index){
+D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t index) {
 
     return GetCPUDescriptorHandle(srvDescriptorHeap_, descriptorSizeSRV, index);
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVGPUDescriptorHandle(uint32_t index){
+D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVGPUDescriptorHandle(uint32_t index) {
 
     return GetGPUDescriptorHandle(srvDescriptorHeap_, descriptorSizeSRV, index);
 }
@@ -863,14 +863,14 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
     if (FAILED(hr)) {
         _com_error err(hr);
         std::wstring msg = L"[LoadTexture] WIC load failed (" + std::to_wstring(hr) +
-                           L"): " + filePathW + L" - " + err.ErrorMessage() + L"\n";
+            L"): " + filePathW + L" - " + err.ErrorMessage() + L"\n";
         OutputDebugStringW(msg.c_str());
         assert(false && "LoadFromWICFile failed");
     }
 
     ScratchImage mipImages{};
     hr = GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
-                         TEX_FILTER_SRGB, 0, mipImages);
+        TEX_FILTER_SRGB, 0, mipImages);
     if (FAILED(hr)) {
         _com_error err(hr);
         std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(hr) + L")\n";
@@ -882,13 +882,13 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
 }
 
 // FPS固定初期化
-void DirectXCommon::InitializeFixFPS(){
+void DirectXCommon::InitializeFixFPS() {
     // 現在時間を記録する
     reference_ = std::chrono::steady_clock::now();
 }
 
 // FPS固定更新
-void DirectXCommon::UpdateFixFPS(){
+void DirectXCommon::UpdateFixFPS() {
 
     // 1/60秒ぴったりの時間
     const std::chrono::microseconds kMinTime(uint64_t(1000000.0f / 60.0f));
