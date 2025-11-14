@@ -149,7 +149,6 @@ ID3D12PipelineState* PSOManager::GetRegion(BlendMode b, DepthWrite d)
 
 ID3D12PipelineState* PSOManager::GetByGeometryShader(BlendMode blend, DepthWrite depth)
 {
-    // byGeometryShaderShaders_ の VS/PS/GS がすべて揃っている場合のみ使用。なければ object にフォールバック
     const bool hasVS = (byGeometryShaderShaders_.vsBlob && byGeometryShaderShaders_.vsBlob->GetBufferPointer());
     const bool hasPS = (byGeometryShaderShaders_.psBlob && byGeometryShaderShaders_.psBlob->GetBufferPointer());
     const bool hasGS = (byGeometryShaderShaders_.gsBlob && byGeometryShaderShaders_.gsBlob->GetBufferPointer());
@@ -160,7 +159,9 @@ ID3D12PipelineState* PSOManager::GetByGeometryShader(BlendMode blend, DepthWrite
 
     D3D12_BLEND_DESC bd = MakeBlend(blend);
     D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
-    auto pso = CreatePSO(set, bd, dd);
+
+    // ByGeometryShader は POINT トポロジを使用（他は既存の TRIANGLE のまま）
+    auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
     if (!pso) { return nullptr; }
     cache_[key] = pso;
     return pso.Get();
@@ -196,6 +197,42 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSO(
     desc.NumRenderTargets = 1;
     desc.RTVFormats[0] = rtvFormat_;
     desc.PrimitiveTopologyType = topology_;
+    desc.SampleDesc.Count = 1;
+    desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr) && "CreateGraphicsPipelineState failed");
+    if (FAILED(hr)) { return nullptr; }
+    return pso;
+}
+
+Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSOWithTopology(
+    const ShaderSet& shaders,
+    const D3D12_BLEND_DESC& blendDesc,
+    const D3D12_DEPTH_STENCIL_DESC& depthDesc,
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) const
+{
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.InputLayout = inputLayout_;
+    desc.VS = { shaders.vsBlob->GetBufferPointer(), shaders.vsBlob->GetBufferSize() };
+    desc.PS = { shaders.psBlob->GetBufferPointer(), shaders.psBlob->GetBufferSize() };
+    if (shaders.gsBlob) {
+        desc.GS = { shaders.gsBlob->GetBufferPointer(), shaders.gsBlob->GetBufferSize() };
+    }
+    desc.BlendState = blendDesc;
+
+    D3D12_RASTERIZER_DESC rs{};
+    rs.CullMode = D3D12_CULL_MODE_BACK;
+    rs.FillMode = D3D12_FILL_MODE_SOLID;
+    desc.RasterizerState = rs;
+
+    desc.DepthStencilState = depthDesc;
+    desc.DSVFormat = dsvFormat_;
+    desc.NumRenderTargets = 1;
+    desc.RTVFormats[0] = rtvFormat_;
+    desc.PrimitiveTopologyType = topology; // 指定トポロジ
     desc.SampleDesc.Count = 1;
     desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 

@@ -540,5 +540,8 @@
     <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
       <Filter>Engine\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

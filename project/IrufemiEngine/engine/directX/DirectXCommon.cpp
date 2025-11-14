@@ -347,7 +347,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///DescriptorTable
 
-    D3D12_ROOT_PARAMETER rootParameters[8] = {};
+    D3D12_ROOT_PARAMETER rootParameters[9] = {};
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
@@ -404,6 +404,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PS で使う
     rootParameters[7].Descriptor.ShaderRegister = 4; // b4
+
+    // GSパイプライン用のTransformationMatrix (VS/GS, b6)
+    rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // VSとGSで共有
+    rootParameters[8].Descriptor.ShaderRegister = 6; // レジスタ番号6を使用
 
     /*テクスチャを貼ろう*/
 
@@ -509,6 +514,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr <IDxcBlob> regionVSBlob = CompileShader(L"resources/shaders/Region.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(regionVSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr <IDxcBlob> byGeometryShaderVSBlob = CompileShader(L"resources/shaders/ByGeometryShader.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(byGeometryShaderVSBlob != nullptr);
+
     Microsoft::WRL::ComPtr <IDxcBlob> byGeometryShaderPSBlob = CompileShader(L"resources/shaders/ByGeometryShader.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(byGeometryShaderPSBlob != nullptr);
 
@@ -548,7 +556,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     };
 
     PSOManager::ShaderSet byGeometryShaders{
-        vertexShaderBlob,
+        byGeometryShaderVSBlob,
         byGeometryShaderPSBlob,
         byGeometryShaderGSBlob
     };
@@ -580,6 +588,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (spriteVSBlob) { particleVSBlob.Reset(); }
     if (spritePSBlob) { particlePSBlob.Reset(); }
     if (regionVSBlob) { regionVSBlob.Reset(); }
+    if (byGeometryShaderVSBlob) { byGeometryShaderVSBlob.Reset(); }
+    if (byGeometryShaderPSBlob) { byGeometryShaderVSBlob.Reset(); }
+    if (byGeometryShaderGSBlob) { byGeometryShaderVSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};

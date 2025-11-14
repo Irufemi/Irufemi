@@ -257,10 +257,12 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyByGeometryShaderPSO();
 
-
     if (isActiveTriangle_) {
         triangle_->Draw();
     }
+
+    engine_->ApplyPSO();
+
     if (isActivePlane_) {
         plane_->Draw();
     }

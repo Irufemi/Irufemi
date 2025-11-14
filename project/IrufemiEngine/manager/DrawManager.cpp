@@ -232,41 +232,43 @@ void DrawManager::EnsureSpotLightResource() {
 }
 
 void DrawManager::DrawTriangle(
-    D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
-    ID3D12Resource* materialResource,
-    ID3D12Resource* wvpResource,
-    ID3D12Resource* directionalLightResource,
-    D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU
+    TriangleClass * triangle
 ) {
 
     /*三角形を表示しよう*/
     //RootSignatureを設定。PSOに設定しているけど別途指定が必要
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
-    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &triangle->GetD3D12Resource()->vertexBufferView_); // VBVを設定
     //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
-    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
     /*三角形の色を変えよう*/
 
     ///CBVを設定する
 
     //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, triangle->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
 
     /*三角形を動かそう*/
 
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, triangle->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
+    // ↓ ここから追加
+    // GSパイプライン用のwvp CBufferをルートパラメータ[8]に設定
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(8, triangle->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
+    // ↑ ここまで追加
 
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, triangle->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, triangle->GetD3D12Resource()->cameraResource_->GetGPUVirtualAddress());
 
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, triangle->GetD3D12Resource()->textureHandle_);
 
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
@@ -274,7 +276,7 @@ void DrawManager::DrawTriangle(
     /*三角形を表示しよう*/
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    dxCommon_->GetCommandList()->DrawInstanced(3, 1, 0, 0);
+    dxCommon_->GetCommandList()->DrawInstanced(static_cast<UINT>(triangle->GetD3D12Resource()->vertexDataList_.size()), 1, 0, 0);
 
 }
 

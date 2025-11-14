@@ -9,6 +9,7 @@
 // 前方宣言
 class DirectXCommon;
 class Sprite;
+class TriangleClass;
 class SphereClass;
 class ObjClass;
 class ParticleClass;
@@ -59,11 +60,7 @@ public: //メンバ関数
     void PostDraw();
 
     void DrawTriangle(
-        D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
-        ID3D12Resource* materialResource,
-        ID3D12Resource* wvpResource,
-        ID3D12Resource* directionalLightResource,
-        D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU
+        TriangleClass* triangle
     );
 
     void DrawSprite(Sprite* sprite);

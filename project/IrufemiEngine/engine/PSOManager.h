@@ -90,6 +90,13 @@ private:
         const D3D12_BLEND_DESC& blendDesc,
         const D3D12_DEPTH_STENCIL_DESC& depthDesc) const;
 
+    // 追加：トポロジ指定版（ByGeometryShader 専用で使用）
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSOWithTopology(
+        const ShaderSet& shaders,
+        const D3D12_BLEND_DESC& blendDesc,
+        const D3D12_DEPTH_STENCIL_DESC& depthDesc,
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) const;
+
     static D3D12_BLEND_DESC MakeBlend(BlendMode m);
     static D3D12_DEPTH_STENCIL_DESC MakeDepth(DepthWrite w);
 

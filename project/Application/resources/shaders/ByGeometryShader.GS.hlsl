@@ -3,23 +3,22 @@
 
 /*ジオメトリシェーダの導入*/
 
-[maxvertexcount(3)]
-void main(
-	triangle VertexShaderOutput input[3],
-	inout TriangleStream<GeometryShaderOutput> output
-)
-{
-    [unroll]
-	for (uint i = 0; i < 3; i++)
-	{
-		GeometryShaderOutput element;
-		element.svpos = input[i].position;
-		element.normal = input[i].normal;
-		element.uv = input[i].texcoord;
-		element.worldPosition = input[i].worldPosition;
-		output.Append(element);
-	}
-}
+//[maxvertexcount(3)]
+//void main(
+//	triangle VertexShaderOutput input[3],
+//	inout TriangleStream<GeometryShaderOutput> output
+//)
+//{
+//	for (uint i = 0; i < 3; i++)
+//	{
+//		GeometryShaderOutput element;
+//		element.svpos = input[i].position;
+//		element.normal = input[i].normal;
+//		element.uv = input[i].texcoord;
+//		element.worldPosition = input[i].worldPosition;
+//		output.Append(element);
+//	}
+//}
 
 /*ジオメトリの加工*/
 
@@ -209,3 +208,58 @@ void main(
 //		output.Append(element);
 //	}
 //}
+
+/* 点の出力（検証用）*/
+//[maxvertexcount(1)]
+//void main(
+//    point VertexShaderOutput input[1],
+//    inout PointStream<GeometryShaderOutput> output
+//)
+//{
+//    GeometryShaderOutput o;
+//    o.svpos         = input[0].position;
+//    o.normal        = input[0].normal;
+//    o.uv            = input[0].texcoord;
+//    o.worldPosition = input[0].worldPosition;
+//    output.Append(o);
+//}
+
+ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b6);
+
+/* 点から三角形を出力（ワールド空間版）*/
+[maxvertexcount(3)]
+void main(
+    point VertexShaderOutput input[1],
+    inout TriangleStream<GeometryShaderOutput> output
+)
+{
+	// ワールド空間でのオフセットを定義
+	const float3 offsetA = float3(0.0f, 0.5f, 0.0f); // 上
+	const float3 offsetB = float3(-0.5f, -0.5f, 0.0f); // 左下
+	const float3 offsetC = float3(0.5f, -0.5f, 0.0f); // 右下
+
+    // VSから渡されたワールド座標を基準点とする
+	float3 basePos = input[0].position.xyz;
+
+	GeometryShaderOutput v;
+	v.normal = input[0].normal;
+	v.uv = input[0].texcoord;
+
+    // 1頂点目 (CW: A)
+	v.worldPosition = basePos + offsetA;
+	v.svpos = mul(float4(v.worldPosition, 1.0f), gTransformationMatrix.WVP);
+	v.uv = float2(0.5f, 0.0f); // UV座標を設定
+	output.Append(v);
+
+    // 2頂点目 (CW: C)
+	v.worldPosition = basePos + offsetC;
+	v.svpos = mul(float4(v.worldPosition, 1.0f), gTransformationMatrix.WVP);
+	v.uv = float2(1.0f, 1.0f); // UV座標を設定
+	output.Append(v);
+
+    // 3頂点目 (CW: B)
+	v.worldPosition = basePos + offsetB;
+	v.svpos = mul(float4(v.worldPosition, 1.0f), gTransformationMatrix.WVP);
+	v.uv = float2(0.0f, 1.0f); // UV座標を設定
+	output.Append(v);
+}
