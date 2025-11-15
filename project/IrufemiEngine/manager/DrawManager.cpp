@@ -19,6 +19,7 @@
 
 #include "source/D3D12ResourceUtil.h"
 #include "engine/directX/DirectXCommon.h"
+#include "manager/ModelManager.h" // GpuMeshのため
 
 
 
@@ -432,30 +433,33 @@ void DrawManager::DrawParticle(ParticleClass* resource) {
 
 void DrawManager::DrawRegion(Region* region) {
     if (!region) { return; }
-    if (region->GetVertexCount() == 0 || region->GetInstanceCount() == 0) { return; }
+    const GpuMesh* gpuMesh = region->GetGpuMesh();
+    if (!gpuMesh || gpuMesh->vertexCount == 0 || region->GetInstanceCount() == 0) { return; }
 
-    // RootSignature
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
 
-    // IA
+    // IA設定 (共有リソースから)
     dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &region->GetVertexBufferView());
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &gpuMesh->vertexBufferView);
+    if (gpuMesh->indexCount > 0) {
+        dxCommon_->GetCommandList()->IASetIndexBuffer(&gpuMesh->indexBufferView);
+    }
 
-    // CBV (PS)
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());          // PS b0
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, region->GetDirectionalLightResource()->GetGPUVirtualAddress());  // PS b1
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, region->GetCameraResource()->GetGPUVirtualAddress());            // PS b2
-
-    // SRV (PS t0 / VS t0)
-    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());         // PS t0
-    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU()); // VS t0
-
-    // オプション：ポイント/スポットライト（他描画と統一）
+    // CBV/SRV設定 (インスタンスリソースから)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, region->GetDirectionalLightResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, region->GetCameraResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU());
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
-    // Draw
-    dxCommon_->GetCommandList()->DrawInstanced(region->GetVertexCount(), region->GetInstanceCount(), 0, 0);
+    // 描画
+    if (gpuMesh->indexCount > 0) {
+        dxCommon_->GetCommandList()->DrawIndexedInstanced(gpuMesh->indexCount, region->GetInstanceCount(), 0, 0, 0);
+    } else {
+        dxCommon_->GetCommandList()->DrawInstanced(gpuMesh->vertexCount, region->GetInstanceCount(), 0, 0);
+    }
 }
 
 void DrawManager::DrawSphereRegion(SphereRegion* region) {
@@ -653,4 +657,33 @@ void DrawManager::DrawSpriteRegion(SpriteRegion* region) {
 
     // Draw
     dxCommon_->GetCommandList()->DrawIndexedInstanced(idxCount, instCount, 0, 0, 0);
+}
+
+void DrawManager::DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource) {
+    if (!gpuMesh || !instanceResource) return;
+
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    
+    // IA設定 (共有リソースから)
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &gpuMesh->vertexBufferView);
+    if (gpuMesh->indexCount > 0) {
+        dxCommon_->GetCommandList()->IASetIndexBuffer(&gpuMesh->indexBufferView);
+    }
+
+    // CBV/SRV設定 (インスタンスリソースから)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, instanceResource->materialResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, instanceResource->transformationResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, instanceResource->directionalLightResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, instanceResource->cameraResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, instanceResource->textureHandle_);
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
+
+    // 描画
+    if (gpuMesh->indexCount > 0) {
+        dxCommon_->GetCommandList()->DrawIndexedInstanced(gpuMesh->indexCount, 1, 0, 0, 0);
+    } else {
+        dxCommon_->GetCommandList()->DrawInstanced(gpuMesh->vertexCount, 1, 0, 0);
+    }
 }

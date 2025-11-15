@@ -103,10 +103,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     // モデル管理
     modelManager_ = std::make_unique<ModelManager>();
-    modelManager_->Initialize();
-    // 必要なら事前ロード（任意）: objModelManager_->PreloadAllUnder("");
+    modelManager_->Initialize(dxCommon_.get()); // dxCommon を渡す
     ObjClass::SetModelManager(modelManager_.get());
-    Region::SetModelManager(modelManager_.get());
+    Region::SetModelManager(modelManager_.get()); // Regionにも設定
 
     // 既存SRVの走査で free-list 再構築
     {

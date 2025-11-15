@@ -23,6 +23,7 @@ class PointLightClass;
 struct SpotLight;
 class SpotLightClass;
 class SpriteRegion; // 追加
+struct GpuMesh; // 追加
 
 //描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -88,4 +89,5 @@ public: //メンバ関数
     void SetSpotLight(SpotLight& info);
 
     void DrawSpriteRegion(SpriteRegion* region); // 追加
+    void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource); // 追加
 };
