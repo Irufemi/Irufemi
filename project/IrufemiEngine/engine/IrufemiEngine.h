@@ -85,7 +85,7 @@ public: // ゲッター
 
     ID3D12GraphicsCommandList* GetCommandList() { return dxCommon_->GetCommandList(); }
     ID3D12Device* GetDevice() { return dxCommon_->GetDevice(); }
-    HWND& GetHwnd() { return dxCommon_->GetHwnd(); }
+    HWND GetHwnd() { return dxCommon_->GetHwnd(); }
     DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return dxCommon_->GetSwapChainDesc(); }
     D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc() { return dxCommon_->GetRtvDesc(); }
     ID3D12DescriptorHeap* GetSrvDescriptorHeap() { return dxCommon_->GetSrvDescriptorHeap(); }

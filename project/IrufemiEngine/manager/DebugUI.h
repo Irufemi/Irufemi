@@ -41,7 +41,7 @@ private: // メンバ変数
 public: // メンバ関数
 
     // 初期化
-    void Initialize(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const Microsoft::WRL::ComPtr<ID3D12Device>& device,HWND &hwnd, DXGI_SWAP_CHAIN_DESC1 &swapChainDesc, D3D12_RENDER_TARGET_VIEW_DESC &rtvDesc, ID3D12DescriptorHeap* srvDescriptorHeap);
+    void Initialize(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const Microsoft::WRL::ComPtr<ID3D12Device>& device,HWND hwnd, DXGI_SWAP_CHAIN_DESC1 &swapChainDesc, D3D12_RENDER_TARGET_VIEW_DESC &rtvDesc, ID3D12DescriptorHeap* srvDescriptorHeap);
 
     // TextureManagerをセット
     void SetTextureManager(TextureManager* textureManager) { this->textureManager_ = textureManager; }

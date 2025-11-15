@@ -241,6 +241,9 @@
     <ClCompile Include="3D\PlaneClass.cpp">
       <Filter>3D</Filter>
     </ClCompile>
+    <ClCompile Include="engine\Input\Mouse.cpp">
+      <Filter>Engine\Input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\AudioManager.h">
@@ -491,6 +494,9 @@
     </ClInclude>
     <ClInclude Include="3D\PlaneClass.h">
       <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\Input\Mouse.h">
+      <Filter>Engine\Input</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

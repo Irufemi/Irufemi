@@ -186,6 +186,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="audio\Se.cpp" />
     <ClCompile Include="manager\ModelManager.cpp" />
     <ClCompile Include="3D\PlaneClass.cpp" />
+    <ClCompile Include="engine\Input\Mouse.cpp" />
     <ClCompile Include="source\D3D12ResourceUtil.cpp" />
     <ClCompile Include="engine\directX\DirectXCommon.cpp" />
     <ClCompile Include="engine\IrufemiEngine.cpp" />
@@ -293,6 +294,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Node.h" />
     <ClInclude Include="manager\ModelManager.h" />
     <ClInclude Include="3D\PlaneClass.h" />
+    <ClInclude Include="engine\Input\Mouse.h" />
     <ClInclude Include="scene\IScene.h" />
     <ClInclude Include="scene\SceneManager.h" />
     <ClInclude Include="audio\Se.h" />

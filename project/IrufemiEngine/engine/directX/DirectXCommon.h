@@ -64,7 +64,7 @@ public: // ゲッター
     D3D12_VIEWPORT& GetViewport() { return this->viewport_; };
     D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc() { return this->rtvDesc_; }
     D3D12_RECT& GetScissorRect() { return this->scissorRect_; };
-    HWND& GetHwnd() { return this->hwnd_; }
+    HWND GetHwnd() { return this->hwnd_; }
     DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return this->swapChainDesc_; }
     ID3D12RootSignature* GetRootSignature() { return this->rootSignature_.Get(); }
     uint64_t& GetFenceValue() { return this->fenceValue_; }

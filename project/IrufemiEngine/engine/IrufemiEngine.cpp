@@ -138,7 +138,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     // 入力
     inputManager_ = std::make_unique<InputManager>();
-    inputManager_->Initialize();
+    inputManager_->Initialize(winApp_->GetHwnd());
 
     // UI
     ui = std::make_unique <DebugUI>();
