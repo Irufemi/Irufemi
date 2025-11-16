@@ -121,9 +121,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </Link>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
-copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
-
-xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
+copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
@@ -173,7 +171,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\Region.cpp" />
     <ClCompile Include="3D\CylinderClass.cpp" />
     <ClCompile Include="2D\Circle2D.cpp" />
-    <ClCompile Include="engine\DescriptorAllocator.cpp" />
+    <ClCompile Include="engine\directX\DescriptorPool.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="engine\directX\DescriptorAllocator.cpp" />
     <ClCompile Include="function\ExportDump.cpp" />
     <ClCompile Include="3D\PointLightClass.cpp" />
     <ClCompile Include="main.cpp">
@@ -239,7 +242,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="3D\Region.h" />
     <ClInclude Include="3D\CylinderClass.h" />
     <ClInclude Include="2D\Circle2D.h" />
-    <ClInclude Include="engine\DescriptorAllocator.h" />
+    <ClInclude Include="engine\directX\DescriptorPool.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="engine\directX\DescriptorAllocator.h" />
     <ClInclude Include="engine\directX\DirectXCommon.h" />
     <ClInclude Include="engine\D3DResourceLeakChecker.h" />
     <ClInclude Include="engine\IrufemiEngine.h" />

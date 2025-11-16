@@ -477,7 +477,7 @@ namespace Math {
     }
 
     //正射行列の作成
-    Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip) {
+    Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float zNear, float zFar) {
         Matrix4x4 projectionMatrix{};
         projectionMatrix.m[0][0] = 2.0f / (right - left);
         projectionMatrix.m[0][1] = 0.0f;
@@ -489,11 +489,11 @@ namespace Math {
         projectionMatrix.m[1][3] = 0.0f;
         projectionMatrix.m[2][0] = 0.0f;
         projectionMatrix.m[2][1] = 0.0f;
-        projectionMatrix.m[2][2] = 1.0f / (farClip - nearClip);
+        projectionMatrix.m[2][2] = 1.0f / (zFar - zNear);
         projectionMatrix.m[2][3] = 0.0f;
         projectionMatrix.m[3][0] = (left + right) / (left - right);
         projectionMatrix.m[3][1] = (top + bottom) / (bottom - top);
-        projectionMatrix.m[3][2] = nearClip / (nearClip - farClip);
+        projectionMatrix.m[3][2] = zNear / (zNear - zFar);
         projectionMatrix.m[3][3] = 1.0f;
         return projectionMatrix;
     }

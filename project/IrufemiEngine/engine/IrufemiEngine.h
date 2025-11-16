@@ -18,7 +18,7 @@
 #include "directX/DirectXCommon.h"
 #include "scene/SceneManager.h"
 #include "WinApp/WinApp.h"
-#include "DescriptorAllocator.h"
+#include "directX/DescriptorAllocator.h"
 #include <functional>
 #include <string>
 #include <array>

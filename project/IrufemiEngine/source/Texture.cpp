@@ -3,7 +3,7 @@
 #include "../externals/DirectXTex/DirectXTex.h"
 #include "../externals/DirectXTex/d3dx12.h"
 #include "engine/directX/DirectXCommon.h"
-#include "engine/DescriptorAllocator.h"
+#include "engine/directX/DescriptorAllocator.h"
 
 DirectXCommon* Texture::dxCommon_ = nullptr;
 uint32_t Texture::index_ = 0;

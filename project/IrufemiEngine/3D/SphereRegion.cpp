@@ -3,7 +3,7 @@
 #include "Application/camera/Camera.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
-#include "engine/DescriptorAllocator.h" // 追加
+#include "engine/directX/DescriptorAllocator.h" // 追加
 
 DirectXCommon* SphereRegion::dx_ = nullptr;
 TextureManager* SphereRegion::textureManager_ = nullptr;

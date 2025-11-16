@@ -25,11 +25,7 @@ void Camera::Initialize(int window_width,int window_height) {
     right_ = width_;
     bottom_ = height_;
 
-    MakeWorldMatrix();
-    MakeViewMatrix();
-    UpdatePerspectiveFovMatrix();
-    UpdateOrthographicMatrix();
-    UpdateViewportMatrix();
+    UpdateMatrix();
 }
 
 //更新
