@@ -46,12 +46,6 @@
     <Filter Include="Engine\directXCommon">
       <UniqueIdentifier>{ea94aad2-7d6a-4408-a993-71c40fa08722}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\external">
-      <UniqueIdentifier>{f82fcc03-0d42-4071-8b01-74fe667fa1fa}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Engine\external\imgui">
-      <UniqueIdentifier>{aa3e12f4-f66b-4a84-a987-afa795c143cf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\shaders">
       <UniqueIdentifier>{1097d707-2383-4ee7-97c5-144b2eb06880}</UniqueIdentifier>
     </Filter>
@@ -206,27 +200,6 @@
     </ClCompile>
     <ClCompile Include="2D\SpriteRegion.cpp">
       <Filter>2D</Filter>
-    </ClCompile>
-    <ClCompile Include="..\externals\imgui\imgui.cpp">
-      <Filter>Engine\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\externals\imgui\imgui_demo.cpp">
-      <Filter>Engine\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\externals\imgui\imgui_draw.cpp">
-      <Filter>Engine\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\externals\imgui\imgui_impl_dx12.cpp">
-      <Filter>Engine\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\externals\imgui\imgui_impl_win32.cpp">
-      <Filter>Engine\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\externals\imgui\imgui_tables.cpp">
-      <Filter>Engine\external\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\externals\imgui\imgui_widgets.cpp">
-      <Filter>Engine\external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math\Matrix4x4.cpp">
@@ -462,30 +435,6 @@
     <ClInclude Include="2D\SpriteRegion.h">
       <Filter>2D</Filter>
     </ClInclude>
-    <ClInclude Include="..\externals\imgui\imconfig.h">
-      <Filter>Engine\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\externals\imgui\imgui.h">
-      <Filter>Engine\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\externals\imgui\imgui_impl_dx12.h">
-      <Filter>Engine\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\externals\imgui\imgui_impl_win32.h">
-      <Filter>Engine\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\externals\imgui\imgui_internal.h">
-      <Filter>Engine\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\externals\imgui\imstb_rectpack.h">
-      <Filter>Engine\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\externals\imgui\imstb_textedit.h">
-      <Filter>Engine\external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\externals\imgui\imstb_truetype.h">
-      <Filter>Engine\external\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="math\Node.h">
       <Filter>math</Filter>
     </ClInclude>
@@ -504,11 +453,6 @@
     <ClInclude Include="engine\directX\DescriptorPool.h">
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\externals\imgui\LICENSE.txt">
-      <Filter>Engine\external\imgui</Filter>
-    </Text>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Object2D.hlsli">
