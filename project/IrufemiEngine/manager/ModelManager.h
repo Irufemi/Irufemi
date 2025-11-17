@@ -9,78 +9,70 @@
 #include <fstream>
 #include <sstream>
 #include <cassert>
+#include <wrl.h>
+#include <d3d12.h>
 #include "math/ObjModel.h"
 #include "math/ModelData.h"
 #include "math/MaterialData.h"
 #include "math/Node.h"
 #include "function/Math.h"
 
-// 前方宣言（assimp）
+// 前方宣言
 struct aiNode;
 namespace Assimp { class Importer; }
 struct aiScene;
 struct aiMesh;
 struct aiMaterial;
+class DirectXCommon;
+
+// 共有されるGPUメッシュリソース
+struct GpuMesh {
+    Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;
+    Microsoft::WRL::ComPtr<ID3D12Resource> indexResource;
+    D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+    D3D12_INDEX_BUFFER_VIEW indexBufferView{};
+    UINT vertexCount = 0;
+    UINT indexCount = 0;
+};
+
+// CPU/GPUデータを統合した管理単位
+struct ManagedModel {
+    std::shared_ptr<ObjModel> cpuModel;
+    std::vector<std::shared_ptr<GpuMesh>> gpuMeshes;
+};
 
 class ModelManager {
 public:
     ModelManager() = default;
     ~ModelManager() = default;
 
-    // ---- インスタンス機能（キャッシュ管理） ----
+    // --- インスタンス機能（キャッシュ管理） ---
+    void Initialize(DirectXCommon* dxCommon);
     void SetRootDirectory(std::string root);
-
-    // 初期化（必要に応じて将来拡張）
-    void Initialize();
-
-    // モデル取得（キャッシュにあれば再利用 / なければロード）
-    // filename: 相対("sample/bunny.obj") / ルートを含む("resources/obj/sample/bunny.obj") 両対応
-    std::shared_ptr<ObjModel> GetModel(const std::string& filename);
-
-    // 事前ロード（フォルダ内再帰走査）
+    std::shared_ptr<ManagedModel> GetModel(const std::string& filename);
     void PreloadAllUnder(const std::string& relativeFolder);
-
-    // キャッシュ内の有効キー一覧
     std::vector<std::string> GetCachedKeys() const;
-
-    // 弱参照のみになったエントリ削除
     void CollectGarbage();
-
-    // 強制クリア
     void ClearAll();
 
-    // ---- 静的ロード関数 (旧 Function.h 由来) ----
-    // 手書き obj → ModelData
+    // --- 静的ロード関数 (旧 Function.h 由来) ---
     static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
-    // 手書き obj → ObjModel (複数 Mesh + Node 無し)
     static ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filename);
-    // Assimp 汎用 → ModelData
     static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
-    // 旧名称互換（必要なら残す）
-    static ObjModel LoadObjFileAssimpM(const std::string& directoryPath, const std::string& filename);
-    // Assimp 汎用 → ObjModel (Node 階層あり)
     static ObjModel LoadModelFileM(const std::string& directoryPath, const std::string& filename);
-    // f 行トークンパース
     static bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
-    // MTL ロード
     static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
-    // Node 再帰構築
     static Node ReadNode(aiNode* node);
 
 private:
-
-    // 正規化＆ルート解決
     std::string NormalizeAndResolve(const std::string& filename) const;
-
     static bool StartsWith(const std::string& s, const std::string& prefix);
-    
-    // "resources/obj/aaa/bbb.obj" → ("resources/obj/aaa", "bbb.obj")
     static std::pair<std::string, std::string> SplitDirectoryAndFile(const std::string& full);
-
     void DebugLogLoad(const std::string& key, size_t meshCount);
 
 private:
+    DirectXCommon* dxCommon_ = nullptr;
     std::string rootDir_;
     mutable std::mutex mutex_;
-    std::unordered_map<std::string, std::weak_ptr<ObjModel>> cache_;
+    std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
 };

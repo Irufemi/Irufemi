@@ -18,7 +18,6 @@
 #include "directX/DirectXCommon.h"
 #include "scene/SceneManager.h"
 #include "WinApp/WinApp.h"
-#include "DescriptorAllocator.h"
 #include <functional>
 #include <string>
 #include <array>
@@ -85,7 +84,7 @@ public: // ゲッター
 
     ID3D12GraphicsCommandList* GetCommandList() { return dxCommon_->GetCommandList(); }
     ID3D12Device* GetDevice() { return dxCommon_->GetDevice(); }
-    HWND& GetHwnd() { return dxCommon_->GetHwnd(); }
+    HWND GetHwnd() { return dxCommon_->GetHwnd(); }
     DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return dxCommon_->GetSwapChainDesc(); }
     D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc() { return dxCommon_->GetRtvDesc(); }
     ID3D12DescriptorHeap* GetSrvDescriptorHeap() { return dxCommon_->GetSrvDescriptorHeap(); }
@@ -112,7 +111,7 @@ public: // ゲッター
     PSOManager* GetPSOManager() { return dxCommon_->GetPSOManager(); }
 
     // オプション: 取得用
-    DescriptorAllocator* GetSrvAllocator() const { return srvAllocator_.get(); }
+    DescriptorPool* GetSrvPool() const { return dxCommon_->GetSrvPool(); }
     
     // SceneManager参照
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
@@ -177,9 +176,6 @@ D3DResourceLeakChecker leakCheck_;
     
     // SceneManager
     std::unique_ptr<SceneManager> sceneManager_ = nullptr;
-    
-    // DescriptorAllocator
-    std::unique_ptr<DescriptorAllocator> srvAllocator_;
     
     // ModelManager
     std::unique_ptr<ModelManager> modelManager_ = nullptr;

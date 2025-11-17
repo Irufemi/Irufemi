@@ -144,7 +144,7 @@
     <ClCompile Include="function\Math.cpp">
       <Filter>function</Filter>
     </ClCompile>
-    <ClCompile Include="engine\PSOManager.cpp">
+    <ClCompile Include="engine\directX\PSOManager.cpp">
       <Filter>Engine\directXCommon</Filter>
     </ClCompile>
     <ClCompile Include="engine\IrufemiEngine.cpp">
@@ -201,9 +201,6 @@
     <ClCompile Include="audio\Se.cpp">
       <Filter>audio</Filter>
     </ClCompile>
-    <ClCompile Include="engine\DescriptorAllocator.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
     <ClCompile Include="2D\Circle2D.cpp">
       <Filter>2D</Filter>
     </ClCompile>
@@ -240,6 +237,15 @@
     </ClCompile>
     <ClCompile Include="3D\PlaneClass.cpp">
       <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\Input\Mouse.cpp">
+      <Filter>Engine\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\directX\DescriptorAllocator.cpp">
+      <Filter>Engine\directXCommon</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\directX\DescriptorPool.cpp">
+      <Filter>Engine\directXCommon</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -387,7 +393,7 @@
     <ClInclude Include="math\shape\ParticleForGPU.h">
       <Filter>math\shape</Filter>
     </ClInclude>
-    <ClInclude Include="engine\PSOManager.h">
+    <ClInclude Include="engine\directX\PSOManager.h">
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
     <ClInclude Include="math\BlendMode.h">
@@ -450,9 +456,6 @@
     <ClInclude Include="audio\Se.h">
       <Filter>audio</Filter>
     </ClInclude>
-    <ClInclude Include="engine\DescriptorAllocator.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="2D\Circle2D.h">
       <Filter>2D</Filter>
     </ClInclude>
@@ -491,6 +494,15 @@
     </ClInclude>
     <ClInclude Include="3D\PlaneClass.h">
       <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\Input\Mouse.h">
+      <Filter>Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\directX\DescriptorAllocator.h">
+      <Filter>Engine\directXCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\directX\DescriptorPool.h">
+      <Filter>Engine\directXCommon</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

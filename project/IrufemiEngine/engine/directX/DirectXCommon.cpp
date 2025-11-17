@@ -13,9 +13,6 @@
 #include "DirectXTex/d3dx12.h"
 #include <thread>
 
-Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::srvDescriptorHeap_ = nullptr;
-uint32_t DirectXCommon::descriptorSizeSRV{};
-
 void DirectXCommon::Finalize() {
 
 
@@ -44,7 +41,7 @@ void DirectXCommon::Finalize() {
     rootSignature_.Reset();
     depthStencilResource_.Reset();
     rtvDescriptorHeap_.Reset();
-    srvDescriptorHeap_.Reset();
+    srvPool_.reset();
     dsvDescriptorHeap_.Reset();
     swapChainResources_[0].Reset();
     swapChainResources_[1].Reset();
@@ -229,7 +226,6 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     //DescriptorSize
 
-    descriptorSizeSRV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     descriptorSizeRTV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     descriptorSizeDSV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
@@ -240,8 +236,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     //RTV用のヒープでディスクリプタの数は2。RTVはShader内で触るものではないので、ShaderVisibleはfalse
     rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 
-    //SRV用のヒープでディスクリプタの数は128。SSRVはShader内で触るものなので、ShaderVisibleはtrue
-    srvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
+    //SRV用のヒープをDescriptorPoolで作成
+    srvPool_ = std::make_unique<DescriptorPool>();
+    srvPool_->Initialize(device_.Get());
 
     /*画面の色を変えよう*/
 
@@ -585,12 +582,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (pixelShaderBlob) { pixelShaderBlob.Reset(); }
     if (particleVSBlob) { particleVSBlob.Reset(); }
     if (particlePSBlob) { particlePSBlob.Reset(); }
-    if (spriteVSBlob) { particleVSBlob.Reset(); }
-    if (spritePSBlob) { particlePSBlob.Reset(); }
+    if (spriteVSBlob) { spriteVSBlob.Reset(); }
+    if (spritePSBlob) { spritePSBlob.Reset(); }
     if (regionVSBlob) { regionVSBlob.Reset(); }
     if (byGeometryShaderVSBlob) { byGeometryShaderVSBlob.Reset(); }
-    if (byGeometryShaderPSBlob) { byGeometryShaderVSBlob.Reset(); }
-    if (byGeometryShaderGSBlob) { byGeometryShaderVSBlob.Reset(); }
+    if (byGeometryShaderPSBlob) { byGeometryShaderPSBlob.Reset(); }
+    if (byGeometryShaderGSBlob) { byGeometryShaderGSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};
@@ -671,18 +668,6 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetGPUDescriptorHandle(const Microsof
     handleGPU.ptr += (descriptorSize * index);
     return handleGPU;
 }
-
-
-D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t index) {
-
-    return GetCPUDescriptorHandle(srvDescriptorHeap_, descriptorSizeSRV, index);
-}
-
-D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVGPUDescriptorHandle(uint32_t index) {
-
-    return GetGPUDescriptorHandle(srvDescriptorHeap_, descriptorSizeSRV, index);
-}
-
 
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetRTVCPUDescriptorHandle(uint32_t index) {
 

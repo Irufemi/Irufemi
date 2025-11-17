@@ -7,7 +7,7 @@
 #include <format>
 #include <cstdint>
 
-#include "engine/DescriptorAllocator.h"
+#include "engine/directX/DescriptorPool.h"
 #include "engine/directX/DirectXCommon.h"
 #include "DirectXTex/DirectXTex.h"
 #include "DirectXTex/d3dx12.h"
@@ -208,14 +208,14 @@ void TextureManager::CreateWhiteDummyTexture() {
 
     {
         // まずアロケータ優先
-        uint32_t index = DescriptorAllocator::kInvalid;
+        uint32_t index = DescriptorPool::kInvalid;
 
-        if (Texture::GetDescriptorAllocator()) {
-            auto alloc = Texture::GetDescriptorAllocator();
-            index = alloc->Allocate();
-            if (index != DescriptorAllocator::kInvalid) {
-                cpuHandle = alloc->GetCPUHandle(index);
-                gpuHandle = alloc->GetGPUHandle(index);
+        if (Texture::GetDescriptorPool()) {
+            auto pool = Texture::GetDescriptorPool();
+            index = pool->Allocate();
+            if (index != DescriptorPool::kInvalid) {
+                cpuHandle = pool->GetCPUHandle(index);
+                gpuHandle = pool->GetGPUHandle(index);
             } else {
                 OutputDebugStringA("CreateWhiteDummyTexture: allocator exhausted, using heap start fallback\n");
                 cpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();

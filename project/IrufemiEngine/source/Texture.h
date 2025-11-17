@@ -6,13 +6,13 @@
 #include <cstdint>
 
 class DirectXCommon;
-class DescriptorAllocator; // 追加
+class DescriptorPool; // 変更
 
 class Texture {
 public:
     static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
-    static void SetDescriptorAllocator(DescriptorAllocator* alloc) { s_srvAllocator_ = alloc; }
-    static DescriptorAllocator* GetDescriptorAllocator() { return s_srvAllocator_; }
+    static void SetDescriptorPool(DescriptorPool* pool) { s_srvPool_ = pool; }
+    static DescriptorPool* GetDescriptorPool() { return s_srvPool_; }
 
     Texture() ;
     ~Texture();
@@ -40,7 +40,7 @@ protected:
     uint32_t srvIndex_ = UINT32_MAX; // allocator で確保した index
 
     static DirectXCommon* dxCommon_;
-    static DescriptorAllocator* s_srvAllocator_;
+    static DescriptorPool* s_srvPool_;
 
     uint32_t width_ = 0;
     uint32_t height_ = 0;

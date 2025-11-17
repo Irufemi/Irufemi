@@ -2,19 +2,22 @@
 #include <memory>
 #include "engine/Input/Keyboard.h"
 #include "engine/Input/GamePad.h"
+#include "engine/Input/Mouse.h"
+#include "math/Vector2.h"
 
-// 役割：具体実装(Keyboard/GamePad)を保持し、旧APIをフォワードして互換を維持するファサード
+// 役割：具体実装(Keyboard/GamePad/Mouse)を保持し、旧APIをフォワードして互換を維持するファサード
 class InputManager {
 public:
     InputManager() = default;
     ~InputManager() = default;
 
-    void Initialize();
+    void Initialize(HWND hwnd);
     void Update();
 
     // 新API（推奨）
     Keyboard* GetKeyboard() { return keyboard_.get(); }
     GamePad* GetGamePad() { return gamepad_.get(); }
+    Mouse* GetMouse() { return mouse_.get(); }
 
     // 旧API（互換用：既存コードを壊さないためフォワード）
     bool IsKeyDown(uint8_t key)     const;
@@ -40,7 +43,17 @@ public:
     bool IsKeyPressedDIK(uint8_t dik) const;
     bool IsKeyReleasedDIK(uint8_t dik) const;
 
+    // --- マウスAPIフォワード ---
+    bool IsMouseButtonDown(Mouse::Button button) const;
+    bool IsMouseButtonPressed(Mouse::Button button) const;
+    bool IsMouseButtonReleased(Mouse::Button button) const;
+    const Vector2& GetMousePosition() const;
+    const Vector2& GetMouseDelta() const;
+    float GetMouseWheelDelta() const;
+
+
 private:
     std::unique_ptr<Keyboard> keyboard_{};
     std::unique_ptr<GamePad>  gamepad_{};
+    std::unique_ptr<Mouse>    mouse_{};
 };

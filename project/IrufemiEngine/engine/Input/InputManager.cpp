@@ -1,15 +1,18 @@
 #include "InputManager.h"
 
-void InputManager::Initialize() {
+void InputManager::Initialize(HWND hwnd) {
     keyboard_ = std::make_unique<Keyboard>();
     gamepad_ = std::make_unique<GamePad>();
+    mouse_ = std::make_unique<Mouse>();
     keyboard_->Initialize();
     gamepad_->Initialize();
+    mouse_->Initialize(hwnd);
 }
 
 void InputManager::Update() {
     keyboard_->Update();
     gamepad_->Update();
+    mouse_->Update();
 }
 
 // --- 旧APIフォワード（互換維持）---
@@ -34,3 +37,28 @@ bool InputManager::IsKeyDownDIK(uint8_t d)     const { return keyboard_->IsKeyDo
 bool InputManager::IsKeyUpDIK(uint8_t d)       const { return keyboard_->IsKeyUpDIK(d); }
 bool InputManager::IsKeyPressedDIK(uint8_t d)  const { return keyboard_->IsKeyPressedDIK(d); }
 bool InputManager::IsKeyReleasedDIK(uint8_t d) const { return keyboard_->IsKeyReleasedDIK(d); }
+
+// --- マウスAPIフォワード ---
+bool InputManager::IsMouseButtonDown(Mouse::Button button) const {
+    return mouse_->IsButtonDown(button);
+}
+
+bool InputManager::IsMouseButtonPressed(Mouse::Button button) const {
+    return mouse_->IsButtonPressed(button);
+}
+
+bool InputManager::IsMouseButtonReleased(Mouse::Button button) const {
+    return mouse_->IsButtonReleased(button);
+}
+
+const Vector2& InputManager::GetMousePosition() const {
+    return mouse_->GetPosition();
+}
+
+const Vector2& InputManager::GetMouseDelta() const {
+    return mouse_->GetDelta();
+}
+
+float InputManager::GetMouseWheelDelta() const {
+    return mouse_->GetWheelDelta();
+}

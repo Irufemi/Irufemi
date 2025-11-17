@@ -10,6 +10,7 @@
 class TextureManager;
 class SceneManager;
 class D3D12ResourceUtil;
+class D3D12ResourceUtilParticle;
 struct Transform;
 struct DirectionalLight;
 struct Material;
@@ -41,7 +42,7 @@ private: // メンバ変数
 public: // メンバ関数
 
     // 初期化
-    void Initialize(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const Microsoft::WRL::ComPtr<ID3D12Device>& device,HWND &hwnd, DXGI_SWAP_CHAIN_DESC1 &swapChainDesc, D3D12_RENDER_TARGET_VIEW_DESC &rtvDesc, ID3D12DescriptorHeap* srvDescriptorHeap);
+    void Initialize(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const Microsoft::WRL::ComPtr<ID3D12Device>& device,HWND hwnd, DXGI_SWAP_CHAIN_DESC1 &swapChainDesc, D3D12_RENDER_TARGET_VIEW_DESC &rtvDesc, ID3D12DescriptorHeap* srvDescriptorHeap);
 
     // TextureManagerをセット
     void SetTextureManager(TextureManager* textureManager) { this->textureManager_ = textureManager; }
@@ -74,6 +75,7 @@ public: // メンバ関数
 
     // 画像
     void DebugTexture(D3D12ResourceUtil * resource_,int & selectedTextureIndex_);
+    void DebugTexture(D3D12ResourceUtilParticle* resource, int& selectedTextureIndex);
 
     // DirectionalLight
     void DebugDirectionalLight(DirectionalLight* directionalLightData);
