@@ -171,12 +171,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\Region.cpp" />
     <ClCompile Include="3D\CylinderClass.cpp" />
     <ClCompile Include="2D\Circle2D.cpp" />
-    <ClCompile Include="engine\directX\DescriptorPool.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="engine\directX\DescriptorAllocator.cpp" />
+    <ClCompile Include="engine\directX\DescriptorPool.cpp" />
     <ClCompile Include="function\ExportDump.cpp" />
     <ClCompile Include="3D\PointLightClass.cpp" />
     <ClCompile Include="main.cpp">
@@ -213,7 +209,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="engine\Input\InputManager.cpp" />
     <ClCompile Include="manager\TextureManager.cpp" />
     <ClCompile Include="math\Vector3 .cpp" />
-    <ClCompile Include="engine\PSOManager.cpp" />
+    <ClCompile Include="engine\directX\PSOManager.cpp" />
     <ClCompile Include="scene\IScene.cpp" />
     <ClCompile Include="scene\SceneManager.cpp" />
     <ClCompile Include="source\Sound.cpp" />
@@ -242,12 +238,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="3D\Region.h" />
     <ClInclude Include="3D\CylinderClass.h" />
     <ClInclude Include="2D\Circle2D.h" />
-    <ClInclude Include="engine\directX\DescriptorPool.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="engine\directX\DescriptorAllocator.h" />
+    <ClInclude Include="engine\directX\DescriptorPool.h" />
     <ClInclude Include="engine\directX\DirectXCommon.h" />
     <ClInclude Include="engine\D3DResourceLeakChecker.h" />
     <ClInclude Include="engine\IrufemiEngine.h" />
@@ -297,7 +289,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Vector3.h" />
     <ClInclude Include="math\Vector4.h" />
     <ClInclude Include="math\VertexData.h" />
-    <ClInclude Include="engine\PSOManager.h" />
+    <ClInclude Include="engine\directX\PSOManager.h" />
     <ClInclude Include="3D\PointLightClass.h" />
     <ClInclude Include="math\Node.h" />
     <ClInclude Include="manager\ModelManager.h" />

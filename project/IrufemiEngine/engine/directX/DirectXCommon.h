@@ -14,7 +14,7 @@
 #include <fstream>
 #include <chrono>
 
-#include "../PSOManager.h"
+#include "PSOManager.h"
 #include "DirectXTex/DirectXTex.h"
 
 // 前方宣言

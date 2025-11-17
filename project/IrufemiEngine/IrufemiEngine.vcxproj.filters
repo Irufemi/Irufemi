@@ -144,7 +144,7 @@
     <ClCompile Include="function\Math.cpp">
       <Filter>function</Filter>
     </ClCompile>
-    <ClCompile Include="engine\PSOManager.cpp">
+    <ClCompile Include="engine\directX\PSOManager.cpp">
       <Filter>Engine\directXCommon</Filter>
     </ClCompile>
     <ClCompile Include="engine\IrufemiEngine.cpp">
@@ -241,10 +241,10 @@
     <ClCompile Include="engine\Input\Mouse.cpp">
       <Filter>Engine\Input</Filter>
     </ClCompile>
-    <ClCompile Include="engine\directX\DescriptorPool.cpp">
+    <ClCompile Include="engine\directX\DescriptorAllocator.cpp">
       <Filter>Engine\directXCommon</Filter>
     </ClCompile>
-    <ClCompile Include="engine\directX\DescriptorAllocator.cpp">
+    <ClCompile Include="engine\directX\DescriptorPool.cpp">
       <Filter>Engine\directXCommon</Filter>
     </ClCompile>
   </ItemGroup>
@@ -393,7 +393,7 @@
     <ClInclude Include="math\shape\ParticleForGPU.h">
       <Filter>math\shape</Filter>
     </ClInclude>
-    <ClInclude Include="engine\PSOManager.h">
+    <ClInclude Include="engine\directX\PSOManager.h">
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
     <ClInclude Include="math\BlendMode.h">
@@ -498,10 +498,10 @@
     <ClInclude Include="engine\Input\Mouse.h">
       <Filter>Engine\Input</Filter>
     </ClInclude>
-    <ClInclude Include="engine\directX\DescriptorPool.h">
+    <ClInclude Include="engine\directX\DescriptorAllocator.h">
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
-    <ClInclude Include="engine\directX\DescriptorAllocator.h">
+    <ClInclude Include="engine\directX\DescriptorPool.h">
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
   </ItemGroup>

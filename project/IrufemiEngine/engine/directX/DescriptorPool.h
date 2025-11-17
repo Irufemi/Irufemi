@@ -1,63 +1,56 @@
 #pragma once
 #include <d3d12.h>
 #include <wrl.h>
+#include <vector>
+#include <queue>
+#include <mutex>
 #include <cstdint>
-#include <memory>
-
-class DescriptorAllocator;
-
-// ディスクリプタハンドル（CPU/GPU/インデックス）をまとめた構造体
-struct DescriptorHandle {
-    D3D12_CPU_DESCRIPTOR_HANDLE cpu;
-    D3D12_GPU_DESCRIPTOR_HANDLE gpu;
-    uint32_t index;
-};
+#include <limits>
 
 class DescriptorPool {
 public:
+    static constexpr uint32_t kMaxSRVCount = 512;
+    static constexpr uint32_t kInvalid = 0xFFFFFFFFu; // std::numeric_limits<uint32_t>::max() の代用
+
     DescriptorPool() = default;
-    ~DescriptorPool() = default;
+    void Initialize(ID3D12Device* device);
 
-    // コピー禁止
-    DescriptorPool(const DescriptorPool&) = delete;
-    DescriptorPool& operator=(const DescriptorPool&) = delete;
-
-    // 初期化
-    void Initialize(
-        ID3D12Device* device,
-        uint32_t capacity,
-        uint32_t reservedCount = 0);
-
-    // ディスクリプタを確保
-    DescriptorHandle Allocate();
-
-    // ディスクリプタを即時解放
+    uint32_t Allocate();
     void Free(uint32_t index);
-
-    // ディスクリプタをフェンス完了後に解放
-    void FreeAfterFence(uint32_t index, uint64_t fenceValue);
-
-    // 指定フェンス値以下の保留中ディスクリプタを解放
+    void FreeAfterFence(uint32_t index, uint64_t safeFence);
     void GarbageCollect(uint64_t completedFence);
 
-    // SRV生成: Texture2D
-    DescriptorHandle CreateSRVForTexture2D(
-        ID3D12Resource* resource,
-        DXGI_FORMAT format,
-        UINT mipLevels);
+    // 使用中インデックス集合（昇順ユニーク）を渡してフリーリストを再構築
+    void RebuildFreeListExcept(const std::vector<uint32_t>& usedSortedUnique);
 
-    // SRV生成: StructuredBuffer
-    DescriptorHandle CreateSRVForStructuredBuffer(
-        ID3D12Resource* resource,
-        UINT numElements,
-        UINT structureByteStride);
+    // 先頭の予約（ImGui 等）
+    void ReservePrefix(uint32_t count);
 
-    // ヒープを取得
+    D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index) const;
+    D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) const;
+
+    // SRV作成
+    void CreateSRVForTexture2D(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT format, UINT mipLevels);
+    void CreateSRVForStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride);
+
     ID3D12DescriptorHeap* GetHeap() const { return heap_.Get(); }
+    uint32_t Capacity() const { return kMaxSRVCount; }
+    uint32_t BaseIndex() const { return baseIndex_; }
 
 private:
+    struct Pending {
+        uint64_t fence;
+        uint32_t index;
+        bool operator<(const Pending& rhs) const { return fence > rhs.fence; } // フェンス小→大
+    };
+
     Microsoft::WRL::ComPtr<ID3D12Device> device_;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> heap_;
-    std::unique_ptr<DescriptorAllocator> allocator_;
     uint32_t descriptorSize_ = 0;
+    uint32_t baseIndex_ = 0;
+    uint32_t nextIndex_ = 0;
+
+    std::vector<uint32_t> freeList_;
+    std::priority_queue<Pending> pending_;
+    mutable std::mutex mutex_;
 };

@@ -2,7 +2,7 @@
 #include "Math.h"
 #include "../externals/imgui/imgui.h"
 #include "engine/directX/DirectXCommon.h"
-#include "engine/directX/DescriptorAllocator.h" // 追加
+#include "engine/directX/DescriptorPool.h" // 追加
 #include <algorithm>
 
 DescriptorAllocator* ParticleClass::s_srvAllocator_ = nullptr; // 追加

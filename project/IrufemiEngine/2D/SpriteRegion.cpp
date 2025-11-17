@@ -3,7 +3,7 @@
 #include "function/Math.h"
 #include "engine/directX/DirectXCommon.h"
 #include "manager/DrawManager.h"
-#include "engine/directX/DescriptorAllocator.h"
+#include "engine/directX/DescriptorPool.h"
 #include "Application/camera/Camera.h"
 
 

@@ -3,7 +3,7 @@
 #include <cassert>
 #include <cstring>
 #include "engine/directX/DirectXCommon.h"
-#include "engine/directX/DescriptorAllocator.h"
+#include "engine/directX/DescriptorPool.h"
 #include "Application/camera/Camera.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
