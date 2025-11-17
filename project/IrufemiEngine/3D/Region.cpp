@@ -17,7 +17,7 @@
 DirectXCommon* Region::dx_ = nullptr;
 TextureManager* Region::textureManager_ = nullptr;
 DrawManager* Region::drawManager_ = nullptr;
-DescriptorAllocator* Region::srvAllocator_ = nullptr;
+DescriptorPool* Region::srvPool_ = nullptr;
 ModelManager* Region::modelManager_ = nullptr;
 
 void Region::Initialize(
@@ -98,18 +98,18 @@ void Region::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     instanceBuffer_ = dx_->CreateBufferResource(sizeInBytes);
 
     if (instancingSrvIndex_ == UINT32_MAX) {
-        if (!srvAllocator_) {
+        if (!srvPool_) {
             OutputDebugStringA("Region::CreateOrResizeInstanceBuffer: srvAllocator_ is null\n");
             return;
         }
-        uint32_t idx = srvAllocator_->Allocate();
-        if (idx == DescriptorAllocator::kInvalid) {
+        uint32_t idx = srvPool_->Allocate();
+        if (idx == DescriptorPool::kInvalid) {
             OutputDebugStringA("Region::CreateOrResizeInstanceBuffer: SRV Allocate failed\n");
             return;
         }
         instancingSrvIndex_ = idx;
-        instancingSrvCPU_ = srvAllocator_->GetCPUHandle(idx);
-        instancingSrvGPU_ = srvAllocator_->GetGPUHandle(idx);
+        instancingSrvCPU_ = srvPool_->GetCPUHandle(idx);
+        instancingSrvGPU_ = srvPool_->GetGPUHandle(idx);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srv{};

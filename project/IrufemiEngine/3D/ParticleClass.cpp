@@ -5,12 +5,12 @@
 #include "engine/directX/DescriptorPool.h" // 追加
 #include <algorithm>
 
-DescriptorAllocator* ParticleClass::s_srvAllocator_ = nullptr; // 追加
+DescriptorPool* ParticleClass::s_srvPool_ = nullptr; // 追加
 
 ParticleClass::~ParticleClass() {
-    if (instancingSrvIndex_ != UINT32_MAX && s_srvAllocator_ && resource_) {
+    if (instancingSrvIndex_ != UINT32_MAX && s_srvPool_ && resource_) {
         if (auto* dx = resource_->GetDirectXCommon()) {
-            s_srvAllocator_->FreeAfterFence(instancingSrvIndex_, dx->GetFenceValue());
+            s_srvPool_->FreeAfterFence(instancingSrvIndex_, dx->GetFenceValue());
         }
         instancingSrvIndex_ = UINT32_MAX;
         instancingSrvHandleCPU_ = {};
@@ -83,12 +83,12 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap
 
     // SRV スロット確保（初回のみ）
     if (instancingSrvIndex_ == UINT32_MAX) {
-        auto* alloc = s_srvAllocator_;
+        auto* alloc = s_srvPool_;
         if (!alloc) {
             OutputDebugStringA("ParticleClass::Initialize: SRV allocator is null\n");
         } else {
             uint32_t idx = alloc->Allocate();
-            if (idx == DescriptorAllocator::kInvalid) {
+            if (idx == DescriptorPool::kInvalid) {
                 OutputDebugStringA("ParticleClass::Initialize: SRV Allocate failed\n");
             } else {
                 instancingSrvIndex_ = idx;

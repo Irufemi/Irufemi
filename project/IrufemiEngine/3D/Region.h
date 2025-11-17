@@ -17,7 +17,7 @@ class DirectXCommon;
 class TextureManager;
 class DrawManager;
 class ModelManager;
-class DescriptorAllocator;
+class DescriptorPool;
 struct ManagedModel;
 struct GpuMesh;
 
@@ -33,7 +33,7 @@ public:
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
     static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
-    static void SetSrvAllocator(DescriptorAllocator* alloc) { srvAllocator_ = alloc; }
+    static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; }
 
     // --- DrawManager から参照する Getter 群 ---
     const GpuMesh* GetGpuMesh() const; // 共有メッシュ取得
@@ -63,7 +63,7 @@ private:
     static TextureManager* textureManager_;
     static DrawManager* drawManager_;
     static ModelManager*    modelManager_;
-    static DescriptorAllocator* srvAllocator_;
+    static DescriptorPool* srvPool_;
 
     Camera* camera_ = nullptr;
 

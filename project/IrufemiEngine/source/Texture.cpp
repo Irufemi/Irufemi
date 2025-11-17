@@ -7,14 +7,14 @@
 
 DirectXCommon* Texture::dxCommon_ = nullptr;
 uint32_t Texture::index_ = 0;
-DescriptorAllocator* Texture::s_srvAllocator_ = nullptr;
+DescriptorPool* Texture::s_srvPool_ = nullptr;
 
 Texture::Texture() = default;
 
 Texture::~Texture() {
-    if (s_srvAllocator_ && srvIndex_ != UINT32_MAX && dxCommon_) {
+    if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
         // GPU が参照し終わるまで遅延解放
-        s_srvAllocator_->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
         srvIndex_ = UINT32_MAX;
     }
 }
@@ -38,12 +38,12 @@ void Texture::Initialize(const std::string& filePath) {
 
     // 1) allocator 優先
     uint32_t indexForSrv = UINT32_MAX;
-    if (s_srvAllocator_) {
-        indexForSrv = s_srvAllocator_->Allocate();
-        if (indexForSrv != DescriptorAllocator::kInvalid) {
+    if (s_srvPool_) {
+        indexForSrv = s_srvPool_->Allocate();
+        if (indexForSrv != DescriptorPool::kInvalid) {
             srvIndex_ = indexForSrv;
-            textureSrvHandleCPU_ = s_srvAllocator_->GetCPUHandle(indexForSrv);
-            textureSrvHandleGPU_ = s_srvAllocator_->GetGPUHandle(indexForSrv);
+            textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(indexForSrv);
+            textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(indexForSrv);
         } else {
             indexForSrv = UINT32_MAX; // fallback
         }
@@ -52,8 +52,8 @@ void Texture::Initialize(const std::string& filePath) {
     if (indexForSrv == UINT32_MAX) {
         index_ += 1;
         indexForSrv = index_;
-        textureSrvHandleCPU_ = DirectXCommon::GetSRVCPUDescriptorHandle(indexForSrv);
-        textureSrvHandleGPU_ = DirectXCommon::GetSRVGPUDescriptorHandle(indexForSrv);
+        textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(indexForSrv);
+        textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(indexForSrv);
     }
 
     dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);

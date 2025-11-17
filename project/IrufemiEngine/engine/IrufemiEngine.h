@@ -18,7 +18,6 @@
 #include "directX/DirectXCommon.h"
 #include "scene/SceneManager.h"
 #include "WinApp/WinApp.h"
-#include "directX/DescriptorPoll.h"
 #include <functional>
 #include <string>
 #include <array>
@@ -112,7 +111,7 @@ public: // ゲッター
     PSOManager* GetPSOManager() { return dxCommon_->GetPSOManager(); }
 
     // オプション: 取得用
-    DescriptorAllocator* GetSrvAllocator() const { return srvAllocator_.get(); }
+    DescriptorPool* GetSrvPool() const { return dxCommon_->GetSrvPool(); }
     
     // SceneManager参照
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
@@ -177,9 +176,6 @@ D3DResourceLeakChecker leakCheck_;
     
     // SceneManager
     std::unique_ptr<SceneManager> sceneManager_ = nullptr;
-    
-    // DescriptorAllocator
-    std::unique_ptr<DescriptorAllocator> srvAllocator_;
     
     // ModelManager
     std::unique_ptr<ModelManager> modelManager_ = nullptr;

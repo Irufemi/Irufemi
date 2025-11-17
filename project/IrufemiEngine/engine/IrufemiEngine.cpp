@@ -79,21 +79,19 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     SphereRegion::SetDirectXCommon(dxCommon_.get());
     TetraRegion::SetDirectXCommon(dxCommon_.get());
 
-    // SRV デスクリプタアロケータの作成（3）
-    const uint32_t srvDescriptorInc = dxCommon_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    // SRV デスクリプタプール
     {
-        ID3D12DescriptorHeap* srvHeap = dxCommon_->GetSrvDescriptorHeap();
-        srvAllocator_ = std::make_unique<DescriptorAllocator>(srvHeap, srvDescriptorInc);
+        DescriptorPool* srvPool = dxCommon_->GetSrvPool();
 
         // ImGui 等が先頭を使っているなら予約
-        srvAllocator_->ReservePrefix(1);
+        srvPool->ReservePrefix(1);
 
         // 注入
-        Texture::SetDescriptorAllocator(srvAllocator_.get());
-        SphereRegion::SetSrvAllocator(srvAllocator_.get());
-        Region::SetSrvAllocator(srvAllocator_.get());
-        TetraRegion::SetSrvAllocator(srvAllocator_.get());
-        ParticleClass::SetSrvAllocator(srvAllocator_.get());
+        Texture::SetDescriptorPool(srvPool);
+        SphereRegion::SetSrvAllocator(srvPool);
+        Region::SetSrvAllocator(srvPool);
+        TetraRegion::SetSrvAllocator(srvPool);
+        ParticleClass::SetSrvAllocator(srvPool);
     }
 
     // テクスチャ管理
@@ -109,31 +107,32 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     // 既存SRVの走査で free-list 再構築
     {
-        ID3D12DescriptorHeap* srvHeap = dxCommon_->GetSrvDescriptorHeap();
-        const uint32_t inc = srvDescriptorInc;
+        DescriptorPool* srvPool = dxCommon_->GetSrvPool();
+        ID3D12DescriptorHeap* srvHeap = srvPool->GetHeap();
+        const uint32_t inc = dxCommon_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         auto toIndex = [&](D3D12_GPU_DESCRIPTOR_HANDLE h)->uint32_t {
-            if (h.ptr == 0) return DescriptorAllocator::kInvalid;
+            if (h.ptr == 0) return DescriptorPool::kInvalid;
             const auto heapStart = srvHeap->GetGPUDescriptorHandleForHeapStart().ptr;
             const uint64_t diff = (h.ptr - heapStart);
-            return static_cast<uint32_t>(diff / srvDescriptorInc);
+            return static_cast<uint32_t>(diff / inc);
             };
 
         std::vector<uint32_t> used;
         // 白テクスチャ
         if (auto white = textureManager->GetWhiteTextureHandle(); white.ptr != 0) {
-            if (auto idx = toIndex(white); idx != DescriptorAllocator::kInvalid) used.push_back(idx);
+            if (auto idx = toIndex(white); idx != DescriptorPool::kInvalid) used.push_back(idx);
         }
         // テクスチャキャッシュ
         for (auto& name : textureManager->GetTextureNames()) {
             auto h = textureManager->GetTextureHandle(name);
-            if (auto idx = toIndex(h); idx != DescriptorAllocator::kInvalid) used.push_back(idx);
+            if (auto idx = toIndex(h); idx != DescriptorPool::kInvalid) used.push_back(idx);
         }
-        for (uint32_t i = 0; i < srvAllocator_->BaseIndex(); ++i) used.push_back(i);
+        for (uint32_t i = 0; i < srvPool->BaseIndex(); ++i) used.push_back(i);
 
         std::sort(used.begin(), used.end());
         used.erase(std::unique(used.begin(), used.end()), used.end());
 
-        srvAllocator_->RebuildFreeListExcept(used);
+        srvPool->RebuildFreeListExcept(used);
     }
 
     // 入力
@@ -303,9 +302,9 @@ void IrufemiEngine::EndFrame() {
     drawManager->PostDraw();
 
     // 5) フレーム終端で遅延解放の回収（フェンス完了値を渡す）
-    if (srvAllocator_) {
+    if (auto* srvPool = dxCommon_->GetSrvPool()) {
         const uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
-        srvAllocator_->GarbageCollect(completed);
+        srvPool->GarbageCollect(completed);
     }
 }
 

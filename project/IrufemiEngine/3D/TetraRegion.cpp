@@ -13,12 +13,12 @@
 DirectXCommon* TetraRegion::dx_ = nullptr;
 TextureManager* TetraRegion::textureManager_ = nullptr;
 DrawManager* TetraRegion::drawManager_ = nullptr;
-DescriptorAllocator* TetraRegion::srvAllocator_ = nullptr; // 追加
+DescriptorPool* TetraRegion::srvPool_ = nullptr; // 追加
 
 TetraRegion::~TetraRegion() {
     // SRV スロットを遅延解放で返す
-    if (instancingSrvIndex_ != UINT32_MAX && srvAllocator_ && dx_) {
-        srvAllocator_->FreeAfterFence(instancingSrvIndex_, dx_->GetFenceValue());
+    if (instancingSrvIndex_ != UINT32_MAX && srvPool_ && dx_) {
+        srvPool_->FreeAfterFence(instancingSrvIndex_, dx_->GetFenceValue());
         instancingSrvIndex_ = UINT32_MAX;
         instancingSrvCPU_ = {};
         instancingSrvGPU_ = {};
@@ -151,12 +151,12 @@ void TetraRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     instanceBuffer_ = dx_->CreateBufferResource(sizeInBytes);
 
     if (instancingSrvIndex_ == UINT32_MAX) {
-        if (!srvAllocator_) { OutputDebugStringA("TetraRegion: srvAllocator_ is null\n"); return; }
-        uint32_t idx = srvAllocator_->Allocate();
-        if (idx == DescriptorAllocator::kInvalid) { OutputDebugStringA("TetraRegion: SRV Allocate failed\n"); return; }
+        if (!srvPool_) { OutputDebugStringA("TetraRegion: srvAllocator_ is null\n"); return; }
+        uint32_t idx = srvPool_->Allocate();
+        if (idx == DescriptorPool::kInvalid) { OutputDebugStringA("TetraRegion: SRV Allocate failed\n"); return; }
         instancingSrvIndex_ = idx;
-        instancingSrvCPU_ = srvAllocator_->GetCPUHandle(idx);
-        instancingSrvGPU_ = srvAllocator_->GetGPUHandle(idx);
+        instancingSrvCPU_ = srvPool_->GetCPUHandle(idx);
+        instancingSrvGPU_ = srvPool_->GetGPUHandle(idx);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srv{};

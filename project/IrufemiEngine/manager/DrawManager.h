@@ -88,6 +88,6 @@ public: //メンバ関数
     void SetSpotLightClass(SpotLightClass* spotLightClass) { spotLight_ = spotLightClass; }
     void SetSpotLight(SpotLight& info);
 
-    void DrawSpriteRegion(SpriteRegion* region); // 追加
-    void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource); // 追加
+    void DrawSpriteRegion(SpriteRegion* region);
+    void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource);
 };

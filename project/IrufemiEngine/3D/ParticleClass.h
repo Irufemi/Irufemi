@@ -57,7 +57,7 @@ private: // メンバ変数
     bool isUpdate_ = true;
 
     // 共有アロケータ
-    static DescriptorAllocator* s_srvAllocator_; // 追加
+    static DescriptorPool* s_srvPool_; // 追加
 
 public:
     ~ParticleClass(); // 追加
@@ -74,6 +74,6 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvHandleGPU_; }
 
     // アロケータ注入
-    static void SetSrvAllocator(DescriptorAllocator* alloc) { s_srvAllocator_ = alloc; } // 追加
+    static void SetSrvAllocator(DescriptorPool* alloc) { s_srvPool_ = alloc; } // 追加
 };
 
