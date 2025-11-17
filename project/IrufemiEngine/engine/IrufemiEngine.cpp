@@ -91,7 +91,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         SphereRegion::SetSrvAllocator(srvPool);
         Region::SetSrvAllocator(srvPool);
         TetraRegion::SetSrvAllocator(srvPool);
-        ParticleClass::SetSrvAllocator(srvPool);
+        ParticleClass::SetSrvPool(srvPool);
     }
 
     // テクスチャ管理
@@ -149,6 +149,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     TriangleClass::SetDebugUI(ui.get());
     PlaneClass::SetDebugUI(ui.get());
     CylinderClass::SetDebugUI(ui.get());
+    ParticleClass::SetDebugUI(ui.get());
 
     // 描画
     drawManager = std::make_unique<DrawManager>();
@@ -176,6 +177,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Region::SetTextureManager(textureManager.get());
     SphereRegion::SetTextureManager(textureManager.get());
     TetraRegion::SetTextureManager(textureManager.get());
+    ParticleClass::SetTextureManager(textureManager.get());
 }
 
 // クリアカラーを float 指定できる 初期化

@@ -95,7 +95,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveParticle_) {
         particle_ = std::make_unique <ParticleClass>();
-        particle_->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
+        particle_->Initialize(camera_.get(), "resources/circle.png");
     }
 }
 
@@ -234,7 +234,7 @@ void DebugScene::Update() {
     if (isActiveParticle_) {
         if (!particle_) {
             particle_ = std::make_unique <ParticleClass>();
-            particle_->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+            particle_->Initialize(camera_.get(), "resources/circle.png");
         }
         particle_->Update();
     }

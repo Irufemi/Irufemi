@@ -173,26 +173,47 @@ void DebugUI::DebugMaterialBy2D(Material* materialData) {
 
 // 画像
 void DebugUI::DebugTexture(D3D12ResourceUtil* resource, int& selectedTextureIndex) {
-
-    if (ImGui::CollapsingHeader("texture")) {
-
-        std::vector<std::string> textureNames = textureManager_->GetTextureNames();
+    if (textureManager_) {
+        auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
-
         if (!textureNames.empty()) {
-            selectedTextureIndex = std::clamp(selectedTextureIndex, 0, static_cast<int>(textureNames.size()) - 1);
-            if (ImGui::BeginCombo("TextureName", textureNames[selectedTextureIndex].c_str())) {
-                for (int i = 0; i < textureNames.size(); ++i) {
+            const char* preview = textureNames[selectedTextureIndex].c_str();
+            if (ImGui::BeginCombo("Texture", preview)) {
+                for (int i = 0; i < static_cast<int>(textureNames.size()); ++i) {
                     bool isSelected = (i == selectedTextureIndex);
                     if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
                         selectedTextureIndex = i;
                         resource->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]);
                     }
+                    if (isSelected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
                 }
                 ImGui::EndCombo();
             }
-        } else {
-            ImGui::Text("No textures found.");
+        }
+    }
+}
+
+void DebugUI::DebugTexture(D3D12ResourceUtilParticle* resource, int& selectedTextureIndex) {
+    if (textureManager_) {
+        auto textureNames = textureManager_->GetTextureNames();
+        std::sort(textureNames.begin(), textureNames.end());
+        if (!textureNames.empty()) {
+            const char* preview = textureNames[selectedTextureIndex].c_str();
+            if (ImGui::BeginCombo("Texture", preview)) {
+                for (int i = 0; i < static_cast<int>(textureNames.size()); ++i) {
+                    bool isSelected = (i == selectedTextureIndex);
+                    if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
+                        selectedTextureIndex = i;
+                        resource->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]);
+                    }
+                    if (isSelected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
         }
     }
 }
