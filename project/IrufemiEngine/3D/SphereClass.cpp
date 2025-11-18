@@ -194,10 +194,10 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
 
 }
 
-void SphereClass::Update(bool debug,const char* sphereName) {
+void SphereClass::Update(bool debug,[[maybe_unused]]const char* sphereName) {
 
     if (debug) {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined USE_IMGUI
 
         std::string name = std::string("Sphere: ") + sphereName;
 

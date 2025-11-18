@@ -123,10 +123,10 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
     }
 }
 
-void Sprite::Update(const bool& debug, const char * spriteName) {
+void Sprite::Update(const bool& debug, [[maybe_unused]]const char * spriteName) {
 
     if (debug) {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined USE_IMGUI
         std::string name = std::string("Sprite: ") + spriteName;
 
         //ImGui

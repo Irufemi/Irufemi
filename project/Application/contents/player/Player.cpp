@@ -36,7 +36,7 @@ void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputMana
 }
 
 void Player::Update() {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined USE_IMGUI
     ImGui::Begin("Player");
     ImGui::Text("State : %s", GetStateName());
     ImGui::Text("OnGround : %s", onGround_ ? "true" : "false");

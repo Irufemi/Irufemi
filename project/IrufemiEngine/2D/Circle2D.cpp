@@ -151,8 +151,8 @@ void Circle2D::UpdateMatrix() {
     *resource_->transformationData_ = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world };
 }
 
-void Circle2D::Update(const char* circleName) {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+void Circle2D::Update([[maybe_unused]]const char* circleName) {
+#if defined USE_IMGUI
     std::string name = std::string("Circle2D: ") + circleName;
     ImGui::Begin(name.c_str());
     ui_->DebugTransform2D(resource_->transform_);

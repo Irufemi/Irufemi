@@ -88,9 +88,9 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
     Update();
 }
 
-void ObjClass::Update(const char* objName) {
+void ObjClass::Update([[maybe_unused]]const char* objName) {
     // (ImGui部分は instanceResources_ を参照するように変更)
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined USE_IMGUI
     std::string name = std::string("Obj: ") + objName;
     ImGui::Begin(name.c_str());
     for (size_t i = 0; i < instanceResources_.size(); ++i) {

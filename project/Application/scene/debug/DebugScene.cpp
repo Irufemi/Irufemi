@@ -117,7 +117,7 @@ void DebugScene::Update() {
     }
 
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#ifdef USE_IMGUI
 
     ImGui::Begin("GameScene");
     // pointLight 

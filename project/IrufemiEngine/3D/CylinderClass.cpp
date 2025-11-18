@@ -216,9 +216,9 @@ void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
     resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 
-void CylinderClass::Update(const char* cylinderName) {
+void CylinderClass::Update([[maybe_unused]]const char* cylinderName) {
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined USE_IMGUI
     std::string name = std::string("Cylinder: ") + cylinderName;
     ImGui::Begin(name.c_str());
 

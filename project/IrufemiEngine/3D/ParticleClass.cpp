@@ -192,9 +192,9 @@ void ParticleClass::Initialize(Camera* camera, const std::string& textureName, P
     }
 }
 
-void ParticleClass::Update(const char* particleName) {
+void ParticleClass::Update([[maybe_unused]]const char* particleName) {
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if USE_IMGUI
     if (s_ui_) {
         std::string name = std::string("Particle: ") + particleName;
 

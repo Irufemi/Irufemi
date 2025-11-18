@@ -132,9 +132,9 @@ void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
     }
 }
 
-void PlaneClass::Update(const char* planeName) {
+void PlaneClass::Update([[maybe_unused]]const char* planeName) {
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined USE_IMGUI
     std::string name = std::string("Plane: ") + planeName;
 
     ImGui::Begin(name.c_str());

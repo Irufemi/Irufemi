@@ -1,7 +1,11 @@
 #include "WinApp.h"
 
+#ifdef USE_IMGUI
+
 #include "imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+#endif // USE_IMGUI
 
 #pragma comment(lib,"winmm.lib")
 
@@ -177,9 +181,14 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
         return TRUE; // NCCREATE 成功
     }
 
+#ifdef USE_IMGUI
+
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) {
         return TRUE;
     }
+
+#endif // USE_IMGUI
+    
 
     if (auto* pThis = reinterpret_cast<WinApp*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA))) {
         return pThis->HandleMessage(hWnd, msg, wParam, lParam);

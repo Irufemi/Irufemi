@@ -87,8 +87,8 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
     resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 
-void TriangleClass::Update(const char* triangleName) {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+void TriangleClass::Update([[maybe_unused]]const char* triangleName) {
+#if defined USE_IMGUI
     std::string name = std::string("Triangle: ") + triangleName;
     ImGui::Begin(name.c_str());
     ui_->DebugTransform(resource_->transform_);

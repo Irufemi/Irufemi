@@ -61,12 +61,12 @@
     <Filter Include="Scene">
       <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\DebugUI">
+      <UniqueIdentifier>{efd67c09-a1d5-4279-9f78-b5610d42879e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="manager\AudioManager.cpp">
-      <Filter>Engine\manager</Filter>
-    </ClCompile>
-    <ClCompile Include="manager\DebugUI.cpp">
       <Filter>Engine\manager</Filter>
     </ClCompile>
     <ClCompile Include="manager\DrawManager.cpp">
@@ -219,6 +219,9 @@
     </ClCompile>
     <ClCompile Include="engine\directX\DescriptorPool.cpp">
       <Filter>Engine\directXCommon</Filter>
+    </ClCompile>
+    <ClCompile Include="manager\DebugUI.cpp">
+      <Filter>Engine\DebugUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

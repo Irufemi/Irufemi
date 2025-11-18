@@ -29,9 +29,9 @@ void Camera::Initialize(int window_width,int window_height) {
 }
 
 //更新
-void Camera::Update(const char *cameraName) {
+void Camera::Update([[maybe_unused]]const char *cameraName) {
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined USE_IMGUI
     std::string name = std::string("Camera: ") + cameraName;
 
     // ImGui（デバッグ時のみ）

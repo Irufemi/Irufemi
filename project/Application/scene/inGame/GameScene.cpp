@@ -81,7 +81,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 // 更新
 void GameScene::Update() {
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined USE_IMGUI
 
     ImGui::Begin("GameScene");
     // pointLight 
