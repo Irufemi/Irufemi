@@ -2,7 +2,9 @@
 
 /*開発のUIを出そう*/
 
-#include <imgui.h>
+
+
+#include "manager/DebugUI.h"
 
 #include <cmath>
 #include <string>

@@ -5,7 +5,7 @@
 #include "contents/MapChipField.h"
 #include "function/Math.h"
 #include "engine/Input/InputManager.h"
-#include <imgui.h>
+#include "manager/DebugUI.h"
 #include "PlayerState.h"
 #include <algorithm>
 #include <cassert>

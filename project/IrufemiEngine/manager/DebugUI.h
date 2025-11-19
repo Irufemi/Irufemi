@@ -17,6 +17,13 @@ struct Material;
 struct Sphere;
 class DirectXCommon;
 
+#ifdef USE_IMGUI
+
+#include "imgui/imgui.h"
+
+#endif // USE_IMGUI
+
+
 class DebugUI{
 private: // メンバ変数
 
