@@ -45,6 +45,11 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
 
+    // 課題用スプライトの初期化
+    imguiSprite_ = std::make_unique<Sprite>();
+    imguiSprite_->Initialize(camera_.get());
+    imguiSprite_->SetPosition(100.0f, 100.0f);
+
     if (isActiveSprite_) {
         sprite_ = std::make_unique <Sprite>();
         sprite_->Initialize(camera_.get());
@@ -150,6 +155,86 @@ void DebugScene::Update() {
     ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::End();
 
+    ImGui::Begin("GE");
+
+    static bool showDemoWindow = false;
+
+    ImGui::Text("Hello, world %d", 123);
+    if (ImGui::Button("showDemoWindow")) {
+        auto MySaveFunction = [&]() { showDemoWindow = !showDemoWindow; return showDemoWindow; };
+        showDemoWindow = MySaveFunction();
+    }
+    static char buf[256] = "";
+    ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
+    static float f{};
+    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+
+    ImGui::End();
+
+    if (showDemoWindow) {
+
+        // 課題用ImGuiウィンドウ
+        ImGui::SetNextWindowSize(ImVec2(500, 100));
+        ImGui::Begin("Sprite Control");
+        if (imguiSprite_) {
+            Vector2 pos = imguiSprite_->GetPosition2D();
+            float pos_xy[] = { pos.x, pos.y };
+            // スライダーの範囲は仮で0-1280としています
+            if (ImGui::SliderFloat2("Position", pos_xy, 0.0f, 1280.0f, "%.1f")) {
+                imguiSprite_->SetPosition(pos_xy[0], pos_xy[1]);
+            }
+        }
+        ImGui::End();
+
+        static bool my_tool_active = true;
+
+        ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
+                if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Do stuff */ }
+                if (ImGui::MenuItem("Close", "Ctrl+W")) { my_tool_active = false; }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+
+        // ImGui用カラー変数を追加
+        static float my_color[4] = { 1.0f, 0.0f, 1.0f, 1.0f };
+
+        // Edit a color stored as 4 floats
+        ImGui::ColorEdit4("Color", my_color);
+
+        // グラフの描画
+        // Generate samples and plot them
+        // グラフに表示するための100個のデータ点を格納する配列を宣言
+        float samples[100];
+        // sinf() (サイン関数) を使って、波のような形になる値を計算し、samples 配列に格納
+        // ImGui::GetTime() を計算に加えることで、グラフが時間と共に左に流れていくようなアニメーションになる
+        for (int n = 0; n < 100; n++)
+            samples[n] = sinf(n * 0.2f + ImGui::GetTime() * 1.5f);
+        // samples 配列のデータを "Samples" というラベルの折れ線グラフとしてImGuiウィンドウ内に描画
+        ImGui::PlotLines("Samples", samples, 100);
+
+        // スクロール可能なテキスト領域の表示
+        // Display contents in a scrolling region
+        // 黄色で見出しを表示
+        ImGui::TextColored(ImVec4(my_color[0], my_color[1], my_color[2], my_color[3]), "Important Stuff");
+        // スクロール可能な子領域を開始
+        ImGui::BeginChild("Scrolling");
+        // 50行分のテキストを表示し、スクロールバーを発生させる
+        for (int n = 0; n < 50; n++)
+            ImGui::Text("%04d: Some text", n);
+        // 子領域を終了
+        ImGui::EndChild();
+        ImGui::End();
+
+        ImGui::ShowDemoWindow();
+
+    }
+
 #endif // _DEBUG
 
     // 3D
@@ -252,6 +337,11 @@ void DebugScene::Update() {
 
     // 2D
 
+    // 課題用スプライトの更新
+    if (imguiSprite_) {
+        imguiSprite_->Update();
+    }
+
     if (isActiveSprite_) {
         if (!sprite_) {
             sprite_ = std::make_unique<Sprite>();
@@ -319,6 +409,11 @@ void DebugScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
+
+    // 課題用スプライトの描画
+    if (imguiSprite_) {
+        imguiSprite_->Draw();
+    }
 
     if (isActiveSprite_) {
         sprite_->Draw();

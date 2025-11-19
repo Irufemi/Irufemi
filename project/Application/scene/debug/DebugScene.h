@@ -67,6 +67,8 @@ private: // メンバ変数
     std::unique_ptr<ParticleClass> particle_ = nullptr;
     bool isActiveParticle_ = false;
 
+    std::unique_ptr<Sprite> imguiSprite_;
+
     IrufemiEngine* engine_ = nullptr;
 
     std::unique_ptr<Camera> camera_ = nullptr;
