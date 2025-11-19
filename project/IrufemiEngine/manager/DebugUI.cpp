@@ -106,6 +106,8 @@ LRESULT DebugUI::WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         return TRUE;
     }
 
+    return FALSE;
+
 }
 #endif // USE_IMGUI
 
