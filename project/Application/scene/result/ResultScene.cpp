@@ -7,7 +7,7 @@
 #include "2D/Circle2D.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
-#include <imgui.h>
+#include "manager/DebugUI.h"
 #include "function/Function.h"
 
 #include <memory>

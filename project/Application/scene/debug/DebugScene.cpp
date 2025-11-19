@@ -2,7 +2,7 @@
 
 #include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
-#include <imgui.h>
+#include "manager/DebugUI.h"
 
 
 // 初期化
