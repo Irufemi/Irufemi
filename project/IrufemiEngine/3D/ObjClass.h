@@ -44,8 +44,9 @@ public: //メンバ関数
 ~ObjClass() = default;
     //初期化
     void Initialize(Camera* camera, const std::string& filename = "plane.obj");
-    void Update(const char* objName = " ");
+    void Update();
     void Draw();
+    void Debug(const char* objName = " ");
 
     // Transform 系ゲッター/セッター（instanceResources_ を参照するように変更）
     const Vector3& GetPosition(uint32_t index = 0)const { return instanceResources_[index]->transform_.translate; }

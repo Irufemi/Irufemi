@@ -50,7 +50,7 @@ public:
     void BuildInstanceBuffer(bool force = false);
 
     // 描画（GPUインスタンシング）。CPUフォールバック描画も可能。
-    void Draw(bool debugUpdate = false, bool useCpuFallback = false);
+    void Draw(bool useCpuFallback = false);
 
     // 共有設定（全インスタンスに適用）
     void SetAnchor(float ax, float ay) { if (sprite_) sprite_->SetAnchor(ax, ay); }

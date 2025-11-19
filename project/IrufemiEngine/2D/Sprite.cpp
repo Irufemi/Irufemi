@@ -107,8 +107,8 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
             // 行列を更新（サイズ反映後）
             Vector3 pos3 = resource_->transform_.translate;
             resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, pos3);
-            resource_->transformationMatrix_.WVP   = Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
-            *resource_->transformationData_        = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world };
+            resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
+            *resource_->transformationData_ = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world };
         }
 
         // デバッグUI（コンボ）用に selectedTextureIndex_ を既存ロジックで決める
@@ -123,80 +123,7 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
     }
 }
 
-void Sprite::Update(const bool& debug, [[maybe_unused]]const char * spriteName) {
-
-    if (debug) {
-#if defined USE_IMGUI
-        std::string name = std::string("Sprite: ") + spriteName;
-
-        //ImGui
-
-        //カメラウィンドウを作り出す
-        ImGui::Begin(name.c_str());
-
-        ui_->DebugTransform2D(resource_->transform_);
-
-        ui_->DebugMaterialBy2D(resource_->materialData_);
-
-        ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-
-        ui_->DebugUvTransform(resource_->uvTransform_);
-
-        ImGui::Checkbox("Flip X", &isFlipX_);
-
-        ImGui::Checkbox("Flip Y", &isFlipY_);
-
-        ImGui::Separator();
-        // Anchor/Size 操作
-        float a[2] = { anchor_.x, anchor_.y };
-        if (ImGui::SliderFloat2("Anchor (0..1)", a, 0.0f, 1.0f)) {
-            SetAnchor(a[0], a[1]);
-        }
-        if (ImGui::SmallButton("TopLeft (0,0)")) { SetAnchor(0.0f, 0.0f); }
-        ImGui::SameLine();
-        if (ImGui::SmallButton("Center (0.5,0.5)")) { SetAnchor(0.5f, 0.5f); }
-        ImGui::SameLine();
-        if (ImGui::SmallButton("BottomRight (1,1)")) { SetAnchor(1.0f, 1.0f); }
-
-        float sz[2] = { size_.x, size_.y };
-        if (ImGui::DragFloat2("Size (px)", sz, 1.0f, 1.0f, 8192.0f)) {
-            SetSize(sz[0], sz[1]);
-        }
-
-        // 実効矩形の確認表示（アンカー適用後のTopLeft/BottomRight）
-        const float left = resource_->transform_.translate.x - anchor_.x * size_.x;
-        const float top = resource_->transform_.translate.y - anchor_.y * size_.y;
-        const float right = left + size_.x;
-        const float bottom = top + size_.y;
-        ImGui::Text("Rect L=%.1f T=%.1f R=%.1f B=%.1f", left, top, right, bottom);
-
-        // 切り出しUI
-        if (ImGui::CollapsingHeader("Texture Rect (px)")) {
-            bool enabled = useTexRect_;
-            if (ImGui::Checkbox("Enable", &enabled)) {
-                useTexRect_ = enabled;
-                if (!useTexRect_) ClearTextureRect();
-            }
-            int lt[2] = { static_cast<int>(texRectLeftTop_.x), static_cast<int>(texRectLeftTop_.y) };
-            int szpx[2] = { static_cast<int>(texRectSize_.x), static_cast<int>(texRectSize_.y) };
-            bool changed = false;
-            changed |= ImGui::DragInt2("LeftTop", lt, 1);
-            changed |= ImGui::DragInt2("Size", szpx, 1);
-            if (changed && enabled) {
-                SetTextureRectPixels(lt[0], lt[1], std::max(1, szpx[0]), std::max(1, szpx[1]), false);
-            }
-            if (ImGui::SmallButton("Reset Full")) {
-                ClearTextureRect();
-            }
-            ImGui::Text("TexSize: (%.0f, %.0f)", textureSize_.x, textureSize_.y);
-        }
-
-        //入力終了
-        ImGui::End();
-
-#endif // _DEBUG
-
-    }
+void Sprite::Update() {
 
     // DebugUI でのテクスチャ選択変更に追随してサイズを更新
     if (textureManager_) {
@@ -346,4 +273,79 @@ void Sprite::AdjustTextureSize() {
         textureSize_ = { static_cast<float>(tw), static_cast<float>(th) };
         SetSize(textureSize_.x, textureSize_.y);
     }
+}
+
+void Sprite::Debug([[maybe_unused]] const char* spriteName) {
+
+#if defined USE_IMGUI
+    std::string name = std::string("Sprite: ") + spriteName;
+
+    //ImGui
+
+    //カメラウィンドウを作り出す
+    ImGui::Begin(name.c_str());
+
+    ui_->DebugTransform2D(resource_->transform_);
+
+    ui_->DebugMaterialBy2D(resource_->materialData_);
+
+    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+
+    ui_->DebugUvTransform(resource_->uvTransform_);
+
+    ImGui::Checkbox("Flip X", &isFlipX_);
+
+    ImGui::Checkbox("Flip Y", &isFlipY_);
+
+    ImGui::Separator();
+    // Anchor/Size 操作
+    float a[2] = { anchor_.x, anchor_.y };
+    if (ImGui::SliderFloat2("Anchor (0..1)", a, 0.0f, 1.0f)) {
+        SetAnchor(a[0], a[1]);
+    }
+    if (ImGui::SmallButton("TopLeft (0,0)")) { SetAnchor(0.0f, 0.0f); }
+    ImGui::SameLine();
+    if (ImGui::SmallButton("Center (0.5,0.5)")) { SetAnchor(0.5f, 0.5f); }
+    ImGui::SameLine();
+    if (ImGui::SmallButton("BottomRight (1,1)")) { SetAnchor(1.0f, 1.0f); }
+
+    float sz[2] = { size_.x, size_.y };
+    if (ImGui::DragFloat2("Size (px)", sz, 1.0f, 1.0f, 8192.0f)) {
+        SetSize(sz[0], sz[1]);
+    }
+
+    // 実効矩形の確認表示（アンカー適用後のTopLeft/BottomRight）
+    const float left = resource_->transform_.translate.x - anchor_.x * size_.x;
+    const float top = resource_->transform_.translate.y - anchor_.y * size_.y;
+    const float right = left + size_.x;
+    const float bottom = top + size_.y;
+    ImGui::Text("Rect L=%.1f T=%.1f R=%.1f B=%.1f", left, top, right, bottom);
+
+    // 切り出しUI
+    if (ImGui::CollapsingHeader("Texture Rect (px)")) {
+        bool enabled = useTexRect_;
+        if (ImGui::Checkbox("Enable", &enabled)) {
+            useTexRect_ = enabled;
+            if (!useTexRect_) ClearTextureRect();
+        }
+        int lt[2] = { static_cast<int>(texRectLeftTop_.x), static_cast<int>(texRectLeftTop_.y) };
+        int szpx[2] = { static_cast<int>(texRectSize_.x), static_cast<int>(texRectSize_.y) };
+        bool changed = false;
+        changed |= ImGui::DragInt2("LeftTop", lt, 1);
+        changed |= ImGui::DragInt2("Size", szpx, 1);
+        if (changed && enabled) {
+            SetTextureRectPixels(lt[0], lt[1], std::max(1, szpx[0]), std::max(1, szpx[1]), false);
+        }
+        if (ImGui::SmallButton("Reset Full")) {
+            ClearTextureRect();
+        }
+        ImGui::Text("TexSize: (%.0f, %.0f)", textureSize_.x, textureSize_.y);
+    }
+
+    //入力終了
+    ImGui::End();
+
+#endif // _DEBUG
+
+    Update();
 }

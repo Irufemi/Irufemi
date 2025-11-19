@@ -88,24 +88,7 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
     Update();
 }
 
-void ObjClass::Update([[maybe_unused]]const char* objName) {
-    // (ImGui部分は instanceResources_ を参照するように変更)
-#if defined USE_IMGUI
-    std::string name = std::string("Obj: ") + objName;
-    ImGui::Begin(name.c_str());
-    for (size_t i = 0; i < instanceResources_.size(); ++i) {
-        auto& res = instanceResources_[i];
-        std::string meshLabel = "Mesh[" + std::to_string(i) + "]";
-        if (ImGui::TreeNode(meshLabel.c_str())) {
-            ui_->DebugTransform(res->transform_);
-            ui_->DebugMaterialBy3D(res->materialData_);
-            ui_->DebugDirectionalLight(res->directionalLightData_);
-            ui_->DebugUvTransform(res->uvTransform_);
-            ImGui::TreePop();
-        }
-    }
-    ImGui::End();
-#endif
+void ObjClass::Update() {
 
     if (!managedModel_) return;
 
@@ -147,4 +130,23 @@ void ObjClass::Draw() {
         // (DrawManager側の修正が必要。ここでは仮の呼び出し)
         drawManager_->DrawSharedMesh(gpuMesh.get(), instanceRes.get());
     }
+}
+
+void ObjClass::Debug([[maybe_unused]] const char* objName) {
+#if defined USE_IMGUI
+    std::string name = std::string("Obj: ") + objName;
+    ImGui::Begin(name.c_str());
+    for (size_t i = 0; i < instanceResources_.size(); ++i) {
+        auto& res = instanceResources_[i];
+        std::string meshLabel = "Mesh[" + std::to_string(i) + "]";
+        if (ImGui::TreeNode(meshLabel.c_str())) {
+            ui_->DebugTransform(res->transform_);
+            ui_->DebugMaterialBy3D(res->materialData_);
+            ui_->DebugDirectionalLight(res->directionalLightData_);
+            ui_->DebugUvTransform(res->uvTransform_);
+            ImGui::TreePop();
+        }
+    }
+    ImGui::End();
+#endif
 }

@@ -64,15 +64,18 @@
     <Filter Include="Engine\DebugUI">
       <UniqueIdentifier>{efd67c09-a1d5-4279-9f78-b5610d42879e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="3D\Light">
+      <UniqueIdentifier>{d24cac09-20bd-47dc-828b-b236ed724e9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\audio">
+      <UniqueIdentifier>{f0d4e162-0e85-4ad7-a095-b4e12fba11b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\texture">
+      <UniqueIdentifier>{fcd3b9d7-f04c-475a-bb9b-fcbc224eac97}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="manager\AudioManager.cpp">
-      <Filter>Engine\manager</Filter>
-    </ClCompile>
     <ClCompile Include="manager\DrawManager.cpp">
-      <Filter>Engine\manager</Filter>
-    </ClCompile>
-    <ClCompile Include="manager\TextureManager.cpp">
       <Filter>Engine\manager</Filter>
     </ClCompile>
     <ClCompile Include="engine\Log.cpp">
@@ -89,12 +92,6 @@
     </ClCompile>
     <ClCompile Include="3D\TriangleClass.cpp">
       <Filter>3D</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Sound.cpp">
-      <Filter>Engine\source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Texture.cpp">
-      <Filter>Engine\source</Filter>
     </ClCompile>
     <ClCompile Include="3D\ParticleClass.cpp">
       <Filter>3D</Filter>
@@ -171,12 +168,6 @@
     <ClCompile Include="function\ExportDump.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
-    <ClCompile Include="3D\PointLightClass.cpp">
-      <Filter>3D</Filter>
-    </ClCompile>
-    <ClCompile Include="3D\SpotLightClass.cpp">
-      <Filter>3D</Filter>
-    </ClCompile>
     <ClCompile Include="math\Vector2.cpp">
       <Filter>math</Filter>
     </ClCompile>
@@ -223,18 +214,27 @@
     <ClCompile Include="manager\DebugUI.cpp">
       <Filter>Engine\DebugUI</Filter>
     </ClCompile>
+    <ClCompile Include="3D\PointLightClass.cpp">
+      <Filter>3D\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\SpotLightClass.cpp">
+      <Filter>3D\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="manager\AudioManager.cpp">
+      <Filter>Engine\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Sound.cpp">
+      <Filter>Engine\audio</Filter>
+    </ClCompile>
+    <ClCompile Include="manager\TextureManager.cpp">
+      <Filter>Engine\texture</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Texture.cpp">
+      <Filter>Engine\texture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="manager\AudioManager.h">
-      <Filter>Engine\manager</Filter>
-    </ClInclude>
-    <ClInclude Include="manager\DebugUI.h">
-      <Filter>Engine\manager</Filter>
-    </ClInclude>
     <ClInclude Include="manager\DrawManager.h">
-      <Filter>Engine\manager</Filter>
-    </ClInclude>
-    <ClInclude Include="manager\TextureManager.h">
       <Filter>Engine\manager</Filter>
     </ClInclude>
     <ClInclude Include="math\ChunkHeader.h">
@@ -307,12 +307,6 @@
       <Filter>3D</Filter>
     </ClInclude>
     <ClInclude Include="source\D3D12ResourceUtil.h">
-      <Filter>Engine\source</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Sound.h">
-      <Filter>Engine\source</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Texture.h">
       <Filter>Engine\source</Filter>
     </ClInclude>
     <ClInclude Include="engine\D3DResourceLeakChecker.h">
@@ -405,17 +399,11 @@
     <ClInclude Include="math\CameraForGPU.h">
       <Filter>math</Filter>
     </ClInclude>
-    <ClInclude Include="3D\PointLightClass.h">
-      <Filter>3D</Filter>
-    </ClInclude>
     <ClInclude Include="math\PointLight.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="math\SpotLight.h">
       <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\SpotLightClass.h">
-      <Filter>3D</Filter>
     </ClInclude>
     <ClInclude Include="3D\CylinderClass.h">
       <Filter>3D</Filter>
@@ -455,6 +443,27 @@
     </ClInclude>
     <ClInclude Include="engine\directX\DescriptorPool.h">
       <Filter>Engine\directXCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\PointLightClass.h">
+      <Filter>3D\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\SpotLightClass.h">
+      <Filter>3D\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="manager\DebugUI.h">
+      <Filter>Engine\DebugUI</Filter>
+    </ClInclude>
+    <ClInclude Include="manager\AudioManager.h">
+      <Filter>Engine\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Sound.h">
+      <Filter>Engine\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="manager\TextureManager.h">
+      <Filter>Engine\texture</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Texture.h">
+      <Filter>Engine\texture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

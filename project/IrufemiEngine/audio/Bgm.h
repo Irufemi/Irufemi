@@ -40,6 +40,9 @@ public:
     // 更新
     void Update();
 
+    // デバッグ
+    void Debug();
+
     void Play(const std::string& category, const std::string& track, bool loop = true);
     void PlayFirstTrack(); // 最初のカテゴリと最初のトラックで再生
     void Stop();

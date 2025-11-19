@@ -44,10 +44,13 @@ public:
     void Initialize(Camera* camera, const std::string& textureName = "resources/whiteTexture.png", uint32_t subdiv = 64);
 
     // 更新（Debug UIなど）
-    void Update(const char* circleName = " ");
+    void Update();
 
     // 描画
     void Draw();
+
+    // デバッグ
+    void Debug(const char* circleName = " ");
 
     // 情報アクセス
     const Circle2DInfo& GetInfo() const { return info_; }

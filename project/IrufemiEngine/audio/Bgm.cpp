@@ -121,6 +121,10 @@ void Bgm::SetVolume(float volume) {
 }
 
 void Bgm::Update() {
+
+}
+
+void Bgm::Debug() {
 #if defined USE_IMGUI
 
     ImGui::Begin("Audio Settings");
@@ -185,4 +189,5 @@ void Bgm::Update() {
 
 #endif // _DEBUG
 
+    Update();
 }

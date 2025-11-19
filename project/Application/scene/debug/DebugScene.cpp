@@ -166,6 +166,7 @@ void DebugScene::Update() {
             plane_ = std::make_unique<PlaneClass>();
             plane_->Initialize(camera_.get());
         }
+        plane_->Debug("Plane");
         plane_->Update();
     }
     if (isActiveSphere_) {
@@ -173,6 +174,7 @@ void DebugScene::Update() {
             sphere_ = std::make_unique<SphereClass>();
             sphere_->Initialize(camera_.get());
         }
+        sphere_->Debug("Sphere");
         sphere_->Update();
     }
     if (isActiveObj_) {
@@ -180,62 +182,71 @@ void DebugScene::Update() {
             obj_ = std::make_unique<ObjClass>();
             obj_->Initialize(camera_.get(), "sample/plane.gltf");
         }
-        obj_->Update("Plane");
+        obj_->Debug("Plane");
+        obj_->Update();
     }
     if (isActiveUtashTeapot_) {
         if (!utashTeapot_) {
             utashTeapot_ = std::make_unique<ObjClass>();
             utashTeapot_->Initialize(camera_.get(), "sample/teapot.obj");
         }
-        utashTeapot_->Update("Utash Teapot");
+        utashTeapot_->Debug("Utash Teapot");
+        utashTeapot_->Update();
     }
     if (isActiveStanfordBunny_) {
         if (!stanfordBunny_) {
             stanfordBunny_ = std::make_unique<ObjClass>();
             stanfordBunny_->Initialize(camera_.get(), "sample/bunny.obj");
         }
-        stanfordBunny_->Update("Stanford Bunny");
+        stanfordBunny_->Debug("Stanford Bunny");
+        stanfordBunny_->Update();
     }
     if (isActiveMultiMesh_) {
         if (!multiMesh_) {
             multiMesh_ = std::make_unique<ObjClass>();
             multiMesh_->Initialize(camera_.get(), "sample/multiMesh.obj");
         }
-        multiMesh_->Update("MultiMesh");
+        multiMesh_->Debug("MultiMesh");
+        multiMesh_->Update();
     }
     if (isActiveMultiMaterial_) {
         if (!multiMaterial_) {
             multiMaterial_ = std::make_unique<ObjClass>();
             multiMaterial_->Initialize(camera_.get(), "sample/multiMaterial.obj");
         }
-        multiMaterial_->Update("MultiMaterial");
+        multiMaterial_->Debug("MultiMaterial");
+        multiMaterial_->Update();
     }
     if (isActiveSuzanne_) {
         if (!suzanne_) {
             suzanne_ = std::make_unique<ObjClass>();
             suzanne_->Initialize(camera_.get(), "sample/suzanne.obj");
         }
-        suzanne_->Update("Suzanne");
+        suzanne_->Debug("Suzanne");
+        suzanne_->Update();
     }
     if (isActiveFence_) {
         if (!fence_) {
             fence_ = std::make_unique<ObjClass>();
             fence_->Initialize(camera_.get(), "sample/fence.obj");
         }
-        fence_->Update("Fence");
+        fence_->Debug("Fence");
+        fence_->Update();
     }
     if (isActiveTerrain_) {
         if (!terrain_) {
             terrain_ = std::make_unique<ObjClass>();
             terrain_->Initialize(camera_.get(), "sample/terrain.obj");
         }
-        terrain_->Update("Terrain");
+        terrain_->Debug("Terrain");
+        terrain_->Update();
     }
     if (isActiveParticle_) {
         if (!particle_) {
             particle_ = std::make_unique <ParticleClass>();
             particle_->Initialize(camera_.get(), "resources/circle.png");
         }
+        particle_->Debug("Particle");
         particle_->Update();
     }
 
@@ -246,6 +257,7 @@ void DebugScene::Update() {
             sprite_ = std::make_unique<Sprite>();
             sprite_->Initialize(camera_.get());
         }
+        sprite_->Debug("Sprite");
         sprite_->Update();
     }
 }
