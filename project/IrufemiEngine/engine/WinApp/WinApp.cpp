@@ -176,7 +176,11 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
         return TRUE; // NCCREATE 成功
     }
 
+#ifdef USE_IMGUI
+
     DebugUI::WndProcHandler(hWnd, msg, wParam, lParam);
+
+#endif // USE_IMGUI
 
     if (auto* pThis = reinterpret_cast<WinApp*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA))) {
         return pThis->HandleMessage(hWnd, msg, wParam, lParam);

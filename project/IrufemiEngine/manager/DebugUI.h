@@ -50,8 +50,9 @@ public: // メンバ関数
 
     // 終了処理
     void Shutdown();
-
+#ifdef USE_IMGUI
     static LRESULT WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif // USE_IMGUI
 
     // フレーム開始
     void FrameStart();
