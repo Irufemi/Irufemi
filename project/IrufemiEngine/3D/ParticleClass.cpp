@@ -1,6 +1,6 @@
 #include "ParticleClass.h"
 #include "Math.h"
-#include "../externals/imgui/imgui.h"
+#include "manager/DebugUI.h"
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h" // 追加
 #include <algorithm>
