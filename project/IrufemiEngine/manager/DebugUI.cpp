@@ -98,6 +98,18 @@ void DebugUI::Shutdown() {
 #endif // USE_IMGUI
 }
 
+LRESULT DebugUI::WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+
+#ifdef USE_IMGUI
+
+    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) {
+        return TRUE;
+    }
+#endif // USE_IMGUI
+}
+
+
+
 void DebugUI::QueueDrawCommands() {
 #ifdef USE_IMGUI
 

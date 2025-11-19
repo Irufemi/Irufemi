@@ -51,6 +51,8 @@ public: // メンバ関数
     // 終了処理
     void Shutdown();
 
+    static LRESULT WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
     // フレーム開始
     void FrameStart();
 
@@ -92,5 +94,6 @@ public: // メンバ関数
 
     // シーンセレクタ
     void DebugSceneSelector(SceneManager* sm);
+
 };
 
