@@ -11,14 +11,14 @@
 #include "imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#endif // USE_IMGUI
+
 
 
 // ImGuiWindowFlags_NoDocking が未定義の場合は定義する
 #ifndef ImGuiWindowFlags_NoDocking
 #define ImGuiWindowFlags_NoDocking (1 << 13)
 #endif
-
+#endif // USE_IMGUI
 #include <vector>
 #include <string>
 #include <algorithm>
