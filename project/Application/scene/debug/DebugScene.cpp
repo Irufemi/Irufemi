@@ -214,7 +214,7 @@ void DebugScene::Update() {
         // sinf() (サイン関数) を使って、波のような形になる値を計算し、samples 配列に格納
         // ImGui::GetTime() を計算に加えることで、グラフが時間と共に左に流れていくようなアニメーションになる
         for (int n = 0; n < 100; n++)
-            samples[n] = sinf(n * 0.2f + ImGui::GetTime() * 1.5f);
+            samples[n] = sinf(n * 0.2f + static_cast<float>(ImGui::GetTime()) * 1.5f);
         // samples 配列のデータを "Samples" というラベルの折れ線グラフとしてImGuiウィンドウ内に描画
         ImGui::PlotLines("Samples", samples, 100);
 
