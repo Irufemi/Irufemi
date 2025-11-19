@@ -53,7 +53,10 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
 }
 
 void ResultScene::Update() {
-    if (circle_) circle_->Update("ResultCenter");
+    if (circle_) { 
+        circle_->Debug("ResultCenter");
+        circle_->Update();
+    }
 
     //エンターキーが押されていたら
     if (engine_->GetInputManager()->IsKeyPressed(VK_RETURN)) {

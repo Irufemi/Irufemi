@@ -87,17 +87,7 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
     resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 
-void TriangleClass::Update(const char* triangleName) {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-    std::string name = std::string("Triangle: ") + triangleName;
-    ImGui::Begin(name.c_str());
-    ui_->DebugTransform(resource_->transform_);
-    ui_->DebugMaterialBy3D(resource_->materialData_);
-    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-    ui_->DebugUvTransform(resource_->uvTransform_);
-    ui_->DebugDirectionalLight(resource_->directionalLightData_);
-    ImGui::End();
-#endif
+void TriangleClass::Update() {
 
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
@@ -122,3 +112,15 @@ void TriangleClass::Draw() {
     drawManager_->DrawTriangle(this);
 }
 
+void TriangleClass::Debug([[maybe_unused]] const char* triangleName) {
+#if defined USE_IMGUI
+    std::string name = std::string("Triangle: ") + triangleName;
+    ImGui::Begin(name.c_str());
+    ui_->DebugTransform(resource_->transform_);
+    ui_->DebugMaterialBy3D(resource_->materialData_);
+    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+    ui_->DebugUvTransform(resource_->uvTransform_);
+    ui_->DebugDirectionalLight(resource_->directionalLightData_);
+    ImGui::End();
+#endif
+}

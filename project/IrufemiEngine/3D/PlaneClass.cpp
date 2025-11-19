@@ -132,21 +132,7 @@ void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
     }
 }
 
-void PlaneClass::Update(const char* planeName) {
-
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-    std::string name = std::string("Plane: ") + planeName;
-
-    ImGui::Begin(name.c_str());
-
-    ui_->DebugTransform(resource_->transform_);
-    ui_->DebugMaterialBy3D(resource_->materialData_);
-    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-    ui_->DebugUvTransform(resource_->uvTransform_);
-    ui_->DebugDirectionalLight(resource_->directionalLightData_);
-
-    ImGui::End();
-#endif
+void PlaneClass::Update() {
 
     // Transform更新
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
@@ -197,9 +183,26 @@ void PlaneClass::Update(const char* planeName) {
         info_.normal = nWorld;
         info_.distance = (nWorld.x * pWorld.x) + (nWorld.y * pWorld.y) + (nWorld.z * pWorld.z);
     }
+
 }
 
 void PlaneClass::Draw() {
     // インデックス付き描画
     drawManager_->DrawByIndex(resource_.get());
+}
+
+void PlaneClass::Debug([[maybe_unused]] const char* planeName) {
+#if defined USE_IMGUI
+    std::string name = std::string("Plane: ") + planeName;
+
+    ImGui::Begin(name.c_str());
+
+    ui_->DebugTransform(resource_->transform_);
+    ui_->DebugMaterialBy3D(resource_->materialData_);
+    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+    ui_->DebugUvTransform(resource_->uvTransform_);
+    ui_->DebugDirectionalLight(resource_->directionalLightData_);
+
+    ImGui::End();
+#endif
 }

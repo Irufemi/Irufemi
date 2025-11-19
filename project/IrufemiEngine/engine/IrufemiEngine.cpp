@@ -2,8 +2,8 @@
 
 
 
-#include "../function/Function.h"
-#include "../function/GetBackBufferIndex.h"
+#include "function/Function.h"
+#include "function/GetBackBufferIndex.h"
 
 #include <cassert>
 #include <DbgHelp.h>
@@ -83,9 +83,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     {
         DescriptorPool* srvPool = dxCommon_->GetSrvPool();
 
-        // ImGui 等が先頭を使っているなら予約
-        srvPool->ReservePrefix(1);
-
         // 注入
         Texture::SetDescriptorPool(srvPool);
         SphereRegion::SetSrvAllocator(srvPool);
@@ -141,7 +138,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     // UI
     ui = std::make_unique <DebugUI>();
-    ui->Initialize(GetCommandList(), GetDevice(), GetHwnd(), GetSwapChainDesc(), GetRtvDesc(), GetSrvDescriptorHeap());
+    ui->Initialize(winApp_->GetHwnd(), dxCommon_.get());
     Sprite::SetDebugUI(ui.get());
     Circle2D::SetDebugUI(ui.get());
     ObjClass::SetDebugUI(ui.get());
@@ -257,7 +254,7 @@ void IrufemiEngine::Execute() {
         // ImGui
         ui->FrameStart();
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#ifdef USE_IMGUI
         ui->FPSDebug();
         ui->DebugSceneSelector(sceneManager_.get());
 #endif // _DEBUG
@@ -285,15 +282,6 @@ void IrufemiEngine::StartFrame() {
 void IrufemiEngine::ProcessFrame() {
     // 描画処理に入る前にImGui::Renderを積む
     ui->QueueDrawCommands();
-
-    //これから書き込むバックバッファのインデックスを取得
-    backBufferIndex_ = GetBackBufferIndex(GetSwapChain());
-
-    ///DSVを設定する
-
-    //描画先のRTVとDSVを設定する
-    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = GetDsvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
-
     drawManager->PreDraw(clearColor_, 1.0f, 0);
 }
 

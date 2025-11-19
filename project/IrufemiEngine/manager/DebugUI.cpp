@@ -1,14 +1,18 @@
 #define NOMINMAX
 #include "DebugUI.h"
-
 #include <Windows.h>
 
 /*開発のUIを出そう*/
+
+#ifdef USE_IMGUI
 
 #include "imgui/imgui.h"
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+#endif // USE_IMGUI
+
 
 // ImGuiWindowFlags_NoDocking が未定義の場合は定義する
 #ifndef ImGuiWindowFlags_NoDocking
@@ -28,10 +32,13 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "math/DirectionalLight.h"
 #include "math/Material.h"
 #include "source/D3D12ResourceUtil.h"
+#include "engine/directX/DirectXCommon.h"
+#include "engine/directX/DescriptorPool.h"
 
-void DebugUI::Initialize(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>& commandList, const Microsoft::WRL::ComPtr<ID3D12Device>& device, HWND hwnd, DXGI_SWAP_CHAIN_DESC1& swapChainDesc, D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc, ID3D12DescriptorHeap* srvDescriptorHeap) {
+void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCommon* dxCommon) {
+#ifdef USE_IMGUI
 
-    this->commandList_ = commandList;
+    dxCommon_ = dxCommon;
 
     /*開発UIを出そう*/
     //ImGuiの初期化。詳細はさして重要ではないので開設は省略する。
@@ -40,18 +47,29 @@ void DebugUI::Initialize(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
     ImGui_ImplWin32_Init(hwnd);
+
+    DescriptorPool* srvPool = dxCommon->GetSrvPool();
+    ID3D12DescriptorHeap* srvHeap = srvPool->GetHeap();
+
+    // ImGui用にディスクリプタを1つ確保
+    const uint32_t imguiIndex = srvPool->Allocate();
+    assert(imguiIndex != DescriptorPool::kInvalid);
+
     ImGui_ImplDX12_Init(
-        device.Get(),
-        swapChainDesc.BufferCount,
-        rtvDesc.Format,
-        srvDescriptorHeap,
-        srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-        srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart()
+        dxCommon->GetDevice(),
+        dxCommon->GetSwapChainDesc().BufferCount,
+        dxCommon->GetRtvDesc().Format,
+        srvHeap,
+        srvPool->GetCPUHandle(imguiIndex),
+        srvPool->GetGPUHandle(imguiIndex)
     );
 
+#endif // USE_IMGUI
 }
 
 void DebugUI::FrameStart() {
+
+#ifdef USE_IMGUI
 
     /*開発のUIを出そう*/
 
@@ -60,11 +78,13 @@ void DebugUI::FrameStart() {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
+#endif // USE_IMGUI
 }
 
 void DebugUI::Shutdown() {
+#ifdef USE_IMGUI
 
-    if (commandList_) { commandList_.Reset(); }
+
     /*開発のUIを出そう*/
 
     ///ImGuiの終了処理
@@ -75,9 +95,24 @@ void DebugUI::Shutdown() {
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 
+#endif // USE_IMGUI
 }
 
+LRESULT DebugUI::WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+
+#ifdef USE_IMGUI
+
+    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) {
+        return TRUE;
+    }
+#endif // USE_IMGUI
+}
+
+
+
 void DebugUI::QueueDrawCommands() {
+#ifdef USE_IMGUI
+
 
     /*開発のUIを出そう*/
 
@@ -85,21 +120,34 @@ void DebugUI::QueueDrawCommands() {
 
     //ImGuiの内部コマンドを生成する
     ImGui::Render();
+#endif // USE_IMGUI
 }
 
 void DebugUI::QueuePostDrawCommands() {
+#ifdef USE_IMGUI
+
 
     /*開発のUIを出そう*/
+/*開発のUIを出そう*/
+
+    ///ImGuiを描画する
+
+    //描画用のDescriptorHeapの設定
+    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    dxCommon_->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
 
     ///ImGuiを描画する
 
     //実際のcommandListのImGuiの描画コマンドを積む
-    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList_.Get());
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon_->GetCommandList());
 
+#endif // USE_IMGUI
 }
 
 // transform
-void DebugUI::DebugTransform(Transform& transform) {
+void DebugUI::DebugTransform([[maybe_unused]] Transform& transform) {
+#ifdef USE_IMGUI
+
     if (ImGui::CollapsingHeader("transform")) {
         ImGui::DragFloat3("scale", &transform.scale.x, 0.05f);
         ImGui::DragFloat3("rotate", &transform.rotate.x, 0.05f);
@@ -120,10 +168,13 @@ void DebugUI::DebugTransform(Transform& transform) {
             transform.rotate.z += static_cast<float>(0.05f / std::numbers::pi);
         }
     }
+#endif // USE_IMGUI
 }
 
 // transform
-void DebugUI::DebugTransform2D(Transform& transform) {
+void DebugUI::DebugTransform2D([[maybe_unused]] Transform& transform) {
+#ifdef USE_IMGUI
+
     if (ImGui::CollapsingHeader("transform")) {
         ImGui::DragFloat2("scale", &transform.scale.x, 0.05f);
         ImGui::DragFloat("rotate", &transform.rotate.z, 0.05f);
@@ -134,20 +185,26 @@ void DebugUI::DebugTransform2D(Transform& transform) {
             transform.rotate.z += static_cast<float>(0.05f / std::numbers::pi);
         }
     }
+#endif // USE_IMGUI
 }
 
-void DebugUI::TextTransform(Transform& transform,const char* name) {
+void DebugUI::TextTransform([[maybe_unused]] Transform& transform, [[maybe_unused]] const char* name) {
+#ifdef USE_IMGUI
+
     std::string header = std::string("transform") + name;
     if (ImGui::CollapsingHeader(header.c_str())) {
         ImGui::Text("scale: (%.2f, %.2f, %.2f)", transform.scale.x, transform.scale.y, transform.scale.z);
         ImGui::Text("rotate: (%.2f, %.2f, %.2f)", transform.rotate.x, transform.rotate.y, transform.rotate.z);
         ImGui::Text("translate: (%.2f, %.2f, %.2f)", transform.translate.x, transform.translate.y, transform.translate.z);
     }
+#endif // USE_IMGUI
 }
 
 
 // Material
-void DebugUI::DebugMaterialBy3D(Material* materialData) {
+void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
+#ifdef USE_IMGUI
+
     if (ImGui::CollapsingHeader("material")) {
         ImGui::ColorEdit4("spriteColor", &materialData->color.x);
         bool enableLighting = materialData->enableLighting;
@@ -162,17 +219,23 @@ void DebugUI::DebugMaterialBy3D(Material* materialData) {
         }
         ImGui::DragFloat("Shininess", &materialData->shininess);
     }
+#endif // USE_IMGUI
 }
 
 // Material
-void DebugUI::DebugMaterialBy2D(Material* materialData) {
+void DebugUI::DebugMaterialBy2D([[maybe_unused]] Material* materialData) {
+#ifdef USE_IMGUI
+
     if (ImGui::CollapsingHeader("material")) {
         ImGui::ColorEdit4("spriteColor", &materialData->color.x);
     }
+#endif // USE_IMGUI
 }
 
 // 画像
-void DebugUI::DebugTexture(D3D12ResourceUtil* resource, int& selectedTextureIndex) {
+void DebugUI::DebugTexture([[maybe_unused]] D3D12ResourceUtil* resource, [[maybe_unused]] int& selectedTextureIndex) {
+#ifdef USE_IMGUI
+
     if (textureManager_) {
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
@@ -193,9 +256,12 @@ void DebugUI::DebugTexture(D3D12ResourceUtil* resource, int& selectedTextureInde
             }
         }
     }
+#endif // USE_IMGUI
 }
 
-void DebugUI::DebugTexture(D3D12ResourceUtilParticle* resource, int& selectedTextureIndex) {
+void DebugUI::DebugTexture([[maybe_unused]] D3D12ResourceUtilParticle* resource, [[maybe_unused]] int& selectedTextureIndex) {
+#ifdef USE_IMGUI
+
     if (textureManager_) {
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
@@ -216,36 +282,48 @@ void DebugUI::DebugTexture(D3D12ResourceUtilParticle* resource, int& selectedTex
             }
         }
     }
+#endif // USE_IMGUI
 }
 
 // DirectionalLight
-void DebugUI::DebugDirectionalLight(DirectionalLight* directionalLightData) {
+void DebugUI::DebugDirectionalLight([[maybe_unused]] DirectionalLight* directionalLightData) {
+#ifdef USE_IMGUI
+
     if (ImGui::CollapsingHeader("directionalLight")) {
         ImGui::ColorEdit4("lightColor", &directionalLightData->color.x);
         ImGui::DragFloat3("lightDirection", &directionalLightData->direction.x, 0.01f);
         ImGui::DragFloat("intensity", &directionalLightData->intensity, 0.01f, 0.0f);
     }
+#endif // USE_IMGUI
 }
 
 // UvTransform
-void DebugUI::DebugUvTransform(Transform& uvTransform) {
+void DebugUI::DebugUvTransform([[maybe_unused]] Transform& uvTransform) {
+#ifdef USE_IMGUI
+
     if (ImGui::CollapsingHeader("uvTransform")) {
         ImGui::DragFloat3("UVTranslate", &uvTransform.translate.x, 0.01f, -10.0f, 10.0f);
         ImGui::DragFloat3("UVScale", &uvTransform.scale.x, 0.01f, -10.0f, 10.0f);
         ImGui::SliderAngle("UVRotate", &uvTransform.rotate.z);
     }
+#endif // USE_IMGUI
 }
 
 // Sphere
-void DebugUI::DebugSphereInfo(Sphere& sphere) {
+void DebugUI::DebugSphereInfo([[maybe_unused]] Sphere& sphere) {
+#ifdef USE_IMGUI
+
     if (ImGui::CollapsingHeader("info")) {
         ImGui::DragFloat3("Center", &sphere.center.x, 0.01f, -10.0f, 10.0f);
         ImGui::DragFloat("radius", &sphere.radius, 0.01f, -10.0f, 10.0f);
     }
+#endif // USE_IMGUI
 }
 
 // FPS/FrameTime オーバーレイ
 void DebugUI::FPSDebug() {
+#ifdef USE_IMGUI
+
     ImGuiIO& io = ImGui::GetIO();
     const float fpsNow = io.Framerate;
     const float frameMsNow = (fpsNow > 0.0f) ? (1000.0f * io.DeltaTime) : 0.0f;
@@ -393,150 +471,150 @@ void DebugUI::FPSDebug() {
 
 
 // 表示モードトグル
-static bool showFpsGraph = false;
-ImGui::Checkbox("Show FPS graph (instead of Frame Time)", &showFpsGraph);
+        static bool showFpsGraph = false;
+        ImGui::Checkbox("Show FPS graph (instead of Frame Time)", &showFpsGraph);
 
-// 共通パラメータ
-const ImVec2 graphSize(260, 90);
-ImVec2 canvasMin = ImGui::GetCursorScreenPos();
-ImVec2 canvasMax = ImVec2(canvasMin.x + graphSize.x, canvasMin.y + graphSize.y);
-ImDrawList* draw = ImGui::GetWindowDrawList();
-draw->AddRectFilled(canvasMin, canvasMax, IM_COL32(25, 25, 30, 200), 4.0f);
-draw->AddRect(canvasMin, canvasMax, IM_COL32(200, 200, 200, 90), 4.0f);
+        // 共通パラメータ
+        const ImVec2 graphSize(260, 90);
+        ImVec2 canvasMin = ImGui::GetCursorScreenPos();
+        ImVec2 canvasMax = ImVec2(canvasMin.x + graphSize.x, canvasMin.y + graphSize.y);
+        ImDrawList* draw = ImGui::GetWindowDrawList();
+        draw->AddRectFilled(canvasMin, canvasMax, IM_COL32(25, 25, 30, 200), 4.0f);
+        draw->AddRect(canvasMin, canvasMax, IM_COL32(200, 200, 200, 90), 4.0f);
 
-if (!showFpsGraph) {
-    // ---- Frame Time モード (ms) ----
-    const float maxScale = std::max(20.0f, cachedMaxMs_ * 1.15f);
-    const float guide60 = target60; // 16.7ms
-    const float guide30 = target30; // 33.3ms
+        if (!showFpsGraph) {
+            // ---- Frame Time モード (ms) ----
+            const float maxScale = std::max(20.0f, cachedMaxMs_ * 1.15f);
+            const float guide60 = target60; // 16.7ms
+            const float guide30 = target30; // 33.3ms
 
-    auto msToY = [&](float ms) {
-        float t = std::clamp(ms / maxScale, 0.0f, 1.0f);
-        return canvasMin.y + (1.0f - t) * graphSize.y; // 大きい ms が上
-        };
-    auto guideLine = [&](float ms, ImU32 col, const char* label) {
-        if (ms > maxScale) return;
-        float y = msToY(ms);
-        draw->AddLine(ImVec2(canvasMin.x, y), ImVec2(canvasMax.x, y), col, 1.0f);
-        draw->AddText(ImVec2(canvasMin.x + 4, y - 12), col, label);
-        };
-    guideLine(guide60, IM_COL32(100, 255, 120, 200), "60FPS (16.7ms)");
-    guideLine(guide30, IM_COL32(255, 190, 80, 200), "30FPS (33.3ms)");
+            auto msToY = [&](float ms) {
+                float t = std::clamp(ms / maxScale, 0.0f, 1.0f);
+                return canvasMin.y + (1.0f - t) * graphSize.y; // 大きい ms が上
+                };
+            auto guideLine = [&](float ms, ImU32 col, const char* label) {
+                if (ms > maxScale) return;
+                float y = msToY(ms);
+                draw->AddLine(ImVec2(canvasMin.x, y), ImVec2(canvasMax.x, y), col, 1.0f);
+                draw->AddText(ImVec2(canvasMin.x + 4, y - 12), col, label);
+                };
+            guideLine(guide60, IM_COL32(100, 255, 120, 200), "60FPS (16.7ms)");
+            guideLine(guide30, IM_COL32(255, 190, 80, 200), "30FPS (33.3ms)");
 
-    for (int i = 1; i <= 4; ++i) {
-        float y = canvasMin.y + (graphSize.y / 5.0f) * i;
-        draw->AddLine(ImVec2(canvasMin.x, y), ImVec2(canvasMax.x, y), IM_COL32(255, 255, 255, 30), 1.0f);
-    }
-
-    if (count > 1) {
-        int sampleCount = (int)count;
-        float xStep = graphSize.x / float(std::max(sampleCount - 1, 1));
-        size_t start = historyFilled_ ? historyIndex_ : 0;
-        ImVec2 prev;
-        for (int i = 0; i < sampleCount; ++i) {
-            size_t idx = (start + i) % kPerfHistoryCount_;
-            float ms = frameTimeHistory_[idx];
-            float x = canvasMin.x + xStep * i;
-            float y = msToY(ms);
-            ImVec2 p(x, y);
-            if (i > 0) {
-                float norm = std::clamp(ms / maxScale, 0.0f, 1.0f);
-                ImU32 col = ImColor(
-                    80 + int(175 * norm),
-                    200 - int(150 * norm),
-                    255 - int(200 * norm),
-                    210);
-                draw->AddLine(prev, p, col, 2.0f);
+            for (int i = 1; i <= 4; ++i) {
+                float y = canvasMin.y + (graphSize.y / 5.0f) * i;
+                draw->AddLine(ImVec2(canvasMin.x, y), ImVec2(canvasMax.x, y), IM_COL32(255, 255, 255, 30), 1.0f);
             }
-            prev = p;
-        }
-        // 最新点
-        size_t latestIdx = (historyIndex_ + kPerfHistoryCount_ - 1) % kPerfHistoryCount_;
-        float latestMs = frameTimeHistory_[latestIdx];
-        draw->AddCircleFilled(ImVec2(canvasMax.x, msToY(latestMs)), 4.0f, IM_COL32(255, 255, 255, 220), 12);
-    }
 
-    // 軸ラベル
-    char top[32]; snprintf(top, sizeof(top), "%.1f ms (slow)", std::max(0.0f, cachedMaxMs_));
-    char mid[32]; snprintf(mid, sizeof(mid), "%.1f", std::max(0.0f, cachedMaxMs_ * 0.5f));
-    draw->AddText(ImVec2(canvasMin.x + 4, canvasMin.y + 2), IM_COL32(220, 220, 220, 200), top);
-    draw->AddText(ImVec2(canvasMin.x + 4, canvasMin.y + graphSize.y * 0.5f - 8), IM_COL32(200, 200, 200, 160), mid);
-    draw->AddText(ImVec2(canvasMin.x + 4, canvasMax.y - 16), IM_COL32(220, 220, 220, 200), "0 ms (fast)");
-
-    ImGui::Dummy(graphSize);
-    ImGui::TextUnformatted("Graph: Frame Time (lower is better)");
-
-} else {
-    // ---- FPS モード ----
-    // フレーム時間履歴を FPS に変換
-    static std::vector<float> fpsHistory;
-    fpsHistory.resize(count);
-    float maxFps = 0.f;
-    for (size_t i = 0; i < count; ++i) {
-        float ms = frameTimeHistory_[i];
-        float f = (ms > 0.0f) ? (1000.0f / ms) : 0.0f;
-        fpsHistory[i] = f;
-        maxFps = std::max(maxFps, f);
-    }
-    // 余裕を持たせる
-    float fpsScale = std::max(70.0f, maxFps * 1.10f);
-
-    auto fpsToY = [&](float f) {
-        float t = std::clamp(f / fpsScale, 0.0f, 1.0f);
-        return canvasMin.y + (1.0f - t) * graphSize.y; // 高FPS が上
-        };
-
-    auto guideFps = [&](float f, ImU32 col, const char* label) {
-        if (f > fpsScale) return;
-        float y = fpsToY(f);
-        draw->AddLine(ImVec2(canvasMin.x, y), ImVec2(canvasMax.x, y), col, 1.0f);
-        draw->AddText(ImVec2(canvasMin.x + 4, y - 12), col, label);
-        };
-    guideFps(60.0f, IM_COL32(100, 255, 120, 200), "60FPS");
-    guideFps(30.0f, IM_COL32(255, 190, 80, 200), "30FPS");
-
-    for (int i = 1; i <= 4; ++i) {
-        float y = canvasMin.y + (graphSize.y / 5.0f) * i;
-        draw->AddLine(ImVec2(canvasMin.x, y), ImVec2(canvasMax.x, y), IM_COL32(255, 255, 255, 30), 1.0f);
-    }
-
-    if (count > 1) {
-        int sampleCount = (int)count;
-        float xStep = graphSize.x / float(std::max(sampleCount - 1, 1));
-        size_t start = historyFilled_ ? historyIndex_ : 0;
-        ImVec2 prev;
-        for (int i = 0; i < sampleCount; ++i) {
-            size_t idx = (start + i) % kPerfHistoryCount_;
-            float f = fpsHistory[idx];
-            float x = canvasMin.x + xStep * i;
-            float y = fpsToY(f);
-            ImVec2 p(x, y);
-            if (i > 0) {
-                float norm = std::clamp(f / fpsScale, 0.0f, 1.0f);
-                ImU32 col = ImColor(
-                    255 - int(150 * norm),     // 低FPSで赤寄り
-                    80 + int(170 * norm),
-                    100 + int(100 * norm),
-                    210);
-                draw->AddLine(prev, p, col, 2.0f);
+            if (count > 1) {
+                int sampleCount = (int)count;
+                float xStep = graphSize.x / float(std::max(sampleCount - 1, 1));
+                size_t start = historyFilled_ ? historyIndex_ : 0;
+                ImVec2 prev;
+                for (int i = 0; i < sampleCount; ++i) {
+                    size_t idx = (start + i) % kPerfHistoryCount_;
+                    float ms = frameTimeHistory_[idx];
+                    float x = canvasMin.x + xStep * i;
+                    float y = msToY(ms);
+                    ImVec2 p(x, y);
+                    if (i > 0) {
+                        float norm = std::clamp(ms / maxScale, 0.0f, 1.0f);
+                        ImU32 col = ImColor(
+                            80 + int(175 * norm),
+                            200 - int(150 * norm),
+                            255 - int(200 * norm),
+                            210);
+                        draw->AddLine(prev, p, col, 2.0f);
+                    }
+                    prev = p;
+                }
+                // 最新点
+                size_t latestIdx = (historyIndex_ + kPerfHistoryCount_ - 1) % kPerfHistoryCount_;
+                float latestMs = frameTimeHistory_[latestIdx];
+                draw->AddCircleFilled(ImVec2(canvasMax.x, msToY(latestMs)), 4.0f, IM_COL32(255, 255, 255, 220), 12);
             }
-            prev = p;
+
+            // 軸ラベル
+            char top[32]; snprintf(top, sizeof(top), "%.1f ms (slow)", std::max(0.0f, cachedMaxMs_));
+            char mid[32]; snprintf(mid, sizeof(mid), "%.1f", std::max(0.0f, cachedMaxMs_ * 0.5f));
+            draw->AddText(ImVec2(canvasMin.x + 4, canvasMin.y + 2), IM_COL32(220, 220, 220, 200), top);
+            draw->AddText(ImVec2(canvasMin.x + 4, canvasMin.y + graphSize.y * 0.5f - 8), IM_COL32(200, 200, 200, 160), mid);
+            draw->AddText(ImVec2(canvasMin.x + 4, canvasMax.y - 16), IM_COL32(220, 220, 220, 200), "0 ms (fast)");
+
+            ImGui::Dummy(graphSize);
+            ImGui::TextUnformatted("Graph: Frame Time (lower is better)");
+
+        } else {
+            // ---- FPS モード ----
+            // フレーム時間履歴を FPS に変換
+            static std::vector<float> fpsHistory;
+            fpsHistory.resize(count);
+            float maxFps = 0.f;
+            for (size_t i = 0; i < count; ++i) {
+                float ms = frameTimeHistory_[i];
+                float f = (ms > 0.0f) ? (1000.0f / ms) : 0.0f;
+                fpsHistory[i] = f;
+                maxFps = std::max(maxFps, f);
+            }
+            // 余裕を持たせる
+            float fpsScale = std::max(70.0f, maxFps * 1.10f);
+
+            auto fpsToY = [&](float f) {
+                float t = std::clamp(f / fpsScale, 0.0f, 1.0f);
+                return canvasMin.y + (1.0f - t) * graphSize.y; // 高FPS が上
+                };
+
+            auto guideFps = [&](float f, ImU32 col, const char* label) {
+                if (f > fpsScale) return;
+                float y = fpsToY(f);
+                draw->AddLine(ImVec2(canvasMin.x, y), ImVec2(canvasMax.x, y), col, 1.0f);
+                draw->AddText(ImVec2(canvasMin.x + 4, y - 12), col, label);
+                };
+            guideFps(60.0f, IM_COL32(100, 255, 120, 200), "60FPS");
+            guideFps(30.0f, IM_COL32(255, 190, 80, 200), "30FPS");
+
+            for (int i = 1; i <= 4; ++i) {
+                float y = canvasMin.y + (graphSize.y / 5.0f) * i;
+                draw->AddLine(ImVec2(canvasMin.x, y), ImVec2(canvasMax.x, y), IM_COL32(255, 255, 255, 30), 1.0f);
+            }
+
+            if (count > 1) {
+                int sampleCount = (int)count;
+                float xStep = graphSize.x / float(std::max(sampleCount - 1, 1));
+                size_t start = historyFilled_ ? historyIndex_ : 0;
+                ImVec2 prev;
+                for (int i = 0; i < sampleCount; ++i) {
+                    size_t idx = (start + i) % kPerfHistoryCount_;
+                    float f = fpsHistory[idx];
+                    float x = canvasMin.x + xStep * i;
+                    float y = fpsToY(f);
+                    ImVec2 p(x, y);
+                    if (i > 0) {
+                        float norm = std::clamp(f / fpsScale, 0.0f, 1.0f);
+                        ImU32 col = ImColor(
+                            255 - int(150 * norm),     // 低FPSで赤寄り
+                            80 + int(170 * norm),
+                            100 + int(100 * norm),
+                            210);
+                        draw->AddLine(prev, p, col, 2.0f);
+                    }
+                    prev = p;
+                }
+                // 最新
+                size_t latestIdx = (historyIndex_ + kPerfHistoryCount_ - 1) % kPerfHistoryCount_;
+                float latestF = fpsHistory[latestIdx];
+                draw->AddCircleFilled(ImVec2(canvasMax.x, fpsToY(latestF)), 4.0f, IM_COL32(255, 255, 255, 220), 12);
+            }
+
+            char top[32]; snprintf(top, sizeof(top), "%.0f FPS (fast)", fpsScale);
+            char mid[32]; snprintf(mid, sizeof(mid), "%.0f", fpsScale * 0.5f);
+            draw->AddText(ImVec2(canvasMin.x + 4, canvasMin.y + 2), IM_COL32(220, 220, 220, 200), top);
+            draw->AddText(ImVec2(canvasMin.x + 4, canvasMin.y + graphSize.y * 0.5f - 8), IM_COL32(200, 200, 200, 160), mid);
+            draw->AddText(ImVec2(canvasMin.x + 4, canvasMax.y - 16), IM_COL32(220, 220, 220, 200), "0 FPS");
+
+            ImGui::Dummy(graphSize);
+            ImGui::TextUnformatted("Graph: FPS (higher is better)");
         }
-        // 最新
-        size_t latestIdx = (historyIndex_ + kPerfHistoryCount_ - 1) % kPerfHistoryCount_;
-        float latestF = fpsHistory[latestIdx];
-        draw->AddCircleFilled(ImVec2(canvasMax.x, fpsToY(latestF)), 4.0f, IM_COL32(255, 255, 255, 220), 12);
-    }
-
-    char top[32]; snprintf(top, sizeof(top), "%.0f FPS (fast)", fpsScale);
-    char mid[32]; snprintf(mid, sizeof(mid), "%.0f", fpsScale * 0.5f);
-    draw->AddText(ImVec2(canvasMin.x + 4, canvasMin.y + 2), IM_COL32(220, 220, 220, 200), top);
-    draw->AddText(ImVec2(canvasMin.x + 4, canvasMin.y + graphSize.y * 0.5f - 8), IM_COL32(200, 200, 200, 160), mid);
-    draw->AddText(ImVec2(canvasMin.x + 4, canvasMax.y - 16), IM_COL32(220, 220, 220, 200), "0 FPS");
-
-    ImGui::Dummy(graphSize);
-    ImGui::TextUnformatted("Graph: FPS (higher is better)");
-}
 
 
         // スパイク検知 (閾値超えフレーム数)
@@ -563,10 +641,13 @@ if (!showFpsGraph) {
         }
     }
     ImGui::End();
+#endif // USE_IMGUI
 }
 
 // ★追加: 統計更新
-void DebugUI::UpdatePerfStats_(float newFrameMs) {
+void DebugUI::UpdatePerfStats_([[maybe_unused]]float newFrameMs) {
+#ifdef USE_IMGUI
+
     frameTimeHistory_[historyIndex_] = newFrameMs;
     historyIndex_ = (historyIndex_ + 1) % kPerfHistoryCount_;
     if (historyIndex_ == 0) historyFilled_ = true;
@@ -595,9 +676,12 @@ void DebugUI::UpdatePerfStats_(float newFrameMs) {
     std::sort(sorted.begin(), sorted.end()); // 昇順 (遅いフレームが後ろ)
     size_t idx99 = static_cast<size_t>(std::clamp(std::floor((sorted.size() - 1) * 0.99f), 0.0f, (float)(sorted.size() - 1)));
     cachedP99Ms_ = sorted[idx99];
+#endif // USE_IMGUI
 }
 
-void DebugUI::DebugSceneSelector(SceneManager* sm) {
+void DebugUI::DebugSceneSelector([[maybe_unused]]SceneManager* sm) {
+#ifdef USE_IMGUI
+
     if (!sm) { return; }
 
     const auto names = sm->GetRegisteredKeys();
@@ -621,5 +705,6 @@ void DebugUI::DebugSceneSelector(SceneManager* sm) {
         ImGui::EndCombo();
     }
     ImGui::End();
+#endif // USE_IMGUI
 }
 

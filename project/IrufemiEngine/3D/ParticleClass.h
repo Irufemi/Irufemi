@@ -70,8 +70,9 @@ public:
     ~ParticleClass(); // 追加
 
     void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png", ParticleType type = ParticleType::kAccelerationField);
-    void Update(const char* particleName = "");
+    void Update();
     void Draw();
+    void Debug(const char* particleName = "");
 
     Particle MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter);
     std::list<Particle> Emit(const Emitter& emitter, std::mt19937& randomEngine);

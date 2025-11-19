@@ -192,70 +192,7 @@ void ParticleClass::Initialize(Camera* camera, const std::string& textureName, P
     }
 }
 
-void ParticleClass::Update(const char* particleName) {
-
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-    if (s_ui_) {
-        std::string name = std::string("Particle: ") + particleName;
-
-        //ImGui
-
-        //ウィンドウを作り出す
-        ImGui::Begin(name.c_str());
-
-        if (ImGui::Button("Add Particle")) {
-            particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
-        }
-
-        ImGui::Checkbox("update", &isUpdate_);
-
-        ImGui::Checkbox("useBillbord", &useBillbord_);
-
-        if (ImGui::CollapsingHeader("Emitter")) {
-            ImGui::DragFloat3("Translate", &emitter_.transform.translate.x, 0.01f, -100.0f, 100.0f);
-            ImGui::DragFloat3("Area", &emitter_.area.x, 0.1f, 0.0f, 100.0f);
-            ImGui::DragFloat3("Velocity Min", &emitter_.velocityMin.x, 0.1f, -10.0f, 10.0f);
-            ImGui::DragFloat3("Velocity Max", &emitter_.velocityMax.x, 0.1f, -10.0f, 10.0f);
-            ImGui::DragInt("Count", reinterpret_cast<int*>(&emitter_.count), 1, 1, 100);
-            ImGui::DragFloat("Frequency", &emitter_.frequency, 0.01f, 0.01f, 10.0f);
-        }
-
-        // ParticleTypeの選択UI
-        const char* particleTypeNames[] = { "AccelerationField" };
-        int currentType = static_cast<int>(particleType_);
-        if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
-            particleType_ = static_cast<ParticleType>(currentType);
-        }
-
-        switch (particleType_) {
-        case ParticleType::kAccelerationField:
-            ImGui::DragFloat3("Acceleration", &accelerationField_.acceleration.x, 0.1f);
-            ImGui::DragFloat3("Area Min", &accelerationField_.area.min.x, 0.1f);
-            ImGui::DragFloat3("Area Max", &accelerationField_.area.max.x, 0.1f);
-            break;
-        }
-
-        s_ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-
-        s_ui_->DebugMaterialBy3D(resource_->materialData_);
-
-        s_ui_->DebugUvTransform(resource_->uvTransform_);
-
-        if (ImGui::CollapsingHeader("InstanceTransform")) {
-
-            uint32_t index = 0;
-
-            for (Particle& particle : particles_) {
-                char buf[16];
-                std::snprintf(buf, sizeof(buf), "%d", index++);
-                s_ui_->TextTransform(particle.transform, buf);
-            }
-        }
-
-        //入力終了
-        ImGui::End();
-    }
-#endif // _DEBUG
+void ParticleClass::Update() {
 
     if (isUpdate_) {
         emitter_.frequencyTime += kDeltatime_; // 時刻を進める
@@ -407,3 +344,69 @@ std::list<Particle> ParticleClass::Emit(const Emitter& emitter, std::mt19937& ra
     return particles;
 }
 
+void ParticleClass::Debug([[maybe_unused]] const char* particleName) {
+
+#if USE_IMGUI
+    if (s_ui_) {
+        std::string name = std::string("Particle: ") + particleName;
+
+        //ImGui
+
+        //ウィンドウを作り出す
+        ImGui::Begin(name.c_str());
+
+        if (ImGui::Button("Add Particle")) {
+            particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+        }
+
+        ImGui::Checkbox("update", &isUpdate_);
+
+        ImGui::Checkbox("useBillbord", &useBillbord_);
+
+        if (ImGui::CollapsingHeader("Emitter")) {
+            ImGui::DragFloat3("Translate", &emitter_.transform.translate.x, 0.01f, -100.0f, 100.0f);
+            ImGui::DragFloat3("Area", &emitter_.area.x, 0.1f, 0.0f, 100.0f);
+            ImGui::DragFloat3("Velocity Min", &emitter_.velocityMin.x, 0.1f, -10.0f, 10.0f);
+            ImGui::DragFloat3("Velocity Max", &emitter_.velocityMax.x, 0.1f, -10.0f, 10.0f);
+            ImGui::DragInt("Count", reinterpret_cast<int*>(&emitter_.count), 1, 1, 100);
+            ImGui::DragFloat("Frequency", &emitter_.frequency, 0.01f, 0.01f, 10.0f);
+        }
+
+        // ParticleTypeの選択UI
+        const char* particleTypeNames[] = { "AccelerationField" };
+        int currentType = static_cast<int>(particleType_);
+        if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
+            particleType_ = static_cast<ParticleType>(currentType);
+        }
+
+        switch (particleType_) {
+        case ParticleType::kAccelerationField:
+            ImGui::DragFloat3("Acceleration", &accelerationField_.acceleration.x, 0.1f);
+            ImGui::DragFloat3("Area Min", &accelerationField_.area.min.x, 0.1f);
+            ImGui::DragFloat3("Area Max", &accelerationField_.area.max.x, 0.1f);
+            break;
+        }
+
+        s_ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+
+        s_ui_->DebugMaterialBy3D(resource_->materialData_);
+
+        s_ui_->DebugUvTransform(resource_->uvTransform_);
+
+        if (ImGui::CollapsingHeader("InstanceTransform")) {
+
+            uint32_t index = 0;
+
+            for (Particle& particle : particles_) {
+                char buf[16];
+                std::snprintf(buf, sizeof(buf), "%d", index++);
+                s_ui_->TextTransform(particle.transform, buf);
+            }
+        }
+
+        //入力終了
+        ImGui::End();
+    }
+#endif // _DEBUG
+
+}

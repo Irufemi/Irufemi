@@ -133,13 +133,10 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     dxCommon_->GetCommandList()->RSSetViewports(1, &viewport);
     dxCommon_->GetCommandList()->RSSetScissorRects(1, &scissorRect);
 
-    /*開発のUIを出そう*/
-
-    ///ImGuiを描画する
-
-    //描画用のDescriptorHeapの設定
+    // フレームで利用するSRVヒープを設定（全描画共通）
     ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
     dxCommon_->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
+
 }
 
 void DrawManager::PostDraw() {

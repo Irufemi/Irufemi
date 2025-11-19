@@ -301,7 +301,7 @@ void SpriteRegion::BuildInstanceBuffer(bool force) {
     }
 }
 
-void SpriteRegion::Draw(bool debugUpdate, bool useCpuFallback) {
+void SpriteRegion::Draw(bool useCpuFallback) {
     if (!sprite_) return;
 
     if (useCpuFallback || !dx_ || !drawManager_ || !s_srvAllocator_) {
@@ -313,7 +313,7 @@ void SpriteRegion::Draw(bool debugUpdate, bool useCpuFallback) {
             sprite_->SetRotation(p.transform.rotate.z);
             sprite_->SetPosition(p.transform.translate.x, p.transform.translate.y, p.transform.translate.z);
             sprite_->SetColor(p.color);
-            sprite_->Update(debugUpdate);
+            sprite_->Update();
             sprite_->Draw();
         }
         return;

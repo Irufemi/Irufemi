@@ -151,38 +151,7 @@ void Circle2D::UpdateMatrix() {
     *resource_->transformationData_ = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world };
 }
 
-void Circle2D::Update(const char* circleName) {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-    std::string name = std::string("Circle2D: ") + circleName;
-    ImGui::Begin(name.c_str());
-    ui_->DebugTransform2D(resource_->transform_);
-    ui_->DebugMaterialBy2D(resource_->materialData_);
-
-    bool useTex = useTexture_;
-    if (ImGui::Checkbox("UseTexture", &useTex)) {
-        SetUseTexture(useTex);
-    }
-
-    if (textureManager_) {
-        auto names = textureManager_->GetTextureNames();
-        std::sort(names.begin(), names.end());
-        if (!names.empty()) {
-            const char* preview = names[selectedTextureIndex_].c_str();
-            if (ImGui::BeginCombo("Texture", preview)) {
-                for (int i = 0; i < static_cast<int>(names.size()); ++i) {
-                    bool sel = (i == selectedTextureIndex_);
-                    if (ImGui::Selectable(names[i].c_str(), sel)) {
-                        selectedTextureIndex_ = i;
-                        resource_->textureHandle_ = textureManager_->GetTextureHandle(names[i]);
-                    }
-                    if (sel) ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-        }
-    }
-    ImGui::End();
-#endif
+void Circle2D::Update() {
 
     // 毎フレーム行列更新（カメラ正射影が動く可能性があるため）
     UpdateMatrix();
@@ -222,4 +191,39 @@ bool Circle2D::SetTextureByName(const std::string& textureName) {
     selectedTextureIndex_ = static_cast<int>(std::distance(names.begin(), it));
     resource_->textureHandle_ = textureManager_->GetTextureHandle(*it);
     return true;
+}
+
+void Circle2D::Debug([[maybe_unused]] const char* circleName) {
+#if defined USE_IMGUI
+    std::string name = std::string("Circle2D: ") + circleName;
+    ImGui::Begin(name.c_str());
+    ui_->DebugTransform2D(resource_->transform_);
+    ui_->DebugMaterialBy2D(resource_->materialData_);
+
+    bool useTex = useTexture_;
+    if (ImGui::Checkbox("UseTexture", &useTex)) {
+        SetUseTexture(useTex);
+    }
+
+    if (textureManager_) {
+        auto names = textureManager_->GetTextureNames();
+        std::sort(names.begin(), names.end());
+        if (!names.empty()) {
+            const char* preview = names[selectedTextureIndex_].c_str();
+            if (ImGui::BeginCombo("Texture", preview)) {
+                for (int i = 0; i < static_cast<int>(names.size()); ++i) {
+                    bool sel = (i == selectedTextureIndex_);
+                    if (ImGui::Selectable(names[i].c_str(), sel)) {
+                        selectedTextureIndex_ = i;
+                        resource_->textureHandle_ = textureManager_->GetTextureHandle(names[i]);
+                    }
+                    if (sel) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+        }
+    }
+    ImGui::End();
+#endif
+    Update();
 }

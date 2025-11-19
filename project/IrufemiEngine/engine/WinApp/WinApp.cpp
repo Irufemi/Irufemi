@@ -1,7 +1,6 @@
 #include "WinApp.h"
 
-#include "../../externals/imgui/imgui_impl_win32.h"
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#include "manager/DebugUI.h"
 
 #pragma comment(lib,"winmm.lib")
 
@@ -10,7 +9,7 @@ WinApp::~WinApp() {
 }
 
 bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::wstring& title) {
-    
+
     hInstance_ = hInstance;
     clientWidth_ = width;
     clientHeight_ = height;
@@ -177,9 +176,7 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
         return TRUE; // NCCREATE 成功
     }
 
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) {
-        return TRUE;
-    }
+    DebugUI::WndProcHandler(hWnd, msg, wParam, lParam);
 
     if (auto* pThis = reinterpret_cast<WinApp*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA))) {
         return pThis->HandleMessage(hWnd, msg, wParam, lParam);
