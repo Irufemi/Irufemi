@@ -394,6 +394,11 @@ void DrawManager::DrawCylinder(CylinderClass* cylinder) {
 
 void DrawManager::DrawParticle(ParticleClass* resource) {
 
+    // インスタンス数が0の場合は描画しない
+    if (resource->GetInstanceCount() == 0) {
+        return;
+    }
+
     /*三角形を表示しよう*/
     //RootSignatureを設定。PSOに設定しているけど別途指定が必要
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());

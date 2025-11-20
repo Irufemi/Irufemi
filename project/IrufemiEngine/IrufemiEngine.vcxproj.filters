@@ -73,6 +73,9 @@
     <Filter Include="Engine\texture">
       <UniqueIdentifier>{fcd3b9d7-f04c-475a-bb9b-fcbc224eac97}</UniqueIdentifier>
     </Filter>
+    <Filter Include="3D\Particle">
+      <UniqueIdentifier>{1809edd0-a6a4-4f58-bde0-1ea7fde05183}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="manager\DrawManager.cpp">
@@ -91,9 +94,6 @@
       <Filter>3D</Filter>
     </ClCompile>
     <ClCompile Include="3D\TriangleClass.cpp">
-      <Filter>3D</Filter>
-    </ClCompile>
-    <ClCompile Include="3D\ParticleClass.cpp">
       <Filter>3D</Filter>
     </ClCompile>
     <ClCompile Include="audio\Bgm.cpp">
@@ -232,6 +232,9 @@
     <ClCompile Include="source\Texture.cpp">
       <Filter>Engine\texture</Filter>
     </ClCompile>
+    <ClCompile Include="3D\ParticleClass.cpp">
+      <Filter>3D\Particle</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
@@ -311,9 +314,6 @@
     </ClInclude>
     <ClInclude Include="engine\D3DResourceLeakChecker.h">
       <Filter>Engine\directXCommon</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\ParticleClass.h">
-      <Filter>3D</Filter>
     </ClInclude>
     <ClInclude Include="audio\Bgm.h">
       <Filter>audio</Filter>
@@ -464,6 +464,12 @@
     </ClInclude>
     <ClInclude Include="source\Texture.h">
       <Filter>Engine\texture</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\ParticleClass.h">
+      <Filter>3D\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="math\ParticleType.h">
+      <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
