@@ -14,10 +14,13 @@ void PointLightClass::Initialize() {
 }
 
 void PointLightClass::Debug() {
+#ifdef USE_IMGUI
 
     if (ImGui::CollapsingHeader("PointLight")) {
         ImGui::ColorEdit4("PointLightColor", &data_->color.x);
         ImGui::DragFloat3("PointLightPosition", &data_->position.x, 0.01f);
         ImGui::DragFloat("PointLightIntensity", &data_->intensity, 0.01f, 0.0f);
     }
+
+#endif // USE_IMGUI
 }

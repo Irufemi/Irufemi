@@ -23,6 +23,8 @@ void SpotLightClass::Initialize() {
 
 void SpotLightClass::Debug() {
 
+#ifdef USE_IMGUI
+
     if (ImGui::CollapsingHeader("SpotLight")) {
         ImGui::ColorEdit4("SpotLightColor", &data_->color.x);
         ImGui::DragFloat3("SpotLightPosition", &data_->position.x, 0.01f);
@@ -35,4 +37,8 @@ void SpotLightClass::Debug() {
         ImGui::DragFloat("SpotLightDecay", &data_->decay, 0.01f, 0.0f);
         ImGui::DragFloat("SpotLightCosAngle", &data_->cosAngle, 0.01f);
     }
+
+#endif // USE_IMGUI
+
+
 }

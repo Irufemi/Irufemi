@@ -12,8 +12,8 @@
 #include <algorithm>
 
 TextureManager* CylinderClass::textureManager_ = nullptr;
-DrawManager*    CylinderClass::drawManager_ = nullptr;
-DebugUI*        CylinderClass::ui_ = nullptr;
+DrawManager* CylinderClass::drawManager_ = nullptr;
+DebugUI* CylinderClass::ui_ = nullptr;
 
 // 上下面キャップを追加するヘルパー実装
 void CylinderClass::AddCap(bool top, bool doubleSided) {
@@ -26,7 +26,7 @@ void CylinderClass::AddCap(bool top, bool doubleSided) {
     resource_->vertexDataList_.push_back({
         { 0.0f, y, 0.0f, 1.0f },
         { 0.5f, 0.5f }
-    });
+        });
     resource_->vertexDataList_.back().normal = normal;
 
     // リム頂点（kSubdivision_ 周）
@@ -41,7 +41,7 @@ void CylinderClass::AddCap(bool top, bool doubleSided) {
         resource_->vertexDataList_.push_back({
             { cx, y, sz, 1.0f },
             { u, v }
-        });
+            });
         resource_->vertexDataList_.back().normal = normal;
     }
 
@@ -94,7 +94,7 @@ void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
             resource_->vertexDataList_.push_back({
                 { cx, y, sz, 1.0f },  // position
                 { static_cast<float>(i) / static_cast<float>(kSubdivision_), 1.0f - t } // texcoord (u:角度, v:高さ)
-            });
+                });
         }
     }
 
@@ -216,31 +216,7 @@ void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
     resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 
-void CylinderClass::Update(const char* cylinderName) {
-
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-    std::string name = std::string("Cylinder: ") + cylinderName;
-    ImGui::Begin(name.c_str());
-
-    // 中心・半径・高さの編集
-    ImGui::DragFloat3("Center", &info_.center.x, 0.01f);
-    ImGui::DragFloat("Radius", &info_.radius, 0.01f, 0.001f, 1000.0f);
-    ImGui::DragFloat("Height", &info_.height, 0.01f, 0.001f, 1000.0f);
-
-    // Transform（係数スケール・回転・位置）
-    resource_->transform_.translate = info_.center;
-    ui_->DebugTransform(resource_->transform_);
-
-    // 位置を CylinderInfo に反映
-    info_.center = resource_->transform_.translate;
-
-    ui_->DebugMaterialBy3D(resource_->materialData_);
-    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-    ui_->DebugUvTransform(resource_->uvTransform_);
-    ui_->DebugDirectionalLight(resource_->directionalLightData_);
-
-    ImGui::End();
-#endif
+void CylinderClass::Update() {
 
 
     // Release でも必ず論理情報を実トランスフォームに反映する
@@ -288,4 +264,31 @@ void CylinderClass::Update(const char* cylinderName) {
 void CylinderClass::Draw() {
     // DrawManager 側に DrawCylinder(CylinderClass*) を用意してください
     drawManager_->DrawCylinder(this);
+}
+
+void CylinderClass::Debug([[maybe_unused]] const char* cylinderName) {
+
+#if defined USE_IMGUI
+    std::string name = std::string("Cylinder: ") + cylinderName;
+    ImGui::Begin(name.c_str());
+
+    // 中心・半径・高さの編集
+    ImGui::DragFloat3("Center", &info_.center.x, 0.01f);
+    ImGui::DragFloat("Radius", &info_.radius, 0.01f, 0.001f, 1000.0f);
+    ImGui::DragFloat("Height", &info_.height, 0.01f, 0.001f, 1000.0f);
+
+    // Transform（係数スケール・回転・位置）
+    resource_->transform_.translate = info_.center;
+    ui_->DebugTransform(resource_->transform_);
+
+    // 位置を CylinderInfo に反映
+    info_.center = resource_->transform_.translate;
+
+    ui_->DebugMaterialBy3D(resource_->materialData_);
+    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+    ui_->DebugUvTransform(resource_->uvTransform_);
+    ui_->DebugDirectionalLight(resource_->directionalLightData_);
+
+    ImGui::End();
+#endif
 }

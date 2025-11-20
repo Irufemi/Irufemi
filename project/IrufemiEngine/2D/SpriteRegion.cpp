@@ -3,9 +3,8 @@
 #include "function/Math.h"
 #include "engine/directX/DirectXCommon.h"
 #include "manager/DrawManager.h"
-#include "engine/DescriptorAllocator.h"
+#include "engine/directX/DescriptorPool.h"
 #include "Application/camera/Camera.h"
-#include "function/Math.h"
 
 
 #include <algorithm>
@@ -27,7 +26,7 @@ static inline Vector4 LerpVec4(const Vector4& a, const Vector4& b, float t) {
 // 静的メンバ
 DirectXCommon* SpriteRegion::dx_ = nullptr;
 DrawManager* SpriteRegion::drawManager_ = nullptr;
-DescriptorAllocator* SpriteRegion::s_srvAllocator_ = nullptr;
+DescriptorPool* SpriteRegion::s_srvAllocator_ = nullptr;
 
 void SpriteRegion::Initialize(Camera* camera, const std::string& textureName) {
     camera_ = camera;
@@ -302,7 +301,7 @@ void SpriteRegion::BuildInstanceBuffer(bool force) {
     }
 }
 
-void SpriteRegion::Draw(bool debugUpdate, bool useCpuFallback) {
+void SpriteRegion::Draw(bool useCpuFallback) {
     if (!sprite_) return;
 
     if (useCpuFallback || !dx_ || !drawManager_ || !s_srvAllocator_) {
@@ -314,7 +313,7 @@ void SpriteRegion::Draw(bool debugUpdate, bool useCpuFallback) {
             sprite_->SetRotation(p.transform.rotate.z);
             sprite_->SetPosition(p.transform.translate.x, p.transform.translate.y, p.transform.translate.z);
             sprite_->SetColor(p.color);
-            sprite_->Update(debugUpdate);
+            sprite_->Update();
             sprite_->Draw();
         }
         return;

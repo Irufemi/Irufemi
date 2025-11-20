@@ -13,7 +13,7 @@
 class Camera;
 class DirectXCommon;
 class DrawManager;
-class DescriptorAllocator;
+class DescriptorPool;
 
 // 単一Spriteを使い回して大量描画するためのバッチャ（GPUインスタンシング対応）
 class SpriteRegion {
@@ -50,7 +50,7 @@ public:
     void BuildInstanceBuffer(bool force = false);
 
     // 描画（GPUインスタンシング）。CPUフォールバック描画も可能。
-    void Draw(bool debugUpdate = false, bool useCpuFallback = false);
+    void Draw(bool useCpuFallback = false);
 
     // 共有設定（全インスタンスに適用）
     void SetAnchor(float ax, float ay) { if (sprite_) sprite_->SetAnchor(ax, ay); }
@@ -72,7 +72,7 @@ public:
 
     // 依存注入
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
-    static void SetSrvAllocator(DescriptorAllocator* alloc) { s_srvAllocator_ = alloc; }
+    static void SetSrvAllocator(DescriptorPool* alloc) { s_srvAllocator_ = alloc; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
 
 private:
@@ -113,7 +113,7 @@ private:
     // 静的依存
     static DirectXCommon* dx_;
     static DrawManager* drawManager_;
-    static DescriptorAllocator* s_srvAllocator_;
+    static DescriptorPool* s_srvAllocator_;
 
     Camera* camera_ = nullptr;
     std::unique_ptr<Sprite> sprite_ = nullptr;  // 共有Sprite（リソース共有の要）

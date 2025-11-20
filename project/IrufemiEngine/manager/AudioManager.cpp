@@ -69,7 +69,8 @@ void AudioManager::Finalize() {
         pXAudio2_->Release();
         pXAudio2_ = nullptr;
     }
-    MFShutdown();
+    HRESULT hr = MFShutdown();
+    assert(SUCCEEDED(hr));
 }
 
 bool AudioManager::IsManagedVoice(IXAudio2SourceVoice* voice) const {

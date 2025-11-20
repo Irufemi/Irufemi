@@ -2,7 +2,7 @@
 
 #include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
-#include <imgui.h>
+#include "manager/DebugUI.h"
 
 
 // 初期化
@@ -31,54 +31,64 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     spotLight_->SetIntensity(0.0f);
     engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
-    isActiveObj = false;
-    isActiveSprite = false;
-    isActiveTriangle = false;
-    isActiveSphere = true;
-    isActiveStanfordBunny = false;
-    isActiveUtashTeapot = false;
-    isActiveMultiMesh = false;
-    isActiveMultiMaterial = false;
-    isActiveSuzanne = false;
+    isActiveObj_ = false;
+    isActiveSprite_ = false;
+    isActiveTriangle_ = false;
+    isActivePlane_ = true;
+    isActiveSphere_ = false;
+    isActiveStanfordBunny_ = false;
+    isActiveUtashTeapot_ = false;
+    isActiveMultiMesh_ = false;
+    isActiveMultiMaterial_ = false;
+    isActiveSuzanne_ = false;
     isActiveFence_ = false;
-    isActiveTerrain_ = true;
-    isActiveParticle = false;
+    isActiveTerrain_ = false;
+    isActiveParticle_ = false;
 
-    if (isActiveObj) {
-        obj = std::make_unique <ObjClass>();
-        obj->Initialize(camera_.get(), "sample/plane.gltf");
+    // 課題用スプライトの初期化
+    imguiSprite_ = std::make_unique<Sprite>();
+    imguiSprite_->Initialize(camera_.get());
+    imguiSprite_->SetPosition(100.0f, 100.0f);
+
+    if (isActiveSprite_) {
+        sprite_ = std::make_unique <Sprite>();
+        sprite_->Initialize(camera_.get());
     }
-    if (isActiveSprite) {
-        sprite = std::make_unique <Sprite>();
-        sprite->Initialize(camera_.get());
-    }
-    if (isActiveTriangle) {
+    if (isActiveTriangle_) {
         triangle_ = std::make_unique <TriangleClass>();
         triangle_->Initialize(camera_.get());
     }
-    if (isActiveSphere) {
-        sphere = std::make_unique <SphereClass>();
-        sphere->Initialize(camera_.get());
+    if (isActivePlane_) {
+        plane_ = std::make_unique<PlaneClass>();
+        plane_->Initialize(camera_.get());
     }
-    if (isActiveStanfordBunny) {
-        stanfordBunny = std::make_unique <ObjClass>();
-        stanfordBunny->Initialize(camera_.get(), "sample/bunny.obj");
+    if (isActiveSphere_) {
+        sphere_ = std::make_unique <SphereClass>();
+        sphere_->Initialize(camera_.get());
     }
-    if (isActiveUtashTeapot) {
-        utashTeapot = std::make_unique <ObjClass>();
-        utashTeapot->Initialize(camera_.get(), "sample/teapot.obj");
+    if (isActiveObj_) {
+        obj_ = std::make_unique <ObjClass>();
+        obj_->Initialize(camera_.get(), "sample/plane.gltf");
     }
-    if (isActiveMultiMesh) {
-        multiMesh = std::make_unique <ObjClass>();
-        multiMesh->Initialize(camera_.get(), "sample/multiMesh.obj");
+    if (isActiveStanfordBunny_) {
+        stanfordBunny_ = std::make_unique <ObjClass>();
+        stanfordBunny_->Initialize(camera_.get(), "sample/bunny.obj");
     }
-    if (isActiveMultiMaterial) {
-        multiMaterial = std::make_unique <ObjClass>();
-        multiMaterial->Initialize(camera_.get(), "sample/multiMaterial.obj");
+    if (isActiveUtashTeapot_) {
+        utashTeapot_ = std::make_unique <ObjClass>();
+        utashTeapot_->Initialize(camera_.get(), "sample/teapot.obj");
     }
-    if (isActiveSuzanne) {
-        suzanne = std::make_unique <ObjClass>();
-        suzanne->Initialize(camera_.get(), "sample/suzanne.obj");
+    if (isActiveMultiMesh_) {
+        multiMesh_ = std::make_unique <ObjClass>();
+        multiMesh_->Initialize(camera_.get(), "sample/multiMesh.obj");
+    }
+    if (isActiveMultiMaterial_) {
+        multiMaterial_ = std::make_unique <ObjClass>();
+        multiMaterial_->Initialize(camera_.get(), "sample/multiMaterial.obj");
+    }
+    if (isActiveSuzanne_) {
+        suzanne_ = std::make_unique <ObjClass>();
+        suzanne_->Initialize(camera_.get(), "sample/suzanne.obj");
     }
     if (isActiveFence_) {
         fence_ = std::make_unique <ObjClass>();
@@ -88,9 +98,9 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         terrain_ = std::make_unique <ObjClass>();
         terrain_->Initialize(camera_.get(), "sample/terrain.obj");
     }
-    if (isActiveParticle) {
-        particle = std::make_unique <ParticleClass>();
-        particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI(), "circle.png");
+    if (isActiveParticle_) {
+        particle_ = std::make_unique <ParticleClass>();
+        particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kHitEffect);
     }
 }
 
@@ -112,7 +122,7 @@ void DebugScene::Update() {
     }
 
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#ifdef USE_IMGUI
 
     ImGui::Begin("GameScene");
     // pointLight 
@@ -130,102 +140,214 @@ void DebugScene::Update() {
     ImGui::End();
 
     ImGui::Begin("Activation");
-    ImGui::Checkbox("Obj", &isActiveObj);
-    ImGui::Checkbox("Sprite", &isActiveSprite);
-    ImGui::Checkbox("Sphere", &isActiveSphere);
-    ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot);
-    ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny);
-    ImGui::Checkbox("MultiMesh", &isActiveMultiMesh);
-    ImGui::Checkbox("MultiMaterial", &isActiveMultiMaterial);
-    ImGui::Checkbox("Suzanne", &isActiveSuzanne);
+    ImGui::Checkbox("Sprite", &isActiveSprite_);
+    ImGui::Checkbox("Triangle", &isActiveTriangle_);
+    ImGui::Checkbox("Plane", &isActivePlane_);
+    ImGui::Checkbox("Sphere", &isActiveSphere_);
+    ImGui::Checkbox("Obj", &isActiveObj_);
+    ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot_);
+    ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny_);
+    ImGui::Checkbox("MultiMesh", &isActiveMultiMesh_);
+    ImGui::Checkbox("MultiMaterial", &isActiveMultiMaterial_);
+    ImGui::Checkbox("Suzanne", &isActiveSuzanne_);
     ImGui::Checkbox("Fence", &isActiveFence_);
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
-    ImGui::Checkbox("Particle", &isActiveParticle);
+    ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::End();
+
+    ImGui::Begin("GE");
+
+
+    ImGui::Text("Hello, world %d", 123);
+    if (ImGui::Button("showDemoWindow")) {
+        auto MySaveFunction = [&]() { showDemoWindow = !showDemoWindow; return showDemoWindow; };
+        showDemoWindow = MySaveFunction();
+    }
+    static char buf[256] = "";
+    ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
+    static float f{};
+    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+
+    ImGui::End();
+
+    if (showDemoWindow) {
+
+        // 課題用ImGuiウィンドウ
+        ImGui::SetNextWindowSize(ImVec2(500, 100));
+        ImGui::Begin("Sprite Control");
+        if (imguiSprite_) {
+            Vector2 pos = imguiSprite_->GetPosition2D();
+            float pos_xy[] = { pos.x, pos.y };
+            // スライダーの範囲は仮で0-1280としています
+            if (ImGui::SliderFloat2("Position", pos_xy, 0.0f, 1280.0f, "%.1f")) {
+                imguiSprite_->SetPosition(pos_xy[0], pos_xy[1]);
+            }
+        }
+        ImGui::End();
+
+        static bool my_tool_active = true;
+
+        ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
+                if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Do stuff */ }
+                if (ImGui::MenuItem("Close", "Ctrl+W")) { my_tool_active = false; }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+
+        // ImGui用カラー変数を追加
+        static float my_color[4] = { 1.0f, 0.0f, 1.0f, 1.0f };
+
+        // Edit a color stored as 4 floats
+        ImGui::ColorEdit4("Color", my_color);
+
+        // グラフの描画
+        // Generate samples and plot them
+        // グラフに表示するための100個のデータ点を格納する配列を宣言
+        float samples[100];
+        // sinf() (サイン関数) を使って、波のような形になる値を計算し、samples 配列に格納
+        // ImGui::GetTime() を計算に加えることで、グラフが時間と共に左に流れていくようなアニメーションになる
+        for (int n = 0; n < 100; n++)
+            samples[n] = sinf(n * 0.2f + static_cast<float>(ImGui::GetTime()) * 1.5f);
+        // samples 配列のデータを "Samples" というラベルの折れ線グラフとしてImGuiウィンドウ内に描画
+        ImGui::PlotLines("Samples", samples, 100);
+
+        // スクロール可能なテキスト領域の表示
+        // Display contents in a scrolling region
+        // 黄色で見出しを表示
+        ImGui::TextColored(ImVec4(my_color[0], my_color[1], my_color[2], my_color[3]), "Important Stuff");
+        // スクロール可能な子領域を開始
+        ImGui::BeginChild("Scrolling");
+        // 50行分のテキストを表示し、スクロールバーを発生させる
+        for (int n = 0; n < 50; n++)
+            ImGui::Text("%04d: Some text", n);
+        // 子領域を終了
+        ImGui::EndChild();
+        ImGui::End();
+
+        ImGui::ShowDemoWindow();
+
+    }
 
 #endif // _DEBUG
 
     // 3D
 
-    if (isActiveObj) {
-        if (!obj) {
-            obj = std::make_unique<ObjClass>();
-            obj->Initialize(camera_.get(),"sample/plane.gltf");
+    if (isActiveTriangle_) {
+        if (!triangle_) {
+            triangle_ = std::make_unique<TriangleClass>();
+            triangle_->Initialize(camera_.get());
         }
-        obj->Update("Plane");
+        triangle_->Update();
     }
-    if (isActiveSphere) {
-        if (!sphere) {
-            sphere = std::make_unique<SphereClass>();
-            sphere->Initialize(camera_.get());
+    if (isActivePlane_) {
+        if (!plane_) {
+            plane_ = std::make_unique<PlaneClass>();
+            plane_->Initialize(camera_.get());
         }
-        sphere->Update();
+        plane_->Debug("Plane");
+        plane_->Update();
     }
-    if (isActiveUtashTeapot) {
-        if (!utashTeapot) {
-            utashTeapot = std::make_unique<ObjClass>();
-            utashTeapot->Initialize(camera_.get(),"sample/teapot.obj");
+    if (isActiveSphere_) {
+        if (!sphere_) {
+            sphere_ = std::make_unique<SphereClass>();
+            sphere_->Initialize(camera_.get());
         }
-        utashTeapot->Update("Utash Teapot");
+        sphere_->Debug("Sphere");
+        sphere_->Update();
     }
-    if (isActiveStanfordBunny) {
-        if (!stanfordBunny) {
-            stanfordBunny = std::make_unique<ObjClass>();
-            stanfordBunny->Initialize(camera_.get(), "sample/bunny.obj");
+    if (isActiveObj_) {
+        if (!obj_) {
+            obj_ = std::make_unique<ObjClass>();
+            obj_->Initialize(camera_.get(), "sample/plane.gltf");
         }
-        stanfordBunny->Update("Stanford Bunny");
+        obj_->Debug("Plane");
+        obj_->Update();
     }
-    if (isActiveMultiMesh) {
-        if (!multiMesh) {
-            multiMesh = std::make_unique<ObjClass>();
-            multiMesh->Initialize(camera_.get(), "sample/multiMesh.obj");
+    if (isActiveUtashTeapot_) {
+        if (!utashTeapot_) {
+            utashTeapot_ = std::make_unique<ObjClass>();
+            utashTeapot_->Initialize(camera_.get(), "sample/teapot.obj");
         }
-        multiMesh->Update("MultiMesh");
+        utashTeapot_->Debug("Utash Teapot");
+        utashTeapot_->Update();
     }
-    if (isActiveMultiMaterial) {
-        if (!multiMaterial) {
-            multiMaterial = std::make_unique<ObjClass>();
-            multiMaterial->Initialize(camera_.get(), "sample/multiMaterial.obj");
+    if (isActiveStanfordBunny_) {
+        if (!stanfordBunny_) {
+            stanfordBunny_ = std::make_unique<ObjClass>();
+            stanfordBunny_->Initialize(camera_.get(), "sample/bunny.obj");
         }
-        multiMaterial->Update("MultiMaterial");
+        stanfordBunny_->Debug("Stanford Bunny");
+        stanfordBunny_->Update();
     }
-    if (isActiveSuzanne) {
-        if (!suzanne) {
-            suzanne = std::make_unique<ObjClass>();
-            suzanne->Initialize(camera_.get(), "sample/suzanne.obj");
+    if (isActiveMultiMesh_) {
+        if (!multiMesh_) {
+            multiMesh_ = std::make_unique<ObjClass>();
+            multiMesh_->Initialize(camera_.get(), "sample/multiMesh.obj");
         }
-        suzanne->Update("Suzanne");
+        multiMesh_->Debug("MultiMesh");
+        multiMesh_->Update();
+    }
+    if (isActiveMultiMaterial_) {
+        if (!multiMaterial_) {
+            multiMaterial_ = std::make_unique<ObjClass>();
+            multiMaterial_->Initialize(camera_.get(), "sample/multiMaterial.obj");
+        }
+        multiMaterial_->Debug("MultiMaterial");
+        multiMaterial_->Update();
+    }
+    if (isActiveSuzanne_) {
+        if (!suzanne_) {
+            suzanne_ = std::make_unique<ObjClass>();
+            suzanne_->Initialize(camera_.get(), "sample/suzanne.obj");
+        }
+        suzanne_->Debug("Suzanne");
+        suzanne_->Update();
     }
     if (isActiveFence_) {
         if (!fence_) {
             fence_ = std::make_unique<ObjClass>();
             fence_->Initialize(camera_.get(), "sample/fence.obj");
         }
-        fence_->Update("Fence");
+        fence_->Debug("Fence");
+        fence_->Update();
     }
     if (isActiveTerrain_) {
         if (!terrain_) {
             terrain_ = std::make_unique<ObjClass>();
             terrain_->Initialize(camera_.get(), "sample/terrain.obj");
         }
-        terrain_->Update("Terrain");
+        terrain_->Debug("Terrain");
+        terrain_->Update();
     }
-    if (isActiveParticle) {
-        if (!particle) {
-            particle = std::make_unique <ParticleClass>();
-            particle->Initialize(engine_->GetSrvDescriptorHeap(), camera_.get(), engine_->GetTextureManager(), engine_->GetDebugUI());
+    if (isActiveParticle_) {
+        if (!particle_) {
+            particle_ = std::make_unique <ParticleClass>();
+            particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kHitEffect);
         }
-        particle->Update();
+        particle_->Debug("Particle");
+        particle_->Update();
     }
 
     // 2D
 
-    if (isActiveSprite) {
-        if (!sprite) {
-            sprite = std::make_unique<Sprite>();
-            sprite->Initialize(camera_.get());
+    // 課題用スプライトの更新
+    if (imguiSprite_) {
+        imguiSprite_->Update();
+    }
+
+    if (isActiveSprite_) {
+        if (!sprite_) {
+            sprite_ = std::make_unique<Sprite>();
+            sprite_->Initialize(camera_.get());
         }
-        sprite->Update();
+        sprite_->Debug("Sprite");
+        sprite_->Update();
     }
 }
 
@@ -234,31 +356,37 @@ void DebugScene::Draw() {
     // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->ApplyByGeometryShaderPSO();
+
+    if (isActiveTriangle_) {
+        triangle_->Draw();
+    }
+
     engine_->ApplyPSO();
 
-
-
-    if (isActiveObj) {
-        obj->Draw();
+    if (isActivePlane_) {
+        plane_->Draw();
     }
-    if (isActiveSphere) {
-        sphere->Draw();
+    if (isActiveSphere_) {
+        sphere_->Draw();
     }
-    if (isActiveUtashTeapot) {
-        utashTeapot->Draw();
-        
+    if (isActiveObj_) {
+        obj_->Draw();
     }
-    if (isActiveStanfordBunny) {
-        stanfordBunny->Draw();
+    if (isActiveUtashTeapot_) {
+        utashTeapot_->Draw();
     }
-    if (isActiveMultiMesh) {
-        multiMesh->Draw();
+    if (isActiveStanfordBunny_) {
+        stanfordBunny_->Draw();
     }
-    if (isActiveMultiMaterial) {
-        multiMaterial->Draw();
+    if (isActiveMultiMesh_) {
+        multiMesh_->Draw();
     }
-    if (isActiveSuzanne) {
-        suzanne->Draw();
+    if (isActiveMultiMaterial_) {
+        multiMaterial_->Draw();
+    }
+    if (isActiveSuzanne_) {
+        suzanne_->Draw();
     }
     if (isActiveFence_) {
         fence_->Draw();
@@ -271,8 +399,8 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();
 
-    if (isActiveParticle) {
-        engine_->GetDrawManager()->DrawParticle(particle.get());
+    if (isActiveParticle_) {
+        engine_->GetDrawManager()->DrawParticle(particle_.get());
     }
 
     // 2D
@@ -281,7 +409,14 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
 
-    if (isActiveSprite) {
-        sprite->Draw();
+    // 課題用スプライトの描画
+    if(showDemoWindow){
+        if (imguiSprite_) {
+            imguiSprite_->Draw();
+        }
+    }
+
+    if (isActiveSprite_) {
+        sprite_->Draw();
     }
 }

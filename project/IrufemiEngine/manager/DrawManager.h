@@ -9,6 +9,7 @@
 // 前方宣言
 class DirectXCommon;
 class Sprite;
+class TriangleClass;
 class SphereClass;
 class ObjClass;
 class ParticleClass;
@@ -22,6 +23,7 @@ class PointLightClass;
 struct SpotLight;
 class SpotLightClass;
 class SpriteRegion; // 追加
+struct GpuMesh; // 追加
 
 //描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -59,11 +61,7 @@ public: //メンバ関数
     void PostDraw();
 
     void DrawTriangle(
-        D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
-        ID3D12Resource* materialResource,
-        ID3D12Resource* wvpResource,
-        ID3D12Resource* directionalLightResource,
-        D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU
+        TriangleClass* triangle
     );
 
     void DrawSprite(Sprite* sprite);
@@ -90,5 +88,6 @@ public: //メンバ関数
     void SetSpotLightClass(SpotLightClass* spotLightClass) { spotLight_ = spotLightClass; }
     void SetSpotLight(SpotLight& info);
 
-    void DrawSpriteRegion(SpriteRegion* region); // 追加
+    void DrawSpriteRegion(SpriteRegion* region);
+    void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource);
 };

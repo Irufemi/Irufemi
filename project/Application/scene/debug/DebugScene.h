@@ -8,6 +8,7 @@
 #include "2D/Sprite.h"
 #include "3D/ObjClass.h"
 #include "3D/SphereClass.h"
+#include "3D/PlaneClass.h"
 #include "3D/TriangleClass.h"
 #include "3D/ParticleClass.h"
 #include "camera/Camera.h"
@@ -27,32 +28,35 @@ public: // メンバ関数
 
 private: // メンバ変数
 
-    std::unique_ptr<ObjClass> obj = nullptr;
-    bool isActiveObj = false;
-
-    std::unique_ptr<Sprite> sprite = nullptr;
-    bool isActiveSprite = false;
+    std::unique_ptr<Sprite> sprite_ = nullptr;
+    bool isActiveSprite_ = false;
 
     std::unique_ptr<TriangleClass> triangle_ = nullptr;
-    bool isActiveTriangle = false;
+    bool isActiveTriangle_ = false;
 
-    std::unique_ptr<SphereClass> sphere = nullptr;
-    bool isActiveSphere = true;
+    std::unique_ptr<PlaneClass> plane_ = nullptr;
+    bool isActivePlane_ = true;
 
-    std::unique_ptr<ObjClass> utashTeapot = nullptr;
-    bool isActiveUtashTeapot = false;
+    std::unique_ptr<SphereClass> sphere_ = nullptr;
+    bool isActiveSphere_ = true;
 
-    std::unique_ptr<ObjClass> stanfordBunny = nullptr;
-    bool isActiveStanfordBunny = false;
+    std::unique_ptr<ObjClass> obj_ = nullptr;
+    bool isActiveObj_ = false;
 
-    std::unique_ptr<ObjClass> multiMesh = nullptr;
-    bool isActiveMultiMesh = false;
+    std::unique_ptr<ObjClass> utashTeapot_ = nullptr;
+    bool isActiveUtashTeapot_ = false;
 
-    std::unique_ptr<ObjClass> multiMaterial = nullptr;
-    bool isActiveMultiMaterial = false;
+    std::unique_ptr<ObjClass> stanfordBunny_ = nullptr;
+    bool isActiveStanfordBunny_ = false;
 
-    std::unique_ptr<ObjClass> suzanne = nullptr;
-    bool isActiveSuzanne = false;
+    std::unique_ptr<ObjClass> multiMesh_ = nullptr;
+    bool isActiveMultiMesh_ = false;
+
+    std::unique_ptr<ObjClass> multiMaterial_ = nullptr;
+    bool isActiveMultiMaterial_ = false;
+
+    std::unique_ptr<ObjClass> suzanne_ = nullptr;
+    bool isActiveSuzanne_ = false;
 
     std::unique_ptr<ObjClass> fence_ = nullptr;
     bool isActiveFence_ = false;
@@ -60,8 +64,11 @@ private: // メンバ変数
     std::unique_ptr<ObjClass> terrain_ = nullptr;
     bool isActiveTerrain_ = false;
 
-    std::unique_ptr<ParticleClass> particle = nullptr;
-    bool isActiveParticle = false;
+    std::unique_ptr<ParticleClass> particle_ = nullptr;
+    bool isActiveParticle_ = false;
+
+    std::unique_ptr<Sprite> imguiSprite_;
+    bool showDemoWindow = false;
 
     IrufemiEngine* engine_ = nullptr;
 

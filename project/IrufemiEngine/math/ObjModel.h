@@ -32,6 +32,7 @@ struct ObjMaterial {
 
 struct ObjMesh {
     std::vector<VertexData> vertices;
+    std::vector<uint32_t> indices; // 追加
     ObjMaterial material;
 };
 

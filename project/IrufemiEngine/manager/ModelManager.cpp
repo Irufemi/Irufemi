@@ -5,28 +5,26 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
+#include "engine/directX/DirectXCommon.h"
 
 //======================
 // キャッシュ系（インスタンス）
 //======================
 
-// ルートディレクトリ設定（既定: "resources/obj"）
+void ModelManager::Initialize(DirectXCommon* dxCommon) {
+    dxCommon_ = dxCommon;
+    if (rootDir_.empty()) {
+        rootDir_ = "resources/obj";
+    }
+}
+
 void ModelManager::SetRootDirectory(std::string root) {
     std::replace(root.begin(), root.end(), '\\', '/');
     if (!root.empty() && root.back() == '/') root.pop_back();
     rootDir_ = std::move(root);
 }
 
-// 初期化（必要に応じて将来拡張）
-void ModelManager::Initialize() {
-    if (rootDir_.empty()) {
-        rootDir_ = "resources/obj";
-    }
-}
-
-// モデル取得（キャッシュにあれば再利用 / なければロード）
-// filename: 相対("sample/bunny.obj") / ルートを含む("resources/obj/sample/bunny.obj") 両対応
-std::shared_ptr<ObjModel> ModelManager::GetModel(const std::string& filename) {
+std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename) {
     const std::string key = NormalizeAndResolve(filename);
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -37,21 +35,57 @@ std::shared_ptr<ObjModel> ModelManager::GetModel(const std::string& filename) {
         }
     }
 
-    // ロード
+    // CPUモデルロード
     auto pair = SplitDirectoryAndFile(key);
-    ObjModel loaded = ModelManager::LoadModelFileM(pair.first, pair.second);
-    auto shared = std::make_shared<ObjModel>(std::move(loaded));
+    auto cpuModel = std::make_shared<ObjModel>(ModelManager::LoadModelFileM(pair.first, pair.second));
+
+    // GPUリソース生成
+    auto managedModel = std::make_shared<ManagedModel>();
+    managedModel->cpuModel = cpuModel;
+    managedModel->gpuMeshes.reserve(cpuModel->meshes.size());
+
+    for (const auto& cpuMesh : cpuModel->meshes) {
+        auto gpuMesh = std::make_shared<GpuMesh>();
+
+        // Vertex Buffer
+        if (!cpuMesh.vertices.empty()) {
+            const size_t vbSize = sizeof(VertexData) * cpuMesh.vertices.size();
+            gpuMesh->vertexResource = dxCommon_->CreateBufferResource(vbSize);
+            gpuMesh->vertexCount = static_cast<UINT>(cpuMesh.vertices.size());
+            gpuMesh->vertexBufferView.BufferLocation = gpuMesh->vertexResource->GetGPUVirtualAddress();
+            gpuMesh->vertexBufferView.SizeInBytes = static_cast<UINT>(vbSize);
+            gpuMesh->vertexBufferView.StrideInBytes = sizeof(VertexData);
+            VertexData* vbData = nullptr;
+            gpuMesh->vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vbData));
+            std::memcpy(vbData, cpuMesh.vertices.data(), vbSize);
+            gpuMesh->vertexResource->Unmap(0, nullptr);
+        }
+
+        // Index Buffer (あれば)
+        if (!cpuMesh.indices.empty()) {
+            const size_t ibSize = sizeof(uint32_t) * cpuMesh.indices.size();
+            gpuMesh->indexResource = dxCommon_->CreateBufferResource(ibSize);
+            gpuMesh->indexCount = static_cast<UINT>(cpuMesh.indices.size());
+            gpuMesh->indexBufferView.BufferLocation = gpuMesh->indexResource->GetGPUVirtualAddress();
+            gpuMesh->indexBufferView.SizeInBytes = static_cast<UINT>(ibSize);
+            gpuMesh->indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+            uint32_t* ibData = nullptr;
+            gpuMesh->indexResource->Map(0, nullptr, reinterpret_cast<void**>(&ibData));
+            std::memcpy(ibData, cpuMesh.indices.data(), ibSize);
+            gpuMesh->indexResource->Unmap(0, nullptr);
+        }
+        managedModel->gpuMeshes.push_back(std::move(gpuMesh));
+    }
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        cache_[key] = shared;
+        cache_[key] = managedModel;
     }
 
-    DebugLogLoad(key, shared->meshes.size());
-    return shared;
+    DebugLogLoad(key, managedModel->cpuModel->meshes.size());
+    return managedModel;
 }
 
-// 事前ロード（フォルダ内再帰走査）
 void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
     namespace fs = std::filesystem;
     const std::string rootBase = rootDir_.empty() ? "resources/obj" : rootDir_;
@@ -64,14 +98,12 @@ void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
         std::string ext = p.extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(),
             [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-        // 対応拡張子
         if (ext == ".obj" || ext == ".gltf" || ext == ".glb") {
             GetModel(p.string());
         }
     }
 }
 
-// キャッシュ内の有効キー一覧
 std::vector<std::string> ModelManager::GetCachedKeys() const {
     std::vector<std::string> out;
     std::lock_guard<std::mutex> lock(mutex_);
@@ -84,7 +116,6 @@ std::vector<std::string> ModelManager::GetCachedKeys() const {
     return out;
 }
 
-// 弱参照のみになったエントリ削除
 void ModelManager::CollectGarbage() {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto it = cache_.begin(); it != cache_.end();) {
@@ -96,26 +127,21 @@ void ModelManager::CollectGarbage() {
     }
 }
 
-// 強制クリア
 void ModelManager::ClearAll() {
     std::lock_guard<std::mutex> lock(mutex_);
     cache_.clear();
 }
 
-// 正規化＆ルート解決
 std::string ModelManager::NormalizeAndResolve(const std::string& filename) const {
     std::string f = filename;
     std::replace(f.begin(), f.end(), '\\', '/');
     if (StartsWith(f, rootDir_ + "/")) {
-        // 既にルート含む
+        // OK
     } else if (StartsWith(f, rootDir_)) {
-        // 末尾スラッシュ無しで一致
         f = rootDir_ + "/" + f.substr(rootDir_.size());
     } else {
-        // 相対とみなし root を前置
         f = rootDir_ + "/" + f;
     }
-    // 小文字化
     std::transform(f.begin(), f.end(), f.begin(),
         [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return f;
@@ -126,7 +152,6 @@ bool ModelManager::StartsWith(const std::string& s, const std::string& prefix) {
         std::equal(prefix.begin(), prefix.end(), s.begin());
 }
 
-// "resources/obj/aaa/bbb.obj" → ("resources/obj/aaa", "bbb.obj")
 std::pair<std::string, std::string> ModelManager::SplitDirectoryAndFile(const std::string& full) {
     auto pos = full.find_last_of('/');
     if (pos == std::string::npos) return { ".", full };
@@ -135,7 +160,7 @@ std::pair<std::string, std::string> ModelManager::SplitDirectoryAndFile(const st
 
 void ModelManager::DebugLogLoad(const std::string& key, size_t meshCount) {
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-    std::string msg = "[ModelManager] Loaded: " + key +
+    std::string msg = "[ModelManager] Loaded GPU resources for: " + key +
         " meshes=" + std::to_string(meshCount) + "\n";
     OutputDebugStringA(msg.c_str());
 #endif
@@ -517,11 +542,6 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
 
 }
 
-ObjModel ModelManager::LoadObjFileAssimpM(const std::string& directoryPath, const std::string& filename) {
-    // 旧名称互換 → 新しい LoadModelFileM を呼ぶ
-    return LoadModelFileM(directoryPath, filename);
-}
-
 // ObjModel Node 対応 Assimp 版
 ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const std::string& filename) {
     ObjModel objModel;
@@ -556,11 +576,11 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
 
         // デフォルト初期化 (※ 読み込めなかったパラメータを安全値で埋める)
         out.textureFilePath = "";
-        out.color = { 1.0f,1.0f,1.0f,1.0f };
-        out.ambient = { 0.0f,0.0f,0.0f };
-        out.specular = { 0.0f,0.0f,0.0f };
+        out.color     = { 1.0f,1.0f,1.0f,1.0f };
+        out.ambient   = { 0.0f,0.0f,0.0f };
+        out.specular  = { 0.0f,0.0f,0.0f };
         out.shininess = 32.0f;
-        out.alpha = 1.0f;
+        out.alpha     = 1.0f;
         out.enableLighting = true;
         out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0,0,0 }, { 0,0,0 });
 
@@ -612,30 +632,26 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
             outMesh.material = convertedMaterials[mesh->mMaterialIndex];
         }
 
-        const bool hasNormals = mesh->HasNormals();
-        const bool hasUV0 = mesh->HasTextureCoords(0);
+        // 頂点データの読み込み
+        outMesh.vertices.resize(mesh->mNumVertices);
+        for (uint32_t i = 0; i < mesh->mNumVertices; ++i) {
+            const aiVector3D& p = mesh->mVertices[i];
+            const aiVector3D& n = mesh->HasNormals() ? mesh->mNormals[i] : aiVector3D(0, 1, 0);
+            const aiVector3D& t = mesh->HasTextureCoords(0) ? mesh->mTextureCoords[0][i] : aiVector3D(0.5f, 0.5f, 0);
 
-        // Faceごとに頂点展開（Triangulate 済みなので常に 3 インデックス）
+            VertexData& v = outMesh.vertices[i];
+            v.position = { -p.x, p.y, p.z, 1.0f };
+            v.normal = { -n.x, n.y, n.z };
+            v.texcoord = { t.x, t.y };
+        }
+
+        // インデックスデータの読み込み
         for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
             const aiFace& face = mesh->mFaces[faceIndex];
-            assert(face.mNumIndices == 3); // 念のため検証
-
-            for (uint32_t e = 0; e < 3; ++e) {
-                const uint32_t idx = face.mIndices[e];
-
-                const aiVector3D& p = mesh->mVertices[idx];
-                aiVector3D n = hasNormals ? mesh->mNormals[idx] : aiVector3D(0, 1, 0);              // 無い場合はY+を仮法線
-                aiVector3D t = hasUV0 ? mesh->mTextureCoords[0][idx] : aiVector3D(0.5f, 0.5f, 0); // 無い場合は中央UV
-
-                VertexData v{};
-                // 左手系化（xのみ反転。回り順は aiProcess_FlipWindingOrder で既に反転）
-                v.position = { -p.x, p.y, p.z, 1.0f };
-                v.normal = { -n.x, n.y, n.z };
-                // UVは aiProcess_FlipUVs 済みなので追加の y 反転不要
-                v.texcoord = { t.x, t.y };
-
-                outMesh.vertices.push_back(v);
-            }
+            assert(face.mNumIndices == 3);
+            outMesh.indices.push_back(face.mIndices[0]);
+            outMesh.indices.push_back(face.mIndices[1]);
+            outMesh.indices.push_back(face.mIndices[2]);
         }
 
         objModel.meshes.push_back(std::move(outMesh));

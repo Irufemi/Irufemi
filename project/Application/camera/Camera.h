@@ -31,7 +31,7 @@ private: // メンバ変数
     //カメラで映す空間の下端のY座標
     float bottom_ = 720.0f;
 
-    //近平面。ここではz軸が奥行きになるため一番手前(面なので0だと面が点になって映らない。できるだけ全部が映る遠いところがいい。大体目安は0.1程度)。
+    //近平面。ここではz軸が奥行きになるため一番手前
     float nearClip_ = 0.0f;
 
     //遠平面。ここではz軸が奥行きになるため遠さを表す。
@@ -47,7 +47,7 @@ private: // メンバ変数
     //ビューポートのアスペクト比
     float aspectRatio_ = 16.0f / 9.0f;
 
-    //深度限界(手前側)
+    //深度限界(手前側)(面なので0だと面が点になって映らない。できるだけ全部が映る遠いところがいい。大体目安は0.1程度)。
     float nearZ_ = 0.1f;
 
     //深度限界(奥側)
@@ -120,6 +120,12 @@ public: // メンバ関数
 
     void SetPerspectiveFovMatrix(Matrix4x4 perspectiveFovMatrix) { this->perspectiveFovMatrix_ = perspectiveFovMatrix; }
 
+    void SetFovY(float fovY) { this->fovAngleY_ = fovY; }
+    void SetAspectRatio(float aspectRatio) { this->aspectRatio_ = aspectRatio; }
+    void SetNearClip(float nearClip) { this->nearClip_ = nearClip; }
+    void SetFarClip(float farClip) { this->farClip_ = farClip; }
+
+
     //ゲッター
 
     /// <summary>
@@ -137,6 +143,11 @@ public: // メンバ関数
     /// </summary>
     /// <returns></returns>
     Matrix4x4 GetCameraMatrix();
+
+    /// <summary>
+    /// ワールド行列の取得
+    /// </summary>
+    Matrix4x4 GetWorldMatrix() const { return worldMatrix_; }
 
     /// <summary>
     /// ビュー行列の取得

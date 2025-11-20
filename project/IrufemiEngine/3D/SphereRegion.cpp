@@ -3,17 +3,17 @@
 #include "Application/camera/Camera.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
-#include "engine/DescriptorAllocator.h" // 追加
+#include "engine/directX/DescriptorPool.h" // 追加
 
 DirectXCommon* SphereRegion::dx_ = nullptr;
 TextureManager* SphereRegion::textureManager_ = nullptr;
 DrawManager* SphereRegion::drawManager_ = nullptr;
-DescriptorAllocator* SphereRegion::srvAllocator_ = nullptr; // 追加
+DescriptorPool* SphereRegion::srvPool_ = nullptr; // 追加
 
 SphereRegion::~SphereRegion() {
     // SRV スロットを遅延解放で返す
-    if (instancingSrvIndex_ != UINT32_MAX && srvAllocator_ && dx_) {
-        srvAllocator_->FreeAfterFence(instancingSrvIndex_, dx_->GetFenceValue());
+    if (instancingSrvIndex_ != UINT32_MAX && srvPool_ && dx_) {
+        srvPool_->FreeAfterFence(instancingSrvIndex_, dx_->GetFenceValue());
         instancingSrvIndex_ = UINT32_MAX;
         instancingSrvCPU_ = {};
         instancingSrvGPU_ = {};
@@ -179,12 +179,12 @@ void SphereRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     instanceBuffer_ = dx_->CreateBufferResource(sizeInBytes);
 
     if (instancingSrvIndex_ == UINT32_MAX) {
-        assert(srvAllocator_ && "SphereRegion::SetSrvAllocator 未設定");
-        uint32_t idx = srvAllocator_->Allocate();
-        if (idx == DescriptorAllocator::kInvalid) { OutputDebugStringA("SphereRegion: SRV Allocate failed\n"); return; }
+        assert(srvPool_ && "SphereRegion::SetSrvAllocator 未設定");
+        uint32_t idx = srvPool_->Allocate();
+        if (idx == DescriptorPool::kInvalid) { OutputDebugStringA("SphereRegion: SRV Allocate failed\n"); return; }
         instancingSrvIndex_ = idx;
-        instancingSrvCPU_ = srvAllocator_->GetCPUHandle(idx);
-        instancingSrvGPU_ = srvAllocator_->GetGPUHandle(idx);
+        instancingSrvCPU_ = srvPool_->GetCPUHandle(idx);
+        instancingSrvGPU_ = srvPool_->GetGPUHandle(idx);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srv{};

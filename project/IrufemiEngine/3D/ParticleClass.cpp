@@ -1,16 +1,18 @@
 #include "ParticleClass.h"
 #include "Math.h"
-#include "../externals/imgui/imgui.h"
+#include "manager/DebugUI.h"
 #include "engine/directX/DirectXCommon.h"
-#include "engine/DescriptorAllocator.h" // 追加
+#include "engine/directX/DescriptorPool.h" // 追加
 #include <algorithm>
 
-DescriptorAllocator* ParticleClass::s_srvAllocator_ = nullptr; // 追加
+DescriptorPool* ParticleClass::s_srvPool_ = nullptr;
+TextureManager* ParticleClass::s_textureManager_ = nullptr;
+DebugUI*        ParticleClass::s_ui_ = nullptr;
 
 ParticleClass::~ParticleClass() {
-    if (instancingSrvIndex_ != UINT32_MAX && s_srvAllocator_ && resource_) {
+    if (instancingSrvIndex_ != UINT32_MAX && s_srvPool_ && resource_) {
         if (auto* dx = resource_->GetDirectXCommon()) {
-            s_srvAllocator_->FreeAfterFence(instancingSrvIndex_, dx->GetFenceValue());
+            s_srvPool_->FreeAfterFence(instancingSrvIndex_, dx->GetFenceValue());
         }
         instancingSrvIndex_ = UINT32_MAX;
         instancingSrvHandleCPU_ = {};
@@ -18,10 +20,9 @@ ParticleClass::~ParticleClass() {
     }
 }
 
-void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& /*srvDescriptorHeap*/, Camera* camera, TextureManager* textureManager, DebugUI* ui, const std::string& textureName) {
+void ParticleClass::Initialize(Camera* camera, const std::string& textureName, ParticleType type) {
     this->camera_ = camera;
-    this->textureManager_ = textureManager;
-    this->ui_ = ui;
+    this->particleType_ = type;
 
     useBillbord_ = true;
     isUpdate_ = true;
@@ -39,15 +40,32 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap
     emitter_.transform.translate = { 0.0f,0.0f,0.0f };
     emitter_.transform.rotate = { 0.0f,0.0f,0.0f };
     emitter_.transform.scale = { 1.0f,1.0f,1.0f };
+    emitter_.area = { 2.0f, 2.0f, 2.0f };
+    emitter_.velocityMin = { -1.0f, -1.0f, -1.0f };
+    emitter_.velocityMax = { 1.0f, 1.0f, 1.0f };
 
-    accelerationField_.acceleration = { 15.0f,0.0f,0.0f };
-    accelerationField_.area.min = { -1.0f,-1.0f,-1.0f };
-    accelerationField_.area.max = { 1.0f,1.0f,1.0f };
+    switch (particleType_) {
+    case ParticleType::Normal:
+        // Normal用の初期設定（必要であれば）
+        break;
+    case ParticleType::kAccelerationField:
+        accelerationField_.acceleration = { 15.0f,0.0f,0.0f };
+        accelerationField_.area.min = { -1.0f,-1.0f,-1.0f };
+        accelerationField_.area.max = { 1.0f,1.0f,1.0f };
+        break;
+    case ParticleType::kHitEffect:
+        emitter_.count = 8;
+        emitter_.area = { 0.0f, 0.0f, 0.0f };
+        emitter_.velocityMin = { 0.0f, 0.0f, 0.0f };
+        emitter_.velocityMax = { 0.0f, 0.0f, 0.0f };
+        useBillbord_ = false;
+        break;
+    }
 
     // 単位行列を書きこんでおく
     particles_.clear();
     for (uint32_t i = 0; i < kNumMaxInstance_; ++i) {
-        particles_.push_back(MakeNewParticle(randomEngine_, emitter_.transform.translate));
+        particles_.push_back(MakeNewParticle(randomEngine_, emitter_));
     }
 
     /// カメラの回転を適用する
@@ -83,12 +101,12 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap
 
     // SRV スロット確保（初回のみ）
     if (instancingSrvIndex_ == UINT32_MAX) {
-        auto* alloc = s_srvAllocator_;
+        auto* alloc = s_srvPool_;
         if (!alloc) {
             OutputDebugStringA("ParticleClass::Initialize: SRV allocator is null\n");
         } else {
             uint32_t idx = alloc->Allocate();
-            if (idx == DescriptorAllocator::kInvalid) {
+            if (idx == DescriptorPool::kInvalid) {
                 OutputDebugStringA("ParticleClass::Initialize: SRV Allocate failed\n");
             } else {
                 instancingSrvIndex_ = idx;
@@ -166,65 +184,27 @@ void ParticleClass::Initialize(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap
     resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
 
-    auto textureNames = textureManager_->GetTextureNames();
-    std::sort(textureNames.begin(), textureNames.end());
-    if (!textureNames.empty()) {
+    if (s_textureManager_) {
+        auto textureNames = s_textureManager_->GetTextureNames();
+        std::sort(textureNames.begin(), textureNames.end());
+        if (!textureNames.empty()) {
 
-        resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
+            resource_->textureHandle_ = s_textureManager_->GetTextureHandle(textureName);
 
-        // コンボボックス用に selectedIndex を初期化
-        auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
-        if (it != textureNames.end()) {
-            selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
-        } else {
-            selectedTextureIndex_ = 0;
+            // コンボボックス用に selectedIndex を初期化
+            auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
+            if (it != textureNames.end()) {
+                selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
+            } else {
+                selectedTextureIndex_ = 0;
+            }
         }
-
     }
-
 }
 
-void ParticleClass::Update(const char* particleName) {
+void ParticleClass::Update() {
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-    std::string name = std::string("Particle: ") + particleName;
-
-    //ImGui
-
-    //ウィンドウを作り出す
-    ImGui::Begin(name.c_str());
-
-    if (ImGui::Button("Add Particle")) {
-        particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
-    }
-
-    ImGui::Checkbox("update", &isUpdate_);
-
-    ImGui::Checkbox("useBillbord", &useBillbord_);
-
-    ImGui::DragFloat3("EmitterTranslate", &emitter_.transform.translate.x, 0.01f, -100.0f, 100.0f);
-
-    ui_->DebugMaterialBy3D(resource_->materialData_);
-
-    ui_->DebugUvTransform(resource_->uvTransform_);
-
-    if (ImGui::CollapsingHeader("InstanceTransform")) {
-
-        uint32_t index = 0;
-
-        for (Particle& particle : particles_) {
-            char buf[16];
-            std::snprintf(buf, sizeof(buf), "%d", index++);
-            ui_->TextTransform(particle.transform, buf);
-        }
-    }
-
-    //入力終了
-    ImGui::End();
-
-#endif // _DEBUG
-
-    if (isUpdate_) {
+    if (isUpdate_ && particleType_ != ParticleType::kHitEffect) {
         emitter_.frequencyTime += kDeltatime_; // 時刻を進める
         if (emitter_.frequency <= emitter_.frequencyTime) { // 頻度より大きいなら発生
             particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
@@ -249,11 +229,18 @@ void ParticleClass::Update(const char* particleName) {
 
         if (numInstance_ < kNumMaxInstance_) {
 
-            if (Math::IsCollision(accelerationField_.area, (*particleIterator).transform.translate)) {
-                (*particleIterator).velocity += accelerationField_.acceleration * kDeltatime_;
-            }
-
             if (isUpdate_) {
+                switch (particleType_) {
+                case ParticleType::Normal:
+                    // Normal用の更新処理（必要であれば）
+                    break;
+                case ParticleType::kAccelerationField:
+                    accelerationField_.Apply(*particleIterator, kDeltatime_);
+                    break;
+                case ParticleType::kHitEffect:
+                    // HitEffect固有の更新処理は今のところなし
+                    break;
+                }
                 particleIterator->currentTime += kDeltatime_; // 経過時間を足す
                 particleIterator->transform.translate += particleIterator->velocity * kDeltatime_;  // 速度を反映させる
             }
@@ -265,7 +252,9 @@ void ParticleClass::Update(const char* particleName) {
             if (useBillbord_) {
                 worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billbordMatrix_), translateMatrix);
             } else {
-                worldMatrix = Math::MakeAffineMatrix(particleIterator->transform.scale, particleIterator->transform.rotate, particleIterator->transform.translate);
+                Matrix4x4 rotateMatrix = Math::MakeRotateZMatrix(particleIterator->transform.rotate.z);
+                worldMatrix = Math::Multiply(scaleMatrix, rotateMatrix);
+                worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             }
             Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
             instancingData_[numInstance_].world = worldMatrix;
@@ -284,18 +273,93 @@ void ParticleClass::Update(const char* particleName) {
 
 }
 
-Particle ParticleClass::MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate) {
-    std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+void ParticleClass::SetAccelerationField(const Vector3& center, const Vector3& size, const Vector3& acceleration) {
+    Vector3 halfSize = { size.x / 2.0f, size.y / 2.0f, size.z / 2.0f };
+    accelerationField_.area.min = { center.x - halfSize.x, center.y - halfSize.y, center.z - halfSize.z };
+    accelerationField_.area.max = { center.x + halfSize.x, center.y + halfSize.y, center.z + halfSize.z };
+    accelerationField_.acceleration = acceleration;
+}
+
+void ParticleClass::SetEmitterPosition(const Vector3& position) {
+    emitter_.transform.translate = position;
+}
+
+void ParticleClass::SetEmitterArea(const Vector3& area) {
+    emitter_.area = area;
+}
+
+void ParticleClass::SetEmitterVelocity(const Vector3& minVel, const Vector3& maxVel) {
+    emitter_.velocityMin = minVel;
+    emitter_.velocityMax = maxVel;
+}
+
+void ParticleClass::SetEmitterFrequency(float frequency) {
+    emitter_.frequency = frequency;
+}
+
+void ParticleClass::SetEmitterCount(uint32_t count) {
+    emitter_.count = count;
+}
+
+void ParticleClass::SetEmitterProperties(
+    const Vector3& position,
+    const Vector3& area,
+    const Vector3& minVel,
+    const Vector3& maxVel,
+    float frequency,
+    uint32_t count) {
+    SetEmitterPosition(position);
+    SetEmitterArea(area);
+    SetEmitterVelocity(minVel, maxVel);
+    SetEmitterFrequency(frequency);
+    SetEmitterCount(count);
+}
+
+void ParticleClass::SetTexture(const std::string& textureFilePath) {
+    if (!s_textureManager_) {
+        return;
+    }
+    auto textureNames = s_textureManager_->GetTextureNames();
+    std::sort(textureNames.begin(), textureNames.end());
+    auto it = std::find(textureNames.begin(), textureNames.end(), textureFilePath);
+
+    if (it != textureNames.end()) {
+        resource_->textureHandle_ = s_textureManager_->GetTextureHandle(textureFilePath);
+        selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
+    }
+}
+
+Particle ParticleClass::MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter) {
+    std::uniform_real_distribution<float> distRange(-1.0f, 1.0f);
     std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
     std::uniform_real_distribution<float> distTime(1.0f, 3.0f);
+    std::uniform_real_distribution<float> distVelocityX(emitter.velocityMin.x, emitter.velocityMax.x);
+    std::uniform_real_distribution<float> distVelocityY(emitter.velocityMin.y, emitter.velocityMax.y);
+    std::uniform_real_distribution<float> distVelocityZ(emitter.velocityMin.z, emitter.velocityMax.z);
+
     Particle particle;
-    particle.transform.scale = { 1.0f,1.0f,1.0f };
-    particle.transform.rotate = { 0.0f,0.0f,0.0f };
-    Vector3 randomTranslate = { distribution(randomEngine),distribution(randomEngine) ,distribution(randomEngine) };
-    particle.transform.translate = translate + randomTranslate;
-    particle.velocity = { distribution(randomEngine),distribution(randomEngine),distribution(randomEngine) };
+
+    if (particleType_ == ParticleType::kHitEffect) {
+        std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+        std::uniform_real_distribution<float> distScale(0.4f, 1.5f);
+        particle.transform.scale = { 0.1f, distScale(randomEngine), 1.0f };
+        particle.transform.rotate = { 0.0f, 0.0f, distRotate(randomEngine) };
+        particle.lifeTime = 0.5f; // ヒットエフェクトは短命に
+    }
+    else {
+        particle.transform.scale = { 1.0f,1.0f,1.0f };
+        particle.transform.rotate = { 0.0f,0.0f,0.0f };
+        particle.lifeTime = distTime(randomEngine);
+    }
+
+    Vector3 randomTranslate = {
+        distRange(randomEngine) * emitter.area.x / 2.0f,
+        distRange(randomEngine) * emitter.area.y / 2.0f,
+        distRange(randomEngine) * emitter.area.z / 2.0f
+    };
+    particle.transform.translate = emitter.transform.translate + randomTranslate;
+    particle.velocity = { distVelocityX(randomEngine), distVelocityY(randomEngine), distVelocityZ(randomEngine) };
     particle.color = { distColor(randomEngine),distColor(randomEngine),distColor(randomEngine) ,1.0f };
-    particle.lifeTime = distTime(randomEngine);
     particle.currentTime = 0.0f;
 
     return particle;
@@ -304,7 +368,126 @@ Particle ParticleClass::MakeNewParticle(std::mt19937& randomEngine, const Vector
 std::list<Particle> ParticleClass::Emit(const Emitter& emitter, std::mt19937& randomEngine) {
     std::list<Particle> particles;
     for (uint32_t count = 0; count < emitter.count; ++count) {
-        particles.push_back(MakeNewParticle(randomEngine, emitter.transform.translate));
+        particles.push_back(MakeNewParticle(randomEngine, emitter));
     }
     return particles;
+}
+
+void ParticleClass::PlayHitEffect(const Vector3& position) {
+    if (particleType_ == ParticleType::kHitEffect) {
+        emitter_.transform.translate = position;
+        particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+    }
+}
+
+void ParticleClass::Debug([[maybe_unused]] const char* particleName) {
+
+#if USE_IMGUI
+    if (s_ui_) {
+        std::string name = std::string("Particle: ") + particleName;
+
+        //ImGui
+
+        //ウィンドウを作り出す
+        ImGui::Begin(name.c_str());
+
+        if (ImGui::Button("Add Particle")) {
+            switch (particleType_) {
+            case ParticleType::kHitEffect:
+                // ヒットエフェクトをエミッタの位置に発生させる
+                PlayHitEffect(emitter_.transform.translate);
+                break;
+            case ParticleType::Normal:
+            case ParticleType::kAccelerationField:
+            default:
+                // 通常のパーティクルを発生させる
+                particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+                break;
+            }
+        }
+
+        ImGui::Checkbox("update", &isUpdate_);
+
+        ImGui::Checkbox("useBillbord", &useBillbord_);
+
+        if (ImGui::CollapsingHeader("Emitter")) {
+            ImGui::DragFloat3("Translate", &emitter_.transform.translate.x, 0.01f, -100.0f, 100.0f);
+            ImGui::DragFloat3("Area", &emitter_.area.x, 0.1f, 0.0f, 100.0f);
+            ImGui::DragFloat3("Velocity Min", &emitter_.velocityMin.x, 0.1f, -10.0f, 10.0f);
+            ImGui::DragFloat3("Velocity Max", &emitter_.velocityMax.x, 0.1f, -10.0f, 10.0f);
+            ImGui::DragInt("Count", reinterpret_cast<int*>(&emitter_.count), 1, 1, 100);
+            ImGui::DragFloat("Frequency", &emitter_.frequency, 0.01f, 0.01f, 10.0f);
+        }
+
+        // ParticleTypeの選択UI
+        const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect" };
+        int currentType = static_cast<int>(particleType_);
+        if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
+            particleType_ = static_cast<ParticleType>(currentType);
+
+            // パーティクルの種類が変更されたら、関連するプロパティをリセットする
+            switch (particleType_) {
+            case ParticleType::Normal:
+                emitter_.count = 3;
+                emitter_.area = { 2.0f, 2.0f, 2.0f };
+                emitter_.velocityMin = { -1.0f, -1.0f, -1.0f };
+                emitter_.velocityMax = { 1.0f, 1.0f, 1.0f };
+                useBillbord_ = true;
+                break;
+            case ParticleType::kAccelerationField:
+                emitter_.count = 3;
+                emitter_.area = { 2.0f, 2.0f, 2.0f };
+                emitter_.velocityMin = { -1.0f, -1.0f, -1.0f };
+                emitter_.velocityMax = { 1.0f, 1.0f, 1.0f };
+                accelerationField_.acceleration = { 15.0f, 0.0f, 0.0f };
+                accelerationField_.area.min = { -1.0f, -1.0f, -1.0f };
+                accelerationField_.area.max = { 1.0f, 1.0f, 1.0f };
+                useBillbord_ = true;
+                break;
+            case ParticleType::kHitEffect:
+                emitter_.count = 8;
+                emitter_.area = { 0.0f, 0.0f, 0.0f };
+                emitter_.velocityMin = { 0.0f, 0.0f, 0.0f };
+                emitter_.velocityMax = { 0.0f, 0.0f, 0.0f };
+                useBillbord_ = false; // ヒットエフェクトではビルボードを切ることが多い
+                break;
+            }
+        }
+
+        switch (particleType_) {
+        case ParticleType::Normal:
+            // Normal用のデバッグ項目（必要であれば）
+            break;
+        case ParticleType::kAccelerationField:
+            ImGui::DragFloat3("Acceleration", &accelerationField_.acceleration.x, 0.1f);
+            ImGui::DragFloat3("Area Min", &accelerationField_.area.min.x, 0.1f);
+            ImGui::DragFloat3("Area Max", &accelerationField_.area.max.x, 0.1f);
+            break;
+        case ParticleType::kHitEffect:
+            // HitEffect用のデバッグ項目は今のところなし
+            break;
+        }
+
+        s_ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+
+        s_ui_->DebugMaterialBy3D(resource_->materialData_);
+
+        s_ui_->DebugUvTransform(resource_->uvTransform_);
+
+        if (ImGui::CollapsingHeader("InstanceTransform")) {
+
+            uint32_t index = 0;
+
+            for (Particle& particle : particles_) {
+                char buf[16];
+                std::snprintf(buf, sizeof(buf), "%d", index++);
+                s_ui_->TextTransform(particle.transform, buf);
+            }
+        }
+
+        //入力終了
+        ImGui::End();
+    }
+#endif // _DEBUG
+
 }

@@ -5,7 +5,7 @@
 #include "contents/MapChipField.h"
 #include "function/Math.h"
 #include "engine/Input/InputManager.h"
-#include <imgui.h>
+#include "manager/DebugUI.h"
 #include "PlayerState.h"
 #include <algorithm>
 #include <cassert>
@@ -36,7 +36,7 @@ void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputMana
 }
 
 void Player::Update() {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined USE_IMGUI
     ImGui::Begin("Player");
     ImGui::Text("State : %s", GetStateName());
     ImGui::Text("OnGround : %s", onGround_ ? "true" : "false");
