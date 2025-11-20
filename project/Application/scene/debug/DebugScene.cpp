@@ -100,7 +100,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveParticle_) {
         particle_ = std::make_unique <ParticleClass>();
-        particle_->Initialize(camera_.get(), "resources/circle.png");
+        particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kHitEffect);
     }
 }
 
@@ -157,7 +157,6 @@ void DebugScene::Update() {
 
     ImGui::Begin("GE");
 
-    static bool showDemoWindow = false;
 
     ImGui::Text("Hello, world %d", 123);
     if (ImGui::Button("showDemoWindow")) {
@@ -329,7 +328,7 @@ void DebugScene::Update() {
     if (isActiveParticle_) {
         if (!particle_) {
             particle_ = std::make_unique <ParticleClass>();
-            particle_->Initialize(camera_.get(), "resources/circle.png");
+            particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kHitEffect);
         }
         particle_->Debug("Particle");
         particle_->Update();
@@ -411,8 +410,10 @@ void DebugScene::Draw() {
     engine_->ApplySpritePSO();
 
     // 課題用スプライトの描画
-    if (imguiSprite_) {
-        imguiSprite_->Draw();
+    if(showDemoWindow){
+        if (imguiSprite_) {
+            imguiSprite_->Draw();
+        }
     }
 
     if (isActiveSprite_) {

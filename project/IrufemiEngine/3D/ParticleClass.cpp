@@ -45,10 +45,20 @@ void ParticleClass::Initialize(Camera* camera, const std::string& textureName, P
     emitter_.velocityMax = { 1.0f, 1.0f, 1.0f };
 
     switch (particleType_) {
+    case ParticleType::Normal:
+        // Normal用の初期設定（必要であれば）
+        break;
     case ParticleType::kAccelerationField:
         accelerationField_.acceleration = { 15.0f,0.0f,0.0f };
         accelerationField_.area.min = { -1.0f,-1.0f,-1.0f };
         accelerationField_.area.max = { 1.0f,1.0f,1.0f };
+        break;
+    case ParticleType::kHitEffect:
+        emitter_.count = 8;
+        emitter_.area = { 0.0f, 0.0f, 0.0f };
+        emitter_.velocityMin = { 0.0f, 0.0f, 0.0f };
+        emitter_.velocityMax = { 0.0f, 0.0f, 0.0f };
+        useBillbord_ = false;
         break;
     }
 
@@ -194,7 +204,7 @@ void ParticleClass::Initialize(Camera* camera, const std::string& textureName, P
 
 void ParticleClass::Update() {
 
-    if (isUpdate_) {
+    if (isUpdate_ && particleType_ != ParticleType::kHitEffect) {
         emitter_.frequencyTime += kDeltatime_; // 時刻を進める
         if (emitter_.frequency <= emitter_.frequencyTime) { // 頻度より大きいなら発生
             particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
@@ -221,8 +231,14 @@ void ParticleClass::Update() {
 
             if (isUpdate_) {
                 switch (particleType_) {
+                case ParticleType::Normal:
+                    // Normal用の更新処理（必要であれば）
+                    break;
                 case ParticleType::kAccelerationField:
                     accelerationField_.Apply(*particleIterator, kDeltatime_);
+                    break;
+                case ParticleType::kHitEffect:
+                    // HitEffect固有の更新処理は今のところなし
                     break;
                 }
                 particleIterator->currentTime += kDeltatime_; // 経過時間を足す
@@ -236,7 +252,9 @@ void ParticleClass::Update() {
             if (useBillbord_) {
                 worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billbordMatrix_), translateMatrix);
             } else {
-                worldMatrix = Math::MakeAffineMatrix(particleIterator->transform.scale, particleIterator->transform.rotate, particleIterator->transform.translate);
+                Matrix4x4 rotateMatrix = Math::MakeRotateZMatrix(particleIterator->transform.rotate.z);
+                worldMatrix = Math::Multiply(scaleMatrix, rotateMatrix);
+                worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             }
             Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
             instancingData_[numInstance_].world = worldMatrix;
@@ -320,8 +338,20 @@ Particle ParticleClass::MakeNewParticle(std::mt19937& randomEngine, const Emitte
     std::uniform_real_distribution<float> distVelocityZ(emitter.velocityMin.z, emitter.velocityMax.z);
 
     Particle particle;
-    particle.transform.scale = { 1.0f,1.0f,1.0f };
-    particle.transform.rotate = { 0.0f,0.0f,0.0f };
+
+    if (particleType_ == ParticleType::kHitEffect) {
+        std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+        std::uniform_real_distribution<float> distScale(0.4f, 1.5f);
+        particle.transform.scale = { 0.1f, distScale(randomEngine), 1.0f };
+        particle.transform.rotate = { 0.0f, 0.0f, distRotate(randomEngine) };
+        particle.lifeTime = 0.5f; // ヒットエフェクトは短命に
+    }
+    else {
+        particle.transform.scale = { 1.0f,1.0f,1.0f };
+        particle.transform.rotate = { 0.0f,0.0f,0.0f };
+        particle.lifeTime = distTime(randomEngine);
+    }
+
     Vector3 randomTranslate = {
         distRange(randomEngine) * emitter.area.x / 2.0f,
         distRange(randomEngine) * emitter.area.y / 2.0f,
@@ -330,7 +360,6 @@ Particle ParticleClass::MakeNewParticle(std::mt19937& randomEngine, const Emitte
     particle.transform.translate = emitter.transform.translate + randomTranslate;
     particle.velocity = { distVelocityX(randomEngine), distVelocityY(randomEngine), distVelocityZ(randomEngine) };
     particle.color = { distColor(randomEngine),distColor(randomEngine),distColor(randomEngine) ,1.0f };
-    particle.lifeTime = distTime(randomEngine);
     particle.currentTime = 0.0f;
 
     return particle;
@@ -342,6 +371,13 @@ std::list<Particle> ParticleClass::Emit(const Emitter& emitter, std::mt19937& ra
         particles.push_back(MakeNewParticle(randomEngine, emitter));
     }
     return particles;
+}
+
+void ParticleClass::PlayHitEffect(const Vector3& position) {
+    if (particleType_ == ParticleType::kHitEffect) {
+        emitter_.transform.translate = position;
+        particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+    }
 }
 
 void ParticleClass::Debug([[maybe_unused]] const char* particleName) {
@@ -356,7 +392,18 @@ void ParticleClass::Debug([[maybe_unused]] const char* particleName) {
         ImGui::Begin(name.c_str());
 
         if (ImGui::Button("Add Particle")) {
-            particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+            switch (particleType_) {
+            case ParticleType::kHitEffect:
+                // ヒットエフェクトをエミッタの位置に発生させる
+                PlayHitEffect(emitter_.transform.translate);
+                break;
+            case ParticleType::Normal:
+            case ParticleType::kAccelerationField:
+            default:
+                // 通常のパーティクルを発生させる
+                particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+                break;
+            }
         }
 
         ImGui::Checkbox("update", &isUpdate_);
@@ -373,17 +420,51 @@ void ParticleClass::Debug([[maybe_unused]] const char* particleName) {
         }
 
         // ParticleTypeの選択UI
-        const char* particleTypeNames[] = { "AccelerationField" };
+        const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect" };
         int currentType = static_cast<int>(particleType_);
         if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
             particleType_ = static_cast<ParticleType>(currentType);
+
+            // パーティクルの種類が変更されたら、関連するプロパティをリセットする
+            switch (particleType_) {
+            case ParticleType::Normal:
+                emitter_.count = 3;
+                emitter_.area = { 2.0f, 2.0f, 2.0f };
+                emitter_.velocityMin = { -1.0f, -1.0f, -1.0f };
+                emitter_.velocityMax = { 1.0f, 1.0f, 1.0f };
+                useBillbord_ = true;
+                break;
+            case ParticleType::kAccelerationField:
+                emitter_.count = 3;
+                emitter_.area = { 2.0f, 2.0f, 2.0f };
+                emitter_.velocityMin = { -1.0f, -1.0f, -1.0f };
+                emitter_.velocityMax = { 1.0f, 1.0f, 1.0f };
+                accelerationField_.acceleration = { 15.0f, 0.0f, 0.0f };
+                accelerationField_.area.min = { -1.0f, -1.0f, -1.0f };
+                accelerationField_.area.max = { 1.0f, 1.0f, 1.0f };
+                useBillbord_ = true;
+                break;
+            case ParticleType::kHitEffect:
+                emitter_.count = 8;
+                emitter_.area = { 0.0f, 0.0f, 0.0f };
+                emitter_.velocityMin = { 0.0f, 0.0f, 0.0f };
+                emitter_.velocityMax = { 0.0f, 0.0f, 0.0f };
+                useBillbord_ = false; // ヒットエフェクトではビルボードを切ることが多い
+                break;
+            }
         }
 
         switch (particleType_) {
+        case ParticleType::Normal:
+            // Normal用のデバッグ項目（必要であれば）
+            break;
         case ParticleType::kAccelerationField:
             ImGui::DragFloat3("Acceleration", &accelerationField_.acceleration.x, 0.1f);
             ImGui::DragFloat3("Area Min", &accelerationField_.area.min.x, 0.1f);
             ImGui::DragFloat3("Area Max", &accelerationField_.area.max.x, 0.1f);
+            break;
+        case ParticleType::kHitEffect:
+            // HitEffect用のデバッグ項目は今のところなし
             break;
         }
 

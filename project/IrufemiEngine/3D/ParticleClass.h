@@ -1,14 +1,15 @@
 #pragma once
 
-#include "../source/D3D12ResourceUtil.h"
+#include "math/ParticleType.h"
+#include "source/D3D12ResourceUtil.h"
 #include "Application/camera/Camera.h"
-#include "../manager/TextureManager.h"
-#include "../manager/DebugUI.h"
-#include "../math/shape/Particle.h"
-#include "../math/shape/ParticleForGPU.h"
-#include "../math/Emitter.h"
-#include "../math/AccelerationField.h"
-#include "../function/Math.h"
+#include "manager/TextureManager.h"
+#include "manager/DebugUI.h"
+#include "math/shape/Particle.h"
+#include "math/shape/ParticleForGPU.h"
+#include "math/Emitter.h"
+#include "math/AccelerationField.h"
+#include "function/Math.h"
 #include <wrl.h>
 #include <memory>
 #include <cstdint>
@@ -16,14 +17,9 @@
 #include <list>
 #include <random>
 
-class DescriptorAllocator; // 追加
+class DescriptorPool;
 
 class ParticleClass {
-public:
-    enum class ParticleType {
-        kAccelerationField,
-    };
-
 private: // メンバ変数
     static inline const uint32_t kNumMaxInstance_ = 100;
 
@@ -76,6 +72,12 @@ public:
 
     Particle MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter);
     std::list<Particle> Emit(const Emitter& emitter, std::mt19937& randomEngine);
+
+    /// <summary>
+    /// ヒットエフェクトを再生します
+    /// </summary>
+    /// <param name="position">発生位置</param>
+    void PlayHitEffect(const Vector3& position);
 
     D3D12ResourceUtilParticle* GetD3D12Resource() { return this->resource_.get(); }
     int32_t GetInstanceCount() const { return this->numInstance_; }

@@ -68,6 +68,7 @@ private: // メンバ変数
     bool isActiveParticle_ = false;
 
     std::unique_ptr<Sprite> imguiSprite_;
+    bool showDemoWindow = false;
 
     IrufemiEngine* engine_ = nullptr;
 
