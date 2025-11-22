@@ -100,7 +100,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveParticle_) {
         particle_ = std::make_unique <ParticleSystem>();
-        particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kHitEffect);
+        particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kAccelerationField);
     }
 }
 
@@ -328,7 +328,7 @@ void DebugScene::Update() {
     if (isActiveParticle_) {
         if (!particle_) {
             particle_ = std::make_unique <ParticleSystem>();
-            particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kHitEffect);
+            particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kAccelerationField);
         }
         particle_->Debug("Particle");
         particle_->Update();

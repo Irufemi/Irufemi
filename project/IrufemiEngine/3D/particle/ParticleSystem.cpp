@@ -25,7 +25,6 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     this->camera_ = camera;
     this->primitiveShape_ = shape;
 
-    useBillbord_ = true;
     isUpdate_ = true;
     randomEngine_.seed(seedGenerator_());
 
@@ -40,13 +39,11 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     }
 
     // 振る舞いを設定
-    ChangeBehavior(type);
+    ChangeBehavior(type, true); // 強制的に更新
 
     // 単位行列を書きこんでおく
     particles_.clear();
-    for (uint32_t i = 0; i < kNumMaxInstance_; ++i) {
-        particles_.push_back(MakeNewParticle(randomEngine_, emitter_));
-    }
+    numInstance_ = 0;
 
     // backToFrontMatrix_の設定(面の向きをカメラの方向にしてあるのでここは調整なし。0でOK)
     backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
@@ -57,22 +54,6 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     billbordMatrix_.m[3][0] = 0.0f;
     billbordMatrix_.m[3][1] = 0.0f;
     billbordMatrix_.m[3][2] = 0.0f;
-
-    for (std::list<Particle>::iterator particleIterator = particles_.begin(); particleIterator != particles_.end(); ++particleIterator) {
-        // 位置と速度を[-1,1]でランダムに初期化
-        Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particleIterator->transform.scale);
-        Matrix4x4 translateMatrix = Math::MakeTranslateMatrix(particleIterator->transform.translate);
-        Matrix4x4 worldMatrix = Math::MakeIdentity4x4();
-        if (useBillbord_) {
-            worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billbordMatrix_), translateMatrix);
-        } else {
-            worldMatrix = Math::MakeAffineMatrix(particleIterator->transform.scale, particleIterator->transform.rotate, particleIterator->transform.translate);
-        }
-        Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-        instancingData_[numInstance_].world = worldMatrix;
-        instancingData_[numInstance_].WVP = worldViewProjectionMatrix;
-        instancingData_[numInstance_].color = particleIterator->color;
-    }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC instancingDesc{};
     instancingDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -549,8 +530,8 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
 }
 
-void ParticleSystem::ChangeBehavior(ParticleType type) {
-    if (particleType_ == type && behavior_) {
+void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
+    if (!force && particleType_ == type && behavior_) {
         return; // 同じ振る舞いなら何もしない
     }
     particleType_ = type;

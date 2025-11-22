@@ -52,7 +52,7 @@ public:
 	void PlayHitEffect(const Vector3& position);
 
 private:
-	void ChangeBehavior(ParticleType type); // 追加
+	void ChangeBehavior(ParticleType type, bool force = false); // 追加
 	Particle MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter);
 	std::list<Particle> Emit(const Emitter& emitter, std::mt19937& randomEngine);
 
