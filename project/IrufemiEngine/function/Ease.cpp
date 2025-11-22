@@ -23,6 +23,11 @@ Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t) {
 	return Add(Multiply(1.0f - t, v1), Multiply(t, v2));
 }
 
+// 線形補間
+Vector4 Lerp(const Vector4& v1, const Vector4& v2, float t) {
+	return Multiply(1.0f - t, v1) + Multiply(t, v2);
+}
+
 // 線形補間(0~1制限あり)
 float LerpClamped(float a, float b, float t) {
 	t = std::clamp(t, 0.0f, 1.0f);

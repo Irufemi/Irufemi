@@ -232,7 +232,16 @@
     <ClCompile Include="source\Texture.cpp">
       <Filter>Engine\texture</Filter>
     </ClCompile>
-    <ClCompile Include="3D\ParticleClass.cpp">
+    <ClCompile Include="3D\particle\ParticleSystem.cpp">
+      <Filter>3D\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="math\shape\Particle.cpp">
+      <Filter>math\shape</Filter>
+    </ClCompile>
+    <ClCompile Include="math\Vector4.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\particle\IParticleBehavior.cpp">
       <Filter>3D\Particle</Filter>
     </ClCompile>
   </ItemGroup>
@@ -360,16 +369,10 @@
     <ClInclude Include="math\shape\Particle.h">
       <Filter>math\shape</Filter>
     </ClInclude>
-    <ClInclude Include="math\shape\ParticleForGPU.h">
-      <Filter>math\shape</Filter>
-    </ClInclude>
     <ClInclude Include="engine\directX\PSOManager.h">
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
     <ClInclude Include="math\BlendMode.h">
-      <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="math\AccelerationField.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="math\Emitter.h">
@@ -465,11 +468,11 @@
     <ClInclude Include="source\Texture.h">
       <Filter>Engine\texture</Filter>
     </ClInclude>
-    <ClInclude Include="3D\ParticleClass.h">
+    <ClInclude Include="3D\particle\ParticleSystem.h">
       <Filter>3D\Particle</Filter>
     </ClInclude>
-    <ClInclude Include="math\ParticleType.h">
-      <Filter>math</Filter>
+    <ClInclude Include="3D\particle\IParticleBehavior.h">
+      <Filter>3D\Particle</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

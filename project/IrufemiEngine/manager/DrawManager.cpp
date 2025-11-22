@@ -9,7 +9,7 @@
 #include "2D/SpriteRegion.h"
 #include "3D/ObjClass.h"
 #include "3D/TriangleClass.h"
-#include "3D/ParticleClass.h"
+#include "3D/particle/ParticleSystem.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "3D/CylinderClass.h"
@@ -392,7 +392,7 @@ void DrawManager::DrawCylinder(CylinderClass* cylinder) {
     dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(cylinder->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
 }
 
-void DrawManager::DrawParticle(ParticleClass* resource) {
+void DrawManager::DrawParticle(ParticleSystem* resource) {
 
     // インスタンス数が0の場合は描画しない
     if (resource->GetInstanceCount() == 0) {

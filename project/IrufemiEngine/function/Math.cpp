@@ -880,4 +880,12 @@ namespace Math {
         return { 0.0f, -vector.z, vector.y };
     }
 
+    Vector4 Multiply(float s, const Vector4& v) {
+        return Vector4{ v.x * s, v.y * s, v.z * s, v.w * s };
+    }
+
+    Vector4 Add(const Vector4& s, const Vector4& v) {
+        return s + v;
+    }
+
 }

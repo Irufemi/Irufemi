@@ -23,7 +23,6 @@ D3D12ResourceUtil::~D3D12ResourceUtil() {
     if (cameraResource_) { cameraResource_.Reset(); }
 }
 
-
 //ID3D12Resourceを生成する
 void D3D12ResourceUtil::CreateResource() {
     char buf[256];
@@ -112,23 +111,33 @@ D3D12ResourceUtilParticle::~D3D12ResourceUtilParticle() {
     if (materialResource_) { materialResource_.Reset(); }
 }
 
-
 //ID3D12Resourceを生成する
 void D3D12ResourceUtilParticle::CreateResource() {
     char buf[256];
     if (!vertexDataList_.empty()) {
-        vertexResource_ = dxCommon_->CreateBufferResource(sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
-        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", vertexResource_.Get(), __FILE__, __LINE__);
-        OutputDebugStringA(buf);
+        // 頂点バッファが未生成、またはサイズが不足している場合のみ再生成
+        size_t newVertexSize = sizeof(VertexData) * vertexDataList_.size();
+        if (!vertexResource_ || vertexResource_->GetDesc().Width < newVertexSize) {
+            vertexResource_ = dxCommon_->CreateBufferResource(newVertexSize);
+            snprintf(buf, sizeof(buf), "Re/Created vertexResource_ at %p in %s:%d\n", vertexResource_.Get(), __FILE__, __LINE__);
+            OutputDebugStringA(buf);
+        }
     }
     if (!indexDataList_.empty()) {
-        indexResource_ = dxCommon_->CreateBufferResource(sizeof(uint32_t) * static_cast<size_t>(indexDataList_.size()));
-        snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", indexResource_.Get(), __FILE__, __LINE__);
+        // インデックスバッファが未生成、またはサイズが不足している場合のみ再生成
+        size_t newIndexSize = sizeof(uint32_t) * indexDataList_.size();
+        if (!indexResource_ || indexResource_->GetDesc().Width < newIndexSize) {
+            indexResource_ = dxCommon_->CreateBufferResource(newIndexSize);
+            snprintf(buf, sizeof(buf), "Re/Created indexResource_ at %p in %s:%d\n", indexResource_.Get(), __FILE__, __LINE__);
+            OutputDebugStringA(buf);
+        }
+    }
+    // マテリアルバッファはサイズ固定なので、初回のみ生成
+    if (!materialResource_) {
+        materialResource_ = dxCommon_->CreateBufferResource(sizeof(Material));
+        snprintf(buf, sizeof(buf), "Created materialResource_ at %p in %s:%d\n", materialResource_.Get(), __FILE__, __LINE__);
         OutputDebugStringA(buf);
     }
-    materialResource_ = dxCommon_->CreateBufferResource(sizeof(Material));
-    snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", materialResource_.Get(), __FILE__, __LINE__);
-    OutputDebugStringA(buf);
 }
 
 //バッファへの書き込みを開放
