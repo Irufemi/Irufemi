@@ -12,7 +12,7 @@
 #include "3D/SphereClass.h"
 #include "3D/ObjClass.h"
 #include "3D/Region.h"
-#include "3D/ParticleClass.h"
+#include "3D/particle/ParticleSystem.h"
 #include "3D/CylinderClass.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"

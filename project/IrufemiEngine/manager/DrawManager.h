@@ -12,7 +12,7 @@ class Sprite;
 class TriangleClass;
 class SphereClass;
 class ObjClass;
-class ParticleClass;
+class ParticleSystem;
 class CylinderClass;
 class D3D12ResourceUtil;
 class Region;
@@ -70,7 +70,7 @@ public: //メンバ関数
 
     void DrawCylinder(CylinderClass* cylinder);
 
-    void DrawParticle(ParticleClass* resource);
+    void DrawParticle(ParticleSystem* resource);
 
     void DrawRegion(Region* region);
 

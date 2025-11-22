@@ -171,13 +171,53 @@ namespace Math {
 
     // スプライン曲線
     Vector3 CatmullRom(const Vector3& p0, const Vector3& p1, const Vector3& p2, const Vector3& p3, float t) {
-        Vector3 p = Multiply(
-            (1.0f / 2.0f), (((Multiply(-1.0f, p0) + Multiply(3.0f, p1) - Multiply(std::powf(t, 3.0f), Multiply(3.0f, p2) + p3))) +
-                ((Multiply(2.0f, p0) - Multiply(5.0f, p1) + Multiply(std::powf(t, 2.0f), Multiply(4.0f, p2) - p3))) + (Multiply(t, Multiply(-1, p0) + p2)) + Multiply(2, p1)));
+        Vector3 p;
+        float t2 = t * t;
+        float t3 = t2 * t;
+
+        p.x = 0.5f * ((-p0.x + 3.0f * p1.x - 3.0f * p2.x + p3.x) * t3 + (2.0f * p0.x - 5.0f * p1.x + 4.0f * p2.x - p3.x) * t2 + (-p0.x + p2.x) * t + 2.0f * p1.x);
+        p.y = 0.5f * ((-p0.y + 3.0f * p1.y - 3.0f * p2.y + p3.y) * t3 + (2.0f * p0.y - 5.0f * p1.y + 4.0f * p2.y - p3.y) * t2 + (-p0.y + p2.y) * t + 2.0f * p1.y);
+        p.z = 0.5f * ((-p0.z + 3.0f * p1.z - 3.0f * p2.z + p3.z) * t3 + (2.0f * p0.z - 5.0f * p1.z + 4.0f * p2.z - p3.z) * t2 + (-p0.z + p2.z) * t + 2.0f * p1.z);
 
         return p;
     }
 
+#pragma endregion
+
+#pragma region 4次元ベクトル関数
+    Vector4 Add(const Vector4& a, const Vector4& b)
+    {
+        return { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
+    }
+
+    Vector4 Subtract(const Vector4& a, const Vector4& b)
+    {
+        return { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
+    }
+
+    Vector4 Multiply(float s, const Vector4& v)
+    {
+        return { v.x * s, v.y * s, v.z * s, v.w * s };
+    }
+
+    float Dot(const Vector4& a, const Vector4& b)
+    {
+        return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+    }
+
+    float Length(const Vector4& v)
+    {
+        return std::sqrt(Dot(v, v));
+    }
+
+    Vector4 Normalize(const Vector4& v)
+    {
+        float len = Length(v);
+        if (len != 0.0f) {
+            return Multiply(1.0f / len, v);
+        }
+        return v;
+    }
 #pragma endregion
 
 
@@ -879,5 +919,4 @@ namespace Math {
         }
         return { 0.0f, -vector.z, vector.y };
     }
-
 }
