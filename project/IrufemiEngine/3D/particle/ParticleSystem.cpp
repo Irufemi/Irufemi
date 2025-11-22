@@ -1,15 +1,14 @@
 #include "ParticleSystem.h"
+#include "Math.h"
 #include "function/Math.h"
-#include "function/Ease.h"
 #include "manager/DebugUI.h"
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h"
 #include <algorithm>
-#include <numbers>
 
 DescriptorPool* ParticleSystem::s_srvPool_ = nullptr;
 TextureManager* ParticleSystem::s_textureManager_ = nullptr;
-DebugUI*        ParticleSystem::s_ui_ = nullptr;
+DebugUI* ParticleSystem::s_ui_ = nullptr;
 
 ParticleSystem::~ParticleSystem() {
     if (instancingSrvIndex_ != UINT32_MAX && s_srvPool_ && resource_) {
@@ -24,7 +23,6 @@ ParticleSystem::~ParticleSystem() {
 
 void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, ParticleType type, PrimitiveShape shape) {
     this->camera_ = camera;
-    this->particleType_ = type;
     this->primitiveShape_ = shape;
 
     useBillbord_ = true;
@@ -41,38 +39,8 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         instancingResource_->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_));
     }
 
-    // countが3コのemitterを作成しておく
-    emitter_.count = 3;
-    emitter_.frequency = 0.5f; // 0.5秒ごとに発生
-    emitter_.frequencyTime = 0.0f; // 発生頻度用の時刻、0で初期化
-    emitter_.transform.translate = { 0.0f,0.0f,0.0f };
-    emitter_.transform.rotate = { 0.0f,0.0f,0.0f };
-    emitter_.transform.scale = { 1.0f,1.0f,1.0f };
-    emitter_.area = { 2.0f, 2.0f, 2.0f };
-    emitter_.velocityMin = { -1.0f, -1.0f, -1.0f };
-    emitter_.velocityMax = { 1.0f, 1.0f, 1.0f };
-    // デフォルトの色の設定
-    emitter_.startColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-    emitter_.endColor = { 1.0f, 1.0f, 1.0f, 0.0f };
-    emitter_.colorMode = ParticleColorMode::kRandom; // デフォルトをランダムに
-
-    switch (particleType_) {
-    case ParticleType::Normal:
-        // Normal用の初期設定（必要であれば）
-        break;
-    case ParticleType::kAccelerationField:
-        accelerationField_.acceleration = { 15.0f,0.0f,0.0f };
-        accelerationField_.area.min = { -1.0f,-1.0f,-1.0f };
-        accelerationField_.area.max = { 1.0f,1.0f,1.0f };
-        break;
-    case ParticleType::kHitEffect:
-        emitter_.count = 8;
-        emitter_.area = { 0.0f, 0.0f, 0.0f };
-        emitter_.velocityMin = { 0.0f, 0.0f, 0.0f };
-        emitter_.velocityMax = { 0.0f, 0.0f, 0.0f };
-        useBillbord_ = false;
-        break;
-    }
+    // 振る舞いを設定
+    ChangeBehavior(type);
 
     // 単位行列を書きこんでおく
     particles_.clear();
@@ -80,9 +48,11 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         particles_.push_back(MakeNewParticle(randomEngine_, emitter_));
     }
 
-    backToFrontMatrix_ = Math::MakeRotateYMatrix(std::numbers::pi_v<float>);
+    // backToFrontMatrix_の設定(面の向きをカメラの方向にしてあるのでここは調整なし。0でOK)
+    backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
 
     /// カメラの回転を適用する
+    billbordMatrix_ = Math::MakeIdentity4x4();
     billbordMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
     billbordMatrix_.m[3][0] = 0.0f;
     billbordMatrix_.m[3][1] = 0.0f;
@@ -294,30 +264,11 @@ void ParticleSystem::Update() {
         }
 
         if (numInstance_ < kNumMaxInstance_) {
-
             if (isUpdate_) {
-                particleIterator->currentTime += kDeltatime_;
-                float alpha = particleIterator->currentTime / particleIterator->lifeTime;
-
-                particleIterator->transform.translate.x += particleIterator->velocity.x * kDeltatime_;
-                particleIterator->transform.translate.y += particleIterator->velocity.y * kDeltatime_;
-                particleIterator->transform.translate.z += particleIterator->velocity.z * kDeltatime_;
-
-                particleIterator->transform.scale = Lerp(particleIterator->startScale, particleIterator->endScale, alpha);
-                particleIterator->color = Lerp(particleIterator->startColor, particleIterator->endColor, alpha);
-
-                // タイプ別の更新
-                switch (particleType_) {
-                case ParticleType::Normal:
-                    // Normal用の更新処理（必要であれば）
-                    break;
-                case ParticleType::kAccelerationField:
-                    accelerationField_.Apply(*particleIterator, kDeltatime_);
-                    break;
-                case ParticleType::kHitEffect:
-                    // HitEffect固有の更新処理は今のところなし
-                    break;
-                }
+                // パーティクル自身の更新
+                particleIterator->Update(kDeltatime_);
+                // 振る舞い固有の更新
+                behavior_->Update(*particleIterator, kDeltatime_);
             }
 
             Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particleIterator->transform.scale);
@@ -341,21 +292,7 @@ void ParticleSystem::Update() {
 
         ++particleIterator; // 次のイテレーターに進める
     }
-
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
-
-}
-
-void ParticleSystem::Draw() {
-	// DrawByIndexInstanced を呼び出す
-    
-}
-
-void ParticleSystem::SetAccelerationField(const Vector3& center, const Vector3& size, const Vector3& acceleration) {
-    Vector3 halfSize = { size.x / 2.0f, size.y / 2.0f, size.z / 2.0f };
-    accelerationField_.area.min = { center.x - halfSize.x, center.y - halfSize.y, center.z - halfSize.z };
-    accelerationField_.area.max = { center.x + halfSize.x, center.y + halfSize.y, center.z + halfSize.z };
-    accelerationField_.acceleration = acceleration;
 }
 
 void ParticleSystem::SetEmitterPosition(const Vector3& position) {
@@ -425,28 +362,15 @@ void ParticleSystem::SetTexture(const std::string& textureFilePath) {
 Particle ParticleSystem::MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter) {
     std::uniform_real_distribution<float> distRange(-1.0f, 1.0f);
     std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
-    std::uniform_real_distribution<float> distTime(1.0f, 3.0f);
     std::uniform_real_distribution<float> distVelocityX(emitter.velocityMin.x, emitter.velocityMax.x);
     std::uniform_real_distribution<float> distVelocityY(emitter.velocityMin.y, emitter.velocityMax.y);
     std::uniform_real_distribution<float> distVelocityZ(emitter.velocityMin.z, emitter.velocityMax.z);
 
     Particle particle;
 
-    if (particleType_ == ParticleType::kHitEffect) {
-        std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
-        std::uniform_real_distribution<float> distScale(0.4f, 1.5f);
-        particle.startScale = { 0.1f, distScale(randomEngine), 1.0f };
-        particle.endScale = particle.startScale * 0.3f;
-        particle.transform.rotate = { 0.0f, 0.0f, distRotate(randomEngine) };
-        particle.lifeTime = 0.5f; // ヒットエフェクトは短命に
-    }
-    else {
-        // エミッタに設定されたスケールを適用
-        particle.startScale = emitter.startScale;
-        particle.endScale = emitter.endScale;
-        particle.transform.rotate = { 0.0f,0.0f,0.0f };
-        particle.lifeTime = distTime(randomEngine);
-    }
+    // 振る舞い固有の初期化
+    behavior_->MakeNewParticle(particle, randomEngine, emitter);
+
     particle.transform.scale = particle.startScale;
 
     Vector3 randomTranslate = {
@@ -456,7 +380,7 @@ Particle ParticleSystem::MakeNewParticle(std::mt19937& randomEngine, const Emitt
     };
     particle.transform.translate = emitter.transform.translate + randomTranslate;
     particle.velocity = { distVelocityX(randomEngine), distVelocityY(randomEngine), distVelocityZ(randomEngine) };
-    
+
     // カラーモードに応じて色を決定
     switch (emitter.colorMode) {
     case ParticleColorMode::kNone:
@@ -518,7 +442,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
         ImGui::Begin(name.c_str());
 
         if (ImGui::BeginTabBar("ParticleTabs")) {
-            // 基本設定タブ
+            // Generalタブ
             if (ImGui::BeginTabItem("General")) {
                 if (ImGui::Button("Add Particle")) {
                     switch (particleType_) {
@@ -546,7 +470,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         if (s_textureManager_) {
                             auto textureNames = s_textureManager_->GetTextureNames();
                             std::sort(textureNames.begin(), textureNames.end());
-                            if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
+                            if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < textureNames.size()) {
                                 currentTextureName = textureNames[selectedTextureIndex_];
                             }
                         }
@@ -558,40 +482,12 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect" };
                 int currentType = static_cast<int>(particleType_);
                 if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
-                    particleType_ = static_cast<ParticleType>(currentType);
-                    // 型に応じたプロパティリセット
-                    switch (particleType_) {
-                    case ParticleType::Normal:
-                        emitter_.count = 3;
-                        emitter_.area = { 2.0f, 2.0f, 2.0f };
-                        emitter_.velocityMin = { -1.0f, -1.0f, -1.0f };
-                        emitter_.velocityMax = { 1.0f, 1.0f, 1.0f };
-                        useBillbord_ = true;
-                        break;
-                    case ParticleType::kAccelerationField:
-                        emitter_.count = 3;
-                        emitter_.area = { 2.0f, 2.0f, 2.0f };
-                        emitter_.velocityMin = { -1.0f, -1.0f, -1.0f };
-                        emitter_.velocityMax = { 1.0f, 1.0f, 1.0f };
-                        accelerationField_.acceleration = { 15.0f, 0.0f, 0.0f };
-                        accelerationField_.area.min = { -1.0f, -1.0f, -1.0f };
-                        accelerationField_.area.max = { 1.0f, 1.0f, 1.0f };
-                        useBillbord_ = true;
-                        break;
-                    case ParticleType::kHitEffect:
-                        emitter_.count = 8;
-                        emitter_.area = { 0.0f, 0.0f, 0.0f };
-                        emitter_.velocityMin = { 0.0f, 0.0f, 0.0f };
-                        emitter_.velocityMax = { 0.0f, 0.0f, 0.0f };
-                        useBillbord_ = false;
-                        break;
-                    }
+                    ChangeBehavior(static_cast<ParticleType>(currentType));
                 }
-
                 ImGui::EndTabItem();
             }
 
-            // エミッタタブ
+            // Emitterタブ
             if (ImGui::BeginTabItem("Emitter")) {
                 ImGui::DragFloat3("Translate", &emitter_.transform.translate.x, 0.01f, -100.0f, 100.0f);
                 ImGui::DragFloat3("Area", &emitter_.area.x, 0.1f, 0.0f, 100.0f);
@@ -618,14 +514,10 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 ImGui::EndTabItem();
             }
 
-            // フィールドタブ（特定のパーティクルタイプでのみ表示）
-            if (particleType_ == ParticleType::kAccelerationField) {
-                if (ImGui::BeginTabItem("Field")) {
-                    ImGui::DragFloat3("Acceleration", &accelerationField_.acceleration.x, 0.1f);
-                    ImGui::DragFloat3("Area Min", &accelerationField_.area.min.x, 0.1f);
-                    ImGui::DragFloat3("Area Max", &accelerationField_.area.max.x, 0.1f);
-                    ImGui::EndTabItem();
-                }
+            // Fieldタブ
+            if (ImGui::BeginTabItem("Behavior")) {
+                behavior_->Debug(&emitter_, s_ui_);
+                ImGui::EndTabItem();
             }
 
             // レンダリングタブ
@@ -655,4 +547,20 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
     }
 #endif // _DEBUG
 
+}
+
+void ParticleSystem::ChangeBehavior(ParticleType type) {
+    if (particleType_ == type && behavior_) {
+        return; // 同じ振る舞いなら何もしない
+    }
+    particleType_ = type;
+    behavior_ = CreateParticleBehavior(type);
+    behavior_->Initialize(&emitter_);
+
+    // ビルボード設定も振る舞いに応じて変更
+    if (type == ParticleType::kHitEffect) {
+        useBillbord_ = false;
+    } else {
+        useBillbord_ = true;
+    }
 }

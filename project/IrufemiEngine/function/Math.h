@@ -144,6 +144,21 @@ namespace Math {
 
 #pragma endregion
 
+#pragma region 4次元ベクトル関数
+    // 加算
+    Vector4 Add(const Vector4& a, const Vector4& b);
+    // 減算
+    Vector4 Subtract(const Vector4& a, const Vector4& b);
+    // スカラー倍
+    Vector4 Multiply(float s, const Vector4& v);
+    // 内積
+    float Dot(const Vector4& a, const Vector4& b);
+    // ノルム(長さ)
+    float Length(const Vector4& v);
+    // 正規化
+    Vector4 Normalize(const Vector4& v);
+#pragma endregion
+
 #pragma region 4x4行列関数
 
     /// <summary>
@@ -400,7 +415,5 @@ namespace Math {
 
 #pragma endregion
     Vector3 Perpendicular(const Vector3& vector);
-
-    Vector4 Multiply(float s, const Vector4& v);
 
 }

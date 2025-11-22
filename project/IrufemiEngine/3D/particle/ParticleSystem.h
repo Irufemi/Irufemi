@@ -3,6 +3,7 @@
 #include "source/D3D12ResourceUtil.h"
 #include "math/shape/Particle.h"
 #include "math/Emitter.h"
+#include "3D/particle/IParticleBehavior.h" // 追加
 #include <list>
 #include <memory>
 #include <random>
@@ -31,7 +32,6 @@ public:
 	static void SetDebugUI(DebugUI* ui) { s_ui_ = ui; }
 	static void SetSrvPool(DescriptorPool* pool) { s_srvPool_ = pool; }
 
-	void SetAccelerationField(const Vector3& center, const Vector3& size, const Vector3& acceleration);
 	void SetEmitterPosition(const Vector3& position);
 	void SetEmitterArea(const Vector3& area);
 	void SetEmitterVelocity(const Vector3& minVel, const Vector3& maxVel);
@@ -52,6 +52,7 @@ public:
 	void PlayHitEffect(const Vector3& position);
 
 private:
+	void ChangeBehavior(ParticleType type); // 追加
 	Particle MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter);
 	std::list<Particle> Emit(const Emitter& emitter, std::mt19937& randomEngine);
 
@@ -75,7 +76,7 @@ private:
 
 	std::list<Particle> particles_;
 	Emitter emitter_;
-	AccelerationField accelerationField_;
+	std::unique_ptr<IParticleBehavior> behavior_ = nullptr; // 振る舞いクラスへのポインタ
 	ParticleType particleType_ = ParticleType::Normal;
 	PrimitiveShape primitiveShape_ = PrimitiveShape::Plane;
 
@@ -88,4 +89,3 @@ private:
 
 	int selectedTextureIndex_ = 0;
 };
-
