@@ -5,6 +5,7 @@
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h"
 #include <algorithm>
+#include <numbers>
 
 DescriptorPool* ParticleSystem::s_srvPool_ = nullptr;
 TextureManager* ParticleSystem::s_textureManager_ = nullptr;
@@ -158,6 +159,55 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
                 resource_->indexDataList_.push_back(i2);
                 resource_->indexDataList_.push_back(i3);
             }
+        }
+    }
+    break;
+    case PrimitiveShape::Ring:
+    {
+        const uint32_t kRingDivide = 32;
+        const float kOuterRadius = 0.5f; // Planeに合わせて0.5fに設定
+        const float kInnerRadius = 0.2f;
+        const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kRingDivide);
+
+        for (uint32_t i = 0; i < kRingDivide; ++i) {
+            float rad = float(i) * radianPerDivide;
+            float radNext = float(i + 1) * radianPerDivide;
+
+            float sin = std::sin(rad);
+            float cos = std::cos(rad);
+            float sinNext = std::sin(radNext);
+            float cosNext = std::cos(radNext);
+
+            float u = float(i) / float(kRingDivide);
+            float uNext = float(i + 1) / float(kRingDivide);
+
+            VertexData v0, v1, v2, v3;
+            // XY平面上に作成
+            v0.position = { cos * kOuterRadius, sin * kOuterRadius, 0.0f, 1.0f };
+            v0.texcoord = { u, 0.0f };
+            v1.position = { cosNext * kOuterRadius, sinNext * kOuterRadius, 0.0f, 1.0f };
+            v1.texcoord = { uNext, 0.0f };
+            v2.position = { cos * kInnerRadius, sin * kInnerRadius, 0.0f, 1.0f };
+            v2.texcoord = { u, 1.0f };
+            v3.position = { cosNext * kInnerRadius, sinNext * kInnerRadius, 0.0f, 1.0f };
+            v3.texcoord = { uNext, 1.0f };
+
+            // 法線はZ-
+            v0.normal = v1.normal = v2.normal = v3.normal = { 0.0f, 0.0f, -1.0f };
+
+            uint32_t baseIndex = i * 4;
+            resource_->vertexDataList_.push_back(v0);
+            resource_->vertexDataList_.push_back(v1);
+            resource_->vertexDataList_.push_back(v2);
+            resource_->vertexDataList_.push_back(v3);
+
+            resource_->indexDataList_.push_back(baseIndex + 0);
+            resource_->indexDataList_.push_back(baseIndex + 2);
+            resource_->indexDataList_.push_back(baseIndex + 1);
+
+            resource_->indexDataList_.push_back(baseIndex + 1);
+            resource_->indexDataList_.push_back(baseIndex + 2);
+            resource_->indexDataList_.push_back(baseIndex + 3);
         }
     }
     break;
@@ -442,7 +492,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 ImGui::Separator();
 
                 // PrimitiveShapeの選択UI
-                const char* primitiveShapeNames[] = { "Plane", "Sphere" };
+                const char* primitiveShapeNames[] = { "Plane", "Sphere", "Ring" };
                 int currentShape = static_cast<int>(primitiveShape_);
                 if (ImGui::Combo("Primitive Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
                     if (primitiveShape_ != static_cast<PrimitiveShape>(currentShape)) {
