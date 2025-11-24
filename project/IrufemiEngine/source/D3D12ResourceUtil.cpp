@@ -134,7 +134,7 @@ void D3D12ResourceUtilParticle::CreateResource() {
     }
     // マテリアルバッファはサイズ固定なので、初回のみ生成
     if (!materialResource_) {
-        materialResource_ = dxCommon_->CreateBufferResource(sizeof(Material));
+        materialResource_ = dxCommon_->CreateBufferResource(sizeof(ParticleMaterial));
         snprintf(buf, sizeof(buf), "Created materialResource_ at %p in %s:%d\n", materialResource_.Get(), __FILE__, __LINE__);
         OutputDebugStringA(buf);
     }

@@ -250,6 +250,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     resource_->materialData_->hasTexture = true;
     resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+    resource_->materialData_->useClampSampler = (primitiveShape_ == PrimitiveShape::Ring);
 
     if (s_textureManager_) {
         auto textureNames = s_textureManager_->GetTextureNames();
@@ -554,7 +555,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
             // レンダリングタブ
             if (ImGui::BeginTabItem("Rendering")) {
                 s_ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-                s_ui_->DebugMaterialBy3D(resource_->materialData_);
+                s_ui_->DebugMaterialParticle(resource_->materialData_);
                 s_ui_->DebugUvTransform(resource_->uvTransform_);
                 ImGui::EndTabItem();
             }

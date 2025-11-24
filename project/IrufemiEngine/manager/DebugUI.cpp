@@ -31,9 +31,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "math/Transform.h"
 #include "math/DirectionalLight.h"
 #include "math/Material.h"
+#include "math/ParticleMaterial.h"
 #include "source/D3D12ResourceUtil.h"
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h"
+#include "function/Math.h"
 
 void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCommon* dxCommon) {
 #ifdef USE_IMGUI
@@ -235,6 +237,77 @@ void DebugUI::DebugMaterialBy2D([[maybe_unused]] Material* materialData) {
 #endif // USE_IMGUI
 }
 
+// Particle 専用マテリアルのデバッグ表示
+void DebugUI::DebugMaterialParticle([[maybe_unused]] ParticleMaterial* materialData) {
+#ifdef USE_IMGUI
+
+    if (!materialData) return;
+
+    if (ImGui::CollapsingHeader("particle material")) {
+        // 基本プロパティ
+        ImGui::ColorEdit4("color", &materialData->color.x);
+
+        bool enableLighting = materialData->enableLighting != 0;
+        if (ImGui::Checkbox("enableLighting", &enableLighting)) {
+            materialData->enableLighting = enableLighting ? 1 : 0;
+        }
+
+        bool hasTexture = materialData->hasTexture != 0;
+        if (ImGui::Checkbox("hasTexture", &hasTexture)) {
+            materialData->hasTexture = hasTexture ? 1 : 0;
+        }
+
+        const char* items[] = { "NonLighting", "Lambert", "HalfLambert" };
+        int currentMode = materialData->lightingMode;
+        if (ImGui::Combo("LightingMode", &currentMode, items, IM_ARRAYSIZE(items))) {
+            materialData->lightingMode = currentMode;
+        }
+
+        // サンプラ切替フラグ（0 = WRAP(s0), 1 = CLAMP(s1)）
+        bool useClamp = materialData->useClampSampler != 0;
+        if (ImGui::Checkbox("Use Clamp Sampler (V)", &useClamp)) {
+            materialData->useClampSampler = useClamp ? 1 : 0;
+        }
+
+        ImGui::DragFloat("Shininess", &materialData->shininess, 0.01f);
+
+        // --- UV Transform 編集（より実用的に） ---
+        // materialData->uvTransform は 4x4 行列。
+        // 編集用に translate/scale/rotate(Z) を抽出し、編集後に再構成する。
+        // 抽出は「一般的な affine（回転 + scale + translate）を想定した簡易逆変換」です。
+        // U/V は X/Y 成分に対応している前提。
+        float tx = materialData->uvTransform.m[3][0];
+        float ty = materialData->uvTransform.m[3][1];
+
+        // 簡易スケール抽出：対角成分を利用（斜交/shear を無視する簡易推定）
+        float sx = materialData->uvTransform.m[0][0];
+        float sy = materialData->uvTransform.m[1][1];
+
+        // 簡易回転（ラジアン）： atan2( m10, m00 ) を使用（回転+scale の混在を近似）
+        float rot = std::atan2(materialData->uvTransform.m[1][0], materialData->uvTransform.m[0][0]);
+
+        bool changed = false;
+        if (ImGui::TreeNode("UV Transform (affine)")) {
+            if (ImGui::DragFloat2("UV Translate", &tx, 0.01f, -100.0f, 100.0f)) changed = true;
+            if (ImGui::DragFloat2("UV Scale", &sx, 0.01f, -100.0f, 100.0f)) changed = true;
+            if (ImGui::SliderAngle("UV Rotate (deg)", &rot)) changed = true;
+            ImGui::TextWrapped("注: 複雑な歪み（shear 等）がある場合は完璧に逆変換できません。一般的な UV 編集用途に最適化しています。");
+            ImGui::TreePop();
+        }
+
+        if (changed) {
+            // Transform 構造を使って行列を再構成（function/Math.h の MakeAffineMatrix を利用）
+            Transform uvT;
+            uvT.translate = { tx, ty, 0.0f };
+            uvT.scale = { sx, sy, 1.0f };
+            uvT.rotate = { 0.0f, 0.0f, rot }; // rad
+
+            materialData->uvTransform = Math::MakeAffineMatrix(uvT.scale, uvT.rotate, uvT.translate);
+        }
+    }
+#endif // USE_IMGUI
+}
+
 // 画像
 void DebugUI::DebugTexture([[maybe_unused]] D3D12ResourceUtil* resource, [[maybe_unused]] int& selectedTextureIndex) {
 #ifdef USE_IMGUI
@@ -416,7 +489,7 @@ void DebugUI::FPSDebug() {
             draw->AddText(ImVec2(canvasMin.x + 4, y - 12), color, label);
             };
         drawGuideLine(guide60, IM_COL32(100, 255, 120, 200), "60fps");
-        drawGuideLine(guide30, IM_COL32(255, 190, 80, 200), "30fps");
+        drawGuideLine(guide30, IM_COL32(255,190, 80, 200), "30fps");
 
         // グリッド (等間隔 5 本)
         for (int i = 1; i <= 4; ++i) {
