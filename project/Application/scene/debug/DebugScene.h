@@ -10,7 +10,7 @@
 #include "3D/SphereClass.h"
 #include "3D/PlaneClass.h"
 #include "3D/TriangleClass.h"
-#include "3D/ParticleClass.h"
+#include "3D/particle/ParticleSystem.h"
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
 #include "3D/PointLightClass.h"
@@ -64,7 +64,7 @@ private: // メンバ変数
     std::unique_ptr<ObjClass> terrain_ = nullptr;
     bool isActiveTerrain_ = false;
 
-    std::unique_ptr<ParticleClass> particle_ = nullptr;
+    std::unique_ptr<ParticleSystem> particle_ = nullptr;
     bool isActiveParticle_ = false;
 
     std::unique_ptr<Sprite> imguiSprite_;

@@ -9,7 +9,7 @@
 #include "2D/SpriteRegion.h"
 #include "3D/ObjClass.h"
 #include "3D/TriangleClass.h"
-#include "3D/ParticleClass.h"
+#include "3D/particle/ParticleSystem.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "3D/CylinderClass.h"
@@ -392,45 +392,47 @@ void DrawManager::DrawCylinder(CylinderClass* cylinder) {
     dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(cylinder->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
 }
 
-void DrawManager::DrawParticle(ParticleClass* resource) {
+void DrawManager::DrawParticle(ParticleSystem* resource) {
 
     // インスタンス数が0の場合は描画しない
     if (resource->GetInstanceCount() == 0) {
         return;
     }
 
-    /*三角形を表示しよう*/
-    //RootSignatureを設定。PSOに設定しているけど別途指定が必要
+    // RootSignature を設定（PSO とは別にコマンドリスト上で設定が必要）
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
-    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &resource->GetD3D12Resource()->vertexBufferView_); // VBVを設定
-    //IBVを設定
+
+    // IA 設定: VB/IB/Topology
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &resource->GetD3D12Resource()->vertexBufferView_);
     dxCommon_->GetCommandList()->IASetIndexBuffer(&resource->GetD3D12Resource()->indexBufferView_);
-    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
     dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    /*三角形の色を変えよう*/
-
-    ///CBVを設定する
-
-    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
+    // --- CBV のバインド ---
+    // 0: 既存のマテリアル CBV（互換性維持のために常にバインド）
+    //    (rootParameters[0] に対応、PixelShader 側の b0 想定)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
 
+    // Particle 専用マテリアル CBV を root index 9 にバインド
+    // - DirectXCommon.cpp の RootSignature で rootParameters[9] を ParticleMaterial (PS b5) に
+    //   マップしているため、Draw 側はルート配列インデックス 9 を使って渡す必要があります。
+    // - ここで渡すのは resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress()
+    //   （D3D12ResourceUtilParticle::materialResource_ が ParticleMaterial 構造体を保持している想定）
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(9, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
+
+    // インスタンス用 SRV (VS 側で参照するインスタンス配列)
     auto instancing = resource->GetInstancingSrvHandleGPU();
     assert(instancing.ptr != 0 && "Instancing SRV handle is null or invalid");
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, resource->GetInstancingSrvHandleGPU());
 
-    /*テクスチャを貼ろう*/
-
-    ///DescriptorTableを設定する
-
-    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
+    // テクスチャ (PS t0)
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, resource->GetD3D12Resource()->textureHandle_);
 
-    /*三角形を表示しよう*/
-
-    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(resource->GetD3D12Resource()->indexDataList_.size()), resource->GetInstanceCount(), 0, 0, 0);
-
+    // 描画コール: インデックス数 × インスタンス数
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(
+        static_cast<UINT>(resource->GetD3D12Resource()->indexDataList_.size()),
+        resource->GetInstanceCount(),
+        0, 0, 0
+    );
 }
 
 void DrawManager::DrawRegion(Region* region) {

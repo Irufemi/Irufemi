@@ -20,23 +20,23 @@ void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
     // D3D12ResourceUtilを生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
-    // ローカルXZ平面上の4頂点（単位サイズ、中心原点）
+    // ローカルXY平面上の4頂点（-Z向き）
     //  v3(-0.5,0.5,0)----v2(0.5,0.5,0)
     //      |                |
     //      |                |
     //  v0(-0.5,-0.5,0)--v1(0.5,-0.5,0)
-    resource_->vertexDataList_.push_back({ { -0.5f, -0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } }); // v0
-    resource_->vertexDataList_.push_back({ {  0.5f,-0.5f, 0.0f,  1.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } }); // v1
-    resource_->vertexDataList_.push_back({ {  0.5f,  0.5f,0.0f,  1.0f }, { 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } }); // v2
-    resource_->vertexDataList_.push_back({ { -0.5f,  0.5f,0.0f,  1.0f }, { 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } }); // v3
+    resource_->vertexDataList_.push_back({ { -0.5f, -0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } }); // v0
+    resource_->vertexDataList_.push_back({ {  0.5f, -0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } }); // v1
+    resource_->vertexDataList_.push_back({ {  0.5f,  0.5f, 0.0f, 1.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } }); // v2
+    resource_->vertexDataList_.push_back({ { -0.5f,  0.5f, 0.0f, 1.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } }); // v3
 
-    // 2トライアングル
+    // 2トライアングル (-Z向き)
     resource_->indexDataList_.push_back(0);
+    resource_->indexDataList_.push_back(2);
     resource_->indexDataList_.push_back(1);
-    resource_->indexDataList_.push_back(2);
     resource_->indexDataList_.push_back(0);
-    resource_->indexDataList_.push_back(2);
     resource_->indexDataList_.push_back(3);
+    resource_->indexDataList_.push_back(2);
 
     // リソースのメモリを確保
     resource_->CreateResource();
@@ -110,8 +110,8 @@ void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
 
     // 初期の平面情報（ワールド空間）も一度更新
     {
-        // 法線は(0,1,0)をWorldInverseTransposeで変換して正規化
-        Vector3 nLocal{ 0.0f, 1.0f, 0.0f };
+        // 法線は(0,0,-1)をWorldInverseTransposeで変換して正規化
+        Vector3 nLocal{ 0.0f, 0.0f, -1.0f };
         // (x,y,z,0) として扱う
         Vector3 nWorld{
             nLocal.x * worldForNormal.m[0][0] + nLocal.y * worldForNormal.m[1][0] + nLocal.z * worldForNormal.m[2][0],
@@ -166,7 +166,7 @@ void PlaneClass::Update() {
 
     // 平面情報をワールド空間で更新
     {
-        Vector3 nLocal{ 0.0f, 1.0f, 0.0f };
+        Vector3 nLocal{ 0.0f, 0.0f, -1.0f };
         Vector3 nWorld{
             nLocal.x * worldForNormal.m[0][0] + nLocal.y * worldForNormal.m[1][0] + nLocal.z * worldForNormal.m[2][0],
             nLocal.x * worldForNormal.m[0][1] + nLocal.y * worldForNormal.m[1][1] + nLocal.z * worldForNormal.m[2][1],

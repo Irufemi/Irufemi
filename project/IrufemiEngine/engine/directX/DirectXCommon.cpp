@@ -344,7 +344,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///DescriptorTable
 
-    D3D12_ROOT_PARAMETER rootParameters[9] = {};
+    D3D12_ROOT_PARAMETER rootParameters[10] = {};
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
@@ -407,11 +407,17 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // VSとGSで共有
     rootParameters[8].Descriptor.ShaderRegister = 6; // レジスタ番号6を使用
 
+    // ParticleMaterial (PS, b5)
+    rootParameters[9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    rootParameters[9].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+    rootParameters[9].Descriptor.ShaderRegister = 5;
+
     /*テクスチャを貼ろう*/
 
     ///Samplerの設定
 
-    D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
+    D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
+    // WRAP Sampler (s0)
     staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR; //バイリニアフィルタ
     staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP; //0~1の範囲外をリピート
     staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -420,6 +426,16 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX; //ありったけのMIpmapを使う
     staticSamplers[0].ShaderRegister = 0; //レジスタ番号0を使う
     staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
+    // CLAMP Sampler (s1)
+    staticSamplers[1].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+    staticSamplers[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    staticSamplers[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    staticSamplers[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    staticSamplers[1].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    staticSamplers[1].MaxLOD = D3D12_FLOAT32_MAX;
+    staticSamplers[1].ShaderRegister = 1; // レジスタ番号1を使う
+    staticSamplers[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
     descriptionRootSignature.pStaticSamplers = staticSamplers;
     descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 

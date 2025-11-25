@@ -157,7 +157,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClCompile Include="2D\Sprite.cpp" />
     <ClCompile Include="3D\ObjClass.cpp" />
-    <ClCompile Include="3D\ParticleClass.cpp" />
+    <ClCompile Include="3D\particle\ParticleSystem.cpp" />
     <ClCompile Include="3D\SphereClass.cpp" />
     <ClCompile Include="3D\TriangleClass.cpp" />
     <ClCompile Include="audio\Bgm.cpp" />
@@ -168,17 +168,20 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="engine\directX\DescriptorPool.cpp" />
     <ClCompile Include="function\ExportDump.cpp" />
     <ClCompile Include="3D\PointLightClass.cpp" />
+    <ClCompile Include="3D\particle\IParticleBehavior.cpp" />
     <ClCompile Include="main.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="math\Matrix4x4.cpp" />
+    <ClCompile Include="math\shape\Particle.cpp" />
     <ClCompile Include="math\Vector2.cpp" />
     <ClCompile Include="audio\Se.cpp" />
     <ClCompile Include="manager\ModelManager.cpp" />
     <ClCompile Include="3D\PlaneClass.cpp" />
     <ClCompile Include="engine\Input\Mouse.cpp" />
+    <ClCompile Include="math\Vector4.cpp" />
     <ClCompile Include="source\D3D12ResourceUtil.cpp" />
     <ClCompile Include="engine\directX\DirectXCommon.cpp" />
     <ClCompile Include="engine\IrufemiEngine.cpp" />
@@ -216,7 +219,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <ClInclude Include="2D\Sprite.h" />
     <ClInclude Include="3D\ObjClass.h" />
-    <ClInclude Include="3D\ParticleClass.h" />
+    <ClInclude Include="3D\particle\ParticleSystem.h" />
     <ClInclude Include="3D\SphereClass.h" />
     <ClInclude Include="3D\TriangleClass.h" />
     <ClInclude Include="audio\Bgm.h" />
@@ -236,13 +239,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="function\Math.h" />
     <ClInclude Include="engine\Input\GamePad.h" />
     <ClInclude Include="engine\Input\Keyboard.h" />
+    <ClInclude Include="3D\particle\IParticleBehavior.h" />
     <ClInclude Include="manager\AudioManager.h" />
     <ClInclude Include="manager\DebugUI.h" />
     <ClInclude Include="manager\DrawManager.h" />
     <ClInclude Include="engine\Input\InputManager.h" />
     <ClInclude Include="manager\TextureManager.h" />
     <ClInclude Include="manager\VoiceCallback.h" />
-    <ClInclude Include="math\AccelerationField.h" />
     <ClInclude Include="math\BlendMode.h" />
     <ClInclude Include="math\CameraForGPU.h" />
     <ClInclude Include="math\ChunkHeader.h" />
@@ -255,14 +258,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Matrix4x4.h" />
     <ClInclude Include="math\ModelData.h" />
     <ClInclude Include="math\ObjModel.h" />
-    <ClInclude Include="math\ParticleType.h" />
+    <ClInclude Include="math\ParticleMaterial.h" />
     <ClInclude Include="math\PointLight.h" />
     <ClInclude Include="math\RiffHeader.h" />
     <ClInclude Include="math\shape\AABB.h" />
     <ClInclude Include="math\shape\Ball.h" />
     <ClInclude Include="math\shape\LinePrimitive.h" />
     <ClInclude Include="math\shape\Particle.h" />
-    <ClInclude Include="math\shape\ParticleForGPU.h" />
     <ClInclude Include="math\shape\Plane.h" />
     <ClInclude Include="math\shape\Sphere.h" />
     <ClInclude Include="math\shape\Spring.h" />

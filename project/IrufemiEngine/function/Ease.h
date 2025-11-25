@@ -2,6 +2,7 @@
 
 #include "../math/Vector2.h"
 #include "../math/Vector3.h"
+#include "../math/Vector4.h"
 
 // 線形補間
 float Lerp(float pos1, float pos2, float t);
@@ -11,6 +12,9 @@ Vector2 Lerp(const Vector2& v1, const Vector2& v2, float t);
 
 // 線形補間
 Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t);
+
+// 線形補間
+Vector4 Lerp(const Vector4& v1, const Vector4& v2, float t);
 
 // 線形補間(0~1制限あり)
 float LerpClamped(float a, float b, float t);

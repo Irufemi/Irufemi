@@ -1,33 +1,20 @@
-
 /*テクスチャを貼ろう*/
 
 #include "./Particle.hlsli"
 
 /*三角形の色を変えよう*/
 
-struct Material
+struct ParticleMaterial
 {
 	float32_t4 color;
-	
-	/*LambertianReflectance*/
-	
 	int32_t enableLighting;
-	
 	int32_t hasTexture;
-	
-	 // 0=Lightingなし, 1=Lambert, 2=HalfLambert
-	int32_t lightingMode;
-	
-	float padding;
-	
-	/*UVTransform*/
-	
-	///Materialの拡張
-	
+	int32_t lightingMode; // 0=Lightingなし, 1=Lambert, 2=HalfLambert
+	int32_t useClampSampler; // 0: WRAP, 1: CLAMP
 	float32_t4x4 uvTransform;
-	
+	float shininess;
 };
-ConstantBuffer<Material> gMaterial : register(b0);
+ConstantBuffer<ParticleMaterial> gMaterial : register(b5);
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;
@@ -38,7 +25,8 @@ struct PixelShaderOutput
 ///Textureを使う
 
 Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
-SamplerState gSampler : register(s0); //Samplerのregisterはs
+SamplerState gSamplerWrap : register(s0); //Samplerのregisterはs
+SamplerState gSamplerClamp : register(s1);
 
 /*LambertianReflectance*/
 
@@ -64,7 +52,15 @@ PixelShaderOutput main(VertexShaderOutput input)
 	///Materialを拡張する
 	
 	float4 transformedUV = mul(float32_t4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
-	float32_t4 textureColor = gTexture.Sample(gSampler, transformedUV.xy);
+	float32_t4 textureColor;
+	if (gMaterial.useClampSampler != 0)
+	{
+		textureColor = gTexture.Sample(gSamplerClamp, transformedUV.xy);
+	}
+	else
+	{
+		textureColor = gTexture.Sample(gSamplerWrap, transformedUV.xy);
+	}
 	output.color = gMaterial.color * textureColor * input.color;
 	
 	/*2値抜き*/
@@ -80,5 +76,3 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	return output;
 }
-
-

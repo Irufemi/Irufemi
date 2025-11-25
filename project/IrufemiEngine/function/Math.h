@@ -2,6 +2,7 @@
 
 #include "math/Vector2.h"
 #include "math/Vector3.h"
+#include "math/Vector4.h"
 #include "math/Matrix4x4.h"
 
 //前方宣言
@@ -141,6 +142,21 @@ namespace Math {
     //スプライン曲線
     Vector3 CatmullRom(const Vector3& p0, const Vector3& p1, const Vector3& p2, const Vector3& p3, float t);
 
+#pragma endregion
+
+#pragma region 4次元ベクトル関数
+    // 加算
+    Vector4 Add(const Vector4& a, const Vector4& b);
+    // 減算
+    Vector4 Subtract(const Vector4& a, const Vector4& b);
+    // スカラー倍
+    Vector4 Multiply(float s, const Vector4& v);
+    // 内積
+    float Dot(const Vector4& a, const Vector4& b);
+    // ノルム(長さ)
+    float Length(const Vector4& v);
+    // 正規化
+    Vector4 Normalize(const Vector4& v);
 #pragma endregion
 
 #pragma region 4x4行列関数
@@ -399,6 +415,5 @@ namespace Math {
 
 #pragma endregion
     Vector3 Perpendicular(const Vector3& vector);
-
 
 }
