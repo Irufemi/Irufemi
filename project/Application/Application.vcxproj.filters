@@ -37,6 +37,18 @@
     <Filter Include="Scene\debug">
       <UniqueIdentifier>{0a6ed38f-12d1-4188-b3fa-fb3877f9047d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="stage">
+      <UniqueIdentifier>{94a9f1f9-f793-4ec9-b909-4605da7b6b1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="effect">
+      <UniqueIdentifier>{aa9d4445-1f1d-4e04-9181-662d1a9eeb84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actor\enemy">
+      <UniqueIdentifier>{b17fc2ed-8b25-4d80-97ba-e78f8dfa8206}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actor\player">
+      <UniqueIdentifier>{ea274c7f-59f8-46ee-8c99-5214b7c09a2c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -58,6 +70,21 @@
     <ClCompile Include="scene\debug\DebugScene.cpp">
       <Filter>Scene\debug</Filter>
     </ClCompile>
+    <ClCompile Include="actor\enemy\Enemy.cpp">
+      <Filter>actor\enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="actor\player\Player.cpp">
+      <Filter>actor\player</Filter>
+    </ClCompile>
+    <ClCompile Include="effect\Effect.cpp">
+      <Filter>effect</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\GameFunction.cpp">
+      <Filter>content</Filter>
+    </ClCompile>
+    <ClCompile Include="stage\Stage.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -77,6 +104,21 @@
     </ClInclude>
     <ClInclude Include="scene\debug\DebugScene.h">
       <Filter>Scene\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="actor\enemy\Enemy.h">
+      <Filter>actor\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="actor\player\Player.h">
+      <Filter>actor\player</Filter>
+    </ClInclude>
+    <ClInclude Include="effect\Effect.h">
+      <Filter>effect</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\GameFunction.h">
+      <Filter>content</Filter>
+    </ClInclude>
+    <ClInclude Include="stage\Stage.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
