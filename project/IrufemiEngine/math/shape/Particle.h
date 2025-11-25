@@ -52,4 +52,5 @@ enum class PrimitiveShape {
 	Plane, // 板
 	Sphere, // 球
 	Ring, // リング
+	Cylinder, // シリンダー
 };

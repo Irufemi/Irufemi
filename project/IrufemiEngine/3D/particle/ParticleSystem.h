@@ -56,6 +56,9 @@ public:
 	                       float startAngleDeg, float endAngleDeg,
 	                       uint32_t segmentCount, bool verticalUV = false);
 
+	// 追加: Cylinder パラメータ設定
+	void SetCylinderParameters(float radius, float height, uint32_t segmentCount, bool flipV = false);
+
 private:
 	void ChangeBehavior(ParticleType type, bool force = false); // 追加
 	Particle MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter);
@@ -101,4 +104,10 @@ private:
 	float ringEndAngleDeg_ = 360.0f;
 	uint32_t ringSegmentCount_ = 32;
 	bool ringVerticalUV_ = false;
+
+	// Cylinder 用パラメータ（デフォルト）
+	float cylinderRadius_ = 0.5f;
+	float cylinderHeight_ = 1.0f;
+	uint32_t cylinderSegmentCount_ = 32;
+	bool cylinderFlipV_ = false;
 };
