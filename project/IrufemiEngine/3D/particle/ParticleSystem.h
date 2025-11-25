@@ -51,6 +51,11 @@ public:
 
 	void PlayHitEffect(const Vector3& position);
 
+	// 追加: Ring パラメータ設定
+	void SetRingParameters(float innerRadius, float outerRadius,
+	                       float startAngleDeg, float endAngleDeg,
+	                       uint32_t segmentCount, bool verticalUV = false);
+
 private:
 	void ChangeBehavior(ParticleType type, bool force = false); // 追加
 	Particle MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter);
@@ -64,8 +69,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource_ = nullptr;
 	ParticleForGPU* instancingData_ = nullptr;
 	uint32_t numInstance_ = 0;
-	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU_{};
-	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU_{};
+	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU_{} ;
+	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU_{} ;
 	uint32_t instancingSrvIndex_ = UINT32_MAX;
 
 	Camera* camera_ = nullptr;
@@ -88,4 +93,12 @@ private:
 	static DescriptorPool* s_srvPool_;
 
 	int selectedTextureIndex_ = 0;
+
+	// Ring 用パラメータ（デフォルト）
+	float ringInnerRadius_ = 0.2f;
+	float ringOuterRadius_ = 0.5f;
+	float ringStartAngleDeg_ = 0.0f;
+	float ringEndAngleDeg_ = 360.0f;
+	uint32_t ringSegmentCount_ = 32;
+	bool ringVerticalUV_ = false;
 };

@@ -11,6 +11,7 @@
 #include "math/Transform.h"
 #include "math/VertexData.h"
 #include "math/Material.h"
+#include "math/ParticleMaterial.h"
 #include "math/TransformationMatrix.h"
 #include "math/DirectionalLight.h"
 #include "math/CameraForGPU.h"
@@ -180,7 +181,7 @@ public: //メンバ変数
     };
 
     //マテリアルデータ(color,enableLighting,uvTransform)
-    Material* materialData_ = nullptr;
+    ParticleMaterial* materialData_ = nullptr;
 
 #pragma endregion
 

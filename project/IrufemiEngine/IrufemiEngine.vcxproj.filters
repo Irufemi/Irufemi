@@ -474,6 +474,9 @@
     <ClInclude Include="3D\particle\IParticleBehavior.h">
       <Filter>3D\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="math\ParticleMaterial.h">
+      <Filter>math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Object2D.hlsli">

@@ -16,6 +16,7 @@ struct DirectionalLight;
 struct Material;
 struct Sphere;
 class DirectXCommon;
+struct ParticleMaterial; // 追加: Particle専用マテリアル前方宣言
 
 #ifdef USE_IMGUI
 
@@ -80,9 +81,12 @@ public: // メンバ関数
 
     // Material
     void DebugMaterialBy3D(Material* material);
-
-    // Material
+    
+// Material
     void DebugMaterialBy2D(Material* material);
+
+    // Particle 専用マテリアルのデバッグ表示
+    void DebugMaterialParticle(ParticleMaterial* material);
 
     // 画像
     void DebugTexture(D3D12ResourceUtil * resource_,int & selectedTextureIndex_);
