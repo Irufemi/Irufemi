@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "ParticleSystem.h"
 #include "Math.h"
 #include "function/Math.h"
@@ -164,38 +165,52 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     break;
     case PrimitiveShape::Ring:
     {
-        const uint32_t kRingDivide = 32;
-        const float kOuterRadius = 0.5f; // Planeに合わせて0.5fに設定
-        const float kInnerRadius = 0.2f;
-        const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kRingDivide);
+        // パラメータ化したリング生成
+        const uint32_t divisions = ringSegmentCount_;
+        const float startRad = ringStartAngleDeg_ * (std::numbers::pi_v<float> / 180.0f);
+        float endRad = ringEndAngleDeg_ * (std::numbers::pi_v<float> / 180.0f);
+        // end が start 以下なら一周分を付加する（負方向の弧も扱いたい場合は要調整）
+        if (endRad <= startRad) endRad += 2.0f * std::numbers::pi_v<float>;
+        const float arc = endRad - startRad;
+        const float radianPerDivide = arc / static_cast<float>(divisions);
 
-        for (uint32_t i = 0; i < kRingDivide; ++i) {
-            float rad = float(i) * radianPerDivide;
-            float radNext = float(i + 1) * radianPerDivide;
+        for (uint32_t i = 0; i < divisions; ++i) {
+            float a0 = startRad + static_cast<float>(i) * radianPerDivide;
+            float a1 = startRad + static_cast<float>(i + 1) * radianPerDivide;
 
-            float sin = std::sin(rad);
-            float cos = std::cos(rad);
-            float sinNext = std::sin(radNext);
-            float cosNext = std::cos(radNext);
+            float s0 = std::sin(a0);
+            float c0 = std::cos(a0);
+            float s1 = std::sin(a1);
+            float c1 = std::cos(a1);
 
-            float u = float(i) / float(kRingDivide);
-            float uNext = float(i + 1) / float(kRingDivide);
+            float u = static_cast<float>(i) / static_cast<float>(divisions);
+            float uNext = static_cast<float>(i + 1) / static_cast<float>(divisions);
 
             VertexData v0, v1, v2, v3;
-            // XY平面上に作成
-            v0.position = { cos * kOuterRadius, sin * kOuterRadius, 0.0f, 1.0f };
-            v0.texcoord = { u, 0.0f };
-            v1.position = { cosNext * kOuterRadius, sinNext * kOuterRadius, 0.0f, 1.0f };
-            v1.texcoord = { uNext, 0.0f };
-            v2.position = { cos * kInnerRadius, sin * kInnerRadius, 0.0f, 1.0f };
-            v2.texcoord = { u, 1.0f };
-            v3.position = { cosNext * kInnerRadius, sinNext * kInnerRadius, 0.0f, 1.0f };
-            v3.texcoord = { uNext, 1.0f };
+            // XY平面上に作成（外周→内周の順）
+            v0.position = { c0 * ringOuterRadius_, s0 * ringOuterRadius_, 0.0f, 1.0f };
+            v1.position = { c1 * ringOuterRadius_, s1 * ringOuterRadius_, 0.0f, 1.0f };
+            v2.position = { c0 * ringInnerRadius_, s0 * ringInnerRadius_, 0.0f, 1.0f };
+            v3.position = { c1 * ringInnerRadius_, s1 * ringInnerRadius_, 0.0f, 1.0f };
+
+            // UV の縦／横切替
+            if (ringVerticalUV_) {
+                v0.texcoord = { 0.0f, u };
+                v1.texcoord = { 0.0f, uNext };
+                v2.texcoord = { 1.0f, u };
+                v3.texcoord = { 1.0f, uNext };
+            } else {
+                v0.texcoord = { u, 0.0f };
+                v1.texcoord = { uNext, 0.0f };
+                v2.texcoord = { u, 1.0f };
+                v3.texcoord = { uNext, 1.0f };
+            }
 
             // 法線はZ-
             v0.normal = v1.normal = v2.normal = v3.normal = { 0.0f, 0.0f, -1.0f };
 
-            uint32_t baseIndex = i * 4;
+            // 基点インデックス（既に頂点が入っている可能性があるため現在サイズを基準にする）
+            uint32_t baseIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
             resource_->vertexDataList_.push_back(v0);
             resource_->vertexDataList_.push_back(v1);
             resource_->vertexDataList_.push_back(v2);
@@ -557,6 +572,55 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 s_ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
                 s_ui_->DebugMaterialParticle(resource_->materialData_);
                 s_ui_->DebugUvTransform(resource_->uvTransform_);
+
+                // --- Ring パラメータ UI ---
+                if (primitiveShape_ == PrimitiveShape::Ring) {
+                    ImGui::Separator();
+                    ImGui::Text("Ring Parameters");
+
+                    // 現在の値をローカルにコピーして UI 編集（変更検出用）
+                    float inner = ringInnerRadius_;
+                    float outer = ringOuterRadius_;
+                    float startDeg = ringStartAngleDeg_;
+                    float endDeg = ringEndAngleDeg_;
+                    int segments = static_cast<int>(ringSegmentCount_);
+                    bool verticalUV = ringVerticalUV_;
+
+                    bool changed = false;
+                    if (ImGui::DragFloat("Inner Radius", &inner, 0.005f, 0.0f, 1000.0f)) changed = true;
+                    if (ImGui::DragFloat("Outer Radius", &outer, 0.005f, 0.0f, 1000.0f)) changed = true;
+                    if (ImGui::DragFloat("Start Angle (deg)", &startDeg, 0.5f, -360.0f, 360.0f)) changed = true;
+                    if (ImGui::DragFloat("End Angle (deg)", &endDeg, 0.5f, -360.0f, 720.0f)) changed = true;
+                    if (ImGui::DragInt("Segment Count", &segments, 1.0f, 3, 1024)) changed = true;
+                    if (ImGui::Checkbox("Vertical UV", &verticalUV)) changed = true;
+
+                    if (changed) {
+                        // 安全化: segments を最低 3 に、inner/outer の順序を保証
+                        segments = std::max(3, segments);
+                        if (inner < 0.0f) inner = 0.0f;
+                        if (outer < 0.0f) outer = 0.0f;
+                        if (inner > outer) std::swap(inner, outer);
+
+                        // 値をセットして Initialize で再生成
+                        SetRingParameters(inner, outer, startDeg, endDeg, static_cast<uint32_t>(segments), verticalUV);
+
+                        // 現在のテクスチャ名を復元して Initialize を呼ぶ（UI 保持のため）
+                        std::string currentTextureName = "resources/circle.png";
+                        if (s_textureManager_) {
+                            auto textureNames = s_textureManager_->GetTextureNames();
+                            std::sort(textureNames.begin(), textureNames.end());
+                            if (!textureNames.empty()) {
+                                if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
+                                    currentTextureName = textureNames[selectedTextureIndex_];
+                                } else {
+                                    currentTextureName = textureNames[0];
+                                }
+                            }
+                        }
+                        Initialize(camera_, currentTextureName, particleType_, primitiveShape_);
+                    }
+                }
+
                 ImGui::EndTabItem();
             }
 
@@ -595,4 +659,17 @@ void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
     } else {
         useBillbord_ = true;
     }
+}
+
+// 追加実装: SetRingParameters (適当な場所に追加：クラス外のメソッド実装セクションに入れてください)
+void ParticleSystem::SetRingParameters(float innerRadius, float outerRadius,
+                                       float startAngleDeg, float endAngleDeg,
+                                       uint32_t segmentCount, bool verticalUV) {
+    // 最低分割数を確保
+    ringSegmentCount_ = std::max<uint32_t>(3, segmentCount);
+    ringInnerRadius_ = innerRadius;
+    ringOuterRadius_ = outerRadius;
+    ringStartAngleDeg_ = startAngleDeg;
+    ringEndAngleDeg_ = endAngleDeg;
+    ringVerticalUV_ = verticalUV;
 }
