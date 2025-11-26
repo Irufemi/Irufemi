@@ -43,6 +43,9 @@
     <Filter Include="Scene\debug">
       <UniqueIdentifier>{0a6ed38f-12d1-4188-b3fa-fb3877f9047d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="content\skydome">
+      <UniqueIdentifier>{2dd0d319-6760-41ba-acf1-9533c080302e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -83,7 +86,7 @@
       <Filter>Scene\debug</Filter>
     </ClCompile>
     <ClCompile Include="contents\skydome\Skydome.cpp">
-      <Filter>content</Filter>
+      <Filter>content\skydome</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -121,7 +124,7 @@
       <Filter>Scene\debug</Filter>
     </ClInclude>
     <ClInclude Include="contents\skydome\Skydome.h">
-      <Filter>content</Filter>
+      <Filter>content\skydome</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

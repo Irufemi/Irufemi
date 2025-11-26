@@ -175,7 +175,11 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="scene\inGame\GameScene.cpp" />
     <ClCompile Include="scene\result\ResultScene.cpp" />
     <ClCompile Include="scene\title\TitleScene.cpp" />
-    <ClCompile Include="contents\shieldEnemy\ShieldEnemy.cpp" />
+    <ClCompile Include="contents\shieldEnemy\ShieldEnemy.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera\Camera.h" />
@@ -189,7 +193,11 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\result\ResultScene.h" />
     <ClInclude Include="scene\title\TitleScene.h" />
-    <ClInclude Include="contents\shieldEnemy\ShieldEnemy.h" />
+    <ClInclude Include="contents\shieldEnemy\ShieldEnemy.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">
