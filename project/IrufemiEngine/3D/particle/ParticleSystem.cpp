@@ -381,7 +381,7 @@ void ParticleSystem::Update() {
             if (useBillbord_) {
                 worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billbordMatrix_), translateMatrix);
             } else {
-                Matrix4x4 rotateMatrix = Math::MakeRotateZMatrix(particleIterator->transform.rotate.z);
+                Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(particleIterator->transform.rotate.x, particleIterator->transform.rotate.y, particleIterator->transform.rotate.z);
                 worldMatrix = Math::Multiply(scaleMatrix, rotateMatrix);
                 worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             }
@@ -759,8 +759,8 @@ void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
 
 // 追加実装: SetRingParameters (適当な場所に追加：クラス外のメソッド実装セクションに入れてください)
 void ParticleSystem::SetRingParameters(float innerRadius, float outerRadius,
-                                       float startAngleDeg, float endAngleDeg,
-                                       uint32_t segmentCount, bool verticalUV) {
+    float startAngleDeg, float endAngleDeg,
+    uint32_t segmentCount, bool verticalUV) {
     // 最低分割数を確保
     ringSegmentCount_ = std::max<uint32_t>(3, segmentCount);
     ringInnerRadius_ = innerRadius;
