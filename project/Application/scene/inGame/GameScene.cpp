@@ -45,6 +45,12 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // マップチップフィールドのファイル読み込み
     mapChipField_->LoadMapChipCsv("resources/blocks.csv");
 
+    /// 天球
+    // 天球の生成
+    skydome_ = std::make_unique<Skydome>();
+    // 天球の初期化
+    skydome_->Initialize(camera_.get());
+
     /// ブロック
     // ブロックの初期化
 
@@ -113,6 +119,9 @@ void GameScene::Update() {
         // カメラコントローラーの更新
         cameraController_->Update(*camera_.get());
     }
+    
+    // 天球の更新
+    skydome_->Update();
 
     if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
         engine_->GetSceneManager()->Request("Title");
@@ -127,6 +136,9 @@ void GameScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
+
+    // 天球
+    skydome_->Draw();
 
     // Player
     player_->Draw();

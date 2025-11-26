@@ -21,6 +21,7 @@
 #include "camera/CameraController.h"
 
 #include "contents/player/Player.h"
+#include "contents/skydome/Skydome.h"
 #include "contents/MapChipField.h"
 
 // 前方宣言
@@ -44,6 +45,9 @@ private: // 変数
 
     // カメラコントローラー
     std::unique_ptr<CameraController> cameraController_ = nullptr;
+
+    // 天球
+    std::unique_ptr<Skydome> skydome_ = nullptr;
 
     /// マップチップフィールド
     std::unique_ptr<MapChipField> mapChipField_ = nullptr;

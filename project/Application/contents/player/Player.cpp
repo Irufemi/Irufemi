@@ -54,6 +54,7 @@ void Player::Update() {
 }
 
 void Player::Draw() {
+    model_->Update();
     model_->Draw();
 }
 
@@ -202,8 +203,6 @@ void Player::BehaviorMoveUpdate() {
 
     // 4) 行列更新（ロジック→描画へ）
     UpdateMatrix();
-
-    model_->Update();
 }
 
 // ===== マップ衝突 =====
