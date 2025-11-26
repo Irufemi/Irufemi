@@ -2,6 +2,169 @@
 
 #include "camera/Camera.h"
 #include "contents/player/Player.h"
+#include "function/Math.h"
+#include "scene/inGame/GameScene.h"
+#include "function/Ease.h"
+#include <numbers>
+#include <cmath>
+#include <cassert>
 
 Camera* ShieldEnemy::camera_ = nullptr;
 Player* ShieldEnemy::player_ = nullptr;
+
+void ShieldEnemy::Initialize(const Vector3& position, GameScene* gameScene) {
+
+    model_ = std::make_unique<ObjClass>();
+    model_->Initialize(camera_, "shieldEnemy.obj");
+
+    gameScene_ = gameScene;
+
+    transform_.translate = position;
+    transform_.rotate = { 0.0f, -std::numbers::pi_v<float> / 2.0f, 0.0f }; // 左向きで開始
+    transform_.scale = { 1.0f, 1.0f, 1.0f };
+
+    lrDirection_ = LRDirection::kLeft;
+    velocity_ = { -0.05f, 0.0f, 0.0f }; // 仮の移動速度
+
+    model_->SetTransform(transform_);
+
+    // 初期状態は歩行
+    behavior_ = Behavior::kWalk;
+    BehaviorWalkInitialize();
+}
+
+void ShieldEnemy::Update() {
+    // 振る舞いの遷移
+    if (behaviorRequest_ != Behavior::kUnknown) {
+        behavior_ = behaviorRequest_;
+        switch (behavior_) {
+        case Behavior::kWalk:
+            BehaviorWalkInitialize();
+            break;
+        case Behavior::kDeath:
+            BehaviorDeathInitialize();
+            break;
+        }
+        behaviorRequest_ = Behavior::kUnknown;
+    }
+
+    // 振る舞いごとの更新
+    switch (behavior_) {
+    case Behavior::kWalk:
+        BehaviorWalkUpdate();
+        break;
+    case Behavior::kDeath:
+        BehaviorDeathUpdate();
+        break;
+    }
+
+    UpdateMatrix();
+}
+
+void ShieldEnemy::Draw() {
+    model_->SetTransform(transform_);
+    model_->Update();
+    model_->Draw();
+}
+
+void ShieldEnemy::OnCollision(const Player* player) {
+    if (behavior_ == Behavior::kDeath || isCollisionDisabled_) {
+        return;
+    }
+
+    if (player->IsAttack()) {
+        // プレイヤーと敵の向きを取得
+        Player::LRDirection playerDir = player->GetLR();
+        LRDirection enemyDir = this->lrDirection_;
+
+        // プレイヤーが右向きで敵が左向き、またはプレイヤーが左向きで敵が右向きの場合、正面からの攻撃とみなす
+        bool isFrontAttack = (playerDir == Player::LRDirection::kRight && enemyDir == LRDirection::kLeft) ||
+                             (playerDir == Player::LRDirection::kLeft && enemyDir == LRDirection::kRight);
+
+        if (isFrontAttack) {
+            // 正面からの攻撃：ダメージ軽減フラグを立てる（エフェクトや音を鳴らすなどの処理もここ）
+            isDamageReduction = true;
+            // TODO: ガードエフェクトやSEを再生
+        }
+        else {
+            // 背後からの攻撃：デス状態へ移行
+            isCollisionDisabled_ = true;
+            behaviorRequest_ = Behavior::kDeath;
+
+            // ヒットエフェクト生成
+            if (gameScene_) {
+                Vector3 effectPos = Math::Multiply(0.5f, Math::Add(transform_.translate, player->GetTranslate()));
+                gameScene_->CreateHitEffect(effectPos);
+            }
+        }
+    }
+}
+
+Vector3 ShieldEnemy::GetWorldPosition() const {
+    Vector3 worldPos;
+    worldPos.x = worldMatrix_.m[3][0];
+    worldPos.y = worldMatrix_.m[3][1];
+    worldPos.z = worldMatrix_.m[3][2];
+    return worldPos;
+}
+
+AABB ShieldEnemy::GetAABB() const {
+    const Vector3 worldPos = GetWorldPosition();
+    AABB aabb;
+    aabb.min = { worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f };
+    aabb.max = { worldPos.x + kWidth / 2.0f, worldPos.y + kHeight / 2.0f, worldPos.z + kWidth / 2.0f };
+    return aabb;
+}
+
+void ShieldEnemy::UpdateMatrix() {
+    worldMatrix_ = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+   
+}
+
+void ShieldEnemy::BehaviorWalkInitialize() {
+    // 歩行開始時の初期化（必要であれば）
+}
+
+void ShieldEnemy::BehaviorWalkUpdate() {
+    // 単純な左右移動の例
+    transform_.translate = Math::Add(transform_.translate, velocity_);
+
+    // 簡易的な回転アニメーション
+    transform_.rotate.x += 0.05f;
+    if (transform_.rotate.x > std::numbers::pi_v<float> * 2.0f) {
+        transform_.rotate.x -= std::numbers::pi_v<float> * 2.0f;
+    }
+}
+
+void ShieldEnemy::BehaviorDeathInitialize() {
+    deathTimer_ = 0.0f;
+    deathStartRotation_ = transform_.rotate;
+    // プレイヤーの攻撃方向に合わせて吹き飛ぶ回転を設定
+    if (player_ && player_->GetLR() == Player::LRDirection::kRight) {
+        deathEndRotation_.y = transform_.rotate.y + std::numbers::pi_v<float> * 2.0f;
+    }
+    else {
+        deathEndRotation_.y = transform_.rotate.y - std::numbers::pi_v<float> * 2.0f;
+    }
+    deathEndRotation_.x = -std::numbers::pi_v<float> / 2.0f;
+}
+
+void ShieldEnemy::BehaviorDeathUpdate() {
+    const float dt = 1.0f / 60.0f;
+    deathTimer_ += dt;
+
+    float t = std::clamp(deathTimer_ / kDeathDuration, 0.0f, 1.0f);
+
+    // Y軸回転
+    transform_.rotate.y = Lerp(deathStartRotation_.y, deathEndRotation_.y, EaseOutSine(t));
+
+    // X軸回転（演出の後半で倒れる）
+    if (t > 0.5f) {
+        float fall_t = (t - 0.5f) * 2.0f;
+        transform_.rotate.x = Lerp(deathStartRotation_.x, deathEndRotation_.x, EaseInSine(fall_t));
+    }
+
+    if (deathTimer_ >= kDeathDuration) {
+        isDead_ = true;
+    }
+}

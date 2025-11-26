@@ -72,34 +72,34 @@ public: // メンバ関数
     void QueuePostDrawCommands();
 
     // Transform
-    void DebugTransform(Transform& transform);
+    static void DebugTransform(Transform& transform);
 
-    void DebugTransform2D(Transform& transform);
+    static void DebugTransform2D(Transform& transform);
 
 
-    void TextTransform(Transform& transform, const char* name = "");
+    static void TextTransform(Transform& transform, const char* name = "");
 
     // Material
-    void DebugMaterialBy3D(Material* material);
+    static void DebugMaterialBy3D(Material* material);
     
 // Material
-    void DebugMaterialBy2D(Material* material);
+    static void DebugMaterialBy2D(Material* material);
 
     // Particle 専用マテリアルのデバッグ表示
-    void DebugMaterialParticle(ParticleMaterial* material);
+    static void DebugMaterialParticle(ParticleMaterial* material);
 
     // 画像
     void DebugTexture(D3D12ResourceUtil * resource_,int & selectedTextureIndex_);
     void DebugTexture(D3D12ResourceUtilParticle* resource, int& selectedTextureIndex);
 
     // DirectionalLight
-    void DebugDirectionalLight(DirectionalLight* directionalLightData);
+    static void DebugDirectionalLight(DirectionalLight* directionalLightData);
 
     // UvTransform
-    void DebugUvTransform(Transform& uvTransform);
+    static void DebugUvTransform(Transform& uvTransform);
 
     // Sphere
-    void DebugSphereInfo(Sphere& sphere);
+    static void DebugSphereInfo(Sphere& sphere);
 
     // FPS/FrameTime オーバーレイ
     void FPSDebug();

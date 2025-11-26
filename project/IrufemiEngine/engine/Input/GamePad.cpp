@@ -165,3 +165,8 @@ bool GamePad::LBReleased() const { return IsButtonReleased(XINPUT_GAMEPAD_LEFT_S
 bool GamePad::RBDown() const { return IsButtonDown(XINPUT_GAMEPAD_RIGHT_SHOULDER); }
 bool GamePad::RBPressed() const { return IsButtonPressed(XINPUT_GAMEPAD_RIGHT_SHOULDER); }
 bool GamePad::RBReleased() const { return IsButtonReleased(XINPUT_GAMEPAD_RIGHT_SHOULDER); }
+
+// ★ START ボタン
+bool GamePad::StartDown() const { return IsButtonDown(XINPUT_GAMEPAD_START); }
+bool GamePad::StartPressed() const { return IsButtonPressed(XINPUT_GAMEPAD_START); }
+bool GamePad::StartReleased() const { return IsButtonReleased(XINPUT_GAMEPAD_START); }
