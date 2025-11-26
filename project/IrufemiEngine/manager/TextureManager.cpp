@@ -7,13 +7,10 @@
 #include <format>
 #include <cstdint>
 
-#include "engine/DescriptorAllocator.h"
+#include "engine/directX/DescriptorPool.h"
 #include "engine/directX/DirectXCommon.h"
 #include "DirectXTex/DirectXTex.h"
 #include "DirectXTex/d3dx12.h"
-
-// 静的メンバ実体
-std::mutex TextureManager::srvIndexMutex_;
 
 static bool IsImageExtImpl(const std::string& extLower) {
     static const char* exts[] = { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".dds" };
@@ -21,37 +18,6 @@ static bool IsImageExtImpl(const std::string& extLower) {
         if (extLower == e) { return true; }
     }
     return false;
-}
-
-// TextureManager::AllocateSrvIndexSafe (クラス内に閉じる実装)
-uint32_t TextureManager::AllocateSrvIndexSafe(DirectXCommon* dxCommon) noexcept {
-    std::lock_guard<std::mutex> lk(srvIndexMutex_);
-
-    if (!dxCommon) {
-        OutputDebugStringA("TextureManager::AllocateSrvIndexSafe: dxCommon is null\n");
-        return UINT32_MAX;
-    }
-
-    auto heap = dxCommon->GetSrvDescriptorHeap();
-    if (!heap) {
-        OutputDebugStringA("TextureManager::AllocateSrvIndexSafe: srvDescriptorHeap is null\n");
-        return UINT32_MAX;
-    }
-
-    D3D12_DESCRIPTOR_HEAP_DESC desc = heap->GetDesc();
-
-    // 既存実装と互換性を維持するため Texture::index_ を参照する
-    uint32_t index = Texture::GetStaticSRVIndex();
-    if (index >= desc.NumDescriptors) {
-        auto msg = std::format("TextureManager::AllocateSrvIndexSafe: index {} >= heap.NumDescriptors {}\n", index, desc.NumDescriptors);
-        OutputDebugStringA(msg.c_str());
-        return UINT32_MAX;
-    }
-
-    // 既存実装互換：静的インデックスを進める。ここで保護される。
-    Texture::AddStaticSRVIndex();
-
-    return index;
 }
 
 // Initialize: DirectXCommon を保存し、Texture にも渡す
@@ -122,8 +88,9 @@ void TextureManager::CreateWhiteDummyTexture() {
     if (whiteTextureHandle.ptr != 0) return;
     if (!dxCommon_) { OutputDebugStringA("CreateWhiteDummyTexture: dxCommon_ is null\n"); return; }
 
-    if (!dxCommon_->GetSrvDescriptorHeap()) {
-        OutputDebugStringA("CreateWhiteDummyTexture: srvDescriptorHeap is null, deferring white texture creation\n");
+    DescriptorPool* srvPool = dxCommon_->GetSrvPool();
+    if (!srvPool) {
+        OutputDebugStringA("CreateWhiteDummyTexture: srvPool is null, deferring white texture creation\n");
         return;
     }
 
@@ -202,55 +169,27 @@ void TextureManager::CreateWhiteDummyTexture() {
     if (FAILED(hr)) { OutputDebugStringA("CreateWhiteDummyTexture: Reset CommandList failed\n"); return; }
 
     // SRV 割当て
-    // ここでハンドルを外側で宣言して、以降でも参照できるようにする
-    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle{};
+    const uint32_t index = srvPool->Allocate();
+    assert(index != DescriptorPool::kInvalid && "DescriptorPool exhausted. Cannot create white texture.");
 
-    {
-        // まずアロケータ優先
-        uint32_t index = DescriptorAllocator::kInvalid;
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = srvPool->GetCPUHandle(index);
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = srvPool->GetGPUHandle(index);
 
-        if (Texture::GetDescriptorAllocator()) {
-            auto alloc = Texture::GetDescriptorAllocator();
-            index = alloc->Allocate();
-            if (index != DescriptorAllocator::kInvalid) {
-                cpuHandle = alloc->GetCPUHandle(index);
-                gpuHandle = alloc->GetGPUHandle(index);
-            } else {
-                OutputDebugStringA("CreateWhiteDummyTexture: allocator exhausted, using heap start fallback\n");
-                cpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
-                gpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
-            }
-        } else {
-            cpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
-            gpuHandle = dxCommon_->GetSrvDescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
-        }
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-        srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        srvDesc.Texture2D.MipLevels = 1;
-        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    dxCommon_->GetDevice()->CreateShaderResourceView(whiteTextureResource.Get(), &srvDesc, cpuHandle);
+    whiteTextureHandle = gpuHandle;
 
-        dxCommon_->GetDevice()->CreateShaderResourceView(whiteTextureResource.Get(), &srvDesc, cpuHandle);
-        whiteTextureHandle = gpuHandle;
-    }
-
-    // ログ（↑で確定した cpuHandle/gpuHandle を使用）
-    {
-        auto msg = std::format("CreateWhiteDummyTexture: created SRV cpu.ptr={:#x} gpu.ptr={:#x}\n",
-            static_cast<uintptr_t>(cpuHandle.ptr),
-            static_cast<uintptr_t>(gpuHandle.ptr));
-        OutputDebugStringA(msg.c_str());
-    }
-}
-
-// 既存API互換：Texture 側の静的SRVインデックスに委譲
-uint32_t TextureManager::GetSRVIndex() const {
-    return Texture::GetStaticSRVIndex();
-}
-void TextureManager::AddSRVIndex() {
-    Texture::AddStaticSRVIndex();
+    // ログ
+    auto msg = std::format("CreateWhiteDummyTexture: created SRV cpu.ptr={:#x} gpu.ptr={:#x} at index {}\n",
+        static_cast<uintptr_t>(cpuHandle.ptr),
+        static_cast<uintptr_t>(gpuHandle.ptr),
+        index);
+    OutputDebugStringA(msg.c_str());
 }
 
 bool TextureManager::GetTextureSize(const std::string& name, uint32_t& outWidth, uint32_t& outHeight) const {

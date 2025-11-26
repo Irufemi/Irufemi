@@ -1,24 +1,8 @@
 
 /*テクスチャを貼ろう*/
 
-#include "./Object3d.hlsli"
+#include "Object3d.hlsli"
 
-/*三角形を動かそう*/
-
-struct TransformationMatrix
-{
-	float32_t4x4 WVP;
-	
-	/*LambertianReflectance*/
-	
-	float32_t4x4 World;
-	
-	/*非均一スケール*/
-	
-	/// 組み込んで使う
-	
-	float32_t4x4 WorldInverseTranspose;
-};
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
 /*三角形を表示しよう*/

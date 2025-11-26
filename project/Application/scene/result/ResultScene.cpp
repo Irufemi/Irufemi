@@ -7,7 +7,7 @@
 #include "2D/Circle2D.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
-#include <imgui.h>
+#include "manager/DebugUI.h"
 #include "function/Function.h"
 
 #include <memory>
@@ -53,7 +53,10 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
 }
 
 void ResultScene::Update() {
-    if (circle_) circle_->Update("ResultCenter");
+    if (circle_) { 
+        circle_->Debug("ResultCenter");
+        circle_->Update();
+    }
 
     //エンターキーが押されていたら
     if (engine_->GetInputManager()->IsKeyPressed(VK_RETURN)) {

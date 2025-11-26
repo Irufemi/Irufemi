@@ -6,6 +6,7 @@
 #include "Matrix4x4.h"
 #include "VertexData.h"
 #include "ModelData.h"
+#include "Node.h"              // 追加: 階層構造を扱うため
 #include "../function/Math.h"
 #include <string>
 #include <vector>
@@ -31,9 +32,12 @@ struct ObjMaterial {
 
 struct ObjMesh {
     std::vector<VertexData> vertices;
+    std::vector<uint32_t> indices; // 追加
     ObjMaterial material;
 };
 
+// 階層(Node)を統合した拡張版 ObjModel
 struct ObjModel {
     std::vector<ObjMesh> meshes;
+    Node rootNode; // 追加: シーン階層ルート
 };

@@ -3,21 +3,22 @@
 #include <cassert>
 #include <cstring>
 #include "engine/directX/DirectXCommon.h"
-#include "engine/DescriptorAllocator.h" // 追加
+#include "engine/directX/DescriptorPool.h"
 #include "Application/camera/Camera.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
-#include "function/Function.h" // LoadObjFileM, 型定義
+#include "manager/ModelManager.h"
 #include "function/Math.h"
 #include "math/Transform.h"
-#include "math/Material.h"   // Material
-#include "math/DirectionalLight.h"      // DirectionalLight
+#include "math/Material.h"
+#include "math/DirectionalLight.h"
 #include "math/CameraForGPU.h"
 
 DirectXCommon* Region::dx_ = nullptr;
 TextureManager* Region::textureManager_ = nullptr;
 DrawManager* Region::drawManager_ = nullptr;
-DescriptorAllocator* Region::srvAllocator_ = nullptr; // 追加
+DescriptorPool* Region::srvPool_ = nullptr;
+ModelManager* Region::modelManager_ = nullptr;
 
 void Region::Initialize(
     Camera* camera,
@@ -25,40 +26,24 @@ void Region::Initialize(
     assert(camera);
     camera_ = camera;
 
-    // OBJ 読み込み（単一メッシュ前提）
-    objModel_ = LoadObjFileM("resources/obj", objFilename);
-    assert(!objModel_.meshes.empty() && "objModel has no mesh");
-    const auto& mesh = objModel_.meshes.front();
+    assert(modelManager_ && "Region::Initialize: ModelManager is not set.");
+    managedModel_ = modelManager_->GetModel(objFilename);
 
-    // メッシュの VB 作成
-    CreateMeshBuffers(mesh);
+    assert(managedModel_ && managedModel_->cpuModel && "Region::Initialize: model load failed.");
+    assert(!managedModel_->cpuModel->meshes.empty() && "Model has no mesh.");
+    const auto& mesh = managedModel_->cpuModel->meshes.front();
 
-    // マテリアル/ライト/カメラ
+    // インスタンス固有リソースの生成
     CreateMaterialResources(mesh);
     EnsureLightAndCamera();
-
-    // テクスチャ共有（SRV 再利用）
     EnsureSharedTexture(mesh);
-
-    // インスタンシングバッファは必要になった時に作成（最低1で良ければここで CreateOrResizeInstanceBuffer(1) でもOK）
 }
 
-void Region::CreateMeshBuffers(const ObjMesh& mesh) {
-    vertexCount_ = static_cast<UINT>(mesh.vertices.size());
-    const size_t vbSize = sizeof(VertexData) * mesh.vertices.size();
-
-    vertexResource_ = dx_->CreateBufferResource(vbSize);
-    vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-    vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
-    vertexBufferView_.SizeInBytes = static_cast<UINT>(vbSize);
-    vertexBufferView_.StrideInBytes = sizeof(VertexData);
-
-    // 転送
-    VertexData* vb = nullptr;
-    HRESULT hr = vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vb));
-    assert(SUCCEEDED(hr));
-    std::memcpy(vb, mesh.vertices.data(), vbSize);
-    vertexResource_->Unmap(0, nullptr);
+const GpuMesh* Region::GetGpuMesh() const {
+    if (managedModel_ && !managedModel_->gpuMeshes.empty()) {
+        return managedModel_->gpuMeshes.front().get();
+    }
+    return nullptr;
 }
 
 void Region::CreateMaterialResources(const ObjMesh& mesh) {
@@ -66,12 +51,17 @@ void Region::CreateMaterialResources(const ObjMesh& mesh) {
     materialResource_ = dx_->CreateBufferResource(sizeof(Material));
     Material* mat = nullptr;
     materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
+    
+    // ObjMaterial から Material へ必要なデータをコピー
     mat->color = mesh.material.color;
     mat->enableLighting = mesh.material.enableLighting;
-    mat->hasTexture = !mesh.material.textureFilePath.empty();
-    mat->lightingMode = mesh.material.enableLighting ? 2 : 0;
     mat->uvTransform = mesh.material.uvTransform;
     mat->shininess = mesh.material.shininess;
+    // hasTexture は EnsureSharedTexture で設定するため、ここではパスの有無で仮設定
+    mat->hasTexture = !mesh.material.textureFilePath.empty();
+    mat->lightingMode = mesh.material.enableLighting ? 2 : 0; // ライティングモードを適切に設定
+
+    if (mat->color.w <= 0.0f) { mat->color.w = 1.0f; }
 
     // ライト
     directionalLightResource_ = dx_->CreateBufferResource(sizeof(DirectionalLight));
@@ -89,7 +79,7 @@ void Region::CreateMaterialResources(const ObjMesh& mesh) {
 }
 
 void Region::EnsureLightAndCamera() {
-    // 初期化済み。毎フレームのカメラ位置更新は Draw 内で行う
+    // 初期化済み
 }
 
 void Region::EnsureSharedTexture(const ObjMesh& mesh) {
@@ -107,20 +97,19 @@ void Region::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 
     instanceBuffer_ = dx_->CreateBufferResource(sizeInBytes);
 
-    // 初回のみ SRV スロット確保（以降は上書き再利用）
     if (instancingSrvIndex_ == UINT32_MAX) {
-        if (!srvAllocator_) {
+        if (!srvPool_) {
             OutputDebugStringA("Region::CreateOrResizeInstanceBuffer: srvAllocator_ is null\n");
             return;
         }
-        uint32_t idx = srvAllocator_->Allocate();
-        if (idx == DescriptorAllocator::kInvalid) {
+        uint32_t idx = srvPool_->Allocate();
+        if (idx == DescriptorPool::kInvalid) {
             OutputDebugStringA("Region::CreateOrResizeInstanceBuffer: SRV Allocate failed\n");
             return;
         }
         instancingSrvIndex_ = idx;
-        instancingSrvCPU_ = srvAllocator_->GetCPUHandle(idx);
-        instancingSrvGPU_ = srvAllocator_->GetGPUHandle(idx);
+        instancingSrvCPU_ = srvPool_->GetCPUHandle(idx);
+        instancingSrvGPU_ = srvPool_->GetGPUHandle(idx);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
@@ -132,7 +121,6 @@ void Region::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     srv.Buffer.StructureByteStride = stride;
     srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-    // 同一ハンドルに上書き（再利用）
     dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srv, instancingSrvCPU_);
 }
 
@@ -146,7 +134,6 @@ void Region::ClearInstances() {
     instanceDirty_ = true;
 }
 
-// 変更: force を見るように
 void Region::BuildInstanceBuffer(bool force) {
     if (instances_.empty()) { return; }
     if (!force && !instanceDirty_) { return; }
@@ -155,7 +142,6 @@ void Region::BuildInstanceBuffer(bool force) {
     const UINT stride = sizeof(InstanceData);
     const UINT sizeInBytes = stride * count;
 
-    // バッファ確保・SRV更新（要素数が変わったときだけ作り直ししたい場合は、既存サイズを保持して条件分岐）
     CreateOrResizeInstanceBuffer(count);
 
     std::vector<InstanceData> temp(count);
@@ -189,18 +175,15 @@ void Region::BuildInstanceBuffer(bool force) {
 }
 
 void Region::Draw() {
-    if (vertexCount_ == 0 || instances_.empty()) { return; }
+    if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || instances_.empty()) { return; }
 
-    // カメラ位置更新
     {
         CameraForGPU* cam = nullptr;
         cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cam));
         cam->worldPosition = camera_->GetTranslate();
     }
 
-    // インスタンスバッファ更新（毎フレームWVP再計算）
     BuildInstanceBuffer(true);
 
     drawManager_->DrawRegion(this);
-
 }

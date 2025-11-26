@@ -60,9 +60,11 @@ public: //メンバ関数
     //初期化
     void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
     //更新
-    void Update(const bool& debug = true, const char* spriteName = "");
+    void Update();
     // 描画
     void Draw();
+    // デバッグ
+    void Debug(const char* spriteName = "");
 
     // ゲッター
     D3D12ResourceUtil* GetD3D12Resource() { return this->resource_.get(); }

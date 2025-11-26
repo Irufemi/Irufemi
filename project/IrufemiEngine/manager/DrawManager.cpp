@@ -9,7 +9,7 @@
 #include "2D/SpriteRegion.h"
 #include "3D/ObjClass.h"
 #include "3D/TriangleClass.h"
-#include "3D/ParticleClass.h"
+#include "3D/particle/ParticleSystem.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "3D/CylinderClass.h"
@@ -19,6 +19,7 @@
 
 #include "source/D3D12ResourceUtil.h"
 #include "engine/directX/DirectXCommon.h"
+#include "manager/ModelManager.h" // GpuMeshのため
 
 
 
@@ -132,13 +133,10 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     dxCommon_->GetCommandList()->RSSetViewports(1, &viewport);
     dxCommon_->GetCommandList()->RSSetScissorRects(1, &scissorRect);
 
-    /*開発のUIを出そう*/
-
-    ///ImGuiを描画する
-
-    //描画用のDescriptorHeapの設定
+    // フレームで利用するSRVヒープを設定（全描画共通）
     ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
     dxCommon_->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
+
 }
 
 void DrawManager::PostDraw() {
@@ -232,41 +230,43 @@ void DrawManager::EnsureSpotLightResource() {
 }
 
 void DrawManager::DrawTriangle(
-    D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
-    ID3D12Resource* materialResource,
-    ID3D12Resource* wvpResource,
-    ID3D12Resource* directionalLightResource,
-    D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU
+    TriangleClass * triangle
 ) {
 
     /*三角形を表示しよう*/
     //RootSignatureを設定。PSOに設定しているけど別途指定が必要
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
-    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &triangle->GetD3D12Resource()->vertexBufferView_); // VBVを設定
     //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
-    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 
     /*三角形の色を変えよう*/
 
     ///CBVを設定する
 
     //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, triangle->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
 
     /*三角形を動かそう*/
 
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, triangle->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
+    // ↓ ここから追加
+    // GSパイプライン用のwvp CBufferをルートパラメータ[8]に設定
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(8, triangle->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
+    // ↑ ここまで追加
 
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, triangle->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, triangle->GetD3D12Resource()->cameraResource_->GetGPUVirtualAddress());
 
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, triangle->GetD3D12Resource()->textureHandle_);
 
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
@@ -274,7 +274,7 @@ void DrawManager::DrawTriangle(
     /*三角形を表示しよう*/
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    dxCommon_->GetCommandList()->DrawInstanced(3, 1, 0, 0);
+    dxCommon_->GetCommandList()->DrawInstanced(static_cast<UINT>(triangle->GetD3D12Resource()->vertexDataList_.size()), 1, 0, 0);
 
 }
 
@@ -392,68 +392,78 @@ void DrawManager::DrawCylinder(CylinderClass* cylinder) {
     dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(cylinder->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
 }
 
-void DrawManager::DrawParticle(ParticleClass* resource) {
+void DrawManager::DrawParticle(ParticleSystem* resource) {
 
-    /*三角形を表示しよう*/
-    //RootSignatureを設定。PSOに設定しているけど別途指定が必要
+    // インスタンス数が0の場合は描画しない
+    if (resource->GetInstanceCount() == 0) {
+        return;
+    }
+
+    // RootSignature を設定（PSO とは別にコマンドリスト上で設定が必要）
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
-    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &resource->GetD3D12Resource()->vertexBufferView_); // VBVを設定
-    //IBVを設定
+
+    // IA 設定: VB/IB/Topology
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &resource->GetD3D12Resource()->vertexBufferView_);
     dxCommon_->GetCommandList()->IASetIndexBuffer(&resource->GetD3D12Resource()->indexBufferView_);
-    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
     dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    /*三角形の色を変えよう*/
-
-    ///CBVを設定する
-
-    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
+    // --- CBV のバインド ---
+    // 0: 既存のマテリアル CBV（互換性維持のために常にバインド）
+    //    (rootParameters[0] に対応、PixelShader 側の b0 想定)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
 
+    // Particle 専用マテリアル CBV を root index 9 にバインド
+    // - DirectXCommon.cpp の RootSignature で rootParameters[9] を ParticleMaterial (PS b5) に
+    //   マップしているため、Draw 側はルート配列インデックス 9 を使って渡す必要があります。
+    // - ここで渡すのは resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress()
+    //   （D3D12ResourceUtilParticle::materialResource_ が ParticleMaterial 構造体を保持している想定）
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(9, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
+
+    // インスタンス用 SRV (VS 側で参照するインスタンス配列)
     auto instancing = resource->GetInstancingSrvHandleGPU();
     assert(instancing.ptr != 0 && "Instancing SRV handle is null or invalid");
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, resource->GetInstancingSrvHandleGPU());
 
-    /*テクスチャを貼ろう*/
-
-    ///DescriptorTableを設定する
-
-    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
+    // テクスチャ (PS t0)
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, resource->GetD3D12Resource()->textureHandle_);
 
-    /*三角形を表示しよう*/
-
-    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(resource->GetD3D12Resource()->indexDataList_.size()), resource->GetInstanceCount(), 0, 0, 0);
-
+    // 描画コール: インデックス数 × インスタンス数
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(
+        static_cast<UINT>(resource->GetD3D12Resource()->indexDataList_.size()),
+        resource->GetInstanceCount(),
+        0, 0, 0
+    );
 }
 
 void DrawManager::DrawRegion(Region* region) {
     if (!region) { return; }
-    if (region->GetVertexCount() == 0 || region->GetInstanceCount() == 0) { return; }
+    const GpuMesh* gpuMesh = region->GetGpuMesh();
+    if (!gpuMesh || gpuMesh->vertexCount == 0 || region->GetInstanceCount() == 0) { return; }
 
-    // RootSignature
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
 
-    // IA
+    // IA設定 (共有リソースから)
     dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &region->GetVertexBufferView());
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &gpuMesh->vertexBufferView);
+    if (gpuMesh->indexCount > 0) {
+        dxCommon_->GetCommandList()->IASetIndexBuffer(&gpuMesh->indexBufferView);
+    }
 
-    // CBV (PS)
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());          // PS b0
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, region->GetDirectionalLightResource()->GetGPUVirtualAddress());  // PS b1
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, region->GetCameraResource()->GetGPUVirtualAddress());            // PS b2
-
-    // SRV (PS t0 / VS t0)
-    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());         // PS t0
-    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU()); // VS t0
-
-    // オプション：ポイント/スポットライト（他描画と統一）
+    // CBV/SRV設定 (インスタンスリソースから)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, region->GetDirectionalLightResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, region->GetCameraResource()->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU());
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
-    // Draw
-    dxCommon_->GetCommandList()->DrawInstanced(region->GetVertexCount(), region->GetInstanceCount(), 0, 0);
+    // 描画
+    if (gpuMesh->indexCount > 0) {
+        dxCommon_->GetCommandList()->DrawIndexedInstanced(gpuMesh->indexCount, region->GetInstanceCount(), 0, 0, 0);
+    } else {
+        dxCommon_->GetCommandList()->DrawInstanced(gpuMesh->vertexCount, region->GetInstanceCount(), 0, 0);
+    }
 }
 
 void DrawManager::DrawSphereRegion(SphereRegion* region) {
@@ -651,4 +661,33 @@ void DrawManager::DrawSpriteRegion(SpriteRegion* region) {
 
     // Draw
     dxCommon_->GetCommandList()->DrawIndexedInstanced(idxCount, instCount, 0, 0, 0);
+}
+
+void DrawManager::DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource) {
+    if (!gpuMesh || !instanceResource) return;
+
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    
+    // IA設定 (共有リソースから)
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &gpuMesh->vertexBufferView);
+    if (gpuMesh->indexCount > 0) {
+        dxCommon_->GetCommandList()->IASetIndexBuffer(&gpuMesh->indexBufferView);
+    }
+
+    // CBV/SRV設定 (インスタンスリソースから)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, instanceResource->materialResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, instanceResource->transformationResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, instanceResource->directionalLightResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, instanceResource->cameraResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, instanceResource->textureHandle_);
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
+
+    // 描画
+    if (gpuMesh->indexCount > 0) {
+        dxCommon_->GetCommandList()->DrawIndexedInstanced(gpuMesh->indexCount, 1, 0, 0, 0);
+    } else {
+        dxCommon_->GetCommandList()->DrawInstanced(gpuMesh->vertexCount, 1, 0, 0);
+    }
 }

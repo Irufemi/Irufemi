@@ -8,18 +8,12 @@
 
 #include <dxcapi.h>
 
-/*objファイルを読んでみよう*/
-
-#include "../math/ModelData.h"
-#include "../math/MaterialData.h"
-
 #include <wrl.h>
 
-#include "../math/ObjModel.h"
-
+#include <string>
 
 /*サウンド再生*/
-#include "../math/SoundData.h"
+#include "math/SoundData.h"
 #include <xaudio2.h> 
 
 /*ログを出そう*/
@@ -43,25 +37,6 @@ IDxcBlob* CompileShader(
 /*前後関係を正しくしよう*/
 
 Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, int32_t width, int32_t height);
-
-/*objjファイルを読んでみよう*/
-
-///　ModelData構造体と読み込み関数
-
-ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
-
-ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filename);
-
-ModelData LoadObjFileAssimp(const std::string& directoryPath, const std::string& filename);
-
-ObjModel LoadObjFileAssimpM(const std::string& directoryPath, const std::string& filename);
-
-// f行の頂点データを安全にパースする関数例
-bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
-
-/// MaterialData構造体と読み込み関数
-
-MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
 
 /*サウンド再生*/
 

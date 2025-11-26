@@ -58,10 +58,13 @@ public: // メンバ関数
     void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
 
     // 更新
-    void Update(const char* cylinderName = " ");
+    void Update();
 
     // 描画
     void Draw();
+
+    // デバッグ
+    void Debug(const char* cylinderName = " ");
 
     // 補助
     D3D12ResourceUtil* GetD3D12Resource() { return this->resource_.get(); }

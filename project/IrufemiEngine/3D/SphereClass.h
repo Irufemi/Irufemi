@@ -60,10 +60,13 @@ public: //メンバ関数
     void Initialize(Camera* camera,  const std::string& textureName = "resources/uvChecker.png");
 
     // 更新
-    void Update(bool debug = true, const char* sphereName = " ");
+    void Update();
 
     // 描画
     void Draw();
+
+    // デバッグ
+    void Debug(const char* sphereName = " ");
 
     D3D12ResourceUtil* GetD3D12Resource() { return this->resource_.get(); }
     void AddRotateY(float value) { this->resource_->transform_.rotate.y += value; }

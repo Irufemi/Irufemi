@@ -194,40 +194,7 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
 
 }
 
-void SphereClass::Update(bool debug,const char* sphereName) {
-
-    if (debug) {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-
-        std::string name = std::string("Sphere: ") + sphereName;
-
-        ImGui::Begin(name.c_str());
-
-        // 半径と中心は DebugSphereInfo で編集
-        ui_->DebugSphereInfo(info_);
-
-        // 位置は Transform 側でも編集されるので同期
-        resource_->transform_.translate = info_.center;
-
-        // scale は係数（1.0 基準）。ここで自由に非等方も可。
-        ui_->DebugTransform(resource_->transform_);
-
-        // 位置を SphereInfo に反映（半径は Transform からは変更しない）
-        info_.center = resource_->transform_.translate;
-
-        ui_->DebugMaterialBy3D(resource_->materialData_);
-
-        ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-
-        ui_->DebugUvTransform(resource_->uvTransform_);
-
-        ui_->DebugDirectionalLight(resource_->directionalLightData_);
-
-        ImGui::End();
-
-#endif // _DEBUG
-
-    }
+void SphereClass::Update() {
 
     // Release でも必ず論理情報を実トランスフォームに反映する
     resource_->transform_.translate = info_.center;
@@ -276,5 +243,38 @@ void SphereClass::Update(bool debug,const char* sphereName) {
 
 void SphereClass::Draw() {
     drawManager_->DrawSphere(this);
+}
+
+void SphereClass::Debug([[maybe_unused]] const char* sphereName) {
+
+#if defined USE_IMGUI
+
+    std::string name = std::string("Sphere: ") + sphereName;
+
+    ImGui::Begin(name.c_str());
+
+    // 半径と中心は DebugSphereInfo で編集
+    ui_->DebugSphereInfo(info_);
+
+    // 位置は Transform 側でも編集されるので同期
+    resource_->transform_.translate = info_.center;
+
+    // scale は係数（1.0 基準）。ここで自由に非等方も可。
+    ui_->DebugTransform(resource_->transform_);
+
+    // 位置を SphereInfo に反映（半径は Transform からは変更しない）
+    info_.center = resource_->transform_.translate;
+
+    ui_->DebugMaterialBy3D(resource_->materialData_);
+
+    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+
+    ui_->DebugUvTransform(resource_->uvTransform_);
+
+    ui_->DebugDirectionalLight(resource_->directionalLightData_);
+
+    ImGui::End();
+
+#endif // _DEBUG
 }
 

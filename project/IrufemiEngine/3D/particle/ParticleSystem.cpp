@@ -1,0 +1,779 @@
+#define NOMINMAX
+#include "ParticleSystem.h"
+#include "Math.h"
+#include "function/Math.h"
+#include "manager/DebugUI.h"
+#include "engine/directX/DirectXCommon.h"
+#include "engine/directX/DescriptorPool.h"
+#include <algorithm>
+#include <numbers>
+
+DescriptorPool* ParticleSystem::s_srvPool_ = nullptr;
+TextureManager* ParticleSystem::s_textureManager_ = nullptr;
+DebugUI* ParticleSystem::s_ui_ = nullptr;
+
+ParticleSystem::~ParticleSystem() {
+    if (instancingSrvIndex_ != UINT32_MAX && s_srvPool_ && resource_) {
+        if (auto* dx = resource_->GetDirectXCommon()) {
+            s_srvPool_->FreeAfterFence(instancingSrvIndex_, dx->GetFenceValue());
+        }
+        instancingSrvIndex_ = UINT32_MAX;
+        instancingSrvHandleCPU_ = {};
+        instancingSrvHandleGPU_ = {};
+    }
+}
+
+void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, ParticleType type, PrimitiveShape shape) {
+    this->camera_ = camera;
+    this->primitiveShape_ = shape;
+
+    isUpdate_ = true;
+    randomEngine_.seed(seedGenerator_());
+
+    // 初回呼び出し時のみリソースを生成
+    if (!resource_) {
+        resource_ = std::make_unique<D3D12ResourceUtilParticle>();
+    }
+    if (!instancingResource_) {
+        // Instancing 用バッファ
+        instancingResource_ = resource_->GetDirectXCommon()->CreateBufferResource(sizeof(ParticleForGPU) * kNumMaxInstance_);
+        instancingResource_->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_));
+    }
+
+    // 振る舞いを設定
+    ChangeBehavior(type, true); // 強制的に更新
+
+    // 単位行列を書きこんでおく
+    particles_.clear();
+    numInstance_ = 0;
+
+    // backToFrontMatrix_の設定(面の向きをカメラの方向にしてあるのでここは調整なし。0でOK)
+    backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
+
+    /// カメラの回転を適用する
+    billbordMatrix_ = Math::MakeIdentity4x4();
+    billbordMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+    billbordMatrix_.m[3][0] = 0.0f;
+    billbordMatrix_.m[3][1] = 0.0f;
+    billbordMatrix_.m[3][2] = 0.0f;
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC instancingDesc{};
+    instancingDesc.Format = DXGI_FORMAT_UNKNOWN;
+    instancingDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    instancingDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    instancingDesc.Buffer.FirstElement = 0;
+    instancingDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+    instancingDesc.Buffer.NumElements = kNumMaxInstance_;
+    instancingDesc.Buffer.StructureByteStride = sizeof(ParticleForGPU);
+
+    // SRV スロット確保（初回のみ）
+    if (instancingSrvIndex_ == UINT32_MAX) {
+        auto* alloc = s_srvPool_;
+        if (!alloc) {
+            OutputDebugStringA("ParticleSystem::Initialize: SRV allocator is null\n");
+        } else {
+            uint32_t idx = alloc->Allocate();
+            if (idx == DescriptorPool::kInvalid) {
+                OutputDebugStringA("ParticleSystem::Initialize: SRV Allocate failed\n");
+            } else {
+                instancingSrvIndex_ = idx;
+                instancingSrvHandleCPU_ = alloc->GetCPUHandle(idx);
+                instancingSrvHandleGPU_ = alloc->GetGPUHandle(idx);
+            }
+        }
+    }
+
+    // 既存の静的インデックス運用は廃止。確保できている場合のみ SRV を作成
+    if (instancingSrvHandleCPU_.ptr != 0) {
+        resource_->GetDirectXCommon()->GetDevice()->CreateShaderResourceView(instancingResource_.Get(), &instancingDesc, instancingSrvHandleCPU_);
+    }
+
+    // 頂点/インデックスデータをクリア
+    resource_->vertexDataList_.clear();
+    resource_->indexDataList_.clear();
+
+    switch (primitiveShape_) {
+    case PrimitiveShape::Plane:
+    {
+        //左下
+        resource_->vertexDataList_.push_back({ { -0.5f,-0.5f,0.0f,1.0f }, { 0.0f,1.0f } });
+        //左上
+        resource_->vertexDataList_.push_back({ { -0.5f,0.5f,0.0f,1.0f  }, { 0.0f,0.0f} });
+        //右下
+        resource_->vertexDataList_.push_back({ { 0.5f,-0.5f,0.0f,1.0f }, { 1.0f,1.0f } });
+        //右上
+        resource_->vertexDataList_.push_back({ { 0.5f,0.5f,0.0f,1.0f }, { 1.0f,0.0f } });
+
+        for (uint32_t i = 0; i < static_cast<uint32_t>(resource_->vertexDataList_.size()); ++i) {
+            resource_->vertexDataList_[i].normal.x = 0.0f;
+            resource_->vertexDataList_[i].normal.y = 0.0f;
+            resource_->vertexDataList_[i].normal.z = -1.0f;
+        }
+
+        resource_->indexDataList_.push_back(0);
+        resource_->indexDataList_.push_back(1);
+        resource_->indexDataList_.push_back(2);
+        resource_->indexDataList_.push_back(1);
+        resource_->indexDataList_.push_back(3);
+        resource_->indexDataList_.push_back(2);
+    }
+    break;
+    case PrimitiveShape::Sphere:
+    {
+        const uint32_t kSubdivision = 16;
+        const float kRadius = 0.5f;
+        const uint32_t kLatCount = kSubdivision; // 緯度分割数
+        const uint32_t kLonCount = kSubdivision; // 経度分割数
+
+        // 頂点データの生成
+        for (uint32_t lat = 0; lat <= kLatCount; ++lat) {
+            float theta = static_cast<float>(lat) / kLatCount * std::numbers::pi_v<float>;
+            for (uint32_t lon = 0; lon <= kLonCount; ++lon) {
+                float phi = static_cast<float>(lon) / kLonCount * 2.0f * std::numbers::pi_v<float>;
+
+                VertexData vertex;
+                vertex.position.x = kRadius * std::sin(theta) * std::cos(phi);
+                vertex.position.y = kRadius * std::cos(theta);
+                vertex.position.z = kRadius * std::sin(theta) * std::sin(phi);
+                vertex.position.w = 1.0f;
+
+                vertex.normal = { vertex.position.x, vertex.position.y, vertex.position.z };
+                vertex.texcoord = { static_cast<float>(lon) / kLonCount, static_cast<float>(lat) / kLatCount };
+
+                resource_->vertexDataList_.push_back(vertex);
+            }
+        }
+
+        // インデックスデータの生成
+        for (uint32_t lat = 0; lat < kLatCount; ++lat) {
+            for (uint32_t lon = 0; lon < kLonCount; ++lon) {
+                uint32_t i0 = lat * (kLonCount + 1) + lon;
+                uint32_t i1 = i0 + 1;
+                uint32_t i2 = (lat + 1) * (kLonCount + 1) + lon;
+                uint32_t i3 = i2 + 1;
+
+                resource_->indexDataList_.push_back(i0);
+                resource_->indexDataList_.push_back(i2);
+                resource_->indexDataList_.push_back(i1);
+
+                resource_->indexDataList_.push_back(i1);
+                resource_->indexDataList_.push_back(i2);
+                resource_->indexDataList_.push_back(i3);
+            }
+        }
+    }
+    break;
+    case PrimitiveShape::Ring:
+    {
+        // パラメータ化したリング生成
+        const uint32_t divisions = ringSegmentCount_;
+        const float startRad = ringStartAngleDeg_ * (std::numbers::pi_v<float> / 180.0f);
+        float endRad = ringEndAngleDeg_ * (std::numbers::pi_v<float> / 180.0f);
+        // end が start 以下なら一周分を付加する（負方向の弧も扱いたい場合は要調整）
+        if (endRad <= startRad) endRad += 2.0f * std::numbers::pi_v<float>;
+        const float arc = endRad - startRad;
+        const float radianPerDivide = arc / static_cast<float>(divisions);
+
+        for (uint32_t i = 0; i < divisions; ++i) {
+            float a0 = startRad + static_cast<float>(i) * radianPerDivide;
+            float a1 = startRad + static_cast<float>(i + 1) * radianPerDivide;
+
+            float s0 = std::sin(a0);
+            float c0 = std::cos(a0);
+            float s1 = std::sin(a1);
+            float c1 = std::cos(a1);
+
+            float u = static_cast<float>(i) / static_cast<float>(divisions);
+            float uNext = static_cast<float>(i + 1) / static_cast<float>(divisions);
+
+            VertexData v0, v1, v2, v3;
+            // XY平面上に作成（外周→内周の順）
+            v0.position = { c0 * ringOuterRadius_, s0 * ringOuterRadius_, 0.0f, 1.0f };
+            v1.position = { c1 * ringOuterRadius_, s1 * ringOuterRadius_, 0.0f, 1.0f };
+            v2.position = { c0 * ringInnerRadius_, s0 * ringInnerRadius_, 0.0f, 1.0f };
+            v3.position = { c1 * ringInnerRadius_, s1 * ringInnerRadius_, 0.0f, 1.0f };
+
+            // UV の縦／横切替
+            if (ringVerticalUV_) {
+                v0.texcoord = { 0.0f, u };
+                v1.texcoord = { 0.0f, uNext };
+                v2.texcoord = { 1.0f, u };
+                v3.texcoord = { 1.0f, uNext };
+            } else {
+                v0.texcoord = { u, 0.0f };
+                v1.texcoord = { uNext, 0.0f };
+                v2.texcoord = { u, 1.0f };
+                v3.texcoord = { uNext, 1.0f };
+            }
+
+            // 法線はZ-
+            v0.normal = v1.normal = v2.normal = v3.normal = { 0.0f, 0.0f, -1.0f };
+
+            // 基点インデックス（既に頂点が入っている可能性があるため現在サイズを基準にする）
+            uint32_t baseIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
+            resource_->vertexDataList_.push_back(v0);
+            resource_->vertexDataList_.push_back(v1);
+            resource_->vertexDataList_.push_back(v2);
+            resource_->vertexDataList_.push_back(v3);
+
+            resource_->indexDataList_.push_back(baseIndex + 0);
+            resource_->indexDataList_.push_back(baseIndex + 2);
+            resource_->indexDataList_.push_back(baseIndex + 1);
+
+            resource_->indexDataList_.push_back(baseIndex + 1);
+            resource_->indexDataList_.push_back(baseIndex + 2);
+            resource_->indexDataList_.push_back(baseIndex + 3);
+        }
+    }
+    break;
+    case PrimitiveShape::Cylinder:
+    {
+        const uint32_t kCylinderDivide = cylinderSegmentCount_;
+        const float kRadius = cylinderRadius_;
+        const float kHeight = cylinderHeight_;
+        const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kCylinderDivide);
+
+        for (uint32_t i = 0; i < kCylinderDivide; ++i) {
+            float rad = static_cast<float>(i) * radianPerDivide;
+            float radNext = static_cast<float>(i + 1) * radianPerDivide;
+
+            float sin = std::sin(rad);
+            float cos = std::cos(rad);
+            float sinNext = std::sin(radNext);
+            float cosNext = std::cos(radNext);
+
+            float u = static_cast<float>(i) / float(kCylinderDivide);
+            float uNext = static_cast<float>(i + 1) / float(kCylinderDivide);
+
+            float v0 = cylinderFlipV_ ? 1.0f : 0.0f;
+            float v1 = cylinderFlipV_ ? 0.0f : 1.0f;
+
+            VertexData vBottom, vTop, vBottomNext, vTopNext;
+
+            // 頂点データ
+            vBottom.position = { cos * kRadius, -kHeight / 2.0f, sin * kRadius, 1.0f };
+            vBottom.texcoord = { u, v0 };
+            vBottom.normal = { cos, 0.0f, sin };
+
+            vTop.position = { cos * kRadius, kHeight / 2.0f, sin * kRadius, 1.0f };
+            vTop.texcoord = { u, v1 };
+            vTop.normal = { cos, 0.0f, sin };
+
+            vBottomNext.position = { cosNext * kRadius, -kHeight / 2.0f, sinNext * kRadius, 1.0f };
+            vBottomNext.texcoord = { uNext, v0 };
+            vBottomNext.normal = { cosNext, 0.0f, sinNext };
+
+            vTopNext.position = { cosNext * kRadius, kHeight / 2.0f, sinNext * kRadius, 1.0f };
+            vTopNext.texcoord = { uNext, v1 };
+            vTopNext.normal = { cosNext, 0.0f, sinNext };
+
+            uint32_t baseIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
+            resource_->vertexDataList_.push_back(vBottom);
+            resource_->vertexDataList_.push_back(vTop);
+            resource_->vertexDataList_.push_back(vBottomNext);
+            resource_->vertexDataList_.push_back(vTopNext);
+
+            resource_->indexDataList_.push_back(baseIndex);
+            resource_->indexDataList_.push_back(baseIndex + 1);
+            resource_->indexDataList_.push_back(baseIndex + 2);
+
+            resource_->indexDataList_.push_back(baseIndex + 1);
+            resource_->indexDataList_.push_back(baseIndex + 3);
+            resource_->indexDataList_.push_back(baseIndex + 2);
+        }
+    }
+    break;
+    }
+
+    // リソースのメモリを確保（または再利用）
+    resource_->CreateResource();
+
+    // 書き込めるようにする
+    resource_->Map();
+
+    //頂点バッファ
+
+    resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
+
+    resource_->vertexBufferView_.BufferLocation = resource_->vertexResource_->GetGPUVirtualAddress();
+    resource_->vertexBufferView_.StrideInBytes = sizeof(VertexData);
+    resource_->vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(resource_->vertexDataList_.size());
+
+    std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
+
+    resource_->indexBufferView_ = D3D12_INDEX_BUFFER_VIEW{};
+    //リソースの先頭のアドレスから使う
+    resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();
+    //使用するリソースのサイズ
+    resource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * static_cast<UINT>(resource_->indexDataList_.size());
+    //インデックスはint32_tとする
+    resource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
+
+    ///IndexResourceにデータを書き込む
+
+    //インデックスリソースにデータを書き込む
+
+    std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
+
+    //マテリアル
+
+    resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
+    resource_->materialData_->enableLighting = true;
+    resource_->materialData_->hasTexture = true;
+    resource_->materialData_->lightingMode = 2;
+    resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+    resource_->materialData_->useClampSampler = (primitiveShape_ == PrimitiveShape::Ring || primitiveShape_ == PrimitiveShape::Cylinder);
+
+    if (s_textureManager_) {
+        auto textureNames = s_textureManager_->GetTextureNames();
+        std::sort(textureNames.begin(), textureNames.end());
+        if (!textureNames.empty()) {
+
+            resource_->textureHandle_ = s_textureManager_->GetTextureHandle(textureName);
+
+            // コンボボックス用に selectedIndex を初期化
+            auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
+            if (it != textureNames.end()) {
+                selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
+            } else {
+                selectedTextureIndex_ = 0;
+            }
+        }
+    }
+}
+
+void ParticleSystem::Update() {
+
+    if (isUpdate_ && particleType_ != ParticleType::kHitEffect) {
+        emitter_.frequencyTime += kDeltatime_; // 時刻を進める
+        if (emitter_.frequency <= emitter_.frequencyTime) { // 頻度より大きいなら発生
+            particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
+            emitter_.frequencyTime -= emitter_.frequency; // 余計に過ぎた時間も加味して頻度計算する
+        }
+    }
+
+    /// カメラの回転を適用する
+    billbordMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+    billbordMatrix_.m[3][0] = 0.0f;
+    billbordMatrix_.m[3][1] = 0.0f;
+    billbordMatrix_.m[3][2] = 0.0f;
+
+    numInstance_ = 0; // 描画すべきインスタンス数
+
+    for (std::list<Particle>::iterator particleIterator = particles_.begin(); particleIterator != particles_.end();) {
+
+        if ((*particleIterator).lifeTime <= (*particleIterator).currentTime) { // 生存時間を過ぎていたら更新せず描画対象にしない
+            particleIterator = particles_.erase(particleIterator); // 生存時間が過ぎたParticleはlistから消す。戻り値が次のイテレーターとなる
+            continue;
+        }
+
+        if (numInstance_ < kNumMaxInstance_) {
+            if (isUpdate_) {
+                // パーティクル自身の更新
+                particleIterator->Update(kDeltatime_);
+                // 振る舞い固有の更新
+                behavior_->Update(*particleIterator, kDeltatime_);
+            }
+
+            Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particleIterator->transform.scale);
+            Matrix4x4 translateMatrix = Math::MakeTranslateMatrix(particleIterator->transform.translate);
+            Matrix4x4 worldMatrix = Math::MakeIdentity4x4();
+            if (useBillbord_) {
+                worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billbordMatrix_), translateMatrix);
+            } else {
+                Matrix4x4 rotateMatrix = Math::MakeRotateZMatrix(particleIterator->transform.rotate.z);
+                worldMatrix = Math::Multiply(scaleMatrix, rotateMatrix);
+                worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
+            }
+            Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+            instancingData_[numInstance_].world = worldMatrix;
+            instancingData_[numInstance_].WVP = worldViewProjectionMatrix;
+            instancingData_[numInstance_].color = particleIterator->color;
+
+            numInstance_++; // 生きているParticleの数を1つカウントする
+
+        }
+
+        ++particleIterator; // 次のイテレーターに進める
+    }
+    resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+}
+
+void ParticleSystem::SetEmitterPosition(const Vector3& position) {
+    emitter_.transform.translate = position;
+}
+
+void ParticleSystem::SetEmitterArea(const Vector3& area) {
+    emitter_.area = area;
+}
+
+void ParticleSystem::SetEmitterVelocity(const Vector3& minVel, const Vector3& maxVel) {
+    emitter_.velocityMin = minVel;
+    emitter_.velocityMax = maxVel;
+}
+
+void ParticleSystem::SetEmitterFrequency(float frequency) {
+    emitter_.frequency = frequency;
+}
+
+void ParticleSystem::SetEmitterCount(uint32_t count) {
+    emitter_.count = count;
+}
+
+void ParticleSystem::SetParticleScale(const Vector3& start, const Vector3& end) {
+    emitter_.startScale = start;
+    emitter_.endScale = end;
+}
+
+void ParticleSystem::SetParticleColor(const Vector4& start, const Vector4& end) {
+    emitter_.startColor = start;
+    emitter_.endColor = end;
+}
+
+// 既存のSetParticleColorの下に追加
+void ParticleSystem::SetParticleColorMode(ParticleColorMode mode) {
+    emitter_.colorMode = mode;
+}
+
+void ParticleSystem::SetEmitterProperties(
+    const Vector3& position,
+    const Vector3& area,
+    const Vector3& minVel,
+    const Vector3& maxVel,
+    float frequency,
+    uint32_t count) {
+    SetEmitterPosition(position);
+    SetEmitterArea(area);
+    SetEmitterVelocity(minVel, maxVel);
+    SetEmitterFrequency(frequency);
+    SetEmitterCount(count);
+}
+
+void ParticleSystem::SetTexture(const std::string& textureFilePath) {
+    if (!s_textureManager_) {
+        return;
+    }
+    auto textureNames = s_textureManager_->GetTextureNames();
+    std::sort(textureNames.begin(), textureNames.end());
+    auto it = std::find(textureNames.begin(), textureNames.end(), textureFilePath);
+
+    if (it != textureNames.end()) {
+        resource_->textureHandle_ = s_textureManager_->GetTextureHandle(textureFilePath);
+        selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
+    }
+}
+
+Particle ParticleSystem::MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter) {
+    std::uniform_real_distribution<float> distRange(-1.0f, 1.0f);
+    std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
+    std::uniform_real_distribution<float> distVelocityX(emitter.velocityMin.x, emitter.velocityMax.x);
+    std::uniform_real_distribution<float> distVelocityY(emitter.velocityMin.y, emitter.velocityMax.y);
+    std::uniform_real_distribution<float> distVelocityZ(emitter.velocityMin.z, emitter.velocityMax.z);
+
+    Particle particle;
+
+    // 振る舞い固有の初期化
+    behavior_->MakeNewParticle(particle, randomEngine, emitter);
+
+    particle.transform.scale = particle.startScale;
+
+    Vector3 randomTranslate = {
+        distRange(randomEngine) * emitter.area.x / 2.0f,
+        distRange(randomEngine) * emitter.area.y / 2.0f,
+        distRange(randomEngine) * emitter.area.z / 2.0f
+    };
+    particle.transform.translate = emitter.transform.translate + randomTranslate;
+    particle.velocity = { distVelocityX(randomEngine), distVelocityY(randomEngine), distVelocityZ(randomEngine) };
+
+    // カラーモードに応じて色を決定
+    switch (emitter.colorMode) {
+    case ParticleColorMode::kNone:
+        particle.startColor = emitter.startColor;
+        particle.endColor = emitter.endColor;
+        break;
+    case ParticleColorMode::kRandom:
+        particle.startColor = { distColor(randomEngine), distColor(randomEngine), distColor(randomEngine), 1.0f };
+        particle.endColor = particle.startColor;
+        particle.endColor.w = 0.0f;
+        break;
+    case ParticleColorMode::kRed:
+        particle.startColor = { distColor(randomEngine), 0.0f, 0.0f, 1.0f };
+        particle.endColor = particle.startColor;
+        particle.endColor.w = 0.0f;
+        break;
+    case ParticleColorMode::kGreen:
+        particle.startColor = { 0.0f, distColor(randomEngine), 0.0f, 1.0f };
+        particle.endColor = particle.startColor;
+        particle.endColor.w = 0.0f;
+        break;
+    case ParticleColorMode::kBlue:
+        particle.startColor = { 0.0f, 0.0f, distColor(randomEngine), 1.0f };
+        particle.endColor = particle.startColor;
+        particle.endColor.w = 0.0f;
+        break;
+    }
+
+    particle.color = particle.startColor;
+    particle.currentTime = 0.0f;
+
+    return particle;
+}
+
+std::list<Particle> ParticleSystem::Emit(const Emitter& emitter, std::mt19937& randomEngine) {
+    std::list<Particle> particles;
+    for (uint32_t count = 0; count < emitter.count; ++count) {
+        particles.push_back(MakeNewParticle(randomEngine, emitter));
+    }
+    return particles;
+}
+
+void ParticleSystem::PlayHitEffect(const Vector3& position) {
+    if (particleType_ == ParticleType::kHitEffect) {
+        emitter_.transform.translate = position;
+        particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+    }
+}
+
+void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
+
+#if USE_IMGUI
+    if (s_ui_) {
+        std::string name = std::string("Particle: ") + particleName;
+
+        //ImGui
+
+        //ウィンドウを作り出す
+        ImGui::Begin(name.c_str());
+
+        if (ImGui::BeginTabBar("ParticleTabs")) {
+            // Generalタブ
+            if (ImGui::BeginTabItem("General")) {
+                if (ImGui::Button("Add Particle")) {
+                    switch (particleType_) {
+                    case ParticleType::kHitEffect:
+                        PlayHitEffect(emitter_.transform.translate);
+                        break;
+                    default:
+                        particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+                        break;
+                    }
+                }
+
+                ImGui::Checkbox("update", &isUpdate_);
+                ImGui::Checkbox("useBillbord", &useBillbord_);
+
+                ImGui::Separator();
+
+                // PrimitiveShapeの選択UI
+                const char* primitiveShapeNames[] = { "Plane", "Sphere", "Ring", "Cylinder" };
+                int currentShape = static_cast<int>(primitiveShape_);
+                if (ImGui::Combo("Primitive Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
+                    if (primitiveShape_ != static_cast<PrimitiveShape>(currentShape)) {
+                        primitiveShape_ = static_cast<PrimitiveShape>(currentShape);
+                        std::string currentTextureName = "resources/circle.png";
+                        if (s_textureManager_) {
+                            auto textureNames = s_textureManager_->GetTextureNames();
+                            std::sort(textureNames.begin(), textureNames.end());
+                            if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < textureNames.size()) {
+                                currentTextureName = textureNames[selectedTextureIndex_];
+                            }
+                        }
+                        Initialize(camera_, currentTextureName, particleType_, primitiveShape_);
+                    }
+                }
+
+                // ParticleTypeの選択UI
+                const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect" };
+                int currentType = static_cast<int>(particleType_);
+                if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
+                    ChangeBehavior(static_cast<ParticleType>(currentType));
+                }
+                ImGui::EndTabItem();
+            }
+
+            // Emitterタブ
+            if (ImGui::BeginTabItem("Emitter")) {
+                ImGui::DragFloat3("Translate", &emitter_.transform.translate.x, 0.01f, -100.0f, 100.0f);
+                ImGui::DragFloat3("Area", &emitter_.area.x, 0.1f, 0.0f, 100.0f);
+                ImGui::DragFloat3("Velocity Min", &emitter_.velocityMin.x, 0.1f, -10.0f, 10.0f);
+                ImGui::DragFloat3("Velocity Max", &emitter_.velocityMax.x, 0.1f, -10.0f, 10.0f);
+                ImGui::DragInt("Count", reinterpret_cast<int*>(&emitter_.count), 1, 1, 100);
+                ImGui::DragFloat("Frequency", &emitter_.frequency, 0.01f, 0.01f, 10.0f);
+
+                ImGui::Separator();
+                ImGui::Text("Particle Lifetime Properties");
+                ImGui::DragFloat3("Start Scale", &emitter_.startScale.x, 0.01f);
+                ImGui::DragFloat3("End Scale", &emitter_.endScale.x, 0.01f);
+
+                const char* colorModeNames[] = { "None", "Random", "Red", "Green", "Blue" };
+                int currentMode = static_cast<int>(emitter_.colorMode);
+                if (ImGui::Combo("Color Mode", &currentMode, colorModeNames, IM_ARRAYSIZE(colorModeNames))) {
+                    emitter_.colorMode = static_cast<ParticleColorMode>(currentMode);
+                }
+
+                if (emitter_.colorMode == ParticleColorMode::kNone) {
+                    ImGui::ColorEdit4("Start Color", &emitter_.startColor.x);
+                    ImGui::ColorEdit4("End Color", &emitter_.endColor.x);
+                }
+                ImGui::EndTabItem();
+            }
+
+            // Fieldタブ
+            if (ImGui::BeginTabItem("Behavior")) {
+                behavior_->Debug(&emitter_, s_ui_);
+                ImGui::EndTabItem();
+            }
+
+            // レンダリングタブ
+            if (ImGui::BeginTabItem("Rendering")) {
+                s_ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+                s_ui_->DebugMaterialParticle(resource_->materialData_);
+                s_ui_->DebugUvTransform(resource_->uvTransform_);
+
+                // --- Ring パラメータ UI ---
+                if (primitiveShape_ == PrimitiveShape::Ring) {
+                    ImGui::Separator();
+                    ImGui::Text("Ring Parameters");
+
+                    // 現在の値をローカルにコピーして UI 編集（変更検出用）
+                    float inner = ringInnerRadius_;
+                    float outer = ringOuterRadius_;
+                    float startDeg = ringStartAngleDeg_;
+                    float endDeg = ringEndAngleDeg_;
+                    int segments = static_cast<int>(ringSegmentCount_);
+                    bool verticalUV = ringVerticalUV_;
+
+                    bool changed = false;
+                    if (ImGui::DragFloat("Inner Radius", &inner, 0.005f, 0.0f, 1000.0f)) changed = true;
+                    if (ImGui::DragFloat("Outer Radius", &outer, 0.005f, 0.0f, 1000.0f)) changed = true;
+                    if (ImGui::DragFloat("Start Angle (deg)", &startDeg, 0.5f, -360.0f, 360.0f)) changed = true;
+                    if (ImGui::DragFloat("End Angle (deg)", &endDeg, 0.5f, -360.0f, 720.0f)) changed = true;
+                    if (ImGui::DragInt("Segment Count", &segments, 1.0f, 3, 1024)) changed = true;
+                    if (ImGui::Checkbox("Vertical UV", &verticalUV)) changed = true;
+
+                    if (changed) {
+                        // 安全化: segments を最低 3 に、inner/outer の順序を保証
+                        segments = std::max(3, segments);
+                        if (inner < 0.0f) inner = 0.0f;
+                        if (outer < 0.0f) outer = 0.0f;
+                        if (inner > outer) std::swap(inner, outer);
+
+                        // 値をセットして Initialize で再生成
+                        SetRingParameters(inner, outer, startDeg, endDeg, static_cast<uint32_t>(segments), verticalUV);
+
+                        // 現在のテクスチャ名を復元して Initialize を呼ぶ（UI 保持のため）
+                        std::string currentTextureName = "resources/circle.png";
+                        if (s_textureManager_) {
+                            auto textureNames = s_textureManager_->GetTextureNames();
+                            std::sort(textureNames.begin(), textureNames.end());
+                            if (!textureNames.empty()) {
+                                if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
+                                    currentTextureName = textureNames[selectedTextureIndex_];
+                                } else {
+                                    currentTextureName = textureNames[0];
+                                }
+                            }
+                        }
+                        Initialize(camera_, currentTextureName, particleType_, primitiveShape_);
+                    }
+                }
+
+                // --- Cylinder パラメータ UI ---
+                if (primitiveShape_ == PrimitiveShape::Cylinder) {
+                    ImGui::Separator();
+                    ImGui::Text("Cylinder Parameters");
+
+                    float radius = cylinderRadius_;
+                    float height = cylinderHeight_;
+                    int segments = static_cast<int>(cylinderSegmentCount_);
+                    bool flipV = cylinderFlipV_;
+
+                    bool changed = false;
+                    if (ImGui::DragFloat("Radius", &radius, 0.005f, 0.0f, 1000.0f)) changed = true;
+                    if (ImGui::DragFloat("Height", &height, 0.01f, 0.0f, 1000.0f)) changed = true;
+                    if (ImGui::DragInt("Segment Count", &segments, 1.0f, 3, 1024)) changed = true;
+                    if (ImGui::Checkbox("Flip V", &flipV)) changed = true;
+
+                    if (changed) {
+                        segments = std::max(3, segments);
+                        if (radius < 0.0f) radius = 0.0f;
+                        if (height < 0.0f) height = 0.0f;
+
+                        SetCylinderParameters(radius, height, static_cast<uint32_t>(segments), flipV);
+
+                        std::string currentTextureName = "resources/circle.png";
+                        if (s_textureManager_) {
+                            auto textureNames = s_textureManager_->GetTextureNames();
+                            std::sort(textureNames.begin(), textureNames.end());
+                            if (!textureNames.empty()) {
+                                if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
+                                    currentTextureName = textureNames[selectedTextureIndex_];
+                                } else {
+                                    currentTextureName = textureNames[0];
+                                }
+                            }
+                        }
+                        Initialize(camera_, currentTextureName, particleType_, primitiveShape_);
+                    }
+                }
+
+                ImGui::EndTabItem();
+            }
+
+            // インスタンスタブ
+            if (ImGui::BeginTabItem("Instances")) {
+                uint32_t index = 0;
+                for (Particle& particle : particles_) {
+                    char buf[16];
+                    std::snprintf(buf, sizeof(buf), "%d", index++);
+                    s_ui_->TextTransform(particle.transform, buf);
+                }
+                ImGui::EndTabItem();
+            }
+
+            ImGui::EndTabBar();
+        }
+
+        //入力終了
+        ImGui::End();
+    }
+#endif // _DEBUG
+
+}
+
+void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
+    if (!force && particleType_ == type && behavior_) {
+        return; // 同じ振る舞いなら何もしない
+    }
+    particleType_ = type;
+    behavior_ = CreateParticleBehavior(type);
+    behavior_->Initialize(&emitter_);
+
+    // ビルボード設定も振る舞いに応じて変更
+    if (type == ParticleType::kHitEffect) {
+        useBillbord_ = false;
+    } else {
+        useBillbord_ = true;
+    }
+}
+
+// 追加実装: SetRingParameters (適当な場所に追加：クラス外のメソッド実装セクションに入れてください)
+void ParticleSystem::SetRingParameters(float innerRadius, float outerRadius,
+                                       float startAngleDeg, float endAngleDeg,
+                                       uint32_t segmentCount, bool verticalUV) {
+    // 最低分割数を確保
+    ringSegmentCount_ = std::max<uint32_t>(3, segmentCount);
+    ringInnerRadius_ = innerRadius;
+    ringOuterRadius_ = outerRadius;
+    ringStartAngleDeg_ = startAngleDeg;
+    ringEndAngleDeg_ = endAngleDeg;
+    ringVerticalUV_ = verticalUV;
+}
+
+// 追加実装: SetCylinderParameters
+void ParticleSystem::SetCylinderParameters(float radius, float height, uint32_t segmentCount, bool flipV) {
+    cylinderRadius_ = radius;
+    cylinderHeight_ = height;
+    cylinderSegmentCount_ = std::max<uint32_t>(3, segmentCount);
+    cylinderFlipV_ = flipV;
+}

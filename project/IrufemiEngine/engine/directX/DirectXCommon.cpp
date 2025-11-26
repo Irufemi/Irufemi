@@ -13,9 +13,6 @@
 #include "DirectXTex/d3dx12.h"
 #include <thread>
 
-Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::srvDescriptorHeap_ = nullptr;
-uint32_t DirectXCommon::descriptorSizeSRV{};
-
 void DirectXCommon::Finalize() {
 
 
@@ -44,7 +41,7 @@ void DirectXCommon::Finalize() {
     rootSignature_.Reset();
     depthStencilResource_.Reset();
     rtvDescriptorHeap_.Reset();
-    srvDescriptorHeap_.Reset();
+    srvPool_.reset();
     dsvDescriptorHeap_.Reset();
     swapChainResources_[0].Reset();
     swapChainResources_[1].Reset();
@@ -229,7 +226,6 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     //DescriptorSize
 
-    descriptorSizeSRV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     descriptorSizeRTV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     descriptorSizeDSV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
@@ -240,8 +236,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     //RTV用のヒープでディスクリプタの数は2。RTVはShader内で触るものではないので、ShaderVisibleはfalse
     rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 
-    //SRV用のヒープでディスクリプタの数は128。SSRVはShader内で触るものなので、ShaderVisibleはtrue
-    srvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
+    //SRV用のヒープをDescriptorPoolで作成
+    srvPool_ = std::make_unique<DescriptorPool>();
+    srvPool_->Initialize(device_.Get());
 
     /*画面の色を変えよう*/
 
@@ -347,7 +344,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///DescriptorTable
 
-    D3D12_ROOT_PARAMETER rootParameters[8] = {};
+    D3D12_ROOT_PARAMETER rootParameters[10] = {};
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
@@ -405,11 +402,22 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PS で使う
     rootParameters[7].Descriptor.ShaderRegister = 4; // b4
 
+    // GSパイプライン用のTransformationMatrix (VS/GS, b6)
+    rootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    rootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // VSとGSで共有
+    rootParameters[8].Descriptor.ShaderRegister = 6; // レジスタ番号6を使用
+
+    // ParticleMaterial (PS, b5)
+    rootParameters[9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    rootParameters[9].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+    rootParameters[9].Descriptor.ShaderRegister = 5;
+
     /*テクスチャを貼ろう*/
 
     ///Samplerの設定
 
-    D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
+    D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
+    // WRAP Sampler (s0)
     staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR; //バイリニアフィルタ
     staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP; //0~1の範囲外をリピート
     staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -418,6 +426,16 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX; //ありったけのMIpmapを使う
     staticSamplers[0].ShaderRegister = 0; //レジスタ番号0を使う
     staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
+    // CLAMP Sampler (s1)
+    staticSamplers[1].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+    staticSamplers[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    staticSamplers[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    staticSamplers[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    staticSamplers[1].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    staticSamplers[1].MaxLOD = D3D12_FLOAT32_MAX;
+    staticSamplers[1].ShaderRegister = 1; // レジスタ番号1を使う
+    staticSamplers[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
     descriptionRootSignature.pStaticSamplers = staticSamplers;
     descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 
@@ -509,6 +527,15 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr <IDxcBlob> regionVSBlob = CompileShader(L"resources/shaders/Region.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(regionVSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr <IDxcBlob> byGeometryShaderVSBlob = CompileShader(L"resources/shaders/ByGeometryShader.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(byGeometryShaderVSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr <IDxcBlob> byGeometryShaderPSBlob = CompileShader(L"resources/shaders/ByGeometryShader.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(byGeometryShaderPSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr <IDxcBlob> byGeometryShaderGSBlob = CompileShader(L"resources/shaders/ByGeometryShader.GS.hlsl", L"gs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(byGeometryShaderGSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -522,7 +549,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     psoManager_ = std::make_unique<PSOManager>();
 
     PSOManager::ShaderSet objectShaders{
-        vertexShaderBlob,  // ← そのまま所有権を渡す（ComPtrは参照カウント）
+        vertexShaderBlob,
         pixelShaderBlob
     };
 
@@ -541,18 +568,25 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         pixelShaderBlob   // PS は既存の Object3D.PS を流用
     };
 
+    PSOManager::ShaderSet byGeometryShaders{
+        byGeometryShaderVSBlob,
+        byGeometryShaderPSBlob,
+        byGeometryShaderGSBlob
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
         rootSignature_.Get(),
         inputLayoutDesc,
-        /*RTV*/ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, // 既存と同じ
-        /*DSV*/ DXGI_FORMAT_D24_UNORM_S8_UINT,   // 既存と同じ
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,  // 既存と同じ
+        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+        DXGI_FORMAT_D24_UNORM_S8_UINT,
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
         objectShaders,
-        particleShaders,     // パーティクルは未使用なら空
+        particleShaders,
         spriteShaders,
-        blocksShaders
+        blocksShaders,
+        byGeometryShaders
     );
 
     //実際に生成
@@ -564,9 +598,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (pixelShaderBlob) { pixelShaderBlob.Reset(); }
     if (particleVSBlob) { particleVSBlob.Reset(); }
     if (particlePSBlob) { particlePSBlob.Reset(); }
-    if (spriteVSBlob) { particleVSBlob.Reset(); }
-    if (spritePSBlob) { particlePSBlob.Reset(); }
+    if (spriteVSBlob) { spriteVSBlob.Reset(); }
+    if (spritePSBlob) { spritePSBlob.Reset(); }
     if (regionVSBlob) { regionVSBlob.Reset(); }
+    if (byGeometryShaderVSBlob) { byGeometryShaderVSBlob.Reset(); }
+    if (byGeometryShaderPSBlob) { byGeometryShaderPSBlob.Reset(); }
+    if (byGeometryShaderGSBlob) { byGeometryShaderGSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};
@@ -647,18 +684,6 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetGPUDescriptorHandle(const Microsof
     handleGPU.ptr += (descriptorSize * index);
     return handleGPU;
 }
-
-
-D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t index){
-
-    return GetCPUDescriptorHandle(srvDescriptorHeap_, descriptorSizeSRV, index);
-}
-
-D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVGPUDescriptorHandle(uint32_t index){
-
-    return GetGPUDescriptorHandle(srvDescriptorHeap_, descriptorSizeSRV, index);
-}
-
 
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetRTVCPUDescriptorHandle(uint32_t index) {
 
@@ -839,14 +864,14 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
     if (FAILED(hr)) {
         _com_error err(hr);
         std::wstring msg = L"[LoadTexture] WIC load failed (" + std::to_wstring(hr) +
-                           L"): " + filePathW + L" - " + err.ErrorMessage() + L"\n";
+            L"): " + filePathW + L" - " + err.ErrorMessage() + L"\n";
         OutputDebugStringW(msg.c_str());
         assert(false && "LoadFromWICFile failed");
     }
 
     ScratchImage mipImages{};
     hr = GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
-                         TEX_FILTER_SRGB, 0, mipImages);
+        TEX_FILTER_SRGB, 0, mipImages);
     if (FAILED(hr)) {
         _com_error err(hr);
         std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(hr) + L")\n";
@@ -858,13 +883,13 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
 }
 
 // FPS固定初期化
-void DirectXCommon::InitializeFixFPS(){
+void DirectXCommon::InitializeFixFPS() {
     // 現在時間を記録する
     reference_ = std::chrono::steady_clock::now();
 }
 
 // FPS固定更新
-void DirectXCommon::UpdateFixFPS(){
+void DirectXCommon::UpdateFixFPS() {
 
     // 1/60秒ぴったりの時間
     const std::chrono::microseconds kMinTime(uint64_t(1000000.0f / 60.0f));

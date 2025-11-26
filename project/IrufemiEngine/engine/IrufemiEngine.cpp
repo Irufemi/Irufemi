@@ -2,8 +2,8 @@
 
 
 
-#include "../function/Function.h"
-#include "../function/GetBackBufferIndex.h"
+#include "function/Function.h"
+#include "function/GetBackBufferIndex.h"
 
 #include <cassert>
 #include <DbgHelp.h>
@@ -17,8 +17,9 @@
 #include "3D/ObjClass.h"
 #include "3D/SphereClass.h"
 #include "3D/TriangleClass.h"
+#include "3D/PlaneClass.h"
 #include "3D/CylinderClass.h"
-#include "3D/ParticleClass.h"
+#include "3D/particle/ParticleSystem.h"
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "3D/Region.h"
@@ -78,21 +79,16 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     SphereRegion::SetDirectXCommon(dxCommon_.get());
     TetraRegion::SetDirectXCommon(dxCommon_.get());
 
-    // SRV デスクリプタアロケータの作成（3）
-    const uint32_t srvDescriptorInc = dxCommon_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    // SRV デスクリプタプール
     {
-        ID3D12DescriptorHeap* srvHeap = dxCommon_->GetSrvDescriptorHeap();
-        srvAllocator_ = std::make_unique<DescriptorAllocator>(srvHeap, srvDescriptorInc);
-
-        // ImGui 等が先頭を使っているなら予約
-        srvAllocator_->ReservePrefix(1);
+        DescriptorPool* srvPool = dxCommon_->GetSrvPool();
 
         // 注入
-        Texture::SetDescriptorAllocator(srvAllocator_.get());
-        SphereRegion::SetSrvAllocator(srvAllocator_.get());
-        Region::SetSrvAllocator(srvAllocator_.get());
-        TetraRegion::SetSrvAllocator(srvAllocator_.get());
-        ParticleClass::SetSrvAllocator(srvAllocator_.get());
+        Texture::SetDescriptorPool(srvPool);
+        SphereRegion::SetSrvAllocator(srvPool);
+        Region::SetSrvAllocator(srvPool);
+        TetraRegion::SetSrvAllocator(srvPool);
+        ParticleSystem::SetSrvPool(srvPool);
     }
 
     // テクスチャ管理
@@ -100,48 +96,57 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     textureManager->Initialize(dxCommon_.get());
     textureManager->LoadAllFromFolder("resources/");
 
+    // モデル管理
+    modelManager_ = std::make_unique<ModelManager>();
+    modelManager_->Initialize(dxCommon_.get()); // dxCommon を渡す
+    ObjClass::SetModelManager(modelManager_.get());
+    Region::SetModelManager(modelManager_.get()); // Regionにも設定
+
     // 既存SRVの走査で free-list 再構築
     {
-        ID3D12DescriptorHeap* srvHeap = dxCommon_->GetSrvDescriptorHeap();
-        const uint32_t inc = srvDescriptorInc;
+        DescriptorPool* srvPool = dxCommon_->GetSrvPool();
+        ID3D12DescriptorHeap* srvHeap = srvPool->GetHeap();
+        const uint32_t inc = dxCommon_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         auto toIndex = [&](D3D12_GPU_DESCRIPTOR_HANDLE h)->uint32_t {
-            if (h.ptr == 0) return DescriptorAllocator::kInvalid;
+            if (h.ptr == 0) return DescriptorPool::kInvalid;
             const auto heapStart = srvHeap->GetGPUDescriptorHandleForHeapStart().ptr;
             const uint64_t diff = (h.ptr - heapStart);
-            return static_cast<uint32_t>(diff / srvDescriptorInc);
+            return static_cast<uint32_t>(diff / inc);
             };
 
         std::vector<uint32_t> used;
         // 白テクスチャ
         if (auto white = textureManager->GetWhiteTextureHandle(); white.ptr != 0) {
-            if (auto idx = toIndex(white); idx != DescriptorAllocator::kInvalid) used.push_back(idx);
+            if (auto idx = toIndex(white); idx != DescriptorPool::kInvalid) used.push_back(idx);
         }
         // テクスチャキャッシュ
         for (auto& name : textureManager->GetTextureNames()) {
             auto h = textureManager->GetTextureHandle(name);
-            if (auto idx = toIndex(h); idx != DescriptorAllocator::kInvalid) used.push_back(idx);
+            if (auto idx = toIndex(h); idx != DescriptorPool::kInvalid) used.push_back(idx);
         }
-        for (uint32_t i = 0; i < srvAllocator_->BaseIndex(); ++i) used.push_back(i);
+        for (uint32_t i = 0; i < srvPool->BaseIndex(); ++i) used.push_back(i);
 
         std::sort(used.begin(), used.end());
         used.erase(std::unique(used.begin(), used.end()), used.end());
 
-        srvAllocator_->RebuildFreeListExcept(used);
+        srvPool->RebuildFreeListExcept(used);
     }
 
     // 入力
     inputManager_ = std::make_unique<InputManager>();
-    inputManager_->Initialize();
+    inputManager_->Initialize(winApp_->GetHwnd());
 
     // UI
     ui = std::make_unique <DebugUI>();
-    ui->Initialize(GetCommandList(), GetDevice(), GetHwnd(), GetSwapChainDesc(), GetRtvDesc(), GetSrvDescriptorHeap());
+    ui->Initialize(winApp_->GetHwnd(), dxCommon_.get());
     Sprite::SetDebugUI(ui.get());
     Circle2D::SetDebugUI(ui.get());
     ObjClass::SetDebugUI(ui.get());
     SphereClass::SetDebugUI(ui.get());
     TriangleClass::SetDebugUI(ui.get());
+    PlaneClass::SetDebugUI(ui.get());
     CylinderClass::SetDebugUI(ui.get());
+    ParticleSystem::SetDebugUI(ui.get());
 
     // 描画
     drawManager = std::make_unique<DrawManager>();
@@ -151,6 +156,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetDrawManager(drawManager.get());
     SphereClass::SetDrawManager(drawManager.get());
     TriangleClass::SetDrawManager(drawManager.get());
+    PlaneClass::SetDrawManager(drawManager.get());
     CylinderClass::SetDrawManager(drawManager.get());
     Region::SetDrawManager(drawManager.get());
     SphereRegion::SetDrawManager(drawManager.get());
@@ -163,10 +169,35 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetTextureManager(textureManager.get());
     SphereClass::SetTextureManager(textureManager.get());
     TriangleClass::SetTextureManager(textureManager.get());
+    PlaneClass::SetTextureManager(textureManager.get());
     CylinderClass::SetTextureManager(textureManager.get());
     Region::SetTextureManager(textureManager.get());
     SphereRegion::SetTextureManager(textureManager.get());
     TetraRegion::SetTextureManager(textureManager.get());
+    ParticleSystem::SetTextureManager(textureManager.get());
+}
+
+// クリアカラーを float 指定できる 初期化
+void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
+                               float r, float g, float b, float a) {
+    clearColor_ = { r, g, b, a };
+    // 既存の Initialize を呼ぶ（互換性維持）
+    Initialize(title, clientWidth, clientHeight);
+}
+
+// クリアカラーを std::array 指定できる 初期化
+void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
+                               const std::array<float, 4>& clearColor) {
+    clearColor_ = clearColor;
+    // 既存の Initialize を呼ぶ（互換性維持）
+    Initialize(title, clientWidth, clientHeight);
+}
+
+// 追加: Vector4 版 Initialize
+void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
+                               const Vector4& clearColor) {
+    clearColor_ = { clearColor.x, clearColor.y, clearColor.z, clearColor.w };
+    Initialize(title, clientWidth, clientHeight);
 }
 
 void IrufemiEngine::Finalize() {
@@ -190,6 +221,9 @@ void IrufemiEngine::Finalize() {
     }
     if (textureManager) {
         textureManager.reset();
+    }
+    if (modelManager_) {
+        modelManager_.reset();
     }
     if (dxCommon_) {
         dxCommon_->Finalize(); dxCommon_.reset();
@@ -220,7 +254,7 @@ void IrufemiEngine::Execute() {
         // ImGui
         ui->FrameStart();
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#ifdef USE_IMGUI
         ui->FPSDebug();
         ui->DebugSceneSelector(sceneManager_.get());
 #endif // _DEBUG
@@ -248,15 +282,6 @@ void IrufemiEngine::StartFrame() {
 void IrufemiEngine::ProcessFrame() {
     // 描画処理に入る前にImGui::Renderを積む
     ui->QueueDrawCommands();
-
-    //これから書き込むバックバッファのインデックスを取得
-    backBufferIndex_ = GetBackBufferIndex(GetSwapChain());
-
-    ///DSVを設定する
-
-    //描画先のRTVとDSVを設定する
-    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = GetDsvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
-
     drawManager->PreDraw(clearColor_, 1.0f, 0);
 }
 
@@ -267,9 +292,9 @@ void IrufemiEngine::EndFrame() {
     drawManager->PostDraw();
 
     // 5) フレーム終端で遅延解放の回収（フェンス完了値を渡す）
-    if (srvAllocator_) {
+    if (auto* srvPool = dxCommon_->GetSrvPool()) {
         const uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
-        srvAllocator_->GarbageCollect(completed);
+        srvPool->GarbageCollect(completed);
     }
 }
 
@@ -293,4 +318,10 @@ void IrufemiEngine::ApplySpritePSO() {
 void IrufemiEngine::ApplyRegionPSO() {
     auto* pso = GetPSOManager()->GetRegion(currentBlend_, currentDepth_);
     drawManager->BindPSO(pso);
+}
+
+void IrufemiEngine::ApplyByGeometryShaderPSO() {
+    auto* pso = GetPSOManager()->GetByGeometryShader(currentBlend_, currentDepth_);
+    assert(pso && "ByGeometryShader PSO is null. Check PSOManager::Initialize and shader blobs.");
+    if (pso) { drawManager->BindPSO(pso); }
 }
