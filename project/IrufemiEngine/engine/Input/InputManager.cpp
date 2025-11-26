@@ -38,6 +38,11 @@ bool InputManager::IsKeyUpDIK(uint8_t d)       const { return keyboard_->IsKeyUp
 bool InputManager::IsKeyPressedDIK(uint8_t d)  const { return keyboard_->IsKeyPressedDIK(d); }
 bool InputManager::IsKeyReleasedDIK(uint8_t d) const { return keyboard_->IsKeyReleasedDIK(d); }
 
+// START フォワード
+bool InputManager::StartDown() const { return gamepad_->StartDown(); }
+bool InputManager::StartPressed() const { return gamepad_->StartPressed(); }
+bool InputManager::StartReleased() const { return gamepad_->StartReleased(); }
+
 // --- マウスAPIフォワード ---
 bool InputManager::IsMouseButtonDown(Mouse::Button button) const {
     return mouse_->IsButtonDown(button);
