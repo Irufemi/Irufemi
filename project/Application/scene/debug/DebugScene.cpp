@@ -34,7 +34,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveObj_ = false;
     isActiveSprite_ = false;
     isActiveTriangle_ = false;
-    isActivePlane_ = true;
+    isActivePlane_ = false;
     isActiveSphere_ = false;
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
@@ -43,12 +43,12 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveSuzanne_ = false;
     isActiveFence_ = false;
     isActiveTerrain_ = false;
-    isActiveParticle_ = false;
+    isActiveParticle_ = true;
 
     // 課題用スプライトの初期化
-    imguiSprite_ = std::make_unique<Sprite>();
+    /*imguiSprite_ = std::make_unique<Sprite>();
     imguiSprite_->Initialize(camera_.get());
-    imguiSprite_->SetPosition(100.0f, 100.0f);
+    imguiSprite_->SetPosition(100.0f, 100.0f);*/
 
     if (isActiveSprite_) {
         sprite_ = std::make_unique <Sprite>();
@@ -124,22 +124,23 @@ void DebugScene::Update() {
 
 #ifdef USE_IMGUI
 
-    ImGui::Begin("GameScene");
-    // pointLight 
-    pointLight_->Debug();
-    // spotLight 
-    spotLight_->Debug();
+    //ImGui::Begin("GameScene");
+    //// pointLight 
+    //pointLight_->Debug();
+    //// spotLight 
+    //spotLight_->Debug();
 
-    ImGui::End();
+    //ImGui::End();
 
     ImGui::Begin("Texture");
     if (ImGui::Button("allLoadActivate")) {
         engine_->GetTextureManager()->LoadAllFromFolder("resources/");
     }
     ImGui::Checkbox("debugMode", &debugMode);
+
     ImGui::End();
 
-    ImGui::Begin("Activation");
+    /*ImGui::Begin("Activation");
     ImGui::Checkbox("Sprite", &isActiveSprite_);
     ImGui::Checkbox("Triangle", &isActiveTriangle_);
     ImGui::Checkbox("Plane", &isActivePlane_);
@@ -153,9 +154,9 @@ void DebugScene::Update() {
     ImGui::Checkbox("Fence", &isActiveFence_);
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("Particle", &isActiveParticle_);
-    ImGui::End();
+    ImGui::End();*/
 
-    ImGui::Begin("GE");
+    /*ImGui::Begin("GE");
 
 
     ImGui::Text("Hello, world %d", 123);
@@ -168,7 +169,7 @@ void DebugScene::Update() {
     static float f{};
     ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
 
-    ImGui::End();
+    ImGui::End();*/
 
     if (showDemoWindow) {
 

@@ -44,6 +44,7 @@ enum class ParticleType {
 	Normal,
 	kAccelerationField,
 	kHitEffect,
+	kExplosion,
 	// 他の種類をここに追加
 };
 

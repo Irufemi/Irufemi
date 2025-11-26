@@ -71,5 +71,18 @@ public:
 	void Debug(Emitter* emitter, DebugUI* ui) override;
 };
 
+/// <summary>
+/// 爆発四散の振る舞い
+/// </summary>
+class ExplosionBehavior : public IParticleBehavior {
+public:
+	void Initialize(Emitter* emitter) override;
+	void Update(Particle& particle, float deltaTime) override;
+	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
+	void Debug(Emitter* emitter, DebugUI* ui) override;
+private:
+	AccelerationField field_;
+};
+
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type);

@@ -89,6 +89,9 @@ public:
     bool LBDown() const;     bool LBPressed() const;     bool LBReleased() const;
     bool RBDown() const;     bool RBPressed() const;     bool RBReleased() const;
 
+    // START ボタンショートカット
+    bool StartDown() const;      bool StartPressed() const;      bool StartReleased() const;
+
     // （任意）Y 反転
     void SetInvertY(bool inv) { invertY_ = inv; }
 

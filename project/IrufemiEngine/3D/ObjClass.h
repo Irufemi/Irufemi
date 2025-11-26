@@ -66,6 +66,9 @@ public: //メンバ関数
     const TransformationMatrix& GetTransformationMatrix(uint32_t index = 0)const { return instanceResources_[index]->transformationMatrix_; }
     void SetTransformationMatrix(TransformationMatrix transformationMatrix, uint32_t index = 0) { instanceResources_[index]->transformationMatrix_ = transformationMatrix; }
 
+    // lighitingModeの切り替え
+    void SetLightingMode(int32_t index) { for (auto& res : instanceResources_) { res->materialData_->lightingMode = index; } }
+
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }

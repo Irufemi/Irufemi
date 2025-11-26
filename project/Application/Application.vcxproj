@@ -81,7 +81,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)\imgui;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)\imgui;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine;$(SolutionDir)IrufemiEngine\manager</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -109,7 +109,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine;$(SolutionDir)IrufemiEngine\manager</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -139,7 +139,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)\imgui;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)\imgui;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine;$(SolutionDir)IrufemiEngine\manager</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -164,6 +164,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="contents\player\Player.cpp" />
     <ClCompile Include="contents\player\PlayerState_Attack.cpp" />
     <ClCompile Include="contents\player\PlayerState_Root.cpp" />
+    <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="scene\debug\DebugScene.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
@@ -174,7 +175,11 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="scene\inGame\GameScene.cpp" />
     <ClCompile Include="scene\result\ResultScene.cpp" />
     <ClCompile Include="scene\title\TitleScene.cpp" />
-    <ClCompile Include="contents\shieldEnemy\ShieldEnemy.cpp" />
+    <ClCompile Include="contents\shieldEnemy\ShieldEnemy.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera\Camera.h" />
@@ -183,11 +188,16 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="contents\MapChipField.h" />
     <ClInclude Include="contents\player\Player.h" />
     <ClInclude Include="contents\player\PlayerState.h" />
+    <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\result\ResultScene.h" />
     <ClInclude Include="scene\title\TitleScene.h" />
-    <ClInclude Include="contents\shieldEnemy\ShieldEnemy.h" />
+    <ClInclude Include="contents\shieldEnemy\ShieldEnemy.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

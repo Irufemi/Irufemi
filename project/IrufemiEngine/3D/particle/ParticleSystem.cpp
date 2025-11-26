@@ -583,7 +583,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 }
 
                 // ParticleTypeの選択UI
-                const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect" };
+                const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect", "Explosion" };
                 int currentType = static_cast<int>(particleType_);
                 if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
                     ChangeBehavior(static_cast<ParticleType>(currentType));
