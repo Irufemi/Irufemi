@@ -244,6 +244,15 @@
     <ClCompile Include="3D\particle\IParticleBehavior.cpp">
       <Filter>3D\Particle</Filter>
     </ClCompile>
+    <ClCompile Include="3D\LineClass.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="math\LineMaterial.h">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="math\LineVertexData.h">
+      <Filter>math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
@@ -477,6 +486,9 @@
     <ClInclude Include="math\ParticleMaterial.h">
       <Filter>math</Filter>
     </ClInclude>
+    <ClInclude Include="3D\LineClass.h">
+      <Filter>3D</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Object2D.hlsli">
@@ -489,6 +501,9 @@
       <Filter>Engine\shaders</Filter>
     </None>
     <None Include="..\Application\resources\shaders\GeometryShaderHeader.hlsli">
+      <Filter>Engine\shaders</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\Line.hlsli">
       <Filter>Engine\shaders</Filter>
     </None>
   </ItemGroup>
@@ -521,6 +536,12 @@
       <Filter>Engine\shaders</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Line.PS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Line.VS.hlsl">
       <Filter>Engine\shaders</Filter>
     </FxCompile>
   </ItemGroup>
