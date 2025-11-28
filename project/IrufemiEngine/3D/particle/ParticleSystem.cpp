@@ -370,6 +370,82 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         }
     }
     break;
+    case PrimitiveShape::Tetrahedron:
+    {
+        // 正四面体（辺長 = s）を生成。底面を水平（XZ平面）に配置する。
+        const float s = 0.5f; // 全体スケール（既存のスケールと整合）
+        const float R = 1.0f / std::sqrt(3.0f);               // 辺長1の正三角形の外接円半径
+        const float baseToApex = std::sqrt(2.0f / 3.0f);      // (a + b) の長さ（辺長=1 のとき）
+        const float b = baseToApex / 4.0f;                   // 基底面の y = -b（重心を原点に揃えるための設定）
+        const float a = 3.0f * b;                            // 頂点の y = +a（重心が原点になるよう a = 3b）
+        // スケール適用済みの頂点
+        Vector3 apex = { 0.0f,  a * s, 0.0f };                  // 頂点（上）
+        Vector3 v0 = { 0.0f, -b * s,  R * s };               // 底面頂点 0
+        Vector3 v1 = { -0.5f * s, -b * s, -R * 0.5f * s };   // 底面頂点 1
+        Vector3 v2 = { 0.5f * s, -b * s, -R * 0.5f * s };   // 底面頂点 2
+
+        // 面の定義（各面は三角形）
+        std::vector<std::tuple<Vector3, Vector3, Vector3>> faces = {
+            { v0, v1, v2 },        // 底面（XZ平面上）
+            { apex, v0, v1 },
+            { apex, v1, v2 },
+            { apex, v2, v0 }
+        };
+
+        // UV は単純に三角形マッピング
+        Vector2 uv0 = { 0.5f, 0.0f };
+        Vector2 uv1 = { 0.0f, 1.0f };
+        Vector2 uv2 = { 1.0f, 1.0f };
+
+        for (const auto& face : faces) {
+            uint32_t baseIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
+
+            Vector3 p0 = std::get<0>(face);
+            Vector3 p1 = std::get<1>(face);
+            Vector3 p2 = std::get<2>(face);
+
+            // 面法線（右手系クロス）を計算
+            Vector3 e0 = Math::Subtract(p1, p0);
+            Vector3 e1 = Math::Subtract(p2, p0);
+            Vector3 triNormal = Math::Normalize(Math::Cross(e0, e1));
+
+            // 頂点データ作成（面ごとに法線を統一して追加）
+            VertexData vd0{}, vd1{}, vd2{};
+            vd0.position = { p0.x, p0.y, p0.z, 1.0f };
+            vd1.position = { p1.x, p1.y, p1.z, 1.0f };
+            vd2.position = { p2.x, p2.y, p2.z, 1.0f };
+
+            vd0.normal = vd1.normal = vd2.normal = triNormal;
+
+            vd0.texcoord = uv0;
+            vd1.texcoord = uv1;
+            vd2.texcoord = uv2;
+
+            resource_->vertexDataList_.push_back(vd0);
+            resource_->vertexDataList_.push_back(vd1);
+            resource_->vertexDataList_.push_back(vd2);
+
+            // 三角形の重心を計算して法線が外向きになるようワインディングを決定
+            Vector3 centroid{
+                (p0.x + p1.x + p2.x) / 3.0f,
+                (p0.y + p1.y + p2.y) / 3.0f,
+                (p0.z + p1.z + p2.z) / 3.0f
+            };
+            float dot = Math::Dot(triNormal, centroid);
+            if (dot >= 0.0f) {
+                // 法線が外向き（重心方向と同じ向き）ならそのまま追加
+                resource_->indexDataList_.push_back(baseIndex + 0);
+                resource_->indexDataList_.push_back(baseIndex + 1);
+                resource_->indexDataList_.push_back(baseIndex + 2);
+            } else {
+                // 内向きならワインディングを反転
+                resource_->indexDataList_.push_back(baseIndex + 2);
+                resource_->indexDataList_.push_back(baseIndex + 1);
+                resource_->indexDataList_.push_back(baseIndex + 0);
+            }
+        }
+    }
+    break;
     }
 
     // リソースのメモリを確保（または再利用）
@@ -736,7 +812,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 ImGui::Separator();
 
                 // PrimitiveShapeの選択UI
-                const char* primitiveShapeNames[] = { "Plane", "Sphere", "Ring", "Cylinder", "Cube" };
+                const char* primitiveShapeNames[] = { "Plane", "Sphere", "Ring", "Cylinder", "Cube", "Tetrahedron" };
                 int currentShape = static_cast<int>(primitiveShape_);
                 if (ImGui::Combo("Primitive Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
                     if (primitiveShape_ != static_cast<PrimitiveShape>(currentShape)) {
