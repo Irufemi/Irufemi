@@ -7,6 +7,7 @@
 
 // 前方宣言
 class DebugUI;
+class ParticleSystem;
 
 /// <summary>
 /// パーティクルの振る舞いを定義するインターフェース
@@ -33,7 +34,7 @@ public:
 	/// <summary>
 	/// この振る舞い固有のデバッグUIを表示します。
 	/// </summary>
-	virtual void Debug(Emitter* emitter, DebugUI* ui) = 0;
+	virtual void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) = 0;
 };
 
 /// <summary>
@@ -44,7 +45,7 @@ public:
 	void Initialize(Emitter* emitter) override;
 	void Update(Particle& particle, float deltaTime) override;
 	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
-	void Debug(Emitter* emitter, DebugUI* ui) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
 };
 
 /// <summary>
@@ -55,7 +56,7 @@ public:
 	void Initialize(Emitter* emitter) override;
 	void Update(Particle& particle, float deltaTime) override;
 	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
-	void Debug(Emitter* emitter, DebugUI* ui) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
 private:
 	AccelerationField field_;
 };
@@ -68,7 +69,7 @@ public:
 	void Initialize(Emitter* emitter) override;
 	void Update(Particle& particle, float deltaTime) override;
 	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
-	void Debug(Emitter* emitter, DebugUI* ui) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
 };
 
 /// <summary>
@@ -79,7 +80,7 @@ public:
 	void Initialize(Emitter* emitter) override;
 	void Update(Particle& particle, float deltaTime) override;
 	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
-	void Debug(Emitter* emitter, DebugUI* ui) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
 private:
 	AccelerationField field_;
 };

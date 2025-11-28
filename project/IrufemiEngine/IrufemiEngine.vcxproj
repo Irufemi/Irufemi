@@ -170,6 +170,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\PointLightClass.cpp" />
     <ClCompile Include="3D\particle\IParticleBehavior.cpp" />
     <ClCompile Include="3D\LineClass.cpp" />
+    <ClCompile Include="InstanceDrawer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="math\LineMaterial.h" />
     <ClCompile Include="math\LineVertexData.h" />
     <ClCompile Include="main.cpp">
@@ -244,6 +249,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="engine\Input\Keyboard.h" />
     <ClInclude Include="3D\particle\IParticleBehavior.h" />
     <ClInclude Include="3D\LineClass.h" />
+    <ClInclude Include="InstanceDrawer.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="manager\AudioManager.h" />
     <ClInclude Include="manager\DebugUI.h" />
     <ClInclude Include="manager\DrawManager.h" />

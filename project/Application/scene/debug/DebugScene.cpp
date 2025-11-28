@@ -135,13 +135,13 @@ void DebugScene::Update() {
 
     //ImGui::End();
 
-    ImGui::Begin("Texture");
+    /*ImGui::Begin("Texture");
     if (ImGui::Button("allLoadActivate")) {
         engine_->GetTextureManager()->LoadAllFromFolder("resources/");
     }
     ImGui::Checkbox("debugMode", &debugMode);
 
-    ImGui::End();
+    ImGui::End();*/
 
     /*ImGui::Begin("Activation");
     ImGui::Checkbox("Sprite", &isActiveSprite_);
@@ -406,7 +406,7 @@ void DebugScene::Draw() {
     engine_->ApplyParticlePSO();
 
     if (isActiveParticle_) {
-        engine_->GetDrawManager()->DrawParticle(particle_.get());
+        particle_->Draw();
     }
 
     // 2D
@@ -425,11 +425,13 @@ void DebugScene::Draw() {
     if (isActiveSprite_) {
         sprite_->Draw();
     }
+    
+    /*
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyLinePSO();
 
-    line2D_->Draw();
+    line2D_->Draw();*/
 
 }

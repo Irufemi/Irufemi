@@ -3,16 +3,22 @@
 #include "source/D3D12ResourceUtil.h"
 #include "math/shape/Particle.h"
 #include "math/Emitter.h"
-#include "3D/particle/IParticleBehavior.h" // 追加
+#include "3D/particle/IParticleBehavior.h"
+#include "3D/LineClass.h"
+#include "math/BlendMode.h"
+#include "engine/directX/PSOManager.h"
 #include <list>
 #include <memory>
 #include <random>
 #include <string>
+#include <vector>
 
 // 前方宣言
 class TextureManager;
+class DrawManager;
 class DebugUI;
 class DescriptorPool;
+class IrufemiEngine;
 
 class ParticleSystem {
 public:
@@ -29,8 +35,10 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvHandleGPU_; }
 
 	static void SetTextureManager(TextureManager* texM) { s_textureManager_ = texM; }
+	static void SetDrawManager(DrawManager* drawM) { s_drawManager_ = drawM; }
 	static void SetDebugUI(DebugUI* ui) { s_ui_ = ui; }
 	static void SetSrvPool(DescriptorPool* pool) { s_srvPool_ = pool; }
+	static void SetEngine(class IrufemiEngine* engine) { s_engine_ = engine; }
 
 	void SetEmitterPosition(const Vector3& position);
 	void SetEmitterArea(const Vector3& area);
@@ -58,6 +66,14 @@ public:
 
 	// 追加: Cylinder パラメータ設定
 	void SetCylinderParameters(float radius, float height, uint32_t segmentCount, bool flipV = false);
+
+	void DrawAABB(const AABB& aabb, const Vector4& color);
+
+	// デバッグ表示切り替え
+	void SetShowEmitterAABB(bool show) { showEmitterAABB_ = show; }
+	bool IsShowEmitterAABB() const { return showEmitterAABB_; }
+	void SetShowFieldAABB(bool show) { showFieldAABB_ = show; }
+	bool IsShowFieldAABB() const { return showFieldAABB_; }
 
 private:
 	void ChangeBehavior(ParticleType type, bool force = false); // 追加
@@ -92,8 +108,10 @@ private:
 	std::mt19937 randomEngine_;
 
 	static TextureManager* s_textureManager_;
+	static DrawManager* s_drawManager_;
 	static DebugUI* s_ui_;
 	static DescriptorPool* s_srvPool_;
+	static class IrufemiEngine* s_engine_;
 
 	int selectedTextureIndex_ = 0;
 
@@ -111,5 +129,13 @@ private:
 	uint32_t cylinderSegmentCount_ = 32;
 	bool cylinderFlipV_ = false;
 
+	std::vector<std::unique_ptr<Line3DClass>> debugLines_;
 
+	// デバッグ表示フラグ
+	bool showEmitterAABB_ = true;
+	bool showFieldAABB_ = true;
+
+	// 描画時の選択（Debug UI で設定され、Draw の直前にエンジンへ反映する）
+	BlendMode selectedBlend_ = BlendMode::kBlendModeAdd; // デフォルト: Add（既存シーンと同等）
+	PSOManager::DepthWrite selectedDepth_ = PSOManager::DepthWrite::Disable; // デフォルト: Disable（既存シーンと同等）
 };
