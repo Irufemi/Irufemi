@@ -287,6 +287,89 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         }
     }
     break;
+    case PrimitiveShape::Cube:
+    {
+        // 単位立方体（中心原点、辺長 = 1.0f）
+        const float h = 0.5f;
+
+        struct FaceDef { Vector3 n; std::array<Vector3,4> pos; std::array<Vector2,4> uv; };
+        std::array<FaceDef,6> faces = {
+            // +X (右面)
+            FaceDef{ {1.0f,0.0f,0.0f},
+                { Vector3{h,h,h}, Vector3{h,h,-h}, Vector3{h,-h,-h}, Vector3{h,-h,h} },
+                { Vector2{1.0f,0.0f}, Vector2{0.0f,0.0f}, Vector2{0.0f,1.0f}, Vector2{1.0f,1.0f} } },
+            // -X (左面)
+            FaceDef{ {-1.0f,0.0f,0.0f},
+                { Vector3{-h,h,-h}, Vector3{-h,h,h}, Vector3{-h,-h,h}, Vector3{-h,-h,-h} },
+                { Vector2{0.0f,0.0f}, Vector2{1.0f,0.0f}, Vector2{1.0f,1.0f}, Vector2{0.0f,1.0f} } },
+            // +Y (上面)
+            FaceDef{ {0.0f,1.0f,0.0f},
+                { Vector3{-h,h,h}, Vector3{h,h,h}, Vector3{h,h,-h}, Vector3{-h,h,-h} },
+                { Vector2{0.0f,0.0f}, Vector2{1.0f,0.0f}, Vector2{1.0f,1.0f}, Vector2{0.0f,1.0f} } },
+            // -Y (下面)
+            FaceDef{ {0.0f,-1.0f,0.0f},
+                { Vector3{-h,-h,-h}, Vector3{h,-h,-h}, Vector3{h,-h,h}, Vector3{-h,-h,h} },
+                { Vector2{0.0f,0.0f}, Vector2{1.0f,0.0f}, Vector2{1.0f,1.0f}, Vector2{0.0f,1.0f} } },
+            // +Z (前面)
+            FaceDef{ {0.0f,0.0f,1.0f},
+                { Vector3{h,h,h}, Vector3{-h,h,h}, Vector3{-h,-h,h}, Vector3{h,-h,h} },
+                { Vector2{0.0f,0.0f}, Vector2{1.0f,0.0f}, Vector2{1.0f,1.0f}, Vector2{0.0f,1.0f} } },
+            // -Z (後面)
+            FaceDef{ {0.0f,0.0f,-1.0f},
+                { Vector3{-h,h,-h}, Vector3{h,h,-h}, Vector3{h,-h,-h}, Vector3{-h,-h,-h} },
+                { Vector2{0.0f,0.0f}, Vector2{1.0f,0.0f}, Vector2{1.0f,1.0f}, Vector2{0.0f,1.0f} } }
+        };
+
+        for (const auto& f : faces) {
+            // 頂点作成（面ごとに4頂点を追加）
+            VertexData v0{}, v1{}, v2{}, v3{};
+            v0.position = { f.pos[0].x, f.pos[0].y, f.pos[0].z, 1.0f }; v0.texcoord = f.uv[0];
+            v1.position = { f.pos[1].x, f.pos[1].y, f.pos[1].z, 1.0f }; v1.texcoord = f.uv[1];
+            v2.position = { f.pos[2].x, f.pos[2].y, f.pos[2].z, 1.0f }; v2.texcoord = f.uv[2];
+            v3.position = { f.pos[3].x, f.pos[3].y, f.pos[3].z, 1.0f }; v3.texcoord = f.uv[3];
+
+            // 面法線で頂点法線を統一
+            v0.normal = v1.normal = v2.normal = v3.normal = f.n;
+
+            uint32_t baseIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
+            resource_->vertexDataList_.push_back(v0);
+            resource_->vertexDataList_.push_back(v1);
+            resource_->vertexDataList_.push_back(v2);
+            resource_->vertexDataList_.push_back(v3);
+
+            // 仮三角(0,1,2) の法線を計算して面法線と向きが合うかチェック
+            Vector3 p0{ resource_->vertexDataList_[baseIndex + 0].position.x, resource_->vertexDataList_[baseIndex + 0].position.y, resource_->vertexDataList_[baseIndex + 0].position.z };
+            Vector3 p1{ resource_->vertexDataList_[baseIndex + 1].position.x, resource_->vertexDataList_[baseIndex + 1].position.y, resource_->vertexDataList_[baseIndex + 1].position.z };
+            Vector3 p2{ resource_->vertexDataList_[baseIndex + 2].position.x, resource_->vertexDataList_[baseIndex + 2].position.y, resource_->vertexDataList_[baseIndex + 2].position.z };
+
+            Vector3 e0 = Math::Subtract(p1, p0);
+            Vector3 e1 = Math::Subtract(p2, p0);
+            Vector3 triNormal = Math::Normalize(Math::Cross(e0, e1));
+
+            float dot = Math::Dot(triNormal, f.n);
+
+            if (dot >= 0.0f) {
+                // 三角形法線が面法線と同じ向き → この順で追加（外向き）
+                resource_->indexDataList_.push_back(baseIndex + 0);
+                resource_->indexDataList_.push_back(baseIndex + 1);
+                resource_->indexDataList_.push_back(baseIndex + 2);
+
+                resource_->indexDataList_.push_back(baseIndex + 0);
+                resource_->indexDataList_.push_back(baseIndex + 2);
+                resource_->indexDataList_.push_back(baseIndex + 3);
+            } else {
+                // 向きが逆ならワインディングを反転して追加
+                resource_->indexDataList_.push_back(baseIndex + 2);
+                resource_->indexDataList_.push_back(baseIndex + 1);
+                resource_->indexDataList_.push_back(baseIndex + 0);
+
+                resource_->indexDataList_.push_back(baseIndex + 3);
+                resource_->indexDataList_.push_back(baseIndex + 2);
+                resource_->indexDataList_.push_back(baseIndex + 0);
+            }
+        }
+    }
+    break;
     }
 
     // リソースのメモリを確保（または再利用）
@@ -653,7 +736,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 ImGui::Separator();
 
                 // PrimitiveShapeの選択UI
-                const char* primitiveShapeNames[] = { "Plane", "Sphere", "Ring", "Cylinder" };
+                const char* primitiveShapeNames[] = { "Plane", "Sphere", "Ring", "Cylinder", "Cube" };
                 int currentShape = static_cast<int>(primitiveShape_);
                 if (ImGui::Combo("Primitive Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
                     if (primitiveShape_ != static_cast<PrimitiveShape>(currentShape)) {
