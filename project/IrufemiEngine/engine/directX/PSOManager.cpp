@@ -20,7 +20,8 @@ void PSOManager::Initialize(
     ShaderSet particleShaders,
     ShaderSet spriteShaders,
     ShaderSet regionShaders,
-    ShaderSet byGeometryShaderShaders
+    ShaderSet byGeometryShaderShaders,
+    ShaderSet lineShaders
 )
 {
     device_ = device;
@@ -38,6 +39,7 @@ void PSOManager::Initialize(
     spriteShaders_ = spriteShaders;
     blocksShaders_ = regionShaders;
     byGeometryShaderShaders_ = byGeometryShaderShaders;
+    lineShaders_ = lineShaders;
 
     cache_.clear();
 }
@@ -167,6 +169,23 @@ ID3D12PipelineState* PSOManager::GetByGeometryShader(BlendMode blend, DepthWrite
     return pso.Get();
 }
 
+ID3D12PipelineState* PSOManager::GetLine(BlendMode blend, DepthWrite depth) {
+    const bool hasLineVS = (lineShaders_.vsBlob && lineShaders_.vsBlob->GetBufferPointer());
+    const bool hasLinePS = (lineShaders_.psBlob && lineShaders_.psBlob->GetBufferPointer());
+    const ShaderSet& set = (hasLineVS && hasLinePS) ? lineShaders_ : objectShaders_;
+
+    Key key{ Hash(set, blend, depth) };
+    if (auto it = cache_.find(key); it != cache_.end()) { return it->second.Get(); }
+
+    D3D12_BLEND_DESC bd = MakeBlend(blend);
+    D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
+
+    auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
+    if (!pso) { return nullptr; }
+    cache_[key] = pso;
+    return pso.Get();
+}
+
 void PSOManager::ClearCache() { cache_.clear(); }
 
 // PSOManager.cpp に追加
@@ -225,7 +244,12 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSOWithTopology(
 
     D3D12_RASTERIZER_DESC rs{};
     rs.CullMode = D3D12_CULL_MODE_BACK;
-    rs.FillMode = D3D12_FILL_MODE_SOLID;
+    // トポロジタイプに応じて FillMode を設定
+    if (topology == D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE) {
+        rs.FillMode = D3D12_FILL_MODE_WIREFRAME;
+    } else {
+        rs.FillMode = D3D12_FILL_MODE_SOLID;
+    }
     desc.RasterizerState = rs;
 
     desc.DepthStencilState = depthDesc;

@@ -25,6 +25,7 @@
 #include "3D/Region.h"
 #include "3D/SphereRegion.h"
 #include "3D/TetraRegion.h"
+#include "3D/LineClass.h"
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "source/Texture.h"
@@ -73,6 +74,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     D3D12ResourceUtil::SetDirectXCommon(dxCommon_.get());
     D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
+    D3D12ResourceUtilLine::SetDirectXCommon(dxCommon_.get());
     PointLightClass::SetDxCommon(dxCommon_.get());
     SpotLightClass::SetDxCommon(dxCommon_.get());
     Region::SetDirectXCommon(dxCommon_.get());
@@ -161,6 +163,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Region::SetDrawManager(drawManager.get());
     SphereRegion::SetDrawManager(drawManager.get());
     TetraRegion::SetDrawManager(drawManager.get());
+    Line2DClass::SetDrawManager(drawManager.get());
+    Line3DClass::SetDrawManager(drawManager.get());
 
     // テクスチャ
     ui->SetTextureManager(textureManager.get());
@@ -323,5 +327,11 @@ void IrufemiEngine::ApplyRegionPSO() {
 void IrufemiEngine::ApplyByGeometryShaderPSO() {
     auto* pso = GetPSOManager()->GetByGeometryShader(currentBlend_, currentDepth_);
     assert(pso && "ByGeometryShader PSO is null. Check PSOManager::Initialize and shader blobs.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplyLinePSO() {
+    auto* pso = GetPSOManager()->GetLine(currentBlend_, currentDepth_);
+    assert(pso && "Line PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager->BindPSO(pso); }
 }

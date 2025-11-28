@@ -22,6 +22,14 @@ void Line2DClass::Initialize(Camera* camera, const Vector2& origin, const Vector
     origin_ = origin;
     end_ = end;
 
+    resource_ = std::make_unique<D3D12ResourceUtilLine>();
+
+    // リソースのメモリを確保
+    resource_->CreateResource();
+
+    // 書き込めるようにする
+    resource_->Map();
+
     // 頂点の追加
     resource_->vertexData_[0] = { { origin.x, origin.y,0.0f,1.0f },color_ };
     resource_->vertexData_[1] = { { end.x, end.y,0.0f,1.0f },color_ };
@@ -29,12 +37,6 @@ void Line2DClass::Initialize(Camera* camera, const Vector2& origin, const Vector
     // indexの割り当て
     resource_->indexData_[0] = 0;
     resource_->indexData_[1] = 1;
-
-    // リソースのメモリを確保
-    resource_->CreateResource();
-
-    // 書き込めるようにする
-    resource_->Map();
 
     // 頂点バッファビュー
     resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
@@ -51,7 +53,7 @@ void Line2DClass::Initialize(Camera* camera, const Vector2& origin, const Vector
     // マテリアル
     resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
 
-    // WVP計算(ここは値が変わらない前提なので初期化時のみ)
+    // WVP計算
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
     *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
@@ -60,10 +62,16 @@ void Line2DClass::Initialize(Camera* camera, const Vector2& origin, const Vector
 // 更新
 void Line2DClass::Update() {
 
+    // WVP計算
+    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
+    resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
+    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
+
 }
 
 // 描画
 void Line2DClass::Draw() {
+    drawManager_->DrawLine2D(this);
 
 }
 
@@ -80,6 +88,8 @@ void Line3DClass::Initialize(Camera* camera, const Vector3& origin, const Vector
 
     origin_ = origin;
     end_ = end;
+
+    resource_ = std::make_unique<D3D12ResourceUtilLine>();
 
     // 頂点の追加
     resource_->vertexData_[0] = { {origin.x, origin.y,origin.z,1.0f},color };
@@ -125,5 +135,5 @@ void Line3DClass::Update() {
 
 // 描画
 void Line3DClass::Draw() {
-
+    drawManager_->DrawLine3D(this);
 }

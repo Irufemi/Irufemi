@@ -38,7 +38,8 @@ public:
         ShaderSet particleShaders = {}, // パーティクル専用 VS/PS（なければ空でOK）
         ShaderSet spriteShaders = {},
         ShaderSet regionShaders = {},
-        ShaderSet byGeometryShaderShaders = {}
+        ShaderSet byGeometryShaderShaders = {},
+        ShaderSet lineShaders = {}
     );
 
     // 既存シェーダで取得（メッシュ/スプライト等）
@@ -54,6 +55,8 @@ public:
 
     // Geometry Shader を使う PSO を取得（未設定時は object にフォールバック）
     ID3D12PipelineState* GetByGeometryShader(BlendMode blend, DepthWrite depth);
+
+    ID3D12PipelineState* GetLine(BlendMode blend, DepthWrite depth);
 
     void ClearCache();
 
@@ -75,6 +78,7 @@ private:
     ShaderSet spriteShaders_{};
     ShaderSet blocksShaders_{};
     ShaderSet byGeometryShaderShaders_{};
+    ShaderSet lineShaders_{};
 
     struct Key {
         uint64_t hash;
