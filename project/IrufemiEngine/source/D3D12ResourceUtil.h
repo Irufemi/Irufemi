@@ -254,6 +254,9 @@ public: // メンバ関数(リソース関連内部ヘルパ)
     // 一括CreateResource
     void CreateResource();
 
+    static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
+    DirectXCommon* GetDirectXCommon() { return dxCommon_; }
+
 public: // メンバ変数(D3D12リソース関連)
 
 #pragma region Vertex
@@ -269,6 +272,8 @@ public: // メンバ変数(D3D12リソース関連)
     uint32_t* indexData_ = nullptr;
 
 #pragma endregion
+
+#pragma region Transform
 
     // transform(scale,rotate,translate)
     Transform transform_ = {

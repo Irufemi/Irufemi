@@ -6,6 +6,7 @@
 
 DirectXCommon* D3D12ResourceUtil::dxCommon_ = nullptr;
 DirectXCommon* D3D12ResourceUtilParticle::dxCommon_ = nullptr;
+DirectXCommon* D3D12ResourceUtilLine::dxCommon_ = nullptr;
 
 //デストラクタ
 D3D12ResourceUtil::~D3D12ResourceUtil() {
@@ -105,7 +106,6 @@ void D3D12ResourceUtil::UpdateTransform3D(const Camera& camera) {
 }
 
 
-
 //デストラクタ
 D3D12ResourceUtilParticle::~D3D12ResourceUtilParticle() {
     char buf[256];
@@ -171,6 +171,7 @@ void D3D12ResourceUtilParticle::UnMap() {
 }
 
 D3D12ResourceUtilLine::~D3D12ResourceUtilLine() {
+    UnMap();
     if (vertexResource_) { vertexResource_.Reset(); }
     if (indexResource_) { indexResource_.Reset(); }
     if (transformationResource_) { transformationResource_.Reset(); }
@@ -184,6 +185,9 @@ void D3D12ResourceUtilLine::Map() {
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
     }
+    if (transformationResource_) {
+        transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+    }
     if (materialResource_) {
         materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
     }
@@ -196,17 +200,25 @@ void D3D12ResourceUtilLine::UnMap() {
     if (indexResource_) {
         indexResource_->Unmap(0, nullptr);
     }
+    if (transformationResource_) {
+        transformationResource_->Unmap(0, nullptr);
+    }
     if (materialResource_) {
         materialResource_->Unmap(0, nullptr);
     }
 }
 
 void D3D12ResourceUtilLine::CreateResource() {
-    if (!vertexData_) {
+    if (!vertexResource_) {
         vertexResource_ = dxCommon_->CreateBufferResource(sizeof(LineVertexData) * static_cast<size_t>(2));
     }
-    if (!indexData_) {
+    if (!indexResource_) {
         indexResource_ = dxCommon_->CreateBufferResource(sizeof(uint32_t) * static_cast<size_t>(2));
     }
-    materialResource_ = dxCommon_->CreateBufferResource(sizeof(LineMaterial));
+    if (!transformationResource_) {
+        transformationResource_ = dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
+    }
+    if (!materialResource_) {
+        materialResource_ = dxCommon_->CreateBufferResource(sizeof(LineMaterial));
+    }
 }

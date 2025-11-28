@@ -20,5 +20,8 @@ VertexShaderOutput main(VertexShaderInput input)
     // WVP だけで投影
 	output.position = mul(input.position, gTransformationMatrix.WVP);
 
+    // VS はカラーを決めない。PS 側で material に基づき決定する。
+	output.color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+
 	return output;
 }

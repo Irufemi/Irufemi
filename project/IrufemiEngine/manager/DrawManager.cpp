@@ -16,6 +16,7 @@
 #include "3D/Region.h"
 #include "3D/SphereRegion.h"
 #include "3D/TetraRegion.h" // 追加インクルード
+#include "3D/LineClass.h"
 
 #include "source/D3D12ResourceUtil.h"
 #include "engine/directX/DirectXCommon.h"
@@ -606,6 +607,37 @@ void DrawManager::DrawByVertex(D3D12ResourceUtil* resource) {
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
     dxCommon_->GetCommandList()->DrawInstanced(static_cast<UINT>(resource->vertexDataList_.size()), 1, 0, 0);
 
+}
+
+void DrawManager::DrawLine2D(Line2DClass* line) {
+    D3D12ResourceUtilLine* resource = line->GetD3D12Resource();
+
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    dxCommon_->GetCommandList()->IASetIndexBuffer(&resource->indexBufferView_);
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
+
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(2, 1, 0, 0, 0);
+
+}
+
+void DrawManager::DrawLine3D(Line3DClass* line) {
+    D3D12ResourceUtilLine* resource = line->GetD3D12Resource();
+
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    dxCommon_->GetCommandList()->IASetIndexBuffer(&resource->indexBufferView_);
+
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
+
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(2, 1, 0, 0, 0);
 }
 
 // SetPointLight / SetSpotLight はクラス保持のデータ差し替え用（任意）

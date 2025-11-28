@@ -102,6 +102,9 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         particle_ = std::make_unique <ParticleSystem>();
         particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kAccelerationField);
     }
+
+    line2D_ = std::make_unique<Line2DClass>();
+    line2D_->Initialize(camera_.get(), { 300.0f,300.0f }, { 360.0f,360.0f });
 }
 
 // 更新
@@ -335,6 +338,8 @@ void DebugScene::Update() {
         particle_->Update();
     }
 
+    line2D_->Update();
+
     // 2D
 
     // 課題用スプライトの更新
@@ -420,4 +425,11 @@ void DebugScene::Draw() {
     if (isActiveSprite_) {
         sprite_->Draw();
     }
+
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->ApplyLinePSO();
+
+    line2D_->Draw();
+
 }

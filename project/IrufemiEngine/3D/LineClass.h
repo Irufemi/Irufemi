@@ -41,6 +41,8 @@ public: // メンバ関数
     const Vector2& GetOrigin()const { return origin_; }
     const Vector2& GetEnd()const { return end_; }
 
+    D3D12ResourceUtilLine* GetD3D12Resource() { return this->resource_.get(); }
+
     // 参照セッター
     static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }
 
@@ -89,6 +91,8 @@ public: // メンバ関数
     // ゲッター
     const Vector3& GetOrigin()const { return origin_; }
     const Vector3& GetEnd()const { return end_; }
+
+    D3D12ResourceUtilLine* GetD3D12Resource() { return this->resource_.get(); }
 
     // 参照セッター
     static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }

@@ -15,6 +15,7 @@ class ObjClass;
 class ParticleSystem;
 class CylinderClass;
 class D3D12ResourceUtil;
+class D3D12ResourceUtilLine;
 class Region;
 class SphereRegion; 
 class TetraRegion; 
@@ -24,6 +25,8 @@ struct SpotLight;
 class SpotLightClass;
 class SpriteRegion; // 追加
 struct GpuMesh; // 追加
+class Line2DClass;
+class Line3DClass;
 
 //描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -81,6 +84,10 @@ public: //メンバ関数
     void DrawByIndex(D3D12ResourceUtil* resource);
 
     void DrawByVertex(D3D12ResourceUtil* resource);
+
+    void DrawLine2D(Line2DClass* line);
+
+    void DrawLine3D(Line3DClass* line);
 
     void SetPointLightClass(PointLightClass* pointLightClass) { pointLight_ = pointLightClass; }
     void SetPointLight(PointLight& info);
