@@ -54,5 +54,6 @@ enum class PrimitiveShape {
 	Sphere, // 球
 	Ring, // リング
 	Cylinder, // シリンダー
-	Cube // 立方体（正6面体）
+	Cube, // 立方体（正6面体）
+	Tetrahedron, // 正4面体
 };
