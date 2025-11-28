@@ -5,11 +5,15 @@
 #include "manager/DebugUI.h"
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h"
+#include "engine/IrufemiEngine.h"
+#include "manager/DrawManager.h"
 #include <algorithm>
 #include <numbers>
 
 DescriptorPool* ParticleSystem::s_srvPool_ = nullptr;
 TextureManager* ParticleSystem::s_textureManager_ = nullptr;
+DrawManager* ParticleSystem::s_drawManager_ = nullptr;
+IrufemiEngine* ParticleSystem::s_engine_ = nullptr;
 DebugUI* ParticleSystem::s_ui_ = nullptr;
 
 ParticleSystem::~ParticleSystem() {
@@ -397,6 +401,53 @@ void ParticleSystem::Update() {
         ++particleIterator; // 次のイテレーターに進める
     }
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+
+#if USE_IMGUI
+    for (auto& line : debugLines_) {
+        line->Update();
+    }
+#endif
+}
+
+void ParticleSystem::Draw()
+{
+    // 1) パーティクル本体を描画（選択された Blend/Depth を描画直前にエンジンへセットして PSO を適用）
+    if (s_engine_) {
+        // 現在のエンジン状態を保存しておく
+        BlendMode prevBlend = s_engine_->currentBlend_;
+        PSOManager::DepthWrite prevDepth = s_engine_->currentDepth_;
+
+        // 選択値をエンジンにセット（描画直前）
+        s_engine_->SetBlend(selectedBlend_);
+        s_engine_->SetDepthWrite(selectedDepth_);
+        s_engine_->ApplyParticlePSO();
+
+        // 描画
+        if (s_drawManager_) {
+            s_drawManager_->DrawParticle(this);
+        }
+
+        // エンジン状態を復元（PSOの切り替えは呼び出し側で制御するため Apply は行わない)
+        s_engine_->SetBlend(prevBlend);
+        s_engine_->SetDepthWrite(prevDepth);
+    } else {
+        // エンジン参照がない場合は従来通り（安全策）
+        if (s_drawManager_) {
+            s_drawManager_->DrawParticle(this);
+        }
+    }
+
+    // 2) デバッグ線（AABB 等）を描画（Line PSO を確実にバインド）
+#if USE_IMGUI
+    if (!debugLines_.empty()) {
+        if (s_engine_) {
+            s_engine_->ApplyLinePSO();
+        }
+        for (auto& line : debugLines_) {
+            if (line && s_drawManager_) s_drawManager_->DrawLine3D(line.get());
+        }
+    }
+#endif
 }
 
 void ParticleSystem::SetEmitterPosition(const Vector3& position) {
@@ -537,6 +588,17 @@ void ParticleSystem::PlayHitEffect(const Vector3& position) {
 void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
 #if USE_IMGUI
+    debugLines_.clear();
+
+    // Emitter AABB をフラグで制御して描画
+    if (showEmitterAABB_) {
+        AABB emitterAABB{
+            .min = emitter_.transform.translate - emitter_.area / 2.0f,
+            .max = emitter_.transform.translate + emitter_.area / 2.0f
+        };
+        DrawAABB(emitterAABB, { 0.0f, 1.0f, 0.0f, 1.0f });
+    }
+
     if (s_ui_) {
         std::string name = std::string("Particle: ") + particleName;
 
@@ -544,6 +606,32 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
         //ウィンドウを作り出す
         ImGui::Begin(name.c_str());
+
+        // ここで表示切替チェックボックスを追加
+        ImGui::Checkbox("Show Emitter AABB", &showEmitterAABB_);
+        ImGui::Checkbox("Show Field AABB", &showFieldAABB_);
+
+        // Blend/Depth の選択は UI 上で選んでおき、描画直前で反映する（即時エンジン変更は行わない）
+        {
+            int blendIdx = static_cast<int>(selectedBlend_);
+            const char* blendNames[] = {
+                "None",
+                "Normal",
+                "Add",
+                "Subtract",
+                "Multiply",
+                "Screen"
+            };
+            if (ImGui::Combo("Particle Blend Mode", &blendIdx, blendNames, IM_ARRAYSIZE(blendNames))) {
+                selectedBlend_ = static_cast<BlendMode>(blendIdx);
+            }
+
+            int depthIdx = (selectedDepth_ == PSOManager::DepthWrite::Enable) ? 0 : 1;
+            const char* depthNames[] = { "Enable", "Disable" };
+            if (ImGui::Combo("Particle Depth Write", &depthIdx, depthNames, IM_ARRAYSIZE(depthNames))) {
+                selectedDepth_ = (depthIdx == 0) ? PSOManager::DepthWrite::Enable : PSOManager::DepthWrite::Disable;
+            }
+        }
 
         if (ImGui::BeginTabBar("ParticleTabs")) {
             // Generalタブ
@@ -620,7 +708,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
             // Fieldタブ
             if (ImGui::BeginTabItem("Behavior")) {
-                behavior_->Debug(&emitter_, s_ui_);
+                behavior_->Debug(&emitter_, s_ui_, this);
                 ImGui::EndTabItem();
             }
 
@@ -755,6 +843,33 @@ void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
     } else {
         useBillbord_ = true;
     }
+}
+
+void ParticleSystem::DrawAABB(const AABB& aabb, const Vector4& color)
+{
+#if USE_IMGUI
+    Vector3 vertices[8];
+    vertices[0] = { aabb.min.x, aabb.min.y, aabb.min.z };
+    vertices[1] = { aabb.max.x, aabb.min.y, aabb.min.z };
+    vertices[2] = { aabb.min.x, aabb.max.y, aabb.min.z };
+    vertices[3] = { aabb.max.x, aabb.max.y, aabb.min.z };
+    vertices[4] = { aabb.min.x, aabb.min.y, aabb.max.z };
+    vertices[5] = { aabb.max.x, aabb.min.y, aabb.max.z };
+    vertices[6] = { aabb.min.x, aabb.max.y, aabb.max.z };
+    vertices[7] = { aabb.max.x, aabb.max.y, aabb.max.z };
+
+    uint32_t indices[] = {
+        0, 1, 1, 3, 3, 2, 2, 0, // Bottom face
+        4, 5, 5, 7, 7, 6, 6, 4, // Top face
+        0, 4, 1, 5, 2, 6, 3, 7  // Connecting edges
+    };
+
+    for (int i = 0; i < 12; ++i) {
+        auto line = std::make_unique<Line3DClass>();
+        line->Initialize(camera_, vertices[indices[i * 2]], vertices[indices[i * 2 + 1]], color);
+        debugLines_.push_back(std::move(line));
+    }
+#endif
 }
 
 // 追加実装: SetRingParameters (適当な場所に追加：クラス外のメソッド実装セクションに入れてください)

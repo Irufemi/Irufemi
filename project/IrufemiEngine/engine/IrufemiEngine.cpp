@@ -163,6 +163,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Region::SetDrawManager(drawManager.get());
     SphereRegion::SetDrawManager(drawManager.get());
     TetraRegion::SetDrawManager(drawManager.get());
+    ParticleSystem::SetDrawManager(drawManager.get());
+    ParticleSystem::SetEngine(this);
     Line2DClass::SetDrawManager(drawManager.get());
     Line3DClass::SetDrawManager(drawManager.get());
 

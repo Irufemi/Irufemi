@@ -253,6 +253,9 @@
     <ClCompile Include="math\LineVertexData.h">
       <Filter>math</Filter>
     </ClCompile>
+    <ClCompile Include="InstanceDrawer.cpp">
+      <Filter>Engine\manager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
@@ -488,6 +491,9 @@
     </ClInclude>
     <ClInclude Include="3D\LineClass.h">
       <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="InstanceDrawer.h">
+      <Filter>Engine\manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

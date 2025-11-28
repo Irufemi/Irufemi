@@ -91,6 +91,12 @@ void Line3DClass::Initialize(Camera* camera, const Vector3& origin, const Vector
 
     resource_ = std::make_unique<D3D12ResourceUtilLine>();
 
+    // リソースのメモリを確保
+    resource_->CreateResource();
+
+    // 書き込めるようにする
+    resource_->Map();
+
     // 頂点の追加
     resource_->vertexData_[0] = { {origin.x, origin.y,origin.z,1.0f},color };
     resource_->vertexData_[1] = { {end.x, end.y,end.z,1.0f} ,color };
@@ -98,12 +104,6 @@ void Line3DClass::Initialize(Camera* camera, const Vector3& origin, const Vector
     // indexの割り当て
     resource_->indexData_[0] = 0;
     resource_->indexData_[1] = 1;
-
-    // リソースのメモリを確保
-    resource_->CreateResource();
-
-    // 書き込めるようにする
-    resource_->Map();
 
     // 頂点バッファビュー
     resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
@@ -123,6 +123,7 @@ void Line3DClass::Initialize(Camera* camera, const Vector3& origin, const Vector
     // WVP計算
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
 }
 
 // 更新
@@ -131,6 +132,7 @@ void Line3DClass::Update() {
     // WVP計算
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
 }
 
 // 描画
