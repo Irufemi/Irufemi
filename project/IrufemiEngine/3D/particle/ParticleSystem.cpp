@@ -27,7 +27,7 @@ ParticleSystem::~ParticleSystem() {
     }
 }
 
-void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, ParticleType type, PrimitiveShape shape) {
+void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, ParticleType type, ParticlePrimitiveShape shape) {
     this->camera_ = camera;
     this->primitiveShape_ = shape;
 
@@ -97,7 +97,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     resource_->indexDataList_.clear();
 
     switch (primitiveShape_) {
-    case PrimitiveShape::Plane:
+    case ParticlePrimitiveShape::Plane:
     {
         //左下
         resource_->vertexDataList_.push_back({ { -0.5f,-0.5f,0.0f,1.0f }, { 0.0f,1.0f } });
@@ -122,7 +122,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         resource_->indexDataList_.push_back(2);
     }
     break;
-    case PrimitiveShape::Sphere:
+    case ParticlePrimitiveShape::Sphere:
     {
         const uint32_t kSubdivision = 16;
         const float kRadius = 0.5f;
@@ -167,7 +167,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         }
     }
     break;
-    case PrimitiveShape::Ring:
+    case ParticlePrimitiveShape::Ring:
     {
         // パラメータ化したリング生成
         const uint32_t divisions = ringSegmentCount_;
@@ -230,7 +230,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         }
     }
     break;
-    case PrimitiveShape::Cylinder:
+    case ParticlePrimitiveShape::Cylinder:
     {
         const uint32_t kCylinderDivide = cylinderSegmentCount_;
         const float kRadius = cylinderRadius_;
@@ -287,7 +287,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         }
     }
     break;
-    case PrimitiveShape::Cube:
+    case ParticlePrimitiveShape::Cube:
     {
         // 単位立方体（中心原点、辺長 = 1.0f）
         const float h = 0.5f;
@@ -370,7 +370,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         }
     }
     break;
-    case PrimitiveShape::Tetrahedron:
+    case ParticlePrimitiveShape::Tetrahedron:
     {
         // 正四面体（辺長 = s）を生成。底面を水平（XZ平面）に配置する。
         const float s = 0.5f; // 全体スケール（既存のスケールと整合）
@@ -485,7 +485,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     resource_->materialData_->hasTexture = true;
     resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-    resource_->materialData_->useClampSampler = (primitiveShape_ == PrimitiveShape::Ring || primitiveShape_ == PrimitiveShape::Cylinder);
+    resource_->materialData_->useClampSampler = (primitiveShape_ == ParticlePrimitiveShape::Ring || primitiveShape_ == ParticlePrimitiveShape::Cylinder);
 
     if (s_textureManager_) {
         auto textureNames = s_textureManager_->GetTextureNames();
@@ -570,15 +570,17 @@ void ParticleSystem::Update() {
 
 void ParticleSystem::Draw()
 {
-    // 1) パーティクル本体を描画（選択された Blend/Depth を描画直前にエンジンへセットして PSO を適用）
+    // 1) パーティクル本体を描画（選択された Blend/Depth/Cull を描画直前にエンジンへセットして PSO を適用）
     if (s_engine_) {
         // 現在のエンジン状態を保存しておく
         BlendMode prevBlend = s_engine_->currentBlend_;
         PSOManager::DepthWrite prevDepth = s_engine_->currentDepth_;
+        PSOManager::CullMode prevCull = s_engine_->currentCull_;
 
         // 選択値をエンジンにセット（描画直前）
         s_engine_->SetBlend(selectedBlend_);
         s_engine_->SetDepthWrite(selectedDepth_);
+        s_engine_->SetCull(selectedCull_);
         s_engine_->ApplyParticlePSO();
 
         // 描画
@@ -589,6 +591,7 @@ void ParticleSystem::Draw()
         // エンジン状態を復元（PSOの切り替えは呼び出し側で制御するため Apply は行わない)
         s_engine_->SetBlend(prevBlend);
         s_engine_->SetDepthWrite(prevDepth);
+        s_engine_->SetCull(prevCull);
     } else {
         // エンジン参照がない場合は従来通り（安全策）
         if (s_drawManager_) {
@@ -770,27 +773,8 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
         ImGui::Checkbox("Show Emitter AABB", &showEmitterAABB_);
         ImGui::Checkbox("Show Field AABB", &showFieldAABB_);
 
-        // Blend/Depth の選択は UI 上で選んでおき、描画直前で反映する（即時エンジン変更は行わない）
-        {
-            int blendIdx = static_cast<int>(selectedBlend_);
-            const char* blendNames[] = {
-                "None",
-                "Normal",
-                "Add",
-                "Subtract",
-                "Multiply",
-                "Screen"
-            };
-            if (ImGui::Combo("Particle Blend Mode", &blendIdx, blendNames, IM_ARRAYSIZE(blendNames))) {
-                selectedBlend_ = static_cast<BlendMode>(blendIdx);
-            }
-
-            int depthIdx = (selectedDepth_ == PSOManager::DepthWrite::Enable) ? 0 : 1;
-            const char* depthNames[] = { "Enable", "Disable" };
-            if (ImGui::Combo("Particle Depth Write", &depthIdx, depthNames, IM_ARRAYSIZE(depthNames))) {
-                selectedDepth_ = (depthIdx == 0) ? PSOManager::DepthWrite::Enable : PSOManager::DepthWrite::Disable;
-            }
-        }
+        // PSO設定のデバッグUIを呼び出す
+        s_ui_->DebugPsoSettings(&selectedBlend_, &selectedDepth_, &selectedCull_, "##Particle");
 
         if (ImGui::BeginTabBar("ParticleTabs")) {
             // Generalタブ
@@ -815,8 +799,8 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 const char* primitiveShapeNames[] = { "Plane", "Sphere", "Ring", "Cylinder", "Cube", "Tetrahedron" };
                 int currentShape = static_cast<int>(primitiveShape_);
                 if (ImGui::Combo("Primitive Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
-                    if (primitiveShape_ != static_cast<PrimitiveShape>(currentShape)) {
-                        primitiveShape_ = static_cast<PrimitiveShape>(currentShape);
+                    if (primitiveShape_ != static_cast<ParticlePrimitiveShape>(currentShape)) {
+                        primitiveShape_ = static_cast<ParticlePrimitiveShape>(currentShape);
                         std::string currentTextureName = "resources/circle.png";
                         if (s_textureManager_) {
                             auto textureNames = s_textureManager_->GetTextureNames();
@@ -878,7 +862,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 s_ui_->DebugUvTransform(resource_->uvTransform_);
 
                 // --- Ring パラメータ UI ---
-                if (primitiveShape_ == PrimitiveShape::Ring) {
+                if (primitiveShape_ == ParticlePrimitiveShape::Ring) {
                     ImGui::Separator();
                     ImGui::Text("Ring Parameters");
 
@@ -926,7 +910,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 }
 
                 // --- Cylinder パラメータ UI ---
-                if (primitiveShape_ == PrimitiveShape::Cylinder) {
+                if (primitiveShape_ == ParticlePrimitiveShape::Cylinder) {
                     ImGui::Separator();
                     ImGui::Text("Cylinder Parameters");
 

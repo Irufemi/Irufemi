@@ -603,7 +603,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     //実際に生成
     // 不透明（深度書き込みあり）
-    psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable);
+    psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable,PSOManager::CullMode::Back);
 
     // 生成が完了したのでShaderBlobを解放
     if (vertexShaderBlob) { vertexShaderBlob.Reset(); }

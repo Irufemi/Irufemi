@@ -4,6 +4,8 @@
 #include <wrl.h>
 #include <array>          
 #include <cstddef>        
+#include "math/BlendMode.h"
+#include "engine/directX/PSOManager.h"
 
 
 // 前方宣言
@@ -107,5 +109,12 @@ public: // メンバ関数
     // シーンセレクタ
     void DebugSceneSelector(SceneManager* sm);
 
+    // PSO設定（ブレンド、深度、カリング）のデバッグUI
+    static void DebugPsoSettings(
+        BlendMode* blendMode,
+        PSOManager::DepthWrite* depthWrite,
+        PSOManager::CullMode* cullMode,
+        const char* unique_id = "##PsoSettings"
+    );
 };
 

@@ -242,7 +242,6 @@ void IrufemiEngine::Finalize() {
 void IrufemiEngine::Execute() {
     // SceneManager 構築（エンジンは所有のみ）
     sceneManager_ = std::make_unique<SceneManager>(this);
-    // g_SceneManager = sceneManager_.get(); // グローバルは使用しない
 
     // Application からの登録を反映
     if (sceneRegistrar_) {
@@ -262,7 +261,7 @@ void IrufemiEngine::Execute() {
 
 #ifdef USE_IMGUI
         ui->FPSDebug();
-        //ui->DebugSceneSelector(sceneManager_.get());
+        ui->DebugSceneSelector(sceneManager_.get());
 #endif // _DEBUG
 
         // 更新
@@ -305,35 +304,35 @@ void IrufemiEngine::EndFrame() {
 }
 
 void IrufemiEngine::ApplyPSO() {
-    auto* pso = GetPSOManager()->Get(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->Get(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplyParticlePSO() {
-    auto* pso = GetPSOManager()->GetParticle(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->GetParticle(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Particle PSO is null. Check particle shader setup.");
     if (pso) { drawManager->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplySpritePSO() {
-    auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_, currentCull_);
     if (pso) { drawManager->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplyRegionPSO() {
-    auto* pso = GetPSOManager()->GetRegion(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->GetRegion(currentBlend_, currentDepth_, currentCull_);
     drawManager->BindPSO(pso);
 }
 
 void IrufemiEngine::ApplyByGeometryShaderPSO() {
-    auto* pso = GetPSOManager()->GetByGeometryShader(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->GetByGeometryShader(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "ByGeometryShader PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplyLinePSO() {
-    auto* pso = GetPSOManager()->GetLine(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->GetLine(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Line PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager->BindPSO(pso); }
 }
