@@ -15,6 +15,8 @@
 #include "math/TransformationMatrix.h"
 #include "math/DirectionalLight.h"
 #include "math/CameraForGPU.h"
+#include "math/LineVertexData.h"
+#include "math/LineMaterial.h"
 #include "manager/TextureManager.h"
 #include "function/Function.h"
 
@@ -234,4 +236,92 @@ public: //メンバ関数
 
     //バッファへの書き込みを閉鎖
     void UnMap();
+};
+
+class D3D12ResourceUtilLine {
+public: // メンバ関数(リソース関連内部ヘルパ)
+    // コンストラクタ
+    D3D12ResourceUtilLine() = default;
+    // デストラクタ
+    ~D3D12ResourceUtilLine();
+
+    // 一括Map
+    void Map();
+
+    // 一括UnMap
+    void UnMap();
+
+    // 一括CreateResource
+    void CreateResource();
+
+    static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
+    DirectXCommon* GetDirectXCommon() { return dxCommon_; }
+
+public: // メンバ変数(D3D12リソース関連)
+
+#pragma region Vertex
+
+    //頂点データ(position)
+    LineVertexData* vertexData_ = nullptr;
+
+#pragma endregion
+
+#pragma region Index
+
+    //頂点インデックス
+    uint32_t* indexData_ = nullptr;
+
+#pragma endregion
+
+#pragma region Transform
+
+    // transform(scale,rotate,translate)
+    Transform transform_ = {
+        {1.0f,1.0f,1.0f},   //scale
+        {0.0f,0.0f,0.0f},   //rotate
+        {0.0f,0.0f,0.0f}    //translate
+    };
+
+    // TransformationMatrix(WVP,world)
+    TransformationMatrix transformationMatrix_{};
+
+    // TransformationMatrixData(WVP,world)
+    TransformationMatrix* transformationData_ = nullptr;
+
+#pragma endregion
+
+#pragma region Material
+
+    LineMaterial* materialData_ = nullptr;
+
+#pragma endregion
+
+
+#pragma region Buffer
+
+    //頂点データバッファ
+    D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+
+    //頂点インデックスバッファ
+    D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
+
+#pragma endregion
+
+#pragma region ID3D12Resource
+
+    // 頂点データ用定数バッファ
+    Microsoft::WRL::ComPtr <ID3D12Resource> vertexResource_ = nullptr;
+    //　頂点インデックス用定数バッファ
+    Microsoft::WRL::ComPtr <ID3D12Resource> indexResource_ = nullptr;
+    // 拡縮回転移動行列用定数バッファ
+    Microsoft::WRL::ComPtr <ID3D12Resource> transformationResource_ = nullptr;
+    // 色用定数バッファ
+    Microsoft::WRL::ComPtr <ID3D12Resource> materialResource_ = nullptr;
+#pragma endregion
+
+#pragma region 外部参照
+
+    static DirectXCommon* dxCommon_;
+
+#pragma endregion
 };

@@ -49,9 +49,11 @@ enum class ParticleType {
 };
 
 // PrimitiveShape形状
-enum class PrimitiveShape {
+enum class ParticlePrimitiveShape {
 	Plane, // 板
 	Sphere, // 球
 	Ring, // リング
 	Cylinder, // シリンダー
+	Cube, // 立方体（正6面体）
+	Tetrahedron, // 正4面体
 };
