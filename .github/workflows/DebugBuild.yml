@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - master
-      - TD2_01
+      - TD2_02
       - AL4
+      - CG
+      - GE
 
 env:
   # リポジトリのルートディレクトリを基点としたソリューションファイルのパス
