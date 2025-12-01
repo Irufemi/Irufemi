@@ -14,8 +14,8 @@ jobs:
     name: 不要なファイルを検索
     runs-on: ubuntu-latest
     env:
-      # 特定のファイル名(拡張子など)のパターン
-      UNWANTED_NAME_PATTERNS: "*.pdb *.lik *.user *.ncb *.suo *.log *.dmp *.zip imgui.ini desktop.ini dxCompiler.dll dxil.dll"
+      # 特定のファイル名(拡張子など)のパターン *.pdb はassimpで必要なのでいったんなし。あとで特定のpdbだけ許すものにする
+      UNWANTED_NAME_PATTERNS: "*.lik *.user *.ncb *.suo *.log *.dmp *.zip imgui.ini desktop.ini dxCompiler.dll dxil.dll"
       # ディレクトリ名のパターン(ビルド出力フォルダなど)
       UNWANTED_DIR_PATTERNS: "generated x64 win32 arm64 .vs bin ipch logs Dump"
 
