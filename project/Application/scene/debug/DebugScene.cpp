@@ -43,7 +43,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveSuzanne_ = false;
     isActiveFence_ = false;
     isActiveTerrain_ = false;
-    isActiveParticle_ = true;
+    isActiveParticle_ = false;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -63,11 +63,11 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         plane_->Initialize(camera_.get());
     }
     if (isActiveSphere_) {
-        sphere_ = std::make_unique <SphereClass>();
+        sphere_ = std::make_unique<SphereClass>();
         sphere_->Initialize(camera_.get());
     }
     if (isActiveObj_) {
-        obj_ = std::make_unique <ObjClass>();
+        obj_ = std::make_unique<ObjClass>();
         obj_->Initialize(camera_.get(), "sample/plane.gltf");
     }
     if (isActiveStanfordBunny_) {
@@ -99,7 +99,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         terrain_->Initialize(camera_.get(), "sample/terrain.obj");
     }
     if (isActiveParticle_) {
-        particle_ = std::make_unique <ParticleSystem>();
+        particle_ = std::make_unique<ParticleSystem>();
         particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kAccelerationField);
     }
 
@@ -127,23 +127,23 @@ void DebugScene::Update() {
 
 #ifdef USE_IMGUI
 
-    //ImGui::Begin("GameScene");
-    //// pointLight 
-    //pointLight_->Debug();
-    //// spotLight 
-    //spotLight_->Debug();
+    ImGui::Begin("GameScene");
+    // pointLight 
+    pointLight_->Debug();
+    // spotLight 
+    spotLight_->Debug();
 
-    //ImGui::End();
+    ImGui::End();
 
-    /*ImGui::Begin("Texture");
+    ImGui::Begin("Texture");
     if (ImGui::Button("allLoadActivate")) {
         engine_->GetTextureManager()->LoadAllFromFolder("resources/");
     }
     ImGui::Checkbox("debugMode", &debugMode);
 
-    ImGui::End();*/
+    ImGui::End();
 
-    /*ImGui::Begin("Activation");
+    ImGui::Begin("Activation");
     ImGui::Checkbox("Sprite", &isActiveSprite_);
     ImGui::Checkbox("Triangle", &isActiveTriangle_);
     ImGui::Checkbox("Plane", &isActivePlane_);
@@ -157,9 +157,9 @@ void DebugScene::Update() {
     ImGui::Checkbox("Fence", &isActiveFence_);
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("Particle", &isActiveParticle_);
-    ImGui::End();*/
+    ImGui::End();
 
-    /*ImGui::Begin("GE");
+    ImGui::Begin("GE");
 
 
     ImGui::Text("Hello, world %d", 123);
@@ -172,7 +172,7 @@ void DebugScene::Update() {
     static float f{};
     ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
 
-    ImGui::End();*/
+    ImGui::End();
 
     if (showDemoWindow) {
 
@@ -362,6 +362,7 @@ void DebugScene::Draw() {
     // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->SetCull(PSOManager::CullMode::Back);
     engine_->ApplyByGeometryShaderPSO();
 
     if (isActiveTriangle_) {
@@ -401,6 +402,11 @@ void DebugScene::Draw() {
         terrain_->Draw();
     }
 
+    engine_->SetBlend(BlendMode::kBlendModeAdd);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+
+    // Effect と Particle は Additive / DepthDisable で描画
+    engine_->SetCull(PSOManager::CullMode::None);
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();

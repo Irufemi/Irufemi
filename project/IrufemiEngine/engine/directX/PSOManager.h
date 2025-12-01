@@ -20,6 +20,9 @@ public:
 
     enum class DepthWrite { Enable, Disable };
 
+    // 追加: Cull 決定用（Depth と同様に扱う）
+    enum class CullMode { Back, Front, None };
+
     struct ShaderSet {
         Microsoft::WRL::ComPtr<IDxcBlob> vsBlob;
         Microsoft::WRL::ComPtr<IDxcBlob> psBlob;
@@ -43,20 +46,20 @@ public:
     );
 
     // 既存シェーダで取得（メッシュ/スプライト等）
-    ID3D12PipelineState* Get(BlendMode blend, DepthWrite depth);
+    ID3D12PipelineState* Get(BlendMode blend, DepthWrite depth, CullMode cull);
 
     // パーティクル用シェーダで取得（未指定なら既存の objectShaders にフォールバック）
-    ID3D12PipelineState* GetParticle(BlendMode blend, DepthWrite depth);
+    ID3D12PipelineState* GetParticle(BlendMode blend, DepthWrite depth, CullMode cull);
 
-    ID3D12PipelineState* GetSprite(BlendMode blend, DepthWrite depth);
+    ID3D12PipelineState* GetSprite(BlendMode blend, DepthWrite depth, CullMode cull);
 
     // 
-    ID3D12PipelineState* GetRegion(BlendMode b, DepthWrite d);
+    ID3D12PipelineState* GetRegion(BlendMode b, DepthWrite d, CullMode c);
 
     // Geometry Shader を使う PSO を取得（未設定時は object にフォールバック）
-    ID3D12PipelineState* GetByGeometryShader(BlendMode blend, DepthWrite depth);
+    ID3D12PipelineState* GetByGeometryShader(BlendMode blend, DepthWrite depth, CullMode cull);
 
-    ID3D12PipelineState* GetLine(BlendMode blend, DepthWrite depth);
+    ID3D12PipelineState* GetLine(BlendMode blend, DepthWrite depth, CullMode cull);
 
     void ClearCache();
 
@@ -92,17 +95,19 @@ private:
     Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSO(
         const ShaderSet& shaders,
         const D3D12_BLEND_DESC& blendDesc,
-        const D3D12_DEPTH_STENCIL_DESC& depthDesc) const;
+        const D3D12_DEPTH_STENCIL_DESC& depthDesc,
+        CullMode cull) const;
 
     // 追加：トポロジ指定版（ByGeometryShader 専用で使用）
     Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSOWithTopology(
         const ShaderSet& shaders,
         const D3D12_BLEND_DESC& blendDesc,
         const D3D12_DEPTH_STENCIL_DESC& depthDesc,
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) const;
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
+        CullMode cull) const;
 
     static D3D12_BLEND_DESC MakeBlend(BlendMode m);
     static D3D12_DEPTH_STENCIL_DESC MakeDepth(DepthWrite w);
 
-    static uint64_t Hash(const ShaderSet& s, BlendMode b, DepthWrite d);
+    static uint64_t Hash(const ShaderSet& s, BlendMode b, DepthWrite d, CullMode c);
 };

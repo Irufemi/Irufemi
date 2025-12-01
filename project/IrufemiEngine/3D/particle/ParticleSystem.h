@@ -25,7 +25,7 @@ public:
 	ParticleSystem() = default;
 	~ParticleSystem();
 
-	void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png", ParticleType type = ParticleType::Normal, PrimitiveShape shape = PrimitiveShape::Plane);
+	void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png", ParticleType type = ParticleType::Normal, ParticlePrimitiveShape shape = ParticlePrimitiveShape::Plane);
 	void Update();
 	void Draw();
 	void Debug(const char* particleName = "");
@@ -102,7 +102,7 @@ private:
 	Emitter emitter_;
 	std::unique_ptr<IParticleBehavior> behavior_ = nullptr; // 振る舞いクラスへのポインタ
 	ParticleType particleType_ = ParticleType::Normal;
-	PrimitiveShape primitiveShape_ = PrimitiveShape::Plane;
+	ParticlePrimitiveShape primitiveShape_ = ParticlePrimitiveShape::Plane;
 
 	std::random_device seedGenerator_;
 	std::mt19937 randomEngine_;
@@ -138,4 +138,5 @@ private:
 	// 描画時の選択（Debug UI で設定され、Draw の直前にエンジンへ反映する）
 	BlendMode selectedBlend_ = BlendMode::kBlendModeAdd; // デフォルト: Add（既存シーンと同等）
 	PSOManager::DepthWrite selectedDepth_ = PSOManager::DepthWrite::Disable; // デフォルト: Disable（既存シーンと同等）
+	PSOManager::CullMode selectedCull_ = PSOManager::CullMode::None; // デフォルト: None
 };
