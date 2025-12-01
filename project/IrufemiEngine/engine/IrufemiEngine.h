@@ -122,6 +122,8 @@ public: // セッター
     // セッター（引数なし描画のためのプリセット切替）
     void SetBlend(BlendMode m) { currentBlend_ = m; }
     void SetDepthWrite(PSOManager::DepthWrite w) { currentDepth_ = w; }
+    // 追加: Cull の切替
+    void SetCull(PSOManager::CullMode c) { currentCull_ = c; }
 
     // 追加: クリアカラーのセッター（いつでも変更可能）
     void SetClearColor(float r, float g, float b, float a = 1.0f) { clearColor_ = { r, g, b, a }; }
@@ -135,18 +137,20 @@ public: // セッター
     void ApplySpritePSO();
     void ApplyRegionPSO();
     void ApplyByGeometryShaderPSO();
+    void ApplyLinePSO();
 
 public:
     // 状態（現在のブレンドと深度書き込み）
     BlendMode currentBlend_ = BlendMode::kBlendModeNormal;
     PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable;
+    PSOManager::CullMode currentCull_ = PSOManager::CullMode::Back; // 追加: デフォルトは Back
 
 private: // メンバ変数
 
     // --- Debug & Logging ---
 
     // リソース解放リークチェック
-D3DResourceLeakChecker leakCheck_;
+    D3DResourceLeakChecker leakCheck_;
     
     // ログ
     std::unique_ptr<Log> log_ = nullptr;

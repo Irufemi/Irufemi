@@ -25,6 +25,7 @@
 #include "3D/Region.h"
 #include "3D/SphereRegion.h"
 #include "3D/TetraRegion.h"
+#include "3D/LineClass.h"
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "source/Texture.h"
@@ -73,6 +74,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     D3D12ResourceUtil::SetDirectXCommon(dxCommon_.get());
     D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
+    D3D12ResourceUtilLine::SetDirectXCommon(dxCommon_.get());
     PointLightClass::SetDxCommon(dxCommon_.get());
     SpotLightClass::SetDxCommon(dxCommon_.get());
     Region::SetDirectXCommon(dxCommon_.get());
@@ -161,6 +163,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Region::SetDrawManager(drawManager.get());
     SphereRegion::SetDrawManager(drawManager.get());
     TetraRegion::SetDrawManager(drawManager.get());
+    ParticleSystem::SetDrawManager(drawManager.get());
+    ParticleSystem::SetEngine(this);
+    Line2DClass::SetDrawManager(drawManager.get());
+    Line3DClass::SetDrawManager(drawManager.get());
 
     // テクスチャ
     ui->SetTextureManager(textureManager.get());
@@ -236,7 +242,6 @@ void IrufemiEngine::Finalize() {
 void IrufemiEngine::Execute() {
     // SceneManager 構築（エンジンは所有のみ）
     sceneManager_ = std::make_unique<SceneManager>(this);
-    // g_SceneManager = sceneManager_.get(); // グローバルは使用しない
 
     // Application からの登録を反映
     if (sceneRegistrar_) {
@@ -299,29 +304,35 @@ void IrufemiEngine::EndFrame() {
 }
 
 void IrufemiEngine::ApplyPSO() {
-    auto* pso = GetPSOManager()->Get(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->Get(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplyParticlePSO() {
-    auto* pso = GetPSOManager()->GetParticle(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->GetParticle(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Particle PSO is null. Check particle shader setup.");
     if (pso) { drawManager->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplySpritePSO() {
-    auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_, currentCull_);
     if (pso) { drawManager->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplyRegionPSO() {
-    auto* pso = GetPSOManager()->GetRegion(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->GetRegion(currentBlend_, currentDepth_, currentCull_);
     drawManager->BindPSO(pso);
 }
 
 void IrufemiEngine::ApplyByGeometryShaderPSO() {
-    auto* pso = GetPSOManager()->GetByGeometryShader(currentBlend_, currentDepth_);
+    auto* pso = GetPSOManager()->GetByGeometryShader(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "ByGeometryShader PSO is null. Check PSOManager::Initialize and shader blobs.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplyLinePSO() {
+    auto* pso = GetPSOManager()->GetLine(currentBlend_, currentDepth_, currentCull_);
+    assert(pso && "Line PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager->BindPSO(pso); }
 }

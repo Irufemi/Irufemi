@@ -61,6 +61,15 @@ void GameScene::Update() {
 
 #endif // _DEBUG
 
+    // カメラの更新
+    if (debugMode) {
+        debugCamera_->Update();
+        camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
+        camera_->SetPerspectiveFovMatrix(debugCamera_->GetCamera().GetPerspectiveFovMatrix());
+    } else {
+        camera_->Update("Camera");
+    }
+    
     if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
         engine_->GetSceneManager()->Request("Title");
     }

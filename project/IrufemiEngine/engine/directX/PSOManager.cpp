@@ -20,7 +20,8 @@ void PSOManager::Initialize(
     ShaderSet particleShaders,
     ShaderSet spriteShaders,
     ShaderSet regionShaders,
-    ShaderSet byGeometryShaderShaders
+    ShaderSet byGeometryShaderShaders,
+    ShaderSet lineShaders
 )
 {
     device_ = device;
@@ -38,48 +39,49 @@ void PSOManager::Initialize(
     spriteShaders_ = spriteShaders;
     blocksShaders_ = regionShaders;
     byGeometryShaderShaders_ = byGeometryShaderShaders;
+    lineShaders_ = lineShaders;
 
     cache_.clear();
 }
 
 
-ID3D12PipelineState* PSOManager::Get(BlendMode blend, DepthWrite depth)
+ID3D12PipelineState* PSOManager::Get(BlendMode blend, DepthWrite depth, CullMode cull)
 {
-    Key key{ Hash(objectShaders_, blend, depth) };
+    Key key{ Hash(objectShaders_, blend, depth, cull) };
     auto it = cache_.find(key);
     if (it != cache_.end()) return it->second.Get();
 
 
     D3D12_BLEND_DESC bd = MakeBlend(blend);
     D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
-    auto p = CreatePSO(objectShaders_, bd, dd);
+    auto p = CreatePSO(objectShaders_, bd, dd, cull);
     if (!p) { return nullptr; }
     cache_[key] = p;
     return p.Get();
 }
 
 
-ID3D12PipelineState* PSOManager::GetParticle(BlendMode blend, DepthWrite depth)
+ID3D12PipelineState* PSOManager::GetParticle(BlendMode blend, DepthWrite depth, CullMode cull)
 {
     const bool hasParticleVS = (particleShaders_.vsBlob && particleShaders_.vsBlob->GetBufferPointer());
     const bool hasParticlePS = (particleShaders_.psBlob && particleShaders_.psBlob->GetBufferPointer());
     const ShaderSet& set = (hasParticleVS && hasParticlePS) ? particleShaders_ : objectShaders_;
 
 
-    Key key{ Hash(set, blend, depth) };
+    Key key{ Hash(set, blend, depth, cull) };
     auto it = cache_.find(key);
     if (it != cache_.end()) return it->second.Get();
 
 
     D3D12_BLEND_DESC bd = MakeBlend(blend);
     D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
-    auto p = CreatePSO(set, bd, dd);
+    auto p = CreatePSO(set, bd, dd, cull);
     if (!p) { return nullptr; }            // ★追加
     cache_[key] = p;
     return p.Get();
 }
 
-ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth) {
+ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth, CullMode cull) {
     // Sprite用シェーダが未設定なら Object 用にフォールバック
     const ShaderSet& shaders = (spriteShaders_.vsBlob && spriteShaders_.psBlob)
         ? spriteShaders_
@@ -87,12 +89,12 @@ ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth) {
 
     // キャッシュキー（Sprite識別のために XOR で種を追加）
     constexpr uint64_t kSpriteTag = 0x535052544B4559ull; // "SPR TKEY"
-    Key key{ static_cast<uint64_t>(Hash(shaders, blend, depth) ^ kSpriteTag) };
+    Key key{ static_cast<uint64_t>(Hash(shaders, blend, depth, cull) ^ kSpriteTag) };
 
     auto it = cache_.find(key);
     if (it != cache_.end()) { return it->second.Get(); }
 
-    // PSO 構築（Rasterizer.Cull=None に固定）
+    // PSO 構築（Rasterizer.Cull を指定 CullMode に合わせる）
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();
     desc.VS = { shaders.vsBlob ? shaders.vsBlob->GetBufferPointer() : nullptr,
@@ -111,10 +113,14 @@ ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth) {
     desc.BlendState = MakeBlend(blend);
     desc.DepthStencilState = MakeDepth(depth);
 
-    // Rasterizer（ここで CullMode = NONE）
+    // Rasterizer（CullMode を反映）
     D3D12_RASTERIZER_DESC rast{};
     rast.FillMode = D3D12_FILL_MODE_SOLID;
-    rast.CullMode = D3D12_CULL_MODE_NONE; // ← 要件
+    switch (cull) {
+    case CullMode::Back: rast.CullMode = D3D12_CULL_MODE_BACK; break;
+    case CullMode::Front: rast.CullMode = D3D12_CULL_MODE_FRONT; break;
+    case CullMode::None: default: rast.CullMode = D3D12_CULL_MODE_NONE; break;
+    }
     rast.FrontCounterClockwise = FALSE;
     rast.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
     rast.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
@@ -133,35 +139,52 @@ ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth) {
     return pso.Get();
 }
 
-ID3D12PipelineState* PSOManager::GetRegion(BlendMode b, DepthWrite d)
+ID3D12PipelineState* PSOManager::GetRegion(BlendMode b, DepthWrite d, CullMode c)
 {
-    // 既存のキャッシュ Key 生成を流用（Hash(blocksShaders_, b, d)）
-    Key k{ Hash(blocksShaders_, b, d) };
+    // 既存のキャッシュ Key 生成を流用（Hash(blocksShaders_, b, d, c)）
+    Key k{ Hash(blocksShaders_, b, d, c) };
     auto it = cache_.find(k);
     if (it != cache_.end()) return it->second.Get();
 
     auto blend = MakeBlend(b);
     auto depth = MakeDepth(d);
-    auto pso = CreatePSO(blocksShaders_, blend, depth);
+    auto pso = CreatePSO(blocksShaders_, blend, depth, c);
     cache_[k] = pso;
     return pso.Get();
 }
 
-ID3D12PipelineState* PSOManager::GetByGeometryShader(BlendMode blend, DepthWrite depth)
+ID3D12PipelineState* PSOManager::GetByGeometryShader(BlendMode blend, DepthWrite depth, CullMode cull)
 {
     const bool hasVS = (byGeometryShaderShaders_.vsBlob && byGeometryShaderShaders_.vsBlob->GetBufferPointer());
     const bool hasPS = (byGeometryShaderShaders_.psBlob && byGeometryShaderShaders_.psBlob->GetBufferPointer());
     const bool hasGS = (byGeometryShaderShaders_.gsBlob && byGeometryShaderShaders_.gsBlob->GetBufferPointer());
     const ShaderSet& set = (hasVS && hasPS && hasGS) ? byGeometryShaderShaders_ : objectShaders_;
 
-    Key key{ Hash(set, blend, depth) };
+    Key key{ Hash(set, blend, depth, cull) };
     if (auto it = cache_.find(key); it != cache_.end()) { return it->second.Get(); }
 
     D3D12_BLEND_DESC bd = MakeBlend(blend);
     D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
 
     // ByGeometryShader は POINT トポロジを使用（他は既存の TRIANGLE のまま）
-    auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT);
+    auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, cull);
+    if (!pso) { return nullptr; }
+    cache_[key] = pso;
+    return pso.Get();
+}
+
+ID3D12PipelineState* PSOManager::GetLine(BlendMode blend, DepthWrite depth, CullMode cull) {
+    const bool hasLineVS = (lineShaders_.vsBlob && lineShaders_.vsBlob->GetBufferPointer());
+    const bool hasLinePS = (lineShaders_.psBlob && lineShaders_.psBlob->GetBufferPointer());
+    const ShaderSet& set = (hasLineVS && hasLinePS) ? lineShaders_ : objectShaders_;
+
+    Key key{ Hash(set, blend, depth, cull) };
+    if (auto it = cache_.find(key); it != cache_.end()) { return it->second.Get(); }
+
+    D3D12_BLEND_DESC bd = MakeBlend(blend);
+    D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
+
+    auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE, cull);
     if (!pso) { return nullptr; }
     cache_[key] = pso;
     return pso.Get();
@@ -173,7 +196,8 @@ void PSOManager::ClearCache() { cache_.clear(); }
 Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSO(
     const ShaderSet& shaders,
     const D3D12_BLEND_DESC& blendDesc,
-    const D3D12_DEPTH_STENCIL_DESC& depthDesc) const
+    const D3D12_DEPTH_STENCIL_DESC& depthDesc,
+    CullMode cull) const
 {
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();
@@ -188,7 +212,11 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSO(
 
     // ラスタライザ（既存エンジンのデフォルトに合わせる）
     D3D12_RASTERIZER_DESC rs{};
-    rs.CullMode = D3D12_CULL_MODE_BACK;
+    switch (cull) {
+    case CullMode::Back: rs.CullMode = D3D12_CULL_MODE_BACK; break;
+    case CullMode::Front: rs.CullMode = D3D12_CULL_MODE_FRONT; break;
+    case CullMode::None: default: rs.CullMode = D3D12_CULL_MODE_NONE; break;
+    }
     rs.FillMode = D3D12_FILL_MODE_SOLID;
     desc.RasterizerState = rs;
 
@@ -211,7 +239,8 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSOWithTopology(
     const ShaderSet& shaders,
     const D3D12_BLEND_DESC& blendDesc,
     const D3D12_DEPTH_STENCIL_DESC& depthDesc,
-    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology) const
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
+    CullMode cull) const
 {
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();
@@ -224,8 +253,17 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSOWithTopology(
     desc.BlendState = blendDesc;
 
     D3D12_RASTERIZER_DESC rs{};
-    rs.CullMode = D3D12_CULL_MODE_BACK;
-    rs.FillMode = D3D12_FILL_MODE_SOLID;
+    switch (cull) {
+    case CullMode::Back: rs.CullMode = D3D12_CULL_MODE_BACK; break;
+    case CullMode::Front: rs.CullMode = D3D12_CULL_MODE_FRONT; break;
+    case CullMode::None: default: rs.CullMode = D3D12_CULL_MODE_NONE; break;
+    }
+    // トポロジタイプに応じて FillMode を設定
+    if (topology == D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE) {
+        rs.FillMode = D3D12_FILL_MODE_WIREFRAME;
+    } else {
+        rs.FillMode = D3D12_FILL_MODE_SOLID;
+    }
     desc.RasterizerState = rs;
 
     desc.DepthStencilState = depthDesc;
@@ -326,7 +364,7 @@ D3D12_DEPTH_STENCIL_DESC PSOManager::MakeDepth(DepthWrite w)
     return d;
 }
 
-uint64_t PSOManager::Hash(const ShaderSet& s, BlendMode b, DepthWrite d)
+uint64_t PSOManager::Hash(const ShaderSet& s, BlendMode b, DepthWrite d, CullMode c)
 {
     uint64_t h = 0;
     // VS
@@ -347,5 +385,6 @@ uint64_t PSOManager::Hash(const ShaderSet& s, BlendMode b, DepthWrite d)
 
     h = FNV1a(&b, sizeof(b), h);
     h = FNV1a(&d, sizeof(d), h);
+    h = FNV1a(&c, sizeof(c), h);
     return h;
 }

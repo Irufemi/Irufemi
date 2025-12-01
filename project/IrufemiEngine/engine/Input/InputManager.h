@@ -43,6 +43,11 @@ public:
     bool IsKeyPressedDIK(uint8_t dik) const;
     bool IsKeyReleasedDIK(uint8_t dik) const;
 
+    // START ボタンフォワード
+    bool StartDown() const;
+    bool StartPressed() const;
+    bool StartReleased() const;
+
     // --- マウスAPIフォワード ---
     bool IsMouseButtonDown(Mouse::Button button) const;
     bool IsMouseButtonPressed(Mouse::Button button) const;

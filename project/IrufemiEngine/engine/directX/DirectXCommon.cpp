@@ -367,7 +367,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     ///平行光源をShaderで使う
 
     rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
-    rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
+    rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // ← ここを変更
     rootParameters[3].Descriptor.ShaderRegister = 1; //レジスタ番号1を使う
 
 
@@ -536,6 +536,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr <IDxcBlob> byGeometryShaderGSBlob = CompileShader(L"resources/shaders/ByGeometryShader.GS.hlsl", L"gs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(byGeometryShaderGSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> lineVSBlob = CompileShader(L"resources/shaders/Line.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(lineVSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> linePSBlob = CompileShader(L"resources/shaders/Line.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(linePSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -574,6 +580,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         byGeometryShaderGSBlob
     };
 
+    PSOManager::ShaderSet lineShaders{
+        lineVSBlob,
+        linePSBlob
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
@@ -586,12 +597,13 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         particleShaders,
         spriteShaders,
         blocksShaders,
-        byGeometryShaders
+        byGeometryShaders,
+        lineShaders
     );
 
     //実際に生成
     // 不透明（深度書き込みあり）
-    psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable);
+    psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable,PSOManager::CullMode::Back);
 
     // 生成が完了したのでShaderBlobを解放
     if (vertexShaderBlob) { vertexShaderBlob.Reset(); }
@@ -604,6 +616,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (byGeometryShaderVSBlob) { byGeometryShaderVSBlob.Reset(); }
     if (byGeometryShaderPSBlob) { byGeometryShaderPSBlob.Reset(); }
     if (byGeometryShaderGSBlob) { byGeometryShaderGSBlob.Reset(); }
+    if (lineVSBlob) { lineVSBlob.Reset(); }
+    if (linePSBlob) { linePSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};

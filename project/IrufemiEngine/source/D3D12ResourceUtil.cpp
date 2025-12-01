@@ -6,6 +6,7 @@
 
 DirectXCommon* D3D12ResourceUtil::dxCommon_ = nullptr;
 DirectXCommon* D3D12ResourceUtilParticle::dxCommon_ = nullptr;
+DirectXCommon* D3D12ResourceUtilLine::dxCommon_ = nullptr;
 
 //デストラクタ
 D3D12ResourceUtil::~D3D12ResourceUtil() {
@@ -58,10 +59,18 @@ void D3D12ResourceUtil::Map() {
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
     }
-    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-    transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
-    directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData_));
-    cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraData_));
+    if (materialResource_) {
+        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
+    }
+    if (transformationResource_) {
+        transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+    }
+    if (directionalLightResource_) {
+        directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData_));
+    }
+    if (cameraResource_) {
+        cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraData_));
+    }
 }
 
 //バッファへの書き込みを閉鎖
@@ -95,7 +104,6 @@ void D3D12ResourceUtil::UpdateTransform3D(const Camera& camera) {
     transformationMatrix_.WorldInverseTranspose =
         Math::Transpose(Math::Inverse(worldForNormal));
 }
-
 
 
 //デストラクタ
@@ -160,4 +168,57 @@ void D3D12ResourceUtilParticle::UnMap() {
         indexResource_->Unmap(0, nullptr);
     }
     materialResource_->Unmap(0, nullptr);
+}
+
+D3D12ResourceUtilLine::~D3D12ResourceUtilLine() {
+    UnMap();
+    if (vertexResource_) { vertexResource_.Reset(); }
+    if (indexResource_) { indexResource_.Reset(); }
+    if (transformationResource_) { transformationResource_.Reset(); }
+    if (materialResource_) { materialResource_.Reset(); }
+}
+
+void D3D12ResourceUtilLine::Map() {
+    if (vertexResource_) {
+        vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
+    }
+    if (indexResource_) {
+        indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
+    }
+    if (transformationResource_) {
+        transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+    }
+    if (materialResource_) {
+        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
+    }
+}
+
+void D3D12ResourceUtilLine::UnMap() {
+    if (vertexResource_) {
+        vertexResource_->Unmap(0, nullptr);
+    }
+    if (indexResource_) {
+        indexResource_->Unmap(0, nullptr);
+    }
+    if (transformationResource_) {
+        transformationResource_->Unmap(0, nullptr);
+    }
+    if (materialResource_) {
+        materialResource_->Unmap(0, nullptr);
+    }
+}
+
+void D3D12ResourceUtilLine::CreateResource() {
+    if (!vertexResource_) {
+        vertexResource_ = dxCommon_->CreateBufferResource(sizeof(LineVertexData) * static_cast<size_t>(2));
+    }
+    if (!indexResource_) {
+        indexResource_ = dxCommon_->CreateBufferResource(sizeof(uint32_t) * static_cast<size_t>(2));
+    }
+    if (!transformationResource_) {
+        transformationResource_ = dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
+    }
+    if (!materialResource_) {
+        materialResource_ = dxCommon_->CreateBufferResource(sizeof(LineMaterial));
+    }
 }

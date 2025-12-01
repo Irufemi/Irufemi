@@ -5,11 +5,15 @@
 #include "manager/DebugUI.h"
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h"
+#include "engine/IrufemiEngine.h"
+#include "manager/DrawManager.h"
 #include <algorithm>
 #include <numbers>
 
 DescriptorPool* ParticleSystem::s_srvPool_ = nullptr;
 TextureManager* ParticleSystem::s_textureManager_ = nullptr;
+DrawManager* ParticleSystem::s_drawManager_ = nullptr;
+IrufemiEngine* ParticleSystem::s_engine_ = nullptr;
 DebugUI* ParticleSystem::s_ui_ = nullptr;
 
 ParticleSystem::~ParticleSystem() {
@@ -23,7 +27,7 @@ ParticleSystem::~ParticleSystem() {
     }
 }
 
-void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, ParticleType type, PrimitiveShape shape) {
+void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, ParticleType type, ParticlePrimitiveShape shape) {
     this->camera_ = camera;
     this->primitiveShape_ = shape;
 
@@ -93,7 +97,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     resource_->indexDataList_.clear();
 
     switch (primitiveShape_) {
-    case PrimitiveShape::Plane:
+    case ParticlePrimitiveShape::Plane:
     {
         //左下
         resource_->vertexDataList_.push_back({ { -0.5f,-0.5f,0.0f,1.0f }, { 0.0f,1.0f } });
@@ -118,7 +122,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         resource_->indexDataList_.push_back(2);
     }
     break;
-    case PrimitiveShape::Sphere:
+    case ParticlePrimitiveShape::Sphere:
     {
         const uint32_t kSubdivision = 16;
         const float kRadius = 0.5f;
@@ -163,7 +167,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         }
     }
     break;
-    case PrimitiveShape::Ring:
+    case ParticlePrimitiveShape::Ring:
     {
         // パラメータ化したリング生成
         const uint32_t divisions = ringSegmentCount_;
@@ -226,6 +230,222 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         }
     }
     break;
+    case ParticlePrimitiveShape::Cylinder:
+    {
+        const uint32_t kCylinderDivide = cylinderSegmentCount_;
+        const float kRadius = cylinderRadius_;
+        const float kHeight = cylinderHeight_;
+        const float radianPerDivide = 2.0f * std::numbers::pi_v<float> / float(kCylinderDivide);
+
+        for (uint32_t i = 0; i < kCylinderDivide; ++i) {
+            float rad = static_cast<float>(i) * radianPerDivide;
+            float radNext = static_cast<float>(i + 1) * radianPerDivide;
+
+            float sin = std::sin(rad);
+            float cos = std::cos(rad);
+            float sinNext = std::sin(radNext);
+            float cosNext = std::cos(radNext);
+
+            float u = static_cast<float>(i) / float(kCylinderDivide);
+            float uNext = static_cast<float>(i + 1) / float(kCylinderDivide);
+
+            float v0 = cylinderFlipV_ ? 1.0f : 0.0f;
+            float v1 = cylinderFlipV_ ? 0.0f : 1.0f;
+
+            VertexData vBottom, vTop, vBottomNext, vTopNext;
+
+            // 頂点データ
+            vBottom.position = { cos * kRadius, -kHeight / 2.0f, sin * kRadius, 1.0f };
+            vBottom.texcoord = { u, v0 };
+            vBottom.normal = { cos, 0.0f, sin };
+
+            vTop.position = { cos * kRadius, kHeight / 2.0f, sin * kRadius, 1.0f };
+            vTop.texcoord = { u, v1 };
+            vTop.normal = { cos, 0.0f, sin };
+
+            vBottomNext.position = { cosNext * kRadius, -kHeight / 2.0f, sinNext * kRadius, 1.0f };
+            vBottomNext.texcoord = { uNext, v0 };
+            vBottomNext.normal = { cosNext, 0.0f, sinNext };
+
+            vTopNext.position = { cosNext * kRadius, kHeight / 2.0f, sinNext * kRadius, 1.0f };
+            vTopNext.texcoord = { uNext, v1 };
+            vTopNext.normal = { cosNext, 0.0f, sinNext };
+
+            uint32_t baseIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
+            resource_->vertexDataList_.push_back(vBottom);
+            resource_->vertexDataList_.push_back(vTop);
+            resource_->vertexDataList_.push_back(vBottomNext);
+            resource_->vertexDataList_.push_back(vTopNext);
+
+            resource_->indexDataList_.push_back(baseIndex);
+            resource_->indexDataList_.push_back(baseIndex + 1);
+            resource_->indexDataList_.push_back(baseIndex + 2);
+
+            resource_->indexDataList_.push_back(baseIndex + 1);
+            resource_->indexDataList_.push_back(baseIndex + 3);
+            resource_->indexDataList_.push_back(baseIndex + 2);
+        }
+    }
+    break;
+    case ParticlePrimitiveShape::Cube:
+    {
+        // 単位立方体（中心原点、辺長 = 1.0f）
+        const float h = 0.5f;
+
+        struct FaceDef { Vector3 n; std::array<Vector3,4> pos; std::array<Vector2,4> uv; };
+        std::array<FaceDef,6> faces = {
+            // +X (右面)
+            FaceDef{ {1.0f,0.0f,0.0f},
+                { Vector3{h,h,h}, Vector3{h,h,-h}, Vector3{h,-h,-h}, Vector3{h,-h,h} },
+                { Vector2{1.0f,0.0f}, Vector2{0.0f,0.0f}, Vector2{0.0f,1.0f}, Vector2{1.0f,1.0f} } },
+            // -X (左面)
+            FaceDef{ {-1.0f,0.0f,0.0f},
+                { Vector3{-h,h,-h}, Vector3{-h,h,h}, Vector3{-h,-h,h}, Vector3{-h,-h,-h} },
+                { Vector2{0.0f,0.0f}, Vector2{1.0f,0.0f}, Vector2{1.0f,1.0f}, Vector2{0.0f,1.0f} } },
+            // +Y (上面)
+            FaceDef{ {0.0f,1.0f,0.0f},
+                { Vector3{-h,h,h}, Vector3{h,h,h}, Vector3{h,h,-h}, Vector3{-h,h,-h} },
+                { Vector2{0.0f,0.0f}, Vector2{1.0f,0.0f}, Vector2{1.0f,1.0f}, Vector2{0.0f,1.0f} } },
+            // -Y (下面)
+            FaceDef{ {0.0f,-1.0f,0.0f},
+                { Vector3{-h,-h,-h}, Vector3{h,-h,-h}, Vector3{h,-h,h}, Vector3{-h,-h,h} },
+                { Vector2{0.0f,0.0f}, Vector2{1.0f,0.0f}, Vector2{1.0f,1.0f}, Vector2{0.0f,1.0f} } },
+            // +Z (前面)
+            FaceDef{ {0.0f,0.0f,1.0f},
+                { Vector3{h,h,h}, Vector3{-h,h,h}, Vector3{-h,-h,h}, Vector3{h,-h,h} },
+                { Vector2{0.0f,0.0f}, Vector2{1.0f,0.0f}, Vector2{1.0f,1.0f}, Vector2{0.0f,1.0f} } },
+            // -Z (後面)
+            FaceDef{ {0.0f,0.0f,-1.0f},
+                { Vector3{-h,h,-h}, Vector3{h,h,-h}, Vector3{h,-h,-h}, Vector3{-h,-h,-h} },
+                { Vector2{0.0f,0.0f}, Vector2{1.0f,0.0f}, Vector2{1.0f,1.0f}, Vector2{0.0f,1.0f} } }
+        };
+
+        for (const auto& f : faces) {
+            // 頂点作成（面ごとに4頂点を追加）
+            VertexData v0{}, v1{}, v2{}, v3{};
+            v0.position = { f.pos[0].x, f.pos[0].y, f.pos[0].z, 1.0f }; v0.texcoord = f.uv[0];
+            v1.position = { f.pos[1].x, f.pos[1].y, f.pos[1].z, 1.0f }; v1.texcoord = f.uv[1];
+            v2.position = { f.pos[2].x, f.pos[2].y, f.pos[2].z, 1.0f }; v2.texcoord = f.uv[2];
+            v3.position = { f.pos[3].x, f.pos[3].y, f.pos[3].z, 1.0f }; v3.texcoord = f.uv[3];
+
+            // 面法線で頂点法線を統一
+            v0.normal = v1.normal = v2.normal = v3.normal = f.n;
+
+            uint32_t baseIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
+            resource_->vertexDataList_.push_back(v0);
+            resource_->vertexDataList_.push_back(v1);
+            resource_->vertexDataList_.push_back(v2);
+            resource_->vertexDataList_.push_back(v3);
+
+            // 仮三角(0,1,2) の法線を計算して面法線と向きが合うかチェック
+            Vector3 p0{ resource_->vertexDataList_[baseIndex + 0].position.x, resource_->vertexDataList_[baseIndex + 0].position.y, resource_->vertexDataList_[baseIndex + 0].position.z };
+            Vector3 p1{ resource_->vertexDataList_[baseIndex + 1].position.x, resource_->vertexDataList_[baseIndex + 1].position.y, resource_->vertexDataList_[baseIndex + 1].position.z };
+            Vector3 p2{ resource_->vertexDataList_[baseIndex + 2].position.x, resource_->vertexDataList_[baseIndex + 2].position.y, resource_->vertexDataList_[baseIndex + 2].position.z };
+
+            Vector3 e0 = Math::Subtract(p1, p0);
+            Vector3 e1 = Math::Subtract(p2, p0);
+            Vector3 triNormal = Math::Normalize(Math::Cross(e0, e1));
+
+            float dot = Math::Dot(triNormal, f.n);
+
+            if (dot >= 0.0f) {
+                // 三角形法線が面法線と同じ向き → この順で追加（外向き）
+                resource_->indexDataList_.push_back(baseIndex + 0);
+                resource_->indexDataList_.push_back(baseIndex + 1);
+                resource_->indexDataList_.push_back(baseIndex + 2);
+
+                resource_->indexDataList_.push_back(baseIndex + 0);
+                resource_->indexDataList_.push_back(baseIndex + 2);
+                resource_->indexDataList_.push_back(baseIndex + 3);
+            } else {
+                // 向きが逆ならワインディングを反転して追加
+                resource_->indexDataList_.push_back(baseIndex + 2);
+                resource_->indexDataList_.push_back(baseIndex + 1);
+                resource_->indexDataList_.push_back(baseIndex + 0);
+
+                resource_->indexDataList_.push_back(baseIndex + 3);
+                resource_->indexDataList_.push_back(baseIndex + 2);
+                resource_->indexDataList_.push_back(baseIndex + 0);
+            }
+        }
+    }
+    break;
+    case ParticlePrimitiveShape::Tetrahedron:
+    {
+        // 正四面体（辺長 = s）を生成。底面を水平（XZ平面）に配置する。
+        const float s = 0.5f; // 全体スケール（既存のスケールと整合）
+        const float R = 1.0f / std::sqrt(3.0f);               // 辺長1の正三角形の外接円半径
+        const float baseToApex = std::sqrt(2.0f / 3.0f);      // (a + b) の長さ（辺長=1 のとき）
+        const float b = baseToApex / 4.0f;                   // 基底面の y = -b（重心を原点に揃えるための設定）
+        const float a = 3.0f * b;                            // 頂点の y = +a（重心が原点になるよう a = 3b）
+        // スケール適用済みの頂点
+        Vector3 apex = { 0.0f,  a * s, 0.0f };                  // 頂点（上）
+        Vector3 v0 = { 0.0f, -b * s,  R * s };               // 底面頂点 0
+        Vector3 v1 = { -0.5f * s, -b * s, -R * 0.5f * s };   // 底面頂点 1
+        Vector3 v2 = { 0.5f * s, -b * s, -R * 0.5f * s };   // 底面頂点 2
+
+        // 面の定義（各面は三角形）
+        std::vector<std::tuple<Vector3, Vector3, Vector3>> faces = {
+            { v0, v1, v2 },        // 底面（XZ平面上）
+            { apex, v0, v1 },
+            { apex, v1, v2 },
+            { apex, v2, v0 }
+        };
+
+        // UV は単純に三角形マッピング
+        Vector2 uv0 = { 0.5f, 0.0f };
+        Vector2 uv1 = { 0.0f, 1.0f };
+        Vector2 uv2 = { 1.0f, 1.0f };
+
+        for (const auto& face : faces) {
+            uint32_t baseIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
+
+            Vector3 p0 = std::get<0>(face);
+            Vector3 p1 = std::get<1>(face);
+            Vector3 p2 = std::get<2>(face);
+
+            // 面法線（右手系クロス）を計算
+            Vector3 e0 = Math::Subtract(p1, p0);
+            Vector3 e1 = Math::Subtract(p2, p0);
+            Vector3 triNormal = Math::Normalize(Math::Cross(e0, e1));
+
+            // 頂点データ作成（面ごとに法線を統一して追加）
+            VertexData vd0{}, vd1{}, vd2{};
+            vd0.position = { p0.x, p0.y, p0.z, 1.0f };
+            vd1.position = { p1.x, p1.y, p1.z, 1.0f };
+            vd2.position = { p2.x, p2.y, p2.z, 1.0f };
+
+            vd0.normal = vd1.normal = vd2.normal = triNormal;
+
+            vd0.texcoord = uv0;
+            vd1.texcoord = uv1;
+            vd2.texcoord = uv2;
+
+            resource_->vertexDataList_.push_back(vd0);
+            resource_->vertexDataList_.push_back(vd1);
+            resource_->vertexDataList_.push_back(vd2);
+
+            // 三角形の重心を計算して法線が外向きになるようワインディングを決定
+            Vector3 centroid{
+                (p0.x + p1.x + p2.x) / 3.0f,
+                (p0.y + p1.y + p2.y) / 3.0f,
+                (p0.z + p1.z + p2.z) / 3.0f
+            };
+            float dot = Math::Dot(triNormal, centroid);
+            if (dot >= 0.0f) {
+                // 法線が外向き（重心方向と同じ向き）ならそのまま追加
+                resource_->indexDataList_.push_back(baseIndex + 0);
+                resource_->indexDataList_.push_back(baseIndex + 1);
+                resource_->indexDataList_.push_back(baseIndex + 2);
+            } else {
+                // 内向きならワインディングを反転
+                resource_->indexDataList_.push_back(baseIndex + 2);
+                resource_->indexDataList_.push_back(baseIndex + 1);
+                resource_->indexDataList_.push_back(baseIndex + 0);
+            }
+        }
+    }
+    break;
     }
 
     // リソースのメモリを確保（または再利用）
@@ -265,7 +485,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     resource_->materialData_->hasTexture = true;
     resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-    resource_->materialData_->useClampSampler = (primitiveShape_ == PrimitiveShape::Ring);
+    resource_->materialData_->useClampSampler = (primitiveShape_ == ParticlePrimitiveShape::Ring || primitiveShape_ == ParticlePrimitiveShape::Cylinder);
 
     if (s_textureManager_) {
         auto textureNames = s_textureManager_->GetTextureNames();
@@ -324,7 +544,7 @@ void ParticleSystem::Update() {
             if (useBillbord_) {
                 worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billbordMatrix_), translateMatrix);
             } else {
-                Matrix4x4 rotateMatrix = Math::MakeRotateZMatrix(particleIterator->transform.rotate.z);
+                Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(particleIterator->transform.rotate.x, particleIterator->transform.rotate.y, particleIterator->transform.rotate.z);
                 worldMatrix = Math::Multiply(scaleMatrix, rotateMatrix);
                 worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             }
@@ -340,6 +560,56 @@ void ParticleSystem::Update() {
         ++particleIterator; // 次のイテレーターに進める
     }
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+
+#if USE_IMGUI
+    for (auto& line : debugLines_) {
+        line->Update();
+    }
+#endif
+}
+
+void ParticleSystem::Draw()
+{
+    // 1) パーティクル本体を描画（選択された Blend/Depth/Cull を描画直前にエンジンへセットして PSO を適用）
+    if (s_engine_) {
+        // 現在のエンジン状態を保存しておく
+        BlendMode prevBlend = s_engine_->currentBlend_;
+        PSOManager::DepthWrite prevDepth = s_engine_->currentDepth_;
+        PSOManager::CullMode prevCull = s_engine_->currentCull_;
+
+        // 選択値をエンジンにセット（描画直前）
+        s_engine_->SetBlend(selectedBlend_);
+        s_engine_->SetDepthWrite(selectedDepth_);
+        s_engine_->SetCull(selectedCull_);
+        s_engine_->ApplyParticlePSO();
+
+        // 描画
+        if (s_drawManager_) {
+            s_drawManager_->DrawParticle(this);
+        }
+
+        // エンジン状態を復元（PSOの切り替えは呼び出し側で制御するため Apply は行わない)
+        s_engine_->SetBlend(prevBlend);
+        s_engine_->SetDepthWrite(prevDepth);
+        s_engine_->SetCull(prevCull);
+    } else {
+        // エンジン参照がない場合は従来通り（安全策）
+        if (s_drawManager_) {
+            s_drawManager_->DrawParticle(this);
+        }
+    }
+
+    // 2) デバッグ線（AABB 等）を描画（Line PSO を確実にバインド）
+#if USE_IMGUI
+    if (!debugLines_.empty()) {
+        if (s_engine_) {
+            s_engine_->ApplyLinePSO();
+        }
+        for (auto& line : debugLines_) {
+            if (line && s_drawManager_) s_drawManager_->DrawLine3D(line.get());
+        }
+    }
+#endif
 }
 
 void ParticleSystem::SetEmitterPosition(const Vector3& position) {
@@ -480,6 +750,17 @@ void ParticleSystem::PlayHitEffect(const Vector3& position) {
 void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
 #if USE_IMGUI
+    debugLines_.clear();
+
+    // Emitter AABB をフラグで制御して描画
+    if (showEmitterAABB_) {
+        AABB emitterAABB{
+            .min = emitter_.transform.translate - emitter_.area / 2.0f,
+            .max = emitter_.transform.translate + emitter_.area / 2.0f
+        };
+        DrawAABB(emitterAABB, { 0.0f, 1.0f, 0.0f, 1.0f });
+    }
+
     if (s_ui_) {
         std::string name = std::string("Particle: ") + particleName;
 
@@ -487,6 +768,13 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
         //ウィンドウを作り出す
         ImGui::Begin(name.c_str());
+
+        // ここで表示切替チェックボックスを追加
+        ImGui::Checkbox("Show Emitter AABB", &showEmitterAABB_);
+        ImGui::Checkbox("Show Field AABB", &showFieldAABB_);
+
+        // PSO設定のデバッグUIを呼び出す
+        s_ui_->DebugPsoSettings(&selectedBlend_, &selectedDepth_, &selectedCull_, "##Particle");
 
         if (ImGui::BeginTabBar("ParticleTabs")) {
             // Generalタブ
@@ -508,11 +796,11 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 ImGui::Separator();
 
                 // PrimitiveShapeの選択UI
-                const char* primitiveShapeNames[] = { "Plane", "Sphere", "Ring" };
+                const char* primitiveShapeNames[] = { "Plane", "Sphere", "Ring", "Cylinder", "Cube", "Tetrahedron" };
                 int currentShape = static_cast<int>(primitiveShape_);
                 if (ImGui::Combo("Primitive Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
-                    if (primitiveShape_ != static_cast<PrimitiveShape>(currentShape)) {
-                        primitiveShape_ = static_cast<PrimitiveShape>(currentShape);
+                    if (primitiveShape_ != static_cast<ParticlePrimitiveShape>(currentShape)) {
+                        primitiveShape_ = static_cast<ParticlePrimitiveShape>(currentShape);
                         std::string currentTextureName = "resources/circle.png";
                         if (s_textureManager_) {
                             auto textureNames = s_textureManager_->GetTextureNames();
@@ -526,7 +814,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 }
 
                 // ParticleTypeの選択UI
-                const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect" };
+                const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect", "Explosion" };
                 int currentType = static_cast<int>(particleType_);
                 if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
                     ChangeBehavior(static_cast<ParticleType>(currentType));
@@ -563,7 +851,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
             // Fieldタブ
             if (ImGui::BeginTabItem("Behavior")) {
-                behavior_->Debug(&emitter_, s_ui_);
+                behavior_->Debug(&emitter_, s_ui_, this);
                 ImGui::EndTabItem();
             }
 
@@ -574,7 +862,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 s_ui_->DebugUvTransform(resource_->uvTransform_);
 
                 // --- Ring パラメータ UI ---
-                if (primitiveShape_ == PrimitiveShape::Ring) {
+                if (primitiveShape_ == ParticlePrimitiveShape::Ring) {
                     ImGui::Separator();
                     ImGui::Text("Ring Parameters");
 
@@ -605,6 +893,45 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         SetRingParameters(inner, outer, startDeg, endDeg, static_cast<uint32_t>(segments), verticalUV);
 
                         // 現在のテクスチャ名を復元して Initialize を呼ぶ（UI 保持のため）
+                        std::string currentTextureName = "resources/circle.png";
+                        if (s_textureManager_) {
+                            auto textureNames = s_textureManager_->GetTextureNames();
+                            std::sort(textureNames.begin(), textureNames.end());
+                            if (!textureNames.empty()) {
+                                if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
+                                    currentTextureName = textureNames[selectedTextureIndex_];
+                                } else {
+                                    currentTextureName = textureNames[0];
+                                }
+                            }
+                        }
+                        Initialize(camera_, currentTextureName, particleType_, primitiveShape_);
+                    }
+                }
+
+                // --- Cylinder パラメータ UI ---
+                if (primitiveShape_ == ParticlePrimitiveShape::Cylinder) {
+                    ImGui::Separator();
+                    ImGui::Text("Cylinder Parameters");
+
+                    float radius = cylinderRadius_;
+                    float height = cylinderHeight_;
+                    int segments = static_cast<int>(cylinderSegmentCount_);
+                    bool flipV = cylinderFlipV_;
+
+                    bool changed = false;
+                    if (ImGui::DragFloat("Radius", &radius, 0.005f, 0.0f, 1000.0f)) changed = true;
+                    if (ImGui::DragFloat("Height", &height, 0.01f, 0.0f, 1000.0f)) changed = true;
+                    if (ImGui::DragInt("Segment Count", &segments, 1.0f, 3, 1024)) changed = true;
+                    if (ImGui::Checkbox("Flip V", &flipV)) changed = true;
+
+                    if (changed) {
+                        segments = std::max(3, segments);
+                        if (radius < 0.0f) radius = 0.0f;
+                        if (height < 0.0f) height = 0.0f;
+
+                        SetCylinderParameters(radius, height, static_cast<uint32_t>(segments), flipV);
+
                         std::string currentTextureName = "resources/circle.png";
                         if (s_textureManager_) {
                             auto textureNames = s_textureManager_->GetTextureNames();
@@ -661,10 +988,37 @@ void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
     }
 }
 
+void ParticleSystem::DrawAABB(const AABB& aabb, const Vector4& color)
+{
+#if USE_IMGUI
+    Vector3 vertices[8];
+    vertices[0] = { aabb.min.x, aabb.min.y, aabb.min.z };
+    vertices[1] = { aabb.max.x, aabb.min.y, aabb.min.z };
+    vertices[2] = { aabb.min.x, aabb.max.y, aabb.min.z };
+    vertices[3] = { aabb.max.x, aabb.max.y, aabb.min.z };
+    vertices[4] = { aabb.min.x, aabb.min.y, aabb.max.z };
+    vertices[5] = { aabb.max.x, aabb.min.y, aabb.max.z };
+    vertices[6] = { aabb.min.x, aabb.max.y, aabb.max.z };
+    vertices[7] = { aabb.max.x, aabb.max.y, aabb.max.z };
+
+    uint32_t indices[] = {
+        0, 1, 1, 3, 3, 2, 2, 0, // Bottom face
+        4, 5, 5, 7, 7, 6, 6, 4, // Top face
+        0, 4, 1, 5, 2, 6, 3, 7  // Connecting edges
+    };
+
+    for (int i = 0; i < 12; ++i) {
+        auto line = std::make_unique<Line3DClass>();
+        line->Initialize(camera_, vertices[indices[i * 2]], vertices[indices[i * 2 + 1]], color);
+        debugLines_.push_back(std::move(line));
+    }
+#endif
+}
+
 // 追加実装: SetRingParameters (適当な場所に追加：クラス外のメソッド実装セクションに入れてください)
 void ParticleSystem::SetRingParameters(float innerRadius, float outerRadius,
-                                       float startAngleDeg, float endAngleDeg,
-                                       uint32_t segmentCount, bool verticalUV) {
+    float startAngleDeg, float endAngleDeg,
+    uint32_t segmentCount, bool verticalUV) {
     // 最低分割数を確保
     ringSegmentCount_ = std::max<uint32_t>(3, segmentCount);
     ringInnerRadius_ = innerRadius;
@@ -672,4 +1026,12 @@ void ParticleSystem::SetRingParameters(float innerRadius, float outerRadius,
     ringStartAngleDeg_ = startAngleDeg;
     ringEndAngleDeg_ = endAngleDeg;
     ringVerticalUV_ = verticalUV;
+}
+
+// 追加実装: SetCylinderParameters
+void ParticleSystem::SetCylinderParameters(float radius, float height, uint32_t segmentCount, bool flipV) {
+    cylinderRadius_ = radius;
+    cylinderHeight_ = height;
+    cylinderSegmentCount_ = std::max<uint32_t>(3, segmentCount);
+    cylinderFlipV_ = flipV;
 }
