@@ -27,6 +27,7 @@ class SpriteRegion; // 追加
 struct GpuMesh; // 追加
 class Line2DClass;
 class Line3DClass;
+class CubeClass;
 
 //描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -66,6 +67,8 @@ public: //メンバ関数
     void DrawTriangle(
         TriangleClass* triangle
     );
+
+    void DrawCube(CubeClass* cube);
 
     void DrawSprite(Sprite* sprite);
 

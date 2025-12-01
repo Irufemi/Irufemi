@@ -1,7 +1,5 @@
 #include "IrufemiEngine.h"
 
-
-
 #include "function/Function.h"
 #include "function/GetBackBufferIndex.h"
 
@@ -17,6 +15,7 @@
 #include "3D/ObjClass.h"
 #include "3D/SphereClass.h"
 #include "3D/TriangleClass.h"
+#include "3D/CubeClass.h"
 #include "3D/PlaneClass.h"
 #include "3D/CylinderClass.h"
 #include "3D/particle/ParticleSystem.h"
@@ -146,6 +145,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetDebugUI(ui.get());
     SphereClass::SetDebugUI(ui.get());
     TriangleClass::SetDebugUI(ui.get());
+    CubeClass::SetDebugUI(ui.get());
     PlaneClass::SetDebugUI(ui.get());
     CylinderClass::SetDebugUI(ui.get());
     ParticleSystem::SetDebugUI(ui.get());
@@ -158,6 +158,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetDrawManager(drawManager.get());
     SphereClass::SetDrawManager(drawManager.get());
     TriangleClass::SetDrawManager(drawManager.get());
+    CubeClass::SetDrawManager(drawManager.get());
     PlaneClass::SetDrawManager(drawManager.get());
     CylinderClass::SetDrawManager(drawManager.get());
     Region::SetDrawManager(drawManager.get());
@@ -175,6 +176,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetTextureManager(textureManager.get());
     SphereClass::SetTextureManager(textureManager.get());
     TriangleClass::SetTextureManager(textureManager.get());
+    CubeClass::SetTextureManager(textureManager.get());
     PlaneClass::SetTextureManager(textureManager.get());
     CylinderClass::SetTextureManager(textureManager.get());
     Region::SetTextureManager(textureManager.get());

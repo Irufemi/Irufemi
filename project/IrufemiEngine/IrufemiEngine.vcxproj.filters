@@ -256,6 +256,9 @@
     <ClCompile Include="InstanceDrawer.cpp">
       <Filter>Engine\manager</Filter>
     </ClCompile>
+    <ClCompile Include="3D\CubeClass.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
@@ -494,6 +497,9 @@
     </ClInclude>
     <ClInclude Include="InstanceDrawer.h">
       <Filter>Engine\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\CubeClass.h">
+      <Filter>3D</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

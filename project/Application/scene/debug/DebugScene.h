@@ -8,6 +8,7 @@
 #include "2D/Sprite.h"
 #include "3D/ObjClass.h"
 #include "3D/SphereClass.h"
+#include "3D/CubeClass.h"
 #include "3D/PlaneClass.h"
 #include "3D/TriangleClass.h"
 #include "3D/particle/ParticleSystem.h"
@@ -35,6 +36,9 @@ private: // メンバ変数
 
     std::unique_ptr<TriangleClass> triangle_ = nullptr;
     bool isActiveTriangle_ = false;
+
+    std::unique_ptr<CubeClass> cube_ = nullptr;
+    bool isActiveCube_ = false;
 
     std::unique_ptr<PlaneClass> plane_ = nullptr;
     bool isActivePlane_ = true;

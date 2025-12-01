@@ -34,6 +34,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveObj_ = false;
     isActiveSprite_ = false;
     isActiveTriangle_ = false;
+    isActiveCube_ = false;
     isActivePlane_ = false;
     isActiveSphere_ = false;
     isActiveStanfordBunny_ = false;
@@ -57,6 +58,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     if (isActiveTriangle_) {
         triangle_ = std::make_unique <TriangleClass>();
         triangle_->Initialize(camera_.get());
+    }
+    if (isActiveCube_) {
+        cube_ = std::make_unique <CubeClass>();
+        cube_->Initialize(camera_.get());
     }
     if (isActivePlane_) {
         plane_ = std::make_unique<PlaneClass>();
@@ -146,6 +151,7 @@ void DebugScene::Update() {
     ImGui::Begin("Activation");
     ImGui::Checkbox("Sprite", &isActiveSprite_);
     ImGui::Checkbox("Triangle", &isActiveTriangle_);
+    ImGui::Checkbox("Cube", &isActiveCube_);
     ImGui::Checkbox("Plane", &isActivePlane_);
     ImGui::Checkbox("Sphere", &isActiveSphere_);
     ImGui::Checkbox("Obj", &isActiveObj_);
@@ -248,6 +254,14 @@ void DebugScene::Update() {
             triangle_->Initialize(camera_.get());
         }
         triangle_->Update();
+    }
+    if (isActiveCube_) {
+        if (!cube_) {
+            cube_ = std::make_unique<CubeClass>();
+            cube_->Initialize(camera_.get());
+        }
+        cube_->Debug("Cube");
+        cube_->Update();
     }
     if (isActivePlane_) {
         if (!plane_) {
@@ -371,6 +385,9 @@ void DebugScene::Draw() {
 
     engine_->ApplyPSO();
 
+    if (isActiveCube_) {
+        cube_->Draw();
+    }
     if (isActivePlane_) {
         plane_->Draw();
     }
