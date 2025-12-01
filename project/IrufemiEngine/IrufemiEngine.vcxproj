@@ -164,6 +164,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\Region.cpp" />
     <ClCompile Include="3D\CylinderClass.cpp" />
     <ClCompile Include="2D\Circle2D.cpp" />
+    <ClCompile Include="3D\CubeClass.cpp" />
     <ClCompile Include="engine\directX\DescriptorAllocator.cpp" />
     <ClCompile Include="engine\directX\DescriptorPool.cpp" />
     <ClCompile Include="function\ExportDump.cpp" />
@@ -234,6 +235,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="3D\Region.h" />
     <ClInclude Include="3D\CylinderClass.h" />
     <ClInclude Include="2D\Circle2D.h" />
+    <ClInclude Include="3D\CubeClass.h" />
     <ClInclude Include="engine\directX\DescriptorAllocator.h" />
     <ClInclude Include="engine\directX\DescriptorPool.h" />
     <ClInclude Include="engine\directX\DirectXCommon.h" />
