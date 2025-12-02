@@ -83,7 +83,13 @@
       <Filter>content</Filter>
     </ClCompile>
     <ClCompile Include="stage\Stage.cpp">
-      <Filter>stage</Filter>
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="actor\rock\Rock.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="actor\rock\RockManager.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -118,7 +124,13 @@
       <Filter>content</Filter>
     </ClInclude>
     <ClInclude Include="stage\Stage.h">
-      <Filter>stage</Filter>
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="actor\rock\Rock.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="actor\rock\RockManager.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
