@@ -1,257 +1,110 @@
+// Enemy.cpp
 #include "Enemy.h"
-#include "function/Math.h"
-#include <array>
-#include <cmath>
-#include <cstdlib>
 
-// 壁の残り寿命（秒）。index ごとに管理（当たりで消えても寿命は自然減衰）
-static std::array<float, 3> wallLifeRemaining_{0.0f, 0.0f, 0.0f};
-// 壁の寿命（同時生成されたグループに割り当てる既定秒数）
-static constexpr float kWallLifetimeSec = 5.0f;
-// 壁の生成半径（敵中心からの距離）
-static constexpr float kWallSpawnRadius = 8.0f;
-// 壁の最小離間距離（重なり判定）
-static constexpr float kWallMinSeparation =
-    2.0f; // 必要に応じて壁サイズに合わせて調整
+#include <random>
 
-// 位置が既存のアクティブ壁と重なっていないか
-static bool IsOccupiedByWall(const Vector3 &pos, const Wall (&walls)[3]) {
-  for (int i = 0; i < 3; ++i) {
-    if (!walls[i].active)
-      continue;
-    const Vector3 wp = walls[i].transform.translate;
-    const float dx = pos.x - wp.x;
-    const float dz = pos.z - wp.z;
-    const float distSq = dx * dx + dz * dz;
-    if (distSq < (kWallMinSeparation * kWallMinSeparation)) {
-      return true;
-    }
-  }
-  return false;
+namespace {
+std::mt19937 &GetRngEnemy() {
+  static std::random_device rd;
+  static std::mt19937 mt(rd());
+  return mt;
 }
 
-// ランダム位置を1つ生成（敵周辺円周内）、既存壁と重ならない位置を返す
-static Vector3 FindRandomWallPosAround(const Vector3 &center,
-                                       const Wall (&walls)[3]) {
-  // 最大試行回数
-  for (int tries = 0; tries < 16; ++tries) {
-    float angle =
-        static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-    angle *= (2.0f * 3.141592654f);
-    const float r = kWallSpawnRadius;
-    Vector3 pos{center.x + std::cos(angle) * r, center.y,
-                center.z + std::sin(angle) * r};
-
-    if (!IsOccupiedByWall(pos, walls)) {
-      return pos;
-    }
-  }
-  // 失敗したら中心から固定オフセット（最悪回避）
-  return Vector3{center.x + rintf(kWallSpawnRadius), center.y, center.z};
+float RandomRangeEnemy(float minValue, float maxValue) {
+  std::uniform_real_distribution<float> dist(minValue, maxValue);
+  return dist(GetRngEnemy());
 }
 
-bool Enemy::HasAnyWall() const {
-  for (int i = 0; i < maxWallCount_; ++i) {
-    if (wall_[i].active)
-      return true;
-  }
-  return false;
+// min〜max の整数乱数（両端含む）
+int RandomIntEnemy(int minValue, int maxValue) {
+  std::uniform_int_distribution<int> dist(minValue, maxValue);
+  return dist(GetRngEnemy());
 }
-
-void Enemy::ResetActionTimer() {
-  float t = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-  actionTimer_ =
-      actionIntervalMin_ + (actionIntervalMax_ - actionIntervalMin_) * t;
-}
+} // namespace
 
 Enemy::Enemy() {}
 
-Enemy::~Enemy() {}
+void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
+                       EnemyWallManager *wallManager,
+                       EnemyBulletManager *bulletManager) {
+  camera_ = camera;
 
-void Enemy::Initialize(Camera *cam) {
-  camera_ = cam;
-  transform_ = {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}};
+  model_ = std::make_unique<ObjClass>();
+  // ★ 敵モデル名は環境に合わせて変更OK
+  model_->Initialize(camera_, "player.obj");
 
-  enemyModel_ = std::make_unique<ObjClass>();
-  enemyModel_->Initialize(cam, "player.obj");
+  transform_.translate = spawnPos;
+  transform_.scale = {1.0f, 1.0f, 1.0f};
 
-  bulletModel_ = std::make_unique<ObjClass>();
-  bulletModel_->Initialize(cam, "axis.obj");
+  enemyWall_ = wallManager;
+  bulletManager_ = bulletManager;
+  hp_ = 100;
 
-  wallModel_ = std::make_unique<ObjClass>();
-  wallModel_->Initialize(cam, "block.obj");
-
-  // 壁状態初期化
-  for (int i = 0; i < 3; ++i) {
-    wall_[i].active = false;
-    wallLifeRemaining_[i] = 0.0f;
-  }
-
-  // 行動タイマー初期化
   ResetActionTimer();
+
+  if (model_) {
+    model_->SetPosition(transform_.translate);
+    model_->Update();
+  }
 }
 
-void Enemy::ChangeState(EnemyState s) {
-  state_ = s;
-  stateTimer_ = 0.0f;
-}
-
-void Enemy::Update(float dt, const Vector3 &playerPos) {
-
-  stateTimer_ += dt;
-
-  switch (state_) {
-  case EnemyState::Idle:
-    Idle(dt, playerPos);
-    break;
-  case EnemyState::Shoot:
-    BulletShoot(dt, playerPos);
-    break;
-  case EnemyState::MakeWall:
-    MakeWall(dt, playerPos);
-    break;
-  case EnemyState::Relocate:
-    Relocate(dt);
-    break;
+void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
+  // 何もできないなら早期リターン
+  if (!enemyWall_ && !bulletManager_) {
+    return;
   }
 
-  // 壁の寿命処理
-  for (int i = 0; i < maxWallCount_; ++i) {
-    if (!wall_[i].active)
-      continue;
-    wallLifeRemaining_[i] -= dt;
-    if (wallLifeRemaining_[i] <= 0.0f) {
-      wall_[i].active = false;
-      wallLifeRemaining_[i] = 0.0f;
+  actionTimer_ -= deltaTime;
+  if (actionTimer_ <= 0.0f) {
+    // ★ タイマーが0になったので、ここでどちらか1つ行動する
+
+    bool canWall = (enemyWall_ != nullptr);
+    bool canBullet = (bulletManager_ != nullptr);
+
+    if (canWall && canBullet) {
+      // 壁 or 弾 をランダムに選択
+      int r = RandomIntEnemy(0, 1); // 0:壁, 1:弾
+
+      if (r == 0) {
+        enemyWall_->SpawnWalls(transform_.translate);
+      } else {
+        bulletManager_->SpawnBulletAimed(transform_.translate, playerPos);
+      }
+
+    } else if (canWall) {
+      // 壁だけ使える場合
+      enemyWall_->SpawnWalls(transform_.translate);
+
+    } else if (canBullet) {
+      // 弾だけ使える場合
+      bulletManager_->SpawnBulletAimed(transform_.translate, playerPos);
     }
+
+    // 次の行動までの時間を設定
+    ResetActionTimer();
   }
 
-  // 弾の移動処理
-  if (bullet_.active) {
-    bullet_.transform.translate.x += bullet_.vel.x * bullet_.speed*dt;
-    bullet_.transform.translate.z += bullet_.vel.z * bullet_.speed*dt;
+  // 将来、敵を動かしたくなったらここで transform_.translate をいじる
+
+  if (model_) {
+    model_->SetPosition(transform_.translate);
+    model_->Update();
   }
 }
 
 void Enemy::Draw() {
-  // 敵本体
-  enemyModel_->SetPosition(transform_.translate);
-  enemyModel_->SetRotate(transform_.rotate);
-  enemyModel_->SetScale(transform_.scale);
-  enemyModel_->Draw();
-
-  // 壁
-  for (int i = 0; i < maxWallCount_; ++i) {
-    if (wall_[i].active) {
-      wallModel_->SetPosition(wall_[i].transform.translate);
-      wallModel_->SetScale(wall_[i].size);
-      wallModel_->Draw();
-    }
+  if (model_) {
+    model_->Draw();
   }
 
-  // 弾
-  if (bullet_.active) {
-    bulletModel_->SetPosition(bullet_.transform.translate);
-    bulletModel_->SetScale({1.0f, 1.0f, 1.0f}); // 目立つように
-    bulletModel_->Draw();
+  // 壁の描画（壁マネージャが描画を持っている想定）
+  if (enemyWall_) {
+    enemyWall_->Draw();
   }
+
+  // 弾の描画は GameScene 側で enemyBulletManager_.Draw() を呼ぶ想定
 }
 
-void Enemy::Idle(float dt, const Vector3 &playerPos) {
-  // 共通クールタイムを減らす
-  actionTimer_ -= dt;
-
-  // まだ時間が残っているなら何もしない
-  if (actionTimer_ > 0.0f) {
-    return;
-  }
-
-  // ===== タイマーが切れたら、次の行動をランダムで1つ決める =====
-  int choice = std::rand() % 3; // 0:Shoot, 1:Wall, 2:Relocate
-
-  switch (choice) {
-  case 0:
-    ChangeState(EnemyState::Shoot);
-    break;
-  case 1:
-    ChangeState(EnemyState::MakeWall);
-    break;
-  case 2:
-    ChangeState(EnemyState::Relocate);
-    break;
-  }
-
-  // ★クールダウンの再セットは「行動が終わったタイミング」でやる
-  //   → Idleを抜けるだけなのでここではしない
-}
-
-void Enemy::BulletShoot(float dt, const Vector3 &playerPos) {
-  if (!bullet_.active) {
-    bullet_.active = true;
-    bullet_.transform.translate = transform_.translate;
-
-    Vector3 dir =
-        Math::Normalize(Math::Subtract(playerPos, transform_.translate));
-    bullet_.vel = dir;
-
-    // 速度が未設定ならデフォルトを入れる
-    if (bullet_.speed <= 0.0f)
-      bullet_.speed = 3.0f;
-  }
-
-  // 1秒経過で終了 → Idleへ
-  if (stateTimer_ > 1.0f) {
-    bullet_.active = false;
-
-    // ★次の行動までのクールタイムを設定
-    ResetActionTimer();
-    ChangeState(EnemyState::Idle);
-  }
-}
-
-void Enemy::MakeWall(float dt, const Vector3 &playerPos) {
-  // 空きスロットに最大3つ生成。同時生成は同一寿命を割り当て。
-  int created = 0;
-  for (int i = 0; i < maxWallCount_ && created < 3; ++i) {
-    if (wall_[i].active)
-      continue; // 既存壁は維持
-    Vector3 pos = FindRandomWallPosAround(transform_.translate, wall_);
-    if (IsOccupiedByWall(pos, wall_)) {
-      // 念のためチェック（FindRandomWallPosAround で十分なはず）
-      continue;
-    }
-    wall_[i].active = true;
-    wall_[i].transform.translate = pos;
-
-    // サイズが未設定なら標準値
-    if (wall_[i].size.x <= 0.0f || wall_[i].size.y <= 0.0f ||
-        wall_[i].size.z <= 0.0f) {
-      wall_[i].size = Vector3{3.0f, 1.0f, 1.0f};
-    }
-
-    // 今回のバッチ寿命を付与（既存の壁とは独立）
-    wallLifeRemaining_[i] = kWallLifetimeSec;
-    ++created;
-  }
-
-  // この行動は即時生成後、短時間で抜けたいならここで待機せずIdleへ
-  // 生成のみで十分なので即終了
-  ResetActionTimer();
-  ChangeState(EnemyState::Idle);
-}
-
-void Enemy::Relocate(float dt) {
-  // ランダムな別位置へワープ（後から演出をつける）
-  float angle = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-  angle *= (2.0f * 3.141592654f);
-  float radius = 20.0f;
-
-  transform_.translate.x = cos(angle) * radius;
-  transform_.translate.z = sin(angle) * radius;
-
-  if (stateTimer_ > 1.0f) {
-    // ★ワープ演出が終わったタイミングでリセット
-    ResetActionTimer();
-    ChangeState(EnemyState::Idle);
-  }
+void Enemy::ResetActionTimer() {
+  actionTimer_ = RandomRangeEnemy(actionIntervalMin_, actionIntervalMax_);
 }

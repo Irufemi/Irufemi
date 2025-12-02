@@ -165,6 +165,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="camera\DebugCamera.cpp" />
     <ClCompile Include="effect\Effect.cpp" />
     <ClCompile Include="contents\GameFunction.cpp" />
+    <ClCompile Include="actor\enemy\EnemyWall.cpp" />
+    <ClCompile Include="actor\enemy\EnemyBullet.cpp" />
     <ClCompile Include="scene\debug\DebugScene.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
@@ -186,6 +188,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="camera\DebugCamera.h" />
     <ClInclude Include="effect\Effect.h" />
     <ClInclude Include="contents\GameFunction.h" />
+    <ClInclude Include="actor\enemy\EnemyWall.h" />
+    <ClInclude Include="actor\enemy\EnemyBullet.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\result\ResultScene.h" />
