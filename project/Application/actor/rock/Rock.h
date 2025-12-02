@@ -9,21 +9,24 @@ public:
     float   radius_;   // XZ 上の半径
     bool    isAlive_;  // 有効かどうか（拾われたら false）
 
-    Rock()
-        : position_{ 0.0f, 0.0f, 0.0f }
-        , radius_(0.5f)
-        , isAlive_(true) {
-    }
+    // ==== スポーン演出用 ====
+    bool  isSpawning_ = false;
+    float spawnTimer_ = 0.0f;
+    float spawnDuration_ = 0.3f;
 
-    Rock(const Vector3& pos, float radius)
-        : position_(pos)
-        , radius_(radius)
-        , isAlive_(true) {
-    }
+    float spawnStartY_ = 0.0f; // 地面より少し下の Y
+    float spawnEndY_ = 0.0f; // 地面の Y（最終）
 
-    void Kill() { isAlive_ = false; }
+public:
+    Rock();
+    Rock(const Vector3& pos, float radius);
 
-    void Update(float /*deltaTime*/) {
-        // 必要になったら「動く岩」処理を書く
-    }
+    void Kill();
+
+    // スポーンなどの時間変化
+    void Update(float deltaTime);
+
+private:
+    // 簡易 BackOut イージング
+    static float EaseOutBack(float t);
 };

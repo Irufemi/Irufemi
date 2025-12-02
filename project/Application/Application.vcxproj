@@ -175,6 +175,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="scene\inGame\GameScene.cpp" />
     <ClCompile Include="scene\result\ResultScene.cpp" />
     <ClCompile Include="scene\title\TitleScene.cpp" />
+    <ClCompile Include="stage\field\Field.cpp" />
     <ClCompile Include="stage\Stage.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -190,6 +191,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\result\ResultScene.h" />
     <ClInclude Include="scene\title\TitleScene.h" />
+    <ClInclude Include="stage\field\Field.h" />
     <ClInclude Include="stage\Stage.h" />
   </ItemGroup>
   <ItemGroup>

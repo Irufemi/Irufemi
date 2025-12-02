@@ -8,6 +8,7 @@ class IrufemiEngine;
 class Camera;
 class Player;
 class Region;        // ★ 追加：Regionを前方宣言
+class Field;
 
 // Rock 全体を管理するクラス
 class RockManager {
@@ -32,6 +33,9 @@ public:
     const std::vector<Rock>& GetRocks() const { return rocks_; }
     std::vector<Rock>& GetRocks() { return rocks_; }
 
+    //追加：Field を渡すためのセッター
+    void SetField(Field* field) { field_ = field; }
+
 
 private:
     std::vector<Rock> rocks_;
@@ -45,6 +49,9 @@ private:
     float   spawnInterval_ = 2.0f;
     float   spawnTimer_ = 0.0f;
     size_t  maxAlive_ = 20;
+
+    //追加：丸フィールドへのポインタ
+    Field* field_ = nullptr;
 
     void UpdateRocks(float deltaTime);
     void AutoSpawn(float deltaTime);
