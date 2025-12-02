@@ -17,6 +17,10 @@
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "audio/Bgm.h"
+#include "actor/player/Player.h"
+#include "actor/enemy/Enemy.h"
+#include"actor/rock/RockManager.h"
+
 
 // 前方宣言
 class IrufemiEngine;
@@ -32,9 +36,14 @@ class DebugCamera;
 /// </summary>
 class GameScene : public IScene {
 private: // 関数
-
+    //追加：衝突処理用のプライベート関数
+    void CheckHit_PlayerAndRock();
 private: // 変数(ゲーム)
+    std::unique_ptr<SphereClass> playerObj_ = nullptr;
+    std::unique_ptr<Player> player_ = nullptr;
 
+    //岩マネージャ
+    std::unique_ptr<RockManager> rockManager_ = nullptr;
 private: // メンバ変数(システム)
 
     // カメラ

@@ -28,6 +28,11 @@ public:
     //  ※ engine / camera 引数は互換用に残しておく（中では使わない）
     void Draw(IrufemiEngine* engine, Camera* camera);
 
+    //追加：岩リストへのアクセス
+    const std::vector<Rock>& GetRocks() const { return rocks_; }
+    std::vector<Rock>& GetRocks() { return rocks_; }
+
+
 private:
     std::vector<Rock> rocks_;
 

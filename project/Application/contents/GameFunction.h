@@ -27,4 +27,5 @@ bool IsHitCircleRect(const Vector3 &circlePos, float circleRadius,
                      const Vector3 &rectCenter, float rectWidth,
                      float rectHeight);
 
+void CheckHit_PlayerAndRock();
 } // namespace GameFunction

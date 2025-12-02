@@ -7,6 +7,7 @@
 
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
+#include"contents/GameFunction.h"
 
 // デストラクタ
 GameScene::~GameScene() {
@@ -22,6 +23,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     camera_ = std::make_unique <Camera>();
     camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    camera_->SetTranslate(Vector3{ 0.0f, 5.0f, -10.0f });
+    camera_->SetRotate(Vector3{ -6.0f, 0.0f, 0.0f });
 
     debugCamera_ = std::make_unique <DebugCamera>();
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
@@ -37,7 +40,23 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     spotLight_->Initialize();
     spotLight_->SetIntensity(0.0f);
 
-    engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());}
+    engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
+
+    playerObj_ = std::make_unique<SphereClass>();
+    playerObj_->Initialize(camera_.get());
+
+    player_ = std::make_unique<Player>();
+    player_->Initialize(camera_.get(), playerObj_.get(), Vector3{ 0.0f, 0.0f, 0.0f },
+        engine->GetInputManager());
+
+    //岩の初期化
+    rockManager_ = std::make_unique<RockManager>();
+    rockManager_->Initialize(camera_.get());  // ← camera_ を渡す
+    rockManager_->SetSpawnArea(
+        Vector3{ -10.0f, 0.0f, 5.0f },
+        Vector3{ 10.0f, 0.0f, 15.0f }
+    );
+}
 
 // 更新
 void GameScene::Update() {
@@ -66,14 +85,24 @@ void GameScene::Update() {
         debugCamera_->Update();
         camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
         camera_->SetPerspectiveFovMatrix(debugCamera_->GetCamera().GetPerspectiveFovMatrix());
-    } else {
+    }
+    else {
         camera_->Update("Camera");
     }
-    
+
     if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
         engine_->GetSceneManager()->Request("Title");
     }
 
+    // プレイヤーの更新処理
+    player_->Update();
+
+    //岩の更新
+    if (rockManager_) {
+        rockManager_->Update(player_.get());
+    }
+
+    CheckHit_PlayerAndRock();
 }
 
 // 描画
@@ -84,11 +113,16 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
 
-    
+    // プレイヤーの更新処理
+    player_->Draw();
+
     // Region
     engine_->ApplyRegionPSO();
+    // 岩の描画
+    if (rockManager_) {
+        rockManager_->Draw(engine_, camera_.get());
+    }
 
-    
 
     // Particle
     engine_->SetBlend(BlendMode::kBlendModeAdd);
@@ -101,4 +135,37 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
 
+}
+
+void GameScene::CheckHit_PlayerAndRock() {
+    if (!player_ || !rockManager_) {
+        return;
+    }
+
+    // プレイヤー情報
+    const Vector3& pPos = player_->GetPosition();
+    const float    pRadius = player_->GetRadius();
+
+    // 岩リスト（書き換えたいので非 const 参照）
+    auto& rocks = rockManager_->GetRocks();
+
+    for (auto& rock : rocks) {
+        if (!rock.isAlive_) {
+            continue;
+        }
+
+        // ★ ここで GameFunction の球判定を使用
+        if (GameFunction::IsHitSphere(pPos, pRadius,
+            rock.position_, rock.radius_)) {
+
+            // プレイヤーが岩を拾う
+            player_->AddRock(1);
+
+            // 岩を消す（isAlive_ = false）
+            rock.Kill();
+
+            // 複数同時に拾いたくないなら break;
+            // 今はまとめて拾えるよう、ループは続けてOK
+        }
+    }
 }

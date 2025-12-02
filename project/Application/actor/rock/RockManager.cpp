@@ -27,11 +27,45 @@ void RockManager::SetSpawnArea(const Vector3& minPos, const Vector3& maxPos) {
     spawnMax_ = maxPos;
 }
 
-void RockManager::Update(Player* /*player*/) {
+void RockManager::Update(Player* player) {
     const float dt = 1.0f / 60.0f;  // 仮フレーム時間
 
     UpdateRocks(dt);
     AutoSpawn(dt);
+
+    //// 2) プレイヤーがいなければ何もしない
+    //if (!player) {
+    //    return;
+    //}
+
+    //// 3) プレイヤー情報を取得
+    //const Vector3& pPos = player->GetPosition();
+    //const float    pRadius = player->GetRadius();
+
+    //// 4) すべての岩とプレイヤーの当たり判定
+    //for (auto& rock : rocks_) {
+    //    if (!rock.isAlive_) {
+    //        continue;
+    //    }
+
+    //    // 球 vs 球の当たり判定（3Dだけど今はXZメインでOK）
+    //    if (GameFunction::IsHitSphere(pPos, pRadius,
+    //        rock.position_, rock.radius_)) {
+
+    //        // ★ ヒットした：岩を「拾う」扱いにする
+
+    //        // プレイヤーに岩を1つ加算
+    //        //   - Player::AddRock() 内で0未満クランプ済み
+    //        player->AddRock(1);
+
+    //        // この岩は消す
+    //        rock.Kill();
+
+    //        // 一応、1フレームに複数個拾いたければ continue
+    //        // ひとつだけにしたければ break;
+    //        // ここでは複数拾えるようにしておく
+    //    }
+    //}
 }
 
 void RockManager::UpdateRocks(float deltaTime) {
@@ -39,6 +73,13 @@ void RockManager::UpdateRocks(float deltaTime) {
         if (!r.isAlive_) continue;
         r.Update(deltaTime);
     }
+
+    // ★ 死んだ岩を配列から削除
+    rocks_.erase(
+        std::remove_if(
+            rocks_.begin(), rocks_.end(),
+            [](const Rock& r) { return !r.isAlive_; }),
+        rocks_.end());
 }
 
 void RockManager::AutoSpawn(float deltaTime) {
@@ -52,6 +93,7 @@ void RockManager::AutoSpawn(float deltaTime) {
     if (alive >= maxAlive_) {
         return;
     }
+    OutputDebugStringA((std::to_string(alive) + "\n").c_str());
 
     if (spawnTimer_ >= spawnInterval_) {
         spawnTimer_ = 0.0f;
