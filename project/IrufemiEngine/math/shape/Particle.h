@@ -44,12 +44,16 @@ enum class ParticleType {
 	Normal,
 	kAccelerationField,
 	kHitEffect,
+	kExplosion,
 	// 他の種類をここに追加
 };
 
 // PrimitiveShape形状
-enum class PrimitiveShape {
+enum class ParticlePrimitiveShape {
 	Plane, // 板
 	Sphere, // 球
 	Ring, // リング
+	Cylinder, // シリンダー
+	Cube, // 立方体（正6面体）
+	Tetrahedron, // 正4面体
 };

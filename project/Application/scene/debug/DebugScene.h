@@ -16,6 +16,8 @@
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "3D/CylinderClass.h"
+#include "3D/LineClass.h"
+
 #include <memory>
 #include <vector>
 
@@ -69,6 +71,10 @@ private: // メンバ変数
 
     std::unique_ptr<Sprite> imguiSprite_;
     bool showDemoWindow = false;
+
+    std::unique_ptr<Line2DClass> line2D_ = nullptr;
+
+    std::unique_ptr<Line3DClass> line3D_ = nullptr;
 
     IrufemiEngine* engine_ = nullptr;
 

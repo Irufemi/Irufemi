@@ -784,3 +784,42 @@ void DebugUI::DebugSceneSelector([[maybe_unused]]SceneManager* sm) {
 #endif // USE_IMGUI
 }
 
+void DebugUI::DebugPsoSettings(
+    [[maybe_unused]] BlendMode* blendMode,
+    [[maybe_unused]] PSOManager::DepthWrite* depthWrite,
+    [[maybe_unused]] PSOManager::CullMode* cullMode,
+    [[maybe_unused]] const char* unique_id) {
+#ifdef USE_IMGUI
+    if (!blendMode || !depthWrite || !cullMode) {
+        return;
+    }
+
+    // Blend Mode
+    int blendIdx = static_cast<int>(*blendMode);
+    const char* blendNames[] = { "None", "Normal", "Add", "Subtract", "Multiply", "Screen" };
+    std::string blendLabel = "Blend Mode";
+    blendLabel += unique_id;
+    if (ImGui::Combo(blendLabel.c_str(), &blendIdx, blendNames, IM_ARRAYSIZE(blendNames))) {
+        *blendMode = static_cast<BlendMode>(blendIdx);
+    }
+
+    // Depth Write
+    int depthIdx = (*depthWrite == PSOManager::DepthWrite::Enable) ? 0 : 1;
+    const char* depthNames[] = { "Enable", "Disable" };
+    std::string depthLabel = "Depth Write";
+    depthLabel += unique_id;
+    if (ImGui::Combo(depthLabel.c_str(), &depthIdx, depthNames, IM_ARRAYSIZE(depthNames))) {
+        *depthWrite = (depthIdx == 0) ? PSOManager::DepthWrite::Enable : PSOManager::DepthWrite::Disable;
+    }
+
+    // Cull Mode
+    int cullIdx = static_cast<int>(*cullMode);
+    const char* cullNames[] = { "Back", "Front", "None" };
+    std::string cullLabel = "Cull Mode";
+    cullLabel += unique_id;
+    if (ImGui::Combo(cullLabel.c_str(), &cullIdx, cullNames, IM_ARRAYSIZE(cullNames))) {
+        *cullMode = static_cast<PSOManager::CullMode>(cullIdx);
+    }
+#endif // USE_IMGUI
+}
+
