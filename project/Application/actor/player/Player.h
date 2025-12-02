@@ -102,6 +102,14 @@ private:
   // クォータニオン
   Quaternion rotation_{0.0f, 0.0f, 0.0f, 1.0f};
 
+public:
+  /// <summary>
+  /// クォータニオンのゲッター
+  /// </summary>
+  /// <returns></returns>
+  Quaternion GetRotation() const { return rotation_; }
+
+private:
   float velocityY_ = 0.0f; // 上下の速度（Y）
   float gravity_ = -0.05f; // 重力加速度
 
@@ -171,4 +179,19 @@ private:
   /// 纏っている岩の数からダメージと半径を計算
   /// </summary>
   void ReCalcStatusFromRock();
+
+public:
+  /// <summary>
+  /// プレイヤーの現在の回転を使って、ローカル方向ベクトルを回転させる
+  /// </summary>
+  /// <param name="dir"></param>
+  /// <returns></returns>
+  Vector3 RotateLocalDir(const Vector3 &dir) const;
+
+  /// <summary>
+  /// 　ワールド方向ベクトルをプレイヤーのローカル方向ベクトルに変換
+  /// </summary>
+  /// <param name="worldDir"></param>
+  /// <returns></returns>
+  Vector3 WorldDirToLocal(const Vector3 &worldDir) const;
 };

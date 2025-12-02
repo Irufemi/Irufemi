@@ -89,6 +89,22 @@ Vector3 QuaternionToEuler(const Quaternion &qIn) {
   return {roll, pitch, yaw};
 }
 
+/// <summary>
+/// ベクトルをクォータニオンで回す
+/// </summary>
+/// <param name="v"></param>
+/// <param name="q"></param>
+/// <returns></returns>
+Vector3 RotateByQuaternion(const Vector3 &v, const Quaternion &q) {
+  Quaternion qv{v.x, v.y, v.z, 0.0f};
+  Quaternion qInv{-q.x, -q.y, -q.z, q.w};
+
+  Quaternion t = Multiply(q, qv);
+  Quaternion r = Multiply(t, qInv);
+
+  return {r.x, r.y, r.z};
+}
+
 } // namespace
 
 void Player::Initialize(Camera *camera, SphereClass *model, Vector3 positoin,
@@ -109,6 +125,8 @@ void Player::Initialize(Camera *camera, SphereClass *model, Vector3 positoin,
   rotation_ = {0.0f, 0.0f, 0.0f, 1.0f};
 
   radius_ = baseRadius_;
+
+  transform_.translate.y = radius_;
 
   // 描画へ反映
   model_->SetRadius(radius_);
@@ -160,9 +178,9 @@ void Player::Update() {
     }
 
     // モデル更新
-    model_->SetCenter(transform_.translate);
-    model_->SetRotate(transform_.rotate);
-    model_->Update();
+    // model_->SetCenter(transform_.translate);
+    // model_->SetRotate(transform_.rotate);
+    // model_->Update();
   }
 
   // キー入力に応じた移動
@@ -173,8 +191,8 @@ void Player::Update() {
   transform_.translate.y += velocityY_;
 
   // 地面着地判定
-  if (transform_.translate.y < 0.0f) {
-    transform_.translate.y = 0.0f;
+  if (transform_.translate.y < radius_) {
+    transform_.translate.y = radius_;
     velocityY_ = 0.0f; // 着地でY速度リセット
   }
 
@@ -185,7 +203,7 @@ void Player::Update() {
   ImGui::DragFloat3("translate", &transform_.translate.x,
                     0.1f); // translate(平行移動)
   ImGui::DragFloat3("rotate", &transform_.rotate.x, 0.1f); // rotate(回転角)
-  ImGui::DragFloat("radius", &radius_, 0.1f, 0.1f, 5.0f);  // radius(半径)
+  ImGui::Text("radius: %f", radius_);
   ImGui::DragFloat("velocityY", &velocityY_, 0.1f);
   ImGui::DragInt("rockCount", &rockCount_, 1, 0, 999);
   ImGui::Text("attackPower: %d", attackPower_);
@@ -324,4 +342,18 @@ void Player::ReCalcStatusFromRock() {
   // サイズ
   // 初期半径 x 倍率
   radius_ = baseRadius_ * mul;
+}
+
+Vector3 Player::RotateLocalDir(const Vector3 &dir) const {
+
+  return RotateByQuaternion(dir, rotation_);
+}
+
+Vector3 Player::WorldDirToLocal(const Vector3 &worldDir) const {
+
+  // rotateの逆を作る
+  Quaternion invRot{-rotation_.x, -rotation_.y, -rotation_.z, rotation_.w};
+
+  // ワールド方向を「プレイヤーローカル」に変換
+  return RotateByQuaternion(worldDir, invRot);
 }
