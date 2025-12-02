@@ -102,7 +102,13 @@ void GameScene::Update() {
         rockManager_->Update(player_.get());
     }
 
-    CheckHit_PlayerAndRock();
+    //岩とプレイヤーのあたり判定
+    if (player_ && rockManager_) {
+        GameFunction::CheckHit_PlayerAndRock(
+            *player_,
+            rockManager_->GetRocks()
+        );
+    }
 }
 
 // 描画
@@ -137,35 +143,4 @@ void GameScene::Draw() {
 
 }
 
-void GameScene::CheckHit_PlayerAndRock() {
-    if (!player_ || !rockManager_) {
-        return;
-    }
 
-    // プレイヤー情報
-    const Vector3& pPos = player_->GetPosition();
-    const float    pRadius = player_->GetRadius();
-
-    // 岩リスト（書き換えたいので非 const 参照）
-    auto& rocks = rockManager_->GetRocks();
-
-    for (auto& rock : rocks) {
-        if (!rock.isAlive_) {
-            continue;
-        }
-
-        // ★ ここで GameFunction の球判定を使用
-        if (GameFunction::IsHitSphere(pPos, pRadius,
-            rock.position_, rock.radius_)) {
-
-            // プレイヤーが岩を拾う
-            player_->AddRock(1);
-
-            // 岩を消す（isAlive_ = false）
-            rock.Kill();
-
-            // 複数同時に拾いたくないなら break;
-            // 今はまとめて拾えるよう、ループは続けてOK
-        }
-    }
-}
