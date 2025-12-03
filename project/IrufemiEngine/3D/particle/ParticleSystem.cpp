@@ -747,6 +747,15 @@ void ParticleSystem::PlayHitEffect(const Vector3& position) {
     }
 }
 
+void ParticleSystem::PlayHitEffect(const Vector3& position, uint32_t count) {
+	if (particleType_ == ParticleType::kHitEffect) {
+		Emitter customEmitter = emitter_;
+		customEmitter.transform.translate = position;
+		customEmitter.count = count;
+		particles_.splice(particles_.end(), Emit(customEmitter, randomEngine_));
+	}
+}
+
 void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
 #if USE_IMGUI
@@ -897,12 +906,10 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         if (s_textureManager_) {
                             auto textureNames = s_textureManager_->GetTextureNames();
                             std::sort(textureNames.begin(), textureNames.end());
-                            if (!textureNames.empty()) {
-                                if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
-                                    currentTextureName = textureNames[selectedTextureIndex_];
-                                } else {
-                                    currentTextureName = textureNames[0];
-                                }
+                            if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
+                                currentTextureName = textureNames[selectedTextureIndex_];
+                            } else {
+                                currentTextureName = textureNames[0];
                             }
                         }
                         Initialize(camera_, currentTextureName, particleType_, primitiveShape_);
@@ -1015,7 +1022,7 @@ void ParticleSystem::DrawAABB(const AABB& aabb, const Vector4& color)
 #endif
 }
 
-// 追加実装: SetRingParameters (適当な場所に追加：クラス外のメソッド実装セクションに入れてください)
+// SetRingParameters
 void ParticleSystem::SetRingParameters(float innerRadius, float outerRadius,
     float startAngleDeg, float endAngleDeg,
     uint32_t segmentCount, bool verticalUV) {
@@ -1028,7 +1035,7 @@ void ParticleSystem::SetRingParameters(float innerRadius, float outerRadius,
     ringVerticalUV_ = verticalUV;
 }
 
-// 追加実装: SetCylinderParameters
+// SetCylinderParameters
 void ParticleSystem::SetCylinderParameters(float radius, float height, uint32_t segmentCount, bool flipV) {
     cylinderRadius_ = radius;
     cylinderHeight_ = height;

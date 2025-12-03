@@ -76,6 +76,9 @@
     <Filter Include="3D\Particle">
       <UniqueIdentifier>{1809edd0-a6a4-4f58-bde0-1ea7fde05183}</UniqueIdentifier>
     </Filter>
+    <Filter Include="3D\Effect">
+      <UniqueIdentifier>{588775aa-5265-4d8d-8290-25e9aa30c275}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="manager\DrawManager.cpp">
@@ -258,6 +261,9 @@
     </ClCompile>
     <ClCompile Include="3D\CubeClass.cpp">
       <Filter>3D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\effect\EffectSystem.cpp">
+      <Filter>3D\Effect</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -500,6 +506,9 @@
     </ClInclude>
     <ClInclude Include="3D\CubeClass.h">
       <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\effect\EffectSystem.h">
+      <Filter>3D\Effect</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

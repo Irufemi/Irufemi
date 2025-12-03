@@ -57,7 +57,10 @@ public:
 		uint32_t count);
 	void SetTexture(const std::string& textureFilePath);
 
+	// ヒットエフェクトを再生する
 	void PlayHitEffect(const Vector3& position);
+	// ヒットエフェクトを再生する（数と位置を指定）
+	void PlayHitEffect(const Vector3& position, uint32_t count);
 
 	// 追加: Ring パラメータ設定
 	void SetRingParameters(float innerRadius, float outerRadius,
