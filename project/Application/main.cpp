@@ -10,6 +10,7 @@
 #include "scene/inGame/GameScene.h"
 #include "scene/result/ResultScene.h"
 #include "scene/debug/DebugScene.h"
+#include "scene/mt4/MT4.h"
 
 //クライアント領域のサイズ
 const int32_t kClientWidth = 1280;
@@ -35,14 +36,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     // アプリ側で登録
     engine->SetSceneRegistrar([](SceneManager& sm) {
-        sm.Register("Title", [] { return std::make_unique<TitleScene>();  });
-        sm.Register("InGame", [] { return std::make_unique<GameScene>();   });
-        sm.Register("Result", [] { return std::make_unique<ResultScene>(); });
-        sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
+        //sm.Register("Title", [] { return std::make_unique<TitleScene>();  });
+        //sm.Register("InGame", [] { return std::make_unique<GameScene>();   });
+        //sm.Register("Result", [] { return std::make_unique<ResultScene>(); });
+        //sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
+        sm.Register("MT4", [] { return std::make_unique<MT4>(); });
         }
     );
 
-    engine->SetInitialSceneName("Debug");
+    engine->SetInitialSceneName("MT4");
 
     engine->Execute();
 

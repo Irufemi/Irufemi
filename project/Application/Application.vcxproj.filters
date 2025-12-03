@@ -46,6 +46,9 @@
     <Filter Include="content\skydome">
       <UniqueIdentifier>{2dd0d319-6760-41ba-acf1-9533c080302e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scene\MT4">
+      <UniqueIdentifier>{911cefbd-75b6-40ec-a094-576482e86bc7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -88,6 +91,9 @@
     <ClCompile Include="contents\skydome\Skydome.cpp">
       <Filter>content\skydome</Filter>
     </ClCompile>
+    <ClCompile Include="scene\mt4\MT4.cpp">
+      <Filter>Scene\MT4</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -125,6 +131,9 @@
     </ClInclude>
     <ClInclude Include="contents\skydome\Skydome.h">
       <Filter>content\skydome</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\mt4\MT4.h">
+      <Filter>Scene\MT4</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
