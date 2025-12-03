@@ -45,6 +45,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveFence_ = false;
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
+    isActiveEffect_ = true;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -107,6 +108,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         particle_ = std::make_unique<ParticleSystem>();
         particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kAccelerationField);
     }
+    if (isActiveEffect_) {
+        effect_ = std::make_unique<EffectSystem>();
+        effect_->Initialize(camera_.get());
+    }
 
     line2D_ = std::make_unique<Line2DClass>();
     line2D_->Initialize(camera_.get(), { 300.0f,300.0f }, { 360.0f,360.0f });
@@ -163,6 +168,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("Fence", &isActiveFence_);
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("Particle", &isActiveParticle_);
+    ImGui::Checkbox("Effect", &isActiveEffect_);
     ImGui::End();
 
     ImGui::Begin("GE");
@@ -351,6 +357,14 @@ void DebugScene::Update() {
         particle_->Debug("Particle");
         particle_->Update();
     }
+    if (isActiveEffect_) {
+        if (!effect_) {
+            effect_ = std::make_unique <EffectSystem>();
+            effect_->Initialize(camera_.get());
+        }
+        effect_->Debug("Effect");
+        effect_->Update();
+    }
 
     line2D_->Update();
 
@@ -427,6 +441,10 @@ void DebugScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();
+
+    if (isActiveEffect_) {
+        effect_->Draw();
+    }
 
     if (isActiveParticle_) {
         particle_->Draw();
