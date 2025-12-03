@@ -9,6 +9,9 @@
 #include <cmath>
 
 static void ImGuiMatrixScreenPrint([[maybe_unused]]const Matrix4x4& m) {
+    
+#ifdef USE_IMGUI
+
     ImGui::Text(
         "%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n",
         m.m[0][0], m.m[0][1], m.m[0][2], m.m[0][3],
@@ -16,6 +19,8 @@ static void ImGuiMatrixScreenPrint([[maybe_unused]]const Matrix4x4& m) {
         m.m[2][0], m.m[2][1], m.m[2][2], m.m[2][3],
         m.m[3][0], m.m[3][1], m.m[3][2], m.m[3][3]
     );
+
+#endif // USE_IMGUI
 }
 
 // 任意軸回転行列の作成関数
