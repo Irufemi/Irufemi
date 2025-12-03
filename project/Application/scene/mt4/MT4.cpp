@@ -8,7 +8,7 @@
 
 #include <cmath>
 
-static void ImGuiMatrixScreenPrint(const Matrix4x4& m) {
+static void ImGuiMatrixScreenPrint([[maybe_unused]]const Matrix4x4& m) {
     ImGui::Text(
         "%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n",
         m.m[0][0], m.m[0][1], m.m[0][2], m.m[0][3],
