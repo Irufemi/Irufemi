@@ -12,6 +12,7 @@
 #include "3D/PlaneClass.h"
 #include "3D/TriangleClass.h"
 #include "3D/particle/ParticleSystem.h"
+#include "3D/effect/EffectSystem.h"
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
 #include "3D/PointLightClass.h"
@@ -72,6 +73,9 @@ private: // メンバ変数
 
     std::unique_ptr<ParticleSystem> particle_ = nullptr;
     bool isActiveParticle_ = false;
+
+    std::unique_ptr<EffectSystem> effect_ = nullptr;
+    bool isActiveEffect_ = false;
 
     std::unique_ptr<Sprite> imguiSprite_;
     bool showDemoWindow = false;
