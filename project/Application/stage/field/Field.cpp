@@ -1,76 +1,221 @@
+// Field.cpp
 #include "Field.h"
+
+// 例: "Math/Vector3.h" とか "engine/math/Vector3.h" とか
+#include "Math/Vector3.h"
+
 #include <cmath>
-#include <cstdlib>
-#include "manager/DebugUI.h"
+#include <cstdlib>   // rand()
+#include <algorithm> // std::min, std::max
 
-void Field::ClampInside(Vector3& pos, float objRadius) const {
+// -------------------------
+// 便利関数（このファイル内だけで使用）
+// -------------------------
 
-	// フィールド中心からのXZ方向ベクトル
-	Vector3 diff{
-		pos.x - center.x,
-		0.0f,
-		pos.z - center.z
-	};
+namespace
+{
+    // 0.0〜1.0 にクランプ
+    float Clamp01(float v)
+    {
+        if (v < 0.0f) { return 0.0f; }
+        if (v > 1.0f) { return 1.0f; }
+        return v;
+    }
 
-	float distSq = diff.x * diff.x + diff.z * diff.z;
+    // 0.0〜1.0 の乱数（雑でOKな版）
+    float Random01()
+    {
+        return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+    }
 
-	// 許される最大距離（フィールド半径 − オブジェクト半径）
-	float maxDist = radius - objRadius;
-	if (maxDist < 0.0f) {
-		maxDist = 0.0f;
-	}
-	float maxDistSq = maxDist * maxDist;
-
-	// まだ円の内側ならOK
-	if (distSq <= maxDistSq) {
-		return;
-	}
-
-	// 円の外に出たので円周まで押し戻す
-	float dist = std::sqrt(distSq);
-
-	// ど真ん中にいて diff が0の場合の保険
-	if (dist == 0.0f) {
-		diff.x = 1.0f;
-		diff.z = 0.0f;
-		dist = 1.0f;
-	}
-
-	// 正規化
-	diff.x /= dist;
-	diff.z /= dist;
-
-	// 円周の位置
-	pos.x = center.x + diff.x * maxDist;
-	pos.z = center.z + diff.z * maxDist;
+    constexpr float kPi = 3.1415926535f;
 }
 
-Vector3 Field::GetRandomPointInside(float y) const {
+// -------------------------
+// Field 本体
+// -------------------------
 
-	// 0〜1 の乱数（float）
-	float u = (float)rand() / RAND_MAX;
-	float v = (float)rand() / RAND_MAX;
+void Field::Initialize(IrufemiEngine* engine, Camera* camera)
+{
+    engine_ = engine;
+    camera_ = camera;
 
-	// 一様分布になるように平方根を使う
-	float r = std::sqrt(u) * radius;
-	float rad = v * 2.0f * 3.1415926535f;
-
-	float x = center.x + r * std::cos(rad);
-	float z = center.z + r * std::sin(rad);
-
-	return Vector3{ x, y, z };
+    // ★ 今はロジックだけ。描画用メッシュや Region などは
+    //    後で「見た目を作るフェーズ」で追加する。
+    //
+    // 例:
+    // fieldRegion_ = new Region();
+    // fieldRegion_->Initialize(...);
 }
 
-// === imguiで編集 ===
-void Field::DrawImGui() {
-	if (ImGui::Begin("Field Debug")) {
-		ImGui::DragFloat("Center X", &center.x, 0.1f);
-		ImGui::DragFloat("Center Z", &center.z, 0.1f);
-		ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, 200.0f);
+void Field::Update(float /*deltaTime*/)
+{
+    // 今のところフィールド自身は時間で変化しないので何もしない。
+    // 砂嵐を動かしたり、ステージギミックを追加したくなったらここに処理を書く。
+}
 
-		ImGui::Separator();
-		ImGui::Text("Now: Center(%.2f, %.2f, %.2f)", center.x, center.y, center.z);
-		ImGui::Text("Radius: %.2f", radius);
-	}
-	ImGui::End();
+void Field::Draw()
+{
+    // ★ 今は空でOK。
+    //   円形メッシュ＋夜砂マテリアルが用意できたら、ここで描画を呼ぶ。
+    //
+    // if (fieldRegion_) {
+    //     fieldRegion_->Draw();
+    // }
+}
+
+// -------------------------
+// ステージパラメータ
+// -------------------------
+
+void Field::SetRadius(float r)
+{
+    // 半径が 0 以下にならないように最低値を入れておく
+    radius_ = (r > 0.01f) ? r : 0.01f;
+}
+
+float Field::GetRadius() const
+{
+    return radius_;
+}
+
+void Field::SetFadeRates(float startRate, float endRate)
+{
+    // 0〜1 にクランプしておく
+    fadeStartRate_ = Clamp01(startRate);
+    fadeEndRate_ = Clamp01(endRate);
+
+    // start > end になっていたら、入れ替えておく
+    if (fadeStartRate_ > fadeEndRate_) {
+        std::swap(fadeStartRate_, fadeEndRate_);
+    }
+}
+
+void Field::SetHeightScale(float scale)
+{
+    heightScale_ = scale;
+}
+
+// -------------------------
+// 地形・境界関連
+// -------------------------
+
+// (x, z) から地面の高さ y を求める
+float Field::GetHeight(float x, float z) const
+{
+    // 中心からの距離 r
+    float r = std::sqrt(x * x + z * z);
+
+    // 半径 0.8 * radius_ で最大高さになるようなパラメータ
+    float maxR = radius_ * 0.8f;
+    if (maxR <= 0.0f) {
+        return 0.0f;
+    }
+
+    // 0〜1 の割合に正規化
+    float t = Clamp01(r / maxR);
+
+    // t^2 で、中心が低くて外側が少し高い「ゆるい砂丘」カーブにする
+    float h = t * t;
+
+    return h * heightScale_;
+}
+
+float Field::GetHeight(const Vector3& pos) const
+{
+    return GetHeight(pos.x, pos.z);
+}
+
+// 円ステージの内側に位置を収める（はみ出したら円周上にクランプ）
+Vector3 Field::ClampInside(const Vector3& pos) const
+{
+    Vector3 result = pos;
+
+    float r = std::sqrt(result.x * result.x + result.z * result.z);
+
+    // 半径を超えていたら円周上に押し戻す
+    if (r > radius_ && r > 0.0f) {
+        float k = radius_ / r;
+        result.x *= k;
+        result.z *= k;
+    }
+
+    // Y は地面の高さに合わせる
+    result.y = GetHeight(result.x, result.z);
+
+    return result;
+}
+
+// -------------------------
+// スポーン用ヘルパ
+// -------------------------
+
+// 円の中のランダム位置（均等分布）
+Vector3 Field::GetRandomPointInField() const
+{
+    // 半径 r の円内一様分布にするために、sqrt を使う
+    float u = Random01();
+    float r = radius_ * std::sqrt(u);
+    float theta = Random01() * 2.0f * kPi;
+
+    float x = r * std::cos(theta);
+    float z = r * std::sin(theta);
+    float y = GetHeight(x, z);
+
+    return Vector3{ x, y, z };
+}
+
+// 内側/外側を指定したリング領域内ランダム
+Vector3 Field::GetRandomPointInRing(float innerRadius, float outerRadius) const
+{
+    // 半径をクランプしておく
+    innerRadius = std::max(0.0f, innerRadius);
+    outerRadius = std::min(radius_, outerRadius);
+
+    if (outerRadius < innerRadius) {
+        std::swap(innerRadius, outerRadius);
+    }
+
+    // inner==outer の場合は、その円周上に一様分布
+    if (outerRadius <= 0.0f) {
+        // どうしようもないので原点返し
+        return Vector3{ 0.0f, GetHeight(0.0f, 0.0f), 0.0f };
+    }
+
+    float inner2 = innerRadius * innerRadius;
+    float outer2 = outerRadius * outerRadius;
+
+    float u = Random01();
+    // 半径^2 を線形補間してから sqrt するとリング内一様分布になる
+    float r2 = inner2 + (outer2 - inner2) * u;
+    float r = std::sqrt(r2);
+
+    float theta = Random01() * 2.0f * kPi;
+
+    float x = r * std::cos(theta);
+    float z = r * std::sin(theta);
+    float y = GetHeight(x, z);
+
+    return Vector3{ x, y, z };
+}
+
+// -------------------------
+// 外周フェード用（描画シェーダに渡す係数）
+// -------------------------
+
+// 戻り値：0.0 = 中央, 1.0 = 外周
+float Field::CalcFade(float x, float z) const
+{
+    float r = std::sqrt(x * x + z * z);
+
+    float start = radius_ * fadeStartRate_;
+    float end = radius_ * fadeEndRate_;
+
+    if (end <= start) {
+        // おかしな設定になっていたらフェードなし扱い
+        return 0.0f;
+    }
+
+    float t = (r - start) / (end - start);
+    return Clamp01(t);
 }

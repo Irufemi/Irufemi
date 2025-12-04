@@ -1,22 +1,75 @@
+// Field.h
 #pragma once
-#include "math/Vector3.h"
 
-class Field {
+// 必要に応じて自分のエンジンのヘッダに合わせて書き換えてね
+// 例: #include "Vector3.h" とか "Math.h" とか
+struct Vector3;
+class Camera;
+class IrufemiEngine;
+// class Region;   // 描画に Region 使うなら前方宣言してOK
+
+class Field
+{
 public:
-	// フィールド中心（XZ平面）。Yは基本無視。
-	Vector3 center;
+    Field() = default;
+    ~Field() = default;
 
-	// フィールドの半径
-	float radius = 10.0f;
+    // --------------------
+    // 基本ライフサイクル
+    // --------------------
+    void Initialize(IrufemiEngine* engine, Camera* camera);
+    void Update(float deltaTime);
+    void Draw();
 
+    // --------------------
+    // ステージパラメータ
+    // --------------------
+    void  SetRadius(float r);
+    float GetRadius() const;
 
-public:
-	// プレイヤー（または任意の円）をフィールド内に収める
-	void ClampInside(Vector3& pos, float objRadius) const;
+    // 必要なら外からフェード設定をいじれるように
+    void  SetFadeRates(float startRate, float endRate);
+    void  SetHeightScale(float scale);
 
-	// 後で必要になったら使える：円の中からランダム取得
-	Vector3 GetRandomPointInside(float y = 0.0f) const;
+    // --------------------
+    // 地形・境界関連
+    // --------------------
 
-	//追加：ImGui デバッグ用
-	void DrawImGui();
+    // 地面の高さ取得（x,z から y を返す）
+    float  GetHeight(float x, float z) const;
+    float  GetHeight(const Vector3& pos) const;
+
+    // ステージ円の内側に位置を収める（はみ出したら円周上にクランプ）
+    Vector3 ClampInside(const Vector3& pos) const;
+
+    // --------------------
+    // スポーン用ヘルパ
+    // --------------------
+
+    // 円の中のランダム位置（プレイヤー・岩・敵のスポーンに使える）
+    Vector3 GetRandomPointInField() const;
+
+    // 内側/外側を指定したリング領域内ランダム
+    Vector3 GetRandomPointInRing(float innerRadius, float outerRadius) const;
+
+    // --------------------
+    // 外周フェード用（シェーダ or 定数バッファ用）
+    // --------------------
+    // 0.0 = 中央, 1.0 = 外周付近
+    float CalcFade(float x, float z) const;
+
+private:
+    // ステージ形状パラメータ
+    float radius_ = 12.0f;   // 円ステージ半径
+    float heightScale_ = 0.15f;   // 砂丘の盛り上がり量
+    float fadeStartRate_ = 0.75f;   // フェード開始(半径に対する割合)
+    float fadeEndRate_ = 1.0f;    // フェード終了(半径に対する割合)
+
+    // エンジン・カメラ参照（必要なら）
+    IrufemiEngine* engine_ = nullptr;
+    Camera* camera_ = nullptr;
+
+    // 描画用の何か（Region や Model 等）
+    // ここはあなたのエンジンに合わせて後で決めよう
+    // Region* fieldRegion_ = nullptr;
 };
