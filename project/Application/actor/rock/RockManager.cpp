@@ -4,8 +4,9 @@
 #include "Application/camera/Camera.h"
 #include "actor/player/Player.h"
 #include "contents/GameFunction.h"
+#include "contents/Quaternion.h"
 #include "engine/IrufemiEngine.h"
-#include "function/Math.h" // MakeAffine など、行列系を使うなら
+#include "stage/field/Field.h"
 #include <cmath>
 #include <random>
 
@@ -14,7 +15,6 @@ namespace {
 /// <summary>
 /// 正規化
 /// </summary>
-/// <param name="v"></param>
 /// <returns></returns>
 Vector3 NormalizeVec(const Vector3 &v) {
   float lenSq = v.x * v.x + v.y * v.y + v.z * v.z;
@@ -25,23 +25,56 @@ Vector3 NormalizeVec(const Vector3 &v) {
   return {v.x * invLen, v.y * invLen, v.z * invLen};
 }
 
+/// <summary>
+/// 内積を返す
+/// </summary>
+/// <returns></returns>
+float DotVec(const Vector3 &a, const Vector3 &b) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+/// <summary>
+/// ローカルY軸周りに回転させる
+/// </summary>
+/// <returns></returns>
+Vector3 RotateAroundYLocal(const Vector3 &dir, float angleRad) {
+  float c = std::cos(angleRad);
+  float s = std::sin(angleRad);
+  Vector3 r;
+  r.x = dir.x * c - dir.z * s;
+  r.y = dir.y;
+  r.z = dir.x * s + dir.z * c;
+  return r;
+}
+
+/// <summary>
+/// クロス積を返す
+/// </summary>
+Vector3 CrossVec(const Vector3 &a, const Vector3 &b) {
+  return {
+      a.y * b.z - a.z * b.y,
+      a.z * b.x - a.x * b.z,
+      a.x * b.y - a.y * b.x,
+  };
+}
+
 } // namespace
 
 void RockManager::Initialize(Camera *camera) {
   // Rock用 Region を生成
   rockRegion_ = std::make_unique<Region>();
-  // ここでは block.obj を流用。岩専用モデルがあるならそのファイル名に。
-  rockRegion_->Initialize(camera, "block.obj");
 
-  // 必要ならここで初期岩を足してもOK
-  // AddRock({0.0f, 0.0f, 5.0f}, 0.5f);
+  // モデルを読み込む
+  rockRegion_->Initialize(camera, "block.obj");
 }
 
 void RockManager::AddRock(const Vector3 &pos, float radius) {
-  // 上限超えそうなら足さない（保険）
+  // 上限を超える場合は追加しない
   if (rocks_.size() >= maxAlive_) {
     return;
   }
+
+  // 指定位置と半径で岩を追加する
   rocks_.emplace_back(pos, radius);
 }
 
@@ -51,29 +84,40 @@ void RockManager::SetSpawnArea(const Vector3 &minPos, const Vector3 &maxPos) {
 }
 
 void RockManager::Update(Player *player) {
-  const float dt = 1.0f / 60.0f; // 仮フレーム時間
+  const float dt = 1.0f / 60.0f; // 1フレーム時間
 
+  // 岩個別の更新とスポーン処理
   UpdateRocks(dt);
   AutoSpawn(dt);
 
-  // 2) プレイヤーがいなければ何もしない
+  //  プレイヤーがいなければ何もしない
   if (!player) {
     return;
   }
 
-  // 3) プレイヤー情報を取得
+  // プレイヤー情報を取得
   const Vector3 &pPos = player->GetPosition();
   const float pRadius = player->GetRadius();
 
-  // 4) すべての岩とプレイヤーの当たり判定
+  // すべての岩とプレイヤーの当たり判定
   for (auto &rock : rocks_) {
 
     if (rock.isAttached_) {
+      // ローカル方向をプレイヤー姿勢に基づいて回し、公転の動きをさせる
       Vector3 rotated = player->RotateLocalDir(rock.localDir_);
       rock.position_ = pPos + rotated * rock.distanceFromPlayer_;
+
+      // プレイヤー姿勢 × ローカル回転をしてワールド姿勢を取得する
+      const Quaternion &qPlayer = player->GetRotation();
+      Quaternion qWorld = Multiply(qPlayer, rock.localRotation_);
+
+      // クォータニオンからオイラー角に変換
+      rock.rotate_ = QuaternionToEuler(qWorld);
+
       continue;
     }
 
+    // 生存していない岩はスキップ
     if (!rock.isAlive_) {
       continue;
     }
@@ -82,41 +126,106 @@ void RockManager::Update(Player *player) {
     if (GameFunction::IsHitSphere(pPos, pRadius, rock.position_,
                                   rock.radius_)) {
 
-      // ★ ヒットした：岩を「拾う」扱いにする
+      // 岩をプレイヤーにくっついた状態にする
       rock.isAttached_ = true;
 
-      // この岩は消す
+      // フィールド上からは消す
       rock.Kill();
 
-      // プレイヤーに岩を1つ加算
-      //   - Player::AddRock() 内で0未満クランプ済み
+      // プレイヤーに岩を1つ追加
       player->AddRock(1);
 
-      // プレイヤーから見た方向＆距離を保存
+      // プレイヤーから見た岩の方向（ワールド）
       Vector3 diff = rock.position_ - pPos;
-      Vector3 dir = NormalizeVec(diff);
+      Vector3 worldDir = NormalizeVec(diff);
 
-      // プレイヤーのローカルに反映させる
-      rock.localDir_ = player->WorldDirToLocal(dir);
+      // ローカル方向の初期候補
+      Vector3 candidateLocalDir = player->WorldDirToLocal(worldDir);
 
-      // プレイヤーとの距離
+      // 最小角度(ほかの岩と重ならないように)
+      const float minAngleRad = 0.5f;
+      const float cosMinAngle = std::cos(minAngleRad);
+
+      // 近すぎたときの調整用パラメータ
+      const float adjustStepRad = 0.4f;
+      const int maxTries = 12;
+
+      // 他の岩と近すぎたら離す
+      for (int i = 0; i < maxTries; ++i) {
+        bool separated = true;
+
+        // すでにくっついている岩との角度
+        for (const auto &other : rocks_) {
+          if (!other.isAttached_) {
+            continue;
+          }
+
+          float dot = DotVec(candidateLocalDir, other.localDir_);
+          if (dot > cosMinAngle) {
+            // 角度が近すぎる(岩同士が重なっている)
+            separated = false;
+            break;
+          }
+        }
+
+        if (separated) {
+          break;
+        }
+
+        // 近すぎたので、ローカルY軸まわりに少し回転させて再チェック
+        candidateLocalDir =
+            RotateAroundYLocal(candidateLocalDir, adjustStepRad);
+      }
+
+      // ローカル方向とプレイヤー中心からの距離を保存する
+      rock.localDir_ = candidateLocalDir;
       rock.distanceFromPlayer_ = pRadius + rock.radius_;
 
-      // 一応、1フレームに複数個拾いたければ continue
-      // ひとつだけにしたければ break;
-      // ここでは複数拾えるようにしておく
+      // 岩の +Y をプレイヤー中心方向へ向けるための回転を計算する
+      Vector3 nWorld = worldDir;
+      Vector3 up{0.0f, 1.0f, 0.0f};
+
+      float dot = DotVec(up, nWorld);
+      const float EPS = 1e-4f;
+
+      Quaternion qAttach; // ワールド空間での岩の姿勢(最終的にオイラー角に戻す)
+
+      if (dot > 1.0f - EPS) {
+        // ほぼ同一方向の場合は回転不要
+        qAttach = {0.0f, 0.0f, 0.0f, 1.0f};
+      } else if (dot < -1.0f + EPS) {
+        // 反対方向の場合は X 軸まわりに180度回転
+        qAttach = FromAxisAngle({1.0f, 0.0f, 0.0f}, 3.14159265f);
+      } else {
+        // up を nWorld に向ける回転
+        Vector3 axis = CrossVec(up, nWorld);
+        axis = NormalizeVec(axis);
+        float angle = std::acos(dot);
+        qAttach = FromAxisAngle(axis, angle);
+      }
+
+      // プレイヤーの姿勢クォータニオン
+      Quaternion qPlayer = player->GetRotation();
+
+      // 逆回転(クォータニオン)
+      Quaternion qPlayerInv{-qPlayer.x, -qPlayer.y, -qPlayer.z, qPlayer.w};
+
+      // プレイヤー基準のローカル回転として保存
+      rock.localRotation_ = Multiply(qPlayerInv, qAttach);
     }
   }
 }
 
 void RockManager::UpdateRocks(float deltaTime) {
+
+  // 岩の更新処理
   for (auto &r : rocks_) {
     if (!r.isAlive_)
       continue;
     r.Update(deltaTime);
   }
 
-  // ★ 死んだ岩を配列から削除
+  // 死亡しているかつ、プレイヤーにくっついていない岩を削除
   rocks_.erase(std::remove_if(
                    rocks_.begin(), rocks_.end(),
                    [](const Rock &r) { return !r.isAlive_ && !r.isAttached_; }),
@@ -124,20 +233,25 @@ void RockManager::UpdateRocks(float deltaTime) {
 }
 
 void RockManager::AutoSpawn(float deltaTime) {
+
+  // スポーンタイマーを進める
   spawnTimer_ += deltaTime;
 
-  // 生きてる個数（または配列サイズ）で上限チェック
+  // 生存している岩を数える
   size_t alive = 0;
   for (const auto &r : rocks_) {
     if (r.isAlive_) {
       ++alive;
     }
   }
+
+  // 上限を超えている場合はスポーンしない
   if (alive >= maxAlive_) {
     return;
   }
   OutputDebugStringA((std::to_string(alive) + "\n").c_str());
 
+  // インターバル経過したらスポーン
   if (spawnTimer_ >= spawnInterval_) {
     spawnTimer_ = 0.0f;
     SpawnRandomRock();
@@ -150,10 +264,23 @@ void RockManager::SpawnRandomRock() {
   std::uniform_real_distribution<float> distX(spawnMin_.x, spawnMax_.x);
   std::uniform_real_distribution<float> distZ(spawnMin_.z, spawnMax_.z);
 
+  // ランダム位置に岩を生成する
   Vector3 pos{};
-  pos.x = distX(rng);
-  pos.y = spawnMin_.y; // 高さは固定
-  pos.z = distZ(rng);
+
+  if (field_) {
+    // ★ Field が設定されている場合 → 丸フィールド内のランダム位置
+    //    y の高さは元の spawnMin_.y を流用
+    pos = field_->GetRandomPointInField();
+  } else {
+    // ★ Field がない場合 → 既存の矩形スポーンにフォールバック
+    static std::mt19937 rng{std::random_device{}()};
+    std::uniform_real_distribution<float> distX(spawnMin_.x, spawnMax_.x);
+    std::uniform_real_distribution<float> distZ(spawnMin_.z, spawnMax_.z);
+
+    pos.x = distX(rng);
+    pos.y = spawnMin_.y;
+    pos.z = distZ(rng);
+  }
 
   float radius = 0.5f;
   AddRock(pos, radius);
@@ -164,19 +291,21 @@ void RockManager::Draw(IrufemiEngine * /*engine*/, Camera * /*camera*/) {
     return;
   }
 
-  // いったん全部クリアして、今フレームの岩を積み直す
+  // 今フレームのインスタンス情報をクリアする
   rockRegion_->ClearInstances();
 
   for (const auto &rock : rocks_) {
+
+    // 生存しておらず、プレイヤーにくっついていない岩は描画しない
     if (!rock.isAlive_ && !rock.isAttached_) {
       continue;
     }
 
-    // Rock → Transform 変換
+    // Transformを生成する
     Transform t{};
-    float s = rock.radius_ * 2.0f; // 半径→直径にしてスケール
+    float s = rock.radius_ * 2.0f;
     t.scale = {s, s, s};
-    t.rotate = {0.0f, 0.0f, 0.0f};
+    t.rotate = rock.rotate_;
     t.translate = rock.position_;
 
     rockRegion_->AddInstance(t);

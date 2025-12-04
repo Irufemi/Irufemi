@@ -163,6 +163,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="actor\rock\RockManager.cpp" />
     <ClCompile Include="camera\Camera.cpp" />
     <ClCompile Include="camera\DebugCamera.cpp" />
+    <ClCompile Include="contents\Quaternion.cpp" />
     <ClCompile Include="effect\Effect.cpp" />
     <ClCompile Include="contents\GameFunction.cpp" />
     <ClCompile Include="actor\enemy\EnemyWall.cpp" />
@@ -187,6 +188,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actor\rock\RockManager.h" />
     <ClInclude Include="camera\Camera.h" />
     <ClInclude Include="camera\DebugCamera.h" />
+    <ClInclude Include="contents\Quaternion.h" />
     <ClInclude Include="effect\Effect.h" />
     <ClInclude Include="contents\GameFunction.h" />
     <ClInclude Include="actor\enemy\EnemyWall.h" />

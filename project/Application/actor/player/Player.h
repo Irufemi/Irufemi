@@ -1,22 +1,11 @@
 #pragma once
 
+#include "3D/SphereClass.h"
+#include "contents/Quaternion.h"
 #include "engine/Input/InputManager.h"
 #include "math/Transform.h"
 
-#include "3D/SphereClass.h"
-
 class Camera;
-
-// プレイヤーの回転(姿勢)を表すクォータニオン
-// どの向きで回転しているかを保持するためのもの
-// オイラー角だけだと斜め移動時の転がりで軸が破綻するため、
-// 内部ではこちらで姿勢を管理し、最後にオイラー角に変換してTransformに渡す。
-struct Quaternion {
-  float x;
-  float y;
-  float z;
-  float w;
-};
 
 class Player {
 
@@ -61,10 +50,14 @@ private:
   void ApplyRolling(const Vector3 &dir, float moveDistance);
 
 public:
-  // トランスフォーム
-
+  /// <summary>
+  /// 現在位置のゲッター
+  /// </summary>
   const Vector3 &GetPosition() const { return transform_.translate; }
 
+  /// <summary>
+  /// 現在位置のセッター
+  /// </summary>
   void SetPosition(const Vector3 &position) {
     transform_.translate = position;
 
@@ -75,13 +68,16 @@ public:
     }
   }
 
+  /// <summary>
+  /// 半径を返す
+  /// </summary>
   float GetRadius() const { return radius_; }
 
 private:
   // カメラ
   Camera *camera_ = nullptr;
 
-  // モデル
+  // モデル(球)
   SphereClass *model_ = nullptr;
 
   // 入力
@@ -94,9 +90,10 @@ private:
       {0.0f, 0.0f, 0.0f},
   };
 
-  // 球の半径
+  // 球の現在の半径
   float radius_;
 
+  // 基本の半径
   const float baseRadius_ = 0.5f;
 
   // クォータニオン
@@ -106,40 +103,45 @@ public:
   /// <summary>
   /// クォータニオンのゲッター
   /// </summary>
-  /// <returns></returns>
   Quaternion GetRotation() const { return rotation_; }
 
+  /// <summary>
+  /// オイラー角の取得
+  /// </summary>
+  Vector3 GetRotate() const { return transform_.rotate; }
+
 private:
-  float velocityY_ = 0.0f; // 上下の速度（Y）
+  float velocityY_ = 0.0f; // 縦方向の速度
   float gravity_ = -0.05f; // 重力加速度
 
 public:
   // ノックバック用
+
+  /// <summary>
+  /// 上下の速度を加算
+  /// </summary>
+  /// <param name="v"></param>
   void AddVerticalVelocity(float v) { velocityY_ = v; }
 
+  /// <summary>
+  /// ノックバックを開始
+  /// </summary>
+  /// <param name="dir"></param>
   void StartKnockback(const Vector3 &dir) {
     isKnockback_ = true;
     knockbackVel_ = dir;
   }
 
 private:
-  // ノックバック用
-  bool isKnockback_ = false;
-  Vector3 knockbackVel_{0, 0, 0};
+  bool isKnockback_ = false;      // ノックバック中かどうか
+  Vector3 knockbackVel_{0, 0, 0}; // ノックバック速度
 
 private:
-  // 纏っている岩の情報
+  // 纏っている岩の数
   int rockCount_ = 0;
 
-  // 攻撃力
+  // 現在の攻撃力
   int attackPower_ = 0;
-
-#ifdef _DEBUG
-
-  // デバッグ用
-  // float Arock = 0.0f;
-
-#endif // D_EBUG
 
   // 何個毎に倍率をあげるか
   int rocksPerLevel_ = 3; // 三個毎に x1 -> x2 -> x3...
@@ -176,20 +178,20 @@ public:
 
 private:
   /// <summary>
-  /// 纏っている岩の数からダメージと半径を計算
+  /// 纏っている岩の数からダメージと半径を再計算
   /// </summary>
   void ReCalcStatusFromRock();
 
 public:
   /// <summary>
-  /// プレイヤーの現在の回転を使って、ローカル方向ベクトルを回転させる
+  /// ローカル方向ベクトルをプレイヤーの現在の回転で回す
   /// </summary>
   /// <param name="dir"></param>
   /// <returns></returns>
   Vector3 RotateLocalDir(const Vector3 &dir) const;
 
   /// <summary>
-  /// 　ワールド方向ベクトルをプレイヤーのローカル方向ベクトルに変換
+  /// ワールド方向をプレイヤーローカルの方向に変換する
   /// </summary>
   /// <param name="worldDir"></param>
   /// <returns></returns>

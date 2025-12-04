@@ -1,4 +1,5 @@
 #pragma once
+#include "contents/Quaternion.h"
 #include "math/Vector3.h"
 
 // フィールドに落ちている「3D岩」
@@ -9,28 +10,30 @@ public:
   float radius_;     // XZ 上の半径
   bool isAlive_;     // 有効かどうか（拾われたら false）
 
-    // ==== スポーン演出用 ====
-    bool  isSpawning_ = false;
-    float spawnTimer_ = 0.0f;
-    float spawnDuration_ = 0.3f;
+  // ==== スポーン演出用 ====
+  bool isSpawning_ = false;
+  float spawnTimer_ = 0.0f;
+  float spawnDuration_ = 0.3f;
 
-    float spawnStartY_ = 0.0f; // 地面より少し下の Y
-    float spawnEndY_ = 0.0f; // 地面の Y（最終）
+  float spawnStartY_ = 0.0f; // 地面より少し下の Y
+  float spawnEndY_ = 0.0f;   // 地面の Y（最終）
+
+  Vector3 rotate_{};
+  Quaternion localRotation_{0.0f, 0.0f, 0.0f, 1.0f};
 
 public:
-    Rock();
-    Rock(const Vector3& pos, float radius);
+  Rock();
+  Rock(const Vector3 &pos, float radius);
   bool isAttached_ = false;
   Vector3 localDir_{0.0f, 0.0f, 1.0f};
   float distanceFromPlayer_ = 0.0f;
 
+  void Kill();
 
-    void Kill();
-
-    // スポーンなどの時間変化
-    void Update(float deltaTime);
+  // スポーンなどの時間変化
+  void Update(float deltaTime);
 
 private:
-    // 簡易 BackOut イージング
-    static float EaseOutBack(float t);
+  // 簡易 BackOut イージング
+  static float EaseOutBack(float t);
 };
