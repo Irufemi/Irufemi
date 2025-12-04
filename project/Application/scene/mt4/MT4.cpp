@@ -32,6 +32,15 @@ static void ImGuiQuaternionScreenPrint([[maybe_unused]] const Quaternion& q) {
 #endif // USE_IMGUI
 }
 
+static void ImGuiVector3ScreenPrint([[maybe_unused]] const Vector3& v) {
+
+#ifdef USE_IMGUI
+
+    ImGui::Text("%f %f %f ", v.x, v.y, v.z);
+
+#endif // USE_IMGUI
+}
+
 // 任意軸回転行列の作成関数
 Matrix4x4 MT4::MakeRotateAxisAngle(const Vector3& axis, float angle) {
 
@@ -204,6 +213,60 @@ Quaternion MT4::Inverse(const Quaternion& quaternion) {
     return result;
 }
 
+// 任意軸回転を表す Quaternionの生成
+Quaternion MT4::MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle) {
+    constexpr float kEpsilon = 1e-6f;
+
+    // 軸を正規化（ゼロ長なら X 軸を代替）
+    float axisLen = Math::Length(axis);
+    Vector3 n = axis;
+    if (axisLen < kEpsilon) {
+        n = Vector3{ 1.0f, 0.0f, 0.0f };
+    } else {
+        n = Math::Multiply(1.0f / axisLen, axis);
+    }
+
+    // 四元数 (x,y,z,w) : (n * sin(theta/2), cos(theta/2))
+    float half = 0.5f * angle;
+    float s = std::sin(half);
+    Quaternion q = { n.x * s, n.y * s, n.z * s, std::cos(half) };
+
+    // 数値安定性のため正規化して返す
+    return Normalize(q);
+}
+
+// ベクトルをQuaternionで回転させた結果のベクトルを求める
+Vector3 MT4::RotateVector(const Vector3& vector, const Quaternion& quaternion) {
+    // 回転四元数は単位四元数であるべきなので正規化して使用
+    Quaternion q = Normalize(quaternion);
+
+    // v を (v, 0) として q * v * q^*
+    Quaternion p = { vector.x, vector.y, vector.z, 0.0f };
+    Quaternion tmp = Multiply(q, p);
+    Quaternion qConj = Conjugate(q);
+    Quaternion res = Multiply(tmp, qConj);
+
+    return Vector3{ res.x, res.y, res.z };
+}
+
+// Quaternionから回転行列を求める
+Matrix4x4 MT4::MakeRotateMatrix(const Quaternion& quaternion) {
+    
+    Matrix4x4 r = Math::MakeIdentity4x4();
+
+    r.m[0][0] = quaternion.w * quaternion.w + quaternion.x * quaternion.x - quaternion.y * quaternion.y - quaternion.z * quaternion.z;
+    r.m[0][1] = 2.0f * (quaternion.x * quaternion.y + quaternion.w * quaternion.z);
+    r.m[0][2] = 2.0f * (quaternion.x * quaternion.z - quaternion.w * quaternion.y);
+    r.m[1][0] = 2.0f * (quaternion.x * quaternion.y - quaternion.w * quaternion.z);
+    r.m[1][1] = quaternion.w * quaternion.w - quaternion.x * quaternion.x + quaternion.y * quaternion.y - quaternion.z * quaternion.z;
+    r.m[1][2] = 2.0f * (quaternion.y * quaternion.z + quaternion.w * quaternion.x);
+    r.m[2][0] = 2.0f * (quaternion.x * quaternion.z + quaternion.w * quaternion.y);
+    r.m[2][1] = 2.0f * (quaternion.y * quaternion.z - quaternion.w * quaternion.x);
+    r.m[2][2] = quaternion.w * quaternion.w - quaternion.x * quaternion.x - quaternion.y * quaternion.y + quaternion.z * quaternion.z;
+    
+    return r;
+}
+
 
 // 初期化
 void MT4::Initialize(IrufemiEngine* engine) {
@@ -274,6 +337,18 @@ void MT4::Initialize(IrufemiEngine* engine) {
 
 #endif // MT4_01_03
 
+#ifdef MT4_01_04
+
+    rotation = MakeRotateAxisAngleQuaternion(
+        Math::Normalize(Vector3{ 1.0f,0.4f,-0.2f }), 0.45f
+    );
+    pointY = { 2.1f,-0.9f,1.3f };
+    rotateMatrix = MakeRotateMatrix(rotation);
+    rotateByQuaternion = RotateVector(pointY, rotation);
+    rotateByMatrix = Math::Transform(pointY, rotateMatrix);
+
+#endif // MT4_01_04
+
 }
 
 // 更新
@@ -315,6 +390,8 @@ void MT4::Update() {
     ImGui::End();
 
 #endif // MT4_01_02
+    
+#ifdef MT4_01_03
 
     ImGui::Begin("MT4 01_02");
 
@@ -333,6 +410,22 @@ void MT4::Update() {
     ImGui::Text("Norm");
     ImGui::Text("%f", norm);
 
+#endif // MT4_01_03
+    
+#ifdef MT4_01_04
+
+    ImGui::Begin("MT4 01_02");
+
+    ImGui::Text("rotation");
+    ImGuiQuaternionScreenPrint(rotation);
+    ImGui::Text("rotateMatrix");
+    ImGuiMatrixScreenPrint(rotateMatrix);
+    ImGui::Text("rotateByQuaternion");
+    ImGuiVector3ScreenPrint(rotateByQuaternion);
+    ImGui::Text("rotateByMatrix");
+    ImGuiVector3ScreenPrint(rotateByMatrix);
+
+#endif // MT4_01_03
 
 #endif // USE_IMGUI
 

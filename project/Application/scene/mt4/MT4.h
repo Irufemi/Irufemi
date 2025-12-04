@@ -1,6 +1,6 @@
 #pragma once
 
-#define MT4_01_03 1
+#define MT4_01_04 1
 
 #include "scene/IScene.h"
 
@@ -85,6 +85,29 @@ public:
     /// <returns></returns>
     static Quaternion Inverse(const Quaternion& quaternion);
 
+    /// <summary>
+    /// 任意軸回転を表す Quaternionの生成
+    /// </summary>
+    /// <param name="axis"></param>
+    /// <param name="angle"></param>
+    /// <returns></returns>
+    Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle);
+    
+    /// <summary>
+    /// ベクトルをQuaternionで回転させた結果のベクトルを求める
+    /// </summary>
+    /// <param name="vector"></param>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    Vector3 RotateVector(const Vector3& vector, const Quaternion& quaternion);
+    
+    /// <summary>
+    /// Quaternionから回転行列を求める
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    Matrix4x4 MakeRotateMatrix(const Quaternion& quaternion);
+
 private: // 課題で追加した変数
 
 #ifdef MT4_01_01
@@ -137,7 +160,19 @@ private: // 課題で追加した変数
 
 #endif // MT4_01_03
 
+#ifdef MT4_01_04
 
+    Quaternion rotation;
+
+    Vector3 pointY;
+
+    Matrix4x4 rotateMatrix;
+
+    Vector3 rotateByQuaternion;
+
+    Vector3 rotateByMatrix;
+
+#endif // MT4_01_04
 
 public: // メンバ関数
     void Initialize(IrufemiEngine* engine) override;
