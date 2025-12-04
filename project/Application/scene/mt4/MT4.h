@@ -1,5 +1,7 @@
 #pragma once
 
+#define MT4_01_02 1
+
 #include "scene/IScene.h"
 
 #include "audio/Bgm.h"
@@ -31,15 +33,47 @@ public:
     /// <param name="axis"></param>
     /// <param name="angle"></param>
     /// <returns></returns>
-    Matrix4x4 MakeRotateAxisAngle(const Vector3& axis, float angle);
+    static Matrix4x4 MakeRotateAxisAngle(const Vector3& axis, float angle);
+
+    /// <summary>
+    /// ある方向からある方向への回転
+    /// </summary>
+    /// <param name="from"></param>
+    /// <param name="to"></param>
+    /// <returns></returns>
+    static Matrix4x4 DirectionToDirection(const Vector3& from, const Vector3& to);
 
 private: // 課題で追加した変数
+
+#ifdef MT4_01_01
 
     Vector3 axis;
 
     float angle;
 
     Matrix4x4 rotateMatrix;
+
+#endif
+
+#ifdef MT4_01_02
+
+    Vector3 from0;
+
+    Vector3 to0;
+
+    Vector3 from1;
+
+    Vector3 to1;
+
+    Matrix4x4 rotateMatrix0;
+
+    Matrix4x4 rotateMatrix1;
+
+    Matrix4x4 rotateMatrix2;
+
+#endif
+
+
 
 
 public: // メンバ関数
