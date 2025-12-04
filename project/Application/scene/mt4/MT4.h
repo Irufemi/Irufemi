@@ -1,6 +1,6 @@
 #pragma once
 
-#define MT4_01_02 1
+#define MT4_01_03 1
 
 #include "scene/IScene.h"
 
@@ -43,6 +43,48 @@ public:
     /// <returns></returns>
     static Matrix4x4 DirectionToDirection(const Vector3& from, const Vector3& to);
 
+    /// <summary>
+    /// Quaternionの積
+    /// </summary>
+    /// <param name="lhs"></param>
+    /// <param name="rhs"></param>
+    /// <returns></returns>
+    static Quaternion Multiply(const Quaternion& lhs, const Quaternion& rhs);
+
+    /// <summary>
+    /// 単位Quaternionを返す
+    /// </summary>
+    /// <returns></returns>
+    static Quaternion IdentityQuaternion();
+
+    /// <summary>
+    /// 共役Quaternionを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    static Quaternion Conjugate(const Quaternion& quaternion);
+    
+    /// <summary>
+    /// Quaternionのnormを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    static float Norm(const Quaternion& quaternion);
+
+    /// <summary>
+    /// 正規化したQuaternionを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    static Quaternion Normalize(const Quaternion& quaternion);
+    
+    /// <summary>
+    /// 逆Quaternionを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    static Quaternion Inverse(const Quaternion& quaternion);
+
 private: // 課題で追加した変数
 
 #ifdef MT4_01_01
@@ -73,6 +115,27 @@ private: // 課題で追加した変数
 
 #endif
 
+#ifdef MT4_01_03
+
+    Quaternion q1;
+
+    Quaternion q2;
+
+    Quaternion identity;
+
+    Quaternion conj;
+
+    Quaternion inv;
+
+    Quaternion normal;
+
+    Quaternion mul1;
+
+    Quaternion mul2;
+
+    float norm;
+
+#endif // MT4_01_03
 
 
 

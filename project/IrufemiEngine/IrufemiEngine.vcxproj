@@ -278,6 +278,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\ObjModel.h" />
     <ClInclude Include="math\ParticleMaterial.h" />
     <ClInclude Include="math\PointLight.h" />
+    <ClInclude Include="math\Quaternion.h" />
     <ClInclude Include="math\RiffHeader.h" />
     <ClInclude Include="math\shape\AABB.h" />
     <ClInclude Include="math\shape\Ball.h" />
