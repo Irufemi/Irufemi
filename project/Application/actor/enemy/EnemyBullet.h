@@ -1,4 +1,3 @@
-// EnemyBullet.h
 #pragma once
 
 #include "3D/ObjClass.h"

@@ -1,9 +1,33 @@
-// Enemy.h
 #pragma once
-#include "EnemyWall.h"
-#include "EnemyBullet.h"
-#include "camera/Camera.h"
 #include "3D/ObjClass.h"
+#include "EnemyBullet.h"
+#include "EnemyWall.h"
+#include "camera/Camera.h"
+
+// プレイヤーとの当たり判定結果をまとめる構造体
+struct EnemyPlayerHitResult {
+  // 壁に当たったか
+  bool hitWall = false;
+  int wallIndex = -1;
+
+  // 弾に当たったか
+  bool hitBullet = false;
+  int bulletIndex = -1;
+
+  // 敵本体に当たったか
+  bool hitEnemyBody = false;
+};
+
+// 敵の行動状態
+enum class EnemyState {
+  Idle = 0,      // 何もしていない（次の行動待ち）
+  WallRise,      // ドッスンのように上昇中
+  WallDrop,      // ドッスン落下中（落ちた瞬間に壁生成）
+  BulletCharge,  // 弾のチャージ中（赤くなっていくイメージ）
+  BurrowPreDive, // 潜る前のもぞもぞ
+  BurrowHidden,  // 潜って見えない状態（地中移動中）
+  BurrowEmerge   // 出現時のもぞもぞ
+};
 
 class Enemy {
 public:
@@ -14,11 +38,48 @@ public:
                   EnemyWallManager *wallManager,
                   EnemyBulletManager *bulletManager);
 
-  // playerPos は「弾を撃つときの狙い先」に使う
+  // playerPos は「弾を撃つときの狙い先」および潜り先の決定に使う
   void Update(float deltaTime, const Vector3 &playerPos);
+
   void Draw();
 
   const Vector3 &GetPosition() const { return transform_.translate; }
+
+  // -------------------------------
+  // プレイヤーとの当たり判定関連
+  // -------------------------------
+
+  // プレイヤーとの当たり判定をまとめて行う
+  // 判定結果は内部に保存され、GetPlayerHitResult で取得できる
+  void CheckCollisionsWithPlayer(const Vector3 &playerPos, float playerRadius);
+
+  // 直近の CheckCollisionsWithPlayer の結果を返す
+  const EnemyPlayerHitResult &GetPlayerHitResult() const {
+    return lastHitResult_;
+  }
+
+  // 手動で結果をクリアしたい場合はこれを呼ぶ
+  void ClearPlayerHitResult() { lastHitResult_ = EnemyPlayerHitResult{}; }
+
+  // -------------------------------
+  // プレイヤーからの攻撃関連
+  // -------------------------------
+
+  // プレイヤーの攻撃力などに応じてダメージを与える
+  void ApplyDamageFromPlayer(int damage);
+
+  int GetHp() const { return hp_; }
+  bool IsDead() const { return hp_ <= 0; }
+
+  // -------------------------------
+  // 予備動作用の情報（見た目用に他クラスから参照したくなったとき用）
+  // -------------------------------
+
+  // 現在の行動状態（デバッグ表示などに使える）
+  EnemyState GetState() const { return state_; }
+
+  // 弾チャージの進み具合（0.0〜1.0）
+  float GetBulletChargeProgress() const { return bulletChargeProgress_; }
 
 private:
   Camera *camera_ = nullptr;
@@ -33,12 +94,54 @@ private:
   int hp_ = 100;
 
   EnemyWallManager *enemyWall_ = nullptr;
-  EnemyBulletManager *bulletManager_ = nullptr;
+  EnemyBulletManager *enemyBullet_ = nullptr;
 
-  // 行動タイマーは1つだけ
+  // 行動タイマー（Idle のときだけ使う：次に行動を始めるまでの時間）
   float actionTimer_ = 0.0f;
-  float actionIntervalMin_ = 2.0f; // 2〜4秒の間で行動
+  float actionIntervalMin_ = 2.0f; // 2〜4秒の間で行動開始
   float actionIntervalMax_ = 4.0f;
 
+  // 潜り移動用（isBurrowing_ は「見えていない間」だけ true にする）
+  bool isBurrowing_ = false; // 見えていない間だけ true
+  float burrowTimer_ = 0.0f; // 旧処理の名残だが保持しておく
+  float burrowDuration_ = 1.0f;
+
+  Vector3 stageCenter_{0.0f, 0.0f, 0.0f}; // ステージ中心（仮に原点）
+  float stageRadius_ = 50.0f;             // ステージ半径
+
+  // 敵本体の当たり判定用半径（円として扱う）
+  float enemyBodyRadius_ = 1.0f;
+
+  // プレイヤーとの直近フレームの当たり判定結果
+  EnemyPlayerHitResult lastHitResult_;
+
+  // --------------------------------
+  // 予備動作 + 行動用の状態マシン
+  // --------------------------------
+  EnemyState state_ = EnemyState::Idle; // 現在の行動状態
+  float stateTimer_ = 0.0f;             // 現在の状態の残り時間（秒）
+
+  // 地面の高さ（ドッスン上下やもぞもぞの基準）
+  float groundY_ = 0.0f;
+
+  // 壁攻撃（ドッスン）用パラメータ
+  float wallRiseHeight_ = 4.0f;   // どれくらい持ち上がるか
+  float wallRiseDuration_ = 0.4f; // 上昇時間
+  float wallDropDuration_ = 0.2f; // 落下時間
+
+  // 弾攻撃のチャージ時間
+  float bulletChargeDuration_ = 0.8f;
+  float bulletChargeProgress_ = 0.0f; // 0.0〜1.0
+
+  // 潜り攻撃用パラメータ
+  float burrowPreDuration_ = 0.8f;      // 潜る前のもぞもぞ時間
+  float burrowHiddenDuration_ = 1.0f;   // 地中にいる時間
+  float burrowEmergeDuration_ = 0.8f;   // 出現時のもぞもぞ時間
+  float burrowWobbleAmplitude_ = 0.3f;  // もぞもぞの揺れの大きさ
+  float burrowWobbleFrequency_ = 10.0f; // もぞもぞの揺れの速さ
+  float burrowPhase_ = 0.0f;            
+
   void ResetActionTimer();
+  Vector3 GetRandomReappearPosition(const Vector3 &playerPos) const;
+  bool IsInsideAnyWall(const Vector3 &pos, float margin) const;
 };
