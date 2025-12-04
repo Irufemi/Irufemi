@@ -36,15 +36,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     // アプリ側で登録
     engine->SetSceneRegistrar([](SceneManager& sm) {
-        //sm.Register("Title", [] { return std::make_unique<TitleScene>();  });
-        //sm.Register("InGame", [] { return std::make_unique<GameScene>();   });
-        //sm.Register("Result", [] { return std::make_unique<ResultScene>(); });
-        //sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
+        sm.Register("Title", [] { return std::make_unique<TitleScene>();  });
+        sm.Register("InGame", [] { return std::make_unique<GameScene>();   });
+        sm.Register("Result", [] { return std::make_unique<ResultScene>(); });
+        sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
         sm.Register("MT4", [] { return std::make_unique<MT4>(); });
         }
     );
 
-    engine->SetInitialSceneName("MT4");
+    engine->SetInitialSceneName("Debug");
 
     engine->Execute();
 
