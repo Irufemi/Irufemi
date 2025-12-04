@@ -1,6 +1,6 @@
 #include "Enemy.h"
+#include "actor/player/Player.h"
 #include "manager/DebugUI.h"
-
 #include <cmath>
 #include <random>
 
@@ -37,7 +37,7 @@ float DistanceXZ(const Vector3 &a, const Vector3 &b) {
 Enemy::Enemy() {}
 
 void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
-                       EnemyWallManager *wallManager,
+                       const float &stageRadius, EnemyWallManager *wallManager,
                        EnemyBulletManager *bulletManager) {
   camera_ = camera;
 
@@ -53,7 +53,7 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
 
   // ステージ情報はとりあえず固定値にしておく
   stageCenter_ = Vector3{0.0f, 0.0f, 0.0f};
-  stageRadius_ = 50.0f;
+  stageRadius_ = stageRadius;
 
   // 地面の高さ（上下の基準）
   groundY_ = spawnPos.y;
@@ -277,6 +277,7 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
   ImGui::Text("State: %d", static_cast<int>(state_));
   ImGui::Text("ActionTimer: %.2f", actionTimer_);
   ImGui::Text("BulletCharge: %.2f", bulletChargeProgress_);
+  ImGui::Text("hp: %d", hp_);
 
   ImGui::End();
 
@@ -291,17 +292,14 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
   // 弾攻撃
   ImGui::Separator();
   ImGui::Text("Bullet Attack");
-  ImGui::SliderFloat("ChargeTime", &bulletChargeDuration_, 0.1f,
-                     3.0f);
+  ImGui::SliderFloat("ChargeTime", &bulletChargeDuration_, 0.1f, 3.0f);
 
   // 潜り移動
   ImGui::Separator();
   ImGui::Text("Dive Move");
   ImGui::SliderFloat("DownTime", &burrowPreDuration_, 0.1f, 2.0f);
-  ImGui::SliderFloat("HiddenTime", &burrowHiddenDuration_, 0.1f,
-                     3.0f);
-  ImGui::SliderFloat("UpTime", &burrowEmergeDuration_, 0.1f,
-                     2.0f);
+  ImGui::SliderFloat("HiddenTime", &burrowHiddenDuration_, 0.1f, 3.0f);
+  ImGui::SliderFloat("UpTime", &burrowEmergeDuration_, 0.1f, 2.0f);
 
   ImGui::SliderFloat("WobbleAmp", &burrowWobbleAmplitude_, 0.0f, 2.0f);
   ImGui::SliderFloat("WobbleFreq", &burrowWobbleFrequency_, 1.0f, 20.0f);
@@ -417,14 +415,14 @@ bool Enemy::IsInsideAnyWall(const Vector3 &pos, float margin) const {
 // ここからプレイヤーとの当たり判定関連
 // --------------------------------------
 
-void Enemy::CheckCollisionsWithPlayer(const Vector3 &playerPos,
-                                      float playerRadius) {
+void Enemy::CheckCollisionsWithPlayer(Player *player) {
   // 毎フレーム最初に結果をリセット
   lastHitResult_ = EnemyPlayerHitResult{};
 
   // 壁との当たり判定（プレイヤー円 vs 壁）
   if (enemyWall_) {
-    int wallIndex = enemyWall_->CheckCollisionCircle(playerPos, playerRadius);
+    int wallIndex = enemyWall_->CheckCollisionCircle(player->GetPosition(),
+                                                     player->GetRadius());
     if (wallIndex >= 0) {
       lastHitResult_.hitWall = true;
       lastHitResult_.wallIndex = wallIndex;
@@ -436,8 +434,8 @@ void Enemy::CheckCollisionsWithPlayer(const Vector3 &playerPos,
 
   // 弾との当たり判定（プレイヤー円 vs 弾）
   if (enemyBullet_) {
-    int bulletIndex =
-        enemyBullet_->CheckCollisionCircle(playerPos, playerRadius);
+    int bulletIndex = enemyBullet_->CheckCollisionCircle(player->GetPosition(),
+                                                         player->GetRadius());
     if (bulletIndex >= 0) {
       lastHitResult_.hitBullet = true;
       lastHitResult_.bulletIndex = bulletIndex;
@@ -450,14 +448,17 @@ void Enemy::CheckCollisionsWithPlayer(const Vector3 &playerPos,
   // 敵本体との当たり判定（プレイヤー円 vs 敵円）
   // 潜って見えない間（BurrowHidden）は当たり判定を取らない
   if (!isBurrowing_) {
-    float dx = playerPos.x - transform_.translate.x;
-    float dz = playerPos.z - transform_.translate.z;
+    float dx = player->GetPosition().x - transform_.translate.x;
+    float dz = player->GetPosition().z - transform_.translate.z;
     float distSq = dx * dx + dz * dz;
-    float r = playerRadius + enemyBodyRadius_;
+    float r = player->GetRadius() + enemyBodyRadius_;
     float rSq = r * r;
 
     if (distSq <= rSq) {
       lastHitResult_.hitEnemyBody = true;
+
+      player->ResetRockCount();        // プレイヤー側で岩をリセット
+      hp_ -= player->GetAttackPower(); // 敵にダメージを与える
     }
   }
 }

@@ -52,7 +52,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   enemyObj_->Initialize(camera_.get());
 
   Vector3 stageCenter{0.0f, 0.0f, 0.0f};
-  float stageRadius = 50.0f;
+  float stageRadius = 20.0f;
 
   enemyWallManager_.Initialize(camera_.get(), stageCenter, stageRadius);
   enemyBulletManager_.Initialize(camera_.get(), stageCenter, stageRadius);
@@ -60,7 +60,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   enemy_ = std::make_unique<Enemy>();
   enemy_->Initialize(camera_.get(),
                      Vector3{0.0f, 0.0f, 7.0f}, // 敵のスポーン位置
-                     &enemyWallManager_, &enemyBulletManager_);
+                     stageRadius, &enemyWallManager_, &enemyBulletManager_);
 
   // 岩の初期化
   rockManager_ = std::make_unique<RockManager>();
@@ -121,8 +121,7 @@ void GameScene::Update() {
   enemy_->Update(deltaTime, player_->GetPosition());
 
   // ここでプレイヤー vs 壁・弾・敵本体の判定　Enemy側でやってる
-  enemy_->CheckCollisionsWithPlayer(player_->GetPosition(),
-                                    player_->GetRadius());
+  enemy_->CheckCollisionsWithPlayer(player_.get());
 
 #if defined USE_IMGUI
   // デバッグ：直近の当たり判定結果を表示（任意）

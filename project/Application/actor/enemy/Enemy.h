@@ -4,6 +4,8 @@
 #include "EnemyWall.h"
 #include "camera/Camera.h"
 
+class Player;
+
 // プレイヤーとの当たり判定結果をまとめる構造体
 struct EnemyPlayerHitResult {
   // 壁に当たったか
@@ -35,7 +37,7 @@ public:
 
   // 壁マネージャと弾マネージャのポインタを渡す
   void Initialize(Camera *camera, const Vector3 &spawnPos,
-                  EnemyWallManager *wallManager,
+                  const float &stageRadius, EnemyWallManager *wallManager,
                   EnemyBulletManager *bulletManager);
 
   // playerPos は「弾を撃つときの狙い先」および潜り先の決定に使う
@@ -51,7 +53,7 @@ public:
 
   // プレイヤーとの当たり判定をまとめて行う
   // 判定結果は内部に保存され、GetPlayerHitResult で取得できる
-  void CheckCollisionsWithPlayer(const Vector3 &playerPos, float playerRadius);
+  void CheckCollisionsWithPlayer(Player *player);
 
   // 直近の CheckCollisionsWithPlayer の結果を返す
   const EnemyPlayerHitResult &GetPlayerHitResult() const {
@@ -107,7 +109,7 @@ private:
   float burrowDuration_ = 1.0f;
 
   Vector3 stageCenter_{0.0f, 0.0f, 0.0f}; // ステージ中心（仮に原点）
-  float stageRadius_ = 50.0f;             // ステージ半径
+  float stageRadius_{};                   // ステージ半径
 
   // 敵本体の当たり判定用半径（円として扱う）
   float enemyBodyRadius_ = 1.0f;
@@ -139,7 +141,7 @@ private:
   float burrowEmergeDuration_ = 0.8f;   // 出現時のもぞもぞ時間
   float burrowWobbleAmplitude_ = 0.3f;  // もぞもぞの揺れの大きさ
   float burrowWobbleFrequency_ = 10.0f; // もぞもぞの揺れの速さ
-  float burrowPhase_ = 0.0f;            
+  float burrowPhase_ = 0.0f;
 
   void ResetActionTimer();
   Vector3 GetRandomReappearPosition(const Vector3 &playerPos) const;
