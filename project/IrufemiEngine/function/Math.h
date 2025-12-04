@@ -303,6 +303,14 @@ namespace Math {
     /// <returns></returns>
     Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth);
 
+    /// <summary>
+    /// 任意軸回転行列の作成関数
+    /// </summary>
+    /// <param name="axis">任意軸の単位ベクトル</param>
+    /// <param name="angle">軸から回転する角度</param>
+    /// <returns></returns>
+    Matrix4x4 MakeRotateAxisAngle(const Vector3& axis, float angle);
+    
 #pragma endregion
 
 #pragma region 衝突判定
