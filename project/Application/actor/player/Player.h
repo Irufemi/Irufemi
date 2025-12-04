@@ -176,6 +176,18 @@ public:
   /// </summary>
   void ResetRockCount() { rockCount_ = 0; }
 
+  /// <summary>
+  /// 岩の数を半分にする
+  /// </summary>
+  void HalveRockCount() {
+    rockCount_ /= 2;
+
+    // 0 未満にならないようにする保険
+    if (rockCount_ < 0) {
+      rockCount_ = 0;
+    }
+  }
+
 private:
   /// <summary>
   /// 纏っている岩の数からダメージと半径を再計算

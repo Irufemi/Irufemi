@@ -83,4 +83,15 @@ private:
   /// </summary>
   void AutoSpawn(float deltaTime);
   void SpawnRandomRock();
+
+public:
+  /// <summary>
+  /// 纏っている岩をすべてリセット
+  /// </summary>
+  void ResetAttachedRocks();
+
+  /// <summary>
+  /// 纏っている岩を半分だけ外す
+  /// </summary>
+  void HalveAttachedRocks(int numToDetach);
 };

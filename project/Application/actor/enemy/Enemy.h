@@ -47,6 +47,8 @@ public:
 
   const Vector3 &GetPosition() const { return transform_.translate; }
 
+  const float &GetRadius() const { return enemyBodyRadius_; }
+
   // -------------------------------
   // プレイヤーとの当たり判定関連
   // -------------------------------
@@ -146,4 +148,11 @@ private:
   void ResetActionTimer();
   Vector3 GetRandomReappearPosition(const Vector3 &playerPos) const;
   bool IsInsideAnyWall(const Vector3 &pos, float margin) const;
+
+public:
+  /// <summary>
+  /// 潜っているかどうか
+  /// </summary>
+  /// <returns></returns>
+  bool IsBurrowing() const { return isBurrowing_; }
 };

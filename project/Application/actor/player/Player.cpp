@@ -48,8 +48,8 @@ void Player::Update() {
     knockbackVel_.z *= 0.85f;
 
     // 着地判定
-    if (transform_.translate.y <= 0.0f) {
-      transform_.translate.y = 0.0f;
+    if (transform_.translate.y <= radius_) {
+      transform_.translate.y = radius_;
       knockbackVel_.y = 0.0f;
 
       float horizontalV2 =
@@ -86,6 +86,7 @@ void Player::Update() {
   ImGui::DragFloat("velocityY", &velocityY_, 0.1f);
   ImGui::DragInt("rockCount", &rockCount_, 1, 0, 999);
   ImGui::Text("attackPower: %d", attackPower_);
+  ImGui::Text("isKnockback: %d", isKnockback_);
   ImGui::End();
 
 #endif // _DEBUG

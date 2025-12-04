@@ -7,6 +7,7 @@
 #include "contents/Quaternion.h"
 #include "engine/IrufemiEngine.h"
 #include "stage/field/Field.h"
+#include <algorithm>
 #include <cmath>
 #include <random>
 
@@ -284,6 +285,51 @@ void RockManager::SpawnRandomRock() {
 
   float radius = 0.5f;
   AddRock(pos, radius);
+}
+
+void RockManager::ResetAttachedRocks() {
+
+  for (auto &rock : rocks_) {
+    if (rock.isAttached_) {
+      rock.isAttached_ = false;
+    }
+  }
+}
+
+void RockManager::HalveAttachedRocks(int numToDetach) {
+
+  if (numToDetach <= 0) {
+    return;
+  }
+
+  // いまプレイヤーに纏っている岩のインデックスを集める
+  std::vector<int> attachedIndices;
+  attachedIndices.reserve(rocks_.size());
+  for (int i = 0; i < static_cast<int>(rocks_.size()); ++i) {
+    if (rocks_[i].isAttached_) {
+      attachedIndices.push_back(i);
+    }
+  }
+
+  if (attachedIndices.empty()) {
+    return;
+  }
+
+  // distanceFromPlayer_ が大きい順（外側順）にソート
+  std::sort(
+      attachedIndices.begin(), attachedIndices.end(), [this](int a, int b) {
+        return rocks_[a].distanceFromPlayer_ > rocks_[b].distanceFromPlayer_;
+      });
+
+  int removeCount =
+      (std::min)(numToDetach, static_cast<int>(attachedIndices.size()));
+
+  // 外側から removeCount 個だけ isAttached を外す
+  for (int i = 0; i < removeCount; ++i) {
+    int idx = attachedIndices[i];
+    rocks_[idx].isAttached_ = false;
+    // isAlive_ はそのまま（Kill 済み）のままで OK
+  }
 }
 
 void RockManager::Draw(IrufemiEngine * /*engine*/, Camera * /*camera*/) {

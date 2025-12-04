@@ -447,20 +447,20 @@ void Enemy::CheckCollisionsWithPlayer(Player *player) {
 
   // 敵本体との当たり判定（プレイヤー円 vs 敵円）
   // 潜って見えない間（BurrowHidden）は当たり判定を取らない
-  if (!isBurrowing_) {
-    float dx = player->GetPosition().x - transform_.translate.x;
-    float dz = player->GetPosition().z - transform_.translate.z;
-    float distSq = dx * dx + dz * dz;
-    float r = player->GetRadius() + enemyBodyRadius_;
-    float rSq = r * r;
+  //if (!isBurrowing_) {
+  //  float dx = player->GetPosition().x - transform_.translate.x;
+  //  float dz = player->GetPosition().z - transform_.translate.z;
+  //  float distSq = dx * dx + dz * dz;
+  //  float r = player->GetRadius() + enemyBodyRadius_;
+  //  float rSq = r * r;
 
-    if (distSq <= rSq) {
-      lastHitResult_.hitEnemyBody = true;
+  //  if (distSq <= rSq) {
+  //    lastHitResult_.hitEnemyBody = true;
 
-      player->ResetRockCount();        // プレイヤー側で岩をリセット
-      hp_ -= player->GetAttackPower(); // 敵にダメージを与える
-    }
-  }
+  //    player->ResetRockCount();        // プレイヤー側で岩をリセット
+  //    hp_ -= player->GetAttackPower(); // 敵にダメージを与える
+  //  }
+  //}
 }
 
 // --------------------------------------

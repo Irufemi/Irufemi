@@ -3,6 +3,7 @@
 #include <vector>
 class Player;
 class Rock;
+class Enemy;
 namespace GameFunction {
 
 /// <summary>
@@ -32,6 +33,9 @@ bool IsHitCircleRect(const Vector3 &circlePos, float circleRadius,
 // ★ 追加：Player vs Rock の衝突処理
 //   - player : プレイヤー本体
 //   - rocks  : 岩リスト（中で isAlive_ チェック＆ Kill まで行う）
-void CheckHit_PlayerAndRock(Player& player, std::vector<Rock>& rocks);
+void CheckHit_PlayerAndRock(Player &player, std::vector<Rock> &rocks);
+
+bool isHitCircle(const Vector3 &posA, float radiusA, const Vector3 &posB,
+                 float radiusB);
 
 } // namespace GameFunction

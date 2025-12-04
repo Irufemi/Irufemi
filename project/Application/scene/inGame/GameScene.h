@@ -41,6 +41,9 @@ private: // 変数(ゲーム)
   std::unique_ptr<SphereClass> playerObj_ = nullptr;
   std::unique_ptr<Player> player_ = nullptr;
 
+  // 1フレーム前のプレイヤー位置
+  Vector3 prevPlayerPos_{};
+
   // ----- エネミー -----
   std::unique_ptr<SphereClass> enemyObj_ = nullptr;
   std::unique_ptr<Enemy> enemy_ = nullptr;
@@ -89,4 +92,15 @@ public: // メンバ関数
   /// 描画
   /// </summary>
   void Draw() override;
+
+private:
+  /// <summary>
+  /// すべての当たり判定を取る
+  /// </summary>
+  void DoCollision();
+
+  /// <summary>
+  /// 直前フレームの移動方向をもとにノックバックを与える
+  /// </summary>
+  void ApplyPlayerKnockback();
 };
