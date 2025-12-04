@@ -510,6 +510,9 @@
     <ClInclude Include="3D\effect\EffectSystem.h">
       <Filter>3D\Effect</Filter>
     </ClInclude>
+    <ClInclude Include="math\Quaternion.h">
+      <Filter>math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Object2D.hlsli">

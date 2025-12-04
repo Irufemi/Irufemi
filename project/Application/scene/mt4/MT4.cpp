@@ -8,8 +8,8 @@
 
 #include <cmath>
 
-static void ImGuiMatrixScreenPrint([[maybe_unused]]const Matrix4x4& m) {
-    
+static void ImGuiMatrixScreenPrint([[maybe_unused]] const Matrix4x4& m) {
+
 #ifdef USE_IMGUI
 
     ImGui::Text(
@@ -23,8 +23,18 @@ static void ImGuiMatrixScreenPrint([[maybe_unused]]const Matrix4x4& m) {
 #endif // USE_IMGUI
 }
 
+static void ImGuiQuaternionScreenPrint([[maybe_unused]] const Quaternion& q) {
+
+#ifdef USE_IMGUI
+
+    ImGui::Text("%f %f %f %f", q.x, q.y, q.z, q.w);
+
+#endif // USE_IMGUI
+}
+
 // 任意軸回転行列の作成関数
 Matrix4x4 MT4::MakeRotateAxisAngle(const Vector3& axis, float angle) {
+
     Matrix4x4 result = Math::MakeIdentity4x4();
     result.m[0][0] = axis.x * axis.x * (1 - std::cos(angle)) + std::cos(angle);
     result.m[0][1] = axis.x * axis.y * (1 - std::cos(angle)) + axis.z * std::sin(angle);
@@ -105,6 +115,95 @@ Matrix4x4 MT4::DirectionToDirection(const Vector3& from, const Vector3& to) {
     return MakeRotateAxisAngle(axis, angle);
 }
 
+// Quaternionの積
+Quaternion MT4::Multiply(const Quaternion& lhs, const Quaternion& rhs) {
+
+    Vector3 qlV = { lhs.x,lhs.y,lhs.z };
+    float qlW = lhs.w;
+    Vector3 qrV = { rhs.x,rhs.y,rhs.z };
+    float qrW = rhs.w;
+
+    float qW = qlW * qrW - Math::Dot(qlV, qrV);
+    Vector3 qV = Math::Cross(qlV, qrV) + Math::Multiply(qrW, qlV) + Math::Multiply(qlW, qrV);
+
+    Quaternion result = { qV.x,qV.y,qV.z,qW };
+
+    return result;
+}
+
+// 単位Quaternionを返す
+Quaternion MT4::IdentityQuaternion() {
+    Quaternion result{};
+    result.x = 0.0f;
+    result.y = 0.0f;
+    result.z = 0.0f;
+    result.w = 1.0f;
+    return result;
+}
+
+// 共役Quaternionを返す
+Quaternion MT4::Conjugate(const Quaternion& quaternion) {
+    Quaternion result{};
+    // スカラー部はそのまま、虚部は符号を反転
+    result.x = -quaternion.x;
+    result.y = -quaternion.y;
+    result.z = -quaternion.z;
+    result.w = quaternion.w;
+    return result;
+}
+
+// Quaternionのnormを返す
+float MT4::Norm(const Quaternion& quaternion) {
+    float norm = std::sqrt(
+        quaternion.w * quaternion.w +
+        quaternion.x * quaternion.x +
+        quaternion.y * quaternion.y +
+        quaternion.z * quaternion.z
+    );
+    return norm;
+}
+
+// 正規化したQuaternionを返す
+Quaternion MT4::Normalize(const Quaternion& quaternion) {
+    constexpr float kEpsilon = 1e-6f;
+    float n = Norm(quaternion);
+    if (n < kEpsilon) {
+        // 長さがほぼ0の場合は元の値をそのまま返す（分母ゼロ回避）
+        return quaternion;
+    }
+    Quaternion result{};
+    result.x = quaternion.x / n;
+    result.y = quaternion.y / n;
+    result.z = quaternion.z / n;
+    result.w = quaternion.w / n;
+    return result;
+}
+
+// 逆Quaternionを返す
+Quaternion MT4::Inverse(const Quaternion& quaternion) {
+    // 逆元は共役をノルム二乗で割る: q^{-1} = q* / ||q||^2
+    constexpr float kEpsilon = 1e-12f;
+    // ノルム二乗を直接計算（sqrt を使わず効率的）
+    float normSq =
+        quaternion.w * quaternion.w +
+        quaternion.x * quaternion.x +
+        quaternion.y * quaternion.y +
+        quaternion.z * quaternion.z;
+
+    if (normSq < kEpsilon) {
+        // ノルム二乗がほぼ0なら逆元は定義されないため単位四元数を返す
+        return IdentityQuaternion();
+    }
+
+    Quaternion conj = Conjugate(quaternion);
+    Quaternion result{};
+    result.x = conj.x / normSq;
+    result.y = conj.y / normSq;
+    result.z = conj.z / normSq;
+    result.w = conj.w / normSq;
+    return result;
+}
+
 
 // 初期化
 void MT4::Initialize(IrufemiEngine* engine) {
@@ -153,7 +252,28 @@ void MT4::Initialize(IrufemiEngine* engine) {
 
 #endif // MT4_01_02
 
-    
+#ifdef MT4_01_03
+
+    q1 = { 2.0f,3.0f,4.0f,1.0f };
+
+    q2 = { 1.0f,3.0f,5.0f,2.0f };
+
+    identity = IdentityQuaternion();
+
+    conj = Conjugate(q1);
+
+    inv = Inverse(q1);
+
+    normal = Normalize(q1);
+
+    mul1 = Multiply(q1, q2);
+
+    mul2 = Multiply(q2, q1);
+
+    norm = Norm(q1);
+
+#endif // MT4_01_03
+
 }
 
 // 更新
@@ -193,8 +313,25 @@ void MT4::Update() {
     ImGuiMatrixScreenPrint(rotateMatrix2);
 
     ImGui::End();
-    
+
 #endif // MT4_01_02
+
+    ImGui::Begin("MT4 01_02");
+
+    ImGui::Text("Identity");
+    ImGuiQuaternionScreenPrint(identity);
+    ImGui::Text("Conjugate");
+    ImGuiQuaternionScreenPrint(conj);
+    ImGui::Text("Inverse");
+    ImGuiQuaternionScreenPrint(inv);
+    ImGui::Text("Normalize");
+    ImGuiQuaternionScreenPrint(normal);
+    ImGui::Text("Multiply(q1, q2)");
+    ImGuiQuaternionScreenPrint(mul1);
+    ImGui::Text("Multiply(q2, q1)");
+    ImGuiQuaternionScreenPrint(mul2);
+    ImGui::Text("Norm");
+    ImGui::Text("%f", norm);
 
 
 #endif // USE_IMGUI
