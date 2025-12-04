@@ -251,7 +251,7 @@ Vector3 MT4::RotateVector(const Vector3& vector, const Quaternion& quaternion) {
 
 // Quaternionから回転行列を求める
 Matrix4x4 MT4::MakeRotateMatrix(const Quaternion& quaternion) {
-    
+
     Matrix4x4 r = Math::MakeIdentity4x4();
 
     r.m[0][0] = quaternion.w * quaternion.w + quaternion.x * quaternion.x - quaternion.y * quaternion.y - quaternion.z * quaternion.z;
@@ -263,10 +263,59 @@ Matrix4x4 MT4::MakeRotateMatrix(const Quaternion& quaternion) {
     r.m[2][0] = 2.0f * (quaternion.x * quaternion.z + quaternion.w * quaternion.y);
     r.m[2][1] = 2.0f * (quaternion.y * quaternion.z - quaternion.w * quaternion.x);
     r.m[2][2] = quaternion.w * quaternion.w - quaternion.x * quaternion.x - quaternion.y * quaternion.y + quaternion.z * quaternion.z;
-    
+
     return r;
 }
 
+// 球面線形補間
+Quaternion MT4::Slerp(const Quaternion& q0, const Quaternion& q1, float t) {
+    // q0, q1 は単位四元数であることが前提（数値誤差は別途管理）
+    Quaternion q0_ = q0;
+
+    // q0 と q1 の内積（4次元ベクトルとして）
+    float dot = q0.x * q1.x + q0.y * q1.y + q0.z * q1.z + q0.w * q1.w;
+
+    // 最短経路を取るために内積が負の場合は片方の符号を反転する
+    if (dot < 0.0f) {
+        q0_.x = -q0.x;
+        q0_.y = -q0.y;
+        q0_.z = -q0.z;
+        q0_.w = -q0.w;
+        dot = -dot;
+    }
+
+    // dot がほぼ 1 の場合は線形補間（数値安定化）
+    constexpr float kDotThreshold = 0.9995f;
+    if (dot > kDotThreshold) {
+        // NLERP（線形補間）: cost を抑えるため正規化は呼び出し側で必要に応じて行う
+        Quaternion result{};
+        result.x = q0_.x + t * (q1.x - q0_.x);
+        result.y = q0_.y + t * (q1.y - q0_.y);
+        result.z = q0_.z + t * (q1.z - q0_.z);
+        result.w = q0_.w + t * (q1.w - q0_.w);
+        return result;
+    }
+
+    // acos の引数を安全にクランプ
+    if (dot < -1.0f) dot = -1.0f;
+    if (dot >  1.0f) dot =  1.0f;
+
+    // なす角 theta を求め，sin を使ってスケール係数を計算
+    float theta = std::acos(dot);
+    float sinTheta = std::sin(theta);
+
+    // 正規ケース：scale0, scale1 を計算して補間
+    float scale0 = std::sin((1.0f - t) * theta) / sinTheta;
+    float scale1 = std::sin(t * theta) / sinTheta;
+
+    Quaternion result{};
+    result.x = scale0 * q0_.x + scale1 * q1.x;
+    result.y = scale0 * q0_.y + scale1 * q1.y;
+    result.z = scale0 * q0_.z + scale1 * q1.z;
+    result.w = scale0 * q0_.w + scale1 * q1.w;
+
+    return result;
+}
 
 // 初期化
 void MT4::Initialize(IrufemiEngine* engine) {
@@ -349,6 +398,19 @@ void MT4::Initialize(IrufemiEngine* engine) {
 
 #endif // MT4_01_04
 
+#ifdef MT4_01_05
+
+    rotation0 = MakeRotateAxisAngleQuaternion({ 0.71f,0.71f,0.0f }, 0.3f);
+    rotation1 = MakeRotateAxisAngleQuaternion({ 0.71f,0.0f,0.71f }, 3.141592f);
+
+    interpolate0 = Slerp(rotation0, rotation1, 0.0f);
+    interpolate1 = Slerp(rotation0, rotation1, 0.3f);
+    interpolate2 = Slerp(rotation0, rotation1, 0.5f);
+    interpolate3 = Slerp(rotation0, rotation1, 0.7f);
+    interpolate4 = Slerp(rotation0, rotation1, 1.0f);
+
+#endif // MT4_01_05
+
 }
 
 // 更新
@@ -390,10 +452,10 @@ void MT4::Update() {
     ImGui::End();
 
 #endif // MT4_01_02
-    
+
 #ifdef MT4_01_03
 
-    ImGui::Begin("MT4 01_02");
+    ImGui::Begin("MT4 01_03");
 
     ImGui::Text("Identity");
     ImGuiQuaternionScreenPrint(identity);
@@ -411,10 +473,10 @@ void MT4::Update() {
     ImGui::Text("%f", norm);
 
 #endif // MT4_01_03
-    
+
 #ifdef MT4_01_04
 
-    ImGui::Begin("MT4 01_02");
+    ImGui::Begin("MT4 01_04");
 
     ImGui::Text("rotation");
     ImGuiQuaternionScreenPrint(rotation);
@@ -425,7 +487,25 @@ void MT4::Update() {
     ImGui::Text("rotateByMatrix");
     ImGuiVector3ScreenPrint(rotateByMatrix);
 
-#endif // MT4_01_03
+#endif // MT4_01_04
+
+#ifdef MT4_01_05
+
+    ImGui::Begin("MT4 01_05");
+
+    ImGui::Text("interpolate0");
+    ImGuiQuaternionScreenPrint(interpolate0);
+    ImGui::Text("interpolate1");
+    ImGuiQuaternionScreenPrint(interpolate1);
+    ImGui::Text("interpolate2");
+    ImGuiQuaternionScreenPrint(interpolate2);
+    ImGui::Text("interpolate3");
+    ImGuiQuaternionScreenPrint(interpolate3);
+    ImGui::Text("interpolate4");
+    ImGuiQuaternionScreenPrint(interpolate4);
+
+#endif // MT4_01_05
+
 
 #endif // USE_IMGUI
 

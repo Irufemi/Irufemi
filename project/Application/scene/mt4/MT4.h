@@ -1,6 +1,6 @@
 #pragma once
 
-#define MT4_01_04 1
+#define MT4_01_05 1
 
 #include "scene/IScene.h"
 
@@ -91,7 +91,7 @@ public:
     /// <param name="axis"></param>
     /// <param name="angle"></param>
     /// <returns></returns>
-    Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle);
+    static Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle);
     
     /// <summary>
     /// ベクトルをQuaternionで回転させた結果のベクトルを求める
@@ -99,14 +99,23 @@ public:
     /// <param name="vector"></param>
     /// <param name="quaternion"></param>
     /// <returns></returns>
-    Vector3 RotateVector(const Vector3& vector, const Quaternion& quaternion);
+    static Vector3 RotateVector(const Vector3& vector, const Quaternion& quaternion);
     
     /// <summary>
     /// Quaternionから回転行列を求める
     /// </summary>
     /// <param name="quaternion"></param>
     /// <returns></returns>
-    Matrix4x4 MakeRotateMatrix(const Quaternion& quaternion);
+    static Matrix4x4 MakeRotateMatrix(const Quaternion& quaternion);
+
+    /// <summary>
+    /// 球面線形補間
+    /// </summary>
+    /// <param name="q0"></param>
+    /// <param name="q1"></param>
+    /// <param name="t"></param>
+    /// <returns></returns>
+    static Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t);
 
 private: // 課題で追加した変数
 
@@ -173,6 +182,25 @@ private: // 課題で追加した変数
     Vector3 rotateByMatrix;
 
 #endif // MT4_01_04
+
+#ifdef MT4_01_05
+
+    Quaternion rotation0;
+
+    Quaternion rotation1;
+
+    Quaternion interpolate0;
+
+    Quaternion interpolate1;
+
+    Quaternion interpolate2;
+
+    Quaternion interpolate3;
+
+    Quaternion interpolate4;
+
+#endif // MT4_01_05
+
 
 public: // メンバ関数
     void Initialize(IrufemiEngine* engine) override;

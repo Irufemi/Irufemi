@@ -265,6 +265,9 @@
     <ClCompile Include="3D\effect\EffectSystem.cpp">
       <Filter>3D\Effect</Filter>
     </ClCompile>
+    <ClCompile Include="math\Quaternion.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
