@@ -98,7 +98,7 @@ void GameScene::Update() {
     camera_->SetPerspectiveFovMatrix(
         debugCamera_->GetCamera().GetPerspectiveFovMatrix());
   } else {
-    camera_->Update("Camera");
+    camera_->Update("Camera",player_->GetPosition(),enemy_->GetPosition());
   }
 
   if (engine_->GetInputManager()->IsKeyPressed('P') ||
