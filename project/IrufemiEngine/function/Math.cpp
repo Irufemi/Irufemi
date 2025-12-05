@@ -559,10 +559,11 @@ namespace Math {
         viewportMatrix.m[3][3] = 1.0f;
         return viewportMatrix;
     }
-
+    
     // 任意軸回転行列の作成関数
     Matrix4x4 MakeRotateAxisAngle(const Vector3& axis, float angle) {
-        Matrix4x4 result = Math::MakeIdentity4x4();
+
+        Matrix4x4 result = MakeIdentity4x4();
         result.m[0][0] = axis.x * axis.x * (1 - std::cos(angle)) + std::cos(angle);
         result.m[0][1] = axis.x * axis.y * (1 - std::cos(angle)) + axis.z * std::sin(angle);
         result.m[0][2] = axis.x * axis.z * (1 - std::cos(angle)) - axis.y * std::sin(angle);
@@ -575,6 +576,269 @@ namespace Math {
 
         return result;
 
+    }
+
+    // ある方向からある方向への回転
+    Matrix4x4 DirectionToDirection(const Vector3& from, const Vector3& to) {
+        // 正規化
+        Vector3 f = Normalize(from);
+        Vector3 t = Normalize(to);
+
+        // 内積から角度のコサインを求める
+        float cosTheta = Dot(f, t);
+
+        // 数値誤差対策の閾値
+        constexpr float kEpsilon = 1e-6f;
+
+        // ほぼ同じ方向 -> 単位行列（回転不要）
+        if (cosTheta > 1.0f - kEpsilon) {
+            return MakeIdentity4x4();
+        }
+
+        // ほぼ逆方向 -> 軸が定義できない（u x v = 0）になるので、
+        // 添付画像の選び方に従って直交ベクトルを選ぶ
+        if (cosTheta < -1.0f + kEpsilon) {
+            Vector3 axis{ 0.0f, 0.0f, 0.0f };
+
+            // 画像の式:
+            // n = [ uy, -ux, 0 ]  (if ux != 0 || uy != 0)
+            // n = [ uz, 0, -ux ]  (if ux != 0 || uz != 0)
+            // 優先は前者（xy 平面での成分があれば使う）
+            if (std::fabs(f.x) > kEpsilon || std::fabs(f.y) > kEpsilon) {
+                axis = Vector3{ f.y, -f.x, 0.0f };
+            } else if (std::fabs(f.x) > kEpsilon || std::fabs(f.z) > kEpsilon) {
+                axis = Vector3{ f.z, 0.0f, -f.x };
+            } else {
+                // ほとんどゼロベクトルなら任意の軸を選択
+                axis = Vector3{ 1.0f, 0.0f, 0.0f };
+            }
+
+            // 正規化（安全）
+            float axisLen = Length(axis);
+            if (axisLen < kEpsilon) {
+                axis = Vector3{ 1.0f, 0.0f, 0.0f };
+            } else {
+                axis = Multiply(1.0f / axisLen, axis);
+            }
+
+            constexpr float kPi = 3.14159265358979323846f;
+            return MakeRotateAxisAngle(axis, kPi);
+        }
+
+        // 通常ケース：軸は cross、角度は acos(dot)
+        Vector3 axis = Cross(f, t);
+        float axisLen = Length(axis);
+        if (axisLen < kEpsilon) {
+            // 数値誤差などで axis が小さい場合は単位行列を返す
+            return MakeIdentity4x4();
+        }
+        axis = Multiply(1.0f / axisLen, axis);
+
+        // acos の引数は [-1, 1] にクランプしておく
+        float cosClamped = cosTheta;
+        if (cosClamped < -1.0f) cosClamped = -1.0f;
+        if (cosClamped > 1.0f) cosClamped = 1.0f;
+        float angle = std::acos(cosClamped);
+
+        return MakeRotateAxisAngle(axis, angle);
+    }
+
+
+#pragma endregion
+
+#pragma region Quaternion
+
+    // Quaternionの積
+    Quaternion Multiply(const Quaternion& lhs, const Quaternion& rhs) {
+
+        Vector3 qlV = { lhs.x,lhs.y,lhs.z };
+        float qlW = lhs.w;
+        Vector3 qrV = { rhs.x,rhs.y,rhs.z };
+        float qrW = rhs.w;
+
+        float qW = qlW * qrW - Dot(qlV, qrV);
+        Vector3 qV = Cross(qlV, qrV) + Multiply(qrW, qlV) + Multiply(qlW, qrV);
+
+        Quaternion result = { qV.x,qV.y,qV.z,qW };
+
+        return result;
+    }
+
+    // 単位Quaternionを返す
+    Quaternion IdentityQuaternion() {
+        Quaternion result{};
+        result.x = 0.0f;
+        result.y = 0.0f;
+        result.z = 0.0f;
+        result.w = 1.0f;
+        return result;
+    }
+
+    // 共役Quaternionを返す
+    Quaternion Conjugate(const Quaternion& quaternion) {
+        Quaternion result{};
+        // スカラー部はそのまま、虚部は符号を反転
+        result.x = -quaternion.x;
+        result.y = -quaternion.y;
+        result.z = -quaternion.z;
+        result.w = quaternion.w;
+        return result;
+    }
+
+    // Quaternionのnormを返す
+    float Norm(const Quaternion& quaternion) {
+        float norm = std::sqrt(
+            quaternion.w * quaternion.w +
+            quaternion.x * quaternion.x +
+            quaternion.y * quaternion.y +
+            quaternion.z * quaternion.z
+        );
+        return norm;
+    }
+
+    // 正規化したQuaternionを返す
+    Quaternion Normalize(const Quaternion& quaternion) {
+        constexpr float kEpsilon = 1e-6f;
+        float n = Norm(quaternion);
+        if (n < kEpsilon) {
+            // 長さがほぼ0の場合は元の値をそのまま返す（分母ゼロ回避）
+            return quaternion;
+        }
+        Quaternion result{};
+        result.x = quaternion.x / n;
+        result.y = quaternion.y / n;
+        result.z = quaternion.z / n;
+        result.w = quaternion.w / n;
+        return result;
+    }
+
+    // 逆Quaternionを返す
+    Quaternion Inverse(const Quaternion& quaternion) {
+        // 逆元は共役をノルム二乗で割る: q^{-1} = q* / ||q||^2
+        constexpr float kEpsilon = 1e-12f;
+        // ノルム二乗を直接計算（sqrt を使わず効率的）
+        float normSq =
+            quaternion.w * quaternion.w +
+            quaternion.x * quaternion.x +
+            quaternion.y * quaternion.y +
+            quaternion.z * quaternion.z;
+
+        if (normSq < kEpsilon) {
+            // ノルム二乗がほぼ0なら逆元は定義されないため単位四元数を返す
+            return IdentityQuaternion();
+        }
+
+        Quaternion conj = Conjugate(quaternion);
+        Quaternion result{};
+        result.x = conj.x / normSq;
+        result.y = conj.y / normSq;
+        result.z = conj.z / normSq;
+        result.w = conj.w / normSq;
+        return result;
+    }
+
+    // 任意軸回転を表す Quaternionの生成
+    Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle) {
+        constexpr float kEpsilon = 1e-6f;
+
+        // 軸を正規化（ゼロ長なら X 軸を代替）
+        float axisLen = Length(axis);
+        Vector3 n = axis;
+        if (axisLen < kEpsilon) {
+            n = Vector3{ 1.0f, 0.0f, 0.0f };
+        } else {
+            n = Multiply(1.0f / axisLen, axis);
+        }
+
+        // 四元数 (x,y,z,w) : (n * sin(theta/2), cos(theta/2))
+        float half = 0.5f * angle;
+        float s = std::sin(half);
+        Quaternion q = { n.x * s, n.y * s, n.z * s, std::cos(half) };
+
+        // 数値安定性のため正規化して返す
+        return Normalize(q);
+    }
+
+    // ベクトルをQuaternionで回転させた結果のベクトルを求める
+    Vector3 RotateVector(const Vector3& vector, const Quaternion& quaternion) {
+        // 回転四元数は単位四元数であるべきなので正規化して使用
+        Quaternion q = Normalize(quaternion);
+
+        // v を (v, 0) として q * v * q^*
+        Quaternion p = { vector.x, vector.y, vector.z, 0.0f };
+        Quaternion tmp = Multiply(q, p);
+        Quaternion qConj = Conjugate(q);
+        Quaternion res = Multiply(tmp, qConj);
+
+        return Vector3{ res.x, res.y, res.z };
+    }
+
+    // Quaternionから回転行列を求める
+    Matrix4x4 MakeRotateMatrix(const Quaternion& quaternion) {
+
+        Matrix4x4 r = MakeIdentity4x4();
+
+        r.m[0][0] = quaternion.w * quaternion.w + quaternion.x * quaternion.x - quaternion.y * quaternion.y - quaternion.z * quaternion.z;
+        r.m[0][1] = 2.0f * (quaternion.x * quaternion.y + quaternion.w * quaternion.z);
+        r.m[0][2] = 2.0f * (quaternion.x * quaternion.z - quaternion.w * quaternion.y);
+        r.m[1][0] = 2.0f * (quaternion.x * quaternion.y - quaternion.w * quaternion.z);
+        r.m[1][1] = quaternion.w * quaternion.w - quaternion.x * quaternion.x + quaternion.y * quaternion.y - quaternion.z * quaternion.z;
+        r.m[1][2] = 2.0f * (quaternion.y * quaternion.z + quaternion.w * quaternion.x);
+        r.m[2][0] = 2.0f * (quaternion.x * quaternion.z + quaternion.w * quaternion.y);
+        r.m[2][1] = 2.0f * (quaternion.y * quaternion.z - quaternion.w * quaternion.x);
+        r.m[2][2] = quaternion.w * quaternion.w - quaternion.x * quaternion.x - quaternion.y * quaternion.y + quaternion.z * quaternion.z;
+
+        return r;
+    }
+
+    // 球面線形補間
+    Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t) {
+        // q0, q1 は単位四元数であることが前提（数値誤差は別途管理）
+        Quaternion q0_ = q0;
+
+        // q0 と q1 の内積（4次元ベクトルとして）
+        float dot = q0.x * q1.x + q0.y * q1.y + q0.z * q1.z + q0.w * q1.w;
+
+        // 最短経路を取るために内積が負の場合は片方の符号を反転する
+        if (dot < 0.0f) {
+            q0_.x = -q0.x;
+            q0_.y = -q0.y;
+            q0_.z = -q0.z;
+            q0_.w = -q0.w;
+            dot = -dot;
+        }
+
+        // dot がほぼ 1 の場合は線形補間（数値安定化）
+        constexpr float kDotThreshold = 0.9995f;
+        if (dot > kDotThreshold) {
+            // NLERP（線形補間）: cost を抑えるため正規化は呼び出し側で必要に応じて行う
+            Quaternion result{};
+            result.x = q0_.x + t * (q1.x - q0_.x);
+            result.y = q0_.y + t * (q1.y - q0_.y);
+            result.z = q0_.z + t * (q1.z - q0_.z);
+            result.w = q0_.w + t * (q1.w - q0_.w);
+            return result;
+        }
+
+        // acos の引数を安全にクランプ
+        if (dot < -1.0f) dot = -1.0f;
+        if (dot > 1.0f) dot = 1.0f;
+
+        // なす角 theta を求め，sin を使ってスケール係数を計算
+        float theta = std::acos(dot);
+        float sinTheta = std::sin(theta);
+
+        // 正規ケース：scale0, scale1 を計算して補間
+        float scale0 = std::sin((1.0f - t) * theta) / sinTheta;
+        float scale1 = std::sin(t * theta) / sinTheta;
+
+        Quaternion result{};
+        result.x = scale0 * q0_.x + scale1 * q1.x;
+        result.y = scale0 * q0_.y + scale1 * q1.y;
+        result.z = scale0 * q0_.z + scale1 * q1.z;
+        result.w = scale0 * q0_.w + scale1 * q1.w;
+
+        return result;
     }
 
 #pragma endregion
