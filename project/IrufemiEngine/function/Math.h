@@ -307,10 +307,96 @@ namespace Math {
     /// <summary>
     /// 任意軸回転行列の作成関数
     /// </summary>
-    /// <param name="axis">任意軸の単位ベクトル</param>
-    /// <param name="angle">軸から回転する角度</param>
+    /// <param name="axis"></param>
+    /// <param name="angle"></param>
     /// <returns></returns>
     Matrix4x4 MakeRotateAxisAngle(const Vector3& axis, float angle);
+
+    /// <summary>
+    /// ある方向からある方向への回転
+    /// </summary>
+    /// <param name="from"></param>
+    /// <param name="to"></param>
+    /// <returns></returns>
+    Matrix4x4 DirectionToDirection(const Vector3& from, const Vector3& to);
+
+#pragma endregion
+
+#pragma region Quaternion
+
+    /// <summary>
+    /// Quaternionの積
+    /// </summary>
+    /// <param name="lhs"></param>
+    /// <param name="rhs"></param>
+    /// <returns></returns>
+    Quaternion Multiply(const Quaternion& lhs, const Quaternion& rhs);
+
+    /// <summary>
+    /// 単位Quaternionを返す
+    /// </summary>
+    /// <returns></returns>
+    Quaternion IdentityQuaternion();
+
+    /// <summary>
+    /// 共役Quaternionを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    Quaternion Conjugate(const Quaternion& quaternion);
+
+    /// <summary>
+    /// Quaternionのnormを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    float Norm(const Quaternion& quaternion);
+
+    /// <summary>
+    /// 正規化したQuaternionを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    Quaternion Normalize(const Quaternion& quaternion);
+
+    /// <summary>
+    /// 逆Quaternionを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    Quaternion Inverse(const Quaternion& quaternion);
+
+    /// <summary>
+    /// 任意軸回転を表す Quaternionの生成
+    /// </summary>
+    /// <param name="axis"></param>
+    /// <param name="angle"></param>
+    /// <returns></returns>
+    Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle);
+
+    /// <summary>
+    /// ベクトルをQuaternionで回転させた結果のベクトルを求める
+    /// </summary>
+    /// <param name="vector"></param>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    Vector3 RotateVector(const Vector3& vector, const Quaternion& quaternion);
+
+    /// <summary>
+    /// Quaternionから回転行列を求める
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    Matrix4x4 MakeRotateMatrix(const Quaternion& quaternion);
+
+    /// <summary>
+    /// 球面線形補間
+    /// </summary>
+    /// <param name="q0"></param>
+    /// <param name="q1"></param>
+    /// <param name="t"></param>
+    /// <returns></returns>
+    Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t);
     
 #pragma endregion
 
