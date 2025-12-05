@@ -1,5 +1,7 @@
 #pragma once
 
+#define MT4_01_05 1
+
 #include "scene/IScene.h"
 
 #include "audio/Bgm.h"
@@ -31,15 +33,173 @@ public:
     /// <param name="axis"></param>
     /// <param name="angle"></param>
     /// <returns></returns>
-    Matrix4x4 MakeRotateAxisAngle(const Vector3& axis, float angle);
+    static Matrix4x4 MakeRotateAxisAngle(const Vector3& axis, float angle);
+
+    /// <summary>
+    /// ある方向からある方向への回転
+    /// </summary>
+    /// <param name="from"></param>
+    /// <param name="to"></param>
+    /// <returns></returns>
+    static Matrix4x4 DirectionToDirection(const Vector3& from, const Vector3& to);
+
+    /// <summary>
+    /// Quaternionの積
+    /// </summary>
+    /// <param name="lhs"></param>
+    /// <param name="rhs"></param>
+    /// <returns></returns>
+    static Quaternion Multiply(const Quaternion& lhs, const Quaternion& rhs);
+
+    /// <summary>
+    /// 単位Quaternionを返す
+    /// </summary>
+    /// <returns></returns>
+    static Quaternion IdentityQuaternion();
+
+    /// <summary>
+    /// 共役Quaternionを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    static Quaternion Conjugate(const Quaternion& quaternion);
+    
+    /// <summary>
+    /// Quaternionのnormを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    static float Norm(const Quaternion& quaternion);
+
+    /// <summary>
+    /// 正規化したQuaternionを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    static Quaternion Normalize(const Quaternion& quaternion);
+    
+    /// <summary>
+    /// 逆Quaternionを返す
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    static Quaternion Inverse(const Quaternion& quaternion);
+
+    /// <summary>
+    /// 任意軸回転を表す Quaternionの生成
+    /// </summary>
+    /// <param name="axis"></param>
+    /// <param name="angle"></param>
+    /// <returns></returns>
+    static Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle);
+    
+    /// <summary>
+    /// ベクトルをQuaternionで回転させた結果のベクトルを求める
+    /// </summary>
+    /// <param name="vector"></param>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    static Vector3 RotateVector(const Vector3& vector, const Quaternion& quaternion);
+    
+    /// <summary>
+    /// Quaternionから回転行列を求める
+    /// </summary>
+    /// <param name="quaternion"></param>
+    /// <returns></returns>
+    static Matrix4x4 MakeRotateMatrix(const Quaternion& quaternion);
+
+    /// <summary>
+    /// 球面線形補間
+    /// </summary>
+    /// <param name="q0"></param>
+    /// <param name="q1"></param>
+    /// <param name="t"></param>
+    /// <returns></returns>
+    static Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t);
 
 private: // 課題で追加した変数
+
+#ifdef MT4_01_01
 
     Vector3 axis;
 
     float angle;
 
     Matrix4x4 rotateMatrix;
+
+#endif
+
+#ifdef MT4_01_02
+
+    Vector3 from0;
+
+    Vector3 to0;
+
+    Vector3 from1;
+
+    Vector3 to1;
+
+    Matrix4x4 rotateMatrix0;
+
+    Matrix4x4 rotateMatrix1;
+
+    Matrix4x4 rotateMatrix2;
+
+#endif
+
+#ifdef MT4_01_03
+
+    Quaternion q1;
+
+    Quaternion q2;
+
+    Quaternion identity;
+
+    Quaternion conj;
+
+    Quaternion inv;
+
+    Quaternion normal;
+
+    Quaternion mul1;
+
+    Quaternion mul2;
+
+    float norm;
+
+#endif // MT4_01_03
+
+#ifdef MT4_01_04
+
+    Quaternion rotation;
+
+    Vector3 pointY;
+
+    Matrix4x4 rotateMatrix;
+
+    Vector3 rotateByQuaternion;
+
+    Vector3 rotateByMatrix;
+
+#endif // MT4_01_04
+
+#ifdef MT4_01_05
+
+    Quaternion rotation0;
+
+    Quaternion rotation1;
+
+    Quaternion interpolate0;
+
+    Quaternion interpolate1;
+
+    Quaternion interpolate2;
+
+    Quaternion interpolate3;
+
+    Quaternion interpolate4;
+
+#endif // MT4_01_05
 
 
 public: // メンバ関数
