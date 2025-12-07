@@ -28,6 +28,28 @@ Vector4 Lerp(const Vector4& v1, const Vector4& v2, float t) {
 	return Multiply(1.0f - t, v1) + Multiply(t, v2);
 }
 
+// Quaternion 線形補間（最短経路を選び正規化して返す）
+Quaternion Lerp(const Quaternion& q0, const Quaternion& q1, float t) {
+	// 最短経路のため内積を計算し、負なら q1 を反転
+	float dot = q0.x * q1.x + q0.y * q1.y + q0.z * q1.z + q0.w * q1.w;
+	Quaternion q1s = q1;
+	if (dot < 0.0f) {
+		q1s.x = -q1s.x;
+		q1s.y = -q1s.y;
+		q1s.z = -q1s.z;
+		q1s.w = -q1s.w;
+	}
+
+	Quaternion res;
+	res.x = q0.x + t * (q1s.x - q0.x);
+	res.y = q0.y + t * (q1s.y - q0.y);
+	res.z = q0.z + t * (q1s.z - q0.z);
+	res.w = q0.w + t * (q1s.w - q0.w);
+
+	// 正規化して返す（NLERP）
+	return Normalize(res);
+}
+
 // 線形補間(0~1制限あり)
 float LerpClamped(float a, float b, float t) {
 	t = std::clamp(t, 0.0f, 1.0f);

@@ -271,6 +271,15 @@ namespace Math {
     Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate);
 
     /// <summary>
+    /// 4x4アフィン変換行列を生成 (Quaternion 回転版)
+    /// </summary>
+    /// <param name="scale"></param>
+    /// <param name="rotateQuaternion"></param>
+    /// <param name="translate"></param>
+    /// <returns></returns>
+    Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Quaternion& rotateQuaternion, const Vector3& translate);
+
+    /// <summary>
     /// 透視投影行列の作成
     /// </summary>
     /// <param name="fovY"></param>
