@@ -205,4 +205,18 @@ public: // メンバ関数
   // 2Dで使うための現在のビューポートサイズ取得
   float GetViewportWidth() const { return width_; }
   float GetViewportHeight() const { return height_; }
+
+private:
+  // ==== カメラシェイク用 ====
+  int shakeFrame_ = 0;          // 残りフレーム数
+  int shakeFrameMax_ = 0;       // シェイク継続フレーム
+  float shakeAmplitude_ = 0.0f; // 揺れの強さ
+
+public:
+  /// <summary>
+  /// カメラシェイク開始
+  /// </summary>
+  /// <param name="durationFrame">何フレーム揺らすか</param>
+  /// <param name="amplitude">揺れの強さ</param>
+  void StartShake(int durationFrame = 15, float amplitude = 0.5f);
 };

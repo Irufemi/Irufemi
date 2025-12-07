@@ -5,6 +5,7 @@
 #include "manager/DebugUI.h"
 
 #include <cmath>
+#include <random>
 #include <string>
 
 #include "function/Math.h"
@@ -96,6 +97,24 @@ void Camera::Update([[maybe_unused]] const char *cameraName, Vector3 pPos,
   const float fovLerp = 0.1f;
   fovAngleY_ = Lerp(fovAngleY_, targetFov, fovLerp);
 
+  // ==== カメラシェイク ====
+  if (shakeFrame_ > 0 && shakeFrameMax_ > 0) {
+
+    // 残り時間に応じて徐々に弱くする
+    float progress =
+        static_cast<float>(shakeFrame_) / static_cast<float>(shakeFrameMax_);
+    float amp = shakeAmplitude_ * progress;
+
+    static std::mt19937 rng{std::random_device{}()};
+    std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+
+    // X/Y 方向にランダムオフセットを加える
+    translate_.x += dist(rng) * amp;
+    translate_.y += dist(rng) * amp;
+
+    --shakeFrame_;
+  }
+
   // 毎フレーム行列を更新する
   UpdateMatrix();
 }
@@ -137,6 +156,12 @@ void Camera::UpdateMatrix() {
   UpdatePerspectiveFovMatrix();
   UpdateOrthographicMatrix();
   UpdateViewportMatrix();
+}
+
+void Camera::StartShake(int durationFrame, float amplitude) {
+  shakeFrameMax_ = durationFrame;
+  shakeFrame_ = durationFrame;
+  shakeAmplitude_ = amplitude;
 }
 
 // カメラ行列を取得する

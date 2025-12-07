@@ -165,6 +165,7 @@ void GameScene::Draw() {
 
   // プレイヤーの描画処理
   player_->Draw();
+
   // エネミーの描画処理（中で壁・弾も描画）
   enemy_->Draw();
 
@@ -208,21 +209,27 @@ void GameScene::DoCollision() {
       // 壁側の処理（壊す・状態変更など）
       enemyWallManager_.OnPlayerHitWall(wallIndex);
 
-      int before = player_->GetRockCount();
+      if (!player_->IsInvincible()) {
 
-      // ノックバックと岩のリセット
-      player_->HalveRockCount();
+        int before = player_->GetRockCount();
 
-      int after = player_->GetRockCount();
-      int numToDetach = before - after;
+        // ノックバックと岩のリセット
+        player_->HalveRockCount();
 
-      // 見た目の岩も外す
-      if (rockManager_) {
-        rockManager_->HalveAttachedRocks(numToDetach);
+        int after = player_->GetRockCount();
+        int numToDetach = before - after;
+
+        // 見た目の岩も外す
+        if (rockManager_) {
+          rockManager_->HalveAttachedRocks(numToDetach);
+        }
+
+        // ノックバック
+        ApplyPlayerKnockback();
+
+        // 無敵開始
+        player_->StartInvincible(45);
       }
-
-      // ノックバック
-      ApplyPlayerKnockback();
     }
   }
 
@@ -231,23 +238,30 @@ void GameScene::DoCollision() {
     int bulletIndex = enemyBulletManager_.CheckCollisionCircle(pPos, pRadius);
     if (bulletIndex >= 0) {
       // 弾側の処理（消すなど）
-      enemyBulletManager_.OnHitBullet(bulletIndex);
 
-      int before = player_->GetRockCount();
+      if (!player_->IsInvincible()) {
 
-      // ノックバックと岩のリセット
-      player_->HalveRockCount();
+        enemyBulletManager_.OnHitBullet(bulletIndex);
 
-      int after = player_->GetRockCount();
-      int numToDetach = before - after;
+        int before = player_->GetRockCount();
 
-      // 見た目の岩も外す
-      if (rockManager_) {
-        rockManager_->HalveAttachedRocks(numToDetach);
+        // ノックバックと岩のリセット
+        player_->HalveRockCount();
+
+        int after = player_->GetRockCount();
+        int numToDetach = before - after;
+
+        // 見た目の岩も外す
+        if (rockManager_) {
+          rockManager_->HalveAttachedRocks(numToDetach);
+        }
+
+        // ノックバック
+        ApplyPlayerKnockback();
+
+        // 無敵開始
+        player_->StartInvincible(45);
       }
-
-      // ノックバック
-      ApplyPlayerKnockback();
     }
   }
 
@@ -258,21 +272,35 @@ void GameScene::DoCollision() {
       const Vector3 &ePos = enemy_->GetPosition();
       float eRadius = enemy_->GetRadius();
 
-      if (GameFunction::isHitCircle(pPos, pRadius, ePos, eRadius)) {
+      // 当たり判定を少し緩くする
+      float hitPlayerRadius = pRadius * 0.9f;
 
-        // プレイヤーの岩をリセット
-        player_->ResetRockCount();
+      if (GameFunction::isHitCircle(pPos, hitPlayerRadius, ePos, eRadius)) {
 
-        // 見た目の岩も外す
-        if (rockManager_) {
-          rockManager_->ResetAttachedRocks();
+        if (!player_->IsInvincible()) {
+
+          // プレイヤーの岩をリセット
+          player_->ResetRockCount();
+
+          // 見た目の岩も外す
+          if (rockManager_) {
+            rockManager_->ResetAttachedRocks();
+          }
+
+          // 敵にダメージ
+          enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
+
+          // ノックバック
+          ApplyPlayerKnockback();
+
+          // 無敵開始
+          player_->StartInvincible(45);
+
+          // カメラのシェイク
+          if (camera_) {
+            camera_->StartShake();
+          }
         }
-
-        // 敵にダメージ
-        enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
-
-        // ノックバック
-        ApplyPlayerKnockback();
       }
     }
   }

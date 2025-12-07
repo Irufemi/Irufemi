@@ -32,6 +32,22 @@ void Player::Initialize(Camera *camera, SphereClass *model, Vector3 positoin,
 
 void Player::Update() {
 
+  // 無敵時間の更新
+  if (isInvincible_) {
+    if (invincibleTimer_ > 0) {
+      --invincibleTimer_;
+
+      ++invincibleBlinkCounter_;
+    } else {
+      isInvincible_ = false;
+      invincibleTimer_ = 0;
+
+      invincibleBlinkCounter_ = 0;
+    }
+  } else {
+    invincibleBlinkCounter_ = 0;
+  }
+
   // ノックバック処理
   if (isKnockback_) {
 
@@ -43,9 +59,12 @@ void Player::Update() {
     transform_.translate += knockbackVel_;
 
     // 減衰（だんだん止まる）
-    knockbackVel_.x *= 0.85f;
-    knockbackVel_.y *= 0.88f; // 上方向は重力があるので落ちる
-    knockbackVel_.z *= 0.85f;
+    const float horizontalDamping = 0.8f;
+    const float verticalDamping = 0.85f;
+
+    knockbackVel_.x *= horizontalDamping;
+    knockbackVel_.y *= verticalDamping;
+    knockbackVel_.z *= horizontalDamping;
 
     // 着地判定
     if (transform_.translate.y <= radius_) {
@@ -56,7 +75,7 @@ void Player::Update() {
           knockbackVel_.x * knockbackVel_.x + knockbackVel_.z * knockbackVel_.z;
 
       // 速度が0に近づけば終了
-      if (horizontalV2 < 0.0001f) {
+      if (horizontalV2 < 0.001f) {
         isKnockback_ = false;
       }
     }
@@ -102,6 +121,19 @@ void Player::Update() {
 }
 
 void Player::Draw() {
+
+  if (isInvincible_) {
+    bool flashOn = ((invincibleBlinkCounter_ / 2) % 2) == 0;
+
+    if (flashOn) {
+      model_->SetColor(invincibleColor_); // 白
+    } else {
+      model_->SetColor(normalColor_); // 通常色
+    }
+  } else {
+    model_->SetColor(normalColor_);
+  }
+
   // モデルの描画
   model_->Draw();
 }
