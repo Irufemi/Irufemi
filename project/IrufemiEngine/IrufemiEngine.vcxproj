@@ -156,10 +156,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="2D\Sprite.cpp" />
+    <ClCompile Include="3D\AnimationModel.cpp" />
     <ClCompile Include="3D\ObjClass.cpp" />
     <ClCompile Include="3D\particle\ParticleSystem.cpp" />
     <ClCompile Include="3D\SphereClass.cpp" />
     <ClCompile Include="3D\TriangleClass.cpp" />
+    <ClCompile Include="manager\AnimationManager.cpp" />
     <ClCompile Include="audio\Bgm.cpp" />
     <ClCompile Include="3D\Region.cpp" />
     <ClCompile Include="3D\CylinderClass.cpp" />
@@ -234,6 +236,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="3D\particle\ParticleSystem.h" />
     <ClInclude Include="3D\SphereClass.h" />
     <ClInclude Include="3D\TriangleClass.h" />
+    <ClInclude Include="manager\AnimationManager.h" />
+    <ClInclude Include="3D\AnimationModel.h" />
     <ClInclude Include="audio\Bgm.h" />
     <ClInclude Include="3D\Region.h" />
     <ClInclude Include="3D\CylinderClass.h" />
@@ -259,12 +263,14 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="math\AnimationTransform.h" />
     <ClInclude Include="manager\AudioManager.h" />
     <ClInclude Include="manager\DebugUI.h" />
     <ClInclude Include="manager\DrawManager.h" />
     <ClInclude Include="engine\Input\InputManager.h" />
     <ClInclude Include="manager\TextureManager.h" />
     <ClInclude Include="manager\VoiceCallback.h" />
+    <ClInclude Include="math\Animation.h" />
     <ClInclude Include="math\BlendMode.h" />
     <ClInclude Include="math\CameraForGPU.h" />
     <ClInclude Include="math\ChunkHeader.h" />
@@ -276,6 +282,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Matrix3x3.h" />
     <ClInclude Include="math\Matrix4x4.h" />
     <ClInclude Include="math\ModelData.h" />
+    <ClInclude Include="math\NodeAnimation.h" />
     <ClInclude Include="math\ObjModel.h" />
     <ClInclude Include="math\ParticleMaterial.h" />
     <ClInclude Include="math\PointLight.h" />
@@ -314,6 +321,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="3D\SphereRegion.h" />
     <ClInclude Include="3D\TetraRegion.h" />
     <ClInclude Include="2D\SpriteRegion.h" />
+    <ClInclude Include="math\Keyframe.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
