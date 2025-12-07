@@ -208,4 +208,9 @@ public:
   /// <param name="worldDir"></param>
   /// <returns></returns>
   Vector3 WorldDirToLocal(const Vector3 &worldDir) const;
+
+  /// <summary>
+  /// ノックバック中かどうか
+  /// </summary>
+  bool IsKnockback() const { return isKnockback_; }
 };

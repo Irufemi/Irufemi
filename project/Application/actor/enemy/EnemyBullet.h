@@ -7,6 +7,9 @@
 #include <memory>
 #include <vector>
 
+// 敵壁前方宣言
+class EnemyWallManager;
+
 struct EnemyBullet {
   Vector3 position;
   Vector3 velocity;
@@ -28,6 +31,9 @@ public:
 
   void Update(float deltaTime);
   void Draw();
+
+  // 壁との当たり判定
+  void ResolveBulletWallCollision(EnemyWallManager& wallManager);
 
   // 敵位置 origin から、target（プレイヤー）に向かって1発撃つ
   void SpawnBulletAimed(const Vector3 &origin, const Vector3 &target);

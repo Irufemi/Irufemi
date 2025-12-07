@@ -253,28 +253,35 @@ void GameScene::DoCollision() {
 
   // -------- プレイヤー vs 敵本体 --------
   {
-    // 潜っている間（BurrowHidden）は本体当たり判定を取らない
-    if (!enemy_->IsBurrowing()) {
-      const Vector3 &ePos = enemy_->GetPosition();
-      float eRadius = enemy_->GetRadius();
+      // 潜っている間（BurrowHidden）は本体当たり判定を取らない
+      if (!enemy_->IsBurrowing()) {
+          const Vector3& ePos = enemy_->GetPosition();
+          float eRadius = enemy_->GetRadius();
 
-      if (GameFunction::isHitCircle(pPos, pRadius, ePos, eRadius)) {
+          if (GameFunction::isHitCircle(pPos, pRadius, ePos, eRadius)) {
 
-        // プレイヤーの岩をリセット
-        player_->ResetRockCount();
+              // すでにノックバック中なら、これ以上当たり判定しない
+              if (!player_->IsKnockback()) {
 
-        // 見た目の岩も外す
-        if (rockManager_) {
-          rockManager_->ResetAttachedRocks();
-        }
+                  // 突進してきている場合は、ここで突進を止める
+                  enemy_->ForceStopDash();
 
-        // 敵にダメージ
-        enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
+                  // プレイヤーの岩をリセット
+                  player_->ResetRockCount();
 
-        // ノックバック
-        ApplyPlayerKnockback();
+                  // 見た目の岩も外す
+                  if (rockManager_) {
+                      rockManager_->ResetAttachedRocks();
+                  }
+
+                  // 敵にダメージ
+                  enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
+
+                  // ノックバック
+                  ApplyPlayerKnockback();
+              }
+          }
       }
-    }
   }
 }
 
