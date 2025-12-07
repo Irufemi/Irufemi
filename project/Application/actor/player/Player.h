@@ -169,12 +169,17 @@ public:
     if (rockCount_ < 0) {
       rockCount_ = 0;
     }
+
+    ReCalcStatusFromRock();
   }
 
   /// <summary>
   /// 岩の数を0にリセット
   /// </summary>
-  void ResetRockCount() { rockCount_ = 0; }
+  void ResetRockCount() {
+    rockCount_ = 0;
+    ReCalcStatusFromRock();
+  }
 
   /// <summary>
   /// 岩の数を半分にする
@@ -186,6 +191,8 @@ public:
     if (rockCount_ < 0) {
       rockCount_ = 0;
     }
+
+    ReCalcStatusFromRock();
   }
 
 private:
@@ -208,6 +215,29 @@ public:
   /// <param name="worldDir"></param>
   /// <returns></returns>
   Vector3 WorldDirToLocal(const Vector3 &worldDir) const;
+
+private:
+  bool isInvincible_ = false; // 無敵か
+  int invincibleTimer_ = 0;   // 無敵フレーム数
+  int invincibleBlinkCounter_ = 0;
+  Vector4 normalColor_{1.0f, 1.0f, 1.0f, 1.0f};
+  Vector4 invincibleColor_{5.0f, 5.0f, 5.0f, 1.0f};
+
+public:
+  /// <summary>
+  /// 無敵中かどうか
+  /// </summary>
+  /// <returns></returns>
+  bool IsInvincible() const { return isInvincible_; }
+
+  /// <summary>
+  /// 無敵開始
+  /// </summary>
+  /// <param name="durationFrame"></param>
+  void StartInvincible(int durationFrame) {
+    isInvincible_ = true;
+    invincibleTimer_ = durationFrame;
+  }
 
   /// <summary>
   /// ノックバック中かどうか
