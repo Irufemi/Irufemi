@@ -65,6 +65,8 @@ private: // 変数
     std::shared_ptr<Player> player_ = nullptr;
     // 3Dモデルデータ(自キャラ)
     std::unique_ptr<ObjClass> modelplayer_ = nullptr;
+    // 3Dモデルデータ(自キャラの攻撃)
+    std::unique_ptr<ObjClass> modelplayerAttack_ = nullptr;
 
 private: // メンバ変数(システム)
 

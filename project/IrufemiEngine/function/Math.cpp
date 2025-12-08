@@ -864,23 +864,6 @@ namespace Math {
         return result;
     }
 
-    // 任意軸回転行列の作成関数
-    Matrix4x4 MakeRotateAxisAngle(const Vector3& axis, float angle) {
-        Matrix4x4 result = Math::MakeIdentity4x4();
-        result.m[0][0] = axis.x * axis.x * (1 - std::cos(angle)) + std::cos(angle);
-        result.m[0][1] = axis.x * axis.y * (1 - std::cos(angle)) + axis.z * std::sin(angle);
-        result.m[0][2] = axis.x * axis.z * (1 - std::cos(angle)) - axis.y * std::sin(angle);
-        result.m[1][0] = axis.x * axis.y * (1 - std::cos(angle)) - axis.z * std::sin(angle);
-        result.m[1][1] = axis.y * axis.y * (1 - std::cos(angle)) + std::cos(angle);
-        result.m[1][2] = axis.y * axis.z * (1 - std::cos(angle)) + axis.x * std::sin(angle);
-        result.m[2][0] = axis.x * axis.z * (1 - std::cos(angle)) + axis.y * std::sin(angle);
-        result.m[2][1] = axis.y * axis.z * (1 - std::cos(angle)) - axis.x * std::sin(angle);
-        result.m[2][2] = axis.z * axis.z * (1 - std::cos(angle)) + std::cos(angle);
-
-        return result;
-
-    }
-
 #pragma endregion
 
 #pragma region 衝突判定
