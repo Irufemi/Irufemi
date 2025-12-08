@@ -73,7 +73,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   rockManager_->SetField(&field_);
 
   field_.SetRadius(12.0f);          // とりあえず 12
-  field_.SetHeightScale(0.15f);     // 砂丘の盛り上がり
+ // field_.SetHeightScale(0.15f);     // 砂丘の盛り上がり
   field_.SetFadeRates(0.75f, 1.0f); // 外周フェード
 
   field_.Initialize(engine, camera_.get());
@@ -134,8 +134,6 @@ void GameScene::Update() {
   {
     Vector3 pos = player_->GetPosition();
 
-    // 足元の高さを Field に合わせる
-    pos.y = field_.GetHeight(pos.x, pos.z) + player_->GetRadius();
 
     // 円の外に出ていたら、円周上にクランプ
     pos = field_.ClampInside(pos);

@@ -30,15 +30,15 @@ public:
 
     // 必要なら外からフェード設定をいじれるように
     void  SetFadeRates(float startRate, float endRate);
-    void  SetHeightScale(float scale);
+    //void  SetHeightScale(float scale);
 
     // --------------------
     // 地形・境界関連
     // --------------------
 
     // 地面の高さ取得（x,z から y を返す）
-    float  GetHeight(float x, float z) const;
-    float  GetHeight(const Vector3& pos) const;
+    //float  GetHeight(float x, float z) const;
+    //float  GetHeight(const Vector3& pos) const;
 
     // ステージ円の内側に位置を収める（はみ出したら円周上にクランプ）
     Vector3 ClampInside(const Vector3& pos) const;
@@ -62,7 +62,7 @@ public:
 private:
     // ステージ形状パラメータ
     float radius_ = 8.0f;   // 円ステージ半径
-    float heightScale_ = 0.15f;   // 砂丘の盛り上がり量
+   // float heightScale_ = 0.15f;   // 砂丘の盛り上がり量
     float fadeStartRate_ = 0.75f;   // フェード開始(半径に対する割合)
     float fadeEndRate_ = 1.0f;    // フェード終了(半径に対する割合)
 
