@@ -20,8 +20,8 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
   camera_ = std::make_unique<Camera>();
   camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
-  camera_->SetTranslate(Vector3{0.0f, 5.0f, -10.0f});
-  camera_->SetRotate(Vector3{-6.0f, 0.0f, 0.0f});
+  camera_->SetTranslate(Vector3{0.0f, 10.0f, -10.0f});
+  camera_->SetRotate(Vector3{-5.8f, 0.0f, 0.0f});
 
   debugCamera_ = std::make_unique<DebugCamera>();
   debugCamera_->Initialize(engine_->GetInputManager(),
