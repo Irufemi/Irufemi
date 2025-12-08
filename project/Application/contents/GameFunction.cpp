@@ -79,4 +79,10 @@ bool isHitCircle(const Vector3 &posA, float radiusA, const Vector3 &posB,
   return distSq <= (r * r);
 }
 
+float DistanceXZ(const Vector3& a, const Vector3& b) {
+    float dx = a.x - b.x;
+    float dz = a.z - b.z;
+    return std::sqrt(dx * dx + dz * dz);
+}
+
 } // namespace GameFunction

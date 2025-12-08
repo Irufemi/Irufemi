@@ -38,4 +38,6 @@ void CheckHit_PlayerAndRock(Player &player, std::vector<Rock> &rocks);
 bool isHitCircle(const Vector3 &posA, float radiusA, const Vector3 &posB,
                  float radiusB);
 
+float DistanceXZ(const Vector3& a, const Vector3& b);
+
 } // namespace GameFunction
