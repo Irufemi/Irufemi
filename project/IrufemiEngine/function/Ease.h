@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../math/Vector2.h"
-#include "../math/Vector3.h"
-#include "../math/Vector4.h"
+#include "math/Vector2.h"
+#include "math/Vector3.h"
+#include "math/Vector4.h"
+#include "math/Quaternion.h" // 追加
 
 // 線形補間
 float Lerp(float pos1, float pos2, float t);
@@ -15,6 +16,9 @@ Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t);
 
 // 線形補間
 Vector4 Lerp(const Vector4& v1, const Vector4& v2, float t);
+
+// Quaternion 線形補間（最短経路・正規化）
+Quaternion Lerp(const Quaternion& q1, const Quaternion& q2, float t); // 追加
 
 // 線形補間(0~1制限あり)
 float LerpClamped(float a, float b, float t);

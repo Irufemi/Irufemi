@@ -451,7 +451,7 @@ ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std:
                     // デフォルト値セット
                     if (!hasTransform) {
                         materialMap[currentName].uvTransform = Math::MakeAffineMatrix(
-                            { 1.0f, 1.0f, 1.0f }, { 0,0,0 }, { 0,0,0 });
+                            { 1.0f, 1.0f, 1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
                     }
                 }
             }
@@ -582,7 +582,7 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
         out.shininess = 32.0f;
         out.alpha     = 1.0f;
         out.enableLighting = true;
-        out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0,0,0 }, { 0,0,0 });
+        out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
 
         // Diffuse テクスチャ (埋め込み "*0" 等は今回は未対応)
         if (m->GetTextureCount(aiTextureType_DIFFUSE) > 0) {

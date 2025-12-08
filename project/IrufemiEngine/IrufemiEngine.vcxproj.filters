@@ -79,6 +79,15 @@
     <Filter Include="3D\Effect">
       <UniqueIdentifier>{588775aa-5265-4d8d-8290-25e9aa30c275}</UniqueIdentifier>
     </Filter>
+    <Filter Include="math\sound">
+      <UniqueIdentifier>{2d0605a7-a645-49d8-87b2-9090b2a17b95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="math\model">
+      <UniqueIdentifier>{6e990205-732c-4f76-8180-609842a52792}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="math\particle">
+      <UniqueIdentifier>{3285e825-34fd-40c2-afd8-b80b265fb6d8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="manager\DrawManager.cpp">
@@ -265,18 +274,21 @@
     <ClCompile Include="3D\effect\EffectSystem.cpp">
       <Filter>3D\Effect</Filter>
     </ClCompile>
+    <ClCompile Include="math\Quaternion.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="manager\AnimationManager.cpp">
+      <Filter>Engine\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\AnimationModel.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
       <Filter>Engine\manager</Filter>
     </ClInclude>
-    <ClInclude Include="math\ChunkHeader.h">
-      <Filter>math</Filter>
-    </ClInclude>
     <ClInclude Include="math\DirectionalLight.h">
-      <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="math\FormatChunk.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="math\Material.h">
@@ -289,15 +301,6 @@
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="math\Matrix4x4.h">
-      <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="math\ModelData.h">
-      <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="math\RiffHeader.h">
-      <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="math\SoundData.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="math\Transform.h">
@@ -348,9 +351,6 @@
     <ClInclude Include="audio\Bgm.h">
       <Filter>audio</Filter>
     </ClInclude>
-    <ClInclude Include="math\ObjModel.h">
-      <Filter>math</Filter>
-    </ClInclude>
     <ClInclude Include="scene\SceneManager.h">
       <Filter>Scene</Filter>
     </ClInclude>
@@ -394,9 +394,6 @@
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
     <ClInclude Include="math\BlendMode.h">
-      <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="math\Emitter.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="engine\IrufemiEngine.h">
@@ -450,9 +447,6 @@
     <ClInclude Include="2D\SpriteRegion.h">
       <Filter>2D</Filter>
     </ClInclude>
-    <ClInclude Include="math\Node.h">
-      <Filter>math</Filter>
-    </ClInclude>
     <ClInclude Include="manager\ModelManager.h">
       <Filter>Engine\manager</Filter>
     </ClInclude>
@@ -495,8 +489,65 @@
     <ClInclude Include="3D\particle\IParticleBehavior.h">
       <Filter>3D\Particle</Filter>
     </ClInclude>
-    <ClInclude Include="math\ParticleMaterial.h">
+    <ClInclude Include="3D\LineClass.h">
+      <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="InstanceDrawer.h">
+      <Filter>Engine\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\CubeClass.h">
+      <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\effect\EffectSystem.h">
+      <Filter>3D\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="math\Quaternion.h">
       <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="math\ChunkHeader.h">
+      <Filter>math\sound</Filter>
+    </ClInclude>
+    <ClInclude Include="math\Node.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="math\Emitter.h">
+      <Filter>math\particle</Filter>
+    </ClInclude>
+    <ClInclude Include="math\FormatChunk.h">
+      <Filter>math\sound</Filter>
+    </ClInclude>
+    <ClInclude Include="math\ModelData.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="math\ObjModel.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="math\ParticleMaterial.h">
+      <Filter>math\particle</Filter>
+    </ClInclude>
+    <ClInclude Include="math\RiffHeader.h">
+      <Filter>math\sound</Filter>
+    </ClInclude>
+    <ClInclude Include="math\SoundData.h">
+      <Filter>math\sound</Filter>
+    </ClInclude>
+    <ClInclude Include="math\Keyframe.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="math\NodeAnimation.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="math\Animation.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="manager\AnimationManager.h">
+      <Filter>Engine\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\AnimationModel.h">
+      <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="math\AnimationTransform.h">
+      <Filter>math\model</Filter>
     </ClInclude>
     <ClInclude Include="3D\LineClass.h">
       <Filter>3D</Filter>
