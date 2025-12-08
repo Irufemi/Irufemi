@@ -119,7 +119,7 @@ private:
     float stageRadius_{};                      // ステージ半径
 
     // 敵本体の当たり判定用半径（円として扱う）
-    float enemyBodyRadius_ = 1.0f;
+    float enemyBodyRadius_ = 1.5f;
 
     // プレイヤーとの直近フレームの当たり判定結果
     EnemyPlayerHitResult lastHitResult_;

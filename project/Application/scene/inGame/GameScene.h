@@ -22,6 +22,7 @@
 #include "actor/player/Player.h"
 #include "actor/rock/RockManager.h"
 #include "audio/Bgm.h"
+#include "stage/field/field.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -45,7 +46,7 @@ private: // 変数(ゲーム)
   Vector3 prevPlayerPos_{};
 
   // ----- エネミー -----
-  std::unique_ptr<SphereClass> enemyObj_ = nullptr;
+  std::unique_ptr<ObjClass> enemyObj_ = nullptr;
   std::unique_ptr<Enemy> enemy_ = nullptr;
 
   EnemyWallManager enemyWallManager_;     // 敵が使う壁マネージャ
@@ -53,6 +54,9 @@ private: // 変数(ゲーム)
 
   // 岩マネージャ
   std::unique_ptr<RockManager> rockManager_ = nullptr;
+
+  // フィールド
+  Field field_;
 
 private: // メンバ変数(システム)
   // カメラ

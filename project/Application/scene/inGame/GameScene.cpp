@@ -49,7 +49,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
                       Vector3{0.0f, 0.0f, 0.0f}, engine->GetInputManager());
   prevPlayerPos_ = player_->GetPosition();
 
-  enemyObj_ = std::make_unique<SphereClass>();
+  enemyObj_ = std::make_unique<ObjClass>();
   enemyObj_->Initialize(camera_.get());
 
   Vector3 stageCenter{0.0f, 0.0f, 0.0f};
@@ -68,6 +68,15 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   rockManager_->Initialize(camera_.get()); // ← camera_ を渡す
   rockManager_->SetSpawnArea(Vector3{-10.0f, 0.0f, 5.0f},
                              Vector3{10.0f, 0.0f, 15.0f});
+
+  // 丸フィールドを岩マネージャに教える
+  rockManager_->SetField(&field_);
+
+  field_.SetRadius(12.0f);          // とりあえず 12
+  field_.SetHeightScale(0.15f);     // 砂丘の盛り上がり
+  field_.SetFadeRates(0.75f, 1.0f); // 外周フェード
+
+  field_.Initialize(engine, camera_.get());
 }
 
 // 更新
@@ -121,6 +130,19 @@ void GameScene::Update() {
   // プレイヤーの更新処理
   player_->Update();
 
+  // Player を Field 上に乗せて、円の内側に収める
+  {
+    Vector3 pos = player_->GetPosition();
+
+    // 足元の高さを Field に合わせる
+    pos.y = field_.GetHeight(pos.x, pos.z) + player_->GetRadius();
+
+    // 円の外に出ていたら、円周上にクランプ
+    pos = field_.ClampInside(pos);
+
+    player_->SetPosition(pos);
+  }
+
   // エネミーの更新処理
   enemy_->Update(deltaTime, player_->GetPosition());
 
@@ -151,6 +173,8 @@ void GameScene::Update() {
   //   GameFunction::CheckHit_PlayerAndRock(*player_, rockManager_->GetRocks());
   // }
 
+  field_.Update(1.0f / 60.0f);
+
   // すべての当たり判定
   DoCollision();
 }
@@ -168,6 +192,12 @@ void GameScene::Draw() {
 
   // エネミーの描画処理（中で壁・弾も描画）
   enemy_->Draw();
+
+  // ここでフィールド専用 PSO を反映
+  engine_->ApplyFieldCylinderPSO();
+
+  // 地面（ステージ）
+  field_.Draw();
 
   // Region
   engine_->ApplyRegionPSO();
@@ -275,26 +305,45 @@ void GameScene::DoCollision() {
       // 当たり判定を少し緩くする
       float hitPlayerRadius = pRadius * 0.9f;
 
-      if (GameFunction::isHitCircle(pPos, hitPlayerRadius, ePos, eRadius)) {
+      if (GameFunction::IsHitCircleRect(pPos, hitPlayerRadius, ePos,
+                                        eRadius * 2.0f, eRadius * 2.0f)) {
 
         if (!player_->IsInvincible()) {
 
           // すでにノックバック中なら、これ以上当たり判定しない
           if (!player_->IsKnockback()) {
 
-            // 突進してきている場合は、ここで突進を止める
-            enemy_->ForceStopDash();
-
-            // プレイヤーの岩をリセット
-            player_->ResetRockCount();
-
-            // 見た目の岩も外す
-            if (rockManager_) {
-              rockManager_->ResetAttachedRocks();
-            }
-
             // 敵にダメージ
             enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
+
+            if (enemy_->GetState() == EnemyState::DashForward) {
+
+              int before = player_->GetRockCount();
+
+              // ノックバックと岩のリセット
+              player_->HalveRockCount();
+
+              int after = player_->GetRockCount();
+              int numToDetach = before - after;
+
+              // 見た目の岩も外す
+              if (rockManager_) {
+                rockManager_->HalveAttachedRocks(numToDetach);
+              }
+
+            } else {
+
+              // プレイヤーの岩をリセット
+              player_->ResetRockCount();
+
+              // 見た目の岩も外す
+              if (rockManager_) {
+                rockManager_->ResetAttachedRocks();
+              }
+            }
+
+            // 突進してきている場合は、ここで突進を止める
+            enemy_->ForceStopDash();
 
             // ノックバック
             ApplyPlayerKnockback();

@@ -45,7 +45,7 @@ void Enemy::Initialize(Camera* camera, const Vector3& spawnPos,
     model_->Initialize(camera_, "player.obj");
 
     transform_.translate = spawnPos;
-    transform_.scale = { 1.0f, 1.0f, 1.0f };
+    transform_.scale = { 3.0f,3.0f,3.0f };
 
     enemyWall_ = wallManager;
     enemyBullet_ = bulletManager;
@@ -496,6 +496,8 @@ void Enemy::Update(float deltaTime, const Vector3& playerPos) {
         // ObjClass にカラーパラメータを持たせてもらってここで渡す想定。
         model_->Update();
     }
+
+    model_->SetScale(transform_.scale);
 }
 
 void Enemy::Draw() {
@@ -590,6 +592,10 @@ bool Enemy::IsInsideAnyWall(const Vector3& pos, float margin) const {
 void Enemy::ApplyDamageFromPlayer(int damage) {
     if (damage <= 0) {
         return;
+    }
+
+    if (state_==EnemyState::DashForward) {
+      return;
     }
 
     hp_ -= damage;
