@@ -1,4 +1,5 @@
 #include "EnemyBullet.h"
+#include "EnemyWall.h"
 #include <cmath>
 #include <random>
 
@@ -205,4 +206,22 @@ void EnemyBulletManager::OnHitBullet(int bulletIndex) {
 
   // 当たった弾を非アクティブにして消す
   b.active = false;
+}
+
+// 敵弾と壁の当たり判定
+void EnemyBulletManager::ResolveBulletWallCollision(EnemyWallManager& wallManager) {
+    for (size_t i = 0; i < bullets_.size(); ++i) {
+        EnemyBullet& b = bullets_[i];
+        if (!b.active) {
+            continue;
+        }
+
+        // 弾を円として壁 AABB と判定
+        int hitWallIndex = wallManager.CheckCollisionCircle(b.position, b.radius);
+        if (hitWallIndex >= 0) {
+            // 弾と壁を両方消す
+            OnHitBullet(static_cast<int>(i));
+            wallManager.OnEnemyHitWall(hitWallIndex);
+        }
+    }
 }

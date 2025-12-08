@@ -55,16 +55,16 @@ private:
   // カメラ
   Camera *camera_ = nullptr;
 
-  // ★ 壁ごとに専用の ObjClass インスタンスを持つ
+  // 壁ごとに専用の ObjClass インスタンスを持つ
   std::vector<std::unique_ptr<ObjClass>> models_;
 
   Vector3 stageCenter_;
-  float stageRadius_ = 50.0f;
+  float stageRadius_{};
 
   std::vector<EnemyWall> walls_;
 
   float wallLifeTime_ = 8.0f; // 壁の寿命（秒）とりあえず8秒ぐらい
-  int maxWallCount_ = 15;     // 同時最大生成数
+  int maxWallCount_ = 9;     // 同時最大生成数
 
   // 内部用：この位置に壁を置いて良いかチェック
   bool CanPlaceWallAt(const Vector3 &pos, const Vector3 &enemyPos) const;
