@@ -379,7 +379,7 @@ void Enemy::Update(float deltaTime, const Vector3& playerPos) {
 
     // --- ここから敵側で持つ当たり判定（弾 vs 壁 / 敵 vs 壁） ---
 
-    // 突進中の敵本体 vs 壁：壁だけ壊す
+    // 突進中の敵本体 vs 壁 壁だけ壊す
     if (enemyWall_) {
         if (state_ == EnemyState::DashForward) {
             int hitWallIndex =
@@ -581,46 +581,6 @@ bool Enemy::IsInsideAnyWall(const Vector3& pos, float margin) const {
     }
 
     return false;
-}
-
-// --------------------------------------
-// ここからプレイヤーとの当たり判定関連
-// --------------------------------------
-
-void Enemy::CheckCollisionsWithPlayer(Player* player) {
-    // 毎フレーム最初に結果をリセット
-    lastHitResult_ = EnemyPlayerHitResult{};
-
-    // 壁との当たり判定（プレイヤー円 vs 壁）
-    if (enemyWall_) {
-        int wallIndex = enemyWall_->CheckCollisionCircle(player->GetPosition(),
-            player->GetRadius());
-        if (wallIndex >= 0) {
-            lastHitResult_.hitWall = true;
-            lastHitResult_.wallIndex = wallIndex;
-
-            // 壁側に「プレイヤーが当たった」ことを通知
-            enemyWall_->OnPlayerHitWall(wallIndex);
-        }
-    }
-
-    // 弾との当たり判定（プレイヤー円 vs 弾）
-    if (enemyBullet_) {
-        int bulletIndex = enemyBullet_->CheckCollisionCircle(player->GetPosition(),
-            player->GetRadius());
-        if (bulletIndex >= 0) {
-            lastHitResult_.hitBullet = true;
-            lastHitResult_.bulletIndex = bulletIndex;
-
-            // 弾側に「当たった」ことを通知（弾を消すなど）
-            enemyBullet_->OnHitBullet(bulletIndex);
-        }
-    }
-
-    // 敵本体との当たり判定（プレイヤー円 vs 敵円）
-    // 潜って見えない間（BurrowHidden）は当たり判定を取らない
-    // 今は GameScene 側で本体当たり判定を取っているのでコメントアウトのまま
-    // if (!isBurrowing_) { ... }
 }
 
 // --------------------------------------

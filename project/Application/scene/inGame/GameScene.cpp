@@ -267,10 +267,10 @@ void GameScene::DoCollision() {
 
   // -------- プレイヤー vs 敵本体 --------
   {
-      // 潜っている間（BurrowHidden）は本体当たり判定を取らない
-      if (!enemy_->IsBurrowing()) {
-          const Vector3& ePos = enemy_->GetPosition();
-          float eRadius = enemy_->GetRadius();
+    // 潜っている間（BurrowHidden）は本体当たり判定を取らない
+    if (!enemy_->IsBurrowing()) {
+      const Vector3 &ePos = enemy_->GetPosition();
+      float eRadius = enemy_->GetRadius();
 
       // 当たり判定を少し緩くする
       float hitPlayerRadius = pRadius * 0.9f;
@@ -279,26 +279,33 @@ void GameScene::DoCollision() {
 
         if (!player_->IsInvincible()) {
 
-          // プレイヤーの岩をリセット
-          player_->ResetRockCount();
+          // すでにノックバック中なら、これ以上当たり判定しない
+          if (!player_->IsKnockback()) {
 
-          // 見た目の岩も外す
-          if (rockManager_) {
-            rockManager_->ResetAttachedRocks();
-          }
+            // 突進してきている場合は、ここで突進を止める
+            enemy_->ForceStopDash();
 
-          // 敵にダメージ
-          enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
+            // プレイヤーの岩をリセット
+            player_->ResetRockCount();
 
-          // ノックバック
-          ApplyPlayerKnockback();
+            // 見た目の岩も外す
+            if (rockManager_) {
+              rockManager_->ResetAttachedRocks();
+            }
 
-          // 無敵開始
-          player_->StartInvincible(45);
+            // 敵にダメージ
+            enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
 
-          // カメラのシェイク
-          if (camera_) {
-            camera_->StartShake();
+            // ノックバック
+            ApplyPlayerKnockback();
+
+            // 無敵開始
+            player_->StartInvincible(45);
+
+            // カメラのシェイク
+            if (camera_) {
+              camera_->StartShake();
+            }
           }
         }
       }
