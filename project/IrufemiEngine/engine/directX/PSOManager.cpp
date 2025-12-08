@@ -21,7 +21,8 @@ void PSOManager::Initialize(
     ShaderSet spriteShaders,
     ShaderSet regionShaders,
     ShaderSet byGeometryShaderShaders,
-    ShaderSet lineShaders
+    ShaderSet lineShaders,
+    ShaderSet fieldCylinderShaders
 )
 {
     device_ = device;
@@ -40,9 +41,12 @@ void PSOManager::Initialize(
     blocksShaders_ = regionShaders;
     byGeometryShaderShaders_ = byGeometryShaderShaders;
     lineShaders_ = lineShaders;
-
+	fieldCylinderShaders_ = fieldCylinderShaders;
     cache_.clear();
 }
+
+
+
 
 
 ID3D12PipelineState* PSOManager::Get(BlendMode blend, DepthWrite depth, CullMode cull)
@@ -189,6 +193,38 @@ ID3D12PipelineState* PSOManager::GetLine(BlendMode blend, DepthWrite depth, Cull
     cache_[key] = pso;
     return pso.Get();
 }
+
+//----------------------ここから追加してます---------------------
+ID3D12PipelineState* PSOManager::GetFieldCylinder(
+    BlendMode bm,
+    DepthWrite dm,
+    CullMode cm
+) {
+    // VS/PS がちゃんと入ってるかチェック（なければ通常オブジェクト用にフォールバック）
+    const bool hasVS = (fieldCylinderShaders_.vsBlob && fieldCylinderShaders_.vsBlob->GetBufferPointer());
+    const bool hasPS = (fieldCylinderShaders_.psBlob && fieldCylinderShaders_.psBlob->GetBufferPointer());
+    const ShaderSet& set = (hasVS && hasPS) ? fieldCylinderShaders_ : objectShaders_;
+
+    // キャッシュキー作成
+    Key key{ Hash(set, bm, dm, cm) };
+    if (auto it = cache_.find(key); it != cache_.end()) {
+        return it->second.Get();
+    }
+
+    // PSO を新規作成
+    D3D12_BLEND_DESC bd = MakeBlend(bm);
+    D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(dm);
+
+    auto pso = CreatePSO(set, bd, dd, cm);
+    if (!pso) {
+        return nullptr;
+    }
+
+    cache_[key] = pso;
+    return pso.Get();
+}
+
+
 
 void PSOManager::ClearCache() { cache_.clear(); }
 

@@ -139,6 +139,9 @@ public: // セッター
     void ApplyByGeometryShaderPSO();
     void ApplyLinePSO();
 
+    //--------------------ここから追加--------------------
+    void ApplyFieldCylinderPSO();
+
 public:
     // 状態（現在のブレンドと深度書き込み）
     BlendMode currentBlend_ = BlendMode::kBlendModeNormal;

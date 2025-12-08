@@ -542,6 +542,18 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> linePSBlob = CompileShader(L"resources/shaders/Line.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(linePSBlob != nullptr);
 
+    //追加：フィールド用の VS
+    Microsoft::WRL::ComPtr<IDxcBlob> fieldVSBlob =
+        CompileShader(L"resources/shaders/Field.VS.hlsl", L"vs_6_0",
+            dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(fieldVSBlob != nullptr);
+
+    //追加：フィールド用の PS
+    Microsoft::WRL::ComPtr<IDxcBlob> fieldPSBlob =
+        CompileShader(L"resources/shaders/Field.PS.hlsl", L"ps_6_0",
+            dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(fieldPSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -585,6 +597,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         linePSBlob
     };
 
+    // Cylinder は D3D12ResourceUtil の VS を使う
+    PSOManager::ShaderSet fieldCylinderShaders{
+        vertexShaderBlob,     // ← いつも Box / Sphere が使ってる VS
+        fieldPSBlob
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
@@ -598,7 +616,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         spriteShaders,
         blocksShaders,
         byGeometryShaders,
-        lineShaders
+        lineShaders,
+        fieldCylinderShaders
     );
 
     //実際に生成
@@ -618,6 +637,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (byGeometryShaderGSBlob) { byGeometryShaderGSBlob.Reset(); }
     if (lineVSBlob) { lineVSBlob.Reset(); }
     if (linePSBlob) { linePSBlob.Reset(); }
+	if (fieldVSBlob) { fieldVSBlob.Reset(); }
+	if (fieldPSBlob) { fieldPSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};

@@ -157,4 +157,8 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="resources\shaders\Field.PS.hlsl" />
+    <FxCompile Include="resources\shaders\Field.VS.hlsl" />
+  </ItemGroup>
 </Project>

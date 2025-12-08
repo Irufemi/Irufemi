@@ -1,11 +1,12 @@
 // Field.h
 #pragma once
-
+#include"3D/CylinderClass.h"
 // 必要に応じて自分のエンジンのヘッダに合わせて書き換えてね
 // 例: #include "Vector3.h" とか "Math.h" とか
 struct Vector3;
 class Camera;
 class IrufemiEngine;
+class CylinderClass;
 // class Region;   // 描画に Region 使うなら前方宣言してOK
 
 class Field
@@ -60,7 +61,7 @@ public:
 
 private:
     // ステージ形状パラメータ
-    float radius_ = 12.0f;   // 円ステージ半径
+    float radius_ = 8.0f;   // 円ステージ半径
     float heightScale_ = 0.15f;   // 砂丘の盛り上がり量
     float fadeStartRate_ = 0.75f;   // フェード開始(半径に対する割合)
     float fadeEndRate_ = 1.0f;    // フェード終了(半径に対する割合)
@@ -72,4 +73,10 @@ private:
     // 描画用の何か（Region や Model 等）
     // ここはあなたのエンジンに合わせて後で決めよう
     // Region* fieldRegion_ = nullptr;
+    // ------------------------
+    // ★ 描画用メンバを追加
+    // ------------------------
+    // ★ フィールド用円柱
+    Cylinder       fieldInfo_;      // 論理情報（中心・半径・高さ）
+    CylinderClass  fieldCylinder_;  // 描画＆変換
 };

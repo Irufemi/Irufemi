@@ -336,3 +336,14 @@ void IrufemiEngine::ApplyLinePSO() {
     assert(pso && "Line PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager->BindPSO(pso); }
 }
+
+//フィールドの円柱用 PSO を適用する関数
+void IrufemiEngine::ApplyFieldCylinderPSO() {
+    auto* pso = GetPSOManager()->GetFieldCylinder(
+        currentBlend_,
+        currentDepth_,
+        currentCull_
+    );
+    assert(pso && "FieldCylinder PSO is null. Check fieldCylinderShaders setup.");
+    if (pso) { drawManager->BindPSO(pso); }  // ← 内部で SetPipelineState を呼んでくれる
+}

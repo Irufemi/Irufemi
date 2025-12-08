@@ -1,8 +1,9 @@
 // Field.cpp
 #include "Field.h"
 
+// ★ ここはあなたの環境に合わせて変更してね
 // 例: "Math/Vector3.h" とか "engine/math/Vector3.h" とか
-#include "Math/Vector3.h"
+#include "math/Vector3.h"
 
 #include <cmath>
 #include <cstdlib>   // rand()
@@ -46,12 +47,26 @@ void Field::Initialize(IrufemiEngine* engine, Camera* camera)
     // 例:
     // fieldRegion_ = new Region();
     // fieldRegion_->Initialize(...);
+     // ★ フィールド円柱の論理情報を設定
+    fieldInfo_.radius = radius_;      // そのままフィールド半径に
+    fieldInfo_.height = 0.5f;         // 厚み（お好み：0.3〜1.0くらい）
+    // 上面が y = 0 に来るように、中心を -height/2 に置く
+    fieldInfo_.center = { 0.0f, -fieldInfo_.height * 0.5f-0.5f, 0.0f };
+
+    // CylinderClass に渡す
+    fieldCylinder_.SetInfo(fieldInfo_);
+
+    // ★ カメラ＆テクスチャ指定で初期化
+    // 砂用テクスチャがまだなければ、とりあえず uvChecker でもOK
+    fieldCylinder_.Initialize(camera, "resources/uvChecker.png");
 }
 
 void Field::Update(float /*deltaTime*/)
 {
     // 今のところフィールド自身は時間で変化しないので何もしない。
     // 砂嵐を動かしたり、ステージギミックを追加したくなったらここに処理を書く。
+    fieldCylinder_.SetInfo(fieldInfo_);
+    fieldCylinder_.Update();
 }
 
 void Field::Draw()
@@ -62,6 +77,7 @@ void Field::Draw()
     // if (fieldRegion_) {
     //     fieldRegion_->Draw();
     // }
+    fieldCylinder_.Draw();
 }
 
 // -------------------------
@@ -72,6 +88,8 @@ void Field::SetRadius(float r)
 {
     // 半径が 0 以下にならないように最低値を入れておく
     radius_ = (r > 0.01f) ? r : 0.01f;
+    fieldInfo_.radius = radius_;
+    fieldCylinder_.SetRadius(radius_);
 }
 
 float Field::GetRadius() const
@@ -169,8 +187,8 @@ Vector3 Field::GetRandomPointInField() const
 Vector3 Field::GetRandomPointInRing(float innerRadius, float outerRadius) const
 {
     // 半径をクランプしておく
-    innerRadius = std::max(0.0f, innerRadius);
-    outerRadius = std::min(radius_, outerRadius);
+    innerRadius = (std::max)(0.0f, innerRadius);
+    outerRadius = (std::min)(radius_, outerRadius);
 
     if (outerRadius < innerRadius) {
         std::swap(innerRadius, outerRadius);
