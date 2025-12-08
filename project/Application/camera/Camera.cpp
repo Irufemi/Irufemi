@@ -78,7 +78,7 @@ void Camera::Update([[maybe_unused]] const char *cameraName, Vector3 pPos,
   // カメラが見る位置（少し上から）
   Vector3 targetPos{
       centerPos.x,
-      centerPos.y + 10.0f, // 見下ろす高さ
+      centerPos.y + 15.0f, // 見下ろす高さ
       centerPos.z - back,  // 手前に引く
   };
 
