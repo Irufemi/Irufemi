@@ -96,6 +96,8 @@ void RockManager::Update(Player *player) {
     return;
   }
 
+  lastPlayer_ = player;
+
   // プレイヤー情報を取得
   const Vector3 &pPos = player->GetPosition();
   const float pRadius = player->GetRadius();
@@ -120,6 +122,10 @@ void RockManager::Update(Player *player) {
 
     // 生存していない岩はスキップ
     if (!rock.isAlive_) {
+      continue;
+    }
+
+    if (rock.isDropped_) {
       continue;
     }
 
@@ -320,15 +326,189 @@ void RockManager::HalveAttachedRocks(int numToDetach) {
       attachedIndices.begin(), attachedIndices.end(), [this](int a, int b) {
         return rocks_[a].distanceFromPlayer_ > rocks_[b].distanceFromPlayer_;
       });
-
-  int removeCount =
+  int detachCount =
       (std::min)(numToDetach, static_cast<int>(attachedIndices.size()));
 
-  // 外側から removeCount 個だけ isAttached を外す
-  for (int i = 0; i < removeCount; ++i) {
+  // 「フィールドに飛ばす岩」の数（失った分の半分）
+  int spawnCount = detachCount / 2;
+  if (detachCount > 0 && spawnCount == 0) {
+    spawnCount = 1; // 1個でも失ったら最低1個は飛ばす
+  }
+
+  // 飛ばす中心（プレイヤー位置）
+  Vector3 center{0.0f, 0.0f, 0.0f};
+  if (lastPlayer_) {
+    center = lastPlayer_->GetPosition();
+  }
+
+  // 乱数準備
+  static std::mt19937 rng{std::random_device{}()};
+
+  // 水平方向の飛び散り角度
+  std::uniform_real_distribution<float> distAngle(0.0f, 6.0f * 3.14159265f);
+
+  // 水平スピード
+  std::uniform_real_distribution<float> distSpeed(10.0f, 20.0f);
+
+  // 上方向初速
+  std::uniform_real_distribution<float> distUp(10.0f, 15.0f);
+
+  for (int i = 0; i < detachCount; ++i) {
     int idx = attachedIndices[i];
-    rocks_[idx].isAttached_ = false;
-    // isAlive_ はそのまま（Kill 済み）のままで OK
+    if (idx < 0 || idx >= static_cast<int>(rocks_.size())) {
+      continue;
+    }
+
+    Rock &rock = rocks_[idx];
+
+    // 纏い状態」解除
+    rock.isAttached_ = false;
+
+    if (i < spawnCount && lastPlayer_) {
+
+      // プレイヤー位置から飛ばす
+      rock.position_ = center;
+
+      // 着地地点
+      rock.spawnEndY_ = 0.0f;
+
+      // ランダム方向（XZ 平面）
+      float angle = distAngle(rng);
+      Vector3 dirXZ{std::cos(angle), 0.0f, std::sin(angle)};
+
+      float speed = distSpeed(rng);
+      float upSpeed = distUp(rng);
+
+      // 初速セット
+      rock.velocity_.x = dirXZ.x * speed;
+      rock.velocity_.z = dirXZ.z * speed;
+      rock.velocity_.y = upSpeed;
+
+      rock.isAlive_ = true;   // フィールド岩として有効
+      rock.isDropped_ = true; // 飛び散り中
+
+      // スポーン演出は今回は使わない
+      rock.isSpawning_ = false;
+
+    } else {
+      rock.isAlive_ =
+          false; // isAttached_ も false なので、次の UpdateRocks で消える
+      rock.isDropped_ = false;
+    }
+  }
+}
+
+std::vector<int> RockManager::SelectDetachedRocks(int lostCount) {
+  std::vector<int> attachedIndices;
+  attachedIndices.reserve(rocks_.size());
+
+  // いまプレイヤーに纏っている岩のインデックスを集める
+  for (int i = 0; i < static_cast<int>(rocks_.size()); ++i) {
+    if (rocks_[i].isAttached_) {
+      attachedIndices.push_back(i);
+    }
+  }
+
+  if (attachedIndices.empty() || lostCount <= 0) {
+    return {};
+  }
+
+  // distanceFromPlayer_ が大きい順（外側順）にソート
+  std::sort(
+      attachedIndices.begin(), attachedIndices.end(), [this](int a, int b) {
+        return rocks_[a].distanceFromPlayer_ > rocks_[b].distanceFromPlayer_;
+      });
+
+  int detachCount =
+      (std::min)(lostCount, static_cast<int>(attachedIndices.size()));
+
+  std::vector<int> result;
+  result.reserve(detachCount);
+
+  for (int i = 0; i < detachCount; ++i) {
+    result.push_back(attachedIndices[i]);
+  }
+
+  return result;
+}
+
+void RockManager::SpawnDroppedRocks(const std::vector<int> &detachedList,
+                                    int spawnCount, const Vector3 &playerPos,
+                                    const Vector3 &knockbackDir) {
+  if (detachedList.empty()) {
+    return;
+  }
+
+  // spawnCount が detachedList を超えないようにクランプ
+  spawnCount = (std::min)(spawnCount, static_cast<int>(detachedList.size()));
+
+  // ノックバック方向（XZ平面）を正規化
+  Vector3 baseDir{knockbackDir.x, 0.0f, knockbackDir.z};
+  baseDir = NormalizeVec(baseDir);
+  if (baseDir.x == 0.0f && baseDir.y == 0.0f && baseDir.z == 0.0f) {
+    // ノックバック方向が無効なら前方向をデフォルトにする
+    baseDir = {0.0f, 0.0f, 1.0f};
+  }
+
+  // 乱数準備
+  static std::mt19937 rng{std::random_device{}()};
+
+  // 前方円錐の広がり（ラジアン）
+  const float maxSpreadRad = 3.14159265f / 6.0f;
+  std::uniform_real_distribution<float> distAngle(-maxSpreadRad, maxSpreadRad);
+
+  // 水平速度の大きさ
+  const float minSpeed = 10.0f;
+  const float maxSpeed = 20.0f;
+  std::uniform_real_distribution<float> distSpeed(minSpeed, maxSpeed);
+
+  // 上向き初速
+  const float minUp = 10.0f;
+  const float maxUp = 16.0f;
+  std::uniform_real_distribution<float> distUp(minUp, maxUp);
+
+  for (int i = 0; i < static_cast<int>(detachedList.size()); ++i) {
+    int idx = detachedList[i];
+    if (idx < 0 || idx >= static_cast<int>(rocks_.size())) {
+      continue;
+    }
+
+    Rock &rock = rocks_[idx];
+
+    // まず纏っていない状態にする
+    rock.isAttached_ = false;
+
+    if (i < spawnCount) {
+      // プレイヤー位置から飛ばし始める
+      rock.position_ = playerPos;
+
+      // 着地する高さを決める
+      rock.spawnEndY_ = 0.0f;
+
+      // XZ 方向：ノックバック方向を中心に少し左右にばらけさせる
+      float angle = distAngle(rng);
+      Vector3 dirXZ = RotateAroundYLocal(baseDir, angle);
+      dirXZ = NormalizeVec(dirXZ);
+
+      float speed = distSpeed(rng);
+      float upSpeed = distUp(rng);
+
+      // 初速セット
+      rock.velocity_.x = dirXZ.x * speed;
+      rock.velocity_.z = dirXZ.z * speed;
+      rock.velocity_.y = upSpeed;
+
+      // 状態フラグ
+      rock.isAlive_ = true;
+      rock.isSpawning_ = false;
+      rock.isDropped_ = true; // 飛び散り中
+
+    } else {
+      // spawnCount を超えた分は「消えるパーティクル用」にする場合はここで Kill
+      // してもOK 今は単純にフィールドにも残さないなら isAlive_ を false
+      // にしておく
+      rock.isAlive_ = false;
+    }
   }
 }
 

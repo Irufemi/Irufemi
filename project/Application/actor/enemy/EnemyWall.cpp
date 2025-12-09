@@ -40,10 +40,12 @@ void EnemyWallManager::Initialize(Camera *camera, const Vector3 &stageCenter,
   // 壁情報とモデル配列を初期化
   walls_.clear();
   models_.clear();
+  warningModels_.clear();
 
   // 最大個数分の容量を事前確保しておく
   walls_.reserve(maxWallCount_);
   models_.reserve(maxWallCount_);
+  warningModels_.reserve(maxWallCount_);
 }
 
 void EnemyWallManager::Update(float deltaTime) {
@@ -53,19 +55,52 @@ void EnemyWallManager::Update(float deltaTime) {
       continue;
     }
 
+    // 予告→落下→着地の処理
+    if (!wall.hasLanded) {
+      // まだ予告中（赤い円だけ表示したいフェーズ）
+      if (wall.warningTime > 0.0f) {
+        wall.warningTime -= deltaTime;
+        if (wall.warningTime <= 0.0f) {
+          wall.warningTime = 0.0f;
+          // ここから落下を開始する
+          wall.fallTimer = wall.fallDuration;
+          wall.position.y = wall.groundY + wall.fallStartHeight;
+        }
+      }
+      // 落下中
+      else if (wall.fallTimer > 0.0f) {
+        wall.fallTimer -= deltaTime;
+        float t = 1.0f - (wall.fallTimer / wall.fallDuration);
+        if (t < 0.0f) {
+          t = 0.0f;
+        }
+        if (t > 1.0f) {
+          t = 1.0f;
+        }
+        // 上から groundY まで線形補間
+        wall.position.y = wall.groundY + wall.fallStartHeight * (1.0f - t);
+
+        if (wall.fallTimer <= 0.0f) {
+          wall.position.y = wall.groundY;
+          wall.hasLanded = true;
+        }
+      }
+    }
+
     wall.lifeTime -= deltaTime;
     if (wall.lifeTime <= 0.0f) {
       wall.active = false;
     }
   }
 
-  // 現在アクティブな壁の数を数える
+  // 現在アクティブな壁の数を数える（必要ならデバッグに使う）
   int activeCount = 0;
   for (const auto &w : walls_) {
     if (w.active) {
       ++activeCount;
     }
   }
+  (void)activeCount;
 }
 
 void EnemyWallManager::Draw() {
@@ -77,20 +112,80 @@ void EnemyWallManager::Draw() {
       continue;
     }
 
-    ObjClass *model = models_[i].get();
-    if (!model) {
-      continue;
+    ObjClass *wallModel = nullptr;
+    if (i < static_cast<int>(models_.size())) {
+      wallModel = models_[i].get();
     }
 
-    // 壁の位置をモデルに反映して描画
-    model->SetPosition(wall.position);
-    model->Update();
-    model->Draw();
+    ObjClass *warningModel = nullptr;
+    if (i < static_cast<int>(warningModels_.size())) {
+      warningModel = warningModels_[i].get();
+    }
+
+    // ============================
+    // 影(予測マーカー)の描画
+    // ============================
+    // ・hasLanded == false の間だけ描画する
+    // ・y は常に groundY 付近に固定
+    // ・スケール + α を「落下の進み具合」に合わせて変化させる
+    if (warningModel && !wall.hasLanded) {
+
+      // 影は常に地面付近
+      Vector3 shadowPos = wall.position;
+      shadowPos.y = wall.groundY + 0.05f; // ほんの少しだけ浮かせる
+
+      // ---- スケール計算 ----
+      const float kMinScale = 0.3f; // 落ち始める前の大きさ
+      const float kMaxScale = 1.0f; // 着地直前の大きさ
+
+      float scaleFactor = kMinScale;
+
+      // 予告時間中：まだ最小スケール + 最小α で固定
+      if (wall.warningTime > 0.0f) {
+        scaleFactor = kMinScale;
+      }
+      // 落下中：fallTimer を使って 0→1 の補間係数を作る
+      else if (wall.fallDuration > 0.0f) {
+        float t = 1.0f - (wall.fallTimer / wall.fallDuration); // 0→1
+        if (t < 0.0f) {
+          t = 0.0f;
+        }
+        if (t > 1.0f) {
+          t = 1.0f;
+        }
+
+        // t が進むほど影が大きく
+        scaleFactor = kMinScale + (kMaxScale - kMinScale) * t;
+      }
+
+      // 影のスケール（XZ 平面メッシュ前提）
+      Vector3 shadowScale(wall.halfSizeX * scaleFactor, // X方向に伸ばす
+                          1.0f,                         // 厚みは 1
+                          wall.halfSizeZ * scaleFactor  // Z方向に伸ばす
+      );
+
+      warningModel->SetPosition(shadowPos);
+      warningModel->SetScale(shadowScale);
+
+      warningModel->Update();
+      warningModel->Draw();
+    }
+
+    // ============================
+    // 壁本体の描画
+    // ============================
+    // 予告時間中は壁を見せたくないので、warningTime が残っている間は描画しない
+    if (wallModel && wall.warningTime <= 0.0f) {
+      wallModel->SetPosition(wall.position);
+      wallModel->Update();
+      wallModel->Draw();
+    }
   }
 }
 
 // 壁生成アクション：敵位置を中心に、同時に最大3つまで生成を試みる
-void EnemyWallManager::SpawnWalls(const Vector3 &enemyPos) {
+void EnemyWallManager::SpawnWalls(const Vector3 &enemyPos,
+                                  const Vector3 &playerPos) {
   // すでにアクティブな壁の数を数える
   int currentCount = 0;
   for (const auto &w : walls_) {
@@ -120,7 +215,7 @@ void EnemyWallManager::SpawnWalls(const Vector3 &enemyPos) {
       Vector3 pos = GenerateRandomPosition(enemyPos);
 
       // 配置して良い場所かどうかをチェック
-      if (!CanPlaceWallAt(pos, enemyPos)) {
+      if (!CanPlaceWallAt(pos, enemyPos, playerPos)) {
         continue;
       }
 
@@ -141,10 +236,16 @@ void EnemyWallManager::SpawnWalls(const Vector3 &enemyPos) {
           break;
         }
 
+        // 壁情報スロット追加
         walls_.emplace_back();
+
+        // 壁本体モデル追加
         models_.emplace_back(std::make_unique<ObjClass>());
-        // 壁モデルを初期化（モデル名は環境に合わせて変更してもよい）
-        models_.back()->Initialize(camera_, "cube.obj");
+        models_.back()->Initialize(camera_, "cube.obj"); // 壁モデル
+
+        // 予測用マーカー（赤い円など）のモデル追加
+        warningModels_.emplace_back(std::make_unique<ObjClass>());
+        warningModels_.back()->Initialize(camera_, "warning.obj");
 
         freeIndex = static_cast<int>(walls_.size()) - 1;
       }
@@ -152,9 +253,19 @@ void EnemyWallManager::SpawnWalls(const Vector3 &enemyPos) {
       // 壁情報を設定してアクティブ化
       EnemyWall &w = walls_[freeIndex];
       w.position = pos;
+      w.position.y = stageCenter_.y; // 基本はステージの地面高さ
       w.halfSizeX = 1.5f;
       w.halfSizeZ = 0.5f;
-      w.lifeTime = wallLifeTime_;
+
+      w.groundY = stageCenter_.y;
+      w.fallStartHeight = wallFallStartHeight_;
+      w.fallDuration = wallFallDuration_;
+      w.fallTimer = 0.0f;
+      w.warningTime = wallWarningTime_;
+      w.hasLanded = false;
+
+      // 予告＋落下＋着地後の存続時間をまとめた寿命
+      w.lifeTime = wallLifeTime_ + wallFallDuration_ + wallWarningTime_;
       w.active = true;
 
       spawned = true;
@@ -175,6 +286,10 @@ int EnemyWallManager::CheckCollisionCircle(const Vector3 &center,
   for (size_t i = 0; i < walls_.size(); ++i) {
     const auto &w = walls_[i];
     if (!w.active) {
+      continue;
+    }
+    // 着地前は当たり判定なし（予告中＆落下中も含める）
+    if (!w.hasLanded) {
       continue;
     }
 
@@ -238,7 +353,8 @@ void EnemyWallManager::OnEnemyHitWall(int wallIndex) {
 
 // 内部関数：その位置に壁を置いてよいかチェックする
 bool EnemyWallManager::CanPlaceWallAt(const Vector3 &pos,
-                                      const Vector3 &enemyPos) const {
+                                      const Vector3 &enemyPos,
+                                      const Vector3 &playerPos) const {
   // ステージ外周から少し内側の範囲だけを使う
   float margin = 1.0f;
   float r = std::sqrt(1.5f * 1.5f + 0.5f * 0.5f);
@@ -250,6 +366,12 @@ bool EnemyWallManager::CanPlaceWallAt(const Vector3 &pos,
   // 敵の近くには配置しないようにする
   float avoidEnemyRadius = 5.0f;
   if (DistanceXZ(pos, enemyPos) < avoidEnemyRadius) {
+    return false;
+  }
+
+  // プレイヤーの近くには配置しないようにする
+  float avoidPlayerRadius = 5.0f;
+  if (DistanceXZ(pos, playerPos) < avoidPlayerRadius) {
     return false;
   }
 

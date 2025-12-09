@@ -4,6 +4,7 @@
 #include "manager/DebugUI.h"
 #include "scene/SceneManager.h"
 
+#include "actor/rock/RockManager.h"
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
 #include "contents/GameFunction.h"
@@ -72,8 +73,8 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   // 丸フィールドを岩マネージャに教える
   rockManager_->SetField(&field_);
 
-  field_.SetRadius(12.0f);          // とりあえず 12
- // field_.SetHeightScale(0.15f);     // 砂丘の盛り上がり
+  field_.SetRadius(12.0f); // とりあえず 12
+  // field_.SetHeightScale(0.15f);     // 砂丘の盛り上がり
   field_.SetFadeRates(0.75f, 1.0f); // 外周フェード
 
   field_.Initialize(engine, camera_.get());
@@ -142,7 +143,6 @@ void GameScene::Update() {
   // Player を Field 上に乗せて、円の内側に収める
   {
     Vector3 pos = player_->GetPosition();
-
 
     // 円の外に出ていたら、円周上にクランプ
     pos = field_.ClampInside(pos);
@@ -242,9 +242,9 @@ void GameScene::Draw() {
 
 void GameScene::DoCollision() {
 
-  if (player_ && rockManager_) {
-    GameFunction::CheckHit_PlayerAndRock(*player_, rockManager_->GetRocks());
-  }
+  // if (player_ && rockManager_) {
+  //   GameFunction::CheckHit_PlayerAndRock(*player_, rockManager_->GetRocks());
+  // }
 
   if (!player_ || !enemy_) {
     return;
@@ -269,14 +269,22 @@ void GameScene::DoCollision() {
 
         int after = player_->GetRockCount();
         int numToDetach = before - after;
+        int spawnCount = (numToDetach + 1) / 2;
 
         // 見た目の岩も外す
         if (rockManager_) {
-          rockManager_->HalveAttachedRocks(numToDetach);
-        }
 
-        // ノックバック
-        ApplyPlayerKnockback();
+          // 外す対象を取得
+          auto detached = rockManager_->SelectDetachedRocks(numToDetach);
+
+          // ノックバック方向を取得する関数にする
+          Vector3 knockDir = ApplyPlayerKnockback(0.8f);
+
+          // 散らばす
+          rockManager_->SpawnDroppedRocks(detached, spawnCount,
+                                          player_->GetPosition(), knockDir);
+          // rockManager_->HalveAttachedRocks(numToDetach);
+        }
 
         // 無敵開始
         player_->StartInvincible(45);
@@ -308,7 +316,7 @@ void GameScene::DoCollision() {
         }
 
         // ノックバック
-        ApplyPlayerKnockback();
+        ApplyPlayerKnockback(0.8f);
 
         // 無敵開始
         player_->StartInvincible(45);
@@ -367,7 +375,7 @@ void GameScene::DoCollision() {
             enemy_->ForceStopDash();
 
             // ノックバック
-            ApplyPlayerKnockback();
+            ApplyPlayerKnockback(1.0f);
 
             // 無敵開始
             player_->StartInvincible(45);
@@ -383,9 +391,9 @@ void GameScene::DoCollision() {
   }
 }
 
-void GameScene::ApplyPlayerKnockback() {
+Vector3 GameScene::ApplyPlayerKnockback(const float knockbackPower) {
   if (!player_) {
-    return;
+    return {0.0f, 0.0f, 0.0f};
   }
 
   // 現在位置と、Update 前に記録しておいた位置との差分
@@ -431,5 +439,7 @@ void GameScene::ApplyPlayerKnockback() {
   player_->AddVerticalVelocity(0.7f);
 
   // ノックバック開始
-  player_->StartKnockback(dir);
+  player_->StartKnockback(dir, knockbackPower);
+
+  return dir;
 }

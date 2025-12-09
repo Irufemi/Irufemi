@@ -110,5 +110,5 @@ private:
   /// <summary>
   /// 直前フレームの移動方向をもとにノックバックを与える
   /// </summary>
-  void ApplyPlayerKnockback();
+  Vector3 ApplyPlayerKnockback(const float knockbackPower);
 };

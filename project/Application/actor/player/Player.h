@@ -114,6 +114,8 @@ private:
   float velocityY_ = 0.0f; // 縦方向の速度
   float gravity_ = -0.05f; // 重力加速度
 
+  Vector3 moveVel_{0.0f, 0.0f, 0.0f}; // 水平移動
+
 public:
   // ノックバック用
 
@@ -127,14 +129,17 @@ public:
   /// ノックバックを開始
   /// </summary>
   /// <param name="dir"></param>
-  void StartKnockback(const Vector3 &dir) {
+  void StartKnockback(const Vector3 &dir, const float knockbackPower) {
     isKnockback_ = true;
     knockbackVel_ = dir;
+    knockbackPower_ = knockbackPower;
+    moveVel_ = {0.0f, 0.0f, 0.0f};
   }
 
 private:
   bool isKnockback_ = false;      // ノックバック中かどうか
   Vector3 knockbackVel_{0, 0, 0}; // ノックバック速度
+  float knockbackPower_ = 0.8f;
 
 private:
   // 纏っている岩の数

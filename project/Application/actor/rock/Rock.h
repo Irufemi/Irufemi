@@ -10,6 +10,9 @@ public:
   float radius_;     // XZ 上の半径
   bool isAlive_;     // 有効かどうか（拾われたら false）
 
+  Vector3 velocity_{0.0f, 0.0f, 0.0f};
+  bool isDropped_ = false;
+
   // ==== スポーン演出用 ====
   bool isSpawning_ = false;
   float spawnTimer_ = 0.0f;

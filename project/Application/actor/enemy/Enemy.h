@@ -8,187 +8,186 @@ class Player;
 
 // プレイヤーとの当たり判定結果をまとめる構造体
 struct EnemyPlayerHitResult {
-    // 壁に当たったか
-    bool hitWall = false;
-    int wallIndex = -1;
+  // 壁に当たったか
+  bool hitWall = false;
+  int wallIndex = -1;
 
-    // 弾に当たったか
-    bool hitBullet = false;
-    int bulletIndex = -1;
+  // 弾に当たったか
+  bool hitBullet = false;
+  int bulletIndex = -1;
 
-    // 敵本体に当たったか
-    bool hitEnemyBody = false;
+  // 敵本体に当たったか
+  bool hitEnemyBody = false;
 };
 
 // 敵の行動状態
 enum class EnemyState {
-    Idle = 0,      // 何もしていない（次の行動待ち）
-    WallRise,      // ドッスンのように上昇中
-    WallDrop,      // ドッスン落下中（落ちた瞬間に壁生成）
-    BulletCharge,  // 弾のチャージ中（赤くなっていくイメージ）
-    BurrowPreDive, // 潜る前のもぞもぞ
-    BurrowHidden,  // 潜って見えない状態（地中移動中）
-    BurrowEmerge,  // 出現時のもぞもぞ
-    ChargeBack,    // 突進の予備動作（後ろに下がる）
-    DashForward    // 高速突進中
+  Idle = 0,      // 何もしていない（次の行動待ち）
+  WallRise,      // ドッスンのように上昇中
+  WallDrop,      // ドッスン落下中（落ちた瞬間に壁生成）
+  BulletCharge,  // 弾のチャージ中（赤くなっていくイメージ）
+  BurrowPreDive, // 潜る前のもぞもぞ
+  BurrowHidden,  // 潜って見えない状態（地中移動中）
+  BurrowEmerge,  // 出現時のもぞもぞ
+  ChargeBack,    // 突進の予備動作（後ろに下がる）
+  DashForward    // 高速突進中
 };
 
 class Enemy {
 public:
-    Enemy();
+  Enemy();
 
-    // 壁マネージャと弾マネージャのポインタを渡す
-    void Initialize(Camera* camera, const Vector3& spawnPos,
-        const float& stageRadius, EnemyWallManager* wallManager,
-        EnemyBulletManager* bulletManager);
+  // 壁マネージャと弾マネージャのポインタを渡す
+  void Initialize(Camera *camera, const Vector3 &spawnPos,
+                  const float &stageRadius, EnemyWallManager *wallManager,
+                  EnemyBulletManager *bulletManager);
 
-    // playerPos は「弾を撃つときの狙い先」および潜り先の決定に使う
-    void Update(float deltaTime, const Vector3& playerPos);
+  // playerPos は「弾を撃つときの狙い先」および潜り先の決定に使う
+  void Update(float deltaTime, const Vector3 &playerPos);
 
-    void Draw();
+  void Draw();
 
-    const Vector3& GetPosition() const { return transform_.translate; }
+  const Vector3 &GetPosition() const { return transform_.translate; }
 
-    const float& GetRadius() const { return enemyBodyRadius_; }
+  const float &GetRadius() const { return enemyBodyRadius_; }
 
-    // -------------------------------
-    // プレイヤーとの当たり判定関連
-    // -------------------------------
+  // -------------------------------
+  // プレイヤーとの当たり判定関連
+  // -------------------------------
 
-    // プレイヤーとの当たり判定をまとめて行う
-    // 判定結果は内部に保存され、GetPlayerHitResult で取得できる
-    void CheckCollisionsWithPlayer(Player* player);
+  // 直近の CheckCollisionsWithPlayer の結果を返す
+  const EnemyPlayerHitResult &GetPlayerHitResult() const {
+    return lastHitResult_;
+  }
 
-    // 直近の CheckCollisionsWithPlayer の結果を返す
-    const EnemyPlayerHitResult& GetPlayerHitResult() const {
-        return lastHitResult_;
-    }
+  // 手動で結果をクリアしたい場合はこれを呼ぶ
+  void ClearPlayerHitResult() { lastHitResult_ = EnemyPlayerHitResult{}; }
 
-    // 手動で結果をクリアしたい場合はこれを呼ぶ
-    void ClearPlayerHitResult() { lastHitResult_ = EnemyPlayerHitResult{}; }
+  // -------------------------------
+  // プレイヤーからの攻撃関連
+  // -------------------------------
 
-    // -------------------------------
-    // プレイヤーからの攻撃関連
-    // -------------------------------
+  // プレイヤーの攻撃力などに応じてダメージを与える
+  void ApplyDamageFromPlayer(int damage);
 
-    // プレイヤーの攻撃力などに応じてダメージを与える
-    void ApplyDamageFromPlayer(int damage);
+  int GetHp() const { return hp_; }
+  bool IsDead() const { return hp_ <= 0; }
 
-    int GetHp() const { return hp_; }
-    bool IsDead() const { return hp_ <= 0; }
+  // -------------------------------
+  // 予備動作用の情報（見た目用に他クラスから参照したくなったとき用）
+  // -------------------------------
 
-    // -------------------------------
-    // 予備動作用の情報（見た目用に他クラスから参照したくなったとき用）
-    // -------------------------------
+  // 現在の行動状態（デバッグ表示などに使える）
+  EnemyState GetState() const { return state_; }
 
-    // 現在の行動状態（デバッグ表示などに使える）
-    EnemyState GetState() const { return state_; }
+  // 弾チャージの進み具合（0.0〜1.0）
+  float GetBulletChargeProgress() const { return bulletChargeProgress_; }
 
-    // 弾チャージの進み具合（0.0〜1.0）
-    float GetBulletChargeProgress() const { return bulletChargeProgress_; }
-
-    // 突進を強制停止（プレイヤーに当たったときなどに呼ぶ）
-    void ForceStopDash();
+  // 突進を強制停止（プレイヤーに当たったときなどに呼ぶ）
+  void ForceStopDash();
 
 private:
-    Camera* camera_ = nullptr;
-    std::unique_ptr<ObjClass> model_ = nullptr;
+  Camera *camera_ = nullptr;
+  std::unique_ptr<ObjClass> model_ = nullptr;
 
-    struct Transform {
-        Vector3 translate{ 0.0f, 0.0f, 0.0f };
-        Vector3 rotate{ 0.0f, 0.0f, 0.0f };
-        Vector3 scale{ 1.0f, 1.0f, 1.0f };
-    } transform_;
+  struct TransformLocal {
+    Vector3 translate{0.0f, 0.0f, 0.0f};
+    Vector3 rotate{0.0f, 0.0f, 0.0f};
+    Vector3 scale{1.0f, 1.0f, 1.0f};
+  } transform_;
 
-    int hp_ = 100;
+  int hp_ = 140;
 
-    EnemyWallManager* enemyWall_ = nullptr;
-    EnemyBulletManager* enemyBullet_ = nullptr;
+  EnemyWallManager *enemyWall_ = nullptr;
+  EnemyBulletManager *enemyBullet_ = nullptr;
 
-    // 行動タイマー（Idle のときだけ使う：次に行動を始めるまでの時間）
-    float actionTimer_ = 0.0f;
-    float actionIntervalMin_ = 2.0f; // 2〜4秒の間で行動開始
-    float actionIntervalMax_ = 4.0f;
+  // 行動タイマー（Idle のときだけ使う：次に行動を始めるまでの時間）
+  float actionTimer_ = 0.0f;
+  float actionIntervalMin_ = 2.0f; // 2〜4秒の間で行動開始
+  float actionIntervalMax_ = 4.0f;
 
-    // 潜り移動用（isBurrowing_ は「見えていない間」だけ true にする）
-    bool isBurrowing_ = false; // 見えていない間だけ true
-    float burrowTimer_ = 0.0f; // 旧処理の名残だが保持しておく
-    float burrowDuration_ = 1.0f;
+  // 潜り移動用（isBurrowing_ は「見えていない間」だけ true にする）
+  bool isBurrowing_ = false; // 見えていない間だけ true
+  float burrowTimer_ = 0.0f; // 旧処理の名残だが保持しておく
+  float burrowDuration_ = 1.0f;
 
-    Vector3 stageCenter_{ 0.0f, 0.0f, 0.0f }; // ステージ中心（仮に原点）
-    float stageRadius_{};                      // ステージ半径
+  Vector3 stageCenter_{0.0f, 0.0f, 0.0f}; // ステージ中心（仮に原点）
+  float stageRadius_{};                   // ステージ半径
 
-    // 敵本体の当たり判定用半径（円として扱う）
-    float enemyBodyRadius_ = 1.5f;
+  // 敵本体の当たり判定用半径（円として扱う）
+  float enemyBodyRadius_ = 1.5f;
 
-    // プレイヤーとの直近フレームの当たり判定結果
-    EnemyPlayerHitResult lastHitResult_;
+  // 敵モデルの下端が地面にくるように持ち上げる量
+  float enemyHeightOffset_ = 1.5f;
 
-    // --------------------------------
-    // 予備動作 + 行動用の状態マシン
-    // --------------------------------
-    EnemyState state_ = EnemyState::Idle; // 現在の行動状態
-    float stateTimer_ = 0.0f;            // 現在の状態の残り時間（秒）
+  // プレイヤーとの直近フレームの当たり判定結果
+  EnemyPlayerHitResult lastHitResult_;
 
-    // 地面の高さ（ドッスン上下やもぞもぞの基準）
-    float groundY_ = 0.0f;
+  // --------------------------------
+  // 予備動作 + 行動用の状態マシン
+  // --------------------------------
+  EnemyState state_ = EnemyState::Idle; // 現在の行動状態
+  float stateTimer_ = 0.0f;             // 現在の状態の残り時間（秒）
 
-    // 壁攻撃（ドッスン）用パラメータ
-    float wallRiseHeight_ = 4.0f;   // どれくらい持ち上がるか
-    float wallRiseDuration_ = 0.4f; // 上昇時間
-    float wallDropDuration_ = 0.2f; // 落下時間
+  // 地面の高さ（ドッスン上下やもぞもぞの基準）
+  float groundY_ = 0.0f;
 
-    // 弾攻撃のチャージ時間
-    float bulletChargeDuration_ = 0.8f;
-    float bulletChargeProgress_ = 0.0f; // 0.0〜1.0
+  // 壁攻撃（ドッスン）用パラメータ
+  float wallRiseHeight_ = 4.0f;   // どれくらい持ち上がるか
+  float wallRiseDuration_ = 0.4f; // 上昇時間
+  float wallDropDuration_ = 0.2f; // 落下時間
 
-    // 潜り攻撃用パラメータ
-    float burrowPreDuration_ = 0.8f;      // 潜る前のもぞもぞ時間
-    float burrowHiddenDuration_ = 1.0f;   // 地中にいる時間
-    float burrowEmergeDuration_ = 0.8f;   // 出現時のもぞもぞ時間
-    float burrowWobbleAmplitude_ = 0.3f;  // もぞもぞの揺れの大きさ
-    float burrowWobbleFrequency_ = 10.0f; // もぞもぞの揺れの速さ
-    float burrowPhase_ = 0.0f;
+  // 弾攻撃のチャージ時間
+  float bulletChargeDuration_ = 0.8f;
+  float bulletChargeProgress_ = 0.0f; // 0.0〜1.0
 
-    // --------- 突進攻撃用パラメータ ---------
-    float dashChargeBackTime_ = 0.4f;   // 予備動作の時間
-    float dashBackDistance_ = 1.5f;     // 後ろに下がる距離
+  // 潜り攻撃用パラメータ
+  float burrowPreDuration_ = 0.8f;      // 潜る前のもぞもぞ時間
+  float burrowHiddenDuration_ = 1.0f;   // 地中にいる時間
+  float burrowEmergeDuration_ = 0.8f;   // 出現時のもぞもぞ時間
+  float burrowWobbleAmplitude_ = 0.3f;  // もぞもぞの揺れの大きさ
+  float burrowWobbleFrequency_ = 10.0f; // もぞもぞの揺れの速さ
+  float burrowPhase_ = 0.0f;
 
-    float dashSpeed_ = 18.0f;           // 突進の速度
-    float dashDistance_ = 10.0f;        // 走る距離
-    float dashMoved_ = 0.0f;            // 現在走った距離
+  // --------- 突進攻撃用パラメータ ---------
+  float dashChargeBackTime_ = 0.4f; // 予備動作の時間
+  float dashBackDistance_ = 1.5f;   // 後ろに下がる距離
 
-    Vector3 dashDirection_{ 0,0,0 };    // 向いている方向のキャッシュ
+  float dashSpeed_ = 18.0f;    // 突進の速度
+  float dashDistance_ = 10.0f; // 走る距離
+  float dashMoved_ = 0.0f;     // 現在走った距離
 
-    // --------- 行動オン/オフフラグ ---------
-    bool enableWallAttack_ = true;
-    bool enableBulletAttack_ = true;
-    bool enableBurrowMove_ = true;
-    bool enableDashAttack_ = true;
+  Vector3 dashDirection_{0, 0, 0}; // 向いている方向のキャッシュ
 
-    // --------- 近/中/遠距離の行動重み ---------
-    struct ActionWeightSet {
-        float bullet = 0.0f;
-        float wall = 0.0f;
-        float burrow = 0.0f;
-        float dash = 0.0f;
-    };
+  // --------- 行動オン/オフフラグ ---------
+  bool enableWallAttack_ = true;
+  bool enableBulletAttack_ = true;
+  bool enableBurrowMove_ = true;
+  bool enableDashAttack_ = true;
 
-    // 近距離: dist < 4.0f
-    ActionWeightSet weightsNear_{ 10.0f, 10.0f, 30.0f, 50.0f };
-    // 中距離: 4.0f <= dist < 8.0f（素の確率）
-    ActionWeightSet weightsMid_{ 40.0f, 20.0f, 10.0f, 30.0f };
-    // 遠距離: dist >= 8.0f
-    ActionWeightSet weightsFar_{ 60.0f, 20.0f, 10.0f, 10.0f };
+  // --------- 近/中/遠距離の行動重み ---------
+  struct ActionWeightSet {
+    float bullet = 0.0f;
+    float wall = 0.0f;
+    float burrow = 0.0f;
+    float dash = 0.0f;
+  };
 
-    void ResetActionTimer();
-    Vector3 GetRandomReappearPosition(const Vector3& playerPos) const;
-    bool IsInsideAnyWall(const Vector3& pos, float margin) const;
+  // 近距離: dist < 4.0f
+  ActionWeightSet weightsNear_{10.0f, 10.0f, 30.0f, 50.0f};
+  // 中距離: 4.0f <= dist < 8.0f（素の確率）
+  ActionWeightSet weightsMid_{40.0f, 20.0f, 10.0f, 30.0f};
+  // 遠距離: dist >= 8.0f
+  ActionWeightSet weightsFar_{60.0f, 20.0f, 10.0f, 10.0f};
+
+  void ResetActionTimer();
+  Vector3 GetRandomReappearPosition(const Vector3 &playerPos) const;
+  bool IsInsideAnyWall(const Vector3 &pos, float margin) const;
 
 public:
-    /// <summary>
-    /// 潜っているかどうか
-    /// </summary>
-    /// <returns></returns>
-    bool IsBurrowing() const { return isBurrowing_; }
+  /// <summary>
+  /// 潜っているかどうか
+  /// </summary>
+  /// <returns></returns>
+  bool IsBurrowing() const { return isBurrowing_; }
 };

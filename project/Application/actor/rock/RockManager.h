@@ -94,4 +94,32 @@ public:
   /// 纏っている岩を半分だけ外す
   /// </summary>
   void HalveAttachedRocks(int numToDetach);
+
+  /// <summary>
+  /// 纏っている岩の数
+  /// </summary>
+  /// <returns></returns>
+  int GetAttachedCount() {
+    int count = 0;
+    for (const auto &rock : rocks_) {
+      if (rock.isAttached_) {
+        ++count;
+      }
+    }
+    return count;
+  }
+
+  /// <summary>
+  /// 外す岩を決める
+  /// </summary>
+  /// <param name="lostCount"></param>
+  /// <returns></returns>
+  std::vector<int> SelectDetachedRocks(int lostCount);
+
+  void SpawnDroppedRocks(const std::vector<int> &detachedList, int spawnCount,
+                         const Vector3 &playerPos, const Vector3 &knockbackDir);
+
+private:
+  // プレイヤーのポインタ
+  Player *lastPlayer_ = nullptr;
 };
