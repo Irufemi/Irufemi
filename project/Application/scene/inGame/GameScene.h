@@ -23,6 +23,7 @@
 #include "actor/rock/RockManager.h"
 #include "audio/Bgm.h"
 #include "stage/field/field.h"
+#include "stage/skyDome/SkyDome.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -57,6 +58,9 @@ private: // 変数(ゲーム)
 
   // フィールド
   Field field_;
+
+  //天球
+  std::unique_ptr<SkyDome> skyDome_;
 
 private: // メンバ変数(システム)
   // カメラ

@@ -347,3 +347,20 @@ void IrufemiEngine::ApplyFieldCylinderPSO() {
     assert(pso && "FieldCylinder PSO is null. Check fieldCylinderShaders setup.");
     if (pso) { drawManager->BindPSO(pso); }  // ← 内部で SetPipelineState を呼んでくれる
 }
+
+void IrufemiEngine::ApplySkyDomePSO()
+{
+    // スカイドームは
+    // - αブレンドなし
+    // - 深度書き込みなし（手前オブジェクトの深度を汚さない）
+    // - 内側から見るので Front カリング
+    BlendMode blend = BlendMode::kBlendModeNone;
+    PSOManager::DepthWrite depth = PSOManager::DepthWrite::Disable;
+    PSOManager::CullMode cull = PSOManager::CullMode::Front;
+
+    ID3D12PipelineState* pso =
+        dxCommon_->GetPSOManager()->GetSkyDome(blend, depth, cull);
+    assert(pso);
+
+    dxCommon_->GetCommandList()->SetPipelineState(pso);
+}

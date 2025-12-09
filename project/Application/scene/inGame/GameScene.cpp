@@ -7,7 +7,7 @@
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
 #include "contents/GameFunction.h"
-
+#include "actor/rock/RockManager.h"
 // デストラクタ
 GameScene::~GameScene() {}
 
@@ -53,7 +53,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   enemyObj_->Initialize(camera_.get());
 
   Vector3 stageCenter{0.0f, 0.0f, 0.0f};
-  float stageRadius = 20.0f;
+  float stageRadius = 12.0f;
 
   enemyWallManager_.Initialize(camera_.get(), stageCenter, stageRadius);
   enemyBulletManager_.Initialize(camera_.get(), stageCenter, stageRadius);
@@ -77,6 +77,11 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   field_.SetFadeRates(0.75f, 1.0f); // 外周フェード
 
   field_.Initialize(engine, camera_.get());
+
+  skyDome_ = std::make_unique<SkyDome>();
+  skyDome_->Initialize(camera_.get(), 50.0f, "resources/uvChecker.png");
+  skyDome_->SetFollowCamera(true);
+
 }
 
 // 更新
@@ -119,6 +124,10 @@ void GameScene::Update() {
   // 仮のデルタタイム
   // エンジンに GetDeltaTime() があるなら、それを使って置き換えてOK
   const float deltaTime = 1.0f / 60.0f;
+
+  if (skyDome_) {
+      skyDome_->Update(deltaTime);
+  }
 
   // 壁マネージャ・弾マネージャの更新（寿命管理など）
   enemyWallManager_.Update(deltaTime);
@@ -183,6 +192,20 @@ void GameScene::Draw() {
   // 3D
   engine_->SetBlend(BlendMode::kBlendModeNormal);
   engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+
+  // ★ 天球
+  if (skyDome_) {
+      engine_->ApplySkyDomePSO();
+      // 背景なのでデプス書き込みOFF
+      engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+
+      skyDome_->Draw();
+
+      // 以降のオブジェクト用に戻す
+      engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+  }
+
+
   engine_->ApplyPSO();
 
   // プレイヤーの描画処理

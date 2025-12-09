@@ -22,7 +22,8 @@ void PSOManager::Initialize(
     ShaderSet regionShaders,
     ShaderSet byGeometryShaderShaders,
     ShaderSet lineShaders,
-    ShaderSet fieldCylinderShaders
+    ShaderSet fieldCylinderShaders,
+	ShaderSet skyDomeShaders
 )
 {
     device_ = device;
@@ -42,6 +43,7 @@ void PSOManager::Initialize(
     byGeometryShaderShaders_ = byGeometryShaderShaders;
     lineShaders_ = lineShaders;
 	fieldCylinderShaders_ = fieldCylinderShaders;
+	skyDomeShaders_ = skyDomeShaders;   
     cache_.clear();
 }
 
@@ -219,6 +221,34 @@ ID3D12PipelineState* PSOManager::GetFieldCylinder(
     if (!pso) {
         return nullptr;
     }
+
+    cache_[key] = pso;
+    return pso.Get();
+}
+
+//追加：SkyDome 用
+ID3D12PipelineState* PSOManager::GetSkyDome(
+    BlendMode bm,
+    DepthWrite dm,
+    CullMode cm
+) {
+    // VS / PS がちゃんと入っていれば SkyDome 用、なければ通常オブジェクト用を使う
+    const bool hasVS = (skyDomeShaders_.vsBlob && skyDomeShaders_.vsBlob->GetBufferPointer());
+    const bool hasPS = (skyDomeShaders_.psBlob && skyDomeShaders_.psBlob->GetBufferPointer());
+    const ShaderSet& set = (hasVS && hasPS) ? skyDomeShaders_ : objectShaders_;
+
+    // キャッシュキー
+    Key key{ Hash(set, bm, dm, cm) };
+    if (auto it = cache_.find(key); it != cache_.end()) {
+        return it->second.Get();
+    }
+
+    // 新規 PSO 作成
+    D3D12_BLEND_DESC bd = MakeBlend(bm);
+    D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(dm);
+
+    auto pso = CreatePSO(set, bd, dd, cm);
+    if (!pso) { return nullptr; }
 
     cache_[key] = pso;
     return pso.Get();

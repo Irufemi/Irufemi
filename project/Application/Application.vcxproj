@@ -179,6 +179,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="scene\result\ResultScene.cpp" />
     <ClCompile Include="scene\title\TitleScene.cpp" />
     <ClCompile Include="stage\field\Field.cpp" />
+    <ClCompile Include="stage\skyDome\SkyDome.cpp" />
     <ClCompile Include="stage\Stage.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -198,6 +199,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="scene\result\ResultScene.h" />
     <ClInclude Include="scene\title\TitleScene.h" />
     <ClInclude Include="stage\field\Field.h" />
+    <ClInclude Include="stage\skyDome\SkyDome.h" />
     <ClInclude Include="stage\Stage.h" />
   </ItemGroup>
   <ItemGroup>
@@ -212,6 +214,22 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="resources\shaders\Field.VS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="resources\shaders\SkyDome.PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="resources\shaders\SkyDome.VS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>

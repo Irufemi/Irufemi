@@ -554,6 +554,18 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
             dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(fieldPSBlob != nullptr);
 
+    //追加：天球用の VS
+    Microsoft::WRL::ComPtr<IDxcBlob> skyDomeVSBlob =
+        CompileShader(L"resources/shaders/SkyDome.VS.hlsl", L"vs_6_0",
+            dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(skyDomeVSBlob != nullptr);
+
+    //追加：天球用の PS
+    Microsoft::WRL::ComPtr<IDxcBlob> skyDomePSBlob =
+        CompileShader(L"resources/shaders/skyDome.PS.hlsl", L"ps_6_0",
+            dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(skyDomePSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -603,6 +615,13 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         fieldPSBlob
     };
 
+    // 天球用
+    PSOManager::ShaderSet skyDomeShaders{
+        skyDomeVSBlob,
+        skyDomePSBlob
+    };
+
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
@@ -617,7 +636,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         blocksShaders,
         byGeometryShaders,
         lineShaders,
-        fieldCylinderShaders
+        fieldCylinderShaders,
+        skyDomeShaders
     );
 
     //実際に生成
@@ -639,6 +659,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (linePSBlob) { linePSBlob.Reset(); }
 	if (fieldVSBlob) { fieldVSBlob.Reset(); }
 	if (fieldPSBlob) { fieldPSBlob.Reset(); }
+	if (skyDomeVSBlob) { skyDomeVSBlob.Reset(); }
+	if (skyDomePSBlob) { skyDomePSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};

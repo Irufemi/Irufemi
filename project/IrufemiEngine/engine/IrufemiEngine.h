@@ -141,6 +141,7 @@ public: // セッター
 
     //--------------------ここから追加--------------------
     void ApplyFieldCylinderPSO();
+    void ApplySkyDomePSO();
 
 public:
     // 状態（現在のブレンドと深度書き込み）
@@ -196,5 +197,7 @@ private: // メンバ変数
     // Application から注入
     SceneRegistrar sceneRegistrar_{};
     std::string initialSceneName_{};
+
+
 };
 

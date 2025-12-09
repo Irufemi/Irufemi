@@ -103,6 +103,9 @@
     <ClCompile Include="contents\Quaternion.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="stage\skyDome\SkyDome.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -156,9 +159,14 @@
     <ClInclude Include="contents\Quaternion.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="stage\skyDome\SkyDome.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="resources\shaders\Field.PS.hlsl" />
     <FxCompile Include="resources\shaders\Field.VS.hlsl" />
+    <FxCompile Include="resources\shaders\SkyDome.VS.hlsl" />
+    <FxCompile Include="resources\shaders\SkyDome.PS.hlsl" />
   </ItemGroup>
 </Project>

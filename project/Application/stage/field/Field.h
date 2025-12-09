@@ -60,6 +60,16 @@ public:
     float CalcFade(float x, float z) const;
 
 private:
+
+    // 砂フィールド用 CB の中身
+    struct FieldCBData {
+        float timeSec = 0.0f;
+        float pad[3] = {};
+    };
+
+    FieldCBData fieldCB_{};
+    Microsoft::WRL::ComPtr<ID3D12Resource> fieldCBResource_;
+
     // ステージ形状パラメータ
     float radius_ = 8.0f;   // 円ステージ半径
    // float heightScale_ = 0.15f;   // 砂丘の盛り上がり量

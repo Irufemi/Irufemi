@@ -43,7 +43,8 @@ public:
         ShaderSet regionShaders = {},
         ShaderSet byGeometryShaderShaders = {},
         ShaderSet lineShaders = {},
-        ShaderSet fieldCylinderShaders = {}
+        ShaderSet fieldCylinderShaders = {},
+		ShaderSet skyDomeShaders = {}
     );
 
     // 既存シェーダで取得（メッシュ/スプライト等）
@@ -64,6 +65,13 @@ public:
 
     //----------------------------ここから追加してます---------------------------
     ID3D12PipelineState* GetFieldCylinder(
+        BlendMode bm,
+        DepthWrite dm,
+        CullMode cm
+    );
+
+    //SkyDome 用
+    ID3D12PipelineState* GetSkyDome(
         BlendMode bm,
         DepthWrite dm,
         CullMode cm
@@ -93,6 +101,7 @@ private:
 
     //--------------------ここから追加してます---------------------
     ShaderSet fieldCylinderShaders_{};
+	ShaderSet skyDomeShaders_{};
 
     struct Key {
         uint64_t hash;
