@@ -51,9 +51,7 @@ void Player::Update() {
   // ノックバック処理
   if (isKnockback_) {
 
-    const float knockbackPower = 0.8f;
-
-    knockbackVel_ *= knockbackPower;
+    knockbackVel_ *= knockbackPower_;
 
     // ノックバック速度を位置に反映
     transform_.translate += knockbackVel_;
@@ -166,34 +164,91 @@ void Player::Move() {
     dir.x -= 1.0f; // 左
   }
 
-  // 入力無しなら終了
-  if (dir.x == 0.0f && dir.z == 0.0f) {
-    return;
+  //// 入力無しなら終了
+  //if (dir.x == 0.0f && dir.z == 0.0f) {
+  //  return;
+  //}
+
+  //// 斜め入力でも速度が一定になるよう正規化
+  //float directionLengthSquared = dir.x * dir.x + dir.z * dir.z;
+  //if (directionLengthSquared > 0.0f) {
+
+  //  // 長さ
+  //  float directionLength = std::sqrt(directionLengthSquared);
+
+  //  // 正規化
+  //  float normalizeFactor = 1.0f / directionLength;
+
+  //  dir.x *= normalizeFactor;
+  //  dir.z *= normalizeFactor;
+  //}
+
+  //// 移動速度(1フレーム当たりの移動量)
+  //const float speed = 0.1f;
+
+  //// 実際の移動
+  //transform_.translate.x += dir.x * speed;
+  //transform_.translate.z += dir.z * speed;
+
+  //// 転がりによる回転処理
+  //ApplyRolling(dir, speed);
+
+ bool hasInput = !(dir.x == 0.0f && dir.z == 0.0f);
+
+  // 斜め入力でも一定の強さになるよう正規化
+  if (hasInput) {
+    float lenSq = dir.x * dir.x + dir.z * dir.z;
+    if (lenSq > 0.0f) {
+      float len = std::sqrt(lenSq);
+      float invLen = 1.0f / len;
+      dir.x *= invLen;
+      dir.z *= invLen;
+    }
   }
 
-  // 斜め入力でも速度が一定になるよう正規化
-  float directionLengthSquared = dir.x * dir.x + dir.z * dir.z;
-  if (directionLengthSquared > 0.0f) {
+  const float accel = 0.01f;    // 押したときの加速
+  const float maxSpeed = 0.1f;  // 最高速度
+  const float friction = 0.95f; // 離したときの減速率 (0.8〜0.95 くらいで調整)
 
-    // 長さ
-    float directionLength = std::sqrt(directionLengthSquared);
-
-    // 正規化
-    float normalizeFactor = 1.0f / directionLength;
-
-    dir.x *= normalizeFactor;
-    dir.z *= normalizeFactor;
+  if (hasInput) {
+    // 入力方向に加速
+    moveVel_.x += dir.x * accel;
+    moveVel_.z += dir.z * accel;
+  } else {
+    // 入力がないフレームは摩擦で減速
+    moveVel_.x *= friction;
+    moveVel_.z *= friction;
   }
 
-  // 移動速度(1フレーム当たりの移動量)
-  const float speed = 0.1f;
+  // 速度が速くなりすぎないようクランプ
+  float speedSq = moveVel_.x * moveVel_.x + moveVel_.z * moveVel_.z;
+  if (speedSq > maxSpeed * maxSpeed) {
+    float speed = std::sqrt(speedSq);
+    if (speed > 0.0f) {
+      float scale = maxSpeed / speed;
+      moveVel_.x *= scale;
+      moveVel_.z *= scale;
+      speedSq = maxSpeed * maxSpeed;
+    }
+  }
 
-  // 実際の移動
-  transform_.translate.x += dir.x * speed;
-  transform_.translate.z += dir.z * speed;
+  // 実際に移動
+  transform_.translate.x += moveVel_.x;
+  transform_.translate.z += moveVel_.z;
 
-  // 転がりによる回転処理
-  ApplyRolling(dir, speed);
+  // 実際に動いた向き＆距離から転がし回転をかける
+  if (speedSq > 0.0f) {
+    float moveDistance = std::sqrt(speedSq);
+
+    Vector3 rollDir{
+        moveVel_.x / moveDistance,
+        0.0f,
+        moveVel_.z / moveDistance,
+    };
+
+    ApplyRolling(rollDir, moveDistance);
+  }
+
 }
 
 void Player::ApplyRolling(const Vector3 &dir, float moveDistance) {
