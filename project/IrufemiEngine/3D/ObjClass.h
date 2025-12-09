@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include "math/Vector4.h"
 
 // 前方宣言
 class TextureManager;
@@ -68,6 +69,15 @@ public: //メンバ関数
 
     // lighitingModeの切り替え
     void SetLightingMode(int32_t index) { for (auto& res : instanceResources_) { res->materialData_->lightingMode = index; } }
+
+    // 色の一括設定
+    void SetColor(const Vector4 &color) {
+      for (auto &res : instanceResources_) {
+        if (res->materialData_) {
+          res->materialData_->color = color;
+        }
+      }
+    }
 
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
