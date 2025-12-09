@@ -71,7 +71,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> fieldCBResource_;
 
     // ステージ形状パラメータ
-    float radius_ = 8.0f;   // 円ステージ半径
+    float radius_ = 30.0f;   // 円ステージ半径
    // float heightScale_ = 0.15f;   // 砂丘の盛り上がり量
     float fadeStartRate_ = 0.75f;   // フェード開始(半径に対する割合)
     float fadeEndRate_ = 1.0f;    // フェード終了(半径に対する割合)

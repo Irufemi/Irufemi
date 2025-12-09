@@ -54,15 +54,21 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   enemyObj_->Initialize(camera_.get());
 
   Vector3 stageCenter{0.0f, 0.0f, 0.0f};
-  float stageRadius = 12.0f;
+  //float stageRadius = 12.0f;
 
-  enemyWallManager_.Initialize(camera_.get(), stageCenter, stageRadius);
-  enemyBulletManager_.Initialize(camera_.get(), stageCenter, stageRadius);
+  field_.SetRadius(18.0f); // とりあえず 12
+  // field_.SetHeightScale(0.15f);     // 砂丘の盛り上がり
+  field_.SetFadeRates(0.75f, 1.0f); // 外周フェード
+
+  field_.Initialize(engine, camera_.get());
+
+  enemyWallManager_.Initialize(camera_.get(), stageCenter, field_.GetRadius());
+  enemyBulletManager_.Initialize(camera_.get(), stageCenter, field_.GetRadius());
 
   enemy_ = std::make_unique<Enemy>();
   enemy_->Initialize(camera_.get(),
                      Vector3{0.0f, 0.0f, 7.0f}, // 敵のスポーン位置
-                     stageRadius, &enemyWallManager_, &enemyBulletManager_);
+      field_.GetRadius(), &enemyWallManager_, &enemyBulletManager_);
 
   // 岩の初期化
   rockManager_ = std::make_unique<RockManager>();
@@ -73,11 +79,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   // 丸フィールドを岩マネージャに教える
   rockManager_->SetField(&field_);
 
-  field_.SetRadius(12.0f); // とりあえず 12
-  // field_.SetHeightScale(0.15f);     // 砂丘の盛り上がり
-  field_.SetFadeRates(0.75f, 1.0f); // 外周フェード
-
-  field_.Initialize(engine, camera_.get());
+  
 
   skyDome_ = std::make_unique<SkyDome>();
   skyDome_->Initialize(camera_.get(), 50.0f, "resources/uvChecker.png");
