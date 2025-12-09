@@ -49,7 +49,10 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
 
   enemyWall_ = wallManager;
   enemyBullet_ = bulletManager;
-  hp_ = 100;
+
+  // HP 初期化（フェーズ1開始）
+  phase_ = EnemyPhase::Phase1;
+  hp_ = maxHp_;
 
   // サイズ変更に合わせて、半径ぶん敵を持ち上げる
   enemyHeightOffset_ = enemyBodyRadius_;
@@ -72,6 +75,10 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
   stateTimer_ = 0.0f;
   bulletChargeProgress_ = 0.0f;
   burrowPhase_ = 0.0f;
+
+  // 弾予備動作用の基準値
+  bulletChargeBaseScale_ = transform_.scale;
+  bulletChargeBaseHeight_ = transform_.translate.y;
 
   ResetActionTimer();
 
@@ -99,6 +106,27 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
       bool canBullet = (enemyBullet_ != nullptr) && enableBulletAttack_;
       bool canBurrow = enableBurrowMove_;
       bool canDash = enableDashAttack_;
+
+      // もし「場外ダッシュ後に強制ワープ」フラグが立っていれば、
+      // 次の行動は確定で潜り移動にする
+      if (forceBurrowOnNextAction_ && canBurrow) {
+        // 通常の潜り開始と同じ初期化
+        state_ = EnemyState::BurrowPreDive;
+        stateTimer_ = burrowPreDuration_;
+        burrowPhase_ = 0.0f;
+        isBurrowing_ = false; // もぞもぞ中は見えている
+        groundY_ = transform_.translate.y;
+
+        // フラグはここで使い切る
+        forceBurrowOnNextAction_ = false;
+        // ランダム抽選には行かず、このまま潜りへ
+        break;
+      }
+
+      // 潜りが禁止されていた場合は、フラグだけ落として通常抽選に戻す
+      if (forceBurrowOnNextAction_ && !canBurrow) {
+        forceBurrowOnNextAction_ = false;
+      }
 
       // プレイヤーとの距離で近/中/遠の重みテーブルを選択
       float dist = DistanceXZ(transform_.translate, playerPos);
@@ -175,6 +203,10 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
           state_ = EnemyState::BulletCharge;
           stateTimer_ = bulletChargeDuration_;
           bulletChargeProgress_ = 0.0f;
+
+          // 膨張・収縮の基準スケール＆高さを記録
+          bulletChargeBaseScale_ = transform_.scale;
+          bulletChargeBaseHeight_ = transform_.translate.y;
         }
         break;
       case 2: // 潜り移動：もぞもぞ → 地中 → もぞもぞ
@@ -251,7 +283,14 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
       // 地面に着地したので壁生成
       transform_.translate.y = groundY_;
       if (enemyWall_) {
-        enemyWall_->SpawnWalls(transform_.translate, playerPos);
+        // フェーズで壁パターンを切り替える
+        if (phase_ == EnemyPhase::Phase2) {
+          // フェーズ2：3×1 のライン状の壁を生成
+          enemyWall_->SpawnWallLine3x1(transform_.translate, playerPos);
+        } else {
+          // フェーズ1：従来どおりランダム配置
+          enemyWall_->SpawnWalls(transform_.translate, playerPos);
+        }
       }
       // 次の行動待ちへ
       state_ = EnemyState::Idle;
@@ -261,23 +300,64 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
   }
 
   case EnemyState::BulletCharge: {
-    // 弾チャージ中（赤くなっていくイメージ）
+    // 弾チャージ中（膨らみながらチャージ）
     stateTimer_ -= deltaTime;
-    float t = 1.0f - (stateTimer_ / bulletChargeDuration_);
-    if (t < 0.0f) {
-      t = 0.0f;
-    }
-    if (t > 1.0f) {
-      t = 1.0f;
-    }
-    bulletChargeProgress_ = t;
 
-    if (stateTimer_ <= 0.0f) {
-      // チャージ完了で弾発射
-      if (enemyBullet_) {
-        enemyBullet_->SpawnBulletAimed(transform_.translate, playerPos);
+    if (stateTimer_ > 0.0f) {
+      // 0.0〜1.0 のチャージ進行度
+      float t = 1.0f - (stateTimer_ / bulletChargeDuration_);
+      if (t < 0.0f) {
+        t = 0.0f;
       }
+      if (t > 1.0f) {
+        t = 1.0f;
+      }
+      bulletChargeProgress_ = t;
+
+      // 見た目スケールを少しずつ大きくする
+      float baseScaleY = bulletChargeBaseScale_.y;
+      if (baseScaleY <= 0.0f) {
+        baseScaleY = 1.0f;
+      }
+
+      float scaleFactor = 1.0f + bulletChargeScaleAmount_ * t; // 最大で 1+0.25
+      float newScale = baseScaleY * scaleFactor;
+
+      // 等方スケールで膨らませる
+      transform_.scale = {newScale, newScale, newScale};
+
+      // 下端が地面に埋まらないように、スケールに合わせて持ち上げる
+      // ・元々の下端 = bulletChargeBaseHeight_ - enemyHeightOffset_
+      // ・現在の半分の高さ = enemyHeightOffset_ * (newScale / baseScaleY)
+      float bottomY = bulletChargeBaseHeight_ - enemyHeightOffset_;
+      float scaledHalfHeight = enemyHeightOffset_ * (newScale / baseScaleY);
+      transform_.translate.y = bottomY + scaledHalfHeight;
+    } else {
+      // ここに来たフレームでチャージ完了 → 弾発射
       bulletChargeProgress_ = 0.0f;
+
+      if (enemyBullet_) {
+        // ★ 弾の発射位置は見た目とは切り離して「Y=0固定」
+        Vector3 bulletOrigin = transform_.translate;
+        bulletOrigin.y = 0.0f; // ここだけ固定値にする
+
+        if (phase_ == EnemyPhase::Phase2) {
+          // フェーズ2：3発同時発射
+          enemyBullet_->SpawnBulletSpread(
+              bulletOrigin,           // Y=0 から出す
+              playerPos,              // 狙い先
+              3,                      // 発射数
+              bulletSpreadAngleRad_); // 左右の開き角
+        } else {
+          // フェーズ1：1発だけ
+          enemyBullet_->SpawnBulletAimed(bulletOrigin, // Y=0 から出す
+                                         playerPos);
+        }
+      }
+
+      // スケールと高さを元に戻す（膨らみ演出リセット）
+      transform_.scale = bulletChargeBaseScale_;
+      transform_.translate.y = bulletChargeBaseHeight_;
 
       // 次の行動待ちへ
       state_ = EnemyState::Idle;
@@ -375,6 +455,16 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
 
     dashMoved_ += move;
 
+    // ステージ外に出たかチェック（この時点ではワープせずフラグだけ立てる）
+    {
+      const float outOfBoundsMargin = 0.5f;
+      float distFromCenter = DistanceXZ(transform_.translate, stageCenter_);
+      if (distFromCenter > stageRadius_ + outOfBoundsMargin) {
+        // 次の行動は確定で潜り移動させたいのでフラグを立てる
+        forceBurrowOnNextAction_ = true;
+      }
+    }
+
     // 一定距離進んだら終了
     if (dashMoved_ >= dashDistance_) {
       state_ = EnemyState::Idle;
@@ -409,11 +499,11 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
 #ifdef _DEBUG
   // ImGui デバッグ
   ImGui::Begin("Enemy");
+  ImGui::Text("Phase: %d", static_cast<int>(phase_) + 1);
   ImGui::Text("State: %d", static_cast<int>(state_));
   ImGui::Text("ActionTimer: %.2f", actionTimer_);
   ImGui::Text("BulletCharge: %.2f", bulletChargeProgress_);
-  ImGui::Text("hp: %d", hp_);
-
+  ImGui::Text("hp: %d / %d", hp_, maxHp_);
   ImGui::End();
 
   ImGui::Begin("Enemy Parameters");
@@ -445,6 +535,10 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
     ImGui::Separator();
     ImGui::Text("Bullet Attack");
     ImGui::SliderFloat("Bullet_ChargeTime", &bulletChargeDuration_, 0.1f, 3.0f);
+    ImGui::SliderFloat("Bullet_SwellAmount", &bulletChargeScaleAmount_, 0.0f,
+                       0.8f);
+    ImGui::SliderFloat("Bullet_SpreadAngle", &bulletSpreadAngleRad_, 0.05f,
+                       0.6f);
   }
 
   // 潜り移動
@@ -606,6 +700,7 @@ void Enemy::ApplyDamageFromPlayer(int damage) {
     return;
   }
 
+  // 突進中はダメージ無効
   if (state_ == EnemyState::DashForward) {
     return;
   }
@@ -614,6 +709,40 @@ void Enemy::ApplyDamageFromPlayer(int damage) {
   if (hp_ < 0) {
     hp_ = 0;
   }
+
+  // フェーズ1で HP が尽きたらフェーズ2へ移行して全快
+  if (phase_ == EnemyPhase::Phase1 && hp_ <= 0) {
+    EnterPhase2();
+  }
+}
+
+// --------------------------------------
+// フェーズ2突入処理
+// --------------------------------------
+void Enemy::EnterPhase2() {
+  phase_ = EnemyPhase::Phase2;
+
+  // HP を全回復
+  hp_ = maxHp_;
+
+  // 行動間隔を 2〜4秒 → 1〜2秒へ
+  actionIntervalMin_ = 1.0f;
+  actionIntervalMax_ = 2.0f;
+
+  // 突進を強化（ため短縮・速度アップ・距離延長）
+  dashChargeBackTime_ *= 0.5f; // 予備動作を半分
+  dashSpeed_ *= 1.5f;          // 速度 1.5 倍
+  dashDistance_ *= 1.5f;       // 距離 1.5 倍
+
+  // それまでの行動状態をリセット
+  state_ = EnemyState::Idle;
+  stateTimer_ = 0.0f;
+  isBurrowing_ = false;
+  bulletChargeProgress_ = 0.0f;
+  burrowPhase_ = 0.0f;
+
+  // 次の行動までの時間を再設定
+  ResetActionTimer();
 }
 
 // --------------------------------------

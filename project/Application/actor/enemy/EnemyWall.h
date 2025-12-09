@@ -20,11 +20,14 @@ struct EnemyWall {
   float warningTime;     // 地面に予告だけ出している時間
   bool hasLanded;        // 落ち切って着地済みかどうか
 
+  // 見た目用の Y 軸回転（ライン壁用）
+  float yawRadians;
+
   EnemyWall()
-      : position(0.0f, 0.0f, 0.0f), halfSizeX(1.5f), halfSizeZ(1.5f),
+      : position(0.0f, 0.0f, 0.0f), halfSizeX(1.5f), halfSizeZ(0.5f),
         lifeTime(0.0f), active(false), groundY(0.0f), fallStartHeight(8.0f),
         fallDuration(0.5f), fallTimer(0.0f), warningTime(0.0f),
-        hasLanded(false) {}
+        hasLanded(false), yawRadians(0.0f) {}
 };
 
 class EnemyWallManager {
@@ -41,8 +44,11 @@ public:
   // 描画
   void Draw();
 
-  // 壁生成アクション：敵の位置を受け取って「最大3つ」生成を試みる
+  // 壁生成アクション：敵の位置を受け取って「最大3つ」生成を試みる（フェーズ1）
   void SpawnWalls(const Vector3 &enemyPos, const Vector3 &playerPos);
+
+  // フェーズ2用：3×1 ライン状の壁を 1 セット生成する
+  void SpawnWallLine3x1(const Vector3 &enemyPos, const Vector3 &playerPos);
 
   // 外から当たり判定に使えるように参照を返す
   const std::vector<EnemyWall> &GetWalls() const { return walls_; }
@@ -89,7 +95,7 @@ private:
 
   // 上から落ちてくるためのパラメータ
   float wallFallStartHeight_ =
-      12.0f;                       // 何メートル上から落ちてくるか（前より高く）
+      12.0f;                      // 何メートル上から落ちてくるか（前より高く）
   float wallFallDuration_ = 0.4f; // 落下時間
   float wallWarningTime_ = 0.6f;  // 着弾予告だけ出している時間
 
@@ -99,7 +105,8 @@ private:
 
   // 内部用：この位置に壁を置いて良いかチェック
   bool CanPlaceWallAt(const Vector3 &pos, const Vector3 &enemyPos,
-                      const Vector3 &playerPos) const;
+                      const Vector3 &playerPos, float candidateHalfX,
+                      float candidateHalfZ) const;
 
   // 内部用：リング領域にランダムな位置を生成
   Vector3 GenerateRandomPosition(const Vector3 &enemyPos) const;

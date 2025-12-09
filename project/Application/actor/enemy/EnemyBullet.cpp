@@ -73,25 +73,34 @@ float EnemyBulletManager::DistanceXZ(const Vector3 &a, const Vector3 &b) {
   return std::sqrt(dx * dx + dz * dz);
 }
 
-void EnemyBulletManager::SpawnBulletAimed(const Vector3 &origin,
-                                          const Vector3 &target) {
-  // 空いている弾スロットを取得（なければ何もしない）
+// 方向ベクトルから 1 発生成する内部関数
+void EnemyBulletManager::SpawnBulletWithDirection(
+    const Vector3 &origin, const Vector3 &dirNormalized) {
   int index = FindFreeIndex();
   if (index < 0) {
     return;
   }
 
-  // 新しい弾の参照を取り、初期位置を設定
   EnemyBullet &b = bullets_[index];
   b.position = origin;
 
+  b.velocity.x = dirNormalized.x * bulletSpeed_;
+  b.velocity.y = 0.0f;
+  b.velocity.z = dirNormalized.z * bulletSpeed_;
+
+  b.radius = 0.5f;
+  b.lifeTime = bulletLifeTime_;
+  b.active = true;
+}
+
+void EnemyBulletManager::SpawnBulletAimed(const Vector3 &origin,
+                                          const Vector3 &target) {
   // XZ 平面でターゲット方向ベクトルを作る
   Vector3 dir{};
   dir.x = target.x - origin.x;
   dir.y = 0.0f;
   dir.z = target.z - origin.z;
 
-  // 正規化して単位ベクトルにする
   float len = LengthXZ(dir);
   if (len > 0.0001f) {
     dir.x /= len;
@@ -103,15 +112,56 @@ void EnemyBulletManager::SpawnBulletAimed(const Vector3 &origin,
     dir.z = std::sin(angle);
   }
 
-  // 方向ベクトルに速度を掛けて弾速ベクトルを設定
-  b.velocity.x = dir.x * bulletSpeed_;
-  b.velocity.y = 0.0f;
-  b.velocity.z = dir.z * bulletSpeed_;
+  SpawnBulletWithDirection(origin, dir);
+}
 
-  // 当たり判定用の半径や寿命、アクティブ状態を設定
-  b.radius = 0.5f;
-  b.lifeTime = bulletLifeTime_;
-  b.active = true;
+void EnemyBulletManager::SpawnBulletSpread(const Vector3 &origin,
+                                           const Vector3 &target, int count,
+                                           float spreadAngleRad) {
+  if (count <= 0) {
+    return;
+  }
+
+  // 基本方向（中央弾の向き）
+  Vector3 baseDir{};
+  baseDir.x = target.x - origin.x;
+  baseDir.y = 0.0f;
+  baseDir.z = target.z - origin.z;
+
+  float len = LengthXZ(baseDir);
+  if (len > 0.0001f) {
+    baseDir.x /= len;
+    baseDir.z /= len;
+  } else {
+    // ほぼ同じ位置にいる場合はランダム方向
+    float angle = RandomRangeBullet(0.0f, 6.28318530718f);
+    baseDir.x = std::cos(angle);
+    baseDir.z = std::sin(angle);
+  }
+
+  // 中央を 0 として左右に振る
+  float centerIndex = static_cast<float>(count - 1) * 0.5f;
+
+  for (int i = 0; i < count; ++i) {
+    float offsetIndex = static_cast<float>(i) - centerIndex;
+    float angle = offsetIndex * spreadAngleRad;
+
+    // baseDir を Y 軸まわりに回転
+    Vector3 dir{};
+    float c = std::cos(angle);
+    float s = std::sin(angle);
+    dir.x = baseDir.x * c - baseDir.z * s;
+    dir.y = 0.0f;
+    dir.z = baseDir.x * s + baseDir.z * c;
+
+    float len2 = LengthXZ(dir);
+    if (len2 > 0.0001f) {
+      dir.x /= len2;
+      dir.z /= len2;
+    }
+
+    SpawnBulletWithDirection(origin, dir);
+  }
 }
 
 void EnemyBulletManager::Update(float deltaTime) {
@@ -209,19 +259,20 @@ void EnemyBulletManager::OnHitBullet(int bulletIndex) {
 }
 
 // 敵弾と壁の当たり判定
-void EnemyBulletManager::ResolveBulletWallCollision(EnemyWallManager& wallManager) {
-    for (size_t i = 0; i < bullets_.size(); ++i) {
-        EnemyBullet& b = bullets_[i];
-        if (!b.active) {
-            continue;
-        }
-
-        // 弾を円として壁 AABB と判定
-        int hitWallIndex = wallManager.CheckCollisionCircle(b.position, b.radius);
-        if (hitWallIndex >= 0) {
-            // 弾と壁を両方消す
-            OnHitBullet(static_cast<int>(i));
-            wallManager.OnEnemyHitWall(hitWallIndex);
-        }
+void EnemyBulletManager::ResolveBulletWallCollision(
+    EnemyWallManager &wallManager) {
+  for (size_t i = 0; i < bullets_.size(); ++i) {
+    EnemyBullet &b = bullets_[i];
+    if (!b.active) {
+      continue;
     }
+
+    // 弾を円として壁 AABB と判定
+    int hitWallIndex = wallManager.CheckCollisionCircle(b.position, b.radius);
+    if (hitWallIndex >= 0) {
+      // 弾と壁を両方消す
+      OnHitBullet(static_cast<int>(i));
+      wallManager.OnEnemyHitWall(hitWallIndex);
+    }
+  }
 }
