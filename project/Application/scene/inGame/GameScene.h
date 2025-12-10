@@ -218,6 +218,9 @@ private:
   bool tutorialDamaged_ = false;  // ダメージを受けたか
   bool tutorialAttackDone_ = false;
 
+  // フェーズ2移行時のカメラ演出が開始済みかどうか
+  bool phase2CameraEffectStarted_ = false;
+
 public:
   static bool s_hasPlayedTutorial_;
 };

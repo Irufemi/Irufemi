@@ -961,17 +961,6 @@ void Enemy::EnterPhase2() {
   phase2TransitionActive_ = true;
   phase2TransitionTimer_ = 0.0f;
 
-  // カメラ演出（シェイク＆ズーム）
-  if (camera_) {
-    // シェイクをかなり強め・長めにする
-    // 第1引数: フレーム数, 第2引数: 揺れの大きさ（ワールド座標）
-    camera_->StartShake(60, 30.0f);
-
-    // FOV をグッと狭めて「寄った」感じを出す
-    // 第1引数: フレーム数, 第2引数: FOV の倍率（0.4 でかなり寄る）
-    camera_->StartZoom(120, 0.4f);
-  }
-
   // TODO: 咆哮SEを鳴らす場合はここでサウンド再生処理を呼ぶ
   enemyChangeSE_.Play();
 

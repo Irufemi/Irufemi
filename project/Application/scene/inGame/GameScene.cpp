@@ -184,10 +184,10 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   tutorialAttackDone_ = false;
 
   // enemy_->SetIsTutorialRock(true);
+
+  // フェーズ2カメラ演出フラグをリセット
+  phase2CameraEffectStarted_ = false;
 }
-
-  
-
 
 // 更新
 void GameScene::Update() {
@@ -213,6 +213,27 @@ void GameScene::Update() {
 
   // デルタタイム
   const float deltaTime = 1.0f / 60.0f;
+
+  // 敵がフェーズ2移行演出中かどうか
+  bool inPhaseTransition = enemy_->GetInPhaseTransition();
+
+  // フェーズ移行が「始まった瞬間」だけカメラ演出を開始する
+  if (inPhaseTransition && !phase2CameraEffectStarted_) {
+      if (camera_) {
+          // 画面を揺らす（30フレーム・少し強め）
+          camera_->StartShake(120, 0.5f);
+
+          // 同時にズーム演出開始
+          // 第1引数: ズームにかけるフレーム数
+          // 第2引数: 目標FOV = 現在FOV * 0.7（小さいほど寄る）
+          camera_->StartZoom(120, 0.5f);
+      }
+      phase2CameraEffectStarted_ = true;
+  }
+  // 演出が完全に終わったら、次のためにフラグを戻しておく
+  else if (!inPhaseTransition) {
+      phase2CameraEffectStarted_ = false;
+  }
 
   switch (state) {
   case GameState::Tutorial: {
