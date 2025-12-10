@@ -8,6 +8,9 @@
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
 #include "contents/GameFunction.h"
+
+bool GameScene::s_hasPlayedTutorial_ = false;
+
 // デストラクタ
 GameScene::~GameScene() {}
 
@@ -128,6 +131,20 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   rockMulti_.Initialize(engine_, camera_.get());
 
   prevRockMultiplier_ = player_->GetMultiplier();
+
+  tutorialRSptite_.Initialize(camera_.get(), "resources/tutorial_rock.png");
+  tutorialRSptite_.SetPosition(200.0f, 80.0f);
+  tutorialRSptite_.Update();
+
+  if (!s_hasPlayedTutorial_) {
+    state = GameState::Tutorial; // 初回はチュートリアル
+  } else {
+    state = GameState::Playing; // 2回目以降は通常プレイ
+  }
+
+  tutorialState_ = TutorialState::Rock;
+  tutorialHitEnemy_ = false;
+  tutorialDamaged_ = false;
 }
 
 // 更新
@@ -156,6 +173,68 @@ void GameScene::Update() {
   const float deltaTime = 1.0f / 60.0f;
 
   switch (state) {
+  case GameState::Tutorial: {
+
+    if (debugMode) {
+      debugCamera_->Update();
+      camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
+      camera_->SetPerspectiveFovMatrix(
+          debugCamera_->GetCamera().GetPerspectiveFovMatrix());
+    } else {
+      camera_->Update("Camera", player_->GetPosition(), enemy_->GetPosition());
+    }
+
+    if (skyDome_) {
+      skyDome_->Update(deltaTime);
+    }
+
+    enemy_->Update(deltaTime, player_->GetPosition());
+
+    // プレイヤーの更新処理
+    player_->Update();
+
+    rockManager_->Update(player_.get());
+
+    field_.Update(deltaTime);
+
+    DoCollision();
+
+    ImGui::Text("isHit:%d", tutorialHitEnemy_);
+
+    switch (tutorialState_) {
+    case TutorialState::Rock: {
+
+      if (tutorialHitEnemy_) {
+        tutorialState_ = TutorialState::Damage;
+        tutorialRSptite_.Initialize(camera_.get(),
+                                    "resources/tutorial_damage.png");
+        tutorialRSptite_.SetPosition(40.0f, 80.0f);
+        tutorialRSptite_.Update();
+      }
+
+      break;
+    }
+
+    case TutorialState::Damage: {
+
+      enemyWallManager_.Update(deltaTime);
+      enemyBulletManager_.Update(deltaTime);
+
+      // --- 被弾して岩が減るフェーズ ---
+      if (tutorialDamaged_) {
+        // チュートリアル終了 → 通常プレイへ
+        s_hasPlayedTutorial_ = true;
+        engine_->GetSceneManager()->Request("InGame");
+        state = GameState::Playing;
+        tutorialRSptite_.SetColor({1.0f, 1.0f, 1.0f, 0.0f});
+        tutorialRSptite_.Update();
+      }
+      break;
+    }
+    }
+
+    break;
+  }
 
   case GameState::Playing:
 
@@ -450,20 +529,21 @@ void GameScene::Update() {
 
 #endif // _DEBUG
 
-    if (engine_->GetInputManager()->IsKeyPressed('W')) {
-		cursolSE_.Play();
-      resultIndex_--;
+    if (engine_->GetInputManager()->IsKeyPressed('W') ||
+        engine_->GetInputManager()->GetLeftStickY() > 0.0f) {
+      resultIndex_ = 0;
       if (resultIndex_ < 0)
         resultIndex_ = 1;
     }
-    if (engine_->GetInputManager()->IsKeyPressed('S')) {
-		cursolSE_.Play();
-      resultIndex_++;
+    if (engine_->GetInputManager()->IsKeyPressed('S') ||
+        engine_->GetInputManager()->GetLeftStickY() < 0.0f) {
+      resultIndex_ = 1;
       if (resultIndex_ > 1)
         resultIndex_ = 0;
     }
 
-    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
+    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
+        engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
 
 		
 		
@@ -585,6 +665,10 @@ void GameScene::Draw() {
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplySpritePSO();
 
+  if (state == GameState::Tutorial) {
+    tutorialRSptite_.Draw();
+  }
+
   rockMulti_.Draw();
 
   fade_.Draw();
@@ -593,7 +677,8 @@ void GameScene::Draw() {
 void GameScene::DoCollision() {
 
   // if (player_ && rockManager_) {
-  //   GameFunction::CheckHit_PlayerAndRock(*player_, rockManager_->GetRocks());
+  //   GameFunction::CheckHit_PlayerAndRock(*player_,
+  //   rockManager_->GetRocks());
   // }
 
   if (!player_ || !enemy_) {
@@ -672,6 +757,11 @@ void GameScene::DoCollision() {
 
         // ノックバックと岩のリセット
         player_->HalveRockCount();
+
+        if (state == GameState::Tutorial &&
+            tutorialState_ == TutorialState::Damage) {
+          tutorialDamaged_ = true;
+        }
 
         int after = player_->GetRockCount();
         int numToDetach = before - after;
@@ -760,6 +850,11 @@ void GameScene::DoCollision() {
 
         // ノックバックと岩のリセット
         player_->HalveRockCount();
+
+        if (state == GameState::Tutorial &&
+            tutorialState_ == TutorialState::Damage) {
+          tutorialDamaged_ = true;
+        }
 
         int after = player_->GetRockCount();
         int numToDetach = before - after;
@@ -856,6 +951,11 @@ void GameScene::DoCollision() {
             enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
             explosion_->PlayExplosion(pPos);
 
+            if (state == GameState::Tutorial &&
+                tutorialState_ == TutorialState::Rock) {
+              tutorialHitEnemy_ = true;
+            }
+
             // スタン開始
             enemy_->StartStan(20);
 
@@ -865,6 +965,14 @@ void GameScene::DoCollision() {
 
               // ノックバックと岩のリセット
               player_->HalveRockCount();
+
+              // 無敵開始
+              player_->StartInvincible(90);
+
+              if (state == GameState::Tutorial &&
+                  tutorialState_ == TutorialState::Damage) {
+                tutorialDamaged_ = true;
+              }
 
               int after = player_->GetRockCount();
               int numToDetach = before - after;
@@ -921,46 +1029,22 @@ Vector3 GameScene::ApplyPlayerKnockback(const float knockbackPower) {
     return {0.0f, 0.0f, 0.0f};
   }
 
-  // 現在位置と、Update 前に記録しておいた位置との差分
-  Vector3 currentPos = player_->GetPosition();
-  Vector3 moveVec{currentPos.x - prevPlayerPos_.x, 0.0f,
-                  currentPos.z - prevPlayerPos_.z};
+  Vector3 p = player_->GetPosition();
+  Vector3 e = enemy_ ? enemy_->GetPosition() : p;
 
-  // XZ 平面の移動量の長さ²
-  float lenSq = moveVec.x * moveVec.x + moveVec.z * moveVec.z;
+  // ノックバック方向 = 相手 → プレイヤー の方向
+  Vector3 dir{p.x - e.x, 0.0f, p.z - e.z};
 
-  float len = std::sqrt(lenSq);
-
-  // ノックバックさせる方向
-  Vector3 dir{};
-
-  if (lenSq >= 0.0001f) {
-    // 十分動いていれば、その逆向きに飛ばす
-    float len = std::sqrt(lenSq);
-    dir = {-moveVec.x / len, 0.0f, -moveVec.z / len};
+  float len = dir.x * dir.x + dir.z * dir.z;
+  if (len > 0.0001f) {
+    len = std::sqrt(len);
+    dir.x /= len;
+    dir.z /= len;
   } else {
-    // ほぼ動いていない → 弾・敵側からの押し出し方向でノックバック
-
-    if (enemy_) {
-      Vector3 fromEnemy{currentPos.x - enemy_->GetPosition().x, 0.0f,
-                        currentPos.z - enemy_->GetPosition().z};
-
-      float lenSq2 = fromEnemy.x * fromEnemy.x + fromEnemy.z * fromEnemy.z;
-
-      if (lenSq2 >= 0.0001f) {
-        float len2 = std::sqrt(lenSq2);
-        dir = {fromEnemy.x / len2, 0.0f, fromEnemy.z / len2};
-      } else {
-        // それでも方向が決められない場合は適当な方向に飛ばす
-        dir = {0.0f, 0.0f, 1.0f};
-      }
-    } else {
-      // 敵がいない状況用の保険
-      dir = {0.0f, 0.0f, 1.0f};
-    }
+    dir = {0.0f, 0.0f, 1.0f};
   }
 
-  // 縦方向の初速（跳ね上がり）
+  // 縦方向上昇
   player_->AddVerticalVelocity(0.7f);
 
   // ノックバック開始
