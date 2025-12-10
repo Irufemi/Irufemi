@@ -44,13 +44,28 @@ void Camera::Update([[maybe_unused]] const char *cameraName, Vector3 pPos,
 #endif
 
   // プレイヤーと敵の位置によってカメラを移動、FOV変更
-  Vector3 centerPos = {
+  Vector3 baseCenterPos = {
       (pPos.x + ePos.x) * 0.5f,
       (pPos.y + ePos.y) * 0.5f,
       (pPos.z + ePos.z) * 0.5f,
   };
 
-  // XZ 平面上での距離
+  // ---- ズーム中は「中央 → 敵寄り」に注目点をずらす ----
+  Vector3 centerPos = baseCenterPos;
+
+  if (zoomFrame_ > 0 && zoomFrameMax_ > 0) {
+    float progress = 1.0f - static_cast<float>(zoomFrame_) /
+                                static_cast<float>(zoomFrameMax_);
+    // イージング（0→1 へゆっくり立ち上がる）
+    float ease = 1.0f - std::pow(1.0f - progress, 3.0f);
+
+    // 中央から敵位置に向かってスライドさせる
+    centerPos.x = baseCenterPos.x + (ePos.x - baseCenterPos.x) * ease;
+    centerPos.y = baseCenterPos.y + (ePos.y - baseCenterPos.y) * ease;
+    centerPos.z = baseCenterPos.z + (ePos.z - baseCenterPos.z) * ease;
+  }
+
+  // XZ 平面上での距離（※ここはプレイヤーと敵の距離のままでOK）
   float dx = pPos.x - ePos.x;
   float dz = pPos.z - ePos.z;
   float distance = std::sqrt(dx * dx + dz * dz);
@@ -94,6 +109,17 @@ void Camera::Update([[maybe_unused]] const char *cameraName, Vector3 pPos,
   float minFov = 35.0f * std::numbers::pi_v<float> / 180.0f; // 寄り
   float maxFov = 60.0f * std::numbers::pi_v<float> / 180.0f; // 引き
   float targetFov = minFov + (maxFov - minFov) * t;
+
+  // ---- ズーム演出の適用 ----
+  if (zoomFrame_ > 0 && zoomFrameMax_ > 0) {
+    float progress = 1.0f - static_cast<float>(zoomFrame_) /
+                                static_cast<float>(zoomFrameMax_);
+    // イージング（最初ゆっくり、最後止まる）
+    float ease = 1.0f - std::pow(1.0f - progress, 3.0f);
+    targetFov = zoomStartFov_ + (zoomTargetFov_ - zoomStartFov_) * ease;
+    --zoomFrame_;
+  }
+
   const float fovLerp = 0.1f;
   fovAngleY_ = Lerp(fovAngleY_, targetFov, fovLerp);
 
@@ -164,7 +190,50 @@ void Camera::StartShake(int durationFrame, float amplitude) {
   shakeAmplitude_ = amplitude;
 }
 
+void Camera::StartZoom(int durationFrame, float targetFovScale) {
+  zoomFrameMax_ = durationFrame;
+  zoomFrame_ = durationFrame;
+  zoomStartFov_ = fovAngleY_;
+  zoomTargetFov_ = fovAngleY_ * targetFovScale;
+}
+
 // カメラ行列を取得する
 Matrix4x4 Camera::GetCameraMatrix() {
   return Math::MakeAffineMatrix(scale_, rotate_, translate_);
+}
+
+Vector2 Camera::WorldToScreen(const Vector3 &worldPos) const {
+  const Matrix4x4 &V = viewMatrix_;
+
+  float vx = worldPos.x * V.m[0][0] + worldPos.y * V.m[1][0] +
+             worldPos.z * V.m[2][0] + 1.0f * V.m[3][0];
+
+  float vy = worldPos.x * V.m[0][1] + worldPos.y * V.m[1][1] +
+             worldPos.z * V.m[2][1] + 1.0f * V.m[3][1];
+
+  float vz = worldPos.x * V.m[0][2] + worldPos.y * V.m[1][2] +
+             worldPos.z * V.m[2][2] + 1.0f * V.m[3][2];
+
+  float vw = worldPos.x * V.m[0][3] + worldPos.y * V.m[1][3] +
+             worldPos.z * V.m[2][3] + 1.0f * V.m[3][3];
+
+  const Matrix4x4 &P = perspectiveFovMatrix_;
+
+  float cx = vx * P.m[0][0] + vy * P.m[1][0] + vz * P.m[2][0] + vw * P.m[3][0];
+
+  float cy = vx * P.m[0][1] + vy * P.m[1][1] + vz * P.m[2][1] + vw * P.m[3][1];
+
+  float cz = vx * P.m[0][2] + vy * P.m[1][2] + vz * P.m[2][2] + vw * P.m[3][2];
+
+  float cw = vx * P.m[0][3] + vy * P.m[1][3] + vz * P.m[2][3] + vw * P.m[3][3];
+
+  // -------- 3. NDC --------
+  float ndcX = cx / cw;
+  float ndcY = cy / cw;
+
+  // -------- 4. スクリーン座標へ --------
+  float sx = (ndcX * 0.5f + 0.5f) * width_;
+  float sy = (-ndcY * 0.5f + 0.5f) * height_; // Y反転
+
+  return Vector2{sx, sy};
 }

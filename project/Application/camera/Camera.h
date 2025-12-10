@@ -212,6 +212,12 @@ private:
   int shakeFrameMax_ = 0;       // シェイク継続フレーム
   float shakeAmplitude_ = 0.0f; // 揺れの強さ
 
+  // ==== ズーム演出用 ====
+  int zoomFrame_ = 0;    // 残りフレーム数
+  int zoomFrameMax_ = 0; // ズーム継続フレーム
+  float zoomStartFov_ = 0.0f;
+  float zoomTargetFov_ = 0.0f;
+
 public:
   /// <summary>
   /// カメラシェイク開始
@@ -220,5 +226,14 @@ public:
   /// <param name="amplitude">揺れの強さ</param>
   void StartShake(int durationFrame = 15, float amplitude = 0.5f);
 
+  /// <summary>
+  /// ズーム演出開始（FOV を一時的に狭める）
+  /// </summary>
+  /// <param name="durationFrame">何フレームかけてズームするか</param>
+  /// <param name="targetFovScale">目標FOV = 現在FOV * targetFovScale</param>
+  void StartZoom(int durationFrame = 30, float targetFovScale = 0.75f);
+  
   float GetFovY() const { return fovAngleY_; }
+
+  Vector2 WorldToScreen(const Vector3 &worldPos) const;
 };

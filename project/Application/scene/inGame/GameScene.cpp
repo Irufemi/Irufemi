@@ -68,6 +68,8 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   field_.ResetFade();
 
   enemyWallManager_.Initialize(camera_.get(), stageCenter, field_.GetRadius());
+  // 敵弾マネージャ初期化
+  enemyBulletManager_.SetMaxBulletCount(6); // 同時最大 6 発ぶんだけ読み込む
   enemyBulletManager_.Initialize(camera_.get(), stageCenter,
                                  field_.GetRadius());
 

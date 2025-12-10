@@ -33,10 +33,22 @@ void EnemyBulletManager::Initialize(Camera *camera, const Vector3 &stageCenter,
   bullets_.clear();
   models_.clear();
 
-  // 最大弾数分の容量を事前確保しておく
-  bullets_.reserve(maxBulletCount_);
-  models_.reserve(maxBulletCount_);
+  // 最大弾数分のスロットをあらかじめ用意しておく
+  bullets_.resize(maxBulletCount_);
+  models_.resize(maxBulletCount_);
+
+  // 各スロットごとにモデルを読み込んでおく
+  for (int i = 0; i < maxBulletCount_; ++i) {
+    // 弾情報リセット
+    bullets_[i] = EnemyBullet(); // position/velocity/lifeTime など初期化
+    bullets_[i].active = false;
+
+    // 弾モデルを生成＆初期化
+    models_[i] = std::make_unique<ObjClass>();
+    models_[i]->Initialize(camera_, "bullet.obj");
+  }
 }
+
 
 int EnemyBulletManager::FindFreeIndex() {
   // 既存配列の中から非アクティブな弾のスロットを探す
@@ -46,19 +58,8 @@ int EnemyBulletManager::FindFreeIndex() {
     }
   }
 
-  // まだ最大弾数に達していなければ、新しい弾とモデルを作る
-  if (static_cast<int>(bullets_.size()) >= maxBulletCount_) {
-    return -1;
-  }
-
-  bullets_.emplace_back();
-  models_.emplace_back(std::make_unique<ObjClass>());
-
-  // 弾のモデルを初期化（名前は環境に合わせて変更してもよい）
-  models_.back()->Initialize(camera_, "bullet.obj");
-
-  // 新しく追加したスロットのインデックスを返す
-  return static_cast<int>(bullets_.size()) - 1;
+  // すべて使用中ならこれ以上は出せない
+  return -1;
 }
 
 float EnemyBulletManager::LengthXZ(const Vector3 &v) {
