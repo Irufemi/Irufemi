@@ -91,6 +91,8 @@ private: // 変数(ゲーム)
   std::unique_ptr<ParticleSystem> hitEffects_ = nullptr;
   // パーティクル(Explosion)
   std::unique_ptr<ParticleSystem> explosion_ = nullptr;
+  // パーティクル(Dust)
+  std::unique_ptr<ParticleSystem> dust_ = nullptr;
 
   //----------SE-------------
   Se playerAttackToEnemySE_;
