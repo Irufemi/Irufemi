@@ -755,6 +755,19 @@ void ParticleSystem::PlayExplosion(const Vector3& position)
 	}
 }
 
+void ParticleSystem::PlayDust(const Vector3& position, const Vector3& moveDirection) {
+	if (particleType_ == ParticleType::kDust) {
+		emitter_.transform.translate = position;
+
+		// 移動方向と逆向きを基本速度とする
+		Vector3 baseVelocity = -moveDirection * 2.0f; // 速度倍率を調整
+		emitter_.velocityMin = baseVelocity + Vector3{ -0.5f, 0.1f, -0.5f };
+		emitter_.velocityMax = baseVelocity + Vector3{ 0.5f, 0.3f, 0.5f };
+
+		particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+	}
+}
+
 void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
 #if USE_IMGUI
@@ -795,6 +808,9 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                     case ParticleType::kExplosion:
     					PlayExplosion(emitter_.transform.translate);
     					break;
+					case ParticleType::kDust:
+						PlayDust(emitter_.transform.translate, { 0.0f, 0.0f, 1.0f });
+						break;
                     default:
                         particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
                         break;
@@ -825,7 +841,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 }
 
                 // ParticleTypeの選択UI
-                const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect", "Explosion" };
+                const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect", "Explosion", "Dust" };
                 int currentType = static_cast<int>(particleType_);
                 if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
                     ChangeBehavior(static_cast<ParticleType>(currentType));
@@ -990,7 +1006,7 @@ void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
     behavior_->Initialize(&emitter_);
 
     // ビルボード設定も振る舞いに応じて変更
-    if (type == ParticleType::kHitEffect || type == ParticleType::kExplosion){
+    if (type == ParticleType::kHitEffect || type == ParticleType::kExplosion || type == ParticleType::kDust){
             useBillbord_ = false;
         } else {
             useBillbord_ = true;
@@ -998,7 +1014,7 @@ void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
     }
     
     void ParticleSystem::DrawAABB(const AABB& aabb, const Vector4& color)
-    {
+{
 #if USE_IMGUI
     Vector3 vertices[8];
     vertices[0] = { aabb.min.x, aabb.min.y, aabb.min.z };

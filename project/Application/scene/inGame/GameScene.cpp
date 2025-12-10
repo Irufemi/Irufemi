@@ -113,6 +113,13 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   explosion_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kExplosion, ParticlePrimitiveShape::Ring);
   explosion_->SetCull(BlendMode::kBlendModeScreen);
 
+  // dust
+  dust_ = std::make_unique<ParticleSystem>();
+  dust_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kDust, ParticlePrimitiveShape::Sphere);
+  dust_->SetCull(BlendMode::kBlendModeAdd);
+  dust_->SetParticleColor({ 0.8f, 0.7f, 0.6f, 0.5f }, { 0.8f, 0.7f, 0.6f, 0.0f });
+
+
   //SEの初期化
   playerAttackToEnemySE_.Initialize("resources/se/player_attack_to_enemy.Mp3");
   playerAttackToWallSE_.Initialize("resources/se/player_attack_to_wall.Mp3");
@@ -193,11 +200,24 @@ void GameScene::Update() {
     // プレイヤーの更新処理
     player_->Update();
 
+    // 砂埃エフェクト
+    Vector3 moveVel = player_->GetMoveVelocity();
+    if (moveVel.x * moveVel.x + moveVel.z * moveVel.z > 0.001f) {
+    	Vector3 dustPos = player_->GetPosition();
+    	dustPos.y = 0.1f; // 地面から少し浮かす
+    	dust_->PlayDust(dustPos, moveVel);
+    }
+
     rockManager_->Update(player_.get());
 
     field_.Update(deltaTime);
 
     DoCollision();
+
+    // particleの更新
+    hitEffects_->Update();
+    explosion_->Update();
+    dust_->Update();
 
 #ifdef USE_IMGUI
 
@@ -271,6 +291,14 @@ void GameScene::Update() {
     // プレイヤーの更新処理
     player_->Update();
 
+    // 砂埃エフェクト
+    Vector3 moveVel = player_->GetMoveVelocity();
+    if (moveVel.x * moveVel.x + moveVel.z * moveVel.z > 0.001f) {
+    	Vector3 dustPos = player_->GetPosition();
+    	dustPos.y = 0.1f; // 地面から少し浮かす
+    	dust_->PlayDust(dustPos, moveVel);
+    }
+
     // Player を Field 上に乗せて、円の内側に収める
     {
       Vector3 pos = player_->GetPosition();
@@ -301,16 +329,15 @@ void GameScene::Update() {
 
 #if defined USE_IMGUI
     // デバッグ：直近の当たり判定結果を表示（任意）
-    // const EnemyPlayerHitResult &hit = enemy_->GetPlayerHitResult();
-    // if (ImGui::Begin("HitResult")) {
-    //  ImGui::Text("hitWall      : %s (index=%d)", hit.hitWall ? "true" :
-    //  "false",
-    //              hit.wallIndex);
-    //  ImGui::Text("hitBullet    : %s (index=%d)",
-    //              hit.hitBullet ? "true" : "false", hit.bulletIndex);
-    //  ImGui::Text("hitEnemyBody : %s", hit.hitEnemyBody ? "true" : "false");
-    //}
-    // ImGui::End();
+//     const EnemyPlayerHitResult &hit = enemy_->GetPlayerHitResult();
+//     if (ImGui::Begin("HitResult")) {
+//      ImGui::Text("hitWall      : %s (index=%d)", hit.hitWall ? "true" : "false",
+//              hit.wallIndex);
+//      ImGui::Text("hitBullet    : %s (index=%d)",
+//              hit.hitBullet ? "true" : "false", hit.bulletIndex);
+//      ImGui::Text("hitEnemyBody : %s", hit.hitEnemyBody ? "true" : "false");
+//    }
+//    ImGui::End();
 #endif
 
     // 岩の更新
@@ -343,6 +370,7 @@ void GameScene::Update() {
     // particleの更新
     hitEffects_->Update();
     explosion_->Update();
+    dust_->Update();
 
     break;
 
@@ -551,6 +579,7 @@ void GameScene::Update() {
 
 		
 		
+		
       if (resultIndex_ == 0) {
           decisionSE_.Play();
         // 0 = Retry
@@ -662,6 +691,7 @@ void GameScene::Draw() {
 
   hitEffects_->Draw();
   explosion_->Draw();
+  dust_->Draw();
 
   // Sprite
 
@@ -726,6 +756,7 @@ void GameScene::DoCollision() {
       hitEffects_->PlayHitEffect(pPos);
       hitEffects_->PlayHitEffect(pPos);
       hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
 
       if (!player_->IsInvincible()) {
 
@@ -748,8 +779,7 @@ void GameScene::DoCollision() {
         //    // Vector3 p = player_->GetPosition();
 
         //    ////
-        //    ///
-        //    プレイヤーを少し上から・手前から見る位置を目標にする（値はあとで調整）
+        //    /// プレイヤーを少し上から・手前から見る位置を目標にする（値はあとで調整）
         //    // playerDeadCamTargetPos_ = {p.x, p.y + 3.0f, p.z - 8.0f};
 
         //    // FOV は少しだけ狭めて寄ってる感じに

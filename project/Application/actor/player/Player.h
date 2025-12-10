@@ -117,6 +117,13 @@ private:
   Vector3 moveVel_{0.0f, 0.0f, 0.0f}; // 水平移動
 
 public:
+  /// <summary>
+  /// 現在の移動速度を取得
+  /// </summary>
+  /// <returns></returns>
+  const Vector3& GetMoveVelocity() const { return moveVel_; }
+
+public:
   // ノックバック用
 
   /// <summary>
@@ -129,6 +136,7 @@ public:
   /// ノックバックを開始
   /// </summary>
   /// <param name="dir"></param>
+  /// <param name="knockbackPower"></param>
   void StartKnockback(const Vector3 &dir, const float knockbackPower) {
     isKnockback_ = true;
     knockbackVel_ = dir;
