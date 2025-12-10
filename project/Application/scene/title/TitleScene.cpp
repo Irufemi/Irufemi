@@ -58,6 +58,7 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     //タイトルBGMの初期化
     titleBGM_.Initialize("resources/bgm/titleBGM.mp3");
+	titleBGM_.SetVolume(0.3f);
     titleBGM_.PlayFixed();
 
     deciding_ = false;

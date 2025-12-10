@@ -78,8 +78,12 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
   enemy_ = std::make_unique<Enemy>();
   enemy_->Initialize(
-      camera_.get(), Vector3{0.0f, 0.0f, 7.0f}, // 敵のスポーン位置
+      camera_.get(), Vector3{ 0.0f, 0.0f, 7.0f }, // 敵のスポーン位置
       field_.GetRadius(), &enemyWallManager_, &enemyBulletManager_);
+
+  // 敵HPゲージの初期化
+  enemyHpGauge_ = std::make_unique<EnemyHpGauge>();
+  enemyHpGauge_->Initialize(camera_.get(), enemy_.get());
 
   // 岩の初期化
   rockManager_ = std::make_unique<RockManager>();
@@ -110,7 +114,9 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
   // explosion
   explosion_ = std::make_unique<ParticleSystem>();
-  explosion_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kExplosion, ParticlePrimitiveShape::Ring);
+  explosion_->Initialize(camera_.get(), "resources/gradationLine.png",
+                         ParticleType::kExplosion,
+                         ParticlePrimitiveShape::Ring);
   explosion_->SetCull(BlendMode::kBlendModeScreen);
 
   // dust
@@ -119,16 +125,16 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   dust_->SetCull(BlendMode::kBlendModeAdd);
   dust_->SetParticleColor({ 0.8f, 0.7f, 0.6f, 0.5f }, { 0.8f, 0.7f, 0.6f, 0.0f });
 
-
   //SEの初期化
   playerAttackToEnemySE_.Initialize("resources/se/player_attack_to_enemy.Mp3");
   playerAttackToWallSE_.Initialize("resources/se/player_attack_to_wall.Mp3");
   enemyAttackToPlayerSE_.Initialize("resources/se/enemy_attack_to_player.Mp3");
   playerDeadSE_.Initialize("resources/se/playerDead.Mp3");
+  enemyDeadSE_.Initialize("resources/se/enemyDead.Mp3");
   cursolSE_.Initialize("resources/se/cursol.Mp3");
   decisionSE_.Initialize("resources/se/decision.Mp3");
   inGameBGM_.Initialize("resources/bgm/inGameBGM.Mp3");
-
+  inGameBGM_.SetVolume(0.3f);
   inGameBGM_.PlayFixed();
 
   // textureの読み込み
@@ -149,10 +155,45 @@ void GameScene::Initialize(IrufemiEngine *engine) {
     state = GameState::Playing; // 2回目以降は通常プレイ
   }
 
+ // =============================
+// GameOver の UI 初期化
+// =============================
+
+  gameOverSprite_.Initialize(camera_.get(),"resources/gameover.png");
+  gameOverSprite_.SetPosition( 640.0f, 220.0f ,0.0f);       // 中央上あたり
+  gameOverSprite_.SetAnchor( 0.5f, 0.5f );
+  
+
+  retrySprite_.Initialize(camera_.get(),"resources/retry.png");
+  retrySprite_.SetPosition( 640.0f, 460.0f,0.0f);           // 1行目
+  retrySprite_.SetAnchor( 0.5f, 0.5f );
+  
+
+  titleSprite_.Initialize(camera_.get(),"resources/Totitle.png");
+  titleSprite_.SetPosition(640.0f, 520.0f,0.0f);           // 2行目
+  titleSprite_.SetAnchor(0.5f, 0.5f );
+  
+  // ベース位置を記録（スタンプ演出用）
+  gameOverBasePos_ = { 640.0f, 220.0f, 0.0f };
+
+  // =============================
+  // GameClear の UI 初期化
+  // =============================
+  gameClearSprite_.Initialize(camera_.get(), "resources/gameclear.png");
+  gameClearSprite_.SetPosition(640.0f, 220.0f, 0.0f); // 好きな位置に
+  gameClearSprite_.SetAnchor(0.5f, 0.5f);
+  gameClearBasePos_ = { 640.0f, 220.0f, 0.0f };
+
   tutorialState_ = TutorialState::Rock;
   tutorialHitEnemy_ = false;
   tutorialDamaged_ = false;
+  tutorialAttackDone_ = false;
+
+  // enemy_->SetIsTutorialRock(true);
 }
+
+  
+
 
 // 更新
 void GameScene::Update() {
@@ -228,14 +269,31 @@ void GameScene::Update() {
     switch (tutorialState_) {
     case TutorialState::Rock: {
 
+      enemy_->SetIsTutorialRock(true);
+
       if (tutorialHitEnemy_) {
+        tutorialState_ = TutorialState::Attack;
+        tutorialRSptite_.Initialize(camera_.get(),
+                                    "resources/tutorial_attack.png");
+        tutorialRSptite_.SetPosition(220.0f, 80.0f);
+        tutorialRSptite_.Update();
+        // enemy_->SetIsTutorialDamage(true);
+      }
+
+      break;
+    }
+
+    case TutorialState::Attack: {
+      if (tutorialAttackDone_) {
         tutorialState_ = TutorialState::Damage;
+
         tutorialRSptite_.Initialize(camera_.get(),
                                     "resources/tutorial_damage.png");
         tutorialRSptite_.SetPosition(40.0f, 80.0f);
         tutorialRSptite_.Update();
-      }
 
+        enemy_->SetIsTutorialDamage(true);
+      }
       break;
     }
 
@@ -244,17 +302,45 @@ void GameScene::Update() {
       enemyWallManager_.Update(deltaTime);
       enemyBulletManager_.Update(deltaTime);
 
+      if (player_->GetRockCount() >= 1) {
+        enemy_->SetIsTutorialRock(false);
+      }
+
       // --- 被弾して岩が減るフェーズ ---
       if (tutorialDamaged_) {
+
+        if (player_->IsKnockback()) {
+          break;
+        }
+
         // チュートリアル終了 → 通常プレイへ
         s_hasPlayedTutorial_ = true;
-        engine_->GetSceneManager()->Request("InGame");
-        state = GameState::Playing;
+
+        if (!fade_.IsFading() && nextSceneName_.empty()) {
+          nextSceneName_ = "InGame"; // 次に行くシーン
+          fade_.StartFadeOut(0.5f);  // 0.5秒フェード
+        }
+
         tutorialRSptite_.SetColor({1.0f, 1.0f, 1.0f, 0.0f});
         tutorialRSptite_.Update();
+        enemy_->SetIsTutorialDamage(false);
+
+        // engine_->GetSceneManager()->Request("InGame");
+        // state = GameState::Playing;
       }
       break;
     }
+    }
+
+    {
+      int currentMul = player_->GetMultiplier();
+      if (currentMul > prevRockMultiplier_) {
+        // プレイヤーの少し上に出す
+        Vector3 pos = player_->GetPosition();
+        pos.y += 2.0f;
+        rockMulti_.Show(currentMul, pos);
+      }
+      prevRockMultiplier_ = currentMul;
     }
 
     break;
@@ -380,6 +466,17 @@ void GameScene::Update() {
 
     if (playerDeadTimer_ >= 3.0f) {
       state = GameState::GameOver;
+      // GAME OVER スタンプ演出開始
+      gameOverStampPlaying_ = true;
+      gameOverStampTimer_ = 0.0f;
+
+      // 最初はちょっと上からスタート
+      float startOffsetY = -200.0f; // 画面上方向に 200px から落とす
+      gameOverSprite_.SetPosition(
+          gameOverBasePos_.x,
+          gameOverBasePos_.y + startOffsetY,
+          gameOverBasePos_.z
+      );
     }
 
     playerDeadTimer_ += deltaTime;
@@ -470,9 +567,20 @@ void GameScene::Update() {
   case GameState::EnemyDead: {
 
     inGameBGM_.Stop();
-
+    
     if (enemyDeadTimer_ >= 3.0f) {
       state = GameState::Clear;
+      enemyDeadSE_.Play();
+      // GAME CLEAR スタンプ演出開始
+      gameClearStampPlaying_ = true;
+      gameClearStampTimer_ = 0.0f;
+
+      float startOffsetY = -200.0f; // 画面上から落とす
+      gameClearSprite_.SetPosition(
+          gameClearBasePos_.x,
+          gameClearBasePos_.y + startOffsetY,
+          gameClearBasePos_.z
+      );
     }
 
     enemyDeadTimer_ += deltaTime;
@@ -555,6 +663,37 @@ void GameScene::Update() {
   }
   case GameState::GameOver: {
 
+     
+      gameOverSprite_.Update();
+      retrySprite_.Update();
+      titleSprite_.Update();
+
+      // GAME OVER スタンプ演出の更新
+      if (gameOverStampPlaying_) {
+
+          gameOverStampTimer_ += deltaTime;
+          float t = gameOverStampTimer_ / gameOverStampDuration_;
+          if (t >= 1.0f) {
+              t = 1.0f;
+              gameOverStampPlaying_ = false;
+          }
+
+          // 「上から落ちてきて ちょっとバウンド」っぽいイージング（easeOutBack）
+          float s = 2.5f;   // バウンドの強さを上げる
+          float u = t * t;  // ← 立ち上がりを遅くする（ゆっくり動き出す）
+
+          float te = u - 1.0f;
+          float ease = te * te * ((s + 1.0f) * te + s) + 1.0f;
+
+          float startOffsetY = -200.0f; // 初期オフセット（Initialize 時に合わせる）
+          float y = gameOverBasePos_.y + startOffsetY * (1.0f - ease);
+
+          gameOverSprite_.SetPosition(
+              gameOverBasePos_.x,
+              y,
+              gameOverBasePos_.z
+          );
+      }
 #ifdef _DEBUG
 
     ImGui::Text("result :%d", resultIndex_);
@@ -577,18 +716,23 @@ void GameScene::Update() {
     if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
         engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
 
-		
-		
-		
       if (resultIndex_ == 0) {
-          decisionSE_.Play();
+        decisionSE_.Play();
         // 0 = Retry
         engine_->GetSceneManager()->Request("InGame");
       } else if (resultIndex_ == 1) {
-          decisionSE_.Play();
+        decisionSE_.Play();
         // 1 = Title
         engine_->GetSceneManager()->Request("Title");
       }
+    }
+
+    //ここから追加：選択中の項目を点滅させるためのタイマー更新
+    gameOverBlinkTimer_ += deltaTime;
+    // 0.25秒ごとに ON / OFF
+    if (gameOverBlinkTimer_ >= 0.5f) {
+        gameOverBlinkTimer_ = 0.0f;
+        gameOverBlinkOn_ = !gameOverBlinkOn_;
     }
 
     break;
@@ -597,6 +741,42 @@ void GameScene::Update() {
     if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
         engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
       // engine_->GetSceneManager()->Request("Title");
+    }
+
+	gameClearSprite_.Update();  
+	titleSprite_.Update();
+
+    //Title 選択肢点滅用タイマー（GameOver と共通）
+    gameOverBlinkTimer_ += deltaTime;
+    if (gameOverBlinkTimer_ >= 0.5f) {   // 0.25秒ごとに ON/OFF
+        gameOverBlinkTimer_ = 0.0f;
+        gameOverBlinkOn_ = !gameOverBlinkOn_;
+    }
+
+    // GAME CLEAR スタンプ演出更新
+    if (gameClearStampPlaying_) {
+
+        gameClearStampTimer_ += deltaTime;
+        float t = gameClearStampTimer_ / gameClearStampDuration_;
+        if (t >= 1.0f) {
+            t = 1.0f;
+            gameClearStampPlaying_ = false;
+        }
+
+        // ゆっくり始まりつつ、ドンッと押される easeOutBack 系
+        float s = 2.3f;      // バウンドの強さ
+        float u = t * t;     // 立ち上がりを遅くする
+        float te = u - 1.0f;
+        float ease = te * te * ((s + 1.0f) * te + s) + 1.0f;
+
+        float startOffsetY = -200.0f;
+        float y = gameClearBasePos_.y + startOffsetY * (1.0f - ease);
+
+        gameClearSprite_.SetPosition(
+            gameClearBasePos_.x,
+            y,
+            gameClearBasePos_.z
+        );
     }
 
     // fade_.Update(deltaTime);
@@ -625,6 +805,11 @@ void GameScene::Update() {
   }
   }
 
+  // 敵 HP ゲージ更新（敵がいないステートでも問題ないように中でチェックしている）
+  if (enemyHpGauge_) {
+      enemyHpGauge_->Update(deltaTime);
+  }
+
   rockMulti_.Update(deltaTime);
 
   // rockMulti_.Show(prevRockMultiplier_,player_->GetPosition());
@@ -632,8 +817,8 @@ void GameScene::Update() {
   fade_.Update(deltaTime);
 
   if (!fade_.IsFading() && !nextSceneName_.empty()) {
-    engine_->GetSceneManager()->Request(nextSceneName_.c_str());
-    nextSceneName_.clear();
+      engine_->GetSceneManager()->Request(nextSceneName_.c_str());
+      nextSceneName_.clear();
   }
 }
 
@@ -699,13 +884,68 @@ void GameScene::Draw() {
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplySpritePSO();
 
+  // 敵 HP ゲージ
+  if (enemyHpGauge_) {
+      enemyHpGauge_->Draw();
+  }
+
   if (state == GameState::Tutorial) {
-    tutorialRSptite_.Draw();
+      tutorialRSptite_.Draw();
   }
 
   rockMulti_.Draw();
 
   fade_.Draw();
+
+  // =============================
+  // GameOver UI の描画
+  // =============================
+  if (state == GameState::GameOver) {
+
+      // 通常色（白）
+      Vector4 normalColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+      // 点滅時の色（明るい黄色と暗めの黄色）
+      Vector4 selectedOnColor{ 1.0f, 1.0f, 0.0f, 1.0f };  // 光ってる状態
+      Vector4 selectedOffColor{ 0.4f, 0.4f, 0.0f, 1.0f };  // ちょっと暗く
+
+      // いったん全体を通常色にリセット
+      retrySprite_.SetColor(normalColor);
+      titleSprite_.SetColor(normalColor);
+
+      // 今の点滅状態に応じた色
+      Vector4 blinkColor = gameOverBlinkOn_ ? selectedOnColor : selectedOffColor;
+
+      // 選択中の方だけ点滅色にする
+      if (resultIndex_ == 0) {
+          // Retry 選択中
+          retrySprite_.SetColor(blinkColor);
+      }
+      else {
+          // Title 選択中
+          titleSprite_.SetColor(blinkColor);
+      }
+
+      gameOverSprite_.Draw();
+      retrySprite_.Draw();
+      titleSprite_.Draw();
+  }
+
+  // =============================
+  // GameClear UI の描画
+  // =============================
+  if (state == GameState::Clear) {
+
+      // Title 選択肢を点滅させる
+      Vector4 onColor{ 1.0f, 1.0f, 0.0f, 1.0f }; // 光ってる黄色
+      Vector4 offColor{ 0.4f, 0.4f, 0.0f, 1.0f }; // 暗め黄色
+
+      Vector4 blinkColor = gameOverBlinkOn_ ? onColor : offColor;
+
+      titleSprite_.SetColor(blinkColor);
+      titleSprite_.Draw();
+  }
+
 }
 
 void GameScene::DoCollision() {
@@ -957,24 +1197,28 @@ void GameScene::DoCollision() {
 
           // 岩0で当たると死亡
           if (player_->GetRockCount() <= 0) {
-            player_->Dead();
-            enemyAttackToPlayerSE_.Play();
-            if (state == GameState::Playing) {
-              state = GameState::PlayerDead;
-              playerDeadTimer_ = 0.0f;
 
-              // カメラ寄せの開始情報を記録
-              deadCamStartPos_ = camera_->GetTranslate();
-              deadCamStartFov_ = camera_->GetFovY();
+            if (state != GameState::Tutorial) {
+              player_->Dead();
 
-              // Vector3 p = player_->GetPosition();
+              enemyAttackToPlayerSE_.Play();
+              if (state == GameState::Playing) {
+                state = GameState::PlayerDead;
+                playerDeadTimer_ = 0.0f;
 
-              ////
-              /// プレイヤーを少し上から・手前から見る位置を目標にする（値はあとで調整）
-              // playerDeadCamTargetPos_ = {p.x, p.y + 3.0f, p.z - 8.0f};
+                // カメラ寄せの開始情報を記録
+                deadCamStartPos_ = camera_->GetTranslate();
+                deadCamStartFov_ = camera_->GetFovY();
 
-              // FOV は少しだけ狭めて寄ってる感じに
-              deadCamTargetFov_ = deadCamStartFov_ * 0.8f;
+                // Vector3 p = player_->GetPosition();
+
+                ////
+                /// プレイヤーを少し上から・手前から見る位置を目標にする（値はあとで調整）
+                // playerDeadCamTargetPos_ = {p.x, p.y + 3.0f, p.z - 8.0f};
+
+                // FOV は少しだけ狭めて寄ってる感じに
+                deadCamTargetFov_ = deadCamStartFov_ * 0.8f;
+              }
             }
           }
 
@@ -985,9 +1229,16 @@ void GameScene::DoCollision() {
             enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
             explosion_->PlayExplosion(pPos);
 
-            if (state == GameState::Tutorial &&
-                tutorialState_ == TutorialState::Rock) {
-              tutorialHitEnemy_ = true;
+            if (state == GameState::Tutorial) {
+              if (tutorialState_ == TutorialState::Rock) {
+                if (player_->GetRockCount() >= 1) {
+                  tutorialHitEnemy_ = true;
+                }
+              } else if (tutorialState_ == TutorialState::Attack) {
+                if (player_->GetRockCount() >= 3) {
+                  tutorialAttackDone_ = true;
+                }
+              }
             }
 
             // スタン開始

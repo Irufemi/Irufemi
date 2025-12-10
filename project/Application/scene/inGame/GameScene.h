@@ -21,13 +21,14 @@
 #include "actor/enemy/EnemyWall.h"
 #include "actor/player/Player.h"
 #include "actor/rock/RockManager.h"
-#include "audio/Se.h"
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "effect/Fade.h"
 #include "stage/field/field.h"
 #include "stage/skyDome/SkyDome.h"
 #include "ui/RockMulti.h"
+#include "ui/EnemyHpGauge.h"
+
 
 // 前方宣言
 class IrufemiEngine;
@@ -88,12 +89,11 @@ private: // 変数(ゲーム)
 
   // パーティクル(HitEffect)
   std::unique_ptr<ParticleSystem> hitEffects_ = nullptr;
-  //パーティクル(Explosion)
+  // パーティクル(Explosion)
   std::unique_ptr<ParticleSystem> explosion_ = nullptr;
   // パーティクル(Dust)
   std::unique_ptr<ParticleSystem> dust_ = nullptr;
 
-  
   //----------SE-------------
   Se playerAttackToEnemySE_;
   Se playerAttackToWallSE_;
@@ -101,7 +101,11 @@ private: // 変数(ゲーム)
   Se playerDeadSE_;
   Se cursolSE_;
   Se decisionSE_;
+  Se enemyDeadSE_;
   Bgm inGameBGM_;
+
+  //-----UI-----
+  std::unique_ptr<EnemyHpGauge> enemyHpGauge_;
 
 private: // メンバ変数(システム)
   // カメラ
@@ -176,6 +180,29 @@ private:
   float worldFade_ = 0.0f;      // 0.0＝通常、1.0＝真っ暗
   float worldFadeSpeed_ = 1.0f; // 1秒で暗くなる値
 
+  // --- GameOver UI ---
+  Sprite gameOverSprite_;
+  Sprite retrySprite_;
+  Sprite titleSprite_;
+
+  // GAME OVER スタンプ演出用
+  bool  gameOverStampPlaying_ = false;
+  float gameOverStampTimer_ = 0.0f;
+  float gameOverStampDuration_ = 0.8f;   // 落ちてくる時間（秒）
+  Vector3 gameOverBasePos_{ 640.0f, 220.0f, 0.0f };
+
+  // --- GameClear UI ---
+  Sprite gameClearSprite_;
+
+  // GAME CLEAR スタンプ演出用
+  bool  gameClearStampPlaying_ = false;
+  float gameClearStampTimer_ = 0.0f;
+  float gameClearStampDuration_ = 0.8f;   // 同じくらいの速度
+  Vector3 gameClearBasePos_{ 640.0f, 220.0f, 0.0f };
+  // GameOver 選択肢の点滅用
+  float gameOverBlinkTimer_ = 0.0f;
+  bool  gameOverBlinkOn_ = true;
+
 public:
   Vector4 GetWorldDarkColor() const {
     float k = 1.0f - worldFade_;
@@ -191,6 +218,7 @@ private:
   Sprite tutorialRSptite_;
   bool tutorialHitEnemy_ = false; // 敵に当てたか
   bool tutorialDamaged_ = false;  // ダメージを受けたか
+  bool tutorialAttackDone_ = false;
 
 public:
   static bool s_hasPlayedTutorial_;
