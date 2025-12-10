@@ -22,8 +22,10 @@
 #include "actor/player/Player.h"
 #include "actor/rock/RockManager.h"
 #include "audio/Bgm.h"
+#include"audio/Se.h"
 #include "stage/field/field.h"
 #include "stage/skyDome/SkyDome.h"
+
 
 // 前方宣言
 class IrufemiEngine;
@@ -32,6 +34,7 @@ class InputManager;
 
 class Camera;
 class DebugCamera;
+class Se;
 
 enum class GameState {
   Playing,
@@ -73,6 +76,15 @@ private: // 変数(ゲーム)
 
   //フィールドフェード開始フラグ
   bool fieldFadeStarted_ = false;
+
+  //----------SE-------------
+  Se playerAttackToEnemySE_;
+  Se playerAttackToWallSE_;
+  Se enemyAttackToPlayerSE_;
+  Se playerDeadSE_;
+  Se cursolSE_;
+  Se decisionSE_;
+  Bgm inGameBGM_;
 
 private: // メンバ変数(システム)
   // カメラ

@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Rock.h"
+#include"audio/Se.h"
 
 class IrufemiEngine;
 class Camera;
@@ -71,6 +72,9 @@ private:
 
   // フィールドへのポインタ
   Field *field_ = nullptr;
+
+  //SEの初期化
+  Se rockAttachedSE_;
 
   /// <summary>
   /// 岩自身の更新処理

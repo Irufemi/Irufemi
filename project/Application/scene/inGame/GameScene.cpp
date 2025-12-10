@@ -88,6 +88,17 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   skyDome_ = std::make_unique<SkyDome>();
   skyDome_->Initialize(camera_.get(), 50.0f, "resources/texture/night_sky_stars.png");
   skyDome_->SetFollowCamera(true);
+
+  //SEの初期化
+  playerAttackToEnemySE_.Initialize("resources/se/player_attack_to_enemy.Mp3");
+  playerAttackToWallSE_.Initialize("resources/se/player_attack_to_wall.Mp3");
+  enemyAttackToPlayerSE_.Initialize("resources/se/enemy_attack_to_player.Mp3");
+  playerDeadSE_.Initialize("resources/se/playerDead.Mp3");
+  cursolSE_.Initialize("resources/se/cursol.Mp3");
+  decisionSE_.Initialize("resources/se/decision.Mp3");
+  inGameBGM_.Initialize("resources/bgm/inGameBGM.Mp3"); 
+ 
+  inGameBGM_.PlayFixed();
 }
 
 // 更新
@@ -210,6 +221,8 @@ void GameScene::Update() {
 
   case GameState::PlayerDead: {
 
+	  inGameBGM_.Stop();
+
     if (playerDeadTimer_ >= 3.0f) {
       state = GameState::GameOver;
     }
@@ -239,6 +252,8 @@ void GameScene::Update() {
     if (worldFade_ > 1.0f) {
       worldFade_ = 1.0f;
     }
+
+	playerDeadSE_.Play();
 
     field_.StartFadeToBlack(1.4f);  // 1秒フェード
     fieldFadeStarted_ = true;
@@ -298,6 +313,8 @@ void GameScene::Update() {
     break;
   }
   case GameState::EnemyDead: {
+
+	  inGameBGM_.Stop();
 
     if (enemyDeadTimer_ >= 5.0f) {
       state = GameState::Clear;
@@ -504,10 +521,15 @@ void GameScene::DoCollision() {
 
       if (!player_->IsInvincible()) {
 
+          if (player_->GetRockCount() >= 1)
+          {
+              playerAttackToEnemySE_.Play();
+          }
+
         // 岩0で当たると死亡
         if (player_->GetRockCount() <= 0) {
           player_->Dead();
-
+		  enemyAttackToPlayerSE_.Play();
           if (state == GameState::Playing) {
             state = GameState::PlayerDead;
             playerDeadTimer_ = 0.0f;
@@ -565,9 +587,15 @@ void GameScene::DoCollision() {
 
       if (!player_->IsInvincible()) {
 
+          if (player_->GetRockCount() >= 1)
+          {
+              playerAttackToEnemySE_.Play();
+          }
+          
         // 岩0で当たると死亡
         if (player_->GetRockCount() <= 0) {
           player_->Dead();
+          enemyAttackToPlayerSE_.Play();
           if (state == GameState::Playing) {
             state = GameState::PlayerDead;
             playerDeadTimer_ = 0.0f;
@@ -631,12 +659,19 @@ void GameScene::DoCollision() {
 
       if (GameFunction::IsHitCircleRect(pPos, hitPlayerRadius, ePos,
                                         eRadius * 2.0f, eRadius * 2.0f)) {
+         
 
         if (!player_->IsInvincible()) {
+
+            if (player_->GetRockCount()>=1)
+            {
+                playerAttackToEnemySE_.Play();
+            }
 
           // 岩0で当たると死亡
           if (player_->GetRockCount() <= 0) {
             player_->Dead();
+			enemyAttackToPlayerSE_.Play();
             if (state == GameState::Playing) {
               state = GameState::PlayerDead;
               playerDeadTimer_ = 0.0f;

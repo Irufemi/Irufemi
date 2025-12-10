@@ -86,6 +86,11 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
     model_->SetPosition(transform_.translate);
     model_->Update();
   }
+
+  //SEの初期化
+  enemyBulletSE_.Initialize("resources/se/enemy_bullet.Mp3");
+  enemyWallSE_.Initialize("resources/se/enemy_wall.Mp3");
+  enemyDashSE_.Initialize("resources/se/enemy_dash.Mp3");
 }
 
 void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
@@ -285,9 +290,14 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
       if (enemyWall_) {
         // フェーズで壁パターンを切り替える
         if (phase_ == EnemyPhase::Phase2) {
+
+            enemyWallSE_.Play();
           // フェーズ2：3×1 のライン状の壁を生成
           enemyWall_->SpawnWallLine3x1(transform_.translate, playerPos);
         } else {
+
+			enemyWallSE_.Play();
+
           // フェーズ1：従来どおりランダム配置
           enemyWall_->SpawnWalls(transform_.translate, playerPos);
         }
@@ -348,10 +358,12 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
               playerPos,              // 狙い先
               3,                      // 発射数
               bulletSpreadAngleRad_); // 左右の開き角
+          enemyBulletSE_.Play();
         } else {
           // フェーズ1：1発だけ
           enemyBullet_->SpawnBulletAimed(bulletOrigin, // Y=0 から出す
                                          playerPos);
+		  enemyBulletSE_.Play();    
         }
       }
 
@@ -449,6 +461,8 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
   case EnemyState::DashForward: {
     // 高速突進中
     float move = dashSpeed_ * deltaTime;
+
+	enemyDashSE_.Play();
 
     transform_.translate.x += dashDirection_.x * move;
     transform_.translate.z += dashDirection_.z * move;

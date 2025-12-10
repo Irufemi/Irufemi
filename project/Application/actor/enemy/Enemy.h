@@ -3,6 +3,7 @@
 #include "EnemyBullet.h"
 #include "EnemyWall.h"
 #include "camera/Camera.h"
+#include"audio/Se.h"
 
 class Player;
 
@@ -210,6 +211,10 @@ private:
   // フェーズ2突入処理
   void EnterPhase2();
 
+  //SEの初期化
+  Se enemyBulletSE_;
+  Se enemyWallSE_;
+  Se enemyDashSE_;
 public:
   /// <summary>
   /// 潜っているかどうか
