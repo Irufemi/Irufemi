@@ -42,11 +42,27 @@ void EnemyWallManager::Initialize(Camera *camera, const Vector3 &stageCenter,
   models_.clear();
   warningModels_.clear();
 
-  // 最大個数分の容量を事前確保しておく
-  walls_.reserve(maxWallCount_);
-  models_.reserve(maxWallCount_);
-  warningModels_.reserve(maxWallCount_);
+  // 最大個数分のスロットをあらかじめ用意しておく
+  walls_.resize(maxWallCount_);
+  models_.resize(maxWallCount_);
+  warningModels_.resize(maxWallCount_);
+
+  // 各スロットごとにモデルを読み込んでおく
+  for (int i = 0; i < maxWallCount_; ++i) {
+    // 壁情報は未使用状態にリセット
+    walls_[i] = EnemyWall{};
+    walls_[i].active = false;
+
+    // 壁本体モデル
+    models_[i] = std::make_unique<ObjClass>();
+    models_[i]->Initialize(camera_, "wall.obj");
+
+    // 予告用（影）のモデル
+    warningModels_[i] = std::make_unique<ObjClass>();
+    warningModels_[i]->Initialize(camera_, "warning.obj");
+  }
 }
+
 
 void EnemyWallManager::Update(float deltaTime) {
   // すべての壁の寿命を更新し、寿命が尽きたら無効化する
@@ -254,26 +270,11 @@ void EnemyWallManager::SpawnWalls(const Vector3 &enemyPos,
         }
       }
 
-      // 空きが無ければ新しいスロットを作る
+      // 空きが無ければ何も生成しない（スロットは初期化時に作成済み）
       if (freeIndex == -1) {
-        if (static_cast<int>(walls_.size()) >= maxWallCount_) {
-          // これ以上増やせないので諦める
-          spawned = false;
-          break;
-        }
-
-        // 壁情報スロット追加
-        walls_.emplace_back();
-
-        // 壁本体モデル追加
-        models_.emplace_back(std::make_unique<ObjClass>());
-        models_.back()->Initialize(camera_, "wall.obj"); // 壁モデル
-
-        // 予測用マーカー（赤い円など）のモデル追加
-        warningModels_.emplace_back(std::make_unique<ObjClass>());
-        warningModels_.back()->Initialize(camera_, "warning.obj");
-
-        freeIndex = static_cast<int>(walls_.size()) - 1;
+        // すでに maxWallCount_ 個すべて使用中
+        spawned = false;
+        break;
       }
 
       // 壁情報を設定してアクティブ化
@@ -359,26 +360,11 @@ void EnemyWallManager::SpawnWallLine3x1(const Vector3 &enemyPos,
         }
       }
 
-      // 空きが無ければ新しいスロットを作る
+      // 空きが無ければ何も生成しない（スロットは初期化時に作成済み）
       if (freeIndex == -1) {
-        if (static_cast<int>(walls_.size()) >= maxWallCount_) {
-          // もう増やせない
-          spawned = false;
-          break;
-        }
-
-        // 壁情報スロット追加
-        walls_.emplace_back();
-
-        // 壁本体モデル追加
-        models_.emplace_back(std::make_unique<ObjClass>());
-        models_.back()->Initialize(camera_, "wall.obj");
-
-        // 予測用マーカー（影）のモデル追加
-        warningModels_.emplace_back(std::make_unique<ObjClass>());
-        warningModels_.back()->Initialize(camera_, "warning.obj");
-
-        freeIndex = static_cast<int>(walls_.size()) - 1;
+        // すでに maxWallCount_ 個すべて使用中
+        spawned = false;
+        break;
       }
 
       // 壁情報を設定してアクティブ化

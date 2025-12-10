@@ -3,6 +3,7 @@
 #include "EnemyBullet.h"
 #include "EnemyWall.h"
 #include "camera/Camera.h"
+#include"audio/Se.h"
 
 class Player;
 
@@ -233,11 +234,11 @@ private:
     float dash = 0.0f;
   };
 
-  // 近距離: dist < 4.0f
+  // 近距離: dist < 6.0f
   ActionWeightSet weightsNear_{10.0f, 10.0f, 30.0f, 50.0f};
-  // 中距離: 4.0f <= dist < 8.0f（素の確率）
+  // 中距離: 6.0f <= dist < 12.0f（素の確率）
   ActionWeightSet weightsMid_{40.0f, 20.0f, 10.0f, 30.0f};
-  // 遠距離: dist >= 8.0f
+  // 遠距離: dist >= 12.0f
   ActionWeightSet weightsFar_{60.0f, 20.0f, 10.0f, 10.0f};
 
   //----- やられ中パラメーター -----
@@ -247,12 +248,20 @@ private:
   Vector4 normalColor_{1.0f, 1.0f, 1.0f, 1.0f};
   Vector4 stanColor_{5.0f, 5.0f, 5.0f, 1.0f};
 
-  // 敵死亡演出用
+    // 敵死亡演出用
   bool deathStarted_ = false;        // 死亡演出が始まったか
   float deathTimer_ = 0.0f;          // 死亡演出の経過時間
   float deathDuration_ = 1.5f;       // 完全に小さくなるまでの時間（秒）
   float deathRotateSpeedY_ = 360.0f; // 1秒あたりのY回転量（度）
   Vector3 deathStartScale_{1.0f, 1.0f, 1.0f}; // 演出開始時のスケール
+
+    // ------- フェーズ2移行演出用 -------
+  bool phase2TransitionActive_ = false;   // フェーズ2演出中か
+  float phase2TransitionTimer_ = 0.0f;    // 経過時間（秒）
+  float phase2TransitionDuration_ = 3.0f; // 演出時間（秒）
+  // 吠えるときの「少し上を向く」角度（ラジアン）
+  float phase2RoarAngleRad_ =
+      -20.0f * 3.141592654f / 180.0f; // 上方向に20度くらい
 
   void ResetActionTimer();
   Vector3 GetRandomReappearPosition(const Vector3 &playerPos) const;
@@ -267,6 +276,10 @@ private:
   // 敵位置 origin から、target（プレイヤー）方向を向かせる
   void DirectionFacing(const Vector3 &origin,const Vector3 &target);
 
+  //SEの初期化
+  Se enemyBulletSE_;
+  Se enemyWallSE_;
+  Se enemyDashSE_;
 public:
   /// <summary>
   /// 潜っているかどうか

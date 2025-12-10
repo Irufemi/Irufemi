@@ -67,6 +67,7 @@ void RockManager::Initialize(Camera *camera) {
 
   // モデルを読み込む
   rockRegion_->Initialize(camera, "rock.obj");
+  rockAttachedSE_.Initialize("resources/se/rock_attached.Mp3");
 }
 
 void RockManager::AddRock(const Vector3 &pos, float radius) {
@@ -132,7 +133,8 @@ void RockManager::Update(Player *player) {
     // 球 vs 球の当たり判定
     if (GameFunction::IsHitSphere(pPos, pRadius, rock.position_,
                                   rock.radius_)) {
-
+      //SEの再生
+      rockAttachedSE_.Play();
       // 岩をプレイヤーにくっついた状態にする
       rock.isAttached_ = true;
 

@@ -80,10 +80,14 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
   bulletChargeBaseScale_ = transform_.scale;
   bulletChargeBaseHeight_ = transform_.translate.y;
 
-  // 死亡演出フラグ初期化
+    // 死亡演出フラグ初期化
   deathStarted_ = false;
   deathTimer_ = 0.0f;
   deathStartScale_ = transform_.scale;
+
+  // フェーズ2移行演出の初期化
+  phase2TransitionActive_ = false;
+  phase2TransitionTimer_ = 0.0f;
 
   ResetActionTimer();
 
@@ -93,6 +97,11 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
     model_->SetRotate(transform_.rotate);
     model_->Update();
   }
+
+  //SEの初期化
+  enemyBulletSE_.Initialize("resources/se/enemy_bullet.Mp3");
+  enemyWallSE_.Initialize("resources/se/enemy_wall.Mp3");
+  enemyDashSE_.Initialize("resources/se/enemy_dash.Mp3");
 }
 
 void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
@@ -105,6 +114,27 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
       isStan_ = false;
       stanTimer_ = 0;
     }
+  }
+
+  // フェーズ2移行中の見た目演出（首を上に向ける）
+  if (phase2TransitionActive_) {
+    phase2TransitionTimer_ += deltaTime;
+
+    float t = (phase2TransitionDuration_ > 0.0f)
+                  ? (phase2TransitionTimer_ / phase2TransitionDuration_)
+                  : 1.0f;
+
+    if (t >= 1.0f) {
+      t = 1.0f;
+      phase2TransitionActive_ = false;
+    }
+
+    // 0→1→0 のカーブで「ぐいっ」と上を向いて元に戻る
+    float s = std::sin(t * 3.141592654f);
+    transform_.rotate.x = phase2RoarAngleRad_ * s;
+  } else {
+    // 通常時は首角度をリセット
+    transform_.rotate.x = 0.0f;
   }
 
   // フェーズ2でHP0以下になったら死亡演出状態に入る
@@ -175,10 +205,10 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
       float dist = DistanceXZ(transform_.translate, playerPos);
 
       ActionWeightSet weights{};
-      if (dist < 4.0f) {
+      if (dist < 6.0f) {
         // 近距離
         weights = weightsNear_;
-      } else if (dist >= 8.0f) {
+      } else if (dist >= 12.0f) {
         // 遠距離
         weights = weightsFar_;
       } else {
@@ -328,9 +358,14 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
       if (enemyWall_) {
         // フェーズで壁パターンを切り替える
         if (phase_ == EnemyPhase::Phase2) {
+
+            enemyWallSE_.Play();
           // フェーズ2：3×1 のライン状の壁を生成
           enemyWall_->SpawnWallLine3x1(transform_.translate, playerPos);
         } else {
+
+			enemyWallSE_.Play();
+
           // フェーズ1：従来どおりランダム配置
           enemyWall_->SpawnWalls(transform_.translate, playerPos);
         }
@@ -391,10 +426,12 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
               playerPos,              // 狙い先
               3,                      // 発射数
               bulletSpreadAngleRad_); // 左右の開き角
+          enemyBulletSE_.Play();
         } else {
           // フェーズ1：1発だけ
           enemyBullet_->SpawnBulletAimed(bulletOrigin, // Y=0 から出す
                                          playerPos);
+		  enemyBulletSE_.Play();    
         }
       }
 
@@ -492,6 +529,8 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
   case EnemyState::DashForward: {
     // 高速突進中
     float move = dashSpeed_ * deltaTime;
+
+	enemyDashSE_.Play();
 
     transform_.translate.x += dashDirection_.x * move;
     transform_.translate.z += dashDirection_.z * move;
@@ -655,21 +694,21 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
   ImGui::Separator();
   ImGui::Text("Action Weights (Near / Mid / Far)");
 
-  ImGui::Text("Near (dist < 4.0)");
+  ImGui::Text("Near (dist < 6.0)");
   ImGui::DragFloat("N_Bullet", &weightsNear_.bullet, 1.0f, 0.0f, 100.0f);
   ImGui::DragFloat("N_Wall", &weightsNear_.wall, 1.0f, 0.0f, 100.0f);
   ImGui::DragFloat("N_Burrow", &weightsNear_.burrow, 1.0f, 0.0f, 100.0f);
   ImGui::DragFloat("N_Dash", &weightsNear_.dash, 1.0f, 0.0f, 100.0f);
 
   ImGui::Separator();
-  ImGui::Text("Mid (4.0 <= dist < 8.0)");
+  ImGui::Text("Mid (6.0 <= dist < 12.0)");
   ImGui::DragFloat("M_Bullet", &weightsMid_.bullet, 1.0f, 0.0f, 100.0f);
   ImGui::DragFloat("M_Wall", &weightsMid_.wall, 1.0f, 0.0f, 100.0f);
   ImGui::DragFloat("M_Burrow", &weightsMid_.burrow, 1.0f, 0.0f, 100.0f);
   ImGui::DragFloat("M_Dash", &weightsMid_.dash, 1.0f, 0.0f, 100.0f);
 
   ImGui::Separator();
-  ImGui::Text("Far (dist >= 8.0)");
+  ImGui::Text("Far (dist >= 12.0)");
   ImGui::DragFloat("F_Bullet", &weightsFar_.bullet, 1.0f, 0.0f, 100.0f);
   ImGui::DragFloat("F_Wall", &weightsFar_.wall, 1.0f, 0.0f, 100.0f);
   ImGui::DragFloat("F_Burrow", &weightsFar_.burrow, 1.0f, 0.0f, 100.0f);
@@ -688,6 +727,40 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
 
 void Enemy::Draw() {
 
+  // ----- フェーズ2用の赤みを計算 -----
+  // フェーズ1のベース色（純白）
+  Vector4 baseColor{1.0f, 1.0f, 1.0f, 1.0f};
+  // フェーズ2で最終的に目指す少し赤い色
+  Vector4 phase2Color{1.2f, 0.4f, 0.4f, 1.0f};
+
+  float colorT = 0.0f;
+
+  if (phase_ == EnemyPhase::Phase2) {
+    // フェーズ2に入ってから phase2TransitionDuration_ 秒かけて赤くする
+    if (phase2TransitionDuration_ > 0.0f) {
+      colorT = phase2TransitionTimer_ / phase2TransitionDuration_;
+    } else {
+      colorT = 1.0f;
+    }
+
+    if (colorT < 0.0f) {
+      colorT = 0.0f;
+    }
+    if (colorT > 1.0f) {
+      colorT = 1.0f;
+    }
+  }
+
+  Vector4 currentColor{};
+  currentColor.x = baseColor.x + (phase2Color.x - baseColor.x) * colorT;
+  currentColor.y = baseColor.y + (phase2Color.y - baseColor.y) * colorT;
+  currentColor.z = baseColor.z + (phase2Color.z - baseColor.z) * colorT;
+  currentColor.w = baseColor.w + (phase2Color.w - baseColor.w) * colorT;
+
+  // 今フレームの「通常色」として保存しておく（スタン点滅で使う）
+  normalColor_ = currentColor;
+
+  // ----- 点滅スタン処理 -----
   if (isStan_) {
     bool flashOn = ((stanTimer_ / 2) % 2) == 0;
 
@@ -820,10 +893,28 @@ void Enemy::ApplyDamageFromPlayer(int damage) {
 void Enemy::EnterPhase2() {
   phase_ = EnemyPhase::Phase2;
 
+  // フェーズ2移行演出開始
+  phase2TransitionActive_ = true;
+  phase2TransitionTimer_ = 0.0f;
+
+  // カメラ演出（シェイク＆ズーム）
+  if (camera_) {
+    // シェイクをかなり強め・長めにする
+    // 第1引数: フレーム数, 第2引数: 揺れの大きさ（ワールド座標）
+    camera_->StartShake(60, 30.0f);
+
+    // FOV をグッと狭めて「寄った」感じを出す
+    // 第1引数: フレーム数, 第2引数: FOV の倍率（0.4 でかなり寄る）
+    camera_->StartZoom(120, 0.4f);
+  }
+
+  // TODO: 咆哮SEを鳴らす場合はここでサウンド再生処理を呼ぶ
+  // 例）SoundManager::PlaySE("enemy_roar.wav");
+
   // HP を全回復
   hp_ = maxHp_;
 
-  // 行動間隔を 2〜4秒 → 1〜2秒へ
+  // 行動間隔を 2〜4秒 → 1〜2秒へ（※2回目以降）
   actionIntervalMin_ = 1.0f;
   actionIntervalMax_ = 2.0f;
 
@@ -844,8 +935,9 @@ void Enemy::EnterPhase2() {
   deathTimer_ = 0.0f;
   deathStartScale_ = transform_.scale;
 
-  // 次の行動までの時間を再設定
-  ResetActionTimer();
+  // 最初の1回だけは長めに待ってから攻撃開始させる
+  //   （フェーズ移行演出を見せるため）
+  actionTimer_ = 3.0f;
 }
 
 // --------------------------------------
