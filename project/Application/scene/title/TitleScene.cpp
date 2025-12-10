@@ -31,6 +31,9 @@ void TitleScene::Initialize(IrufemiEngine *engine) {
   spotLight_->Initialize();
   spotLight_->SetIntensity(0.0f);
   engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
+
+  fade_.Initialize(engine_, camera_.get());
+  fade_.StartFadeIn(0.5f);
 }
 
 // 更新
@@ -45,10 +48,21 @@ void TitleScene::Update() {
     camera_->Update("Camera", {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f});
   }
 
-  if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
-      engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+  if (!fade_.IsFading()) {
+    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
+        engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
 
-    engine_->GetSceneManager()->Request("InGame");
+      // 次に行くシーン名をセットして、フェードアウト開始
+      nextSceneName_ = "InGame";
+      fade_.StartFadeOut(0.5f);
+    }
+  }
+
+  fade_.Update(1.0f / 60.0f);
+
+  if (!fade_.IsFading() && !nextSceneName_.empty()) {
+    engine_->GetSceneManager()->Request(nextSceneName_.c_str());
+    nextSceneName_.clear();
   }
 }
 
@@ -64,4 +78,6 @@ void TitleScene::Draw() {
   engine_->SetBlend(BlendMode::kBlendModeNormal);
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplySpritePSO();
+
+  fade_.Draw();
 }

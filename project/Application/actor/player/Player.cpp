@@ -314,6 +314,8 @@ void Player::ReCalcStatusFromRock() {
 
   int sizeMul = static_cast<int>(1.0f + (rockCount_ / rocksPerLevel_ * 0.5f));
 
+  currentMultiplier_ = static_cast<int>(1.0f + (rockCount_ / rocksPerLevel_));
+
   // ダメージ
   //  岩の数　x　倍率
   attackPower_ = rockCount_ * damageMul;

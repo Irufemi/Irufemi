@@ -42,7 +42,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
   playerObj_ = std::make_unique<SphereClass>();
-  playerObj_->Initialize(camera_.get(),"resources/texture/playerFace.png");
+  playerObj_->Initialize(camera_.get(), "resources/texture/playerFace.png");
 
   player_ = std::make_unique<Player>();
   player_->Initialize(camera_.get(), playerObj_.get(),
@@ -88,7 +88,8 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   rockManager_->SetField(&field_);
 
   skyDome_ = std::make_unique<SkyDome>();
-  skyDome_->Initialize(camera_.get(), 50.0f, "resources/texture/night_sky_stars.png");
+  skyDome_->Initialize(camera_.get(), 50.0f,
+                       "resources/texture/night_sky_stars.png");
   skyDome_->SetFollowCamera(true);
 
   // フェード
@@ -110,6 +111,10 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   inGameBGM_.Initialize("resources/bgm/inGameBGM.Mp3"); 
  
   inGameBGM_.PlayFixed();
+
+  rockMulti_.Initialize(engine_, camera_.get());
+
+  prevRockMultiplier_ = player_->GetMultiplier();
 }
 
 // 更新
@@ -151,10 +156,10 @@ void GameScene::Update() {
       camera_->Update("Camera", player_->GetPosition(), enemy_->GetPosition());
     }
 
-    if (engine_->GetInputManager()->IsKeyPressed('P') ||
-        engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
-      engine_->GetSceneManager()->Request("Title");
-    }
+    // if (engine_->GetInputManager()->IsKeyPressed('P') ||
+    //     engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+    //   engine_->GetSceneManager()->Request("Title");
+    // }
 
     if (skyDome_) {
       skyDome_->Update(deltaTime);
@@ -223,10 +228,21 @@ void GameScene::Update() {
     //   rockManager_->GetRocks());
     // }
 
-   field_.Update(deltaTime);
+    field_.Update(deltaTime);
 
     // すべての当たり判定
     DoCollision();
+
+    {
+      int currentMul = player_->GetMultiplier();
+      if (currentMul > prevRockMultiplier_) {
+        // プレイヤーの少し上に出す
+        Vector3 pos = player_->GetPosition();
+        pos.y += 2.0f;
+        rockMulti_.Show(currentMul, pos);
+      }
+      prevRockMultiplier_ = currentMul;
+    }
 
     // particleの更新
     hitEffects_->Update();
@@ -330,7 +346,7 @@ void GameScene::Update() {
 
 	  inGameBGM_.Stop();
 
-    if (enemyDeadTimer_ >= 5.0f) {
+    if (enemyDeadTimer_ >= 3.0f) {
       state = GameState::Clear;
     }
 
@@ -476,6 +492,10 @@ void GameScene::Update() {
   }
   }
 
+  rockMulti_.Update(deltaTime);
+
+  // rockMulti_.Show(prevRockMultiplier_,player_->GetPosition());
+
   fade_.Update(deltaTime);
 
   if (!fade_.IsFading() && !nextSceneName_.empty()) {
@@ -540,6 +560,8 @@ void GameScene::Draw() {
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplySpritePSO();
 
+  rockMulti_.Draw();
+
   fade_.Draw();
 }
 
@@ -595,27 +617,28 @@ void GameScene::DoCollision() {
           }
 
         // 岩0で当たると死亡
-        if (player_->GetRockCount() <= 0) {
-          player_->Dead();
-		  enemyAttackToPlayerSE_.Play();
-          if (state == GameState::Playing) {
-            state = GameState::PlayerDead;
-            playerDeadTimer_ = 0.0f;
+        // if (player_->GetRockCount() <= 0) {
+        //  player_->Dead();
 
-            // カメラ寄せの開始情報を記録
-            deadCamStartPos_ = camera_->GetTranslate();
-            deadCamStartFov_ = camera_->GetFovY();
+        //  if (state == GameState::Playing) {
+        //    state = GameState::PlayerDead;
+        //    playerDeadTimer_ = 0.0f;
 
-            // Vector3 p = player_->GetPosition();
+        //    // カメラ寄せの開始情報を記録
+        //    deadCamStartPos_ = camera_->GetTranslate();
+        //    deadCamStartFov_ = camera_->GetFovY();
 
-            ////
-            /// プレイヤーを少し上から・手前から見る位置を目標にする（値はあとで調整）
-            // playerDeadCamTargetPos_ = {p.x, p.y + 3.0f, p.z - 8.0f};
+        //    // Vector3 p = player_->GetPosition();
 
-            // FOV は少しだけ狭めて寄ってる感じに
-            deadCamTargetFov_ = deadCamStartFov_ * 0.8f;
-          }
-        }
+        //    ////
+        //    ///
+        //    プレイヤーを少し上から・手前から見る位置を目標にする（値はあとで調整）
+        //    // playerDeadCamTargetPos_ = {p.x, p.y + 3.0f, p.z - 8.0f};
+
+        //    // FOV は少しだけ狭めて寄ってる感じに
+        //    deadCamTargetFov_ = deadCamStartFov_ * 0.8f;
+        //  }
+        //}
 
         int before = player_->GetRockCount();
 
