@@ -199,7 +199,11 @@ void GameScene::Update() {
 
     DoCollision();
 
+#ifdef USE_IMGUI
+
     ImGui::Text("isHit:%d", tutorialHitEnemy_);
+
+#endif // USE_IMGUI
 
     switch (tutorialState_) {
     case TutorialState::Rock: {
