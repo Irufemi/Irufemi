@@ -42,35 +42,17 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
                        EnemyBulletManager *bulletManager) {
   camera_ = camera;
 
-  // 敵本体モデル
+  // 敵本体モデルだけを読み込む
   model_ = std::make_unique<ObjClass>();
   model_->Initialize(camera_, "boss.obj");
-
-  // 弾モデル（1個だけ）
-  bulletModel_ = std::make_unique<ObjClass>();
-  bulletModel_->Initialize(camera_, "bullet.obj");
-
-  // 壁モデル（1個だけ）
-  wallModel_ = std::make_unique<ObjClass>();
-  wallModel_->Initialize(camera_, "wall.obj");
-
-  // 壁の影モデル（1個だけ）
-  wallWarningModel_ = std::make_unique<ObjClass>();
-  wallWarningModel_->Initialize(camera_, "warning.obj");
 
   transform_.translate = spawnPos;
   transform_.scale = {3.0f, 3.0f, 3.0f};
 
+  // 壁・弾マネージャのポインタを保持（モデルはそれぞれのマネージャ側で Region
+  // 経由で読み込む）
   enemyWall_ = wallManager;
   enemyBullet_ = bulletManager;
-
-  // マネージャにモデルポインタを渡す
-  if (enemyBullet_ && bulletModel_) {
-    enemyBullet_->SetModel(bulletModel_.get());
-  }
-  if (enemyWall_ && wallModel_ && wallWarningModel_) {
-    enemyWall_->SetModels(wallModel_.get(), wallWarningModel_.get());
-  }
 
   // HP 初期化（フェーズ1開始）
   phase_ = EnemyPhase::Phase1;
@@ -136,7 +118,6 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
   enemyChangeSE_.Initialize("resources/se/enemy_charge.Mp3");
   enemyBurrowSE_.Initialize("resources/se/enemy_burrow.Mp3");
 }
-
 
 void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
 
@@ -805,15 +786,12 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
 void Enemy::Draw() {
 
   // ----- フェーズ2用の赤みを計算 -----
-  // フェーズ1のベース色（純白）
-  Vector4 baseColor{1.0f, 1.0f, 1.0f, 1.0f};
-  // フェーズ2で最終的に目指す少し赤い色
-  Vector4 phase2Color{1.2f, 0.4f, 0.4f, 1.0f};
+  Vector4 baseColor{1.0f, 1.0f, 1.0f, 1.0f};   // フェーズ1の基本色
+  Vector4 phase2Color{1.8f, 0.1f, 0.1f, 1.0f}; // フェーズ2の少し赤い色
 
   float colorT = 0.0f;
 
   if (phase_ == EnemyPhase::Phase2) {
-    // フェーズ2に入ってから phase2TransitionDuration_ 秒かけて赤くする
     if (phase2TransitionDuration_ > 0.0f) {
       colorT = phase2TransitionTimer_ / phase2TransitionDuration_;
     } else {
@@ -834,13 +812,12 @@ void Enemy::Draw() {
   currentColor.z = baseColor.z + (phase2Color.z - baseColor.z) * colorT;
   currentColor.w = baseColor.w + (phase2Color.w - baseColor.w) * colorT;
 
-  // 今フレームの「通常色」として保存しておく（スタン点滅で使う）
+  // 今フレームの通常色として保存（スタン点滅で使用）
   normalColor_ = currentColor;
 
-  // ----- 点滅スタン処理 -----
+  // スタン中の点滅
   if (isStan_) {
     bool flashOn = ((stanTimer_ / 2) % 2) == 0;
-
     if (flashOn) {
       model_->SetColor(stanColor_);
     } else {
@@ -851,20 +828,8 @@ void Enemy::Draw() {
   }
 
   // 潜り中（BurrowHidden）の間だけ見えなくする
-  if (!isBurrowing_) {
-    if (model_) {
-      model_->Draw();
-    }
-  }
-
-  // 壁の描画
-  if (enemyWall_) {
-    enemyWall_->Draw();
-  }
-
-  // 弾の描画
-  if (enemyBullet_) {
-    enemyBullet_->Draw();
+  if (!isBurrowing_ && model_) {
+    model_->Draw();
   }
 
   // 潜りエフェクトの描画

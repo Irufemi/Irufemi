@@ -2,6 +2,7 @@
 #include "3D/ObjClass.h"
 #include "EnemyBullet.h"
 #include "EnemyWall.h"
+#include "audio/Se.h"
 #include "camera/Camera.h"
 #include"audio/Se.h"
 #include "3D/particle/ParticleSystem.h"
@@ -135,15 +136,13 @@ public:
     stanTimer_ = durationFrame;
   }
 
+  // フェーズ移行中かどうか
+  bool GetInPhaseTransition() const { return phase2TransitionActive_; }
+
 private:
   Camera *camera_ = nullptr;
   // 敵モデル
   std::unique_ptr<ObjClass> model_ = nullptr;
-
-  // 弾・壁用の共有モデル
-  std::unique_ptr<ObjClass> bulletModel_ = nullptr;
-  std::unique_ptr<ObjClass> wallModel_ = nullptr;
-  std::unique_ptr<ObjClass> wallWarningModel_ = nullptr;
 
   struct TransformLocal {
     Vector3 translate{0.0f, 0.0f, 0.0f};
@@ -258,14 +257,14 @@ private:
   Vector4 normalColor_{1.0f, 1.0f, 1.0f, 1.0f};
   Vector4 stanColor_{5.0f, 5.0f, 5.0f, 1.0f};
 
-    // 敵死亡演出用
+  // 敵死亡演出用
   bool deathStarted_ = false;        // 死亡演出が始まったか
   float deathTimer_ = 0.0f;          // 死亡演出の経過時間
   float deathDuration_ = 1.5f;       // 完全に小さくなるまでの時間（秒）
   float deathRotateSpeedY_ = 360.0f; // 1秒あたりのY回転量（度）
   Vector3 deathStartScale_{1.0f, 1.0f, 1.0f}; // 演出開始時のスケール
 
-    // ------- フェーズ2移行演出用 -------
+  // ------- フェーズ2移行演出用 -------
   bool phase2TransitionActive_ = false;   // フェーズ2演出中か
   float phase2TransitionTimer_ = 0.0f;    // 経過時間（秒）
   float phase2TransitionDuration_ = 3.0f; // 演出時間（秒）
@@ -284,9 +283,9 @@ private:
   float LengthXZ(const Vector3 &v);
 
   // 敵位置 origin から、target（プレイヤー）方向を向かせる
-  void DirectionFacing(const Vector3 &origin,const Vector3 &target);
+  void DirectionFacing(const Vector3 &origin, const Vector3 &target);
 
-  //SEの初期化
+  // SEの初期化
   Se enemyBulletSE_;
   Se enemyWallSE_;
   Se enemyDashSE_;
