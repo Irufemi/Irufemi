@@ -78,6 +78,9 @@ private: // 変数(ゲーム)
   //フィールドフェード開始フラグ
   bool fieldFadeStarted_ = false;
 
+  //パーティクル(HitEffect)
+  std::unique_ptr<ParticleSystem> hitEffects_ = nullptr;
+  
   //----------SE-------------
   Se playerAttackToEnemySE_;
   Se playerAttackToWallSE_;

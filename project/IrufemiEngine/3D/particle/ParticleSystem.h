@@ -75,6 +75,9 @@ public:
 	void SetShowFieldAABB(bool show) { showFieldAABB_ = show; }
 	bool IsShowFieldAABB() const { return showFieldAABB_; }
 
+	// カリングなどの切り替え
+	void SetCull(const BlendMode& blend) { selectedBlend_ = blend; }
+
 private:
 	void ChangeBehavior(ParticleType type, bool force = false); // 追加
 	Particle MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter);

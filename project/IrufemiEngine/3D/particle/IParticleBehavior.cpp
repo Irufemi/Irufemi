@@ -74,7 +74,7 @@ void HitEffectBehavior::Update([[maybe_unused]] Particle& particle, [[maybe_unus
 }
 void HitEffectBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
 	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
-	std::uniform_real_distribution<float> distScale(0.4f, 1.5f);
+	std::uniform_real_distribution<float> distScale(2.4f,3.5f);
 	particle.startScale = { 0.1f, distScale(randomEngine), 1.0f };
 	particle.endScale = particle.startScale * 0.3f;
 	particle.transform.rotate = { 0.0f, 0.0f, distRotate(randomEngine) };
