@@ -33,6 +33,14 @@ class InputManager;
 class Camera;
 class DebugCamera;
 
+enum class GameState {
+  Playing,
+  PlayerDead,
+  EnemyDead,
+  GameOver,
+  Clear,
+};
+
 /// <summary>
 /// ゲーム
 /// </summary>
@@ -52,6 +60,7 @@ private: // 変数(ゲーム)
 
   EnemyWallManager enemyWallManager_;     // 敵が使う壁マネージャ
   EnemyBulletManager enemyBulletManager_; // 敵が使う弾マネージャー
+  Vector3 enemyDeadPos_{};
 
   // 岩マネージャ
   std::unique_ptr<RockManager> rockManager_ = nullptr;
@@ -59,7 +68,7 @@ private: // 変数(ゲーム)
   // フィールド
   Field field_;
 
-  //天球
+  // 天球
   std::unique_ptr<SkyDome> skyDome_;
 
 private: // メンバ変数(システム)
@@ -111,4 +120,30 @@ private:
   /// 直前フレームの移動方向をもとにノックバックを与える
   /// </summary>
   Vector3 ApplyPlayerKnockback(const float knockbackPower);
+
+private:
+  GameState state = GameState::Playing;
+
+  float playerDeadTimer_ = 0.0f;
+  float playerDeadDuration_ = 2.0f;
+
+  float enemyDeadTimer_ = 0.0f;
+  float enemyDeadDuration_ = 2.0f;
+
+  Vector3 deadCamStartPos_{};  // 演出開始時のカメラ位置
+  Vector3 deadCamTargetPos_{}; // 目標位置
+  float deadCamStartFov_ = 0.0f;
+  float deadCamTargetFov_ = 0.0f;
+
+  float worldFade_ = 0.0f;      // 0.0＝通常、1.0＝真っ暗
+  float worldFadeSpeed_ = 1.0f; // 1秒で暗くなる値
+
+public:
+  Vector4 GetWorldDarkColor() const {
+    float k = 1.0f - worldFade_;
+    return Vector4{k, k, k, 1.0f};
+  }
+
+private:
+  int resultIndex_ = 0; // リザルト時の選択肢　1:リトライ、2:タイトル
 };

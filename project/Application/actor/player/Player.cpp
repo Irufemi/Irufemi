@@ -25,6 +25,8 @@ void Player::Initialize(Camera *camera, SphereClass *model, Vector3 positoin,
 
   transform_.translate.y = radius_;
 
+  isAlive_ = true;
+
   // モデルへ反映
   model_->SetRadius(radius_);
   model_->SetCenter(transform_.translate);
@@ -104,6 +106,7 @@ void Player::Update() {
   ImGui::DragInt("rockCount", &rockCount_, 1, 0, 999);
   ImGui::Text("attackPower: %d", attackPower_);
   ImGui::Text("isKnockback: %d", isKnockback_);
+  ImGui::Text("isAlive: %d", isAlive_);
   ImGui::End();
 
 #endif // _DEBUG
@@ -147,6 +150,10 @@ void Player::Move() {
     return;
   }
 
+  if (!isAlive_) {
+    return;
+  }
+
   // 入力方向ベクトル
   Vector3 dir{0.0f, 0.0f, 0.0f};
 
@@ -165,13 +172,13 @@ void Player::Move() {
   }
 
   //// 入力無しなら終了
-  //if (dir.x == 0.0f && dir.z == 0.0f) {
-  //  return;
-  //}
+  // if (dir.x == 0.0f && dir.z == 0.0f) {
+  //   return;
+  // }
 
   //// 斜め入力でも速度が一定になるよう正規化
-  //float directionLengthSquared = dir.x * dir.x + dir.z * dir.z;
-  //if (directionLengthSquared > 0.0f) {
+  // float directionLengthSquared = dir.x * dir.x + dir.z * dir.z;
+  // if (directionLengthSquared > 0.0f) {
 
   //  // 長さ
   //  float directionLength = std::sqrt(directionLengthSquared);
@@ -184,16 +191,16 @@ void Player::Move() {
   //}
 
   //// 移動速度(1フレーム当たりの移動量)
-  //const float speed = 0.1f;
+  // const float speed = 0.1f;
 
   //// 実際の移動
-  //transform_.translate.x += dir.x * speed;
-  //transform_.translate.z += dir.z * speed;
+  // transform_.translate.x += dir.x * speed;
+  // transform_.translate.z += dir.z * speed;
 
   //// 転がりによる回転処理
-  //ApplyRolling(dir, speed);
+  // ApplyRolling(dir, speed);
 
- bool hasInput = !(dir.x == 0.0f && dir.z == 0.0f);
+  bool hasInput = !(dir.x == 0.0f && dir.z == 0.0f);
 
   // 斜め入力でも一定の強さになるよう正規化
   if (hasInput) {
@@ -248,7 +255,6 @@ void Player::Move() {
 
     ApplyRolling(rollDir, moveDistance);
   }
-
 }
 
 void Player::ApplyRolling(const Vector3 &dir, float moveDistance) {

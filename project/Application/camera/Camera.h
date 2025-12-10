@@ -219,4 +219,6 @@ public:
   /// <param name="durationFrame">何フレーム揺らすか</param>
   /// <param name="amplitude">揺れの強さ</param>
   void StartShake(int durationFrame = 15, float amplitude = 0.5f);
+
+  float GetFovY() const { return fovAngleY_; }
 };
