@@ -113,6 +113,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   playerAttackToWallSE_.Initialize("resources/se/player_attack_to_wall.Mp3");
   enemyAttackToPlayerSE_.Initialize("resources/se/enemy_attack_to_player.Mp3");
   playerDeadSE_.Initialize("resources/se/playerDead.Mp3");
+  enemyDeadSE_.Initialize("resources/se/enemyDead.Mp3");
   cursolSE_.Initialize("resources/se/cursol.Mp3");
   decisionSE_.Initialize("resources/se/decision.Mp3");
   inGameBGM_.Initialize("resources/bgm/inGameBGM.Mp3");
@@ -126,6 +127,35 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   rockMulti_.Initialize(engine_, camera_.get());
 
   prevRockMultiplier_ = player_->GetMultiplier();
+
+ // =============================
+// GameOver の UI 初期化
+// =============================
+
+  gameOverSprite_.Initialize(camera_.get(),"resources/gameover.png");
+  gameOverSprite_.SetPosition( 640.0f, 220.0f ,0.0f);       // 中央上あたり
+  gameOverSprite_.SetAnchor( 0.5f, 0.5f );
+  
+
+  retrySprite_.Initialize(camera_.get(),"resources/retry.png");
+  retrySprite_.SetPosition( 640.0f, 460.0f,0.0f);           // 1行目
+  retrySprite_.SetAnchor( 0.5f, 0.5f );
+  
+
+  titleSprite_.Initialize(camera_.get(),"resources/Totitle.png");
+  titleSprite_.SetPosition(640.0f, 520.0f,0.0f);           // 2行目
+  titleSprite_.SetAnchor(0.5f, 0.5f );
+  
+  // ベース位置を記録（スタンプ演出用）
+  gameOverBasePos_ = { 640.0f, 220.0f, 0.0f };
+
+  // =============================
+  // GameClear の UI 初期化
+  // =============================
+  gameClearSprite_.Initialize(camera_.get(), "resources/gameclear.png");
+  gameClearSprite_.SetPosition(640.0f, 220.0f, 0.0f); // 好きな位置に
+  gameClearSprite_.SetAnchor(0.5f, 0.5f);
+  gameClearBasePos_ = { 640.0f, 220.0f, 0.0f };
 }
 
 // 更新
@@ -267,6 +297,17 @@ void GameScene::Update() {
 
     if (playerDeadTimer_ >= 3.0f) {
       state = GameState::GameOver;
+      // GAME OVER スタンプ演出開始
+      gameOverStampPlaying_ = true;
+      gameOverStampTimer_ = 0.0f;
+
+      // 最初はちょっと上からスタート
+      float startOffsetY = -200.0f; // 画面上方向に 200px から落とす
+      gameOverSprite_.SetPosition(
+          gameOverBasePos_.x,
+          gameOverBasePos_.y + startOffsetY,
+          gameOverBasePos_.z
+      );
     }
 
     playerDeadTimer_ += deltaTime;
@@ -357,9 +398,20 @@ void GameScene::Update() {
   case GameState::EnemyDead: {
 
     inGameBGM_.Stop();
-
+    
     if (enemyDeadTimer_ >= 3.0f) {
       state = GameState::Clear;
+      enemyDeadSE_.Play();
+      // GAME CLEAR スタンプ演出開始
+      gameClearStampPlaying_ = true;
+      gameClearStampTimer_ = 0.0f;
+
+      float startOffsetY = -200.0f; // 画面上から落とす
+      gameClearSprite_.SetPosition(
+          gameClearBasePos_.x,
+          gameClearBasePos_.y + startOffsetY,
+          gameClearBasePos_.z
+      );
     }
 
     enemyDeadTimer_ += deltaTime;
@@ -442,6 +494,37 @@ void GameScene::Update() {
   }
   case GameState::GameOver: {
 
+     
+      gameOverSprite_.Update();
+      retrySprite_.Update();
+      titleSprite_.Update();
+
+      // GAME OVER スタンプ演出の更新
+      if (gameOverStampPlaying_) {
+
+          gameOverStampTimer_ += deltaTime;
+          float t = gameOverStampTimer_ / gameOverStampDuration_;
+          if (t >= 1.0f) {
+              t = 1.0f;
+              gameOverStampPlaying_ = false;
+          }
+
+          // 「上から落ちてきて ちょっとバウンド」っぽいイージング（easeOutBack）
+          float s = 2.5f;   // バウンドの強さを上げる
+          float u = t * t;  // ← 立ち上がりを遅くする（ゆっくり動き出す）
+
+          float te = u - 1.0f;
+          float ease = te * te * ((s + 1.0f) * te + s) + 1.0f;
+
+          float startOffsetY = -200.0f; // 初期オフセット（Initialize 時に合わせる）
+          float y = gameOverBasePos_.y + startOffsetY * (1.0f - ease);
+
+          gameOverSprite_.SetPosition(
+              gameOverBasePos_.x,
+              y,
+              gameOverBasePos_.z
+          );
+      }
 #ifdef _DEBUG
 
     ImGui::Text("result :%d", resultIndex_);
@@ -482,6 +565,35 @@ void GameScene::Update() {
     if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
         engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
       // engine_->GetSceneManager()->Request("Title");
+    }
+
+	gameClearSprite_.Update();  
+	titleSprite_.Update();
+
+    // GAME CLEAR スタンプ演出更新
+    if (gameClearStampPlaying_) {
+
+        gameClearStampTimer_ += deltaTime;
+        float t = gameClearStampTimer_ / gameClearStampDuration_;
+        if (t >= 1.0f) {
+            t = 1.0f;
+            gameClearStampPlaying_ = false;
+        }
+
+        // ゆっくり始まりつつ、ドンッと押される easeOutBack 系
+        float s = 2.3f;      // バウンドの強さ
+        float u = t * t;     // 立ち上がりを遅くする
+        float te = u - 1.0f;
+        float ease = te * te * ((s + 1.0f) * te + s) + 1.0f;
+
+        float startOffsetY = -200.0f;
+        float y = gameClearBasePos_.y + startOffsetY * (1.0f - ease);
+
+        gameClearSprite_.SetPosition(
+            gameClearBasePos_.x,
+            y,
+            gameClearBasePos_.z
+        );
     }
 
     // fade_.Update(deltaTime);
@@ -582,6 +694,42 @@ void GameScene::Draw() {
   rockMulti_.Draw();
 
   fade_.Draw();
+
+  // =============================
+  // GameOver UI の描画
+  // =============================
+  if (state == GameState::GameOver) {
+
+      // まず通常色
+      retrySprite_.SetColor({ 1,1,1,1 });
+      titleSprite_.SetColor({ 1,1,1,1 });
+
+      // カーソル位置で強調（黄色など）
+      if (resultIndex_ == 0) {
+          retrySprite_.SetColor({ 1,1,0,1 });
+      }
+      else {
+          titleSprite_.SetColor({ 1,1,0,1 });
+      }
+
+      gameOverSprite_.Draw();
+      retrySprite_.Draw();
+      titleSprite_.Draw();
+  }
+
+  // =============================
+  // GameClear UI の描画
+  // =============================
+  if (state == GameState::Clear) {
+
+      Vector4 baseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+      gameClearSprite_.SetColor(baseColor);
+      gameClearSprite_.Draw();
+      titleSprite_.SetColor({ 1,1,0,1 });
+      titleSprite_.Draw();
+  }
+
 }
 
 void GameScene::DoCollision() {

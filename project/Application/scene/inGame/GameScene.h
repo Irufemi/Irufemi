@@ -92,6 +92,7 @@ private: // 変数(ゲーム)
   Se playerDeadSE_;
   Se cursolSE_;
   Se decisionSE_;
+  Se enemyDeadSE_;
   Bgm inGameBGM_;
 
 private: // メンバ変数(システム)
@@ -166,6 +167,26 @@ private:
 
   float worldFade_ = 0.0f;      // 0.0＝通常、1.0＝真っ暗
   float worldFadeSpeed_ = 1.0f; // 1秒で暗くなる値
+
+  // --- GameOver UI ---
+  Sprite gameOverSprite_;
+  Sprite retrySprite_;
+  Sprite titleSprite_;
+
+  // GAME OVER スタンプ演出用
+  bool  gameOverStampPlaying_ = false;
+  float gameOverStampTimer_ = 0.0f;
+  float gameOverStampDuration_ = 0.8f;   // 落ちてくる時間（秒）
+  Vector3 gameOverBasePos_{ 640.0f, 220.0f, 0.0f };
+
+  // --- GameClear UI ---
+  Sprite gameClearSprite_;
+
+  // GAME CLEAR スタンプ演出用
+  bool  gameClearStampPlaying_ = false;
+  float gameClearStampTimer_ = 0.0f;
+  float gameClearStampDuration_ = 0.8f;   // 同じくらいの速度
+  Vector3 gameClearBasePos_{ 640.0f, 220.0f, 0.0f };
 
 public:
   Vector4 GetWorldDarkColor() const {
