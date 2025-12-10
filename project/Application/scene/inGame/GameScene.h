@@ -194,6 +194,9 @@ private:
   float gameClearStampTimer_ = 0.0f;
   float gameClearStampDuration_ = 0.8f;   // 同じくらいの速度
   Vector3 gameClearBasePos_{ 640.0f, 220.0f, 0.0f };
+  // GameOver 選択肢の点滅用
+  float gameOverBlinkTimer_ = 0.0f;
+  bool  gameOverBlinkOn_ = true;
 
 public:
   Vector4 GetWorldDarkColor() const {

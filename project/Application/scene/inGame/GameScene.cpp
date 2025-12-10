@@ -648,6 +648,14 @@ void GameScene::Update() {
       }
     }
 
+    //ここから追加：選択中の項目を点滅させるためのタイマー更新
+    gameOverBlinkTimer_ += deltaTime;
+    // 0.25秒ごとに ON / OFF
+    if (gameOverBlinkTimer_ >= 0.5f) {
+        gameOverBlinkTimer_ = 0.0f;
+        gameOverBlinkOn_ = !gameOverBlinkOn_;
+    }
+
     break;
   }
   case GameState::Clear: {
@@ -658,6 +666,13 @@ void GameScene::Update() {
 
 	gameClearSprite_.Update();  
 	titleSprite_.Update();
+
+    //Title 選択肢点滅用タイマー（GameOver と共通）
+    gameOverBlinkTimer_ += deltaTime;
+    if (gameOverBlinkTimer_ >= 0.5f) {   // 0.25秒ごとに ON/OFF
+        gameOverBlinkTimer_ = 0.0f;
+        gameOverBlinkOn_ = !gameOverBlinkOn_;
+    }
 
     // GAME CLEAR スタンプ演出更新
     if (gameClearStampPlaying_) {
@@ -797,16 +812,28 @@ void GameScene::Draw() {
   // =============================
   if (state == GameState::GameOver) {
 
-      // まず通常色
-      retrySprite_.SetColor({ 1,1,1,1 });
-      titleSprite_.SetColor({ 1,1,1,1 });
+      // 通常色（白）
+      Vector4 normalColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
-      // カーソル位置で強調（黄色など）
+      // 点滅時の色（明るい黄色と暗めの黄色）
+      Vector4 selectedOnColor{ 1.0f, 1.0f, 0.0f, 1.0f };  // 光ってる状態
+      Vector4 selectedOffColor{ 0.4f, 0.4f, 0.0f, 1.0f };  // ちょっと暗く
+
+      // いったん全体を通常色にリセット
+      retrySprite_.SetColor(normalColor);
+      titleSprite_.SetColor(normalColor);
+
+      // 今の点滅状態に応じた色
+      Vector4 blinkColor = gameOverBlinkOn_ ? selectedOnColor : selectedOffColor;
+
+      // 選択中の方だけ点滅色にする
       if (resultIndex_ == 0) {
-          retrySprite_.SetColor({ 1,1,0,1 });
+          // Retry 選択中
+          retrySprite_.SetColor(blinkColor);
       }
       else {
-          titleSprite_.SetColor({ 1,1,0,1 });
+          // Title 選択中
+          titleSprite_.SetColor(blinkColor);
       }
 
       gameOverSprite_.Draw();
@@ -819,11 +846,13 @@ void GameScene::Draw() {
   // =============================
   if (state == GameState::Clear) {
 
-      Vector4 baseColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+      // Title 選択肢を点滅させる
+      Vector4 onColor{ 1.0f, 1.0f, 0.0f, 1.0f }; // 光ってる黄色
+      Vector4 offColor{ 0.4f, 0.4f, 0.0f, 1.0f }; // 暗め黄色
 
-      gameClearSprite_.SetColor(baseColor);
-      gameClearSprite_.Draw();
-      titleSprite_.SetColor({ 1,1,0,1 });
+      Vector4 blinkColor = gameOverBlinkOn_ ? onColor : offColor;
+
+      titleSprite_.SetColor(blinkColor);
       titleSprite_.Draw();
   }
 
