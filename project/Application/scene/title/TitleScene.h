@@ -34,8 +34,6 @@ private: // メンバ変数
   std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
   bool debugMode = false;
 
-  std::unique_ptr<PointLightClass> pointLight_ = nullptr;
-  std::unique_ptr<SpotLightClass> spotLight_ = nullptr;
 
   // 遷移フェード
   Fade fade_;
