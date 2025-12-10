@@ -215,7 +215,7 @@ void Player::Move() {
 
   const float accel = 0.01f;    // 押したときの加速
   const float maxSpeed = 0.1f;  // 最高速度
-  const float friction = 0.95f; // 離したときの減速率 (0.8〜0.95 くらいで調整)
+  const float friction = 0.95f; // 離したときの減速率
 
   if (hasInput) {
     // 入力方向に加速

@@ -22,6 +22,7 @@
 #include "actor/player/Player.h"
 #include "actor/rock/RockManager.h"
 #include "audio/Bgm.h"
+#include "effect/Fade.h"
 #include"audio/Se.h"
 #include "stage/field/field.h"
 #include "stage/skyDome/SkyDome.h"
@@ -105,6 +106,10 @@ private: // メンバ変数(システム)
 
   // エンジン
   IrufemiEngine *engine_ = nullptr;
+
+  // 遷移フェード
+  Fade fade_;
+  std::string nextSceneName_;
 
 public: // メンバ関数
   // デストラクタ
