@@ -122,7 +122,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   cursolSE_.Initialize("resources/se/cursol.Mp3");
   decisionSE_.Initialize("resources/se/decision.Mp3");
   inGameBGM_.Initialize("resources/bgm/inGameBGM.Mp3");
-
+  inGameBGM_.SetVolume(0.3f);
   inGameBGM_.PlayFixed();
 
   // textureの読み込み
