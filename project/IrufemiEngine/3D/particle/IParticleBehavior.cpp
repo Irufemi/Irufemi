@@ -119,6 +119,32 @@ void ExplosionBehavior::Debug([[maybe_unused]] Emitter* emitter, DebugUI* ui, Pa
 #endif // USE_IMGUI
 }
 
+// DustBehavior
+void DustBehavior::Initialize(Emitter* emitter) {
+	emitter->count = 1;
+	emitter->area = { 0.1f, 0.1f, 0.1f };
+	emitter->velocityMin = { -0.5f, 0.1f, -0.5f };
+	emitter->velocityMax = { 0.5f, 0.3f, 0.5f };
+	emitter->startScale = { 0.1f, 0.1f, 0.1f };
+	emitter->endScale = { 0.3f, 0.3f, 0.3f };
+}
+void DustBehavior::Update([[maybe_unused]] Particle& particle, [[maybe_unused]] float deltaTime) {
+	// 砂埃は特に更新処理なし
+}
+void DustBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
+	std::uniform_real_distribution<float> distScale(0.1f, 0.3f);
+	std::uniform_real_distribution<float> distTime(0.5f, 1.0f);
+
+	float scale = distScale(randomEngine);
+	particle.startScale = { scale, scale, scale };
+	particle.endScale = particle.startScale * 1.5f;
+	particle.transform.rotate = { 0.0f, 0.0f, 0.0f };
+	particle.lifeTime = distTime(randomEngine);
+}
+void DustBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {
+	// UIなし
+}
+
 
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
@@ -129,6 +155,8 @@ std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
 		return std::make_unique<HitEffectBehavior>();
 	case ParticleType::kExplosion:
 		return std::make_unique<ExplosionBehavior>();
+	case ParticleType::kDust:
+		return std::make_unique<DustBehavior>();
 	case ParticleType::Normal:
 	default:
 		return std::make_unique<NormalBehavior>();

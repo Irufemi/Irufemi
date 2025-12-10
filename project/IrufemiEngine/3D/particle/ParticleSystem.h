@@ -59,6 +59,7 @@ public:
 
 	void PlayHitEffect(const Vector3& position);
 	void PlayExplosion(const Vector3& position);
+	void PlayDust(const Vector3& position, const Vector3& moveDirection);
 
 	// 追加: Ring パラメータ設定
 	void SetRingParameters(float innerRadius, float outerRadius,
