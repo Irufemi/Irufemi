@@ -280,6 +280,8 @@ private:
   Se enemyBulletSE_;
   Se enemyWallSE_;
   Se enemyDashSE_;
+  Se enemyChangeSE_;
+  Se enemyBurrowSE_;    
 public:
   /// <summary>
   /// 潜っているかどうか

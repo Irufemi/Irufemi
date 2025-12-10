@@ -102,6 +102,8 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
   enemyBulletSE_.Initialize("resources/se/enemy_bullet.Mp3");
   enemyWallSE_.Initialize("resources/se/enemy_wall.Mp3");
   enemyDashSE_.Initialize("resources/se/enemy_dash.Mp3");
+  enemyChangeSE_.Initialize("resources/se/enemy_charge.Mp3");
+  enemyBurrowSE_.Initialize("resources/se/enemy_burrow.Mp3");
 }
 
 void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
@@ -454,6 +456,7 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
     transform_.translate.y = groundY_ + wobble;
 
     if (stateTimer_ <= 0.0f) {
+		enemyBurrowSE_.Play();  
       // ここで潜りきって地中へ → 見えなくなる
       isBurrowing_ = true;
 
@@ -909,7 +912,7 @@ void Enemy::EnterPhase2() {
   }
 
   // TODO: 咆哮SEを鳴らす場合はここでサウンド再生処理を呼ぶ
-  // 例）SoundManager::PlaySE("enemy_roar.wav");
+  enemyChangeSE_.Play();
 
   // HP を全回復
   hp_ = maxHp_;

@@ -31,6 +31,17 @@ void TitleScene::Initialize(IrufemiEngine *engine) {
   spotLight_->Initialize();
   spotLight_->SetIntensity(0.0f);
   engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
+
+  //SEの初期化
+  cursolSE_.Initialize("resources/se/cursol.mp3");
+  decisionSE_.Initialize("resources/se/decision.mp3");
+
+  //タイトルBGMの初期化
+  titleBGM_.Initialize("resources/bgm/titleBGM.mp3");
+  titleBGM_.PlayFixed();
+
+  deciding_ = false;
+  decideTimer_ = 0.0f;
 }
 
 // 更新
@@ -45,10 +56,25 @@ void TitleScene::Update() {
     camera_->Update("Camera", {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f});
   }
 
+  // すでに決定中なら、タイマーを進めるだけ
+  if (deciding_) {
+      decideTimer_ += 1.0f / 60.0f; // 実際の deltaTime に合わせて
+      if (decideTimer_ >= 0.3f) {   // 0.3秒くらい待ってからシーンチェンジ
+          engine_->GetSceneManager()->Request("InGame");
+      }
+      return; // それ以外の入力は無視
+  }
+
+  // まだ決定してないときだけ入力受付
   if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
       engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
 
-    engine_->GetSceneManager()->Request("InGame");
+      // 決定SEを鳴らして
+      decisionSE_.Play();
+
+      // 決定モードに移行
+      deciding_ = true;
+      decideTimer_ = 0.0f;
   }
 }
 
