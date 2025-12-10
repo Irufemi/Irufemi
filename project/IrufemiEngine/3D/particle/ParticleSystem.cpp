@@ -507,10 +507,10 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
 
 void ParticleSystem::Update() {
 
-    if (isUpdate_ && particleType_ != ParticleType::kHitEffect) {
+    if (isUpdate_ && particleType_ != ParticleType::kHitEffect && particleType_ != ParticleType::kExplosion) {
         emitter_.frequencyTime += kDeltatime_; // 時刻を進める
         if (emitter_.frequency <= emitter_.frequencyTime) { // 頻度より大きいなら発生
-            particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
+                particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
             emitter_.frequencyTime -= emitter_.frequency; // 余計に過ぎた時間も加味して頻度計算する
         }
     }
@@ -747,6 +747,14 @@ void ParticleSystem::PlayHitEffect(const Vector3& position) {
     }
 }
 
+void ParticleSystem::PlayExplosion(const Vector3& position)
+{
+	if (particleType_ == ParticleType::kExplosion) {
+		emitter_.transform.translate = position;
+		particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+	}
+}
+
 void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
 #if USE_IMGUI
@@ -784,6 +792,9 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                     case ParticleType::kHitEffect:
                         PlayHitEffect(emitter_.transform.translate);
                         break;
+                    case ParticleType::kExplosion:
+    					PlayExplosion(emitter_.transform.translate);
+    					break;
                     default:
                         particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
                         break;
@@ -897,12 +908,10 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         if (s_textureManager_) {
                             auto textureNames = s_textureManager_->GetTextureNames();
                             std::sort(textureNames.begin(), textureNames.end());
-                            if (!textureNames.empty()) {
-                                if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
-                                    currentTextureName = textureNames[selectedTextureIndex_];
-                                } else {
-                                    currentTextureName = textureNames[0];
-                                }
+                            if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
+                                currentTextureName = textureNames[selectedTextureIndex_];
+                            } else {
+                                currentTextureName = textureNames[0];
                             }
                         }
                         Initialize(camera_, currentTextureName, particleType_, primitiveShape_);
@@ -981,15 +990,15 @@ void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
     behavior_->Initialize(&emitter_);
 
     // ビルボード設定も振る舞いに応じて変更
-    if (type == ParticleType::kHitEffect) {
-        useBillbord_ = false;
-    } else {
-        useBillbord_ = true;
+    if (type == ParticleType::kHitEffect || type == ParticleType::kExplosion){
+            useBillbord_ = false;
+        } else {
+            useBillbord_ = true;
+        }
     }
-}
-
-void ParticleSystem::DrawAABB(const AABB& aabb, const Vector4& color)
-{
+    
+    void ParticleSystem::DrawAABB(const AABB& aabb, const Vector4& color)
+    {
 #if USE_IMGUI
     Vector3 vertices[8];
     vertices[0] = { aabb.min.x, aabb.min.y, aabb.min.z };

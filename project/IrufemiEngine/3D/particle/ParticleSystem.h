@@ -58,6 +58,7 @@ public:
 	void SetTexture(const std::string& textureFilePath);
 
 	void PlayHitEffect(const Vector3& position);
+	void PlayExplosion(const Vector3& position);
 
 	// 追加: Ring パラメータ設定
 	void SetRingParameters(float innerRadius, float outerRadius,
