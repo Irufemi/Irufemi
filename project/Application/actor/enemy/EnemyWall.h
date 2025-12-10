@@ -75,15 +75,21 @@ public:
     wallWarningTime_ = warningTime;
   }
 
+  // モデルポインタを外部からセットする（Enemy から渡す）
+  void SetModels(ObjClass *wallModel, ObjClass *warningModel) {
+    wallModel_ = wallModel;
+    warningModel_ = warningModel;
+  }
+
 private:
   // カメラ
   Camera *camera_ = nullptr;
 
-  // 壁本体モデル
-  std::vector<std::unique_ptr<ObjClass>> models_;
+  // 壁本体モデル（1個を使い回す）
+  ObjClass *wallModel_ = nullptr;
 
-  // 位置予測用のマーカー（赤い円など）のモデル
-  std::vector<std::unique_ptr<ObjClass>> warningModels_;
+  // 位置予測用のマーカー（赤い円など）のモデル（1個を使い回す）
+  ObjClass *warningModel_ = nullptr;
 
   Vector3 stageCenter_;
   float stageRadius_{};

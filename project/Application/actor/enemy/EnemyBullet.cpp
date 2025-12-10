@@ -29,26 +29,15 @@ void EnemyBulletManager::Initialize(Camera *camera, const Vector3 &stageCenter,
   stageCenter_ = stageCenter;
   stageRadius_ = stageRadius;
 
-  // 弾の情報とモデル配列を初期化
+  // 弾の情報を初期化
   bullets_.clear();
-  models_.clear();
-
-  // 最大弾数分のスロットをあらかじめ用意しておく
   bullets_.resize(maxBulletCount_);
-  models_.resize(maxBulletCount_);
 
-  // 各スロットごとにモデルを読み込んでおく
   for (int i = 0; i < maxBulletCount_; ++i) {
-    // 弾情報リセット
-    bullets_[i] = EnemyBullet(); // position/velocity/lifeTime など初期化
+    bullets_[i] = EnemyBullet();
     bullets_[i].active = false;
-
-    // 弾モデルを生成＆初期化
-    models_[i] = std::make_unique<ObjClass>();
-    models_[i]->Initialize(camera_, "bullet.obj");
   }
 }
-
 
 int EnemyBulletManager::FindFreeIndex() {
   // 既存配列の中から非アクティブな弾のスロットを探す
@@ -194,23 +183,20 @@ void EnemyBulletManager::Update(float deltaTime) {
 }
 
 void EnemyBulletManager::Draw() {
+  // モデルが設定されていなければ何もしない
+  if (!bulletModel_) {
+    return;
+  }
+
   // アクティブな弾だけモデルを更新・描画する
-  const int count = static_cast<int>(bullets_.size());
-  for (int i = 0; i < count; ++i) {
-    const EnemyBullet &b = bullets_[i];
+  for (const auto &b : bullets_) {
     if (!b.active) {
       continue;
     }
 
-    ObjClass *model = models_[i].get();
-    if (!model) {
-      continue;
-    }
-
-    // モデルに位置を反映してから描画
-    model->SetPosition(b.position);
-    model->Update();
-    model->Draw();
+    bulletModel_->SetPosition(b.position);
+    bulletModel_->Update();
+    bulletModel_->Draw();
   }
 }
 

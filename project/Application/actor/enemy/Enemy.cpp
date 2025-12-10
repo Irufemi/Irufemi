@@ -41,14 +41,35 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
                        EnemyBulletManager *bulletManager) {
   camera_ = camera;
 
+  // 敵本体モデル
   model_ = std::make_unique<ObjClass>();
   model_->Initialize(camera_, "boss.obj");
+
+  // 弾モデル（1個だけ）
+  bulletModel_ = std::make_unique<ObjClass>();
+  bulletModel_->Initialize(camera_, "bullet.obj");
+
+  // 壁モデル（1個だけ）
+  wallModel_ = std::make_unique<ObjClass>();
+  wallModel_->Initialize(camera_, "wall.obj");
+
+  // 壁の影モデル（1個だけ）
+  wallWarningModel_ = std::make_unique<ObjClass>();
+  wallWarningModel_->Initialize(camera_, "warning.obj");
 
   transform_.translate = spawnPos;
   transform_.scale = {3.0f, 3.0f, 3.0f};
 
   enemyWall_ = wallManager;
   enemyBullet_ = bulletManager;
+
+  // マネージャにモデルポインタを渡す
+  if (enemyBullet_ && bulletModel_) {
+    enemyBullet_->SetModel(bulletModel_.get());
+  }
+  if (enemyWall_ && wallModel_ && wallWarningModel_) {
+    enemyWall_->SetModels(wallModel_.get(), wallWarningModel_.get());
+  }
 
   // HP 初期化（フェーズ1開始）
   phase_ = EnemyPhase::Phase1;
@@ -80,7 +101,7 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
   bulletChargeBaseScale_ = transform_.scale;
   bulletChargeBaseHeight_ = transform_.translate.y;
 
-    // 死亡演出フラグ初期化
+  // 死亡演出フラグ初期化
   deathStarted_ = false;
   deathTimer_ = 0.0f;
   deathStartScale_ = transform_.scale;
@@ -98,11 +119,12 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
     model_->Update();
   }
 
-  //SEの初期化
+  // SEの初期化
   enemyBulletSE_.Initialize("resources/se/enemy_bullet.Mp3");
   enemyWallSE_.Initialize("resources/se/enemy_wall.Mp3");
   enemyDashSE_.Initialize("resources/se/enemy_dash.Mp3");
 }
+
 
 void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
 

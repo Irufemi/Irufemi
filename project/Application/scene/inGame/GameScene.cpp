@@ -96,6 +96,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   fade_.Initialize(engine_, camera_.get());
   fade_.StartFadeIn(0.5f);
 
+  // SEの初期化
   // hiteffect
   hitEffects_ = std::make_unique<ParticleSystem>();
   hitEffects_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kHitEffect, ParticlePrimitiveShape::Ring);
@@ -108,9 +109,13 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   playerDeadSE_.Initialize("resources/se/playerDead.Mp3");
   cursolSE_.Initialize("resources/se/cursol.Mp3");
   decisionSE_.Initialize("resources/se/decision.Mp3");
-  inGameBGM_.Initialize("resources/bgm/inGameBGM.Mp3"); 
- 
+  inGameBGM_.Initialize("resources/bgm/inGameBGM.Mp3");
+
   inGameBGM_.PlayFixed();
+
+  // textureの読み込み
+  engine_->GetTextureManager()->GetTextureHandle("resources/hp_bar.png");
+  engine_->GetTextureManager()->GetTextureHandle("resources/hp_gauge.png");
 
   rockMulti_.Initialize(engine_, camera_.get());
 
@@ -251,7 +256,7 @@ void GameScene::Update() {
 
   case GameState::PlayerDead: {
 
-	  inGameBGM_.Stop();
+    inGameBGM_.Stop();
 
     if (playerDeadTimer_ >= 3.0f) {
       state = GameState::GameOver;
@@ -283,9 +288,9 @@ void GameScene::Update() {
       worldFade_ = 1.0f;
     }
 
-	playerDeadSE_.Play();
+    playerDeadSE_.Play();
 
-    field_.StartFadeToBlack(1.4f);  // 1秒フェード
+    field_.StartFadeToBlack(1.4f); // 1秒フェード
     fieldFadeStarted_ = true;
 
     // カメラの更新
@@ -344,7 +349,7 @@ void GameScene::Update() {
   }
   case GameState::EnemyDead: {
 
-	  inGameBGM_.Stop();
+    inGameBGM_.Stop();
 
     if (enemyDeadTimer_ >= 3.0f) {
       state = GameState::Clear;
@@ -611,10 +616,9 @@ void GameScene::DoCollision() {
 
       if (!player_->IsInvincible()) {
 
-          if (player_->GetRockCount() >= 1)
-          {
-              playerAttackToEnemySE_.Play();
-          }
+        if (player_->GetRockCount() >= 1) {
+          playerAttackToEnemySE_.Play();
+        }
 
         // 岩0で当たると死亡
         // if (player_->GetRockCount() <= 0) {
@@ -700,11 +704,10 @@ void GameScene::DoCollision() {
 
       if (!player_->IsInvincible()) {
 
-          if (player_->GetRockCount() >= 1)
-          {
-              playerAttackToEnemySE_.Play();
-          }
-          
+        if (player_->GetRockCount() >= 1) {
+          playerAttackToEnemySE_.Play();
+        }
+
         // 岩0で当たると死亡
         if (player_->GetRockCount() <= 0) {
           player_->Dead();
@@ -798,15 +801,14 @@ void GameScene::DoCollision() {
 
         if (!player_->IsInvincible()) {
 
-            if (player_->GetRockCount()>=1)
-            {
-                playerAttackToEnemySE_.Play();
-            }
+          if (player_->GetRockCount() >= 1) {
+            playerAttackToEnemySE_.Play();
+          }
 
           // 岩0で当たると死亡
           if (player_->GetRockCount() <= 0) {
             player_->Dead();
-			enemyAttackToPlayerSE_.Play();
+            enemyAttackToPlayerSE_.Play();
             if (state == GameState::Playing) {
               state = GameState::PlayerDead;
               playerDeadTimer_ = 0.0f;
