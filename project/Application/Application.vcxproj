@@ -169,6 +169,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="actor\enemy\EnemyWall.cpp" />
     <ClCompile Include="actor\enemy\EnemyBullet.cpp" />
     <ClCompile Include="effect\Fade.cpp" />
+    <ClCompile Include="ui\RockMulti.cpp" />
     <ClCompile Include="scene\debug\DebugScene.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
@@ -195,6 +196,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actor\enemy\EnemyWall.h" />
     <ClInclude Include="actor\enemy\EnemyBullet.h" />
     <ClInclude Include="effect\Fade.h" />
+    <ClInclude Include="ui\RockMulti.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\result\ResultScene.h" />

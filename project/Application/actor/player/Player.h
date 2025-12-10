@@ -256,4 +256,10 @@ public:
   bool GetIsAlive() const { return isAlive_; }
 
   void Dead() { isAlive_ = false; }
+
+private:
+  int currentMultiplier_ = 1;
+
+public:
+  int GetMultiplier() const { return currentMultiplier_; }
 };

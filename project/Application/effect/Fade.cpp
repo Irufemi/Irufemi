@@ -10,6 +10,7 @@ void Fade::Initialize(IrufemiEngine *engine, Camera *camera) {
   sprite_->SetAnchor(0.0f, 0.0f);
   sprite_->SetPosition(0.0f, 0.0f);
   sprite_->SetSize(1280.0f, 720.0f);
+  sprite_->Update();
 
   alpha_ = 0.0f;
   state_ = State::None;

@@ -21,11 +21,12 @@
 #include "actor/enemy/EnemyWall.h"
 #include "actor/player/Player.h"
 #include "actor/rock/RockManager.h"
+#include "audio/Se.h"
 #include "audio/Bgm.h"
 #include "effect/Fade.h"
-#include"audio/Se.h"
 #include "stage/field/field.h"
 #include "stage/skyDome/SkyDome.h"
+#include "ui/RockMulti.h"
 
 
 // 前方宣言
@@ -75,9 +76,15 @@ private: // 変数(ゲーム)
   // 天球
   std::unique_ptr<SkyDome> skyDome_;
 
-  //フィールドフェード開始フラグ
+  // フィールドフェード開始フラグ
   bool fieldFadeStarted_ = false;
 
+  //パーティクル(HitEffect)
+  std::unique_ptr<ParticleSystem> hitEffects_ = nullptr;
+  //パーティクル(Explosion)
+  std::unique_ptr<ParticleSystem> explosion_ = nullptr;
+
+  
   //----------SE-------------
   Se playerAttackToEnemySE_;
   Se playerAttackToWallSE_;
@@ -110,6 +117,8 @@ private: // メンバ変数(システム)
   // 遷移フェード
   Fade fade_;
   std::string nextSceneName_;
+
+  RockMulti rockMulti_;
 
 public: // メンバ関数
   // デストラクタ
@@ -166,4 +175,6 @@ public:
 
 private:
   int resultIndex_ = 0; // リザルト時の選択肢　1:リトライ、2:タイトル
+
+  int prevRockMultiplier_ = 1;
 };

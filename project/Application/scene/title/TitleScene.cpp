@@ -32,6 +32,9 @@ void TitleScene::Initialize(IrufemiEngine *engine) {
   spotLight_->SetIntensity(0.0f);
   engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
+  fade_.Initialize(engine_, camera_.get());
+  fade_.StartFadeIn(0.5f);
+
   //SEの初期化
   cursolSE_.Initialize("resources/se/cursol.mp3");
   decisionSE_.Initialize("resources/se/decision.mp3");
@@ -56,25 +59,21 @@ void TitleScene::Update() {
     camera_->Update("Camera", {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f});
   }
 
-  // すでに決定中なら、タイマーを進めるだけ
-  if (deciding_) {
-      decideTimer_ += 1.0f / 60.0f; // 実際の deltaTime に合わせて
-      if (decideTimer_ >= 0.3f) {   // 0.3秒くらい待ってからシーンチェンジ
-          engine_->GetSceneManager()->Request("InGame");
-      }
-      return; // それ以外の入力は無視
+  if (!fade_.IsFading()) {
+    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
+        engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+
+      // 次に行くシーン名をセットして、フェードアウト開始
+      nextSceneName_ = "InGame";
+      fade_.StartFadeOut(0.5f);
+    }
   }
 
-  // まだ決定してないときだけ入力受付
-  if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
-      engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+  fade_.Update(1.0f / 60.0f);
 
-      // 決定SEを鳴らして
-      decisionSE_.Play();
-
-      // 決定モードに移行
-      deciding_ = true;
-      decideTimer_ = 0.0f;
+  if (!fade_.IsFading() && !nextSceneName_.empty()) {
+    engine_->GetSceneManager()->Request(nextSceneName_.c_str());
+    nextSceneName_.clear();
   }
 }
 
@@ -90,4 +89,6 @@ void TitleScene::Draw() {
   engine_->SetBlend(BlendMode::kBlendModeNormal);
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplySpritePSO();
+
+  fade_.Draw();
 }

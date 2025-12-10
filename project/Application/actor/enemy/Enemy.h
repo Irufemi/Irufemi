@@ -135,7 +135,13 @@ public:
 
 private:
   Camera *camera_ = nullptr;
+  // 敵モデル
   std::unique_ptr<ObjClass> model_ = nullptr;
+
+  // 弾・壁用の共有モデル
+  std::unique_ptr<ObjClass> bulletModel_ = nullptr;
+  std::unique_ptr<ObjClass> wallModel_ = nullptr;
+  std::unique_ptr<ObjClass> wallWarningModel_ = nullptr;
 
   struct TransformLocal {
     Vector3 translate{0.0f, 0.0f, 0.0f};

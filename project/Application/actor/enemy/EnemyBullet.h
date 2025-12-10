@@ -26,6 +26,7 @@ class EnemyBulletManager {
 public:
   EnemyBulletManager();
 
+  // ステージ情報とカメラをセットする
   void Initialize(Camera *camera, const Vector3 &stageCenter,
                   float stageRadius);
 
@@ -49,8 +50,12 @@ public:
   // 当たった弾を消す
   void OnHitBullet(int bulletIndex);
 
+  // 最大弾数と弾速の設定
   void SetMaxBulletCount(int maxCount) { maxBulletCount_ = maxCount; }
   void SetBulletSpeed(float speed) { bulletSpeed_ = speed; }
+
+  // モデルポインタを外部からセットする（Enemy から渡す）
+  void SetModel(ObjClass *model) { bulletModel_ = model; }
 
 private:
   Camera *camera_ = nullptr;
@@ -62,8 +67,11 @@ private:
   float bulletLifeTime_ = 5.0f; // 寿命
   int maxBulletCount_ = 64;     // 最大弾数
 
+  // 弾データ
   std::vector<EnemyBullet> bullets_;
-  std::vector<std::unique_ptr<ObjClass>> models_;
+
+  // 共有モデル（1個だけ）
+  ObjClass *bulletModel_ = nullptr;
 
   int FindFreeIndex();
   static float LengthXZ(const Vector3 &v);

@@ -42,7 +42,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
   playerObj_ = std::make_unique<SphereClass>();
-  playerObj_->Initialize(camera_.get(),"resources/texture/playerFace.png");
+  playerObj_->Initialize(camera_.get(), "resources/texture/playerFace.png");
 
   player_ = std::make_unique<Player>();
   player_->Initialize(camera_.get(), playerObj_.get(),
@@ -88,12 +88,25 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   rockManager_->SetField(&field_);
 
   skyDome_ = std::make_unique<SkyDome>();
-  skyDome_->Initialize(camera_.get(), 50.0f, "resources/texture/night_sky_stars.png");
+  skyDome_->Initialize(camera_.get(), 50.0f,
+                       "resources/texture/night_sky_stars.png");
   skyDome_->SetFollowCamera(true);
 
   // フェード
   fade_.Initialize(engine_, camera_.get());
   fade_.StartFadeIn(0.5f);
+
+  // SEの初期化
+  // hiteffect
+  hitEffects_ = std::make_unique<ParticleSystem>();
+  hitEffects_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kHitEffect, ParticlePrimitiveShape::Ring);
+  hitEffects_->SetCull(BlendMode::kBlendModeScreen);
+  hitEffects_->SetParticleColorMode(ParticleColorMode::kRed);
+
+  // explosion
+  explosion_ = std::make_unique<ParticleSystem>();
+  explosion_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kExplosion, ParticlePrimitiveShape::Ring);
+  explosion_->SetCull(BlendMode::kBlendModeScreen);
 
   //SEの初期化
   playerAttackToEnemySE_.Initialize("resources/se/player_attack_to_enemy.Mp3");
@@ -102,9 +115,17 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   playerDeadSE_.Initialize("resources/se/playerDead.Mp3");
   cursolSE_.Initialize("resources/se/cursol.Mp3");
   decisionSE_.Initialize("resources/se/decision.Mp3");
-  inGameBGM_.Initialize("resources/bgm/inGameBGM.Mp3"); 
- 
+  inGameBGM_.Initialize("resources/bgm/inGameBGM.Mp3");
+
   inGameBGM_.PlayFixed();
+
+  // textureの読み込み
+  engine_->GetTextureManager()->GetTextureHandle("resources/hp_bar.png");
+  engine_->GetTextureManager()->GetTextureHandle("resources/hp_gauge.png");
+
+  rockMulti_.Initialize(engine_, camera_.get());
+
+  prevRockMultiplier_ = player_->GetMultiplier();
 }
 
 // 更新
@@ -146,10 +167,10 @@ void GameScene::Update() {
       camera_->Update("Camera", player_->GetPosition(), enemy_->GetPosition());
     }
 
-    if (engine_->GetInputManager()->IsKeyPressed('P') ||
-        engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
-      engine_->GetSceneManager()->Request("Title");
-    }
+    // if (engine_->GetInputManager()->IsKeyPressed('P') ||
+    //     engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+    //   engine_->GetSceneManager()->Request("Title");
+    // }
 
     if (skyDome_) {
       skyDome_->Update(deltaTime);
@@ -218,16 +239,31 @@ void GameScene::Update() {
     //   rockManager_->GetRocks());
     // }
 
-   field_.Update(deltaTime);
+    field_.Update(deltaTime);
 
     // すべての当たり判定
     DoCollision();
+
+    {
+      int currentMul = player_->GetMultiplier();
+      if (currentMul > prevRockMultiplier_) {
+        // プレイヤーの少し上に出す
+        Vector3 pos = player_->GetPosition();
+        pos.y += 2.0f;
+        rockMulti_.Show(currentMul, pos);
+      }
+      prevRockMultiplier_ = currentMul;
+    }
+
+    // particleの更新
+    hitEffects_->Update();
+    explosion_->Update();
 
     break;
 
   case GameState::PlayerDead: {
 
-	  inGameBGM_.Stop();
+    inGameBGM_.Stop();
 
     if (playerDeadTimer_ >= 3.0f) {
       state = GameState::GameOver;
@@ -259,9 +295,9 @@ void GameScene::Update() {
       worldFade_ = 1.0f;
     }
 
-	playerDeadSE_.Play();
+    playerDeadSE_.Play();
 
-    field_.StartFadeToBlack(1.4f);  // 1秒フェード
+    field_.StartFadeToBlack(1.4f); // 1秒フェード
     fieldFadeStarted_ = true;
 
     // カメラの更新
@@ -320,9 +356,9 @@ void GameScene::Update() {
   }
   case GameState::EnemyDead: {
 
-	  inGameBGM_.Stop();
+    inGameBGM_.Stop();
 
-    if (enemyDeadTimer_ >= 5.0f) {
+    if (enemyDeadTimer_ >= 3.0f) {
       state = GameState::Clear;
     }
 
@@ -474,6 +510,10 @@ void GameScene::Update() {
   }
   }
 
+  rockMulti_.Update(deltaTime);
+
+  // rockMulti_.Show(prevRockMultiplier_,player_->GetPosition());
+
   fade_.Update(deltaTime);
 
   if (!fade_.IsFading() && !nextSceneName_.empty()) {
@@ -530,11 +570,16 @@ void GameScene::Draw() {
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplyParticlePSO();
 
+  hitEffects_->Draw();
+  explosion_->Draw();
+
   // Sprite
 
   engine_->SetBlend(BlendMode::kBlendModeNormal);
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplySpritePSO();
+
+  rockMulti_.Draw();
 
   fade_.Draw();
 }
@@ -562,36 +607,56 @@ void GameScene::DoCollision() {
     if (wallIndex >= 0) {
       // 壁側の処理（壊す・状態変更など）
       enemyWallManager_.OnPlayerHitWall(wallIndex);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
 
       if (!player_->IsInvincible()) {
 
-          if (player_->GetRockCount() >= 1)
-          {
-              playerAttackToEnemySE_.Play();
-          }
+        if (player_->GetRockCount() >= 1) {
+          playerAttackToEnemySE_.Play();
+        }
 
         // 岩0で当たると死亡
-        if (player_->GetRockCount() <= 0) {
-          player_->Dead();
-		  enemyAttackToPlayerSE_.Play();
-          if (state == GameState::Playing) {
-            state = GameState::PlayerDead;
-            playerDeadTimer_ = 0.0f;
+        // if (player_->GetRockCount() <= 0) {
+        //  player_->Dead();
 
-            // カメラ寄せの開始情報を記録
-            deadCamStartPos_ = camera_->GetTranslate();
-            deadCamStartFov_ = camera_->GetFovY();
+        //  if (state == GameState::Playing) {
+        //    state = GameState::PlayerDead;
+        //    playerDeadTimer_ = 0.0f;
 
-            // Vector3 p = player_->GetPosition();
+        //    // カメラ寄せの開始情報を記録
+        //    deadCamStartPos_ = camera_->GetTranslate();
+        //    deadCamStartFov_ = camera_->GetFovY();
 
-            ////
-            /// プレイヤーを少し上から・手前から見る位置を目標にする（値はあとで調整）
-            // playerDeadCamTargetPos_ = {p.x, p.y + 3.0f, p.z - 8.0f};
+        //    // Vector3 p = player_->GetPosition();
 
-            // FOV は少しだけ狭めて寄ってる感じに
-            deadCamTargetFov_ = deadCamStartFov_ * 0.8f;
-          }
-        }
+        //    ////
+        //    ///
+        //    プレイヤーを少し上から・手前から見る位置を目標にする（値はあとで調整）
+        //    // playerDeadCamTargetPos_ = {p.x, p.y + 3.0f, p.z - 8.0f};
+
+        //    // FOV は少しだけ狭めて寄ってる感じに
+        //    deadCamTargetFov_ = deadCamStartFov_ * 0.8f;
+        //  }
+        //}
 
         int before = player_->GetRockCount();
 
@@ -629,13 +694,34 @@ void GameScene::DoCollision() {
     if (bulletIndex >= 0) {
       // 弾側の処理（消すなど）
 
+
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+
       if (!player_->IsInvincible()) {
 
-          if (player_->GetRockCount() >= 1)
-          {
-              playerAttackToEnemySE_.Play();
-          }
-          
+        if (player_->GetRockCount() >= 1) {
+          playerAttackToEnemySE_.Play();
+        }
+
         // 岩0で当たると死亡
         if (player_->GetRockCount() <= 0) {
           player_->Dead();
@@ -705,17 +791,38 @@ void GameScene::DoCollision() {
                                         eRadius * 2.0f, eRadius * 2.0f)) {
          
 
+
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+
         if (!player_->IsInvincible()) {
 
-            if (player_->GetRockCount()>=1)
-            {
-                playerAttackToEnemySE_.Play();
-            }
+          if (player_->GetRockCount() >= 1) {
+            playerAttackToEnemySE_.Play();
+          }
 
           // 岩0で当たると死亡
           if (player_->GetRockCount() <= 0) {
             player_->Dead();
-			enemyAttackToPlayerSE_.Play();
+            enemyAttackToPlayerSE_.Play();
             if (state == GameState::Playing) {
               state = GameState::PlayerDead;
               playerDeadTimer_ = 0.0f;
@@ -740,6 +847,7 @@ void GameScene::DoCollision() {
 
             // 敵にダメージ
             enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
+            explosion_->PlayExplosion(pPos);
 
             // スタン開始
             enemy_->StartStan(20);
