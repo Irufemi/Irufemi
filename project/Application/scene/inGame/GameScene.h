@@ -75,6 +75,9 @@ private: // 変数(ゲーム)
   //フィールドフェード開始フラグ
   bool fieldFadeStarted_ = false;
 
+  //パーティクル(HitEffect)
+  std::unique_ptr<ParticleSystem> hitEffects_ = nullptr;
+
 private: // メンバ変数(システム)
   // カメラ
   std::unique_ptr<Camera> camera_ = nullptr;

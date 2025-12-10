@@ -92,6 +92,12 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   // フェード
   fade_.Initialize(engine_, camera_.get());
   fade_.StartFadeIn(0.5f);
+
+  // hiteffect
+  hitEffects_ = std::make_unique<ParticleSystem>();
+  hitEffects_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kHitEffect, ParticlePrimitiveShape::Ring);
+  hitEffects_->SetCull(BlendMode::kBlendModeScreen);
+  hitEffects_->SetParticleColorMode(ParticleColorMode::kRed);
 }
 
 // 更新
@@ -209,6 +215,9 @@ void GameScene::Update() {
 
     // すべての当たり判定
     DoCollision();
+
+    // particleの更新
+    hitEffects_->Update();
 
     break;
 
@@ -505,6 +514,8 @@ void GameScene::Draw() {
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplyParticlePSO();
 
+  hitEffects_->Draw();
+
   // Sprite
 
   engine_->SetBlend(BlendMode::kBlendModeNormal);
@@ -537,6 +548,26 @@ void GameScene::DoCollision() {
     if (wallIndex >= 0) {
       // 壁側の処理（壊す・状態変更など）
       enemyWallManager_.OnPlayerHitWall(wallIndex);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
 
       if (!player_->IsInvincible()) {
 
@@ -598,6 +629,28 @@ void GameScene::DoCollision() {
     int bulletIndex = enemyBulletManager_.CheckCollisionCircle(pPos, pRadius);
     if (bulletIndex >= 0) {
       // 弾側の処理（消すなど）
+
+
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
 
       if (!player_->IsInvincible()) {
 
@@ -667,6 +720,28 @@ void GameScene::DoCollision() {
 
       if (GameFunction::IsHitCircleRect(pPos, hitPlayerRadius, ePos,
                                         eRadius * 2.0f, eRadius * 2.0f)) {
+
+
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
+          hitEffects_->PlayHitEffect(pPos);
 
         if (!player_->IsInvincible()) {
 
