@@ -67,7 +67,7 @@ public:
     // --------------------
     // 0.0 = 中央, 1.0 = 外周付近
     float CalcFade(float x, float z) const;
-
+    void ResetFade();
 private:
 
     // 砂フィールド用 CB の中身

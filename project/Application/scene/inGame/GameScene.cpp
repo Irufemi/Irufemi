@@ -65,6 +65,8 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
   fieldFadeStarted_ = false;
 
+  field_.ResetFade();
+
   enemyWallManager_.Initialize(camera_.get(), stageCenter, field_.GetRadius());
   enemyBulletManager_.Initialize(camera_.get(), stageCenter,
                                  field_.GetRadius());
@@ -237,6 +239,9 @@ void GameScene::Update() {
     if (worldFade_ > 1.0f) {
       worldFade_ = 1.0f;
     }
+
+    field_.StartFadeToBlack(1.4f);  // 1秒フェード
+    fieldFadeStarted_ = true;
 
     // カメラの更新
     if (debugMode) {

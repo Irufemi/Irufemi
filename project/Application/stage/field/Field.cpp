@@ -187,6 +187,21 @@ void Field::SetFadeRates(float startRate, float endRate) {
   }
 }
 
+void Field::ResetFade()
+{
+    fade_ = 0.0f;      // or blackFade_ = 0.0f;
+    fadeSpeed_ = 0.0f;
+    fading_ = false;
+
+    fieldCB_.blackFade = 0.0f;
+    if (fieldCBResource_) {
+        void* mapped = nullptr;
+        fieldCBResource_->Map(0, nullptr, &mapped);
+        std::memcpy(mapped, &fieldCB_, sizeof(FieldCBData));
+        fieldCBResource_->Unmap(0, nullptr);
+    }
+}
+
 //void Field::SetHeightScale(float scale) { heightScale_ = scale; }
 
 // -------------------------
