@@ -34,6 +34,17 @@ void TitleScene::Initialize(IrufemiEngine *engine) {
 
   fade_.Initialize(engine_, camera_.get());
   fade_.StartFadeIn(0.5f);
+
+  //SEの初期化
+  cursolSE_.Initialize("resources/se/cursol.mp3");
+  decisionSE_.Initialize("resources/se/decision.mp3");
+
+  //タイトルBGMの初期化
+  titleBGM_.Initialize("resources/bgm/titleBGM.mp3");
+  titleBGM_.PlayFixed();
+
+  deciding_ = false;
+  decideTimer_ = 0.0f;
 }
 
 // 更新

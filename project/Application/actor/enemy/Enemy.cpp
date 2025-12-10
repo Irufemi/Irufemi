@@ -133,6 +133,8 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
   burrowEffect_->SetParticleScale({0.5f, 0.5f, 0.5f}, {2.0f, 2.0f, 2.0f});
   burrowEffect_->SetEmitterCount(2); // 1回あたりの発生数を調整
   burrowEffect_->SetCull(BlendMode::kBlendModeScreen);
+  enemyChangeSE_.Initialize("resources/se/enemy_charge.Mp3");
+  enemyBurrowSE_.Initialize("resources/se/enemy_burrow.Mp3");
 }
 
 
@@ -493,6 +495,7 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
     }
 
     if (stateTimer_ <= 0.0f) {
+		enemyBurrowSE_.Play();  
       // ここで潜りきって地中へ → 見えなくなる
       isBurrowing_ = true;
 
@@ -988,7 +991,7 @@ void Enemy::EnterPhase2() {
   }
 
   // TODO: 咆哮SEを鳴らす場合はここでサウンド再生処理を呼ぶ
-  // 例）SoundManager::PlaySE("enemy_roar.wav");
+  enemyChangeSE_.Play();
 
   // HP を全回復
   hp_ = maxHp_;

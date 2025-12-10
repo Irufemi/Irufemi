@@ -449,11 +449,13 @@ void GameScene::Update() {
 #endif // _DEBUG
 
     if (engine_->GetInputManager()->IsKeyPressed('W')) {
+		cursolSE_.Play();
       resultIndex_--;
       if (resultIndex_ < 0)
         resultIndex_ = 1;
     }
     if (engine_->GetInputManager()->IsKeyPressed('S')) {
+		cursolSE_.Play();
       resultIndex_++;
       if (resultIndex_ > 1)
         resultIndex_ = 0;
@@ -461,10 +463,14 @@ void GameScene::Update() {
 
     if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
 
+		
+		
       if (resultIndex_ == 0) {
+          decisionSE_.Play();
         // 0 = Retry
         engine_->GetSceneManager()->Request("InGame");
       } else if (resultIndex_ == 1) {
+          decisionSE_.Play();
         // 1 = Title
         engine_->GetSceneManager()->Request("Title");
       }

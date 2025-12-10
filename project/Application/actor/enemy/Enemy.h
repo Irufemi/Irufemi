@@ -293,6 +293,8 @@ private:
 
   // 潜りエフェクト
   std::unique_ptr<ParticleSystem> burrowEffect_ = nullptr;
+  Se enemyChangeSE_;
+  Se enemyBurrowSE_;    
 public:
   /// <summary>
   /// 潜っているかどうか
