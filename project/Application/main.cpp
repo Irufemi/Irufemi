@@ -41,7 +41,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     );
 
-    engine->SetInitialSceneName("Debug");
+    engine->SetInitialSceneName("Title");
 
     engine->Execute();
 

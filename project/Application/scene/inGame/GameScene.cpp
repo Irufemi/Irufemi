@@ -88,6 +88,10 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   skyDome_ = std::make_unique<SkyDome>();
   skyDome_->Initialize(camera_.get(), 50.0f, "resources/texture/night_sky_stars.png");
   skyDome_->SetFollowCamera(true);
+
+  // フェード
+  fade_.Initialize(engine_, camera_.get());
+  fade_.StartFadeIn(0.5f);
 }
 
 // 更新
@@ -319,7 +323,7 @@ void GameScene::Update() {
     // カメラにイージングを適用
     float te = EaseOut(t);
 
-    Vector3 e = enemyDeadPos_;
+    Vector3 e = enemy_->GetPosition();
     deadCamTargetPos_ = {e.x, e.y + 4.0f, e.z - 8.0f};
 
     worldFade_ += worldFadeSpeed_ * deltaTime;
@@ -416,10 +420,40 @@ void GameScene::Update() {
   case GameState::Clear: {
     if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
         engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
-      engine_->GetSceneManager()->Request("Title");
+      // engine_->GetSceneManager()->Request("Title");
     }
+
+    // fade_.Update(deltaTime);
+
+    // if (!fade_.IsFading()) {
+    //   nextSceneName_ = "Title";
+    //   fade_.StartFadeOut(0.5f);
+    // }
+
+    //// フェードアウト完了後に切り替えたい場合は
+    // if (!fade_.IsFading() && !nextSceneName_.empty()) {
+    //   engine_->GetSceneManager()->Request(nextSceneName_.c_str());
+    // }
+
+    if (!fade_.IsFading()) {
+      if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
+          engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+
+        // 次に行くシーン名をセットして、フェードアウト開始
+        nextSceneName_ = "Title";
+        fade_.StartFadeOut(0.5f);
+      }
+    }
+
     break;
   }
+  }
+
+  fade_.Update(deltaTime);
+
+  if (!fade_.IsFading() && !nextSceneName_.empty()) {
+    engine_->GetSceneManager()->Request(nextSceneName_.c_str());
+    nextSceneName_.clear();
   }
 }
 
@@ -476,6 +510,8 @@ void GameScene::Draw() {
   engine_->SetBlend(BlendMode::kBlendModeNormal);
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplySpritePSO();
+
+  fade_.Draw();
 }
 
 void GameScene::DoCollision() {
@@ -600,7 +636,7 @@ void GameScene::DoCollision() {
 
         // 見た目の岩も外す
         if (rockManager_) {
-          rockManager_->HalveAttachedRocks(numToDetach);
+          // rockManager_->HalveAttachedRocks(numToDetach);
 
           // 外す対象を取得
           auto detached = rockManager_->SelectDetachedRocks(numToDetach);
@@ -675,7 +711,7 @@ void GameScene::DoCollision() {
 
               // 見た目の岩も外す
               if (rockManager_) {
-                rockManager_->HalveAttachedRocks(numToDetach);
+                // rockManager_->HalveAttachedRocks(numToDetach);
 
                 // 外す対象を取得
                 auto detached = rockManager_->SelectDetachedRocks(numToDetach);
@@ -706,7 +742,7 @@ void GameScene::DoCollision() {
             ApplyPlayerKnockback(1.0f);
 
             // 無敵開始
-            player_->StartInvincible(45);
+            // player_->StartInvincible(45);
 
             // カメラのシェイク
             if (camera_) {

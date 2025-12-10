@@ -45,7 +45,7 @@ void TitleScene::Update() {
     camera_->Update("Camera", {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f});
   }
 
-  if (engine_->GetInputManager()->IsKeyPressed('P') ||
+  if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
       engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
 
     engine_->GetSceneManager()->Request("InGame");
