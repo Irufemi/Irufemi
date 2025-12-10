@@ -30,7 +30,8 @@ enum class EnemyState {
   BurrowHidden,  // 潜って見えない状態（地中移動中）
   BurrowEmerge,  // 出現時のもぞもぞ
   ChargeBack,    // 突進の予備動作（後ろに下がる）
-  DashForward    // 高速突進中
+  DashForward,   // 高速突進中
+  Dead           // フェーズ2でHP0になった後のやられ演出
 };
 
 // フェーズ
@@ -41,27 +42,55 @@ enum class EnemyPhase {
 
 class Enemy {
 public:
+  /// <summary>
+  /// 初期化
+  /// </summary>
   Enemy();
 
-  // 壁マネージャと弾マネージャのポインタを渡す
+  /// <summary>
+  /// 壁マネージャと弾マネージャのポインタを渡す
+  /// </summary>
+  /// <param name="camera">カメラ</param>
+  /// <param name="spawnPos">初期位置</param>
+  /// <param name="stageRadius">ステージ半径</param>
+  /// <param name="wallManager">壁マネージャー</param>
+  /// <param name="bulletManager">弾マネージャー</param>
   void Initialize(Camera *camera, const Vector3 &spawnPos,
                   const float &stageRadius, EnemyWallManager *wallManager,
                   EnemyBulletManager *bulletManager);
 
-  // playerPos は「弾を撃つときの狙い先」および潜り先の決定に使う
+  /// <summary>
+  /// 更新処理
+  /// </summary>
+  /// <param name="deltaTime">時間</param>
+  /// <param name="playerPos">プレイヤー座標</param>
   void Update(float deltaTime, const Vector3 &playerPos);
 
+  /// <summary>
+  /// 描画処理
+  /// </summary>
   void Draw();
 
+  /// <summary>
+  /// 現在位置のゲッター
+  /// </summary>
+  /// <returns>敵の座標</returns>
   const Vector3 &GetPosition() const { return transform_.translate; }
 
+  /// <summary>
+  /// 現在位置のセッター
+  /// </summary>
+  /// <returns>敵の半径</returns>
   const float &GetRadius() const { return enemyBodyRadius_; }
 
   // -------------------------------
   // プレイヤーとの当たり判定関連
   // -------------------------------
 
-  // 直近の CheckCollisionsWithPlayer の結果を返す
+  /// <summary>
+  /// 直近フレームのプレイヤーとの当たり判定結果を取得
+  /// </summary>
+  /// <returns>直近フレームのプレイヤーとの当たり判定結果</returns>
   const EnemyPlayerHitResult &GetPlayerHitResult() const {
     return lastHitResult_;
   }
@@ -77,6 +106,8 @@ public:
   void ApplyDamageFromPlayer(int damage);
 
   int GetHp() const { return hp_; }
+
+  // フェーズ2かつHP0以下で死亡扱い
   bool IsDead() const { return (phase_ == EnemyPhase::Phase2) && (hp_ <= 0); }
 
   // -------------------------------
@@ -94,6 +125,12 @@ public:
 
   // 突進を強制停止（プレイヤーに当たったときなどに呼ぶ）
   void ForceStopDash();
+
+  // スタン状態を開始（durationFrame フレーム間スタンする）
+  void StartStan(int durationFrame) {
+    isStan_ = true;
+    stanTimer_ = durationFrame;
+  }
 
 private:
   Camera *camera_ = nullptr;
@@ -203,12 +240,32 @@ private:
   // 遠距離: dist >= 8.0f
   ActionWeightSet weightsFar_{60.0f, 20.0f, 10.0f, 10.0f};
 
+  //----- やられ中パラメーター -----
+  bool isStan_ = false; // 無敵か
+  int stanTimer_ = 0;   // 無敵フレーム数
+  int invincibleBlinkCounter_ = 0;
+  Vector4 normalColor_{1.0f, 1.0f, 1.0f, 1.0f};
+  Vector4 stanColor_{5.0f, 5.0f, 5.0f, 1.0f};
+
+  // 敵死亡演出用
+  bool deathStarted_ = false;        // 死亡演出が始まったか
+  float deathTimer_ = 0.0f;          // 死亡演出の経過時間
+  float deathDuration_ = 1.5f;       // 完全に小さくなるまでの時間（秒）
+  float deathRotateSpeedY_ = 360.0f; // 1秒あたりのY回転量（度）
+  Vector3 deathStartScale_{1.0f, 1.0f, 1.0f}; // 演出開始時のスケール
+
   void ResetActionTimer();
   Vector3 GetRandomReappearPosition(const Vector3 &playerPos) const;
   bool IsInsideAnyWall(const Vector3 &pos, float margin) const;
 
   // フェーズ2突入処理
   void EnterPhase2();
+
+  // XZ平面でのベクトル長さを返す
+  float LengthXZ(const Vector3 &v);
+
+  // 敵位置 origin から、target（プレイヤー）方向を向かせる
+  void DirectionFacing(const Vector3 &origin,const Vector3 &target);
 
 public:
   /// <summary>

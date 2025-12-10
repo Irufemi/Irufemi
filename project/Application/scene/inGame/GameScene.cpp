@@ -698,6 +698,9 @@ void GameScene::DoCollision() {
             // 敵にダメージ
             enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
 
+            // スタン開始
+            enemy_->StartStan(20);
+
             if (enemy_->GetState() == EnemyState::DashForward) {
 
               int before = player_->GetRockCount();

@@ -80,25 +80,68 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
   bulletChargeBaseScale_ = transform_.scale;
   bulletChargeBaseHeight_ = transform_.translate.y;
 
+  // 死亡演出フラグ初期化
+  deathStarted_ = false;
+  deathTimer_ = 0.0f;
+  deathStartScale_ = transform_.scale;
+
   ResetActionTimer();
 
   if (model_) {
     model_->SetPosition(transform_.translate);
+    model_->SetScale(transform_.scale);
+    model_->SetRotate(transform_.rotate);
     model_->Update();
   }
 }
 
 void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
-  // 壁も弾も管理できないなら何もしない
+
+  // スタン時間の更新
+  if (isStan_) {
+    if (stanTimer_ > 0) {
+      --stanTimer_;
+    } else {
+      isStan_ = false;
+      stanTimer_ = 0;
+    }
+  }
+
+  // フェーズ2でHP0以下になったら死亡演出状態に入る
+  if (IsDead()) {
+    if (state_ != EnemyState::Dead) {
+      state_ = EnemyState::Dead;
+      deathStarted_ = true;
+      deathTimer_ = 0.0f;
+      deathStartScale_ = transform_.scale;
+      // 死亡中は必ず見えていてほしいので潜りフラグを落とす
+      isBurrowing_ = false;
+    }
+  }
+
+  // 壁も弾も管理できない場合、死亡演出以外では何もしない
   if (!enemyWall_ && !enemyBullet_) {
-    return;
+    if (state_ != EnemyState::Dead) {
+      return;
+    }
+  }
+
+  if (state_ != EnemyState::DashForward) {
+    if (state_ != EnemyState::ChargeBack) {
+      if (state_ != EnemyState::Dead) {
+      DirectionFacing(transform_.translate, playerPos);
+      }
+    }
   }
 
   // 現在の状態に応じて処理を分ける（予備動作込みの状態マシン）
   switch (state_) {
   case EnemyState::Idle: {
     // 次の行動までの待ち時間
-    actionTimer_ -= deltaTime;
+    if (!isStan_) {
+      actionTimer_ -= deltaTime;
+    }
+
     if (actionTimer_ <= 0.0f) {
 
       // その行動をそもそも実行できるかどうか
@@ -337,7 +380,7 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
       bulletChargeProgress_ = 0.0f;
 
       if (enemyBullet_) {
-        // ★ 弾の発射位置は見た目とは切り離して「Y=0固定」
+        // 弾の発射位置は見た目とは切り離して「Y=0固定」
         Vector3 bulletOrigin = transform_.translate;
         bulletOrigin.y = 0.0f; // ここだけ固定値にする
 
@@ -474,26 +517,58 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
     break;
   }
 
+  case EnemyState::Dead: {
+    // フェーズ2の死亡演出：回転しながら小さくなっていく
+    deathTimer_ += deltaTime;
+
+    float t = deathTimer_ / deathDuration_;
+    if (t < 0.0f) {
+      t = 0.0f;
+    }
+    if (t > 1.0f) {
+      t = 1.0f;
+    }
+
+    // Y軸に回転を加える
+    transform_.rotate.y += deathRotateSpeedY_ * deltaTime;
+
+    // スケールを 1.0 → 0.0 へ
+    float s = 1.0f - t;
+    if (s < 0.0f) {
+      s = 0.0f;
+    }
+    transform_.scale = {
+        deathStartScale_.x * s,
+        deathStartScale_.y * s,
+        deathStartScale_.z * s,
+    };
+
+    break;
+  }
+
   default:
     break;
   }
 
   // --- ここから敵側で持つ当たり判定（弾 vs 壁 / 敵 vs 壁） ---
+  // 死亡演出中は当たり判定を無効にしておく
+  if (state_ != EnemyState::Dead) {
 
-  // 突進中の敵本体 vs 壁 壁だけ壊す
-  if (enemyWall_) {
-    if (state_ == EnemyState::DashForward) {
-      int hitWallIndex = enemyWall_->CheckCollisionCircle(transform_.translate,
-                                                          enemyBodyRadius_);
-      if (hitWallIndex >= 0) {
-        enemyWall_->OnEnemyHitWall(hitWallIndex);
+    // 突進中の敵本体 vs 壁 壁だけ壊す
+    if (enemyWall_) {
+      if (state_ == EnemyState::DashForward) {
+        int hitWallIndex = enemyWall_->CheckCollisionCircle(
+            transform_.translate, enemyBodyRadius_);
+        if (hitWallIndex >= 0) {
+          enemyWall_->OnEnemyHitWall(hitWallIndex);
+        }
       }
     }
-  }
 
-  // 弾 vs 壁：両方消す
-  if (enemyWall_ && enemyBullet_) {
-    enemyBullet_->ResolveBulletWallCollision(*enemyWall_);
+    // 弾 vs 壁：両方消す
+    if (enemyWall_ && enemyBullet_) {
+      enemyBullet_->ResolveBulletWallCollision(*enemyWall_);
+    }
   }
 
 #ifdef _DEBUG
@@ -507,6 +582,10 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
   ImGui::End();
 
   ImGui::Begin("Enemy Parameters");
+
+  // 敵のY軸回転
+  ImGui::Text("Enemy Rotation Y");
+  ImGui::DragFloat("Rotate_Y", &transform_.rotate.y, 1.0f);
 
   // 行動オン/オフ
   ImGui::Text("Action Enable");
@@ -602,11 +681,25 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
   if (model_) {
     model_->SetPosition(transform_.translate);
     model_->SetScale(transform_.scale);
+    model_->SetRotate(transform_.rotate);
     model_->Update();
   }
 }
 
 void Enemy::Draw() {
+
+  if (isStan_) {
+    bool flashOn = ((stanTimer_ / 2) % 2) == 0;
+
+    if (flashOn) {
+      model_->SetColor(stanColor_);
+    } else {
+      model_->SetColor(normalColor_);
+    }
+  } else {
+    model_->SetColor(normalColor_);
+  }
+
   // 潜り中（BurrowHidden）の間だけ見えなくする
   if (!isBurrowing_) {
     if (model_) {
@@ -705,6 +798,11 @@ void Enemy::ApplyDamageFromPlayer(int damage) {
     return;
   }
 
+  // すでに死亡演出中ならもうHPを減らさない
+  if (state_ == EnemyState::Dead) {
+    return;
+  }
+
   hp_ -= damage;
   if (hp_ < 0) {
     hp_ = 0;
@@ -741,6 +839,11 @@ void Enemy::EnterPhase2() {
   bulletChargeProgress_ = 0.0f;
   burrowPhase_ = 0.0f;
 
+  // 死亡演出関係もリセット
+  deathStarted_ = false;
+  deathTimer_ = 0.0f;
+  deathStartScale_ = transform_.scale;
+
   // 次の行動までの時間を再設定
   ResetActionTimer();
 }
@@ -755,5 +858,25 @@ void Enemy::ForceStopDash() {
     stateTimer_ = 0.0f;
     dashMoved_ = 0.0f;
     ResetActionTimer();
+  }
+}
+
+float Enemy::LengthXZ(const Vector3 &v) {
+  // XZ 平面上での長さ（Yは無視）を計算する
+  return std::sqrt(v.x * v.x + v.z * v.z);
+}
+
+void Enemy::DirectionFacing(const Vector3 &origin, const Vector3 &target) {
+  // origin から target を向くように Yaw を設定する
+  Vector3 dir;
+  dir.x = target.x - origin.x;
+  dir.y = 0.0f;
+  dir.z = target.z - origin.z;
+  float len = LengthXZ(dir);
+  if (len > 0.01f) {
+    dir.x /= len;
+    dir.z /= len;
+    float angle = std::atan2(dir.x, dir.z); // Z 軸基準の角度
+    transform_.rotate.y = angle;
   }
 }
