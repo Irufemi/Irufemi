@@ -1,13 +1,10 @@
 #pragma once
 
-#include "3D/ObjClass.h"
-#include "camera/Camera.h"
+#include "3D/Region.h"
 #include "math/Vector3.h"
-
-#include <memory>
 #include <vector>
 
-// 敵壁前方宣言
+class Camera;
 class EnemyWallManager;
 
 struct EnemyBullet {
@@ -54,9 +51,6 @@ public:
   void SetMaxBulletCount(int maxCount) { maxBulletCount_ = maxCount; }
   void SetBulletSpeed(float speed) { bulletSpeed_ = speed; }
 
-  // モデルポインタを外部からセットする（Enemy から渡す）
-  void SetModel(ObjClass *model) { bulletModel_ = model; }
-
 private:
   Camera *camera_ = nullptr;
 
@@ -67,11 +61,11 @@ private:
   float bulletLifeTime_ = 5.0f; // 寿命
   int maxBulletCount_ = 64;     // 最大弾数
 
-  // 弾データ
+  // 弾のロジック用データ
   std::vector<EnemyBullet> bullets_;
 
-  // 共有モデル（1個だけ）
-  ObjClass *bulletModel_ = nullptr;
+  // 描画用：インスタンシングでまとめて描画
+  Region bulletRegion_;
 
   int FindFreeIndex();
   static float LengthXZ(const Vector3 &v);

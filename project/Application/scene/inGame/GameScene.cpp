@@ -99,7 +99,9 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   // SEの初期化
   // hiteffect
   hitEffects_ = std::make_unique<ParticleSystem>();
-  hitEffects_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kHitEffect, ParticlePrimitiveShape::Ring);
+  hitEffects_->Initialize(camera_.get(), "resources/gradationLine.png",
+                          ParticleType::kHitEffect,
+                          ParticlePrimitiveShape::Ring);
   hitEffects_->SetCull(BlendMode::kBlendModeScreen);
   hitEffects_->SetParticleColorMode(ParticleColorMode::kRed);
 
@@ -560,6 +562,10 @@ void GameScene::Draw() {
   // Region
   engine_->ApplyRegionPSO();
 
+  // 敵の壁と弾を描画（Region を使う）
+  enemyWallManager_.Draw();
+  enemyBulletManager_.Draw();
+
   // 岩の描画
   if (rockManager_) {
     rockManager_->Draw(engine_, camera_.get());
@@ -595,6 +601,10 @@ void GameScene::DoCollision() {
   }
 
   if (!player_->GetIsAlive()) {
+    return;
+  }
+
+  if (enemy_->GetInPhaseTransition()) {
     return;
   }
 
@@ -694,27 +704,26 @@ void GameScene::DoCollision() {
     if (bulletIndex >= 0) {
       // 弾側の処理（消すなど）
 
-
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
-        hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
+      hitEffects_->PlayHitEffect(pPos);
 
       if (!player_->IsInvincible()) {
 
@@ -789,29 +798,27 @@ void GameScene::DoCollision() {
 
       if (GameFunction::IsHitCircleRect(pPos, hitPlayerRadius, ePos,
                                         eRadius * 2.0f, eRadius * 2.0f)) {
-         
 
-
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
-          hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
+        hitEffects_->PlayHitEffect(pPos);
 
         if (!player_->IsInvincible()) {
 
