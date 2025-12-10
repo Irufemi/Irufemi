@@ -6,7 +6,6 @@
 
 namespace {
 
-
 // 乱数生成器を取得（初期化は一度だけ）
 std::mt19937 &GetRngEnemy() {
   static std::random_device rd;
@@ -109,9 +108,12 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
 
   // 潜りエフェクトの初期化
   burrowEffect_ = std::make_unique<ParticleSystem>();
-  burrowEffect_->Initialize(camera_, "resources/gradationLine.png", ParticleType::kExplosion, ParticlePrimitiveShape::Ring);
+  burrowEffect_->Initialize(camera_, "resources/gradationLine.png",
+                            ParticleType::kExplosion,
+                            ParticlePrimitiveShape::Ring);
   burrowEffect_->SetCull(BlendMode::kBlendModeNormal);
-  burrowEffect_->SetParticleColor({0.6f, 0.45f, 0.3f, 0.8f}, {0.6f, 0.45f, 0.3f, 0.0f});
+  burrowEffect_->SetParticleColor({0.6f, 0.45f, 0.3f, 0.8f},
+                                  {0.6f, 0.45f, 0.3f, 0.0f});
   burrowEffect_->SetParticleScale({0.5f, 0.5f, 0.5f}, {2.0f, 2.0f, 2.0f});
   burrowEffect_->SetEmitterCount(2); // 1回あたりの発生数を調整
   burrowEffect_->SetCull(BlendMode::kBlendModeScreen);
@@ -174,7 +176,7 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
   if (state_ != EnemyState::DashForward) {
     if (state_ != EnemyState::ChargeBack) {
       if (state_ != EnemyState::Dead) {
-      DirectionFacing(transform_.translate, playerPos);
+        DirectionFacing(transform_.translate, playerPos);
       }
     }
   }
@@ -185,6 +187,10 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
     // 次の行動までの待ち時間
     if (!isStan_) {
       actionTimer_ -= deltaTime;
+    }
+
+    if (isTutorialRock_) {
+      ResetActionTimer();
     }
 
     if (actionTimer_ <= 0.0f) {
@@ -243,6 +249,11 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
       }
       if (!canDash) {
         weights.dash = 0.0f;
+      }
+
+      if (isTutorialDamage_) {
+        weights.burrow = 0.0f;
+        weights.wall = 0.0f;
       }
 
       float totalWeight =
@@ -374,12 +385,12 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
         // フェーズで壁パターンを切り替える
         if (phase_ == EnemyPhase::Phase2) {
 
-            enemyWallSE_.Play();
+          enemyWallSE_.Play();
           // フェーズ2：3×1 のライン状の壁を生成
           enemyWall_->SpawnWallLine3x1(transform_.translate, playerPos);
         } else {
 
-			enemyWallSE_.Play();
+          enemyWallSE_.Play();
 
           // フェーズ1：従来どおりランダム配置
           enemyWall_->SpawnWalls(transform_.translate, playerPos);
@@ -446,7 +457,7 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
           // フェーズ1：1発だけ
           enemyBullet_->SpawnBulletAimed(bulletOrigin, // Y=0 から出す
                                          playerPos);
-		  enemyBulletSE_.Play();    
+          enemyBulletSE_.Play();
         }
       }
 
@@ -470,13 +481,13 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
 
     // 砂埃エフェクト
     if (burrowEffect_) {
-        Vector3 effectPos = transform_.translate;
-        effectPos.y = groundY_ - enemyHeightOffset_; // 地面の位置
-        burrowEffect_->PlayExplosion(effectPos);
+      Vector3 effectPos = transform_.translate;
+      effectPos.y = groundY_ - enemyHeightOffset_; // 地面の位置
+      burrowEffect_->PlayExplosion(effectPos);
     }
 
     if (stateTimer_ <= 0.0f) {
-		enemyBurrowSE_.Play();  
+      enemyBurrowSE_.Play();
       // ここで潜りきって地中へ → 見えなくなる
       isBurrowing_ = true;
 
@@ -485,7 +496,7 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
 
       // 次に出てくる位置を決める（ワープは見えない間にしてしまう）
       Vector3 newPos = GetRandomReappearPosition(playerPos);
-      
+
       // 潜り終了位置を保存
       burrowEndPos_ = newPos;
 
@@ -507,17 +518,23 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
 
     // 地中移動中の砂埃エフェクト
     if (burrowEffect_ && burrowHiddenDuration_ > 0.0f) {
-        // 0.0 (開始) -> 1.0 (終了) の進行度
-        float t = 1.0f - (stateTimer_ / burrowHiddenDuration_);
-        if (t < 0.0f) { t = 0.0f; }
-        if (t > 1.0f) { t = 1.0f; }
+      // 0.0 (開始) -> 1.0 (終了) の進行度
+      float t = 1.0f - (stateTimer_ / burrowHiddenDuration_);
+      if (t < 0.0f) {
+        t = 0.0f;
+      }
+      if (t > 1.0f) {
+        t = 1.0f;
+      }
 
-        // 開始位置と終了位置を線形補間
-        Vector3 effectPos;
-        effectPos.x = burrowStartPos_.x + (burrowEndPos_.x - burrowStartPos_.x) * t;
-        effectPos.y = groundY_ - enemyHeightOffset_; // 地面の高さ
-        effectPos.z = burrowStartPos_.z + (burrowEndPos_.z - burrowStartPos_.z) * t;
-        burrowEffect_->PlayExplosion(effectPos);
+      // 開始位置と終了位置を線形補間
+      Vector3 effectPos;
+      effectPos.x =
+          burrowStartPos_.x + (burrowEndPos_.x - burrowStartPos_.x) * t;
+      effectPos.y = groundY_ - enemyHeightOffset_; // 地面の高さ
+      effectPos.z =
+          burrowStartPos_.z + (burrowEndPos_.z - burrowStartPos_.z) * t;
+      burrowEffect_->PlayExplosion(effectPos);
     }
 
     if (stateTimer_ <= 0.0f) {
@@ -541,9 +558,9 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
 
     // 砂埃エフェクト
     if (burrowEffect_) {
-        Vector3 effectPos = transform_.translate;
-        effectPos.y = groundY_ - enemyHeightOffset_; // 地面の位置
-        burrowEffect_->PlayExplosion(effectPos);
+      Vector3 effectPos = transform_.translate;
+      effectPos.y = groundY_ - enemyHeightOffset_; // 地面の位置
+      burrowEffect_->PlayExplosion(effectPos);
     }
 
     if (stateTimer_ <= 0.0f) {
@@ -584,7 +601,7 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
     // 高速突進中
     float move = dashSpeed_ * deltaTime;
 
-	enemyDashSE_.Play();
+    enemyDashSE_.Play();
 
     transform_.translate.x += dashDirection_.x * move;
     transform_.translate.z += dashDirection_.z * move;
@@ -779,7 +796,7 @@ void Enemy::Update(float deltaTime, const Vector3 &playerPos) {
   }
 
   if (burrowEffect_) {
-      burrowEffect_->Update();
+    burrowEffect_->Update();
   }
 }
 
@@ -834,7 +851,7 @@ void Enemy::Draw() {
 
   // 潜りエフェクトの描画
   if (burrowEffect_) {
-      burrowEffect_->Draw();
+    burrowEffect_->Draw();
   }
 }
 

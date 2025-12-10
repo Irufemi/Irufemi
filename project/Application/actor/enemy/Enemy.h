@@ -1,11 +1,10 @@
 #pragma once
 #include "3D/ObjClass.h"
+#include "3D/particle/ParticleSystem.h"
 #include "EnemyBullet.h"
 #include "EnemyWall.h"
 #include "audio/Se.h"
 #include "camera/Camera.h"
-#include"audio/Se.h"
-#include "3D/particle/ParticleSystem.h"
 #include <memory>
 
 class Player;
@@ -293,11 +292,20 @@ private:
   // 潜りエフェクト
   std::unique_ptr<ParticleSystem> burrowEffect_ = nullptr;
   Se enemyChangeSE_;
-  Se enemyBurrowSE_;    
+  Se enemyBurrowSE_;
+
 public:
   /// <summary>
   /// 潜っているかどうか
   /// </summary>
   /// <returns></returns>
   bool IsBurrowing() const { return isBurrowing_; }
+
+private:
+  bool isTutorialRock_ = false;
+  bool isTutorialDamage_ = false;
+
+public:
+  void SetIsTutorialRock(const bool isT) { isTutorialRock_ = isT; }
+  void SetIsTutorialDamage(const bool isT) { isTutorialDamage_ = isT; }
 };
