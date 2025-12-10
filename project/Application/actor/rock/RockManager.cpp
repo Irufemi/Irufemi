@@ -225,11 +225,36 @@ void RockManager::Update(Player *player) {
 
 void RockManager::UpdateRocks(float deltaTime) {
 
+    // フィールド半径（場外判定用）
+    float fieldRadius = 0.0f;
+    if (field_) {
+        fieldRadius = field_->GetRadius(); // 円フィールドの半径
+    }
+
   // 岩の更新処理
   for (auto &r : rocks_) {
     if (!r.isAlive_)
       continue;
     r.Update(deltaTime);
+
+    // === 場外チェック ===
+    // プレイヤーにくっついていない & スポーン中でない岩だけ判定
+    if (fieldRadius > 0.0f && !r.isAttached_ && !r.isSpawning_) {
+
+        float x = r.position_.x;
+        float z = r.position_.z;
+        float distSq = x * x + z * z;
+        float limitSq = fieldRadius * fieldRadius;
+
+        // フィールドの外側に出たら縮小開始
+        if (distSq > limitSq) {
+            if (!r.isShrinking_) {
+                r.isShrinking_ = true;
+                r.shrinkTimer_ = 0.0f;
+                r.shrinkStartRadius_ = r.radius_;
+            }
+        }
+    }
   }
 
   // 死亡しているかつ、プレイヤーにくっついていない岩を削除

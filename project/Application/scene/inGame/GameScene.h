@@ -62,6 +62,9 @@ private: // 変数(ゲーム)
   //天球
   std::unique_ptr<SkyDome> skyDome_;
 
+  //フィールドフェード開始フラグ
+  bool fieldFadeStarted_ = false;
+
 private: // メンバ変数(システム)
   // カメラ
   std::unique_ptr<Camera> camera_ = nullptr;

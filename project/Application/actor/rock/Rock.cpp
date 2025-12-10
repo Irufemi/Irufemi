@@ -9,6 +9,12 @@ Rock::Rock() : position_{0.0f, 0.0f, 0.0f}, radius_(0.5f), isAlive_(true) {
   spawnDuration_ = 0.3f;
   spawnStartY_ = position_.y;
   spawnEndY_ = position_.y;
+
+  // 縮小用
+  isShrinking_ = false;
+  shrinkTimer_ = 0.0f;
+  shrinkDuration_ = 0.3f;
+  shrinkStartRadius_ = radius_;
 }
 
 Rock::Rock(const Vector3 &pos, float radius)
@@ -92,6 +98,24 @@ void Rock::Update(float deltaTime) {
       velocity_ = {0.0f, 0.0f, 0.0f};
       isDropped_ = false; // 以降は普通のフィールド岩
     }
+  }
+
+  // === 場外に出たあとの縮小アニメーション ===
+  if (isShrinking_) {
+      shrinkTimer_ += deltaTime;
+      float t = shrinkTimer_ / shrinkDuration_;
+      if (t >= 1.0f) {
+          t = 1.0f;
+      }
+
+      // 半径を徐々に 0 にする
+      radius_ = shrinkStartRadius_ * (1.0f - t);
+
+      // 完全に縮小しきったら削除フラグ
+      if (t >= 1.0f) {
+          isAlive_ = false;
+          isShrinking_ = false;
+      }
   }
 
   // 将来「動く岩」にしたくなったら、この下に処理を足す

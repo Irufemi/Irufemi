@@ -62,6 +62,8 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
   field_.Initialize(engine, camera_.get());
 
+  fieldFadeStarted_ = false;
+
   enemyWallManager_.Initialize(camera_.get(), stageCenter, field_.GetRadius());
   enemyBulletManager_.Initialize(camera_.get(), stageCenter, field_.GetRadius());
 
@@ -82,7 +84,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   
 
   skyDome_ = std::make_unique<SkyDome>();
-  skyDome_->Initialize(camera_.get(), 50.0f, "resources/uvChecker.png");
+  skyDome_->Initialize(camera_.get(), 50.0f, "resources/texture/night_sky_stars.png");
   skyDome_->SetFollowCamera(true);
 
 }
@@ -182,7 +184,7 @@ void GameScene::Update() {
   //   GameFunction::CheckHit_PlayerAndRock(*player_, rockManager_->GetRocks());
   // }
 
-  field_.Update(1.0f / 60.0f);
+   field_.Update(deltaTime);
 
   // すべての当たり判定
   DoCollision();

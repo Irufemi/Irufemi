@@ -1,10 +1,19 @@
-//======================================================
+//====================================================== 
 // FieldCylinder.PS.hlsl
-// 砂色 + やわらかノイズ + 静止リング + 外周フェード
+// 砂色 + やわらかノイズ + 砂粒 + 静止リング + 外周フェード
 //======================================================
 
 Texture2D gTexture : register(t0);
 SamplerState gSampler : register(s0);
+
+// 黒フェード量など
+cbuffer FieldPS_CB : register(b5)
+{
+    float timeSec; // 砂アニメ用（今は 0 でOK）
+    float blackFade; // 0.0 = 通常, 1.0 = 真っ黒
+    float2 _fieldPad;
+};
+
 
 struct PSInput
 {
@@ -12,8 +21,6 @@ struct PSInput
     float2 uv : TEXCOORD0;
     float3 normal : NORMAL;
 };
-
-// ※ timeSec はもう使わないので cbuffer なし
 
 float SmoothStep(float edge0, float edge1, float x)
 {
@@ -48,7 +55,7 @@ float4 main(PSInput input) : SV_TARGET
     float3 baseColor = lerp(sandTint, nightTint, nightMix);
 
     //--------------------------------------------------
-    // ② ゆるめノイズ（チラつき少なめ）
+    // ② ゆるめノイズ（大きなムラ）
     //--------------------------------------------------
     float2 uvCoarse = input.uv * 6.0; // 大きめのムラだけ
     float nCoarse = Hash21(uvCoarse);
@@ -59,10 +66,27 @@ float4 main(PSInput input) : SV_TARGET
     float noiseFade = saturate(1.0 - distUV * 1.8); // 中央1 → 外0
     noiseFade = noiseFade * noiseFade;
 
-    float grainFactor = 1.0 + gCoarse * coarseStrength * noiseFade;
+    float coarseFactor = 1.0 + gCoarse * coarseStrength * noiseFade;
 
-    float3 noisyColor = baseColor * grainFactor;
+    float3 noisyColor = baseColor * coarseFactor;
 
+    //--------------------------------------------------
+    // ②’ 砂粒っぽい細かいノイズ ★追加部分
+    //--------------------------------------------------
+    // 細かいザラザラはやりすぎるとモアレになるので少しだけ
+    float2 uvFine = input.uv * 40.0; // 粒の密度
+    float nFine = Hash21(uvFine + 37.0);
+    nFine = nFine * 2.0 - 1.0; // -1〜1
+
+    // 外側は若干弱めに
+    float grainFade = saturate(1.2 - distUV * 2.0);
+    float grainStrength = 0.035; // 粒の強さ
+
+    float grainFactor = 1.0 + nFine * grainStrength * grainFade;
+
+    noisyColor *= grainFactor;
+
+    
     //--------------------------------------------------
     // ③ 法線で“傾斜部分を少し暗く”
     //--------------------------------------------------
@@ -77,7 +101,6 @@ float4 main(PSInput input) : SV_TARGET
     const float ringWidth = 0.06; // 太さ
     const float ringDarkMul = 0.78; // 暗さ
 
-    // 距離に応じて周期的なパターンを作る
     float ringPhase = frac(distUV * ringCount);
     float ringLine = SmoothStep(0.0, ringWidth, ringWidth - ringPhase);
 
@@ -95,6 +118,9 @@ float4 main(PSInput input) : SV_TARGET
     float fadeMul = lerp(1.0, minFactor, k);
 
     float3 finalColor = noisyColor * fadeMul;
+    
+    // ---- 黒フェード適用（0 → そのまま, 1 → 真っ黒） ----
+    finalColor = lerp(finalColor, float3(0.0, 0.0, 0.0), blackFade);
 
     return float4(finalColor, 1.0);
 }

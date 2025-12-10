@@ -8,6 +8,7 @@
 #include <algorithm> // std::min, std::max
 #include <cmath>
 #include <cstdlib> // rand()
+#include "engine/irufemiEngine.h"
 
 // -------------------------
 // 便利関数（このファイル内だけで使用）
@@ -32,6 +33,33 @@ float Random01() {
 
 constexpr float kPi = 3.1415926535f;
 } // namespace
+
+void Field::StartFadeToBlack(float durationSec)
+{
+    // durationSec 秒かけて 0→1 にする
+    if (durationSec <= 0.0f) {
+        fade_ = 1.0f;
+        fading_ = false;
+        fadeSpeed_ = 0.0f;
+        return;
+    }
+
+    fading_ = true;
+    fadeSpeed_ = 1.0f / durationSec;
+}
+
+//void Field::Update(float deltaTime)
+//{
+//    if (!fading_) { return; }
+//
+//    fade_ += fadeSpeed_ * deltaTime;
+//    if (fade_ >= 1.0f) {
+//        fade_ = 1.0f;
+//        fading_ = false; // 完了
+//    }
+//}
+
+
 
 // -------------------------
 // Field 本体
@@ -59,9 +87,53 @@ void Field::Initialize(IrufemiEngine *engine, Camera *camera) {
   // ★ カメラ＆テクスチャ指定で初期化
   // 砂用テクスチャがまだなければ、とりあえず uvChecker でもOK
   fieldCylinder_.Initialize(camera, "resources/uvChecker.png");
+
+  assert(engine);
+
+  // --- フィールド用定数バッファ初期値 ---
+  fieldCB_.timeSec = 0.0f;
+  fieldCB_.blackFade = 0.0f;
+  fieldCB_.pad[0] = 0.0f;
+  fieldCB_.pad[1] = 0.0f;
+
+  // ★ IrufemiEngine 経由で定数バッファを作成
+  fieldCBResource_ = engine_->CreateBufferResource(sizeof(FieldCBData));
+  assert(fieldCBResource_);
+
+  // 一度初期値を書き込んでおく
+  void* mapped = nullptr;
+  fieldCBResource_->Map(0, nullptr, &mapped);
+  memcpy(mapped, &fieldCB_, sizeof(FieldCBData));
+  fieldCBResource_->Unmap(0, nullptr);
 }
 
-void Field::Update(float /*deltaTime*/) {
+void Field::Update(float deltaTime) {
+
+    // -------------------------
+    // ① 黒フェードアニメーション
+    // -------------------------
+    if (fading_) {
+        fade_ += fadeSpeed_ * deltaTime;
+        if (fade_ >= 1.0f) {
+            fade_ = 1.0f;
+            fading_ = false; // 完了
+        }
+    }
+
+    // -------------------------
+    // ② 定数バッファに反映
+    // -------------------------
+     // --- 定数バッファへ書き込み ---
+    if (fieldCBResource_) {
+        fieldCB_.blackFade = fade_;              // 0.0〜1.0
+        fieldCB_.timeSec += 1.0f / 60.0f;       // 必要なら適当に
+
+        void* mapped = nullptr;
+        fieldCBResource_->Map(0, nullptr, &mapped);
+        memcpy(mapped, &fieldCB_, sizeof(FieldCBData));
+        fieldCBResource_->Unmap(0, nullptr);
+    }
+
   // 今のところフィールド自身は時間で変化しないので何もしない。
   // 砂嵐を動かしたり、ステージギミックを追加したくなったらここに処理を書く。
   fieldCylinder_.SetInfo(fieldInfo_);
@@ -75,6 +147,19 @@ void Field::Draw() {
   // if (fieldRegion_) {
   //     fieldRegion_->Draw();
   // }
+
+   // いつものフィールド用 PSO を適用
+    engine_->ApplyFieldCylinderPSO();
+
+    // --- フィールド用定数バッファ (b5) を root パラメータ 9 にバインド ---
+    if (fieldCBResource_) {
+        engine_->GetCommandList()->SetGraphicsRootConstantBufferView(
+            9, // ← RootSignature / PSO で b5 を束ねたスロットに合わせる
+            fieldCBResource_->GetGPUVirtualAddress());
+    }
+
+    // 円柱描画
+    fieldCylinder_.Draw();
   fieldCylinder_.Draw();
 }
 

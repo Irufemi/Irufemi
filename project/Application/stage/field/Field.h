@@ -32,6 +32,15 @@ public:
     void  SetFadeRates(float startRate, float endRate);
     //void  SetHeightScale(float scale);
 
+    // ==============================
+    // 黒フェード量の設定・取得
+    // ==============================
+    // t: 0.0 = 通常, 1.0 = 真っ黒
+   // プレイヤー死亡などで呼ぶ用
+    void StartFadeToBlack(float durationSec = 1.0f);
+    float GetFade() const { return fade_; }
+
+
     // --------------------
     // 地形・境界関連
     // --------------------
@@ -63,9 +72,11 @@ private:
 
     // 砂フィールド用 CB の中身
     struct FieldCBData {
-        float timeSec = 0.0f;
-        float pad[3] = {};
+        float timeSec = 0.0f;  // 砂のアニメーション用（今後使いたければ）
+        float blackFade = 0.0f;  // プレイヤー死亡時の黒フェード
+        float pad[2] = {};    // 16byte アライメント用
     };
+
 
     FieldCBData fieldCB_{};
     Microsoft::WRL::ComPtr<ID3D12Resource> fieldCBResource_;
@@ -84,9 +95,17 @@ private:
     // ここはあなたのエンジンに合わせて後で決めよう
     // Region* fieldRegion_ = nullptr;
     // ------------------------
-    // ★ 描画用メンバを追加
+    // 描画用メンバを追加
     // ------------------------
-    // ★ フィールド用円柱
+    // フィールド用円柱
     Cylinder       fieldInfo_;      // 論理情報（中心・半径・高さ）
     CylinderClass  fieldCylinder_;  // 描画＆変換
+
+    // ==============================
+    // プレイヤー死亡時の黒フェード
+    // ==============================
+    float fade_ = 0.0f;        // 0.0 = 通常, 1.0 = 真っ黒
+    float fadeSpeed_ = 0.0f;   // 1秒でフェードさせたいなら 1.0 / 1.0
+    bool  fading_ = false;     // フェード中フラグ
+
 };

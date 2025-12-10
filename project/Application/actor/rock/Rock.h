@@ -24,6 +24,12 @@ public:
   Vector3 rotate_{};
   Quaternion localRotation_{0.0f, 0.0f, 0.0f, 1.0f};
 
+  // ==== 場外に出たときの縮小演出用 ====
+  bool  isShrinking_ = false; // 縮小中か？
+  float shrinkTimer_ = 0.0f;  // 経過時間
+  float shrinkDuration_ = 1.0f;  // 何秒かけて消えるか
+  float shrinkStartRadius_ = 0.0f; // 縮小開始時の半径
+
 public:
   Rock();
   Rock(const Vector3 &pos, float radius);

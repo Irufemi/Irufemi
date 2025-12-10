@@ -116,6 +116,21 @@ public: // ゲッター
     // SceneManager参照
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
 
+    // ★★ ここから追加 ★★
+   // DirectXCommon 本体へのポインタ（必要なら）
+    DirectXCommon* GetDirectXCommon() const { return dxCommon_.get(); }
+
+    // コマンドリストを直接欲しいとき用
+    ID3D12GraphicsCommandList* GetCommandList() const {
+        return dxCommon_->GetCommandList();
+    }
+
+    // 任意サイズの Upload 用バッファを作るラッパ
+    Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes) {
+        return dxCommon_->CreateBufferResource(sizeInBytes);
+    }
+    // ★★ ここまで追加 ★★
+
 public: // セッター
     void AddFenceValue(uint32_t index) { dxCommon_->GetFenceValue() += index; }
     
