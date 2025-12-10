@@ -158,16 +158,16 @@ void Player::Move() {
   Vector3 dir{0.0f, 0.0f, 0.0f};
 
   // キー入力での移動
-  if (input_->IsKeyDown('W')) {
+  if (input_->IsKeyDown('W') || input_->GetLeftStickY() > 0.0f) {
     dir.z += 1.0f; // 前
   }
-  if (input_->IsKeyDown('S')) {
+  if (input_->IsKeyDown('S') || input_->GetLeftStickY() < 0.0f) {
     dir.z -= 1.0f; // 後ろ
   }
-  if (input_->IsKeyDown('D')) {
+  if (input_->IsKeyDown('D') || input_->GetLeftStickX() > 0.0f) {
     dir.x += 1.0f; // 右
   }
-  if (input_->IsKeyDown('A')) {
+  if (input_->IsKeyDown('A') || input_->GetLeftStickX() < 0.0f) {
     dir.x -= 1.0f; // 左
   }
 

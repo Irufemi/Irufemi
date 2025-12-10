@@ -34,6 +34,14 @@ private: // メンバ変数
   std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
   bool debugMode = false;
 
+  // タイトル文字
+  std::unique_ptr<Sprite> titleText_ = nullptr;
+
+  // プッシュ文字
+  std::unique_ptr<Sprite> pushText_ = nullptr;
+
+  // アイドリングアニメーション用タイマー
+  float idleAnimTimer_ = 0.0f;
 
   // 遷移フェード
   Fade fade_;
