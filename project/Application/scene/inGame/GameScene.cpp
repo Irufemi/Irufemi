@@ -171,12 +171,14 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   gameClearSprite_.SetPosition(640.0f, 220.0f, 0.0f); // 好きな位置に
   gameClearSprite_.SetAnchor(0.5f, 0.5f);
   gameClearBasePos_ = { 640.0f, 220.0f, 0.0f };
-}
 
   tutorialState_ = TutorialState::Rock;
   tutorialHitEnemy_ = false;
   tutorialDamaged_ = false;
 }
+
+  
+
 
 // 更新
 void GameScene::Update() {
