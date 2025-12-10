@@ -248,4 +248,12 @@ public:
   /// ノックバック中かどうか
   /// </summary>
   bool IsKnockback() const { return isKnockback_; }
+
+private:
+  bool isAlive_;
+
+public:
+  bool GetIsAlive() const { return isAlive_; }
+
+  void Dead() { isAlive_ = false; }
 };

@@ -33,6 +33,12 @@ enum class EnemyState {
   DashForward    // 高速突進中
 };
 
+// フェーズ
+enum class EnemyPhase {
+  Phase1 = 0,
+  Phase2 = 1,
+};
+
 class Enemy {
 public:
   Enemy();
@@ -71,7 +77,7 @@ public:
   void ApplyDamageFromPlayer(int damage);
 
   int GetHp() const { return hp_; }
-  bool IsDead() const { return hp_ <= 0; }
+  bool IsDead() const { return (phase_ == EnemyPhase::Phase2) && (hp_ <= 0); }
 
   // -------------------------------
   // 予備動作用の情報（見た目用に他クラスから参照したくなったとき用）
@@ -82,6 +88,9 @@ public:
 
   // 弾チャージの進み具合（0.0〜1.0）
   float GetBulletChargeProgress() const { return bulletChargeProgress_; }
+
+  // 現在のフェーズ
+  EnemyPhase GetPhase() const { return phase_; }
 
   // 突進を強制停止（プレイヤーに当たったときなどに呼ぶ）
   void ForceStopDash();
@@ -96,14 +105,17 @@ private:
     Vector3 scale{1.0f, 1.0f, 1.0f};
   } transform_;
 
+  // HP
+  int maxHp_ = 140;
   int hp_ = 140;
+  EnemyPhase phase_ = EnemyPhase::Phase1;
 
   EnemyWallManager *enemyWall_ = nullptr;
   EnemyBulletManager *enemyBullet_ = nullptr;
 
   // 行動タイマー（Idle のときだけ使う：次に行動を始めるまでの時間）
   float actionTimer_ = 0.0f;
-  float actionIntervalMin_ = 2.0f; // 2〜4秒の間で行動開始
+  float actionIntervalMin_ = 2.0f; // フェーズ1：2〜4秒の間で行動開始
   float actionIntervalMax_ = 4.0f;
 
   // 潜り移動用（isBurrowing_ は「見えていない間」だけ true にする）
@@ -141,6 +153,14 @@ private:
   float bulletChargeDuration_ = 0.8f;
   float bulletChargeProgress_ = 0.0f; // 0.0〜1.0
 
+  // 弾の見た目用（膨張・収縮）
+  Vector3 bulletChargeBaseScale_{1.0f, 1.0f, 1.0f};
+  float bulletChargeBaseHeight_ = 0.0f;
+  float bulletChargeScaleAmount_ = 0.25f; // Max で 25% くらい大きくする
+
+  // フェーズ2用の弾拡散角度（1 発ごとの間隔）
+  float bulletSpreadAngleRad_ = 0.20f; // おおよそ 11.5 度
+
   // 潜り攻撃用パラメータ
   float burrowPreDuration_ = 0.8f;      // 潜る前のもぞもぞ時間
   float burrowHiddenDuration_ = 1.0f;   // 地中にいる時間
@@ -158,6 +178,9 @@ private:
   float dashMoved_ = 0.0f;     // 現在走った距離
 
   Vector3 dashDirection_{0, 0, 0}; // 向いている方向のキャッシュ
+
+  // 突進で場外に出たあと、次の行動を確定で潜り移動にするフラグ
+  bool forceBurrowOnNextAction_ = false;
 
   // --------- 行動オン/オフフラグ ---------
   bool enableWallAttack_ = true;
@@ -183,6 +206,9 @@ private:
   void ResetActionTimer();
   Vector3 GetRandomReappearPosition(const Vector3 &playerPos) const;
   bool IsInsideAnyWall(const Vector3 &pos, float margin) const;
+
+  // フェーズ2突入処理
+  void EnterPhase2();
 
 public:
   /// <summary>

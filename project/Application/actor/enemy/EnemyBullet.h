@@ -33,10 +33,14 @@ public:
   void Draw();
 
   // 壁との当たり判定
-  void ResolveBulletWallCollision(EnemyWallManager& wallManager);
+  void ResolveBulletWallCollision(EnemyWallManager &wallManager);
 
   // 敵位置 origin から、target（プレイヤー）に向かって1発撃つ
   void SpawnBulletAimed(const Vector3 &origin, const Vector3 &target);
+
+  // フェーズ2用：origin から target 方向に count 発を扇状に撃つ
+  void SpawnBulletSpread(const Vector3 &origin, const Vector3 &target,
+                         int count, float spreadAngleRad);
 
   // 円（プレイヤーなど）との当たり判定
   // 当たっている弾のインデックスを返す（なければ -1）
@@ -64,4 +68,8 @@ private:
   int FindFreeIndex();
   static float LengthXZ(const Vector3 &v);
   static float DistanceXZ(const Vector3 &a, const Vector3 &b);
+
+  // 実際の移動方向から弾を1発発生させる内部関数
+  void SpawnBulletWithDirection(const Vector3 &origin,
+                                const Vector3 &dirNormalized);
 };
