@@ -3,6 +3,7 @@
 #include "engine/IrufemiEngine.h"
 #include "manager/DebugUI.h"
 #include "scene/SceneManager.h"
+#include <cmath> // sinf を使うために追加
 
 // 初期化
 void TitleScene::Initialize(IrufemiEngine* engine) {
@@ -61,10 +62,13 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     deciding_ = false;
     decideTimer_ = 0.0f;
+    idleAnimTimer_ = 0.0f;
 }
 
 // 更新
 void TitleScene::Update() {
+    const float deltaTime = 1.0f / 60.0f;
+
     // カメラの通常更新
     if (debugMode) {
         debugCamera_->Update();
@@ -78,20 +82,50 @@ void TitleScene::Update() {
     // タイトル文字の更新
     titleText_->Update();
 
-    // プッシュ文字の更新
-    pushText_->Update();
+    // --- UIアニメーション処理 ---
+    if (deciding_) {
+        // 決定後の短い明滅アニメーション
+        decideTimer_ += deltaTime;
+        const float blinkDuration = 0.3f; // 明滅アニメーションの総時間
+        const int blinkCount = 2; // 明滅回数
 
-    if (!fade_.IsFading()) {
-        if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
-            engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
-
+        if (decideTimer_ < blinkDuration) {
+            // 1回の明滅（消灯→点灯）にかかる時間
+            float singleBlinkTime = blinkDuration / blinkCount;
+            // 現在の明滅サイクルの進捗 (0-1)
+            float phase = fmodf(decideTimer_, singleBlinkTime) / singleBlinkTime;
+            // 0.5を境に表示/非表示を切り替え
+            pushText_->SetAlpha(phase < 0.5f ? 0.0f : 1.0f);
+        } else {
+            // アニメーション終了
+            pushText_->SetAlpha(0.0f); // 最後に非表示にする
             // 次に行くシーン名をセットして、フェードアウト開始
             nextSceneName_ = "InGame";
             fade_.StartFadeOut(0.5f);
+            deciding_ = false; // アニメーションとフェード開始処理を一度だけ行う
+        }
+
+    } else if (!fade_.IsFading()) {
+        // アイドリング中のゆっくりとした明滅
+        idleAnimTimer_ += deltaTime;
+        const float blinkSpeed = 1.5f; // 明滅の速さ (2.0f -> 1.5f に変更して滑らかに)
+        // sin波を使って 0.3 ～ 1.0 の範囲でアルファ値を変化させる
+        float alpha = (sinf(idleAnimTimer_ * blinkSpeed) + 1.0f) / 2.0f * 0.7f + 0.3f;
+        pushText_->SetAlpha(alpha);
+
+        // 入力受付
+        if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
+            engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+            deciding_ = true;
+            decideTimer_ = 0.0f;
+            decisionSE_.Play();
         }
     }
 
-    fade_.Update(1.0f / 60.0f);
+    // プッシュ文字の更新
+    pushText_->Update();
+
+    fade_.Update(deltaTime);
 
     if (!fade_.IsFading() && !nextSceneName_.empty()) {
         engine_->GetSceneManager()->Request(nextSceneName_.c_str());
@@ -117,7 +151,9 @@ void TitleScene::Draw() {
     titleText_->Draw();
 
     // プッシュ文字の描画
-    pushText_->Draw();
+    if (pushText_->GetColor().w > 0.0f) {
+        pushText_->Draw();
+    }
 
 
     fade_.Draw();
