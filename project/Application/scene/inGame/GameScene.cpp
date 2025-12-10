@@ -100,6 +100,12 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   hitEffects_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kHitEffect, ParticlePrimitiveShape::Ring);
   hitEffects_->SetCull(BlendMode::kBlendModeScreen);
   hitEffects_->SetParticleColorMode(ParticleColorMode::kRed);
+
+  // explosion
+  explosion_ = std::make_unique<ParticleSystem>();
+  explosion_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kExplosion, ParticlePrimitiveShape::Ring);
+  explosion_->SetCull(BlendMode::kBlendModeScreen);
+
   //SEの初期化
   playerAttackToEnemySE_.Initialize("resources/se/player_attack_to_enemy.Mp3");
   playerAttackToWallSE_.Initialize("resources/se/player_attack_to_wall.Mp3");
@@ -230,6 +236,7 @@ void GameScene::Update() {
 
     // particleの更新
     hitEffects_->Update();
+    explosion_->Update();
 
     break;
 
@@ -533,6 +540,7 @@ void GameScene::Draw() {
   engine_->ApplyParticlePSO();
 
   hitEffects_->Draw();
+  explosion_->Draw();
 
   // Sprite
 
@@ -808,6 +816,7 @@ void GameScene::DoCollision() {
 
             // 敵にダメージ
             enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
+            explosion_->PlayExplosion(pPos);
 
             // スタン開始
             enemy_->StartStan(20);

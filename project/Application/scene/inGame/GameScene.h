@@ -21,9 +21,9 @@
 #include "actor/enemy/EnemyWall.h"
 #include "actor/player/Player.h"
 #include "actor/rock/RockManager.h"
+#include "audio/Se.h"
 #include "audio/Bgm.h"
 #include "effect/Fade.h"
-#include"audio/Se.h"
 #include "stage/field/field.h"
 #include "stage/skyDome/SkyDome.h"
 
@@ -80,6 +80,9 @@ private: // 変数(ゲーム)
 
   //パーティクル(HitEffect)
   std::unique_ptr<ParticleSystem> hitEffects_ = nullptr;
+  //パーティクル(Explosion)
+  std::unique_ptr<ParticleSystem> explosion_ = nullptr;
+
   
   //----------SE-------------
   Se playerAttackToEnemySE_;
