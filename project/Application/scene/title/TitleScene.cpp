@@ -89,14 +89,33 @@ void TitleScene::Update() {
       nextSceneName_ = "InGame";
       fade_.StartFadeOut(0.5f);
     }
-  }
+    else {
+        camera_->Update("Camera", { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
+    }
 
-  fade_.Update(1.0f / 60.0f);
+    // まだフェード中じゃないときだけ入力を受け付ける
+    if (!fade_.IsFading()) {
+        if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
+            engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
 
-  if (!fade_.IsFading() && !nextSceneName_.empty()) {
-    engine_->GetSceneManager()->Request(nextSceneName_.c_str());
-    nextSceneName_.clear();
-  }
+			decisionSE_.SetVolume(0.8f);
+            // 決定SEを鳴らす（ここで一回だけ）
+            decisionSE_.Play();
+
+            // 次に行くシーン名をセットして、フェードアウト開始
+            nextSceneName_ = "InGame";
+            fade_.StartFadeOut(0.5f);
+        }
+    }
+
+    // フェードの進行
+    fade_.Update(1.0f / 60.0f);
+
+    // フェードが終わっていて、かつ遷移先が設定されているならシーン切り替え
+    if (!fade_.IsFading() && !nextSceneName_.empty()) {
+        engine_->GetSceneManager()->Request(nextSceneName_.c_str());
+        nextSceneName_.clear();
+    }
 }
 
 void TitleScene::Draw() {
