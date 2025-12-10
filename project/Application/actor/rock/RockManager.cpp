@@ -66,7 +66,7 @@ void RockManager::Initialize(Camera *camera) {
   rockRegion_ = std::make_unique<Region>();
 
   // モデルを読み込む
-  rockRegion_->Initialize(camera, "block.obj");
+  rockRegion_->Initialize(camera, "rock.obj");
 }
 
 void RockManager::AddRock(const Vector3 &pos, float radius) {

@@ -267,7 +267,7 @@ void EnemyWallManager::SpawnWalls(const Vector3 &enemyPos,
 
         // 壁本体モデル追加
         models_.emplace_back(std::make_unique<ObjClass>());
-        models_.back()->Initialize(camera_, "cube.obj"); // 壁モデル
+        models_.back()->Initialize(camera_, "wall.obj"); // 壁モデル
 
         // 予測用マーカー（赤い円など）のモデル追加
         warningModels_.emplace_back(std::make_unique<ObjClass>());
@@ -372,7 +372,7 @@ void EnemyWallManager::SpawnWallLine3x1(const Vector3 &enemyPos,
 
         // 壁本体モデル追加
         models_.emplace_back(std::make_unique<ObjClass>());
-        models_.back()->Initialize(camera_, "cube.obj");
+        models_.back()->Initialize(camera_, "wall.obj");
 
         // 予測用マーカー（影）のモデル追加
         warningModels_.emplace_back(std::make_unique<ObjClass>());

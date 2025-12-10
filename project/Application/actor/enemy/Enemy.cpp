@@ -42,7 +42,7 @@ void Enemy::Initialize(Camera *camera, const Vector3 &spawnPos,
   camera_ = camera;
 
   model_ = std::make_unique<ObjClass>();
-  model_->Initialize(camera_, "player.obj");
+  model_->Initialize(camera_, "boss.obj");
 
   transform_.translate = spawnPos;
   transform_.scale = {3.0f, 3.0f, 3.0f};

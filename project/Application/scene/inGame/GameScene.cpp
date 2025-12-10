@@ -42,7 +42,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
 
   playerObj_ = std::make_unique<SphereClass>();
-  playerObj_->Initialize(camera_.get());
+  playerObj_->Initialize(camera_.get(),"resources/texture/playerFace.png");
 
   player_ = std::make_unique<Player>();
   player_->Initialize(camera_.get(), playerObj_.get(),
