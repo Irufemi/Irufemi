@@ -27,6 +27,8 @@
 #include "stage/field/field.h"
 #include "stage/skyDome/SkyDome.h"
 #include "ui/RockMulti.h"
+#include "ui/EnemyHpGauge.h"
+
 
 // 前方宣言
 class IrufemiEngine;
@@ -99,6 +101,9 @@ private: // 変数(ゲーム)
   Se decisionSE_;
   Se enemyDeadSE_;
   Bgm inGameBGM_;
+
+  //-----UI-----
+  std::unique_ptr<EnemyHpGauge> enemyHpGauge_;
 
 private: // メンバ変数(システム)
   // カメラ

@@ -108,7 +108,11 @@ public:
   // プレイヤーの攻撃力などに応じてダメージを与える
   void ApplyDamageFromPlayer(int damage);
 
+  // 現在のHPを取得
   int GetHp() const { return hp_; }
+
+  // 最大HPを取得
+  int GetMaxHp() const { return maxHp_; }
 
   // フェーズ2かつHP0以下で死亡扱い
   bool IsDead() const { return (phase_ == EnemyPhase::Phase2) && (hp_ <= 0); }

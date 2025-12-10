@@ -78,8 +78,12 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
   enemy_ = std::make_unique<Enemy>();
   enemy_->Initialize(
-      camera_.get(), Vector3{0.0f, 0.0f, 7.0f}, // 敵のスポーン位置
+      camera_.get(), Vector3{ 0.0f, 0.0f, 7.0f }, // 敵のスポーン位置
       field_.GetRadius(), &enemyWallManager_, &enemyBulletManager_);
+
+  // 敵HPゲージの初期化
+  enemyHpGauge_ = std::make_unique<EnemyHpGauge>();
+  enemyHpGauge_->Initialize(camera_.get(), enemy_.get());
 
   // 岩の初期化
   rockManager_ = std::make_unique<RockManager>();
@@ -774,6 +778,11 @@ void GameScene::Update() {
   }
   }
 
+  // 敵 HP ゲージ更新（敵がいないステートでも問題ないように中でチェックしている）
+  if (enemyHpGauge_) {
+      enemyHpGauge_->Update(deltaTime);
+  }
+
   rockMulti_.Update(deltaTime);
 
   // rockMulti_.Show(prevRockMultiplier_,player_->GetPosition());
@@ -781,8 +790,8 @@ void GameScene::Update() {
   fade_.Update(deltaTime);
 
   if (!fade_.IsFading() && !nextSceneName_.empty()) {
-    engine_->GetSceneManager()->Request(nextSceneName_.c_str());
-    nextSceneName_.clear();
+      engine_->GetSceneManager()->Request(nextSceneName_.c_str());
+      nextSceneName_.clear();
   }
 }
 
@@ -847,8 +856,13 @@ void GameScene::Draw() {
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplySpritePSO();
 
+  // 敵 HP ゲージ
+  if (enemyHpGauge_) {
+      enemyHpGauge_->Draw();
+  }
+
   if (state == GameState::Tutorial) {
-    tutorialRSptite_.Draw();
+      tutorialRSptite_.Draw();
   }
 
   rockMulti_.Draw();
