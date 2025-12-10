@@ -4,6 +4,8 @@
 #include "EnemyWall.h"
 #include "camera/Camera.h"
 #include"audio/Se.h"
+#include "3D/particle/ParticleSystem.h"
+#include <memory>
 
 class Player;
 
@@ -212,6 +214,8 @@ private:
   float burrowWobbleAmplitude_ = 0.3f;  // もぞもぞの揺れの大きさ
   float burrowWobbleFrequency_ = 10.0f; // もぞもぞの揺れの速さ
   float burrowPhase_ = 0.0f;
+  Vector3 burrowStartPos_{}; // 潜り開始位置
+  Vector3 burrowEndPos_{};   // 潜り終了位置
 
   // --------- 突進攻撃用パラメータ ---------
   float dashChargeBackTime_ = 0.4f; // 予備動作の時間
@@ -286,6 +290,9 @@ private:
   Se enemyBulletSE_;
   Se enemyWallSE_;
   Se enemyDashSE_;
+
+  // 潜りエフェクト
+  std::unique_ptr<ParticleSystem> burrowEffect_ = nullptr;
 public:
   /// <summary>
   /// 潜っているかどうか
