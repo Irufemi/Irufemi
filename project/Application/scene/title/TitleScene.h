@@ -40,6 +40,8 @@ private: // メンバ変数
   // プッシュ文字
   std::unique_ptr<Sprite> pushText_ = nullptr;
 
+  // アイドリングアニメーション用タイマー
+  float idleAnimTimer_ = 0.0f;
 
   // 遷移フェード
   Fade fade_;
