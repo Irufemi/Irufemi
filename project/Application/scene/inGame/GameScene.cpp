@@ -110,10 +110,12 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
   // explosion
   explosion_ = std::make_unique<ParticleSystem>();
-  explosion_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kExplosion, ParticlePrimitiveShape::Ring);
+  explosion_->Initialize(camera_.get(), "resources/gradationLine.png",
+                         ParticleType::kExplosion,
+                         ParticlePrimitiveShape::Ring);
   explosion_->SetCull(BlendMode::kBlendModeScreen);
 
-  //SEの初期化
+  // SEの初期化
   playerAttackToEnemySE_.Initialize("resources/se/player_attack_to_enemy.Mp3");
   playerAttackToWallSE_.Initialize("resources/se/player_attack_to_wall.Mp3");
   enemyAttackToPlayerSE_.Initialize("resources/se/enemy_attack_to_player.Mp3");
@@ -175,6 +177,9 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   tutorialState_ = TutorialState::Rock;
   tutorialHitEnemy_ = false;
   tutorialDamaged_ = false;
+  tutorialAttackDone_ = false;
+
+  // enemy_->SetIsTutorialRock(true);
 }
 
   
@@ -241,14 +246,31 @@ void GameScene::Update() {
     switch (tutorialState_) {
     case TutorialState::Rock: {
 
+      enemy_->SetIsTutorialRock(true);
+
       if (tutorialHitEnemy_) {
+        tutorialState_ = TutorialState::Attack;
+        tutorialRSptite_.Initialize(camera_.get(),
+                                    "resources/tutorial_attack.png");
+        tutorialRSptite_.SetPosition(220.0f, 80.0f);
+        tutorialRSptite_.Update();
+        // enemy_->SetIsTutorialDamage(true);
+      }
+
+      break;
+    }
+
+    case TutorialState::Attack: {
+      if (tutorialAttackDone_) {
         tutorialState_ = TutorialState::Damage;
+
         tutorialRSptite_.Initialize(camera_.get(),
                                     "resources/tutorial_damage.png");
         tutorialRSptite_.SetPosition(40.0f, 80.0f);
         tutorialRSptite_.Update();
-      }
 
+        enemy_->SetIsTutorialDamage(true);
+      }
       break;
     }
 
@@ -257,17 +279,45 @@ void GameScene::Update() {
       enemyWallManager_.Update(deltaTime);
       enemyBulletManager_.Update(deltaTime);
 
+      if (player_->GetRockCount() >= 1) {
+        enemy_->SetIsTutorialRock(false);
+      }
+
       // --- 被弾して岩が減るフェーズ ---
       if (tutorialDamaged_) {
+
+        if (player_->IsKnockback()) {
+          break;
+        }
+
         // チュートリアル終了 → 通常プレイへ
         s_hasPlayedTutorial_ = true;
-        engine_->GetSceneManager()->Request("InGame");
-        state = GameState::Playing;
+
+        if (!fade_.IsFading() && nextSceneName_.empty()) {
+          nextSceneName_ = "InGame"; // 次に行くシーン
+          fade_.StartFadeOut(0.5f);  // 0.5秒フェード
+        }
+
         tutorialRSptite_.SetColor({1.0f, 1.0f, 1.0f, 0.0f});
         tutorialRSptite_.Update();
+        enemy_->SetIsTutorialDamage(false);
+
+        // engine_->GetSceneManager()->Request("InGame");
+        // state = GameState::Playing;
       }
       break;
     }
+    }
+
+    {
+      int currentMul = player_->GetMultiplier();
+      if (currentMul > prevRockMultiplier_) {
+        // プレイヤーの少し上に出す
+        Vector3 pos = player_->GetPosition();
+        pos.y += 2.0f;
+        rockMulti_.Show(currentMul, pos);
+      }
+      prevRockMultiplier_ = currentMul;
     }
 
     break;
@@ -635,14 +685,12 @@ void GameScene::Update() {
     if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
         engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
 
-		
-		
       if (resultIndex_ == 0) {
-          decisionSE_.Play();
+        decisionSE_.Play();
         // 0 = Retry
         engine_->GetSceneManager()->Request("InGame");
       } else if (resultIndex_ == 1) {
-          decisionSE_.Play();
+        decisionSE_.Play();
         // 1 = Title
         engine_->GetSceneManager()->Request("Title");
       }
@@ -1107,24 +1155,28 @@ void GameScene::DoCollision() {
 
           // 岩0で当たると死亡
           if (player_->GetRockCount() <= 0) {
-            player_->Dead();
-            enemyAttackToPlayerSE_.Play();
-            if (state == GameState::Playing) {
-              state = GameState::PlayerDead;
-              playerDeadTimer_ = 0.0f;
 
-              // カメラ寄せの開始情報を記録
-              deadCamStartPos_ = camera_->GetTranslate();
-              deadCamStartFov_ = camera_->GetFovY();
+            if (state != GameState::Tutorial) {
+              player_->Dead();
 
-              // Vector3 p = player_->GetPosition();
+              enemyAttackToPlayerSE_.Play();
+              if (state == GameState::Playing) {
+                state = GameState::PlayerDead;
+                playerDeadTimer_ = 0.0f;
 
-              ////
-              /// プレイヤーを少し上から・手前から見る位置を目標にする（値はあとで調整）
-              // playerDeadCamTargetPos_ = {p.x, p.y + 3.0f, p.z - 8.0f};
+                // カメラ寄せの開始情報を記録
+                deadCamStartPos_ = camera_->GetTranslate();
+                deadCamStartFov_ = camera_->GetFovY();
 
-              // FOV は少しだけ狭めて寄ってる感じに
-              deadCamTargetFov_ = deadCamStartFov_ * 0.8f;
+                // Vector3 p = player_->GetPosition();
+
+                ////
+                /// プレイヤーを少し上から・手前から見る位置を目標にする（値はあとで調整）
+                // playerDeadCamTargetPos_ = {p.x, p.y + 3.0f, p.z - 8.0f};
+
+                // FOV は少しだけ狭めて寄ってる感じに
+                deadCamTargetFov_ = deadCamStartFov_ * 0.8f;
+              }
             }
           }
 
@@ -1135,9 +1187,16 @@ void GameScene::DoCollision() {
             enemy_->ApplyDamageFromPlayer(player_->GetAttackPower());
             explosion_->PlayExplosion(pPos);
 
-            if (state == GameState::Tutorial &&
-                tutorialState_ == TutorialState::Rock) {
-              tutorialHitEnemy_ = true;
+            if (state == GameState::Tutorial) {
+              if (tutorialState_ == TutorialState::Rock) {
+                if (player_->GetRockCount() >= 1) {
+                  tutorialHitEnemy_ = true;
+                }
+              } else if (tutorialState_ == TutorialState::Attack) {
+                if (player_->GetRockCount() >= 3) {
+                  tutorialAttackDone_ = true;
+                }
+              }
             }
 
             // スタン開始

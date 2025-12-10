@@ -21,7 +21,6 @@
 #include "actor/enemy/EnemyWall.h"
 #include "actor/player/Player.h"
 #include "actor/rock/RockManager.h"
-#include "audio/Se.h"
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "effect/Fade.h"
@@ -88,10 +87,9 @@ private: // 変数(ゲーム)
 
   // パーティクル(HitEffect)
   std::unique_ptr<ParticleSystem> hitEffects_ = nullptr;
-  //パーティクル(Explosion)
+  // パーティクル(Explosion)
   std::unique_ptr<ParticleSystem> explosion_ = nullptr;
 
-  
   //----------SE-------------
   Se playerAttackToEnemySE_;
   Se playerAttackToWallSE_;
@@ -213,6 +211,7 @@ private:
   Sprite tutorialRSptite_;
   bool tutorialHitEnemy_ = false; // 敵に当てたか
   bool tutorialDamaged_ = false;  // ダメージを受けたか
+  bool tutorialAttackDone_ = false;
 
 public:
   static bool s_hasPlayedTutorial_;
