@@ -35,6 +35,22 @@ void TitleScene::Initialize(IrufemiEngine *engine) {
   fade_.Initialize(engine_, camera_.get());
   fade_.StartFadeIn(0.5f);
 
+  // タイトル文字の初期化
+  titleText_ = std::make_unique<Sprite>();
+  titleText_->Initialize(camera_.get(), "resources/title_titleTextFile.png");
+  titleText_->SetAnchor(0.0f, 0.0f);
+  titleText_->SetPosition(0.0f, 0.0f);
+  titleText_->SetSize(1280.0f, 720.0f);
+  titleText_->Update();
+
+
+  pushText_ = std::make_unique<Sprite>();
+  pushText_->Initialize(camera_.get(), "resources/title_pushText.png");
+  pushText_->SetAnchor(0.0f, 0.0f);
+  pushText_->SetPosition(0.0f, 0.0f);
+  pushText_->SetSize(1280.0f, 720.0f);
+  pushText_->Update();
+
   //SEの初期化
   cursolSE_.Initialize("resources/se/cursol.mp3");
   decisionSE_.Initialize("resources/se/decision.mp3");
@@ -49,12 +65,29 @@ void TitleScene::Initialize(IrufemiEngine *engine) {
 
 // 更新
 void TitleScene::Update() {
-    // カメラの通常更新
-    if (debugMode) {
-        debugCamera_->Update();
-        camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
-        camera_->SetPerspectiveFovMatrix(
-            debugCamera_->GetCamera().GetPerspectiveFovMatrix());
+  // カメラの通常更新
+  if (debugMode) {
+    debugCamera_->Update();
+    camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
+    camera_->SetPerspectiveFovMatrix(
+        debugCamera_->GetCamera().GetPerspectiveFovMatrix());
+  } else {
+    camera_->Update("Camera", {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f});
+  }
+
+  // タイトル文字の更新
+  titleText_->Update();
+
+  // プッシュ文字の更新
+  pushText_->Update();
+
+  if (!fade_.IsFading()) {
+    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) ||
+        engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+
+      // 次に行くシーン名をセットして、フェードアウト開始
+      nextSceneName_ = "InGame";
+      fade_.StartFadeOut(0.5f);
     }
     else {
         camera_->Update("Camera", { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
@@ -97,6 +130,14 @@ void TitleScene::Draw() {
   engine_->SetBlend(BlendMode::kBlendModeNormal);
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplySpritePSO();
+
+  
+  // タイトル文字の描画
+  titleText_->Draw();
+
+  // プッシュ文字の描画
+  pushText_->Draw();
+
 
   fade_.Draw();
 }
