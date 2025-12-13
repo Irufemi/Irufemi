@@ -92,15 +92,42 @@ void AnimationModel::Update() {
 
     animationTime += 1.0f / 60.0f; //時刻を進める。1/60で固定してあるが、計測した時間を使って可変フレーム対応するほうが望ましい
     animationTime = std::fmod(animationTime, animation_.duration); // 最後までいったら最初からリピート再生。リピートしなくても別に良い
-    rootNodeAnimation = animation_.nodeAnimations[model_.rootNode.name]; // rootNodeのAnimationを取得
-    transform_.translate = AnimationManager::CalculateValue(rootNodeAnimation.translate, animationTime); //指定時刻の値を取得。関数の詳細は次ページ
-    transform_.rotate = AnimationManager::CalculateValue(rootNodeAnimation.rotate, animationTime);
-    transform_.scale = AnimationManager::CalculateValue(rootNodeAnimation.scale, animationTime);
-    localMatrix_ = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 
-    // 出来上がったlocalMatrixでモデルをアニメーションさせ、worldMatrixで任意の変換をかける
-    transformData_->WVP = localMatrix_ * worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
-    transformData_->world = localMatrix_ * worldMatrix_;
+    for (size_t i = 0; i < instanceResources_.size(); ++i) {
+
+        auto& r = instanceResources_[i];
+
+        rootNodeAnimation = animation_.nodeAnimations[managedModel_->cpuModel->rootNode.name]; // rootNodeのAnimationを取得
+        r->transform_.translate = AnimationManager::CalculateValue(rootNodeAnimation.translate, animationTime); //指定時刻の値を取得。関数の詳細は次ページ
+        r->transform_.rotate = AnimationManager::CalculateValue(rootNodeAnimation.rotate, animationTime);
+        r->transform_.scale = AnimationManager::CalculateValue(rootNodeAnimation.scale, animationTime);
+        localMatrix_ = Math::MakeAffineMatrix(r->transform_.scale, r->transform_.rotate, r->transform_.translate);
+
+        r->transformationMatrix_.world = Math::MakeAffineMatrix(r->transform_.scale, r->transform_.rotate, r->transform_.translate);
+        Matrix4x4 worldViewProj = Math::Multiply(r->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+
+        // rootNode 行列を適用
+        if (managedModel_->cpuModel) {
+            worldViewProj = managedModel_->cpuModel->rootNode.localMatrix * worldViewProj;
+            r->transformationMatrix_.world = managedModel_->cpuModel->rootNode.localMatrix * r->transformationMatrix_.world;
+        }
+
+        r->transformationMatrix_.WVP = worldViewProj;
+
+        Matrix4x4 worldForNormal = r->transformationMatrix_.world;
+        worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+        r->transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+        r->transformationData_->WorldInverseTranspose = r->transformationMatrix_.WorldInverseTranspose;
+
+        r->materialData_->uvTransform = Math::MakeAffineMatrix(r->uvTransform_.scale, r->uvTransform_.rotate, r->uvTransform_.translate);
+        r->directionalLightData_->direction = Math::Normalize(r->directionalLightData_->direction);
+        r->cameraData_->worldPosition = camera_->GetTranslate();
+
+        // 出来上がったlocalMatrixでモデルをアニメーションさせ、worldMatrixで任意の変換をかける
+        r->transformationData_->WVP = localMatrix_ * worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
+        r->transformationData_->world = localMatrix_ * worldMatrix_;
+    }
 
 }
 
