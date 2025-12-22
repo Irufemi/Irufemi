@@ -8,6 +8,10 @@ on:
   push:
     branches:
       - master
+      - TD2_03
+      - AL4
+      - CG
+      - GE
 
 jobs:
   check-files:

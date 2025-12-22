@@ -1,4 +1,4 @@
-# Irufemi Engine (‰¼)
+# Irufemi Engine
 
 DirectX12‚ğƒx[ƒX‚É‚µ‚½©ì3DƒQ[ƒ€ƒGƒ“ƒWƒ“‚Å‚·B
 
@@ -30,12 +30,12 @@ DirectX 12‚ÌAPI‚ğ’¼Ú“I‚É—˜—p‚µAƒŒƒ“ƒ_ƒŠƒ“ƒO‚ÌŠî‘b‚©‚ç‰—p‚Ü‚Å‚ğÀ‘•‚µ‚Ä‚¢‚Ü‚·
 
 - Windows 10 / 11
 - Visual Studio 2022
-- Windows SDK (ƒo[ƒWƒ‡ƒ“: 10.0.xxxx.x ˆÈ~)
+- Windows SDK (ƒo[ƒWƒ‡ƒ“: 10.0.26100.7175 ˆÈ~)
 
 ## ƒrƒ‹ƒh•û–@
 
 1. ‚±‚ÌƒŠƒ|ƒWƒgƒŠ‚ğƒNƒ[ƒ“‚µ‚Ü‚·B
-2. `(ƒvƒƒWƒFƒNƒg–¼).sln` ‚ğ Visual Studio 2022 ‚ÅŠJ‚«‚Ü‚·B
+2. `Irufemi.sln` ‚ğ Visual Studio 2022 ‚ÅŠJ‚«‚Ü‚·B
 3. ƒ\ƒŠƒ…[ƒVƒ‡ƒ“‚ğƒrƒ‹ƒh‚µ‚Ü‚·B
 
 ## g—pƒ‰ƒCƒuƒ‰ƒŠ
