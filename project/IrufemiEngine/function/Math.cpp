@@ -666,6 +666,25 @@ namespace Math {
         return MakeRotateAxisAngle(axis, angle);
     }
 
+    // 回転行列からオイラー角を抽出
+    Vector3 ExtractEulerFromMatrix(const Matrix4x4& matrix) {
+        Vector3 euler{};
+        float sy = std::sqrt(matrix.m[0][0] * matrix.m[0][0] + matrix.m[1][0] * matrix.m[1][0]);
+        constexpr float kEpsilon = 1e-6f;
+
+        if (sy > kEpsilon) {
+            euler.x = std::atan2(matrix.m[2][1], matrix.m[2][2]);
+            euler.y = std::atan2(-matrix.m[2][0], sy);
+            euler.z = std::atan2(matrix.m[1][0], matrix.m[0][0]);
+        } else {
+            // ジンバルロック状態
+            euler.x = std::atan2(-matrix.m[1][2], matrix.m[1][1]);
+            euler.y = std::atan2(-matrix.m[2][0], sy);
+            euler.z = 0;
+        }
+        return euler;
+    }
+
 
 #pragma endregion
 
@@ -862,6 +881,12 @@ namespace Math {
         result.w = scale0 * q0_.w + scale1 * q1.w;
 
         return result;
+    }
+
+    // Quaternionからオイラー角へ変換
+    Vector3 ToEuler(const Quaternion& q) {
+        Matrix4x4 rotMat = MakeRotateMatrix(q);
+        return ExtractEulerFromMatrix(rotMat);
     }
 
 #pragma endregion

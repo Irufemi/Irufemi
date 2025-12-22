@@ -24,6 +24,7 @@ struct aiScene;
 struct aiMesh;
 struct aiMaterial;
 class DirectXCommon;
+class TextureManager; // 追加
 
 // 共有されるGPUメッシュリソース
 struct GpuMesh {
@@ -35,10 +36,17 @@ struct GpuMesh {
     UINT indexCount = 0;
 };
 
+// 共有されるGPUマテリアルリソース
+struct GpuMaterial {
+    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
+    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle{};
+};
+
 // CPU/GPUデータを統合した管理単位
 struct ManagedModel {
     std::shared_ptr<ObjModel> cpuModel;
     std::vector<std::shared_ptr<GpuMesh>> gpuMeshes;
+    std::vector<std::shared_ptr<GpuMaterial>> gpuMaterials; // 追加
 };
 
 class ModelManager {
@@ -47,7 +55,7 @@ public:
     ~ModelManager() = default;
 
     // --- インスタンス機能（キャッシュ管理） ---
-    void Initialize(DirectXCommon* dxCommon);
+    void Initialize(DirectXCommon* dxCommon, TextureManager* textureManager); // TextureManager を追加
     void SetRootDirectory(std::string root);
     std::shared_ptr<ManagedModel> GetModel(const std::string& filename);
     void PreloadAllUnder(const std::string& relativeFolder);
@@ -72,6 +80,7 @@ private:
 
 private:
     DirectXCommon* dxCommon_ = nullptr;
+    TextureManager* textureManager_ = nullptr; // 追加
     std::string rootDir_;
     mutable std::mutex mutex_;
     std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;

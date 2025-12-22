@@ -2,6 +2,7 @@
 
 #include "math/Animation.h"
 #include "function/Ease.h"
+#include "function/Math.h"
 
 #include <cassert>
 #include <assimp/Importer.hpp>
@@ -162,9 +163,15 @@ Quaternion AnimationManager::CalculateValue(const AnimationCurve<Quaternion>& ke
         if (keyframes.keyframes[index].time <= time && time <= keyframes.keyframes[nextIndex].time) {
             // 範囲内を補間する
             float t = (time - keyframes.keyframes[index].time) / (keyframes.keyframes[nextIndex].time - keyframes.keyframes[index].time);
-            return Lerp(keyframes.keyframes[index].value, keyframes.keyframes[nextIndex].value, t);
+            return Math::Slerp(keyframes.keyframes[index].value, keyframes.keyframes[nextIndex].value, t);
+            }
         }
+        // ここまできた場合は一番後の時刻よりも後ろなので最後の値を返すことにする
+        return (*keyframes.keyframes.rbegin()).value;
     }
-    // ここまできた場合は一番後の時刻よりも後ろなので最後の値を返すことにする
-    return (*keyframes.keyframes.rbegin()).value;
-}
+    
+    // 任意の時刻の値を取得する(オイラー角)
+    Vector3 AnimationManager::CalculateValueAsEuler(const AnimationCurve<Quaternion>& keyframes, float time) {
+        Quaternion rotation = CalculateValue(keyframes, time);
+        return Math::ToEuler(rotation);
+    }

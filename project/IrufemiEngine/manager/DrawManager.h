@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <array>
 #include <wrl.h>
+#include "math/TransformationMatrix.h" // 追加
 
 // 前方宣言
 class DirectXCommon;
@@ -23,8 +24,9 @@ struct PointLight;
 class PointLightClass;
 struct SpotLight;
 class SpotLightClass;
-class SpriteRegion; // 追加
-struct GpuMesh; // 追加
+class SpriteRegion;
+struct GpuMesh;
+struct ManagedModel;
 class Line2DClass;
 class Line3DClass;
 class CubeClass;
@@ -36,6 +38,16 @@ class DrawManager {
 private:
 
     DirectXCommon* dxCommon_ = nullptr;
+
+    // カメラやライトの定数バッファを一時的に保持するリソース
+    Microsoft::WRL::ComPtr<ID3D12Resource> frameResource_;
+    struct FrameData {
+        D3D12_GPU_VIRTUAL_ADDRESS camera;
+        D3D12_GPU_VIRTUAL_ADDRESS directionalLight;
+    } frameData_{};
+    CameraForGPU* cameraData_ = nullptr;
+    DirectionalLight* directionalLightData_ = nullptr;
+
 
     PointLightClass* pointLight_ = nullptr;
 
@@ -51,7 +63,7 @@ private:
 
 public: //メンバ関数
 
-    void Initialize(DirectXCommon* dx) { dxCommon_ = dx; }
+    void Initialize(DirectXCommon* dx);
     void Finalize();
 
     // 追加（保持はしないで即時バインド）
@@ -63,6 +75,9 @@ public: //メンバ関数
         uint8_t clearStencil = 0
     );
     void PostDraw();
+
+    // フレーム単位の共通データを設定
+    void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light);
 
     void DrawTriangle(
         TriangleClass* triangle
@@ -91,6 +106,9 @@ public: //メンバ関数
     void DrawLine2D(Line2DClass* line);
 
     void DrawLine3D(Line3DClass* line);
+
+    // モデル描画用の新関数
+    void DrawModel(const ManagedModel* model, const TransformationMatrix& matrix);
 
     void SetPointLightClass(PointLightClass* pointLightClass) { pointLight_ = pointLightClass; }
     void SetPointLight(PointLight& info);
