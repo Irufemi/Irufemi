@@ -99,11 +99,12 @@ void AnimationModel::Update() {
 
         rootNodeAnimation = animation_.nodeAnimations[managedModel_->cpuModel->rootNode.name]; // rootNodeのAnimationを取得
         r->transform_.translate = AnimationManager::CalculateValue(rootNodeAnimation.translate, animationTime); //指定時刻の値を取得。関数の詳細は次ページ
-        r->transform_.rotate = AnimationManager::CalculateValue(rootNodeAnimation.rotate, animationTime);
+        Quaternion rotation = AnimationManager::CalculateValue(rootNodeAnimation.rotate, animationTime);
+        r->transform_.rotate = Math::ToEuler(rotation);
         r->transform_.scale = AnimationManager::CalculateValue(rootNodeAnimation.scale, animationTime);
-        localMatrix_ = Math::MakeAffineMatrix(r->transform_.scale, r->transform_.rotate, r->transform_.translate);
+        localMatrix_ = Math::MakeAffineMatrix(r->transform_.scale, rotation, r->transform_.translate);
 
-        r->transformationMatrix_.world = Math::MakeAffineMatrix(r->transform_.scale, r->transform_.rotate, r->transform_.translate);
+        r->transformationMatrix_.world = Math::MakeAffineMatrix(r->transform_.scale, rotation, r->transform_.translate);
         Matrix4x4 worldViewProj = Math::Multiply(r->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
 
         // rootNode 行列を適用

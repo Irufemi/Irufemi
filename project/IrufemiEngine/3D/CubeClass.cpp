@@ -132,12 +132,6 @@ void CubeClass::Initialize(Camera* camera, float width, float height, float dept
     if (resource_->textureHandle_.ptr == 0) {
         resource_->materialData_->hasTexture = false;
     }
-
-    resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->directionalLightData_->direction = { 0.0f,-1.0f,0.0f };
-    resource_->directionalLightData_->intensity = 1.0f;
-
-    resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 
 void CubeClass::SetSize(float width, float height, float depth) {
@@ -170,9 +164,6 @@ void CubeClass::Update() {
         resource_->materialData_->hasTexture = false;
     }
 
-    resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
-    resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
-    resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 
 void CubeClass::Draw() {
@@ -188,7 +179,6 @@ void CubeClass::Debug(const char* cubeName) {
     ui_->DebugTransform(resource_->transform_);
     ui_->DebugMaterialBy3D(resource_->materialData_);
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-    ui_->DebugDirectionalLight(resource_->directionalLightData_);
 
     // サイズ編集 UI（変更時は Initialize で再生成）
     float w = width_;

@@ -10,4 +10,10 @@ struct PointLight {
     Vector3 position;
     //!< 輝度
     float intensity;
+    //!< ライトの影響範囲
+    float radius;
+    //!< 減衰率
+    float decay;
+private:
+    float padding[2];
 };

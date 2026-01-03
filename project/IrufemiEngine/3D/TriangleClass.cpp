@@ -79,12 +79,6 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
         selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
-
-    // ライト/カメラ
-    resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
-    resource_->directionalLightData_->intensity = 1.0f;
-    resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 
 void TriangleClass::Update() {
@@ -103,8 +97,6 @@ void TriangleClass::Update() {
     };
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
-    resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
-    resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 
 void TriangleClass::Draw() {
@@ -120,7 +112,6 @@ void TriangleClass::Debug([[maybe_unused]] const char* triangleName) {
     ui_->DebugMaterialBy3D(resource_->materialData_);
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
     ui_->DebugUvTransform(resource_->uvTransform_);
-    ui_->DebugDirectionalLight(resource_->directionalLightData_);
     ImGui::End();
 #endif
 }

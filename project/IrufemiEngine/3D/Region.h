@@ -38,8 +38,6 @@ public:
     // --- DrawManager から参照する Getter 群 ---
     const GpuMesh* GetGpuMesh() const; // 共有メッシュ取得
     ID3D12Resource* GetMaterialResource() { return materialResource_.Get(); }
-    ID3D12Resource* GetDirectionalLightResource() { return directionalLightResource_.Get(); }
-    ID3D12Resource* GetCameraResource() { return cameraResource_.Get(); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_; }
     UINT GetInstanceCount() const { return static_cast<UINT>(instances_.size()); }
@@ -72,8 +70,6 @@ private:
 
     // インスタンス固有リソース
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource_;
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
 
     // インスタンシング用

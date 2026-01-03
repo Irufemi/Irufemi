@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include "math/Transform.h"
+#include "math/ObjModel.h" // ObjMaterial と ObjModel を使うためにインクルード
 
 // 前方宣言
 class TextureManager;
@@ -27,9 +29,13 @@ private:
     // 共有モデルデータ（CPU/GPU）
     std::shared_ptr<ManagedModel> managedModel_;
 
-    std::vector<std::unique_ptr<Texture>> textures_;
-    // インスタンス固有リソース（Transform, Material等）
-    std::vector<std::unique_ptr<D3D12ResourceUtil>> instanceResources_;
+    // オブジェクト全体のTransform
+    Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+    TransformationMatrix transformationMatrix_{};
+
+    // 変換行列用リソース
+    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_;
+    TransformationMatrix* transformationData_ = nullptr;
 
     Camera* camera_ = nullptr;
 
@@ -41,33 +47,49 @@ private:
 public: //メンバ関数
 
     //デストラクタ
-~ObjClass() = default;
+    ~ObjClass();
     //初期化
     void Initialize(Camera* camera, const std::string& filename = "plane.obj");
     void Update();
     void Draw();
     void Debug(const char* objName = " ");
 
-    // Transform 系ゲッター/セッター（instanceResources_ を参照するように変更）
-    const Vector3& GetPosition(uint32_t index = 0)const { return instanceResources_[index]->transform_.translate; }
-    void SetPosition(const Vector3& position, uint32_t index = 0) { instanceResources_[index]->transform_.translate = position; }
+    // Transform 系ゲッター/セッター (オブジェクト全体のTransformを操作するように変更)
+    const Vector3& GetPosition() const { return transform_.translate; }
+    void SetPosition(const Vector3& position) { transform_.translate = position; }
 
-    const Vector3& GetRotate(uint32_t index = 0)const { return instanceResources_[index]->transform_.rotate; }
-    void SetRotate(const Vector3& rotate, uint32_t index = 0) { for (auto& res : instanceResources_) { res->transform_.rotate = rotate; } }
-    void SetRotateX(const float& rotate) { for (auto& res : instanceResources_) { res->transform_.rotate.x = rotate; } }
-    void SetRotateY(const float& rotate) { for (auto& res : instanceResources_) { res->transform_.rotate.y = rotate; } }
-    void SetRotateZ(const float& rotate) { for (auto& res : instanceResources_) { res->transform_.rotate.z = rotate; } }
-    
+    const Vector3& GetRotate() const { return transform_.rotate; }
+    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
+    void SetRotateX(const float& rotate) { transform_.rotate.x = rotate; }
+    void SetRotateY(const float& rotate) { transform_.rotate.y = rotate; }
+    void SetRotateZ(const float& rotate) { transform_.rotate.z = rotate; }
+
     // 拡縮
-    const Vector3& GetScale(uint32_t index = 0)const { return instanceResources_[index]->transform_.scale; }
-    void SetScale(const Vector3& scale) { for (auto& res : instanceResources_) { res->transform_.scale = scale; } }
-    const Transform& GetTransform(uint32_t index = 0)const { return instanceResources_[index]->transform_; }
-    void SetTransform(Transform transform) { for (auto& res : instanceResources_) { res->transform_ = transform; } }
-    const TransformationMatrix& GetTransformationMatrix(uint32_t index = 0)const { return instanceResources_[index]->transformationMatrix_; }
-    void SetTransformationMatrix(TransformationMatrix transformationMatrix, uint32_t index = 0) { instanceResources_[index]->transformationMatrix_ = transformationMatrix; }
+    const Vector3& GetScale() const { return transform_.scale; }
+    void SetScale(const Vector3& scale) { transform_.scale = scale; }
+    const Transform& GetTransform() const { return transform_; }
+    void SetTransform(const Transform& transform) { transform_ = transform; }
+    const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
+    void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
 
-    // lighitingModeの切り替え
-    void SetLightingMode(int32_t index) { for (auto& res : instanceResources_) { res->materialData_->lightingMode = index; } }
+    // --- マテリアル関連のメソッド ---
+
+    // モデルが持つメッシュ数を取得
+    size_t GetMeshCount() const;
+
+    // 指定したインデックスのメッシュのマテリアルを取得（読み取り専用）
+    const ObjMaterial* GetMaterial(size_t meshIndex) const;
+
+    // 指定したインデックスのメッシュのマテリアルを取得（書き込み可能）
+    ObjMaterial* GetMaterial(size_t meshIndex);
+
+    // すべてのメッシュのライティングを一括で設定
+    void SetEnableLightingToAllMeshes(bool enable);
+
+    // 描画用の変換行列リソースのGPUアドレスを取得
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
+        return transformationResource_->GetGPUVirtualAddress();
+    }
 
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }

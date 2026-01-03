@@ -114,18 +114,6 @@ void TetraRegion::CreateMaterialResources() {
     mat->lightingMode = 2;
     mat->uvTransform = Math::MakeIdentity4x4();
     mat->shininess = 32.0f;
-
-    directionalLightResource_ = dx_->CreateBufferResource(sizeof(DirectionalLight));
-    DirectionalLight* dl = nullptr;
-    directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&dl));
-    dl->color = {1,1,1,1};
-    dl->direction = {0,-1,0};
-    dl->intensity = 1.0f;
-
-    cameraResource_ = dx_->CreateBufferResource(sizeof(CameraForGPU));
-    CameraForGPU* cam = nullptr;
-    cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cam));
-    cam->worldPosition = {0,0,0};
 }
 
 void TetraRegion::EnsureSharedTexture(const std::string& textureName) {
@@ -279,11 +267,6 @@ void TetraRegion::Draw() {
     if ((vertexCount_ == 0 || indexCount_ == 0)) { return; }
     const bool useWorlds = !instanceWorlds_.empty();
     if (!useWorlds && instances_.empty()) { return; }
-
-    // カメラワールド位置更新
-    CameraForGPU* cam = nullptr;
-    cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cam));
-    cam->worldPosition = camera_->GetTranslate();
 
     // インスタンス更新
     BuildInstanceBuffer(true);

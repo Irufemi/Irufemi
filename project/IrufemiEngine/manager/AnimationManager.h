@@ -47,5 +47,13 @@ public:
     /// <param name="time"></param>
     /// <returns></returns>
     static Quaternion CalculateValue(const AnimationCurve<Quaternion>& keyframes, float time);
+
+    /// <summary>
+    /// 任意の時刻の値を取得する(オイラー角)
+    /// </summary>
+    /// <param name="keyframes"></param>
+    /// <param name="time"></param>
+    /// <returns></returns>
+    static Vector3 CalculateValueAsEuler(const AnimationCurve<Quaternion>& keyframes, float time);
 };
 

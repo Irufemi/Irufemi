@@ -138,20 +138,6 @@ void SphereRegion::CreateMaterialResources() {
     mat->lightingMode = 2;
     mat->uvTransform = Math::MakeIdentity4x4();
     mat->shininess = 64.0f;
-
-    // Light
-    directionalLightResource_ = dx_->CreateBufferResource(sizeof(DirectionalLight));
-    DirectionalLight* dl = nullptr;
-    directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&dl));
-    dl->color = { 1,1,1,1 };
-    dl->direction = { 0,-1,0 };
-    dl->intensity = 1.0f;
-
-    // Camera
-    cameraResource_ = dx_->CreateBufferResource(sizeof(CameraForGPU));
-    CameraForGPU* cam = nullptr;
-    cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cam));
-    cam->worldPosition = { 0,0,0 };
 }
 
 void SphereRegion::EnsureSharedTexture(const std::string& textureName) {
@@ -284,18 +270,10 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
 void SphereRegion::Draw() {
     if (vertexCount_ == 0 || indexCount_ == 0 || instances_.empty()) { return; }
 
-    // カメラワールド位置更新
-    {
-        CameraForGPU* cam = nullptr;
-        cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cam));
-        cam->worldPosition = camera_->GetTranslate();
-    }
-
     // 毎フレームインスタンスの WVP 更新
     BuildInstanceBuffer(true);
 
     drawManager_->DrawSphereRegion(this);
-
 }
 
 void SphereRegion::SetColor(const Vector4& color) {

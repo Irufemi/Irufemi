@@ -126,11 +126,6 @@ void Circle2D::InitMaterialAndMatrix() {
     resource_->materialData_->hasTexture = true;
     resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-
-    // ライト（未使用でも初期化）
-    resource_->directionalLightData_->color = { 1,1,1,1 };
-    resource_->directionalLightData_->direction = { 0.0f, -1.0f, 0.0f };
-    resource_->directionalLightData_->intensity = 1.0f;
 }
 
 void Circle2D::UpdateMatrix() {
@@ -158,9 +153,6 @@ void Circle2D::Update() {
 
     // UV 変換はSpriteと同様の意味付け（ここではIdentityのまま）
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-
-    // ライト正規化
-    resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
 }
 
 void Circle2D::Draw() {

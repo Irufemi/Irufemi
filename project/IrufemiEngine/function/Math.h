@@ -104,7 +104,7 @@ namespace Math {
     /// <param name="b"></param>
     /// <returns></returns>
     Vector3 Cross(const Vector3& a, const Vector3& b);
-    
+
     /// <summary>
     /// 正射影ベクトルを求める(v1をv2へ投影する(ベクトル射影))
     /// </summary>
@@ -329,6 +329,13 @@ namespace Math {
     /// <returns></returns>
     Matrix4x4 DirectionToDirection(const Vector3& from, const Vector3& to);
 
+    /// <summary>
+    /// 回転行列からオイラー角を抽出
+    /// </summary>
+    /// <param name="matrix"></param>
+    /// <returns></returns>
+    Vector3 ExtractEulerFromMatrix(const Matrix4x4& matrix);
+
 #pragma endregion
 
 #pragma region Quaternion
@@ -406,7 +413,14 @@ namespace Math {
     /// <param name="t"></param>
     /// <returns></returns>
     Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t);
-    
+
+    /// <summary>
+    /// Quaternionからオイラー角へ変換
+    /// </summary>
+    /// <param name="q"></param>
+    /// <returns></returns>
+    Vector3 ToEuler(const Quaternion& q);
+
 #pragma endregion
 
 #pragma region 衝突判定
@@ -504,9 +518,9 @@ namespace Math {
     /// <summary>
     /// AABBと直線の衝突判定
     /// </summary>
-    /// <param name="aabb"></param>
-    /// <param name="plaane"></param>
-    /// <returns></returns>
+        /// <param name="aabb"></param>
+        /// <param name="plaane"></param>
+        /// <returns></returns>
     bool IsCollision(const AABB& aabb, const Line& line);
 
     /// <summary>

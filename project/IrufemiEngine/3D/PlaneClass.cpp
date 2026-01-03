@@ -101,13 +101,6 @@ void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
         }
     }
 
-    // ライト/カメラ
-    resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
-    resource_->directionalLightData_->intensity = 1.0f;
-
-    resource_->cameraData_->worldPosition = camera_->GetTranslate();
-
     // 初期の平面情報（ワールド空間）も一度更新
     {
         // 法線は(0,0,-1)をWorldInverseTransposeで変換して正規化
@@ -158,12 +151,6 @@ void PlaneClass::Update() {
     // UV行列
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 
-    // ライト正規化
-    resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
-
-    // カメラ
-    resource_->cameraData_->worldPosition = camera_->GetTranslate();
-
     // 平面情報をワールド空間で更新
     {
         Vector3 nLocal{ 0.0f, 0.0f, -1.0f };
@@ -201,7 +188,6 @@ void PlaneClass::Debug([[maybe_unused]] const char* planeName) {
     ui_->DebugMaterialBy3D(resource_->materialData_);
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
     ui_->DebugUvTransform(resource_->uvTransform_);
-    ui_->DebugDirectionalLight(resource_->directionalLightData_);
 
     ImGui::End();
 #endif

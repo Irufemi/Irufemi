@@ -78,13 +78,6 @@ public: //メンバ変数
 
 #pragma endregion
 
-#pragma region DirectionalLight
-
-    // directionalLight(color,direction,intensity)
-    DirectionalLight* directionalLightData_ = nullptr;
-
-#pragma endregion
-
 #pragma region Texture
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
@@ -101,12 +94,6 @@ public: //メンバ変数
 
 #pragma endregion
 
-#pragma region Camera
-
-    CameraForGPU* cameraData_ = nullptr;
-
-#pragma endregion
-
 #pragma region ID3D12Resource
 
     // 頂点データ用定数バッファ
@@ -117,10 +104,6 @@ public: //メンバ変数
     Microsoft::WRL::ComPtr <ID3D12Resource> materialResource_ = nullptr;
     // 拡縮回転移動行列用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> transformationResource_ = nullptr;
-    // 光用定数バッファ
-    Microsoft::WRL::ComPtr <ID3D12Resource> directionalLightResource_ = nullptr;
-    
-    Microsoft::WRL::ComPtr <ID3D12Resource> cameraResource_ = nullptr;
 #pragma endregion
 
 #pragma region 外部参照

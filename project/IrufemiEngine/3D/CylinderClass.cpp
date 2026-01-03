@@ -207,13 +207,6 @@ void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
             ? static_cast<int>(std::distance(textureNames.begin(), it))
             : 0;
     }
-
-    // ライトとカメラ
-    resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
-    resource_->directionalLightData_->intensity = 1.0f;
-
-    resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 
 void CylinderClass::Update() {
@@ -254,11 +247,6 @@ void CylinderClass::Update() {
 
     resource_->materialData_->uvTransform =
         Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
-
-    resource_->directionalLightData_->direction =
-        Math::Normalize(resource_->directionalLightData_->direction);
-
-    resource_->cameraData_->worldPosition = camera_->GetTranslate();
 }
 
 void CylinderClass::Draw() {
@@ -287,7 +275,6 @@ void CylinderClass::Debug([[maybe_unused]] const char* cylinderName) {
     ui_->DebugMaterialBy3D(resource_->materialData_);
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
     ui_->DebugUvTransform(resource_->uvTransform_);
-    ui_->DebugDirectionalLight(resource_->directionalLightData_);
 
     ImGui::End();
 #endif

@@ -99,7 +99,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     // モデル管理
     modelManager_ = std::make_unique<ModelManager>();
-    modelManager_->Initialize(dxCommon_.get()); // dxCommon を渡す
+    modelManager_->Initialize(dxCommon_.get(),textureManager.get()); // dxCommon を渡す
     ObjClass::SetModelManager(modelManager_.get());
     Region::SetModelManager(modelManager_.get()); // Regionにも設定
 

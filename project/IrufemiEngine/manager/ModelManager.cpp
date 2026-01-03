@@ -6,13 +6,16 @@
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
 #include "engine/directX/DirectXCommon.h"
+#include "manager/TextureManager.h" // 追加
+#include "math/Material.h" // Material構造体のため追加
 
 //======================
 // キャッシュ系（インスタンス）
 //======================
 
-void ModelManager::Initialize(DirectXCommon* dxCommon) {
+void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureManager) {
     dxCommon_ = dxCommon;
+    textureManager_ = textureManager; // 追加
     if (rootDir_.empty()) {
         rootDir_ = "resources/obj";
     }
@@ -43,6 +46,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
     auto managedModel = std::make_shared<ManagedModel>();
     managedModel->cpuModel = cpuModel;
     managedModel->gpuMeshes.reserve(cpuModel->meshes.size());
+    managedModel->gpuMaterials.reserve(cpuModel->meshes.size()); // 追加
 
     for (const auto& cpuMesh : cpuModel->meshes) {
         auto gpuMesh = std::make_shared<GpuMesh>();
@@ -75,6 +79,28 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
             gpuMesh->indexResource->Unmap(0, nullptr);
         }
         managedModel->gpuMeshes.push_back(std::move(gpuMesh));
+
+        // Materialリソース生成
+        auto gpuMaterial = std::make_shared<GpuMaterial>();
+        gpuMaterial->materialResource = dxCommon_->CreateBufferResource(sizeof(Material));
+        Material* materialData = nullptr;
+        gpuMaterial->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
+
+        materialData->color = cpuMesh.material.color;
+        materialData->enableLighting = cpuMesh.material.enableLighting;
+        materialData->uvTransform = cpuMesh.material.uvTransform;
+        materialData->shininess = cpuMesh.material.shininess;
+        materialData->hasTexture = !cpuMesh.material.textureFilePath.empty();
+        materialData->lightingMode = cpuMesh.material.enableLighting ? 2 : 0;
+        if (materialData->color.w <= 0.0f) { materialData->color.w = 1.0f; }
+
+        // テクスチャハンドル取得
+        if (materialData->hasTexture) {
+            gpuMaterial->textureHandle = textureManager_->GetTextureHandle(cpuMesh.material.textureFilePath);
+        } else {
+            gpuMaterial->textureHandle = textureManager_->GetWhiteTextureHandle();
+        }
+        managedModel->gpuMaterials.push_back(std::move(gpuMaterial));
     }
 
     {
@@ -554,14 +580,15 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
     const std::string filePath = directoryPath + "/" + filename;
 
     // 読み込み時オプション:
-    // ・ aiProcess_Triangulate        : 非三角形ポリゴンを三角形化
+    // ・ aiProcess_Triangulate        : 非三角形ポリゴンを三角化
     // ・ aiProcess_FlipWindingOrder  : 三角形の並び順を逆にして表裏判定を左手系用に合わせる
-    // ・ aiProcess_FlipUVs           : UVのV(y)成分を反転 (自前で texcoord.y = 1 - y をしないため)
-    //   ※ 左手系化そのものは x 反転のみここでは手動対応。aiProcess_MakeLeftHanded は未使用。
+    // ・ aiProcess_FlipUVs           : UVのV(y)成分を反転
+    // ・ aiProcess_MakeLeftHanded    : 右手座標系から左手座標系へ変換（Z反転、行列の調整など全て行う）
     const unsigned int flags =
         aiProcess_Triangulate |
         aiProcess_FlipWindingOrder |
-        aiProcess_FlipUVs;
+        aiProcess_FlipUVs |
+        aiProcess_MakeLeftHanded; // このフラグを追加
 
     const aiScene* scene = importer.ReadFile(filePath.c_str(), flags);
     assert(scene && scene->HasMeshes()); // 失敗したらsceneはnullptr / メッシュが無い場合は非対応
@@ -640,8 +667,9 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
             const aiVector3D& t = mesh->HasTextureCoords(0) ? mesh->mTextureCoords[0][i] : aiVector3D(0.5f, 0.5f, 0);
 
             VertexData& v = outMesh.vertices[i];
-            v.position = { -p.x, p.y, p.z, 1.0f };
-            v.normal = { -n.x, n.y, n.z };
+            // Assimpが変換してくれるので、手動での反転は不要になる
+            v.position = { p.x, p.y, p.z, 1.0f };
+            v.normal = { n.x, n.y, n.z };
             v.texcoord = { t.x, t.y };
         }
 

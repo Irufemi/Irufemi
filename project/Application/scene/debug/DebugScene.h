@@ -13,15 +13,16 @@
 #include "3D/TriangleClass.h"
 #include "3D/particle/ParticleSystem.h"
 #include "3D/effect/EffectSystem.h"
-#include "camera/Camera.h"
-#include "camera/DebugCamera.h"
-#include "3D/PointLightClass.h"
-#include "3D/SpotLightClass.h"
-#include "3D/CylinderClass.h"
 #include "3D/LineClass.h"
 
 #include <memory>
 #include <vector>
+
+class Camera;
+class DebugCamera;
+struct PointLight;
+struct SpotLight;
+struct DirectionalLight;
 
 class DebugScene : public IScene {
 
@@ -86,14 +87,20 @@ private: // メンバ変数
 
     IrufemiEngine* engine_ = nullptr;
 
+    // カメラ
     std::unique_ptr<Camera> camera_ = nullptr;
 
+    // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
-    bool debugMode = false;
+
+    std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
+
+    std::unique_ptr<PointLight> pointLight_ = nullptr;
+
+    std::unique_ptr<SpotLight> spotLight_ = nullptr;
 
     int loadTexture = false;
 
-    std::unique_ptr<PointLightClass> pointLight_ = nullptr;
-    std::unique_ptr<SpotLightClass> spotLight_ = nullptr;
+    bool debugMode = false;;
 };
 

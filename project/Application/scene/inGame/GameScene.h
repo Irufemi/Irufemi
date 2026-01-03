@@ -14,8 +14,6 @@
 #include "3D/Region.h"
 #include "3D/particle/ParticleSystem.h"
 #include "3D/CylinderClass.h"
-#include "3D/PointLightClass.h"
-#include "3D/SpotLightClass.h"
 #include "audio/Bgm.h"
 
 #include "camera/CameraController.h"
@@ -26,11 +24,12 @@
 
 // 前方宣言
 class IrufemiEngine;
-
 class InputManager;
-
 class Camera;
 class DebugCamera;
+struct PointLight;
+struct SpotLight;
+struct DirectionalLight;
 
 
 /// <summary>
@@ -74,9 +73,11 @@ private: // メンバ変数(システム)
     // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
 
-    std::unique_ptr<PointLightClass> pointLight_ = nullptr;
+    std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
 
-    std::unique_ptr<SpotLightClass> spotLight_ = nullptr;
+    std::unique_ptr<PointLight> pointLight_ = nullptr;
+
+    std::unique_ptr<SpotLight> spotLight_ = nullptr;
 
     int loadTexture = false;
 

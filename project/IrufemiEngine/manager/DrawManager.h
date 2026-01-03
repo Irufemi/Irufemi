@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <array>
 #include <wrl.h>
+#include "math/TransformationMatrix.h" // 追加
 
 // 前方宣言
 class DirectXCommon;
@@ -19,15 +20,18 @@ class D3D12ResourceUtilLine;
 class Region;
 class SphereRegion; 
 class TetraRegion; 
-struct PointLight;
-class PointLightClass;
-struct SpotLight;
-class SpotLightClass;
-class SpriteRegion; // 追加
-struct GpuMesh; // 追加
+class SpriteRegion;
+struct GpuMesh;
+struct ManagedModel;
 class Line2DClass;
 class Line3DClass;
 class CubeClass;
+
+// 構造体を前方宣言
+struct PointLight;
+struct SpotLight;
+struct DirectionalLight;
+struct CameraForGPU;
 
 //描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -37,21 +41,23 @@ private:
 
     DirectXCommon* dxCommon_ = nullptr;
 
-    PointLightClass* pointLight_ = nullptr;
-
-    SpotLightClass* spotLight_ = nullptr;
-
-    void EnsurePointLightResource(); // 生成・初期化の遅延実行用
-    void EnsureSpotLightResource(); // 生成・初期化の遅延実行用
-
-    // フォールバック込みで今フレーム使うGPUアドレスを取得
-    D3D12_GPU_VIRTUAL_ADDRESS GetPointLightVA();
-    D3D12_GPU_VIRTUAL_ADDRESS GetSpotLightVA();
+    // カメラやライトの定数バッファを一時的に保持するリソース
+    Microsoft::WRL::ComPtr<ID3D12Resource> frameResource_;
+    struct FrameData {
+        D3D12_GPU_VIRTUAL_ADDRESS camera;
+        D3D12_GPU_VIRTUAL_ADDRESS directionalLight;
+        D3D12_GPU_VIRTUAL_ADDRESS pointLight;
+        D3D12_GPU_VIRTUAL_ADDRESS spotLight;
+    } frameData_{};
+    CameraForGPU* cameraData_ = nullptr;
+    DirectionalLight* directionalLightData_ = nullptr;
+    PointLight* pointLightData_ = nullptr;
+    SpotLight* spotLightData_ = nullptr;
 
 
 public: //メンバ関数
 
-    void Initialize(DirectXCommon* dx) { dxCommon_ = dx; }
+    void Initialize(DirectXCommon* dx);
     void Finalize();
 
     // 追加（保持はしないで即時バインド）
@@ -63,6 +69,9 @@ public: //メンバ関数
         uint8_t clearStencil = 0
     );
     void PostDraw();
+
+    // フレーム単位の共通データを設定
+    void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const PointLight& pointLight, const SpotLight& spotLight);
 
     void DrawTriangle(
         TriangleClass* triangle
@@ -92,12 +101,11 @@ public: //メンバ関数
 
     void DrawLine3D(Line3DClass* line);
 
-    void SetPointLightClass(PointLightClass* pointLightClass) { pointLight_ = pointLightClass; }
-    void SetPointLight(PointLight& info);
-
-    void SetSpotLightClass(SpotLightClass* spotLightClass) { spotLight_ = spotLightClass; }
-    void SetSpotLight(SpotLight& info);
+    // モデル描画用の新関数
+    void DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA);
 
     void DrawSpriteRegion(SpriteRegion* region);
     void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource);
+
+    DirectXCommon* GetDxCommon() const { return dxCommon_; }
 };

@@ -4,22 +4,18 @@
 #include "engine/IrufemiEngine.h"
 #include "scene/SceneManager.h"
 #include "camera/Camera.h"
+#include "camera/DebugCamera.h"
 #include "2D/Circle2D.h"
-#include "3D/PointLightClass.h"
-#include "3D/SpotLightClass.h"
+#include "math/PointLight.h"
+#include "math/SpotLight.h"
+#include "math/DirectionalLight.h"
 #include "manager/DebugUI.h"
 #include "function/Function.h"
 
 #include <memory>
 
 ResultScene::~ResultScene() {
-    // シーン破棄時に DrawManager の参照を外す
-    if (engine_) {
-        if (engine_->GetDrawManager()) {
-            engine_->GetDrawManager()->SetPointLightClass(nullptr);
-            engine_->GetDrawManager()->SetSpotLightClass(nullptr);
-        }
-    }
+
 }
 
 void ResultScene::Initialize(IrufemiEngine* engine) {
@@ -39,20 +35,64 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     circle_->SetInfo({ Vector3{ cx, cy, 0.0f }, 50.0f });
     circle_->SetUseTexture(false);
     circle_->SetColor(Vector4{ 1.0f, 0.0f, 0.0f, 1.0f });
+    
+    // --- ライトの初期化 ---
+    pointLight_ = std::make_unique <PointLight>();
+    pointLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    pointLight_->position = { 0.0f, 5.0f, 0.0f };
+    pointLight_->intensity = 1.0f;
+    pointLight_->radius = 10.0f;
+    pointLight_->decay = 1.0f;
 
-    // ワークアラウンド：DrawManager に渡すライトを用意しておく
-    pointLight_ = std::make_unique<PointLightClass>();
-    pointLight_->Initialize();
-    pointLight_->SetPos(Vector3{ 0.0f, 30.0f, 0.0f });
-    engine_->GetDrawManager()->SetPointLightClass(pointLight_.get());
+    spotLight_ = std::make_unique <SpotLight>();
+    spotLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    spotLight_->position = { 2.0f, 1.25f, 0.0f };
+    spotLight_->distance = 7.0f;
+    spotLight_->direction = Math::Normalize(Vector3{ -1.0f,-1.0f,0.0f });
+    spotLight_->intensity = 0.0f; // 初期状態ではOFF
+    spotLight_->decay = 2.0f;
+    spotLight_->cosAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
 
-    spotLight_ = std::make_unique<SpotLightClass>();
-    spotLight_->Initialize();
-    spotLight_->SetIntensity(0.0f);
-    engine_->GetDrawManager()->SetSpotLightClass(spotLight_.get());
+    directionalLight_ = std::make_unique<DirectionalLight>();
+    directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
+    directionalLight_->direction = { 0.5f,-0.7f,1.0f };
+    directionalLight_->intensity = 1.0f;
 }
 
 void ResultScene::Update() {
+
+#if defined USE_IMGUI
+
+    ImGui::Begin("ResultScene");
+    // pointLight 
+    if (ImGui::CollapsingHeader("PointLight")) {
+        ImGui::ColorEdit4("PointLightColor", &pointLight_->color.x);
+        ImGui::DragFloat3("PointLightPosition", &pointLight_->position.x, 0.01f);
+        ImGui::DragFloat("PointLightIntensity", &pointLight_->intensity, 0.01f, 0.0f);
+        ImGui::DragFloat("PointLightRadius", &pointLight_->radius, 0.01f, 0.0f);
+        ImGui::DragFloat("PointLightDecay", &pointLight_->decay, 0.01f, 0.0f);
+    }
+    // spotLight 
+    if (ImGui::CollapsingHeader("SpotLight")) {
+        ImGui::ColorEdit4("SpotLightColor", &spotLight_->color.x);
+        ImGui::DragFloat3("SpotLightPosition", &spotLight_->position.x, 0.01f);
+        ImGui::DragFloat("SpotLightIntensity", &spotLight_->intensity, 0.01f, 0.0f);
+        ImGui::DragFloat3("SpotLightDirection", &spotLight_->direction.x, 0.01f);
+        spotLight_->direction = Math::Normalize(spotLight_->direction);
+        ImGui::DragFloat("SpotLightDistance", &spotLight_->distance, 0.01f, 0.0f);
+        ImGui::DragFloat("SpotLightDecay", &spotLight_->decay, 0.01f, 0.0f);
+        ImGui::DragFloat("SpotLightCosAngle", &spotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
+    }
+
+    ImGui::End();
+
+#endif // USE_IMGUI
+
+    // --- カメラの更新 ---
+    // 現在アクティブなカメラへのポインタ
+    Camera* currentCamera = debugMode ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
+    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
+
     if (circle_) { 
         circle_->Debug("ResultCenter");
         circle_->Update();
@@ -62,11 +102,19 @@ void ResultScene::Update() {
     if (engine_->GetInputManager()->IsKeyPressed(VK_RETURN)) {
         engine_->GetSceneManager()->Request("Title");
     }
+
+    // --- フレーム共通データのセット ---
+    CameraForGPU cameraForGpu;
+    cameraForGpu.view = currentCamera->GetViewMatrix();
+    cameraForGpu.projection = currentCamera->GetPerspectiveFovMatrix();
+    cameraForGpu.worldPosition = currentCamera->GetTranslate();
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, *pointLight_, *spotLight_);
 }
 
 void ResultScene::Draw() {
+
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplySpritePSO();
-    if (circle_) circle_->Draw();
+
 }
