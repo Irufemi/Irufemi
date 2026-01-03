@@ -80,6 +80,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // 3Dモデルデータの生成
     modelplayer_ = std::make_unique<ObjClass>();
     modelplayer_->Initialize(camera_.get(), "player.obj");
+    modelplayerAttack_ = std::make_unique<ObjClass>();
+    modelplayerAttack_->Initialize(camera_.get(), "player_attackEffect.obj");
+    player_->SetAttackModel(modelplayerAttack_.get());
     // 座標をマップチップ番号で指定
     Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 18);
     // 自キャラの初期化

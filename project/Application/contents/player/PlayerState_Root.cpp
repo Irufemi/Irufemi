@@ -2,6 +2,8 @@
 #include "Player.h"
 #include "PlayerState.h"
 
+#include "engine/Input/InputManager.h"
+
 
 // 注意: Player から friend 許可を受けるため、無名名前空間ではなくグローバル定義でも可。
 // ここでは衝突を避けつつ、ひとまずグローバルに直接定義する。
@@ -19,9 +21,16 @@ struct PlayerStateRoot final : IPlayerState {
 		player.MoveInput();
 
 		// 攻撃開始トリガ（例: スペースキー）
-		/*if (Input::GetInstance()->PushKey(DIK_SPACE)) {
-			player.ChangeState(MakeAttackState());
-		}*/
+		if (player.inputManager_->IsKeyPressed(VK_SPACE)) {
+			// 地上なら何度でも、空中なら未使用時のみ許可
+			if (player.onGround_ || !player.attackUsed_) {
+				// 空中で発動したら1回分使用したことにする
+				if (!player.onGround_) {
+					player.attackUsed_ = true;
+				}
+				player.ChangeState(MakeAttackState());
+			}
+		}
 	}
 };
 

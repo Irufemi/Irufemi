@@ -27,6 +27,7 @@ void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputMana
     // 追加初期化
     airJumpsLeft_ = kMaxAirJumps;
     jumpHeldPrev_ = false;
+    attackUsed_ = false; // 攻撃使用フラグ初期化
 
     // 描画へ反映
     model_->SetTransform(transform_);
@@ -56,6 +57,10 @@ void Player::Update() {
 void Player::Draw() {
     model_->Update();
     model_->Draw();
+    if (IsAttack()) {
+        attackModel_->Update();
+        attackModel_->Draw();
+    }
 }
 
 // ===== ステート制御 =====
@@ -148,6 +153,9 @@ void Player::MoveInput() {
 
         // 入力ロック開始（壁ジャン初速を活かす）
         horizontalControlLockTimer_ = kWallJumpHorizLockTime;
+
+        // 壁ジャンを行ったので空中攻撃を再度使えるようにする（リセット）
+        attackUsed_ = false;
 
         // 状態クリア
         onGround_ = false;
@@ -331,6 +339,8 @@ float Player::ResolveHorizontalFrom(const Vector3& base, float dx, CollisionMapI
 
 void Player::MoveAccordingly(const CollisionMapInfo& info) {
     transform_.translate = Math::Add(transform_.translate, info.amountMove);
+    // 攻撃モデルはプレイヤ位置に追従
+    attackTransform_.translate = transform_.translate;
 }
 
 /*
@@ -371,6 +381,8 @@ void Player::ContactGround(const CollisionMapInfo& info) {
         }
         // 通常の着地
         onGround_ = true;
+        // 着地で攻撃フラグをリセット（地上で再び攻撃可能にする）
+        attackUsed_ = false;
         velocity_.x *= (1.0f - kAttenuationLanding);
         // 二段ジャンプリセット
         airJumpsLeft_ = kMaxAirJumps;
@@ -483,6 +495,7 @@ void Player::UpdateMatrix() {
 
     // 描画側 Transform に反映
     model_->SetTransform(transform_);
+    attackModel_->SetTransform(attackTransform_);
 }
 
 // ===== 幾何ユーティリティ =====

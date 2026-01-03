@@ -549,6 +549,18 @@
     <ClInclude Include="math\AnimationTransform.h">
       <Filter>math\model</Filter>
     </ClInclude>
+    <ClInclude Include="3D\LineClass.h">
+      <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="InstanceDrawer.h">
+      <Filter>Engine\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\CubeClass.h">
+      <Filter>3D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\effect\EffectSystem.h">
+      <Filter>3D\Effect</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Object2D.hlsli">

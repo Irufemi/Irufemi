@@ -43,6 +43,9 @@ public:
 	const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
 	const Transform& GetTransform() const { return transform_; }
 
+	// セッター
+	void SetAttackModel(ObjClass* obj) { attackModel_ = obj; }
+
 	// --- ステート制御 ---
 	void ChangeState(std::unique_ptr<IPlayerState> next);
 
@@ -115,12 +118,18 @@ private: // ===== データメンバ =====
 	int  wallCoyoteCounter_ = 0;
 	float horizontalControlLockTimer_ = 0.0f; // 壁ジャン直後の横入力ロック
 
+	// 攻撃使用フラグ（空中では1回だけ許可、地上では何度でも）
+	bool attackUsed_ = false;
+
 	// Transformとワールド行列
 	Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
 	Matrix4x4 worldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
+	Transform attackTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+	Matrix4x4 attackWorldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
 
 	// 描画
 	ObjClass* model_ = nullptr;
+	ObjClass* attackModel_ = nullptr;
 	Camera* camera_ = nullptr;
 	InputManager* inputManager_ = nullptr;
 
