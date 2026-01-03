@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include "math/Transform.h"
+#include "math/ObjModel.h" // ObjMaterial と ObjModel を使うためにインクルード
 
 // 前方宣言
 class TextureManager;
@@ -67,8 +68,19 @@ public: //メンバ関数
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
     void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
 
-    // lighitingModeの切り替え (DrawManagerへの移行を推奨)
-    // void SetLightingMode(int32_t index); // この機能は描画時に設定するため、DrawManager側で制御する方が適切かもしれません
+    // --- マテリアル関連のメソッド ---
+
+    // モデルが持つメッシュ数を取得
+    size_t GetMeshCount() const;
+
+    // 指定したインデックスのメッシュのマテリアルを取得（読み取り専用）
+    const ObjMaterial* GetMaterial(size_t meshIndex) const;
+
+    // 指定したインデックスのメッシュのマテリアルを取得（書き込み可能）
+    ObjMaterial* GetMaterial(size_t meshIndex);
+
+    // すべてのメッシュのライティングを一括で設定
+    void SetEnableLightingToAllMeshes(bool enable);
 
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }

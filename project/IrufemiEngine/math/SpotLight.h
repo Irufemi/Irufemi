@@ -18,6 +18,8 @@ struct SpotLight{
     float decay;
     //!< スポットライトの余弦
     float cosAngle;
-    
-    float padding[2];
+    //!< フォールオフ
+    float falloff;
+private:
+    float padding;
 };

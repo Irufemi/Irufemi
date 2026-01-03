@@ -11,8 +11,8 @@ DirectXCommon* D3D12ResourceUtilLine::dxCommon_ = nullptr;
 //デストラクタ
 D3D12ResourceUtil::~D3D12ResourceUtil() {
     char buf[256];
-    snprintf(buf, sizeof(buf), "[D3D12ResourceUtil] Destruct: vertex=%p, index=%p, material=%p, trans=%p, light=%p\n",
-        vertexResource_.Get(), indexResource_.Get(), materialResource_.Get(), transformationResource_.Get(), directionalLightResource_.Get());
+    snprintf(buf, sizeof(buf), "[D3D12ResourceUtil] Destruct: vertex=%p, index=%p, material=%p, trans=%p\n",
+        vertexResource_.Get(), indexResource_.Get(), materialResource_.Get(), transformationResource_.Get());
     OutputDebugStringA(buf);
 
     UnMap();
@@ -20,8 +20,6 @@ D3D12ResourceUtil::~D3D12ResourceUtil() {
     if (indexResource_) { indexResource_.Reset(); }
     if (materialResource_) { materialResource_.Reset(); }
     if (transformationResource_) { transformationResource_.Reset(); }
-    if (directionalLightResource_) { directionalLightResource_.Reset(); }
-    if (cameraResource_) { cameraResource_.Reset(); }
 }
 
 //ID3D12Resourceを生成する
@@ -43,12 +41,6 @@ void D3D12ResourceUtil::CreateResource() {
     transformationResource_ = dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
     snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", transformationResource_.Get(), __FILE__, __LINE__);
     OutputDebugStringA(buf);
-    directionalLightResource_ = dxCommon_->CreateBufferResource(sizeof(DirectionalLight));
-    snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", directionalLightResource_.Get(), __FILE__, __LINE__);
-    OutputDebugStringA(buf);
-    cameraResource_ = dxCommon_->CreateBufferResource(sizeof(CameraForGPU));
-    snprintf(buf, sizeof(buf), "Created ID3D12Resource at %p in %s:%d\n", cameraResource_.Get(), __FILE__, __LINE__);
-    OutputDebugStringA(buf);
 }
 
 //バッファへの書き込みを開放
@@ -65,12 +57,6 @@ void D3D12ResourceUtil::Map() {
     if (transformationResource_) {
         transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
     }
-    if (directionalLightResource_) {
-        directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData_));
-    }
-    if (cameraResource_) {
-        cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraData_));
-    }
 }
 
 //バッファへの書き込みを閉鎖
@@ -86,9 +72,6 @@ void D3D12ResourceUtil::UnMap() {
     }
     if (transformationResource_) {
         transformationResource_->Unmap(0, nullptr);
-    }
-    if (directionalLightResource_) {
-        directionalLightResource_->Unmap(0, nullptr);
     }
 }
 

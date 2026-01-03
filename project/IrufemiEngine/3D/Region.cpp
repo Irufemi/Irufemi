@@ -62,20 +62,6 @@ void Region::CreateMaterialResources(const ObjMesh& mesh) {
     mat->lightingMode = mesh.material.enableLighting ? 2 : 0; // ライティングモードを適切に設定
 
     if (mat->color.w <= 0.0f) { mat->color.w = 1.0f; }
-
-    // ライト
-    directionalLightResource_ = dx_->CreateBufferResource(sizeof(DirectionalLight));
-    DirectionalLight* dl = nullptr;
-    directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&dl));
-    dl->color = { 1.0f,1.0f,1.0f,1.0f };
-    dl->direction = { 0.0f,-1.0f,0.0f };
-    dl->intensity = 1.0f;
-
-    // カメラ
-    cameraResource_ = dx_->CreateBufferResource(sizeof(CameraForGPU));
-    CameraForGPU* cam = nullptr;
-    cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cam));
-    cam->worldPosition = camera_->GetTranslate();
 }
 
 void Region::EnsureLightAndCamera() {
@@ -176,12 +162,6 @@ void Region::BuildInstanceBuffer(bool force) {
 
 void Region::Draw() {
     if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || instances_.empty()) { return; }
-
-    {
-        CameraForGPU* cam = nullptr;
-        cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cam));
-        cam->worldPosition = camera_->GetTranslate();
-    }
 
     BuildInstanceBuffer(true);
 

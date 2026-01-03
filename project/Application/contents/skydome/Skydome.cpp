@@ -14,7 +14,7 @@ void Skydome::Initialize(Camera* camera) {
 
 	model_ = std::make_unique<ObjClass>();
 	model_->Initialize(camera_, "skydome.obj");
-	model_->SetLightingMode(0);
+	model_->SetEnableLightingToAllMeshes(0);
 
 	worldTransform_ = { Vector3{1.0f,1.0f,1.0f},Vector3{0.0f,0.0f,0.0f},Vector3{0.0f,0.0f,0.0f} };
 }

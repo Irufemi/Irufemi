@@ -4,10 +4,12 @@
 #include <memory>
 
 class IrufemiEngine;
+class DebugCamera;
 class Camera;
 class Circle2D;
-class PointLightClass;
-class SpotLightClass;
+struct PointLight;
+struct SpotLight;
+struct DirectionalLight;
 
 class ResultScene : public IScene {
 public:
@@ -18,10 +20,20 @@ public:
 
 private:
     IrufemiEngine* engine_ = nullptr;
-    std::unique_ptr<Camera> camera_;
-    std::unique_ptr<Circle2D> circle_;
 
-    // ワークアラウンド用ライト
-    std::unique_ptr<PointLightClass> pointLight_;
-    std::unique_ptr<SpotLightClass> spotLight_;
+    // カメラ
+    std::unique_ptr<Camera> camera_ = nullptr;
+
+    // デバッグカメラ
+    std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
+
+    std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
+
+    std::unique_ptr<PointLight> pointLight_ = nullptr;
+
+    std::unique_ptr<SpotLight> spotLight_ = nullptr;
+
+    bool debugMode = false;
+
+    std::unique_ptr<Circle2D> circle_;
 };

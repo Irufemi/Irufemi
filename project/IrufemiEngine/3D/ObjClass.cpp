@@ -35,6 +35,7 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 }
 
 void ObjClass::Update() {
+
     if (!managedModel_ || !camera_) return;
 
     // オブジェクト全体のワールド行列を計算
@@ -53,11 +54,6 @@ void ObjClass::Update() {
     worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
     worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
     transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-
-    // DrawManagerにフレーム共通データを渡す (仮のライトデータ)
-    CameraForGPU cameraGpuData{ camera_->GetTranslate() };
-    DirectionalLight lightGpuData{ {1,1,1,1}, {0,-1,0}, 1.0f };
-    drawManager_->SetFrameData(cameraGpuData, lightGpuData);
 }
 
 void ObjClass::Draw() {
@@ -74,7 +70,52 @@ void ObjClass::Debug([[maybe_unused]] const char* objName) {
     if (ui_) {
         ui_->DebugTransform(transform_);
     }
-    // マテリアルやライトのデバッグは、DrawManagerや専用のデバッグクラスで行うのが望ましい
+    
+    // ImGuiでマテリアルを編集
+    if (managedModel_ && managedModel_->cpuModel) {
+        for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
+            std::string materialLabel = "Mesh " + std::to_string(i) + " Material";
+            if (ImGui::TreeNode(materialLabel.c_str())) {
+                ObjMaterial* mat = GetMaterial(i);
+                if (mat) {
+                    ImGui::ColorEdit4("Color", &mat->color.x);
+                    ImGui::Checkbox("Enable Lighting", &mat->enableLighting);
+                    ImGui::DragFloat("Shininess", &mat->shininess, 1.0f, 1.0f, 256.0f);
+                }
+                ImGui::TreePop();
+            }
+        }
+    }
+
     ImGui::End();
 #endif
+}
+
+size_t ObjClass::GetMeshCount() const {
+    if (managedModel_ && managedModel_->cpuModel) {
+        return managedModel_->cpuModel->meshes.size();
+    }
+    return 0;
+}
+
+const ObjMaterial* ObjClass::GetMaterial(size_t meshIndex) const {
+    if (managedModel_ && managedModel_->cpuModel && meshIndex < managedModel_->cpuModel->meshes.size()) {
+        return &managedModel_->cpuModel->meshes[meshIndex].material;
+    }
+    return nullptr;
+}
+
+ObjMaterial* ObjClass::GetMaterial(size_t meshIndex) {
+    if (managedModel_ && managedModel_->cpuModel && meshIndex < managedModel_->cpuModel->meshes.size()) {
+        return &managedModel_->cpuModel->meshes[meshIndex].material;
+    }
+    return nullptr;
+}
+
+void ObjClass::SetEnableLightingToAllMeshes(bool enable) {
+    if (managedModel_ && managedModel_->cpuModel) {
+        for (auto& mesh : managedModel_->cpuModel->meshes) {
+            mesh.material.enableLighting = enable;
+        }
+    }
 }

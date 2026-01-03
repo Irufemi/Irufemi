@@ -22,8 +22,11 @@
 #include "source/D3D12ResourceUtil.h"
 #include "engine/directX/DirectXCommon.h"
 #include "manager/ModelManager.h" // GpuMeshのため
-#include "math/CameraForGPU.h" // 追加
-#include "math/DirectionalLight.h" // 追加
+#include "math/CameraForGPU.h"
+#include "math/DirectionalLight.h"
+#include "math/PointLight.h"
+#include "math/SpotLight.h"
+#include "function/Math.h"
 
 
 namespace {
@@ -61,35 +64,36 @@ namespace {
 void DrawManager::Initialize(DirectXCommon* dx) {
     dxCommon_ = dx;
 
-    // フレームリソースを生成
-    const UINT frameResSize = sizeof(CameraForGPU) + sizeof(DirectionalLight);
+    // 各CBVのサイズを256バイトアラインメントに切り上げる
+    const size_t cameraSize = (sizeof(CameraForGPU) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+    const size_t directionalLightSize = (sizeof(DirectionalLight) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+    const size_t pointLightSize = (sizeof(PointLight) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+    const size_t spotLightSize = (sizeof(SpotLight) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+
+    // フレームリソースを生成（全ライトとカメラを格納できるサイズ）
+    const UINT frameResSize = static_cast<UINT>(cameraSize + directionalLightSize + pointLightSize + spotLightSize);
     frameResource_ = dxCommon_->CreateBufferResource(frameResSize);
     uint8_t* mapped = nullptr;
     frameResource_->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
-    
+
     // 各データのポインタとGPUアドレスをキャッシュ
-    cameraData_ = reinterpret_cast<CameraForGPU*>(mapped);
-    directionalLightData_ = reinterpret_cast<DirectionalLight*>(mapped + sizeof(CameraForGPU));
-    
+    uintptr_t mappedAddress = reinterpret_cast<uintptr_t>(mapped);
+    cameraData_ = reinterpret_cast<CameraForGPU*>(mappedAddress);
+    directionalLightData_ = reinterpret_cast<DirectionalLight*>(mappedAddress + cameraSize);
+    pointLightData_ = reinterpret_cast<PointLight*>(mappedAddress + cameraSize + directionalLightSize);
+    spotLightData_ = reinterpret_cast<SpotLight*>(mappedAddress + cameraSize + directionalLightSize + pointLightSize);
+
     frameData_.camera = frameResource_->GetGPUVirtualAddress();
-    frameData_.directionalLight = frameData_.camera + sizeof(CameraForGPU);
+    frameData_.directionalLight = frameData_.camera + cameraSize;
+    frameData_.pointLight = frameData_.directionalLight + directionalLightSize;
+    frameData_.spotLight = frameData_.pointLight + pointLightSize;
 }
 
 void DrawManager::Finalize() {
-    // 静的フォールバックCBVを解放（デバイス参照を外す）
-    if (gNullPointLight) {
-        // マップ済みでもUnmap不要だが、気になるなら解除
-        // gNullPointLight->Unmap(0, nullptr);
-        gNullPointLight.Reset();
-        gNullPointLightVA = 0;
+    if (frameResource_) {
+        frameResource_->Unmap(0, nullptr);
+        frameResource_.Reset();
     }
-    if (gNullSpotLight) {
-        // gNullSpotLight->Unmap(0, nullptr);
-        gNullSpotLight.Reset();
-        gNullSpotLightVA = 0;
-    }
-    pointLight_ = nullptr;
-    spotLight_ = nullptr;
     dxCommon_ = nullptr;
 }
 
@@ -156,6 +160,13 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     // フレームで利用するSRVヒープを設定（全描画共通）
     ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
     dxCommon_->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
+
+    // --- フレーム共通CBVをここで一度だけバインド ---
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, frameData_.camera);
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, frameData_.directionalLight);
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, frameData_.pointLight);
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, frameData_.spotLight);
 
 }
 
@@ -234,19 +245,19 @@ void DrawManager::PostDraw() {
 
 }
 
-void DrawManager::EnsurePointLightResource() {
-    if (!pointLight_) return;
-    if (!pointLight_->GetResource()) {
-        pointLight_->Initialize();
+void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const PointLight& pointLight, const SpotLight& spotLight) {
+    if (cameraData_) {
+        *cameraData_ = camera;
     }
-}
-
-void DrawManager::EnsureSpotLightResource() {
-    if (!spotLight_) return;
-    if (!spotLight_->GetResource()) {
-        spotLight_->Initialize();
+    if (directionalLightData_) {
+        *directionalLightData_ = light;
     }
-
+    if (pointLightData_) {
+        *pointLightData_ = pointLight;
+    }
+    if (spotLightData_) {
+        *spotLightData_ = spotLight;
+    }
 }
 
 void DrawManager::DrawTriangle(
@@ -277,19 +288,12 @@ void DrawManager::DrawTriangle(
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(8, triangle->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
     // ↑ ここまで追加
 
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, triangle->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, triangle->GetD3D12Resource()->cameraResource_->GetGPUVirtualAddress());
-
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, triangle->GetD3D12Resource()->textureHandle_);
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     /*三角形を表示しよう*/
 
@@ -323,8 +327,6 @@ void DrawManager::DrawSprite(Sprite* sprite) {
 
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, sprite->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, sprite->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
 
     // 5. テクスチャ用のDescriptor Table設定（SRV）
 
@@ -365,21 +367,12 @@ void DrawManager::DrawSphere(SphereClass* sphere) {
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, sphere->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, sphere->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
-
-    /*PhongReflectionModel*/
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, sphere->GetD3D12Resource()->cameraResource_->GetGPUVirtualAddress());
-
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, sphere->GetD3D12Resource()->textureHandle_);
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     /*三角形を表示しよう*/
 
@@ -399,14 +392,8 @@ void DrawManager::DrawCylinder(CylinderClass* cylinder) {
     // CBV / SRV
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, cylinder->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, cylinder->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, cylinder->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, cylinder->GetD3D12Resource()->cameraResource_->GetGPUVirtualAddress());
 
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, cylinder->GetD3D12Resource()->textureHandle_);
-
-    // ←ここを直接メンバ参照から安全な VA 取得に変更
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     // Draw
     dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(cylinder->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
@@ -471,12 +458,8 @@ void DrawManager::DrawRegion(Region* region) {
 
     // CBV/SRV設定 (インスタンスリソースから)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, region->GetDirectionalLightResource()->GetGPUVirtualAddress());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, region->GetCameraResource()->GetGPUVirtualAddress());
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     // 描画
     if (gpuMesh->indexCount > 0) {
@@ -500,16 +483,10 @@ void DrawManager::DrawSphereRegion(SphereRegion* region) {
 
     // CBV (PS)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());          // PS b0
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, region->GetDirectionalLightResource()->GetGPUVirtualAddress());  // PS b1
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, region->GetCameraResource()->GetGPUVirtualAddress());            // PS b2
 
     // SRV (PS t0 / VS t0)
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());            // PS t0
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU());   // VS t0
-
-    // ライト（フォールバック込み）
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     // Draw
     dxCommon_->GetCommandList()->DrawIndexedInstanced(region->GetIndexCount(), region->GetInstanceCount(), 0, 0, 0);
@@ -526,14 +503,9 @@ void DrawManager::DrawTetraRegion(TetraRegion* region) {
     dxCommon_->GetCommandList()->IASetIndexBuffer(&region->GetIndexBufferView());
 
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, region->GetDirectionalLightResource()->GetGPUVirtualAddress());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, region->GetCameraResource()->GetGPUVirtualAddress());
 
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU());
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     dxCommon_->GetCommandList()->DrawIndexedInstanced(region->GetIndexCount(), region->GetInstanceCount(), 0, 0, 0);
 }
@@ -561,21 +533,12 @@ void DrawManager::DrawByIndex(D3D12ResourceUtil* resource) {
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
 
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, resource->directionalLightResource_->GetGPUVirtualAddress());
-
-    /*PhongReflectionModel*/
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, resource->cameraResource_->GetGPUVirtualAddress());
-
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     /*三角形を表示しよう*/
 
@@ -605,21 +568,12 @@ void DrawManager::DrawByVertex(D3D12ResourceUtil* resource) {
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
 
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, resource->directionalLightResource_->GetGPUVirtualAddress());
-
-    /*PhongReflectionModel*/
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, resource->cameraResource_->GetGPUVirtualAddress());
-
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     /*三角形を表示しよう*/
 
@@ -659,32 +613,6 @@ void DrawManager::DrawLine3D(Line3DClass* line) {
     dxCommon_->GetCommandList()->DrawIndexedInstanced(2, 1, 0, 0, 0);
 }
 
-// SetPointLight / SetSpotLight はクラス保持のデータ差し替え用（任意）
-// void DrawManager::SetPointLight(PointLight& info) {
-//     if (!pointLight_) return;
-//     pointLight_->SetData(&info);
-// }
-// void DrawManager::SetSpotLight(SpotLight& info) {
-//     if (!spotLight_) return;
-//     spotLight_->SetData(&info);
-// }
-
-D3D12_GPU_VIRTUAL_ADDRESS DrawManager::GetPointLightVA() {
-    EnsureNullPointLight(dxCommon_);
-    EnsurePointLightResource();
-    return (pointLight_ && pointLight_->GetResource())
-        ? pointLight_->GetResource()->GetGPUVirtualAddress()
-        : gNullPointLightVA;
-}
-
-D3D12_GPU_VIRTUAL_ADDRESS DrawManager::GetSpotLightVA() {
-    EnsureNullSpotLight(dxCommon_);
-    EnsureSpotLightResource();
-    return (spotLight_ && spotLight_->GetResource())
-        ? spotLight_->GetResource()->GetGPUVirtualAddress()
-        : gNullSpotLightVA;
-}
-
 void DrawManager::DrawSpriteRegion(SpriteRegion* region) {
     if (!region) return;
     auto* res = region->GetSpriteResource();
@@ -703,8 +631,6 @@ void DrawManager::DrawSpriteRegion(SpriteRegion* region) {
 
     // CBV (PS)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, res->materialResource_->GetGPUVirtualAddress());          // PS b0
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, res->directionalLightResource_->GetGPUVirtualAddress());  // PS b1
-    // 2Dでは camera CBV 未使用のため省略（必要なら SetGraphicsRootConstantBufferView(5, ...)）
 
     // SRV (PS t0 / VS t0)
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, res->textureHandle_);              // PS t0 (テクスチャ)
@@ -729,11 +655,7 @@ void DrawManager::DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* inst
     // CBV/SRV設定 (インスタンスリソースから)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, instanceResource->materialResource_->GetGPUVirtualAddress());
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, instanceResource->transformationResource_->GetGPUVirtualAddress());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, instanceResource->directionalLightResource_->GetGPUVirtualAddress());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, instanceResource->cameraResource_->GetGPUVirtualAddress());
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, instanceResource->textureHandle_);
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     // 描画
     if (gpuMesh->indexCount > 0) {
@@ -766,12 +688,6 @@ void DrawManager::DrawCube(CubeClass* cube) {
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, cube->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, cube->GetD3D12Resource()->directionalLightResource_->GetGPUVirtualAddress());
-
-    /*PhongReflectionModel*/
-
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, cube->GetD3D12Resource()->cameraResource_->GetGPUVirtualAddress());
-
     /*テクスチャを貼ろう*/
 
     ///DescriptorTableを設定する
@@ -779,22 +695,10 @@ void DrawManager::DrawCube(CubeClass* cube) {
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, cube->GetD3D12Resource()->textureHandle_);
 
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
-
     /*三角形を表示しよう*/
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
     dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(cube->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
-}
-
-void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light) {
-    if (cameraData_) {
-        *cameraData_ = camera;
-    }
-    if (directionalLightData_) {
-        *directionalLightData_ = light;
-    }
 }
 
 void DrawManager::DrawModel(const ManagedModel* model, const TransformationMatrix& matrix) {
@@ -809,12 +713,6 @@ void DrawManager::DrawModel(const ManagedModel* model, const TransformationMatri
 
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    // ライトとカメラのCBVをセット
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, frameData_.directionalLight);
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, frameData_.camera);
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, GetPointLightVA());
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, GetSpotLightVA());
 
     // モデル内の全メッシュをループして描画
     for (size_t i = 0; i < model->gpuMeshes.size(); ++i) {

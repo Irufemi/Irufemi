@@ -53,6 +53,7 @@ struct DirectionalLight
     //!< 輝度
 	float intensity;
 };
+
 ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
 
 /*PhongReflectionModel*/
@@ -61,6 +62,8 @@ ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
 
 struct Camera
 {
+	float32_t4x4 view;
+	float32_t4x4 projection;
 	float32_t3 worldPosition;
 };
 ConstantBuffer<Camera> gCamera : register(b2);
@@ -75,8 +78,13 @@ struct PointLight
 	float32_t3 position;
 	//!< 輝度
 	float intensity;
-	
+	//!< ライトの影響範囲
+	float radius;
+	//!< 減衰率
+	float decay;
+	float2 padding;
 };
+
 ConstantBuffer<PointLight> gPointLight : register(b3);
 
 /*SpotLight*/
@@ -96,6 +104,10 @@ struct SpotLight
 	float32_t decay;
 	//!< スポットライトの余弦
 	float32_t cosAngle;
+	//!< フォールオフ
+	float32_t falloff;
+	
+	float padding;
 };
 ConstantBuffer<SpotLight> gSpotLight : register(b4);
 

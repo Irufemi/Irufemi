@@ -20,16 +20,18 @@ class D3D12ResourceUtilLine;
 class Region;
 class SphereRegion; 
 class TetraRegion; 
-struct PointLight;
-class PointLightClass;
-struct SpotLight;
-class SpotLightClass;
 class SpriteRegion;
 struct GpuMesh;
 struct ManagedModel;
 class Line2DClass;
 class Line3DClass;
 class CubeClass;
+
+// 構造体を前方宣言
+struct PointLight;
+struct SpotLight;
+struct DirectionalLight;
+struct CameraForGPU;
 
 //描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -44,21 +46,13 @@ private:
     struct FrameData {
         D3D12_GPU_VIRTUAL_ADDRESS camera;
         D3D12_GPU_VIRTUAL_ADDRESS directionalLight;
+        D3D12_GPU_VIRTUAL_ADDRESS pointLight;
+        D3D12_GPU_VIRTUAL_ADDRESS spotLight;
     } frameData_{};
     CameraForGPU* cameraData_ = nullptr;
     DirectionalLight* directionalLightData_ = nullptr;
-
-
-    PointLightClass* pointLight_ = nullptr;
-
-    SpotLightClass* spotLight_ = nullptr;
-
-    void EnsurePointLightResource(); // 生成・初期化の遅延実行用
-    void EnsureSpotLightResource(); // 生成・初期化の遅延実行用
-
-    // フォールバック込みで今フレーム使うGPUアドレスを取得
-    D3D12_GPU_VIRTUAL_ADDRESS GetPointLightVA();
-    D3D12_GPU_VIRTUAL_ADDRESS GetSpotLightVA();
+    PointLight* pointLightData_ = nullptr;
+    SpotLight* spotLightData_ = nullptr;
 
 
 public: //メンバ関数
@@ -77,7 +71,7 @@ public: //メンバ関数
     void PostDraw();
 
     // フレーム単位の共通データを設定
-    void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light);
+    void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const PointLight& pointLight, const SpotLight& spotLight);
 
     void DrawTriangle(
         TriangleClass* triangle
@@ -109,12 +103,6 @@ public: //メンバ関数
 
     // モデル描画用の新関数
     void DrawModel(const ManagedModel* model, const TransformationMatrix& matrix);
-
-    void SetPointLightClass(PointLightClass* pointLightClass) { pointLight_ = pointLightClass; }
-    void SetPointLight(PointLight& info);
-
-    void SetSpotLightClass(SpotLightClass* spotLightClass) { spotLight_ = spotLightClass; }
-    void SetSpotLight(SpotLight& info);
 
     void DrawSpriteRegion(SpriteRegion* region);
     void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource);

@@ -88,11 +88,6 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
     resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
 
-
-    resource_->directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->directionalLightData_->direction = { 0.0f,-1.0f,0.0f, };
-    resource_->directionalLightData_->intensity = 1.0f;
-
     // --- 必ず指定テクスチャをロード＆ハンドル取得 ---
     if (textureManager_) {
         // 指定名で必ずロード/取得（未ロードならロード）
@@ -182,8 +177,6 @@ void Sprite::Update() {
     // mul(row, M) を想定: input * (flip * crop * userUV)
     Matrix4x4 base = Math::Multiply(cropUV, userUV);
     resource_->materialData_->uvTransform = Math::Multiply(flipUV, base);
-
-    resource_->directionalLightData_->direction = Math::Normalize(resource_->directionalLightData_->direction);
 
 }
 

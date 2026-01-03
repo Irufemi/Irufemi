@@ -62,8 +62,6 @@ public:
     D3D12_VERTEX_BUFFER_VIEW&   GetVertexBufferView() { return vertexBufferView_; }
     D3D12_INDEX_BUFFER_VIEW&    GetIndexBufferView() { return indexBufferView_; }
     ID3D12Resource*             GetMaterialResource() { return materialResource_.Get(); }
-    ID3D12Resource*             GetDirectionalLightResource() { return directionalLightResource_.Get(); }
-    ID3D12Resource*             GetCameraResource() { return cameraResource_.Get(); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_; }
     UINT                        GetIndexCount() const { return indexCount_; }
@@ -106,8 +104,6 @@ private:
 
     // マテリアル/ライト/カメラ
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource_;
 
     // 共有テクスチャ SRV
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};

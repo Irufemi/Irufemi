@@ -15,6 +15,12 @@
 #include <memory>
 #include <vector>
 
+class Camera;
+class DebugCamera;
+struct PointLight;
+struct SpotLight;
+struct DirectionalLight;
+
 /// <summary>
 /// タイトル
 /// </summary>
@@ -28,11 +34,17 @@ public: // メンバ関数
 private: // メンバ変数
     IrufemiEngine* engine_ = nullptr;
 
+    // カメラ
     std::unique_ptr<Camera> camera_ = nullptr;
 
+    // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
-    bool debugMode = false;
 
-    std::unique_ptr<PointLightClass> pointLight_ = nullptr;
-    std::unique_ptr<SpotLightClass> spotLight_ = nullptr;
+    std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
+
+    std::unique_ptr<PointLight> pointLight_ = nullptr;
+
+    std::unique_ptr<SpotLight> spotLight_ = nullptr;
+
+    bool debugMode = false;
 };
