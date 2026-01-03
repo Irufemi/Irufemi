@@ -18,6 +18,12 @@ DrawManager* ObjClass::drawManager_ = nullptr;
 DebugUI* ObjClass::ui_ = nullptr;
 ModelManager* ObjClass::modelManager_ = nullptr;
 
+ObjClass::~ObjClass() {
+    if (transformationResource_) {
+        transformationResource_->Unmap(0, nullptr);
+    }
+}
+
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
     camera_ = camera;
 
@@ -29,6 +35,12 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         OutputDebugStringA("[ObjClass] Initialize: model load failed.\n");
         return;
     }
+
+    // 変換行列リソースの生成とマップ
+    assert(drawManager_ && "DrawManager is not set. Cannot get DirectXCommon.");
+    transformationResource_ = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
+    transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+
 
     // 初回Updateを呼んでおく
     Update();
@@ -54,13 +66,18 @@ void ObjClass::Update() {
     worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
     worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
     transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+
+    // 計算した行列をマップ済みのリソースにコピー
+    if (transformationData_) {
+        *transformationData_ = transformationMatrix_;
+    }
 }
 
 void ObjClass::Draw() {
     if (!managedModel_ || !drawManager_) return;
 
-    // モデルが持つすべてのメッシュを描画するよう依頼
-    drawManager_->DrawModel(managedModel_.get(), transformationMatrix_);
+    // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
+    drawManager_->DrawModel(managedModel_.get(), GetTransformationGpuAddress());
 }
 
 void ObjClass::Debug([[maybe_unused]] const char* objName) {

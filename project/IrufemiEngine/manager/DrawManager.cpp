@@ -701,15 +701,8 @@ void DrawManager::DrawCube(CubeClass* cube) {
     dxCommon_->GetCommandList()->DrawIndexedInstanced(static_cast<UINT>(cube->GetD3D12Resource()->indexDataList_.size()), 1, 0, 0, 0);
 }
 
-void DrawManager::DrawModel(const ManagedModel* model, const TransformationMatrix& matrix) {
+void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA) {
     if (!model || !model->cpuModel || !dxCommon_) return;
-
-    // オブジェクトごとの変換行列用リソースを一時的に確保
-    Microsoft::WRL::ComPtr<ID3D12Resource> transformResource = dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
-    TransformationMatrix* transformData = nullptr;
-    transformResource->Map(0, nullptr, reinterpret_cast<void**>(&transformData));
-    *transformData = matrix;
-    D3D12_GPU_VIRTUAL_ADDRESS transformVA = transformResource->GetGPUVirtualAddress();
 
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -723,13 +716,14 @@ void DrawManager::DrawModel(const ManagedModel* model, const TransformationMatri
 
         // IA (頂点/インデックス)
         dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &gpuMesh->vertexBufferView);
+
         if (gpuMesh->indexCount > 0) {
             dxCommon_->GetCommandList()->IASetIndexBuffer(&gpuMesh->indexBufferView);
         }
 
         // CBV (マテリアル/Transform)
         dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, gpuMaterial->materialResource->GetGPUVirtualAddress());
-        dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformVA);
+        dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformGpuVA);
 
         // SRV (テクスチャ)
         dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, gpuMaterial->textureHandle);

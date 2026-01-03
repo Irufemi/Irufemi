@@ -33,6 +33,10 @@ private:
     Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     TransformationMatrix transformationMatrix_{};
 
+    // 変換行列用リソース
+    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_;
+    TransformationMatrix* transformationData_ = nullptr;
+
     Camera* camera_ = nullptr;
 
     static TextureManager* textureManager_;
@@ -43,7 +47,7 @@ private:
 public: //メンバ関数
 
     //デストラクタ
-    ~ObjClass() = default;
+    ~ObjClass();
     //初期化
     void Initialize(Camera* camera, const std::string& filename = "plane.obj");
     void Update();
@@ -81,6 +85,11 @@ public: //メンバ関数
 
     // すべてのメッシュのライティングを一括で設定
     void SetEnableLightingToAllMeshes(bool enable);
+
+    // 描画用の変換行列リソースのGPUアドレスを取得
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
+        return transformationResource_->GetGPUVirtualAddress();
+    }
 
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }

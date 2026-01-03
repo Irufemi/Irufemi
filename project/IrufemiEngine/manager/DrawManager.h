@@ -102,8 +102,10 @@ public: //メンバ関数
     void DrawLine3D(Line3DClass* line);
 
     // モデル描画用の新関数
-    void DrawModel(const ManagedModel* model, const TransformationMatrix& matrix);
+    void DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA);
 
     void DrawSpriteRegion(SpriteRegion* region);
     void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource);
+
+    DirectXCommon* GetDxCommon() const { return dxCommon_; }
 };
