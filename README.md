@@ -1,66 +1,67 @@
 # Irufemi Engine
 
-DirectX12���x�[�X�ɂ�������3D�Q�[���G���W���ł��B
+DirectX12をベースにした自作3Dゲームエンジンです。
 
 [![DebugBuild](https://github.com/Irufemi/CG3/actions/workflows/DebugBuild.yml/badge.svg)](https://github.com/Irufemi/CG3/actions/workflows/DebugBuild.yml)
 [![ReleaseBuild](https://github.com/Irufemi/CG3/actions/workflows/ReleaseBuild.yml/badge.svg)](https://github.com/Irufemi/CG3/actions/workflows/ReleaseBuild.yml)
 [![DevelopmentBuild](https://github.com/Irufemi/CG3/actions/workflows/DevelopmentBuild.yml/badge.svg)](https://github.com/Irufemi/CG3/actions/workflows/DevelopmentBuild.yml)
+[![CheckUnwantedFiles](https://github.com/Irufemi/Irufemi/actions/workflows/CheckUnwantedFiles.yml/badge.svg)](https://github.com/Irufemi/Irufemi/actions/workflows/CheckUnwantedFiles.yml)
 
-## �T�v
+## 概要
 
-���̃v���W�F�N�g�́A3D�O���t�B�b�N�X�v���O���~���O�̊w�K��ړI�Ƃ��ĊJ������Ă���Q�[���G���W���ł��B
-DirectX 12��API�𒼐ړI�ɗ��p���A�����_�����O�̊�b���牞�p�܂ł��������Ă��܂��B
+このプロジェクトは、3Dグラフィックスプログラミングの学習を目的として開発されているゲームエンジンです。
+DirectX 12のAPIを直接的に利用し、レンダリングの基礎から応用までを実装しています。
 
-## ��ȋ@�\
+## 主な機能
 
-- **�����_�����O**
-  - DirectX 12�x�[�X�̃����_�����O�p�C�v���C��
-  - �X�v���C�g�A�O�p�`�A���A�����̂Ȃǂ̊�{�}�`�̕`��
-  - ���f���f�[�^�i`.obj`, `.gltf`�j�̓ǂݍ��݂ƕ`��
-  - ���s�����A�_�����A�X�|�b�g���C�g
-  - �p�[�e�B�N���V�X�e��
-- **���f���ƃA�j���[�V����**
-  - Assimp���C�u�����ɂ��3D���f���̃C���|�[�g
-  - �X�P���^���A�j���[�V�����̍Đ�
-- **���̑�**
-  - ImGui�ɂ��f�o�b�OUI
-  - ����̎Z�p���C�u�����iVector, Matrix, Quaternion�j
+- **レンダリング**
+  - DirectX 12ベースのレンダリングパイプライン
+  - スプライト、三角形、球、立方体などの基本図形の描画
+  - モデルデータ（`.obj`, `.gltf`）の読み込みと描画
+  - 平行光源、点光源、スポットライト
+  - パーティクルシステム
+- **モデルとアニメーション**
+  - Assimpライブラリによる3Dモデルのインポート
+  - スケルタルアニメーションの再生
+- **その他**
+  - ImGuiによるデバッグUI
+  - 自作の算術ライブラリ（Vector, Matrix, Quaternion）
 
-## �����
+## 動作環境
 
 - Windows 10 / 11
 - Visual Studio 2022
-- Windows SDK (�o�[�W����: 10.0.26100.7175 �ȍ~)
+- Windows SDK (バージョン: 10.0.26100.7175 以降)
 
-## �r���h���@
+## ビルド方法
 
-1. ���̃��|�W�g�����N���[�����܂��B
-2. `Irufemi.sln` �� Visual Studio 2022 �ŊJ���܂��B
-3. �\�����[�V�������r���h���܂��B
+1. このリポジトリをクローンします。
+2. `Irufemi.sln` を Visual Studio 2022 で開きます。
+3. ソリューションをビルドします。
 
-## �g�p���C�u����
+## 使用ライブラリ
 
-���̃v���W�F�N�g�́A�ȉ��̃T�[�h�p�[�e�B�����C�u�����Ɉˑ����Ă��܂��B
+このプロジェクトは、以下のサードパーティ製ライブラリに依存しています。
 
-- [Assimp](https://github.com/assimp/assimp) - 3D���f���ǂݍ���
-- [Dear ImGui](https://github.com/ocornut/imgui) - �f�o�b�OUI
+- [Assimp](https://github.com/assimp/assimp) - 3Dモデル読み込み
+- [Dear ImGui](https://github.com/ocornut/imgui) - デバッグUI
 - [DirectX 12 Agility SDK](https://devblogs.microsoft.com/directx/directx12agility/) - DirectX 12 API
-- (���̑�����ΒǋL)
+- (その他あれば追記)
 
-## 3D���f���̃A�Z�b�g�p�C�v���C���ɂ���
+## 3Dモデルのアセットパイプラインについて
 
-���̃v���W�F�N�g�ł́A3D���f���̓ǂݍ��݂� **Assimp** ���C�u�������g�p���Ă��܂��B
+このプロジェクトでは、3Dモデルの読み込みに **Assimp** ライブラリを使用しています。
 
-���f�������[�h����ہAAssimp�� `aiProcess_MakeLeftHanded` �t���O�𗘗p���āA**���ׂẴ��f���f�[�^��DirectX�̍�����W�n�Ɏ����ŕϊ�**���Ă��܂��B
+モデルをロードする際、Assimpの `aiProcess_MakeLeftHanded` フラグを利用して、**すべてのモデルデータをDirectXの左手座標系に自動で変換**しています。
 
-### ���f���쐬�ҁE�v���O���}�[�����̃��[��
+### モデル作成者・プログラマー向けのルール
 
-- **Blender�Ȃǂ�DCC�c�[�����烂�f�����G�N�X�|�[�g����ۂ́A�c�[���̃f�t�H���g�ݒ�iY-up�̉E����W�n�j�̂܂܃G�N�X�|�[�g���Ă��������B**
-- ���W�n�ϊ��̂��߂̓��ʂȃG�N�X�|�[�g�ݒ�͕s�v�ł��B
+- **BlenderなどのDCCツールからモデルをエクスポートする際は、ツールのデフォルト設定（Y-upの右手座標系）のままエクスポートしてください。**
+- 座標系変換のための特別なエクスポート設定は不要です。
 
-���̃��[���ɂ��A�G�N�X�|�[�g���̐ݒ�~�X��h���A`.obj` �� `.gltf` �Ƃ������قȂ�t�H�[�}�b�g�ł���т�����舵�����\�ɂȂ�܂��B
+このルールにより、エクスポート時の設定ミスを防ぎ、`.obj` や `.gltf` といった異なるフォーマットでも一貫した取り扱いが可能になります。
 
-## ���C�Z���X
+## ライセンス
 
-���̃v���W�F�N�g�� [MIT License](LICENSE.txt) �̉��Ō��J����Ă��܂��B
-�������A�ˑ����郉�C�u�����ɂ��ẮA���ꂼ��̃��C�Z���X�ɏ]���Ă��������B
+このプロジェクトは [MIT License](LICENSE.txt) の下で公開されています。
+ただし、依存するライブラリについては、それぞれのライセンスに従ってください。
