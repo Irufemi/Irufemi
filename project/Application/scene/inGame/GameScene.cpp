@@ -4,7 +4,6 @@
 #include "engine/IrufemiEngine.h"
 #include "manager/DebugUI.h"
 
-
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
 #include "math/CameraForGPU.h"
@@ -13,6 +12,9 @@
 #include "math/DirectionalLight.h"
 #include "function/Collision.h" // Collision をインクルード
 #include <algorithm> // remove_if をインクルード
+#include "contents/enemy/shieldEnemy/ShieldEnemy.h"
+#include "contents/enemy/normalEnemy/NormalEnemy.h"
+
 
 // デストラクタ
 GameScene::~GameScene() {
@@ -235,15 +237,61 @@ void GameScene::Draw() {
 }
 
 void GameScene::GenerateEnemies() {
-    // ここで敵を生成して enemies_ に追加します
-    // 例：
-    // auto enemy = std::make_unique<ConcreteEnemy>(); // 具体的な敵クラス
-    // enemy->Initialize({10.0f, 2.0f, 0.0f});
-    // enemies_.push_back(std::move(enemy));
+    //// ShieldEnemyをマップチップ(10, 18)に配置
+    //{
+    //    // 1. ShieldEnemyを生成
+    //    auto enemy = std::make_unique<ShieldEnemy>(this, camera_.get());
+    // NormalEnemyをマップチップ(10, 18)に配置
+    {
+        auto enemy = std::make_unique<NormalEnemy>(this, camera_.get());
+        Vector3 position = mapChipField_->GetMapChipPositionByIndex(10, 18);
+        enemy->Initialize(position);
+        enemies_.push_back(std::move(enemy));
+    }
+
+    //    // 2. マップチップから配置座標を取得
+    //    Vector3 position = mapChipField_->GetMapChipPositionByIndex(10, 18);
+
+    //    // 3. 初期化
+    //    enemy->Initialize(position);
+
+    //    // 4. リストに追加
+    //    enemies_.push_back(std::move(enemy));
+    //}
+
+    //// さらに別のShieldEnemyをマップチップ(15, 18)に配置
+    //{
+    //    auto enemy = std::make_unique<ShieldEnemy>(this, camera_.get());
+    //    Vector3 position = mapChipField_->GetMapChipPositionByIndex(15, 18);
+    //    enemy->Initialize(position);
+    //    enemies_.push_back(std::move(enemy));
+    //}
+    // さらに別のNormalEnemyをマップチップ(15, 18)に配置
+    {
+        auto enemy = std::make_unique<NormalEnemy>(this, camera_.get());
+        Vector3 position = mapChipField_->GetMapChipPositionByIndex(15, 18);
+        enemy->Initialize(position);
+        enemies_.push_back(std::move(enemy));
+    }
 }
 
 void GameScene::CheckAllCollisions() {
-    // 自キャラと敵キャラの衝突判定
+    // --- プレイヤーの攻撃 vs 敵 ---
+    if (player_->IsAttacking()) {
+        const AABB attackAABB = player_->GetAttackAABB();
+        for (const auto& enemy : enemies_) {
+            if (enemy->IsDead()) {
+                continue;
+            }
+            const AABB enemyAABB = enemy->GetAABB();
+            if (Collision::IsAABBCollision(attackAABB, enemyAABB)) {
+                // 敵側の衝突処理（プレイヤーのポインタを渡す）
+                enemy->OnCollision(player_.get());
+            }
+        }
+    }
+
+    // --- プレイヤー本体 vs 敵 ---
     const AABB playerAABB = player_->GetAABB();
     for (const auto& enemy : enemies_) {
         if (enemy->IsDead()) {
@@ -253,8 +301,6 @@ void GameScene::CheckAllCollisions() {
         if (Collision::IsAABBCollision(playerAABB, enemyAABB)) {
             // プレイヤー側の衝突処理
             player_->OnCollision(enemy.get());
-            // 敵側の衝突処理
-            enemy->OnCollision(player_.get());
         }
     }
 }

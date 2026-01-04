@@ -9,6 +9,10 @@ void IEnemy::Initialize(const Vector3& position) {
 }
 
 void IEnemy::OnCollision(Player* player) {
+    // プレイヤーが攻撃中でなければ何もしない
+    if (!player->IsAttacking()) {
+        return;
+    }
     // プレイヤーがダッシュ中なら何もしない
     if (player->IsDashing()) {
         return;

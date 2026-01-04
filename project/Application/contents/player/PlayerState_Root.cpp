@@ -31,6 +31,11 @@ struct PlayerStateRoot final : IPlayerState {
 				player.ChangeState(MakeDashState());
 			}
 		}
+
+		// 攻撃開始トリガ（例: Eキー）
+		if (player.inputManager_->IsKeyPressed('E')) {
+			player.ChangeState(MakeAttackState());
+		}
 	}
 };
 

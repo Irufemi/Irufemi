@@ -42,7 +42,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     );
 
-    engine->SetInitialSceneName("Debug");
+    engine->SetInitialSceneName("InGame");
 
     engine->Execute();
 

@@ -36,9 +36,11 @@ public:
 	const Vector3& GetTranslate() const { return transform_.translate; }
 	Vector3 GetWorldPosition();
 	AABB GetAABB();
+	AABB GetAttackAABB(); // 攻撃用AABBを取得する関数を追加
 	LRDirection GetLR() const { return lrDirection_; }
 	bool IsDead() const { return isDead_; }
 	bool IsDashing() const;
+	bool IsAttacking() const; // 攻撃中か判定する関数を追加
 	const char* GetStateName() const { return state_ ? state_->Name() : "<none>"; }
 	const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
 	const Transform& GetTransform() const { return transform_; }
@@ -142,6 +144,7 @@ private: // ===== データメンバ =====
 private: // ===== 内部処理 =====
 	// 入力/移動
 	void MoveInput();
+	void ApplyGravity(); // 重力適用を別関数に
 	void BehaviorMoveUpdate();
 	void TurningControl(); // 見た目の向き補間
 	void UpdateMatrix();
@@ -163,6 +166,7 @@ private: // ===== 内部処理 =====
 	friend struct IPlayerState;
 	friend struct PlayerStateRoot;
 	friend struct PlayerStateDash;
+	friend struct PlayerStateAttack;
 
 	// 旧個別判定（参考用・未使用）
 	void MapCollisionTop(CollisionMapInfo& info);

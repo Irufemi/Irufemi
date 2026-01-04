@@ -51,8 +51,15 @@ void Player::Update() {
         state_->Update(*this);
     }
 
-    // 共通の移動・衝突	
-    BehaviorMoveUpdate();
+    // 攻撃中でなければ移動と衝突判定を行う
+    if (!IsAttacking()) {
+        BehaviorMoveUpdate();
+    }
+    else {
+        // 攻撃中でも旋回と行列更新は行う
+        TurningControl();
+        UpdateMatrix();
+    }
 }
 
 void Player::Draw() {
@@ -181,14 +188,18 @@ void Player::MoveInput() {
     }
 
     // 重力（空中のみ）
+    ApplyGravity();
+
+    // 押下状態の保存
+    jumpHeldPrev_ = jumpDown;
+}
+
+void Player::ApplyGravity() {
     if (!onGround_) {
         float g = (velocity_.y <= 0.0f) ? kgravityAcceleration * kFallGravityScale : kgravityAcceleration;
         velocity_ = Math::Add(velocity_, Vector3(0.0f, -g, 0.0f));
         velocity_.y = std::max(velocity_.y, -kLimitFallSpeed);
     }
-
-    // 押下状態の保存
-    jumpHeldPrev_ = jumpDown;
 }
 
 /*
@@ -534,6 +545,7 @@ void Player::OnCollision(const IEnemy* enemy) {
 
 // ===== 補助 =====
 bool Player::IsDashing() const { return state_ && state_->IsDashing(); }
+bool Player::IsAttacking() const { return state_ && state_->IsAttacking(); }
 
 // ===== 位置・AABB =====
 Vector3 Player::GetWorldPosition() {
@@ -553,5 +565,19 @@ AABB Player::GetAABB() {
     AABB aabb;
     aabb.min = { worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f };
     aabb.max = { worldPos.x + kWidth / 2.0f, worldPos.y + kHeight / 2.0f, worldPos.z + kWidth / 2.0f };
+    return aabb;
+}
+
+AABB Player::GetAttackAABB() {
+    const Vector3 worldPos = GetWorldPosition();
+    AABB aabb;
+    const float attackWidth = 1.0f;
+    const float attackHeight = 1.0f;
+    float offsetX = (lrDirection_ == LRDirection::kRight) ? (kWidth / 2.0f + attackWidth / 2.0f) : -(kWidth / 2.0f + attackWidth / 2.0f);
+
+    Vector3 attackCenter = { worldPos.x + offsetX, worldPos.y, worldPos.z };
+
+    aabb.min = { attackCenter.x - attackWidth / 2.0f, attackCenter.y - attackHeight / 2.0f, attackCenter.z - attackWidth / 2.0f };
+    aabb.max = { attackCenter.x + attackWidth / 2.0f, attackCenter.y + attackHeight / 2.0f, attackCenter.z + attackWidth / 2.0f };
     return aabb;
 }
