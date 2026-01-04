@@ -7,6 +7,7 @@
 #include "engine/Input/InputManager.h"
 #include "manager/DebugUI.h"
 #include "PlayerState.h"
+#include "3D/ObjClass.h"
 #include <algorithm>
 #include <cassert>
 #include <numbers>
@@ -27,7 +28,7 @@ void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputMana
     // 追加初期化
     airJumpsLeft_ = kMaxAirJumps;
     jumpHeldPrev_ = false;
-    attackUsed_ = false; // 攻撃使用フラグ初期化
+    dashUsed_ = false; // ダッシュ使用フラグ初期化
 
     // 描画へ反映
     model_->SetTransform(transform_);
@@ -57,10 +58,11 @@ void Player::Update() {
 void Player::Draw() {
     model_->Update();
     model_->Draw();
-    if (IsAttack()) {
-        attackModel_->Update();
-        attackModel_->Draw();
-    }
+    // Note: ダッシュエフェクトモデルを描画する場合はここで処理
+    // if (IsDashing() && dashEffectModel_) {
+    //     dashEffectModel_->Update();
+    //     dashEffectModel_->Draw();
+    // }
 }
 
 // ===== ステート制御 =====
@@ -154,8 +156,8 @@ void Player::MoveInput() {
         // 入力ロック開始（壁ジャン初速を活かす）
         horizontalControlLockTimer_ = kWallJumpHorizLockTime;
 
-        // 壁ジャンを行ったので空中攻撃を再度使えるようにする（リセット）
-        attackUsed_ = false;
+        // 壁ジャンを行ったので空中ダッシュを再度使えるようにする（リセット）
+        dashUsed_ = false;
 
         // 状態クリア
         onGround_ = false;
@@ -339,8 +341,8 @@ float Player::ResolveHorizontalFrom(const Vector3& base, float dx, CollisionMapI
 
 void Player::MoveAccordingly(const CollisionMapInfo& info) {
     transform_.translate = Math::Add(transform_.translate, info.amountMove);
-    // 攻撃モデルはプレイヤ位置に追従
-    attackTransform_.translate = transform_.translate;
+    // ダッシュエフェクトモデルはプレイヤ位置に追従
+    dashEffectTransform_.translate = transform_.translate;
 }
 
 /*
@@ -377,12 +379,14 @@ void Player::ContactGround(const CollisionMapInfo& info) {
             onGround_ = false;
             jumpBufferCounter_ = 0;
             coyoteCounter_ = 0;
+			// 着地したため、ダッシュ使用フラグをリセット
+			dashUsed_ = false;
             return;
         }
         // 通常の着地
         onGround_ = true;
-        // 着地で攻撃フラグをリセット（地上で再び攻撃可能にする）
-        attackUsed_ = false;
+        // 着地でダッシュフラグをリセット（地上で再びダッシュ可能にする）
+        dashUsed_ = false;
         velocity_.x *= (1.0f - kAttenuationLanding);
         // 二段ジャンプリセット
         airJumpsLeft_ = kMaxAirJumps;
@@ -495,7 +499,9 @@ void Player::UpdateMatrix() {
 
     // 描画側 Transform に反映
     model_->SetTransform(transform_);
-    attackModel_->SetTransform(attackTransform_);
+    if (dashEffectModel_) {
+        dashEffectModel_->SetTransform(dashEffectTransform_);
+    }
 }
 
 // ===== 幾何ユーティリティ =====
@@ -518,16 +524,16 @@ void Player::MapCollisionRight(CollisionMapInfo& info) { (void)info; }
 void Player::MapCollisionLeft(CollisionMapInfo& info) { (void)info; }
 
 // ===== OnCollision =====
-void Player::OnCollision(const Enemy* enemy) {
+void Player::OnCollision(const IEnemy* enemy) {
     (void)enemy;
-    if (IsAttack()) {
+    if (IsDashing()) {
         return;
     }
     isDead_ = true;
 }
 
 // ===== 補助 =====
-bool Player::IsAttack() const { return state_ && state_->IsAttack(); }
+bool Player::IsDashing() const { return state_ && state_->IsDashing(); }
 
 // ===== 位置・AABB =====
 Vector3 Player::GetWorldPosition() {

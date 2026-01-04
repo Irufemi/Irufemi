@@ -7,20 +7,20 @@
 #include "math/Transform.h"
 #include "math/Matrix4x4.h"
 #include "3D/ObjClass.h"
+#include "math/LRDirection.h"
 #include <cstdint>
 #include <memory>
 
 // 前方宣言
-class Enemy;
+class IEnemy;
 class Camera;
 class InputManager;
 struct IPlayerState;
 struct PlayerStateRoot;
-struct PlayerStateAttack;
+struct PlayerStateDash;
 
 class Player {
 public:
-	enum class LRDirection { kRight, kLeft };
 
 	// --- ライフサイクル ---
 	void Initialize(ObjClass* model, Camera* camera, InputManager* inputManager, Vector3& position);
@@ -28,7 +28,7 @@ public:
 	void Draw();
 
 	// --- ゲーム連携 ---
-	void OnCollision(const Enemy* enemy);
+	void OnCollision(const IEnemy* enemy);
 	void SetMapChipField(MapChipField* mapChipField) { this->mapChipField_ = mapChipField; }
 
 	// --- 状態取得（読み取り専用） ---
@@ -38,13 +38,13 @@ public:
 	AABB GetAABB();
 	LRDirection GetLR() const { return lrDirection_; }
 	bool IsDead() const { return isDead_; }
-	bool IsAttack() const;
+	bool IsDashing() const;
 	const char* GetStateName() const { return state_ ? state_->Name() : "<none>"; }
 	const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
 	const Transform& GetTransform() const { return transform_; }
 
 	// セッター
-	void SetAttackModel(ObjClass* obj) { attackModel_ = obj; }
+	void SetDashEffectModel(ObjClass* obj) { dashEffectModel_ = obj; }
 
 	// --- ステート制御 ---
 	void ChangeState(std::unique_ptr<IPlayerState> next);
@@ -92,7 +92,7 @@ private: // ===== 内部型・定数 =====
 	static inline const float kTimeToFullRun = 0.06f;        // 最高速へ到達する時間[s]
 	static inline const float kWallJumpHorizLockTime = 0.10f;// 壁ジャン直後の横入力ロック時間[s]
 
-	static inline const Vector3 kattackVelocity_{0.4f, 0.0f, 0.0f};
+	static inline const Vector3 kDashVelocity_{0.4f, 0.0f, 0.0f};
 
 private: // ===== データメンバ =====
 	std::unique_ptr<IPlayerState> state_{};
@@ -118,18 +118,18 @@ private: // ===== データメンバ =====
 	int  wallCoyoteCounter_ = 0;
 	float horizontalControlLockTimer_ = 0.0f; // 壁ジャン直後の横入力ロック
 
-	// 攻撃使用フラグ（空中では1回だけ許可、地上では何度でも）
-	bool attackUsed_ = false;
+	// ダッシュ使用フラグ（空中では1回だけ許可、地上では何度でも）
+	bool dashUsed_ = false;
 
 	// Transformとワールド行列
 	Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
 	Matrix4x4 worldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
-	Transform attackTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
-	Matrix4x4 attackWorldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
+	Transform dashEffectTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+	Matrix4x4 dashEffectWorldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
 
 	// 描画
 	ObjClass* model_ = nullptr;
-	ObjClass* attackModel_ = nullptr;
+	ObjClass* dashEffectModel_ = nullptr;
 	Camera* camera_ = nullptr;
 	InputManager* inputManager_ = nullptr;
 
@@ -162,7 +162,7 @@ private: // ===== 内部処理 =====
 	// ステートから private へアクセスを許可
 	friend struct IPlayerState;
 	friend struct PlayerStateRoot;
-	friend struct PlayerStateAttack;
+	friend struct PlayerStateDash;
 
 	// 旧個別判定（参考用・未使用）
 	void MapCollisionTop(CollisionMapInfo& info);

@@ -46,6 +46,9 @@
     <Filter Include="content\skydome">
       <UniqueIdentifier>{2dd0d319-6760-41ba-acf1-9533c080302e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="actor\enemy">
+      <UniqueIdentifier>{76850a7a-5d4f-4ae6-852d-335cd761d210}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -73,7 +76,7 @@
     <ClCompile Include="contents\player\Player.cpp">
       <Filter>actor\player</Filter>
     </ClCompile>
-    <ClCompile Include="contents\player\PlayerState_Attack.cpp">
+    <ClCompile Include="contents\player\PlayerState_Dash.cpp">
       <Filter>actor\player</Filter>
     </ClCompile>
     <ClCompile Include="contents\player\PlayerState_Root.cpp">
@@ -87,6 +90,9 @@
     </ClCompile>
     <ClCompile Include="contents\skydome\Skydome.cpp">
       <Filter>content\skydome</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\enemy\IEnemy.cpp">
+      <Filter>actor\enemy</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -125,6 +131,9 @@
     </ClInclude>
     <ClInclude Include="contents\skydome\Skydome.h">
       <Filter>content\skydome</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\enemy\IEnemy.h">
+      <Filter>actor\enemy</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

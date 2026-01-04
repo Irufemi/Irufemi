@@ -11,6 +11,8 @@
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
+#include "function/Collision.h" // Collision をインクルード
+#include <algorithm> // remove_if をインクルード
 
 // デストラクタ
 GameScene::~GameScene() {
@@ -82,13 +84,16 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     modelplayer_->Initialize(camera_.get(), "player.obj");
     modelplayerAttack_ = std::make_unique<ObjClass>();
     modelplayerAttack_->Initialize(camera_.get(), "player_attackEffect.obj");
-    player_->SetAttackModel(modelplayerAttack_.get());
+    player_->SetDashEffectModel(modelplayerAttack_.get());
     // 座標をマップチップ番号で指定
     Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 18);
     // 自キャラの初期化
     player_->Initialize(modelplayer_.get(), camera_.get(), engine->GetInputManager(), playerPosition);
     // マップチップデータのセット
     player_->SetMapChipField(mapChipField_.get());
+
+    /// 敵キャラ
+    GenerateEnemies();
 
     /// カメラコントローラー
     // カメラコントローラーの生成
@@ -148,6 +153,24 @@ void GameScene::Update() {
     // 自キャラの更新
     player_->Update();
 
+    // 敵キャラの更新
+    for (const auto& enemy : enemies_) {
+        enemy->Update();
+    }
+
+    // 衝突判定
+    CheckAllCollisions();
+
+    // 死亡した敵をリストから削除
+    enemies_.erase(
+        std::remove_if(
+            enemies_.begin(),
+            enemies_.end(),
+            [](const std::unique_ptr<IEnemy>& enemy) { return enemy->IsDead(); }
+        ),
+        enemies_.end()
+    );
+
     // --- カメラの更新 ---
     // 現在アクティブなカメラへのポインタ
     Camera* currentCamera = debugMode ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
@@ -187,6 +210,11 @@ void GameScene::Draw() {
     // Player
     player_->Draw();
 
+    // 敵
+    for (const auto& enemy : enemies_) {
+        enemy->Draw();
+    }
+
     // Region
     engine_->ApplyRegionPSO();
 
@@ -204,6 +232,31 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
 
+}
+
+void GameScene::GenerateEnemies() {
+    // ここで敵を生成して enemies_ に追加します
+    // 例：
+    // auto enemy = std::make_unique<ConcreteEnemy>(); // 具体的な敵クラス
+    // enemy->Initialize({10.0f, 2.0f, 0.0f});
+    // enemies_.push_back(std::move(enemy));
+}
+
+void GameScene::CheckAllCollisions() {
+    // 自キャラと敵キャラの衝突判定
+    const AABB playerAABB = player_->GetAABB();
+    for (const auto& enemy : enemies_) {
+        if (enemy->IsDead()) {
+            continue;
+        }
+        const AABB enemyAABB = enemy->GetAABB();
+        if (Collision::IsAABBCollision(playerAABB, enemyAABB)) {
+            // プレイヤー側の衝突処理
+            player_->OnCollision(enemy.get());
+            // 敵側の衝突処理
+            enemy->OnCollision(player_.get());
+        }
+    }
 }
 
 

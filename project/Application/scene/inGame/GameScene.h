@@ -3,6 +3,7 @@
 #include "scene/IScene.h"
 
 #include <memory>
+#include <vector> // vector をインクルード
 
 #include "3D/TriangleClass.h"
 #include "2D/Sprite.h"
@@ -21,6 +22,7 @@
 #include "contents/player/Player.h"
 #include "contents/skydome/Skydome.h"
 #include "contents/MapChipField.h"
+#include "contents/enemy/IEnemy.h" // IEnemy をインクルード
 
 // 前方宣言
 class IrufemiEngine;
@@ -39,6 +41,11 @@ class GameScene : public IScene {
 private: // 関数
 
     void GenerateBlocks();
+
+    // 敵の生成
+    void GenerateEnemies();
+    // 衝突判定
+    void CheckAllCollisions();
 
 private: // 変数
 
@@ -66,6 +73,9 @@ private: // 変数
     std::unique_ptr<ObjClass> modelplayer_ = nullptr;
     // 3Dモデルデータ(自キャラの攻撃)
     std::unique_ptr<ObjClass> modelplayerAttack_ = nullptr;
+
+    /// 敵キャラ
+    std::vector<std::unique_ptr<IEnemy>> enemies_;
 
 private: // メンバ変数(システム)
 

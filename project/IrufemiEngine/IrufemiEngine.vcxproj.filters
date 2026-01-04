@@ -88,6 +88,9 @@
     <Filter Include="math\particle">
       <UniqueIdentifier>{3285e825-34fd-40c2-afd8-b80b265fb6d8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="math\light">
+      <UniqueIdentifier>{ac7dd633-a770-475b-9e3f-749598582d26}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="manager\DrawManager.cpp">
@@ -283,13 +286,13 @@
     <ClCompile Include="3D\AnimationModel.cpp">
       <Filter>3D</Filter>
     </ClCompile>
+    <ClCompile Include="function\Collision.cpp">
+      <Filter>function</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
       <Filter>Engine\manager</Filter>
-    </ClInclude>
-    <ClInclude Include="math\DirectionalLight.h">
-      <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="math\Material.h">
       <Filter>math</Filter>
@@ -418,12 +421,6 @@
       <Filter>Engine\function</Filter>
     </ClInclude>
     <ClInclude Include="math\CameraForGPU.h">
-      <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="math\PointLight.h">
-      <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="math\SpotLight.h">
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="3D\CylinderClass.h">
@@ -560,6 +557,21 @@
     </ClInclude>
     <ClInclude Include="3D\effect\EffectSystem.h">
       <Filter>3D\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="math\SpotLight.h">
+      <Filter>math\light</Filter>
+    </ClInclude>
+    <ClInclude Include="math\PointLight.h">
+      <Filter>math\light</Filter>
+    </ClInclude>
+    <ClInclude Include="math\DirectionalLight.h">
+      <Filter>math\light</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Collision.h">
+      <Filter>function</Filter>
+    </ClInclude>
+    <ClInclude Include="math\LRDirection.h">
+      <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
