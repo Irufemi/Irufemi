@@ -8,6 +8,7 @@
 #include "manager/DebugUI.h"
 #include "PlayerState.h"
 #include "3D/ObjClass.h"
+#include "contents/enemy/IEnemy.h"
 #include <algorithm>
 #include <cassert>
 #include <numbers>
@@ -24,11 +25,14 @@ void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputMana
     transform_.translate = position;
     transform_.rotate = Vector3{ 0.0f, std::numbers::pi_v<float> / 2.0f, 0.0f };
     transform_.scale = Vector3{ 1.0f, 1.0f, 1.0f };
+    attackEffectTransform_ = transform_;
 
     // 追加初期化
     airJumpsLeft_ = kMaxAirJumps;
     jumpHeldPrev_ = false;
     dashUsed_ = false; // ダッシュ使用フラグ初期化
+    hp_ = kMaxHP;
+    invincibilityTimer_ = 0.0f;
 
     // 描画へ反映
     model_->SetTransform(transform_);
@@ -44,8 +48,38 @@ void Player::Update() {
     ImGui::Text("OnGround : %s", onGround_ ? "true" : "false");
     ImGui::Text("AirJumpsLeft : %d", airJumpsLeft_);
     ImGui::Text("TouchWall : %s (dir=%d, coyote=%d)", isTouchingWall_ ? "true" : "false", lastWallDir_, wallCoyoteCounter_);
+    ImGui::Text("HP: %d/%d", hp_, kMaxHP);
+    ImGui::Text("Invincibility: %.2f", invincibilityTimer_);
     ImGui::End();
 #endif
+
+    // ダメージフラグをリセット
+    isJustDamaged_ = false;
+
+    // 無敵時間処理
+    if (invincibilityTimer_ > 0.0f) {
+        const float dt = 1.0f / 60.0f;
+        invincibilityTimer_ -= dt;
+
+        // 点滅処理：周期を長くし、半透明にする
+        float blinkCycle = 0.4f; // 点滅周期を0.4秒に
+        float alpha = (std::fmod(invincibilityTimer_, blinkCycle) < blinkCycle / 2.0f) ? 0.3f : 1.0f; // 透明度を0.3に
+        model_->SetAlpha(alpha);
+
+        // 無敵時間に応じて赤から白へ色を戻す
+        float colorLerpT = std::clamp(1.0f - (invincibilityTimer_ / kInvincibilityDuration), 0.0f, 1.0f);
+        Vector4 red = { 1.0f, 0.5f, 0.5f, 1.0f };
+        Vector4 white = { 1.0f, 1.0f, 1.0f, 1.0f };
+        model_->SetColor(Lerp(red, white, colorLerpT));
+
+
+        if (invincibilityTimer_ <= 0.0f) {
+            // 無敵終了：色とアルファを元に戻す
+            model_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+            model_->SetAlpha(1.0f);
+        }
+    }
+
     // ステート更新
     if (state_) {
         state_->Update(*this);
@@ -65,11 +99,10 @@ void Player::Update() {
 void Player::Draw() {
     model_->Update();
     model_->Draw();
-    // Note: ダッシュエフェクトモデルを描画する場合はここで処理
-    // if (IsDashing() && dashEffectModel_) {
-    //     dashEffectModel_->Update();
-    //     dashEffectModel_->Draw();
-    // }
+     if (IsAttacking() && attackEffectModel_) {
+         attackEffectModel_->Update();
+         attackEffectModel_->Draw();
+     }
 }
 
 // ===== ステート制御 =====
@@ -510,9 +543,7 @@ void Player::UpdateMatrix() {
 
     // 描画側 Transform に反映
     model_->SetTransform(transform_);
-    if (dashEffectModel_) {
-        dashEffectModel_->SetTransform(dashEffectTransform_);
-    }
+    attackEffectModel_->SetTransform(attackEffectTransform_);
 }
 
 // ===== 幾何ユーティリティ =====
@@ -536,11 +567,37 @@ void Player::MapCollisionLeft(CollisionMapInfo& info) { (void)info; }
 
 // ===== OnCollision =====
 void Player::OnCollision(const IEnemy* enemy) {
-    (void)enemy;
     if (IsDashing()) {
         return;
     }
-    isDead_ = true;
+    TakeDamage(enemy->GetDamage(), enemy->GetWorldPosition());
+}
+
+void Player::TakeDamage(int damage, const Vector3& enemyPosition) {
+    // 無敵時間中はダメージを受けない
+    if (invincibilityTimer_ > 0.0f) {
+        return;
+    }
+
+    hp_ -= damage;
+    if (hp_ <= 0) {
+        hp_ = 0;
+        isDead_ = true;
+    }
+
+    // ダメージを受けたフラグを立てる
+    isJustDamaged_ = true;
+
+    // --- ノックバック処理 ---
+    // 敵との位置関係からノックバック方向を決定
+    float knockbackDir = (transform_.translate.x > enemyPosition.x) ? 1.0f : -1.0f;
+    velocity_.x = knockbackDir * kKnockbackHorizontal;
+    velocity_.y = kKnockbackVertical; // 常に少し上に跳ねる
+
+    // 無敵時間を開始
+    invincibilityTimer_ = kInvincibilityDuration;
+    // ダメージを受けた瞬間に赤くする
+    model_->SetColor({ 1.0f, 0.5f, 0.5f, 1.0f });
 }
 
 // ===== 補助 =====

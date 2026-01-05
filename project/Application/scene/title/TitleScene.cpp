@@ -3,6 +3,7 @@
 #include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
 #include "manager/DebugUI.h"
+#include "function/Ease.h"
 
 
 // 初期化
@@ -42,6 +43,10 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
+
+    // フェードの初期化
+    fade_ = std::make_unique<Fade>();
+    fade_->Initialize(camera_.get());
 }
 
 // 更新
@@ -55,10 +60,21 @@ void TitleScene::Update() {
         camera_->Update("Camera");
     }
 
-    if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+    // シーン遷移中でなければ、入力を受け付ける
+    if (!isChangingScene_ && (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A))) {
+        // 1秒かけて黒にフェードアウト
+        fade_->FadeOut(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f });
+        isChangingScene_ = true;
+    }
 
+    // フェード処理の更新
+    fade_->Update();
+
+    // フェードアウトが完了したらシーン遷移をリクエスト
+    if (isChangingScene_ && fade_->IsDone()) {
         engine_->GetSceneManager()->Request("InGame");
     }
+
 
 #ifdef USE_IMGUI
 
@@ -112,4 +128,7 @@ void TitleScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
+
+    // フェードの描画
+    fade_->Draw();
 }

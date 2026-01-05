@@ -14,6 +14,7 @@
 #include <algorithm> // remove_if をインクルード
 #include "contents/enemy/shieldEnemy/ShieldEnemy.h"
 #include "contents/enemy/normalEnemy/NormalEnemy.h"
+#include "function/Ease.h"
 
 
 // デストラクタ
@@ -85,8 +86,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     modelplayer_ = std::make_unique<ObjClass>();
     modelplayer_->Initialize(camera_.get(), "player.obj");
     modelplayerAttack_ = std::make_unique<ObjClass>();
-    modelplayerAttack_->Initialize(camera_.get(), "player_attackEffect.obj");
-    player_->SetDashEffectModel(modelplayerAttack_.get());
+    modelplayerAttack_->Initialize(camera_.get(), "attack.obj");
+    modelplayerAttack_->SetColor(Vector4{ 85.9f / 255.0f,89.8f / 255.0f,52.9f / 255.0f,1.0f });
+    player_->SetAttackEffectModel(modelplayerAttack_.get());
     // 座標をマップチップ番号で指定
     Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 18);
     // 自キャラの初期化
@@ -106,6 +108,60 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     cameraController_->Settarget(player_.get());
     // リセット(瞬間合わせ)
     cameraController_->Reset();
+
+    // UI/HUDの作成
+
+    // HP
+    text_HP_ = std::make_unique<Sprite>();
+    text_HP_->Initialize(camera_.get(), "resources/texture/gameText_HP.png");
+    text_HP_->SetPosition(5.0f, 5.0f);
+    text_HP_->Update();
+
+    // HPBar
+    //out
+    hpBar_out_ = std::make_unique<Sprite>();
+    hpBar_out_->Initialize(camera_.get(), "resources/texture/hpBar_out.png");
+    hpBar_out_->SetAnchor(0.0f, 0.0f);
+    hpBar_out_->SetPosition(90.0f, 5.0f);
+    hpBar_out_->Update();
+    //in
+    hpBar_in_ = std::make_unique<Sprite>();
+    hpBar_in_->Initialize(camera_.get(), "resources/texture/hpBar_in.png");
+    hpBar_in_->SetAnchor(0.0f, 0.0f);
+    hpBar_in_->SetPosition(91.0f, 6.0f);
+    hpBar_in_->SetColor(Vector4{ 67.0f/255.0f,201.0f / 255.0f,79.0f / 255.0f,1.0f });
+    hpBarOriginalWidth_ = hpBar_in_->GetSize().x;
+    hpBar_in_->Update();
+
+    // Fade
+    fade_ = std::make_unique<Fade>();
+    fade_->Initialize(camera_.get());
+    // ゲーム開始時に黒色で1秒間のフェードインを開始
+    fade_->FadeIn(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f });
+
+    // ポーズ画面用スプライト
+    pauseSprite_ = std::make_unique<Sprite>();
+    pauseSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+    pauseSprite_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
+    pauseSprite_->SetSize(static_cast<float>(engine->GetClientWidth()), static_cast<float>(engine->GetClientHeight()));
+    pauseSprite_->SetAnchor(0.5f, 0.5f);
+    pauseSprite_->SetColor({ 0.1f, 0.1f, 0.1f, 0.5f });
+
+    // ポーズメニューUIの初期化
+    pauseTitleText_ = std::make_unique<Sprite>();
+    pauseTitleText_->Initialize(camera_.get(), "resources/texture/pause_pause.png");
+    pauseTitleText_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
+    pauseTitleText_->SetAnchor(0.5f, 0.5f);
+
+    pauseReturnToGameText_ = std::make_unique<Sprite>();
+    pauseReturnToGameText_->Initialize(camera_.get(), "resources/texture/pause_backGame.png");
+    pauseReturnToGameText_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
+    pauseReturnToGameText_->SetAnchor(0.5f, 0.5f);
+
+    pauseReturnToTitleText_ = std::make_unique<Sprite>();
+    pauseReturnToTitleText_->Initialize(camera_.get(), "resources/texture/pause_backTitle.png");
+    pauseReturnToTitleText_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
+    pauseReturnToTitleText_->SetAnchor(0.5f, 0.5f);
 }
 
 // 更新
@@ -152,26 +208,29 @@ void GameScene::Update() {
 
 #endif // _DEBUG
 
-    // 自キャラの更新
-    player_->Update();
+    // フェードが完了している場合のみゲームロジックを更新
+    if (fade_->IsDone()) {
+        // 自キャラの更新
+        player_->Update();
 
-    // 敵キャラの更新
-    for (const auto& enemy : enemies_) {
-        enemy->Update();
+        // 敵キャラの更新
+        for (const auto& enemy : enemies_) {
+            enemy->Update();
+        }
+
+        // 衝突判定
+        CheckAllCollisions();
+
+        // 死亡した敵をリストから削除
+        enemies_.erase(
+            std::remove_if(
+                enemies_.begin(),
+                enemies_.end(),
+                [](const std::unique_ptr<IEnemy>& enemy) { return enemy->IsDead(); }
+            ),
+            enemies_.end()
+        );
     }
-
-    // 衝突判定
-    CheckAllCollisions();
-
-    // 死亡した敵をリストから削除
-    enemies_.erase(
-        std::remove_if(
-            enemies_.begin(),
-            enemies_.end(),
-            [](const std::unique_ptr<IEnemy>& enemy) { return enemy->IsDead(); }
-        ),
-        enemies_.end()
-    );
 
     // --- カメラの更新 ---
     // 現在アクティブなカメラへのポインタ
@@ -189,6 +248,33 @@ void GameScene::Update() {
     if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
         engine_->GetSceneManager()->Request("Title");
     }
+
+    // UI/HUDの更新
+
+    // HP
+    text_HP_->Update();
+    // HPBar
+    // out
+    hpBar_out_->Update();
+    // in
+    // HPの割合を計算
+    float hpRatio = static_cast<float>(player_->GetHP()) / static_cast<float>(player_->GetMaxHP());
+    hpRatio = std::clamp(hpRatio, 0.0f, 1.0f);
+
+    // HPバーの幅を更新
+    hpBar_in_->SetSize(hpBarOriginalWidth_ * hpRatio, hpBar_in_->GetSize().y);
+
+    // HPに応じて色を緑から赤へ線形補間
+    Vector4 green = { 67.0f / 255.0f, 201.0f / 255.0f, 79.0f / 255.0f, 1.0f };
+    Vector4 red = { 1.0f, 0.0f, 0.0f, 1.0f };
+    // HPが50%を切ったら赤に近づける
+    float colorRatio = std::clamp((1.0f - hpRatio) * 2.0f, 0.0f, 1.0f);
+    hpBar_in_->SetColor(Lerp(green, red, colorRatio));
+
+    hpBar_in_->Update();
+
+    // フェードの更新
+    fade_->Update();
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;
@@ -234,6 +320,119 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
 
+    // UI
+
+    // HP
+    text_HP_->Draw();
+
+    // HUD
+
+    // HPBar
+    // out
+    hpBar_out_->Draw();
+    // in
+    hpBar_in_->Draw();
+
+    // フェードの描画（最前面）
+    fade_->Draw();
+}
+
+void GameScene::PauseUpdate()
+{
+    const float BLINK_SPEED = 4.0f; // 通常の明滅速度
+    const float CONFIRM_BLINK_SPEED = 15.0f; // 決定時の高速な明滅速度
+    const float CONFIRMATION_DURATION = 0.5f; // 決定演出の時間
+
+    // ポーズ中の更新処理
+    if (pauseSprite_) {
+        pauseSprite_->Update();
+    }
+
+    // メニュー選択中の処理
+    if (pauseMenuState_ == PauseMenuState::Selecting) {
+        // 入力による選択項目の変更
+        if (IScene::PressedVK('W') || engine_->GetInputManager()->GetGamePad()->IsButtonPressed(XINPUT_GAMEPAD_DPAD_UP)) {
+            currentPauseOption_ = PauseOption::ReturnToGame;
+        }
+        else if (IScene::PressedVK('S') || engine_->GetInputManager()->GetGamePad()->IsButtonPressed(XINPUT_GAMEPAD_DPAD_DOWN)) {
+            currentPauseOption_ = PauseOption::ReturnToTitle;
+        }
+
+        // 決定キーが押されたら、決定演出に移行
+        if (IScene::PressedVK(VK_SPACE) || engine_->GetInputManager()->GetGamePad()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+            pauseMenuState_ = PauseMenuState::Confirming;
+            confirmationTimer_ = 0.0f; // 決定演出タイマーをリセット
+        }
+
+        // 選択項目の明滅処理
+        blinkTimer_ += 1.0f / 60.0f; // 60FPSを想定
+        float alpha = 0.6f + 0.4f * std::sin(blinkTimer_ * BLINK_SPEED);
+
+        // 全てのテキストを一旦不透明にリセット
+        pauseReturnToGameText_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+        pauseReturnToTitleText_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+
+        // 選択中の項目だけアルファ値を変更
+        if (currentPauseOption_ == PauseOption::ReturnToGame) {
+            pauseReturnToGameText_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+        }
+        else {
+            pauseReturnToTitleText_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+        }
+    }
+    // 決定演出中の処理
+    else if (pauseMenuState_ == PauseMenuState::Confirming) {
+        confirmationTimer_ += 1.0f / 60.0f;
+        float alpha = std::fmod(confirmationTimer_ * CONFIRM_BLINK_SPEED, 1.0f) > 0.5f ? 1.0f : 0.0f;
+
+        if (currentPauseOption_ == PauseOption::ReturnToGame) {
+            pauseReturnToGameText_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+        }
+        else {
+            pauseReturnToTitleText_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+        }
+
+        // 演出時間が終了したら、実際の処理を実行
+        if (confirmationTimer_ >= CONFIRMATION_DURATION) {
+            if (currentPauseOption_ == PauseOption::ReturnToGame) {
+                engine_->GetSceneManager()->TogglePause(); // ポーズ解除
+            }
+            else {
+                engine_->GetSceneManager()->Request("Title"); // タイトルへ
+            }
+            // 状態をリセット
+            pauseMenuState_ = PauseMenuState::Selecting;
+        }
+    }
+
+    // 各スプライトの更新
+    pauseTitleText_->Update();
+    pauseReturnToGameText_->Update();
+    pauseReturnToTitleText_->Update();
+}
+
+void GameScene::PauseDraw()
+{
+    // ポーズ画面の描画
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    engine_->ApplySpritePSO();
+
+    // 半透明の背景
+    if (pauseSprite_) {
+        pauseSprite_->Draw();
+    }
+
+    // メニュー項目の描画
+    if (pauseTitleText_) {
+        pauseTitleText_->Draw();
+    }
+    if (pauseReturnToGameText_) {
+        pauseReturnToGameText_->Draw();
+    }
+    if (pauseReturnToTitleText_) {
+        pauseReturnToTitleText_->Draw();
+    }
 }
 
 void GameScene::GenerateEnemies() {

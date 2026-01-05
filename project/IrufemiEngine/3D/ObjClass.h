@@ -92,6 +92,9 @@ public: //メンバ関数
     // すべてのメッシュのアルファ値を一括で設定
     void SetAlpha(float alpha);
 
+    // すべてのメッシュの色を一括で設定
+    void SetColor(const Vector4& color);
+
     // 描画用の変換行列リソースのGPUアドレスを取得
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
         return transformationResource_->GetGPUVirtualAddress();

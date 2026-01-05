@@ -15,6 +15,12 @@ public:
     virtual void Update() = 0;
     virtual void Draw() = 0;
 
+    // --- ポーズ機能 ---
+    // ポーズ中の更新（デフォルトは空実装）
+    virtual void PauseUpdate() {}
+    // ポーズ中の描画（デフォルトは空実装）
+    virtual void PauseDraw() {}
+
     // 毎フレーム、SceneManager から呼ぶ
     static void SyncInput(IrufemiEngine* engine);
 

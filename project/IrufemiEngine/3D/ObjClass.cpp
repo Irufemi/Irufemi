@@ -148,6 +148,14 @@ void ObjClass::SetAlpha(float alpha) {
     }
 }
 
+void ObjClass::SetColor(const Vector4& color) {
+    if (managedModel_ && managedModel_->cpuModel) {
+        for (auto& mesh : managedModel_->cpuModel->meshes) {
+            mesh.material.color = color;
+        }
+    }
+}
+
 void ObjClass::UpdateMaterials() {
     if (!managedModel_ || !managedModel_->cpuModel || managedModel_->gpuMaterials.empty()) {
         return;

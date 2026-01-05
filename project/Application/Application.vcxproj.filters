@@ -52,6 +52,9 @@
     <Filter Include="actor\enemy\normalEnemy">
       <UniqueIdentifier>{eb5cf759-1e95-4fa2-996a-236a276d5f04}</UniqueIdentifier>
     </Filter>
+    <Filter Include="content\Effect">
+      <UniqueIdentifier>{9e8f6131-4b15-44ed-aae2-9140b8a8e370}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -103,6 +106,9 @@
     <ClCompile Include="contents\enemy\normalEnemy\NormalEnemy.cpp">
       <Filter>actor\enemy\normalEnemy</Filter>
     </ClCompile>
+    <ClCompile Include="contents\Effect\Fade.cpp">
+      <Filter>content\Effect</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -146,6 +152,9 @@
     </ClInclude>
     <ClInclude Include="contents\enemy\normalEnemy\NormalEnemy.h">
       <Filter>actor\enemy\normalEnemy</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\Effect\Fade.h">
+      <Filter>content\Effect</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -48,6 +48,10 @@ private:
 	// 追従対象の各方向へのカメラ移動範囲
 	static inline const Rect margin = {-10.0f, 10.0f, -5.0f, 5.0f};
 
+	// カメラシェイク
+	float shakeTimer_ = 0.0f;
+	float shakeAmplitude_ = 0.0f;
+
 public: // メンバ関数
 	/// <summary>
 	/// 初期化
@@ -63,6 +67,13 @@ public: // メンバ関数
 	/// リセット
 	/// </summary>
 	void Reset();
+
+	/// <summary>
+	/// カメラシェイクを開始
+	/// </summary>
+	/// <param name="duration">持続時間(秒)</param>
+	/// <param name="amplitude">振幅</param>
+	void StartShake(float duration, float amplitude);
 
 	// セッター
 

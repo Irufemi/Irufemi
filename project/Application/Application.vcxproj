@@ -170,6 +170,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="contents\enemy\IEnemy.cpp" />
     <ClCompile Include="contents\enemy\normalEnemy\NormalEnemy.cpp" />
+    <ClCompile Include="contents\Effect\Fade.cpp" />
     <ClCompile Include="scene\debug\DebugScene.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
@@ -196,6 +197,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="contents\enemy\IEnemy.h" />
     <ClInclude Include="contents\enemy\normalEnemy\NormalEnemy.h" />
+    <ClInclude Include="contents\Effect\Fade.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\result\ResultScene.h" />

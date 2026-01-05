@@ -27,3 +27,16 @@ AABB IEnemy::GetAABB() const {
     aabb.max = { transform_.translate.x + width_ / 2.0f, transform_.translate.y + height_ / 2.0f, transform_.translate.z + width_ / 2.0f };
     return aabb;
 }
+
+// ワールド座標を取得
+Vector3 IEnemy::GetWorldPosition() const {
+
+    // ワールド座標を入れる変数
+    Vector3 worldPos;
+    // ワールド行列の平行移動成分を取得(ワールド座標)
+    worldPos.x = worldMatrix_.m[3][0];
+    worldPos.y = worldMatrix_.m[3][1];
+    worldPos.z = worldMatrix_.m[3][2];
+
+    return worldPos;
+}

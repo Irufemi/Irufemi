@@ -28,6 +28,9 @@ void NormalEnemy::Initialize(const Vector3& position) {
     lrDirection_ = LRDirection::kLeft;
     velocity_ = { -0.05f, 0.0f, 0.0f }; // 仮の移動速度
 
+    // ダメージ値を設定
+    damage_ = 10;
+
     // 初期状態は歩行
     behavior_ = Behavior::kWalk;
     BehaviorWalkInitialize();

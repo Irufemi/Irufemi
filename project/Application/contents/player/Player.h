@@ -30,6 +30,7 @@ public:
 	// --- ゲーム連携 ---
 	void OnCollision(const IEnemy* enemy);
 	void SetMapChipField(MapChipField* mapChipField) { this->mapChipField_ = mapChipField; }
+	void TakeDamage(int damage, const Vector3& enemyPosition);
 
 	// --- 状態取得（読み取り専用） ---
 	const Vector3& GetVelocity() const { return this->velocity_; }
@@ -41,12 +42,15 @@ public:
 	bool IsDead() const { return isDead_; }
 	bool IsDashing() const;
 	bool IsAttacking() const; // 攻撃中か判定する関数を追加
+	bool IsJustDamaged() const { return isJustDamaged_; } // ダメージを受けた瞬間か
 	const char* GetStateName() const { return state_ ? state_->Name() : "<none>"; }
 	const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
 	const Transform& GetTransform() const { return transform_; }
+	int GetHP() const { return hp_; }
+	int GetMaxHP() const { return kMaxHP; }
 
 	// セッター
-	void SetDashEffectModel(ObjClass* obj) { dashEffectModel_ = obj; }
+	void SetAttackEffectModel(ObjClass* obj) { attackEffectModel_ = obj; }
 
 	// --- ステート制御 ---
 	void ChangeState(std::unique_ptr<IPlayerState> next);
@@ -90,11 +94,21 @@ private: // ===== 内部型・定数 =====
 	// 壁スライド（Hollow Knight 風）
 	static inline const float kWallSlideMaxFallSpeed = 0.12f;// 壁方向入力中の最大落下速度
 
+	// ダメージ表現
+	static inline const float kKnockbackHorizontal = 0.18f; // ダメージ時の水平ノックバック速度
+	static inline const float kKnockbackVertical = 0.15f;   // ダメージ時の垂直ノックバック速度
+
 	// 入力一定速度化のスナップ設定
 	static inline const float kTimeToFullRun = 0.06f;        // 最高速へ到達する時間[s]
 	static inline const float kWallJumpHorizLockTime = 0.10f;// 壁ジャン直後の横入力ロック時間[s]
 
 	static inline const Vector3 kDashVelocity_{0.4f, 0.0f, 0.0f};
+
+	// HP
+	static inline const int kMaxHP = 200;
+
+	// 無敵時間
+	static inline const float kInvincibilityDuration = 1.5f; // 無敵時間[s]
 
 private: // ===== データメンバ =====
 	std::unique_ptr<IPlayerState> state_{};
@@ -128,10 +142,13 @@ private: // ===== データメンバ =====
 	Matrix4x4 worldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
 	Transform dashEffectTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
 	Matrix4x4 dashEffectWorldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
+	Transform attackEffectTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+	Matrix4x4 attackEffectWorldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
 
 	// 描画
 	ObjClass* model_ = nullptr;
-	ObjClass* dashEffectModel_ = nullptr;
+	ObjClass* attackEffectModel_ = nullptr;
+
 	Camera* camera_ = nullptr;
 	InputManager* inputManager_ = nullptr;
 
@@ -140,6 +157,15 @@ private: // ===== データメンバ =====
 
 	// 生存
 	bool isDead_ = false;
+
+	// HP
+	int hp_ = kMaxHP;
+
+	// 無敵時間タイマー
+	float invincibilityTimer_ = 0.0f;
+
+	// ダメージフラグ
+	bool isJustDamaged_ = false;
 
 private: // ===== 内部処理 =====
 	// 入力/移動

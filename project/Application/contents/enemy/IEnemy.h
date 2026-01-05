@@ -1,5 +1,6 @@
 #pragma once
 
+#include "math/Vector3.h"
 #include "math/Transform.h"
 #include "math/Matrix4x4.h"
 #include "math/shape/AABB.h"
@@ -34,6 +35,10 @@ public: // アクセサ
     bool IsDead() const { return isDead_; }
     // 向きを取得する
     LRDirection GetLRDirection() const { return lrDirection_; }
+    // ダメージを取得する
+    int GetDamage() const { return damage_; }
+    // ワールド座標を取得
+    Vector3 GetWorldPosition() const;
 
 protected: // メンバ変数
     // トランスフォーム
@@ -50,5 +55,7 @@ protected: // メンバ変数
     bool isDead_ = false;
     // 向き
     LRDirection lrDirection_ = LRDirection::kLeft;
+    // ダメージ
+    int damage_ = 10;
 };
 

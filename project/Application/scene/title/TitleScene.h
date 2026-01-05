@@ -12,6 +12,7 @@
 #include "3D/PointLightClass.h"
 #include "3D/SpotLightClass.h"
 #include "3D/CylinderClass.h"
+#include "contents/Effect/Fade.h"
 #include <memory>
 #include <vector>
 
@@ -45,6 +46,11 @@ private: // メンバ変数
     std::unique_ptr<PointLight> pointLight_ = nullptr;
 
     std::unique_ptr<SpotLight> spotLight_ = nullptr;
+
+    // フェード
+    std::unique_ptr<Fade> fade_ = nullptr;
+
+    bool isChangingScene_ = false;
 
     bool debugMode = false;
 };

@@ -1,6 +1,7 @@
 #include "SceneManager.h"
 #include "IScene.h"
 #include "engine/IrufemiEngine.h"
+#include <Windows.h> // VK_ESCAPE のためにインクルード
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {}
 
@@ -27,25 +28,46 @@ bool SceneManager::ChangeTo(const Key& next) {
     current_ = it->second();
     currentName_ = next;
     current_->Initialize(engine_);
+    isPaused_ = false; // シーン切り替え時にポーズを解除
     return true;
 }
 
 void SceneManager::Update() {
-    // 入力同期（必要ならここで）
+    // 入力同期
     IScene::SyncInput(engine_);
 
+    // ESCキーでポーズ切り替え
+    if (IScene::PressedVK(VK_ESCAPE)) {
+        TogglePause();
+    }
+
+    // シーン切り替え処理
     if (!pending_.empty()) {
         ChangeTo(pending_);
         pending_.clear();
     }
 
     if (current_) {
-        current_->Update();
+        if (isPaused_) {
+            // ポーズ中
+            current_->PauseUpdate();
+        }
+        else {
+            // 通常更新
+            current_->Update();
+        }
     }
 }
 
 void SceneManager::Draw() {
-    if (current_) { current_->Draw(); }
+    if (current_) {
+        // 通常の描画
+        current_->Draw();
+        // ポーズ中なら、その上にポーズ画面を描画
+        if (isPaused_) {
+            current_->PauseDraw();
+        }
+    }
 }
 
 const  SceneManager::Key& SceneManager::GetCurrent() const { return currentName_; }

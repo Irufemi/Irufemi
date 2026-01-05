@@ -7,6 +7,7 @@
 #include "contents/player/Player.h"
 
 #include <algorithm>
+#include <random>
 
 
 // 初期化
@@ -18,6 +19,16 @@ void CameraController::Initialize() {
 
 // 更新
 void CameraController::Update(Camera& camera) {
+    // 追従対象がいなければ何もしない
+    if (!target_) {
+        return;
+    }
+
+    // プレイヤーがダメージを受けたらシェイクを開始
+    if (target_->IsJustDamaged()) {
+        StartShake(0.3f, 0.2f); // 0.3秒間、振幅0.2で揺らす
+    }
+
     // 追従対象のワールドトランスフォームを参照
     const Transform& targetWorldtransform = target_->GetTransform();
     // 追従対象とオフセットと追従対象の速度からカメラの目標座標を計算
@@ -41,6 +52,31 @@ void CameraController::Update(Camera& camera) {
         camera_.SetTranslate(Vector3{ x , y ,camera_.GetTranslate().z });
     }
 
+    // カメラシェイク処理
+    if (shakeTimer_ > 0.0f) {
+        const float dt = 1.0f / 60.0f; // 60fps前提
+        shakeTimer_ -= dt;
+
+        // 乱数生成器
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> distrib(-1.0f, 1.0f);
+
+        // 時間経過で振幅を減衰させる
+        float currentAmplitude = shakeAmplitude_ * (shakeTimer_ / 0.3f); // 0.3fはシェイクの持続時間
+
+        // ランダムなオフセットを生成
+        Vector3 shakeOffset = {
+            distrib(gen) * currentAmplitude,
+            distrib(gen) * currentAmplitude,
+            0.0f
+        };
+
+        // カメラ座標にオフセットを加算
+        camera_.SetTranslate(Math::Add(camera_.GetTranslate(), shakeOffset));
+    }
+
+
     // 行列を更新する
     camera.SetTranslate(camera_.GetTranslate());
     camera.SetRotate(camera_.GetRotate());
@@ -52,4 +88,9 @@ void CameraController::Reset() {
     const Transform& targetWorldTransform = target_->GetTransform();
     // 追従対象とオフセットからカメラの座標を計算
     camera_.SetTranslate(Math::Add(targetWorldTransform.translate, targetOffset_));
+}
+
+void CameraController::StartShake(float duration, float amplitude) {
+    shakeTimer_ = duration;
+    shakeAmplitude_ = amplitude;
 }
