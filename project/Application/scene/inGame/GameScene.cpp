@@ -162,6 +162,29 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     pauseReturnToTitleText_->Initialize(camera_.get(), "resources/texture/pause_backTitle.png");
     pauseReturnToTitleText_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
     pauseReturnToTitleText_->SetAnchor(0.5f, 0.5f);
+
+    // カウントダウン(1)
+    text_1_ = std::make_unique<Sprite>();
+    text_1_->Initialize(camera_.get(), "resources/texture/text_1.png");
+    text_1_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+
+    // カウントダウン(2)
+    text_2_ = std::make_unique<Sprite>();
+    text_2_->Initialize(camera_.get(), "resources/texture/text_2.png");
+    text_2_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+
+    // カウントダウン(3)
+    text_3_ = std::make_unique<Sprite>();
+    text_3_->Initialize(camera_.get(), "resources/texture/text_3.png");
+    text_3_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+
+    // カウントダウン時のテキスト
+    countdownText_killEnemy_ = std::make_unique<Sprite>();
+    countdownText_killEnemy_->Initialize(camera_.get(), "resources/texture/text_killEnemy.png");
+    countdownText_killEnemy_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f - 150.0f);
+
+    // フェーズの初期化
+    phase_ = Phase::FadeIn;
 }
 
 // 更新
@@ -208,29 +231,23 @@ void GameScene::Update() {
 
 #endif // _DEBUG
 
-    // フェードが完了している場合のみゲームロジックを更新
-    if (fade_->IsDone()) {
-        // 自キャラの更新
-        player_->Update();
-
-        // 敵キャラの更新
-        for (const auto& enemy : enemies_) {
-            enemy->Update();
-        }
-
-        // 衝突判定
-        CheckAllCollisions();
-
-        // 死亡した敵をリストから削除
-        enemies_.erase(
-            std::remove_if(
-                enemies_.begin(),
-                enemies_.end(),
-                [](const std::unique_ptr<IEnemy>& enemy) { return enemy->IsDead(); }
-            ),
-            enemies_.end()
-        );
+    // フェーズごとの更新
+    switch (phase_) {
+    case Phase::FadeIn:
+        UpdateFadeIn();
+        break;
+    case Phase::Countdown:
+        UpdateCountdown();
+        break;
+    case Phase::Gameplay:
+        UpdateGameplay();
+        break;
+    case Phase::FadeOut:
+        UpdateFadeOut();
+        break;
     }
+
+    // --- 常に更新する処理 ---
 
     // --- カメラの更新 ---
     // 現在アクティブなカメラへのポインタ
@@ -244,34 +261,6 @@ void GameScene::Update() {
 
     // 天球の更新
     skydome_->Update();
-
-    if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
-        engine_->GetSceneManager()->Request("Title");
-    }
-
-    // UI/HUDの更新
-
-    // HP
-    text_HP_->Update();
-    // HPBar
-    // out
-    hpBar_out_->Update();
-    // in
-    // HPの割合を計算
-    float hpRatio = static_cast<float>(player_->GetHP()) / static_cast<float>(player_->GetMaxHP());
-    hpRatio = std::clamp(hpRatio, 0.0f, 1.0f);
-
-    // HPバーの幅を更新
-    hpBar_in_->SetSize(hpBarOriginalWidth_ * hpRatio, hpBar_in_->GetSize().y);
-
-    // HPに応じて色を緑から赤へ線形補間
-    Vector4 green = { 67.0f / 255.0f, 201.0f / 255.0f, 79.0f / 255.0f, 1.0f };
-    Vector4 red = { 1.0f, 0.0f, 0.0f, 1.0f };
-    // HPが50%を切ったら赤に近づける
-    float colorRatio = std::clamp((1.0f - hpRatio) * 2.0f, 0.0f, 1.0f);
-    hpBar_in_->SetColor(Lerp(green, red, colorRatio));
-
-    hpBar_in_->Update();
 
     // フェードの更新
     fade_->Update();
@@ -332,6 +321,18 @@ void GameScene::Draw() {
     hpBar_out_->Draw();
     // in
     hpBar_in_->Draw();
+
+    // カウントダウンUIの描画
+    if (phase_ == Phase::Countdown) {
+        countdownText_killEnemy_->Draw();
+        if (countdownTimer_ > 2.0f) {
+            text_3_->Draw();
+        } else if (countdownTimer_ > 1.0f) {
+            text_2_->Draw();
+        } else if (countdownTimer_ > 0.0f) {
+            text_1_->Draw();
+        }
+    }
 
     // フェードの描画（最前面）
     fade_->Draw();
@@ -531,5 +532,134 @@ void GameScene::GenerateBlocks() {
                 if (blocks_) { blocks_->AddInstance(*worldtransformBlocks_[i][j]); }
             }
         }
+    }
+}
+
+void GameScene::UpdateFadeIn()
+{
+    // フェードインが完了したらカウントダウンへ
+    if (fade_->IsDone()) {
+        phase_ = Phase::Countdown;
+        countdownTimer_ = 3.0f; // カウントダウン開始
+    }
+}
+
+void GameScene::UpdateCountdown()
+{
+    // カウントダウンタイマーを減らす
+    countdownTimer_ -= 1.0f / 60.0f; // 60FPS想定
+
+    // テキストの更新
+    countdownText_killEnemy_->Update();
+
+    // 各秒の開始時にアニメーションを適用
+    float timeWithinSecond = std::fmod(countdownTimer_, 1.0f);
+    if (timeWithinSecond > 0.98f) { // 1秒の始まりに近いタイミングで一度だけ実行
+        float scale = 2.0f;
+        float alpha = 0.0f;
+        if (countdownTimer_ > 2.0f) {
+            text_3_->GetD3D12Resource()->transform_.scale = { text_3_->GetSize().x * scale, text_3_->GetSize().y * scale, 1.0f };
+            text_3_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+        } else if (countdownTimer_ > 1.0f) {
+            text_2_->GetD3D12Resource()->transform_.scale = { text_2_->GetSize().x * scale, text_2_->GetSize().y * scale, 1.0f };
+            text_2_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+        } else if (countdownTimer_ > 0.0f) {
+            text_1_->GetD3D12Resource()->transform_.scale = { text_1_->GetSize().x * scale, text_1_->GetSize().y * scale, 1.0f };
+            text_1_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+        }
+    }
+
+    // 1秒かけてスケールとアルファを変化させる
+    float t = 1.0f - timeWithinSecond; // 0.0 -> 1.0
+    float easedT = EaseOutQuint(t);
+
+    float currentScale = Lerp(2.0f, 1.0f, easedT);
+    float currentAlpha = Lerp(0.0f, 1.0f, easedT);
+
+    // タイマーに応じて表示する数字を更新
+    if (countdownTimer_ > 2.0f) {
+        text_3_->GetD3D12Resource()->transform_.scale = { text_3_->GetSize().x * currentScale, text_3_->GetSize().y * currentScale, 1.0f };
+        text_3_->SetColor({ 1.0f, 1.0f, 1.0f, currentAlpha });
+        text_3_->Update();
+    } else if (countdownTimer_ > 1.0f) {
+        text_2_->GetD3D12Resource()->transform_.scale = { text_2_->GetSize().x * currentScale, text_2_->GetSize().y * currentScale, 1.0f };
+        text_2_->SetColor({ 1.0f, 1.0f, 1.0f, currentAlpha });
+        text_2_->Update();
+    } else if (countdownTimer_ > 0.0f) {
+        text_1_->GetD3D12Resource()->transform_.scale = { text_1_->GetSize().x * currentScale, text_1_->GetSize().y * currentScale, 1.0f };
+        text_1_->SetColor({ 1.0f, 1.0f, 1.0f, currentAlpha });
+        text_1_->Update();
+    }
+
+    // カウントダウンが終了したらゲームプレイへ
+    if (countdownTimer_ <= 0.0f) {
+        phase_ = Phase::Gameplay;
+    }
+}
+
+void GameScene::UpdateGameplay()
+{
+    // 自キャラの更新
+    player_->Update();
+
+    // 敵キャラの更新
+    for (const auto& enemy : enemies_) {
+        enemy->Update();
+    }
+
+    // 衝突判定
+    CheckAllCollisions();
+
+    // 死亡した敵をリストから削除
+    enemies_.erase(
+        std::remove_if(
+            enemies_.begin(),
+            enemies_.end(),
+            [](const std::unique_ptr<IEnemy>& enemy) { return enemy->IsDead(); }
+        ),
+        enemies_.end()
+    );
+
+    if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+        phase_ = Phase::FadeOut;
+        fade_->FadeOut(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f });
+    }
+
+    // UI/HUDの更新
+
+    // HP
+    text_HP_->Update();
+    // HPBar
+    // out
+    hpBar_out_->Update();
+    // in
+    // HPの割合を計算
+    float hpRatio = static_cast<float>(player_->GetHP()) / static_cast<float>(player_->GetMaxHP());
+    hpRatio = std::clamp(hpRatio, 0.0f, 1.0f);
+
+    // HPバーの幅を更新
+    hpBar_in_->SetSize(hpBarOriginalWidth_ * hpRatio, hpBar_in_->GetSize().y);
+
+    // HPに応じて色を緑から赤へ線形補間
+    Vector4 green = { 67.0f / 255.0f, 201.0f / 255.0f, 79.0f / 255.0f, 1.0f };
+    Vector4 red = { 1.0f, 0.0f, 0.0f, 1.0f };
+    // HPが50%を切ったら赤に近づける
+    float colorRatio = std::clamp((1.0f - hpRatio) * 2.0f, 0.0f, 1.0f);
+    hpBar_in_->SetColor(Lerp(green, red, colorRatio));
+
+    hpBar_in_->Update();
+
+    // ゲームクリア条件（例：敵が全滅）
+    if (enemies_.empty()) {
+        phase_ = Phase::FadeOut;
+        fade_->FadeOut(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f }); // 黒色で1秒間のフェードアウト
+    }
+}
+
+void GameScene::UpdateFadeOut()
+{
+    // フェードアウトが完了したらタイトルシーンへ
+    if (fade_->IsDone()) {
+        engine_->GetSceneManager()->Request("Title");
     }
 }

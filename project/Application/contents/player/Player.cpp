@@ -39,6 +39,7 @@ void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputMana
 
     // 初期状態は Root
     ChangeState(MakeRootState());
+
 }
 
 void Player::Update() {
@@ -88,8 +89,7 @@ void Player::Update() {
     // 攻撃中でなければ移動と衝突判定を行う
     if (!IsAttacking()) {
         BehaviorMoveUpdate();
-    }
-    else {
+    } else {
         // 攻撃中でも旋回と行列更新は行う
         TurningControl();
         UpdateMatrix();
@@ -97,12 +97,15 @@ void Player::Update() {
 }
 
 void Player::Draw() {
-    model_->Update();
-    model_->Draw();
-     if (IsAttacking() && attackEffectModel_) {
-         attackEffectModel_->Update();
-         attackEffectModel_->Draw();
-     }
+    if (model_) {
+        model_->SetTransform(transform_);
+        model_->Update();
+        model_->Draw();
+    }
+    if (IsAttacking() && attackEffectModel_) {
+        attackEffectModel_->Update();
+        attackEffectModel_->Draw();
+    }
 }
 
 // ===== ステート制御 =====
@@ -123,7 +126,7 @@ void Player::ChangeState(std::unique_ptr<IPlayerState> next) {
 void Player::MoveInput() {
     // 入力
     const bool right = inputManager_->IsKeyDown('D');
-    const bool left  = inputManager_->IsKeyDown('A');
+    const bool left = inputManager_->IsKeyDown('A');
     const bool jumpDown = inputManager_->IsKeyDown('W');
     const bool jumpTriggered = jumpDown && !jumpHeldPrev_;
 
@@ -423,8 +426,8 @@ void Player::ContactGround(const CollisionMapInfo& info) {
             onGround_ = false;
             jumpBufferCounter_ = 0;
             coyoteCounter_ = 0;
-			// 着地したため、ダッシュ使用フラグをリセット
-			dashUsed_ = false;
+            // 着地したため、ダッシュ使用フラグをリセット
+            dashUsed_ = false;
             return;
         }
         // 通常の着地
@@ -527,11 +530,11 @@ void Player::UpdateMatrix() {
     worldMatrix_.m[0][1] = 0.0f;
     worldMatrix_.m[0][2] = s.x * -sy;
     worldMatrix_.m[0][3] = 0.0f;
-    worldMatrix_.m[1][0] = 0.0f;  
-    worldMatrix_.m[1][1] = s.y; 
+    worldMatrix_.m[1][0] = 0.0f;
+    worldMatrix_.m[1][1] = s.y;
     worldMatrix_.m[1][2] = 0.0f;
     worldMatrix_.m[1][3] = 0.0f;
-    worldMatrix_.m[2][0] = s.z * sy; 
+    worldMatrix_.m[2][0] = s.z * sy;
     worldMatrix_.m[2][1] = 0.0f;
     worldMatrix_.m[2][2] = s.z * cy;
     worldMatrix_.m[2][3] = 0.0f;
@@ -567,7 +570,8 @@ void Player::MapCollisionLeft(CollisionMapInfo& info) { (void)info; }
 
 // ===== OnCollision =====
 void Player::OnCollision(const IEnemy* enemy) {
-    if (IsDashing()) {
+    // 敵が死亡している、またはプレイヤーがダッシュ中なら何もしない
+    if (enemy->IsDead() || IsDashing()) {
         return;
     }
     TakeDamage(enemy->GetDamage(), enemy->GetWorldPosition());

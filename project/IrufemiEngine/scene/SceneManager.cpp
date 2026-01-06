@@ -36,8 +36,8 @@ void SceneManager::Update() {
     // 入力同期
     IScene::SyncInput(engine_);
 
-    // ESCキーでポーズ切り替え
-    if (IScene::PressedVK(VK_ESCAPE)) {
+    // 現在のシーンがポーズ可能な場合のみ、ESCキーでポーズ切り替え
+    if (current_ && current_->IsPausable() && IScene::PressedVK(VK_ESCAPE)) {
         TogglePause();
     }
 

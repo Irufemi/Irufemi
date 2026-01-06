@@ -16,7 +16,7 @@ const int32_t kClientWidth = 1280;
 const int32_t kClientHeight = 720;
 
 // タイトル
-const std::wstring kTitle = L"LE2B_12_スエヒロ_コウイチ";
+const std::wstring kTitle = L"LE2B_12_スエヒロ_コウイチ_アンナイト";
 
 // ウィンドウの色
 //const Vector4 clearColor = { 0.1f, 0.25f, 0.5f, 1.0f };
@@ -42,7 +42,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     );
 
-    engine->SetInitialSceneName("InGame");
+    engine->SetInitialSceneName("Title");
 
     engine->Execute();
 

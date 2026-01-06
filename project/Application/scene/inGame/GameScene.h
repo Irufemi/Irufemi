@@ -48,6 +48,12 @@ private: // 関数
     // 衝突判定
     void CheckAllCollisions();
 
+    // フェーズごとの更新処理
+    void UpdateFadeIn();
+    void UpdateCountdown();
+    void UpdateGameplay();
+    void UpdateFadeOut();
+
 private: // 変数(ゲームの歯車)
 
     // カメラコントローラー
@@ -97,6 +103,15 @@ private: // メンバ変数(UI/HUD)
     std::unique_ptr<Sprite> pauseReturnToGameText_ = nullptr;
     std::unique_ptr<Sprite> pauseReturnToTitleText_ = nullptr;
 
+    // カウントダウン(1)
+    std::unique_ptr<Sprite> text_1_ = nullptr;
+    // カウントダウン(2)
+    std::unique_ptr<Sprite> text_2_ = nullptr;
+    // カウントダウン(3)
+    std::unique_ptr<Sprite> text_3_ = nullptr;
+    // カウントダウン時のテキスト
+    std::unique_ptr<Sprite> countdownText_killEnemy_ = nullptr;
+
 private: // ポーズメニューの状態
     enum class PauseOption {
         ReturnToGame,
@@ -112,6 +127,16 @@ private: // ポーズメニューの状態
 
     float blinkTimer_ = 0.0f;         // 選択項目の明滅タイマー
     float confirmationTimer_ = 0.0f;  // 決定演出用のタイマー
+
+private: // ゲーム進行の状態
+    enum class Phase {
+        FadeIn,
+        Countdown,
+        Gameplay,
+        FadeOut,
+    };
+    Phase phase_ = Phase::FadeIn;
+    float countdownTimer_ = 3.0f; // カウントダウンタイマー
 
 private: // 画面演出
     // フェード
@@ -169,4 +194,9 @@ public: // メンバ関数
     /// ポーズ中の描画
     /// </summary>
     void PauseDraw() override;
+
+    /// <summary>
+    /// このシーンがポーズ可能かを返す
+    /// </summary>
+    bool IsPausable() const override { return true; }
 };

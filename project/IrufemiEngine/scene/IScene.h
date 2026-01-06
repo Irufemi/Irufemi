@@ -20,6 +20,8 @@ public:
     virtual void PauseUpdate() {}
     // ポーズ中の描画（デフォルトは空実装）
     virtual void PauseDraw() {}
+    // このシーンがポーズ可能か（デフォルトは不可）
+    virtual bool IsPausable() const { return false; }
 
     // 毎フレーム、SceneManager から呼ぶ
     static void SyncInput(IrufemiEngine* engine);
