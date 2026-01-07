@@ -7,7 +7,7 @@
 class Bgm {
 private:
     IXAudio2SourceVoice* voice_ = nullptr;
-    float volume_ = 0.6f;
+    float volume_ = 0.1f;
     int selectedCat_ = 0;
     int selectedTrack_ = 0;
     static AudioManager* audioManager_;

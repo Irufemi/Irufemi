@@ -15,6 +15,7 @@
 #include "3D/Region.h"
 #include "3D/particle/ParticleSystem.h"
 #include "3D/CylinderClass.h"
+#include "audio/Se.h"
 #include "audio/Bgm.h"
 
 #include "camera/CameraController.h"
@@ -87,6 +88,12 @@ private: // 変数(ゲームの歯車)
     /// 敵キャラ
     std::vector<std::unique_ptr<IEnemy>> enemies_;
 
+private: // 音源
+    // bgm
+    std::unique_ptr<Bgm> bgm_ = nullptr;
+    // se(決定音)
+    std::unique_ptr<Se> se_select_ = nullptr;
+
 private: // メンバ変数(UI/HUD)
     // HP
     std::unique_ptr<Sprite> text_HP_ = nullptr;
@@ -111,6 +118,9 @@ private: // メンバ変数(UI/HUD)
     std::unique_ptr<Sprite> text_3_ = nullptr;
     // カウントダウン時のテキスト
     std::unique_ptr<Sprite> countdownText_killEnemy_ = nullptr;
+
+    // 操作方法
+    std::unique_ptr<Sprite> manual_ = nullptr;
 
 private: // ポーズメニューの状態
     enum class PauseOption {

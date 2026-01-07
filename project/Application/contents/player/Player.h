@@ -8,6 +8,7 @@
 #include "math/Matrix4x4.h"
 #include "3D/ObjClass.h"
 #include "math/LRDirection.h"
+#include "audio/Se.h"
 #include <cstdint>
 #include <memory>
 
@@ -166,6 +167,12 @@ private: // ===== データメンバ =====
 
 	// ダメージフラグ
 	bool isJustDamaged_ = false;
+
+	// se (ダッシュ)
+	std::unique_ptr<Se> se_dash_ = nullptr;
+
+	// se (攻撃)
+	std::unique_ptr<Se> se_slash_ = nullptr;
 
 private: // ===== 内部処理 =====
 	// 入力/移動

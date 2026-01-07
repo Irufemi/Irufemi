@@ -55,6 +55,9 @@
     <Filter Include="content\Effect">
       <UniqueIdentifier>{9e8f6131-4b15-44ed-aae2-9140b8a8e370}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scene\statgeSelect">
+      <UniqueIdentifier>{ff03cd2d-af96-44ae-b342-c150a81581c8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -109,6 +112,15 @@
     <ClCompile Include="contents\Effect\Fade.cpp">
       <Filter>content\Effect</Filter>
     </ClCompile>
+    <ClCompile Include="scene\stageSelect\SelectScene.cpp">
+      <Filter>Scene\statgeSelect</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\stageSelect\StageDataManager.cpp">
+      <Filter>Scene\statgeSelect</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\result\GameResultManager.cpp">
+      <Filter>Scene\result</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -155,6 +167,15 @@
     </ClInclude>
     <ClInclude Include="contents\Effect\Fade.h">
       <Filter>content\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\stageSelect\SelectScene.h">
+      <Filter>Scene\statgeSelect</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\stageSelect\StageDataManager.h">
+      <Filter>Scene\statgeSelect</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\result\GameResultManager.h">
+      <Filter>Scene\result</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

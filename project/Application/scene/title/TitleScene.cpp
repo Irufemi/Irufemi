@@ -103,6 +103,14 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     // フェードの初期化
     fade_ = std::make_unique<Fade>();
     fade_->Initialize(camera_.get());
+
+    // bgm
+     bgm_ = std::make_unique<Bgm>();
+     bgm_->Initialize("resources/bgm/title.mp3");
+     bgm_->PlayFixed();
+    // se(決定音)
+     se_select_ = std::make_unique<Se>();
+     se_select_->Initialize("resources/se/se_select.mp3");
 }
 
 // 更新
@@ -165,6 +173,7 @@ void TitleScene::Update() {
 
         // 入力で高速明滅へ移行
         if (!isChangingScene_ && (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A))) {
+            se_select_->Play();
             pushKeyState_ = PushKeyState::FastBlink;
             pushKeyAnimTimer_ = 0.0f; // タイマーリセット
         }
@@ -205,7 +214,7 @@ void TitleScene::Update() {
 
     // フェードアウトが完了したらシーン遷移をリクエスト
     if (isChangingScene_ && fade_->IsDone()) {
-        engine_->GetSceneManager()->Request("InGame");
+        engine_->GetSceneManager()->Request("Select");
     }
 
 

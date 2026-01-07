@@ -26,6 +26,11 @@ struct DirectionalLight;
 /// タイトル
 /// </summary>
 class TitleScene : public IScene {
+private: // 音源
+    // bgm
+    std::unique_ptr<Bgm> bgm_ = nullptr;
+    // se(決定音)
+    std::unique_ptr<Se> se_select_ = nullptr;
 
 private: // 描画物
     // タイトル(アンナイトのア)

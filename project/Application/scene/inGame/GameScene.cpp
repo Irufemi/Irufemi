@@ -15,6 +15,8 @@
 #include "contents/enemy/shieldEnemy/ShieldEnemy.h"
 #include "contents/enemy/normalEnemy/NormalEnemy.h"
 #include "function/Ease.h"
+#include "Application/scene/stageSelect/StageDataManager.h" // StageDataManagerをインクルード
+#include "Application/scene/result/GameResultManager.h" // GameResultManagerをインクルード
 
 
 // デストラクタ
@@ -61,8 +63,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     /// マップチップフィールド
     // マップチップフィールドの生成
     mapChipField_ = std::make_unique<MapChipField>();
-    // マップチップフィールドのファイル読み込み
-    mapChipField_->LoadMapChipCsv("resources/blocks.csv");
+    // ステージ番号に応じてマップを読み込み
+    std::string mapFileName = "resources/stage" + std::to_string(StageDataManager::selectedStageIndex + 1) + ".csv";
+    mapChipField_->LoadMapChipCsv(mapFileName);
 
     /// 天球
     // 天球の生成
@@ -183,8 +186,20 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     countdownText_killEnemy_->Initialize(camera_.get(), "resources/texture/text_killEnemy.png");
     countdownText_killEnemy_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f - 150.0f);
 
+    // 操作方法
+    manual_ = std::make_unique<Sprite>();
+    manual_->Initialize(camera_.get(), "resources/texture/manual.png");
+
     // フェーズの初期化
     phase_ = Phase::FadeIn;
+
+    // bgm
+    bgm_ = std::make_unique<Bgm>();
+    bgm_->Initialize("resources/bgm/ingame.mp3");
+    bgm_->PlayFixed();
+    // se(決定音)
+    se_select_ = std::make_unique<Se>();
+    se_select_->Initialize("resources/se/se_select.mp3");
 }
 
 // 更新
@@ -262,8 +277,11 @@ void GameScene::Update() {
     // 天球の更新
     skydome_->Update();
 
+    manual_->Update();
+
     // フェードの更新
     fade_->Update();
+
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;
@@ -322,6 +340,8 @@ void GameScene::Draw() {
     // in
     hpBar_in_->Draw();
 
+    manual_->Draw();
+
     // カウントダウンUIの描画
     if (phase_ == Phase::Countdown) {
         countdownText_killEnemy_->Draw();
@@ -352,17 +372,18 @@ void GameScene::PauseUpdate()
     // メニュー選択中の処理
     if (pauseMenuState_ == PauseMenuState::Selecting) {
         // 入力による選択項目の変更
-        if (IScene::PressedVK('W') || engine_->GetInputManager()->GetGamePad()->IsButtonPressed(XINPUT_GAMEPAD_DPAD_UP)) {
+        if (IScene::PressedVK('W') || engine_->GetInputManager()->DPadUpPressed()) {
             currentPauseOption_ = PauseOption::ReturnToGame;
         }
-        else if (IScene::PressedVK('S') || engine_->GetInputManager()->GetGamePad()->IsButtonPressed(XINPUT_GAMEPAD_DPAD_DOWN)) {
+        else if (IScene::PressedVK('S') || engine_->GetInputManager()->DPadDownPressed()) {
             currentPauseOption_ = PauseOption::ReturnToTitle;
         }
 
         // 決定キーが押されたら、決定演出に移行
-        if (IScene::PressedVK(VK_SPACE) || engine_->GetInputManager()->GetGamePad()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+        if (IScene::PressedVK(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
             pauseMenuState_ = PauseMenuState::Confirming;
             confirmationTimer_ = 0.0f; // 決定演出タイマーをリセット
+            se_select_->Play();
         }
 
         // 選択項目の明滅処理
@@ -437,41 +458,45 @@ void GameScene::PauseDraw()
 }
 
 void GameScene::GenerateEnemies() {
-    //// ShieldEnemyをマップチップ(10, 18)に配置
-    //{
-    //    // 1. ShieldEnemyを生成
-    //    auto enemy = std::make_unique<ShieldEnemy>(this, camera_.get());
-    // NormalEnemyをマップチップ(10, 18)に配置
+    // ステージ番号に応じて敵の生成パターンを切り替える
+    switch (StageDataManager::selectedStageIndex) {
+    case 0: // ステージ1
     {
-        auto enemy = std::make_unique<NormalEnemy>(this, camera_.get());
-        Vector3 position = mapChipField_->GetMapChipPositionByIndex(10, 18);
-        enemy->Initialize(position);
-        enemies_.push_back(std::move(enemy));
+        // NormalEnemyをマップチップ(10, 18)に配置
+        auto enemy1 = std::make_unique<NormalEnemy>(this, camera_.get());
+        Vector3 pos1 = mapChipField_->GetMapChipPositionByIndex(10, 18);
+        enemy1->Initialize(pos1);
+        enemy1->SetMapChipField(mapChipField_.get()); // マップチップフィールドをセット
+        enemies_.push_back(std::move(enemy1));
+
+        // さらに別のNormalEnemyをマップチップ(15, 18)に配置
+        auto enemy2 = std::make_unique<NormalEnemy>(this, camera_.get());
+        Vector3 pos2 = mapChipField_->GetMapChipPositionByIndex(15, 18);
+        enemy2->Initialize(pos2);
+        enemy2->SetMapChipField(mapChipField_.get()); // マップチップフィールドをセット
+        enemies_.push_back(std::move(enemy2));
+        break;
     }
-
-    //    // 2. マップチップから配置座標を取得
-    //    Vector3 position = mapChipField_->GetMapChipPositionByIndex(10, 18);
-
-    //    // 3. 初期化
-    //    enemy->Initialize(position);
-
-    //    // 4. リストに追加
-    //    enemies_.push_back(std::move(enemy));
-    //}
-
-    //// さらに別のShieldEnemyをマップチップ(15, 18)に配置
-    //{
-    //    auto enemy = std::make_unique<ShieldEnemy>(this, camera_.get());
-    //    Vector3 position = mapChipField_->GetMapChipPositionByIndex(15, 18);
-    //    enemy->Initialize(position);
-    //    enemies_.push_back(std::move(enemy));
-    //}
-    // さらに別のNormalEnemyをマップチップ(15, 18)に配置
+    case 1: // ステージ2
     {
-        auto enemy = std::make_unique<NormalEnemy>(this, camera_.get());
-        Vector3 position = mapChipField_->GetMapChipPositionByIndex(15, 18);
-        enemy->Initialize(position);
-        enemies_.push_back(std::move(enemy));
+        // ShieldEnemyをマップチップ(8, 18)に配置
+        auto enemy1 = std::make_unique<ShieldEnemy>(this, camera_.get());
+        Vector3 pos1 = mapChipField_->GetMapChipPositionByIndex(8, 18);
+        enemy1->Initialize(pos1);
+        enemy1->SetMapChipField(mapChipField_.get()); // マップチップフィールドをセット
+        enemies_.push_back(std::move(enemy1));
+
+        // NormalEnemyをマップチップ(18, 18)に配置
+        auto enemy2 = std::make_unique<ShieldEnemy>(this, camera_.get());
+        Vector3 pos2 = mapChipField_->GetMapChipPositionByIndex(18, 18);
+        enemy2->Initialize(pos2);
+        enemy2->SetMapChipField(mapChipField_.get()); // マップチップフィールドをセット
+        enemies_.push_back(std::move(enemy2));
+        break;
+    }
+    default:
+        // デフォルトの敵配置など
+        break;
     }
 }
 
@@ -649,17 +674,24 @@ void GameScene::UpdateGameplay()
 
     hpBar_in_->Update();
 
-    // ゲームクリア条件（例：敵が全滅）
-    if (enemies_.empty()) {
+    // ゲームオーバー条件（プレイヤー死亡）
+    if (player_->IsDead()) {
+        GameResultManager::result = GameResultManager::Result::Lose;
         phase_ = Phase::FadeOut;
         fade_->FadeOut(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f }); // 黒色で1秒間のフェードアウト
+    }
+    // ゲームクリア条件（例：敵が全滅）
+    else if (enemies_.empty()) {
+        GameResultManager::result = GameResultManager::Result::Win;
+        phase_ = Phase::FadeOut;
+        fade_->FadeOut(1.0f, { 1.0f, 1.0f, 1.0f, 1.0f }); // 白色で1秒間のフェードアウト
     }
 }
 
 void GameScene::UpdateFadeOut()
 {
-    // フェードアウトが完了したらタイトルシーンへ
+    // フェードアウトが完了したらリザルトシーンへ
     if (fade_->IsDone()) {
-        engine_->GetSceneManager()->Request("Title");
+        engine_->GetSceneManager()->Request("Result");
     }
 }

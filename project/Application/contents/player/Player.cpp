@@ -40,6 +40,13 @@ void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputMana
     // 初期状態は Root
     ChangeState(MakeRootState());
 
+    // se(ダッシュ)
+    se_dash_ = std::make_unique<Se>();
+    se_dash_->Initialize("resources/se/se_dash.mp3");
+
+    // se(攻撃)
+    se_slash_ = std::make_unique<Se>();
+    se_slash_->Initialize("resources/se/se_slash.mp3");
 }
 
 void Player::Update() {
@@ -125,9 +132,17 @@ void Player::ChangeState(std::unique_ptr<IPlayerState> next) {
  */
 void Player::MoveInput() {
     // 入力
-    const bool right = inputManager_->IsKeyDown('D');
-    const bool left = inputManager_->IsKeyDown('A');
-    const bool jumpDown = inputManager_->IsKeyDown('W');
+    const bool keyRight = inputManager_->IsKeyDown('D');
+    const bool keyLeft = inputManager_->IsKeyDown('A');
+    const bool keyJump = inputManager_->IsKeyDown('W');
+
+    const bool padRight = inputManager_->DPadRight() || inputManager_->GetLeftStickX() > 0.5f;
+    const bool padLeft = inputManager_->DPadLeft() || inputManager_->GetLeftStickX() < -0.5f;
+    const bool padJump = inputManager_->IsButtonDown(XINPUT_GAMEPAD_A);
+
+    const bool right = keyRight || padRight;
+    const bool left = keyLeft || padLeft;
+    const bool jumpDown = keyJump || padJump;
     const bool jumpTriggered = jumpDown && !jumpHeldPrev_;
 
     // 固定Δt（60fps前提）
@@ -479,10 +494,10 @@ void Player::ContactWall(const CollisionMapInfo& info) {
     if (wallDir != 0 && inputManager_) {
         if (wallDir > 0) {
             // 右壁に接触 → 右入力が「壁方向」
-            pressingToward = inputManager_->IsKeyDown('D');
+            pressingToward = inputManager_->IsKeyDown('D') || inputManager_->DPadRight() || inputManager_->GetLeftStickX() > 0.5f;
         } else {
             // 左壁に接触 → 左入力が「壁方向」
-            pressingToward = inputManager_->IsKeyDown('A');
+            pressingToward = inputManager_->IsKeyDown('A') || inputManager_->DPadLeft() || inputManager_->GetLeftStickX() < -0.5f;
         }
     }
     if (!onGround_ && (isTouchingWall_ || info.isContactWall) && pressingToward && velocity_.y < 0.0f) {

@@ -6,6 +6,7 @@
 #include "scene/inGame/GameScene.h"
 #include "function/Ease.h"
 #include "3D/ObjClass.h"
+#include "contents/MapChipField.h"
 #include <numbers>
 #include <cmath>
 #include <cassert>
@@ -106,8 +107,46 @@ void NormalEnemy::BehaviorWalkInitialize() {
 }
 
 void NormalEnemy::BehaviorWalkUpdate() {
-    // 単純な左右移動の例
-    transform_.translate = Math::Add(transform_.translate, velocity_);
+	// 接地している場合のみ行動
+	if (onGround_) {
+		bool shouldTurn = false;
+
+		// --- 崖チェック ---
+		Vector3 footPosition = transform_.translate;
+		float checkOffsetX = (lrDirection_ == LRDirection::kRight) ? width_ / 2.0f : -width_ / 2.0f;
+		footPosition.x += checkOffsetX;
+		footPosition.y -= height_ / 2.0f + 0.1f; // 少し下をチェック
+
+		MapChipField::IndexSet footIndex = mapChipField_->GetMapChipIndexSetByPosition(footPosition);
+		if (mapChipField_->GetMapChipTypeByIndex(footIndex.xIndex, footIndex.yIndex) == MapChipType::kBlank) {
+			shouldTurn = true;
+		}
+
+		// --- 壁チェック ---
+		// isTouchingWall_ は基底クラスの衝突解決で更新される
+		if (isTouchingWall_) {
+			shouldTurn = true;
+		}
+
+		// --- 方向転換処理 ---
+		if (shouldTurn) {
+			if (lrDirection_ == LRDirection::kLeft) {
+				lrDirection_ = LRDirection::kRight;
+				transform_.rotate.y = std::numbers::pi_v<float> / 2.0f;
+			}
+			else {
+				lrDirection_ = LRDirection::kLeft;
+				transform_.rotate.y = -std::numbers::pi_v<float> / 2.0f;
+			}
+		}
+
+		// --- 速度設定 ---
+		float moveSpeed = (lrDirection_ == LRDirection::kLeft) ? -0.05f : 0.05f;
+		velocity_.x = moveSpeed;
+	}
+
+	// 基底クラスの移動・衝突解決処理を呼ぶ
+	BehaviorMoveUpdate();
 }
 
 void NormalEnemy::BehaviorDeathInitialize() {

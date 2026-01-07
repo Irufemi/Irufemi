@@ -43,6 +43,16 @@ bool InputManager::StartDown() const { return gamepad_->StartDown(); }
 bool InputManager::StartPressed() const { return gamepad_->StartPressed(); }
 bool InputManager::StartReleased() const { return gamepad_->StartReleased(); }
 
+// --- D-Pad フォワード ---
+bool InputManager::DPadUp() const { return gamepad_->DPadUp(); }
+bool InputManager::DPadDown() const { return gamepad_->DPadDown(); }
+bool InputManager::DPadLeft() const { return gamepad_->DPadLeft(); }
+bool InputManager::DPadRight() const { return gamepad_->DPadRight(); }
+bool InputManager::DPadUpPressed() const { return gamepad_->DPadUpPressed(); }
+bool InputManager::DPadDownPressed() const { return gamepad_->DPadDownPressed(); }
+bool InputManager::DPadLeftPressed() const { return gamepad_->DPadLeftPressed(); }
+bool InputManager::DPadRightPressed() const { return gamepad_->DPadRightPressed(); }
+
 // --- マウスAPIフォワード ---
 bool InputManager::IsMouseButtonDown(Mouse::Button button) const {
     return mouse_->IsButtonDown(button);

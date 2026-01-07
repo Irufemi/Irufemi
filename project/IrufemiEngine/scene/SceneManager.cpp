@@ -2,6 +2,7 @@
 #include "IScene.h"
 #include "engine/IrufemiEngine.h"
 #include <Windows.h> // VK_ESCAPE のためにインクルード
+#include "engine/Input/InputManager.h" // InputManager をインクルード
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {}
 
@@ -36,9 +37,12 @@ void SceneManager::Update() {
     // 入力同期
     IScene::SyncInput(engine_);
 
-    // 現在のシーンがポーズ可能な場合のみ、ESCキーでポーズ切り替え
-    if (current_ && current_->IsPausable() && IScene::PressedVK(VK_ESCAPE)) {
-        TogglePause();
+    // 現在のシーンがポーズ可能な場合のみ、ESCキーまたはゲームパッドのスタートボタンでポーズ切り替え
+    if (current_ && current_->IsPausable()) {
+        InputManager* input = engine_->GetInputManager();
+        if (input && (IScene::PressedVK(VK_ESCAPE) || input->StartPressed())) {
+            TogglePause();
+        }
     }
 
     // シーン切り替え処理

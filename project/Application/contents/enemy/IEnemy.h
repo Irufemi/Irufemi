@@ -5,6 +5,7 @@
 #include "math/Matrix4x4.h"
 #include "math/shape/AABB.h"
 #include "math/LRDirection.h"
+#include "contents/MapChipField.h"
 
 #include <memory>
 
@@ -14,6 +15,15 @@ class ObjClass;
 
 class IEnemy
 {
+private: // 内部型
+	struct CollisionMapInfo {
+		bool isContactCeiling = false;
+		bool isContactGround = false;
+		bool isContactWall = false;
+		int  wallDir = 0;
+		Vector3 amountMove{};
+	};
+
 public: // メンバ関数
     // デストラクタ
     virtual ~IEnemy() = default;
@@ -28,6 +38,9 @@ public: // メンバ関数
     // 衝突時の処理
     virtual void OnCollision(Player* player);
 
+    // マップチップフィールドをセット
+    void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
+
 public: // アクセサ
     // AABBを取得する
     AABB GetAABB() const;
@@ -39,6 +52,33 @@ public: // アクセサ
     int GetDamage() const { return damage_; }
     // ワールド座標を取得
     Vector3 GetWorldPosition() const;
+
+protected: // 内部処理
+	// 移動と衝突判定
+	void BehaviorMoveUpdate();
+	// 重力適用
+	void ApplyGravity();
+	// 衝突検知
+	void CollisionDetection(CollisionMapInfo& info);
+	// 衝突後の移動
+	void MoveAccordingly(const CollisionMapInfo& info);
+	// 地面との接触処理
+	void ContactGround(const CollisionMapInfo& info);
+	// 壁との接触処理
+	void ContactWall(const CollisionMapInfo& info);
+	// 座標がブロック内か判定
+	bool IsSolidAt(const Vector3& p, MapChipField::IndexSet* outIdx, MapChipField::Rect* outRect) const;
+	// 垂直方向の衝突解決
+	float ResolveVerticalFrom(const Vector3& base, float dy, CollisionMapInfo& info) const;
+	// 水平方向の衝突解決
+	float ResolveHorizontalFrom(const Vector3& base, float dx, CollisionMapInfo& info) const;
+	// 行列の更新
+	void UpdateMatrix();
+
+protected: // 定数
+	static inline const float kgravityAcceleration = 0.010f;
+	static inline const float kLimitFallSpeed = 0.36f;
+	static inline const float kMBlank = 0.01f;
 
 protected: // メンバ変数
     // トランスフォーム
@@ -57,5 +97,13 @@ protected: // メンバ変数
     LRDirection lrDirection_ = LRDirection::kLeft;
     // ダメージ
     int damage_ = 10;
+    // マップチップフィールド
+    MapChipField* mapChipField_ = nullptr;
+	// 速度
+	Vector3 velocity_{};
+	// 接地フラグ
+	bool onGround_ = false;
+	// 壁接触フラグ
+	bool isTouchingWall_ = false;
 };
 
