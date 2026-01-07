@@ -5,14 +5,15 @@
 #include "scene/SceneManager.h"
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
-#include "2D/Circle2D.h"
+#include "2D/Sprite.h" // Spriteをインクルード
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
 #include "manager/DebugUI.h"
 #include "function/Function.h"
-
+#include "GameResultManager.h" // GameResultManagerをインクルード
 #include <memory>
+#include <cmath>
 
 ResultScene::~ResultScene() {
 
@@ -27,14 +28,31 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     camera_->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });
     camera_->UpdateMatrix();
 
-    // Circle2D の初期化
-    circle_ = std::make_unique<Circle2D>();
-    circle_->Initialize(camera_.get(), "");
-    float cx = static_cast<float>(engine_->GetClientWidth()) * 0.5f;
-    float cy = static_cast<float>(engine_->GetClientHeight()) * 0.5f;
-    circle_->SetInfo({ Vector3{ cx, cy, 0.0f }, 50.0f });
-    circle_->SetUseTexture(false);
-    circle_->SetColor(Vector4{ 1.0f, 0.0f, 0.0f, 1.0f });
+    // 結果画像の初期化
+    resultImage_ = std::make_unique<Sprite>();
+    std::string texturePath;
+    if (GameResultManager::result == GameResultManager::Result::Win) {
+        texturePath = "resources/texture/Clear.png";
+    } else {
+        texturePath = "resources/texture/GameOver.png";
+    }
+    resultImage_->Initialize(camera_.get(), texturePath);
+    resultImage_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+
+    // Continueテキストの初期化
+    continueText_ = std::make_unique<Sprite>();
+    continueText_->Initialize(camera_.get(), "resources/texture/titleText_pushKey.png");
+    continueText_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.8f);
+
+    // フェードの初期化
+    fade_ = std::make_unique<Fade>();
+    fade_->Initialize(camera_.get());
+    // リザルトシーン開始時にフェードイン
+    if (GameResultManager::result == GameResultManager::Result::Win) {
+        fade_->FadeIn(1.0f, { 1.0f, 1.0f, 1.0f, 1.0f }); // 白から
+    } else {
+        fade_->FadeIn(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f }); // 黒から
+    }
     
     // --- ライトの初期化 ---
     pointLight_ = std::make_unique <PointLight>();
@@ -57,6 +75,14 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
+
+    // bgm
+    bgm_ = std::make_unique<Bgm>();
+    bgm_->Initialize("resources/bgm/result.mp3");
+    bgm_->PlayFixed();
+    // se(決定音)
+    se_select_ = std::make_unique<Se>();
+    se_select_->Initialize("resources/se/se_select.mp3");
 }
 
 void ResultScene::Update() {
@@ -89,18 +115,29 @@ void ResultScene::Update() {
 #endif // USE_IMGUI
 
     // --- カメラの更新 ---
-    // 現在アクティブなカメラへのポインタ
     Camera* currentCamera = debugMode ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
-    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
+    currentCamera->Update("Camera");
 
-    if (circle_) { 
-        circle_->Debug("ResultCenter");
-        circle_->Update();
+    // フェードの更新
+    fade_->Update();
+    if (!fade_->IsDone()) {
+        resultImage_->Update();
+        continueText_->Update();
+        return; // フェード中は他の処理をスキップ
     }
 
-    //エンターキーが押されていたら
-    if (engine_->GetInputManager()->IsKeyPressed(VK_RETURN)) {
-        engine_->GetSceneManager()->Request("Title");
+    // Continueテキストの明滅
+    blinkTimer_ += 1.0f / 60.0f;
+    float alpha = 0.5f + 0.5f * std::sin(blinkTimer_ * 5.0f);
+    continueText_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+
+    resultImage_->Update();
+    continueText_->Update();
+
+    //エンターキーが押されていたらステージ選択へ
+    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+        engine_->GetSceneManager()->Request("Select");
+        se_select_->Play();
     }
 
     // --- フレーム共通データのセット ---
@@ -114,7 +151,15 @@ void ResultScene::Update() {
 void ResultScene::Draw() {
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
 
+    if (resultImage_) {
+        resultImage_->Draw();
+    }
+    if (continueText_ && fade_->IsDone()) {
+        continueText_->Draw();
+    }
+
+    fade_->Draw();
 }

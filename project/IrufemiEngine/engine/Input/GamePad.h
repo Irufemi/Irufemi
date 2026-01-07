@@ -38,6 +38,9 @@ public:
     bool IsConnected() const { return connected_; }
     void SetIndex(int idx) { index_ = idx; }
 
+    // ★ 状態取得
+    const XINPUT_STATE& GetState() const { return state_; }
+
     // ★ 8方向（左スティック）
     Stick8 Left8(float threshold = 0.30f) const;
     bool Left8Is(Stick8 dir, float threshold = 0.30f) const;

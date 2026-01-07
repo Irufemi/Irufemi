@@ -10,17 +10,18 @@
 #include "scene/inGame/GameScene.h"
 #include "scene/result/ResultScene.h"
 #include "scene/debug/DebugScene.h"
+#include "scene/stageSelect/SelectScene.h"
 
 //クライアント領域のサイズ
 const int32_t kClientWidth = 1280;
 const int32_t kClientHeight = 720;
 
 // タイトル
-const std::wstring kTitle = L"LE2B_12_スエヒロ_コウイチ";
+const std::wstring kTitle = L"LE2B_12_スエヒロ_コウイチ_アンナイト";
 
 // ウィンドウの色
 //const Vector4 clearColor = { 0.1f, 0.25f, 0.5f, 1.0f };
-const Vector4 clearColor = { 0.4f, 0.4f, 0.4f, 1.0f };
+const Vector4 clearColor = { 0.7f, 0.7f, 0.7f, 1.0f };
 
 //windowsアプリでのエントリーポint32_tイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -36,13 +37,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // アプリ側で登録
     engine->SetSceneRegistrar([](SceneManager& sm) {
         sm.Register("Title", [] { return std::make_unique<TitleScene>();  });
+        sm.Register("Select", [] { return std::make_unique<SelectScene>();  });
         sm.Register("InGame", [] { return std::make_unique<GameScene>();   });
         sm.Register("Result", [] { return std::make_unique<ResultScene>(); });
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
         }
     );
 
-    engine->SetInitialSceneName("Debug");
+    engine->SetInitialSceneName("Title");
 
     engine->Execute();
 

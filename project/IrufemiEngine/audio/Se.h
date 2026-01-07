@@ -7,7 +7,7 @@
 class Se {
 private:
     IXAudio2SourceVoice* voice_ = nullptr;
-    float volume_ = 0.6f; // SEは通常フルボリュームを想定
+    float volume_ = 0.4f; // SEは通常フルボリュームを想定
     std::shared_ptr<Sound> sound_;
     std::string soundKey_;
 

@@ -7,6 +7,8 @@
 #include "engine/Input/InputManager.h"
 #include "manager/DebugUI.h"
 #include "PlayerState.h"
+#include "3D/ObjClass.h"
+#include "contents/enemy/IEnemy.h"
 #include <algorithm>
 #include <cassert>
 #include <numbers>
@@ -23,17 +25,28 @@ void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputMana
     transform_.translate = position;
     transform_.rotate = Vector3{ 0.0f, std::numbers::pi_v<float> / 2.0f, 0.0f };
     transform_.scale = Vector3{ 1.0f, 1.0f, 1.0f };
+    attackEffectTransform_ = transform_;
 
     // 追加初期化
     airJumpsLeft_ = kMaxAirJumps;
     jumpHeldPrev_ = false;
-    attackUsed_ = false; // 攻撃使用フラグ初期化
+    dashUsed_ = false; // ダッシュ使用フラグ初期化
+    hp_ = kMaxHP;
+    invincibilityTimer_ = 0.0f;
 
     // 描画へ反映
     model_->SetTransform(transform_);
 
     // 初期状態は Root
     ChangeState(MakeRootState());
+
+    // se(ダッシュ)
+    se_dash_ = std::make_unique<Se>();
+    se_dash_->Initialize("resources/se/se_dash.mp3");
+
+    // se(攻撃)
+    se_slash_ = std::make_unique<Se>();
+    se_slash_->Initialize("resources/se/se_slash.mp3");
 }
 
 void Player::Update() {
@@ -43,23 +56,62 @@ void Player::Update() {
     ImGui::Text("OnGround : %s", onGround_ ? "true" : "false");
     ImGui::Text("AirJumpsLeft : %d", airJumpsLeft_);
     ImGui::Text("TouchWall : %s (dir=%d, coyote=%d)", isTouchingWall_ ? "true" : "false", lastWallDir_, wallCoyoteCounter_);
+    ImGui::Text("HP: %d/%d", hp_, kMaxHP);
+    ImGui::Text("Invincibility: %.2f", invincibilityTimer_);
     ImGui::End();
 #endif
+
+    // ダメージフラグをリセット
+    isJustDamaged_ = false;
+
+    // 無敵時間処理
+    if (invincibilityTimer_ > 0.0f) {
+        const float dt = 1.0f / 60.0f;
+        invincibilityTimer_ -= dt;
+
+        // 点滅処理：周期を長くし、半透明にする
+        float blinkCycle = 0.4f; // 点滅周期を0.4秒に
+        float alpha = (std::fmod(invincibilityTimer_, blinkCycle) < blinkCycle / 2.0f) ? 0.3f : 1.0f; // 透明度を0.3に
+        model_->SetAlpha(alpha);
+
+        // 無敵時間に応じて赤から白へ色を戻す
+        float colorLerpT = std::clamp(1.0f - (invincibilityTimer_ / kInvincibilityDuration), 0.0f, 1.0f);
+        Vector4 red = { 1.0f, 0.5f, 0.5f, 1.0f };
+        Vector4 white = { 1.0f, 1.0f, 1.0f, 1.0f };
+        model_->SetColor(Lerp(red, white, colorLerpT));
+
+
+        if (invincibilityTimer_ <= 0.0f) {
+            // 無敵終了：色とアルファを元に戻す
+            model_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+            model_->SetAlpha(1.0f);
+        }
+    }
+
     // ステート更新
     if (state_) {
         state_->Update(*this);
     }
 
-    // 共通の移動・衝突	
-    BehaviorMoveUpdate();
+    // 攻撃中でなければ移動と衝突判定を行う
+    if (!IsAttacking()) {
+        BehaviorMoveUpdate();
+    } else {
+        // 攻撃中でも旋回と行列更新は行う
+        TurningControl();
+        UpdateMatrix();
+    }
 }
 
 void Player::Draw() {
-    model_->Update();
-    model_->Draw();
-    if (IsAttack()) {
-        attackModel_->Update();
-        attackModel_->Draw();
+    if (model_) {
+        model_->SetTransform(transform_);
+        model_->Update();
+        model_->Draw();
+    }
+    if (IsAttacking() && attackEffectModel_) {
+        attackEffectModel_->Update();
+        attackEffectModel_->Draw();
     }
 }
 
@@ -80,9 +132,17 @@ void Player::ChangeState(std::unique_ptr<IPlayerState> next) {
  */
 void Player::MoveInput() {
     // 入力
-    const bool right = inputManager_->IsKeyDown('D');
-    const bool left  = inputManager_->IsKeyDown('A');
-    const bool jumpDown = inputManager_->IsKeyDown('W');
+    const bool keyRight = inputManager_->IsKeyDown('D');
+    const bool keyLeft = inputManager_->IsKeyDown('A');
+    const bool keyJump = inputManager_->IsKeyDown('W');
+
+    const bool padRight = inputManager_->DPadRight() || inputManager_->GetLeftStickX() > 0.5f;
+    const bool padLeft = inputManager_->DPadLeft() || inputManager_->GetLeftStickX() < -0.5f;
+    const bool padJump = inputManager_->IsButtonDown(XINPUT_GAMEPAD_A);
+
+    const bool right = keyRight || padRight;
+    const bool left = keyLeft || padLeft;
+    const bool jumpDown = keyJump || padJump;
     const bool jumpTriggered = jumpDown && !jumpHeldPrev_;
 
     // 固定Δt（60fps前提）
@@ -154,8 +214,8 @@ void Player::MoveInput() {
         // 入力ロック開始（壁ジャン初速を活かす）
         horizontalControlLockTimer_ = kWallJumpHorizLockTime;
 
-        // 壁ジャンを行ったので空中攻撃を再度使えるようにする（リセット）
-        attackUsed_ = false;
+        // 壁ジャンを行ったので空中ダッシュを再度使えるようにする（リセット）
+        dashUsed_ = false;
 
         // 状態クリア
         onGround_ = false;
@@ -179,14 +239,18 @@ void Player::MoveInput() {
     }
 
     // 重力（空中のみ）
+    ApplyGravity();
+
+    // 押下状態の保存
+    jumpHeldPrev_ = jumpDown;
+}
+
+void Player::ApplyGravity() {
     if (!onGround_) {
         float g = (velocity_.y <= 0.0f) ? kgravityAcceleration * kFallGravityScale : kgravityAcceleration;
         velocity_ = Math::Add(velocity_, Vector3(0.0f, -g, 0.0f));
         velocity_.y = std::max(velocity_.y, -kLimitFallSpeed);
     }
-
-    // 押下状態の保存
-    jumpHeldPrev_ = jumpDown;
 }
 
 /*
@@ -339,8 +403,8 @@ float Player::ResolveHorizontalFrom(const Vector3& base, float dx, CollisionMapI
 
 void Player::MoveAccordingly(const CollisionMapInfo& info) {
     transform_.translate = Math::Add(transform_.translate, info.amountMove);
-    // 攻撃モデルはプレイヤ位置に追従
-    attackTransform_.translate = transform_.translate;
+    // ダッシュエフェクトモデルはプレイヤ位置に追従
+    dashEffectTransform_.translate = transform_.translate;
 }
 
 /*
@@ -377,12 +441,14 @@ void Player::ContactGround(const CollisionMapInfo& info) {
             onGround_ = false;
             jumpBufferCounter_ = 0;
             coyoteCounter_ = 0;
+            // 着地したため、ダッシュ使用フラグをリセット
+            dashUsed_ = false;
             return;
         }
         // 通常の着地
         onGround_ = true;
-        // 着地で攻撃フラグをリセット（地上で再び攻撃可能にする）
-        attackUsed_ = false;
+        // 着地でダッシュフラグをリセット（地上で再びダッシュ可能にする）
+        dashUsed_ = false;
         velocity_.x *= (1.0f - kAttenuationLanding);
         // 二段ジャンプリセット
         airJumpsLeft_ = kMaxAirJumps;
@@ -428,10 +494,10 @@ void Player::ContactWall(const CollisionMapInfo& info) {
     if (wallDir != 0 && inputManager_) {
         if (wallDir > 0) {
             // 右壁に接触 → 右入力が「壁方向」
-            pressingToward = inputManager_->IsKeyDown('D');
+            pressingToward = inputManager_->IsKeyDown('D') || inputManager_->DPadRight() || inputManager_->GetLeftStickX() > 0.5f;
         } else {
             // 左壁に接触 → 左入力が「壁方向」
-            pressingToward = inputManager_->IsKeyDown('A');
+            pressingToward = inputManager_->IsKeyDown('A') || inputManager_->DPadLeft() || inputManager_->GetLeftStickX() < -0.5f;
         }
     }
     if (!onGround_ && (isTouchingWall_ || info.isContactWall) && pressingToward && velocity_.y < 0.0f) {
@@ -479,11 +545,11 @@ void Player::UpdateMatrix() {
     worldMatrix_.m[0][1] = 0.0f;
     worldMatrix_.m[0][2] = s.x * -sy;
     worldMatrix_.m[0][3] = 0.0f;
-    worldMatrix_.m[1][0] = 0.0f;  
-    worldMatrix_.m[1][1] = s.y; 
+    worldMatrix_.m[1][0] = 0.0f;
+    worldMatrix_.m[1][1] = s.y;
     worldMatrix_.m[1][2] = 0.0f;
     worldMatrix_.m[1][3] = 0.0f;
-    worldMatrix_.m[2][0] = s.z * sy; 
+    worldMatrix_.m[2][0] = s.z * sy;
     worldMatrix_.m[2][1] = 0.0f;
     worldMatrix_.m[2][2] = s.z * cy;
     worldMatrix_.m[2][3] = 0.0f;
@@ -495,7 +561,7 @@ void Player::UpdateMatrix() {
 
     // 描画側 Transform に反映
     model_->SetTransform(transform_);
-    attackModel_->SetTransform(attackTransform_);
+    attackEffectModel_->SetTransform(attackEffectTransform_);
 }
 
 // ===== 幾何ユーティリティ =====
@@ -518,16 +584,44 @@ void Player::MapCollisionRight(CollisionMapInfo& info) { (void)info; }
 void Player::MapCollisionLeft(CollisionMapInfo& info) { (void)info; }
 
 // ===== OnCollision =====
-void Player::OnCollision(const Enemy* enemy) {
-    (void)enemy;
-    if (IsAttack()) {
+void Player::OnCollision(const IEnemy* enemy) {
+    // 敵が死亡している、またはプレイヤーがダッシュ中なら何もしない
+    if (enemy->IsDead() || IsDashing()) {
         return;
     }
-    isDead_ = true;
+    TakeDamage(enemy->GetDamage(), enemy->GetWorldPosition());
+}
+
+void Player::TakeDamage(int damage, const Vector3& enemyPosition) {
+    // 無敵時間中はダメージを受けない
+    if (invincibilityTimer_ > 0.0f) {
+        return;
+    }
+
+    hp_ -= damage;
+    if (hp_ <= 0) {
+        hp_ = 0;
+        isDead_ = true;
+    }
+
+    // ダメージを受けたフラグを立てる
+    isJustDamaged_ = true;
+
+    // --- ノックバック処理 ---
+    // 敵との位置関係からノックバック方向を決定
+    float knockbackDir = (transform_.translate.x > enemyPosition.x) ? 1.0f : -1.0f;
+    velocity_.x = knockbackDir * kKnockbackHorizontal;
+    velocity_.y = kKnockbackVertical; // 常に少し上に跳ねる
+
+    // 無敵時間を開始
+    invincibilityTimer_ = kInvincibilityDuration;
+    // ダメージを受けた瞬間に赤くする
+    model_->SetColor({ 1.0f, 0.5f, 0.5f, 1.0f });
 }
 
 // ===== 補助 =====
-bool Player::IsAttack() const { return state_ && state_->IsAttack(); }
+bool Player::IsDashing() const { return state_ && state_->IsDashing(); }
+bool Player::IsAttacking() const { return state_ && state_->IsAttacking(); }
 
 // ===== 位置・AABB =====
 Vector3 Player::GetWorldPosition() {
@@ -547,5 +641,19 @@ AABB Player::GetAABB() {
     AABB aabb;
     aabb.min = { worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f };
     aabb.max = { worldPos.x + kWidth / 2.0f, worldPos.y + kHeight / 2.0f, worldPos.z + kWidth / 2.0f };
+    return aabb;
+}
+
+AABB Player::GetAttackAABB() {
+    const Vector3 worldPos = GetWorldPosition();
+    AABB aabb;
+    const float attackWidth = 1.0f;
+    const float attackHeight = 1.0f;
+    float offsetX = (lrDirection_ == LRDirection::kRight) ? (kWidth / 2.0f + attackWidth / 2.0f) : -(kWidth / 2.0f + attackWidth / 2.0f);
+
+    Vector3 attackCenter = { worldPos.x + offsetX, worldPos.y, worldPos.z };
+
+    aabb.min = { attackCenter.x - attackWidth / 2.0f, attackCenter.y - attackHeight / 2.0f, attackCenter.z - attackWidth / 2.0f };
+    aabb.max = { attackCenter.x + attackWidth / 2.0f, attackCenter.y + attackHeight / 2.0f, attackCenter.z + attackWidth / 2.0f };
     return aabb;
 }

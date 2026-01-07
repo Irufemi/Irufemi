@@ -1,6 +1,6 @@
 #include "Particle.h"
 #include "function/Ease.h"
-#include "function/Math.h"
+#include "function/Collision.h"
 
 void Particle::Update(float deltaTime) {
 	currentTime += deltaTime;
@@ -15,7 +15,7 @@ void Particle::Update(float deltaTime) {
 }
 
 void AccelerationField::Apply(Particle& particle, float deltaTime) const {
-	if (Math::IsCollision(area, particle.transform.translate)) {
+	if (Collision::IsCollision(area, particle.transform.translate)) {
 		particle.velocity += acceleration * deltaTime;
 	}
 }

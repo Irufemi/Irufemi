@@ -12,13 +12,15 @@ class Player;
 /// </summary>
 struct IPlayerState {
 	virtual ~IPlayerState() = default;
-	virtual const char* Name() const = 0;           // デバッグ表示用の状態名
-	virtual bool IsAttack() const { return false; } // 攻撃モデルを描画すべきか
-	virtual void Enter(Player& player) = 0;         // 状態開始
-	virtual void Update(Player& player) = 0;        // 毎フレーム更新
-	virtual void Exit(Player& player) = 0;          // 状態終了
+	virtual const char* Name() const = 0;          // デバッグ表示用の状態名
+	virtual bool IsDashing() const { return false; } // ダッシュ中か
+	virtual bool IsAttacking() const { return false; } // 攻撃中か
+	virtual void Enter(Player& player) = 0;        // 状態開始
+	virtual void Update(Player& player) = 0;       // 毎フレーム更新
+	virtual void Exit(Player& player) = 0;         // 状態終了
 };
 
 // 具体ステート生成関数（実体は cpp 側）
 std::unique_ptr<IPlayerState> MakeRootState();
+std::unique_ptr<IPlayerState> MakeDashState();
 std::unique_ptr<IPlayerState> MakeAttackState();

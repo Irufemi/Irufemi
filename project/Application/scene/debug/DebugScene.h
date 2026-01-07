@@ -31,6 +31,9 @@ public: // メンバ関数
     void Update() override;
     void Draw() override;
 
+    // このシーンはポーズ可能
+    bool IsPausable() const override { return true; }
+
 private: // メンバ変数
 
     std::unique_ptr<Sprite> sprite_ = nullptr;

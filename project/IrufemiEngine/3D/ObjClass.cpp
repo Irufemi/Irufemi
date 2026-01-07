@@ -71,6 +71,9 @@ void ObjClass::Update() {
     if (transformationData_) {
         *transformationData_ = transformationMatrix_;
     }
+
+    // マテリアル情報をGPUへ転送
+    UpdateMaterials();
 }
 
 void ObjClass::Draw() {
@@ -133,6 +136,56 @@ void ObjClass::SetEnableLightingToAllMeshes(bool enable) {
     if (managedModel_ && managedModel_->cpuModel) {
         for (auto& mesh : managedModel_->cpuModel->meshes) {
             mesh.material.enableLighting = enable;
+        }
+    }
+}
+
+void ObjClass::SetAlpha(float alpha) {
+    if (managedModel_ && managedModel_->cpuModel) {
+        for (auto& mesh : managedModel_->cpuModel->meshes) {
+            mesh.material.color.w = alpha;
+        }
+    }
+}
+
+void ObjClass::SetColor(const Vector4& color) {
+    if (managedModel_ && managedModel_->cpuModel) {
+        for (auto& mesh : managedModel_->cpuModel->meshes) {
+            mesh.material.color = color;
+        }
+    }
+}
+
+void ObjClass::UpdateMaterials() {
+    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->gpuMaterials.empty()) {
+        return;
+    }
+
+    // 全メッシュのマテリアルを更新
+    for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
+        // インデックスが範囲内か確認
+        if (i >= managedModel_->gpuMaterials.size()) {
+            continue;
+        }
+
+        const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
+        GpuMaterial* gpuMat = managedModel_->gpuMaterials[i].get();
+
+        if (gpuMat && gpuMat->materialResource) {
+            Material* mappedData = nullptr;
+            gpuMat->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
+            if (mappedData) {
+                mappedData->color = cpuMat.color;
+                mappedData->enableLighting = cpuMat.enableLighting;
+                mappedData->uvTransform = cpuMat.uvTransform;
+                mappedData->shininess = cpuMat.shininess;
+                mappedData->hasTexture = !cpuMat.textureFilePath.empty();
+                // ライティングモードを enableLighting に基づいて設定
+                mappedData->lightingMode = cpuMat.enableLighting ? 2 : 0;
+                if (mappedData->color.w <= 0.0f) { mappedData->color.w = 1.0f; }
+
+                gpuMat->materialResource->Unmap(0, nullptr);
+            }
         }
     }
 }

@@ -33,6 +33,10 @@ public:
     // 並び順は登録順
     std::vector<Key> GetRegisteredKeys() const;
 
+    // ポーズ状態の切り替え
+    void TogglePause() { isPaused_ = !isPaused_; }
+    bool IsPaused() const { return isPaused_; }
+
 private:
     IrufemiEngine* engine_ = nullptr; // 非所有
     std::unique_ptr<IScene> current_{};
@@ -41,4 +45,6 @@ private:
 
     std::unordered_map<Key, Factory> factories_;
     std::vector<Key> order_; // ← 登録順を保持
+
+    bool isPaused_ = false; // ポーズ状態フラグ
 };

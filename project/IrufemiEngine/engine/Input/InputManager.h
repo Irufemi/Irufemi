@@ -48,6 +48,16 @@ public:
     bool StartPressed() const;
     bool StartReleased() const;
 
+    // --- D-Pad フォワード ---
+    bool DPadUp() const;
+    bool DPadDown() const;
+    bool DPadLeft() const;
+    bool DPadRight() const;
+    bool DPadUpPressed() const;
+    bool DPadDownPressed() const;
+    bool DPadLeftPressed() const;
+    bool DPadRightPressed() const;
+
     // --- マウスAPIフォワード ---
     bool IsMouseButtonDown(Mouse::Button button) const;
     bool IsMouseButtonPressed(Mouse::Button button) const;

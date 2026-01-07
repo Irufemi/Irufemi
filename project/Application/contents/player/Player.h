@@ -7,20 +7,21 @@
 #include "math/Transform.h"
 #include "math/Matrix4x4.h"
 #include "3D/ObjClass.h"
+#include "math/LRDirection.h"
+#include "audio/Se.h"
 #include <cstdint>
 #include <memory>
 
 // 前方宣言
-class Enemy;
+class IEnemy;
 class Camera;
 class InputManager;
 struct IPlayerState;
 struct PlayerStateRoot;
-struct PlayerStateAttack;
+struct PlayerStateDash;
 
 class Player {
 public:
-	enum class LRDirection { kRight, kLeft };
 
 	// --- ライフサイクル ---
 	void Initialize(ObjClass* model, Camera* camera, InputManager* inputManager, Vector3& position);
@@ -28,23 +29,29 @@ public:
 	void Draw();
 
 	// --- ゲーム連携 ---
-	void OnCollision(const Enemy* enemy);
+	void OnCollision(const IEnemy* enemy);
 	void SetMapChipField(MapChipField* mapChipField) { this->mapChipField_ = mapChipField; }
+	void TakeDamage(int damage, const Vector3& enemyPosition);
 
 	// --- 状態取得（読み取り専用） ---
 	const Vector3& GetVelocity() const { return this->velocity_; }
 	const Vector3& GetTranslate() const { return transform_.translate; }
 	Vector3 GetWorldPosition();
 	AABB GetAABB();
+	AABB GetAttackAABB(); // 攻撃用AABBを取得する関数を追加
 	LRDirection GetLR() const { return lrDirection_; }
 	bool IsDead() const { return isDead_; }
-	bool IsAttack() const;
+	bool IsDashing() const;
+	bool IsAttacking() const; // 攻撃中か判定する関数を追加
+	bool IsJustDamaged() const { return isJustDamaged_; } // ダメージを受けた瞬間か
 	const char* GetStateName() const { return state_ ? state_->Name() : "<none>"; }
 	const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
 	const Transform& GetTransform() const { return transform_; }
+	int GetHP() const { return hp_; }
+	int GetMaxHP() const { return kMaxHP; }
 
 	// セッター
-	void SetAttackModel(ObjClass* obj) { attackModel_ = obj; }
+	void SetAttackEffectModel(ObjClass* obj) { attackEffectModel_ = obj; }
 
 	// --- ステート制御 ---
 	void ChangeState(std::unique_ptr<IPlayerState> next);
@@ -88,11 +95,21 @@ private: // ===== 内部型・定数 =====
 	// 壁スライド（Hollow Knight 風）
 	static inline const float kWallSlideMaxFallSpeed = 0.12f;// 壁方向入力中の最大落下速度
 
+	// ダメージ表現
+	static inline const float kKnockbackHorizontal = 0.18f; // ダメージ時の水平ノックバック速度
+	static inline const float kKnockbackVertical = 0.15f;   // ダメージ時の垂直ノックバック速度
+
 	// 入力一定速度化のスナップ設定
 	static inline const float kTimeToFullRun = 0.06f;        // 最高速へ到達する時間[s]
 	static inline const float kWallJumpHorizLockTime = 0.10f;// 壁ジャン直後の横入力ロック時間[s]
 
-	static inline const Vector3 kattackVelocity_{0.4f, 0.0f, 0.0f};
+	static inline const Vector3 kDashVelocity_{0.4f, 0.0f, 0.0f};
+
+	// HP
+	static inline const int kMaxHP = 200;
+
+	// 無敵時間
+	static inline const float kInvincibilityDuration = 1.5f; // 無敵時間[s]
 
 private: // ===== データメンバ =====
 	std::unique_ptr<IPlayerState> state_{};
@@ -118,18 +135,21 @@ private: // ===== データメンバ =====
 	int  wallCoyoteCounter_ = 0;
 	float horizontalControlLockTimer_ = 0.0f; // 壁ジャン直後の横入力ロック
 
-	// 攻撃使用フラグ（空中では1回だけ許可、地上では何度でも）
-	bool attackUsed_ = false;
+	// ダッシュ使用フラグ（空中では1回だけ許可、地上では何度でも）
+	bool dashUsed_ = false;
 
 	// Transformとワールド行列
 	Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
 	Matrix4x4 worldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
-	Transform attackTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
-	Matrix4x4 attackWorldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
+	Transform dashEffectTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+	Matrix4x4 dashEffectWorldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
+	Transform attackEffectTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+	Matrix4x4 attackEffectWorldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
 
 	// 描画
 	ObjClass* model_ = nullptr;
-	ObjClass* attackModel_ = nullptr;
+	ObjClass* attackEffectModel_ = nullptr;
+
 	Camera* camera_ = nullptr;
 	InputManager* inputManager_ = nullptr;
 
@@ -139,9 +159,25 @@ private: // ===== データメンバ =====
 	// 生存
 	bool isDead_ = false;
 
+	// HP
+	int hp_ = kMaxHP;
+
+	// 無敵時間タイマー
+	float invincibilityTimer_ = 0.0f;
+
+	// ダメージフラグ
+	bool isJustDamaged_ = false;
+
+	// se (ダッシュ)
+	std::unique_ptr<Se> se_dash_ = nullptr;
+
+	// se (攻撃)
+	std::unique_ptr<Se> se_slash_ = nullptr;
+
 private: // ===== 内部処理 =====
 	// 入力/移動
 	void MoveInput();
+	void ApplyGravity(); // 重力適用を別関数に
 	void BehaviorMoveUpdate();
 	void TurningControl(); // 見た目の向き補間
 	void UpdateMatrix();
@@ -162,6 +198,7 @@ private: // ===== 内部処理 =====
 	// ステートから private へアクセスを許可
 	friend struct IPlayerState;
 	friend struct PlayerStateRoot;
+	friend struct PlayerStateDash;
 	friend struct PlayerStateAttack;
 
 	// 旧個別判定（参考用・未使用）
