@@ -29,8 +29,6 @@
 #include "audio/Se.h"
 #include "source/Texture.h"
 
-#include "Application/contents/Effect/Fade.h"
-
 #include "scene/IScene.h"
 #include <imgui.h>
 
@@ -185,8 +183,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     SphereRegion::SetTextureManager(textureManager.get());
     TetraRegion::SetTextureManager(textureManager.get());
     ParticleSystem::SetTextureManager(textureManager.get());
-
-    Fade::SetEngine(this);
 }
 
 // クリアカラーを float 指定できる 初期化

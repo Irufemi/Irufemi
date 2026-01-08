@@ -7,10 +7,10 @@
 #include "engine/IrufemiEngine.h"
 
 #include "scene/title/TitleScene.h"
+#include "scene/stageSelect/SelectScene.h"
 #include "scene/inGame/GameScene.h"
 #include "scene/result/ResultScene.h"
 #include "scene/debug/DebugScene.h"
-#include "scene/stageSelect/SelectScene.h"
 
 //クライアント領域のサイズ
 const int32_t kClientWidth = 1280;
@@ -44,7 +44,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     );
 
-    engine->SetInitialSceneName("Title");
+    engine->SetInitialSceneName("Debug");
 
     engine->Execute();
 
