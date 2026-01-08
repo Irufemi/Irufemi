@@ -17,7 +17,7 @@ const int32_t kClientWidth = 1280;
 const int32_t kClientHeight = 720;
 
 // タイトル
-const std::wstring kTitle = L"2326_";
+const std::wstring kTitle = L"2326_血管壊回";
 
 // ウィンドウの色
 //const Vector4 clearColor = { 0.1f, 0.25f, 0.5f, 1.0f };
