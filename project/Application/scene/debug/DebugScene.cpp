@@ -3,13 +3,12 @@
 #include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
 #include "manager/DebugUI.h"
-
-#include "camera/Camera.h"
-#include "camera/DebugCamera.h"
 #include "math/CameraForGPU.h"
-#include "math/PointLight.h"
-#include "math/SpotLight.h"
-#include "math/DirectionalLight.h"
+
+// デストラクタ
+DebugScene::~DebugScene() {
+
+}
 
 // 初期化
 void DebugScene::Initialize(IrufemiEngine* engine) {
@@ -25,7 +24,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
 
     debugCamera_ = std::make_unique<DebugCamera>();
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
-    debugMode = false;
+    debugMode_ = false;
 
     // --- ライトの初期化 ---
     pointLight_ = std::make_unique <PointLight>();
@@ -63,7 +62,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveFence_ = false;
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
-    isActiveEffect_ = true;
+    isActiveEffect_ = false;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -138,20 +137,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
 // 更新
 void DebugScene::Update() {
 
-    // --- カメラの更新 ---
-    // 現在アクティブなカメラへのポインタ
-    Camera* currentCamera = debugMode ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
-    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
-
-    if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
-
-        engine_->GetSceneManager()->Request("InGame");
-    }
-
 
 #ifdef USE_IMGUI
 
-    ImGui::Begin("GameScene");
+    ImGui::Begin("DebugScene");
     // pointLight 
     if (ImGui::CollapsingHeader("PointLight")) {
         ImGui::ColorEdit4("PointLightColor", &pointLight_->color.x);
@@ -185,7 +174,7 @@ void DebugScene::Update() {
     if (ImGui::Button("allLoadActivate")) {
         engine_->GetTextureManager()->LoadAllFromFolder("resources/");
     }
-    ImGui::Checkbox("debugMode", &debugMode);
+    ImGui::Checkbox("debugMode", &debugMode_);
 
     ImGui::End();
 
@@ -288,6 +277,10 @@ void DebugScene::Update() {
 
 #endif // _DEBUG
 
+    // =====
+    // ↓ゲームの更新
+    // =====
+
     // 3D
 
     if (isActiveTriangle_) {
@@ -388,7 +381,7 @@ void DebugScene::Update() {
     if (isActiveParticle_) {
         if (!particle_) {
             particle_ = std::make_unique <ParticleSystem>();
-            particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kAccelerationField);
+            particle_->Initialize(camera_.get(), "resources/circle.png", ParticleType::kAccelerationField);
         }
         particle_->Debug("Particle");
         particle_->Update();
@@ -420,13 +413,26 @@ void DebugScene::Update() {
         sprite_->Update();
     }
 
+    if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+
+        engine_->GetSceneManager()->Request("InGame");
+    }
+
+    // =====
+    // ↑ゲームの更新
+    // =====
+
+    // --- カメラの更新 ---
+    // 現在アクティブなカメラへのポインタ
+    Camera* currentCamera = debugMode_ ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
+    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;
     cameraForGpu.view = currentCamera->GetViewMatrix();
     cameraForGpu.projection = currentCamera->GetPerspectiveFovMatrix();
     cameraForGpu.worldPosition = currentCamera->GetTranslate();
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_.get(), *pointLight_.get(), *spotLight_.get());
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, *pointLight_, *spotLight_);
 }
 
 void DebugScene::Draw() {

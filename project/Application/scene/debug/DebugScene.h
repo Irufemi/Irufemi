@@ -2,6 +2,13 @@
 
 #include "scene/IScene.h"
 
+// 環境物
+#include "camera/Camera.h"
+#include "camera/DebugCamera.h"
+#include <math/PointLight.h>
+#include <math/SpotLight.h>
+#include <math/DirectionalLight.h>
+
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "math/shape/LinePrimitive.h"
@@ -18,23 +25,30 @@
 #include <memory>
 #include <vector>
 
+// 前方宣言
+class IrufemiEngine;
+class InputManager;
 class Camera;
 class DebugCamera;
+class Sprite;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
 
 class DebugScene : public IScene {
+public: // メンバ関数(ゲーム)
 
-public: // メンバ関数
+public:
+    ~DebugScene() override;
     void Initialize(IrufemiEngine* engine) override;
     void Update() override;
     void Draw() override;
-
     // このシーンはポーズ可能
     bool IsPausable() const override { return true; }
 
-private: // メンバ変数
+private: // メンバ関数(内部ヘルパ)
+
+private: // メンバ変数(ゲーム)
 
     std::unique_ptr<Sprite> sprite_ = nullptr;
     bool isActiveSprite_ = false;
@@ -88,22 +102,18 @@ private: // メンバ変数
 
     std::unique_ptr<Line3DClass> line3D_ = nullptr;
 
+private: // メンバ変数(システム)
+    // エンジン
     IrufemiEngine* engine_ = nullptr;
-
     // カメラ
     std::unique_ptr<Camera> camera_ = nullptr;
-
     // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
 
+    bool debugMode_ = false;
+    // ライト
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
-
     std::unique_ptr<PointLight> pointLight_ = nullptr;
-
     std::unique_ptr<SpotLight> spotLight_ = nullptr;
-
-    int loadTexture = false;
-
-    bool debugMode = false;;
 };
 
