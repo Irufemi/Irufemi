@@ -37,9 +37,13 @@ private:
     // 共有モデルデータ（CPU/GPU）
     std::shared_ptr<ManagedModel> managedModel_;
 
-    std::vector<std::unique_ptr<Texture>> textures_;
-    // インスタンス固有リソース（Transform, Material等）
-    std::vector<std::unique_ptr<D3D12ResourceUtil>> instanceResources_;
+    // オブジェクト全体のTransform
+    Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+    TransformationMatrix transformationMatrix_{};
+
+    // 変換行列用リソース
+    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_;
+    TransformationMatrix* transformationData_ = nullptr;
 
     Camera* camera_ = nullptr;
 
@@ -47,13 +51,6 @@ private:
     static DrawManager* drawManager_;
     static DebugUI* ui_;
     static ModelManager* modelManager_;
-
-    // 共有モデルデータ（CPU/GPU）
-    std::shared_ptr<ManagedModel> managedModel_;
-
-    std::vector<std::unique_ptr<Texture>> textures_;
-    // インスタンス固有リソース（Transform, Material等）
-    std::vector<std::unique_ptr<D3D12ResourceUtil>> instanceResources_;
 
     Matrix4x4 localMatrix_;
 
