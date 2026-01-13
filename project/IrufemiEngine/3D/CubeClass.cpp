@@ -96,6 +96,7 @@ void CubeClass::Initialize(Camera* camera, float width, float height, float dept
     resource_->materialData_->hasTexture = true;
     resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+    resource_->materialData_->shininess = 64.0f;
 
     // transformation
     resource_->transform_.translate = center_;

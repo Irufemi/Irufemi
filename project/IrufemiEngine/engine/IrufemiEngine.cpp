@@ -13,6 +13,7 @@
 #include "2D/Sprite.h"
 #include "2D/Circle2D.h"
 #include "3D/ObjClass.h"
+#include "3D/AnimationModel.h"
 #include "3D/SphereClass.h"
 #include "3D/TriangleClass.h"
 #include "3D/CubeClass.h"
@@ -101,6 +102,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     modelManager_ = std::make_unique<ModelManager>();
     modelManager_->Initialize(dxCommon_.get(),textureManager.get()); // dxCommon を渡す
     ObjClass::SetModelManager(modelManager_.get());
+    AnimationModel::SetModelManager(modelManager_.get());
     Region::SetModelManager(modelManager_.get()); // Regionにも設定
 
     // 既存SRVの走査で free-list 再構築
@@ -143,6 +145,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Sprite::SetDebugUI(ui.get());
     Circle2D::SetDebugUI(ui.get());
     ObjClass::SetDebugUI(ui.get());
+    AnimationModel::SetDebugUI(ui.get());
     SphereClass::SetDebugUI(ui.get());
     TriangleClass::SetDebugUI(ui.get());
     CubeClass::SetDebugUI(ui.get());
@@ -156,6 +159,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Sprite::SetDrawManager(drawManager.get());
     Circle2D::SetDrawManager(drawManager.get());
     ObjClass::SetDrawManager(drawManager.get());
+    AnimationModel::SetDrawManager(drawManager.get());
     SphereClass::SetDrawManager(drawManager.get());
     TriangleClass::SetDrawManager(drawManager.get());
     CubeClass::SetDrawManager(drawManager.get());
@@ -174,6 +178,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Sprite::SetTextureManager(textureManager.get());
     Circle2D::SetTextureManager(textureManager.get());
     ObjClass::SetTextureManager(textureManager.get());
+    AnimationModel::SetTextureManager(textureManager.get());
     SphereClass::SetTextureManager(textureManager.get());
     TriangleClass::SetTextureManager(textureManager.get());
     CubeClass::SetTextureManager(textureManager.get());

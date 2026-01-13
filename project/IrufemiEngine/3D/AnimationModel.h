@@ -6,9 +6,13 @@
 #include "math/Animation.h"
 #include "math/NodeAnimation.h"
 #include "math/ModelData.h"
-#include "source/D3D12ResourceUtil.h"
+#include "math/Transform.h"
+#include "math/ObjModel.h" // ObjMaterial と ObjModel を使うためにインクルード
 #include <d3d12.h>
 #include <string>
+#include <cstdint>
+#include <memory>
+#include "wrl.h"
 
 // 前方宣言
 class Camera;
@@ -19,7 +23,7 @@ class ModelManager;
 struct ManagedModel;
 
 
-class AnimationModel{
+class AnimationModel {
 public: // メンバ関数
 
     void Initialize(Camera* camera, const std::string& directoryPath, const std::string& filename);
@@ -28,12 +32,32 @@ public: // メンバ関数
 
     void Draw();
 
-    void Debug();
+    void Debug(const char* objName = " ");
+
+    // 描画用の変換行列リソースのGPUアドレスを取得
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
+        return transformationResource_->GetGPUVirtualAddress();
+    }
 
 private: // メンバ関数(内部ヘルパ)
 
+    void UpdateMaterials();
+
+    void UpdateAnimation();
+
+public: // ゲッター・セッター
+    // 指定したインデックスのメッシュのマテリアルを取得（読み取り専用）
+    const ObjMaterial* GetMaterial(size_t meshIndex) const;
+    // 指定したインデックスのメッシュのマテリアルを取得（書き込み可能）
+    ObjMaterial* GetMaterial(size_t meshIndex);
+
+
+    static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
+    static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
+    static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
+
 private: // メンバ変数
-private:
     // 共有モデルデータ（CPU/GPU）
     std::shared_ptr<ManagedModel> managedModel_;
 
@@ -58,11 +82,6 @@ private:
 
     Animation animation_;
 
-    NodeAnimation& rootNodeAnimation;
-
-    float animationTime = 0.0f;
-
-    Camera* camera_ = nullptr;
+    float animationTime_ = 0.0f;
 
 };
-

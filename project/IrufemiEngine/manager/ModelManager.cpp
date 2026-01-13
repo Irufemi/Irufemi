@@ -606,7 +606,7 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
         out.color     = { 1.0f,1.0f,1.0f,1.0f };
         out.ambient   = { 0.0f,0.0f,0.0f };
         out.specular  = { 0.0f,0.0f,0.0f };
-        out.shininess = 32.0f;
+        out.shininess = 64.0f;
         out.alpha     = 1.0f;
         out.enableLighting = true;
         out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
@@ -637,7 +637,7 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
         }
         float shininess = 0.0f;
         if (m->Get(AI_MATKEY_SHININESS, shininess) == aiReturn_SUCCESS) {
-            out.shininess = shininess;
+            out.shininess = shininess > 0.0f ? shininess : 64.0f;
         }
         float opacity = 1.0f;
         if (m->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS) {

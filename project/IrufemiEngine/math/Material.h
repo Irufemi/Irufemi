@@ -31,6 +31,6 @@ struct Material {
 
     /*PhongReflectionModel*/
 
-    float shininess = 1.0f;
+    float shininess = 64.0f;
 
 };
