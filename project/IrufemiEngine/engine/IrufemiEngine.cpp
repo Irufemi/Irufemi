@@ -188,6 +188,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     SphereRegion::SetTextureManager(textureManager.get());
     TetraRegion::SetTextureManager(textureManager.get());
     ParticleSystem::SetTextureManager(textureManager.get());
+
+    animationManager_ = std::make_unique<AnimationManager>();
+    animationManager_->Initialize();
+
+    AnimationModel::SetAnimationManager(animationManager_.get());
 }
 
 // クリアカラーを float 指定できる 初期化

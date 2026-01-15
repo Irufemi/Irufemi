@@ -16,17 +16,18 @@ TextureManager* AnimationModel::textureManager_ = nullptr;
 DrawManager* AnimationModel::drawManager_ = nullptr;
 DebugUI* AnimationModel::ui_ = nullptr;
 ModelManager* AnimationModel::modelManager_ = nullptr;
+AnimationManager* AnimationModel::animationManager_ = nullptr;
 
 // 初期化
-void AnimationModel::Initialize(Camera* camera, const std::string& directoryPath, const std::string& filename) {
+void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
     camera_ = camera;
 
-    assert(modelManager_ && "ObjClass::Initialize: ModelManager is not set.");
+    assert(modelManager_ && "AnimationModel::Initialize: ModelManager is not set.");
     // ModelManagerから共有モデルを取得するだけ
     managedModel_ = modelManager_->GetModel(filename);
 
     if (!managedModel_ || !managedModel_->cpuModel) {
-        OutputDebugStringA("[ObjClass] Initialize: model load failed.\n");
+        OutputDebugStringA("[AnimationModel] Initialize: model load failed.\n");
         return;
     }
 
@@ -35,7 +36,8 @@ void AnimationModel::Initialize(Camera* camera, const std::string& directoryPath
     transformationResource_ = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
     transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
 
-    animation_ = AnimationManager::LoadAnimationFile(directoryPath, filename);
+    assert(animationManager_ && "AnimationModel::Initialize: AnimationManager is not set.");
+    animation_ = animationManager_->LoadAnimationFile(filename);
 
 
     // 初回Updateを呼んでおく

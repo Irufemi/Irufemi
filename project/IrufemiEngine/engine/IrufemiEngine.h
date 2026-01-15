@@ -7,6 +7,7 @@
 #include "manager/TextureManager.h"
 #include "manager/AudioManager.h"
 #include "manager/ModelManager.h"
+#include "manager/AnimationManager.h"
 #include "math/BlendMode.h"
 #include <memory>
 #include "Log.h"
@@ -183,6 +184,9 @@ private: // メンバ変数
     
     // ModelManager
     std::unique_ptr<ModelManager> modelManager_ = nullptr;
+
+    // AnimationManager
+    std::unique_ptr<AnimationManager> animationManager_ = nullptr;
 
     //画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };

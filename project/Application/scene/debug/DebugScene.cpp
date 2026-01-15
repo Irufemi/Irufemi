@@ -132,7 +132,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveAnimationModel_) {
         animationModel_ = std::make_unique<AnimationModel>();
-        animationModel_->Initialize(camera_.get(), "resources/obj", "AnimatedCube.gltf");
+        animationModel_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
     }
 
     line2D_ = std::make_unique<Line2DClass>();
@@ -403,7 +403,7 @@ void DebugScene::Update() {
     if (isActiveAnimationModel_) {
         if (!animationModel_) {
             animationModel_ = std::make_unique<AnimationModel>();
-            animationModel_->Initialize(camera_.get(), "resources/obj", "AnimatedCube.gltf");
+            animationModel_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
         }
         animationModel_->Debug("animationModel");
         animationModel_->Update();
