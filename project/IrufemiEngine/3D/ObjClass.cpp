@@ -9,10 +9,8 @@
 #include "manager/ModelManager.h"
 #include <imgui.h>
 #include "engine/directX/DirectXCommon.h"
-#include "math/CameraForGPU.h" // 追加
-#include "math/DirectionalLight.h" // 追加
 
-// (静的メンバ定義は変更なし)
+// 静的メンバ定義
 TextureManager* ObjClass::textureManager_ = nullptr;
 DrawManager* ObjClass::drawManager_ = nullptr;
 DebugUI* ObjClass::ui_ = nullptr;
@@ -89,24 +87,29 @@ void ObjClass::Debug([[maybe_unused]] const char* objName) {
     ImGui::Begin(name.c_str());
     if (ui_) {
         ui_->DebugTransform(transform_);
-    }
-    
-    // ImGuiでマテリアルを編集
-    if (managedModel_ && managedModel_->cpuModel) {
-        for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
-            std::string materialLabel = "Mesh " + std::to_string(i) + " Material";
-            if (ImGui::TreeNode(materialLabel.c_str())) {
-                ObjMaterial* mat = GetMaterial(i);
-                if (mat) {
-                    ImGui::ColorEdit4("Color", &mat->color.x);
-                    ImGui::Checkbox("Enable Lighting", &mat->enableLighting);
-                    ImGui::DragFloat("Shininess", &mat->shininess, 1.0f, 1.0f, 256.0f);
+
+        // ImGuiでマテリアルを編集
+        if (managedModel_ && managedModel_->cpuModel) {
+            for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
+                std::string materialLabel = "Mesh " + std::to_string(i) + " Material";
+                if (ImGui::TreeNode(materialLabel.c_str())) {
+                    ObjMaterial* mat = GetMaterial(i);
+                    if (mat) {
+                        // unique_id を渡してコントロールIDの衝突を避ける
+                        std::string unique_id = "##" + std::to_string(i);
+                        ui_->DebugObjMaterial(mat, unique_id.c_str());
+
+                        // テクスチャ選択
+                        // 注意：この部分はObjClassがテクスチャのインデックスを保持する仕組みがないと完全には機能しません。
+                        // 今はUIのみ表示します。
+                        int tempIndex = 0; // ダミー
+                        // ui_->DebugTexture(...)
+                    }
+                    ImGui::TreePop();
                 }
-                ImGui::TreePop();
             }
         }
     }
-
     ImGui::End();
 #endif
 }

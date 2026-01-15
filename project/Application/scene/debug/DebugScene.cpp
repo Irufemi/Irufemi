@@ -63,6 +63,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
     isActiveEffect_ = false;
+    isActiveAnimationModel_ = false;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -129,6 +130,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         effect_ = std::make_unique<EffectSystem>();
         effect_->Initialize(camera_.get());
     }
+    if (isActiveAnimationModel_) {
+        animationModel_ = std::make_unique<AnimationModel>();
+        animationModel_->Initialize(camera_.get(), "resources/obj", "AnimatedCube.gltf");
+    }
 
     line2D_ = std::make_unique<Line2DClass>();
     line2D_->Initialize(camera_.get(), { 300.0f,300.0f }, { 360.0f,360.0f });
@@ -194,6 +199,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::Checkbox("Effect", &isActiveEffect_);
+    ImGui::Checkbox("AnimationModel", &isActiveAnimationModel_);
     ImGui::End();
 
     ImGui::Begin("GE");
@@ -394,6 +400,14 @@ void DebugScene::Update() {
         effect_->Debug("Effect");
         effect_->Update();
     }
+    if (isActiveAnimationModel_) {
+        if (!animationModel_) {
+            animationModel_ = std::make_unique<AnimationModel>();
+            animationModel_->Initialize(camera_.get(), "resources/obj", "AnimatedCube.gltf");
+        }
+        animationModel_->Debug("animationModel");
+        animationModel_->Update();
+    }
 
     line2D_->Update();
 
@@ -481,6 +495,9 @@ void DebugScene::Draw() {
     }
     if (isActiveTerrain_) {
         terrain_->Draw();
+    }
+    if (isActiveAnimationModel_) {
+        animationModel_->Draw();
     }
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);

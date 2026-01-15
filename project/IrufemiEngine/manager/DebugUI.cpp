@@ -32,6 +32,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "math/DirectionalLight.h"
 #include "math/Material.h"
 #include "math/ParticleMaterial.h"
+#include "math/ObjModel.h"
+#include "math/Matrix4x4.h"
 #include "source/D3D12ResourceUtil.h"
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h"
@@ -205,6 +207,24 @@ void DebugUI::TextTransform([[maybe_unused]] Transform& transform, [[maybe_unuse
 #endif // USE_IMGUI
 }
 
+// ObjMaterial
+void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_unused]] const char* unique_id) {
+#ifdef USE_IMGUI
+    if (!material) return;
+
+    std::string id_str = unique_id;
+
+    ImGui::ColorEdit4(("Color" + id_str).c_str(), &material->color.x);
+    ImGui::Checkbox(("Enable Lighting" + id_str).c_str(), &material->enableLighting);
+    ImGui::DragFloat(("Shininess" + id_str).c_str(), &material->shininess, 1.0f, 1.0f, 256.0f);
+
+    // UV Transform
+    if (ImGui::TreeNode(("UV Transform" + id_str).c_str())) {
+        DebugUvTransform(material->uvTransform);
+        ImGui::TreePop();
+    }
+#endif // USE_IMGUI
+}
 
 // Material
 void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
@@ -385,6 +405,36 @@ void DebugUI::DebugUvTransform([[maybe_unused]] Transform& uvTransform) {
 #endif // USE_IMGUI
 }
 
+// UvTransform
+void DebugUI::DebugUvTransform([[maybe_unused]] Matrix4x4& uvTransform) {
+#ifdef USE_IMGUI
+    if (ImGui::CollapsingHeader("uvTransform")) {
+        // 編集用に translate/scale/rotate(Z) を抽出
+        float tx = uvTransform.m[3][0];
+        float ty = uvTransform.m[3][1];
+        float sx = std::sqrt(uvTransform.m[0][0] * uvTransform.m[0][0] + uvTransform.m[0][1] * uvTransform.m[0][1]);
+        float sy = std::sqrt(uvTransform.m[1][0] * uvTransform.m[1][0] + uvTransform.m[1][1] * uvTransform.m[1][1]);
+        float rot = std::atan2(uvTransform.m[1][0], uvTransform.m[0][0]);
+
+        bool changed = false;
+        if (ImGui::DragFloat2("UVTranslate", &tx, 0.01f)) changed = true;
+        if (ImGui::DragFloat2("UVScale", &sx, 0.01f)) {
+            sy = sx; // XとYを同じ値に保つ
+            changed = true;
+        }
+        if (ImGui::SliderAngle("UVRotate", &rot)) changed = true;
+
+        if (changed) {
+            // Transform 構造を使って行列を再構成
+            Transform uvT;
+            uvT.translate = { tx, ty, 0.0f };
+            uvT.scale = { sx, sy, 1.0f };
+            uvT.rotate = { 0.0f, 0.0f, rot }; // rad
+            uvTransform = Math::MakeAffineMatrix(uvT.scale, uvT.rotate, uvT.translate);
+        }
+    }
+#endif // USE_IMGUI
+}
 // Sphere
 void DebugUI::DebugSphereInfo([[maybe_unused]] Sphere& sphere) {
 #ifdef USE_IMGUI

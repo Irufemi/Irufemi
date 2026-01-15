@@ -14,11 +14,13 @@ class SceneManager;
 class D3D12ResourceUtil;
 class D3D12ResourceUtilParticle;
 struct Transform;
+struct Matrix4x4;
 struct DirectionalLight;
 struct Material;
 struct Sphere;
 class DirectXCommon;
 struct ParticleMaterial; // 追加: Particle専用マテリアル前方宣言
+struct ObjMaterial;
 
 #ifdef USE_IMGUI
 
@@ -84,8 +86,11 @@ public: // メンバ関数
     // Material
     static void DebugMaterialBy3D(Material* material);
     
-// Material
+    // Material
     static void DebugMaterialBy2D(Material* material);
+
+    // ObjMaterialのデバッグ表示
+    static void DebugObjMaterial(ObjMaterial* material, const char* unique_id = "");
 
     // Particle 専用マテリアルのデバッグ表示
     static void DebugMaterialParticle(ParticleMaterial* material);
@@ -99,6 +104,9 @@ public: // メンバ関数
 
     // UvTransform
     static void DebugUvTransform(Transform& uvTransform);
+
+    // UvTransform
+    static void DebugUvTransform(Matrix4x4& uvTransform);
 
     // Sphere
     static void DebugSphereInfo(Sphere& sphere);

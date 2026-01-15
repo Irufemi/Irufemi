@@ -46,9 +46,11 @@
     <Filter Include="Scene\statgeSelect">
       <UniqueIdentifier>{ff03cd2d-af96-44ae-b342-c150a81581c8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Application">
+      <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="scene\inGame\GameScene.cpp">
       <Filter>Scene\inGame</Filter>
     </ClCompile>
@@ -69,6 +71,12 @@
     </ClCompile>
     <ClCompile Include="scene\stageSelect\SelectScene.cpp">
       <Filter>Scene\statgeSelect</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="GameApplication.cpp">
+      <Filter>Application</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -92,6 +100,9 @@
     </ClInclude>
     <ClInclude Include="scene\stageSelect\SelectScene.h">
       <Filter>Scene\statgeSelect</Filter>
+    </ClInclude>
+    <ClInclude Include="GameApplication.h">
+      <Filter>Application</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
