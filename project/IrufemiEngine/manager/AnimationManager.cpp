@@ -185,6 +185,8 @@ Quaternion AnimationManager::CalculateValue(const AnimationCurve<Quaternion>& ke
         for (const Joint& joint : skeleton.joints) {
             skeleton.jointMap.emplace(joint.name, joint.index);
         }
+
+        return skeleton;
     }
 
     //NodeからJointを作る
