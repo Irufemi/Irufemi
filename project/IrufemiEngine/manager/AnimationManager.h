@@ -7,18 +7,24 @@
 #include "math/Joint.h"
 #include "math/Node.h"
 #include <optional>
-
+#include <unordered_map>
+#include <memory>
+#include <mutex>
+#include <vector>
+#include <algorithm>
 
 class AnimationManager
 {
 public:
-    /// <summary>
-    /// Animationを解析する
-    /// </summary>
-    /// <param name="directoryPath"></param>
-    /// <param name="filename"></param>
-    /// <returns></returns>
-    static Animation LoadAnimationFile(const std::string& directoryPath, const std::string& filename);
+    AnimationManager() = default;
+    ~AnimationManager() = default;
+
+    // --- インスタンス機能 ---
+    void Initialize();
+    void SetRootDirectory(std::string root);
+    Animation LoadAnimationFile(const std::string& filename);
+
+public: // 静的ヘルパ
 
     /// <summary>
     /// 任意の時刻の値を取得する
@@ -89,5 +95,15 @@ public:
     /// <param name="animation"></param>
     /// <param name="animationTime"></param>
     static void ApplyAnimation(Skeleton& skeleton, const Animation& animation, float animationTime);
+
+private: // 内部ヘルパ
+    std::string NormalizeAndResolve(const std::string& filename) const;
+    static bool StartsWith(const std::string& s, const std::string& prefix);
+    static std::pair<std::string, std::string> SplitDirectoryAndFile(const std::string& full);
+
+private:
+    std::string rootDir_;
+    mutable std::mutex mutex_;
+    std::unordered_map<std::string, std::weak_ptr<Animation>> cache_;
 };
 

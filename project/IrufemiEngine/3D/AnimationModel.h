@@ -20,13 +20,14 @@ class TextureManager;
 class DrawManager;
 class DebugUI;
 class ModelManager;
+class AnimationManager;
 struct ManagedModel;
 
 
 class AnimationModel {
 public: // メンバ関数
 
-    void Initialize(Camera* camera, const std::string& directoryPath, const std::string& filename);
+    void Initialize(Camera* camera, const std::string& filename);
 
     void Update();
 
@@ -56,6 +57,7 @@ public: // ゲッター・セッター
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
     static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
+    static void SetAnimationManager(AnimationManager* am) { animationManager_ = am; }
 
 private: // メンバ変数
     // 共有モデルデータ（CPU/GPU）
@@ -75,6 +77,7 @@ private: // メンバ変数
     static DrawManager* drawManager_;
     static DebugUI* ui_;
     static ModelManager* modelManager_;
+    static AnimationManager* animationManager_;
 
     Matrix4x4 localMatrix_;
 
