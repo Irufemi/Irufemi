@@ -277,6 +277,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\DirectionalLight.h" />
     <ClInclude Include="math\Emitter.h" />
     <ClInclude Include="math\FormatChunk.h" />
+    <ClInclude Include="math\Joint.h" />
     <ClInclude Include="math\LRDirection.h" />
     <ClInclude Include="math\Material.h" />
     <ClInclude Include="math\MaterialData.h" />
@@ -288,6 +289,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\ParticleMaterial.h" />
     <ClInclude Include="math\PointLight.h" />
     <ClInclude Include="math\Quaternion.h" />
+    <ClInclude Include="math\QuaternionTransform.h" />
     <ClInclude Include="math\RiffHeader.h" />
     <ClInclude Include="math\shape\AABB.h" />
     <ClInclude Include="math\shape\Ball.h" />
@@ -297,6 +299,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\shape\Sphere.h" />
     <ClInclude Include="math\shape\Spring.h" />
     <ClInclude Include="math\shape\Triangle.h" />
+    <ClInclude Include="math\Skeleton.h" />
     <ClInclude Include="math\SoundData.h" />
     <ClInclude Include="math\SpotLight.h" />
     <ClInclude Include="math\Transform.h" />

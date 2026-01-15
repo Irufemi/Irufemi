@@ -543,9 +543,6 @@
     <ClInclude Include="3D\LineClass.h">
       <Filter>3D</Filter>
     </ClInclude>
-    <ClInclude Include="InstanceDrawer.h">
-      <Filter>Engine\manager</Filter>
-    </ClInclude>
     <ClInclude Include="3D\CubeClass.h">
       <Filter>3D</Filter>
     </ClInclude>
@@ -566,6 +563,15 @@
     </ClInclude>
     <ClInclude Include="math\LRDirection.h">
       <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="math\QuaternionTransform.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="math\Skeleton.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="math\Joint.h">
+      <Filter>math\model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
