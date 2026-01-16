@@ -9,6 +9,7 @@ struct Ray;
 struct Line;
 struct Triangle;
 struct AABB;
+struct OBB;
 
 namespace Collision {
 
@@ -119,6 +120,36 @@ namespace Collision {
     bool IsCollision(const AABB& aabb, const Vector3& point);
 
     /// <summary>
+    /// OBBと球の衝突判定
+    /// </summary>
+    bool IsCollision(const OBB& obb, const Sphere& sphere);
+
+    /// <summary>
+    /// OBBと線分の衝突判定
+    /// </summary>
+    bool IsCollision(const OBB& obb, const Segment& segment);
+
+    /// <summary>
+    /// OBBと半直線の衝突判定
+    /// </summary>
+    bool IsCollision(const OBB& obb, const Ray& ray);
+
+    /// <summary>
+    /// OBBと直線の衝突判定
+    /// </summary>
+    bool IsCollision(const OBB& obb, const Line& line);
+
+    /// <summary>
+    /// OBBとOBBの衝突判定
+    /// </summary>
+    bool IsCollision(const OBB& a, const OBB& b);
+
+    /// <summary>
+    /// OBBとAABBの衝突判定
+    /// </summary>
+    bool IsCollision(const OBB& obb, const AABB& aabb);
+
+    /// <summary>
     /// 球と球の衝突判定
     /// </summary>
     bool IsSphereCollision(const Sphere& s1, const Sphere& s2);
@@ -177,5 +208,35 @@ namespace Collision {
     /// AABBと点の衝突判定
     /// </summary>
     bool IsAABBPointCollision(const AABB& aabb, const Vector3& point);
+
+    /// <summary>
+    /// OBBと球の衝突判定
+    /// </summary>
+    bool IsOBBSphereCollision(const OBB& obb, const Sphere& sphere);
+
+    /// <summary>
+    /// OBBと線分の衝突判定
+    /// </summary>
+    bool IsOBBSegmentCollision(const OBB& obb, const Segment& segment);
+
+    /// </summary>
+    /// OBBとRay（半直線）の判定
+    /// </summary>
+    bool IsOBBRayCollision(const OBB& obb, const Ray& ray);
+
+    /// </summary>
+    /// OBBとLine（直線）の判定
+    /// </summary>
+    bool IsOBBLineCollision(const OBB& obb, const Line& line);
+
+    /// <summary>
+    /// OBBとOBBの衝突判定
+    /// </summary>
+    bool IsOBBCollision(const OBB& a, const OBB& b);
+
+    /// <summary>
+    /// OBBとAABBの衝突判定
+    /// </summary>
+    bool IsOBBAABBCollision(const OBB& obb, const AABB& aabb);
 
 } // namespace Collision

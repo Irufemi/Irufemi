@@ -573,6 +573,9 @@
     <ClInclude Include="math\Joint.h">
       <Filter>math\model</Filter>
     </ClInclude>
+    <ClInclude Include="math\shape\OBB.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Object2D.hlsli">
