@@ -3,7 +3,14 @@
 #include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
 #include "manager/DebugUI.h"
+
+#include "camera/Camera.h"
+#include "camera/DebugCamera.h"
 #include "math/CameraForGPU.h"
+#include "math/PointLight.h"
+#include "math/SpotLight.h"
+#include "math/DirectionalLight.h"
+#include "2D/Sprite.h"
 
 // デストラクタ
 DebugScene::~DebugScene() {

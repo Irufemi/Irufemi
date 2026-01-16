@@ -13,9 +13,7 @@
 #include "math/DirectionalLight.h"
 
 // デストラクタ
-TitleScene::~TitleScene() {
-
-}
+TitleScene::~TitleScene() = default;
 
 // 初期化
 void TitleScene::Initialize(IrufemiEngine* engine) {

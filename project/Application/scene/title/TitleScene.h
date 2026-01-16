@@ -6,8 +6,8 @@
 #include <vector>
 
 class IrufemiEngine;
-class DebugCamera;
 class Camera;
+class DebugCamera;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;

@@ -2,13 +2,6 @@
 
 #include "scene/IScene.h"
 
-// 環境物
-#include "camera/Camera.h"
-#include "camera/DebugCamera.h"
-#include <math/PointLight.h>
-#include <math/SpotLight.h>
-#include <math/DirectionalLight.h>
-
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "math/shape/LinePrimitive.h"

@@ -23,7 +23,7 @@ struct SpotLight;
 struct Material;
 struct Sphere;
 class DirectXCommon;
-struct ParticleMaterial; // 追加: Particle専用マテリアル前方宣言
+struct ParticleMaterial;
 struct ObjMaterial;
 
 #ifdef USE_IMGUI
