@@ -15,6 +15,13 @@ struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
 
+#include "3D/ObjClass.h"
+
+#include "contents/player/Player.h"
+#include "contents/healer/Healer.h"
+#include "contents/enemy/Enemy.h"
+#include "contents/wall/Wall.h"
+
 /// <summary>
 /// ゲーム
 /// </summary>
@@ -35,7 +42,21 @@ public: // メンバ関数(システム)
 
 private: // メンバ関数(内部ヘルパ)
 
+    void CollisionCheck();
+
 private: // メンバ変数(ゲーム)
+
+    std::list<Wall*> walls_;
+    static inline const int32_t kMaxWall_ = 16;
+
+    std::list<Enemy*> enemies_;
+    static inline const int32_t kMaxEnemy_ = 5;
+
+    std::unique_ptr<Player> player_ = nullptr;
+
+    std::unique_ptr<Healer> healer_ = nullptr;
+
+    Transform worldTransform_;
 
 private: // メンバ変数(システム)
     // エンジン

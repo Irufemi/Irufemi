@@ -49,6 +49,12 @@
     <Filter Include="Application">
       <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="actor\healer">
+      <UniqueIdentifier>{3c12280d-ba5a-4ee8-b811-edb5151061b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\wall">
+      <UniqueIdentifier>{5fc33b31-37e0-481c-b9a6-d6db2fd47862}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene\inGame\GameScene.cpp">
@@ -78,6 +84,18 @@
     <ClCompile Include="GameApplication.cpp">
       <Filter>Application</Filter>
     </ClCompile>
+    <ClCompile Include="contents\player\Player.cpp">
+      <Filter>actor\player</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\healer\Healer.cpp">
+      <Filter>actor\healer</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\enemy\Enemy.cpp">
+      <Filter>actor\enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\wall\Wall.cpp">
+      <Filter>content\wall</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -103,6 +121,18 @@
     </ClInclude>
     <ClInclude Include="GameApplication.h">
       <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\player\Player.h">
+      <Filter>actor\player</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\healer\Healer.h">
+      <Filter>actor\healer</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\enemy\Enemy.h">
+      <Filter>actor\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\wall\Wall.h">
+      <Filter>content\wall</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

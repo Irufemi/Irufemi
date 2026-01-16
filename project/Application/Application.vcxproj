@@ -161,6 +161,10 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
   <ItemGroup>
     <ClCompile Include="camera\Camera.cpp" />
     <ClCompile Include="camera\DebugCamera.cpp" />
+    <ClCompile Include="contents\enemy\Enemy.cpp" />
+    <ClCompile Include="contents\healer\Healer.cpp" />
+    <ClCompile Include="contents\player\Player.cpp" />
+    <ClCompile Include="contents\wall\Wall.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="scene\debug\DebugScene.cpp" />
     <ClCompile Include="main.cpp">
@@ -177,6 +181,10 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
   <ItemGroup>
     <ClInclude Include="camera\Camera.h" />
     <ClInclude Include="camera\DebugCamera.h" />
+    <ClInclude Include="contents\enemy\Enemy.h" />
+    <ClInclude Include="contents\healer\Healer.h" />
+    <ClInclude Include="contents\player\Player.h" />
+    <ClInclude Include="contents\wall\Wall.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />

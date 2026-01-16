@@ -166,6 +166,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\SphereClass.cpp" />
     <ClCompile Include="3D\TriangleClass.cpp" />
     <ClCompile Include="function\Collision.cpp" />
+    <ClCompile Include="function\Random.cpp" />
     <ClCompile Include="manager\AnimationManager.cpp" />
     <ClCompile Include="audio\Bgm.cpp" />
     <ClCompile Include="3D\Region.cpp" />
@@ -237,6 +238,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="3D\SphereClass.h" />
     <ClInclude Include="3D\TriangleClass.h" />
     <ClInclude Include="function\Collision.h" />
+    <ClInclude Include="function\Random.h" />
     <ClInclude Include="manager\AnimationManager.h" />
     <ClInclude Include="3D\AnimationModel.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
@@ -285,6 +287,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Matrix4x4.h" />
     <ClInclude Include="math\ModelData.h" />
     <ClInclude Include="math\NodeAnimation.h" />
+    <ClInclude Include="math\shape\OBB.h" />
     <ClInclude Include="math\ObjModel.h" />
     <ClInclude Include="math\ParticleMaterial.h" />
     <ClInclude Include="math\PointLight.h" />

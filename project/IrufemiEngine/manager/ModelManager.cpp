@@ -98,7 +98,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
         if (materialData->hasTexture) {
             gpuMaterial->textureHandle = textureManager_->GetTextureHandle(cpuMesh.material.textureFilePath);
         } else {
-            gpuMaterial->textureHandle = textureManager_->GetWhiteTextureHandle();
+            gpuMaterial->textureHandle = textureManager_->GetTextureHandle("resources/whiteTexture.png");
         }
         managedModel->gpuMaterials.push_back(std::move(gpuMaterial));
     }
