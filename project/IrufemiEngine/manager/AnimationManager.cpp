@@ -7,12 +7,25 @@
 #include <cassert>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
+#include <algorithm>
+
+void AnimationManager::Initialize() {
+    if (rootDir_.empty()) {
+        rootDir_ = "resources/obj";
+    }
+}
+
+void AnimationManager::SetRootDirectory(std::string root) {
+    std::replace(root.begin(), root.end(), '\\', '/');
+    if (!root.empty() && root.back() == '/') root.pop_back();
+    rootDir_ = std::move(root);
+}
 
 /*Animation*/
 
 ///Animationを解析する
 
-Animation AnimationManager::LoadAnimationFile(const std::string& directoryPath, const std::string& filename) {
+Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
 
     // まずはAnimationの長さを秒に変換する
     // ・ｍTicksPerSecond：周波数
@@ -22,7 +35,7 @@ Animation AnimationManager::LoadAnimationFile(const std::string& directoryPath, 
 
     Animation animation; // 今回作るアニメーション
     Assimp::Importer importer;
-    std::string filePath = directoryPath + "/" + filename;
+    const std::string filePath = NormalizeAndResolve(filename);
     const aiScene* scene = importer.ReadFile(filePath.c_str(), 0);
     assert(scene->mNumAnimations != 0); // アニメーションがない
     aiAnimation* animationAssimp = scene->mAnimations[0]; // 最初のアニメーションだけ採用。もちろん複数対応するに越したことはない
@@ -164,14 +177,98 @@ Quaternion AnimationManager::CalculateValue(const AnimationCurve<Quaternion>& ke
             // 範囲内を補間する
             float t = (time - keyframes.keyframes[index].time) / (keyframes.keyframes[nextIndex].time - keyframes.keyframes[index].time);
             return Math::Slerp(keyframes.keyframes[index].value, keyframes.keyframes[nextIndex].value, t);
-            }
         }
-        // ここまできた場合は一番後の時刻よりも後ろなので最後の値を返すことにする
-        return (*keyframes.keyframes.rbegin()).value;
     }
-    
-    // 任意の時刻の値を取得する(オイラー角)
-    Vector3 AnimationManager::CalculateValueAsEuler(const AnimationCurve<Quaternion>& keyframes, float time) {
-        Quaternion rotation = CalculateValue(keyframes, time);
-        return Math::ToEuler(rotation);
+    // ここまできた場合は一番後の時刻よりも後ろなので最後の値を返すことにする
+    return (*keyframes.keyframes.rbegin()).value;
+}
+
+// 任意の時刻の値を取得する(オイラー角)
+Vector3 AnimationManager::CalculateValueAsEuler(const AnimationCurve<Quaternion>& keyframes, float time) {
+    Quaternion rotation = CalculateValue(keyframes, time);
+    return Math::ToEuler(rotation);
+}
+
+// Nodeの階層構造からSkeletonを作る
+Skeleton AnimationManager::CreateSkeleton(const Node& rootNode) {
+    Skeleton skeleton;
+    skeleton.root = CreateJoint(rootNode, {}, skeleton.joints);
+
+    // 名前とindexのマッピングを行いアクセスしやすくする
+    for (const Joint& joint : skeleton.joints) {
+        skeleton.jointMap.emplace(joint.name, joint.index);
     }
+
+    return skeleton;
+}
+
+//NodeからJointを作る
+int32_t AnimationManager::CreateJoint(const Node& node, const std::optional<int32_t>& parent, std::vector<Joint>& joints) {
+    Joint joint;
+    joint.name = node.name;
+    joint.localMatrix = node.localMatrix;
+    joint.skeletonSpaceMatrix = Math::MakeIdentity4x4();
+    joint.transform = node.transform;
+    joint.index = int32_t(joints.size()); // 現在登録されている数をIndexに
+    joint.parent = parent;
+    joints.push_back(joint); // SkeletonのJoint列に追加
+    for (const Node& child : node.children) {
+        // 子Jointを作成し、そのIndexを登録
+        int32_t childIndex = CreateJoint(child, joint.index, joints);
+        joints[joint.index].children.push_back(childIndex);
+    }
+    // 自身のIndexを返す
+    return joint.index;
+}
+
+// Skeletonの更新
+void AnimationManager::SkeletonUpdate(Skeleton& skeleton) {
+    // すべてのJointを更新。親が若いので通常ループで処理可能になっている。
+    for (Joint& joint : skeleton.joints) {
+        joint.localMatrix = Math::MakeAffineMatrix(joint.transform.scale, joint.transform.rotate, joint.transform.translate);
+        if (joint.parent) { // 親がいれば親の行列を掛ける
+            joint.skeletonSpaceMatrix = joint.localMatrix * skeleton.joints[*joint.parent].skeletonSpaceMatrix;
+        } else { // 親がいないんでlocalMatrixとskeletonSpaceMatrixは一致する
+            joint.skeletonSpaceMatrix = joint.localMatrix;
+        }
+    }
+}
+
+// Skeletonに対してAnimationを適用する
+void AnimationManager::ApplyAnimation(Skeleton& skeleton, const Animation& animation, float animationTime) {
+    for (Joint& joint : skeleton.joints) {
+        // 対象のJointのAnimationがあれば、値の適用を行う。下記のif文はC++17から可能になった初期化付きif文。
+        if (auto it = animation.nodeAnimations.find(joint.name); it != animation.nodeAnimations.end()) {
+            const NodeAnimation& rootNodeAnimation = (*it).second;
+            joint.transform.translate = CalculateValue(rootNodeAnimation.translate, animationTime);
+            joint.transform.rotate = CalculateValue(rootNodeAnimation.rotate, animationTime);
+            joint.transform.scale = CalculateValue(rootNodeAnimation.scale, animationTime);
+        }
+    }
+}
+
+std::string AnimationManager::NormalizeAndResolve(const std::string& filename) const {
+    std::string f = filename;
+    std::replace(f.begin(), f.end(), '\\', '/');
+    if (StartsWith(f, rootDir_ + "/")) {
+        // OK
+    } else if (StartsWith(f, rootDir_)) {
+        f = rootDir_ + "/" + f.substr(rootDir_.size());
+    } else {
+        f = rootDir_ + "/" + f;
+    }
+    std::transform(f.begin(), f.end(), f.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return f;
+}
+
+bool AnimationManager::StartsWith(const std::string& s, const std::string& prefix) {
+    return s.size() >= prefix.size() &&
+        std::equal(prefix.begin(), prefix.end(), s.begin());
+}
+
+std::pair<std::string, std::string> AnimationManager::SplitDirectoryAndFile(const std::string& full) {
+    auto pos = full.find_last_of('/');
+    if (pos == std::string::npos) return { ".", full };
+    return { full.substr(0, pos), full.substr(pos + 1) };
+}

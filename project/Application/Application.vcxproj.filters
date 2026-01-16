@@ -40,27 +40,32 @@
     <Filter Include="Scene\debug">
       <UniqueIdentifier>{0a6ed38f-12d1-4188-b3fa-fb3877f9047d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="content\skydome">
-      <UniqueIdentifier>{2dd0d319-6760-41ba-acf1-9533c080302e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="actor\enemy">
       <UniqueIdentifier>{76850a7a-5d4f-4ae6-852d-335cd761d210}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actor\enemy\shieldEnemy">
-      <UniqueIdentifier>{e63a0f9e-c30f-4eb8-8643-c4e709ec8fb5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actor\enemy\normalEnemy">
-      <UniqueIdentifier>{eb5cf759-1e95-4fa2-996a-236a276d5f04}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="content\Effect">
-      <UniqueIdentifier>{9e8f6131-4b15-44ed-aae2-9140b8a8e370}</UniqueIdentifier>
     </Filter>
     <Filter Include="Scene\statgeSelect">
       <UniqueIdentifier>{ff03cd2d-af96-44ae-b342-c150a81581c8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Application">
+      <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\player">
+      <UniqueIdentifier>{feffeacc-24bd-45f3-aa53-8aeb72c9294c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\enemy">
+      <UniqueIdentifier>{ab19a78a-4011-4d7b-80f3-0cbc0e865eae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\enemy\shieldEnemy">
+      <UniqueIdentifier>{8c761790-d221-4623-8f2e-eb16ae252fe4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\enemy\normalEnemy">
+      <UniqueIdentifier>{f030a979-a1c4-4077-a175-43946c8f283f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\effect">
+      <UniqueIdentifier>{babfd3d8-482e-49f9-a43f-87cca2b7d391}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="scene\inGame\GameScene.cpp">
       <Filter>Scene\inGame</Filter>
     </ClCompile>
@@ -73,53 +78,59 @@
     <ClCompile Include="camera\Camera.cpp">
       <Filter>camera</Filter>
     </ClCompile>
-    <ClCompile Include="camera\CameraController.cpp">
-      <Filter>camera</Filter>
-    </ClCompile>
     <ClCompile Include="camera\DebugCamera.cpp">
       <Filter>camera</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\debug\DebugScene.cpp">
+      <Filter>Scene\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\stageSelect\SelectScene.cpp">
+      <Filter>Scene\statgeSelect</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="GameApplication.cpp">
+      <Filter>Application</Filter>
     </ClCompile>
     <ClCompile Include="contents\MapChipField.cpp">
       <Filter>content</Filter>
     </ClCompile>
     <ClCompile Include="contents\player\Player.cpp">
-      <Filter>actor\player</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\player\PlayerState_Dash.cpp">
-      <Filter>actor\player</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\player\PlayerState_Root.cpp">
-      <Filter>actor\player</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\enemy\shieldEnemy\ShieldEnemy.cpp">
-      <Filter>actor\enemy\shieldEnemy</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\debug\DebugScene.cpp">
-      <Filter>Scene\debug</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\skydome\Skydome.cpp">
-      <Filter>content\skydome</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\enemy\IEnemy.cpp">
-      <Filter>actor\enemy</Filter>
+      <Filter>content\player</Filter>
     </ClCompile>
     <ClCompile Include="contents\player\PlayerState_Attack.cpp">
-      <Filter>actor\player</Filter>
+      <Filter>content\player</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\player\PlayerState_Dash.cpp">
+      <Filter>content\player</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\player\PlayerState_Root.cpp">
+      <Filter>content\player</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\enemy\IEnemy.cpp">
+      <Filter>content\enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\enemy\shieldEnemy\ShieldEnemy.cpp">
+      <Filter>content\enemy\shieldEnemy</Filter>
     </ClCompile>
     <ClCompile Include="contents\enemy\normalEnemy\NormalEnemy.cpp">
-      <Filter>actor\enemy\normalEnemy</Filter>
+      <Filter>content\enemy\normalEnemy</Filter>
     </ClCompile>
     <ClCompile Include="contents\Effect\Fade.cpp">
-      <Filter>content\Effect</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\stageSelect\SelectScene.cpp">
-      <Filter>Scene\statgeSelect</Filter>
+      <Filter>content\effect</Filter>
     </ClCompile>
     <ClCompile Include="scene\stageSelect\StageDataManager.cpp">
       <Filter>Scene\statgeSelect</Filter>
     </ClCompile>
+    <ClCompile Include="camera\CameraController.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="scene\result\GameResultManager.cpp">
-      <Filter>Scene\result</Filter>
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\skydome\Skydome.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -135,47 +146,50 @@
     <ClInclude Include="camera\Camera.h">
       <Filter>camera</Filter>
     </ClInclude>
-    <ClInclude Include="camera\CameraController.h">
-      <Filter>camera</Filter>
-    </ClInclude>
     <ClInclude Include="camera\DebugCamera.h">
       <Filter>camera</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\debug\DebugScene.h">
+      <Filter>Scene\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\stageSelect\SelectScene.h">
+      <Filter>Scene\statgeSelect</Filter>
+    </ClInclude>
+    <ClInclude Include="GameApplication.h">
+      <Filter>Application</Filter>
     </ClInclude>
     <ClInclude Include="contents\MapChipField.h">
       <Filter>content</Filter>
     </ClInclude>
     <ClInclude Include="contents\player\Player.h">
-      <Filter>actor\player</Filter>
+      <Filter>content\player</Filter>
     </ClInclude>
     <ClInclude Include="contents\player\PlayerState.h">
-      <Filter>actor\player</Filter>
-    </ClInclude>
-    <ClInclude Include="contents\enemy\shieldEnemy\ShieldEnemy.h">
-      <Filter>actor\enemy\shieldEnemy</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\debug\DebugScene.h">
-      <Filter>Scene\debug</Filter>
-    </ClInclude>
-    <ClInclude Include="contents\skydome\Skydome.h">
-      <Filter>content\skydome</Filter>
+      <Filter>content\player</Filter>
     </ClInclude>
     <ClInclude Include="contents\enemy\IEnemy.h">
-      <Filter>actor\enemy</Filter>
+      <Filter>content\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\enemy\shieldEnemy\ShieldEnemy.h">
+      <Filter>content\enemy\shieldEnemy</Filter>
     </ClInclude>
     <ClInclude Include="contents\enemy\normalEnemy\NormalEnemy.h">
-      <Filter>actor\enemy\normalEnemy</Filter>
+      <Filter>content\enemy\normalEnemy</Filter>
     </ClInclude>
     <ClInclude Include="contents\Effect\Fade.h">
-      <Filter>content\Effect</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\stageSelect\SelectScene.h">
-      <Filter>Scene\statgeSelect</Filter>
+      <Filter>content\effect</Filter>
     </ClInclude>
     <ClInclude Include="scene\stageSelect\StageDataManager.h">
       <Filter>Scene\statgeSelect</Filter>
     </ClInclude>
+    <ClInclude Include="camera\CameraController.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="scene\result\GameResultManager.h">
-      <Filter>Scene\result</Filter>
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\skydome\Skydome.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

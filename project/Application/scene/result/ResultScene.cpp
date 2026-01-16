@@ -1,19 +1,18 @@
-#define NOMINMAX
 #include "ResultScene.h"
 
-#include "engine/IrufemiEngine.h"
 #include "scene/SceneManager.h"
+#include "engine/IrufemiEngine.h"
+#include "manager/DebugUI.h"
+
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
-#include "2D/Sprite.h" // Spriteをインクルード
+
+#include "math/CameraForGPU.h"
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
-#include "manager/DebugUI.h"
-#include "function/Function.h"
-#include "GameResultManager.h" // GameResultManagerをインクルード
-#include <memory>
-#include <cmath>
+
+#include "GameResultManager.h"
 
 ResultScene::~ResultScene() {
 
@@ -27,6 +26,28 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
     camera_->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });
     camera_->UpdateMatrix();
+    
+    // --- ライトの初期化 ---
+    pointLight_ = std::make_unique <PointLight>();
+    pointLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    pointLight_->position = { 0.0f, 5.0f, 0.0f };
+    pointLight_->intensity = 1.0f;
+    pointLight_->radius = 10.0f;
+    pointLight_->decay = 1.0f;
+
+    spotLight_ = std::make_unique <SpotLight>();
+    spotLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    spotLight_->position = { 2.0f, 1.25f, 0.0f };
+    spotLight_->distance = 7.0f;
+    spotLight_->direction = Math::Normalize(Vector3{ -1.0f,-1.0f,0.0f });
+    spotLight_->intensity = 0.0f; // 初期状態ではOFF
+    spotLight_->decay = 2.0f;
+    spotLight_->cosAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
+
+    directionalLight_ = std::make_unique<DirectionalLight>();
+    directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
+    directionalLight_->direction = { 0.5f,-0.7f,1.0f };
+    directionalLight_->intensity = 1.0f;
 
     // 結果画像の初期化
     resultImage_ = std::make_unique<Sprite>();
@@ -53,28 +74,6 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     } else {
         fade_->FadeIn(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f }); // 黒から
     }
-    
-    // --- ライトの初期化 ---
-    pointLight_ = std::make_unique <PointLight>();
-    pointLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    pointLight_->position = { 0.0f, 5.0f, 0.0f };
-    pointLight_->intensity = 1.0f;
-    pointLight_->radius = 10.0f;
-    pointLight_->decay = 1.0f;
-
-    spotLight_ = std::make_unique <SpotLight>();
-    spotLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    spotLight_->position = { 2.0f, 1.25f, 0.0f };
-    spotLight_->distance = 7.0f;
-    spotLight_->direction = Math::Normalize(Vector3{ -1.0f,-1.0f,0.0f });
-    spotLight_->intensity = 0.0f; // 初期状態ではOFF
-    spotLight_->decay = 2.0f;
-    spotLight_->cosAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
-
-    directionalLight_ = std::make_unique<DirectionalLight>();
-    directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
-    directionalLight_->direction = { 0.5f,-0.7f,1.0f };
-    directionalLight_->intensity = 1.0f;
 
     // bgm
     bgm_ = std::make_unique<Bgm>();
@@ -109,14 +108,31 @@ void ResultScene::Update() {
         ImGui::DragFloat("SpotLightDecay", &spotLight_->decay, 0.01f, 0.0f);
         ImGui::DragFloat("SpotLightCosAngle", &spotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
     }
+    // directionalLight
+    if (ImGui::CollapsingHeader("DirectionalLight")) {
+        ImGui::ColorEdit4("DirectionalLightColor", &directionalLight_->color.x);
+        ImGui::DragFloat3("DirectionalLightDirection", &directionalLight_->direction.x, 0.01f);
+        directionalLight_->direction = Math::Normalize(directionalLight_->direction);
+        ImGui::DragFloat("DirectionalLightIntensity", &directionalLight_->intensity, 0.01f, 0.0f);
+    }
+    ImGui::Checkbox("debugMode", &debugMode_);
 
     ImGui::End();
 
 #endif // USE_IMGUI
 
     // --- カメラの更新 ---
-    Camera* currentCamera = debugMode ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
+    Camera* currentCamera = debugMode_ ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
     currentCamera->Update("Camera");
+
+    // =====
+    // ↓ゲームの更新
+    // =====
+
+    // エンターキー/Aボタンが押されていたらステージ選択へ
+    if (engine_->GetInputManager()->IsKeyPressed(VK_RETURN) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+        engine_->GetSceneManager()->Request("Select");
+    }
 
     // フェードの更新
     fade_->Update();
@@ -139,6 +155,10 @@ void ResultScene::Update() {
         engine_->GetSceneManager()->Request("Select");
         se_select_->Play();
     }
+
+    // =====
+    // ↑ゲームの更新
+    // =====
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;

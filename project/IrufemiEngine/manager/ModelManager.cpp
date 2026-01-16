@@ -606,7 +606,7 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
         out.color     = { 1.0f,1.0f,1.0f,1.0f };
         out.ambient   = { 0.0f,0.0f,0.0f };
         out.specular  = { 0.0f,0.0f,0.0f };
-        out.shininess = 32.0f;
+        out.shininess = 64.0f;
         out.alpha     = 1.0f;
         out.enableLighting = true;
         out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
@@ -637,7 +637,7 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
         }
         float shininess = 0.0f;
         if (m->Get(AI_MATKEY_SHININESS, shininess) == aiReturn_SUCCESS) {
-            out.shininess = shininess;
+            out.shininess = shininess > 0.0f ? shininess : 64.0f;
         }
         float opacity = 1.0f;
         if (m->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS) {
@@ -702,6 +702,23 @@ Node ModelManager::ReadNode(aiNode* node) {
     /// assimpでNodを解析する
 
     Node result;
+
+    /*Skeleton*/
+
+    /// Nodeを拡張する
+
+    aiVector3D scale, translate;
+    aiQuaternion rotate;
+    node->mTransformation.Decompose(scale, rotate, translate); // assimpの行列からSRTを抽出する関数を利用
+    result.transform.scale = { scale.x, scale.y, scale.z }; // Scaleはそのまま
+    result.transform.rotate = { rotate.x, rotate.y, rotate.z, rotate.w }; // x軸を反転、さらに回転方向が逆なので軸を反転させる
+    result.transform.translate = { -translate.x, translate.y, translate.z }; // x軸を反転
+    result.localMatrix = Math::MakeAffineMatrix(result.transform.scale, result.transform.rotate, result.transform.translate);
+
+    /*glTFを読み込んでみよう*/
+
+    /// 前準備
+
     aiMatrix4x4 aiLocalMatrix = node->mTransformation; // nodeのlocalMatrixを取得
     aiLocalMatrix.Transpose(); // 列ベクトル形式を行ベクトル形式に転置
     //result.localMatrix.m[0][0] = aiLocalMatrix[0][0]; // 他の要素も同様に

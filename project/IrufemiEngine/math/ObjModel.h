@@ -19,7 +19,7 @@ struct ObjMaterial {
     // Ks
     Vector3 specular = { 1.0f, 1.0f, 1.0f };
     // Ns
-    float shininess = 32.0f;  
+    float shininess = 64.0f;  
     // d
     float alpha = 1.0f;    
 

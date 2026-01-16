@@ -10,6 +10,7 @@
 #include <numbers>
 #include <cmath>
 #include <cassert>
+#include <algorithm>
 
 ShieldEnemy::ShieldEnemy(GameScene* gameScene, Camera* camera)
     : gameScene_(gameScene), camera_(camera) {

@@ -3,8 +3,19 @@
 #include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
 #include "manager/DebugUI.h"
-#include "function/Ease.h"
 
+#include "camera/Camera.h"
+#include "camera/DebugCamera.h"
+
+#include "math/CameraForGPU.h"
+#include "math/PointLight.h"
+#include "math/SpotLight.h"
+#include "math/DirectionalLight.h"
+
+// デストラクタ
+TitleScene::~TitleScene() {
+
+}
 
 // 初期化
 void TitleScene::Initialize(IrufemiEngine* engine) {
@@ -20,7 +31,7 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     debugCamera_ = std::make_unique<DebugCamera>();
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
-    debugMode = false;
+    debugMode_ = false;
 
     // --- ライトの初期化 ---
     pointLight_ = std::make_unique <PointLight>();
@@ -60,7 +71,7 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     initialTextPositions_[0] = { startX + textSpacing * 0, startY, 0.0f };
     text_a_->SetPosition(initialTextPositions_[0]);
     text_a_->SetScale({ textScale, textScale, textScale });
-    text_a_->SetColor(Vector4{99.0f / 255.0f,39.0f / 255.0f,178.0f/255.0f,1.0f});
+    text_a_->SetColor(Vector4{ 99.0f / 255.0f,39.0f / 255.0f,178.0f / 255.0f,1.0f });
 
     // タイトル(アンナイトのン)
     text_n_ = std::make_unique<ObjClass>();
@@ -105,24 +116,60 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     fade_->Initialize(camera_.get());
 
     // bgm
-     bgm_ = std::make_unique<Bgm>();
-     bgm_->Initialize("resources/bgm/title.mp3");
-     bgm_->PlayFixed();
+    bgm_ = std::make_unique<Bgm>();
+    bgm_->Initialize("resources/bgm/title.mp3");
+    bgm_->PlayFixed();
     // se(決定音)
-     se_select_ = std::make_unique<Se>();
-     se_select_->Initialize("resources/se/se_select.mp3");
+    se_select_ = std::make_unique<Se>();
+    se_select_->Initialize("resources/se/se_select.mp3");
 }
 
 // 更新
 void TitleScene::Update() {
-    // カメラの通常更新
-    if (debugMode) {
-        debugCamera_->Update();
-        camera_->SetViewMatrix(debugCamera_->GetCamera().GetViewMatrix());
-        camera_->SetPerspectiveFovMatrix(debugCamera_->GetCamera().GetPerspectiveFovMatrix());
-    } else {
-        camera_->Update("Camera");
+
+
+#if defined USE_IMGUI
+
+    ImGui::Begin("TitleScene");
+    // pointLight 
+    if (ImGui::CollapsingHeader("PointLight")) {
+        ImGui::ColorEdit4("PointLightColor", &pointLight_->color.x);
+        ImGui::DragFloat3("PointLightPosition", &pointLight_->position.x, 0.01f);
+        ImGui::DragFloat("PointLightIntensity", &pointLight_->intensity, 0.01f, 0.0f);
+        ImGui::DragFloat("PointLightRadius", &pointLight_->radius, 0.01f, 0.0f);
+        ImGui::DragFloat("PointLightDecay", &pointLight_->decay, 0.01f, 0.0f);
     }
+    // spotLight 
+    if (ImGui::CollapsingHeader("SpotLight")) {
+        ImGui::ColorEdit4("SpotLightColor", &spotLight_->color.x);
+        ImGui::DragFloat3("SpotLightPosition", &spotLight_->position.x, 0.01f);
+        ImGui::DragFloat("SpotLightIntensity", &spotLight_->intensity, 0.01f, 0.0f);
+        ImGui::DragFloat3("SpotLightDirection", &spotLight_->direction.x, 0.01f);
+        spotLight_->direction = Math::Normalize(spotLight_->direction);
+        ImGui::DragFloat("SpotLightDistance", &spotLight_->distance, 0.01f, 0.0f);
+        ImGui::DragFloat("SpotLightDecay", &spotLight_->decay, 0.01f, 0.0f);
+        ImGui::DragFloat("SpotLightCosAngle", &spotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
+    }
+    // directionalLight
+    if (ImGui::CollapsingHeader("DirectionalLight")) {
+        ImGui::ColorEdit4("DirectionalLightColor", &directionalLight_->color.x);
+        ImGui::DragFloat3("DirectionalLightDirection", &directionalLight_->direction.x, 0.01f);
+        directionalLight_->direction = Math::Normalize(directionalLight_->direction);
+        ImGui::DragFloat("DirectionalLightIntensity", &directionalLight_->intensity, 0.01f, 0.0f);
+    }
+    ImGui::Checkbox("debugMode", &debugMode_);
+
+    ImGui::End();
+
+#endif // USE_IMGUI
+
+    // --- カメラの更新 ---
+    Camera* currentCamera = debugMode_ ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
+    currentCamera->Update("Camera");
+
+    // =====
+    // ↓ゲームの更新
+    // =====
 
     // --- 文字のアニメーション ---
     animationTimer_ += 1.0f / 60.0f; // 60FPSを想定
@@ -217,43 +264,9 @@ void TitleScene::Update() {
         engine_->GetSceneManager()->Request("Select");
     }
 
-
-#ifdef USE_IMGUI
-
-    ImGui::Begin("TitleScene");
-
-    if (ImGui::CollapsingHeader("Text Animation")) {
-        ImGui::DragFloat("Amplitude", &floatAmplitude_, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat("Speed", &floatSpeed_, 0.05f, 0.0f, 5.0f);
-    }
-
-    // pointLight 
-    if (ImGui::CollapsingHeader("PointLight")) {
-        ImGui::ColorEdit4("PointLightColor", &pointLight_->color.x);
-        ImGui::DragFloat3("PointLightPosition", &pointLight_->position.x, 0.01f);
-        ImGui::DragFloat("PointLightIntensity", &pointLight_->intensity, 0.01f, 0.0f);
-        ImGui::DragFloat("PointLightRadius", &pointLight_->radius, 0.01f, 0.0f);
-        ImGui::DragFloat("PointLightDecay", &pointLight_->decay, 0.01f, 0.0f);
-    }
-    // spotLight 
-    if (ImGui::CollapsingHeader("SpotLight")) {
-        ImGui::ColorEdit4("SpotLightColor", &spotLight_->color.x);
-        ImGui::DragFloat3("SpotLightPosition", &spotLight_->position.x, 0.01f);
-        ImGui::DragFloat("SpotLightIntensity", &spotLight_->intensity, 0.01f, 0.0f);
-        ImGui::DragFloat3("SpotLightDirection", &spotLight_->direction.x, 0.01f);
-        spotLight_->direction = Math::Normalize(spotLight_->direction);
-        ImGui::DragFloat("SpotLightDistance", &spotLight_->distance, 0.01f, 0.0f);
-        ImGui::DragFloat("SpotLightDecay", &spotLight_->decay, 0.01f, 0.0f);
-        ImGui::DragFloat("SpotLightCosAngle", &spotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
-    }
-    
-    ImGui::End();
-#endif // USE_IMGUI
-
-    // --- カメラの更新 ---
-    // 現在アクティブなカメラへのポインタ
-    Camera* currentCamera = debugMode ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
-    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
+    // =====
+    // ↑ゲームの更新
+    // =====
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;

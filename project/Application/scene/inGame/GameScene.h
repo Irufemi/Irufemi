@@ -3,44 +3,50 @@
 #include "scene/IScene.h"
 
 #include <memory>
-#include <vector> // vector をインクルード
-
-#include "3D/TriangleClass.h"
-#include "2D/Sprite.h"
-#include "2D/Circle2D.h"
-#include "2D/NumberText.h"
-#include "2D/TimeDisplay.h"
-#include "3D/SphereClass.h"
-#include "3D/ObjClass.h"
-#include "3D/Region.h"
-#include "3D/particle/ParticleSystem.h"
-#include "3D/CylinderClass.h"
-#include "audio/Se.h"
-#include "audio/Bgm.h"
-
-#include "camera/CameraController.h"
-
-#include "contents/player/Player.h"
-#include "contents/skydome/Skydome.h"
-#include "contents/MapChipField.h"
-#include "contents/Effect/Fade.h"
-#include "contents/enemy/IEnemy.h" // IEnemy をインクルード
+#include <vector>
 
 // 前方宣言
 class IrufemiEngine;
 class InputManager;
 class Camera;
 class DebugCamera;
+class Sprite;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
+
+#include "audio/Bgm.h"
+#include "audio/Se.h"
+#include "3D/ObjClass.h"
+#include "3D/Region.h"
+
+#include "contents/effect/Fade.h"
+#include "contents/player/Player.h"
+#include "contents/enemy/normalEnemy/NormalEnemy.h"
+#include "contents/enemy/shieldEnemy/ShieldEnemy.h"
+#include "contents/skydome/Skydome.h"
+#include "camera/CameraController.h"
 
 
 /// <summary>
 /// ゲーム
 /// </summary>
 class GameScene : public IScene {
-private: // 関数
+public: // メンバ関数(ゲーム)
+
+public: // メンバ関数(システム)
+    ~GameScene() override;
+    void Initialize(IrufemiEngine* engine) override;
+    void Update() override;
+    void Draw() override;
+    // ポーズ中の更新
+    void PauseUpdate() override;
+    // ポーズ中の描画
+    void PauseDraw() override;
+    // このシーンがポーズ可能かを返す
+    bool IsPausable() const override { return true; }
+
+private: // メンバ関数(内部ヘルパ)
 
     void GenerateBlocks();
 
@@ -55,7 +61,7 @@ private: // 関数
     void UpdateGameplay();
     void UpdateFadeOut();
 
-private: // 変数(ゲームの歯車)
+private: // メンバ変数(ゲーム)
 
     // カメラコントローラー
     std::unique_ptr<CameraController> cameraController_ = nullptr;
@@ -87,14 +93,7 @@ private: // 変数(ゲームの歯車)
 
     /// 敵キャラ
     std::vector<std::unique_ptr<IEnemy>> enemies_;
-
-private: // 音源
-    // bgm
-    std::unique_ptr<Bgm> bgm_ = nullptr;
-    // se(決定音)
-    std::unique_ptr<Se> se_select_ = nullptr;
-
-private: // メンバ変数(UI/HUD)
+    
     // HP
     std::unique_ptr<Sprite> text_HP_ = nullptr;
     // HPBar
@@ -103,8 +102,7 @@ private: // メンバ変数(UI/HUD)
     // in
     std::unique_ptr<Sprite> hpBar_in_ = nullptr;
     float hpBarOriginalWidth_ = 0.0f;
-    // ポーズ表示用
-    std::unique_ptr<Sprite> pauseSprite_ = nullptr;
+
     // ポーズメニューUI
     std::unique_ptr<Sprite> pauseTitleText_ = nullptr;
     std::unique_ptr<Sprite> pauseReturnToGameText_ = nullptr;
@@ -122,7 +120,26 @@ private: // メンバ変数(UI/HUD)
     // 操作方法
     std::unique_ptr<Sprite> manual_ = nullptr;
 
-private: // ポーズメニューの状態
+    // bgm
+    std::unique_ptr<Bgm> bgm_ = nullptr;
+    // se(決定音)
+    std::unique_ptr<Se> se_select_ = nullptr;
+
+    // ゲーム進行の状態
+    enum class Phase {
+        FadeIn,
+        Countdown,
+        Gameplay,
+        FadeOut,
+    };
+    Phase phase_ = Phase::FadeIn;
+    float countdownTimer_ = 3.0f; // カウントダウンタイマー
+    
+    // 画面演出
+    // フェード
+    std::unique_ptr<Fade> fade_ = nullptr;
+
+    // ポーズメニューの状態
     enum class PauseOption {
         ReturnToGame,
         ReturnToTitle,
@@ -138,75 +155,20 @@ private: // ポーズメニューの状態
     float blinkTimer_ = 0.0f;         // 選択項目の明滅タイマー
     float confirmationTimer_ = 0.0f;  // 決定演出用のタイマー
 
-private: // ゲーム進行の状態
-    enum class Phase {
-        FadeIn,
-        Countdown,
-        Gameplay,
-        FadeOut,
-    };
-    Phase phase_ = Phase::FadeIn;
-    float countdownTimer_ = 3.0f; // カウントダウンタイマー
-
-private: // 画面演出
-    // フェード
-    std::unique_ptr<Fade> fade_ = nullptr;
-
 private: // メンバ変数(システム)
-
+    // エンジン
+    IrufemiEngine* engine_ = nullptr;
     // カメラ
     std::unique_ptr<Camera> camera_ = nullptr;
-
     // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
 
+    bool debugMode_ = false;
+    // ライト
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
-
     std::unique_ptr<PointLight> pointLight_ = nullptr;
-
     std::unique_ptr<SpotLight> spotLight_ = nullptr;
 
-    int loadTexture = false;
-
-    bool debugMode = false;
-
-    // ポインタ参照
-
-    // エンジン
-    IrufemiEngine* engine_ = nullptr;
-
-public: // メンバ関数
-
-    // デストラクタ
-    ~GameScene();
-
-    /// <summary>
-    /// 初期化
-    /// </summary>
-    void Initialize(IrufemiEngine* engine) override;
-
-    /// <summary>
-    /// 更新
-    /// </summary>
-    void Update() override;
-
-    /// <summary>
-    /// 描画
-    /// </summary>
-    void Draw() override;
-
-    /// <summary>
-    /// ポーズ中の更新
-    /// </summary>
-    void PauseUpdate() override;
-
-    /// <summary>
-    /// ポーズ中の描画
-    /// </summary>
-    void PauseDraw() override;
-
-    /// <summary>
-    /// このシーンがポーズ可能かを返す
-    /// </summary>
-    bool IsPausable() const override { return true; }
+    // ポーズ表示用
+    std::unique_ptr<Sprite> pauseSprite_ = nullptr;
 };

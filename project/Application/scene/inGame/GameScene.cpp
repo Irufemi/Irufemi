@@ -10,14 +10,14 @@
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
-#include "function/Collision.h" // Collision をインクルード
-#include <algorithm> // remove_if をインクルード
-#include "contents/enemy/shieldEnemy/ShieldEnemy.h"
-#include "contents/enemy/normalEnemy/NormalEnemy.h"
-#include "function/Ease.h"
-#include "Application/scene/stageSelect/StageDataManager.h" // StageDataManagerをインクルード
-#include "Application/scene/result/GameResultManager.h" // GameResultManagerをインクルード
+#include "2D/Sprite.h"
 
+#include "function/Collision.h"
+#include "function/Math.h"
+#include "function/Ease.h"
+
+#include "Application/scene/stageSelect/StageDataManager.h"
+#include "Application/scene/result/GameResultManager.h"
 
 // デストラクタ
 GameScene::~GameScene() {
@@ -33,10 +33,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     camera_ = std::make_unique <Camera>();
     camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    camera_->UpdateMatrix();
 
     debugCamera_ = std::make_unique <DebugCamera>();
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
-    debugMode = false;
+    debugMode_ = false;
 
     // --- ライトの初期化 ---
     pointLight_ = std::make_unique <PointLight>();
@@ -59,6 +60,16 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
+
+
+    // ポーズ画面用スプライト
+    pauseSprite_ = std::make_unique<Sprite>();
+    pauseSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+    pauseSprite_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
+    pauseSprite_->SetSize(static_cast<float>(engine->GetClientWidth()), static_cast<float>(engine->GetClientHeight()));
+    pauseSprite_->SetAnchor(0.5f, 0.5f);
+    pauseSprite_->SetColor({ 0.1f, 0.1f, 0.1f, 0.5f });
+
 
     /// マップチップフィールド
     // マップチップフィールドの生成
@@ -132,7 +143,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     hpBar_in_->Initialize(camera_.get(), "resources/texture/hpBar_in.png");
     hpBar_in_->SetAnchor(0.0f, 0.0f);
     hpBar_in_->SetPosition(91.0f, 6.0f);
-    hpBar_in_->SetColor(Vector4{ 67.0f/255.0f,201.0f / 255.0f,79.0f / 255.0f,1.0f });
+    hpBar_in_->SetColor(Vector4{ 67.0f / 255.0f,201.0f / 255.0f,79.0f / 255.0f,1.0f });
     hpBarOriginalWidth_ = hpBar_in_->GetSize().x;
     hpBar_in_->Update();
 
@@ -241,10 +252,27 @@ void GameScene::Update() {
     if (ImGui::Button("allLoadActivate")) {
         engine_->GetTextureManager()->LoadAllFromFolder("resources/");
     }
-    ImGui::Checkbox("debugMode", &debugMode);
+    ImGui::Checkbox("debugMode", &debugMode_);
     ImGui::End();
 
 #endif // _DEBUG
+
+    // --- カメラの更新 ---
+    // 現在アクティブなカメラへのポインタ
+    Camera* currentCamera = debugMode_ ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
+    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
+
+    // 天球の更新
+    skydome_->Update();
+
+    manual_->Update();
+
+    // フェードの更新
+    fade_->Update();
+
+    // =====
+    // ↓ゲームの更新
+    // =====
 
     // フェーズごとの更新
     switch (phase_) {
@@ -262,26 +290,14 @@ void GameScene::Update() {
         break;
     }
 
-    // --- 常に更新する処理 ---
-
-    // --- カメラの更新 ---
-    // 現在アクティブなカメラへのポインタ
-    Camera* currentCamera = debugMode ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
-    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
-
     // デバッグモードでない場合のみ、カメラコントローラーを適用
-    if (!debugMode) {
+    if (!debugMode_) {
         cameraController_->Update(*camera_.get());
     }
 
-    // 天球の更新
-    skydome_->Update();
-
-    manual_->Update();
-
-    // フェードの更新
-    fade_->Update();
-
+    // =====
+    // ↑ゲームの更新
+    // =====
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;
@@ -316,13 +332,7 @@ void GameScene::Draw() {
     // ブロック
     blocks_->Draw();
 
-    // Particle
-    engine_->SetBlend(BlendMode::kBlendModeAdd);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    engine_->ApplyParticlePSO();
-
     // Sprite
-
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
@@ -374,8 +384,7 @@ void GameScene::PauseUpdate()
         // 入力による選択項目の変更
         if (IScene::PressedVK('W') || engine_->GetInputManager()->DPadUpPressed()) {
             currentPauseOption_ = PauseOption::ReturnToGame;
-        }
-        else if (IScene::PressedVK('S') || engine_->GetInputManager()->DPadDownPressed()) {
+        } else if (IScene::PressedVK('S') || engine_->GetInputManager()->DPadDownPressed()) {
             currentPauseOption_ = PauseOption::ReturnToTitle;
         }
 
@@ -397,8 +406,7 @@ void GameScene::PauseUpdate()
         // 選択中の項目だけアルファ値を変更
         if (currentPauseOption_ == PauseOption::ReturnToGame) {
             pauseReturnToGameText_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
-        }
-        else {
+        } else {
             pauseReturnToTitleText_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
         }
     }
@@ -409,8 +417,7 @@ void GameScene::PauseUpdate()
 
         if (currentPauseOption_ == PauseOption::ReturnToGame) {
             pauseReturnToGameText_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
-        }
-        else {
+        } else {
             pauseReturnToTitleText_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
         }
 
@@ -418,8 +425,7 @@ void GameScene::PauseUpdate()
         if (confirmationTimer_ >= CONFIRMATION_DURATION) {
             if (currentPauseOption_ == PauseOption::ReturnToGame) {
                 engine_->GetSceneManager()->TogglePause(); // ポーズ解除
-            }
-            else {
+            } else {
                 engine_->GetSceneManager()->Request("Title"); // タイトルへ
             }
             // 状態をリセット

@@ -2,37 +2,37 @@
 
 #include "scene/IScene.h"
 
-#include "audio/Bgm.h"
-#include "audio/Se.h"
-#include "math/shape/LinePrimitive.h"
-#include "2D/Sprite.h"
-#include "3D/ObjClass.h"
-#include "camera/Camera.h"
-#include "camera/DebugCamera.h"
-#include "3D/PointLightClass.h"
-#include "3D/SpotLightClass.h"
-#include "3D/CylinderClass.h"
-#include "contents/Effect/Fade.h"
 #include <memory>
-#include <vector>
 
-class Camera;
+class IrufemiEngine;
 class DebugCamera;
+class Camera;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
+
+#include "3D/ObjClass.h"
+#include "2D/Sprite.h"
+#include "audio/Bgm.h"
+#include "audio/Se.h"
+
+#include "contents/Effect/Fade.h"
 
 /// <summary>
 /// タイトル
 /// </summary>
 class TitleScene : public IScene {
-private: // 音源
-    // bgm
-    std::unique_ptr<Bgm> bgm_ = nullptr;
-    // se(決定音)
-    std::unique_ptr<Se> se_select_ = nullptr;
+public: // メンバ関数(ゲーム)
 
-private: // 描画物
+public: // メンバ関数(システム)
+    ~TitleScene() override;
+    void Initialize(IrufemiEngine* engine) override;
+    void Update() override;
+    void Draw() override;
+
+private: // メンバ関数(内部ヘルパ)
+
+private: // メンバ変数(ゲーム)
     // タイトル(アンナイトのア)
     std::unique_ptr<ObjClass> text_a_ = nullptr;
     // タイトル(アンナイトのン)
@@ -48,10 +48,12 @@ private: // 描画物
 
     // フェード
     std::unique_ptr<Fade> fade_ = nullptr;
-
-    bool isChangingScene_ = false;
-
-    bool debugMode = false;
+    
+    // 音源
+    // bgm
+    std::unique_ptr<Bgm> bgm_ = nullptr;
+    // se(決定音)
+    std::unique_ptr<Se> se_select_ = nullptr;
 
     // --- アニメーション用変数 ---
     float animationTimer_ = 0.0f; // アニメーションのタイマー
@@ -68,24 +70,19 @@ private: // 描画物
     PushKeyState pushKeyState_ = PushKeyState::NormalBlink;
     float pushKeyAnimTimer_ = 0.0f; // プッシュキー用タイマー
 
-
-public: // メンバ関数
-    void Initialize(IrufemiEngine* engine) override;
-    void Update() override;
-    void Draw() override;
-
-private: // メンバ変数
+private: // メンバ変数(システム)
+    // エンジン
     IrufemiEngine* engine_ = nullptr;
-
     // カメラ
     std::unique_ptr<Camera> camera_ = nullptr;
-
     // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
 
+    bool isChangingScene_ = false;
+
+    bool debugMode_ = false;
+    // ライト
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
-
     std::unique_ptr<PointLight> pointLight_ = nullptr;
-
     std::unique_ptr<SpotLight> spotLight_ = nullptr;
 };
