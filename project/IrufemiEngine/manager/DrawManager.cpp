@@ -24,8 +24,6 @@
 #include "manager/ModelManager.h" // GpuMeshのため
 #include "math/CameraForGPU.h"
 #include "math/DirectionalLight.h"
-#include "math/PointLight.h"
-#include "math/SpotLight.h"
 #include "function/Math.h"
 
 
@@ -67,11 +65,11 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     // 各CBVのサイズを256バイトアラインメントに切り上げる
     const size_t cameraSize = (sizeof(CameraForGPU) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
     const size_t directionalLightSize = (sizeof(DirectionalLight) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
-    const size_t pointLightSize = (sizeof(PointLight) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
-    const size_t spotLightSize = (sizeof(SpotLight) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+    const size_t pointLightsSize = (sizeof(PointLights) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+    const size_t spotLightsSize = (sizeof(SpotLights) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
 
     // フレームリソースを生成（全ライトとカメラを格納できるサイズ）
-    const UINT frameResSize = static_cast<UINT>(cameraSize + directionalLightSize + pointLightSize + spotLightSize);
+    const UINT frameResSize = static_cast<UINT>(cameraSize + directionalLightSize + pointLightsSize + spotLightsSize);
     frameResource_ = dxCommon_->CreateBufferResource(frameResSize);
     uint8_t* mapped = nullptr;
     frameResource_->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
@@ -80,13 +78,13 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     uintptr_t mappedAddress = reinterpret_cast<uintptr_t>(mapped);
     cameraData_ = reinterpret_cast<CameraForGPU*>(mappedAddress);
     directionalLightData_ = reinterpret_cast<DirectionalLight*>(mappedAddress + cameraSize);
-    pointLightData_ = reinterpret_cast<PointLight*>(mappedAddress + cameraSize + directionalLightSize);
-    spotLightData_ = reinterpret_cast<SpotLight*>(mappedAddress + cameraSize + directionalLightSize + pointLightSize);
+    pointLightsData_ = reinterpret_cast<PointLights*>(mappedAddress + cameraSize + directionalLightSize);
+    spotLightsData_ = reinterpret_cast<SpotLights*>(mappedAddress + cameraSize + directionalLightSize + pointLightsSize);
 
     frameData_.camera = frameResource_->GetGPUVirtualAddress();
     frameData_.directionalLight = frameData_.camera + cameraSize;
-    frameData_.pointLight = frameData_.directionalLight + directionalLightSize;
-    frameData_.spotLight = frameData_.pointLight + pointLightSize;
+    frameData_.pointLights = frameData_.directionalLight + directionalLightSize;
+    frameData_.spotLights = frameData_.pointLights + pointLightsSize;
 }
 
 void DrawManager::Finalize() {
@@ -165,8 +163,8 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(5, frameData_.camera);
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, frameData_.directionalLight);
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, frameData_.pointLight);
-    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, frameData_.spotLight);
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, frameData_.pointLights);
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, frameData_.spotLights);
 
 }
 
@@ -245,18 +243,32 @@ void DrawManager::PostDraw() {
 
 }
 
-void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const PointLight& pointLight, const SpotLight& spotLight) {
+void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights) {
     if (cameraData_) {
         *cameraData_ = camera;
     }
     if (directionalLightData_) {
         *directionalLightData_ = light;
     }
-    if (pointLightData_) {
-        *pointLightData_ = pointLight;
+    if (pointLightsData_) {
+        for (int i = 0; i < kMaxPointLights; ++i) {
+            if (i < pointLights.size()) {
+                pointLightsData_->lights[i] = *pointLights[i];
+                pointLightsData_->lights[i].isActive = 1;
+            } else {
+                pointLightsData_->lights[i].isActive = 0;
+            }
+        }
     }
-    if (spotLightData_) {
-        *spotLightData_ = spotLight;
+    if (spotLightsData_) {
+        for (int i = 0; i < kMaxSpotLights; ++i) {
+            if (i < spotLights.size()) {
+                spotLightsData_->lights[i] = *spotLights[i];
+                spotLightsData_->lights[i].isActive = 1;
+            } else {
+                spotLightsData_->lights[i].isActive = 0;
+            }
+        }
     }
 }
 

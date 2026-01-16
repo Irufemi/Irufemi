@@ -99,7 +99,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // テクスチャ管理
     textureManager = std::make_unique<TextureManager>();
     textureManager->Initialize(dxCommon_.get());
+
+#if defined(_DEBUG) || defined(DEVELOPMENT)
     textureManager->LoadAllFromFolder("resources/");
+#endif
 
     // モデル管理
     modelManager_ = std::make_unique<ModelManager>();
