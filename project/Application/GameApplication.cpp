@@ -18,7 +18,7 @@ namespace {
     // --- ゲーム固有の定数 ---
     const int32_t kClientWidth = 1280;
     const int32_t kClientHeight = 720;
-    const std::wstring kTitle = L"2326_血管壊回";
+    const std::wstring kTitle = L"LE2B_12_スエヒロ_コウイチ_アンナイト";
     const Vector4 kClearColor = { 0.7f, 0.7f, 0.7f, 1.0f };
     const char kInitialScene[] = "Debug";
 
