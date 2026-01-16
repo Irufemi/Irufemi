@@ -39,7 +39,6 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
     assert(animationManager_ && "AnimationModel::Initialize: AnimationManager is not set.");
     animation_ = animationManager_->LoadAnimationFile(filename);
 
-
     // 初回Updateを呼んでおく
     Update();
 
@@ -58,7 +57,6 @@ void AnimationModel::Update() {
     // オブジェクト全体のワールド行列を計算
     transformationMatrix_.WVP = localMatrix_ * worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
     transformationMatrix_.world = localMatrix_ * worldMatrix_;
-
 
     // 法線変換用の逆転置行列
     Matrix4x4 worldForNormal = transformationMatrix_.world;
