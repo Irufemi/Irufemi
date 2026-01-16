@@ -11,9 +11,6 @@
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
 
-
-#include "StageDataManager.h"
-
 SelectScene::~SelectScene() {
 
 }
