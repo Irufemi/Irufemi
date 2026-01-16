@@ -64,6 +64,9 @@
     <Filter Include="content\effect">
       <UniqueIdentifier>{babfd3d8-482e-49f9-a43f-87cca2b7d391}</UniqueIdentifier>
     </Filter>
+    <Filter Include="content\skydome">
+      <UniqueIdentifier>{ca677367-9311-4bf8-b19d-3388568d67ee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene\inGame\GameScene.cpp">
@@ -123,14 +126,14 @@
     <ClCompile Include="scene\stageSelect\StageDataManager.cpp">
       <Filter>Scene\statgeSelect</Filter>
     </ClCompile>
-    <ClCompile Include="camera\CameraController.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="scene\result\GameResultManager.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>Scene\result</Filter>
+    </ClCompile>
+    <ClCompile Include="camera\CameraController.cpp">
+      <Filter>camera</Filter>
     </ClCompile>
     <ClCompile Include="contents\skydome\Skydome.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>content\skydome</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -182,14 +185,14 @@
     <ClInclude Include="scene\stageSelect\StageDataManager.h">
       <Filter>Scene\statgeSelect</Filter>
     </ClInclude>
-    <ClInclude Include="camera\CameraController.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="scene\result\GameResultManager.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Scene\result</Filter>
+    </ClInclude>
+    <ClInclude Include="camera\CameraController.h">
+      <Filter>camera</Filter>
     </ClInclude>
     <ClInclude Include="contents\skydome\Skydome.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>content\skydome</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
