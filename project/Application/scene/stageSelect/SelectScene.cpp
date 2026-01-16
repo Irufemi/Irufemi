@@ -11,6 +11,9 @@
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
 
+
+#include "StageDataManager.h"
+
 SelectScene::~SelectScene() {
 
 }
@@ -48,6 +51,38 @@ void SelectScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
+
+    // タイトル文字 の初期化
+    text_title_ = std::make_unique<Sprite>();
+    text_title_->Initialize(camera_.get(), "resources/texture/stageSelect_title.png");
+    text_title_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+
+    // 文字(1)
+    text_1_ = std::make_unique<Sprite>();
+    text_1_->Initialize(camera_.get(), "resources/texture/stageSelect_1.png");
+    text_1_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+
+    // 文字(2)
+    text_2_ = std::make_unique<Sprite>();
+    text_2_->Initialize(camera_.get(), "resources/texture/stageSelect_2.png");
+    text_2_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+
+    // 管理用ベクターに登録
+    stageSprites_.push_back(text_1_.get());
+    stageSprites_.push_back(text_2_.get());
+
+    // フェードの初期化
+    fade_ = std::make_unique<Fade>();
+    fade_->Initialize(camera_.get());
+    fade_->FadeIn(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f }); // 黒からフェードイン
+
+    // bgm
+    bgm_ = std::make_unique<Bgm>();
+    bgm_->Initialize("resources/bgm/title.mp3");
+    bgm_->PlayFixed();
+    // se(決定音)
+    se_select_ = std::make_unique<Se>();
+    se_select_->Initialize("resources/se/se_select.mp3");
 }
 
 void SelectScene::Update() {
@@ -88,20 +123,80 @@ void SelectScene::Update() {
 
 #endif // USE_IMGUI
 
+    // --- カメラの更新 ---
+    // 現在アクティブなカメラへのポインタ
+    Camera* currentCamera = debugMode_ ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
+    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
+
     // =====
     // ↓ゲームの更新
     // =====
+
+    // フェードの更新
+    fade_->Update();
+    if (!fade_->IsDone() && phase_ != Phase::FadingOut) {
+        return; // フェードイン中は他の処理をスキップ
+    }
+
+    // スプライトの更新
+    text_title_->Update();
+    for (auto& sprite : stageSprites_) {
+        sprite->Update();
+    }
+
+    const float BLINK_SPEED = 3.0f;
+    const float CONFIRM_BLINK_SPEED = 15.0f;
+    const float CONFIRMATION_DURATION = 0.8f;
+
+    if (phase_ == Phase::Selecting) {
+        // 入力処理
+        if (IScene::PressedVK('A') || engine_->GetInputManager()->GetGamePad()->IsButtonPressed(XINPUT_GAMEPAD_DPAD_LEFT)) {
+            currentStageIndex_ = (currentStageIndex_ - 1 + static_cast<int>(stageSprites_.size())) % static_cast<int>(stageSprites_.size());
+        }
+        if (IScene::PressedVK('D') || engine_->GetInputManager()->GetGamePad()->IsButtonPressed(XINPUT_GAMEPAD_DPAD_RIGHT)) {
+            currentStageIndex_ = (currentStageIndex_ + 1) % static_cast<int>(stageSprites_.size());
+        }
+
+        // 決定処理
+        if (IScene::PressedVK(VK_SPACE) || engine_->GetInputManager()->GetGamePad()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+            se_select_->Play();
+            phase_ = Phase::Confirming;
+            confirmationTimer_ = 0.0f;
+            StageDataManager::selectedStageIndex = currentStageIndex_;
+        }
+
+        // 明滅処理
+        blinkTimer_ += 1.0f / 60.0f;
+        float alpha = 0.5f + 0.5f * std::sin(blinkTimer_ * BLINK_SPEED);
+
+        for (size_t i = 0; i < stageSprites_.size(); ++i) {
+            if (i == currentStageIndex_) {
+                stageSprites_[i]->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+            } else {
+                stageSprites_[i]->SetColor({ 0.5f, 0.5f, 0.5f, 1.0f }); // 非選択項目は暗く
+            }
+        }
+
+    } else if (phase_ == Phase::Confirming) {
+        confirmationTimer_ += 1.0f / 60.0f;
+        float alpha = std::fmod(confirmationTimer_ * CONFIRM_BLINK_SPEED, 1.0f) > 0.5f ? 1.0f : 0.2f;
+        stageSprites_[currentStageIndex_]->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+
+        if (confirmationTimer_ >= CONFIRMATION_DURATION) {
+            phase_ = Phase::FadingOut;
+            fade_->FadeOut(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f }); // ゲームシーンへ
+        }
+    } else if (phase_ == Phase::FadingOut) {
+        if (fade_->IsDone()) {
+            engine_->GetSceneManager()->Request("InGame");
+        }
+    }
 
 
 
     // =====
     // ↑ゲームの更新
     // =====
-
-    // --- カメラの更新 ---
-    // 現在アクティブなカメラへのポインタ
-    Camera* currentCamera = debugMode_ ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
-    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
 
     // エンターキー/Aボタンが押されていたらゲームへ
     if (engine_->GetInputManager()->IsKeyPressed(VK_RETURN) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
@@ -121,4 +216,11 @@ void SelectScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
+
+    text_title_->Draw();
+    for (auto& sprite : stageSprites_) {
+        sprite->Draw();
+    }
+
+    fade_->Draw();
 }

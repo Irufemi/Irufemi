@@ -49,6 +49,21 @@
     <Filter Include="Application">
       <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="content\player">
+      <UniqueIdentifier>{feffeacc-24bd-45f3-aa53-8aeb72c9294c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\enemy">
+      <UniqueIdentifier>{ab19a78a-4011-4d7b-80f3-0cbc0e865eae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\enemy\shieldEnemy">
+      <UniqueIdentifier>{8c761790-d221-4623-8f2e-eb16ae252fe4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\enemy\normalEnemy">
+      <UniqueIdentifier>{f030a979-a1c4-4077-a175-43946c8f283f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\effect">
+      <UniqueIdentifier>{babfd3d8-482e-49f9-a43f-87cca2b7d391}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene\inGame\GameScene.cpp">
@@ -78,6 +93,45 @@
     <ClCompile Include="GameApplication.cpp">
       <Filter>Application</Filter>
     </ClCompile>
+    <ClCompile Include="contents\MapChipField.cpp">
+      <Filter>content</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\player\Player.cpp">
+      <Filter>content\player</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\player\PlayerState_Attack.cpp">
+      <Filter>content\player</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\player\PlayerState_Dash.cpp">
+      <Filter>content\player</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\player\PlayerState_Root.cpp">
+      <Filter>content\player</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\enemy\IEnemy.cpp">
+      <Filter>content\enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\enemy\shieldEnemy\ShieldEnemy.cpp">
+      <Filter>content\enemy\shieldEnemy</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\enemy\normalEnemy\NormalEnemy.cpp">
+      <Filter>content\enemy\normalEnemy</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\Effect\Fade.cpp">
+      <Filter>content\effect</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\stageSelect\StageDataManager.cpp">
+      <Filter>Scene\statgeSelect</Filter>
+    </ClCompile>
+    <ClCompile Include="camera\CameraController.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\result\GameResultManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\skydome\Skydome.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -103,6 +157,39 @@
     </ClInclude>
     <ClInclude Include="GameApplication.h">
       <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\MapChipField.h">
+      <Filter>content</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\player\Player.h">
+      <Filter>content\player</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\player\PlayerState.h">
+      <Filter>content\player</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\enemy\IEnemy.h">
+      <Filter>content\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\enemy\shieldEnemy\ShieldEnemy.h">
+      <Filter>content\enemy\shieldEnemy</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\enemy\normalEnemy\NormalEnemy.h">
+      <Filter>content\enemy\normalEnemy</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\Effect\Fade.h">
+      <Filter>content\effect</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\stageSelect\StageDataManager.h">
+      <Filter>Scene\statgeSelect</Filter>
+    </ClInclude>
+    <ClInclude Include="camera\CameraController.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\result\GameResultManager.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\skydome\Skydome.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

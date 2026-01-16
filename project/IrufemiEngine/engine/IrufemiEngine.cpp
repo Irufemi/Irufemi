@@ -29,6 +29,9 @@
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "source/Texture.h"
+#include "Application/contents/Effect/Fade.h"
+// ポーズ表示用
+std::unique_ptr<Sprite> pauseSprite_ = nullptr;
 
 #include "scene/IScene.h"
 #include <imgui.h>
@@ -193,6 +196,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     animationManager_->Initialize();
 
     AnimationModel::SetAnimationManager(animationManager_.get());
+
+    Fade::SetEngine(this);
 }
 
 // クリアカラーを float 指定できる 初期化
