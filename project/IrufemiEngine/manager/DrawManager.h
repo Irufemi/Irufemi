@@ -73,7 +73,7 @@ public: //メンバ関数
     void Initialize(DirectXCommon* dx);
     void Finalize();
 
-    // 追加（保持はしないで即時バインド）
+    // 追加(保持はしないで即時バインド)
     void BindPSO(ID3D12PipelineState* pso);
 
     void PreDraw(

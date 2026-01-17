@@ -42,11 +42,11 @@ public: // メンバ関数
     /// </summary>
     void Initialize(const std::wstring& title, const int32_t& clientWidth = 1280, const int32_t& clientHeight = 720);
    
-    /// 追加: クリアカラーを引数で指定できる Initialize（float RGBA）
+    /// 追加: クリアカラーを引数で指定できる Initialize(float RGBA)
    void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                     float r, float g, float b, float a = 1.0f);
     
-    /// 追加: クリアカラーを引数で指定できる Initialize（std::array）
+    /// 追加: クリアカラーを引数で指定できる Initialize(std::array)
     void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                     const std::array<float, 4>& clearColor);
     // 追加: Vector4 版
@@ -120,19 +120,19 @@ public: // ゲッター
 public: // セッター
     void AddFenceValue(uint32_t index) { dxCommon_->GetFenceValue() += index; }
     
-    // セッター（引数なし描画のためのプリセット切替）
+    // セッター(引数なし描画のためのプリセット切替)
     void SetBlend(BlendMode m) { currentBlend_ = m; }
     void SetDepthWrite(PSOManager::DepthWrite w) { currentDepth_ = w; }
     // 追加: Cull の切替
     void SetCull(PSOManager::CullMode c) { currentCull_ = c; }
 
-    // 追加: クリアカラーのセッター（いつでも変更可能）
+    // 追加: クリアカラーのセッター(いつでも変更可能)
     void SetClearColor(float r, float g, float b, float a = 1.0f) { clearColor_ = { r, g, b, a }; }
     void SetClearColor(const std::array<float, 4>& c) { clearColor_ = c; }
     // 追加: Vector4 版
     void SetClearColor(const Vector4& c) { clearColor_ = { c.x, c.y, c.z, c.w }; }
 
-    // 状態からPSOを適用してBind（引数なしで使うやつ）
+    // 状態からPSOを適用してBind(引数なしで使うやつ)
     void ApplyPSO();
     void ApplyParticlePSO();
     void ApplySpritePSO();
@@ -141,7 +141,7 @@ public: // セッター
     void ApplyLinePSO();
 
 public:
-    // 状態（現在のブレンドと深度書き込み）
+    // 状態(現在のブレンドと深度書き込み)
     BlendMode currentBlend_ = BlendMode::kBlendModeNormal;
     PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable;
     PSOManager::CullMode currentCull_ = PSOManager::CullMode::Back; // 追加: デフォルトは Back

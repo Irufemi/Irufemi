@@ -14,13 +14,13 @@ struct PlayerStateRoot final : IPlayerState {
 
 	/// <summary>
 	/// 通常状態：
-	/// ・入力（左右/ジャンプ/重力）は Player::MoveInput() に集約
+	/// ・入力(左右/ジャンプ/重力)は Player::MoveInput() に集約
 	/// ・ここでは「ダッシュへ遷移するか」を見るのみ
 	/// </summary>
 	void Update(Player& player) override {
 		player.MoveInput();
 
-		// ダッシュ開始トリガ（例: スペースキー or Xボタン）
+		// ダッシュ開始トリガ(例: スペースキー or Xボタン)
 		if (player.inputManager_->IsKeyPressed(VK_SPACE) || player.inputManager_->IsButtonPressed(XINPUT_GAMEPAD_X)) {
 			// 地上なら何度でも、空中なら未使用時のみ許可
 			if (player.onGround_ || !player.dashUsed_) {
@@ -33,7 +33,7 @@ struct PlayerStateRoot final : IPlayerState {
 			}
 		}
 
-		// 攻撃開始トリガ（例: Eキー or Bボタン）
+		// 攻撃開始トリガ(例: Eキー or Bボタン)
 		if (player.inputManager_->IsKeyPressed('E') || player.inputManager_->IsButtonPressed(XINPUT_GAMEPAD_B)) {
 			player.ChangeState(MakeAttackState());
 			player.se_slash_->Play();

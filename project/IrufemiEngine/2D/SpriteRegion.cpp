@@ -33,7 +33,7 @@ void SpriteRegion::Initialize(Camera* camera, const std::string& textureName) {
     sprite_ = std::make_unique<Sprite>();
     sprite_->Initialize(camera_, textureName);
 
-    // 中央アンカー推奨（サイズ中心で拡大縮小する）
+    // 中央アンカー推奨(サイズ中心で拡大縮小する)
     sprite_->SetAnchor(0.5f, 0.5f);
     sprite_->SetFlip(false, false);
 
@@ -253,7 +253,7 @@ void SpriteRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
         instanceBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&instanceData_));
         assert(instanceData_ && "Instance buffer map failed");
 
-        // SRV は一度作れば再利用（Descriptor は固定スロット）
+        // SRV は一度作れば再利用(Descriptor は固定スロット)
         EnsureInstancingSRV();
         // SRV のストライド/NumElements は最大容量で定義する
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
@@ -305,7 +305,7 @@ void SpriteRegion::Draw(bool useCpuFallback) {
     if (!sprite_) return;
 
     if (useCpuFallback || !dx_ || !drawManager_ || !s_srvAllocator_) {
-        // CPUフォールバック（既存の逐次描画）
+        // CPUフォールバック(既存の逐次描画)
         for (auto& p : particles_) {
             if (!p.active) continue;
 

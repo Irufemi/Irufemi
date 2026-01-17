@@ -82,7 +82,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // ブロックの初期化
 
     /// ブロック
-    // ブロックの初期化（Blocksでまとめて管理）
+    // ブロックの初期化(Blocksでまとめて管理)
     blocks_ = std::make_unique<Region>();
     blocks_->Initialize(camera_.get(), "block.obj");
     GenerateBlocks();
@@ -354,7 +354,7 @@ void GameScene::Draw() {
         }
     }
 
-    // フェードの描画（最前面）
+    // フェードの描画(最前面)
     fade_->Draw();
 }
 
@@ -506,7 +506,7 @@ void GameScene::CheckAllCollisions() {
             }
             const AABB enemyAABB = enemy->GetAABB();
             if (Collision::IsAABBCollision(attackAABB, enemyAABB)) {
-                // 敵側の衝突処理（プレイヤーのポインタを渡す）
+                // 敵側の衝突処理(プレイヤーのポインタを渡す)
                 enemy->OnCollision(player_.get());
             }
         }
@@ -542,7 +542,7 @@ void GameScene::GenerateBlocks() {
     }
 
     // ブロックの生成
-    // ブロックの生成（Blocks にインスタンスを積む）
+    // ブロックの生成(Blocks にインスタンスを積む)
     for (uint32_t i = 0; i < numBlockVirtical; ++i) {
         for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
             if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kBlock) {
@@ -670,13 +670,13 @@ void GameScene::UpdateGameplay()
 
     hpBar_in_->Update();
 
-    // ゲームオーバー条件（プレイヤー死亡）
+    // ゲームオーバー条件(プレイヤー死亡)
     if (player_->IsDead()) {
         GameResultManager::result = GameResultManager::Result::Lose;
         phase_ = Phase::FadeOut;
         fade_->FadeOut(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f }); // 黒色で1秒間のフェードアウト
     }
-    // ゲームクリア条件（例：敵が全滅）
+    // ゲームクリア条件(例：敵が全滅)
     else if (enemies_.empty()) {
         GameResultManager::result = GameResultManager::Result::Win;
         phase_ = Phase::FadeOut;

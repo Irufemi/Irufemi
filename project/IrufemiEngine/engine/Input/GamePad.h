@@ -30,7 +30,7 @@ public:
     float GetLeftTrigger() const;
     float GetRightTrigger() const;
 
-    // デッドゾーン設定（必要なら外から変更可）
+    // デッドゾーン設定(必要なら外から変更可)
     void SetLeftDeadZone(float dz) { deadZoneLeft_ = dz; }
     void SetRightDeadZone(float dz) { deadZoneRight_ = dz; }
 
@@ -41,7 +41,7 @@ public:
     // ★ 状態取得
     const XINPUT_STATE& GetState() const { return state_; }
 
-    // ★ 8方向（左スティック）
+    // ★ 8方向(左スティック)
     Stick8 Left8(float threshold = 0.30f) const;
     bool Left8Is(Stick8 dir, float threshold = 0.30f) const;
     bool Left8Pressed(Stick8 dir, float threshold = 0.30f) const;
@@ -75,7 +75,7 @@ public:
     bool DPadDownRightDown() const; bool DPadDownRightPressed() const; bool DPadDownRightReleased() const;
     bool DPadDownLeftDown() const;  bool DPadDownLeftPressed() const;  bool DPadDownLeftReleased() const;
 
-    // ★ トリガ（アナログ＆しきい値デジタル）
+    // ★ トリガ(アナログ＆しきい値デジタル)
     float LeftTriggerAnalog(float deadzone = 30.0f)  const;
     float RightTriggerAnalog(float deadzone = 30.0f) const;
     bool LeftTriggerDown(uint8_t threshold = 30) const;
@@ -95,12 +95,12 @@ public:
     // START ボタンショートカット
     bool StartDown() const;      bool StartPressed() const;      bool StartReleased() const;
 
-    // （任意）Y 反転
+    // (任意)Y 反転
     void SetInvertY(bool inv) { invertY_ = inv; }
 
 private:
 
-    // ★ ラジアル正規化（円形DZ）: Controller と同等の内部ヘルパ
+    // ★ ラジアル正規化(円形DZ): Controller と同等の内部ヘルパ
     static std::pair<float, float> RadialNormalize(short x, short y, int dz);
 
     // ★ 8方向化ヘルパ

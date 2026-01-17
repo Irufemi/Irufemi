@@ -28,7 +28,7 @@ void TextureManager::Initialize(DirectXCommon* dxCommon) {
     CreateWhiteDummyTexture();
 }
 
-// 指定フォルダ配下を走査してロード（キーはフルパス文字列）
+// 指定フォルダ配下を走査してロード(キーはフルパス文字列)
 void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
     namespace fs = std::filesystem;
     fs::path root(folderPath);
@@ -52,7 +52,7 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
     }
 }
 
-// 取得（未ロードならロードしてキャッシュ）
+// 取得(未ロードならロードしてキャッシュ)
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& name) const {
     // 既存キー検索
     auto it = textures_.find(name);

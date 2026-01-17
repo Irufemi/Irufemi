@@ -68,7 +68,7 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     const size_t pointLightsSize = (sizeof(PointLights) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
     const size_t spotLightsSize = (sizeof(SpotLights) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
 
-    // フレームリソースを生成（全ライトとカメラを格納できるサイズ）
+    // フレームリソースを生成(全ライトとカメラを格納できるサイズ)
     const UINT frameResSize = static_cast<UINT>(cameraSize + directionalLightSize + pointLightsSize + spotLightsSize);
     frameResource_ = dxCommon_->CreateBufferResource(frameResSize);
     uint8_t* mapped = nullptr;
@@ -155,7 +155,7 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     dxCommon_->GetCommandList()->RSSetViewports(1, &viewport);
     dxCommon_->GetCommandList()->RSSetScissorRects(1, &scissorRect);
 
-    // フレームで利用するSRVヒープを設定（全描画共通）
+    // フレームで利用するSRVヒープを設定(全描画共通)
     ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
     dxCommon_->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
 
@@ -316,12 +316,12 @@ void DrawManager::DrawTriangle(
 
 void DrawManager::DrawSprite(Sprite* sprite) {
 
-    // 2. パイプラインの基本構成（RootSignature, PSO）
+    // 2. パイプラインの基本構成(RootSignature, PSO)
 
     //RootSignatureを設定。PSOに設定しているけど別途指定が必要
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
 
-    // 3. バッファ設定（VBV、IBV、Topology）
+    // 3. バッファ設定(VBV、IBV、Topology)
 
     //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
     dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -330,7 +330,7 @@ void DrawManager::DrawSprite(Sprite* sprite) {
     //IBVを設定
     dxCommon_->GetCommandList()->IASetIndexBuffer(&sprite->GetD3D12Resource()->indexBufferView_);
 
-    // 4. 定数バッファ（CBV）やライト用CBVの設定
+    // 4. 定数バッファ(CBV)やライト用CBVの設定
 
     ///CBVを設定する
 
@@ -340,7 +340,7 @@ void DrawManager::DrawSprite(Sprite* sprite) {
     //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, sprite->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
-    // 5. テクスチャ用のDescriptor Table設定（SRV）
+    // 5. テクスチャ用のDescriptor Table設定(SRV)
 
     /*テクスチャを貼ろう*/
 
@@ -395,7 +395,7 @@ void DrawManager::DrawSphere(SphereClass* sphere) {
 
 void DrawManager::DrawCylinder(CylinderClass* cylinder) {
 
-    // RootSignature / IA / VB/IB 設定（省略せずそのまま）
+    // RootSignature / IA / VB/IB 設定(省略せずそのまま)
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &cylinder->GetD3D12Resource()->vertexBufferView_);
     dxCommon_->GetCommandList()->IASetIndexBuffer(&cylinder->GetD3D12Resource()->indexBufferView_);
@@ -418,7 +418,7 @@ void DrawManager::DrawParticle(ParticleSystem* resource) {
         return;
     }
 
-    // RootSignature を設定（PSO とは別にコマンドリスト上で設定が必要）
+    // RootSignature を設定(PSO とは別にコマンドリスト上で設定が必要)
     dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
 
     // IA 設定: VB/IB/Topology
@@ -427,7 +427,7 @@ void DrawManager::DrawParticle(ParticleSystem* resource) {
     dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // --- CBV のバインド ---
-    // 0: 既存のマテリアル CBV（互換性維持のために常にバインド）
+    // 0: 既存のマテリアル CBV(互換性維持のために常にバインド)
     //    (rootParameters[0] に対応、PixelShader 側の b0 想定)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
 
@@ -435,7 +435,7 @@ void DrawManager::DrawParticle(ParticleSystem* resource) {
     // - DirectXCommon.cpp の RootSignature で rootParameters[9] を ParticleMaterial (PS b5) に
     //   マップしているため、Draw 側はルート配列インデックス 9 を使って渡す必要があります。
     // - ここで渡すのは resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress()
-    //   （D3D12ResourceUtilParticle::materialResource_ が ParticleMaterial 構造体を保持している想定）
+    //   (D3D12ResourceUtilParticle::materialResource_ が ParticleMaterial 構造体を保持している想定)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(9, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
 
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)

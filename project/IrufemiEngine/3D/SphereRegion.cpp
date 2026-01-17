@@ -26,7 +26,7 @@ void SphereRegion::Initialize(Camera* camera, const std::string& textureName, ui
     assert(camera);
     camera_ = camera;
 
-    // スフィアメッシュ生成（単位球）
+    // スフィアメッシュ生成(単位球)
     std::vector<VertexData> vertices;
     std::vector<uint32_t>   indices;
     BuildSphereMesh(subdivision, vertices, indices);
@@ -38,7 +38,7 @@ void SphereRegion::Initialize(Camera* camera, const std::string& textureName, ui
     CreateMaterialResources();
     EnsureLightAndCamera();
 
-    // テクスチャ共有（SRV再利用）
+    // テクスチャ共有(SRV再利用)
     EnsureSharedTexture(textureName);
 }
 
@@ -50,7 +50,7 @@ void SphereRegion::BuildSphereMesh(uint32_t subdivision, std::vector<VertexData>
     const float kLonEvery = 2.0f * pi / static_cast<float>(subdivision);
     const float kLatEvery = pi / static_cast<float>(subdivision);
 
-    // 頂点生成（上から下へ 緯度×経度グリッド）
+    // 頂点生成(上から下へ 緯度×経度グリッド)
     for (uint32_t lat = 0; lat <= subdivision; ++lat) {
         float theta = -pi / 2.0f + kLatEvery * lat; // θ
         for (uint32_t lon = 0; lon <= subdivision; ++lon) {
@@ -74,7 +74,7 @@ void SphereRegion::BuildSphereMesh(uint32_t subdivision, std::vector<VertexData>
         }
     }
 
-    // インデックス（各クワッドを2トライアングル）
+    // インデックス(各クワッドを2トライアングル)
     const uint32_t stride = subdivision + 1;
     for (uint32_t lat = 0; lat < subdivision; ++lat) {
         for (uint32_t lon = 0; lon < subdivision; ++lon) {
@@ -182,7 +182,7 @@ void SphereRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     srv.Buffer.StructureByteStride = stride;
     srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-    // 同じハンドルに上書き（再利用）
+    // 同じハンドルに上書き(再利用)
     dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srv, instancingSrvCPU_);
 }
 
@@ -228,7 +228,7 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
     const UINT stride = sizeof(InstanceData);
     const UINT sizeInBytes = stride * count;
 
-    // 今回は毎回作り直し（必要ならサイズ比較して再利用可）
+    // 今回は毎回作り直し(必要ならサイズ比較して再利用可)
     CreateOrResizeInstanceBuffer(count);
 
     std::vector<InstanceData> temp(count);
@@ -277,7 +277,7 @@ void SphereRegion::Draw() {
 }
 
 void SphereRegion::SetColor(const Vector4& color) {
-    // マテリアル色（テクスチャと乗算される想定）
+    // マテリアル色(テクスチャと乗算される想定)
     Material* mat = nullptr;
     materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
     mat->color = color;

@@ -47,10 +47,10 @@ public:
     void BuildInstanceBuffer(bool force = false);
     void Draw();
 
-    // 色設定API（SphereRegion と同等）
+    // 色設定API(SphereRegion と同等)
     void SetColor(const Vector4& color);                 // マテリアル色
-    void SetInstanceColor(uint32_t index, const Vector4& color); // 個別インスタンス色（Transform系）
-    void SetAllInstanceColor(const Vector4& color);      // 全インスタンス同色（Transform系）
+    void SetInstanceColor(uint32_t index, const Vector4& color); // 個別インスタンス色(Transform系)
+    void SetAllInstanceColor(const Vector4& color);      // 全インスタンス同色(Transform系)
 
     // サイズ関連
     void SetEdge(float edge);

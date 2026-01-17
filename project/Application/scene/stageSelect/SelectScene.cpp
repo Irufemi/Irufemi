@@ -21,7 +21,7 @@ SelectScene::~SelectScene() {
 void SelectScene::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 
-    // カメラ（2D 正射影）
+    // カメラ(2D 正射影)
     camera_ = std::make_unique<Camera>();
     camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
     camera_->UpdateMatrix();

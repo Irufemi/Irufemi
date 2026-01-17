@@ -6,7 +6,7 @@
 
 /// <summary>
 /// ダッシュ状態：溜め(Charge)→突進(Dash)→余韻(Aftereffect)
-/// 見た目（スケールとアルファ値）と速度の付与だけを担当し、
+/// 見た目(スケールとアルファ値)と速度の付与だけを担当し、
 /// 物理・衝突は Player 側の共通処理に任せる。
 /// </summary>
 struct PlayerStateDash final : IPlayerState {
@@ -30,7 +30,7 @@ struct PlayerStateDash final : IPlayerState {
 		++timer_;
 		switch (phase_) {
 		case Phase::Charge: {
-			// 溜め（少し縮む）
+			// 溜め(少し縮む)
 			float t = static_cast<float>(timer_) / 2.0f;
 			player.transform_.scale.x = Lerp(1.0f, 0.8f, EaseOutSine(t));
 			player.transform_.scale.y = Lerp(1.0f, 0.8f, EaseOutSine(t));
@@ -41,7 +41,7 @@ struct PlayerStateDash final : IPlayerState {
 			break;
 		}
 		case Phase::Dash: {
-			// 突進（横に伸びる）＋ 向きに応じて速度付与
+			// 突進(横に伸びる)＋ 向きに応じて速度付与
 			float t = static_cast<float>(timer_) / 10.0f;
 			player.transform_.scale.x = Lerp(0.8f, 1.5f, EaseOutSine(t));
 			player.transform_.scale.y = Lerp(0.8f, 0.7f, EaseInSine(t));
@@ -55,7 +55,7 @@ struct PlayerStateDash final : IPlayerState {
 			break;
 		}
 		case Phase::Aftereffect: {
-			// 余韻（スケールを元へ戻す）→ Root へ復帰
+			// 余韻(スケールを元へ戻す)→ Root へ復帰
 			float t = static_cast<float>(timer_) / 8.0f;
 			player.transform_.scale.x = Lerp(1.5f, 1.0f, EaseOutSine(t));
 			player.transform_.scale.y = Lerp(0.7f, 1.0f, EaseOutSine(t));

@@ -31,7 +31,7 @@ void DirectXCommon::Finalize() {
         fenceEvent_ = nullptr;
     }
 
-    // PSO キャッシュを解放（PSO/RSの参照を切る）
+    // PSO キャッシュを解放(PSO/RSの参照を切る)
     if (psoManager_) {
         psoManager_->ClearCache();
         psoManager_.reset();
@@ -476,7 +476,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///InputLayoutの拡張
 
-    D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+    D3D12_INPUT_ELEMENT_DESC inputElementDescs[4] = {};
     inputElementDescs[0].SemanticName = "POSITION";
     inputElementDescs[0].SemanticIndex = 0;
     inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -602,7 +602,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     );
 
     //実際に生成
-    // 不透明（深度書き込みあり）
+    // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable,PSOManager::CullMode::Back);
 
     // 生成が完了したのでShaderBlobを解放

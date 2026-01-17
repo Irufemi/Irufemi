@@ -19,7 +19,7 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
     this->camera_ = camera;
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
-    // 頂点はユニットクワッド(0..1)に統一（サイズはscaleで与える）
+    // 頂点はユニットクワッド(0..1)に統一(サイズはscaleで与える)
     // 左下
     resource_->vertexDataList_.push_back({ { 0.0f,1.0f,0.0f,1.0f }, { 0.0f,1.0f } ,{0.0f,0.0f,-1.0f} });
     // 左上
@@ -72,7 +72,7 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
     // VB/IB作成とMapが済んだ後に一度アンカーを頂点に反映しておく
     ApplyAnchorToVertices();
 
-    // --- 初回の行列計算（アンカー分は頂点側で処理するので引かない） ---
+    // --- 初回の行列計算(アンカー分は頂点側で処理するので引かない) ---
     Vector3 pos = resource_->transform_.translate;
     resource_->transformationMatrix_.world =
         Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, pos);
@@ -90,7 +90,7 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
 
     // --- 必ず指定テクスチャをロード＆ハンドル取得 ---
     if (textureManager_) {
-        // 指定名で必ずロード/取得（未ロードならロード）
+        // 指定名で必ずロード/取得(未ロードならロード)
         resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
         // テクスチャサイズを直接取得して反映
@@ -99,14 +99,14 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
             textureSize_ = { static_cast<float>(tw), static_cast<float>(th) };
             SetSize(textureSize_.x, textureSize_.y);
 
-            // 行列を更新（サイズ反映後）
+            // 行列を更新(サイズ反映後)
             Vector3 pos3 = resource_->transform_.translate;
             resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, pos3);
             resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
             *resource_->transformationData_ = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world };
         }
 
-        // デバッグUI（コンボ）用に selectedTextureIndex_ を既存ロジックで決める
+        // デバッグUI(コンボ)用に selectedTextureIndex_ を既存ロジックで決める
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
         if (!textureNames.empty()) {
@@ -154,8 +154,8 @@ void Sprite::Update() {
         Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
     *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
 
-    // ---- UV 変換（flip → crop → userUV）----
-     // userUV: 既存の uvTransform（回転/スクロール）
+    // ---- UV 変換(flip → crop → userUV)----
+     // userUV: 既存の uvTransform(回転/スクロール)
     Matrix4x4 userUV =
         Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 
@@ -208,7 +208,7 @@ const Vector2 Sprite::GetPosition2D() const {
 }
 
 void Sprite::ApplyAnchorToVertices() {
-    // アンカーによるローカル頂点のずらし（資料通り）
+    // アンカーによるローカル頂点のずらし(資料通り)
     const float left = 0.0f - anchor_.x;
     const float right = 1.0f - anchor_.x;
     const float top = 0.0f - anchor_.y;
@@ -307,7 +307,7 @@ void Sprite::Debug([[maybe_unused]] const char* spriteName) {
         SetSize(sz[0], sz[1]);
     }
 
-    // 実効矩形の確認表示（アンカー適用後のTopLeft/BottomRight）
+    // 実効矩形の確認表示(アンカー適用後のTopLeft/BottomRight)
     const float left = resource_->transform_.translate.x - anchor_.x * size_.x;
     const float top = resource_->transform_.translate.y - anchor_.y * size_.y;
     const float right = left + size_.x;

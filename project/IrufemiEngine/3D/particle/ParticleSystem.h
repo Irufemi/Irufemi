@@ -59,7 +59,7 @@ public:
 
 	// ヒットエフェクトを再生する
 	void PlayHitEffect(const Vector3& position);
-	// ヒットエフェクトを再生する（数と位置を指定）
+	// ヒットエフェクトを再生する(数と位置を指定)
 	void PlayHitEffect(const Vector3& position, uint32_t count);
 
 	// 追加: Ring パラメータ設定
@@ -118,7 +118,7 @@ private:
 
 	int selectedTextureIndex_ = 0;
 
-	// Ring 用パラメータ（デフォルト）
+	// Ring 用パラメータ(デフォルト)
 	float ringInnerRadius_ = 0.2f;
 	float ringOuterRadius_ = 0.5f;
 	float ringStartAngleDeg_ = 0.0f;
@@ -126,7 +126,7 @@ private:
 	uint32_t ringSegmentCount_ = 32;
 	bool ringVerticalUV_ = false;
 
-	// Cylinder 用パラメータ（デフォルト）
+	// Cylinder 用パラメータ(デフォルト)
 	float cylinderRadius_ = 0.5f;
 	float cylinderHeight_ = 1.0f;
 	uint32_t cylinderSegmentCount_ = 32;
@@ -138,8 +138,8 @@ private:
 	bool showEmitterAABB_ = true;
 	bool showFieldAABB_ = true;
 
-	// 描画時の選択（Debug UI で設定され、Draw の直前にエンジンへ反映する）
-	BlendMode selectedBlend_ = BlendMode::kBlendModeAdd; // デフォルト: Add（既存シーンと同等）
-	PSOManager::DepthWrite selectedDepth_ = PSOManager::DepthWrite::Disable; // デフォルト: Disable（既存シーンと同等）
+	// 描画時の選択(Debug UI で設定され、Draw の直前にエンジンへ反映する)
+	BlendMode selectedBlend_ = BlendMode::kBlendModeAdd; // デフォルト: Add(既存シーンと同等)
+	PSOManager::DepthWrite selectedDepth_ = PSOManager::DepthWrite::Disable; // デフォルト: Disable(既存シーンと同等)
 	PSOManager::CullMode selectedCull_ = PSOManager::CullMode::None; // デフォルト: None
 };

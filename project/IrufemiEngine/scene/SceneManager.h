@@ -18,10 +18,10 @@ public:
     // 登録順を保持しつつ登録
     void Register(const Key& name, Factory f);
 
-    // シーン切替要求（次の Update 冒頭で反映）
+    // シーン切替要求(次の Update 冒頭で反映)
     void Request(const Key& next);
 
-    // 即時切替（初期化時など）
+    // 即時切替(初期化時など)
     bool ChangeTo(const Key& next);
 
     void Update();

@@ -96,7 +96,7 @@ private:
 	Camera* camera_ = nullptr;
 	std::vector<std::unique_ptr<IEffectBehavior>> effects_;
 
-	// UI で使う一時 Transform（位置/回転（rad）/スケール）
+	// UI で使う一時 Transform(位置/回転(rad)/スケール)
 	Transform spawnTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
 	EffectType selectedEffectType_ = EffectType::kAura; // UIで選択されたエフェクトタイプ
 };

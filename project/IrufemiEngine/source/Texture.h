@@ -21,11 +21,11 @@ public:
 
     const D3D12_GPU_DESCRIPTOR_HANDLE& GetTextureSrvHandleGPU()const { return textureSrvHandleGPU_; }
 
-    // 追加: サイズ取得（TextureManager::GetTextureSize から呼ばれる）
+    // 追加: サイズ取得(TextureManager::GetTextureSize から呼ばれる)
     uint32_t GetWidth()  const { return width_; }
     uint32_t GetHeight() const { return height_; }
 
-    // 既存互換（段階移行用）
+    // 既存互換(段階移行用)
     static uint32_t GetStaticSRVIndex() { return index_; }
     static void AddStaticSRVIndex() { index_++; }
 

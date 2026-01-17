@@ -19,7 +19,7 @@ namespace {
         ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), w.data(), size);
         return w;
     }
-    // パス正規化（キーとして安定化させる）
+    // パス正規化(キーとして安定化させる)
     std::string NormalizePath(const std::string& path) {
         std::filesystem::path p(path);
         p.make_preferred();
@@ -179,7 +179,7 @@ IXAudio2SourceVoice* AudioManager::Play(std::shared_ptr<Sound> soundData, bool l
     hr = pSourceVoice->Start(0);
     assert(SUCCEEDED(hr));
 
-    // 生成したソースボイスのポインタを返す（外部で音量変更などに使うため）
+    // 生成したソースボイスのポインタを返す(外部で音量変更などに使うため)
     // 管理リストに追加してから返す
     activeVoices_.push_back(pSourceVoice);
     return pSourceVoice;

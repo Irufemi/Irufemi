@@ -15,22 +15,22 @@ class DirectXCommon;
 class DrawManager;
 class DescriptorPool;
 
-// 単一Spriteを使い回して大量描画するためのバッチャ（GPUインスタンシング対応）
+// 単一Spriteを使い回して大量描画するためのバッチャ(GPUインスタンシング対応)
 class SpriteRegion {
 public:
     SpriteRegion() = default;
     ~SpriteRegion() = default;
 
-    // 初期化：共有のSpriteを1つだけ作る（テクスチャ名を固定化）
+    // 初期化：共有のSpriteを1つだけ作る(テクスチャ名を固定化)
     void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
 
-    // パーティクルライクな管理（CPU 更新）
+    // パーティクルライクな管理(CPU 更新)
     void Update(float dt);
 
-    // 単純にインスタンスを追加（Transform.scale は px 単位で幅/高さ）
+    // 単純にインスタンスを追加(Transform.scale は px 単位で幅/高さ)
     void AddInstance(const Transform& t);
 
-    // 大量演出（明滅→シャード）の発生ヘルパ
+    // 大量演出(明滅→シャード)の発生ヘルパ
     void EmitSquareWave(
         const Vector2& center,
         int cols, int rows,
@@ -46,13 +46,13 @@ public:
     // 全インスタンス削除
     void ClearInstances();
 
-    // インスタンシングバッファ更新（必要時だけ再構築/更新）
+    // インスタンシングバッファ更新(必要時だけ再構築/更新)
     void BuildInstanceBuffer(bool force = false);
 
-    // 描画（GPUインスタンシング）。CPUフォールバック描画も可能。
+    // 描画(GPUインスタンシング)。CPUフォールバック描画も可能。
     void Draw(bool useCpuFallback = false);
 
-    // 共有設定（全インスタンスに適用）
+    // 共有設定(全インスタンスに適用)
     void SetAnchor(float ax, float ay) { if (sprite_) sprite_->SetAnchor(ax, ay); }
     void SetFlip(bool fx, bool fy) { if (sprite_) sprite_->SetFlip(fx, fy); }
     void SetColor(const Vector4& color) { if (sprite_) sprite_->SetColor(color); }
@@ -77,7 +77,7 @@ public:
 
 private:
     struct Particle {
-        Transform transform;       // translate = 位置, scale = 幅/高さ（px）
+        Transform transform;       // translate = 位置, scale = 幅/高さ(px)
         Vector2 velocity{ 0.0f, 0.0f }; // px/sec
         float rotationSpeed = 0.0f;     // rad/sec (Zのみ)
         Vector4 color{ 1.0f,1.0f,1.0f,1.0f };
@@ -96,11 +96,11 @@ private:
         float shardLifetime = 0.0f;
     };
 
-    // VS 側が読む1インスタンス分のデータ（行列は列優先/プロジェクトのHLSL準拠で）
+    // VS 側が読む1インスタンス分のデータ(行列は列優先/プロジェクトのHLSL準拠で)
     struct InstanceData {
-        Matrix4x4 WVP;   // CPUで計算したWVP（VSでそのまま使う）
+        Matrix4x4 WVP;   // CPUで計算したWVP(VSでそのまま使う)
         Vector4   color; // 乗算用カラー
-        // 将来の拡張用（UV矩形/追加パラメータなど）はここに追加
+        // 将来の拡張用(UV矩形/追加パラメータなど)はここに追加
     };
 
     void SpawnShardsAt(const Vector3& center, int count, float sizePx, float lifetime);
@@ -116,12 +116,12 @@ private:
     static DescriptorPool* s_srvAllocator_;
 
     Camera* camera_ = nullptr;
-    std::unique_ptr<Sprite> sprite_ = nullptr;  // 共有Sprite（リソース共有の要）
+    std::unique_ptr<Sprite> sprite_ = nullptr;  // 共有Sprite(リソース共有の要)
 
     std::vector<Particle> particles_;           // 管理するインスタンス群
     size_t activeCount_ = 0;                    // 今回描画する有効インスタンス数
 
-    // プール制限（必要に応じて増やす）
+    // プール制限(必要に応じて増やす)
     size_t maxParticles_ = 8192;
 
     // 乱数

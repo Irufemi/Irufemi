@@ -21,7 +21,7 @@ ResultScene::~ResultScene() {
 void ResultScene::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 
-    // カメラ（2D 正射影）
+    // カメラ(2D 正射影)
     camera_ = std::make_unique<Camera>();
     camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
     camera_->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });

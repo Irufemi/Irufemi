@@ -131,7 +131,7 @@ public: // メンバ関数
     // シーンセレクタ
     void DebugSceneSelector(SceneManager* sm);
 
-    // PSO設定（ブレンド、深度、カリング）のデバッグUI
+    // PSO設定(ブレンド、深度、カリング)のデバッグUI
     static void DebugPsoSettings(
         BlendMode* blendMode,
         PSOManager::DepthWrite* depthWrite,

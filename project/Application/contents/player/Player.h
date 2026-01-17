@@ -33,7 +33,7 @@ public:
 	void SetMapChipField(MapChipField* mapChipField) { this->mapChipField_ = mapChipField; }
 	void TakeDamage(int damage, const Vector3& enemyPosition);
 
-	// --- 状態取得（読み取り専用） ---
+	// --- 状態取得(読み取り専用) ---
 	const Vector3& GetVelocity() const { return this->velocity_; }
 	const Vector3& GetTranslate() const { return transform_.translate; }
 	Vector3 GetWorldPosition();
@@ -58,8 +58,8 @@ public:
 
 private: // ===== 内部型・定数 =====
 	struct CollisionMapInfo {
-		bool isContactCeiling = false;      // ↑方向（頭）で天井にヒット
-		bool isContactGround = false;       // ↓方向（足）で地面にヒット
+		bool isContactCeiling = false;      // ↑方向(頭)で天井にヒット
+		bool isContactGround = false;       // ↓方向(足)で地面にヒット
 		bool isContactWall = false;         // ←→方向で壁にヒット
 		int  wallDir = 0;                   // 壁の在る側: +1=右壁, -1=左壁, 0=なし
 		Vector3 amountMove{};               // 軸分離でクリップ後の最終移動量
@@ -68,11 +68,11 @@ private: // ===== 内部型・定数 =====
 	enum Corner { kRightBottom, kLeftBottom, kRightTop, kLeftTop, kNumCorner };
 
 	// --- チューニング用パラメータ ---
-	static inline const float kAcceleration = 0.018f;        // 地上: 横加速度（横移動では未使用）
-	static inline const float kAttenuation = 0.10f;          // 地上: 無入力減衰（横移動では未使用）
-	static inline const float kLimitRunSpeed = 0.20f;        // 地上/空中: 横最高速（=入力一定速度）
-	static inline const float kAirAcceleration = 0.011f;     // 空中: 横加速度（横移動では未使用）
-	static inline const float kAirAttenuation = 0.02f;       // 空中: 無入力減衰（横移動では未使用）
+	static inline const float kAcceleration = 0.018f;        // 地上: 横加速度(横移動では未使用)
+	static inline const float kAttenuation = 0.10f;          // 地上: 無入力減衰(横移動では未使用)
+	static inline const float kLimitRunSpeed = 0.20f;        // 地上/空中: 横最高速(=入力一定速度)
+	static inline const float kAirAcceleration = 0.011f;     // 空中: 横加速度(横移動では未使用)
+	static inline const float kAirAttenuation = 0.02f;       // 空中: 無入力減衰(横移動では未使用)
 	static inline const float kgravityAcceleration = 0.010f; // 重力
 	static inline const float kLimitFallSpeed = 0.36f;       // 落下終端速度
 	static inline const float kFallGravityScale = 1.2f;      // 下降時の重力倍率
@@ -84,15 +84,15 @@ private: // ===== 内部型・定数 =====
 	static inline const float kAttenuationLanding = 0.08f;   // 着地時の水平減衰
 	static inline const float kAttenuationWall = 0.25f;      // 壁接触時の水平減衰
 	static inline const float kJumpCutFactor = 0.5f;         // ジャンプ短押しカット倍率
-	static inline const int   kCoyoteFrames = 6;             // コヨーテタイム（フレーム）
-	static inline const int   kJumpBufferFrames = 6;         // ジャンプバッファ（フレーム）
+	static inline const int   kCoyoteFrames = 6;             // コヨーテタイム(フレーム)
+	static inline const int   kJumpBufferFrames = 6;         // ジャンプバッファ(フレーム)
 	static inline const int   kMaxAirJumps = 1;              // 2段ジャンプ回数
 
 	// 壁ジャンプ
 	static inline const float kWallJumpHorizontal = 0.26f;   // 壁から離れる水平速度
 	static inline const float kWallJumpVertical = 0.28f;     // 壁ジャンの上向き速度
 	static inline const int   kWallCoyoteFrames = 6;         // 壁コヨーテ
-	// 壁スライド（Hollow Knight 風）
+	// 壁スライド(Hollow Knight 風)
 	static inline const float kWallSlideMaxFallSpeed = 0.12f;// 壁方向入力中の最大落下速度
 
 	// ダメージ表現
@@ -135,16 +135,16 @@ private: // ===== データメンバ =====
 	int  wallCoyoteCounter_ = 0;
 	float horizontalControlLockTimer_ = 0.0f; // 壁ジャン直後の横入力ロック
 
-	// ダッシュ使用フラグ（空中では1回だけ許可、地上では何度でも）
+	// ダッシュ使用フラグ(空中では1回だけ許可、地上では何度でも)
 	bool dashUsed_ = false;
 
 	// Transformとワールド行列
 	Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
-	Matrix4x4 worldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
+	Matrix4x4 worldMatrix_{}; // S*Ry*T(現在はY回転のみ対応)
 	Transform dashEffectTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
-	Matrix4x4 dashEffectWorldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
+	Matrix4x4 dashEffectWorldMatrix_{}; // S*Ry*T(現在はY回転のみ対応)
 	Transform attackEffectTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
-	Matrix4x4 attackEffectWorldMatrix_{}; // S*Ry*T（現在はY回転のみ対応）
+	Matrix4x4 attackEffectWorldMatrix_{}; // S*Ry*T(現在はY回転のみ対応)
 
 	// 描画
 	ObjClass* model_ = nullptr;
@@ -201,7 +201,7 @@ private: // ===== 内部処理 =====
 	friend struct PlayerStateDash;
 	friend struct PlayerStateAttack;
 
-	// 旧個別判定（参考用・未使用）
+	// 旧個別判定(参考用・未使用)
 	void MapCollisionTop(CollisionMapInfo& info);
 	void MapCollisionBottom(CollisionMapInfo& info);
 	void MapCollisionRight(CollisionMapInfo& info);

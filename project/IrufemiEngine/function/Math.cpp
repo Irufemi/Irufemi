@@ -44,7 +44,7 @@ namespace Math {
         return result;
     }
 
-    // 点と線分(2D)の最近接点（Segment2D: endは終点座標）
+    // 点と線分(2D)の最近接点(Segment2D: endは終点座標)
     Vector2 ClosestPoint(const Vector2& point, const Segment2D& segment) {
         Vector2 ab = Subtract(segment.end, segment.origin);
         Vector2 ap = Subtract(point, segment.origin);
@@ -123,7 +123,7 @@ namespace Math {
 
     }
 
-    //クロス積（外積）
+    //クロス積(外積)
     Vector3 Cross(const Vector3& a, const Vector3& b) {
 
         return  { a.y * b.z - a.z * b.y,a.z * b.x - a.x * b.z,a.x * b.y - a.y * b.x };
@@ -155,7 +155,7 @@ namespace Math {
     Vector3 ClosestPoint(const Vector3& point, const Line& line) {
         Vector3 a = Subtract(point, line.origin);
         float t = Dot(a, line.diff) / Dot(line.diff, line.diff);
-        return Add(line.origin, Multiply(t, line.diff)); // tに制限なし（無限直線）
+        return Add(line.origin, Multiply(t, line.diff)); // tに制限なし(無限直線)
     }
 
     // ベジェ曲線
@@ -293,7 +293,7 @@ namespace Math {
         float det = a[0] * o[0] + a[1] * o[4] + a[2] * o[8] + a[3] * o[12];
 
         if (det == 0.0f) {
-            return Matrix4x4(); // 逆行列が存在しない場合（ゼロ行列返すなど）
+            return Matrix4x4(); // 逆行列が存在しない場合(ゼロ行列返すなど)
         }
 
         float invDet = 1.0f / det;
@@ -613,12 +613,12 @@ namespace Math {
         // 数値誤差対策の閾値
         constexpr float kEpsilon = 1e-6f;
 
-        // ほぼ同じ方向 -> 単位行列（回転不要）
+        // ほぼ同じ方向 -> 単位行列(回転不要)
         if (cosTheta > 1.0f - kEpsilon) {
             return MakeIdentity4x4();
         }
 
-        // ほぼ逆方向 -> 軸が定義できない（u x v = 0）になるので、
+        // ほぼ逆方向 -> 軸が定義できない(u x v = 0)になるので、
         // 添付画像の選び方に従って直交ベクトルを選ぶ
         if (cosTheta < -1.0f + kEpsilon) {
             Vector3 axis{ 0.0f, 0.0f, 0.0f };
@@ -626,7 +626,7 @@ namespace Math {
             // 画像の式:
             // n = [ uy, -ux, 0 ]  (if ux != 0 || uy != 0)
             // n = [ uz, 0, -ux ]  (if ux != 0 || uz != 0)
-            // 優先は前者（xy 平面での成分があれば使う）
+            // 優先は前者(xy 平面での成分があれば使う)
             if (std::fabs(f.x) > kEpsilon || std::fabs(f.y) > kEpsilon) {
                 axis = Vector3{ f.y, -f.x, 0.0f };
             } else if (std::fabs(f.x) > kEpsilon || std::fabs(f.z) > kEpsilon) {
@@ -636,7 +636,7 @@ namespace Math {
                 axis = Vector3{ 1.0f, 0.0f, 0.0f };
             }
 
-            // 正規化（安全）
+            // 正規化(安全)
             float axisLen = Length(axis);
             if (axisLen < kEpsilon) {
                 axis = Vector3{ 1.0f, 0.0f, 0.0f };
@@ -743,7 +743,7 @@ namespace Math {
         constexpr float kEpsilon = 1e-6f;
         float n = Norm(quaternion);
         if (n < kEpsilon) {
-            // 長さがほぼ0の場合は元の値をそのまま返す（分母ゼロ回避）
+            // 長さがほぼ0の場合は元の値をそのまま返す(分母ゼロ回避)
             return quaternion;
         }
         Quaternion result{};
@@ -758,7 +758,7 @@ namespace Math {
     Quaternion Inverse(const Quaternion& quaternion) {
         // 逆元は共役をノルム二乗で割る: q^{-1} = q* / ||q||^2
         constexpr float kEpsilon = 1e-12f;
-        // ノルム二乗を直接計算（sqrt を使わず効率的）
+        // ノルム二乗を直接計算(sqrt を使わず効率的)
         float normSq =
             quaternion.w * quaternion.w +
             quaternion.x * quaternion.x +
@@ -783,7 +783,7 @@ namespace Math {
     Quaternion MakeRotateAxisAngleQuaternion(const Vector3& axis, float angle) {
         constexpr float kEpsilon = 1e-6f;
 
-        // 軸を正規化（ゼロ長なら X 軸を代替）
+        // 軸を正規化(ゼロ長なら X 軸を代替)
         float axisLen = Length(axis);
         Vector3 n = axis;
         if (axisLen < kEpsilon) {
@@ -835,10 +835,10 @@ namespace Math {
 
     // 球面線形補間
     Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t) {
-        // q0, q1 は単位四元数であることが前提（数値誤差は別途管理）
+        // q0, q1 は単位四元数であることが前提(数値誤差は別途管理)
         Quaternion q0_ = q0;
 
-        // q0 と q1 の内積（4次元ベクトルとして）
+        // q0 と q1 の内積(4次元ベクトルとして)
         float dot = q0.x * q1.x + q0.y * q1.y + q0.z * q1.z + q0.w * q1.w;
 
         // 最短経路を取るために内積が負の場合は片方の符号を反転する
@@ -850,10 +850,10 @@ namespace Math {
             dot = -dot;
         }
 
-        // dot がほぼ 1 の場合は線形補間（数値安定化）
+        // dot がほぼ 1 の場合は線形補間(数値安定化)
         constexpr float kDotThreshold = 0.9995f;
         if (dot > kDotThreshold) {
-            // NLERP（線形補間）: cost を抑えるため正規化は呼び出し側で必要に応じて行う
+            // NLERP(線形補間): cost を抑えるため正規化は呼び出し側で必要に応じて行う
             Quaternion result{};
             result.x = q0_.x + t * (q1.x - q0_.x);
             result.y = q0_.y + t * (q1.y - q0_.y);

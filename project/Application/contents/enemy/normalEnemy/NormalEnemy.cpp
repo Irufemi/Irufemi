@@ -93,7 +93,7 @@ void NormalEnemy::OnCollision(Player* player) {
     isCollisionDisabled_ = true;
     behaviorRequest_ = Behavior::kDeath;
 
-    // ヒットエフェクトの生成（必要であれば）
+    // ヒットエフェクトの生成(必要であれば)
     // if (gameScene_) {
     //     // ...
     // }
@@ -104,7 +104,7 @@ void NormalEnemy::UpdateMatrix() {
 }
 
 void NormalEnemy::BehaviorWalkInitialize() {
-    // 歩行開始時の初期化（必要であれば）
+    // 歩行開始時の初期化(必要であれば)
 }
 
 void NormalEnemy::BehaviorWalkUpdate() {
@@ -167,7 +167,7 @@ void NormalEnemy::BehaviorDeathUpdate() {
     // Y軸回転
     transform_.rotate.y = Lerp(deathStartRotation_.y, deathEndRotation_.y, EaseOutSine(t));
 
-    // X軸回転（演出の後半で倒れる）
+    // X軸回転(演出の後半で倒れる)
     if (t > 0.5f) {
         float fall_t = (t - 0.5f) * 2.0f;
         transform_.rotate.x = Lerp(deathStartRotation_.x, deathEndRotation_.x, EaseInSine(fall_t));

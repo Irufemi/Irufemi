@@ -20,10 +20,10 @@ public:
     void FreeAfterFence(uint32_t index, uint64_t safeFence);
     void GarbageCollect(uint64_t completedFence);
 
-    // 使用中インデックス集合（昇順ユニーク）を渡してフリーリストを再構築
+    // 使用中インデックス集合(昇順ユニーク)を渡してフリーリストを再構築
     void RebuildFreeListExcept(const std::vector<uint32_t>& usedSortedUnique);
 
-    // 先頭の予約（ImGui 等）
+    // 先頭の予約(ImGui 等)
     void ReservePrefix(uint32_t count);
 
     D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index) const;

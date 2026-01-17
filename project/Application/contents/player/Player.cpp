@@ -21,7 +21,7 @@ void Player::Initialize(ObjClass* model, Camera* camera, InputManager* inputMana
     camera_ = camera;
     inputManager_ = inputManager;
 
-    // Transform 初期化（右向きで開始）
+    // Transform 初期化(右向きで開始)
     transform_.translate = position;
     transform_.rotate = Vector3{ 0.0f, std::numbers::pi_v<float> / 2.0f, 0.0f };
     transform_.scale = Vector3{ 1.0f, 1.0f, 1.0f };
@@ -128,7 +128,7 @@ void Player::ChangeState(std::unique_ptr<IPlayerState> next) {
 
 /*
  * MoveInput
- * 入力一定速度（Hollow Knight 風）+ 二段/壁ジャン + 壁スライド
+ * 入力一定速度(Hollow Knight 風)+ 二段/壁ジャン + 壁スライド
  */
 void Player::MoveInput() {
     // 入力
@@ -145,7 +145,7 @@ void Player::MoveInput() {
     const bool jumpDown = keyJump || padJump;
     const bool jumpTriggered = jumpDown && !jumpHeldPrev_;
 
-    // 固定Δt（60fps前提）
+    // 固定Δt(60fps前提)
     const float dt = 1.0f / 60.0f;
 
     // ジャンプバッファ
@@ -159,8 +159,8 @@ void Player::MoveInput() {
         horizontalControlLockTimer_ = std::max(0.0f, horizontalControlLockTimer_ - dt);
     }
 
-    // --- 横移動（入力一定速度） ---
-    // 方向入力から目標速度を決定（地上/空中で同一）
+    // --- 横移動(入力一定速度) ---
+    // 方向入力から目標速度を決定(地上/空中で同一)
     int inputX = (right ? 1 : 0) - (left ? 1 : 0);
     if (inputX != 0) {
         // 見た目の向き更新
@@ -179,7 +179,7 @@ void Player::MoveInput() {
         velocity_.x += (targetX - velocity_.x) * alpha;
         velocity_.x = std::clamp(velocity_.x, -kLimitRunSpeed, kLimitRunSpeed);
     }
-    // ロック中は壁ジャン初速を尊重（クランプのみ）
+    // ロック中は壁ジャン初速を尊重(クランプのみ)
     else {
         velocity_.x = std::clamp(velocity_.x, -kLimitRunSpeed, kLimitRunSpeed);
     }
@@ -211,10 +211,10 @@ void Player::MoveInput() {
         // 壁ジャン後は二段ジャンプをリセット
         airJumpsLeft_ = kMaxAirJumps;
 
-        // 入力ロック開始（壁ジャン初速を活かす）
+        // 入力ロック開始(壁ジャン初速を活かす)
         horizontalControlLockTimer_ = kWallJumpHorizLockTime;
 
-        // 壁ジャンを行ったので空中ダッシュを再度使えるようにする（リセット）
+        // 壁ジャンを行ったので空中ダッシュを再度使えるようにする(リセット)
         dashUsed_ = false;
 
         // 状態クリア
@@ -232,13 +232,13 @@ void Player::MoveInput() {
         jumpBufferCounter_ = 0;
     }
 
-    // ジャンプカット（ボタン離し）
+    // ジャンプカット(ボタン離し)
     const bool jumpHeld = jumpDown;
     if (!jumpHeld && velocity_.y > 0.0f) {
         velocity_.y *= kJumpCutFactor;
     }
 
-    // 重力（空中のみ）
+    // 重力(空中のみ)
     ApplyGravity();
 
     // 押下状態の保存
@@ -256,7 +256,7 @@ void Player::ApplyGravity() {
 /*
  * BehaviorMoveUpdate
  * 目的: 速度に基づく移動を、マップチップとの衝突でクリップしつつ反映する。
- * 手順: 1) 旋回演出 2) 衝突解決（Y→X） 3) 接触後処理 4) 行列更新
+ * 手順: 1) 旋回演出 2) 衝突解決(Y→X) 3) 接触後処理 4) 行列更新
  */
 void Player::BehaviorMoveUpdate() {
     // 1) 見た目の向き補間
@@ -273,7 +273,7 @@ void Player::BehaviorMoveUpdate() {
     ContactGround(info);
     ContactWall(info);
 
-    // 4) 行列更新（ロジック→描画へ）
+    // 4) 行列更新(ロジック→描画へ)
     UpdateMatrix();
 }
 
@@ -292,8 +292,8 @@ void Player::CollisionDetection(CollisionMapInfo& info) {
 /*
  * ResolveVerticalFrom
  * 目的: Y 移動 dy を、頭/足の左右2点サンプルで検出したブロックに対してクリップする。
- * 方法: 上昇(頭): rect.bottom と自機 top の距離で dy を短縮（-kMBlank）。
- * 下降(足): rect.top と自機 bottom の距離で dy を伸長（+kMBlank）。
+ * 方法: 上昇(頭): rect.bottom と自機 top の距離で dy を短縮(-kMBlank)。
+ * 下降(足): rect.top と自機 bottom の距離で dy を伸長(+kMBlank)。
  * 対応: (旧) MapCollisionTop / MapCollisionBottom の統合。
  */
 float Player::ResolveVerticalFrom(const Vector3& base, float dy, CollisionMapInfo& info) const {
@@ -346,8 +346,8 @@ float Player::ResolveVerticalFrom(const Vector3& base, float dy, CollisionMapInf
 /*
  * ResolveHorizontalFrom
  * 目的: X 移動 dx を、左右端の上下2点サンプルで検出したブロックに対してクリップする。
- * 方法: 右移動: rect.left と自機 right の距離で dx を短縮（-kMBlank）。
- * 左移動: rect.right と自機 left の距離で dx を伸長（+kMBlank）。
+ * 方法: 右移動: rect.left と自機 right の距離で dx を短縮(-kMBlank)。
+ * 左移動: rect.right と自機 left の距離で dx を伸長(+kMBlank)。
  * 対応: (旧) MapCollisionRight / MapCollisionLeft の統合。
  */
 float Player::ResolveHorizontalFrom(const Vector3& base, float dx, CollisionMapInfo& info) const {
@@ -433,7 +433,7 @@ void Player::ContactCeiling(const CollisionMapInfo& info) {
 void Player::ContactGround(const CollisionMapInfo& info) {
     // 空中→接地に遷移したフレーム
     if (!onGround_ && info.isContactGround) {
-        // 着地直前に押していたら、着地フレームで即ジャンプ（バッファ）
+        // 着地直前に押していたら、着地フレームで即ジャンプ(バッファ)
         if (jumpBufferCounter_ > 0) {
             // 地上ジャンプ扱いなので、空中ジャンプ回数はここでリセット
             airJumpsLeft_ = kMaxAirJumps;
@@ -447,7 +447,7 @@ void Player::ContactGround(const CollisionMapInfo& info) {
         }
         // 通常の着地
         onGround_ = true;
-        // 着地でダッシュフラグをリセット（地上で再びダッシュ可能にする）
+        // 着地でダッシュフラグをリセット(地上で再びダッシュ可能にする)
         dashUsed_ = false;
         velocity_.x *= (1.0f - kAttenuationLanding);
         // 二段ジャンプリセット
@@ -471,7 +471,7 @@ void Player::ContactWall(const CollisionMapInfo& info) {
         velocity_.x *= (1.0f - kAttenuationWall);
     }
 
-    // 壁接触状態と壁コヨーテ更新（空中時のみ）
+    // 壁接触状態と壁コヨーテ更新(空中時のみ)
     if (!onGround_ && info.isContactWall) {
         isTouchingWall_ = true;
         wallCoyoteCounter_ = kWallCoyoteFrames;
@@ -487,7 +487,7 @@ void Player::ContactWall(const CollisionMapInfo& info) {
         }
     }
 
-    // 壁スライド（Hollow Knight 風）：壁方向入力中は落下速度を強く制限
+    // 壁スライド(Hollow Knight 風)：壁方向入力中は落下速度を強く制限
     // 条件: 空中 && 壁に触れている(もしくは直前まで触れていた) && 壁方向に入力
     int wallDir = (info.wallDir != 0) ? info.wallDir : lastWallDir_; // +1=右壁, -1=左壁
     bool pressingToward = false;
@@ -514,7 +514,7 @@ void Player::TurningControl() {
             : -std::numbers::pi_v<float> / 2.0f;
         return;
     }
-    // 簡易な固定Δt補間（60fps想定）
+    // 簡易な固定Δt補間(60fps想定)
     const float dt = 1.0f / 60.0f;
     float t = std::clamp(1.0f - (turnTimer_ / kTimeTurn), 0.0f, 1.0f);
     float target = (lrDirection_ == LRDirection::kRight)
@@ -527,7 +527,7 @@ void Player::TurningControl() {
 /*
  * UpdateMatrix
  * 役割: Player 自身のワールド行列を更新し、Transform を model にセットする。
- * 備考: 現状は Y 回転のみを考慮（本プロジェクトの使用状況に一致）。X/Z を使う場合は拡張する。
+ * 備考: 現状は Y 回転のみを考慮(本プロジェクトの使用状況に一致)。X/Z を使う場合は拡張する。
  */
 void Player::UpdateMatrix() {
     // S*Ry*T の簡易アフィン
@@ -577,7 +577,7 @@ Vector3 Player::CornerPosition(const Vector3& center, Corner corner) {
     }
 }
 
-// ===== 旧個別判定（参考用・未使用） =====
+// ===== 旧個別判定(参考用・未使用) =====
 void Player::MapCollisionTop(CollisionMapInfo& info) { (void)info; }
 void Player::MapCollisionBottom(CollisionMapInfo& info) { (void)info; }
 void Player::MapCollisionRight(CollisionMapInfo& info) { (void)info; }

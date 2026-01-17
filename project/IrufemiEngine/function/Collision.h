@@ -220,12 +220,12 @@ namespace Collision {
     bool IsOBBSegmentCollision(const OBB& obb, const Segment& segment);
 
     /// </summary>
-    /// OBBとRay（半直線）の判定
+    /// OBBとRay(半直線)の判定
     /// </summary>
     bool IsOBBRayCollision(const OBB& obb, const Ray& ray);
 
     /// </summary>
-    /// OBBとLine（直線）の判定
+    /// OBBとLine(直線)の判定
     /// </summary>
     bool IsOBBLineCollision(const OBB& obb, const Line& line);
 

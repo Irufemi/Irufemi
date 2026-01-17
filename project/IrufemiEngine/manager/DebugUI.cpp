@@ -412,7 +412,7 @@ void DebugUI::DebugMaterialParticle([[maybe_unused]] ParticleMaterial* materialD
             materialData->lightingMode = currentMode;
         }
 
-        // サンプラ切替フラグ（0 = WRAP(s0), 1 = CLAMP(s1)）
+        // サンプラ切替フラグ(0 = WRAP(s0), 1 = CLAMP(s1))
         bool useClamp = materialData->useClampSampler != 0;
         if (ImGui::Checkbox("Use Clamp Sampler (V)", &useClamp)) {
             materialData->useClampSampler = useClamp ? 1 : 0;
@@ -420,19 +420,19 @@ void DebugUI::DebugMaterialParticle([[maybe_unused]] ParticleMaterial* materialD
 
         ImGui::DragFloat("Shininess", &materialData->shininess, 0.01f);
 
-        // --- UV Transform 編集（より実用的に） ---
+        // --- UV Transform 編集(より実用的に) ---
         // materialData->uvTransform は 4x4 行列。
         // 編集用に translate/scale/rotate(Z) を抽出し、編集後に再構成する。
-        // 抽出は「一般的な affine（回転 + scale + translate）を想定した簡易逆変換」です。
+        // 抽出は「一般的な affine(回転 + scale + translate)を想定した簡易逆変換」です。
         // U/V は X/Y 成分に対応している前提。
         float tx = materialData->uvTransform.m[3][0];
         float ty = materialData->uvTransform.m[3][1];
 
-        // 簡易スケール抽出：対角成分を利用（斜交/shear を無視する簡易推定）
+        // 簡易スケール抽出：対角成分を利用(斜交/shear を無視する簡易推定)
         float sx = materialData->uvTransform.m[0][0];
         float sy = materialData->uvTransform.m[1][1];
 
-        // 簡易回転（ラジアン）： atan2( m10, m00 ) を使用（回転+scale の混在を近似）
+        // 簡易回転(ラジアン)： atan2( m10, m00 ) を使用(回転+scale の混在を近似)
         float rot = std::atan2(materialData->uvTransform.m[1][0], materialData->uvTransform.m[0][0]);
 
         bool changed = false;
@@ -440,12 +440,12 @@ void DebugUI::DebugMaterialParticle([[maybe_unused]] ParticleMaterial* materialD
             if (ImGui::DragFloat2("UV Translate", &tx, 0.01f, -100.0f, 100.0f)) changed = true;
             if (ImGui::DragFloat2("UV Scale", &sx, 0.01f, -100.0f, 100.0f)) changed = true;
             if (ImGui::SliderAngle("UV Rotate (deg)", &rot)) changed = true;
-            ImGui::TextWrapped("注: 複雑な歪み（shear 等）がある場合は完璧に逆変換できません。一般的な UV 編集用途に最適化しています。");
+            ImGui::TextWrapped("注: 複雑な歪み(shear 等)がある場合は完璧に逆変換できません。一般的な UV 編集用途に最適化しています。");
             ImGui::TreePop();
         }
 
         if (changed) {
-            // Transform 構造を使って行列を再構成（function/Math.h の MakeAffineMatrix を利用）
+            // Transform 構造を使って行列を再構成(function/Math.h の MakeAffineMatrix を利用)
             Transform uvT;
             uvT.translate = { tx, ty, 0.0f };
             uvT.scale = { sx, sy, 1.0f };
@@ -640,7 +640,7 @@ void DebugUI::FPSDebug() {
         */
 
         /*
-        // ---------- カスタムグラフ描画（上が高い値） ----------
+        // ---------- カスタムグラフ描画(上が高い値) ----------
         const ImVec2 graphSize(260, 90);
         ImVec2 canvasMin = ImGui::GetCursorScreenPos();
         ImVec2 canvasMax = ImVec2(canvasMin.x + graphSize.x, canvasMin.y + graphSize.y);
@@ -680,7 +680,7 @@ void DebugUI::FPSDebug() {
         if (count > 1) {
             const int sampleCount = static_cast<int>(count);
             const float xStep = graphSize.x / float(std::max(sampleCount - 1, 1));
-            // start index（リングバッファの最古）
+            // start index(リングバッファの最古)
             size_t start = historyFilled_ ? historyIndex_ : 0;
             ImVec2 prev;
             for (int i = 0; i < sampleCount; ++i) {

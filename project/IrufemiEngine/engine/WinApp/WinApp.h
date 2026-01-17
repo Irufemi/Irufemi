@@ -6,19 +6,19 @@
 
 class WinApp final {
 public:
-    // クラス定数（課題要件の int 定数）
+    // クラス定数(課題要件の int 定数)
     static constexpr int kClassVersion = 1;
 
     WinApp() = default;
     ~WinApp();
 
-    // 初期化（ウィンドウ生成 + COM 初期化）
+    // 初期化(ウィンドウ生成 + COM 初期化)
     bool Initialize(HINSTANCE hInstance, int width = 1280, int height = 720, const std::wstring& title = L"Window");
 
-    // 後始末（ウィンドウ破棄 + COM 終了）
+    // 後始末(ウィンドウ破棄 + COM 終了)
     void Finalize();
 
-    // メッセージポンプ（false を返したらアプリ終了）
+    // メッセージポンプ(false を返したらアプリ終了)
     bool ProcessMessages();
 
     // ゲッター

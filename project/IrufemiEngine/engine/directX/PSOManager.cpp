@@ -3,7 +3,7 @@
 #include <cassert>
 
 
-// 軽量ハッシュ（キャッシュキー用）
+// 軽量ハッシュ(キャッシュキー用)
 static uint64_t FNV1a(const void* p, size_t n, uint64_t h = 1469598103934665603ull) {
     const uint8_t* b = (const uint8_t*)p; while (n--) { h ^= *b++; h *= 1099511628211ull; } return h;
 }
@@ -33,9 +33,9 @@ void PSOManager::Initialize(
     inputLayout_.NumElements = static_cast<UINT>(inputElements_.size());
     rtvFormat_ = rtvFormat; // 既存の RTV 形式
     dsvFormat_ = dsvFormat; // 既存の DSV 形式
-    topology_ = topology; // 三角形トポロジ固定（既存）
-    objectShaders_ = objectShaders; // 既存 VS/PS（Object3D）
-    particleShaders_ = particleShaders; // パーティクル VS/PS（あれば）
+    topology_ = topology; // 三角形トポロジ固定(既存)
+    objectShaders_ = objectShaders; // 既存 VS/PS(Object3D)
+    particleShaders_ = particleShaders; // パーティクル VS/PS(あれば)
     spriteShaders_ = spriteShaders;
     blocksShaders_ = regionShaders;
     byGeometryShaderShaders_ = byGeometryShaderShaders;
@@ -87,14 +87,14 @@ ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth, Cu
         ? spriteShaders_
         : objectShaders_;
 
-    // キャッシュキー（Sprite識別のために XOR で種を追加）
+    // キャッシュキー(Sprite識別のために XOR で種を追加)
     constexpr uint64_t kSpriteTag = 0x535052544B4559ull; // "SPR TKEY"
     Key key{ static_cast<uint64_t>(Hash(shaders, blend, depth, cull) ^ kSpriteTag) };
 
     auto it = cache_.find(key);
     if (it != cache_.end()) { return it->second.Get(); }
 
-    // PSO 構築（Rasterizer.Cull を指定 CullMode に合わせる）
+    // PSO 構築(Rasterizer.Cull を指定 CullMode に合わせる)
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();
     desc.VS = { shaders.vsBlob ? shaders.vsBlob->GetBufferPointer() : nullptr,
@@ -113,7 +113,7 @@ ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth, Cu
     desc.BlendState = MakeBlend(blend);
     desc.DepthStencilState = MakeDepth(depth);
 
-    // Rasterizer（CullMode を反映）
+    // Rasterizer(CullMode を反映)
     D3D12_RASTERIZER_DESC rast{};
     rast.FillMode = D3D12_FILL_MODE_SOLID;
     switch (cull) {
@@ -141,7 +141,7 @@ ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth, Cu
 
 ID3D12PipelineState* PSOManager::GetRegion(BlendMode b, DepthWrite d, CullMode c)
 {
-    // 既存のキャッシュ Key 生成を流用（Hash(blocksShaders_, b, d, c)）
+    // 既存のキャッシュ Key 生成を流用(Hash(blocksShaders_, b, d, c))
     Key k{ Hash(blocksShaders_, b, d, c) };
     auto it = cache_.find(k);
     if (it != cache_.end()) return it->second.Get();
@@ -166,7 +166,7 @@ ID3D12PipelineState* PSOManager::GetByGeometryShader(BlendMode blend, DepthWrite
     D3D12_BLEND_DESC bd = MakeBlend(blend);
     D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
 
-    // ByGeometryShader は POINT トポロジを使用（他は既存の TRIANGLE のまま）
+    // ByGeometryShader は POINT トポロジを使用(他は既存の TRIANGLE のまま)
     auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, cull);
     if (!pso) { return nullptr; }
     cache_[key] = pso;
@@ -210,7 +210,7 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSO(
     }
     desc.BlendState = blendDesc;
 
-    // ラスタライザ（既存エンジンのデフォルトに合わせる）
+    // ラスタライザ(既存エンジンのデフォルトに合わせる)
     D3D12_RASTERIZER_DESC rs{};
     switch (cull) {
     case CullMode::Back: rs.CullMode = D3D12_CULL_MODE_BACK; break;
@@ -286,12 +286,12 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSOWithTopology(
 D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
 {
     D3D12_BLEND_DESC d{}; auto& rt = d.RenderTarget[0];
-    rt.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; // すべての色要素を書き込む（既存コメント踏襲）
+    rt.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; // すべての色要素を書き込む(既存コメント踏襲)
 
 
     switch (m) {
     case BlendMode::kBlendModeNone:
-        // BlendEnable = FALSE（ブレンドなし）
+        // BlendEnable = FALSE(ブレンドなし)
         break;
 
 
@@ -300,7 +300,7 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         rt.SrcBlend = D3D12_BLEND_SRC_ALPHA;
         rt.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
         rt.BlendOp = D3D12_BLEND_OP_ADD;
-        rt.SrcBlendAlpha = D3D12_BLEND_ONE; // αの設定：基本は固定（既存コメントと同じ）
+        rt.SrcBlendAlpha = D3D12_BLEND_ONE; // αの設定：基本は固定(既存コメントと同じ)
         rt.DestBlendAlpha = D3D12_BLEND_ZERO;
         rt.BlendOpAlpha = D3D12_BLEND_OP_ADD;
         break;
@@ -317,7 +317,7 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         break;
 
 
-    case BlendMode::kBlendModeSubtract: // Subtract（RGBは REV_SUBTRACT）
+    case BlendMode::kBlendModeSubtract: // Subtract(RGBは REV_SUBTRACT)
         rt.BlendEnable = TRUE;
         rt.SrcBlend = D3D12_BLEND_ONE; // RGB: 1 - 1 の係数で REV_SUBTRACT
         rt.DestBlend = D3D12_BLEND_ONE;
@@ -328,7 +328,7 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         break;
 
 
-    case BlendMode::kBlendModeMultiply: // Multiply（src * dst）
+    case BlendMode::kBlendModeMultiply: // Multiply(src * dst)
         rt.BlendEnable = TRUE;
         rt.SrcBlend = D3D12_BLEND_DEST_COLOR;
         rt.DestBlend = D3D12_BLEND_ZERO;
@@ -339,7 +339,7 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         break;
 
 
-    case BlendMode::kBlendModeScreen: // Screen（src*(1-dst)+dst）
+    case BlendMode::kBlendModeScreen: // Screen(src*(1-dst)+dst)
         rt.BlendEnable = TRUE;
         rt.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
         rt.DestBlend = D3D12_BLEND_ONE;
@@ -358,9 +358,9 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
 D3D12_DEPTH_STENCIL_DESC PSOManager::MakeDepth(DepthWrite w)
 {
     D3D12_DEPTH_STENCIL_DESC d{};
-    d.DepthEnable = TRUE;                                      // Depth の機能を有効化する（既存コメント踏襲）
+    d.DepthEnable = TRUE;                                      // Depth の機能を有効化する(既存コメント踏襲)
     d.DepthWriteMask = (w == DepthWrite::Enable) ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO; // 書き込みします/しません
-    d.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;            // つまり、近ければ描画される（既存コメント踏襲）
+    d.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;            // つまり、近ければ描画される(既存コメント踏襲)
     return d;
 }
 

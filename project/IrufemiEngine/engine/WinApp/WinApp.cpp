@@ -39,7 +39,7 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::w
 
     //ウィンドウクラスを登録する
     ATOM atom = RegisterClassW(&wc);
-    didRegisterClass_ = (atom != 0);           // 既に登録済みなら 0（解除しない）
+    didRegisterClass_ = (atom != 0);           // 既に登録済みなら 0(解除しない)
 
     ///ウィンドウサイズを決める
 
@@ -85,7 +85,7 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::w
     clientHeight_ = cr.bottom - cr.top;
 
     // ─────────────────────────────────────────────────────
-    // 推奨（WinApp集約の modern 版：後で差し替えるときの参考）
+    // 推奨(WinApp集約の modern 版：後で差し替えるときの参考)
     //  - WNDCLASSEXW/ RegisterClassExW
     //  - static WinApp::WndProc + WM_NCCREATE で this 紐付け
     //  - CreateWindowExW で lpParam に this を渡す
