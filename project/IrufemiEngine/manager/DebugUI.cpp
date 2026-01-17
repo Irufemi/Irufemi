@@ -5,15 +5,10 @@
 /*開発のUIを出そう*/
 
 #ifdef USE_IMGUI
-
 #include "imgui/imgui.h"
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-
-
-
 // ImGuiWindowFlags_NoDocking が未定義の場合は定義する
 #ifndef ImGuiWindowFlags_NoDocking
 #define ImGuiWindowFlags_NoDocking (1 << 13)
@@ -40,6 +35,10 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h"
 #include "function/Math.h"
+
+// 静的宣言
+std::unique_ptr<PointLight> DebugUI::templatePointLight_;
+std::unique_ptr<SpotLight> DebugUI::templateSpotLight_;
 
 void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCommon* dxCommon) {
 #ifdef USE_IMGUI
