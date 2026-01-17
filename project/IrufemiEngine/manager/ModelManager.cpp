@@ -17,7 +17,7 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
     dxCommon_ = dxCommon;
     textureManager_ = textureManager; // 追加
     if (rootDir_.empty()) {
-        rootDir_ = "resources/obj";
+        rootDir_ = "resources/model";
     }
 }
 
@@ -28,7 +28,7 @@ void ModelManager::SetRootDirectory(std::string root) {
 }
 
 std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename) {
-    const std::string key = NormalizeAndResolve(filename);
+    const std::string key = filename; // キーはファイル名自体にする
     {
         std::lock_guard<std::mutex> lock(mutex_);
         if (auto it = cache_.find(key); it != cache_.end()) {
@@ -38,8 +38,26 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
         }
     }
 
+    // ファイルパスを解決
+    std::string fullPath;
+    // パス区切り文字が含まれているかチェック
+    if (filename.find('/') != std::string::npos || filename.find('\\') != std::string::npos) {
+        // 含まれている場合は、ルートディレクトリからの相対パスとして扱う
+        fullPath = NormalizeAndResolve(filename);
+    }
+    else {
+        // 含まれていない場合は、再帰的にファイルを検索
+        fullPath = FindFileRecursive(filename);
+    }
+
+    if (fullPath.empty() || !std::filesystem::exists(fullPath)) {
+        // ファイルが見つからない場合のエラーハンドリング
+        OutputDebugStringA(("[ModelManager] File not found: " + filename + "\n").c_str());
+        return nullptr;
+    }
+
     // CPUモデルロード
-    auto pair = SplitDirectoryAndFile(key);
+    auto pair = SplitDirectoryAndFile(fullPath);
     auto cpuModel = std::make_shared<ObjModel>(ModelManager::LoadModelFileM(pair.first, pair.second));
 
     // GPUリソース生成
@@ -98,7 +116,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
         if (materialData->hasTexture) {
             gpuMaterial->textureHandle = textureManager_->GetTextureHandle(cpuMesh.material.textureFilePath);
         } else {
-            gpuMaterial->textureHandle = textureManager_->GetWhiteTextureHandle();
+            gpuMaterial->textureHandle = textureManager_->GetTextureHandle("resources/whiteTexture.png");
         }
         managedModel->gpuMaterials.push_back(std::move(gpuMaterial));
     }
@@ -114,7 +132,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
 
 void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
     namespace fs = std::filesystem;
-    const std::string rootBase = rootDir_.empty() ? "resources/obj" : rootDir_;
+    const std::string rootBase = rootDir_.empty() ? "resources/model" : rootDir_;
     fs::path start = fs::path(rootBase) / relativeFolder;
     if (!fs::exists(start)) { return; }
 
@@ -125,7 +143,7 @@ void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
         std::transform(ext.begin(), ext.end(), ext.begin(),
             [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
         if (ext == ".obj" || ext == ".gltf" || ext == ".glb") {
-            GetModel(p.string());
+            GetModel(p.filename().string()); // ファイル名のみを渡す
         }
     }
 }
@@ -156,6 +174,7 @@ void ModelManager::CollectGarbage() {
 void ModelManager::ClearAll() {
     std::lock_guard<std::mutex> lock(mutex_);
     cache_.clear();
+    filePathCache_.clear();
 }
 
 std::string ModelManager::NormalizeAndResolve(const std::string& filename) const {
@@ -190,6 +209,45 @@ void ModelManager::DebugLogLoad(const std::string& key, size_t meshCount) {
         " meshes=" + std::to_string(meshCount) + "\n";
     OutputDebugStringA(msg.c_str());
 #endif
+}
+
+std::string ModelManager::FindFileRecursive(const std::string& filename) const {
+    namespace fs = std::filesystem;
+    std::string lowerFilename = filename;
+    std::transform(lowerFilename.begin(), lowerFilename.end(), lowerFilename.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (auto it = filePathCache_.find(lowerFilename); it != filePathCache_.end()) {
+            return it->second;
+        }
+    }
+
+    const fs::path rootPath = rootDir_;
+    if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
+        return "";
+    }
+
+    for (const auto& entry : fs::recursive_directory_iterator(rootPath)) {
+        if (entry.is_regular_file()) {
+            std::string entryFilename = entry.path().filename().string();
+            std::transform(entryFilename.begin(), entryFilename.end(), entryFilename.begin(),
+                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+            if (entryFilename == lowerFilename) {
+                std::string foundPath = entry.path().string();
+                std::replace(foundPath.begin(), foundPath.end(), '\\', '/');
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    filePathCache_[lowerFilename] = foundPath;
+                }
+                return foundPath;
+            }
+        }
+    }
+
+    return ""; // 見つからなかった
 }
 
 //======================
@@ -617,7 +675,11 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
             if (m->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == aiReturn_SUCCESS) {
                 std::string p = texPath.C_Str();
                 if (!p.empty() && p[0] != '*') {
-                    out.textureFilePath = directoryPath + "/" + p; // 相対パスを呼び出し元ディレクトリ基準で連結
+                    // テクスチャのパスをモデルファイルからの相対パスとして解決
+                    std::filesystem::path modelPath(filePath);
+                    std::filesystem::path texturePath = modelPath.parent_path() / p;
+                    out.textureFilePath = texturePath.string();
+                    std::replace(out.textureFilePath.begin(), out.textureFilePath.end(), '\\', '/');
                 }
             }
         }

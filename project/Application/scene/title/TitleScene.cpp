@@ -69,7 +69,7 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     // タイトル(アンナイトのア)
     text_a_ = std::make_unique<ObjClass>();
-    text_a_->Initialize(camera_.get(), "resources/obj/titleText_a.obj");
+    text_a_->Initialize(camera_.get(), "titleText_a.obj");
     initialTextPositions_[0] = { startX + textSpacing * 0, startY, 0.0f };
     text_a_->SetPosition(initialTextPositions_[0]);
     text_a_->SetScale({ textScale, textScale, textScale });
@@ -77,7 +77,7 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     // タイトル(アンナイトのン)
     text_n_ = std::make_unique<ObjClass>();
-    text_n_->Initialize(camera_.get(), "resources/obj/titleText_n.obj");
+    text_n_->Initialize(camera_.get(), "titleText_n.obj");
     initialTextPositions_[1] = { startX + textSpacing * 1, startY, 0.0f };
     text_n_->SetPosition(initialTextPositions_[1]);
     text_n_->SetScale({ textScale, textScale, textScale });
@@ -85,7 +85,7 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     // タイトル(アンナイトのナ)
     text_na_ = std::make_unique<ObjClass>();
-    text_na_->Initialize(camera_.get(), "resources/obj/titleText_na.obj");
+    text_na_->Initialize(camera_.get(), "titleText_na.obj");
     initialTextPositions_[2] = { startX + textSpacing * 2, startY, 0.0f };
     text_na_->SetPosition(initialTextPositions_[2]);
     text_na_->SetScale({ textScale, textScale, textScale });
@@ -93,7 +93,7 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     // タイトル(アンナイトのイ)
     text_i_ = std::make_unique<ObjClass>();
-    text_i_->Initialize(camera_.get(), "resources/obj/titleText_i.obj");
+    text_i_->Initialize(camera_.get(), "titleText_i.obj");
     initialTextPositions_[3] = { startX + textSpacing * 3, startY, 0.0f };
     text_i_->SetPosition(initialTextPositions_[3]);
     text_i_->SetScale({ textScale, textScale, textScale });
@@ -101,7 +101,7 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     // タイトル(アンナイトのト)
     text_to_ = std::make_unique<ObjClass>();
-    text_to_->Initialize(camera_.get(), "resources/obj/titleText_to.obj");
+    text_to_->Initialize(camera_.get(), "titleText_to.obj");
     initialTextPositions_[4] = { startX + textSpacing * 4, startY, 0.0f };
     text_to_->SetPosition(initialTextPositions_[4]);
     text_to_->SetScale({ textScale, textScale, textScale });
