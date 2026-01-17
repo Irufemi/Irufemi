@@ -29,13 +29,13 @@ void CylinderClass::AddCap(bool top, bool doubleSided) {
         });
     resource_->vertexDataList_.back().normal = normal;
 
-    // リム頂点（kSubdivision_ 周）
+    // リム頂点(kSubdivision_ 周)
     uint32_t rimStart = static_cast<uint32_t>(resource_->vertexDataList_.size());
     for (uint32_t i = 0; i <= kSubdivision_; ++i) {
         float theta = i * kThetaEvery_;
         float cx = std::cos(theta);
         float sz = std::sin(theta);
-        // UV は円盤マッピング（V 反転に合わせて 1 - で調整）
+        // UV は円盤マッピング(V 反転に合わせて 1 - で調整)
         float u = cx * 0.5f + 0.5f;
         float v = 1.0f - (sz * 0.5f + 0.5f);
         resource_->vertexDataList_.push_back({
@@ -45,9 +45,9 @@ void CylinderClass::AddCap(bool top, bool doubleSided) {
         resource_->vertexDataList_.back().normal = normal;
     }
 
-    // インデックス（ファン）
+    // インデックス(ファン)
     // ワインディングはレンダラ側のフロント定義に合わせるため、
-    // 元コードと同様に rimStart+i+1 / rimStart+i の形にしてある（表向き）。
+    // 元コードと同様に rimStart+i+1 / rimStart+i の形にしてある(表向き)。
     for (uint32_t i = 0; i < kSubdivision_; ++i) {
         uint32_t v0 = centerIndex;
         uint32_t v1 = rimStart + i + 1;
@@ -76,8 +76,8 @@ void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
     // =========================
-    // メッシュ生成（単位円柱）
-    // 側面：半径=1, 高さ=1（y: -0.5 ～ +0.5）
+    // メッシュ生成(単位円柱)
+    // 側面：半径=1, 高さ=1(y: -0.5 ～ +0.5)
     // 上下面：三角形ファン
     // =========================
 
@@ -98,7 +98,7 @@ void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
         }
     }
 
-    // 側面法線を設定（y=0 の放射方向）
+    // 側面法線を設定(y=0 の放射方向)
     for (uint32_t h = 0; h <= kHeightSubdivision_; ++h) {
         for (uint32_t i = 0; i <= kSubdivision_; ++i) {
             uint32_t idx = h * (kSubdivision_ + 1) + i;
@@ -128,10 +128,10 @@ void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
         }
     }
 
-    // 上蓋を追加（通常は single-sided）
+    // 上蓋を追加(通常は single-sided)
     AddCap(true /*top*/, false /*doubleSided*/);
 
-    // 下蓋を追加（通常は single-sided）
+    // 下蓋を追加(通常は single-sided)
     AddCap(false /*top*/, true /*doubleSided*/);
 
     // ========= リソース確保と書き込み =========
@@ -229,7 +229,7 @@ void CylinderClass::Update() {
         Math::Multiply(resource_->transformationMatrix_.world,
             Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
 
-    // 法線用（平行移動除去）
+    // 法線用(平行移動除去)
     Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
     worldForNormal.m[3][0] = 0.0f;
     worldForNormal.m[3][1] = 0.0f;
@@ -265,7 +265,7 @@ void CylinderClass::Debug([[maybe_unused]] const char* cylinderName) {
     ImGui::DragFloat("Radius", &info_.radius, 0.01f, 0.001f, 1000.0f);
     ImGui::DragFloat("Height", &info_.height, 0.01f, 0.001f, 1000.0f);
 
-    // Transform（係数スケール・回転・位置）
+    // Transform(係数スケール・回転・位置)
     resource_->transform_.translate = info_.center;
     ui_->DebugTransform(resource_->transform_);
 

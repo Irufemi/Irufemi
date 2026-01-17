@@ -29,32 +29,32 @@ public:
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
     static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; } // 追加
 
-    ~SphereRegion(); // 追加（遅延解放で返却）
+    ~SphereRegion(); // 追加(遅延解放で返却)
 
     // 初期化：スフィアメッシュ生成 + マテリアル/ライト/カメラ + 共有テクスチャ
-    // subdivision: 緯度経度の分割数（SphereClass と同等の 16 を既定）
+    // subdivision: 緯度経度の分割数(SphereClass と同等の 16 を既定)
     void Initialize(Camera* camera, const std::string& textureName  = "resources/uvChecker.png", uint32_t subdivision = 16);
 
-    // インスタンス追加（Transform 直接）
+    // インスタンス追加(Transform 直接)
     void AddInstance(const Transform& t);
-    // 色つきインスタンス追加（Transform 直接）
+    // 色つきインスタンス追加(Transform 直接)
     void AddInstance(const Transform& t, const Vector4& color);
-    // インスタンス追加（中心と半径の簡易API）
+    // インスタンス追加(中心と半径の簡易API)
     void AddInstance(const Vector3& center, float radius, const Vector3& rotate = { 0,0,0 });
-    // 色つきインスタンス追加（中心と半径の簡易API）
+    // 色つきインスタンス追加(中心と半径の簡易API)
     void AddInstance(const Vector3& center, float radius, const Vector3& rotate, const Vector4& color);
 
     // 全インスタンス削除
     void ClearInstances();
 
-    // インスタンスバッファ更新（force=true で毎フレーム更新）
+    // インスタンスバッファ更新(force=true で毎フレーム更新)
     void BuildInstanceBuffer(bool force = false);
 
-    // 描画（事前に DrawManager::PreDraw 済みであること）
+    // 描画(事前に DrawManager::PreDraw 済みであること)
     void Draw();
 
-    // 色設定（マテリアル全体 or インスタンス個別/一括）
-    void SetColor(const Vector4& color);                 // マテリアル色（全体に乗算される前提の色）
+    // 色設定(マテリアル全体 or インスタンス個別/一括)
+    void SetColor(const Vector4& color);                 // マテリアル色(全体に乗算される前提の色)
     void SetInstanceColor(uint32_t index, const Vector4& color); // 個別インスタンス色
     void SetAllInstanceColor(const Vector4& color);      // 全インスタンス同色
 
@@ -75,7 +75,7 @@ private:
         Vector4   color; // インスタンス色
     };
 
-    // メッシュ生成（単位球）
+    // メッシュ生成(単位球)
     void BuildSphereMesh(uint32_t subdivision, std::vector<VertexData>& outVertices, std::vector<uint32_t>& outIndices);
 
     // リソース群作成
@@ -93,7 +93,7 @@ private:
 
     Camera* camera_ = nullptr;
 
-    // メッシュ（VB/IB）
+    // メッシュ(VB/IB)
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
     D3D12_VERTEX_BUFFER_VIEW               vertexBufferView_{};
     UINT                                   vertexCount_ = 0;
@@ -114,7 +114,7 @@ private:
     D3D12_GPU_DESCRIPTOR_HANDLE            instancingSrvGPU_{};
     uint32_t                               instancingSrvIndex_ = UINT32_MAX; // 1スロット確保して再利用
 
-    // インスタンス群（Transform / Color を保持）
+    // インスタンス群(Transform / Color を保持)
     std::vector<Transform> instances_;
     std::vector<Vector4>   instanceColors_;
     bool                   instanceDirty_ = false;

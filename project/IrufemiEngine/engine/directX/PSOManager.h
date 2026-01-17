@@ -20,7 +20,7 @@ public:
 
     enum class DepthWrite { Enable, Disable };
 
-    // 追加: Cull 決定用（Depth と同様に扱う）
+    // 追加: Cull 決定用(Depth と同様に扱う)
     enum class CullMode { Back, Front, None };
 
     struct ShaderSet {
@@ -29,7 +29,7 @@ public:
         Microsoft::WRL::ComPtr<IDxcBlob> gsBlob;
     };
 
-    // 初期化（IrufemiEngine::Initialize から呼ぶ）
+    // 初期化(IrufemiEngine::Initialize から呼ぶ)
     void Initialize(
         ID3D12Device* device,
         ID3D12RootSignature* rootSig,
@@ -38,17 +38,17 @@ public:
         DXGI_FORMAT dsvFormat,
         D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
         ShaderSet objectShaders,         // 既存：Object3D.VS/PS など
-        ShaderSet particleShaders = {}, // パーティクル専用 VS/PS（なければ空でOK）
+        ShaderSet particleShaders = {}, // パーティクル専用 VS/PS(なければ空でOK)
         ShaderSet spriteShaders = {},
         ShaderSet regionShaders = {},
         ShaderSet byGeometryShaderShaders = {},
         ShaderSet lineShaders = {}
     );
 
-    // 既存シェーダで取得（メッシュ/スプライト等）
+    // 既存シェーダで取得(メッシュ/スプライト等)
     ID3D12PipelineState* Get(BlendMode blend, DepthWrite depth, CullMode cull);
 
-    // パーティクル用シェーダで取得（未指定なら既存の objectShaders にフォールバック）
+    // パーティクル用シェーダで取得(未指定なら既存の objectShaders にフォールバック)
     ID3D12PipelineState* GetParticle(BlendMode blend, DepthWrite depth, CullMode cull);
 
     ID3D12PipelineState* GetSprite(BlendMode blend, DepthWrite depth, CullMode cull);
@@ -56,7 +56,7 @@ public:
     // 
     ID3D12PipelineState* GetRegion(BlendMode b, DepthWrite d, CullMode c);
 
-    // Geometry Shader を使う PSO を取得（未設定時は object にフォールバック）
+    // Geometry Shader を使う PSO を取得(未設定時は object にフォールバック)
     ID3D12PipelineState* GetByGeometryShader(BlendMode blend, DepthWrite depth, CullMode cull);
 
     ID3D12PipelineState* GetLine(BlendMode blend, DepthWrite depth, CullMode cull);
@@ -66,11 +66,11 @@ public:
 private:
     using ComPtr = Microsoft::WRL::ComPtr<ID3D12PipelineState>;
 
-    // IrufemiEngine の固定情報（RS/IL/RTV/DSV/Topo）
+    // IrufemiEngine の固定情報(RS/IL/RTV/DSV/Topo)
     Microsoft::WRL::ComPtr<ID3D12Device> device_;
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSig_;
     D3D12_INPUT_LAYOUT_DESC inputLayout_{};
-    // 要素配列を自前で所有（Initialize 時に深いコピー）
+    // 要素配列を自前で所有(Initialize 時に深いコピー)
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements_;
     DXGI_FORMAT rtvFormat_{ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB };
     DXGI_FORMAT dsvFormat_{ DXGI_FORMAT_D24_UNORM_S8_UINT };
@@ -98,7 +98,7 @@ private:
         const D3D12_DEPTH_STENCIL_DESC& depthDesc,
         CullMode cull) const;
 
-    // 追加：トポロジ指定版（ByGeometryShader 専用で使用）
+    // 追加：トポロジ指定版(ByGeometryShader 専用で使用)
     Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSOWithTopology(
         const ShaderSet& shaders,
         const D3D12_BLEND_DESC& blendDesc,

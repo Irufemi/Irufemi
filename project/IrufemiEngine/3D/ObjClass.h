@@ -26,7 +26,7 @@ struct ManagedModel;
 
 class ObjClass {
 private:
-    // 共有モデルデータ（CPU/GPU）
+    // 共有モデルデータ(CPU/GPU)
     std::shared_ptr<ManagedModel> managedModel_;
 
     // オブジェクト全体のTransform
@@ -80,10 +80,10 @@ public: //メンバ関数
     // モデルが持つメッシュ数を取得
     size_t GetMeshCount() const;
 
-    // 指定したインデックスのメッシュのマテリアルを取得（読み取り専用）
+    // 指定したインデックスのメッシュのマテリアルを取得(読み取り専用)
     const ObjMaterial* GetMaterial(size_t meshIndex) const;
 
-    // 指定したインデックスのメッシュのマテリアルを取得（書き込み可能）
+    // 指定したインデックスのメッシュのマテリアルを取得(書き込み可能)
     ObjMaterial* GetMaterial(size_t meshIndex);
 
     // すべてのメッシュのライティングを一括で設定

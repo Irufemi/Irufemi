@@ -48,7 +48,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     /*CrashHandler*/
     SetUnhandledExceptionFilter(ExportDump);
 
-    // WinApp をエンジン内で生成・初期化（COM 初期化もここで実施される）
+    // WinApp をエンジン内で生成・初期化(COM 初期化もここで実施される)
     winApp_ = std::make_unique<WinApp>();
     if (!winApp_->Initialize(GetModuleHandle(nullptr), clientWidth, clientHeight, title.c_str())) {
         assert(false && "WinApp::Initialize failed");
@@ -98,7 +98,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // テクスチャ管理
     textureManager = std::make_unique<TextureManager>();
     textureManager->Initialize(dxCommon_.get());
+
+#if defined(_DEBUG) || defined(DEVELOPMENT)
     textureManager->LoadAllFromFolder("resources/");
+#endif
 
     // モデル管理
     modelManager_ = std::make_unique<ModelManager>();
@@ -201,7 +204,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                                float r, float g, float b, float a) {
     clearColor_ = { r, g, b, a };
-    // 既存の Initialize を呼ぶ（互換性維持）
+    // 既存の Initialize を呼ぶ(互換性維持)
     Initialize(title, clientWidth, clientHeight);
 }
 
@@ -209,7 +212,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                                const std::array<float, 4>& clearColor) {
     clearColor_ = clearColor;
-    // 既存の Initialize を呼ぶ（互換性維持）
+    // 既存の Initialize を呼ぶ(互換性維持)
     Initialize(title, clientWidth, clientHeight);
 }
 
@@ -254,7 +257,7 @@ void IrufemiEngine::Finalize() {
 }
 
 void IrufemiEngine::Execute() {
-    // SceneManager 構築（エンジンは所有のみ）
+    // SceneManager 構築(エンジンは所有のみ)
     sceneManager_ = std::make_unique<SceneManager>(this);
 
     // Application からの登録を反映
@@ -310,7 +313,7 @@ void IrufemiEngine::EndFrame() {
     ui->QueuePostDrawCommands();
     drawManager->PostDraw();
 
-    // 5) フレーム終端で遅延解放の回収（フェンス完了値を渡す）
+    // 5) フレーム終端で遅延解放の回収(フェンス完了値を渡す)
     if (auto* srvPool = dxCommon_->GetSrvPool()) {
         const uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
         srvPool->GarbageCollect(completed);

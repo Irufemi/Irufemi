@@ -54,21 +54,15 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     debugMode_ = false;
 
     // --- ライトの初期化 ---
-    pointLight_ = std::make_unique <PointLight>();
-    pointLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    pointLight_->position = { 0.0f, 5.0f, 0.0f };
-    pointLight_->intensity = 1.0f;
-    pointLight_->radius = 10.0f;
-    pointLight_->decay = 1.0f;
-
-    spotLight_ = std::make_unique <SpotLight>();
-    spotLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    spotLight_->position = { 2.0f, 1.25f, 0.0f };
-    spotLight_->distance = 7.0f;
-    spotLight_->direction = Math::Normalize(Vector3{ -1.0f,-1.0f,0.0f });
-    spotLight_->intensity = 0.0f; // 初期状態ではOFF
-    spotLight_->decay = 2.0f;
-    spotLight_->cosAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
+    // シーンに最初から配置するライト
+    auto pointLight = std::make_unique<PointLight>();
+    pointLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    pointLight->position = { 0.0f, 5.0f, 0.0f };
+    pointLight->intensity = 1.0f;
+    pointLight->radius = 10.0f;
+    pointLight->decay = 1.0f;
+    pointLight->isActive = 1;
+    pointLights_.push_back(std::move(pointLight));
 
     directionalLight_ = std::make_unique<DirectionalLight>();
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
@@ -134,41 +128,26 @@ void GameScene::Update() {
 #if defined USE_IMGUI
 
     ImGui::Begin("GameScene");
+    if (ImGui::BeginTabBar("GameSceneTabs")) {
 
-    // pointLight 
-    if (ImGui::CollapsingHeader("PointLight")) {
-        ImGui::ColorEdit4("PointLightColor", &pointLight_->color.x);
-        ImGui::DragFloat3("PointLightPosition", &pointLight_->position.x, 0.01f);
-        ImGui::DragFloat("PointLightIntensity", &pointLight_->intensity, 0.01f, 0.0f);
-        ImGui::DragFloat("PointLightRadius", &pointLight_->radius, 0.01f, 0.0f);
-        ImGui::DragFloat("PointLightDecay", &pointLight_->decay, 0.01f, 0.0f);
-    }
-    // spotLight 
-    if (ImGui::CollapsingHeader("SpotLight")) {
-        ImGui::ColorEdit4("SpotLightColor", &spotLight_->color.x);
-        ImGui::DragFloat3("SpotLightPosition", &spotLight_->position.x, 0.01f);
-        ImGui::DragFloat("SpotLightIntensity", &spotLight_->intensity, 0.01f, 0.0f);
-        ImGui::DragFloat3("SpotLightDirection", &spotLight_->direction.x, 0.01f);
-        spotLight_->direction = Math::Normalize(spotLight_->direction);
-        ImGui::DragFloat("SpotLightDistance", &spotLight_->distance, 0.01f, 0.0f);
-        ImGui::DragFloat("SpotLightDecay", &spotLight_->decay, 0.01f, 0.0f);
-        ImGui::DragFloat("SpotLightCosAngle", &spotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
-    }
-    // directionalLight
-    if (ImGui::CollapsingHeader("DirectionalLight")) {
-        ImGui::ColorEdit4("DirectionalLightColor", &directionalLight_->color.x);
-        ImGui::DragFloat3("DirectionalLightDirection", &directionalLight_->direction.x, 0.01f);
-        directionalLight_->direction = Math::Normalize(directionalLight_->direction);
-        ImGui::DragFloat("DirectionalLightIntensity", &directionalLight_->intensity, 0.01f, 0.0f);
-    }
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_);
 
-    ImGui::End();
+        // Texture タブ
+        if (ImGui::BeginTabItem("Texture")) {
+            if (ImGui::Button("allLoadActivate")) {
+                engine_->GetTextureManager()->LoadAllFromFolder("resources/");
+            }
+            ImGui::EndTabItem();
+        }
 
-    ImGui::Begin("Texture");
-    if (ImGui::Button("allLoadActivate")) {
-        engine_->GetTextureManager()->LoadAllFromFolder("resources/");
+        // Debug タブ
+        if (ImGui::BeginTabItem("Debug")) {
+            ImGui::Checkbox("debugMode", &debugMode_);
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
     }
-    ImGui::Checkbox("debugMode", &debugMode_);
     ImGui::End();
 
 #endif // _DEBUG
@@ -211,7 +190,17 @@ void GameScene::Update() {
     cameraForGpu.view = currentCamera->GetViewMatrix();
     cameraForGpu.projection = currentCamera->GetPerspectiveFovMatrix();
     cameraForGpu.worldPosition = currentCamera->GetTranslate();
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, *pointLight_, *spotLight_);
+    
+    std::vector<PointLight*> pLights;
+    for (const auto& light : pointLights_) {
+        pLights.push_back(light.get());
+    }
+    std::vector<SpotLight*> sLights;
+    for (const auto& light : spotLights_) {
+        sLights.push_back(light.get());
+    }
+
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights);
 }
 
 // 描画

@@ -221,7 +221,7 @@ PixelShaderOutput main(GeometryShaderOutput input)
 			// 物体表面の特定の点に対する入射光を計算する
 			float32_t3 pointLightDirection = normalize(input.worldPosition - gPointLight.position);
 			
-			// 拡散（Directional と同じモードで計算）
+			// 拡散(Directional と同じモードで計算)
 			float cosPoint = 1.0f;
 			if (gMaterial.lightingMode == 1)
 			{
@@ -233,7 +233,7 @@ PixelShaderOutput main(GeometryShaderOutput input)
 				cosPoint = pow(NdotLPoint * 0.5f + 0.5f, 2.0f);
 			}
 			
-			// 鏡面（Blinn-Phong）
+			// 鏡面(Blinn-Phong)
 			float32_t3 halfVectorPoint = normalize(-pointLightDirection + toEye);
 			float NDotHPoint = dot(normalize(input.normal), halfVectorPoint);
 			float specularPowPoint = pow(saturate(NDotHPoint), gMaterial.shininess);
@@ -243,18 +243,18 @@ PixelShaderOutput main(GeometryShaderOutput input)
 			
 			/*SpotLight*/
 
-            /// 入射光（ライト→表面の向き）
+            /// 入射光(ライト→表面の向き)
 			float32_t3 spotLightDirectionOnSurface = normalize(input.worldPosition - gSpotLight.position);
 
-            // 距離減衰（0..1）：distance と decay を使用
+            // 距離減衰(0..1)：distance と decay を使用
 			float d = length(input.worldPosition - gSpotLight.position);
 			float attenuationFactor = pow(saturate(1.0f - d / max(gSpotLight.distance, 1e-5f)), gSpotLight.decay);
 
-            // 角度減衰（Falloff）：中心1、閾値 cosAngle で0
+            // 角度減衰(Falloff)：中心1、閾値 cosAngle で0
 			float cosAngleSpot = dot(spotLightDirectionOnSurface, gSpotLight.direction); // 両方とも単位ベクトル前提
 			float falloffFactor = saturate((cosAngleSpot - gSpotLight.cosAngle) / (1.0f - gSpotLight.cosAngle));
 
-            // 拡散（Lambert/Half-Lambert は Directional/Point と同じ分岐）
+            // 拡散(Lambert/Half-Lambert は Directional/Point と同じ分岐)
 			float cosSpot = 1.0f;
 			if (gMaterial.lightingMode == 1)
 			{
@@ -266,7 +266,7 @@ PixelShaderOutput main(GeometryShaderOutput input)
 				cosSpot = pow(NdotLSpot * 0.5f + 0.5f, 2.0f);
 			}
 
-            // 鏡面（Blinn-Phong）
+            // 鏡面(Blinn-Phong)
 			float32_t3 halfVectorSpot = normalize(-spotLightDirectionOnSurface + toEye);
 			float NDotHSpot = dot(normalize(input.normal), halfVectorSpot);
 			float specularPowSpot = pow(saturate(NDotHSpot), gMaterial.shininess);

@@ -15,7 +15,7 @@ void InputManager::Update() {
     mouse_->Update();
 }
 
-// --- 旧APIフォワード（互換維持）---
+// --- 旧APIフォワード(互換維持)---
 bool InputManager::IsKeyDown(uint8_t k)     const { return keyboard_->IsKeyDown(k); }
 bool InputManager::IsKeyUp(uint8_t k)       const { return keyboard_->IsKeyUp(k); }
 bool InputManager::IsKeyPressed(uint8_t k)  const { return keyboard_->IsKeyPressed(k); }

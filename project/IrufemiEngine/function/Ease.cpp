@@ -28,7 +28,7 @@ Vector4 Lerp(const Vector4& v1, const Vector4& v2, float t) {
 	return Multiply(1.0f - t, v1) + Multiply(t, v2);
 }
 
-// Quaternion 線形補間（最短経路を選び正規化して返す）
+// Quaternion 線形補間(最短経路を選び正規化して返す)
 Quaternion Lerp(const Quaternion& q0, const Quaternion& q1, float t) {
 	// 最短経路のため内積を計算し、負なら q1 を反転
 	float dot = q0.x * q1.x + q0.y * q1.y + q0.z * q1.z + q0.w * q1.w;
@@ -46,7 +46,7 @@ Quaternion Lerp(const Quaternion& q0, const Quaternion& q1, float t) {
 	res.z = q0.z + t * (q1s.z - q0.z);
 	res.w = q0.w + t * (q1s.w - q0.w);
 
-	// 正規化して返す（NLERP）
+	// 正規化して返す(NLERP)
 	return Normalize(res);
 }
 
@@ -101,13 +101,13 @@ Vector3 Slerp(const Vector3& v1, const Vector3& v2, float t) {
 	float theta = std::acos(d);
 	float length = Lerp(l1, l2, t); // 長さは線形補間
 
-	// 角度が極小なら nlerp 的に処理（sinθ ≒ 0 回避）
+	// 角度が極小なら nlerp 的に処理(sinθ ≒ 0 回避)
 	if (theta < 1e-5f) {
 		Vector3 dir = safeNormalize(Add(Multiply(1.0f - t, u1), Multiply(t, u2)));
 		return Multiply(length, dir);
 	}
 
-	// 180°付近（無数の経路がある）対策：任意の直交方向を選んで回す
+	// 180°付近(無数の経路がある)対策：任意の直交方向を選んで回す
 	if (std::abs(std::numbers::pi_v<float> - theta) < 1e-4f) {
 		// u1 とほぼ平行でない基準軸を選ぶ
 		Vector3 axis = (std::abs(u1.x) < 0.9f) ? Vector3{1, 0, 0} : Vector3{0, 1, 0};

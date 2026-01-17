@@ -66,7 +66,7 @@ void Circle2D::BuildUnitCircleFan(uint32_t subdiv) {
     resource_->vertexDataList_.clear();
     resource_->indexDataList_.clear();
 
-    // 中心頂点（UVは中心）
+    // 中心頂点(UVは中心)
     resource_->vertexDataList_.push_back({
         { 0.0f, 0.0f, 0.0f, 1.0f },
         { 0.5f, 0.5f },
@@ -79,7 +79,7 @@ void Circle2D::BuildUnitCircleFan(uint32_t subdiv) {
         float th = step * static_cast<float>(i);
         float x = std::cos(th);
         float y = std::sin(th);
-        // UVは[-1,1] -> [0,1] へ射影（V反転込み）
+        // UVは[-1,1] -> [0,1] へ射影(V反転込み)
         float u = 0.5f + 0.5f * x;
         float v = 0.5f - 0.5f * y;
 
@@ -90,7 +90,7 @@ void Circle2D::BuildUnitCircleFan(uint32_t subdiv) {
         });
     }
 
-    // インデックス（三角形ファン）
+    // インデックス(三角形ファン)
     // 中心: 0, 周: [1..subdiv+1]
     for (uint32_t i = 1; i <= subdiv; ++i) {
         resource_->indexDataList_.push_back(0);
@@ -101,12 +101,12 @@ void Circle2D::BuildUnitCircleFan(uint32_t subdiv) {
 
 void Circle2D::InitMaterialAndMatrix() {
     // transform 初期値
-    // resource_->transform_.scale は「係数」として扱う（SphereClass と同様）
+    // resource_->transform_.scale は「係数」として扱う(SphereClass と同様)
     resource_->transform_.scale = { 1.0f, 1.0f, 1.0f };
     resource_->transform_.rotate = { 0.0f, 0.0f, 0.0f };
     resource_->transform_.translate = info_.center;
 
-    // 実スケール = 半径 × 係数（非等方スケールを許容）
+    // 実スケール = 半径 × 係数(非等方スケールを許容)
     Vector3 effectiveScale{
         info_.radius * resource_->transform_.scale.x,
         info_.radius * resource_->transform_.scale.y,
@@ -129,10 +129,10 @@ void Circle2D::InitMaterialAndMatrix() {
 }
 
 void Circle2D::UpdateMatrix() {
-    // transform_.scale は係数のまま（非等方を許容）
+    // transform_.scale は係数のまま(非等方を許容)
     resource_->transform_.translate = info_.center;
 
-    // 実スケール = 半径 × 係数（各成分個別に乗算）
+    // 実スケール = 半径 × 係数(各成分個別に乗算)
     Vector3 effectiveScale{
         info_.radius * resource_->transform_.scale.x,
         info_.radius * resource_->transform_.scale.y,
@@ -148,10 +148,10 @@ void Circle2D::UpdateMatrix() {
 
 void Circle2D::Update() {
 
-    // 毎フレーム行列更新（カメラ正射影が動く可能性があるため）
+    // 毎フレーム行列更新(カメラ正射影が動く可能性があるため)
     UpdateMatrix();
 
-    // UV 変換はSpriteと同様の意味付け（ここではIdentityのまま）
+    // UV 変換はSpriteと同様の意味付け(ここではIdentityのまま)
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
 }
 

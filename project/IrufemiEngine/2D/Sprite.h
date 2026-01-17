@@ -39,10 +39,10 @@ private:
     bool isFlipX_ = false;
     bool isFlipY_ = false;
 
-    // 現在のテクスチャのピクセルサイズ（取得できない場合は 0）
+    // 現在のテクスチャのピクセルサイズ(取得できない場合は 0)
     Vector2 textureSize_{ 0.0f, 0.0f };
 
-    // 切り出し矩形（ピクセル指定）
+    // 切り出し矩形(ピクセル指定)
     bool  useTexRect_ = false;
     Vector2 texRectLeftTop_{ 0.0f, 0.0f }; // px
     Vector2 texRectSize_{ 0.0f, 0.0f };    // px
@@ -75,7 +75,7 @@ public: //メンバ関数
     const Vector2& GetSize() const { return size_; }
     const Vector2& GetAnchor() const { return anchor_; }
 
-    // 位置API（アンカー基準の座標を設定/取得）
+    // 位置API(アンカー基準の座標を設定/取得)
     void SetPosition(const float& x, const float& y, const float& z = 0.0f);
     const Vector2 GetPosition2D() const;
 
@@ -98,9 +98,9 @@ public: //メンバ関数
     bool IsFlipX() const { return isFlipX_; }
     bool IsFlipY() const { return isFlipY_; }
 
-    //テクスチャ範囲指定（ピクセル）。成功時 true（テクスチャサイズ未取得時は false）
+    //テクスチャ範囲指定(ピクセル)。成功時 true(テクスチャサイズ未取得時は false)
     bool SetTextureRectPixels(int x, int y, int w, int h, bool autoResize = false);
-    // 範囲指定を解除（フルテクスチャに戻す）
+    // 範囲指定を解除(フルテクスチャに戻す)
     void ClearTextureRect();
 
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }

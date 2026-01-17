@@ -54,7 +54,7 @@ public:
     ModelManager() = default;
     ~ModelManager() = default;
 
-    // --- インスタンス機能（キャッシュ管理） ---
+    // --- インスタンス機能(キャッシュ管理) ---
     void Initialize(DirectXCommon* dxCommon, TextureManager* textureManager); // TextureManager を追加
     void SetRootDirectory(std::string root);
     std::shared_ptr<ManagedModel> GetModel(const std::string& filename);

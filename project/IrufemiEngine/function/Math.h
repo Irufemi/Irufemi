@@ -98,7 +98,7 @@ namespace Math {
     Vector3 Normalize(const Vector3& vector);
 
     /// <summary>
-    /// クロス積（外積）
+    /// クロス積(外積)
     /// </summary>
     /// <param name="a"></param>
     /// <param name="b"></param>

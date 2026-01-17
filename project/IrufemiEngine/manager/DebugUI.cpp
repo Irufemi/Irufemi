@@ -5,15 +5,10 @@
 /*開発のUIを出そう*/
 
 #ifdef USE_IMGUI
-
 #include "imgui/imgui.h"
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-
-
-
 // ImGuiWindowFlags_NoDocking が未定義の場合は定義する
 #ifndef ImGuiWindowFlags_NoDocking
 #define ImGuiWindowFlags_NoDocking (1 << 13)
@@ -30,6 +25,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "math/shape/Sphere.h"
 #include "math/Transform.h"
 #include "math/DirectionalLight.h"
+#include "math/PointLight.h"
+#include "math/SpotLight.h"
 #include "math/Material.h"
 #include "math/ParticleMaterial.h"
 #include "math/ObjModel.h"
@@ -38,6 +35,10 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h"
 #include "function/Math.h"
+
+// 静的宣言
+std::unique_ptr<PointLight> DebugUI::templatePointLight_;
+std::unique_ptr<SpotLight> DebugUI::templateSpotLight_;
 
 void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCommon* dxCommon) {
 #ifdef USE_IMGUI
@@ -67,6 +68,25 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
         srvPool->GetCPUHandle(imguiIndex),
         srvPool->GetGPUHandle(imguiIndex)
     );
+
+    // テンプレートライトの初期化
+    templatePointLight_ = std::make_unique<PointLight>();
+    templatePointLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    templatePointLight_->position = { 0.0f, 1.0f, 0.0f };
+    templatePointLight_->intensity = 1.0f;
+    templatePointLight_->radius = 10.0f;
+    templatePointLight_->decay = 1.0f;
+    templatePointLight_->isActive = 1;
+
+    templateSpotLight_ = std::make_unique<SpotLight>();
+    templateSpotLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    templateSpotLight_->position = { 0.0f, 1.0f, 0.0f };
+    templateSpotLight_->distance = 10.0f;
+    templateSpotLight_->direction = { 0.0f, -1.0f, 0.0f };
+    templateSpotLight_->intensity = 1.0f;
+    templateSpotLight_->decay = 1.0f;
+    templateSpotLight_->cosAngle = std::cos(std::numbers::pi_v<float> / 6.0f);
+    templateSpotLight_->isActive = 1;
 
 #endif // USE_IMGUI
 }
@@ -149,6 +169,115 @@ void DebugUI::QueuePostDrawCommands() {
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon_->GetCommandList());
 
 #endif // USE_IMGUI
+}
+
+void DebugUI::DebugLights(
+    [[maybe_unused]] DirectionalLight* directionalLight,
+    [[maybe_unused]] std::vector<std::unique_ptr<PointLight>>& pointLights,
+    [[maybe_unused]] std::vector<std::unique_ptr<SpotLight>>& spotLights) {
+#ifdef USE_IMGUI
+    if (ImGui::BeginTabBar("LightsTabBar")) {
+        // Light Editor タブ
+        if (ImGui::BeginTabItem("Light Editor")) {
+            ImGui::SeparatorText("PointLight Template");
+            ImGui::ColorEdit4("PL Color", &templatePointLight_->color.x);
+            ImGui::DragFloat3("PL Position", &templatePointLight_->position.x, 0.01f);
+            ImGui::DragFloat("PL Intensity", &templatePointLight_->intensity, 0.01f, 0.0f);
+            ImGui::DragFloat("PL Radius", &templatePointLight_->radius, 0.01f, 0.0f);
+            ImGui::DragFloat("PL Decay", &templatePointLight_->decay, 0.01f, 0.0f);
+            if (ImGui::Button("Add PointLight to Scene")) {
+                auto newLight = std::make_unique<PointLight>(*templatePointLight_);
+                pointLights.push_back(std::move(newLight));
+            }
+
+            ImGui::Separator();
+
+            ImGui::SeparatorText("SpotLight Template");
+            ImGui::ColorEdit4("SL Color", &templateSpotLight_->color.x);
+            ImGui::DragFloat3("SL Position", &templateSpotLight_->position.x, 0.01f);
+            ImGui::DragFloat("SL Intensity", &templateSpotLight_->intensity, 0.01f, 0.0f);
+            ImGui::DragFloat3("SL Direction", &templateSpotLight_->direction.x, 0.01f);
+            templateSpotLight_->direction = Math::Normalize(templateSpotLight_->direction);
+            ImGui::DragFloat("SL Distance", &templateSpotLight_->distance, 0.01f, 0.0f);
+            ImGui::DragFloat("SL Decay", &templateSpotLight_->decay, 0.01f, 0.0f);
+            ImGui::DragFloat("SL CosAngle", &templateSpotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
+            if (ImGui::Button("Add SpotLight to Scene")) {
+                auto newLight = std::make_unique<SpotLight>(*templateSpotLight_);
+                spotLights.push_back(std::move(newLight));
+            }
+
+            ImGui::EndTabItem();
+        }
+
+        // DirectionalLight タブ
+        if (directionalLight && ImGui::BeginTabItem("DirectionalLight")) {
+            ImGui::ColorEdit4("Color", &directionalLight->color.x);
+            ImGui::DragFloat3("Direction", &directionalLight->direction.x, 0.01f);
+            directionalLight->direction = Math::Normalize(directionalLight->direction);
+            ImGui::DragFloat("Intensity", &directionalLight->intensity, 0.01f, 0.0f);
+            ImGui::EndTabItem();
+        }
+
+        // PointLights タブ
+        if (ImGui::BeginTabItem("PointLights")) {
+            int pointLightToRemove = -1;
+            for (size_t i = 0; i < pointLights.size(); ++i) {
+                auto& light = pointLights[i];
+                std::string label = "PointLight " + std::to_string(i);
+                if (ImGui::CollapsingHeader(label.c_str())) {
+                    ImGui::PushID(static_cast<int>(i));
+                    if (ImGui::Button("[-] Remove")) {
+                        pointLightToRemove = static_cast<int>(i);
+                    }
+                    ImGui::SameLine();
+                    ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
+                    ImGui::ColorEdit4("Color", &light->color.x);
+                    ImGui::DragFloat3("Position", &light->position.x, 0.01f);
+                    ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
+                    ImGui::DragFloat("Radius", &light->radius, 0.01f, 0.0f);
+                    ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
+                    ImGui::PopID();
+                }
+            }
+            if (pointLightToRemove != -1) {
+                pointLights.erase(pointLights.begin() + pointLightToRemove);
+            }
+            ImGui::EndTabItem();
+        }
+
+        // SpotLights タブ
+        if (ImGui::BeginTabItem("SpotLights")) {
+            int spotLightToRemove = -1;
+            for (size_t i = 0; i < spotLights.size(); ++i) {
+                auto& light = spotLights[i];
+                std::string label = "SpotLight " + std::to_string(i);
+                if (ImGui::CollapsingHeader(label.c_str())) {
+                    ImGui::PushID(static_cast<int>(i + pointLights.size()));
+                    if (ImGui::Button("[-] Remove")) {
+                        spotLightToRemove = static_cast<int>(i);
+                    }
+                    ImGui::SameLine();
+                    ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
+                    ImGui::ColorEdit4("Color", &light->color.x);
+                    ImGui::DragFloat3("Position", &light->position.x, 0.01f);
+                    ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
+                    ImGui::DragFloat3("Direction", &light->direction.x, 0.01f);
+                    light->direction = Math::Normalize(light->direction);
+                    ImGui::DragFloat("Distance", &light->distance, 0.01f, 0.0f);
+                    ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
+                    ImGui::DragFloat("CosAngle", &light->cosAngle, 0.01f, 0.0f, 1.0f);
+                    ImGui::PopID();
+                }
+            }
+            if (spotLightToRemove != -1) {
+                spotLights.erase(spotLights.begin() + spotLightToRemove);
+            }
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
+#endif
 }
 
 // transform
@@ -283,7 +412,7 @@ void DebugUI::DebugMaterialParticle([[maybe_unused]] ParticleMaterial* materialD
             materialData->lightingMode = currentMode;
         }
 
-        // サンプラ切替フラグ（0 = WRAP(s0), 1 = CLAMP(s1)）
+        // サンプラ切替フラグ(0 = WRAP(s0), 1 = CLAMP(s1))
         bool useClamp = materialData->useClampSampler != 0;
         if (ImGui::Checkbox("Use Clamp Sampler (V)", &useClamp)) {
             materialData->useClampSampler = useClamp ? 1 : 0;
@@ -291,19 +420,19 @@ void DebugUI::DebugMaterialParticle([[maybe_unused]] ParticleMaterial* materialD
 
         ImGui::DragFloat("Shininess", &materialData->shininess, 0.01f);
 
-        // --- UV Transform 編集（より実用的に） ---
+        // --- UV Transform 編集(より実用的に) ---
         // materialData->uvTransform は 4x4 行列。
         // 編集用に translate/scale/rotate(Z) を抽出し、編集後に再構成する。
-        // 抽出は「一般的な affine（回転 + scale + translate）を想定した簡易逆変換」です。
+        // 抽出は「一般的な affine(回転 + scale + translate)を想定した簡易逆変換」です。
         // U/V は X/Y 成分に対応している前提。
         float tx = materialData->uvTransform.m[3][0];
         float ty = materialData->uvTransform.m[3][1];
 
-        // 簡易スケール抽出：対角成分を利用（斜交/shear を無視する簡易推定）
+        // 簡易スケール抽出：対角成分を利用(斜交/shear を無視する簡易推定)
         float sx = materialData->uvTransform.m[0][0];
         float sy = materialData->uvTransform.m[1][1];
 
-        // 簡易回転（ラジアン）： atan2( m10, m00 ) を使用（回転+scale の混在を近似）
+        // 簡易回転(ラジアン)： atan2( m10, m00 ) を使用(回転+scale の混在を近似)
         float rot = std::atan2(materialData->uvTransform.m[1][0], materialData->uvTransform.m[0][0]);
 
         bool changed = false;
@@ -311,12 +440,12 @@ void DebugUI::DebugMaterialParticle([[maybe_unused]] ParticleMaterial* materialD
             if (ImGui::DragFloat2("UV Translate", &tx, 0.01f, -100.0f, 100.0f)) changed = true;
             if (ImGui::DragFloat2("UV Scale", &sx, 0.01f, -100.0f, 100.0f)) changed = true;
             if (ImGui::SliderAngle("UV Rotate (deg)", &rot)) changed = true;
-            ImGui::TextWrapped("注: 複雑な歪み（shear 等）がある場合は完璧に逆変換できません。一般的な UV 編集用途に最適化しています。");
+            ImGui::TextWrapped("注: 複雑な歪み(shear 等)がある場合は完璧に逆変換できません。一般的な UV 編集用途に最適化しています。");
             ImGui::TreePop();
         }
 
         if (changed) {
-            // Transform 構造を使って行列を再構成（function/Math.h の MakeAffineMatrix を利用）
+            // Transform 構造を使って行列を再構成(function/Math.h の MakeAffineMatrix を利用)
             Transform uvT;
             uvT.translate = { tx, ty, 0.0f };
             uvT.scale = { sx, sy, 1.0f };
@@ -511,7 +640,7 @@ void DebugUI::FPSDebug() {
         */
 
         /*
-        // ---------- カスタムグラフ描画（上が高い値） ----------
+        // ---------- カスタムグラフ描画(上が高い値) ----------
         const ImVec2 graphSize(260, 90);
         ImVec2 canvasMin = ImGui::GetCursorScreenPos();
         ImVec2 canvasMax = ImVec2(canvasMin.x + graphSize.x, canvasMin.y + graphSize.y);
@@ -551,7 +680,7 @@ void DebugUI::FPSDebug() {
         if (count > 1) {
             const int sampleCount = static_cast<int>(count);
             const float xStep = graphSize.x / float(std::max(sampleCount - 1, 1));
-            // start index（リングバッファの最古）
+            // start index(リングバッファの最古)
             size_t start = historyFilled_ ? historyIndex_ : 0;
             ImVec2 prev;
             for (int i = 0; i < sampleCount; ++i) {

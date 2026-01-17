@@ -83,7 +83,7 @@
 
 /// RestartStrip
 
-// 三角形の入力から、線分を３つ出力するサンプル
+// 三角形の入力から、線分を3つ出力するサンプル
 //[maxvertexcount(6)]
 //void main(
 //triangle VertexShaderOutput input[3],
@@ -126,7 +126,7 @@
 
 /// LineStrip
 
-//// 三角形の入力から、線分を３つ出力するサンプル
+//// 三角形の入力から、線分を3つ出力するサンプル
 //[maxvertexcount(6)]
 //void main(
 //triangle VertexShaderOutput input[3],
@@ -142,7 +142,7 @@
 //		element.normal = input[i].normal;
 //		element.uv = input[i].texcoord;
 //		element.worldPosition = input[i].worldPosition;
-//		// 頂点を１つ追加
+//		// 頂点を1つ追加
 //		output.Append(element);
 //	}
 //	// 最初の点をもう一度追加
@@ -209,7 +209,7 @@
 //	}
 //}
 
-/* 点の出力（検証用）*/
+/* 点の出力(検証用)*/
 //[maxvertexcount(1)]
 //void main(
 //    point VertexShaderOutput input[1],
@@ -226,7 +226,7 @@
 
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b6);
 
-/* 点から三角形を出力（ワールド空間版）*/
+/* 点から三角形を出力(ワールド空間版)*/
 [maxvertexcount(3)]
 void main(
     point VertexShaderOutput input[1],

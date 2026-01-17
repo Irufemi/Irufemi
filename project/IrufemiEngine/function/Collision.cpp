@@ -122,7 +122,7 @@ namespace Collision {
         // 各辺を結んだベクトルと、頂点と衝突点pを結んだベクトルのクロス積を求める
         Vector3 normal = Math::Cross(Math::Subtract(triangle.vertices_[1], triangle.vertices_[0]), Math::Subtract(triangle.vertices_[2], triangle.vertices_[0]));
 
-        // 平面と線分の内積（垂直＝平行チェック）
+        // 平面と線分の内積(垂直＝平行チェック)
         float dot = Math::Dot(normal, segment.diff);
         if (dot == 0.0f) {
             return false; // 平行なので交差しない
@@ -382,19 +382,19 @@ namespace Collision {
             std::clamp(localPos.z, -obb.size.z, obb.size.z)
         };
 
-        // 3. ローカル空間での最近接点と球の中心（localPos）の距離を判定
+        // 3. ローカル空間での最近接点と球の中心(localPos)の距離を判定
         float distance = Math::Length(Math::Subtract(localPos, closestPoint));
 
         return distance <= sphere.radius;
     }
-    
+
     // OBBと線分の衝突判定
     bool IsCollision(const OBB& obb, const Segment& segment) {
         // 1. 線分をOBBのローカル空間に変換する
         // OBBの中心からの相対座標
         Vector3 worldOriginRel = Math::Subtract(segment.origin, obb.center);
 
-        // OBBの各軸（orientations）への射影を行い、ローカル空間の線分を作る
+        // OBBの各軸(orientations)への射影を行い、ローカル空間の線分を作る
         Segment localSegment;
         localSegment.origin = {
             Math::Dot(worldOriginRel, obb.orientations[0]),
@@ -417,7 +417,7 @@ namespace Collision {
         return IsAABBSegmentCollision(localAABB, localSegment);
     }
 
-    // OBBとRay（半直線）の判定
+    // OBBとRay(半直線)の判定
     bool IsCollision(const OBB& obb, const Ray& ray) {
         // 1. RayをOBBのローカル空間に変換
         Vector3 worldRelPos = Math::Subtract(ray.origin, obb.center);
@@ -441,12 +441,12 @@ namespace Collision {
         const float* sizeArr = &obb.size.x;
 
         for (int i = 0; i < 3; ++i) {
-            // diffがほぼ0（線がこの軸に対して動いていない）場合
+            // diffがほぼ0(線がこの軸に対して動いていない)場合
             if (std::abs(diffArr[i]) < 1e-6f) {
                 // 始点がOBBの外側なら、平行なので一生当たらない
                 if (std::abs(originArr[i]) > sizeArr[i]) return false;
             } else {
-                // 各軸のスラブ（壁）との交差距離tを計算
+                // 各軸のスラブ(壁)との交差距離tを計算
                 float t1 = (-sizeArr[i] - originArr[i]) / diffArr[i];
                 float t2 = (sizeArr[i] - originArr[i]) / diffArr[i];
 
@@ -462,9 +462,9 @@ namespace Collision {
         return tMin <= tMax && tMax >= 0.0f;
     }
 
-    // OBBとLine（直線）の判定
+    // OBBとLine(直線)の判定
     bool IsCollision(const OBB& obb, const Line& line) {
-        // 1. LineをOBBのローカル空間に変換（Rayと同様）
+        // 1. LineをOBBのローカル空間に変換(Rayと同様)
         Vector3 worldRelPos = Math::Subtract(line.origin, obb.center);
         Vector3 localOrigin = {
             Math::Dot(worldRelPos, obb.orientations[0]),
@@ -477,7 +477,7 @@ namespace Collision {
             Math::Dot(line.diff, obb.orientations[2])
         };
 
-        // 2. スラブ法（範囲制限なし）
+        // 2. スラブ法(範囲制限なし)
         float tMin = -std::numeric_limits<float>::infinity();
         float tMax = std::numeric_limits<float>::infinity();
 
@@ -501,15 +501,15 @@ namespace Collision {
 
     // OBBとOBBの衝突判定
     bool IsCollision(const OBB& a, const OBB& b) {
-        // 2つのOBBの各軸（計6本）と、それらの外積（3x3=9本）の計15本を調べる
+        // 2つのOBBの各軸(計6本)と、それらの外積(3x3=9本)の計15本を調べる
 
-        // 1. 準備：回転行列（相対方向）と中心差分の計算
+        // 1. 準備：回転行列(相対方向)と中心差分の計算
         float R[3][3], AbsR[3][3];
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 // aの軸iとbの軸jの内積
                 R[i][j] = Math::Dot(a.orientations[i], b.orientations[j]);
-                // 絶対値（浮動小数点の誤差対策で僅かな値を加算）
+                // 絶対値(浮動小数点の誤差対策で僅かな値を加算)
                 AbsR[i][j] = std::abs(R[i][j]) + 1e-6f;
             }
         }
@@ -525,7 +525,7 @@ namespace Collision {
 
         float ra, rb;
 
-        // 2. 分離軸の判定（全15パターン）
+        // 2. 分離軸の判定(全15パターン)
 
         // --- aの各軸 (3本) ---
         for (int i = 0; i < 3; i++) {
@@ -901,12 +901,12 @@ namespace Collision {
         return IsCollision(obb, segment);
     }
 
-    // OBBとRay（半直線）の判定
+    // OBBとRay(半直線)の判定
     bool IsOBBRayCollision(const OBB& obb, const Ray& ray) {
         return IsCollision(obb, ray);
     }
 
-    // OBBとLine（直線）の判定
+    // OBBとLine(直線)の判定
     bool IsOBBLineCollision(const OBB& obb, const Line& line) {
         return IsCollision(obb, line);
     }

@@ -2,6 +2,7 @@
 
 #include "Vector3.h"
 #include "Vector4.h"
+#include <cstdint>
 
 struct SpotLight{
     //!< ライトの色
@@ -20,6 +21,8 @@ struct SpotLight{
     float cosAngle;
     //!< フォールオフ
     float falloff;
+    //!< 有効フラグ
+    int32_t isActive;
 private:
-    float padding;
+    float padding[3];
 };

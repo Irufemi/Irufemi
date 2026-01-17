@@ -1,5 +1,5 @@
-// Blocks 用インスタンシング VS（Particle と同様に VS: t0 を使用）
-// RootParameter[4] (VS) に SRV テーブルをバインド（t0）
+// Blocks 用インスタンシング VS(Particle と同様に VS: t0 を使用)
+// RootParameter[4] (VS) に SRV テーブルをバインド(t0)
 // 出力は Object3d.hlsli の VertexShaderOutput に合わせる
 
 #include "./Object3d.hlsli"
@@ -32,11 +32,11 @@ VertexShaderOutput main(VertexShaderInput input, uint32_t instanceId : SV_Instan
     // UV
 	output.texcoord = input.texcoord;
 
-    // 法線（逆転置行列で変換）
+    // 法線(逆転置行列で変換)
 	float32_t4 n4 = mul(float32_t4(input.normal, 0.0f), inst.WorldInverseTranspose);
 	output.normal = normalize(n4.xyz);
 
-    // ワールド座標（PS 側で視線方向などに使用）
+    // ワールド座標(PS 側で視線方向などに使用)
 	float32_t4 worldPos = mul(input.position, inst.World);
 	output.worldPosition = worldPos.xyz;
 

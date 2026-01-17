@@ -2,6 +2,7 @@
 
 #include "Vector3.h"
 #include "Vector4.h"
+#include <cstdint>
 
 struct PointLight {
     //!< ライトの色
@@ -14,6 +15,8 @@ struct PointLight {
     float radius;
     //!< 減衰率
     float decay;
+    //!< 有効フラグ
+    int32_t isActive;
 private:
-    float padding[2];
+    float padding;
 };
