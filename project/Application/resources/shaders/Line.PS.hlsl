@@ -1,6 +1,6 @@
 #include "Line.hlsli"
 
-// material を PS 側で参照（register を b0 に合わせる）
+// material を PS 側で参照(register を b0 に合わせる)
 ConstantBuffer<Material> gMaterial : register(b0);
 
 struct PixelShaderOutput

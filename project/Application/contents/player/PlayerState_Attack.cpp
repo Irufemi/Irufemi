@@ -36,7 +36,7 @@ struct PlayerStateAttack final : IPlayerState {
 
         // --- 攻撃エフェクトのアニメーション ---
         float t = static_cast<float>(timer_) / kAttackDuration;
-        // 攻撃範囲（例として1.5f）
+        // 攻撃範囲(例として1.5f)
         const float attackRange = 1.5f;
         // プレイヤーの向きに合わせて移動方向を決める
         float moveDirection = (player.lrDirection_ == LRDirection::kRight) ? 1.0f : -1.0f;

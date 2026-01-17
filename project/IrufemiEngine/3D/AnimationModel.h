@@ -47,9 +47,9 @@ private: // メンバ関数(内部ヘルパ)
     void UpdateAnimation();
 
 public: // ゲッター・セッター
-    // 指定したインデックスのメッシュのマテリアルを取得（読み取り専用）
+    // 指定したインデックスのメッシュのマテリアルを取得(読み取り専用)
     const ObjMaterial* GetMaterial(size_t meshIndex) const;
-    // 指定したインデックスのメッシュのマテリアルを取得（書き込み可能）
+    // 指定したインデックスのメッシュのマテリアルを取得(書き込み可能)
     ObjMaterial* GetMaterial(size_t meshIndex);
 
 
@@ -60,7 +60,7 @@ public: // ゲッター・セッター
     static void SetAnimationManager(AnimationManager* am) { animationManager_ = am; }
 
 private: // メンバ変数
-    // 共有モデルデータ（CPU/GPU）
+    // 共有モデルデータ(CPU/GPU)
     std::shared_ptr<ManagedModel> managedModel_;
 
     // オブジェクト全体のTransform

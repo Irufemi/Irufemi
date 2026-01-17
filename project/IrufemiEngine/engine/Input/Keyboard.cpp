@@ -24,10 +24,10 @@ bool Keyboard::IsKeyReleased(uint8_t key) const {
     return  (previousKeys_[key] & 0x80) && !(currentKeys_[key] & 0x80);
 }
 
-// よく使うキーの表引き（必要に応じて拡張）
+// よく使うキーの表引き(必要に応じて拡張)
 static uint8_t LookupVKFromDIK(uint8_t dik) {
     static const std::unordered_map<uint8_t, uint8_t> kMap = {
-        // 文字キー（WASDなどはVK_がそのまま）
+        // 文字キー(WASDなどはVK_がそのまま)
         { 0x1E /*DIK_A*/, 'A' }, { 0x30 /*DIK_B*/, 'B' }, { 0x2E /*DIK_C*/, 'C' },
         { 0x20 /*DIK_D*/, 'D' }, { 0x12 /*DIK_E*/, 'E' }, { 0x21 /*DIK_F*/, 'F' },
         { 0x22 /*DIK_G*/, 'G' }, { 0x23 /*DIK_H*/, 'H' }, { 0x17 /*DIK_I*/, 'I' },
@@ -59,7 +59,7 @@ static uint8_t LookupVKFromDIK(uint8_t dik) {
         { 0x3E /*DIK_F4*/, VK_F4 }, { 0x3F /*DIK_F5*/, VK_F5 }, { 0x40 /*DIK_F6*/, VK_F6 },
         { 0x41 /*DIK_F7*/, VK_F7 }, { 0x42 /*DIK_F8*/, VK_F8 }, { 0x43 /*DIK_F9*/, VK_F9 },
         { 0x44 /*DIK_F10*/, VK_F10 }, { 0x57 /*DIK_F11*/, VK_F11 }, { 0x58 /*DIK_F12*/, VK_F12 },
-        // --- テンキー（NUMPAD） ---
+        // --- テンキー(NUMPAD) ---
         { 0x52 /*DIK_NUMPAD0*/, VK_NUMPAD0 }, { 0x4F /*DIK_NUMPAD1*/, VK_NUMPAD1 },
         { 0x50 /*DIK_NUMPAD2*/, VK_NUMPAD2 }, { 0x51 /*DIK_NUMPAD3*/, VK_NUMPAD3 },
         { 0x4B /*DIK_NUMPAD4*/, VK_NUMPAD4 }, { 0x4C /*DIK_NUMPAD5*/, VK_NUMPAD5 },
@@ -71,7 +71,7 @@ static uint8_t LookupVKFromDIK(uint8_t dik) {
         // ※ NUMPAD Enter は DIKで 0x9C。VKは VK_RETURN と同じ扱いになる点に注意
         { 0x9C /*DIK_NUMPADENTER*/, VK_RETURN },
 
-        // --- 追記例: OEMキー（記号系） ---
+        // --- 追記例: OEMキー(記号系) ---
         // JP/US 配列差の影響を抑えたいときに固定
         { 0x0D /*DIK_MINUS*/,     VK_OEM_MINUS },   // '-' '_'
         { 0x0C /*DIK_EQUALS*/,    VK_OEM_PLUS  },   // '=' '+'
@@ -85,25 +85,25 @@ static uint8_t LookupVKFromDIK(uint8_t dik) {
         { 0x35 /*DIK_SLASH*/,     VK_OEM_2     },   // '/' '?'
         { 0x29 /*DIK_GRAVE*/,     VK_OEM_3     },   // '`' '~'
 
-        // ---（必要なら）日本語配列系（任意）---
-        // 無変換/変換/かな切替/102キー（＼/ろ）など
+        // ---(必要なら)日本語配列系(任意)---
+        // 無変換/変換/かな切替/102キー(＼/ろ)など
         { 0x7B /*DIK_CONVERT*/,     VK_CONVERT     },
         { 0x79 /*DIK_NOCONVERT*/,   VK_NONCONVERT  },
         { 0x70 /*DIK_KANA*/,        VK_KANA        },
-        { 0x73 /*DIK_ROEM_102?*/,   VK_OEM_102     }, // JISの＼/ろキー相当（環境差あり）
+        { 0x73 /*DIK_ROEM_102?*/,   VK_OEM_102     }, // JISの＼/ろキー相当(環境差あり)
     };
     if (auto it = kMap.find(dik); it != kMap.end()) return it->second;
     return 0; // 0 は未定義
 }
 
-// DIK -> VK 変換（表引き→フォールバック）
+// DIK -> VK 変換(表引き→フォールバック)
 uint8_t Keyboard::DIKToVK(uint8_t dik) {
     if (uint8_t vk = LookupVKFromDIK(dik)) return vk;
 
-    // フォールバック：スキャンコード→VK（拡張キー考慮）
-    // DIK の拡張系（例: 0xE0 系）は数値が 0x80 以上に出ることが多いので、拡張ビットを与える
+    // フォールバック：スキャンコード→VK(拡張キー考慮)
+    // DIK の拡張系(例: 0xE0 系)は数値が 0x80 以上に出ることが多いので、拡張ビットを与える
     UINT sc = dik;
-    if (dik & 0x80u) sc |= 0x100u; // 拡張の保険（必要に応じて調整）
+    if (dik & 0x80u) sc |= 0x100u; // 拡張の保険(必要に応じて調整)
     UINT vk = MapVirtualKeyEx(sc, MAPVK_VSC_TO_VK_EX, GetKeyboardLayout(0));
     return static_cast<uint8_t>(vk);
 }

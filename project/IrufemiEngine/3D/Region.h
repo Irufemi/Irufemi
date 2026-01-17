@@ -65,7 +65,7 @@ private:
 
     Camera* camera_ = nullptr;
 
-    // 共有モデルデータ（CPU/GPU）
+    // 共有モデルデータ(CPU/GPU)
     std::shared_ptr<ManagedModel> managedModel_{};
 
     // インスタンス固有リソース

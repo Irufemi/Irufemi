@@ -14,12 +14,12 @@ public:
     void Initialize(HWND hwnd);
     void Update();
 
-    // 新API（推奨）
+    // 新API(推奨)
     Keyboard* GetKeyboard() { return keyboard_.get(); }
     GamePad* GetGamePad() { return gamepad_.get(); }
     Mouse* GetMouse() { return mouse_.get(); }
 
-    // 旧API（互換用：既存コードを壊さないためフォワード）
+    // 旧API(互換用：既存コードを壊さないためフォワード)
     bool IsKeyDown(uint8_t key)     const;
     bool IsKeyUp(uint8_t key)       const;
     bool IsKeyPressed(uint8_t key)  const;

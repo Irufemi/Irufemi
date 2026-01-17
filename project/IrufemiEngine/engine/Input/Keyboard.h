@@ -29,6 +29,6 @@ private:
     std::array<BYTE, KEY_COUNT> currentKeys_{};
     std::array<BYTE, KEY_COUNT> previousKeys_{};
 
-    // DIK -> VK 変換（表引き＋フォールバック）
+    // DIK -> VK 変換(表引き＋フォールバック)
     static uint8_t DIKToVK(uint8_t dik);
 };

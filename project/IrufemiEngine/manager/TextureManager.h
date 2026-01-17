@@ -22,13 +22,13 @@ public:
     // フォルダからロード
     void LoadAllFromFolder(const std::string& folderPath);
 
-    // ファイルパス/名前でSRVハンドルを取得（未ロードならロードしてキャッシュ）
+    // ファイルパス/名前でSRVハンドルを取得(未ロードならロードしてキャッシュ)
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle(const std::string& name) const;
 
     // テクスチャ名一覧
     std::vector<std::string> GetTextureNames() const;
 
-    // 白テクスチャの作成（フォールバック）
+    // 白テクスチャの作成(フォールバック)
     void CreateWhiteDummyTexture();
 
     // テクスチャサイズ取得
@@ -40,7 +40,7 @@ public:
 private:
     DirectXCommon* dxCommon_ = nullptr;
 
-    // key: ファイルパス（または識別名）、value: Texture オブジェクト
+    // key: ファイルパス(または識別名)、value: Texture オブジェクト
     std::unordered_map<std::string, std::shared_ptr<Texture>> textures_;
 
     // フォールバック白テクスチャ

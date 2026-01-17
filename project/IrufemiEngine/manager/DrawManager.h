@@ -6,6 +6,9 @@
 #include <array>
 #include <wrl.h>
 #include "math/TransformationMatrix.h" // 追加
+#include "math/PointLight.h"
+#include "math/SpotLight.h"
+#include <vector>
 
 // 前方宣言
 class DirectXCommon;
@@ -28,8 +31,6 @@ class Line3DClass;
 class CubeClass;
 
 // 構造体を前方宣言
-struct PointLight;
-struct SpotLight;
 struct DirectionalLight;
 struct CameraForGPU;
 
@@ -41,18 +42,30 @@ private:
 
     DirectXCommon* dxCommon_ = nullptr;
 
+    // シェーダーで定義したライトの最大数
+    static const int kMaxPointLights = 4;
+    static const int kMaxSpotLights = 4;
+
+    // ライト配列を格納する構造体
+    struct PointLights {
+        PointLight lights[kMaxPointLights];
+    };
+    struct SpotLights {
+        SpotLight lights[kMaxSpotLights];
+    };
+
     // カメラやライトの定数バッファを一時的に保持するリソース
     Microsoft::WRL::ComPtr<ID3D12Resource> frameResource_;
     struct FrameData {
         D3D12_GPU_VIRTUAL_ADDRESS camera;
         D3D12_GPU_VIRTUAL_ADDRESS directionalLight;
-        D3D12_GPU_VIRTUAL_ADDRESS pointLight;
-        D3D12_GPU_VIRTUAL_ADDRESS spotLight;
+        D3D12_GPU_VIRTUAL_ADDRESS pointLights;
+        D3D12_GPU_VIRTUAL_ADDRESS spotLights;
     } frameData_{};
     CameraForGPU* cameraData_ = nullptr;
     DirectionalLight* directionalLightData_ = nullptr;
-    PointLight* pointLightData_ = nullptr;
-    SpotLight* spotLightData_ = nullptr;
+    PointLights* pointLightsData_ = nullptr;
+    SpotLights* spotLightsData_ = nullptr;
 
 
 public: //メンバ関数
@@ -60,7 +73,7 @@ public: //メンバ関数
     void Initialize(DirectXCommon* dx);
     void Finalize();
 
-    // 追加（保持はしないで即時バインド）
+    // 追加(保持はしないで即時バインド)
     void BindPSO(ID3D12PipelineState* pso);
 
     void PreDraw(
@@ -71,7 +84,7 @@ public: //メンバ関数
     void PostDraw();
 
     // フレーム単位の共通データを設定
-    void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const PointLight& pointLight, const SpotLight& spotLight);
+    void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights);
 
     void DrawTriangle(
         TriangleClass* triangle

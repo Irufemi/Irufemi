@@ -51,7 +51,7 @@ bool Se::SetSourceByKey(const std::string& key, float volume) {
 
 void Se::Play(bool loop) {
     if (!audioManager_ || !sound_) return;
-    // 再生開始前に既存の再生を止める（同一インスタンスで再生を上書き）
+    // 再生開始前に既存の再生を止める(同一インスタンスで再生を上書き)
     Stop();
     voice_ = audioManager_->Play(sound_, loop, volume_);
 }

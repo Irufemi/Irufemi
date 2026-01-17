@@ -4,6 +4,8 @@
 #include <wrl.h>
 #include <array>          
 #include <cstddef>        
+#include <memory>
+#include <vector>
 #include "math/BlendMode.h"
 #include "engine/directX/PSOManager.h"
 
@@ -16,10 +18,12 @@ class D3D12ResourceUtilParticle;
 struct Transform;
 struct Matrix4x4;
 struct DirectionalLight;
+struct PointLight;
+struct SpotLight;
 struct Material;
 struct Sphere;
 class DirectXCommon;
-struct ParticleMaterial; // 追加: Particle専用マテリアル前方宣言
+struct ParticleMaterial;
 struct ObjMaterial;
 
 #ifdef USE_IMGUI
@@ -52,6 +56,10 @@ private: // メンバ変数
     float cachedFps_ = 0.0f;
     void UpdatePerfStats_(float newFrameMs); // ★集計用内部関数
 
+    // --- ImGui用ライト編集テンプレート ---
+    static std::unique_ptr<PointLight> templatePointLight_;
+    static std::unique_ptr<SpotLight> templateSpotLight_;
+
 public: // メンバ関数
 
     // 初期化
@@ -74,6 +82,12 @@ public: // メンバ関数
 
     // 描画処理が終わったタイミングでコマンドを積む
     void QueuePostDrawCommands();
+
+    // ライトUI
+    static void DebugLights(
+        DirectionalLight* directionalLight,
+        std::vector<std::unique_ptr<PointLight>>& pointLights,
+        std::vector<std::unique_ptr<SpotLight>>& spotLights);
 
     // Transform
     static void DebugTransform(Transform& transform);
@@ -117,7 +131,7 @@ public: // メンバ関数
     // シーンセレクタ
     void DebugSceneSelector(SceneManager* sm);
 
-    // PSO設定（ブレンド、深度、カリング）のデバッグUI
+    // PSO設定(ブレンド、深度、カリング)のデバッグUI
     static void DebugPsoSettings(
         BlendMode* blendMode,
         PSOManager::DepthWrite* depthWrite,

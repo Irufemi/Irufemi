@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-// IXAudio2SourceVoice構造体を前方宣言（ヘッダの依存関係を減らすため）
+// IXAudio2SourceVoice構造体を前方宣言(ヘッダの依存関係を減らすため)
 struct IXAudio2SourceVoice;
 
 class AudioManager {
@@ -25,7 +25,7 @@ private:
     // 再生中の SourceVoice を一元管理
     std::vector<IXAudio2SourceVoice*> activeVoices_;
 
-    // カテゴリ名 → その中にあるファイル名リスト（ソート済み）
+    // カテゴリ名 → その中にあるファイル名リスト(ソート済み)
     std::map<std::string, std::vector<std::string>> categoryMap_;
 
     // 追加: ファイナライズ済みフラグ
@@ -53,13 +53,13 @@ public:
     // サブフォルダ単位でロードするオーバーロード版
     void LoadSoundsFromFolder(const std::string& folderPath, const std::string& category);
 
-    // カテゴリ（サブフォルダ）単位でソート済みのサウンド名一覧を取得する
+    // カテゴリ(サブフォルダ)単位でソート済みのサウンド名一覧を取得する
     std::vector<std::string> GetSoundNames(const std::string& category) const;
 
     // 名前を指定してロード済みのサウンドデータを取得する
     std::shared_ptr<Sound> GetSoundData(const std::string& name) const;
 
-    // 利用可能なサウンドカテゴリ一覧（サブフォルダ名）を取得
+    // 利用可能なサウンドカテゴリ一覧(サブフォルダ名)を取得
     std::vector<std::string> GetCategories() const;
 
     // サウンドを再生し、再生中のボイスへのポインタを返す
@@ -68,9 +68,9 @@ public:
 
     // 再生中のボイスを停止し、破棄する
     void Stop(IXAudio2SourceVoice*& voice);
-    void StopAll(); // 追加: 全Voice停止（Finalize内で利用）
+    void StopAll(); // 追加: 全Voice停止(Finalize内で利用)
 
-    // 追加: 重複を避けてファイルからロード or 取得（TextureManager風）
+    // 追加: 重複を避けてファイルからロード or 取得(TextureManager風)
     // key が空なら filePath をキーにする
     std::shared_ptr<Sound> GetOrLoadSoundByFile(const std::string& filePath, const std::string& key = "");
 

@@ -31,7 +31,7 @@ protected: // メンバ変数
 
     // 周方向分割数
     const uint32_t kSubdivision_ = 16;
-    // 高さ方向分割数（側面）
+    // 高さ方向分割数(側面)
     const uint32_t kHeightSubdivision_ = 1;
 
     // 周方向 1 セグメントあたりの角度
@@ -42,7 +42,7 @@ protected: // メンバ変数
 
     int selectedTextureIndex_ = 0;
 
-    // ポインタ参照（非所有）
+    // ポインタ参照(非所有)
     static TextureManager* textureManager_;
     static DrawManager* drawManager_;
     static DebugUI* ui_;
@@ -86,7 +86,7 @@ public: // メンバ関数
 
 private:
     // 上下面キャップを個別に作るヘルパー
-    // top == true => +Y 側のキャップ（上蓋）
+    // top == true => +Y 側のキャップ(上蓋)
     // doubleSided == true => 各三角形の逆順も追加して両面にする
     void AddCap(bool top, bool doubleSided = false);
 };

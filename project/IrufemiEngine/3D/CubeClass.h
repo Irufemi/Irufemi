@@ -17,18 +17,18 @@ class DebugUI;
 
 class CubeClass {
 protected:
-    // 中心位置 + サイズ（幅, 高さ, 奥行）
+    // 中心位置 + サイズ(幅, 高さ, 奥行)
     Vector3 center_{ 0.0f, 0.0f, 0.0f };
-    float width_ = 1.0f;  // 横（X）
-    float height_ = 1.0f; // 縦（Y）
-    float depth_ = 1.0f;  // 奥行（Z）
+    float width_ = 1.0f;  // 横(X)
+    float height_ = 1.0f; // 縦(Y)
+    float depth_ = 1.0f;  // 奥行(Z)
 
     // D3D12リソース
     std::unique_ptr<D3D12ResourceUtil> resource_ = nullptr;
 
     int selectedTextureIndex_ = 0;
 
-    // ポインタ参照（静的）
+    // ポインタ参照(静的)
     static TextureManager* textureManager_;
     static DrawManager* drawManager_;
     static DebugUI* ui_;

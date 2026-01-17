@@ -17,7 +17,7 @@ void GamePad::Update() {
     }
 }
 
-// ★ ラジアル正規化（円形DZ）
+// ★ ラジアル正規化(円形DZ)
 std::pair<float, float> GamePad::RadialNormalize(short x, short y, int dz) {
     float fx = static_cast<float>(x);
     float fy = static_cast<float>(y);
@@ -88,7 +88,7 @@ bool GamePad::LUpLeft(float th) const { return Left8Is(Stick8::UpLeft, th); }
 bool GamePad::LDownRight(float th) const { return Left8Is(Stick8::DownRight, th); }
 bool GamePad::LDownLeft(float th) const { return Left8Is(Stick8::DownLeft, th); }
 
-// ★ D-Pad 8方向（wButtons→8方向）
+// ★ D-Pad 8方向(wButtons→8方向)
 static Stick8 DPad8FromButtons(WORD w) {
     const bool up = (w & XINPUT_GAMEPAD_DPAD_UP) != 0;
     const bool right = (w & XINPUT_GAMEPAD_DPAD_RIGHT) != 0;

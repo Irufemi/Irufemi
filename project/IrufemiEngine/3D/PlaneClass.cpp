@@ -20,7 +20,7 @@ void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
     // D3D12ResourceUtilを生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
-    // ローカルXY平面上の4頂点（-Z向き）
+    // ローカルXY平面上の4頂点(-Z向き)
     //  v3(-0.5,0.5,0)----v2(0.5,0.5,0)
     //      |                |
     //      |                |
@@ -101,7 +101,7 @@ void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
         }
     }
 
-    // 初期の平面情報（ワールド空間）も一度更新
+    // 初期の平面情報(ワールド空間)も一度更新
     {
         // 法線は(0,0,-1)をWorldInverseTransposeで変換して正規化
         Vector3 nLocal{ 0.0f, 0.0f, -1.0f };
@@ -113,7 +113,7 @@ void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
         };
         nWorld = Math::Normalize(nWorld);
 
-        // 平面上の1点（ローカル原点が平面上）をワールドへ
+        // 平面上の1点(ローカル原点が平面上)をワールドへ
         Vector3 pWorld{
             resource_->transformationMatrix_.world.m[3][0],
             resource_->transformationMatrix_.world.m[3][1],

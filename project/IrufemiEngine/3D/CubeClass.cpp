@@ -25,12 +25,12 @@ void CubeClass::Initialize(Camera* camera, float width, float height, float dept
     // D3D12ResourceUtil の生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
-    // サイズ反映（中心原点）
+    // サイズ反映(中心原点)
     const float hx = width_ * 0.5f;
     const float hy = height_ * 0.5f;
     const float hz = depth_ * 0.5f;
 
-    // 頂点データ（24頂点）
+    // 頂点データ(24頂点)
     resource_->vertexDataList_ = {
         // 前面 (-Z)
         { { -hx, -hy, -hz, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } }, // 0
@@ -139,8 +139,8 @@ void CubeClass::SetSize(float width, float height, float depth) {
     width_ = width;
     height_ = height;
     depth_ = depth;
-    // サイズを変えた場合は再初期化が必要（頂点を再生成する方針）
-    // 呼び出し側（Debug UI 等）で Initialize を呼ぶ設計にしているためここではリソース操作は行わない
+    // サイズを変えた場合は再初期化が必要(頂点を再生成する方針)
+    // 呼び出し側(Debug UI 等)で Initialize を呼ぶ設計にしているためここではリソース操作は行わない
 }
 
 void CubeClass::Update() {
@@ -181,7 +181,7 @@ void CubeClass::Debug(const char* cubeName) {
     ui_->DebugMaterialBy3D(resource_->materialData_);
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
 
-    // サイズ編集 UI（変更時は Initialize で再生成）
+    // サイズ編集 UI(変更時は Initialize で再生成)
     float w = width_;
     float h = height_;
     float d = depth_;
@@ -196,7 +196,7 @@ void CubeClass::Debug(const char* cubeName) {
         h = std::max(0.0f, h);
         d = std::max(0.0f, d);
 
-        // 現在のテクスチャ名を復元して Initialize を呼ぶ（UI 保持のため）
+        // 現在のテクスチャ名を復元して Initialize を呼ぶ(UI 保持のため)
         std::string currentTextureName = "resources/uvChecker.png";
         if (textureManager_) {
             auto textureNames = textureManager_->GetTextureNames();

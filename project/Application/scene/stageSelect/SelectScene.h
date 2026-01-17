@@ -3,6 +3,7 @@
 #include "scene/IScene.h"
 
 #include <memory>
+#include <vector>
 
 class IrufemiEngine;
 
@@ -72,6 +73,6 @@ private: // メンバ変数(システム)
     bool debugMode_ = false;
     // ライト
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
-    std::unique_ptr<PointLight> pointLight_ = nullptr;
-    std::unique_ptr<SpotLight> spotLight_ = nullptr;
+    std::vector<std::unique_ptr<PointLight>> pointLights_;
+    std::vector<std::unique_ptr<SpotLight>> spotLights_;
 };

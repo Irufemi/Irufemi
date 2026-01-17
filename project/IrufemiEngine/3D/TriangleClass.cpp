@@ -19,11 +19,11 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
     // D3D12ResourceUtilを生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
-    // 入力頂点は1点のみ（GS で増やす）
+    // 入力頂点は1点のみ(GS で増やす)
     resource_->vertexDataList_.clear();
     resource_->vertexDataList_.push_back({ { 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } ,{0.0f,0.0f,-1.0f} });
 
-    // インデックスは使わない（空でOK）
+    // インデックスは使わない(空でOK)
     resource_->indexDataList_.clear();
 
     // リソース確保と Map
@@ -37,7 +37,7 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
     resource_->vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(resource_->vertexDataList_.size());
     std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
 
-    // IBV は未使用だが、0要素のままで問題なし（DrawTriangle では IB を設定しない）
+    // IBV は未使用だが、0要素のままで問題なし(DrawTriangle では IB を設定しない)
     resource_->indexBufferView_ = {};
     if (resource_->indexResource_) {
         resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();

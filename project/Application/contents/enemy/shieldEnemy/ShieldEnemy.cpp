@@ -96,7 +96,7 @@ void ShieldEnemy::OnCollision(Player* player) {
                          (playerDir == LRDirection::kLeft && lrDirection_ == LRDirection::kRight);
 
     if (isFrontAttack) {
-        // 正面からの攻撃：ダメージ軽減フラグを立てる（エフェクトや音を鳴らすなどの処理もここ）
+        // 正面からの攻撃：ダメージ軽減フラグを立てる(エフェクトや音を鳴らすなどの処理もここ)
         isDamageReduction = true;
         // TODO: ガードエフェクトやSEを再生
     }
@@ -118,7 +118,7 @@ void ShieldEnemy::UpdateMatrix() {
 }
 
 void ShieldEnemy::BehaviorWalkInitialize() {
-    // 歩行開始時の初期化（必要であれば）
+    // 歩行開始時の初期化(必要であれば)
 }
 
 void ShieldEnemy::BehaviorWalkUpdate() {
@@ -186,7 +186,7 @@ void ShieldEnemy::BehaviorDeathUpdate() {
     // Y軸回転
     transform_.rotate.y = Lerp(deathStartRotation_.y, deathEndRotation_.y, EaseOutSine(t));
 
-    // X軸回転（演出の後半で倒れる）
+    // X軸回転(演出の後半で倒れる)
     if (t > 0.5f) {
         float fall_t = (t - 0.5f) * 2.0f;
         transform_.rotate.x = Lerp(deathStartRotation_.x, deathEndRotation_.x, EaseInSine(fall_t));

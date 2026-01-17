@@ -17,7 +17,7 @@ Vector3 Lerp(const Vector3& v1, const Vector3& v2, float t);
 // 線形補間
 Vector4 Lerp(const Vector4& v1, const Vector4& v2, float t);
 
-// Quaternion 線形補間（最短経路・正規化）
+// Quaternion 線形補間(最短経路・正規化)
 Quaternion Lerp(const Quaternion& q1, const Quaternion& q2, float t); // 追加
 
 // 線形補間(0~1制限あり)

@@ -25,7 +25,7 @@ void Bgm::Initialize(const std::string& filePath, const std::string& key, bool l
         return;
     }
 
-    // currentSound_ を保持（これが存在する = 固定モード）
+    // currentSound_ を保持(これが存在する = 固定モード)
     currentSound_ = sound;
     soundKey_ = key.empty() ? filePath : key;
     fixedLoop_ = loop;
@@ -104,7 +104,7 @@ void Bgm::Stop() {
         if (audioManager_) {
             audioManager_->Stop(voice_);
         } else {
-            // audioManager_ がない場合は最低限 Stop を試みる（安全策）
+            // audioManager_ がない場合は最低限 Stop を試みる(安全策)
             voice_->Stop(0);
             voice_->DestroyVoice();
             voice_ = nullptr;

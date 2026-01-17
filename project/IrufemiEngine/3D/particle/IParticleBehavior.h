@@ -38,7 +38,7 @@ public:
 };
 
 /// <summary>
-/// 通常のパーティクル（追加の振る舞いなし）
+/// 通常のパーティクル(追加の振る舞いなし)
 /// </summary>
 class NormalBehavior : public IParticleBehavior {
 public:

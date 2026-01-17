@@ -61,7 +61,7 @@ Vector3 MapChipField::GetMapChipPositionByIndex(int xIndex, int yIndex) {
 }
 
 MapChipField::IndexSet MapChipField::GetMapChipIndexSetByPosition(const Vector3& position) {
-	// 位置→インデックス（中心基準）。y は配列行に合わせて反転
+	// 位置→インデックス(中心基準)。y は配列行に合わせて反転
 	IndexSet indexSet{};
 	indexSet.xIndex = static_cast<int>((position.x + kBlockWidth / 2.0f) / kBlockWidth);
 	indexSet.yIndex = static_cast<int>((position.y + kBlockHeight / 2.0f) / kBlockHeight);
@@ -70,7 +70,7 @@ MapChipField::IndexSet MapChipField::GetMapChipIndexSetByPosition(const Vector3&
 }
 
 MapChipField::Rect MapChipField::GetRectByIndex(int xIndex, int yIndex) {
-	// タイルの AABB を返す（中心座標 ± 半サイズ）
+	// タイルの AABB を返す(中心座標 ± 半サイズ)
 	Vector3 center = GetMapChipPositionByIndex(xIndex, yIndex);
 	Rect rect{};
 	rect.left = center.x - kBlockWidth / 2.0f;

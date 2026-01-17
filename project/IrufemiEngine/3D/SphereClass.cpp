@@ -124,7 +124,7 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
 
     resource_->transform_.translate = info_.center;
 
-    // scaleは係数として扱う（初期値は等方1）
+    // scaleは係数として扱う(初期値は等方1)
     resource_->transform_.scale = Vector3{ 1.0f,1.0f,1.0f };
 
     // 実スケール = 半径 × 係数
@@ -248,10 +248,10 @@ void SphereClass::Debug([[maybe_unused]] const char* sphereName) {
     // 位置は Transform 側でも編集されるので同期
     resource_->transform_.translate = info_.center;
 
-    // scale は係数（1.0 基準）。ここで自由に非等方も可。
+    // scale は係数(1.0 基準)。ここで自由に非等方も可。
     ui_->DebugTransform(resource_->transform_);
 
-    // 位置を SphereInfo に反映（半径は Transform からは変更しない）
+    // 位置を SphereInfo に反映(半径は Transform からは変更しない)
     info_.center = resource_->transform_.translate;
 
     ui_->DebugMaterialBy3D(resource_->materialData_);

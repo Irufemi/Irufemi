@@ -98,7 +98,7 @@ public: //メンバ変数
 
     // 頂点データ用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> vertexResource_ = nullptr;
-    //　頂点インデックス用定数バッファ
+    // 頂点インデックス用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> indexResource_ = nullptr;
     // 色用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> materialResource_ = nullptr;
@@ -190,7 +190,7 @@ public: //メンバ変数
 
     // 頂点データ用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> vertexResource_ = nullptr;
-    //　頂点インデックス用定数バッファ
+    // 頂点インデックス用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> indexResource_ = nullptr;
     // 色用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> materialResource_ = nullptr;
@@ -294,7 +294,7 @@ public: // メンバ変数(D3D12リソース関連)
 
     // 頂点データ用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> vertexResource_ = nullptr;
-    //　頂点インデックス用定数バッファ
+    // 頂点インデックス用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> indexResource_ = nullptr;
     // 拡縮回転移動行列用定数バッファ
     Microsoft::WRL::ComPtr <ID3D12Resource> transformationResource_ = nullptr;

@@ -7,12 +7,17 @@
 #include "engine/IrufemiEngine.h"
 #include "scene/SceneManager.h"
 
-// ゲームシーンのインクルード
+// memoryでの未定義
+#include "camera/DebugCamera.h"
+
+// シーンのインクルード
 #include "scene/title/TitleScene.h"
 #include "scene/stageSelect/SelectScene.h"
 #include "scene/inGame/GameScene.h"
 #include "scene/result/ResultScene.h"
+#if defined(_DEBUG) || defined(DEVELOPMENT)
 #include "scene/debug/DebugScene.h"
+#endif
 
 namespace {
     // --- ゲーム固有の定数 ---
@@ -20,7 +25,12 @@ namespace {
     const int32_t kClientHeight = 720;
     const std::wstring kTitle = L"LE2B_12_スエヒロ_コウイチ_アンナイト";
     const Vector4 kClearColor = { 0.7f, 0.7f, 0.7f, 1.0f };
-    const char kInitialScene[] = "Debug";
+    const char kInitialScene[]
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+        = "Debug";
+#else
+        = "InGame";
+#endif
 
     // --- シーン登録処理 ---
     void RegisterScenes(SceneManager& sm) {
@@ -28,7 +38,9 @@ namespace {
         sm.Register("Select", [] { return std::make_unique<SelectScene>(); });
         sm.Register("InGame", [] { return std::make_unique<GameScene>(); });
         sm.Register("Result", [] { return std::make_unique<ResultScene>(); });
+#if defined(_DEBUG) || defined(DEVELOPMENT)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
+#endif
     }
 }
 

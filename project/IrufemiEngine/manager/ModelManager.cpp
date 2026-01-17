@@ -10,7 +10,7 @@
 #include "math/Material.h" // Material構造体のため追加
 
 //======================
-// キャッシュ系（インスタンス）
+// キャッシュ系(インスタンス)
 //======================
 
 void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureManager) {
@@ -193,7 +193,7 @@ void ModelManager::DebugLogLoad(const std::string& key, size_t meshCount) {
 }
 
 //======================
-// 静的ロード関数群（旧 Function.h 移植）
+// 静的ロード関数群(旧 Function.h 移植)
 //======================
 
 MaterialData ModelManager::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename) {
@@ -331,7 +331,7 @@ ModelData ModelManager::LoadObjFile(const std::string& directoryPath, const std:
 
 // f行の頂点データを安全にパースする関数例
 bool ModelManager::ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx) {
-    posIdx = uvIdx = normIdx = -1; // デフォルト値（0開始なら0に）
+    posIdx = uvIdx = normIdx = -1; // デフォルト値(0開始なら0に)
 
     size_t firstSlash = token.find('/');
     size_t secondSlash = token.find('/', firstSlash + 1);
@@ -408,7 +408,7 @@ ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std:
 
                 tri[i] = { position, texcoord, normal };
             }
-            // 三角形の回り順は逆にしている（必要な場合のみ）
+            // 三角形の回り順は逆にしている(必要な場合のみ)
             currentMesh.vertices.push_back(tri[2]);
             currentMesh.vertices.push_back(tri[1]);
             currentMesh.vertices.push_back(tri[0]);
@@ -583,7 +583,7 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
     // ・ aiProcess_Triangulate        : 非三角形ポリゴンを三角化
     // ・ aiProcess_FlipWindingOrder  : 三角形の並び順を逆にして表裏判定を左手系用に合わせる
     // ・ aiProcess_FlipUVs           : UVのV(y)成分を反転
-    // ・ aiProcess_MakeLeftHanded    : 右手座標系から左手座標系へ変換（Z反転、行列の調整など全て行う）
+    // ・ aiProcess_MakeLeftHanded    : 右手座標系から左手座標系へ変換(Z反転、行列の調整など全て行う)
     const unsigned int flags =
         aiProcess_Triangulate |
         aiProcess_FlipWindingOrder |

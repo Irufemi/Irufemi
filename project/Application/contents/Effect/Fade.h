@@ -29,12 +29,12 @@ public:
     void Draw();
 
     /// @brief フェードインを開始します
-    /// @param duration フェードにかかる時間（秒）
+    /// @param duration フェードにかかる時間(秒)
     /// @param color フェードの色
     void FadeIn(float duration, const Vector4& color);
 
     /// @brief フェードアウトを開始します
-    /// @param duration フェードにかかる時間（秒）
+    /// @param duration フェードにかかる時間(秒)
     /// @param color フェードの色
     void FadeOut(float duration, const Vector4& color);
 

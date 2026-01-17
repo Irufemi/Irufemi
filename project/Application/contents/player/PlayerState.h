@@ -20,7 +20,7 @@ struct IPlayerState {
 	virtual void Exit(Player& player) = 0;         // 状態終了
 };
 
-// 具体ステート生成関数（実体は cpp 側）
+// 具体ステート生成関数(実体は cpp 側)
 std::unique_ptr<IPlayerState> MakeRootState();
 std::unique_ptr<IPlayerState> MakeDashState();
 std::unique_ptr<IPlayerState> MakeAttackState();

@@ -36,7 +36,7 @@ void Camera::Update([[maybe_unused]]const char *cameraName) {
 #if defined USE_IMGUI
     std::string name = std::string("Camera: ") + cameraName;
 
-    // ImGui（デバッグ時のみ）
+    // ImGui(デバッグ時のみ)
     ImGui::Begin(name.c_str());
     ImGui::DragFloat3("translate", &translate_.x, 0.1f);
     ImGui::DragFloat3("rotate", &rotate_.x, 0.1f);

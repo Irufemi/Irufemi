@@ -40,21 +40,15 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     debugMode_ = false;
 
     // --- ライトの初期化 ---
-    pointLight_ = std::make_unique <PointLight>();
-    pointLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    pointLight_->position = { 0.0f, 5.0f, 0.0f };
-    pointLight_->intensity = 1.0f;
-    pointLight_->radius = 10.0f;
-    pointLight_->decay = 1.0f;
-
-    spotLight_ = std::make_unique <SpotLight>();
-    spotLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    spotLight_->position = { 2.0f, 1.25f, 0.0f };
-    spotLight_->distance = 7.0f;
-    spotLight_->direction = Math::Normalize(Vector3{ -1.0f,-1.0f,0.0f });
-    spotLight_->intensity = 0.0f; // 初期状態ではOFF
-    spotLight_->decay = 2.0f;
-    spotLight_->cosAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
+    // シーンに最初から配置するライト
+    auto pointLight = std::make_unique<PointLight>();
+    pointLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    pointLight->position = { 0.0f, 5.0f, 0.0f };
+    pointLight->intensity = 1.0f;
+    pointLight->radius = 10.0f;
+    pointLight->decay = 1.0f;
+    pointLight->isActive = 1;
+    pointLights_.push_back(std::move(pointLight));
 
     directionalLight_ = std::make_unique<DirectionalLight>();
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
@@ -88,7 +82,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // ブロックの初期化
 
     /// ブロック
-    // ブロックの初期化（Blocksでまとめて管理）
+    // ブロックの初期化(Blocksでまとめて管理)
     blocks_ = std::make_unique<Region>();
     blocks_->Initialize(camera_.get(), "block.obj");
     GenerateBlocks();
@@ -219,40 +213,26 @@ void GameScene::Update() {
 #if defined USE_IMGUI
 
     ImGui::Begin("GameScene");
-    // pointLight 
-    if (ImGui::CollapsingHeader("PointLight")) {
-        ImGui::ColorEdit4("PointLightColor", &pointLight_->color.x);
-        ImGui::DragFloat3("PointLightPosition", &pointLight_->position.x, 0.01f);
-        ImGui::DragFloat("PointLightIntensity", &pointLight_->intensity, 0.01f, 0.0f);
-        ImGui::DragFloat("PointLightRadius", &pointLight_->radius, 0.01f, 0.0f);
-        ImGui::DragFloat("PointLightDecay", &pointLight_->decay, 0.01f, 0.0f);
-    }
-    // spotLight 
-    if (ImGui::CollapsingHeader("SpotLight")) {
-        ImGui::ColorEdit4("SpotLightColor", &spotLight_->color.x);
-        ImGui::DragFloat3("SpotLightPosition", &spotLight_->position.x, 0.01f);
-        ImGui::DragFloat("SpotLightIntensity", &spotLight_->intensity, 0.01f, 0.0f);
-        ImGui::DragFloat3("SpotLightDirection", &spotLight_->direction.x, 0.01f);
-        spotLight_->direction = Math::Normalize(spotLight_->direction);
-        ImGui::DragFloat("SpotLightDistance", &spotLight_->distance, 0.01f, 0.0f);
-        ImGui::DragFloat("SpotLightDecay", &spotLight_->decay, 0.01f, 0.0f);
-        ImGui::DragFloat("SpotLightCosAngle", &spotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
-    }
-    // directionalLight
-    if (ImGui::CollapsingHeader("DirectionalLight")) {
-        ImGui::ColorEdit4("DirectionalLightColor", &directionalLight_->color.x);
-        ImGui::DragFloat3("DirectionalLightDirection", &directionalLight_->direction.x, 0.01f);
-        directionalLight_->direction = Math::Normalize(directionalLight_->direction);
-        ImGui::DragFloat("DirectionalLightIntensity", &directionalLight_->intensity, 0.01f, 0.0f);
-    }
+    if (ImGui::BeginTabBar("GameSceneTabs")) {
 
-    ImGui::End();
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_);
 
-    ImGui::Begin("Texture");
-    if (ImGui::Button("allLoadActivate")) {
-        engine_->GetTextureManager()->LoadAllFromFolder("resources/");
+        // Texture タブ
+        if (ImGui::BeginTabItem("Texture")) {
+            if (ImGui::Button("allLoadActivate")) {
+                engine_->GetTextureManager()->LoadAllFromFolder("resources/");
+            }
+            ImGui::EndTabItem();
+        }
+
+        // Debug タブ
+        if (ImGui::BeginTabItem("Debug")) {
+            ImGui::Checkbox("debugMode", &debugMode_);
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
     }
-    ImGui::Checkbox("debugMode", &debugMode_);
     ImGui::End();
 
 #endif // _DEBUG
@@ -304,7 +284,17 @@ void GameScene::Update() {
     cameraForGpu.view = currentCamera->GetViewMatrix();
     cameraForGpu.projection = currentCamera->GetPerspectiveFovMatrix();
     cameraForGpu.worldPosition = currentCamera->GetTranslate();
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, *pointLight_, *spotLight_);
+    
+    std::vector<PointLight*> pLights;
+    for (const auto& light : pointLights_) {
+        pLights.push_back(light.get());
+    }
+    std::vector<SpotLight*> sLights;
+    for (const auto& light : spotLights_) {
+        sLights.push_back(light.get());
+    }
+
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights);
 }
 
 // 描画
@@ -364,7 +354,7 @@ void GameScene::Draw() {
         }
     }
 
-    // フェードの描画（最前面）
+    // フェードの描画(最前面)
     fade_->Draw();
 }
 
@@ -516,7 +506,7 @@ void GameScene::CheckAllCollisions() {
             }
             const AABB enemyAABB = enemy->GetAABB();
             if (Collision::IsAABBCollision(attackAABB, enemyAABB)) {
-                // 敵側の衝突処理（プレイヤーのポインタを渡す）
+                // 敵側の衝突処理(プレイヤーのポインタを渡す)
                 enemy->OnCollision(player_.get());
             }
         }
@@ -552,7 +542,7 @@ void GameScene::GenerateBlocks() {
     }
 
     // ブロックの生成
-    // ブロックの生成（Blocks にインスタンスを積む）
+    // ブロックの生成(Blocks にインスタンスを積む)
     for (uint32_t i = 0; i < numBlockVirtical; ++i) {
         for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
             if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kBlock) {
@@ -561,8 +551,8 @@ void GameScene::GenerateBlocks() {
                 worldtransformBlocks_[i][j]->translate = mapChipField_->GetMapChipPositionByIndex(j, i);
                 // Blocksにもインスタンスとして追加
                 if (blocks_) { blocks_->AddInstance(*worldtransformBlocks_[i][j]); }
-            }
         }
+    }
     }
 }
 
@@ -680,13 +670,13 @@ void GameScene::UpdateGameplay()
 
     hpBar_in_->Update();
 
-    // ゲームオーバー条件（プレイヤー死亡）
+    // ゲームオーバー条件(プレイヤー死亡)
     if (player_->IsDead()) {
         GameResultManager::result = GameResultManager::Result::Lose;
         phase_ = Phase::FadeOut;
         fade_->FadeOut(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f }); // 黒色で1秒間のフェードアウト
     }
-    // ゲームクリア条件（例：敵が全滅）
+    // ゲームクリア条件(例：敵が全滅)
     else if (enemies_.empty()) {
         GameResultManager::result = GameResultManager::Result::Win;
         phase_ = Phase::FadeOut;

@@ -70,7 +70,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     instancingDesc.Buffer.NumElements = kNumMaxInstance_;
     instancingDesc.Buffer.StructureByteStride = sizeof(ParticleForGPU);
 
-    // SRV スロット確保（初回のみ）
+    // SRV スロット確保(初回のみ)
     if (instancingSrvIndex_ == UINT32_MAX) {
         auto* alloc = s_srvPool_;
         if (!alloc) {
@@ -173,7 +173,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         const uint32_t divisions = ringSegmentCount_;
         const float startRad = ringStartAngleDeg_ * (std::numbers::pi_v<float> / 180.0f);
         float endRad = ringEndAngleDeg_ * (std::numbers::pi_v<float> / 180.0f);
-        // end が start 以下なら一周分を付加する（負方向の弧も扱いたい場合は要調整）
+        // end が start 以下なら一周分を付加する(負方向の弧も扱いたい場合は要調整)
         if (endRad <= startRad) endRad += 2.0f * std::numbers::pi_v<float>;
         const float arc = endRad - startRad;
         const float radianPerDivide = arc / static_cast<float>(divisions);
@@ -191,7 +191,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
             float uNext = static_cast<float>(i + 1) / static_cast<float>(divisions);
 
             VertexData v0, v1, v2, v3;
-            // XY平面上に作成（外周→内周の順）
+            // XY平面上に作成(外周→内周の順)
             v0.position = { c0 * ringOuterRadius_, s0 * ringOuterRadius_, 0.0f, 1.0f };
             v1.position = { c1 * ringOuterRadius_, s1 * ringOuterRadius_, 0.0f, 1.0f };
             v2.position = { c0 * ringInnerRadius_, s0 * ringInnerRadius_, 0.0f, 1.0f };
@@ -213,7 +213,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
             // 法線はZ-
             v0.normal = v1.normal = v2.normal = v3.normal = { 0.0f, 0.0f, -1.0f };
 
-            // 基点インデックス（既に頂点が入っている可能性があるため現在サイズを基準にする）
+            // 基点インデックス(既に頂点が入っている可能性があるため現在サイズを基準にする)
             uint32_t baseIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
             resource_->vertexDataList_.push_back(v0);
             resource_->vertexDataList_.push_back(v1);
@@ -289,7 +289,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     break;
     case ParticlePrimitiveShape::Cube:
     {
-        // 単位立方体（中心原点、辺長 = 1.0f）
+        // 単位立方体(中心原点、辺長 = 1.0f)
         const float h = 0.5f;
 
         struct FaceDef { Vector3 n; std::array<Vector3,4> pos; std::array<Vector2,4> uv; };
@@ -321,7 +321,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         };
 
         for (const auto& f : faces) {
-            // 頂点作成（面ごとに4頂点を追加）
+            // 頂点作成(面ごとに4頂点を追加)
             VertexData v0{}, v1{}, v2{}, v3{};
             v0.position = { f.pos[0].x, f.pos[0].y, f.pos[0].z, 1.0f }; v0.texcoord = f.uv[0];
             v1.position = { f.pos[1].x, f.pos[1].y, f.pos[1].z, 1.0f }; v1.texcoord = f.uv[1];
@@ -349,7 +349,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
             float dot = Math::Dot(triNormal, f.n);
 
             if (dot >= 0.0f) {
-                // 三角形法線が面法線と同じ向き → この順で追加（外向き）
+                // 三角形法線が面法線と同じ向き → この順で追加(外向き)
                 resource_->indexDataList_.push_back(baseIndex + 0);
                 resource_->indexDataList_.push_back(baseIndex + 1);
                 resource_->indexDataList_.push_back(baseIndex + 2);
@@ -372,21 +372,21 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     break;
     case ParticlePrimitiveShape::Tetrahedron:
     {
-        // 正四面体（辺長 = s）を生成。底面を水平（XZ平面）に配置する。
-        const float s = 0.5f; // 全体スケール（既存のスケールと整合）
+        // 正四面体(辺長 = s)を生成。底面を水平(XZ平面)に配置する。
+        const float s = 0.5f; // 全体スケール(既存のスケールと整合)
         const float R = 1.0f / std::sqrt(3.0f);               // 辺長1の正三角形の外接円半径
-        const float baseToApex = std::sqrt(2.0f / 3.0f);      // (a + b) の長さ（辺長=1 のとき）
-        const float b = baseToApex / 4.0f;                   // 基底面の y = -b（重心を原点に揃えるための設定）
-        const float a = 3.0f * b;                            // 頂点の y = +a（重心が原点になるよう a = 3b）
+        const float baseToApex = std::sqrt(2.0f / 3.0f);      // (a + b) の長さ(辺長=1 のとき)
+        const float b = baseToApex / 4.0f;                   // 基底面の y = -b(重心を原点に揃えるための設定)
+        const float a = 3.0f * b;                            // 頂点の y = +a(重心が原点になるよう a = 3b)
         // スケール適用済みの頂点
-        Vector3 apex = { 0.0f,  a * s, 0.0f };                  // 頂点（上）
+        Vector3 apex = { 0.0f,  a * s, 0.0f };                  // 頂点(上)
         Vector3 v0 = { 0.0f, -b * s,  R * s };               // 底面頂点 0
         Vector3 v1 = { -0.5f * s, -b * s, -R * 0.5f * s };   // 底面頂点 1
         Vector3 v2 = { 0.5f * s, -b * s, -R * 0.5f * s };   // 底面頂点 2
 
-        // 面の定義（各面は三角形）
+        // 面の定義(各面は三角形)
         std::vector<std::tuple<Vector3, Vector3, Vector3>> faces = {
-            { v0, v1, v2 },        // 底面（XZ平面上）
+            { v0, v1, v2 },        // 底面(XZ平面上)
             { apex, v0, v1 },
             { apex, v1, v2 },
             { apex, v2, v0 }
@@ -404,12 +404,12 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
             Vector3 p1 = std::get<1>(face);
             Vector3 p2 = std::get<2>(face);
 
-            // 面法線（右手系クロス）を計算
+            // 面法線(右手系クロス)を計算
             Vector3 e0 = Math::Subtract(p1, p0);
             Vector3 e1 = Math::Subtract(p2, p0);
             Vector3 triNormal = Math::Normalize(Math::Cross(e0, e1));
 
-            // 頂点データ作成（面ごとに法線を統一して追加）
+            // 頂点データ作成(面ごとに法線を統一して追加)
             VertexData vd0{}, vd1{}, vd2{};
             vd0.position = { p0.x, p0.y, p0.z, 1.0f };
             vd1.position = { p1.x, p1.y, p1.z, 1.0f };
@@ -433,7 +433,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
             };
             float dot = Math::Dot(triNormal, centroid);
             if (dot >= 0.0f) {
-                // 法線が外向き（重心方向と同じ向き）ならそのまま追加
+                // 法線が外向き(重心方向と同じ向き)ならそのまま追加
                 resource_->indexDataList_.push_back(baseIndex + 0);
                 resource_->indexDataList_.push_back(baseIndex + 1);
                 resource_->indexDataList_.push_back(baseIndex + 2);
@@ -448,7 +448,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     break;
     }
 
-    // リソースのメモリを確保（または再利用）
+    // リソースのメモリを確保(または再利用)
     resource_->CreateResource();
 
     // 書き込めるようにする
@@ -570,14 +570,14 @@ void ParticleSystem::Update() {
 
 void ParticleSystem::Draw()
 {
-    // 1) パーティクル本体を描画（選択された Blend/Depth/Cull を描画直前にエンジンへセットして PSO を適用）
+    // 1) パーティクル本体を描画(選択された Blend/Depth/Cull を描画直前にエンジンへセットして PSO を適用)
     if (s_engine_) {
         // 現在のエンジン状態を保存しておく
         BlendMode prevBlend = s_engine_->currentBlend_;
         PSOManager::DepthWrite prevDepth = s_engine_->currentDepth_;
         PSOManager::CullMode prevCull = s_engine_->currentCull_;
 
-        // 選択値をエンジンにセット（描画直前）
+        // 選択値をエンジンにセット(描画直前)
         s_engine_->SetBlend(selectedBlend_);
         s_engine_->SetDepthWrite(selectedDepth_);
         s_engine_->SetCull(selectedCull_);
@@ -588,18 +588,18 @@ void ParticleSystem::Draw()
             s_drawManager_->DrawParticle(this);
         }
 
-        // エンジン状態を復元（PSOの切り替えは呼び出し側で制御するため Apply は行わない)
+        // エンジン状態を復元(PSOの切り替えは呼び出し側で制御するため Apply は行わない)
         s_engine_->SetBlend(prevBlend);
         s_engine_->SetDepthWrite(prevDepth);
         s_engine_->SetCull(prevCull);
     } else {
-        // エンジン参照がない場合は従来通り（安全策）
+        // エンジン参照がない場合は従来通り(安全策)
         if (s_drawManager_) {
             s_drawManager_->DrawParticle(this);
         }
     }
 
-    // 2) デバッグ線（AABB 等）を描画（Line PSO を確実にバインド）
+    // 2) デバッグ線(AABB 等)を描画(Line PSO を確実にバインド)
 #if USE_IMGUI
     if (!debugLines_.empty()) {
         if (s_engine_) {
@@ -875,7 +875,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                     ImGui::Separator();
                     ImGui::Text("Ring Parameters");
 
-                    // 現在の値をローカルにコピーして UI 編集（変更検出用）
+                    // 現在の値をローカルにコピーして UI 編集(変更検出用)
                     float inner = ringInnerRadius_;
                     float outer = ringOuterRadius_;
                     float startDeg = ringStartAngleDeg_;
@@ -901,7 +901,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         // 値をセットして Initialize で再生成
                         SetRingParameters(inner, outer, startDeg, endDeg, static_cast<uint32_t>(segments), verticalUV);
 
-                        // 現在のテクスチャ名を復元して Initialize を呼ぶ（UI 保持のため）
+                        // 現在のテクスチャ名を復元して Initialize を呼ぶ(UI 保持のため)
                         std::string currentTextureName = "resources/circle.png";
                         if (s_textureManager_) {
                             auto textureNames = s_textureManager_->GetTextureNames();

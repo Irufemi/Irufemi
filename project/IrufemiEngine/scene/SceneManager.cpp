@@ -13,14 +13,14 @@ void SceneManager::Register(const Key& name, Factory f) {
         order_.push_back(name);            // 新規登録時のみ順序リストに追加
         factories_.emplace(name, std::move(f));
     } else {
-        it->second = std::move(f);         // 既存は上書きのみ（順序は変えない）
+        it->second = std::move(f);         // 既存は上書きのみ(順序は変えない)
     }
 }
 
-// シーン切替要求（次の Update 冒頭で反映）
+// シーン切替要求(次の Update 冒頭で反映)
 void SceneManager::Request(const Key& next) { pending_ = next; }
 
-// 即時切替（初期化時など）
+// 即時切替(初期化時など)
 bool SceneManager::ChangeTo(const Key& next) {
     auto it = factories_.find(next);
     if (it == factories_.end()) { return false; }
