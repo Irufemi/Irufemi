@@ -9,6 +9,7 @@
 
 // memoryでの未定義
 #include "camera/DebugCamera.h"
+#include "2D/Sprite.h"
 
 // シーンのインクルード
 #include "scene/title/TitleScene.h"
