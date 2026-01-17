@@ -100,10 +100,12 @@ private: // 内部ヘルパ
     std::string NormalizeAndResolve(const std::string& filename) const;
     static bool StartsWith(const std::string& s, const std::string& prefix);
     static std::pair<std::string, std::string> SplitDirectoryAndFile(const std::string& full);
+    std::string FindFileRecursive(const std::string& filename) const;
 
 private:
     std::string rootDir_;
     mutable std::mutex mutex_;
     std::unordered_map<std::string, std::weak_ptr<Animation>> cache_;
+    mutable std::unordered_map<std::string, std::string> filePathCache_;
 };
 

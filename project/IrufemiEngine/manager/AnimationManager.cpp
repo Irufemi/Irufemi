@@ -5,9 +5,11 @@
 #include "function/Math.h"
 
 #include <cassert>
+#include <filesystem>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <algorithm>
+#include <Windows.h>
 
 void AnimationManager::Initialize() {
     if (rootDir_.empty()) {
@@ -35,7 +37,24 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
 
     Animation animation; // 今回作るアニメーション
     Assimp::Importer importer;
-    const std::string filePath = NormalizeAndResolve(filename);
+
+    // ファイルパスを解決
+    std::string filePath;
+    // パス区切り文字が含まれているかチェック
+    if (filename.find('/') != std::string::npos || filename.find('\\') != std::string::npos) {
+        // 含まれている場合は、ルートディレクトリからの相対パスとして扱う
+        filePath = NormalizeAndResolve(filename);
+    }
+    else {
+        // 含まれていない場合は、再帰的にファイルを検索
+        filePath = FindFileRecursive(filename);
+    }
+
+    if (filePath.empty() || !std::filesystem::exists(filePath)) {
+        OutputDebugStringA(("[AnimationManager] File not found: " + filename + "\n").c_str());
+        return {}; // 空のアニメーションを返す
+    }
+
     const aiScene* scene = importer.ReadFile(filePath.c_str(), 0);
     assert(scene->mNumAnimations != 0); // アニメーションがない
     aiAnimation* animationAssimp = scene->mAnimations[0]; // 最初のアニメーションだけ採用。もちろん複数対応するに越したことはない
@@ -271,4 +290,43 @@ std::pair<std::string, std::string> AnimationManager::SplitDirectoryAndFile(cons
     auto pos = full.find_last_of('/');
     if (pos == std::string::npos) return { ".", full };
     return { full.substr(0, pos), full.substr(pos + 1) };
+}
+
+std::string AnimationManager::FindFileRecursive(const std::string& filename) const {
+    namespace fs = std::filesystem;
+    std::string lowerFilename = filename;
+    std::transform(lowerFilename.begin(), lowerFilename.end(), lowerFilename.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (auto it = filePathCache_.find(lowerFilename); it != filePathCache_.end()) {
+            return it->second;
+        }
+    }
+
+    const fs::path rootPath = rootDir_;
+    if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
+        return "";
+    }
+
+    for (const auto& entry : fs::recursive_directory_iterator(rootPath)) {
+        if (entry.is_regular_file()) {
+            std::string entryFilename = entry.path().filename().string();
+            std::transform(entryFilename.begin(), entryFilename.end(), entryFilename.begin(),
+                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+            if (entryFilename == lowerFilename) {
+                std::string foundPath = entry.path().string();
+                std::replace(foundPath.begin(), foundPath.end(), '\\', '/');
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    filePathCache_[lowerFilename] = foundPath;
+                }
+                return foundPath;
+            }
+        }
+    }
+
+    return ""; // 見つからなかった
 }
