@@ -17,7 +17,7 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
     dxCommon_ = dxCommon;
     textureManager_ = textureManager; // 追加
     if (rootDir_.empty()) {
-        rootDir_ = "resources/obj";
+        rootDir_ = "resources/model";
     }
 }
 
@@ -132,7 +132,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
 
 void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
     namespace fs = std::filesystem;
-    const std::string rootBase = rootDir_.empty() ? "resources/obj" : rootDir_;
+    const std::string rootBase = rootDir_.empty() ? "resources/model" : rootDir_;
     fs::path start = fs::path(rootBase) / relativeFolder;
     if (!fs::exists(start)) { return; }
 
@@ -675,7 +675,11 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
             if (m->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == aiReturn_SUCCESS) {
                 std::string p = texPath.C_Str();
                 if (!p.empty() && p[0] != '*') {
-                    out.textureFilePath = directoryPath + "/" + p; // 相対パスを呼び出し元ディレクトリ基準で連結
+                    // テクスチャのパスをモデルファイルからの相対パスとして解決
+                    std::filesystem::path modelPath(filePath);
+                    std::filesystem::path texturePath = modelPath.parent_path() / p;
+                    out.textureFilePath = texturePath.string();
+                    std::replace(out.textureFilePath.begin(), out.textureFilePath.end(), '\\', '/');
                 }
             }
         }

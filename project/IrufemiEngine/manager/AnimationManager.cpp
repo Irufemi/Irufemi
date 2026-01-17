@@ -13,7 +13,7 @@
 
 void AnimationManager::Initialize() {
     if (rootDir_.empty()) {
-        rootDir_ = "resources/obj";
+        rootDir_ = "resources/model";
     }
 }
 
