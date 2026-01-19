@@ -214,6 +214,15 @@ void SphereRegion::AddInstance(const Vector3& center, float radius, const Vector
     AddInstance(t, color);
 }
 
+void SphereRegion::UpdateInstance(uint32_t index, const Transform& t) {
+    if (index >= instances_.size()) {
+        assert(false && "SphereRegion::UpdateInstance: index out of range");
+        return;
+    }
+    instances_[index] = t;
+    instanceDirty_ = true;
+}
+
 void SphereRegion::ClearInstances() {
     instances_.clear();
     instanceColors_.clear();

@@ -1,5 +1,5 @@
 #include "PointLightClass.h"
-#include <imgui.h>
+#include "manager/DebugUI.h"
 
 DirectXCommon* PointLightClass::dxCommon_ = nullptr;
 

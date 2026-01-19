@@ -3,28 +3,29 @@
 #include "Application/camera/Camera.h"
 #include "manager/ModelManager.h"
 #include "manager/AnimationManager.h"
+#include "engine/directX/DirectXCommon.h"
 #include "manager/DrawManager.h"
 #include "manager/DebugUI.h"
-#include "engine/directX/DirectXCommon.h"
+#include "engine/IrufemiEngine.h"
 #include "function/Math.h"
 #include "math/Material.h"
 #include "math/ObjModel.h"
+#include "3D/SphereRegion.h"
 #include <cmath>
 
 // 静的メンバ定義
-TextureManager* AnimationModel::textureManager_ = nullptr;
-DrawManager* AnimationModel::drawManager_ = nullptr;
-DebugUI* AnimationModel::ui_ = nullptr;
-ModelManager* AnimationModel::modelManager_ = nullptr;
-AnimationManager* AnimationModel::animationManager_ = nullptr;
+IrufemiEngine* AnimationModel::engine_ = nullptr;
+
+AnimationModel::AnimationModel() {}
+AnimationModel::~AnimationModel(){}
 
 // 初期化
 void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
     camera_ = camera;
 
-    assert(modelManager_ && "AnimationModel::Initialize: ModelManager is not set.");
+    assert(engine_ && "AnimationModel::Initialize: ModelManager is not set.");
     // ModelManagerから共有モデルを取得するだけ
-    managedModel_ = modelManager_->GetModel(filename);
+    managedModel_ = engine_->GetObjModelManager()->GetModel(filename);
 
     if (!managedModel_ || !managedModel_->cpuModel) {
         OutputDebugStringA("[AnimationModel] Initialize: model load failed.\n");
@@ -32,12 +33,29 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
     }
 
     // 変換行列リソースの生成とマップ
-    assert(drawManager_ && "DrawManager is not set. Cannot get DirectXCommon.");
-    transformationResource_ = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
+    assert(engine_ && "DrawManager is not set. Cannot get DirectXCommon.");
+    transformationResource_ = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
     transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
 
-    assert(animationManager_ && "AnimationModel::Initialize: AnimationManager is not set.");
-    animation_ = animationManager_->LoadAnimationFile(filename);
+    assert(engine_ && "AnimationModel::Initialize: AnimationManager is not set.");
+    animation_ = engine_->GetAnimationManager()->LoadAnimationFile(filename);
+
+    // Skeletonの生成
+    if (managedModel_ && managedModel_->cpuModel) {
+        // ModelManager(またはAnimationManager)にあるNode構造からSkeletonを作成
+        skeleton_ = AnimationManager::CreateSkeleton(managedModel_->cpuModel->rootNode);
+
+        // 2. SphereRegionの初期化
+        jointSpheres_ = std::make_unique<SphereRegion>();
+        jointSpheres_->Initialize(camera, "resources/whiteTexture.png", 16);
+
+        // 3. Jointの数だけ描画用インスタンスを「最初だけ」追加
+        for (size_t i = 0; i < skeleton_.joints.size(); ++i) {
+            Transform tf{};
+            tf.scale = { 0.01f, 0.01f, 0.01f }; // 関節の大きさ
+            jointSpheres_->AddInstance(tf);
+        }
+    }
 
     // 初回Updateを呼んでおく
     Update();
@@ -55,8 +73,8 @@ void AnimationModel::Update() {
     UpdateAnimation();
 
     // オブジェクト全体のワールド行列を計算
-    transformationMatrix_.WVP = localMatrix_ * worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
-    transformationMatrix_.world = localMatrix_ * worldMatrix_;
+    transformationMatrix_.WVP = worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
+    transformationMatrix_.world = worldMatrix_;
 
     // 法線変換用の逆転置行列
     Matrix4x4 worldForNormal = transformationMatrix_.world;
@@ -69,6 +87,30 @@ void AnimationModel::Update() {
         *transformationData_ = transformationMatrix_;
     }
 
+    // 各Jointの位置をSphereRegionに反映
+    for (size_t i = 0; i < skeleton_.joints.size(); ++i) {
+        // JointのSkeleton空間での行列を取得
+        const Matrix4x4& jointMat = skeleton_.joints[i].skeletonSpaceMatrix;
+
+        // Jointのワールド座標 = Joint(Skeleton空間) * モデルのWorld行列
+        Matrix4x4 jointWorldMat = jointMat * worldMatrix_;
+
+        // 行列から位置（translate）だけを抽出
+        Vector3 jointPosition = {
+            jointWorldMat.m[3][0],
+            jointWorldMat.m[3][1],
+            jointWorldMat.m[3][2]
+        };
+
+        // SphereRegionのi番目のインスタンスの位置を更新
+        Transform tf;
+        tf.scale = { 0.01f, 0.01f, 0.01f };
+        tf.rotate = { 0.0f, 0.0f, 0.0f }; // 球体なので回転は無視でOK
+        tf.translate = jointPosition;
+
+        jointSpheres_->UpdateInstance(static_cast<uint32_t>(i), tf);
+    }
+
     // マテリアル情報をGPUへ転送
     UpdateMaterials();
 
@@ -77,10 +119,19 @@ void AnimationModel::Update() {
 // 描画
 void AnimationModel::Draw() {
 
-    if (!managedModel_ || !drawManager_) return;
+    if (!managedModel_ || !engine_) return;
+    
+    engine_->ApplyRegionPSO();
+
+    // --- 追加：骨格（球体の集合）を一括描画 ---
+    if (jointSpheres_) {
+        jointSpheres_->Draw();
+    }
+
+    engine_->ApplyPSO();
 
     // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
-    drawManager_->DrawModel(managedModel_.get(), GetTransformationGpuAddress());
+    engine_->GetDrawManager()->DrawModel(managedModel_.get(), GetTransformationGpuAddress());
 }
 
 // デバッグ
@@ -88,8 +139,8 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
 #if defined USE_IMGUI
     std::string name = std::string("AnimationModel: ") + objName;
     ImGui::Begin(name.c_str());
-    if (ui_) {
-        ui_->DebugTransform(transform_);
+    if (engine_) {
+        engine_->GetDebugUI()->DebugTransform(transform_);
 
         // ImGuiでマテリアルを編集
         if (managedModel_ && managedModel_->cpuModel) {
@@ -100,7 +151,7 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
                     if (mat) {
                         // unique_id を渡してコントロールIDの衝突を避ける
                         std::string unique_id = "##" + std::to_string(i);
-                        ui_->DebugObjMaterial(mat, unique_id.c_str());
+                        engine_->GetDebugUI()->DebugObjMaterial(mat, unique_id.c_str());
                     }
                     ImGui::TreePop();
                 }
@@ -152,11 +203,14 @@ void AnimationModel::UpdateAnimation() {
 
     animationTime_ += 1.0f / 60.0f; // 時刻を進める。1/60で固定してあるが、計測した時間を使って可変フレームを対応したほうが望ましい。
     animationTime_ = std::fmod(animationTime_, animation_.duration); // 最後まで言ったら最初からリピート再生。リピートしなくても別にいい。
-    NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[managedModel_->cpuModel->rootNode.name]; // rootNodeのAnimationを取得
-    Vector3 translate = AnimationManager::CalculateValue(rootNodeAnimation.translate, animationTime_); /// 指定時刻の値を取得
-    Quaternion rotate = AnimationManager::CalculateValue(rootNodeAnimation.rotate, animationTime_);
-    Vector3 scale = AnimationManager::CalculateValue(rootNodeAnimation.scale, animationTime_);
-    localMatrix_ = Math::MakeAffineMatrix(scale, rotate, translate);
+
+    // 1. 全Jointにアニメーションを適用
+    // animationTimeにおける各JointのSRT（Local）が更新される
+    AnimationManager::ApplyAnimation(skeleton_, animation_, animationTime_);
+
+    // 2. 階層構造の行列更新
+    // 親の行列を子に掛け合わせ、skeletonSpaceMatrix（モデル空間での位置）を計算する
+    AnimationManager::SkeletonUpdate(skeleton_);
 
 }
 

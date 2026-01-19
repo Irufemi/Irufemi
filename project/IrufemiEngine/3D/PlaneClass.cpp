@@ -4,7 +4,6 @@
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
 #include "manager/DebugUI.h"
-#include <imgui.h>
 
 #include <algorithm>
 #include <array>

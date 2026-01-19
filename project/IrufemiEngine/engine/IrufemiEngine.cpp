@@ -30,11 +30,11 @@
 #include "audio/Se.h"
 #include "source/Texture.h"
 #include "Application/contents/Effect/Fade.h"
+#include "manager/DebugUI.h"
 // ポーズ表示用
 std::unique_ptr<Sprite> pauseSprite_ = nullptr;
 
 #include "scene/IScene.h"
-#include <imgui.h>
 
 #pragma comment(lib,"Dbghelp.lib")
 #pragma comment(lib,"d3d12.lib")
@@ -108,7 +108,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     modelManager_ = std::make_unique<ModelManager>();
     modelManager_->Initialize(dxCommon_.get(),textureManager.get()); // dxCommon を渡す
     ObjClass::SetModelManager(modelManager_.get());
-    AnimationModel::SetModelManager(modelManager_.get());
     Region::SetModelManager(modelManager_.get()); // Regionにも設定
 
     // 既存SRVの走査で free-list 再構築
@@ -151,7 +150,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Sprite::SetDebugUI(ui.get());
     Circle2D::SetDebugUI(ui.get());
     ObjClass::SetDebugUI(ui.get());
-    AnimationModel::SetDebugUI(ui.get());
     SphereClass::SetDebugUI(ui.get());
     TriangleClass::SetDebugUI(ui.get());
     CubeClass::SetDebugUI(ui.get());
@@ -165,7 +163,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Sprite::SetDrawManager(drawManager.get());
     Circle2D::SetDrawManager(drawManager.get());
     ObjClass::SetDrawManager(drawManager.get());
-    AnimationModel::SetDrawManager(drawManager.get());
     SphereClass::SetDrawManager(drawManager.get());
     TriangleClass::SetDrawManager(drawManager.get());
     CubeClass::SetDrawManager(drawManager.get());
@@ -184,7 +181,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Sprite::SetTextureManager(textureManager.get());
     Circle2D::SetTextureManager(textureManager.get());
     ObjClass::SetTextureManager(textureManager.get());
-    AnimationModel::SetTextureManager(textureManager.get());
     SphereClass::SetTextureManager(textureManager.get());
     TriangleClass::SetTextureManager(textureManager.get());
     CubeClass::SetTextureManager(textureManager.get());
@@ -198,7 +194,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     animationManager_ = std::make_unique<AnimationManager>();
     animationManager_->Initialize();
 
-    AnimationModel::SetAnimationManager(animationManager_.get());
+    AnimationModel::SetIeufemiEngine(this);
 
     Fade::SetEngine(this);
 }

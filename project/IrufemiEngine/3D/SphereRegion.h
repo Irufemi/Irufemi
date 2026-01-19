@@ -44,6 +44,9 @@ public:
     // 色つきインスタンス追加(中心と半径の簡易API)
     void AddInstance(const Vector3& center, float radius, const Vector3& rotate, const Vector4& color);
 
+    // インスタンス更新
+    void UpdateInstance(uint32_t index, const Transform& t);
+
     // 全インスタンス削除
     void ClearInstances();
 

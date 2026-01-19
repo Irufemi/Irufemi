@@ -7,7 +7,6 @@
 #include "Application/camera/Camera.h"
 #include "function/Math.h"
 #include "function/Function.h"
-#include <imgui.h>
 
 #include <algorithm>
 
