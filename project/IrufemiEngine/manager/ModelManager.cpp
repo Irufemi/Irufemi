@@ -760,40 +760,33 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
 /// 前準備
 
 Node ModelManager::ReadNode(aiNode* node) {
-
-    /// assimpでNodを解析する
-
     Node result;
 
-    /*Skeleton*/
-
-    /// Nodeを拡張する
-
-    aiVector3D scale, translate;
-    aiQuaternion rotate;
-    node->mTransformation.Decompose(scale, rotate, translate); // assimpの行列からSRTを抽出する関数を利用
-    result.transform.scale = { scale.x, scale.y, scale.z }; // Scaleはそのまま
-    result.transform.rotate = { rotate.x, rotate.y, rotate.z, rotate.w }; // x軸を反転、さらに回転方向が逆なので軸を反転させる
-    result.transform.translate = { -translate.x, translate.y, translate.z }; // x軸を反転
-    result.localMatrix = Math::MakeAffineMatrix(result.transform.scale, result.transform.rotate, result.transform.translate);
-
-    /*glTFを読み込んでみよう*/
-
-    /// 前準備
-
+    // aiProcess_MakeLeftHandedフラグにより、Assimpが座標系変換をすでに行っている。
+    // そのため、ここでの手動変換は不要。
+    // Assimpから渡される行列をそのままローカル行列として使用する。
     aiMatrix4x4 aiLocalMatrix = node->mTransformation; // nodeのlocalMatrixを取得
-    aiLocalMatrix.Transpose(); // 列ベクトル形式を行ベクトル形式に転置
-    //result.localMatrix.m[0][0] = aiLocalMatrix[0][0]; // 他の要素も同様に
+    aiLocalMatrix.Transpose(); // Assimpの列ベクトル形式を行ベクトル形式に転置
+
+    // Matrix4x4にコピー
     for (int r = 0; r < 4; ++r) {
         for (int c = 0; c < 4; ++c) {
             result.localMatrix.m[r][c] = aiLocalMatrix[r][c];
         }
     }
 
-    result.name = node->mName.C_Str(); // Nodeを格納
-    result.children.resize(node->mNumChildren); // 子供の数だけ確保
+    // SRTの分解もAssimpの変換後の値から行う
+    aiVector3D scale, translate;
+    aiQuaternion rotate;
+    node->mTransformation.Decompose(scale, rotate, translate);
+    result.transform.scale = { scale.x, scale.y, scale.z };
+    result.transform.rotate = { rotate.x, rotate.y, rotate.z, rotate.w };
+    result.transform.translate = { translate.x, translate.y, translate.z };
+
+    result.name = node->mName.C_Str(); // Node名を格納
+    result.children.resize(node->mNumChildren); // 子供の数だけメモリを確保
     for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex) {
-        // 再帰的に読んで階層構造を作っていく
+        // 再帰的にReadNodeを呼び出し、階層構造を構築する
         result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
     }
     return result;

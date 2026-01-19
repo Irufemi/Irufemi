@@ -65,6 +65,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveCube_ = false;
     isActivePlane_ = false;
     isActiveSphere_ = false;
+    isActiveCylinder_ = false;
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
     isActiveMultiMesh_ = false;
@@ -101,6 +102,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     if (isActiveSphere_) {
         sphere_ = std::make_unique<SphereClass>();
         sphere_->Initialize(camera_.get());
+    }
+    if (isActiveCylinder_) {
+        cylinder_ = std::make_unique<CylinderClass>();
+        cylinder_->Initialize(camera_.get());
     }
     if (isActiveObj_) {
         obj_ = std::make_unique<ObjClass>();
@@ -192,6 +197,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("Cube", &isActiveCube_);
     ImGui::Checkbox("Plane", &isActivePlane_);
     ImGui::Checkbox("Sphere", &isActiveSphere_);
+    ImGui::Checkbox("Cylinder", &isActiveCylinder_);
     ImGui::Checkbox("Obj", &isActiveObj_);
     ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot_);
     ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny_);
@@ -324,6 +330,14 @@ void DebugScene::Update() {
         sphere_->Debug("Sphere");
         sphere_->Update();
     }
+    if (isActiveCylinder_) {
+        if (!cylinder_) {
+            cylinder_ = std::make_unique<CylinderClass>();
+            cylinder_->Initialize(camera_.get());
+        }
+        cylinder_->Debug("Cylinder");
+        cylinder_->Update();
+    }
     if (isActiveObj_) {
         if (!obj_) {
             obj_ = std::make_unique<ObjClass>();
@@ -413,7 +427,7 @@ void DebugScene::Update() {
         animationModel_->Update();
     }
     if (isActiveAnimationModel_walk_) {
-        if (!animationModel_) {
+        if (!animationModel_walk_) {
             animationModel_walk_ = std::make_unique<AnimationModel>();
             animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
         }
@@ -493,6 +507,9 @@ void DebugScene::Draw() {
     }
     if (isActiveSphere_) {
         sphere_->Draw();
+    }
+    if (isActiveCylinder_) {
+        cylinder_->Draw();
     }
     if (isActiveObj_) {
         obj_->Draw();

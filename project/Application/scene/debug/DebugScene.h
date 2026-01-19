@@ -10,6 +10,7 @@
 #include "3D/SphereClass.h"
 #include "3D/CubeClass.h"
 #include "3D/PlaneClass.h"
+#include "3D/CylinderClass.h"
 #include "3D/TriangleClass.h"
 #include "3D/particle/ParticleSystem.h"
 #include "3D/effect/EffectSystem.h"
@@ -58,6 +59,9 @@ private: // メンバ変数(ゲーム)
 
     std::unique_ptr<SphereClass> sphere_ = nullptr;
     bool isActiveSphere_ = true;
+
+    std::unique_ptr<CylinderClass> cylinder_ = nullptr;
+    bool isActiveCylinder_ = true;
 
     std::unique_ptr<ObjClass> obj_ = nullptr;
     bool isActiveObj_ = false;

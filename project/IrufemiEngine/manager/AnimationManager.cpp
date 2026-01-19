@@ -10,6 +10,7 @@
 #include <assimp/scene.h>
 #include <algorithm>
 #include <Windows.h>
+#include <assimp/postprocess.h>
 
 void AnimationManager::Initialize() {
     if (rootDir_.empty()) {
@@ -55,7 +56,7 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
         return {}; // 空のアニメーションを返す
     }
 
-    const aiScene* scene = importer.ReadFile(filePath.c_str(), 0);
+    const aiScene* scene = importer.ReadFile(filePath.c_str(), aiProcess_MakeLeftHanded);
     assert(scene->mNumAnimations != 0); // アニメーションがない
     aiAnimation* animationAssimp = scene->mAnimations[0]; // 最初のアニメーションだけ採用。もちろん複数対応するに越したことはない
     animation.duration = float(animationAssimp->mDuration / animationAssimp->mTicksPerSecond); // 時間の単位を秒に変換
@@ -70,7 +71,7 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
             aiVectorKey& keyAssimp = nodeAnimationAssimp->mPositionKeys[keyIndex];
             KeyframeVector3 keyframe;
             keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond); // ここも秒に変換
-            keyframe.value = { -keyAssimp.mValue.x, keyAssimp.mValue.y, keyAssimp.mValue.z };//右手->左手
+            keyframe.value = { keyAssimp.mValue.x, keyAssimp.mValue.y, keyAssimp.mValue.z };//右手->左手
             nodeAnimation.translate.keyframes.push_back(keyframe);
         }
 
@@ -85,7 +86,7 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
             keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond); // 秒に変換
             aiQuaternion& q = keyAssimp.mValue;
             // 右手系->左手系変換: y,z を反転
-            keyframe.value = { q.x, -q.y, -q.z, q.w };
+            keyframe.value = { q.x, q.y, q.z, q.w };
             nodeAnimation.rotate.keyframes.push_back(keyframe);
         }
 

@@ -284,7 +284,7 @@ void GameScene::Update() {
     cameraForGpu.view = currentCamera->GetViewMatrix();
     cameraForGpu.projection = currentCamera->GetPerspectiveFovMatrix();
     cameraForGpu.worldPosition = currentCamera->GetTranslate();
-    
+
     std::vector<PointLight*> pLights;
     for (const auto& light : pointLights_) {
         pLights.push_back(light.get());
@@ -546,13 +546,13 @@ void GameScene::GenerateBlocks() {
     for (uint32_t i = 0; i < numBlockVirtical; ++i) {
         for (uint32_t j = 0; j < numBlockHorizontal; ++j) {
             if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kBlock) {
-                Transform* worldTransform = new Transform();
-                worldtransformBlocks_[i][j] = worldTransform;
+                std::unique_ptr<Transform> worldTransform = std::make_unique<Transform>();
+                worldtransformBlocks_[i][j] = worldTransform.get();
                 worldtransformBlocks_[i][j]->translate = mapChipField_->GetMapChipPositionByIndex(j, i);
                 // Blocksにもインスタンスとして追加
                 if (blocks_) { blocks_->AddInstance(*worldtransformBlocks_[i][j]); }
+            }
         }
-    }
     }
 }
 
