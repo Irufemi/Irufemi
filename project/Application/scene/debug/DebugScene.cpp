@@ -10,6 +10,7 @@
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
+#include "math/AreaLight.h"
 #include "2D/Sprite.h"
 
 // デストラクタ
@@ -58,6 +59,16 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
+
+    auto areaLight = std::make_unique<AreaLight>();
+    areaLight->color = { 1.0f, 0.5f, 0.5f, 1.0f };
+    areaLight->position = { 0.0f, 2.0f, 2.0f };
+    areaLight->intensity = 1.0f;
+    areaLight->direction = { 0.0f, -1.0f, 0.0f };
+    areaLight->range = 10.0f;
+    areaLight->size = { 2.0f, 2.0f };
+    areaLight->isActive = 1;
+    areaLights_.push_back(std::move(areaLight));
 
     isActiveObj_ = false;
     isActiveSprite_ = false;
@@ -170,7 +181,7 @@ void DebugScene::Update() {
 
     if (ImGui::BeginTabBar("DebugSceneTabs")) {
         
-        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_);
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
         // Texture タブ
         if (ImGui::BeginTabItem("Texture")) {
@@ -481,8 +492,12 @@ void DebugScene::Update() {
     for (const auto& light : spotLights_) {
         sLights.push_back(light.get());
     }
+    std::vector<AreaLight*> aLights;
+    for (const auto& light : areaLights_) {
+        aLights.push_back(light.get());
+    }
 
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights);
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
 void DebugScene::Draw() {

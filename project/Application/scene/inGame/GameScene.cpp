@@ -10,6 +10,7 @@
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
+#include "math/AreaLight.h"
 #include "2D/Sprite.h"
 
 #include "function/Collision.h"
@@ -215,7 +216,7 @@ void GameScene::Update() {
     ImGui::Begin("GameScene");
     if (ImGui::BeginTabBar("GameSceneTabs")) {
 
-        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_);
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
         // Texture タブ
         if (ImGui::BeginTabItem("Texture")) {
@@ -293,8 +294,12 @@ void GameScene::Update() {
     for (const auto& light : spotLights_) {
         sLights.push_back(light.get());
     }
+    std::vector<AreaLight*> aLights;
+    for (const auto& light : areaLights_) {
+        aLights.push_back(light.get());
+    }
 
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights);
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
 // 描画

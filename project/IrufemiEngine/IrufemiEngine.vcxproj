@@ -271,6 +271,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="manager\TextureManager.h" />
     <ClInclude Include="manager\VoiceCallback.h" />
     <ClInclude Include="math\Animation.h" />
+    <ClInclude Include="math\AreaLight.h" />
     <ClInclude Include="math\BlendMode.h" />
     <ClInclude Include="math\CameraForGPU.h" />
     <ClInclude Include="math\ChunkHeader.h" />

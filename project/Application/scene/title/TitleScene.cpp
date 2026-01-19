@@ -11,6 +11,7 @@
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
+#include "math/AreaLight.h"
 
 // デストラクタ
 TitleScene::~TitleScene() = default;
@@ -135,7 +136,7 @@ void TitleScene::Update() {
     ImGui::Begin("TitleScene");
     if (ImGui::BeginTabBar("TitleSceneTabs")) {
 
-        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_);
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
         // Texture タブ
         if (ImGui::BeginTabItem("Texture")) {
@@ -277,8 +278,12 @@ void TitleScene::Update() {
     for (const auto& light : spotLights_) {
         sLights.push_back(light.get());
     }
+    std::vector<AreaLight*> aLights;
+    for (const auto& light : areaLights_) {
+        aLights.push_back(light.get());
+    }
 
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights);
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
 void TitleScene::Draw() {
