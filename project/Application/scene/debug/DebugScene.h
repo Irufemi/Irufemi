@@ -92,6 +92,9 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<AnimationModel> animationModel_ = nullptr;
     bool isActiveAnimationModel_ = false;
 
+    std::unique_ptr<AnimationModel> animationModel_walk_ = nullptr;
+    bool isActiveAnimationModel_walk_ = false;
+
     std::unique_ptr<Sprite> imguiSprite_;
     bool showDemoWindow = false;
 

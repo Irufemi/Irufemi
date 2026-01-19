@@ -75,6 +75,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveParticle_ = false;
     isActiveEffect_ = false;
     isActiveAnimationModel_ = false;
+    isActiveAnimationModel_walk_ = false;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -145,6 +146,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         animationModel_ = std::make_unique<AnimationModel>();
         animationModel_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
     }
+    if (isActiveAnimationModel_walk_) {
+        animationModel_walk_ = std::make_unique<AnimationModel>();
+        animationModel_->Initialize(camera_.get(), "sample/walk.gltf");
+    }
 
     line2D_ = std::make_unique<Line2DClass>();
     line2D_->Initialize(camera_.get(), { 300.0f,300.0f }, { 360.0f,360.0f });
@@ -198,6 +203,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::Checkbox("Effect", &isActiveEffect_);
     ImGui::Checkbox("AnimationModel", &isActiveAnimationModel_);
+    ImGui::Checkbox("AnimationModel_walk", &isActiveAnimationModel_walk_);
     ImGui::End();
 
     ImGui::Begin("GE");
@@ -406,6 +412,14 @@ void DebugScene::Update() {
         animationModel_->Debug("animationModel");
         animationModel_->Update();
     }
+    if (isActiveAnimationModel_walk_) {
+        if (!animationModel_) {
+            animationModel_walk_ = std::make_unique<AnimationModel>();
+            animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
+        }
+        animationModel_walk_->Debug("aniamtionModel_walk_");
+        animationModel_walk_->Update();
+    }
 
     line2D_->Update();
 
@@ -506,6 +520,9 @@ void DebugScene::Draw() {
     }
     if (isActiveAnimationModel_) {
         animationModel_->Draw();
+    }
+    if (isActiveAnimationModel_walk_) {
+        animationModel_walk_->Draw();
     }
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);
