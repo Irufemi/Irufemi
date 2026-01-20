@@ -140,6 +140,7 @@ public: // セッター
     void ApplyRegionPSO();
     void ApplyByGeometryShaderPSO();
     void ApplyLinePSO();
+    void ApplyLineInstancedPSO();
 
 public:
     // 状態(現在のブレンドと深度書き込み)

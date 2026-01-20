@@ -123,7 +123,7 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     //バリアを張る対象のリソース。現在のバックバッファに対して行う
     barrier.Transition.pResource = backBuffer;
-    // リソースバリアの Subresource を D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES にして明示
+    // リソースバリアの SubResource を D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES にして明示
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     //遷移前(現在)のResourceState
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
@@ -186,13 +186,13 @@ void DrawManager::PostDraw() {
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     //バリアを張る対象のリソース。現在のバックバッファに対して行う
     barrier.Transition.pResource = backBuffer;
-    // リソースバリアの Subresource を D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES にして明示
+    // リソースバリアの SubResource を D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES にして明示
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     //画面に描く処理はすべて終わり、画面に映すので、状態を遷移
     //今回はRenderTargetからPresentにする
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-    //TransitionBarrierを張る                                                                                                                                                                                                                                                                                                                                                                                                                                                                rrierを張る
+    //TransitionBarrierを張る
     dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
 
     /*画面の色を変えよう*/
@@ -306,7 +306,7 @@ void DrawManager::DrawTriangle(
 
     /*三角形を動かそう*/
 
-    //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
+    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, triangle->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
     // ↓ ここから追加
@@ -351,7 +351,7 @@ void DrawManager::DrawSprite(Sprite* sprite) {
     //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, sprite->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
 
-    //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
+    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, sprite->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
     // 5. テクスチャ用のDescriptor Table設定(SRV)
@@ -390,7 +390,7 @@ void DrawManager::DrawSphere(SphereClass* sphere) {
 
     /*三角形を動かそう*/
 
-    //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
+    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, sphere->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
     /*テクスチャを貼ろう*/
@@ -556,7 +556,7 @@ void DrawManager::DrawByIndex(D3D12ResourceUtil* resource) {
 
     /*三角形を動かそう*/
 
-    //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
+    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
 
     /*テクスチャを貼ろう*/
@@ -591,7 +591,7 @@ void DrawManager::DrawByVertex(D3D12ResourceUtil* resource) {
 
     /*三角形を動かそう*/
 
-    //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
+    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
 
     /*テクスチャを貼ろう*/
@@ -637,6 +637,28 @@ void DrawManager::DrawLine3D(Line3DClass* line) {
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
 
     dxCommon_->GetCommandList()->DrawIndexedInstanced(2, 1, 0, 0, 0);
+}
+
+void DrawManager::DrawLine3DRegion(Line3DRegion* region) {
+    if (!region) return;
+    auto* res = region->GetBaseResource();
+    if (!res) return;
+    const UINT instCount = region->GetInstanceCountU32();
+    if (instCount == 0) return;
+
+    // RootSignature
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+
+    // IA
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &res->vertexBufferView_);
+    dxCommon_->GetCommandList()->IASetIndexBuffer(&res->indexBufferView_);
+
+    // SRV (VS t1)
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(11, region->GetInstancingSrvHandleGPU());
+
+    // Draw
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(2, instCount, 0, 0, 0);
 }
 
 void DrawManager::DrawSpriteRegion(SpriteRegion* region) {
@@ -711,7 +733,7 @@ void DrawManager::DrawCube(CubeClass* cube) {
 
     /*三角形を動かそう*/
 
-    //wvp用のCbufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
+    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, cube->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
 
     /*テクスチャを貼ろう*/

@@ -29,6 +29,7 @@ struct GpuMesh;
 struct ManagedModel;
 class Line2DClass;
 class Line3DClass;
+class Line3DRegion;
 class CubeClass;
 
 // 構造体を前方宣言
@@ -120,6 +121,8 @@ public: //メンバ関数
     void DrawLine2D(Line2DClass* line);
 
     void DrawLine3D(Line3DClass* line);
+
+    void DrawLine3DRegion(Line3DRegion* region);
 
     // モデル描画用の新関数
     void DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA);
