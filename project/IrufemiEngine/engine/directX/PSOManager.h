@@ -43,7 +43,8 @@ public:
         ShaderSet regionShaders = {},
         ShaderSet byGeometryShaderShaders = {},
         ShaderSet lineShaders = {},
-        ShaderSet lineInstancedShaders = {}
+        ShaderSet lineInstancedShaders = {},
+        ShaderSet skinningShaders = {}
     );
 
     // 既存シェーダで取得(メッシュ/スプライト等)
@@ -63,6 +64,8 @@ public:
     ID3D12PipelineState* GetLine(BlendMode blend, DepthWrite depth, CullMode cull);
 
     ID3D12PipelineState* GetLineInstanced(BlendMode blend, DepthWrite depth, CullMode cull);
+
+    ID3D12PipelineState* GetSkinning(BlendMode blend, DepthWrite depth, CullMode cull);
 
     void ClearCache();
 
@@ -86,6 +89,7 @@ private:
     ShaderSet byGeometryShaderShaders_{};
     ShaderSet lineShaders_{};
     ShaderSet lineInstancedShaders_{};
+    ShaderSet skinningShaders_{};
 
     struct Key {
         uint64_t hash;

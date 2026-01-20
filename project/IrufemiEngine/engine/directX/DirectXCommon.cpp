@@ -1,6 +1,7 @@
 #include "DirectXCommon.h"
 
 #include <string>
+#include <array>
 #include <cassert>
 #include <format>
 #include <filesystem>
@@ -494,7 +495,17 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///InputLayoutの拡張
 
-    D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+    // D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+
+    /*Skinning*/
+
+    /// InputLayoutの拡張
+
+    std::array<D3D12_INPUT_ELEMENT_DESC, 5> inputElementDescs{};
+
+    /*テクスチャを貼ろう*/
+
+    ///InputLayoutの拡張
     inputElementDescs[0].SemanticName = "POSITION";
     inputElementDescs[0].SemanticIndex = 0;
     inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -513,22 +524,36 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
     inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 
+    /*Skinning*/
+
+    /// InputLayoutの拡張
+    inputElementDescs[3].SemanticName = "WEIGHT";
+    inputElementDescs[3].SemanticIndex = 0;
+    inputElementDescs[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;//float32_t4
+    inputElementDescs[3].InputSlot = 1; // 1番目のslotのVBVのことだと伝える
+    inputElementDescs[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+    inputElementDescs[4].SemanticName = "INDEX";
+    inputElementDescs[4].SemanticIndex = 0;
+    inputElementDescs[4].Format = DXGI_FORMAT_R32G32B32A32_SINT; // int32_t4
+    inputElementDescs[4].InputSlot = 1; // 1番目のslotのVBVのことだと伝える
+    inputElementDescs[4].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
     /*三角形を表示しよう*/
 
     ///InputLayoutの設定を行う
 
     D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
-    inputLayoutDesc.pInputElementDescs = inputElementDescs;
-    inputLayoutDesc.NumElements = _countof(inputElementDescs);
+    inputLayoutDesc.pInputElementDescs = inputElementDescs.data();
+    inputLayoutDesc.NumElements = static_cast<UINT>(inputElementDescs.size());
 
     ///ShaderをCompileする
 
     //Shaderをコンパイルする
-    Microsoft::WRL::ComPtr <IDxcBlob> vertexShaderBlob = CompileShader(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
-    assert(vertexShaderBlob != nullptr);
+    Microsoft::WRL::ComPtr <IDxcBlob> object3DVSBlob = CompileShader(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(object3DVSBlob != nullptr);
 
-    Microsoft::WRL::ComPtr <IDxcBlob> pixelShaderBlob = CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
-    assert(pixelShaderBlob != nullptr);
+    Microsoft::WRL::ComPtr <IDxcBlob> object3DPSBlob = CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(object3DPSBlob != nullptr);
 
     Microsoft::WRL::ComPtr <IDxcBlob> particleVSBlob = CompileShader(L"resources/shaders/Particle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(particleVSBlob != nullptr);
@@ -566,6 +591,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> lineInstancedPSBlob = CompileShader(L"resources/shaders/LineInstanced.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(lineInstancedPSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> skinningObject3DVSBlob = CompileShader(L"resources/shaders/SkinningObject3D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(skinningObject3DVSBlob != nullptr);
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -579,8 +606,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     psoManager_ = std::make_unique<PSOManager>();
 
     PSOManager::ShaderSet objectShaders{
-        vertexShaderBlob,
-        pixelShaderBlob
+        object3DVSBlob,
+        object3DPSBlob
     };
 
     PSOManager::ShaderSet particleShaders{
@@ -595,7 +622,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     PSOManager::ShaderSet blocksShaders{
         regionVSBlob,
-        pixelShaderBlob   // PS は既存の Object3D.PS を流用
+        object3DPSBlob   // PS は既存の Object3D.PS を流用
     };
 
     PSOManager::ShaderSet byGeometryShaders{
@@ -614,6 +641,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         lineInstancedPSBlob
     };
 
+    PSOManager::ShaderSet skinningObject3DShaders{
+        skinningObject3DVSBlob,
+        object3DPSBlob
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
@@ -628,16 +660,17 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         blocksShaders,
         byGeometryShaders,
         lineShaders,
-        lineInstancedShaders
+        lineInstancedShaders,
+        skinningObject3DShaders
     );
 
     //実際に生成
     // 不透明(深度書き込みあり)
-    psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable,PSOManager::CullMode::Back);
+    psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
 
     // 生成が完了したのでShaderBlobを解放
-    if (vertexShaderBlob) { vertexShaderBlob.Reset(); }
-    if (pixelShaderBlob) { pixelShaderBlob.Reset(); }
+    if (object3DVSBlob) { object3DVSBlob.Reset(); }
+    if (object3DPSBlob) { object3DPSBlob.Reset(); }
     if (particleVSBlob) { particleVSBlob.Reset(); }
     if (particlePSBlob) { particlePSBlob.Reset(); }
     if (spriteVSBlob) { spriteVSBlob.Reset(); }
@@ -650,6 +683,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (linePSBlob) { linePSBlob.Reset(); }
     if (lineInstancedVSBlob) { lineInstancedVSBlob.Reset(); }
     if (lineInstancedPSBlob) { lineInstancedPSBlob.Reset(); }
+    if (skinningObject3DVSBlob) { skinningObject3DVSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};

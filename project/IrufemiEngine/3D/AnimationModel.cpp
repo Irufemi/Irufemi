@@ -18,7 +18,7 @@
 IrufemiEngine* AnimationModel::engine_ = nullptr;
 
 AnimationModel::AnimationModel() {}
-AnimationModel::~AnimationModel(){}
+AnimationModel::~AnimationModel() {}
 
 // 初期化
 void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
@@ -45,6 +45,9 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
     if (managedModel_ && managedModel_->cpuModel) {
         // ModelManager(またはAnimationManager)にあるNode構造からSkeletonを作成
         skeleton_ = AnimationManager::CreateSkeleton(managedModel_->cpuModel->rootNode);
+
+        // SkinClusterの生成
+        skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *managedModel_->cpuModel);
 
         // 2. SphereRegionの初期化
         jointSpheres_ = std::make_unique<SphereRegion>();
@@ -139,7 +142,7 @@ void AnimationModel::Update() {
 void AnimationModel::Draw() {
 
     if (!managedModel_ || !engine_) return;
-    
+
     engine_->ApplyRegionPSO();
 
     // --- 追加：骨格（球体の集合）を一括描画 ---
@@ -153,10 +156,10 @@ void AnimationModel::Draw() {
         boneLines_->Draw();
     }
 
-    engine_->ApplyPSO();
+    engine_->ApplySkinningPSO();
 
     // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
-    engine_->GetDrawManager()->DrawModel(managedModel_.get(), GetTransformationGpuAddress());
+    engine_->GetDrawManager()->DrawAnimationModel(managedModel_.get(), GetTransformationGpuAddress(), skinCluster_);
 }
 
 // デバッグ
@@ -236,6 +239,9 @@ void AnimationModel::UpdateAnimation() {
     // 2. 階層構造の行列更新
     // 親の行列を子に掛け合わせ、skeletonSpaceMatrix（モデル空間での位置）を計算する
     AnimationManager::SkeletonUpdate(skeleton_);
+
+    // 3. SkeletonSpaceの情報を基に、SkinClusterのMatrixPaletteを更新する
+    AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_);
 
 }
 

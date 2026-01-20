@@ -9,6 +9,7 @@
 #include "math/Transform.h"
 #include "math/ObjModel.h"
 #include "math/Skeleton.h"
+#include "math/SkinCluster.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>
@@ -74,6 +75,8 @@ private: // メンバ変数
     static IrufemiEngine* engine_;
 
     Skeleton skeleton_;
+
+    SkinCluster skinCluster_;
 
     Matrix4x4 worldMatrix_;
 

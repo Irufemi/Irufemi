@@ -199,7 +199,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ParticleSystem::SetTextureManager(textureManager.get());
 
     animationManager_ = std::make_unique<AnimationManager>();
-    animationManager_->Initialize();
+    animationManager_->Initialize(dxCommon_.get());
 
     AnimationModel::SetIrufemiEngine(this);
 
@@ -363,5 +363,12 @@ void IrufemiEngine::ApplyLinePSO() {
 void IrufemiEngine::ApplyLineInstancedPSO() {
     auto* pso = GetPSOManager()->GetLineInstanced(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "LineInstanced PSO is null. Check PSOManager::Initialize and shader blobs.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplySkinningPSO()
+{
+    auto* pso = GetPSOManager()->GetSkinning(currentBlend_, currentDepth_, currentCull_);
+    assert(pso && "Skinning PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager->BindPSO(pso); }
 }

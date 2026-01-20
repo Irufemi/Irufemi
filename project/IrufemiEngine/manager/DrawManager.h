@@ -31,6 +31,7 @@ class Line2DClass;
 class Line3DClass;
 class Line3DRegion;
 class CubeClass;
+struct SkinCluster;
 
 // 構造体を前方宣言
 struct DirectionalLight;
@@ -126,6 +127,8 @@ public: //メンバ関数
 
     // モデル描画用の新関数
     void DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA);
+
+    void DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster);
 
     void DrawSpriteRegion(SpriteRegion* region);
     void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource);
