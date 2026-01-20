@@ -10,8 +10,6 @@
 #include "3D/ObjClass.h"
 #include "3D/TriangleClass.h"
 #include "3D/particle/ParticleSystem.h"
-#include "3D/PointLightClass.h"
-#include "3D/SpotLightClass.h"
 #include "3D/CylinderClass.h"
 #include "3D/Region.h"
 #include "3D/SphereRegion.h"
@@ -24,6 +22,7 @@
 #include "manager/ModelManager.h" // GpuMeshのため
 #include "math/CameraForGPU.h"
 #include "math/DirectionalLight.h"
+#include "math/AreaLight.h"
 #include "function/Math.h"
 
 
@@ -67,9 +66,10 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     const size_t directionalLightSize = (sizeof(DirectionalLight) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
     const size_t pointLightsSize = (sizeof(PointLights) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
     const size_t spotLightsSize = (sizeof(SpotLights) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+    const size_t areaLightsSize = (sizeof(AreaLights) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
 
     // フレームリソースを生成(全ライトとカメラを格納できるサイズ)
-    const UINT frameResSize = static_cast<UINT>(cameraSize + directionalLightSize + pointLightsSize + spotLightsSize);
+    const UINT frameResSize = static_cast<UINT>(cameraSize + directionalLightSize + pointLightsSize + spotLightsSize + areaLightsSize);
     frameResource_ = dxCommon_->CreateBufferResource(frameResSize);
     uint8_t* mapped = nullptr;
     frameResource_->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
@@ -80,11 +80,13 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     directionalLightData_ = reinterpret_cast<DirectionalLight*>(mappedAddress + cameraSize);
     pointLightsData_ = reinterpret_cast<PointLights*>(mappedAddress + cameraSize + directionalLightSize);
     spotLightsData_ = reinterpret_cast<SpotLights*>(mappedAddress + cameraSize + directionalLightSize + pointLightsSize);
+    areaLightsData_ = reinterpret_cast<AreaLights*>(mappedAddress + cameraSize + directionalLightSize + pointLightsSize + spotLightsSize);
 
     frameData_.camera = frameResource_->GetGPUVirtualAddress();
     frameData_.directionalLight = frameData_.camera + cameraSize;
     frameData_.pointLights = frameData_.directionalLight + directionalLightSize;
     frameData_.spotLights = frameData_.pointLights + pointLightsSize;
+    frameData_.areaLights = frameData_.spotLights + spotLightsSize;
 }
 
 void DrawManager::Finalize() {
@@ -165,6 +167,7 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(3, frameData_.directionalLight);
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(6, frameData_.pointLights);
     dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(7, frameData_.spotLights);
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(10, frameData_.areaLights);
 
 }
 
@@ -243,7 +246,7 @@ void DrawManager::PostDraw() {
 
 }
 
-void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights) {
+void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights) {
     if (cameraData_) {
         *cameraData_ = camera;
     }
@@ -267,6 +270,17 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLigh
                 spotLightsData_->lights[i].isActive = 1;
             } else {
                 spotLightsData_->lights[i].isActive = 0;
+            }
+        }
+    }
+    if (areaLightsData_) {
+        for (int i = 0; i < kMaxAreaLights; ++i) {
+            if (i < areaLights.size()) {
+                areaLightsData_->lights[i] = *areaLights[i];
+                areaLightsData_->lights[i].isActive = 1;
+            }
+            else {
+                areaLightsData_->lights[i].isActive = 0;
             }
         }
     }

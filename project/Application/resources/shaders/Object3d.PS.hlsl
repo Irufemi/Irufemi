@@ -123,6 +123,31 @@ struct SpotLights
 };
 ConstantBuffer<SpotLights> gSpotLights : register(b4);
 
+#define MAX_AREA_LIGHTS 4
+struct AreaLight
+{
+    //!< ライトの色
+	float4 color;
+    //!< ライトの位置
+	float3 position;
+    //!< 輝度
+	float intensity;
+    //!< スポットライトの方向
+	float3 direction;
+    //!< ライトの届く最大距離
+	float range;
+    //!< 矩形のサイズ(幅、高さ)
+	float2 size;
+    //!< 有効フラグ
+	int32_t isActive;
+	float padding;
+};
+struct AreaLights
+{
+	AreaLight lights[MAX_AREA_LIGHTS];
+};
+ConstantBuffer<AreaLights> gAreaLights : register(b7);
+
 /*テクスチャを貼ろう*/
 
 PixelShaderOutput main(VertexShaderOutput input)
@@ -315,6 +340,48 @@ PixelShaderOutput main(VertexShaderOutput input)
 				totalDiffuse += diffuseSpot;
 				totalSpecular += specularSpot;
 			}
+
+			/*AreaLight*/
+			for (int i = 0; i < MAX_AREA_LIGHTS; ++i)
+			{
+				if (gAreaLights.lights[i].isActive == 0)
+				{
+					continue;
+				}
+				AreaLight light = gAreaLights.lights[i];
+
+                // 距離減衰
+				float d = length(input.worldPosition - light.position);
+				float attenuation = pow(saturate(1.0f - d / max(light.range, 1e-5f)), 1.0f);
+
+                // ライトの向きと法線のなす角
+				float cosAngle = dot(normalize(input.normal), -light.direction);
+
+				float diffuseFactor = 0.0f;
+				if (gMaterial.lightingMode == 1) // Lambert
+				{
+					diffuseFactor = saturate(cosAngle);
+				}
+				else if (gMaterial.lightingMode == 2) // Half-Lambert
+				{
+					diffuseFactor = pow(cosAngle * 0.5f + 0.5f, 2.0f);
+				}
+
+				float32_t3 diffuseArea =
+					gMaterial.color.rgb * textureColor.rgb * light.color.rgb *
+					diffuseFactor * light.intensity * attenuation;
+
+				totalDiffuse += diffuseArea;
+
+				// 鏡面反射(Blinn-Phong)
+				float32_t3 halfVectorArea = normalize(-light.direction + toEye);
+				float NDotHArea = dot(normalize(input.normal), halfVectorArea);
+				float specularPowArea = pow(saturate(NDotHArea), gMaterial.shininess);
+				float32_t3 specularArea = light.color.rgb * light.intensity * specularPowArea * attenuation * float32_t3(1.0f, 1.0f, 1.0f);
+
+				totalSpecular += specularArea;
+			}
+
 
 			/*PointLight*/	
 			

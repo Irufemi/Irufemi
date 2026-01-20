@@ -10,6 +10,7 @@
 #include "3D/SphereClass.h"
 #include "3D/CubeClass.h"
 #include "3D/PlaneClass.h"
+#include "3D/CylinderClass.h"
 #include "3D/TriangleClass.h"
 #include "3D/particle/ParticleSystem.h"
 #include "3D/effect/EffectSystem.h"
@@ -28,6 +29,7 @@ class Sprite;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
+struct AreaLight;
 
 class DebugScene : public IScene {
 public: // メンバ関数(ゲーム)
@@ -58,6 +60,9 @@ private: // メンバ変数(ゲーム)
 
     std::unique_ptr<SphereClass> sphere_ = nullptr;
     bool isActiveSphere_ = true;
+
+    std::unique_ptr<CylinderClass> cylinder_ = nullptr;
+    bool isActiveCylinder_ = true;
 
     std::unique_ptr<ObjClass> obj_ = nullptr;
     bool isActiveObj_ = false;
@@ -115,5 +120,6 @@ private: // メンバ変数(システム)
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
     std::vector<std::unique_ptr<PointLight>> pointLights_;
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
+    std::vector<std::unique_ptr<AreaLight>> areaLights_;
 };
 

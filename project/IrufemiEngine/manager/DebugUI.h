@@ -20,6 +20,7 @@ struct Matrix4x4;
 struct DirectionalLight;
 struct PointLight;
 struct SpotLight;
+struct AreaLight;
 struct Material;
 struct Sphere;
 class DirectXCommon;
@@ -59,6 +60,7 @@ private: // メンバ変数
     // --- ImGui用ライト編集テンプレート ---
     static std::unique_ptr<PointLight> templatePointLight_;
     static std::unique_ptr<SpotLight> templateSpotLight_;
+    static std::unique_ptr<AreaLight> templateAreaLight_;
 
 public: // メンバ関数
 
@@ -83,11 +85,13 @@ public: // メンバ関数
     // 描画処理が終わったタイミングでコマンドを積む
     void QueuePostDrawCommands();
 
-    // ライトUI
+    // --- ライトデバッグ ---
     static void DebugLights(
         DirectionalLight* directionalLight,
         std::vector<std::unique_ptr<PointLight>>& pointLights,
-        std::vector<std::unique_ptr<SpotLight>>& spotLights);
+        std::vector<std::unique_ptr<SpotLight>>& spotLights,
+        std::vector<std::unique_ptr<AreaLight>>& areaLights
+    );
 
     // Transform
     static void DebugTransform(Transform& transform);

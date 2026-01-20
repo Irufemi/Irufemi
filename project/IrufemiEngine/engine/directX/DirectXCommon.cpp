@@ -344,7 +344,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///DescriptorTable
 
-    D3D12_ROOT_PARAMETER rootParameters[10] = {};
+    D3D12_ROOT_PARAMETER rootParameters[11] = {};
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
@@ -411,6 +411,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootParameters[9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameters[9].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
     rootParameters[9].Descriptor.ShaderRegister = 5;
+
+    // AreaLight (PS, b7)
+    rootParameters[10].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    rootParameters[10].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PS で使う
+    rootParameters[10].Descriptor.ShaderRegister = 7; // b7
 
     /*テクスチャを貼ろう*/
 

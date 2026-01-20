@@ -9,6 +9,7 @@
 #include "math/CameraForGPU.h"
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
+#include "math/AreaLight.h"
 #include "math/DirectionalLight.h"
 
 
@@ -96,7 +97,7 @@ void SelectScene::Update() {
     ImGui::Begin("SelectScene");
     if (ImGui::BeginTabBar("SelectSceneTabs")) {
 
-        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_);
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
         // Texture タブ
         if (ImGui::BeginTabItem("Texture")) {
@@ -213,8 +214,12 @@ void SelectScene::Update() {
     for (const auto& light : spotLights_) {
         sLights.push_back(light.get());
     }
+    std::vector<AreaLight*> aLights;
+    for (const auto& light : areaLights_) {
+        aLights.push_back(light.get());
+    }
 
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights);
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
 void SelectScene::Draw() {

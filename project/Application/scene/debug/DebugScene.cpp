@@ -10,6 +10,7 @@
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
+#include "math/AreaLight.h"
 #include "2D/Sprite.h"
 
 // デストラクタ
@@ -59,12 +60,23 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
 
+    auto areaLight = std::make_unique<AreaLight>();
+    areaLight->color = { 1.0f, 0.5f, 0.5f, 1.0f };
+    areaLight->position = { 0.0f, 2.0f, 2.0f };
+    areaLight->intensity = 1.0f;
+    areaLight->direction = { 0.0f, -1.0f, 0.0f };
+    areaLight->range = 10.0f;
+    areaLight->size = { 2.0f, 2.0f };
+    areaLight->isActive = 1;
+    areaLights_.push_back(std::move(areaLight));
+
     isActiveObj_ = false;
     isActiveSprite_ = false;
     isActiveTriangle_ = false;
     isActiveCube_ = false;
     isActivePlane_ = false;
     isActiveSphere_ = false;
+    isActiveCylinder_ = false;
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
     isActiveMultiMesh_ = false;
@@ -101,6 +113,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     if (isActiveSphere_) {
         sphere_ = std::make_unique<SphereClass>();
         sphere_->Initialize(camera_.get());
+    }
+    if (isActiveCylinder_) {
+        cylinder_ = std::make_unique<CylinderClass>();
+        cylinder_->Initialize(camera_.get());
     }
     if (isActiveObj_) {
         obj_ = std::make_unique<ObjClass>();
@@ -165,7 +181,7 @@ void DebugScene::Update() {
 
     if (ImGui::BeginTabBar("DebugSceneTabs")) {
         
-        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_);
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
         // Texture タブ
         if (ImGui::BeginTabItem("Texture")) {
@@ -192,6 +208,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("Cube", &isActiveCube_);
     ImGui::Checkbox("Plane", &isActivePlane_);
     ImGui::Checkbox("Sphere", &isActiveSphere_);
+    ImGui::Checkbox("Cylinder", &isActiveCylinder_);
     ImGui::Checkbox("Obj", &isActiveObj_);
     ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot_);
     ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny_);
@@ -324,6 +341,14 @@ void DebugScene::Update() {
         sphere_->Debug("Sphere");
         sphere_->Update();
     }
+    if (isActiveCylinder_) {
+        if (!cylinder_) {
+            cylinder_ = std::make_unique<CylinderClass>();
+            cylinder_->Initialize(camera_.get());
+        }
+        cylinder_->Debug("Cylinder");
+        cylinder_->Update();
+    }
     if (isActiveObj_) {
         if (!obj_) {
             obj_ = std::make_unique<ObjClass>();
@@ -413,7 +438,7 @@ void DebugScene::Update() {
         animationModel_->Update();
     }
     if (isActiveAnimationModel_walk_) {
-        if (!animationModel_) {
+        if (!animationModel_walk_) {
             animationModel_walk_ = std::make_unique<AnimationModel>();
             animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
         }
@@ -467,8 +492,12 @@ void DebugScene::Update() {
     for (const auto& light : spotLights_) {
         sLights.push_back(light.get());
     }
+    std::vector<AreaLight*> aLights;
+    for (const auto& light : areaLights_) {
+        aLights.push_back(light.get());
+    }
 
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights);
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
 void DebugScene::Draw() {
@@ -493,6 +522,9 @@ void DebugScene::Draw() {
     }
     if (isActiveSphere_) {
         sphere_->Draw();
+    }
+    if (isActiveCylinder_) {
+        cylinder_->Draw();
     }
     if (isActiveObj_) {
         obj_->Draw();
