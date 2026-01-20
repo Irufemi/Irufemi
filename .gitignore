@@ -1,7 +1,4 @@
 ## [Visual Studio 標準の除外設定]
-## 参照元: https://github.com/github/gitignore/blob/master/VisualStudio.gitignore [cite: 1, 2]
-
-# ユーザー固有ファイル 
 *.rsuser
 *.suo
 *.user
@@ -9,7 +6,7 @@
 *.sln.docstates
 *.userprefs
 
-# ビルド結果と一時ファイル 
+# ビルド結果と一時出力
 [Dd]ebug/
 [Rr]elease/
 x64/
@@ -29,38 +26,32 @@ project/logs/
 *.VC.db
 *.VC.VC.opendb
 
-# Visual Studio 2015/2017/2019/2022 キャッシュ/オプションディレクトリ 
+# Visual Studio キャッシュ/オプション
 .vs/
 Generated\ Files/
 
-# テスト結果 
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-
 # ====================================================================
-# プロジェクト固有の修正アドバイスに基づく追加設定
+# プロジェクト健康診断に基づく修正・追加設定
 # ====================================================================
 
-# 1. 外部ライブラリの管理 (診断2)
-# 本来は vcpkg 等での管理が望ましいですが、リポジトリを軽量化するために
-# .lib ファイルを除外対象として検討してください。
-# *.lib
-
-# 2. 中間ファイル (.obj) の混入防止 (診断3-2)
-# 3Dモデルとしての .obj は維持しつつ、ビルドプロセスで生成されるものを除外します。
+# 1. ビルド中間ファイル(.obj)の混入防止
+# resources/ 内の3Dモデル用.objを保護しつつ、ビルド生成物のみを除外
 **/Debug/*.obj
 **/Release/*.obj
 **/x64/*.obj
 **/x86/*.obj
 
-# 3. DCCツール・編集用ソースファイルの除外 (診断4, 5)
-# 実行には不要なバックアップや編集用データを除外します。
+# 2. DCCツール・編集用ソースファイルの個別除外
 *.blend1
 *.xcf
 *.aseprite
 
+# 3. アセット編集用ソースフォルダ（原本フォルダ）の除外
+# project/Application/ 内に作成する編集専用フォルダをまるごと除外
+/project/Application/asset_src/
+
 # ====================================================================
-# 既存のプロジェクト固有パス設定 [cite: 7]
+# プロジェクト固有の既存パス設定
 # ====================================================================
 DirectXGame/DirectXGame.exe
 DirectXGame/imgui.ini
@@ -69,5 +60,3 @@ DirectXGame/imgui.ini
 /project/IrufemiEngine/logs/
 /project/Application/logs/
 /project/Application/imgui.ini
-
-# その他、標準テンプレートに含まれる不要なツール群の記述は整理済み [cite: 2, 6]
