@@ -18,16 +18,17 @@
 #if defined(_DEBUG) || defined(DEVELOPMENT)
 #include "scene/debug/DebugScene.h"
 #endif
+#include "scene/CG/CGScene.h"
 
 namespace {
     // --- ゲーム固有の定数 ---
     const int32_t kClientWidth = 1280;
     const int32_t kClientHeight = 720;
-    const std::wstring kTitle = L"LE2B_12_スエヒロ_コウイチ_アンナイト";
+    const std::wstring kTitle = L"LE2B_12_スエヒロ_コウイチ_CG3評価課題2";
     const Vector4 kClearColor = { 0.7f, 0.7f, 0.7f, 1.0f };
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-        = "Debug";
+        = "CG";
 #else
         = "InGame";
 #endif
@@ -41,6 +42,8 @@ namespace {
 #if defined(_DEBUG) || defined(DEVELOPMENT)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
+        sm.Register("CG", [] { return std::make_unique<CGScene>(); });
+
     }
 }
 

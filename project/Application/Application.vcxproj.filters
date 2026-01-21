@@ -67,6 +67,9 @@
     <Filter Include="content\skydome">
       <UniqueIdentifier>{ca677367-9311-4bf8-b19d-3388568d67ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scene\CG3">
+      <UniqueIdentifier>{71f087f2-5f9d-4603-a258-3369ad493bca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene\inGame\GameScene.cpp">
@@ -135,6 +138,9 @@
     <ClCompile Include="contents\skydome\Skydome.cpp">
       <Filter>content\skydome</Filter>
     </ClCompile>
+    <ClCompile Include="scene\CG\CGScene.cpp">
+      <Filter>Scene\CG3</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -193,6 +199,9 @@
     </ClInclude>
     <ClInclude Include="contents\skydome\Skydome.h">
       <Filter>content\skydome</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\CG\CGScene.h">
+      <Filter>Scene\CG3</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

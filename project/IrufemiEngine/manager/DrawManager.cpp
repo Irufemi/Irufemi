@@ -787,6 +787,40 @@ void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS
     // 一時リソースはフレーム終了後に解放される
 }
 
+void DrawManager::DrawModel(const ManagedModel* model, size_t meshIndex, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA) {
+    if (!model || !model->cpuModel || !dxCommon_ || meshIndex >= model->gpuMeshes.size()) return;
+
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    const auto& gpuMesh = model->gpuMeshes[meshIndex];
+    const auto& gpuMaterial = model->gpuMaterials[meshIndex];
+
+    if (!gpuMesh || !gpuMaterial) return;
+
+    // IA (頂点/インデックス)
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &gpuMesh->vertexBufferView);
+
+    if (gpuMesh->indexCount > 0) {
+        dxCommon_->GetCommandList()->IASetIndexBuffer(&gpuMesh->indexBufferView);
+    }
+
+    // CBV (マテリアル/Transform)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, gpuMaterial->materialResource->GetGPUVirtualAddress());
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformGpuVA);
+
+    // SRV (テクスチャ)
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, gpuMaterial->textureHandle);
+
+    // 描画コマンド
+    if (gpuMesh->indexCount > 0) {
+        dxCommon_->GetCommandList()->DrawIndexedInstanced(gpuMesh->indexCount, 1, 0, 0, 0);
+    }
+    else {
+        dxCommon_->GetCommandList()->DrawInstanced(gpuMesh->vertexCount, 1, 0, 0);
+    }
+}
+
 void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster)
 {
     if (!model || !model->cpuModel || !dxCommon_) return;

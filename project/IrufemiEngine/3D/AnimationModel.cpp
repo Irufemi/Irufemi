@@ -38,6 +38,16 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
     transformationResource_ = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
     transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
 
+    // ノードアニメーション用のリソース確保
+    if (managedModel_->cpuModel->skinClusterData.empty()) {
+        meshTransformationResources_.resize(managedModel_->cpuModel->meshes.size());
+        meshTransformationData_.resize(managedModel_->cpuModel->meshes.size());
+        for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
+            meshTransformationResources_[i] = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
+            meshTransformationResources_[i]->Map(0, nullptr, reinterpret_cast<void**>(&meshTransformationData_[i]));
+        }
+    }
+
     assert(engine_ && "AnimationModel::Initialize: AnimationManager is not set.");
     animation_ = engine_->GetAnimationManager()->LoadAnimationFile(filename);
 
@@ -46,8 +56,10 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
         // ModelManager(またはAnimationManager)にあるNode構造からSkeletonを作成
         skeleton_ = AnimationManager::CreateSkeleton(managedModel_->cpuModel->rootNode);
 
-        // SkinClusterの生成
-        skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *managedModel_->cpuModel);
+        // SkinClusterの生成 (スキニングモデルの場合のみ)
+        if (!managedModel_->cpuModel->skinClusterData.empty()) {
+            skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *managedModel_->cpuModel);
+        }
 
         // 2. SphereRegionの初期化
         jointSpheres_ = std::make_unique<SphereRegion>();
@@ -80,20 +92,33 @@ void AnimationModel::Update() {
 
     UpdateAnimation();
 
-    // オブジェクト全体のワールド行列を計算
-    transformationMatrix_.WVP = worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
-    transformationMatrix_.world = worldMatrix_;
+    // スキニングモデルかノードアニメーションモデルかで処理を分岐
+    if (!managedModel_->cpuModel->skinClusterData.empty()) {
+        // --- スキニングモデルの更新 ---
+        transformationMatrix_.WVP = worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
+        transformationMatrix_.world = worldMatrix_;
+        Matrix4x4 worldForNormal = transformationMatrix_.world;
+        worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+        transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+        if (transformationData_) {
+            *transformationData_ = transformationMatrix_;
+        }
+    } else {
+        // --- ノードアニメーションモデルの更新 ---
+        for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
+            const auto& mesh = managedModel_->cpuModel->meshes[i];
+            Matrix4x4 nodeWorldMatrix = nodeWorldMatrices_[mesh.nodeName] * worldMatrix_;
 
-    // 法線変換用の逆転置行列
-    Matrix4x4 worldForNormal = transformationMatrix_.world;
-    worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
-    worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
-    transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-
-    // 計算した行列をマップ済みのリソースにコピー
-    if (transformationData_) {
-        *transformationData_ = transformationMatrix_;
+            meshTransformationData_[i]->WVP = nodeWorldMatrix * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
+            meshTransformationData_[i]->world = nodeWorldMatrix;
+            Matrix4x4 worldForNormal = meshTransformationData_[i]->world;
+            worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
+            worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+            meshTransformationData_[i]->WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+        }
     }
+
 
     // 各Jointの位置をSphereRegionに反映
     boneLines_->ClearInstances();
@@ -143,23 +168,30 @@ void AnimationModel::Draw() {
 
     if (!managedModel_ || !engine_) return;
 
-    engine_->ApplyRegionPSO();
-
     // --- 追加：骨格（球体の集合）を一括描画 ---
-    if (jointSpheres_) {
+    if (jointSpheres_ && !skeleton_.joints.empty()) {
+        engine_->ApplyRegionPSO();
         jointSpheres_->Draw();
     }
 
     // --- 追加：ボーン（線）を一括描画 ---
-    if (boneLines_) {
+    if (boneLines_ && !skeleton_.joints.empty()) {
         engine_->ApplyLineInstancedPSO();
         boneLines_->Draw();
     }
 
-    engine_->ApplySkinningPSO();
-
-    // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
-    engine_->GetDrawManager()->DrawAnimationModel(managedModel_.get(), GetTransformationGpuAddress(), skinCluster_);
+    // スキニングの有無でPSOと描画関数を切り替え
+    if (!managedModel_->cpuModel->skinClusterData.empty()) {
+        engine_->ApplySkinningPSO();
+        // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
+        engine_->GetDrawManager()->DrawAnimationModel(managedModel_.get(), GetTransformationGpuAddress(), skinCluster_);
+    } else {
+        engine_->ApplyPSO();
+        // メッシュごとに描画
+        for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
+            engine_->GetDrawManager()->DrawModel(managedModel_.get(), i, meshTransformationResources_[i]->GetGPUVirtualAddress());
+        }
+    }
 }
 
 // デバッグ
@@ -240,8 +272,15 @@ void AnimationModel::UpdateAnimation() {
     // 親の行列を子に掛け合わせ、skeletonSpaceMatrix（モデル空間での位置）を計算する
     AnimationManager::SkeletonUpdate(skeleton_);
 
-    // 3. SkeletonSpaceの情報を基に、SkinClusterのMatrixPaletteを更新する
-    AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_);
+    // 3. SkeletonSpaceの情報を基に、SkinClusterのMatrixPaletteを更新、またはノードのワールド行列を保存
+    if (!managedModel_->cpuModel->skinClusterData.empty()) {
+        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_);
+    } else {
+        // ノードアニメーションの場合、各ノードのワールド行列を保存
+        for (const auto& joint : skeleton_.joints) {
+            nodeWorldMatrices_[joint.name] = joint.skeletonSpaceMatrix;
+        }
+    }
 
 }
 

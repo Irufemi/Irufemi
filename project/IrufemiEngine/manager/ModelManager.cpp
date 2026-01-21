@@ -676,6 +676,21 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
 
 }
 
+// ノードとメッシュの関連を解析するヘルパー関数
+void ProcessNode(aiNode* node, const aiScene* scene, std::vector<ObjMesh>& meshes) {
+    // 現在のノードが持つメッシュを処理
+    for (UINT i = 0; i < node->mNumMeshes; i++) {
+        UINT meshIndex = node->mMeshes[i];
+        if (meshIndex < meshes.size()) {
+            meshes[meshIndex].nodeName = node->mName.C_Str();
+        }
+    }
+    // 子ノードを再帰的に処理
+    for (UINT i = 0; i < node->mNumChildren; i++) {
+        ProcessNode(node->mChildren[i], scene, meshes);
+    }
+}
+
 // ObjModel Node 対応 Assimp 版
 ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const std::string& filename) {
     ObjModel objModel;
@@ -817,6 +832,9 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
 
         objModel.meshes.push_back(std::move(outMesh));
     }
+
+    // ノードとメッシュの関連付けを解析
+    ProcessNode(scene->mRootNode, scene, objModel.meshes);
 
     /// Node 階層(structure)を解析 (シーンルートから再帰構築)
 

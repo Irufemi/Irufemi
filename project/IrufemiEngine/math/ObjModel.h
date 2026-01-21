@@ -37,6 +37,7 @@ struct ObjMesh {
     std::vector<VertexData> vertices;
     std::vector<uint32_t> indices; // 追加
     ObjMaterial material;
+    std::string nodeName; // 追加: このメッシュが属するノード名
 };
 
 // 階層(Node)を統合した拡張版 ObjModel

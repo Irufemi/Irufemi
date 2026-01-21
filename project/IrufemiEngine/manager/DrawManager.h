@@ -127,6 +127,7 @@ public: //メンバ関数
 
     // モデル描画用の新関数
     void DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA);
+    void DrawModel(const ManagedModel* model, size_t meshIndex, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA);
 
     void DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster);
 
