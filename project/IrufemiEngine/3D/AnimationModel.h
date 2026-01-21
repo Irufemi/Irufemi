@@ -9,6 +9,7 @@
 #include "math/Transform.h"
 #include "math/ObjModel.h"
 #include "math/Skeleton.h"
+#include "math/SkinCluster.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>
@@ -19,6 +20,7 @@
 class Camera;
 class IrufemiEngine;
 class SphereRegion;
+class Line3DRegion;
 struct ManagedModel;
 
 
@@ -54,7 +56,7 @@ public: // ゲッター・セッター
     ObjMaterial* GetMaterial(size_t meshIndex);
 
 
-    static void SetIeufemiEngine(IrufemiEngine* engine) { engine_ = engine; }
+    static void SetIrufemiEngine(IrufemiEngine* engine) { engine_ = engine; }
 
 private: // メンバ変数
     // 共有モデルデータ(CPU/GPU)
@@ -74,6 +76,8 @@ private: // メンバ変数
 
     Skeleton skeleton_;
 
+    SkinCluster skinCluster_;
+
     Matrix4x4 worldMatrix_;
 
     Animation animation_;
@@ -82,4 +86,5 @@ private: // メンバ変数
 
     // --- 追加：関節表示用のインスタンス描画機構 ---
     std::unique_ptr<SphereRegion> jointSpheres_;
+    std::unique_ptr<Line3DRegion> boneLines_;
 };

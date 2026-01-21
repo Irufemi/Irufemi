@@ -3,15 +3,23 @@
 #include <string>
 #include "math/Animation.h"
 #include "math/NodeAnimation.h"
-#include "math/Skeleton.h"
 #include "math/Joint.h"
 #include "math/Node.h"
+#include "math/Skeleton.h"
+#include "math/SkinCluster.h"
 #include <optional>
 #include <unordered_map>
 #include <memory>
 #include <mutex>
 #include <vector>
 #include <algorithm>
+#include <wrl.h>
+#include <d3d12.h>
+
+// 前方宣言
+class DirectXCommon;
+struct ModelData;
+struct ObjModel; // 追加
 
 class AnimationManager
 {
@@ -20,9 +28,11 @@ public:
     ~AnimationManager() = default;
 
     // --- インスタンス機能 ---
-    void Initialize();
+    void Initialize(DirectXCommon* dxCommon);
     void SetRootDirectory(std::string root);
     Animation LoadAnimationFile(const std::string& filename);
+    SkinCluster CreateSkinCluster(const Skeleton& skeleton, const ModelData& modelData);
+    SkinCluster CreateSkinCluster(const Skeleton& skeleton, const ObjModel& objModel);
 
 public: // 静的ヘルパ
 
@@ -96,6 +106,13 @@ public: // 静的ヘルパ
     /// <param name="animationTime"></param>
     static void ApplyAnimation(Skeleton& skeleton, const Animation& animation, float animationTime);
 
+    /// <summary>
+    /// SkinClusterの更新
+    /// </summary>
+    /// <param name="skinCluster"></param>
+    /// <param name="skeleton"></param>
+    static void SkinClusterUpdate(SkinCluster& skinCluster, const Skeleton& skeleton);
+
 private: // 内部ヘルパ
     std::string NormalizeAndResolve(const std::string& filename) const;
     static bool StartsWith(const std::string& s, const std::string& prefix);
@@ -103,6 +120,7 @@ private: // 内部ヘルパ
     std::string FindFileRecursive(const std::string& filename) const;
 
 private:
+    DirectXCommon* dxCommon_ = nullptr;
     std::string rootDir_;
     mutable std::mutex mutex_;
     std::unordered_map<std::string, std::weak_ptr<Animation>> cache_;

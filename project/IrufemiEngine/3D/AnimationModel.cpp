@@ -11,13 +11,14 @@
 #include "math/Material.h"
 #include "math/ObjModel.h"
 #include "3D/SphereRegion.h"
+#include "3D/LineClass.h"
 #include <cmath>
 
 // 静的メンバ定義
 IrufemiEngine* AnimationModel::engine_ = nullptr;
 
 AnimationModel::AnimationModel() {}
-AnimationModel::~AnimationModel(){}
+AnimationModel::~AnimationModel() {}
 
 // 初期化
 void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
@@ -45,6 +46,9 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
         // ModelManager(またはAnimationManager)にあるNode構造からSkeletonを作成
         skeleton_ = AnimationManager::CreateSkeleton(managedModel_->cpuModel->rootNode);
 
+        // SkinClusterの生成
+        skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *managedModel_->cpuModel);
+
         // 2. SphereRegionの初期化
         jointSpheres_ = std::make_unique<SphereRegion>();
         jointSpheres_->Initialize(camera, "resources/whiteTexture.png", 16);
@@ -55,6 +59,10 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
             tf.scale = { 0.01f, 0.01f, 0.01f }; // 関節の大きさ
             jointSpheres_->AddInstance(tf);
         }
+
+        // ボーン用のLine3DRegionを初期化
+        boneLines_ = std::make_unique<Line3DRegion>();
+        boneLines_->Initialize(camera);
     }
 
     // 初回Updateを呼んでおく
@@ -88,6 +96,7 @@ void AnimationModel::Update() {
     }
 
     // 各Jointの位置をSphereRegionに反映
+    boneLines_->ClearInstances();
     for (size_t i = 0; i < skeleton_.joints.size(); ++i) {
         // JointのSkeleton空間での行列を取得
         const Matrix4x4& jointMat = skeleton_.joints[i].skeletonSpaceMatrix;
@@ -109,6 +118,19 @@ void AnimationModel::Update() {
         tf.translate = jointPosition;
 
         jointSpheres_->UpdateInstance(static_cast<uint32_t>(i), tf);
+
+        // 親ジョイントがあれば、親から自分への線（ボーン）を描画
+        if (skeleton_.joints[i].parent) {
+            const int32_t parentIndex = *skeleton_.joints[i].parent;
+            const Matrix4x4& parentMat = skeleton_.joints[parentIndex].skeletonSpaceMatrix;
+            Matrix4x4 parentWorldMat = parentMat * worldMatrix_;
+            Vector3 parentPosition = {
+                parentWorldMat.m[3][0],
+                parentWorldMat.m[3][1],
+                parentWorldMat.m[3][2]
+            };
+            boneLines_->AddInstance(parentPosition, jointPosition, { 1.0f, 1.0f, 0.0f, 1.0f });
+        }
     }
 
     // マテリアル情報をGPUへ転送
@@ -120,7 +142,7 @@ void AnimationModel::Update() {
 void AnimationModel::Draw() {
 
     if (!managedModel_ || !engine_) return;
-    
+
     engine_->ApplyRegionPSO();
 
     // --- 追加：骨格（球体の集合）を一括描画 ---
@@ -128,10 +150,16 @@ void AnimationModel::Draw() {
         jointSpheres_->Draw();
     }
 
-    engine_->ApplyPSO();
+    // --- 追加：ボーン（線）を一括描画 ---
+    if (boneLines_) {
+        engine_->ApplyLineInstancedPSO();
+        boneLines_->Draw();
+    }
+
+    engine_->ApplySkinningPSO();
 
     // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
-    engine_->GetDrawManager()->DrawModel(managedModel_.get(), GetTransformationGpuAddress());
+    engine_->GetDrawManager()->DrawAnimationModel(managedModel_.get(), GetTransformationGpuAddress(), skinCluster_);
 }
 
 // デバッグ
@@ -211,6 +239,9 @@ void AnimationModel::UpdateAnimation() {
     // 2. 階層構造の行列更新
     // 親の行列を子に掛け合わせ、skeletonSpaceMatrix（モデル空間での位置）を計算する
     AnimationManager::SkeletonUpdate(skeleton_);
+
+    // 3. SkeletonSpaceの情報を基に、SkinClusterのMatrixPaletteを更新する
+    AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_);
 
 }
 

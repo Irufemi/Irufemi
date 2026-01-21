@@ -86,8 +86,9 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
     isActiveEffect_ = false;
-    isActiveAnimationModel_ = false;
+    isActiveAnimationModel_animatedCube_ = false;
     isActiveAnimationModel_walk_ = false;
+    isActiveAnimationModel_sneakWalk_ = false;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -158,13 +159,17 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         effect_ = std::make_unique<EffectSystem>();
         effect_->Initialize(camera_.get());
     }
-    if (isActiveAnimationModel_) {
-        animationModel_ = std::make_unique<AnimationModel>();
-        animationModel_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
+    if (isActiveAnimationModel_animatedCube_) {
+        animationModel_animatedCube_ = std::make_unique<AnimationModel>();
+        animationModel_animatedCube_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
     }
     if (isActiveAnimationModel_walk_) {
         animationModel_walk_ = std::make_unique<AnimationModel>();
-        animationModel_->Initialize(camera_.get(), "sample/walk.gltf");
+        animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
+    }
+    if (isActiveAnimationModel_sneakWalk_) {
+        animationModel_sneakWalk_ = std::make_unique<AnimationModel>();
+        animationModel_sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
     }
 
     line2D_ = std::make_unique<Line2DClass>();
@@ -219,8 +224,9 @@ void DebugScene::Update() {
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::Checkbox("Effect", &isActiveEffect_);
-    ImGui::Checkbox("AnimationModel", &isActiveAnimationModel_);
+    ImGui::Checkbox("AnimationModel_animatedCube", &isActiveAnimationModel_animatedCube_);
     ImGui::Checkbox("AnimationModel_walk", &isActiveAnimationModel_walk_);
+    ImGui::Checkbox("AnimationModel_sneakWalk", &isActiveAnimationModel_sneakWalk_);
     ImGui::End();
 
     ImGui::Begin("GE");
@@ -429,13 +435,13 @@ void DebugScene::Update() {
         effect_->Debug("Effect");
         effect_->Update();
     }
-    if (isActiveAnimationModel_) {
-        if (!animationModel_) {
-            animationModel_ = std::make_unique<AnimationModel>();
-            animationModel_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
+    if (isActiveAnimationModel_animatedCube_) {
+        if (!animationModel_animatedCube_) {
+            animationModel_animatedCube_ = std::make_unique<AnimationModel>();
+            animationModel_animatedCube_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
         }
-        animationModel_->Debug("animationModel");
-        animationModel_->Update();
+        animationModel_animatedCube_->Debug("animationModel_animatedCube");
+        animationModel_animatedCube_->Update();
     }
     if (isActiveAnimationModel_walk_) {
         if (!animationModel_walk_) {
@@ -444,6 +450,14 @@ void DebugScene::Update() {
         }
         animationModel_walk_->Debug("aniamtionModel_walk_");
         animationModel_walk_->Update();
+    }
+    if (isActiveAnimationModel_sneakWalk_) {
+        if (!animationModel_sneakWalk_) {
+            animationModel_sneakWalk_ = std::make_unique<AnimationModel>();
+            animationModel_sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+        }
+        animationModel_sneakWalk_->Debug("aniamtionModel_sneakWalk_");
+        animationModel_sneakWalk_->Update();
     }
 
     line2D_->Update();
@@ -550,11 +564,14 @@ void DebugScene::Draw() {
     if (isActiveTerrain_) {
         terrain_->Draw();
     }
-    if (isActiveAnimationModel_) {
-        animationModel_->Draw();
+    if (isActiveAnimationModel_animatedCube_) {
+        animationModel_animatedCube_->Draw();
     }
     if (isActiveAnimationModel_walk_) {
         animationModel_walk_->Draw();
+    }
+    if (isActiveAnimationModel_sneakWalk_) {
+        animationModel_sneakWalk_->Draw();
     }
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);

@@ -279,6 +279,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Emitter.h" />
     <ClInclude Include="math\FormatChunk.h" />
     <ClInclude Include="math\Joint.h" />
+    <ClInclude Include="math\JointWeightData.h" />
     <ClInclude Include="math\LRDirection.h" />
     <ClInclude Include="math\Material.h" />
     <ClInclude Include="math\MaterialData.h" />
@@ -302,6 +303,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\shape\Spring.h" />
     <ClInclude Include="math\shape\Triangle.h" />
     <ClInclude Include="math\Skeleton.h" />
+    <ClInclude Include="math\SkinCluster.h" />
     <ClInclude Include="math\SoundData.h" />
     <ClInclude Include="math\SpotLight.h" />
     <ClInclude Include="math\Transform.h" />
@@ -316,6 +318,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="manager\ModelManager.h" />
     <ClInclude Include="3D\PlaneClass.h" />
     <ClInclude Include="engine\Input\Mouse.h" />
+    <ClInclude Include="math\VertexInfluence.h" />
+    <ClInclude Include="math\WellForGPU.h" />
     <ClInclude Include="scene\IScene.h" />
     <ClInclude Include="scene\SceneManager.h" />
     <ClInclude Include="audio\Se.h" />
@@ -328,6 +332,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="3D\TetraRegion.h" />
     <ClInclude Include="2D\SpriteRegion.h" />
     <ClInclude Include="math\Keyframe.h" />
+    <ClInclude Include="math\VertexWeightData.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
@@ -337,9 +342,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   <ItemGroup>
     <None Include="..\Application\resources\shaders\GeometryShaderHeader.hlsli" />
     <None Include="..\Application\resources\shaders\Line.hlsli" />
+    <None Include="..\Application\resources\shaders\LineInstanced.hlsli" />
     <None Include="..\Application\resources\shaders\Object2D.hlsli" />
     <None Include="..\Application\resources\shaders\Object3d.hlsli" />
     <None Include="..\Application\resources\shaders\Particle.hlsli" />
+    <None Include="..\Application\resources\shaders\SkinningObject3D.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
@@ -373,6 +380,16 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\LineInstanced.PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\LineInstanced.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -416,6 +433,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\Region.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\SkinningObject3D.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
