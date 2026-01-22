@@ -1,5 +1,5 @@
 #pragma once
-#include "../wall/Wall.h"
+#include "contents/wall/Wall.h"
 #include "HealerActor.h"
 
 #include <deque>

@@ -18,11 +18,11 @@ struct AreaLight;
 
 #include "3D/ObjClass.h"
 
-#include "contents/player/Player.h"
-#include "contents/healer/Healer.h"
-#include "contents/enemy/Enemy.h"
+#include "actors/player/Player.h"
+#include "actors/healer/Healer.h"
+#include "actors/healer/HealerActor.h"
+#include "actors/enemy/Enemy.h"
 #include "contents/wall/Wall.h"
-#include "contents/healer/HealerActor.h"
 
 /// <summary>
 /// ゲーム

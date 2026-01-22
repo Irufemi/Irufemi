@@ -84,19 +84,19 @@
     <ClCompile Include="GameApplication.cpp">
       <Filter>Application</Filter>
     </ClCompile>
-    <ClCompile Include="contents\player\Player.cpp">
+    <ClCompile Include="actors\player\Player.cpp">
       <Filter>actor\player</Filter>
     </ClCompile>
-    <ClCompile Include="contents\healer\Healer.cpp">
+    <ClCompile Include="actors\healer\Healer.cpp">
       <Filter>actor\healer</Filter>
     </ClCompile>
-    <ClCompile Include="contents\enemy\Enemy.cpp">
+    <ClCompile Include="actors\enemy\Enemy.cpp">
       <Filter>actor\enemy</Filter>
     </ClCompile>
     <ClCompile Include="contents\wall\Wall.cpp">
       <Filter>content\wall</Filter>
     </ClCompile>
-    <ClCompile Include="contents\healer\HealerActor.cpp">
+    <ClCompile Include="actors\healer\HealerActor.cpp">
       <Filter>actor\healer</Filter>
     </ClCompile>
   </ItemGroup>
@@ -125,19 +125,19 @@
     <ClInclude Include="GameApplication.h">
       <Filter>Application</Filter>
     </ClInclude>
-    <ClInclude Include="contents\player\Player.h">
+    <ClInclude Include="actors\player\Player.h">
       <Filter>actor\player</Filter>
     </ClInclude>
-    <ClInclude Include="contents\healer\Healer.h">
+    <ClInclude Include="actors\healer\Healer.h">
       <Filter>actor\healer</Filter>
     </ClInclude>
-    <ClInclude Include="contents\enemy\Enemy.h">
+    <ClInclude Include="actors\enemy\Enemy.h">
       <Filter>actor\enemy</Filter>
     </ClInclude>
     <ClInclude Include="contents\wall\Wall.h">
       <Filter>content\wall</Filter>
     </ClInclude>
-    <ClInclude Include="contents\healer\HealerActor.h">
+    <ClInclude Include="actors\healer\HealerActor.h">
       <Filter>actor\healer</Filter>
     </ClInclude>
   </ItemGroup>

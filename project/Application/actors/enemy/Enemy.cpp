@@ -1,5 +1,5 @@
 #include "Enemy.h"
-#include "../wall/Wall.h"
+#include "contents/wall/Wall.h"
 #include "function/Random.h"
 #include "../healer/HealerActor.h"
 #include <limits>
