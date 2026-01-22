@@ -9,7 +9,7 @@ const int32_t kClientWidth = 500;
 const int32_t kClientHeight = 800;
 
 // タイトル
-const std::wstring kTitle = L"2126_だんだんリサイクル";
+const std::wstring kTitle = L"2126_弾弾リサイクル";
 
 //windowsアプリでのエントリーポint32_tイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
