@@ -96,6 +96,9 @@
     <ClCompile Include="contents\wall\Wall.cpp">
       <Filter>content\wall</Filter>
     </ClCompile>
+    <ClCompile Include="contents\healer\HealerActor.cpp">
+      <Filter>actor\healer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -133,6 +136,9 @@
     </ClInclude>
     <ClInclude Include="contents\wall\Wall.h">
       <Filter>content\wall</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\healer\HealerActor.h">
+      <Filter>actor\healer</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

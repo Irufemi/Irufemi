@@ -21,6 +21,7 @@ struct DirectionalLight;
 #include "contents/healer/Healer.h"
 #include "contents/enemy/Enemy.h"
 #include "contents/wall/Wall.h"
+#include "contents/healer/HealerActor.h"
 
 /// <summary>
 /// ゲーム
@@ -51,6 +52,9 @@ private: // メンバ変数(ゲーム)
 
     std::list<Enemy*> enemies_;
     static inline const int32_t kMaxEnemy_ = 5;
+
+    std::list<HealerActor*> healerActor_;
+    static inline const int32_t kMaxHealerActor_ = 20;
 
     std::unique_ptr<Player> player_ = nullptr;
 

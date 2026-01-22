@@ -31,6 +31,13 @@ GameScene::~GameScene() {
         walls_.pop_front();
     }
 
+    while (!healerActor_.empty()) {
+        HealerActor* ha = healerActor_.front();
+        if (ha)
+            delete ha;
+        healerActor_.pop_front();
+    }
+
     // スマートポインタに変更したため下記はコメントアウト
 
     /*delete player_;
@@ -115,7 +122,21 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         enemy->Initialize(camera_.get(), Vector3{x, y, 0.0f});
         enemies_.push_back(enemy);
     }
-#pragma endregion Enemy初期化 "Cube.obj");
+#pragma endregion Enemy初期化
+
+
+#pragma region HealerActor初期化
+
+    for (int32_t i = 0; i < kMaxHealerActor_; ++i) {
+        HealerActor* healerActor = new HealerActor();
+        float x = Random::GeneratorFloat(-15.0f, 15.0f);
+        float y = Random::GeneratorFloat(-15.0f, 15.0f);
+        healerActor->Initialize(camera_.get(), Vector3{x, y, 0.0f});
+        healerActor_.push_back(healerActor);
+    }
+
+#pragma endregion HealerActor初期化
+
 
     // Healer 初期化
     healer_ = std::make_unique<Healer>();
@@ -170,16 +191,26 @@ void GameScene::Update() {
 
     for (int32_t i = 0; i < kMaxEnemy_; ++i) {
         Enemy* e = enemies_.front();
-        if (e) e->Update(walls_);
+        if (e) e->Update(walls_, healerActor_);
         enemies_.push_back(enemies_.front());
         enemies_.pop_front();
     }
+
+    for (int32_t i = 0; i < kMaxHealerActor_; ++i)
+    {
+        HealerActor* ha = healerActor_.front();
+        if (ha)
+            ha->Update();
+        healerActor_.push_back(healerActor_.front());
+        healerActor_.pop_front();
+    }
+
     player_->Update();
 
     CollisionCheck();
 
     // Healer は壊れた順に修復を試みる
-    if (healer_) healer_->Update(camera_.get(), walls_);
+    if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
 
     // =====
     // ↑ゲームの更新
@@ -225,7 +256,16 @@ void GameScene::Draw() {
         enemies_.pop_front();
     }
 
-    //player_->Draw();
+    for (int32_t i = 0; i < kMaxHealerActor_; ++i)
+    {
+        HealerActor* ha = healerActor_.front();
+        if (ha)
+            ha->Draw();
+        healerActor_.push_back(healerActor_.front());
+        healerActor_.pop_front();
+    }
+
+    player_->Draw();
 
     // Sprite
     engine_->SetBlend(BlendMode::kBlendModeNormal);

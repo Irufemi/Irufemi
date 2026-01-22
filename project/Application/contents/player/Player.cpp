@@ -12,7 +12,7 @@ Player::~Player() {}
 void Player::Initialize(Camera* camera, const Vector3& pos, InputManager* input) {
 
     model_ = std::make_unique<ObjClass>();
-    model_->Initialize(camera,"cube.obj");
+    model_->Initialize(camera,"TD_Player.obj");
 
     camera_ = camera;
 

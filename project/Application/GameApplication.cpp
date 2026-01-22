@@ -28,9 +28,9 @@ namespace {
     const Vector4 kClearColor = { 0.5f, 0.5f, 0.5f, 1.0f };
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-        = "Debug";
-#else
         = "InGame";
+#else
+        = "Title";
 #endif
 
     // --- シーン登録処理 ---
