@@ -1,6 +1,7 @@
 #include "DirectXCommon.h"
 
 #include <string>
+#include <array>
 #include <cassert>
 #include <format>
 #include <filesystem>
@@ -87,7 +88,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///DXGIFactoryの生成
 
-    //HRESULTはWndows系のエラーコードであり、
+    //HRESULTはWindows系のエラーコードであり、
     //関数が成功したかどうかをSUCCEEDEDマクロで判定できる
     HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
     //初期化の根本的な部分でエラーが出た場合はプログラムが間違っているか、どうにもできない場合が多いのでassertにしておく
@@ -269,7 +270,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     /*前後関係を正しくしよう*/
 
-    //DepthtencilTexturreをウィンドウのサイズで作成
+    //DepthStencilTextureをウィンドウのサイズで作成
     depthStencilResource_ = CreateDepthStencilTextureResource(device_.Get(), clientWidth_, clientHeight_);
 
     ///DepthStencilView(DSV)
@@ -334,17 +335,17 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     /// RootSignatureの変更
 
-    D3D12_DESCRIPTOR_RANGE descriptorRangeForInstacing[1] = {};
-    descriptorRangeForInstacing[0].BaseShaderRegister = 0; //0からは始まる
-    descriptorRangeForInstacing[0].NumDescriptors = 1; //数は1つ
-    descriptorRangeForInstacing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; //SRVを使う
-    descriptorRangeForInstacing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; //offsetを自動計算
+    D3D12_DESCRIPTOR_RANGE descriptorRangeForInstancing[1] = {};
+    descriptorRangeForInstancing[0].BaseShaderRegister = 0; //0からは始まる
+    descriptorRangeForInstancing[0].NumDescriptors = 1; //数は1つ
+    descriptorRangeForInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; //SRVを使う
+    descriptorRangeForInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND; //offsetを自動計算
 
     /*テクスチャを貼ろう*/
 
     ///DescriptorTable
 
-    D3D12_ROOT_PARAMETER rootParameters[10] = {};
+    D3D12_ROOT_PARAMETER rootParameters[12] = {};
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
@@ -373,7 +374,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
     rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-    rootParameters[4].DescriptorTable.pDescriptorRanges = descriptorRangeForInstacing;
+    rootParameters[4].DescriptorTable.pDescriptorRanges = descriptorRangeForInstancing;
     rootParameters[4].DescriptorTable.NumDescriptorRanges = 1;
 
     /*PhongReflectionModel*/
@@ -411,6 +412,24 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootParameters[9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameters[9].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
     rootParameters[9].Descriptor.ShaderRegister = 5;
+
+    // AreaLight (PS, b7)
+    rootParameters[10].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+    rootParameters[10].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; // PS で使う
+    rootParameters[10].Descriptor.ShaderRegister = 7; // b7
+
+    // Line Instancing (VS, t1)
+    D3D12_DESCRIPTOR_RANGE descriptorRangeForLineInstancing[1] = {};
+    descriptorRangeForLineInstancing[0].BaseShaderRegister = 1; // t1
+    descriptorRangeForLineInstancing[0].NumDescriptors = 1;
+    descriptorRangeForLineInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    descriptorRangeForLineInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+    rootParameters[11].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParameters[11].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+    rootParameters[11].DescriptorTable.pDescriptorRanges = descriptorRangeForLineInstancing;
+    rootParameters[11].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForLineInstancing);
+
 
     /*テクスチャを貼ろう*/
 
@@ -476,7 +495,17 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///InputLayoutの拡張
 
-    D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+    // D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
+
+    /*Skinning*/
+
+    /// InputLayoutの拡張
+
+    std::array<D3D12_INPUT_ELEMENT_DESC, 5> inputElementDescs{};
+
+    /*テクスチャを貼ろう*/
+
+    ///InputLayoutの拡張
     inputElementDescs[0].SemanticName = "POSITION";
     inputElementDescs[0].SemanticIndex = 0;
     inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -495,22 +524,36 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
     inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 
+    /*Skinning*/
+
+    /// InputLayoutの拡張
+    inputElementDescs[3].SemanticName = "WEIGHT";
+    inputElementDescs[3].SemanticIndex = 0;
+    inputElementDescs[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;//float32_t4
+    inputElementDescs[3].InputSlot = 1; // 1番目のslotのVBVのことだと伝える
+    inputElementDescs[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+    inputElementDescs[4].SemanticName = "INDEX";
+    inputElementDescs[4].SemanticIndex = 0;
+    inputElementDescs[4].Format = DXGI_FORMAT_R32G32B32A32_SINT; // int32_t4
+    inputElementDescs[4].InputSlot = 1; // 1番目のslotのVBVのことだと伝える
+    inputElementDescs[4].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+
     /*三角形を表示しよう*/
 
     ///InputLayoutの設定を行う
 
     D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
-    inputLayoutDesc.pInputElementDescs = inputElementDescs;
-    inputLayoutDesc.NumElements = _countof(inputElementDescs);
+    inputLayoutDesc.pInputElementDescs = inputElementDescs.data();
+    inputLayoutDesc.NumElements = static_cast<UINT>(inputElementDescs.size());
 
     ///ShaderをCompileする
 
     //Shaderをコンパイルする
-    Microsoft::WRL::ComPtr <IDxcBlob> vertexShaderBlob = CompileShader(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
-    assert(vertexShaderBlob != nullptr);
+    Microsoft::WRL::ComPtr <IDxcBlob> object3DVSBlob = CompileShader(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(object3DVSBlob != nullptr);
 
-    Microsoft::WRL::ComPtr <IDxcBlob> pixelShaderBlob = CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
-    assert(pixelShaderBlob != nullptr);
+    Microsoft::WRL::ComPtr <IDxcBlob> object3DPSBlob = CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(object3DPSBlob != nullptr);
 
     Microsoft::WRL::ComPtr <IDxcBlob> particleVSBlob = CompileShader(L"resources/shaders/Particle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(particleVSBlob != nullptr);
@@ -542,6 +585,14 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> linePSBlob = CompileShader(L"resources/shaders/Line.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(linePSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> lineInstancedVSBlob = CompileShader(L"resources/shaders/LineInstanced.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(lineInstancedVSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> lineInstancedPSBlob = CompileShader(L"resources/shaders/LineInstanced.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(lineInstancedPSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> skinningObject3DVSBlob = CompileShader(L"resources/shaders/SkinningObject3D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(skinningObject3DVSBlob != nullptr);
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -555,8 +606,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     psoManager_ = std::make_unique<PSOManager>();
 
     PSOManager::ShaderSet objectShaders{
-        vertexShaderBlob,
-        pixelShaderBlob
+        object3DVSBlob,
+        object3DPSBlob
     };
 
     PSOManager::ShaderSet particleShaders{
@@ -571,7 +622,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     PSOManager::ShaderSet blocksShaders{
         regionVSBlob,
-        pixelShaderBlob   // PS は既存の Object3D.PS を流用
+        object3DPSBlob   // PS は既存の Object3D.PS を流用
     };
 
     PSOManager::ShaderSet byGeometryShaders{
@@ -583,6 +634,16 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     PSOManager::ShaderSet lineShaders{
         lineVSBlob,
         linePSBlob
+    };
+
+    PSOManager::ShaderSet lineInstancedShaders{
+        lineInstancedVSBlob,
+        lineInstancedPSBlob
+    };
+
+    PSOManager::ShaderSet skinningObject3DShaders{
+        skinningObject3DVSBlob,
+        object3DPSBlob
     };
 
     // 入力レイアウトは既存の inputLayoutDesc
@@ -598,16 +659,18 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         spriteShaders,
         blocksShaders,
         byGeometryShaders,
-        lineShaders
+        lineShaders,
+        lineInstancedShaders,
+        skinningObject3DShaders
     );
 
     //実際に生成
     // 不透明(深度書き込みあり)
-    psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable,PSOManager::CullMode::Back);
+    psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
 
     // 生成が完了したのでShaderBlobを解放
-    if (vertexShaderBlob) { vertexShaderBlob.Reset(); }
-    if (pixelShaderBlob) { pixelShaderBlob.Reset(); }
+    if (object3DVSBlob) { object3DVSBlob.Reset(); }
+    if (object3DPSBlob) { object3DPSBlob.Reset(); }
     if (particleVSBlob) { particleVSBlob.Reset(); }
     if (particlePSBlob) { particlePSBlob.Reset(); }
     if (spriteVSBlob) { spriteVSBlob.Reset(); }
@@ -618,6 +681,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (byGeometryShaderGSBlob) { byGeometryShaderGSBlob.Reset(); }
     if (lineVSBlob) { lineVSBlob.Reset(); }
     if (linePSBlob) { linePSBlob.Reset(); }
+    if (lineInstancedVSBlob) { lineInstancedVSBlob.Reset(); }
+    if (lineInstancedPSBlob) { lineInstancedPSBlob.Reset(); }
+    if (skinningObject3DVSBlob) { skinningObject3DVSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};
@@ -754,14 +820,14 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_
 
 [[nodiscard]] //戻り値を破棄しないように
 Microsoft::WRL::ComPtr<ID3D12Resource>  DirectXCommon::UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages) {
-    ///IntermediteResource(中間リソース)
+    ///IntermediateResource(中間リソース)
 
     std::vector<D3D12_SUBRESOURCE_DATA> subResources;
-    //1. PrepareUploadを利用して、読み込んだデータからDirectX12用のSubresource(サブリソース)の配列を作成する(Subresourceは、MipMapの1枚1枚ぐらいのイメージでいると良い)
+    //1. PrepareUploadを利用して、読み込んだデータからDirectX12用のSubResource(サブリソース)の配列を作成する(SubResourceは、MipMapの1枚1枚ぐらいのイメージでいると良い)
     DirectX::PrepareUpload(device_.Get(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subResources);
-    //2. Subresourceの数を基に、コピー元となるIntermediateResourceに必要なサイズを計算する
+    //2. SubResourceの数を基に、コピー元となるIntermediateResourceに必要なサイズを計算する
     uint64_t intermediateSize = GetRequiredIntermediateSize(texture.Get(), 0, UINT(subResources.size()));
-    //3. 計算したサイズでIntermediteResourceを作る
+    //3. 計算したサイズでIntermediateResourceを作る
     Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(intermediateSize);
 
     ///データ転送をコマンドに積む
@@ -799,12 +865,12 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(cons
     //before
     //1. TextureデータそのものをCPUに読み込む
     //2. DirectX12のTextureResourceを作る)(MainMemory)
-    //3. TextureResourceに1で読んだデータを転送する(WriteToSubresource)
+    //3. TextureResourceに1で読んだデータを転送する(WriteToSubResource)
 
     //after
     //1.Textureデータその物をCPUで読み込む
 
-    //2. DorectX12TextureResourceを作る(VRAM)
+    //2. DirectX12TextureResourceを作る(VRAM)
     //3. CPUに書き込む用にUploadHeapのResourceを作る(IntermediateResource)
     //4. 3に対してCPUでデータを書き込む
     //5. CommandListに3を2に転送するコマンドを積む
@@ -831,7 +897,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(cons
 
     /*テクスチャを正しく配置しよう*/
 
-    //TexturResourceを作る(VRAM)
+    //TextureResourceを作る(VRAM)
 
     heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 

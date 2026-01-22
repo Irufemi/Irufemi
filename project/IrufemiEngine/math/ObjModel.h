@@ -7,9 +7,11 @@
 #include "VertexData.h"
 #include "ModelData.h"
 #include "Node.h"              // 追加: 階層構造を扱うため
-#include "../function/Math.h"
+#include "function/Math.h"
+#include "JointWeightData.h"
 #include <string>
 #include <vector>
+#include <map>
 
 struct ObjMaterial {
     // Kd
@@ -31,6 +33,7 @@ struct ObjMaterial {
 };
 
 struct ObjMesh {
+
     std::vector<VertexData> vertices;
     std::vector<uint32_t> indices; // 追加
     ObjMaterial material;
@@ -40,4 +43,5 @@ struct ObjMesh {
 struct ObjModel {
     std::vector<ObjMesh> meshes;
     Node rootNode; // 追加: シーン階層ルート
+    std::map<std::string, JointWeightData> skinClusterData;
 };

@@ -10,6 +10,7 @@ class Camera;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
+struct AreaLight;
 
 class ResultScene : public IScene {
 public: // メンバ関数(ゲーム)
@@ -37,4 +38,5 @@ private: // メンバ変数(システム)
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
     std::vector<std::unique_ptr<PointLight>> pointLights_;
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
+    std::vector<std::unique_ptr<AreaLight>> areaLights_;
 };

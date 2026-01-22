@@ -6,8 +6,11 @@
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
 #include "engine/directX/DirectXCommon.h"
-#include "manager/TextureManager.h" // 追加
-#include "math/Material.h" // Material構造体のため追加
+#include "manager/TextureManager.h"
+#include "math/Material.h"
+#include "math/Node.h"
+#include "math/Skeleton.h"
+#include "math/SkinCluster.h"
 
 //======================
 // キャッシュ系(インスタンス)
@@ -17,7 +20,7 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
     dxCommon_ = dxCommon;
     textureManager_ = textureManager; // 追加
     if (rootDir_.empty()) {
-        rootDir_ = "resources/obj";
+        rootDir_ = "resources/model";
     }
 }
 
@@ -28,7 +31,7 @@ void ModelManager::SetRootDirectory(std::string root) {
 }
 
 std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename) {
-    const std::string key = NormalizeAndResolve(filename);
+    const std::string key = filename; // キーはファイル名自体にする
     {
         std::lock_guard<std::mutex> lock(mutex_);
         if (auto it = cache_.find(key); it != cache_.end()) {
@@ -38,8 +41,25 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
         }
     }
 
+    // ファイルパスを解決
+    std::string fullPath;
+    // パス区切り文字が含まれているかチェック
+    if (filename.find('/') != std::string::npos || filename.find('\\') != std::string::npos) {
+        // 含まれている場合は、ルートディレクトリからの相対パスとして扱う
+        fullPath = NormalizeAndResolve(filename);
+    } else {
+        // 含まれていない場合は、再帰的にファイルを検索
+        fullPath = FindFileRecursive(filename);
+    }
+
+    if (fullPath.empty() || !std::filesystem::exists(fullPath)) {
+        // ファイルが見つからない場合のエラーハンドリング
+        OutputDebugStringA(("[ModelManager] File not found: " + filename + "\n").c_str());
+        return nullptr;
+    }
+
     // CPUモデルロード
-    auto pair = SplitDirectoryAndFile(key);
+    auto pair = SplitDirectoryAndFile(fullPath);
     auto cpuModel = std::make_shared<ObjModel>(ModelManager::LoadModelFileM(pair.first, pair.second));
 
     // GPUリソース生成
@@ -114,7 +134,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
 
 void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
     namespace fs = std::filesystem;
-    const std::string rootBase = rootDir_.empty() ? "resources/obj" : rootDir_;
+    const std::string rootBase = rootDir_.empty() ? "resources/model" : rootDir_;
     fs::path start = fs::path(rootBase) / relativeFolder;
     if (!fs::exists(start)) { return; }
 
@@ -125,7 +145,7 @@ void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
         std::transform(ext.begin(), ext.end(), ext.begin(),
             [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
         if (ext == ".obj" || ext == ".gltf" || ext == ".glb") {
-            GetModel(p.string());
+            GetModel(p.filename().string()); // ファイル名のみを渡す
         }
     }
 }
@@ -156,6 +176,7 @@ void ModelManager::CollectGarbage() {
 void ModelManager::ClearAll() {
     std::lock_guard<std::mutex> lock(mutex_);
     cache_.clear();
+    filePathCache_.clear();
 }
 
 std::string ModelManager::NormalizeAndResolve(const std::string& filename) const {
@@ -190,6 +211,45 @@ void ModelManager::DebugLogLoad(const std::string& key, size_t meshCount) {
         " meshes=" + std::to_string(meshCount) + "\n";
     OutputDebugStringA(msg.c_str());
 #endif
+}
+
+std::string ModelManager::FindFileRecursive(const std::string& filename) const {
+    namespace fs = std::filesystem;
+    std::string lowerFilename = filename;
+    std::transform(lowerFilename.begin(), lowerFilename.end(), lowerFilename.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (auto it = filePathCache_.find(lowerFilename); it != filePathCache_.end()) {
+            return it->second;
+        }
+    }
+
+    const fs::path rootPath = rootDir_;
+    if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
+        return "";
+    }
+
+    for (const auto& entry : fs::recursive_directory_iterator(rootPath)) {
+        if (entry.is_regular_file()) {
+            std::string entryFilename = entry.path().filename().string();
+            std::transform(entryFilename.begin(), entryFilename.end(), entryFilename.begin(),
+                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+            if (entryFilename == lowerFilename) {
+                std::string foundPath = entry.path().string();
+                std::replace(foundPath.begin(), foundPath.end(), '\\', '/');
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    filePathCache_[lowerFilename] = foundPath;
+                }
+                return foundPath;
+            }
+        }
+    }
+
+    return ""; // 見つからなかった
 }
 
 //======================
@@ -316,7 +376,7 @@ ModelData ModelManager::LoadObjFile(const std::string& directoryPath, const std:
         ///obj読み込みにmaterial読み込みを追加
 
         else if (identifier == "mtllib") {
-            //materialTempalateLibraryファイルの名前を取得する
+            //materialTemplateLibraryファイルの名前を取得する
             std::string materialFilename;
             s >> materialFilename;
             //基本的にobjファイルと同一階層にmtlは存在させるので、ディレクトリ名とファイルを渡す
@@ -544,8 +604,56 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
                 vertex.normal.x *= -1.0f;
                 modelData.vertices.push_back(vertex);
             }
+
+            /*DrawIndexed*/
+
+            /// Indexを解析する
+
+            for (uint32_t element = 0; element < face.mNumIndices; ++element) {
+                uint32_t vertexIndex = face.mIndices[element];
+                modelData.indices.push_back(vertexIndex);
+            }
+        }
+
+        /*Skinning*/
+
+
+        /// SkinCluster構築用のデータ取得を追加
+
+        for (uint32_t boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex) {
+            
+            /// Jointごとの格納領域を作る
+
+            // meshに関連付けられたJointから情報を取得する
+            // assimpではJointをBoneと呼び、Skinningに必要なデータが保持されている
+            aiBone* bone = mesh->mBones[boneIndex];
+            std::string jointName = bone->mName.C_Str();
+            JointWeightData& jointWeightData = modelData.skinClusterData[jointName];
+
+            /// InverseBindPoseMatrixの抽出
+
+            // assimpでは、JointのInverseBindPoseMatrixはmOffsetMatrixによって保持される。
+            // assimpは右手系の列ベクトルなので、左手系で直接使用することは適さない。
+            // したがって、BindPose時の各成分を抽出し、必要な変換を施す必要がある
+            aiMatrix4x4 bindPoseMatrixAssimp = bone->mOffsetMatrix.Inverse();
+            aiVector3D scale, translate;
+            aiQuaternion rotate;
+            bindPoseMatrixAssimp.Decompose(scale, rotate, translate);
+            Matrix4x4 bindPoseMatrix = Math::MakeAffineMatrix(Vector3{ scale.x,scale.y,scale.z }, Quaternion{ rotate.x,-rotate.y,-rotate.z,rotate.w }, Vector3{ -translate.x,translate.y,translate.z });
+            jointWeightData.inverseBndPoseMatrix = Math::Inverse(bindPoseMatrix);
+            
+            /// Weight情報を取り出す
+
+            // Jointに関連付けられた頂点のweightとその頂点のindexを取り出して格納する
+            // mVertexIdは該当Mesh内でのIndexである
+            //  MultiMesh/MultiMaterial対応する際にはこのまま保存するのではなく、全体を通して改良が必要である
+            for (uint32_t weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex) {
+                jointWeightData.vertexWeights.push_back({ bone->mWeights[weightIndex].mWeight,bone->mWeights[weightIndex].mVertexId });
+            }
         }
     }
+
+    /*いろんなフォーマットのモデルが読みたい*/
 
     /// materialを解析する
 
@@ -603,11 +711,11 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
 
         // デフォルト初期化 (※ 読み込めなかったパラメータを安全値で埋める)
         out.textureFilePath = "";
-        out.color     = { 1.0f,1.0f,1.0f,1.0f };
-        out.ambient   = { 0.0f,0.0f,0.0f };
-        out.specular  = { 0.0f,0.0f,0.0f };
+        out.color = { 1.0f,1.0f,1.0f,1.0f };
+        out.ambient = { 0.0f,0.0f,0.0f };
+        out.specular = { 0.0f,0.0f,0.0f };
         out.shininess = 64.0f;
-        out.alpha     = 1.0f;
+        out.alpha = 1.0f;
         out.enableLighting = true;
         out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
 
@@ -617,7 +725,11 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
             if (m->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == aiReturn_SUCCESS) {
                 std::string p = texPath.C_Str();
                 if (!p.empty() && p[0] != '*') {
-                    out.textureFilePath = directoryPath + "/" + p; // 相対パスを呼び出し元ディレクトリ基準で連結
+                    // テクスチャのパスをモデルファイルからの相対パスとして解決
+                    std::filesystem::path modelPath(filePath);
+                    std::filesystem::path texturePath = modelPath.parent_path() / p;
+                    out.textureFilePath = texturePath.string();
+                    std::replace(out.textureFilePath.begin(), out.textureFilePath.end(), '\\', '/');
                 }
             }
         }
@@ -682,6 +794,27 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
             outMesh.indices.push_back(face.mIndices[2]);
         }
 
+        // SkinCluster構築用のデータ取得を追加
+        for (uint32_t boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex) {
+            aiBone* bone = mesh->mBones[boneIndex];
+            std::string jointName = bone->mName.C_Str();
+            JointWeightData& jointWeightData = objModel.skinClusterData[jointName];
+
+            // InverseBindPoseMatrixの抽出
+            aiMatrix4x4 bindPoseMatrixAssimp = bone->mOffsetMatrix.Inverse();
+            aiVector3D scale, translate;
+            aiQuaternion rotate;
+            bindPoseMatrixAssimp.Decompose(scale, rotate, translate);
+            // Assimpは左手座標系変換済みなので、そのままMatrixを作成
+            Matrix4x4 bindPoseMatrix = Math::MakeAffineMatrix({ scale.x, scale.y, scale.z }, { rotate.x, rotate.y, rotate.z, rotate.w }, { translate.x, translate.y, translate.z });
+            jointWeightData.inverseBndPoseMatrix = Math::Inverse(bindPoseMatrix);
+
+            // Weight情報を取り出す
+            for (uint32_t weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex) {
+                jointWeightData.vertexWeights.push_back({ bone->mWeights[weightIndex].mWeight, bone->mWeights[weightIndex].mVertexId });
+            }
+        }
+
         objModel.meshes.push_back(std::move(outMesh));
     }
 
@@ -698,40 +831,33 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
 /// 前準備
 
 Node ModelManager::ReadNode(aiNode* node) {
-
-    /// assimpでNodを解析する
-
     Node result;
 
-    /*Skeleton*/
-
-    /// Nodeを拡張する
-
-    aiVector3D scale, translate;
-    aiQuaternion rotate;
-    node->mTransformation.Decompose(scale, rotate, translate); // assimpの行列からSRTを抽出する関数を利用
-    result.transform.scale = { scale.x, scale.y, scale.z }; // Scaleはそのまま
-    result.transform.rotate = { rotate.x, rotate.y, rotate.z, rotate.w }; // x軸を反転、さらに回転方向が逆なので軸を反転させる
-    result.transform.translate = { -translate.x, translate.y, translate.z }; // x軸を反転
-    result.localMatrix = Math::MakeAffineMatrix(result.transform.scale, result.transform.rotate, result.transform.translate);
-
-    /*glTFを読み込んでみよう*/
-
-    /// 前準備
-
+    // aiProcess_MakeLeftHandedフラグにより、Assimpが座標系変換をすでに行っている。
+    // そのため、ここでの手動変換は不要。
+    // Assimpから渡される行列をそのままローカル行列として使用する。
     aiMatrix4x4 aiLocalMatrix = node->mTransformation; // nodeのlocalMatrixを取得
-    aiLocalMatrix.Transpose(); // 列ベクトル形式を行ベクトル形式に転置
-    //result.localMatrix.m[0][0] = aiLocalMatrix[0][0]; // 他の要素も同様に
+    aiLocalMatrix.Transpose(); // Assimpの列ベクトル形式を行ベクトル形式に転置
+
+    // Matrix4x4にコピー
     for (int r = 0; r < 4; ++r) {
         for (int c = 0; c < 4; ++c) {
             result.localMatrix.m[r][c] = aiLocalMatrix[r][c];
         }
     }
 
-    result.name = node->mName.C_Str(); // Nodeを格納
-    result.children.resize(node->mNumChildren); // 子供の数だけ確保
+    // SRTの分解もAssimpの変換後の値から行う
+    aiVector3D scale, translate;
+    aiQuaternion rotate;
+    node->mTransformation.Decompose(scale, rotate, translate);
+    result.transform.scale = { scale.x, scale.y, scale.z };
+    result.transform.rotate = { rotate.x, rotate.y, rotate.z, rotate.w };
+    result.transform.translate = { translate.x, translate.y, translate.z };
+
+    result.name = node->mName.C_Str(); // Node名を格納
+    result.children.resize(node->mNumChildren); // 子供の数だけメモリを確保
     for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex) {
-        // 再帰的に読んで階層構造を作っていく
+        // 再帰的にReadNodeを呼び出し、階層構造を構築する
         result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
     }
     return result;

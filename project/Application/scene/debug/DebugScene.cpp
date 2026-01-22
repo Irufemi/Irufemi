@@ -10,6 +10,7 @@
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
+#include "math/AreaLight.h"
 #include "2D/Sprite.h"
 
 // デストラクタ
@@ -59,12 +60,23 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
 
+    auto areaLight = std::make_unique<AreaLight>();
+    areaLight->color = { 1.0f, 0.5f, 0.5f, 1.0f };
+    areaLight->position = { 0.0f, 2.0f, 2.0f };
+    areaLight->intensity = 1.0f;
+    areaLight->direction = { 0.0f, -1.0f, 0.0f };
+    areaLight->range = 10.0f;
+    areaLight->size = { 2.0f, 2.0f };
+    areaLight->isActive = 1;
+    areaLights_.push_back(std::move(areaLight));
+
     isActiveObj_ = false;
     isActiveSprite_ = false;
     isActiveTriangle_ = false;
     isActiveCube_ = false;
     isActivePlane_ = false;
     isActiveSphere_ = false;
+    isActiveCylinder_ = false;
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
     isActiveMultiMesh_ = false;
@@ -74,7 +86,9 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
     isActiveEffect_ = false;
-    isActiveAnimationModel_ = false;
+    isActiveAnimationModel_animatedCube_ = false;
+    isActiveAnimationModel_walk_ = false;
+    isActiveAnimationModel_sneakWalk_ = false;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -100,6 +114,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     if (isActiveSphere_) {
         sphere_ = std::make_unique<SphereClass>();
         sphere_->Initialize(camera_.get());
+    }
+    if (isActiveCylinder_) {
+        cylinder_ = std::make_unique<CylinderClass>();
+        cylinder_->Initialize(camera_.get());
     }
     if (isActiveObj_) {
         obj_ = std::make_unique<ObjClass>();
@@ -141,9 +159,17 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         effect_ = std::make_unique<EffectSystem>();
         effect_->Initialize(camera_.get());
     }
-    if (isActiveAnimationModel_) {
-        animationModel_ = std::make_unique<AnimationModel>();
-        animationModel_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
+    if (isActiveAnimationModel_animatedCube_) {
+        animationModel_animatedCube_ = std::make_unique<AnimationModel>();
+        animationModel_animatedCube_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
+    }
+    if (isActiveAnimationModel_walk_) {
+        animationModel_walk_ = std::make_unique<AnimationModel>();
+        animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
+    }
+    if (isActiveAnimationModel_sneakWalk_) {
+        animationModel_sneakWalk_ = std::make_unique<AnimationModel>();
+        animationModel_sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
     }
 
     line2D_ = std::make_unique<Line2DClass>();
@@ -160,7 +186,7 @@ void DebugScene::Update() {
 
     if (ImGui::BeginTabBar("DebugSceneTabs")) {
         
-        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_);
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
         // Texture タブ
         if (ImGui::BeginTabItem("Texture")) {
@@ -187,6 +213,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("Cube", &isActiveCube_);
     ImGui::Checkbox("Plane", &isActivePlane_);
     ImGui::Checkbox("Sphere", &isActiveSphere_);
+    ImGui::Checkbox("Cylinder", &isActiveCylinder_);
     ImGui::Checkbox("Obj", &isActiveObj_);
     ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot_);
     ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny_);
@@ -197,7 +224,9 @@ void DebugScene::Update() {
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::Checkbox("Effect", &isActiveEffect_);
-    ImGui::Checkbox("AnimationModel", &isActiveAnimationModel_);
+    ImGui::Checkbox("AnimationModel_animatedCube", &isActiveAnimationModel_animatedCube_);
+    ImGui::Checkbox("AnimationModel_walk", &isActiveAnimationModel_walk_);
+    ImGui::Checkbox("AnimationModel_sneakWalk", &isActiveAnimationModel_sneakWalk_);
     ImGui::End();
 
     ImGui::Begin("GE");
@@ -318,6 +347,14 @@ void DebugScene::Update() {
         sphere_->Debug("Sphere");
         sphere_->Update();
     }
+    if (isActiveCylinder_) {
+        if (!cylinder_) {
+            cylinder_ = std::make_unique<CylinderClass>();
+            cylinder_->Initialize(camera_.get());
+        }
+        cylinder_->Debug("Cylinder");
+        cylinder_->Update();
+    }
     if (isActiveObj_) {
         if (!obj_) {
             obj_ = std::make_unique<ObjClass>();
@@ -398,13 +435,29 @@ void DebugScene::Update() {
         effect_->Debug("Effect");
         effect_->Update();
     }
-    if (isActiveAnimationModel_) {
-        if (!animationModel_) {
-            animationModel_ = std::make_unique<AnimationModel>();
-            animationModel_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
+    if (isActiveAnimationModel_animatedCube_) {
+        if (!animationModel_animatedCube_) {
+            animationModel_animatedCube_ = std::make_unique<AnimationModel>();
+            animationModel_animatedCube_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
         }
-        animationModel_->Debug("animationModel");
-        animationModel_->Update();
+        animationModel_animatedCube_->Debug("animationModel_animatedCube");
+        animationModel_animatedCube_->Update();
+    }
+    if (isActiveAnimationModel_walk_) {
+        if (!animationModel_walk_) {
+            animationModel_walk_ = std::make_unique<AnimationModel>();
+            animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
+        }
+        animationModel_walk_->Debug("aniamtionModel_walk_");
+        animationModel_walk_->Update();
+    }
+    if (isActiveAnimationModel_sneakWalk_) {
+        if (!animationModel_sneakWalk_) {
+            animationModel_sneakWalk_ = std::make_unique<AnimationModel>();
+            animationModel_sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+        }
+        animationModel_sneakWalk_->Debug("aniamtionModel_sneakWalk_");
+        animationModel_sneakWalk_->Update();
     }
 
     line2D_->Update();
@@ -453,8 +506,12 @@ void DebugScene::Update() {
     for (const auto& light : spotLights_) {
         sLights.push_back(light.get());
     }
+    std::vector<AreaLight*> aLights;
+    for (const auto& light : areaLights_) {
+        aLights.push_back(light.get());
+    }
 
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights);
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
 void DebugScene::Draw() {
@@ -480,6 +537,9 @@ void DebugScene::Draw() {
     if (isActiveSphere_) {
         sphere_->Draw();
     }
+    if (isActiveCylinder_) {
+        cylinder_->Draw();
+    }
     if (isActiveObj_) {
         obj_->Draw();
     }
@@ -504,8 +564,14 @@ void DebugScene::Draw() {
     if (isActiveTerrain_) {
         terrain_->Draw();
     }
-    if (isActiveAnimationModel_) {
-        animationModel_->Draw();
+    if (isActiveAnimationModel_animatedCube_) {
+        animationModel_animatedCube_->Draw();
+    }
+    if (isActiveAnimationModel_walk_) {
+        animationModel_walk_->Draw();
+    }
+    if (isActiveAnimationModel_sneakWalk_) {
+        animationModel_sneakWalk_->Draw();
     }
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);

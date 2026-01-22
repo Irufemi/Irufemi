@@ -1,7 +1,7 @@
 #include "Bgm.h"
 
 #include <algorithm>
-#include <imgui.h>
+#include "manager/DebugUI.h"
 
 AudioManager* Bgm::audioManager_ = nullptr;
 

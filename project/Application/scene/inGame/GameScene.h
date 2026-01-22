@@ -14,6 +14,7 @@ class Sprite;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
+struct AreaLight;
 
 #include "3D/ObjClass.h"
 
@@ -75,6 +76,7 @@ private: // メンバ変数(システム)
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
     std::vector<std::unique_ptr<PointLight>> pointLights_;
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
+    std::vector<std::unique_ptr<AreaLight>> areaLights_;
 
     // ポーズ表示用
     std::unique_ptr<Sprite> pauseSprite_ = nullptr;

@@ -21,7 +21,9 @@ void PSOManager::Initialize(
     ShaderSet spriteShaders,
     ShaderSet regionShaders,
     ShaderSet byGeometryShaderShaders,
-    ShaderSet lineShaders
+    ShaderSet lineShaders,
+    ShaderSet lineInstancedShaders,
+    ShaderSet skinningShaders
 )
 {
     device_ = device;
@@ -40,6 +42,8 @@ void PSOManager::Initialize(
     blocksShaders_ = regionShaders;
     byGeometryShaderShaders_ = byGeometryShaderShaders;
     lineShaders_ = lineShaders;
+    lineInstancedShaders_ = lineInstancedShaders;
+    skinningShaders_ = skinningShaders;
 
     cache_.clear();
 }
@@ -185,6 +189,41 @@ ID3D12PipelineState* PSOManager::GetLine(BlendMode blend, DepthWrite depth, Cull
     D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
 
     auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE, cull);
+    if (!pso) { return nullptr; }
+    cache_[key] = pso;
+    return pso.Get();
+}
+
+ID3D12PipelineState* PSOManager::GetLineInstanced(BlendMode blend, DepthWrite depth, CullMode cull) {
+    const bool hasVS = (lineInstancedShaders_.vsBlob && lineInstancedShaders_.vsBlob->GetBufferPointer());
+    const bool hasPS = (lineInstancedShaders_.psBlob && lineInstancedShaders_.psBlob->GetBufferPointer());
+    const ShaderSet& set = (hasVS && hasPS) ? lineInstancedShaders_ : objectShaders_;
+
+    Key key{ Hash(set, blend, depth, cull) };
+    if (auto it = cache_.find(key); it != cache_.end()) { return it->second.Get(); }
+
+    D3D12_BLEND_DESC bd = MakeBlend(blend);
+    D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
+
+    auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE, cull);
+    if (!pso) { return nullptr; }
+    cache_[key] = pso;
+    return pso.Get();
+}
+
+ID3D12PipelineState* PSOManager::GetSkinning(BlendMode blend, DepthWrite depth, CullMode cull)
+{
+    const bool hasVS = (skinningShaders_.vsBlob && skinningShaders_.vsBlob->GetBufferPointer());
+    const bool hasPS = (skinningShaders_.psBlob && skinningShaders_.psBlob->GetBufferPointer());
+    const ShaderSet& set = (hasVS && hasPS) ? skinningShaders_ : objectShaders_;
+
+    Key key{ Hash(set, blend, depth, cull) };
+    if (auto it = cache_.find(key); it != cache_.end()) { return it->second.Get(); }
+
+    D3D12_BLEND_DESC bd = MakeBlend(blend);
+    D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
+
+    auto pso = CreatePSO(set, bd, dd, cull);
     if (!pso) { return nullptr; }
     cache_[key] = pso;
     return pso.Get();

@@ -8,6 +8,7 @@
 #include "math/TransformationMatrix.h" // 追加
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
+#include "math/AreaLight.h"
 #include <vector>
 
 // 前方宣言
@@ -28,7 +29,9 @@ struct GpuMesh;
 struct ManagedModel;
 class Line2DClass;
 class Line3DClass;
+class Line3DRegion;
 class CubeClass;
+struct SkinCluster;
 
 // 構造体を前方宣言
 struct DirectionalLight;
@@ -45,6 +48,7 @@ private:
     // シェーダーで定義したライトの最大数
     static const int kMaxPointLights = 4;
     static const int kMaxSpotLights = 4;
+    static const int kMaxAreaLights = 4;
 
     // ライト配列を格納する構造体
     struct PointLights {
@@ -52,6 +56,9 @@ private:
     };
     struct SpotLights {
         SpotLight lights[kMaxSpotLights];
+    };
+    struct AreaLights {
+        AreaLight lights[kMaxAreaLights];
     };
 
     // カメラやライトの定数バッファを一時的に保持するリソース
@@ -61,11 +68,13 @@ private:
         D3D12_GPU_VIRTUAL_ADDRESS directionalLight;
         D3D12_GPU_VIRTUAL_ADDRESS pointLights;
         D3D12_GPU_VIRTUAL_ADDRESS spotLights;
+        D3D12_GPU_VIRTUAL_ADDRESS areaLights;
     } frameData_{};
     CameraForGPU* cameraData_ = nullptr;
     DirectionalLight* directionalLightData_ = nullptr;
     PointLights* pointLightsData_ = nullptr;
     SpotLights* spotLightsData_ = nullptr;
+    AreaLights* areaLightsData_ = nullptr;
 
 
 public: //メンバ関数
@@ -84,7 +93,7 @@ public: //メンバ関数
     void PostDraw();
 
     // フレーム単位の共通データを設定
-    void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights);
+    void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);
 
     void DrawTriangle(
         TriangleClass* triangle
@@ -114,8 +123,12 @@ public: //メンバ関数
 
     void DrawLine3D(Line3DClass* line);
 
+    void DrawLine3DRegion(Line3DRegion* region);
+
     // モデル描画用の新関数
     void DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA);
+
+    void DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster);
 
     void DrawSpriteRegion(SpriteRegion* region);
     void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource);

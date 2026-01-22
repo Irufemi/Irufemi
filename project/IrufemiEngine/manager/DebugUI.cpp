@@ -27,6 +27,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "math/DirectionalLight.h"
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
+#include "math/AreaLight.h"
 #include "math/Material.h"
 #include "math/ParticleMaterial.h"
 #include "math/ObjModel.h"
@@ -39,6 +40,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 // 静的宣言
 std::unique_ptr<PointLight> DebugUI::templatePointLight_;
 std::unique_ptr<SpotLight> DebugUI::templateSpotLight_;
+std::unique_ptr<AreaLight> DebugUI::templateAreaLight_;
 
 void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCommon* dxCommon) {
 #ifdef USE_IMGUI
@@ -87,6 +89,15 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     templateSpotLight_->decay = 1.0f;
     templateSpotLight_->cosAngle = std::cos(std::numbers::pi_v<float> / 6.0f);
     templateSpotLight_->isActive = 1;
+
+    templateAreaLight_ = std::make_unique<AreaLight>();
+    templateAreaLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    templateAreaLight_->position = { 0.0f, 1.0f, 0.0f };
+    templateAreaLight_->intensity = 1.0f;
+    templateAreaLight_->direction = { 0.0f, -1.0f, 0.0f };
+    templateAreaLight_->range = 10.0f;
+    templateAreaLight_->size = { 1.0f, 1.0f };
+    templateAreaLight_->isActive = 1;
 
 #endif // USE_IMGUI
 }
@@ -174,109 +185,151 @@ void DebugUI::QueuePostDrawCommands() {
 void DebugUI::DebugLights(
     [[maybe_unused]] DirectionalLight* directionalLight,
     [[maybe_unused]] std::vector<std::unique_ptr<PointLight>>& pointLights,
-    [[maybe_unused]] std::vector<std::unique_ptr<SpotLight>>& spotLights) {
+    [[maybe_unused]] std::vector<std::unique_ptr<SpotLight>>& spotLights,
+    [[maybe_unused]] std::vector<std::unique_ptr<AreaLight>>& areaLights) {
 #ifdef USE_IMGUI
-    if (ImGui::BeginTabBar("LightsTabBar")) {
-        // Light Editor タブ
-        if (ImGui::BeginTabItem("Light Editor")) {
-            ImGui::SeparatorText("PointLight Template");
-            ImGui::ColorEdit4("PL Color", &templatePointLight_->color.x);
-            ImGui::DragFloat3("PL Position", &templatePointLight_->position.x, 0.01f);
-            ImGui::DragFloat("PL Intensity", &templatePointLight_->intensity, 0.01f, 0.0f);
-            ImGui::DragFloat("PL Radius", &templatePointLight_->radius, 0.01f, 0.0f);
-            ImGui::DragFloat("PL Decay", &templatePointLight_->decay, 0.01f, 0.0f);
-            if (ImGui::Button("Add PointLight to Scene")) {
-                auto newLight = std::make_unique<PointLight>(*templatePointLight_);
-                pointLights.push_back(std::move(newLight));
-            }
-
-            ImGui::Separator();
-
-            ImGui::SeparatorText("SpotLight Template");
-            ImGui::ColorEdit4("SL Color", &templateSpotLight_->color.x);
-            ImGui::DragFloat3("SL Position", &templateSpotLight_->position.x, 0.01f);
-            ImGui::DragFloat("SL Intensity", &templateSpotLight_->intensity, 0.01f, 0.0f);
-            ImGui::DragFloat3("SL Direction", &templateSpotLight_->direction.x, 0.01f);
-            templateSpotLight_->direction = Math::Normalize(templateSpotLight_->direction);
-            ImGui::DragFloat("SL Distance", &templateSpotLight_->distance, 0.01f, 0.0f);
-            ImGui::DragFloat("SL Decay", &templateSpotLight_->decay, 0.01f, 0.0f);
-            ImGui::DragFloat("SL CosAngle", &templateSpotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
-            if (ImGui::Button("Add SpotLight to Scene")) {
-                auto newLight = std::make_unique<SpotLight>(*templateSpotLight_);
-                spotLights.push_back(std::move(newLight));
-            }
-
-            ImGui::EndTabItem();
+    // Light Editor タブ
+    if (ImGui::BeginTabItem("Light Editor")) {
+        ImGui::SeparatorText("PointLight Template");
+        ImGui::ColorEdit4("PL Color", &templatePointLight_->color.x);
+        ImGui::DragFloat3("PL Position", &templatePointLight_->position.x, 0.01f);
+        ImGui::DragFloat("PL Intensity", &templatePointLight_->intensity, 0.01f, 0.0f);
+        ImGui::DragFloat("PL Radius", &templatePointLight_->radius, 0.01f, 0.0f);
+        ImGui::DragFloat("PL Decay", &templatePointLight_->decay, 0.01f, 0.0f);
+        if (ImGui::Button("Add PointLight to Scene")) {
+            auto newLight = std::make_unique<PointLight>(*templatePointLight_);
+            pointLights.push_back(std::move(newLight));
         }
 
-        // DirectionalLight タブ
-        if (directionalLight && ImGui::BeginTabItem("DirectionalLight")) {
-            ImGui::ColorEdit4("Color", &directionalLight->color.x);
-            ImGui::DragFloat3("Direction", &directionalLight->direction.x, 0.01f);
-            directionalLight->direction = Math::Normalize(directionalLight->direction);
-            ImGui::DragFloat("Intensity", &directionalLight->intensity, 0.01f, 0.0f);
-            ImGui::EndTabItem();
+        ImGui::Separator();
+
+        ImGui::SeparatorText("SpotLight Template");
+        ImGui::ColorEdit4("SL Color", &templateSpotLight_->color.x);
+        ImGui::DragFloat3("SL Position", &templateSpotLight_->position.x, 0.01f);
+        ImGui::DragFloat("SL Intensity", &templateSpotLight_->intensity, 0.01f, 0.0f);
+        ImGui::DragFloat3("SL Direction", &templateSpotLight_->direction.x, 0.01f);
+        templateSpotLight_->direction = Math::Normalize(templateSpotLight_->direction);
+        ImGui::DragFloat("SL Distance", &templateSpotLight_->distance, 0.01f, 0.0f);
+        ImGui::DragFloat("SL Decay", &templateSpotLight_->decay, 0.01f, 0.0f);
+        ImGui::DragFloat("SL CosAngle", &templateSpotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
+        if (ImGui::Button("Add SpotLight to Scene")) {
+            auto newLight = std::make_unique<SpotLight>(*templateSpotLight_);
+            spotLights.push_back(std::move(newLight));
         }
 
-        // PointLights タブ
-        if (ImGui::BeginTabItem("PointLights")) {
-            int pointLightToRemove = -1;
-            for (size_t i = 0; i < pointLights.size(); ++i) {
-                auto& light = pointLights[i];
-                std::string label = "PointLight " + std::to_string(i);
-                if (ImGui::CollapsingHeader(label.c_str())) {
-                    ImGui::PushID(static_cast<int>(i));
-                    if (ImGui::Button("[-] Remove")) {
-                        pointLightToRemove = static_cast<int>(i);
-                    }
-                    ImGui::SameLine();
-                    ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
-                    ImGui::ColorEdit4("Color", &light->color.x);
-                    ImGui::DragFloat3("Position", &light->position.x, 0.01f);
-                    ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
-                    ImGui::DragFloat("Radius", &light->radius, 0.01f, 0.0f);
-                    ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
-                    ImGui::PopID();
-                }
-            }
-            if (pointLightToRemove != -1) {
-                pointLights.erase(pointLights.begin() + pointLightToRemove);
-            }
-            ImGui::EndTabItem();
+        ImGui::Separator();
+
+        ImGui::SeparatorText("AreaLight Template");
+        ImGui::ColorEdit4("AL Color", &templateAreaLight_->color.x);
+        ImGui::DragFloat3("AL Position", &templateAreaLight_->position.x, 0.01f);
+        ImGui::DragFloat("AL Intensity", &templateAreaLight_->intensity, 0.01f, 0.0f);
+        ImGui::DragFloat3("AL Direction", &templateAreaLight_->direction.x, 0.01f);
+        templateAreaLight_->direction = Math::Normalize(templateAreaLight_->direction);
+        ImGui::DragFloat("AL Range", &templateAreaLight_->range, 0.01f, 0.0f);
+        ImGui::DragFloat2("AL Size", &templateAreaLight_->size.x, 0.01f, 0.0f);
+        if (ImGui::Button("Add AreaLight to Scene")) {
+            auto newLight = std::make_unique<AreaLight>(*templateAreaLight_);
+            areaLights.push_back(std::move(newLight));
         }
 
-        // SpotLights タブ
-        if (ImGui::BeginTabItem("SpotLights")) {
-            int spotLightToRemove = -1;
-            for (size_t i = 0; i < spotLights.size(); ++i) {
-                auto& light = spotLights[i];
-                std::string label = "SpotLight " + std::to_string(i);
-                if (ImGui::CollapsingHeader(label.c_str())) {
-                    ImGui::PushID(static_cast<int>(i + pointLights.size()));
-                    if (ImGui::Button("[-] Remove")) {
-                        spotLightToRemove = static_cast<int>(i);
-                    }
-                    ImGui::SameLine();
-                    ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
-                    ImGui::ColorEdit4("Color", &light->color.x);
-                    ImGui::DragFloat3("Position", &light->position.x, 0.01f);
-                    ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
-                    ImGui::DragFloat3("Direction", &light->direction.x, 0.01f);
-                    light->direction = Math::Normalize(light->direction);
-                    ImGui::DragFloat("Distance", &light->distance, 0.01f, 0.0f);
-                    ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
-                    ImGui::DragFloat("CosAngle", &light->cosAngle, 0.01f, 0.0f, 1.0f);
-                    ImGui::PopID();
-                }
-            }
-            if (spotLightToRemove != -1) {
-                spotLights.erase(spotLights.begin() + spotLightToRemove);
-            }
-            ImGui::EndTabItem();
-        }
-
-        ImGui::EndTabBar();
+        ImGui::EndTabItem();
     }
+
+    // DirectionalLight タブ
+    if (directionalLight && ImGui::BeginTabItem("DirectionalLight")) {
+        ImGui::ColorEdit4("Color", &directionalLight->color.x);
+        ImGui::DragFloat3("Direction", &directionalLight->direction.x, 0.01f);
+        directionalLight->direction = Math::Normalize(directionalLight->direction);
+        ImGui::DragFloat("Intensity", &directionalLight->intensity, 0.01f, 0.0f);
+        ImGui::EndTabItem();
+    }
+
+    // PointLights タブ
+    if (ImGui::BeginTabItem("PointLights")) {
+        int pointLightToRemove = -1;
+        for (size_t i = 0; i < pointLights.size(); ++i) {
+            auto& light = pointLights[i];
+            std::string label = "PointLight " + std::to_string(i);
+            if (ImGui::CollapsingHeader(label.c_str())) {
+                ImGui::PushID(static_cast<int>(i));
+                if (ImGui::Button("[-] Remove")) {
+                    pointLightToRemove = static_cast<int>(i);
+                }
+                ImGui::SameLine();
+                ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
+                ImGui::ColorEdit4("Color", &light->color.x);
+                ImGui::DragFloat3("Position", &light->position.x, 0.01f);
+                ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
+                ImGui::DragFloat("Radius", &light->radius, 0.01f, 0.0f);
+                ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
+                ImGui::PopID();
+            }
+        }
+        if (pointLightToRemove != -1) {
+            pointLights.erase(pointLights.begin() + pointLightToRemove);
+        }
+        ImGui::EndTabItem();
+    }
+
+    // SpotLights タブ
+    if (ImGui::BeginTabItem("SpotLights")) {
+        int spotLightToRemove = -1;
+        for (size_t i = 0; i < spotLights.size(); ++i) {
+            auto& light = spotLights[i];
+            std::string label = "SpotLight " + std::to_string(i);
+            if (ImGui::CollapsingHeader(label.c_str())) {
+                ImGui::PushID(static_cast<int>(i + pointLights.size()));
+                if (ImGui::Button("[-] Remove")) {
+                    spotLightToRemove = static_cast<int>(i);
+                }
+                ImGui::SameLine();
+                ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
+                ImGui::ColorEdit4("Color", &light->color.x);
+                ImGui::DragFloat3("Position", &light->position.x, 0.01f);
+                ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
+                ImGui::DragFloat3("Direction", &light->direction.x, 0.01f);
+                light->direction = Math::Normalize(light->direction);
+                ImGui::DragFloat("Distance", &light->distance, 0.01f, 0.0f);
+                ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
+                ImGui::DragFloat("CosAngle", &light->cosAngle, 0.01f, 0.0f, 1.0f);
+                ImGui::PopID();
+            }
+        }
+        if (spotLightToRemove != -1) {
+            spotLights.erase(spotLights.begin() + spotLightToRemove);
+        }
+        ImGui::EndTabItem();
+    }
+
+    // AreaLights タブ
+    if (ImGui::BeginTabItem("AreaLights")) {
+        int areaLightToRemove = -1;
+        for (size_t i = 0; i < areaLights.size(); ++i) {
+            auto& light = areaLights[i];
+            std::string label = "AreaLight " + std::to_string(i);
+            if (ImGui::CollapsingHeader(label.c_str())) {
+                ImGui::PushID(static_cast<int>(i + pointLights.size() + spotLights.size()));
+                if (ImGui::Button("[-] Remove")) {
+                    areaLightToRemove = static_cast<int>(i);
+                }
+                ImGui::SameLine();
+                ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
+                ImGui::ColorEdit4("Color", &light->color.x);
+                ImGui::DragFloat3("Position", &light->position.x, 0.01f);
+                ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
+                ImGui::DragFloat3("Direction", &light->direction.x, 0.01f);
+                light->direction = Math::Normalize(light->direction);
+                ImGui::DragFloat("Range", &light->range, 0.01f, 0.0f);
+                ImGui::DragFloat2("Size", &light->size.x, 0.01f, 0.0f);
+                ImGui::PopID();
+            }
+        }
+        if (areaLightToRemove != -1) {
+            areaLights.erase(areaLights.begin() + areaLightToRemove);
+        }
+        ImGui::EndTabItem();
+    }
+
 #endif
 }
 
@@ -900,7 +953,7 @@ void DebugUI::FPSDebug() {
 }
 
 // ★追加: 統計更新
-void DebugUI::UpdatePerfStats_([[maybe_unused]]float newFrameMs) {
+void DebugUI::UpdatePerfStats_([[maybe_unused]] float newFrameMs) {
 #ifdef USE_IMGUI
 
     frameTimeHistory_[historyIndex_] = newFrameMs;
@@ -934,7 +987,7 @@ void DebugUI::UpdatePerfStats_([[maybe_unused]]float newFrameMs) {
 #endif // USE_IMGUI
 }
 
-void DebugUI::DebugSceneSelector([[maybe_unused]]SceneManager* sm) {
+void DebugUI::DebugSceneSelector([[maybe_unused]] SceneManager* sm) {
 #ifdef USE_IMGUI
 
     if (!sm) { return; }
