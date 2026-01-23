@@ -70,21 +70,65 @@ void CGScene::Initialize(IrufemiEngine* engine) {
     areaLight->isActive = 1;
     areaLights_.push_back(std::move(areaLight));
 
-    isActiveAnimationModel_animatedCube_ = false;
-    isActiveAnimationModel_walk_ = false;
-    isActiveAnimationModel_sneakWalk_ = false;
+    isActivePlaneObj_ = false;
+    isActiveAnimatedCube_ = false;
+    isActiveWalk_ = false;
+    isActiveSneakWalk_ = false;
+    isActiveAnimationNode_ = false;
+    isActiveAnimationNodeMisc_ = false;
+    isActiveMeshPrimitives_ = false;
+    isActiveMeshPrimitiveVertexColor_ = false;
+    isActiveTextureSampler_ = false;
+    isActiveMaterialAlphaBlend_ = false;
+    isActiveAnimationSkin_ = false;
 
-    if (isActiveAnimationModel_animatedCube_) {
-        animationModel_animatedCube_ = std::make_unique<AnimationModel>();
-        animationModel_animatedCube_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
+    if (isActivePlaneObj_) {
+        planeObj_ = std::make_unique<ObjClass>();
+        planeObj_->Initialize(camera_.get(), "sample/plane.obj");
     }
-    if (isActiveAnimationModel_walk_) {
-        animationModel_walk_ = std::make_unique<AnimationModel>();
-        animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
+    if (isActivePlaneGltf_) {
+        planeGltf_ = std::make_unique<ObjClass>();
+        planeGltf_->Initialize(camera_.get(), "sample/plane.gltf");
     }
-    if (isActiveAnimationModel_sneakWalk_) {
-        animationModel_sneakWalk_ = std::make_unique<AnimationModel>();
-        animationModel_sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+    if (isActiveAnimatedCube_) {
+        animatedCube_ = std::make_unique<AnimationModel>();
+        animatedCube_->Initialize(camera_.get(), "sample/AnimatedCube.gltf");
+    }
+    if (isActiveWalk_) {
+        walk_ = std::make_unique<AnimationModel>();
+        walk_->Initialize(camera_.get(), "sample/walk.gltf");
+    }
+    if (isActiveSneakWalk_) {
+        sneakWalk_ = std::make_unique<AnimationModel>();
+        sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+    }
+    if (isActiveAnimationNode_) {
+        animationNode_ = std::make_unique<AnimationModel>();
+        animationNode_->Initialize(camera_.get(), "test/Animation_Node/Animation_Node_00.gltf");
+    }
+    if (isActiveAnimationNodeMisc_) {
+        animationNodeMisc_ = std::make_unique<AnimationModel>();
+        animationNodeMisc_->Initialize(camera_.get(), "test/Animation_NodeMisc/Animation_NodeMisc_00.gltf");
+    }
+    if (isActiveMeshPrimitives_) {
+        meshPrimitives_ = std::make_unique<ObjClass>();
+        meshPrimitives_->Initialize(camera_.get(), "test/Mesh_Primitives/Mesh_Primitives_00.gltf");
+    }
+    if (isActiveMeshPrimitiveVertexColor_) {
+        meshPrimitiveVertexColor_ = std::make_unique<ObjClass>();
+        meshPrimitiveVertexColor_->Initialize(camera_.get(), "test/Mesh_PrimitiveVertexColor/Mesh_PrimitiveVertexColor_00.gltf");
+    }
+    if (isActiveTextureSampler_) {
+        textureSampler_ = std::make_unique<ObjClass>();
+        textureSampler_->Initialize(camera_.get(), "test/Texture_Sampler/Texture_Sampler_00.gltf");
+    }
+    if (isActiveMaterialAlphaBlend_) {
+        materialAlphaBlend_ = std::make_unique<ObjClass>();
+        materialAlphaBlend_->Initialize(camera_.get(), "test/Material_AlphaBlend/Material_AlphaBlend_00.gltf");
+    }
+    if (isActiveAnimationSkin_) {
+        animationSkin_ = std::make_unique<AnimationModel>();
+        animationSkin_->Initialize(camera_.get(), "test/Animation_Skin/Animation_Skin_00.gltf");
     }
 
 }
@@ -98,7 +142,7 @@ void CGScene::Update() {
     ImGui::Begin("CGScene");
 
     if (ImGui::BeginTabBar("CGSceneTabs")) {
-        
+
         DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
         // Texture タブ
@@ -121,9 +165,18 @@ void CGScene::Update() {
     ImGui::End();
 
     ImGui::Begin("Activation");
-    ImGui::Checkbox("AnimationModel_animatedCube", &isActiveAnimationModel_animatedCube_);
-    ImGui::Checkbox("AnimationModel_walk", &isActiveAnimationModel_walk_);
-    ImGui::Checkbox("AnimationModel_sneakWalk", &isActiveAnimationModel_sneakWalk_);
+    ImGui::Checkbox("planeObj", &isActivePlaneObj_);
+    ImGui::Checkbox("planeGltf", &isActivePlaneGltf_);
+    ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
+    ImGui::Checkbox("Walk", &isActiveWalk_);
+    ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
+    ImGui::Checkbox("Aniamtion Node", &isActiveAnimationNode_);
+    ImGui::Checkbox("Animation NodeMisc", &isActiveAnimationNodeMisc_);
+    ImGui::Checkbox("Mesh Primitives", &isActiveMeshPrimitives_);
+    ImGui::Checkbox("Mesh PrimitiveVertexColor", &isActiveMeshPrimitiveVertexColor_);
+    ImGui::Checkbox("Texture Sampler", &isActiveTextureSampler_);
+    ImGui::Checkbox("Material AlphaBlend", &isActiveMaterialAlphaBlend_);
+    ImGui::Checkbox("Animation Skin", &isActiveAnimationSkin_);
     ImGui::End();
 
 #endif // USE_IMGUI
@@ -139,29 +192,102 @@ void CGScene::Update() {
 
     // 3D
 
-    if (isActiveAnimationModel_animatedCube_) {
-        if (!animationModel_animatedCube_) {
-            animationModel_animatedCube_ = std::make_unique<AnimationModel>();
-            animationModel_animatedCube_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
+
+    if (isActivePlaneObj_) {
+        if (!planeObj_) {
+            planeObj_ = std::make_unique<ObjClass>();
+            planeObj_->Initialize(camera_.get(), "sample/plane.obj");
         }
-        animationModel_animatedCube_->Debug("animationModel_animatedCube");
-        animationModel_animatedCube_->Update();
+        planeObj_->Debug("PlaneObj");
+        planeObj_->Update();
     }
-    if (isActiveAnimationModel_walk_) {
-        if (!animationModel_walk_) {
-            animationModel_walk_ = std::make_unique<AnimationModel>();
-            animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
+    if (isActivePlaneGltf_) {
+        if (!planeGltf_) {
+            planeGltf_ = std::make_unique<ObjClass>();
+            planeGltf_->Initialize(camera_.get(), "sample/plane.gltf");
         }
-        animationModel_walk_->Debug("aniamtionModel_walk_");
-        animationModel_walk_->Update();
+        planeGltf_->Debug("PlaneGltf");
+        planeGltf_->Update();
     }
-    if (isActiveAnimationModel_sneakWalk_) {
-        if (!animationModel_sneakWalk_) {
-            animationModel_sneakWalk_ = std::make_unique<AnimationModel>();
-            animationModel_sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+    if (isActiveAnimatedCube_) {
+        if (!animatedCube_) {
+            animatedCube_ = std::make_unique<AnimationModel>();
+            animatedCube_->Initialize(camera_.get(), "sample/AnimatedCube.gltf");
         }
-        animationModel_sneakWalk_->Debug("aniamtionModel_sneakWalk_");
-        animationModel_sneakWalk_->Update();
+        animatedCube_->Debug("AnimatedCube");
+        animatedCube_->Update();
+    }
+    if (isActiveWalk_) {
+        if (!walk_) {
+            walk_ = std::make_unique<AnimationModel>();
+            walk_->Initialize(camera_.get(), "sample/walk.gltf");
+        }
+        walk_->Debug("Walk");
+        walk_->Update();
+    }
+    if (isActiveSneakWalk_) {
+        if (!sneakWalk_) {
+            sneakWalk_ = std::make_unique<AnimationModel>();
+            sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+        }
+        sneakWalk_->Debug("SneakWalk");
+        sneakWalk_->Update();
+    }
+    if (isActiveAnimationNode_) {
+        if (!animationNode_) {
+            animationNode_ = std::make_unique<AnimationModel>();
+            animationNode_->Initialize(camera_.get(), "test/Animation_Node/Animation_Node_00.gltf");
+        }
+        animationNode_->Debug("Animation Node");
+        animationNode_->Update();
+    }
+    if (isActiveAnimationNodeMisc_) {
+        if (!animationNodeMisc_) {
+            animationNodeMisc_ = std::make_unique<AnimationModel>();
+            animationNodeMisc_->Initialize(camera_.get(), "test/Animation_NodeMisc/Animation_NodeMisc_00.gltf");
+        }
+        animationNodeMisc_->Debug("Animation NodeMisc");
+        animationNodeMisc_->Update();
+    }
+    if (isActiveMeshPrimitives_) {
+        if (!meshPrimitives_) {
+            meshPrimitives_ = std::make_unique<ObjClass>();
+            meshPrimitives_->Initialize(camera_.get(), "test/Mesh_Primitives/Mesh_Primitives_00.gltf");
+        }
+        meshPrimitives_->Debug("Mesh Primitives");
+        meshPrimitives_->Update();
+    }
+    if (isActiveMeshPrimitiveVertexColor_) {
+        if (!meshPrimitiveVertexColor_) {
+            meshPrimitiveVertexColor_ = std::make_unique<ObjClass>();
+            meshPrimitiveVertexColor_->Initialize(camera_.get(), "test/Mesh_PrimitiveVertexColor/Mesh_PrimitiveVertexColor_00.gltf");
+        }
+        meshPrimitiveVertexColor_->Debug("Mesh PrimitiveVertexColor");
+        meshPrimitiveVertexColor_->Update();
+    }
+    if (isActiveTextureSampler_) {
+        if (!textureSampler_) {
+            textureSampler_ = std::make_unique<ObjClass>();
+            textureSampler_->Initialize(camera_.get(), "test/Texture_Sampler/Texture_Sampler_00.gltf");
+        }
+        textureSampler_->Debug("Texture Sampler");
+        textureSampler_->Update();
+    }
+    if (isActiveMaterialAlphaBlend_) {
+        if (!materialAlphaBlend_) {
+            materialAlphaBlend_ = std::make_unique<ObjClass>();
+            materialAlphaBlend_->Initialize(camera_.get(), "test/Material_AlphaBlend/Material_AlphaBlend_00.gltf");
+        }
+        materialAlphaBlend_->Debug("Material AlphaBlend");
+        materialAlphaBlend_->Update();
+    }
+    if (isActiveAnimationSkin_) {
+        if (!animationSkin_) {
+            animationSkin_ = std::make_unique<AnimationModel>();
+            animationSkin_->Initialize(camera_.get(), "test/Animation_Skin/Animation_Skin_00.gltf");
+        }
+        animationSkin_->Debug("Animation Skin");
+        animationSkin_->Update();
     }
 
     // =====
@@ -199,14 +325,47 @@ void CGScene::Draw() {
 
     engine_->ApplyPSO();
 
-    if (isActiveAnimationModel_animatedCube_) {
-        animationModel_animatedCube_->Draw();
+    if (isActivePlaneObj_) {
+        planeObj_->Draw();
     }
-    if (isActiveAnimationModel_walk_) {
-        animationModel_walk_->Draw();
+    if (isActivePlaneGltf_) {
+        planeGltf_->Draw();
     }
-    if (isActiveAnimationModel_sneakWalk_) {
-        animationModel_sneakWalk_->Draw();
+    if (isActiveAnimatedCube_) {
+        animatedCube_->Draw();
+    }
+    if (isActiveWalk_) {
+        walk_->Draw();
+    }
+    if (isActiveSneakWalk_) {
+        sneakWalk_->Draw();
+    }
+    if (isActiveAnimationNode_) {
+        animationNode_->Draw();
+    }
+    if (isActiveAnimationNodeMisc_) {
+        animationNodeMisc_->Draw();
+    }
+    if (isActiveMeshPrimitives_) {
+        meshPrimitives_->Draw();
+    }
+    if (isActiveMeshPrimitiveVertexColor_) {
+        meshPrimitiveVertexColor_->Draw();
+    }
+    if (isActiveTextureSampler_) {
+        textureSampler_->Draw();
+    }
+
+    engine_->SetBlend(BlendMode::kBlendModeAdd);
+
+    if (isActiveMaterialAlphaBlend_) {
+        materialAlphaBlend_->Draw();
+    }
+
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+
+    if (isActiveAnimationSkin_) {
+        animationSkin_->Draw();
     }
 
 }

@@ -106,16 +106,19 @@ void AnimationModel::Update() {
         }
     } else {
         // --- ノードアニメーションモデルの更新 ---
-        for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
-            const auto& mesh = managedModel_->cpuModel->meshes[i];
-            Matrix4x4 nodeWorldMatrix = nodeWorldMatrices_[mesh.nodeName] * worldMatrix_;
+        // オブジェクト全体のワールド行列を計算
+        transformationMatrix_.WVP = localMatrix_ * worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
+        transformationMatrix_.world = localMatrix_ * worldMatrix_;
 
-            meshTransformationData_[i]->WVP = nodeWorldMatrix * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
-            meshTransformationData_[i]->world = nodeWorldMatrix;
-            Matrix4x4 worldForNormal = meshTransformationData_[i]->world;
-            worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
-            worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
-            meshTransformationData_[i]->WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+        // 法線変換用の逆転置行列
+        Matrix4x4 worldForNormal = transformationMatrix_.world;
+        worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+        transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+
+        // 計算した行列をマップ済みのリソースにコピー
+        if (transformationData_) {
+            *transformationData_ = transformationMatrix_;
         }
     }
 
@@ -188,9 +191,7 @@ void AnimationModel::Draw() {
     } else {
         engine_->ApplyPSO();
         // メッシュごとに描画
-        for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
-            engine_->GetDrawManager()->DrawModel(managedModel_.get(), i, meshTransformationResources_[i]->GetGPUVirtualAddress());
-        }
+        engine_->GetDrawManager()->DrawModel(managedModel_.get(), GetTransformationGpuAddress());
     }
 }
 
@@ -264,24 +265,25 @@ void AnimationModel::UpdateAnimation() {
     animationTime_ += 1.0f / 60.0f; // 時刻を進める。1/60で固定してあるが、計測した時間を使って可変フレームを対応したほうが望ましい。
     animationTime_ = std::fmod(animationTime_, animation_.duration); // 最後まで言ったら最初からリピート再生。リピートしなくても別にいい。
 
-    // 1. 全Jointにアニメーションを適用
-    // animationTimeにおける各JointのSRT（Local）が更新される
-    AnimationManager::ApplyAnimation(skeleton_, animation_, animationTime_);
-
-    // 2. 階層構造の行列更新
-    // 親の行列を子に掛け合わせ、skeletonSpaceMatrix（モデル空間での位置）を計算する
-    AnimationManager::SkeletonUpdate(skeleton_);
-
-    // 3. SkeletonSpaceの情報を基に、SkinClusterのMatrixPaletteを更新、またはノードのワールド行列を保存
+    // スキニングアニメーションの場合
     if (!managedModel_->cpuModel->skinClusterData.empty()) {
-        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_);
-    } else {
-        // ノードアニメーションの場合、各ノードのワールド行列を保存
-        for (const auto& joint : skeleton_.joints) {
-            nodeWorldMatrices_[joint.name] = joint.skeletonSpaceMatrix;
-        }
-    }
+        // 1. 全Jointにアニメーションを適用
+        AnimationManager::ApplyAnimation(skeleton_, animation_, animationTime_);
 
+        // 2. 階層構造の行列更新
+        AnimationManager::SkeletonUpdate(skeleton_);
+
+        // 3. SkinClusterのMatrixPaletteを更新
+        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_);
+    } else { // ノードアニメーションの場合
+        // rootNodeのAnimationを取得
+        NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[managedModel_->cpuModel->rootNode.name];
+        // 指定時刻の値を取得
+        Vector3 translate = AnimationManager::CalculateValue(rootNodeAnimation.translate, animationTime_);
+        Quaternion rotate = AnimationManager::CalculateValue(rootNodeAnimation.rotate, animationTime_);
+        Vector3 scale = AnimationManager::CalculateValue(rootNodeAnimation.scale, animationTime_);
+        localMatrix_ = Math::MakeAffineMatrix(scale, rotate, translate);
+    }
 }
 
 const ObjMaterial* AnimationModel::GetMaterial(size_t meshIndex) const {

@@ -2,19 +2,8 @@
 
 #include "scene/IScene.h"
 
-#include "audio/Bgm.h"
-#include "audio/Se.h"
-#include "math/shape/LinePrimitive.h"
-#include "2D/Sprite.h"
-#include "3D/ObjClass.h"
 #include "3D/SphereClass.h"
-#include "3D/CubeClass.h"
-#include "3D/PlaneClass.h"
-#include "3D/CylinderClass.h"
-#include "3D/TriangleClass.h"
-#include "3D/particle/ParticleSystem.h"
-#include "3D/effect/EffectSystem.h"
-#include "3D/LineClass.h"
+#include "3D/ObjClass.h"
 #include "3D/AnimationModel.h"
 
 #include <memory>
@@ -46,14 +35,43 @@ private: // メンバ関数(内部ヘルパ)
 
 private: // メンバ変数(ゲーム)
 
-    std::unique_ptr<AnimationModel> animationModel_animatedCube_ = nullptr;
-    bool isActiveAnimationModel_animatedCube_ = false;
+    std::unique_ptr<SphereClass> sphere_ = nullptr;
 
-    std::unique_ptr<AnimationModel> animationModel_walk_ = nullptr;
-    bool isActiveAnimationModel_walk_ = false;
+    std::unique_ptr<ObjClass> planeObj_ = nullptr;
+    bool isActivePlaneObj_ = false;
 
-    std::unique_ptr<AnimationModel> animationModel_sneakWalk_ = nullptr;
-    bool isActiveAnimationModel_sneakWalk_ = false;
+    std::unique_ptr<ObjClass> planeGltf_ = nullptr;
+    bool isActivePlaneGltf_ = false;
+
+    std::unique_ptr<AnimationModel> animatedCube_ = nullptr;
+    bool isActiveAnimatedCube_ = false;
+
+    std::unique_ptr<AnimationModel> walk_ = nullptr;
+    bool isActiveWalk_ = false;
+
+    std::unique_ptr<AnimationModel> sneakWalk_ = nullptr;
+    bool isActiveSneakWalk_ = false;
+
+    std::unique_ptr<AnimationModel> animationNode_ = nullptr;
+    bool isActiveAnimationNode_ = false;
+
+    std::unique_ptr<AnimationModel> animationNodeMisc_ = nullptr;
+    bool isActiveAnimationNodeMisc_ = false;
+
+    std::unique_ptr<ObjClass> meshPrimitives_ = nullptr;
+    bool isActiveMeshPrimitives_ = false;
+
+    std::unique_ptr<ObjClass> meshPrimitiveVertexColor_ = nullptr;
+    bool isActiveMeshPrimitiveVertexColor_ = false;
+
+    std::unique_ptr<ObjClass> textureSampler_ = nullptr;
+    bool isActiveTextureSampler_ = false;
+
+    std::unique_ptr<ObjClass> materialAlphaBlend_ = nullptr;
+    bool isActiveMaterialAlphaBlend_ = false;
+
+    std::unique_ptr<AnimationModel> animationSkin_ = nullptr;
+    bool isActiveAnimationSkin_ = false;
 
 private: // メンバ変数(システム)
     // エンジン

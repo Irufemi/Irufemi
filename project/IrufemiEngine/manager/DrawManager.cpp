@@ -838,12 +838,23 @@ void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUA
 
         if (!gpuMesh || !gpuMaterial) continue;
 
-        // 複数の頂点バッファを設定
-        D3D12_VERTEX_BUFFER_VIEW vbvs[] = {
-            gpuMesh->vertexBufferView,
-            skinCluster.influenceBufferView
-        };
-        dxCommon_->GetCommandList()->IASetVertexBuffers(0, 2, vbvs);
+        // セットするバッファの配列を用意
+        D3D12_VERTEX_BUFFER_VIEW vbvs[2];
+        UINT vbvCount = 0;
+
+        // 1. 基本の頂点バッファをセット（これは絶対にある）
+        vbvs[vbvCount] = gpuMesh->vertexBufferView;
+        vbvCount++;
+
+        // 2. スキニング用バッファ（ボーンがある場合のみ追加）
+        // skinClusterが有効なリソースを持っているか確認する
+        if (skinCluster.influenceResource != nullptr) {
+            vbvs[vbvCount] = skinCluster.influenceBufferView;
+            vbvCount++;
+        }
+
+        // 実際に存在するバッファの数（1つ or 2つ）だけをGPUに教える
+        dxCommon_->GetCommandList()->IASetVertexBuffers(0, vbvCount, vbvs);
 
         if (gpuMesh->indexCount > 0) {
             dxCommon_->GetCommandList()->IASetIndexBuffer(&gpuMesh->indexBufferView);

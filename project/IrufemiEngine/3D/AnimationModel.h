@@ -85,6 +85,9 @@ private: // メンバ変数
 
     SkinCluster skinCluster_;
 
+    // ノードアニメーション用の固有Matrix
+    Matrix4x4 localMatrix_;
+
     Matrix4x4 worldMatrix_;
 
     Animation animation_;
