@@ -180,18 +180,17 @@ void Player::Attack()
 		}
 
 		 // モデルの尖端(ローカル)を基準にスケール時の位置調整を行う
-      
         float tipLocal = attackRangeModelTipOffset_;
-        float scaledTipLocal = tipLocal * scale; 
+        float scaledTipLocal = tipLocal * scale * attackRangeModelTipDirection_; 
 
        
         Transform t = attackRangeModel_->GetTransform();
-        t.translate = transform_.translate + Math::Multiply(attackRangeDistance_ - scaledTipLocal, forward);
+        t.translate = transform_.translate + Math::Multiply(attackRangeTipAnchorDistance_ - scaledTipLocal, forward);
         t.rotate = transform_.rotate;
         t.scale = { scale, scale, scale };
         attackRangeModel_->SetTransform(t);
 
-		return;
+         return;
 	}
 
 	
