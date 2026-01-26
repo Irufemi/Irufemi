@@ -55,6 +55,9 @@
     <Filter Include="content\wall">
       <UniqueIdentifier>{5fc33b31-37e0-481c-b9a6-d6db2fd47862}</UniqueIdentifier>
     </Filter>
+    <Filter Include="content\UI">
+      <UniqueIdentifier>{69d1e0b5-2473-4220-8e88-2d2d4be20c83}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene\inGame\GameScene.cpp">
@@ -99,6 +102,12 @@
     <ClCompile Include="actors\healer\HealerActor.cpp">
       <Filter>actor\healer</Filter>
     </ClCompile>
+    <ClCompile Include="contents\UI\NumberText.cpp">
+      <Filter>content\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\UI\TimeDisplay.cpp">
+      <Filter>content\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -139,6 +148,12 @@
     </ClInclude>
     <ClInclude Include="actors\healer\HealerActor.h">
       <Filter>actor\healer</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\UI\NumberText.h">
+      <Filter>content\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\UI\TimeDisplay.h">
+      <Filter>content\UI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

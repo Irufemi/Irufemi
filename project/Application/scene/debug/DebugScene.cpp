@@ -174,11 +174,16 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
 
     line2D_ = std::make_unique<Line2DClass>();
     line2D_->Initialize(camera_.get(), { 300.0f,300.0f }, { 360.0f,360.0f });
+
+    numberText_ = std::make_unique<NumberText>();
+    // 数字テクスチャと1文字あたりのサイズを指定
+    numberText_->Initialize(camera_.get(), "resources/texture/text_num.png", 32.0f, 64.0f);
 }
 
 // 更新
 void DebugScene::Update() {
 
+    frameCount_++;
 
 #ifdef USE_IMGUI
 
@@ -512,6 +517,11 @@ void DebugScene::Update() {
     }
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
+
+    // 数字の表示位置を画面中央に設定
+    float halfWidth = engine_->GetClientWidth() / 2.0f;
+    float halfHeight = engine_->GetClientHeight() / 2.0f;
+    numberText_->SetPosition({ halfWidth, halfHeight });
 }
 
 void DebugScene::Draw() {
@@ -608,6 +618,9 @@ void DebugScene::Draw() {
         sprite_->Draw();
     }
     
+    // フレームカウントを1桁で描画
+    numberText_->Draw(frameCount_);
+
     /*
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
