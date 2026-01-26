@@ -13,6 +13,7 @@ Healer::~Healer() {}
 
 void Healer::NotifyWallDestroyed(const Vector3& pos, const Vector3& rot) {
 	destroyedQueue_.push_back(DestroyedWallInfo{ pos, rot, {} });
+	healFrameCounter_ = 0;
 }
 
 static float DistanceSq(const Vector3& a, const Vector3& b) {

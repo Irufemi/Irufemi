@@ -334,6 +334,7 @@ void GameScene::CollisionCheck() {
     }
 #pragma endregion PlayerとEnemyの衝突判定
 
+#pragma region EnemyとWallの衝突判定
     // Enemy と Wall の衝突判定（接触フレームを蓄積して HP を減らす）
     for (auto wallIt = walls_.begin(); wallIt != walls_.end(); ++wallIt) {
         Wall* wall = *wallIt;
@@ -380,4 +381,33 @@ void GameScene::CollisionCheck() {
             wall->DecayContactFrames();
         }
     }
+
+#pragma endregion EnemyとWallの衝突判定
+
+#pragma region EnemyをHealerActorの衝突判定
+
+    // Enemy と HealerActor の衝突判定
+    for (auto enemyIt = enemies_.begin(); enemyIt != enemies_.end(); ++enemyIt) {
+        Enemy* enemy = *enemyIt;
+        if (!enemy || !enemy->IsAlive()) continue;
+
+        enemy->UpdateOBB();
+        const OBB& obbEnemy = enemy->GetOBB();
+
+        for (auto healerIt = healerActor_.begin(); healerIt != healerActor_.end(); ++healerIt) {
+            HealerActor* ha = *healerIt;
+            if (!ha || !ha->IsAlive()) continue;
+
+            ha->UpdateOBB();
+            const OBB& obbHealer = ha->GetOBB();
+
+            if (Collision::IsOBBCollision(obbEnemy, obbHealer)) {
+                // 双方に衝突ハンドラを呼ぶ
+                enemy->HandleCollision();
+                ha->HandleCollision();
+            }
+        }
+    }
+
+#pragma endregion EnemyをHealerActorの衝突判定
 }
