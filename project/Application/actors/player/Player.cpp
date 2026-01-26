@@ -4,6 +4,7 @@
 #include "camera/Camera.h"
 #include "engine/Input/InputManager.h"
 #include "function/Math.h"
+#include <cmath>
 
 Player::Player() {}
 
@@ -30,42 +31,16 @@ void Player::Update()
 
 	transform_.translate += velocity;
 
-	if (input_->IsKeyDown('A')
-		|| input_->IsKeyDown('D')
-		|| input_->IsKeyDown('W')
-		|| input_->IsKeyDown('S')
-		|| input_->GetLeftStickX()
-		|| input_->GetLeftStickY()
-		)
+	Move();
+
+	// 進行方向に向ける
 	{
-		// 加速度の設定
-		Vector3 acceleration = {};
-
-		if (input_->IsKeyDown('A') || input_->GetLeftStickX() < 0.0f)
-		{
-			acceleration.x = -kAcceleration;
+		float speed = Math::Length(velocity);
+		constexpr float kDeadZone = 1e-4f;
+		if (speed > kDeadZone) {
+			
+			transform_.rotate.z = -std::atan2(velocity.x, velocity.y);
 		}
-
-		if (input_->IsKeyDown('D') || input_->GetLeftStickX() > 0.0f)
-		{
-			acceleration.x = kAcceleration;
-		}
-
-		if (input_->IsKeyDown('W') || input_->GetLeftStickY() > 0.0f)
-		{
-			acceleration.y = kAcceleration;
-		}
-
-		if (input_->IsKeyDown('S') || input_->GetLeftStickY() < 0.0f)
-		{
-			acceleration.y = -kAcceleration;
-		}
-
-		velocity = acceleration;
-	}
-	else
-	{
-		velocity = {};
 	}
 
 	UpdateOBB();
@@ -104,4 +79,45 @@ void Player::HandleCollision()
 {
 	// 簡易処理: 衝突時は速度をゼロにして位置を戻す（ここでは速度のみリセット）
 	velocity = {};
+}
+
+void Player::Move()
+{
+	if (input_->IsKeyDown('A')
+		|| input_->IsKeyDown('D')
+		|| input_->IsKeyDown('W')
+		|| input_->IsKeyDown('S')
+		|| input_->GetLeftStickX()
+		|| input_->GetLeftStickY()
+		)
+	{
+		// 加速度の設定
+		Vector3 acceleration = {};
+
+		if (input_->IsKeyDown('A') || input_->GetLeftStickX() < 0.0f)
+		{
+			acceleration.x = -kAcceleration;
+		}
+
+		if (input_->IsKeyDown('D') || input_->GetLeftStickX() > 0.0f)
+		{
+			acceleration.x = kAcceleration;
+		}
+
+		if (input_->IsKeyDown('W') || input_->GetLeftStickY() > 0.0f)
+		{
+			acceleration.y = kAcceleration;
+		}
+
+		if (input_->IsKeyDown('S') || input_->GetLeftStickY() < 0.0f)
+		{
+			acceleration.y = -kAcceleration;
+		}
+
+		velocity = acceleration;
+	}
+	else
+	{
+		velocity = {};
+	}
 }

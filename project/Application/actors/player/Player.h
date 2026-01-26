@@ -39,7 +39,7 @@ private:
 
 	float depth_ = 2.0f;
 
-	static inline const float kAcceleration = 1.0f;
+	static inline const float kAcceleration = 0.2f;
 
 private:
 
@@ -50,4 +50,7 @@ private:
 	Camera* camera_ = nullptr;
 
 	InputManager* input_ = nullptr;
+
+private:
+	void Move();
 };
