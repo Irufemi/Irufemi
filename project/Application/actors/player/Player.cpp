@@ -147,48 +147,77 @@ void Player::CreateObj(Camera* camera)
 
 void Player::Attack()
 {
+	constexpr float kFrameDt = 1.0f / 60.0f;
+	constexpr float kAttackRangeMaxScale = 3.0f; 
 
-	if (input_ && input_->IsButtonPressed(XINPUT_GAMEPAD_A))
-	{
-		// 攻撃開始
-		isAttacking_ = true;
-		velocity = {}; // 攻撃開始時点で動きを止める
 	
+	if (input_ && input_->IsButtonDown(XINPUT_GAMEPAD_A)) {
+		if (!isCharging_) {
+			
+			isCharging_ = true;
+			isAttacking_ = true; 
+			chargeTimer_ = 0.0f;
+			attackRangeVisible_ = true;
+		}
 
-		attackRangeVisible_ = true;
-		attackRangeTimer_ = kAttackRangeDuration;
+		
+		chargeTimer_ += kFrameDt;
+		if (chargeTimer_ > kMaxChargeTime) chargeTimer_ = kMaxChargeTime;
 
+		float ratio = (kMaxChargeTime > 0.0f) ? (chargeTimer_ / kMaxChargeTime) : 1.0f; // 0..1
+		attackRangeDistance_ = attackRangeBase_ + (attackRangeMax_ - attackRangeBase_) * ratio;
+		float scale = 1.0f + (kAttackRangeMaxScale - 1.0f) * ratio;
 
+		
 		Vector3 forward = {};
 		float vlen = Math::Length(velocity);
-		if (vlen > 1e-4f)
-		{
+		if (vlen > 1e-4f) {
 			forward = Math::Normalize(velocity);
-		}
-		else
-		{
-
+		} else {
 			forward.x = std::sin(-transform_.rotate.z);
 			forward.y = std::cos(-transform_.rotate.z);
 			forward.z = 0.0f;
 		}
 
+		 // モデルの尖端(ローカル)を基準にスケール時の位置調整を行う
+      
+        float tipLocal = attackRangeModelTipOffset_;
+        float scaledTipLocal = tipLocal * scale; 
 
-		Transform t = attackRangeModel_->GetTransform();
-		t.translate = transform_.translate + Math::Multiply(attackRangeDistance_, forward);
-		t.rotate = transform_.rotate;
-		attackRangeModel_->SetTransform(t);
+       
+        Transform t = attackRangeModel_->GetTransform();
+        t.translate = transform_.translate + Math::Multiply(attackRangeDistance_ - scaledTipLocal, forward);
+        t.rotate = transform_.rotate;
+        t.scale = { scale, scale, scale };
+        attackRangeModel_->SetTransform(t);
+
+		return;
 	}
 
+	
+	if (input_ && input_->IsButtonReleased(XINPUT_GAMEPAD_A)) {
+		if (isCharging_) {
+			
+			isCharging_ = false;
+			attackRangeVisible_ = true;
+			attackRangeTimer_ = kAttackRangeDuration;
 
-	if (attackRangeVisible_)
-	{
-		attackRangeTimer_ -= 1.0f / 60.0f;
-		if (attackRangeTimer_ <= 0.0f)
-		{
+			
+		}
+	}
+
+	
+	if (attackRangeVisible_ && !isCharging_) {
+		attackRangeTimer_ -= kFrameDt;
+		if (attackRangeTimer_ <= 0.0f) {
 			attackRangeVisible_ = false;
-			// 攻撃終了
-			isAttacking_ = false;
+			isAttacking_ = false; 
+
+			
+			attackRangeDistance_ = attackRangeBase_;
+			Transform t = attackRangeModel_->GetTransform();
+			t.scale = { 1.0f, 1.0f, 1.0f };
+			attackRangeModel_->SetTransform(t);
 		}
 	}
 }

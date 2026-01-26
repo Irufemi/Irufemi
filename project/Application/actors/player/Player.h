@@ -49,10 +49,21 @@ private:
 
 	static inline constexpr float kAttackRangeDuration = 0.5f;
 
+
+	
+	float attackRangeBase_ = 2.0f;
 	float attackRangeDistance_ = 2.0f;
+	float attackRangeMax_ = 6.0f;
+
+	
+	float attackRangeModelTipOffset_ = 1.0f;
 
 	// 攻撃中フラグ
 	bool isAttacking_ = false;
+	// チャージ中フラグ
+	bool isCharging_ = false;
+	float chargeTimer_ = 0.0f;
+	static inline constexpr float kMaxChargeTime = 2.0f; 
 
 private:
 
