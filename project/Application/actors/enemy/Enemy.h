@@ -49,6 +49,11 @@ private:
 	int preferHealerTimer_ = 0;
 	static inline const int kPreferHealerFrames = 60;
 
+	//  一度決めたターゲット(壁またはヒーラー)を保持して、そのターゲットが消滅するまで行動を維持する
+	Wall* targetWall_ = nullptr;
+	const HealerActor* targetHealer_ = nullptr;
+	// 直前に接触した Healer を記憶して、すぐに再ターゲットしないようにする
+	const HealerActor* lastTouchedHealer_ = nullptr;
 
 private:
 	std::unique_ptr<ObjClass> model_ = nullptr;
