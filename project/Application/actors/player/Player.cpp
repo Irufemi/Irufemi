@@ -5,6 +5,7 @@
 #include "engine/Input/InputManager.h"
 #include "function/Math.h"
 #include <cmath>
+#include <Xinput.h>
 
 Player::Player() {}
 
@@ -13,8 +14,7 @@ Player::~Player() {}
 void Player::Initialize(Camera* camera, const Vector3& pos, InputManager* input)
 {
 
-	model_ = std::make_unique<ObjClass>();
-	model_->Initialize(camera, "TD_Player.obj");
+	CreateObj(camera);
 
 	camera_ = camera;
 
@@ -43,6 +43,8 @@ void Player::Update()
 		}
 	}
 
+	Attack();
+
 	UpdateOBB();
 
 	model_->Debug();
@@ -57,6 +59,12 @@ void Player::Draw()
 	model_->Update();
 
 	model_->Draw();
+
+	
+	if (attackRangeVisible_) {
+		attackRangeModel_->Update();
+		attackRangeModel_->Draw();
+	}
 
 }
 
@@ -83,6 +91,12 @@ void Player::HandleCollision()
 
 void Player::Move()
 {
+	// 移動は攻撃中は不可
+	if (isAttacking_) {
+		velocity = {};
+		return;
+	}
+
 	if (input_->IsKeyDown('A')
 		|| input_->IsKeyDown('D')
 		|| input_->IsKeyDown('W')
@@ -119,5 +133,62 @@ void Player::Move()
 	else
 	{
 		velocity = {};
+	}
+}
+
+void Player::CreateObj(Camera* camera)
+{
+	model_ = std::make_unique<ObjClass>();
+	model_->Initialize(camera, "TD_Player.obj");
+
+	attackRangeModel_ = std::make_unique<ObjClass>();
+	attackRangeModel_->Initialize(camera, "TD_AttackRange.obj");
+}
+
+void Player::Attack()
+{
+
+	if (input_ && input_->IsButtonPressed(XINPUT_GAMEPAD_A))
+	{
+		// 攻撃開始
+		isAttacking_ = true;
+		velocity = {}; // 攻撃開始時点で動きを止める
+	
+
+		attackRangeVisible_ = true;
+		attackRangeTimer_ = kAttackRangeDuration;
+
+
+		Vector3 forward = {};
+		float vlen = Math::Length(velocity);
+		if (vlen > 1e-4f)
+		{
+			forward = Math::Normalize(velocity);
+		}
+		else
+		{
+
+			forward.x = std::sin(-transform_.rotate.z);
+			forward.y = std::cos(-transform_.rotate.z);
+			forward.z = 0.0f;
+		}
+
+
+		Transform t = attackRangeModel_->GetTransform();
+		t.translate = transform_.translate + Math::Multiply(attackRangeDistance_, forward);
+		t.rotate = transform_.rotate;
+		attackRangeModel_->SetTransform(t);
+	}
+
+
+	if (attackRangeVisible_)
+	{
+		attackRangeTimer_ -= 1.0f / 60.0f;
+		if (attackRangeTimer_ <= 0.0f)
+		{
+			attackRangeVisible_ = false;
+			// 攻撃終了
+			isAttacking_ = false;
+		}
 	}
 }
