@@ -2,6 +2,7 @@
 
 #include "math/Transform.h"
 #include "math/Vector3.h"
+#include "math/shape/OBB.h"
 
 #include "memory.h"
 
@@ -26,12 +27,31 @@ public:
 	void SetAssigned(bool assigned);
 	bool IsAssigned() const;
 
+	void SetAlive(bool alive);	
+	bool IsAlive() const;
+
+
+
+	void UpdateOBB();
+
+	const OBB& GetOBB() const;
+
+	void HandleCollision();
+
 
 private:
 
 	std::unique_ptr<ObjClass> model_ = nullptr;
-	Transform worldTransform_;
+	Transform transform_;
 	Camera* camera_ = nullptr;
 	bool assigned_ = false;
+	OBB obb_{};
 
+	bool alive_ = true;
+
+	float width_ = 0.5f;
+
+	float height_ = 0.5f;
+
+	float depth_ = 0.5f;
 };
