@@ -103,6 +103,14 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     timer_ = 0.0f;
 
     // 時間表記の生成・初期化
+    timeDisplay_ = std::make_unique<TimeDisplay>();
+    timeDisplay_->Initialize(
+        camera_.get(),
+        TimeFormat::S_DECIMAL,
+        "resources/texture/text_num.png", { 32.0f, 64.0f },
+        "resources/texture/timeDisplay_separator.png", { 32.0f, 64.0f }
+    );
+    timeDisplay_->SetPosition({ 20.0f, 20.0f }); // 左上に配置
 
 #pragma region Player初期化
     player_ = std::make_unique<Player>();
@@ -234,6 +242,11 @@ void GameScene::Update() {
     // Healer は壊れた順に修復を試みる
     if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
 
+    // 時間表示の更新
+    if (timeDisplay_) {
+        timeDisplay_->Update();
+    }
+
     // =====
     // ↑ゲームの更新
     // =====
@@ -325,6 +338,19 @@ void GameScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
+
+    // カウントダウンタイマーの描画
+    if (timeDisplay_) {
+        // 念のため、描画直前にスプライト用の設定を再適用
+        engine_->SetBlend(BlendMode::kBlendModeNormal);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine_->ApplySpritePSO();
+        float remainingTime = playTime_ - timer_;
+        if (remainingTime < 0.0f) {
+            remainingTime = 0.0f;
+        }
+        timeDisplay_->Draw(remainingTime);
+    }
 }
 
 void GameScene::PauseUpdate()

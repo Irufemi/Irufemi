@@ -23,6 +23,7 @@ struct AreaLight;
 #include "actors/healer/HealerActor.h"
 #include "actors/enemy/Enemy.h"
 #include "contents/wall/Wall.h"
+#include "contents/UI/TimeDisplay.h"
 
 
 /// <summary>
@@ -124,6 +125,9 @@ private: // メンバ変数(ゲーム)
 
     // ゲームのプレイ時間(秒)
     int playTime_ = 60;
+
+    std::unique_ptr<TimeDisplay> timeDisplay_;
+
 
 private: // メンバ変数(システム)
     // エンジン
