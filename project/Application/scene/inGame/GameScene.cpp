@@ -17,6 +17,8 @@
 #include "function/Random.h"
 #include "function/Collision.h"
 
+#include "../../Sword.h" // add include for Sword
+
 // デストラクタ
 GameScene::~GameScene() {
 
@@ -485,4 +487,25 @@ void GameScene::CollisionCheck() {
     }
 
 #pragma endregion EnemyをHealerActorの衝突判定
+
+#pragma region SwordとEnemyの衝突判定
+    // Sword の当たり判定はスラッシュ中のみ有効
+    if (player_) {
+        Sword* sword = player_->GetSword();
+        if (sword && sword->IsSlashing()) {
+          
+            sword->UpdateOBB();
+            const OBB& swordObb = sword->GetOBB();
+
+            for (Enemy* enemy : enemies_) {
+                if (!enemy || !enemy->IsAlive()) continue;
+                enemy->UpdateOBB();
+                const OBB& enemyObb = enemy->GetOBB();
+                if (Collision::IsOBBCollision(swordObb, enemyObb)) {
+                    enemy->Kill();
+                }
+            }
+        }
+    }
+#pragma endregion SwordとEnemyの衝突判定
 }

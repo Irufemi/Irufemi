@@ -102,11 +102,16 @@
     <ClCompile Include="actors\healer\HealerActor.cpp">
       <Filter>actor\healer</Filter>
     </ClCompile>
+
+    <ClCompile Include="Sword.cpp">
+      <Filter>actor\player</Filter>
+
     <ClCompile Include="contents\UI\NumberText.cpp">
       <Filter>content\UI</Filter>
     </ClCompile>
     <ClCompile Include="contents\UI\TimeDisplay.cpp">
       <Filter>content\UI</Filter>
+
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -149,11 +154,16 @@
     <ClInclude Include="actors\healer\HealerActor.h">
       <Filter>actor\healer</Filter>
     </ClInclude>
+
+    <ClInclude Include="Sword.h">
+      <Filter>actor\player</Filter>
+
     <ClInclude Include="contents\UI\NumberText.h">
       <Filter>content\UI</Filter>
     </ClInclude>
     <ClInclude Include="contents\UI\TimeDisplay.h">
       <Filter>content\UI</Filter>
+
     </ClInclude>
   </ItemGroup>
 </Project>
