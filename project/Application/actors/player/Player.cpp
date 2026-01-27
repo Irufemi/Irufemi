@@ -71,8 +71,8 @@ void Player::Draw()
 
 	if (attackRangeVisible_)
 	{
-		attackRangeModel_->Update();
-		attackRangeModel_->Draw();
+		//attackRangeModel_->Update();
+		//attackRangeModel_->Draw();
 
 		
 		if (sword_)
@@ -226,6 +226,12 @@ void Player::Attack()
 			isCharging_ = false;
 			attackRangeVisible_ = true;
 			attackRangeTimer_ = kAttackRangeDuration;
+
+
+			
+			if (sword_ && attackRangeModel_) {
+				sword_->StartSlash(attackRangeModel_->GetTransform());
+			}
 
 
 		}

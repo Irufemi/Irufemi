@@ -410,4 +410,8 @@ void GameScene::CollisionCheck() {
     }
 
 #pragma endregion EnemyをHealerActorの衝突判定
+
+#pragma region SwordとEnemyの衝突判定
+
+#pragma endregion SwordとEnemyの衝突判定
 }

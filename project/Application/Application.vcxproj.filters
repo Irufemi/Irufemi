@@ -100,7 +100,7 @@
       <Filter>actor\healer</Filter>
     </ClCompile>
     <ClCompile Include="Sword.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>actor\player</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

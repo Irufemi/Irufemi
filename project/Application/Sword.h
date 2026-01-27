@@ -22,6 +22,9 @@ public:
 	void SetPosition(const Vector3& pos);
 	void SetTransform(const Transform& t);
 
+	
+	void StartSlash(const Transform& anchor);
+
 private:
 	void CreateObj(Camera* camera);
 
@@ -39,4 +42,11 @@ private:
 
 private:
 	std::unique_ptr<ObjClass> swordModel_ = nullptr;
+
+	
+	bool isSlashing_ = false;
+	float slashTimer_ = 0.0f;
+	float slashDuration_ = 0.2f; 
+	Transform slashStartTransform_{};
+	Transform slashEndTransform_{};
 };
