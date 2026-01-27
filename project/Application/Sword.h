@@ -25,6 +25,10 @@ public:
 	
 	void StartSlash(const Transform& anchor);
 
+	
+	const OBB& GetOBB() const { return obb_; }
+	bool IsSlashing() const { return isSlashing_; }
+
 private:
 	void CreateObj(Camera* camera);
 

@@ -83,7 +83,11 @@ void Sword::CreateObj(Camera* camera) {
 
 void Sword::UpdateOBB() {
 	obb_.center = transform_.translate;
-	obb_.size = { width_ / 2.0f, height_ / 2.0f, depth_ / 2.0f };
+
+	float sx = transform_.scale.x;
+	float sy = transform_.scale.y;
+	float sz = transform_.scale.z;
+	obb_.size = { (width_ * sx) / 2.0f, (height_ * sy) / 2.0f, (depth_ * sz) / 2.0f };
 	Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(transform_.rotate.x, transform_.rotate.y, transform_.rotate.z);
 	obb_.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
 	obb_.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
