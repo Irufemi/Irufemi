@@ -12,6 +12,7 @@
 #include "math/DirectionalLight.h"
 #include "math/AreaLight.h"
 #include "2D/Sprite.h"
+#include "contents/UI/NumberText.h"
 
 #include "function/Random.h"
 #include "function/Collision.h"
@@ -50,6 +51,12 @@ GameScene::~GameScene() {
 
 // 初期化
 void GameScene::Initialize(IrufemiEngine* engine) {
+
+    // Phaseを初期化したかをfalseに
+    isResetPhase_ = false;
+
+    // Phaseを完了したかをfalseに
+    isCompletePhase_ = false;
 
     // 参照したものをコピー
     // エンジン
@@ -90,6 +97,22 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     // ランダムエンジン
     Random::SeedEngine();
+
+    // フェーズに応じた初期化を行う
+    PhaseInitialize();
+
+    // タイマーの初期化
+    timer_ = 0.0f;
+
+    // 時間表記の生成・初期化
+    timeDisplay_ = std::make_unique<TimeDisplay>();
+    timeDisplay_->Initialize(
+        camera_.get(),
+        TimeFormat::S_DECIMAL,
+        "resources/texture/text_num.png", { 32.0f, 64.0f },
+        "resources/texture/timeDisplay_separator.png", { 32.0f, 64.0f }
+    );
+    timeDisplay_->SetPosition({ 20.0f, 20.0f }); // 左上に配置
 
 #pragma region Player初期化
     player_ = std::make_unique<Player>();
@@ -167,6 +190,7 @@ void GameScene::Update() {
         // Debug タブ
         if (ImGui::BeginTabItem("Debug")) {
             ImGui::Checkbox("debugMode", &debugMode_);
+            ImGui::Text("Timer: %.2f", timer_);
             ImGui::EndTabItem();
         }
 
@@ -184,6 +208,11 @@ void GameScene::Update() {
     // =====
     // ↓ゲームの更新
     // =====
+
+    // タイマー更新 (60FPS固定と仮定)
+    timer_ += 1.0f / 60.0f;
+
+    PhaseUpdate();
 
     for (int32_t i = 0; i < kMaxWall_; ++i) {
         Wall* w = walls_.front();
@@ -215,6 +244,11 @@ void GameScene::Update() {
     // Healer は壊れた順に修復を試みる
     if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
 
+    // 時間表示の更新
+    if (timeDisplay_) {
+        timeDisplay_->Update();
+    }
+
     // =====
     // ↑ゲームの更新
     // =====
@@ -240,6 +274,34 @@ void GameScene::Update() {
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
+
+// フェーズの初期化
+void GameScene::PhaseInitialize() {}
+
+// フェーズの更新
+void GameScene::PhaseUpdate() {}
+
+// フェードインの初期化
+void GameScene::FadeInInitialize() {}
+
+
+// フェードイン中の更新
+void GameScene::FadeInUpdate() {}
+
+
+// ゲーム中の更新
+void GameScene::GameInitialize() {}
+
+
+// ゲーム中の更新
+void GameScene::GameUpdate() {}
+
+// フェードアウト中の更新
+void GameScene::FadeOutInitialize() {}
+
+
+// フェードアウト中の更新
+void GameScene::FadeOutUpdate(){}
 
 // 描画
 void GameScene::Draw() {
@@ -278,6 +340,19 @@ void GameScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
+
+    // カウントダウンタイマーの描画
+    if (timeDisplay_) {
+        // 念のため、描画直前にスプライト用の設定を再適用
+        engine_->SetBlend(BlendMode::kBlendModeNormal);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine_->ApplySpritePSO();
+        float remainingTime = playTime_ - timer_;
+        if (remainingTime < 0.0f) {
+            remainingTime = 0.0f;
+        }
+        timeDisplay_->Draw(remainingTime);
+    }
 }
 
 void GameScene::PauseUpdate()

@@ -43,6 +43,10 @@ public:
 	int GetHP() const { return hp_; }
 	void ResetContactFrames() { contactFrames_ = 0; }
 
+	float GetWidth() { return width_; }
+	float GetHeight() { return height_; }
+	float GetDepth() { return depth_; }
+
 private:
 	OBB obb_{};
 

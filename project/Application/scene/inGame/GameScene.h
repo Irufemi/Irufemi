@@ -23,6 +23,8 @@ struct AreaLight;
 #include "actors/healer/HealerActor.h"
 #include "actors/enemy/Enemy.h"
 #include "contents/wall/Wall.h"
+#include "contents/UI/TimeDisplay.h"
+
 
 /// <summary>
 /// ゲーム
@@ -44,7 +46,59 @@ public: // メンバ関数(システム)
 
 private: // メンバ関数(内部ヘルパ)
 
+    // 衝突判定
     void CollisionCheck();
+
+    // フェーズの初期化
+    void PhaseInitialize();
+
+    // フェーズの更新
+    void PhaseUpdate();
+
+    // フェードインの初期化
+    void FadeInInitialize();
+
+    // フェードイン中の更新
+    void FadeInUpdate();
+
+    // ゲーム中の更新
+    void GameInitialize();
+
+    // ゲーム中の更新
+    void GameUpdate();
+
+    // フェードアウト中の更新
+    void FadeOutInitialize();
+
+    // フェードアウト中の更新
+    void FadeOutUpdate();
+
+private: // メンバ変数(ゲーム進行)
+
+    // フェーズ
+    enum class Phase {
+        FadeIn,
+        Game,
+        FadeOut
+    };
+
+    // モード
+    enum class GameMode {
+        Tutorial,
+        Standard,
+    };
+
+    // Phaseの初期化を行ったか
+    bool isResetPhase_ = false;
+
+    // Phase進行が完了したか
+    bool isCompletePhase_ = false;
+
+    // ゲームモード
+    GameMode mode_;
+
+    // フェーズ
+    Phase phase_;
 
 private: // メンバ変数(ゲーム)
 
@@ -57,11 +111,23 @@ private: // メンバ変数(ゲーム)
     std::list<HealerActor*> healerActor_;
     static inline const int32_t kMaxHealerActor_ = 20;
 
+    // Player(白血球)
     std::unique_ptr<Player> player_ = nullptr;
 
+    // ヒーラー(血小板)
     std::unique_ptr<Healer> healer_ = nullptr;
 
-    Transform worldTransform_;
+    // タイマー(単位:秒)
+    float timer_ = 0.0f;
+
+    // 倒した敵の数
+    int killScore_ = 0;
+
+    // ゲームのプレイ時間(秒)
+    int playTime_ = 60;
+
+    std::unique_ptr<TimeDisplay> timeDisplay_;
+
 
 private: // メンバ変数(システム)
     // エンジン

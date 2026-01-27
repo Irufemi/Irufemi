@@ -16,6 +16,7 @@
 #include "3D/effect/EffectSystem.h"
 #include "3D/LineClass.h"
 #include "3D/AnimationModel.h"
+#include "contents/UI/NumberText.h"
 
 #include <memory>
 #include <vector>
@@ -109,6 +110,9 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<Line2DClass> line2D_ = nullptr;
 
     std::unique_ptr<Line3DClass> line3D_ = nullptr;
+
+    std::unique_ptr<NumberText> numberText_ = nullptr;
+    int frameCount_ = 0;
 
 private: // メンバ変数(システム)
     // エンジン

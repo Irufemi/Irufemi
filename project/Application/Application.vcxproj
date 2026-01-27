@@ -164,6 +164,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="actors\enemy\Enemy.cpp" />
     <ClCompile Include="actors\healer\Healer.cpp" />
     <ClCompile Include="actors\player\Player.cpp" />
+    <ClCompile Include="contents\UI\NumberText.cpp" />
+    <ClCompile Include="contents\UI\TimeDisplay.cpp" />
     <ClCompile Include="contents\wall\Wall.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="actors\healer\HealerActor.cpp" />
@@ -187,6 +189,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\healer\Healer.h" />
     <ClInclude Include="actors\healer\HealerActor.h" />
     <ClInclude Include="actors\player\Player.h" />
+    <ClInclude Include="contents\UI\NumberText.h" />
+    <ClInclude Include="contents\UI\TimeDisplay.h" />
     <ClInclude Include="contents\wall\Wall.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
