@@ -223,6 +223,14 @@ void GameScene::Update() {
 
     for (int32_t i = 0; i < kMaxEnemy_; ++i) {
         Enemy* e = enemies_.front();
+        if (!e) {
+            // recreate enemy for this slot so it can respawn
+            e = new Enemy();
+            float x = Random::GeneratorFloat(-10.0f, 10.0f);
+            float y = Random::GeneratorFloat(-10.0f, 10.0f);
+            e->Initialize(camera_.get(), Vector3{x, y, 0.0f});
+            enemies_.front() = e; // replace nullptr slot with new instance
+        }
         if (e) e->Update(walls_, healerActor_);
         enemies_.push_back(enemies_.front());
         enemies_.pop_front();
@@ -497,11 +505,14 @@ void GameScene::CollisionCheck() {
             sword->UpdateOBB();
             const OBB& swordObb = sword->GetOBB();
 
-            for (Enemy* enemy : enemies_) {
+           
+            for (auto enemyIt = enemies_.begin(); enemyIt != enemies_.end(); ++enemyIt) {
+                Enemy* enemy = *enemyIt;
                 if (!enemy || !enemy->IsAlive()) continue;
                 enemy->UpdateOBB();
                 const OBB& enemyObb = enemy->GetOBB();
                 if (Collision::IsOBBCollision(swordObb, enemyObb)) {
+               
                     enemy->Kill();
                 }
             }
