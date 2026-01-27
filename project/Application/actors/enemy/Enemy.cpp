@@ -30,6 +30,9 @@ void Enemy::Initialize(Camera* camera, Vector3 pos) {
 }
 
 void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>& healers) {
+	// 毎フレーム、衝突状態をリセット
+	isCollidingWithWall_ = false;
+
 	if (!alive_) {
 		// カウントダウンでリスポーン判定
 		if (respawnCounter_ > 0) {
@@ -135,7 +138,8 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 		targetPos = targetWall_->GetPosition();
 	}
 
-	if (hasTarget) {
+	// 壁に衝突しておらず、ターゲットがいる場合に移動する
+	if (hasTarget && !isCollidingWithWall_) {
 		Vector3 direction = targetPos - transform_.translate;
 		float dirLen = Math::Length(direction);
 
@@ -215,5 +219,75 @@ void Enemy::UpdateOBB()
 const OBB& Enemy::GetOBB() const { return obb_; }
 
 void Enemy::HandleCollision() { speed = 0.0f; }
+
+void Enemy::OnCollisionWithWall(const Wall* wall) {
+	const OBB& wallOBB = wall->GetOBB();
+	Vector3 pushBackVector = { 0.0f, 0.0f, 0.0f };
+	float minOverlap = FLT_MAX;
+
+	// OBBの分離軸テストを再度行い、最小の押し出しベクトルを見つける
+	// 15本の分離軸をテスト
+	const Vector3* axes[15];
+	axes[0] = &obb_.orientations[0];
+	axes[1] = &obb_.orientations[1];
+	axes[2] = &obb_.orientations[2];
+	axes[3] = &wallOBB.orientations[0];
+	axes[4] = &wallOBB.orientations[1];
+	axes[5] = &wallOBB.orientations[2];
+	Vector3 crossProduct;
+	crossProduct = Math::Cross(obb_.orientations[0], wallOBB.orientations[0]); axes[6] = &crossProduct;
+	crossProduct = Math::Cross(obb_.orientations[0], wallOBB.orientations[1]); axes[7] = &crossProduct;
+	crossProduct = Math::Cross(obb_.orientations[0], wallOBB.orientations[2]); axes[8] = &crossProduct;
+	crossProduct = Math::Cross(obb_.orientations[1], wallOBB.orientations[0]); axes[9] = &crossProduct;
+	crossProduct = Math::Cross(obb_.orientations[1], wallOBB.orientations[1]); axes[10] = &crossProduct;
+	crossProduct = Math::Cross(obb_.orientations[1], wallOBB.orientations[2]); axes[11] = &crossProduct;
+	crossProduct = Math::Cross(obb_.orientations[2], wallOBB.orientations[0]); axes[12] = &crossProduct;
+	crossProduct = Math::Cross(obb_.orientations[2], wallOBB.orientations[1]); axes[13] = &crossProduct;
+	crossProduct = Math::Cross(obb_.orientations[2], wallOBB.orientations[2]); axes[14] = &crossProduct;
+
+	for (int i = 0; i < 15; ++i) {
+		const Vector3& axis = *axes[i];
+		if (Math::Length(axis) < 0.0001f) continue; // 軸がゼロベクトルの場合はスキップ
+
+		Vector3 normalizedAxis = Math::Normalize(axis);
+
+		float projEnemy =
+			obb_.size.x * std::abs(Math::Dot(normalizedAxis, obb_.orientations[0])) +
+			obb_.size.y * std::abs(Math::Dot(normalizedAxis, obb_.orientations[1])) +
+			obb_.size.z * std::abs(Math::Dot(normalizedAxis, obb_.orientations[2]));
+
+		float projWall =
+			wallOBB.size.x * std::abs(Math::Dot(normalizedAxis, wallOBB.orientations[0])) +
+			wallOBB.size.y * std::abs(Math::Dot(normalizedAxis, wallOBB.orientations[1])) +
+			wallOBB.size.z * std::abs(Math::Dot(normalizedAxis, wallOBB.orientations[2]));
+
+		Vector3 distanceVec = obb_.center - wallOBB.center;
+		float distance = std::abs(Math::Dot(distanceVec, normalizedAxis));
+
+		float overlap = projEnemy + projWall - distance;
+		if (overlap < 0) {
+			// 分離軸が見つかったので、この関数が呼ばれるのはおかしいが、安全のためリターン
+			return;
+		}
+
+		if (overlap < minOverlap) {
+			minOverlap = overlap;
+			// 押し出し方向を決定
+			Vector3 direction = obb_.center - wallOBB.center;
+			if (Math::Dot(direction, normalizedAxis) < 0) {
+				pushBackVector = -normalizedAxis;
+			}
+			else {
+				pushBackVector = normalizedAxis;
+			}
+		}
+	}
+
+	// 最小の重なり量で押し出す
+	if (minOverlap < FLT_MAX) {
+		transform_.translate += pushBackVector * minOverlap;
+		UpdateOBB(); // 位置を更新したのでOBBも更新
+	}
+}
 
 void Enemy::Kill() { alive_ = false; respawnCounter_ = kRespawnFrames; }

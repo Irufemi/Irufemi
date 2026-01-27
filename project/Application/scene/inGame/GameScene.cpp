@@ -431,6 +431,7 @@ void GameScene::CollisionCheck() {
 
             if (Collision::IsOBBCollision(obbEnemy, obbWall)) {
                 touched = true;
+                enemy->OnCollisionWithWall(wall); // ★ 衝突時に押し出し処理を呼ぶ
                 bool destroyed = wall->AccumulateContactFrame();
                 if (destroyed) {
 

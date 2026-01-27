@@ -26,6 +26,12 @@ public:
 
 	void HandleCollision();
 
+	// 衝突時に壁から押し出す処理
+	void OnCollisionWithWall(const Wall* wall);
+
+	// 壁との衝突状態を設定
+	void SetCollidingWithWall(bool isColliding) { isCollidingWithWall_ = isColliding; }
+
 	bool IsAlive() const { return alive_; }
 	void Kill();
 
@@ -54,6 +60,9 @@ private:
 	const HealerActor* targetHealer_ = nullptr;
 	// 直前に接触した Healer を記憶して、すぐに再ターゲットしないようにする
 	const HealerActor* lastTouchedHealer_ = nullptr;
+
+	// 壁と衝突しているか
+	bool isCollidingWithWall_ = false;
 
 private:
 	std::unique_ptr<ObjClass> model_ = nullptr;
