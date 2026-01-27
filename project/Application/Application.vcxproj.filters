@@ -117,9 +117,6 @@
     <ClCompile Include="contents\skydome\Skydome.cpp">
       <Filter>content\skydome</Filter>
     </ClCompile>
-    <ClCompile Include="scene\CG\CGScene.cpp">
-      <Filter>Scene\CG3</Filter>
-    </ClCompile>
     <ClCompile Include="actors\enemy\IEnemy.cpp">
       <Filter>actor\enemy</Filter>
     </ClCompile>
@@ -184,9 +181,6 @@
     </ClInclude>
     <ClInclude Include="contents\skydome\Skydome.h">
       <Filter>content\skydome</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\CG\CGScene.h">
-      <Filter>Scene\CG3</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\IEnemy.h">
       <Filter>actor\enemy</Filter>
