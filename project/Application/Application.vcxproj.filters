@@ -1,73 +1,26 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="ソース ファイル">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="ヘッダー ファイル">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="リソース ファイル">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="camera">
-      <UniqueIdentifier>{b2d20bfd-f14e-4085-86ad-27fd4e530cb4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="content">
-      <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene">
-      <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\inGame">
-      <UniqueIdentifier>{86fe6dc3-e9e1-4808-a280-aa9dd371aaba}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\title">
-      <UniqueIdentifier>{52b04192-3ea4-4077-b32c-a2d4e50999b5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\result">
-      <UniqueIdentifier>{10005089-1114-4451-b83e-4c222dd4993b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actor">
-      <UniqueIdentifier>{490d274c-e2b4-4b8c-a942-e7053c118b00}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actor\player">
-      <UniqueIdentifier>{c7a866e3-5957-4bef-b573-cc39ef55055c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\debug">
-      <UniqueIdentifier>{0a6ed38f-12d1-4188-b3fa-fb3877f9047d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actor\enemy">
-      <UniqueIdentifier>{76850a7a-5d4f-4ae6-852d-335cd761d210}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\statgeSelect">
-      <UniqueIdentifier>{ff03cd2d-af96-44ae-b342-c150a81581c8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application">
-      <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actor\healer">
-      <UniqueIdentifier>{3c12280d-ba5a-4ee8-b811-edb5151061b9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="content\wall">
-      <UniqueIdentifier>{5fc33b31-37e0-481c-b9a6-d6db2fd47862}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="content\UI">
-      <UniqueIdentifier>{69d1e0b5-2473-4220-8e88-2d2d4be20c83}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="scene\inGame\GameScene.cpp">
-      <Filter>Scene\inGame</Filter>
+    <ClCompile Include="actors\enemy\Enemy.cpp">
+      <Filter>actor\enemy</Filter>
     </ClCompile>
-    <ClCompile Include="scene\title\TitleScene.cpp">
-      <Filter>Scene\title</Filter>
+    <ClCompile Include="actors\player\Player.cpp">
+      <Filter>actor\player</Filter>
     </ClCompile>
-    <ClCompile Include="scene\result\ResultScene.cpp">
-      <Filter>Scene\result</Filter>
+    <ClCompile Include="Sword.cpp">
+      <Filter>actor\player</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\healer\Healer.cpp">
+      <Filter>actor\healer</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\healer\HealerActor.cpp">
+      <Filter>actor\healer</Filter>
+    </ClCompile>
+    <ClCompile Include="GameApplication.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Application</Filter>
     </ClCompile>
     <ClCompile Include="camera\Camera.cpp">
       <Filter>camera</Filter>
@@ -75,54 +28,49 @@
     <ClCompile Include="camera\DebugCamera.cpp">
       <Filter>camera</Filter>
     </ClCompile>
-    <ClCompile Include="scene\debug\DebugScene.cpp">
-      <Filter>Scene\debug</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\stageSelect\SelectScene.cpp">
-      <Filter>Scene\statgeSelect</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Application</Filter>
-    </ClCompile>
-    <ClCompile Include="GameApplication.cpp">
-      <Filter>Application</Filter>
-    </ClCompile>
-    <ClCompile Include="actors\player\Player.cpp">
-      <Filter>actor\player</Filter>
-    </ClCompile>
-    <ClCompile Include="actors\healer\Healer.cpp">
-      <Filter>actor\healer</Filter>
-    </ClCompile>
-    <ClCompile Include="actors\enemy\Enemy.cpp">
-      <Filter>actor\enemy</Filter>
-    </ClCompile>
     <ClCompile Include="contents\wall\Wall.cpp">
       <Filter>content\wall</Filter>
     </ClCompile>
-    <ClCompile Include="actors\healer\HealerActor.cpp">
-      <Filter>actor\healer</Filter>
+    <ClCompile Include="scene\title\TitleScene.cpp">
+      <Filter>scene\title</Filter>
     </ClCompile>
-
-    <ClCompile Include="Sword.cpp">
-      <Filter>actor\player</Filter>
-
+    <ClCompile Include="scene\stageSelect\SelectScene.cpp">
+      <Filter>scene\select</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\inGame\GameScene.cpp">
+      <Filter>scene\game</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\debug\DebugScene.cpp">
+      <Filter>scene\debug</Filter>
+    </ClCompile>
     <ClCompile Include="contents\UI\NumberText.cpp">
-      <Filter>content\UI</Filter>
+      <Filter>content\ui</Filter>
     </ClCompile>
     <ClCompile Include="contents\UI\TimeDisplay.cpp">
-      <Filter>content\UI</Filter>
-
+      <Filter>content\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\result\ResultScene.cpp">
+      <Filter>scene\result</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="scene\inGame\GameScene.h">
-      <Filter>Scene\inGame</Filter>
+    <ClInclude Include="actors\enemy\Enemy.h">
+      <Filter>actor\enemy</Filter>
     </ClInclude>
-    <ClInclude Include="scene\title\TitleScene.h">
-      <Filter>Scene\title</Filter>
+    <ClInclude Include="actors\player\Player.h">
+      <Filter>actor\player</Filter>
     </ClInclude>
-    <ClInclude Include="scene\result\ResultScene.h">
-      <Filter>Scene\result</Filter>
+    <ClInclude Include="Sword.h">
+      <Filter>actor\player</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\healer\Healer.h">
+      <Filter>actor\healer</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\healer\HealerActor.h">
+      <Filter>actor\healer</Filter>
+    </ClInclude>
+    <ClInclude Include="GameApplication.h">
+      <Filter>Application</Filter>
     </ClInclude>
     <ClInclude Include="camera\Camera.h">
       <Filter>camera</Filter>
@@ -130,40 +78,76 @@
     <ClInclude Include="camera\DebugCamera.h">
       <Filter>camera</Filter>
     </ClInclude>
-    <ClInclude Include="scene\debug\DebugScene.h">
-      <Filter>Scene\debug</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\stageSelect\SelectScene.h">
-      <Filter>Scene\statgeSelect</Filter>
-    </ClInclude>
-    <ClInclude Include="GameApplication.h">
-      <Filter>Application</Filter>
-    </ClInclude>
-    <ClInclude Include="actors\player\Player.h">
-      <Filter>actor\player</Filter>
-    </ClInclude>
-    <ClInclude Include="actors\healer\Healer.h">
-      <Filter>actor\healer</Filter>
-    </ClInclude>
-    <ClInclude Include="actors\enemy\Enemy.h">
-      <Filter>actor\enemy</Filter>
-    </ClInclude>
     <ClInclude Include="contents\wall\Wall.h">
       <Filter>content\wall</Filter>
     </ClInclude>
-    <ClInclude Include="actors\healer\HealerActor.h">
-      <Filter>actor\healer</Filter>
+    <ClInclude Include="scene\title\TitleScene.h">
+      <Filter>scene\title</Filter>
     </ClInclude>
-
-    <ClInclude Include="Sword.h">
-      <Filter>actor\player</Filter>
-
+    <ClInclude Include="scene\stageSelect\SelectScene.h">
+      <Filter>scene\select</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\debug\DebugScene.h">
+      <Filter>scene\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\inGame\GameScene.h">
+      <Filter>scene\game</Filter>
+    </ClInclude>
     <ClInclude Include="contents\UI\NumberText.h">
-      <Filter>content\UI</Filter>
+      <Filter>content\ui</Filter>
     </ClInclude>
     <ClInclude Include="contents\UI\TimeDisplay.h">
-      <Filter>content\UI</Filter>
-
+      <Filter>content\ui</Filter>
     </ClInclude>
+    <ClInclude Include="scene\result\ResultScene.h">
+      <Filter>scene\result</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="actor">
+      <UniqueIdentifier>{ae44f0dc-d1d1-4ded-83bd-392c4a3bbd22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actor\enemy">
+      <UniqueIdentifier>{4b56248b-9be6-4928-ae44-4cde8875cc66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actor\player">
+      <UniqueIdentifier>{aea91559-2c34-4a73-9b33-6c97712ab9fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actor\healer">
+      <UniqueIdentifier>{5be7e210-5115-4245-9a9f-4b5d15704a58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application">
+      <UniqueIdentifier>{93572540-c62c-4189-9e13-346f78e2a492}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="camera">
+      <UniqueIdentifier>{cf3f225a-a226-49fc-9ccd-e3c73d1dd80c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content">
+      <UniqueIdentifier>{533dfb44-fa6c-40de-8e62-d5089ea15686}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\wall">
+      <UniqueIdentifier>{b357cf17-aaa7-4208-a316-c4a3cb970846}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene">
+      <UniqueIdentifier>{e5590f56-7a7d-427e-9d33-a4f0bcdde6a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\title">
+      <UniqueIdentifier>{d266367b-1600-4abc-9f24-4644ca075200}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\select">
+      <UniqueIdentifier>{e7d91910-c778-4318-b876-6cf08f915d69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\game">
+      <UniqueIdentifier>{620309b7-1a89-4c8b-aa90-594d2c4dc8f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\debug">
+      <UniqueIdentifier>{ef1a72e3-dbfa-425b-b4d8-023cd6b39ac0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\ui">
+      <UniqueIdentifier>{ac8d0399-39e2-40e3-9d61-9bd18e410d23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\result">
+      <UniqueIdentifier>{f620c62a-817d-4518-8f60-36ade1311192}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
