@@ -70,6 +70,8 @@ void CGScene::Initialize(IrufemiEngine* engine) {
     areaLight->isActive = 1;
     areaLights_.push_back(std::move(areaLight));
 
+    isActiveSphere_ = false;
+    isActiveTerrain_ = false;
     isActivePlaneObj_ = false;
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
@@ -82,6 +84,14 @@ void CGScene::Initialize(IrufemiEngine* engine) {
     isActiveMaterialAlphaBlend_ = false;
     isActiveAnimationSkin_ = false;
 
+    if (isActiveSphere_) {
+        sphere_ = std::make_unique<SphereClass>();
+        sphere_->Initialize(camera_.get());
+    }
+    if (isActiveTerrain_) {
+        terrain_ = std::make_unique <ObjClass>();
+        terrain_->Initialize(camera_.get(), "sample/terrain.obj");
+    }
     if (isActivePlaneObj_) {
         planeObj_ = std::make_unique<ObjClass>();
         planeObj_->Initialize(camera_.get(), "sample/plane.obj");
@@ -165,6 +175,8 @@ void CGScene::Update() {
     ImGui::End();
 
     ImGui::Begin("Activation");
+    ImGui::Checkbox("Sphere", &isActiveSphere_);
+    ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("planeObj", &isActivePlaneObj_);
     ImGui::Checkbox("planeGltf", &isActivePlaneGltf_);
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
@@ -193,6 +205,22 @@ void CGScene::Update() {
     // 3D
 
 
+    if (isActiveSphere_) {
+        if (!sphere_) {
+            sphere_ = std::make_unique<SphereClass>();
+            sphere_->Initialize(camera_.get());
+        }
+        sphere_->Debug("Sphere");
+        sphere_->Update();
+    }
+    if (isActiveTerrain_) {
+        if (!terrain_) {
+            terrain_ = std::make_unique<ObjClass>();
+            terrain_->Initialize(camera_.get(), "sample/terrain.obj");
+        }
+        terrain_->Debug("Terrain");
+        terrain_->Update();
+    }
     if (isActivePlaneObj_) {
         if (!planeObj_) {
             planeObj_ = std::make_unique<ObjClass>();
@@ -325,6 +353,12 @@ void CGScene::Draw() {
 
     engine_->ApplyPSO();
 
+    if (isActiveSphere_) {
+        sphere_->Draw();
+    }
+    if (isActiveTerrain_) {
+        terrain_->Draw();
+    }
     if (isActivePlaneObj_) {
         planeObj_->Draw();
     }
@@ -355,9 +389,6 @@ void CGScene::Draw() {
     if (isActiveTextureSampler_) {
         textureSampler_->Draw();
     }
-
-    engine_->SetBlend(BlendMode::kBlendModeAdd);
-
     if (isActiveMaterialAlphaBlend_) {
         materialAlphaBlend_->Draw();
     }

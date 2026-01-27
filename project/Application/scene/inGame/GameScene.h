@@ -22,9 +22,9 @@ struct AreaLight;
 #include "3D/Region.h"
 
 #include "contents/effect/Fade.h"
-#include "contents/player/Player.h"
-#include "contents/enemy/normalEnemy/NormalEnemy.h"
-#include "contents/enemy/shieldEnemy/ShieldEnemy.h"
+#include "actors/player/Player.h"
+#include "actors/enemy/normalEnemy/NormalEnemy.h"
+#include "actors/enemy/shieldEnemy/ShieldEnemy.h"
 #include "contents/skydome/Skydome.h"
 #include "camera/CameraController.h"
 

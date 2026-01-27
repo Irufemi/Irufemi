@@ -1,12 +1,12 @@
 #include "ShieldEnemy.h"
 
 #include "camera/Camera.h"
-#include "contents/player/Player.h"
+#include "actors/player/Player.h"
 #include "function/Math.h"
 #include "scene/inGame/GameScene.h"
 #include "function/Ease.h"
 #include "3D/ObjClass.h"
-#include "contents/MapChipField.h"
+#include "contents/mapChipField/MapChipField.h"
 #include <numbers>
 #include <cmath>
 #include <cassert>

@@ -49,18 +49,6 @@
     <Filter Include="Application">
       <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="content\player">
-      <UniqueIdentifier>{feffeacc-24bd-45f3-aa53-8aeb72c9294c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="content\enemy">
-      <UniqueIdentifier>{ab19a78a-4011-4d7b-80f3-0cbc0e865eae}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="content\enemy\shieldEnemy">
-      <UniqueIdentifier>{8c761790-d221-4623-8f2e-eb16ae252fe4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="content\enemy\normalEnemy">
-      <UniqueIdentifier>{f030a979-a1c4-4077-a175-43946c8f283f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="content\effect">
       <UniqueIdentifier>{babfd3d8-482e-49f9-a43f-87cca2b7d391}</UniqueIdentifier>
     </Filter>
@@ -69,6 +57,15 @@
     </Filter>
     <Filter Include="Scene\CG3">
       <UniqueIdentifier>{71f087f2-5f9d-4603-a258-3369ad493bca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actor\enemy\normalEnemy">
+      <UniqueIdentifier>{f030a979-a1c4-4077-a175-43946c8f283f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actor\enemy\shieldEnemy">
+      <UniqueIdentifier>{8c761790-d221-4623-8f2e-eb16ae252fe4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="content\mapChipFirld">
+      <UniqueIdentifier>{ce752556-d881-4238-bf6f-a52e9dbf16c6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -99,29 +96,11 @@
     <ClCompile Include="GameApplication.cpp">
       <Filter>Application</Filter>
     </ClCompile>
-    <ClCompile Include="contents\MapChipField.cpp">
-      <Filter>content</Filter>
+    <ClCompile Include="actors\enemy\shieldEnemy\ShieldEnemy.cpp">
+      <Filter>actor\enemy\shieldEnemy</Filter>
     </ClCompile>
-    <ClCompile Include="contents\player\Player.cpp">
-      <Filter>content\player</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\player\PlayerState_Attack.cpp">
-      <Filter>content\player</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\player\PlayerState_Dash.cpp">
-      <Filter>content\player</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\player\PlayerState_Root.cpp">
-      <Filter>content\player</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\enemy\IEnemy.cpp">
-      <Filter>content\enemy</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\enemy\shieldEnemy\ShieldEnemy.cpp">
-      <Filter>content\enemy\shieldEnemy</Filter>
-    </ClCompile>
-    <ClCompile Include="contents\enemy\normalEnemy\NormalEnemy.cpp">
-      <Filter>content\enemy\normalEnemy</Filter>
+    <ClCompile Include="actors\enemy\normalEnemy\NormalEnemy.cpp">
+      <Filter>actor\enemy\normalEnemy</Filter>
     </ClCompile>
     <ClCompile Include="contents\Effect\Fade.cpp">
       <Filter>content\effect</Filter>
@@ -140,6 +119,24 @@
     </ClCompile>
     <ClCompile Include="scene\CG\CGScene.cpp">
       <Filter>Scene\CG3</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\IEnemy.cpp">
+      <Filter>actor\enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\player\Player.cpp">
+      <Filter>actor\player</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\player\PlayerState_Attack.cpp">
+      <Filter>actor\player</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\player\PlayerState_Dash.cpp">
+      <Filter>actor\player</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\player\PlayerState_Root.cpp">
+      <Filter>actor\player</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\mapChipField\MapChipField.cpp">
+      <Filter>content\mapChipFirld</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -167,23 +164,11 @@
     <ClInclude Include="GameApplication.h">
       <Filter>Application</Filter>
     </ClInclude>
-    <ClInclude Include="contents\MapChipField.h">
-      <Filter>content</Filter>
+    <ClInclude Include="actors\enemy\shieldEnemy\ShieldEnemy.h">
+      <Filter>actor\enemy\shieldEnemy</Filter>
     </ClInclude>
-    <ClInclude Include="contents\player\Player.h">
-      <Filter>content\player</Filter>
-    </ClInclude>
-    <ClInclude Include="contents\player\PlayerState.h">
-      <Filter>content\player</Filter>
-    </ClInclude>
-    <ClInclude Include="contents\enemy\IEnemy.h">
-      <Filter>content\enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="contents\enemy\shieldEnemy\ShieldEnemy.h">
-      <Filter>content\enemy\shieldEnemy</Filter>
-    </ClInclude>
-    <ClInclude Include="contents\enemy\normalEnemy\NormalEnemy.h">
-      <Filter>content\enemy\normalEnemy</Filter>
+    <ClInclude Include="actors\enemy\normalEnemy\NormalEnemy.h">
+      <Filter>actor\enemy\normalEnemy</Filter>
     </ClInclude>
     <ClInclude Include="contents\Effect\Fade.h">
       <Filter>content\effect</Filter>
@@ -202,6 +187,18 @@
     </ClInclude>
     <ClInclude Include="scene\CG\CGScene.h">
       <Filter>Scene\CG3</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\IEnemy.h">
+      <Filter>actor\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\player\Player.h">
+      <Filter>actor\player</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\player\PlayerState.h">
+      <Filter>actor\player</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\mapChipField\MapChipField.h">
+      <Filter>content\mapChipFirld</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

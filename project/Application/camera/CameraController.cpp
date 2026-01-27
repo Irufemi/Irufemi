@@ -4,7 +4,7 @@
 
 #include "function/Math.h"
 #include "function/Ease.h"
-#include "contents/player/Player.h"
+#include "actors/player/Player.h"
 
 #include <algorithm>
 #include <random>

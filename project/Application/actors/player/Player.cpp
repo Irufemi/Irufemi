@@ -2,13 +2,13 @@
 #include "Player.h"
 
 #include "function/Ease.h"
-#include "contents/MapChipField.h"
+#include "contents/mapChipField/MapChipField.h"
 #include "function/Math.h"
 #include "engine/Input/InputManager.h"
 #include "manager/DebugUI.h"
 #include "PlayerState.h"
 #include "3D/ObjClass.h"
-#include "contents/enemy/IEnemy.h"
+#include "actors/enemy/IEnemy.h"
 #include <algorithm>
 #include <cassert>
 #include <numbers>

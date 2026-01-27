@@ -36,6 +36,10 @@ private: // メンバ関数(内部ヘルパ)
 private: // メンバ変数(ゲーム)
 
     std::unique_ptr<SphereClass> sphere_ = nullptr;
+    bool isActiveSphere_ = false;
+
+    std::unique_ptr<ObjClass> terrain_ = nullptr;
+    bool isActiveTerrain_ = false;
 
     std::unique_ptr<ObjClass> planeObj_ = nullptr;
     bool isActivePlaneObj_ = false;
