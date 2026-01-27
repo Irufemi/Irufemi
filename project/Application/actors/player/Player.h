@@ -10,6 +10,7 @@
 class Camera;
 class ObjClass;
 class InputManager;
+class Sword; 
 
 class Player {
 public:
@@ -74,6 +75,7 @@ private:
 
 	std::unique_ptr<ObjClass> model_ = nullptr;//Playerのモデル
 	std::unique_ptr<ObjClass> attackRangeModel_ = nullptr;//攻撃範囲表示用モデル
+	std::unique_ptr<Sword> sword_ = nullptr; 
 
 
 	Transform transform_;

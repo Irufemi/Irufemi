@@ -99,6 +99,9 @@
     <ClCompile Include="actors\healer\HealerActor.cpp">
       <Filter>actor\healer</Filter>
     </ClCompile>
+    <ClCompile Include="Sword.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -139,6 +142,9 @@
     </ClInclude>
     <ClInclude Include="actors\healer\HealerActor.h">
       <Filter>actor\healer</Filter>
+    </ClInclude>
+    <ClInclude Include="Sword.h">
+      <Filter>actor\player</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -178,6 +178,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="scene\result\ResultScene.cpp" />
     <ClCompile Include="scene\stageSelect\SelectScene.cpp" />
     <ClCompile Include="scene\title\TitleScene.cpp" />
+    <ClCompile Include="Sword.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera\Camera.h" />
@@ -193,6 +194,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="scene\result\ResultScene.h" />
     <ClInclude Include="scene\stageSelect\SelectScene.h" />
     <ClInclude Include="scene\title\TitleScene.h" />
+    <ClInclude Include="Sword.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">
