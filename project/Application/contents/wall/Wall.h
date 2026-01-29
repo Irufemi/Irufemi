@@ -24,6 +24,9 @@ public:
 	// OBB の取得
 	const OBB& GetOBB() const;
 
+	// Transformの取得
+	const Transform& GetTransform() const;
+
 	// 位置の取得
 	const Vector3& GetPosition() const;
 
@@ -46,6 +49,9 @@ public:
 	float GetWidth() { return width_; }
 	float GetHeight() { return height_; }
 	float GetDepth() { return depth_; }
+
+	// サイズをVector3として取得
+	Vector3 GetSize() const;
 
 private:
 	OBB obb_{};
