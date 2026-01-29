@@ -4,12 +4,14 @@
 #include "math/Vector3.h"
 #include "math/shape/OBB.h"
 
-#include "memory.h"
+#include <memory>
+#include <list>
 
 #include "3D/ObjClass.h"
 
 // 前方宣言
 class Camera;
+class Wall;
 
 class HealerActor
 {
@@ -21,7 +23,7 @@ public:
 	void Draw();
 
 	Vector3 GetPosition() const;
-	void MoveTowards(const Vector3& target, float speed);
+	void MoveTowards(const Vector3& target, float speed, const std::list<Wall*>& walls);
 	void RefreshTransform();
 
 	void SetAssigned(bool assigned);

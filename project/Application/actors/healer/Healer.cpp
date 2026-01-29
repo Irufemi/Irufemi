@@ -81,7 +81,7 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 	for (DestroyedWallInfo& info : destroyedQueue_) {
 		for (HealerActor* ha : info.assignedHealers) {
 			if (!ha) continue;
-			ha->MoveTowards(ha->GetTargetPosition(), speed);
+			ha->MoveTowards(ha->GetTargetPosition(), speed, walls);
 			ha->RefreshTransform();
 		}
 	}
