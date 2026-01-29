@@ -17,6 +17,7 @@ void HealerActor::Initialize(Camera* camera, const Vector3& pos) {
 
 	transform_.translate = pos;
 	transform_.scale = { 1.0f, 1.0f, 1.0f };
+	targetPosition_ = pos;
 
 	model_ = std::make_unique<ObjClass>();
 	model_->Initialize(camera_,"TD_Healer.obj");
@@ -67,6 +68,10 @@ bool HealerActor::IsAssigned() const { return assigned_; }
 void HealerActor::SetAlive(bool alive) { alive_ = alive; }
 
 bool HealerActor::IsAlive() const { return alive_; }
+
+void HealerActor::SetTargetPosition(const Vector3& pos) { targetPosition_ = pos; }
+
+const Vector3& HealerActor::GetTargetPosition() const { return targetPosition_; }
 
 
 void HealerActor::UpdateOBB() {

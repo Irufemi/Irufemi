@@ -453,8 +453,8 @@ void GameScene::CollisionCheck() {
                         }
                     }
 
-                    // 壊された位置を Healer に通知
-                    if (healer_) healer_->NotifyWallDestroyed(wall->GetPosition(), wall->GetRotation());
+                    // 壊されたTransformとサイズを Healer に通知
+                    if (healer_) healer_->NotifyWallDestroyed(wall->GetTransform(), wall->GetSize());
 
                     delete wall;
                     *wallIt = nullptr;

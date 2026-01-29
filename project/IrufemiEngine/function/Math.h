@@ -228,6 +228,14 @@ namespace Math {
     /// <returns></returns>
     Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);
 
+    /// <summary>
+    /// 法線や方向ベクトルなど、平行移動の影響を受けないベクトルを変換
+    /// </summary>
+    /// <param name="vector"></param>
+    /// <param name="matrix"></param>
+    /// <returns></returns>
+    Vector3 TransformNormal(const Vector3& vector, const Matrix4x4& matrix);
+
 
     //回転は左手座標系(左手を握って親指の方向が軸、その他の指の幕方向が回転の正の方向)
 
@@ -335,6 +343,13 @@ namespace Math {
     /// <param name="matrix"></param>
     /// <returns></returns>
     Vector3 ExtractEulerFromMatrix(const Matrix4x4& matrix);
+
+    /// <summary>
+    /// 回転行列からオイラー角を抽出
+    /// </summary>
+    /// <param name="matrix"></param>
+    /// <returns></returns>
+    Vector3 GetEulerAngles(const Matrix4x4& matrix);
 
 #pragma endregion
 

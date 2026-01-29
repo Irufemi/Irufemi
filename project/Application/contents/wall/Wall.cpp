@@ -30,19 +30,6 @@ void Wall::Draw() {
 	if (model_) model_->Draw();
 }
 
-void Wall::UpdateOBB() {
-	obb_.center = transform_.translate;
-	obb_.size = { width_ / 2.0f, height_ / 2.0f, depth_ / 2.0f };
-	Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(transform_.rotate.x, transform_.rotate.y, transform_.rotate.z);
-	obb_.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
-	obb_.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
-	obb_.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
-}
-
-const OBB& Wall::GetOBB() const {
-	return obb_;
-}
-
 const Vector3& Wall::GetPosition() const { return transform_.translate; }
 
 void Wall::SetRotation(const Vector3& rot) { transform_.rotate = rot; }
@@ -62,9 +49,33 @@ bool Wall::AccumulateContactFrame() {
 }
 
 void Wall::DecayContactFrames() {
-	// 被触続していないときに徐々に接触フレームを減少させる
 	if (contactFrames_ > 0) {
-		contactFrames_ -= 1; // 1フレーム分だけ減らす。必要なら緩やかに変更。
-		if (contactFrames_ < 0) contactFrames_ = 0;
+		contactFrames_--;
 	}
+}
+
+void Wall::UpdateOBB() {
+	obb_.center = transform_.translate;
+	obb_.size = { width_ / 2.0f, height_ / 2.0f, depth_ / 2.0f };
+	Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(transform_.rotate.x, transform_.rotate.y, transform_.rotate.z);
+	obb_.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
+	obb_.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
+	obb_.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
+
+	// 各軸を正規化
+	obb_.orientations[0] = Math::Normalize(obb_.orientations[0]);
+	obb_.orientations[1] = Math::Normalize(obb_.orientations[1]);
+	obb_.orientations[2] = Math::Normalize(obb_.orientations[2]);
+}
+
+const OBB& Wall::GetOBB() const {
+	return obb_;
+}
+
+const Transform& Wall::GetTransform() const {
+	return transform_;
+}
+
+Vector3 Wall::GetSize() const {
+	return { width_, height_, depth_ };
 }

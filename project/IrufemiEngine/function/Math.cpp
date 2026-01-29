@@ -399,6 +399,15 @@ namespace Math {
         }
     }
 
+    // 法線や方向ベクトルなど、平行移動の影響を受けないベクトルを変換
+    Vector3 TransformNormal(const Vector3& vector, const Matrix4x4& m) {
+        Vector3 result{};
+        result.x = vector.x * m.m[0][0] + vector.y * m.m[1][0] + vector.z * m.m[2][0];
+        result.y = vector.x * m.m[0][1] + vector.y * m.m[1][1] + vector.z * m.m[2][1];
+        result.z = vector.x * m.m[0][2] + vector.y * m.m[1][2] + vector.z * m.m[2][2];
+        return result;
+    }
+
     // 4x4 X軸周り回転行列の作成関数
     Matrix4x4 MakeRotateXMatrix(const float& radian) {
         Matrix4x4 matrix{};
@@ -677,6 +686,26 @@ namespace Math {
             euler.y = std::atan2(-matrix.m[2][0], sy);
             euler.z = std::atan2(matrix.m[1][0], matrix.m[0][0]);
         } else {
+            // ジンバルロック状態
+            euler.x = std::atan2(-matrix.m[1][2], matrix.m[1][1]);
+            euler.y = std::atan2(-matrix.m[2][0], sy);
+            euler.z = 0;
+        }
+        return euler;
+    }
+
+    // 回転行列からオイラー角を抽出
+    Vector3 GetEulerAngles(const Matrix4x4& matrix) {
+        Vector3 euler{};
+        float sy = std::sqrt(matrix.m[0][0] * matrix.m[0][0] + matrix.m[1][0] * matrix.m[1][0]);
+        constexpr float kEpsilon = 1e-6f;
+
+        if (sy > kEpsilon) {
+            euler.x = std::atan2(matrix.m[2][1], matrix.m[2][2]);
+            euler.y = std::atan2(-matrix.m[2][0], sy);
+            euler.z = std::atan2(matrix.m[1][0], matrix.m[0][0]);
+        }
+        else {
             // ジンバルロック状態
             euler.x = std::atan2(-matrix.m[1][2], matrix.m[1][1]);
             euler.y = std::atan2(-matrix.m[2][0], sy);

@@ -30,6 +30,8 @@ public:
 	void SetAlive(bool alive);	
 	bool IsAlive() const;
 
+	void SetTargetPosition(const Vector3& pos);
+	const Vector3& GetTargetPosition() const;
 
 
 	void UpdateOBB();
@@ -48,6 +50,8 @@ private:
 	OBB obb_{};
 
 	bool alive_ = true;
+
+	Vector3 targetPosition_{};
 
 	float width_ = 0.5f;
 
