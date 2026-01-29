@@ -118,8 +118,10 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 #pragma region Wall初期化
 
     {
+        Wall sampleWall; // サイズ取得用のサンプル
+        const float wallHeight = sampleWall.GetHeight();
         const float baseRadius = 20.0f;
-        const float radii[2] = { baseRadius, baseRadius * 1.5f };
+        const float radii[2] = { baseRadius, baseRadius + wallHeight };
         const float twoPi = 2.0f * std::numbers::pi_v<float>;
 
         // Create two concentric rings: inner and one outer ring.
