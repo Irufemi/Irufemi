@@ -6,13 +6,15 @@
 #include <algorithm>
 
 #include "camera/Camera.h"
+#include "function/Random.h"
+#include "function/Math.h"
 
 Healer::Healer() {}
 
 Healer::~Healer() {}
 
-void Healer::NotifyWallDestroyed(const Vector3& pos, const Vector3& rot) {
-	destroyedQueue_.push_back(DestroyedWallInfo{ pos, rot, {} });
+void Healer::NotifyWallDestroyed(const Transform& transform, const Vector3& wallSize) {
+	destroyedQueue_.push_back(DestroyedWallInfo{ transform, wallSize, {} });
 	healFrameCounter_ = 0;
 }
 
@@ -47,13 +49,27 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 			float bestDist = FLT_MAX;
 			for (int i = 0; i < (int)availableHealers.size(); ++i) {
 				HealerActor* ha = availableHealers[i];
-				float d = DistanceSq(ha->GetPosition(), info.pos);
+				float d = DistanceSq(ha->GetPosition(), info.transform.translate);
 				if (d < bestDist) { bestDist = d; bestIdx = i; }
 			}
 			if (bestIdx < 0) break;
 			HealerActor* chosen = availableHealers[bestIdx];
 			info.assignedHealers.push_back(chosen);
 			chosen->SetAssigned(true);
+
+			// Wallのローカル空間でランダムなオフセットを生成
+			Vector3 randomOffset;
+			randomOffset.x = Random::GeneratorFloat(-info.wallSize.x / 2.0f, info.wallSize.x / 2.0f);
+			randomOffset.y = Random::GeneratorFloat(-info.wallSize.y / 2.0f, info.wallSize.y / 2.0f);
+			randomOffset.z = Random::GeneratorFloat(-info.wallSize.z / 2.0f, info.wallSize.z / 2.0f);
+
+			// オフセットをワールド空間に変換
+			Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(info.transform.rotate.x, info.transform.rotate.y, info.transform.rotate.z);
+			Vector3 worldOffset = Math::TransformNormal(randomOffset, rotMat);
+
+			// 目標位置を設定
+			chosen->SetTargetPosition(info.transform.translate + worldOffset);
+
 
 			availableHealers.erase(availableHealers.begin() + bestIdx);
 			--need;
@@ -65,7 +81,7 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 	for (DestroyedWallInfo& info : destroyedQueue_) {
 		for (HealerActor* ha : info.assignedHealers) {
 			if (!ha) continue;
-			ha->MoveTowards(info.pos, speed);
+			ha->MoveTowards(ha->GetTargetPosition(), speed, walls);
 			ha->RefreshTransform();
 		}
 	}
@@ -75,13 +91,17 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 
 	healFrameCounter_ = 0;
 
+	if (destroyedQueue_.empty()) return;
+
 	// 復元先として nullptr のスロットを探す。見つかればそこで壁を復元する。
 	for (Wall*& w : walls) {
 		if (w == nullptr) {
 			Wall* newWall = new Wall();
 			const DestroyedWallInfo info = destroyedQueue_.front();
-			newWall->Initialize(camera, info.pos);
-			newWall->SetRotation(info.rot);
+			
+			// Transformから位置と回転を復元
+			newWall->Initialize(camera, info.transform.translate);
+			newWall->SetRotation(info.transform.rotate);
 			newWall->Update();
 			w = newWall;
 

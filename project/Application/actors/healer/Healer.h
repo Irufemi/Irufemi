@@ -6,6 +6,7 @@
 #include <list>
 
 #include "math/Vector3.h"
+#include "math/Transform.h" // Transform をインクルード
 
 // 前方宣言
 class Camera;
@@ -16,8 +17,8 @@ public:
 	Healer();
 	~Healer();
 
-	// 壊された壁の位置と回転を通知する（破壊時に呼び出す）
-	void NotifyWallDestroyed(const Vector3& pos, const Vector3& rot);
+	// 壊された壁のTransformとサイズを通知する（破壊時に呼び出す）
+	void NotifyWallDestroyed(const Transform& transform, const Vector3& wallSize);
 
 	// 毎フレーム呼び出す。修復可能なときに次の壊れた壁を復元する。
 	// camera は Wall の初期化に必要。walls は復元先のコンテナ（nullptr のスロットを探す）
@@ -25,8 +26,8 @@ public:
 
 private:
 	struct DestroyedWallInfo {
-		Vector3 pos;
-		Vector3 rot;
+		Transform transform; // 位置と回転
+		Vector3 wallSize;    // 壁のサイズ
 		std::vector<HealerActor*> assignedHealers; // 演出用に割り当てられたHealerActor複数
 	};
 

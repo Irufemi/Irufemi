@@ -24,11 +24,17 @@ public:
 	// OBB の取得
 	const OBB& GetOBB() const;
 
+	// Transformの取得
+	const Transform& GetTransform() const;
+
 	// 位置の取得
 	const Vector3& GetPosition() const;
 
 	// 回転を設定（z軸回転など）
 	void SetRotation(const Vector3& rot);
+
+	// スケールを設定
+	void SetScale(const Vector3& scale);
 
 	// 回転の取得
 	const Vector3& GetRotation() const;
@@ -46,6 +52,9 @@ public:
 	float GetWidth() { return width_; }
 	float GetHeight() { return height_; }
 	float GetDepth() { return depth_; }
+
+	// サイズをVector3として取得
+	Vector3 GetSize() const;
 
 private:
 	OBB obb_{};

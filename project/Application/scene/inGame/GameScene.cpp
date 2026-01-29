@@ -118,15 +118,17 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 #pragma region Wall初期化
 
     {
+        Wall sampleWall; // サイズ取得用のサンプル
+        const float wallHeight = sampleWall.GetHeight();
         const float baseRadius = 20.0f;
-        const float radii[2] = { baseRadius, baseRadius * 1.5f };
+        const float radii[2] = { baseRadius, baseRadius + wallHeight };
         const float twoPi = 2.0f * std::numbers::pi_v<float>;
 
       
         for (int ring = 0; ring < 2; ++ring) {
             float radius = radii[ring];
-           
-            float angularOffset = (ring % 2 == 0) ? 0.0f : (twoPi / (2.0f * static_cast<float>(kMaxWall_)));
+            // Stagger every other ring so walls are not perfectly aligned radially
+            float angularOffset = 0.0f;
 
             for (int32_t i = 0; i < kMaxWall_; ++i) {
                 float angle = twoPi * static_cast<float>(i) / static_cast<float>(kMaxWall_) + angularOffset;
@@ -134,6 +136,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
                 float y = radius * std::sin(angle);
                 Wall* wall = new Wall();
                 wall->Initialize(camera_.get(), Vector3{x, y, 0.0f});
+
+                if (ring > 0) {
+                    float scaleRatio = radii[ring] / radii[0];
+                    wall->SetScale({ scaleRatio, 1.0f, 1.0f });
+                }
 
                 float rotZ = angle + std::numbers::pi_v<float> * 0.5f;
                 wall->SetRotation(Vector3{ 0.0f, 0.0f, rotZ });
@@ -466,6 +473,7 @@ void GameScene::CollisionCheck() {
 
             if (Collision::IsOBBCollision(obbEnemy, obbWall)) {
                 touched = true;
+                enemy->OnCollisionWithWall(wall); // ★ 衝突時に押し出し処理を呼ぶ
                 bool destroyed = wall->AccumulateContactFrame();
                 if (destroyed) {
 
@@ -478,8 +486,8 @@ void GameScene::CollisionCheck() {
                         }
                     }
 
-                    // 壊された位置を Healer に通知
-                    if (healer_) healer_->NotifyWallDestroyed(wall->GetPosition(), wall->GetRotation());
+                    // 壊されたTransformとサイズを Healer に通知
+                    if (healer_) healer_->NotifyWallDestroyed(wall->GetTransform(), wall->GetSize());
 
                     delete wall;
                     *wallIt = nullptr;

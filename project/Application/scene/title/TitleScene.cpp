@@ -57,6 +57,15 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
+
+    /// Sprite
+    // テキスト
+    // 血管壊回
+    textSprite_title_ = std::make_unique<Sprite>();
+    textSprite_title_->Initialize(camera_.get(), "resources/texture/text_title.png");
+    // 押したらスタート
+    textSprite_pushStart_ = std::make_unique<Sprite>();
+    textSprite_pushStart_->Initialize(camera_.get(), "resources/texture/text_title.png");
 }
 
 // 更新
