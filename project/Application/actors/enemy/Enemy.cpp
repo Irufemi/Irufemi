@@ -20,7 +20,7 @@ Enemy::~Enemy() {}
 void Enemy::Initialize(Camera* camera, Vector3 pos) {
     camera_ = camera;
     model_ = std::make_unique<ObjClass>();
-    model_->Initialize(camera, "cube.obj");
+    model_->Initialize(camera, "TD_Enemy.obj");
     transform_.translate = pos;
 	preferHealer_ = false;
 	preferHealerTimer_ = 0;
@@ -29,12 +29,17 @@ void Enemy::Initialize(Camera* camera, Vector3 pos) {
 	lastTouchedHealer_ = nullptr;
 }
 
-void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>& healers) {
-	if (!alive_) {
+void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>& healers)
+{
+	if (!alive_)
+	{
 		// カウントダウンでリスポーン判定
-		if (respawnCounter_ > 0) {
+		if (respawnCounter_ > 0)
+		{
 			--respawnCounter_;
-		} else {
+		}
+		else
+		{
 			// リスポーン
 			alive_ = true;
 			// ランダム位置に再配置（適宜範囲は調整）
@@ -54,72 +59,93 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 	}
 
 	// ターゲットがまだ無い場合のみ確率をロールして行動を決定する
-	if (targetWall_ == nullptr && targetHealer_ == nullptr) {
-		if (preferHealerTimer_ <= 0) {
+	if (targetWall_ == nullptr && targetHealer_ == nullptr)
+	{
+		if (preferHealerTimer_ <= 0)
+		{
 			// roll once and cache result for kPreferHealerFrames
 			float prob = Random::GeneratorFloat(0.0f, 1.0f);
 			preferHealer_ = (prob <= 0.5f);
 			preferHealerTimer_ = kPreferHealerFrames;
 
-			if (preferHealer_) {
+			if (preferHealer_)
+			{
 				// Healer を狙うモード -> その時点で最も近い修復中の Healer をターゲットにする
 				const HealerActor* best = nullptr;
 				float bestDist = FLT_MAX;
-				for (const HealerActor* ha : healers) {
+				for (const HealerActor* ha : healers)
+				{
 					if (!ha) continue;
 					if (!ha->IsAssigned()) continue; // 修復中のもののみ
 					if (ha == lastTouchedHealer_) continue; // 直前に触れたHealerは除外
 					float d = Math::Length(ha->GetPosition() - transform_.translate);
 					if (d < bestDist) { bestDist = d; best = ha; }
 				}
-				if (best) {
+				if (best)
+				{
 					targetHealer_ = best;
-				} else {
+				}
+				else
+				{
 					// Healer がいなければ近い壁をターゲットにする
 					Wall* nearestWall = nullptr;
 					float nearestDistance = FLT_MAX;
-					for (Wall* wall : walls) {
+					for (Wall* wall : walls)
+					{
 						if (!wall) continue;
 						float d = Math::Length(wall->GetPosition() - transform_.translate);
 						if (d < nearestDistance) { nearestDistance = d; nearestWall = wall; }
 					}
 					targetWall_ = nearestWall;
 				}
-			} else {
+			}
+			else
+			{
 				// 壁を壊すモード -> その時点で最も近い Wall をターゲットにする
 				Wall* bestW = nullptr;
 				float bestDistW = FLT_MAX;
-				for (Wall* w : walls) {
+				for (Wall* w : walls)
+				{
 					if (!w) continue;
 					float d = Math::Length(w->GetPosition() - transform_.translate);
 					if (d < bestDistW) { bestDistW = d; bestW = w; }
 				}
 				targetWall_ = bestW;
 			}
-		} else {
+		}
+		else
+		{
 			--preferHealerTimer_;
 		}
-	} else {
+	}
+	else
+	{
 		// 既にターゲットがある場合はタイマーだけ減らす（再ロールはターゲットが消えるまで行わない）
 		if (preferHealerTimer_ > 0) --preferHealerTimer_;
 	}
 
 	// 保持しているターゲットがまだ存在するか検証する。存在しなければクリアして次フレームに再ロール可能にする
-	if (targetHealer_) {
+	if (targetHealer_)
+	{
 		bool valid = false;
-		for (const HealerActor* ha : healers) {
+		for (const HealerActor* ha : healers)
+		{
 			if (ha == targetHealer_) { valid = true; break; }
 		}
-		if (!valid || !targetHealer_->IsAssigned()) {
+		if (!valid || !targetHealer_->IsAssigned())
+		{
 			targetHealer_ = nullptr;
 		}
 	}
-	if (targetWall_) {
+	if (targetWall_)
+	{
 		bool valid = false;
-		for (Wall* w : walls) {
+		for (Wall* w : walls)
+		{
 			if (w == targetWall_) { valid = true; break; }
 		}
-		if (!valid) {
+		if (!valid)
+		{
 			targetWall_ = nullptr;
 		}
 	}
@@ -127,24 +153,30 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 	// ターゲットに向かって移動
 	Vector3 targetPos{ 0.0f, 0.0f, 0.0f };
 	bool hasTarget = false;
-	if (targetHealer_) {
+	if (targetHealer_)
+	{
 		hasTarget = true;
 		targetPos = targetHealer_->GetPosition();
-	} else if (targetWall_) {
+	}
+	else if (targetWall_)
+	{
 		hasTarget = true;
 		targetPos = targetWall_->GetPosition();
 	}
 
-	if (hasTarget) {
+	if (hasTarget)
+	{
 		Vector3 direction = targetPos - transform_.translate;
 		float dirLen = Math::Length(direction);
 
 		// ターゲットが壁の場合、めり込まないように接触距離を考慮する
 		float stopDistance = 0.0f;
-		if (targetWall_) {
+		if (targetWall_)
+		{
 			const OBB& wallObb = targetWall_->GetOBB();
 			Vector3 dirToWall = wallObb.center - obb_.center;
-			if (Math::Length(dirToWall) > 1e-6f) {
+			if (Math::Length(dirToWall) > 1e-6f)
+			{
 				dirToWall = Math::Normalize(dirToWall);
 
 				// EnemyのOBBを移動方向に射影した半径
@@ -164,7 +196,8 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 		}
 
 
-		if (dirLen > stopDistance) {
+		if (dirLen > stopDistance)
+		{
 			direction = Math::Normalize(direction);
 
 			// 移動速度
@@ -176,10 +209,12 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 
 	// Healer に接触したか簡易判定
 	// 接触を検出したら targetHealer_ をクリアして lastTouchedHealer_ に記憶
-	if (targetHealer_) {
+	if (targetHealer_)
+	{
 		float touchDist = 1.0f; // 接触許容距離(調整可)
 		float d = Math::Length(targetHealer_->GetPosition() - transform_.translate);
-		if (d <= touchDist) {
+		if (d <= touchDist)
+		{
 			// 接触とみなす
 			targetHealer_ = nullptr;
 			lastTouchedHealer_ = targetHealer_;
@@ -188,8 +223,7 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 		}
 	}
 
-    UpdateOBB();
-
+	UpdateOBB();
 }
 
 void Enemy::Draw() {
