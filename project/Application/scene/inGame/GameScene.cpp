@@ -124,7 +124,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         const float radii[2] = { baseRadius, baseRadius + wallHeight };
         const float twoPi = 2.0f * std::numbers::pi_v<float>;
 
-        // Create two concentric rings: inner and one outer ring.
+      
         for (int ring = 0; ring < 2; ++ring) {
             float radius = radii[ring];
             // Stagger every other ring so walls are not perfectly aligned radially
@@ -267,6 +267,25 @@ void GameScene::Update() {
         timeDisplay_->Update();
     }
 
+     if (cameraShakeTimer_ > 0.0f && camera_) {
+        cameraShakeTimer_ -= 1.0f / 60.0f;
+       
+        float mag = cameraShakeMagnitude_;
+        float ox = (Random::GeneratorFloat(-1.0f, 1.0f)) * mag;
+        float oy = (Random::GeneratorFloat(-1.0f, 1.0f)) * mag;
+        Vector3 t = camera_->GetTranslate();
+      
+        if (cameraShakeTimer_ + (1.0f/60.0f) >= cameraShakeDuration_) {
+            cameraShakeOriginalTranslate_ = t;
+        }
+        camera_->SetTranslate(Vector3{ cameraShakeOriginalTranslate_.x + ox, cameraShakeOriginalTranslate_.y + oy, cameraShakeOriginalTranslate_.z });
+        if (cameraShakeTimer_ <= 0.0f) {
+          
+            camera_->SetTranslate(cameraShakeOriginalTranslate_);
+            cameraShakeTimer_ = 0.0f;
+        }
+    }
+
     // =====
     // ↑ゲームの更新
     // =====
@@ -314,12 +333,12 @@ void GameScene::GameInitialize() {}
 // ゲーム中の更新
 void GameScene::GameUpdate() {}
 
-// フェードアウト中の更新
+// フェードアウト中の初期化
 void GameScene::FadeOutInitialize() {}
 
 
 // フェードアウト中の更新
-void GameScene::FadeOutUpdate(){}
+void GameScene::FadeOutUpdate() {}
 
 // 描画
 void GameScene::Draw() {
@@ -423,7 +442,14 @@ void GameScene::CollisionCheck() {
         if (Collision::IsOBBCollision(obbPlayer, obbEnemy)) {
             player_->HandleCollision();
             enemy->HandleCollision();
-        }
+           
+            if (cameraShakeTimer_ <= 0.0f) {
+                const float shakeDur = 0.8f;
+                StartCameraShake(camera_.get(), shakeDur, 0.8f);
+                
+                player_->StunFor(shakeDur);
+            }
+         }
     }
 #pragma endregion PlayerとEnemyの衝突判定
 
@@ -528,4 +554,12 @@ void GameScene::CollisionCheck() {
         }
     }
 #pragma endregion SwordとEnemyの衝突判定
+}
+
+void GameScene::StartCameraShake(Camera* cam, float duration, float magnitude) {
+    if (!cam) return;
+    cameraShakeDuration_ = duration;
+    cameraShakeTimer_ = duration;
+    cameraShakeMagnitude_ = magnitude;
+    cameraShakeOriginalTranslate_ = cam->GetTranslate();
 }
