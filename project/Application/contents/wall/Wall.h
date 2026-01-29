@@ -56,11 +56,11 @@ private:
 	int contactFrames_ = 0;
 	static inline const int kRequiredContactFrames_ = 60; // 60フレームでダメージ
 
-	float width_ = 8.74f;
+	float width_ = 8.23f;
 
 	float height_ = 2.0f;
 
-	float depth_ = 2.0f;
+	float depth_ = 2.16f;
 
 private:
 	std::unique_ptr<ObjClass> model_ = nullptr;
