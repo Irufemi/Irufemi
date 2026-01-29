@@ -34,6 +34,8 @@ const Vector3& Wall::GetPosition() const { return transform_.translate; }
 
 void Wall::SetRotation(const Vector3& rot) { transform_.rotate = rot; }
 
+void Wall::SetScale(const Vector3& scale) { transform_.scale = scale; }
+
 const Vector3& Wall::GetRotation() const { return transform_.rotate; }
 
 bool Wall::AccumulateContactFrame() {
@@ -56,7 +58,7 @@ void Wall::DecayContactFrames() {
 
 void Wall::UpdateOBB() {
 	obb_.center = transform_.translate;
-	obb_.size = { width_ / 2.0f, height_ / 2.0f, depth_ / 2.0f };
+	obb_.size = { (width_ * transform_.scale.x) / 2.0f, (height_ * transform_.scale.y) / 2.0f, (depth_ * transform_.scale.z) / 2.0f };
 	Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(transform_.rotate.x, transform_.rotate.y, transform_.rotate.z);
 	obb_.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
 	obb_.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
@@ -77,5 +79,5 @@ const Transform& Wall::GetTransform() const {
 }
 
 Vector3 Wall::GetSize() const {
-	return { width_, height_, depth_ };
+	return { width_ * transform_.scale.x, height_ * transform_.scale.y, depth_ * transform_.scale.z };
 }

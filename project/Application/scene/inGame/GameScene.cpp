@@ -137,6 +137,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
                 Wall* wall = new Wall();
                 wall->Initialize(camera_.get(), Vector3{x, y, 0.0f});
 
+                if (ring > 0) {
+                    float scaleRatio = radii[ring] / radii[0];
+                    wall->SetScale({ scaleRatio, 1.0f, 1.0f });
+                }
+
                 float rotZ = angle + std::numbers::pi_v<float> * 0.5f;
                 wall->SetRotation(Vector3{ 0.0f, 0.0f, rotZ });
                 walls_.push_back(wall);

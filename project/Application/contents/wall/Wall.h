@@ -33,6 +33,9 @@ public:
 	// 回転を設定（z軸回転など）
 	void SetRotation(const Vector3& rot);
 
+	// スケールを設定
+	void SetScale(const Vector3& scale);
+
 	// 回転の取得
 	const Vector3& GetRotation() const;
 
