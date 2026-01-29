@@ -52,6 +52,9 @@
     <ClCompile Include="scene\result\ResultScene.cpp">
       <Filter>scene\result</Filter>
     </ClCompile>
+    <ClCompile Include="actors\enemy\TwoHitEnemy.cpp">
+      <Filter>actor\enemy</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actors\enemy\Enemy.h">
@@ -101,6 +104,9 @@
     </ClInclude>
     <ClInclude Include="scene\result\ResultScene.h">
       <Filter>scene\result</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\TwoHitEnemy.h">
+      <Filter>actor\enemy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
