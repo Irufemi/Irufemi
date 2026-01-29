@@ -17,7 +17,7 @@
 #include "function/Random.h"
 #include "function/Collision.h"
 
-#include "../../Sword.h" // add include for Sword
+#include "Sword.h"
 
 // デストラクタ
 GameScene::~GameScene() {
@@ -42,11 +42,7 @@ GameScene::~GameScene() {
         healerActor_.pop_front();
     }
 
-    // スマートポインタに変更したため下記はコメントアウト
-
-    /*delete player_;
-    delete model_;
-    delete healer_;*/
+    
 }
 
 // 初期化
@@ -122,18 +118,27 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 #pragma region Wall初期化
 
     {
-        const float radius = 20.0f;
+        const float baseRadius = 20.0f;
+        const float radii[2] = { baseRadius, baseRadius * 1.5f };
         const float twoPi = 2.0f * std::numbers::pi_v<float>;
-        for (int32_t i = 0; i < kMaxWall_; ++i) {
-            float angle = twoPi * static_cast<float>(i) / static_cast<float>(kMaxWall_);
-            float x = radius * std::cos(angle);
-            float y = radius * std::sin(angle);
-            Wall* wall = new Wall();
-            wall->Initialize(camera_.get(), Vector3{x, y, 0.0f});
 
-            float rotZ = angle + std::numbers::pi_v<float> *0.5f;
-            wall->SetRotation(Vector3{ 0.0f, 0.0f, rotZ });
-            walls_.push_back(wall);
+        // Create two concentric rings: inner and one outer ring.
+        for (int ring = 0; ring < 2; ++ring) {
+            float radius = radii[ring];
+            // Stagger every other ring so walls are not perfectly aligned radially
+            float angularOffset = (ring % 2 == 0) ? 0.0f : (twoPi / (2.0f * static_cast<float>(kMaxWall_)));
+
+            for (int32_t i = 0; i < kMaxWall_; ++i) {
+                float angle = twoPi * static_cast<float>(i) / static_cast<float>(kMaxWall_) + angularOffset;
+                float x = radius * std::cos(angle);
+                float y = radius * std::sin(angle);
+                Wall* wall = new Wall();
+                wall->Initialize(camera_.get(), Vector3{x, y, 0.0f});
+
+                float rotZ = angle + std::numbers::pi_v<float> * 0.5f;
+                wall->SetRotation(Vector3{ 0.0f, 0.0f, rotZ });
+                walls_.push_back(wall);
+            }
         }
     }
 
@@ -214,15 +219,21 @@ void GameScene::Update() {
 
     PhaseUpdate();
 
-    for (int32_t i = 0; i < kMaxWall_; ++i) {
-        Wall* w = walls_.front();
+    // Update all walls (use full container size because we now create multiple rings)
+    for (Wall* w : walls_) {
         if (w) w->Update();
-        walls_.push_back(walls_.front());
-        walls_.pop_front();
     }
 
     for (int32_t i = 0; i < kMaxEnemy_; ++i) {
         Enemy* e = enemies_.front();
+        if (!e) {
+            // recreate enemy for this slot so it can respawn
+            e = new Enemy();
+            float x = Random::GeneratorFloat(-10.0f, 10.0f);
+            float y = Random::GeneratorFloat(-10.0f, 10.0f);
+            e->Initialize(camera_.get(), Vector3{x, y, 0.0f});
+            enemies_.front() = e; // replace nullptr slot with new instance
+        }
         if (e) e->Update(walls_, healerActor_);
         enemies_.push_back(enemies_.front());
         enemies_.pop_front();
@@ -311,11 +322,9 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO(); 
     
-    for (int32_t i = 0; i < kMaxWall_; ++i) {
-        Wall* w = walls_.front();
+    // Draw all walls (iterate whole container to include added rings)
+    for (Wall* w : walls_) {
         if (w) w->Draw();
-        walls_.push_back(walls_.front());
-        walls_.pop_front();
     }
 
     for (int32_t i = 0; i < kMaxEnemy_; ++i) {
@@ -498,11 +507,14 @@ void GameScene::CollisionCheck() {
             sword->UpdateOBB();
             const OBB& swordObb = sword->GetOBB();
 
-            for (Enemy* enemy : enemies_) {
+           
+            for (auto enemyIt = enemies_.begin(); enemyIt != enemies_.end(); ++enemyIt) {
+                Enemy* enemy = *enemyIt;
                 if (!enemy || !enemy->IsAlive()) continue;
                 enemy->UpdateOBB();
                 const OBB& enemyObb = enemy->GetOBB();
                 if (Collision::IsOBBCollision(swordObb, enemyObb)) {
+               
                     enemy->Kill();
                 }
             }
