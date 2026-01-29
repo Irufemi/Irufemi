@@ -128,7 +128,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         for (int ring = 0; ring < 2; ++ring) {
             float radius = radii[ring];
             // Stagger every other ring so walls are not perfectly aligned radially
-            float angularOffset = (ring % 2 == 0) ? 0.0f : (twoPi / (2.0f * static_cast<float>(kMaxWall_)));
+            float angularOffset = 0.0f;
 
             for (int32_t i = 0; i < kMaxWall_; ++i) {
                 float angle = twoPi * static_cast<float>(i) / static_cast<float>(kMaxWall_) + angularOffset;
