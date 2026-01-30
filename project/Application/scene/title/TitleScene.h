@@ -38,6 +38,18 @@ private: // メンバ変数(ゲーム)
     // 押したらスタート
     std::unique_ptr<Sprite> textSprite_pushStart_ = nullptr;
 
+#pragma region takamura追加
+    std::vector<std::unique_ptr<Sprite>> stripeSprites_;
+    std::vector<float> stripeProgress_;
+    int transitionTimer = 0;
+    int transitionTime = 90;
+    int transitionStripeIndex = 8;
+    bool isTransitioning = false;
+    float stripeWidth = 700.0f;
+    float stripeHeight = 820.0f;
+    float transitionDeley = 0.5f;
+#pragma endregion takamura追加
+
 private: // メンバ変数(システム)
     // エンジン
     IrufemiEngine* engine_ = nullptr;
