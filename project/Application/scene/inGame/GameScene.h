@@ -73,6 +73,16 @@ private: // メンバ関数(内部ヘルパ)
     // フェードアウト中の更新
     void FadeOutUpdate();
 
+#pragma region takamura追加（トランジション）
+    std::vector<std::unique_ptr<Sprite>> stripeSprites_;
+    std::vector<float> stripeProgress_;
+    int transitionTimer = 0;
+    int transitionStripeIndex = 8;
+    bool isTransitionOut = true;  // シーン開始時はtrue（はけるアニメーション）
+    float stripeWidth = 700.0f;
+    float stripeHeight = 820.0f;
+#pragma endregion takamura追加
+
 private: // メンバ変数(ゲーム進行)
 
     // フェーズ
