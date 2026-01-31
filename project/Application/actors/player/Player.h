@@ -31,6 +31,12 @@ public:
     // expose sword for collision checks
     Sword* GetSword() { return sword_.get(); }
 
+    // stun query
+    bool IsStunned() const { return isStunned_; }
+
+    // externally set stun duration (seconds)
+    void StunFor(float seconds) { isStunned_ = true; stunTimer_ = seconds; }
+
 private:
 
     OBB obb_{};
@@ -86,6 +92,11 @@ private:
     Camera* camera_ = nullptr;
 
     InputManager* input_ = nullptr;
+
+    // スタン関連
+    bool isStunned_ = false;
+    float stunTimer_ = 0.0f;
+    static inline constexpr float kStunDuration = 2.0f; // スタン時間(秒)
 
 private:
     void Move();

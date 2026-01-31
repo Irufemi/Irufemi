@@ -36,6 +36,22 @@ void Player::Initialize(Camera* camera, const Vector3& pos, InputManager* input)
 
 void Player::Update()
 {
+    // スタン中の場合はタイマーを減らしてスタン終了判定
+    if (isStunned_)
+    {
+        constexpr float kFrameDt = 1.0f / 60.0f;
+        stunTimer_ -= kFrameDt;
+        if (stunTimer_ <= 0.0f)
+        {
+            isStunned_ = false;
+            stunTimer_ = 0.0f;
+        }
+        // スタン中は移動や攻撃を行わない。ただし見た目の更新は行う
+        transform_.translate += velocity;
+        UpdateOBB();
+        model_->Debug();
+        return;
+    }
 
 	transform_.translate += velocity;
 
@@ -106,12 +122,21 @@ void Player::HandleCollision()
 {
 	// 簡易処理: 衝突時は速度をゼロにして位置を戻す（ここでは速度のみリセット）
 	velocity = {};
+
+	
 }
 
 void Player::Move()
 {
 	// 移動は攻撃中は不可
 	if (isAttacking_)
+	{
+		velocity = {};
+		return;
+	}
+
+	// 移動不可: スタン中
+	if (isStunned_)
 	{
 		velocity = {};
 		return;
@@ -227,7 +252,6 @@ void Player::Attack()
 			isCharging_ = false;
 			attackRangeVisible_ = true;
 			attackRangeTimer_ = kAttackRangeDuration;
-
 
 			
 			if (sword_ && attackRangeModel_) {

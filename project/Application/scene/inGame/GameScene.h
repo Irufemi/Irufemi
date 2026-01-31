@@ -17,6 +17,7 @@ struct DirectionalLight;
 struct AreaLight;
 
 #include "3D/ObjClass.h"
+#include "math/Vector3.h"
 
 #include "actors/player/Player.h"
 #include "actors/healer/Healer.h"
@@ -83,6 +84,8 @@ private: // メンバ関数(内部ヘルパ)
     // 各モードの具体的生成ロジック
     void TutorialInitialize();
     void StandardInitialize();
+  
+    void StartCameraShake(Camera* cam, float duration, float magnitude);
 
 private: // メンバ変数(ゲーム進行)
 
@@ -140,6 +143,11 @@ private: // メンバ変数(ゲーム)
 
     std::unique_ptr<TimeDisplay> timeDisplay_;
 
+  
+    float cameraShakeTimer_ = 0.0f;
+    float cameraShakeDuration_ = 0.0f;
+    float cameraShakeMagnitude_ = 0.0f;
+    Vector3 cameraShakeOriginalTranslate_{};
 
 private: // メンバ変数(システム)
     // エンジン
