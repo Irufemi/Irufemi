@@ -55,6 +55,9 @@ private: // メンバ関数(内部ヘルパ)
     // フェーズの更新
     void PhaseUpdate();
 
+    // フェーズの変更
+    void PhaseChange();
+
     // フェードインの初期化
     void FadeInInitialize();
 
@@ -73,11 +76,20 @@ private: // メンバ関数(内部ヘルパ)
     // フェードアウト中の更新
     void FadeOutUpdate();
 
+    // 既存のゲームオブジェクトをすべて破棄・リセットする
+    void ClearAllObjects();
+    // モード分岐用
+    void ModeInitialize();
+    // 各モードの具体的生成ロジック
+    void TutorialInitialize();
+    void StandardInitialize();
+
 private: // メンバ変数(ゲーム進行)
 
     // フェーズ
     enum class Phase {
         FadeIn,
+        Countdown,
         Game,
         FadeOut
     };

@@ -16,8 +16,9 @@ Player::~Player() {}
 
 void Player::Initialize(Camera* camera, const Vector3& pos, InputManager* input)
 {
-
-	CreateObj(camera);
+	if (!model_ && !attackRangeModel_) {
+		CreateObj(camera);
+	}
 
 	// create sword
 	sword_ = std::make_unique<Sword>();
