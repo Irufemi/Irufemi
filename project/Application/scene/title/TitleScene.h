@@ -7,6 +7,10 @@
 
 #include "2D/Sprite.h"
 
+#pragma region takamura追加
+#include "StripeTransition.h"
+#pragma endregion takamura追加
+
 class IrufemiEngine;
 class Camera;
 class DebugCamera;
@@ -39,15 +43,10 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<Sprite> textSprite_pushStart_ = nullptr;
 
 #pragma region takamura追加
-    std::vector<std::unique_ptr<Sprite>> stripeSprites_;
-    std::vector<float> stripeProgress_;
+    std::unique_ptr<StripeTransition> stripeTransition_;
+    bool isTransitioning = false;
     int transitionTimer = 0;
     int transitionTime = 90;
-    int transitionStripeIndex = 8;
-    bool isTransitioning = false;
-    float stripeWidth = 700.0f;
-    float stripeHeight = 820.0f;
-    float transitionDeley = 0.5f;
 #pragma endregion takamura追加
 
 private: // メンバ変数(システム)

@@ -52,6 +52,7 @@
     <ClCompile Include="scene\result\ResultScene.cpp">
       <Filter>scene\result</Filter>
     </ClCompile>
+    <ClCompile Include="StripeTransition.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actors\enemy\Enemy.h">
@@ -102,6 +103,7 @@
     <ClInclude Include="scene\result\ResultScene.h">
       <Filter>scene\result</Filter>
     </ClInclude>
+    <ClInclude Include="StripeTransition.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="actor">

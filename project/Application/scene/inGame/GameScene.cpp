@@ -180,25 +180,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     healer_ = std::make_unique<Healer>();
 
 #pragma region takamura追加（トランジション）
-    float screenHeight = static_cast<float>(engine_->GetClientHeight());
-    float screenWidth = static_cast<float>(engine_->GetClientWidth());
-    float spacing = screenWidth / transitionStripeIndex;
-    float spacingOffset = 50.0f;
-    const std::string& texturePath = "resources/texture/stripe.png";
-
-    for (int i = 0; i < transitionStripeIndex; ++i) {
-        auto stripe = std::make_unique<Sprite>();
-        stripe->Initialize(camera_.get(), texturePath);
-        stripe->SetSize(stripeWidth, stripeHeight);
-
-        // 初期位置（画面を覆っている状態 = TitleSceneの最終位置）
-        float x = (spacing + spacingOffset) * i - 450.0f;
-        float y = -50.0f;
-        stripe->SetPosition(x, y);
-
-        stripeSprites_.push_back(std::move(stripe));
-        stripeProgress_.push_back(0.0f);
-    }
+    stripeTransition_ = std::make_unique<StripeTransition>();
+    stripeTransition_->Initialize(camera_.get(), engine_, StripeTransition::Mode::Out);
+    stripeTransition_->Start();
 #pragma endregion takamura追加
 
 }
@@ -290,73 +274,7 @@ void GameScene::Update() {
     }
 
 #pragma region takamura追加（トランジション）
-    if (isTransitionOut) {
-        ++transitionTimer;
-
-        float screenWidth = static_cast<float>(engine_->GetClientWidth());
-        float screenHeight = static_cast<float>(engine_->GetClientHeight());
-        float spacing = screenWidth / transitionStripeIndex;
-        float spacingOffset = 50.0f;
-
-        // トリガー位置
-        float triggerY = stripeHeight / 2.0f;
-
-        for (int i = 0; i < transitionStripeIndex; ++i) {
-            bool shouldStart = false;
-
-            if (i == 0) {
-                shouldStart = true;
-            } else {
-                // 前のスプライトの位置で判定
-                Vector2 prevPos = stripeSprites_[i - 1]->GetPosition2D();
-                float prevTriggerPoint = prevPos.y + (stripeHeight * 1.0f / 3.0f);
-
-                // 前のスプライトが下に動き始めたら開始
-                if (prevTriggerPoint >= triggerY + 100.0f) {
-                    shouldStart = true;
-                }
-            }
-
-            // 降下処理（画面外へ）
-            if (shouldStart && stripeProgress_[i] < 1.0f) {
-                float moveSpeed = 0.05f;
-                stripeProgress_[i] += moveSpeed;
-                if (stripeProgress_[i] > 1.0f) {
-                    stripeProgress_[i] = 1.0f;
-                }
-            }
-
-            // 初期位置（画面を覆っている状態）
-            float startX = (spacing + spacingOffset) * i - 450.0f;
-            float startY = -50.0f;
-
-            // 最終位置（画面外の下）
-            float endX = (spacing + spacingOffset) * i - 950.0f;
-            float endY = screenHeight + 200.0f;
-
-            // 線形補間
-            float x = startX + (endX - startX) * stripeProgress_[i];
-            float y = startY + (endY - startY) * stripeProgress_[i];
-
-            stripeSprites_[i]->SetPosition(x, y);
-        }
-
-        // 全てのストライプがはけたらトランジション終了
-        bool allDone = true;
-        for (const auto& p : stripeProgress_) {
-            if (p < 1.0f) {
-                allDone = false;
-                break;
-            }
-        }
-        if (allDone) {
-            isTransitionOut = false;
-        }
-    }
-
-    for (auto& stripe : stripeSprites_) {
-        stripe->Update();
-    }
+    stripeTransition_->Update();
 #pragma endregion takamura追加
 
     // =====
@@ -463,12 +381,8 @@ void GameScene::Draw() {
     }
 
 #pragma region takamura追加（トランジション）
-    // トランジション中のみ描画
-    if (isTransitionOut) {
-        for (int i = transitionStripeIndex - 1; i >= 0; --i) {
-            stripeSprites_[i]->Draw();
-        }
-    }
+    // 2D描画の最後に
+    stripeTransition_->Draw();
 #pragma endregion takamura追加
 
 }

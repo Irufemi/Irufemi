@@ -68,34 +68,9 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     textSprite_pushStart_->Initialize(camera_.get(), "resources/texture/text_title.png");
 
 #pragma region takamura追加
-    float screenHeight = static_cast<float>(engine_->GetClientHeight());
-    float offScreenY = screenHeight + 300.0f;
-    float spacing = static_cast<float>(engine_->GetClientWidth()) / transitionStripeIndex;
-    const std::string& texturePath = "resources/texture/stripe.png";
-
-    for (int i = 0; i < transitionStripeIndex; ++i) {
-        auto stripe = std::make_unique<Sprite>();
-
-        stripe->Initialize(camera_.get(), texturePath);
-        stripe->SetSize(stripeWidth, stripeHeight);
-
-        // 初期位置（画面外の上）
-        float x = spacing * i - 50.0f;
-        float y = -offScreenY;
-        stripe->SetPosition(x, y);
-
-        stripeSprites_.push_back(std::move(stripe));
-        stripeProgress_.push_back(0.0f);
-
-        for (int i = 0; i < static_cast<int>(stripeSprites_.size()); ++i) {
-            Vector2 pos = stripeSprites_[i]->GetPosition2D();
-            Vector2 size = stripeSprites_[i]->GetSize();
-            char buf[256];
-            sprintf_s(buf, "Stripe[%d] after init: pos=(%.1f, %.1f), size=(%.1f, %.1f)\n",
-                i, pos.x, pos.y, size.x, size.y);
-            OutputDebugStringA(buf);
-        }
-    }
+    // ストライプトランジション初期化（入り）
+    stripeTransition_ = std::make_unique<StripeTransition>();
+    stripeTransition_->Initialize(camera_.get(), engine_, StripeTransition::Mode::In);
 #pragma endregion takamura追加
 }
 
@@ -124,62 +99,6 @@ void TitleScene::Update() {
             ImGui::EndTabItem();
         }
 
-        // Transition タブ
-        if (ImGui::BeginTabItem("Transition")) {
-            ImGui::Text("isTransitioning: %s", isTransitioning ? "true" : "false");
-            ImGui::Text("transitionTimer: %d", transitionTimer);
-            ImGui::Text("stripeSprites count: %zu", stripeSprites_.size());
-            ImGui::Text("stripeProgress count: %zu", stripeProgress_.size());
-
-            ImGui::Separator();
-
-            // 各ストライプの情報
-            for (int i = 0; i < transitionStripeIndex && i < static_cast<int>(stripeSprites_.size()); ++i) {
-                Vector2 pos = stripeSprites_[i]->GetPosition2D();
-                Vector2 size = stripeSprites_[i]->GetSize();
-                ImGui::Text("Stripe[%d]: pos=(%.1f, %.1f), size=(%.1f, %.1f), progress=%.2f",
-                    i, pos.x, pos.y, size.x, size.y, stripeProgress_[i]);
-            }
-
-            ImGui::Separator();
-
-            // 手動テストボタン
-            if (ImGui::Button("Start Transition")) {
-                isTransitioning = true;
-                transitionTimer = 0;
-                for (auto& p : stripeProgress_) {
-                    p = 0.0f;
-                }
-            }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Reset")) {
-                isTransitioning = false;
-                transitionTimer = 0;
-                for (auto& p : stripeProgress_) {
-                    p = 0.0f;
-                }
-            }
-
-            // 強制表示ボタン
-            if (ImGui::Button("Force Show All (progress=1)")) {
-                for (auto& p : stripeProgress_) {
-                    p = 1.0f;
-                }
-                // 位置も更新
-                float screenWidth = static_cast<float>(engine_->GetClientWidth());
-                float spacing = screenWidth / transitionStripeIndex;
-                for (int i = 0; i < transitionStripeIndex && i < static_cast<int>(stripeSprites_.size()); ++i) {
-                    float x = spacing * i - 100.0f;
-                    float y = 0.0f;
-                    stripeSprites_[i]->SetPosition(x, y);
-                }
-            }
-
-            ImGui::EndTabItem();
-        }
-
         ImGui::EndTabBar();
     }
 
@@ -195,81 +114,24 @@ void TitleScene::Update() {
     // ↓ゲームの更新
     // =====
 
-    // なんかのキー入力
+#pragma region takamura追加
+    // キー入力でトランジション開始
     if (engine_->GetInputManager()->IsKeyDownDIK(0x39)) {
-        // シーン切り替え開始
         if (!isTransitioning) {
             isTransitioning = true;
+            stripeTransition_->Start();
         }
     }
 
+    // トランジション更新
     if (isTransitioning) {
-        ++transitionTimer;
+        stripeTransition_->Update();
 
-        float screenWidth = static_cast<float>(engine_->GetClientWidth());
-        float screenHeight = static_cast<float>(engine_->GetClientHeight());
-        float spacing = screenWidth / transitionStripeIndex;
-        float spacingOffset = 50.0f;
-
-        // トリガー位置：前のスプライトの下端が、自身の高さの半分の位置に来たら
-        float triggerY = stripeHeight / 2.0f;
-
-        for (int i = 0; i < transitionStripeIndex; ++i) {
-
-            // 最初のスプライトは即開始、それ以外は前のスプライトの位置で判定
-            bool shouldStart = false;
-
-            if (i == 0) {
-                // 最初のスプライトは即開始
-                shouldStart = true;
-            } else {
-                // 前のスプライトの下端位置を計算
-                Vector2 prevPos = stripeSprites_[i - 1]->GetPosition2D();
-                float prevBottom = prevPos.y + stripeHeight;  // 下端 = Y + 高さ
-
-                // 前のスプライトの下端の1/3の位置
-                float prevTriggerPoint = prevPos.y + (stripeHeight * 2.0f / 3.0f);
-
-                // 自身の高さの半分の位置に達したら開始
-                if (prevTriggerPoint >= triggerY) {
-                    shouldStart = true;
-                }
-            }
-
-            // 降下処理
-            if (shouldStart && stripeProgress_[i] < 1.0f) {
-                float moveSpeed = 0.1f;  // 大きいほど速い（0.01〜1.0くらいで調整）
-                stripeProgress_[i] += moveSpeed;
-                if (stripeProgress_[i] > 1.0f) {
-                    stripeProgress_[i] = 1.0f;
-                }
-            }
-
-            // 初期位置
-            float startX = (spacing + spacingOffset) * i + 50.0f;
-            float startY = -screenHeight - 200.0f;
-
-            // 最終位置
-            float endX = (spacing + spacingOffset) * i - 450.0f;
-            float endY = -50.0f;
-
-            // 線形補間
-            float x = startX + (endX - startX) * stripeProgress_[i];
-            float y = startY + (endY - startY) * stripeProgress_[i];
-
-            stripeSprites_[i]->SetPosition(x, y);
+        if (stripeTransition_->IsFinished()) {
+            engine_->GetSceneManager()->Request("InGame");
         }
     }
-
-    if (transitionTimer >= transitionTime) {
-        // シーンの切り替え
-        engine_->GetSceneManager()->Request("InGame");
-    }
-
-    for (auto& stripe : stripeSprites_) {
-        stripe->Update();
-    }
-
+#pragma endregion takamura追加
     // =====
     // ↑ゲームの更新
     // =====
@@ -309,10 +171,7 @@ void TitleScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
 
-    // 逆順で描画してみる
-    for (int i = transitionStripeIndex - 1; i >= 0; --i) {
-        if (stripeProgress_[i] > 0.0f) {
-            stripeSprites_[i]->Draw();
-        }
-    }
+#pragma region takamura追加
+    stripeTransition_->Draw();
+#pragma endregion takamura追加
 }
