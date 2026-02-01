@@ -65,7 +65,7 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 
 			// オフセットをワールド空間に変換
 			Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(info.transform.rotate.x, info.transform.rotate.y, info.transform.rotate.z);
-			Vector3 worldOffset = Math::TransformNormal(randomOffset, rotMat);
+			Vector3 worldOffset = Math::Transform(randomOffset, rotMat);
 
 			// 目標位置を設定
 			chosen->SetTargetPosition(info.transform.translate + worldOffset);

@@ -56,6 +56,10 @@ public:
 	// サイズをVector3として取得
 	Vector3 GetSize() const;
 
+	// 壁がどのリングに属しているか設定・取得
+	void SetRingIndex(int index) { ringIndex_ = index; }
+	int GetRingIndex() const { return ringIndex_; }
+
 private:
 	OBB obb_{};
 
@@ -70,6 +74,8 @@ private:
 	float height_ = 2.0f;
 
 	float depth_ = 2.16f;
+
+	int ringIndex_ = 0; // 壁が属するリングのインデックス
 
 private:
 	std::unique_ptr<ObjClass> model_ = nullptr;
