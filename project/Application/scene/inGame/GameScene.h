@@ -25,7 +25,8 @@ struct AreaLight;
 #include "actors/enemy/Enemy.h"
 #include "contents/wall/Wall.h"
 #include "contents/UI/TimeDisplay.h"
-
+// SE support
+#include "audio/Se.h"
 
 /// <summary>
 /// ゲーム
@@ -182,4 +183,7 @@ private: // メンバ変数(システム)
 
     // ポーズ表示用
     std::unique_ptr<Sprite> pauseSprite_ = nullptr;
+
+    // SE: プレイヤーと敵の接触時の効果音
+    Se sePlayerHit_;
 };
