@@ -28,5 +28,5 @@ protected:
 
 private:
     int remainingHits_ = 2;
-    std::string modelFile_ = "TD_Enemy.obj";
+    std::string modelFile_ = "TD_HardEnemy.obj";
 };
