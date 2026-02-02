@@ -20,34 +20,60 @@
 #include "Sword.h"
 #include "actors/enemy/TwoHitEnemy.h"
 
+
+// 
+void GameScene::ClearAllObjects() {
+    // 1. 生ポインタのリストを delete してクリア
+    for (Wall* w : walls_) { if (w) delete w; }
+    walls_.clear();
+
+    for (Enemy* e : enemies_) { if (e) delete e; }
+    enemies_.clear();
+
+    for (HealerActor* ha : healerActor_) { if (ha) delete ha; }
+    healerActor_.clear();
+
+    // 2. unique_ptr をリセット
+    player_.reset();
+    healer_.reset();
+    //timeDisplay_.reset();
+
+    // 3. ライトのリストもリセット（必要に応じて）
+    // ※ Initializeで毎回 push_back するなら、ここをクリアしないと増え続けます
+    //pointLights_.clear();
+    //spotLights_.clear();
+    //areaLights_.clear();
+}
+
 // デストラクタ
 GameScene::~GameScene() {
 
 
-    while (!enemies_.empty()) {
-        Enemy* e = enemies_.front();
-        if (e) delete e;
-        enemies_.pop_front();
-    }
+    ClearAllObjects();
+    timeDisplay_.reset();
+    pointLights_.clear();
+    spotLights_.clear();
+    areaLights_.clear();
 
-    while (!walls_.empty()) {
-        Wall* w = walls_.front();
-        if (w) delete w;
-        walls_.pop_front();
-    }
-
-    while (!healerActor_.empty()) {
-        HealerActor* ha = healerActor_.front();
-        if (ha)
-            delete ha;
-        healerActor_.pop_front();
-    }
-
-    
 }
 
 // 初期化
 void GameScene::Initialize(IrufemiEngine* engine) {
+
+    // 1. 基本設定 (phase_, mode_, engine_)
+
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+    // phaseの設定
+    phase_ = Phase::FadeIn;
+    // modeの設定(ゲーム自体を見たいため一旦Standard)
+    mode_ = GameMode::Standard;
+#else
+    //phaseの設定
+    phase_ = Phase::FadeIn;
+    // modeの設定(Releaseは間違えないようにtutorialから)
+    mode_ = GameMode::Tutorial;
+
+#endif
 
     // Phaseを初期化したかをfalseに
     isResetPhase_ = false;
@@ -58,6 +84,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // 参照したものをコピー
     // エンジン
     this->engine_ = engine;
+
+    // 2. システム基盤 (camera_, light_, pauseSprite_)
 
     camera_ = std::make_unique <Camera>();
     camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
@@ -83,7 +111,6 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
 
-
     // ポーズ画面用スプライト
     pauseSprite_ = std::make_unique<Sprite>();
     pauseSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
@@ -95,11 +122,10 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // ランダムエンジン
     Random::SeedEngine();
 
-    // フェーズに応じた初期化を行う
-    PhaseInitialize();
+    // 3. モード別の初期化
+    ModeInitialize();
 
-    // タイマーの初期化
-    timer_ = 0.0f;
+    // 4. 全モード共通UIの生成
 
     // 時間表記の生成・初期化
     timeDisplay_ = std::make_unique<TimeDisplay>();
@@ -110,6 +136,10 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         "resources/texture/timeDisplay_separator.png", { 32.0f, 64.0f }
     );
     timeDisplay_->SetPosition({ 20.0f, 20.0f }); // 左上に配置
+
+
+    // 5. フェーズ初期化
+    PhaseInitialize();
 
 #pragma region Player初期化
     player_ = std::make_unique<Player>();
@@ -187,6 +217,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // Healer 初期化
     healer_ = std::make_unique<Healer>();
 
+
 }
 
 // 更新
@@ -225,12 +256,11 @@ void GameScene::Update() {
     Camera* currentCamera = debugMode_ ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
     currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
 
+    // 
+
     // =====
     // ↓ゲームの更新
     // =====
-
-    // タイマー更新 (60FPS固定と仮定)
-    timer_ += 1.0f / 60.0f;
 
     PhaseUpdate();
 
@@ -239,28 +269,14 @@ void GameScene::Update() {
         if (w) w->Update();
     }
 
-    for (int32_t i = 0; i < kMaxEnemy_; ++i) {
-        Enemy* e = enemies_.front();
-        if (!e) {
-            // recreate enemy for this slot so it can respawn
-            e = new Enemy();
-            float x = Random::GeneratorFloat(-10.0f, 10.0f);
-            float y = Random::GeneratorFloat(-10.0f, 10.0f);
-            e->Initialize(camera_.get(), Vector3{x, y, 0.0f});
-            enemies_.front() = e; // replace nullptr slot with new instance
-        }
+    // --- Enemy の更新 ---
+    for (Enemy* e : enemies_) {
         if (e) e->Update(walls_, healerActor_);
-        enemies_.push_back(enemies_.front());
-        enemies_.pop_front();
     }
 
-    for (int32_t i = 0; i < kMaxHealerActor_; ++i)
-    {
-        HealerActor* ha = healerActor_.front();
-        if (ha)
-            ha->Update();
-        healerActor_.push_back(healerActor_.front());
-        healerActor_.pop_front();
+    // --- HealerActor の更新 ---
+    for (HealerActor* ha : healerActor_) {
+        if (ha) ha->Update();
     }
 
     player_->Update();
@@ -320,61 +336,25 @@ void GameScene::Update() {
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
-// フェーズの初期化
-void GameScene::PhaseInitialize() {}
-
-// フェーズの更新
-void GameScene::PhaseUpdate() {}
-
-// フェードインの初期化
-void GameScene::FadeInInitialize() {}
-
-
-// フェードイン中の更新
-void GameScene::FadeInUpdate() {}
-
-
-// ゲーム中の更新
-void GameScene::GameInitialize() {}
-
-
-// ゲーム中の更新
-void GameScene::GameUpdate() {}
-
-// フェードアウト中の初期化
-void GameScene::FadeOutInitialize() {}
-
-
-// フェードアウト中の更新
-void GameScene::FadeOutUpdate() {}
-
 // 描画
 void GameScene::Draw() {
 
     // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-    engine_->ApplyPSO(); 
-    
+    engine_->ApplyPSO();
+
     // Draw all walls (iterate whole container to include added rings)
     for (Wall* w : walls_) {
         if (w) w->Draw();
     }
 
-    for (int32_t i = 0; i < kMaxEnemy_; ++i) {
-        Enemy* e = enemies_.front();
+    for (Enemy* e : enemies_) {
         if (e) e->Draw();
-        enemies_.push_back(enemies_.front());
-        enemies_.pop_front();
     }
 
-    for (int32_t i = 0; i < kMaxHealerActor_; ++i)
-    {
-        HealerActor* ha = healerActor_.front();
-        if (ha)
-            ha->Draw();
-        healerActor_.push_back(healerActor_.front());
-        healerActor_.pop_front();
+    for (HealerActor* ha : healerActor_) {
+        if (ha) ha->Draw();
     }
 
     player_->Draw();
@@ -386,15 +366,134 @@ void GameScene::Draw() {
 
     // カウントダウンタイマーの描画
     if (timeDisplay_) {
-        // 念のため、描画直前にスプライト用の設定を再適用
-        engine_->SetBlend(BlendMode::kBlendModeNormal);
-        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-        engine_->ApplySpritePSO();
         float remainingTime = playTime_ - timer_;
         if (remainingTime < 0.0f) {
             remainingTime = 0.0f;
         }
         timeDisplay_->Draw(remainingTime);
+    }
+}
+
+// フェーズの初期化
+void GameScene::PhaseInitialize() {
+
+    // 早期リターン
+    if (isResetPhase_) {
+        return;
+    }
+
+    switch (phase_)
+    {
+    case Phase::FadeIn:
+
+        break;
+    case Phase::Countdown:
+
+        break;
+    case Phase::Game:
+
+        // ゲームタイマーの初期化
+        timer_ = 0.0f;
+
+        break;
+    case Phase::FadeOut:
+
+    default:
+        break;
+    }
+    // 初期化の完了
+    isResetPhase_ = true;
+}
+
+// フェーズの更新
+void GameScene::PhaseUpdate() {}
+
+// フェーズの変更
+void GameScene::PhaseChange() {
+
+    switch (phase_)
+    {
+    case Phase::FadeIn:
+        phase_ = Phase::Countdown;
+        break;
+    case Phase::Countdown:
+        phase_ = Phase::Game;
+        break;
+    case Phase::Game:
+        phase_ = Phase::FadeOut;
+        break;
+    case Phase::FadeOut:
+
+    default:
+        break;
+    }
+
+    isResetPhase_ = false;
+}
+
+// フェードインの初期化
+void GameScene::FadeInInitialize() {}
+
+// フェードイン中の更新
+void GameScene::FadeInUpdate() {
+
+    // 条件を満たしたらPhase完了
+    if (false) {
+        isCompletePhase_ = true;
+    }
+
+}
+
+// ゲーム中の更新
+void GameScene::GameInitialize() {
+    switch (mode_) {
+    case GameMode::Tutorial:
+
+        break;
+    case GameMode::Standard:
+
+    default:
+        break;
+    }
+}
+
+
+// ゲーム中の更新
+void GameScene::GameUpdate() {
+    switch (mode_) {
+    case GameMode::Tutorial:
+
+        // 条件を満たしたらPhase完了
+        if (false) {
+            isCompletePhase_ = true;
+        }
+
+        break;
+    case GameMode::Standard:
+    default:
+
+        // タイマー更新 (60FPS固定と仮定)
+        timer_ += 1.0f / 60.0f;
+
+        // 条件を満たしたらPhase完了
+        if (false) {
+            isCompletePhase_ = true;
+        }
+
+        break;
+    }
+}
+
+// フェードアウト中の更新
+void GameScene::FadeOutInitialize() {}
+
+
+// フェードアウト中の更新
+void GameScene::FadeOutUpdate() {
+
+    // 条件を満たしたらPhase完了
+    if (false) {
+        isCompletePhase_ = true;
     }
 }
 
@@ -412,6 +511,11 @@ void GameScene::PauseDraw()
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
+
+
+    if (pauseSprite_) {
+        pauseSprite_->Draw();
+    }
 }
 
 void GameScene::CollisionCheck() {
@@ -544,19 +648,24 @@ void GameScene::CollisionCheck() {
     if (player_) {
         Sword* sword = player_->GetSword();
         if (sword && sword->IsSlashing()) {
-          
+
             sword->UpdateOBB();
             const OBB& swordObb = sword->GetOBB();
 
-           
+
             for (auto enemyIt = enemies_.begin(); enemyIt != enemies_.end(); ++enemyIt) {
                 Enemy* enemy = *enemyIt;
                 if (!enemy || !enemy->IsAlive()) continue;
                 enemy->UpdateOBB();
                 const OBB& enemyObb = enemy->GetOBB();
                 if (Collision::IsOBBCollision(swordObb, enemyObb)) {
+
+
+                    //enemy->Kill();
+
                    // call virtual HitBySword so derived enemies can require multiple hits
                     enemy->HitBySword();
+
                 }
             }
         }
@@ -564,6 +673,97 @@ void GameScene::CollisionCheck() {
 #pragma endregion SwordとEnemyの衝突判定
 }
 
+void GameScene::StandardInitialize() {
+    // --- 共通UI（ここでもリセットされるので再生成） ---
+    // timeDisplay_ = std::make_unique<TimeDisplay>();
+    // timeDisplay_->Initialize(camera_.get(), TimeFormat::S_DECIMAL, "resources/texture/text_num.png", {32, 64}, "...", {32, 64});
+
+    // --- Player ---
+    player_ = std::make_unique<Player>();
+    player_->Initialize(camera_.get(), Vector3{ -5.0f, 0.0f, 0.0f }, engine_->GetInputManager());
+
+    // --- Walls (二重リング配置) ---
+    {
+        Wall sampleWall; // サイズ取得用のサンプル
+        const float wallHeight = sampleWall.GetHeight();
+        const float baseRadius = 20.0f;
+        const float radii[2] = { baseRadius, baseRadius + wallHeight };
+        const float twoPi = 2.0f * std::numbers::pi_v<float>;
+
+        // Create two concentric rings: inner and one outer ring.
+        for (int ring = 0; ring < 2; ++ring) {
+            float radius = radii[ring];
+            // Stagger every other ring so walls are not perfectly aligned radially
+            float angularOffset = 0.0f;
+
+            for (int32_t i = 0; i < kMaxWall_; ++i) {
+                float angle = twoPi * static_cast<float>(i) / static_cast<float>(kMaxWall_) + angularOffset;
+                float x = radius * std::cos(angle);
+                float y = radius * std::sin(angle);
+                Wall* wall = new Wall();
+                wall->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+
+                if (ring > 0) {
+                    float scaleRatio = radii[ring] / radii[0];
+                    wall->SetScale({ scaleRatio, 1.0f, 1.0f });
+                }
+
+                float rotZ = angle + std::numbers::pi_v<float> *0.5f;
+                wall->SetRotation(Vector3{ 0.0f, 0.0f, rotZ });
+                walls_.push_back(wall);
+            }
+        }
+    }
+
+    // --- Enemies ---
+    for (int32_t i = 0; i < kMaxEnemy_; ++i) {
+        Enemy* enemy = new Enemy();
+
+        float x = Random::GeneratorFloat(-10.0f, 10.0f);
+        float y = Random::GeneratorFloat(-10.0f, 10.0f);
+        enemy->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+        enemies_.push_back(enemy);
+    }
+
+    healer_ = std::make_unique<Healer>();
+
+    // healerActor_ の生成を追加
+    for (int32_t i = 0; i < kMaxHealerActor_; ++i) {
+        HealerActor* ha = new HealerActor();
+        float x = Random::GeneratorFloat(-15.0f, 15.0f);
+        float y = Random::GeneratorFloat(-15.0f, 15.0f);
+        ha->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+        healerActor_.push_back(ha);
+    }
+}
+
+void GameScene::TutorialInitialize() {
+    // チュートリアル用の簡易的な配置
+    player_ = std::make_unique<Player>();
+    player_->Initialize(camera_.get(), Vector3{ 0, 0, 0 }, engine_->GetInputManager());
+
+    // 壁を1枚だけ置くなど
+    Wall* wall = new Wall();
+    wall->Initialize(camera_.get(), Vector3{ 0, 5, 0 });
+    walls_.push_back(wall);
+
+    healer_ = std::make_unique<Healer>();
+}
+
+void GameScene::ModeInitialize() {
+    // 既存のオブジェクト（Player, Enemy, Wall等）をすべて消す
+    ClearAllObjects();
+
+    // モードに応じて生成
+    switch (mode_) {
+    case GameMode::Tutorial:
+        TutorialInitialize();
+        break;
+    case GameMode::Standard:
+        StandardInitialize();
+        break;
+    }
+}
 void GameScene::StartCameraShake(Camera* cam, float duration, float magnitude) {
     if (!cam) return;
     cameraShakeDuration_ = duration;

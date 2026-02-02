@@ -81,9 +81,9 @@ void HealerActor::MoveTowards(const Vector3& target, float speed, const std::lis
             };
 
             float distFromPathSq =
-                std::pow(wallPos.x - closestPointOnPath.x, 2) +
-                std::pow(wallPos.y - closestPointOnPath.y, 2) +
-                std::pow(wallPos.z - closestPointOnPath.z, 2);
+                std::powf(wallPos.x - closestPointOnPath.x, 2) +
+                std::powf(wallPos.y - closestPointOnPath.y, 2) +
+                std::powf(wallPos.z - closestPointOnPath.z, 2);
 
             // 壁の半径（約2.0〜2.5）より近ければ「ぶつかる」と判断
             float wallRadius = 2.2f;

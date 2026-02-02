@@ -1,5 +1,11 @@
 #pragma once
 
+class TwoHitEnemy
+{
+};
+
+
+
 #include "Enemy.h"
 
 // Enemy that requires two sword hits to die.
@@ -19,4 +25,4 @@ protected:
 
 private:
     int remainingHits_ = 2;
-};
+}

@@ -1,4 +1,5 @@
 #include "TwoHitEnemy.h"
+
 #include "camera/Camera.h"
 
 TwoHitEnemy::TwoHitEnemy() { remainingHits_ = 2; }
