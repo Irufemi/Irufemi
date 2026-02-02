@@ -29,6 +29,9 @@ public:
 	const OBB& GetOBB() const { return obb_; }
 	bool IsSlashing() const { return isSlashing_; }
 
+	// Get current slash id (incremented on each StartSlash) so collision logic can avoid multiple hits per slash
+	uint32_t GetCurrentSlashId() const { return currentSlashId_; }
+
 private:
 	void CreateObj(Camera* camera);
 
@@ -53,4 +56,7 @@ private:
 	float slashDuration_ = 0.2f; 
 	Transform slashStartTransform_{};
 	Transform slashEndTransform_{};
+
+	// Incremented each time a slash starts. Used by GameScene to prevent multiple hits from the same slash.
+	uint32_t currentSlashId_ = 0;
 };

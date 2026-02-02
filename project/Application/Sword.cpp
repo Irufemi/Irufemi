@@ -112,10 +112,13 @@ void Sword::StartSlash(const Transform& anchor) {
 	float startAngle = baseAngle - 1.2f;
 	float endAngle = baseAngle + 1.2f;
 
-	
+	// increment slash id
+	++currentSlashId_;
+
+	//	
 	float tipLocal = 1.6f;
 
-	
+	//	slashStartTransform_ = anchor;
 	slashStartTransform_ = anchor;
 	slashStartTransform_.rotate.z = startAngle;
 	{
@@ -124,7 +127,7 @@ void Sword::StartSlash(const Transform& anchor) {
 		slashStartTransform_.translate = anchor.translate + offsetStart; 
 	}
 
-	
+	//	slashEndTransform_ = anchor;
 	slashEndTransform_ = anchor;
 	slashEndTransform_.rotate.z = endAngle;
 	{

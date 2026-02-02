@@ -35,6 +35,14 @@ void Enemy::Initialize(Camera* camera, Vector3 pos) {
     lastTouchedHealer_ = nullptr;
 }
 
+void Enemy::ReloadModel() {
+   
+    model_.reset();
+    model_ = std::make_unique<ObjClass>();
+    model_->Initialize(camera_, GetModelFile());
+    
+}
+
 void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>& healers)
 {
 	if (!alive_)
