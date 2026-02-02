@@ -18,6 +18,7 @@
 #include "function/Collision.h"
 
 #include "Sword.h"
+#include "actors/enemy/TwoHitEnemy.h"
 
 
 // 
@@ -136,8 +137,86 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     );
     timeDisplay_->SetPosition({ 20.0f, 20.0f }); // 左上に配置
 
+
     // 5. フェーズ初期化
     PhaseInitialize();
+
+#pragma region Player初期化
+    player_ = std::make_unique<Player>();
+    player_->Initialize(camera_.get(), Vector3{ -5.0f, 0.0f, 0.0f }, engine_->GetInputManager());
+#pragma endregion Player初期化
+
+#pragma region Wall初期化
+
+    {
+        Wall sampleWall; // サイズ取得用のサンプル
+        const float wallHeight = sampleWall.GetHeight();
+        const float baseRadius = 20.0f;
+        const float radii[2] = { baseRadius, baseRadius + wallHeight };
+        const float twoPi = 2.0f * std::numbers::pi_v<float>;
+
+      
+        for (int ring = 0; ring < 2; ++ring) {
+            float radius = radii[ring];
+            // Stagger every other ring so walls are not perfectly aligned radially
+            float angularOffset = 0.0f;
+
+            for (int32_t i = 0; i < kMaxWall_; ++i) {
+                float angle = twoPi * static_cast<float>(i) / static_cast<float>(kMaxWall_) + angularOffset;
+                float x = radius * std::cos(angle);
+                float y = radius * std::sin(angle);
+                Wall* wall = new Wall();
+                wall->Initialize(camera_.get(), Vector3{x, y, 0.0f});
+
+                if (ring > 0) {
+                    float scaleRatio = radii[ring] / radii[0];
+                    wall->SetScale({ scaleRatio, 1.0f, 1.0f });
+                }
+
+                float rotZ = angle + std::numbers::pi_v<float> * 0.5f;
+                wall->SetRotation(Vector3{ 0.0f, 0.0f, rotZ });
+                walls_.push_back(wall);
+            }
+        }
+    }
+
+#pragma endregion Wall初期化
+
+#pragma region Enemy初期化
+    for (int32_t i = 0; i < kMaxEnemy_; ++i) {
+        // Create one TwoHitEnemy (requires 2 sword hits) for the first slot, others are normal Enemies
+        Enemy* enemy = nullptr;
+        if (i == 0) {
+            auto* e2 = new TwoHitEnemy();
+            enemy = e2;
+        } else {
+            enemy = new Enemy();
+        }
+
+        float x = Random::GeneratorFloat(-10.0f, 10.0f);
+        float y = Random::GeneratorFloat(-10.0f, 10.0f);
+        enemy->Initialize(camera_.get(), Vector3{x, y, 0.0f});
+        enemies_.push_back(enemy);
+    }
+#pragma endregion Enemy初期化
+
+
+#pragma region HealerActor初期化
+
+    for (int32_t i = 0; i < kMaxHealerActor_; ++i) {
+        HealerActor* healerActor = new HealerActor();
+        float x = Random::GeneratorFloat(-15.0f, 15.0f);
+        float y = Random::GeneratorFloat(-15.0f, 15.0f);
+        healerActor->Initialize(camera_.get(), Vector3{x, y, 0.0f});
+        healerActor_.push_back(healerActor);
+    }
+
+#pragma endregion HealerActor初期化
+
+
+    // Healer 初期化
+    healer_ = std::make_unique<Healer>();
+
 
 }
 
@@ -581,7 +660,12 @@ void GameScene::CollisionCheck() {
                 const OBB& enemyObb = enemy->GetOBB();
                 if (Collision::IsOBBCollision(swordObb, enemyObb)) {
 
-                    enemy->Kill();
+
+                    //enemy->Kill();
+
+                   // call virtual HitBySword so derived enemies can require multiple hits
+                    enemy->HitBySword();
+
                 }
             }
         }
