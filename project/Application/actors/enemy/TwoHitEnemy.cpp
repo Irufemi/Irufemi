@@ -17,3 +17,8 @@ void TwoHitEnemy::HitBySword() {
         Kill();
     }
 }
+
+void TwoHitEnemy::Draw() {
+   
+    Enemy::Draw();
+}
