@@ -43,7 +43,24 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 		int need = kMaxPerWall - static_cast<int>(info.assignedHealers.size());
 		if (need <= 0) continue;
 
-		while (need > 0 && !availableHealers.empty()) {
+		while (need > 0) {
+			// 利用可能なヒーラーがいない場合は、新しいヒーラーを生成してヒーラーリストに追加
+			if (availableHealers.empty()) {
+				// 壁の破壊位置周辺に新しいHealerActorを生成
+				HealerActor* newHa = new HealerActor();
+				// 壁から少しオフセットされた位置に出現させる
+				Vector3 spawnOffset;
+				spawnOffset.x = Random::GeneratorFloat(-info.wallSize.x, info.wallSize.x) * 0.5f;
+				spawnOffset.y = Random::GeneratorFloat(-info.wallSize.y, info.wallSize.y) * 0.5f;
+				spawnOffset.z = 0.0f;
+				Vector3 spawnPos = { info.transform.translate.x + spawnOffset.x, info.transform.translate.y + spawnOffset.y, info.transform.translate.z + spawnOffset.z };
+				newHa->Initialize(camera, spawnPos);
+				// 外部コンテナに追加して、GameSceneがそのライフタイムを管理できるようにする
+				healers.push_back(newHa);
+				availableHealers.push_back(newHa);
+			}
+
+			if (availableHealers.empty()) break; // セーフティチェック
 
 			int bestIdx = -1;
 			float bestDist = FLT_MAX;

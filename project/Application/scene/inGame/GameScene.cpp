@@ -424,7 +424,7 @@ void GameScene::GameInitialize() {
 }
 
 
-// ゲーム中の更新
+ // ゲーム中の更新
 void GameScene::GameUpdate() {
     switch (mode_) {
     case GameMode::Tutorial:
@@ -720,14 +720,7 @@ void GameScene::StandardInitialize() {
 
     healer_ = std::make_unique<Healer>();
 
-    // healerActor_ の生成を追加
-    for (int32_t i = 0; i < kMaxHealerActor_; ++i) {
-        HealerActor* ha = new HealerActor();
-        float x = Random::GeneratorFloat(-15.0f, 15.0f);
-        float y = Random::GeneratorFloat(-15.0f, 15.0f);
-        ha->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
-        healerActor_.push_back(ha);
-    }
+    //Healer が壁破壊時に必要に応じてスポーン。
 }
 
 void GameScene::TutorialInitialize() {
