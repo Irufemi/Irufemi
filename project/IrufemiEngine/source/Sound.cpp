@@ -1,5 +1,6 @@
 #include "Sound.h"
 #include <cassert>
+#include <filesystem>
 
 Sound::~Sound() {
     if (pWaveFormat) {
@@ -9,6 +10,9 @@ Sound::~Sound() {
 }
 
 bool Sound::Load(const std::wstring& filePath) {
+    // ファイルが存在するかチェック
+    assert(std::filesystem::exists(filePath) && "Sound file not found.");
+
     HRESULT hr;
 
     // ソースリーダーの作成

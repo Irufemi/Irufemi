@@ -152,7 +152,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     isTransitioningToStandard_ = false;
 
-	sePlayerHit_.Initialize("resources/sound/se_PlayerHit.mp3");
+	sePlayerHit_.Initialize("resources/audio/se/PlayerHit.mp3");
 
 }
 
