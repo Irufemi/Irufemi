@@ -20,12 +20,41 @@ void Wall::Initialize(Camera* camera, const Vector3& pos) {
 }
 
 void Wall::Update() {
+
+	// --- ここから修復演出の更新 ---
+	if (isRepairing_) {
+		// 1フレーム分進める（60FPS前提なら 1/60）
+		repairAnimTimer_ += 1.0f / 60.0f;
+		float t = repairAnimTimer_ / repairAnimDuration_;
+
+		if (t >= 1.0f) {
+			// 演出完了
+			t = 1.0f;
+			isRepairing_ = false;
+			repairAlpha_ = 1.0f;
+			transform_.scale = repairBaseScale_;
+		} else {
+			// α値：線形で0→1
+			repairAlpha_ = t;
+
+			// スケール：バウンスイージングで0→1
+			float bounceT = BounceEaseOut(t);
+			transform_.scale = {
+				repairBaseScale_.x * bounceT,
+				repairBaseScale_.y * bounceT,
+				repairBaseScale_.z * bounceT
+			};
+		}
+	}
+
+	// --- ここまで修復演出 ---
 	UpdateOBB();
 }
 
 void Wall::Draw() { 
 	// 描画物の更新
 	model_->SetTransform(transform_);
+	model_->SetAlpha(repairAlpha_);
 	model_->Update();
 	// 描画
 	if (model_) model_->Draw();
@@ -81,4 +110,30 @@ const Transform& Wall::GetTransform() const {
 
 Vector3 Wall::GetSize() const {
 	return { width_ * transform_.scale.x, height_ * transform_.scale.y, depth_ * transform_.scale.z };
+}
+
+void Wall::StartRepairAnimation(){
+	isRepairing_ = true;
+	repairAnimTimer_ = 0.0f;
+	repairAlpha_ = 0.0f;
+	// 目標スケールを保存しておき、アニメ中は0から始める
+	repairBaseScale_ = transform_.scale;
+	transform_.scale = { 0.0f, 0.0f, 0.0f };
+}
+
+float Wall::BounceEaseOut(float t)
+{
+	// バウンスイージング
+	if (t < 1.0f / 2.75f) {
+		return 7.5625f * t * t;
+	} else if (t < 2.0f / 2.75f) {
+		t -= 1.5f / 2.75f;
+		return 7.5625f * t * t + 0.75f;
+	} else if (t < 2.5f / 2.75f) {
+		t -= 2.25f / 2.75f;
+		return 7.5625f * t * t + 0.9375f;
+	} else {
+		t -= 2.625f / 2.75f;
+		return 7.5625f * t * t + 0.984375f;
+	}
 }
