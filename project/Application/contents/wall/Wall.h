@@ -78,6 +78,9 @@ private:
 	float repairAlpha_ = 0.0f;       // 現在のα値（0.0=透明 → 1.0=不透明）
 	Vector3 repairBaseScale_{};      // 演出開始時の最終スケール（目標値）
 
+
+	bool playedRepairSE_ = false;
+
 	float BounceEaseOut(float t);
 #pragma endregion
 
