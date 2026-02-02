@@ -152,6 +152,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
 	sePlayerHit_.Initialize("resources/audio/se/PlayerHit.mp3");
 
+    // ヒーラー死亡時のSE初期化
+    seHealerDeath_.Initialize("resources/audio/se/DeathHealerActor.mp3");
 }
 
 // 更新
@@ -626,6 +628,10 @@ void GameScene::CollisionCheck() {
                 // 双方に衝突ハンドラを呼ぶ
                 enemy->HandleCollision();
                 ha->HandleCollision();
+                // ヒーラーが死亡した場合、シーンでSEを再生する
+                if (!ha->IsAlive()) {
+                    seHealerDeath_.Play(false);
+                }
             }
         }
     }
