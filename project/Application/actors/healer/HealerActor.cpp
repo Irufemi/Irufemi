@@ -1,5 +1,5 @@
+#define NOMINMAX
 #include "HealerActor.h"
-
 
 #include "function/Math.h"
 
@@ -121,10 +121,13 @@ void HealerActor::MoveTowards(const Vector3& target, float speed, const std::lis
         finalDir.z /= finalLen;
     }
 
+    // 移動量を計算（目標までの距離がspeedより小さい場合は、その距離だけ移動）
+    float moveAmount = std::min(speed, distToTarget);
+
     // 移動実行
-    pos.x += finalDir.x * speed;
-    pos.y += finalDir.y * speed;
-    pos.z += finalDir.z * speed;
+    pos.x += finalDir.x * moveAmount;
+    pos.y += finalDir.y * moveAmount;
+    pos.z += finalDir.z * moveAmount;
 }
 
 void HealerActor::RefreshTransform() {

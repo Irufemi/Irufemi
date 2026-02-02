@@ -87,6 +87,11 @@ private: // メンバ関数(内部ヘルパ)
   
     void StartCameraShake(Camera* cam, float duration, float magnitude);
 
+#if defined(USE_IMGUI)
+    // ImGuiでのデバッグ表示・操作
+    void DebugImGui();
+#endif
+
 private: // メンバ変数(ゲーム進行)
 
     // フェーズ
@@ -114,6 +119,17 @@ private: // メンバ変数(ゲーム進行)
 
     // フェーズ
     Phase phase_;
+
+    // ゲームオーバーフラグ
+    bool isGameOver_ = false;
+
+    // チュートリアルからスタンダードへの移行フラグ
+    bool isTransitioningToStandard_ = false;
+
+    // フェード演出用
+    std::unique_ptr<Sprite> fadeSprite_ = nullptr;
+    float fadeTimer_ = 0.0f;
+    static inline const float kFadeDuration_ = 1.0f; // 1秒でフェード
 
 private: // メンバ変数(ゲーム)
 

@@ -42,6 +42,7 @@ private:
     OBB obb_{};
 
     Vector3 velocity = {};
+    Vector3 lastSafePosition_ = {};
 
     float width_ = 2.0f;
 

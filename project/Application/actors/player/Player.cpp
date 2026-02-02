@@ -29,6 +29,7 @@ void Player::Initialize(Camera* camera, const Vector3& pos, InputManager* input)
 	input_ = input;
 
 	transform_.translate = pos;
+	lastSafePosition_ = pos;
 
 	//必要ならModelの初期角度
 
@@ -53,6 +54,7 @@ void Player::Update()
         return;
     }
 
+	lastSafePosition_ = transform_.translate;
 	transform_.translate += velocity;
 
 	Move();
@@ -120,8 +122,9 @@ const OBB& Player::GetOBB() const
 
 void Player::HandleCollision()
 {
-	// 簡易処理: 衝突時は速度をゼロにして位置を戻す（ここでは速度のみリセット）
+	// 簡易処理: 衝突時は速度をゼロにして位置を戻す
 	velocity = {};
+	transform_.translate = lastSafePosition_;
 
 	
 }
