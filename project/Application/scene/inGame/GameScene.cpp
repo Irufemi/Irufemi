@@ -152,6 +152,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     isTransitioningToStandard_ = false;
 
+	sePlayerHit_.Initialize("resources/sound/se_PlayerHit.mp3");
+
 }
 
 // 更新
@@ -541,6 +543,8 @@ void GameScene::CollisionCheck() {
                 
                 player_->StunFor(shakeDur);
             }
+            // SE 再生: プレイヤーと敵が接触したとき
+            sePlayerHit_.Play(false);
          }
     }
 #pragma endregion PlayerとEnemyの衝突判定
