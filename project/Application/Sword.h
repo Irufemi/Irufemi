@@ -37,9 +37,9 @@ private:
 
 	OBB obb_{};
 	
-	float width_ = 2.0f;
+	float width_ = 0.2f;
 
-	float height_ = 0.2f;
+	float height_ = 2.7f;
 
 	float depth_ = 0.2f;
 

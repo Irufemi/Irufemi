@@ -122,6 +122,9 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 			newWall->Update();
 			w = newWall;
 
+			// 修復演出
+			w->StartRepairAnimation();
+
 			// 割り当てられていた HealerActor がいれば削除してスロットを nullptr にする
 			for (HealerActor* assigned : info.assignedHealers) {
 				if (!assigned) continue;
