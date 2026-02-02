@@ -60,7 +60,27 @@ public:
 	void SetRingIndex(int index) { ringIndex_ = index; }
 	int GetRingIndex() const { return ringIndex_; }
 
+#pragma region takamura_追加
+	// 修復演出を開始する
+	void StartRepairAnimation();
+
+	bool IsRepairing() const { return isRepairing_; }
+
+	float GetAlpha() const { return repairAlpha_; }
+#pragma endregion
 private:
+
+#pragma region takamura_追加
+    // 修復演出用
+	bool isRepairing_ = false;       // 修復アニメーション中か
+	float repairAnimTimer_ = 0.0f;   // 現在の経過時間
+	float repairAnimDuration_ = 1.0f; // 演出にかける秒数（60FPSなら60フレーム分）
+	float repairAlpha_ = 0.0f;       // 現在のα値（0.0=透明 → 1.0=不透明）
+	Vector3 repairBaseScale_{};      // 演出開始時の最終スケール（目標値）
+
+	float BounceEaseOut(float t);
+#pragma endregion
+
 	OBB obb_{};
 
 	// 体力
