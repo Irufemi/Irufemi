@@ -18,6 +18,7 @@
 #include "function/Collision.h"
 
 #include "Sword.h"
+#include "actors/enemy/TwoHitEnemy.h"
 
 // デストラクタ
 GameScene::~GameScene() {
@@ -153,7 +154,14 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
 #pragma region Enemy初期化
     for (int32_t i = 0; i < kMaxEnemy_; ++i) {
-        Enemy* enemy = new Enemy();
+        // Create one TwoHitEnemy (requires 2 sword hits) for the first slot, others are normal Enemies
+        Enemy* enemy = nullptr;
+        if (i == 0) {
+            auto* e2 = new TwoHitEnemy();
+            enemy = e2;
+        } else {
+            enemy = new Enemy();
+        }
 
         float x = Random::GeneratorFloat(-10.0f, 10.0f);
         float y = Random::GeneratorFloat(-10.0f, 10.0f);
@@ -547,8 +555,8 @@ void GameScene::CollisionCheck() {
                 enemy->UpdateOBB();
                 const OBB& enemyObb = enemy->GetOBB();
                 if (Collision::IsOBBCollision(swordObb, enemyObb)) {
-               
-                    enemy->Kill();
+                   // call virtual HitBySword so derived enemies can require multiple hits
+                    enemy->HitBySword();
                 }
             }
         }

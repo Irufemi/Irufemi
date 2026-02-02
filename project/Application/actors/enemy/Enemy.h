@@ -10,11 +10,12 @@ class Wall;
 class HealerActor;
 class Camera;
 class ObjClass;
+class SphereClass; // forward
 
 class Enemy {
 public:
 	Enemy();
-	~Enemy();
+	virtual ~Enemy();
 	void Initialize(Camera* camera, Vector3 pos);
 
 	void Update(const std::list<Wall*>& walls, const std::list<HealerActor*>& healers);
@@ -34,6 +35,9 @@ public:
 
 	bool IsAlive() const { return alive_; }
 	void Kill();
+
+	// Called when hit by the player's sword. Default behavior is to die immediately.
+	virtual void HitBySword() { Kill(); }
 
 private:
 	OBB obb_{};
@@ -66,6 +70,12 @@ private:
 
 private:
 	std::unique_ptr<ObjClass> model_ = nullptr;
+	// fallback debug model when ObjClass model isn't available
+	std::unique_ptr<SphereClass> debugModel_ = nullptr;
 	Transform transform_;
 	Camera* camera_ = nullptr;
+
+protected:
+	// Subclasses can override to use a different model file
+	virtual const char* GetModelFile() const { return "TD_Enemy.obj"; }
 };

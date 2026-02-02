@@ -159,6 +159,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="actors\enemy\TwoHitEnemy.cpp" />
     <ClCompile Include="camera\Camera.cpp" />
     <ClCompile Include="camera\DebugCamera.cpp" />
     <ClCompile Include="actors\enemy\Enemy.cpp" />
@@ -183,6 +184,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="Sword.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="actors\enemy\TwoHitEnemy.h" />
     <ClInclude Include="camera\Camera.h" />
     <ClInclude Include="camera\DebugCamera.h" />
     <ClInclude Include="actors\enemy\Enemy.h" />

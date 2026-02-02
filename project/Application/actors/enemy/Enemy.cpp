@@ -8,6 +8,7 @@
 #include "camera/Camera.h"
 
 #include "3D/ObjClass.h"
+#include "IrufemiEngine/3D/SphereClass.h"
 
 #include "function/Math.h"
 #include "function/Collision.h"
@@ -19,7 +20,13 @@ Enemy::~Enemy() {}
 void Enemy::Initialize(Camera* camera, Vector3 pos) {
     camera_ = camera;
     model_ = std::make_unique<ObjClass>();
-    model_->Initialize(camera, "TD_Enemy.obj");
+    model_->Initialize(camera, GetModelFile());
+    // If ObjClass failed to load (managedModel_ may be null), create a debug sphere so Draw shows something
+    // Note: ObjClass::Initialize writes a debug message when load fails; we still create a simple sphere fallback
+    debugModel_ = std::make_unique<SphereClass>();
+    debugModel_->Initialize(camera, "resources/uvChecker.png");
+    debugModel_->SetRadius(0.8f);
+
     transform_.translate = pos;
     preferHealer_ = false;
     preferHealerTimer_ = 0;
@@ -130,7 +137,7 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 		for (const HealerActor* ha : healers)
 		{
 			if (ha == targetHealer_) { valid = true; break; }
-		}
+			}
 		if (!valid || !targetHealer_->IsAssigned())
 		{
 			targetHealer_ = nullptr;
@@ -142,7 +149,7 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 		for (Wall* w : walls)
 		{
 			if (w == targetWall_) { valid = true; break; }
-		}
+			}
 		if (!valid)
 		{
 			targetWall_ = nullptr;
@@ -227,22 +234,36 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 
 void Enemy::Draw() {
 
-    // 描画物の更新
-    model_->SetTransform(transform_);
-    model_->Update();
+	// 描画物の更新
+	if (model_) {
+		model_->SetTransform(transform_);
+		model_->Update();
+	}
+	if (debugModel_) {
+		SphereClass* s = debugModel_.get();
+		// keep sphere at same position
+		s->SetCenter(transform_.translate);
+		s->Update();
+	}
 
-    // 描画物の描画
-    if (alive_ && model_) model_->Draw();
+	// 描画物の描画
+	if (alive_) {
+		if (model_) {
+			model_->Draw();
+		} else if (debugModel_) {
+			debugModel_->Draw();
+		}
+	}
 }
 
 void Enemy::UpdateOBB()
 {
-    obb_.center = transform_.translate;
-    obb_.size = { width_ / 2.0f, height_ / 2.0f, depth_ / 2.0f };
-    Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(transform_.rotate.x, transform_.rotate.y, transform_.rotate.z);
-    obb_.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
-    obb_.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
-    obb_.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
+	obb_.center = transform_.translate;
+	obb_.size = { width_ / 2.0f, height_ / 2.0f, depth_ / 2.0f };
+	Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(transform_.rotate.x, transform_.rotate.y, transform_.rotate.z);
+	obb_.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
+	obb_.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
+	obb_.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
 }
 
 const OBB& Enemy::GetOBB() const { return obb_; }
