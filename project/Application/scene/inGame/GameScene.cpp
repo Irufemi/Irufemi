@@ -669,7 +669,7 @@ void GameScene::StandardInitialize() {
 
     // --- Player ---
     player_ = std::make_unique<Player>();
-    player_->Initialize(camera_.get(), Vector3{ -5.0f, 0.0f, 0.0f }, engine_->GetInputManager());
+    player_->Initialize(camera_.get(), Vector3{ 0.0f, 0.0f, 0.0f }, engine_->GetInputManager());
 
     // --- Walls (二重リング配置) ---
     {
@@ -711,15 +711,46 @@ void GameScene::StandardInitialize() {
         Enemy* enemy = nullptr;
         if (i == 0) {
             auto* e2 = new TwoHitEnemy();
+            // Use filename only so ModelManager can search under rootDir (resources/model)
+            e2->SetModelFile("TD_HardEnemy.obj");
             enemy = e2;
         } else {
             enemy = new Enemy();
         }
 
-        float x = Random::GeneratorFloat(-10.0f, 10.0f);
-        float y = Random::GeneratorFloat(-10.0f, 10.0f);
+       //敵の最初の生成がPlayerと被らないようにする
+        const float minSpawnDist = 3.0f; 
+        float x = 0.0f;
+        float y = 0.0f;
+        for (int attempt = 0; attempt < 100; ++attempt) {
+            x = Random::GeneratorFloat(-10.0f, 10.0f);
+            y = Random::GeneratorFloat(-10.0f, 10.0f);
+            if ((x * x + y * y) >= (minSpawnDist * minSpawnDist)) {
+                break; 
+            }
+        }
+
         enemy->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
         enemies_.push_back(enemy);
+    }
+
+    // Also spawn an extra TwoHitEnemy together with the initial enemy wave so it's present from the first frame.
+    {
+        TwoHitEnemy* two = new TwoHitEnemy();
+        // use project's model filename only
+        two->SetModelFile("TD_HardEnemy.obj");
+        const float minSpawnDist = 3.0f;
+        float x = 0.0f;
+        float y = 0.0f;
+        for (int attempt = 0; attempt < 100; ++attempt) {
+            x = Random::GeneratorFloat(-10.0f, 10.0f);
+            y = Random::GeneratorFloat(-10.0f, 10.0f);
+            if ((x * x + y * y) >= (minSpawnDist * minSpawnDist)) {
+                break;
+            }
+        }
+        two->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+        enemies_.push_back(two);
     }
 
     healer_ = std::make_unique<Healer>();

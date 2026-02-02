@@ -19,7 +19,7 @@ public:
 	void Initialize(Camera* camera, Vector3 pos);
 
 	void Update(const std::list<Wall*>& walls, const std::list<HealerActor*>& healers);
-	void Draw();
+	virtual void Draw();
 
 	void UpdateOBB();
 
@@ -38,6 +38,9 @@ public:
 
 	// Called when hit by the player's sword. Default behavior is to die immediately.
 	virtual void HitBySword() { Kill(); }
+
+	// Return number of meshes in the loaded model (0 if none)
+	size_t GetModelMeshCount() const;
 
 private:
 	OBB obb_{};

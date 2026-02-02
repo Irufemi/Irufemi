@@ -233,26 +233,28 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 
 void Enemy::Draw() {
 
-	// 描画物の更新
-	if (model_) {
-		model_->SetTransform(transform_);
-		model_->Update();
-	}
-	if (debugModel_) {
-		SphereClass* s = debugModel_.get();
-		// keep sphere at same position
-		s->SetCenter(transform_.translate);
-		s->Update();
-	}
+    // 描画物の更新
+    if (model_) {
+        model_->SetTransform(transform_);
+        model_->Update();
+    }
+    if (debugModel_) {
+        SphereClass* s = debugModel_.get();
+        // keep sphere at same position
+        s->SetCenter(transform_.translate);
+        s->Update();
+    }
 
-	// 描画物の描画
-	if (alive_) {
-		if (model_) {
-			model_->Draw();
-		} else if (debugModel_) {
-			debugModel_->Draw();
-		}
-	}
+    // 描画物の描画
+    if (alive_) {
+        // Prefer drawing the Obj model only when it actually has mesh data; otherwise fall back to debug sphere
+        const size_t modelMeshCount = model_ ? model_->GetMeshCount() : 0;
+        if (model_ && modelMeshCount > 0) {
+            model_->Draw();
+        } else if (debugModel_) {
+            debugModel_->Draw();
+        }
+    }
 }
 
 void Enemy::UpdateOBB()
@@ -339,3 +341,9 @@ void Enemy::OnCollisionWithWall(const Wall* wall) {
 }
 
 void Enemy::Kill() { alive_ = false; respawnCounter_ = kRespawnFrames; }
+
+// Implementation for helper: return mesh count of loaded model
+size_t Enemy::GetModelMeshCount() const {
+    if (model_) return model_->GetMeshCount();
+    return 0;
+}
