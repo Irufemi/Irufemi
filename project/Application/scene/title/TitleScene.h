@@ -7,6 +7,10 @@
 
 #include "2D/Sprite.h"
 
+#pragma region takamura追加
+#include "StripeTransition.h"
+#pragma endregion takamura追加
+
 class IrufemiEngine;
 class Camera;
 class DebugCamera;
@@ -37,6 +41,13 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<Sprite> textSprite_title_ = nullptr;
     // 押したらスタート
     std::unique_ptr<Sprite> textSprite_pushStart_ = nullptr;
+
+#pragma region takamura追加
+    std::unique_ptr<StripeTransition> stripeTransition_;
+    bool isTransitioning = false;
+    int transitionTimer = 0;
+    int transitionTime = 90;
+#pragma endregion takamura追加
 
 private: // メンバ変数(システム)
     // エンジン
