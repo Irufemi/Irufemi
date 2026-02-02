@@ -9,7 +9,7 @@ class Camera {
 private: // メンバ変数
 
     //カメラの位置。ワールド座標。
-    Vector3 translate_ = { 0.0f,0.0f,-50.0f };
+    Vector3 translate_ = { 0.0f,0.0f,-55.0f };
 
     //カメラの回転角度
     Vector3 rotate_ = { 0.0f,0.0f,0.0f };

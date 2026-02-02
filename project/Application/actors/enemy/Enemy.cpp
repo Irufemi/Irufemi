@@ -175,27 +175,26 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 		Vector3 direction = targetPos - transform_.translate;
 		float dirLen = Math::Length(direction);
 
-		// ターゲットが壁の場合、めり込まないように接触距離を考慮する
+		// ターゲットが壁の場合、めり込みないように接触距離を考慮する
 		float stopDistance = 0.0f;
 		if (targetWall_)
 		{
-			const OBB& wallObb = targetWall_->GetOBB();
-			Vector3 dirToWall = wallObb.center - obb_.center;
-			if (Math::Length(dirToWall) > 1e-6f)
+			if (dirLen > 1e-6f)
 			{
-				dirToWall = Math::Normalize(dirToWall);
+				Vector3 moveDir = Math::Normalize(direction);
+				const OBB& wallObb = targetWall_->GetOBB();
 
 				// EnemyのOBBを移動方向に射影した半径
 				float enemyRadius =
-					std::abs(Math::Dot(obb_.orientations[0], dirToWall)) * obb_.size.x +
-					std::abs(Math::Dot(obb_.orientations[1], dirToWall)) * obb_.size.y +
-					std::abs(Math::Dot(obb_.orientations[2], dirToWall)) * obb_.size.z;
+					std::abs(Math::Dot(obb_.orientations[0], moveDir)) * obb_.size.x +
+					std::abs(Math::Dot(obb_.orientations[1], moveDir)) * obb_.size.y +
+					std::abs(Math::Dot(obb_.orientations[2], moveDir)) * obb_.size.z;
 
 				// WallのOBBを移動方向に射影した半径
 				float wallRadius =
-					std::abs(Math::Dot(wallObb.orientations[0], dirToWall)) * wallObb.size.x +
-					std::abs(Math::Dot(wallObb.orientations[1], dirToWall)) * wallObb.size.y +
-					std::abs(Math::Dot(wallObb.orientations[2], dirToWall)) * wallObb.size.z;
+					std::abs(Math::Dot(wallObb.orientations[0], moveDir)) * wallObb.size.x +
+					std::abs(Math::Dot(wallObb.orientations[1], moveDir)) * wallObb.size.y +
+					std::abs(Math::Dot(wallObb.orientations[2], moveDir)) * wallObb.size.z;
 
 				stopDistance = enemyRadius + wallRadius - 0.5f; // 0.5fはめり込み許容オフセット
 			}

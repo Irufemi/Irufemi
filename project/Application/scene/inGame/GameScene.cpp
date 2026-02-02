@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "GameScene.h"
 
 #include "scene/SceneManager.h"
@@ -69,9 +70,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     mode_ = GameMode::Standard;
 #else
     //phaseの設定
-    phase_ = Phase::FadeIn;
+    phase_ = Phase::Game;
     // modeの設定(Releaseは間違えないようにtutorialから)
-    mode_ = GameMode::Tutorial;
+    mode_ = GameMode::Standard;
 
 #endif
 
@@ -119,6 +120,14 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     pauseSprite_->SetAnchor(0.5f, 0.5f);
     pauseSprite_->SetColor({ 0.1f, 0.1f, 0.1f, 0.5f });
 
+    // フェード用スプライト
+    fadeSprite_ = std::make_unique<Sprite>();
+    fadeSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+    fadeSprite_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
+    fadeSprite_->SetSize(static_cast<float>(engine->GetClientWidth()), static_cast<float>(engine->GetClientHeight()));
+    fadeSprite_->SetAnchor(0.5f, 0.5f);
+    fadeSprite_->SetColor({ 0.0f, 0.0f, 0.0f, 1.0f }); // 初期は黒
+
     // ランダムエンジン
     Random::SeedEngine();
 
@@ -141,82 +150,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // 5. フェーズ初期化
     PhaseInitialize();
 
-#pragma region Player初期化
-    player_ = std::make_unique<Player>();
-    player_->Initialize(camera_.get(), Vector3{ -5.0f, 0.0f, 0.0f }, engine_->GetInputManager());
-#pragma endregion Player初期化
-
-#pragma region Wall初期化
-
-    {
-        Wall sampleWall; // サイズ取得用のサンプル
-        const float wallHeight = sampleWall.GetHeight();
-        const float baseRadius = 20.0f;
-        const float radii[2] = { baseRadius, baseRadius + wallHeight };
-        const float twoPi = 2.0f * std::numbers::pi_v<float>;
-
-      
-        for (int ring = 0; ring < 2; ++ring) {
-            float radius = radii[ring];
-            // Stagger every other ring so walls are not perfectly aligned radially
-            float angularOffset = 0.0f;
-
-            for (int32_t i = 0; i < kMaxWall_; ++i) {
-                float angle = twoPi * static_cast<float>(i) / static_cast<float>(kMaxWall_) + angularOffset;
-                float x = radius * std::cos(angle);
-                float y = radius * std::sin(angle);
-                Wall* wall = new Wall();
-                wall->Initialize(camera_.get(), Vector3{x, y, 0.0f});
-
-                if (ring > 0) {
-                    float scaleRatio = radii[ring] / radii[0];
-                    wall->SetScale({ scaleRatio, 1.0f, 1.0f });
-                }
-
-                float rotZ = angle + std::numbers::pi_v<float> * 0.5f;
-                wall->SetRotation(Vector3{ 0.0f, 0.0f, rotZ });
-                walls_.push_back(wall);
-            }
-        }
-    }
-
-#pragma endregion Wall初期化
-
-#pragma region Enemy初期化
-    for (int32_t i = 0; i < kMaxEnemy_; ++i) {
-        // Create one TwoHitEnemy (requires 2 sword hits) for the first slot, others are normal Enemies
-        Enemy* enemy = nullptr;
-        if (i == 0) {
-            auto* e2 = new TwoHitEnemy();
-            enemy = e2;
-        } else {
-            enemy = new Enemy();
-        }
-
-        float x = Random::GeneratorFloat(-10.0f, 10.0f);
-        float y = Random::GeneratorFloat(-10.0f, 10.0f);
-        enemy->Initialize(camera_.get(), Vector3{x, y, 0.0f});
-        enemies_.push_back(enemy);
-    }
-#pragma endregion Enemy初期化
-
-
-#pragma region HealerActor初期化
-
-    for (int32_t i = 0; i < kMaxHealerActor_; ++i) {
-        HealerActor* healerActor = new HealerActor();
-        float x = Random::GeneratorFloat(-15.0f, 15.0f);
-        float y = Random::GeneratorFloat(-15.0f, 15.0f);
-        healerActor->Initialize(camera_.get(), Vector3{x, y, 0.0f});
-        healerActor_.push_back(healerActor);
-    }
-
-#pragma endregion HealerActor初期化
-
-
-    // Healer 初期化
-    healer_ = std::make_unique<Healer>();
-
+    isTransitioningToStandard_ = false;
 
 }
 
@@ -224,32 +158,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 void GameScene::Update() {
 
 #if defined USE_IMGUI
-
-    ImGui::Begin("GameScene");
-    if (ImGui::BeginTabBar("GameSceneTabs")) {
-
-        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
-
-        // Texture タブ
-        if (ImGui::BeginTabItem("Texture")) {
-            if (ImGui::Button("allLoadActivate")) {
-                engine_->GetTextureManager()->LoadAllFromFolder("resources/");
-            }
-            ImGui::EndTabItem();
-        }
-
-        // Debug タブ
-        if (ImGui::BeginTabItem("Debug")) {
-            ImGui::Checkbox("debugMode", &debugMode_);
-            ImGui::Text("Timer: %.2f", timer_);
-            ImGui::EndTabItem();
-        }
-
-        ImGui::EndTabBar();
-    }
-    ImGui::End();
-
-#endif // _DEBUG
+    DebugImGui();
+#endif // USE_IMGUI
 
     // --- カメラの更新 ---
     // 現在アクティブなカメラへのポインタ
@@ -264,27 +174,31 @@ void GameScene::Update() {
 
     PhaseUpdate();
 
-    // Update all walls (use full container size because we now create multiple rings)
-    for (Wall* w : walls_) {
-        if (w) w->Update();
+    // フェード中以外にゲームオブジェクトを更新
+    if (phase_ != Phase::FadeIn && phase_ != Phase::FadeOut) {
+        // Update all walls (use full container size because we now create multiple rings)
+        for (Wall* w : walls_) {
+            if (w) w->Update();
+        }
+
+        // --- Enemy の更新 ---
+        for (Enemy* e : enemies_) {
+            if (e) e->Update(walls_, healerActor_);
+        }
+
+        // --- HealerActor の更新 ---
+        for (HealerActor* ha : healerActor_) {
+            if (ha) ha->Update();
+        }
+
+        player_->Update();
+
+        CollisionCheck();
+
+        // Healer は壊れた順に修復を試みる
+        if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
     }
 
-    // --- Enemy の更新 ---
-    for (Enemy* e : enemies_) {
-        if (e) e->Update(walls_, healerActor_);
-    }
-
-    // --- HealerActor の更新 ---
-    for (HealerActor* ha : healerActor_) {
-        if (ha) ha->Update();
-    }
-
-    player_->Update();
-
-    CollisionCheck();
-
-    // Healer は壊れた順に修復を試みる
-    if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
 
     // 時間表示の更新
     if (timeDisplay_) {
@@ -372,6 +286,11 @@ void GameScene::Draw() {
         }
         timeDisplay_->Draw(remainingTime);
     }
+
+    // フェードスプライトの描画
+    if (fadeSprite_ && (phase_ == Phase::FadeIn || phase_ == Phase::FadeOut)) {
+        fadeSprite_->Draw();
+    }
 }
 
 // フェーズの初期化
@@ -385,7 +304,7 @@ void GameScene::PhaseInitialize() {
     switch (phase_)
     {
     case Phase::FadeIn:
-
+        FadeInInitialize();
         break;
     case Phase::Countdown:
 
@@ -394,10 +313,11 @@ void GameScene::PhaseInitialize() {
 
         // ゲームタイマーの初期化
         timer_ = 0.0f;
+        isGameOver_ = false;
 
         break;
     case Phase::FadeOut:
-
+        FadeOutInitialize();
     default:
         break;
     }
@@ -406,7 +326,33 @@ void GameScene::PhaseInitialize() {
 }
 
 // フェーズの更新
-void GameScene::PhaseUpdate() {}
+void GameScene::PhaseUpdate() {
+    // 完了していたら次のフェーズへ
+    if (isCompletePhase_) {
+        PhaseChange();
+        isCompletePhase_ = false; // フラグをリセット
+        isResetPhase_ = false;    // 初期化フラグをリセット
+    }
+
+    // フェーズ初期化
+    PhaseInitialize();
+
+    // 各フェーズの更新
+    switch (phase_) {
+    case Phase::FadeIn:
+        FadeInUpdate();
+        break;
+    case Phase::Countdown:
+        // CountdownUpdate(); // (必要なら)
+        break;
+    case Phase::Game:
+        GameUpdate();
+        break;
+    case Phase::FadeOut:
+        FadeOutUpdate();
+        break;
+    }
+}
 
 // フェーズの変更
 void GameScene::PhaseChange() {
@@ -421,9 +367,23 @@ void GameScene::PhaseChange() {
         break;
     case Phase::Game:
         phase_ = Phase::FadeOut;
+        // チュートリアル完了後なら移行フラグを立てる
+        if (mode_ == GameMode::Tutorial) {
+            isTransitioningToStandard_ = true;
+        }
         break;
     case Phase::FadeOut:
-
+        // チュートリアルからの移行ならFadeInに戻る
+        if (isTransitioningToStandard_) {
+            mode_ = GameMode::Standard;
+            ModeInitialize();
+            phase_ = Phase::FadeIn;
+            isTransitioningToStandard_ = false; // フラグをリセット
+        }
+        else {
+            // スタンダードモード終了後はタイトルなどへ
+            engine_->GetSceneManager()->Request("Title");
+        }
     default:
         break;
     }
@@ -432,13 +392,19 @@ void GameScene::PhaseChange() {
 }
 
 // フェードインの初期化
-void GameScene::FadeInInitialize() {}
+void GameScene::FadeInInitialize() {
+    fadeTimer_ = 0.0f;
+}
 
 // フェードイン中の更新
 void GameScene::FadeInUpdate() {
 
-    // 条件を満たしたらPhase完了
-    if (false) {
+    fadeTimer_ += 1.0f / 60.0f;
+    float alpha = 1.0f - std::min(fadeTimer_ / kFadeDuration_, 1.0f);
+    fadeSprite_->SetColor({ 0.0f, 0.0f, 0.0f, alpha });
+    fadeSprite_->Update();
+
+    if (fadeTimer_ >= kFadeDuration_) {
         isCompletePhase_ = true;
     }
 
@@ -463,8 +429,8 @@ void GameScene::GameUpdate() {
     switch (mode_) {
     case GameMode::Tutorial:
 
-        // 条件を満たしたらPhase完了
-        if (false) {
+        // チュートリアル完了条件（例：Healerがいなくなったら）
+        if (!healer_) {
             isCompletePhase_ = true;
         }
 
@@ -475,8 +441,13 @@ void GameScene::GameUpdate() {
         // タイマー更新 (60FPS固定と仮定)
         timer_ += 1.0f / 60.0f;
 
-        // 条件を満たしたらPhase完了
-        if (false) {
+        // クリア条件：60秒経過し、かつゲームオーバーでない
+        if (timer_ >= playTime_ && !isGameOver_) {
+            isCompletePhase_ = true;
+        }
+
+        // ゲームオーバー条件：2層目の壁が破壊された
+        if (isGameOver_) {
             isCompletePhase_ = true;
         }
 
@@ -485,14 +456,20 @@ void GameScene::GameUpdate() {
 }
 
 // フェードアウト中の更新
-void GameScene::FadeOutInitialize() {}
+void GameScene::FadeOutInitialize() {
+    fadeTimer_ = 0.0f;
+}
 
 
 // フェードアウト中の更新
 void GameScene::FadeOutUpdate() {
 
-    // 条件を満たしたらPhase完了
-    if (false) {
+    fadeTimer_ += 1.0f / 60.0f;
+    float alpha = std::min(fadeTimer_ / kFadeDuration_, 1.0f);
+    fadeSprite_->SetColor({ 0.0f, 0.0f, 0.0f, alpha });
+    fadeSprite_->Update();
+
+    if (fadeTimer_ >= kFadeDuration_) {
         isCompletePhase_ = true;
     }
 }
@@ -537,13 +514,16 @@ void GameScene::CollisionCheck() {
 
         if (Collision::IsOBBCollision(obbPlayer, obbWall)) {
             player_->HandleCollision();
+            // 衝突したらプレイヤーの位置が戻るので、OBBを再更新してループを抜ける
+            player_->UpdateOBB();
+            break;
         }
     }
 #pragma endregion PlayerとWallの衝突判定
 
 #pragma region PlayerとEnemyの衝突判定
     for (Enemy* enemy : enemies_) {
-        if (!enemy)
+        if (!enemy || !enemy->IsAlive())
             continue;
 
         // 敵の OBB を更新して取得
@@ -588,6 +568,11 @@ void GameScene::CollisionCheck() {
                 enemy->OnCollisionWithWall(wall); // ★ 衝突時に押し出し処理を呼ぶ
                 bool destroyed = wall->AccumulateContactFrame();
                 if (destroyed) {
+
+                    // ゲームオーバー判定
+                    if (wall->GetRingIndex() == 1) { // 2層目 (0-indexed)
+                        isGameOver_ = true;
+                    }
 
                     for (auto eIt = enemies_.begin(); eIt != enemies_.end(); ++eIt) {
                         Enemy* e = *eIt;
@@ -702,6 +687,7 @@ void GameScene::StandardInitialize() {
                 float y = radius * std::sin(angle);
                 Wall* wall = new Wall();
                 wall->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+                wall->SetRingIndex(ring); // リングのインデックスを設定
 
                 if (ring > 0) {
                     float scaleRatio = radii[ring] / radii[0];
@@ -717,7 +703,14 @@ void GameScene::StandardInitialize() {
 
     // --- Enemies ---
     for (int32_t i = 0; i < kMaxEnemy_; ++i) {
-        Enemy* enemy = new Enemy();
+        // Create one TwoHitEnemy (requires 2 sword hits) for the first slot, others are normal Enemies
+        Enemy* enemy = nullptr;
+        if (i == 0) {
+            auto* e2 = new TwoHitEnemy();
+            enemy = e2;
+        } else {
+            enemy = new Enemy();
+        }
 
         float x = Random::GeneratorFloat(-10.0f, 10.0f);
         float y = Random::GeneratorFloat(-10.0f, 10.0f);
@@ -754,6 +747,9 @@ void GameScene::ModeInitialize() {
     // 既存のオブジェクト（Player, Enemy, Wall等）をすべて消す
     ClearAllObjects();
 
+    // ゲームオーバーフラグをリセット
+    isGameOver_ = false;
+
     // モードに応じて生成
     switch (mode_) {
     case GameMode::Tutorial:
@@ -771,3 +767,57 @@ void GameScene::StartCameraShake(Camera* cam, float duration, float magnitude) {
     cameraShakeMagnitude_ = magnitude;
     cameraShakeOriginalTranslate_ = cam->GetTranslate();
 }
+
+#if defined(USE_IMGUI)
+void GameScene::DebugImGui()
+{
+    ImGui::Begin("GameScene");
+    if (ImGui::BeginTabBar("GameSceneTabs")) {
+
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+
+        // Texture タブ
+        if (ImGui::BeginTabItem("Texture")) {
+            if (ImGui::Button("allLoadActivate")) {
+                engine_->GetTextureManager()->LoadAllFromFolder("resources/");
+            }
+            ImGui::EndTabItem();
+        }
+
+        // Debug タブ
+        if (ImGui::BeginTabItem("Debug")) {
+            ImGui::Checkbox("debugMode", &debugMode_);
+            ImGui::Text("Timer: %.2f", timer_);
+            ImGui::Text("GameOver: %s", isGameOver_ ? "true" : "false");
+
+            // GameModeの変更
+            const char* modeNames[] = { "Tutorial", "Standard" };
+            int currentMode = static_cast<int>(mode_);
+            if (ImGui::Combo("GameMode", &currentMode, modeNames, IM_ARRAYSIZE(modeNames))) {
+                mode_ = static_cast<GameMode>(currentMode);
+                ModeInitialize(); // モードを再初期化
+            }
+
+            // Phaseの変更
+            const char* phaseNames[] = { "FadeIn", "Countdown", "Game", "FadeOut" };
+            int currentPhase = static_cast<int>(phase_);
+            if (ImGui::Combo("Phase", &currentPhase, phaseNames, IM_ARRAYSIZE(phaseNames))) {
+                phase_ = static_cast<Phase>(currentPhase);
+                isResetPhase_ = false; // フェーズを再初期化
+            }
+
+            // チュートリアル強制完了ボタン
+            if (mode_ == GameMode::Tutorial) {
+                if (ImGui::Button("Force Complete Tutorial")) {
+                    isCompletePhase_ = true;
+                }
+            }
+
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
+    ImGui::End();
+}
+#endif

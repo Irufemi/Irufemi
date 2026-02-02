@@ -16,6 +16,7 @@ void Wall::Initialize(Camera* camera, const Vector3& pos) {
 	model_->Initialize(camera,"TD_Block.obj");
 
 	transform_.translate = pos;
+	ringIndex_ = 0; // デフォルトは0層
 }
 
 void Wall::Update() {
