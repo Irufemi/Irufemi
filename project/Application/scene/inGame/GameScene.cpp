@@ -122,14 +122,6 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     pauseSprite_->SetAnchor(0.5f, 0.5f);
     pauseSprite_->SetColor({ 0.1f, 0.1f, 0.1f, 0.5f });
 
-    // フェード用スプライト
-    fadeSprite_ = std::make_unique<Sprite>();
-    fadeSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
-    fadeSprite_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
-    fadeSprite_->SetSize(static_cast<float>(engine->GetClientWidth()), static_cast<float>(engine->GetClientHeight()));
-    fadeSprite_->SetAnchor(0.5f, 0.5f);
-    fadeSprite_->SetColor({ 0.0f, 0.0f, 0.0f, 1.0f }); // 初期は黒
-
     // ランダムエンジン
     Random::SeedEngine();
 
@@ -147,6 +139,10 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         "resources/texture/timeDisplay_separator.png", { 32.0f, 64.0f }
     );
     timeDisplay_->SetPosition({ 20.0f, 20.0f }); // 左上に配置
+
+#pragma region takamura追加（トランジション）
+    stripeTransition_ = std::make_unique<StripeTransition>();
+#pragma endregion takamura追加
 
 
     // 5. フェーズ初期化
@@ -228,6 +224,12 @@ void GameScene::Update() {
         }
     }
 
+#pragma region takamura追加（トランジション）
+     if(stripeTransition_){
+         stripeTransition_->Update();
+     }
+#pragma endregion takamura追加
+
     // =====
     // ↑ゲームの更新
     // =====
@@ -291,10 +293,10 @@ void GameScene::Draw() {
         timeDisplay_->Draw(remainingTime);
     }
 
-    // フェードスプライトの描画
-    if (fadeSprite_ && (phase_ == Phase::FadeIn || phase_ == Phase::FadeOut)) {
-        fadeSprite_->Draw();
-    }
+#pragma region takamura追加（トランジション）
+    // 2D描画の最後に
+    stripeTransition_->Draw();
+#pragma endregion takamura追加
 }
 
 // フェーズの初期化
@@ -321,8 +323,8 @@ void GameScene::PhaseInitialize() {
 
         break;
     case Phase::FadeOut:
-        FadeOutInitialize();
     default:
+        FadeOutInitialize();
         break;
     }
     // 初期化の完了
@@ -377,6 +379,7 @@ void GameScene::PhaseChange() {
         }
         break;
     case Phase::FadeOut:
+    default:
         // チュートリアルからの移行ならFadeInに戻る
         if (isTransitioningToStandard_) {
             mode_ = GameMode::Standard;
@@ -388,7 +391,6 @@ void GameScene::PhaseChange() {
             // スタンダードモード終了後はタイトルなどへ
             engine_->GetSceneManager()->Request("Title");
         }
-    default:
         break;
     }
 
@@ -397,18 +399,16 @@ void GameScene::PhaseChange() {
 
 // フェードインの初期化
 void GameScene::FadeInInitialize() {
-    fadeTimer_ = 0.0f;
+
+    stripeTransition_->Initialize(camera_.get(), engine_, StripeTransition::Mode::Out);
+    stripeTransition_->Start();
+
 }
 
 // フェードイン中の更新
 void GameScene::FadeInUpdate() {
 
-    fadeTimer_ += 1.0f / 60.0f;
-    float alpha = 1.0f - std::min(fadeTimer_ / kFadeDuration_, 1.0f);
-    fadeSprite_->SetColor({ 0.0f, 0.0f, 0.0f, alpha });
-    fadeSprite_->Update();
-
-    if (fadeTimer_ >= kFadeDuration_) {
+    if (stripeTransition_->IsFinished()) {
         isCompletePhase_ = true;
     }
 
@@ -461,19 +461,17 @@ void GameScene::GameUpdate() {
 
 // フェードアウト中の更新
 void GameScene::FadeOutInitialize() {
-    fadeTimer_ = 0.0f;
+
+    stripeTransition_->Initialize(camera_.get(), engine_, StripeTransition::Mode::In);
+    stripeTransition_->Start();
 }
 
 
 // フェードアウト中の更新
 void GameScene::FadeOutUpdate() {
 
-    fadeTimer_ += 1.0f / 60.0f;
-    float alpha = std::min(fadeTimer_ / kFadeDuration_, 1.0f);
-    fadeSprite_->SetColor({ 0.0f, 0.0f, 0.0f, alpha });
-    fadeSprite_->Update();
-
-    if (fadeTimer_ >= kFadeDuration_) {
+    
+    if (stripeTransition_->IsFinished()) {
         isCompletePhase_ = true;
     }
 }

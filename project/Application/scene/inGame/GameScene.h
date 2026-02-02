@@ -28,6 +28,10 @@ struct AreaLight;
 // SE support
 #include "audio/Se.h"
 
+#pragma region takamura追加
+#include "StripeTransition.h"
+#pragma endregion takamura追加
+
 /// <summary>
 /// ゲーム
 /// </summary>
@@ -127,10 +131,9 @@ private: // メンバ変数(ゲーム進行)
     // チュートリアルからスタンダードへの移行フラグ
     bool isTransitioningToStandard_ = false;
 
-    // フェード演出用
-    std::unique_ptr<Sprite> fadeSprite_ = nullptr;
-    float fadeTimer_ = 0.0f;
-    static inline const float kFadeDuration_ = 1.0f; // 1秒でフェード
+#pragma region takamura追加（トランジション）
+    std::unique_ptr<StripeTransition> stripeTransition_;
+#pragma endregion takamura追加
 
 private: // メンバ変数(ゲーム)
 
@@ -159,7 +162,6 @@ private: // メンバ変数(ゲーム)
     int playTime_ = 60;
 
     std::unique_ptr<TimeDisplay> timeDisplay_;
-
   
     float cameraShakeTimer_ = 0.0f;
     float cameraShakeDuration_ = 0.0f;
@@ -175,6 +177,7 @@ private: // メンバ変数(システム)
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
 
     bool debugMode_ = false;
+
     // ライト
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
     std::vector<std::unique_ptr<PointLight>> pointLights_;

@@ -68,6 +68,11 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     textSprite_pushStart_ = std::make_unique<Sprite>();
     textSprite_pushStart_->Initialize(camera_.get(), "resources/texture/text_title.png");
 
+#pragma region takamura追加
+    // ストライプトランジション初期化（入り）
+    stripeTransition_ = std::make_unique<StripeTransition>();
+    stripeTransition_->Initialize(camera_.get(), engine_, StripeTransition::Mode::In);
+#pragma endregion takamura追加
   
     titleObj_ = std::make_unique<ObjClass>();
   
@@ -118,6 +123,24 @@ void TitleScene::Update() {
     // ↓ゲームの更新
     // =====
 
+#pragma region takamura追加
+    // キー入力でトランジション開始
+    if (engine_->GetInputManager()->IsKeyDownDIK(0x39)) {
+        if (!isTransitioning) {
+            isTransitioning = true;
+            stripeTransition_->Start();
+        }
+    }
+
+    // トランジション更新
+    if (isTransitioning) {
+        stripeTransition_->Update();
+
+        if (stripeTransition_->IsFinished()) {
+            engine_->GetSceneManager()->Request("InGame");
+        }
+    }
+#pragma endregion takamura追加
     // タイトルモデルの更新
     if (titleObj_) {
         titleObj_->Update();
@@ -168,7 +191,6 @@ void TitleScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
-
     // テキストスプライト描画
     if (textSprite_title_) {
         textSprite_title_->Draw();
@@ -177,5 +199,8 @@ void TitleScene::Draw() {
         textSprite_pushStart_->Draw();
     }
 
+#pragma region takamura追加
+    stripeTransition_->Draw();
+#pragma endregion takamura追加
 
 }
