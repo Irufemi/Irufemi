@@ -34,7 +34,7 @@ public:
 	void SetCollidingWithWall(bool isColliding) { isCollidingWithWall_ = isColliding; }
 
 	bool IsAlive() const { return alive_; }
-	void Kill();
+	virtual void Kill();
 
 	// Called when hit by the player's sword. Default behavior is to die immediately.
 	virtual void HitBySword() { Kill(); }
@@ -81,4 +81,7 @@ private:
 protected:
 	// Subclasses can override to use a different model file
 	virtual const char* GetModelFile() const { return "TD_Enemy.obj"; }
+
+	// Reinitialize the ObjClass model using current GetModelFile()
+	void ReloadModel();
 };

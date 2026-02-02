@@ -14,6 +14,7 @@
 class IrufemiEngine;
 class Camera;
 class DebugCamera;
+class ObjClass;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
@@ -48,6 +49,8 @@ private: // メンバ変数(ゲーム)
     int transitionTimer = 0;
     int transitionTime = 90;
 #pragma endregion takamura追加
+ 
+    std::unique_ptr<ObjClass> titleObj_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン

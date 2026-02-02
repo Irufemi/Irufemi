@@ -2,6 +2,7 @@
 
 #include "Enemy.h"
 #include <string>
+#include <chrono>
 
 class Camera;
 
@@ -13,20 +14,35 @@ public:
 
     void Initialize(Camera* camera, Vector3 pos);
 
-    // override HitBySword to require 2 hits
+  
     void HitBySword() override;
 
-    // allow changing the model file used by this enemy
+  
+    void HitBySlash(uint32_t slashId);
+
+   
+    void Kill() override;
+ 
     void SetModelFile(const char* file) { modelFile_ = file ? file : "TD_Enemy.obj"; }
 
-    // ensure we can customize drawing if needed
+   
     void Draw() override;
 
+  
+    void Update(const std::list<class Wall*>& walls, const std::list<class HealerActor*>& healers);
+
 protected:
-    // Use the same model as default Enemy so it will be visible by default
+  
     const char* GetModelFile() const override { return modelFile_.c_str(); }
 
 private:
     int remainingHits_ = 2;
     std::string modelFile_ = "TD_HardEnemy.obj";
+
+   
+    std::chrono::steady_clock::time_point lastHitTime_ = std::chrono::steady_clock::time_point{};
+    static inline constexpr float kHitCooldownSeconds = 0.25f; 
+
+   
+    uint32_t lastSlashId_ = 0;
 };

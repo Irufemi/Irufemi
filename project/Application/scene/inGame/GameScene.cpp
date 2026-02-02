@@ -21,6 +21,8 @@
 #include "Sword.h"
 #include "actors/enemy/TwoHitEnemy.h"
 
+#include <unordered_map>
+
 
 // 
 void GameScene::ClearAllObjects() {
@@ -545,7 +547,7 @@ void GameScene::CollisionCheck() {
             sePlayerHit_.Play(false);
          }
     }
-#pragma endregion PlayerとEnemyの衝突判定
+#pragma region PlayerとEnemyの衝突判定
 
 #pragma region EnemyとWallの衝突判定
     // Enemy と Wall の衝突判定（接触フレームを蓄積して HP を減らす）
@@ -639,6 +641,9 @@ void GameScene::CollisionCheck() {
             sword->UpdateOBB();
             const OBB& swordObb = sword->GetOBB();
 
+            // static map to remember which enemy was hit by which slash id
+            static std::unordered_map<Enemy*, uint32_t> lastHitSlashIdMap;
+            uint32_t currentSlashId = sword->GetCurrentSlashId();
 
             for (auto enemyIt = enemies_.begin(); enemyIt != enemies_.end(); ++enemyIt) {
                 Enemy* enemy = *enemyIt;
@@ -647,11 +652,27 @@ void GameScene::CollisionCheck() {
                 const OBB& enemyObb = enemy->GetOBB();
                 if (Collision::IsOBBCollision(swordObb, enemyObb)) {
 
+                    // ensure we only register one hit per enemy per slash
+                    auto it = lastHitSlashIdMap.find(enemy);
+                    if (it != lastHitSlashIdMap.end() && it->second == currentSlashId) {
+                        // already hit this enemy during current slash -> skip
+                        continue;
+                    }
 
-                    //enemy->Kill();
+                    // record this hit
+                    lastHitSlashIdMap[enemy] = currentSlashId;
 
-                   // call virtual HitBySword so derived enemies can require multiple hits
-                    enemy->HitBySword();
+                    // call HitBySlash if enemy is TwoHitEnemy so we pass the slash id and avoid fallback ids
+                    TwoHitEnemy* two = dynamic_cast<TwoHitEnemy*>(enemy);
+                    if (two) {
+                        // debug
+                        std::string dbg = "GameScene: registering hit on TwoHitEnemy with slashId=" + std::to_string(currentSlashId) + "\n";
+                        OutputDebugStringA(dbg.c_str());
+                        two->HitBySlash(currentSlashId);
+                    } else {
+                        // fallback: call general HitBySword
+                        enemy->HitBySword();
+                    }
 
                 }
             }
