@@ -13,6 +13,7 @@
 #include "math/DirectionalLight.h"
 #include "math/AreaLight.h"
 
+#include "3D/ObjClass.h" 
 // デストラクタ
 TitleScene::~TitleScene() = default;
 
@@ -66,6 +67,15 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     // 押したらスタート
     textSprite_pushStart_ = std::make_unique<Sprite>();
     textSprite_pushStart_->Initialize(camera_.get(), "resources/texture/text_title.png");
+
+  
+    titleObj_ = std::make_unique<ObjClass>();
+  
+    titleObj_->Initialize(camera_.get(), "TD_Title.obj");
+  
+    titleObj_->SetPosition({ 0.0f, 0.0f, 0.0f });
+    titleObj_->SetScale({ 1.0f, 1.0f, 1.0f });
+
 }
 
 // 更新
@@ -108,6 +118,11 @@ void TitleScene::Update() {
     // ↓ゲームの更新
     // =====
 
+    // タイトルモデルの更新
+    if (titleObj_) {
+        titleObj_->Update();
+    }
+
     // =====
     // ↑ゲームの更新
     // =====
@@ -138,14 +153,29 @@ void TitleScene::Draw() {
 
     // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    engine_->SetCull(PSOManager::CullMode::None);
     engine_->ApplyPSO();
+
+    // タイトルモデルを描画
+    if (titleObj_) {
+        titleObj_->Draw();
+    }
 
     // 2D
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
+
+    // テキストスプライト描画
+    if (textSprite_title_) {
+        textSprite_title_->Draw();
+    }
+    if (textSprite_pushStart_) {
+        textSprite_pushStart_->Draw();
+    }
 
 
 }
