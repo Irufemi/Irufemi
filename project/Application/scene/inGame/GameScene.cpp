@@ -709,14 +709,19 @@ void GameScene::StandardInitialize() {
         Wall sampleWall; // サイズ取得用のサンプル
         const float wallHeight = sampleWall.GetHeight();
         const float baseRadius = 20.0f;
-        const float radii[2] = { baseRadius, baseRadius + wallHeight };
+        // 三重リングに変更: 内側(0), 中間(1), 外側(2)
+        const std::array<float, 3> radii = { baseRadius, baseRadius + wallHeight, baseRadius + 2.0f * wallHeight };
         const float twoPi = 2.0f * std::numbers::pi_v<float>;
 
-        // Create two concentric rings: inner and one outer ring.
-        for (int ring = 0; ring < 2; ++ring) {
+     
+        for (int ring = 0; ring < static_cast<int>(radii.size()); ++ring) {
             float radius = radii[ring];
             // Stagger every other ring so walls are not perfectly aligned radially
             float angularOffset = 0.0f;
+            if (ring % 2 == 1) {
+           
+                angularOffset = (twoPi / static_cast<float>(kMaxWall_)) * 0.5f;
+            }
 
             for (int32_t i = 0; i < kMaxWall_; ++i) {
                 float angle = twoPi * static_cast<float>(i) / static_cast<float>(kMaxWall_) + angularOffset;
