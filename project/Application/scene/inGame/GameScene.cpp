@@ -719,6 +719,32 @@ void GameScene::CollisionCheck() {
 
                 }
             }
+
+            // Sword と HealerActor の当たり判定（スラッシュ中のみ）
+            for (auto haIt = healerActor_.begin(); haIt != healerActor_.end(); ++haIt) {
+                HealerActor* ha = *haIt;
+                if (!ha || !ha->IsAlive()) continue;
+
+                ha->UpdateOBB();
+                const OBB& healerObb = ha->GetOBB();
+
+                if (Collision::IsOBBCollision(swordObb, healerObb)) {
+                    // play hit effect at healer position
+                    if (effectSystem_) {
+                        Transform hitTransform;
+                        hitTransform.translate = healerObb.center;
+                        effectSystem_->Play(EffectType::kHitEffect, hitTransform);
+                    }
+
+                   
+                    ha->HandleCollision();
+
+                 
+                    if (!ha->IsAlive()) {
+                        seHealerDeath_.Play(false);
+                    }
+                }
+            }
         }
     }
 #pragma endregion SwordとEnemyの衝突判定
