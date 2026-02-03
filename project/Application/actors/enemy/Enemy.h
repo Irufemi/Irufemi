@@ -11,6 +11,7 @@ class HealerActor;
 class Camera;
 class ObjClass;
 class SphereClass; // forward
+class Player; // forward
 
 class Enemy {
 public:
@@ -18,7 +19,7 @@ public:
 	virtual ~Enemy();
 	void Initialize(Camera* camera, Vector3 pos);
 
-	void Update(const std::list<Wall*>& walls, const std::list<HealerActor*>& healers);
+	virtual void Update(const std::list<Wall*>& walls, const std::list<HealerActor*>& healers);
 	virtual void Draw();
 
 	void UpdateOBB();
@@ -44,6 +45,15 @@ public:
 
 	// Return number of meshes in the loaded model (0 if none)
 	size_t GetModelMeshCount() const;
+
+	// Allow external code to nudge/move an enemy (used to resolve overlaps)
+	void MoveBy(const Vector3& delta);
+
+	// Set reference to player so specialized enemies can chase
+	void SetPlayer(Player* p) { player_ = p; }
+
+	
+	int GetRespawnCounter() const { return respawnCounter_; }
 
 private:
 	OBB obb_{};
@@ -78,16 +88,19 @@ private:
 	std::unique_ptr<ObjClass> model_ = nullptr;
 	// fallback debug model when ObjClass model isn't available
 	std::unique_ptr<SphereClass> debugModel_ = nullptr;
+
+protected:
 	Transform transform_;
 	Camera* camera_ = nullptr;
 
-protected:
 	// Subclasses can override to use a different model file
 	virtual const char* GetModelFile() const { return "TD_Enemy.obj"; }
 
 	// Reinitialize the ObjClass model using current GetModelFile()
 	void ReloadModel();
 
-	
+	// Allow derived classes to access player pointer
+	Player* player_ = nullptr;
+
 	virtual void OnRespawn() {}
 };

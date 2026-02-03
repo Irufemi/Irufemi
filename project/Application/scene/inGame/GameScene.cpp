@@ -17,9 +17,11 @@
 
 #include "function/Random.h"
 #include "function/Collision.h"
+#include "function/Math.h"
 
 #include "Sword.h"
 #include "actors/enemy/TwoHitEnemy.h"
+#include "actors/enemy/ChaserEnemy.h"
 
 #include <unordered_map>
 
@@ -191,6 +193,54 @@ void GameScene::Update() {
         // --- Enemy の更新 ---
         for (Enemy* e : enemies_) {
             if (e) e->Update(walls_, healerActor_);
+        }
+
+        
+        for (auto it = enemies_.begin(); it != enemies_.end(); ++it) {
+            Enemy* e = *it;
+            if (!e) continue;
+            if (e->IsAlive()) continue;
+            if (e->GetRespawnCounter() > 0) continue;
+
+            
+            const float minSpawnDist = 3.0f;
+            float x = 0.0f, y = 0.0f;
+            for (int attempt = 0; attempt < 100; ++attempt) {
+                x = Random::GeneratorFloat(-10.0f, 10.0f);
+                y = Random::GeneratorFloat(-10.0f, 10.0f);
+                Vector3 p = player_ ? player_->GetPosition() : Vector3{0,0,0};
+                float dx = x - p.x;
+                float dy = y - p.y;
+                if ((dx*dx + dy*dy) >= (minSpawnDist * minSpawnDist)) break;
+            }
+
+           
+            TwoHitEnemy* two = dynamic_cast<TwoHitEnemy*>(e);
+            ChaserEnemy* ch = dynamic_cast<ChaserEnemy*>(e);
+
+           
+            delete e;
+
+            Enemy* spawned = nullptr;
+            if (two) {
+                auto* nn = new TwoHitEnemy();
+                nn->SetModelFile("TD_HardEnemy.obj");
+                nn->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+                nn->SetPlayer(player_.get());
+                spawned = nn;
+            } else if (ch) {
+                auto* nn = new ChaserEnemy();
+                nn->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+                nn->SetPlayer(player_.get());
+                spawned = nn;
+            } else {
+                auto* nn = new Enemy();
+                nn->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+                nn->SetPlayer(player_.get());
+                spawned = nn;
+            }
+
+            *it = spawned;
         }
 
         // --- HealerActor の更新 ---
@@ -560,7 +610,17 @@ void GameScene::CollisionCheck() {
 
         // Player と Enemy の衝突判定
         if (Collision::IsOBBCollision(obbPlayer, obbEnemy)) {
-            player_->HandleCollision();
+          
+            Vector3 pushDir = obbPlayer.center - obbEnemy.center;
+            if (Math::Length(pushDir) < 1e-4f) {
+           
+                float ang = Random::GeneratorFloat(0.0f, 2.0f * std::numbers::pi_v<float>);
+                pushDir = Vector3{ std::cos(ang), std::sin(ang), 0.0f };
+            }
+            pushDir = Math::Normalize(pushDir);
+            const float knockbackStrength = 3.5f; 
+            player_->MoveBy(pushDir * knockbackStrength);
+
             enemy->HandleCollision();
            
             if (cameraShakeTimer_ <= 0.0f) {
@@ -571,6 +631,9 @@ void GameScene::CollisionCheck() {
             }
             // SE 再生: プレイヤーと敵が接触したとき
             sePlayerHit_.Play(false);
+
+            // Enemy dies after hitting the player once
+            enemy->Kill();
          }
     }
 #pragma region PlayerとEnemyの衝突判定
@@ -604,7 +667,7 @@ void GameScene::CollisionCheck() {
                         isGameOver_ = true;
                     }
 
-                 
+                  
                     for (auto eIt = enemies_.begin(); eIt != enemies_.end(); ++eIt) {
                         Enemy* e = *eIt;
                         if (!e || !e->IsAlive()) continue;
@@ -668,6 +731,47 @@ void GameScene::CollisionCheck() {
 
 #pragma endregion EnemyをHealerActorの衝突判定
 
+#pragma region Enemy同士の衝突判定
+    // Enemy同士がめり込まないように互いに押し出す
+    for (auto itA = enemies_.begin(); itA != enemies_.end(); ++itA) {
+        Enemy* a = *itA;
+        if (!a || !a->IsAlive()) continue;
+        a->UpdateOBB();
+        const OBB& obbA = a->GetOBB();
+
+        auto itB = itA;
+        ++itB;
+        for (; itB != enemies_.end(); ++itB) {
+            Enemy* b = *itB;
+            if (!b || !b->IsAlive()) continue;
+            b->UpdateOBB();
+            const OBB& obbB = b->GetOBB();
+
+            if (Collision::IsOBBCollision(obbA, obbB)) {
+                // 中心間ベクトル
+                Vector3 dir = obbA.center - obbB.center;
+                float dist = Math::Length(dir);
+                float rA = std::max({ obbA.size.x, obbA.size.y, obbA.size.z });
+                float rB = std::max({ obbB.size.x, obbB.size.y, obbB.size.z });
+                float overlap = rA + rB - dist;
+                if (overlap > 0.0001f) {
+                    Vector3 pushDir;
+                    if (dist < 1e-4f) {
+                        // 中心がほぼ一致する場合はランダム方向で押し出す
+                        float ang = Random::GeneratorFloat(0.0f, 2.0f * std::numbers::pi_v<float>);
+                        pushDir = Vector3{ std::cos(ang), std::sin(ang), 0.0f };
+                    } else {
+                        pushDir = dir / dist;
+                    }
+                    Vector3 delta = pushDir * (overlap * 0.5f + 0.001f);
+                    a->MoveBy(delta);
+                    b->MoveBy(-delta);
+                }
+            }
+        }
+    }
+#pragma endregion Enemy同士の衝突判定
+
 #pragma region SwordとEnemyの衝突判定
     // Sword の当たり判定はスラッシュ中のみ有効
     if (player_) {
@@ -716,6 +820,32 @@ void GameScene::CollisionCheck() {
                         enemy->HitBySword();
                     }
 
+                }
+            }
+
+            // Sword と HealerActor の当たり判定（スラッシュ中のみ）
+            for (auto haIt = healerActor_.begin(); haIt != healerActor_.end(); ++haIt) {
+                HealerActor* ha = *haIt;
+                if (!ha || !ha->IsAlive()) continue;
+
+                ha->UpdateOBB();
+                const OBB& healerObb = ha->GetOBB();
+
+                if (Collision::IsOBBCollision(swordObb, healerObb)) {
+                    // play hit effect at healer position
+                    if (effectSystem_) {
+                        Transform hitTransform;
+                        hitTransform.translate = healerObb.center;
+                        effectSystem_->Play(EffectType::kHitEffect, hitTransform);
+                    }
+
+                  
+                    ha->HandleCollision();
+
+                  
+                    if (!ha->IsAlive()) {
+                        seHealerDeath_.Play(false);
+                    }
                 }
             }
         }
@@ -806,6 +936,8 @@ void GameScene::StandardInitialize() {
         }
 
         enemy->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+        // provide player pointer so specialized enemies can chase the player
+        enemy->SetPlayer(player_.get());
         enemies_.push_back(enemy);
     }
 
@@ -825,7 +957,17 @@ void GameScene::StandardInitialize() {
             }
         }
         two->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+        two->SetPlayer(player_.get());
         enemies_.push_back(two);
+    }
+
+    // Spawn a ChaserEnemy for model draw check
+    {
+        ChaserEnemy* ch = new ChaserEnemy();
+        // if you want a custom model file, call ch->SetModelFile("YourModel.obj");
+        ch->Initialize(camera_.get(), Vector3{ 5.0f, 0.0f, 0.0f });
+        ch->SetPlayer(player_.get());
+        enemies_.push_back(ch);
     }
 
     healer_ = std::make_unique<Healer>();
