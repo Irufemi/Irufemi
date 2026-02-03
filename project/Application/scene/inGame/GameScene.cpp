@@ -196,6 +196,54 @@ void GameScene::Update() {
             if (e) e->Update(walls_, healerActor_);
         }
 
+        
+        for (auto it = enemies_.begin(); it != enemies_.end(); ++it) {
+            Enemy* e = *it;
+            if (!e) continue;
+            if (e->IsAlive()) continue;
+            if (e->GetRespawnCounter() > 0) continue;
+
+            
+            const float minSpawnDist = 3.0f;
+            float x = 0.0f, y = 0.0f;
+            for (int attempt = 0; attempt < 100; ++attempt) {
+                x = Random::GeneratorFloat(-10.0f, 10.0f);
+                y = Random::GeneratorFloat(-10.0f, 10.0f);
+                Vector3 p = player_ ? player_->GetPosition() : Vector3{0,0,0};
+                float dx = x - p.x;
+                float dy = y - p.y;
+                if ((dx*dx + dy*dy) >= (minSpawnDist * minSpawnDist)) break;
+            }
+
+           
+            TwoHitEnemy* two = dynamic_cast<TwoHitEnemy*>(e);
+            ChaserEnemy* ch = dynamic_cast<ChaserEnemy*>(e);
+
+           
+            delete e;
+
+            Enemy* spawned = nullptr;
+            if (two) {
+                auto* nn = new TwoHitEnemy();
+                nn->SetModelFile("TD_HardEnemy.obj");
+                nn->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+                nn->SetPlayer(player_.get());
+                spawned = nn;
+            } else if (ch) {
+                auto* nn = new ChaserEnemy();
+                nn->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+                nn->SetPlayer(player_.get());
+                spawned = nn;
+            } else {
+                auto* nn = new Enemy();
+                nn->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+                nn->SetPlayer(player_.get());
+                spawned = nn;
+            }
+
+            *it = spawned;
+        }
+
         // --- HealerActor の更新 ---
         for (HealerActor* ha : healerActor_) {
             if (ha) ha->Update();
@@ -563,7 +611,17 @@ void GameScene::CollisionCheck() {
 
         // Player と Enemy の衝突判定
         if (Collision::IsOBBCollision(obbPlayer, obbEnemy)) {
-            player_->HandleCollision();
+          
+            Vector3 pushDir = obbPlayer.center - obbEnemy.center;
+            if (Math::Length(pushDir) < 1e-4f) {
+           
+                float ang = Random::GeneratorFloat(0.0f, 2.0f * std::numbers::pi_v<float>);
+                pushDir = Vector3{ std::cos(ang), std::sin(ang), 0.0f };
+            }
+            pushDir = Math::Normalize(pushDir);
+            const float knockbackStrength = 3.5f; 
+            player_->MoveBy(pushDir * knockbackStrength);
+
             enemy->HandleCollision();
            
             if (cameraShakeTimer_ <= 0.0f) {
@@ -574,6 +632,9 @@ void GameScene::CollisionCheck() {
             }
             // SE 再生: プレイヤーと敵が接触したとき
             sePlayerHit_.Play(false);
+
+            // Enemy dies after hitting the player once
+            enemy->Kill();
          }
     }
 #pragma region PlayerとEnemyの衝突判定
@@ -876,6 +937,8 @@ void GameScene::StandardInitialize() {
         }
 
         enemy->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+        // provide player pointer so specialized enemies can chase the player
+        enemy->SetPlayer(player_.get());
         enemies_.push_back(enemy);
     }
 
@@ -895,6 +958,7 @@ void GameScene::StandardInitialize() {
             }
         }
         two->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
+        two->SetPlayer(player_.get());
         enemies_.push_back(two);
     }
 
@@ -903,6 +967,7 @@ void GameScene::StandardInitialize() {
         ChaserEnemy* ch = new ChaserEnemy();
         // if you want a custom model file, call ch->SetModelFile("YourModel.obj");
         ch->Initialize(camera_.get(), Vector3{ 5.0f, 0.0f, 0.0f });
+        ch->SetPlayer(player_.get());
         enemies_.push_back(ch);
     }
 

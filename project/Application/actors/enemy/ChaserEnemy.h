@@ -7,7 +7,10 @@ public:
     ChaserEnemy();
     ~ChaserEnemy() override;
 
+  
+    void Update(const std::list<class Wall*>& walls, const std::list<class HealerActor*>& healers) override;
+
 protected:
-    // Use a distinct model file for chaser; fallback to existing if file not present
+  
     const char* GetModelFile() const override;
 };

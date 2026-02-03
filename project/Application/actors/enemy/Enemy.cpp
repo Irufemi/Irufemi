@@ -52,29 +52,7 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 		{
 			--respawnCounter_;
 		}
-		else
-		{
-			// リスポーン
-			alive_ = true;
-			// ランダム位置に再配置（適宜範囲は調整）
-			float x = Random::GeneratorFloat(-10.0f, 10.0f);
-			float y = Random::GeneratorFloat(-10.0f, 10.0f);
-			transform_.translate = Vector3{ x, y, 0.0f };
-			// 初期速度をリセット
-			speed = 0.0f;
-			// ターゲットをリセット
-			targetWall_ = nullptr;
-			targetHealer_ = nullptr;
-			lastTouchedHealer_ = nullptr;
-
-		
-			OnRespawn();
-
-			
-			ReloadModel();
-
-		}
-		// UpdateAABB と transform 更新はリスポーン後も行う
+		// UpdateOBB は死んでいる間も行う
 		UpdateOBB();
 		return;
 	}

@@ -25,7 +25,7 @@ struct AreaLight;
 #include "actors/enemy/Enemy.h"
 #include "contents/wall/Wall.h"
 #include "contents/UI/TimeDisplay.h"
-// SE support
+
 #include "audio/Se.h"
 
 #pragma region takamura追加

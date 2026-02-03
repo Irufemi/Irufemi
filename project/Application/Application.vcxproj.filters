@@ -59,6 +59,7 @@
       <Filter>content\effect</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\ChaserEnemy.cpp" />
+    <ClCompile Include="actors\player\Player_MoveBy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actors\enemy\Enemy.h">

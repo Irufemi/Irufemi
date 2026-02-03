@@ -39,8 +39,10 @@ public:
     // externally set stun duration (seconds)
     void StunFor(float seconds) { isStunned_ = true; stunTimer_ = seconds; }
 
-   
     Vector3 GetPosition() const { return transform_.translate; }
+
+    // Move player by delta (used for knockback)
+    void MoveBy(const Vector3& delta);
 
 private:
 
