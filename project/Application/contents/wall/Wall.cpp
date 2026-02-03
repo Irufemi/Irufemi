@@ -3,6 +3,7 @@
 #include "camera/Camera.h"
 #include "3D/ObjClass.h"
 #include "function/Math.h"
+#include "audio/Se.h"
 
 Wall::Wall() {}
 
@@ -17,6 +18,7 @@ void Wall::Initialize(Camera* camera, const Vector3& pos, const std::string& mod
 
 	transform_.translate = pos;
 	ringIndex_ = 0; // デフォルトは0層
+	playedRepairSE_ = false; // reset per-instance flag
 }
 
 void Wall::Update() {
@@ -119,6 +121,22 @@ void Wall::StartRepairAnimation(){
 	// 目標スケールを保存しておき、アニメ中は0から始める
 	repairBaseScale_ = transform_.scale;
 	transform_.scale = { 0.0f, 0.0f, 0.0f };
+
+	
+	static Se seRepair;
+	static bool seInitialized = false;
+	if (!seInitialized) {
+		
+		seRepair.Initialize("resources/audio/se/Repair.mp3", "", 0.2f);
+		seInitialized = true;
+	}
+
+	
+	if (!playedRepairSE_) {
+		seRepair.SetVolume(0.2f);
+		seRepair.Play(false);
+		playedRepairSE_ = true;
+	}
 }
 
 float Wall::BounceEaseOut(float t)

@@ -13,7 +13,34 @@ Healer::Healer() {}
 
 Healer::~Healer() {}
 
+// 壁位置キー生成(位置と回転を丸めてハッシュ)
+size_t Healer::MakeWallKey(const Transform& t) {
+	auto quantize = [](float v) {
+		return static_cast<int>(std::round(v * 100.0f)); // 0.01 単位で丸め
+	};
+	size_t seed = 0;
+	auto hashCombine = [&seed](size_t h) { seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2); };
+	hashCombine(std::hash<int>{}(quantize(t.translate.x)));
+	hashCombine(std::hash<int>{}(quantize(t.translate.y)));
+	hashCombine(std::hash<int>{}(quantize(t.translate.z)));
+	hashCombine(std::hash<int>{}(quantize(t.rotate.x)));
+	hashCombine(std::hash<int>{}(quantize(t.rotate.y)));
+	hashCombine(std::hash<int>{}(quantize(t.rotate.z)));
+	return seed;
+}
+
 void Healer::NotifyWallDestroyed(const Transform& transform, const Vector3& wallSize) {
+	// 復活上限チェック
+	size_t key = MakeWallKey(transform);
+	int count = 0;
+	if (auto it = reviveCounts_.find(key); it != reviveCounts_.end()) {
+		count = it->second;
+	}
+	if (count >= kMaxRevivesPerWall) {
+		// 上限に達しているので復活キューに入れない
+		return;
+	}
+	// 復活予定としてキューに積む
 	destroyedQueue_.push_back(DestroyedWallInfo{ transform, wallSize, {} });
 	healFrameCounter_ = 0;
 }
@@ -124,6 +151,11 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 
 			// 修復演出
 			w->StartRepairAnimation();
+
+			// 復活回数を増加
+			size_t key = MakeWallKey(info.transform);
+			int& cnt = reviveCounts_[key];
+			cnt = cnt + 1; // 初回なら 0→1
 
 			// 割り当てられていた HealerActor がいれば削除してスロットを nullptr にする
 			for (HealerActor* assigned : info.assignedHealers) {

@@ -189,4 +189,7 @@ private: // メンバ変数(システム)
 
     // SE: プレイヤーと敵の接触時の効果音
     Se sePlayerHit_;
+
+    // SE: ヒーラー死亡時の効果音
+    Se seHealerDeath_;
 };
