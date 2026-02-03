@@ -143,19 +143,26 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 			Wall* newWall = new Wall();
 			const DestroyedWallInfo info = destroyedQueue_.front();
 			
-			// Transformから位置と回転を復元
-			newWall->Initialize(camera, info.transform.translate, "TD_DamageBlock.obj");
+			// 復活回数を増加
+			size_t key = MakeWallKey(info.transform);
+			int& cnt = reviveCounts_[key];
+			cnt = cnt + 1; // 初回なら 0→1
+
+			// 復活回数に応じてモデルを切り替える
+			std::string modelFilename = "TD_DamageBlock.obj";
+			if (cnt >= 2) {
+				modelFilename = "TD_OverDamageBlock.obj";
+			}
+
+			// Transformから位置と回転、スケールを復元
+			newWall->Initialize(camera, info.transform.translate, modelFilename);
 			newWall->SetRotation(info.transform.rotate);
+			newWall->SetScale(info.transform.scale);
 			newWall->Update();
 			w = newWall;
 
 			// 修復演出
 			w->StartRepairAnimation();
-
-			// 復活回数を増加
-			size_t key = MakeWallKey(info.transform);
-			int& cnt = reviveCounts_[key];
-			cnt = cnt + 1; // 初回なら 0→1
 
 			// 割り当てられていた HealerActor がいれば削除してスロットを nullptr にする
 			for (HealerActor* assigned : info.assignedHealers) {
