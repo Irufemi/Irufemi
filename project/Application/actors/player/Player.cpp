@@ -41,6 +41,7 @@ void Player::Initialize(Camera* camera, const Vector3& pos, InputManager* input)
 
    
     seCharge_.Initialize("resources/audio/se/Charge.mp3");
+    seSlash_.Initialize("resources/audio/se/Sword.mp3");
    
     chargeVolume_ = 0.0f;
     targetChargeVolume_ = 0.0f;
@@ -298,20 +299,33 @@ void Player::Attack()
 			attackRangeTimer_ = kAttackRangeDuration;
 
 			
-            if (chargeSoundStarted_) {
-                seCharge_.Stop();
-                chargeVolume_ = 0.0f;
-                targetChargeVolume_ = 0.0f;
-                pendingStopChargeSound_ = false;
-            } else {
-               
-                targetChargeVolume_ = 0.0f;
-                pendingStopChargeSound_ = false;
-            }
-            chargeSoundStarted_ = false;
+		    if (chargeSoundStarted_) {
+		        seCharge_.Stop();
+		        chargeVolume_ = 0.0f;
+		        targetChargeVolume_ = 0.0f;
+		        pendingStopChargeSound_ = false;
+		    } else {
+		       
+		        targetChargeVolume_ = 0.0f;
+		        pendingStopChargeSound_ = false;
+		    }
+		    chargeSoundStarted_ = false;
             
             if (sword_ && attackRangeModel_) {
-                sword_->StartSlash(attackRangeModel_->GetTransform());
+           
+                float chargeRatio = (kMaxChargeTime > 0.0f) ? (chargeTimer_ / kMaxChargeTime) : 0.0f;
+                
+                const float minDuration = 0.14f;
+                const float maxDuration = 0.40f;
+             
+                float duration = maxDuration + (minDuration - maxDuration) * chargeRatio;
+
+                sword_->StartSlash(attackRangeModel_->GetTransform(), duration);
+
+              
+                float vol = 0.5f + 0.5f * chargeRatio;
+                seSlash_.SetVolume(vol);
+                seSlash_.Play(false);
             }
 
 

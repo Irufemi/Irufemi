@@ -23,13 +23,13 @@ public:
 	void SetTransform(const Transform& t);
 
 	
-	void StartSlash(const Transform& anchor);
+	void StartSlash(const Transform& anchor, float duration = 0.28f);
 
 	
 	const OBB& GetOBB() const { return obb_; }
 	bool IsSlashing() const { return isSlashing_; }
 
-	// Get current slash id (incremented on each StartSlash) so collision logic can avoid multiple hits per slash
+
 	uint32_t GetCurrentSlashId() const { return currentSlashId_; }
 
 private:
@@ -57,6 +57,6 @@ private:
 	Transform slashStartTransform_{};
 	Transform slashEndTransform_{};
 
-	// Incremented each time a slash starts. Used by GameScene to prevent multiple hits from the same slash.
+	
 	uint32_t currentSlashId_ = 0;
 };
