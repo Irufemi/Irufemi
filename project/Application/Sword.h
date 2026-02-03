@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <functional>// コールバック用
 
 #include "math/shape/OBB.h"
 #include "math/Vector3.h"
@@ -32,6 +33,14 @@ public:
 	// Get current slash id (incremented on each StartSlash) so collision logic can avoid multiple hits per slash
 	uint32_t GetCurrentSlashId() const { return currentSlashId_; }
 
+	// 現在のTransformを取得
+	const Transform& GetTransform() const { return transform_; }
+
+	// 斬撃開始時のコールバック設定
+	void SetOnSlashStart(std::function<void(const Transform&)> callback) {
+		onSlashStart_ = callback;
+	}
+
 private:
 	void CreateObj(Camera* camera);
 
@@ -59,4 +68,6 @@ private:
 
 	// Incremented each time a slash starts. Used by GameScene to prevent multiple hits from the same slash.
 	uint32_t currentSlashId_ = 0;
+
+	std::function<void(const Transform&)> onSlashStart_;
 };
