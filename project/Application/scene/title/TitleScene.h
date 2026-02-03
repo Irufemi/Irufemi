@@ -11,6 +11,8 @@
 #include "StripeTransition.h"
 #pragma endregion takamura追加
 
+#include "audio/Se.h"
+
 class IrufemiEngine;
 class Camera;
 class DebugCamera;
@@ -68,4 +70,7 @@ private: // メンバ変数(システム)
     std::vector<std::unique_ptr<PointLight>> pointLights_;
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
+
+private:
+    Se seDecision_;
 };

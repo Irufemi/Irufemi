@@ -81,6 +81,8 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     titleObj_->SetPosition({ 0.0f, 0.0f, 0.0f });
     titleObj_->SetScale({ 1.0f, 1.0f, 1.0f });
 
+    seDecision_.Initialize("resources/audio/se/Decision.mp3");
+
 }
 
 // 更新
@@ -128,6 +130,7 @@ void TitleScene::Update() {
     if (engine_->GetInputManager()->IsKeyDownDIK(0x39)) {
         if (!isTransitioning) {
             isTransitioning = true;
+            seDecision_.Play(false);
             stripeTransition_->Start();
         }
     }
