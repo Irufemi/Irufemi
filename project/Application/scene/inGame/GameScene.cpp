@@ -169,7 +169,6 @@ void GameScene::Update() {
     currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
 
     // 
-
     // =====
     // ↓ゲームの更新
     // =====
@@ -201,6 +200,15 @@ void GameScene::Update() {
         if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
     }
 
+    // カメラをプレイヤーに追従させる（デバッグカメラ使用中は追従しない）
+    if (!debugMode_ && player_ && camera_) {
+        Vector3 playerPos = player_->GetPosition();
+        Vector3 camT = camera_->GetTranslate();
+        camT.x = playerPos.x;
+        camT.y = playerPos.y;
+        camera_->SetTranslate(camT);
+       
+    }
 
     // 時間表示の更新
     if (timeDisplay_) {

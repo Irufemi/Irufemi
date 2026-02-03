@@ -39,6 +39,9 @@ public:
     // externally set stun duration (seconds)
     void StunFor(float seconds) { isStunned_ = true; stunTimer_ = seconds; }
 
+   
+    Vector3 GetPosition() const { return transform_.translate; }
+
 private:
 
     OBB obb_{};
