@@ -113,7 +113,7 @@ private:
 
   
     Se seCharge_;
-
+    Se seSlash_;
     
     float chargeVolume_ = 0.0f;         
     float targetChargeVolume_ = 0.0f;  

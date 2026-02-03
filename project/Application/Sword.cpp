@@ -103,11 +103,11 @@ void Sword::SetTransform(const Transform& t) {
     if (swordModel_) swordModel_->SetTransform(t);
 }
 
-void Sword::StartSlash(const Transform& anchor) {
+void Sword::StartSlash(const Transform& anchor, float duration) {
 	
 	isSlashing_ = true;
 	slashTimer_ = 0.0f;
-	slashDuration_ = 0.28f; 
+	slashDuration_ = duration; 
 	float baseAngle = anchor.rotate.z;
 	float startAngle = baseAngle - 1.2f;
 	float endAngle = baseAngle + 1.2f;
