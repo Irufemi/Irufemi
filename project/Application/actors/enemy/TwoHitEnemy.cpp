@@ -22,7 +22,10 @@ void TwoHitEnemy::HitBySword() {
         SetModelFile("TD_Enemy.obj");
         ReloadModel();
     }
-    // do not kill on sword hit; death is based on walls destroyed
+    else if (hitCount_ >= 2) {
+        Kill();
+    }
+   
 }
 
 void TwoHitEnemy::HitBySlash(uint32_t slashId) {
@@ -35,6 +38,9 @@ void TwoHitEnemy::HitBySlash(uint32_t slashId) {
     if (hitCount_ == 1) {
         SetModelFile("TD_Enemy.obj");
         ReloadModel();
+    }
+    else if (hitCount_ >= 2) {
+        Kill();
     }
 }
 
@@ -59,6 +65,8 @@ void TwoHitEnemy::OnWallDestroyed(const Wall* wall) {
       
         SetModelFile("TD_Enemy.obj");
         ReloadModel();
+    
+        if (hitCount_ < 1) hitCount_ = 1;
     }
     if (wallsDestroyedCount_ >= 2) {
         Kill();

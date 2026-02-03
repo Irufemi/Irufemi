@@ -45,6 +45,9 @@ public:
 	// Return number of meshes in the loaded model (0 if none)
 	size_t GetModelMeshCount() const;
 
+	// Allow external code to nudge/move an enemy (used to resolve overlaps)
+	void MoveBy(const Vector3& delta);
+
 private:
 	OBB obb_{};
 

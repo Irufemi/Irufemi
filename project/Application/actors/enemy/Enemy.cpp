@@ -280,6 +280,11 @@ void Enemy::UpdateOBB()
 	obb_.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
 	obb_.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
 	obb_.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
+
+	// 各軸を正規化
+	obb_.orientations[0] = Math::Normalize(obb_.orientations[0]);
+	obb_.orientations[1] = Math::Normalize(obb_.orientations[1]);
+	obb_.orientations[2] = Math::Normalize(obb_.orientations[2]);
 }
 
 const OBB& Enemy::GetOBB() const { return obb_; }
@@ -361,4 +366,9 @@ void Enemy::Kill() { alive_ = false; respawnCounter_ = kRespawnFrames; }
 size_t Enemy::GetModelMeshCount() const {
     if (model_) return model_->GetMeshCount();
     return 0;
+}
+
+void Enemy::MoveBy(const Vector3& delta) {
+    transform_.translate += delta;
+    UpdateOBB();
 }

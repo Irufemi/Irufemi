@@ -224,11 +224,19 @@ void Player::Attack()
 	constexpr float kFrameDt = 1.0f / 60.0f;
 	constexpr float kAttackRangeMaxScale = 3.0f;
 
+   if (isAttacking_ && !attackRangeVisible_ && sword_ && !sword_->IsSlashing()) {
+        isAttacking_ = false;
+    }
+
 
 	if (input_->IsKeyDown(VK_SPACE) || input_->IsButtonDown(XINPUT_GAMEPAD_A))
 	{
-		if (!isCharging_)
-		{
+	
+		if (!isCharging_) {
+			if (isAttacking_ || (sword_ && sword_->IsSlashing())) {
+				
+				return;
+			}
 
 			isCharging_ = true;
 			isAttacking_ = true;
@@ -256,7 +264,7 @@ void Player::Attack()
         }
 
         if (chargeSoundStarted_) {
-           
+            
             targetChargeVolume_ = 0.2f + 0.4f * ratio; 
         }
 
@@ -339,7 +347,11 @@ void Player::Attack()
 		if (attackRangeTimer_ <= 0.0f)
 		{
 			attackRangeVisible_ = false;
-			isAttacking_ = false;
+
+			
+			if (!(sword_ && sword_->IsSlashing())) {
+				isAttacking_ = false;
+			}
 
 
 			attackRangeDistance_ = attackRangeBase_;

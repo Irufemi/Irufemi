@@ -17,6 +17,7 @@
 
 #include "function/Random.h"
 #include "function/Collision.h"
+#include "function/Math.h"
 
 #include "Sword.h"
 #include "actors/enemy/TwoHitEnemy.h"
@@ -604,7 +605,7 @@ void GameScene::CollisionCheck() {
                         isGameOver_ = true;
                     }
 
-                 
+                  
                     for (auto eIt = enemies_.begin(); eIt != enemies_.end(); ++eIt) {
                         Enemy* e = *eIt;
                         if (!e || !e->IsAlive()) continue;
@@ -668,6 +669,47 @@ void GameScene::CollisionCheck() {
 
 #pragma endregion EnemyをHealerActorの衝突判定
 
+#pragma region Enemy同士の衝突判定
+    // Enemy同士がめり込まないように互いに押し出す
+    for (auto itA = enemies_.begin(); itA != enemies_.end(); ++itA) {
+        Enemy* a = *itA;
+        if (!a || !a->IsAlive()) continue;
+        a->UpdateOBB();
+        const OBB& obbA = a->GetOBB();
+
+        auto itB = itA;
+        ++itB;
+        for (; itB != enemies_.end(); ++itB) {
+            Enemy* b = *itB;
+            if (!b || !b->IsAlive()) continue;
+            b->UpdateOBB();
+            const OBB& obbB = b->GetOBB();
+
+            if (Collision::IsOBBCollision(obbA, obbB)) {
+                // 中心間ベクトル
+                Vector3 dir = obbA.center - obbB.center;
+                float dist = Math::Length(dir);
+                float rA = std::max({ obbA.size.x, obbA.size.y, obbA.size.z });
+                float rB = std::max({ obbB.size.x, obbB.size.y, obbB.size.z });
+                float overlap = rA + rB - dist;
+                if (overlap > 0.0001f) {
+                    Vector3 pushDir;
+                    if (dist < 1e-4f) {
+                        // 中心がほぼ一致する場合はランダム方向で押し出す
+                        float ang = Random::GeneratorFloat(0.0f, 2.0f * std::numbers::pi_v<float>);
+                        pushDir = Vector3{ std::cos(ang), std::sin(ang), 0.0f };
+                    } else {
+                        pushDir = dir / dist;
+                    }
+                    Vector3 delta = pushDir * (overlap * 0.5f + 0.001f);
+                    a->MoveBy(delta);
+                    b->MoveBy(-delta);
+                }
+            }
+        }
+    }
+#pragma endregion Enemy同士の衝突判定
+
 #pragma region SwordとEnemyの衝突判定
     // Sword の当たり判定はスラッシュ中のみ有効
     if (player_) {
@@ -716,6 +758,32 @@ void GameScene::CollisionCheck() {
                         enemy->HitBySword();
                     }
 
+                }
+            }
+
+            // Sword と HealerActor の当たり判定（スラッシュ中のみ）
+            for (auto haIt = healerActor_.begin(); haIt != healerActor_.end(); ++haIt) {
+                HealerActor* ha = *haIt;
+                if (!ha || !ha->IsAlive()) continue;
+
+                ha->UpdateOBB();
+                const OBB& healerObb = ha->GetOBB();
+
+                if (Collision::IsOBBCollision(swordObb, healerObb)) {
+                    // play hit effect at healer position
+                    if (effectSystem_) {
+                        Transform hitTransform;
+                        hitTransform.translate = healerObb.center;
+                        effectSystem_->Play(EffectType::kHitEffect, hitTransform);
+                    }
+
+                   
+                    ha->HandleCollision();
+
+                  
+                    if (!ha->IsAlive()) {
+                        seHealerDeath_.Play(false);
+                    }
                 }
             }
         }
