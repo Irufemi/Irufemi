@@ -9,6 +9,12 @@
 #include <dinput.h>
 
 #include "Sword.h"
+#include <algorithm>
+
+static float LerpFloat(float a, float b, float t) {
+    t = std::clamp(t, 0.0f, 1.0f);
+    return a + (b - a) * t;
+}
 
 Player::Player() {}
 
@@ -16,27 +22,46 @@ Player::~Player() {}
 
 void Player::Initialize(Camera* camera, const Vector3& pos, InputManager* input)
 {
-	if (!model_ && !attackRangeModel_) {
-		CreateObj(camera);
-	}
+    if (!model_ && !attackRangeModel_) {
+        CreateObj(camera);
+    }
 
-	// create sword
-	sword_ = std::make_unique<Sword>();
-	sword_->Initialize(camera, pos);
+    // create sword
+    sword_ = std::make_unique<Sword>();
+    sword_->Initialize(camera, pos);
 
-	camera_ = camera;
+    camera_ = camera;
 
-	input_ = input;
+    input_ = input;
 
-	transform_.translate = pos;
-	lastSafePosition_ = pos;
+    transform_.translate = pos;
+    lastSafePosition_ = pos;
 
-	//必要ならModelの初期角度
+    //必要ならModelの初期角度
 
+   
+    seCharge_.Initialize("resources/audio/se/Charge.mp3");
+   
+    chargeVolume_ = 0.0f;
+    targetChargeVolume_ = 0.0f;
+    seCharge_.SetVolume(0.0f);
 }
 
 void Player::Update()
 {
+    
+    constexpr float kFrameDt = 1.0f / 60.0f;
+    if (chargeVolume_ != targetChargeVolume_) {
+        float alpha = std::clamp(volumeLerpSpeed_ * kFrameDt, 0.0f, 0.5f);
+        chargeVolume_ = LerpFloat(chargeVolume_, targetChargeVolume_, alpha);
+        seCharge_.SetVolume(chargeVolume_);
+      
+        if (pendingStopChargeSound_ && chargeVolume_ <= 0.001f) {
+            seCharge_.Stop();
+            pendingStopChargeSound_ = false;
+        }
+    }
+
     // スタン中の場合はタイマーを減らしてスタン終了判定
     if (isStunned_)
     {
@@ -54,27 +79,27 @@ void Player::Update()
         return;
     }
 
-	lastSafePosition_ = transform_.translate;
-	transform_.translate += velocity;
+    lastSafePosition_ = transform_.translate;
+    transform_.translate += velocity;
 
-	Move();
+    Move();
 
-	// 進行方向に向ける
-	{
-		float speed = Math::Length(velocity);
-		constexpr float kDeadZone = 1e-4f;
-		if (speed > kDeadZone)
-		{
+    // 進行方向に向ける
+    {
+        float speed = Math::Length(velocity);
+        constexpr float kDeadZone = 1e-4f;
+        if (speed > kDeadZone)
+        {
 
-			transform_.rotate.z = -std::atan2(velocity.x, velocity.y);
-		}
-	}
+            transform_.rotate.z = -std::atan2(velocity.x, velocity.y);
+        }
+    }
 
-	Attack();
+    Attack();
 
-	UpdateOBB();
+    UpdateOBB();
 
-	model_->Debug();
+    model_->Debug();
 
 }
 
@@ -208,18 +233,34 @@ void Player::Attack()
 			isAttacking_ = true;
 			chargeTimer_ = 0.0f;
 			attackRangeVisible_ = true;
-		}
+
+			
+			chargeSoundStarted_ = false;
+			targetChargeVolume_ = 0.0f;
+			pendingStopChargeSound_ = false;
+        }
+
+        
+        chargeTimer_ += kFrameDt;
+        if (chargeTimer_ > kMaxChargeTime) chargeTimer_ = kMaxChargeTime;
+
+        float ratio = (kMaxChargeTime > 0.0f) ? (chargeTimer_ / kMaxChargeTime) : 1.0f; // 0..1
+        attackRangeDistance_ = attackRangeBase_ + (attackRangeMax_ - attackRangeBase_) * ratio;
+        float scale = 1.0f + (kAttackRangeMaxScale - 1.0f) * ratio;
 
 
-		chargeTimer_ += kFrameDt;
-		if (chargeTimer_ > kMaxChargeTime) chargeTimer_ = kMaxChargeTime;
+        if (!chargeSoundStarted_ && chargeTimer_ >= chargeSoundStartThreshold_) {
+            seCharge_.Play(true); 
+            chargeSoundStarted_ = true;
+        }
 
-		float ratio = (kMaxChargeTime > 0.0f) ? (chargeTimer_ / kMaxChargeTime) : 1.0f; // 0..1
-		attackRangeDistance_ = attackRangeBase_ + (attackRangeMax_ - attackRangeBase_) * ratio;
-		float scale = 1.0f + (kAttackRangeMaxScale - 1.0f) * ratio;
+        if (chargeSoundStarted_) {
+           
+            targetChargeVolume_ = 0.2f + 0.4f * ratio; 
+        }
 
 
-		Vector3 forward = {};
+        Vector3 forward = {};
 		float vlen = Math::Length(velocity);
 		if (vlen > 1e-4f)
 		{
@@ -257,9 +298,21 @@ void Player::Attack()
 			attackRangeTimer_ = kAttackRangeDuration;
 
 			
-			if (sword_ && attackRangeModel_) {
-				sword_->StartSlash(attackRangeModel_->GetTransform());
-			}
+            if (chargeSoundStarted_) {
+                seCharge_.Stop();
+                chargeVolume_ = 0.0f;
+                targetChargeVolume_ = 0.0f;
+                pendingStopChargeSound_ = false;
+            } else {
+               
+                targetChargeVolume_ = 0.0f;
+                pendingStopChargeSound_ = false;
+            }
+            chargeSoundStarted_ = false;
+            
+            if (sword_ && attackRangeModel_) {
+                sword_->StartSlash(attackRangeModel_->GetTransform());
+            }
 
 
 		}

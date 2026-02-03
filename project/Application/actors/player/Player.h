@@ -12,6 +12,8 @@ class ObjClass;
 class InputManager;
 class Sword; // forward
 
+#include "audio/Se.h"
+
 class Player {
 public:
     Player();
@@ -105,4 +107,17 @@ private:
     void CreateObj(Camera* camera);
 
     void Attack();
+
+  
+    Se seCharge_;
+
+    
+    float chargeVolume_ = 0.0f;         
+    float targetChargeVolume_ = 0.0f;  
+    float volumeLerpSpeed_ = 3.0f;    
+    bool pendingStopChargeSound_ = false; 
+
+   
+    bool chargeSoundStarted_ = false;
+    float chargeSoundStartThreshold_ = 0.08f; 
 };
