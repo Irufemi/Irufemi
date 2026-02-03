@@ -43,6 +43,17 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
     Update();
 }
 
+void ObjClass::LoadModel(const std::string& filename)
+{
+    assert(modelManager_ && "ObjClass::LoadModel: ModelManager is not set.");
+    managedModel_ = modelManager_->GetModel(filename);
+    if (!managedModel_ || !managedModel_->cpuModel) {
+        OutputDebugStringA(("[ObjClass] LoadModel: model load failed for " + filename + "\n").c_str());
+        return;
+    }
+    UpdateMaterials();
+}
+
 void ObjClass::Update() {
 
     if (!managedModel_ || !camera_) return;

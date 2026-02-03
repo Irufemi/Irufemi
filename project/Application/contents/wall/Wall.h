@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include "math/Vector3.h"
 #include "math/Transform.h"
@@ -15,7 +16,7 @@ class Wall {
 public:
 	Wall();
 	~Wall();
-	void Initialize(Camera* camera, const Vector3& pos);
+	void Initialize(Camera* camera, const Vector3& pos, const std::string& modelFilename = "TD_Block.obj");
 	void Update();
 	void Draw();
 

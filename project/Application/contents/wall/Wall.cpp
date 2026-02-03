@@ -8,12 +8,12 @@ Wall::Wall() {}
 
 Wall::~Wall() {}
 
-void Wall::Initialize(Camera* camera, const Vector3& pos) {
+void Wall::Initialize(Camera* camera, const Vector3& pos, const std::string& modelFilename) {
 	
 	camera_ = camera;
 
 	model_ = std::make_unique<ObjClass>();
-	model_->Initialize(camera,"TD_Block.obj");
+	model_->Initialize(camera, modelFilename);
 
 	transform_.translate = pos;
 	ringIndex_ = 0; // デフォルトは0層

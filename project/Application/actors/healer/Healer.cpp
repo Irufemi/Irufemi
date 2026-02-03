@@ -117,7 +117,7 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 			const DestroyedWallInfo info = destroyedQueue_.front();
 			
 			// Transformから位置と回転を復元
-			newWall->Initialize(camera, info.transform.translate);
+			newWall->Initialize(camera, info.transform.translate, "TD_DamageBlock.obj");
 			newWall->SetRotation(info.transform.rotate);
 			newWall->Update();
 			w = newWall;
