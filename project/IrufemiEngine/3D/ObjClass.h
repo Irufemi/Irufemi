@@ -53,6 +53,8 @@ public: //メンバ関数
     ~ObjClass();
     //初期化
     void Initialize(Camera* camera, const std::string& filename = "plane.obj");
+    // モデルの再読み込み
+    void LoadModel(const std::string& filename);
     void Update();
     void Draw();
     void Debug(const char* objName = " ");
