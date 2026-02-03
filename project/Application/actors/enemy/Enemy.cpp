@@ -66,6 +66,13 @@ void Enemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>&
 			targetWall_ = nullptr;
 			targetHealer_ = nullptr;
 			lastTouchedHealer_ = nullptr;
+
+		
+			OnRespawn();
+
+			
+			ReloadModel();
+
 		}
 		// UpdateAABB と transform 更新はリスポーン後も行う
 		UpdateOBB();
