@@ -28,6 +28,8 @@ struct AreaLight;
 // SE support
 #include "audio/Se.h"
 
+class EffectSystem;
+
 /// <summary>
 /// ゲーム
 /// </summary>
@@ -173,6 +175,9 @@ private: // メンバ変数(システム)
     std::unique_ptr<Camera> camera_ = nullptr;
     // デバッグカメラ
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
+
+    // エフェクトシステム
+    std::unique_ptr<EffectSystem> effectSystem_ = nullptr;
 
     bool debugMode_ = false;
     // ライト

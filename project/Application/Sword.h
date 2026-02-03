@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <functional>// コールバック用
 
 #include "math/shape/OBB.h"
 #include "math/Vector3.h"
@@ -29,6 +30,14 @@ public:
 	const OBB& GetOBB() const { return obb_; }
 	bool IsSlashing() const { return isSlashing_; }
 
+	// 現在のTransformを取得
+	const Transform& GetTransform() const { return transform_; }
+
+	// 斬撃開始時のコールバック設定
+	void SetOnSlashStart(std::function<void(const Transform&)> callback) {
+		onSlashStart_ = callback;
+	}
+
 private:
 	void CreateObj(Camera* camera);
 
@@ -53,4 +62,6 @@ private:
 	float slashDuration_ = 0.2f; 
 	Transform slashStartTransform_{};
 	Transform slashEndTransform_{};
+
+	std::function<void(const Transform&)> onSlashStart_;
 };

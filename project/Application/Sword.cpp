@@ -136,4 +136,9 @@ void Sword::StartSlash(const Transform& anchor) {
 	
 	slashStartTransform_.scale = anchor.scale;
 	slashEndTransform_.scale = anchor.scale;
+
+	// コールバックを呼ぶ
+	if (onSlashStart_) {
+		onSlashStart_(slashStartTransform_);
+	}
 }
