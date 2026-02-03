@@ -605,12 +605,18 @@ void GameScene::CollisionCheck() {
                         isGameOver_ = true;
                     }
 
+                 
                     for (auto eIt = enemies_.begin(); eIt != enemies_.end(); ++eIt) {
                         Enemy* e = *eIt;
                         if (!e || !e->IsAlive()) continue;
                         e->UpdateOBB();
                         if (Collision::IsOBBCollision(e->GetOBB(), obbWall)) {
-                            e->Kill();
+                           auto* two = dynamic_cast<class TwoHitEnemy*>(e);
+                            if (two) {
+                                two->OnWallDestroyed(wall);
+                            } else {
+                                e->Kill();
+                            }
                         }
                     }
 
@@ -927,4 +933,4 @@ void GameScene::DebugImGui()
     }
     ImGui::End();
 }
-#endif
+#endif#endif

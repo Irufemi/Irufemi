@@ -39,6 +39,9 @@ public:
 	// Called when hit by the player's sword. Default behavior is to die immediately.
 	virtual void HitBySword() { Kill(); }
 
+	
+	virtual void OnWallDestroyed(const Wall* wall) {}
+
 	// Return number of meshes in the loaded model (0 if none)
 	size_t GetModelMeshCount() const;
 
@@ -84,4 +87,7 @@ protected:
 
 	// Reinitialize the ObjClass model using current GetModelFile()
 	void ReloadModel();
+
+	
+	virtual void OnRespawn() {}
 };

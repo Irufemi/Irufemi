@@ -1,66 +1,45 @@
 #include "TwoHitEnemy.h"
 
 #include "camera/Camera.h"
+#include "contents/wall/Wall.h"
 #include <chrono>
 
-TwoHitEnemy::TwoHitEnemy() { remainingHits_ = 2; }
+TwoHitEnemy::TwoHitEnemy() { wallsDestroyedCount_ = 0; hitCount_ = 0; }
 TwoHitEnemy::~TwoHitEnemy() = default;
 
 void TwoHitEnemy::Initialize(Camera* camera, Vector3 pos) {
     
     Enemy::Initialize(camera, pos);
-    remainingHits_ = 2;
-    lastHitTime_ = std::chrono::steady_clock::time_point{};
+    wallsDestroyedCount_ = 0;
+    hitCount_ = 0;
     lastSlashId_ = 0;
 }
 
 void TwoHitEnemy::HitBySword() {
-   
-    static uint32_t fallbackId = 1;
-    HitBySlash(fallbackId++);
-}
-
-void TwoHitEnemy::HitBySlash(uint32_t slashId) {
-   
-    if (slashId != 0 && lastSlashId_ == slashId) {
-        return;
-    }
-
-    lastSlashId_ = slashId;
-
-    using namespace std::chrono;
-    auto now = steady_clock::now();
-    if (lastHitTime_.time_since_epoch().count() != 0) {
-        duration<float> diff = now - lastHitTime_;
-        if (diff.count() < kHitCooldownSeconds) {
-           
-            return;
-        }
-    }
-
-    lastHitTime_ = now;
-
-    --remainingHits_;
-
-    
-    if (remainingHits_ == 1) {
+  
+    ++hitCount_;
+    if (hitCount_ == 1) {
         SetModelFile("TD_Enemy.obj");
         ReloadModel();
     }
+    // do not kill on sword hit; death is based on walls destroyed
+}
 
-    if (remainingHits_ <= 0) {
-        Kill();
+void TwoHitEnemy::HitBySlash(uint32_t slashId) {
+  
+    if (slashId != 0 && lastSlashId_ == slashId) return;
+    lastSlashId_ = slashId;
+
+  
+    ++hitCount_;
+    if (hitCount_ == 1) {
+        SetModelFile("TD_Enemy.obj");
+        ReloadModel();
     }
 }
 
 void TwoHitEnemy::Kill() {
- 
-    if (remainingHits_ > 0) {
-     
-        return;
-    }
-
-   
+    if (!IsAlive()) return;
     Enemy::Kill();
 }
 
@@ -70,6 +49,18 @@ void TwoHitEnemy::Draw() {
 
 void TwoHitEnemy::Update(const std::list<Wall*>& walls, const std::list<HealerActor*>& healers)
 {
-
     Enemy::Update(walls, healers);
+}
+
+void TwoHitEnemy::OnWallDestroyed(const Wall* wall) {
+  
+    ++wallsDestroyedCount_;
+    if (wallsDestroyedCount_ == 1) {
+      
+        SetModelFile("TD_Enemy.obj");
+        ReloadModel();
+    }
+    if (wallsDestroyedCount_ >= 2) {
+        Kill();
+    }
 }
