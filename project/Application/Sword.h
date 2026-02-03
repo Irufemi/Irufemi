@@ -46,11 +46,11 @@ private:
 
 	OBB obb_{};
 	
-	float width_ = 0.2f;
+	float width_ = 0.3f;
 
-	float height_ = 2.7f;
+	float height_ = 3.0f;
 
-	float depth_ = 0.2f;
+	float depth_ = 1.0f;
 
 	Camera* camera_ = nullptr;
 
