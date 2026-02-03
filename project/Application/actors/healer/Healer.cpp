@@ -51,13 +51,13 @@ void Healer::NotifyWallDestroyed(const Transform& transform, const Vector3& wall
 	// キューが空だったかを確認（空なら最初の破壊通知）
 	bool wasEmpty = destroyedQueue_.empty();
 	// 復活予定としてキューに積む
-	destroyedQueue_.push_back(DestroyedWallInfo{ transform, wallSize, {} });
+	destroyedQueue_.push_back(DestroyedWallInfo{ transform, wallSize, {}, 0.0f });
 	// 既に修復キューがある状態で新たな壊れた壁が来た場合、
 	// タイマーをリセットせずに引き継ぐ（要求どおり）。
 	if (wasEmpty) {
-		// 最初の要素が追加されたタイミングでタイマーをリセットしておくことで
+		// 最初の要素が追加されたタイミングで進捗を0にしておくことで
 		// 初回復元までのカウントを開始する。
-		healFrameCounter_ = 0;
+		destroyedQueue_.front().progress = 0.0f;
 	}
 }
 
@@ -73,42 +73,36 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 		availableHealers.push_back(ha);
 	}
 
-
+	// 壊れた壁があればヒーラーを割り当てる
 	if (!destroyedQueue_.empty()) {
-	
-		std::vector<size_t> idxs;
-		idxs.reserve(destroyedQueue_.size());
-		for (size_t i = 0; i < destroyedQueue_.size(); ++i) idxs.push_back(i);
-		std::sort(idxs.begin(), idxs.end(), [&](size_t a, size_t b) {
+		// ポインタの配列を作成してソート（deque を直接インデックスで参照すると破壊と競合する可能性があるため）
+		std::vector<DestroyedWallInfo*> ptrs;
+		ptrs.reserve(destroyedQueue_.size());
+		for (auto &entry : destroyedQueue_) ptrs.push_back(&entry);
+		std::sort(ptrs.begin(), ptrs.end(), [&](DestroyedWallInfo* a, DestroyedWallInfo* b) {
 			const Vector3 origin{ 0.0f, 0.0f, 0.0f };
-			float da = DistanceSq(destroyedQueue_[a].transform.translate, origin);
-			float db = DistanceSq(destroyedQueue_[b].transform.translate, origin);
-			return da > db; // larger distance (outer) first
+			return DistanceSq(a->transform.translate, origin) > DistanceSq(b->transform.translate, origin); // 外側優先
 		});
 
-		for (size_t idx : idxs) {
-			DestroyedWallInfo& info = destroyedQueue_[idx];
+		for (DestroyedWallInfo* pInfo : ptrs) {
+			DestroyedWallInfo& info = *pInfo;
 			int need = kMaxPerWall - static_cast<int>(info.assignedHealers.size());
 			if (need <= 0) continue;
 
 			while (need > 0) {
-				// 利用可能なヒーラーがいない場合は、新しいヒーラーを生成してヒーラーリストに追加
 				if (availableHealers.empty()) {
-					// 壁の破壊位置周辺に新しいHealerActorを生成
 					HealerActor* newHa = new HealerActor();
-					// 壁から少しオフセットされた位置に出現させる
 					Vector3 spawnOffset;
 					spawnOffset.x = Random::GeneratorFloat(-info.wallSize.x, info.wallSize.x) * 0.5f;
 					spawnOffset.y = Random::GeneratorFloat(-info.wallSize.y, info.wallSize.y) * 0.5f;
 					spawnOffset.z = 0.0f;
 					Vector3 spawnPos = { info.transform.translate.x + spawnOffset.x, info.transform.translate.y + spawnOffset.y, info.transform.translate.z + spawnOffset.z };
 					newHa->Initialize(camera, spawnPos);
-					// 外部コンテナに追加して、GameSceneがそのライフタイムを管理できるようにする
 					healers.push_back(newHa);
 					availableHealers.push_back(newHa);
 				}
 
-				if (availableHealers.empty()) break; // セーフティチェック
+				if (availableHealers.empty()) break;
 
 				int bestIdx = -1;
 				float bestDist = FLT_MAX;
@@ -122,19 +116,16 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 				info.assignedHealers.push_back(chosen);
 				chosen->SetAssigned(true);
 
-				// Wallのローカル空間でランダムなオフセットを生成
 				Vector3 randomOffset;
 				randomOffset.x = Random::GeneratorFloat(-info.wallSize.x / 2.0f, info.wallSize.x / 2.0f);
 				randomOffset.y = Random::GeneratorFloat(-info.wallSize.y / 2.0f, info.wallSize.y / 2.0f);
-				randomOffset.z = 0.0f; // Zオフセットを0に修正
+				randomOffset.z = 0.0f;
 
-				// オフセットをワールド空間に変換
 				Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(info.transform.rotate.x, info.transform.rotate.y, info.transform.rotate.z);
 				Vector3 worldOffset = Math::Transform(randomOffset, rotMat);
 
-				// 目標位置を設定
 				Vector3 targetPos = info.transform.translate + worldOffset;
-				targetPos.z = info.transform.translate.z; // Z座標を壁の位置に合わせる
+				targetPos.z = info.transform.translate.z;
 				chosen->SetTargetPosition(targetPos);
 
 				availableHealers.erase(availableHealers.begin() + bestIdx);
@@ -152,66 +143,69 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 		}
 	}
 
-	++healFrameCounter_;
-	if (healFrameCounter_ < kHealIntervalFrames) return;
+	// 壁ごとの進捗を進める。各順位は 0.5 の累乗で速度低下（1.0, 0.5, 0.25, 0.125...）
+	if (!destroyedQueue_.empty()) {
+		std::vector<DestroyedWallInfo*> ptrs;
+		ptrs.reserve(destroyedQueue_.size());
+		for (auto &entry : destroyedQueue_) ptrs.push_back(&entry);
+		std::sort(ptrs.begin(), ptrs.end(), [&](DestroyedWallInfo* a, DestroyedWallInfo* b) {
+			const Vector3 origin{0.0f, 0.0f, 0.0f};
+			return DistanceSq(a->transform.translate, origin) > DistanceSq(b->transform.translate, origin);
+		});
 
-	healFrameCounter_ = 0;
+		for (size_t order = 0; order < ptrs.size(); ++order) {
+			DestroyedWallInfo* pInfo = ptrs[order];
+			float speedMultiplier = std::pow(0.5f, static_cast<float>(order));
+			pInfo->progress += speedMultiplier;
+			if (pInfo->progress >= static_cast<float>(kHealIntervalFrames)) {
+				// nullptr スロットを探して復元
+				for (Wall*& w : walls) {
+					if (w == nullptr) {
+						Wall* newWall = new Wall();
+						const DestroyedWallInfo infoCopy = *pInfo; // copy for use after erase
 
-	if (destroyedQueue_.empty()) return;
+						// 復活回数を増加
+						size_t key = MakeWallKey(infoCopy.transform);
+						int& cnt = reviveCounts_[key];
+						cnt = cnt + 1;
 
-	// 復元先として nullptr のスロットを探す。見つかればそこで壁を復元する。
-	for (Wall*& w : walls) {
-		if (w == nullptr) {
-			Wall* newWall = new Wall();
-		
-			size_t bestIdx = 0;
-			float bestDist = -1.0f;
-			const Vector3 origin{ 0.0f, 0.0f, 0.0f };
-			for (size_t i = 0; i < destroyedQueue_.size(); ++i) {
-				float d = DistanceSq(destroyedQueue_[i].transform.translate, origin);
-				if (d > bestDist) { bestDist = d; bestIdx = i; }
-			}
+						std::string modelFilename = "TD_DamageBlock.obj";
+						if (cnt >= 2) modelFilename = "TD_OverDamageBlock.obj";
 
-			const DestroyedWallInfo info = destroyedQueue_[bestIdx];
+						Vector3 restoredPos = infoCopy.transform.translate;
+						restoredPos.z = 0.0f;
+						newWall->Initialize(camera, restoredPos, modelFilename);
+						newWall->SetRotation(infoCopy.transform.rotate);
+						newWall->SetScale(infoCopy.transform.scale);
+						newWall->Update();
+						w = newWall;
 
-			// 復活回数を増加
-			size_t key = MakeWallKey(info.transform);
-			int& cnt = reviveCounts_[key];
-			cnt = cnt + 1; // 初回なら 0→1
+						w->StartRepairAnimation();
 
-			// 復活回数に応じてモデルを切り替える
-			std::string modelFilename = "TD_DamageBlock.obj";
-			if (cnt >= 2) {
-				modelFilename = "TD_OverDamageBlock.obj";
-			}
+						// 割り当てられていた HealerActor を削除
+						for (HealerActor* assigned : infoCopy.assignedHealers) {
+							if (!assigned) continue;
+							for (HealerActor*& slot : healers) {
+								if (slot == assigned) {
+									delete slot;
+									slot = nullptr;
+									break;
+								}
+							}
+						}
 
-			// Transformから位置と回転、スケールを復元
-			Vector3 restoredPos = info.transform.translate;
-			restoredPos.z = 0.0f; // Z座標を0に強制
-			newWall->Initialize(camera, restoredPos, modelFilename);
-			newWall->SetRotation(info.transform.rotate);
-			newWall->SetScale(info.transform.scale);
-			newWall->Update();
-			w = newWall;
+						// deque から該当要素を削除（ポインタ比較）
+						for (auto it = destroyedQueue_.begin(); it != destroyedQueue_.end(); ++it) {
+							if (&(*it) == pInfo) {
+								destroyedQueue_.erase(it);
+								break;
+							}
+						}
 
-			// 修復演出
-			w->StartRepairAnimation();
-
-			// 割り当てられていた HealerActor がいれば削除してスロットを nullptr にする
-			for (HealerActor* assigned : info.assignedHealers) {
-				if (!assigned) continue;
-				for (HealerActor*& slot : healers) {
-					if (slot == assigned) {
-						delete slot;
-						slot = nullptr;
-						break;
+						break; // walls ループを抜ける
 					}
 				}
 			}
-
-			// erase the restored entry from the deque
-			destroyedQueue_.erase(destroyedQueue_.begin() + bestIdx);
-			break;
 		}
 	}
 }

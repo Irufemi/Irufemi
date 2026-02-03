@@ -30,13 +30,14 @@ private:
 		Transform transform; // 位置と回転
 		Vector3 wallSize;    // 壁のサイズ
 		std::vector<HealerActor*> assignedHealers; // 演出用に割り当てられたHealerActor複数
+		float progress = 0.0f; // 修復進捗（フレーム換算）
 	};
 
 	// 壁位置をキー化する(簡易ハッシュ用)
 	static size_t MakeWallKey(const Transform& t);
 
 	std::deque<DestroyedWallInfo> destroyedQueue_{};
-	int healFrameCounter_ = 0;
+	// 各エントリごとに進捗を持つため、グローバルな healFrameCounter_ は不要
 	static inline const int kHealIntervalFrames = 180; // 180フレームごとに1つ修復
 
 	// 復活回数の管理(位置キー→回数)
