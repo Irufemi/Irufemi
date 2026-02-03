@@ -162,6 +162,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     // ヒーラー死亡時のSE初期化
     seHealerDeath_.Initialize("resources/audio/se/DeathHealerActor.mp3");
+
+    model_tube_ = std::make_unique<ObjClass>();
+    model_tube_->Initialize(camera_.get(), "tube.obj");
 }
 
 // 更新
@@ -301,6 +304,9 @@ void GameScene::Update() {
      }
 #pragma endregion takamura追加
 
+     model_tube_->Debug("tube");
+     model_tube_->Update();
+
     // =====
     // ↑ゲームの更新
     // =====
@@ -334,6 +340,8 @@ void GameScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
+
+    model_tube_->Draw();
 
     // Draw all walls (iterate whole container to include added rings)
     for (Wall* w : walls_) {
@@ -871,7 +879,7 @@ void GameScene::StandardInitialize() {
         });
     }*/
 
-    // --- Walls (二重リング配置) ---
+    // --- Walls (三重リング配置) ---
     {
         Wall sampleWall; // サイズ取得用のサンプル
         const float wallHeight = sampleWall.GetHeight();

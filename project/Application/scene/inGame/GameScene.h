@@ -170,6 +170,8 @@ private: // メンバ変数(ゲーム)
     float cameraShakeMagnitude_ = 0.0f;
     Vector3 cameraShakeOriginalTranslate_{};
 
+    std::unique_ptr<ObjClass> model_tube_ = nullptr;
+
 private: // メンバ変数(システム)
     // エンジン
     IrufemiEngine* engine_ = nullptr;
