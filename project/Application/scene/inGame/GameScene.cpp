@@ -21,6 +21,7 @@
 #include "Sword.h"
 #include "actors/enemy/TwoHitEnemy.h"
 
+#include "3D/Effect/EffectSystem.h"
 #include <unordered_map>
 
 
@@ -97,6 +98,12 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     debugCamera_ = std::make_unique <DebugCamera>();
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode_ = false;
+
+#pragma region takamura_追加
+    // エフェクトシステムの初期化
+    effectSystem_ = std::make_unique<EffectSystem>();
+    effectSystem_->Initialize(camera_.get());
+#pragma endregion
 
     // --- ライトの初期化 ---
     // シーンに最初から配置するライト
@@ -198,6 +205,11 @@ void GameScene::Update() {
 
         // Healer は壊れた順に修復を試みる
         if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
+
+        // エフェクトの更新
+        if (effectSystem_) {
+            effectSystem_->Update();
+        }
     }
 
     // カメラをプレイヤーに追従させる（デバッグカメラ使用中は追従しない）
@@ -288,6 +300,11 @@ void GameScene::Draw() {
     }
 
     player_->Draw();
+
+    // エフェクトの描画
+    if (effectSystem_) {
+        effectSystem_->Draw();
+    }
 
     // Sprite
     engine_->SetBlend(BlendMode::kBlendModeNormal);
@@ -672,6 +689,12 @@ void GameScene::CollisionCheck() {
                         // already hit this enemy during current slash -> skip
                         continue;
                     }
+                    // ヒットエフェクトを敵の位置で発生
+                    if (effectSystem_) {
+                        Transform hitTransform;
+                        hitTransform.translate = enemyObb.center;  // 敵の中心位置
+                        effectSystem_->Play(EffectType::kHitEffect, hitTransform);
+                    }
 
                     // record this hit
                     lastHitSlashIdMap[enemy] = currentSlashId;
@@ -703,6 +726,15 @@ void GameScene::StandardInitialize() {
     // --- Player ---
     player_ = std::make_unique<Player>();
     player_->Initialize(camera_.get(), Vector3{ 0.0f, 0.0f, 0.0f }, engine_->GetInputManager());
+
+    // 斬撃時のエフェクトコールバックを設定
+   /* if (player_->GetSword()) {
+        player_->GetSword()->SetOnSlashStart([this](const Transform& t) {
+            if (effectSystem_) {
+                effectSystem_->Play(EffectType::kHitEffect, t);
+            }
+        });
+    }*/
 
     // --- Walls (二重リング配置) ---
     {
@@ -795,6 +827,15 @@ void GameScene::TutorialInitialize() {
     // チュートリアル用の簡易的な配置
     player_ = std::make_unique<Player>();
     player_->Initialize(camera_.get(), Vector3{ 0, 0, 0 }, engine_->GetInputManager());
+
+    //// コールバック設定
+    //if (player_->GetSword()) {
+    //    player_->GetSword()->SetOnSlashStart([this](const Transform& t) {
+    //        if (effectSystem_) {
+    //            effectSystem_->Play(EffectType::kHitEffect, t);
+    //        }
+    //     });
+    //}
 
     // 壁を1枚だけ置くなど
     Wall* wall = new Wall();

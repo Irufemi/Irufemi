@@ -26,7 +26,7 @@ namespace {
     const int32_t kClientWidth = 1280;
     const int32_t kClientHeight = 720;
     const std::wstring kTitle = L"2326_血管壊回";
-    const Vector4 kClearColor = { 1.0f, 0.8f, 0.8f, 1.0f };
+    const Vector4 kClearColor = { 0.7f, 0.3f, 0.3f, 1.0f };
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
         = "InGame";
