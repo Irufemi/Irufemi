@@ -105,14 +105,16 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 			Vector3 randomOffset;
 			randomOffset.x = Random::GeneratorFloat(-info.wallSize.x / 2.0f, info.wallSize.x / 2.0f);
 			randomOffset.y = Random::GeneratorFloat(-info.wallSize.y / 2.0f, info.wallSize.y / 2.0f);
-			randomOffset.z = Random::GeneratorFloat(-info.wallSize.z / 2.0f, info.wallSize.z / 2.0f);
+			randomOffset.z = 0.0f; // Zオフセットを0に修正
 
 			// オフセットをワールド空間に変換
 			Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(info.transform.rotate.x, info.transform.rotate.y, info.transform.rotate.z);
 			Vector3 worldOffset = Math::Transform(randomOffset, rotMat);
 
 			// 目標位置を設定
-			chosen->SetTargetPosition(info.transform.translate + worldOffset);
+			Vector3 targetPos = info.transform.translate + worldOffset;
+			targetPos.z = info.transform.translate.z; // Z座標を壁の位置に合わせる
+			chosen->SetTargetPosition(targetPos);
 
 
 			availableHealers.erase(availableHealers.begin() + bestIdx);
@@ -155,7 +157,9 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 			}
 
 			// Transformから位置と回転、スケールを復元
-			newWall->Initialize(camera, info.transform.translate, modelFilename);
+			Vector3 restoredPos = info.transform.translate;
+			restoredPos.z = 0.0f; // Z座標を0に強制
+			newWall->Initialize(camera, restoredPos, modelFilename);
 			newWall->SetRotation(info.transform.rotate);
 			newWall->SetScale(info.transform.scale);
 			newWall->Update();

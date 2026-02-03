@@ -23,7 +23,6 @@
 #include "actors/enemy/TwoHitEnemy.h"
 #include "actors/enemy/ChaserEnemy.h"
 
-#include "3D/Effect/EffectSystem.h"
 #include <unordered_map>
 
 
@@ -1075,4 +1074,4 @@ void GameScene::DebugImGui()
     }
     ImGui::End();
 }
-#endif#endif
+#endif

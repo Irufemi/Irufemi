@@ -17,6 +17,7 @@ struct DirectionalLight;
 struct AreaLight;
 
 #include "3D/ObjClass.h"
+#include "3D/Effect/EffectSystem.h"
 #include "math/Vector3.h"
 
 #include "actors/player/Player.h"
@@ -32,7 +33,6 @@ struct AreaLight;
 #include "StripeTransition.h"
 #pragma endregion takamura追加
 
-class EffectSystem;
 
 /// <summary>
 /// ゲーム
