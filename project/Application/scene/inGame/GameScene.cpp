@@ -21,7 +21,6 @@
 #include "Sword.h"
 #include "actors/enemy/TwoHitEnemy.h"
 
-#include "3D/Effect/EffectSystem.h"
 #include <unordered_map>
 
 
