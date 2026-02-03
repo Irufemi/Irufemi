@@ -58,6 +58,7 @@
     <ClCompile Include="StripeTransition.cpp">
       <Filter>content\effect</Filter>
     </ClCompile>
+    <ClCompile Include="actors\enemy\ChaserEnemy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actors\enemy\Enemy.h">
@@ -114,6 +115,7 @@
     <ClInclude Include="StripeTransition.h">
       <Filter>content\effect</Filter>
     </ClInclude>
+    <ClInclude Include="actors\enemy\ChaserEnemy.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="actor">

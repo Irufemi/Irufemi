@@ -21,6 +21,7 @@
 
 #include "Sword.h"
 #include "actors/enemy/TwoHitEnemy.h"
+#include "actors/enemy/ChaserEnemy.h"
 
 #include "3D/Effect/EffectSystem.h"
 #include <unordered_map>
@@ -778,7 +779,7 @@ void GameScene::CollisionCheck() {
                         effectSystem_->Play(EffectType::kHitEffect, hitTransform);
                     }
 
-                   
+                  
                     ha->HandleCollision();
 
                   
@@ -895,6 +896,14 @@ void GameScene::StandardInitialize() {
         }
         two->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
         enemies_.push_back(two);
+    }
+
+    // Spawn a ChaserEnemy for model draw check
+    {
+        ChaserEnemy* ch = new ChaserEnemy();
+        // if you want a custom model file, call ch->SetModelFile("YourModel.obj");
+        ch->Initialize(camera_.get(), Vector3{ 5.0f, 0.0f, 0.0f });
+        enemies_.push_back(ch);
     }
 
     healer_ = std::make_unique<Healer>();
