@@ -48,7 +48,7 @@ private:
     Vector2 texRectSize_{ 0.0f, 0.0f };    // px
 
     // 現在のテクスチャ解像度にスプライトサイズを合わせる
-    void AdjustTextureSize(); 
+    void AdjustTextureSize();
 
     // アンカー反映で頂点ローカル座標を更新
     void ApplyAnchorToVertices();

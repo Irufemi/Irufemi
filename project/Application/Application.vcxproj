@@ -199,6 +199,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="contents\wall\Wall.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
+    <ClInclude Include="scene\GameResultData.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
     <ClInclude Include="scene\result\ResultScene.h" />
     <ClInclude Include="scene\stageSelect\SelectScene.h" />

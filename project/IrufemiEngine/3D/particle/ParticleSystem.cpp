@@ -710,9 +710,13 @@ Particle ParticleSystem::MakeNewParticle(std::mt19937& randomEngine, const Emitt
         particle.endColor.w = 0.0f;
         break;
     case ParticleColorMode::kRed:
-        particle.startColor = { distColor(randomEngine), 0.0f, 0.0f, 1.0f };
+    {
+        std::uniform_real_distribution<float> distRed(0.7f, 1.0f);
+        std::uniform_real_distribution<float> distGreenBlue(0.0f, 0.2f);
+        particle.startColor = { distRed(randomEngine), distGreenBlue(randomEngine), distGreenBlue(randomEngine), 1.0f };
         particle.endColor = particle.startColor;
         particle.endColor.w = 0.0f;
+    }
         break;
     case ParticleColorMode::kGreen:
         particle.startColor = { 0.0f, distColor(randomEngine), 0.0f, 1.0f };
@@ -823,7 +827,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 }
 
                 // ParticleTypeの選択UI
-                const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect", "Explosion" };
+                const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect", "Explosion", "BloodFlow" };
                 int currentType = static_cast<int>(particleType_);
                 if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
                     ChangeBehavior(static_cast<ParticleType>(currentType));

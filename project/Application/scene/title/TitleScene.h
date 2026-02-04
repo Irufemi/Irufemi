@@ -39,9 +39,7 @@ private: // メンバ関数(内部ヘルパ)
 private: // メンバ変数(ゲーム)
 
     /// Sprite
-    // テキスト
-    // 血管壊回
-    std::unique_ptr<Sprite> textSprite_title_ = nullptr;
+
     // 押したらスタート
     std::unique_ptr<Sprite> textSprite_pushStart_ = nullptr;
 

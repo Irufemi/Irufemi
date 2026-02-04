@@ -6,12 +6,16 @@
 
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
+#include "2D/Sprite.h"
 
 #include "math/CameraForGPU.h"
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
 #include "math/AreaLight.h"
+
+#include "scene/GameResultData.h"
+#include "engine/Input/InputManager.h"
 
 ResultScene::~ResultScene() {
 
@@ -51,6 +55,36 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
+
+    // --- スプライトの初期化 ---
+    // テクスチャパスは仮のものです
+    gameClearSprite_ = std::make_unique<Sprite>();
+    gameClearSprite_->Initialize(camera_.get(), "resources/texture/UI/Clear/Clear.png");
+    gameClearSprite_->SetPosition(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+    gameClearSprite_->SetAnchor(0.5f, 0.5f);
+    gameClearSprite_->Update();
+
+    gameOverSprite_ = std::make_unique<Sprite>();
+    gameOverSprite_->Initialize(camera_.get(), "resources/texture/UI/GameOver/GameOver.png");
+    gameOverSprite_->SetPosition(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+    gameOverSprite_->SetAnchor(0.5f, 0.5f);
+    gameOverSprite_->Update();
+
+    // --- 結果データに基づいて表示を決定 ---
+    auto& resultData = GameResultData::GetInstance();
+    if (resultData.isGameClear) {
+        currentResultSprite_ = gameClearSprite_.get();
+    }
+    else {
+        currentResultSprite_ = gameOverSprite_.get();
+    }
+
+    // --- トランジションの初期化 ---
+    stripeTransition_ = std::make_unique<StripeTransition>();
+    stripeTransition_->Initialize(camera_.get(), engine_, StripeTransition::Mode::Out);
+    stripeTransition_->Start();
+
+    isTransitioningToTitle_ = false;
 }
 
 void ResultScene::Update() {
@@ -92,6 +126,26 @@ void ResultScene::Update() {
     // ↓ゲームの更新
     // =====
 
+    stripeTransition_->Update();
+
+    if (currentResultSprite_) {
+        currentResultSprite_->Update();
+    }
+
+    // 何かキーが押されたらタイトルに戻る
+    if (!isTransitioningToTitle_ && stripeTransition_->IsFinished()) {
+        if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+            isTransitioningToTitle_ = true;
+            stripeTransition_->Initialize(camera_.get(), engine_, StripeTransition::Mode::In);
+            stripeTransition_->Start();
+        }
+    }
+
+    if (isTransitioningToTitle_ && stripeTransition_->IsFinished()) {
+        engine_->GetSceneManager()->Request("Title");
+    }
+
+
     // =====
     // ↑ゲームの更新
     // =====
@@ -123,4 +177,10 @@ void ResultScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
+
+    if (currentResultSprite_) {
+        currentResultSprite_->Draw();
+    }
+
+    stripeTransition_->Draw();
 }
