@@ -30,6 +30,7 @@ class ParticleSystem;
 #include "contents/UI/TimeDisplay.h"
 
 #include "audio/Se.h"
+#include "audio/Bgm.h"
 
 #pragma region takamura追加
 #include "StripeTransition.h"
@@ -221,4 +222,6 @@ private: // メンバ変数(システム)
 
     // SE: ヒーラー死亡時の効果音
     Se seHealerDeath_;
+
+	Bgm bgmGame_;
 };

@@ -60,6 +60,8 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     titleObj_->SetScale({ 1.0f, 1.0f, 1.0f });
 
     seDecision_.Initialize("resources/audio/se/Decision.mp3");
+    bgmTitle_.Initialize("resources/audio/bgm/Title.mp3", "", true, true);
+    bgmTitle_.SetVolume(1.0f);
 
 }
 

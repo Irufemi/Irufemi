@@ -18,7 +18,8 @@
 #include "engine/Input/InputManager.h"
 
 ResultScene::~ResultScene() {
-
+    // ResultScene 終了時に BGM を停止
+    bgmResult_.Stop();
 }
 
 void ResultScene::Initialize(IrufemiEngine* engine) {
@@ -79,6 +80,15 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
         currentResultSprite_ = gameOverSprite_.get();
     }
 
+    // --- Result BGM の初期化と再生 ---
+    // ゲームオーバー/クリア画面に応じて適切なBGMを再生
+    if (resultData.isGameClear) {
+      /*  bgmResult_.Initialize("resources/audio/bgm/GameClear.mp3", "", true, true);*/
+    } else {
+        bgmResult_.Initialize("resources/audio/bgm/GameOver.mp3", "", true, true);
+    }
+    bgmResult_.SetVolume(1.0f);
+
     // --- トランジションの初期化 ---
     stripeTransition_ = std::make_unique<StripeTransition>();
     stripeTransition_->Initialize(camera_.get(), engine_, StripeTransition::Mode::Out);
@@ -138,6 +148,8 @@ void ResultScene::Update() {
             isTransitioningToTitle_ = true;
             stripeTransition_->Initialize(camera_.get(), engine_, StripeTransition::Mode::In);
             stripeTransition_->Start();
+            // トランジション開始時にBGMをフェードアウト的に停止
+            bgmResult_.Stop();
         }
     }
 

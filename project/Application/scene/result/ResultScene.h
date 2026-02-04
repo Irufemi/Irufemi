@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "StripeTransition.h"
+#include "audio/Bgm.h"
 
 class IrufemiEngine;
 class DebugCamera;
@@ -52,4 +53,7 @@ private: // メンバ変数(システム)
     std::vector<std::unique_ptr<PointLight>> pointLights_;
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
+
+    // Result BGM
+    Bgm bgmResult_;
 };
