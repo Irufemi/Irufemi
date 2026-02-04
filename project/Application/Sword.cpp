@@ -33,13 +33,24 @@ void Sword::Update() {
 
 		Transform cur = {};
 
-	
+		// プレイヤー移動の追従: 現在のアンカーに対して補間
+		Vector3 startPos = slashAnchorStart_.translate;
+		Vector3 endPos = currentSlashAnchor_.translate;
+		Vector3 posInterpAnchor{
+			startPos.x + (endPos.x - startPos.x) * tt,
+			startPos.y + (endPos.y - startPos.y) * tt,
+			startPos.z + (endPos.z - startPos.z) * tt,
+		};
+
+		// 斬撃内部の開始/終了Transformも、現在アンカーに基づく
 		Vector3 posInterp;
 		posInterp.x = slashStartTransform_.translate.x + (slashEndTransform_.translate.x - slashStartTransform_.translate.x) * tt;
 		posInterp.y = slashStartTransform_.translate.y + (slashEndTransform_.translate.y - slashStartTransform_.translate.y) * tt;
 		posInterp.z = slashStartTransform_.translate.z + (slashEndTransform_.translate.z - slashStartTransform_.translate.z) * tt;
 
-		
+		// アンカー補間位置をベースにオフセットを加算
+		posInterp = posInterp + (posInterpAnchor - slashAnchorStart_.translate);
+
 		float curAngle = slashStartTransform_.rotate.z + (slashEndTransform_.rotate.z - slashStartTransform_.rotate.z) * tt;
 		Vector3 forward{ std::sin(-curAngle), std::cos(-curAngle), 0.0f };
 		posInterp = posInterp + Math::Multiply(outwardPulse, forward);
@@ -103,6 +114,10 @@ void Sword::SetTransform(const Transform& t) {
     if (swordModel_) swordModel_->SetTransform(t);
 }
 
+void Sword::UpdateSlashAnchor(const Transform& anchor) {
+	currentSlashAnchor_ = anchor;
+}
+
 void Sword::StartSlash(const Transform& anchor, float duration) {
 	
 	isSlashing_ = true;
@@ -114,6 +129,10 @@ void Sword::StartSlash(const Transform& anchor, float duration) {
 
 	// increment slash id
 	++currentSlashId_;
+
+	// アンカー開始と現在アンカーを記録
+	slashAnchorStart_ = anchor;
+	currentSlashAnchor_ = anchor;
 
 	//	
 	float tipLocal = 1.6f;

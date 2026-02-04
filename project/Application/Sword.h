@@ -23,6 +23,8 @@ public:
 	void SetPosition(const Vector3& pos);
 	void SetTransform(const Transform& t);
 
+	// スラッシュ中のアンカー更新（プレイヤーの現在位置などを渡す）
+	void UpdateSlashAnchor(const Transform& anchor);
 	
 	void StartSlash(const Transform& anchor, float duration = 0.28f);
 
@@ -65,6 +67,9 @@ private:
 	float slashDuration_ = 0.2f; 
 	Transform slashStartTransform_{};
 	Transform slashEndTransform_{};
+	// スラッシュ開始時のアンカーと現在のアンカー（プレイヤー追従用）
+	Transform slashAnchorStart_{};
+	Transform currentSlashAnchor_{};
 
 	
 	uint32_t currentSlashId_ = 0;
