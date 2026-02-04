@@ -4,6 +4,7 @@
 #include <string>
 
 class Camera;
+class EffectSystem;
 
 class TwoHitEnemy : public Enemy {
 public:
@@ -29,6 +30,9 @@ public:
  
     void OnWallDestroyed(const Wall* wall) override;
 
+    int GetHitCount() const { return hitCount_; }
+    void SetEffectSystem(EffectSystem* effectSystem) { effectSystem_ = effectSystem; }
+
 protected:
     const char* GetModelFile() const override { return modelFile_.c_str(); }
 
@@ -39,6 +43,6 @@ private:
     int hitCount_ = 0; 
     std::string modelFile_ = "TD_HardEnemy.obj";
 
-   
+    EffectSystem* effectSystem_ = nullptr;
     uint32_t lastSlashId_ = 0;
 };
