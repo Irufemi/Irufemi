@@ -588,7 +588,28 @@ void GameScene::CountdownUpdate() {
         }
 
         countdownTimer_ -= 1.0f / 60.0f; // 60FPS想定
-        if (countdownTimer_ < 0.0f) {
+
+        // アニメーション処理
+        int spriteIndex = static_cast<int>(std::ceil(countdownTimer_));
+        if (spriteIndex >= 0 && spriteIndex < countdownSprites_.size()) {
+            Sprite* sprite = countdownSprites_[spriteIndex].get();
+            if (sprite) {
+                // 1秒間のアニメーション（拡大してフェードアウト）
+                float progress = 1.0f - (countdownTimer_ - std::floor(countdownTimer_)); // 0.0 -> 1.0
+                float scale = 1.0f + 0.5f * progress;
+                float alpha = 1.0f - progress;
+
+                Vector2 originalSize = sprite->GetSize();
+                sprite->SetSize(originalSize.x * scale, originalSize.y * scale);
+                Vector4 color = sprite->GetColor();
+                color.w = alpha;
+                sprite->SetColor(color);
+                sprite->Update(); // 変更を反映
+            }
+        }
+
+
+        if (countdownTimer_ < -kStartDisplayTime) { // Start表示時間後
             isCompletePhase_ = true;
         }
     }
@@ -785,7 +806,7 @@ void GameScene::CollisionCheck() {
                 if (destroyed) {
                     
                     // ゲームオーバー判定
-                    if (wall->GetRingIndex() == 1) { // 2層目 (0-indexed)
+                    if (wall->GetRingIndex() == 2) { // 3層目 (0-indexed) が破壊されたらゲームオーバー
                         isGameOver_ = true;
                     }
 

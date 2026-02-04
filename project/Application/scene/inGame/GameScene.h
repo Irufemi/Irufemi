@@ -142,7 +142,9 @@ private: // メンバ変数(ゲーム進行)
     bool isTransitioningToStandard_ = false;
 
     // カウントダウンタイマー
-    float countdownTimer_ = 3.0f;
+    float countdownTimer_ = 3.99f;
+    // 「Start」表示の時間
+    static constexpr float kStartDisplayTime = 0.8f;
 
     // カウントダウン中に初期更新を行ったか
     bool hasDoneInitialUpdate_ = false;
