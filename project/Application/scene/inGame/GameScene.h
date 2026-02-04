@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <vector>
+#include <array>
 
 // 前方宣言
 class IrufemiEngine;
@@ -15,6 +16,7 @@ struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
 struct AreaLight;
+class ParticleSystem;
 
 #include "3D/ObjClass.h"
 #include "3D/Effect/EffectSystem.h"
@@ -71,6 +73,12 @@ private: // メンバ関数(内部ヘルパ)
 
     // フェードイン中の更新
     void FadeInUpdate();
+
+    // カウントダウンの初期化
+    void CountdownInitialize();
+
+    // カウントダウンの更新
+    void CountdownUpdate();
 
     // ゲーム中の更新
     void GameInitialize();
@@ -133,6 +141,12 @@ private: // メンバ変数(ゲーム進行)
     // チュートリアルからスタンダードへの移行フラグ
     bool isTransitioningToStandard_ = false;
 
+    // カウントダウンタイマー
+    float countdownTimer_ = 3.0f;
+
+    // カウントダウン中に初期更新を行ったか
+    bool hasDoneInitialUpdate_ = false;
+
 #pragma region takamura追加（トランジション）
     std::unique_ptr<StripeTransition> stripeTransition_;
 #pragma endregion takamura追加
@@ -164,11 +178,19 @@ private: // メンバ変数(ゲーム)
     int playTime_ = 60;
 
     std::unique_ptr<TimeDisplay> timeDisplay_;
+    // カウントダウン表示用スプライト (0:Start, 1:1, 2:2, 3:3)
+    std::array<std::unique_ptr<Sprite>, 4> countdownSprites_;
   
     float cameraShakeTimer_ = 0.0f;
     float cameraShakeDuration_ = 0.0f;
     float cameraShakeMagnitude_ = 0.0f;
     Vector3 cameraShakeOriginalTranslate_{};
+
+    std::unique_ptr<ObjClass> model_tube_ = nullptr;
+
+    // 血流パーティクル
+    std::unique_ptr<ParticleSystem> bloodFlowParticle_ = nullptr;
+    std::unique_ptr<ParticleSystem> bloodFlowParticleRing_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン

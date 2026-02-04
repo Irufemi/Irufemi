@@ -1,3 +1,4 @@
+#include <cmath>
 #define NOMINMAX
 #include "GameScene.h"
 
@@ -14,6 +15,7 @@
 #include "math/AreaLight.h"
 #include "2D/Sprite.h"
 #include "contents/UI/NumberText.h"
+#include "3D/particle/ParticleSystem.h"
 
 #include "function/Random.h"
 #include "function/Collision.h"
@@ -24,7 +26,11 @@
 #include "actors/enemy/ChaserEnemy.h"
 
 #include <unordered_map>
+
+#include "scene/GameResultData.h"
+
 #include <unordered_set>
+
 
 
 // 
@@ -42,6 +48,7 @@ void GameScene::ClearAllObjects() {
     // 2. unique_ptr をリセット
     player_.reset();
     healer_.reset();
+    bloodFlowParticleRing_.reset();
     //timeDisplay_.reset();
 
     // 3. ライトのリストもリセット（必要に応じて）
@@ -75,7 +82,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     mode_ = GameMode::Standard;
 #else
     //phaseの設定
-    phase_ = Phase::Game;
+    phase_ = Phase::FadeIn;
     // modeの設定(Releaseは間違えないようにtutorialから)
     mode_ = GameMode::Standard;
 
@@ -139,13 +146,32 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     // 4. 全モード共通UIの生成
 
+    // カウントダウン用スプライトの初期化
+    // テクスチャパスは仮のものです。実際のファイル名に合わせてください。
+    const char* texturePaths[] = {
+        "resources/texture/countdown/start.png", // 0: Start
+        "resources/texture/countdown/1.png",     // 1: 1
+        "resources/texture/countdown/2.png",     // 2: 2
+        "resources/texture/countdown/3.png"      // 3: 3
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        countdownSprites_[i] = std::make_unique<Sprite>();
+        countdownSprites_[i]->Initialize(camera_.get(), texturePaths[i]);
+        countdownSprites_[i]->SetAnchor(0.5f, 0.5f);
+        countdownSprites_[i]->SetPosition(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+        countdownSprites_[i]->Update();
+    }
+
     // 時間表記の生成・初期化
     timeDisplay_ = std::make_unique<TimeDisplay>();
     timeDisplay_->Initialize(
         camera_.get(),
         TimeFormat::S_DECIMAL,
-        "resources/texture/text_num.png", { 32.0f, 64.0f },
-        "resources/texture/timeDisplay_separator.png", { 32.0f, 64.0f }
+        "resources/texture/timeDisplay/text_num_", ".png", // ベースパスと拡張子に分割
+        { 48.0f, 64.0f },
+        "resources/texture/timeDisplay/timeDisplay_separator_dot.png", // '.' 専用テクスチャ
+        { 32.0f, 64.0f }
     );
     timeDisplay_->SetPosition({ 20.0f, 20.0f }); // 左上に配置
 
@@ -163,6 +189,16 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     // ヒーラー死亡時のSE初期化
     seHealerDeath_.Initialize("resources/audio/se/DeathHealerActor.mp3");
+
+    model_tube_ = std::make_unique<ObjClass>();
+    model_tube_->Initialize(camera_.get(), "tube.obj");
+
+    // 血流パーティクルの初期化
+    bloodFlowParticle_ = std::make_unique<ParticleSystem>();
+    bloodFlowParticle_->Initialize(camera_.get(), "resources/circle.png", ParticleType::kBloodFlow, ParticlePrimitiveShape::Sphere);
+
+    bloodFlowParticleRing_ = std::make_unique<ParticleSystem>();
+    bloodFlowParticleRing_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kBloodFlow, ParticlePrimitiveShape::Ring);
 }
 
 // 更新
@@ -184,8 +220,8 @@ void GameScene::Update() {
 
     PhaseUpdate();
 
-    // フェード中以外にゲームオブジェクトを更新
-    if (phase_ != Phase::FadeIn && phase_ != Phase::FadeOut) {
+    // ゲーム中の更新
+    if (phase_ == Phase::Game) {
         // Update all walls (use full container size because we now create multiple rings)
         for (Wall* w : walls_) {
             if (w) w->Update();
@@ -262,6 +298,20 @@ void GameScene::Update() {
         }
     }
 
+    // 血流パーティクルの更新
+    if (bloodFlowParticle_) {
+        bloodFlowParticle_->Update();
+#if defined(USE_IMGUI)
+        bloodFlowParticle_->Debug("BloodFlow");
+#endif
+    }
+    if (bloodFlowParticleRing_) {
+        bloodFlowParticleRing_->Update();
+#if defined(USE_IMGUI)
+        bloodFlowParticleRing_->Debug("BloodFlowRing");
+#endif
+    }
+
     // カメラをプレイヤーに追従させる（デバッグカメラ使用中は追従しない）
     if (!debugMode_ && player_ && camera_) {
         Vector3 playerPos = player_->GetPosition();
@@ -302,6 +352,9 @@ void GameScene::Update() {
      }
 #pragma endregion takamura追加
 
+     model_tube_->Debug("tube");
+     model_tube_->Update();
+
     // =====
     // ↑ゲームの更新
     // =====
@@ -336,6 +389,8 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplyPSO();
 
+    model_tube_->Draw();
+
     // Draw all walls (iterate whole container to include added rings)
     for (Wall* w : walls_) {
         if (w) w->Draw();
@@ -356,18 +411,36 @@ void GameScene::Draw() {
         effectSystem_->Draw();
     }
 
+    // 血流パーティクルの描画
+    if (bloodFlowParticle_) {
+        bloodFlowParticle_->Draw();
+    }
+    if (bloodFlowParticleRing_) {
+        bloodFlowParticleRing_->Draw();
+    }
+
     // Sprite
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
 
     // カウントダウンタイマーの描画
-    if (timeDisplay_) {
+    if (phase_ == Phase::Game && timeDisplay_) {
         float remainingTime = playTime_ - timer_;
         if (remainingTime < 0.0f) {
             remainingTime = 0.0f;
         }
         timeDisplay_->Draw(remainingTime);
+    }
+
+    // カウントダウンの描画
+    if (phase_ == Phase::Countdown) {
+        int spriteIndex = static_cast<int>(std::ceil(countdownTimer_));
+        if (spriteIndex >= 0 && spriteIndex < countdownSprites_.size()) {
+            if (countdownSprites_[spriteIndex]) {
+                countdownSprites_[spriteIndex]->Draw();
+            }
+        }
     }
 
 #pragma region takamura追加（トランジション）
@@ -390,7 +463,7 @@ void GameScene::PhaseInitialize() {
         FadeInInitialize();
         break;
     case Phase::Countdown:
-
+        CountdownInitialize();
         break;
     case Phase::Game:
 
@@ -426,7 +499,7 @@ void GameScene::PhaseUpdate() {
         FadeInUpdate();
         break;
     case Phase::Countdown:
-        // CountdownUpdate(); // (必要なら)
+        CountdownUpdate();
         break;
     case Phase::Game:
         GameUpdate();
@@ -465,8 +538,11 @@ void GameScene::PhaseChange() {
             isTransitioningToStandard_ = false; // フラグをリセット
         }
         else {
-            // スタンダードモード終了後はタイトルなどへ
-            engine_->GetSceneManager()->Request("Title");
+            // リザルトシーンへ移行する前に結果を保存
+            auto& resultData = GameResultData::GetInstance();
+            resultData.isGameClear = !isGameOver_;
+            resultData.killScore = killScore_;
+            engine_->GetSceneManager()->Request("Result");
         }
         break;
     }
@@ -489,6 +565,37 @@ void GameScene::FadeInUpdate() {
         isCompletePhase_ = true;
     }
 
+}
+
+// カウントダウンの初期化
+void GameScene::CountdownInitialize() {
+    if (mode_ == GameMode::Standard) {
+        countdownTimer_ = 3.99f; // 3から始まるように調整
+        hasDoneInitialUpdate_ = false; // 初期化フラグをリセット
+    }
+}
+
+// カウントダウンの更新
+void GameScene::CountdownUpdate() {
+    if (mode_ == GameMode::Standard) {
+        // 最初の1フレームだけ更新処理を呼ぶ
+        if (!hasDoneInitialUpdate_) {
+            for (Wall* w : walls_) { if (w) w->Update(); }
+            for (Enemy* e : enemies_) { if (e) e->Update(walls_, healerActor_); }
+            if (player_) player_->Update();
+            if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
+            hasDoneInitialUpdate_ = true;
+        }
+
+        countdownTimer_ -= 1.0f / 60.0f; // 60FPS想定
+        if (countdownTimer_ < 0.0f) {
+            isCompletePhase_ = true;
+        }
+    }
+    else {
+        // チュートリアルモードでは即座にゲームフェーズへ
+        isCompletePhase_ = true;
+    }
 }
 
 // ゲーム中の更新
@@ -544,7 +651,7 @@ void GameScene::FadeOutInitialize() {
 }
 
 
-// フェードアウト中の更新
+ // フェードアウト中の更新
 void GameScene::FadeOutUpdate() {
 
     
@@ -921,7 +1028,7 @@ void GameScene::StandardInitialize() {
         });
     }*/
 
-    // --- Walls (二重リング配置) ---
+    // --- Walls (三重リング配置) ---
     {
         Wall sampleWall; // サイズ取得用のサンプル
         const float wallHeight = sampleWall.GetHeight();
@@ -930,7 +1037,7 @@ void GameScene::StandardInitialize() {
         const std::array<float, 3> radii = { baseRadius, baseRadius + wallHeight, baseRadius + 2.0f * wallHeight };
         const float twoPi = 2.0f * std::numbers::pi_v<float>;
 
-     
+
         for (int ring = 0; ring < static_cast<int>(radii.size()); ++ring) {
             float radius = radii[ring];
             // Stagger every other ring so walls are not perfectly aligned radially

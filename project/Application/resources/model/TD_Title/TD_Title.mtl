@@ -1,10 +1,10 @@
-# Blender 5.0.1 MTL File: 'TD2_3Title.blend'
+# Blender 4.4.3 MTL File: 'TD_Title.blend'
 # www.blender.org
 
 newmtl マテリアル
 Ns 1000.000000
 Ka 0.365854 0.365854 0.365854
-Kd 0.800016 0.095340 0.054286
+Kd 0.800088 0.056569 0.061348
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.000000

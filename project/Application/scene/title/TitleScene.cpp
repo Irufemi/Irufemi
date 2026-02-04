@@ -34,39 +34,17 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     debugMode_ = false;
 
     // --- ライトの初期化 ---
-    auto pointLight = std::make_unique<PointLight>();
-    pointLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    pointLight->position = { 0.0f, 5.0f, 0.0f };
-    pointLight->intensity = 1.0f;
-    pointLight->radius = 10.0f;
-    pointLight->decay = 1.0f;
-    pointLight->isActive = 1;
-    pointLights_.push_back(std::move(pointLight));
-
-    auto spotLight = std::make_unique<SpotLight>();
-    spotLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    spotLight->position = { 2.0f, 1.25f, 0.0f };
-    spotLight->distance = 7.0f;
-    spotLight->direction = Math::Normalize(Vector3{ -1.0f,-1.0f,0.0f });
-    spotLight->intensity = 0.0f; // 初期状態ではOFF
-    spotLight->decay = 2.0f;
-    spotLight->cosAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
-    spotLight->isActive = 1;
-    spotLights_.push_back(std::move(spotLight));
-
     directionalLight_ = std::make_unique<DirectionalLight>();
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
 
     /// Sprite
-    // テキスト
-    // 血管壊回
-    textSprite_title_ = std::make_unique<Sprite>();
-    textSprite_title_->Initialize(camera_.get(), "resources/texture/text_title.png");
     // 押したらスタート
     textSprite_pushStart_ = std::make_unique<Sprite>();
-    textSprite_pushStart_->Initialize(camera_.get(), "resources/texture/text_title.png");
+    textSprite_pushStart_->Initialize(camera_.get(), "resources/texture/title/text_pushStart.png");
+    textSprite_pushStart_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, 2.0f * engine_->GetClientHeight() / 3.0f);
+    textSprite_pushStart_->Update();
 
 #pragma region takamura追加
     // ストライプトランジション初期化（入り）
@@ -78,7 +56,7 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
   
     titleObj_->Initialize(camera_.get(), "TD_Title.obj");
   
-    titleObj_->SetPosition({ 0.0f, 0.0f, 0.0f });
+    titleObj_->SetPosition({ 0.0f, 1.0f, 0.0f });
     titleObj_->SetScale({ 1.0f, 1.0f, 1.0f });
 
     seDecision_.Initialize("resources/audio/se/Decision.mp3");
@@ -127,7 +105,7 @@ void TitleScene::Update() {
 
 #pragma region takamura追加
     // キー入力でトランジション開始
-    if (engine_->GetInputManager()->IsKeyDownDIK(0x39)) {
+    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
         if (!isTransitioning) {
             isTransitioning = true;
             seDecision_.Play(false);
@@ -180,8 +158,6 @@ void TitleScene::Draw() {
     // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    engine_->SetCull(PSOManager::CullMode::None);
     engine_->ApplyPSO();
 
     // タイトルモデルを描画
@@ -191,13 +167,8 @@ void TitleScene::Draw() {
 
     // 2D
 
-    engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
     // テキストスプライト描画
-    if (textSprite_title_) {
-        textSprite_title_->Draw();
-    }
     if (textSprite_pushStart_) {
         textSprite_pushStart_->Draw();
     }

@@ -174,10 +174,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
 
     line2D_ = std::make_unique<Line2DClass>();
     line2D_->Initialize(camera_.get(), { 300.0f,300.0f }, { 360.0f,360.0f });
-
-    numberText_ = std::make_unique<NumberText>();
-    // 数字テクスチャと1文字あたりのサイズを指定
-    numberText_->Initialize(camera_.get(), "resources/texture/text_num.png", 32.0f, 64.0f);
 }
 
 // 更新

@@ -6,7 +6,8 @@
 void TimeDisplay::Initialize(
     Camera* camera,
     TimeFormat format,
-    const std::string& numberTexturePath,
+    const std::string& numberTextureBasePath,
+    const std::string& numberTextureFileExtension,
     const Vector2& numberSize,
     const std::string& separatorTexturePath,
     const Vector2& separatorSize) {
@@ -38,21 +39,17 @@ void TimeDisplay::Initialize(
     digits_.resize(numDigits);
     for (int i = 0; i < numDigits; ++i) {
         digits_[i] = std::make_unique<NumberText>();
-        digits_[i]->Initialize(camera_, numberTexturePath, numberSize_.x, numberSize_.y);
+        digits_[i]->Initialize(camera_, numberTextureBasePath, numberTextureFileExtension, numberSize_.x, numberSize_.y);
     }
 
     // 区切り文字用のSpriteを生成
     separators_.resize(numSeparators);
     for (int i = 0; i < numSeparators; ++i) {
         separators_[i] = std::make_unique<Sprite>();
+        // 区切り文字は個別のテクスチャとして読み込む
         separators_[i]->Initialize(camera_, separatorTexturePath);
         separators_[i]->SetSize(separatorSize_.x, separatorSize_.y);
         separators_[i]->SetAnchor(0.0f, 0.0f); // 左上基準
-
-        // テクスチャの切り出し範囲を設定
-        // 0番目を':'、1番目を'.'と仮定
-        int texX = (format_ == TimeFormat::S_DECIMAL) ? static_cast<int>(separatorSize_.x) : 0;
-        separators_[i]->SetTextureRectPixels(texX, 0, static_cast<int>(separatorSize_.x), static_cast<int>(separatorSize_.y));
     }
 }
 

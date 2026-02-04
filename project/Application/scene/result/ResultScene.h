@@ -1,12 +1,15 @@
-    #pragma once
+#pragma once
 
 #include "scene/IScene.h"
 #include <memory>
 #include <vector>
 
+#include "StripeTransition.h"
+
 class IrufemiEngine;
 class DebugCamera;
 class Camera;
+class Sprite;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
@@ -24,6 +27,16 @@ public: // メンバ関数(システム)
 private: // メンバ関数(内部ヘルパ)
 
 private: // メンバ変数(ゲーム)
+    // ゲームクリア表示用スプライト
+    std::unique_ptr<Sprite> gameClearSprite_ = nullptr;
+    // ゲームオーバー表示用スプライト
+    std::unique_ptr<Sprite> gameOverSprite_ = nullptr;
+    // 現在表示する結果スプライト
+    Sprite* currentResultSprite_ = nullptr;
+
+    // トランジション
+    std::unique_ptr<StripeTransition> stripeTransition_;
+    bool isTransitioningToTitle_ = false;
 
 private: // メンバ変数(システム)
     // エンジン
