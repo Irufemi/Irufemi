@@ -13,6 +13,7 @@ enum class EffectType {
 	kNone, // 無し
 	kAura, // シリンダーでのオーラ
 	kHitEffect, // 単体RingとParticleSystemのHitEffectを組み合わせた形
+	kArmorBreak,
 };
 
 /// <summary>
@@ -71,6 +72,25 @@ private:
 // ファクトリ関数
 std::unique_ptr<IEffectBehavior> CreateEffectBehavior(EffectType type);
 
+class ArmorBreakEffect : public IEffectBehavior {
+public:
+	void Initialize(Camera* camera) override;
+	void Update() override;
+	void Draw() override;
+	void Debug(const std::string& name) override;
+	void Play(const Transform& transform) override;
+	bool IsPlaying() const override { return isPlaying_; }
+
+private:
+	Camera* camera_ = nullptr;
+	Transform transform_;
+	bool isPlaying_ = false;
+	float currentTime_ = 0.0f;
+	float lifeTime_ = 1.5f;
+
+	std::unique_ptr<ParticleSystem> debrisParticle_;
+	std::unique_ptr<ParticleSystem> shockwaveParticle_;
+};
 
 class EffectSystem {
 public: // メンバ関数

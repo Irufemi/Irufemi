@@ -22,6 +22,8 @@ class IrufemiEngine;
 
 class ParticleSystem {
 public:
+	void EmitOnce();
+
 	ParticleSystem() = default;
 	~ParticleSystem();
 

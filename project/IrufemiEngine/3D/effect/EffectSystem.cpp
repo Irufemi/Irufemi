@@ -114,11 +114,80 @@ std::unique_ptr<IEffectBehavior> CreateEffectBehavior(EffectType type) {
 		return std::make_unique<AuraEffect>();
 	case EffectType::kHitEffect:
 		return std::make_unique<HitEffect>();
+	case EffectType::kArmorBreak:
+		return std::make_unique<ArmorBreakEffect>();
 	default:
 		return nullptr;
 	}
 }
 
+// --- ArmorBreakEffect ---
+void ArmorBreakEffect::Initialize(Camera* camera) {
+	camera_ = camera;
+
+	// 破片パーティクル
+	debrisParticle_ = std::make_unique<ParticleSystem>();
+	debrisParticle_->Initialize(camera, "resources/circle.png", ParticleType::Normal, ParticlePrimitiveShape::Tetrahedron);
+	debrisParticle_->SetEmitterCount(15);
+	debrisParticle_->SetEmitterFrequency(100.0f);
+	debrisParticle_->SetEmitterArea({ 0.3f, 0.3f, 0.3f });
+	debrisParticle_->SetEmitterVelocity({ -4.0f, -4.0f, -2.0f }, { 4.0f, 4.0f, 2.0f });
+	debrisParticle_->SetParticleScale({ 3.0f, 3.0f, 3.0f }, { 0.8f, 0.8f, 0.8f });
+	debrisParticle_->SetParticleColor({ 1.0f, 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f });
+
+	// 衝撃波リング
+	shockwaveParticle_ = std::make_unique<ParticleSystem>();
+	shockwaveParticle_->Initialize(camera, "resources/gradationLine.png", ParticleType::Normal, ParticlePrimitiveShape::Ring);
+	shockwaveParticle_->SetEmitterCount(1);
+	shockwaveParticle_->SetEmitterFrequency(100.0f);
+	shockwaveParticle_->SetParticleScale({ 0.3f, 0.3f, 1.0f }, { 3.0f, 3.0f, 1.0f });
+	shockwaveParticle_->SetParticleColor({ 0.5f, 0.5f, 1.0f, 0.9f }, { 0.4f, 0.4f, 0.7f, 0.0f });
+	shockwaveParticle_->SetRingParameters(0.1f, 0.4f, 0.0f, 360.0f, 32);
+}
+
+void ArmorBreakEffect::Update() {
+	if (isPlaying_) {
+		currentTime_ += 1.0f / 60.0f;
+		if (currentTime_ >= lifeTime_) {
+			isPlaying_ = false;
+		}
+		debrisParticle_->Update();
+		shockwaveParticle_->Update();
+	}
+}
+
+void ArmorBreakEffect::Draw() {
+	if (isPlaying_) {
+		shockwaveParticle_->Draw();
+		debrisParticle_->Draw();
+	}
+}
+
+void ArmorBreakEffect::Debug(const std::string& name) {
+#ifdef USE_IMGUI
+	if (ImGui::TreeNode(name.c_str())) {
+		ImGui::Checkbox("IsPlaying", &isPlaying_);
+		ImGui::Text("Time: %.2f / %.2f", currentTime_, lifeTime_);
+		debrisParticle_->Debug("Debris Particle");
+		shockwaveParticle_->Debug("Shockwave Particle");
+		ImGui::TreePop();
+	}
+#endif
+}
+
+void ArmorBreakEffect::Play(const Transform& transform) {
+	transform_ = transform;
+	isPlaying_ = true;
+	currentTime_ = 0.0f;
+
+	Vector3 pos = transform.translate;
+
+	debrisParticle_->SetEmitterPosition(pos);
+	debrisParticle_->EmitOnce();
+
+	shockwaveParticle_->SetEmitterPosition(pos);
+	shockwaveParticle_->EmitOnce();
+}
 
 // --- EffectSystem ---
 EffectSystem::EffectSystem() {}

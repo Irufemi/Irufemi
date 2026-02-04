@@ -16,6 +16,11 @@ DrawManager* ParticleSystem::s_drawManager_ = nullptr;
 IrufemiEngine* ParticleSystem::s_engine_ = nullptr;
 DebugUI* ParticleSystem::s_ui_ = nullptr;
 
+void ParticleSystem::EmitOnce()
+{
+    particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+}
+
 ParticleSystem::~ParticleSystem() {
     if (instancingSrvIndex_ != UINT32_MAX && s_srvPool_ && resource_) {
         if (auto* dx = resource_->GetDirectXCommon()) {
