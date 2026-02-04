@@ -44,6 +44,9 @@ public:
     // Move player by delta (used for knockback)
     void MoveBy(const Vector3& delta);
 
+    // Query if the player is currently charging the sword
+    bool IsCharging() const { return isCharging_; }
+
 private:
 
     OBB obb_{};

@@ -13,7 +13,6 @@ Healer::Healer() {}
 
 Healer::~Healer() {}
 
-// 壊れた壁を優先的に修復するための距離2計算(既存と共有)
 static float DistanceSq(const Vector3& a, const Vector3& b) {
 	float dx = a.x - b.x;
 	float dy = a.y - b.y;
@@ -21,10 +20,9 @@ static float DistanceSq(const Vector3& a, const Vector3& b) {
 	return dx * dx + dy * dy + dz * dz;
 }
 
-// 壁位置キー生成(位置と回転を丸めてハッシュ)
 size_t Healer::MakeWallKey(const Transform& t) {
 	auto quantize = [](float v) {
-		return static_cast<int>(std::round(v * 100.0f)); // 0.01 単位で丸め
+		return static_cast<int>(std::round(v * 100.0f));
 	};
 	size_t seed = 0;
 	auto hashCombine = [&seed](size_t h) { seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2); };
@@ -38,31 +36,22 @@ size_t Healer::MakeWallKey(const Transform& t) {
 }
 
 void Healer::NotifyWallDestroyed(const Transform& transform, const Vector3& wallSize) {
-	// 復活上限チェック
 	size_t key = MakeWallKey(transform);
 	int count = 0;
 	if (auto it = reviveCounts_.find(key); it != reviveCounts_.end()) {
 		count = it->second;
 	}
 	if (count >= kMaxRevivesPerWall) {
-		// 上限に達しているので復活キューに入れない
 		return;
 	}
-	// キューが空だったかを確認（空なら最初の破壊通知）
 	bool wasEmpty = destroyedQueue_.empty();
-	// 復活予定としてキューに積む
 	destroyedQueue_.push_back(DestroyedWallInfo{ transform, wallSize, {}, 0.0f });
-	// 既に修復キューがある状態で新たな壊れた壁が来た場合、
-	// タイマーをリセットせずに引き継ぐ（要求どおり）。
 	if (wasEmpty) {
-		// 最初の要素が追加されたタイミングで進捗を0にしておくことで
-		// 初回復元までのカウントを開始する。
 		destroyedQueue_.front().progress = 0.0f;
 	}
 }
 
 void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerActor*>& healers) {
-	// 最大同一壁あたりの割り当て数
 	static const int kMaxPerWall = 5;
 
 	std::vector<HealerActor*> availableHealers;
@@ -134,6 +123,55 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 		}
 	}
 
+	// 即座に全滅チェック→再スポーン（進捗リセット）
+	for (DestroyedWallInfo& info : destroyedQueue_) {
+		int aliveCount = 0;
+		for (HealerActor* ha : info.assignedHealers) {
+			if (ha && ha->IsAlive()) { ++aliveCount; }
+		}
+		if (aliveCount == 0 && !info.assignedHealers.empty()) {
+			// 既存の割り当てを削除
+			for (HealerActor* assigned : info.assignedHealers) {
+				if (!assigned) continue;
+				for (HealerActor*& slot : healers) {
+					if (slot == assigned) {
+						delete slot;
+						slot = nullptr;
+						break;
+					}
+				}
+			}
+			info.assignedHealers.clear();
+
+			// 5体を即座にスポーン
+			for (int i = 0; i < 5; ++i) {
+				HealerActor* newHa = new HealerActor();
+				Vector3 spawnOffset;
+				spawnOffset.x = Random::GeneratorFloat(-info.wallSize.x, info.wallSize.x) * 0.5f;
+				spawnOffset.y = Random::GeneratorFloat(-info.wallSize.y, info.wallSize.y) * 0.5f;
+				spawnOffset.z = 0.0f;
+				Vector3 spawnPos = { info.transform.translate.x + spawnOffset.x, info.transform.translate.y + spawnOffset.y, info.transform.translate.z + spawnOffset.z };
+				newHa->Initialize(camera, spawnPos);
+				newHa->SetAssigned(true);
+
+				Vector3 randomOffset;
+				randomOffset.x = Random::GeneratorFloat(-info.wallSize.x / 2.0f, info.wallSize.x / 2.0f);
+				randomOffset.y = Random::GeneratorFloat(-info.wallSize.y / 2.0f, info.wallSize.y / 2.0f);
+				randomOffset.z = 0.0f;
+				Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(info.transform.rotate.x, info.transform.rotate.y, info.transform.rotate.z);
+				Vector3 worldOffset = Math::Transform(randomOffset, rotMat);
+				Vector3 targetPos = info.transform.translate + worldOffset;
+				targetPos.z = info.transform.translate.z;
+				newHa->SetTargetPosition(targetPos);
+
+				info.assignedHealers.push_back(newHa);
+				healers.push_back(newHa);
+			}
+
+			info.progress = 0.0f; // やり直し
+		}
+	}
+
 	const float speed = 0.1f;
 	for (DestroyedWallInfo& info : destroyedQueue_) {
 		for (HealerActor* ha : info.assignedHealers) {
@@ -155,10 +193,19 @@ void Healer::Update(Camera* camera, std::list<Wall*>& walls, std::list<HealerAct
 
 		for (size_t order = 0; order < ptrs.size(); ++order) {
 			DestroyedWallInfo* pInfo = ptrs[order];
-			float speedMultiplier = std::pow(0.5f, static_cast<float>(order));
+
+			int aliveCount = 0;
+			for (HealerActor* ha : pInfo->assignedHealers) {
+				if (ha && ha->IsAlive()) { ++aliveCount; }
+			}
+
+			float perHealerFactor = 0.2f; // 5体で 1.0
+			float healerSpeedFactor = aliveCount * perHealerFactor; // 生存数に比例
+			// キュー順位による低下を掛け合わせる
+			float speedMultiplier = std::pow(0.5f, static_cast<float>(order)) * healerSpeedFactor;
 			pInfo->progress += speedMultiplier;
+
 			if (pInfo->progress >= static_cast<float>(kHealIntervalFrames)) {
-				// nullptr スロットを探して復元
 				for (Wall*& w : walls) {
 					if (w == nullptr) {
 						Wall* newWall = new Wall();
