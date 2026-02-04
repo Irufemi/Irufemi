@@ -1,5 +1,6 @@
 #include "Wall.h"
 
+#include <cmath>
 #include "camera/Camera.h"
 #include "3D/ObjClass.h"
 #include "function/Math.h"
@@ -18,6 +19,7 @@ void Wall::Initialize(Camera* camera, const Vector3& pos, const std::string& mod
 
 	transform_.translate = pos;
 	ringIndex_ = 0; // デフォルトは0層
+	RecalcHPByRing_();
 	playedRepairSE_ = false; // reset per-instance flag
 }
 
@@ -154,4 +156,19 @@ float Wall::BounceEaseOut(float t)
 		t -= 2.625f / 2.75f;
 		return 7.5625f * t * t + 0.984375f;
 	}
+}
+
+void Wall::RecalcHPByRing_() {
+	// リングごとのHP倍率: 0->1.0, 1->1.5, 2->2.0（それ以外は1.0）
+	float multiplier = 1.0f;
+	switch (ringIndex_) {
+	case 0: multiplier = 1.0f; break;
+	case 1: multiplier = 1.5f; break;
+	case 2: multiplier = 2.0f; break;
+	default: multiplier = 1.0f; break;
+	}
+	// HPは整数なので四捨五入して設定（最低1）
+	int scaled = static_cast<int>(std::round(static_cast<float>(baseHp_) * multiplier));
+	if (scaled < 1) scaled = 1;
+	hp_ = scaled;
 }

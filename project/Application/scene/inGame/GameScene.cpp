@@ -317,6 +317,14 @@ void GameScene::Update() {
             player_->UpdateOBB();
             const OBB& obbPlayerFix = player_->GetOBB();
             const Vector3 origin{0.0f, 0.0f, 0.0f};
+            // 現在の外周リング半径を計算
+            float outerRadius = 0.0f;
+            for (Wall* w : walls_) {
+                if (!w) continue;
+                const Vector3 wp = w->GetPosition();
+                outerRadius = std::max(outerRadius, std::sqrt(wp.x * wp.x + wp.y * wp.y));
+            }
+            const float clampMargin = 0.1f;
             for (Wall* w : walls_) {
                 if (!w) continue;
                 w->UpdateOBB();
@@ -325,20 +333,25 @@ void GameScene::Update() {
                     // 原点方向への押し出しベクトル
                     Vector3 dir = origin - player_->GetPosition();
                     float len = Math::Length(dir);
-                    if (len < 1e-4f) {
-                        // 原点とほぼ同位置なら適当な方向に押し出す
-                        dir = {1.0f, 0.0f, 0.0f};
-                        len = 1.0f;
-                    }
+                    if (len < 1e-4f) { dir = {1.0f, 0.0f, 0.0f}; len = 1.0f; }
                     dir = dir / len;
-                    // 重なり量の概算（最大半径同士）で少し余裕をもって押し出す
+                    // 重なり量の概算
                     float rP = std::max({ obbPlayerFix.size.x, obbPlayerFix.size.y, obbPlayerFix.size.z });
                     float rW = std::max({ obbWallFix.size.x, obbWallFix.size.y, obbWallFix.size.z });
                     float dist = Math::Length(obbPlayerFix.center - obbWallFix.center);
                     float overlap = (rP + rW) - dist;
-                    float push = std::max(overlap + 0.05f, 0.25f); // 最低押し出し量
+                    float push = std::max(overlap + 0.05f, 0.25f);
                     player_->MoveBy(dir * push);
-                    // 押し出し後に一度OBB更新
+                    // 外周より外に出ないように半径をクランプ
+                    Vector3 p = player_->GetPosition();
+                    float r = std::sqrt(p.x * p.x + p.y * p.y);
+                    if (outerRadius > 0.0f && r > (outerRadius - clampMargin)) {
+                        Vector3 nrm;
+                        if (r < 1e-4f) { nrm = {1.0f, 0.0f, 0.0f}; }
+                        else { nrm = { p.x / r, p.y / r, 0.0f }; }
+                        Vector3 clamped = { nrm.x * (outerRadius - clampMargin), nrm.y * (outerRadius - clampMargin), p.z };
+                        player_->MoveBy(clamped - p);
+                    }
                     player_->UpdateOBB();
                     break; // 一つ修正したら終了
                 }

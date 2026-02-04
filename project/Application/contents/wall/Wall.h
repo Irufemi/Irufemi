@@ -58,7 +58,7 @@ public:
 	Vector3 GetSize() const;
 
 	// 壁がどのリングに属しているか設定・取得
-	void SetRingIndex(int index) { ringIndex_ = index; }
+	void SetRingIndex(int index) { ringIndex_ = index; RecalcHPByRing_(); }
 	int GetRingIndex() const { return ringIndex_; }
 
 #pragma region takamura_追加
@@ -89,6 +89,7 @@ private:
 
 	// 体力
 	int hp_ = 3;
+	int baseHp_ = 3; // リングによる倍率の基準HP
 	// 敵と接触しているフレーム数
 	int contactFrames_ = 0;
 	static inline const int kRequiredContactFrames_ = 60; // 60フレームでダメージ
@@ -100,6 +101,8 @@ private:
 	float depth_ = 2.16f;
 
 	int ringIndex_ = 0; // 壁が属するリングのインデックス
+
+	void RecalcHPByRing_();
 
 private:
 	std::unique_ptr<ObjClass> model_ = nullptr;
