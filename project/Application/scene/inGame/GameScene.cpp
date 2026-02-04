@@ -47,6 +47,7 @@ void GameScene::ClearAllObjects() {
     player_.reset();
     healer_.reset();
     bloodFlowParticleRing_.reset();
+    bloodBurstParticle_.reset();
     //timeDisplay_.reset();
 
     // 3. ライトのリストもリセット（必要に応じて）
@@ -136,6 +137,15 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     pauseSprite_->SetAnchor(0.5f, 0.5f);
     pauseSprite_->SetColor({ 0.1f, 0.1f, 0.1f, 0.5f });
 
+    // ホワイトアウト用スプライト
+    whiteoutSprite_ = std::make_unique<Sprite>();
+    whiteoutSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+    whiteoutSprite_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
+    whiteoutSprite_->SetSize(static_cast<float>(engine->GetClientWidth()), static_cast<float>(engine->GetClientHeight()));
+    whiteoutSprite_->SetAnchor(0.5f, 0.5f);
+    whiteoutSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f }); // 最初は透明
+    whiteoutSprite_->Update();
+
     // ランダムエンジン
     Random::SeedEngine();
 
@@ -183,7 +193,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     isTransitioningToStandard_ = false;
 
-	sePlayerHit_.Initialize("resources/audio/se/PlayerHit.mp3");
+    sePlayerHit_.Initialize("resources/audio/se/PlayerHit.mp3");
 
     // ヒーラー死亡時のSE初期化
     seHealerDeath_.Initialize("resources/audio/se/DeathHealerActor.mp3");
@@ -200,6 +210,10 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     bloodFlowParticleRing_ = std::make_unique<ParticleSystem>();
     bloodFlowParticleRing_->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::kBloodFlow, ParticlePrimitiveShape::Ring);
+
+    // 血液噴出パーティクルの初期化
+    bloodBurstParticle_ = std::make_unique<ParticleSystem>();
+    bloodBurstParticle_->Initialize(camera_.get(), "resources/circle.png", ParticleType::kBloodBurst, ParticlePrimitiveShape::Sphere);
 }
 
 // 更新
@@ -222,7 +236,7 @@ void GameScene::Update() {
     PhaseUpdate();
 
     // ゲーム中の更新
-    if (phase_ == Phase::Game) {
+    if (phase_ == Phase::Game && gameOverState_ == GameOverState::None) {
         // Update all walls (use full container size because we now create multiple rings)
         for (Wall* w : walls_) {
             if (w) w->Update();
@@ -233,30 +247,30 @@ void GameScene::Update() {
             if (e) e->Update(walls_, healerActor_);
         }
 
-        
+
         for (auto it = enemies_.begin(); it != enemies_.end(); ++it) {
             Enemy* e = *it;
             if (!e) continue;
             if (e->IsAlive()) continue;
             if (e->GetRespawnCounter() > 0) continue;
 
-            
+
             const float minSpawnDist = 3.0f;
             float x = 0.0f, y = 0.0f;
             for (int attempt = 0; attempt < 100; ++attempt) {
                 x = Random::GeneratorFloat(-10.0f, 10.0f);
                 y = Random::GeneratorFloat(-10.0f, 10.0f);
-                Vector3 p = player_ ? player_->GetPosition() : Vector3{0,0,0};
+                Vector3 p = player_ ? player_->GetPosition() : Vector3{ 0,0,0 };
                 float dx = x - p.x;
                 float dy = y - p.y;
-                if ((dx*dx + dy*dy) >= (minSpawnDist * minSpawnDist)) break;
+                if ((dx * dx + dy * dy) >= (minSpawnDist * minSpawnDist)) break;
             }
 
-           
+
             TwoHitEnemy* two = dynamic_cast<TwoHitEnemy*>(e);
             ChaserEnemy* ch = dynamic_cast<ChaserEnemy*>(e);
 
-           
+
             delete e;
 
             Enemy* spawned = nullptr;
@@ -312,6 +326,12 @@ void GameScene::Update() {
         bloodFlowParticleRing_->Debug("BloodFlowRing");
 #endif
     }
+    if (bloodBurstParticle_) {
+        bloodBurstParticle_->Update();
+#if defined(USE_IMGUI)
+        bloodBurstParticle_->Debug("BloodBurst");
+#endif
+    }
 
     // カメラをプレイヤーに追従させる（デバッグカメラ使用中は追従しない）
     if (!debugMode_ && player_ && camera_) {
@@ -320,7 +340,7 @@ void GameScene::Update() {
         camT.x = playerPos.x;
         camT.y = playerPos.y;
         camera_->SetTranslate(camT);
-       
+
     }
 
     // 時間表示の更新
@@ -328,33 +348,33 @@ void GameScene::Update() {
         timeDisplay_->Update();
     }
 
-     if (cameraShakeTimer_ > 0.0f && camera_) {
+    if (cameraShakeTimer_ > 0.0f && camera_) {
         cameraShakeTimer_ -= 1.0f / 60.0f;
-       
+
         float mag = cameraShakeMagnitude_;
         float ox = (Random::GeneratorFloat(-1.0f, 1.0f)) * mag;
         float oy = (Random::GeneratorFloat(-1.0f, 1.0f)) * mag;
         Vector3 t = camera_->GetTranslate();
-      
-        if (cameraShakeTimer_ + (1.0f/60.0f) >= cameraShakeDuration_) {
+
+        if (cameraShakeTimer_ + (1.0f / 60.0f) >= cameraShakeDuration_) {
             cameraShakeOriginalTranslate_ = t;
         }
         camera_->SetTranslate(Vector3{ cameraShakeOriginalTranslate_.x + ox, cameraShakeOriginalTranslate_.y + oy, cameraShakeOriginalTranslate_.z });
         if (cameraShakeTimer_ <= 0.0f) {
-          
+
             camera_->SetTranslate(cameraShakeOriginalTranslate_);
             cameraShakeTimer_ = 0.0f;
         }
     }
 
 #pragma region takamura追加（トランジション）
-     if(stripeTransition_){
-         stripeTransition_->Update();
-     }
+    if (stripeTransition_) {
+        stripeTransition_->Update();
+    }
 #pragma endregion takamura追加
 
-     model_tube_->Debug("tube");
-     model_tube_->Update();
+    model_tube_->Debug("tube");
+    model_tube_->Update();
 
     // =====
     // ↑ゲームの更新
@@ -419,6 +439,9 @@ void GameScene::Draw() {
     if (bloodFlowParticleRing_) {
         bloodFlowParticleRing_->Draw();
     }
+    if (bloodBurstParticle_) {
+        bloodBurstParticle_->Draw();
+    }
 
     // Sprite
     engine_->SetBlend(BlendMode::kBlendModeNormal);
@@ -443,6 +466,9 @@ void GameScene::Draw() {
             }
         }
     }
+
+    // ホワイトアウトの描画
+    whiteoutSprite_->Draw();
 
 #pragma region takamura追加（トランジション）
     // 2D描画の最後に
@@ -471,6 +497,11 @@ void GameScene::PhaseInitialize() {
         // ゲームタイマーの初期化
         timer_ = 0.0f;
         isGameOver_ = false;
+        gameOverState_ = GameOverState::None;
+        gameOverTimer_ = 0.0f;
+        if (whiteoutSprite_) {
+            whiteoutSprite_->SetColor({ 1.0f, 1.0f, 1.0f, 0.0f });
+        }
 
         break;
     case Phase::FadeOut:
@@ -537,8 +568,7 @@ void GameScene::PhaseChange() {
             ModeInitialize();
             phase_ = Phase::FadeIn;
             isTransitioningToStandard_ = false; // フラグをリセット
-        }
-        else {
+        } else {
             // リザルトシーンへ移行する前に結果を保存
             auto& resultData = GameResultData::GetInstance();
             resultData.isGameClear = !isGameOver_;
@@ -557,6 +587,14 @@ void GameScene::FadeInInitialize() {
     stripeTransition_->Initialize(camera_.get(), engine_, StripeTransition::Mode::Out);
     stripeTransition_->Start();
 
+    // 演出開始前に一度だけ更新処理を呼ぶ
+    if (!hasDoneInitialUpdateInFadeIn_) {
+        for (Wall* w : walls_) { if (w) w->Update(); }
+        for (Enemy* e : enemies_) { if (e) e->Update(walls_, healerActor_); }
+        if (player_) player_->Update();
+        if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
+        hasDoneInitialUpdateInFadeIn_ = true;
+    }
 }
 
 // フェードイン中の更新
@@ -581,10 +619,11 @@ void GameScene::CountdownUpdate() {
     if (mode_ == GameMode::Standard) {
         // 最初の1フレームだけ更新処理を呼ぶ
         if (!hasDoneInitialUpdate_) {
-            for (Wall* w : walls_) { if (w) w->Update(); }
-            for (Enemy* e : enemies_) { if (e) e->Update(walls_, healerActor_); }
-            if (player_) player_->Update();
-            if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
+            // FadeInで既に実行済みのため、ここでは不要
+            // for (Wall* w : walls_) { if (w) w->Update(); }
+            // for (Enemy* e : enemies_) { if (e) e->Update(walls_, healerActor_); }
+            // if (player_) player_->Update();
+            // if (healer_) healer_->Update(camera_.get(), walls_, healerActor_);
             hasDoneInitialUpdate_ = true;
         }
 
@@ -613,8 +652,7 @@ void GameScene::CountdownUpdate() {
         if (countdownTimer_ < -kStartDisplayTime) { // Start表示時間後
             isCompletePhase_ = true;
         }
-    }
-    else {
+    } else {
         // チュートリアルモードでは即座にゲームフェーズへ
         isCompletePhase_ = true;
     }
@@ -634,7 +672,7 @@ void GameScene::GameInitialize() {
 }
 
 
- // ゲーム中の更新
+// ゲーム中の更新
 void GameScene::GameUpdate() {
     switch (mode_) {
     case GameMode::Tutorial:
@@ -648,17 +686,48 @@ void GameScene::GameUpdate() {
     case GameMode::Standard:
     default:
 
-        // タイマー更新 (60FPS固定と仮定)
-        timer_ += 1.0f / 60.0f;
-
-        // クリア条件：60秒経過し、かつゲームオーバーでない
-        if (timer_ >= playTime_ && !isGameOver_) {
-            isCompletePhase_ = true;
-        }
-
-        // ゲームオーバー条件：2層目の壁が破壊された
         if (isGameOver_) {
-            isCompletePhase_ = true;
+            gameOverTimer_ += 1.0f / 60.0f;
+
+            switch (gameOverState_) {
+            case GameOverState::Bursting:
+            {
+                // 5秒かけてパーティクル表示とホワイトアウトを同時に行う
+                const float burstAndFadeDuration = 5.0f;
+
+                // 継続的にパーティクルを放出
+                if (bloodBurstParticle_ && (static_cast<int>(gameOverTimer_ * 10) % 5 == 0)) { // 0.5秒ごとに放出
+                    bloodBurstParticle_->PlayHitEffect(bloodBurstParticle_->GetEmitterPosition());
+                }
+
+                // ホワイトアウトのアルファ値を徐々に上げる
+                float alpha = std::min(1.0f, gameOverTimer_ / burstAndFadeDuration);
+                if (whiteoutSprite_) {
+                    whiteoutSprite_->SetColor({ 1.0f, 1.0f, 1.0f, alpha });
+                }
+
+                // 演出時間が終了したら完了
+                if (gameOverTimer_ >= burstAndFadeDuration) {
+                    isCompletePhase_ = true;
+                }
+            }
+            break;
+            case GameOverState::FadingOut:
+                // この状態は使われなくなるが、念のため残しておく
+                isCompletePhase_ = true;
+                break;
+            case GameOverState::None:
+                // 通常ここには来ない
+                break;
+            }
+        } else {
+            // タイマー更新 (60FPS固定と仮定)
+            timer_ += 1.0f / 60.0f;
+
+            // クリア条件：60秒経過し、かつゲームオーバーでない
+            if (timer_ >= playTime_) {
+                isCompletePhase_ = true;
+            }
         }
 
         break;
@@ -673,10 +742,10 @@ void GameScene::FadeOutInitialize() {
 }
 
 
- // フェードアウト中の更新
+// フェードアウト中の更新
 void GameScene::FadeOutUpdate() {
 
-    
+
     if (stripeTransition_->IsFinished()) {
         isCompletePhase_ = true;
     }
@@ -740,23 +809,23 @@ void GameScene::CollisionCheck() {
 
         // Player と Enemy の衝突判定
         if (Collision::IsOBBCollision(obbPlayer, obbEnemy)) {
-          
+
             Vector3 pushDir = obbPlayer.center - obbEnemy.center;
             if (Math::Length(pushDir) < 1e-4f) {
-           
+
                 float ang = Random::GeneratorFloat(0.0f, 2.0f * std::numbers::pi_v<float>);
                 pushDir = Vector3{ std::cos(ang), std::sin(ang), 0.0f };
             }
             pushDir = Math::Normalize(pushDir);
-            const float knockbackStrength = 3.5f; 
+            const float knockbackStrength = 3.5f;
             player_->MoveBy(pushDir * knockbackStrength);
 
             enemy->HandleCollision();
-           
+
             if (cameraShakeTimer_ <= 0.0f) {
                 const float shakeDur = 0.8f;
                 StartCameraShake(camera_.get(), shakeDur, 0.8f);
-                
+
                 player_->StunFor(shakeDur);
             }
             // SE 再生: プレイヤーと敵が接触したとき
@@ -764,7 +833,7 @@ void GameScene::CollisionCheck() {
 
             // Enemy dies after hitting the player once
             enemy->Kill();
-         }
+        }
     }
 #pragma region PlayerとEnemyの衝突判定
 
@@ -803,8 +872,15 @@ void GameScene::CollisionCheck() {
                 bool destroyed = wall->AccumulateContactFrame();
                 if (destroyed) {
                     // ゲームオーバー判定
-                    if (wall->GetRingIndex() == 2) { // 3層目 (0-indexed) が破壊されたらゲームオーバー
+                    if (wall->GetRingIndex() == 2 && !isGameOver_) { // 3層目 (0-indexed) が破壊されたらゲームオーバー
                         isGameOver_ = true;
+                        gameOverState_ = GameOverState::Bursting;
+                        gameOverTimer_ = 0.0f;
+                        // 血液噴出エフェクトを再生
+                        if (bloodBurstParticle_) {
+                            bloodBurstParticle_->SetEmitterPosition(wall->GetTransform().translate);
+                            bloodBurstParticle_->PlayHitEffect(wall->GetTransform().translate);
+                        }
                     }
 
                     // 壁に接触していた他の敵を処理
@@ -813,7 +889,7 @@ void GameScene::CollisionCheck() {
                         if (!e || !e->IsAlive()) continue;
                         e->UpdateOBB();
                         if (Collision::IsOBBCollision(e->GetOBB(), obbWall)) {
-                           auto* two = dynamic_cast<class TwoHitEnemy*>(e);
+                            auto* two = dynamic_cast<TwoHitEnemy*>(e);
                             if (two) {
                                 two->OnWallDestroyed(wall);
                             } else {
@@ -830,21 +906,30 @@ void GameScene::CollisionCheck() {
                     break; // この壁は破壊されたので次の壁へ
                 }
             } else {
-              
+
                 float rE = std::max({ obbEnemy.size.x, obbEnemy.size.y, obbEnemy.size.z });
                 float rW = std::max({ obbWall.size.x, obbWall.size.y, obbWall.size.z });
                 Vector3 d = obbEnemy.center - obbWall.center;
                 if (Math::Length(d) <= (rE + rW)) {
-                  
+
                     touchedThisWall = true;
                     enemy->OnCollisionWithWall(wall);
 
-                 
+
                     contactedEnemies.insert(enemy);
 
                     bool destroyed = wall->AccumulateContactFrame();
                     if (destroyed) {
-                        if (wall->GetRingIndex() == 2) { isGameOver_ = true; }
+                        if (wall->GetRingIndex() == 2 && !isGameOver_) {
+                            isGameOver_ = true;
+                            gameOverState_ = GameOverState::Bursting;
+                            gameOverTimer_ = 0.0f;
+                            // 血液噴出エフェクトを再生
+                            if (bloodBurstParticle_) {
+                                bloodBurstParticle_->SetEmitterPosition(wall->GetTransform().translate);
+                                bloodBurstParticle_->PlayHitEffect(wall->GetTransform().translate);
+                            }
+                        }
                         for (auto eIt = enemies_.begin(); eIt != enemies_.end(); ++eIt) {
                             Enemy* e = *eIt;
                             if (!e || !e->IsAlive()) continue;
@@ -1014,10 +1099,10 @@ void GameScene::CollisionCheck() {
                         effectSystem_->Play(EffectType::kHitEffect, hitTransform);
                     }
 
-                  
+
                     ha->HandleCollision();
 
-                  
+
                     if (!ha->IsAlive()) {
                         seHealerDeath_.Play(false);
                     }
@@ -1061,7 +1146,7 @@ void GameScene::StandardInitialize() {
             // Stagger every other ring so walls are not perfectly aligned radially
             float angularOffset = 0.0f;
             if (ring % 2 == 1) {
-           
+
                 angularOffset = (twoPi / static_cast<float>(kMaxWall_)) * 0.5f;
             }
 
@@ -1098,15 +1183,15 @@ void GameScene::StandardInitialize() {
             enemy = new Enemy();
         }
 
-       //敵の最初の生成がPlayerと被らないようにする
-        const float minSpawnDist = 3.0f; 
+        //敵の最初の生成がPlayerと被らないようにする
+        const float minSpawnDist = 3.0f;
         float x = 0.0f;
         float y = 0.0f;
         for (int attempt = 0; attempt < 100; ++attempt) {
             x = Random::GeneratorFloat(-10.0f, 10.0f);
             y = Random::GeneratorFloat(-10.0f, 10.0f);
             if ((x * x + y * y) >= (minSpawnDist * minSpawnDist)) {
-                break; 
+                break;
             }
         }
 
@@ -1164,10 +1249,6 @@ void GameScene::TutorialInitialize() {
     //     });
     //}
 
-    // 壁を1枚だけ置くなど
-    Wall* wall = new Wall();
-    wall->Initialize(camera_.get(), Vector3{ 0, 5, 0 });
-    walls_.push_back(wall);
 
     healer_ = std::make_unique<Healer>();
 }
@@ -1178,6 +1259,8 @@ void GameScene::ModeInitialize() {
 
     // ゲームオーバーフラグをリセット
     isGameOver_ = false;
+    gameOverState_ = GameOverState::None;
+    gameOverTimer_ = 0.0f;
 
     // モードに応じて生成
     switch (mode_) {
@@ -1219,6 +1302,8 @@ void GameScene::DebugImGui()
             ImGui::Checkbox("debugMode", &debugMode_);
             ImGui::Text("Timer: %.2f", timer_);
             ImGui::Text("GameOver: %s", isGameOver_ ? "true" : "false");
+            ImGui::Text("GameOverState: %d", static_cast<int>(gameOverState_));
+            ImGui::Text("GameOverTimer: %.2f", gameOverTimer_);
 
             // GameModeの変更
             const char* modeNames[] = { "Tutorial", "Standard" };

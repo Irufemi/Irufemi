@@ -124,6 +124,13 @@ private: // メンバ変数(ゲーム進行)
         Standard,
     };
 
+    // ゲームオーバー演出の状態
+    enum class GameOverState {
+        None,      // 通常時
+        Bursting,  // 血液噴出中
+        FadingOut, // ホワイトアウト中
+    };
+
     // Phaseの初期化を行ったか
     bool isResetPhase_ = false;
 
@@ -139,6 +146,11 @@ private: // メンバ変数(ゲーム進行)
     // ゲームオーバーフラグ
     bool isGameOver_ = false;
 
+    // ゲームオーバー演出の状態
+    GameOverState gameOverState_ = GameOverState::None;
+    // ゲームオーバー演出用タイマー
+    float gameOverTimer_ = 0.0f;
+
     // チュートリアルからスタンダードへの移行フラグ
     bool isTransitioningToStandard_ = false;
 
@@ -149,6 +161,11 @@ private: // メンバ変数(ゲーム進行)
 
     // カウントダウン中に初期更新を行ったか
     bool hasDoneInitialUpdate_ = false;
+
+    // フェードイン演出用タイマー
+    float fadeInTimer_ = 0.0f;
+    // フェードイン中に一度だけ更新処理を行ったか
+    bool hasDoneInitialUpdateInFadeIn_ = false;
 
 #pragma region takamura追加（トランジション）
     std::unique_ptr<StripeTransition> stripeTransition_;
@@ -194,6 +211,8 @@ private: // メンバ変数(ゲーム)
     // 血流パーティクル
     std::unique_ptr<ParticleSystem> bloodFlowParticle_ = nullptr;
     std::unique_ptr<ParticleSystem> bloodFlowParticleRing_ = nullptr;
+    // 血液噴出パーティクル
+    std::unique_ptr<ParticleSystem> bloodBurstParticle_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン
@@ -216,6 +235,8 @@ private: // メンバ変数(システム)
 
     // ポーズ表示用
     std::unique_ptr<Sprite> pauseSprite_ = nullptr;
+    // ホワイトアウト用
+    std::unique_ptr<Sprite> whiteoutSprite_ = nullptr;
 
     // SE: プレイヤーと敵の接触時の効果音
     Se sePlayerHit_;

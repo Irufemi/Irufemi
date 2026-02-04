@@ -40,6 +40,7 @@ public:
 	static void SetSrvPool(DescriptorPool* pool) { s_srvPool_ = pool; }
 	static void SetEngine(class IrufemiEngine* engine) { s_engine_ = engine; }
 
+	const Vector3& GetEmitterPosition() const { return emitter_.transform.translate; }
 	void SetEmitterPosition(const Vector3& position);
 	void SetEmitterArea(const Vector3& area);
 	void SetEmitterVelocity(const Vector3& minVel, const Vector3& maxVel);
@@ -57,9 +58,9 @@ public:
 		uint32_t count);
 	void SetTexture(const std::string& textureFilePath);
 
-	// ヒットエフェクトを再生する
+	// 単発エフェクトを再生する
 	void PlayHitEffect(const Vector3& position);
-	// ヒットエフェクトを再生する(数と位置を指定)
+	// 単発エフェクトを再生する(数と位置を指定)
 	void PlayHitEffect(const Vector3& position, uint32_t count);
 
 	// 追加: Ring パラメータ設定

@@ -83,7 +83,7 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     // --- Result BGM の初期化と再生 ---
     // ゲームオーバー/クリア画面に応じて適切なBGMを再生
     if (resultData.isGameClear) {
-      /*  bgmResult_.Initialize("resources/audio/bgm/GameClear.mp3", "", true, true);*/
+        bgmResult_.Initialize("resources/audio/bgm/GameClear.mp3", "", true, true);
     } else {
         bgmResult_.Initialize("resources/audio/bgm/GameOver.mp3", "", true, true);
     }
