@@ -26,7 +26,11 @@
 #include "actors/enemy/ChaserEnemy.h"
 
 #include <unordered_map>
+
 #include "scene/GameResultData.h"
+
+#include <unordered_set>
+
 
 
 // 
@@ -744,6 +748,9 @@ void GameScene::CollisionCheck() {
 
 #pragma region EnemyとWallの衝突判定
     // Enemy と Wall の衝突判定（接触フレームを蓄積して HP を減らす）
+    // Track enemies that have already applied contact this frame so one enemy
+    // cannot damage multiple walls in the same frame.
+    std::unordered_set<Enemy*> contactedThisFrame;
     for (auto wallIt = walls_.begin(); wallIt != walls_.end(); ++wallIt) {
         Wall* wall = *wallIt;
         if (!wall) continue;
@@ -757,21 +764,32 @@ void GameScene::CollisionCheck() {
             Enemy* enemy = *enemyIt;
             if (!enemy || !enemy->IsAlive()) continue;
 
+          
+            if (contactedThisFrame.find(enemy) != contactedThisFrame.end()) {
+              
+                enemy->UpdateOBB();
+                continue;
+            }
+
             enemy->UpdateOBB();
             const OBB& obbEnemy = enemy->GetOBB();
 
             if (Collision::IsOBBCollision(obbEnemy, obbWall)) {
                 touched = true;
                 enemy->OnCollisionWithWall(wall); // ★ 衝突時に押し出し処理を呼ぶ
+
+              
+                contactedThisFrame.insert(enemy);
+
                 bool destroyed = wall->AccumulateContactFrame();
                 if (destroyed) {
-
+                    
                     // ゲームオーバー判定
                     if (wall->GetRingIndex() == 1) { // 2層目 (0-indexed)
                         isGameOver_ = true;
                     }
 
-                  
+                    
                     for (auto eIt = enemies_.begin(); eIt != enemies_.end(); ++eIt) {
                         Enemy* e = *eIt;
                         if (!e || !e->IsAlive()) continue;
@@ -792,6 +810,41 @@ void GameScene::CollisionCheck() {
                     delete wall;
                     *wallIt = nullptr;
                     break; // この壁は破壊されたので次の壁へ
+                }
+            } else {
+              
+                float rE = std::max({ obbEnemy.size.x, obbEnemy.size.y, obbEnemy.size.z });
+                float rW = std::max({ obbWall.size.x, obbWall.size.y, obbWall.size.z });
+                Vector3 d = obbEnemy.center - obbWall.center;
+                if (Math::Length(d) <= (rE + rW)) {
+                  
+                    touched = true;
+                    enemy->OnCollisionWithWall(wall);
+
+                 
+                    contactedThisFrame.insert(enemy);
+
+                    bool destroyed = wall->AccumulateContactFrame();
+                    if (destroyed) {
+                        if (wall->GetRingIndex() == 1) { isGameOver_ = true; }
+                        for (auto eIt = enemies_.begin(); eIt != enemies_.end(); ++eIt) {
+                            Enemy* e = *eIt;
+                            if (!e || !e->IsAlive()) continue;
+                            e->UpdateOBB();
+                            if (Collision::IsOBBCollision(e->GetOBB(), obbWall)) {
+                                auto* two = dynamic_cast<class TwoHitEnemy*>(e);
+                                if (two) {
+                                    two->OnWallDestroyed(wall);
+                                } else {
+                                    e->Kill();
+                                }
+                            }
+                        }
+                        if (healer_) healer_->NotifyWallDestroyed(wall->GetTransform(), wall->GetSize());
+                        delete wall;
+                        *wallIt = nullptr;
+                        break;
+                    }
                 }
             }
         }
