@@ -181,6 +181,52 @@ void BloodFlowBehavior::Debug([[maybe_unused]] Emitter* emitter, DebugUI* ui, Pa
 #endif // USE_IMGUI
 }
 
+// BloodBurstBehavior
+void BloodBurstBehavior::Initialize(Emitter* emitter) {
+	emitter->count = 300; // 大量に放出
+	emitter->area = { 0.0f, 0.0f, 0.0f }; // 1点から
+	emitter->velocityMin = { -10.0f, 5.0f, -10.0f }; // 全方位に飛び散る
+	emitter->velocityMax = { 10.0f, 20.0f, 10.0f };
+	emitter->startColor = { 0.8f, 0.0f, 0.0f, 1.0f };
+	emitter->endColor = { 0.5f, 0.0f, 0.0f, 0.0f };
+	emitter->startScale = { 0.5f, 0.5f, 0.5f };
+	emitter->endScale = { 0.1f, 0.1f, 0.1f };
+	emitter->colorMode = ParticleColorMode::kRed;
+
+	field_.acceleration = { 0.0f, -9.8f, 0.0f }; // 重力
+	field_.area.min = { -1000.0f, -1000.0f, -1000.0f }; // 広範囲に適用
+	field_.area.max = { 1000.0f, 1000.0f, 1000.0f };
+}
+void BloodBurstBehavior::Update(Particle& particle, float deltaTime) {
+	field_.Apply(particle, deltaTime);
+}
+void BloodBurstBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
+	std::uniform_real_distribution<float> distTime(2.0f, 4.0f);
+	std::uniform_real_distribution<float> distRed(0.6f, 1.0f);
+	std::uniform_real_distribution<float> distGreenBlue(0.0f, 0.15f);
+
+	particle.startScale = emitter.startScale;
+	particle.endScale = emitter.endScale;
+	particle.transform.rotate = { 0.0f,0.0f,0.0f };
+	particle.lifeTime = distTime(randomEngine);
+
+	// 色を赤系でランダムに
+	particle.startColor = { distRed(randomEngine), distGreenBlue(randomEngine), distGreenBlue(randomEngine), 1.0f };
+	particle.endColor = particle.startColor;
+	particle.endColor.w = 0.0f;
+}
+void BloodBurstBehavior::Debug([[maybe_unused]] Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) {
+#ifdef USE_IMGUI
+	ImGui::DragFloat3("Acceleration", &field_.acceleration.x, 0.1f);
+	ImGui::DragFloat3("Area Min", &field_.area.min.x, 0.1f);
+	ImGui::DragFloat3("Area Max", &field_.area.max.x, 0.1f);
+
+	if (particleSystem && particleSystem->IsShowFieldAABB()) {
+		particleSystem->DrawAABB(field_.area, { 1.0f, 0.0f, 0.0f, 1.0f });
+	}
+#endif // USE_IMGUI
+}
+
 
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
@@ -193,6 +239,8 @@ std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
 		return std::make_unique<ExplosionBehavior>();
 	case ParticleType::kBloodFlow:
 		return std::make_unique<BloodFlowBehavior>();
+	case ParticleType::kBloodBurst:
+		return std::make_unique<BloodBurstBehavior>();
 	case ParticleType::Normal:
 	default:
 		return std::make_unique<NormalBehavior>();

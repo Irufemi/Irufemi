@@ -98,5 +98,18 @@ private:
 	AccelerationField field_;
 };
 
+/// <summary>
+/// 血液噴出の振る舞い
+/// </summary>
+class BloodBurstBehavior : public IParticleBehavior {
+public:
+	void Initialize(Emitter* emitter) override;
+	void Update(Particle& particle, float deltaTime) override;
+	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
+private:
+	AccelerationField field_;
+};
+
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type);

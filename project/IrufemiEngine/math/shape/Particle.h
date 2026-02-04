@@ -46,6 +46,7 @@ enum class ParticleType {
 	kHitEffect,
 	kExplosion,
 	kBloodFlow,
+	kBloodBurst,
 	// 他の種類をここに追加
 };
 
