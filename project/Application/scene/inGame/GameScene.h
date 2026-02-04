@@ -159,6 +159,8 @@ private: // メンバ変数(ゲーム進行)
     float countdownTimer_ = 3.99f;
     // 「Start」表示の時間
     static constexpr float kStartDisplayTime = 0.8f;
+    // 説明表示の時間
+    static constexpr float kInstructionDisplayTime = 3.0f;
 
     // カウントダウン中に初期更新を行ったか
     bool hasDoneInitialUpdate_ = false;
@@ -203,6 +205,11 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<TimeDisplay> timeDisplay_;
     // カウントダウン表示用スプライト (0:Start, 1:1, 2:2, 3:3)
     std::array<std::unique_ptr<Sprite>, 4> countdownSprites_;
+    // 説明表示用スプライト
+    std::unique_ptr<Sprite> instructionSprite_ = nullptr;
+
+    // ポーズ案内用スプライト
+    std::unique_ptr<Sprite> text_pause_ = nullptr;
   
     float cameraShakeTimer_ = 0.0f;
     float cameraShakeDuration_ = 0.0f;
@@ -219,6 +226,9 @@ private: // メンバ変数(ゲーム)
 
     // 画面外インジケーター
     std::unique_ptr<OffScreenIndicator> offScreenIndicator_ = nullptr;
+
+    // ゲーム中の操作説明用スプライト
+    std::unique_ptr<Sprite> gameInstructionSprite_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン
