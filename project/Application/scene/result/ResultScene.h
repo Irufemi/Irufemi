@@ -6,6 +6,7 @@
 
 #include "StripeTransition.h"
 #include "audio/Bgm.h"
+#include "3D/ObjClass.h"
 
 class IrufemiEngine;
 class DebugCamera;
@@ -28,12 +29,12 @@ public: // メンバ関数(システム)
 private: // メンバ関数(内部ヘルパ)
 
 private: // メンバ変数(ゲーム)
-    // ゲームクリア表示用スプライト
-    std::unique_ptr<Sprite> gameClearSprite_ = nullptr;
+    // ゲームクリア表示用モデル
+    std::unique_ptr<ObjClass> gameClearModel_ = nullptr;
     // ゲームオーバー表示用スプライト
-    std::unique_ptr<Sprite> gameOverSprite_ = nullptr;
+    std::unique_ptr<ObjClass> gameOverModel_ = nullptr;
     // 現在表示する結果スプライト
-    Sprite* currentResultSprite_ = nullptr;
+    ObjClass* currentResultModel_ = nullptr;
 
     // トランジション
     std::unique_ptr<StripeTransition> stripeTransition_;

@@ -59,25 +59,20 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
 
     // --- スプライトの初期化 ---
     // テクスチャパスは仮のものです
-    gameClearSprite_ = std::make_unique<Sprite>();
-    gameClearSprite_->Initialize(camera_.get(), "resources/texture/UI/Clear/Clear.png");
-    gameClearSprite_->SetPosition(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
-    gameClearSprite_->SetAnchor(0.5f, 0.5f);
-    gameClearSprite_->Update();
+    gameClearModel_ = std::make_unique<ObjClass>();
+    gameClearModel_->Initialize(camera_.get(), "TD_Clear.obj");
 
-    gameOverSprite_ = std::make_unique<Sprite>();
-    gameOverSprite_->Initialize(camera_.get(), "resources/texture/UI/GameOver/GameOver.png");
-    gameOverSprite_->SetPosition(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
-    gameOverSprite_->SetAnchor(0.5f, 0.5f);
-    gameOverSprite_->Update();
+    gameOverModel_ = std::make_unique<ObjClass>();
+    gameOverModel_->Initialize(camera_.get(), "TD_GameOver.obj");
+    gameOverModel_->Update();
 
     // --- 結果データに基づいて表示を決定 ---
     auto& resultData = GameResultData::GetInstance();
     if (resultData.isGameClear) {
-        currentResultSprite_ = gameClearSprite_.get();
+        currentResultModel_ = gameClearModel_.get();
     }
     else {
-        currentResultSprite_ = gameOverSprite_.get();
+        currentResultModel_ = gameOverModel_.get();
     }
 
     // --- Result BGM の初期化と再生 ---
@@ -138,8 +133,8 @@ void ResultScene::Update() {
 
     stripeTransition_->Update();
 
-    if (currentResultSprite_) {
-        currentResultSprite_->Update();
+    if (currentResultModel_) {
+        currentResultModel_->Update();
     }
 
     // 何かキーが押されたらタイトルに戻る
@@ -188,11 +183,13 @@ void ResultScene::Draw() {
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    engine_->ApplySpritePSO();
+    engine_->ApplyPSO();
 
-    if (currentResultSprite_) {
-        currentResultSprite_->Draw();
+    if (currentResultModel_) {
+        currentResultModel_->Draw();
     }
+
+    engine_->ApplySpritePSO();
 
     stripeTransition_->Draw();
 }

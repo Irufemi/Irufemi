@@ -171,6 +171,13 @@ void GameScene::Initialize(IrufemiEngine* engine) {
         countdownSprites_[i]->Update();
     }
 
+    // 説明表示用スプライトの初期化
+    instructionSprite_ = std::make_unique<Sprite>();
+    instructionSprite_->Initialize(camera_.get(), "resources/texture/game/GameGoal_GameScene.png"); // 仮のパス
+    instructionSprite_->SetAnchor(0.5f, 0.5f);
+    instructionSprite_->SetPosition(engine_->GetClientWidth() / 2.0f,engine_->GetClientHeight() / 3.0f);
+    instructionSprite_->Update();
+
     // 時間表記の生成・初期化
     timeDisplay_ = std::make_unique<TimeDisplay>();
     timeDisplay_->Initialize(
@@ -218,6 +225,21 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // 画面外インジケーターの初期化
     offScreenIndicator_ = std::make_unique<OffScreenIndicator>();
     offScreenIndicator_->Initialize(camera_.get(), engine_);
+
+    // ポーズ案内用スプライトの初期化
+    text_pause_ = std::make_unique<Sprite>();
+    text_pause_->Initialize(camera_.get(), "resources/texture/game/pause.png");
+    text_pause_->SetAnchor(0.0f, 1.0f);
+    text_pause_->SetPosition(0.0f, engine_->GetClientHeight());
+    text_pause_->Update();
+
+    // ゲーム中の操作説明用スプライトの初期化
+    gameInstructionSprite_ = std::make_unique<Sprite>();
+    gameInstructionSprite_->Initialize(camera_.get(), "resources/texture/game/GameGoal_GameScene1.png");
+    gameInstructionSprite_->SetAnchor(1.0f, 0.0f);
+    gameInstructionSprite_->SetSize(400, 40);
+    gameInstructionSprite_->SetPosition(engine_->GetClientWidth(), 0.0f);
+    gameInstructionSprite_->Update();
 }
 
 // 更新
@@ -428,9 +450,11 @@ void GameScene::Update() {
     if (offScreenIndicator_) {
         offScreenIndicator_->Update(attackingEnemies_);
     }
-
-    model_tube_->Debug("tube");
     model_tube_->Update();
+
+    if (gameInstructionSprite_) {
+        gameInstructionSprite_->Update();
+    }
 
     // =====
     // ↑ゲームの更新
@@ -515,10 +539,18 @@ void GameScene::Draw() {
 
     // カウントダウンの描画
     if (phase_ == Phase::Countdown) {
-        int spriteIndex = static_cast<int>(std::ceil(countdownTimer_));
-        if (spriteIndex >= 0 && spriteIndex < countdownSprites_.size()) {
-            if (countdownSprites_[spriteIndex]) {
-                countdownSprites_[spriteIndex]->Draw();
+        // 説明表示
+        if (instructionSprite_) {
+            instructionSprite_->Draw();
+        }
+
+        // カウントダウン数値表示 (説明時間終了後)
+        if (countdownTimer_ <= 3.99f) {
+            int spriteIndex = static_cast<int>(std::ceil(countdownTimer_));
+            if (spriteIndex >= 0 && spriteIndex < countdownSprites_.size()) {
+                if (countdownSprites_[spriteIndex]) {
+                    countdownSprites_[spriteIndex]->Draw();
+                }
             }
         }
     }
@@ -526,6 +558,13 @@ void GameScene::Draw() {
     // 画面外インジケーターの描画
     if (offScreenIndicator_) {
         offScreenIndicator_->Draw();
+    }
+
+    // ポーズ案内用スプライトの描画
+    text_pause_->Draw();
+
+    if (gameInstructionSprite_) {
+        gameInstructionSprite_->Draw();
     }
 
     // ホワイトアウトの描画
@@ -670,7 +709,7 @@ void GameScene::FadeInUpdate() {
 // カウントダウンの初期化
 void GameScene::CountdownInitialize() {
     if (mode_ == GameMode::Standard) {
-        countdownTimer_ = 3.99f; // 3から始まるように調整
+        countdownTimer_ = 3.99f + kInstructionDisplayTime; // 説明時間分タイマーを延長
         hasDoneInitialUpdate_ = false; // 初期化フラグをリセット
     }
 }
@@ -690,22 +729,29 @@ void GameScene::CountdownUpdate() {
 
         countdownTimer_ -= 1.0f / 60.0f; // 60FPS想定
 
-        // アニメーション処理
-        int spriteIndex = static_cast<int>(std::ceil(countdownTimer_));
-        if (spriteIndex >= 0 && spriteIndex < countdownSprites_.size()) {
-            Sprite* sprite = countdownSprites_[spriteIndex].get();
-            if (sprite) {
-                // 1秒間のアニメーション（拡大してフェードアウト）
-                float progress = 1.0f - (countdownTimer_ - std::floor(countdownTimer_)); // 0.0 -> 1.0
-                float scale = 1.0f + 0.5f * progress;
-                float alpha = 1.0f - progress;
+        // 説明表示中はスプライトを更新
+        if (instructionSprite_) {
+            instructionSprite_->Update();
+        }
 
-                Vector2 originalSize = sprite->GetSize();
-                sprite->SetSize(originalSize.x * scale, originalSize.y * scale);
-                Vector4 color = sprite->GetColor();
-                color.w = alpha;
-                sprite->SetColor(color);
-                sprite->Update(); // 変更を反映
+        // カウントダウン数値のアニメーション処理 (説明時間終了後)
+        if (countdownTimer_ <= 3.99f) {
+            int spriteIndex = static_cast<int>(std::ceil(countdownTimer_));
+            if (spriteIndex >= 0 && spriteIndex < countdownSprites_.size()) {
+                Sprite* sprite = countdownSprites_[spriteIndex].get();
+                if (sprite) {
+                    // 1秒間のアニメーション（拡大してフェードアウト）
+                    float progress = 1.0f - (countdownTimer_ - std::floor(countdownTimer_)); // 0.0 -> 1.0
+                    float scale = 1.0f + 0.5f * progress;
+                    float alpha = 1.0f - progress;
+
+                    Vector2 originalSize = sprite->GetSize();
+                    sprite->SetSize(originalSize.x * scale, originalSize.y * scale);
+                    Vector4 color = sprite->GetColor();
+                    color.w = alpha;
+                    sprite->SetColor(color);
+                    sprite->Update(); // 変更を反映
+                }
             }
         }
 
@@ -731,7 +777,6 @@ void GameScene::GameInitialize() {
         break;
     }
 }
-
 
 // ゲーム中の更新
 void GameScene::GameUpdate() {
