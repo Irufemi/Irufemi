@@ -75,6 +75,79 @@ void Player::Update()
         }
         // スタン中は移動や攻撃を行わない。ただし見た目の更新は行う
         transform_.translate += velocity;
+
+        // チャージ中でも攻撃範囲のアンカー（攻撃範囲モデル）をプレイヤーに追従させる
+        if (attackRangeVisible_ && isCharging_ && attackRangeModel_) {
+            constexpr float kAttackRangeMaxScale = 3.0f;
+            float ratio = (kMaxChargeTime > 0.0f) ? (chargeTimer_ / kMaxChargeTime) : 1.0f;
+            float scale = 1.0f + (kAttackRangeMaxScale - 1.0f) * ratio;
+
+            Vector3 forward = {};
+            float vlen = Math::Length(velocity);
+            if (vlen > 1e-4f) {
+                forward = Math::Normalize(velocity);
+            } else {
+                forward.x = std::sin(-transform_.rotate.z);
+                forward.y = std::cos(-transform_.rotate.z);
+                forward.z = 0.0f;
+            }
+
+            float tipLocal = attackRangeModelTipOffset_;
+            float scaledTipLocal = tipLocal * scale * attackRangeModelTipDirection_;
+
+            Transform t = attackRangeModel_->GetTransform();
+            t.translate = transform_.translate + Math::Multiply(attackRangeTipAnchorDistance_ - scaledTipLocal, forward);
+            t.rotate = transform_.rotate;
+            t.scale = { scale, scale, scale };
+            attackRangeModel_->SetTransform(t);
+        }
+
+        // スタン中にキー/ボタンを離したら、通常時同様に斬撃を開始できるようにする
+        if (isCharging_ && ((input_ && input_->IsButtonReleased(XINPUT_GAMEPAD_A)) || (input_ && input_->IsKeyReleased(VK_SPACE)))) {
+            isCharging_ = false;
+            attackRangeVisible_ = true;
+            attackRangeTimer_ = kAttackRangeDuration;
+
+            // チャージ音の処理
+            if (chargeSoundStarted_) {
+                seCharge_.Stop();
+                chargeVolume_ = 0.0f;
+                targetChargeVolume_ = 0.0f;
+                pendingStopChargeSound_ = false;
+            } else {
+                targetChargeVolume_ = 0.0f;
+                pendingStopChargeSound_ = false;
+            }
+            chargeSoundStarted_ = false;
+
+            // 斬撃開始（チャージ比率に応じた速度/音量）
+            if (sword_ && attackRangeModel_) {
+                float chargeRatio = (kMaxChargeTime > 0.0f) ? (chargeTimer_ / kMaxChargeTime) : 0.0f;
+                const float minDuration = 0.14f;
+                const float maxDuration = 0.40f;
+                float duration = maxDuration + (minDuration - maxDuration) * chargeRatio;
+
+                sword_->StartSlash(attackRangeModel_->GetTransform(), duration);
+
+                float vol = 0.5f + 0.5f * chargeRatio;
+                seSlash_.SetVolume(vol);
+                seSlash_.Play(false);
+            }
+        }
+        
+        // プレイヤー位置に剣を追従（攻撃表示時は攻撃範囲モデル、スラッシュ中はアンカー更新）
+        if (sword_) {
+            if (attackRangeVisible_) {
+                Transform t = attackRangeModel_->GetTransform();
+                sword_->SetTransform(t);
+            } else if (sword_->IsSlashing()) {
+                sword_->UpdateSlashAnchor(transform_);
+            } else {
+                sword_->SetTransform(transform_);
+            }
+            sword_->Update();
+        }
+
         UpdateOBB();
         model_->Debug();
         return;
@@ -98,6 +171,19 @@ void Player::Update()
 
     Attack();
 
+    // プレイヤー位置に剣を追従し、Updateをここで毎フレーム呼ぶ
+    if (sword_) {
+        if (attackRangeVisible_) {
+            Transform t = attackRangeModel_->GetTransform();
+            sword_->SetTransform(t);
+        } else if (sword_->IsSlashing()) {
+            sword_->UpdateSlashAnchor(transform_);
+        } else {
+            sword_->SetTransform(transform_);
+        }
+        sword_->Update();
+    }
+
     UpdateOBB();
 
     model_->Debug();
@@ -113,22 +199,10 @@ void Player::Draw()
 
 	model_->Draw();
 
-
-	if (attackRangeVisible_)
-	{
-		//attackRangeModel_->Update();
-		//attackRangeModel_->Draw();
-
-		
-		if (sword_)
-		{
-			Transform t = attackRangeModel_->GetTransform();
-			sword_->SetTransform(t);
-			sword_->Update();
-			sword_->Draw();
-		}
+	// 剣はUpdateでTransformを同期済み。ここでは描画のみ行う
+	if (sword_) {
+		sword_->Draw();
 	}
-
 }
 
 void Player::UpdateOBB()
@@ -152,7 +226,17 @@ void Player::HandleCollision()
 	velocity = {};
 	transform_.translate = lastSafePosition_;
 
-	
+	// 衝突で位置が戻った場合も剣を同期（スラッシュ中はアンカー更新）
+	if (sword_) {
+		if (attackRangeVisible_) {
+			Transform t = attackRangeModel_->GetTransform();
+			sword_->SetTransform(t);
+		} else if (sword_->IsSlashing()) {
+			sword_->UpdateSlashAnchor(transform_);
+		} else {
+			sword_->SetTransform(transform_);
+		}
+	}
 }
 
 void Player::Move()
@@ -350,7 +434,7 @@ void Player::Attack()
 
 			
 			if (!(sword_ && sword_->IsSlashing())) {
-				isAttacking_ = false;
+			 isAttacking_ = false;
 			}
 
 
