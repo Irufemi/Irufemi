@@ -5,6 +5,8 @@
 #include <memory>
 #include <vector>
 
+#include"audio/Bgm.h"
+
 class IrufemiEngine;
 
 class Camera;
@@ -41,4 +43,9 @@ private: // メンバ変数(システム)
     std::vector<std::unique_ptr<PointLight>> pointLights_;
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
+
+private:
+	Bgm bgmGameOver_;
+
+
 };

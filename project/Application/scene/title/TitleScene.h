@@ -12,6 +12,7 @@
 #pragma endregion takamura追加
 
 #include "audio/Se.h"
+#include "audio/Bgm.h"
 
 class IrufemiEngine;
 class Camera;
@@ -71,4 +72,6 @@ private: // メンバ変数(システム)
 
 private:
     Se seDecision_;
+	Bgm bgmTitle_;
+    
 };

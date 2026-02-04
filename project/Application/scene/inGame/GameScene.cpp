@@ -190,6 +190,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // ヒーラー死亡時のSE初期化
     seHealerDeath_.Initialize("resources/audio/se/DeathHealerActor.mp3");
 
+	bgmGame_.Initialize("resources/audio/bgm/GameScene.mp3", "", true, true);
+	bgmGame_.SetVolume(0.8f);
+
     model_tube_ = std::make_unique<ObjClass>();
     model_tube_->Initialize(camera_.get(), "tube.obj");
 
