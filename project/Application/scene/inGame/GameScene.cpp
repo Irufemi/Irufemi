@@ -26,9 +26,7 @@
 #include "actors/enemy/ChaserEnemy.h"
 
 #include <unordered_map>
-
 #include "scene/GameResultData.h"
-
 #include <unordered_set>
 
 
@@ -769,9 +767,8 @@ void GameScene::CollisionCheck() {
 
 #pragma region EnemyとWallの衝突判定
     // Enemy と Wall の衝突判定（接触フレームを蓄積して HP を減らす）
-    // Track enemies that have already applied contact this frame so one enemy
-    // cannot damage multiple walls in the same frame.
-    std::unordered_set<Enemy*> contactedThisFrame;
+    // 1フレームに1体の敵が複数の壁にダメージを与えないように、接触した敵を記録する
+    std::unordered_set<Enemy*> contactedEnemies;
     for (auto wallIt = walls_.begin(); wallIt != walls_.end(); ++wallIt) {
         Wall* wall = *wallIt;
         if (!wall) continue;
@@ -779,16 +776,14 @@ void GameScene::CollisionCheck() {
         wall->UpdateOBB();
         const OBB& obbWall = wall->GetOBB();
 
-        bool touched = false;
+        bool touchedThisWall = false;
 
         for (auto enemyIt = enemies_.begin(); enemyIt != enemies_.end(); ++enemyIt) {
             Enemy* enemy = *enemyIt;
             if (!enemy || !enemy->IsAlive()) continue;
 
-          
-            if (contactedThisFrame.find(enemy) != contactedThisFrame.end()) {
-              
-                enemy->UpdateOBB();
+            // このフレームで既に他の壁に接触済みの敵はスキップ
+            if (contactedEnemies.count(enemy)) {
                 continue;
             }
 
@@ -796,21 +791,20 @@ void GameScene::CollisionCheck() {
             const OBB& obbEnemy = enemy->GetOBB();
 
             if (Collision::IsOBBCollision(obbEnemy, obbWall)) {
-                touched = true;
-                enemy->OnCollisionWithWall(wall); // ★ 衝突時に押し出し処理を呼ぶ
+                touchedThisWall = true;
+                enemy->OnCollisionWithWall(wall); // 衝突時に押し出し処理を呼ぶ
 
-              
-                contactedThisFrame.insert(enemy);
+                // この敵を接触済みとして記録
+                contactedEnemies.insert(enemy);
 
                 bool destroyed = wall->AccumulateContactFrame();
                 if (destroyed) {
-                    
                     // ゲームオーバー判定
                     if (wall->GetRingIndex() == 2) { // 3層目 (0-indexed) が破壊されたらゲームオーバー
                         isGameOver_ = true;
                     }
 
-                    
+                    // 壁に接触していた他の敵を処理
                     for (auto eIt = enemies_.begin(); eIt != enemies_.end(); ++eIt) {
                         Enemy* e = *eIt;
                         if (!e || !e->IsAlive()) continue;
@@ -839,15 +833,15 @@ void GameScene::CollisionCheck() {
                 Vector3 d = obbEnemy.center - obbWall.center;
                 if (Math::Length(d) <= (rE + rW)) {
                   
-                    touched = true;
+                    touchedThisWall = true;
                     enemy->OnCollisionWithWall(wall);
 
                  
-                    contactedThisFrame.insert(enemy);
+                    contactedEnemies.insert(enemy);
 
                     bool destroyed = wall->AccumulateContactFrame();
                     if (destroyed) {
-                        if (wall->GetRingIndex() == 1) { isGameOver_ = true; }
+                        if (wall->GetRingIndex() == 2) { isGameOver_ = true; }
                         for (auto eIt = enemies_.begin(); eIt != enemies_.end(); ++eIt) {
                             Enemy* e = *eIt;
                             if (!e || !e->IsAlive()) continue;
@@ -870,7 +864,7 @@ void GameScene::CollisionCheck() {
             }
         }
 
-        if (*wallIt != nullptr && !touched) {
+        if (*wallIt != nullptr && !touchedThisWall) {
             // 徐々に接触フレームを減らし、断続的な接触でもHPが減るようにする
             wall->DecayContactFrames();
         }
@@ -1192,6 +1186,7 @@ void GameScene::ModeInitialize() {
         break;
     }
 }
+
 void GameScene::StartCameraShake(Camera* cam, float duration, float magnitude) {
     if (!cam) return;
     cameraShakeDuration_ = duration;
