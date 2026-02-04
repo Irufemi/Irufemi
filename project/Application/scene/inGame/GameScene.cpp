@@ -281,6 +281,7 @@ void GameScene::Update() {
             if (two) {
                 auto* nn = new TwoHitEnemy();
                 nn->SetModelFile("TD_HardEnemy.obj");
+                nn->SetEffectSystem(effectSystem_.get());
                 nn->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
                 nn->SetPlayer(player_.get());
                 spawned = nn;
@@ -1241,6 +1242,7 @@ void GameScene::StandardInitialize() {
             auto* e2 = new TwoHitEnemy();
             // Use filename only so ModelManager can search under rootDir (resources/model)
             e2->SetModelFile("TD_HardEnemy.obj");
+            e2->SetEffectSystem(effectSystem_.get());
             enemy = e2;
         } else {
             enemy = new Enemy();
@@ -1279,6 +1281,7 @@ void GameScene::StandardInitialize() {
                 break;
             }
         }
+        two->SetEffectSystem(effectSystem_.get());
         two->Initialize(camera_.get(), Vector3{ x, y, 0.0f });
         two->SetPlayer(player_.get());
         enemies_.push_back(two);
