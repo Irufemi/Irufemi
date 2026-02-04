@@ -90,6 +90,7 @@ public: //メンバ関数
     // 色
     const Vector4& GetColor()const { return resource_->materialData_->color; }
     void SetColor(const Vector4& color) { resource_->materialData_->color = color; }
+    void SetAlpha(float alpha);
 
     // フリップAPI
     void SetFlip(bool flipX, bool flipY) { isFlipX_ = flipX; isFlipY_ = flipY; }

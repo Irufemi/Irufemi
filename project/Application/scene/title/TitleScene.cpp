@@ -13,7 +13,9 @@
 #include "math/DirectionalLight.h"
 #include "math/AreaLight.h"
 
-#include "3D/ObjClass.h" 
+#include "3D/ObjClass.h"
+#include "3D/particle/ParticleSystem.h"
+#include <random> // std::mt19937 と分布クラスのために追加
 // デストラクタ
 TitleScene::~TitleScene() = default;
 
@@ -63,6 +65,41 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     bgmTitle_.Initialize("resources/audio/bgm/Title.mp3", "", true, true);
     bgmTitle_.SetVolume(1.0f);
 
+    // 背景パーティクルの初期化
+    // 画面のワールド座標範囲を計算 (Z=0平面)
+    float fovY = camera_->GetFovAngleY();
+    float aspectRatio = camera_->GetAspectRatio();
+    float viewHeight = 2.0f * 10.0f * std::tan(fovY * 0.5f);
+    float viewWidth = viewHeight * aspectRatio;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> xDist(-viewWidth / 2.0f, viewWidth / 2.0f);
+    std::uniform_real_distribution<float> yDist(-viewHeight / 2.0f, viewHeight / 2.0f);
+    std::uniform_real_distribution<float> freqDist(2.0f, 5.0f);
+    std::uniform_real_distribution<float> scaleDist(3.0f, 7.0f);
+
+    const int kNumParticleSystems = 5;
+    for (int i = 0; i < kNumParticleSystems; ++i) {
+        auto particleSystem = std::make_unique<ParticleSystem>();
+        particleSystem->Initialize(camera_.get(), "resources/gradationLine.png", ParticleType::Normal, ParticlePrimitiveShape::Ring);
+        
+        // 画面内にランダムに配置
+        particleSystem->SetEmitterPosition({ xDist(gen), yDist(gen), 0.0f });
+        
+        particleSystem->SetEmitterArea({ 0.0f, 0.0f, 0.0f });
+        particleSystem->SetEmitterCount(1);
+        particleSystem->SetEmitterFrequency(freqDist(gen));
+        
+        float startScale = 0.1f;
+        float endScale = scaleDist(gen);
+        particleSystem->SetParticleScale({ startScale, startScale, 1.0f }, { endScale, endScale, 1.0f });
+        
+        particleSystem->SetParticleColor({ 1.0f, 1.0f, 1.0f, 0.5f }, { 1.0f, 1.0f, 1.0f, 0.0f });
+        particleSystem->SetRingParameters(0.8f, 1.0f, 0.0f, 360.0f, 32);
+        
+        particleSystems_.push_back(std::move(particleSystem));
+    }
 }
 
 // 更新
@@ -87,6 +124,11 @@ void TitleScene::Update() {
         // Debug タブ
         if (ImGui::BeginTabItem("Debug")) {
             ImGui::Checkbox("debugMode", &debugMode_);
+            int i = 0;
+            for (auto& ps : particleSystems_) {
+                std::string name = "Particle " + std::to_string(i++);
+                ps->Debug(name.c_str());
+            }
             ImGui::EndTabItem();
         }
 
@@ -105,11 +147,14 @@ void TitleScene::Update() {
     // ↓ゲームの更新
     // =====
 
+    UpdateTextAnimation();
+
 #pragma region takamura追加
     // キー入力でトランジション開始
     if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE) || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
         if (!isTransitioning) {
             isTransitioning = true;
+            isTextAnimationFast_ = true; // アニメーションを高速化
             seDecision_.Play(false);
             stripeTransition_->Start();
         }
@@ -127,6 +172,11 @@ void TitleScene::Update() {
     // タイトルモデルの更新
     if (titleObj_) {
         titleObj_->Update();
+    }
+
+    // 背景パーティクルの更新
+    for (auto& ps : particleSystems_) {
+        ps->Update();
     }
 
     // =====
@@ -167,6 +217,11 @@ void TitleScene::Draw() {
         titleObj_->Draw();
     }
 
+    // 背景パーティクルの描画
+    for (auto& ps : particleSystems_) {
+        ps->Draw();
+    }
+
     // 2D
 
     engine_->ApplySpritePSO();
@@ -179,4 +234,18 @@ void TitleScene::Draw() {
     stripeTransition_->Draw();
 #pragma endregion takamura追加
 
+}
+
+void TitleScene::UpdateTextAnimation() {
+    if (!textSprite_pushStart_) return;
+
+    // アニメーション速度を決定
+    int animationSpeed = isTextAnimationFast_ ? 4 : 1;
+    textAnimationTimer_ = (textAnimationTimer_ + animationSpeed) % 120;
+
+    // sin波を使ってアルファ値を計算 (0.5から1.0の範囲で変動)
+    float sine = std::sin(static_cast<float>(textAnimationTimer_) * 3.14159265f / 60.0f);
+    float alpha = 0.75f + 0.25f * sine;
+
+    textSprite_pushStart_->SetAlpha(alpha);
 }

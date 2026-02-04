@@ -25,6 +25,7 @@ class Region {
 public:
     void Initialize(Camera* camera, const std::string& objFilename);
     void AddInstance(const Transform& t);
+    void AddInstance(const Transform& t, const Vector4& color);
     void ClearInstances();
     void BuildInstanceBuffer(bool force = false);
     void Draw();
@@ -48,6 +49,11 @@ private:
         Matrix4x4 World;
         Matrix4x4 WorldInverseTranspose;
         Vector4   color;
+    };
+
+    struct Instance {
+        Transform transform;
+        Vector4   color = { 1.0f, 1.0f, 1.0f, 1.0f };
     };
 
     // リソース生成ヘルパ
@@ -78,6 +84,6 @@ private:
     D3D12_GPU_DESCRIPTOR_HANDLE            instancingSrvGPU_{};
     uint32_t                               instancingSrvIndex_ = UINT32_MAX;
 
-    std::vector<Transform> instances_;
+    std::vector<Instance> instances_;
     bool                   instanceDirty_ = false;
 };

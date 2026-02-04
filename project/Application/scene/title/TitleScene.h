@@ -14,6 +14,7 @@
 #include "audio/Se.h"
 #include "audio/Bgm.h"
 
+// 前方宣言
 class IrufemiEngine;
 class Camera;
 class DebugCamera;
@@ -22,6 +23,7 @@ struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
 struct AreaLight;
+class ParticleSystem;
 
 /// <summary>
 /// タイトル
@@ -36,6 +38,7 @@ public: // メンバ関数(システム)
     void Draw() override;
 
 private: // メンバ関数(内部ヘルパ)
+    void UpdateTextAnimation();
 
 private: // メンバ変数(ゲーム)
 
@@ -43,6 +46,8 @@ private: // メンバ変数(ゲーム)
 
     // 押したらスタート
     std::unique_ptr<Sprite> textSprite_pushStart_ = nullptr;
+    int textAnimationTimer_ = 0;
+    bool isTextAnimationFast_ = false;
 
 #pragma region takamura追加
     std::unique_ptr<StripeTransition> stripeTransition_;
@@ -52,6 +57,8 @@ private: // メンバ変数(ゲーム)
 #pragma endregion takamura追加
  
     std::unique_ptr<ObjClass> titleObj_ = nullptr;
+
+    std::vector<std::unique_ptr<ParticleSystem>> particleSystems_;
 
 private: // メンバ変数(システム)
     // エンジン

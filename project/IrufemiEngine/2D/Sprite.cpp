@@ -190,6 +190,10 @@ void Sprite::SetSize(const float& width, const float& height) {
     resource_->transform_.scale = { size_.x, size_.y, 1.0f };
 }
 
+void Sprite::SetAlpha(float alpha) {
+    resource_->materialData_->color.w = alpha;
+}
+
 void Sprite::SetAnchor(const float& ax, const float& ay) {
     anchor_.x = ax;
     anchor_.y = ay;

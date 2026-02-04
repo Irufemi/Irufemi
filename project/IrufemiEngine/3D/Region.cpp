@@ -111,7 +111,12 @@ void Region::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 }
 
 void Region::AddInstance(const Transform& t) {
-    instances_.push_back(t);
+    instances_.push_back({ t });
+    instanceDirty_ = true;
+}
+
+void Region::AddInstance(const Transform& t, const Vector4& color) {
+    instances_.push_back({ t, color });
     instanceDirty_ = true;
 }
 
@@ -134,9 +139,10 @@ void Region::BuildInstanceBuffer(bool force) {
     const Matrix4x4 view = camera_->GetViewMatrix();
     const Matrix4x4 proj = camera_->GetPerspectiveFovMatrix();
     for (UINT i = 0; i < count; ++i) {
-        const Transform& inst = instances_[i];
+        const auto& inst = instances_[i];
+        const Transform& transform = inst.transform;
 
-        Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
+        Matrix4x4 world = Math::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
         Matrix4x4 wvp = Math::Multiply(world, Math::Multiply(view, proj));
 
         Matrix4x4 worldForNormal = world;
@@ -148,7 +154,7 @@ void Region::BuildInstanceBuffer(bool force) {
         temp[i].WVP = wvp;
         temp[i].World = world;
         temp[i].WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-        temp[i].color = { 1,1,1,1 };
+        temp[i].color = inst.color;
     }
 
     uint8_t* dst = nullptr;

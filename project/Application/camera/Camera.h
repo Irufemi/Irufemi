@@ -169,6 +169,9 @@ public: // メンバ関数
     /// </summary>
     Matrix4x4 GetViewportMatrix() const { return viewportMatrix_; }
 
+    float GetFovAngleY() const { return fovAngleY_; }
+    float GetAspectRatio() const { return aspectRatio_; }
+
 
     /// <summary>
     /// ワールド行列の作成
