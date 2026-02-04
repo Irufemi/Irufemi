@@ -214,6 +214,10 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // 血液噴出パーティクルの初期化
     bloodBurstParticle_ = std::make_unique<ParticleSystem>();
     bloodBurstParticle_->Initialize(camera_.get(), "resources/circle.png", ParticleType::kBloodBurst, ParticlePrimitiveShape::Sphere);
+
+    // 画面外インジケーターの初期化
+    offScreenIndicator_ = std::make_unique<OffScreenIndicator>();
+    offScreenIndicator_->Initialize(camera_.get(), engine_);
 }
 
 // 更新
@@ -373,6 +377,11 @@ void GameScene::Update() {
     }
 #pragma endregion takamura追加
 
+    // 画面外インジケーターの更新
+    if (offScreenIndicator_) {
+        offScreenIndicator_->Update(attackingEnemies_);
+    }
+
     model_tube_->Debug("tube");
     model_tube_->Update();
 
@@ -465,6 +474,11 @@ void GameScene::Draw() {
                 countdownSprites_[spriteIndex]->Draw();
             }
         }
+    }
+
+    // 画面外インジケーターの描画
+    if (offScreenIndicator_) {
+        offScreenIndicator_->Draw();
     }
 
     // ホワイトアウトの描画
@@ -841,6 +855,7 @@ void GameScene::CollisionCheck() {
     // Enemy と Wall の衝突判定（接触フレームを蓄積して HP を減らす）
     // 1フレームに1体の敵が複数の壁にダメージを与えないように、接触した敵を記録する
     std::unordered_set<Enemy*> contactedEnemies;
+    attackingEnemies_.clear(); // 毎フレームクリア
     for (auto wallIt = walls_.begin(); wallIt != walls_.end(); ++wallIt) {
         Wall* wall = *wallIt;
         if (!wall) continue;
@@ -865,6 +880,7 @@ void GameScene::CollisionCheck() {
             if (Collision::IsOBBCollision(obbEnemy, obbWall)) {
                 touchedThisWall = true;
                 enemy->OnCollisionWithWall(wall); // 衝突時に押し出し処理を呼ぶ
+                attackingEnemies_.push_back(enemy); // 攻撃中の敵としてリストに追加
 
                 // この敵を接触済みとして記録
                 contactedEnemies.insert(enemy);
@@ -914,6 +930,7 @@ void GameScene::CollisionCheck() {
 
                     touchedThisWall = true;
                     enemy->OnCollisionWithWall(wall);
+                    attackingEnemies_.push_back(enemy); // 攻撃中の敵としてリストに追加
 
 
                     contactedEnemies.insert(enemy);

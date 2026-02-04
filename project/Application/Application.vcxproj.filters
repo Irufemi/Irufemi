@@ -64,6 +64,7 @@
     <ClCompile Include="actors\enemy\ChaserEnemy.cpp">
       <Filter>actor\enemy</Filter>
     </ClCompile>
+    <ClCompile Include="contents\UI\OffScreenIndicator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actors\enemy\Enemy.h">
@@ -126,6 +127,7 @@
     <ClInclude Include="scene\GameResultData.h">
       <Filter>scene</Filter>
     </ClInclude>
+    <ClInclude Include="contents\UI\OffScreenIndicator.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="actor">

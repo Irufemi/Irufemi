@@ -28,6 +28,7 @@ class ParticleSystem;
 #include "actors/enemy/Enemy.h"
 #include "contents/wall/Wall.h"
 #include "contents/UI/TimeDisplay.h"
+#include "contents/UI/OffScreenIndicator.h"
 
 #include "audio/Se.h"
 #include "audio/Bgm.h"
@@ -178,6 +179,8 @@ private: // メンバ変数(ゲーム)
 
     std::list<Enemy*> enemies_;
     static inline const int32_t kMaxEnemy_ = 5;
+    // 壁を攻撃中の敵リスト
+    std::list<Enemy*> attackingEnemies_;
 
     std::list<HealerActor*> healerActor_;
     static inline const int32_t kMaxHealerActor_ = 20;
@@ -213,6 +216,9 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<ParticleSystem> bloodFlowParticleRing_ = nullptr;
     // 血液噴出パーティクル
     std::unique_ptr<ParticleSystem> bloodBurstParticle_ = nullptr;
+
+    // 画面外インジケーター
+    std::unique_ptr<OffScreenIndicator> offScreenIndicator_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン
