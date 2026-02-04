@@ -23,7 +23,8 @@ public:
     void Initialize(
         Camera* camera,
         TimeFormat format,
-        const std::string& numberTexturePath,
+        const std::string& numberTextureBasePath, // ベースパスに変更
+        const std::string& numberTextureFileExtension, // 拡張子を追加
         const Vector2& numberSize,
         const std::string& separatorTexturePath,
         const Vector2& separatorSize

@@ -1,6 +1,7 @@
 #include "IParticleBehavior.h"
 #include "manager/DebugUI.h"
 #include "3D/particle/ParticleSystem.h"
+#include "function/Math.h"
 #include <numbers>
 
 // NormalBehavior
@@ -119,6 +120,67 @@ void ExplosionBehavior::Debug([[maybe_unused]] Emitter* emitter, DebugUI* ui, Pa
 #endif // USE_IMGUI
 }
 
+// BloodFlowBehavior
+void BloodFlowBehavior::Initialize(Emitter* emitter) {
+	emitter->count = 50;
+	emitter->area = { 40.0f, 40.0f, 105.0f }; // XY半径20, Zは-55～50なので長さ105
+	emitter->transform.translate = { 0.0f, 0.0f, -2.5f }; // Zの中心を-2.5に
+	emitter->velocityMin = { 0.0f, 0.0f, -15.0f };
+	emitter->velocityMax = { 0.0f, 0.0f, -5.0f };
+	emitter->startColor = { 1.0f, 0.1f, 0.1f, 1.0f };
+	emitter->endColor = { 0.8f, 0.0f, 0.0f, 0.0f };
+	emitter->startScale = { 0.3f, 0.3f, 0.3f };
+	emitter->endScale = { 0.1f, 0.1f, 0.1f };
+	emitter->colorMode = ParticleColorMode::kRed;
+
+	field_.acceleration = { 0.0f, 0.0f, -20.0f }; // Z軸負方向に加速
+	field_.area.min = { -20.0f, -20.0f, -55.0f };
+	field_.area.max = { 20.0f, 20.0f, 50.0f };
+}
+void BloodFlowBehavior::Update(Particle& particle, float deltaTime) {
+	// XY平面で円形にクリッピング
+	Vector2 posXY = { particle.transform.translate.x, particle.transform.translate.y };
+	if (Math::Length(posXY) > 20.0f) {
+		// 範囲外に出たら反対側から再出現させるなど
+		particle.currentTime = particle.lifeTime; // 単純に消す
+	}
+	field_.Apply(particle, deltaTime);
+}
+void BloodFlowBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
+	std::uniform_real_distribution<float> distTime(2.0f, 5.0f);
+	std::uniform_real_distribution<float> distRed(0.7f, 1.0f);
+	std::uniform_real_distribution<float> distGreenBlue(0.0f, 0.2f);
+
+	particle.startScale = emitter.startScale;
+	particle.endScale = emitter.endScale;
+	particle.transform.rotate = { 0.0f,0.0f,0.0f };
+	particle.lifeTime = distTime(randomEngine);
+
+	// 色を赤系でランダムに
+	particle.startColor = { distRed(randomEngine), distGreenBlue(randomEngine), distGreenBlue(randomEngine), 1.0f };
+	particle.endColor = particle.startColor;
+	particle.endColor.w = 0.0f;
+
+	// 生成位置を円柱内に限定する
+	std::uniform_real_distribution<float> distRadius(0.0f, 20.0f);
+	std::uniform_real_distribution<float> distAngle(0.0f, 2.0f * std::numbers::pi_v<float>);
+	float r = distRadius(randomEngine);
+	float angle = distAngle(randomEngine);
+	particle.transform.translate.x = r * std::cos(angle);
+	particle.transform.translate.y = r * std::sin(angle);
+}
+void BloodFlowBehavior::Debug([[maybe_unused]] Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) {
+#ifdef USE_IMGUI
+	ImGui::DragFloat3("Acceleration", &field_.acceleration.x, 0.1f);
+	ImGui::DragFloat3("Area Min", &field_.area.min.x, 0.1f);
+	ImGui::DragFloat3("Area Max", &field_.area.max.x, 0.1f);
+
+	if (particleSystem && particleSystem->IsShowFieldAABB()) {
+		particleSystem->DrawAABB(field_.area, { 1.0f, 0.0f, 0.0f, 1.0f });
+	}
+#endif // USE_IMGUI
+}
+
 
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
@@ -129,6 +191,8 @@ std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
 		return std::make_unique<HitEffectBehavior>();
 	case ParticleType::kExplosion:
 		return std::make_unique<ExplosionBehavior>();
+	case ParticleType::kBloodFlow:
+		return std::make_unique<BloodFlowBehavior>();
 	case ParticleType::Normal:
 	default:
 		return std::make_unique<NormalBehavior>();

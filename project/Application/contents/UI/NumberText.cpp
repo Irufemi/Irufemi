@@ -2,37 +2,37 @@
 #include "Application/camera/Camera.h"
 #include <string>
 
-void NumberText::Initialize(Camera* camera, const std::string& texturePath, float numberWidth, float numberHeight) {
+void NumberText::Initialize(Camera* camera, const std::string& textureBasePath, const std::string& fileExtension, float numberWidth, float numberHeight) {
     camera_ = camera;
-    texturePath_ = texturePath;
-    numberWidth_ = numberWidth;
-    numberHeight_ = numberHeight;
     spriteSize_ = { numberWidth, numberHeight };
 
-    // スプライトを1つだけ生成
-    numberSprite_ = std::make_unique<Sprite>();
-    numberSprite_->Initialize(camera_, texturePath_);
-    numberSprite_->SetSize(spriteSize_.x, spriteSize_.y);
-    numberSprite_->SetAnchor(0.0f, 0.0f); // 左上基準
+    // 0から9までのスプライトを生成・初期化
+    for (int i = 0; i < 10; ++i) {
+        numberSprites_[i] = std::make_unique<Sprite>();
+        // "basePath" + "i" + ".png" のようなパスを生成
+        std::string texturePath = textureBasePath + std::to_string(i) + fileExtension;
+        numberSprites_[i]->Initialize(camera_, texturePath);
+        numberSprites_[i]->SetSize(spriteSize_.x, spriteSize_.y);
+        numberSprites_[i]->SetAnchor(0.0f, 0.0f); // 左上基準
+    }
 }
 
 void NumberText::Draw(int number) {
     // 1桁の数字のみを扱う
     int digit = number % 10;
 
-    // 描画位置を設定
-    numberSprite_->SetPosition(position_.x, position_.y);
-
-    // テクスチャの切り出し範囲を設定
-    int texX = static_cast<int>(digit * numberWidth_);
-    int texY = 0;
-    numberSprite_->SetTextureRectPixels(texX, texY, static_cast<int>(numberWidth_), static_cast<int>(numberHeight_));
-
-    // 設定を反映させるためにUpdateを呼び出す
-    numberSprite_->Update();
-
-    // スプライトを描画
-    numberSprite_->Draw();
+    if (digit >= 0 && digit < 10) {
+        // 対応する数字のスプライトを取得
+        Sprite* sprite = numberSprites_[digit].get();
+        if (sprite) {
+            // 描画位置を設定
+            sprite->SetPosition(position_.x, position_.y);
+            // 設定を反映させるためにUpdateを呼び出す
+            sprite->Update();
+            // スプライトを描画
+            sprite->Draw();
+        }
+    }
 }
 
 void NumberText::SetPosition(const Vector2& position) {
@@ -41,13 +41,17 @@ void NumberText::SetPosition(const Vector2& position) {
 
 void NumberText::SetSize(float width, float height) {
     spriteSize_ = { width, height };
-    if (numberSprite_) {
-        numberSprite_->SetSize(width, height);
+    for (auto& sprite : numberSprites_) {
+        if (sprite) {
+            sprite->SetSize(width, height);
+        }
     }
 }
 
 void NumberText::SetColor(const Vector4& color) {
-    if (numberSprite_) {
-        numberSprite_->SetColor(color);
+    for (auto& sprite : numberSprites_) {
+        if (sprite) {
+            sprite->SetColor(color);
+        }
     }
 }

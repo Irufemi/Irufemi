@@ -58,8 +58,12 @@
     <ClCompile Include="StripeTransition.cpp">
       <Filter>content\effect</Filter>
     </ClCompile>
-    <ClCompile Include="actors\enemy\ChaserEnemy.cpp" />
-    <ClCompile Include="actors\player\Player_MoveBy.cpp" />
+    <ClCompile Include="actors\player\Player_MoveBy.cpp">
+      <Filter>actor\player</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\ChaserEnemy.cpp">
+      <Filter>actor\enemy</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actors\enemy\Enemy.h">
@@ -116,7 +120,12 @@
     <ClInclude Include="StripeTransition.h">
       <Filter>content\effect</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\ChaserEnemy.h" />
+    <ClInclude Include="actors\enemy\ChaserEnemy.h">
+      <Filter>actor\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\GameResultData.h">
+      <Filter>scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="actor">
