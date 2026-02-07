@@ -646,11 +646,6 @@ void GameScene::UpdateGameplay()
         enemies_.end()
     );
 
-    if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
-        phase_ = Phase::FadeOut;
-        fade_->FadeOut(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f });
-    }
-
     // UI/HUDの更新
 
     // HP
