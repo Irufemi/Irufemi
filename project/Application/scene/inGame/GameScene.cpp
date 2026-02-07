@@ -230,7 +230,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     text_pause_ = std::make_unique<Sprite>();
     text_pause_->Initialize(camera_.get(), "resources/texture/game/pause.png");
     text_pause_->SetAnchor(0.0f, 1.0f);
-    text_pause_->SetPosition(0.0f, engine_->GetClientHeight());
+    text_pause_->SetPosition(0.0f, static_cast<float>(engine_->GetClientHeight()));
     text_pause_->Update();
 
     // ゲーム中の操作説明用スプライトの初期化
@@ -238,7 +238,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     gameInstructionSprite_->Initialize(camera_.get(), "resources/texture/game/GameGoal_GameScene1.png");
     gameInstructionSprite_->SetAnchor(1.0f, 0.0f);
     gameInstructionSprite_->SetSize(400, 40);
-    gameInstructionSprite_->SetPosition(engine_->GetClientWidth(), 0.0f);
+    gameInstructionSprite_->SetPosition(static_cast<float>(engine_->GetClientWidth()), 0.0f);
     gameInstructionSprite_->Update();
 }
 
