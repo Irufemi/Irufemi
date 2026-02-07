@@ -44,10 +44,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 
     // αカットアウト：テクスチャ使用時のみ(閾値0.5)
     // → 無地半透明(hasTexture == 0)の場合は discard しない(加算/通常ブレンドが効く)
-	if (gMaterial.hasTexture != 0 && baseColor.a < 0.5f)
-	{
-		discard;
-	}
+	
 
 	output.color = baseColor;
 	return output;

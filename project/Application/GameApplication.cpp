@@ -29,7 +29,7 @@ namespace {
 #if defined(_DEBUG) || defined(DEVELOPMENT)
         = "Debug";
 #else
-        = "InGame";
+        = "Title";
 #endif
 
     // --- シーン登録処理 ---
