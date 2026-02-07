@@ -321,9 +321,6 @@
     <ClInclude Include="math\VertexData.h">
       <Filter>math</Filter>
     </ClInclude>
-    <ClInclude Include="manager\VoiceCallback.h">
-      <Filter>Engine\manager</Filter>
-    </ClInclude>
     <ClInclude Include="scene\IScene.h">
       <Filter>Scene</Filter>
     </ClInclude>
@@ -573,8 +570,29 @@
     <ClInclude Include="math\Joint.h">
       <Filter>math\model</Filter>
     </ClInclude>
+    <ClInclude Include="math\AreaLight.h">
+      <Filter>math\light</Filter>
+    </ClInclude>
     <ClInclude Include="math\shape\OBB.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>math\shape</Filter>
+    </ClInclude>
+    <ClInclude Include="manager\VoiceCallback.h">
+      <Filter>Engine\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="math\VertexWeightData.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="math\JointWeightData.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="math\SkinCluster.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="math\VertexInfluence.h">
+      <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="math\WellForGPU.h">
+      <Filter>math\model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -591,6 +609,12 @@
       <Filter>Engine\shaders</Filter>
     </None>
     <None Include="..\Application\resources\shaders\Line.hlsli">
+      <Filter>Engine\shaders</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\LineInstanced.hlsli">
+      <Filter>Engine\shaders</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\SkinningObject3D.hlsli">
       <Filter>Engine\shaders</Filter>
     </None>
   </ItemGroup>
@@ -629,6 +653,15 @@
       <Filter>Engine\shaders</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\Line.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\LineInstanced.PS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\LineInstanced.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\SkinningObject3D.VS.hlsl">
       <Filter>Engine\shaders</Filter>
     </FxCompile>
   </ItemGroup>

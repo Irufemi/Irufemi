@@ -7,7 +7,9 @@
 #include "math/NodeAnimation.h"
 #include "math/ModelData.h"
 #include "math/Transform.h"
-#include "math/ObjModel.h" // ObjMaterial と ObjModel を使うためにインクルード
+#include "math/ObjModel.h"
+#include "math/Skeleton.h"
+#include "math/SkinCluster.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>
@@ -16,16 +18,17 @@
 
 // 前方宣言
 class Camera;
-class TextureManager;
-class DrawManager;
-class DebugUI;
-class ModelManager;
-class AnimationManager;
+class IrufemiEngine;
+class SphereRegion;
+class Line3DRegion;
 struct ManagedModel;
 
 
 class AnimationModel {
 public: // メンバ関数
+
+    AnimationModel();
+    ~AnimationModel();
 
     void Initialize(Camera* camera, const std::string& filename);
 
@@ -53,11 +56,7 @@ public: // ゲッター・セッター
     ObjMaterial* GetMaterial(size_t meshIndex);
 
 
-    static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
-    static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
-    static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
-    static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
-    static void SetAnimationManager(AnimationManager* am) { animationManager_ = am; }
+    static void SetIrufemiEngine(IrufemiEngine* engine) { engine_ = engine; }
 
 private: // メンバ変数
     // 共有モデルデータ(CPU/GPU)
@@ -73,13 +72,11 @@ private: // メンバ変数
 
     Camera* camera_ = nullptr;
 
-    static TextureManager* textureManager_;
-    static DrawManager* drawManager_;
-    static DebugUI* ui_;
-    static ModelManager* modelManager_;
-    static AnimationManager* animationManager_;
+    static IrufemiEngine* engine_;
 
-    Matrix4x4 localMatrix_;
+    Skeleton skeleton_;
+
+    SkinCluster skinCluster_;
 
     Matrix4x4 worldMatrix_;
 
@@ -87,4 +84,7 @@ private: // メンバ変数
 
     float animationTime_ = 0.0f;
 
+    // --- 追加：関節表示用のインスタンス描画機構 ---
+    std::unique_ptr<SphereRegion> jointSpheres_;
+    std::unique_ptr<Line3DRegion> boneLines_;
 };

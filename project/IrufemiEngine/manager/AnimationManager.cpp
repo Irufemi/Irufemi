@@ -3,15 +3,24 @@
 #include "math/Animation.h"
 #include "function/Ease.h"
 #include "function/Math.h"
+#include "math/ModelData.h"
+#include "math/ObjModel.h"
+#include "engine/directX/DirectXCommon.h"
+#include "engine/directX/DescriptorPool.h"
 
 #include <cassert>
+#include <filesystem>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <algorithm>
+#include <Windows.h>
+#include <assimp/postprocess.h>
+#include <numeric>
 
-void AnimationManager::Initialize() {
+void AnimationManager::Initialize(DirectXCommon* dxCommon) {
+    dxCommon_ = dxCommon;
     if (rootDir_.empty()) {
-        rootDir_ = "resources/obj";
+        rootDir_ = "resources/model";
     }
 }
 
@@ -35,8 +44,24 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
 
     Animation animation; // 今回作るアニメーション
     Assimp::Importer importer;
-    const std::string filePath = NormalizeAndResolve(filename);
-    const aiScene* scene = importer.ReadFile(filePath.c_str(), 0);
+
+    // ファイルパスを解決
+    std::string filePath;
+    // パス区切り文字が含まれているかチェック
+    if (filename.find('/') != std::string::npos || filename.find('\\') != std::string::npos) {
+        // 含まれている場合は、ルートディレクトリからの相対パスとして扱う
+        filePath = NormalizeAndResolve(filename);
+    } else {
+        // 含まれていない場合は、再帰的にファイルを検索
+        filePath = FindFileRecursive(filename);
+    }
+
+    if (filePath.empty() || !std::filesystem::exists(filePath)) {
+        OutputDebugStringA(("[AnimationManager] File not found: " + filename + "\n").c_str());
+        return {}; // 空のアニメーションを返す
+    }
+
+    const aiScene* scene = importer.ReadFile(filePath.c_str(), aiProcess_MakeLeftHanded);
     assert(scene->mNumAnimations != 0); // アニメーションがない
     aiAnimation* animationAssimp = scene->mAnimations[0]; // 最初のアニメーションだけ採用。もちろん複数対応するに越したことはない
     animation.duration = float(animationAssimp->mDuration / animationAssimp->mTicksPerSecond); // 時間の単位を秒に変換
@@ -51,7 +76,7 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
             aiVectorKey& keyAssimp = nodeAnimationAssimp->mPositionKeys[keyIndex];
             KeyframeVector3 keyframe;
             keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond); // ここも秒に変換
-            keyframe.value = { -keyAssimp.mValue.x, keyAssimp.mValue.y, keyAssimp.mValue.z };//右手->左手
+            keyframe.value = { keyAssimp.mValue.x, keyAssimp.mValue.y, keyAssimp.mValue.z };//右手->左手
             nodeAnimation.translate.keyframes.push_back(keyframe);
         }
 
@@ -66,7 +91,7 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
             keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond); // 秒に変換
             aiQuaternion& q = keyAssimp.mValue;
             // 右手系->左手系変換: y,z を反転
-            keyframe.value = { q.x, -q.y, -q.z, q.w };
+            keyframe.value = { q.x, q.y, q.z, q.w };
             nodeAnimation.rotate.keyframes.push_back(keyframe);
         }
 
@@ -271,4 +296,196 @@ std::pair<std::string, std::string> AnimationManager::SplitDirectoryAndFile(cons
     auto pos = full.find_last_of('/');
     if (pos == std::string::npos) return { ".", full };
     return { full.substr(0, pos), full.substr(pos + 1) };
+}
+
+std::string AnimationManager::FindFileRecursive(const std::string& filename) const {
+    namespace fs = std::filesystem;
+    std::string lowerFilename = filename;
+    std::transform(lowerFilename.begin(), lowerFilename.end(), lowerFilename.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (auto it = filePathCache_.find(lowerFilename); it != filePathCache_.end()) {
+            return it->second;
+        }
+    }
+
+    const fs::path rootPath = rootDir_;
+    if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
+        return "";
+    }
+
+    for (const auto& entry : fs::recursive_directory_iterator(rootPath)) {
+        if (entry.is_regular_file()) {
+            std::string entryFilename = entry.path().filename().string();
+            std::transform(entryFilename.begin(), entryFilename.end(), entryFilename.begin(),
+                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+            if (entryFilename == lowerFilename) {
+                std::string foundPath = entry.path().string();
+                std::replace(foundPath.begin(), foundPath.end(), '\\', '/');
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    filePathCache_[lowerFilename] = foundPath;
+                }
+                return foundPath;
+            }
+        }
+    }
+
+    return ""; // 見つからなかった
+}
+
+/*Skinning*/
+
+/// SkinClusterの生成
+
+// SkinClusterを生成
+SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const ModelData& modelData) {
+    SkinCluster skinCluster;
+
+    /// MatrixPalleteの作成
+
+    // pallete用のResourceを確保
+    skinCluster.paletteResource = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());
+    WellForGPU* mappedPallete = nullptr;
+    skinCluster.paletteResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedPallete));
+    skinCluster.mappedPalette = { mappedPallete,skeleton.joints.size() }; // spanを使ってアクセスするようにする
+
+    // SRV用のインデックスを確保
+    uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
+    assert(paletteSrvIndex != DescriptorPool::kInvalid);
+    skinCluster.paletteSrvHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(paletteSrvIndex);
+    skinCluster.paletteSrvHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(paletteSrvIndex);
+
+    // palette用のsrvを作成。StructuredBufferでアクセスできるようにする。
+    D3D12_SHADER_RESOURCE_VIEW_DESC paletteSrvDesc{};
+    paletteSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    paletteSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    paletteSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    paletteSrvDesc.Buffer.FirstElement = 0;
+    paletteSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+    paletteSrvDesc.Buffer.NumElements = UINT(skeleton.joints.size());
+    paletteSrvDesc.Buffer.StructureByteStride = sizeof(WellForGPU);
+
+    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.paletteResource.Get(), &paletteSrvDesc, skinCluster.paletteSrvHandle.first);
+
+    /// influence用Resourceの作成
+
+    // influence用のResourceを確保。頂点毎にinfluence情報を追加できるようにする。
+    skinCluster.influenceResource = dxCommon_->CreateBufferResource(sizeof(VertexInfluence) * modelData.vertices.size());
+    VertexInfluence* mappedInfluence = nullptr;
+    skinCluster.influenceResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedInfluence));
+    std::memset(mappedInfluence, 0, sizeof(VertexInfluence) * modelData.vertices.size()); // 0埋め。weightを0にしておく。
+    skinCluster.mappedInfluence = { mappedInfluence,modelData.vertices.size() };
+
+    // Influence用のVBVの作成
+    skinCluster.influenceBufferView.BufferLocation = skinCluster.influenceResource->GetGPUVirtualAddress();
+    skinCluster.influenceBufferView.SizeInBytes = UINT(sizeof(VertexInfluence) * modelData.vertices.size());
+    skinCluster.influenceBufferView.StrideInBytes = sizeof(VertexInfluence);
+
+    // InverseBindPoseMatrixInverseBindPoseMatrixを格納する場所を作成して、単位行列で埋める
+    skinCluster.inverseBindPoseMatrices.resize(skeleton.joints.size());
+    std::generate(skinCluster.inverseBindPoseMatrices.begin(), skinCluster.inverseBindPoseMatrices.end(), [] {return Math::MakeIdentity4x4(); });
+
+    /// ModelDataを解析してInstanceを埋める
+
+    for (const auto& jointWeight : modelData.skinClusterData) { // ModelのskinClusterの情報を解析
+        auto it = skeleton.jointMap.find(jointWeight.first); // jointWeight.firstはJoint名なので、skeletonに対象となるjointが含まれているか判断
+        if (it == skeleton.jointMap.end()) { // そんな名前のJointは存在しない。なので次に回す。
+            continue;
+        }
+        // (*it).secondにはjointのindexが入っているので、該当のindexのinverseBindPoseMatrixを代入
+        skinCluster.inverseBindPoseMatrices[(*it).second] = jointWeight.second.inverseBndPoseMatrix;
+        for (const auto& vertexWeight : jointWeight.second.vertexWeights) {
+            auto& currentInfluence = skinCluster.mappedInfluence[vertexWeight.vertexIndex]; // 該当のvertexIndexのinfluence情報を参照しておく
+            for (uint32_t index = 0; index < kNumMaxInfluence; ++index) { // 空いているところに入れる
+                if (currentInfluence.weights[index] == 0.0f) { // weight==0が空いている状態なので、その場所にweightとjointのindexを代入
+                    currentInfluence.weights[index] = vertexWeight.weight;
+                    currentInfluence.jointIndices[index] = (*it).second;
+                }
+
+            }
+
+        }
+    }
+
+    return skinCluster;
+}
+
+// SkinClusterを生成 (ObjModel版)
+SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const ObjModel& objModel) {
+    SkinCluster skinCluster;
+
+    // 全メッシュの頂点数を合計
+    size_t totalVertices = 0;
+    for (const auto& mesh : objModel.meshes) {
+        totalVertices += mesh.vertices.size();
+    }
+
+    /// MatrixPalleteの作成
+    skinCluster.paletteResource = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());
+    WellForGPU* mappedPallete = nullptr;
+    skinCluster.paletteResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedPallete));
+    skinCluster.mappedPalette = { mappedPallete, skeleton.joints.size() };
+
+    uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
+    assert(paletteSrvIndex != DescriptorPool::kInvalid);
+    skinCluster.paletteSrvHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(paletteSrvIndex);
+    skinCluster.paletteSrvHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(paletteSrvIndex);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC paletteSrvDesc{};
+    paletteSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    paletteSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    paletteSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    paletteSrvDesc.Buffer.FirstElement = 0;
+    paletteSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+    paletteSrvDesc.Buffer.NumElements = UINT(skeleton.joints.size());
+    paletteSrvDesc.Buffer.StructureByteStride = sizeof(WellForGPU);
+    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.paletteResource.Get(), &paletteSrvDesc, skinCluster.paletteSrvHandle.first);
+
+    /// influence用Resourceの作成
+    skinCluster.influenceResource = dxCommon_->CreateBufferResource(sizeof(VertexInfluence) * totalVertices);
+    VertexInfluence* mappedInfluence = nullptr;
+    skinCluster.influenceResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedInfluence));
+    std::memset(mappedInfluence, 0, sizeof(VertexInfluence) * totalVertices);
+    skinCluster.mappedInfluence = { mappedInfluence, totalVertices };
+
+    skinCluster.influenceBufferView.BufferLocation = skinCluster.influenceResource->GetGPUVirtualAddress();
+    skinCluster.influenceBufferView.SizeInBytes = UINT(sizeof(VertexInfluence) * totalVertices);
+    skinCluster.influenceBufferView.StrideInBytes = sizeof(VertexInfluence);
+
+    skinCluster.inverseBindPoseMatrices.resize(skeleton.joints.size());
+    std::generate(skinCluster.inverseBindPoseMatrices.begin(), skinCluster.inverseBindPoseMatrices.end(), [] {return Math::MakeIdentity4x4(); });
+
+    /// ModelDataを解析してInstanceを埋める
+    for (const auto& jointWeight : objModel.skinClusterData) {
+        auto it = skeleton.jointMap.find(jointWeight.first);
+        if (it == skeleton.jointMap.end()) {
+            continue;
+        }
+        skinCluster.inverseBindPoseMatrices[(*it).second] = jointWeight.second.inverseBndPoseMatrix;
+        for (const auto& vertexWeight : jointWeight.second.vertexWeights) {
+            auto& currentInfluence = skinCluster.mappedInfluence[vertexWeight.vertexIndex];
+            for (uint32_t index = 0; index < kNumMaxInfluence; ++index) {
+                if (currentInfluence.weights[index] == 0.0f) {
+                    currentInfluence.weights[index] = vertexWeight.weight;
+                    currentInfluence.jointIndices[index] = (*it).second;
+                    break;
+                }
+            }
+        }
+    }
+
+    return skinCluster;
+}
+
+// SkinClusterの更新
+void AnimationManager::SkinClusterUpdate(SkinCluster& skinCluster, const Skeleton& skeleton) {
+    for (size_t jointIndex = 0; jointIndex < skeleton.joints.size(); ++jointIndex) {
+        assert(jointIndex < skinCluster.inverseBindPoseMatrices.size());
+        skinCluster.mappedPalette[jointIndex].skeletonSpaceMatrix = skinCluster.inverseBindPoseMatrices[jointIndex] * skeleton.joints[jointIndex].skeletonSpaceMatrix;
+        skinCluster.mappedPalette[jointIndex].skeletonSpaceInverseTransposeMatrix = Math::Transpose(Math::Inverse(skinCluster.mappedPalette[jointIndex].skeletonSpaceMatrix));
+    }
 }

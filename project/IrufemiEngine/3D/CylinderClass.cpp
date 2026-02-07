@@ -1,7 +1,6 @@
 #include "CylinderClass.h"
 
 #include <cmath>
-#include <imgui.h>
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
 #include "manager/DebugUI.h"
@@ -14,58 +13,6 @@
 TextureManager* CylinderClass::textureManager_ = nullptr;
 DrawManager* CylinderClass::drawManager_ = nullptr;
 DebugUI* CylinderClass::ui_ = nullptr;
-
-// 上下面キャップを追加するヘルパー実装
-void CylinderClass::AddCap(bool top, bool doubleSided) {
-    // y と法線方向を決める
-    float y = top ? 0.5f : -0.5f;
-    Vector3 normal = top ? Vector3{ 0.0f, 1.0f, 0.0f } : Vector3{ 0.0f, -1.0f, 0.0f };
-
-    // 中心頂点
-    uint32_t centerIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
-    resource_->vertexDataList_.push_back({
-        { 0.0f, y, 0.0f, 1.0f },
-        { 0.5f, 0.5f }
-        });
-    resource_->vertexDataList_.back().normal = normal;
-
-    // リム頂点(kSubdivision_ 周)
-    uint32_t rimStart = static_cast<uint32_t>(resource_->vertexDataList_.size());
-    for (uint32_t i = 0; i <= kSubdivision_; ++i) {
-        float theta = i * kThetaEvery_;
-        float cx = std::cos(theta);
-        float sz = std::sin(theta);
-        // UV は円盤マッピング(V 反転に合わせて 1 - で調整)
-        float u = cx * 0.5f + 0.5f;
-        float v = 1.0f - (sz * 0.5f + 0.5f);
-        resource_->vertexDataList_.push_back({
-            { cx, y, sz, 1.0f },
-            { u, v }
-            });
-        resource_->vertexDataList_.back().normal = normal;
-    }
-
-    // インデックス(ファン)
-    // ワインディングはレンダラ側のフロント定義に合わせるため、
-    // 元コードと同様に rimStart+i+1 / rimStart+i の形にしてある(表向き)。
-    for (uint32_t i = 0; i < kSubdivision_; ++i) {
-        uint32_t v0 = centerIndex;
-        uint32_t v1 = rimStart + i + 1;
-        uint32_t v2 = rimStart + i;
-
-        // 表向き三角形
-        resource_->indexDataList_.push_back(v0);
-        resource_->indexDataList_.push_back(v1);
-        resource_->indexDataList_.push_back(v2);
-
-        if (doubleSided) {
-            // 逆順も追加して両面にする
-            resource_->indexDataList_.push_back(v0);
-            resource_->indexDataList_.push_back(v2);
-            resource_->indexDataList_.push_back(v1);
-        }
-    }
-}
 
 // 初期化
 void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
@@ -128,11 +75,71 @@ void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
         }
     }
 
-    // 上蓋を追加(通常は single-sided)
-    AddCap(true /*top*/, false /*doubleSided*/);
+    // --- 上蓋 ---
+    {
+        float y = 0.5f;
+        Vector3 normal = { 0.0f, 1.0f, 0.0f };
 
-    // 下蓋を追加(通常は single-sided)
-    AddCap(false /*top*/, true /*doubleSided*/);
+        // 中心頂点
+        uint32_t centerIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
+        resource_->vertexDataList_.push_back({ { 0.0f, y, 0.0f, 1.0f }, { 0.5f, 0.5f } });
+        resource_->vertexDataList_.back().normal = normal;
+
+        // リム頂点
+        uint32_t rimStart = static_cast<uint32_t>(resource_->vertexDataList_.size());
+        for (uint32_t i = 0; i <= kSubdivision_; ++i) {
+            float theta = i * kThetaEvery_;
+            float cx = std::cos(theta);
+            float sz = std::sin(theta);
+            float u = cx * 0.5f + 0.5f;
+            float v = 1.0f - (sz * 0.5f + 0.5f);
+            resource_->vertexDataList_.push_back({ { cx, y, sz, 1.0f }, { u, v } });
+            resource_->vertexDataList_.back().normal = normal;
+        }
+
+        // インデックス
+        for (uint32_t i = 0; i < kSubdivision_; ++i) {
+            uint32_t v0 = centerIndex;
+            uint32_t v1 = rimStart + i + 1;
+            uint32_t v2 = rimStart + i;
+            resource_->indexDataList_.push_back(v0);
+            resource_->indexDataList_.push_back(v1);
+            resource_->indexDataList_.push_back(v2);
+        }
+    }
+
+    // --- 下蓋 ---
+    {
+        float y = -0.5f;
+        Vector3 normal = { 0.0f, -1.0f, 0.0f };
+
+        // 中心頂点
+        uint32_t centerIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
+        resource_->vertexDataList_.push_back({ { 0.0f, y, 0.0f, 1.0f }, { 0.5f, 0.5f } });
+        resource_->vertexDataList_.back().normal = normal;
+
+        // リム頂点
+        uint32_t rimStart = static_cast<uint32_t>(resource_->vertexDataList_.size());
+        for (uint32_t i = 0; i <= kSubdivision_; ++i) {
+            float theta = i * kThetaEvery_;
+            float cx = std::cos(theta);
+            float sz = std::sin(theta);
+            float u = cx * 0.5f + 0.5f;
+            float v = sz * 0.5f + 0.5f; // V座標を反転させない
+            resource_->vertexDataList_.push_back({ { cx, y, sz, 1.0f }, { u, v } });
+            resource_->vertexDataList_.back().normal = normal;
+        }
+
+        // インデックス
+        for (uint32_t i = 0; i < kSubdivision_; ++i) {
+            uint32_t v0 = centerIndex;
+            uint32_t v1 = rimStart + i + 1;
+            uint32_t v2 = rimStart + i;
+            resource_->indexDataList_.push_back(v0);
+            resource_->indexDataList_.push_back(v2);
+            resource_->indexDataList_.push_back(v1);
+        }
+    }
 
     // ========= リソース確保と書き込み =========
 

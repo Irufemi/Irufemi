@@ -12,6 +12,7 @@ class DebugCamera;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
+struct AreaLight;
 
 #include "2D/Sprite.h"
 #include "audio/Se.h"
@@ -75,4 +76,5 @@ private: // メンバ変数(システム)
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
     std::vector<std::unique_ptr<PointLight>> pointLights_;
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
+    std::vector<std::unique_ptr<AreaLight>> areaLights_;
 };

@@ -1,7 +1,6 @@
 #include "SphereClass.h"
 
 #include <cmath>
-#include <imgui.h>
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
 #include "manager/DebugUI.h"

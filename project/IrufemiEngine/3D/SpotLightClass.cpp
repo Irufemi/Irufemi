@@ -1,6 +1,6 @@
 #include "SpotLightClass.h"
 
-#include <imgui.h>
+#include "manager/DebugUI.h"
 #include "function/Math.h"
 #include <cmath>
 #include <numbers>

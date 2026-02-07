@@ -12,6 +12,7 @@
 #include "source/D3D12ResourceUtil.h"
 #include "2D/Sprite.h"
 #include "2D/Circle2D.h"
+#include "2D/SpriteRegion.h"
 #include "3D/ObjClass.h"
 #include "3D/AnimationModel.h"
 #include "3D/SphereClass.h"
@@ -30,11 +31,11 @@
 #include "audio/Se.h"
 #include "source/Texture.h"
 #include "Application/contents/Effect/Fade.h"
+#include "manager/DebugUI.h"
 // ポーズ表示用
 std::unique_ptr<Sprite> pauseSprite_ = nullptr;
 
 #include "scene/IScene.h"
-#include <imgui.h>
 
 #pragma comment(lib,"Dbghelp.lib")
 #pragma comment(lib,"d3d12.lib")
@@ -83,6 +84,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Region::SetDirectXCommon(dxCommon_.get());
     SphereRegion::SetDirectXCommon(dxCommon_.get());
     TetraRegion::SetDirectXCommon(dxCommon_.get());
+    Line3DRegion::SetDirectXCommon(dxCommon_.get());
 
     // SRV デスクリプタプール
     {
@@ -94,6 +96,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         Region::SetSrvAllocator(srvPool);
         TetraRegion::SetSrvAllocator(srvPool);
         ParticleSystem::SetSrvPool(srvPool);
+        SpriteRegion::SetSrvAllocator(srvPool);
+        Line3DRegion::SetSrvAllocator(srvPool);
     }
 
     // テクスチャ管理
@@ -108,7 +112,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     modelManager_ = std::make_unique<ModelManager>();
     modelManager_->Initialize(dxCommon_.get(),textureManager.get()); // dxCommon を渡す
     ObjClass::SetModelManager(modelManager_.get());
-    AnimationModel::SetModelManager(modelManager_.get());
     Region::SetModelManager(modelManager_.get()); // Regionにも設定
 
     // 既存SRVの走査で free-list 再構築
@@ -151,7 +154,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Sprite::SetDebugUI(ui.get());
     Circle2D::SetDebugUI(ui.get());
     ObjClass::SetDebugUI(ui.get());
-    AnimationModel::SetDebugUI(ui.get());
     SphereClass::SetDebugUI(ui.get());
     TriangleClass::SetDebugUI(ui.get());
     CubeClass::SetDebugUI(ui.get());
@@ -163,9 +165,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     drawManager = std::make_unique<DrawManager>();
     drawManager->Initialize(dxCommon_.get());
     Sprite::SetDrawManager(drawManager.get());
+    SpriteRegion::SetDrawManager(drawManager.get());
     Circle2D::SetDrawManager(drawManager.get());
     ObjClass::SetDrawManager(drawManager.get());
-    AnimationModel::SetDrawManager(drawManager.get());
     SphereClass::SetDrawManager(drawManager.get());
     TriangleClass::SetDrawManager(drawManager.get());
     CubeClass::SetDrawManager(drawManager.get());
@@ -178,13 +180,14 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ParticleSystem::SetEngine(this);
     Line2DClass::SetDrawManager(drawManager.get());
     Line3DClass::SetDrawManager(drawManager.get());
+    Line3DRegion::SetDrawManager(drawManager.get());
 
     // テクスチャ
     ui->SetTextureManager(textureManager.get());
     Sprite::SetTextureManager(textureManager.get());
+    SpriteRegion::SetDirectXCommon(dxCommon_.get());
     Circle2D::SetTextureManager(textureManager.get());
     ObjClass::SetTextureManager(textureManager.get());
-    AnimationModel::SetTextureManager(textureManager.get());
     SphereClass::SetTextureManager(textureManager.get());
     TriangleClass::SetTextureManager(textureManager.get());
     CubeClass::SetTextureManager(textureManager.get());
@@ -196,9 +199,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ParticleSystem::SetTextureManager(textureManager.get());
 
     animationManager_ = std::make_unique<AnimationManager>();
-    animationManager_->Initialize();
+    animationManager_->Initialize(dxCommon_.get());
 
-    AnimationModel::SetAnimationManager(animationManager_.get());
+    AnimationModel::SetIrufemiEngine(this);
 
     Fade::SetEngine(this);
 }
@@ -354,5 +357,18 @@ void IrufemiEngine::ApplyByGeometryShaderPSO() {
 void IrufemiEngine::ApplyLinePSO() {
     auto* pso = GetPSOManager()->GetLine(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Line PSO is null. Check PSOManager::Initialize and shader blobs.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplyLineInstancedPSO() {
+    auto* pso = GetPSOManager()->GetLineInstanced(currentBlend_, currentDepth_, currentCull_);
+    assert(pso && "LineInstanced PSO is null. Check PSOManager::Initialize and shader blobs.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplySkinningPSO()
+{
+    auto* pso = GetPSOManager()->GetSkinning(currentBlend_, currentDepth_, currentCull_);
+    assert(pso && "Skinning PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager->BindPSO(pso); }
 }

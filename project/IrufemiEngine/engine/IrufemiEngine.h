@@ -105,6 +105,7 @@ public: // ゲッター
     AudioManager* GetAudioManager() { return this->audioManager_.get(); }
     TextureManager* GetTextureManager() { return this->textureManager.get(); }
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
+    AnimationManager* GetAnimationManager() { return animationManager_.get(); }
     int32_t& GetClientWidth() { return dxCommon_->GetClientWidth(); }
     int32_t& GetClientHeight() { return dxCommon_->GetClientHeight(); }
     D3D12_VIEWPORT& GetViewport() { return dxCommon_->GetViewport(); }
@@ -139,6 +140,8 @@ public: // セッター
     void ApplyRegionPSO();
     void ApplyByGeometryShaderPSO();
     void ApplyLinePSO();
+    void ApplyLineInstancedPSO();
+    void ApplySkinningPSO();
 
 public:
     // 状態(現在のブレンドと深度書き込み)
