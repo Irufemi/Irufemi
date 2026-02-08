@@ -5,6 +5,10 @@
 #include "math/Matrix4x4.h"
 #include <numbers>
 
+/**
+ * @class Camera
+ * @brief 3D空間の視点を管理し、ビュー行列や射影行列を生成するクラス
+ */
 class Camera {
 private: // メンバ変数
 
@@ -90,114 +94,132 @@ private: // メンバ変数
     Matrix4x4 viewportMatrix_{};
 
 public: // メンバ関数
-    //コンストラクタ
+    /**
+     * @brief コンストラクタ
+     */
     Camera();
 
-    //デストラクタ
+    /**
+     * @brief デストラクタ
+     */
     ~Camera();
 
-    //初期化
-    void Initialize(int windowWidth = 1280, int windowHeight = 720);
+    /**
+     * @brief 初期化処理
+     * @param windowWidth ウィンドウの幅
+     * @param windowHeight ウィンドウの高さ
+     */
+    void Initialize(const int& windowWidth = 1280, const int& windowHeight = 720);
 
-    //更新
+    /**
+     * @brief 更新処理
+     * @param cameraName デバッグ表示用のカメラ名
+     */
     void Update(const char* cameraName);
 
     //セッター
 
-    /// <summary>
-    /// translateの設定
-    /// </summary>
-    /// <param name="translate"></param>
-    void SetTranslate(Vector3 translate) { this->translate_ = translate; }
+    /**
+     * @brief カメラの座標を設定します
+     * @param translate ワールド座標
+     */
+    void SetTranslate(const Vector3& translate) { this->translate_ = translate; }
 
-    /// <summary>
-    /// rotateの設定
-    /// </summary>
-    /// <param name="rotate"></param>
-    void SetRotate(Vector3 rotate) { this->rotate_ = rotate; }
+    /**
+     * @brief カメラの回転角度を設定します
+     * @param rotate オイラー角
+     */
+    void SetRotate(const Vector3& rotate) { this->rotate_ = rotate; }
 
-    void SetViewMatrix(Matrix4x4 viewMatrix) { this->viewMatrix_ = viewMatrix; }
+    void SetViewMatrix(const Matrix4x4& viewMatrix) { this->viewMatrix_ = viewMatrix; }
 
-    void SetPerspectiveFovMatrix(Matrix4x4 perspectiveFovMatrix) { this->perspectiveFovMatrix_ = perspectiveFovMatrix; }
+    void SetPerspectiveFovMatrix(const Matrix4x4& perspectiveFovMatrix) { this->perspectiveFovMatrix_ = perspectiveFovMatrix; }
 
-    void SetFovY(float fovY) { this->fovAngleY_ = fovY; }
-    void SetAspectRatio(float aspectRatio) { this->aspectRatio_ = aspectRatio; }
-    void SetNearClip(float nearClip) { this->nearClip_ = nearClip; }
-    void SetFarClip(float farClip) { this->farClip_ = farClip; }
+    void SetFovY(const float& fovY) { this->fovAngleY_ = fovY; }
+    void SetAspectRatio(const float& aspectRatio) { this->aspectRatio_ = aspectRatio; }
+    void SetNearClip(const float& nearClip) { this->nearClip_ = nearClip; }
+    void SetFarClip(const float& farClip) { this->farClip_ = farClip; }
 
 
     //ゲッター
 
-    /// <summary>
-    /// カメラの位置の取得
-    /// </summary>
+    /**
+     * @brief カメラの座標を取得します
+     * @return const Vector3& ワールド座標
+     */
     const Vector3& GetTranslate() const { return this->translate_; }
 
-    /// <summary>
-    /// カメラの回転角度の取得
-    /// </summary>
+    /**
+     * @brief カメラの回転角度を取得します
+     * @return const Vector3& オイラー角
+     */
     const Vector3& GetRotate() const { return this->rotate_; }
 
-    /// <summary>
-    /// カメラ行列を取得する
-    /// </summary>
-    /// <returns></returns>
+    /**
+     * @brief カメラ行列(ワールド行列)を取得します
+     * @return const Matrix4x4& カメラのワールド行列
+     */
     const Matrix4x4& GetCameraMatrix();
 
-    /// <summary>
-    /// ワールド行列の取得
-    /// </summary>
+    /**
+     * @brief ワールド行列を取得します
+     * @return const Matrix4x4& ワールド行列
+     */
     const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
 
-    /// <summary>
-    /// ビュー行列の取得
-    /// </summary>
+    /**
+     * @brief ビュー行列を取得します
+     * @return const Matrix4x4& ビュー行列
+     */
     const Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
 
-    /// <summary>
-    /// 透視投影行列の取得
-    /// </summary>
+    /**
+     * @brief 透視投影行列を取得します
+     * @return const Matrix4x4& 透視投影行列
+     */
     const Matrix4x4& GetPerspectiveFovMatrix() const { return perspectiveFovMatrix_; }
 
-    /// <summary>
-    /// 正射行列の取得
-    /// </summary>
+    /**
+     * @brief 正射影行列を取得します
+     * @return const Matrix4x4& 正射影行列
+     */
     const Matrix4x4& GetOrthographicMatrix() const { return orthographicMatrix_; }
 
-    /// <summary>
-    /// ビューポート変換行列の取得
-    /// </summary>
+    /**
+     * @brief ビューポート変換行列を取得します
+     * @return const Matrix4x4& ビューポート変換行列
+     */
     const Matrix4x4& GetViewportMatrix() const { return viewportMatrix_; }
 
 
-    /// <summary>
-    /// ワールド行列の作成
-    /// </summary>
+    /**
+     * @brief ワールド行列を再計算します
+     */
     void MakeWorldMatrix();
 
-    /// <summary>
-    /// ビュー行列の作成
-    /// </summary>
+    /**
+     * @brief ビュー行列を再計算します
+     */
     void MakeViewMatrix();
 
-    /// <summary>
-    /// 透視投影行列の更新
-    /// </summary>
+    /**
+     * @brief 透視投影行列を再計算します
+     */
     void UpdatePerspectiveFovMatrix();
 
-    /// <summary>
-    /// 正射行列の更新
-    /// </summary>
+    /**
+     * @brief 正射影行列を再計算します
+     */
     void UpdateOrthographicMatrix();
 
-    /// <summary>
-    /// 透視投影行列の更新
-    /// </summary>
+    /**
+     * @brief ビューポート行列を再計算します
+     */
     void UpdateViewportMatrix();
 
-    /// <summary>
-    /// 各行列の更新
-    /// </summary>
+    /**
+     * @brief すべての行列を更新します
+     */
     void UpdateMatrix();
 
     // 2Dで使うための現在のビューポートサイズ取得

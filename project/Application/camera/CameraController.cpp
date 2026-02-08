@@ -85,7 +85,7 @@ void CameraController::Reset() {
     camera_.SetTranslate(Math::Add(targetWorldTransform.translate, targetOffset_));
 }
 
-void CameraController::StartShake(float duration, float amplitude) {
+void CameraController::StartShake(const float& duration, const float& amplitude) {
     shakeTimer_ = duration;
     shakeAmplitude_ = amplitude;
 }

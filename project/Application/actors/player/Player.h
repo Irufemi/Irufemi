@@ -46,7 +46,7 @@ public:
 	/// @brief ダメージを受ける
 	/// @param damage 受けるダメージ量
 	/// @param enemyPosition 敵の位置
-	void TakeDamage(int damage, const Vector3& enemyPosition);
+	void TakeDamage(const int& damage, const Vector3& enemyPosition);
 
 	// --- 状態取得(読み取り専用) ---
 	/// @brief 現在の速度を取得
@@ -101,7 +101,7 @@ public:
 	void SetAttackEffectModel(ObjClass* obj) { attackEffectModel_ = obj; }
 	/// @brief 向きを設定
 	/// @param dir 設定する向き
-	void SetLRDirection(LRDirection dir) { lrDirection_ = dir; }
+	void SetLRDirection(const LRDirection& dir) { lrDirection_ = dir; }
 
 	// --- ステート制御 ---
 	/// @brief ステートを変更する

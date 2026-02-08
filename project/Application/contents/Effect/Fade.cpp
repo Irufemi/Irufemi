@@ -62,7 +62,7 @@ void Fade::Draw() {
     }
 }
 
-void Fade::FadeIn(float duration, const Vector4& color) {
+void Fade::FadeIn(const float& duration, const Vector4& color) {
     state_ = FadeState::FadingIn;
     fadeDuration_ = duration;
     fadeTimer_ = 0.0f;
@@ -71,7 +71,7 @@ void Fade::FadeIn(float duration, const Vector4& color) {
     sprite_->SetColor({ fadeColor_.x, fadeColor_.y, fadeColor_.z, 1.0f });
 }
 
-void Fade::FadeOut(float duration, const Vector4& color) {
+void Fade::FadeOut(const float& duration, const Vector4& color) {
     state_ = FadeState::FadingOut;
     fadeDuration_ = duration;
     fadeTimer_ = 0.0f;

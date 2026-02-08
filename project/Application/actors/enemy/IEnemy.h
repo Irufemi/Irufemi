@@ -67,14 +67,14 @@ protected: // 派生クラス向けアクセサ
 	const Vector3& GetVelocity() const { return velocity_; }
 	void SetVelocity(const Vector3& velocity) { velocity_ = velocity; }
 	LRDirection GetDirection() const { return lrDirection_; }
-	void SetDirection(LRDirection direction) { lrDirection_ = direction; }
+	void SetDirection(const LRDirection& direction) { lrDirection_ = direction; }
 	bool IsOnGround() const { return onGround_; }
 	bool IsTouchingWall() const { return isTouchingWall_; }
-	void SetIsDead(bool isDead) { isDead_ = isDead; }
+	void SetIsDead(const bool& isDead) { isDead_ = isDead; }
 	std::unique_ptr<ObjClass>& GetModel() { return model_; }
-	void SetWidth(float width) { width_ = width; }
-	void SetHeight(float height) { height_ = height; }
-	void SetDamage(int damage) { damage_ = damage; }
+	void SetWidth(const float& width) { width_ = width; }
+	void SetHeight(const float& height) { height_ = height; }
+	void SetDamage(const int& damage) { damage_ = damage; }
 
 protected: // 内部処理
 	// 移動と衝突判定

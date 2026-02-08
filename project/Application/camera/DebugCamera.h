@@ -6,11 +6,12 @@
 #include "engine/Input/InputManager.h"
 #include "camera/Camera.h"
 
-/*デバッグカメラ*/
-
-/// <summary>
-/// デバッグカメラ
-/// </summary>
+/**
+ * @class DebugCamera
+ * @brief デバッグ目的で自由に操作できるカメラ
+ *
+ * キーボード入力により、シーン内を自由に移動・回転できます。
+ */
 class DebugCamera {
 private: //メンバ変数
     // カメラ注視点までの距離(ピボット回転)
@@ -26,22 +27,25 @@ private: //メンバ変数
     Matrix4x4 matRot_{};
 
 public: //メンバ関数
-    /// <summary>
-    /// 初期化
-    /// </summary>
+    /**
+     * @brief 初期化処理
+     * @param input InputManagerのポインタ
+     * @param windowWidth ウィンドウの幅
+     * @param windowHeight ウィンドウの高さ
+     */
     void Initialize(InputManager* input, int windowWidth, int windowHeight);
 
-    /// <summary>
-    /// 更新
-    /// </summary>
+    /**
+     * @brief 更新処理
+     */
     void Update();
 
     //ゲッター
 
-    /// <summary>
-    /// カメラを取得
-    /// </summary>
-    /// <returns>カメラ</returns>
+    /**
+     * @brief 内部で管理しているCameraオブジェクトを取得します
+     * @return const Camera& カメラオブジェクト
+     */
     const Camera& GetCamera() { return camera_; }
 };
 

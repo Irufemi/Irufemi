@@ -130,7 +130,7 @@
       <Filter>actors\enemy</Filter>
     </ClCompile>
     <ClCompile Include="actors\player\PlayerPhysics.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>actors\player</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -192,7 +192,7 @@
       <Filter>actors\enemy</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\PlayerPhysics.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>actors\player</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
