@@ -79,7 +79,7 @@ public: // メンバ関数
 
 	void Settarget(Player* target) { this->target_ = target; }
 
-	void SetMovavleArea(const Rect& area) { this->movableArea_ = area; }
+	void SetMovableArea(const Rect& area) { this->movableArea_ = area; }
 
 	// ゲッター
 };

@@ -16,9 +16,6 @@
     <Filter Include="camera">
       <UniqueIdentifier>{b2d20bfd-f14e-4085-86ad-27fd4e530cb4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="content">
-      <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Scene">
       <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
     </Filter>
@@ -31,17 +28,8 @@
     <Filter Include="Scene\result">
       <UniqueIdentifier>{10005089-1114-4451-b83e-4c222dd4993b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="actor">
-      <UniqueIdentifier>{490d274c-e2b4-4b8c-a942-e7053c118b00}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actor\player">
-      <UniqueIdentifier>{c7a866e3-5957-4bef-b573-cc39ef55055c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Scene\debug">
       <UniqueIdentifier>{0a6ed38f-12d1-4188-b3fa-fb3877f9047d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actor\enemy">
-      <UniqueIdentifier>{76850a7a-5d4f-4ae6-852d-335cd761d210}</UniqueIdentifier>
     </Filter>
     <Filter Include="Scene\statgeSelect">
       <UniqueIdentifier>{ff03cd2d-af96-44ae-b342-c150a81581c8}</UniqueIdentifier>
@@ -49,16 +37,28 @@
     <Filter Include="Application">
       <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="content\effect">
+    <Filter Include="contents">
+      <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contents\effect">
       <UniqueIdentifier>{babfd3d8-482e-49f9-a43f-87cca2b7d391}</UniqueIdentifier>
     </Filter>
-    <Filter Include="content\skydome">
+    <Filter Include="contents\skydome">
       <UniqueIdentifier>{ca677367-9311-4bf8-b19d-3388568d67ee}</UniqueIdentifier>
     </Filter>
-    <Filter Include="actor\enemy\normalEnemy">
+    <Filter Include="actors">
+      <UniqueIdentifier>{490d274c-e2b4-4b8c-a942-e7053c118b00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actors\player">
+      <UniqueIdentifier>{c7a866e3-5957-4bef-b573-cc39ef55055c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actors\enemy">
+      <UniqueIdentifier>{76850a7a-5d4f-4ae6-852d-335cd761d210}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actors\enemy\normalEnemy">
       <UniqueIdentifier>{f030a979-a1c4-4077-a175-43946c8f283f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="actor\enemy\shieldEnemy">
+    <Filter Include="actors\enemy\shieldEnemy">
       <UniqueIdentifier>{8c761790-d221-4623-8f2e-eb16ae252fe4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -91,16 +91,16 @@
       <Filter>Application</Filter>
     </ClCompile>
     <ClCompile Include="contents\MapChipField.cpp">
-      <Filter>content</Filter>
+      <Filter>contents</Filter>
     </ClCompile>
-    <ClCompile Include="contents\enemy\shieldEnemy\ShieldEnemy.cpp">
-      <Filter>actor\enemy\shieldEnemy</Filter>
+    <ClCompile Include="actors\enemy\shieldEnemy\ShieldEnemy.cpp">
+      <Filter>actors\enemy\shieldEnemy</Filter>
     </ClCompile>
-    <ClCompile Include="contents\enemy\normalEnemy\NormalEnemy.cpp">
-      <Filter>actor\enemy\normalEnemy</Filter>
+    <ClCompile Include="actors\enemy\normalEnemy\NormalEnemy.cpp">
+      <Filter>actors\enemy\normalEnemy</Filter>
     </ClCompile>
     <ClCompile Include="contents\Effect\Fade.cpp">
-      <Filter>content\effect</Filter>
+      <Filter>contents\effect</Filter>
     </ClCompile>
     <ClCompile Include="scene\stageSelect\StageDataManager.cpp">
       <Filter>Scene\statgeSelect</Filter>
@@ -112,22 +112,25 @@
       <Filter>camera</Filter>
     </ClCompile>
     <ClCompile Include="contents\skydome\Skydome.cpp">
-      <Filter>content\skydome</Filter>
+      <Filter>contents\skydome</Filter>
     </ClCompile>
-    <ClCompile Include="contents\player\Player.cpp">
-      <Filter>actor\player</Filter>
+    <ClCompile Include="actors\player\Player.cpp">
+      <Filter>actors\player</Filter>
     </ClCompile>
-    <ClCompile Include="contents\player\PlayerState_Attack.cpp">
-      <Filter>actor\player</Filter>
+    <ClCompile Include="actors\player\PlayerState_Attack.cpp">
+      <Filter>actors\player</Filter>
     </ClCompile>
-    <ClCompile Include="contents\player\PlayerState_Dash.cpp">
-      <Filter>actor\player</Filter>
+    <ClCompile Include="actors\player\PlayerState_Dash.cpp">
+      <Filter>actors\player</Filter>
     </ClCompile>
-    <ClCompile Include="contents\player\PlayerState_Root.cpp">
-      <Filter>actor\player</Filter>
+    <ClCompile Include="actors\player\PlayerState_Root.cpp">
+      <Filter>actors\player</Filter>
     </ClCompile>
-    <ClCompile Include="contents\enemy\IEnemy.cpp">
-      <Filter>actor\enemy</Filter>
+    <ClCompile Include="actors\enemy\IEnemy.cpp">
+      <Filter>actors\enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\player\PlayerPhysics.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -156,16 +159,16 @@
       <Filter>Application</Filter>
     </ClInclude>
     <ClInclude Include="contents\MapChipField.h">
-      <Filter>content</Filter>
+      <Filter>contents</Filter>
     </ClInclude>
-    <ClInclude Include="contents\enemy\shieldEnemy\ShieldEnemy.h">
-      <Filter>actor\enemy\shieldEnemy</Filter>
+    <ClInclude Include="actors\enemy\shieldEnemy\ShieldEnemy.h">
+      <Filter>actors\enemy\shieldEnemy</Filter>
     </ClInclude>
-    <ClInclude Include="contents\enemy\normalEnemy\NormalEnemy.h">
-      <Filter>actor\enemy\normalEnemy</Filter>
+    <ClInclude Include="actors\enemy\normalEnemy\NormalEnemy.h">
+      <Filter>actors\enemy\normalEnemy</Filter>
     </ClInclude>
     <ClInclude Include="contents\Effect\Fade.h">
-      <Filter>content\effect</Filter>
+      <Filter>contents\effect</Filter>
     </ClInclude>
     <ClInclude Include="scene\stageSelect\StageDataManager.h">
       <Filter>Scene\statgeSelect</Filter>
@@ -177,16 +180,19 @@
       <Filter>camera</Filter>
     </ClInclude>
     <ClInclude Include="contents\skydome\Skydome.h">
-      <Filter>content\skydome</Filter>
+      <Filter>contents\skydome</Filter>
     </ClInclude>
-    <ClInclude Include="contents\player\Player.h">
-      <Filter>actor\player</Filter>
+    <ClInclude Include="actors\player\Player.h">
+      <Filter>actors\player</Filter>
     </ClInclude>
-    <ClInclude Include="contents\player\PlayerState.h">
-      <Filter>actor\player</Filter>
+    <ClInclude Include="actors\player\PlayerState.h">
+      <Filter>actors\player</Filter>
     </ClInclude>
-    <ClInclude Include="contents\enemy\IEnemy.h">
-      <Filter>actor\enemy</Filter>
+    <ClInclude Include="actors\enemy\IEnemy.h">
+      <Filter>actors\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\player\PlayerPhysics.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

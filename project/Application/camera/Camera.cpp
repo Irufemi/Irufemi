@@ -18,9 +18,9 @@ Camera::Camera() {}
 Camera::~Camera() {}
 
 //初期化
-void Camera::Initialize(int window_width,int window_height) {
-    width_ = static_cast<float>(window_width);
-    height_ = static_cast<float>(window_height);
+void Camera::Initialize(int windowWidth,int windowHeight) {
+    width_ = static_cast<float>(windowWidth);
+    height_ = static_cast<float>(windowHeight);
 
     // ウィンドウサイズに基づいてアスペクト比と正射影境界を更新
     aspectRatio_ = (height_ != 0.0f) ? (width_ / height_) : 1.0f;
@@ -92,4 +92,7 @@ void Camera::UpdateMatrix() {
 }
 
 // カメラ行列を取得する
-Matrix4x4 Camera::GetCameraMatrix() { return Math::MakeAffineMatrix(scale_, rotate_, translate_); }
+const Matrix4x4& Camera::GetCameraMatrix() { 
+    worldMatrix_ = Math::MakeAffineMatrix(scale_, rotate_, translate_);
+    return worldMatrix_;
+}

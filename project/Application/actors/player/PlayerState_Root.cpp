@@ -1,6 +1,7 @@
 #include "Math.h"  // Add などのユーティリティ
 #include "Player.h"
 #include "PlayerState.h"
+#include "PlayerPhysics.h" // 追加
 
 #include "engine/Input/InputManager.h"
 
@@ -9,7 +10,10 @@
 // ここでは衝突を避けつつ、ひとまずグローバルに直接定義する。
 struct PlayerStateRoot final : IPlayerState {
 	const char* Name() const override { return "Root"; }
-	void Enter(Player&) override {}
+	void Enter(Player& player) override {
+		// 物理コンポーネントの水平入力ロックを解除
+		player.physics_->ResetHorizontalLock();
+	}
 	void Exit(Player&) override {}
 
 	/// <summary>
@@ -18,16 +22,16 @@ struct PlayerStateRoot final : IPlayerState {
 	/// ・ここでは「ダッシュへ遷移するか」を見るのみ
 	/// </summary>
 	void Update(Player& player) override {
-		player.MoveInput();
+		player.physics_->MoveInput();
 
 		// ダッシュ開始トリガ(例: スペースキー or Xボタン)
 		if (player.inputManager_->IsKeyPressed(VK_SPACE) || player.inputManager_->IsButtonPressed(XINPUT_GAMEPAD_X)) {
 			// 地上なら何度でも、空中なら未使用時のみ許可
-			if (player.onGround_ || !player.dashUsed_) {
+			if (player.physics_->IsOnGround() || !player.physics_->IsDashUsed()) {
 				player.se_dash_->Play();
 				// 空中で発動したら1回分使用したことにする
-				if (!player.onGround_) {
-					player.dashUsed_ = true;
+				if (!player.physics_->IsOnGround()) {
+					player.physics_->SetDashUsed(true);
 				}
 				player.ChangeState(MakeDashState());
 			}

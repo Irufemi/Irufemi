@@ -286,6 +286,9 @@
     <ClCompile Include="function\Collision.cpp">
       <Filter>function</Filter>
     </ClCompile>
+    <ClCompile Include="function\Random.cpp">
+      <Filter>function</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
@@ -593,6 +596,9 @@
     </ClInclude>
     <ClInclude Include="math\WellForGPU.h">
       <Filter>math\model</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Random.h">
+      <Filter>function</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

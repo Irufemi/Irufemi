@@ -1,6 +1,6 @@
 #define NOMINMAX
 #include "IEnemy.h"
-#include "contents/player/Player.h"
+#include "actors/player/Player.h"
 #include "contents/MapChipField.h"
 #include "function/Math.h"
 #include <algorithm>
@@ -50,6 +50,43 @@ Vector3 IEnemy::GetWorldPosition() const {
 }
 
 void IEnemy::BehaviorMoveUpdate() {
+	// 接地している場合のみ行動
+	if (onGround_) {
+		bool shouldTurn = false;
+
+		// --- 崖チェック ---
+		Vector3 footPosition = transform_.translate;
+		float checkOffsetX = (lrDirection_ == LRDirection::kRight) ? width_ / 2.0f : -width_ / 2.0f;
+		footPosition.x += checkOffsetX;
+		footPosition.y -= height_ / 2.0f + 0.1f; // 少し下をチェック
+
+		MapChipField::IndexSet footIndex = mapChipField_->GetMapChipIndexSetByPosition(footPosition);
+		if (mapChipField_->GetMapChipTypeByIndex(footIndex.xIndex, footIndex.yIndex) == MapChipType::kBlank) {
+			shouldTurn = true;
+		}
+
+		// --- 壁チェック ---
+		if (isTouchingWall_) {
+			shouldTurn = true;
+		}
+
+		// --- 方向転換処理 ---
+		if (shouldTurn) {
+			if (lrDirection_ == LRDirection::kLeft) {
+				lrDirection_ = LRDirection::kRight;
+				transform_.rotate.y = std::numbers::pi_v<float> / 2.0f;
+			}
+			else {
+				lrDirection_ = LRDirection::kLeft;
+				transform_.rotate.y = -std::numbers::pi_v<float> / 2.0f;
+			}
+		}
+
+		// --- 速度設定 ---
+		float moveSpeed = (lrDirection_ == LRDirection::kLeft) ? -kDefaultMoveSpeed : kDefaultMoveSpeed;
+		velocity_.x = moveSpeed;
+	}
+
 	ApplyGravity();
 
 	CollisionMapInfo info{};
@@ -111,7 +148,8 @@ bool IEnemy::IsSolidAt(const Vector3& p, MapChipField::IndexSet* outIdx, MapChip
 	if (outIdx) { *outIdx = idx; }
 	MapChipType t = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
 	if (t == MapChipType::kBlock) {
-		if (outRect) { *outRect = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex); }
+		MapChipField::Rect r = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex);
+		if (outRect) { *outRect = r; }
 		return true;
 	}
 	return false;

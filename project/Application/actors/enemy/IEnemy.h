@@ -28,30 +28,53 @@ public: // メンバ関数
     // デストラクタ
     virtual ~IEnemy() = default;
 
-    // 初期化
+    /// @brief 敵の初期化
+    /// @param position 初期座標
     virtual void Initialize(const Vector3& position);
-    // 更新
+    /// @brief 毎フレーム更新
     virtual void Update() = 0;
-    // 描画
+    /// @brief 描画
     virtual void Draw() = 0;
 
-    // 衝突時の処理
+    /// @brief プレイヤーとの衝突時に呼ばれる処理
+    /// @param player 衝突したプレイヤー
     virtual void OnCollision(Player* player);
 
-    // マップチップフィールドをセット
+    /// @brief マップチップフィールドを設定
+    /// @param mapChipField マップチップフィールド
     void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
 
 public: // アクセサ
-    // AABBを取得する
-    AABB GetAABB() const;
-    // 生存フラグを取得する
-    bool IsDead() const { return isDead_; }
-    // 向きを取得する
-    LRDirection GetLRDirection() const { return lrDirection_; }
-    // ダメージを取得する
-    int GetDamage() const { return damage_; }
-    // ワールド座標を取得
+    /// @brief AABB(当たり判定)を取得
+    /// @return AABB
+	AABB GetAABB() const;
+    /// @brief 生存フラグを取得
+    /// @return true: 死亡, false: 生存
+	bool IsDead() const { return isDead_; }
+    /// @brief 向きを取得
+    /// @return 向き (LRDirection)
+	LRDirection GetLRDirection() const { return lrDirection_; }
+    /// @brief プレイヤーに与えるダメージ量を取得
+    /// @return ダメージ量
+	int GetDamage() const { return damage_; }
+    /// @brief ワールド座標を取得
+    /// @return ワールド座標
     Vector3 GetWorldPosition() const;
+
+protected: // 派生クラス向けアクセサ
+	const Transform& GetTransform() const { return transform_; }
+	Transform& GetTransform() { return transform_; }
+	const Vector3& GetVelocity() const { return velocity_; }
+	void SetVelocity(const Vector3& velocity) { velocity_ = velocity; }
+	LRDirection GetDirection() const { return lrDirection_; }
+	void SetDirection(LRDirection direction) { lrDirection_ = direction; }
+	bool IsOnGround() const { return onGround_; }
+	bool IsTouchingWall() const { return isTouchingWall_; }
+	void SetIsDead(bool isDead) { isDead_ = isDead; }
+	std::unique_ptr<ObjClass>& GetModel() { return model_; }
+	void SetWidth(float width) { width_ = width; }
+	void SetHeight(float height) { height_ = height; }
+	void SetDamage(int damage) { damage_ = damage; }
 
 protected: // 内部処理
 	// 移動と衝突判定
@@ -79,8 +102,9 @@ protected: // 定数
 	static inline const float kgravityAcceleration = 0.010f;
 	static inline const float kLimitFallSpeed = 0.36f;
 	static inline const float kMBlank = 0.01f;
+	static inline const float kDefaultMoveSpeed = 0.05f;
 
-protected: // メンバ変数
+private: // メンバ変数
     // トランスフォーム
     Transform transform_;
     // ワールド行列

@@ -1,4 +1,4 @@
-    #pragma once
+#pragma once
 
 #include "scene/IScene.h"
 #include <memory>
@@ -18,13 +18,29 @@ struct AreaLight;
 
 #include "contents/Effect/Fade.h"
 
+/**
+ * @class ResultScene
+ * @brief ゲームの結果（クリア/ゲームオーバー）を表示するクラス
+ *
+ * ゲームの結果に応じてUIを表示し、入力に応じてステージ選択シーンへ戻ります。
+ */
 class ResultScene : public IScene {
 public: // メンバ関数(ゲーム)
 
 public: // メンバ関数(システム)
     ~ResultScene() override;
+    /**
+     * @brief 初期化処理
+     * @param engine IrufemiEngineのポインタ
+     */
     void Initialize(IrufemiEngine* engine) override;
+    /**
+     * @brief 毎フレームの更新処理
+     */
     void Update() override;
+    /**
+     * @brief 描画処理
+     */
     void Draw() override;
 
 private: // メンバ関数(内部ヘルパ)
