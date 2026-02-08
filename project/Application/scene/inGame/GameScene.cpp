@@ -27,185 +27,19 @@ GameScene::~GameScene() {
 
 // 初期化
 void GameScene::Initialize(IrufemiEngine* engine) {
+    // エンジンへのポインタを保持
+    engine_ = engine;
 
-    // 参照したものをコピー
-    // エンジン
-    this->engine_ = engine;
+    // 各コンポーネントの初期化
+    InitializeSystem();
+    InitializeGameObjects();
+    InitializeUI();
 
-    camera_ = std::make_unique <Camera>();
-    camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
-    camera_->UpdateMatrix();
-
-    debugCamera_ = std::make_unique <DebugCamera>();
-    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
-    debugMode_ = false;
-
-    // --- ライトの初期化 ---
-    // シーンに最初から配置するライト
-    auto pointLight = std::make_unique<PointLight>();
-    pointLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    pointLight->position = { 0.0f, 5.0f, 0.0f };
-    pointLight->intensity = 1.0f;
-    pointLight->radius = 10.0f;
-    pointLight->decay = 1.0f;
-    pointLight->isActive = 1;
-    pointLights_.push_back(std::move(pointLight));
-
-    directionalLight_ = std::make_unique<DirectionalLight>();
-    directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
-    directionalLight_->direction = { 0.5f,-0.7f,1.0f };
-    directionalLight_->intensity = 1.0f;
-
-
-    // ポーズ画面用スプライト
-    pauseSprite_ = std::make_unique<Sprite>();
-    pauseSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
-    pauseSprite_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
-    pauseSprite_->SetSize(static_cast<float>(engine->GetClientWidth()), static_cast<float>(engine->GetClientHeight()));
-    pauseSprite_->SetAnchor(0.5f, 0.5f);
-    pauseSprite_->SetColor({ 0.1f, 0.1f, 0.1f, 0.5f });
-
-
-    /// マップチップフィールド
-    // マップチップフィールドの生成
-    mapChipField_ = std::make_unique<MapChipField>();
-    // ステージ番号に応じてマップを読み込み
-    std::string mapFileName = "resources/stage" + std::to_string(StageDataManager::selectedStageIndex + 1) + ".csv";
-    mapChipField_->LoadMapChipCsv(mapFileName);
-
-    /// 天球
-    // 天球の生成
-    skydome_ = std::make_unique<Skydome>();
-    // 天球の初期化
-    skydome_->Initialize(camera_.get());
-
-    /// ブロック
-    // ブロックの初期化
-
-    /// ブロック
-    // ブロックの初期化(Blocksでまとめて管理)
-    blocks_ = std::make_unique<Region>();
-    blocks_->Initialize(camera_.get(), "block.obj");
-    GenerateBlocks();
-
-    /// 自キャラ
-    // 自キャラの生成
-    player_ = std::make_shared<Player>();
-    // 3Dモデルデータの生成
-    modelplayer_ = std::make_unique<ObjClass>();
-    modelplayer_->Initialize(camera_.get(), "player.obj");
-    modelplayerAttack_ = std::make_unique<ObjClass>();
-    modelplayerAttack_->Initialize(camera_.get(), "attack.obj");
-    modelplayerAttack_->SetColor(Vector4{ 85.9f / 255.0f,89.8f / 255.0f,52.9f / 255.0f,1.0f });
-    player_->SetAttackEffectModel(modelplayerAttack_.get());
-    // 座標をマップチップ番号で指定
-    Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 18);
-    // 自キャラの初期化
-    player_->Initialize(modelplayer_.get(), camera_.get(), engine->GetInputManager(), playerPosition);
-    // マップチップデータのセット
-    player_->SetMapChipField(mapChipField_.get());
-
-    /// 敵キャラ
-    GenerateEnemies();
-
-    /// カメラコントローラー
-    // カメラコントローラーの生成
-    cameraController_ = std::make_unique<CameraController>();
-    // カメラコントローラーの初期化
-    cameraController_->Initialize();
-    // 追従対象をセット
-    cameraController_->Settarget(player_.get());
-    // リセット(瞬間合わせ)
-    cameraController_->Reset();
-
-    // UI/HUDの作成
-
-    // HP
-    text_HP_ = std::make_unique<Sprite>();
-    text_HP_->Initialize(camera_.get(), "resources/texture/gameText_HP.png");
-    text_HP_->SetPosition(5.0f, 5.0f);
-    text_HP_->Update();
-
-    // HPBar
-    //out
-    hpBar_out_ = std::make_unique<Sprite>();
-    hpBar_out_->Initialize(camera_.get(), "resources/texture/hpBar_out.png");
-    hpBar_out_->SetAnchor(0.0f, 0.0f);
-    hpBar_out_->SetPosition(90.0f, 5.0f);
-    hpBar_out_->Update();
-    //in
-    hpBar_in_ = std::make_unique<Sprite>();
-    hpBar_in_->Initialize(camera_.get(), "resources/texture/hpBar_in.png");
-    hpBar_in_->SetAnchor(0.0f, 0.0f);
-    hpBar_in_->SetPosition(91.0f, 6.0f);
-    hpBar_in_->SetColor(Vector4{ 67.0f / 255.0f,201.0f / 255.0f,79.0f / 255.0f,1.0f });
-    hpBarOriginalWidth_ = hpBar_in_->GetSize().x;
-    hpBar_in_->Update();
-
-    // Fade
-    fade_ = std::make_unique<Fade>();
-    fade_->Initialize(camera_.get());
-    // ゲーム開始時に黒色で1秒間のフェードインを開始
-    fade_->FadeIn(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f });
-
-    // ポーズ画面用スプライト
-    pauseSprite_ = std::make_unique<Sprite>();
-    pauseSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
-    pauseSprite_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
-    pauseSprite_->SetSize(static_cast<float>(engine->GetClientWidth()), static_cast<float>(engine->GetClientHeight()));
-    pauseSprite_->SetAnchor(0.5f, 0.5f);
-    pauseSprite_->SetColor({ 0.1f, 0.1f, 0.1f, 0.5f });
-
-    // ポーズメニューUIの初期化
-    pauseTitleText_ = std::make_unique<Sprite>();
-    pauseTitleText_->Initialize(camera_.get(), "resources/texture/pause_pause.png");
-    pauseTitleText_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
-    pauseTitleText_->SetAnchor(0.5f, 0.5f);
-
-    pauseReturnToGameText_ = std::make_unique<Sprite>();
-    pauseReturnToGameText_->Initialize(camera_.get(), "resources/texture/pause_backGame.png");
-    pauseReturnToGameText_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
-    pauseReturnToGameText_->SetAnchor(0.5f, 0.5f);
-
-    pauseReturnToTitleText_ = std::make_unique<Sprite>();
-    pauseReturnToTitleText_->Initialize(camera_.get(), "resources/texture/pause_backTitle.png");
-    pauseReturnToTitleText_->SetPosition(engine->GetClientWidth() / 2.0f, engine->GetClientHeight() / 2.0f);
-    pauseReturnToTitleText_->SetAnchor(0.5f, 0.5f);
-
-    // カウントダウン(1)
-    text_1_ = std::make_unique<Sprite>();
-    text_1_->Initialize(camera_.get(), "resources/texture/text_1.png");
-    text_1_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
-
-    // カウントダウン(2)
-    text_2_ = std::make_unique<Sprite>();
-    text_2_->Initialize(camera_.get(), "resources/texture/text_2.png");
-    text_2_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
-
-    // カウントダウン(3)
-    text_3_ = std::make_unique<Sprite>();
-    text_3_->Initialize(camera_.get(), "resources/texture/text_3.png");
-    text_3_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
-
-    // カウントダウン時のテキスト
-    countdownText_killEnemy_ = std::make_unique<Sprite>();
-    countdownText_killEnemy_->Initialize(camera_.get(), "resources/texture/text_killEnemy.png");
-    countdownText_killEnemy_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f - 150.0f);
-
-    // 操作方法
-    manual_ = std::make_unique<Sprite>();
-    manual_->Initialize(camera_.get(), "resources/texture/manual.png");
-
-    // フェーズの初期化
+    // フェーズとBGMの初期化
     phase_ = Phase::FadeIn;
-
-    // bgm
     bgm_ = std::make_unique<Bgm>();
     bgm_->Initialize("resources/bgm/ingame.mp3");
     bgm_->PlayFixed();
-    // se(決定音)
-    se_select_ = std::make_unique<Se>();
-    se_select_->Initialize("resources/se/se_select.mp3");
 }
 
 // 更新
@@ -456,6 +290,141 @@ void GameScene::PauseDraw()
     if (pauseReturnToTitleText_) {
         pauseReturnToTitleText_->Draw();
     }
+}
+
+void GameScene::InitializeSystem() {
+    camera_ = std::make_unique<Camera>();
+    camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    camera_->UpdateMatrix();
+
+    debugCamera_ = std::make_unique<DebugCamera>();
+    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
+    debugMode_ = false;
+
+    // --- ライトの初期化 ---
+    auto pointLight = std::make_unique<PointLight>();
+    pointLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    pointLight->position = { 0.0f, 5.0f, 0.0f };
+    pointLight->intensity = 1.0f;
+    pointLight->radius = 10.0f;
+    pointLight->decay = 1.0f;
+    pointLight->isActive = 1;
+    pointLights_.push_back(std::move(pointLight));
+
+    directionalLight_ = std::make_unique<DirectionalLight>();
+    directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    directionalLight_->direction = { 0.5f, -0.7f, 1.0f };
+    directionalLight_->intensity = 1.0f;
+}
+
+void GameScene::InitializeGameObjects() {
+    // マップチップフィールド
+    mapChipField_ = std::make_unique<MapChipField>();
+    std::string mapFileName = "resources/stage" + std::to_string(StageDataManager::selectedStageIndex + 1) + ".csv";
+    mapChipField_->LoadMapChipCsv(mapFileName);
+
+    // 天球
+    skydome_ = std::make_unique<Skydome>();
+    skydome_->Initialize(camera_.get());
+
+    // ブロック
+    blocks_ = std::make_unique<Region>();
+    blocks_->Initialize(camera_.get(), "block.obj");
+    GenerateBlocks();
+
+    // 自キャラ
+    player_ = std::make_shared<Player>();
+    modelplayer_ = std::make_unique<ObjClass>();
+    modelplayer_->Initialize(camera_.get(), "player.obj");
+    modelplayerAttack_ = std::make_unique<ObjClass>();
+    modelplayerAttack_->Initialize(camera_.get(), "attack.obj");
+    modelplayerAttack_->SetColor(Vector4{ 85.9f / 255.0f, 89.8f / 255.0f, 52.9f / 255.0f, 1.0f });
+    player_->SetAttackEffectModel(modelplayerAttack_.get());
+    Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(1, 18);
+    player_->Initialize(modelplayer_.get(), camera_.get(), engine_->GetInputManager(), playerPosition);
+    player_->SetMapChipField(mapChipField_.get());
+
+    // 敵キャラ
+    GenerateEnemies();
+
+    // カメラコントローラー
+    cameraController_ = std::make_unique<CameraController>();
+    cameraController_->Initialize();
+    cameraController_->Settarget(player_.get());
+    cameraController_->Reset();
+}
+
+void GameScene::InitializeUI() {
+    // HP
+    text_HP_ = std::make_unique<Sprite>();
+    text_HP_->Initialize(camera_.get(), "resources/texture/gameText_HP.png");
+    text_HP_->SetPosition(5.0f, 5.0f);
+
+    // HPBar
+    hpBar_out_ = std::make_unique<Sprite>();
+    hpBar_out_->Initialize(camera_.get(), "resources/texture/hpBar_out.png");
+    hpBar_out_->SetAnchor(0.0f, 0.0f);
+    hpBar_out_->SetPosition(90.0f, 5.0f);
+
+    hpBar_in_ = std::make_unique<Sprite>();
+    hpBar_in_->Initialize(camera_.get(), "resources/texture/hpBar_in.png");
+    hpBar_in_->SetAnchor(0.0f, 0.0f);
+    hpBar_in_->SetPosition(91.0f, 6.0f);
+    hpBar_in_->SetColor(Vector4{ 67.0f / 255.0f, 201.0f / 255.0f, 79.0f / 255.0f, 1.0f });
+    hpBarOriginalWidth_ = hpBar_in_->GetSize().x;
+
+    // フェード
+    fade_ = std::make_unique<Fade>();
+    fade_->Initialize(camera_.get());
+    fade_->FadeIn(1.0f, { 0.0f, 0.0f, 0.0f, 1.0f });
+
+    // ポーズ画面
+    pauseSprite_ = std::make_unique<Sprite>();
+    pauseSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+    pauseSprite_->SetPosition(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+    pauseSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
+    pauseSprite_->SetAnchor(0.5f, 0.5f);
+    pauseSprite_->SetColor({ 0.1f, 0.1f, 0.1f, 0.5f });
+
+    pauseTitleText_ = std::make_unique<Sprite>();
+    pauseTitleText_->Initialize(camera_.get(), "resources/texture/pause_pause.png");
+    pauseTitleText_->SetPosition(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+    pauseTitleText_->SetAnchor(0.5f, 0.5f);
+
+    pauseReturnToGameText_ = std::make_unique<Sprite>();
+    pauseReturnToGameText_->Initialize(camera_.get(), "resources/texture/pause_backGame.png");
+    pauseReturnToGameText_->SetPosition(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+    pauseReturnToGameText_->SetAnchor(0.5f, 0.5f);
+
+    pauseReturnToTitleText_ = std::make_unique<Sprite>();
+    pauseReturnToTitleText_->Initialize(camera_.get(), "resources/texture/pause_backTitle.png");
+    pauseReturnToTitleText_->SetPosition(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+    pauseReturnToTitleText_->SetAnchor(0.5f, 0.5f);
+
+    // カウントダウン
+    text_1_ = std::make_unique<Sprite>();
+    text_1_->Initialize(camera_.get(), "resources/texture/text_1.png");
+    text_1_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+
+    text_2_ = std::make_unique<Sprite>();
+    text_2_->Initialize(camera_.get(), "resources/texture/text_2.png");
+    text_2_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+
+    text_3_ = std::make_unique<Sprite>();
+    text_3_->Initialize(camera_.get(), "resources/texture/text_3.png");
+    text_3_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+
+    countdownText_killEnemy_ = std::make_unique<Sprite>();
+    countdownText_killEnemy_->Initialize(camera_.get(), "resources/texture/text_killEnemy.png");
+    countdownText_killEnemy_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f - 150.0f);
+
+    // 操作方法
+    manual_ = std::make_unique<Sprite>();
+    manual_->Initialize(camera_.get(), "resources/texture/manual.png");
+
+    // SE
+    se_select_ = std::make_unique<Se>();
+    se_select_->Initialize("resources/se/se_select.mp3");
 }
 
 void GameScene::GenerateEnemies() {

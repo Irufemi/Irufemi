@@ -97,7 +97,7 @@ public: // メンバ関数
     ~Camera();
 
     //初期化
-    void Initialize(int window_width = 1280, int window_height = 720);
+    void Initialize(int windowWidth = 1280, int windowHeight = 720);
 
     //更新
     void Update(const char* cameraName);
@@ -131,43 +131,43 @@ public: // メンバ関数
     /// <summary>
     /// カメラの位置の取得
     /// </summary>
-    Vector3 GetTranslate() const { return this->translate_; }
+    const Vector3& GetTranslate() const { return this->translate_; }
 
     /// <summary>
     /// カメラの回転角度の取得
     /// </summary>
-    Vector3 GetRotate() const { return this->rotate_; }
+    const Vector3& GetRotate() const { return this->rotate_; }
 
     /// <summary>
     /// カメラ行列を取得する
     /// </summary>
     /// <returns></returns>
-    Matrix4x4 GetCameraMatrix();
+    const Matrix4x4& GetCameraMatrix();
 
     /// <summary>
     /// ワールド行列の取得
     /// </summary>
-    Matrix4x4 GetWorldMatrix() const { return worldMatrix_; }
+    const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
 
     /// <summary>
     /// ビュー行列の取得
     /// </summary>
-    Matrix4x4 GetViewMatrix() const { return viewMatrix_; }
+    const Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
 
     /// <summary>
     /// 透視投影行列の取得
     /// </summary>
-    Matrix4x4 GetPerspectiveFovMatrix() const { return perspectiveFovMatrix_; }
+    const Matrix4x4& GetPerspectiveFovMatrix() const { return perspectiveFovMatrix_; }
 
     /// <summary>
     /// 正射行列の取得
     /// </summary>
-    Matrix4x4 GetOrthographicMatrix() const { return orthographicMatrix_; }
+    const Matrix4x4& GetOrthographicMatrix() const { return orthographicMatrix_; }
 
     /// <summary>
     /// ビューポート変換行列の取得
     /// </summary>
-    Matrix4x4 GetViewportMatrix() const { return viewportMatrix_; }
+    const Matrix4x4& GetViewportMatrix() const { return viewportMatrix_; }
 
 
     /// <summary>
@@ -201,8 +201,8 @@ public: // メンバ関数
     void UpdateMatrix();
 
     // 2Dで使うための現在のビューポートサイズ取得
-    float GetViewportWidth() const { return width_; }
-    float GetViewportHeight() const { return height_; }
+    const float& GetViewportWidth() const { return width_; }
+    const float& GetViewportHeight() const { return height_; }
 
 };
 

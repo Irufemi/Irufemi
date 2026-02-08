@@ -448,7 +448,7 @@ void DebugScene::Update() {
             animationModel_walk_ = std::make_unique<AnimationModel>();
             animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
         }
-        animationModel_walk_->Debug("aniamtionModel_walk_");
+        animationModel_walk_->Debug("animationModel_walk_");
         animationModel_walk_->Update();
     }
     if (isActiveAnimationModel_sneakWalk_) {
@@ -456,7 +456,7 @@ void DebugScene::Update() {
             animationModel_sneakWalk_ = std::make_unique<AnimationModel>();
             animationModel_sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
         }
-        animationModel_sneakWalk_->Debug("aniamtionModel_sneakWalk_");
+        animationModel_sneakWalk_->Debug("animationModel_sneakWalk_");
         animationModel_sneakWalk_->Update();
     }
 
@@ -607,13 +607,5 @@ void DebugScene::Draw() {
     if (isActiveSprite_) {
         sprite_->Draw();
     }
-    
-    /*
-
-    engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-    engine_->ApplyLinePSO();
-
-    line2D_->Draw();*/
 
 }

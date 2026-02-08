@@ -21,7 +21,7 @@ IDxcBlob* CompileShader(
     /// 1. hlslファイルを読む
 
     //これからシェーダーをコンパイルする旨をログに出す
-    OutPutLog(os,ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n", filePath, profile)));
+    Log::OutPutLog(os,ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n", filePath, profile)));
     //hislファイルを読む
     IDxcBlobEncoding* shaderSource = nullptr;
     HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
@@ -61,7 +61,7 @@ IDxcBlob* CompileShader(
     IDxcBlobUtf8* shaderError = nullptr;
     shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
     if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
-        OutPutLog(os,shaderError->GetStringPointer());
+        Log::OutPutLog(os,shaderError->GetStringPointer());
         //警告・エラーダメゼッタイ
         assert(false);
     }
@@ -73,7 +73,7 @@ IDxcBlob* CompileShader(
     hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
     assert(SUCCEEDED(hr));
     //成功したらログを出す
-    OutPutLog(os,ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath, profile)));
+    Log::OutPutLog(os,ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath, profile)));
     //もう使わないリソースを解散
     shaderSource->Release();
     shaderResult->Release();

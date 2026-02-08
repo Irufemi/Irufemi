@@ -1,6 +1,6 @@
 #pragma once
 
-#include "contents/enemy/IEnemy.h"
+#include "actors/enemy/IEnemy.h"
 #include <cstdint>
 
 // 前方宣言

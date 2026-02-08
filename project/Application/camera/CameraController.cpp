@@ -4,10 +4,10 @@
 
 #include "function/Math.h"
 #include "function/Ease.h"
-#include "contents/player/Player.h"
+#include "actors/player/Player.h"
+#include "function/Random.h"
 
 #include <algorithm>
-#include <random>
 
 
 // 初期化
@@ -57,18 +57,13 @@ void CameraController::Update(Camera& camera) {
         const float dt = 1.0f / 60.0f; // 60fps前提
         shakeTimer_ -= dt;
 
-        // 乱数生成器
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> distrib(-1.0f, 1.0f);
-
         // 時間経過で振幅を減衰させる
         float currentAmplitude = shakeAmplitude_ * (shakeTimer_ / 0.3f); // 0.3fはシェイクの持続時間
 
         // ランダムなオフセットを生成
         Vector3 shakeOffset = {
-            distrib(gen) * currentAmplitude,
-            distrib(gen) * currentAmplitude,
+            Random::GeneratorFloat(-1.0f, 1.0f) * currentAmplitude,
+            Random::GeneratorFloat(-1.0f, 1.0f) * currentAmplitude,
             0.0f
         };
 

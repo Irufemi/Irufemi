@@ -44,7 +44,7 @@ void MapChipField::LoadMapChipCsv(const std::string& filePath) {
 	}
 }
 
-MapChipType MapChipField::GetMapChipTypeByIndex(int xIndex, int yIndex) {
+const MapChipType& MapChipField::GetMapChipTypeByIndex(int xIndex, int yIndex) {
 	// 範囲外アクセスは安全に空タイルとして扱う
 	if (xIndex < 0 || kNumBlockHorizontal - 1 < xIndex) {
 		return MapChipType::kBlank;
@@ -55,12 +55,12 @@ MapChipType MapChipField::GetMapChipTypeByIndex(int xIndex, int yIndex) {
 	return mapChipData_.data[yIndex][xIndex];
 }
 
-Vector3 MapChipField::GetMapChipPositionByIndex(int xIndex, int yIndex) {
+const Vector3& MapChipField::GetMapChipPositionByIndex(int xIndex, int yIndex) {
 	// タイル中心座標。y は「上 +」の画面系なので配列インデックスを反転
 	return Vector3(kBlockWidth * xIndex, kBlockHeight * (kNumBlockVirtical - 1 - yIndex), 0);
 }
 
-MapChipField::IndexSet MapChipField::GetMapChipIndexSetByPosition(const Vector3& position) {
+const MapChipField::IndexSet& MapChipField::GetMapChipIndexSetByPosition(const Vector3& position) {
 	// 位置→インデックス(中心基準)。y は配列行に合わせて反転
 	IndexSet indexSet{};
 	indexSet.xIndex = static_cast<int>((position.x + kBlockWidth / 2.0f) / kBlockWidth);
@@ -69,7 +69,7 @@ MapChipField::IndexSet MapChipField::GetMapChipIndexSetByPosition(const Vector3&
 	return indexSet;
 }
 
-MapChipField::Rect MapChipField::GetRectByIndex(int xIndex, int yIndex) {
+const MapChipField::Rect& MapChipField::GetRectByIndex(int xIndex, int yIndex) {
 	// タイルの AABB を返す(中心座標 ± 半サイズ)
 	Vector3 center = GetMapChipPositionByIndex(xIndex, yIndex);
 	Rect rect{};

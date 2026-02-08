@@ -51,10 +51,10 @@ public:
     void PlayFixed();
 
     void SetVolume(float volume);
-    float GetVolume() const { return volume_; }
+    const float& GetVolume() const { return volume_; }
 
-    int GetSelectedCategoryIndex() const { return selectedCat_; }
-    int GetSelectedTrackIndex() const { return selectedTrack_; }
+    const int& GetSelectedCategoryIndex() const { return selectedCat_; }
+    const int& GetSelectedTrackIndex() const { return selectedTrack_; }
     void SetSelectedCategoryIndex(int index) { selectedCat_ = index; }
     void SetSelectedTrackIndex(int index) { selectedTrack_ = index; }
 

@@ -35,14 +35,14 @@ public:                                               // ===== Public API =====
 	void LoadMapChipCsv(const std::string& filePath); // CSV を data へロード
 
 	// ★ インデックス/座標←→相互変換とタイル情報取得(範囲外は安全に空扱い)
-	MapChipType GetMapChipTypeByIndex(int xIndex, int yIndex);
-	Vector3 GetMapChipPositionByIndex(int xIndex, int yIndex);      // タイル中心座標
-	IndexSet GetMapChipIndexSetByPosition(const Vector3& position); // 位置→インデックス
-	Rect GetRectByIndex(int xIndex, int yIndex);                                  // タイル AABB
+	const MapChipType& GetMapChipTypeByIndex(int xIndex, int yIndex);
+	const Vector3& GetMapChipPositionByIndex(int xIndex, int yIndex);      // タイル中心座標
+	const IndexSet& GetMapChipIndexSetByPosition(const Vector3& position); // 位置→インデックス
+	const Rect& GetRectByIndex(int xIndex, int yIndex);                                  // タイル AABB
 
 	// フィールドサイズ(タイル数)
-	uint32_t GetNumBlockVirtical() { return kNumBlockVirtical; }
-	uint32_t GetNumBlockHorizontal() { return kNumBlockHorizontal; }
+	const uint32_t& GetNumBlockVirtical() { return kNumBlockVirtical; }
+	const uint32_t& GetNumBlockHorizontal() { return kNumBlockHorizontal; }
 
 private: // ===== Data & constants =====
 	// タイル寸法・フィールドタイル数
