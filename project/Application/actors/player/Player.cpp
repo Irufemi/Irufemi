@@ -216,11 +216,11 @@ void Player::TakeDamage(int damage, const Vector3& enemyPosition) {
 }
 
 // ===== 補助 =====
-const bool& Player::IsDashing() const { return state_ && state_->IsDashing(); }
-const bool& Player::IsAttacking() const { return state_ && state_->IsAttacking(); }
+bool Player::IsDashing() const { return state_ && state_->IsDashing(); }
+bool Player::IsAttacking() const { return state_ && state_->IsAttacking(); }
 
 // ===== 位置・AABB =====
-const Vector3& Player::GetWorldPosition() {
+Vector3 Player::GetWorldPosition() const {
 
     // ワールド座標を入れる変数
     Vector3 worldPos;
@@ -232,7 +232,7 @@ const Vector3& Player::GetWorldPosition() {
     return worldPos;
 }
 
-const AABB& Player::GetAABB() {
+AABB Player::GetAABB() const {
     const Vector3 worldPos = GetWorldPosition();
     AABB aabb;
     aabb.min = { worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f };
@@ -240,7 +240,7 @@ const AABB& Player::GetAABB() {
     return aabb;
 }
 
-const AABB& Player::GetAttackAABB() {
+AABB Player::GetAttackAABB()const {
     const Vector3 worldPos = GetWorldPosition();
     AABB aabb;
     const float attackWidth = 1.0f;

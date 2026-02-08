@@ -29,7 +29,7 @@ void IEnemy::OnCollision(Player* player) {
     isDead_ = true;
 }
 
-const AABB& IEnemy::GetAABB() const {
+AABB IEnemy::GetAABB() const {
     AABB aabb;
     aabb.min = { transform_.translate.x - width_ / 2.0f, transform_.translate.y - height_ / 2.0f, transform_.translate.z - width_ / 2.0f };
     aabb.max = { transform_.translate.x + width_ / 2.0f, transform_.translate.y + height_ / 2.0f, transform_.translate.z + width_ / 2.0f };
@@ -37,7 +37,7 @@ const AABB& IEnemy::GetAABB() const {
 }
 
 // ワールド座標を取得
-const Vector3& IEnemy::GetWorldPosition() const {
+Vector3 IEnemy::GetWorldPosition() const {
 
     // ワールド座標を入れる変数
     Vector3 worldPos;
@@ -148,7 +148,8 @@ bool IEnemy::IsSolidAt(const Vector3& p, MapChipField::IndexSet* outIdx, MapChip
 	if (outIdx) { *outIdx = idx; }
 	MapChipType t = mapChipField_->GetMapChipTypeByIndex(idx.xIndex, idx.yIndex);
 	if (t == MapChipType::kBlock) {
-		if (outRect) { *outRect = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex); }
+		MapChipField::Rect r = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex);
+		if (outRect) { *outRect = r; }
 		return true;
 	}
 	return false;

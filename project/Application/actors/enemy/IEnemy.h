@@ -47,19 +47,19 @@ public: // メンバ関数
 public: // アクセサ
     /// @brief AABB(当たり判定)を取得
     /// @return AABB
-	const const AABB& GetAABB() const;
+	AABB GetAABB() const;
     /// @brief 生存フラグを取得
     /// @return true: 死亡, false: 生存
-	const bool IsDead() const { return isDead_; }
+	bool IsDead() const { return isDead_; }
     /// @brief 向きを取得
     /// @return 向き (LRDirection)
-	const LRDirection& GetLRDirection() const { return lrDirection_; }
+	LRDirection GetLRDirection() const { return lrDirection_; }
     /// @brief プレイヤーに与えるダメージ量を取得
     /// @return ダメージ量
-	const int& GetDamage() const { return damage_; }
+	int GetDamage() const { return damage_; }
     /// @brief ワールド座標を取得
     /// @return ワールド座標
-    const Vector3& GetWorldPosition() const;
+    Vector3 GetWorldPosition() const;
 
 protected: // 派生クラス向けアクセサ
 	const Transform& GetTransform() const { return transform_; }

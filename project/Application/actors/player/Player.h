@@ -57,28 +57,28 @@ public:
 	const Vector3& GetTranslate() const { return transform_.translate; }
 	/// @brief ワールド座標を取得
 	/// @return ワールド座標
-	const Vector3& GetWorldPosition();
+	Vector3 GetWorldPosition()const;
 	/// @brief AABB(当たり判定)を取得
 	/// @return AABB
-	const AABB& GetAABB();
+	AABB GetAABB()const;
 	/// @brief 攻撃用のAABBを取得
 	/// @return 攻撃用AABB
-	const AABB& GetAttackAABB(); // 攻撃用AABBを取得する関数を追加
+	AABB GetAttackAABB()const; // 攻撃用AABBを取得する関数を追加
 	/// @brief 現在の向きを取得
 	/// @return 向き (LRDirection)
-	const LRDirection& GetLR() const { return lrDirection_; }
+	LRDirection GetLR() const { return lrDirection_; }
 	/// @brief 死亡しているか
 	/// @return true: 死亡, false: 生存
-	const bool& IsDead() const { return isDead_; }
+	bool IsDead() const { return isDead_; }
 	/// @brief ダッシュ中か
 	/// @return true: ダッシュ中
-	const bool& IsDashing() const;
+	bool IsDashing() const;
 	/// @brief 攻撃中か
 	/// @return true: 攻撃中
-	const bool& IsAttacking() const; // 攻撃中か判定する関数を追加
+	bool IsAttacking() const; // 攻撃中か判定する関数を追加
 	/// @brief ダメージを受けた瞬間か
 	/// @return true: ダメージを受けた直後
-	const bool& IsJustDamaged() const { return isJustDamaged_; } // ダメージを受けた瞬間か
+	bool IsJustDamaged() const { return isJustDamaged_; } // ダメージを受けた瞬間か
 	/// @brief 現在のステート名を取得
 	/// @return ステート名
 	const char* GetStateName() const { return state_ ? state_->Name() : "<none>"; }
@@ -90,10 +90,10 @@ public:
 	const Transform& GetTransform() const { return transform_; }
 	/// @brief 現在のHPを取得
 	/// @return HP
-	const int& GetHP() const { return hp_; }
+	int GetHP() const { return hp_; }
 	/// @brief 最大HPを取得
 	/// @return 最大HP
-	const int& GetMaxHP() const { return kMaxHP; }
+	int GetMaxHP() const { return kMaxHP; }
 
 	// セッター
 	/// @brief 攻撃エフェクトのモデルを設定

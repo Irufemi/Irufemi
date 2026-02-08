@@ -92,4 +92,7 @@ void Camera::UpdateMatrix() {
 }
 
 // カメラ行列を取得する
-const Matrix4x4& Camera::GetCameraMatrix() { return Math::MakeAffineMatrix(scale_, rotate_, translate_); }
+const Matrix4x4& Camera::GetCameraMatrix() { 
+    worldMatrix_ = Math::MakeAffineMatrix(scale_, rotate_, translate_);
+    return worldMatrix_;
+}
