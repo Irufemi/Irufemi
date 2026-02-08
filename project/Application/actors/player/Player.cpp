@@ -188,7 +188,7 @@ void Player::OnCollision(const IEnemy* enemy) {
     TakeDamage(enemy->GetDamage(), enemy->GetWorldPosition());
 }
 
-void Player::TakeDamage(int damage, const Vector3& enemyPosition) {
+void Player::TakeDamage(const int& damage, const Vector3& enemyPosition) {
     // 無敵時間中はダメージを受けない
     if (invincibilityTimer_ > 0.0f) {
         return;

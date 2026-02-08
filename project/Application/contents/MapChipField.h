@@ -13,10 +13,12 @@ struct MapChipData {
 	std::vector<std::vector<MapChipType>> data;
 };
 
-/// <summary>
-/// マップチップフィールド
-/// ※ 座標系：x 右+, y 上+。タイル原点は中心。
-/// </summary>
+/**
+ * @class MapChipField
+ * @brief CSVファイルから読み込んだデータに基づいてマップチップを管理するクラス
+ *
+ * 座標系：x 右+, y 上+。タイル原点は中心。
+ */
 class MapChipField {
 public: // ===== Public types =====
 	struct IndexSet {
@@ -31,17 +33,53 @@ public: // ===== Public types =====
 	};
 
 public:                                               // ===== Public API =====
-	void ResetMapChipData();                          // 配列リサイズ＆初期化
-	void LoadMapChipCsv(const std::string& filePath); // CSV を data へロード
+	/**
+	 * @brief マップチップデータをリセットし、配列を再確保します
+	 */
+	void ResetMapChipData();
+	/**
+	 * @brief 指定されたCSVファイルからマップデータを読み込みます
+	 * @param filePath CSVファイルのパス
+	 */
+	void LoadMapChipCsv(const std::string& filePath);
 
-	// ★ インデックス/座標←→相互変換とタイル情報取得(範囲外は安全に空扱い)
+	/**
+	 * @brief 指定したインデックスのマップチップ種類を取得します
+	 * @param xIndex X方向のインデックス
+	 * @param yIndex Y方向のインデックス
+	 * @return MapChipType マップチップの種類
+	 */
 	MapChipType GetMapChipTypeByIndex(int xIndex, int yIndex) const;
-	Vector3 GetMapChipPositionByIndex(int xIndex, int yIndex) const;      // タイル中心座標
-	IndexSet GetMapChipIndexSetByPosition(const Vector3& position) const; // 位置→インデックス
-	Rect GetRectByIndex(const int& xIndex, const int& yIndex) const;                                  // タイル AABB
+	/**
+	 * @brief 指定したインデックスのマップチップの中心座標を取得します
+	 * @param xIndex X方向のインデックス
+	 * @param yIndex Y方向のインデックス
+	 * @return Vector3 ワールド座標
+	 */
+	Vector3 GetMapChipPositionByIndex(int xIndex, int yIndex) const;
+	/**
+	 * @brief ワールド座標から対応するマップチップのインデックスを取得します
+	 * @param position ワールド座標
+	 * @return IndexSet マップチップのインデックス
+	 */
+	IndexSet GetMapChipIndexSetByPosition(const Vector3& position) const;
+	/**
+	 * @brief 指定したインデックスのマップチップの矩形（AABB）を取得します
+	 * @param xIndex X方向のインデックス
+	 * @param yIndex Y方向のインデックス
+	 * @return Rect 矩形情報
+	 */
+	Rect GetRectByIndex(const int& xIndex, const int& yIndex) const;
 
-	// フィールドサイズ(タイル数)
+	/**
+	 * @brief マップの垂直方向のタイル数を取得します
+	 * @return uint32_t 垂直方向のタイル数
+	 */
 	uint32_t GetNumBlockVirtical() const { return kNumBlockVirtical; }
+	/**
+	 * @brief マップの水平方向のタイル数を取得します
+	 * @return uint32_t 水平方向のタイル数
+	 */
 	uint32_t GetNumBlockHorizontal() const { return kNumBlockHorizontal; }
 
 private: // ===== Data & constants =====
@@ -51,5 +89,5 @@ private: // ===== Data & constants =====
 	static inline const uint32_t kNumBlockVirtical = 20;
 	static inline const uint32_t kNumBlockHorizontal = 100;
 
-	MapChipData mapChipData_{};
+	MapChipData mapChipData_;
 };

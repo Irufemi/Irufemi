@@ -1,12 +1,25 @@
 #pragma once
 
+/**
+ * @class GameApplication
+ * @brief ゲームアプリケーション全体のエントリーポイントと実行を管理するクラス
+ *
+ * エンジンの初期化、シーンの登録、ゲームループの開始を担当します。
+ */
 class GameApplication {
 public:
-    // コンストラクタ・デストラクタ
+    /**
+     * @brief コンストラクタ
+     */
     GameApplication();
+    /**
+     * @brief デストラクタ
+     */
     ~GameApplication();
 
-    // 実行
+    /**
+     * @brief ゲームアプリケーションを実行します
+     */
     void Run();
 
 private:
