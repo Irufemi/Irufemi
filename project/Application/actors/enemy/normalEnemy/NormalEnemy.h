@@ -8,9 +8,18 @@ class Camera;
 class GameScene;
 class Player;
 
+/**
+ * @class NormalEnemy
+ * @brief 標準的な敵キャラクタークラス
+ * @details IEnemyを継承し、左右に移動するだけのシンプルな振る舞いを実装します。
+ *          プレイヤーの攻撃を受けると死亡します。
+ */
 class NormalEnemy : public IEnemy {
 public:
-    // 振る舞いの種類
+    /**
+     * @enum Behavior
+     * @brief 敵の振る舞いの種類を定義します
+     */
     enum class Behavior {
         kWalk,  // 歩行
         kDeath, // 死亡
@@ -18,24 +27,42 @@ public:
     };
 
 public: // メンバ関数
-    // コンストラクタ
+    /**
+     * @brief コンストラクタ
+     * @param gameScene ゲームシーンのポインタ
+     * @param camera カメラのポインタ
+     */
     NormalEnemy(GameScene* gameScene, Camera* camera);
 
-    // 初期化
+    /**
+     * @brief 初期化処理
+     * @param position 初期座標
+     */
     void Initialize(const Vector3& position) override;
-    // 更新
+    /**
+     * @brief 毎フレームの更新処理
+     */
     void Update() override;
-    // 描画
+    /**
+     * @brief 描画処理
+     */
     void Draw() override;
 
-    // 衝突時に呼ばれる関数
+    /**
+     * @brief プレイヤーとの衝突時に呼ばれる関数
+     * @param player 衝突したプレイヤーのポインタ
+     */
     void OnCollision(Player* player) override;
 
 private: // 内部処理
-    // 行列の更新
+    /**
+     * @brief ワールド行列を更新します
+     */
     void UpdateMatrix();
 
-    // 各振る舞いの処理
+    /**
+     * @brief 各振る舞いの初期化・更新処理
+     */
     void BehaviorWalkInitialize();
     void BehaviorWalkUpdate();
     void BehaviorDeathInitialize();

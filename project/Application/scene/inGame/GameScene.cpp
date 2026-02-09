@@ -350,7 +350,7 @@ void GameScene::InitializeGameObjects() {
     // カメラコントローラー
     cameraController_ = std::make_unique<CameraController>();
     cameraController_->Initialize();
-    cameraController_->Settarget(player_.get());
+    cameraController_->SetTarget(player_.get());
     cameraController_->Reset();
 }
 

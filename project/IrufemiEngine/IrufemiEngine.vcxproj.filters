@@ -1,18 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="ソース ファイル">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="ヘッダー ファイル">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="リソース ファイル">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="math">
       <UniqueIdentifier>{d550c156-20f2-429d-9345-fa886c180b31}</UniqueIdentifier>
     </Filter>
@@ -143,12 +131,6 @@
     </ClCompile>
     <ClCompile Include="math\Vector3 .cpp">
       <Filter>math</Filter>
-    </ClCompile>
-    <ClCompile Include="function\Ease.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\Math.cpp">
-      <Filter>function</Filter>
     </ClCompile>
     <ClCompile Include="engine\directX\PSOManager.cpp">
       <Filter>Engine\directXCommon</Filter>
@@ -284,10 +266,16 @@
       <Filter>3D</Filter>
     </ClCompile>
     <ClCompile Include="function\Collision.cpp">
-      <Filter>function</Filter>
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="function\Ease.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="function\Math.cpp">
+      <Filter>math</Filter>
     </ClCompile>
     <ClCompile Include="function\Random.cpp">
-      <Filter>function</Filter>
+      <Filter>math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -380,12 +368,6 @@
     </ClInclude>
     <ClInclude Include="function\GetBackBufferIndex.h">
       <Filter>Engine\function</Filter>
-    </ClInclude>
-    <ClInclude Include="function\Ease.h">
-      <Filter>function</Filter>
-    </ClInclude>
-    <ClInclude Include="function\Math.h">
-      <Filter>function</Filter>
     </ClInclude>
     <ClInclude Include="math\shape\Particle.h">
       <Filter>math\shape</Filter>
@@ -558,9 +540,6 @@
     <ClInclude Include="math\DirectionalLight.h">
       <Filter>math\light</Filter>
     </ClInclude>
-    <ClInclude Include="function\Collision.h">
-      <Filter>function</Filter>
-    </ClInclude>
     <ClInclude Include="math\LRDirection.h">
       <Filter>math</Filter>
     </ClInclude>
@@ -598,7 +577,16 @@
       <Filter>math\model</Filter>
     </ClInclude>
     <ClInclude Include="function\Random.h">
-      <Filter>function</Filter>
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Collision.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Ease.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Math.h">
+      <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
