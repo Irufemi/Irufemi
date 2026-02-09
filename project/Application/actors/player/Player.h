@@ -21,6 +21,10 @@ struct IPlayerState;
 struct PlayerStateRoot;
 struct PlayerStateDash;
 
+/// @class Player
+/// @brief プレイヤーキャラクターを管理するクラス
+/// @details プレイヤーの入力、状態遷移、物理挙動、描画、他オブジェクトとの衝突など、
+///          プレイヤーに関連するすべての要素を統括します。
 class Player {
 public:
 
