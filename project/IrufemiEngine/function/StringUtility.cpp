@@ -1,6 +1,13 @@
 #include "StringUtility.h"
 #include <Windows.h>
 
+namespace StringUtility {
+
+    bool EndsWith(const std::wstring& str, const std::wstring& suffix) {
+        return str.ends_with(suffix);
+    }
+}
+
 std::wstring ConvertString(const std::string& str) {
     if (str.empty()) {
         return std::wstring();

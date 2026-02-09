@@ -23,7 +23,8 @@ void PSOManager::Initialize(
     ShaderSet byGeometryShaderShaders,
     ShaderSet lineShaders,
     ShaderSet lineInstancedShaders,
-    ShaderSet skinningShaders
+    ShaderSet skinningShaders,
+    ShaderSet skyboxShaders
 )
 {
     device_ = device;
@@ -44,6 +45,7 @@ void PSOManager::Initialize(
     lineShaders_ = lineShaders;
     lineInstancedShaders_ = lineInstancedShaders;
     skinningShaders_ = skinningShaders;
+    skyboxShaders_ = skyboxShaders;
 
     cache_.clear();
 }
@@ -222,6 +224,29 @@ ID3D12PipelineState* PSOManager::GetSkinning(BlendMode blend, DepthWrite depth, 
 
     D3D12_BLEND_DESC bd = MakeBlend(blend);
     D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
+
+    auto pso = CreatePSO(set, bd, dd, cull);
+    if (!pso) { return nullptr; }
+    cache_[key] = pso;
+    return pso.Get();
+}
+
+ID3D12PipelineState* PSOManager::GetSkybox(CullMode cull)
+{
+    const bool hasVS = (skyboxShaders_.vsBlob && skyboxShaders_.vsBlob->GetBufferPointer());
+    const bool hasPS = (skyboxShaders_.psBlob && skyboxShaders_.psBlob->GetBufferPointer());
+    const ShaderSet& set = (hasVS && hasPS) ? skyboxShaders_ : objectShaders_;
+
+    Key key{ Hash(set, BlendMode::kBlendModeNone, DepthWrite::Disable, cull) };
+    if (auto it = cache_.find(key); it != cache_.end()) { return it->second.Get(); }
+
+    D3D12_BLEND_DESC bd = MakeBlend(BlendMode::kBlendModeNone);
+
+    // Skybox用の特別な深度設定
+    D3D12_DEPTH_STENCIL_DESC dd{};
+    dd.DepthEnable = TRUE;
+    dd.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // 深度書き込みはしない
+    dd.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL; // 深度が同じか近ければ描画
 
     auto pso = CreatePSO(set, bd, dd, cull);
     if (!pso) { return nullptr; }

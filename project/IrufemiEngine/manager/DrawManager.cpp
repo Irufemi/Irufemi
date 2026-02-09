@@ -16,6 +16,7 @@
 #include "3D/TetraRegion.h"
 #include "3D/LineClass.h"
 #include "3D/CubeClass.h"
+#include "3D/Skybox.h"
 
 #include "source/D3D12ResourceUtil.h"
 #include "engine/directX/DirectXCommon.h"
@@ -875,4 +876,31 @@ void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUA
             dxCommon_->GetCommandList()->DrawInstanced(gpuMesh->vertexCount, 1, 0, 0);
         }
     }
+}
+
+void DrawManager::DrawSkybox(Skybox* skybox) {
+
+    dxCommon_->GetCommandList()->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+
+    dxCommon_->GetCommandList()->IASetVertexBuffers(0, 1, &skybox->GetVertexBufferView()); // VBVを設定
+    //IBVを設定
+    dxCommon_->GetCommandList()->IASetIndexBuffer(&skybox->GetIndexBufferView());
+    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
+    dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    ///CBVを設定する
+
+    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(0, skybox->GetMaterialResource()->GetGPUVirtualAddress());
+
+    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
+    dxCommon_->GetCommandList()->SetGraphicsRootConstantBufferView(1, skybox->GetTransformationResource()->GetGPUVirtualAddress());
+
+    ///DescriptorTableを設定する
+
+    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
+    dxCommon_->GetCommandList()->SetGraphicsRootDescriptorTable(2, skybox->GetTextureHandle());
+
+    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。
+    dxCommon_->GetCommandList()->DrawIndexedInstanced(skybox->GetIndexSize(), 1, 0, 0, 0);
 }

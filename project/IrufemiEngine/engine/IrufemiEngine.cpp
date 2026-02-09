@@ -27,6 +27,7 @@
 #include "3D/SphereRegion.h"
 #include "3D/TetraRegion.h"
 #include "3D/LineClass.h"
+#include "3D/Skybox.h"
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "source/Texture.h"
@@ -204,6 +205,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     AnimationModel::SetIrufemiEngine(this);
 
     Fade::SetEngine(this);
+    Skybox::SetEngine(this);
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -370,5 +372,13 @@ void IrufemiEngine::ApplySkinningPSO()
 {
     auto* pso = GetPSOManager()->GetSkinning(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Skinning PSO is null. Check PSOManager::Initialize and shader blobs.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplySkyboxPSO()
+{
+    // Skyboxは内側から見るので、前面カリング
+    auto* pso = GetPSOManager()->GetSkybox(PSOManager::CullMode::Front);
+    assert(pso && "Skybox PSO is null. Check Skybox shader setup.");
     if (pso) { drawManager->BindPSO(pso); }
 }

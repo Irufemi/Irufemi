@@ -99,6 +99,7 @@ public: // ゲッター
     ID3D12Resource* GetSwapChainResources(UINT index) { return dxCommon_->GetSwapChainResources(index); }
     D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return dxCommon_->GetRtvHandles(index); }
     uint64_t& GetFenceValue() { return dxCommon_->GetFenceValue(); }
+    DirectXCommon* GetDirectXCommon() { return this->dxCommon_.get(); }
     InputManager* GetInputManager() { return this->inputManager_.get(); }
     DrawManager* GetDrawManager() { return this->drawManager.get(); }
     DebugUI* GetDebugUI() { return this->ui.get(); }
@@ -142,6 +143,7 @@ public: // セッター
     void ApplyLinePSO();
     void ApplyLineInstancedPSO();
     void ApplySkinningPSO();
+    void ApplySkyboxPSO();
 
 public:
     // 状態(現在のブレンドと深度書き込み)

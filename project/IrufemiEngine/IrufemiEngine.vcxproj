@@ -179,6 +179,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\PointLightClass.cpp" />
     <ClCompile Include="3D\particle\IParticleBehavior.cpp" />
     <ClCompile Include="3D\LineClass.cpp" />
+    <ClCompile Include="manager\PrimitiveManager.cpp" />
     <ClCompile Include="math\LineMaterial.h" />
     <ClCompile Include="math\LineVertexData.h" />
     <ClCompile Include="main.cpp">
@@ -195,6 +196,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\PlaneClass.cpp" />
     <ClCompile Include="engine\Input\Mouse.cpp" />
     <ClCompile Include="math\Vector4.cpp" />
+    <ClCompile Include="3D\Skybox.cpp" />
     <ClCompile Include="source\D3D12ResourceUtil.cpp" />
     <ClCompile Include="engine\directX\DirectXCommon.cpp" />
     <ClCompile Include="engine\IrufemiEngine.cpp" />
@@ -263,6 +265,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="engine\Input\Keyboard.h" />
     <ClInclude Include="3D\particle\IParticleBehavior.h" />
     <ClInclude Include="3D\LineClass.h" />
+    <ClInclude Include="manager\PrimitiveManager.h" />
     <ClInclude Include="math\AnimationTransform.h" />
     <ClInclude Include="manager\AudioManager.h" />
     <ClInclude Include="manager\DebugUI.h" />
@@ -290,6 +293,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\ObjModel.h" />
     <ClInclude Include="math\ParticleMaterial.h" />
     <ClInclude Include="math\PointLight.h" />
+    <ClInclude Include="math\PrimitiveType.h" />
     <ClInclude Include="math\Quaternion.h" />
     <ClInclude Include="math\QuaternionTransform.h" />
     <ClInclude Include="math\RiffHeader.h" />
@@ -323,6 +327,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="scene\IScene.h" />
     <ClInclude Include="scene\SceneManager.h" />
     <ClInclude Include="audio\Se.h" />
+    <ClInclude Include="3D\Skybox.h" />
     <ClInclude Include="source\D3D12ResourceUtil.h" />
     <ClInclude Include="source\Sound.h" />
     <ClInclude Include="source\Texture.h" />
@@ -342,6 +347,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="..\Application\resources\shaders\Object3d.hlsli" />
     <None Include="..\Application\resources\shaders\Particle.hlsli" />
     <None Include="..\Application\resources\shaders\SkinningObject3D.hlsli" />
+    <None Include="..\Application\resources\shaders\Skybox.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
@@ -433,6 +439,16 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\SkinningObject3D.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Skybox.PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Skybox.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

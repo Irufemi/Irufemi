@@ -25,14 +25,35 @@ class DirectXCommon;
 class Camera;
 
 class D3D12ResourceUtil {
+
+
+public: //メンバ関数
+
+    //デストラクタ
+    ~D3D12ResourceUtil();
+
+    //ID3D12Resourceを生成する
+    void CreateResource();
+
+    //バッファへの書き込みを開放
+    void Map();
+
+    //バッファへの書き込みを閉鎖
+    void UnMap();
+
+    void UpdateTransform3D(const Camera& camera);
+
+    static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
+    DirectXCommon* GetDirectXCommon() { return dxCommon_; }
+
 public: //メンバ変数
 
 #pragma region Vertex
 
-    // 頂点データリスト(position,tecoord,normal)
+    // 頂点データリスト(position,texcoord,normal)
     std::vector<VertexData> vertexDataList_{};
 
-    //頂点データ(position,tecoord,normal)
+    //頂点データ(position,texcoord,normal)
     VertexData* vertexData_ = nullptr;
 
 #pragma endregion
@@ -111,26 +132,6 @@ public: //メンバ変数
     static DirectXCommon* dxCommon_;
 
 #pragma endregion
-
-
-public: //メンバ関数
-
-    static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
-    DirectXCommon* GetDirectXCommon() { return dxCommon_; }
-
-    //デストラクタ
-    ~D3D12ResourceUtil();
-
-    //ID3D12Resourceを生成する
-    void CreateResource();
-
-    //バッファへの書き込みを開放
-    void Map();
-
-    //バッファへの書き込みを閉鎖
-    void UnMap();
-
-    void UpdateTransform3D(const Camera& camera);
 };
 
 class D3D12ResourceUtilParticle {
@@ -138,10 +139,10 @@ public: //メンバ変数
 
 #pragma region Vertex
 
-    // 頂点データリスト(position,tecoord,normal)
+    // 頂点データリスト(position,texcoord,normal)
     std::vector<VertexData> vertexDataList_{};
 
-    //頂点データ(position,tecoord,normal)
+    //頂点データ(position,texcoord,normal)
     VertexData* vertexData_ = nullptr;
 
 #pragma endregion

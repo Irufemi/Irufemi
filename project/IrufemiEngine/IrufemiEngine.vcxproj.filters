@@ -286,6 +286,12 @@
     <ClCompile Include="function\Collision.cpp">
       <Filter>function</Filter>
     </ClCompile>
+    <ClCompile Include="manager\PrimitiveManager.cpp">
+      <Filter>Engine\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\Skybox.cpp">
+      <Filter>3D</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
@@ -594,6 +600,15 @@
     <ClInclude Include="math\WellForGPU.h">
       <Filter>math\model</Filter>
     </ClInclude>
+    <ClInclude Include="manager\PrimitiveManager.h">
+      <Filter>Engine\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="math\PrimitiveType.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\Skybox.h">
+      <Filter>3D</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Object2D.hlsli">
@@ -615,6 +630,9 @@
       <Filter>Engine\shaders</Filter>
     </None>
     <None Include="..\Application\resources\shaders\SkinningObject3D.hlsli">
+      <Filter>Engine\shaders</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\Skybox.hlsli">
       <Filter>Engine\shaders</Filter>
     </None>
   </ItemGroup>
@@ -662,6 +680,12 @@
       <Filter>Engine\shaders</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\SkinningObject3D.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Skybox.PS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Skybox.VS.hlsl">
       <Filter>Engine\shaders</Filter>
     </FxCompile>
   </ItemGroup>

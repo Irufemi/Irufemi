@@ -16,6 +16,7 @@
 #include "3D/effect/EffectSystem.h"
 #include "3D/LineClass.h"
 #include "3D/AnimationModel.h"
+#include "3D/Skybox.h"
 
 #include <memory>
 #include <vector>
@@ -94,8 +95,6 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<EffectSystem> effect_ = nullptr;
     bool isActiveEffect_ = false;
 
-
-
     std::unique_ptr<AnimationModel> animatedCube_ = nullptr;
     bool isActiveAnimatedCube_ = false;
 
@@ -126,12 +125,8 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<AnimationModel> animationSkin_ = nullptr;
     bool isActiveAnimationSkin_ = false;
 
-    std::unique_ptr<Sprite> imguiSprite_;
-    bool showDemoWindow = false;
-
-    std::unique_ptr<Line2DClass> line2D_ = nullptr;
-
-    std::unique_ptr<Line3DClass> line3D_ = nullptr;
+    std::unique_ptr<Skybox> skybox_ = nullptr;
+    bool isActiveSkybox_ = false;
 
 private: // メンバ変数(システム)
     // エンジン

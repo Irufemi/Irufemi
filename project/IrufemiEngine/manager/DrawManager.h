@@ -31,6 +31,7 @@ class Line2DClass;
 class Line3DClass;
 class Line3DRegion;
 class CubeClass;
+class Skybox;
 struct SkinCluster;
 
 // 構造体を前方宣言
@@ -133,6 +134,8 @@ public: //メンバ関数
 
     void DrawSpriteRegion(SpriteRegion* region);
     void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource);
+
+    void DrawSkybox(Skybox* skybox);
 
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
 };
