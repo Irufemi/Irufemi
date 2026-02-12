@@ -132,7 +132,7 @@ private:
 	uint32_t cylinderSegmentCount_ = 32;
 	bool cylinderFlipV_ = false;
 
-	std::vector<std::unique_ptr<Line3DClass>> debugLines_;
+	std::unique_ptr<Line3DRegion> debugLineRegion_;
 
 	// デバッグ表示フラグ
 	bool showEmitterAABB_ = true;

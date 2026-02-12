@@ -14,6 +14,8 @@
 #include <string>
 #include <cstdint>
 #include <memory>
+#include <vector>
+#include <map>
 #include "wrl.h"
 
 // 前方宣言
@@ -70,6 +72,11 @@ private: // メンバ変数
     Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_;
     TransformationMatrix* transformationData_ = nullptr;
 
+    // メッシュごとの変換行列リソース
+    std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> meshTransformationResources_;
+    std::vector<TransformationMatrix*> meshTransformationData_;
+    std::map<std::string, Matrix4x4> nodeWorldMatrices_;
+
     Camera* camera_ = nullptr;
 
     static IrufemiEngine* engine_;
@@ -77,6 +84,9 @@ private: // メンバ変数
     Skeleton skeleton_;
 
     SkinCluster skinCluster_;
+
+    // ノードアニメーション用の固有Matrix
+    Matrix4x4 localMatrix_;
 
     Matrix4x4 worldMatrix_;
 

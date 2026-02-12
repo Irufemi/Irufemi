@@ -27,6 +27,9 @@ struct ObjMaterial {
 
     bool enableLighting = true;
 
+    // 環境マップの映り込み係数
+    float environmentCoefficient = 1.0f;
+
     Matrix4x4 uvTransform = Math::MakeIdentity4x4();
 
     std::string textureFilePath = "";
@@ -37,6 +40,7 @@ struct ObjMesh {
     std::vector<VertexData> vertices;
     std::vector<uint32_t> indices; // 追加
     ObjMaterial material;
+    std::string nodeName; // 追加: このメッシュが属するノード名
 };
 
 // 階層(Node)を統合した拡張版 ObjModel

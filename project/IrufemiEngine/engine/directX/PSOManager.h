@@ -44,7 +44,8 @@ public:
         ShaderSet byGeometryShaderShaders = {},
         ShaderSet lineShaders = {},
         ShaderSet lineInstancedShaders = {},
-        ShaderSet skinningShaders = {}
+        ShaderSet skinningShaders = {},
+        ShaderSet skyboxShaders = {}
     );
 
     // 既存シェーダで取得(メッシュ/スプライト等)
@@ -66,6 +67,8 @@ public:
     ID3D12PipelineState* GetLineInstanced(BlendMode blend, DepthWrite depth, CullMode cull);
 
     ID3D12PipelineState* GetSkinning(BlendMode blend, DepthWrite depth, CullMode cull);
+
+    ID3D12PipelineState* GetSkybox(CullMode cull);
 
     void ClearCache();
 
@@ -90,6 +93,7 @@ private:
     ShaderSet lineShaders_{};
     ShaderSet lineInstancedShaders_{};
     ShaderSet skinningShaders_{};
+    ShaderSet skyboxShaders_{};
 
     struct Key {
         uint64_t hash;

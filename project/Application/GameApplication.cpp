@@ -41,6 +41,7 @@ namespace {
 #if defined(_DEBUG) || defined(DEVELOPMENT)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
+
     }
 }
 

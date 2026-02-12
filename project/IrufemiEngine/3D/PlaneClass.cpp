@@ -173,8 +173,9 @@ void PlaneClass::Update() {
 }
 
 void PlaneClass::Draw() {
-    // インデックス付き描画
-    drawManager_->DrawByIndex(resource_.get());
+    if (drawManager_) {
+        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
+    }
 }
 
 void PlaneClass::Debug([[maybe_unused]] const char* planeName) {

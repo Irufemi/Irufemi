@@ -257,8 +257,9 @@ void CylinderClass::Update() {
 }
 
 void CylinderClass::Draw() {
-    // DrawManager 側に DrawCylinder(CylinderClass*) を用意してください
-    drawManager_->DrawCylinder(this);
+    if (drawManager_) {
+        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
+    }
 }
 
 void CylinderClass::Debug([[maybe_unused]] const char* cylinderName) {

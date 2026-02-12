@@ -399,6 +399,7 @@ void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_u
     ImGui::ColorEdit4(("Color" + id_str).c_str(), &material->color.x);
     ImGui::Checkbox(("Enable Lighting" + id_str).c_str(), &material->enableLighting);
     ImGui::DragFloat(("Shininess" + id_str).c_str(), &material->shininess, 1.0f, 1.0f, 256.0f);
+    ImGui::DragFloat(("Environment Coefficient" + id_str).c_str(), &material->environmentCoefficient, 0.01f, 0.0f, 1.0f);
 
     // UV Transform
     if (ImGui::TreeNode(("UV Transform" + id_str).c_str())) {
@@ -425,6 +426,7 @@ void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
             materialData->lightingMode = currentMode;
         }
         ImGui::DragFloat("Shininess", &materialData->shininess);
+        ImGui::DragFloat("Environment Coefficient", &materialData->environmentCoefficient, 0.01f, 0.0f, 1.0f);
     }
 #endif // USE_IMGUI
 }

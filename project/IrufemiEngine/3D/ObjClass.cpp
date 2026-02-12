@@ -181,6 +181,7 @@ void ObjClass::UpdateMaterials() {
                 mappedData->enableLighting = cpuMat.enableLighting;
                 mappedData->uvTransform = cpuMat.uvTransform;
                 mappedData->shininess = cpuMat.shininess;
+                mappedData->environmentCoefficient = cpuMat.environmentCoefficient; // この行を追加
                 mappedData->hasTexture = !cpuMat.textureFilePath.empty();
                 // ライティングモードを enableLighting に基づいて設定
                 mappedData->lightingMode = cpuMat.enableLighting ? 2 : 0;

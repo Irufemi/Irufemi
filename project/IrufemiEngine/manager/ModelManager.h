@@ -64,27 +64,27 @@ public:
     void ClearAll();
 
     // --- 静的ロード関数 (旧 Function.h 由来) ---
-        static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
-        static ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filename);
-        static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
-        static ObjModel LoadModelFileM(const std::string& directoryPath, const std::string& filename);
-        static bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
-        static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
-        static Node ReadNode(aiNode* node);
-    
-    
-    private:
-        std::string NormalizeAndResolve(const std::string& filename) const;
-        static bool StartsWith(const std::string& s, const std::string& prefix);
-        static std::pair<std::string, std::string> SplitDirectoryAndFile(const std::string& full);
-        void DebugLogLoad(const std::string& key, size_t meshCount);
-        std::string FindFileRecursive(const std::string& filename) const;
-    
-    private:
-        DirectXCommon* dxCommon_ = nullptr;
-        TextureManager* textureManager_ = nullptr; // 追加
-        std::string rootDir_;
-        mutable std::mutex mutex_;
-        std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
-        mutable std::unordered_map<std::string, std::string> filePathCache_;
-    };
+    static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
+    static ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filename);
+    static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
+    static ObjModel LoadModelFileM(const std::string& directoryPath, const std::string& filename);
+    static bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
+    static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
+    static Node ReadNode(aiNode* node);
+
+
+private:
+    std::string NormalizeAndResolve(const std::string& filename) const;
+    static bool StartsWith(const std::string& s, const std::string& prefix);
+    static std::pair<std::string, std::string> SplitDirectoryAndFile(const std::string& full);
+    void DebugLogLoad(const std::string& key, size_t meshCount);
+    std::string FindFileRecursive(const std::string& filename) const;
+
+private:
+    DirectXCommon* dxCommon_ = nullptr;
+    TextureManager* textureManager_ = nullptr; // 追加
+    std::string rootDir_;
+    mutable std::mutex mutex_;
+    std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
+    mutable std::unordered_map<std::string, std::string> filePathCache_;
+};

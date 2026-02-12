@@ -22,12 +22,11 @@
 #include "3D/PlaneClass.h"
 #include "3D/CylinderClass.h"
 #include "3D/particle/ParticleSystem.h"
-#include "3D/PointLightClass.h"
-#include "3D/SpotLightClass.h"
 #include "3D/Region.h"
 #include "3D/SphereRegion.h"
 #include "3D/TetraRegion.h"
 #include "3D/LineClass.h"
+#include "3D/Skybox.h"
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "source/Texture.h"
@@ -81,9 +80,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     D3D12ResourceUtil::SetDirectXCommon(dxCommon_.get());
     D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
     D3D12ResourceUtilLine::SetDirectXCommon(dxCommon_.get());
-    PointLightClass::SetDxCommon(dxCommon_.get());
-    SpotLightClass::SetDxCommon(dxCommon_.get());
-    Region::SetDirectXCommon(dxCommon_.get());
+    ModelRegion::SetDirectXCommon(dxCommon_.get());
     SphereRegion::SetDirectXCommon(dxCommon_.get());
     TetraRegion::SetDirectXCommon(dxCommon_.get());
     Line3DRegion::SetDirectXCommon(dxCommon_.get());
@@ -95,7 +92,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         // 注入
         Texture::SetDescriptorPool(srvPool);
         SphereRegion::SetSrvAllocator(srvPool);
-        Region::SetSrvAllocator(srvPool);
+        ModelRegion::SetSrvAllocator(srvPool);
         TetraRegion::SetSrvAllocator(srvPool);
         ParticleSystem::SetSrvPool(srvPool);
         SpriteRegion::SetSrvAllocator(srvPool);
@@ -114,7 +111,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     modelManager_ = std::make_unique<ModelManager>();
     modelManager_->Initialize(dxCommon_.get(),textureManager.get()); // dxCommon を渡す
     ObjClass::SetModelManager(modelManager_.get());
-    Region::SetModelManager(modelManager_.get()); // Regionにも設定
+    ModelRegion::SetModelManager(modelManager_.get()); // Regionにも設定
 
     // 既存SRVの走査で free-list 再構築
     {
@@ -175,13 +172,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     CubeClass::SetDrawManager(drawManager.get());
     PlaneClass::SetDrawManager(drawManager.get());
     CylinderClass::SetDrawManager(drawManager.get());
-    Region::SetDrawManager(drawManager.get());
+    ModelRegion::SetDrawManager(drawManager.get());
     SphereRegion::SetDrawManager(drawManager.get());
     TetraRegion::SetDrawManager(drawManager.get());
     ParticleSystem::SetDrawManager(drawManager.get());
     ParticleSystem::SetEngine(this);
-    Line2DClass::SetDrawManager(drawManager.get());
-    Line3DClass::SetDrawManager(drawManager.get());
     Line3DRegion::SetDrawManager(drawManager.get());
 
     // テクスチャ
@@ -195,7 +190,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     CubeClass::SetTextureManager(textureManager.get());
     PlaneClass::SetTextureManager(textureManager.get());
     CylinderClass::SetTextureManager(textureManager.get());
-    Region::SetTextureManager(textureManager.get());
+    ModelRegion::SetTextureManager(textureManager.get());
     SphereRegion::SetTextureManager(textureManager.get());
     TetraRegion::SetTextureManager(textureManager.get());
     ParticleSystem::SetTextureManager(textureManager.get());
@@ -206,6 +201,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     AnimationModel::SetIrufemiEngine(this);
 
     Fade::SetEngine(this);
+    Skybox::SetEngine(this);
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -372,5 +368,13 @@ void IrufemiEngine::ApplySkinningPSO()
 {
     auto* pso = GetPSOManager()->GetSkinning(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Skinning PSO is null. Check PSOManager::Initialize and shader blobs.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplySkyboxPSO()
+{
+    // Skyboxは内側から見るので、前面カリング
+    auto* pso = GetPSOManager()->GetSkybox(PSOManager::CullMode::Front);
+    assert(pso && "Skybox PSO is null. Check Skybox shader setup.");
     if (pso) { drawManager->BindPSO(pso); }
 }

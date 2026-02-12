@@ -3,6 +3,7 @@
 #include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
 #include "manager/DebugUI.h"
+#include "manager/TextureManager.h"
 
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
@@ -75,7 +76,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTriangle_ = false;
     isActiveCube_ = false;
     isActivePlane_ = false;
-    isActiveSphere_ = false;
+    isActiveSphere_ = true; // Sphereをデフォルトで表示
     isActiveCylinder_ = false;
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
@@ -86,9 +87,17 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
     isActiveEffect_ = false;
-    isActiveAnimationModel_animatedCube_ = false;
-    isActiveAnimationModel_walk_ = false;
-    isActiveAnimationModel_sneakWalk_ = false;
+    isActiveAnimatedCube_ = false;
+    isActiveWalk_ = false;
+    isActiveSneakWalk_ = false;
+    isActiveAnimationNode_ = false;
+    isActiveAnimationNodeMisc_ = false;
+    isActiveMeshPrimitives_ = false;
+    isActiveMeshPrimitiveVertexColor_ = false;
+    isActiveTextureSampler_ = false;
+    isActiveMaterialAlphaBlend_ = false;
+    isActiveAnimationSkin_ = false;
+    isActiveSkybox_ = true; // Skyboxと環境マップをデフォルトで有効化
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -159,21 +168,50 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         effect_ = std::make_unique<EffectSystem>();
         effect_->Initialize(camera_.get());
     }
-    if (isActiveAnimationModel_animatedCube_) {
-        animationModel_animatedCube_ = std::make_unique<AnimationModel>();
-        animationModel_animatedCube_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
+    if (isActiveAnimatedCube_) {
+        animatedCube_ = std::make_unique<AnimationModel>();
+        animatedCube_->Initialize(camera_.get(), "sample/AnimatedCube.gltf");
     }
-    if (isActiveAnimationModel_walk_) {
-        animationModel_walk_ = std::make_unique<AnimationModel>();
-        animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
+    if (isActiveWalk_) {
+        walk_ = std::make_unique<AnimationModel>();
+        walk_->Initialize(camera_.get(), "sample/walk.gltf");
     }
-    if (isActiveAnimationModel_sneakWalk_) {
-        animationModel_sneakWalk_ = std::make_unique<AnimationModel>();
-        animationModel_sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+    if (isActiveSneakWalk_) {
+        sneakWalk_ = std::make_unique<AnimationModel>();
+        sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
     }
-
-    line2D_ = std::make_unique<Line2DClass>();
-    line2D_->Initialize(camera_.get(), { 300.0f,300.0f }, { 360.0f,360.0f });
+    if (isActiveAnimationNode_) {
+        animationNode_ = std::make_unique<AnimationModel>();
+        animationNode_->Initialize(camera_.get(), "test/Animation_Node/Animation_Node_00.gltf");
+    }
+    if (isActiveAnimationNodeMisc_) {
+        animationNodeMisc_ = std::make_unique<AnimationModel>();
+        animationNodeMisc_->Initialize(camera_.get(), "test/Animation_NodeMisc/Animation_NodeMisc_00.gltf");
+    }
+    if (isActiveMeshPrimitives_) {
+        meshPrimitives_ = std::make_unique<ObjClass>();
+        meshPrimitives_->Initialize(camera_.get(), "test/Mesh_Primitives/Mesh_Primitives_00.gltf");
+    }
+    if (isActiveMeshPrimitiveVertexColor_) {
+        meshPrimitiveVertexColor_ = std::make_unique<ObjClass>();
+        meshPrimitiveVertexColor_->Initialize(camera_.get(), "test/Mesh_PrimitiveVertexColor/Mesh_PrimitiveVertexColor_00.gltf");
+    }
+    if (isActiveTextureSampler_) {
+        textureSampler_ = std::make_unique<ObjClass>();
+        textureSampler_->Initialize(camera_.get(), "test/Texture_Sampler/Texture_Sampler_00.gltf");
+    }
+    if (isActiveMaterialAlphaBlend_) {
+        materialAlphaBlend_ = std::make_unique<ObjClass>();
+        materialAlphaBlend_->Initialize(camera_.get(), "test/Material_AlphaBlend/Material_AlphaBlend_00.gltf");
+    }
+    if (isActiveAnimationSkin_) {
+        animationSkin_ = std::make_unique<AnimationModel>();
+        animationSkin_->Initialize(camera_.get(), "test/Animation_Skin/Animation_Skin_00.gltf");
+    }
+    if (isActiveSkybox_) {
+        skybox_ = std::make_unique<Skybox>();
+        skybox_->Initialize(camera_.get(),"resources/rostock_laage_airport_4k.dds");
+    }
 }
 
 // 更新
@@ -224,89 +262,18 @@ void DebugScene::Update() {
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::Checkbox("Effect", &isActiveEffect_);
-    ImGui::Checkbox("AnimationModel_animatedCube", &isActiveAnimationModel_animatedCube_);
-    ImGui::Checkbox("AnimationModel_walk", &isActiveAnimationModel_walk_);
-    ImGui::Checkbox("AnimationModel_sneakWalk", &isActiveAnimationModel_sneakWalk_);
+    ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
+    ImGui::Checkbox("Walk", &isActiveWalk_);
+    ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
+    ImGui::Checkbox("Aniamtion Node", &isActiveAnimationNode_);
+    ImGui::Checkbox("Animation NodeMisc", &isActiveAnimationNodeMisc_);
+    ImGui::Checkbox("Mesh Primitives", &isActiveMeshPrimitives_);
+    ImGui::Checkbox("Mesh PrimitiveVertexColor", &isActiveMeshPrimitiveVertexColor_);
+    ImGui::Checkbox("Texture Sampler", &isActiveTextureSampler_);
+    ImGui::Checkbox("Material AlphaBlend", &isActiveMaterialAlphaBlend_);
+    ImGui::Checkbox("Animation Skin", &isActiveAnimationSkin_);
+    ImGui::Checkbox("Skybox", &isActiveSkybox_);
     ImGui::End();
-
-    ImGui::Begin("GE");
-
-
-    ImGui::Text("Hello, world %d", 123);
-    if (ImGui::Button("showDemoWindow")) {
-        auto MySaveFunction = [&]() { showDemoWindow = !showDemoWindow; return showDemoWindow; };
-        showDemoWindow = MySaveFunction();
-    }
-    static char buf[256] = "";
-    ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
-    static float f{};
-    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-
-    ImGui::End();
-
-    if (showDemoWindow) {
-
-        // 課題用ImGuiウィンドウ
-        ImGui::SetNextWindowSize(ImVec2(500, 100));
-        ImGui::Begin("Sprite Control");
-        if (imguiSprite_) {
-            Vector2 pos = imguiSprite_->GetPosition2D();
-            float pos_xy[] = { pos.x, pos.y };
-            // スライダーの範囲は仮で0-1280としています
-            if (ImGui::SliderFloat2("Position", pos_xy, 0.0f, 1280.0f, "%.1f")) {
-                imguiSprite_->SetPosition(pos_xy[0], pos_xy[1]);
-            }
-        }
-        ImGui::End();
-
-        static bool my_tool_active = true;
-
-        ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
-        if (ImGui::BeginMenuBar())
-        {
-            if (ImGui::BeginMenu("File"))
-            {
-                if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
-                if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Do stuff */ }
-                if (ImGui::MenuItem("Close", "Ctrl+W")) { my_tool_active = false; }
-                ImGui::EndMenu();
-            }
-            ImGui::EndMenuBar();
-        }
-
-        // ImGui用カラー変数を追加
-        static float my_color[4] = { 1.0f, 0.0f, 1.0f, 1.0f };
-
-        // Edit a color stored as 4 floats
-        ImGui::ColorEdit4("Color", my_color);
-
-        // グラフの描画
-        // Generate samples and plot them
-        // グラフに表示するための100個のデータ点を格納する配列を宣言
-        float samples[100];
-        // sinf() (サイン関数) を使って、波のような形になる値を計算し、samples 配列に格納
-        // ImGui::GetTime() を計算に加えることで、グラフが時間と共に左に流れていくようなアニメーションになる
-        for (int n = 0; n < 100; n++)
-            samples[n] = sinf(n * 0.2f + static_cast<float>(ImGui::GetTime()) * 1.5f);
-        // samples 配列のデータを "Samples" というラベルの折れ線グラフとしてImGuiウィンドウ内に描画
-        ImGui::PlotLines("Samples", samples, 100);
-
-        // スクロール可能なテキスト領域の表示
-        // Display contents in a scrolling region
-        // 黄色で見出しを表示
-        ImGui::TextColored(ImVec4(my_color[0], my_color[1], my_color[2], my_color[3]), "Important Stuff");
-        // スクロール可能な子領域を開始
-        ImGui::BeginChild("Scrolling");
-        // 50行分のテキストを表示し、スクロールバーを発生させる
-        for (int n = 0; n < 50; n++)
-            ImGui::Text("%04d: Some text", n);
-        // 子領域を終了
-        ImGui::EndChild();
-        ImGui::End();
-
-        ImGui::ShowDemoWindow();
-
-    }
 
 #endif // _DEBUG
 
@@ -435,39 +402,96 @@ void DebugScene::Update() {
         effect_->Debug("Effect");
         effect_->Update();
     }
-    if (isActiveAnimationModel_animatedCube_) {
-        if (!animationModel_animatedCube_) {
-            animationModel_animatedCube_ = std::make_unique<AnimationModel>();
-            animationModel_animatedCube_->Initialize(camera_.get(),"sample/AnimatedCube.gltf");
+    if (isActiveAnimatedCube_) {
+        if (!animatedCube_) {
+            animatedCube_ = std::make_unique<AnimationModel>();
+            animatedCube_->Initialize(camera_.get(), "sample/AnimatedCube.gltf");
         }
-        animationModel_animatedCube_->Debug("animationModel_animatedCube");
-        animationModel_animatedCube_->Update();
+        animatedCube_->Debug("AnimatedCube");
+        animatedCube_->Update();
     }
-    if (isActiveAnimationModel_walk_) {
-        if (!animationModel_walk_) {
-            animationModel_walk_ = std::make_unique<AnimationModel>();
-            animationModel_walk_->Initialize(camera_.get(), "sample/walk.gltf");
+    if (isActiveWalk_) {
+        if (!walk_) {
+            walk_ = std::make_unique<AnimationModel>();
+            walk_->Initialize(camera_.get(), "sample/walk.gltf");
         }
-        animationModel_walk_->Debug("animationModel_walk_");
-        animationModel_walk_->Update();
+        walk_->Debug("Walk");
+        walk_->Update();
     }
-    if (isActiveAnimationModel_sneakWalk_) {
-        if (!animationModel_sneakWalk_) {
-            animationModel_sneakWalk_ = std::make_unique<AnimationModel>();
-            animationModel_sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+    if (isActiveSneakWalk_) {
+        if (!sneakWalk_) {
+            sneakWalk_ = std::make_unique<AnimationModel>();
+            sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
         }
-        animationModel_sneakWalk_->Debug("animationModel_sneakWalk_");
-        animationModel_sneakWalk_->Update();
+        sneakWalk_->Debug("SneakWalk");
+        sneakWalk_->Update();
     }
-
-    line2D_->Update();
+    if (isActiveAnimationNode_) {
+        if (!animationNode_) {
+            animationNode_ = std::make_unique<AnimationModel>();
+            animationNode_->Initialize(camera_.get(), "test/Animation_Node/Animation_Node_00.gltf");
+        }
+        animationNode_->Debug("Animation Node");
+        animationNode_->Update();
+    }
+    if (isActiveAnimationNodeMisc_) {
+        if (!animationNodeMisc_) {
+            animationNodeMisc_ = std::make_unique<AnimationModel>();
+            animationNodeMisc_->Initialize(camera_.get(), "test/Animation_NodeMisc/Animation_NodeMisc_00.gltf");
+        }
+        animationNodeMisc_->Debug("Animation NodeMisc");
+        animationNodeMisc_->Update();
+    }
+    if (isActiveMeshPrimitives_) {
+        if (!meshPrimitives_) {
+            meshPrimitives_ = std::make_unique<ObjClass>();
+            meshPrimitives_->Initialize(camera_.get(), "test/Mesh_Primitives/Mesh_Primitives_00.gltf");
+        }
+        meshPrimitives_->Debug("Mesh Primitives");
+        meshPrimitives_->Update();
+    }
+    if (isActiveMeshPrimitiveVertexColor_) {
+        if (!meshPrimitiveVertexColor_) {
+            meshPrimitiveVertexColor_ = std::make_unique<ObjClass>();
+            meshPrimitiveVertexColor_->Initialize(camera_.get(), "test/Mesh_PrimitiveVertexColor/Mesh_PrimitiveVertexColor_00.gltf");
+        }
+        meshPrimitiveVertexColor_->Debug("Mesh PrimitiveVertexColor");
+        meshPrimitiveVertexColor_->Update();
+    }
+    if (isActiveTextureSampler_) {
+        if (!textureSampler_) {
+            textureSampler_ = std::make_unique<ObjClass>();
+            textureSampler_->Initialize(camera_.get(), "test/Texture_Sampler/Texture_Sampler_00.gltf");
+        }
+        textureSampler_->Debug("Texture Sampler");
+        textureSampler_->Update();
+    }
+    if (isActiveMaterialAlphaBlend_) {
+        if (!materialAlphaBlend_) {
+            materialAlphaBlend_ = std::make_unique<ObjClass>();
+            materialAlphaBlend_->Initialize(camera_.get(), "test/Material_AlphaBlend/Material_AlphaBlend_00.gltf");
+        }
+        materialAlphaBlend_->Debug("Material AlphaBlend");
+        materialAlphaBlend_->Update();
+    }
+    if (isActiveAnimationSkin_) {
+        if (!animationSkin_) {
+            animationSkin_ = std::make_unique<AnimationModel>();
+            animationSkin_->Initialize(camera_.get(), "test/Animation_Skin/Animation_Skin_00.gltf");
+        }
+        animationSkin_->Debug("Animation Skin");
+        animationSkin_->Update();
+    }
+    if (isActiveSkybox_) {
+        if (!skybox_) {
+            skybox_ = std::make_unique<Skybox>();
+            skybox_->Initialize(camera_.get(),"resources/rostock_laage_airport_4k.dds");
+        }
+        skybox_->Debug();
+        skybox_->Update();
+    }
 
     // 2D
-
-    // 課題用スプライトの更新
-    if (imguiSprite_) {
-        imguiSprite_->Update();
-    }
 
     if (isActiveSprite_) {
         if (!sprite_) {
@@ -512,6 +536,12 @@ void DebugScene::Update() {
     }
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
+
+    // 環境マップをDrawManagerに設定
+    if (isActiveSkybox_) {
+        D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle = engine_->GetTextureManager()->GetTextureHandle("resources/rostock_laage_airport_4k.dds");
+        engine_->GetDrawManager()->SetEnvironmentMap(envMapHandle);
+    }
 }
 
 void DebugScene::Draw() {
@@ -564,14 +594,38 @@ void DebugScene::Draw() {
     if (isActiveTerrain_) {
         terrain_->Draw();
     }
-    if (isActiveAnimationModel_animatedCube_) {
-        animationModel_animatedCube_->Draw();
+    if (isActiveAnimatedCube_) {
+        animatedCube_->Draw();
     }
-    if (isActiveAnimationModel_walk_) {
-        animationModel_walk_->Draw();
+    if (isActiveWalk_) {
+        walk_->Draw();
     }
-    if (isActiveAnimationModel_sneakWalk_) {
-        animationModel_sneakWalk_->Draw();
+    if (isActiveSneakWalk_) {
+        sneakWalk_->Draw();
+    }
+    if (isActiveAnimationNode_) {
+        animationNode_->Draw();
+    }
+    if (isActiveAnimationNodeMisc_) {
+        animationNodeMisc_->Draw();
+    }
+    if (isActiveMeshPrimitives_) {
+        meshPrimitives_->Draw();
+    }
+    if (isActiveMeshPrimitiveVertexColor_) {
+        meshPrimitiveVertexColor_->Draw();
+    }
+    if (isActiveTextureSampler_) {
+        textureSampler_->Draw();
+    }
+    if (isActiveMaterialAlphaBlend_) {
+        materialAlphaBlend_->Draw();
+    }
+    if (isActiveAnimationSkin_) {
+        animationSkin_->Draw();
+    }
+    if (isActiveSkybox_) {
+        skybox_->Draw();
     }
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);
@@ -596,13 +650,6 @@ void DebugScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplySpritePSO();
-
-    // 課題用スプライトの描画
-    if(showDemoWindow){
-        if (imguiSprite_) {
-            imguiSprite_->Draw();
-        }
-    }
 
     if (isActiveSprite_) {
         sprite_->Draw();

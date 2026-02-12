@@ -177,9 +177,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="engine\directX\DescriptorAllocator.cpp" />
     <ClCompile Include="engine\directX\DescriptorPool.cpp" />
     <ClCompile Include="function\ExportDump.cpp" />
-    <ClCompile Include="3D\PointLightClass.cpp" />
     <ClCompile Include="3D\particle\IParticleBehavior.cpp" />
     <ClCompile Include="3D\LineClass.cpp" />
+    <ClCompile Include="manager\PrimitiveManager.cpp" />
     <ClCompile Include="math\LineMaterial.h" />
     <ClCompile Include="math\LineVertexData.h" />
     <ClCompile Include="main.cpp">
@@ -196,6 +196,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\PlaneClass.cpp" />
     <ClCompile Include="engine\Input\Mouse.cpp" />
     <ClCompile Include="math\Vector4.cpp" />
+    <ClCompile Include="3D\Skybox.cpp" />
+    <ClCompile Include="source\Object3DResource.cpp" />
     <ClCompile Include="source\D3D12ResourceUtil.cpp" />
     <ClCompile Include="engine\directX\DirectXCommon.cpp" />
     <ClCompile Include="engine\IrufemiEngine.cpp" />
@@ -225,14 +227,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="source\Sound.cpp" />
     <ClCompile Include="source\Texture.cpp" />
     <ClCompile Include="function\StringUtility.cpp" />
-    <ClCompile Include="3D\SpotLightClass.cpp" />
     <ClCompile Include="3D\SphereRegion.cpp" />
     <ClCompile Include="3D\TetraRegion.cpp" />
     <ClCompile Include="2D\SpriteRegion.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="2D\Sprite.h" />
-    <ClInclude Include="3D\effect\EffectSystem.h" />
     <ClInclude Include="3D\ObjClass.h" />
     <ClInclude Include="3D\particle\ParticleSystem.h" />
     <ClInclude Include="3D\SphereClass.h" />
@@ -265,6 +265,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="engine\Input\Keyboard.h" />
     <ClInclude Include="3D\particle\IParticleBehavior.h" />
     <ClInclude Include="3D\LineClass.h" />
+    <ClInclude Include="manager\PrimitiveManager.h" />
     <ClInclude Include="math\AnimationTransform.h" />
     <ClInclude Include="manager\AudioManager.h" />
     <ClInclude Include="manager\DebugUI.h" />
@@ -292,6 +293,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\ObjModel.h" />
     <ClInclude Include="math\ParticleMaterial.h" />
     <ClInclude Include="math\PointLight.h" />
+    <ClInclude Include="math\PrimitiveType.h" />
     <ClInclude Include="math\Quaternion.h" />
     <ClInclude Include="math\QuaternionTransform.h" />
     <ClInclude Include="math\RiffHeader.h" />
@@ -315,31 +317,26 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Vector4.h" />
     <ClInclude Include="math\VertexData.h" />
     <ClInclude Include="engine\directX\PSOManager.h" />
-    <ClInclude Include="3D\PointLightClass.h" />
     <ClInclude Include="math\Node.h" />
     <ClInclude Include="manager\ModelManager.h" />
     <ClInclude Include="3D\PlaneClass.h" />
     <ClInclude Include="engine\Input\Mouse.h" />
     <ClInclude Include="math\VertexInfluence.h" />
     <ClInclude Include="math\WellForGPU.h" />
+    <ClInclude Include="source\Object3DResource.h" />
     <ClInclude Include="scene\IScene.h" />
     <ClInclude Include="scene\SceneManager.h" />
     <ClInclude Include="audio\Se.h" />
+    <ClInclude Include="3D\Skybox.h" />
     <ClInclude Include="source\D3D12ResourceUtil.h" />
     <ClInclude Include="source\Sound.h" />
     <ClInclude Include="source\Texture.h" />
     <ClInclude Include="function\StringUtility.h" />
-    <ClInclude Include="3D\SpotLightClass.h" />
     <ClInclude Include="3D\SphereRegion.h" />
     <ClInclude Include="3D\TetraRegion.h" />
     <ClInclude Include="2D\SpriteRegion.h" />
     <ClInclude Include="math\Keyframe.h" />
     <ClInclude Include="math\VertexWeightData.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
-      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\GeometryShaderHeader.hlsli" />
@@ -349,6 +346,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="..\Application\resources\shaders\Object3d.hlsli" />
     <None Include="..\Application\resources\shaders\Particle.hlsli" />
     <None Include="..\Application\resources\shaders\SkinningObject3D.hlsli" />
+    <None Include="..\Application\resources\shaders\Skybox.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
@@ -444,6 +442,21 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Skybox.PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Skybox.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
+      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

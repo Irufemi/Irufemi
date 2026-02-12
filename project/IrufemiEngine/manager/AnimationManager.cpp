@@ -62,7 +62,11 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
     }
 
     const aiScene* scene = importer.ReadFile(filePath.c_str(), aiProcess_MakeLeftHanded);
-    assert(scene->mNumAnimations != 0); // アニメーションがない
+    // アニメーションがない場合は空のアニメーションを返す
+    if (!scene || scene->mNumAnimations == 0) {
+        OutputDebugStringA(("[AnimationManager] No animations found in file: " + filename + "\n").c_str());
+        return {}; // 空のアニメーションを返す
+    }
     aiAnimation* animationAssimp = scene->mAnimations[0]; // 最初のアニメーションだけ採用。もちろん複数対応するに越したことはない
     animation.duration = float(animationAssimp->mDuration / animationAssimp->mTicksPerSecond); // 時間の単位を秒に変換
 

@@ -155,7 +155,7 @@ void Circle2D::Update() {
 }
 
 void Circle2D::Draw() {
-    drawManager_->DrawByIndex(resource_.get());
+    drawManager_->DrawObject2D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
 }
 
 void Circle2D::SetInfo(const Circle2DInfo& info) {

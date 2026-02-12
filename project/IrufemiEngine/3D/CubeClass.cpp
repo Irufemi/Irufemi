@@ -168,7 +168,9 @@ void CubeClass::Update() {
 }
 
 void CubeClass::Draw() {
-    if (drawManager_) drawManager_->DrawCube(this);
+    if (drawManager_) {
+        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
+    }
 }
 
 void CubeClass::Debug(const char* cubeName) {

@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <array>
 #include <wrl.h>
-#include "math/TransformationMatrix.h" // 追加
+#include "math/TransformationMatrix.h"
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/AreaLight.h"
@@ -21,9 +21,9 @@ class ParticleSystem;
 class CylinderClass;
 class D3D12ResourceUtil;
 class D3D12ResourceUtilLine;
-class Region;
-class SphereRegion; 
-class TetraRegion; 
+class ModelRegion;
+class SphereRegion;
+class TetraRegion;
 class SpriteRegion;
 struct GpuMesh;
 struct ManagedModel;
@@ -31,6 +31,7 @@ class Line2DClass;
 class Line3DClass;
 class Line3DRegion;
 class CubeClass;
+class Skybox;
 struct SkinCluster;
 
 // 構造体を前方宣言
@@ -44,6 +45,7 @@ class DrawManager {
 private:
 
     DirectXCommon* dxCommon_ = nullptr;
+    ID3D12GraphicsCommandList* commandList_ = nullptr; // コマンドリストをキャッシュ
 
     // シェーダーで定義したライトの最大数
     static const int kMaxPointLights = 4;
@@ -76,13 +78,13 @@ private:
     SpotLights* spotLightsData_ = nullptr;
     AreaLights* areaLightsData_ = nullptr;
 
+    D3D12_GPU_DESCRIPTOR_HANDLE environmentMapHandle_{}; // 環境マップ用SRVハンドル
 
 public: //メンバ関数
 
     void Initialize(DirectXCommon* dx);
     void Finalize();
 
-    // 追加(保持はしないで即時バインド)
     void BindPSO(ID3D12PipelineState* pso);
 
     void PreDraw(
@@ -95,43 +97,38 @@ public: //メンバ関数
     // フレーム単位の共通データを設定
     void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);
 
+    // 環境マップ設定用
+    void SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle);
+    D3D12_GPU_DESCRIPTOR_HANDLE GetEnvironmentMap() const { return environmentMapHandle_; }
+
     void DrawTriangle(
         TriangleClass* triangle
     );
 
-    void DrawCube(CubeClass* cube);
-
-    void DrawSprite(Sprite* sprite);
-
-    void DrawSphere(SphereClass* sphere);
-
-    void DrawCylinder(CylinderClass* cylinder);
-
     void DrawParticle(ParticleSystem* resource);
 
-    void DrawRegion(Region* region);
+    void DrawModelRegion(ModelRegion* region);
 
-    void DrawSphereRegion(SphereRegion* region);
+    void DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount);
 
-    void DrawTetraRegion(TetraRegion* region);
+    // LineInstancedシェーダー用描画関数
+    void DrawLineInstanced(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
+    
+    // Object3Dシェーダー用描画関数
+    void DrawObject3D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
 
-    void DrawByIndex(D3D12ResourceUtil* resource);
+    // Object2Dシェーダー用描画関数
+    void DrawObject2D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
 
-    void DrawByVertex(D3D12ResourceUtil* resource);
+    // Skyboxシェーダー用描画関数
+    void DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
 
-    void DrawLine2D(Line2DClass* line);
-
-    void DrawLine3D(Line3DClass* line);
-
-    void DrawLine3DRegion(Line3DRegion* region);
-
-    // モデル描画用の新関数
+    // モデル描画用の関数
     void DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA);
 
     void DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster);
 
     void DrawSpriteRegion(SpriteRegion* region);
-    void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource);
 
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
 };

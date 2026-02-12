@@ -230,7 +230,9 @@ void SphereClass::Update() {
 }
 
 void SphereClass::Draw() {
-    drawManager_->DrawSphere(this);
+    if (drawManager_) {
+        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
+    }
 }
 
 void SphereClass::Debug([[maybe_unused]] const char* sphereName) {

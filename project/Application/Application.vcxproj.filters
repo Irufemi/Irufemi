@@ -25,14 +25,8 @@
     <Filter Include="Application">
       <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="contents">
-      <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="contents\effect">
-      <UniqueIdentifier>{babfd3d8-482e-49f9-a43f-87cca2b7d391}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="contents\skydome">
-      <UniqueIdentifier>{ca677367-9311-4bf8-b19d-3388568d67ee}</UniqueIdentifier>
+    <Filter Include="Scene\CG3">
+      <UniqueIdentifier>{71f087f2-5f9d-4603-a258-3369ad493bca}</UniqueIdentifier>
     </Filter>
     <Filter Include="actors">
       <UniqueIdentifier>{490d274c-e2b4-4b8c-a942-e7053c118b00}</UniqueIdentifier>
@@ -48,6 +42,18 @@
     </Filter>
     <Filter Include="actors\enemy\shieldEnemy">
       <UniqueIdentifier>{8c761790-d221-4623-8f2e-eb16ae252fe4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contents">
+      <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contents\effect">
+      <UniqueIdentifier>{babfd3d8-482e-49f9-a43f-87cca2b7d391}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contents\skydome">
+      <UniqueIdentifier>{ca677367-9311-4bf8-b19d-3388568d67ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contents\mapChipFirld">
+      <UniqueIdentifier>{ce752556-d881-4238-bf6f-a52e9dbf16c6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -78,9 +84,6 @@
     <ClCompile Include="GameApplication.cpp">
       <Filter>Application</Filter>
     </ClCompile>
-    <ClCompile Include="contents\MapChipField.cpp">
-      <Filter>contents</Filter>
-    </ClCompile>
     <ClCompile Include="actors\enemy\shieldEnemy\ShieldEnemy.cpp">
       <Filter>actors\enemy\shieldEnemy</Filter>
     </ClCompile>
@@ -102,6 +105,9 @@
     <ClCompile Include="contents\skydome\Skydome.cpp">
       <Filter>contents\skydome</Filter>
     </ClCompile>
+    <ClCompile Include="actors\enemy\IEnemy.cpp">
+      <Filter>actors\enemy</Filter>
+    </ClCompile>
     <ClCompile Include="actors\player\Player.cpp">
       <Filter>actors\player</Filter>
     </ClCompile>
@@ -114,11 +120,8 @@
     <ClCompile Include="actors\player\PlayerState_Root.cpp">
       <Filter>actors\player</Filter>
     </ClCompile>
-    <ClCompile Include="actors\enemy\IEnemy.cpp">
-      <Filter>actors\enemy</Filter>
-    </ClCompile>
-    <ClCompile Include="actors\player\PlayerPhysics.cpp">
-      <Filter>actors\player</Filter>
+    <ClCompile Include="contents\mapChipField\MapChipField.cpp">
+      <Filter>contents\mapChipFirld</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -146,9 +149,6 @@
     <ClInclude Include="GameApplication.h">
       <Filter>Application</Filter>
     </ClInclude>
-    <ClInclude Include="contents\MapChipField.h">
-      <Filter>contents</Filter>
-    </ClInclude>
     <ClInclude Include="actors\enemy\shieldEnemy\ShieldEnemy.h">
       <Filter>actors\enemy\shieldEnemy</Filter>
     </ClInclude>
@@ -170,17 +170,17 @@
     <ClInclude Include="contents\skydome\Skydome.h">
       <Filter>contents\skydome</Filter>
     </ClInclude>
+    <ClInclude Include="actors\enemy\IEnemy.h">
+      <Filter>actors\enemy</Filter>
+    </ClInclude>
     <ClInclude Include="actors\player\Player.h">
       <Filter>actors\player</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\PlayerState.h">
       <Filter>actors\player</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\IEnemy.h">
-      <Filter>actors\enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="actors\player\PlayerPhysics.h">
-      <Filter>actors\player</Filter>
+    <ClInclude Include="contents\mapChipField\MapChipField.h">
+      <Filter>contents\mapChipFirld</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

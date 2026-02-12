@@ -345,7 +345,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///DescriptorTable
 
-    D3D12_ROOT_PARAMETER rootParameters[12] = {};
+    D3D12_ROOT_PARAMETER rootParameters[13] = {};
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
@@ -429,6 +429,18 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootParameters[11].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
     rootParameters[11].DescriptorTable.pDescriptorRanges = descriptorRangeForLineInstancing;
     rootParameters[11].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForLineInstancing);
+
+    // EnvironmentMap (PS, t1)
+    D3D12_DESCRIPTOR_RANGE descriptorRangeForEnvMap[1] = {};
+    descriptorRangeForEnvMap[0].BaseShaderRegister = 1; // t1
+    descriptorRangeForEnvMap[0].NumDescriptors = 1;
+    descriptorRangeForEnvMap[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    descriptorRangeForEnvMap[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+    rootParameters[12].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParameters[12].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+    rootParameters[12].DescriptorTable.pDescriptorRanges = descriptorRangeForEnvMap;
+    rootParameters[12].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForEnvMap);
 
 
     /*テクスチャを貼ろう*/
@@ -594,6 +606,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> skinningObject3DVSBlob = CompileShader(L"resources/shaders/SkinningObject3D.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(skinningObject3DVSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> skyboxVSBlob = CompileShader(L"resources/shaders/Skybox.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(skyboxVSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> skyboxPSBlob = CompileShader(L"resources/shaders/Skybox.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(skyboxPSBlob != nullptr);
+
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
     if (dxcCompiler) { dxcCompiler.Reset(); }
@@ -620,7 +638,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         spritePSBlob
     };
 
-    PSOManager::ShaderSet blocksShaders{
+    PSOManager::ShaderSet regionShaders{
         regionVSBlob,
         object3DPSBlob   // PS は既存の Object3D.PS を流用
     };
@@ -646,6 +664,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         object3DPSBlob
     };
 
+    PSOManager::ShaderSet skyboxShaders{
+        skyboxVSBlob,
+        skyboxPSBlob
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
@@ -657,11 +680,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         objectShaders,
         particleShaders,
         spriteShaders,
-        blocksShaders,
+        regionShaders,
         byGeometryShaders,
         lineShaders,
         lineInstancedShaders,
-        skinningObject3DShaders
+        skinningObject3DShaders,
+        skyboxShaders
     );
 
     //実際に生成
@@ -684,6 +708,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (lineInstancedVSBlob) { lineInstancedVSBlob.Reset(); }
     if (lineInstancedPSBlob) { lineInstancedPSBlob.Reset(); }
     if (skinningObject3DVSBlob) { skinningObject3DVSBlob.Reset(); }
+    if (skyboxVSBlob) { skyboxVSBlob.Reset(); }
+    if (skyboxPSBlob) { skyboxPSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};
@@ -940,23 +966,35 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
         assert(false && "Texture file not found");
     }
 
-    HRESULT hr = LoadFromWICFile(filePathW.c_str(), WIC_FLAGS_FORCE_SRGB, nullptr, image);
+    HRESULT hr;
+    if (StringUtility::EndsWith(filePathW, L".dds")) {
+        hr = LoadFromDDSFile(filePathW.c_str(), DDS_FLAGS_NONE, nullptr, image);
+    }
+    else {
+        hr = LoadFromWICFile(filePathW.c_str(), WIC_FLAGS_FORCE_SRGB, nullptr, image);
+    }
+
     if (FAILED(hr)) {
         _com_error err(hr);
-        std::wstring msg = L"[LoadTexture] WIC load failed (" + std::to_wstring(hr) +
+        std::wstring msg = L"[LoadTexture] Load failed (" + std::to_wstring(hr) +
             L"): " + filePathW + L" - " + err.ErrorMessage() + L"\n";
         OutputDebugStringW(msg.c_str());
-        assert(false && "LoadFromWICFile failed");
+        assert(false && "LoadTexture failed");
     }
 
     ScratchImage mipImages{};
-    hr = GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
-        TEX_FILTER_SRGB, 0, mipImages);
-    if (FAILED(hr)) {
-        _com_error err(hr);
-        std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(hr) + L")\n";
-        OutputDebugStringW(msg.c_str());
-        assert(false && "GenerateMipMaps failed");
+    if (IsCompressed(image.GetMetadata().format)) {
+        mipImages = std::move(image);
+    }
+    else {
+        hr = GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
+            TEX_FILTER_SRGB, 0, mipImages);
+        if (FAILED(hr)) {
+            _com_error err(hr);
+            std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(hr) + L")\n";
+            OutputDebugStringW(msg.c_str());
+            assert(false && "GenerateMipMaps failed");
+        }
     }
 
     return mipImages;

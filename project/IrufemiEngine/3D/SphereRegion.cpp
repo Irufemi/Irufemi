@@ -138,6 +138,7 @@ void SphereRegion::CreateMaterialResources() {
     mat->lightingMode = 2;
     mat->uvTransform = Math::MakeIdentity4x4();
     mat->shininess = 64.0f;
+    mat->environmentCoefficient = 1.0f; // この行を追加
 }
 
 void SphereRegion::EnsureSharedTexture(const std::string& textureName) {
@@ -188,7 +189,7 @@ void SphereRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 
 void SphereRegion::AddInstance(const Transform& t) {
     instances_.push_back(t);
-    instanceColors_.push_back({1,1,1,1}); // 既定は白
+    instanceColors_.push_back({ 1,1,1,1 }); // 既定は白
     instanceDirty_ = true;
 }
 
@@ -247,7 +248,7 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
 
     // 色配列サイズをインスタンス数に合わせる
     if (instanceColors_.size() != instances_.size()) {
-        instanceColors_.resize(instances_.size(), {1,1,1,1});
+        instanceColors_.resize(instances_.size(), { 1,1,1,1 });
     }
 
     for (UINT i = 0; i < count; ++i) {
@@ -282,7 +283,7 @@ void SphereRegion::Draw() {
     // 毎フレームインスタンスの WVP 更新
     BuildInstanceBuffer(true);
 
-    drawManager_->DrawSphereRegion(this);
+    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialResource_.Get(), textureHandle_, instancingSrvGPU_, indexCount_, GetInstanceCount());
 }
 
 void SphereRegion::SetColor(const Vector4& color) {
@@ -290,6 +291,14 @@ void SphereRegion::SetColor(const Vector4& color) {
     Material* mat = nullptr;
     materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
     mat->color = color;
+}
+
+void SphereRegion::SetEnvironmentCoefficient(float coefficient) {
+    Material* mat = nullptr;
+    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
+    if (mat) {
+        mat->environmentCoefficient = coefficient;
+    }
 }
 
 void SphereRegion::SetInstanceColor(uint32_t index, const Vector4& color) {
