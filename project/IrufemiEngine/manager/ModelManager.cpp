@@ -110,6 +110,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
         materialData->enableLighting = cpuMesh.material.enableLighting;
         materialData->uvTransform = cpuMesh.material.uvTransform;
         materialData->shininess = cpuMesh.material.shininess;
+        materialData->environmentCoefficient = cpuMesh.material.environmentCoefficient; // この行を追加
         materialData->hasTexture = !cpuMesh.material.textureFilePath.empty();
         materialData->lightingMode = cpuMesh.material.enableLighting ? 2 : 0;
         if (materialData->color.w <= 0.0f) { materialData->color.w = 1.0f; }

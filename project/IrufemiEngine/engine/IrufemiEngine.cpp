@@ -21,8 +21,6 @@
 #include "3D/PlaneClass.h"
 #include "3D/CylinderClass.h"
 #include "3D/particle/ParticleSystem.h"
-#include "3D/PointLightClass.h"
-#include "3D/SpotLightClass.h"
 #include "3D/Region.h"
 #include "3D/SphereRegion.h"
 #include "3D/TetraRegion.h"
@@ -80,8 +78,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     D3D12ResourceUtil::SetDirectXCommon(dxCommon_.get());
     D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
     D3D12ResourceUtilLine::SetDirectXCommon(dxCommon_.get());
-    PointLightClass::SetDxCommon(dxCommon_.get());
-    SpotLightClass::SetDxCommon(dxCommon_.get());
     ModelRegion::SetDirectXCommon(dxCommon_.get());
     SphereRegion::SetDirectXCommon(dxCommon_.get());
     TetraRegion::SetDirectXCommon(dxCommon_.get());

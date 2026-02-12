@@ -27,6 +27,9 @@ struct ObjMaterial {
 
     bool enableLighting = true;
 
+    // 環境マップの映り込み係数
+    float environmentCoefficient = 1.0f;
+
     Matrix4x4 uvTransform = Math::MakeIdentity4x4();
 
     std::string textureFilePath = "";

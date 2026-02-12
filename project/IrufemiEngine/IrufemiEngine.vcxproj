@@ -176,7 +176,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="engine\directX\DescriptorAllocator.cpp" />
     <ClCompile Include="engine\directX\DescriptorPool.cpp" />
     <ClCompile Include="function\ExportDump.cpp" />
-    <ClCompile Include="3D\PointLightClass.cpp" />
     <ClCompile Include="3D\particle\IParticleBehavior.cpp" />
     <ClCompile Include="3D\LineClass.cpp" />
     <ClCompile Include="manager\PrimitiveManager.cpp" />
@@ -227,14 +226,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="source\Sound.cpp" />
     <ClCompile Include="source\Texture.cpp" />
     <ClCompile Include="function\StringUtility.cpp" />
-    <ClCompile Include="3D\SpotLightClass.cpp" />
     <ClCompile Include="3D\SphereRegion.cpp" />
     <ClCompile Include="3D\TetraRegion.cpp" />
     <ClCompile Include="2D\SpriteRegion.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="2D\Sprite.h" />
-    <ClInclude Include="3D\effect\EffectSystem.h" />
     <ClInclude Include="3D\ObjClass.h" />
     <ClInclude Include="3D\particle\ParticleSystem.h" />
     <ClInclude Include="3D\SphereClass.h" />
@@ -318,7 +315,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="math\Vector4.h" />
     <ClInclude Include="math\VertexData.h" />
     <ClInclude Include="engine\directX\PSOManager.h" />
-    <ClInclude Include="3D\PointLightClass.h" />
     <ClInclude Include="math\Node.h" />
     <ClInclude Include="manager\ModelManager.h" />
     <ClInclude Include="3D\PlaneClass.h" />
@@ -334,7 +330,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="source\Sound.h" />
     <ClInclude Include="source\Texture.h" />
     <ClInclude Include="function\StringUtility.h" />
-    <ClInclude Include="3D\SpotLightClass.h" />
     <ClInclude Include="3D\SphereRegion.h" />
     <ClInclude Include="3D\TetraRegion.h" />
     <ClInclude Include="2D\SpriteRegion.h" />

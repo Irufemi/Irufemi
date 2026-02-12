@@ -3,6 +3,7 @@
 #include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
 #include "manager/DebugUI.h"
+#include "manager/TextureManager.h"
 
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
@@ -75,7 +76,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTriangle_ = false;
     isActiveCube_ = false;
     isActivePlane_ = false;
-    isActiveSphere_ = false;
+    isActiveSphere_ = true; // Sphereをデフォルトで表示
     isActiveCylinder_ = false;
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
@@ -96,7 +97,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTextureSampler_ = false;
     isActiveMaterialAlphaBlend_ = false;
     isActiveAnimationSkin_ = false;
-    isActiveSkybox_ = false;
+    isActiveSkybox_ = true; // Skyboxと環境マップをデフォルトで有効化
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -535,6 +536,12 @@ void DebugScene::Update() {
     }
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
+
+    // 環境マップをDrawManagerに設定
+    if (isActiveSkybox_) {
+        D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle = engine_->GetTextureManager()->GetTextureHandle("resources/rostock_laage_airport_4k.dds");
+        engine_->GetDrawManager()->SetEnvironmentMap(envMapHandle);
+    }
 }
 
 void DebugScene::Draw() {

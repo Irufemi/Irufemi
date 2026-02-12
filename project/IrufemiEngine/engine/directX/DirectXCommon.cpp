@@ -345,7 +345,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     ///DescriptorTable
 
-    D3D12_ROOT_PARAMETER rootParameters[12] = {};
+    D3D12_ROOT_PARAMETER rootParameters[13] = {};
     rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; //CBVを使う
     rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     rootParameters[0].Descriptor.ShaderRegister = 0; //レジスタ番号0を使う
@@ -429,6 +429,18 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootParameters[11].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
     rootParameters[11].DescriptorTable.pDescriptorRanges = descriptorRangeForLineInstancing;
     rootParameters[11].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForLineInstancing);
+
+    // EnvironmentMap (PS, t1)
+    D3D12_DESCRIPTOR_RANGE descriptorRangeForEnvMap[1] = {};
+    descriptorRangeForEnvMap[0].BaseShaderRegister = 1; // t1
+    descriptorRangeForEnvMap[0].NumDescriptors = 1;
+    descriptorRangeForEnvMap[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    descriptorRangeForEnvMap[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+    rootParameters[12].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParameters[12].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+    rootParameters[12].DescriptorTable.pDescriptorRanges = descriptorRangeForEnvMap;
+    rootParameters[12].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeForEnvMap);
 
 
     /*テクスチャを貼ろう*/
@@ -626,7 +638,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         spritePSBlob
     };
 
-    PSOManager::ShaderSet blocksShaders{
+    PSOManager::ShaderSet regionShaders{
         regionVSBlob,
         object3DPSBlob   // PS は既存の Object3D.PS を流用
     };
@@ -668,7 +680,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         objectShaders,
         particleShaders,
         spriteShaders,
-        blocksShaders,
+        regionShaders,
         byGeometryShaders,
         lineShaders,
         lineInstancedShaders,

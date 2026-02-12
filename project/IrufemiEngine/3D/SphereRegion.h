@@ -58,6 +58,7 @@ public:
 
     // 色設定(マテリアル全体 or インスタンス個別/一括)
     void SetColor(const Vector4& color);                 // マテリアル色(全体に乗算される前提の色)
+    void SetEnvironmentCoefficient(float coefficient); 
     void SetInstanceColor(uint32_t index, const Vector4& color); // 個別インスタンス色
     void SetAllInstanceColor(const Vector4& color);      // 全インスタンス同色
 

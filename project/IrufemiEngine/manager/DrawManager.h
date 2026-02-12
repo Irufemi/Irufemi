@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <array>
 #include <wrl.h>
-#include "math/TransformationMatrix.h" // 追加
+#include "math/TransformationMatrix.h"
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/AreaLight.h"
@@ -22,8 +22,8 @@ class CylinderClass;
 class D3D12ResourceUtil;
 class D3D12ResourceUtilLine;
 class ModelRegion;
-class SphereRegion; 
-class TetraRegion; 
+class SphereRegion;
+class TetraRegion;
 class SpriteRegion;
 struct GpuMesh;
 struct ManagedModel;
@@ -45,6 +45,7 @@ class DrawManager {
 private:
 
     DirectXCommon* dxCommon_ = nullptr;
+    ID3D12GraphicsCommandList* commandList_ = nullptr; // コマンドリストをキャッシュ
 
     // シェーダーで定義したライトの最大数
     static const int kMaxPointLights = 4;
@@ -77,13 +78,13 @@ private:
     SpotLights* spotLightsData_ = nullptr;
     AreaLights* areaLightsData_ = nullptr;
 
+    D3D12_GPU_DESCRIPTOR_HANDLE environmentMapHandle_{}; // 環境マップ用SRVハンドル
 
 public: //メンバ関数
 
     void Initialize(DirectXCommon* dx);
     void Finalize();
 
-    // 追加(保持はしないで即時バインド)
     void BindPSO(ID3D12PipelineState* pso);
 
     void PreDraw(
@@ -95,6 +96,10 @@ public: //メンバ関数
 
     // フレーム単位の共通データを設定
     void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);
+
+    // 環境マップ設定用
+    void SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle);
+    D3D12_GPU_DESCRIPTOR_HANDLE GetEnvironmentMap() const { return environmentMapHandle_; }
 
     void DrawTriangle(
         TriangleClass* triangle

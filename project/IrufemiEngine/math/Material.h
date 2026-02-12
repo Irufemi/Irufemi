@@ -33,4 +33,8 @@ struct Material {
 
     float shininess = 64.0f;
 
+    // 環境マップの映り込み係数
+    float environmentCoefficient = 1.0f;
+
+    float padding2[2]; // パディング
 };

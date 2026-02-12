@@ -70,12 +70,6 @@
     <Filter Include="render\3D">
       <UniqueIdentifier>{1c90d707-2613-47d1-bd66-a7303fa8f90f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="render\3D\Light">
-      <UniqueIdentifier>{d24cac09-20bd-47dc-828b-b236ed724e9e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="render\3D\Effect">
-      <UniqueIdentifier>{588775aa-5265-4d8d-8290-25e9aa30c275}</UniqueIdentifier>
-    </Filter>
     <Filter Include="render\Object3D">
       <UniqueIdentifier>{09239bed-694d-46fc-b05b-5ed78b10d76e}</UniqueIdentifier>
     </Filter>
@@ -90,6 +84,9 @@
     </Filter>
     <Filter Include="render\LineInstanced">
       <UniqueIdentifier>{78ee9df5-4278-4da8-ab04-f45e9c350115}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render\Skybox">
+      <UniqueIdentifier>{df9cbe3c-3b86-4a15-8de1-fef19d477197}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -211,12 +208,6 @@
     <ClCompile Include="manager\DebugUI.cpp">
       <Filter>Engine\DebugUI</Filter>
     </ClCompile>
-    <ClCompile Include="3D\PointLightClass.cpp">
-      <Filter>render\3D\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="3D\SpotLightClass.cpp">
-      <Filter>render\3D\Light</Filter>
-    </ClCompile>
     <ClCompile Include="manager\AudioManager.cpp">
       <Filter>Engine\audio</Filter>
     </ClCompile>
@@ -256,9 +247,6 @@
     <ClCompile Include="manager\PrimitiveManager.cpp">
       <Filter>Engine\manager</Filter>
     </ClCompile>
-    <ClCompile Include="3D\Skybox.cpp">
-      <Filter>render\3D</Filter>
-    </ClCompile>
     <ClCompile Include="source\Object3DResource.cpp">
       <Filter>Engine\source</Filter>
     </ClCompile>
@@ -293,6 +281,9 @@
       <Filter>render\LineInstanced</Filter>
     </ClCompile>
     <ClCompile Include="3D\effect\EffectSystem.cpp" />
+    <ClCompile Include="3D\Skybox.cpp">
+      <Filter>render\Skybox</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
@@ -442,12 +433,6 @@
     <ClInclude Include="engine\directX\DescriptorPool.h">
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
-    <ClInclude Include="3D\PointLightClass.h">
-      <Filter>render\3D\Light</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\SpotLightClass.h">
-      <Filter>render\3D\Light</Filter>
-    </ClInclude>
     <ClInclude Include="manager\DebugUI.h">
       <Filter>Engine\DebugUI</Filter>
     </ClInclude>
@@ -462,9 +447,6 @@
     </ClInclude>
     <ClInclude Include="source\Texture.h">
       <Filter>Engine\texture</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\effect\EffectSystem.h">
-      <Filter>render\3D\Effect</Filter>
     </ClInclude>
     <ClInclude Include="math\Quaternion.h">
       <Filter>math</Filter>
@@ -513,9 +495,6 @@
     </ClInclude>
     <ClInclude Include="math\AnimationTransform.h">
       <Filter>math\model</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\LineClass.h">
-      <Filter>3D</Filter>
     </ClInclude>
     <ClInclude Include="3D\effect\EffectSystem.h">
       <Filter>3D\Effect</Filter>
@@ -574,9 +553,6 @@
     <ClInclude Include="math\PrimitiveType.h">
       <Filter>math</Filter>
     </ClInclude>
-    <ClInclude Include="3D\Skybox.h">
-      <Filter>render\3D</Filter>
-    </ClInclude>
     <ClInclude Include="source\Object3DResource.h">
       <Filter>Engine\source</Filter>
     </ClInclude>
@@ -587,9 +563,6 @@
       <Filter>render\Object3D</Filter>
     </ClInclude>
     <ClInclude Include="3D\ObjClass.h">
-      <Filter>render\Object3D</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\CubeClass.h">
       <Filter>render\Object3D</Filter>
     </ClInclude>
     <ClInclude Include="3D\PlaneClass.h">
@@ -610,6 +583,13 @@
     </ClInclude>
     <ClInclude Include="3D\LineClass.h">
       <Filter>render\LineInstanced</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\LineClass.h" />
+    <ClInclude Include="3D\Skybox.h">
+      <Filter>render\Skybox</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\CubeClass.h">
+      <Filter>render\Object3D</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
