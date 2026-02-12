@@ -3,7 +3,7 @@
 #include "math/Vector3.h"
 #include "math/Transform.h"
 #include "math/LRDirection.h"
-#include "contents/MapChipField.h"
+#include "contents/mapChipField/MapChipField.h"
 
 class Player;
 class InputManager;

@@ -123,6 +123,9 @@
     <ClCompile Include="contents\mapChipField\MapChipField.cpp">
       <Filter>contents\mapChipFirld</Filter>
     </ClCompile>
+    <ClCompile Include="actors\player\PlayerPhysics.cpp">
+      <Filter>actors\player</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -181,6 +184,9 @@
     </ClInclude>
     <ClInclude Include="contents\mapChipField\MapChipField.h">
       <Filter>contents\mapChipFirld</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\player\PlayerPhysics.h">
+      <Filter>actors\player</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

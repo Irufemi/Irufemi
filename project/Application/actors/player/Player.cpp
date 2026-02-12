@@ -2,7 +2,6 @@
 #include "Player.h"
 
 #include "function/Ease.h"
-#include "contents/mapChipField/MapChipField.h"
 #include "function/Math.h"
 #include "engine/Input/InputManager.h"
 #include "manager/DebugUI.h"
@@ -137,14 +136,6 @@ void Player::SetMapChipField(MapChipField* mapChipField) {
     if (physics_) {
         physics_->Initialize(this, &transform_, mapChipField_, inputManager_);
     }
-    // 簡易な固定Δt補間(60fps想定)
-    const float dt = 1.0f / 60.0f;
-    float t = std::clamp(1.0f - (turnTimer_ / kTimeTurn), 0.0f, 1.0f);
-    float target = (lrDirection_ == LRDirection::kRight)
-        ? std::numbers::pi_v<float> / 2.0f
-        : -std::numbers::pi_v<float> / 2.0f;
-    transform_.rotate.y = Lerp(turnFirstRotationY_, target, EaseOutSine(t));
-    turnTimer_ = std::max(0.0f, turnTimer_ - dt);
 }
 
 /*
@@ -186,25 +177,6 @@ void Player::UpdateMatrix() {
     model_->SetTransform(transform_);
     attackEffectModel_->SetTransform(attackEffectTransform_);
 }
-
-// ===== 幾何ユーティリティ =====
-Vector3 Player::CornerPosition(const Vector3& center, Corner corner) {
-    const float hx = kWidth * 0.5f;
-    const float hy = kHeight * 0.5f;
-    switch (corner) {
-    case kRightBottom: return Math::Add(center, Vector3{ +hx, -hy, 0.0f });
-    case kLeftBottom:  return Math::Add(center, Vector3{ -hx, -hy, 0.0f });
-    case kRightTop:    return Math::Add(center, Vector3{ +hx, +hy, 0.0f });
-    case kLeftTop:     return Math::Add(center, Vector3{ -hx, +hy, 0.0f });
-    default:           return center;
-    }
-}
-
-// ===== 旧個別判定(参考用・未使用) =====
-void Player::MapCollisionTop(CollisionMapInfo& info) { (void)info; }
-void Player::MapCollisionBottom(CollisionMapInfo& info) { (void)info; }
-void Player::MapCollisionRight(CollisionMapInfo& info) { (void)info; }
-void Player::MapCollisionLeft(CollisionMapInfo& info) { (void)info; }
 
 // ===== OnCollision =====
 void Player::OnCollision(const IEnemy* enemy) {

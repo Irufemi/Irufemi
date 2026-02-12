@@ -233,6 +233,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="2D\Sprite.h" />
+    <ClInclude Include="3D\effect\EffectSystem.h" />
     <ClInclude Include="3D\ObjClass.h" />
     <ClInclude Include="3D\particle\ParticleSystem.h" />
     <ClInclude Include="3D\SphereClass.h" />
