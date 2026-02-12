@@ -149,7 +149,7 @@ public: // ===== 定数 (PlayerPhysicsからも参照される) =====
 	static inline const float kTimeToFullRun = 0.06f;        // 最高速へ到達する時間[s]
 	static inline const float kWallJumpHorizLockTime = 0.10f;// 壁ジャン直後の横入力ロック時間[s]
 
-	static inline const Vector3 kDashVelocity_{0.4f, 0.0f, 0.0f};
+	static inline const Vector3 kDashVelocity_{ 0.4f, 0.0f, 0.0f };
 
 	// HP
 	static inline const int kMaxHP = 200;

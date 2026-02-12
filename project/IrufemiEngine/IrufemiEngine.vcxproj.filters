@@ -283,9 +283,11 @@
     <ClCompile Include="3D\LineClass.cpp">
       <Filter>render\LineInstanced</Filter>
     </ClCompile>
-    <ClCompile Include="3D\effect\EffectSystem.cpp" />
     <ClCompile Include="3D\Skybox.cpp">
       <Filter>render\Skybox</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\effect\EffectSystem.cpp">
+      <Filter>render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -493,9 +495,6 @@
     <ClInclude Include="math\AnimationTransform.h">
       <Filter>math\model</Filter>
     </ClInclude>
-    <ClInclude Include="3D\effect\EffectSystem.h">
-      <Filter>3D\Effect</Filter>
-    </ClInclude>
     <ClInclude Include="math\SpotLight.h">
       <Filter>math\light</Filter>
     </ClInclude>
@@ -575,9 +574,6 @@
     <ClInclude Include="2D\Circle2D.h">
       <Filter>render\Object2D</Filter>
     </ClInclude>
-    <ClInclude Include="3D\LineClass.h">
-      <Filter>render\LineInstanced</Filter>
-    </ClInclude>
     <ClInclude Include="3D\LineClass.h" />
     <ClInclude Include="3D\Skybox.h">
       <Filter>render\Skybox</Filter>
@@ -587,6 +583,21 @@
     </ClInclude>
     <ClInclude Include="function\Random.h">
       <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Collision.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Ease.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Math.h">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\LineClass.h">
+      <Filter>render\LineInstanced</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\effect\EffectSystem.h">
+      <Filter>render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
