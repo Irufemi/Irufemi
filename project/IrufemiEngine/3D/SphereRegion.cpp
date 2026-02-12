@@ -188,7 +188,7 @@ void SphereRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 
 void SphereRegion::AddInstance(const Transform& t) {
     instances_.push_back(t);
-    instanceColors_.push_back({1,1,1,1}); // 既定は白
+    instanceColors_.push_back({ 1,1,1,1 }); // 既定は白
     instanceDirty_ = true;
 }
 
@@ -247,7 +247,7 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
 
     // 色配列サイズをインスタンス数に合わせる
     if (instanceColors_.size() != instances_.size()) {
-        instanceColors_.resize(instances_.size(), {1,1,1,1});
+        instanceColors_.resize(instances_.size(), { 1,1,1,1 });
     }
 
     for (UINT i = 0; i < count; ++i) {
@@ -282,7 +282,7 @@ void SphereRegion::Draw() {
     // 毎フレームインスタンスの WVP 更新
     BuildInstanceBuffer(true);
 
-    drawManager_->DrawSphereRegion(this);
+    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialResource_.Get(), textureHandle_, instancingSrvGPU_, indexCount_, GetInstanceCount());
 }
 
 void SphereRegion::SetColor(const Vector4& color) {

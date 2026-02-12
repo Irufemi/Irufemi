@@ -61,9 +61,8 @@ void TetraRegion::BuildTetraMesh(std::vector<VertexData>& outVertices, std::vect
         VertexData vd{};
         vd.position = { pos[i].x, pos[i].y, pos[i].z, 1.0f };
         vd.texcoord = uv[i];
-        float len = std::sqrt(pos[i].x*pos[i].x + pos[i].y*pos[i].y + pos[i].z*pos[i].z);
-        if (len > 1e-6f) { vd.normal = { pos[i].x/len, pos[i].y/len, pos[i].z/len }; }
-        else { vd.normal = {0.0f,1.0f,0.0f}; }
+        float len = std::sqrt(pos[i].x * pos[i].x + pos[i].y * pos[i].y + pos[i].z * pos[i].z);
+        if (len > 1e-6f) { vd.normal = { pos[i].x / len, pos[i].y / len, pos[i].z / len }; } else { vd.normal = { 0.0f,1.0f,0.0f }; }
         outVertices.push_back(vd);
     }
 
@@ -75,7 +74,7 @@ void TetraRegion::BuildTetraMesh(std::vector<VertexData>& outVertices, std::vect
 
 void TetraRegion::CreateMeshBuffers(const std::vector<VertexData>& vertices, const std::vector<uint32_t>& indices) {
     vertexCount_ = static_cast<UINT>(vertices.size());
-    indexCount_  = static_cast<UINT>(indices.size());
+    indexCount_ = static_cast<UINT>(indices.size());
     const size_t vbSize = sizeof(VertexData) * vertices.size();
     const size_t ibSize = sizeof(uint32_t) * indices.size();
 
@@ -108,7 +107,7 @@ void TetraRegion::CreateMaterialResources() {
     materialResource_ = dx_->CreateBufferResource(sizeof(Material));
     Material* mat = nullptr;
     materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-    mat->color = {1,1,1,1};
+    mat->color = { 1,1,1,1 };
     mat->enableLighting = true;
     mat->hasTexture = true;
     mat->lightingMode = 2;
@@ -161,7 +160,7 @@ void TetraRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 
 void TetraRegion::AddInstance(const Transform& t) {
     instances_.push_back(t);
-    instanceColors_.push_back({1,1,1,1}); // 既定は白
+    instanceColors_.push_back({ 1,1,1,1 }); // 既定は白
     instanceDirty_ = true;
 }
 
@@ -227,12 +226,12 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
             temp[i].WVP = wvp;
             temp[i].World = world;
             temp[i].WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-            temp[i].color = (i < instanceWorldColors_.size()) ? instanceWorldColors_[i] : Vector4{1,1,1,1};
+            temp[i].color = (i < instanceWorldColors_.size()) ? instanceWorldColors_[i] : Vector4{ 1,1,1,1 };
         }
     } else {
         // Transform系の色配列をサイズ同期
         if (instanceColors_.size() != instances_.size()) {
-            instanceColors_.resize(instances_.size(), Vector4{1,1,1,1});
+            instanceColors_.resize(instances_.size(), Vector4{ 1,1,1,1 });
         }
 
         for (uint32_t i = 0; i < count; ++i) {
@@ -271,7 +270,7 @@ void TetraRegion::Draw() {
     // インスタンス更新
     BuildInstanceBuffer(true);
 
-    drawManager_->DrawTetraRegion(this);
+    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialResource_.Get(), textureHandle_, instancingSrvGPU_, indexCount_, GetInstanceCount());
 }
 
 // --- サイズ関連 ---

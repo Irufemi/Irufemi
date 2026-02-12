@@ -84,7 +84,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     /// ブロック
     // ブロックの初期化(Blocksでまとめて管理)
-    blocks_ = std::make_unique<Region>();
+    blocks_ = std::make_unique<ModelRegion>();
     blocks_->Initialize(camera_.get(), "block.obj");
     GenerateBlocks();
 

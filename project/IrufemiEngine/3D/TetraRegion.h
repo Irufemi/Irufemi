@@ -58,13 +58,6 @@ public:
     float ComputeScaleFromVertexRadius(float worldVertexRadius) const;
     void AddInstanceByVertexRadius(const Vector3& center, float worldVertexRadius, const Vector3& rotate = {0,0,0});
 
-    // DrawManager getters
-    D3D12_VERTEX_BUFFER_VIEW&   GetVertexBufferView() { return vertexBufferView_; }
-    D3D12_INDEX_BUFFER_VIEW&    GetIndexBufferView() { return indexBufferView_; }
-    ID3D12Resource*             GetMaterialResource() { return materialResource_.Get(); }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_; }
-    UINT                        GetIndexCount() const { return indexCount_; }
     UINT                        GetInstanceCount() const {
         return static_cast<UINT>(instanceWorlds_.empty() ? instances_.size() : instanceWorlds_.size());
     }

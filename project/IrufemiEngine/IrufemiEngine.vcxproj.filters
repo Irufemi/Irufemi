@@ -1,29 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="ソース ファイル">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="ヘッダー ファイル">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="リソース ファイル">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="math">
       <UniqueIdentifier>{d550c156-20f2-429d-9345-fa886c180b31}</UniqueIdentifier>
     </Filter>
     <Filter Include="function">
       <UniqueIdentifier>{fdffdddd-33bd-48e7-bc36-ea565a122c9f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3D">
-      <UniqueIdentifier>{1c90d707-2613-47d1-bd66-a7303fa8f90f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="2D">
-      <UniqueIdentifier>{81443dc7-2f7f-4d80-9041-a390755139e9}</UniqueIdentifier>
     </Filter>
     <Filter Include="audio">
       <UniqueIdentifier>{93a356b9-f23a-4034-ab06-edadb43a2423}</UniqueIdentifier>
@@ -55,29 +37,17 @@
     <Filter Include="Engine\winApp">
       <UniqueIdentifier>{b2ee8d91-6e9d-4fe1-ac98-96b44fa3a1d2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="3D\Region">
-      <UniqueIdentifier>{9ab83aa2-3655-40ac-a5b4-0cc535a3d404}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Scene">
       <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\DebugUI">
       <UniqueIdentifier>{efd67c09-a1d5-4279-9f78-b5610d42879e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="3D\Light">
-      <UniqueIdentifier>{d24cac09-20bd-47dc-828b-b236ed724e9e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine\audio">
       <UniqueIdentifier>{f0d4e162-0e85-4ad7-a095-b4e12fba11b3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\texture">
       <UniqueIdentifier>{fcd3b9d7-f04c-475a-bb9b-fcbc224eac97}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3D\Particle">
-      <UniqueIdentifier>{1809edd0-a6a4-4f58-bde0-1ea7fde05183}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3D\Effect">
-      <UniqueIdentifier>{588775aa-5265-4d8d-8290-25e9aa30c275}</UniqueIdentifier>
     </Filter>
     <Filter Include="math\sound">
       <UniqueIdentifier>{2d0605a7-a645-49d8-87b2-9090b2a17b95}</UniqueIdentifier>
@@ -91,6 +61,36 @@
     <Filter Include="math\light">
       <UniqueIdentifier>{ac7dd633-a770-475b-9e3f-749598582d26}</UniqueIdentifier>
     </Filter>
+    <Filter Include="render">
+      <UniqueIdentifier>{49562265-8288-4286-9d7a-998da039a121}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render\2D">
+      <UniqueIdentifier>{81443dc7-2f7f-4d80-9041-a390755139e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render\3D">
+      <UniqueIdentifier>{1c90d707-2613-47d1-bd66-a7303fa8f90f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render\3D\Light">
+      <UniqueIdentifier>{d24cac09-20bd-47dc-828b-b236ed724e9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render\3D\Effect">
+      <UniqueIdentifier>{588775aa-5265-4d8d-8290-25e9aa30c275}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render\Object3D">
+      <UniqueIdentifier>{09239bed-694d-46fc-b05b-5ed78b10d76e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render\Particle">
+      <UniqueIdentifier>{77173c74-5160-418c-ad0d-6b8180ade2e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render\Region">
+      <UniqueIdentifier>{9ab83aa2-3655-40ac-a5b4-0cc535a3d404}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render\Object2D">
+      <UniqueIdentifier>{d88700ad-3b0b-4754-827a-565d70e6c456}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render\LineInstanced">
+      <UniqueIdentifier>{78ee9df5-4278-4da8-ab04-f45e9c350115}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="manager\DrawManager.cpp">
@@ -99,17 +99,8 @@
     <ClCompile Include="engine\Log.cpp">
       <Filter>Engine\directXCommon</Filter>
     </ClCompile>
-    <ClCompile Include="2D\Sprite.cpp">
-      <Filter>2D</Filter>
-    </ClCompile>
-    <ClCompile Include="3D\ObjClass.cpp">
-      <Filter>3D</Filter>
-    </ClCompile>
-    <ClCompile Include="3D\SphereClass.cpp">
-      <Filter>3D</Filter>
-    </ClCompile>
     <ClCompile Include="3D\TriangleClass.cpp">
-      <Filter>3D</Filter>
+      <Filter>render\3D</Filter>
     </ClCompile>
     <ClCompile Include="audio\Bgm.cpp">
       <Filter>audio</Filter>
@@ -186,26 +177,20 @@
     <ClCompile Include="math\Vector2.cpp">
       <Filter>math</Filter>
     </ClCompile>
-    <ClCompile Include="3D\CylinderClass.cpp">
-      <Filter>3D</Filter>
-    </ClCompile>
     <ClCompile Include="3D\TetraRegion.cpp">
-      <Filter>3D\Region</Filter>
+      <Filter>render\Region</Filter>
     </ClCompile>
     <ClCompile Include="3D\Region.cpp">
-      <Filter>3D\Region</Filter>
+      <Filter>render\Region</Filter>
     </ClCompile>
     <ClCompile Include="3D\SphereRegion.cpp">
-      <Filter>3D\Region</Filter>
+      <Filter>render\Region</Filter>
     </ClCompile>
     <ClCompile Include="audio\Se.cpp">
       <Filter>audio</Filter>
     </ClCompile>
-    <ClCompile Include="2D\Circle2D.cpp">
-      <Filter>2D</Filter>
-    </ClCompile>
     <ClCompile Include="2D\SpriteRegion.cpp">
-      <Filter>2D</Filter>
+      <Filter>render\2D</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math\Matrix4x4.cpp">
@@ -213,9 +198,6 @@
     </ClCompile>
     <ClCompile Include="manager\ModelManager.cpp">
       <Filter>Engine\manager</Filter>
-    </ClCompile>
-    <ClCompile Include="3D\PlaneClass.cpp">
-      <Filter>3D</Filter>
     </ClCompile>
     <ClCompile Include="engine\Input\Mouse.cpp">
       <Filter>Engine\Input</Filter>
@@ -230,10 +212,10 @@
       <Filter>Engine\DebugUI</Filter>
     </ClCompile>
     <ClCompile Include="3D\PointLightClass.cpp">
-      <Filter>3D\Light</Filter>
+      <Filter>render\3D\Light</Filter>
     </ClCompile>
     <ClCompile Include="3D\SpotLightClass.cpp">
-      <Filter>3D\Light</Filter>
+      <Filter>render\3D\Light</Filter>
     </ClCompile>
     <ClCompile Include="manager\AudioManager.cpp">
       <Filter>Engine\audio</Filter>
@@ -247,32 +229,17 @@
     <ClCompile Include="source\Texture.cpp">
       <Filter>Engine\texture</Filter>
     </ClCompile>
-    <ClCompile Include="3D\particle\ParticleSystem.cpp">
-      <Filter>3D\Particle</Filter>
-    </ClCompile>
     <ClCompile Include="math\shape\Particle.cpp">
       <Filter>math\shape</Filter>
     </ClCompile>
     <ClCompile Include="math\Vector4.cpp">
       <Filter>math</Filter>
     </ClCompile>
-    <ClCompile Include="3D\particle\IParticleBehavior.cpp">
-      <Filter>3D\Particle</Filter>
-    </ClCompile>
-    <ClCompile Include="3D\LineClass.cpp">
-      <Filter>3D</Filter>
-    </ClCompile>
     <ClCompile Include="math\LineMaterial.h">
       <Filter>math</Filter>
     </ClCompile>
     <ClCompile Include="math\LineVertexData.h">
       <Filter>math</Filter>
-    </ClCompile>
-    <ClCompile Include="3D\CubeClass.cpp">
-      <Filter>3D</Filter>
-    </ClCompile>
-    <ClCompile Include="3D\effect\EffectSystem.cpp">
-      <Filter>3D\Effect</Filter>
     </ClCompile>
     <ClCompile Include="math\Quaternion.cpp">
       <Filter>math</Filter>
@@ -281,7 +248,7 @@
       <Filter>Engine\manager</Filter>
     </ClCompile>
     <ClCompile Include="3D\AnimationModel.cpp">
-      <Filter>3D</Filter>
+      <Filter>render\3D</Filter>
     </ClCompile>
     <ClCompile Include="function\Collision.cpp">
       <Filter>function</Filter>
@@ -290,8 +257,42 @@
       <Filter>Engine\manager</Filter>
     </ClCompile>
     <ClCompile Include="3D\Skybox.cpp">
-      <Filter>3D</Filter>
+      <Filter>render\3D</Filter>
     </ClCompile>
+    <ClCompile Include="source\Object3DResource.cpp">
+      <Filter>Engine\source</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\SphereClass.cpp">
+      <Filter>render\Object3D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\CylinderClass.cpp">
+      <Filter>render\Object3D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\ObjClass.cpp">
+      <Filter>render\Object3D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\CubeClass.cpp">
+      <Filter>render\Object3D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\PlaneClass.cpp">
+      <Filter>render\Object3D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\particle\IParticleBehavior.cpp">
+      <Filter>render\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\particle\ParticleSystem.cpp">
+      <Filter>render\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\Circle2D.cpp">
+      <Filter>render\Object2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\Sprite.cpp">
+      <Filter>render\Object2D</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\LineClass.cpp">
+      <Filter>render\LineInstanced</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\effect\EffectSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manager\DrawManager.h">
@@ -333,17 +334,8 @@
     <ClInclude Include="engine\Log.h">
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
-    <ClInclude Include="2D\Sprite.h">
-      <Filter>2D</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\ObjClass.h">
-      <Filter>3D</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\SphereClass.h">
-      <Filter>3D</Filter>
-    </ClInclude>
     <ClInclude Include="3D\TriangleClass.h">
-      <Filter>3D</Filter>
+      <Filter>render\3D</Filter>
     </ClInclude>
     <ClInclude Include="source\D3D12ResourceUtil.h">
       <Filter>Engine\source</Filter>
@@ -423,32 +415,23 @@
     <ClInclude Include="math\CameraForGPU.h">
       <Filter>math</Filter>
     </ClInclude>
-    <ClInclude Include="3D\CylinderClass.h">
-      <Filter>3D</Filter>
-    </ClInclude>
     <ClInclude Include="3D\TetraRegion.h">
-      <Filter>3D\Region</Filter>
+      <Filter>render\Region</Filter>
     </ClInclude>
     <ClInclude Include="3D\Region.h">
-      <Filter>3D\Region</Filter>
+      <Filter>render\Region</Filter>
     </ClInclude>
     <ClInclude Include="3D\SphereRegion.h">
-      <Filter>3D\Region</Filter>
+      <Filter>render\Region</Filter>
     </ClInclude>
     <ClInclude Include="audio\Se.h">
       <Filter>audio</Filter>
     </ClInclude>
-    <ClInclude Include="2D\Circle2D.h">
-      <Filter>2D</Filter>
-    </ClInclude>
     <ClInclude Include="2D\SpriteRegion.h">
-      <Filter>2D</Filter>
+      <Filter>render\2D</Filter>
     </ClInclude>
     <ClInclude Include="manager\ModelManager.h">
       <Filter>Engine\manager</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\PlaneClass.h">
-      <Filter>3D</Filter>
     </ClInclude>
     <ClInclude Include="engine\Input\Mouse.h">
       <Filter>Engine\Input</Filter>
@@ -460,10 +443,10 @@
       <Filter>Engine\directXCommon</Filter>
     </ClInclude>
     <ClInclude Include="3D\PointLightClass.h">
-      <Filter>3D\Light</Filter>
+      <Filter>render\3D\Light</Filter>
     </ClInclude>
     <ClInclude Include="3D\SpotLightClass.h">
-      <Filter>3D\Light</Filter>
+      <Filter>render\3D\Light</Filter>
     </ClInclude>
     <ClInclude Include="manager\DebugUI.h">
       <Filter>Engine\DebugUI</Filter>
@@ -480,20 +463,8 @@
     <ClInclude Include="source\Texture.h">
       <Filter>Engine\texture</Filter>
     </ClInclude>
-    <ClInclude Include="3D\particle\ParticleSystem.h">
-      <Filter>3D\Particle</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\particle\IParticleBehavior.h">
-      <Filter>3D\Particle</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\LineClass.h">
-      <Filter>3D</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\CubeClass.h">
-      <Filter>3D</Filter>
-    </ClInclude>
     <ClInclude Include="3D\effect\EffectSystem.h">
-      <Filter>3D\Effect</Filter>
+      <Filter>render\3D\Effect</Filter>
     </ClInclude>
     <ClInclude Include="math\Quaternion.h">
       <Filter>math</Filter>
@@ -538,15 +509,12 @@
       <Filter>Engine\manager</Filter>
     </ClInclude>
     <ClInclude Include="3D\AnimationModel.h">
-      <Filter>3D</Filter>
+      <Filter>render\3D</Filter>
     </ClInclude>
     <ClInclude Include="math\AnimationTransform.h">
       <Filter>math\model</Filter>
     </ClInclude>
     <ClInclude Include="3D\LineClass.h">
-      <Filter>3D</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\CubeClass.h">
       <Filter>3D</Filter>
     </ClInclude>
     <ClInclude Include="3D\effect\EffectSystem.h">
@@ -607,7 +575,41 @@
       <Filter>math</Filter>
     </ClInclude>
     <ClInclude Include="3D\Skybox.h">
-      <Filter>3D</Filter>
+      <Filter>render\3D</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Object3DResource.h">
+      <Filter>Engine\source</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\SphereClass.h">
+      <Filter>render\Object3D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\CylinderClass.h">
+      <Filter>render\Object3D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\ObjClass.h">
+      <Filter>render\Object3D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\CubeClass.h">
+      <Filter>render\Object3D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\PlaneClass.h">
+      <Filter>render\Object3D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\CubeClass.h" />
+    <ClInclude Include="3D\particle\ParticleSystem.h">
+      <Filter>render\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\particle\IParticleBehavior.h">
+      <Filter>render\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\Sprite.h">
+      <Filter>render\Object2D</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\Circle2D.h">
+      <Filter>render\Object2D</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\LineClass.h">
+      <Filter>render\LineInstanced</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

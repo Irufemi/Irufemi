@@ -44,6 +44,12 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         instancingResource_->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_));
     }
 
+    // デバッグ用の Line3DRegion を初期化
+    if (!debugLineRegion_) {
+        debugLineRegion_ = std::make_unique<Line3DRegion>();
+        debugLineRegion_->Initialize(camera_);
+    }
+
     // 振る舞いを設定
     ChangeBehavior(type, true); // 強制的に更新
 
@@ -562,8 +568,8 @@ void ParticleSystem::Update() {
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 
 #if USE_IMGUI
-    for (auto& line : debugLines_) {
-        line->Update();
+    if (debugLineRegion_) {
+        debugLineRegion_->Update();
     }
 #endif
 }
@@ -601,13 +607,11 @@ void ParticleSystem::Draw()
 
     // 2) デバッグ線(AABB 等)を描画(Line PSO を確実にバインド)
 #if USE_IMGUI
-    if (!debugLines_.empty()) {
+    if (debugLineRegion_) {
         if (s_engine_) {
-            s_engine_->ApplyLinePSO();
+            s_engine_->ApplyLineInstancedPSO();
         }
-        for (auto& line : debugLines_) {
-            if (line && s_drawManager_) s_drawManager_->DrawLine3D(line.get());
-        }
+        debugLineRegion_->Draw();
     }
 #endif
 }
@@ -759,7 +763,9 @@ void ParticleSystem::PlayHitEffect(const Vector3& position, uint32_t count) {
 void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
 #if USE_IMGUI
-    debugLines_.clear();
+    if (debugLineRegion_) {
+        debugLineRegion_->ClearInstances();
+    }
 
     // Emitter AABB をフラグで制御して描画
     if (showEmitterAABB_) {
@@ -998,6 +1004,8 @@ void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
 void ParticleSystem::DrawAABB(const AABB& aabb, const Vector4& color)
 {
 #if USE_IMGUI
+    if (!debugLineRegion_) return;
+
     Vector3 vertices[8];
     vertices[0] = { aabb.min.x, aabb.min.y, aabb.min.z };
     vertices[1] = { aabb.max.x, aabb.min.y, aabb.min.z };
@@ -1008,17 +1016,23 @@ void ParticleSystem::DrawAABB(const AABB& aabb, const Vector4& color)
     vertices[6] = { aabb.min.x, aabb.max.y, aabb.max.z };
     vertices[7] = { aabb.max.x, aabb.max.y, aabb.max.z };
 
-    uint32_t indices[] = {
-        0, 1, 1, 3, 3, 2, 2, 0, // Bottom face
-        4, 5, 5, 7, 7, 6, 6, 4, // Top face
-        0, 4, 1, 5, 2, 6, 3, 7  // Connecting edges
-    };
+    // 底面
+    debugLineRegion_->AddInstance(vertices[0], vertices[1], color);
+    debugLineRegion_->AddInstance(vertices[1], vertices[3], color);
+    debugLineRegion_->AddInstance(vertices[3], vertices[2], color);
+    debugLineRegion_->AddInstance(vertices[2], vertices[0], color);
 
-    for (int i = 0; i < 12; ++i) {
-        auto line = std::make_unique<Line3DClass>();
-        line->Initialize(camera_, vertices[indices[i * 2]], vertices[indices[i * 2 + 1]], color);
-        debugLines_.push_back(std::move(line));
-    }
+    // 上面
+    debugLineRegion_->AddInstance(vertices[4], vertices[5], color);
+    debugLineRegion_->AddInstance(vertices[5], vertices[7], color);
+    debugLineRegion_->AddInstance(vertices[7], vertices[6], color);
+    debugLineRegion_->AddInstance(vertices[6], vertices[4], color);
+
+    // 側面
+    debugLineRegion_->AddInstance(vertices[0], vertices[4], color);
+    debugLineRegion_->AddInstance(vertices[1], vertices[5], color);
+    debugLineRegion_->AddInstance(vertices[2], vertices[6], color);
+    debugLineRegion_->AddInstance(vertices[3], vertices[7], color);
 #endif
 }
 

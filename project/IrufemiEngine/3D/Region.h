@@ -21,7 +21,7 @@ class DescriptorPool;
 struct ManagedModel;
 struct GpuMesh;
 
-class Region {
+class ModelRegion {
 public:
     void Initialize(Camera* camera, const std::string& objFilename);
     void AddInstance(const Transform& t);

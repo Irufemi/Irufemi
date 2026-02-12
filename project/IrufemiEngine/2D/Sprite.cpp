@@ -180,7 +180,7 @@ void Sprite::Update() {
 }
 
 void Sprite::Draw() {
-    drawManager_->DrawSprite(this);
+    drawManager_->DrawObject2D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
 }
 
 void Sprite::SetSize(const float& width, const float& height) {

@@ -14,13 +14,13 @@
 #include "math/DirectionalLight.h"
 #include "math/CameraForGPU.h"
 
-DirectXCommon* Region::dx_ = nullptr;
-TextureManager* Region::textureManager_ = nullptr;
-DrawManager* Region::drawManager_ = nullptr;
-DescriptorPool* Region::srvPool_ = nullptr;
-ModelManager* Region::modelManager_ = nullptr;
+DirectXCommon* ModelRegion::dx_ = nullptr;
+TextureManager* ModelRegion::textureManager_ = nullptr;
+DrawManager* ModelRegion::drawManager_ = nullptr;
+DescriptorPool* ModelRegion::srvPool_ = nullptr;
+ModelManager* ModelRegion::modelManager_ = nullptr;
 
-void Region::Initialize(
+void ModelRegion::Initialize(
     Camera* camera,
     const std::string& objFilename) {
     assert(camera);
@@ -39,14 +39,14 @@ void Region::Initialize(
     EnsureSharedTexture(mesh);
 }
 
-const GpuMesh* Region::GetGpuMesh() const {
+const GpuMesh* ModelRegion::GetGpuMesh() const {
     if (managedModel_ && !managedModel_->gpuMeshes.empty()) {
         return managedModel_->gpuMeshes.front().get();
     }
     return nullptr;
 }
 
-void Region::CreateMaterialResources(const ObjMesh& mesh) {
+void ModelRegion::CreateMaterialResources(const ObjMesh& mesh) {
     // マテリアル
     materialResource_ = dx_->CreateBufferResource(sizeof(Material));
     Material* mat = nullptr;
@@ -64,11 +64,11 @@ void Region::CreateMaterialResources(const ObjMesh& mesh) {
     if (mat->color.w <= 0.0f) { mat->color.w = 1.0f; }
 }
 
-void Region::EnsureLightAndCamera() {
+void ModelRegion::EnsureLightAndCamera() {
     // 初期化済み
 }
 
-void Region::EnsureSharedTexture(const ObjMesh& mesh) {
+void ModelRegion::EnsureSharedTexture(const ObjMesh& mesh) {
     if (!mesh.material.textureFilePath.empty()) {
         textureHandle_ = textureManager_->GetTextureHandle(mesh.material.textureFilePath);
     } else {
@@ -77,7 +77,7 @@ void Region::EnsureSharedTexture(const ObjMesh& mesh) {
     assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
 }
 
-void Region::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
+void ModelRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     const UINT stride = sizeof(InstanceData);
     const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride);
 
@@ -110,17 +110,17 @@ void Region::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srv, instancingSrvCPU_);
 }
 
-void Region::AddInstance(const Transform& t) {
+void ModelRegion::AddInstance(const Transform& t) {
     instances_.push_back(t);
     instanceDirty_ = true;
 }
 
-void Region::ClearInstances() {
+void ModelRegion::ClearInstances() {
     instances_.clear();
     instanceDirty_ = true;
 }
 
-void Region::BuildInstanceBuffer(bool force) {
+void ModelRegion::BuildInstanceBuffer(bool force) {
     if (instances_.empty()) { return; }
     if (!force && !instanceDirty_) { return; }
 
@@ -160,10 +160,10 @@ void Region::BuildInstanceBuffer(bool force) {
     instanceDirty_ = false;
 }
 
-void Region::Draw() {
+void ModelRegion::Draw() {
     if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || instances_.empty()) { return; }
 
     BuildInstanceBuffer(true);
 
-    drawManager_->DrawRegion(this);
+    drawManager_->DrawModelRegion(this);
 }

@@ -21,7 +21,7 @@ class ParticleSystem;
 class CylinderClass;
 class D3D12ResourceUtil;
 class D3D12ResourceUtilLine;
-class Region;
+class ModelRegion;
 class SphereRegion; 
 class TetraRegion; 
 class SpriteRegion;
@@ -100,42 +100,30 @@ public: //メンバ関数
         TriangleClass* triangle
     );
 
-    void DrawCube(CubeClass* cube);
-
-    void DrawSprite(Sprite* sprite);
-
-    void DrawSphere(SphereClass* sphere);
-
-    void DrawCylinder(CylinderClass* cylinder);
-
     void DrawParticle(ParticleSystem* resource);
 
-    void DrawRegion(Region* region);
+    void DrawModelRegion(ModelRegion* region);
 
-    void DrawSphereRegion(SphereRegion* region);
+    void DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount);
 
-    void DrawTetraRegion(TetraRegion* region);
+    // LineInstancedシェーダー用描画関数
+    void DrawLineInstanced(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
+    
+    // Object3Dシェーダー用描画関数
+    void DrawObject3D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
 
-    void DrawByIndex(D3D12ResourceUtil* resource);
+    // Object2Dシェーダー用描画関数
+    void DrawObject2D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
 
-    void DrawByVertex(D3D12ResourceUtil* resource);
+    // Skyboxシェーダー用描画関数
+    void DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
 
-    void DrawLine2D(Line2DClass* line);
-
-    void DrawLine3D(Line3DClass* line);
-
-    void DrawLine3DRegion(Line3DRegion* region);
-
-    // モデル描画用の新関数
+    // モデル描画用の関数
     void DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA);
-    void DrawModel(const ManagedModel* model, size_t meshIndex, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA);
 
     void DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster);
 
     void DrawSpriteRegion(SpriteRegion* region);
-    void DrawSharedMesh(const GpuMesh* gpuMesh, D3D12ResourceUtil* instanceResource);
-
-    void DrawSkybox(Skybox* skybox);
 
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
 };
