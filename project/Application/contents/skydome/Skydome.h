@@ -8,9 +8,10 @@
 // 前方宣言
 class Camera;
 
-/// <summary>
-/// 天球
-/// </summary>
+/**
+ * @class Skydome
+ * @brief 背景となる天球モデルを管理するクラス
+ */
 class Skydome {
 private: // メンバ変数
 	// ワールド変換データ
@@ -23,18 +24,19 @@ private: // メンバ変数
 	Camera* camera_ = nullptr;
 
 public: // メンバ関数
-	    /// <summary>
-	    /// 初期化
-	    /// </summary>
+	/**
+	 * @brief 初期化処理
+	 * @param camera カメラのポインタ
+	 */
 	void Initialize(Camera* camera);
 
-	/// <summary>
-	/// 更新
-	/// </summary>
+	/**
+	 * @brief 更新処理
+	 */
 	void Update();
 
-	/// <summary>
-	/// 描画
-	/// </summary>
+	/**
+	 * @brief 描画処理
+	 */
 	void Draw();
 };

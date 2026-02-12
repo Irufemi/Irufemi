@@ -20,16 +20,33 @@ struct AreaLight;
 
 #include "contents/Effect/Fade.h"
 
-/// <summary>
-/// タイトル
-/// </summary>
+/**
+ * @class TitleScene
+ * @brief タイトル画面を管理するクラス
+ *
+ * ゲームの開始をユーザーに促し、入力に応じてステージ選択シーンへ遷移します。
+ * タイトルロゴのアニメーションやBGMの再生も担当します。
+ */
 class TitleScene : public IScene {
 public: // メンバ関数(ゲーム)
 
 public: // メンバ関数(システム)
     ~TitleScene() override;
+
+    /**
+     * @brief 初期化処理
+     * @param engine IrufemiEngineのポインタ
+     */
     void Initialize(IrufemiEngine* engine) override;
+
+    /**
+     * @brief 毎フレームの更新処理
+     */
     void Update() override;
+
+    /**
+     * @brief 描画処理
+     */
     void Draw() override;
 
 private: // メンバ関数(内部ヘルパ)

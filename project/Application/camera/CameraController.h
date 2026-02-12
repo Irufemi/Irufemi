@@ -7,9 +7,12 @@
 class Player;
 
 
-/// <summary>
-/// カメラコントローラー
-/// </summary>
+/**
+ * @class CameraController
+ * @brief プレイヤーに追従するゲームカメラの振る舞いを制御するクラス
+ *
+ * プレイヤーを追従し、移動範囲制限やカメラシェイクなどの効果を適用します。
+ */
 class CameraController {
 private:
 	// 矩形
@@ -53,33 +56,34 @@ private:
 	float shakeAmplitude_ = 0.0f;
 
 public: // メンバ関数
-	/// <summary>
-	/// 初期化
-	/// </summary>
+	/**
+	 * @brief 初期化処理
+	 */
 	void Initialize();
 
-	/// <summary>
-	/// 更新
-	/// </summary>
+	/**
+	 * @brief 更新処理
+	 * @param camera 操作対象のカメラ
+	 */
 	void Update(Camera& camera);
 
-	/// <summary>
-	/// リセット
-	/// </summary>
+	/**
+	 * @brief カメラの位置を追従対象に即座に合わせます
+	 */
 	void Reset();
 
-	/// <summary>
-	/// カメラシェイクを開始
-	/// </summary>
-	/// <param name="duration">持続時間(秒)</param>
-	/// <param name="amplitude">振幅</param>
-	void StartShake(float duration, float amplitude);
+	/**
+	 * @brief カメラシェイクを開始します
+	 * @param duration 持続時間(秒)
+	 * @param amplitude 揺れの振幅
+	 */
+	void StartShake(const float& duration, const float& amplitude);
 
 	// セッター
 
-	void Settarget(Player* target) { this->target_ = target; }
+	void SetTarget(Player* target) { this->target_ = target; }
 
-	void SetMovavleArea(const Rect& area) { this->movableArea_ = area; }
+	void SetMovableArea(const Rect& area) { this->movableArea_ = area; }
 
 	// ゲッター
 };

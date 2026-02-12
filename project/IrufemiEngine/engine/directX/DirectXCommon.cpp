@@ -107,7 +107,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         //ソフトウェアアダプタでなければ採用!
         if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
             //採用したアダプタの情報をログに出力。wstringの方なので注意
-            OutPutLog(log_->GetLogStream(), ConvertString(std::format(L"use Adapter:{}\n", adapterDesc.Description)));
+            Log::OutPutLog(log_->GetLogStream(), ConvertString(std::format(L"use Adapter:{}\n", adapterDesc.Description)));
             break;
         }
         useAdapter = nullptr; //ソフトウェアアダプタの場合は見なかったことにする
@@ -130,7 +130,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         //指定した機能レベルでデバイスが生成できたかを確認
         if (SUCCEEDED(hr)) {
             //生成できたのでログ出力を行ってループを抜ける
-            OutPutLog(log_->GetLogStream(), std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
+            Log::OutPutLog(log_->GetLogStream(), std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
             auto msg = std::format("Resource[{}] created at {} in {}:{}\n", "ID3D12Device", static_cast<const void*>(device_.Get()), __FILE__, __LINE__);
             OutputDebugStringA(msg.c_str());
             break;
@@ -138,7 +138,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     }
     //デバイス生成がうまくいかなかったので起動できない
     assert(device_ != nullptr);
-    OutPutLog(log_->GetLogStream(), "Complete create D3D12Device!!!\n"); //初期化完了のログを出す
+    Log::OutPutLog(log_->GetLogStream(), "Complete create D3D12Device!!!\n"); //初期化完了のログを出す
 
     // 生成が完了したのでuseAdapterを解放
     if (useAdapter) { useAdapter.Reset(); }
@@ -492,7 +492,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<ID3DBlob>  errorBlob = nullptr;
     hr = D3D12SerializeRootSignature(&descriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, signatureBlob.GetAddressOf(), errorBlob.GetAddressOf());
     if (FAILED(hr)) {
-        OutPutLog(log_->GetLogStream(), reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
+        Log::OutPutLog(log_->GetLogStream(), reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
         assert(false);
     }
     //バイナリを元に生成

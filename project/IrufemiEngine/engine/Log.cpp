@@ -42,7 +42,7 @@ void Log::Initialize() {
 /*ログを出そう*/
 
 //出力ウィンドウに文字を出す
-void OutPutLog(std::ostream& os, const std::string& message) {
+void Log::OutPutLog(std::ostream& os, const std::string& message) {
     os << message << std::endl;
     OutputDebugStringA(message.c_str());
 }

@@ -29,16 +29,30 @@ struct AreaLight;
 #include "camera/CameraController.h"
 
 
-/// <summary>
-/// ゲーム
-/// </summary>
+/**
+ * @class GameScene
+ * @brief ゲームプレイ中のメインシーンを管理するクラス
+ *
+ * プレイヤー、敵、マップなどのゲームオブジェクトを管理し、
+ * ゲームのロジック、更新、描画、衝突判定などを担当します。
+ */
 class GameScene : public IScene {
 public: // メンバ関数(ゲーム)
 
 public: // メンバ関数(システム)
     ~GameScene() override;
+    /**
+     * @brief 初期化処理
+     * @param engine IrufemiEngineのポインタ
+     */
     void Initialize(IrufemiEngine* engine) override;
+    /**
+     * @brief 毎フレームの更新処理
+     */
     void Update() override;
+    /**
+     * @brief 描画処理
+     */
     void Draw() override;
     // ポーズ中の更新
     void PauseUpdate() override;
@@ -48,6 +62,11 @@ public: // メンバ関数(システム)
     bool IsPausable() const override { return true; }
 
 private: // メンバ関数(内部ヘルパ)
+
+    // 初期化ヘルパ
+    void InitializeSystem();
+    void InitializeGameObjects();
+    void InitializeUI();
 
     void GenerateBlocks();
 

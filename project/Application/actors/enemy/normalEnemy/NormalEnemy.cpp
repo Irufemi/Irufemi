@@ -15,23 +15,23 @@
 NormalEnemy::NormalEnemy(GameScene* gameScene, Camera* camera)
     : gameScene_(gameScene), camera_(camera) {
     // 基底クラスの当たり判定サイズを設定
-    width_ = 1.0f;
-    height_ = 1.0f;
+    SetWidth(1.0f);
+    SetHeight(1.0f);
 }
 
 void NormalEnemy::Initialize(const Vector3& position) {
     // 基底クラスの初期化を呼び出す
     IEnemy::Initialize(position);
 
-    model_ = std::make_unique<ObjClass>();
-    model_->Initialize(camera_, "enemy.obj"); // モデル名を "enemy.obj" に変更
+    GetModel() = std::make_unique<ObjClass>();
+    GetModel()->Initialize(camera_, "enemy.obj"); // モデル名を "enemy.obj" に変更
 
-    transform_.rotate = { 0.0f, -std::numbers::pi_v<float> / 2.0f, 0.0f }; // 左向きで開始
-    lrDirection_ = LRDirection::kLeft;
-    velocity_ = { -0.05f, 0.0f, 0.0f }; // 仮の移動速度
+    GetTransform().rotate = { 0.0f, -std::numbers::pi_v<float> / 2.0f, 0.0f }; // 左向きで開始
+    SetDirection(LRDirection::kLeft);
+    SetVelocity({ -kDefaultMoveSpeed, 0.0f, 0.0f }); // 仮の移動速度
 
     // ダメージ値を設定
-    damage_ = 10;
+    SetDamage(10);
 
     // 初期状態は歩行
     behavior_ = Behavior::kWalk;
@@ -71,10 +71,10 @@ void NormalEnemy::Update() {
 }
 
 void NormalEnemy::Draw() {
-    if (model_) {
-        model_->SetTransform(transform_);
-        model_->Update();
-        model_->Draw();
+    if (GetModel()) {
+        GetModel()->SetTransform(GetTransform());
+        GetModel()->Update();
+        GetModel()->Draw();
     }
 }
 
@@ -100,7 +100,7 @@ void NormalEnemy::OnCollision(Player* player) {
 }
 
 void NormalEnemy::UpdateMatrix() {
-    worldMatrix_ = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    IEnemy::UpdateMatrix();
 }
 
 void NormalEnemy::BehaviorWalkInitialize() {
@@ -108,51 +108,13 @@ void NormalEnemy::BehaviorWalkInitialize() {
 }
 
 void NormalEnemy::BehaviorWalkUpdate() {
-	// 接地している場合のみ行動
-	if (onGround_) {
-		bool shouldTurn = false;
-
-		// --- 崖チェック ---
-		Vector3 footPosition = transform_.translate;
-		float checkOffsetX = (lrDirection_ == LRDirection::kRight) ? width_ / 2.0f : -width_ / 2.0f;
-		footPosition.x += checkOffsetX;
-		footPosition.y -= height_ / 2.0f + 0.1f; // 少し下をチェック
-
-		MapChipField::IndexSet footIndex = mapChipField_->GetMapChipIndexSetByPosition(footPosition);
-		if (mapChipField_->GetMapChipTypeByIndex(footIndex.xIndex, footIndex.yIndex) == MapChipType::kBlank) {
-			shouldTurn = true;
-		}
-
-		// --- 壁チェック ---
-		// isTouchingWall_ は基底クラスの衝突解決で更新される
-		if (isTouchingWall_) {
-			shouldTurn = true;
-		}
-
-		// --- 方向転換処理 ---
-		if (shouldTurn) {
-			if (lrDirection_ == LRDirection::kLeft) {
-				lrDirection_ = LRDirection::kRight;
-				transform_.rotate.y = std::numbers::pi_v<float> / 2.0f;
-			}
-			else {
-				lrDirection_ = LRDirection::kLeft;
-				transform_.rotate.y = -std::numbers::pi_v<float> / 2.0f;
-			}
-		}
-
-		// --- 速度設定 ---
-		float moveSpeed = (lrDirection_ == LRDirection::kLeft) ? -0.05f : 0.05f;
-		velocity_.x = moveSpeed;
-	}
-
 	// 基底クラスの移動・衝突解決処理を呼ぶ
 	BehaviorMoveUpdate();
 }
 
 void NormalEnemy::BehaviorDeathInitialize() {
     deathTimer_ = 0.0f;
-    deathStartRotation_ = transform_.rotate;
+    deathStartRotation_ = GetTransform().rotate;
     // プレイヤーの攻撃方向に合わせて吹き飛ぶ回転を設定
     // TODO: Playerのポインタを保持する方法を検討
     deathEndRotation_.x = -std::numbers::pi_v<float> / 2.0f;
@@ -165,15 +127,15 @@ void NormalEnemy::BehaviorDeathUpdate() {
     float t = std::clamp(deathTimer_ / kDeathDuration, 0.0f, 1.0f);
 
     // Y軸回転
-    transform_.rotate.y = Lerp(deathStartRotation_.y, deathEndRotation_.y, EaseOutSine(t));
+    GetTransform().rotate.y = Lerp(deathStartRotation_.y, deathEndRotation_.y, EaseOutSine(t));
 
     // X軸回転(演出の後半で倒れる)
     if (t > 0.5f) {
         float fall_t = (t - 0.5f) * 2.0f;
-        transform_.rotate.x = Lerp(deathStartRotation_.x, deathEndRotation_.x, EaseInSine(fall_t));
+        GetTransform().rotate.x = Lerp(deathStartRotation_.x, deathEndRotation_.x, EaseInSine(fall_t));
     }
 
     if (deathTimer_ >= kDeathDuration) {
-        isDead_ = true;
+        SetIsDead(true);
     }
 }

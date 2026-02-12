@@ -2,6 +2,7 @@
 
 #include "function/Function.h"
 #include "function/GetBackBufferIndex.h"
+#include "function/Random.h"
 
 #include <cassert>
 #include <DbgHelp.h>
@@ -31,8 +32,6 @@
 #include "source/Texture.h"
 #include "Application/contents/Effect/Fade.h"
 #include "manager/DebugUI.h"
-// ポーズ表示用
-std::unique_ptr<Sprite> pauseSprite_ = nullptr;
 
 #include "scene/IScene.h"
 
@@ -59,6 +58,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // ログを出せるようにする
     log_ = std::make_unique<Log>();
     log_->Initialize();
+
+    // 乱数エンジンのシードを設定
+    Random::SeedEngine();
 
     // AudioManagerの生成・Media Foundationの初期化
     audioManager_ = std::make_unique<AudioManager>();

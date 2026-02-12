@@ -132,12 +132,6 @@
     <ClCompile Include="math\Vector3 .cpp">
       <Filter>math</Filter>
     </ClCompile>
-    <ClCompile Include="function\Ease.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\Math.cpp">
-      <Filter>function</Filter>
-    </ClCompile>
     <ClCompile Include="engine\directX\PSOManager.cpp">
       <Filter>Engine\directXCommon</Filter>
     </ClCompile>
@@ -242,7 +236,16 @@
       <Filter>render\3D</Filter>
     </ClCompile>
     <ClCompile Include="function\Collision.cpp">
-      <Filter>function</Filter>
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="function\Ease.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="function\Math.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="function\Random.cpp">
+      <Filter>math</Filter>
     </ClCompile>
     <ClCompile Include="manager\PrimitiveManager.cpp">
       <Filter>Engine\manager</Filter>
@@ -366,12 +369,6 @@
     </ClInclude>
     <ClInclude Include="function\GetBackBufferIndex.h">
       <Filter>Engine\function</Filter>
-    </ClInclude>
-    <ClInclude Include="function\Ease.h">
-      <Filter>function</Filter>
-    </ClInclude>
-    <ClInclude Include="function\Math.h">
-      <Filter>function</Filter>
     </ClInclude>
     <ClInclude Include="math\shape\Particle.h">
       <Filter>math\shape</Filter>
@@ -508,9 +505,6 @@
     <ClInclude Include="math\DirectionalLight.h">
       <Filter>math\light</Filter>
     </ClInclude>
-    <ClInclude Include="function\Collision.h">
-      <Filter>function</Filter>
-    </ClInclude>
     <ClInclude Include="math\LRDirection.h">
       <Filter>math</Filter>
     </ClInclude>
@@ -590,6 +584,9 @@
     </ClInclude>
     <ClInclude Include="3D\CubeClass.h">
       <Filter>render\Object3D</Filter>
+    </ClInclude>
+    <ClInclude Include="function\Random.h">
+      <Filter>math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

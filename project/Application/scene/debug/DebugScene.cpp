@@ -654,13 +654,5 @@ void DebugScene::Draw() {
     if (isActiveSprite_) {
         sprite_->Draw();
     }
-    
-    /*
-
-    engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-    engine_->ApplyLinePSO();
-
-    line2D_->Draw();*/
 
 }
