@@ -160,6 +160,7 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
 
     // --- フレーム共通CBV/SRVをここで一度だけバインド ---
     commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    commandList_->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
     commandList_->SetGraphicsRootConstantBufferView(5, frameData_.camera);
     commandList_->SetGraphicsRootConstantBufferView(3, frameData_.directionalLight);
     commandList_->SetGraphicsRootConstantBufferView(6, frameData_.pointLights);
@@ -248,8 +249,8 @@ void DrawManager::PostDraw() {
 }
 
 void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights) {
-    if (cameraData_) {*cameraData_ = camera;}
-    if (directionalLightData_) {*directionalLightData_ = light;}
+    if (cameraData_) { *cameraData_ = camera; }
+    if (directionalLightData_) { *directionalLightData_ = light; }
     if (pointLightsData_) {
         for (int i = 0; i < kMaxPointLights; ++i) {
             pointLightsData_->lights[i].isActive = (i < pointLights.size());
@@ -631,4 +632,19 @@ void DrawManager::DrawObject3D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
     commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+}
+
+void DrawManager::DrawSkinning(const D3D12_GPU_DESCRIPTOR_HANDLE& palette, const D3D12_GPU_DESCRIPTOR_HANDLE& inputVertex, const D3D12_GPU_DESCRIPTOR_HANDLE& influence, const D3D12_GPU_DESCRIPTOR_HANDLE& outputVertex, const D3D12_GPU_VIRTUAL_ADDRESS& skinningInformation, const float& verticesSize) {
+
+
+    // Parameterの設定
+    commandList_->SetComputeRootDescriptorTable(0, palette);
+    commandList_->SetComputeRootDescriptorTable(1, inputVertex);
+    commandList_->SetComputeRootDescriptorTable(2, influence);
+    commandList_->SetComputeRootDescriptorTable(3, outputVertex);
+    commandList_->SetComputeRootConstantBufferView(4, skinningInformation);
+
+    // Dispatch
+    commandList_->Dispatch(static_cast<UINT>(verticesSize + 1023 / 1024), 1, 1);
+
 }
