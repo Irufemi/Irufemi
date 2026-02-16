@@ -34,6 +34,8 @@ public: // メンバ関数
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
 
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateUAVBufferResource(size_t sizeInBytes);
+
 	Microsoft::WRL::ComPtr<ID3D12Resource>  UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata& metadata);
@@ -69,6 +71,10 @@ public: // ゲッター
 	int32_t& GetClientHeight() { return clientHeight_; }
 	PSOManager* GetPSOManager() { return psoManager_.get(); }
 	DescriptorPool* GetSrvPool() const { return srvPool_.get(); }
+
+	// Compute Shader用
+	ID3D12RootSignature* GetComputeRootSignature() const { return computeRootSignature_.Get(); }
+	ID3D12PipelineState* GetSkinningComputePSO() const { return skinningComputePSO_.Get(); }
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetRTVCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetRTVGPUDescriptorHandle(uint32_t index);
@@ -152,6 +158,10 @@ private: // メンバ変数
 
 	// PSO 管理インスタンス
 	std::unique_ptr<PSOManager> psoManager_ = nullptr;
+
+	// --- Compute Shader ---
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> computeRootSignature_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> skinningComputePSO_ = nullptr;
 
 	// 記録時間(FPS固定用)
 	std::chrono::steady_clock::time_point  reference_;

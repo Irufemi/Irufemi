@@ -183,13 +183,20 @@ void AnimationModel::Draw() {
         boneLines_->Draw();
     }
 
-    // スキニングの有無でPSOと描画関数を切り替え
+    engine_->ApplyPSO();
+    // スキニングの有無で描画関数を切り替え
+
     if (!managedModel_->cpuModel->skinClusterData.empty()) {
-        engine_->ApplySkinningPSO();
         // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
-        engine_->GetDrawManager()->DrawAnimationModel(managedModel_.get(), GetTransformationGpuAddress(), skinCluster_);
+        engine_->GetDrawManager()->DrawAnimationModel(
+            managedModel_.get(),
+            GetTransformationGpuAddress(),
+            skinCluster_,
+            skinCluster_.skinnedVertexSrvHandle.second,
+            skinCluster_.skinningInformationResource->GetGPUVirtualAddress(),
+            skinCluster_.mappedSkinningInformation->numVertices
+        );
     } else {
-        engine_->ApplyPSO();
         // メッシュごとに描画
         engine_->GetDrawManager()->DrawModel(managedModel_.get(), GetTransformationGpuAddress());
     }

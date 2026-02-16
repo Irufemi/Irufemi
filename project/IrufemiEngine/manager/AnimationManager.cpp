@@ -7,6 +7,7 @@
 #include "math/ObjModel.h"
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h"
+#include "math/VertexData.h"
 
 #include <cassert>
 #include <filesystem>
@@ -460,6 +461,22 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
     skinCluster.influenceBufferView.SizeInBytes = UINT(sizeof(VertexInfluence) * totalVertices);
     skinCluster.influenceBufferView.StrideInBytes = sizeof(VertexInfluence);
 
+    // influence用SRV
+    uint32_t influenceSrvIndex = dxCommon_->GetSrvPool()->Allocate();
+    assert(influenceSrvIndex != DescriptorPool::kInvalid);
+    skinCluster.influenceSrvHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(influenceSrvIndex);
+    skinCluster.influenceSrvHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(influenceSrvIndex);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC influenceSrvDesc{};
+    influenceSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    influenceSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    influenceSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    influenceSrvDesc.Buffer.FirstElement = 0;
+    influenceSrvDesc.Buffer.NumElements = UINT(totalVertices);
+    influenceSrvDesc.Buffer.StructureByteStride = sizeof(VertexInfluence);
+    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.influenceResource.Get(), &influenceSrvDesc, skinCluster.influenceSrvHandle.first);
+
+
     skinCluster.inverseBindPoseMatrices.resize(skeleton.joints.size());
     std::generate(skinCluster.inverseBindPoseMatrices.begin(), skinCluster.inverseBindPoseMatrices.end(), [] {return Math::MakeIdentity4x4(); });
 
@@ -481,6 +498,49 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
             }
         }
     }
+
+    // --- コンピュートシェーダ用のリソース生成 ---
+    // Skinned Vertex Buffer (UAV)
+    skinCluster.skinnedVertexResource = dxCommon_->CreateUAVBufferResource(sizeof(VertexData) * totalVertices);
+    // UAV
+    uint32_t skinnedVertexUavIndex = dxCommon_->GetSrvPool()->Allocate();
+    assert(skinnedVertexUavIndex != DescriptorPool::kInvalid);
+    skinCluster.skinnedVertexUavHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(skinnedVertexUavIndex);
+    skinCluster.skinnedVertexUavHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(skinnedVertexUavIndex);
+
+    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
+    uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    uavDesc.Buffer.FirstElement = 0;
+    uavDesc.Buffer.NumElements = UINT(totalVertices);
+    uavDesc.Buffer.StructureByteStride = sizeof(VertexData);
+    dxCommon_->GetDevice()->CreateUnorderedAccessView(skinCluster.skinnedVertexResource.Get(), nullptr, &uavDesc, skinCluster.skinnedVertexUavHandle.first);
+
+    // SRV
+    uint32_t skinnedVertexSrvIndex = dxCommon_->GetSrvPool()->Allocate();
+    assert(skinnedVertexSrvIndex != DescriptorPool::kInvalid);
+    skinCluster.skinnedVertexSrvHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(skinnedVertexSrvIndex);
+    skinCluster.skinnedVertexSrvHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(skinnedVertexSrvIndex);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    srvDesc.Buffer.FirstElement = 0;
+    srvDesc.Buffer.NumElements = UINT(totalVertices);
+    srvDesc.Buffer.StructureByteStride = sizeof(VertexData);
+    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.skinnedVertexResource.Get(), &srvDesc, skinCluster.skinnedVertexSrvHandle.first);
+
+    // VBV
+    skinCluster.skinnedVertexBufferView.BufferLocation = skinCluster.skinnedVertexResource->GetGPUVirtualAddress();
+    skinCluster.skinnedVertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * totalVertices);
+    skinCluster.skinnedVertexBufferView.StrideInBytes = sizeof(VertexData);
+
+    // Skinning Information (CBV)
+    skinCluster.skinningInformationResource = dxCommon_->CreateBufferResource(sizeof(SkinningInformation));
+    skinCluster.skinningInformationResource->Map(0, nullptr, reinterpret_cast<void**>(&skinCluster.mappedSkinningInformation));
+    skinCluster.mappedSkinningInformation->numVertices = static_cast<uint32_t>(totalVertices);
+
 
     return skinCluster;
 }

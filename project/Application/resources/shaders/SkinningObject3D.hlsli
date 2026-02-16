@@ -17,3 +17,9 @@ struct TransformationMatrix
 	float32_t4x4 World;
 	float32_t4x4 WorldInverseTranspose;
 };
+
+struct Well
+{
+	float32_t4x4 skeletonSpaceMatrix;
+	float32_t4x4 skeletonInverseTransposeMatrix;
+};

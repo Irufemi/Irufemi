@@ -34,6 +34,7 @@ struct GpuMesh {
     D3D12_INDEX_BUFFER_VIEW indexBufferView{};
     UINT vertexCount = 0;
     UINT indexCount = 0;
+    D3D12_GPU_DESCRIPTOR_HANDLE vertexSrvHandle{}; // 追加
 };
 
 // 共有されるGPUマテリアルリソース

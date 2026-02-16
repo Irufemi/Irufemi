@@ -39,6 +39,8 @@ void DirectXCommon::Finalize() {
     }
 
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
+    skinningComputePSO_.Reset();
+    computeRootSignature_.Reset();
     rootSignature_.Reset();
     depthStencilResource_.Reset();
     rtvDescriptorHeap_.Reset();
@@ -503,6 +505,64 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (signatureBlob) { signatureBlob.Reset(); }
     if (errorBlob) { errorBlob.Reset(); }
 
+    // --- Compute Shader用のRootSignatureとPSOを生成 ---
+    {
+        D3D12_ROOT_SIGNATURE_DESC computeRootSignatureDesc{};
+        computeRootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+        // Skinning.CS.hlslのresource bindingに合わせる
+        // t0: StructuredBuffer<Well> gMatrixPalette
+        // t1: StructuredBuffer<Vertex> gInputVertices
+        // t2: StructuredBuffer<VertexInfluence> gInfluences
+        // u0: RWStructuredBuffer<Vertex> gOutputVertices
+        // b0: ConstantBuffer<SkinningInformation> gSkinningInformation
+        D3D12_DESCRIPTOR_RANGE srvRanges[3];
+        srvRanges[0] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t0
+        srvRanges[1] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t1
+        srvRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t2
+
+        D3D12_DESCRIPTOR_RANGE uavRange = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u0
+
+        D3D12_ROOT_PARAMETER computeRootParameters[5] = {};
+        computeRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        computeRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[0].DescriptorTable.pDescriptorRanges = &srvRanges[0];
+        computeRootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
+
+        computeRootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        computeRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[1].DescriptorTable.pDescriptorRanges = &srvRanges[1];
+        computeRootParameters[1].DescriptorTable.NumDescriptorRanges = 1;
+
+        computeRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        computeRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[2].DescriptorTable.pDescriptorRanges = &srvRanges[2];
+        computeRootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
+
+        computeRootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        computeRootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[3].DescriptorTable.pDescriptorRanges = &uavRange;
+        computeRootParameters[3].DescriptorTable.NumDescriptorRanges = 1;
+
+        computeRootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        computeRootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[4].Descriptor.ShaderRegister = 0; // b0
+        computeRootParameters[4].Descriptor.RegisterSpace = 0;
+
+        computeRootSignatureDesc.pParameters = computeRootParameters;
+        computeRootSignatureDesc.NumParameters = _countof(computeRootParameters);
+
+        Microsoft::WRL::ComPtr<ID3DBlob> computeSignatureBlob = nullptr;
+        Microsoft::WRL::ComPtr<ID3DBlob> computeErrorBlob = nullptr;
+        hr = D3D12SerializeRootSignature(&computeRootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &computeSignatureBlob, &computeErrorBlob);
+        if (FAILED(hr)) {
+            Log::OutPutLog(log_->GetLogStream(), reinterpret_cast<char*>(computeErrorBlob->GetBufferPointer()));
+            assert(false);
+        }
+        hr = device_->CreateRootSignature(0, computeSignatureBlob->GetBufferPointer(), computeSignatureBlob->GetBufferSize(), IID_PPV_ARGS(&computeRootSignature_));
+        assert(SUCCEEDED(hr));
+    }
+
     /*テクスチャを貼ろう*/
 
     ///InputLayoutの拡張
@@ -612,6 +672,10 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> skyboxPSBlob = CompileShader(L"resources/shaders/Skybox.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(skyboxPSBlob != nullptr);
 
+    // Compute Shaderのコンパイル
+    Microsoft::WRL::ComPtr<IDxcBlob> skinningCSBlob = CompileShader(L"resources/shaders/Skinning.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(skinningCSBlob != nullptr);
+
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
     if (dxcCompiler) { dxcCompiler.Reset(); }
@@ -692,6 +756,14 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
 
+    // Compute PSOの生成
+    D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc{};
+    computePsoDesc.CS = { skinningCSBlob->GetBufferPointer(), skinningCSBlob->GetBufferSize() };
+    computePsoDesc.pRootSignature = computeRootSignature_.Get();
+    computePsoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+    hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&skinningComputePSO_));
+    assert(SUCCEEDED(hr));
+
     // 生成が完了したのでShaderBlobを解放
     if (object3DVSBlob) { object3DVSBlob.Reset(); }
     if (object3DPSBlob) { object3DPSBlob.Reset(); }
@@ -710,6 +782,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (skinningObject3DVSBlob) { skinningObject3DVSBlob.Reset(); }
     if (skyboxVSBlob) { skyboxVSBlob.Reset(); }
     if (skyboxPSBlob) { skyboxPSBlob.Reset(); }
+    if (skinningCSBlob) { skinningCSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};
@@ -840,6 +913,33 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_
 
     return bufferResource;
 
+}
+
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateUAVBufferResource(size_t sizeInBytes) {
+    D3D12_HEAP_PROPERTIES heapProperties{};
+    heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+    D3D12_RESOURCE_DESC resourceDesc{};
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    resourceDesc.Width = sizeInBytes;
+    resourceDesc.Height = 1;
+    resourceDesc.DepthOrArraySize = 1;
+    resourceDesc.MipLevels = 1;
+    resourceDesc.SampleDesc.Count = 1;
+    resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> bufferResource = nullptr;
+    HRESULT hr = device_->CreateCommittedResource(
+        &heapProperties,
+        D3D12_HEAP_FLAG_NONE,
+        &resourceDesc,
+        D3D12_RESOURCE_STATE_COMMON,
+        nullptr,
+        IID_PPV_ARGS(bufferResource.GetAddressOf()));
+    assert(SUCCEEDED(hr));
+
+    return bufferResource;
 }
 
 /*テクスチャを正しく配置しよう*/

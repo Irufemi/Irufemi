@@ -14,11 +14,11 @@ ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
 /*Skinning*/
 
-struct Well
-{
-	float32_t4x4 skeletonSpaceMatrix;
-	float32_t4x4 skeletonInverseTransposeMatrix;
-};
+//struct Well
+//{
+//	float32_t4x4 skeletonSpaceMatrix;
+//	float32_t4x4 skeletonInverseTransposeMatrix;
+//};
 StructuredBuffer<Well> gMatrixPalette : register(t0);
 
 struct Skinned
