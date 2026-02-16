@@ -6,6 +6,7 @@
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
 #include "engine/directX/DirectXCommon.h"
+#include "engine/directX/DescriptorPool.h"
 #include "manager/TextureManager.h"
 #include "math/Material.h"
 #include "math/Node.h"
@@ -83,6 +84,19 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
             gpuMesh->vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vbData));
             std::memcpy(vbData, cpuMesh.vertices.data(), vbSize);
             gpuMesh->vertexResource->Unmap(0, nullptr);
+
+            // 頂点バッファのSRVを作成
+            uint32_t srvIndex = dxCommon_->GetSrvPool()->Allocate();
+            assert(srvIndex != DescriptorPool::kInvalid);
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+            srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+            srvDesc.Buffer.FirstElement = 0;
+            srvDesc.Buffer.NumElements = gpuMesh->vertexCount;
+            srvDesc.Buffer.StructureByteStride = sizeof(VertexData);
+            dxCommon_->GetDevice()->CreateShaderResourceView(gpuMesh->vertexResource.Get(), &srvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(srvIndex));
+            gpuMesh->vertexSrvHandle = dxCommon_->GetSrvPool()->GetGPUHandle(srvIndex);
         }
 
         // Index Buffer (あれば)

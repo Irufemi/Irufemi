@@ -521,13 +521,39 @@ void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS
     // 一時リソースはフレーム終了後に解放される
 }
 
-void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster)
+void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster, const D3D12_GPU_DESCRIPTOR_HANDLE& skinnedVertexSrv, D3D12_GPU_VIRTUAL_ADDRESS skinningInfoGpuVA, uint32_t numVertices)
 {
     if (!model || !model->cpuModel || !dxCommon_) return;
+
+    // --- コンピュートシェーダーによるスキニング実行 ---
+    // PSOをコンピュート用に切り替え
+    commandList_->SetPipelineState(dxCommon_->GetSkinningComputePSO());
+
+    // Parameterの設定
+    commandList_->SetComputeRootDescriptorTable(0, skinCluster.paletteSrvHandle.second);
+    commandList_->SetComputeRootDescriptorTable(1, model->gpuMeshes[0]->vertexSrvHandle); // 入力頂点(t1)
+    commandList_->SetComputeRootDescriptorTable(2, skinCluster.influenceSrvHandle.second);
+    commandList_->SetComputeRootDescriptorTable(3, skinCluster.skinnedVertexUavHandle.second);
+    commandList_->SetComputeRootConstantBufferView(4, skinningInfoGpuVA);
+
+    // Dispatch
+    commandList_->Dispatch( (numVertices + 1023) / 1024, 1, 1);
+
+    // --- UAVバリア ---
+    // スキニング計算結果(UAV)を、頂点シェーダーの入力(SRV)として使えるようにするためのバリア
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier.UAV.pResource = skinCluster.skinnedVertexResource.Get();
+    commandList_->ResourceBarrier(1, &barrier);
+
+    // --- グラフィックスパイプラインでの描画 ---
+    // PSOをグラフィックス用に切り替え (呼び出し元で ApplySkinningPSO が呼ばれている想定)
+    commandList_->SetPipelineState(dxCommon_->GetPSOManager()->GetSkinning(BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back));
 
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // Skinning用のMatrixPaletteをSRVとしてバインド
+    // (VSでも参照する可能性があるため、ここではコメントアウトせず残す)
     commandList_->SetGraphicsRootDescriptorTable(4, skinCluster.paletteSrvHandle.second);
 
     // モデル内の全メッシュをループして描画
@@ -538,21 +564,14 @@ void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUA
         if (!gpuMesh || !gpuMaterial) continue;
 
         // セットするバッファの配列を用意
-        D3D12_VERTEX_BUFFER_VIEW vbvs[2];
+        D3D12_VERTEX_BUFFER_VIEW vbvs[1];
         UINT vbvCount = 0;
 
-        // 1. 基本の頂点バッファをセット（これは絶対にある）
-        vbvs[vbvCount] = gpuMesh->vertexBufferView;
+        // 1. コンピュートシェーダーで計算済みの頂点バッファをセット
+        vbvs[vbvCount] = skinCluster.skinnedVertexBufferView;
         vbvCount++;
 
-        // 2. スキニング用バッファ（ボーンがある場合のみ追加）
-        // skinClusterが有効なリソースを持っているか確認する
-        if (skinCluster.influenceResource != nullptr) {
-            vbvs[vbvCount] = skinCluster.influenceBufferView;
-            vbvCount++;
-        }
-
-        // 実際に存在するバッファの数（1つ or 2つ）だけをGPUに教える
+        // 実際に存在するバッファの数（1つ）だけをGPUに教える
         commandList_->IASetVertexBuffers(0, vbvCount, vbvs);
 
         if (gpuMesh->indexCount > 0) {
@@ -634,7 +653,7 @@ void DrawManager::DrawObject3D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
     commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 }
 
-void DrawManager::DrawSkinning(const D3D12_GPU_DESCRIPTOR_HANDLE& palette, const D3D12_GPU_DESCRIPTOR_HANDLE& inputVertex, const D3D12_GPU_DESCRIPTOR_HANDLE& influence, const D3D12_GPU_DESCRIPTOR_HANDLE& outputVertex, const D3D12_GPU_VIRTUAL_ADDRESS& skinningInformation, const float& verticesSize) {
+void DrawManager::DispatchSkinning(const D3D12_GPU_DESCRIPTOR_HANDLE& palette, const D3D12_GPU_DESCRIPTOR_HANDLE& inputVertex, const D3D12_GPU_DESCRIPTOR_HANDLE& influence, const D3D12_GPU_DESCRIPTOR_HANDLE& outputVertex, const D3D12_GPU_VIRTUAL_ADDRESS& skinningInformation, const float& verticesSize) {
 
 
     // Parameterの設定
