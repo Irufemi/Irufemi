@@ -8,7 +8,7 @@ on:
   push:
     branches:
       - master
-      - TD2_03
+      - TD3_01
       - AL4
       - CG
       - GE
