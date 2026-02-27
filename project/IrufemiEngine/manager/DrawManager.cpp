@@ -547,7 +547,7 @@ void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUA
     commandList_->ResourceBarrier(1, &barrier);
 
     // --- グラフィックスパイプラインでの描画 ---
-    // PSOをグラフィックス用に切り替え (呼び出し元で ApplySkinningPSO が呼ばれている想定)
+    // PSOをグラフィックス用に切り替え (呼び出し元で ApplyPSO が呼ばれている想定)
     commandList_->SetPipelineState(dxCommon_->GetPSOManager()->Get(BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back));
 
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

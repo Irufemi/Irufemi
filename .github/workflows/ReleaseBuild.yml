@@ -3,7 +3,8 @@ name: ReleaseBuild
 on:
   push:
     branches:
-      - TD2_03
+      - master
+      - TD3_01
       - AL4
       - CG
       - GE
