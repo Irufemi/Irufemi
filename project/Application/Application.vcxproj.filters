@@ -37,6 +37,12 @@
     <Filter Include="contents">
       <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="contents\field">
+      <UniqueIdentifier>{87ca9e63-654d-423d-9130-9be2643c6eeb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contents\Effect">
+      <UniqueIdentifier>{36a4bbf6-55cb-47ff-979e-a57e76b57f86}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene\inGame\GameScene.cpp">
@@ -66,6 +72,16 @@
     <ClCompile Include="GameApplication.cpp">
       <Filter>Application</Filter>
     </ClCompile>
+    <ClCompile Include="actors\enemy\Enemy.cpp">
+      <Filter>actors\enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\player\Player.cpp">
+      <Filter>actors\player</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\field\Field.cpp">
+      <Filter>contents\field</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\effect\Effect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -92,5 +108,15 @@
     <ClInclude Include="GameApplication.h">
       <Filter>Application</Filter>
     </ClInclude>
+    <ClInclude Include="actors\enemy\Enemy.h">
+      <Filter>actors\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\player\Player.h">
+      <Filter>actors\player</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\field\Field.h">
+      <Filter>contents\field</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\effect\Effect.h" />
   </ItemGroup>
 </Project>
