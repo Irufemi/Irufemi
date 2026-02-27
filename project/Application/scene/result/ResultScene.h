@@ -12,12 +12,6 @@ struct SpotLight;
 struct DirectionalLight;
 struct AreaLight;
 
-#include "audio/Se.h"
-#include "audio/Bgm.h"
-#include "2D/Sprite.h"
-
-#include "contents/Effect/Fade.h"
-
 /**
  * @class ResultScene
  * @brief ゲームの結果（クリア/ゲームオーバー）を表示するクラス
@@ -46,22 +40,6 @@ public: // メンバ関数(システム)
 private: // メンバ関数(内部ヘルパ)
 
 private: // メンバ変数(ゲーム)
-
-    // 結果表示用スプライト
-    std::unique_ptr<Sprite> resultImage_ = nullptr;
-    std::unique_ptr<Sprite> continueText_ = nullptr;
-
-    // フェード
-    std::unique_ptr<Fade> fade_ = nullptr;
-
-    // 演出用タイマー
-    float blinkTimer_ = 0.0f;
-    
-    // 音源
-    // bgm
-    std::unique_ptr<Bgm> bgm_ = nullptr;
-    // se(決定音)
-    std::unique_ptr<Se> se_select_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン

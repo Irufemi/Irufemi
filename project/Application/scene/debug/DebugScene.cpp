@@ -180,34 +180,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         sneakWalk_ = std::make_unique<AnimationModel>();
         sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
     }
-    if (isActiveAnimationNode_) {
-        animationNode_ = std::make_unique<AnimationModel>();
-        animationNode_->Initialize(camera_.get(), "test/Animation_Node/Animation_Node_00.gltf");
-    }
-    if (isActiveAnimationNodeMisc_) {
-        animationNodeMisc_ = std::make_unique<AnimationModel>();
-        animationNodeMisc_->Initialize(camera_.get(), "test/Animation_NodeMisc/Animation_NodeMisc_00.gltf");
-    }
-    if (isActiveMeshPrimitives_) {
-        meshPrimitives_ = std::make_unique<ObjClass>();
-        meshPrimitives_->Initialize(camera_.get(), "test/Mesh_Primitives/Mesh_Primitives_00.gltf");
-    }
-    if (isActiveMeshPrimitiveVertexColor_) {
-        meshPrimitiveVertexColor_ = std::make_unique<ObjClass>();
-        meshPrimitiveVertexColor_->Initialize(camera_.get(), "test/Mesh_PrimitiveVertexColor/Mesh_PrimitiveVertexColor_00.gltf");
-    }
-    if (isActiveTextureSampler_) {
-        textureSampler_ = std::make_unique<ObjClass>();
-        textureSampler_->Initialize(camera_.get(), "test/Texture_Sampler/Texture_Sampler_00.gltf");
-    }
-    if (isActiveMaterialAlphaBlend_) {
-        materialAlphaBlend_ = std::make_unique<ObjClass>();
-        materialAlphaBlend_->Initialize(camera_.get(), "test/Material_AlphaBlend/Material_AlphaBlend_00.gltf");
-    }
-    if (isActiveAnimationSkin_) {
-        animationSkin_ = std::make_unique<AnimationModel>();
-        animationSkin_->Initialize(camera_.get(), "test/Animation_Skin/Animation_Skin_00.gltf");
-    }
     if (isActiveSkybox_) {
         skybox_ = std::make_unique<Skybox>();
         skybox_->Initialize(camera_.get(),"resources/rostock_laage_airport_4k.dds");

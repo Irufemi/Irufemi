@@ -30,7 +30,6 @@
 #include "audio/Bgm.h"
 #include "audio/Se.h"
 #include "source/Texture.h"
-#include "Application/contents/Effect/Fade.h"
 #include "manager/DebugUI.h"
 
 #include "scene/IScene.h"
@@ -200,7 +199,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     AnimationModel::SetIrufemiEngine(this);
 
-    Fade::SetEngine(this);
     Skybox::SetEngine(this);
 }
 

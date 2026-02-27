@@ -159,20 +159,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="actors\player\PlayerPhysics.cpp" />
     <ClCompile Include="camera\Camera.cpp" />
-    <ClCompile Include="camera\CameraController.cpp" />
     <ClCompile Include="camera\DebugCamera.cpp" />
-    <ClCompile Include="contents\Effect\Fade.cpp" />
-    <ClCompile Include="actors\enemy\IEnemy.cpp" />
-    <ClCompile Include="actors\enemy\normalEnemy\NormalEnemy.cpp" />
-    <ClCompile Include="actors\enemy\shieldEnemy\ShieldEnemy.cpp" />
-    <ClCompile Include="contents\mapChipField\MapChipField.cpp" />
-    <ClCompile Include="actors\player\Player.cpp" />
-    <ClCompile Include="actors\player\PlayerState_Attack.cpp" />
-    <ClCompile Include="actors\player\PlayerState_Dash.cpp" />
-    <ClCompile Include="actors\player\PlayerState_Root.cpp" />
-    <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="scene\debug\DebugScene.cpp" />
     <ClCompile Include="main.cpp">
@@ -182,32 +170,18 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</WholeProgramOptimization>
     </ClCompile>
     <ClCompile Include="scene\inGame\GameScene.cpp" />
-    <ClCompile Include="scene\result\GameResultManager.cpp" />
     <ClCompile Include="scene\result\ResultScene.cpp" />
     <ClCompile Include="scene\stageSelect\SelectScene.cpp" />
-    <ClCompile Include="scene\stageSelect\StageDataManager.cpp" />
     <ClCompile Include="scene\title\TitleScene.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="actors\player\PlayerPhysics.h" />
     <ClInclude Include="camera\Camera.h" />
-    <ClInclude Include="camera\CameraController.h" />
     <ClInclude Include="camera\DebugCamera.h" />
-    <ClInclude Include="contents\Effect\Fade.h" />
-    <ClInclude Include="actors\enemy\IEnemy.h" />
-    <ClInclude Include="actors\enemy\normalEnemy\NormalEnemy.h" />
-    <ClInclude Include="actors\enemy\shieldEnemy\ShieldEnemy.h" />
-    <ClInclude Include="contents\mapChipField\MapChipField.h" />
-    <ClInclude Include="actors\player\Player.h" />
-    <ClInclude Include="actors\player\PlayerState.h" />
-    <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
-    <ClInclude Include="scene\result\GameResultManager.h" />
     <ClInclude Include="scene\result\ResultScene.h" />
     <ClInclude Include="scene\stageSelect\SelectScene.h" />
-    <ClInclude Include="scene\stageSelect\StageDataManager.h" />
     <ClInclude Include="scene\title\TitleScene.h" />
   </ItemGroup>
   <ItemGroup>
