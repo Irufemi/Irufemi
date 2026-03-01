@@ -485,7 +485,7 @@ void DrawManager::DrawSpriteRegion(SpriteRegion* region) {
     commandList_->DrawIndexedInstanced(idxCount, instCount, 0, 0, 0);
 }
 
-void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA) {
+void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const std::vector<std::shared_ptr<GpuMaterial>>& materials) {
     if (!model || !model->cpuModel || !dxCommon_) return;
 
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -493,7 +493,7 @@ void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS
     // モデル内の全メッシュをループして描画
     for (size_t i = 0; i < model->gpuMeshes.size(); ++i) {
         const auto& gpuMesh = model->gpuMeshes[i];
-        const auto& gpuMaterial = model->gpuMaterials[i];
+        const auto& gpuMaterial = (i < materials.size() && materials[i]) ? materials[i] : model->gpuMaterials[i];
 
         if (!gpuMesh || !gpuMaterial) continue;
 
@@ -518,10 +518,9 @@ void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS
             commandList_->DrawInstanced(gpuMesh->vertexCount, 1, 0, 0);
         }
     }
-    // 一時リソースはフレーム終了後に解放される
 }
 
-void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster, const D3D12_GPU_DESCRIPTOR_HANDLE& skinnedVertexSrv, D3D12_GPU_VIRTUAL_ADDRESS skinningInfoGpuVA, uint32_t numVertices)
+void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster, const D3D12_GPU_DESCRIPTOR_HANDLE& skinnedVertexSrv, D3D12_GPU_VIRTUAL_ADDRESS skinningInfoGpuVA, uint32_t numVertices, const std::vector<std::shared_ptr<GpuMaterial>>& materials)
 {
     if (!model || !model->cpuModel || !dxCommon_) return;
 
@@ -559,7 +558,7 @@ void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUA
     // モデル内の全メッシュをループして描画
     for (size_t i = 0; i < model->gpuMeshes.size(); ++i) {
         const auto& gpuMesh = model->gpuMeshes[i];
-        const auto& gpuMaterial = model->gpuMaterials[i];
+        const auto& gpuMaterial = (i < materials.size() && materials[i]) ? materials[i] : model->gpuMaterials[i];
 
         if (!gpuMesh || !gpuMaterial) continue;
 
