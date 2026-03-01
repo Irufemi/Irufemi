@@ -426,7 +426,7 @@ void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
             materialData->lightingMode = currentMode;
         }
         ImGui::DragFloat("Shininess", &materialData->shininess);
-        ImGui::DragFloat("Environment Coefficient", &materialData->environmentCoefficient, 0.01f, 0.0f, 1.0f);
+        //ImGui::DragFloat("Environment Coefficient", &materialData->environmentCoefficient, 0.01f, 0.0f, 1.0f);
     }
 #endif // USE_IMGUI
 }

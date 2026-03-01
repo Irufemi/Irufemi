@@ -167,10 +167,10 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     commandList_->SetGraphicsRootConstantBufferView(7, frameData_.spotLights);
     commandList_->SetGraphicsRootConstantBufferView(10, frameData_.areaLights);
 
-    // 環境マップをバインド
-    if (environmentMapHandle_.ptr != 0) {
-        commandList_->SetGraphicsRootDescriptorTable(12, environmentMapHandle_);
-    }
+    //// 環境マップをバインド
+    //if (environmentMapHandle_.ptr != 0) {
+    //    commandList_->SetGraphicsRootDescriptorTable(12, environmentMapHandle_);
+    //}
 }
 
 void DrawManager::PostDraw() {

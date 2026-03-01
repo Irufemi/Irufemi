@@ -27,10 +27,10 @@ struct Material
 
 	float32_t shininess;
 
-    // 環境マップの映り込み係数
-	float32_t environmentCoefficient;
+ //   // 環境マップの映り込み係数
+	//float32_t environmentCoefficient;
 
-	float32_t2 padding2; // パディング
+	//float32_t2 padding2; // パディング
 	
 };
 ConstantBuffer<Material> gMaterial : register(b0);
@@ -156,7 +156,7 @@ ConstantBuffer<AreaLights> gAreaLights : register(b7);
 
 /// 環境マップを追加する
 
-TextureCube<float32_t4> gEnviromentTexture : register(t1);
+//TextureCube<float32_t4> gEnviromentTexture : register(t1);
 
 /*テクスチャを貼ろう*/
 
@@ -436,18 +436,18 @@ PixelShaderOutput main(VertexShaderOutput input)
 		
 	}
 	
-	/*周囲の映り込み*/
+	///*周囲の映り込み*/
 	
-	/// 環境マップを追加する
+	///// 環境マップを追加する
 	
-	if (gMaterial.enableLighting != 0)
-	{
-		float32_t3 cameraToPosition = normalize(input.worldPosition - gCamera.worldPosition);
-		float32_t3 reflectedVector = reflect(cameraToPosition, normalize(input.normal));
-		float32_t4 enviromentColor = gEnviromentTexture.Sample(gSampler, reflectedVector);
+	//if (gMaterial.enableLighting != 0)
+	//{
+	//	float32_t3 cameraToPosition = normalize(input.worldPosition - gCamera.worldPosition);
+	//	float32_t3 reflectedVector = reflect(cameraToPosition, normalize(input.normal));
+	//	float32_t4 enviromentColor = gEnviromentTexture.Sample(gSampler, reflectedVector);
 	
-		output.color.rgb += enviromentColor.rgb * gMaterial.environmentCoefficient;
-	}
+	//	output.color.rgb += enviromentColor.rgb * gMaterial.environmentCoefficient;
+	//}
 	
 	return output;
 }

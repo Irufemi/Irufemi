@@ -104,27 +104,6 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<AnimationModel> sneakWalk_ = nullptr;
     bool isActiveSneakWalk_ = false;
 
-    std::unique_ptr<AnimationModel> animationNode_ = nullptr;
-    bool isActiveAnimationNode_ = false;
-
-    std::unique_ptr<AnimationModel> animationNodeMisc_ = nullptr;
-    bool isActiveAnimationNodeMisc_ = false;
-
-    std::unique_ptr<ObjClass> meshPrimitives_ = nullptr;
-    bool isActiveMeshPrimitives_ = false;
-
-    std::unique_ptr<ObjClass> meshPrimitiveVertexColor_ = nullptr;
-    bool isActiveMeshPrimitiveVertexColor_ = false;
-
-    std::unique_ptr<ObjClass> textureSampler_ = nullptr;
-    bool isActiveTextureSampler_ = false;
-
-    std::unique_ptr<ObjClass> materialAlphaBlend_ = nullptr;
-    bool isActiveMaterialAlphaBlend_ = false;
-
-    std::unique_ptr<AnimationModel> animationSkin_ = nullptr;
-    bool isActiveAnimationSkin_ = false;
-
     std::unique_ptr<Skybox> skybox_ = nullptr;
     bool isActiveSkybox_ = false;
 
