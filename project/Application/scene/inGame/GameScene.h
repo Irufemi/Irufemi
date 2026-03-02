@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <vector>
+#include "actors/enemy/Enemy.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -70,4 +71,7 @@ private: // メンバ変数(システム)
 
     // ポーズ表示用
     std::unique_ptr<Sprite> pauseSprite_ = nullptr;
+
+    // ボス
+    std::unique_ptr<Enemy> boss_ = nullptr;
 };

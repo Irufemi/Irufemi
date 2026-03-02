@@ -7,6 +7,7 @@
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
 #include "math/CameraForGPU.h"
+#include "actors/enemy/Enemy.h"
 #include "math/PointLight.h"
 #include "math/SpotLight.h"
 #include "math/DirectionalLight.h"
@@ -46,6 +47,10 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     pauseSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
     pauseSprite_->SetAnchor(0.5f, 0.5f);
     pauseSprite_->SetColor({ 0.1f, 0.1f, 0.1f, 0.5f });
+
+    // ボスの初期化
+    boss_ = std::make_unique<Enemy>();
+    boss_->Initialize(camera_.get());
 }
 
 // 更新
@@ -88,7 +93,9 @@ void GameScene::Update() {
     // =====
     // ↓ゲームの更新
     // =====
-
+    if (boss_) {
+        boss_->Update();
+    }
 
     // =====
     // ↑ゲームの更新
@@ -118,7 +125,15 @@ void GameScene::Update() {
 
 // 描画
 void GameScene::Draw() {
+    // 3Dモデル描画の事前設定
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->SetCull(PSOManager::CullMode::Back);
+    engine_->ApplyPSO();
 
+    if (boss_) {
+        boss_->Draw();
+    }
 }
 
 void GameScene::PauseUpdate()

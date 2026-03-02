@@ -82,6 +82,10 @@
       <Filter>contents\field</Filter>
     </ClCompile>
     <ClCompile Include="contents\effect\Effect.cpp" />
+    <ClCompile Include="actors\enemy\Body.cpp" />
+    <ClCompile Include="actors\enemy\HeadLeft.cpp" />
+    <ClCompile Include="actors\enemy\HeadMid.cpp" />
+    <ClCompile Include="actors\enemy\HeadRight.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -118,5 +122,9 @@
       <Filter>contents\field</Filter>
     </ClInclude>
     <ClInclude Include="contents\effect\Effect.h" />
+    <ClInclude Include="actors\enemy\Body.h" />
+    <ClInclude Include="actors\enemy\HeadLeft.h" />
+    <ClInclude Include="actors\enemy\HeadMid.h" />
+    <ClInclude Include="actors\enemy\HeadRight.h" />
   </ItemGroup>
 </Project>

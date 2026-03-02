@@ -1,6 +1,10 @@
 #pragma once
-#include "3D/ObjClass.h"
 #include <memory>
+#include <array>
+#include "Body.h"
+#include "HeadLeft.h"
+#include "HeadMid.h"
+#include "HeadRight.h"
 
 class Camera;
 
@@ -15,9 +19,11 @@ public:
   void Draw();
 
 private:
-  std::unique_ptr<ObjClass> body_ = nullptr;
-  bool isActivebody_ = false;
+  std::array<std::unique_ptr<Body>, 3> bodies_;
 
-  std::unique_ptr<ObjClass> head_ = nullptr;
-  bool isActivehead_ = false;
+  std::unique_ptr<HeadLeft> headLeft_ = nullptr;
+  std::unique_ptr<HeadMid> headMid_ = nullptr;
+  std::unique_ptr<HeadRight> headRight_ = nullptr;
+
+  bool isActive_ = false;
 };
