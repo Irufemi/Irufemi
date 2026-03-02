@@ -26,4 +26,14 @@ void HeadLeft::Draw() {
 
 void HeadLeft::SetPosition(const Vector3& pos) {
   basePosition_ = pos;
+  if (obj_) {
+    obj_->SetPosition(pos);
+  }
+}
+
+void HeadLeft::SetTransform(const Transform& transform) {
+  basePosition_ = transform.translate;
+  if (obj_) {
+    obj_->SetTransform(transform);
+  }
 }

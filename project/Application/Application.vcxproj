@@ -160,6 +160,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="actors\enemy\Body.cpp" />
+    <ClCompile Include="actors\enemy\EnemyAI.cpp" />
     <ClCompile Include="actors\enemy\HeadLeft.cpp" />
     <ClCompile Include="actors\enemy\HeadMid.cpp" />
     <ClCompile Include="actors\enemy\HeadRight.cpp" />
@@ -184,6 +185,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actors\enemy\Body.h" />
+    <ClInclude Include="actors\enemy\EnemyAI.h" />
     <ClInclude Include="actors\enemy\HeadLeft.h" />
     <ClInclude Include="actors\enemy\HeadMid.h" />
     <ClInclude Include="actors\enemy\HeadRight.h" />

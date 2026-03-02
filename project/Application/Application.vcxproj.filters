@@ -86,6 +86,7 @@
     <ClCompile Include="actors\enemy\HeadLeft.cpp" />
     <ClCompile Include="actors\enemy\HeadMid.cpp" />
     <ClCompile Include="actors\enemy\HeadRight.cpp" />
+    <ClCompile Include="actors\enemy\EnemyAI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -126,5 +127,6 @@
     <ClInclude Include="actors\enemy\HeadLeft.h" />
     <ClInclude Include="actors\enemy\HeadMid.h" />
     <ClInclude Include="actors\enemy\HeadRight.h" />
+    <ClInclude Include="actors\enemy\EnemyAI.h" />
   </ItemGroup>
 </Project>

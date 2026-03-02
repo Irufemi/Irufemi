@@ -24,6 +24,16 @@ void Body::Draw() {
 
 void Body::SetPosition(const Vector3& pos) {
   basePosition_ = pos;
+  if (obj_) {
+    obj_->SetPosition(pos);
+  }
+}
+
+void Body::SetTransform(const Transform& transform) {
+  basePosition_ = transform.translate;
+  if (obj_) {
+    obj_->SetTransform(transform);
+  }
 }
 
 const Vector3& Body::GetPosition() const {

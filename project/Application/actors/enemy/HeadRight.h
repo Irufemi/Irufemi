@@ -1,6 +1,7 @@
 #pragma once
 
 #include "3D/ObjClass.h"
+#include "math/Transform.h"
 #include <memory>
 
 class Camera;
@@ -13,7 +14,10 @@ public:
   void Update();
   void Draw();
 
-  void SetPosition(const Vector3 &pos);
+  void SetPosition(const Vector3& pos);
+
+  // Transformを一括設定する（回転やスケールも含めて上書き）
+  void SetTransform(const Transform& transform);
 
 private:
   std::unique_ptr<ObjClass> obj_ = nullptr;
