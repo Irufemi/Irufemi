@@ -1,5 +1,6 @@
 #include "WinApp.h"
-
+#include "engine/Input/InputManager.h"
+#include "engine/Input/Mouse.h"
 #include "manager/DebugUI.h"
 
 #pragma comment(lib,"winmm.lib")
@@ -191,6 +192,14 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+    case WM_MOUSEWHEEL:
+        if (inputManager_) {
+            if (auto* mouse = inputManager_->GetMouse()) {
+                float wheelDelta = static_cast<float>(GET_WHEEL_DELTA_WPARAM(wParam)) / WHEEL_DELTA;
+                mouse->SetWheelDelta(wheelDelta);
+            }
+        }
+        return 0;
     case WM_SIZE:
         clientWidth_ = LOWORD(lParam);
         clientHeight_ = HIWORD(lParam);

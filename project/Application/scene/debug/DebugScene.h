@@ -34,8 +34,6 @@ struct AreaLight;
 
 class DebugScene : public IScene {
 public: // メンバ関数(ゲーム)
-
-public:
     ~DebugScene() override;
     void Initialize(IrufemiEngine* engine) override;
     void Update() override;

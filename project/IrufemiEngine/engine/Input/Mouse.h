@@ -28,6 +28,9 @@ public:
     // ホイール
     float GetWheelDelta() const;
 
+    // WinAppからホイール差分を設定するためのセッター
+    void SetWheelDelta(float delta) { wheelDelta_ = delta; }
+
 private:
     HWND hwnd_ = nullptr;
     BYTE currentButtons_[3]{};

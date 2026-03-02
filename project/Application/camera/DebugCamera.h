@@ -14,17 +14,14 @@
  */
 class DebugCamera {
 private: //メンバ変数
+    // カメラ注視点
+    Vector3 target_{};
     // カメラ注視点までの距離(ピボット回転)
-    float distance_{};
+    float distance_{ 10.0f };
     // 入力クラスのポインタ
     InputManager* input_ = nullptr;
-    // スケーリング
-    float scaleX_ = 1.0f;
-    float scaleY_ = 1.0f;
     // カメラ
     Camera camera_{};
-    // 回転行列
-    Matrix4x4 matRot_{};
 
 public: //メンバ関数
     /**
@@ -46,6 +43,12 @@ public: //メンバ関数
      * @brief 内部で管理しているCameraオブジェクトを取得します
      * @return const Camera& カメラオブジェクト
      */
-    const Camera& GetCamera() { return camera_; }
+    const Camera& GetCamera() const { return camera_; }
+
+    /**
+     * @brief 内部で管理しているCameraオブジェクトを取得します
+     * @return Camera& カメラオブジェクト
+    */
+    Camera& GetCamera() { return camera_; }
 };
 

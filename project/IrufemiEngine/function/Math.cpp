@@ -399,6 +399,15 @@ namespace Math {
         }
     }
 
+    // 3次元ベクトル(法線など)を変換する
+    Vector3 TransformNormal(const Vector3& vector, const Matrix4x4& m) {
+        Vector3 result{};
+        result.x = vector.x * m.m[0][0] + vector.y * m.m[1][0] + vector.z * m.m[2][0];
+        result.y = vector.x * m.m[0][1] + vector.y * m.m[1][1] + vector.z * m.m[2][1];
+        result.z = vector.x * m.m[0][2] + vector.y * m.m[1][2] + vector.z * m.m[2][2];
+        return result;
+    }
+
     // 4x4 X軸周り回転行列の作成関数
     Matrix4x4 MakeRotateXMatrix(const float& radian) {
         Matrix4x4 matrix{};
@@ -469,6 +478,11 @@ namespace Math {
     Matrix4x4 MakeRotateXYZMatrix(const float& thetaX, const float& thetaY, const float& thetaZ) {
         Matrix4x4 matrix = Multiply(MakeRotateXMatrix(thetaX), Multiply(MakeRotateYMatrix(thetaY), MakeRotateZMatrix(thetaZ)));
         return matrix;
+    }
+
+    // 3次元回転行列の作成関数 (Vector3版)
+    Matrix4x4 MakeRotateXYZMatrix(const Vector3& rotate) {
+        return MakeRotateXYZMatrix(rotate.x, rotate.y, rotate.z);
     }
 
     //4x4アフィン変換行列を高速に生成

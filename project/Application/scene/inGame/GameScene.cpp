@@ -73,9 +73,19 @@ void GameScene::Update() {
 #endif // _DEBUG
 
     // --- カメラの更新 ---
-    // 現在アクティブなカメラへのポインタ
-    Camera* currentCamera = debugMode_ ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
-    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
+    if (debugMode_) {
+        // デバッグカメラを更新
+        debugCamera_->Update();
+        // デバッグカメラの計算結果をメインカメラに上書きする
+        const Camera& dbgCam = debugCamera_->GetCamera();
+        camera_->SetViewMatrix(dbgCam.GetViewMatrix());
+        camera_->SetTranslate(dbgCam.GetTranslate());
+        camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
+    }
+    else {
+        // 通常カメラの更新
+        camera_->Update("Camera");
+    }
 
     // 天球の更新
     skydome_->Update();
@@ -116,9 +126,9 @@ void GameScene::Update() {
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;
-    cameraForGpu.view = currentCamera->GetViewMatrix();
-    cameraForGpu.projection = currentCamera->GetPerspectiveFovMatrix();
-    cameraForGpu.worldPosition = currentCamera->GetTranslate();
+    cameraForGpu.view = camera_->GetViewMatrix();
+    cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
+    cameraForGpu.worldPosition = camera_->GetTranslate();
 
     std::vector<PointLight*> pLights;
     for (const auto& light : pointLights_) {
