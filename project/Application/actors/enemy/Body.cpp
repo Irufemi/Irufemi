@@ -11,6 +11,9 @@ void Body::Initialize(Camera* camera, const Vector3& initialPos) {
 }
 
 void Body::Update() {
+  if (obj_) {
+    obj_->Update();
+  }
 }
 
 void Body::Draw() {

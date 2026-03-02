@@ -9,9 +9,13 @@ void HeadLeft::Initialize(Camera* camera, const Vector3& initialPos) {
   obj_->Initialize(camera, "enemy/head.obj");
   basePosition_ = initialPos;
   obj_->SetPosition(basePosition_);
+  obj_->SetColor({1.0f, 0.0f, 0.0f, 1.0f}); // 赤色に設定
 }
 
 void HeadLeft::Update() {
+  if (obj_) {
+    obj_->Update();
+  }
 }
 
 void HeadLeft::Draw() {
