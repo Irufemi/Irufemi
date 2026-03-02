@@ -23,7 +23,29 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     // エンジンへのポインタを保持
     engine_ = engine;
 
-    // 各コンポーネントの初期化
+    camera_ = std::make_unique<Camera>();
+    camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    camera_->SetTranslate(Vector3{ 0.0f,0.0f,-10.0f });
+
+    // 重要：SetTranslate の後で行列を確実に更新しておく
+    camera_->UpdateMatrix();
+
+    debugCamera_ = std::make_unique<DebugCamera>();
+    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
+    debugMode_ = false;
+
+    directionalLight_ = std::make_unique<DirectionalLight>();
+    directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
+    directionalLight_->direction = { 0.5f,-0.7f,1.0f };
+    directionalLight_->intensity = 1.0f;
+
+    // ポーズ画面
+    pauseSprite_ = std::make_unique<Sprite>();
+    pauseSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+    pauseSprite_->SetPosition(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() / 2.0f);
+    pauseSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
+    pauseSprite_->SetAnchor(0.5f, 0.5f);
+    pauseSprite_->SetColor({ 0.1f, 0.1f, 0.1f, 0.5f });
 }
 
 // 更新
