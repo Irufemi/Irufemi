@@ -43,6 +43,21 @@
     <Filter Include="contents\Effect">
       <UniqueIdentifier>{36a4bbf6-55cb-47ff-979e-a57e76b57f86}</UniqueIdentifier>
     </Filter>
+    <Filter Include="actors\enemy\body">
+      <UniqueIdentifier>{2e18bd5c-ce49-4fb6-abb1-8a1812fc561f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actors\enemy\head">
+      <UniqueIdentifier>{1587a22d-b6f6-4698-b861-ddd5d265b618}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actors\enemy\head\left">
+      <UniqueIdentifier>{2fe67ef0-f88a-459a-8139-781b8a38264b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actors\enemy\head\mid">
+      <UniqueIdentifier>{5468ce93-7c4a-44bf-ad6c-499a7d66faf3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="actors\enemy\head\right">
+      <UniqueIdentifier>{9670f63d-0276-4875-ae4f-d9206afcd7fb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene\inGame\GameScene.cpp">
@@ -81,12 +96,24 @@
     <ClCompile Include="contents\field\Field.cpp">
       <Filter>contents\field</Filter>
     </ClCompile>
-    <ClCompile Include="contents\effect\Effect.cpp" />
-    <ClCompile Include="actors\enemy\EnemyAI.cpp" />
-    <ClCompile Include="actors\enemy\Body\Body.cpp" />
-    <ClCompile Include="actors\enemy\Head\Left\HeadLeft.cpp" />
-    <ClCompile Include="actors\enemy\Head\Mid\HeadMid.cpp" />
-    <ClCompile Include="actors\enemy\Head\Right\HeadRight.cpp" />
+    <ClCompile Include="contents\effect\Effect.cpp">
+      <Filter>contents\Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Body\Body.cpp">
+      <Filter>actors\enemy\body</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\EnemyAI.cpp">
+      <Filter>actors\enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Head\Left\HeadLeft.cpp">
+      <Filter>actors\enemy\head\left</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Head\Mid\HeadMid.cpp">
+      <Filter>actors\enemy\head\mid</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Head\Right\HeadRight.cpp">
+      <Filter>actors\enemy\head\right</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -122,11 +149,23 @@
     <ClInclude Include="contents\field\Field.h">
       <Filter>contents\field</Filter>
     </ClInclude>
-    <ClInclude Include="contents\effect\Effect.h" />
-    <ClInclude Include="actors\enemy\EnemyAI.h" />
-    <ClInclude Include="actors\enemy\Body\Body.h" />
-    <ClInclude Include="actors\enemy\Head\Left\HeadLeft.h" />
-    <ClInclude Include="actors\enemy\Head\Mid\HeadMid.h" />
-    <ClInclude Include="actors\enemy\Head\Right\HeadRight.h" />
+    <ClInclude Include="contents\effect\Effect.h">
+      <Filter>contents\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Body\Body.h">
+      <Filter>actors\enemy\body</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\EnemyAI.h">
+      <Filter>actors\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Head\Left\HeadLeft.h">
+      <Filter>actors\enemy\head\left</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Head\Mid\HeadMid.h">
+      <Filter>actors\enemy\head\mid</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Head\Right\HeadRight.h">
+      <Filter>actors\enemy\head\right</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

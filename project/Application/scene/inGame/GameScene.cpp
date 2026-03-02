@@ -70,9 +70,17 @@ void GameScene::Update() {
         camera_->Update("Main Camera");
     }
 
+    // =====
+    // ↓ゲームの更新
+    // =====
+
     if (boss_) {
         boss_->Update();
     }
+
+    // =====
+    // ↑ゲームの更新
+    // =====
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;

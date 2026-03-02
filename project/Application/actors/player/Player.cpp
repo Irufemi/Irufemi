@@ -33,15 +33,6 @@ void Player::Update() {
         viewMode_ = (viewMode_ == ViewMode::kThirdPerson) ? ViewMode::kFirstPerson : ViewMode::kThirdPerson;
     }
 
-    // 3. 3Dモデルのトランスフォームを更新
-    if (obj_) {
-        obj_->SetPosition(translate_);
-        obj_->SetRotate(rotate_);
-        obj_->SetScale(scale_);
-		obj_->Debug("Player");
-        obj_->Update();
-    }
-
     // 4. カメラをプレイヤーに追従させる
     UpdateCamera();
 }
@@ -49,6 +40,14 @@ void Player::Update() {
 void Player::Draw() {
     // モデルの描画
     if (obj_) {
+
+        // 3Dモデルのトランスフォームを更新
+        obj_->SetPosition(translate_);
+        obj_->SetRotate(rotate_);
+        obj_->SetScale(scale_);
+        obj_->Debug("Player");
+        obj_->Update();
+
         // 一人称視点のときは自分の体が見えると邪魔なので描画しない
         if (viewMode_ != ViewMode::kFirstPerson) {
             obj_->Draw();
