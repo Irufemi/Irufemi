@@ -512,15 +512,27 @@ void DebugScene::Update() {
     // =====
 
     // --- カメラの更新 ---
-    // 現在アクティブなカメラへのポインタ
-    Camera* currentCamera = debugMode_ ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
-    currentCamera->Update("Camera"); // デバッグカメラも通常カメラもUpdateを呼ぶ
+    if (debugMode_) {
+        // デバッグカメラを更新
+        debugCamera_->Update();
+        // デバッグカメラの計算結果をメインカメラに上書きする
+        const Camera& dbgCam = debugCamera_->GetCamera();
+        camera_->SetViewMatrix(dbgCam.GetViewMatrix());
+        camera_->SetTranslate(dbgCam.GetTranslate());
+        // プロジェクション行列も念のため同期
+        camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
+    }
+    else {
+        // 通常カメラの更新
+        camera_->Update("Camera");
+    }
 
     // --- フレーム共通データのセット ---
+    // 常に camera_ を参照すればOK
     CameraForGPU cameraForGpu;
-    cameraForGpu.view = currentCamera->GetViewMatrix();
-    cameraForGpu.projection = currentCamera->GetPerspectiveFovMatrix();
-    cameraForGpu.worldPosition = currentCamera->GetTranslate();
+    cameraForGpu.view = camera_->GetViewMatrix();
+    cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
+    cameraForGpu.worldPosition = camera_->GetTranslate();
 
     std::vector<PointLight*> pLights;
     for (const auto& light : pointLights_) {

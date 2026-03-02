@@ -28,6 +28,11 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     camera_->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });
     camera_->UpdateMatrix();
 
+    // デバッグカメラの初期化を追加
+    debugCamera_ = std::make_unique<DebugCamera>();
+    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
+    debugMode_ = false;
+
     // --- ライトの初期化 ---
     auto pointLight = std::make_unique<PointLight>();
     pointLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -121,8 +126,19 @@ void ResultScene::Update() {
 #endif // USE_IMGUI
 
     // --- カメラの更新 ---
-    Camera* currentCamera = debugMode_ ? const_cast<Camera*>(&debugCamera_->GetCamera()) : camera_.get();
-    currentCamera->Update("Camera");
+    if (debugMode_) {
+        // デバッグカメラを更新
+        debugCamera_->Update();
+        // デバッグカメラの計算結果をメインカメラに上書きする
+        const Camera& dbgCam = debugCamera_->GetCamera();
+        camera_->SetViewMatrix(dbgCam.GetViewMatrix());
+        camera_->SetTranslate(dbgCam.GetTranslate());
+        camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
+    }
+    else {
+        // 通常カメラの更新
+        camera_->Update("Camera");
+    }
 
     // =====
     // ↓ゲームの更新
@@ -161,9 +177,9 @@ void ResultScene::Update() {
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;
-    cameraForGpu.view = currentCamera->GetViewMatrix();
-    cameraForGpu.projection = currentCamera->GetPerspectiveFovMatrix();
-    cameraForGpu.worldPosition = currentCamera->GetTranslate();
+    cameraForGpu.view = camera_->GetViewMatrix();
+    cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
+    cameraForGpu.worldPosition = camera_->GetTranslate();
 
     std::vector<PointLight*> pLights;
     for (const auto& light : pointLights_) {
