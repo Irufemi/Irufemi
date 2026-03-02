@@ -159,11 +159,11 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="actors\enemy\Body.cpp" />
+    <ClCompile Include="actors\enemy\Body\Body.cpp" />
     <ClCompile Include="actors\enemy\EnemyAI.cpp" />
-    <ClCompile Include="actors\enemy\HeadLeft.cpp" />
-    <ClCompile Include="actors\enemy\HeadMid.cpp" />
-    <ClCompile Include="actors\enemy\HeadRight.cpp" />
+    <ClCompile Include="actors\enemy\Head\Left\HeadLeft.cpp" />
+    <ClCompile Include="actors\enemy\Head\Mid\HeadMid.cpp" />
+    <ClCompile Include="actors\enemy\Head\Right\HeadRight.cpp" />
     <ClCompile Include="actors\player\Player.cpp" />
     <ClCompile Include="camera\Camera.cpp" />
     <ClCompile Include="camera\DebugCamera.cpp" />
@@ -184,11 +184,11 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="scene\title\TitleScene.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="actors\enemy\Body.h" />
+    <ClInclude Include="actors\enemy\Body\Body.h" />
     <ClInclude Include="actors\enemy\EnemyAI.h" />
-    <ClInclude Include="actors\enemy\HeadLeft.h" />
-    <ClInclude Include="actors\enemy\HeadMid.h" />
-    <ClInclude Include="actors\enemy\HeadRight.h" />
+    <ClInclude Include="actors\enemy\Head\Left\HeadLeft.h" />
+    <ClInclude Include="actors\enemy\Head\Mid\HeadMid.h" />
+    <ClInclude Include="actors\enemy\Head\Right\HeadRight.h" />
     <ClInclude Include="actors\player\Player.h" />
     <ClInclude Include="camera\Camera.h" />
     <ClInclude Include="camera\DebugCamera.h" />

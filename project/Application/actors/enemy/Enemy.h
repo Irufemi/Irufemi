@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
 #include <array>
-#include "Body.h"
-#include "HeadLeft.h"
-#include "HeadMid.h"
-#include "HeadRight.h"
+#include "actors/enemy/Body/Body.h"
+#include "actors/enemy/Head/Left/HeadLeft.h"
+#include "actors/enemy/Head/Mid/HeadMid.h"
+#include "actors/enemy/Head/Right/HeadRight.h"
 #include "EnemyAI.h"
 #include "math/Transform.h"
 

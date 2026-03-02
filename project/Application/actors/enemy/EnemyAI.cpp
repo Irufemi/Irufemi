@@ -27,7 +27,6 @@ void EnemyAI::Update() {
   timer_ += 1.0f / 60.0f;
 
   // -- 仮アニメーション（AIによる制御テスト） --
-  globalTransform.translate.z += 0.01f; // 全体がZ方向に進む
   globalTransform.rotate.y += 0.005f;  // 全体がY軸で回転する
   
   // 真ん中の胴体が上下にドクドク動く

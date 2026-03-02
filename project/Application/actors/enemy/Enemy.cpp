@@ -1,9 +1,5 @@
 #include "Enemy.h"
 #include "camera/Camera.h"
-#include "Body.h"
-#include "HeadLeft.h"
-#include "HeadMid.h"
-#include "HeadRight.h"
 #include "function/Math.h"
 
 Enemy::~Enemy() {}
