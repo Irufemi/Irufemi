@@ -2,8 +2,8 @@
 
 #include "math/Vector3.h"
 #include "math/Matrix4x4.h"
+#include "3D/ObjClass.h"
 #include <memory>
-#include <string>
 
 // 前方宣言
 class Camera;
@@ -20,6 +20,9 @@ public:
         kFirstPerson, // 一人称
         kThirdPerson  // 三人称
     };
+
+    // デストラクタ
+    ~Player();
 
     /**
      * @brief 初期化処理
@@ -50,16 +53,6 @@ private:
     void HandleMovement();
 
     /**
-     * @brief 攻撃処理
-     */
-    void HandleAttack();
-
-    /**
-     * @brief 視点切り替え処理
-     */
-    void HandleViewSwitch();
-
-    /**
      * @brief カメラ座標の更新
      */
     void UpdateCamera();
@@ -70,17 +63,20 @@ private:
     Camera* camera_ = nullptr;
     IrufemiEngine* engine_ = nullptr;
 
+    // 3Dモデル本体
+    std::unique_ptr<ObjClass> obj_ = nullptr;
+
     // トランスフォーム
-    Vector3 scale_ = { 1.0f, 1.0f, 1.0f };
+    Vector3 scale_ = { 0.3f, 0.3f, 0.3f };
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
     Vector3 translate_ = { 0.0f, 0.0f, 0.0f };
 
-    // 移動用変数
+    // 移動用物理変数
     Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
     ViewMode viewMode_ = ViewMode::kThirdPerson;
     bool isGrounded_ = true;
 
-    // 定数
+    // パラメータ
     const float kMoveSpeed = 0.2f;
     const float kJumpForce = 0.5f;
     const float kGravity = 0.02f;
