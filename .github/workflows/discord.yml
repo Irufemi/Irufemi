@@ -17,6 +17,12 @@ jobs:
         webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
         color: "#48f442"
         username: "GitHub Bot"
-        args: The ${{ github.event_name }} event triggered.
-
-
+        # メッセージ内容をカスタマイズ
+        message: |
+          **${{ github.actor }}** が `${{ github.ref_name }}` に **${{ github.event_name }}** を行いました。
+          
+          **リポジトリ:** ${{ github.repository }}
+          **コミットメッセージ:** > ${{ github.event.head_commit.message || github.event.pull_request.title }}
+          
+          **詳細はこちら:**
+          ${{ github.event.compare || github.event.pull_request.html_url }}
