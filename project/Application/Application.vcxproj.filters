@@ -25,9 +25,6 @@
     <Filter Include="Application">
       <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Scene\CG3">
-      <UniqueIdentifier>{71f087f2-5f9d-4603-a258-3369ad493bca}</UniqueIdentifier>
-    </Filter>
     <Filter Include="actors">
       <UniqueIdentifier>{490d274c-e2b4-4b8c-a942-e7053c118b00}</UniqueIdentifier>
     </Filter>
