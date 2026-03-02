@@ -17,6 +17,6 @@ public:
 
 private:
   std::unique_ptr<ObjClass> obj_ = nullptr;
-  Vector3 basePosition_;
+  Vector3 basePosition_ = {};
   float timer_ = 0.0f;
 };

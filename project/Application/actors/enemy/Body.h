@@ -18,5 +18,5 @@ public:
 
 private:
   std::unique_ptr<ObjClass> obj_ = nullptr;
-  Vector3 basePosition_;
+  Vector3 basePosition_ = {};
 };
