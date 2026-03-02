@@ -5,6 +5,7 @@
 #include "math/Vector4.h"
 #include "math/Matrix4x4.h"
 #include "math/Quaternion.h"
+#include <numbers>
 
 //前方宣言
 struct Segment2D;
@@ -18,6 +19,11 @@ struct AABB;
 struct OBB;
 
 namespace Math {
+
+    // 定数
+    constexpr float PI = std::numbers::pi_v<float>;
+    constexpr float PIDiv2 = std::numbers::pi_v<float> / 2.0f;
+    constexpr float PIDiv4 = std::numbers::pi_v<float> / 4.0f;
 
 #pragma region 2次元ベクトル関数
 
@@ -228,6 +234,14 @@ namespace Math {
     /// <returns></returns>
     Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);
 
+    /// <summary>
+    /// 3次元ベクトル(法線など)を変換
+    /// </summary>
+    /// <param name="vector"></param>
+    /// <param name="matrix"></param>
+    /// <returns></returns>
+    Vector3 TransformNormal(const Vector3& vector, const Matrix4x4& matrix);
+
 
     //回転は左手座標系(左手を握って親指の方向が軸、その他の指の幕方向が回転の正の方向)
 
@@ -260,6 +274,13 @@ namespace Math {
     /// <param name="thetaZ"></param>
     /// <returns></returns>
     Matrix4x4 MakeRotateXYZMatrix(const float& thetaX, const float& thetaY, const float& thetaZ);
+
+    /// <summary>
+    /// 4x4 3次元回転行列の作成 (Vector3版)
+    /// </summary>
+    /// <param name="rotate"></param>
+    /// <returns></returns>
+    Matrix4x4 MakeRotateXYZMatrix(const Vector3& rotate);
 
     /// <summary>
     /// 4x4アフィン変換行列を高速に生成

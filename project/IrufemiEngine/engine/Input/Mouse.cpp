@@ -28,8 +28,8 @@ void Mouse::Update() {
     position_ = { static_cast<float>(p.x), static_cast<float>(p.y) };
     delta_ = { position_.x - prevPosition_.x, position_.y - prevPosition_.y };
 
-    // ホイール値はイベント駆動で取得するため、ここではリセットしない
-    // Win32Application側でWM_MOUSEWHEELを処理して値をセットすることを想定
+    // ホイールの差分をリセット
+    wheelDelta_ = 0.0f;
 }
 
 bool Mouse::IsButtonDown(Button button) const {

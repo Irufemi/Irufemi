@@ -36,7 +36,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     player_->Initialize(engine_->GetInputManager(), camera_.get(), engine_);
 
     boss_ = std::make_unique<Enemy>();
-    boss_->Initialize(camera_.get()); 
+    boss_->Initialize(camera_.get());
 
     directionalLight_ = std::make_unique<DirectionalLight>();
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -44,33 +44,41 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->intensity = 1.0f;
 }
 
+// 更新
 void GameScene::Update() {
+
 #ifdef USE_IMGUI
     ImGui::Begin("Debug");
     ImGui::Checkbox("Debug Camera", &debugMode_);
     ImGui::End();
 #endif
 
-    Camera* currentCamera = nullptr;
+    // --- カメラの更新 ---
     if (debugMode_) {
+        // デバッグカメラを更新
         debugCamera_->Update();
-        currentCamera = const_cast<Camera*>(&debugCamera_->GetCamera());
+        // デバッグカメラの計算結果をメインカメラに上書きする
+        const Camera& dbgCam = debugCamera_->GetCamera();
+        camera_->SetViewMatrix(dbgCam.GetViewMatrix());
+        camera_->SetTranslate(dbgCam.GetTranslate());
+        camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
     } else {
         if (player_) {
             player_->Update();
         }
+        // 通常カメラの更新
         camera_->Update("Main Camera");
-        currentCamera = camera_.get();
     }
 
     if (boss_) {
         boss_->Update();
     }
 
+    // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;
-    cameraForGpu.view = currentCamera->GetViewMatrix();
-    cameraForGpu.projection = currentCamera->GetPerspectiveFovMatrix();
-    cameraForGpu.worldPosition = currentCamera->GetTranslate();
+    cameraForGpu.view = camera_->GetViewMatrix();
+    cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
+    cameraForGpu.worldPosition = camera_->GetTranslate();
 
     std::vector<PointLight*> pLights;
     std::vector<SpotLight*> sLights;
@@ -79,7 +87,9 @@ void GameScene::Update() {
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
+// 描画
 void GameScene::Draw() {
+
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);

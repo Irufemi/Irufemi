@@ -4,6 +4,9 @@
 #include <string>
 #include <cstdint>
 
+// 前方宣言
+class InputManager;
+
 class WinApp final {
 public:
     // クラス定数(課題要件の int 定数)
@@ -27,6 +30,9 @@ public:
     int GetClientWidth() const { return clientWidth_; }
     int GetClientHeight() const { return clientHeight_; }
 
+    // InputManagerのポインタを設定
+    void SetInputManager(InputManager* inputManager) { inputManager_ = inputManager; }
+
     // 静的 WndProc
     static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -49,4 +55,5 @@ private:
     int32_t clientHeight_ = 0;
     bool comInitialized_ = false;
     bool didRegisterClass_ = false;
+    InputManager* inputManager_ = nullptr; // InputManagerへのポインタ
 };
