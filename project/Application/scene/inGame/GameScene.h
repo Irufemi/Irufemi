@@ -10,7 +10,7 @@ class IrufemiEngine;
 class InputManager;
 class Camera;
 class DebugCamera;
-class Player; // 前方宣言
+class Player;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
@@ -18,8 +18,8 @@ struct AreaLight;
 
 class GameScene : public IScene {
 public:
-    GameScene();           // コンストラクタ
-    ~GameScene() override; // デストラクタの実体はcppに書く
+    GameScene();
+    ~GameScene() override;
 
     void Initialize(IrufemiEngine* engine) override;
     void Update() override;

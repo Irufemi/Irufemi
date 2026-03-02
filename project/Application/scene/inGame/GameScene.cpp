@@ -1,8 +1,6 @@
 #include "GameScene.h"
 
-// --- 重要：Playerの定義を最初に見せる ---
-#include "actors/player/Player.h" // プロジェクトのフォルダ構造に合わせてパスを調整してください
-
+#include "actors/player/Player.h" 
 #include "scene/SceneManager.h"
 #include "engine/IrufemiEngine.h"
 #include "manager/DebugUI.h"
@@ -16,10 +14,8 @@
 #include "math/AreaLight.h"
 #include "2D/Sprite.h"
 
-// コンストラクタ
 GameScene::GameScene() {}
 
-// デストラクタ：ここでPlayerの定義が既にあるため unique_ptr が正常に削除できる
 GameScene::~GameScene() {
 }
 
@@ -39,9 +35,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     player_ = std::make_unique<Player>();
     player_->Initialize(engine_->GetInputManager(), camera_.get(), engine_);
 
-    // エラー修正：Enemy::Initialize は Camera* を求めているため、camera_.get() を渡す
     boss_ = std::make_unique<Enemy>();
-    boss_->Initialize(camera_.get()); // ここを修正
+    boss_->Initialize(camera_.get()); 
 
     directionalLight_ = std::make_unique<DirectionalLight>();
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -72,7 +67,6 @@ void GameScene::Update() {
         boss_->Update();
     }
 
-    // GPUデータ転送
     CameraForGPU cameraForGpu;
     cameraForGpu.view = currentCamera->GetViewMatrix();
     cameraForGpu.projection = currentCamera->GetPerspectiveFovMatrix();
