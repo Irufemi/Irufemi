@@ -120,15 +120,6 @@
     <ClCompile Include="function\GetBackBufferIndex.cpp">
       <Filter>Engine\function</Filter>
     </ClCompile>
-    <ClCompile Include="function\SoundLoadWave.cpp">
-      <Filter>Engine\function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\SoundPlayWave.cpp">
-      <Filter>Engine\function</Filter>
-    </ClCompile>
-    <ClCompile Include="function\SoundUnload.cpp">
-      <Filter>Engine\function</Filter>
-    </ClCompile>
     <ClCompile Include="math\Vector3 .cpp">
       <Filter>math</Filter>
     </ClCompile>
