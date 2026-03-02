@@ -37,17 +37,3 @@ IDxcBlob* CompileShader(
 /*前後関係を正しくしよう*/
 
 Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, int32_t width, int32_t height);
-
-/*サウンド再生*/
-
-SoundData SoundLoadWave(const char* filename);
-
-///音声データの解放
-
-//音声データ解放
-void SoundUnload(SoundData* soundData);
-
-///サウンドの再生
-
-//音声再生
-void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData);

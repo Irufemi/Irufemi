@@ -210,9 +210,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="function\Ease.cpp" />
     <ClCompile Include="function\GetBackBufferIndex.cpp" />
     <ClCompile Include="function\Math.cpp" />
-    <ClCompile Include="function\SoundLoadWave.cpp" />
-    <ClCompile Include="function\SoundPlayWave.cpp" />
-    <ClCompile Include="function\SoundUnload.cpp" />
     <ClCompile Include="engine\Input\GamePad.cpp" />
     <ClCompile Include="engine\Input\Keyboard.cpp" />
     <ClCompile Include="manager\AudioManager.cpp" />
