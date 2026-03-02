@@ -15,9 +15,6 @@ public:
   void Draw();
 
 private:
-
-  std::unique_ptr<Camera> camera_ = nullptr;
-
   std::unique_ptr<ObjClass> body_ = nullptr;
   bool isActivebody_ = false;
 

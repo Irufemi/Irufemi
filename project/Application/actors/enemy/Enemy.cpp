@@ -7,11 +7,11 @@ void Enemy::Initialize(Camera *camera) {
 
   // ボディの初期化
   body_ = std::make_unique<ObjClass>();
-  body_->Initialize(camera, "enemy_body.obj");
+  body_->Initialize(camera, "enemy/body.obj");
   isActivebody_ = true;
   // 頭の初期化
   head_ = std::make_unique<ObjClass>();
-  head_->Initialize(camera, "enemy_head.obj");
+  head_->Initialize(camera, "enemy/head.obj");
   isActivehead_ = true;
 }
 
