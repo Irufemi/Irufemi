@@ -26,6 +26,10 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     attackObj_ = std::make_unique<ObjClass>();
     attackObj_->Initialize(camera_, "enemy/body.obj");
 
+    // --- 一人称視点用マスク画像の生成と初期化 ---
+    maskSprite_ = std::make_unique<Sprite>();
+    maskSprite_->Initialize(camera_, "resources/mask.png");
+
     // --- ミサイルモデルとデータの初期化（4個分それぞれ用意する） ---
     for (int i = 0; i < kMaxMissiles; ++i) {
         missileObjs_[i] = std::make_unique<ObjClass>();
@@ -116,6 +120,13 @@ void Player::Draw() {
             // 個別のモデルに対して更新と描画を呼ぶ
             missileObjs_[i]->Update();
             missileObjs_[i]->Draw();
+        }
+    }
+
+    // --- 一人称視点のとき、画面にマスク画像を被せる ---
+    if (viewMode_ == ViewMode::kFirstPerson && !isDead_) {
+        if (maskSprite_) {
+            maskSprite_->Draw();
         }
     }
 }
@@ -330,13 +341,13 @@ void Player::UpdateCamera() {
     if (viewMode_ == ViewMode::kThirdPerson) {
         // 三人称：後ろから見下ろす
         cameraPos.x = translate_.x;
-        cameraPos.y = translate_.y + 1.5f;
+        cameraPos.y = 1.5f; // ← ジャンプしてもカメラが追従しないように固定（translate_.y + を削除）
         cameraPos.z = translate_.z - 5.0f;
         camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
     } else {
         // 一人称：目線の高さ
         cameraPos.x = translate_.x;
-        cameraPos.y = translate_.y;
+        cameraPos.y = 0.0f; // ← ジャンプしてもカメラが追従しないように固定（地面の高さ基準）
         cameraPos.z = translate_.z;
         camera_->SetRotate({ -0.2f, 0.0f, 0.0f });
     }

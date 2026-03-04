@@ -3,6 +3,7 @@
 #include "math/Vector3.h"
 #include "math/Matrix4x4.h"
 #include "3D/ObjClass.h"
+#include "2D/Sprite.h" // マスク画像描画用のヘッダーを追加
 #include <memory>
 #include <vector>
 
@@ -10,6 +11,7 @@
 class Camera;
 class InputManager;
 class IrufemiEngine;
+class Sprite;
 
 /**
  * @struct AttackCollision
@@ -132,6 +134,9 @@ private:
     // 攻撃可視化用モデル（分身）
     std::unique_ptr<ObjClass> attackObj_ = nullptr;
 
+    // --- 一人称視点用マスク画像スプライト ---
+    std::unique_ptr<Sprite> maskSprite_ = nullptr;
+
     // --- 誘導ミサイル用 ---
     static const int kMaxMissiles = 4; // ミサイルの数（4発）
     std::unique_ptr<ObjClass> missileObjs_[kMaxMissiles];
@@ -161,6 +166,6 @@ private:
 
     // パラメータ
     const float kMoveSpeed = 0.2f;
-    const float kJumpForce = 0.5f;
+    const float kJumpForce = 0.25f;
     const float kGravity = 0.02f;
 };
