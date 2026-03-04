@@ -80,7 +80,6 @@ void Player::Draw() {
         obj_->SetPosition(translate_);
         obj_->SetRotate(rotate_);
         obj_->SetScale(scale_);
-        obj_->Debug("Player");
         obj_->Update();
 
         // ダメージを受けたあとの無敵時間中は点滅させる（2フレームに1回描画をスキップ）
