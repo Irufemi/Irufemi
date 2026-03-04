@@ -330,8 +330,8 @@ void Player::UpdateCamera() {
     if (viewMode_ == ViewMode::kThirdPerson) {
         // 三人称：後ろから見下ろす
         cameraPos.x = translate_.x;
-        cameraPos.y = translate_.y + 5.0f;
-        cameraPos.z = translate_.z - 20.0f;
+        cameraPos.y = translate_.y + 1.5f;
+        cameraPos.z = translate_.z - 5.0f;
         camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
     } else {
         // 一人称：目線の高さ
