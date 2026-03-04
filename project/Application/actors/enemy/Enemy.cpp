@@ -52,9 +52,6 @@ void Enemy::Update() {
   // Bodyの更新
   for (int i = 0; i < 3; ++i) {
     if (bodies_[i]) {
-      // ローカル行列 * グローバル行列 でワールド行列を算出し、座標などを抽出する簡易実装
-      // （IrufemiEngineではアフィン変換成分から行列にする関数はあるが行列から座標等を取り出す関数はExtractEulerFromMatrixのみで、スケール・位置を抽出する共通関数がないため
-      //   自前で行列の積による位置変換と回転合成を行う）
 
       // 【1】位置の合成： ローカル位置をグローバル行列で変換
       Vector3 worldPos = Math::Transform(bodyLocalTransforms_[i].translate, globalMatrix);
