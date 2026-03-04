@@ -12,7 +12,7 @@ void Enemy::Initialize(Camera *camera) {
   EnemyParameters::GetInstance()->Load("resources/Json/enemy/parameters.json");
 
   // ボス全体の初期Transform設定
-  globalTransform_ = {{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
+  globalTransform_ = {{4.0f, 4.0f, 4.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 
   // 各部位の初期化とローカルTransform設定
   for (int i = 0; i < 3; ++i) {
