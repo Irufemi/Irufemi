@@ -6,6 +6,7 @@
 #include "engine/IrufemiEngine.h"
 #include <Windows.h>
 #include <cmath>
+#include <cstdlib>
 
 // デストラクタ
 Player::~Player() {
@@ -18,22 +19,56 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
 
     // --- モデルの生成と初期化 ---
     obj_ = std::make_unique<ObjClass>();
-    // とりあえず確認用として、Bodyと同じモデルを指定
-    // もし自前のplayer.obj等があるならここを書き換えてください
     obj_->Initialize(camera_, "enemy/body.obj");
 
+    // --- 攻撃表示用モデルの生成と初期化 ---
+    attackObj_ = std::make_unique<ObjClass>();
+    attackObj_->Initialize(camera_, "enemy/body.obj");
+
+    // --- ミサイルモデルとデータの初期化（4個分それぞれ用意する） ---
+    for (int i = 0; i < kMaxMissiles; ++i) {
+        missileObjs_[i] = std::make_unique<ObjClass>();
+        missileObjs_[i]->Initialize(camera_, "enemy/body.obj");
+        missiles_[i].isActive = false;
+    }
+    missileCooldown_ = 0;
+
+    // 近接攻撃判定の初期化
+    attackCollision_.isActive = false;
+    attackCollision_.radius = 2.0f;
+
+    // --- プレイヤーステータスの初期化 ---
+    hp_ = 100;
+    isDead_ = false;
+    invincibleTimer_ = 0;
 }
 
 void Player::Update() {
+    // 死亡している場合は操作や更新を停止する
+    if (isDead_) {
+        return;
+    }
+
+    // 無敵時間タイマーの減算
+    if (invincibleTimer_ > 0) {
+        invincibleTimer_--;
+    }
+
     // 1. 移動処理
     HandleMovement();
 
-    // 2. 視点切り替え(Vキー)
+    // 2. 近接攻撃処理（Pキー）
+    HandleAttack();
+
+    // 3. ミサイル攻撃処理（Mキー）
+    HandleMissile();
+
+    // 4. 視点切り替え(Vキー)
     if (input_->IsKeyPressed('V')) {
         viewMode_ = (viewMode_ == ViewMode::kThirdPerson) ? ViewMode::kFirstPerson : ViewMode::kThirdPerson;
     }
 
-    // 4. カメラをプレイヤーに追従させる
+    // 5. カメラをプレイヤーに追従させる
     UpdateCamera();
 }
 
@@ -48,12 +83,74 @@ void Player::Draw() {
         obj_->Debug("Player");
         obj_->Update();
 
-        // 一人称視点のときは自分の体が見えると邪魔なので描画しない
-        if (viewMode_ != ViewMode::kFirstPerson) {
+        // ダメージを受けたあとの無敵時間中は点滅させる（2フレームに1回描画をスキップ）
+        bool isBlinking = (invincibleTimer_ > 0 && (invincibleTimer_ % 4) < 2);
+
+        // 一人称視点ではなく、かつ無敵点滅中でなければ描画
+        if (viewMode_ != ViewMode::kFirstPerson && !isBlinking && !isDead_) {
             obj_->Draw();
         }
     }
+
+    // 近接攻撃判定が有効な間だけ、分身モデルを描画する
+    if (attackObj_ && attackCollision_.isActive && !isDead_) {
+        attackObj_->Draw();
+    }
+
+    // ミサイルが飛んでいる間だけ、ミサイルごとに個別のモデルを描画する
+    for (int i = 0; i < kMaxMissiles; ++i) {
+        if (missiles_[i].isActive && missileObjs_[i]) {
+            missileObjs_[i]->SetPosition(missiles_[i].position);
+
+            // ミサイルを進行方向（速度ベクトル）に向ける計算
+            Vector3 mRot = { 0.0f, 0.0f, 0.0f };
+            mRot.y = std::atan2(missiles_[i].velocity.x, missiles_[i].velocity.z);
+            float xzLen = std::sqrt(missiles_[i].velocity.x * missiles_[i].velocity.x + missiles_[i].velocity.z * missiles_[i].velocity.z);
+            mRot.x = std::atan2(-missiles_[i].velocity.y, xzLen);
+            missileObjs_[i]->SetRotate(mRot);
+
+            // 少し小さくして描画
+            Vector3 missileScale = { scale_.x * 0.4f, scale_.y * 0.4f, scale_.z * 0.4f };
+            missileObjs_[i]->SetScale(missileScale);
+
+            // 個別のモデルに対して更新と描画を呼ぶ
+            missileObjs_[i]->Update();
+            missileObjs_[i]->Draw();
+        }
+    }
 }
+
+// ---------------------------------------------------------
+// ダメージ処理と判定取得
+// ---------------------------------------------------------
+PlayerCollider Player::GetCollider() const {
+    PlayerCollider col;
+    // モデルの足元(translate_)から少し上を判定の中心とする
+    col.center = translate_;
+    col.center.y += 1.0f;
+    col.radius = kColliderRadius;
+    return col;
+}
+
+void Player::ApplyDamage(int damage) {
+    // 既に死亡している、または無敵時間中ならダメージを受けない
+    if (isDead_ || invincibleTimer_ > 0) {
+        return;
+    }
+
+    hp_ -= damage;
+    if (hp_ <= 0) {
+        hp_ = 0;
+        isDead_ = true;
+        OutputDebugStringA("Player Dead!\n");
+    } else {
+        // ダメージを受けたら60フレーム（約1秒）無敵になる
+        invincibleTimer_ = 60;
+        OutputDebugStringA("Player Damaged!\n");
+    }
+}
+// ---------------------------------------------------------
+
 
 void Player::HandleMovement() {
     Vector3 move = { 0.0f, 0.0f, 0.0f };
@@ -91,6 +188,137 @@ void Player::HandleMovement() {
             translate_.y = 0.0f;
             velocity_.y = 0.0f;
             isGrounded_ = true;
+        }
+    }
+}
+
+void Player::HandleAttack() {
+    // Pキーで近接攻撃開始
+    if (input_->IsKeyPressed('P') && !attackCollision_.isActive) {
+        attackCollision_.isActive = true;
+        attackActiveTimer_ = 10; // 10フレーム間持続
+        OutputDebugStringA("Player Attack Start!\n");
+    }
+
+    // 攻撃判定の有効期間中の処理
+    if (attackCollision_.isActive) {
+        // プレイヤーの向きに合わせて正面に判定を出す
+        float sinY = std::sin(rotate_.y);
+        float cosY = std::cos(rotate_.y);
+
+        // プレイヤーの座標から1.5前方、高さ1.0の位置を中心とする
+        attackCollision_.center.x = translate_.x + sinY * 1.5f;
+        attackCollision_.center.y = translate_.y + 1.0f;
+        attackCollision_.center.z = translate_.z + cosY * 1.5f;
+
+        // 分身モデルを攻撃判定の場所に配置して更新
+        if (attackObj_) {
+            attackObj_->SetPosition(attackCollision_.center);
+            attackObj_->SetRotate(rotate_); // プレイヤーと同じ向き
+            attackObj_->SetScale(scale_);   // プレイヤーと同じ大きさ
+            attackObj_->Update();
+        }
+
+        attackActiveTimer_--;
+        if (attackActiveTimer_ <= 0) {
+            attackCollision_.isActive = false;
+        }
+    }
+}
+
+void Player::HandleMissile() {
+    // クールダウンの処理
+    if (missileCooldown_ > 0) {
+        missileCooldown_--;
+    }
+
+    // Mキーで4個の誘導ミサイルを発射
+    if (input_->IsKeyPressed('M') && missileCooldown_ <= 0) {
+        missileCooldown_ = 60; // 60フレーム（約1秒）に1回撃てる
+
+        float sinY = std::sin(rotate_.y);
+        float cosY = std::cos(rotate_.y);
+
+        // 誘導目標：プレイヤーの20ユニット先
+        Vector3 targetPos = {
+            translate_.x + sinY * 20.0f,
+            translate_.y + 1.0f,
+            translate_.z + cosY * 20.0f
+        };
+
+        for (int i = 0; i < kMaxMissiles; ++i) {
+            missiles_[i].isActive = true;
+            missiles_[i].timer = 120; // 120フレーム（約2秒）生存
+            missiles_[i].target = targetPos;
+
+            // 初期位置：プレイヤーの少し前
+            missiles_[i].position = {
+                translate_.x + sinY * 1.0f,
+                translate_.y + 1.0f,
+                translate_.z + cosY * 1.0f
+            };
+
+            // 射出ベクトルを大きくばらけさせる
+            float spreadX = ((std::rand() % 100) / 25.0f) - 2.0f; // -2.0 ~ 2.0
+            float spreadY = ((std::rand() % 100) / 25.0f) - 0.5f; // -0.5 ~ 3.5 (上方向へ散らす)
+            float spreadZ = ((std::rand() % 100) / 25.0f) - 2.0f; // -2.0 ~ 2.0
+
+            // プレイヤーの前方ベクトルに拡散ベクトルを足して初速にする
+            missiles_[i].velocity = {
+                (sinY * 0.2f) + (spreadX * 0.4f),
+                spreadY * 0.4f,
+                (cosY * 0.2f) + (spreadZ * 0.4f)
+            };
+        }
+        OutputDebugStringA("Fire 4 Homing Missiles!\n");
+    }
+
+    // ミサイルの移動と誘導処理
+    for (int i = 0; i < kMaxMissiles; ++i) {
+        if (missiles_[i].isActive) {
+            // 1. 目標へのベクトルを計算
+            Vector3 toTarget = {
+                missiles_[i].target.x - missiles_[i].position.x,
+                missiles_[i].target.y - missiles_[i].position.y,
+                missiles_[i].target.z - missiles_[i].position.z
+            };
+
+            // ベクトルの正規化（長さを1にする）
+            float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
+            if (dist > 0.001f) {
+                toTarget.x /= dist;
+                toTarget.y /= dist;
+                toTarget.z /= dist;
+            }
+
+            // 2. 誘導処理：徐々に目標方向へベクトルを向ける
+            float turnSpeed = 0.08f; // 誘導の強さ（大きいほど急カーブ）
+            missiles_[i].velocity.x += toTarget.x * turnSpeed;
+            missiles_[i].velocity.y += toTarget.y * turnSpeed;
+            missiles_[i].velocity.z += toTarget.z * turnSpeed;
+
+            // 3. 速度制限（最高速度を超えないようにする）
+            float currentSpeed = std::sqrt(
+                missiles_[i].velocity.x * missiles_[i].velocity.x +
+                missiles_[i].velocity.y * missiles_[i].velocity.y +
+                missiles_[i].velocity.z * missiles_[i].velocity.z
+            );
+            if (currentSpeed > kMissileSpeed) {
+                missiles_[i].velocity.x = (missiles_[i].velocity.x / currentSpeed) * kMissileSpeed;
+                missiles_[i].velocity.y = (missiles_[i].velocity.y / currentSpeed) * kMissileSpeed;
+                missiles_[i].velocity.z = (missiles_[i].velocity.z / currentSpeed) * kMissileSpeed;
+            }
+
+            // 4. 座標の更新
+            missiles_[i].position.x += missiles_[i].velocity.x;
+            missiles_[i].position.y += missiles_[i].velocity.y;
+            missiles_[i].position.z += missiles_[i].velocity.z;
+
+            // 5. 寿命管理
+            missiles_[i].timer--;
+            if (missiles_[i].timer <= 0) {
+                missiles_[i].isActive = false;
+            }
         }
     }
 }
