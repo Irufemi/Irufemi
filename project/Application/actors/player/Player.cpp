@@ -20,6 +20,7 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     // --- モデルの生成と初期化 ---
     obj_ = std::make_unique<ObjClass>();
     obj_->Initialize(camera_, "enemy/body.obj");
+    obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
     // --- 攻撃表示用モデルの生成と初期化 ---
     attackObj_ = std::make_unique<ObjClass>();
@@ -335,7 +336,7 @@ void Player::UpdateCamera() {
     } else {
         // 一人称：目線の高さ
         cameraPos.x = translate_.x;
-        cameraPos.y = translate_.y + 1.8f;
+        cameraPos.y = translate_.y;
         cameraPos.z = translate_.z;
         camera_->SetRotate({ -0.2f, 0.0f, 0.0f });
     }
