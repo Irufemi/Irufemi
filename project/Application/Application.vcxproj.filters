@@ -90,6 +90,9 @@
     <ClCompile Include="actors\enemy\Enemy.cpp">
       <Filter>actors\enemy</Filter>
     </ClCompile>
+    <ClCompile Include="actors\enemy\EnemyParameters.cpp">
+      <Filter>actors\enemy</Filter>
+    </ClCompile>
     <ClCompile Include="actors\player\Player.cpp">
       <Filter>actors\player</Filter>
     </ClCompile>
@@ -141,6 +144,9 @@
       <Filter>Application</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Enemy.h">
+      <Filter>actors\enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\EnemyParameters.h">
       <Filter>actors\enemy</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\Player.h">

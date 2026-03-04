@@ -81,7 +81,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)\externals\imgui;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine;$(SolutionDir)IrufemiEngine\manager;$(ProjectDir)externals/curl/include;$(ProjectDir)externals/nlohmann/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)\externals\imgui;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine;$(SolutionDir)IrufemiEngine\manager;$(SolutionDir)externals/curl/include;$(SolutionDir)externals/nlohmann/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -109,7 +109,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine;$(SolutionDir)IrufemiEngine\manager;$(ProjectDir)externals/curl/include;$(ProjectDir)Externals/nlohmann/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine;$(SolutionDir)IrufemiEngine\manager;$(SolutionDir)externals/curl/include;$(SolutionDir)externals/nlohmann/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -140,7 +140,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)\externals\imgui;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine;$(SolutionDir)IrufemiEngine\manager;$(ProjectDir)externals/curl/include;$(ProjectDir)externals/nlohmann/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);$(SolutionDir)\externals\imgui;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals;$(SolutionDir)IrufemiEngine;$(SolutionDir)IrufemiEngine\manager;$(SolutionDir)externals/curl/include;$(SolutionDir)externals/nlohmann/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -169,6 +169,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="camera\DebugCamera.cpp" />
     <ClCompile Include="contents\effect\Effect.cpp" />
     <ClCompile Include="actors\enemy\Enemy.cpp" />
+    <ClCompile Include="actors\enemy\EnemyParameters.cpp" />
     <ClCompile Include="contents\field\Field.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="scene\debug\DebugScene.cpp" />
@@ -195,6 +196,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="contents\effect\Effect.h" />
     <ClInclude Include="contents\field\Field.h" />
     <ClInclude Include="actors\enemy\Enemy.h" />
+    <ClInclude Include="actors\enemy\EnemyParameters.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />

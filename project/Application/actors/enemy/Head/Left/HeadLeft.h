@@ -16,6 +16,9 @@ public:
 
   void SetPosition(const Vector3& pos);
 
+  void SetHP(int hp) { hp_ = hp; }
+  int GetHP() const { return hp_; }
+
   // Transformを一括設定する（回転やスケールも含めて上書き）
   void SetTransform(const Transform& transform);
 
@@ -23,4 +26,5 @@ private:
   std::unique_ptr<ObjClass> obj_ = nullptr;
   Vector3 basePosition_ = {};
   float timer_ = 0.0f;
+  int hp_ = 0;
 };
