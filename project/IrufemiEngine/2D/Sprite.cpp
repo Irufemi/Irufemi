@@ -6,7 +6,6 @@
 #include "manager/DrawManager.h"
 #include "Application/camera/Camera.h"
 #include "function/Math.h"
-#include "function/Function.h"
 
 #include <algorithm>
 
