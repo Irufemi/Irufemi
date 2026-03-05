@@ -42,6 +42,24 @@ public: // メンバ関数
 
 	static DirectX::ScratchImage LoadTexture(const std::string& flilePath);
 
+	static Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
+		//CompilerするShaderファイルへのパス
+		const std::wstring& filePath,
+		//Compilerに使用するProfile
+		const wchar_t* profile,
+		//初期化で生成したものを3つ
+		const Microsoft::WRL::ComPtr<IDxcUtils>& dxcUtils,
+		const Microsoft::WRL::ComPtr<IDxcCompiler3>& dxcCompiler,
+		const Microsoft::WRL::ComPtr<IDxcIncludeHandler>& includeHandler,
+		std::ostream& os
+	);
+
+	static Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, int32_t width, int32_t height);
+
+	static UINT GetBackBufferIndex(const Microsoft::WRL::ComPtr<IDXGISwapChain4>& swapChain);
+
+	static Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(const Microsoft::WRL::ComPtr<ID3D12Device>& device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+
 	// FPS固定初期化
 	void InitializeFixFPS();
 	// FPS固定更新

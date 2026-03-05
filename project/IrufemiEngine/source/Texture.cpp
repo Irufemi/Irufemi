@@ -1,7 +1,6 @@
 #include "Texture.h"
-#include "../function/Function.h"
-#include "../externals/DirectXTex/DirectXTex.h"
-#include "../externals/DirectXTex/d3dx12.h"
+#include "externals/DirectXTex/DirectXTex.h"
+#include "externals/DirectXTex/d3dx12.h"
 #include "engine/directX/DirectXCommon.h"
 #include "engine/directX/DescriptorPool.h"
 
@@ -62,8 +61,14 @@ void Texture::Initialize(const std::string& filePath) {
     if (indexForSrv == UINT32_MAX) {
         index_ += 1;
         indexForSrv = index_;
-        textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(indexForSrv);
-        textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(indexForSrv);
+        if (s_srvPool_) {
+            textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(indexForSrv);
+            textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(indexForSrv);
+        } else {
+            // s_srvPool_ が nullptr の場合は安全なデフォルト値を設定
+            textureSrvHandleCPU_ = D3D12_CPU_DESCRIPTOR_HANDLE{ 0 };
+            textureSrvHandleGPU_ = D3D12_GPU_DESCRIPTOR_HANDLE{ 0 };
+        }
     }
 
     dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);

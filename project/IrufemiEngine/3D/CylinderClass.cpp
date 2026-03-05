@@ -5,7 +5,6 @@
 #include "manager/DrawManager.h"
 #include "manager/DebugUI.h"
 
-#include "function/Function.h"
 #include "function/Math.h"
 #include <string>
 #include <algorithm>
