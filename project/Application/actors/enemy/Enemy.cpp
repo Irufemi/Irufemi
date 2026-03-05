@@ -2,7 +2,7 @@
 #include "camera/Camera.h"
 #include "function/Math.h"
 #include "EnemyParameters.h"
-#include <imgui.h>
+#include "DebugUI.h"
 
 Enemy::~Enemy() {}
 
