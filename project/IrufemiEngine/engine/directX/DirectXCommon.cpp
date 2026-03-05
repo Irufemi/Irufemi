@@ -39,6 +39,8 @@ void DirectXCommon::Finalize() {
     }
 
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
+    gpuParticleUpdatePSO_.Reset();
+    gpuParticleInitializePSO_.Reset();
     skinningComputePSO_.Reset();
     computeRootSignature_.Reset();
     rootSignature_.Reset();
@@ -676,6 +678,18 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> skinningCSBlob = CompileShader(L"resources/shaders/Skinning.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(skinningCSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleInitializeCSBlob = CompileShader(L"resources/shaders/InitializeParticle.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(gpuParticleInitializeCSBlob != nullptr);
+
+    /*Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleUpdateCSBlob = CompileShader(L"resources/shaders/UpdateParticle.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(gpuParticleUpdateCSBlob != nullptr);*/
+
+    Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleVSBlob = CompileShader(L"resources/shaders/ParticleGPU.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(gpuParticleVSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> gpuParticlePSBlob = CompileShader(L"resources/shaders/ParticleGPU.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(gpuParticlePSBlob != nullptr);
+
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
     if (dxcCompiler) { dxcCompiler.Reset(); }
@@ -733,6 +747,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         skyboxPSBlob
     };
 
+    PSOManager::ShaderSet gpuParticleShaders{
+    gpuParticleVSBlob,
+    gpuParticlePSBlob
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
@@ -749,7 +768,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         lineShaders,
         lineInstancedShaders,
         skinningObject3DShaders,
-        skyboxShaders
+        skyboxShaders,
+        gpuParticleShaders
     );
 
     //実際に生成
@@ -758,11 +778,20 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     // Compute PSOの生成
     D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc{};
-    computePsoDesc.CS = { skinningCSBlob->GetBufferPointer(), skinningCSBlob->GetBufferSize() };
     computePsoDesc.pRootSignature = computeRootSignature_.Get();
     computePsoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+    computePsoDesc.CS = { skinningCSBlob->GetBufferPointer(), skinningCSBlob->GetBufferSize() };
     hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&skinningComputePSO_));
     assert(SUCCEEDED(hr));
+
+    computePsoDesc.CS = { gpuParticleInitializeCSBlob->GetBufferPointer(), gpuParticleInitializeCSBlob->GetBufferSize() };
+    hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&gpuParticleInitializePSO_));
+    assert(SUCCEEDED(hr));
+
+    /*computePsoDesc.CS = { gpuParticleUpdateCSBlob->GetBufferPointer(), gpuParticleUpdateCSBlob->GetBufferSize() };
+    hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&gpuParticleUpdatePSO_));
+    assert(SUCCEEDED(hr));*/
 
     // 生成が完了したのでShaderBlobを解放
     if (object3DVSBlob) { object3DVSBlob.Reset(); }
@@ -783,6 +812,10 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (skyboxVSBlob) { skyboxVSBlob.Reset(); }
     if (skyboxPSBlob) { skyboxPSBlob.Reset(); }
     if (skinningCSBlob) { skinningCSBlob.Reset(); }
+    if (gpuParticleInitializeCSBlob) { gpuParticleInitializeCSBlob.Reset(); }
+    /*if (gpuParticleUpdateCSBlob) { gpuParticleUpdateCSBlob.Reset(); }*/
+    if (gpuParticleVSBlob) { gpuParticleVSBlob.Reset(); }
+    if (gpuParticlePSBlob) { gpuParticlePSBlob.Reset(); }
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};

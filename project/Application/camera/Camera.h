@@ -191,6 +191,10 @@ public: // メンバ関数
      */
     const Matrix4x4& GetViewportMatrix() const { return viewportMatrix_; }
 
+    Matrix4x4 GetViewProjectionMatrix2D();
+
+    Matrix4x4 GetViewProjectionMatrix3D();
+
 
     /**
      * @brief ワールド行列を再計算します

@@ -451,29 +451,11 @@ void DebugUI::DebugMaterialParticle([[maybe_unused]] ParticleMaterial* materialD
         // 基本プロパティ
         ImGui::ColorEdit4("color", &materialData->color.x);
 
-        bool enableLighting = materialData->enableLighting != 0;
-        if (ImGui::Checkbox("enableLighting", &enableLighting)) {
-            materialData->enableLighting = enableLighting ? 1 : 0;
-        }
-
-        bool hasTexture = materialData->hasTexture != 0;
-        if (ImGui::Checkbox("hasTexture", &hasTexture)) {
-            materialData->hasTexture = hasTexture ? 1 : 0;
-        }
-
-        const char* items[] = { "NonLighting", "Lambert", "HalfLambert" };
-        int currentMode = materialData->lightingMode;
-        if (ImGui::Combo("LightingMode", &currentMode, items, IM_ARRAYSIZE(items))) {
-            materialData->lightingMode = currentMode;
-        }
-
         // サンプラ切替フラグ(0 = WRAP(s0), 1 = CLAMP(s1))
         bool useClamp = materialData->useClampSampler != 0;
         if (ImGui::Checkbox("Use Clamp Sampler (V)", &useClamp)) {
             materialData->useClampSampler = useClamp ? 1 : 0;
         }
-
-        ImGui::DragFloat("Shininess", &materialData->shininess, 0.01f);
 
         // --- UV Transform 編集(より実用的に) ---
         // materialData->uvTransform は 4x4 行列。

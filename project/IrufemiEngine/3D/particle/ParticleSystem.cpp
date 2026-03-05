@@ -11,7 +11,7 @@
 #include <numbers>
 
 DescriptorPool* ParticleSystem::s_srvPool_ = nullptr;
-TextureManager* ParticleSystem::s_textureManager_ = nullptr;
+TextureManager* ParticleSystem::textureManager_ = nullptr;
 DrawManager* ParticleSystem::s_drawManager_ = nullptr;
 IrufemiEngine* ParticleSystem::s_engine_ = nullptr;
 DebugUI* ParticleSystem::s_ui_ = nullptr;
@@ -487,18 +487,15 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     //マテリアル
 
     resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->materialData_->enableLighting = true;
-    resource_->materialData_->hasTexture = true;
-    resource_->materialData_->lightingMode = 2;
     resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
     resource_->materialData_->useClampSampler = (primitiveShape_ == ParticlePrimitiveShape::Ring || primitiveShape_ == ParticlePrimitiveShape::Cylinder);
 
-    if (s_textureManager_) {
-        auto textureNames = s_textureManager_->GetTextureNames();
+    if (textureManager_) {
+        auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
         if (!textureNames.empty()) {
 
-            resource_->textureHandle_ = s_textureManager_->GetTextureHandle(textureName);
+            resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
             // コンボボックス用に selectedIndex を初期化
             auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
@@ -667,15 +664,15 @@ void ParticleSystem::SetEmitterProperties(
 }
 
 void ParticleSystem::SetTexture(const std::string& textureFilePath) {
-    if (!s_textureManager_) {
+    if (!textureManager_) {
         return;
     }
-    auto textureNames = s_textureManager_->GetTextureNames();
+    auto textureNames = textureManager_->GetTextureNames();
     std::sort(textureNames.begin(), textureNames.end());
     auto it = std::find(textureNames.begin(), textureNames.end(), textureFilePath);
 
     if (it != textureNames.end()) {
-        resource_->textureHandle_ = s_textureManager_->GetTextureHandle(textureFilePath);
+        resource_->textureHandle_ = textureManager_->GetTextureHandle(textureFilePath);
         selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
     }
 }
@@ -817,8 +814,8 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                     if (primitiveShape_ != static_cast<ParticlePrimitiveShape>(currentShape)) {
                         primitiveShape_ = static_cast<ParticlePrimitiveShape>(currentShape);
                         std::string currentTextureName = "resources/circle.png";
-                        if (s_textureManager_) {
-                            auto textureNames = s_textureManager_->GetTextureNames();
+                        if (textureManager_) {
+                            auto textureNames = textureManager_->GetTextureNames();
                             std::sort(textureNames.begin(), textureNames.end());
                             if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < textureNames.size()) {
                                 currentTextureName = textureNames[selectedTextureIndex_];
@@ -909,8 +906,8 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
                         // 現在のテクスチャ名を復元して Initialize を呼ぶ(UI 保持のため)
                         std::string currentTextureName = "resources/circle.png";
-                        if (s_textureManager_) {
-                            auto textureNames = s_textureManager_->GetTextureNames();
+                        if (textureManager_) {
+                            auto textureNames = textureManager_->GetTextureNames();
                             std::sort(textureNames.begin(), textureNames.end());
                             if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
                                 currentTextureName = textureNames[selectedTextureIndex_];
@@ -946,8 +943,8 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         SetCylinderParameters(radius, height, static_cast<uint32_t>(segments), flipV);
 
                         std::string currentTextureName = "resources/circle.png";
-                        if (s_textureManager_) {
-                            auto textureNames = s_textureManager_->GetTextureNames();
+                        if (textureManager_) {
+                            auto textureNames = textureManager_->GetTextureNames();
                             std::sort(textureNames.begin(), textureNames.end());
                             if (!textureNames.empty()) {
                                 if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {

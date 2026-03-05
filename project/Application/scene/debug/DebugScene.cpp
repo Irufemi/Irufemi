@@ -76,7 +76,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTriangle_ = false;
     isActiveCube_ = false;
     isActivePlane_ = false;
-    isActiveSphere_ = true; // Sphereをデフォルトで表示
+    isActiveSphere_ = false; 
     isActiveCylinder_ = false;
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
@@ -86,18 +86,12 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveFence_ = false;
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
+    isActiveGPUParticle_ = false;
     isActiveEffect_ = false;
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
     isActiveSneakWalk_ = false;
-    isActiveAnimationNode_ = false;
-    isActiveAnimationNodeMisc_ = false;
-    isActiveMeshPrimitives_ = false;
-    isActiveMeshPrimitiveVertexColor_ = false;
-    isActiveTextureSampler_ = false;
-    isActiveMaterialAlphaBlend_ = false;
-    isActiveAnimationSkin_ = false;
-    isActiveSkybox_ = true; // Skyboxと環境マップをデフォルトで有効化
+    isActiveSkybox_ = true; 
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -164,6 +158,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         particle_ = std::make_unique<ParticleSystem>();
         particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kAccelerationField);
     }
+    if (isActiveGPUParticle_) {
+        gpuParticle_ = std::make_unique<GPUParticleSystem>();
+        gpuParticle_->Initialize(camera_.get(), "resources/circle.png");
+    }
     if (isActiveEffect_) {
         effect_ = std::make_unique<EffectSystem>();
         effect_->Initialize(camera_.get());
@@ -179,34 +177,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     if (isActiveSneakWalk_) {
         sneakWalk_ = std::make_unique<AnimationModel>();
         sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
-    }
-    if (isActiveAnimationNode_) {
-        animationNode_ = std::make_unique<AnimationModel>();
-        animationNode_->Initialize(camera_.get(), "test/Animation_Node/Animation_Node_00.gltf");
-    }
-    if (isActiveAnimationNodeMisc_) {
-        animationNodeMisc_ = std::make_unique<AnimationModel>();
-        animationNodeMisc_->Initialize(camera_.get(), "test/Animation_NodeMisc/Animation_NodeMisc_00.gltf");
-    }
-    if (isActiveMeshPrimitives_) {
-        meshPrimitives_ = std::make_unique<ObjClass>();
-        meshPrimitives_->Initialize(camera_.get(), "test/Mesh_Primitives/Mesh_Primitives_00.gltf");
-    }
-    if (isActiveMeshPrimitiveVertexColor_) {
-        meshPrimitiveVertexColor_ = std::make_unique<ObjClass>();
-        meshPrimitiveVertexColor_->Initialize(camera_.get(), "test/Mesh_PrimitiveVertexColor/Mesh_PrimitiveVertexColor_00.gltf");
-    }
-    if (isActiveTextureSampler_) {
-        textureSampler_ = std::make_unique<ObjClass>();
-        textureSampler_->Initialize(camera_.get(), "test/Texture_Sampler/Texture_Sampler_00.gltf");
-    }
-    if (isActiveMaterialAlphaBlend_) {
-        materialAlphaBlend_ = std::make_unique<ObjClass>();
-        materialAlphaBlend_->Initialize(camera_.get(), "test/Material_AlphaBlend/Material_AlphaBlend_00.gltf");
-    }
-    if (isActiveAnimationSkin_) {
-        animationSkin_ = std::make_unique<AnimationModel>();
-        animationSkin_->Initialize(camera_.get(), "test/Animation_Skin/Animation_Skin_00.gltf");
     }
     if (isActiveSkybox_) {
         skybox_ = std::make_unique<Skybox>();
@@ -261,17 +231,11 @@ void DebugScene::Update() {
     ImGui::Checkbox("Fence", &isActiveFence_);
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("Particle", &isActiveParticle_);
+    ImGui::Checkbox("GPUParticle", &isActiveGPUParticle_);
     ImGui::Checkbox("Effect", &isActiveEffect_);
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
     ImGui::Checkbox("Walk", &isActiveWalk_);
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
-    ImGui::Checkbox("Aniamtion Node", &isActiveAnimationNode_);
-    ImGui::Checkbox("Animation NodeMisc", &isActiveAnimationNodeMisc_);
-    ImGui::Checkbox("Mesh Primitives", &isActiveMeshPrimitives_);
-    ImGui::Checkbox("Mesh PrimitiveVertexColor", &isActiveMeshPrimitiveVertexColor_);
-    ImGui::Checkbox("Texture Sampler", &isActiveTextureSampler_);
-    ImGui::Checkbox("Material AlphaBlend", &isActiveMaterialAlphaBlend_);
-    ImGui::Checkbox("Animation Skin", &isActiveAnimationSkin_);
     ImGui::Checkbox("Skybox", &isActiveSkybox_);
     ImGui::End();
 
@@ -394,6 +358,13 @@ void DebugScene::Update() {
         particle_->Debug("Particle");
         particle_->Update();
     }
+    if (isActiveGPUParticle_) {
+        if (!gpuParticle_) {
+            gpuParticle_ = std::make_unique <GPUParticleSystem>();
+            gpuParticle_->Initialize(camera_.get(), "resources/circle.png");
+        }
+        gpuParticle_->Update();
+    }
     if (isActiveEffect_) {
         if (!effect_) {
             effect_ = std::make_unique <EffectSystem>();
@@ -425,62 +396,6 @@ void DebugScene::Update() {
         }
         sneakWalk_->Debug("SneakWalk");
         sneakWalk_->Update();
-    }
-    if (isActiveAnimationNode_) {
-        if (!animationNode_) {
-            animationNode_ = std::make_unique<AnimationModel>();
-            animationNode_->Initialize(camera_.get(), "test/Animation_Node/Animation_Node_00.gltf");
-        }
-        animationNode_->Debug("Animation Node");
-        animationNode_->Update();
-    }
-    if (isActiveAnimationNodeMisc_) {
-        if (!animationNodeMisc_) {
-            animationNodeMisc_ = std::make_unique<AnimationModel>();
-            animationNodeMisc_->Initialize(camera_.get(), "test/Animation_NodeMisc/Animation_NodeMisc_00.gltf");
-        }
-        animationNodeMisc_->Debug("Animation NodeMisc");
-        animationNodeMisc_->Update();
-    }
-    if (isActiveMeshPrimitives_) {
-        if (!meshPrimitives_) {
-            meshPrimitives_ = std::make_unique<ObjClass>();
-            meshPrimitives_->Initialize(camera_.get(), "test/Mesh_Primitives/Mesh_Primitives_00.gltf");
-        }
-        meshPrimitives_->Debug("Mesh Primitives");
-        meshPrimitives_->Update();
-    }
-    if (isActiveMeshPrimitiveVertexColor_) {
-        if (!meshPrimitiveVertexColor_) {
-            meshPrimitiveVertexColor_ = std::make_unique<ObjClass>();
-            meshPrimitiveVertexColor_->Initialize(camera_.get(), "test/Mesh_PrimitiveVertexColor/Mesh_PrimitiveVertexColor_00.gltf");
-        }
-        meshPrimitiveVertexColor_->Debug("Mesh PrimitiveVertexColor");
-        meshPrimitiveVertexColor_->Update();
-    }
-    if (isActiveTextureSampler_) {
-        if (!textureSampler_) {
-            textureSampler_ = std::make_unique<ObjClass>();
-            textureSampler_->Initialize(camera_.get(), "test/Texture_Sampler/Texture_Sampler_00.gltf");
-        }
-        textureSampler_->Debug("Texture Sampler");
-        textureSampler_->Update();
-    }
-    if (isActiveMaterialAlphaBlend_) {
-        if (!materialAlphaBlend_) {
-            materialAlphaBlend_ = std::make_unique<ObjClass>();
-            materialAlphaBlend_->Initialize(camera_.get(), "test/Material_AlphaBlend/Material_AlphaBlend_00.gltf");
-        }
-        materialAlphaBlend_->Debug("Material AlphaBlend");
-        materialAlphaBlend_->Update();
-    }
-    if (isActiveAnimationSkin_) {
-        if (!animationSkin_) {
-            animationSkin_ = std::make_unique<AnimationModel>();
-            animationSkin_->Initialize(camera_.get(), "test/Animation_Skin/Animation_Skin_00.gltf");
-        }
-        animationSkin_->Debug("Animation Skin");
-        animationSkin_->Update();
     }
     if (isActiveSkybox_) {
         if (!skybox_) {
@@ -615,27 +530,6 @@ void DebugScene::Draw() {
     if (isActiveSneakWalk_) {
         sneakWalk_->Draw();
     }
-    if (isActiveAnimationNode_) {
-        animationNode_->Draw();
-    }
-    if (isActiveAnimationNodeMisc_) {
-        animationNodeMisc_->Draw();
-    }
-    if (isActiveMeshPrimitives_) {
-        meshPrimitives_->Draw();
-    }
-    if (isActiveMeshPrimitiveVertexColor_) {
-        meshPrimitiveVertexColor_->Draw();
-    }
-    if (isActiveTextureSampler_) {
-        textureSampler_->Draw();
-    }
-    if (isActiveMaterialAlphaBlend_) {
-        materialAlphaBlend_->Draw();
-    }
-    if (isActiveAnimationSkin_) {
-        animationSkin_->Draw();
-    }
     if (isActiveSkybox_) {
         skybox_->Draw();
     }
@@ -655,6 +549,10 @@ void DebugScene::Draw() {
 
     if (isActiveParticle_) {
         particle_->Draw();
+    }
+
+    if (isActiveGPUParticle_) {
+        gpuParticle_->Draw();
     }
 
     // 2D

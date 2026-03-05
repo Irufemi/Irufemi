@@ -47,6 +47,14 @@ void Camera::Update([[maybe_unused]]const char *cameraName) {
     UpdateMatrix();
 }
 
+Matrix4x4 Camera::GetViewProjectionMatrix2D() {
+    return viewMatrix_ * orthographicMatrix_;
+}
+
+Matrix4x4 Camera::GetViewProjectionMatrix3D() {
+    return viewMatrix_ * perspectiveFovMatrix_;
+}
+
 //ワールド行列の作成
 void Camera::MakeWorldMatrix() {
 
