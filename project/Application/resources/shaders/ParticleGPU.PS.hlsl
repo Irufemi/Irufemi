@@ -1,6 +1,6 @@
 /*テクスチャを貼ろう*/
 
-#include "Particle.hlsli"
+#include "ParticleGPU.hlsli"
 
 /*三角形の色を変えよう*/
 
@@ -8,10 +8,11 @@ struct ParticleMaterial
 {
 	float32_t4 color;
 	int32_t useClampSampler; // 0: WRAP, 1: CLAMP
-	float3 pad;
+	float3 _padding;
 	float32_t4x4 uvTransform;
 };
-ConstantBuffer<ParticleMaterial> gMaterial : register(b5);
+ConstantBuffer<ParticleMaterial> gMaterial : register(b0);
+
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;
@@ -25,19 +26,6 @@ Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
 SamplerState gSamplerWrap : register(s0); //Samplerのregisterはs
 SamplerState gSamplerClamp : register(s1);
 
-/*LambertianReflectance*/
-
-struct DirectionalLight
-{
-	 //!< ライトの色
-	float32_t4 color;
-    //!< ライトの向き
-	float32_t3 direction;
-    //!< 輝度
-	float intensity;
-};
-ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
-
 /*テクスチャを貼ろう*/
 
 PixelShaderOutput main(VertexShaderOutput input)
@@ -49,7 +37,8 @@ PixelShaderOutput main(VertexShaderOutput input)
 	///Materialを拡張する
 	
 	float4 transformedUV = mul(float32_t4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
-	float32_t4 textureColor;
+	float32_t4 textureColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
+
 	if (gMaterial.useClampSampler != 0)
 	{
 		textureColor = gTexture.Sample(gSamplerClamp, transformedUV.xy);
@@ -58,6 +47,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	{
 		textureColor = gTexture.Sample(gSamplerWrap, transformedUV.xy);
 	}
+
 	output.color = gMaterial.color * textureColor * input.color;
 	
 	/*2値抜き*/

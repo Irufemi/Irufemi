@@ -34,7 +34,7 @@ public:
 	D3D12ResourceUtilParticle* GetD3D12Resource() { return resource_.get(); }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvHandleGPU_; }
 
-	static void SetTextureManager(TextureManager* texM) { s_textureManager_ = texM; }
+	static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
 	static void SetDrawManager(DrawManager* drawM) { s_drawManager_ = drawM; }
 	static void SetDebugUI(DebugUI* ui) { s_ui_ = ui; }
 	static void SetSrvPool(DescriptorPool* pool) { s_srvPool_ = pool; }
@@ -110,7 +110,7 @@ private:
 	std::random_device seedGenerator_;
 	std::mt19937 randomEngine_;
 
-	static TextureManager* s_textureManager_;
+	static TextureManager* textureManager_;
 	static DrawManager* s_drawManager_;
 	static DebugUI* s_ui_;
 	static DescriptorPool* s_srvPool_;
