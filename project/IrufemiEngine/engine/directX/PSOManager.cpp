@@ -24,7 +24,8 @@ void PSOManager::Initialize(
     ShaderSet lineShaders,
     ShaderSet lineInstancedShaders,
     ShaderSet skinningShaders,
-    ShaderSet skyboxShaders
+    ShaderSet skyboxShaders,
+    ShaderSet gpuParticleShaders
 )
 {
     device_ = device;
@@ -46,6 +47,7 @@ void PSOManager::Initialize(
     lineInstancedShaders_ = lineInstancedShaders;
     skinningShaders_ = skinningShaders;
     skyboxShaders_ = skyboxShaders;
+    gpuParticleShaders_ = gpuParticleShaders;
 
     cache_.clear();
 }
@@ -251,6 +253,17 @@ ID3D12PipelineState* PSOManager::GetSkybox(CullMode cull)
     auto pso = CreatePSO(set, bd, dd, cull);
     if (!pso) { return nullptr; }
     cache_[key] = pso;
+    return pso.Get();
+}
+
+ID3D12PipelineState* PSOManager::GetGpuParticle(BlendMode blend, DepthWrite depth, CullMode cull) {
+    const auto& shaders = (gpuParticleShaders_.vsBlob && gpuParticleShaders_.psBlob) ? gpuParticleShaders_ : objectShaders_;
+    uint64_t hash = Hash(shaders, blend, depth, cull);
+    if (cache_.count({ hash })) {
+        return cache_.at({ hash }).Get();
+    }
+    auto pso = CreatePSO(shaders, MakeBlend(blend), MakeDepth(depth), cull);
+    cache_[{hash}] = pso;
     return pso.Get();
 }
 

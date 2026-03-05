@@ -144,6 +144,7 @@ public: // セッター
     void ApplyLineInstancedPSO();
     void ApplySkinningPSO();
     void ApplySkyboxPSO();
+    void ApplyGpuParticlePSO();
 
 public:
     // 状態(現在のブレンドと深度書き込み)

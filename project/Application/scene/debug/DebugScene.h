@@ -13,6 +13,7 @@
 #include "3D/CylinderClass.h"
 #include "3D/TriangleClass.h"
 #include "3D/particle/ParticleSystem.h"
+#include "3D/particle/GPUParticleSystem.h"
 #include "3D/effect/EffectSystem.h"
 #include "3D/LineClass.h"
 #include "3D/AnimationModel.h"
@@ -89,6 +90,9 @@ private: // メンバ変数(ゲーム)
 
     std::unique_ptr<ParticleSystem> particle_ = nullptr;
     bool isActiveParticle_ = false;
+
+    std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
+    bool isActiveGPUParticle_ = false;
 
     std::unique_ptr<EffectSystem> effect_ = nullptr;
     bool isActiveEffect_ = false;

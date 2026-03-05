@@ -88,6 +88,9 @@
     <Filter Include="render\Skybox">
       <UniqueIdentifier>{df9cbe3c-3b86-4a15-8de1-fef19d477197}</UniqueIdentifier>
     </Filter>
+    <Filter Include="render\ParticleGPU">
+      <UniqueIdentifier>{b1277eb3-c5e5-4d7b-829d-dce3b590ae4f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="manager\DrawManager.cpp">
@@ -174,7 +177,6 @@
     <ClCompile Include="2D\SpriteRegion.cpp">
       <Filter>render\2D</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="math\Matrix4x4.cpp">
       <Filter>math</Filter>
     </ClCompile>
@@ -279,6 +281,9 @@
     </ClCompile>
     <ClCompile Include="3D\effect\EffectSystem.cpp">
       <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="3D\particle\GPUParticleSystem.cpp">
+      <Filter>render\ParticleGPU</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -590,6 +595,9 @@
     <ClInclude Include="3D\effect\EffectSystem.h">
       <Filter>render</Filter>
     </ClInclude>
+    <ClInclude Include="3D\particle\GPUParticleSystem.h">
+      <Filter>render\ParticleGPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Object2D.hlsli">
@@ -614,6 +622,9 @@
       <Filter>Engine\shaders</Filter>
     </None>
     <None Include="..\Application\resources\shaders\Skybox.hlsli">
+      <Filter>Engine\shaders</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\ParticleGPU.hlsli">
       <Filter>Engine\shaders</Filter>
     </None>
   </ItemGroup>
@@ -667,6 +678,15 @@
       <Filter>Engine\shaders</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\Skybox.VS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\InitializeParticle.CS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ParticleGPU.PS.hlsl">
+      <Filter>Engine\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ParticleGPU.VS.hlsl">
       <Filter>Engine\shaders</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\Skinning.CS.hlsl">

@@ -22,6 +22,7 @@
 #include "3D/PlaneClass.h"
 #include "3D/CylinderClass.h"
 #include "3D/particle/ParticleSystem.h"
+#include "3D/particle/GPUParticleSystem.h"
 #include "3D/Region.h"
 #include "3D/SphereRegion.h"
 #include "3D/TetraRegion.h"
@@ -176,7 +177,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     SphereRegion::SetDrawManager(drawManager.get());
     TetraRegion::SetDrawManager(drawManager.get());
     ParticleSystem::SetDrawManager(drawManager.get());
+    GPUParticleSystem::SetDrawManager(drawManager.get());
     ParticleSystem::SetEngine(this);
+    GPUParticleSystem::SetEngine(this);
     Line3DRegion::SetDrawManager(drawManager.get());
 
     // テクスチャ
@@ -194,6 +197,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     SphereRegion::SetTextureManager(textureManager.get());
     TetraRegion::SetTextureManager(textureManager.get());
     ParticleSystem::SetTextureManager(textureManager.get());
+    GPUParticleSystem::SetTextureManager(textureManager.get());
 
     animationManager_ = std::make_unique<AnimationManager>();
     animationManager_->Initialize(dxCommon_.get());
@@ -201,6 +205,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     AnimationModel::SetIrufemiEngine(this);
 
     Skybox::SetEngine(this);
+    GPUParticleSystem::SetDXCommon(dxCommon_.get());
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -375,5 +380,11 @@ void IrufemiEngine::ApplySkyboxPSO()
     // Skyboxは内側から見るので、前面カリング
     auto* pso = GetPSOManager()->GetSkybox(PSOManager::CullMode::Front);
     assert(pso && "Skybox PSO is null. Check Skybox shader setup.");
+    if (pso) { drawManager->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplyGpuParticlePSO() {
+    auto* pso = GetPSOManager()->GetGpuParticle(currentBlend_, currentDepth_, currentCull_);
+    assert(pso && "GpuParticle PSO is null. Check GpuParticle shader setup.");
     if (pso) { drawManager->BindPSO(pso); }
 }

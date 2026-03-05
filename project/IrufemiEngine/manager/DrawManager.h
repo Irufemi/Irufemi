@@ -134,5 +134,7 @@ public: //メンバ関数
 
     void DispatchSkinning(const D3D12_GPU_DESCRIPTOR_HANDLE& palette, const D3D12_GPU_DESCRIPTOR_HANDLE& inputVertex, const D3D12_GPU_DESCRIPTOR_HANDLE& influence, const D3D12_GPU_DESCRIPTOR_HANDLE& outputVertex, const D3D12_GPU_VIRTUAL_ADDRESS& skinningInformation, const float& verticesSize);
 
+    void DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const UINT& instanceCount);
+
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
 };

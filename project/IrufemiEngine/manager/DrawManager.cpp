@@ -377,13 +377,6 @@ void DrawManager::DrawParticle(ParticleSystem* resource) {
     //    (rootParameters[0] に対応、PixelShader 側の b0 想定)
     commandList_->SetGraphicsRootConstantBufferView(0, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
 
-    // Particle 専用マテリアル CBV を root index 9 にバインド
-    // - DirectXCommon.cpp の RootSignature で rootParameters[9] を ParticleMaterial (PS b5) に
-    //   マップしているため、Draw 側はルート配列インデックス 9 を使って渡す必要があります。
-    // - ここで渡すのは resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress()
-    //   (D3D12ResourceUtilParticle::materialResource_ が ParticleMaterial 構造体を保持している想定)
-    commandList_->SetGraphicsRootConstantBufferView(9, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
-
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)
     auto instancing = resource->GetInstancingSrvHandleGPU();
     assert(instancing.ptr != 0 && "Instancing SRV handle is null or invalid");
@@ -536,7 +529,7 @@ void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUA
     commandList_->SetComputeRootConstantBufferView(4, skinningInfoGpuVA);
 
     // Dispatch
-    commandList_->Dispatch( (numVertices + 1023) / 1024, 1, 1);
+    commandList_->Dispatch((numVertices + 1023) / 1024, 1, 1);
 
     // --- UAVバリア ---
     // スキニング計算結果(UAV)を、頂点シェーダーの入力(SRV)として使えるようにするためのバリア
@@ -665,4 +658,26 @@ void DrawManager::DispatchSkinning(const D3D12_GPU_DESCRIPTOR_HANDLE& palette, c
     // Dispatch
     commandList_->Dispatch(static_cast<UINT>(verticesSize + 1023 / 1024), 1, 1);
 
+}
+
+void DrawManager::DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const UINT& instanceCount) {
+
+    // IA 設定: VB/IB/Topology
+    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView);
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // --- CBV のバインド ---
+    // (rootParameters[0] に対応、PixelShader 側の b0 想定)
+    commandList_->SetGraphicsRootConstantBufferView(1, perView);
+
+    commandList_->SetGraphicsRootConstantBufferView(0, material);
+
+    // --- SRVのバインド ---
+    // テクスチャ (PS t0)
+    commandList_->SetGraphicsRootDescriptorTable(2, textureHandle);
+    // パーティクルデータ (VS t0)
+    commandList_->SetGraphicsRootDescriptorTable(4, particleSrv);
+
+    // 描画コール
+    commandList_->DrawInstanced(6, instanceCount, 0, 0);
 }

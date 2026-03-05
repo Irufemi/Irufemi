@@ -76,7 +76,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTriangle_ = false;
     isActiveCube_ = false;
     isActivePlane_ = false;
-    isActiveSphere_ = true; // Sphereをデフォルトで表示
+    isActiveSphere_ = false; 
     isActiveCylinder_ = false;
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
@@ -86,11 +86,12 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveFence_ = false;
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
+    isActiveGPUParticle_ = false;
     isActiveEffect_ = false;
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
     isActiveSneakWalk_ = false;
-    isActiveSkybox_ = true; // Skyboxと環境マップをデフォルトで有効化
+    isActiveSkybox_ = true; 
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -156,6 +157,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     if (isActiveParticle_) {
         particle_ = std::make_unique<ParticleSystem>();
         particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kAccelerationField);
+    }
+    if (isActiveGPUParticle_) {
+        gpuParticle_ = std::make_unique<GPUParticleSystem>();
+        gpuParticle_->Initialize(camera_.get(), "resources/circle.png");
     }
     if (isActiveEffect_) {
         effect_ = std::make_unique<EffectSystem>();
@@ -226,6 +231,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("Fence", &isActiveFence_);
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("Particle", &isActiveParticle_);
+    ImGui::Checkbox("GPUParticle", &isActiveGPUParticle_);
     ImGui::Checkbox("Effect", &isActiveEffect_);
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
     ImGui::Checkbox("Walk", &isActiveWalk_);
@@ -351,6 +357,13 @@ void DebugScene::Update() {
         }
         particle_->Debug("Particle");
         particle_->Update();
+    }
+    if (isActiveGPUParticle_) {
+        if (!gpuParticle_) {
+            gpuParticle_ = std::make_unique <GPUParticleSystem>();
+            gpuParticle_->Initialize(camera_.get(), "resources/circle.png");
+        }
+        gpuParticle_->Update();
     }
     if (isActiveEffect_) {
         if (!effect_) {
@@ -536,6 +549,10 @@ void DebugScene::Draw() {
 
     if (isActiveParticle_) {
         particle_->Draw();
+    }
+
+    if (isActiveGPUParticle_) {
+        gpuParticle_->Draw();
     }
 
     // 2D
