@@ -1,7 +1,5 @@
 #include "IrufemiEngine.h"
 
-#include "function/Function.h"
-#include "function/GetBackBufferIndex.h"
 #include "function/Random.h"
 
 #include <cassert>
@@ -45,8 +43,9 @@ IrufemiEngine::~IrufemiEngine() { Finalize(); }
 
 // 初期化
 void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight) {
+    
     /*CrashHandler*/
-    SetUnhandledExceptionFilter(ExportDump);
+    SetUnhandledExceptionFilter(WinApp::ExportDump);
 
     // WinApp をエンジン内で生成・初期化(COM 初期化もここで実施される)
     winApp_ = std::make_unique<WinApp>();

@@ -18,7 +18,6 @@
 #include "math/LineVertexData.h"
 #include "math/LineMaterial.h"
 #include "manager/TextureManager.h"
-#include "function/Function.h"
 
 // 前方宣言
 class DirectXCommon;

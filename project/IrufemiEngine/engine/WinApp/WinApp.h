@@ -36,6 +36,8 @@ public:
     // 静的 WndProc
     static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+    static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception);
+
     // コピー/ムーブ禁止
     WinApp(const WinApp&) = delete;
     WinApp& operator=(const WinApp&) = delete;

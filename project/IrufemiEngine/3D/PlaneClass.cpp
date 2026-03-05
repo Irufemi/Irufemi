@@ -1,6 +1,5 @@
 #include "PlaneClass.h"
 #include "function/Math.h"
-#include "function/Function.h"
 #include "manager/TextureManager.h"
 #include "manager/DrawManager.h"
 #include "manager/DebugUI.h"

@@ -8,7 +8,6 @@
 #include <comdef.h>
 
 #include "../Log.h"
-#include "function/Function.h"
 #include "function/StringUtility.h"
 #include "math/VertexData.h"
 #include "DirectXTex/d3dx12.h"
@@ -1162,5 +1161,142 @@ void DirectXCommon::UpdateFixFPS() {
     }
     // 現在の時間を記録する(次フレームの前回記録からの経過時間を取得の計算に使うため、待機完了後の時間を記録しておく)
     reference_ = std::chrono::steady_clock::now();
+
+}
+
+Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(
+    //CompilerするShaderファイルへのパス
+    const std::wstring& filePath,
+    //Compilerに使用するProfile
+    const wchar_t* profile,
+    //初期化で生成したものを3つ
+    const Microsoft::WRL::ComPtr<IDxcUtils>& dxcUtils,
+    const Microsoft::WRL::ComPtr<IDxcCompiler3>& dxcCompiler,
+    const Microsoft::WRL::ComPtr<IDxcIncludeHandler>& includeHandler,
+    std::ostream& os
+) {
+
+    /// 1. hlslファイルを読む
+
+    //これからシェーダーをコンパイルする旨をログに出す
+    Log::OutPutLog(os, ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n", filePath, profile)));
+    //hislファイルを読む
+    IDxcBlobEncoding* shaderSource = nullptr;
+    HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+    //読めなかったら止める
+    assert(SUCCEEDED(hr));
+    //読み込んだファイルの内容を設定する
+    DxcBuffer shaderSourceBuffer;
+    shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
+    shaderSourceBuffer.Size = shaderSource->GetBufferSize();
+    shaderSourceBuffer.Encoding = DXC_CP_UTF8; //UTF8の文字コードであることを通知
+
+    /// 2. Compileする
+
+    LPCWSTR arguments[]{
+        filePath.c_str(), // コンパイル対象のhlslファイル名
+        L"-E",L"main", // エントリーポイントの指定。基本的にmain以外にはしない
+        L"-T",profile, // ShaderProfileの設定
+        L"-Zi",L"-Qembed_debug", // デバッグ用の情報を埋め込む
+        L"-Od", // 最適化を外しておく
+        L"-Zpr", // メモリレイアウトは行優先
+    };
+    //実際にShaderをコンパイルする
+    IDxcResult* shaderResult = nullptr;
+    hr = dxcCompiler->Compile(
+        &shaderSourceBuffer, // 読み込んだファイル
+        arguments, // コンパイルオプション
+        _countof(arguments), // コンパイルオプションの数
+        includeHandler.Get(), // includeが含まれた諸々
+        IID_PPV_ARGS(&shaderResult) // コンパイル結果
+    );
+    //コンパイルエラーではなくdxcが起動できないなど致命的な状況
+    assert(SUCCEEDED(hr));
+
+    /// 3. 警告・エラーが出ていないか確認する
+
+    //警告・エラーが出ていたらログに出して止める
+    IDxcBlobUtf8* shaderError = nullptr;
+    shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
+    if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
+        Log::OutPutLog(os, shaderError->GetStringPointer());
+        //警告・エラーダメゼッタイ
+        assert(false);
+    }
+
+    /// 4. Compile結果を受け取って返す
+
+    //コンパイル結果から実行用のバイナリ部分を取得
+    IDxcBlob* shaderBlob = nullptr;
+    hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
+    assert(SUCCEEDED(hr));
+    //成功したらログを出す
+    Log::OutPutLog(os, ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath, profile)));
+    //もう使わないリソースを解散
+    shaderSource->Release();
+    shaderResult->Release();
+    //実行用のバイナリを返却
+    return shaderBlob;
+
+}
+
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureResource(const Microsoft::WRL::ComPtr<ID3D12Device>& device, int32_t width, int32_t height) {
+
+    ///Resource/Heapの設定を行う
+
+    //生成するResourceの設定
+    D3D12_RESOURCE_DESC resourceDesc{};
+    resourceDesc.Width = width; //Textureの幅
+    resourceDesc.Height = height; //Textureの高さ
+    resourceDesc.MipLevels = 1; //mipmapの数
+    resourceDesc.DepthOrArraySize = 1; //奥行き or 配列Textureの配列数
+    resourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; //DepthStencilとして利用可能なフォーマット
+    resourceDesc.SampleDesc.Count = 1; //サンプリングカウント。1固定
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; //2次元
+    resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL; // DepthStencilとして使う通知
+
+    //利用するHeapの設定
+    D3D12_HEAP_PROPERTIES heapProperties{};
+    heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT; //VRAM上に作る
+
+    ///深度地のクリア最適化設定
+
+    //深度地のクリア設定
+    D3D12_CLEAR_VALUE depthClearValue{};
+    depthClearValue.DepthStencil.Depth = 1.0f; // 1.0f(最大値)でクリア
+    depthClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; //フォーマット。Resourceと合わせる。
+
+    ///Resourceの生成
+
+    //Resourceの生成
+    Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
+    HRESULT hr = device->CreateCommittedResource(
+        &heapProperties, //Heapの設定
+        D3D12_HEAP_FLAG_NONE, //Heapの特殊な設定。特になし。
+        &resourceDesc, //Resourceの設定
+        D3D12_RESOURCE_STATE_DEPTH_WRITE, //深度値を書き込む状態にしておく
+        &depthClearValue, //Clear最適値
+        IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
+    );
+    assert(SUCCEEDED(hr));
+
+    return resource;
+}
+
+UINT DirectXCommon::GetBackBufferIndex(const Microsoft::WRL::ComPtr<IDXGISwapChain4>& swapChain) {
+    assert(swapChain != nullptr);
+    return swapChain->GetCurrentBackBufferIndex();
+}
+
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(const Microsoft::WRL::ComPtr<ID3D12Device>& device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible) {
+
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap = nullptr;
+    D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+    descriptorHeapDesc.Type = heapType;
+    descriptorHeapDesc.NumDescriptors = numDescriptors;
+    descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(descriptorHeap.GetAddressOf()));
+    assert(SUCCEEDED(hr));
+    return descriptorHeap;
 
 }

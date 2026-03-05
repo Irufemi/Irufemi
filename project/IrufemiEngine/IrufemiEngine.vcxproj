@@ -177,7 +177,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="3D\effect\EffectSystem.cpp" />
     <ClCompile Include="engine\directX\DescriptorAllocator.cpp" />
     <ClCompile Include="engine\directX\DescriptorPool.cpp" />
-    <ClCompile Include="function\ExportDump.cpp" />
     <ClCompile Include="3D\particle\IParticleBehavior.cpp" />
     <ClCompile Include="3D\LineClass.cpp" />
     <ClCompile Include="manager\PrimitiveManager.cpp" />
@@ -199,12 +198,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="engine\IrufemiEngine.cpp" />
     <ClCompile Include="engine\Log.cpp" />
     <ClCompile Include="engine\WinApp\WinApp.cpp" />
-    <ClCompile Include="function\CompileShader.cpp" />
-    <ClCompile Include="function\CreateDepthStencilTextureResource.cpp" />
-    <ClCompile Include="function\CreateDescriptorHeap.cpp" />
-    <ClCompile Include="function\CreateTextureResurce.cpp" />
     <ClCompile Include="function\Ease.cpp" />
-    <ClCompile Include="function\GetBackBufferIndex.cpp" />
     <ClCompile Include="function\Math.cpp" />
     <ClCompile Include="engine\Input\GamePad.cpp" />
     <ClCompile Include="engine\Input\Keyboard.cpp" />
@@ -253,8 +247,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="engine\Log.h" />
     <ClInclude Include="engine\WinApp\WinApp.h" />
     <ClInclude Include="function\Ease.h" />
-    <ClInclude Include="function\Function.h" />
-    <ClInclude Include="function\GetBackBufferIndex.h" />
     <ClInclude Include="function\Math.h" />
     <ClInclude Include="engine\Input\GamePad.h" />
     <ClInclude Include="engine\Input\Keyboard.h" />
