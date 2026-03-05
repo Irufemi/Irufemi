@@ -560,12 +560,6 @@
     <ClInclude Include="source\Object3DResource.h">
       <Filter>Renderer\Object3D\Data</Filter>
     </ClInclude>
-    <ClInclude Include="3D\CubeClass.h">
-      <Filter>Renderer\Object3D</Filter>
-    </ClInclude>
-    <ClInclude Include="3D\LineClass.h">
-      <Filter>Renderer\LineInstanced</Filter>
-    </ClInclude>
     <ClInclude Include="function\Collision.h">
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClInclude>
@@ -606,6 +600,12 @@
     </ClInclude>
     <ClInclude Include="math\MaterialData.h">
       <Filter>Resource\Model\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\LineClass.h">
+      <Filter>Renderer\LineInstanced</Filter>
+    </ClInclude>
+    <ClInclude Include="3D\CubeClass.h">
+      <Filter>Renderer\Object3D</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
