@@ -152,9 +152,6 @@
     <ClInclude Include="actors\player\Player.h">
       <Filter>actors\player</Filter>
     </ClInclude>
-    <ClInclude Include="contents\field\Field.h">
-      <Filter>contents\field</Filter>
-    </ClInclude>
     <ClInclude Include="contents\effect\Effect.h">
       <Filter>contents\Effect</Filter>
     </ClInclude>
@@ -172,6 +169,9 @@
     </ClInclude>
     <ClInclude Include="actors\enemy\Head\Right\HeadRight.h">
       <Filter>actors\enemy\head\right</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\field\Field.h">
+      <Filter>contents\field</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

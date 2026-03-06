@@ -49,6 +49,8 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
 }
 
 void Player::Update() {
+    // ImGui
+    obj_->Debug();
     // 死亡している場合は操作や更新を停止する
     if (isDead_) {
         return;
