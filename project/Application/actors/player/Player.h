@@ -3,7 +3,7 @@
 #include "math/Vector3.h"
 #include "math/Matrix4x4.h"
 #include "3D/ObjClass.h"
-#include "2D/Sprite.h" 
+#include "2D/Sprite.h" // マスク画像描画用のヘッダーを追加
 #include <memory>
 #include <vector>
 
@@ -12,7 +12,7 @@ class Camera;
 class InputManager;
 class IrufemiEngine;
 class Sprite;
-class Mouse;
+class Mouse; // マウス用の前方宣言を追加
 
 /**
  * @struct AttackCollision
@@ -178,7 +178,7 @@ private:
     std::unique_ptr<ObjClass> machineGunObjRight_ = nullptr;
 
     static const int kMaxBullets = 100;
-    std::unique_ptr<ObjClass> bulletObjs_[kMaxBullets]; // ★修正：弾1つ1つに個別のモデルを用意する
+    std::unique_ptr<ObjClass> bulletObjs_[kMaxBullets]; // 個別の弾モデルを用意する
     MachineGunBullet bullets_[kMaxBullets];
 
     int machineGunActiveTimer_ = 0;
@@ -186,11 +186,11 @@ private:
     Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
 
     // --- 誘導ミサイル用 ---
-    static const int kMaxMissiles = 4;
+    static const int kMaxMissiles = 4; // ミサイルの数（4発）
     std::unique_ptr<ObjClass> missileObjs_[kMaxMissiles];
-    MissileData missiles_[kMaxMissiles];
-    int missileCooldown_ = 0;
-    const float kMissileSpeed = 0.8f;
+    MissileData missiles_[kMaxMissiles];   // ミサイルの物理データ
+    int missileCooldown_ = 0;              // 発射のクールダウン
+    const float kMissileSpeed = 0.8f;      // ミサイルの最高速度
 
     // トランスフォーム
     Vector3 scale_ = { 0.3f, 0.3f, 0.3f };
@@ -204,13 +204,13 @@ private:
 
     // --- 近接攻撃判定用 ---
     AttackCollision attackCollision_ = { {0.0f, 0.0f, 0.0f}, 2.0f, false };
-    int attackActiveTimer_ = 0;
+    int attackActiveTimer_ = 0; // 判定の持続時間管理
 
     // --- ステータス・やられ判定用 ---
-    int hp_ = 100;
-    bool isDead_ = false;
-    int invincibleTimer_ = 0;
-    const float kColliderRadius = 1.0f;
+    int hp_ = 100;                    // プレイヤーの体力
+    bool isDead_ = false;             // 死亡フラグ
+    int invincibleTimer_ = 0;         // ダメージ後の無敵時間タイマー
+    const float kColliderRadius = 1.0f; // やられ判定の大きさ
 
     // パラメータ
     const float kMoveSpeed = 0.2f;
