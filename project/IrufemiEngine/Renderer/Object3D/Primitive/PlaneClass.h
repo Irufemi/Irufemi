@@ -69,6 +69,9 @@ public: //メンバ関数
     void SetRotate(const Vector3& rotate) { resource_->transform_.rotate = rotate; }
     Vector3 GetRotate()const { return resource_->transform_.rotate; }
 
+    void SetColor(const Vector4& color) { resource_->materialData_->color = color; }
+    Vector4 GetColor()const { return resource_->materialData_->color; }
+
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
