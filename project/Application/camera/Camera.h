@@ -222,6 +222,18 @@ public: // メンバ関数
     void UpdateViewportMatrix();
 
     /**
+     * @brief カメラを揺らします
+     * @param intensity 揺れの強さ
+     * @param durationFrames 揺らすフレーム数
+     */
+    void Shake(float intensity, int durationFrames);
+
+private:
+    float shakeIntensity_ = 0.0f;
+    int shakeFrames_ = 0;
+
+public:
+    /**
      * @brief すべての行列を更新します
      */
     void UpdateMatrix();

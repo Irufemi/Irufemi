@@ -2,12 +2,16 @@
 #include "camera/Camera.h"
 #include "function/Math.h"
 #include "EnemyParameters.h"
-#include "DebugUI.h"
+#include <debugUI.h>
+#include <cmath>
+#include <algorithm>
 
 Enemy::~Enemy() {}
 
 void Enemy::Initialize(Camera *camera) {
   
+  camera_ = camera;
+
   // JSONからのパラメータ読み込み
   EnemyParameters::GetInstance()->Load("resources/Json/enemy/parameters.json");
 
@@ -57,10 +61,22 @@ void Enemy::Update() {
 
   // --- だるま落としの高さ計算と落下アニメーション ---
   float targetY = 0.0f;
+  bool triggeredShakeThisFrame = false;
+
   for (int i = 0; i < 3; ++i) {
     if (bodies_[i]) {
-      // 現在の目標Y座標に向けて滑らかに移動させる (毎フレーム20%近づく)
-      bodyLocalTransforms_[i].translate.y += (targetY - bodyLocalTransforms_[i].translate.y) * 0.2f;
+      float diff = targetY - bodyLocalTransforms_[i].translate.y;
+      
+      // 現在の目標Y座標に向けて滑らかに移動させる
+      bodyLocalTransforms_[i].translate.y += diff * fallSpeed_;
+
+      // ターゲットYに十分近づいたら着地とみなす (0.01だと遅れを感じるので0.1fにする)
+      bool currentlyFalling = std::abs(diff) > 0.1f;
+      if (isFalling_[i] && !currentlyFalling && !triggeredShakeThisFrame) {
+        if (camera_) camera_->Shake(shakeIntensity_, 15);
+        triggeredShakeThisFrame = true;
+      }
+      isFalling_[i] = currentlyFalling;
 
       // この部位が破壊されていなければ上に高さを積む
       if (bodies_[i]->GetHP() > 0) {
@@ -70,9 +86,31 @@ void Enemy::Update() {
   }
 
   // 頭の高さはボディの積算高さを目標にする
-  if (headLeft_) headLeftLocalTransform_.translate.y += (targetY - headLeftLocalTransform_.translate.y) * 0.2f;
-  if (headMid_) headMidLocalTransform_.translate.y += (targetY - headMidLocalTransform_.translate.y) * 0.2f;
-  if (headRight_) headRightLocalTransform_.translate.y += (targetY - headRightLocalTransform_.translate.y) * 0.2f;
+  float headDiffLeft = 0.0f, headDiffMid = 0.0f, headDiffRight = 0.0f;
+  if (headLeft_) {
+    headDiffLeft = targetY - headLeftLocalTransform_.translate.y;
+    headLeftLocalTransform_.translate.y += headDiffLeft * fallSpeed_;
+  }
+  if (headMid_) {
+    headDiffMid = targetY - headMidLocalTransform_.translate.y;
+    headMidLocalTransform_.translate.y += headDiffMid * fallSpeed_;
+  }
+  if (headRight_) {
+    headDiffRight = targetY - headRightLocalTransform_.translate.y;
+    headRightLocalTransform_.translate.y += headDiffRight * fallSpeed_;
+  }
+
+  // いずれかの頭が落下を終えたら検知
+  float maxHeadDiff = std::abs(headDiffLeft);
+  if (std::abs(headDiffMid) > maxHeadDiff) maxHeadDiff = std::abs(headDiffMid);
+  if (std::abs(headDiffRight) > maxHeadDiff) maxHeadDiff = std::abs(headDiffRight);
+  
+  bool headCurrentlyFalling = maxHeadDiff > 0.5f;
+  if (isFalling_[3] && !headCurrentlyFalling && !triggeredShakeThisFrame) {
+    if (camera_) camera_->Shake(shakeIntensity_, 15);
+    triggeredShakeThisFrame = true;
+  }
+  isFalling_[3] = headCurrentlyFalling;
   // -----------------------------------------------------
 
   // グローバル変換行列の生成（平行移動・回転・拡縮）
@@ -123,6 +161,13 @@ void Enemy::Update() {
 
 #ifdef USE_IMGUI
   ImGui::Begin("Enemy HP Status");
+  
+  ImGui::Separator();
+  ImGui::Text("Animation Settings");
+  ImGui::SliderFloat("Fall Speed", &fallSpeed_, 0.01f, 1.0f);
+  ImGui::SliderFloat("Shake Intensity", &shakeIntensity_, 0.0f, 10.0f);
+  ImGui::Separator();
+
   for (int i = 0; i < 3; ++i) {
     if (bodies_[i]) {
       int hp = bodies_[i]->GetHP();

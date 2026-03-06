@@ -8,6 +8,8 @@
 
 #include <cmath>
 #include <string>
+#include <cstdlib>
+#include <algorithm>
 
 #include "function/Math.h"
 
@@ -64,9 +66,24 @@ void Camera::MakeWorldMatrix() {
 
 //ビュー行列の作成
 void Camera::MakeViewMatrix() {
+    Vector3 shakeOffset = {0.0f, 0.0f, 0.0f};
+    if (shakeFrames_ > 0) {
+        shakeFrames_--;
+        float rx = ((float)std::rand() / RAND_MAX) * 2.0f - 1.0f;
+        float ry = ((float)std::rand() / RAND_MAX) * 2.0f - 1.0f;
+        float rz = ((float)std::rand() / RAND_MAX) * 2.0f - 1.0f;
+        shakeOffset = {rx * shakeIntensity_, ry * shakeIntensity_, rz * shakeIntensity_};
+    }
 
-    viewMatrix_ =Math::Inverse(worldMatrix_);
+    Vector3 t = {translate_.x + shakeOffset.x, translate_.y + shakeOffset.y, translate_.z + shakeOffset.z};
+    Matrix4x4 tempWorldForView = Math::MakeAffineMatrix(scale_, rotate_, t);
 
+    viewMatrix_ = Math::Inverse(tempWorldForView);
+}
+
+void Camera::Shake(float intensity, int durationFrames) {
+    shakeIntensity_ = intensity;
+    shakeFrames_ = shakeFrames_ > durationFrames ? shakeFrames_ : durationFrames;
 }
 
 //透視投影行列の更新
