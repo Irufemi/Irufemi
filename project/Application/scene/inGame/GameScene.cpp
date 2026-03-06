@@ -13,6 +13,7 @@
 #include "math/DirectionalLight.h"
 #include "math/AreaLight.h"
 #include "2D/Sprite.h"
+#include "contents/field/Field.h"
 
 GameScene::GameScene() {}
 
@@ -37,6 +38,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     boss_ = std::make_unique<Enemy>();
     boss_->Initialize(camera_.get());
+
+    field_ = std::make_unique<Field>(camera_.get(), engine_);
+    field_->Initialize();
 
     directionalLight_ = std::make_unique<DirectionalLight>();
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -78,6 +82,10 @@ void GameScene::Update() {
         boss_->Update();
     }
 
+    if (field_) {
+        field_->Update();
+    }
+
     // =====
     // ↑ゲームの更新
     // =====
@@ -102,6 +110,10 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
     engine_->ApplyPSO();
+
+    if (field_) {
+        field_->Draw();
+    }
 
     if (player_) {
         player_->Draw();

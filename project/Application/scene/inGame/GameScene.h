@@ -3,7 +3,6 @@
 #include "scene/IScene.h"
 #include <memory>
 #include <vector>
-#include "actors/enemy/Enemy.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -11,6 +10,8 @@ class InputManager;
 class Camera;
 class DebugCamera;
 class Player;
+class Enemy;
+class Field;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
@@ -37,6 +38,7 @@ private:
     // ゲームオブジェクト
     std::unique_ptr<Player> player_ = nullptr;
     std::unique_ptr<Enemy> boss_ = nullptr;
+    std::unique_ptr<Field> field_ = nullptr;
 
     // ライト
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;

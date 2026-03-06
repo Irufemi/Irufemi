@@ -8,7 +8,7 @@ class IrufemiEngine;
 
 class Field{
 public:
-	Field(InputManager* input, Camera* camera, IrufemiEngine* engine);
+	Field(Camera* camera, IrufemiEngine* engine);
 	~Field();
 	void Initialize();
 	void Update();
