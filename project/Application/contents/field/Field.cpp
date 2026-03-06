@@ -1,9 +1,6 @@
 #include "Field.h"
 
-#include "engine/Input/InputManager.h"
-#include "engine/IrufemiEngine.h"
 #include "camera/Camera.h"
-#include "debugUI.h"
 
 Field::Field(Camera* camera, IrufemiEngine* engine) {
 	camera_ = camera;

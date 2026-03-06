@@ -1,7 +1,6 @@
 #pragma once
 
-#include "3D/ObjClass.h"
-#include "math/Transform.h"
+#include "Irufemi.h"
 #include <memory>
 
 class Camera;

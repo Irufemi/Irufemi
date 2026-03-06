@@ -1,8 +1,7 @@
 #include "Enemy.h"
+#include "Irufemi.h"
 #include "camera/Camera.h"
-#include "function/Math.h"
 #include "EnemyParameters.h"
-#include <debugUI.h>
 #include <cmath>
 #include <algorithm>
 

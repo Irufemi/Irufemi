@@ -1,17 +1,13 @@
 #include "Camera.h"
 
-/*開発のUIを出そう*/
-
-
-
-#include "manager/DebugUI.h"
+#include "Engine/Manager/DebugUI.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 
 #include <cmath>
 #include <string>
 #include <cstdlib>
 #include <algorithm>
 
-#include "function/Math.h"
 
 //コンストラクタ
 Camera::Camera() {}

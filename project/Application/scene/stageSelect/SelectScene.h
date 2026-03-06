@@ -1,11 +1,10 @@
 #pragma once
 
-#include "scene/IScene.h"
+#include "Framework/IScene.h"
+#include "Irufemi.h"
 
 #include <memory>
 #include <vector>
-
-class IrufemiEngine;
 
 class Camera;
 class DebugCamera;

@@ -1,20 +1,20 @@
 #include "GameScene.h"
 
-#include "actors/player/Player.h" 
-#include "scene/SceneManager.h"
-#include "engine/IrufemiEngine.h"
-#include "manager/DebugUI.h"
+#include "Framework/SceneManager.h"
+#include "Irufemi.h"
+
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
-#include "math/CameraForGPU.h"
+#include "Graphics/Data/CameraForGPU.h"
+#include "Graphics/Data/PointLight.h"
+#include "Graphics/Data/SpotLight.h"
+#include "Graphics/Data/DirectionalLight.h"
+#include "Graphics/Data/AreaLight.h"
+
+#include "actors/player/Player.h" 
 #include "actors/enemy/Enemy.h"
-#include "math/PointLight.h"
-#include "math/SpotLight.h"
-#include "math/DirectionalLight.h"
-#include "math/AreaLight.h"
-#include "2D/Sprite.h"
 #include "contents/field/Field.h"
-#include "engine/Input/Mouse.h"
+
 #include <Windows.h>
 
 GameScene::GameScene() {}

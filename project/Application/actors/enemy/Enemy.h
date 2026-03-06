@@ -6,7 +6,6 @@
 #include "actors/enemy/Head/Mid/HeadMid.h"
 #include "actors/enemy/Head/Right/HeadRight.h"
 #include "EnemyAI.h"
-#include "math/Transform.h"
 
 class Camera;
 

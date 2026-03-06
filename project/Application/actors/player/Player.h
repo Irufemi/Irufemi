@@ -1,18 +1,11 @@
 #pragma once
 
-#include "math/Vector3.h"
-#include "math/Matrix4x4.h"
-#include "3D/ObjClass.h"
-#include "2D/Sprite.h" // マスク画像描画用のヘッダーを追加
+#include "Irufemi.h"
 #include <memory>
 #include <vector>
 
 // 前方宣言
 class Camera;
-class InputManager;
-class IrufemiEngine;
-class Sprite;
-class Mouse; // マウス用の前方宣言を追加
 
 /**
  * @struct AttackCollision
