@@ -1,8 +1,7 @@
 #include "PlayerState.h"
 #include "Player.h"
 #include "PlayerPhysics.h" // 追加
-#include "function/Ease.h"
-#include "function/Math.h"
+#include "Irufemi.h"
 #include <numbers>
 
 /// <summary>

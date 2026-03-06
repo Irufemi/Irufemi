@@ -1,9 +1,6 @@
 #define NOMINMAX
 #include "Fade.h"
-#include "2D/Sprite.h"
 #include "camera/Camera.h"
-#include "engine/IrufemiEngine.h"
-#include "function/Ease.h"
 
 Fade::Fade() = default;
 Fade::~Fade() = default;

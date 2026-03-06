@@ -217,6 +217,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Region\Primitive\TetraRegion.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Irufemi.h" />
     <ClInclude Include="Renderer\Object2D\Sprite\Sprite.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\CubeClass.h" />
     <ClInclude Include="Renderer\System\EffectSystem.h" />

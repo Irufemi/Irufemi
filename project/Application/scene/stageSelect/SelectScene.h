@@ -1,6 +1,8 @@
 #pragma once
 
-#include "scene/IScene.h"
+#include "Framework/IScene.h"
+
+#include "Irufemi.h"
 
 #include <memory>
 #include <vector>
@@ -13,10 +15,6 @@ struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
 struct AreaLight;
-
-#include "2D/Sprite.h"
-#include "audio/Se.h"
-#include "audio/Bgm.h"
 
 #include "contents/Effect/Fade.h" 
 

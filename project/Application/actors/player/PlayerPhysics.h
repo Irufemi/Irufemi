@@ -1,8 +1,6 @@
 #pragma once
 
-#include "math/Vector3.h"
-#include "math/Transform.h"
-#include "math/LRDirection.h"
+#include "Irufemi.h"
 #include "contents/mapChipField/MapChipField.h"
 
 class Player;

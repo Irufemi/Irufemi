@@ -1,8 +1,8 @@
 #define NOMINMAX
 #include "DebugCamera.h"
-#include "engine/Input/Mouse.h"
-#include "engine/Input/Keyboard.h"
-#include "function/Math.h"
+#include "Engine/Platform/Input/Mouse.h"
+#include "Engine/Platform/Input/Keyboard.h"
+#include "Core/Math/Geometry/Math.h"
 #include <algorithm>
 #include <string>
 

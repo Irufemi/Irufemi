@@ -1,9 +1,9 @@
 #pragma once
 
-#include "math/Vector3.h"
-#include "math/Matrix4x4.h"
-#include "function/Math.h"
-#include "engine/Input/InputManager.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Geometry/Math.h"
+#include "Engine/Platform/Input/InputManager.h"
 #include "camera/Camera.h"
 
 /**

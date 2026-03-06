@@ -1,20 +1,15 @@
 #pragma once
 
-#include "scene/IScene.h"
+#include "Framework/IScene.h"
 #include <memory>
 #include <vector>
 
-class IrufemiEngine;
 class DebugCamera;
 class Camera;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
 struct AreaLight;
-
-#include "audio/Se.h"
-#include "audio/Bgm.h"
-#include "2D/Sprite.h"
 
 #include "contents/Effect/Fade.h"
 

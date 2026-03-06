@@ -589,6 +589,9 @@
     <ClInclude Include="Resource\Model\Data\MaterialData.h">
       <Filter>Resource\Model\Data</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Irufemi.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Object2D.hlsli">

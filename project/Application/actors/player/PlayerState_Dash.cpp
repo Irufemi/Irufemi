@@ -1,9 +1,7 @@
 #include "PlayerState.h"
 #include "Player.h"
 #include "PlayerPhysics.h" // 追加
-#include "function/Ease.h"
-#include "function/Math.h"
-#include "3D/ObjClass.h"
+#include "Irufemi.h"
 
 struct PlayerStateDash final : IPlayerState {
 	enum class Phase { Charge, Dash, Aftereffect };
