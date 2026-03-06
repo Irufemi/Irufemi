@@ -1,5 +1,6 @@
 #include "Mouse.h"
 #include <algorithm>
+#include <string>
 
 void Mouse::Initialize(HWND hwnd) {
     hwnd_ = hwnd;
@@ -27,6 +28,13 @@ void Mouse::Update() {
     ScreenToClient(hwnd_, &p);
     position_ = { static_cast<float>(p.x), static_cast<float>(p.y) };
     delta_ = { position_.x - prevPosition_.x, position_.y - prevPosition_.y };
+
+    // --- デバッグコード追加 ---
+    if (wheelDelta_ != 0.0f) {
+        std::string dbgMsg = "[Mouse::Update] wheelDelta_ before reset: " + std::to_string(wheelDelta_) + "\n";
+        OutputDebugStringA(dbgMsg.c_str());
+    }
+    // -------------------------
 
     // ホイールの差分をリセット
     wheelDelta_ = 0.0f;

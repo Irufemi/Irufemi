@@ -202,6 +202,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     animationManager_->Initialize(dxCommon_.get());
 
     AnimationModel::SetIrufemiEngine(this);
+    winApp_->SetInputManager(inputManager_.get());
 
     Skybox::SetEngine(this);
     GPUParticleSystem::SetDXCommon(dxCommon_.get());
@@ -278,8 +279,6 @@ void IrufemiEngine::Execute() {
     }
 
     while (winApp_->ProcessMessages()) {
-        // 入力
-        inputManager_->Update();
         // ImGui
         ui->FrameStart();
 
@@ -290,6 +289,9 @@ void IrufemiEngine::Execute() {
 
         // 更新
         sceneManager_->Update();
+
+        // 入力
+        inputManager_->Update();
 
         // フレーム途中処理
         ProcessFrame();
