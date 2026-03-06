@@ -71,6 +71,10 @@ void GameScene::Update() {
         boss_->Update();
     }
 
+    if (field_) {
+        field_->Update();
+    }
+
     // =====
     // ↑ゲームの更新
     // =====

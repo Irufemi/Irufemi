@@ -146,7 +146,7 @@ PlayerCollider Player::GetCollider() const {
 }
 
 void Player::ApplyDamage(int damage) {
-    // 既に死亡している、または無敵時間中ならダメージを受けない
+    // お前はもう死んでいる、または無敵時間中ならダメージを受けない
     if (isDead_ || invincibleTimer_ > 0) {
         return;
     }
@@ -341,8 +341,6 @@ void Player::UpdateCamera() {
 
     Vector3 cameraPos;
 
-    // ジャンプ時のカメラの揺れ具合（1.0で完全追従、0.0で固定）
-    // 0.2〜0.3くらいにすると「少しだけ動く」自然な表現になります。
     const float kCameraJumpFollowRatio = 0.8f;
 
     if (viewMode_ == ViewMode::kThirdPerson) {
