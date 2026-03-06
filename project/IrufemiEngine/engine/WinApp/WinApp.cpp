@@ -4,6 +4,7 @@
 #include "manager/DebugUI.h"
 #include <DbgHelp.h>
 #include <strsafe.h>
+#include <string>
 
 #pragma comment(lib,"winmm.lib")
 
@@ -198,6 +199,12 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (inputManager_) {
             if (auto* mouse = inputManager_->GetMouse()) {
                 float wheelDelta = static_cast<float>(GET_WHEEL_DELTA_WPARAM(wParam)) / WHEEL_DELTA;
+                
+                // --- デバッグコード追加 ---
+                std::string dbgMsg = "[WinApp] WM_MOUSEWHEEL received. Delta: " + std::to_string(wheelDelta) + "\n";
+                OutputDebugStringA(dbgMsg.c_str());
+                // -------------------------
+
                 mouse->SetWheelDelta(wheelDelta);
             }
         }

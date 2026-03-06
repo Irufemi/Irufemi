@@ -4,6 +4,7 @@
 #include "engine/Input/Keyboard.h"
 #include "function/Math.h"
 #include <algorithm>
+#include <string>
 
 void DebugCamera::Initialize(InputManager* input, int windowWidth, int windowHeight) {
     input_ = input;
@@ -18,6 +19,9 @@ void DebugCamera::Initialize(InputManager* input, int windowWidth, int windowHei
 }
 
 void DebugCamera::Update() {
+    // ImGuiでの操作を先に反映させる
+    camera_.Update("DebugCamera");
+
     Mouse* mouse = input_->GetMouse();
     Keyboard* keyboard = input_->GetKeyboard();
 
@@ -51,9 +55,19 @@ void DebugCamera::Update() {
     // ズーム操作 (マウスホイール)
     float wheelDelta = mouse->GetWheelDelta();
     if (wheelDelta != 0.0f) {
+        // --- デバッグコード追加 ---
+        std::string dbgMsg = "[DebugCamera] GetWheelDelta: " + std::to_string(wheelDelta) + ", old distance: " + std::to_string(distance_) + "\n";
+        OutputDebugStringA(dbgMsg.c_str());
+        // -------------------------
+
         const float zoomSpeed = 2.0f;
         distance_ -= wheelDelta * zoomSpeed;
         distance_ = std::max(distance_, 1.0f); // 最小距離制限
+
+        // --- デバッグコード追加 ---
+        dbgMsg = "[DebugCamera] new distance: " + std::to_string(distance_) + "\n";
+        OutputDebugStringA(dbgMsg.c_str());
+        // -------------------------
     }
 
     // カメラの位置を更新
@@ -63,6 +77,6 @@ void DebugCamera::Update() {
     offset = Math::TransformNormal(offset, rotMat);
     camera_.SetTranslate(Math::Add(target_, offset));
 
-    //ImGuiでいじったり値が変更された部分
-    camera_.Update("DebugCamera");
+    // マウス操作後の最終的な行列を更新
+    camera_.UpdateMatrix();
 }
