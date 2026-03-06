@@ -1,15 +1,10 @@
 #pragma once
 
-#include "math/shape/AABB.h"
-#include "contents/mapChipField/MapChipField.h"
+#include "Irufemi.h"
 #include "PlayerState.h"
-#include "math/Vector3.h"
-#include "math/Transform.h"
-#include "math/Matrix4x4.h"
-#include "3D/ObjClass.h"
-#include "math/LRDirection.h"
-#include "audio/Se.h"
 #include "PlayerPhysics.h" // 追加
+#include "Core/Type/LRDirection.h"
+#include "contents/mapChipField/MapChipField.h"
 #include <cstdint>
 #include <memory>
 

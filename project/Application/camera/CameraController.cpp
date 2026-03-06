@@ -2,10 +2,7 @@
 
 #include "CameraController.h"
 
-#include "function/Math.h"
-#include "function/Ease.h"
 #include "actors/player/Player.h"
-#include "function/Random.h"
 
 #include <algorithm>
 

@@ -1,9 +1,7 @@
 #define NOMINMAX
 #include "PlayerPhysics.h"
 #include "Player.h"
-#include "engine/Input/InputManager.h"
-#include "function/Math.h"
-#include "function/Ease.h"
+#include "Irufemi.h"
 #include <algorithm>
 #include <numbers>
 #include <cmath>

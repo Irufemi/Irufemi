@@ -1,21 +1,14 @@
 #include "GameScene.h"
 
-#include "scene/SceneManager.h"
-#include "engine/IrufemiEngine.h"
-#include "manager/DebugUI.h"
+#include "Framework/SceneManager.h"
 
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
-#include "math/CameraForGPU.h"
-#include "math/PointLight.h"
-#include "math/SpotLight.h"
-#include "math/DirectionalLight.h"
-#include "math/AreaLight.h"
-#include "2D/Sprite.h"
-
-#include "function/Collision.h"
-#include "function/Math.h"
-#include "function/Ease.h"
+#include "Graphics/Data/CameraForGPU.h"
+#include "Graphics/Data/PointLight.h"
+#include "Graphics/Data/SpotLight.h"
+#include "Graphics/Data/DirectionalLight.h"
+#include "Graphics/Data/AreaLight.h"
 
 #include "Application/scene/stageSelect/StageDataManager.h"
 #include "Application/scene/result/GameResultManager.h"

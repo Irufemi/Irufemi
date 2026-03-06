@@ -2,8 +2,7 @@
 
 #include <memory>
 
-#include "math/Transform.h"
-#include "3D/ObjClass.h"
+#include "Irufemi.h"
 
 // 前方宣言
 class Camera;

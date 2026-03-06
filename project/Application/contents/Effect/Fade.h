@@ -1,8 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "math/Vector4.h"
-#include "function/Ease.h"
+#include "Irufemi.h"
 
 // 前方宣言
 class Sprite;

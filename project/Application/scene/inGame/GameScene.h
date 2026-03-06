@@ -1,25 +1,19 @@
 #pragma once
 
-#include "scene/IScene.h"
+#include "Framework/IScene.h"
+
+#include "Irufemi.h"
 
 #include <memory>
 #include <vector>
 
 // 前方宣言
-class IrufemiEngine;
-class InputManager;
 class Camera;
 class DebugCamera;
-class Sprite;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
 struct AreaLight;
-
-#include "audio/Bgm.h"
-#include "audio/Se.h"
-#include "3D/ObjClass.h"
-#include "3D/Region.h"
 
 #include "contents/effect/Fade.h"
 #include "actors/player/Player.h"
@@ -27,7 +21,6 @@ struct AreaLight;
 #include "actors/enemy/shieldEnemy/ShieldEnemy.h"
 #include "contents/skydome/Skydome.h"
 #include "camera/CameraController.h"
-
 
 /**
  * @class GameScene

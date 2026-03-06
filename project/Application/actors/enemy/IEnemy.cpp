@@ -2,7 +2,7 @@
 #include "IEnemy.h"
 #include "actors/player/Player.h"
 #include "contents/mapChipField/MapChipField.h"
-#include "function/Math.h"
+#include "Irufemi.h"
 #include <algorithm>
 #include <numbers>
 

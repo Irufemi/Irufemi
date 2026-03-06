@@ -1,6 +1,6 @@
 #pragma once
 
-#include "math/Vector3.h"
+#include "Irufemi.h"
 #include "camera/Camera.h"
 
 // 前方宣言

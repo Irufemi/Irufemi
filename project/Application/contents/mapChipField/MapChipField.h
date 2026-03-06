@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "math/Vector3.h"
+#include "Irufemi.h"
 
 // マップチップの種類
 enum MapChipType { kBlank, kBlock };

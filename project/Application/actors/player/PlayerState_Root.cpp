@@ -1,9 +1,8 @@
-#include "Math.h"  // Add などのユーティリティ
 #include "Player.h"
 #include "PlayerState.h"
 #include "PlayerPhysics.h" // 追加
 
-#include "engine/Input/InputManager.h"
+#include "Irufemi.h"
 
 
 // 注意: Player から friend 許可を受けるため、無名名前空間ではなくグローバル定義でも可。
