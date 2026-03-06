@@ -62,7 +62,7 @@ void GameScene::Update() {
     // =====
 
 
-    // プレイヤーの更新（今と同じく、デバッグカメラ中はプレイヤーの動きを止める）
+    // プレイヤーの更新
     if (player_ && !debugMode_) {
         player_->Update();
     }
