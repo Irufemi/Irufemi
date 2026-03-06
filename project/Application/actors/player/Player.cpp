@@ -341,7 +341,7 @@ void Player::UpdateCamera() {
 
     // ジャンプ時のカメラの揺れ具合（1.0で完全追従、0.0で固定）
     // 0.2〜0.3くらいにすると「少しだけ動く」自然な表現になります。
-    const float kCameraJumpFollowRatio = 0.5f;
+    const float kCameraJumpFollowRatio = 0.8f;
 
     if (viewMode_ == ViewMode::kThirdPerson) {
         // 三人称：後ろから見下ろす

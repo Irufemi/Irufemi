@@ -53,6 +53,25 @@ void GameScene::Update() {
     ImGui::End();
 #endif
 
+    // =====
+    // ↓ゲームの更新
+    // =====
+
+
+    // プレイヤーの更新（今と同じく、デバッグカメラ中はプレイヤーの動きを止める）
+    if (player_ && !debugMode_) {
+        player_->Update();
+    }
+
+    if (boss_) {
+        boss_->Update();
+    }
+
+    // =====
+    // ↑ゲームの更新
+    // =====
+
+
     // --- カメラの更新 ---
     if (debugMode_) {
         // デバッグカメラを更新
@@ -63,24 +82,10 @@ void GameScene::Update() {
         camera_->SetTranslate(dbgCam.GetTranslate());
         camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
     } else {
-        if (player_) {
-            player_->Update();
-        }
-        // 通常カメラの更新
+        // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
         camera_->Update("Main Camera");
     }
 
-    // =====
-    // ↓ゲームの更新
-    // =====
-
-    if (boss_) {
-        boss_->Update();
-    }
-
-    // =====
-    // ↑ゲームの更新
-    // =====
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;
