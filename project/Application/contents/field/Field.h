@@ -20,7 +20,11 @@ private:
 	IrufemiEngine* engine_ = nullptr;
 
 	// マップのモデル
-	std::unique_ptr<PlaneClass> plane_ = nullptr;
-	std::unique_ptr<ObjClass> map_ = nullptr;
+	std::unique_ptr<PlaneClass> pFloor_ = nullptr;
+	std::unique_ptr<PlaneClass> pPZWall_ = nullptr;
+	std::unique_ptr<PlaneClass> pMZWall_ = nullptr;
+	std::unique_ptr<PlaneClass> pPXWall_ = nullptr;
+	std::unique_ptr<PlaneClass> pMXWall_ = nullptr;
+	std::unique_ptr<ObjClass> floor_ = nullptr;
 };
 

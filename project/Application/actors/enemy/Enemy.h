@@ -47,5 +47,11 @@ private:
 
   std::unique_ptr<EnemyAI> ai_ = nullptr;
 
+  Camera* camera_ = nullptr;
+
+  float fallSpeed_ = 0.05f;
+  float shakeIntensity_ = 1.0f;
+  bool isFalling_[4] = {false, false, false, false}; // 0-2: bodies, 3: head
+
   bool isActive_ = false;
 };
