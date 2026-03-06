@@ -1,6 +1,6 @@
 #include "EffectSystem.h"
-#include "function/Math.h"
-#include "manager/DebugUI.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Manager/DebugUI.h"
 
 // --- AuraEffect ---
 void AuraEffect::Initialize(Camera* camera) {

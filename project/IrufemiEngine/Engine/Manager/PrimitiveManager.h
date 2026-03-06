@@ -1,7 +1,7 @@
 #pragma once
 
-#include "math/VertexData.h"
-#include "math/PrimitiveType.h"
+#include "Renderer/VertexData.h"
+#include "Engine/Core/Type/PrimitiveType.h"
 #include <cstdint>
 #include <vector>
 

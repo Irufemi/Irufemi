@@ -506,7 +506,7 @@
     <ClInclude Include="Engine\Core\Shape\Sphere.h">
       <Filter>Engine\Core\Shape</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\LineInstanced\Data\LinePrimitive.h">
+    <ClInclude Include="Engine\Core\Shape\LinePrimitive.h">
       <Filter>Engine\Core\Shape</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Type\LRDirection.h">

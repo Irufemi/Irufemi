@@ -1,11 +1,11 @@
 #define NOMINMAX
 #include "Sprite.h"
 
-#include "manager/DebugUI.h"
-#include "manager/TextureManager.h"
-#include "manager/DrawManager.h"
+#include "Engine/Manager/DebugUI.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Engine/Manager/DrawManager.h"
 #include "Application/camera/Camera.h"
-#include "function/Math.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 
 #include <algorithm>
 

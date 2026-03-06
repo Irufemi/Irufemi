@@ -8,14 +8,14 @@
 #include <cstdint>
 #include <cassert>
 
-#include "math/VertexData.h"
-#include "function/Math.h"
-#include "math/Transform.h"
-#include "math/Material.h"
-#include "math/Matrix4x4.h"
-#include "math/Vector4.h"
-#include "math/DirectionalLight.h"
-#include "math/CameraForGPU.h"
+#include "Renderer/VertexData.h"
+#include "Renderer/Material.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Transform.h"
+#include "Engine/Core/Math/Matrix4x4.h"
+#include "Engine/Core/Math/Vector4.h"
+#include "Engine/Graphics/Data/DirectionalLight.h"
+#include "Engine/Graphics/Data/CameraForGPU.h"
 
 class DirectXCommon;
 class Camera;                       

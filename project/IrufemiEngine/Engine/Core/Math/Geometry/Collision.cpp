@@ -1,12 +1,12 @@
 #include "Collision.h"
 
 #include "Math.h"
-#include "math/shape/AABB.h"
-#include "math/shape/LinePrimitive.h"
-#include "math/shape/Plane.h"
-#include "math/shape/Sphere.h"
-#include "math/shape/Triangle.h"
-#include "math/shape/OBB.h"
+#include "Engine/Core/Math/Geometry/AABB.h"
+#include "Engine/Core/Shape/LinePrimitive.h"
+#include "Engine/Core/Shape/Plane.h"
+#include "Engine/Core/Shape/Sphere.h"
+#include "Engine/Core/Shape/Triangle.h"
+#include "Engine/Core/Math/Geometry/OBB.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>

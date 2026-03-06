@@ -109,7 +109,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)externals;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals\curl\include;$(SolutionDir)externals\nlohmann\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)externals;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals\curl\include;$(SolutionDir)externals\imgui;$(SolutionDir)externals\nlohmann\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -284,7 +284,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Audio\Data\RiffHeader.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\AABB.h" />
     <ClInclude Include="Engine\Core\Shape\Ball.h" />
-    <ClInclude Include="Renderer\LineInstanced\Data\LinePrimitive.h" />
+    <ClInclude Include="Engine\Core\Shape\LinePrimitive.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\OBB.h" />
     <ClInclude Include="Renderer\Particle\Data\Particle.h" />
     <ClInclude Include="Engine\Core\Shape\Plane.h" />

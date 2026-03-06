@@ -6,8 +6,8 @@
 #include <cstddef>        
 #include <memory>
 #include <vector>
-#include "math/BlendMode.h"
-#include "engine/directX/PSOManager.h"
+#include "Engine/Core/Type/BlendMode.h"
+#include "Engine/Graphics/Pipeline/PSOManager.h"
 
 
 // 前方宣言

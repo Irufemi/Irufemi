@@ -7,8 +7,8 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <memory>
-#include "source/D3D12ResourceUtil.h"
-#include "math/shape/Sphere.h"
+#include "Renderer/D3D12ResourceUtil.h"
+#include "Engine/Core/Shape/Sphere.h"
 
 // 前方宣言
 class TextureManager;

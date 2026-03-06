@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include <vector>
-#include "math/BlendMode.h"
+#include "Engine/Core/Type/BlendMode.h"
 
 /// <summary>
 /// PSO をブレンド種別と深度書き込みの有無でキャッシュして返すマネージャ

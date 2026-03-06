@@ -8,12 +8,12 @@
 #include <cstdint>
 #include <cassert>
 
-#include "math/VertexData.h"            // VertexData
-#include "function/Math.h"              // MakeAffineMatrix など
-#include "math/Transform.h"             // Transform
-#include "math/Material.h"              // Material
-#include "math/DirectionalLight.h"      // DirectionalLight
-#include "math/CameraForGPU.h"          // CameraForGPU
+#include "Renderer/VertexData.h"            // VertexData
+#include "Renderer/Material.h"              // Material
+#include "Engine/Core/Math/Geometry/Math.h"              // MakeAffineMatrix など
+#include "Engine/Core/Math/Transform.h"             // Transform
+#include "Engine/Graphics/Data/DirectionalLight.h"      // DirectionalLight
+#include "Engine/Graphics/Data/CameraForGPU.h"          // CameraForGPU
 
 class DirectXCommon;
 class Camera;

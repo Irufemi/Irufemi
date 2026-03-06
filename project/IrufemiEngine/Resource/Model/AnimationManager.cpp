@@ -1,13 +1,13 @@
 #include "AnimationManager.h"
 
-#include "math/Animation.h"
-#include "function/Ease.h"
-#include "function/Math.h"
-#include "math/ModelData.h"
-#include "math/ObjModel.h"
-#include "engine/directX/DirectXCommon.h"
-#include "engine/directX/DescriptorPool.h"
-#include "math/VertexData.h"
+#include "Data/Animation.h"
+#include "Engine/Core/Utility/Ease.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Data/ModelData.h"
+#include "Data/ObjModel.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Renderer/VertexData.h"
 
 #include <cassert>
 #include <filesystem>

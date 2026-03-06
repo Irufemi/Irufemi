@@ -1,7 +1,7 @@
 #pragma once
 
-#include "math/shape/Particle.h"
-#include "math/Emitter.h"
+#include "Renderer/Particle/Data/Particle.h"
+#include "Renderer/Particle/Data/Emitter.h"
 #include <random>
 #include <memory>
 

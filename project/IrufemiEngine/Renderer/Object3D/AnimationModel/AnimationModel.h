@@ -1,22 +1,22 @@
 #pragma once
 
-#include "math/Matrix4x4.h"
-#include "math/AnimationTransform.h"
-#include "math/TransformationMatrix.h"
-#include "math/Animation.h"
-#include "math/NodeAnimation.h"
-#include "math/ModelData.h"
-#include "math/Transform.h"
-#include "math/ObjModel.h"
-#include "math/Skeleton.h"
-#include "math/SkinCluster.h"
+#include "Engine/Core/Math/Matrix4x4.h"
+#include "Engine/Core/Math/Transform.h"
+#include "Resource/Model/Data/AnimationTransform.h"
+#include "Renderer/TransformationMatrix.h"
+#include "Resource/Model/Data/Animation.h"
+#include "Resource/Model/Data/NodeAnimation.h"
+#include "Resource/Model/Data/ModelData.h"
+#include "Resource/Model/Data/ObjModel.h"
+#include "Resource/Model/Data/Skeleton.h"
+#include "Resource/Model/Data/SkinCluster.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>
 #include <memory>
 #include <vector>
 #include <map>
-#include "wrl.h"
+#include <wrl.h>
 
 // 前方宣言
 class Camera;

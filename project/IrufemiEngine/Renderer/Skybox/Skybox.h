@@ -5,10 +5,10 @@
 #include <wrl.h>
 #include <cstdint>
 #include <string>
-#include "math/VertexData.h"
-#include "math/Transform.h"
-#include "math/Matrix4x4.h"
-#include "math/Vector4.h"
+#include "Renderer/VertexData.h"
+#include "Engine/Core/Math/Transform.h"
+#include "Engine/Core/Math/Matrix4x4.h"
+#include "Engine/Core/Math/Vector4.h"
 #include <vector>
 
 // 前方宣言

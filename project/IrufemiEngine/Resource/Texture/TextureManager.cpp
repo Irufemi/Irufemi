@@ -7,8 +7,8 @@
 #include <format>
 #include <cstdint>
 
-#include "engine/directX/DescriptorPool.h"
-#include "engine/directX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "DirectXTex/DirectXTex.h"
 #include "DirectXTex/d3dx12.h"
 

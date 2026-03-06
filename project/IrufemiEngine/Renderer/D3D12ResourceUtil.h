@@ -7,17 +7,17 @@
 #include <cstdint>
 #include <wrl.h>
 
-#include "math/Matrix4x4.h"
-#include "math/Transform.h"
-#include "math/VertexData.h"
-#include "math/Material.h"
-#include "math/ParticleMaterial.h"
-#include "math/TransformationMatrix.h"
-#include "math/DirectionalLight.h"
-#include "math/CameraForGPU.h"
-#include "math/LineVertexData.h"
-#include "math/LineMaterial.h"
-#include "manager/TextureManager.h"
+#include "Engine/Core/Math/Matrix4x4.h"
+#include "Engine/Core/Math/Transform.h"
+#include "VertexData.h"
+#include "Material.h"
+#include "TransformationMatrix.h"
+#include "Particle/Data/ParticleMaterial.h"
+#include "Engine/Graphics/Data/DirectionalLight.h"
+#include "Engine/Graphics/Data/CameraForGPU.h"
+#include "LineInstanced/Data/LineVertexData.h"
+#include "LineInstanced/Data/LineMaterial.h"
+#include "Resource/Texture/TextureManager.h"
 
 // 前方宣言
 class DirectXCommon;

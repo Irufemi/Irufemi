@@ -4,28 +4,27 @@
 #include <cassert>
 
 #include <dxgidebug.h>
-#include "3D/SphereClass.h"
-#include "2D/Sprite.h"
-#include "2D/SpriteRegion.h"
-#include "3D/ObjClass.h"
-#include "3D/TriangleClass.h"
-#include "3D/particle/ParticleSystem.h"
-#include "3D/CylinderClass.h"
-#include "3D/Region.h"
-#include "3D/SphereRegion.h"
-#include "3D/TetraRegion.h"
-#include "3D/LineClass.h"
-#include "3D/CubeClass.h"
-#include "3D/Skybox.h"
+#include "Renderer/Object2D/Sprite/Sprite.h"
+#include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include "Renderer/Object3D/Primitive/SphereClass.h"
+#include "Renderer/Object3D/Primitive/TriangleClass.h"
+#include "Renderer/Object3D/Primitive/CylinderClass.h"
+#include "Renderer/Object3D/Primitive/CubeClass.h"
+#include "Renderer/Region/Region.h"
+#include "Renderer/Region/Primitive/SphereRegion.h"
+#include "Renderer/Region/Primitive/TetraRegion.h"
+#include "Renderer/Particle/ParticleSystem.h"
+#include "Renderer/LineInstanced/LineClass.h"
+#include "Renderer/Skybox//Skybox.h"
 
-#include "source/D3D12ResourceUtil.h"
-#include "engine/directX/DirectXCommon.h"
-#include "manager/ModelManager.h" // GpuMeshのため
-#include "math/CameraForGPU.h"
-#include "math/DirectionalLight.h"
-#include "math/AreaLight.h"
-#include "function/Math.h"
-#include "math/SkinCluster.h"
+#include "Renderer/D3D12ResourceUtil.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Resource/Model/ModelManager.h"
+#include "Engine/Graphics/Data/CameraForGPU.h"
+#include "Engine/Graphics/Data/DirectionalLight.h"
+#include "Engine/Graphics/Data/AreaLight.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Resource/Model/Data/SkinCluster.h"
 
 
 namespace {
@@ -452,30 +451,6 @@ void DrawManager::DrawLineInstanced(const D3D12_VERTEX_BUFFER_VIEW& vertexBuffer
 
     // Draw
     commandList_->DrawIndexedInstanced(2, instanceCount, 0, 0, 0);
-}
-
-void DrawManager::DrawSpriteRegion(SpriteRegion* region) {
-    if (!region) return;
-    auto* res = region->GetSpriteResource();
-    if (!res) return;
-    const UINT idxCount = region->GetIndexCount();
-    const UINT instCount = region->GetInstanceCountU32();
-    if (idxCount == 0 || instCount == 0) return;
-
-    // IA
-    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    commandList_->IASetVertexBuffers(0, 1, &res->vertexBufferView_);
-    commandList_->IASetIndexBuffer(&res->indexBufferView_);
-
-    // CBV (PS)
-    commandList_->SetGraphicsRootConstantBufferView(0, res->materialResource_->GetGPUVirtualAddress());          // PS b0
-
-    // SRV (PS t0 / VS t0)
-    commandList_->SetGraphicsRootDescriptorTable(2, res->textureHandle_);              // PS t0 (テクスチャ)
-    commandList_->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU()); // VS t0 (インスタンス)
-
-    // Draw
-    commandList_->DrawIndexedInstanced(idxCount, instCount, 0, 0, 0);
 }
 
 void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA) {

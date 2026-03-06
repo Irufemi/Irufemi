@@ -1,7 +1,7 @@
 #pragma once
 
-#include "math/Matrix4x4.h"
-#include "math/Vector3.h"
+#include "Engine/Core/Math/Matrix4x4.h"
+#include "Engine/Core/Math/Vector3.h"
 
 struct CameraForGPU {
     Matrix4x4 view;

@@ -8,7 +8,7 @@
 #include <string>
 
 #include "Application/camera/Camera.h"
-#include "source/D3D12ResourceUtil.h"
+#include "Renderer/D3D12ResourceUtil.h"
 
 // 前方宣言
 class TextureManager;

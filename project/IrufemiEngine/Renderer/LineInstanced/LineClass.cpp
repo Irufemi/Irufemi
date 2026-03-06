@@ -1,10 +1,10 @@
 #include "LineClass.h"
 
 #include "Application/camera/Camera.h"
-#include "manager/DrawManager.h"
-#include "engine/directX/DirectXCommon.h"
-#include "function/Math.h"
-#include "engine/directX/DescriptorPool.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 
 DirectXCommon* Line3DRegion::dx_ = nullptr;
 DrawManager* Line3DRegion::drawManager_ = nullptr;

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <memory>
-#include "math/Vector4.h"
-#include "function/Ease.h"
+#include "Engine/Core/Math/Vector4.h"
+#include "Engine/Core/Utility/Ease.h"
 
 // 前方宣言
 class Sprite;

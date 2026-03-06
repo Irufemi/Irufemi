@@ -1,10 +1,10 @@
 #define NOMINMAX
 #include "Circle2D.h"
 
-#include "manager/TextureManager.h"
-#include "manager/DrawManager.h"
-#include "manager/DebugUI.h"
-#include "function/Math.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Manager/DebugUI.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 #include <algorithm>
 #include <vector>
 

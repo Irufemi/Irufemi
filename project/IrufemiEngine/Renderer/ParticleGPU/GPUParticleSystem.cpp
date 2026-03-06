@@ -1,12 +1,12 @@
 #include "GPUParticleSystem.h"
-#include "engine/directX/DirectXCommon.h"
-#include "engine/directX/DescriptorPool.h"
-#include "manager/DrawManager.h"
-#include "manager/TextureManager.h"
+#include "Engine/IrufemiEngine.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Renderer/VertexData.h"
 #include "Application/camera/Camera.h"
-#include "math/VertexData.h"
-#include "function/Math.h"
-#include "engine/IrufemiEngine.h"
 #include <cassert>
 
 // 静的メンバ変数の実体定義

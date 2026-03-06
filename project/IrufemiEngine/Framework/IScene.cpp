@@ -1,6 +1,6 @@
 #include "IScene.h"
-#include "../engine/IrufemiEngine.h"
-#include "../engine/Input/InputManager.h"
+#include "Engine/IrufemiEngine.h"
+#include "Engine/Platform/Input/InputManager.h"
 #include <cstring>
 
 unsigned char IScene::keys_[256]{};

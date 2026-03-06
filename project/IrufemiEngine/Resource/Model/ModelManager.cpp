@@ -5,13 +5,13 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
-#include "engine/directX/DirectXCommon.h"
-#include "engine/directX/DescriptorPool.h"
-#include "manager/TextureManager.h"
-#include "math/Material.h"
-#include "math/Node.h"
-#include "math/Skeleton.h"
-#include "math/SkinCluster.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Renderer/Material.h"
+#include "Resource/Model/Data/Node.h"
+#include "Resource/Model/Data/Skeleton.h"
+#include "Resource/Model/Data/SkinCluster.h"
 
 //======================
 // キャッシュ系(インスタンス)

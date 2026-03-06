@@ -2,12 +2,12 @@
 #include <filesystem>
 #include <algorithm>
 #include <Windows.h>
-#include "function/Math.h"
-#include "manager/TextureManager.h"
-#include "manager/DrawManager.h"
-#include "manager/DebugUI.h"
-#include "manager/ModelManager.h"
-#include "engine/directX/DirectXCommon.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Manager/DebugUI.h"
+#include "Resource/Model/ModelManager.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
 
 // 静的メンバ定義
 TextureManager* ObjClass::textureManager_ = nullptr;

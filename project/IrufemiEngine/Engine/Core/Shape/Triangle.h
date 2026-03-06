@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Vector3.h"
+#include "Engine/Core/Math/Vector3.h"
 
 struct Triangle {
 

@@ -4,8 +4,8 @@
 #include <array>
 #include <d3d12.h>
 
-#include "math/shape/Triangle.h"
-#include "source/D3D12ResourceUtil.h"
+#include "Engine/Core/Shape/Triangle.h"
+#include "Renderer/D3D12ResourceUtil.h"
 #include "Application/camera/Camera.h"
 #include <wrl.h>
 #include <memory>

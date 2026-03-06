@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "DirectXTex/DirectXTex.h"
-#include "PSOManager.h"
-#include "DescriptorPool.h"
+#include "Engine/Graphics/Pipeline/PSOManager.h"
+#include "Engine/Graphics/DirectX/DescriptorPool.h"
 
 class Log;
 

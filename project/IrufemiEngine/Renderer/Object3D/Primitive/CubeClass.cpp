@@ -6,10 +6,10 @@
 #include <cstdio>
 #include <Windows.h>
 
-#include "manager/TextureManager.h"
-#include "manager/DrawManager.h"
-#include "manager/DebugUI.h"
-#include "function/Math.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Manager/DebugUI.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 
 TextureManager* CubeClass::textureManager_ = nullptr;
 DrawManager* CubeClass::drawManager_ = nullptr;

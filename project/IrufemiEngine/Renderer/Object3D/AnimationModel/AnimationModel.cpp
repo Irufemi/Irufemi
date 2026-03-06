@@ -1,17 +1,17 @@
 #include "AnimationModel.h"
 
+#include "Engine/IrufemiEngine.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Manager/DebugUI.h"
+#include "Resource/Model/ModelManager.h"
+#include "Resource/Model/AnimationManager.h"
+#include "Renderer/Material.h"
+#include "Resource/Model/Data/ObjModel.h"
+#include "Renderer/Region/Primitive/SphereRegion.h"
+#include "Renderer/LineInstanced/LineClass.h"
 #include "Application/camera/Camera.h"
-#include "manager/ModelManager.h"
-#include "manager/AnimationManager.h"
-#include "engine/directX/DirectXCommon.h"
-#include "manager/DrawManager.h"
-#include "manager/DebugUI.h"
-#include "engine/IrufemiEngine.h"
-#include "function/Math.h"
-#include "math/Material.h"
-#include "math/ObjModel.h"
-#include "3D/SphereRegion.h"
-#include "3D/LineClass.h"
 #include <cmath>
 
 // 静的メンバ定義

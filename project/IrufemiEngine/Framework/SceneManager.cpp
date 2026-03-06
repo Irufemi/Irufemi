@@ -1,8 +1,8 @@
 #include "SceneManager.h"
 #include "IScene.h"
-#include "engine/IrufemiEngine.h"
+#include "Engine/IrufemiEngine.h"
 #include <Windows.h> // VK_ESCAPE のためにインクルード
-#include "engine/Input/InputManager.h" // InputManager をインクルード
+#include "Engine/Platform/Input/InputManager.h" // InputManager をインクルード
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {}
 

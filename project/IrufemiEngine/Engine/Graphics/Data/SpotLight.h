@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Vector3.h"
-#include "Vector4.h"
+#include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Vector4.h"
 #include <cstdint>
 
 struct SpotLight{

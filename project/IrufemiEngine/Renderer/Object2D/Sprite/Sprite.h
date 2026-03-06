@@ -3,8 +3,8 @@
 #include <d3d12.h>
 #include <vector>
 #include <cstdint>
-#include "source/D3D12ResourceUtil.h"
-#include "math/Vector2.h" 
+#include "Renderer/D3D12ResourceUtil.h"
+#include "Engine/Core/Math/Vector2.h" 
 #include <wrl.h>
 #include <memory>
 

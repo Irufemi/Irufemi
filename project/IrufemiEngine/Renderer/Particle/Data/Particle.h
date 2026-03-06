@@ -1,10 +1,10 @@
 #pragma once
-#include "math/Transform.h"
-#include "math/Vector3.h"
-#include "math/Vector4.h"
-#include "math/Matrix4x4.h"
-#include "math/shape/AABB.h"
-#include "math/shape/Particle.h"
+#include "Engine/Core/Math/Transform.h"
+#include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Vector4.h"
+#include "Engine/Core/Math/Matrix4x4.h"
+#include "Engine/Core/Math/Geometry/AABB.h"
+#include "Renderer/Particle/Data/Particle.h"
 
 struct Particle {
 	Transform transform;

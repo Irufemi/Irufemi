@@ -1,6 +1,6 @@
 #include "Ease.h"
 
-#include "Math.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 #include <algorithm>
 #include <cmath>
 #include <numbers>

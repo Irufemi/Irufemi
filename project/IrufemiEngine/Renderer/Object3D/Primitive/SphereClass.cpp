@@ -1,11 +1,11 @@
 #include "SphereClass.h"
 
 #include <cmath>
-#include "manager/TextureManager.h"
-#include "manager/DrawManager.h"
-#include "manager/DebugUI.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Manager/DebugUI.h"
 
-#include "function/Math.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 #include <string>
 #include <algorithm>
 #include <cstdio>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Transform.h"
-#include "Vector3.h"
+#include "Engine/Core/Math/Transform.h"
+#include "Engine/Core/Math/Vector3.h"
 #include <cstdint>
 
 enum class ParticleColorMode {

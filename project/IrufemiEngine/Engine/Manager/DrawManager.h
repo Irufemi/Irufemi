@@ -5,10 +5,10 @@
 #include <cstdint>
 #include <array>
 #include <wrl.h>
-#include "math/TransformationMatrix.h"
-#include "math/PointLight.h"
-#include "math/SpotLight.h"
-#include "math/AreaLight.h"
+#include "Renderer/TransformationMatrix.h"
+#include "Engine/Graphics/Data/PointLight.h"
+#include "Engine/Graphics/Data/SpotLight.h"
+#include "Engine/Graphics/Data/AreaLight.h"
 #include <vector>
 
 // 前方宣言

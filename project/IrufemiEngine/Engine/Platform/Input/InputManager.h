@@ -1,9 +1,9 @@
 #pragma once
 #include <memory>
-#include "engine/Input/Keyboard.h"
-#include "engine/Input/GamePad.h"
-#include "engine/Input/Mouse.h"
-#include "math/Vector2.h"
+#include "Engine/Platform/Input/Keyboard.h"
+#include "Engine/Platform/Input/GamePad.h"
+#include "Engine/Platform/Input/Mouse.h"
+#include "Engine/Core/Math/Vector2.h"
 
 // 役割：具体実装(Keyboard/GamePad/Mouse)を保持し、旧APIをフォワードして互換を維持するファサード
 class InputManager {

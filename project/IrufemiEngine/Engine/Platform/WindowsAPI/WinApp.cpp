@@ -1,7 +1,7 @@
 #include "WinApp.h"
-#include "engine/Input/InputManager.h"
-#include "engine/Input/Mouse.h"
-#include "manager/DebugUI.h"
+#include "Engine/Platform/Input/InputManager.h"
+#include "Engine/Platform/Input/Mouse.h"
+#include "Engine/Manager/DebugUI.h"
 #include <DbgHelp.h>
 #include <strsafe.h>
 #include <string>

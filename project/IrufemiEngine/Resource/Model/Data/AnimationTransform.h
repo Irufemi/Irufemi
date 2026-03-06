@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Vector3.h"
-#include "Quaternion.h"
+#include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Quaternion.h"
 
 struct AnimationTrasform {
     Vector3 scale;

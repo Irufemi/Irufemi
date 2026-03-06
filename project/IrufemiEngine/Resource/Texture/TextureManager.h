@@ -7,7 +7,7 @@
 #include <mutex>  
 #include <d3d12.h>
 #include <wrl.h>
-#include "source/Texture.h" 
+#include "Resource/Texture/Texture.h" 
 
 class DirectXCommon;
 

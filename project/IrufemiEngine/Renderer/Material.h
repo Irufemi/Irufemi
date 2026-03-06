@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Vector4.h"
-#include "Matrix4x4.h"
+#include "Engine/Core/Math/Vector4.h"
+#include "Engine/Core/Math/Matrix4x4.h"
 #include <cstdint>
 
 /*LambertianReflectance*/

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "math/QuaternionTransform.h"
-#include "math/Matrix4x4.h"
+#include "Engine/Core/Math/QuaternionTransform.h"
+#include "Engine/Core/Math/Matrix4x4.h"
 #include <string>
 #include <cstdint>
 #include <vector>

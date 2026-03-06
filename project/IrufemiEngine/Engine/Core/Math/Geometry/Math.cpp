@@ -7,12 +7,12 @@
 #include <algorithm> 
 #include <limits> 
 
-#include "Ease.h"
-#include "math/shape/AABB.h"
-#include "math/shape/LinePrimitive.h"
-#include "math/shape/Plane.h"
-#include "math/shape/Sphere.h"
-#include "math/shape/Triangle.h"
+#include "Engine/Core/Utility/Ease.h"
+#include "Engine/Core/Math/Geometry/AABB.h"
+#include "Engine/Core/Shape/LinePrimitive.h"
+#include "Engine/Core/Shape/Plane.h"
+#include "Engine/Core/Shape/Sphere.h"
+#include "Engine/Core/Shape/Triangle.h"
 
 namespace Math {
 

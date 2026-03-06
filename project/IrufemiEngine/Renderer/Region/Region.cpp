@@ -2,17 +2,17 @@
 
 #include <cassert>
 #include <cstring>
-#include "engine/directX/DirectXCommon.h"
-#include "engine/directX/DescriptorPool.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Application/camera/Camera.h"
-#include "manager/TextureManager.h"
-#include "manager/DrawManager.h"
-#include "manager/ModelManager.h"
-#include "function/Math.h"
-#include "math/Transform.h"
-#include "math/Material.h"
-#include "math/DirectionalLight.h"
-#include "math/CameraForGPU.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Resource/Model/ModelManager.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Transform.h"
+#include "Renderer/Material.h"
+#include "Engine/Graphics/Data/DirectionalLight.h"
+#include "Engine/Graphics/Data/CameraForGPU.h"
 
 DirectXCommon* ModelRegion::dx_ = nullptr;
 TextureManager* ModelRegion::textureManager_ = nullptr;

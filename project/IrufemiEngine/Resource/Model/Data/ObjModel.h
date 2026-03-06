@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Vector2.h"
-#include "Vector3.h"
-#include "Vector4.h"
-#include "Matrix4x4.h"
-#include "VertexData.h"
+#include "Engine/Core/Math/Vector2.h"
+#include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Vector4.h"
+#include "Engine/Core/Math/Matrix4x4.h"
+#include "Renderer/VertexData.h"
 #include "ModelData.h"
 #include "Node.h"              // 追加: 階層構造を扱うため
-#include "function/Math.h"
-#include "JointWeightData.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Resource/Model/Data/JointWeightData.h"
 #include <string>
 #include <vector>
 #include <map>

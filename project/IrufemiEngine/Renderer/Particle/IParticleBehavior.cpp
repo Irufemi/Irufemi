@@ -1,6 +1,6 @@
 #include "IParticleBehavior.h"
-#include "manager/DebugUI.h"
-#include "3D/particle/ParticleSystem.h"
+#include "Engine/Manager/DebugUI.h"
+#include "Renderer/Particle/ParticleSystem.h"
 #include <numbers>
 
 // NormalBehavior

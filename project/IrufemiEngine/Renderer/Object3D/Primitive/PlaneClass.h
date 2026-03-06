@@ -6,8 +6,8 @@
 #include <string>
 #include <memory>
 
-#include "math/shape/Plane.h"
-#include "source/D3D12ResourceUtil.h"
+#include "Engine/Core/shape/Plane.h"
+#include "Renderer/D3D12ResourceUtil.h"
 #include "Application/camera/Camera.h"
 #include <wrl.h>
 

@@ -1,12 +1,12 @@
 #pragma once
 
 #include <string>
-#include "math/Animation.h"
-#include "math/NodeAnimation.h"
-#include "math/Joint.h"
-#include "math/Node.h"
-#include "math/Skeleton.h"
-#include "math/SkinCluster.h"
+#include "Data/Animation.h"
+#include "Data/NodeAnimation.h"
+#include "Data/Joint.h"
+#include "Data/Node.h"
+#include "Data/Skeleton.h"
+#include "Data/SkinCluster.h"
 #include <optional>
 #include <unordered_map>
 #include <memory>

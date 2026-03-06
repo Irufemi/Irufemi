@@ -1,8 +1,8 @@
 #include "Texture.h"
-#include "externals/DirectXTex/DirectXTex.h"
-#include "externals/DirectXTex/d3dx12.h"
-#include "engine/directX/DirectXCommon.h"
-#include "engine/directX/DescriptorPool.h"
+#include "DirectXTex/DirectXTex.h"
+#include "DirectXTex/d3dx12.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DescriptorPool.h"
 
 DirectXCommon* Texture::dxCommon_ = nullptr;
 uint32_t Texture::index_ = 0;

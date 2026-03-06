@@ -1,6 +1,6 @@
 #include "Particle.h"
-#include "function/Ease.h"
-#include "function/Collision.h"
+#include "Engine/Core/Utility/Ease.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
 
 void Particle::Update(float deltaTime) {
 	currentTime += deltaTime;

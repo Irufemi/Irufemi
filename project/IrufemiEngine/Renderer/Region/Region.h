@@ -6,10 +6,10 @@
 #include <wrl.h>
 #include <d3d12.h>
 
-#include "function/Math.h"
-#include "math/Transform.h"
-#include "math/VertexData.h"
-#include "math/ObjModel.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Transform.h"
+#include "Renderer/VertexData.h"
+#include "Resource/Model/Data/ObjModel.h"
 
 // 前方宣言
 class Camera;

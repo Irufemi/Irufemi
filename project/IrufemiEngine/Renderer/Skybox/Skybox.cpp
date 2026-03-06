@@ -1,11 +1,11 @@
 #include "Skybox.h"
 
+#include "Engine/IrufemiEngine.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Resource/Texture/TextureManager.h"
 #include "Application/camera/Camera.h"
-#include "engine/IrufemiEngine.h"
-#include "engine/directX/DirectXCommon.h"
-#include "manager/TextureManager.h"
-#include "manager/DrawManager.h"
-#include "function/Math.h"
 
 IrufemiEngine* Skybox::engine_ = nullptr;
 

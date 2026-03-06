@@ -7,9 +7,9 @@
 #include <filesystem>
 #include <comdef.h>
 
-#include "../Log.h"
-#include "function/StringUtility.h"
-#include "math/VertexData.h"
+#include "Engine/Core/Utility/Log.h"
+#include "Engine/Core/Utility/StringUtility.h"
+#include "Renderer/VertexData.h"
 #include "DirectXTex/d3dx12.h"
 #include <thread>
 

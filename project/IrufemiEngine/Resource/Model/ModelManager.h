@@ -11,10 +11,10 @@
 #include <cassert>
 #include <wrl.h>
 #include <d3d12.h>
-#include "math/ObjModel.h"
-#include "math/ModelData.h"
-#include "math/MaterialData.h"
-#include "function/Math.h"
+#include "Resource/Model/Data/ObjModel.h"
+#include "Resource/Model/Data/ModelData.h"
+#include "Resource/Model/Data/MaterialData.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 
 // 前方宣言
 struct aiNode;

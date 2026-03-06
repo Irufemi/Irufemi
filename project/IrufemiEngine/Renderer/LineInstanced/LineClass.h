@@ -5,12 +5,12 @@
 #include <cstdint>
 #include <vector>
 #include <random>
-#include "math/Vector2.h"
-#include "math/Vector3.h"
-#include "math/Vector4.h"
-#include "math/Transform.h"
-#include "math/TransformationMatrix.h"
-#include "source/D3D12ResourceUtil.h"
+#include "Engine/Core/Math/Vector2.h"
+#include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Vector4.h"
+#include "Engine/Core/Math/Transform.h"
+#include "Renderer/TransformationMatrix.h"
+#include "Renderer/D3D12ResourceUtil.h"
 
 // 前方宣言
 class Camera;

@@ -7,9 +7,8 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <memory>
-#include "source/D3D12ResourceUtil.h"
-// Vector3 等の型を取り込むために既存の shape を経由
-#include "math/shape/Sphere.h"
+#include "Renderer/D3D12ResourceUtil.h"
+#include "Engine/Core/Math/Vector3.h"
 
 // 前方宣言
 class TextureManager;

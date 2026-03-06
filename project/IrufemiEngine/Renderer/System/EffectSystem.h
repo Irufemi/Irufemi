@@ -1,7 +1,7 @@
 #pragma once
 
-#include "3D/particle/ParticleSystem.h"
-#include "math/Transform.h"
+#include "Renderer/Particle/ParticleSystem.h"
+#include "Engine/Core/Math/Transform.h"
 #include <memory>
 #include <string>
 #include <vector>

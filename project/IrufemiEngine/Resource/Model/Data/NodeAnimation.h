@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vector>
-#include "Vector3.h"
+#include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Quaternion.h"
 #include "Keyframe.h"
-#include "Quaternion.h"
 
 template<typename tValue>
 struct AnimationCurve {

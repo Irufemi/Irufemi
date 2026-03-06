@@ -2,13 +2,13 @@
 #include <d3d12.h>
 #include <string>
 #include "Application/camera/Camera.h"
-#include "source/D3D12ResourceUtil.h"
+#include "Renderer/D3D12ResourceUtil.h"
 #include <wrl.h>
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include "math/Transform.h"
-#include "math/ObjModel.h" // ObjMaterial と ObjModel を使うためにインクルード
+#include "Engine/Core/Math/Transform.h"
+#include "Resource/Model/Data/ObjModel.h"
 
 // 前方宣言
 class TextureManager;

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Vector2.h"
-#include "Vector3.h"
-#include "Vector4.h"
+#include "Engine/Core/Math/Vector2.h"
+#include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Vector4.h"
 
 struct VertexData {
     Vector4 position;

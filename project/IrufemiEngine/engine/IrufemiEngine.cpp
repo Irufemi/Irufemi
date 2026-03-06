@@ -1,38 +1,37 @@
 #include "IrufemiEngine.h"
 
-#include "function/Random.h"
+#include "Engine/Core/Math/Random/Random.h"
 
 #include <cassert>
 #include <DbgHelp.h>
 #include <cstdint>
 #include <format>
 
-#include "math/VertexData.h"
-#include "source/D3D12ResourceUtil.h"
-#include "2D/Sprite.h"
-#include "2D/Circle2D.h"
-#include "2D/SpriteRegion.h"
-#include "3D/ObjClass.h"
-#include "3D/AnimationModel.h"
-#include "3D/SphereClass.h"
-#include "3D/TriangleClass.h"
-#include "3D/CubeClass.h"
-#include "3D/PlaneClass.h"
-#include "3D/CylinderClass.h"
-#include "3D/particle/ParticleSystem.h"
-#include "3D/particle/GPUParticleSystem.h"
-#include "3D/Region.h"
-#include "3D/SphereRegion.h"
-#include "3D/TetraRegion.h"
-#include "3D/LineClass.h"
-#include "3D/Skybox.h"
-#include "audio/Bgm.h"
-#include "audio/Se.h"
-#include "source/Texture.h"
+#include "Renderer/VertexData.h"
+#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/Object2D/Sprite/Sprite.h"
+#include "Renderer/Object2D/Primitive/Circle2D.h"
+#include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include "Renderer/Object3D/AnimationModel/AnimationModel.h"
+#include "Renderer/Object3D/Primitive/SphereClass.h"
+#include "Renderer/Object3D/Primitive/TriangleClass.h"
+#include "Renderer/Object3D/Primitive/CubeClass.h"
+#include "Renderer/Object3D/Primitive/PlaneClass.h"
+#include "Renderer/Object3D/Primitive/CylinderClass.h"
+#include "Renderer/Particle/ParticleSystem.h"
+#include "Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "Renderer/Region/Region.h"
+#include "Renderer/Region/Primitive/SphereRegion.h"
+#include "Renderer/Region/Primitive/TetraRegion.h"
+#include "Renderer/LineInstanced/LineClass.h"
+#include "Renderer/Skybox/Skybox.h"
+#include "Resource/Audio/Bgm.h"
+#include "Resource/Audio/Se.h"
+#include "Resource/Texture/Texture.h"
+#include "Engine/Manager/DebugUI.h"
 #include "Application/contents/Effect/Fade.h"
-#include "manager/DebugUI.h"
 
-#include "scene/IScene.h"
+#include "Framework/IScene.h"
 
 #pragma comment(lib,"Dbghelp.lib")
 #pragma comment(lib,"d3d12.lib")
@@ -95,7 +94,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         ModelRegion::SetSrvAllocator(srvPool);
         TetraRegion::SetSrvAllocator(srvPool);
         ParticleSystem::SetSrvPool(srvPool);
-        SpriteRegion::SetSrvAllocator(srvPool);
         Line3DRegion::SetSrvAllocator(srvPool);
     }
 
@@ -165,7 +163,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     drawManager = std::make_unique<DrawManager>();
     drawManager->Initialize(dxCommon_.get());
     Sprite::SetDrawManager(drawManager.get());
-    SpriteRegion::SetDrawManager(drawManager.get());
     Circle2D::SetDrawManager(drawManager.get());
     ObjClass::SetDrawManager(drawManager.get());
     SphereClass::SetDrawManager(drawManager.get());
@@ -185,7 +182,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // テクスチャ
     ui->SetTextureManager(textureManager.get());
     Sprite::SetTextureManager(textureManager.get());
-    SpriteRegion::SetDirectXCommon(dxCommon_.get());
     Circle2D::SetTextureManager(textureManager.get());
     ObjClass::SetTextureManager(textureManager.get());
     SphereClass::SetTextureManager(textureManager.get());

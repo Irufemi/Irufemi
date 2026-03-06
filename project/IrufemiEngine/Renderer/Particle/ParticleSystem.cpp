@@ -1,12 +1,11 @@
 #define NOMINMAX
 #include "ParticleSystem.h"
-#include "Math.h"
-#include "function/Math.h"
-#include "manager/DebugUI.h"
-#include "engine/directX/DirectXCommon.h"
-#include "engine/directX/DescriptorPool.h"
-#include "engine/IrufemiEngine.h"
-#include "manager/DrawManager.h"
+#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Manager/DebugUI.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Engine/IrufemiEngine.h"
+#include "Engine/Manager/DrawManager.h"
 #include <algorithm>
 #include <numbers>
 
