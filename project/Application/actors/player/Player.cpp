@@ -338,16 +338,23 @@ void Player::UpdateCamera() {
     if (!camera_) return;
 
     Vector3 cameraPos;
+
+    // ジャンプ時のカメラの揺れ具合（1.0で完全追従、0.0で固定）
+    // 0.2〜0.3くらいにすると「少しだけ動く」自然な表現になります。
+    const float kCameraJumpFollowRatio = 0.5f;
+
     if (viewMode_ == ViewMode::kThirdPerson) {
         // 三人称：後ろから見下ろす
         cameraPos.x = translate_.x;
-        cameraPos.y = 1.5f; // ← ジャンプしてもカメラが追従しないように固定（translate_.y + を削除）
+        // ベースの高さ(1.5f)に、プレイヤーのジャンプ量の30%だけ足す
+        cameraPos.y = 1.5f + (translate_.y * kCameraJumpFollowRatio);
         cameraPos.z = translate_.z - 5.0f;
         camera_->SetRotate({ 0.0f, 0.0f, 0.0f });
     } else {
         // 一人称：目線の高さ
         cameraPos.x = translate_.x;
-        cameraPos.y = 0.0f; // ← ジャンプしてもカメラが追従しないように固定（地面の高さ基準）
+        // ベースの高さ(0.0f)に、プレイヤーのジャンプ量の30%だけ足す
+        cameraPos.y = 0.0f + (translate_.y * kCameraJumpFollowRatio);
         cameraPos.z = translate_.z;
         camera_->SetRotate({ -0.2f, 0.0f, 0.0f });
     }
