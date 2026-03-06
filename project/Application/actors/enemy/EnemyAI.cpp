@@ -20,8 +20,13 @@ void EnemyAI::Update() {
   Transform& globalTransform = enemy_->GetGlobalTransform();
   
   // 各部位のローカルトランスフォームを取得
-  Transform& body1 = enemy_->GetBodyLocalTransform(1); // 真ん中の胴体
-  Transform& headLeft = enemy_->GetHeadLeftLocalTransform();
+  Transform& bodyTop = enemy_->GetBodyLocalTransform(2); // 一番上の胴体
+  Transform& bodyMid = enemy_->GetBodyLocalTransform(1); // 真ん中の胴体
+  Transform& bodyBot = enemy_->GetBodyLocalTransform(0); // 一番下の胴体
+
+  Transform& headLeft = enemy_->GetHeadLeftLocalTransform();   // 左の頭
+  Transform& headMid = enemy_->GetHeadMidLocalTransform();     // 真ん中の頭
+  Transform& headRight = enemy_->GetHeadRightLocalTransform(); // 右の頭
 
   // タイマー更新
   timer_ += 1.0f / 60.0f;
@@ -29,9 +34,10 @@ void EnemyAI::Update() {
   // -- 仮アニメーション（AIによる制御テスト） --
   globalTransform.rotate.y += 0.005f;  // 全体がY軸で回転する
   
-  // 真ん中の胴体が上下にドクドク動く
-  body1.translate.y += std::sin(globalTransform.translate.z * 10.0f) * 0.05f; 
-  
+  bodyTop.translate.y += std::sin(globalTransform.translate.z * 10.0f) * 0.05f;
+  bodyMid.translate.y += std::sin(globalTransform.translate.z * 10.0f) * 0.05f; 
+  bodyBot.translate.y += std::sin(globalTransform.translate.z * 10.0f) * 0.05f;
+
   // 左の頭がグルグル回る
   headLeft.rotate.z += 0.05f; 
   // -------------------------------------------------------------------
