@@ -101,10 +101,10 @@ void Player::Update() {
         rotate_.y += delta.x * sensitivityMult;
         cameraPitch_ += delta.y * sensitivityMult;
 
-        if (cameraPitch_ > 1.4f) cameraPitch_ = 1.4f;
-        if (cameraPitch_ < -1.4f) cameraPitch_ = -1.4f;
+        // --- 上下の振り幅をさらに制限（0.4f = 約23度） ---
+        if (cameraPitch_ > 0.4f) cameraPitch_ = 0.4f;
+        if (cameraPitch_ < -0.4f) cameraPitch_ = -0.4f;
     }
-
     // 1. 移動処理
     HandleMovement();
 
@@ -532,27 +532,31 @@ void Player::UpdateCamera() {
     if (!camera_) return;
 
     Vector3 cameraPos;
-
-    // ジャンプ時のカメラの揺れ具合（1.0で完全追従、0.0で固定）
-    // 0.8fくらいにすると「少しだけ動く」自然な表現になります。
     const float kCameraJumpFollowRatio = 0.8f;
 
+    // --- プレイヤーのどの高さを中心にカメラを回すか（注視点） ---
+    // 足元(translate_)から少し上（例：1.5f）をターゲットにする
+    Vector3 lookAtTarget = {
+        translate_.x,
+        translate_.y + 1.5f,
+        translate_.z
+    };
+
     if (viewMode_ == ViewMode::kThirdPerson) {
-        // 三人称：後ろから見下ろす
+        // 三人称：注視点を中心に球状にカメラを配置する
         float distance = 5.0f;
-        // ベースの高さ(1.5f)に、プレイヤーのジャンプ量の一部だけ足す
-        float heightOffset = 1.5f + (translate_.y * kCameraJumpFollowRatio);
 
         float cosPitch = std::cos(cameraPitch_);
         float sinPitch = std::sin(cameraPitch_);
         float cosYaw = std::cos(rotate_.y);
         float sinYaw = std::sin(rotate_.y);
 
-        cameraPos.x = translate_.x - (sinYaw * cosPitch * distance);
-        cameraPos.y = heightOffset - (sinPitch * distance);
-        cameraPos.z = translate_.z - (cosYaw * cosPitch * distance);
+        // 注視点(lookAtTarget)からのオフセットとして計算
+        cameraPos.x = lookAtTarget.x - (sinYaw * cosPitch * distance);
+        cameraPos.y = lookAtTarget.y - (sinPitch * distance); // 高さも注視点基準
+        cameraPos.z = lookAtTarget.z - (cosYaw * cosPitch * distance);
 
-        // ★床へのめり込み防止：カメラのY座標が 0.2f 以下にならないように固定する
+        // 床へのめり込み防止
         if (cameraPos.y < 0.2f) {
             cameraPos.y = 0.2f;
         }
@@ -560,16 +564,12 @@ void Player::UpdateCamera() {
         camera_->SetTranslate(cameraPos);
         camera_->SetRotate({ cameraPitch_, rotate_.y, 0.0f });
     } else {
-        // 一人称：目線の高さ
+        // 一人称（既存のロジック）
         cameraPos.x = translate_.x;
-        // ベースの高さ(0.0f)に、プレイヤーのジャンプ量の一部だけ足す
         cameraPos.y = 1.0f + (translate_.y * kCameraJumpFollowRatio);
         cameraPos.z = translate_.z;
 
-        // ★床へのめり込み防止：一人称視点でも念のため制限をかける
-        if (cameraPos.y < 0.2f) {
-            cameraPos.y = 0.2f;
-        }
+        if (cameraPos.y < 0.2f) cameraPos.y = 0.2f;
 
         camera_->SetTranslate(cameraPos);
         camera_->SetRotate({ cameraPitch_, rotate_.y, 0.0f });
