@@ -14,6 +14,8 @@
 #include "math/AreaLight.h"
 #include "2D/Sprite.h"
 #include "contents/field/Field.h"
+#include "engine/Input/Mouse.h"
+#include <Windows.h>
 
 GameScene::GameScene() {}
 
@@ -32,9 +34,14 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode_ = false;
 
-    // プレイヤーの初期化
+    // ★マウスの初期化（アクティブなウィンドウハンドルを取得して渡しています）
+    // ※もしエンジン側に engine_->GetWindowHandle() のような関数があればそちらに変更してください
+    mouse_ = std::make_unique<Mouse>();
+    mouse_->Initialize(GetActiveWindow());
+
+    // プレイヤーの初期化（引数に mouse_.get() を追加）
     player_ = std::make_unique<Player>();
-    player_->Initialize(engine_->GetInputManager(), camera_.get(), engine_);
+    player_->Initialize(engine_->GetInputManager(), camera_.get(), engine_, mouse_.get());
 
     boss_ = std::make_unique<Enemy>();
     boss_->Initialize(camera_.get());
@@ -61,9 +68,16 @@ void GameScene::Update() {
     // ↓ゲームの更新
     // =====
 
+    if (mouse_) {
+        mouse_->Update();
+    }
 
     // プレイヤーの更新
     if (player_ && !debugMode_) {
+        // ★プレイヤーにボスの座標を毎フレーム教える（機関銃とミサイルのオートエイム用）
+        if (boss_) {
+            player_->SetTargetPosition(boss_->GetGlobalTransform().translate);
+        }
         player_->Update();
     }
 
@@ -93,7 +107,6 @@ void GameScene::Update() {
         // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
         camera_->Update("Main Camera");
     }
-
 
     // --- フレーム共通データのセット ---
     CameraForGPU cameraForGpu;

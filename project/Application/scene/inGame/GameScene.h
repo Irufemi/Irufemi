@@ -16,6 +16,7 @@ struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
 struct AreaLight;
+class Mouse; // ★追加：Mouseの前方宣言
 
 class GameScene : public IScene {
 public:
@@ -34,6 +35,8 @@ private:
     std::unique_ptr<Camera> camera_ = nullptr;
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
     bool debugMode_ = false;
+
+    std::unique_ptr<Mouse> mouse_ = nullptr;
 
     // ゲームオブジェクト
     std::unique_ptr<Player> player_ = nullptr;
