@@ -10,6 +10,7 @@
 #include "Engine/Graphics/Data/SpotLight.h"
 #include "Engine/Graphics/Data/AreaLight.h"
 #include <vector>
+#include <memory>
 
 // 前方宣言
 class DirectXCommon;
