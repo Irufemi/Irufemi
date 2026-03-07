@@ -19,6 +19,11 @@ ObjClass::~ObjClass() {
     if (transformationResource_) {
         transformationResource_->Unmap(0, nullptr);
     }
+    for (size_t i = 0; i < instanceMaterials_.size(); ++i) {
+        if (instanceMaterials_[i] && instanceMaterials_[i]->materialResource) {
+            instanceMaterials_[i]->materialResource->Unmap(0, nullptr);
+        }
+    }
 }
 
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
@@ -38,6 +43,17 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
     transformationResource_ = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
     transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
 
+    // インスタンス固有のマテリアルリソースを生成
+    instanceMaterials_.resize(managedModel_->gpuMaterials.size());
+    mappedMaterials_.resize(managedModel_->gpuMaterials.size());
+    for (size_t i = 0; i < managedModel_->gpuMaterials.size(); ++i) {
+        instanceMaterials_[i] = std::make_shared<GpuMaterial>();
+        instanceMaterials_[i]->materialResource = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(Material));
+        instanceMaterials_[i]->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedMaterials_[i]));
+        // 共有のテクスチャハンドルをコピー
+        instanceMaterials_[i]->textureHandle = managedModel_->gpuMaterials[i]->textureHandle;
+    }
+
 
     // 初回Updateを呼んでおく
     Update();
@@ -49,7 +65,7 @@ void ObjClass::Update() {
 
     // オブジェクト全体のワールド行列を計算
     transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-    
+
     // rootNodeの行列を適用(モデルデータに階層情報があれば)
     if (managedModel_->cpuModel) {
         transformationMatrix_.world = managedModel_->cpuModel->rootNode.localMatrix * transformationMatrix_.world;
@@ -77,7 +93,7 @@ void ObjClass::Draw() {
     if (!managedModel_ || !drawManager_) return;
 
     // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
-    drawManager_->DrawModel(managedModel_.get(), GetTransformationGpuAddress());
+    drawManager_->DrawModel(managedModel_.get(), GetTransformationGpuAddress(), instanceMaterials_);
 }
 
 void ObjClass::Debug([[maybe_unused]] const char* objName) {
@@ -86,6 +102,7 @@ void ObjClass::Debug([[maybe_unused]] const char* objName) {
     ImGui::Begin(name.c_str());
     if (ui_) {
         ui_->DebugTransform(transform_);
+        ImGui::ColorEdit4("Color", &color_.x); // インスタンスカラーを編集
 
         // ImGuiでマテリアルを編集
         if (managedModel_ && managedModel_->cpuModel) {
@@ -143,52 +160,39 @@ void ObjClass::SetEnableLightingToAllMeshes(bool enable) {
 }
 
 void ObjClass::SetAlpha(float alpha) {
-    if (managedModel_ && managedModel_->cpuModel) {
-        for (auto& mesh : managedModel_->cpuModel->meshes) {
-            mesh.material.color.w = alpha;
-        }
-    }
+    color_.w = alpha;
 }
 
 void ObjClass::SetColor(const Vector4& color) {
-    if (managedModel_ && managedModel_->cpuModel) {
-        for (auto& mesh : managedModel_->cpuModel->meshes) {
-            mesh.material.color = color;
-        }
-    }
+    color_ = color;
 }
 
 void ObjClass::UpdateMaterials() {
-    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->gpuMaterials.empty()) {
+    if (!managedModel_ || !managedModel_->cpuModel || mappedMaterials_.empty()) {
         return;
     }
 
     // 全メッシュのマテリアルを更新
     for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
         // インデックスが範囲内か確認
-        if (i >= managedModel_->gpuMaterials.size()) {
+        if (i >= mappedMaterials_.size() || !mappedMaterials_[i]) {
             continue;
         }
 
         const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
-        GpuMaterial* gpuMat = managedModel_->gpuMaterials[i].get();
+        Material* mappedData = mappedMaterials_[i];
 
-        if (gpuMat && gpuMat->materialResource) {
-            Material* mappedData = nullptr;
-            gpuMat->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
-            if (mappedData) {
-                mappedData->color = cpuMat.color;
-                mappedData->enableLighting = cpuMat.enableLighting;
-                mappedData->uvTransform = cpuMat.uvTransform;
-                mappedData->shininess = cpuMat.shininess;
-                mappedData->environmentCoefficient = cpuMat.environmentCoefficient; // この行を追加
-                mappedData->hasTexture = !cpuMat.textureFilePath.empty();
-                // ライティングモードを enableLighting に基づいて設定
-                mappedData->lightingMode = cpuMat.enableLighting ? 2 : 0;
-                if (mappedData->color.w <= 0.0f) { mappedData->color.w = 1.0f; }
+        // インスタンスカラーとマテリアルカラーを乗算
+        mappedData->color.x = cpuMat.color.x * color_.x;
+        mappedData->color.y = cpuMat.color.y * color_.y;
+        mappedData->color.z = cpuMat.color.z * color_.z;
+        mappedData->color.w = cpuMat.color.w * color_.w;
 
-                gpuMat->materialResource->Unmap(0, nullptr);
-            }
-        }
+        mappedData->enableLighting = cpuMat.enableLighting;
+        mappedData->uvTransform = cpuMat.uvTransform;
+        mappedData->shininess = cpuMat.shininess;
+        mappedData->hasTexture = !cpuMat.textureFilePath.empty();
+        mappedData->lightingMode = cpuMat.enableLighting ? 2 : 0;
+        if (mappedData->color.w <= 0.0f) { mappedData->color.w = 1.0f; }
     }
 }

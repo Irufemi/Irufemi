@@ -24,6 +24,8 @@ class IrufemiEngine;
 class SphereRegion;
 class Line3DRegion;
 struct ManagedModel;
+struct GpuMaterial;
+struct Material;
 
 
 class AnimationModel {
@@ -57,6 +59,9 @@ public: // ゲッター・セッター
     // 指定したインデックスのメッシュのマテリアルを取得(書き込み可能)
     ObjMaterial* GetMaterial(size_t meshIndex);
 
+    void SetColor(const Vector4& color) { color_ = color; }
+    const Vector4& GetColor() const { return color_; }
+
 
     static void SetIrufemiEngine(IrufemiEngine* engine) { engine_ = engine; }
 
@@ -67,6 +72,11 @@ private: // メンバ変数
     // オブジェクト全体のTransform
     Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     TransformationMatrix transformationMatrix_{};
+    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // インスタンスカラー
+
+    // インスタンス固有のマテリアル
+    std::vector<std::shared_ptr<GpuMaterial>> instanceMaterials_;
+    std::vector<Material*> mappedMaterials_;
 
     // 変換行列用リソース
     Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_;
