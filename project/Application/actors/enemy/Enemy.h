@@ -8,7 +8,7 @@
 #include "actors/enemy/Head/Right/HeadRight.h"
 #include "EnemyAI.h"
 #include "EnemyAnimation.h"
-#include "math/Transform.h"
+#include "core/math/Transform.h"
 
 class Camera;
 
