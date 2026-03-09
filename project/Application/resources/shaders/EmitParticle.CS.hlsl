@@ -29,12 +29,14 @@ void main(uint32_t3 DTid : SV_DispatchThreadID)
 			// 最大よりもparticleの数が少なければ射出可能
 			if (particleIndex < kMaxParticles)
 			{
-			
 				// Particleの初期化
 				gParticles[particleIndex].scale = generator.Generate3d();
 				gParticles[particleIndex].translate = generator.Generate3d();
 				gParticles[particleIndex].color.rgb = generator.Generate3d();
 				gParticles[particleIndex].color.a = 1.0f;
+				gParticles[particleIndex].velocity = (generator.Generate3d() * 2.0f - 1.0f) / 5.0f;
+				gParticles[particleIndex].lifeTime = generator.Generate1d();
+				gParticles[particleIndex].currentTime = 0.0f;
 			}
 		}
 	}

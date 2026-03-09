@@ -177,13 +177,9 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
     D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = particleResource_.Get();
+    barrier.UAV.pResource = nullptr; // グローバルUAVバリア
     commandList->ResourceBarrier(1, &barrier);
 
-    D3D12_RESOURCE_BARRIER barrierFreeCounter{};
-    barrierFreeCounter.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrierFreeCounter.UAV.pResource = freeCounterResource_.Get();
-    commandList->ResourceBarrier(1, &barrierFreeCounter);
 
     /*Particleを発生させる*/
 
@@ -205,6 +201,7 @@ void GPUParticleSystem::Update() {
 
     emitterSphere_->frequencyTime += engine_->GetDeltaTime(); // δタイムを加算
     perFrameData_->time = engine_->GetTotalTime();
+    perFrameData_->deltaTime = engine_->GetDeltaTime();
 
     // 射出間隔を上回ったら射出許可を出して時間を調整
     if (emitterSphere_->frequency <= emitterSphere_->frequencyTime) {
@@ -223,8 +220,14 @@ void GPUParticleSystem::Update() {
     ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-    // Emit
     commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
+
+    // UAVバリアの設定
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier.UAV.pResource = nullptr; // グローバルUAVバリア
+
+    // Emit
     commandList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
     commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
     commandList->SetComputeRootDescriptorTable(6, freeCounterUavHandleGPU_);
@@ -232,15 +235,19 @@ void GPUParticleSystem::Update() {
     commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
     commandList->Dispatch(1, 1, 1);
 
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = particleResource_.Get();
+    // Emitの完了を待つ
     commandList->ResourceBarrier(1, &barrier);
 
-    D3D12_RESOURCE_BARRIER barrierFreeCounter{};
-    barrierFreeCounter.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrierFreeCounter.UAV.pResource = freeCounterResource_.Get();
-    commandList->ResourceBarrier(1, &barrierFreeCounter);
+    // Update
+    commandList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
+    commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(6, freeCounterUavHandleGPU_);
+    commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
+    commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
+
+    // Updateの完了を待つ
+    commandList->ResourceBarrier(1, &barrier);
+
 
     perViewData_->viewProjection = camera_->GetViewProjectionMatrix3D();
 
@@ -248,12 +255,12 @@ void GPUParticleSystem::Update() {
     Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
 
     /// カメラの回転を適用する
-    Matrix4x4 billbordMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
-    billbordMatrix_.m[3][0] = 0.0f;
-    billbordMatrix_.m[3][1] = 0.0f;
-    billbordMatrix_.m[3][2] = 0.0f;
+    Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+    billboardMatrix_.m[3][0] = 0.0f;
+    billboardMatrix_.m[3][1] = 0.0f;
+    billboardMatrix_.m[3][2] = 0.0f;
 
-    perViewData_->billbordMatrix = billbordMatrix_;
+    perViewData_->billbordMatrix = billboardMatrix_;
 }
 
 // 描画

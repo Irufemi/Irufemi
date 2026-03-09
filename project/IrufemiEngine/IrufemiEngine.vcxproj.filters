@@ -711,5 +711,8 @@
     <FxCompile Include="..\Application\resources\shaders\EmitParticle.CS.hlsl">
       <Filter>Renderer\ParticleGPU\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\UpdateParticle.CS.hlsl">
+      <Filter>Renderer\ParticleGPU\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

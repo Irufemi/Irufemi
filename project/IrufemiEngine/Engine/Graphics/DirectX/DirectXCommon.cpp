@@ -696,8 +696,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleEmitCSBlob = CompileShader(L"resources/shaders/EmitParticle.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(gpuParticleEmitCSBlob != nullptr);
 
-    /*Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleUpdateCSBlob = CompileShader(L"resources/shaders/UpdateParticle.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
-    assert(gpuParticleUpdateCSBlob != nullptr);*/
+    Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleUpdateCSBlob = CompileShader(L"resources/shaders/UpdateParticle.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(gpuParticleUpdateCSBlob != nullptr);
 
     Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleVSBlob = CompileShader(L"resources/shaders/ParticleGPU.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(gpuParticleVSBlob != nullptr);
@@ -808,9 +808,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&gpuParticleEmitPSO_));
     assert(SUCCEEDED(hr));
 
-    /*computePsoDesc.CS = { gpuParticleUpdateCSBlob->GetBufferPointer(), gpuParticleUpdateCSBlob->GetBufferSize() };
+    computePsoDesc.CS = { gpuParticleUpdateCSBlob->GetBufferPointer(), gpuParticleUpdateCSBlob->GetBufferSize() };
     hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&gpuParticleUpdatePSO_));
-    assert(SUCCEEDED(hr));*/
+    assert(SUCCEEDED(hr));
 
     // 生成が完了したのでShaderBlobを解放
     if (object3DVSBlob) { object3DVSBlob.Reset(); }
@@ -833,7 +833,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (skinningCSBlob) { skinningCSBlob.Reset(); }
     if (gpuParticleInitializeCSBlob) { gpuParticleInitializeCSBlob.Reset(); }
     if (gpuParticleEmitCSBlob) { gpuParticleEmitCSBlob.Reset(); }
-    /*if (gpuParticleUpdateCSBlob) { gpuParticleUpdateCSBlob.Reset(); }*/
+    if (gpuParticleUpdateCSBlob) { gpuParticleUpdateCSBlob.Reset(); }
     if (gpuParticleVSBlob) { gpuParticleVSBlob.Reset(); }
     if (gpuParticlePSBlob) { gpuParticlePSBlob.Reset(); }
 
