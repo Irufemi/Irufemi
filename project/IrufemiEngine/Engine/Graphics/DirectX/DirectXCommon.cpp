@@ -523,11 +523,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         srvRanges[1] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t1
         srvRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t2
 
-        D3D12_DESCRIPTOR_RANGE uavRanges[2];
+        D3D12_DESCRIPTOR_RANGE uavRanges[3];
         uavRanges[0] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u0
         uavRanges[1] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u1
+        uavRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u2
 
-        D3D12_ROOT_PARAMETER computeRootParameters[7] = {};
+        D3D12_ROOT_PARAMETER computeRootParameters[8] = {};
         computeRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         computeRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         computeRootParameters[0].DescriptorTable.pDescriptorRanges = &srvRanges[0];
@@ -562,6 +563,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         computeRootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         computeRootParameters[6].DescriptorTable.pDescriptorRanges = &uavRanges[1];
         computeRootParameters[6].DescriptorTable.NumDescriptorRanges = 1;
+
+        computeRootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        computeRootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[7].DescriptorTable.pDescriptorRanges = &uavRanges[2];
+        computeRootParameters[7].DescriptorTable.NumDescriptorRanges = 1;
 
         computeRootSignatureDesc.pParameters = computeRootParameters;
         computeRootSignatureDesc.NumParameters = _countof(computeRootParameters);

@@ -98,32 +98,33 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     srvDesc.Buffer.StructureByteStride = sizeof(ParticleCS);
     dxCommon_->GetDevice()->CreateShaderResourceView(particleResource_.Get(), &srvDesc, particleSrvHandleCPU_);
 
-    // freeCounterリソース
-    freeCounterResource_ = dxCommon_->CreateUAVBufferResource(sizeof(int32_t));
+    // freeListIndexリソース
+    freeListIndexResource_ = dxCommon_->CreateUAVBufferResource(sizeof(int32_t));
     // UAV
-    uint32_t freeCounterUavIndex = srvPool->Allocate();
-    freeCounterUavHandleCPU_ = srvPool->GetCPUHandle(freeCounterUavIndex);
-    freeCounterUavHandleGPU_ = srvPool->GetGPUHandle(freeCounterUavIndex);
-    D3D12_UNORDERED_ACCESS_VIEW_DESC freeCounterUavDesc{};
-    freeCounterUavDesc.Format = DXGI_FORMAT_UNKNOWN;
-    freeCounterUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-    freeCounterUavDesc.Buffer.FirstElement = 0;
-    freeCounterUavDesc.Buffer.NumElements = 1;
-    freeCounterUavDesc.Buffer.StructureByteStride = sizeof(int32_t);
-    dxCommon_->GetDevice()->CreateUnorderedAccessView(freeCounterResource_.Get(), nullptr, &freeCounterUavDesc, freeCounterUavHandleCPU_);
+    uint32_t freeListIndexUavIndex = srvPool->Allocate();
+    freeListIndexUavHandleCPU_ = srvPool->GetCPUHandle(freeListIndexUavIndex);
+    freeListIndexUavHandleGPU_ = srvPool->GetGPUHandle(freeListIndexUavIndex);
+    D3D12_UNORDERED_ACCESS_VIEW_DESC freeListIndexUavDesc{};
+    freeListIndexUavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    freeListIndexUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    freeListIndexUavDesc.Buffer.FirstElement = 0;
+    freeListIndexUavDesc.Buffer.NumElements = 1;
+    freeListIndexUavDesc.Buffer.StructureByteStride = sizeof(int32_t);
+    dxCommon_->GetDevice()->CreateUnorderedAccessView(freeListIndexResource_.Get(), nullptr, &freeListIndexUavDesc, freeListIndexUavHandleCPU_);
 
-    // SRV
-    uint32_t freeCounterSrvIndex = srvPool->Allocate();
-    freeCounterSrvHandleCPU_ = srvPool->GetCPUHandle(freeCounterSrvIndex);
-    freeCounterSrvHandleGPU_ = srvPool->GetGPUHandle(freeCounterSrvIndex);
-    D3D12_SHADER_RESOURCE_VIEW_DESC freeCounterSrvDesc{};
-    freeCounterSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    freeCounterSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    freeCounterSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-    freeCounterSrvDesc.Buffer.FirstElement = 0;
-    freeCounterSrvDesc.Buffer.NumElements = 1;
-    freeCounterSrvDesc.Buffer.StructureByteStride = sizeof(int32_t);
-    dxCommon_->GetDevice()->CreateShaderResourceView(freeCounterResource_.Get(), &freeCounterSrvDesc, freeCounterSrvHandleCPU_);
+    // freeListリソース
+    freeListResource_ = dxCommon_->CreateUAVBufferResource(sizeof(int32_t) * kMaxParticles);
+    // UAV
+    uint32_t freeListUavIndex = srvPool->Allocate();
+    freeListUavHandleCPU_ = srvPool->GetCPUHandle(freeListUavIndex);
+    freeListUavHandleGPU_ = srvPool->GetGPUHandle(freeListUavIndex);
+    D3D12_UNORDERED_ACCESS_VIEW_DESC freeListUavDesc{};
+    freeListUavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    freeListUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    freeListUavDesc.Buffer.FirstElement = 0;
+    freeListUavDesc.Buffer.NumElements = kMaxParticles;
+    freeListUavDesc.Buffer.StructureByteStride = sizeof(int32_t);
+    dxCommon_->GetDevice()->CreateUnorderedAccessView(freeListResource_.Get(), nullptr, &freeListUavDesc, freeListUavHandleCPU_);
 
     // PerView用リソース
     perViewResource_ = dxCommon_->CreateBufferResource(sizeof(PerViewForGPU));
@@ -171,7 +172,8 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
     commandList->SetPipelineState(dxCommon_->GetGpuParticleIntializePSO());
     commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
-    commandList->SetComputeRootDescriptorTable(6, freeCounterUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
 
     commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
@@ -230,7 +232,8 @@ void GPUParticleSystem::Update() {
     // Emit
     commandList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
     commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
-    commandList->SetComputeRootDescriptorTable(6, freeCounterUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
     commandList->SetComputeRootConstantBufferView(4, emitterSphereResource_->GetGPUVirtualAddress());
     commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
     commandList->Dispatch(1, 1, 1);
@@ -241,7 +244,8 @@ void GPUParticleSystem::Update() {
     // Update
     commandList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
     commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
-    commandList->SetComputeRootDescriptorTable(6, freeCounterUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
     commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
     commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 

@@ -102,12 +102,19 @@ private:
     D3D12_CPU_DESCRIPTOR_HANDLE particleSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandleGPU_{};
 
-    int32_t* freeCounter_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> freeCounterResource_;
-    D3D12_CPU_DESCRIPTOR_HANDLE freeCounterUavHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE freeCounterUavHandleGPU_{};
-    D3D12_CPU_DESCRIPTOR_HANDLE freeCounterSrvHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE freeCounterSrvHandleGPU_{};
+    int32_t* freeListIndex_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> freeListIndexResource_;
+    D3D12_CPU_DESCRIPTOR_HANDLE freeListIndexUavHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE freeListIndexUavHandleGPU_{};
+    D3D12_CPU_DESCRIPTOR_HANDLE freeListIndexSrvHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE freeListIndexSrvHandleGPU_{};
+
+    int32_t* freeList_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> freeListResource_;
+    D3D12_CPU_DESCRIPTOR_HANDLE freeListUavHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE freeListUavHandleGPU_{};
+    D3D12_CPU_DESCRIPTOR_HANDLE freeListSrvHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE freeListSrvHandleGPU_{};
 
     Microsoft::WRL::ComPtr<ID3D12Resource> perViewResource_;
     PerViewForGPU* perViewData_ = nullptr;

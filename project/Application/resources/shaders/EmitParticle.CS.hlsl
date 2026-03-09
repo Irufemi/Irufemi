@@ -1,11 +1,12 @@
-
 #include "ParticleGPU.hlsli"
 #include "RandomGenerator.hlsli"
 #include "PerFrame.hlsli"
 
 RWStructuredBuffer<Particle> gParticles : register(u0);
 
-RWStructuredBuffer<int32_t> gFreeCounter : register(u1);
+RWStructuredBuffer<int32_t> gFreeListIndex : register(u1);
+
+RWStructuredBuffer<int32_t> gFreeList : register(u2);
 
 ConstantBuffer<EmitterSphere> gEmitter : register(b0);
 
@@ -24,19 +25,27 @@ void main(uint32_t3 DTid : SV_DispatchThreadID)
 		// Generate3d呼ぶたびにseedが変わるので結果全ての乱数が変わる
 		for (uint32_t countIndex = 0; countIndex < gEmitter.count; ++countIndex)
 		{
-			int32_t particleIndex;
-			InterlockedAdd(gFreeCounter[0], 1, particleIndex); // gFreeCounter[0]に1を足し、足す前の値をparticleIndexに格納する
-			// 最大よりもparticleの数が少なければ射出可能
-			if (particleIndex < kMaxParticles)
+			int32_t freeListIndex;
+			// FreeListのIndexを1つ前に設定し、現在のIndexを取得する
+			InterlockedAdd(gFreeListIndex[0], -1, freeListIndex);
+			if (0 <= freeListIndex && freeListIndex < kMaxParticles)
 			{
+				uint32_t particleIndex = gFreeList[freeListIndex];
 				// Particleの初期化
 				gParticles[particleIndex].scale = generator.Generate3d();
-				gParticles[particleIndex].translate = generator.Generate3d();
+				gParticles[particleIndex].translate = gEmitter.translate; // エミッターの位置から発生
 				gParticles[particleIndex].color.rgb = generator.Generate3d();
 				gParticles[particleIndex].color.a = 1.0f;
 				gParticles[particleIndex].velocity = (generator.Generate3d() * 2.0f - 1.0f) / 5.0f;
-				gParticles[particleIndex].lifeTime = generator.Generate1d();
+				gParticles[particleIndex].lifeTime = generator.Generate1d() * 2.0f + 1.0f; // 1～3秒の寿命
 				gParticles[particleIndex].currentTime = 0.0f;
+			}
+			else
+			{
+				// 発生させられなかったので、減らしてしまった分もとに戻す。これを忘れると発生させなかった分だけどんどんIndexが減ってしまう
+				InterlockedAdd(gFreeListIndex[0], 1);
+				// Emit中にParticleは消えないので、この後発生することはないためbreakして終わらせる
+				break;
 			}
 		}
 	}
