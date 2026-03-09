@@ -188,7 +188,7 @@ private:
     const float kMissileSpeed = 0.8f;      // ミサイルの最高速度
 
     // トランスフォーム
-    Vector3 scale_ = { 0.3f, 0.3f, 0.3f };
+    Vector3 scale_ = { 0.3f, 1.0f, 0.3f };
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
     Vector3 translate_ = { 0.0f, 0.0f, -50.0f };
 
