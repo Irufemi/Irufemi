@@ -14,18 +14,9 @@ void EnemyAI::Update() {
 
     timer_ += 1.0f / 60.0f;
 
-    // 全体のトランスフォームを取得（参照渡しで直接編集）
-    Transform& globalTransform = enemy_->GetGlobalTransform();
-
-    // -- 全体の動き制御 --
-    if (enemy_->GetState() == EnemyState::Idle) {
-        globalTransform.rotate.y += 0.005f; // 全体がY軸で回転する
-    }
-
-    // -- 状態の制御テスト --
-    // 5秒ごとに待機と攻撃を切り替える例
-    if (std::fmod(timer_, 10.0f) > 5.0f) {
-        enemy_->SetState(EnemyState::Attack);
+    // 指定した周期内で、一定時間を超えたら攻撃状態へ移行
+    if (std::fmod(timer_, stateChangeInterval_) > attackStartTime_) {
+        enemy_->SetState(EnemyState::Attack_Beam);
     } else {
         enemy_->SetState(EnemyState::Idle);
     }

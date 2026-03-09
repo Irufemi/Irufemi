@@ -14,9 +14,10 @@ class Camera;
 
 // 敵の行動状態
 enum class EnemyState {
-    Idle,      // 待機中
-    Attack,    // 攻撃中
-    Damaged    // 被弾時
+    Idle,          // 待機：ふわふわ浮遊しながら自転
+    Attack_Beam,   // 攻撃：集結・シェイク後のビーム発射演出
+    Attack_Dash,   // 攻撃：突進（将来用）
+    Damaged        // 被弾：ノックバック演出など
 };
 
 class Enemy {
@@ -26,53 +27,51 @@ public:
     void Update();
     void Draw();
 
-    // --- AIやAnimationから操作するためのゲッター ---
+    // --- アクセサ（AIやAnimationから操作用） ---
     Transform& GetGlobalTransform() { return globalTransform_; }
-
     Transform& GetBodyLocalTransform(int index) { return bodyLocalTransforms_[index]; }
     Transform& GetHeadLeftLocalTransform() { return headLeftLocalTransform_; }
     Transform& GetHeadMidLocalTransform() { return headMidLocalTransform_; }
     Transform& GetHeadRightLocalTransform() { return headRightLocalTransform_; }
 
-    // アニメーション用オフセット座標へのアクセス
     Vector3& GetBodyOffset(int index) { return bodyOffsets_[index]; }
     Vector3& GetHeadLeftOffset() { return headLeftOffset_; }
     Vector3& GetHeadMidOffset() { return headMidOffset_; }
     Vector3& GetHeadRightOffset() { return headRightOffset_; }
 
-    // 状態管理
     void SetState(EnemyState state) { state_ = state; }
     EnemyState GetState() const { return state_; }
 
 private:
+    // 各パーツ
     std::array<std::unique_ptr<Body>, 3> bodies_;
     std::unique_ptr<HeadLeft> headLeft_ = nullptr;
     std::unique_ptr<HeadMid> headMid_ = nullptr;
     std::unique_ptr<HeadRight> headRight_ = nullptr;
 
-    // 全体のTransform（親）
+    // トランスフォーム
     Transform globalTransform_;
-
-    // 各部位のローカルTransform（だるま落としの基準座標）
     std::array<Transform, 3> bodyLocalTransforms_;
     Transform headLeftLocalTransform_;
     Transform headMidLocalTransform_;
     Transform headRightLocalTransform_;
 
-    // 各部位のアニメーション用オフセット
+    // アニメーション用オフセット
     std::array<Vector3, 3> bodyOffsets_;
     Vector3 headLeftOffset_ = { 0.0f, 0.0f, 0.0f };
     Vector3 headMidOffset_ = { 0.0f, 0.0f, 0.0f };
     Vector3 headRightOffset_ = { 0.0f, 0.0f, 0.0f };
 
+    // 制御クラス
     std::unique_ptr<EnemyAI> ai_ = nullptr;
     std::unique_ptr<EnemyAnimation> animation_ = nullptr;
 
     EnemyState state_ = EnemyState::Idle;
     Camera* camera_ = nullptr;
 
-    float fallSpeed_ = 0.05f;
-    float shakeIntensity_ = 1.0f;
+    // パラメータ
+    float fallSpeed_ = 0.05f;      // 落下時の補間速度
+    float shakeIntensity_ = 1.0f; // 着地時のシェイク強度
     bool isFalling_[4] = { false, false, false, false };
 
     bool isActive_ = false;
