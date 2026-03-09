@@ -150,65 +150,66 @@ void GameScene::Update() {
             checkAndDamage(boss_->GetBody(i));
         }
         checkAndDamage(boss_->GetHeadLeft());
-        checkAndDamage(boss_->GetHeadMid());
-        checkAndDamage(boss_->GetHeadRight());
-
-        // 吹き飛んだ部位(projectile) vs 生存している部位(target) の判定
-        auto checkProjectileHitTarget = [&](auto* projectile) {
+        // 吹き飛んだ部位(projectile) vs 生存している各部位(target) の判定
+        auto checkProjectileHitPart = [&](auto* projectile) {
             if (!projectile || !projectile->IsBlownAway() || projectile->IsCompletelyDead()) return;
 
             auto checkTarget = [&](auto* target) {
                 // targetはまだ生きているか（吹き飛んでいないか）
                 if (!target || target->GetHP() <= 0 || target->IsBlownAway()) return;
-                
-                // OBB同士の判定
-                if (Collision::IsOBBCollision(projectile->GetOBB(), target->GetOBB())) {
-                    // ダメージを与える
-                    target->SetHP(target->GetHP() - 100); 
 
-                    // 吹き飛んできた部位の反射方向計算
+                // OBB同士の判定(部位 vs 部位)
+                if (Collision::IsOBBCollision(projectile->GetOBB(), target->GetOBB())) {
                     Vector3 vel = projectile->GetBlowVelocity();
                     Vector3 diff = Math::Subtract(projectile->GetTransform().translate, target->GetTransform().translate);
-                    float diffLen = Math::Length(diff);
-                    Vector3 normal = {0.0f, 0.0f, 1.0f};
-                    if (diffLen > 0.001f) {
-                         normal = {diff.x / diffLen, diff.y / diffLen, diff.z / diffLen};
+                    
+                    // XZ平面での法線を計算
+                    Vector3 normal = {diff.x, 0.0f, diff.z};
+                    float normalLen = Math::Length(normal);
+                    if (normalLen > 0.001f) {
+                        normal = {normal.x / normalLen, 0.0f, normal.z / normalLen};
+                    } else {
+                        normal = {0.0f, 0.0f, 1.0f};
                     }
 
+                    // 部位の速度と、ターゲットから部位への方向ベクトルの内積
                     float dot = Math::Dot(vel, normal);
-                    // R = V - 2(V・N)N
-                    Vector3 reflect = Math::Subtract(vel, Math::Multiply(2.0f * dot, normal));
-                    reflect.y = 0.0f; // Y方向には飛ばないように固定
 
-                    // 速度を反転・反射させる
-                    projectile->SetBlowVelocity(reflect);
+                    // dot < 0.0f なら、部位がターゲットに向かって飛んできている（めり込み・連続ヒット防止）
+                    if (dot < 0.0f) {
+                        // 当たった部位のみにダメージを与える
+                        target->SetHP(target->GetHP() - 100); 
 
-                    // ターゲットのHPが尽きた場合
-                    if (target->GetHP() <= 0) {
-                        float velLen = Math::Length(vel);
-                        Vector3 attackDir = {0.0f, 0.0f, 1.0f};
-                        if (velLen > 0.001f) {
-                            attackDir = {vel.x / velLen, 0.0f, vel.z / velLen};
+                        // 反射ベクトル: R = V - 2(V・N)N
+                        Vector3 reflect = Math::Subtract(vel, Math::Multiply(2.0f * dot, normal));
+                        reflect.y = 0.0f; // Y方向には飛ばないように固定
+
+                        // 速度を反転・反射させる
+                        projectile->SetBlowVelocity(reflect);
+
+                        // ターゲットのHPが尽きた場合
+                        if (target->GetHP() <= 0) {
+                            float velLen = Math::Length(vel);
+                            Vector3 attackDir = {0.0f, 0.0f, 1.0f};
+                            if (velLen > 0.001f) {
+                                attackDir = {vel.x / velLen, 0.0f, vel.z / velLen};
+                            }
+                            target->OnDestroyed(attackDir, EnemyParameters::GetInstance()->GetBlowSpeed());
                         }
-                        target->OnDestroyed(attackDir, EnemyParameters::GetInstance()->GetBlowSpeed());
                     }
                 }
             };
-            
-            checkTarget(boss_->GetBody(0));
-            checkTarget(boss_->GetBody(1));
-            checkTarget(boss_->GetBody(2));
+
+            for (int i = 0; i < 3; ++i) checkTarget(boss_->GetBody(i));
             checkTarget(boss_->GetHeadLeft());
             checkTarget(boss_->GetHeadMid());
             checkTarget(boss_->GetHeadRight());
         };
 
-        checkProjectileHitTarget(boss_->GetBody(0));
-        checkProjectileHitTarget(boss_->GetBody(1));
-        checkProjectileHitTarget(boss_->GetBody(2));
-        checkProjectileHitTarget(boss_->GetHeadLeft());
-        checkProjectileHitTarget(boss_->GetHeadMid());
-        checkProjectileHitTarget(boss_->GetHeadRight());
+        for (int i = 0; i < 3; ++i) checkProjectileHitPart(boss_->GetBody(i));
+        checkProjectileHitPart(boss_->GetHeadLeft());
+        checkProjectileHitPart(boss_->GetHeadMid());
+        checkProjectileHitPart(boss_->GetHeadRight());
     }
 
     if (field_) {
