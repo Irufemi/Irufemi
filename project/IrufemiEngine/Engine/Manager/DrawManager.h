@@ -34,7 +34,7 @@ class Line3DRegion;
 class CubeClass;
 class Skybox;
 struct SkinCluster;
-struct GpuMaterial; // 追加
+struct GpuMaterial;
 
 // 構造体を前方宣言
 struct DirectionalLight;

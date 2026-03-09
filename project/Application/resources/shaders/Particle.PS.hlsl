@@ -11,7 +11,7 @@ struct ParticleMaterial
 	float3 pad;
 	float32_t4x4 uvTransform;
 };
-ConstantBuffer<ParticleMaterial> gMaterial : register(b5);
+ConstantBuffer<ParticleMaterial> gMaterial : register(b0);
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;
