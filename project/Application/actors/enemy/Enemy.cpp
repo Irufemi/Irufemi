@@ -59,10 +59,10 @@ void Enemy::Update() {
 
     // --- ビームの更新と位置同期 ---
     if (beam_) {
-        // 毎フレーム「最新の頭の位置」を渡して同期させる
+        // 常に最新の「頭のワールド行列」を渡す
+        // これにより、頭がシェイクで揺れても、ビームも一緒に揺れる
         beam_->Update(GetHeadMidWorldMatrix());
 
-        // ビームが寿命で消えたら破棄
         if (beam_->IsExpired()) {
             beam_.reset();
         }
