@@ -38,5 +38,12 @@ void EnemyParameters::Load(const std::string& filepath) {
     if (enemy.contains("head_right") && enemy["head_right"].contains("hp")) {
       headRightHP_ = enemy["head_right"]["hp"];
     }
+
+    if (enemy.contains("blow_speed")) {
+        blowSpeed_ = enemy["blow_speed"];
+    }
+    if (enemy.contains("disappear_time")) {
+        disappearTime_ = enemy["disappear_time"];
+    }
   }
 }

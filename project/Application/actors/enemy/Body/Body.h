@@ -2,6 +2,7 @@
 
 #include "Irufemi.h"
 #include <memory>
+#include "Engine/Core/Math/Geometry/OBB.h"
 
 class Camera;
 
@@ -21,9 +22,26 @@ public:
 
   // Transformを一括設定する（回転やスケールも含めて上書き）
   void SetTransform(const Transform& transform);
+  const Transform& GetTransform() const { return transform_; }
+
+  void OnDestroyed(const Vector3& attackDir, float blowSpeed);
+  bool IsCompletelyDead() const;
+  bool IsBlownAway() const { return isBlownAway_; }
+
+  const Vector3& GetBlowVelocity() const { return blowVelocity_; }
+  void SetBlowVelocity(const Vector3& v) { blowVelocity_ = v; }
+
+  OBB GetOBB() const;
 
 private:
   std::unique_ptr<ObjClass> obj_ = nullptr;
   Vector3 basePosition_ = {};
+  Transform transform_ = {}; // OBB計算や吹き飛び時の姿勢保持のために保存
+
   int hp_ = 0;
+
+  // 吹き飛び・消滅用
+  bool isBlownAway_ = false;
+  Vector3 blowVelocity_ = {};
+  float disappearTimer_ = 0.0f;
 };

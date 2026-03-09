@@ -95,6 +95,18 @@ public:
     const AttackCollision& GetAttackCollision() const { return attackCollision_; }
 
     /**
+     * @brief マシンガンの弾の取得
+     */
+    MachineGunBullet* GetMachineGunBullets() { return bullets_; }
+    static int GetMaxMachineGunBullets() { return kMaxBullets; }
+
+    /**
+     * @brief ミサイルの取得
+     */
+    MissileData* GetMissiles() { return missiles_; }
+    static int GetMaxMissiles() { return kMaxMissiles; }
+
+    /**
      * @brief やられ判定の取得（敵からの攻撃を受けるときに使う）
      * @return やられ判定構造体
      */

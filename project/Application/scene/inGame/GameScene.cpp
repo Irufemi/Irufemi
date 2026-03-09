@@ -13,7 +13,10 @@
 
 #include "actors/player/Player.h" 
 #include "actors/enemy/Enemy.h"
+#include "actors/enemy/EnemyParameters.h"
 #include "contents/field/Field.h"
+
+#include "Engine/Core/Math/Geometry/Collision.h"
 
 #include <Windows.h>
 
@@ -83,6 +86,129 @@ void GameScene::Update() {
 
     if (boss_) {
         boss_->Update();
+    }
+
+    // --- 当たり判定の実装 ---
+    if (player_ && boss_) {
+        // Playerの攻撃判定（近接）
+        const AttackCollision& attackCol = player_->GetAttackCollision();
+        Sphere attackSphere;
+        attackSphere.center = attackCol.center;
+        attackSphere.radius = attackCol.radius;
+        Vector3 playerPos = player_->GetTranslate(); // 攻撃方向計算用
+
+        auto checkAndDamage = [&](auto* part) {
+            if (!part || part->GetHP() <= 0 || part->IsBlownAway()) return;
+
+            // 1. 近接攻撃の判定
+            if (attackCol.isActive && Collision::IsOBBSphereCollision(part->GetOBB(), attackSphere)) {
+                part->SetHP(part->GetHP() - 100); // 仮のダメージ量
+                if (part->GetHP() <= 0) {
+                    // 攻撃方向：プレイヤーから対象部位へのベクトル
+                    Vector3 attackDir = Math::Normalize(Math::Subtract(part->GetTransform().translate, playerPos));
+                    part->OnDestroyed(attackDir, EnemyParameters::GetInstance()->GetBlowSpeed());
+                }
+            }
+
+            // 2. マシンガンの弾の判定
+            MachineGunBullet* bullets = player_->GetMachineGunBullets();
+            for (int j = 0; j < Player::GetMaxMachineGunBullets(); ++j) {
+                if (!bullets[j].isActive) continue;
+                Sphere bulletSphere;
+                bulletSphere.center = bullets[j].position;
+                bulletSphere.radius = 1.0f; // 余裕を持たせた半径
+                if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
+                    bullets[j].isActive = false; // 弾丸消滅
+                    part->SetHP(part->GetHP() - 10); // マシンガンのダメージ
+                    if (part->GetHP() <= 0) {
+                        Vector3 attackDir = Math::Normalize(bullets[j].velocity);
+                        part->OnDestroyed(attackDir, EnemyParameters::GetInstance()->GetBlowSpeed());
+                    }
+                }
+            }
+
+            // 3. ミサイルの判定
+            MissileData* missiles = player_->GetMissiles();
+            for (int k = 0; k < Player::GetMaxMissiles(); ++k) {
+                if (!missiles[k].isActive) continue;
+                Sphere missileSphere;
+                missileSphere.center = missiles[k].position;
+                missileSphere.radius = 2.0f; // ミサイルの当たり判定を大きめに
+                if (Collision::IsOBBSphereCollision(part->GetOBB(), missileSphere)) {
+                    missiles[k].isActive = false; // ミサイル消滅
+                    part->SetHP(part->GetHP() - 50); // ミサイルのダメージ
+                    if (part->GetHP() <= 0) {
+                        Vector3 attackDir = Math::Normalize(missiles[k].velocity);
+                        part->OnDestroyed(attackDir, EnemyParameters::GetInstance()->GetBlowSpeed());
+                    }
+                }
+            }
+        };
+
+        // 各部位に対して判定
+        for (int i = 0; i < 3; ++i) {
+            checkAndDamage(boss_->GetBody(i));
+        }
+        checkAndDamage(boss_->GetHeadLeft());
+        checkAndDamage(boss_->GetHeadMid());
+        checkAndDamage(boss_->GetHeadRight());
+
+        // 吹き飛んだ部位(projectile) vs 生存している部位(target) の判定
+        auto checkProjectileHitTarget = [&](auto* projectile) {
+            if (!projectile || !projectile->IsBlownAway() || projectile->IsCompletelyDead()) return;
+
+            auto checkTarget = [&](auto* target) {
+                // targetはまだ生きているか（吹き飛んでいないか）
+                if (!target || target->GetHP() <= 0 || target->IsBlownAway()) return;
+                
+                // OBB同士の判定
+                if (Collision::IsOBBCollision(projectile->GetOBB(), target->GetOBB())) {
+                    // ダメージを与える
+                    target->SetHP(target->GetHP() - 100); 
+
+                    // 吹き飛んできた部位の反射方向計算
+                    Vector3 vel = projectile->GetBlowVelocity();
+                    Vector3 diff = Math::Subtract(projectile->GetTransform().translate, target->GetTransform().translate);
+                    float diffLen = Math::Length(diff);
+                    Vector3 normal = {0.0f, 0.0f, 1.0f};
+                    if (diffLen > 0.001f) {
+                         normal = {diff.x / diffLen, diff.y / diffLen, diff.z / diffLen};
+                    }
+
+                    float dot = Math::Dot(vel, normal);
+                    // R = V - 2(V・N)N
+                    Vector3 reflect = Math::Subtract(vel, Math::Multiply(2.0f * dot, normal));
+                    reflect.y = 0.0f; // Y方向には飛ばないように固定
+
+                    // 速度を反転・反射させる
+                    projectile->SetBlowVelocity(reflect);
+
+                    // ターゲットのHPが尽きた場合
+                    if (target->GetHP() <= 0) {
+                        float velLen = Math::Length(vel);
+                        Vector3 attackDir = {0.0f, 0.0f, 1.0f};
+                        if (velLen > 0.001f) {
+                            attackDir = {vel.x / velLen, 0.0f, vel.z / velLen};
+                        }
+                        target->OnDestroyed(attackDir, EnemyParameters::GetInstance()->GetBlowSpeed());
+                    }
+                }
+            };
+            
+            checkTarget(boss_->GetBody(0));
+            checkTarget(boss_->GetBody(1));
+            checkTarget(boss_->GetBody(2));
+            checkTarget(boss_->GetHeadLeft());
+            checkTarget(boss_->GetHeadMid());
+            checkTarget(boss_->GetHeadRight());
+        };
+
+        checkProjectileHitTarget(boss_->GetBody(0));
+        checkProjectileHitTarget(boss_->GetBody(1));
+        checkProjectileHitTarget(boss_->GetBody(2));
+        checkProjectileHitTarget(boss_->GetHeadLeft());
+        checkProjectileHitTarget(boss_->GetHeadMid());
+        checkProjectileHitTarget(boss_->GetHeadRight());
     }
 
     if (field_) {
