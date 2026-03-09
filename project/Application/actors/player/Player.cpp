@@ -92,9 +92,11 @@ void Player::Update() {
         rotate_.y += delta.x * sensitivityMult;
         cameraPitch_ += delta.y * sensitivityMult;
 
-        // --- 上下の振り幅をさらに制限（0.4f = 約23度） ---
-        if (cameraPitch_ > 0.4f) cameraPitch_ = 0.4f;
-        if (cameraPitch_ < -0.4f) cameraPitch_ = -0.4f;
+        // --- 上下の振り幅を非対称に制限 ---
+        // 上方向(-0.2f)は前回「いい感じ」だった値を維持し、
+        // 下方向(プラス側)の移動のみを 0.05f とほぼ動かないように狭めます。
+        if (cameraPitch_ > 0.05f) cameraPitch_ = 0.05f;   // 下を向く限界を厳しく制限
+        if (cameraPitch_ < -0.2f) cameraPitch_ = -0.2f;   // 上を向く限界は維持
     }
     // 1. 移動処理
     HandleMovement();
