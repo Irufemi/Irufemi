@@ -1,6 +1,5 @@
 #pragma once
-#include "3D/PlaneClass.h"
-#include "3D/ObjClass.h"
+#include "Irufemi.h"
 
 class Camera;
 class InputManager;

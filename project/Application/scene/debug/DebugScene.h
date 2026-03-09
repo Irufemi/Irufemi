@@ -1,33 +1,16 @@
 #pragma once
 
-#include "scene/IScene.h"
+#include "Framework/IScene.h"
 
-#include "audio/Bgm.h"
-#include "audio/Se.h"
-#include "math/shape/LinePrimitive.h"
-#include "2D/Sprite.h"
-#include "3D/ObjClass.h"
-#include "3D/SphereClass.h"
-#include "3D/CubeClass.h"
-#include "3D/PlaneClass.h"
-#include "3D/CylinderClass.h"
-#include "3D/TriangleClass.h"
-#include "3D/particle/ParticleSystem.h"
-#include "3D/particle/GPUParticleSystem.h"
-#include "3D/effect/EffectSystem.h"
-#include "3D/LineClass.h"
-#include "3D/AnimationModel.h"
-#include "3D/Skybox.h"
+#include "Irufemi.h"
 
 #include <memory>
 #include <vector>
 
 // 前方宣言
 class IrufemiEngine;
-class InputManager;
 class Camera;
 class DebugCamera;
-class Sprite;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;

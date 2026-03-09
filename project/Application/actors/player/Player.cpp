@@ -1,19 +1,9 @@
 #include "Player.h"
 
-#include "engine/Input/InputManager.h"
 #include "camera/Camera.h"
-#include "function/Math.h"
-#include "engine/IrufemiEngine.h"
-#include "engine/Input/Mouse.h"
 #include <Windows.h>
 #include <cmath>
 #include <cstdlib>
-
-// ImGui用
-#ifdef USE_IMGUI
-#include "manager/DebugUI.h" 
-#include <imgui.h>
-#endif
 
 // デストラクタ
 Player::~Player() {

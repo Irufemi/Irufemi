@@ -1,17 +1,16 @@
 #include "ResultScene.h"
 
-#include "scene/SceneManager.h"
-#include "engine/IrufemiEngine.h"
-#include "manager/DebugUI.h"
+#include "Framework/SceneManager.h"
+
+#include "Irufemi.h"
 
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
-
-#include "math/CameraForGPU.h"
-#include "math/PointLight.h"
-#include "math/SpotLight.h"
-#include "math/DirectionalLight.h"
-#include "math/AreaLight.h"
+#include "Graphics/Data/CameraForGPU.h"
+#include "Graphics/Data/PointLight.h"
+#include "Graphics/Data/SpotLight.h"
+#include "Graphics/Data/DirectionalLight.h"
+#include "Graphics/Data/AreaLight.h"
 
 ResultScene::~ResultScene() {
 

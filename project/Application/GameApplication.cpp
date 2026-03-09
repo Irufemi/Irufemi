@@ -2,14 +2,12 @@
 
 #include <memory>
 #include <string>
-#include "math/Vector4.h"
 
-#include "engine/IrufemiEngine.h"
-#include "scene/SceneManager.h"
+#include "Engine/Irufemi.h"
+#include "Framework/SceneManager.h"
 
 // memoryでの未定義
 #include "camera/DebugCamera.h"
-#include "2D/Sprite.h"
 
 // シーンのインクルード
 #include "scene/title/TitleScene.h"

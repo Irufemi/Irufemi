@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scene/IScene.h"
+#include "Framework/IScene.h"
 
 #include <memory>
 #include <vector>
