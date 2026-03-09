@@ -538,7 +538,7 @@ void Player::UpdateCamera() {
     // 足元(translate_)から少し上（例：1.5f）をターゲットにする
     Vector3 lookAtTarget = {
         translate_.x,
-        translate_.y + 1.5f,
+        translate_.y,
         translate_.z
     };
 
