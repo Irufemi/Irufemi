@@ -3,6 +3,8 @@
 #include "core/math/geometry/Math.h"
 #include "EnemyParameters.h"
 #include <manager/debugUI.h>
+#include "Engine/Core/Math/Geometry/OBB.h"
+#include "actors/enemy/Body/Body.h"
 #include <cmath>
 #include <string>
 
@@ -103,6 +105,16 @@ void Enemy::Update() {
     ImGui::Begin("Enemy HP Status");
     ImGui::SliderFloat("Fall Speed", &fallSpeed_, 0.01f, 1.0f);
     ImGui::SliderFloat("Shake Intensity", &shakeIntensity_, 0.0f, 10.0f);
+
+    float blowSpeed = EnemyParameters::GetInstance()->GetBlowSpeed();
+    if (ImGui::SliderFloat("Blow Speed", &blowSpeed, 0.0f, 5.0f)) {
+        EnemyParameters::GetInstance()->SetBlowSpeed(blowSpeed);
+    }
+    float disappearTime = EnemyParameters::GetInstance()->GetDisappearTime();
+    if (ImGui::SliderFloat("Disappear Time", &disappearTime, 0.5f, 10.0f)) {
+        EnemyParameters::GetInstance()->SetDisappearTime(disappearTime);
+    }
+
     for (int i = 0; i < 3; ++i) {
         if (bodies_[i]) {
             int hp = bodies_[i]->GetHP();
@@ -115,10 +127,12 @@ void Enemy::Update() {
 
 void Enemy::Draw() {
     if (!isActive_) return;
-    for (auto& body : bodies_) if (body && body->GetHP() > 0) body->Draw();
-    if (headLeft_ && headLeft_->GetHP() > 0) headLeft_->Draw();
-    if (headMid_ && headMid_->GetHP() > 0) headMid_->Draw();
-    if (headRight_ && headRight_->GetHP() > 0) headRight_->Draw();
+    for (auto& body : bodies_) {
+        if (body && !body->IsCompletelyDead()) body->Draw();
+    }
+    if (headLeft_ && !headLeft_->IsCompletelyDead()) headLeft_->Draw();
+    if (headMid_ && !headMid_->IsCompletelyDead()) headMid_->Draw();
+    if (headRight_ && !headRight_->IsCompletelyDead()) headRight_->Draw();
 }
 
 // --- Enemy::Update の行列計算ロジックを流用して実装 ---

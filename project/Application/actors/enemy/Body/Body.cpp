@@ -1,5 +1,7 @@
 #include "Body.h"
 #include "camera/Camera.h"
+#include "actors/enemy/EnemyParameters.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 
 Body::~Body() {}
 
@@ -11,13 +13,47 @@ void Body::Initialize(Camera* camera, const Vector3& initialPos) {
 }
 
 void Body::Update() {
-  if (obj_) {
+  if (isBlownAway_) {
+    // 吹き飛び中の移動
+    basePosition_ = Math::Add(basePosition_, blowVelocity_);
+    
+    // 壁との判定（フィールドサイズはX,Z ±100）
+    const float kFieldBound = 100.0f;
+    const float kRadius = 2.0f; // 部位のだいたいの半径
+    
+    if (basePosition_.x - kRadius < -kFieldBound) {
+        basePosition_.x = -kFieldBound + kRadius;
+        blowVelocity_.x *= -1.0f;
+    } else if (basePosition_.x + kRadius > kFieldBound) {
+        basePosition_.x = kFieldBound - kRadius;
+        blowVelocity_.x *= -1.0f;
+    }
+    
+    if (basePosition_.z - kRadius < -kFieldBound) {
+        basePosition_.z = -kFieldBound + kRadius;
+        blowVelocity_.z *= -1.0f;
+    } else if (basePosition_.z + kRadius > kFieldBound) {
+        basePosition_.z = kFieldBound - kRadius;
+        blowVelocity_.z *= -1.0f;
+    }
+
+    // 回転を加えるなどの演出も可能
+    transform_.translate = basePosition_;
+    if (obj_) {
+      obj_->SetTransform(transform_);
+    }
+    
+    // 消滅タイマーを進める
+    disappearTimer_ += 1.0f / 60.0f; // 60FPS想定
+  }
+
+  if (obj_ && !IsCompletelyDead()) {
     obj_->Update();
   }
 }
 
 void Body::Draw() {
-  if (obj_) {
+  if (obj_ && !IsCompletelyDead()) {
     obj_->Draw();
   }
 }
@@ -30,12 +66,44 @@ void Body::SetPosition(const Vector3& pos) {
 }
 
 void Body::SetTransform(const Transform& transform) {
-  basePosition_ = transform.translate;
-  if (obj_) {
-    obj_->SetTransform(transform);
+  if (!isBlownAway_) { // 吹き飛び中は外部からのTransform上書きを無視する
+      transform_ = transform;
+      basePosition_ = transform.translate;
+      if (obj_) {
+        obj_->SetTransform(transform);
+      }
   }
 }
 
 const Vector3& Body::GetPosition() const {
   return basePosition_;
+}
+
+void Body::OnDestroyed(const Vector3& attackDir, float blowSpeed) {
+    if (isBlownAway_) return;
+    
+    isBlownAway_ = true;
+    disappearTimer_ = 0.0f;
+    blowVelocity_ = Math::Multiply(blowSpeed, attackDir);
+    blowVelocity_.y = 0.0f; // Y軸方向への吹き飛びを完全に無くす
+}
+
+bool Body::IsCompletelyDead() const {
+    if (!isBlownAway_) return false;
+    return disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime();
+}
+
+OBB Body::GetOBB() const {
+    OBB obb;
+    obb.center = transform_.translate;
+    
+    // 回転から各軸の方向ベクトルを算出
+    Matrix4x4 rotateMat = Math::MakeRotateXYZMatrix(transform_.rotate);
+    obb.orientations[0] = { rotateMat.m[0][0], rotateMat.m[0][1], rotateMat.m[0][2] };
+    obb.orientations[1] = { rotateMat.m[1][0], rotateMat.m[1][1], rotateMat.m[1][2] };
+    obb.orientations[2] = { rotateMat.m[2][0], rotateMat.m[2][1], rotateMat.m[2][2] };
+    
+    // だるまの胴体のサイズ（仮）
+    obb.size = { 1.5f, 1.0f, 1.5f };
+    return obb;
 }

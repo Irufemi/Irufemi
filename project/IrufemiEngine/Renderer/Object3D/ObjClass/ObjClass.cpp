@@ -65,7 +65,7 @@ void ObjClass::Update() {
 
     // オブジェクト全体のワールド行列を計算
     transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-    
+
     // rootNodeの行列を適用(モデルデータに階層情報があれば)
     if (managedModel_->cpuModel) {
         transformationMatrix_.world = managedModel_->cpuModel->rootNode.localMatrix * transformationMatrix_.world;

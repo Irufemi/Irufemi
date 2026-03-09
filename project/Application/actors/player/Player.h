@@ -95,6 +95,18 @@ public:
     const AttackCollision& GetAttackCollision() const { return attackCollision_; }
 
     /**
+     * @brief マシンガンの弾の取得
+     */
+    MachineGunBullet* GetMachineGunBullets() { return bullets_; }
+    static int GetMaxMachineGunBullets() { return kMaxBullets; }
+
+    /**
+     * @brief ミサイルの取得
+     */
+    MissileData* GetMissiles() { return missiles_; }
+    static int GetMaxMissiles() { return kMaxMissiles; }
+
+    /**
      * @brief やられ判定の取得（敵からの攻撃を受けるときに使う）
      * @return やられ判定構造体
      */
@@ -188,7 +200,7 @@ private:
     const float kMissileSpeed = 0.8f;      // ミサイルの最高速度
 
     // トランスフォーム
-    Vector3 scale_ = { 0.3f, 0.3f, 0.3f };
+    Vector3 scale_ = { 0.3f, 1.0f, 0.3f };
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
     Vector3 translate_ = { 0.0f, 0.0f, -50.0f };
 

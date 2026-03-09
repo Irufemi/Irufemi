@@ -46,6 +46,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     /*CrashHandler*/
     SetUnhandledExceptionFilter(WinApp::ExportDump);
 
+    // 時間計測の開始
+    startTime_ = std::chrono::steady_clock::now();
+    lastFrameTime_ = startTime_;
+
     // WinApp をエンジン内で生成・初期化(COM 初期化もここで実施される)
     winApp_ = std::make_unique<WinApp>();
     if (!winApp_->Initialize(GetModuleHandle(nullptr), clientWidth, clientHeight, title.c_str())) {
@@ -275,6 +279,9 @@ void IrufemiEngine::Execute() {
     }
 
     while (winApp_->ProcessMessages()) {
+        // フレーム開始時の時間更新
+        StartFrame();
+
         // ImGui
         ui->FrameStart();
 
@@ -302,7 +309,11 @@ void IrufemiEngine::Execute() {
 
 // フレーム開始処理
 void IrufemiEngine::StartFrame() {
-
+    // 時間の更新
+    auto now = std::chrono::steady_clock::now();
+    deltaTime_ = std::chrono::duration<float>(now - lastFrameTime_).count();
+    totalTime_ = std::chrono::duration<float>(now - startTime_).count();
+    lastFrameTime_ = now;
 }
 
 // フレーム途中処理

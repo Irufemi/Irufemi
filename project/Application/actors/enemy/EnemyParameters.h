@@ -15,6 +15,12 @@ public:
   int GetHeadMidHP() const { return headMidHP_; }
   int GetHeadRightHP() const { return headRightHP_; }
 
+  float GetBlowSpeed() const { return blowSpeed_; }
+  void SetBlowSpeed(float speed) { blowSpeed_ = speed; }
+
+  float GetDisappearTime() const { return disappearTime_; }
+  void SetDisappearTime(float time) { disappearTime_ = time; }
+
 private:
   EnemyParameters() = default;
   ~EnemyParameters() = default;
@@ -25,4 +31,7 @@ private:
   int headLeftHP_ = 50;
   int headMidHP_ = 150;
   int headRightHP_ = 50;
+
+  float blowSpeed_ = 0.5f;
+  float disappearTime_ = 3.0f;
 };

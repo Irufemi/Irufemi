@@ -191,13 +191,13 @@ void AnimationModel::Draw() {
 
     if (!managedModel_ || !engine_) return;
 
-    // --- 骨格（球体の集合）を一括描画 ---
+    // --- 追加：骨格（球体の集合）を一括描画 ---
     if (jointSpheres_ && !skeleton_.joints.empty()) {
         engine_->ApplyRegionPSO();
         jointSpheres_->Draw();
     }
 
-    // --- ボーン（線）を一括描画 ---
+    // --- 追加：ボーン（線）を一括描画 ---
     if (boneLines_ && !skeleton_.joints.empty()) {
         engine_->ApplyLineInstancedPSO();
         boneLines_->Draw();

@@ -44,7 +44,13 @@ public:
     EnemyState GetState() const { return state_; }
 
    Matrix4x4 GetHeadMidWorldMatrix() const;
-   OBB GetOBB() const;
+   OBB GetOBB() const; // 全体のOBB
+
+   // --- 部位ごとの操作インターフェース ---
+   Body* GetBody(int index) { return bodies_[index].get(); }
+   HeadLeft* GetHeadLeft() { return headLeft_.get(); }
+   HeadMid* GetHeadMid() { return headMid_.get(); }
+   HeadRight* GetHeadRight() { return headRight_.get(); }
 
 private:
     // 各パーツ

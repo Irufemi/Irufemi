@@ -11,6 +11,8 @@
     },
     "head_right": {
       "hp": 1000
-    }
+    },
+    "blow_speed": 1.0,
+    "disappear_time": 5.0
   }
 }
