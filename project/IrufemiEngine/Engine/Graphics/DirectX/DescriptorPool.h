@@ -9,6 +9,7 @@
 
 class DescriptorPool {
 public:
+
     static constexpr uint32_t kMaxSRVCount = 512;
     static constexpr uint32_t kInvalid = 0xFFFFFFFFu; // std::numeric_limits<uint32_t>::max() の代用
 

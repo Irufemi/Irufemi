@@ -38,6 +38,7 @@ void DirectXCommon::Finalize() {
     }
 
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
+    gpuParticleEmitPSO_.Reset();
     gpuParticleUpdatePSO_.Reset();
     gpuParticleInitializePSO_.Reset();
     skinningComputePSO_.Reset();
@@ -522,9 +523,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         srvRanges[1] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t1
         srvRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t2
 
-        D3D12_DESCRIPTOR_RANGE uavRange = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u0
+        D3D12_DESCRIPTOR_RANGE uavRanges[3];
+        uavRanges[0] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u0
+        uavRanges[1] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u1
+        uavRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u2
 
-        D3D12_ROOT_PARAMETER computeRootParameters[5] = {};
+        D3D12_ROOT_PARAMETER computeRootParameters[8] = {};
         computeRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         computeRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         computeRootParameters[0].DescriptorTable.pDescriptorRanges = &srvRanges[0];
@@ -542,13 +546,28 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
         computeRootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         computeRootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-        computeRootParameters[3].DescriptorTable.pDescriptorRanges = &uavRange;
+        computeRootParameters[3].DescriptorTable.pDescriptorRanges = &uavRanges[0];
         computeRootParameters[3].DescriptorTable.NumDescriptorRanges = 1;
 
         computeRootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         computeRootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         computeRootParameters[4].Descriptor.ShaderRegister = 0; // b0
         computeRootParameters[4].Descriptor.RegisterSpace = 0;
+
+        computeRootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        computeRootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[5].Descriptor.ShaderRegister = 1; // b1
+        computeRootParameters[5].Descriptor.RegisterSpace = 0;
+
+        computeRootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        computeRootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[6].DescriptorTable.pDescriptorRanges = &uavRanges[1];
+        computeRootParameters[6].DescriptorTable.NumDescriptorRanges = 1;
+
+        computeRootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        computeRootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[7].DescriptorTable.pDescriptorRanges = &uavRanges[2];
+        computeRootParameters[7].DescriptorTable.NumDescriptorRanges = 1;
 
         computeRootSignatureDesc.pParameters = computeRootParameters;
         computeRootSignatureDesc.NumParameters = _countof(computeRootParameters);
@@ -680,8 +699,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleInitializeCSBlob = CompileShader(L"resources/shaders/InitializeParticle.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(gpuParticleInitializeCSBlob != nullptr);
 
-    /*Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleUpdateCSBlob = CompileShader(L"resources/shaders/UpdateParticle.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
-    assert(gpuParticleUpdateCSBlob != nullptr);*/
+    Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleEmitCSBlob = CompileShader(L"resources/shaders/EmitParticle.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(gpuParticleEmitCSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleUpdateCSBlob = CompileShader(L"resources/shaders/UpdateParticle.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(gpuParticleUpdateCSBlob != nullptr);
 
     Microsoft::WRL::ComPtr<IDxcBlob> gpuParticleVSBlob = CompileShader(L"resources/shaders/ParticleGPU.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(gpuParticleVSBlob != nullptr);
@@ -788,9 +810,13 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&gpuParticleInitializePSO_));
     assert(SUCCEEDED(hr));
 
-    /*computePsoDesc.CS = { gpuParticleUpdateCSBlob->GetBufferPointer(), gpuParticleUpdateCSBlob->GetBufferSize() };
+    computePsoDesc.CS = { gpuParticleEmitCSBlob->GetBufferPointer(), gpuParticleEmitCSBlob->GetBufferSize() };
+    hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&gpuParticleEmitPSO_));
+    assert(SUCCEEDED(hr));
+
+    computePsoDesc.CS = { gpuParticleUpdateCSBlob->GetBufferPointer(), gpuParticleUpdateCSBlob->GetBufferSize() };
     hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&gpuParticleUpdatePSO_));
-    assert(SUCCEEDED(hr));*/
+    assert(SUCCEEDED(hr));
 
     // 生成が完了したのでShaderBlobを解放
     if (object3DVSBlob) { object3DVSBlob.Reset(); }
@@ -812,7 +838,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (skyboxPSBlob) { skyboxPSBlob.Reset(); }
     if (skinningCSBlob) { skinningCSBlob.Reset(); }
     if (gpuParticleInitializeCSBlob) { gpuParticleInitializeCSBlob.Reset(); }
-    /*if (gpuParticleUpdateCSBlob) { gpuParticleUpdateCSBlob.Reset(); }*/
+    if (gpuParticleEmitCSBlob) { gpuParticleEmitCSBlob.Reset(); }
+    if (gpuParticleUpdateCSBlob) { gpuParticleUpdateCSBlob.Reset(); }
     if (gpuParticleVSBlob) { gpuParticleVSBlob.Reset(); }
     if (gpuParticlePSBlob) { gpuParticlePSBlob.Reset(); }
 

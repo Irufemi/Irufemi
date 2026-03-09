@@ -16,6 +16,8 @@ class DrawManager;
 class DebugUI;
 class ModelManager;
 struct ManagedModel;
+struct GpuMaterial;
+struct Material;
 
 //==========================
 // objが配布されているサイト
@@ -32,6 +34,11 @@ private:
     // オブジェクト全体のTransform
     Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     TransformationMatrix transformationMatrix_{};
+    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // インスタンスカラー
+
+    // インスタンス固有のマテリアル
+    std::vector<std::shared_ptr<GpuMaterial>> instanceMaterials_;
+    std::vector<Material*> mappedMaterials_;
 
     // 変換行列用リソース
     Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_;
@@ -89,10 +96,10 @@ public: //メンバ関数
     // すべてのメッシュのライティングを一括で設定
     void SetEnableLightingToAllMeshes(bool enable);
 
-    // すべてのメッシュのアルファ値を一括で設定
+    // インスタンスのアルファ値を設定
     void SetAlpha(float alpha);
 
-    // すべてのメッシュの色を一括で設定
+    // インスタンスの色を一括で設定
     void SetColor(const Vector4& color);
 
     // 描画用の変換行列リソースのGPUアドレスを取得

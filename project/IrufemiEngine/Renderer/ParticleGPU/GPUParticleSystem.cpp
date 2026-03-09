@@ -22,7 +22,7 @@ GPUParticleSystem::GPUParticleSystem() = default;
 GPUParticleSystem::~GPUParticleSystem() = default;
 
 // 初期化
-void GPUParticleSystem::Initialize(Camera* camera,const std::string& textureName) {
+void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureName) {
 
     assert(dxCommon_);
     assert(drawManager_);
@@ -31,11 +31,48 @@ void GPUParticleSystem::Initialize(Camera* camera,const std::string& textureName
 
     camera_ = camera;
 
+    auto* srvPool = dxCommon_->GetSrvPool();
+
+    /*EmitterSphere*/
+    emitterSphereResource_ = dxCommon_->CreateBufferResource(sizeof(EmitterSphere));
+    emitterSphereResource_->Map(0, nullptr, reinterpret_cast<void**>(&emitterSphere_));
+
+    perFrameResource_ = dxCommon_->CreateBufferResource(sizeof(PerFrame));
+    perFrameResource_->Map(0, nullptr, reinterpret_cast<void**>(&perFrameData_));
+
+    // SRV
+    uint32_t emitterSrvIndex = srvPool->Allocate();
+    emitterSphereSrvHandleCPU_ = srvPool->GetCPUHandle(emitterSrvIndex);
+    emitterSphereSrvHandleGPU_ = srvPool->GetGPUHandle(emitterSrvIndex);
+    D3D12_SHADER_RESOURCE_VIEW_DESC emitterSrvDesc{};
+    emitterSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    emitterSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    emitterSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    emitterSrvDesc.Buffer.FirstElement = 0;
+    emitterSrvDesc.Buffer.NumElements = 1;
+    emitterSrvDesc.Buffer.StructureByteStride = sizeof(EmitterSphere);
+    dxCommon_->GetDevice()->CreateShaderResourceView(emitterSphereResource_.Get(), &emitterSrvDesc, emitterSphereSrvHandleCPU_);
+
+    // perFrame SRV
+    uint32_t perFrameSrvIndex = srvPool->Allocate();
+    perFrameSrvHandleCPU_ = srvPool->GetCPUHandle(perFrameSrvIndex);
+    perFrameSrvHandleGPU_ = srvPool->GetGPUHandle(perFrameSrvIndex);
+    D3D12_SHADER_RESOURCE_VIEW_DESC perFrameSrvDesc{};
+    perFrameSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    perFrameSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    perFrameSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    perFrameSrvDesc.Buffer.FirstElement = 0;
+    perFrameSrvDesc.Buffer.NumElements = 1;
+    perFrameSrvDesc.Buffer.StructureByteStride = sizeof(PerFrame);
+    dxCommon_->GetDevice()->CreateShaderResourceView(perFrameResource_.Get(), &perFrameSrvDesc, perFrameSrvHandleCPU_);
+
+
+    /*GPUParticle*/
+
     // 1. Particleの情報を格納するためのResourceをD3D12_HEAP_TYPE_DEFAULTで作る
     particleResource_ = dxCommon_->CreateUAVBufferResource(sizeof(ParticleCS) * kMaxParticles);
 
     // 2. 1に対してUAV等のViewを作る
-    auto* srvPool = dxCommon_->GetSrvPool();
     // UAV
     uint32_t uavIndex = srvPool->Allocate();
     particleUavHandleCPU_ = srvPool->GetCPUHandle(uavIndex);
@@ -60,6 +97,34 @@ void GPUParticleSystem::Initialize(Camera* camera,const std::string& textureName
     srvDesc.Buffer.NumElements = kMaxParticles;
     srvDesc.Buffer.StructureByteStride = sizeof(ParticleCS);
     dxCommon_->GetDevice()->CreateShaderResourceView(particleResource_.Get(), &srvDesc, particleSrvHandleCPU_);
+
+    // freeListIndexリソース
+    freeListIndexResource_ = dxCommon_->CreateUAVBufferResource(sizeof(int32_t));
+    // UAV
+    uint32_t freeListIndexUavIndex = srvPool->Allocate();
+    freeListIndexUavHandleCPU_ = srvPool->GetCPUHandle(freeListIndexUavIndex);
+    freeListIndexUavHandleGPU_ = srvPool->GetGPUHandle(freeListIndexUavIndex);
+    D3D12_UNORDERED_ACCESS_VIEW_DESC freeListIndexUavDesc{};
+    freeListIndexUavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    freeListIndexUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    freeListIndexUavDesc.Buffer.FirstElement = 0;
+    freeListIndexUavDesc.Buffer.NumElements = 1;
+    freeListIndexUavDesc.Buffer.StructureByteStride = sizeof(int32_t);
+    dxCommon_->GetDevice()->CreateUnorderedAccessView(freeListIndexResource_.Get(), nullptr, &freeListIndexUavDesc, freeListIndexUavHandleCPU_);
+
+    // freeListリソース
+    freeListResource_ = dxCommon_->CreateUAVBufferResource(sizeof(int32_t) * kMaxParticles);
+    // UAV
+    uint32_t freeListUavIndex = srvPool->Allocate();
+    freeListUavHandleCPU_ = srvPool->GetCPUHandle(freeListUavIndex);
+    freeListUavHandleGPU_ = srvPool->GetGPUHandle(freeListUavIndex);
+    D3D12_UNORDERED_ACCESS_VIEW_DESC freeListUavDesc{};
+    freeListUavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    freeListUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    freeListUavDesc.Buffer.FirstElement = 0;
+    freeListUavDesc.Buffer.NumElements = kMaxParticles;
+    freeListUavDesc.Buffer.StructureByteStride = sizeof(int32_t);
+    dxCommon_->GetDevice()->CreateUnorderedAccessView(freeListResource_.Get(), nullptr, &freeListUavDesc, freeListUavHandleCPU_);
 
     // PerView用リソース
     perViewResource_ = dxCommon_->CreateBufferResource(sizeof(PerViewForGPU));
@@ -107,17 +172,86 @@ void GPUParticleSystem::Initialize(Camera* camera,const std::string& textureName
     commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
     commandList->SetPipelineState(dxCommon_->GetGpuParticleIntializePSO());
     commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
 
     commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
     D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = particleResource_.Get();
+    barrier.UAV.pResource = nullptr; // グローバルUAVバリア
     commandList->ResourceBarrier(1, &barrier);
+
+
+    /*Particleを発生させる*/
+
+    emitterSphere_->count = 10;
+    emitterSphere_->frequency = 0.5f;
+    emitterSphere_->frequencyTime = 0.0f;
+    emitterSphere_->translate = Vector3(0.0f, 0.0f, 0.0f);
+    emitterSphere_->radius = 1.0f;
+    emitterSphere_->emit = 1;
+
+    perFrameData_->deltaTime = engine_->GetDeltaTime();
+
 }
 
 // 更新
 void GPUParticleSystem::Update() {
+
+    /*Particleを発生させる*/
+
+    emitterSphere_->frequencyTime += engine_->GetDeltaTime(); // δタイムを加算
+    perFrameData_->time = engine_->GetTotalTime();
+    perFrameData_->deltaTime = engine_->GetDeltaTime();
+
+    // 射出間隔を上回ったら射出許可を出して時間を調整
+    if (emitterSphere_->frequency <= emitterSphere_->frequencyTime) {
+        emitterSphere_->frequencyTime -= emitterSphere_->frequency;
+        emitterSphere_->emit = 1;
+    // 射出間隔を上回っていないので、射出許可は出せない
+    } else {
+        emitterSphere_->emit = 0;
+    }
+
+    /*GPUParticle*/
+
+    ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+
+    // ディスクリプタヒープを設定
+    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+    commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
+
+    // UAVバリアの設定
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier.UAV.pResource = nullptr; // グローバルUAVバリア
+
+    // Emit
+    commandList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
+    commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+    commandList->SetComputeRootConstantBufferView(4, emitterSphereResource_->GetGPUVirtualAddress());
+    commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
+    commandList->Dispatch(1, 1, 1);
+
+    // Emitの完了を待つ
+    commandList->ResourceBarrier(1, &barrier);
+
+    // Update
+    commandList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
+    commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+    commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
+    commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
+
+    // Updateの完了を待つ
+    commandList->ResourceBarrier(1, &barrier);
+
 
     perViewData_->viewProjection = camera_->GetViewProjectionMatrix3D();
 
@@ -125,24 +259,27 @@ void GPUParticleSystem::Update() {
     Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
 
     /// カメラの回転を適用する
-    Matrix4x4 billbordMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
-    billbordMatrix_.m[3][0] = 0.0f;
-    billbordMatrix_.m[3][1] = 0.0f;
-    billbordMatrix_.m[3][2] = 0.0f;
+    Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+    billboardMatrix_.m[3][0] = 0.0f;
+    billboardMatrix_.m[3][1] = 0.0f;
+    billboardMatrix_.m[3][2] = 0.0f;
 
-    perViewData_->billbordMatrix = billbordMatrix_;
+    perViewData_->billbordMatrix = billboardMatrix_;
 }
 
 // 描画
 void GPUParticleSystem::Draw() {
+
+    /*GPUParticle*/
+
     // 4. 1を利用してParticleのInstance描画を行う
 
     engine_->ApplyGpuParticlePSO();
 
     drawManager_->DrawParticleGPU(
         vertexBufferView_,
-        perViewResource_->GetGPUVirtualAddress(),
         materialResource_->GetGPUVirtualAddress(),
+        perViewResource_->GetGPUVirtualAddress(),
         particleSrvHandleGPU_,
         textureHandle_,
         kMaxParticles

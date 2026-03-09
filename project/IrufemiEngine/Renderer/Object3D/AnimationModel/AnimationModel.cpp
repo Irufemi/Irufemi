@@ -18,7 +18,16 @@
 IrufemiEngine* AnimationModel::engine_ = nullptr;
 
 AnimationModel::AnimationModel() {}
-AnimationModel::~AnimationModel() {}
+AnimationModel::~AnimationModel() {
+    if (transformationResource_) {
+        transformationResource_->Unmap(0, nullptr);
+    }
+    for (size_t i = 0; i < instanceMaterials_.size(); ++i) {
+        if (instanceMaterials_[i] && instanceMaterials_[i]->materialResource) {
+            instanceMaterials_[i]->materialResource->Unmap(0, nullptr);
+        }
+    }
+}
 
 // 初期化
 void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
@@ -37,6 +46,17 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
     assert(engine_ && "DrawManager is not set. Cannot get DirectXCommon.");
     transformationResource_ = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
     transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+
+    // インスタンス固有のマテリアルリソースを生成
+    instanceMaterials_.resize(managedModel_->gpuMaterials.size());
+    mappedMaterials_.resize(managedModel_->gpuMaterials.size());
+    for (size_t i = 0; i < managedModel_->gpuMaterials.size(); ++i) {
+        instanceMaterials_[i] = std::make_shared<GpuMaterial>();
+        instanceMaterials_[i]->materialResource = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(Material));
+        instanceMaterials_[i]->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedMaterials_[i]));
+        // 共有のテクスチャハンドルをコピー
+        instanceMaterials_[i]->textureHandle = managedModel_->gpuMaterials[i]->textureHandle;
+    }
 
     // ノードアニメーション用のリソース確保
     if (managedModel_->cpuModel->skinClusterData.empty()) {
@@ -171,13 +191,13 @@ void AnimationModel::Draw() {
 
     if (!managedModel_ || !engine_) return;
 
-    // --- 骨格（球体の集合）を一括描画 ---
+    // --- 追加：骨格（球体の集合）を一括描画 ---
     if (jointSpheres_ && !skeleton_.joints.empty()) {
         engine_->ApplyRegionPSO();
         jointSpheres_->Draw();
     }
 
-    // --- ボーン（線）を一括描画 ---
+    // --- 追加：ボーン（線）を一括描画 ---
     if (boneLines_ && !skeleton_.joints.empty()) {
         engine_->ApplyLineInstancedPSO();
         boneLines_->Draw();
@@ -194,11 +214,12 @@ void AnimationModel::Draw() {
             skinCluster_,
             skinCluster_.skinnedVertexSrvHandle.second,
             skinCluster_.skinningInformationResource->GetGPUVirtualAddress(),
-            skinCluster_.mappedSkinningInformation->numVertices
+            skinCluster_.mappedSkinningInformation->numVertices,
+            instanceMaterials_
         );
     } else {
         // メッシュごとに描画
-        engine_->GetDrawManager()->DrawModel(managedModel_.get(), GetTransformationGpuAddress());
+        engine_->GetDrawManager()->DrawModel(managedModel_.get(), GetTransformationGpuAddress(), instanceMaterials_);
     }
 }
 
@@ -209,6 +230,7 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
     ImGui::Begin(name.c_str());
     if (engine_) {
         engine_->GetDebugUI()->DebugTransform(transform_);
+        ImGui::ColorEdit4("Color", &color_.x); // インスタンスカラーを編集
 
         // ImGuiでマテリアルを編集
         if (managedModel_ && managedModel_->cpuModel) {
@@ -231,37 +253,33 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
 }
 
 void AnimationModel::UpdateMaterials() {
-    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->gpuMaterials.empty()) {
+    if (!managedModel_ || !managedModel_->cpuModel || mappedMaterials_.empty()) {
         return;
     }
 
     // 全メッシュのマテリアルを更新
     for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
         // インデックスが範囲内か確認
-        if (i >= managedModel_->gpuMaterials.size()) {
+        if (i >= mappedMaterials_.size() || !mappedMaterials_[i]) {
             continue;
         }
 
         const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
-        GpuMaterial* gpuMat = managedModel_->gpuMaterials[i].get();
+        Material* mappedData = mappedMaterials_[i];
 
-        if (gpuMat && gpuMat->materialResource) {
-            Material* mappedData = nullptr;
-            gpuMat->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
-            if (mappedData) {
-                mappedData->color = cpuMat.color;
-                mappedData->enableLighting = cpuMat.enableLighting;
-                mappedData->uvTransform = cpuMat.uvTransform;
-                mappedData->shininess = cpuMat.shininess;
-                mappedData->environmentCoefficient = cpuMat.environmentCoefficient; // この行を追加
-                mappedData->hasTexture = !cpuMat.textureFilePath.empty();
-                // ライティングモードを enableLighting に基づいて設定
-                mappedData->lightingMode = cpuMat.enableLighting ? 2 : 0;
-                if (mappedData->color.w <= 0.0f) { mappedData->color.w = 1.0f; }
+        // インスタンスカラーとマテリアルカラーを乗算
+        mappedData->color.x = cpuMat.color.x * color_.x;
+        mappedData->color.y = cpuMat.color.y * color_.y;
+        mappedData->color.z = cpuMat.color.z * color_.z;
+        mappedData->color.w = cpuMat.color.w * color_.w;
 
-                gpuMat->materialResource->Unmap(0, nullptr);
-            }
-        }
+        mappedData->enableLighting = cpuMat.enableLighting;
+        mappedData->uvTransform = cpuMat.uvTransform;
+        mappedData->shininess = cpuMat.shininess;
+        mappedData->hasTexture = !cpuMat.textureFilePath.empty();
+        // ライティングモードを enableLighting に基づいて設定
+        mappedData->lightingMode = cpuMat.enableLighting ? 2 : 0;
+        if (mappedData->color.w <= 0.0f) { mappedData->color.w = 1.0f; }
     }
 }
 

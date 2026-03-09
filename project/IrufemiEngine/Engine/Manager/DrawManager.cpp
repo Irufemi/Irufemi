@@ -453,7 +453,7 @@ void DrawManager::DrawLineInstanced(const D3D12_VERTEX_BUFFER_VIEW& vertexBuffer
     commandList_->DrawIndexedInstanced(2, instanceCount, 0, 0, 0);
 }
 
-void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA) {
+void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const std::vector<std::shared_ptr<GpuMaterial>>& materials) {
     if (!model || !model->cpuModel || !dxCommon_) return;
 
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -461,7 +461,7 @@ void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS
     // モデル内の全メッシュをループして描画
     for (size_t i = 0; i < model->gpuMeshes.size(); ++i) {
         const auto& gpuMesh = model->gpuMeshes[i];
-        const auto& gpuMaterial = model->gpuMaterials[i];
+        const auto& gpuMaterial = (i < materials.size() && materials[i]) ? materials[i] : model->gpuMaterials[i];
 
         if (!gpuMesh || !gpuMaterial) continue;
 
@@ -486,10 +486,9 @@ void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS
             commandList_->DrawInstanced(gpuMesh->vertexCount, 1, 0, 0);
         }
     }
-    // 一時リソースはフレーム終了後に解放される
 }
 
-void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster, const D3D12_GPU_DESCRIPTOR_HANDLE& skinnedVertexSrv, D3D12_GPU_VIRTUAL_ADDRESS skinningInfoGpuVA, uint32_t numVertices)
+void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster, const D3D12_GPU_DESCRIPTOR_HANDLE& skinnedVertexSrv, D3D12_GPU_VIRTUAL_ADDRESS skinningInfoGpuVA, uint32_t numVertices, const std::vector<std::shared_ptr<GpuMaterial>>& materials)
 {
     if (!model || !model->cpuModel || !dxCommon_) return;
 
@@ -527,7 +526,7 @@ void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUA
     // モデル内の全メッシュをループして描画
     for (size_t i = 0; i < model->gpuMeshes.size(); ++i) {
         const auto& gpuMesh = model->gpuMeshes[i];
-        const auto& gpuMaterial = model->gpuMaterials[i];
+        const auto& gpuMaterial = (i < materials.size() && materials[i]) ? materials[i] : model->gpuMaterials[i];
 
         if (!gpuMesh || !gpuMaterial) continue;
 
@@ -644,9 +643,9 @@ void DrawManager::DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferVi
 
     // --- CBV のバインド ---
     // (rootParameters[0] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView(1, perView);
+    commandList_->SetGraphicsRootConstantBufferView(0, perView);
 
-    commandList_->SetGraphicsRootConstantBufferView(0, material);
+    commandList_->SetGraphicsRootConstantBufferView(1, material);
 
     // --- SRVのバインド ---
     // テクスチャ (PS t0)
