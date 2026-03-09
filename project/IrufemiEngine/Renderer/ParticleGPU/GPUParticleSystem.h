@@ -3,6 +3,7 @@
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
 #include "Engine/Core/Math/Matrix4x4.h"
+#include "Engine/Core/Type/PerFrame.h"
 #include <wrl.h>
 #include <d3d12.h>
 #include <string>
@@ -36,6 +37,21 @@ struct ParticleGPUMaterial {
     Matrix4x4 uvTransform;
 };
 
+struct EmitterSphere {
+    // 位置
+    Vector3 translate;
+    // 射出半径
+    float radius;
+    // 射出数
+    uint32_t count;
+    // 射出間隔
+    float frequency;
+    // 射出間隔調整用時間
+    float frequencyTime;
+    // 射出許可
+    uint32_t emit;
+};
+
 class GPUParticleSystem
 {
 public:
@@ -44,7 +60,7 @@ public:
     // デストラクタ
     ~GPUParticleSystem();
     // 初期化
-    void Initialize(Camera* camera,const std::string& textureName = "resources/circle.png");
+    void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png");
     // 更新
     void Update();
     // 描画
@@ -65,11 +81,33 @@ private:
 
     static const uint32_t kMaxParticles = 1024;
 
+    EmitterSphere* emitterSphere_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> emitterSphereResource_;
+    D3D12_CPU_DESCRIPTOR_HANDLE emitterSphereUavHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE emitterSphereUavHandleGPU_{};
+    D3D12_CPU_DESCRIPTOR_HANDLE emitterSphereSrvHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE emitterSphereSrvHandleGPU_{};
+
+    PerFrame* perFrameData_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> perFrameResource_;
+    D3D12_CPU_DESCRIPTOR_HANDLE perFrameUavHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE perFrameUavHandleGPU_{};
+    D3D12_CPU_DESCRIPTOR_HANDLE perFrameSrvHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE perFrameSrvHandleGPU_{};
+
+    ParticleCS* particleData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> particleResource_;
     D3D12_CPU_DESCRIPTOR_HANDLE particleUavHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE particleUavHandleGPU_{};
     D3D12_CPU_DESCRIPTOR_HANDLE particleSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandleGPU_{};
+
+    int32_t* freeCounter_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> freeCounterResource_;
+    D3D12_CPU_DESCRIPTOR_HANDLE freeCounterUavHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE freeCounterUavHandleGPU_{};
+    D3D12_CPU_DESCRIPTOR_HANDLE freeCounterSrvHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE freeCounterSrvHandleGPU_{};
 
     Microsoft::WRL::ComPtr<ID3D12Resource> perViewResource_;
     PerViewForGPU* perViewData_ = nullptr;

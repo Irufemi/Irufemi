@@ -643,9 +643,9 @@ void DrawManager::DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferVi
 
     // --- CBV のバインド ---
     // (rootParameters[0] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView(1, perView);
+    commandList_->SetGraphicsRootConstantBufferView(0, perView);
 
-    commandList_->SetGraphicsRootConstantBufferView(0, material);
+    commandList_->SetGraphicsRootConstantBufferView(1, material);
 
     // --- SRVのバインド ---
     // テクスチャ (PS t0)

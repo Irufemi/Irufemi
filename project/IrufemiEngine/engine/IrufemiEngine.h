@@ -113,6 +113,10 @@ public: // ゲッター
     D3D12_RECT& GetScissorRect() { return dxCommon_->GetScissorRect(); }
     PSOManager* GetPSOManager() { return dxCommon_->GetPSOManager(); }
 
+    // 時間関連のゲッター
+    float GetDeltaTime() const { return deltaTime_; }
+    float GetTotalTime() const { return totalTime_; }
+
     // オプション: 取得用
     DescriptorPool* GetSrvPool() const { return dxCommon_->GetSrvPool(); }
     
@@ -203,5 +207,11 @@ private: // メンバ変数
     // Application から注入
     SceneRegistrar sceneRegistrar_{};
     std::string initialSceneName_{};
+
+    // --- 時間管理 ---
+    std::chrono::steady_clock::time_point startTime_{};
+    std::chrono::steady_clock::time_point lastFrameTime_{};
+    float deltaTime_ = 0.0f;
+    float totalTime_ = 0.0f;
 };
 

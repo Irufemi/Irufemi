@@ -7,9 +7,6 @@
     <Filter Include="Renderer">
       <UniqueIdentifier>{49562265-8288-4286-9d7a-998da039a121}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\2D">
-      <UniqueIdentifier>{81443dc7-2f7f-4d80-9041-a390755139e9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer\3D">
       <UniqueIdentifier>{1c90d707-2613-47d1-bd66-a7303fa8f90f}</UniqueIdentifier>
     </Filter>
@@ -124,13 +121,22 @@
     <Filter Include="Framework\Scene">
       <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\ParticleGPU\Shaders">
+      <UniqueIdentifier>{839be5d9-ec75-492a-8be8-ca670744463e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Object3D\Primitive">
+      <UniqueIdentifier>{14124d30-5130-4e31-a364-7efff267a78d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Object3D\AnimationModel">
+      <UniqueIdentifier>{dadabbef-8d55-43cb-9c29-1af1e6ea2fa6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Compute">
+      <UniqueIdentifier>{1542982a-dc2c-4782-a8b3-e712e003e678}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
       <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\TriangleClass.cpp">
-      <Filter>Renderer\3D</Filter>
     </ClCompile>
     <ClCompile Include="Resource\Audio\Bgm.cpp">
       <Filter>Resource\Audio</Filter>
@@ -180,25 +186,10 @@
     <ClCompile Include="Resource\Texture\Texture.cpp">
       <Filter>Resource\Texture</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object3D\AnimationModel\AnimationModel.cpp">
-      <Filter>Renderer\3D</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Manager\PrimitiveManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\SphereClass.cpp">
-      <Filter>Renderer\Object3D</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\CylinderClass.cpp">
-      <Filter>Renderer\Object3D</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Object3D\ObjClass\ObjClass.cpp">
-      <Filter>Renderer\Object3D</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\CubeClass.cpp">
-      <Filter>Renderer\Object3D</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\PlaneClass.cpp">
       <Filter>Renderer\Object3D</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Particle\IParticleBehavior.cpp">
@@ -294,6 +285,24 @@
     <ClCompile Include="Renderer\System\EffectSystem.cpp">
       <Filter>Renderer\System</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Object3D\Primitive\TriangleClass.cpp">
+      <Filter>Renderer\3D</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Object3D\Primitive\CubeClass.cpp">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Object3D\Primitive\CylinderClass.cpp">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Object3D\Primitive\PlaneClass.cpp">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Object3D\Primitive\SphereClass.cpp">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Object3D\AnimationModel\AnimationModel.cpp">
+      <Filter>Renderer\Object3D\AnimationModel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -301,9 +310,6 @@
     </ClInclude>
     <ClInclude Include="Framework\IScene.h">
       <Filter>Framework\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Primitive\TriangleClass.h">
-      <Filter>Renderer\3D</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Audio\Bgm.h">
       <Filter>Resource\Audio</Filter>
@@ -350,22 +356,10 @@
     <ClInclude Include="Resource\Texture\Texture.h">
       <Filter>Resource\Texture</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object3D\AnimationModel\AnimationModel.h">
-      <Filter>Renderer\3D</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Manager\PrimitiveManager.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Primitive\SphereClass.h">
-      <Filter>Renderer\Object3D</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Primitive\CylinderClass.h">
-      <Filter>Renderer\Object3D</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\Object3D\ObjClass\ObjClass.h">
-      <Filter>Renderer\Object3D</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Primitive\PlaneClass.h">
       <Filter>Renderer\Object3D</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Particle\ParticleSystem.h">
@@ -572,8 +566,6 @@
     <ClInclude Include="Renderer\System\EffectSystem.h">
       <Filter>Renderer\System</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Primitive\CubeClass.h" />
-    <ClInclude Include="Renderer\LineInstanced\LineClass.h" />
     <ClInclude Include="Engine\Graphics\Data\SpotLight.h">
       <Filter>Engine\Graphics\Data</Filter>
     </ClInclude>
@@ -591,6 +583,30 @@
     </ClInclude>
     <ClInclude Include="Engine\Irufemi.h">
       <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object3D\Primitive\TriangleClass.h">
+      <Filter>Renderer\3D</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object3D\Primitive\CubeClass.h">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object3D\Primitive\CylinderClass.h">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object3D\Primitive\PlaneClass.h">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object3D\Primitive\SphereClass.h">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object3D\AnimationModel\AnimationModel.h">
+      <Filter>Renderer\Object3D\AnimationModel</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Type\PerFrame.h">
+      <Filter>Engine\Core\Type</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\LineInstanced\LineClass.h">
+      <Filter>Renderer\LineInstanced</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -620,6 +636,12 @@
     </None>
     <None Include="..\Application\resources\shaders\ParticleGPU.hlsli">
       <Filter>Engine\Graphics\Shaders</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">
+      <Filter>Engine\Compute</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\PerFrame.hlsli">
+      <Filter>Engine\Compute</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -674,9 +696,6 @@
     <FxCompile Include="..\Application\resources\shaders\Skybox.VS.hlsl">
       <Filter>Engine\Graphics\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\InitializeParticle.CS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\ParticleGPU.PS.hlsl">
       <Filter>Engine\Graphics\Shaders</Filter>
     </FxCompile>
@@ -685,6 +704,12 @@
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\Skinning.CS.hlsl">
       <Filter>Engine\Graphics\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\InitializeParticle.CS.hlsl">
+      <Filter>Renderer\ParticleGPU\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\EmitParticle.CS.hlsl">
+      <Filter>Renderer\ParticleGPU\Shaders</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>
