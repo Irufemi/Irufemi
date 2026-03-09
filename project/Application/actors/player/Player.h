@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Irufemi.h"
+#include "Engine/Core/Math/Geometry/OBB.h" // OBBを追加
 #include <memory>
 #include <vector>
 
@@ -47,6 +48,7 @@ struct MachineGunBullet {
 struct PlayerCollider {
     Vector3 center; // 判定の中心座標
     float radius;   // 判定の半径
+    OBB obb;        // OBBの当たり判定データを追加
 };
 
 /**

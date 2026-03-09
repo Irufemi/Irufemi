@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <cmath>
 #include <cstdlib>
+#include "Math.h"
 
 // デストラクタ
 Player::~Player() {
@@ -240,6 +241,21 @@ PlayerCollider Player::GetCollider() const {
     col.center = translate_;
     col.center.y += 1.0f;
     col.radius = kColliderRadius;
+
+    // --- OBBの当たり判定データの追加 ---
+    col.obb.center = col.center;
+
+    // プレイヤーのY軸回転から回転行列を生成
+    Matrix4x4 rotateMatrix = Math::MakeRotateMatrix(Math::MakeRotateAxisAngleQuaternion({ 0.0f, 1.0f, 0.0f }, rotate_.y));
+
+    // 行列から X軸, Y軸, Z軸 の方向ベクトルを抽出
+    col.obb.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
+    col.obb.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
+    col.obb.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
+
+    // OBBのサイズ（各軸の半分の長さ）を設定（必要に応じて調整してください）
+    col.obb.size = { 0.5f, 1.0f, 0.5f };
+
     return col;
 }
 
