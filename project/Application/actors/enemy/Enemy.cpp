@@ -57,6 +57,17 @@ void Enemy::Update() {
     if (ai_) ai_->Update();
     if (animation_) animation_->Update();
 
+    // --- ビームの更新と位置同期 ---
+    if (beam_) {
+        // 毎フレーム「最新の頭の位置」を渡して同期させる
+        beam_->Update(GetHeadMidWorldMatrix());
+
+        // ビームが寿命で消えたら破棄
+        if (beam_->IsExpired()) {
+            beam_.reset();
+        }
+    }
+
     // だるま落とし落下物理
     float targetY = 0.0f;
     bool triggeredShake = false;
@@ -127,33 +138,26 @@ void Enemy::Update() {
 
 void Enemy::Draw() {
     if (!isActive_) return;
-    for (auto& body : bodies_) {
-        if (body && !body->IsCompletelyDead()) body->Draw();
-    }
-    if (headLeft_ && !headLeft_->IsCompletelyDead()) headLeft_->Draw();
-    if (headMid_ && !headMid_->IsCompletelyDead()) headMid_->Draw();
-    if (headRight_ && !headRight_->IsCompletelyDead()) headRight_->Draw();
+    for (auto& body : bodies_) if (body && body->GetHP() > 0) body->Draw();
+    if (headLeft_ && headLeft_->GetHP() > 0) headLeft_->Draw();
+    if (headMid_ && headMid_->GetHP() > 0) headMid_->Draw();
+    if (headRight_ && headRight_->GetHP() > 0) headRight_->Draw();
+    // ビームを描画
+    if (beam_) beam_->Draw();
 }
 
-// --- Enemy::Update の行列計算ロジックを流用して実装 ---
+// ビームの発射命令（トリガー）
+void Enemy::FireBeam() {
+    if (!beam_) {
+        beam_ = std::make_unique<EnemyBeam>();
+        beam_->Initialize(camera_, GetHeadMidWorldMatrix());
+    }
+}
 
 Matrix4x4 Enemy::GetHeadMidWorldMatrix() const {
-    // 親のワールド行列
-    Matrix4x4 globalMat = Math::MakeAffineMatrix(
-        globalTransform_.scale,
-        globalTransform_.rotate,
-        globalTransform_.translate
-    );
-
-    // HeadMidのローカル移動（アニメーションのオフセット込み）
+    Matrix4x4 globalMat = Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate, globalTransform_.translate);
     Vector3 localPos = Math::Add(headMidLocalTransform_.translate, headMidOffset_);
-
-    // HeadMidとしてのワールド行列を合成して返す
-    // 回転やスケールも考慮されるため、ビームの向きの基準になります
-    return Math::Multiply(
-        Math::MakeAffineMatrix({ 1,1,1 }, headMidLocalTransform_.rotate, localPos),
-        globalMat
-    );
+    return Math::Multiply(Math::MakeAffineMatrix({ 1,1,1 }, headMidLocalTransform_.rotate, localPos), globalMat);
 }
 
 OBB Enemy::GetOBB() const {

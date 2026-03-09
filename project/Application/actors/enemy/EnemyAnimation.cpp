@@ -61,6 +61,10 @@ void EnemyAnimation::UpdateAttackBeam() {
 
     } else if (attackTimer_ < (beamGatheringTime_ + beamShakingTime_)) {
         // --- フェーズ2：爆発シェイク ---
+        if (!enemy_->IsFiringBeam()) {
+            enemy_->FireBeam();
+        }
+
         float shakeX = std::sin(timer_ * beamShakeSpeed_) * beamShakeIntensityX_;
         float shakeY = std::cos(timer_ * (beamShakeSpeed_ + 10.0f)) * beamShakeIntensityY_;
 

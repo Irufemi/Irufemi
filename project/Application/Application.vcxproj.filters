@@ -120,6 +120,7 @@
     <ClCompile Include="actors\enemy\EnemyAnimation.cpp">
       <Filter>actors\enemy</Filter>
     </ClCompile>
+    <ClCompile Include="actors\enemy\EnemyBeam.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -179,5 +180,6 @@
     <ClInclude Include="actors\enemy\EnemyAnimation.h">
       <Filter>actors\enemy</Filter>
     </ClInclude>
+    <ClInclude Include="actors\enemy\EnemyBeam.h" />
   </ItemGroup>
 </Project>

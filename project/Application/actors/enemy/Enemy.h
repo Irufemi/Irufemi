@@ -8,6 +8,7 @@
 #include "actors/enemy/Head/Right/HeadRight.h"
 #include "EnemyAI.h"
 #include "EnemyAnimation.h"
+#include "EnemyBeam.h"
 #include "core/math/Transform.h"
 #include "core/math/geometry/OBB.h"
 
@@ -27,6 +28,10 @@ public:
     void Initialize(Camera* camera);
     void Update();
     void Draw();
+
+    // --- ビーム制御用 ---
+    void FireBeam(); // ビームを生成する関数
+    bool IsFiringBeam() const { return beam_ != nullptr; }
 
     // --- アクセサ（AIやAnimationから操作用） ---
     Transform& GetGlobalTransform() { return globalTransform_; }
@@ -58,6 +63,9 @@ private:
     std::unique_ptr<HeadLeft> headLeft_ = nullptr;
     std::unique_ptr<HeadMid> headMid_ = nullptr;
     std::unique_ptr<HeadRight> headRight_ = nullptr;
+
+    // ビームのインスタンス管理
+    std::unique_ptr<EnemyBeam> beam_ = nullptr;
 
     // トランスフォーム
     Transform globalTransform_;
