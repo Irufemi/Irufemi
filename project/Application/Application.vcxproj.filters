@@ -117,7 +117,9 @@
     <ClCompile Include="actors\enemy\Head\Right\HeadRight.cpp">
       <Filter>actors\enemy\head\right</Filter>
     </ClCompile>
-    <ClCompile Include="actors\enemy\EnemyAnimation.cpp" />
+    <ClCompile Include="actors\enemy\EnemyAnimation.cpp">
+      <Filter>actors\enemy</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -174,6 +176,8 @@
     <ClInclude Include="contents\field\Field.h">
       <Filter>contents\field</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\EnemyAnimation.h" />
+    <ClInclude Include="actors\enemy\EnemyAnimation.h">
+      <Filter>actors\enemy</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
