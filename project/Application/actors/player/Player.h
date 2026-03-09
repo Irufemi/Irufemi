@@ -190,7 +190,7 @@ private:
     // トランスフォーム
     Vector3 scale_ = { 0.3f, 0.3f, 0.3f };
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
-    Vector3 translate_ = { 0.0f, 0.0f, 0.0f };
+    Vector3 translate_ = { 0.0f, 0.0f, -50.0f };
 
     // 移動用物理変数
     Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };

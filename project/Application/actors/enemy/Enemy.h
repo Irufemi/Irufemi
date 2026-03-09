@@ -9,6 +9,7 @@
 #include "EnemyAI.h"
 #include "EnemyAnimation.h"
 #include "core/math/Transform.h"
+#include "core/math/geometry/OBB.h"
 
 class Camera;
 
@@ -41,6 +42,9 @@ public:
 
     void SetState(EnemyState state) { state_ = state; }
     EnemyState GetState() const { return state_; }
+
+   Matrix4x4 GetHeadMidWorldMatrix() const;
+   OBB GetOBB() const;
 
 private:
     // 各パーツ

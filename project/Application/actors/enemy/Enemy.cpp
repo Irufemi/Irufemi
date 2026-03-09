@@ -120,3 +120,41 @@ void Enemy::Draw() {
     if (headMid_ && headMid_->GetHP() > 0) headMid_->Draw();
     if (headRight_ && headRight_->GetHP() > 0) headRight_->Draw();
 }
+
+// --- Enemy::Update の行列計算ロジックを流用して実装 ---
+
+Matrix4x4 Enemy::GetHeadMidWorldMatrix() const {
+    // 親のワールド行列
+    Matrix4x4 globalMat = Math::MakeAffineMatrix(
+        globalTransform_.scale,
+        globalTransform_.rotate,
+        globalTransform_.translate
+    );
+
+    // HeadMidのローカル移動（アニメーションのオフセット込み）
+    Vector3 localPos = Math::Add(headMidLocalTransform_.translate, headMidOffset_);
+
+    // HeadMidとしてのワールド行列を合成して返す
+    // 回転やスケールも考慮されるため、ビームの向きの基準になります
+    return Math::Multiply(
+        Math::MakeAffineMatrix({ 1,1,1 }, headMidLocalTransform_.rotate, localPos),
+        globalMat
+    );
+}
+
+OBB Enemy::GetOBB() const {
+    OBB obb;
+    // globalTransform_ から中心座標、回転、サイズを抽出して設定
+    obb.center = globalTransform_.translate;
+
+    // 各軸の方向ベクトル（回転から算出）
+    Matrix4x4 rotateMat = Math::MakeRotateXYZMatrix(globalTransform_.rotate);
+    obb.orientations[0] = { rotateMat.m[0][0], rotateMat.m[0][1], rotateMat.m[0][2] };
+    obb.orientations[1] = { rotateMat.m[1][0], rotateMat.m[1][1], rotateMat.m[1][2] };
+    obb.orientations[2] = { rotateMat.m[2][0], rotateMat.m[2][1], rotateMat.m[2][2] };
+
+    // 半径（サイズ）の設定
+    obb.size = { 2.0f, 4.0f, 2.0f }; // 敵の見た目に合わせた仮のサイズ
+
+    return obb;
+}
