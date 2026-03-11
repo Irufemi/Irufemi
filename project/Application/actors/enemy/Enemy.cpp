@@ -138,12 +138,16 @@ void Enemy::Update() {
 
 void Enemy::Draw() {
     if (!isActive_) return;
-    for (auto& body : bodies_) if (body && body->GetHP() > 0) body->Draw();
-    if (headLeft_ && headLeft_->GetHP() > 0) headLeft_->Draw();
-    if (headMid_ && headMid_->GetHP() > 0) headMid_->Draw();
-    if (headRight_ && headRight_->GetHP() > 0) headRight_->Draw();
-    // ビームを描画
-    if (beam_) beam_->Draw();
+    for (auto &body : bodies_) {
+      if (body && !body->IsCompletelyDead())
+        body->Draw();
+    }
+    if (headLeft_ && !headLeft_->IsCompletelyDead())
+      headLeft_->Draw();
+    if (headMid_ && !headMid_->IsCompletelyDead())
+      headMid_->Draw();
+    if (headRight_ && !headRight_->IsCompletelyDead())
+      headRight_->Draw();
 }
 
 // ビームの発射命令（トリガー）
