@@ -97,6 +97,18 @@ void GameScene::Update() {
         attackSphere.radius = attackCol.radius;
         Vector3 playerPos = player_->GetTranslate(); // 攻撃方向計算用
 
+        // Player vs EnemyBeam の判定
+        if (boss_->GetBeam()) {
+            Sphere playerColliderSphere;
+            playerColliderSphere.center = player_->GetCollider().center;
+            playerColliderSphere.radius = player_->GetCollider().radius;
+
+            if (Collision::IsOBBSphereCollision(boss_->GetBeam()->GetOBB(), playerColliderSphere)) {
+                // ビームに当たった場合プレイヤーにダメージを与える
+                player_->ApplyDamage(10);
+            }
+        }
+
         auto checkAndDamage = [&](auto* part) {
             if (!part || part->GetHP() <= 0 || part->IsBlownAway()) return;
 

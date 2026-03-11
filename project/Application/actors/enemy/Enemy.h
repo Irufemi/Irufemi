@@ -40,6 +40,7 @@ public:
   // --- ビーム制御用 ---
   void FireBeam(); // ビームを生成する関数
   bool IsFiringBeam() const { return beam_ != nullptr; }
+  EnemyBeam* GetBeam() const { return beam_.get(); }
 
   // --- アクセサ（AIやAnimationから操作用） ---
   Transform &GetGlobalTransform() { return globalTransform_; }

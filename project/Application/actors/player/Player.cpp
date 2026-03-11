@@ -167,68 +167,58 @@ void Player::Update() {
     if (lineOBB_) {
         lineOBB_->ClearInstances();
         if (isDebugDrawOBB_) {
-            auto addObbLines = [&](const OBB& obb) {
-                Vector3 corners[8];
-                for (int i = 0; i < 8; ++i) {
-                    Vector3 offset = { 0, 0, 0 };
-                    offset = Math::Add(offset, Math::Multiply((i & 1) ? obb.size.x : -obb.size.x, obb.orientations[0]));
-                    offset = Math::Add(offset, Math::Multiply((i & 2) ? obb.size.y : -obb.size.y, obb.orientations[1]));
-                    offset = Math::Add(offset, Math::Multiply((i & 4) ? obb.size.z : -obb.size.z, obb.orientations[2]));
-                    corners[i] = Math::Add(obb.center, offset);
+            auto addSphereLines = [&](const Vector3& center, float radius, const Vector4& color) {
+                const int segments = 16;
+                const float step = (2.0f * 3.14159265f) / segments;
+
+                // XZ平面の円
+                for (int i = 0; i < segments; ++i) {
+                    float theta1 = i * step;
+                    float theta2 = (i + 1) * step;
+                    Vector3 p1 = { center.x + radius * std::cos(theta1), center.y, center.z + radius * std::sin(theta1) };
+                    Vector3 p2 = { center.x + radius * std::cos(theta2), center.y, center.z + radius * std::sin(theta2) };
+                    lineOBB_->AddInstance(p1, p2, color);
                 }
-                Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f }; // Green
-                lineOBB_->AddInstance(corners[0], corners[1], color);
-                lineOBB_->AddInstance(corners[1], corners[3], color);
-                lineOBB_->AddInstance(corners[3], corners[2], color);
-                lineOBB_->AddInstance(corners[2], corners[0], color);
-                lineOBB_->AddInstance(corners[4], corners[5], color);
-                lineOBB_->AddInstance(corners[5], corners[7], color);
-                lineOBB_->AddInstance(corners[7], corners[6], color);
-                lineOBB_->AddInstance(corners[6], corners[4], color);
-                lineOBB_->AddInstance(corners[0], corners[4], color);
-                lineOBB_->AddInstance(corners[1], corners[5], color);
-                lineOBB_->AddInstance(corners[2], corners[6], color);
-                lineOBB_->AddInstance(corners[3], corners[7], color);
+                // XY平面の円
+                for (int i = 0; i < segments; ++i) {
+                    float theta1 = i * step;
+                    float theta2 = (i + 1) * step;
+                    Vector3 p1 = { center.x + radius * std::cos(theta1), center.y + radius * std::sin(theta1), center.z };
+                    Vector3 p2 = { center.x + radius * std::cos(theta2), center.y + radius * std::sin(theta2), center.z };
+                    lineOBB_->AddInstance(p1, p2, color);
+                }
+                // YZ平面の円
+                for (int i = 0; i < segments; ++i) {
+                    float theta1 = i * step;
+                    float theta2 = (i + 1) * step;
+                    Vector3 p1 = { center.x, center.y + radius * std::cos(theta1), center.z + radius * std::sin(theta1) };
+                    Vector3 p2 = { center.x, center.y + radius * std::cos(theta2), center.z + radius * std::sin(theta2) };
+                    lineOBB_->AddInstance(p1, p2, color);
+                }
             };
 
-            // Player OBB
-            addObbLines(GetCollider().obb);
+            Vector4 greenColor = { 0.0f, 1.0f, 0.0f, 1.0f };
 
-            // Attack OBB
+            // Player Collider (Sphere)
+            PlayerCollider col = GetCollider();
+            addSphereLines(col.center, col.radius, greenColor);
+
+            // Attack Collision (Sphere)
             if (attackCollision_.isActive) {
-                OBB attackObb;
-                attackObb.center = attackCollision_.center;
-                attackObb.orientations[0] = { 1.0f, 0.0f, 0.0f };
-                attackObb.orientations[1] = { 0.0f, 1.0f, 0.0f };
-                attackObb.orientations[2] = { 0.0f, 0.0f, 1.0f };
-                attackObb.size = { attackCollision_.radius, attackCollision_.radius, attackCollision_.radius };
-                addObbLines(attackObb);
+                addSphereLines(attackCollision_.center, attackCollision_.radius, greenColor);
             }
 
-            // Missiles OBB
+            // Missiles (Sphere)
             for (int i = 0; i < kMaxMissiles; ++i) {
                 if (missiles_[i].isActive) {
-                    OBB missileObb;
-                    missileObb.center = missiles_[i].position;
-                    // ミサイルの進行方向から回転行列を作ることもできるが、簡略化のため軸固定
-                    missileObb.orientations[0] = { 1.0f, 0.0f, 0.0f };
-                    missileObb.orientations[1] = { 0.0f, 1.0f, 0.0f };
-                    missileObb.orientations[2] = { 0.0f, 0.0f, 1.0f };
-                    missileObb.size = { 1.0f, 1.0f, 1.0f };
-                    addObbLines(missileObb);
+                    addSphereLines(missiles_[i].position, 2.0f, greenColor);
                 }
             }
 
-            // Bullets OBB
+            // Bullets (Sphere)
             for (int i = 0; i < kMaxBullets; ++i) {
                 if (bullets_[i].isActive) {
-                    OBB bulletObb;
-                    bulletObb.center = bullets_[i].position;
-                    bulletObb.orientations[0] = { 1.0f, 0.0f, 0.0f };
-                    bulletObb.orientations[1] = { 0.0f, 1.0f, 0.0f };
-                    bulletObb.orientations[2] = { 0.0f, 0.0f, 1.0f };
-                    bulletObb.size = { 0.5f, 0.5f, 0.5f };
-                    addObbLines(bulletObb);
+                    addSphereLines(bullets_[i].position, 1.0f, greenColor);
                 }
             }
         }
