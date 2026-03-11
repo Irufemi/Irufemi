@@ -190,19 +190,19 @@ void DebugScene::Update() {
 
     if (ImGui::BeginTabBar("DebugSceneTabs")) {
         
-        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+        //DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
-        // Texture タブ
-        if (ImGui::BeginTabItem("Texture")) {
-            if (ImGui::Button("allLoadActivate")) {
-                engine_->GetTextureManager()->LoadAllFromFolder("resources/");
-            }
-            ImGui::EndTabItem();
-        }
+        //// Texture タブ
+        //if (ImGui::BeginTabItem("Texture")) {
+        //    if (ImGui::Button("allLoadActivate")) {
+        //        engine_->GetTextureManager()->LoadAllFromFolder("resources/");
+        //    }
+        //    ImGui::EndTabItem();
+        //}
 
         // Debug タブ
         if (ImGui::BeginTabItem("Debug")) {
-            ImGui::Checkbox("debugMode", &debugMode_);
+            ImGui::Checkbox("debugCamera", &debugMode_);
             ImGui::EndTabItem();
         }
 

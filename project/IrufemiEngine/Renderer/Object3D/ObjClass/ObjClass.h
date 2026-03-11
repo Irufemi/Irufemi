@@ -63,6 +63,7 @@ public: //メンバ関数
     void Update();
     void Draw();
     void Debug(const char* objName = " ");
+    void DebugTab();
 
     // Transform 系ゲッター/セッター (オブジェクト全体のTransformを操作するように変更)
     const Vector3& GetPosition() const { return transform_.translate; }

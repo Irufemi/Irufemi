@@ -172,6 +172,7 @@ private:
     float mouseSensitivity_ = 5.0f;           // マウス感度 (初期値を下げました)
     float mouseSensitivityMultiplier_ = 1.0f; // マウス感度の倍率
     float cameraPitch_ = -0.1f;               // カメラの上下の角度（ピッチ）
+    bool isCameraControlEnabled_ = true;      // カメラ操作の有効/無効フラグ
 
     // 3Dモデル本体
     std::unique_ptr<ObjClass> obj_ = nullptr;

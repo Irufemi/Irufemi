@@ -69,6 +69,7 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     lineOBB_ = std::make_unique<Line3DRegion>();
     lineOBB_->Initialize(camera_);
 #endif
+    isCameraControlEnabled_ = true;
 }
 
 void Player::Update() {
@@ -82,16 +83,36 @@ void Player::Update() {
         invincibleTimer_--;
     }
 
+    // F2キーでカメラ操作の有効/無効を切り替え
+    if (input_->IsKeyPressed(VK_F2)) {
+        isCameraControlEnabled_ = !isCameraControlEnabled_;
+    }
+
 #ifdef USE_IMGUI
-    ImGui::Begin("Player Settings");
-    ImGui::SliderFloat("Mouse Sensitivity", &mouseSensitivity_, 0.0f, 100.0f);
-    // ドラッグ速度は 0.01f のまま、上限を 1.0f に変更
-    ImGui::DragFloat("Sensitivity Multiplier", &mouseSensitivityMultiplier_, 0.01f, 0.0f, 1.0f, "%.4f");
+    ImGui::Begin("Player");
+    if (ImGui::BeginTabBar("PlayerTabs")) {
+
+        if (ImGui::BeginTabItem("Settings")) {
+            ImGui::SliderFloat("Mouse Sensitivity", &mouseSensitivity_, 0.0f, 100.0f);
+            // ドラッグ速度は 0.01f のまま、上限を 1.0f に変更
+            ImGui::DragFloat("Sensitivity Multiplier", &mouseSensitivityMultiplier_, 0.01f, 0.0f, 1.0f, "%.4f");
+            ImGui::Checkbox("Camera Control Enabled", &isCameraControlEnabled_);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Model")) {
+            if (obj_) {
+                obj_->DebugTab();
+            }
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
     ImGui::End();
+
 #endif
 
     // --- マウスによる視点操作 ---
-    if (mouse_) {
+    if (isCameraControlEnabled_ && mouse_) {
         Vector2 delta = mouse_->GetDelta();
 
         // 縦横の感度を統一・計算式を調整

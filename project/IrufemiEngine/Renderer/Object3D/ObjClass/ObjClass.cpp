@@ -100,6 +100,13 @@ void ObjClass::Debug([[maybe_unused]] const char* objName) {
 #if defined USE_IMGUI
     std::string name = std::string("Obj: ") + objName;
     ImGui::Begin(name.c_str());
+    DebugTab();
+    ImGui::End();
+#endif
+}
+
+void ObjClass::DebugTab() {
+#if defined USE_IMGUI
     if (ui_) {
         ui_->DebugTransform(transform_);
         ImGui::ColorEdit4("Color", &color_.x); // インスタンスカラーを編集
@@ -126,7 +133,6 @@ void ObjClass::Debug([[maybe_unused]] const char* objName) {
             }
         }
     }
-    ImGui::End();
 #endif
 }
 
