@@ -8,6 +8,10 @@
 #include "Engine/Platform/Input/Mouse.h"
 #include "Renderer/LineInstanced/LineClass.h"
 
+#ifdef USE_IMGUI
+#include <imgui.h> // 念のためインクルード
+#endif
+
 // デストラクタ
 Player::~Player() {
 }
@@ -121,15 +125,15 @@ void Player::Update() {
         rotate_.y += delta.x * sensitivityMult;
         cameraPitch_ += delta.y * sensitivityMult;
 
-        // 【変更部分】一人称時の上下の振り幅の制限
+        // 一人称時の上下の振り幅の制限
         if (viewMode_ == ViewMode::kThirdPerson) {
-            // 三人称視点の制限（元のまま）
+            // 三人称視点の制限
             if (cameraPitch_ > -0.01f) cameraPitch_ = -0.02f; // 下を向く限界
             if (cameraPitch_ < -0.2f) cameraPitch_ = -0.2f;   // 上を向く限界
         } else {
             // 一人称視点の制限
             if (cameraPitch_ > 0.6f) cameraPitch_ = 0.6f;     // 下を向く限界
-            if (cameraPitch_ < -1.2f) cameraPitch_ = -1.2f;   // 上を向く限界（-1.1f から -1.2f に少し広げました）
+            if (cameraPitch_ < -1.3f) cameraPitch_ = -1.3f;   // 上を向く限界
         }
     }
 
@@ -195,7 +199,7 @@ void Player::Update() {
                     Vector3 p2 = { center.x, center.y + radius * std::cos(theta2), center.z + radius * std::sin(theta2) };
                     lineOBB_->AddInstance(p1, p2, color);
                 }
-            };
+                };
 
             Vector4 greenColor = { 0.0f, 1.0f, 0.0f, 1.0f };
 
@@ -204,7 +208,8 @@ void Player::Update() {
             addSphereLines(col.center, col.radius, greenColor);
 
             // Attack Collision (Sphere)
-            if (attackCollision_.isActive) {
+            // デバッグカメラ有効中（isCameraControlEnabled_ == false）は攻撃の当たり判定線も非表示に
+            if (attackCollision_.isActive && isCameraControlEnabled_) {
                 addSphereLines(attackCollision_.center, attackCollision_.radius, greenColor);
             }
 
@@ -246,8 +251,8 @@ void Player::Draw() {
         }
     }
 
-    // 近接攻撃判定が有効な間だけ、分身モデルを描画する
-    if (attackObj_ && attackCollision_.isActive && !isDead_) {
+    // 【修正】近接攻撃判定が有効、かつ通常カメラ操作時（デバッグカメラ状態でない時）のみ攻撃モデルを描画する
+    if (attackObj_ && attackCollision_.isActive && !isDead_ && isCameraControlEnabled_) {
         attackObj_->Draw();
     }
 
@@ -355,9 +360,9 @@ void Player::Draw() {
 // ---------------------------------------------------------
 PlayerCollider Player::GetCollider() const {
     PlayerCollider col;
-    // モデルの足元(translate_)から少し上を判定の中心とする
+    // 【修正】さらに位置を下に（0.4f -> 0.2f）変更
     col.center = translate_;
-    col.center.y += 1.0f;
+    col.center.y += 0.2f;
     col.radius = kColliderRadius;
 
     // --- OBBの当たり判定データの追加 ---
@@ -371,8 +376,8 @@ PlayerCollider Player::GetCollider() const {
     col.obb.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
     col.obb.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
 
-    // OBBのサイズ（各軸の半分の長さ）を設定（必要に応じて調整してください）
-    col.obb.size = { 0.5f, 1.0f, 0.5f };
+    // 【修正】サイズも小さくして下半身にフィットさせる（0.4f -> 0.3f）
+    col.obb.size = { 0.3f, 0.3f, 0.3f };
 
     return col;
 }
@@ -446,6 +451,20 @@ void Player::HandleMovement() {
 }
 
 void Player::HandleAttack() {
+#ifdef USE_IMGUI
+    // 【修正】ImGuiのウィンドウやボタンを操作（クリック）している時は攻撃を行わない（誤爆防止）
+    if (ImGui::GetIO().WantCaptureMouse) {
+        return;
+    }
+#endif
+
+    // デバッグカメラ有効時（isCameraControlEnabled_ == false）は攻撃を出さない・キャンセルする
+    if (!isCameraControlEnabled_) {
+        attackCollision_.isActive = false;
+        attackActiveTimer_ = 0;
+        return;
+    }
+
     // マウスの左クリックで近接攻撃開始
     if (mouse_ && mouse_->IsButtonPressed(Mouse::Button::Left) && !attackCollision_.isActive) {
         attackCollision_.isActive = true;
