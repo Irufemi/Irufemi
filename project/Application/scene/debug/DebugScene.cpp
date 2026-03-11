@@ -469,6 +469,11 @@ void DebugScene::Update() {
 
 void DebugScene::Draw() {
 
+
+    if (isActiveSkybox_) {
+        skybox_->Draw();
+    }
+
     // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
@@ -525,9 +530,6 @@ void DebugScene::Draw() {
     }
     if (isActiveSneakWalk_) {
         sneakWalk_->Draw();
-    }
-    if (isActiveSkybox_) {
-        skybox_->Draw();
     }
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);
