@@ -198,15 +198,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 		if (gMaterial.lightingMode == 0)
 		{
-			if (gMaterial.hasTexture == 1)
-			{
-				output.color = gMaterial.color * textureColor;
-			}
-			else
-			{
-				output.color = gMaterial.color;
-				output.color.a = 1.0f;
-			}
+			output.color = gMaterial.color * textureColor;
 		}
 		else
 		{
@@ -392,7 +384,6 @@ PixelShaderOutput main(VertexShaderOutput input)
 				totalSpecular += specularArea;
 			}
 
-
 			/*PointLight*/	
 			
 			/// 全部足す
@@ -400,15 +391,8 @@ PixelShaderOutput main(VertexShaderOutput input)
 			// 最終的な色はどのように決まるのかといえば、DirectionalLightとPointLightでそれぞれ計算したDiffuse/Specularをすべて足し合わせて求める
 			output.color.rgb = totalDiffuse + totalSpecular;
 			
-			if (gMaterial.hasTexture == 1)
-			{
-				// アルファは今まで通り
-				output.color.a = gMaterial.color.a * textureColor.a;
-			}
-			else
-			{
-				output.color.a = 1.0f;
-			}
+			// アルファ
+			output.color.a = gMaterial.color.a * textureColor.a;
 		}
 		
 		/*2値抜き*/
@@ -424,15 +408,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	else
 	{
 	
-		if (gMaterial.hasTexture == 1)
-		{
-			output.color = gMaterial.color * textureColor;
-		}
-		else
-		{
-			output.color = gMaterial.color;
-			output.color.a = 1.0f;
-		}
+		output.color = gMaterial.color * textureColor;
 		
 	}
 	

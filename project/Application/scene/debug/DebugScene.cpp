@@ -469,6 +469,7 @@ void DebugScene::Update() {
 
 void DebugScene::Draw() {
 
+
     if (isActiveSkybox_) {
         skybox_->Draw();
     }
