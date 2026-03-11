@@ -7,6 +7,7 @@
 
 // 前方宣言
 class Camera;
+class Line3DRegion;
 
 /**
  * @struct AttackCollision
@@ -224,6 +225,11 @@ private:
     const float kMoveSpeed = 0.2f;
     const float kJumpForce = 0.25f;
     const float kGravity = 0.02f;
+
+#ifdef USE_IMGUI
+    std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
+    bool isDebugDrawOBB_ = false;
+#endif
 
     // フィールドの境界（壁の位置に合わせる）
     const float kFieldRangeX = 100.0f;

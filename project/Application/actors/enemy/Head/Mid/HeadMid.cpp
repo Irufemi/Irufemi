@@ -66,12 +66,18 @@ void HeadMid::SetPosition(const Vector3& pos) {
   }
 }
 
-void HeadMid::SetTransform(const Transform& transform) {
+void HeadMid::SetTransform(const Transform& transform, const Vector3* drawWorldPos) {
   if (!isBlownAway_) {
     transform_ = transform;
     basePosition_ = transform.translate;
     if (obj_) {
-      obj_->SetTransform(transform);
+      if (drawWorldPos) {
+        Transform drawTransform = transform;
+        drawTransform.translate = *drawWorldPos;
+        obj_->SetTransform(drawTransform);
+      } else {
+        obj_->SetTransform(transform);
+      }
     }
   }
 }
@@ -99,6 +105,6 @@ OBB HeadMid::GetOBB() const {
     obb.orientations[1] = { rotateMat.m[1][0], rotateMat.m[1][1], rotateMat.m[1][2] };
     obb.orientations[2] = { rotateMat.m[2][0], rotateMat.m[2][1], rotateMat.m[2][2] };
     
-    obb.size = { 1.5f, 1.0f, 1.5f };
+    obb.size = EnemyParameters::GetInstance()->GetHeadOBBSize();
     return obb;
 }

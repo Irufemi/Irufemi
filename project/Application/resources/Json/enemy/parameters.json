@@ -1,16 +1,36 @@
 {
   "enemy": {
     "body": {
-      "hp": 1000
+      "hp": 1000,
+      "obb_size": [
+        12.0,
+        3.0,
+        12.0
+      ]
     },
     "head_left": {
-      "hp": 1000
+      "hp": 1000,
+      "obb_size": [
+        4.0,
+        19.0,
+        4.0
+      ]
     },
     "head_mid": {
-      "hp": 1000
+      "hp": 1000,
+      "obb_size": [
+        4.0,
+        19.0,
+        4.0
+      ]
     },
     "head_right": {
-      "hp": 1000
+      "hp": 1000,
+      "obb_size": [
+        4.0,
+        19.0,
+        4.0
+      ]
     },
     "blow_speed": 1.0,
     "disappear_time": 5.0

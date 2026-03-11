@@ -4,6 +4,12 @@
 #include "EnemyBeam.h"
 #include "actors/enemy/Body/Body.h"
 #include "actors/enemy/Head/Left/HeadLeft.h"
+#pragma once
+#include "EnemyAI.h"
+#include "EnemyAnimation.h"
+#include "EnemyBeam.h"
+#include "actors/enemy/Body/Body.h"
+#include "actors/enemy/Head/Left/HeadLeft.h"
 #include "actors/enemy/Head/Mid/HeadMid.h"
 #include "actors/enemy/Head/Right/HeadRight.h"
 #include "core/math/Transform.h"
@@ -13,6 +19,8 @@
 #include <vector>
 
 class Camera;
+class IrufemiEngine;
+class Line3DRegion;
 
 // 敵の行動状態
 enum class EnemyState {
@@ -25,7 +33,7 @@ enum class EnemyState {
 class Enemy {
 public:
   ~Enemy();
-  void Initialize(Camera *camera);
+  void Initialize(Camera *camera, IrufemiEngine *engine = nullptr);
   void Update();
   void Draw();
 
@@ -93,6 +101,12 @@ private:
   float fallSpeed_ = 0.01f;     // 落下時の補間速度
   float shakeIntensity_ = 1.0f; // 着地時のシェイク強度
   bool isFalling_[4] = {false, false, false, false};
+
+#ifdef USE_IMGUI
+  bool isDebugDrawOBB_ = false;
+  std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
+  IrufemiEngine* engine_ = nullptr;
+#endif
 
   bool isActive_ = false;
 };

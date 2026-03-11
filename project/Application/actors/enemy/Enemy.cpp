@@ -1,182 +1,308 @@
 #include "Enemy.h"
+#include "EnemyParameters.h"
+#include "Engine/Platform/Input/InputManager.h"
+#include "IrufemiEngine.h"
+#include "Renderer/LineInstanced/LineClass.h"
+#include "actors/enemy/Body/Body.h"
 #include "camera/Camera.h"
 #include "core/math/geometry/Math.h"
-#include "EnemyParameters.h"
-#include <manager/debugUI.h>
-#include "Engine/Core/Math/Geometry/OBB.h"
-#include "actors/enemy/Body/Body.h"
 #include <cmath>
+#include <manager/debugUI.h>
 #include <string>
 
 Enemy::~Enemy() {}
 
-void Enemy::Initialize(Camera* camera) {
-    camera_ = camera;
-    EnemyParameters::GetInstance()->Load("resources/Json/enemy/parameters.json");
+void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
+  camera_ = camera;
+#ifdef USE_IMGUI
+  engine_ = engine;
+  lineOBB_ = std::make_unique<Line3DRegion>();
+  lineOBB_->Initialize(camera_);
+#endif
 
-    // 全体の初期トランスフォーム
-    globalTransform_ = { {4.0f, 4.0f, 4.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 3.0f, 0.0f} };
+  EnemyParameters::GetInstance()->Load("resources/Json/enemy/parameters.json");
 
-    // 胴体の初期化
-    for (int i = 0; i < 3; ++i) {
-        bodies_[i] = std::make_unique<Body>();
-        bodyLocalTransforms_[i] = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {-0.5f, (float)i * 2.0f, 0.0f} };
-        bodies_[i]->Initialize(camera, bodyLocalTransforms_[i].translate);
-        bodies_[i]->SetHP(EnemyParameters::GetInstance()->GetBodyHP());
-        bodyOffsets_[i] = { 0.0f, 0.0f, 0.0f };
-    }
+  // 全体の初期トランスフォーム
+  globalTransform_ = {
+      {4.0f, 4.0f, 4.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 3.0f, 0.0f}};
 
-    // 頭部の初期化
-    float topY = 6.0f;
-    headLeft_ = std::make_unique<HeadLeft>();
-    headLeftLocalTransform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {-2.5f, topY, 0.0f} };
-    headLeft_->Initialize(camera, headLeftLocalTransform_.translate);
-    headLeft_->SetHP(EnemyParameters::GetInstance()->GetHeadLeftHP());
+  // 胴体の初期化
+  for (int i = 0; i < 3; ++i) {
+    bodies_[i] = std::make_unique<Body>();
+    bodyLocalTransforms_[i] = {
+        {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {-0.5f, (float)i * 2.0f, 0.0f}};
+    bodies_[i]->Initialize(camera, bodyLocalTransforms_[i].translate);
+    bodies_[i]->SetHP(EnemyParameters::GetInstance()->GetBodyHP());
+    bodyOffsets_[i] = {0.0f, 0.0f, 0.0f};
+  }
 
-    headMid_ = std::make_unique<HeadMid>();
-    headMidLocalTransform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {-0.5f, topY, 0.0f} };
-    headMid_->Initialize(camera, headMidLocalTransform_.translate);
-    headMid_->SetHP(EnemyParameters::GetInstance()->GetHeadMidHP());
+  // 頭部の初期化
+  float topY = 6.0f;
+  headLeft_ = std::make_unique<HeadLeft>();
+  headLeftLocalTransform_ = {
+      {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {-2.5f, topY, 0.0f}};
+  headLeft_->Initialize(camera, headLeftLocalTransform_.translate);
+  headLeft_->SetHP(EnemyParameters::GetInstance()->GetHeadLeftHP());
 
-    headRight_ = std::make_unique<HeadRight>();
-    headRightLocalTransform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {1.5f, topY, 0.0f} };
-    headRight_->Initialize(camera, headRightLocalTransform_.translate);
-    headRight_->SetHP(EnemyParameters::GetInstance()->GetHeadRightHP());
+  headMid_ = std::make_unique<HeadMid>();
+  headMidLocalTransform_ = {
+      {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {-0.5f, topY, 0.0f}};
+  headMid_->Initialize(camera, headMidLocalTransform_.translate);
+  headMid_->SetHP(EnemyParameters::GetInstance()->GetHeadMidHP());
 
-    ai_ = std::make_unique<EnemyAI>();
-    ai_->Initialize(this);
-    animation_ = std::make_unique<EnemyAnimation>();
-    animation_->Initialize(this);
+  headRight_ = std::make_unique<HeadRight>();
+  headRightLocalTransform_ = {
+      {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {1.5f, topY, 0.0f}};
+  headRight_->Initialize(camera, headRightLocalTransform_.translate);
+  headRight_->SetHP(EnemyParameters::GetInstance()->GetHeadRightHP());
 
-    isActive_ = true;
+  ai_ = std::make_unique<EnemyAI>();
+  ai_->Initialize(this);
+  animation_ = std::make_unique<EnemyAnimation>();
+  animation_->Initialize(this);
+
+  isActive_ = true;
 }
 
 void Enemy::Update() {
-    if (!isActive_) return;
+  if (!isActive_)
+    return;
 
-    if (ai_) ai_->Update();
-    if (animation_) animation_->Update();
-
-    // --- ビームの更新と位置同期 ---
-    if (beam_) {
-        // 常に最新の「頭のワールド行列」を渡す
-        // これにより、頭がシェイクで揺れても、ビームも一緒に揺れる
-        beam_->Update(GetHeadMidWorldMatrix());
-
-        if (beam_->IsExpired()) {
-            beam_.reset();
-        }
-    }
-
-    // だるま落とし落下物理
-    float targetY = 0.0f;
-    bool triggeredShake = false;
-    for (int i = 0; i < 3; ++i) {
-        if (bodies_[i]) {
-            float diff = targetY - bodyLocalTransforms_[i].translate.y;
-            bodyLocalTransforms_[i].translate.y += diff * fallSpeed_;
-            bool currentlyFalling = std::abs(diff) > 0.1f;
-            if (isFalling_[i] && !currentlyFalling && !triggeredShake) {
-                if (camera_) camera_->Shake(shakeIntensity_, 15);
-                triggeredShake = true;
-            }
-            isFalling_[i] = currentlyFalling;
-            if (bodies_[i]->GetHP() > 0) targetY += 2.0f;
-        }
-    }
-    headLeftLocalTransform_.translate.y += (targetY - headLeftLocalTransform_.translate.y) * fallSpeed_;
-    headMidLocalTransform_.translate.y += (targetY - headMidLocalTransform_.translate.y) * fallSpeed_;
-    headRightLocalTransform_.translate.y += (targetY - headRightLocalTransform_.translate.y) * fallSpeed_;
-
-    // 行列計算
-    Matrix4x4 globalMat = Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate, globalTransform_.translate);
-
-    // 胴体描画更新
-    for (int i = 0; i < 3; ++i) {
-        if (bodies_[i]) {
-            Vector3 worldPos = Math::Transform(Math::Add(bodyLocalTransforms_[i].translate, bodyOffsets_[i]), globalMat);
-            bodies_[i]->SetTransform({ {globalTransform_.scale.x, globalTransform_.scale.y, globalTransform_.scale.z}, globalTransform_.rotate, worldPos });
-            bodies_[i]->Update();
-        }
-    }
-
-    // 頭部描画更新
-    auto updateHead = [&](auto& head, Transform& localT, Vector3& offset) {
-        if (head) {
-            Vector3 worldPos = Math::Transform(Math::Add(localT.translate, offset), globalMat);
-            head->SetTransform({ globalTransform_.scale, globalTransform_.rotate, worldPos });
-            head->Update();
-        }
-        };
-    updateHead(headLeft_, headLeftLocalTransform_, headLeftOffset_);
-    updateHead(headMid_, headMidLocalTransform_, headMidOffset_);
-    updateHead(headRight_, headRightLocalTransform_, headRightOffset_);
+  if (ai_)
+    ai_->Update();
+  if (animation_)
+    animation_->Update();
 
 #ifdef USE_IMGUI
-    ImGui::Begin("Enemy HP Status");
-    ImGui::SliderFloat("Fall Speed", &fallSpeed_, 0.01f, 1.0f);
-    ImGui::SliderFloat("Shake Intensity", &shakeIntensity_, 0.0f, 10.0f);
+  if (engine_ && engine_->GetInputManager()->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
+    isDebugDrawOBB_ = !isDebugDrawOBB_;
+  }
+#endif
 
-    float blowSpeed = EnemyParameters::GetInstance()->GetBlowSpeed();
-    if (ImGui::SliderFloat("Blow Speed", &blowSpeed, 0.0f, 5.0f)) {
-        EnemyParameters::GetInstance()->SetBlowSpeed(blowSpeed);
-    }
-    float disappearTime = EnemyParameters::GetInstance()->GetDisappearTime();
-    if (ImGui::SliderFloat("Disappear Time", &disappearTime, 0.5f, 10.0f)) {
-        EnemyParameters::GetInstance()->SetDisappearTime(disappearTime);
-    }
+  // --- ビームの更新と位置同期 ---
+  if (beam_) {
+    // 常に最新の「頭のワールド行列」を渡す
+    // これにより、頭がシェイクで揺れても、ビームも一緒に揺れる
+    beam_->Update(GetHeadMidWorldMatrix());
 
-    for (int i = 0; i < 3; ++i) {
-        if (bodies_[i]) {
-            int hp = bodies_[i]->GetHP();
-            if (ImGui::SliderInt(("Body[" + std::to_string(i) + "] HP").c_str(), &hp, 0, 10000)) bodies_[i]->SetHP(hp);
+    if (beam_->IsExpired()) {
+      beam_.reset();
+    }
+  }
+
+  // だるま落とし落下物理
+  float targetY = 0.0f;
+  bool triggeredShake = false;
+  for (int i = 0; i < 3; ++i) {
+    if (bodies_[i]) {
+      float diff = targetY - bodyLocalTransforms_[i].translate.y;
+      bodyLocalTransforms_[i].translate.y += diff * fallSpeed_;
+      bool currentlyFalling = std::abs(diff) > 0.1f;
+      if (isFalling_[i] && !currentlyFalling && !triggeredShake) {
+        if (camera_)
+          camera_->Shake(shakeIntensity_, 15);
+        triggeredShake = true;
+      }
+      isFalling_[i] = currentlyFalling;
+      if (bodies_[i]->GetHP() > 0)
+        targetY += 2.0f;
+    }
+  }
+  headLeftLocalTransform_.translate.y +=
+      (targetY - headLeftLocalTransform_.translate.y) * fallSpeed_;
+  headMidLocalTransform_.translate.y +=
+      (targetY - headMidLocalTransform_.translate.y) * fallSpeed_;
+  headRightLocalTransform_.translate.y +=
+      (targetY - headRightLocalTransform_.translate.y) * fallSpeed_;
+
+  // 行列計算
+  Matrix4x4 globalMat =
+      Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate,
+                             globalTransform_.translate);
+
+  // 胴体描画更新
+  for (int i = 0; i < 3; ++i) {
+    if (bodies_[i]) {
+      Vector3 worldPosWithOffset = Math::Transform(
+          Math::Add(bodyLocalTransforms_[i].translate, bodyOffsets_[i]),
+          globalMat);
+      Vector3 worldPosWithoutOffset = Math::Transform(
+          bodyLocalTransforms_[i].translate, globalMat);
+      bodies_[i]->SetTransform(
+          {{globalTransform_.scale.x, globalTransform_.scale.y,
+                     globalTransform_.scale.z},
+                    globalTransform_.rotate,
+                    worldPosWithoutOffset},
+          &worldPosWithOffset);
+      bodies_[i]->Update();
+    }
+  }
+
+  // 頭部描画更新
+  auto updateHead = [&](auto &head, Transform &localT, Vector3 &offset) {
+    if (head) {
+      Vector3 worldPosWithOffset =
+          Math::Transform(Math::Add(localT.translate, offset), globalMat);
+      Vector3 worldPosWithoutOffset =
+          Math::Transform(localT.translate, globalMat);
+      head->SetTransform(
+          {globalTransform_.scale, globalTransform_.rotate, worldPosWithoutOffset},
+          &worldPosWithOffset);
+      head->Update();
+    }
+  };
+  updateHead(headLeft_, headLeftLocalTransform_, headLeftOffset_);
+  updateHead(headMid_, headMidLocalTransform_, headMidOffset_);
+  updateHead(headRight_, headRightLocalTransform_, headRightOffset_);
+
+#ifdef USE_IMGUI
+  ImGui::Begin("Enemy HP Status");
+  ImGui::SliderFloat("Fall Speed", &fallSpeed_, 0.01f, 1.0f);
+  ImGui::SliderFloat("Shake Intensity", &shakeIntensity_, 0.0f, 10.0f);
+
+  float blowSpeed = EnemyParameters::GetInstance()->GetBlowSpeed();
+  if (ImGui::SliderFloat("Blow Speed", &blowSpeed, 0.0f, 5.0f)) {
+    EnemyParameters::GetInstance()->SetBlowSpeed(blowSpeed);
+  }
+  float disappearTime = EnemyParameters::GetInstance()->GetDisappearTime();
+  if (ImGui::SliderFloat("Disappear Time", &disappearTime, 0.5f, 10.0f)) {
+    EnemyParameters::GetInstance()->SetDisappearTime(disappearTime);
+  }
+
+  Vector3 bodyObb = EnemyParameters::GetInstance()->GetBodyOBBSize();
+  if (ImGui::SliderFloat3("Body OBB Size", &bodyObb.x, 0.1f, 30.0f)) {
+    EnemyParameters::GetInstance()->SetBodyOBBSize(bodyObb);
+  }
+  Vector3 headObb = EnemyParameters::GetInstance()->GetHeadOBBSize();
+  if (ImGui::SliderFloat3("Head OBB Size", &headObb.x, 0.1f, 30.0f)) {
+    EnemyParameters::GetInstance()->SetHeadOBBSize(headObb);
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    if (bodies_[i]) {
+      int hp = bodies_[i]->GetHP();
+      if (ImGui::SliderInt(("Body[" + std::to_string(i) + "] HP").c_str(), &hp,
+                           0, 10000))
+        bodies_[i]->SetHP(hp);
+    }
+  }
+  ImGui::End();
+#endif
+
+#ifdef USE_IMGUI
+  if (lineOBB_) {
+    lineOBB_->ClearInstances();
+    if (isDebugDrawOBB_) {
+      auto addObbLines = [&](const OBB &obb) {
+        Vector3 corners[8];
+        for (int i = 0; i < 8; ++i) {
+          Vector3 offset = {0, 0, 0};
+          offset = Math::Add(offset,
+                             Math::Multiply((i & 1) ? obb.size.x : -obb.size.x,
+                                            obb.orientations[0]));
+          offset = Math::Add(offset,
+                             Math::Multiply((i & 2) ? obb.size.y : -obb.size.y,
+                                            obb.orientations[1]));
+          offset = Math::Add(offset,
+                             Math::Multiply((i & 4) ? obb.size.z : -obb.size.z,
+                                            obb.orientations[2]));
+          corners[i] = Math::Add(obb.center, offset);
         }
+        Vector4 color = {0.0f, 1.0f, 0.0f, 1.0f}; // Green
+        lineOBB_->AddInstance(corners[0], corners[1], color);
+        lineOBB_->AddInstance(corners[1], corners[3], color);
+        lineOBB_->AddInstance(corners[3], corners[2], color);
+        lineOBB_->AddInstance(corners[2], corners[0], color);
+        lineOBB_->AddInstance(corners[4], corners[5], color);
+        lineOBB_->AddInstance(corners[5], corners[7], color);
+        lineOBB_->AddInstance(corners[7], corners[6], color);
+        lineOBB_->AddInstance(corners[6], corners[4], color);
+        lineOBB_->AddInstance(corners[0], corners[4], color);
+        lineOBB_->AddInstance(corners[1], corners[5], color);
+        lineOBB_->AddInstance(corners[2], corners[6], color);
+        lineOBB_->AddInstance(corners[3], corners[7], color);
+      };
+      for (int i = 0; i < 3; ++i) {
+        if (bodies_[i] && !bodies_[i]->IsCompletelyDead())
+          addObbLines(bodies_[i]->GetOBB());
+      }
+      if (headLeft_ && !headLeft_->IsCompletelyDead())
+        addObbLines(headLeft_->GetOBB());
+      if (headMid_ && !headMid_->IsCompletelyDead())
+        addObbLines(headMid_->GetOBB());
+      if (headRight_ && !headRight_->IsCompletelyDead())
+        addObbLines(headRight_->GetOBB());
+      if (beam_)
+        addObbLines(beam_->GetOBB());
     }
-    ImGui::End();
+    lineOBB_->Update();
+  }
 #endif
 }
 
 void Enemy::Draw() {
-    if (!isActive_) return;
-    for (auto &body : bodies_) {
-      if (body && !body->IsCompletelyDead())
-        body->Draw();
+  if (!isActive_)
+    return;
+  for (auto &body : bodies_) {
+    if (body && !body->IsCompletelyDead()) {
+      body->Draw();
     }
-    if (headLeft_ && !headLeft_->IsCompletelyDead())
-      headLeft_->Draw();
-    if (headMid_ && !headMid_->IsCompletelyDead())
-      headMid_->Draw();
-    if (headRight_ && !headRight_->IsCompletelyDead())
-      headRight_->Draw();
+  }
+  if (headLeft_ && !headLeft_->IsCompletelyDead())
+    headLeft_->Draw();
+  if (headMid_ && !headMid_->IsCompletelyDead())
+    headMid_->Draw();
+  if (headRight_ && !headRight_->IsCompletelyDead())
+    headRight_->Draw();
+
+   // ビームを描画
+  if (beam_)
+    beam_->Draw();
+
+#ifdef USE_IMGUI
+  if (lineOBB_ && isDebugDrawOBB_ && engine_) {
+    engine_->ApplyLineInstancedPSO();
+    lineOBB_->Draw();
+    engine_->ApplyPSO(); // restore
+  }
+#endif
 }
 
 // ビームの発射命令（トリガー）
 void Enemy::FireBeam() {
-    if (!beam_) {
-        beam_ = std::make_unique<EnemyBeam>();
-        beam_->Initialize(camera_, GetHeadMidWorldMatrix());
-    }
+  if (!beam_) {
+    beam_ = std::make_unique<EnemyBeam>();
+    beam_->Initialize(camera_, GetHeadMidWorldMatrix());
+  }
 }
 
 Matrix4x4 Enemy::GetHeadMidWorldMatrix() const {
-    Matrix4x4 globalMat = Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate, globalTransform_.translate);
-    Vector3 localPos = Math::Add(headMidLocalTransform_.translate, headMidOffset_);
-    return Math::Multiply(Math::MakeAffineMatrix({ 1,1,1 }, headMidLocalTransform_.rotate, localPos), globalMat);
+  Matrix4x4 globalMat =
+      Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate,
+                             globalTransform_.translate);
+  Vector3 localPos =
+      Math::Add(headMidLocalTransform_.translate, headMidOffset_);
+  return Math::Multiply(Math::MakeAffineMatrix(
+                            {1, 1, 1}, headMidLocalTransform_.rotate, localPos),
+                        globalMat);
 }
 
 OBB Enemy::GetOBB() const {
-    OBB obb;
-    // globalTransform_ から中心座標、回転、サイズを抽出して設定
-    obb.center = globalTransform_.translate;
+  OBB obb;
+  // globalTransform_ から中心座標、回転、サイズを抽出して設定
+  obb.center = globalTransform_.translate;
 
-    // 各軸の方向ベクトル（回転から算出）
-    Matrix4x4 rotateMat = Math::MakeRotateXYZMatrix(globalTransform_.rotate);
-    obb.orientations[0] = { rotateMat.m[0][0], rotateMat.m[0][1], rotateMat.m[0][2] };
-    obb.orientations[1] = { rotateMat.m[1][0], rotateMat.m[1][1], rotateMat.m[1][2] };
-    obb.orientations[2] = { rotateMat.m[2][0], rotateMat.m[2][1], rotateMat.m[2][2] };
+  // 各軸の方向ベクトル（回転から算出）
+  Matrix4x4 rotateMat = Math::MakeRotateXYZMatrix(globalTransform_.rotate);
+  obb.orientations[0] = {rotateMat.m[0][0], rotateMat.m[0][1],
+                         rotateMat.m[0][2]};
+  obb.orientations[1] = {rotateMat.m[1][0], rotateMat.m[1][1],
+                         rotateMat.m[1][2]};
+  obb.orientations[2] = {rotateMat.m[2][0], rotateMat.m[2][1],
+                         rotateMat.m[2][2]};
 
-    // 半径（サイズ）の設定
-    obb.size = { 2.0f, 4.0f, 2.0f }; // 敵の見た目に合わせた仮のサイズ
+  // 半径（サイズ）の設定
+  obb.size = {2.0f, 4.0f, 2.0f}; // 敵の見た目に合わせた仮のサイズ
 
-    return obb;
+  return obb;
 }

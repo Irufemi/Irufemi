@@ -4,7 +4,7 @@
 void EnemyBeam::Initialize(Camera* camera, const Matrix4x4& muzzleMatrix) {
     obj_ = std::make_unique<ObjClass>();
     obj_->Initialize(camera, "sample/block.obj");
-    obj_->SetColor({1.0f, 1.0f, 0.0f});
+    obj_->SetColor({1.0f, 1.0f, 0.0f,1.0f});
 
     // 1. 基本となる座標と回転を設定
     transform_.translate = { muzzleMatrix.m[3][0], muzzleMatrix.m[3][1], muzzleMatrix.m[3][2] };

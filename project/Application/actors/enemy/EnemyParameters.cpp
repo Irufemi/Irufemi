@@ -45,5 +45,11 @@ void EnemyParameters::Load(const std::string& filepath) {
     if (enemy.contains("disappear_time")) {
         disappearTime_ = enemy["disappear_time"];
     }
+    if (enemy.contains("body") && enemy["body"].contains("obb_size") && enemy["body"]["obb_size"].is_array() && enemy["body"]["obb_size"].size() == 3) {
+        bodyOBBSize_ = { enemy["body"]["obb_size"][0], enemy["body"]["obb_size"][1], enemy["body"]["obb_size"][2] };
+    }
+    if (enemy.contains("head_mid") && enemy["head_mid"].contains("obb_size") && enemy["head_mid"]["obb_size"].is_array() && enemy["head_mid"]["obb_size"].size() == 3) {
+        headOBBSize_ = { enemy["head_mid"]["obb_size"][0], enemy["head_mid"]["obb_size"][1], enemy["head_mid"]["obb_size"][2] };
+    }
   }
 }

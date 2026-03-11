@@ -47,7 +47,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     player_->Initialize(engine_->GetInputManager(), camera_.get(), engine_, mouse_.get());
 
     boss_ = std::make_unique<Enemy>();
-    boss_->Initialize(camera_.get());
+    boss_->Initialize(camera_.get(), engine_);
 
     field_ = std::make_unique<Field>(camera_.get(), engine_);
     field_->Initialize();

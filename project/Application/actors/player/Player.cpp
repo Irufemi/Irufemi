@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include "Math.h"
 #include "Engine/Platform/Input/Mouse.h"
+#include "Renderer/LineInstanced/LineClass.h"
 
 // デストラクタ
 Player::~Player() {
@@ -63,6 +64,11 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     hp_ = 100;
     isDead_ = false;
     invincibleTimer_ = 0;
+
+#ifdef USE_IMGUI
+    lineOBB_ = std::make_unique<Line3DRegion>();
+    lineOBB_->Initialize(camera_);
+#endif
 }
 
 void Player::Update() {
@@ -131,6 +137,83 @@ void Player::Update() {
 
     // 6. カメラをプレイヤーに追従させる
     UpdateCamera();
+
+#ifdef USE_IMGUI
+    if (input_->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
+        isDebugDrawOBB_ = !isDebugDrawOBB_;
+    }
+
+    if (lineOBB_) {
+        lineOBB_->ClearInstances();
+        if (isDebugDrawOBB_) {
+            auto addObbLines = [&](const OBB& obb) {
+                Vector3 corners[8];
+                for (int i = 0; i < 8; ++i) {
+                    Vector3 offset = { 0, 0, 0 };
+                    offset = Math::Add(offset, Math::Multiply((i & 1) ? obb.size.x : -obb.size.x, obb.orientations[0]));
+                    offset = Math::Add(offset, Math::Multiply((i & 2) ? obb.size.y : -obb.size.y, obb.orientations[1]));
+                    offset = Math::Add(offset, Math::Multiply((i & 4) ? obb.size.z : -obb.size.z, obb.orientations[2]));
+                    corners[i] = Math::Add(obb.center, offset);
+                }
+                Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f }; // Green
+                lineOBB_->AddInstance(corners[0], corners[1], color);
+                lineOBB_->AddInstance(corners[1], corners[3], color);
+                lineOBB_->AddInstance(corners[3], corners[2], color);
+                lineOBB_->AddInstance(corners[2], corners[0], color);
+                lineOBB_->AddInstance(corners[4], corners[5], color);
+                lineOBB_->AddInstance(corners[5], corners[7], color);
+                lineOBB_->AddInstance(corners[7], corners[6], color);
+                lineOBB_->AddInstance(corners[6], corners[4], color);
+                lineOBB_->AddInstance(corners[0], corners[4], color);
+                lineOBB_->AddInstance(corners[1], corners[5], color);
+                lineOBB_->AddInstance(corners[2], corners[6], color);
+                lineOBB_->AddInstance(corners[3], corners[7], color);
+            };
+
+            // Player OBB
+            addObbLines(GetCollider().obb);
+
+            // Attack OBB
+            if (attackCollision_.isActive) {
+                OBB attackObb;
+                attackObb.center = attackCollision_.center;
+                attackObb.orientations[0] = { 1.0f, 0.0f, 0.0f };
+                attackObb.orientations[1] = { 0.0f, 1.0f, 0.0f };
+                attackObb.orientations[2] = { 0.0f, 0.0f, 1.0f };
+                attackObb.size = { attackCollision_.radius, attackCollision_.radius, attackCollision_.radius };
+                addObbLines(attackObb);
+            }
+
+            // Missiles OBB
+            for (int i = 0; i < kMaxMissiles; ++i) {
+                if (missiles_[i].isActive) {
+                    OBB missileObb;
+                    missileObb.center = missiles_[i].position;
+                    // ミサイルの進行方向から回転行列を作ることもできるが、簡略化のため軸固定
+                    missileObb.orientations[0] = { 1.0f, 0.0f, 0.0f };
+                    missileObb.orientations[1] = { 0.0f, 1.0f, 0.0f };
+                    missileObb.orientations[2] = { 0.0f, 0.0f, 1.0f };
+                    missileObb.size = { 1.0f, 1.0f, 1.0f };
+                    addObbLines(missileObb);
+                }
+            }
+
+            // Bullets OBB
+            for (int i = 0; i < kMaxBullets; ++i) {
+                if (bullets_[i].isActive) {
+                    OBB bulletObb;
+                    bulletObb.center = bullets_[i].position;
+                    bulletObb.orientations[0] = { 1.0f, 0.0f, 0.0f };
+                    bulletObb.orientations[1] = { 0.0f, 1.0f, 0.0f };
+                    bulletObb.orientations[2] = { 0.0f, 0.0f, 1.0f };
+                    bulletObb.size = { 0.5f, 0.5f, 0.5f };
+                    addObbLines(bulletObb);
+                }
+            }
+        }
+        lineOBB_->Update();
+    }
+#endif
 }
 
 void Player::Draw() {
@@ -246,6 +329,14 @@ void Player::Draw() {
             maskSprite_->Draw();
         }
     }
+
+#ifdef USE_IMGUI
+    if (lineOBB_ && isDebugDrawOBB_ && engine_) {
+        engine_->ApplyLineInstancedPSO();
+        lineOBB_->Draw();
+        engine_->ApplyPSO(); // restore
+    }
+#endif
 }
 
 // ---------------------------------------------------------

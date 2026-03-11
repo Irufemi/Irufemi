@@ -21,7 +21,7 @@ public:
   int GetHP() const { return hp_; }
 
   // Transformを一括設定する（回転やスケールも含めて上書き）
-  void SetTransform(const Transform& transform);
+  void SetTransform(const Transform& transform, const Vector3* drawWorldPos = nullptr);
   const Transform& GetTransform() const { return transform_; }
 
   void OnDestroyed(const Vector3& attackDir, float blowSpeed);

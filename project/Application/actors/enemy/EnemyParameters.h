@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "Engine/Core/Math/Vector3.h"
 
 class EnemyParameters {
 public:
@@ -21,6 +22,12 @@ public:
   float GetDisappearTime() const { return disappearTime_; }
   void SetDisappearTime(float time) { disappearTime_ = time; }
 
+  const Vector3& GetBodyOBBSize() const { return bodyOBBSize_; }
+  void SetBodyOBBSize(const Vector3& size) { bodyOBBSize_ = size; }
+
+  const Vector3& GetHeadOBBSize() const { return headOBBSize_; }
+  void SetHeadOBBSize(const Vector3& size) { headOBBSize_ = size; }
+
 private:
   EnemyParameters() = default;
   ~EnemyParameters() = default;
@@ -34,4 +41,7 @@ private:
 
   float blowSpeed_ = 0.5f;
   float disappearTime_ = 3.0f;
+
+  Vector3 bodyOBBSize_ = { 1.5f, 1.0f, 1.5f };
+  Vector3 headOBBSize_ = { 1.5f, 1.0f, 1.5f };
 };
