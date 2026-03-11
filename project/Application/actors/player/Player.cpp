@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 #include "Math.h"
+#include "Engine/Platform/Input/Mouse.h"
 
 // デストラクタ
 Player::~Player() {
@@ -87,21 +88,28 @@ void Player::Update() {
     if (mouse_) {
         Vector2 delta = mouse_->GetDelta();
 
-        float sensitivityMult = mouseSensitivity_ * mouseSensitivityMultiplier_ * 0.0005f;
+        // 縦横の感度を統一・計算式を調整
+        float sensitivityMult = mouseSensitivity_ * mouseSensitivityMultiplier_ * 0.001f;
 
         rotate_.y += delta.x * sensitivityMult;
         cameraPitch_ += delta.y * sensitivityMult;
 
-        // --- 上下の振り幅を非対称に制限 ---
-        // 上方向(-0.2f)は前回「いい感じ」だった値を維持し、
-        // 下方向(プラス側)の移動のみを 0.05f とほぼ動かないように狭めます。
-        if (cameraPitch_ > 0.05f) cameraPitch_ = 0.05f;   // 下を向く限界を厳しく制限
-        if (cameraPitch_ < -0.2f) cameraPitch_ = -0.2f;   // 上を向く限界は維持
+        // 【変更部分】一人称時の上下の振り幅の制限
+        if (viewMode_ == ViewMode::kThirdPerson) {
+            // 三人称視点の制限（元のまま）
+            if (cameraPitch_ > -0.01f) cameraPitch_ = -0.02f; // 下を向く限界
+            if (cameraPitch_ < -0.2f) cameraPitch_ = -0.2f;   // 上を向く限界
+        } else {
+            // 一人称視点の制限
+            if (cameraPitch_ > 0.6f) cameraPitch_ = 0.6f;     // 下を向く限界
+            if (cameraPitch_ < -1.2f) cameraPitch_ = -1.2f;   // 上を向く限界（-1.1f から -1.2f に少し広げました）
+        }
     }
+
     // 1. 移動処理
     HandleMovement();
 
-    // 2. 近接攻撃処理（Pキー）
+    // 2. 近接攻撃処理（マウスの左クリックに変更）
     HandleAttack();
 
     // 3. ミサイル攻撃処理（Mキー）
@@ -113,6 +121,12 @@ void Player::Update() {
     // 5. 視点切り替え(Vキー)
     if (input_->IsKeyPressed('V')) {
         viewMode_ = (viewMode_ == ViewMode::kThirdPerson) ? ViewMode::kFirstPerson : ViewMode::kThirdPerson;
+
+        // 視点を切り替えた直後、現在のカメラの角度が切り替え先の制限を超えていたら補正する
+        if (viewMode_ == ViewMode::kThirdPerson) {
+            if (cameraPitch_ > -0.02f) cameraPitch_ = -0.02f;
+            if (cameraPitch_ < -0.2f) cameraPitch_ = -0.2f;
+        }
     }
 
     // 6. カメラをプレイヤーに追従させる
@@ -302,6 +316,12 @@ void Player::HandleMovement() {
 
         translate_.x += moveX * kMoveSpeed;
         translate_.z += moveZ * kMoveSpeed;
+
+        // --- フィールド外に出ないための制限 ---
+        if (translate_.x > kFieldRangeX)  translate_.x = kFieldRangeX;
+        if (translate_.x < -kFieldRangeX) translate_.x = -kFieldRangeX;
+        if (translate_.z > kFieldRangeZ)  translate_.z = kFieldRangeZ;
+        if (translate_.z < -kFieldRangeZ) translate_.z = -kFieldRangeZ;
     }
 
     // ジャンプと重力
@@ -324,8 +344,8 @@ void Player::HandleMovement() {
 }
 
 void Player::HandleAttack() {
-    // Pキーで近接攻撃開始
-    if (input_->IsKeyPressed('P') && !attackCollision_.isActive) {
+    // マウスの左クリックで近接攻撃開始
+    if (mouse_ && mouse_->IsButtonPressed(Mouse::Button::Left) && !attackCollision_.isActive) {
         attackCollision_.isActive = true;
         attackActiveTimer_ = 10; // 10フレーム間持続
         OutputDebugStringA("Player Attack Start!\n");
@@ -346,7 +366,8 @@ void Player::HandleAttack() {
         if (attackObj_) {
             attackObj_->SetPosition(attackCollision_.center);
             attackObj_->SetRotate(rotate_); // プレイヤーと同じ向き
-            attackObj_->SetScale(scale_);   // プレイヤーと同じ大きさ
+            // モデルの表示サイズは元通りのまま
+            attackObj_->SetScale(scale_);
             attackObj_->Update();
         }
 
@@ -551,8 +572,19 @@ void Player::UpdateCamera() {
     };
 
     if (viewMode_ == ViewMode::kThirdPerson) {
-        // 三人称：注視点を中心に球状にカメラを配置する
-        float distance = 5.0f;
+        // --- 下を向くにつれてカメラを近づける処理 ---
+        // 割合(0.0 ～ 1.0) を計算。-0.05f(下向き限界)に近づくほど距離を短くする
+        float pitchRatio = (cameraPitch_ - (-0.2f)) / (-0.05f - (-0.2f));
+
+        // 範囲外の値を防ぐためのクランプ
+        if (pitchRatio < 0.0f) pitchRatio = 0.0f;
+        if (pitchRatio > 1.0f) pitchRatio = 1.0f;
+
+        float maxDistance = 5.0f; // 一番上を向いている時の距離（遠い）
+        float minDistance = 2.0f; // 一番下を向いている時の距離（近い）
+
+        // 割合に応じて距離を滑らかに変更（線形補間）
+        float distance = maxDistance * (1.0f - pitchRatio) + minDistance * pitchRatio;
 
         float cosPitch = std::cos(cameraPitch_);
         float sinPitch = std::sin(cameraPitch_);

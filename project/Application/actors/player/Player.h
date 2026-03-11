@@ -168,9 +168,9 @@ private:
     Mouse* mouse_ = nullptr;
 
     // --- カメラ・マウス操作用パラメータ ---
-    float mouseSensitivity_ = 30.0f;          // マウス感度 (0 ~ 100)
+    float mouseSensitivity_ = 5.0f;           // マウス感度 (初期値を下げました)
     float mouseSensitivityMultiplier_ = 1.0f; // マウス感度の倍率
-    float cameraPitch_ = 0.0f;                // カメラの上下の角度（ピッチ）
+    float cameraPitch_ = -0.1f;               // カメラの上下の角度（ピッチ）
 
     // 3Dモデル本体
     std::unique_ptr<ObjClass> obj_ = nullptr;
@@ -210,7 +210,8 @@ private:
     bool isGrounded_ = true;
 
     // --- 近接攻撃判定用 ---
-    AttackCollision attackCollision_ = { {0.0f, 0.0f, 0.0f}, 2.0f, false };
+    // 半径を 4.0f に拡大
+    AttackCollision attackCollision_ = { {0.0f, 0.0f, 0.0f}, 4.0f, false };
     int attackActiveTimer_ = 0; // 判定の持続時間管理
 
     // --- ステータス・やられ判定用 ---
@@ -223,4 +224,8 @@ private:
     const float kMoveSpeed = 0.2f;
     const float kJumpForce = 0.25f;
     const float kGravity = 0.02f;
+
+    // フィールドの境界（壁の位置に合わせる）
+    const float kFieldRangeX = 100.0f;
+    const float kFieldRangeZ = 100.0f;
 };
