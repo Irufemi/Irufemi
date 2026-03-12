@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "ModelManager.h"
 #include <filesystem>
 #include <Windows.h>
@@ -12,6 +13,7 @@
 #include "Resource/Model/Data/Node.h"
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
+#include <limits>
 
 //======================
 // キャッシュ系(インスタンス)
@@ -892,6 +894,219 @@ Node ModelManager::ReadNode(aiNode* node) {
     for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex) {
         // 再帰的にReadNodeを呼び出し、階層構造を構築する
         result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
+    }
+    return result;
+}
+
+namespace {
+    // レイと三角形の交差判定
+    bool IntersectRayTriangle(const Vector3& origin, const Vector3& direction,
+        const Vector3& v0, const Vector3& v1, const Vector3& v2,
+        float& t) {
+        const float kEpsilon = 1e-6f;
+        Vector3 edge1 = Math::Subtract(v1, v0);
+        Vector3 edge2 = Math::Subtract(v2, v0);
+        Vector3 h = Math::Cross(direction, edge2);
+        float a = Math::Dot(edge1, h);
+        if (a > -kEpsilon && a < kEpsilon)
+            return false; // レイは三角形と平行
+
+        float f = 1.0f / a;
+        Vector3 s = Math::Subtract(origin, v0);
+        float u = f * Math::Dot(s, h);
+        if (u < 0.0f || u > 1.0f)
+            return false;
+
+        Vector3 q = Math::Cross(s, edge1);
+        float v = f * Math::Dot(direction, q);
+        if (v < 0.0f || u + v > 1.0f)
+            return false;
+
+        t = f * Math::Dot(edge2, q);
+        return (t > kEpsilon);
+    }
+
+    // 点と三角形の最近接点を求める
+    Vector3 ClosestPointOnTriangle(const Vector3& p, const Vector3& a, const Vector3& b, const Vector3& c) {
+        Vector3 ab = b - a;
+        Vector3 ac = c - a;
+        Vector3 ap = p - a;
+        float d1 = Math::Dot(ab, ap);
+        float d2 = Math::Dot(ac, ap);
+        if (d1 <= 0.0f && d2 <= 0.0f) return a;
+
+        Vector3 bp = p - b;
+        float d3 = Math::Dot(ab, bp);
+        float d4 = Math::Dot(ac, bp);
+        if (d3 >= 0.0f && d4 <= d3) return b;
+
+        float vc = d1 * d4 - d3 * d2;
+        if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
+            float v = d1 / (d1 - d3);
+            return a + v * ab;
+        }
+
+        Vector3 cp = p - c;
+        float d5 = Math::Dot(ab, cp);
+        float d6 = Math::Dot(ac, cp);
+        if (d6 >= 0.0f && d5 <= d6) return c;
+
+        float vb = d5 * d2 - d1 * d6;
+        if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
+            float w = d2 / (d2 - d6);
+            return a + w * ac;
+        }
+
+        float va = d3 * d6 - d5 * d4;
+        if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
+            float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+            return b + w * (c - b);
+        }
+
+        float denom = 1.0f / (va + vb + vc);
+        float v = vb * denom;
+        float w = vc * denom;
+        return a + ab * v + ac * w;
+    }
+
+    // 重心座標を計算
+    Vector3 Barycentric(const Vector3& p, const Vector3& a, const Vector3& b, const Vector3& c) {
+        Vector3 v0 = b - a, v1 = c - a, v2 = p - a;
+        float d00 = Math::Dot(v0, v0);
+        float d01 = Math::Dot(v0, v1);
+        float d11 = Math::Dot(v1, v1);
+        float d20 = Math::Dot(v2, v0);
+        float d21 = Math::Dot(v2, v1);
+        float denom = d00 * d11 - d01 * d01;
+        float v = (d11 * d20 - d01 * d21) / denom;
+        float w = (d00 * d21 - d01 * d20) / denom;
+        float u = 1.0f - v - w;
+        return { u, v, w };
+    }
+}
+
+VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3Int& resolution, TextureManager* textureManager) {
+    VoxelizedModel result;
+    if (model.meshes.empty() || !textureManager) {
+        return result;
+    }
+    result.resolution = resolution;
+
+    // 1. モデル全体のAABBを計算
+    result.aabbMin = { std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
+    result.aabbMax = { std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest() };
+
+    for (const auto& mesh : model.meshes) {
+        for (const auto& vertex : mesh.vertices) {
+            result.aabbMin.x = std::min(result.aabbMin.x, vertex.position.x);
+            result.aabbMin.y = std::min(result.aabbMin.y, vertex.position.y);
+            result.aabbMin.z = std::min(result.aabbMin.z, vertex.position.z);
+            result.aabbMax.x = std::max(result.aabbMax.x, vertex.position.x);
+            result.aabbMax.y = std::max(result.aabbMax.y, vertex.position.y);
+            result.aabbMax.z = std::max(result.aabbMax.z, vertex.position.z);
+        }
+    }
+
+    // 2. ボクセル1つあたりのサイズを計算
+    Vector3 aabbSize = Math::Subtract(result.aabbMax, result.aabbMin);
+    Vector3 voxelSize = {
+        aabbSize.x / resolution.x,
+        aabbSize.y / resolution.y,
+        aabbSize.z / resolution.z
+    };
+
+    // 3. 全てのボクセルをループ処理
+    for (int z = 0; z < resolution.z; ++z) {
+        for (int y = 0; y < resolution.y; ++y) {
+            for (int x = 0; x < resolution.x; ++x) {
+                // 4. 各ボクセルの中心座標を計算
+                Vector3 voxelCenter = result.aabbMin + Vector3{
+                    (x + 0.5f) * voxelSize.x,
+                    (y + 0.5f) * voxelSize.y,
+                    (z + 0.5f) * voxelSize.z
+                };
+
+                // 5. 内外判定 (レイキャスト法)
+                int intersections = 0;
+                Vector3 rayDir = { 1.0f, 0.0f, 0.0f }; // X+方向へのレイ
+                for (const auto& mesh : model.meshes) {
+                    for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+                        const auto& v0 = mesh.vertices[mesh.indices[i]].position;
+                        const auto& v1 = mesh.vertices[mesh.indices[i + 1]].position;
+                        const auto& v2 = mesh.vertices[mesh.indices[i + 2]].position;
+                        float t;
+                        if (IntersectRayTriangle(voxelCenter, rayDir, { v0.x,v0.y,v0.z }, { v1.x,v1.y,v1.z }, { v2.x,v2.y,v2.z }, t)) {
+                            intersections++;
+                        }
+                    }
+                }
+
+                // 6. (内部と判定された場合) 色と法線をサンプリング
+                if (intersections % 2 == 1) {
+                    float minDistanceSq = std::numeric_limits<float>::max();
+                    Voxel newVoxel;
+                    newVoxel.position = voxelCenter;
+
+                    // 最も近い三角形面上の点を探す
+                    for (const auto& mesh : model.meshes) {
+                        for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+                            const auto& v0 = mesh.vertices[mesh.indices[i]];
+                            const auto& v1 = mesh.vertices[mesh.indices[i + 1]];
+                            const auto& v2 = mesh.vertices[mesh.indices[i + 2]];
+
+                            Vector3 p0 = { v0.position.x, v0.position.y, v0.position.z };
+                            Vector3 p1 = { v1.position.x, v1.position.y, v1.position.z };
+                            Vector3 p2 = { v2.position.x, v2.position.y, v2.position.z };
+
+                            Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
+                            float distSq = Math::Length(closestPoint - voxelCenter) * Math::Length(closestPoint - voxelCenter);
+
+                            if (distSq < minDistanceSq) {
+                                minDistanceSq = distSq;
+
+                                // 重心座標を計算
+                                Vector3 bary = Barycentric(closestPoint, p0, p1, p2);
+
+                                // UV座標を補間
+                                Vector2 uv = v0.texcoord * bary.x + v1.texcoord * bary.y + v2.texcoord * bary.z;
+
+                                // 法線を補間
+                                newVoxel.normal = Math::Normalize(v0.normal * bary.x + v1.normal * bary.y + v2.normal * bary.z);
+
+                                // テクスチャから色をサンプリング
+                                if (!mesh.material.textureFilePath.empty()) {
+                                    const DirectX::ScratchImage* image = textureManager->GetScratchImage(mesh.material.textureFilePath);
+                                    if (image && image->GetImageCount() > 0) {
+                                        const DirectX::Image* img = image->GetImage(0, 0, 0);
+                                        int texX = static_cast<int>(uv.x * img->width) % img->width;
+                                        int texY = static_cast<int>(uv.y * img->height) % img->height;
+                                        
+                                        // ピクセルデータへのポインタを取得
+                                        uint8_t* pixels = img->pixels;
+                                        // 1ピクセルあたりのバイト数を取得 (例: RGBA8なら4)
+                                        size_t pixelStride = DirectX::BitsPerPixel(img->format) / 8;
+                                        // 目的のピクセルのアドレスを計算
+                                        uint8_t* pixel = pixels + (texY * img->rowPitch) + (texX * pixelStride);
+
+                                        // 色を読み取り、Vector4に変換 (フォーマットに応じて処理が必要)
+                                        // ここでは単純なR8G8B8A8_UNORMを仮定
+                                        newVoxel.color.x = pixel[0] / 255.0f;
+                                        newVoxel.color.y = pixel[1] / 255.0f;
+                                        newVoxel.color.z = pixel[2] / 255.0f;
+                                        newVoxel.color.w = pixel[3] / 255.0f;
+                                    } else {
+                                        newVoxel.color = mesh.material.color; // 画像がなければマテリアル色
+                                    }
+                                } else {
+                                    newVoxel.color = mesh.material.color; // テクスチャがなければマテリアル色
+                                }
+                            }
+                        }
+                    }
+                    result.voxels.push_back(newVoxel);
+                }
+            }
+        }
     }
     return result;
 }

@@ -25,7 +25,8 @@ void PSOManager::Initialize(
     ShaderSet lineInstancedShaders,
     ShaderSet skinningShaders,
     ShaderSet skyboxShaders,
-    ShaderSet gpuParticleShaders
+    ShaderSet gpuParticleShaders,
+    ShaderSet voxelParticleShaders
 )
 {
     device_ = device;
@@ -48,6 +49,7 @@ void PSOManager::Initialize(
     skinningShaders_ = skinningShaders;
     skyboxShaders_ = skyboxShaders;
     gpuParticleShaders_ = gpuParticleShaders;
+    voxelParticleShaders_ = voxelParticleShaders;
 
     cache_.clear();
 }
@@ -267,6 +269,26 @@ ID3D12PipelineState* PSOManager::GetGpuParticle(BlendMode blend, DepthWrite dept
     return pso.Get();
 }
 
+ID3D12PipelineState* PSOManager::GetVoxelParticle(BlendMode blend, DepthWrite depth, CullMode cull)
+{
+    const bool hasVS = (voxelParticleShaders_.vsBlob && voxelParticleShaders_.vsBlob->GetBufferPointer());
+    const bool hasPS = (voxelParticleShaders_.psBlob && voxelParticleShaders_.psBlob->GetBufferPointer());
+    const bool hasGS = (voxelParticleShaders_.gsBlob && voxelParticleShaders_.gsBlob->GetBufferPointer());
+    const ShaderSet& set = (hasVS && hasPS && hasGS) ? voxelParticleShaders_ : objectShaders_;
+
+    Key key{ Hash(set, blend, depth, cull) };
+    if (auto it = cache_.find(key); it != cache_.end()) { return it->second.Get(); }
+
+    D3D12_BLEND_DESC bd = MakeBlend(blend);
+    D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
+
+    // VoxelParticleはPOINTトポロジを使用
+    auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, cull);
+    if (!pso) { return nullptr; }
+    cache_[key] = pso;
+    return pso.Get();
+}
+
 void PSOManager::ClearCache() { cache_.clear(); }
 
 // PSOManager.cpp に追加
@@ -321,7 +343,13 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSOWithTopology(
 {
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();
-    desc.InputLayout = inputLayout_;
+    // VoxelParticleは頂点入力がないため、InputLayoutを無効化
+    if (topology == D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT) {
+        desc.InputLayout = { nullptr, 0 };
+    }
+    else {
+        desc.InputLayout = inputLayout_;
+    }
     desc.VS = { shaders.vsBlob->GetBufferPointer(), shaders.vsBlob->GetBufferSize() };
     desc.PS = { shaders.psBlob->GetBufferPointer(), shaders.psBlob->GetBufferSize() };
     if (shaders.gsBlob) {

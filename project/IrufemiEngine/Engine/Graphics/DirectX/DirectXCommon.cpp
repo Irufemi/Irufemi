@@ -38,6 +38,11 @@ void DirectXCommon::Finalize() {
     }
 
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
+    voxelParticlePSBlob_.Reset();
+    voxelParticleGSBlob_.Reset();
+    voxelParticleVSBlob_.Reset();
+    voxelParticleUpdatePSO_.Reset();
+    voxelParticleInitializePSO_.Reset();
     gpuParticleEmitPSO_.Reset();
     gpuParticleUpdatePSO_.Reset();
     gpuParticleInitializePSO_.Reset();
@@ -711,6 +716,22 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> gpuParticlePSBlob = CompileShader(L"resources/shaders/ParticleGPU.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(gpuParticlePSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> voxelParticleInitializeCSBlob = CompileShader(L"resources/shaders/InitializeVoxel.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(voxelParticleInitializeCSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> voxelParticleUpdateCSBlob = CompileShader(L"resources/shaders/UpdateVoxel.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(voxelParticleUpdateCSBlob != nullptr);
+
+    voxelParticleVSBlob_ = CompileShader(L"resources/shaders/VoxelParticle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(voxelParticleVSBlob_ != nullptr);
+
+    voxelParticleGSBlob_ = CompileShader(L"resources/shaders/VoxelParticle.GS.hlsl", L"gs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(voxelParticleGSBlob_ != nullptr);
+
+    voxelParticlePSBlob_ = CompileShader(L"resources/shaders/VoxelParticle.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(voxelParticlePSBlob_ != nullptr);
+
+
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
     if (dxcCompiler) { dxcCompiler.Reset(); }
@@ -773,6 +794,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     gpuParticlePSBlob
     };
 
+    PSOManager::ShaderSet voxelParticleShaders{
+        voxelParticleVSBlob_,
+        voxelParticlePSBlob_,
+        voxelParticleGSBlob_
+    };
+
     // 入力レイアウトは既存の inputLayoutDesc
     psoManager_->Initialize(
         device_.Get(),
@@ -790,7 +817,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         lineInstancedShaders,
         skinningObject3DShaders,
         skyboxShaders,
-        gpuParticleShaders
+        gpuParticleShaders,
+        voxelParticleShaders
     );
 
     //実際に生成
@@ -818,6 +846,15 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&gpuParticleUpdatePSO_));
     assert(SUCCEEDED(hr));
 
+    computePsoDesc.CS = { voxelParticleInitializeCSBlob->GetBufferPointer(), voxelParticleInitializeCSBlob->GetBufferSize() };
+    hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&voxelParticleInitializePSO_));
+    assert(SUCCEEDED(hr));
+
+    computePsoDesc.CS = { voxelParticleUpdateCSBlob->GetBufferPointer(), voxelParticleUpdateCSBlob->GetBufferSize() };
+    hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&voxelParticleUpdatePSO_));
+    assert(SUCCEEDED(hr));
+
+
     // 生成が完了したのでShaderBlobを解放
     if (object3DVSBlob) { object3DVSBlob.Reset(); }
     if (object3DPSBlob) { object3DPSBlob.Reset(); }
@@ -842,6 +879,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (gpuParticleUpdateCSBlob) { gpuParticleUpdateCSBlob.Reset(); }
     if (gpuParticleVSBlob) { gpuParticleVSBlob.Reset(); }
     if (gpuParticlePSBlob) { gpuParticlePSBlob.Reset(); }
+    if (voxelParticleInitializeCSBlob) { voxelParticleInitializeCSBlob.Reset(); }
+    if (voxelParticleUpdateCSBlob) { voxelParticleUpdateCSBlob.Reset(); }
+
 
     //頂点リソース用のヒープを生成
     D3D12_HEAP_PROPERTIES uploadHeapProperties{};

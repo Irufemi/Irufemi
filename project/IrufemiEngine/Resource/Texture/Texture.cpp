@@ -21,13 +21,13 @@ Texture::~Texture() {
 void Texture::Initialize(const std::string& filePath) {
     this->filePath_ = filePath;
 
-    DirectX::ScratchImage mipImages = dxCommon_->LoadTexture(filePath_);
-    const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+    mipImages_ = dxCommon_->LoadTexture(filePath_);
+    const DirectX::TexMetadata& metadata = mipImages_.GetMetadata();
     width_ = static_cast<uint32_t>(metadata.width);
     height_ = static_cast<uint32_t>(metadata.height);
 
     textureResource_ = dxCommon_->CreateTextureResource(metadata);
-    intermediateResource_ = dxCommon_->UploadTextureData(textureResource_.Get(), mipImages);
+    intermediateResource_ = dxCommon_->UploadTextureData(textureResource_.Get(), mipImages_);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
     srvDesc.Format = metadata.format;

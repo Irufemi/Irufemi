@@ -20,6 +20,7 @@
 #include "Renderer/Object3D/Primitive/CylinderClass.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 #include "Renderer/Region/Region.h"
 #include "Renderer/Region/Primitive/SphereRegion.h"
 #include "Renderer/Region/Primitive/TetraRegion.h"
@@ -208,6 +209,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Fade::SetEngine(this);
     Skybox::SetEngine(this);
     GPUParticleSystem::SetDXCommon(dxCommon_.get());
+    VoxelParticleSystem::SetEngine(this);
 }
 
 // クリアカラーを float 指定できる 初期化

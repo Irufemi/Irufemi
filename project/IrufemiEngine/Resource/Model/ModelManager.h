@@ -14,6 +14,7 @@
 #include "Resource/Model/Data/ObjModel.h"
 #include "Resource/Model/Data/ModelData.h"
 #include "Resource/Model/Data/MaterialData.h"
+#include "Resource/Model/Data/VoxelizedModel.h"
 #include "Engine/Core/Math/Geometry/Math.h"
 
 // 前方宣言
@@ -72,6 +73,7 @@ public:
     static bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
     static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
     static Node ReadNode(aiNode* node);
+    static VoxelizedModel VoxelizeModel(const ObjModel& model, const Vector3Int& resolution, TextureManager* textureManager);
 
 
 private:

@@ -170,7 +170,7 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
-    commandList->SetPipelineState(dxCommon_->GetGpuParticleIntializePSO());
+    commandList->SetPipelineState(dxCommon_->GetGpuParticleInitializePSO());
     commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
     commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
     commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
@@ -276,6 +276,10 @@ void GPUParticleSystem::Draw() {
 
     engine_->ApplyGpuParticlePSO();
 
+    engine_->SetBlend(BlendMode::kBlendModeAdd);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable());
+    engine_->SetCull(PSOManager::CullMode::None);
+      
     drawManager_->DrawParticleGPU(
         vertexBufferView_,
         materialResource_->GetGPUVirtualAddress(),

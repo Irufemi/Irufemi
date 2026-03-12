@@ -4,9 +4,10 @@
 #include <string>
 #include <wrl.h>
 #include <cstdint>
+#include "DirectXTex/DirectXTex.h"
 
 class DirectXCommon;
-class DescriptorPool; // 変更
+class DescriptorPool;
 
 class Texture {
 public:
@@ -21,7 +22,10 @@ public:
 
     const D3D12_GPU_DESCRIPTOR_HANDLE& GetTextureSrvHandleGPU()const { return textureSrvHandleGPU_; }
 
-    // 追加: サイズ取得(TextureManager::GetTextureSize から呼ばれる)
+    // ScratchImageを取得
+    const DirectX::ScratchImage* GetScratchImage() const { return &mipImages_; }
+
+    // サイズ取得(TextureManager::GetTextureSize から呼ばれる)
     uint32_t GetWidth()  const { return width_; }
     uint32_t GetHeight() const { return height_; }
 
@@ -35,6 +39,7 @@ protected:
     std::string filePath_;
     Microsoft::WRL::ComPtr<ID3D12Resource> textureResource_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource_ = nullptr;
+    DirectX::ScratchImage mipImages_;
 
     static uint32_t index_; // 互換用
     uint32_t srvIndex_ = UINT32_MAX; // allocator で確保した index
