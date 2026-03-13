@@ -62,14 +62,13 @@ void EnemyBeam::Draw() {
 
 OBB EnemyBeam::GetOBB() const {
     OBB obb;
-    // visualTransform相当の計算
+    obb.center = transform_.translate;
     Matrix4x4 rotateMat = Math::MakeRotateXYZMatrix(transform_.rotate);
-    Vector3 currentForward = { rotateMat.m[2][0], rotateMat.m[2][1], rotateMat.m[2][2] };
-
-    obb.center = Math::Add(transform_.translate, Math::Multiply(forwardOffset_, currentForward));
     obb.orientations[0] = { rotateMat.m[0][0], rotateMat.m[0][1], rotateMat.m[0][2] };
     obb.orientations[1] = { rotateMat.m[1][0], rotateMat.m[1][1], rotateMat.m[1][2] };
     obb.orientations[2] = { rotateMat.m[2][0], rotateMat.m[2][1], rotateMat.m[2][2] };
-    obb.size = transform_.scale;
+
+    // transform_.scale には (太さ, 太さ, 距離) が入っているので、その半分を半径とする
+    obb.size = { transform_.scale.x * 0.5f, transform_.scale.y * 0.5f, transform_.scale.z * 0.5f };
     return obb;
 }
