@@ -8,6 +8,7 @@
 // 前方宣言
 class Camera;
 class Line3DRegion;
+class Enemy; // ★追加：Enemyクラスを前方宣言して、ポインタを使えるようにする
 
 /**
  * @struct AttackCollision
@@ -129,6 +130,12 @@ public:
      */
     void SetTargetPosition(const Vector3& targetPos) { targetPos_ = targetPos; }
 
+    /**
+     * @brief 敵を吹き飛ばす命令を受け取る関数（★追加）
+     * @param enemy 吹き飛ばす対象のEnemyポインタ
+     */
+    void HitAndKnockback(Enemy* enemy);
+
 private:
     /**
      * @brief 移動処理
@@ -169,7 +176,7 @@ private:
     Mouse* mouse_ = nullptr;
 
     // --- カメラ・マウス操作用パラメータ ---
-    float mouseSensitivity_ = 5.0f;           // マウス感度 (初期値を下げました)
+    float mouseSensitivity_ = 5.0f;           // マウス感度
     float mouseSensitivityMultiplier_ = 1.0f; // マウス感度の倍率
     float cameraPitch_ = -0.1f;               // カメラの上下の角度（ピッチ）
     bool isCameraControlEnabled_ = true;      // カメラ操作の有効/無効フラグ
@@ -187,7 +194,7 @@ private:
     std::unique_ptr<ObjClass> machineGunObjRight_ = nullptr;
 
     static const int kMaxBullets = 100;
-    std::unique_ptr<ObjClass> bulletObjs_[kMaxBullets]; // 個別の弾モデルを用意する
+    std::unique_ptr<ObjClass> bulletObjs_[kMaxBullets];
     MachineGunBullet bullets_[kMaxBullets];
 
     int machineGunActiveTimer_ = 0;
@@ -195,11 +202,11 @@ private:
     Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
 
     // --- 誘導ミサイル用 ---
-    static const int kMaxMissiles = 4; // ミサイルの数（4発）
+    static const int kMaxMissiles = 4;
     std::unique_ptr<ObjClass> missileObjs_[kMaxMissiles];
-    MissileData missiles_[kMaxMissiles];   // ミサイルの物理データ
-    int missileCooldown_ = 0;              // 発射のクールダウン
-    const float kMissileSpeed = 0.8f;      // ミサイルの最高速度
+    MissileData missiles_[kMaxMissiles];
+    int missileCooldown_ = 0;
+    const float kMissileSpeed = 0.8f;
 
     // トランスフォーム
     Vector3 scale_ = { 0.3f, 1.0f, 0.3f };
@@ -212,15 +219,29 @@ private:
     bool isGrounded_ = true;
 
     // --- 近接攻撃判定用 ---
-    // 半径を 4.0f に拡大
+    enum class AttackState {
+        kNone,      // 待機
+        kCharging,  // チャージ中
+        kAttacking  // 攻撃中
+    };
+    AttackState attackState_ = AttackState::kNone;
+    int chargeTimer_ = 0;            // ボタンを長押ししているフレーム数
+    float currentChargeRate_ = 0.0f; // スイング時に保持するチャージ倍率
+
     AttackCollision attackCollision_ = { {0.0f, 0.0f, 0.0f}, 4.0f, false };
-    int attackActiveTimer_ = 0; // 判定の持続時間管理
+    int attackActiveTimer_ = 0;
+    const int kAttackDuration = 20;  // スイングにかかるフレーム数
 
     // --- ステータス・やられ判定用 ---
-    int hp_ = 100;                    // プレイヤーの体力
-    bool isDead_ = false;             // 死亡フラグ
-    int invincibleTimer_ = 0;         // ダメージ後の無敵時間タイマー
-    const float kColliderRadius = 1.0f; // やられ判定の大きさ
+    int hp_ = 100;
+    bool isDead_ = false;
+    int invincibleTimer_ = 0;
+    const float kColliderRadius = 1.0f;
+
+    // --- ノックバック（吹き飛ばし）処理用変数（★追加） ---
+    Enemy* knockbackTarget_ = nullptr;            // 吹き飛ばしている最中の敵
+    Vector3 knockbackVelocity_ = { 0.0f, 0.0f, 0.0f }; // 吹き飛ぶ速度
+    int knockbackTimer_ = 0;                      // 吹き飛ぶ時間（フレーム）
 
     // パラメータ
     const float kMoveSpeed = 0.2f;
@@ -232,7 +253,7 @@ private:
     bool isDebugDrawOBB_ = false;
 #endif
 
-    // フィールドの境界（壁の位置に合わせる）
+    // フィールドの境界
     const float kFieldRangeX = 100.0f;
     const float kFieldRangeZ = 100.0f;
 };
