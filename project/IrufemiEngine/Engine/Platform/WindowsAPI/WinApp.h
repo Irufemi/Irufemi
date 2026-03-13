@@ -58,4 +58,5 @@ private:
     bool comInitialized_ = false;
     bool didRegisterClass_ = false;
     InputManager* inputManager_ = nullptr; // InputManagerへのポインタ
+    bool cursorLocked_ = true; // カーソル固定状態
 };
