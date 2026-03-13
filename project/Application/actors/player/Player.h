@@ -224,12 +224,16 @@ private:
     const float kMissileSpeed = 0.8f;
 
     // --- ★スキルとからくりチャージ用 ---
-    int skillCooldownTimer_ = 0;             // スキルのクールタイム（メンバー変数）
+    int skillDurationTimer_ = 0;             // スキル実行中（打ち終わるまで）の時間
+    int skillCooldownTimer_ = 0;             // スキルのクールタイム
     const int kSkillCooldownTime = 300;      // クールタイム5秒（60FPS想定）
 
     int karakuriChargeTimer_ = 0;            // からくりチャージ用の長押し時間
     const int kKarakuriChargeTime = 300;     // チャージ完了までの時間（5秒）
     bool isKarakuriCharged_ = false;         // チャージ状態（界王拳状態）
+
+    int karakuriActiveTimer_ = 0;            // ★追加：界王拳状態の持続時間
+    const int kKarakuriActiveTime = 1200;    // ★追加：20秒間（60FPS * 20 = 1200フレーム）
 
     // トランスフォーム
     Vector3 scale_ = { 0.3f, 1.0f, 0.3f };
@@ -256,7 +260,7 @@ private:
     const int kAttackDuration = 20;  // スイングにかかるフレーム数
 
     // --- ステータス・やられ判定用 ---
-    const int kMaxHp = 100;           // 最大体力（★追加）
+    const int kMaxHp = 100;           // 最大体力
     int hp_ = kMaxHp;                 // 現在の体力
     bool isDead_ = false;
     int invincibleTimer_ = 0;

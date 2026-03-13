@@ -95,6 +95,9 @@ void Enemy::Update(Player* player) {
     }
   }
 ------------------------------------------- */
+  if (state_ != EnemyState::Attack_Beam && beam_) {
+    beam_.reset();
+  }
 
   // だるま落とし落下物理
   float targetY = 0.0f;

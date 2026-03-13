@@ -180,13 +180,20 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
         return TRUE; // NCCREATE 成功
     }
 
+    // thisポインタを取得
+    auto* pThis = reinterpret_cast<WinApp*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
+
 #ifdef USE_IMGUI
-
-    DebugUI::WndProcHandler(hWnd, msg, wParam, lParam);
-
+    // カーソルがロックされていない場合のみImGuiにメッセージを渡す
+    if (pThis && !pThis->IsCursorLocked()) {
+        if (DebugUI::WndProcHandler(hWnd, msg, wParam, lParam)) {
+            // ImGuiがメッセージを処理した場合、以降の処理は行わない
+            return TRUE;
+        }
+    }
 #endif // USE_IMGUI
 
-    if (auto* pThis = reinterpret_cast<WinApp*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA))) {
+    if (pThis) {
         return pThis->HandleMessage(hWnd, msg, wParam, lParam);
     }
 
@@ -195,6 +202,27 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+    case WM_KEYDOWN:
+        if (wParam == VK_F3) {
+            cursorLocked_ = !cursorLocked_; // 状態をトグル
+            if (cursorLocked_) {
+                // カーソルを非表示にして固定
+                ShowCursor(FALSE);
+                RECT clientRect;
+                GetClientRect(hWnd, &clientRect);
+                ClientToScreen(hWnd, reinterpret_cast<POINT*>(&clientRect.left));
+                ClientToScreen(hWnd, reinterpret_cast<POINT*>(&clientRect.right));
+                ClipCursor(&clientRect);
+            }
+            else {
+                // カーソルを表示して解放
+                ShowCursor(TRUE);
+                ClipCursor(nullptr);
+            }
+        }
+        break;
+#endif
     case WM_MOUSEWHEEL:
         if (inputManager_) {
             if (auto* mouse = inputManager_->GetMouse()) {
@@ -208,6 +236,28 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 mouse->SetWheelDelta(wheelDelta);
             }
         }
+        return 0;
+    case WM_SETFOCUS: // ウィンドウがアクティブになった
+    {
+        if (cursorLocked_) {
+            // カーソルを非表示にする
+            ShowCursor(FALSE);
+
+            // カーソルをウィンドウのクライアント領域に固定する
+            RECT clientRect;
+            GetClientRect(hWnd, &clientRect);
+            ClientToScreen(hWnd, reinterpret_cast<POINT*>(&clientRect.left));
+            ClientToScreen(hWnd, reinterpret_cast<POINT*>(&clientRect.right));
+            ClipCursor(&clientRect);
+        }
+    }
+        return 0;
+
+    case WM_KILLFOCUS: // ウィンドウが非アクティブになった
+        // カーソルを表示する
+        ShowCursor(TRUE);
+        // カーソルの固定を解除する
+        ClipCursor(nullptr);
         return 0;
     case WM_SIZE:
         clientWidth_ = LOWORD(lParam);

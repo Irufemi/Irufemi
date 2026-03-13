@@ -34,6 +34,7 @@ public:
   // --- ビーム制御用 ---
   void FireBeam(); // ビームを生成する関数
   bool IsFiringBeam() const { return beam_ != nullptr; }
+  bool IsFiringRealBeam() const { return animation_ != nullptr && animation_->IsFiring(); }
   EnemyBeam* GetBeam() const { return beam_.get(); }
 
   // --- アクセサ（AIやAnimationから操作用） ---
