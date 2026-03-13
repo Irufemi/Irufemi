@@ -85,7 +85,7 @@ void GameScene::Update() {
     }
 
     if (boss_) {
-        boss_->Update();
+        boss_->Update(player_.get());
     }
 
     // --- 当たり判定の実装 ---
