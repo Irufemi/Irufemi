@@ -63,7 +63,11 @@ void EnemyBeam::Draw() {
 OBB EnemyBeam::GetOBB() const {
     OBB obb;
     obb.center = transform_.translate;
+    // visualTransform相当の計算
     Matrix4x4 rotateMat = Math::MakeRotateXYZMatrix(transform_.rotate);
+    Vector3 currentForward = { rotateMat.m[2][0], rotateMat.m[2][1], rotateMat.m[2][2] };
+
+    obb.center = Math::Add(transform_.translate, Math::Multiply(forwardOffset_, currentForward));
     obb.orientations[0] = { rotateMat.m[0][0], rotateMat.m[0][1], rotateMat.m[0][2] };
     obb.orientations[1] = { rotateMat.m[1][0], rotateMat.m[1][1], rotateMat.m[1][2] };
     obb.orientations[2] = { rotateMat.m[2][0], rotateMat.m[2][1], rotateMat.m[2][2] };

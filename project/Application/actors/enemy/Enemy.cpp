@@ -80,6 +80,21 @@ void Enemy::Update(Player* player) {
   }
 #endif
 
+  /* --- このブロックを削除またはコメントアウト ---
+  if (beam_) {
+    Matrix4x4 headMatrix = GetHeadMidWorldMatrix();
+    Vector3 headPos = { headMatrix.m[3][0], headMatrix.m[3][1], headMatrix.m[3][2] };
+    Vector3 playerPos = player->GetTranslate();
+    playerPos.y += 1.0f;
+
+    // ここで毎フレーム playerPos を使っているのが追尾の原因
+    beam_->Update(headPos, playerPos);
+
+    if (beam_->IsExpired()) {
+      beam_.reset();
+    }
+  }
+------------------------------------------- */
   if (state_ != EnemyState::Attack_Beam && beam_) {
     beam_.reset();
   }

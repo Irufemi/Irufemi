@@ -15,7 +15,7 @@ void EnemyAI::Update() {
     timer_ += 1.0f / 60.0f;
 
     if (enemy_->GetState() == EnemyState::Idle) {
-        // 10秒周期のうち、5秒経過したら攻撃開始！
+        // 15秒周期のうち、5秒経過したら攻撃開始！
         if (std::fmod(timer_, stateChangeInterval_) > attackStartTime_) {
             enemy_->SetState(EnemyState::Attack_Beam);
         }
