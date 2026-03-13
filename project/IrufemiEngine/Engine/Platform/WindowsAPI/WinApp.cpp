@@ -180,13 +180,20 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
         return TRUE; // NCCREATE 成功
     }
 
+    // thisポインタを取得
+    auto* pThis = reinterpret_cast<WinApp*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
+
 #ifdef USE_IMGUI
-
-    DebugUI::WndProcHandler(hWnd, msg, wParam, lParam);
-
+    // カーソルがロックされていない場合のみImGuiにメッセージを渡す
+    if (pThis && !pThis->IsCursorLocked()) {
+        if (DebugUI::WndProcHandler(hWnd, msg, wParam, lParam)) {
+            // ImGuiがメッセージを処理した場合、以降の処理は行わない
+            return TRUE;
+        }
+    }
 #endif // USE_IMGUI
 
-    if (auto* pThis = reinterpret_cast<WinApp*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA))) {
+    if (pThis) {
         return pThis->HandleMessage(hWnd, msg, wParam, lParam);
     }
 
@@ -197,7 +204,7 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg) {
 #if defined(_DEBUG) || defined(DEVELOPMENT)
     case WM_KEYDOWN:
-        if (wParam == VK_TAB) {
+        if (wParam == VK_F3) {
             cursorLocked_ = !cursorLocked_; // 状態をトグル
             if (cursorLocked_) {
                 // カーソルを非表示にして固定

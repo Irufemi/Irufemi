@@ -29,6 +29,7 @@ public:
     HINSTANCE GetHInstance() const { return hInstance_; }
     int GetClientWidth() const { return clientWidth_; }
     int GetClientHeight() const { return clientHeight_; }
+    bool IsCursorLocked() const { return cursorLocked_; }
 
     // InputManagerのポインタを設定
     void SetInputManager(InputManager* inputManager) { inputManager_ = inputManager; }
