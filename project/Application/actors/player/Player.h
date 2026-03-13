@@ -224,7 +224,8 @@ private:
     const float kMissileSpeed = 0.8f;
 
     // --- ★スキルとからくりチャージ用 ---
-    int skillCooldownTimer_ = 0;             // スキルのクールタイム（メンバー変数）
+    int skillDurationTimer_ = 0;             // ★追加：スキル実行中（打ち終わるまで）の時間
+    int skillCooldownTimer_ = 0;             // スキルのクールタイム
     const int kSkillCooldownTime = 300;      // クールタイム5秒（60FPS想定）
 
     int karakuriChargeTimer_ = 0;            // からくりチャージ用の長押し時間
@@ -256,7 +257,7 @@ private:
     const int kAttackDuration = 20;  // スイングにかかるフレーム数
 
     // --- ステータス・やられ判定用 ---
-    const int kMaxHp = 100;           // 最大体力（★追加）
+    const int kMaxHp = 100;           // 最大体力
     int hp_ = kMaxHp;                 // 現在の体力
     bool isDead_ = false;
     int invincibleTimer_ = 0;

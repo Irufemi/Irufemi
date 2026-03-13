@@ -4,14 +4,14 @@
 #include <Windows.h>
 #include <cmath>
 #include <cstdlib>
-#include <cstdio> // sprintf用にインクルード追加
+#include <cstdio> 
 #include "Math.h"
 #include "Engine/Platform/Input/Mouse.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "actors/enemy/Enemy.h" 
 
 #ifdef USE_IMGUI
-#include <imgui.h> // 念のためインクルード
+#include <imgui.h> 
 #endif
 
 // デストラクタ
@@ -62,6 +62,7 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     }
 
     // スキル用変数の初期化
+    skillDurationTimer_ = 0;
     skillCooldownTimer_ = 0;
     karakuriChargeTimer_ = 0;
     isKarakuriCharged_ = false;
@@ -110,13 +111,13 @@ void Player::Update() {
     ImGui::Begin("Player");
 
     // ==========================================
-    // ★追加：ImGuiでのHPバー描画
+    // ImGuiでのHPバー描画
     // ==========================================
     ImGui::Text("Player Status");
 
     // HPの割合を計算 (0.0f ～ 1.0f)
     float hpFraction = static_cast<float>(hp_) / static_cast<float>(kMaxHp);
-    if (hpFraction < 0.0f) hpFraction = 0.0f; // 万が一マイナスになった時の対策
+    if (hpFraction < 0.0f) hpFraction = 0.0f;
 
     // バーの上に表示するテキストを作成
     char hpText[32];
@@ -134,11 +135,10 @@ void Player::Update() {
 
     // バーの色を適用してプログレスバーを描画
     ImGui::PushStyleColor(ImGuiCol_PlotHistogram, hpColor);
-    // 第2引数の ImVec2(-1.0f, 0.0f) は「横幅いっぱいまでバーを広げる」という意味
     ImGui::ProgressBar(hpFraction, ImVec2(-1.0f, 0.0f), hpText);
     ImGui::PopStyleColor();
 
-    ImGui::Separator(); // 区切り線
+    ImGui::Separator();
     // ==========================================
 
     if (ImGui::BeginTabBar("PlayerTabs")) {
@@ -148,8 +148,11 @@ void Player::Update() {
             ImGui::DragFloat("Sensitivity Multiplier", &mouseSensitivityMultiplier_, 0.01f, 0.0f, 1.0f, "%.4f");
             ImGui::Checkbox("Camera Control Enabled", &isCameraControlEnabled_);
 
-            // スキルの状態確認用デバッグUI
-            ImGui::Text("Skill Cooldown: %d / %d", skillCooldownTimer_, kSkillCooldownTime);
+            if (skillDurationTimer_ > 0) {
+                ImGui::Text("Skill ACTIVE (Firing): %d", skillDurationTimer_);
+            } else {
+                ImGui::Text("Skill Cooldown: %d / %d", skillCooldownTimer_, kSkillCooldownTime);
+            }
             ImGui::Text("Karakuri Charge: %d / %d", karakuriChargeTimer_, kKarakuriChargeTime);
             ImGui::Text("Karakuri State: %s", isKarakuriCharged_ ? "MAX (Kaioken)" : "Normal");
 
@@ -176,12 +179,13 @@ void Player::Update() {
         rotate_.y += delta.x * sensitivityMult;
         cameraPitch_ += delta.y * sensitivityMult;
 
-        // 一人称時の上下の振り幅の制限
         if (viewMode_ == ViewMode::kThirdPerson) {
-            if (cameraPitch_ > -0.01f) cameraPitch_ = -0.02f;
-            if (cameraPitch_ < -0.2f) cameraPitch_ = -0.2f;
+            // 正の値が上空からの見下ろし、負の値が地面からの見上げです。
+            if (cameraPitch_ > 0.65f) cameraPitch_ = 0.65f;
+            // ★修正箇所：見上げの限界を狭めました（-1.2f -> -0.3f）
+            if (cameraPitch_ < -0.3f) cameraPitch_ = -0.3f;
         } else {
-            if (cameraPitch_ > 0.6f) cameraPitch_ = 0.6f;
+            if (cameraPitch_ > 0.65f) cameraPitch_ = 0.65f;
             if (cameraPitch_ < -1.3f) cameraPitch_ = -1.3f;
         }
     }
@@ -205,8 +209,9 @@ void Player::Update() {
 
         // 視点を切り替えた直後の補正
         if (viewMode_ == ViewMode::kThirdPerson) {
-            if (cameraPitch_ > -0.02f) cameraPitch_ = -0.02f;
-            if (cameraPitch_ < -0.2f) cameraPitch_ = -0.2f;
+            if (cameraPitch_ > 0.65f) cameraPitch_ = 0.65f;
+            // ★修正箇所：ここも見上げの限界に合わせます
+            if (cameraPitch_ < -0.3f) cameraPitch_ = -0.3f;
         }
     }
 
@@ -247,7 +252,6 @@ void Player::Update() {
                 const int segments = 16;
                 const float step = (2.0f * 3.14159265f) / segments;
 
-                // XZ平面の円
                 for (int i = 0; i < segments; ++i) {
                     float theta1 = i * step;
                     float theta2 = (i + 1) * step;
@@ -255,7 +259,6 @@ void Player::Update() {
                     Vector3 p2 = { center.x + radius * std::cos(theta2), center.y, center.z + radius * std::sin(theta2) };
                     lineOBB_->AddInstance(p1, p2, color);
                 }
-                // XY平面の円
                 for (int i = 0; i < segments; ++i) {
                     float theta1 = i * step;
                     float theta2 = (i + 1) * step;
@@ -263,7 +266,6 @@ void Player::Update() {
                     Vector3 p2 = { center.x + radius * std::cos(theta2), center.y + radius * std::sin(theta2), center.z };
                     lineOBB_->AddInstance(p1, p2, color);
                 }
-                // YZ平面の円
                 for (int i = 0; i < segments; ++i) {
                     float theta1 = i * step;
                     float theta2 = (i + 1) * step;
@@ -275,27 +277,17 @@ void Player::Update() {
 
             Vector4 greenColor = { 0.0f, 1.0f, 0.0f, 1.0f };
 
-            // Player Collider (Sphere)
             PlayerCollider col = GetCollider();
             addSphereLines(col.center, col.radius, greenColor);
 
-            // Attack Collision (Sphere)
             if (attackCollision_.isActive && isCameraControlEnabled_) {
                 addSphereLines(attackCollision_.center, attackCollision_.radius, greenColor);
             }
-
-            // Missiles (Sphere)
             for (int i = 0; i < kMaxMissiles; ++i) {
-                if (missiles_[i].isActive) {
-                    addSphereLines(missiles_[i].position, 2.0f, greenColor);
-                }
+                if (missiles_[i].isActive) addSphereLines(missiles_[i].position, 2.0f, greenColor);
             }
-
-            // Bullets (Sphere)
             for (int i = 0; i < kMaxBullets; ++i) {
-                if (bullets_[i].isActive) {
-                    addSphereLines(bullets_[i].position, 1.0f, greenColor);
-                }
+                if (bullets_[i].isActive) addSphereLines(bullets_[i].position, 1.0f, greenColor);
             }
         }
         lineOBB_->Update();
@@ -304,17 +296,13 @@ void Player::Update() {
 }
 
 void Player::Draw() {
-    // ダメージを受けたあとの無敵時間中は点滅させる
     bool isBlinking = (invincibleTimer_ > 0 && (invincibleTimer_ % 4) < 2);
 
-    // モデルの描画
     if (obj_) {
-        // からくりチャージ（界王拳）の演出
-        // チャージ完了時は黄金（黄色）に光り、通常時は赤色に戻る
         if (isKarakuriCharged_) {
-            obj_->SetColor({ 1.0f, 0.8f, 0.0f, 1.0f }); // 黄金色
+            obj_->SetColor({ 1.0f, 0.8f, 0.0f, 1.0f });
         } else {
-            obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f }); // デフォルトの赤色
+            obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
         }
 
         obj_->SetPosition(translate_);
@@ -327,12 +315,10 @@ void Player::Draw() {
         }
     }
 
-    // 待機中以外（チャージ中、または攻撃中）のとき、ハンマーを描画する
     if (attackObj_ && attackState_ != AttackState::kNone && !isDead_ && isCameraControlEnabled_) {
         attackObj_->Draw();
     }
 
-    // --- 機関銃（肩）の描画 ---
     if (machineGunObjLeft_ && machineGunObjRight_ && !isDead_) {
         float sinY = std::sin(rotate_.y);
         float cosY = std::cos(rotate_.y);
@@ -373,45 +359,35 @@ void Player::Draw() {
         }
     }
 
-    // --- 機関銃の弾の描画 ---
     for (int i = 0; i < kMaxBullets; ++i) {
         if (bullets_[i].isActive && bulletObjs_[i] && !isDead_) {
             bulletObjs_[i]->SetPosition(bullets_[i].position);
-
             Vector3 bRot = { 0.0f, std::atan2(bullets_[i].velocity.x, bullets_[i].velocity.z), 0.0f };
             float bxzLen = std::sqrt(bullets_[i].velocity.x * bullets_[i].velocity.x + bullets_[i].velocity.z * bullets_[i].velocity.z);
             bRot.x = std::atan2(-bullets_[i].velocity.y, bxzLen);
-
             bulletObjs_[i]->SetRotate(bRot);
             bulletObjs_[i]->SetScale({ 0.05f, 0.05f, 0.2f });
-
             bulletObjs_[i]->Update();
             bulletObjs_[i]->Draw();
         }
     }
 
-    // --- ミサイルの描画 ---
     for (int i = 0; i < kMaxMissiles; ++i) {
         if (missiles_[i].isActive && missileObjs_[i]) {
             missileObjs_[i]->SetPosition(missiles_[i].position);
-
             Vector3 mRot = { 0.0f, std::atan2(missiles_[i].velocity.x, missiles_[i].velocity.z), 0.0f };
             float xzLen = std::sqrt(missiles_[i].velocity.x * missiles_[i].velocity.x + missiles_[i].velocity.z * missiles_[i].velocity.z);
             mRot.x = std::atan2(-missiles_[i].velocity.y, xzLen);
             missileObjs_[i]->SetRotate(mRot);
-
             Vector3 missileScale = { scale_.x * 0.4f, scale_.y * 0.4f, scale_.z * 0.4f };
             missileObjs_[i]->SetScale(missileScale);
-
             missileObjs_[i]->Update();
             missileObjs_[i]->Draw();
         }
     }
 
     if (viewMode_ == ViewMode::kFirstPerson && !isDead_) {
-        if (maskSprite_) {
-            maskSprite_->Draw();
-        }
+        if (maskSprite_) maskSprite_->Draw();
     }
 
 #ifdef USE_IMGUI
@@ -428,47 +404,32 @@ PlayerCollider Player::GetCollider() const {
     col.center = translate_;
     col.center.y += 0.2f;
     col.radius = kColliderRadius;
-
     col.obb.center = col.center;
-
     Matrix4x4 rotateMatrix = Math::MakeRotateMatrix(Math::MakeRotateAxisAngleQuaternion({ 0.0f, 1.0f, 0.0f }, rotate_.y));
-
     col.obb.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
     col.obb.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
     col.obb.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
-
     col.obb.size = { 0.3f, 0.3f, 0.3f };
-
     return col;
 }
 
 void Player::ApplyDamage(int damage) {
-    if (isDead_ || invincibleTimer_ > 0) {
-        return;
-    }
-
-    // からくりチャージ中（Eキー長押し ＆ 未チャージ完了）はダメージ2倍！
+    if (isDead_ || invincibleTimer_ > 0) return;
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
     int finalDamage = isCharging ? damage * 2 : damage;
-
     hp_ -= finalDamage;
     if (hp_ <= 0) {
         hp_ = 0;
         isDead_ = true;
-        OutputDebugStringA("Player Dead!\n");
     } else {
         invincibleTimer_ = 60;
-        OutputDebugStringA("Player Damaged!\n");
     }
 }
 
 void Player::HandleMovement() {
-    // からくりチャージ中（Eキー長押し ＆ 未チャージ完了）は動けないようにする
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
-
     Vector3 move = { 0.0f, 0.0f, 0.0f };
 
-    // チャージ中でなければ移動入力を受け付ける
     if (!isCharging) {
         if (input_->IsKeyDown('W')) move.z += 1.0f;
         if (input_->IsKeyDown('S')) move.z -= 1.0f;
@@ -478,10 +439,8 @@ void Player::HandleMovement() {
 
     if (move.x != 0.0f || move.z != 0.0f) {
         move = Math::Normalize(move);
-
         float sinY = std::sin(rotate_.y);
         float cosY = std::cos(rotate_.y);
-
         float moveX = move.x * cosY + move.z * sinY;
         float moveZ = -move.x * sinY + move.z * cosY;
 
@@ -495,7 +454,6 @@ void Player::HandleMovement() {
     }
 
     if (isGrounded_) {
-        // ジャンプもチャージ中でないときのみ可能
         if (!isCharging && input_->IsKeyPressed(VK_SPACE)) {
             velocity_.y = kJumpForce;
             isGrounded_ = false;
@@ -503,7 +461,6 @@ void Player::HandleMovement() {
     } else {
         velocity_.y -= kGravity;
         translate_.y += velocity_.y;
-
         if (translate_.y <= 0.0f) {
             translate_.y = 0.0f;
             velocity_.y = 0.0f;
@@ -514,9 +471,7 @@ void Player::HandleMovement() {
 
 void Player::HandleAttack() {
 #ifdef USE_IMGUI
-    if (ImGui::GetIO().WantCaptureMouse) {
-        return;
-    }
+    if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
 
     if (!isCameraControlEnabled_) {
@@ -527,39 +482,26 @@ void Player::HandleAttack() {
     }
 
     bool isLButtonDown = false;
-    if (mouse_) {
-        isLButtonDown = mouse_->IsButtonDown(Mouse::Button::Left);
-    }
+    if (mouse_) isLButtonDown = mouse_->IsButtonDown(Mouse::Button::Left);
 
-    // --- 状態ごとの処理 ---
     switch (attackState_) {
     case AttackState::kNone:
-        // 左クリックされた瞬間にチャージ開始
         if (mouse_ && mouse_->IsButtonPressed(Mouse::Button::Left)) {
             attackState_ = AttackState::kCharging;
             chargeTimer_ = 0;
-            OutputDebugStringA("Player Charge Start!\n");
         }
         break;
 
     case AttackState::kCharging:
-        // 左クリックが押し続けられているか
         if (isLButtonDown) {
             chargeTimer_++;
-
-            // std::min によるマクロエラー回避のため、手動で最大値制限を行う
             float chargeRate = static_cast<float>(chargeTimer_) / 60.0f;
-            if (chargeRate > 1.0f) {
-                chargeRate = 1.0f;
-            }
+            if (chargeRate > 1.0f) chargeRate = 1.0f;
 
-            // チャージ中の構え（左側に構える）
-            float currentAngle = rotate_.y + 1.5f; // +方向(左)
+            float currentAngle = rotate_.y + 1.5f;
             float sinA = std::sin(currentAngle);
             float cosA = std::cos(currentAngle);
-
             float swingRadius = 2.5f;
-            // チャージ中はパワーが溜まる演出として、少しハンマーをプルプル上下に揺らす
             float hammerHeight = 1.0f + (std::sin(static_cast<float>(chargeTimer_) * 0.5f) * 0.1f * chargeRate);
 
             Vector3 hammerPos;
@@ -569,78 +511,53 @@ void Player::HandleAttack() {
 
             if (attackObj_) {
                 attackObj_->SetPosition(hammerPos);
-
-                // ハンマーを横に倒して構える
                 Vector3 swingRot = rotate_;
                 swingRot.y = currentAngle;
-                swingRot.x = 1.57f; // 横に倒す(約90度)
+                swingRot.x = 1.57f;
                 attackObj_->SetRotate(swingRot);
-
-                // チャージするほどハンマーが少し大きくなる
-                float hammerSize = 0.8f + (chargeRate * 0.4f); // 0.8f ～ 1.2f
+                float hammerSize = 0.8f + (chargeRate * 0.4f);
                 Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * 1.5f * hammerSize, scale_.z * hammerSize };
                 attackObj_->SetScale(hammerScale);
-
                 attackObj_->Update();
             }
         } else {
-            // ボタンが離されたら攻撃（スイング）発動！
             attackState_ = AttackState::kAttacking;
             attackActiveTimer_ = kAttackDuration;
             attackCollision_.isActive = true;
-
-            // std::minを使わずにチャージ割合を保存する
             currentChargeRate_ = static_cast<float>(chargeTimer_) / 60.0f;
-            if (currentChargeRate_ > 1.0f) {
-                currentChargeRate_ = 1.0f;
-            }
-
-            // 攻撃判定の大きさをチャージ量に応じて広げる
-            attackCollision_.radius = 2.0f + (2.0f * currentChargeRate_); // 通常2.0f ～ フルチャージ4.0f
-
-            OutputDebugStringA("Player Attack Swing!\n");
+            if (currentChargeRate_ > 1.0f) currentChargeRate_ = 1.0f;
+            attackCollision_.radius = 2.0f + (2.0f * currentChargeRate_);
         }
         break;
 
     case AttackState::kAttacking:
         if (attackActiveTimer_ > 0) {
-            // スイング進行度 (0.0f ～ 1.0f)
             float t = 1.0f - (static_cast<float>(attackActiveTimer_) / kAttackDuration);
-
-            // 逆から：左(1.5f)から右(-1.5f)への水平スイング
             float swingAngleOffset = 1.5f - (3.0f * t);
-
             float currentAngle = rotate_.y + swingAngleOffset;
             float sinA = std::sin(currentAngle);
             float cosA = std::cos(currentAngle);
 
-            // チャージ量に応じてリーチ（振る半径）も少し伸びる
             float swingRadius = 2.5f + (currentChargeRate_ * 0.5f);
             float hammerHeight = 1.0f;
 
-            // 当たり判定の中心を弧を描くように移動
             attackCollision_.center.x = translate_.x + sinA * swingRadius;
             attackCollision_.center.y = translate_.y + hammerHeight;
             attackCollision_.center.z = translate_.z + cosA * swingRadius;
 
             if (attackObj_) {
                 attackObj_->SetPosition(attackCollision_.center);
-
                 Vector3 swingRot = rotate_;
                 swingRot.y = currentAngle;
                 swingRot.x = 1.57f;
                 attackObj_->SetRotate(swingRot);
-
-                // 構えの時と同じ大きさで振り抜く
                 float hammerSize = 0.8f + (currentChargeRate_ * 0.4f);
                 Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * 1.5f * hammerSize, scale_.z * hammerSize };
                 attackObj_->SetScale(hammerScale);
-
                 attackObj_->Update();
             }
 
             attackActiveTimer_--;
-            // スイングが終わったら待機状態に戻る
             if (attackActiveTimer_ <= 0) {
                 attackCollision_.isActive = false;
                 attackState_ = AttackState::kNone;
@@ -650,62 +567,44 @@ void Player::HandleAttack() {
     }
 }
 
-// ---------------------------------------------------------
-// スキル・からくりチャージの管理
-// ---------------------------------------------------------
 void Player::HandleSkill() {
-    // 1. スキルのクールタイム減少
-    if (skillCooldownTimer_ > 0) {
+    if (skillDurationTimer_ > 0) {
+        skillDurationTimer_--;
+        if (skillDurationTimer_ <= 0) {
+            skillCooldownTimer_ = kSkillCooldownTime;
+        }
+    } else if (skillCooldownTimer_ > 0) {
         skillCooldownTimer_--;
     }
 
-    // 2. からくりチャージ（Eキー長押し）
     if (input_->IsKeyDown('E')) {
-        // まだチャージ完了していない場合のみカウント
         if (!isKarakuriCharged_) {
             karakuriChargeTimer_++;
             if (karakuriChargeTimer_ >= kKarakuriChargeTime) {
                 isKarakuriCharged_ = true;
-                karakuriChargeTimer_ = 0; // タイマーはリセット
-                OutputDebugStringA("Karakuri Charge MAX!! (Kaioken State)\n");
+                karakuriChargeTimer_ = 0;
             }
         }
     } else {
-        // Eキーを離したとき、チャージ途中でやめたらリセットする
-        if (!isKarakuriCharged_) {
-            karakuriChargeTimer_ = 0;
-        }
+        if (!isKarakuriCharged_) karakuriChargeTimer_ = 0;
     }
 
 #ifdef USE_IMGUI
-    if (ImGui::GetIO().WantCaptureMouse) {
-        return; // ImGui操作中はスキルの暴発防止
-    }
+    if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
 
-    // デバッグカメラ有効中はスキルを出さない
-    if (!isCameraControlEnabled_) {
-        return;
-    }
+    if (!isCameraControlEnabled_) return;
 
-    // 3. マウス右クリックによるスキル発動
     if (mouse_ && mouse_->IsButtonPressed(Mouse::Button::Right)) {
-        // クールタイムが終わっていれば発動可能
-        if (skillCooldownTimer_ <= 0) {
-            // スキルクールタイム（5秒）をセット
-            skillCooldownTimer_ = kSkillCooldownTime;
-
+        if (skillDurationTimer_ <= 0 && skillCooldownTimer_ <= 0) {
             if (isKarakuriCharged_) {
-                // 界王拳状態ならミサイル発動
                 FireMissileSkill();
-                // 撃ったらチャージ状態を解除（力を使い果たす）
                 isKarakuriCharged_ = false;
+                skillDurationTimer_ = 120;
             } else {
-                // 通常状態なら機関銃発動
                 StartMachineGunSkill();
+                skillDurationTimer_ = 180;
             }
-        } else {
-            OutputDebugStringA("Skill is on Cooldown!\n");
         }
     }
 }
@@ -717,34 +616,27 @@ void Player::FireMissileSkill() {
     for (int i = 0; i < kMaxMissiles; ++i) {
         missiles_[i].isActive = true;
         missiles_[i].timer = 120;
-
         missiles_[i].target = { targetPos_.x, targetPos_.y + 1.0f, targetPos_.z };
-
         missiles_[i].position = {
             translate_.x + sinY * 1.0f,
             translate_.y + 1.0f,
             translate_.z + cosY * 1.0f
         };
-
         float spreadX = ((std::rand() % 100) / 25.0f) - 2.0f;
         float spreadY = ((std::rand() % 100) / 25.0f) - 0.5f;
         float spreadZ = ((std::rand() % 100) / 25.0f) - 2.0f;
-
         missiles_[i].velocity = {
             (sinY * 0.2f) + (spreadX * 0.4f),
             spreadY * 0.4f,
             (cosY * 0.2f) + (spreadZ * 0.4f)
         };
     }
-    OutputDebugStringA("Fire 4 Homing Missiles (Karakuri Charge)!\n");
 }
 
 void Player::UpdateMissile() {
     for (int i = 0; i < kMaxMissiles; ++i) {
         if (missiles_[i].isActive) {
-
             missiles_[i].target = { targetPos_.x, targetPos_.y + 1.0f, targetPos_.z };
-
             Vector3 toTarget = {
                 missiles_[i].target.x - missiles_[i].position.x,
                 missiles_[i].target.y - missiles_[i].position.y,
@@ -779,27 +671,22 @@ void Player::UpdateMissile() {
             missiles_[i].position.z += missiles_[i].velocity.z;
 
             missiles_[i].timer--;
-            if (missiles_[i].timer <= 0) {
-                missiles_[i].isActive = false;
-            }
+            if (missiles_[i].timer <= 0) missiles_[i].isActive = false;
         }
     }
 }
 
 void Player::StartMachineGunSkill() {
-    machineGunActiveTimer_ = 180; // 3秒間撃ち続ける
+    machineGunActiveTimer_ = 180;
     machineGunFireTimer_ = 0;
-    OutputDebugStringA("MachineGun Skill Start!\n");
 }
 
 void Player::UpdateMachineGun() {
     if (machineGunActiveTimer_ > 0) {
         machineGunActiveTimer_--;
         machineGunFireTimer_--;
-
         if (machineGunFireTimer_ <= 0) {
             machineGunFireTimer_ = 6;
-
             float sinY = std::sin(rotate_.y);
             float cosY = std::cos(rotate_.y);
             float rightX = cosY;
@@ -820,9 +707,7 @@ void Player::UpdateMachineGun() {
             bullets_[i].position.z += bullets_[i].velocity.z;
 
             bullets_[i].timer--;
-            if (bullets_[i].timer <= 0) {
-                bullets_[i].isActive = false;
-            }
+            if (bullets_[i].timer <= 0) bullets_[i].isActive = false;
         }
     }
 }
@@ -872,20 +757,13 @@ void Player::UpdateCamera() {
 
     Vector3 lookAtTarget = {
         translate_.x,
-        translate_.y,
+        translate_.y + 1.5f,
         translate_.z
     };
 
     if (viewMode_ == ViewMode::kThirdPerson) {
-        float pitchRatio = (cameraPitch_ - (-0.2f)) / (-0.05f - (-0.2f));
 
-        if (pitchRatio < 0.0f) pitchRatio = 0.0f;
-        if (pitchRatio > 1.0f) pitchRatio = 1.0f;
-
-        float maxDistance = 5.0f;
-        float minDistance = 2.0f;
-
-        float distance = maxDistance * (1.0f - pitchRatio) + minDistance * pitchRatio;
+        float distance = 5.0f;
 
         float cosPitch = std::cos(cameraPitch_);
         float sinPitch = std::sin(cameraPitch_);
@@ -893,7 +771,7 @@ void Player::UpdateCamera() {
         float sinYaw = std::sin(rotate_.y);
 
         cameraPos.x = lookAtTarget.x - (sinYaw * cosPitch * distance);
-        cameraPos.y = lookAtTarget.y - (sinPitch * distance);
+        cameraPos.y = lookAtTarget.y + (sinPitch * distance);
         cameraPos.z = lookAtTarget.z - (cosYaw * cosPitch * distance);
 
         if (cameraPos.y < 0.2f) {
@@ -914,27 +792,19 @@ void Player::UpdateCamera() {
     }
 }
 
-// ---------------------------------------------------------
-// 敵に攻撃を当てたときに呼び出すノックバック関数
-// ---------------------------------------------------------
 void Player::HitAndKnockback(Enemy* enemy) {
     if (!enemy) return;
 
-    // 吹き飛ばす対象として登録
     knockbackTarget_ = enemy;
-    knockbackTimer_ = 20; // 20フレーム（約0.3秒）かけて滑らせる
+    knockbackTimer_ = 20;
 
-    // プレイヤーの座標と敵の座標を取得
     Vector3 pPos = translate_;
     Vector3 ePos = enemy->GetGlobalTransform().translate;
-
-    // プレイヤーから敵へ向かうベクトル（方向）を計算
     Vector3 dir = { ePos.x - pPos.x, 0.0f, ePos.z - pPos.z };
 
-    // ベクトルの長さを計算して正規化（長さを1にする）
     float len = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
     if (len > 0.001f) {
-        float power = 2.0f; // ★吹き飛ぶ勢い
+        float power = 2.0f;
         knockbackVelocity_.x = (dir.x / len) * power;
         knockbackVelocity_.y = (dir.y / len) * power;
         knockbackVelocity_.z = (dir.z / len) * power;
