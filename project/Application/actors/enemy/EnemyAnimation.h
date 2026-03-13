@@ -44,7 +44,7 @@ private:
     // --- ビーム攻撃：挙動 ---
     float beamRotateSpeed_ = 0.1f;      // 追尾の機敏さ
     float beamThicknessCharge_ = 0.2f;  // 予兆の細さ
-    float beamThicknessFire_ = 8.0f;   // ビームの太さ（さらに太く！）
+    float beamThicknessFire_ = 12.0f;   // ビームの太さ（さらに太く！）
 
     // --- ビーム攻撃：振動(シェイク) ---
     float shakeStrength_ = 0.3f;   // ビーム中の震えの強さ
