@@ -4,6 +4,7 @@
 #include "IrufemiEngine.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "actors/enemy/Body/Body.h"
+#include "actors/player/Player.h"
 #include "camera/Camera.h"
 #include "core/math/geometry/Math.h"
 #include <cmath>
@@ -64,14 +65,14 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   isActive_ = true;
 }
 
-void Enemy::Update() {
+void Enemy::Update(Player* player) {
   if (!isActive_)
     return;
 
   if (ai_)
     ai_->Update();
   if (animation_)
-    animation_->Update();
+    animation_->Update(player);
 
 #ifdef USE_IMGUI
   if (engine_ && engine_->GetInputManager()->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
@@ -79,16 +80,21 @@ void Enemy::Update() {
   }
 #endif
 
-  // --- ビームの更新と位置同期 ---
+  /* --- このブロックを削除またはコメントアウト ---
   if (beam_) {
-    // 常に最新の「頭のワールド行列」を渡す
-    // これにより、頭がシェイクで揺れても、ビームも一緒に揺れる
-    beam_->Update(GetHeadMidWorldMatrix());
+    Matrix4x4 headMatrix = GetHeadMidWorldMatrix();
+    Vector3 headPos = { headMatrix.m[3][0], headMatrix.m[3][1], headMatrix.m[3][2] };
+    Vector3 playerPos = player->GetTranslate();
+    playerPos.y += 1.0f;
+
+    // ここで毎フレーム playerPos を使っているのが追尾の原因
+    beam_->Update(headPos, playerPos);
 
     if (beam_->IsExpired()) {
       beam_.reset();
     }
   }
+------------------------------------------- */
 
   // だるま落とし落下物理
   float targetY = 0.0f;
@@ -277,14 +283,20 @@ void Enemy::FireBeam() {
 }
 
 Matrix4x4 Enemy::GetHeadMidWorldMatrix() const {
-  Matrix4x4 globalMat =
-      Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate,
-                             globalTransform_.translate);
-  Vector3 localPos =
-      Math::Add(headMidLocalTransform_.translate, headMidOffset_);
-  return Math::Multiply(Math::MakeAffineMatrix(
-                            {1, 1, 1}, headMidLocalTransform_.rotate, localPos),
-                        globalMat);
+    // globalTransform_.rotate には EnemyAnimation で計算した 
+    // 「プレイヤーを向くための X回転とY回転」が入っている必要があります
+    Matrix4x4 globalMat = Math::MakeAffineMatrix(
+        globalTransform_.scale,
+        globalTransform_.rotate, // ここに X(上下) と Y(左右) が入っていればOK
+        globalTransform_.translate
+    );
+
+    Vector3 localPos = Math::Add(headMidLocalTransform_.translate, headMidOffset_);
+
+    return Math::Multiply(
+        Math::MakeAffineMatrix({ 1,1,1 }, headMidLocalTransform_.rotate, localPos),
+        globalMat
+    );
 }
 
 OBB Enemy::GetOBB() const {

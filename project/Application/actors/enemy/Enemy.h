@@ -4,12 +4,6 @@
 #include "EnemyBeam.h"
 #include "actors/enemy/Body/Body.h"
 #include "actors/enemy/Head/Left/HeadLeft.h"
-#pragma once
-#include "EnemyAI.h"
-#include "EnemyAnimation.h"
-#include "EnemyBeam.h"
-#include "actors/enemy/Body/Body.h"
-#include "actors/enemy/Head/Left/HeadLeft.h"
 #include "actors/enemy/Head/Mid/HeadMid.h"
 #include "actors/enemy/Head/Right/HeadRight.h"
 #include "core/math/Transform.h"
@@ -26,7 +20,7 @@ class Line3DRegion;
 enum class EnemyState {
   Idle,        // 待機：ふわふわ浮遊しながら自転
   Attack_Beam, // 攻撃：集結・シェイク後のビーム発射演出
-  Attack_Dash, // 攻撃：突進（将来用）
+  Attack_Missile, // 攻撃：ミサイル
   Damaged      // 被弾：ノックバック演出など
 };
 
@@ -34,7 +28,7 @@ class Enemy {
 public:
   ~Enemy();
   void Initialize(Camera *camera, IrufemiEngine *engine = nullptr);
-  void Update();
+  void Update(Player* player);
   void Draw();
 
   // --- ビーム制御用 ---

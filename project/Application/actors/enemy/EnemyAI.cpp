@@ -14,10 +14,10 @@ void EnemyAI::Update() {
 
     timer_ += 1.0f / 60.0f;
 
-    // 指定した周期内で、一定時間を超えたら攻撃状態へ移行
-    if (std::fmod(timer_, stateChangeInterval_) > attackStartTime_) {
-        enemy_->SetState(EnemyState::Attack_Beam);
-    } else {
-        enemy_->SetState(EnemyState::Idle);
+    if (enemy_->GetState() == EnemyState::Idle) {
+        // 10秒周期のうち、5秒経過したら攻撃開始！
+        if (std::fmod(timer_, stateChangeInterval_) > attackStartTime_) {
+            enemy_->SetState(EnemyState::Attack_Beam);
+        }
     }
 }
