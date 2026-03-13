@@ -65,6 +65,7 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     skillDurationTimer_ = 0;
     skillCooldownTimer_ = 0;
     karakuriChargeTimer_ = 0;
+    karakuriActiveTimer_ = 0; // ★追加
     isKarakuriCharged_ = false;
 
     // 近接攻撃判定の初期化
@@ -153,8 +154,14 @@ void Player::Update() {
             } else {
                 ImGui::Text("Skill Cooldown: %d / %d", skillCooldownTimer_, kSkillCooldownTime);
             }
-            ImGui::Text("Karakuri Charge: %d / %d", karakuriChargeTimer_, kKarakuriChargeTime);
-            ImGui::Text("Karakuri State: %s", isKarakuriCharged_ ? "MAX (Kaioken)" : "Normal");
+
+            // ★修正箇所：界王拳発動中かどうかで表示を変える
+            if (isKarakuriCharged_) {
+                ImGui::Text("Karakuri State: MAX (Kaioken) - Time Left: %d", karakuriActiveTimer_);
+            } else {
+                ImGui::Text("Karakuri Charge: %d / %d", karakuriChargeTimer_, kKarakuriChargeTime);
+                ImGui::Text("Karakuri State: Normal");
+            }
 
             ImGui::EndTabItem();
         }
@@ -180,12 +187,11 @@ void Player::Update() {
         cameraPitch_ += delta.y * sensitivityMult;
 
         if (viewMode_ == ViewMode::kThirdPerson) {
-            // 正の値が上空からの見下ろし、負の値が地面からの見上げです。
-            if (cameraPitch_ > 0.65f) cameraPitch_ = 0.65f;
-            // ★修正箇所：見上げの限界を狭めました（-1.2f -> -0.3f）
+            // 正の値が見下ろし、負の値が見上げです。
+            if (cameraPitch_ > 0.25f) cameraPitch_ = 0.25f;
             if (cameraPitch_ < -0.3f) cameraPitch_ = -0.3f;
         } else {
-            if (cameraPitch_ > 0.65f) cameraPitch_ = 0.65f;
+            if (cameraPitch_ > 0.25f) cameraPitch_ = 0.25f;
             if (cameraPitch_ < -1.3f) cameraPitch_ = -1.3f;
         }
     }
@@ -209,8 +215,7 @@ void Player::Update() {
 
         // 視点を切り替えた直後の補正
         if (viewMode_ == ViewMode::kThirdPerson) {
-            if (cameraPitch_ > 0.65f) cameraPitch_ = 0.65f;
-            // ★修正箇所：ここも見上げの限界に合わせます
+            if (cameraPitch_ > 0.25f) cameraPitch_ = 0.25f;
             if (cameraPitch_ < -0.3f) cameraPitch_ = -0.3f;
         }
     }
@@ -577,12 +582,22 @@ void Player::HandleSkill() {
         skillCooldownTimer_--;
     }
 
+    // ★追加箇所：界王拳状態の持続時間（20秒）のカウントダウン
+    if (isKarakuriCharged_) {
+        karakuriActiveTimer_--;
+        if (karakuriActiveTimer_ <= 0) {
+            isKarakuriCharged_ = false; // 20秒経ったら通常状態に戻る
+            OutputDebugStringA("Karakuri Charge Ended.\n");
+        }
+    }
+
     if (input_->IsKeyDown('E')) {
         if (!isKarakuriCharged_) {
             karakuriChargeTimer_++;
             if (karakuriChargeTimer_ >= kKarakuriChargeTime) {
                 isKarakuriCharged_ = true;
                 karakuriChargeTimer_ = 0;
+                karakuriActiveTimer_ = kKarakuriActiveTime; // ★追加：持続時間をセット
             }
         }
     } else {
@@ -599,7 +614,8 @@ void Player::HandleSkill() {
         if (skillDurationTimer_ <= 0 && skillCooldownTimer_ <= 0) {
             if (isKarakuriCharged_) {
                 FireMissileSkill();
-                isKarakuriCharged_ = false;
+                // ★削除箇所：ここで false にしていた処理を消し、タイマー終了まで持続するようにしました。
+                // isKarakuriCharged_ = false; 
                 skillDurationTimer_ = 120;
             } else {
                 StartMachineGunSkill();
