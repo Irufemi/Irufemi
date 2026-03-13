@@ -8,7 +8,7 @@
 // 前方宣言
 class Camera;
 class Line3DRegion;
-class Enemy; // ★追加：Enemyクラスを前方宣言して、ポインタを使えるようにする
+class Enemy; // Enemyクラスを前方宣言して、ポインタを使えるようにする
 
 /**
  * @struct AttackCollision
@@ -122,6 +122,7 @@ public:
 
     // HPと生存状態の取得
     int GetHp() const { return hp_; }
+    int GetMaxHp() const { return kMaxHp; } // 最大HP取得用
     bool IsDead() const { return isDead_; }
 
     /**
@@ -131,7 +132,7 @@ public:
     void SetTargetPosition(const Vector3& targetPos) { targetPos_ = targetPos; }
 
     /**
-     * @brief 敵を吹き飛ばす命令を受け取る関数（★追加）
+     * @brief 敵を吹き飛ばす命令を受け取る関数
      * @param enemy 吹き飛ばす対象のEnemyポインタ
      */
     void HitAndKnockback(Enemy* enemy);
@@ -148,14 +149,29 @@ private:
     void HandleAttack();
 
     /**
-     * @brief ミサイル攻撃処理（複数・誘導対応）
+     * @brief スキル・からくりチャージの入力処理
      */
-    void HandleMissile();
+    void HandleSkill();
 
     /**
-     * @brief 機関銃の処理（オートエイム連射）
+     * @brief ミサイルスキル発動
      */
-    void HandleMachineGun();
+    void FireMissileSkill();
+
+    /**
+     * @brief 機関銃スキル発動
+     */
+    void StartMachineGunSkill();
+
+    /**
+     * @brief ミサイル攻撃の更新（移動・誘導）
+     */
+    void UpdateMissile();
+
+    /**
+     * @brief 機関銃の更新（連射・弾の移動）
+     */
+    void UpdateMachineGun();
 
     /**
      * @brief 機関銃の弾を1発発射する処理
@@ -205,8 +221,15 @@ private:
     static const int kMaxMissiles = 4;
     std::unique_ptr<ObjClass> missileObjs_[kMaxMissiles];
     MissileData missiles_[kMaxMissiles];
-    int missileCooldown_ = 0;
     const float kMissileSpeed = 0.8f;
+
+    // --- ★スキルとからくりチャージ用 ---
+    int skillCooldownTimer_ = 0;             // スキルのクールタイム（メンバー変数）
+    const int kSkillCooldownTime = 300;      // クールタイム5秒（60FPS想定）
+
+    int karakuriChargeTimer_ = 0;            // からくりチャージ用の長押し時間
+    const int kKarakuriChargeTime = 300;     // チャージ完了までの時間（5秒）
+    bool isKarakuriCharged_ = false;         // チャージ状態（界王拳状態）
 
     // トランスフォーム
     Vector3 scale_ = { 0.3f, 1.0f, 0.3f };
@@ -233,12 +256,13 @@ private:
     const int kAttackDuration = 20;  // スイングにかかるフレーム数
 
     // --- ステータス・やられ判定用 ---
-    int hp_ = 100;
+    const int kMaxHp = 100;           // 最大体力（★追加）
+    int hp_ = kMaxHp;                 // 現在の体力
     bool isDead_ = false;
     int invincibleTimer_ = 0;
     const float kColliderRadius = 1.0f;
 
-    // --- ノックバック（吹き飛ばし）処理用変数（★追加） ---
+    // --- ノックバック（吹き飛ばし）処理用変数 ---
     Enemy* knockbackTarget_ = nullptr;            // 吹き飛ばしている最中の敵
     Vector3 knockbackVelocity_ = { 0.0f, 0.0f, 0.0f }; // 吹き飛ぶ速度
     int knockbackTimer_ = 0;                      // 吹き飛ぶ時間（フレーム）
