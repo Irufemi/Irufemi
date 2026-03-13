@@ -85,7 +85,7 @@ void GameScene::Update() {
     }
 
     if (boss_) {
-        boss_->Update();
+        boss_->Update(player_.get());
     }
 
     // --- 当たり判定の実装 ---
@@ -98,7 +98,7 @@ void GameScene::Update() {
         Vector3 playerPos = player_->GetTranslate(); // 攻撃方向計算用
 
         // Player vs EnemyBeam の判定
-        if (boss_->GetBeam()) {
+        if (boss_->GetBeam() && boss_->GetBeam()->IsActive() && boss_->IsFiringRealBeam()) {
             Sphere playerColliderSphere;
             playerColliderSphere.center = player_->GetCollider().center;
             playerColliderSphere.radius = player_->GetCollider().radius;
