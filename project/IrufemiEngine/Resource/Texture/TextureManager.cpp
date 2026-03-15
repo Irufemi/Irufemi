@@ -66,15 +66,29 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& 
     }
 
     // キャッシュ更新
-    auto* self = const_cast<TextureManager*>(this);
     auto tex = std::make_shared<Texture>();
     tex->Initialize(name);
     D3D12_GPU_DESCRIPTOR_HANDLE handle = tex->GetTextureSrvHandleGPU();
     if (handle.ptr == 0 && whiteTextureHandle.ptr != 0) {
         handle = whiteTextureHandle;
     }
-    self->textures_.emplace(name, std::move(tex));
+    textures_.emplace(name, std::move(tex));
     return handle;
+}
+
+const DirectX::ScratchImage* TextureManager::GetScratchImage(const std::string& name) const
+{
+    // 既存キー検索
+    auto it = textures_.find(name);
+    if (it != textures_.end()) {
+        return it->second->GetScratchImage();
+    }
+
+    // キャッシュになければロード
+    auto tex = std::make_shared<Texture>();
+    tex->Initialize(name);
+    textures_.emplace(name, tex);
+    return tex->GetScratchImage();
 }
 
 std::vector<std::string> TextureManager::GetTextureNames() const {

@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "ModelManager.h"
 #include <filesystem>
 #include <Windows.h>
@@ -12,6 +13,7 @@
 #include "Resource/Model/Data/Node.h"
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
+#include <limits>
 
 //======================
 // キャッシュ系(インスタンス)
@@ -554,6 +556,21 @@ ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std:
                         materialMap[currentName].uvTransform = Math::MakeAffineMatrix(
                             { 1.0f, 1.0f, 1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
                     }
+                } else if (mtlId == "map_Bump" || mtlId == "bump") {
+                    std::string token;
+                    bool hasTransform = false;
+                    // テクスチャオプション対応
+                    while (ms >> token) {
+                        if (token == "-o" || token == "-s" || token == "-bm") {
+                            // UVTransformやバンプ係数の読み飛ばし
+                            std::string dummy;
+                            ms >> dummy;
+                            if (token != "-bm") ms >> dummy; // -o, -sは2要素
+                        } else {
+                            materialMap[currentName].normalMapFilePath = directoryPath + "/" + token;
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -636,7 +653,7 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
         /// SkinCluster構築用のデータ取得を追加
 
         for (uint32_t boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex) {
-            
+
             /// Jointごとの格納領域を作る
 
             // meshに関連付けられたJointから情報を取得する
@@ -656,7 +673,7 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
             bindPoseMatrixAssimp.Decompose(scale, rotate, translate);
             Matrix4x4 bindPoseMatrix = Math::MakeAffineMatrix(Vector3{ scale.x,scale.y,scale.z }, Quaternion{ rotate.x,-rotate.y,-rotate.z,rotate.w }, Vector3{ -translate.x,translate.y,translate.z });
             jointWeightData.inverseBndPoseMatrix = Math::Inverse(bindPoseMatrix);
-            
+
             /// Weight情報を取り出す
 
             // Jointに関連付けられた頂点のweightとその頂点のindexを取り出して格納する
@@ -760,6 +777,22 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
                     std::filesystem::path texturePath = modelPath.parent_path() / p;
                     out.textureFilePath = texturePath.string();
                     std::replace(out.textureFilePath.begin(), out.textureFilePath.end(), '\\', '/');
+                }
+            }
+        }
+
+        // Normal テクスチャ
+        if (m->GetTextureCount(aiTextureType_NORMALS) > 0 || m->GetTextureCount(aiTextureType_HEIGHT) > 0) {
+            aiString texPath;
+            // NORMALSを優先し、なければHEIGHT(Bump)を取得
+            if (m->GetTexture(aiTextureType_NORMALS, 0, &texPath) == aiReturn_SUCCESS ||
+                m->GetTexture(aiTextureType_HEIGHT,  0, &texPath) == aiReturn_SUCCESS) {
+                std::string p = texPath.C_Str();
+                if (!p.empty() && p[0] != '*') {
+                    std::filesystem::path modelPath(filePath);
+                    std::filesystem::path texturePath = modelPath.parent_path() / p;
+                    out.normalMapFilePath = texturePath.string();
+                    std::replace(out.normalMapFilePath.begin(), out.normalMapFilePath.end(), '\\', '/');
                 }
             }
         }
@@ -892,6 +925,341 @@ Node ModelManager::ReadNode(aiNode* node) {
     for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex) {
         // 再帰的にReadNodeを呼び出し、階層構造を構築する
         result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
+    }
+    return result;
+}
+
+namespace {
+    // レイと三角形の交差判定
+    bool IntersectRayTriangle(const Vector3& origin, const Vector3& direction,
+        const Vector3& v0, const Vector3& v1, const Vector3& v2,
+        float& t) {
+        const float kEpsilon = 1e-6f;
+        Vector3 edge1 = Math::Subtract(v1, v0);
+        Vector3 edge2 = Math::Subtract(v2, v0);
+        Vector3 h = Math::Cross(direction, edge2);
+        float a = Math::Dot(edge1, h);
+        if (a > -kEpsilon && a < kEpsilon)
+            return false; // レイは三角形と平行
+
+        float f = 1.0f / a;
+        Vector3 s = Math::Subtract(origin, v0);
+        float u = f * Math::Dot(s, h);
+        if (u < 0.0f || u > 1.0f)
+            return false;
+
+        Vector3 q = Math::Cross(s, edge1);
+        float v = f * Math::Dot(direction, q);
+        if (v < 0.0f || u + v > 1.0f)
+            return false;
+
+        t = f * Math::Dot(edge2, q);
+        return (t > kEpsilon);
+    }
+
+    // 点と三角形の最近接点を求める
+    Vector3 ClosestPointOnTriangle(const Vector3& p, const Vector3& a, const Vector3& b, const Vector3& c) {
+        Vector3 ab = b - a;
+        Vector3 ac = c - a;
+        Vector3 ap = p - a;
+        float d1 = Math::Dot(ab, ap);
+        float d2 = Math::Dot(ac, ap);
+        if (d1 <= 0.0f && d2 <= 0.0f) return a;
+
+        Vector3 bp = p - b;
+        float d3 = Math::Dot(ab, bp);
+        float d4 = Math::Dot(ac, bp);
+        if (d3 >= 0.0f && d4 <= d3) return b;
+
+        float vc = d1 * d4 - d3 * d2;
+        if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
+            float v = d1 / (d1 - d3);
+            return a + v * ab;
+        }
+
+        Vector3 cp = p - c;
+        float d5 = Math::Dot(ab, cp);
+        float d6 = Math::Dot(ac, cp);
+        if (d6 >= 0.0f && d5 <= d6) return c;
+
+        float vb = d5 * d2 - d1 * d6;
+        if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
+            float w = d2 / (d2 - d6);
+            return a + w * ac;
+        }
+
+        float va = d3 * d6 - d5 * d4;
+        if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
+            float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+            return b + w * (c - b);
+        }
+
+        float denom = 1.0f / (va + vb + vc);
+        float v = vb * denom;
+        float w = vc * denom;
+        return a + ab * v + ac * w;
+    }
+
+    // 重心座標を計算
+    Vector3 Barycentric(const Vector3& p, const Vector3& a, const Vector3& b, const Vector3& c) {
+        Vector3 v0 = b - a, v1 = c - a, v2 = p - a;
+        float d00 = Math::Dot(v0, v0);
+        float d01 = Math::Dot(v0, v1);
+        float d11 = Math::Dot(v1, v1);
+        float d20 = Math::Dot(v2, v0);
+        float d21 = Math::Dot(v2, v1);
+        float denom = d00 * d11 - d01 * d01;
+        float v = (d11 * d20 - d01 * d21) / denom;
+        float w = (d00 * d21 - d01 * d20) / denom;
+        float u = 1.0f - v - w;
+        return { u, v, w };
+    }
+}
+
+VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3Int& resolution, TextureManager* textureManager) {
+    VoxelizedModel result;
+    result.resolution = resolution;
+
+    // 1. AABB(バウンディングボックス)の計算
+    result.aabbMin = { (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)() };
+    result.aabbMax = { std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest() };
+
+    for (const auto& mesh : model.meshes) {
+        for (const auto& vertex : mesh.vertices) {
+            result.aabbMin.x = (std::min)(result.aabbMin.x, vertex.position.x);
+            result.aabbMin.y = (std::min)(result.aabbMin.y, vertex.position.y);
+            result.aabbMin.z = (std::min)(result.aabbMin.z, vertex.position.z);
+            result.aabbMax.x = (std::max)(result.aabbMax.x, vertex.position.x);
+            result.aabbMax.y = (std::max)(result.aabbMax.y, vertex.position.y);
+            result.aabbMax.z = (std::max)(result.aabbMax.z, vertex.position.z);
+        }
+    }
+
+    Vector3 aabbSize = {
+        result.aabbMax.x - result.aabbMin.x,
+        result.aabbMax.y - result.aabbMin.y,
+        result.aabbMax.z - result.aabbMin.z
+    };
+    Vector3 voxelSize = { aabbSize.x / resolution.x, aabbSize.y / resolution.y, aabbSize.z / resolution.z };
+
+    // 2. 全てのボクセルをループ処理
+    for (int z = 0; z < resolution.z; ++z) {
+        for (int y = 0; y < resolution.y; ++y) {
+            for (int x = 0; x < resolution.x; ++x) {
+                // 3. 各ボクセルの中心座標を計算
+                Vector3 voxelCenter = {
+                    result.aabbMin.x + (x + 0.5f) * voxelSize.x,
+                    result.aabbMin.y + (y + 0.5f) * voxelSize.y,
+                    result.aabbMin.z + (z + 0.5f) * voxelSize.z
+                };
+
+                int intersections = 0;
+
+                // 3方向にレイを飛ばして多数決で内外判定 (1方向だと法線平行のポリゴンで誤判定しやすい)
+                const Vector3 rayDirs[3] = {
+                    { 1.0f, 0.0f, 0.0f }, // X+
+                    { 0.0f, 1.0f, 0.0f }, // Y+
+                    { 0.0f, 0.0f, 1.0f }, // Z+
+                };
+                int intersectionPerDir[3] = { 0, 0, 0 };
+
+                float minDistance = (std::numeric_limits<float>::max)();
+                const ObjMesh* closestMesh = nullptr;
+                VertexData closestTri[3];
+
+                // 4. メッシュとの交差判定と最も近いポリゴンの探索
+                for (const auto& mesh : model.meshes) {
+                    size_t faceCount = mesh.indices.empty() ? mesh.vertices.size() : mesh.indices.size();
+                    for (size_t i = 0; i < faceCount; i += 3) {
+                        VertexData v0 = mesh.indices.empty() ? mesh.vertices[i] : mesh.vertices[mesh.indices[i]];
+                        VertexData v1 = mesh.indices.empty() ? mesh.vertices[i + 1] : mesh.vertices[mesh.indices[i + 1]];
+                        VertexData v2 = mesh.indices.empty() ? mesh.vertices[i + 2] : mesh.vertices[mesh.indices[i + 2]];
+
+                        Vector3 p0 = { v0.position.x, v0.position.y, v0.position.z };
+                        Vector3 p1 = { v1.position.x, v1.position.y, v1.position.z };
+                        Vector3 p2 = { v2.position.x, v2.position.y, v2.position.z };
+
+                        // 3方向それぞれ独立にカウント
+                        for (int d = 0; d < 3; ++d) {
+                            float t;
+                            if (IntersectRayTriangle(voxelCenter, rayDirs[d], p0, p1, p2, t) && t > 0.0f) {
+                                intersectionPerDir[d]++;
+                            }
+                        }
+
+                        // 最も近いポリゴンを見つける
+                        Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
+                        Vector3 diff = closestPoint - voxelCenter;
+                        float distanceSq = Math::Dot(diff, diff);
+
+                        if (distanceSq < minDistance) {
+                            minDistance = distanceSq;
+                            closestMesh = &mesh;
+                            closestTri[0] = v0;
+                            closestTri[1] = v1;
+                            closestTri[2] = v2;
+                        }
+                    }
+                }
+
+                // 5. 内外判定：各方向の交差回数が奇数なら「内部」→ 2/3以上で内部と判断（多数決）
+                int insideVotes = 0;
+                for (int d = 0; d < 3; ++d) {
+                    if (intersectionPerDir[d] % 2 != 0) {
+                        insideVotes++;
+                    }
+                }
+
+                // 内部のボクセルのみ生成（2/3方向以上が内部判定で採用）
+                if (insideVotes >= 2)
+                {
+                    Voxel newVoxel;
+                    newVoxel.position = voxelCenter;
+                    newVoxel.normal = { 0.0f, 1.0f, 0.0f };      // 初期法線
+                    newVoxel.color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 初期色
+                    newVoxel.uv = { 0.0f, 0.0f };                // 初期UV
+
+                    if (closestMesh != nullptr) {
+                        Vector3 p0 = { closestTri[0].position.x, closestTri[0].position.y, closestTri[0].position.z };
+                        Vector3 p1 = { closestTri[1].position.x, closestTri[1].position.y, closestTri[1].position.z };
+                        Vector3 p2 = { closestTri[2].position.x, closestTri[2].position.y, closestTri[2].position.z };
+
+                        // Barycentric(重心座標)の計算
+                        Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
+                        Vector3 uvw = Barycentric(closestPoint, p0, p1, p2);
+
+                        // ==========================================
+                        // 法線(Normal)の補間と設定
+                        // ==========================================
+                        Vector3 n0 = closestTri[0].normal;
+                        Vector3 n1 = closestTri[1].normal;
+                        Vector3 n2 = closestTri[2].normal;
+
+                        Vector3 interpolatedNormal = {
+                            n0.x * uvw.x + n1.x * uvw.y + n2.x * uvw.z,
+                            n0.y * uvw.x + n1.y * uvw.y + n2.y * uvw.z,
+                            n0.z * uvw.x + n1.z * uvw.y + n2.z * uvw.z
+                        };
+                        newVoxel.normal = Math::Normalize(interpolatedNormal); // 正規化してボクセルに保存
+
+                        // UVの取得
+                        Vector2 uv0 = closestTri[0].texcoord;
+                        Vector2 uv1 = closestTri[1].texcoord;
+                        Vector2 uv2 = closestTri[2].texcoord;
+
+                        Vector2 interpolatedUV = {
+                            uv0.x * uvw.x + uv1.x * uvw.y + uv2.x * uvw.z,
+                            uv0.y * uvw.x + uv1.y * uvw.y + uv2.y * uvw.z
+                        };
+                        newVoxel.uv = interpolatedUV;
+
+                        // ==========================================
+                        // 法線マップからの詳細な法線の計算・焼き付け
+                        // ==========================================
+                        if (!closestMesh->material.normalMapFilePath.empty() && textureManager) {
+                            const DirectX::ScratchImage* nimg = textureManager->GetScratchImage(closestMesh->material.normalMapFilePath);
+                            if (nimg) {
+                                int nwidth = static_cast<int>(nimg->GetMetadata().width);
+                                int nheight = static_cast<int>(nimg->GetMetadata().height);
+
+                                int ntexX = static_cast<int>(interpolatedUV.x * nwidth) % nwidth;
+                                int ntexY = static_cast<int>(interpolatedUV.y * nheight) % nheight;
+                                if (ntexX < 0) ntexX += nwidth;
+                                if (ntexY < 0) ntexY += nheight;
+
+                                const DirectX::Image* nimage = nimg->GetImage(0, 0, 0);
+                                if (nimage) {
+                                    uint8_t* npixels = nimage->pixels;
+                                    size_t nrowPitch = nimage->rowPitch;
+                                    size_t npixelStride = DirectX::BitsPerPixel(nimg->GetMetadata().format) / 8;
+                                    uint8_t* npixel = npixels + (ntexY * nrowPitch) + (ntexX * npixelStride);
+
+                                    // 1. サンプリングしたRGB[0, 255]を[-1.0, 1.0]のベクトルに変換
+                                    Vector3 sampledNormal;
+                                    sampledNormal.x = (npixel[0] / 255.0f) * 2.0f - 1.0f;
+                                    sampledNormal.y = (npixel[1] / 255.0f) * 2.0f - 1.0f;
+                                    sampledNormal.z = (npixel[2] / 255.0f) * 2.0f - 1.0f;
+
+                                    // 2. 接空間ベクトル (Tangent, Bitangent) の計算
+                                    Vector3 edge1 = p1 - p0;
+                                    Vector3 edge2 = p2 - p0;
+                                    Vector2 deltaUV1 = uv1 - uv0;
+                                    Vector2 deltaUV2 = uv2 - uv0;
+
+                                    float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+                                    
+                                    Vector3 tangent;
+                                    tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+                                    tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+                                    tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+                                    tangent = Math::Normalize(tangent);
+
+                                    // グラム・シュミットの直交化を用いてTangentを再直交化
+                                    tangent = Math::Normalize(tangent - newVoxel.normal * Math::Dot(tangent, newVoxel.normal));
+
+                                    // Bitangentの計算 (NormalとTangentの外積に、UV方向による符号を掛ける)
+                                    Vector3 bitangent = Math::Cross(newVoxel.normal, tangent);
+                                    if (f < 0.0f) {
+                                        bitangent.x *= -1.0f;
+                                        bitangent.y *= -1.0f;
+                                        bitangent.z *= -1.0f;
+                                    }
+
+                                    // 3. Tangent SpaceからLocal Spaceへの変換行列で合成
+                                    // Matrix TBN( tangent, bitangent, newVoxel.normal )
+                                    Vector3 localNormal;
+                                    localNormal.x = tangent.x * sampledNormal.x + bitangent.x * sampledNormal.y + newVoxel.normal.x * sampledNormal.z;
+                                    localNormal.y = tangent.y * sampledNormal.x + bitangent.y * sampledNormal.y + newVoxel.normal.y * sampledNormal.z;
+                                    localNormal.z = tangent.z * sampledNormal.x + bitangent.z * sampledNormal.y + newVoxel.normal.z * sampledNormal.z;
+
+                                    newVoxel.normal = Math::Normalize(localNormal);
+                                }
+                            }
+                        }
+                        // ==========================================
+                        // UVからテクスチャカラーをサンプリング
+                        // ==========================================
+
+                        if (!closestMesh->material.textureFilePath.empty() && textureManager) {
+                            // GetScratchImage を使用する
+                            const DirectX::ScratchImage* img = textureManager->GetScratchImage(closestMesh->material.textureFilePath);
+
+                            if (img) {
+                                int width = static_cast<int>(img->GetMetadata().width);
+                                int height = static_cast<int>(img->GetMetadata().height);
+
+                                int texX = static_cast<int>(interpolatedUV.x * width) % width;
+                                int texY = static_cast<int>(interpolatedUV.y * height) % height;
+                                if (texX < 0) texX += width;
+                                if (texY < 0) texY += height;
+
+                                // 元のコードに合わせて GetImage(0, 0, 0) からピクセルデータを取得
+                                const DirectX::Image* image = img->GetImage(0, 0, 0);
+                                if (image) {
+                                    uint8_t* pixels = image->pixels;
+                                    size_t rowPitch = image->rowPitch;
+                                    size_t pixelStride = DirectX::BitsPerPixel(img->GetMetadata().format) / 8;
+                                    uint8_t* pixel = pixels + (texY * rowPitch) + (texX * pixelStride);
+
+                                    newVoxel.color.x = pixel[0] / 255.0f;
+                                    newVoxel.color.y = pixel[1] / 255.0f;
+                                    newVoxel.color.z = pixel[2] / 255.0f;
+                                    newVoxel.color.w = pixel[3] / 255.0f;
+                                } else {
+                                    newVoxel.color = closestMesh->material.color;
+                                }
+                            } else {
+                                newVoxel.color = closestMesh->material.color;
+                            }
+                        } else {
+                            newVoxel.color = closestMesh->material.color;
+                        }
+                    }
+
+                    result.voxels.push_back(newVoxel);
+                }
+            }
+        }
     }
     return result;
 }
