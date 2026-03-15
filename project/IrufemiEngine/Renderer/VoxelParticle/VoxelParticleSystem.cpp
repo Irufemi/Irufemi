@@ -82,30 +82,27 @@ void VoxelParticleSystem::Update(float deltaTime) {
   if (voxelCount_ == 0)
     return;
 
-  // エミッターの時間を更新
+  // エミッターデータ更新
   emitterData_.time += deltaTime;
-
-  // 定数バッファを更新
   emitterData_.emit = isEmitting_ ? 1 : 0;
   *mappedEmitterData_ = emitterData_;
 
-  // PerView更新
-  mappedPerViewData_->viewProjection = camera_->GetViewProjectionMatrix3D();
+  // PerFrame データを更新（time と deltaTime を CS シェーダーへ渡す）
+  perFrameData_.time = emitterData_.time;
+  perFrameData_.deltaTime = deltaTime;
+  *mappedPerFrameData_ = perFrameData_;
 
-  // ビルボードは使わないので単位行列を設定
+  // PerView 更新（描画用）
+  mappedPerViewData_->viewProjection = camera_->GetViewProjectionMatrix3D();
   mappedPerViewData_->billbordMatrix = Math::MakeIdentity4x4();
 
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
 
-  // --- ディスクリプタヒープの設定 ---
   ID3D12DescriptorHeap *ppHeaps[] = {dxCommon->GetSrvPool()->GetHeap()};
   commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-  // --- Compute パイプライン設定 ---
   commandList->SetComputeRootSignature(dxCommon->GetComputeRootSignature());
 
-  // UAVバリア設定用
   D3D12_RESOURCE_BARRIER barrier{};
   barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
   barrier.UAV.pResource = particleBuffer_.Get();
@@ -116,12 +113,12 @@ void VoxelParticleSystem::Update(float deltaTime) {
     commandList->SetComputeRootDescriptorTable(0, voxelSrvHandleGPU_);    // t0
     commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
     commandList->SetComputeRootConstantBufferView(
-        4, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0
+        4, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0 (VoxelEmitter)
     commandList->SetComputeRootConstantBufferView(
-        5, perViewConstantBuffer_->GetGPUVirtualAddress()); // b1
+        5, perFrameConstantBuffer_
+               ->GetGPUVirtualAddress()); // b1 (PerFrame: time/deltaTime)
     commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
 
-    // 次のUpdateやDrawの前にバリアを張る
     commandList->ResourceBarrier(1, &barrier);
 
     isEmitting_ = false; // 1度だけ発生
@@ -131,12 +128,12 @@ void VoxelParticleSystem::Update(float deltaTime) {
   commandList->SetPipelineState(updatePSO_.Get());
   commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
   commandList->SetComputeRootConstantBufferView(
-      4, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0
+      4, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0 (VoxelEmitter)
   commandList->SetComputeRootConstantBufferView(
-      5, perViewConstantBuffer_->GetGPUVirtualAddress()); // b1
+      5, perFrameConstantBuffer_
+             ->GetGPUVirtualAddress()); // b1 (PerFrame: time/deltaTime)
   commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
 
-  // 次のDrawの前にバリアを張る
   commandList->ResourceBarrier(1, &barrier);
 }
 
@@ -154,8 +151,7 @@ void VoxelParticleSystem::Draw() {
 
   // VoxelParticle 専用PSOを取得してバインド
   auto *pso = dxCommon->GetPSOManager()->GetVoxelParticle(
-      BlendMode::kBlendModeNormal,
-      PSOManager::DepthWrite::Enable,
+      BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable,
       PSOManager::CullMode::Back);
   assert(pso && "VoxelParticle PSO is null.");
   engine_->GetDrawManager()->BindPSO(pso);
@@ -325,8 +321,15 @@ void VoxelParticleSystem::CreateResources() {
 
   // Emitter定数バッファ
   emitterConstantBuffer_ = dxCommon->CreateBufferResource(sizeof(VoxelEmitter));
+  emitterConstantBuffer_->Map(0, nullptr, reinterpret_cast<void **>(&mappedEmitterData_));
+  
   // PerView定数バッファ
   perViewConstantBuffer_ = dxCommon->CreateBufferResource(sizeof(PerView));
+  perViewConstantBuffer_->Map(0, nullptr, reinterpret_cast<void **>(&mappedPerViewData_));
+
+  // PerFrame定数バッファ
+  perFrameConstantBuffer_ = dxCommon->CreateBufferResource(sizeof(PerFrame));
+  perFrameConstantBuffer_->Map(0, nullptr, reinterpret_cast<void **>(&mappedPerFrameData_));
 }
 
 void VoxelParticleSystem::CreatePSO() {

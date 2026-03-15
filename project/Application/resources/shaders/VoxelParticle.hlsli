@@ -21,17 +21,19 @@ struct VoxelParticle
 	uint isActive;
 };
 
-// C++側のVoxelEmitter構造体と一致させる
+// C++側のVoxelEmitter構造体と一致させる（合計48バイト）
 struct VoxelEmitter
 {
-	float3 emitPosition;
-	float time;
-	float lifeTime;
-	float gravity;
-	uint emit;
-	float dispersion;
-	float convergence;
-	float pad;
+	float3 emitPosition;  // 12
+	float time;           // 4  → 計16
+	float lifeTime;       // 4
+	float gravity;        // 4
+	uint emit;            // 4
+	float dispersion;     // 4  → 計32
+	float convergence;    // 4
+	float pad0;           // 4
+	float pad1;           // 4
+	float pad2;           // 4  → 計48
 };
 
 // C++側のPerView構造体と一致させる

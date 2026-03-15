@@ -28,16 +28,18 @@ struct VoxelParticle {
   uint32_t isActive; // 0:非アクティブ, 1:アクティブ
 };
 
-// HLSL側のVoxelEmitter構造体と一致させる
+// HLSL側のVoxelEmitter構造体と一致させる（16バイトアライメント対応 = 48バイト）
 struct VoxelEmitter {
   Vector3 emitPosition = {0.0f, 0.0f, 0.0f};
-  float time = 0.0f;
+  float time = 0.0f;          // emitPosition + time = 16バイト
   float lifeTime = 3.0f;
   float gravity = 9.8f;
   uint32_t emit = 0;
-  float dispersion = 5.0f;  // 爆発の散開係数
-  float convergence = 1.0f; // 収束係数
-  float pad;                // 16バイトアライメント
+  float dispersion = 5.0f;    // lifeTime + gravity + emit + dispersion = +16 → 32バイト
+  float convergence = 1.0f;
+  float pad0 = 0.0f;
+  float pad1 = 0.0f;
+  float pad2 = 0.0f;          // convergence + pad0 + pad1 + pad2 = +16 → 48バイト
 };
 
 

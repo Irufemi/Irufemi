@@ -370,7 +370,7 @@ void DebugScene::Update() {
     if (isActiveVoxelParticle_) {
         if (!voxelParticle_) {
             voxelParticle_ = std::make_unique<VoxelParticleSystem>();
-            voxelParticle_->Initialize("terrain.obj", { 32,32,32 }, camera_.get());
+            voxelParticle_->Initialize("sample/terrain.obj", { 32,32,32 }, camera_.get());
         }
         voxelParticle_->Debug("Voxel Particle");
         voxelParticle_->Update(engine_->GetDeltaTime());
