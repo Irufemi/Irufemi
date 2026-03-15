@@ -210,7 +210,19 @@ void DrawManager::PostDraw() {
     ID3D12CommandList* commandLists[] = { commandList_ };
     dxCommon_->GetCommandQueue()->ExecuteCommandLists(_countof(commandLists), commandLists);
     //GPUとOSに画面の交換を行うよう通知する
-    dxCommon_->GetSwapChain()->Present(1, 0);
+    hr = dxCommon_->GetSwapChain()->Present(1, 0);
+    // デバイスが削除されたかどうかのチェック
+    if (FAILED(hr)) {
+        if (hr == DXGI_ERROR_DEVICE_REMOVED) {
+            HRESULT removedReason = dxCommon_->GetDevice()->GetDeviceRemovedReason();
+            char str[256];
+            sprintf_s(str, "Device Removed, reason code: 0x%08X\n", removedReason);
+            OutputDebugStringA(str);
+        }
+        // 他のエラーコードも必要に応じて処理
+        assert(SUCCEEDED(hr));
+    }
+
 
     /*完璧な画面クリアを目指して*/
 

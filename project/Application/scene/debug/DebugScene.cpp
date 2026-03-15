@@ -83,6 +83,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
     isActiveGPUParticle_ = false;
+    isActiveVoxelParticle_ = true;
     isActiveEffect_ = false;
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
@@ -158,6 +159,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         gpuParticle_ = std::make_unique<GPUParticleSystem>();
         gpuParticle_->Initialize(camera_.get(), "resources/circle.png");
     }
+    if (isActiveVoxelParticle_) {
+        voxelParticle_ = std::make_unique<VoxelParticleSystem>();
+        voxelParticle_->Initialize("sample/terrain.obj", { 32,32,32 }, camera_.get());
+    }
     if (isActiveEffect_) {
         effect_ = std::make_unique<EffectSystem>();
         effect_->Initialize(camera_.get());
@@ -228,6 +233,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
     ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::Checkbox("GPUParticle", &isActiveGPUParticle_);
+    ImGui::Checkbox("VoxelParticle", &isActiveVoxelParticle_);
     ImGui::Checkbox("Effect", &isActiveEffect_);
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
     ImGui::Checkbox("Walk", &isActiveWalk_);
@@ -360,6 +366,14 @@ void DebugScene::Update() {
             gpuParticle_->Initialize(camera_.get(), "resources/circle.png");
         }
         gpuParticle_->Update();
+    }
+    if (isActiveVoxelParticle_) {
+        if (!voxelParticle_) {
+            voxelParticle_ = std::make_unique<VoxelParticleSystem>();
+            voxelParticle_->Initialize("sample/terrain.obj", { 32,32,32 }, camera_.get());
+        }
+        voxelParticle_->Debug("Voxel Particle");
+        voxelParticle_->Update(engine_->GetDeltaTime());
     }
     if (isActiveEffect_) {
         if (!effect_) {
@@ -551,6 +565,10 @@ void DebugScene::Draw() {
 
     if (isActiveGPUParticle_) {
         gpuParticle_->Draw();
+    }
+
+    if (isActiveVoxelParticle_) {
+        voxelParticle_->Draw();
     }
 
     // 2D

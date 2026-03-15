@@ -4,6 +4,7 @@
 #include "Engine/Core/Math/Vector4.h"
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Type/PerFrame.h"
+#include "Engine/Core/Type/PerView.h"
 #include <wrl.h>
 #include <d3d12.h>
 #include <string>
@@ -23,11 +24,6 @@ struct ParticleCS {
     Vector3 velocity;
     float currentTime;
     Vector4 color;
-};
-
-struct PerViewForGPU {
-    Matrix4x4 viewProjection;
-    Matrix4x4 billbordMatrix;
 };
 
 struct ParticleGPUMaterial {
@@ -117,7 +113,7 @@ private:
     D3D12_GPU_DESCRIPTOR_HANDLE freeListSrvHandleGPU_{};
 
     Microsoft::WRL::ComPtr<ID3D12Resource> perViewResource_;
-    PerViewForGPU* perViewData_ = nullptr;
+    PerView* perViewData_ = nullptr;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};

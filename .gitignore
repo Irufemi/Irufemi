@@ -1,4 +1,4 @@
-## [Visual Studio 標準の除外設定]
+## [Visual Studio - Standard Exclusions]
 *.rsuser
 *.suo
 *.user
@@ -6,7 +6,7 @@
 *.sln.docstates
 *.userprefs
 
-# ビルド結果と一時出力
+# Build outputs and temporary files
 [Dd]ebug/
 [Rr]elease/
 x64/
@@ -26,32 +26,32 @@ project/logs/
 *.VC.db
 *.VC.VC.opendb
 
-# Visual Studio キャッシュ/オプション
+# Visual Studio cache/options
 .vs/
 Generated\ Files/
 
 # ====================================================================
-# プロジェクト健康診断に基づく修正・追加設定
+# Project-specific additions
 # ====================================================================
 
-# 1. ビルド中間ファイル(.obj)の混入防止
-# resources/ 内の3Dモデル用.objを保護しつつ、ビルド生成物のみを除外
+# 1. Prevent build intermediate files (.obj) from being committed
+#    Protects .obj files under resources/ (3D models) while excluding build outputs
 **/Debug/*.obj
 **/Release/*.obj
 **/x64/*.obj
 **/x86/*.obj
 
-# 2. DCCツール・編集用ソースファイルの個別除外
+# 2. DCC tool / editor source files
 *.blend1
 *.xcf
 *.aseprite
 
-# 3. アセット編集用ソースフォルダ（原本フォルダ）の除外
-# project/Application/ 内に作成する編集専用フォルダをまるごと除外
+# 3. Asset editing source folder (original folder) exclusion
+#    Exclude the editing source folder under project/Application/ entirely
 /project/Application/asset_src/
 
 # ====================================================================
-# プロジェクト固有の既存パス設定
+# Project-specific existing paths
 # ====================================================================
 DirectXGame/DirectXGame.exe
 DirectXGame/imgui.ini
@@ -60,3 +60,31 @@ DirectXGame/imgui.ini
 /project/IrufemiEngine/logs/
 /project/Application/logs/
 /project/Application/imgui.ini
+
+# ====================================================================
+# AntiGravity / AI tools
+# ====================================================================
+
+# AntiGravity workflow definitions and task files
+.agents/
+.agent/
+_agents/
+_agent/
+
+# Gemini / AntiGravity local cache (if placed inside project)
+.gemini/
+
+# Other AI tools (Copilot, Cursor, etc.)
+.copilot/
+.cursor/
+
+# ====================================================================
+# Debug / temporary log files
+# ====================================================================
+debuglog.txt
+*.log
+# ====================================================================
+# clangd language server cache
+# ====================================================================
+.cache/
+**/.cache/

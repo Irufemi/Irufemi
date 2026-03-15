@@ -93,9 +93,12 @@ public: // ゲッター
 	// Compute Shader用
 	ID3D12RootSignature* GetComputeRootSignature() const { return computeRootSignature_.Get(); }
 	ID3D12PipelineState* GetSkinningComputePSO() const { return skinningComputePSO_.Get(); }
-	ID3D12PipelineState* GetGpuParticleIntializePSO() const { return gpuParticleInitializePSO_.Get(); }
+	ID3D12PipelineState* GetGpuParticleInitializePSO() const { return gpuParticleInitializePSO_.Get(); }
 	ID3D12PipelineState* GetGpuParticleUpdatePSO() const { return gpuParticleUpdatePSO_.Get(); }
 	ID3D12PipelineState* GetGpuParticleEmitPSO() const { return gpuParticleEmitPSO_.Get(); }
+	ID3D12PipelineState* GetVoxelParticleInitializePSO() const { return voxelParticleInitializePSO_.Get(); }
+	ID3D12PipelineState* GetVoxelParticleEmitPSO() const { return voxelParticleEmitPSO_.Get(); }
+	ID3D12PipelineState* GetVoxelParticleUpdatePSO() const { return voxelParticleUpdatePSO_.Get(); }
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetRTVCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetRTVGPUDescriptorHandle(uint32_t index);
@@ -186,6 +189,9 @@ private: // メンバ変数
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleInitializePSO_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleUpdatePSO_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleEmitPSO_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleInitializePSO_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleEmitPSO_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleUpdatePSO_ = nullptr;
 
 	// 記録時間(FPS固定用)
 	std::chrono::steady_clock::time_point  reference_;
