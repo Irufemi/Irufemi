@@ -1054,7 +1054,14 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                 };
 
                 int intersections = 0;
-                Vector3 rayDir = { 1.0f, 0.0f, 0.0f }; // X+方向へのレイ
+
+                // 3方向にレイを飛ばして多数決で内外判定 (1方向だと法線平行のポリゴンで誤判定しやすい)
+                const Vector3 rayDirs[3] = {
+                    { 1.0f, 0.0f, 0.0f }, // X+
+                    { 0.0f, 1.0f, 0.0f }, // Y+
+                    { 0.0f, 0.0f, 1.0f }, // Z+
+                };
+                int intersectionPerDir[3] = { 0, 0, 0 };
 
                 float minDistance = (std::numeric_limits<float>::max)();
                 const ObjMesh* closestMesh = nullptr;
@@ -1062,7 +1069,6 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
 
                 // 4. メッシュとの交差判定と最も近いポリゴンの探索
                 for (const auto& mesh : model.meshes) {
-                    // ※インデックスバッファがある場合はそちらで回す想定
                     size_t faceCount = mesh.indices.empty() ? mesh.vertices.size() : mesh.indices.size();
                     for (size_t i = 0; i < faceCount; i += 3) {
                         VertexData v0 = mesh.indices.empty() ? mesh.vertices[i] : mesh.vertices[mesh.indices[i]];
@@ -1073,13 +1079,13 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                         Vector3 p1 = { v1.position.x, v1.position.y, v1.position.z };
                         Vector3 p2 = { v2.position.x, v2.position.y, v2.position.z };
 
-                        // --- 既存のレイキャスト判定（交差回数のカウントと最近接ポリゴンの更新） ---
-                        // （※既存の交差判定関数に置き換えてください）
-                        /*
-                        if (RayIntersectsTriangle(voxelCenter, rayDir, p0, p1, p2, outT)) {
-                            intersections++;
+                        // 3方向それぞれ独立にカウント
+                        for (int d = 0; d < 3; ++d) {
+                            float t;
+                            if (IntersectRayTriangle(voxelCenter, rayDirs[d], p0, p1, p2, t) && t > 0.0f) {
+                                intersectionPerDir[d]++;
+                            }
                         }
-                        */
 
                         // 最も近いポリゴンを見つける
                         Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
@@ -1096,9 +1102,16 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                     }
                 }
 
-                // 5. 内外判定（交差回数が奇数なら内部など、ご自身のアルゴリズムに合わせてください）
-                // ※ ここでは内側と判定された（ボクセルを配置する）と仮定します
-                // if (intersections % 2 != 0) 
+                // 5. 内外判定：各方向の交差回数が奇数なら「内部」→ 2/3以上で内部と判断（多数決）
+                int insideVotes = 0;
+                for (int d = 0; d < 3; ++d) {
+                    if (intersectionPerDir[d] % 2 != 0) {
+                        insideVotes++;
+                    }
+                }
+
+                // 内部のボクセルのみ生成（2/3方向以上が内部判定で採用）
+                if (insideVotes >= 2)
                 {
                     Voxel newVoxel;
                     newVoxel.position = voxelCenter;
