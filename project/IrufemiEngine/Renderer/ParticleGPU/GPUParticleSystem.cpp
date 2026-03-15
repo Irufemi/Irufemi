@@ -127,7 +127,7 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     dxCommon_->GetDevice()->CreateUnorderedAccessView(freeListResource_.Get(), nullptr, &freeListUavDesc, freeListUavHandleCPU_);
 
     // PerView用リソース
-    perViewResource_ = dxCommon_->CreateBufferResource(sizeof(PerViewForGPU));
+    perViewResource_ = dxCommon_->CreateBufferResource(sizeof(PerView));
     perViewResource_->Map(0, nullptr, reinterpret_cast<void**>(&perViewData_));
 
     // Material用リソース
@@ -277,7 +277,7 @@ void GPUParticleSystem::Draw() {
     engine_->ApplyGpuParticlePSO();
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable());
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::None);
       
     drawManager_->DrawParticleGPU(

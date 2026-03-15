@@ -1,13 +1,15 @@
 #pragma once
-#include <string>
-#include <memory>
-#include <wrl.h>
-#include <d3d12.h>
+#include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector3Int.h"
 #include "Engine/Core/Math/Vector4.h"
-#include "Engine/Core/Math/Matrix4x4.h"
 #include "Resource/Model/Data/VoxelizedModel.h"
+#include "Engine/Core/Type/PerView.h"
+#include <d3d12.h>
+#include <memory>
+#include <string>
+#include <wrl.h>
+
 
 // 前方宣言
 class IrufemiEngine;
@@ -15,92 +17,96 @@ class Camera;
 class ModelManager;
 class TextureManager;
 
-// HLSL側のVoxelEmitter構造体と一致させる
-struct VoxelEmitter {
-    Vector3 emitPosition = { 0.0f, 0.0f, 0.0f };
-    float time = 0.0f;
-    float lifeTime = 3.0f;
-    float gravity = 9.8f;
-    uint32_t emit = 0;
-    float dispersion = 5.0f;   // 爆発の散開係数
-    float convergence = 1.0f;  // 収束係数
-    float pad; // 16バイトアライメント
-};
-
-// HLSL側のPerView構造体と一致させる
-struct PerView {
-    Matrix4x4 viewProjection;
-    Matrix4x4 billboard;
-};
-
 // HLSL側のVoxelParticle構造体と一致させる
 struct VoxelParticle {
-    Vector3 position;
-    Vector3 velocity;
-    Vector4 color;
-    float life;
-    float size;
-    uint32_t isActive;
-    float pad[2]; // アライメント調整
+  Vector3 position;
+  float life;
+  Vector3 velocity;
+  float size;
+  Vector4 color;
+  Vector3 normal;
+  uint32_t isActive; // 0:非アクティブ, 1:アクティブ
+};
+
+// HLSL側のVoxelEmitter構造体と一致させる
+struct VoxelEmitter {
+  Vector3 emitPosition = {0.0f, 0.0f, 0.0f};
+  float time = 0.0f;
+  float lifeTime = 3.0f;
+  float gravity = 9.8f;
+  uint32_t emit = 0;
+  float dispersion = 5.0f;  // 爆発の散開係数
+  float convergence = 1.0f; // 収束係数
+  float pad;                // 16バイトアライメント
 };
 
 
 class VoxelParticleSystem {
 public:
-    VoxelParticleSystem() = default;
-    ~VoxelParticleSystem() = default;
+  VoxelParticleSystem() = default;
+  ~VoxelParticleSystem() = default;
 
-    static void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
+  static void SetEngine(IrufemiEngine *engine) { engine_ = engine; }
 
-    void Initialize(
-        const std::string& modelName,
-        const Vector3Int& resolution,
-        Camera* camera
-    );
+  void Initialize(const std::string &modelName, const Vector3Int &resolution,
+                  Camera *camera);
 
-    void Update(float deltaTime);
-    void Draw();
+  void Update(float deltaTime);
+  void Draw();
+  void Debug(const char *name);
 
-    void Emit(const Vector3& position);
+  void Emit(const Vector3 &position);
 
 private:
-    void CreateResources();
-    void CreatePSO();
+  void CreateResources();
+  void CreatePSO();
+  void CreateCubeMesh(float sizeX, float sizeY, float sizeZ);
 
 private:
-    Camera* camera_ = nullptr;
-    ModelManager* modelManager_ = nullptr;
-    TextureManager* textureManager_ = nullptr;
-    ID3D12Device* device_ = nullptr;
+  Camera *camera_ = nullptr;
+  ModelManager *modelManager_ = nullptr;
+  TextureManager *textureManager_ = nullptr;
+  ID3D12Device *device_ = nullptr;
 
-    std::unique_ptr<VoxelizedModel> voxelModel_;
+  std::unique_ptr<VoxelizedModel> voxelModel_;
 
-    // GPUリソース
-    Microsoft::WRL::ComPtr<ID3D12Resource> voxelBuffer_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> particleBuffer_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> emitterConstantBuffer_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> perViewConstantBuffer_;
+  // GPUリソース
+  Microsoft::WRL::ComPtr<ID3D12Resource> voxelBuffer_;
+  Microsoft::WRL::ComPtr<ID3D12Resource> particleBuffer_;
+  Microsoft::WRL::ComPtr<ID3D12Resource> emitterConstantBuffer_;
+  Microsoft::WRL::ComPtr<ID3D12Resource> perViewConstantBuffer_;
+  Microsoft::WRL::ComPtr<ID3D12Resource> perFrameConstantBuffer_;
+  Microsoft::WRL::ComPtr<ID3D12Resource> cubeVertexBuffer_;
+  Microsoft::WRL::ComPtr<ID3D12Resource> cubeIndexBuffer_;
 
-    // デスクリプタハンドル
-    D3D12_CPU_DESCRIPTOR_HANDLE voxelSrvHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE voxelSrvHandleGPU_{};
-    D3D12_CPU_DESCRIPTOR_HANDLE particleSrvHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandleGPU_{};
-    D3D12_CPU_DESCRIPTOR_HANDLE particleUavHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE particleUavHandleGPU_{};
+  // デスクリプタハンドル
+  D3D12_CPU_DESCRIPTOR_HANDLE voxelSrvHandleCPU_{};
+  D3D12_GPU_DESCRIPTOR_HANDLE voxelSrvHandleGPU_{};
+  D3D12_CPU_DESCRIPTOR_HANDLE particleSrvHandleCPU_{};
+  D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandleGPU_{};
+  D3D12_CPU_DESCRIPTOR_HANDLE particleUavHandleCPU_{};
+  D3D12_GPU_DESCRIPTOR_HANDLE particleUavHandleGPU_{};
 
-    // PSO
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> initializePSO_;
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> updatePSO_;
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> drawPSO_;
+  // メッシュビュー
+  D3D12_VERTEX_BUFFER_VIEW cubeVertexBufferView_{};
+  D3D12_INDEX_BUFFER_VIEW cubeIndexBufferView_{};
+  uint32_t cubeIndexCount_ = 0;
 
-    VoxelEmitter emitterData_{};
-    VoxelEmitter* mappedEmitterData_ = nullptr;
-    PerView* mappedPerViewData_ = nullptr;
+  // PSO
+  Microsoft::WRL::ComPtr<ID3D12PipelineState> initializePSO_;
+  Microsoft::WRL::ComPtr<ID3D12PipelineState> updatePSO_;
+  Microsoft::WRL::ComPtr<ID3D12PipelineState> emitPSO_;
+  Microsoft::WRL::ComPtr<ID3D12PipelineState> drawPSO_;
 
-    uint32_t voxelCount_ = 0;
-    bool isEmitting_ = false;
+  VoxelEmitter emitterData_{};
+  VoxelEmitter *mappedEmitterData_ = nullptr;
+  PerView *mappedPerViewData_ = nullptr;
+  struct PerFrame { float time; float deltaTime; };
+  PerFrame *mappedPerFrameData_ = nullptr;
+  PerFrame perFrameData_{};
 
-    static IrufemiEngine* engine_;
+  uint32_t voxelCount_ = 0;
+  bool isEmitting_ = false;
+
+  static IrufemiEngine *engine_;
 };
-

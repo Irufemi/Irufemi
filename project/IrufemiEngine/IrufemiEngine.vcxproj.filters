@@ -629,6 +629,9 @@
     <ClInclude Include="Renderer\VoxelParticle\VoxelParticleSystem.h">
       <Filter>Renderer\VoxelParticle</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Core\Type\PerView.h">
+      <Filter>Engine\Core\Type</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Object2D.hlsli">
@@ -751,9 +754,6 @@
       <Filter>Engine\Graphics\Shaders</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\VoxelParticle.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\VoxelParticle.GS.hlsl">
       <Filter>Engine\Graphics\Shaders</Filter>
     </FxCompile>
   </ItemGroup>

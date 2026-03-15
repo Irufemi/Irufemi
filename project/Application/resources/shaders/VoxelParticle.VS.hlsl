@@ -1,32 +1,46 @@
 #include "VoxelParticle.hlsli"
 
-struct VSOutput
+// 頂点シェーダーの入力
+struct VSInput
 {
-	float4 position : SV_POSITION;
-	float4 color : COLOR;
-	float size : PSIZE;
+	float4 position : POSITION0;
+	float2 texcoord : TEXCOORD0;
+	float3 normal : NORMAL0;
 };
 
+// パーティクルごとのデータ
 StructuredBuffer<VoxelParticle> gParticles : register(t0);
+ConstantBuffer<PerView> gPerView : register(b0);
 
-VSOutput main(uint vertexID : SV_VertexID)
+VertexShaderOutput main(VSInput input, uint instanceID : SV_InstanceID)
 {
-	VSOutput output;
-	VoxelParticle particle = gParticles[vertexID];
+	VertexShaderOutput output;
+	VoxelParticle particle = gParticles[instanceID];
 
-    // アクティブなパーティクルのみ描画
-	if (particle.isActive == 0 || particle.life <= 0.0f)
+	// 削除した (死んだパーティクルは PS の color.a <= 0 で discard される)
+	// 初期状態(isActive==0)でも、元の形状を描画する必要があるためカリングしない。
+
+    // ワールド行列を作成
+    // ここでは単純な平行移動のみ
+	float4x4 worldMatrix =
 	{
-		output.position = float4(0.0, 0.0, 0.0, 0.0); // 画面外に飛ばす
-		output.color = float4(0.0, 0.0, 0.0, 0.0);
-		output.size = 0.0;
-	}
-	else
-	{
-		output.position = float4(particle.position, 1.0f);
-		output.color = particle.color;
-		output.size = particle.size;
-	}
+		1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        particle.position.x, particle.position.y, particle.position.z, 1
+	};
+
+    // 位置変換
+	float4 worldPos = mul(input.position, worldMatrix);
+	output.position = mul(worldPos, gPerView.viewProjection);
+	output.worldPosition = worldPos.xyz;
+
+    // 法線変換（パーティクル固有の法線を渡す）
+	output.normal = particle.normal;
+    
+    // UVと色
+	output.texcoord = input.texcoord;
+	output.color = particle.color;
 
 	return output;
 }

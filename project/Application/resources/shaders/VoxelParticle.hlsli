@@ -1,42 +1,52 @@
-#ifndef VOXEL_PARTICLE_HLSLI
-#define VOXEL_PARTICLE_HLSLI
+#pragma once
 
-// CPU側のVoxel構造体と対応
+// C++側のVoxel構造体と一致させる
 struct Voxel
 {
-	float3 position; // 初期位置 (AABB Minからのオフセット)
-	float4 color;
+	float3 position;
 	float3 normal;
+	float4 color;
+	float2 uv;
 };
 
-// GPU上で更新されるパーティクルごとのデータ
+// C++側のVoxelParticle構造体と一致させる
 struct VoxelParticle
 {
 	float3 position;
-	float3 velocity;
-	float4 color;
 	float life;
+	float3 velocity;
 	float size;
-	uint isActive; // 0:非アクティブ, 1:アクティブ
+	float4 color;
+	float3 normal;
+	uint isActive;
 };
 
-// エフェクト全体を制御する定数バッファ
+// C++側のVoxelEmitter構造体と一致させる
 struct VoxelEmitter
 {
-	float3 emitPosition; // エフェクトの発生基点
-	float time; // エフェクト開始からの経過時間
-	float lifeTime; // パーティクルの最大寿命
-	float gravity; // 重力加速度
-	uint emit; // 射出トリガー (0以外で射出)
-	float dispersion; // 爆発の散開係数
-	float convergence; // 収束係数
+	float3 emitPosition;
+	float time;
+	float lifeTime;
+	float gravity;
+	uint emit;
+	float dispersion;
+	float convergence;
+	float pad;
 };
 
+// C++側のPerView構造体と一致させる
 struct PerView
 {
 	float4x4 viewProjection;
 	float4x4 billboard;
 };
 
-
-#endif // VOXEL_PARTICLE_HLSLI
+// 追加: 頂点シェーダー出力構造体
+struct VertexShaderOutput
+{
+	float4 position : SV_POSITION;
+	float2 texcoord : TEXCOORD0;
+	float3 normal : NORMAL0;
+	float3 worldPosition : POSITION0;
+	float4 color : COLOR0;
+};

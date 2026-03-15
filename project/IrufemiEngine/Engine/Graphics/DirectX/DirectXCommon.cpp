@@ -38,12 +38,9 @@ void DirectXCommon::Finalize() {
     }
 
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
-    voxelParticlePSBlob_.Reset();
-    voxelParticleGSBlob_.Reset();
-    voxelParticleVSBlob_.Reset();
     voxelParticleUpdatePSO_.Reset();
-    voxelParticleInitializePSO_.Reset();
-    gpuParticleEmitPSO_.Reset();
+    voxelParticleEmitPSO_.Reset();
+    voxelParticleUpdatePSO_.Reset();
     gpuParticleUpdatePSO_.Reset();
     gpuParticleInitializePSO_.Reset();
     skinningComputePSO_.Reset();
@@ -719,16 +716,16 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> voxelParticleInitializeCSBlob = CompileShader(L"resources/shaders/InitializeVoxel.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(voxelParticleInitializeCSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> voxelParticleEmitCSBlob = CompileShader(L"resources/shaders/EmitVoxel.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(voxelParticleEmitCSBlob != nullptr);
+
     Microsoft::WRL::ComPtr<IDxcBlob> voxelParticleUpdateCSBlob = CompileShader(L"resources/shaders/UpdateVoxel.CS.hlsl", L"cs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(voxelParticleUpdateCSBlob != nullptr);
 
-    voxelParticleVSBlob_ = CompileShader(L"resources/shaders/VoxelParticle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    Microsoft::WRL::ComPtr<IDxcBlob> voxelParticleVSBlob_ = CompileShader(L"resources/shaders/VoxelParticle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(voxelParticleVSBlob_ != nullptr);
 
-    voxelParticleGSBlob_ = CompileShader(L"resources/shaders/VoxelParticle.GS.hlsl", L"gs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
-    assert(voxelParticleGSBlob_ != nullptr);
-
-    voxelParticlePSBlob_ = CompileShader(L"resources/shaders/VoxelParticle.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    Microsoft::WRL::ComPtr<IDxcBlob> voxelParticlePSBlob_ = CompileShader(L"resources/shaders/VoxelParticle.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(voxelParticlePSBlob_ != nullptr);
 
 
@@ -797,7 +794,6 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     PSOManager::ShaderSet voxelParticleShaders{
         voxelParticleVSBlob_,
         voxelParticlePSBlob_,
-        voxelParticleGSBlob_
     };
 
     // 入力レイアウトは既存の inputLayoutDesc
@@ -850,8 +846,13 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&voxelParticleInitializePSO_));
     assert(SUCCEEDED(hr));
 
+    computePsoDesc.CS = { voxelParticleEmitCSBlob->GetBufferPointer(), voxelParticleEmitCSBlob->GetBufferSize() };
+    hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&voxelParticleEmitPSO_));
+    assert(SUCCEEDED(hr));
+
     computePsoDesc.CS = { voxelParticleUpdateCSBlob->GetBufferPointer(), voxelParticleUpdateCSBlob->GetBufferSize() };
     hr = device_->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&voxelParticleUpdatePSO_));
+    assert(SUCCEEDED(hr));
     assert(SUCCEEDED(hr));
 
 
@@ -880,6 +881,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (gpuParticleVSBlob) { gpuParticleVSBlob.Reset(); }
     if (gpuParticlePSBlob) { gpuParticlePSBlob.Reset(); }
     if (voxelParticleInitializeCSBlob) { voxelParticleInitializeCSBlob.Reset(); }
+    // --- VoxelParticle Emit ---
+    if (voxelParticleEmitCSBlob) { voxelParticleEmitCSBlob.Reset(); }
+    // --- VoxelParticle Update ---
     if (voxelParticleUpdateCSBlob) { voxelParticleUpdateCSBlob.Reset(); }
 
 

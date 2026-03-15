@@ -4,6 +4,7 @@
 #include <wrl.h>
 #include <unordered_map>
 #include <cstdint>
+#include <string>
 #include <vector>
 #include "Engine/Core/Type/BlendMode.h"
 
@@ -87,6 +88,7 @@ private:
     D3D12_INPUT_LAYOUT_DESC inputLayout_{};
     // 要素配列を自前で所有(Initialize 時に深いコピー)
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements_;
+    std::vector<std::string> semanticNames_;
     DXGI_FORMAT rtvFormat_{ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB };
     DXGI_FORMAT dsvFormat_{ DXGI_FORMAT_D24_UNORM_S8_UINT };
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_{ D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE };
@@ -116,7 +118,8 @@ private:
         const ShaderSet& shaders,
         const D3D12_BLEND_DESC& blendDesc,
         const D3D12_DEPTH_STENCIL_DESC& depthDesc,
-        CullMode cull) const;
+        CullMode cull,
+        bool useNullInputLayout = false) const;
 
     // 追加：トポロジ指定版(ByGeometryShader 専用で使用)
     Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSOWithTopology(

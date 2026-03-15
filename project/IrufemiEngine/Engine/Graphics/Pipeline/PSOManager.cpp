@@ -34,6 +34,17 @@ void PSOManager::Initialize(
     // ★ディープコピー：要素配列を所有し、inputLayout_ には自前のポインタを設定
     inputElements_.assign(inputLayout.pInputElementDescs,
         inputLayout.pInputElementDescs + inputLayout.NumElements);
+    
+    // SemanticName の文字列実体もコピーして保持する必要がある
+    semanticNames_.clear();
+    semanticNames_.reserve(inputElements_.size());
+    for (auto& elem : inputElements_) {
+        // C文字列をコピーして保持
+        semanticNames_.push_back(std::string(elem.SemanticName));
+        // コピーした文字列のポインタをおきかえる
+        elem.SemanticName = semanticNames_.back().c_str();
+    }
+
     inputLayout_.pInputElementDescs = inputElements_.data();
     inputLayout_.NumElements = static_cast<UINT>(inputElements_.size());
     rtvFormat_ = rtvFormat; // 既存の RTV 形式
@@ -273,8 +284,7 @@ ID3D12PipelineState* PSOManager::GetVoxelParticle(BlendMode blend, DepthWrite de
 {
     const bool hasVS = (voxelParticleShaders_.vsBlob && voxelParticleShaders_.vsBlob->GetBufferPointer());
     const bool hasPS = (voxelParticleShaders_.psBlob && voxelParticleShaders_.psBlob->GetBufferPointer());
-    const bool hasGS = (voxelParticleShaders_.gsBlob && voxelParticleShaders_.gsBlob->GetBufferPointer());
-    const ShaderSet& set = (hasVS && hasPS && hasGS) ? voxelParticleShaders_ : objectShaders_;
+    const ShaderSet& set = (hasVS && hasPS) ? voxelParticleShaders_ : objectShaders_;
 
     Key key{ Hash(set, blend, depth, cull) };
     if (auto it = cache_.find(key); it != cache_.end()) { return it->second.Get(); }
@@ -282,8 +292,8 @@ ID3D12PipelineState* PSOManager::GetVoxelParticle(BlendMode blend, DepthWrite de
     D3D12_BLEND_DESC bd = MakeBlend(blend);
     D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
 
-    // VoxelParticleはPOINTトポロジを使用
-    auto pso = CreatePSOWithTopology(set, bd, dd, D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, cull);
+    // VoxelParticleはTRIANGLEトポロジでインスタンシング描画
+    auto pso = CreatePSO(set, bd, dd, cull, true); // 第5引数に true を追加
     if (!pso) { return nullptr; }
     cache_[key] = pso;
     return pso.Get();
@@ -296,7 +306,8 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSO(
     const ShaderSet& shaders,
     const D3D12_BLEND_DESC& blendDesc,
     const D3D12_DEPTH_STENCIL_DESC& depthDesc,
-    CullMode cull) const
+    CullMode cull,
+    bool useNullInputLayout) const
 {
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();
@@ -343,13 +354,7 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSOWithTopology(
 {
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();
-    // VoxelParticleは頂点入力がないため、InputLayoutを無効化
-    if (topology == D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT) {
-        desc.InputLayout = { nullptr, 0 };
-    }
-    else {
-        desc.InputLayout = inputLayout_;
-    }
+    desc.InputLayout = inputLayout_;
     desc.VS = { shaders.vsBlob->GetBufferPointer(), shaders.vsBlob->GetBufferSize() };
     desc.PS = { shaders.psBlob->GetBufferPointer(), shaders.psBlob->GetBufferSize() };
     if (shaders.gsBlob) {
