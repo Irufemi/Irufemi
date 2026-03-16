@@ -181,8 +181,9 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</WholeProgramOptimization>
     </ClCompile>
+    <ClCompile Include="scene\GameOver\GameOverScene.cpp" />
     <ClCompile Include="scene\inGame\GameScene.cpp" />
-    <ClCompile Include="scene\result\ResultScene.cpp" />
+    <ClCompile Include="scene\Clear\ClearScene.cpp" />
     <ClCompile Include="scene\stageSelect\SelectScene.cpp" />
     <ClCompile Include="scene\title\TitleScene.cpp" />
   </ItemGroup>
@@ -203,8 +204,9 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\EnemyBeam.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
+    <ClInclude Include="scene\GameOver\GameOverScene.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
-    <ClInclude Include="scene\result\ResultScene.h" />
+    <ClInclude Include="scene\Clear\ClearScene.h" />
     <ClInclude Include="scene\stageSelect\SelectScene.h" />
     <ClInclude Include="scene\title\TitleScene.h" />
   </ItemGroup>

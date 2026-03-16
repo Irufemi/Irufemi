@@ -18,7 +18,7 @@ struct AreaLight;
  *
  * ゲームの結果に応じてUIを表示し、入力に応じてステージ選択シーンへ戻ります。
  */
-class ResultScene : public IScene {
+class GameOverScene : public IScene {
 public: // メンバ関数(ゲーム)
 
 public: // メンバ関数(システム)

@@ -1,4 +1,4 @@
-#include "ResultScene.h"
+#include "GameOverScene.h"
 
 #include "Framework/SceneManager.h"
 
@@ -12,11 +12,11 @@
 #include "Graphics/Data/DirectionalLight.h"
 #include "Graphics/Data/AreaLight.h"
 
-ResultScene::~ResultScene() {
+GameOverScene::~GameOverScene() {
 
 }
 
-void ResultScene::Initialize(IrufemiEngine* engine) {
+void GameOverScene::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 
     // カメラ(2D 正射影)
@@ -58,13 +58,13 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
 
 }
 
-void ResultScene::Update() {
+void GameOverScene::Update() {
 
 #if defined USE_IMGUI
 
-    ImGui::Begin("ResultScene");
+    ImGui::Begin("GameOverScene");
 
-    if (ImGui::BeginTabBar("ResultSceneTabs")) {
+    if (ImGui::BeginTabBar("GameOverSceneTabs")) {
 
         DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
@@ -139,7 +139,7 @@ void ResultScene::Update() {
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
-void ResultScene::Draw() {
+void GameOverScene::Draw() {
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
