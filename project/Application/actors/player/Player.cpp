@@ -1,5 +1,6 @@
 #include "Player.h"
 
+#include "Framework/SceneManager.h" // ★追加：シーン遷移用
 #include "camera/Camera.h"
 #include <Windows.h>
 #include <cmath>
@@ -65,7 +66,7 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     skillDurationTimer_ = 0;
     skillCooldownTimer_ = 0;
     karakuriChargeTimer_ = 0;
-    karakuriActiveTimer_ = 0; // ★追加
+    karakuriActiveTimer_ = 0;
     isKarakuriCharged_ = false;
 
     // 近接攻撃判定の初期化
@@ -155,7 +156,6 @@ void Player::Update() {
                 ImGui::Text("Skill Cooldown: %d / %d", skillCooldownTimer_, kSkillCooldownTime);
             }
 
-            // ★修正箇所：界王拳発動中かどうかで表示を変える
             if (isKarakuriCharged_) {
                 ImGui::Text("Karakuri State: MAX (Kaioken) - Time Left: %d", karakuriActiveTimer_);
             } else {
@@ -184,6 +184,16 @@ void Player::Update() {
         float sensitivityMult = mouseSensitivity_ * mouseSensitivityMultiplier_ * 0.001f;
 
         rotate_.y += delta.x * sensitivityMult;
+
+        // ★追加：横の振り向きを360度ループさせて、何周でも回れるようにする
+        const float twoPi = 2.0f * 3.14159265f;
+        while (rotate_.y > twoPi) {
+            rotate_.y -= twoPi;
+        }
+        while (rotate_.y < -twoPi) {
+            rotate_.y += twoPi;
+        }
+
         cameraPitch_ += delta.y * sensitivityMult;
 
         if (viewMode_ == ViewMode::kThirdPerson) {
@@ -426,6 +436,12 @@ void Player::ApplyDamage(int damage) {
     if (hp_ <= 0) {
         hp_ = 0;
         isDead_ = true;
+
+        // ★追加：死亡時にゲームオーバーシーンへ遷移
+        if (engine_ && engine_->GetSceneManager()) {
+            engine_->GetSceneManager()->Request("GameOver"); // ※実際のシーン登録名に合わせて変更してください
+        }
+
     } else {
         invincibleTimer_ = 60;
     }
@@ -582,11 +598,10 @@ void Player::HandleSkill() {
         skillCooldownTimer_--;
     }
 
-    // ★追加箇所：界王拳状態の持続時間（20秒）のカウントダウン
     if (isKarakuriCharged_) {
         karakuriActiveTimer_--;
         if (karakuriActiveTimer_ <= 0) {
-            isKarakuriCharged_ = false; // 20秒経ったら通常状態に戻る
+            isKarakuriCharged_ = false;
             OutputDebugStringA("Karakuri Charge Ended.\n");
         }
     }
@@ -597,7 +612,7 @@ void Player::HandleSkill() {
             if (karakuriChargeTimer_ >= kKarakuriChargeTime) {
                 isKarakuriCharged_ = true;
                 karakuriChargeTimer_ = 0;
-                karakuriActiveTimer_ = kKarakuriActiveTime; // ★追加：持続時間をセット
+                karakuriActiveTimer_ = kKarakuriActiveTime;
             }
         }
     } else {
@@ -614,8 +629,6 @@ void Player::HandleSkill() {
         if (skillDurationTimer_ <= 0 && skillCooldownTimer_ <= 0) {
             if (isKarakuriCharged_) {
                 FireMissileSkill();
-                // ★削除箇所：ここで false にしていた処理を消し、タイマー終了まで持続するようにしました。
-                // isKarakuriCharged_ = false; 
                 skillDurationTimer_ = 120;
             } else {
                 StartMachineGunSkill();
