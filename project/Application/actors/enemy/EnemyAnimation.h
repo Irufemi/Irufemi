@@ -48,11 +48,11 @@ private:
 	float phaseOffset_ = 0.6f;
 
 	// --- ビーム攻撃：フェーズ時間設定 (秒) ---
-	float chargeTime_ = 2.0f;       // チャージ（追尾）
-	float anticipationTime_ = 0.5f; // 溜め（静止）
-	float fireTime_ = 1.2f;         // ビーム発射
-	float stunTime_ = 0.8f;         // 撃ち終わりの硬直（ここで姿勢を戻す）
-	float recoveryTime_ = 2.0f;     // 一呼吸（ガクッと力が抜ける）
+	float chargeTime_ = 3.0f;       // チャージ（追尾）
+	float anticipationTime_ = 1.2f; // 溜め（静止）
+	float fireTime_ = 2.5f;         // ビーム発射
+	float stunTime_ = 1.0f;         // 撃ち終わりの硬直（ここで姿勢を戻す）
+	float recoveryTime_ = 1.0f;     // 一呼吸（ガクッと力が抜ける）
 
 	// --- ビーム攻撃：演出パラメータ ---
 	float beamRotateSpeed_ = 0.1f;
