@@ -50,6 +50,8 @@
 #include "Renderer/Particle/ParticleSystem.h"
 // ParticleGPU
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
+// VoxelParticle
+#include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 // Region
 #include "Renderer/Region/Region.h"
 #include "Renderer/Region/Primitive/SphereRegion.h"

@@ -25,7 +25,8 @@ void PSOManager::Initialize(
     ShaderSet lineInstancedShaders,
     ShaderSet skinningShaders,
     ShaderSet skyboxShaders,
-    ShaderSet gpuParticleShaders
+    ShaderSet gpuParticleShaders,
+    ShaderSet voxelParticleShaders
 )
 {
     device_ = device;
@@ -33,6 +34,17 @@ void PSOManager::Initialize(
     // ★ディープコピー：要素配列を所有し、inputLayout_ には自前のポインタを設定
     inputElements_.assign(inputLayout.pInputElementDescs,
         inputLayout.pInputElementDescs + inputLayout.NumElements);
+    
+    // SemanticName の文字列実体もコピーして保持する必要がある
+    semanticNames_.clear();
+    semanticNames_.reserve(inputElements_.size());
+    for (auto& elem : inputElements_) {
+        // C文字列をコピーして保持
+        semanticNames_.push_back(std::string(elem.SemanticName));
+        // コピーした文字列のポインタをおきかえる
+        elem.SemanticName = semanticNames_.back().c_str();
+    }
+
     inputLayout_.pInputElementDescs = inputElements_.data();
     inputLayout_.NumElements = static_cast<UINT>(inputElements_.size());
     rtvFormat_ = rtvFormat; // 既存の RTV 形式
@@ -48,6 +60,7 @@ void PSOManager::Initialize(
     skinningShaders_ = skinningShaders;
     skyboxShaders_ = skyboxShaders;
     gpuParticleShaders_ = gpuParticleShaders;
+    voxelParticleShaders_ = voxelParticleShaders;
 
     cache_.clear();
 }
@@ -267,6 +280,25 @@ ID3D12PipelineState* PSOManager::GetGpuParticle(BlendMode blend, DepthWrite dept
     return pso.Get();
 }
 
+ID3D12PipelineState* PSOManager::GetVoxelParticle(BlendMode blend, DepthWrite depth, CullMode cull)
+{
+    const bool hasVS = (voxelParticleShaders_.vsBlob && voxelParticleShaders_.vsBlob->GetBufferPointer());
+    const bool hasPS = (voxelParticleShaders_.psBlob && voxelParticleShaders_.psBlob->GetBufferPointer());
+    const ShaderSet& set = (hasVS && hasPS) ? voxelParticleShaders_ : objectShaders_;
+
+    Key key{ Hash(set, blend, depth, cull) };
+    if (auto it = cache_.find(key); it != cache_.end()) { return it->second.Get(); }
+
+    D3D12_BLEND_DESC bd = MakeBlend(blend);
+    D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
+
+    // VoxelParticleはTRIANGLEトポロジでインスタンシング描画
+    auto pso = CreatePSO(set, bd, dd, cull, true); // 第5引数に true を追加
+    if (!pso) { return nullptr; }
+    cache_[key] = pso;
+    return pso.Get();
+}
+
 void PSOManager::ClearCache() { cache_.clear(); }
 
 // PSOManager.cpp に追加
@@ -274,7 +306,8 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSO(
     const ShaderSet& shaders,
     const D3D12_BLEND_DESC& blendDesc,
     const D3D12_DEPTH_STENCIL_DESC& depthDesc,
-    CullMode cull) const
+    CullMode cull,
+    bool useNullInputLayout) const
 {
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();

@@ -221,7 +221,7 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 ClipCursor(nullptr);
             }
         }
-        break;
+        return 0;
 #endif
     case WM_MOUSEWHEEL:
         if (inputManager_) {

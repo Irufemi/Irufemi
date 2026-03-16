@@ -13,7 +13,8 @@
 #include "scene/title/TitleScene.h"
 #include "scene/stageSelect/SelectScene.h"
 #include "scene/inGame/GameScene.h"
-#include "scene/result/ResultScene.h"
+#include "scene/Clear/ClearScene.h"
+#include "scene/GameOver/GameOverScene.h"
 #if defined(_DEBUG) || defined(DEVELOPMENT)
 #include "scene/debug/DebugScene.h"
 #endif
@@ -34,9 +35,10 @@ namespace {
     // --- シーン登録処理 ---
     void RegisterScenes(SceneManager& sm) {
         sm.Register("Title", [] { return std::make_unique<TitleScene>(); });
-        sm.Register("Select", [] { return std::make_unique<SelectScene>(); });
+        //sm.Register("Select", [] { return std::make_unique<SelectScene>(); });
         sm.Register("InGame", [] { return std::make_unique<GameScene>(); });
-        sm.Register("Result", [] { return std::make_unique<ResultScene>(); });
+        sm.Register("Clear", [] { return std::make_unique<ClearScene>(); });
+        sm.Register("GameOver", [] { return std::make_unique<GameOverScene>(); });
 #if defined(_DEBUG) || defined(DEVELOPMENT)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif

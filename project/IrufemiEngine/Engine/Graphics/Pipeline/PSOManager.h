@@ -4,6 +4,7 @@
 #include <wrl.h>
 #include <unordered_map>
 #include <cstdint>
+#include <string>
 #include <vector>
 #include "Engine/Core/Type/BlendMode.h"
 
@@ -46,7 +47,8 @@ public:
         ShaderSet lineInstancedShaders = {},
         ShaderSet skinningShaders = {},
         ShaderSet skyboxShaders = {},
-        ShaderSet gpuParticleShaders = {}
+        ShaderSet gpuParticleShaders = {},
+        ShaderSet voxelParticleShaders = {}
     );
 
     // 既存シェーダで取得(メッシュ/スプライト等)
@@ -73,6 +75,8 @@ public:
 
     ID3D12PipelineState* GetGpuParticle(BlendMode blend, DepthWrite depth, CullMode cull);
 
+    ID3D12PipelineState* GetVoxelParticle(BlendMode blend, DepthWrite depth, CullMode cull);
+
     void ClearCache();
 
 private:
@@ -84,6 +88,7 @@ private:
     D3D12_INPUT_LAYOUT_DESC inputLayout_{};
     // 要素配列を自前で所有(Initialize 時に深いコピー)
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements_;
+    std::vector<std::string> semanticNames_;
     DXGI_FORMAT rtvFormat_{ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB };
     DXGI_FORMAT dsvFormat_{ DXGI_FORMAT_D24_UNORM_S8_UINT };
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_{ D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE };
@@ -98,6 +103,7 @@ private:
     ShaderSet skinningShaders_{};
     ShaderSet skyboxShaders_{};
     ShaderSet gpuParticleShaders_{};
+    ShaderSet voxelParticleShaders_{};
 
     struct Key {
         uint64_t hash;
@@ -112,7 +118,8 @@ private:
         const ShaderSet& shaders,
         const D3D12_BLEND_DESC& blendDesc,
         const D3D12_DEPTH_STENCIL_DESC& depthDesc,
-        CullMode cull) const;
+        CullMode cull,
+        bool useNullInputLayout = false) const;
 
     // 追加：トポロジ指定版(ByGeometryShader 専用で使用)
     Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSOWithTopology(

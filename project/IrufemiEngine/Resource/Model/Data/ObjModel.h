@@ -6,7 +6,7 @@
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Renderer/VertexData.h"
 #include "ModelData.h"
-#include "Node.h"              // 追加: 階層構造を扱うため
+#include "Node.h"             
 #include "Engine/Core/Math/Geometry/Math.h"
 #include "Resource/Model/Data/JointWeightData.h"
 #include <string>
@@ -33,6 +33,7 @@ struct ObjMaterial {
     Matrix4x4 uvTransform = Math::MakeIdentity4x4();
 
     std::string textureFilePath = "";
+    std::string normalMapFilePath = "";
 };
 
 struct ObjMesh {

@@ -1,4 +1,4 @@
-#include "ResultScene.h"
+#include "GameOverScene.h"
 
 #include "Framework/SceneManager.h"
 
@@ -12,11 +12,11 @@
 #include "Graphics/Data/DirectionalLight.h"
 #include "Graphics/Data/AreaLight.h"
 
-ResultScene::~ResultScene() {
+GameOverScene::~GameOverScene() {
 
 }
 
-void ResultScene::Initialize(IrufemiEngine* engine) {
+void GameOverScene::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 
     // カメラ(2D 正射影)
@@ -56,15 +56,23 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
 
+    // 背景スプライトの初期化
+    backSprite_ = std::make_unique<Sprite>();
+    backSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+    backSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
+    backSprite_->SetPosition(0.0f, 0.0f);
+    backSprite_->SetColor(Vector4{ 228.0f / 255.0f,95.0f / 255.0f,130.0f / 255.0f,1.0f });
+    backSprite_->Update();
+
 }
 
-void ResultScene::Update() {
+void GameOverScene::Update() {
 
 #if defined USE_IMGUI
 
-    ImGui::Begin("ResultScene");
+    ImGui::Begin("GameOverScene");
 
-    if (ImGui::BeginTabBar("ResultSceneTabs")) {
+    if (ImGui::BeginTabBar("GameOverSceneTabs")) {
 
         DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
@@ -108,10 +116,13 @@ void ResultScene::Update() {
     // ↓ゲームの更新
     // =====
 
-    // 何かされていたらステージ選択へ
-    if (false) {
-        engine_->GetSceneManager()->Request("Select");
+    // Spaceキーが押されていたらステージ選択へ
+    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
+        engine_->GetSceneManager()->Request("Title");
     }
+
+    // 背景スプライトの更新
+    backSprite_->Update();
 
     // =====
     // ↑ゲームの更新
@@ -139,10 +150,13 @@ void ResultScene::Update() {
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
-void ResultScene::Draw() {
+void GameOverScene::Draw() {
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplySpritePSO();
+
+    // 背景スプライトの描画
+    backSprite_->Draw();
 
 }

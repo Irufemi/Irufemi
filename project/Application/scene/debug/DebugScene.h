@@ -77,6 +77,9 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
     bool isActiveGPUParticle_ = false;
 
+    std::unique_ptr<VoxelParticleSystem> voxelParticle_ = nullptr;
+    bool isActiveVoxelParticle_ = false;
+
     std::unique_ptr<EffectSystem> effect_ = nullptr;
     bool isActiveEffect_ = false;
 

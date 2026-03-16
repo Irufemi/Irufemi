@@ -1,4 +1,4 @@
-#include "TitleScene.h"
+#include "ClearScene.h"
 
 #include "Framework/SceneManager.h"
 
@@ -12,21 +12,20 @@
 #include "Graphics/Data/DirectionalLight.h"
 #include "Graphics/Data/AreaLight.h"
 
-// デストラクタ
-TitleScene::~TitleScene() = default;
+ClearScene::~ClearScene() {
 
-// 初期化
-void TitleScene::Initialize(IrufemiEngine* engine) {
+}
 
+void ClearScene::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 
+    // カメラ(2D 正射影)
     camera_ = std::make_unique<Camera>();
     camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
-    camera_->SetTranslate(Vector3{ 0.0f,0.0f,-10.0f });
-
-    // 重要：SetTranslate の後で行列を確実に更新しておく
+    camera_->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });
     camera_->UpdateMatrix();
 
+    // デバッグカメラの初期化を追加
     debugCamera_ = std::make_unique<DebugCamera>();
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode_ = false;
@@ -56,16 +55,24 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
+
+    // 背景スプライトの初期化
+    backSprite_ = std::make_unique<Sprite>();
+    backSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+    backSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
+    backSprite_->SetPosition(0.0f, 0.0f);
+    backSprite_->SetColor(Vector4{ 95.0f / 255.0f,205.0f / 255.0f,228.0f / 255.0f,1.0f });
+    backSprite_->Update();
+
 }
 
-// 更新
-void TitleScene::Update() {
-
+void ClearScene::Update() {
 
 #if defined USE_IMGUI
 
-    ImGui::Begin("TitleScene");
-    if (ImGui::BeginTabBar("TitleSceneTabs")) {
+    ImGui::Begin("ClearScene");
+
+    if (ImGui::BeginTabBar("ClearSceneTabs")) {
 
         DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 
@@ -99,8 +106,7 @@ void TitleScene::Update() {
         camera_->SetViewMatrix(dbgCam.GetViewMatrix());
         camera_->SetTranslate(dbgCam.GetTranslate());
         camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
-    }
-    else {
+    } else {
         // 通常カメラの更新
         camera_->Update("Camera");
     }
@@ -109,10 +115,13 @@ void TitleScene::Update() {
     // ↓ゲームの更新
     // =====
 
-    // SPACEキーを押したらシーン遷移をリクエスト
+    // Spaceキーが押されていたらステージ選択へ
     if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
-        engine_->GetSceneManager()->Request("InGame");
+        engine_->GetSceneManager()->Request("Title");
     }
+
+    // 背景スプライトの更新
+    backSprite_->Update();
 
     // =====
     // ↑ゲームの更新
@@ -140,6 +149,13 @@ void TitleScene::Update() {
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
-void TitleScene::Draw() {
+void ClearScene::Draw() {
+
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->ApplySpritePSO();
+
+    // 背景スプライトの描画
+    backSprite_->Draw();
 
 }
