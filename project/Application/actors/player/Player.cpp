@@ -76,8 +76,9 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     attackState_ = AttackState::kNone;
     chargeTimer_ = 0;
     currentChargeRate_ = 0.0f;
+    attackCollision_.center = {};
     attackCollision_.isActive = false;
-    attackCollision_.radius = 2.0f;
+    attackCollision_.radius = 1.0f;
 
     // --- プレイヤーステータスの初期化 ---
     hp_ = kMaxHp;

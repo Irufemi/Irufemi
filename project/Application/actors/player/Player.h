@@ -263,7 +263,7 @@ private:
     int chargeTimer_ = 0;            // ボタンを長押ししているフレーム数
     float currentChargeRate_ = 0.0f; // スイング時に保持するチャージ倍率
 
-    AttackCollision attackCollision_ = { {0.0f, 0.0f, 0.0f}, 4.0f, false };
+    AttackCollision attackCollision_;
     int attackActiveTimer_ = 0;
     const int kAttackDuration = 20;  // スイングにかかるフレーム数
 

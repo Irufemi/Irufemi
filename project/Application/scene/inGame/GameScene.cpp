@@ -203,7 +203,7 @@ void GameScene::Update() {
           // なら、部位がターゲットに向かって飛んできている（めり込み・連続ヒット防止）
           if (dot < 0.0f) {
             // 当たった部位のみにダメージを与える
-            target->ApplyDamage(100);
+            target->ApplyDamage(500);
 
             // 反射ベクトル: R = V - 2(V・N)N
             Vector3 reflect =
