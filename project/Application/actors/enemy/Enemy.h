@@ -63,6 +63,8 @@ public:
   HeadMid *GetHeadMid() { return headMid_.get(); }
   HeadRight *GetHeadRight() { return headRight_.get(); }
 
+  bool GetIsActive() const { return isActive_; }
+
 private:
   // 各パーツ
   std::array<std::unique_ptr<Body>, 3> bodies_;
@@ -105,4 +107,5 @@ private:
 #endif
 
   bool isActive_ = false;
+
 };

@@ -65,7 +65,7 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   isActive_ = true;
 }
 
-void Enemy::Update(Player* player) {
+void Enemy::Update(Player *player) {
   if (!isActive_)
     return;
 
@@ -80,21 +80,6 @@ void Enemy::Update(Player* player) {
   }
 #endif
 
-  /* --- このブロックを削除またはコメントアウト ---
-  if (beam_) {
-    Matrix4x4 headMatrix = GetHeadMidWorldMatrix();
-    Vector3 headPos = { headMatrix.m[3][0], headMatrix.m[3][1], headMatrix.m[3][2] };
-    Vector3 playerPos = player->GetTranslate();
-    playerPos.y += 1.0f;
-
-    // ここで毎フレーム playerPos を使っているのが追尾の原因
-    beam_->Update(headPos, playerPos);
-
-    if (beam_->IsExpired()) {
-      beam_.reset();
-    }
-  }
-------------------------------------------- */
   if (state_ != EnemyState::Attack_Beam && beam_) {
     beam_.reset();
   }
@@ -135,13 +120,13 @@ void Enemy::Update(Player* player) {
       Vector3 worldPosWithOffset = Math::Transform(
           Math::Add(bodyLocalTransforms_[i].translate, bodyOffsets_[i]),
           globalMat);
-      Vector3 worldPosWithoutOffset = Math::Transform(
-          bodyLocalTransforms_[i].translate, globalMat);
+      Vector3 worldPosWithoutOffset =
+          Math::Transform(bodyLocalTransforms_[i].translate, globalMat);
       bodies_[i]->SetTransform(
           {{globalTransform_.scale.x, globalTransform_.scale.y,
-                     globalTransform_.scale.z},
-                    globalTransform_.rotate,
-                    worldPosWithoutOffset},
+            globalTransform_.scale.z},
+           globalTransform_.rotate,
+           worldPosWithoutOffset},
           &worldPosWithOffset);
       bodies_[i]->Update();
     }
@@ -154,9 +139,9 @@ void Enemy::Update(Player* player) {
           Math::Transform(Math::Add(localT.translate, offset), globalMat);
       Vector3 worldPosWithoutOffset =
           Math::Transform(localT.translate, globalMat);
-      head->SetTransform(
-          {globalTransform_.scale, globalTransform_.rotate, worldPosWithoutOffset},
-          &worldPosWithOffset);
+      head->SetTransform({globalTransform_.scale, globalTransform_.rotate,
+                          worldPosWithoutOffset},
+                         &worldPosWithOffset);
       head->Update();
     }
   };
@@ -195,10 +180,24 @@ void Enemy::Update(Player* player) {
         bodies_[i]->SetHP(hp);
     }
   }
-  ImGui::End();
-#endif
 
-#ifdef USE_IMGUI
+  if (headLeft_) {
+    int hp = headLeft_->GetHP();
+    if (ImGui::SliderInt("Head Left HP", &hp, 0, 10000))
+      headLeft_->SetHP(hp);
+  }
+  if (headMid_) {
+    int hp = headMid_->GetHP();
+    if (ImGui::SliderInt("Head Mid HP", &hp, 0, 10000))
+      headMid_->SetHP(hp);
+  }
+  if (headRight_) {
+    int hp = headRight_->GetHP();
+    if (ImGui::SliderInt("Head Right HP", &hp, 0, 10000))
+      headRight_->SetHP(hp);
+  }
+  ImGui::End();
+
   if (lineOBB_) {
     lineOBB_->ClearInstances();
     if (isDebugDrawOBB_) {
@@ -247,6 +246,21 @@ void Enemy::Update(Player* player) {
     lineOBB_->Update();
   }
 #endif
+
+  // enemyが完全に死んでいるかの判定
+  if (headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
+      headRight_->GetHP() <= 0) {
+    bool allBodiesDead = true;
+    for (int i = 0; i < 3; ++i) {
+      if (bodies_[i] && bodies_[i]->GetHP() > 0) {
+        allBodiesDead = false;
+        break;
+      }
+    }
+    if (allBodiesDead) {
+      isActive_ = false; // 完全に消滅したら非アクティブにする
+    }
+  }
 }
 
 void Enemy::Draw() {
@@ -264,7 +278,7 @@ void Enemy::Draw() {
   if (headRight_ && !headRight_->IsCompletelyDead())
     headRight_->Draw();
 
-   // ビームを描画
+  // ビームを描画
   if (beam_)
     beam_->Draw();
 
@@ -286,20 +300,19 @@ void Enemy::FireBeam() {
 }
 
 Matrix4x4 Enemy::GetHeadMidWorldMatrix() const {
-    // globalTransform_.rotate には EnemyAnimation で計算した 
-    // 「プレイヤーを向くための X回転とY回転」が入っている必要があります
-    Matrix4x4 globalMat = Math::MakeAffineMatrix(
-        globalTransform_.scale,
-        globalTransform_.rotate, // ここに X(上下) と Y(左右) が入っていればOK
-        globalTransform_.translate
-    );
+  // globalTransform_.rotate には EnemyAnimation で計算した
+  // 「プレイヤーを向くための X回転とY回転」が入っている必要があります
+  Matrix4x4 globalMat = Math::MakeAffineMatrix(
+      globalTransform_.scale,
+      globalTransform_.rotate, // ここに X(上下) と Y(左右) が入っていればOK
+      globalTransform_.translate);
 
-    Vector3 localPos = Math::Add(headMidLocalTransform_.translate, headMidOffset_);
+  Vector3 localPos =
+      Math::Add(headMidLocalTransform_.translate, headMidOffset_);
 
-    return Math::Multiply(
-        Math::MakeAffineMatrix({ 1,1,1 }, headMidLocalTransform_.rotate, localPos),
-        globalMat
-    );
+  return Math::Multiply(Math::MakeAffineMatrix(
+                            {1, 1, 1}, headMidLocalTransform_.rotate, localPos),
+                        globalMat);
 }
 
 OBB Enemy::GetOBB() const {
