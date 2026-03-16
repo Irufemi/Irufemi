@@ -585,7 +585,10 @@ void Player::HandleAttack() {
             attackCollision_.isActive = true;
             currentChargeRate_ = static_cast<float>(chargeTimer_) / 60.0f;
             if (currentChargeRate_ > 1.0f) currentChargeRate_ = 1.0f;
-            attackCollision_.radius = 2.0f + (2.0f * currentChargeRate_);
+
+            // 攻撃モデルのサイズ計算と同じベース値を使用して当たり判定を設定
+            float hammerSize = 0.8f + (currentChargeRate_ * 0.4f);
+            attackCollision_.radius = hammerSize;
         }
         break;
 
