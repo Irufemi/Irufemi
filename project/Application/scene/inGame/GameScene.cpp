@@ -37,14 +37,12 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
     debugMode_ = false;
 
-    // ★マウスの初期化（アクティブなウィンドウハンドルを取得して渡しています）
-    // ※もしエンジン側に engine_->GetWindowHandle() のような関数があればそちらに変更してください
-    mouse_ = std::make_unique<Mouse>();
-    mouse_->Initialize(GetActiveWindow());
+    // ★マウスはエンジン(InputManager)が管理している
+    // GameScene での初期化・保持は不要になりました
 
-    // プレイヤーの初期化（引数に mouse_.get() を追加）
+    // プレイヤーの初期化（エンジン側のポインタのみ渡す）
     player_ = std::make_unique<Player>();
-    player_->Initialize(engine_->GetInputManager(), camera_.get(), engine_, mouse_.get());
+    player_->Initialize(engine_->GetInputManager(), camera_.get(), engine_);
 
     boss_ = std::make_unique<Enemy>();
     boss_->Initialize(camera_.get(), engine_);
@@ -71,9 +69,7 @@ void GameScene::Update() {
   // ↓ゲームの更新
   // =====
 
-  if (mouse_) {
-    mouse_->Update();
-  }
+    // 独自のマウス更新は二重更新（デルタ値の消失）の原因になるため削除
 
   // プレイヤーの更新
   if (player_ && !debugMode_) {

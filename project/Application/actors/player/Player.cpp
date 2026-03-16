@@ -6,10 +6,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstdio> 
-#include "Math.h"
-#include "Engine/Platform/Input/Mouse.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 #include "Renderer/LineInstanced/LineClass.h"
-#include "actors/enemy/Enemy.h" 
+#include "../enemy/Enemy.h" 
 
 #ifdef USE_IMGUI
 #include <imgui.h> 
@@ -19,11 +18,10 @@
 Player::~Player() {
 }
 
-void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine, Mouse* mouse) {
+void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine) {
     input_ = input;
     camera_ = camera;
     engine_ = engine;
-    mouse_ = mouse;
 
     // --- モデルの生成と初期化 ---
     obj_ = std::make_unique<ObjClass>();
@@ -178,23 +176,13 @@ void Player::Update() {
 #endif
 
     // --- マウスによる視点操作 ---
-    if (isCameraControlEnabled_ && mouse_) {
-        Vector2 delta = mouse_->GetDelta();
+    if (isCameraControlEnabled_) {
+        Vector2 mouseDelta = input_->GetMouseDelta();
 
         float sensitivityMult = mouseSensitivity_ * mouseSensitivityMultiplier_ * 0.001f;
 
-        rotate_.y += delta.x * sensitivityMult;
-
-        // ★追加：横の振り向きを360度ループさせて、何周でも回れるようにする
-        const float twoPi = 2.0f * 3.14159265f;
-        while (rotate_.y > twoPi) {
-            rotate_.y -= twoPi;
-        }
-        while (rotate_.y < -twoPi) {
-            rotate_.y += twoPi;
-        }
-
-        cameraPitch_ += delta.y * sensitivityMult;
+        rotate_.y += mouseDelta.x * sensitivityMult;
+        cameraPitch_ += mouseDelta.y * sensitivityMult;
 
         if (viewMode_ == ViewMode::kThirdPerson) {
             // 正の値が見下ろし、負の値が見上げです。
@@ -502,12 +490,11 @@ void Player::HandleAttack() {
         return;
     }
 
-    bool isLButtonDown = false;
-    if (mouse_) isLButtonDown = mouse_->IsButtonDown(Mouse::Button::Left);
+    bool isLButtonDown = input_->IsMouseButtonDown(Mouse::Button::Left);
 
     switch (attackState_) {
     case AttackState::kNone:
-        if (mouse_ && mouse_->IsButtonPressed(Mouse::Button::Left)) {
+        if (input_->IsMouseButtonPressed(Mouse::Button::Left)) {
             attackState_ = AttackState::kCharging;
             chargeTimer_ = 0;
         }
@@ -625,7 +612,7 @@ void Player::HandleSkill() {
 
     if (!isCameraControlEnabled_) return;
 
-    if (mouse_ && mouse_->IsButtonPressed(Mouse::Button::Right)) {
+    if (input_->IsMouseButtonPressed(Mouse::Button::Right)) {
         if (skillDurationTimer_ <= 0 && skillCooldownTimer_ <= 0) {
             if (isKarakuriCharged_) {
                 FireMissileSkill();

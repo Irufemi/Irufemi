@@ -22,12 +22,10 @@ void DebugCamera::Update() {
     // ImGuiでの操作を先に反映させる
     camera_.Update("DebugCamera");
 
-    Mouse* mouse = input_->GetMouse();
+    bool isMiddleButtonDown = input_->IsMouseButtonDown(Mouse::Button::Middle);
     Keyboard* keyboard = input_->GetKeyboard();
-
-    bool isMiddleButtonDown = mouse->IsButtonDown(Mouse::Button::Middle);
     bool isShiftDown = keyboard->IsKeyDown(VK_LSHIFT) || keyboard->IsKeyDown(VK_RSHIFT);
-    Vector2 mouseDelta = mouse->GetDelta();
+    Vector2 mouseDelta = input_->GetMouseDelta();
 
     // Blenderライクな操作
     if (isMiddleButtonDown) {
@@ -53,7 +51,7 @@ void DebugCamera::Update() {
     }
 
     // ズーム操作 (マウスホイール)
-    float wheelDelta = mouse->GetWheelDelta();
+    float wheelDelta = input_->GetMouseWheelDelta();
     if (wheelDelta != 0.0f) {
         // --- デバッグコード追加 ---
         std::string dbgMsg = "[DebugCamera] GetWheelDelta: " + std::to_string(wheelDelta) + ", old distance: " + std::to_string(distance_) + "\n";

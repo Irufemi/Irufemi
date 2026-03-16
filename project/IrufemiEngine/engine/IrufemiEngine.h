@@ -1,17 +1,17 @@
 #pragma once
 
-#include "Graphics/DirectX/DirectXCommon.h"
-#include "Graphics/DirectX/D3DResourceLeakChecker.h"
-#include "Platform/Input/InputManager.h"
-#include "Platform/WindowsAPI/WinApp.h"
-#include "Manager/DrawManager.h"
-#include "Manager/DebugUI.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/D3DResourceLeakChecker.h"
+#include "Engine/Platform/Input/InputManager.h"
+#include "Engine/Platform/WindowsAPI/WinApp.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Manager/DebugUI.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Resource/Audio/AudioManager.h"
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Model/AnimationManager.h"
-#include "Core/Type/BlendMode.h"
-#include "Core/Utility/Log.h"
+#include "Engine/Core/Type/BlendMode.h"
+#include "Engine/Core/Utility/Log.h"
 #include "Framework/SceneManager.h"
 #include "Engine/Core/Math/Vector4.h"
 #include <memory>
@@ -138,6 +138,8 @@ public: // セッター
     // 追加: Vector4 版
     void SetClearColor(const Vector4& c) { clearColor_ = { c.x, c.y, c.z, c.w }; }
 
+    void SetCursorLocked(bool lock);
+
     // 状態からPSOを適用してBind(引数なしで使うやつ)
     void ApplyPSO();
     void ApplyParticlePSO();
@@ -194,7 +196,7 @@ private: // メンバ変数
     
     // ModelManager
     std::unique_ptr<ModelManager> modelManager_ = nullptr;
-
+ 
     // AnimationManager
     std::unique_ptr<AnimationManager> animationManager_ = nullptr;
 
@@ -214,4 +216,3 @@ private: // メンバ変数
     float deltaTime_ = 0.0f;
     float totalTime_ = 0.0f;
 };
-

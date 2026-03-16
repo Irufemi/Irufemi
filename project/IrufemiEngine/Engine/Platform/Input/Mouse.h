@@ -31,6 +31,9 @@ public:
     // WinAppからホイール差分を設定するためのセッター
     void SetWheelDelta(float delta) { wheelDelta_ = delta; }
 
+    // ロック状態の設定
+    void SetLocked(bool locked);
+
 private:
     HWND hwnd_ = nullptr;
     BYTE currentButtons_[3]{};
@@ -39,4 +42,5 @@ private:
     Vector2 prevPosition_{};
     Vector2 delta_{};
     float wheelDelta_ = 0.0f;
+    bool isLocked_ = true; // マウスを中央に固定するかどうか
 };

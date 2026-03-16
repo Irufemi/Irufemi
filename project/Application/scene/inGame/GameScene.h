@@ -36,7 +36,7 @@ private:
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
     bool debugMode_ = false;
 
-    std::unique_ptr<Mouse> mouse_ = nullptr;
+    // マウスは InputManager から取得するため削除
 
     // ゲームオブジェクト
     std::unique_ptr<Player> player_ = nullptr;

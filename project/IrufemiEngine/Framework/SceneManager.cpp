@@ -1,8 +1,9 @@
-#include "SceneManager.h"
-#include "IScene.h"
+#include "Framework/SceneManager.h"
+#include "Framework/IScene.h"
 #include "Engine/IrufemiEngine.h"
 #include <Windows.h> // VK_ESCAPE のためにインクルード
 #include "Engine/Platform/Input/InputManager.h" // InputManager をインクルード
+#include "Engine/Platform/Input/Mouse.h"
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {}
 
@@ -30,6 +31,7 @@ bool SceneManager::ChangeTo(const Key& next) {
     currentName_ = next;
     current_->Initialize(engine_);
     isPaused_ = false; // シーン切り替え時にポーズを解除
+    engine_->SetCursorLocked(true); // シーン開始時はマウスをロック
     return true;
 }
 
@@ -42,6 +44,9 @@ void SceneManager::Update() {
         InputManager* input = engine_->GetInputManager();
         if (input && (IScene::PressedVK(VK_ESCAPE) || input->StartPressed())) {
             TogglePause();
+            // ポーズ状態に合わせてマウスのロックを切り替え
+            // ポーズ中ならロック解除（マウス表示）、通常ならロック（非表示）
+            engine_->SetCursorLocked(!isPaused_);
         }
     }
 

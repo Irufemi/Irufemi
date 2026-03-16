@@ -1,12 +1,19 @@
-#include "WinApp.h"
+#include <string>
+#include <memory>
+#include <vector>
+#include <algorithm>
+
+#include "Engine/Platform/WindowsAPI/WinApp.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Engine/Platform/Input/Mouse.h"
 #include "Engine/Manager/DebugUI.h"
+
+#include <Windows.h>
 #include <DbgHelp.h>
 #include <strsafe.h>
-#include <string>
 
 #pragma comment(lib,"winmm.lib")
+#pragma comment(lib,"Dbghelp.lib")
 
 WinApp::~WinApp() {
     Finalize();
@@ -70,7 +77,6 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::w
         this					//オプション
     );
     if (!hwnd_) {
-        if (comInitialized_) { CoUninitialize(); comInitialized_ = false; }
         return false;
     }
 
@@ -88,57 +94,6 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::w
     clientWidth_ = cr.right - cr.left;
     clientHeight_ = cr.bottom - cr.top;
 
-    // ─────────────────────────────────────────────────────
-    // 推奨(WinApp集約の modern 版：後で差し替えるときの参考)
-    //  - WNDCLASSEXW/ RegisterClassExW
-    //  - static WinApp::WndProc + WM_NCCREATE で this 紐付け
-    //  - CreateWindowExW で lpParam に this を渡す
-    //  - 背景フラッシュ回避のため背景ブラシは nullptr 推奨
-    // ─────────────────────────────────────────────────────
-    //WNDCLASSEXW wcx{};
-    //wcx.cbSize = sizeof(wcx);
-    //wcx.style = CS_HREDRAW | CS_VREDRAW;
-    //wcx.lpfnWndProc = &WinApp::WndProc;
-    //wcx.hInstance = hInstance_;
-    //wcx.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    //wcx.hbrBackground = nullptr; // ちらつき回避
-    //wcx.lpszClassName = className_.c_str();
-    //if (!RegisterClassExW(&wcx)) {
-    //    if (GetLastError() != ERROR_CLASS_ALREADY_EXISTS) {
-    //        if (comInitialized_) { CoUninitialize(); comInitialized_ = false; }
-    //        return false;
-    //    }
-    //    didRegisterClass_ = false;
-    //} else {
-    //    didRegisterClass_ = true;
-    //}
-
-    //RECT rc{ 0, 0, width, height };
-    //AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-    //const int winW = rc.right - rc.left;
-    //const int winH = rc.bottom - rc.top;
-
-    //hwnd_ = CreateWindowExW(
-    //    0,
-    //    className_.c_str(),
-    //    windowTitle_.c_str(),
-    //    WS_OVERLAPPEDWINDOW,
-    //    CW_USEDEFAULT, CW_USEDEFAULT,
-    //    winW, winH,
-    //    nullptr, nullptr, hInstance_, this // ← lpParam に this
-    //);
-    //if (!hwnd_) {
-    //    if (comInitialized_) { CoUninitialize(); comInitialized_ = false; }
-    //    return false;
-    //}
-
-    //ShowWindow(hwnd_, SW_SHOW);
-    //// UpdateWindow(hwnd_); // 連続描画なら不要
-    //RECT cr2{};
-    //GetClientRect(hwnd_, &cr2);
-    //clientWidth_ = cr2.right - cr2.left;
-    //clientHeight_ = cr2.bottom - cr2.top;
-
     return true;
 }
 
@@ -151,9 +106,15 @@ void WinApp::Finalize() {
         UnregisterClassW(className_.c_str(), hInstance_);
         didRegisterClass_ = false;
     }
-    if (comInitialized_) {
-        CoUninitialize();
-        comInitialized_ = false;
+}
+
+
+void WinApp::SetCursorLocked(bool lock) {
+    cursorLocked_ = lock;
+    if (inputManager_) {
+        if (auto* mouse = inputManager_->GetMouse()) {
+            mouse->SetLocked(cursorLocked_);
+        }
     }
 }
 
@@ -206,19 +167,10 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     case WM_KEYDOWN:
         if (wParam == VK_F3) {
             cursorLocked_ = !cursorLocked_; // 状態をトグル
-            if (cursorLocked_) {
-                // カーソルを非表示にして固定
-                ShowCursor(FALSE);
-                RECT clientRect;
-                GetClientRect(hWnd, &clientRect);
-                ClientToScreen(hWnd, reinterpret_cast<POINT*>(&clientRect.left));
-                ClientToScreen(hWnd, reinterpret_cast<POINT*>(&clientRect.right));
-                ClipCursor(&clientRect);
-            }
-            else {
-                // カーソルを表示して解放
-                ShowCursor(TRUE);
-                ClipCursor(nullptr);
+            if (inputManager_) {
+                if (auto* mouse = inputManager_->GetMouse()) {
+                    mouse->SetLocked(cursorLocked_);
+                }
             }
         }
         return 0;
@@ -227,37 +179,24 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (inputManager_) {
             if (auto* mouse = inputManager_->GetMouse()) {
                 float wheelDelta = static_cast<float>(GET_WHEEL_DELTA_WPARAM(wParam)) / WHEEL_DELTA;
-                
-                // --- デバッグコード追加 ---
-                std::string dbgMsg = "[WinApp] WM_MOUSEWHEEL received. Delta: " + std::to_string(wheelDelta) + "\n";
-                OutputDebugStringA(dbgMsg.c_str());
-                // -------------------------
-
                 mouse->SetWheelDelta(wheelDelta);
             }
         }
         return 0;
     case WM_SETFOCUS: // ウィンドウがアクティブになった
-    {
-        if (cursorLocked_) {
-            // カーソルを非表示にする
-            ShowCursor(FALSE);
-
-            // カーソルをウィンドウのクライアント領域に固定する
-            RECT clientRect;
-            GetClientRect(hWnd, &clientRect);
-            ClientToScreen(hWnd, reinterpret_cast<POINT*>(&clientRect.left));
-            ClientToScreen(hWnd, reinterpret_cast<POINT*>(&clientRect.right));
-            ClipCursor(&clientRect);
+        if (inputManager_) {
+            if (auto* mouse = inputManager_->GetMouse()) {
+                mouse->SetLocked(cursorLocked_);
+            }
         }
-    }
         return 0;
 
     case WM_KILLFOCUS: // ウィンドウが非アクティブになった
-        // カーソルを表示する
-        ShowCursor(TRUE);
-        // カーソルの固定を解除する
-        ClipCursor(nullptr);
+        if (inputManager_) {
+            if (auto* mouse = inputManager_->GetMouse()) {
+                mouse->SetLocked(false);
+            }
+        }
         return 0;
     case WM_SIZE:
         clientWidth_ = LOWORD(lParam);
@@ -280,9 +219,9 @@ LONG WINAPI WinApp::ExportDump(EXCEPTION_POINTERS* exception) {
     SYSTEMTIME time;
     GetLocalTime(&time);
     wchar_t filePath[MAX_PATH] = { 0 };
-    CreateDirectory(L"./Dumps", nullptr);
+    CreateDirectoryW(L"./Dumps", nullptr);
     StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d-%02d%02d.dmp", time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute);
-    HANDLE dumpFileHandle = CreateFile(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+    HANDLE dumpFileHandle = CreateFileW(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
     //processId(このexeのId)とクラッシュ(例外)の発生したthreadIdを取得
     DWORD processId = GetCurrentProcessId();
     DWORD threadId = GetCurrentThreadId();

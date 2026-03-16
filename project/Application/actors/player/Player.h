@@ -74,7 +74,7 @@ public:
      * @param engine IrufemiEngineのポインタ
      * @param mouse Mouseのポインタ
      */
-    void Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine, Mouse* mouse);
+    void Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine);
 
     /**
      * @brief 更新処理
@@ -189,7 +189,7 @@ private:
     InputManager* input_ = nullptr;
     Camera* camera_ = nullptr;
     IrufemiEngine* engine_ = nullptr;
-    Mouse* mouse_ = nullptr;
+    // Mouse* mouse_ = nullptr; // InputManager 経由で取得するため削除
 
     // --- カメラ・マウス操作用パラメータ ---
     float mouseSensitivity_ = 5.0f;           // マウス感度

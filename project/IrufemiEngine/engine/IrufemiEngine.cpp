@@ -338,6 +338,12 @@ void IrufemiEngine::EndFrame() {
     }
 }
 
+void IrufemiEngine::SetCursorLocked(bool lock) {
+    if (winApp_) {
+        winApp_->SetCursorLocked(lock);
+    }
+}
+
 void IrufemiEngine::ApplyPSO() {
     auto* pso = GetPSOManager()->Get(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "PSO is null. Check PSOManager::Initialize and shader blobs.");

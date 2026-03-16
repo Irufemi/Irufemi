@@ -30,6 +30,7 @@ public:
     int GetClientWidth() const { return clientWidth_; }
     int GetClientHeight() const { return clientHeight_; }
     bool IsCursorLocked() const { return cursorLocked_; }
+    void SetCursorLocked(bool lock);
 
     // InputManagerのポインタを設定
     void SetInputManager(InputManager* inputManager) { inputManager_ = inputManager; }
@@ -59,5 +60,5 @@ private:
     bool comInitialized_ = false;
     bool didRegisterClass_ = false;
     InputManager* inputManager_ = nullptr; // InputManagerへのポインタ
-    bool cursorLocked_ = true; // カーソル固定状態
+    bool cursorLocked_ = true; // カーソル固定状態デフォルト真
 };
