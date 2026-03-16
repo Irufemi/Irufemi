@@ -10,11 +10,12 @@
 
 void EnemyAnimation::Initialize(Enemy* enemy) {
     enemy_ = enemy;
+    hasFinishedAttack_ = false;
 }
 
 void EnemyAnimation::Update(Player* player) {
     if (!enemy_) return;
-    timer_ += 1.0f / 60.0f; // デルタタイム加算
+    timer_ += 1.0f / 60.0f;
 
     EnemyState state = enemy_->GetState();
     switch (state) {
@@ -23,114 +24,173 @@ void EnemyAnimation::Update(Player* player) {
     }
 }
 
+// --- 待機状態：通常の呼吸と自転 ---
 void EnemyAnimation::UpdateIdle() {
     attackTimer_ = 0.0f;
     isLockedOn_ = false;
     isFiring_ = false;
+    hasFinishedAttack_ = false; // Idleに戻っている間はfalse
 
-    // --- 攻撃フェーズからの復帰処理 ---
-    // ズレた各パーツのオフセットを (0,0,0) へ戻していく
-    float s = returnSpeed_;
-    enemy_->GetHeadMidOffset() += (Vector3{ 0,0,0 } - enemy_->GetHeadMidOffset()) * s;
-    enemy_->GetHeadLeftOffset() += (Vector3{ 0,0,0 } - enemy_->GetHeadLeftOffset()) * s;
-    enemy_->GetHeadRightOffset() += (Vector3{ 0,0,0 } - enemy_->GetHeadRightOffset()) * s;
+    float ls = lerpSpeed_;
 
-    // 胴体パーツの復帰とふわふわアニメ
+    // 各首の呼吸（縦揺れ）
+    auto ApplyIdleBreath = [&](Vector3& offset, float phase) {
+        float waveY = std::sin(timer_ * breathSpeed_ + phase) * breathHeight_;
+        offset.x += (0.0f - offset.x) * returnSpeed_;
+        offset.y += (waveY - offset.y) * ls;
+        offset.z += (0.0f - offset.z) * returnSpeed_;
+        };
+    ApplyIdleBreath(enemy_->GetHeadMidOffset(), 0.0f);
+    ApplyIdleBreath(enemy_->GetHeadLeftOffset(), phaseOffset_);
+    ApplyIdleBreath(enemy_->GetHeadRightOffset(), phaseOffset_ * 2.0f);
+
+    // 胴体の波打ち
     for (int i = 0; i < 3; ++i) {
-        Vector3& offset = enemy_->GetBodyOffset(i);
-        float waveY = std::sin(timer_ * idleWaveSpeed_ + (float)i * idlePhaseOffset_) * idleWaveHeight_;
-
-        offset.x += (0.0f - offset.x) * s;
-        offset.y += (waveY - offset.y) * lerpSpeed_; // Y軸のみサイン波を優先
-        offset.z += (0.0f - offset.z) * s;
+        float waveBodyY = std::sin(timer_ * breathSpeed_ - (float)(i + 1) * phaseOffset_) * bodyWaveHeight_;
+        enemy_->GetBodyOffset(i).y += (waveBodyY - enemy_->GetBodyOffset(i).y) * ls;
+        enemy_->GetBodyOffset(i).x += (0.0f - enemy_->GetBodyOffset(i).x) * returnSpeed_;
     }
 
+    // 全体の回転を戻す
     enemy_->GetGlobalTransform().rotate.y += idleRotationSpeed_;
+    enemy_->GetGlobalTransform().rotate.x += (0.0f - enemy_->GetGlobalTransform().rotate.x) * returnSpeed_;
 }
 
+// --- ビーム攻撃：前傾姿勢・個別振動・後隙 ---
 void EnemyAnimation::UpdateAttackBeam(Player* player) {
     attackTimer_ += 1.0f / 60.0f;
     EnemyBeam* beam = enemy_->GetBeam();
 
-    // 中央の頭（発射口）のワールド座標を取得
     Matrix4x4 headMatrix = enemy_->GetHeadMidWorldMatrix();
     Vector3 headPos = { headMatrix.m[3][0], headMatrix.m[3][1] + headExtensionY_, headMatrix.m[3][2] };
 
-    // --- フェーズ1：チャージ（追尾中） ---
-    if (attackTimer_ < chargeTime_) {
-        isFiring_ = false;
-        Vector3 currentTarget = (player) ? player->GetTranslate() : Vector3{ 0,0,0 };
-        currentTarget.y += 1.0f;
+    float endCharge = chargeTime_;
+    float endAnticipation = endCharge + anticipationTime_;
+    float endFire = endAnticipation + fireTime_;
+    float endStun = endFire + stunTime_;
+    float endRecovery = endStun + recoveryTime_;
 
-        // プレイヤーの方向を向く回転計算
-        Vector3 ePos = enemy_->GetGlobalTransform().translate;
-        float tAngleY = std::atan2(currentTarget.x - ePos.x, currentTarget.z - ePos.z);
-        float diffY = NormalizeAngle(tAngleY - enemy_->GetGlobalTransform().rotate.y);
-        enemy_->GetGlobalTransform().rotate.y += diffY * beamRotateSpeed_;
+    // 1. チャージ（追尾 ＆ 各部バラバラの震え ＆ 徐々に前傾）
+    if (attackTimer_ < endCharge) {
+        float progress = attackTimer_ / chargeTime_;
+        float sp = shakeBaseSpeed_;
+
+        // 前傾姿勢へ移行
+        enemy_->GetGlobalTransform().rotate.x += (fireLeanAngleX_ - enemy_->GetGlobalTransform().rotate.x) * 0.05f;
+
+        // 頭部の個別振動
+        auto SetShake = [&](Vector3& offset, float seed) {
+            offset = { std::sin(timer_ * sp * seed) * chargeHeadShake_, std::cos(timer_ * sp * (seed + 0.1f)) * chargeHeadShake_, 0 };
+            };
+        SetShake(enemy_->GetHeadMidOffset(), 1.0f);
+        SetShake(enemy_->GetHeadLeftOffset(), 1.2f);
+        SetShake(enemy_->GetHeadRightOffset(), 0.8f);
+
+        // 体の個別振動
+        for (int i = 0; i < 3; ++i) {
+            enemy_->GetBodyOffset(i).x = std::sin(timer_ * sp * 0.7f + (float)i) * chargeBodyShake_;
+        }
+
+        Vector3 target = (player) ? player->GetTranslate() : Vector3{ 0,0,0 };
+        target.y += 1.0f;
+        float tAngleY = std::atan2(target.x - enemy_->GetGlobalTransform().translate.x, target.z - enemy_->GetGlobalTransform().translate.z);
+        enemy_->GetGlobalTransform().rotate.y += NormalizeAngle(tAngleY - enemy_->GetGlobalTransform().rotate.y) * beamRotateSpeed_;
 
         enemy_->FireBeam();
         if (beam) {
             beam->SetActive(true);
-            beam->SetThickness(beamThicknessCharge_);
-            beam->SetColor({ 1.0f, 0.0f, 0.0f, 0.3f });
-            beam->Update(headPos, currentTarget);
+            beam->SetThickness(0.2f);
+            beam->Update(headPos, target);
         }
     }
-    // --- フェーズ2：本射（シェイク・固定射撃） ---
-    else if (attackTimer_ < (chargeTime_ + fireTime_)) {
-        isFiring_ = true;
-        if (!isLockedOn_) {
-            if (player) { lockedTargetPos_ = player->GetTranslate(); lockedTargetPos_.y += 1.0f; }
+    // 2. 溜め（一瞬止まって集中）
+    else if (attackTimer_ < endAnticipation) {
+        if (!isLockedOn_ && player) {
+            lockedTargetPos_ = player->GetTranslate(); lockedTargetPos_.y += 1.0f;
             isLockedOn_ = true;
         }
+        // 振動を小さくして「溜め」を表現
+        enemy_->GetHeadMidOffset() = { 0,0,0 };
+        enemy_->GetHeadLeftOffset() = { 0,0,0 };
+        enemy_->GetHeadRightOffset() = { 0,0,0 };
+        for (int i = 0; i < 3; ++i) enemy_->GetBodyOffset(i).x *= 0.5f;
 
-        float sp = shakeBaseSpeed_;
-        float hStr = headShakeStrength_;
-        float bStr = bodyShakeStrength_;
+        if (beam) beam->Update(headPos, lockedTargetPos_);
+    }
+    // 3. 本射（激しい全身振動 ＆ 前傾維持）
+    else if (attackTimer_ < endFire) {
+        isFiring_ = true;
+        float fireProgress = (attackTimer_ - endAnticipation) / fireTime_;
+        float sp = shakeBaseSpeed_ * 1.3f; // 高速振動
 
-        // --- 頭部の激しいシェイク ---
-        enemy_->GetHeadMidOffset() = { std::sin(timer_ * sp) * hStr,      std::cos(timer_ * sp * 1.1f) * hStr, 0 };
-        enemy_->GetHeadLeftOffset() = { std::sin(timer_ * sp * 0.9f) * hStr, std::cos(timer_ * sp * 1.2f) * hStr, 0 };
-        enemy_->GetHeadRightOffset() = { std::sin(timer_ * sp * 1.3f) * hStr, std::cos(timer_ * sp * 0.8f) * hStr, 0 };
+        // 全頭部の激しい個別振動
+        auto SetFireShake = [&](Vector3& offset, float seed) {
+            offset = { std::sin(timer_ * sp * seed) * fireHeadShake_, std::cos(timer_ * sp * (seed + 0.2f)) * fireHeadShake_, 0 };
+            };
+        SetFireShake(enemy_->GetHeadMidOffset(), 1.1f);
+        SetFireShake(enemy_->GetHeadLeftOffset(), 0.95f);
+        SetFireShake(enemy_->GetHeadRightOffset(), 1.15f);
 
-        // --- ★胴体パーツのシェイク（頭部より控えめに震わせる） ---
+        // 体もバチバチに震わせる
         for (int i = 0; i < 3; ++i) {
-            Vector3& offset = enemy_->GetBodyOffset(i);
-            // パーツごとに少しずつ周期(i*0.5f)をずらしてバラバラ感を出す
-            offset.x = std::sin(timer_ * sp + (float)i * 0.5f) * bStr;
-            offset.z = std::cos(timer_ * sp * 0.9f + (float)i * 0.5f) * bStr;
+            enemy_->GetBodyOffset(i).x = std::sin(timer_ * sp * 0.8f + (float)i) * fireBodyShake_;
+            enemy_->GetBodyOffset(i).y += (std::cos(timer_ * sp * 0.5f) * 0.1f - enemy_->GetBodyOffset(i).y) * 0.1f;
         }
 
+        // ビーム太さ演出
         if (beam) {
-            beam->SetColor({ 1.0f, 0.2f, 0.2f, 1.0f });
-            beam->SetThickness(beamThicknessFire_);
+            float thickness = beamThicknessFire_;
+            if (fireProgress > fadeOutStartThreshold_) {
+                float f = (fireProgress - fadeOutStartThreshold_) / (1.0f - fadeOutStartThreshold_);
+                thickness += (std::pow(f, 3) * beamThicknessFire_ * beamExpandScale_);
+            }
+            beam->SetThickness(thickness);
             beam->Update(headPos, lockedTargetPos_);
         }
     }
-    // --- フェーズ3：後隙（個別パーツの縮退） ---
-    else if (attackTimer_ < (chargeTime_ + fireTime_ + recoveryTime_)) {
+    // 4. 硬直（ビーム消滅 ＆ 姿勢をIdleの状態へ戻し始める）
+    else if (attackTimer_ < endStun) {
         isFiring_ = false;
         if (beam) beam->SetActive(false);
 
-        float sSpd = shrinkSpeed_;
-        // 胴体：配列に定義した個別の目標座標へ寄せる
-        for (int i = 0; i < 3; ++i) {
-            Vector3& offset = enemy_->GetBodyOffset(i);
-            offset += (shrinkBodyTargets_[i] - offset) * sSpd;
-        }
-        // 頭部：それぞれ別の目標座標へ寄せる
-        enemy_->GetHeadMidOffset() += (shrinkHeadMidTarget_ - enemy_->GetHeadMidOffset()) * sSpd;
-        enemy_->GetHeadLeftOffset() += (shrinkHeadLeftTarget_ - enemy_->GetHeadLeftOffset()) * sSpd;
-        enemy_->GetHeadRightOffset() += (shrinkHeadRightTarget_ - enemy_->GetHeadRightOffset()) * sSpd;
+        // 前傾を戻す（反動でのけぞり気味に戻す）
+        enemy_->GetGlobalTransform().rotate.x += (0.0f - enemy_->GetGlobalTransform().rotate.x) * returnSpeed_;
 
-        enemy_->GetGlobalTransform().rotate.x *= (1.0f - sSpd); // 傾きを戻す
+        float sp = shakeBaseSpeed_ * 0.5f;
+        auto SetStunPos = [&](Vector3& offset, float seed) {
+            offset.x = std::sin(timer_ * sp * seed) * stunShakeStrength_;
+            offset.z += (-1.0f - offset.z) * 0.15f; // 反動で少し引く
+            };
+        SetStunPos(enemy_->GetHeadMidOffset(), 1.0f);
+        SetStunPos(enemy_->GetHeadLeftOffset(), 1.1f);
+        SetStunPos(enemy_->GetHeadRightOffset(), 0.9f);
+    }
+    // 5. 一呼吸（ガクッと力を抜く ＆ 完了フラグ）
+    else if (attackTimer_ < endRecovery) {
+        float recProgress = (attackTimer_ - endStun) / recoveryTime_;
+        float breathCurve = std::sin(recProgress * (float)M_PI);
+        float currentExhaustion = (1.0f - recProgress) * exhaustionDepth_ - (breathCurve * 0.5f);
+
+        auto ApplyExhaustion = [&](Vector3& offset) {
+            offset.y += (currentExhaustion - offset.y) * lerpSpeed_;
+            offset.z += (0.0f - offset.z) * returnSpeed_;
+            };
+        ApplyExhaustion(enemy_->GetHeadMidOffset());
+        ApplyExhaustion(enemy_->GetHeadLeftOffset());
+        ApplyExhaustion(enemy_->GetHeadRightOffset());
+
+        for (int i = 0; i < 3; ++i) {
+            enemy_->GetBodyOffset(i).y += (currentExhaustion * 0.7f - enemy_->GetBodyOffset(i).y) * lerpSpeed_;
+        }
     } else {
+        // 全行程完了
+        hasFinishedAttack_ = true;
         enemy_->SetState(EnemyState::Idle);
     }
 }
 
 float EnemyAnimation::NormalizeAngle(float angle) {
-    while (angle > M_PI)  angle -= 2.0f * (float)M_PI;
-    while (angle < -M_PI) angle += 2.0f * (float)M_PI;
+    while (angle > (float)M_PI) angle -= 2.0f * (float)M_PI;
+    while (angle < -(float)M_PI) angle += 2.0f * (float)M_PI;
     return angle;
 }
