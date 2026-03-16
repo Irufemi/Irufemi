@@ -33,8 +33,9 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 			// 生存時間更新
 			gParticles[particleIndex].life -= (1.0f / gEmitter.lifeTime) * gPerFrame.deltaTime;
         
-			// 色(アルファ)更新
+			// 色(アルファ)とサイズ更新
 			gParticles[particleIndex].color.a = saturate(gParticles[particleIndex].life);
+			gParticles[particleIndex].size = saturate(gParticles[particleIndex].life * 5.0f); // 最後の20%で縮小
 		} else {
 			// 寿命が尽きたら非アクティブにする
 			gParticles[particleIndex].isActive = 0;

@@ -11,6 +11,8 @@
 #include "Renderer/VertexData.h"
 #include "Resource/Model/ModelManager.h"
 #include <cassert>
+#include <cstdio>
+#include <Windows.h>
 
 IrufemiEngine *VoxelParticleSystem::engine_ = nullptr;
 
@@ -33,7 +35,13 @@ void VoxelParticleSystem::Initialize(const std::string &modelName,
   voxelModel_ = std::make_unique<VoxelizedModel>(ModelManager::VoxelizeModel(
       *managedModel->cpuModel, resolution, textureManager_));
   voxelCount_ = static_cast<uint32_t>(voxelModel_->voxels.size());
+  
+  // デバッグログ：生成されたボクセル数を出力
+  char log[256];
+  sprintf_s(log, "[Voxel] Voxel Count: %u\n", voxelCount_);
+  OutputDebugStringA(log);
   if (voxelCount_ == 0) {
+    OutputDebugStringA("[Voxel] WARNING: Voxel count is ZERO. Voxelization failed or model is too small.\n");
     return; // ボクセルがなければ何もしない
   }
 
@@ -94,7 +102,13 @@ void VoxelParticleSystem::Update(float deltaTime) {
 
   // PerView 更新（描画用）
   mappedPerViewData_->viewProjection = camera_->GetViewProjectionMatrix3D();
-  mappedPerViewData_->billbordMatrix = Math::MakeIdentity4x4();
+  
+  // ビルボード行列の計算
+  Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix(0.0f);
+  mappedPerViewData_->billboardMatrix = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
+  mappedPerViewData_->billboardMatrix.m[3][0] = 0.0f;
+  mappedPerViewData_->billboardMatrix.m[3][1] = 0.0f;
+  mappedPerViewData_->billboardMatrix.m[3][2] = 0.0f;
 
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
@@ -135,45 +149,95 @@ void VoxelParticleSystem::Update(float deltaTime) {
   commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
 
   commandList->ResourceBarrier(1, &barrier);
+
+  // --- デバッグログ ---
+  if (++debugFrameCount_ >= 60) {
+    debugFrameCount_ = 0;
+    char logMsg[128];
+    sprintf_s(logMsg, "[Voxel Update][Ptr:%p] count:%u hasExploded:%d isEmitting:%d\n",
+              this, voxelCount_, hasExploded_ ? 1 : 0, isEmitting_ ? 1 : 0);
+    OutputDebugStringA(logMsg);
+    
+    if (hasExploded_) {
+        OutputDebugStringA("[Voxel Draw] Executing Draw Command\n");
+    }
+  }
 }
 
 void VoxelParticleSystem::Draw() {
-  if (voxelCount_ == 0)
+  if (voxelCount_ == 0 || !hasExploded_)
     return;
 
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
 
-  // 3DオブジェクトとしてのPSO設定：通常ブレンド・深度書き込み有効・背面カリング
+  // 3DオブジェクトとしてのPSO設定：通常ブレンド・深度書き込み無効・背面カリング
   engine_->SetBlend(BlendMode::kBlendModeNormal);
-  engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->SetCull(PSOManager::CullMode::Back);
 
+  // リソースバリヤー: UAV -> ShaderResource (読み取り)
+  D3D12_RESOURCE_BARRIER barrier{};
+  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+  barrier.Transition.pResource = particleBuffer_.Get();
+  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+  barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+  commandList->ResourceBarrier(1, &barrier);
+
   // VoxelParticle 専用PSOを取得してバインド
-  auto *pso = dxCommon->GetPSOManager()->GetVoxelParticle(
-      BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable,
-      PSOManager::CullMode::Back);
-  assert(pso && "VoxelParticle PSO is null.");
-  engine_->GetDrawManager()->BindPSO(pso);
+  engine_->GetDrawManager()->BindPSO(drawPSO_.Get());
 
   commandList->SetGraphicsRootSignature(dxCommon->GetRootSignature());
   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   commandList->IASetVertexBuffers(0, 1, &cubeVertexBufferView_);
   commandList->IASetIndexBuffer(&cubeIndexBufferView_);
 
-  // RootParameter: [1]CBV(PerView), [4]SRV(ParticleData)
+  // RootParameter: [1]CBV(PerView), [3]CBV(VoxelEmitter), [4]SRV(ParticleData)
   commandList->SetGraphicsRootConstantBufferView(
       1, perViewConstantBuffer_->GetGPUVirtualAddress()); // b0 (PerView)
+  commandList->SetGraphicsRootConstantBufferView(
+      3, emitterConstantBuffer_->GetGPUVirtualAddress()); // b1 (VoxelEmitter)
   commandList->SetGraphicsRootDescriptorTable(
       4, particleSrvHandleGPU_); // t0 (ParticleData)
 
   commandList->DrawIndexedInstanced(cubeIndexCount_, voxelCount_, 0, 0, 0);
+
+  // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
+  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+  commandList->ResourceBarrier(1, &barrier);
+
+  // PSOを元に戻す(重要)
+  engine_->ApplyPSO();
 }
 
 void VoxelParticleSystem::Emit(const Vector3 &position) {
   emitterData_.emitPosition = position;
+  emitterData_.baseVelocity = {0, 0, 0};
+  emitterData_.rotate = {0, 0, 0};
+  emitterData_.scale = {1, 1, 1};
+  emitterData_.convergence = 0.0f;
+  emitterData_.gravity = 9.8f;
+  emitterData_.dispersion = 5.0f;
+  emitterData_.lifeTime = 2.0f;
   emitterData_.time = 0.0f;
   isEmitting_ = true;
+  hasExploded_ = true;
+}
+
+void VoxelParticleSystem::Explode(const Vector3 &position,
+                                  const Vector3 &velocity,
+                                  const Vector3 &rotate,
+                                  const Vector3 &scale) {
+  emitterData_.emitPosition = position;
+  emitterData_.baseVelocity = velocity;
+  emitterData_.rotate = rotate;
+  emitterData_.scale = scale;
+  emitterData_.time = 0.0f;
+  isEmitting_ = true;
+  hasExploded_ = true;
+
 }
 
 void VoxelParticleSystem::CreateCubeMesh(float sizeX, float sizeY,
@@ -343,9 +407,9 @@ void VoxelParticleSystem::CreatePSO() {
   assert(initializePSO_ && emitPSO_ && updatePSO_);
 
   // --- Graphics PSO ---
-  drawPSO_ = psoManager->GetVoxelParticle(BlendMode::kBlendModeAdd,
-                                          PSOManager::DepthWrite::Disable,
-                                          PSOManager::CullMode::None);
+  drawPSO_ = psoManager->GetVoxelParticle(BlendMode::kBlendModeNormal,
+                                          PSOManager::DepthWrite::Enable,
+                                          PSOManager::CullMode::Back);
   assert(drawPSO_);
 }
 

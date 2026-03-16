@@ -49,4 +49,6 @@ private:
   bool isBlownAway_ = false;
   Vector3 blowVelocity_ = {};
   float disappearTimer_ = 0.0f;
+
+  std::unique_ptr<VoxelParticleSystem> voxelSystem_ = nullptr;
 };

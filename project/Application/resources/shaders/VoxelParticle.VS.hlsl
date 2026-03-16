@@ -11,6 +11,7 @@ struct VSInput
 // パーティクルごとのデータ
 StructuredBuffer<VoxelParticle> gParticles : register(t0);
 ConstantBuffer<PerView> gPerView : register(b0);
+ConstantBuffer<VoxelEmitter> gEmitter : register(b1);
 
 VertexShaderOutput main(VSInput input, uint instanceID : SV_InstanceID)
 {
@@ -30,8 +31,16 @@ VertexShaderOutput main(VSInput input, uint instanceID : SV_InstanceID)
         particle.position.x, particle.position.y, particle.position.z, 1
 	};
 
-    // 位置変換
-	float4 worldPos = mul(input.position, worldMatrix);
+    // 位置変換 (モデルスケールとパーティクルサイズを適用)
+	float4 localPos = input.position;
+	localPos.xyz *= gEmitter.scale * particle.size; 
+	float4 worldPos = mul(localPos, worldMatrix);
+    
+    // 非アクティブなら画面外へ飛ばす
+    if (particle.isActive == 0) {
+        worldPos.xyz = float3(0, -10000, 0);
+    }
+    
 	output.position = mul(worldPos, gPerView.viewProjection);
 	output.worldPosition = worldPos.xyz;
 

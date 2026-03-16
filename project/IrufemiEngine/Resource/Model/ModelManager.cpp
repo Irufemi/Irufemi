@@ -1235,17 +1235,24 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
 
                                 // 元のコードに合わせて GetImage(0, 0, 0) からピクセルデータを取得
                                 const DirectX::Image* image = img->GetImage(0, 0, 0);
-                                if (image) {
+                                if (image && !DirectX::IsCompressed(img->GetMetadata().format)) {
                                     uint8_t* pixels = image->pixels;
                                     size_t rowPitch = image->rowPitch;
                                     size_t pixelStride = DirectX::BitsPerPixel(img->GetMetadata().format) / 8;
-                                    uint8_t* pixel = pixels + (texY * rowPitch) + (texX * pixelStride);
-
-                                    newVoxel.color.x = pixel[0] / 255.0f;
-                                    newVoxel.color.y = pixel[1] / 255.0f;
-                                    newVoxel.color.z = pixel[2] / 255.0f;
-                                    newVoxel.color.w = pixel[3] / 255.0f;
+                                    
+                                    // RGBA8 系統の場合のみ安全に読み取れる（雑な実装なため）
+                                    if (pixelStride >= 4) {
+                                      uint8_t *pixel =
+                                          pixels + (texY * rowPitch) + (texX * pixelStride);
+                                      newVoxel.color.x = pixel[0] / 255.0f;
+                                      newVoxel.color.y = pixel[1] / 255.0f;
+                                      newVoxel.color.z = pixel[2] / 255.0f;
+                                      newVoxel.color.w = pixel[3] / 255.0f;
+                                    } else {
+                                      newVoxel.color = closestMesh->material.color;
+                                    }
                                 } else {
+                                    // 圧縮テクスチャや不明な形式の場合はマテリアルカラーで代用
                                     newVoxel.color = closestMesh->material.color;
                                 }
                             } else {

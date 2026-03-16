@@ -1,4 +1,5 @@
 #include "HeadRight.h"
+#include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 #include "camera/Camera.h"
 #include "actors/enemy/EnemyParameters.h"
 #include "Engine/Core/Math/Geometry/Math.h"
@@ -46,7 +47,20 @@ void HeadRight::Update() {
     }
     
     // 消滅タイマーを進める
+    float prevTimer = disappearTimer_;
     disappearTimer_ += 1.0f / 60.0f;
+
+    if (prevTimer < EnemyParameters::GetInstance()->GetDisappearTime() &&
+        disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime()) {
+        // 爆散！
+        if (voxelSystem_) {
+            voxelSystem_->Explode(basePosition_, blowVelocity_, transform_.rotate, transform_.scale);
+        }
+    }
+  }
+
+  if (voxelSystem_) {
+      voxelSystem_->Update(1.0f / 60.0f);
   }
 
   if (damageFlashTimer_ > 0.0f) {
@@ -78,8 +92,12 @@ void HeadRight::Update() {
 }
 
 void HeadRight::Draw() {
-  if (obj_ && !IsCompletelyDead()) {
+  bool modelGone = disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime();
+  if (obj_ && !modelGone) {
     obj_->Draw();
+  }
+  if (voxelSystem_) {
+      voxelSystem_->Draw();
   }
 }
 
@@ -117,7 +135,10 @@ void HeadRight::OnDestroyed(const Vector3& attackDir, float blowSpeed) {
 
 bool HeadRight::IsCompletelyDead() const {
     if (!isBlownAway_) return false;
-    return disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime();
+    // モデルが消滅し、かつ VoxelParticle も終了していれば完全に死んだとみなす
+    bool modelGone = disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime();
+    bool voxelActive = voxelSystem_ && voxelSystem_->IsActive();
+    return modelGone && !voxelActive;
 }
 
 OBB HeadRight::GetOBB() const {

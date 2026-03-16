@@ -60,11 +60,11 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
 
     /// カメラの回転を適用する
-    billbordMatrix_ = Math::MakeIdentity4x4();
-    billbordMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
-    billbordMatrix_.m[3][0] = 0.0f;
-    billbordMatrix_.m[3][1] = 0.0f;
-    billbordMatrix_.m[3][2] = 0.0f;
+    billboardMatrix_ = Math::MakeIdentity4x4();
+    billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+    billboardMatrix_.m[3][0] = 0.0f;
+    billboardMatrix_.m[3][1] = 0.0f;
+    billboardMatrix_.m[3][2] = 0.0f;
 
     D3D12_SHADER_RESOURCE_VIEW_DESC instancingDesc{};
     instancingDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -518,10 +518,10 @@ void ParticleSystem::Update() {
     }
 
     /// カメラの回転を適用する
-    billbordMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
-    billbordMatrix_.m[3][0] = 0.0f;
-    billbordMatrix_.m[3][1] = 0.0f;
-    billbordMatrix_.m[3][2] = 0.0f;
+    billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+    billboardMatrix_.m[3][0] = 0.0f;
+    billboardMatrix_.m[3][1] = 0.0f;
+    billboardMatrix_.m[3][2] = 0.0f;
 
     numInstance_ = 0; // 描画すべきインスタンス数
 
@@ -543,8 +543,8 @@ void ParticleSystem::Update() {
             Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particleIterator->transform.scale);
             Matrix4x4 translateMatrix = Math::MakeTranslateMatrix(particleIterator->transform.translate);
             Matrix4x4 worldMatrix = Math::MakeIdentity4x4();
-            if (useBillbord_) {
-                worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billbordMatrix_), translateMatrix);
+            if (useBillboard_) {
+                worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billboardMatrix_), translateMatrix);
             } else {
                 Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(particleIterator->transform.rotate.x, particleIterator->transform.rotate.y, particleIterator->transform.rotate.z);
                 worldMatrix = Math::Multiply(scaleMatrix, rotateMatrix);
@@ -802,7 +802,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 }
 
                 ImGui::Checkbox("update", &isUpdate_);
-                ImGui::Checkbox("useBillbord", &useBillbord_);
+                ImGui::Checkbox("useBillboard", &useBillboard_);
 
                 ImGui::Separator();
 
@@ -991,9 +991,9 @@ void ParticleSystem::ChangeBehavior(ParticleType type, bool force) {
 
     // ビルボード設定も振る舞いに応じて変更
     if (type == ParticleType::kHitEffect) {
-        useBillbord_ = false;
+        useBillboard_ = false;
     } else {
-        useBillbord_ = true;
+        useBillboard_ = true;
     }
 }
 

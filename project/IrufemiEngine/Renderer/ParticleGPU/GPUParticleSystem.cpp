@@ -264,7 +264,7 @@ void GPUParticleSystem::Update() {
     billboardMatrix_.m[3][1] = 0.0f;
     billboardMatrix_.m[3][2] = 0.0f;
 
-    perViewData_->billbordMatrix = billboardMatrix_;
+    perViewData_->billboardMatrix = billboardMatrix_;
 }
 
 // 描画

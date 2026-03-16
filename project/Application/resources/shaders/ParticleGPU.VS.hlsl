@@ -24,7 +24,7 @@ VertexShaderOutput main(VertexShaderInput input, uint32_t instanceId : SV_Instan
 {
 	VertexShaderOutput output;
 	Particle particle = gParticles[instanceId];
-	float32_t4x4 worldMatrix = gPerView.billbordMatrix; // worldMatrixを作る
+	float32_t4x4 worldMatrix = gPerView.billboardMatrix; // worldMatrixを作る
 	worldMatrix[0] *= particle.scale.x;
 	worldMatrix[1] *= particle.scale.y;
 	worldMatrix[2] *= particle.scale.z;

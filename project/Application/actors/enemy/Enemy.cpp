@@ -256,18 +256,18 @@ void Enemy::Update(Player *player) {
   }
 #endif
 
-  // enemyが完全に死んでいるかの判定
-  if (headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
-      headRight_->GetHP() <= 0) {
-    bool allBodiesDead = true;
+  // enemyが完全に死んでいるかの判定（全ての部位がボクセル含めて消滅したか）
+  if (headMid_->IsCompletelyDead() && headLeft_->IsCompletelyDead() &&
+      headRight_->IsCompletelyDead()) {
+    bool allPartsGone = true;
     for (int i = 0; i < 3; ++i) {
-      if (bodies_[i] && bodies_[i]->GetHP() > 0) {
-        allBodiesDead = false;
+      if (bodies_[i] && !bodies_[i]->IsCompletelyDead()) {
+          allPartsGone = false;
         break;
       }
     }
-    if (allBodiesDead) {
-      isActive_ = false; // 完全に消滅したら非アクティブにする
+    if (allPartsGone) {
+      isActive_ = false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
     }
   }
 }

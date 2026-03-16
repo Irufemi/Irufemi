@@ -18,7 +18,7 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
     
 	gParticles[voxelIndex].position = voxel.position;
 	gParticles[voxelIndex].velocity = float3(0.0f, 0.0f, 0.0f);
-	gParticles[voxelIndex].color = voxel.color;
+	gParticles[voxelIndex].color = float4(voxel.color.rgb, 0.0f); // 初期は透明にする
 	gParticles[voxelIndex].life = 0.0f; // 非アクティブ
 	gParticles[voxelIndex].size = 1.0f;
 	gParticles[voxelIndex].isActive = 0; // 非アクティブ

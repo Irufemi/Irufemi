@@ -96,9 +96,9 @@ private:
 	uint32_t instancingSrvIndex_ = UINT32_MAX;
 
 	Camera* camera_ = nullptr;
-	Matrix4x4 billbordMatrix_{};
+	Matrix4x4 billboardMatrix_{};
 	Matrix4x4 backToFrontMatrix_{};
-	bool useBillbord_ = true;
+	bool useBillboard_ = true;
 	bool isUpdate_ = true;
 
 	std::list<Particle> particles_;

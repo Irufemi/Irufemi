@@ -28,18 +28,20 @@ struct VoxelParticle {
   uint32_t isActive; // 0:非アクティブ, 1:アクティブ
 };
 
-// HLSL側のVoxelEmitter構造体と一致させる（16バイトアライメント対応 = 48バイト）
+// HLSL側のVoxelEmitter構造体と一致させる（16バイトアライメント対応 = 80バイト）
 struct VoxelEmitter {
   Vector3 emitPosition = {0.0f, 0.0f, 0.0f};
-  float time = 0.0f;          // emitPosition + time = 16バイト
-  float lifeTime = 3.0f;
+  float time = 0.0f;
+  float lifeTime = 2.0f;
   float gravity = 9.8f;
   uint32_t emit = 0;
-  float dispersion = 5.0f;    // lifeTime + gravity + emit + dispersion = +16 → 32バイト
+  float dispersion = 5.0f;
   float convergence = 1.0f;
-  float pad0 = 0.0f;
+  Vector3 baseVelocity = {0.0f, 0.0f, 0.0f};
+  Vector3 rotate = {0.0f, 0.0f, 0.0f};
   float pad1 = 0.0f;
-  float pad2 = 0.0f;          // convergence + pad0 + pad1 + pad2 = +16 → 48バイト
+  Vector3 scale = {1.0f, 1.0f, 1.0f};
+  float pad0 = 0.0f;
 };
 
 
@@ -58,6 +60,15 @@ public:
   void Debug(const char *name);
 
   void Emit(const Vector3 &position);
+  void Explode(const Vector3 &position, const Vector3 &velocity,
+               const Vector3 &rotate, const Vector3 &scale);
+
+  bool IsActive() const {
+    if (!hasExploded_)
+      return false;
+    // 爆散（hasExploded_ = true, time = 0）から lifeTime (+余裕) が経過するまではアクティブ
+    return emitterData_.time < (emitterData_.lifeTime + 2.0f);
+  }
 
 private:
   void CreateResources();
@@ -109,6 +120,8 @@ private:
 
   uint32_t voxelCount_ = 0;
   bool isEmitting_ = false;
+  bool hasExploded_ = false;
+  uint32_t debugFrameCount_ = 0; // デバッグログ用
 
   static IrufemiEngine *engine_;
 };
