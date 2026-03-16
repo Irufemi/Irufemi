@@ -108,7 +108,7 @@ void ClearScene::Update() {
         camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
     } else {
         // 通常カメラの更新
-        camera_->Update("Camera");
+        camera_->Update();
     }
 
     // =====

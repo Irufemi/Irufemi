@@ -29,8 +29,12 @@ void Camera::Initialize(const int& windowWidth,const int& windowHeight) {
 }
 
 //更新
-void Camera::Update([[maybe_unused]]const char *cameraName) {
+void Camera::Update() {
+    // 毎フレーム行列を更新する
+    UpdateMatrix();
+}
 
+void Camera::Debug([[maybe_unused]] const char* cameraName) {
 #if defined USE_IMGUI
     std::string name = std::string("Camera: ") + cameraName;
 
@@ -40,9 +44,6 @@ void Camera::Update([[maybe_unused]]const char *cameraName) {
     ImGui::DragFloat3("rotate", &rotate_.x, 0.1f);
     ImGui::End();
 #endif
-
-    // 毎フレーム行列を更新する
-    UpdateMatrix();
 }
 
 Matrix4x4 Camera::GetViewProjectionMatrix2D() {

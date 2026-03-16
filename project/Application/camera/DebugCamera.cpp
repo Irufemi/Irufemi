@@ -19,8 +19,8 @@ void DebugCamera::Initialize(InputManager* input, int windowWidth, int windowHei
 }
 
 void DebugCamera::Update() {
-    // ImGuiでの操作を先に反映させる
-    camera_.Update("DebugCamera");
+    // 行列更新
+    camera_.Update();
 
     bool isMiddleButtonDown = input_->IsMouseButtonDown(Mouse::Button::Middle);
     Keyboard* keyboard = input_->GetKeyboard();
@@ -78,3 +78,7 @@ void DebugCamera::Update() {
     // マウス操作後の最終的な行列を更新
     camera_.UpdateMatrix();
 }
+
+void DebugCamera::Debug() {
+    camera_.Debug("DebugCamera");
+}

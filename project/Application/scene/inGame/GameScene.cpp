@@ -259,8 +259,9 @@ void GameScene::Update() {
     camera_->SetTranslate(dbgCam.GetTranslate());
     camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
   } else {
-    // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
-    camera_->Update("Main Camera");
+      camera_->Debug("Main Camera");
+      // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
+    camera_->Update();
   }
 
   // --- フレーム共通データのセット ---

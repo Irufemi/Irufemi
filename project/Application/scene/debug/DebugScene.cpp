@@ -448,8 +448,9 @@ void DebugScene::Update() {
         camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
     }
     else {
+        camera_->Debug("Camera");
         // 通常カメラの更新
-        camera_->Update("Camera");
+        camera_->Update();
     }
 
     // --- フレーム共通データのセット ---

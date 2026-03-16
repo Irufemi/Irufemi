@@ -37,6 +37,11 @@ public: //メンバ関数
      */
     void Update();
 
+    /**
+     * @brief デバッグ表示
+     */
+    void Debug();
+
     //ゲッター
 
     /**

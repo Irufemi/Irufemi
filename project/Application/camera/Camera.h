@@ -113,9 +113,14 @@ public: // メンバ関数
 
     /**
      * @brief 更新処理
+     */
+    void Update();
+
+    /**
+     * @brief デバッグ表示
      * @param cameraName デバッグ表示用のカメラ名
      */
-    void Update(const char* cameraName);
+    void Debug(const char* cameraName);
 
     //セッター
 
@@ -135,10 +140,9 @@ public: // メンバ関数
 
     void SetPerspectiveFovMatrix(const Matrix4x4& perspectiveFovMatrix) { this->perspectiveFovMatrix_ = perspectiveFovMatrix; }
 
-    void SetFovY(const float& fovY) { this->fovAngleY_ = fovY; }
-    void SetAspectRatio(const float& aspectRatio) { this->aspectRatio_ = aspectRatio; }
-    void SetNearClip(const float& nearClip) { this->nearClip_ = nearClip; }
     void SetFarClip(const float& farClip) { this->farClip_ = farClip; }
+
+    void SetFovY(const float& fovY) { this->fovAngleY_ = fovY; }
 
 
     //ゲッター
