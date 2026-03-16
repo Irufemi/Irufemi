@@ -2,6 +2,7 @@
 #include "camera/Camera.h"
 #include "actors/enemy/EnemyParameters.h"
 #include "Engine/Core/Math/Geometry/Math.h"
+#include <algorithm>
 #include <cmath>
 
 HeadRight::~HeadRight() {}
@@ -11,7 +12,7 @@ void HeadRight::Initialize(Camera* camera, const Vector3& initialPos) {
   obj_->Initialize(camera, "enemy/head.obj");
   basePosition_ = initialPos;
   obj_->SetPosition(basePosition_);
-  obj_->SetColor({0.0f, 0.0f, 1.0f, 1.0f}); // 青色に設定
+  obj_->SetColor(baseColor_);
 }
 
 void HeadRight::Update() {
@@ -48,7 +49,30 @@ void HeadRight::Update() {
     disappearTimer_ += 1.0f / 60.0f;
   }
 
+  if (damageFlashTimer_ > 0.0f) {
+    damageFlashTimer_ -= 1.0f / 60.0f;
+    if (damageFlashTimer_ < 0.0f) {
+      damageFlashTimer_ = 0.0f;
+    }
+  }
+
   if (obj_ && !IsCompletelyDead()) {
+    Vector4 color = baseColor_;
+    float duration = EnemyParameters::GetInstance()->GetDamageFlashDuration();
+    if (damageFlashTimer_ > 0.0f && duration > 0.0f) {
+      const Vector4 damageColor = EnemyParameters::GetInstance()->GetDamageFlashColor();
+      float t = damageFlashTimer_ / duration;
+      if (t < 0.0f) {
+        t = 0.0f;
+      } else if (t > 1.0f) {
+        t = 1.0f;
+      }
+      color.x = baseColor_.x + (damageColor.x - baseColor_.x) * t;
+      color.y = baseColor_.y + (damageColor.y - baseColor_.y) * t;
+      color.z = baseColor_.z + (damageColor.z - baseColor_.z) * t;
+      color.w = baseColor_.w + (damageColor.w - baseColor_.w) * t;
+    }
+    obj_->SetColor(color);
     obj_->Update();
   }
 }
@@ -107,4 +131,12 @@ OBB HeadRight::GetOBB() const {
     
     obb.size = EnemyParameters::GetInstance()->GetHeadOBBSize();
     return obb;
+}
+
+void HeadRight::ApplyDamage(int damage) {
+  hp_ -= damage;
+  if (hp_ < 0) {
+    hp_ = 0;
+  }
+  damageFlashTimer_ = EnemyParameters::GetInstance()->GetDamageFlashDuration();
 }

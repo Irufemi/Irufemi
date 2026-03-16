@@ -45,6 +45,12 @@ void EnemyParameters::Load(const std::string& filepath) {
     if (enemy.contains("disappear_time")) {
         disappearTime_ = enemy["disappear_time"];
     }
+    if (enemy.contains("damage_flash_duration")) {
+        damageFlashDuration_ = enemy["damage_flash_duration"];
+    }
+    if (enemy.contains("damage_flash_color") && enemy["damage_flash_color"].is_array() && enemy["damage_flash_color"].size() == 4) {
+        damageFlashColor_ = { enemy["damage_flash_color"][0], enemy["damage_flash_color"][1], enemy["damage_flash_color"][2], enemy["damage_flash_color"][3] };
+    }
     if (enemy.contains("body") && enemy["body"].contains("obb_size") && enemy["body"]["obb_size"].is_array() && enemy["body"]["obb_size"].size() == 3) {
         bodyOBBSize_ = { enemy["body"]["obb_size"][0], enemy["body"]["obb_size"][1], enemy["body"]["obb_size"][2] };
     }

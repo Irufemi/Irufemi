@@ -33,6 +33,13 @@
       ]
     },
     "blow_speed": 1.0,
-    "disappear_time": 5.0
+    "disappear_time": 5.0,
+    "damage_flash_duration": 0.2,
+    "damage_flash_color": [
+      1.0,
+      0.6,
+      0.6,
+      1.0
+    ]
   }
 }

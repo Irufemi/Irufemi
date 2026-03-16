@@ -118,7 +118,7 @@ void GameScene::Update() {
       // 1. 近接攻撃の判定
       if (attackCol.isActive &&
           Collision::IsOBBSphereCollision(part->GetOBB(), attackSphere)) {
-        part->SetHP(part->GetHP() - 100); // 仮のダメージ量
+        part->ApplyDamage(100); // 仮のダメージ量
         if (part->GetHP() <= 0) {
           // 攻撃方向：プレイヤーから対象部位へのベクトル
           Vector3 attackDir = Math::Normalize(
@@ -138,7 +138,7 @@ void GameScene::Update() {
         bulletSphere.radius = 1.0f; // 余裕を持たせた半径
         if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
           bullets[j].isActive = false;     // 弾丸消滅
-          part->SetHP(part->GetHP() - 10); // マシンガンのダメージ
+          part->ApplyDamage(10); // マシンガンのダメージ
           if (part->GetHP() <= 0) {
             Vector3 attackDir = Math::Normalize(bullets[j].velocity);
             part->OnDestroyed(attackDir,
@@ -157,7 +157,7 @@ void GameScene::Update() {
         missileSphere.radius = 2.0f; // ミサイルの当たり判定を大きめに
         if (Collision::IsOBBSphereCollision(part->GetOBB(), missileSphere)) {
           missiles[k].isActive = false;    // ミサイル消滅
-          part->SetHP(part->GetHP() - 50); // ミサイルのダメージ
+          part->ApplyDamage(50); // ミサイルのダメージ
           if (part->GetHP() <= 0) {
             Vector3 attackDir = Math::Normalize(missiles[k].velocity);
             part->OnDestroyed(attackDir,
@@ -207,7 +207,7 @@ void GameScene::Update() {
           // なら、部位がターゲットに向かって飛んできている（めり込み・連続ヒット防止）
           if (dot < 0.0f) {
             // 当たった部位のみにダメージを与える
-            target->SetHP(target->GetHP() - 100);
+            target->ApplyDamage(100);
 
             // 反射ベクトル: R = V - 2(V・N)N
             Vector3 reflect =

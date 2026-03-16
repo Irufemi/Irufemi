@@ -17,6 +17,8 @@ public:
   void SetPosition(const Vector3& pos);
   const Vector3& GetPosition() const;
 
+  void ApplyDamage(int damage);
+
   void SetHP(int hp) { hp_ = hp; }
   int GetHP() const { return hp_; }
 
@@ -39,6 +41,9 @@ private:
   Transform transform_ = {}; // OBB計算や吹き飛び時の姿勢保持のために保存
 
   int hp_ = 0;
+
+  Vector4 baseColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+  float damageFlashTimer_ = 0.0f;
 
   // 吹き飛び・消滅用
   bool isBlownAway_ = false;

@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Vector4.h"
 
 class EnemyParameters {
 public:
@@ -28,6 +29,12 @@ public:
   const Vector3& GetHeadOBBSize() const { return headOBBSize_; }
   void SetHeadOBBSize(const Vector3& size) { headOBBSize_ = size; }
 
+  float GetDamageFlashDuration() const { return damageFlashDuration_; }
+  void SetDamageFlashDuration(float duration) { damageFlashDuration_ = duration; }
+
+  const Vector4& GetDamageFlashColor() const { return damageFlashColor_; }
+  void SetDamageFlashColor(const Vector4& color) { damageFlashColor_ = color; }
+
 private:
   EnemyParameters() = default;
   ~EnemyParameters() = default;
@@ -44,4 +51,7 @@ private:
 
   Vector3 bodyOBBSize_ = { 1.5f, 1.0f, 1.5f };
   Vector3 headOBBSize_ = { 1.5f, 1.0f, 1.5f };
+
+  float damageFlashDuration_ = 0.2f;
+  Vector4 damageFlashColor_ = { 1.0f, 0.6f, 0.6f, 1.0f };
 };

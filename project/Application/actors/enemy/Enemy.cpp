@@ -163,6 +163,15 @@ void Enemy::Update(Player *player) {
     EnemyParameters::GetInstance()->SetDisappearTime(disappearTime);
   }
 
+  float flashDuration = EnemyParameters::GetInstance()->GetDamageFlashDuration();
+  if (ImGui::SliderFloat("Damage Flash Duration", &flashDuration, 0.0f, 1.0f)) {
+    EnemyParameters::GetInstance()->SetDamageFlashDuration(flashDuration);
+  }
+  Vector4 flashColor = EnemyParameters::GetInstance()->GetDamageFlashColor();
+  if (ImGui::ColorEdit4("Damage Flash Color", &flashColor.x)) {
+    EnemyParameters::GetInstance()->SetDamageFlashColor(flashColor);
+  }
+
   Vector3 bodyObb = EnemyParameters::GetInstance()->GetBodyOBBSize();
   if (ImGui::SliderFloat3("Body OBB Size", &bodyObb.x, 0.1f, 30.0f)) {
     EnemyParameters::GetInstance()->SetBodyOBBSize(bodyObb);
