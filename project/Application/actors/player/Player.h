@@ -245,6 +245,14 @@ private:
     ViewMode viewMode_ = ViewMode::kThirdPerson;
     bool isGrounded_ = true;
 
+    // --- ★追加：回避用変数 ---
+    int dodgeCooldownTimer_ = 0;         // 回避のクールタイム
+    const int kDodgeCooldownTime = 120;  // クールタイム2秒（60FPS想定）
+    int dodgeDurationTimer_ = 0;         // 回避行動自体の持続時間
+    const int kDodgeDurationTime = 20;   // 回避時間（約0.3秒）
+    Vector3 dodgeDirection_ = { 0.0f, 0.0f, 0.0f }; // 回避する方向
+    const float kDodgeSpeed = 0.6f;      // 回避の移動速度
+
     // --- 近接攻撃判定用 ---
     enum class AttackState {
         kNone,      // 待機

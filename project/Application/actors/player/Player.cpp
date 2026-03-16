@@ -67,6 +67,11 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     karakuriActiveTimer_ = 0;
     isKarakuriCharged_ = false;
 
+    // 回避用変数の初期化
+    dodgeCooldownTimer_ = 0;
+    dodgeDurationTimer_ = 0;
+    dodgeDirection_ = { 0.0f, 0.0f, 0.0f };
+
     // 近接攻撃判定の初期化
     attackState_ = AttackState::kNone;
     chargeTimer_ = 0;
@@ -100,6 +105,11 @@ void Player::Update() {
     // 無敵時間タイマーの減算
     if (invincibleTimer_ > 0) {
         invincibleTimer_--;
+    }
+
+    // 回避のクールタイム減算
+    if (dodgeCooldownTimer_ > 0) {
+        dodgeCooldownTimer_--;
     }
 
     // F2キーでカメラ操作の有効/無効を切り替え
@@ -156,6 +166,7 @@ void Player::Update() {
 
             if (isKarakuriCharged_) {
                 ImGui::Text("Karakuri State: MAX (Kaioken) - Time Left: %d", karakuriActiveTimer_);
+                ImGui::Text("Dodge Cooldown: %d / %d", dodgeCooldownTimer_, kDodgeCooldownTime);
             } else {
                 ImGui::Text("Karakuri Charge: %d / %d", karakuriChargeTimer_, kKarakuriChargeTime);
                 ImGui::Text("Karakuri State: Normal");
@@ -439,6 +450,21 @@ void Player::HandleMovement() {
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
     Vector3 move = { 0.0f, 0.0f, 0.0f };
 
+    // 回避行動中の強制移動処理（通常の移動入力を無視する）
+    if (dodgeDurationTimer_ > 0) {
+        translate_.x += dodgeDirection_.x * kDodgeSpeed;
+        translate_.z += dodgeDirection_.z * kDodgeSpeed;
+
+        // フィールド外に出ないように制限
+        if (translate_.x > kFieldRangeX)  translate_.x = kFieldRangeX;
+        if (translate_.x < -kFieldRangeX) translate_.x = -kFieldRangeX;
+        if (translate_.z > kFieldRangeZ)  translate_.z = kFieldRangeZ;
+        if (translate_.z < -kFieldRangeZ) translate_.z = -kFieldRangeZ;
+
+        dodgeDurationTimer_--;
+        return; // 回避中は通常の移動やジャンプ処理を行わない
+    }
+
     if (!isCharging) {
         if (input_->IsKeyDown('W')) move.z += 1.0f;
         if (input_->IsKeyDown('S')) move.z -= 1.0f;
@@ -446,12 +472,15 @@ void Player::HandleMovement() {
         if (input_->IsKeyDown('D')) move.x += 1.0f;
     }
 
+    // 通常の移動方向の計算
+    float moveX = 0.0f;
+    float moveZ = 0.0f;
     if (move.x != 0.0f || move.z != 0.0f) {
         move = Math::Normalize(move);
         float sinY = std::sin(rotate_.y);
         float cosY = std::cos(rotate_.y);
-        float moveX = move.x * cosY + move.z * sinY;
-        float moveZ = -move.x * sinY + move.z * cosY;
+        moveX = move.x * cosY + move.z * sinY;
+        moveZ = -move.x * sinY + move.z * cosY;
 
         translate_.x += moveX * kMoveSpeed;
         translate_.z += moveZ * kMoveSpeed;
@@ -463,9 +492,30 @@ void Player::HandleMovement() {
     }
 
     if (isGrounded_) {
+        // Spaceキーの処理を、からくりチャージ中かどうかで分岐
         if (!isCharging && input_->IsKeyPressed(VK_SPACE)) {
-            velocity_.y = kJumpForce;
-            isGrounded_ = false;
+            if (isKarakuriCharged_) {
+                // からくりチャージ中：回避アクション
+                if (dodgeCooldownTimer_ <= 0) {
+                    dodgeCooldownTimer_ = kDodgeCooldownTime; // クールタイム2秒
+                    dodgeDurationTimer_ = kDodgeDurationTime; // 回避モーションの時間
+                    invincibleTimer_ = kDodgeDurationTime;    // 既存の無敵タイマーを利用して回避中を無敵に
+
+                    // 移動入力があればその方向へ、なければ向いている方向（前）へ回避
+                    if (move.x != 0.0f || move.z != 0.0f) {
+                        dodgeDirection_ = { moveX, 0.0f, moveZ };
+                    } else {
+                        float sinY = std::sin(rotate_.y);
+                        float cosY = std::cos(rotate_.y);
+                        dodgeDirection_ = { sinY, 0.0f, cosY };
+                    }
+                    dodgeDirection_ = Math::Normalize(dodgeDirection_);
+                }
+            } else {
+                // 通常時：ジャンプ
+                velocity_.y = kJumpForce;
+                isGrounded_ = false;
+            }
         }
     } else {
         velocity_.y -= kGravity;
