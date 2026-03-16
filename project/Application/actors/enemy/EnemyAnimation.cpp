@@ -142,7 +142,7 @@ void EnemyAnimation::UpdateAttackBeam(Player* player) {
             float thickness = beamThicknessFire_;
             if (fireProgress > fadeOutStartThreshold_) {
                 float f = (fireProgress - fadeOutStartThreshold_) / (1.0f - fadeOutStartThreshold_);
-                thickness += (std::pow(f, 3) * beamThicknessFire_ * beamExpandScale_);
+                thickness += (std::pow(f, 3.0f) * beamThicknessFire_ * beamExpandScale_);
             }
             beam->SetThickness(thickness);
             beam->Update(headPos, lockedTargetPos_);
