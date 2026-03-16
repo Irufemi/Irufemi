@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Framework/IScene.h"
+#include "Renderer/Object2D/Sprite/Sprite.h"
 #include <memory>
 #include <vector>
 
@@ -40,6 +41,9 @@ public: // メンバ関数(システム)
 private: // メンバ関数(内部ヘルパ)
 
 private: // メンバ変数(ゲーム)
+
+    // 仮置き背景スプライト
+    std::unique_ptr<Sprite> backSprite_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン

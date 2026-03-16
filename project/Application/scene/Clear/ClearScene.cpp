@@ -56,6 +56,14 @@ void ClearScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
 
+    // 背景スプライトの初期化
+    backSprite_ = std::make_unique<Sprite>();
+    backSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+    backSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
+    backSprite_->SetPosition(0.0f, 0.0f);
+    backSprite_->SetColor(Vector4{ 95.0f / 255.0f,205.0f / 255.0f,228.0f / 255.0f,1.0f });
+    backSprite_->Update();
+
 }
 
 void ClearScene::Update() {
@@ -98,8 +106,7 @@ void ClearScene::Update() {
         camera_->SetViewMatrix(dbgCam.GetViewMatrix());
         camera_->SetTranslate(dbgCam.GetTranslate());
         camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
-    }
-    else {
+    } else {
         // 通常カメラの更新
         camera_->Update("Camera");
     }
@@ -108,10 +115,13 @@ void ClearScene::Update() {
     // ↓ゲームの更新
     // =====
 
-    // 何かされていたらステージ選択へ
-    if (false) {
-        engine_->GetSceneManager()->Request("Select");
+    // Spaceキーが押されていたらステージ選択へ
+    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
+        engine_->GetSceneManager()->Request("Title");
     }
+
+    // 背景スプライトの更新
+    backSprite_->Update();
 
     // =====
     // ↑ゲームの更新
@@ -142,7 +152,10 @@ void ClearScene::Update() {
 void ClearScene::Draw() {
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->ApplySpritePSO();
+
+    // 背景スプライトの描画
+    backSprite_->Draw();
 
 }

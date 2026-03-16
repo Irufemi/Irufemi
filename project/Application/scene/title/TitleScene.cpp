@@ -109,9 +109,9 @@ void TitleScene::Update() {
     // ↓ゲームの更新
     // =====
 
-    // 何かしたらシーン遷移をリクエスト
-    if (false) {
-        engine_->GetSceneManager()->Request("Select");
+    // SPACEキーを押したらシーン遷移をリクエスト
+    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
+        engine_->GetSceneManager()->Request("InGame");
     }
 
     // =====

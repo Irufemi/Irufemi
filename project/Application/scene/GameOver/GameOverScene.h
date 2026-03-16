@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Framework/IScene.h"
+#include "Renderer/Object2D/Sprite/Sprite.h"
 #include <memory>
 #include <vector>
 
@@ -13,7 +14,7 @@ struct DirectionalLight;
 struct AreaLight;
 
 /**
- * @class ResultScene
+ * @class GameOverScene
  * @brief ゲームの結果（クリア/ゲームオーバー）を表示するクラス
  *
  * ゲームの結果に応じてUIを表示し、入力に応じてステージ選択シーンへ戻ります。
@@ -22,7 +23,7 @@ class GameOverScene : public IScene {
 public: // メンバ関数(ゲーム)
 
 public: // メンバ関数(システム)
-    ~ResultScene() override;
+    ~GameOverScene() override;
     /**
      * @brief 初期化処理
      * @param engine IrufemiEngineのポインタ
@@ -40,6 +41,9 @@ public: // メンバ関数(システム)
 private: // メンバ関数(内部ヘルパ)
 
 private: // メンバ変数(ゲーム)
+
+    // 仮置き背景スプライト
+    std::unique_ptr<Sprite> backSprite_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン

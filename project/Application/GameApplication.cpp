@@ -38,7 +38,7 @@ namespace {
         //sm.Register("Select", [] { return std::make_unique<SelectScene>(); });
         sm.Register("InGame", [] { return std::make_unique<GameScene>(); });
         sm.Register("Clear", [] { return std::make_unique<ClearScene>(); });
-        sm.Register("Clear", [] { return std::make_unique<GameOverScene>(); });
+        sm.Register("GameOver", [] { return std::make_unique<GameOverScene>(); });
 #if defined(_DEBUG) || defined(DEVELOPMENT)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
