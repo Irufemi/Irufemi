@@ -349,22 +349,28 @@ void VoxelParticleSystem::CreatePSO() {
   assert(drawPSO_);
 }
 
-void VoxelParticleSystem::Debug(const char *name) {
-  if (ImGui::TreeNode(name)) {
-    ImGui::Text("Voxel Count: %u", voxelCount_);
-    ImGui::DragFloat3("Emit Position", &emitterData_.emitPosition.x, 0.1f);
-    if (ImGui::Button("Emit")) {
-      Emit(emitterData_.emitPosition);
+void VoxelParticleSystem::Debug([[maybe_unused]] const char *name) {
+
+#ifdef USE_IMGUI
+
+    if (ImGui::TreeNode(name)) {
+        ImGui::Text("Voxel Count: %u", voxelCount_);
+        ImGui::DragFloat3("Emit Position", &emitterData_.emitPosition.x, 0.1f);
+        if (ImGui::Button("Emit")) {
+            Emit(emitterData_.emitPosition);
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Emitter Settings");
+        ImGui::DragFloat("Life Time", &emitterData_.lifeTime, 0.1f, 0.1f, 10.0f);
+        ImGui::DragFloat("Gravity", &emitterData_.gravity, 0.1f, -20.0f, 20.0f);
+        ImGui::DragFloat("Dispersion", &emitterData_.dispersion, 0.1f, 0.0f, 20.0f);
+        ImGui::DragFloat("Convergence", &emitterData_.convergence, 0.1f, 0.0f,
+            20.0f);
+
+        ImGui::TreePop();
     }
 
-    ImGui::Separator();
-    ImGui::Text("Emitter Settings");
-    ImGui::DragFloat("Life Time", &emitterData_.lifeTime, 0.1f, 0.1f, 10.0f);
-    ImGui::DragFloat("Gravity", &emitterData_.gravity, 0.1f, -20.0f, 20.0f);
-    ImGui::DragFloat("Dispersion", &emitterData_.dispersion, 0.1f, 0.0f, 20.0f);
-    ImGui::DragFloat("Convergence", &emitterData_.convergence, 0.1f, 0.0f,
-                     20.0f);
+#endif // USE_IMGUI
 
-    ImGui::TreePop();
-  }
 }
