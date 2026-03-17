@@ -172,3 +172,10 @@ void HeadLeft::ApplyDamage(int damage) {
   }
   damageFlashTimer_ = EnemyParameters::GetInstance()->GetDamageFlashDuration();
 }
+
+void HeadLeft::ScatterAt(const Vector3& velocity, const OBB& collisionArea) {
+  if (voxelSystem_) {
+    voxelSystem_->CollisionScatter(basePosition_, velocity, transform_.rotate,
+                                   transform_.scale, collisionArea);
+  }
+}

@@ -63,16 +63,19 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   animation_->Initialize(this);
 
   isActive_ = true;
+  isDead_ = false;
 }
 
 void Enemy::Update(Player *player) {
   if (!isActive_)
     return;
 
-  if (ai_)
-    ai_->Update();
-  if (animation_)
-    animation_->Update(player);
+  if (!isDead_) {
+    if (ai_)
+      ai_->Update();
+    if (animation_)
+      animation_->Update(player);
+  }
 
 #ifdef USE_IMGUI
   if (engine_ && engine_->GetInputManager()->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
@@ -269,6 +272,17 @@ void Enemy::Update(Player *player) {
     if (allPartsGone) {
       isActive_ = false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
     }
+    
+    // 論理的な死亡判定（HP全損）
+    if (!isDead_) {
+        bool allHpZero = true;
+        for (int i = 0; i < 3; ++i) {
+            if (bodies_[i] && bodies_[i]->GetHP() > 0) { allHpZero = false; break; }
+        }
+        if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 && headRight_->GetHP() <= 0) {
+            isDead_ = true;
+        }
+    }
   }
 }
 
@@ -288,9 +302,9 @@ void Enemy::Draw(IrufemiEngine* engine) {
     headRight_->Draw(engine);
 
   // ビームを描画
-  if (beam_){
-      engine_->ApplyPSO();
-      beam_->Draw();
+  if (beam_) {
+    engine->ApplyPSO();
+    beam_->Draw();
   }
 
 #ifdef USE_IMGUI

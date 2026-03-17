@@ -122,6 +122,19 @@ void GameScene::Update() {
           part->OnDestroyed(attackDir,
                             EnemyParameters::GetInstance()->GetBlowSpeed());
         }
+
+        // 衝突エフェクト（近接攻撃）
+        OBB attackOBB;
+        attackOBB.center = attackSphere.center;
+        attackOBB.orientations[0] = {1, 0, 0};
+        attackOBB.orientations[1] = {0, 1, 0};
+        attackOBB.orientations[2] = {0, 0, 1};
+        attackOBB.size = {attackCol.radius * 1.5f, attackCol.radius * 1.5f, attackCol.radius * 1.5f};
+        
+        // 攻撃方向を考慮した初速ではじけさせる
+        Vector3 attackDir = Math::Normalize(
+            Math::Subtract(part->GetTransform().translate, playerPos));
+        part->ScatterAt(Math::Multiply(1.0f, attackDir), attackOBB);
       }
 
       // 2. マシンガンの弾の判定
@@ -223,6 +236,11 @@ void GameScene::Update() {
               target->OnDestroyed(
                   attackDir, EnemyParameters::GetInstance()->GetBlowSpeed());
             }
+
+            // 衝突エフェクト（部位同士の衝突）
+            // ターゲットのOBBをそのままはじける領域として指定
+            target->ScatterAt(Math::Multiply(-0.5f, vel), target->GetOBB());
+            projectile->ScatterAt(Math::Multiply(-0.5f, reflect), projectile->GetOBB());
           }
         }
       };
@@ -278,7 +296,7 @@ void GameScene::Update() {
                                           pLights, sLights, aLights);
 
   // enemyが死んだときクリアシーンに遷移する
-  if (boss_ && !boss_->GetIsActive()) {
+  if (boss_ && boss_->IsDead()) {
     if (engine_ && engine_->GetSceneManager()) {
       engine_->GetSceneManager()->Request("Clear");
     }

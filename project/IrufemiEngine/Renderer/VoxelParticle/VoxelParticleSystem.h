@@ -16,6 +16,7 @@ class IrufemiEngine;
 class Camera;
 class ModelManager;
 class TextureManager;
+struct OBB;
 
 // HLSL側のVoxelParticle構造体と一致させる
 struct VoxelParticle {
@@ -32,16 +33,23 @@ struct VoxelParticle {
 struct VoxelEmitter {
   Vector3 emitPosition = {0.0f, 0.0f, 0.0f};
   float time = 0.0f;
-  float lifeTime = 2.0f;
-  float gravity = 9.8f;
+  float lifeTime = 0.8f; // 短くすることで「はじける」感を出し、残像を防ぐ
+  float gravity = 2.0f; // 重力を弱める
   uint32_t emit = 0;
-  float dispersion = 5.0f;
-  float convergence = 1.0f;
+  float dispersion = 8.0f; // 拡散を強める
+  float convergence = 0.1f; // 収束を弱める
   Vector3 baseVelocity = {0.0f, 0.0f, 0.0f};
   Vector3 rotate = {0.0f, 0.0f, 0.0f};
   float pad1 = 0.0f;
   Vector3 scale = {1.0f, 1.0f, 1.0f};
   float pad0 = 0.0f;
+
+  // 衝突判定用 (OBB近似)
+  Vector3 collisionCenter;
+  uint32_t useCollision = 0; // 0:無効, 1:有効
+  Vector4 collisionOrientations[3]; // 配列要素は16バイトアラインメントが必要
+  Vector3 collisionSize;
+  float pad2 = 0.0f; // 16バイトアライメント調整用
 };
 
 
@@ -62,6 +70,11 @@ public:
   void Emit(const Vector3 &position);
   void Explode(const Vector3 &position, const Vector3 &velocity,
                const Vector3 &rotate, const Vector3 &scale);
+  
+  // 指定したOBBの範囲内にあるボクセルのみをはじけさせる
+  void CollisionScatter(const Vector3& position, const Vector3& velocity,
+                        const Vector3& rotate, const Vector3& scale,
+                        const struct OBB& collisionArea);
 
   bool IsActive() const {
     if (!hasExploded_)

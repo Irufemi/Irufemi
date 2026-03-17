@@ -12,7 +12,9 @@
 #include "Resource/Model/ModelManager.h"
 #include <cassert>
 #include <cstdio>
+#include "Engine/Core/Math/Geometry/OBB.h"
 #include <Windows.h>
+#include <algorithm>
 
 IrufemiEngine *VoxelParticleSystem::engine_ = nullptr;
 
@@ -214,6 +216,7 @@ void VoxelParticleSystem::Emit(const Vector3 &position) {
   emitterData_.dispersion = 5.0f;
   emitterData_.lifeTime = 2.0f;
   emitterData_.time = 0.0f;
+  emitterData_.useCollision = 0; // 衝突判定無効
   isEmitting_ = true;
   hasExploded_ = true;
 }
@@ -227,9 +230,57 @@ void VoxelParticleSystem::Explode(const Vector3 &position,
   emitterData_.rotate = rotate;
   emitterData_.scale = scale;
   emitterData_.time = 0.0f;
+  emitterData_.useCollision = 0; // 衝突判定無効
   isEmitting_ = true;
   hasExploded_ = true;
+}
 
+void VoxelParticleSystem::CollisionScatter(const Vector3 &position,
+                                           const Vector3 &velocity,
+                                           const Vector3 &rotate,
+                                           const Vector3 &scale,
+                                           const OBB &collisionArea) {
+  if (isEmitting_) {
+    // 既にエミット待ちの場合は、領域を広げて両方の衝突をカバーするようにする
+    // 簡易的に AABB ベースで合成領域を計算
+    Vector3 minA = Math::Subtract(emitterData_.collisionCenter, emitterData_.collisionSize);
+    Vector3 maxA = Math::Add(emitterData_.collisionCenter, emitterData_.collisionSize);
+    Vector3 minB = Math::Subtract(collisionArea.center, collisionArea.size);
+    Vector3 maxB = Math::Add(collisionArea.center, collisionArea.size);
+
+    Vector3 newMin = { (std::min)(minA.x, minB.x), (std::min)(minA.y, minB.y), (std::min)(minA.z, minB.z) };
+    Vector3 newMax = { (std::max)(maxA.x, maxB.x), (std::max)(maxA.y, maxB.y), (std::max)(maxA.z, maxB.z) };
+
+    emitterData_.collisionCenter = Math::Multiply(0.5f, Math::Add(newMin, newMax));
+    emitterData_.collisionSize = Math::Multiply(0.5f, Math::Subtract(newMax, newMin));
+    // 合成後は軸並行（回転なし）として扱う
+    for (int i = 0; i < 3; ++i) {
+      emitterData_.collisionOrientations[i] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    }
+    emitterData_.collisionOrientations[0].x = 1.0f;
+    emitterData_.collisionOrientations[1].y = 1.0f;
+    emitterData_.collisionOrientations[2].z = 1.0f;
+  } else {
+    emitterData_.emitPosition = position;
+    emitterData_.baseVelocity = velocity;
+    emitterData_.rotate = rotate;
+    emitterData_.scale = scale;
+    emitterData_.time = 0.0f;
+
+    // 衝突判定用データ設定
+    emitterData_.useCollision = 1;
+    emitterData_.collisionCenter = collisionArea.center;
+    emitterData_.collisionSize = collisionArea.size;
+    for (int i = 0; i < 3; ++i) {
+      emitterData_.collisionOrientations[i].x = collisionArea.orientations[i].x;
+      emitterData_.collisionOrientations[i].y = collisionArea.orientations[i].y;
+      emitterData_.collisionOrientations[i].z = collisionArea.orientations[i].z;
+      emitterData_.collisionOrientations[i].w = 0.0f;
+    }
+  }
+
+  isEmitting_ = true;
+  hasExploded_ = true;
 }
 
 void VoxelParticleSystem::CreateCubeMesh(float sizeX, float sizeY,
@@ -375,16 +426,16 @@ void VoxelParticleSystem::CreateResources() {
   device_->CreateShaderResourceView(particleBuffer_.Get(), &particleSrvDesc,
                                     particleSrvHandleCPU_);
 
-  // Emitter定数バッファ
-  emitterConstantBuffer_ = dxCommon->CreateBufferResource(sizeof(VoxelEmitter));
+  // Emitter定数バッファ (256バイトアライメント)
+  emitterConstantBuffer_ = dxCommon->CreateBufferResource((sizeof(VoxelEmitter) + 0xFF) & ~0xFF);
   emitterConstantBuffer_->Map(0, nullptr, reinterpret_cast<void **>(&mappedEmitterData_));
   
-  // PerView定数バッファ
-  perViewConstantBuffer_ = dxCommon->CreateBufferResource(sizeof(PerView));
+  // PerView定数バッファ (256バイトアライメント)
+  perViewConstantBuffer_ = dxCommon->CreateBufferResource((sizeof(PerView) + 0xFF) & ~0xFF);
   perViewConstantBuffer_->Map(0, nullptr, reinterpret_cast<void **>(&mappedPerViewData_));
 
-  // PerFrame定数バッファ
-  perFrameConstantBuffer_ = dxCommon->CreateBufferResource(sizeof(PerFrame));
+  // PerFrame定数バッファ (256バイトアライメント)
+  perFrameConstantBuffer_ = dxCommon->CreateBufferResource((sizeof(PerFrame) + 0xFF) & ~0xFF);
   perFrameConstantBuffer_->Map(0, nullptr, reinterpret_cast<void **>(&mappedPerFrameData_));
 }
 

@@ -1,9 +1,10 @@
 #include "Body.h"
+#include "Engine/Irufemi.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 #include "camera/Camera.h"
 #include "actors/enemy/EnemyParameters.h"
 #include "Engine/Core/Math/Geometry/Math.h"
-#include "IrufemiEngine.h"
+#include "Engine/IrufemiEngine.h"
 #include <algorithm>
 
 Body::~Body() {}
@@ -178,4 +179,11 @@ void Body::ApplyDamage(int damage) {
     hp_ = 0;
   }
   damageFlashTimer_ = EnemyParameters::GetInstance()->GetDamageFlashDuration();
+}
+
+void Body::ScatterAt(const Vector3& velocity, const OBB& collisionArea) {
+  if (voxelSystem_) {
+    voxelSystem_->CollisionScatter(basePosition_, velocity, transform_.rotate,
+                                   transform_.scale, collisionArea);
+  }
 }

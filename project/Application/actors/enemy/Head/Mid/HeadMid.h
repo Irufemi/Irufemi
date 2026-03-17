@@ -1,12 +1,11 @@
 #pragma once
-
 #include "Irufemi.h"
 #include <memory>
-
 #include "Engine/Core/Math/Geometry/OBB.h"
 
 class Camera;
 class IrufemiEngine;
+class VoxelParticleSystem;
 
 class HeadMid {
 public:
@@ -35,6 +34,9 @@ public:
   void SetBlowVelocity(const Vector3& v) { blowVelocity_ = v; }
 
   OBB GetOBB() const;
+
+  // 指定した位置でパーティクルをはじけさせる
+  void ScatterAt(const Vector3& velocity, const OBB& collisionArea);
 
 private:
   std::unique_ptr<ObjClass> obj_ = nullptr;

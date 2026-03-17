@@ -211,7 +211,7 @@ private:
 
     static const int kMaxBullets = 100;
     std::unique_ptr<ObjClass> bulletObjs_[kMaxBullets];
-    MachineGunBullet bullets_[kMaxBullets];
+    MachineGunBullet bullets_[kMaxBullets] = {};
 
     int machineGunActiveTimer_ = 0;
     int machineGunFireTimer_ = 0;
@@ -220,7 +220,7 @@ private:
     // --- 誘導ミサイル用 ---
     static const int kMaxMissiles = 4;
     std::unique_ptr<ObjClass> missileObjs_[kMaxMissiles];
-    MissileData missiles_[kMaxMissiles];
+    MissileData missiles_[kMaxMissiles] = {};
     const float kMissileSpeed = 0.8f;
 
     // --- ★スキルとからくりチャージ用 ---
@@ -263,7 +263,7 @@ private:
     int chargeTimer_ = 0;            // ボタンを長押ししているフレーム数
     float currentChargeRate_ = 0.0f; // スイング時に保持するチャージ倍率
 
-    AttackCollision attackCollision_;
+    AttackCollision attackCollision_ = {};
     int attackActiveTimer_ = 0;
     const int kAttackDuration = 20;  // スイングにかかるフレーム数
 

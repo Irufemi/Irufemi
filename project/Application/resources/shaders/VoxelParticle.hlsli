@@ -36,6 +36,13 @@ struct VoxelEmitter
 	float pad1;
 	float3 scale;
 	float pad0;
+
+	// 衝突判定用
+	float3 collisionCenter;
+	uint useCollision;
+	float4 collisionOrientations[3];
+	float3 collisionSize;
+	float pad2;
 };
 
 // C++側のPerView構造体と一致させる

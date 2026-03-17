@@ -67,6 +67,7 @@ public:
     HeadRight* GetHeadRight() { return headRight_.get(); }
 
   bool GetIsActive() const { return isActive_; }
+  bool IsDead() const { return isDead_; }
 
 private:
     // 各パーツ
@@ -86,7 +87,7 @@ private:
     Transform headRightLocalTransform_;
 
     // アニメーション用オフセット
-    std::array<Vector3, 3> bodyOffsets_;
+    std::array<Vector3, 3> bodyOffsets_ = {};
     Vector3 headLeftOffset_ = { 0.0f, 0.0f, 0.0f };
     Vector3 headMidOffset_ = { 0.0f, 0.0f, 0.0f };
     Vector3 headRightOffset_ = { 0.0f, 0.0f, 0.0f };
@@ -110,5 +111,6 @@ private:
 #endif
 
   bool isActive_ = false;
+  bool isDead_ = false;
 
 };

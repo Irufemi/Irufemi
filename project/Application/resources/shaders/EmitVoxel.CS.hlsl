@@ -43,12 +43,40 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 	localPos = mul(rotateMat, localPos);
     
     // 3. 初期位置: エミッター位置 + 回転・スケール適用後のボクセル相対位置
-	gParticles[voxelIndex].position = gEmitter.emitPosition + localPos;
+	float3 worldPos = gEmitter.emitPosition + localPos;
+	gParticles[voxelIndex].position = worldPos;
+
+	// OBB判定 (衝突領域内かチェック)
+	if (gEmitter.useCollision != 0)
+	{
+		float3 d = worldPos - gEmitter.collisionCenter;
+		bool inside = true;
+		[unroll]
+		for (int i = 0; i < 3; ++i)
+		{
+			float dist = dot(d, gEmitter.collisionOrientations[i].xyz);
+			if (abs(dist) > gEmitter.collisionSize[i])
+			{
+				inside = false;
+				break;
+			}
+		}
+
+		if (!inside)
+		{
+			gParticles[voxelIndex].isActive = 0;
+			return;
+		}
+	}
     
-    // 4. 初期速度: ボクセルの法線を同様に回転させ、ランダム性とベース速度を加える
+    // 4. 初期速度: ボクセルの法線を回転させ、衝突時は中心から外側へ向かうベクトルを加味する
 	float3 rotatedNormal = normalize(mul(rotateMat, voxel.normal));
+	float3 burstDir = (gEmitter.useCollision != 0) ? normalize(worldPos - gEmitter.collisionCenter) : rotatedNormal;
+	
 	float3 randomVec = (generator.Generate3d() * 2.0f - 1.0f) * 0.5f; // -0.5 ~ 0.5
-	gParticles[voxelIndex].velocity = gEmitter.baseVelocity + normalize(rotatedNormal + randomVec) * gEmitter.dispersion;
+	float3 moveDir = normalize(lerp(rotatedNormal, burstDir, 0.7f) + randomVec);
+	
+	gParticles[voxelIndex].velocity = gEmitter.baseVelocity + moveDir * gEmitter.dispersion;
 
 	gParticles[voxelIndex].color = voxel.color;
 	gParticles[voxelIndex].life = 1.0f; // 寿命を満タンにする
