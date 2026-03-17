@@ -171,11 +171,6 @@ void VoxelParticleSystem::Draw() {
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
 
-  // 3DオブジェクトとしてのPSO設定：通常ブレンド・深度書き込み無効・背面カリング
-  engine_->SetBlend(BlendMode::kBlendModeNormal);
-  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-  engine_->SetCull(PSOManager::CullMode::Back);
-
   // リソースバリヤー: UAV -> ShaderResource (読み取り)
   D3D12_RESOURCE_BARRIER barrier{};
   barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -193,13 +188,13 @@ void VoxelParticleSystem::Draw() {
   commandList->IASetVertexBuffers(0, 1, &cubeVertexBufferView_);
   commandList->IASetIndexBuffer(&cubeIndexBufferView_);
 
-  // RootParameter: [1]CBV(PerView), [3]CBV(VoxelEmitter), [4]SRV(ParticleData)
+  // RootParameter: [8]CBV(PerView), [1]CBV(VoxelEmitter), [11]SRV(ParticleData)
   commandList->SetGraphicsRootConstantBufferView(
-      1, perViewConstantBuffer_->GetGPUVirtualAddress()); // b0 (PerView)
+      8, perViewConstantBuffer_->GetGPUVirtualAddress()); // b6 (PerView)
   commandList->SetGraphicsRootConstantBufferView(
-      3, emitterConstantBuffer_->GetGPUVirtualAddress()); // b1 (VoxelEmitter)
+      1, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0 (VoxelEmitter)
   commandList->SetGraphicsRootDescriptorTable(
-      4, particleSrvHandleGPU_); // t0 (ParticleData)
+      11, particleSrvHandleGPU_); // t1 (ParticleData)
 
   commandList->DrawIndexedInstanced(cubeIndexCount_, voxelCount_, 0, 0, 0);
 
@@ -207,9 +202,6 @@ void VoxelParticleSystem::Draw() {
   barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
   barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
   commandList->ResourceBarrier(1, &barrier);
-
-  // PSOを元に戻す(重要)
-  engine_->ApplyPSO();
 }
 
 void VoxelParticleSystem::Emit(const Vector3 &position) {

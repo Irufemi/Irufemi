@@ -6,6 +6,7 @@
 #include "Engine/Core/Math/Geometry/OBB.h"
 
 class Camera;
+class IrufemiEngine;
 
 class HeadLeft {
 public:
@@ -13,7 +14,7 @@ public:
 
   void Initialize(Camera* camera, const Vector3& initialPos);
   void Update();
-  void Draw();
+  void Draw(IrufemiEngine* engine);
 
   void SetPosition(const Vector3& pos);
 

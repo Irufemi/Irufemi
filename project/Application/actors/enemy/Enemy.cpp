@@ -272,24 +272,26 @@ void Enemy::Update(Player *player) {
   }
 }
 
-void Enemy::Draw() {
+void Enemy::Draw(IrufemiEngine* engine) {
   if (!isActive_)
     return;
   for (auto &body : bodies_) {
     if (body && !body->IsCompletelyDead()) {
-      body->Draw();
+      body->Draw(engine);
     }
   }
   if (headLeft_ && !headLeft_->IsCompletelyDead())
-    headLeft_->Draw();
+    headLeft_->Draw(engine);
   if (headMid_ && !headMid_->IsCompletelyDead())
-    headMid_->Draw();
+    headMid_->Draw(engine);
   if (headRight_ && !headRight_->IsCompletelyDead())
-    headRight_->Draw();
+    headRight_->Draw(engine);
 
   // ビームを描画
-  if (beam_)
-    beam_->Draw();
+  if (beam_){
+      engine_->ApplyPSO();
+      beam_->Draw();
+  }
 
 #ifdef USE_IMGUI
   if (lineOBB_ && isDebugDrawOBB_ && engine_) {

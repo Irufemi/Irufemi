@@ -9,9 +9,9 @@ struct VSInput
 };
 
 // パーティクルごとのデータ
-StructuredBuffer<VoxelParticle> gParticles : register(t0);
-ConstantBuffer<PerView> gPerView : register(b0);
-ConstantBuffer<VoxelEmitter> gEmitter : register(b1);
+StructuredBuffer<VoxelParticle> gParticles : register(t1);
+ConstantBuffer<PerView> gPerView : register(b6);
+ConstantBuffer<VoxelEmitter> gEmitter : register(b0);
 
 VertexShaderOutput main(VSInput input, uint instanceID : SV_InstanceID)
 {

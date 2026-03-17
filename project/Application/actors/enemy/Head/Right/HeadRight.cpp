@@ -3,6 +3,7 @@
 #include "camera/Camera.h"
 #include "actors/enemy/EnemyParameters.h"
 #include "Engine/Core/Math/Geometry/Math.h"
+#include "IrufemiEngine.h"
 #include <algorithm>
 #include <cmath>
 
@@ -91,12 +92,19 @@ void HeadRight::Update() {
   }
 }
 
-void HeadRight::Draw() {
+void HeadRight::Draw(IrufemiEngine* engine) {
   bool modelGone = disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime();
   if (obj_ && !modelGone) {
+      engine->SetBlend(BlendMode::kBlendModeNormal);
+      engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
+      engine->SetCull(PSOManager::CullMode::Back);
     obj_->Draw();
   }
   if (voxelSystem_) {
+      // ボクセル描画用の状態を明示的にセット
+      engine->SetBlend(BlendMode::kBlendModeNormal);
+      engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
+      engine->SetCull(PSOManager::CullMode::Back);
       voxelSystem_->Draw();
   }
 }

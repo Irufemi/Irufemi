@@ -302,7 +302,7 @@ void GameScene::Draw() {
     }
 
     if (boss_) {
-        boss_->Draw();
+        boss_->Draw(engine_);
     }
 }
 

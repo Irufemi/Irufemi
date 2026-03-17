@@ -29,7 +29,7 @@ public:
     ~Enemy();
     void Initialize(Camera* camera, IrufemiEngine* engine = nullptr);
     void Update(Player* player);
-    void Draw();
+    void Draw(IrufemiEngine* engine);
 
     // --- ビーム制御用 ---
     void FireBeam(); // ビームを生成する関数
