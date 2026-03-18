@@ -189,13 +189,17 @@ void GameScene::Update() {
           projectile->IsCompletelyDead())
         return;
 
+      // 毎回のターゲット（全部位）との判定ループ内で何度もGetOBB()を呼ばないようにキャッシュする
+      OBB projectileOBB = projectile->GetOBB();
+
       auto checkTarget = [&](auto *target) {
         // targetはまだ生きているか（吹き飛んでいないか）
         if (!target || target->GetHP() <= 0 || target->IsBlownAway())
           return;
 
         // OBB同士の判定(部位 vs 部位)
-        if (Collision::IsOBBCollision(projectile->GetOBB(), target->GetOBB())) {
+        // projectile->GetOBB() は親ループで1度だけ取得・計算するようにキャッシュ
+        if (Collision::IsOBBCollision(projectileOBB, target->GetOBB())) {
           Vector3 vel = projectile->GetBlowVelocity();
           Vector3 diff = Math::Subtract(projectile->GetTransform().translate,
                                         target->GetTransform().translate);

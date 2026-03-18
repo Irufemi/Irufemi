@@ -162,6 +162,13 @@ OBB HeadMid::GetOBB() const {
     obb.orientations[2] = { rotateMat.m[2][0], rotateMat.m[2][1], rotateMat.m[2][2] };
     
     obb.size = EnemyParameters::GetInstance()->GetHeadOBBSize();
+    
+    // 当たり判定をモデルの下側（原点）から上方向にシフトさせる
+    // 完全に上に上げる(1.0f)と高すぎる場合があるため、0.6fなどで少し下にずらす
+    float offsetY = obb.size.y * 0.6f; // （値を変更すると上下の位置を微調整できます）
+    Vector3 centerOffset = Math::Multiply(offsetY, obb.orientations[1]);
+    obb.center = Math::Add(obb.center, centerOffset);
+
     return obb;
 }
 
