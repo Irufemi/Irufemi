@@ -15,6 +15,7 @@
 #include "actors/enemy/Enemy.h"
 #include "actors/enemy/EnemyParameters.h"
 #include "contents/field/Field.h"
+#include "contents/skydome/Skydome.h"
 
 #include "Engine/Core/Math/Geometry/Collision.h"
 
@@ -49,6 +50,9 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
     field_ = std::make_unique<Field>(camera_.get(), engine_);
     field_->Initialize();
+
+    skydome_ = std::make_unique<Skydome>();
+    skydome_->Initialize(camera_.get());
 
     directionalLight_ = std::make_unique<DirectionalLight>();
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -267,6 +271,8 @@ void GameScene::Update() {
     field_->Update();
   }
 
+  skydome_->Update();
+
   // =====
   // ↑ゲームの更新
   // =====
@@ -314,6 +320,8 @@ void GameScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
     engine_->ApplyPSO();
+
+    skydome_->Draw();
 
     if (field_) {
         field_->Draw();

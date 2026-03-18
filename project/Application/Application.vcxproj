@@ -173,6 +173,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="contents\field\Field.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimation.cpp" />
     <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp" />
+    <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="scene\debug\DebugScene.cpp" />
     <ClCompile Include="main.cpp">
@@ -202,6 +203,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\EnemyParameters.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h" />
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
+    <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
     <ClInclude Include="scene\GameOver\GameOverScene.h" />
