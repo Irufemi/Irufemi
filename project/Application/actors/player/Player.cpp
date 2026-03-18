@@ -66,6 +66,12 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     muzzleFlashRight_ = std::make_unique<ParticleSystem>();
     muzzleFlashRight_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleFlash);
 
+    missileFire_ = std::make_unique<ParticleSystem>();
+    missileFire_->Initialize(camera_, "resources/circle.png", ParticleType::kMissileFire);
+    
+    missileSmoke_ = std::make_unique<ParticleSystem>();
+    missileSmoke_->Initialize(camera_, "resources/circle.png", ParticleType::kMissileSmoke);
+
     // --- 薬莢モデルの初期化 ---
     for (int i = 0; i < kMaxCartridges; ++i) {
         cartridgeObjs_[i] = std::make_unique<ObjClass>();
@@ -246,6 +252,8 @@ void Player::Update() {
     if (muzzleSmokeRight_) muzzleSmokeRight_->Update();
     if (muzzleFlashLeft_) muzzleFlashLeft_->Update();
     if (muzzleFlashRight_) muzzleFlashRight_->Update();
+    if (missileFire_) missileFire_->Update();
+    if (missileSmoke_) missileSmoke_->Update();
 
     // 5. 視点切り替え(Vキー)
     if (input_->IsKeyPressed('V')) {
@@ -420,8 +428,10 @@ void Player::Draw() {
     // --- 煙とマズルフラッシュの描画 ---
     if (muzzleSmokeLeft_) muzzleSmokeLeft_->Draw();
     if (muzzleSmokeRight_) muzzleSmokeRight_->Draw();
-    if (muzzleFlashLeft_) muzzleFlashLeft_->Draw();
-    if (muzzleFlashRight_) muzzleFlashRight_->Draw();
+        if (muzzleFlashLeft_) muzzleFlashLeft_->Draw();
+        if (muzzleFlashRight_) muzzleFlashRight_->Draw();
+        if (missileFire_) missileFire_->Draw();
+        if (missileSmoke_) missileSmoke_->Draw();
 
     // パーティクル描画後はPSOが切り替わっている可能性があるため、通常のオブジェクト描画用にリセットする
     if (engine_) {
@@ -815,6 +825,24 @@ void Player::UpdateMissile() {
             missiles_[i].position.x += missiles_[i].velocity.x;
             missiles_[i].position.y += missiles_[i].velocity.y;
             missiles_[i].position.z += missiles_[i].velocity.z;
+
+            // ミサイルの進行方向の逆（しっぽ）から火と煙を出す
+            // モデルの長さ(6.0)とスケール(playerScale * 0.4)を考慮
+            float missileHalfLength = (6.0f * 0.5f) * (scale_.z * 0.4f); // 約0.36
+            float vx = missiles_[i].velocity.x;
+            float vy = missiles_[i].velocity.y;
+            float vz = missiles_[i].velocity.z;
+            float speed = std::sqrt(vx * vx + vy * vy + vz * vz);
+            
+            Vector3 tailPos = missiles_[i].position;
+            if (speed > 0.001f) {
+                tailPos.x -= (vx / speed) * missileHalfLength;
+                tailPos.y -= (vy / speed) * missileHalfLength;
+                tailPos.z -= (vz / speed) * missileHalfLength;
+            }
+
+            if (missileFire_) missileFire_->PlayHitEffect(tailPos, 3);
+            if (missileSmoke_) missileSmoke_->PlayHitEffect(tailPos, 2);
 
             missiles_[i].timer--;
             if (missiles_[i].timer <= 0) missiles_[i].isActive = false;
