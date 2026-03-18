@@ -98,6 +98,7 @@ public:
      * @brief 描画処理
      */
     void Draw();
+    void DrawParticles(); // ★追加：パーティクルのみを後で描画するためのメソッド
 
     // ゲッター
     const Vector3& GetTranslate() const { return translate_; }
@@ -245,6 +246,8 @@ private:
     std::unique_ptr<ParticleSystem> muzzleSmokeRight_ = nullptr;
     std::unique_ptr<ParticleSystem> muzzleFlashLeft_ = nullptr;
     std::unique_ptr<ParticleSystem> muzzleFlashRight_ = nullptr;
+    std::unique_ptr<ParticleSystem> muzzleFlashAddLeft_ = nullptr; // ★追加：加算合成用
+    std::unique_ptr<ParticleSystem> muzzleFlashAddRight_ = nullptr; // ★追加：加算合成用
     std::unique_ptr<ParticleSystem> missileFire_ = nullptr;
     std::unique_ptr<ParticleSystem> missileSmoke_ = nullptr;
     std::unique_ptr<ObjClass> machineGunObjLeft_ = nullptr;
