@@ -191,6 +191,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="scene\title\TitleScene.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Beam.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Idle.h" />
     <ClInclude Include="actors\enemy\Animation\IEnemyAnimationState.h" />
     <ClInclude Include="actors\enemy\Body\Body.h" />
     <ClInclude Include="actors\enemy\AI\EnemyAI.h" />
