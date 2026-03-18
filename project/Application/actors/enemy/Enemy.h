@@ -1,7 +1,7 @@
 #pragma once
-#include "EnemyAI.h"
-#include "EnemyAnimation.h"
-#include "EnemyBeam.h"
+#include "AI/EnemyAI.h"
+#include "Animation/EnemyAnimation.h"
+#include "Beam/EnemyBeam.h"
 #include "Body/Body.h"
 #include "Head/Left/HeadLeft.h"
 #include "Head/Mid/HeadMid.h"

@@ -160,7 +160,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="actors\enemy\Body\Body.cpp" />
-    <ClCompile Include="actors\enemy\EnemyAI.cpp" />
+    <ClCompile Include="actors\enemy\AI\EnemyAI.cpp" />
     <ClCompile Include="actors\enemy\Head\Left\HeadLeft.cpp" />
     <ClCompile Include="actors\enemy\Head\Mid\HeadMid.cpp" />
     <ClCompile Include="actors\enemy\Head\Right\HeadRight.cpp" />
@@ -171,8 +171,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="actors\enemy\Enemy.cpp" />
     <ClCompile Include="actors\enemy\EnemyParameters.cpp" />
     <ClCompile Include="contents\field\Field.cpp" />
-    <ClCompile Include="actors\enemy\EnemyAnimation.cpp" />
-    <ClCompile Include="actors\enemy\EnemyBeam.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimation.cpp" />
+    <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="scene\debug\DebugScene.cpp" />
     <ClCompile Include="main.cpp">
@@ -189,7 +189,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actors\enemy\Body\Body.h" />
-    <ClInclude Include="actors\enemy\EnemyAI.h" />
+    <ClInclude Include="actors\enemy\AI\EnemyAI.h" />
     <ClInclude Include="actors\enemy\Head\Left\HeadLeft.h" />
     <ClInclude Include="actors\enemy\Head\Mid\HeadMid.h" />
     <ClInclude Include="actors\enemy\Head\Right\HeadRight.h" />
@@ -200,8 +200,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="contents\field\Field.h" />
     <ClInclude Include="actors\enemy\Enemy.h" />
     <ClInclude Include="actors\enemy\EnemyParameters.h" />
-    <ClInclude Include="actors\enemy\EnemyAnimation.h" />
-    <ClInclude Include="actors\enemy\EnemyBeam.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h" />
+    <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
     <ClInclude Include="scene\GameOver\GameOverScene.h" />
