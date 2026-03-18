@@ -38,7 +38,7 @@ struct MissileData {
  */
 struct MachineGunBullet {
     Vector3 position; // 現在位置
-    Vector3 velocity; // 移動速度（ベクトル）
+    Vector3 velocity; // 移動速度（ベクトル
     bool isActive;    // 飛んでいるか
     int timer;        // 生存フレーム数
 };
@@ -85,7 +85,6 @@ public:
      * @param input InputManagerのポインタ
      * @param camera Cameraのポインタ
      * @param engine IrufemiEngineのポインタ
-     * @param mouse Mouseのポインタ
      */
     void Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine);
 
@@ -214,13 +213,20 @@ private:
     InputManager* input_ = nullptr;
     Camera* camera_ = nullptr;
     IrufemiEngine* engine_ = nullptr;
-    // Mouse* mouse_ = nullptr; // InputManager 経由で取得するため削除
 
     // --- カメラ・マウス操作用パラメータ ---
     float mouseSensitivity_ = 5.0f;           // マウス感度
     float mouseSensitivityMultiplier_ = 1.0f; // マウス感度の倍率
     float cameraPitch_ = -0.1f;               // カメラの上下の角度（ピッチ）
     bool isCameraControlEnabled_ = true;      // カメラ操作の有効/無効フラグ
+
+    // --- 振動（シェイク）パラメータ ---
+    Vector3 machineGunVibration_ = { 0.0f, 0.0f, 0.0f }; // 機関銃発射時の振動（位置オフセット）
+    Vector3 missileVibration_ = { 0.0f, 0.0f, 0.0f };      // ミサイル発射時の振動（プレイヤー本体のオフセット）
+    int missileVibrationTimer_ = 0;                        // ミサイル振動の持続時間
+    const int kMissileVibrationDuration = 30;               // ミサイル振動の持続フレーム（約0.5秒）
+    float machineGunVibrationScale_ = 0.05f;
+    float missileVibrationScale_ = 0.4f;                   // ミサイル振動の強さを大幅にアップ
 
     // 3Dモデル本体
     std::unique_ptr<ObjClass> obj_ = nullptr;
@@ -253,7 +259,7 @@ private:
     MissileData missiles_[kMaxMissiles] = {};
     const float kMissileSpeed = 0.8f;
 
-    // --- ★スキルとからくりチャージ用 ---
+    // --- スキルとからくりチャージ用 ---
     int skillDurationTimer_ = 0;             // スキル実行中（打ち終わるまで）の時間
     int skillCooldownTimer_ = 0;             // スキルのクールタイム
     const int kSkillCooldownTime = 300;      // クールタイム5秒（60FPS想定）
@@ -262,8 +268,8 @@ private:
     const int kKarakuriChargeTime = 300;     // チャージ完了までの時間（5秒）
     bool isKarakuriCharged_ = false;         // チャージ状態（界王拳状態）
 
-    int karakuriActiveTimer_ = 0;            // ★追加：界王拳状態の持続時間
-    const int kKarakuriActiveTime = 1200;    // ★追加：20秒間（60FPS * 20 = 1200フレーム）
+    int karakuriActiveTimer_ = 0;            // 界王拳状態の持続時間
+    const int kKarakuriActiveTime = 1200;    // 20秒間（60FPS * 20 = 1200フレーム）
 
     // トランスフォーム
     Vector3 scale_ = { 0.3f, 1.0f, 0.3f };
@@ -275,7 +281,7 @@ private:
     ViewMode viewMode_ = ViewMode::kThirdPerson;
     bool isGrounded_ = true;
 
-    // --- ★追加：回避用変数 ---
+    // --- 回避用変数 ---
     int dodgeCooldownTimer_ = 0;         // 回避のクールタイム
     const int kDodgeCooldownTime = 120;  // クールタイム2秒（60FPS想定）
     int dodgeDurationTimer_ = 0;         // 回避行動自体の持続時間

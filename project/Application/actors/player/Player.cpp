@@ -1,6 +1,6 @@
 #include "Player.h"
 
-#include "Framework/SceneManager.h" // ★追加：シーン遷移用
+#include "Framework/SceneManager.h" // シーン遷移用
 #include "camera/Camera.h"
 #include <Windows.h>
 #include <cmath>
@@ -67,6 +67,11 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
         missileObjs_[i]->Initialize(camera_, "enemy/body.obj");
         missiles_[i].isActive = false;
     }
+
+    // 振動（シェイク）パラメータの初期化
+    machineGunVibration_ = { 0.0f, 0.0f, 0.0f };
+    missileVibration_ = { 0.0f, 0.0f, 0.0f };
+    missileVibrationTimer_ = 0;
 
     // スキル用変数の初期化
     skillDurationTimer_ = 0;
@@ -181,6 +186,10 @@ void Player::Update() {
                 ImGui::Text("Karakuri State: Normal");
             }
 
+            // 振動調整用ImGui
+            ImGui::DragFloat("MachineGun Vibe Scale", &machineGunVibrationScale_, 0.001f, 0.0f, 0.5f);
+            ImGui::DragFloat("Missile Vibe Scale", &missileVibrationScale_, 0.001f, 0.0f, 1.0f);
+
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Model")) {
@@ -194,6 +203,30 @@ void Player::Update() {
     ImGui::End();
 
 #endif
+
+    // ==========================================
+    // 振動（シェイク）の更新
+    // ==========================================
+    // ★変更: 撃ち終わった時のみ減衰させる。撃っている間は UpdateMachineGun() で毎フレーム上書きされます
+    if (machineGunActiveTimer_ <= 0) {
+        machineGunVibration_.x *= 0.8f;
+        machineGunVibration_.y *= 0.8f;
+        machineGunVibration_.z *= 0.8f;
+    }
+
+    if (missileVibrationTimer_ > 0) {
+        missileVibrationTimer_--;
+        // 振動をより激しくランダムに更新して持続させる
+        missileVibration_.x = ((std::rand() % 100) / 100.0f - 0.5f) * missileVibrationScale_ * 2.0f;
+        missileVibration_.y = ((std::rand() % 100) / 100.0f - 0.5f) * missileVibrationScale_ * 2.0f;
+        missileVibration_.z = ((std::rand() % 100) / 100.0f - 0.5f) * missileVibrationScale_ * 2.0f;
+    } else if (missileVibration_.x != 0.0f || missileVibration_.y != 0.0f || missileVibration_.z != 0.0f) {
+        // タイマーが切れたら減衰
+        missileVibration_.x *= 0.8f;
+        missileVibration_.y *= 0.8f;
+        missileVibration_.z *= 0.8f;
+    }
+    // ==========================================
 
     // --- マウスによる視点操作 ---
     if (isCameraControlEnabled_) {
@@ -329,7 +362,8 @@ void Player::Draw() {
             obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
         }
 
-        obj_->SetPosition(translate_);
+        // プレイヤー本体の位置にミサイル振動を反映
+        obj_->SetPosition(translate_ + missileVibration_);
         obj_->SetRotate(rotate_);
         obj_->SetScale(scale_);
         obj_->Update();
@@ -340,6 +374,7 @@ void Player::Draw() {
     }
 
     if (attackObj_ && attackState_ != AttackState::kNone && !isDead_ && isCameraControlEnabled_) {
+        // 攻撃モデルにもミサイル振動を反映（プレイヤーの衝撃感を出すため）
         attackObj_->Draw();
     }
 
@@ -367,12 +402,13 @@ void Player::Draw() {
             rot.x = cameraPitch_;
         }
 
-        machineGunObjLeft_->SetPosition(leftShoulder);
+        // 機関銃モデルの位置に機関銃振動を反映
+        machineGunObjLeft_->SetPosition(leftShoulder + machineGunVibration_);
         machineGunObjLeft_->SetRotate(rot);
         machineGunObjLeft_->SetScale({ 0.1f, 0.1f, 0.3f });
         machineGunObjLeft_->Update();
 
-        machineGunObjRight_->SetPosition(rightShoulder);
+        machineGunObjRight_->SetPosition(rightShoulder + machineGunVibration_);
         machineGunObjRight_->SetRotate(rot);
         machineGunObjRight_->SetScale({ 0.1f, 0.1f, 0.3f });
         machineGunObjRight_->Update();
@@ -389,7 +425,7 @@ void Player::Draw() {
 
             // 残り時間に応じて透明度（アルファ値）を計算してフェードアウト
             float alpha = 1.0f;
-            const int fadeDuration = 45; // ★変更：消え始める残りフレーム数
+            const int fadeDuration = 45; // 残りフレーム数から消え始める
             if (cartridges_[i].timer < fadeDuration) {
                 alpha = static_cast<float>(cartridges_[i].timer) / static_cast<float>(fadeDuration);
             }
@@ -418,15 +454,24 @@ void Player::Draw() {
         }
     }
 
+    // ミサイルの外観
     for (int i = 0; i < kMaxMissiles; ++i) {
         if (missiles_[i].isActive && missileObjs_[i]) {
+            missiles_[i].position.y += missileVibration_.y; // 飛んでいく間も少しだけ揺らしてスピード感を出す
+
             missileObjs_[i]->SetPosition(missiles_[i].position);
             Vector3 mRot = { 0.0f, std::atan2(missiles_[i].velocity.x, missiles_[i].velocity.z), 0.0f };
             float xzLen = std::sqrt(missiles_[i].velocity.x * missiles_[i].velocity.x + missiles_[i].velocity.z * missiles_[i].velocity.z);
             mRot.x = std::atan2(-missiles_[i].velocity.y, xzLen);
             missileObjs_[i]->SetRotate(mRot);
-            Vector3 missileScale = { scale_.x * 0.4f, scale_.y * 0.4f, scale_.z * 0.4f };
+
+            // 細長くて鋭いミサイル形状に変更
+            Vector3 missileScale = { 0.15f, 0.15f, 0.8f };
             missileObjs_[i]->SetScale(missileScale);
+
+            // 色をより危険な赤オレンジに変更
+            missileObjs_[i]->SetColor({ 0.9f, 0.2f, 0.1f, 1.0f });
+
             missileObjs_[i]->Update();
             missileObjs_[i]->Draw();
         }
@@ -447,7 +492,8 @@ void Player::Draw() {
 
 PlayerCollider Player::GetCollider() const {
     PlayerCollider col;
-    col.center = translate_;
+    // やられ判定にもミサイル振動を反映
+    col.center = translate_ + missileVibration_;
     col.center.y += 0.2f;
     col.radius = kColliderRadius;
     col.obb.center = col.center;
@@ -468,7 +514,7 @@ void Player::ApplyDamage(int damage) {
         hp_ = 0;
         isDead_ = true;
 
-        // ★追加：死亡時にゲームオーバーシーンへ遷移
+        // 死亡時にゲームオーバーシーンへ遷移
         if (engine_ && engine_->GetSceneManager()) {
             engine_->GetSceneManager()->Request("GameOver"); // ※実際のシーン登録名に合わせて変更してください
         }
@@ -600,7 +646,8 @@ void Player::HandleAttack() {
             hammerPos.z = translate_.z + cosA * swingRadius;
 
             if (attackObj_) {
-                attackObj_->SetPosition(hammerPos);
+                // 攻撃モデルにもミサイル振動を反映
+                attackObj_->SetPosition(hammerPos + missileVibration_);
                 Vector3 swingRot = rotate_;
                 swingRot.y = currentAngle;
                 swingRot.x = 1.57f;
@@ -634,12 +681,14 @@ void Player::HandleAttack() {
             float swingRadius = 2.5f + (currentChargeRate_ * 0.5f);
             float hammerHeight = 1.0f;
 
+            // 攻撃判定の位置にもミサイル振動を反映
             attackCollision_.center.x = translate_.x + sinA * swingRadius;
             attackCollision_.center.y = translate_.y + hammerHeight;
             attackCollision_.center.z = translate_.z + cosA * swingRadius;
 
             if (attackObj_) {
-                attackObj_->SetPosition(attackCollision_.center);
+                // 攻撃モデルにもミサイル振動を反映
+                attackObj_->SetPosition(attackCollision_.center + missileVibration_);
                 Vector3 swingRot = rotate_;
                 swingRot.y = currentAngle;
                 swingRot.x = 1.57f;
@@ -701,6 +750,8 @@ void Player::HandleSkill() {
         if (skillDurationTimer_ <= 0 && skillCooldownTimer_ <= 0) {
             if (isKarakuriCharged_) {
                 FireMissileSkill();
+                // ミサイル振動を開始
+                missileVibrationTimer_ = kMissileVibrationDuration;
                 skillDurationTimer_ = 120;
             } else {
                 StartMachineGunSkill();
@@ -786,6 +837,12 @@ void Player::UpdateMachineGun() {
     if (machineGunActiveTimer_ > 0) {
         machineGunActiveTimer_--;
         machineGunFireTimer_--;
+
+        // ★変更: 撃っている間は【毎フレーム】振動の乱数を更新することで、揺れの速度を最速にします
+        machineGunVibration_.x = ((std::rand() % 100) / 100.0f - 0.5f) * machineGunVibrationScale_;
+        machineGunVibration_.y = ((std::rand() % 100) / 100.0f - 0.5f) * machineGunVibrationScale_;
+        machineGunVibration_.z = ((std::rand() % 100) / 100.0f - 0.5f) * machineGunVibrationScale_;
+
         if (machineGunFireTimer_ <= 0) {
             machineGunFireTimer_ = 6;
             float sinY = std::sin(rotate_.y);
@@ -878,6 +935,11 @@ void Player::UpdateCamera() {
         cameraPos.y = lookAtTarget.y + (sinPitch * distance);
         cameraPos.z = lookAtTarget.z - (cosYaw * cosPitch * distance);
 
+        // カメラにも発射時の振動を少しだけブレンドして、画面全体を揺らす
+        cameraPos.x += missileVibration_.x * 0.5f;
+        cameraPos.y += missileVibration_.y * 0.5f;
+        cameraPos.z += missileVibration_.z * 0.5f;
+
         if (cameraPos.y < 0.2f) {
             cameraPos.y = 0.2f;
         }
@@ -888,6 +950,11 @@ void Player::UpdateCamera() {
         cameraPos.x = translate_.x;
         cameraPos.y = 1.0f + (translate_.y * kCameraJumpFollowRatio);
         cameraPos.z = translate_.z;
+
+        // 一人称視点でも揺らす
+        cameraPos.x += missileVibration_.x * 0.5f;
+        cameraPos.y += missileVibration_.y * 0.5f;
+        cameraPos.z += missileVibration_.z * 0.5f;
 
         if (cameraPos.y < 0.2f) cameraPos.y = 0.2f;
 
@@ -921,7 +988,7 @@ void Player::EjectCartridge(const Vector3& startPos, bool isRight) {
             cartridges_[i].isActive = true;
             cartridges_[i].position = startPos;
 
-            // ★変更：寿命を少し短くする（180 -> 90、約1.5秒）
+            // 寿命を少し短くする（180 -> 90、約1.5秒）
             cartridges_[i].timer = 90;
 
             // 弾を撃っているターゲット（targetPos_）への方向を計算
@@ -985,7 +1052,7 @@ void Player::EjectCartridge(const Vector3& startPos, bool isRight) {
 void Player::UpdateCartridges() {
     for (int i = 0; i < kMaxCartridges; ++i) {
         if (cartridges_[i].isActive) {
-            // ★追加：フェードアウト中は徐々に地面に沈むように判定を分ける
+            // フェードアウト中は徐々に地面に沈むように判定を分ける
             const int fadeDuration = 45; // 残り45フレーム（0.75秒）から沈み始める
             bool isFading = (cartridges_[i].timer < fadeDuration);
 
@@ -1035,4 +1102,3 @@ void Player::UpdateCartridges() {
         }
     }
 }
-
