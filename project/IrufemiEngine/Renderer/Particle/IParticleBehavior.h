@@ -107,5 +107,27 @@ public:
 	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
 };
 
+/// <summary>
+/// ミサイルの炎の振る舞い
+/// </summary>
+class MissileFireBehavior : public IParticleBehavior {
+public:
+	void Initialize(Emitter* emitter) override;
+	void Update(Particle& particle, float deltaTime) override;
+	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
+};
+
+/// <summary>
+/// ミサイルの煙の振る舞い
+/// </summary>
+class MissileSmokeBehavior : public IParticleBehavior {
+public:
+	void Initialize(Emitter* emitter) override;
+	void Update(Particle& particle, float deltaTime) override;
+	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
+};
+
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type);
