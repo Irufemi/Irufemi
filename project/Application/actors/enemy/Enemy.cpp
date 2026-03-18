@@ -367,9 +367,8 @@ void Enemy::Update(Player *player) {
   }
 }
 
-void Enemy::Draw(IrufemiEngine *engine) {
-  if (!isActive_)
-    return;
+void Enemy::Draw(IrufemiEngine* engine) {
+  if (!isActive_) return;
   for (auto &body : bodies_) {
     if (body && !body->IsCompletelyDead()) {
       body->Draw(engine);
@@ -383,7 +382,7 @@ void Enemy::Draw(IrufemiEngine *engine) {
     headRight_->Draw(engine);
 
   // ビームを描画
-  if (beam_) {
+  if (beam_ ) {
     engine->ApplyPSO();
     beam_->Draw();
   }
