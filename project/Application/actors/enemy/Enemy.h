@@ -1,4 +1,5 @@
 #pragma once
+#include "EnemyState.h"
 #include "AI/EnemyAI.h"
 #include "Animation/EnemyAnimation.h"
 #include "Beam/EnemyBeam.h"
@@ -15,14 +16,6 @@
 class Camera;
 class IrufemiEngine;
 class Line3DRegion;
-
-// 敵の行動状態
-enum class EnemyState {
-    Idle,        // 待機：ふわふわ浮遊しながら自転
-    Attack_Beam, // 攻撃：集結・シェイク後のビーム発射演出
-    Attack_Missile, // 攻撃：ミサイル
-    Damaged      // 被弾：ノックバック演出など
-};
 
 class Enemy {
 public:
@@ -51,7 +44,7 @@ public:
     Vector3& GetHeadMidOffset() { return headMidOffset_; }
     Vector3& GetHeadRightOffset() { return headRightOffset_; }
 
-    void SetState(EnemyState state) { state_ = state; }
+    void SetState(EnemyState newState);
     EnemyState GetState() const { return state_; }
 
     // アニメーションクラスへのアクセス用
