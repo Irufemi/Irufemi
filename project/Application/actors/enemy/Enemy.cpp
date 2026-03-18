@@ -1,10 +1,10 @@
 #include "Enemy.h"
+#include "Body/Body.h"
 #include "EnemyParameters.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "IrufemiEngine.h"
-#include "Renderer/LineInstanced/LineClass.h"
-#include "Body/Body.h"
 #include "Player.h"
+#include "Renderer/LineInstanced/LineClass.h"
 #include "camera/Camera.h"
 #include "core/math/geometry/Math.h"
 #include <cmath>
@@ -154,6 +154,102 @@ void Enemy::Update(Player *player) {
 
 #ifdef USE_IMGUI
   ImGui::Begin("Enemy HP Status");
+
+  ImGui::Text("Enemy Status");
+
+  auto clampHp = [](int hp) { return hp < 0 ? 0 : hp; };
+
+  auto drawHpBar = [&](const char *label, int currentHp, int maxHp) {
+    currentHp = clampHp(currentHp);
+
+    float hpFraction = 0.0f;
+    if (maxHp > 0) {
+      hpFraction = static_cast<float>(currentHp) / static_cast<float>(maxHp);
+    }
+
+    if (hpFraction < 0.0f)
+      hpFraction = 0.0f;
+    if (hpFraction > 1.0f)
+      hpFraction = 1.0f;
+
+    char hpText[64];
+    snprintf(hpText, sizeof(hpText), "%s : %d / %d", label, currentHp, maxHp);
+
+    ImVec4 hpColor;
+    if (hpFraction > 0.5f) {
+      hpColor = ImVec4(0.2f, 0.8f, 0.2f, 1.0f); // 緑
+    } else if (hpFraction > 0.2f) {
+      hpColor = ImVec4(0.8f, 0.8f, 0.2f, 1.0f); // 黄
+    } else {
+      hpColor = ImVec4(0.8f, 0.2f, 0.2f, 1.0f); // 赤
+    }
+
+    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, hpColor);
+    ImGui::ProgressBar(hpFraction, ImVec2(-1.0f, 0.0f), hpText);
+    ImGui::PopStyleColor();
+  };
+
+  // =========================
+  // 累計HP
+  // =========================
+  int maxEnemyHp = EnemyParameters::GetInstance()->GetBodyHP() * 3 +
+                   EnemyParameters::GetInstance()->GetHeadLeftHP() +
+                   EnemyParameters::GetInstance()->GetHeadMidHP() +
+                   EnemyParameters::GetInstance()->GetHeadRightHP();
+
+  int currentEnemyHp = 0;
+  for (int i = 0; i < 3; ++i) {
+    if (bodies_[i]) {
+      currentEnemyHp += clampHp(bodies_[i]->GetHP());
+    }
+  }
+  if (headLeft_) {
+    currentEnemyHp += clampHp(headLeft_->GetHP());
+  }
+  if (headMid_) {
+    currentEnemyHp += clampHp(headMid_->GetHP());
+  }
+  if (headRight_) {
+    currentEnemyHp += clampHp(headRight_->GetHP());
+  }
+
+  drawHpBar("Total HP", currentEnemyHp, maxEnemyHp);
+
+  ImGui::Separator();
+
+  // =========================
+  // BodyごとのHP
+  // =========================
+  int bodyMaxHp = EnemyParameters::GetInstance()->GetBodyHP();
+
+  for (int i = 0; i < 3; ++i) {
+    char label[32];
+    snprintf(label, sizeof(label), "Body %d", i + 1);
+
+    int currentHp = 0;
+    if (bodies_[i]) {
+      currentHp = bodies_[i]->GetHP();
+    }
+
+    drawHpBar(label, currentHp, bodyMaxHp);
+  }
+
+  ImGui::Separator();
+
+  // =========================
+  // HeadごとのHP
+  // =========================
+  drawHpBar("Head Left", headLeft_ ? headLeft_->GetHP() : 0,
+            EnemyParameters::GetInstance()->GetHeadLeftHP());
+
+  drawHpBar("Head Mid", headMid_ ? headMid_->GetHP() : 0,
+            EnemyParameters::GetInstance()->GetHeadMidHP());
+
+  drawHpBar("Head Right", headRight_ ? headRight_->GetHP() : 0,
+            EnemyParameters::GetInstance()->GetHeadRightHP());
+
+  ImGui::Separator();
+
   ImGui::SliderFloat("Fall Speed", &fallSpeed_, 0.01f, 1.0f);
   ImGui::SliderFloat("Shake Intensity", &shakeIntensity_, 0.0f, 10.0f);
 
@@ -161,15 +257,18 @@ void Enemy::Update(Player *player) {
   if (ImGui::SliderFloat("Blow Speed", &blowSpeed, 0.0f, 5.0f)) {
     EnemyParameters::GetInstance()->SetBlowSpeed(blowSpeed);
   }
+
   float disappearTime = EnemyParameters::GetInstance()->GetDisappearTime();
   if (ImGui::SliderFloat("Disappear Time", &disappearTime, 0.5f, 10.0f)) {
     EnemyParameters::GetInstance()->SetDisappearTime(disappearTime);
   }
 
-  float flashDuration = EnemyParameters::GetInstance()->GetDamageFlashDuration();
+  float flashDuration =
+      EnemyParameters::GetInstance()->GetDamageFlashDuration();
   if (ImGui::SliderFloat("Damage Flash Duration", &flashDuration, 0.0f, 1.0f)) {
     EnemyParameters::GetInstance()->SetDamageFlashDuration(flashDuration);
   }
+
   Vector4 flashColor = EnemyParameters::GetInstance()->GetDamageFlashColor();
   if (ImGui::ColorEdit4("Damage Flash Color", &flashColor.x)) {
     EnemyParameters::GetInstance()->SetDamageFlashColor(flashColor);
@@ -179,35 +278,12 @@ void Enemy::Update(Player *player) {
   if (ImGui::SliderFloat3("Body OBB Size", &bodyObb.x, 0.1f, 30.0f)) {
     EnemyParameters::GetInstance()->SetBodyOBBSize(bodyObb);
   }
+
   Vector3 headObb = EnemyParameters::GetInstance()->GetHeadOBBSize();
   if (ImGui::SliderFloat3("Head OBB Size", &headObb.x, 0.1f, 30.0f)) {
     EnemyParameters::GetInstance()->SetHeadOBBSize(headObb);
   }
 
-  for (int i = 0; i < 3; ++i) {
-    if (bodies_[i]) {
-      int hp = bodies_[i]->GetHP();
-      if (ImGui::SliderInt(("Body[" + std::to_string(i) + "] HP").c_str(), &hp,
-                           0, 10000))
-        bodies_[i]->SetHP(hp);
-    }
-  }
-
-  if (headLeft_) {
-    int hp = headLeft_->GetHP();
-    if (ImGui::SliderInt("Head Left HP", &hp, 0, 10000))
-      headLeft_->SetHP(hp);
-  }
-  if (headMid_) {
-    int hp = headMid_->GetHP();
-    if (ImGui::SliderInt("Head Mid HP", &hp, 0, 10000))
-      headMid_->SetHP(hp);
-  }
-  if (headRight_) {
-    int hp = headRight_->GetHP();
-    if (ImGui::SliderInt("Head Right HP", &hp, 0, 10000))
-      headRight_->SetHP(hp);
-  }
   ImGui::End();
 
   if (lineOBB_) {
@@ -265,28 +341,33 @@ void Enemy::Update(Player *player) {
     bool allPartsGone = true;
     for (int i = 0; i < 3; ++i) {
       if (bodies_[i] && !bodies_[i]->IsCompletelyDead()) {
-          allPartsGone = false;
+        allPartsGone = false;
         break;
       }
     }
     if (allPartsGone) {
-      isActive_ = false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
+      isActive_ =
+          false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
     }
-    
+
     // 論理的な死亡判定（HP全損）
     if (!isDead_) {
-        bool allHpZero = true;
-        for (int i = 0; i < 3; ++i) {
-            if (bodies_[i] && bodies_[i]->GetHP() > 0) { allHpZero = false; break; }
+      bool allHpZero = true;
+      for (int i = 0; i < 3; ++i) {
+        if (bodies_[i] && bodies_[i]->GetHP() > 0) {
+          allHpZero = false;
+          break;
         }
-        if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 && headRight_->GetHP() <= 0) {
-            isDead_ = true;
-        }
+      }
+      if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
+          headRight_->GetHP() <= 0) {
+        isDead_ = true;
+      }
     }
   }
 }
 
-void Enemy::Draw(IrufemiEngine* engine) {
+void Enemy::Draw(IrufemiEngine *engine) {
   if (!isActive_)
     return;
   for (auto &body : bodies_) {
@@ -361,10 +442,10 @@ OBB Enemy::GetOBB() const {
 }
 
 void Enemy::SetState(EnemyState newState) {
-    state_ = newState;
+  state_ = newState;
 
-    // ★重要：アニメーションクラスにも「状態が変わったよ！」と教えてあげる
-    if (animation_) {
-        animation_->ChangeState(newState);
-    }
+  // ★重要：アニメーションクラスにも「状態が変わったよ！」と教えてあげる
+  if (animation_) {
+    animation_->ChangeState(newState);
+  }
 }
