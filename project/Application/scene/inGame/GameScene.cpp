@@ -334,6 +334,11 @@ void GameScene::Draw() {
     if (boss_) {
         boss_->Draw(engine_);
     }
+
+    // --- 透明オブジェクト（パーティクルなど）を最後に描画 ---
+    if (player_) {
+        player_->DrawParticles();
+    }
 }
 
 void GameScene::PauseUpdate() {}

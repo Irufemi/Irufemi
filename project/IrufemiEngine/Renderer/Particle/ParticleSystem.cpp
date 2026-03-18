@@ -451,6 +451,34 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
         }
     }
     break;
+    case ParticlePrimitiveShape::Circle:
+    {
+        const uint32_t kCircleDivide = 32;
+        const float kRadius = 0.5f;
+
+        // 中心点
+        VertexData vCenter;
+        vCenter.position = { 0.0f, 0.0f, 0.0f, 1.0f };
+        vCenter.texcoord = { 0.5f, 0.5f };
+        vCenter.normal = { 0.0f, 0.0f, -1.0f };
+        resource_->vertexDataList_.push_back(vCenter);
+
+        for (uint32_t i = 0; i <= kCircleDivide; ++i) {
+            float rad = 2.0f * std::numbers::pi_v<float> * float(i) / float(kCircleDivide);
+            VertexData v;
+            v.position = { std::cos(rad) * kRadius, std::sin(rad) * kRadius, 0.0f, 1.0f };
+            v.texcoord = { std::cos(rad) * 0.5f + 0.5f, std::sin(rad) * 0.5f + 0.5f };
+            v.normal = { 0.0f, 0.0f, -1.0f };
+            resource_->vertexDataList_.push_back(v);
+        }
+
+        for (uint32_t i = 0; i < kCircleDivide; ++i) {
+            resource_->indexDataList_.push_back(0); // 中心
+            resource_->indexDataList_.push_back(i + 1);
+            resource_->indexDataList_.push_back(i + 2);
+        }
+    }
+    break;
     }
 
     // リソースのメモリを確保(または再利用)

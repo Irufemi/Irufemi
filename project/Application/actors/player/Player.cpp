@@ -9,6 +9,7 @@
 #include "Engine/Core/Math/Geometry/Math.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Renderer/Particle/ParticleSystem.h"
+#include "Renderer/Particle/Data/Particle.h" // ★追加: 定義を確実にする
 #include "../enemy/Enemy.h" 
 
 #ifdef USE_IMGUI
@@ -62,9 +63,19 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
 
     // --- マズルフラッシュパーティクルの初期化 ---
     muzzleFlashLeft_ = std::make_unique<ParticleSystem>();
-    muzzleFlashLeft_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleFlash);
+    muzzleFlashLeft_->Initialize(camera_, "resources/whiteTexture.png", ParticleType::kMuzzleFlash, ParticlePrimitiveShape::Circle);
+    muzzleFlashLeft_->SetBlend(BlendMode::kBlendModeNormal); // 通常ブレンドにして背景を見えにくくする
     muzzleFlashRight_ = std::make_unique<ParticleSystem>();
-    muzzleFlashRight_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleFlash);
+    muzzleFlashRight_->Initialize(camera_, "resources/whiteTexture.png", ParticleType::kMuzzleFlash, ParticlePrimitiveShape::Circle);
+    muzzleFlashRight_->SetBlend(BlendMode::kBlendModeNormal);
+
+    // --- 加算合成マズルフラッシュの初期化（以前の仕様） ---
+    muzzleFlashAddLeft_ = std::make_unique<ParticleSystem>();
+    muzzleFlashAddLeft_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleFlash);
+    muzzleFlashAddLeft_->SetBlend(BlendMode::kBlendModeAdd);
+    muzzleFlashAddRight_ = std::make_unique<ParticleSystem>();
+    muzzleFlashAddRight_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleFlash);
+    muzzleFlashAddRight_->SetBlend(BlendMode::kBlendModeAdd);
 
     missileFire_ = std::make_unique<ParticleSystem>();
     missileFire_->Initialize(camera_, "resources/circle.png", ParticleType::kMissileFire);
@@ -252,6 +263,8 @@ void Player::Update() {
     if (muzzleSmokeRight_) muzzleSmokeRight_->Update();
     if (muzzleFlashLeft_) muzzleFlashLeft_->Update();
     if (muzzleFlashRight_) muzzleFlashRight_->Update();
+    if (muzzleFlashAddLeft_) muzzleFlashAddLeft_->Update();
+    if (muzzleFlashAddRight_) muzzleFlashAddRight_->Update();
     if (missileFire_) missileFire_->Update();
     if (missileSmoke_) missileSmoke_->Update();
 
@@ -423,15 +436,9 @@ void Player::Draw() {
         // マズルフラッシュの放出位置は銃口（muzzleLeft / muzzleRight）に合わせる
         if (muzzleFlashLeft_) muzzleFlashLeft_->SetEmitterPosition(muzzleLeft);
         if (muzzleFlashRight_) muzzleFlashRight_->SetEmitterPosition(muzzleRight);
+        if (muzzleFlashAddLeft_) muzzleFlashAddLeft_->SetEmitterPosition(muzzleLeft);
+        if (muzzleFlashAddRight_) muzzleFlashAddRight_->SetEmitterPosition(muzzleRight);
     }
-
-    // --- 煙とマズルフラッシュの描画 ---
-    if (muzzleSmokeLeft_) muzzleSmokeLeft_->Draw();
-    if (muzzleSmokeRight_) muzzleSmokeRight_->Draw();
-        if (muzzleFlashLeft_) muzzleFlashLeft_->Draw();
-        if (muzzleFlashRight_) muzzleFlashRight_->Draw();
-        if (missileFire_) missileFire_->Draw();
-        if (missileSmoke_) missileSmoke_->Draw();
 
     // パーティクル描画後はPSOが切り替わっている可能性があるため、通常のオブジェクト描画用にリセットする
     if (engine_) {
@@ -892,8 +899,11 @@ void Player::UpdateMachineGun() {
             EjectCartridge(leftShoulder, false); 
             if (muzzleSmokeLeft_) muzzleSmokeLeft_->PlayHitEffect(leftShoulder); 
             if (muzzleFlashLeft_) {
-                muzzleFlashLeft_->PlayHitEffect(muzzleLeft); // 1回目
-                muzzleFlashLeft_->PlayHitEffect(muzzleLeft); // 密度をさらに上げるために重ねる
+                muzzleFlashLeft_->PlayHitEffect(muzzleLeft); // 芯として1回だけ
+            }
+            if (muzzleFlashAddLeft_) {
+                muzzleFlashAddLeft_->PlayHitEffect(muzzleLeft);
+                muzzleFlashAddLeft_->PlayHitEffect(muzzleLeft); // 発光感のために2回重ねる
             }
 
             FireMachineGunBullet(muzzleRight);
@@ -901,7 +911,10 @@ void Player::UpdateMachineGun() {
             if (muzzleSmokeRight_) muzzleSmokeRight_->PlayHitEffect(rightShoulder); 
             if (muzzleFlashRight_) {
                 muzzleFlashRight_->PlayHitEffect(muzzleRight);
-                muzzleFlashRight_->PlayHitEffect(muzzleRight);
+            }
+            if (muzzleFlashAddRight_) {
+                muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
+                muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
             }
         }
     }
@@ -1138,3 +1151,19 @@ void Player::UpdateCartridges() {
     }
 }
 
+void Player::DrawParticles() {
+    // --- 煙とマズルフラッシュの描画 ---
+    if (muzzleSmokeLeft_) muzzleSmokeLeft_->Draw();
+    if (muzzleSmokeRight_) muzzleSmokeRight_->Draw();
+    if (muzzleFlashLeft_) muzzleFlashLeft_->Draw();
+    if (muzzleFlashRight_) muzzleFlashRight_->Draw();
+    if (muzzleFlashAddLeft_) muzzleFlashAddLeft_->Draw();
+    if (muzzleFlashAddRight_) muzzleFlashAddRight_->Draw();
+    if (missileFire_) missileFire_->Draw();
+    if (missileSmoke_) missileSmoke_->Draw();
+
+    // パーティクル描画後はPSOが切り替わっている可能性があるため、通常のオブジェクト描画用にリセットする
+    if (engine_) {
+        engine_->ApplyPSO();
+    }
+}
