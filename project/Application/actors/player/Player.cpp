@@ -53,6 +53,14 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     machineGunActiveTimer_ = 0;
     machineGunFireTimer_ = 0;
 
+    // --- 薬莢モデルの初期化 ---
+    for (int i = 0; i < kMaxCartridges; ++i) {
+        cartridgeObjs_[i] = std::make_unique<ObjClass>();
+        cartridgeObjs_[i]->Initialize(camera_, "enemy/body.obj"); // 既存モデルを流用して縮小します
+        cartridgeObjs_[i]->SetColor({ 0.8f, 0.6f, 0.1f, 1.0f });  // 真鍮（しんちゅう）っぽい色に設定
+        cartridges_[i].isActive = false;
+    }
+
     // --- ミサイルモデルとデータの初期化 ---
     for (int i = 0; i < kMaxMissiles; ++i) {
         missileObjs_[i] = std::make_unique<ObjClass>();
@@ -218,6 +226,7 @@ void Player::Update() {
     // 4. ミサイルや機関銃の発射後の更新（移動処理など）
     UpdateMissile();
     UpdateMachineGun();
+    UpdateCartridges(); // ★追加：薬莢の更新
 
     // 5. 視点切り替え(Vキー)
     if (input_->IsKeyPressed('V')) {
@@ -371,6 +380,18 @@ void Player::Draw() {
         if (viewMode_ != ViewMode::kFirstPerson && !isBlinking) {
             machineGunObjLeft_->Draw();
             machineGunObjRight_->Draw();
+        }
+    }
+
+    // --- 薬莢の描画 ---
+    for (int i = 0; i < kMaxCartridges; ++i) {
+        if (cartridges_[i].isActive && cartridgeObjs_[i] && !isDead_) {
+            cartridgeObjs_[i]->SetPosition(cartridges_[i].position);
+            cartridgeObjs_[i]->SetRotate(cartridges_[i].rotation);
+            // 弾よりさらに小さく設定します
+            cartridgeObjs_[i]->SetScale({ 0.02f, 0.02f, 0.04f });
+            cartridgeObjs_[i]->Update();
+            cartridgeObjs_[i]->Draw();
         }
     }
 
@@ -766,7 +787,10 @@ void Player::UpdateMachineGun() {
             Vector3 rightShoulder = { translate_.x + rightX * 0.7f, translate_.y + 1.0f, translate_.z + rightZ * 0.7f };
 
             FireMachineGunBullet(leftShoulder);
+            EjectCartridge(leftShoulder, false); // ★追加：左へ排出
+
             FireMachineGunBullet(rightShoulder);
+            EjectCartridge(rightShoulder, true); // ★追加：右へ排出
         }
     }
 
@@ -880,3 +904,79 @@ void Player::HitAndKnockback(Enemy* enemy) {
         knockbackVelocity_.z = (dir.z / len) * power;
     }
 }
+
+void Player::EjectCartridge(const Vector3& startPos, bool isRight) {
+    for (int i = 0; i < kMaxCartridges; ++i) {
+        if (!cartridges_[i].isActive) {
+            cartridges_[i].isActive = true;
+            cartridges_[i].position = startPos;
+            cartridges_[i].timer = 60; // 約1秒で消滅させる
+
+            // プレイヤーの向いている方向から、真横のベクトルを計算
+            float sinY = std::sin(rotate_.y);
+            float cosY = std::cos(rotate_.y);
+
+            // isRightがtrueなら右方向、falseなら左方向へ飛ばす
+            float dirX = isRight ? cosY : -cosY;
+            float dirZ = isRight ? -sinY : sinY;
+
+            // 毎回同じ方向に飛ばないよう、少しランダムなばらつきを加える
+            float randX = ((std::rand() % 100) / 100.0f - 0.5f) * 0.1f;
+            float randZ = ((std::rand() % 100) / 100.0f - 0.5f) * 0.1f;
+            float randY = ((std::rand() % 100) / 100.0f) * 0.1f;
+
+            float speed = 0.15f;
+            cartridges_[i].velocity = {
+                dirX * speed + randX,
+                0.2f + randY, // 斜め上にピョーンと跳ねさせる
+                dirZ * speed + randZ
+            };
+
+            // 回転を初期化し、ランダムな回転速度を設定
+            cartridges_[i].rotation = { 0.0f, 0.0f, 0.0f };
+            cartridges_[i].angularVelocity = {
+                ((std::rand() % 100) / 100.0f) * 0.6f - 0.3f,
+                ((std::rand() % 100) / 100.0f) * 0.6f - 0.3f,
+                ((std::rand() % 100) / 100.0f) * 0.6f - 0.3f
+            };
+            break;
+        }
+    }
+}
+
+void Player::UpdateCartridges() {
+    for (int i = 0; i < kMaxCartridges; ++i) {
+        if (cartridges_[i].isActive) {
+            // 移動と重力の適用
+            cartridges_[i].position.x += cartridges_[i].velocity.x;
+            cartridges_[i].position.y += cartridges_[i].velocity.y;
+            cartridges_[i].position.z += cartridges_[i].velocity.z;
+            cartridges_[i].velocity.y -= kGravity; // 重力で落ちる
+
+            // くるくる回転させる
+            cartridges_[i].rotation.x += cartridges_[i].angularVelocity.x;
+            cartridges_[i].rotation.y += cartridges_[i].angularVelocity.y;
+            cartridges_[i].rotation.z += cartridges_[i].angularVelocity.z;
+
+            // 地面に落ちたときの処理
+            if (cartridges_[i].position.y <= 0.0f) {
+                cartridges_[i].position.y = 0.0f;
+                cartridges_[i].velocity.y *= -0.4f; // 軽くバウンドさせる
+                cartridges_[i].velocity.x *= 0.7f;  // 摩擦で横移動を減速
+                cartridges_[i].velocity.z *= 0.7f;
+
+                // 回転も徐々に止める
+                cartridges_[i].angularVelocity.x *= 0.5f;
+                cartridges_[i].angularVelocity.y *= 0.5f;
+                cartridges_[i].angularVelocity.z *= 0.5f;
+            }
+
+            // 寿命が尽きたら消す
+            cartridges_[i].timer--;
+            if (cartridges_[i].timer <= 0) {
+                cartridges_[i].isActive = false;
+            }
+        }
+    }
+}
+

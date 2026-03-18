@@ -44,6 +44,19 @@ struct MachineGunBullet {
 };
 
 /**
+ * @struct Cartridge
+ * @brief 機関銃の薬莢データ
+ */
+struct Cartridge {
+    Vector3 position;
+    Vector3 velocity;
+    Vector3 rotation;
+    Vector3 angularVelocity; // 回転速度（くるくる回らせるため）
+    bool isActive;
+    int timer;
+};
+
+/**
  * @struct PlayerCollider
  * @brief プレイヤー自身の当たり判定（攻撃を受ける側）データ
  */
@@ -184,6 +197,18 @@ private:
      */
     void UpdateCamera();
 
+    /**
+     * @brief 薬莢の更新処理（移動、重力、回転）
+     */
+    void UpdateCartridges();
+
+    /**
+     * @brief 薬莢を1つ排出する処理
+     * @param startPos 排出位置（肩の位置）
+     * @param isRight 右側の銃かどうか（排出方向を決めるため）
+     */
+    void EjectCartridge(const Vector3& startPos, bool isRight);
+
 private:
     // 外部依存
     InputManager* input_ = nullptr;
@@ -216,6 +241,11 @@ private:
     int machineGunActiveTimer_ = 0;
     int machineGunFireTimer_ = 0;
     Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
+
+    // --- 薬莢（Cartridge）用オブジェクトとデータ ---
+    static const int kMaxCartridges = 100;
+    std::unique_ptr<ObjClass> cartridgeObjs_[kMaxCartridges];
+    Cartridge cartridges_[kMaxCartridges] = {};
 
     // --- 誘導ミサイル用 ---
     static const int kMaxMissiles = 4;
