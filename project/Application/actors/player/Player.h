@@ -8,6 +8,7 @@
 // 前方宣言
 class Camera;
 class Line3DRegion;
+class ParticleSystem;
 class Enemy; // Enemyクラスを前方宣言して、ポインタを使えるようにする
 
 /**
@@ -231,6 +232,10 @@ private:
     std::unique_ptr<Sprite> maskSprite_ = nullptr;
 
     // --- 機関銃・弾用オブジェクトとデータ ---
+    std::unique_ptr<ParticleSystem> muzzleSmokeLeft_ = nullptr;
+    std::unique_ptr<ParticleSystem> muzzleSmokeRight_ = nullptr;
+    std::unique_ptr<ParticleSystem> muzzleFlashLeft_ = nullptr;
+    std::unique_ptr<ParticleSystem> muzzleFlashRight_ = nullptr;
     std::unique_ptr<ObjClass> machineGunObjLeft_ = nullptr;
     std::unique_ptr<ObjClass> machineGunObjRight_ = nullptr;
 

@@ -509,7 +509,8 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
 
 void ParticleSystem::Update() {
 
-    if (isUpdate_ && particleType_ != ParticleType::kHitEffect) {
+    if (isUpdate_ && particleType_ != ParticleType::kHitEffect && 
+        particleType_ != ParticleType::kMuzzleSmoke && particleType_ != ParticleType::kMuzzleFlash) {
         emitter_.frequencyTime += kDeltatime_; // 時刻を進める
         if (emitter_.frequency <= emitter_.frequencyTime) { // 頻度より大きいなら発生
             particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
@@ -741,19 +742,23 @@ std::list<Particle> ParticleSystem::Emit(const Emitter& emitter, std::mt19937& r
 }
 
 void ParticleSystem::PlayHitEffect(const Vector3& position) {
-    if (particleType_ == ParticleType::kHitEffect) {
+    if (particleType_ == ParticleType::kHitEffect || 
+        particleType_ == ParticleType::kMuzzleSmoke || 
+        particleType_ == ParticleType::kMuzzleFlash) {
         emitter_.transform.translate = position;
         particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
     }
 }
 
 void ParticleSystem::PlayHitEffect(const Vector3& position, uint32_t count) {
-	if (particleType_ == ParticleType::kHitEffect) {
-		Emitter customEmitter = emitter_;
-		customEmitter.transform.translate = position;
-		customEmitter.count = count;
-		particles_.splice(particles_.end(), Emit(customEmitter, randomEngine_));
-	}
+    if (particleType_ == ParticleType::kHitEffect || 
+        particleType_ == ParticleType::kMuzzleSmoke || 
+        particleType_ == ParticleType::kMuzzleFlash) {
+        Emitter customEmitter = emitter_;
+        customEmitter.transform.translate = position;
+        customEmitter.count = count;
+        particles_.splice(particles_.end(), Emit(customEmitter, randomEngine_));
+    }
 }
 
 void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
