@@ -226,7 +226,7 @@ void Player::Update() {
     // 4. ミサイルや機関銃の発射後の更新（移動処理など）
     UpdateMissile();
     UpdateMachineGun();
-    UpdateCartridges(); // ★追加：薬莢の更新
+    UpdateCartridges(); // 薬莢の更新
 
     // 5. 視点切り替え(Vキー)
     if (input_->IsKeyPressed('V')) {
@@ -386,6 +386,16 @@ void Player::Draw() {
     // --- 薬莢の描画 ---
     for (int i = 0; i < kMaxCartridges; ++i) {
         if (cartridges_[i].isActive && cartridgeObjs_[i] && !isDead_) {
+
+            // 残り時間に応じて透明度（アルファ値）を計算してフェードアウト
+            float alpha = 1.0f;
+            const int fadeDuration = 45; // ★変更：消え始める残りフレーム数
+            if (cartridges_[i].timer < fadeDuration) {
+                alpha = static_cast<float>(cartridges_[i].timer) / static_cast<float>(fadeDuration);
+            }
+            // 計算したアルファ値を使って色を再設定
+            cartridgeObjs_[i]->SetColor({ 0.8f, 0.6f, 0.1f, alpha });
+
             cartridgeObjs_[i]->SetPosition(cartridges_[i].position);
             cartridgeObjs_[i]->SetRotate(cartridges_[i].rotation);
             // 弾よりさらに小さく設定します
@@ -911,10 +921,10 @@ void Player::EjectCartridge(const Vector3& startPos, bool isRight) {
             cartridges_[i].isActive = true;
             cartridges_[i].position = startPos;
 
-            // 寿命を長くする（約3秒）
-            cartridges_[i].timer = 180;
+            // ★変更：寿命を少し短くする（180 -> 90、約1.5秒）
+            cartridges_[i].timer = 90;
 
-            // ★変更点：弾を撃っているターゲット（targetPos_）への方向を計算
+            // 弾を撃っているターゲット（targetPos_）への方向を計算
             Vector3 playerCenter = { translate_.x, translate_.y + 1.0f, translate_.z };
             Vector3 aimPos = { targetPos_.x, targetPos_.y + 1.0f, targetPos_.z };
 
@@ -975,11 +985,25 @@ void Player::EjectCartridge(const Vector3& startPos, bool isRight) {
 void Player::UpdateCartridges() {
     for (int i = 0; i < kMaxCartridges; ++i) {
         if (cartridges_[i].isActive) {
-            // 移動と重力の適用
+            // ★追加：フェードアウト中は徐々に地面に沈むように判定を分ける
+            const int fadeDuration = 45; // 残り45フレーム（0.75秒）から沈み始める
+            bool isFading = (cartridges_[i].timer < fadeDuration);
+
+            if (!isFading) {
+                // 通常時：重力で落ちる
+                cartridges_[i].velocity.y -= kGravity;
+            } else {
+                // フェード中：重力を無視し、ゆっくり下へ沈む速度に固定
+                cartridges_[i].velocity.y = -0.005f;
+                // 横移動や回転もピタッと止める
+                cartridges_[i].velocity.x *= 0.9f;
+                cartridges_[i].velocity.z *= 0.9f;
+            }
+
+            // 移動の適用
             cartridges_[i].position.x += cartridges_[i].velocity.x;
             cartridges_[i].position.y += cartridges_[i].velocity.y;
             cartridges_[i].position.z += cartridges_[i].velocity.z;
-            cartridges_[i].velocity.y -= kGravity; // 重力で落ちる
 
             // くるくる回転させる
             cartridges_[i].rotation.x += cartridges_[i].angularVelocity.x;
@@ -988,15 +1012,19 @@ void Player::UpdateCartridges() {
 
             // 地面に落ちたときの処理
             if (cartridges_[i].position.y <= 0.0f) {
-                cartridges_[i].position.y = 0.0f;
-                cartridges_[i].velocity.y *= -0.4f; // 軽くバウンドさせる
-                cartridges_[i].velocity.x *= 0.7f;  // 摩擦で横移動を減速
-                cartridges_[i].velocity.z *= 0.7f;
+                if (!isFading) {
+                    // フェード前なら通常通りバウンドして止まる
+                    cartridges_[i].position.y = 0.0f;
+                    cartridges_[i].velocity.y *= -0.4f; // 軽くバウンドさせる
+                    cartridges_[i].velocity.x *= 0.7f;  // 摩擦で横移動を減速
+                    cartridges_[i].velocity.z *= 0.7f;
 
-                // 回転も徐々に止める
-                cartridges_[i].angularVelocity.x *= 0.5f;
-                cartridges_[i].angularVelocity.y *= 0.5f;
-                cartridges_[i].angularVelocity.z *= 0.5f;
+                    // 回転も徐々に止める
+                    cartridges_[i].angularVelocity.x *= 0.5f;
+                    cartridges_[i].angularVelocity.y *= 0.5f;
+                    cartridges_[i].angularVelocity.z *= 0.5f;
+                }
+                // フェード中なら y <= 0.0f の制限を無視してそのまま下に沈ませる
             }
 
             // 寿命が尽きたら消す
@@ -1007,3 +1035,4 @@ void Player::UpdateCartridges() {
         }
     }
 }
+
