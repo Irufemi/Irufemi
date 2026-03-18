@@ -509,7 +509,8 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
 
 void ParticleSystem::Update() {
 
-    if (isUpdate_ && particleType_ != ParticleType::kHitEffect) {
+    if (isUpdate_ && particleType_ != ParticleType::kHitEffect && 
+        particleType_ != ParticleType::kMuzzleSmoke && particleType_ != ParticleType::kMuzzleFlash) {
         emitter_.frequencyTime += kDeltatime_; // 時刻を進める
         if (emitter_.frequency <= emitter_.frequencyTime) { // 頻度より大きいなら発生
             particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
@@ -542,11 +543,17 @@ void ParticleSystem::Update() {
 
             Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particleIterator->transform.scale);
             Matrix4x4 translateMatrix = Math::MakeTranslateMatrix(particleIterator->transform.translate);
+            Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(particleIterator->transform.rotate.x, particleIterator->transform.rotate.y, particleIterator->transform.rotate.z);
+            
             Matrix4x4 worldMatrix = Math::MakeIdentity4x4();
             if (useBillboard_) {
-                worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billboardMatrix_), translateMatrix);
+                // ビルボードの場合、スケール -> 個別回転(Z) -> ビルボード -> 平行移動 の順で適用
+                // 面がカメラを向いた状態で個別に回転させる
+                Matrix4x4 rotateZMatrix = Math::MakeRotateZMatrix(particleIterator->transform.rotate.z);
+                worldMatrix = Math::Multiply(scaleMatrix, rotateZMatrix);
+                worldMatrix = Math::Multiply(worldMatrix, billboardMatrix_);
+                worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             } else {
-                Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(particleIterator->transform.rotate.x, particleIterator->transform.rotate.y, particleIterator->transform.rotate.z);
                 worldMatrix = Math::Multiply(scaleMatrix, rotateMatrix);
                 worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             }
@@ -741,19 +748,23 @@ std::list<Particle> ParticleSystem::Emit(const Emitter& emitter, std::mt19937& r
 }
 
 void ParticleSystem::PlayHitEffect(const Vector3& position) {
-    if (particleType_ == ParticleType::kHitEffect) {
+    if (particleType_ == ParticleType::kHitEffect || 
+        particleType_ == ParticleType::kMuzzleSmoke || 
+        particleType_ == ParticleType::kMuzzleFlash) {
         emitter_.transform.translate = position;
         particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
     }
 }
 
 void ParticleSystem::PlayHitEffect(const Vector3& position, uint32_t count) {
-	if (particleType_ == ParticleType::kHitEffect) {
-		Emitter customEmitter = emitter_;
-		customEmitter.transform.translate = position;
-		customEmitter.count = count;
-		particles_.splice(particles_.end(), Emit(customEmitter, randomEngine_));
-	}
+    if (particleType_ == ParticleType::kHitEffect || 
+        particleType_ == ParticleType::kMuzzleSmoke || 
+        particleType_ == ParticleType::kMuzzleFlash) {
+        Emitter customEmitter = emitter_;
+        customEmitter.transform.translate = position;
+        customEmitter.count = count;
+        particles_.splice(particles_.end(), Emit(customEmitter, randomEngine_));
+    }
 }
 
 void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {

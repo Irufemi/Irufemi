@@ -1,4 +1,4 @@
-#include "IParticleBehavior.h"
+#include "Renderer/Particle/IParticleBehavior.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include <numbers>
@@ -120,6 +120,84 @@ void ExplosionBehavior::Debug([[maybe_unused]] Emitter* emitter, DebugUI* ui, Pa
 }
 
 
+// MuzzleSmokeBehavior
+void MuzzleSmokeBehavior::Initialize(Emitter* emitter) {
+	emitter->count = 3;
+	emitter->area = { 0.1f, 0.1f, 0.1f };
+	emitter->velocityMin = { -0.5f, 0.2f, -0.5f };
+	emitter->velocityMax = { 0.5f, 1.0f, 0.5f };
+	emitter->startScale = { 0.1f, 0.1f, 1.0f };
+	emitter->endScale = { 0.5f, 0.5f, 1.0f };
+	emitter->startColor = { 1.0f, 1.0f, 1.0f, 0.5f };
+	emitter->endColor = { 1.0f, 1.0f, 1.0f, 0.0f };
+	emitter->colorMode = ParticleColorMode::kNone;
+}
+void MuzzleSmokeBehavior::Update(Particle& particle, [[maybe_unused]] float deltaTime) {
+	// 速度の減衰(空気抵抗)
+	particle.velocity *= 0.95f;
+	// 浮力(少し浮上)
+	particle.velocity.y += 0.5f * deltaTime;
+}
+void MuzzleSmokeBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
+	std::uniform_real_distribution<float> distTime(0.5f, 1.2f);
+	std::uniform_real_distribution<float> distScale(0.8f, 1.2f);
+	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+
+	particle.startScale = emitter.startScale * distScale(randomEngine);
+	particle.endScale = emitter.endScale * distScale(randomEngine);
+	particle.transform.rotate = { 0.0f, 0.0f, distRotate(randomEngine) };
+	particle.lifeTime = distTime(randomEngine);
+}
+void MuzzleSmokeBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {
+	// 必要に応じてUIを追加
+}
+
+// MuzzleFlashBehavior
+void MuzzleFlashBehavior::Initialize(Emitter* emitter) {
+	emitter->count = 25; // 大増量
+	emitter->area = { 0.01f, 0.01f, 0.01f }; // 放出点を中心に固める
+	emitter->velocityMin = { -15.0f, -15.0f, -15.0f }; // 爆発的な速度
+	emitter->velocityMax = { 15.0f, 15.0f, 15.0f };
+	emitter->startScale = { 1.0f, 1.0f, 1.0f }; // ダミー（MakeNewParticleで設定）
+	emitter->endScale = { 0.0f, 0.0f, 1.0f };
+	emitter->startColor = { 6.0f, 3.0f, 0.2f, 1.0f }; // より濃く鮮やかな金色/オレンジ
+	emitter->endColor = { 1.5f, 0.3f, 0.0f, 0.0f }; // 消え際も彩度を高めに
+	emitter->colorMode = ParticleColorMode::kNone;
+}
+void MuzzleFlashBehavior::Update(Particle& particle, float deltaTime) {
+	// 一瞬で広がり、一瞬で消えるための急激な減衰
+	particle.velocity *= 0.3f; 
+}
+void MuzzleFlashBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
+	std::uniform_real_distribution<float> distType(0.0f, 1.0f);
+	std::uniform_real_distribution<float> distTime(0.01f, 0.025f); // 1-2フレーム
+	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+
+	float typeRoll = distType(randomEngine);
+	if (typeRoll < 0.3f) {
+		// 【コア】 中心で大きく光る塊
+		std::uniform_real_distribution<float> distScale(2.0f, 4.0f);
+		float s = distScale(randomEngine);
+		particle.startScale = { s, s, 1.0f };
+	} else {
+		// 【ライン】 放射状に伸びる鋭い閃光
+		std::uniform_real_distribution<float> distWidth(0.05f, 0.15f);
+		std::uniform_real_distribution<float> distLength(5.0f, 12.0f);
+		particle.startScale = { distWidth(randomEngine), distLength(randomEngine), 1.0f };
+		// 速度をラインの方向に合わせる（より放射状に見せる）
+		float angle = distRotate(randomEngine);
+		particle.transform.rotate.z = angle;
+		float speed = 20.0f;
+		particle.velocity = { std::sin(angle) * speed, -std::cos(angle) * speed, 0.0f };
+	}
+	
+	particle.transform.rotate.z = distRotate(randomEngine);
+	particle.endScale = emitter.endScale;
+	particle.lifeTime = distTime(randomEngine);
+}
+void MuzzleFlashBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {
+}
+
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
 	switch (type) {
@@ -129,6 +207,10 @@ std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
 		return std::make_unique<HitEffectBehavior>();
 	case ParticleType::kExplosion:
 		return std::make_unique<ExplosionBehavior>();
+	case ParticleType::kMuzzleSmoke:
+		return std::make_unique<MuzzleSmokeBehavior>();
+	case ParticleType::kMuzzleFlash:
+		return std::make_unique<MuzzleFlashBehavior>();
 	case ParticleType::Normal:
 	default:
 		return std::make_unique<NormalBehavior>();
