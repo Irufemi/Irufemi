@@ -787,10 +787,10 @@ void Player::UpdateMachineGun() {
             Vector3 rightShoulder = { translate_.x + rightX * 0.7f, translate_.y + 1.0f, translate_.z + rightZ * 0.7f };
 
             FireMachineGunBullet(leftShoulder);
-            EjectCartridge(leftShoulder, false); // ★追加：左へ排出
+            EjectCartridge(leftShoulder, false); // 左へ排出
 
             FireMachineGunBullet(rightShoulder);
-            EjectCartridge(rightShoulder, true); // ★追加：右へ排出
+            EjectCartridge(rightShoulder, true); // 右へ排出
         }
     }
 
@@ -910,26 +910,54 @@ void Player::EjectCartridge(const Vector3& startPos, bool isRight) {
         if (!cartridges_[i].isActive) {
             cartridges_[i].isActive = true;
             cartridges_[i].position = startPos;
-            cartridges_[i].timer = 60; // 約1秒で消滅させる
 
-            // プレイヤーの向いている方向から、真横のベクトルを計算
-            float sinY = std::sin(rotate_.y);
-            float cosY = std::cos(rotate_.y);
+            // 寿命を長くする（約3秒）
+            cartridges_[i].timer = 180;
 
-            // isRightがtrueなら右方向、falseなら左方向へ飛ばす
-            float dirX = isRight ? cosY : -cosY;
-            float dirZ = isRight ? -sinY : sinY;
+            // ★変更点：弾を撃っているターゲット（targetPos_）への方向を計算
+            Vector3 playerCenter = { translate_.x, translate_.y + 1.0f, translate_.z };
+            Vector3 aimPos = { targetPos_.x, targetPos_.y + 1.0f, targetPos_.z };
+
+            // 高低差は無視して、水平方向(XZ平面)の向きだけをとる
+            Vector3 toTarget = {
+                aimPos.x - playerCenter.x,
+                0.0f,
+                aimPos.z - playerCenter.z
+            };
+
+            float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
+            Vector3 forward;
+            if (dist > 0.001f) {
+                forward = { toTarget.x / dist, 0.0f, toTarget.z / dist };
+            } else {
+                // ターゲットが無い場合はカメラ/体の向きにする
+                float sinY = std::sin(rotate_.y);
+                float cosY = std::cos(rotate_.y);
+                forward = { sinY, 0.0f, cosY };
+            }
+
+            // 正面方向に対する「右方向」のベクトルを計算
+            Vector3 rightDir = { forward.z, 0.0f, -forward.x };
+
+            // 排出速度のベースを「撃っている方向の真後ろ」に設定
+            float forwardSpeed = 0.15f;
+            Vector3 ejectBase = { -forward.x * forwardSpeed, 0.0f, -forward.z * forwardSpeed };
+
+            // isRightに応じて、少し横方向の成分を加える（右斜め後ろ、左斜め後ろ）
+            float spreadSpeed = 0.05f;
+            ejectBase.x += rightDir.x * (isRight ? spreadSpeed : -spreadSpeed);
+            ejectBase.z += rightDir.z * (isRight ? spreadSpeed : -spreadSpeed);
 
             // 毎回同じ方向に飛ばないよう、少しランダムなばらつきを加える
             float randX = ((std::rand() % 100) / 100.0f - 0.5f) * 0.1f;
             float randZ = ((std::rand() % 100) / 100.0f - 0.5f) * 0.1f;
             float randY = ((std::rand() % 100) / 100.0f) * 0.1f;
 
-            float speed = 0.15f;
+            // 速度を設定（上方向への跳ね上げは維持）
             cartridges_[i].velocity = {
-                dirX * speed + randX,
+                ejectBase.x + randX,
                 0.2f + randY, // 斜め上にピョーンと跳ねさせる
-                dirZ * speed + randZ
+                ejectBase.z + randZ
             };
 
             // 回転を初期化し、ランダムな回転速度を設定
@@ -979,4 +1007,3 @@ void Player::UpdateCartridges() {
         }
     }
 }
-
