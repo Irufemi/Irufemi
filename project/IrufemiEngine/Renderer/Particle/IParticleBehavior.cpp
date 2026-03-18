@@ -154,7 +154,7 @@ void MuzzleSmokeBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unuse
 
 // MuzzleFlashBehavior
 void MuzzleFlashBehavior::Initialize(Emitter* emitter) {
-	emitter->count = 25; // 大増量
+	emitter->count = 50; // さらに倍増！
 	emitter->area = { 0.01f, 0.01f, 0.01f }; // 放出点を中心に固める
 	emitter->velocityMin = { -15.0f, -15.0f, -15.0f }; // 爆発的な速度
 	emitter->velocityMax = { 15.0f, 15.0f, 15.0f };
@@ -176,12 +176,12 @@ void MuzzleFlashBehavior::MakeNewParticle(Particle& particle, std::mt19937& rand
 	float typeRoll = distType(randomEngine);
 	if (typeRoll < 0.3f) {
 		// 【コア】 中心で大きく光る塊
-		std::uniform_real_distribution<float> distScale(2.0f, 4.0f);
+		std::uniform_real_distribution<float> distScale(8.0f, 16.0f);
 		float s = distScale(randomEngine);
 		particle.startScale = { s, s, 1.0f };
 	} else {
 		// 【ライン】 放射状に伸びる鋭い閃光
-		std::uniform_real_distribution<float> distWidth(0.05f, 0.15f);
+		std::uniform_real_distribution<float> distWidth(0.5f, 1.2f);
 		std::uniform_real_distribution<float> distLength(5.0f, 12.0f);
 		particle.startScale = { distWidth(randomEngine), distLength(randomEngine), 1.0f };
 		// 速度をラインの方向に合わせる（より放射状に見せる）
