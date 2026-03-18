@@ -72,6 +72,11 @@ public:
 
 	void DrawAABB(const AABB& aabb, const Vector4& color);
 
+	// 描画設定のセッター
+	void SetBlend(BlendMode blend) { selectedBlend_ = blend; }
+	void SetDepthWrite(PSOManager::DepthWrite depth) { selectedDepth_ = depth; }
+	void SetCull(PSOManager::CullMode cull) { selectedCull_ = cull; }
+
 	// デバッグ表示切り替え
 	void SetShowEmitterAABB(bool show) { showEmitterAABB_ = show; }
 	bool IsShowEmitterAABB() const { return showEmitterAABB_; }

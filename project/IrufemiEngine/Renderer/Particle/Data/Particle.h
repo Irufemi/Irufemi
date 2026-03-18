@@ -60,4 +60,5 @@ enum class ParticlePrimitiveShape {
 	Cylinder, // シリンダー
 	Cube, // 立方体(正6面体)
 	Tetrahedron, // 正4面体
+	Circle, // 円形（追加）
 };

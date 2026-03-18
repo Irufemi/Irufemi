@@ -160,8 +160,8 @@ void MuzzleFlashBehavior::Initialize(Emitter* emitter) {
 	emitter->velocityMax = { 15.0f, 15.0f, 15.0f };
 	emitter->startScale = { 1.0f, 1.0f, 1.0f }; // ダミー（MakeNewParticleで設定）
 	emitter->endScale = { 0.0f, 0.0f, 1.0f };
-	emitter->startColor = { 6.0f, 3.0f, 0.2f, 1.0f }; // より濃く鮮やかな金色/オレンジ
-	emitter->endColor = { 1.5f, 0.3f, 0.0f, 0.0f }; // 消え際も彩度を高めに
+	emitter->startColor = { 1.0f, 0.7f, 0.1f, 1.0f }; // 鮮やかなオレンジ（通常ブレンド用に正規化）
+	emitter->endColor = { 1.0f, 0.0f, 0.0f, 0.0f }; // 赤く消えていく
 	emitter->colorMode = ParticleColorMode::kNone;
 }
 void MuzzleFlashBehavior::Update(Particle& particle, float deltaTime) {
@@ -170,19 +170,19 @@ void MuzzleFlashBehavior::Update(Particle& particle, float deltaTime) {
 }
 void MuzzleFlashBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
 	std::uniform_real_distribution<float> distType(0.0f, 1.0f);
-	std::uniform_real_distribution<float> distTime(0.01f, 0.025f); // 1-2フレーム
+	std::uniform_real_distribution<float> distTime(0.06f, 0.13f); // 残像感のある寿命
 	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
 
 	float typeRoll = distType(randomEngine);
 	if (typeRoll < 0.3f) {
 		// 【コア】 中心で大きく光る塊
-		std::uniform_real_distribution<float> distScale(8.0f, 16.0f);
+		std::uniform_real_distribution<float> distScale(0.5f, 1.0f); // 極小に
 		float s = distScale(randomEngine);
 		particle.startScale = { s, s, 1.0f };
 	} else {
 		// 【ライン】 放射状に伸びる鋭い閃光
-		std::uniform_real_distribution<float> distWidth(0.5f, 1.2f);
-		std::uniform_real_distribution<float> distLength(5.0f, 12.0f);
+		std::uniform_real_distribution<float> distWidth(0.05f, 0.1f); // 極細
+		std::uniform_real_distribution<float> distLength(0.5f, 1.5f); // 非常に短く
 		particle.startScale = { distWidth(randomEngine), distLength(randomEngine), 1.0f };
 		// 速度をラインの方向に合わせる（より放射状に見せる）
 		float angle = distRotate(randomEngine);
