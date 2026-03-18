@@ -245,6 +245,8 @@ private:
     std::unique_ptr<ParticleSystem> muzzleSmokeRight_ = nullptr;
     std::unique_ptr<ParticleSystem> muzzleFlashLeft_ = nullptr;
     std::unique_ptr<ParticleSystem> muzzleFlashRight_ = nullptr;
+    std::unique_ptr<ParticleSystem> missileFire_ = nullptr;
+    std::unique_ptr<ParticleSystem> missileSmoke_ = nullptr;
     std::unique_ptr<ObjClass> machineGunObjLeft_ = nullptr;
     std::unique_ptr<ObjClass> machineGunObjRight_ = nullptr;
 

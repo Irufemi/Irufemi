@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="camera">
@@ -60,6 +60,9 @@
     </Filter>
     <Filter Include="Scene\Title">
       <UniqueIdentifier>{52b04192-3ea4-4077-b32c-a2d4e50999b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contents\Skydome">
+      <UniqueIdentifier>{a2e5f410-816b-4e06-a443-0f90dfb32db7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -129,6 +132,11 @@
     <ClCompile Include="scene\GameOver\GameOverScene.cpp">
       <Filter>Scene\GameOver</Filter>
     </ClCompile>
+    <ClCompile Include="contents\skydome\Skydome.cpp">
+      <Filter>contents\Skydome</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Idle.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Beam.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">

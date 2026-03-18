@@ -12,6 +12,7 @@ class DebugCamera;
 class Player;
 class Enemy;
 class Field;
+class Skydome;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
@@ -42,6 +43,7 @@ private:
     std::unique_ptr<Player> player_ = nullptr;
     std::unique_ptr<Enemy> boss_ = nullptr;
     std::unique_ptr<Field> field_ = nullptr;
+    std::unique_ptr<Skydome> skydome_ = nullptr;
 
     // ライト
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;

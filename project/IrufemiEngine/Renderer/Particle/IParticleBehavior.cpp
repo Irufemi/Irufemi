@@ -154,7 +154,7 @@ void MuzzleSmokeBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unuse
 
 // MuzzleFlashBehavior
 void MuzzleFlashBehavior::Initialize(Emitter* emitter) {
-	emitter->count = 25; // 大増量
+	emitter->count = 50; // さらに倍増！
 	emitter->area = { 0.01f, 0.01f, 0.01f }; // 放出点を中心に固める
 	emitter->velocityMin = { -15.0f, -15.0f, -15.0f }; // 爆発的な速度
 	emitter->velocityMax = { 15.0f, 15.0f, 15.0f };
@@ -176,12 +176,12 @@ void MuzzleFlashBehavior::MakeNewParticle(Particle& particle, std::mt19937& rand
 	float typeRoll = distType(randomEngine);
 	if (typeRoll < 0.3f) {
 		// 【コア】 中心で大きく光る塊
-		std::uniform_real_distribution<float> distScale(2.0f, 4.0f);
+		std::uniform_real_distribution<float> distScale(8.0f, 16.0f);
 		float s = distScale(randomEngine);
 		particle.startScale = { s, s, 1.0f };
 	} else {
 		// 【ライン】 放射状に伸びる鋭い閃光
-		std::uniform_real_distribution<float> distWidth(0.05f, 0.15f);
+		std::uniform_real_distribution<float> distWidth(0.5f, 1.2f);
 		std::uniform_real_distribution<float> distLength(5.0f, 12.0f);
 		particle.startScale = { distWidth(randomEngine), distLength(randomEngine), 1.0f };
 		// 速度をラインの方向に合わせる（より放射状に見せる）
@@ -196,7 +196,61 @@ void MuzzleFlashBehavior::MakeNewParticle(Particle& particle, std::mt19937& rand
 	particle.lifeTime = distTime(randomEngine);
 }
 void MuzzleFlashBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {
+#ifdef USE_IMGUI
+	ImGui::Text("Muzzle Flash Particle Behavior");
+#endif
 }
+
+// MissileFireBehavior
+void MissileFireBehavior::Initialize(Emitter* emitter) {
+	emitter->count = 5;
+	emitter->area = { 0.1f, 0.1f, 0.1f };
+	emitter->velocityMin = { -1.0f, -1.0f, -1.0f };
+	emitter->velocityMax = { 1.0f, 1.0f, 1.0f };
+	emitter->startScale = { 0.5f, 0.5f, 0.5f };
+	emitter->endScale = { 0.1f, 0.1f, 0.1f };
+	emitter->startColor = { 2.0f, 1.5f, 0.5f, 1.0f }; // 高輝度オレンジ
+	emitter->endColor = { 1.0f, 0.0f, 0.0f, 0.0f };
+	emitter->colorMode = ParticleColorMode::kNone;
+}
+void MissileFireBehavior::Update(Particle& particle, float deltaTime) {
+	// 推進炎なので少し揺らぐ
+	particle.velocity.x += (std::rand() % 100 / 100.0f - 0.5f) * 0.5f;
+	particle.velocity.y += (std::rand() % 100 / 100.0f - 0.5f) * 0.5f;
+	particle.velocity.z += (std::rand() % 100 / 100.0f - 0.5f) * 0.5f;
+}
+void MissileFireBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
+	std::uniform_real_distribution<float> distTime(0.05f, 0.15f);
+	std::uniform_real_distribution<float> distScale(0.8f, 1.5f);
+	particle.startScale = emitter.startScale * distScale(randomEngine);
+	particle.endScale = emitter.endScale;
+	particle.lifeTime = distTime(randomEngine);
+}
+void MissileFireBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {}
+
+// MissileSmokeBehavior
+void MissileSmokeBehavior::Initialize(Emitter* emitter) {
+	emitter->count = 3;
+	emitter->area = { 0.2f, 0.2f, 0.2f };
+	emitter->velocityMin = { -0.5f, -0.5f, -0.5f };
+	emitter->velocityMax = { 0.5f, 0.5f, 0.5f };
+	emitter->startScale = { 0.3f, 0.3f, 0.3f };
+	emitter->endScale = { 1.5f, 1.5f, 1.5f }; // 広がる煙
+	emitter->startColor = { 0.5f, 0.5f, 0.5f, 0.6f };
+	emitter->endColor = { 0.2f, 0.2f, 0.2f, 0.0f };
+	emitter->colorMode = ParticleColorMode::kNone;
+}
+void MissileSmokeBehavior::Update(Particle& particle, float deltaTime) {
+	particle.velocity *= 0.98f; // 空気抵抗で減速
+}
+void MissileSmokeBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
+	std::uniform_real_distribution<float> distTime(0.5f, 1.2f); // 長生き
+	std::uniform_real_distribution<float> distScale(0.5f, 2.0f);
+	particle.startScale = emitter.startScale * distScale(randomEngine);
+	particle.endScale = emitter.endScale * distScale(randomEngine);
+	particle.lifeTime = distTime(randomEngine);
+}
+void MissileSmokeBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {}
 
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
@@ -211,6 +265,10 @@ std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
 		return std::make_unique<MuzzleSmokeBehavior>();
 	case ParticleType::kMuzzleFlash:
 		return std::make_unique<MuzzleFlashBehavior>();
+	case ParticleType::kMissileFire:
+		return std::make_unique<MissileFireBehavior>();
+	case ParticleType::kMissileSmoke:
+		return std::make_unique<MissileSmokeBehavior>();
 	case ParticleType::Normal:
 	default:
 		return std::make_unique<NormalBehavior>();

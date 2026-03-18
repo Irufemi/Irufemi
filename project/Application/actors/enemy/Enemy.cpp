@@ -74,7 +74,7 @@ void Enemy::Update(Player *player) {
     if (ai_)
       ai_->Update();
     if (animation_)
-      animation_->Update(player);
+      animation_->Update(player, 1.0f / 60.0f);
   }
 
 #ifdef USE_IMGUI
@@ -358,4 +358,13 @@ OBB Enemy::GetOBB() const {
   obb.size = {2.0f, 4.0f, 2.0f}; // 敵の見た目に合わせた仮のサイズ
 
   return obb;
+}
+
+void Enemy::SetState(EnemyState newState) {
+    state_ = newState;
+
+    // ★重要：アニメーションクラスにも「状態が変わったよ！」と教えてあげる
+    if (animation_) {
+        animation_->ChangeState(newState);
+    }
 }
