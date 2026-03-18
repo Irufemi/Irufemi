@@ -4,7 +4,7 @@
 #include "Engine/Core/Math/Vector4.h"
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Math/Geometry/AABB.h"
-#include "Renderer/Particle/Data/Particle.h"
+
 
 struct Particle {
 	Transform transform;
@@ -45,6 +45,8 @@ enum class ParticleType {
 	kAccelerationField,
 	kHitEffect,
 	kExplosion,
+	kMuzzleSmoke, // 排莢口の煙
+	kMuzzleFlash, // 銃口の火花
 	// 他の種類をここに追加
 };
 

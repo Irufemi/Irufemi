@@ -8,6 +8,7 @@
 #include <cstdio> 
 #include "Engine/Core/Math/Geometry/Math.h"
 #include "Renderer/LineInstanced/LineClass.h"
+#include "Renderer/Particle/ParticleSystem.h"
 #include "../enemy/Enemy.h" 
 
 #ifdef USE_IMGUI
@@ -52,6 +53,18 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     }
     machineGunActiveTimer_ = 0;
     machineGunFireTimer_ = 0;
+
+    // --- 銃口の煙パーティクルの初期化 ---
+    muzzleSmokeLeft_ = std::make_unique<ParticleSystem>();
+    muzzleSmokeLeft_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleSmoke);
+    muzzleSmokeRight_ = std::make_unique<ParticleSystem>();
+    muzzleSmokeRight_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleSmoke);
+
+    // --- マズルフラッシュパーティクルの初期化 ---
+    muzzleFlashLeft_ = std::make_unique<ParticleSystem>();
+    muzzleFlashLeft_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleFlash);
+    muzzleFlashRight_ = std::make_unique<ParticleSystem>();
+    muzzleFlashRight_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleFlash);
 
     // --- 薬莢モデルの初期化 ---
     for (int i = 0; i < kMaxCartridges; ++i) {
@@ -228,6 +241,12 @@ void Player::Update() {
     UpdateMachineGun();
     UpdateCartridges(); // 薬莢の更新
 
+    // 煙パーティクルの更新
+    if (muzzleSmokeLeft_) muzzleSmokeLeft_->Update();
+    if (muzzleSmokeRight_) muzzleSmokeRight_->Update();
+    if (muzzleFlashLeft_) muzzleFlashLeft_->Update();
+    if (muzzleFlashRight_) muzzleFlashRight_->Update();
+
     // 5. 視点切り替え(Vキー)
     if (input_->IsKeyPressed('V')) {
         viewMode_ = (viewMode_ == ViewMode::kThirdPerson) ? ViewMode::kFirstPerson : ViewMode::kThirdPerson;
@@ -369,18 +388,44 @@ void Player::Draw() {
 
         machineGunObjLeft_->SetPosition(leftShoulder);
         machineGunObjLeft_->SetRotate(rot);
-        machineGunObjLeft_->SetScale({ 0.1f, 0.1f, 0.3f });
+        machineGunObjLeft_->SetScale(Player::kMachineGunScale);
         machineGunObjLeft_->Update();
 
         machineGunObjRight_->SetPosition(rightShoulder);
         machineGunObjRight_->SetRotate(rot);
-        machineGunObjRight_->SetScale({ 0.1f, 0.1f, 0.3f });
+        machineGunObjRight_->SetScale(Player::kMachineGunScale);
         machineGunObjRight_->Update();
 
         if (viewMode_ != ViewMode::kFirstPerson && !isBlinking) {
             machineGunObjLeft_->Draw();
             machineGunObjRight_->Draw();
         }
+
+        // 銃口へのオフセット計算 (モデル寸法に基づく: Length=6.0f, ScaleZ=0.3f)
+        float muzzleOffsetSize = (Player::kMachineGunModelSize.z * 0.5f) * Player::kMachineGunScale.z; 
+        float cosRotX = std::cos(rot.x);
+        Vector3 forward = { std::sin(rot.y) * cosRotX, -std::sin(rot.x), std::cos(rot.y) * cosRotX };
+        Vector3 muzzleLeft = { leftShoulder.x + forward.x * muzzleOffsetSize, leftShoulder.y + forward.y * muzzleOffsetSize, leftShoulder.z + forward.z * muzzleOffsetSize };
+        Vector3 muzzleRight = { rightShoulder.x + forward.x * muzzleOffsetSize, rightShoulder.y + forward.y * muzzleOffsetSize, rightShoulder.z + forward.z * muzzleOffsetSize };
+
+        // 煙の放出位置は排莢口（leftShoulder / rightShoulder）に合わせる
+        if (muzzleSmokeLeft_) muzzleSmokeLeft_->SetEmitterPosition(leftShoulder);
+        if (muzzleSmokeRight_) muzzleSmokeRight_->SetEmitterPosition(rightShoulder);
+
+        // マズルフラッシュの放出位置は銃口（muzzleLeft / muzzleRight）に合わせる
+        if (muzzleFlashLeft_) muzzleFlashLeft_->SetEmitterPosition(muzzleLeft);
+        if (muzzleFlashRight_) muzzleFlashRight_->SetEmitterPosition(muzzleRight);
+    }
+
+    // --- 煙とマズルフラッシュの描画 ---
+    if (muzzleSmokeLeft_) muzzleSmokeLeft_->Draw();
+    if (muzzleSmokeRight_) muzzleSmokeRight_->Draw();
+    if (muzzleFlashLeft_) muzzleFlashLeft_->Draw();
+    if (muzzleFlashRight_) muzzleFlashRight_->Draw();
+
+    // パーティクル描画後はPSOが切り替わっている可能性があるため、通常のオブジェクト描画用にリセットする
+    if (engine_) {
+        engine_->ApplyPSO();
     }
 
     // --- 薬莢の描画 ---
@@ -796,11 +841,40 @@ void Player::UpdateMachineGun() {
             Vector3 leftShoulder = { translate_.x - rightX * 0.7f, translate_.y + 1.0f, translate_.z - rightZ * 0.7f };
             Vector3 rightShoulder = { translate_.x + rightX * 0.7f, translate_.y + 1.0f, translate_.z + rightZ * 0.7f };
 
-            FireMachineGunBullet(leftShoulder);
-            EjectCartridge(leftShoulder, false); // 左へ排出
+            // 銃口へのオフセット計算
+            Vector3 playerCenter = { translate_.x, translate_.y + 1.0f, translate_.z };
+            Vector3 aimPos = { targetPos_.x, targetPos_.y + 1.0f, targetPos_.z };
+            Vector3 toTarget = { aimPos.x - playerCenter.x, aimPos.y - playerCenter.y, aimPos.z - playerCenter.z };
 
-            FireMachineGunBullet(rightShoulder);
-            EjectCartridge(rightShoulder, true); // 右へ排出
+            Vector3 forward;
+            float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
+            if (dist > 0.001f) {
+                forward = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
+            } else {
+                float cosPitch = std::cos(cameraPitch_);
+                float sinPitch = std::sin(cameraPitch_);
+                forward = { std::sin(rotate_.y) * cosPitch, -sinPitch, std::cos(rotate_.y) * cosPitch };
+            }
+
+            float muzzleOffsetSize = (Player::kMachineGunModelSize.z * 0.5f) * Player::kMachineGunScale.z; // 銃の長さ分前方にずらす (3.0 * 0.3 = 0.9)
+            Vector3 muzzleLeft = { leftShoulder.x + forward.x * muzzleOffsetSize, leftShoulder.y + forward.y * muzzleOffsetSize, leftShoulder.z + forward.z * muzzleOffsetSize };
+            Vector3 muzzleRight = { rightShoulder.x + forward.x * muzzleOffsetSize, rightShoulder.y + forward.y * muzzleOffsetSize, rightShoulder.z + forward.z * muzzleOffsetSize };
+
+            FireMachineGunBullet(muzzleLeft);
+            EjectCartridge(leftShoulder, false); 
+            if (muzzleSmokeLeft_) muzzleSmokeLeft_->PlayHitEffect(leftShoulder); 
+            if (muzzleFlashLeft_) {
+                muzzleFlashLeft_->PlayHitEffect(muzzleLeft); // 1回目
+                muzzleFlashLeft_->PlayHitEffect(muzzleLeft); // 密度をさらに上げるために重ねる
+            }
+
+            FireMachineGunBullet(muzzleRight);
+            EjectCartridge(rightShoulder, true); 
+            if (muzzleSmokeRight_) muzzleSmokeRight_->PlayHitEffect(rightShoulder); 
+            if (muzzleFlashRight_) {
+                muzzleFlashRight_->PlayHitEffect(muzzleRight);
+                muzzleFlashRight_->PlayHitEffect(muzzleRight);
+            }
         }
     }
 
