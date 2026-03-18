@@ -13,15 +13,17 @@ void EnemyAnimState_Beam::Enter(Enemy* enemy) {
     attackTimer_ = 0.0f;
     isLockedOn_ = false;
     isFiring_ = false;
-    hasFinishedAttack_ = false;
+    hasFinishedAttack_ = false; // これが重要
+    // totalTimer_ は継続させてOK
 }
 
 void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
     attackTimer_ += deltaTime;
-    totalTime_ += deltaTime; // 振動用
+    totalTimer_ += deltaTime; // 振動計算用の timer_ 代わり
 
     EnemyBeam* beam = enemy->GetBeam();
     Matrix4x4 headMatrix = enemy->GetHeadMidWorldMatrix();
+    // 元の headExtensionY_ を使用した座標計算
     Vector3 headPos = { headMatrix.m[3][0], headMatrix.m[3][1] + headExtensionY_, headMatrix.m[3][2] };
 
     float endCharge = chargeTime_;
@@ -30,20 +32,20 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
     float endStun = endFire + stunTime_;
     float endRecovery = endStun + recoveryTime_;
 
-    // 1. チャージ
+    // 1. チャージ（追尾 ＆ 各部バラバラの震え ＆ 徐々に前傾）
     if (attackTimer_ < endCharge) {
         float sp = shakeBaseSpeed_;
         enemy->GetGlobalTransform().rotate.x += (fireLeanAngleX_ - enemy->GetGlobalTransform().rotate.x) * 0.05f;
 
         auto SetShake = [&](Vector3& offset, float seed) {
-            offset = { std::sin(totalTime_ * sp * seed) * chargeHeadShake_, std::cos(totalTime_ * sp * (seed + 0.1f)) * chargeHeadShake_, 0 };
+            offset = { std::sin(totalTimer_ * sp * seed) * chargeHeadShake_, std::cos(totalTimer_ * sp * (seed + 0.1f)) * chargeHeadShake_, 0 };
             };
         SetShake(enemy->GetHeadMidOffset(), 1.0f);
         SetShake(enemy->GetHeadLeftOffset(), 1.2f);
         SetShake(enemy->GetHeadRightOffset(), 0.8f);
 
         for (int i = 0; i < 3; ++i) {
-            enemy->GetBodyOffset(i).x = std::sin(totalTime_ * sp * 0.7f + (float)i) * chargeBodyShake_;
+            enemy->GetBodyOffset(i).x = std::sin(totalTimer_ * sp * 0.7f + (float)i) * chargeBodyShake_;
         }
 
         Vector3 target = (player) ? player->GetTranslate() : Vector3{ 0,0,0 };
@@ -51,7 +53,7 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
         float tAngleY = std::atan2(target.x - enemy->GetGlobalTransform().translate.x, target.z - enemy->GetGlobalTransform().translate.z);
         enemy->GetGlobalTransform().rotate.y += NormalizeAngle(tAngleY - enemy->GetGlobalTransform().rotate.y) * beamRotateSpeed_;
 
-        enemy->FireBeam(); // ここで生成
+        enemy->FireBeam(); // ここでビーム生成をトリガー
         if (beam) {
             beam->SetActive(true);
             beam->SetThickness(0.2f);
@@ -72,22 +74,22 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
 
         if (beam) beam->Update(headPos, lockedTargetPos_);
     }
-    // 3. 本射
+    // 3. 本射（激しい全身振動 ＆ 前傾維持）
     else if (attackTimer_ < endFire) {
         isFiring_ = true;
         float fireProgress = (attackTimer_ - endAnticipation) / fireTime_;
         float sp = shakeBaseSpeed_ * 1.3f;
 
         auto SetFireShake = [&](Vector3& offset, float seed) {
-            offset = { std::sin(totalTime_ * sp * seed) * fireHeadShake_, std::cos(totalTime_ * sp * (seed + 0.2f)) * fireHeadShake_, 0 };
+            offset = { std::sin(totalTimer_ * sp * seed) * fireHeadShake_, std::cos(totalTimer_ * sp * (seed + 0.2f)) * fireHeadShake_, 0 };
             };
         SetFireShake(enemy->GetHeadMidOffset(), 1.1f);
         SetFireShake(enemy->GetHeadLeftOffset(), 0.95f);
         SetFireShake(enemy->GetHeadRightOffset(), 1.15f);
 
         for (int i = 0; i < 3; ++i) {
-            enemy->GetBodyOffset(i).x = std::sin(totalTime_ * sp * 0.8f + (float)i) * fireBodyShake_;
-            enemy->GetBodyOffset(i).y += (std::cos(totalTime_ * sp * 0.5f) * 0.1f - enemy->GetBodyOffset(i).y) * 0.1f;
+            enemy->GetBodyOffset(i).x = std::sin(totalTimer_ * sp * 0.8f + (float)i) * fireBodyShake_;
+            enemy->GetBodyOffset(i).y += (std::cos(totalTimer_ * sp * 0.5f) * 0.1f - enemy->GetBodyOffset(i).y) * 0.1f;
         }
 
         if (beam) {
@@ -104,19 +106,18 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
     else if (attackTimer_ < endStun) {
         isFiring_ = false;
         if (beam) beam->SetActive(false);
-
         enemy->GetGlobalTransform().rotate.x += (0.0f - enemy->GetGlobalTransform().rotate.x) * returnSpeed_;
 
         float sp = shakeBaseSpeed_ * 0.5f;
         auto SetStunPos = [&](Vector3& offset, float seed) {
-            offset.x = std::sin(totalTime_ * sp * seed) * stunShakeStrength_;
+            offset.x = std::sin(totalTimer_ * sp * seed) * stunShakeStrength_;
             offset.z += (-1.0f - offset.z) * 0.15f;
             };
         SetStunPos(enemy->GetHeadMidOffset(), 1.0f);
         SetStunPos(enemy->GetHeadLeftOffset(), 1.1f);
         SetStunPos(enemy->GetHeadRightOffset(), 0.9f);
     }
-    // 5. 回復
+    // 5. 一呼吸
     else if (attackTimer_ < endRecovery) {
         float recProgress = (attackTimer_ - endStun) / recoveryTime_;
         float breathCurve = std::sin(recProgress * (float)M_PI);
@@ -141,11 +142,10 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
 
 void EnemyAnimState_Beam::Exit(Enemy* enemy) {
     if (auto* beam = enemy->GetBeam()) beam->SetActive(false);
-    isFiring_ = false;
 }
 
 float EnemyAnimState_Beam::NormalizeAngle(float angle) {
-    while (angle > (float)M_PI) angle -= (float)M_PI * 2.0f;
-    while (angle < -(float)M_PI) angle += (float)M_PI * 2.0f;
+    while (angle > (float)M_PI) angle -= 2.0f * (float)M_PI;
+    while (angle < -(float)M_PI) angle += 2.0f * (float)M_PI;
     return angle;
 }

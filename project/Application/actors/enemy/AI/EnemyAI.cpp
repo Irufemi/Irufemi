@@ -22,22 +22,24 @@ void EnemyAI::Update() {
             isFirstAttackStarted_ = true;
             enemy_->SetState(EnemyState::Attack_Beam);
         }
-        return; // 最初の待機中は以下の処理（通常のループ）を行わない
+        return;
     }
 
-    // 2. 通常の攻撃サイクル（アニメーション完了待ち）
-    if (enemy_->GetAnimation()->HasFinishedAttack()) {
-        enemy_->GetAnimation()->ResetAttackFinished();
-        isWaitingForNextAttack_ = true;
-        attackWaitTimer_ = 0.0f;
-    }
-
-    // 3. 次の攻撃までの待機処理
+    // 2. 次の攻撃までの待機処理 (待機フラグが立っている間)
     if (isWaitingForNextAttack_) {
         attackWaitTimer_ += 1.0f / 60.0f;
         if (attackWaitTimer_ >= attackInterval_) {
-            enemy_->SetState(EnemyState::Attack_Beam);
             isWaitingForNextAttack_ = false;
+            enemy_->SetState(EnemyState::Attack_Beam); // ここでビーム状態へ
+        }
+    }
+    // 3. 攻撃中：アニメーションが完了したか監視
+    else {
+        if (enemy_->GetAnimation()->HasFinishedAttack()) {
+            // 攻撃が終わったので待機モードへ移行
+            isWaitingForNextAttack_ = true;
+            attackWaitTimer_ = 0.0f;
+            enemy_->SetState(EnemyState::Idle);
         }
     }
 }
