@@ -543,11 +543,17 @@ void ParticleSystem::Update() {
 
             Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particleIterator->transform.scale);
             Matrix4x4 translateMatrix = Math::MakeTranslateMatrix(particleIterator->transform.translate);
+            Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(particleIterator->transform.rotate.x, particleIterator->transform.rotate.y, particleIterator->transform.rotate.z);
+            
             Matrix4x4 worldMatrix = Math::MakeIdentity4x4();
             if (useBillboard_) {
-                worldMatrix = Math::Multiply(Math::Multiply(scaleMatrix, billboardMatrix_), translateMatrix);
+                // ビルボードの場合、スケール -> 個別回転(Z) -> ビルボード -> 平行移動 の順で適用
+                // 面がカメラを向いた状態で個別に回転させる
+                Matrix4x4 rotateZMatrix = Math::MakeRotateZMatrix(particleIterator->transform.rotate.z);
+                worldMatrix = Math::Multiply(scaleMatrix, rotateZMatrix);
+                worldMatrix = Math::Multiply(worldMatrix, billboardMatrix_);
+                worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             } else {
-                Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(particleIterator->transform.rotate.x, particleIterator->transform.rotate.y, particleIterator->transform.rotate.z);
                 worldMatrix = Math::Multiply(scaleMatrix, rotateMatrix);
                 worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             }

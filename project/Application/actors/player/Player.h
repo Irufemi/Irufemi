@@ -232,6 +232,9 @@ private:
     std::unique_ptr<Sprite> maskSprite_ = nullptr;
 
     // --- 機関銃・弾用オブジェクトとデータ ---
+    inline static const Vector3 kMachineGunModelSize = { 6.0f, 1.6f, 6.0f };
+    inline static const Vector3 kMachineGunScale = { 0.1f, 0.1f, 0.3f };
+
     std::unique_ptr<ParticleSystem> muzzleSmokeLeft_ = nullptr;
     std::unique_ptr<ParticleSystem> muzzleSmokeRight_ = nullptr;
     std::unique_ptr<ParticleSystem> muzzleFlashLeft_ = nullptr;

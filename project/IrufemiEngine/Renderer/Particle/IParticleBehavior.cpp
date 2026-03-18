@@ -154,28 +154,45 @@ void MuzzleSmokeBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unuse
 
 // MuzzleFlashBehavior
 void MuzzleFlashBehavior::Initialize(Emitter* emitter) {
-	emitter->count = 5;
-	emitter->area = { 0.05f, 0.05f, 0.05f };
-	emitter->velocityMin = { -2.0f, -2.0f, -2.0f };
-	emitter->velocityMax = { 2.0f, 2.0f, 2.0f };
-	emitter->startScale = { 0.1f, 0.1f, 1.0f };
+	emitter->count = 25; // 大増量
+	emitter->area = { 0.01f, 0.01f, 0.01f }; // 放出点を中心に固める
+	emitter->velocityMin = { -15.0f, -15.0f, -15.0f }; // 爆発的な速度
+	emitter->velocityMax = { 15.0f, 15.0f, 15.0f };
+	emitter->startScale = { 1.0f, 1.0f, 1.0f }; // ダミー（MakeNewParticleで設定）
 	emitter->endScale = { 0.0f, 0.0f, 1.0f };
-	emitter->startColor = { 1.0f, 0.8f, 0.2f, 1.0f }; // オレンジ/黄色
-	emitter->endColor = { 1.0f, 0.4f, 0.0f, 0.0f };
+	emitter->startColor = { 6.0f, 3.0f, 0.2f, 1.0f }; // より濃く鮮やかな金色/オレンジ
+	emitter->endColor = { 1.5f, 0.3f, 0.0f, 0.0f }; // 消え際も彩度を高めに
 	emitter->colorMode = ParticleColorMode::kNone;
 }
 void MuzzleFlashBehavior::Update(Particle& particle, float deltaTime) {
-	// 初速を速くし、すぐに減衰させる
-	particle.velocity *= 0.9f;
+	// 一瞬で広がり、一瞬で消えるための急激な減衰
+	particle.velocity *= 0.3f; 
 }
 void MuzzleFlashBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
-	std::uniform_real_distribution<float> distTime(0.05f, 0.15f); // 非常に短い
-	std::uniform_real_distribution<float> distScale(0.5f, 1.5f);
+	std::uniform_real_distribution<float> distType(0.0f, 1.0f);
+	std::uniform_real_distribution<float> distTime(0.01f, 0.025f); // 1-2フレーム
 	std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
 
-	particle.startScale = emitter.startScale * distScale(randomEngine);
+	float typeRoll = distType(randomEngine);
+	if (typeRoll < 0.3f) {
+		// 【コア】 中心で大きく光る塊
+		std::uniform_real_distribution<float> distScale(2.0f, 4.0f);
+		float s = distScale(randomEngine);
+		particle.startScale = { s, s, 1.0f };
+	} else {
+		// 【ライン】 放射状に伸びる鋭い閃光
+		std::uniform_real_distribution<float> distWidth(0.05f, 0.15f);
+		std::uniform_real_distribution<float> distLength(5.0f, 12.0f);
+		particle.startScale = { distWidth(randomEngine), distLength(randomEngine), 1.0f };
+		// 速度をラインの方向に合わせる（より放射状に見せる）
+		float angle = distRotate(randomEngine);
+		particle.transform.rotate.z = angle;
+		float speed = 20.0f;
+		particle.velocity = { std::sin(angle) * speed, -std::cos(angle) * speed, 0.0f };
+	}
+	
+	particle.transform.rotate.z = distRotate(randomEngine);
 	particle.endScale = emitter.endScale;
-	particle.transform.rotate = { 0.0f, 0.0f, distRotate(randomEngine) };
 	particle.lifeTime = distTime(randomEngine);
 }
 void MuzzleFlashBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {

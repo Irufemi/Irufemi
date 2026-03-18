@@ -388,12 +388,12 @@ void Player::Draw() {
 
         machineGunObjLeft_->SetPosition(leftShoulder);
         machineGunObjLeft_->SetRotate(rot);
-        machineGunObjLeft_->SetScale({ 0.1f, 0.1f, 0.3f });
+        machineGunObjLeft_->SetScale(Player::kMachineGunScale);
         machineGunObjLeft_->Update();
 
         machineGunObjRight_->SetPosition(rightShoulder);
         machineGunObjRight_->SetRotate(rot);
-        machineGunObjRight_->SetScale({ 0.1f, 0.1f, 0.3f });
+        machineGunObjRight_->SetScale(Player::kMachineGunScale);
         machineGunObjRight_->Update();
 
         if (viewMode_ != ViewMode::kFirstPerson && !isBlinking) {
@@ -401,10 +401,8 @@ void Player::Draw() {
             machineGunObjRight_->Draw();
         }
 
-        // 銃口へのオフセット計算 (UpdateMachineGunと合わせる)
-        // モデルの長さ(Z)が 0.3f なので、中心からは 0.15f ずらす (モデルの原点が中心にあると仮定)
-        // 実際には少し余裕を持って 0.15f + α に調整
-        float muzzleOffsetSize = 0.15f; 
+        // 銃口へのオフセット計算 (モデル寸法に基づく: Length=6.0f, ScaleZ=0.3f)
+        float muzzleOffsetSize = (Player::kMachineGunModelSize.z * 0.5f) * Player::kMachineGunScale.z; 
         float cosRotX = std::cos(rot.x);
         Vector3 forward = { std::sin(rot.y) * cosRotX, -std::sin(rot.x), std::cos(rot.y) * cosRotX };
         Vector3 muzzleLeft = { leftShoulder.x + forward.x * muzzleOffsetSize, leftShoulder.y + forward.y * muzzleOffsetSize, leftShoulder.z + forward.z * muzzleOffsetSize };
@@ -858,19 +856,25 @@ void Player::UpdateMachineGun() {
                 forward = { std::sin(rotate_.y) * cosPitch, -sinPitch, std::cos(rotate_.y) * cosPitch };
             }
 
-            float muzzleOffsetSize = 0.15f; // 銃の長さ分前方にずらす
+            float muzzleOffsetSize = (Player::kMachineGunModelSize.z * 0.5f) * Player::kMachineGunScale.z; // 銃の長さ分前方にずらす (3.0 * 0.3 = 0.9)
             Vector3 muzzleLeft = { leftShoulder.x + forward.x * muzzleOffsetSize, leftShoulder.y + forward.y * muzzleOffsetSize, leftShoulder.z + forward.z * muzzleOffsetSize };
             Vector3 muzzleRight = { rightShoulder.x + forward.x * muzzleOffsetSize, rightShoulder.y + forward.y * muzzleOffsetSize, rightShoulder.z + forward.z * muzzleOffsetSize };
 
             FireMachineGunBullet(muzzleLeft);
-            EjectCartridge(leftShoulder, false); // 排莢は肩（ベース）から
-            if (muzzleSmokeLeft_) muzzleSmokeLeft_->PlayHitEffect(leftShoulder); // 煙は排莢口（肩）から
-            if (muzzleFlashLeft_) muzzleFlashLeft_->PlayHitEffect(muzzleLeft);    // 火花は銃口から
+            EjectCartridge(leftShoulder, false); 
+            if (muzzleSmokeLeft_) muzzleSmokeLeft_->PlayHitEffect(leftShoulder); 
+            if (muzzleFlashLeft_) {
+                muzzleFlashLeft_->PlayHitEffect(muzzleLeft); // 1回目
+                muzzleFlashLeft_->PlayHitEffect(muzzleLeft); // 密度をさらに上げるために重ねる
+            }
 
             FireMachineGunBullet(muzzleRight);
-            EjectCartridge(rightShoulder, true); // 排莢は肩（ベース）から
-            if (muzzleSmokeRight_) muzzleSmokeRight_->PlayHitEffect(rightShoulder); // 煙は排莢口（肩）から
-            if (muzzleFlashRight_) muzzleFlashRight_->PlayHitEffect(muzzleRight);    // 火花は銃口から
+            EjectCartridge(rightShoulder, true); 
+            if (muzzleSmokeRight_) muzzleSmokeRight_->PlayHitEffect(rightShoulder); 
+            if (muzzleFlashRight_) {
+                muzzleFlashRight_->PlayHitEffect(muzzleRight);
+                muzzleFlashRight_->PlayHitEffect(muzzleRight);
+            }
         }
     }
 
