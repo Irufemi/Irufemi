@@ -1,6 +1,6 @@
 #include "EnemyAnimation.h"
 #include "Enemy.h"
-#include "actors/player/Player.h"
+#include "Player.h"
 #include <cmath>
 #include <algorithm>
 

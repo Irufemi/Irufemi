@@ -3,8 +3,8 @@
 #include "Engine/Platform/Input/InputManager.h"
 #include "IrufemiEngine.h"
 #include "Renderer/LineInstanced/LineClass.h"
-#include "actors/enemy/Body/Body.h"
-#include "actors/player/Player.h"
+#include "Body/Body.h"
+#include "Player.h"
 #include "camera/Camera.h"
 #include "core/math/geometry/Math.h"
 #include <cmath>

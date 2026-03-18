@@ -70,22 +70,8 @@ void VoxelParticleSystem::Initialize(const std::string &modelName,
       0, nullptr, reinterpret_cast<void **>(&mappedPerViewData_));
   assert(SUCCEEDED(hr));
 
-  // 6. GPU上での初期化 (全パーティクルをisActive=0にする)
-  ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
-  auto *dxCommon = engine_->GetDirectXCommon();
-  ID3D12DescriptorHeap *ppHeaps[] = {dxCommon->GetSrvPool()->GetHeap()};
-  commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-  commandList->SetComputeRootSignature(dxCommon->GetComputeRootSignature());
-  commandList->SetPipelineState(initializePSO_.Get());
-  commandList->SetComputeRootDescriptorTable(0, voxelSrvHandleGPU_);    // t0
-  commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
-  commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
-
-  // UAVバリア
-  D3D12_RESOURCE_BARRIER barrier{};
-  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-  barrier.UAV.pResource = particleBuffer_.Get();
-  commandList->ResourceBarrier(1, &barrier);
+  // 6. 初期化 Dispatch は最初の Draw まで遅延させる
+  needsInitialize_ = true;
 }
 
 void VoxelParticleSystem::Update(float deltaTime) {
@@ -112,66 +98,69 @@ void VoxelParticleSystem::Update(float deltaTime) {
   mappedPerViewData_->billboardMatrix.m[3][1] = 0.0f;
   mappedPerViewData_->billboardMatrix.m[3][2] = 0.0f;
 
+  // Dispatch 処理は Draw に移動 (PreDraw 後に実行するため)
+}
+
+void VoxelParticleSystem::Draw() {
+  if (voxelCount_ == 0)
+    return;
+
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
 
+  // 1. Compute Shader dispatch (Deferred from Initialize and Update)
+  
+  // デスクリプタヒープの設定
   ID3D12DescriptorHeap *ppHeaps[] = {dxCommon->GetSrvPool()->GetHeap()};
   commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
   commandList->SetComputeRootSignature(dxCommon->GetComputeRootSignature());
 
-  D3D12_RESOURCE_BARRIER barrier{};
-  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-  barrier.UAV.pResource = particleBuffer_.Get();
+  D3D12_RESOURCE_BARRIER uavBarrier{};
+  uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+  uavBarrier.UAV.pResource = particleBuffer_.Get();
 
-  // 1. エミット処理 (フラクチャリングのトリガー)
+  // A. 初期化
+  if (needsInitialize_) {
+    commandList->SetPipelineState(initializePSO_.Get());
+    commandList->SetComputeRootDescriptorTable(0, voxelSrvHandleGPU_);    // t0
+    commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
+    commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
+    commandList->ResourceBarrier(1, &uavBarrier);
+    needsInitialize_ = false;
+  }
+
+  // B. エミット
   if (isEmitting_) {
     commandList->SetPipelineState(emitPSO_.Get());
     commandList->SetComputeRootDescriptorTable(0, voxelSrvHandleGPU_);    // t0
     commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
-    commandList->SetComputeRootConstantBufferView(
-        4, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0 (VoxelEmitter)
-    commandList->SetComputeRootConstantBufferView(
-        5, perFrameConstantBuffer_
-               ->GetGPUVirtualAddress()); // b1 (PerFrame: time/deltaTime)
+    commandList->SetComputeRootConstantBufferView(4, emitterConstantBuffer_->GetGPUVirtualAddress());
+    commandList->SetComputeRootConstantBufferView(5, perFrameConstantBuffer_->GetGPUVirtualAddress());
     commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
-
-    commandList->ResourceBarrier(1, &barrier);
-
-    isEmitting_ = false; // 1度だけ発生
+    commandList->ResourceBarrier(1, &uavBarrier);
+    isEmitting_ = false;
   }
 
-  // 2. 毎フレームの更新処理
+  // C. 毎フレームの更新
   commandList->SetPipelineState(updatePSO_.Get());
   commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
-  commandList->SetComputeRootConstantBufferView(
-      4, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0 (VoxelEmitter)
-  commandList->SetComputeRootConstantBufferView(
-      5, perFrameConstantBuffer_
-             ->GetGPUVirtualAddress()); // b1 (PerFrame: time/deltaTime)
+  commandList->SetComputeRootConstantBufferView(4, emitterConstantBuffer_->GetGPUVirtualAddress());
+  commandList->SetComputeRootConstantBufferView(5, perFrameConstantBuffer_->GetGPUVirtualAddress());
   commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
-
-  commandList->ResourceBarrier(1, &barrier);
+  commandList->ResourceBarrier(1, &uavBarrier);
 
   // --- デバッグログ ---
   if (++debugFrameCount_ >= 60) {
     debugFrameCount_ = 0;
     char logMsg[128];
-    sprintf_s(logMsg, "[Voxel Update][Ptr:%p] count:%u hasExploded:%d isEmitting:%d\n",
-              this, voxelCount_, hasExploded_ ? 1 : 0, isEmitting_ ? 1 : 0);
+    sprintf_s(logMsg, "[Voxel Draw][Ptr:%p] count:%u hasExploded:%d\n",
+              this, voxelCount_, hasExploded_ ? 1 : 0);
     OutputDebugStringA(logMsg);
-    
-    if (hasExploded_) {
-        OutputDebugStringA("[Voxel Draw] Executing Draw Command\n");
-    }
   }
-}
 
-void VoxelParticleSystem::Draw() {
-  if (voxelCount_ == 0 || !hasExploded_)
+  // 2. Graphics Draw
+  if (!hasExploded_)
     return;
-
-  ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
-  auto *dxCommon = engine_->GetDirectXCommon();
 
   // リソースバリヤー: UAV -> ShaderResource (読み取り)
   D3D12_RESOURCE_BARRIER barrier{};

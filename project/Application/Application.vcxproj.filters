@@ -108,7 +108,7 @@
     <ClCompile Include="actors\enemy\Body\Body.cpp">
       <Filter>actors\enemy\body</Filter>
     </ClCompile>
-    <ClCompile Include="actors\enemy\EnemyAI.cpp">
+    <ClCompile Include="actors\enemy\AI\EnemyAI.cpp">
       <Filter>actors\enemy</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\Head\Left\HeadLeft.cpp">
@@ -120,10 +120,10 @@
     <ClCompile Include="actors\enemy\Head\Right\HeadRight.cpp">
       <Filter>actors\enemy\head\right</Filter>
     </ClCompile>
-    <ClCompile Include="actors\enemy\EnemyAnimation.cpp">
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimation.cpp">
       <Filter>actors\enemy</Filter>
     </ClCompile>
-    <ClCompile Include="actors\enemy\EnemyBeam.cpp">
+    <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp">
       <Filter>actors\enemy</Filter>
     </ClCompile>
     <ClCompile Include="scene\GameOver\GameOverScene.cpp">
@@ -170,7 +170,7 @@
     <ClInclude Include="actors\enemy\Body\Body.h">
       <Filter>actors\enemy\body</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\EnemyAI.h">
+    <ClInclude Include="actors\enemy\AI\EnemyAI.h">
       <Filter>actors\enemy</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Head\Left\HeadLeft.h">
@@ -185,10 +185,10 @@
     <ClInclude Include="contents\field\Field.h">
       <Filter>contents\field</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\EnemyAnimation.h">
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h">
       <Filter>actors\enemy</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\EnemyBeam.h">
+    <ClInclude Include="actors\enemy\Beam\EnemyBeam.h">
       <Filter>actors\enemy</Filter>
     </ClInclude>
     <ClInclude Include="scene\GameOver\GameOverScene.h">
