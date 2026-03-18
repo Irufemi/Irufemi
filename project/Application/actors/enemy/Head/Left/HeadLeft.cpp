@@ -101,6 +101,7 @@ void HeadLeft::Draw(IrufemiEngine* engine) {
       engine->SetBlend(BlendMode::kBlendModeNormal);
       engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
       engine->SetCull(PSOManager::CullMode::Back);
+      engine->ApplyPSO();
     obj_->Draw();
   }
   if (voxelSystem_) {

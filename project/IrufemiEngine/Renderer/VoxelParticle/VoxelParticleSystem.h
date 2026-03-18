@@ -134,6 +134,7 @@ private:
   uint32_t voxelCount_ = 0;
   bool isEmitting_ = false;
   bool hasExploded_ = false;
+  bool needsInitialize_ = true;
   uint32_t debugFrameCount_ = 0; // デバッグログ用
 
   static IrufemiEngine *engine_;
