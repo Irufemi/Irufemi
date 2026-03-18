@@ -98,6 +98,7 @@ void HeadRight::Draw(IrufemiEngine* engine) {
       engine->SetBlend(BlendMode::kBlendModeNormal);
       engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
       engine->SetCull(PSOManager::CullMode::Back);
+      engine->ApplyPSO();
     obj_->Draw();
   }
   if (voxelSystem_) {
@@ -162,7 +163,7 @@ OBB HeadRight::GetOBB() const {
     
     // 当たり判定をモデルの下側（原点）から上方向にシフトさせる
     // 完全に上に上げる(1.0f)と高すぎる場合があるため、0.6fなどで少し下にずらす
-    float offsetY = obb.size.y * 0.6f; // （値を変更すると上下の位置を微調整できます）
+    float offsetY = obb.size.y * 0.7f; // （値を変更すると上下の位置を微調整できます）
     Vector3 centerOffset = Math::Multiply(offsetY, obb.orientations[1]);
     obb.center = Math::Add(obb.center, centerOffset);
 
