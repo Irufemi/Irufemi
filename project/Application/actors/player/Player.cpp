@@ -1,6 +1,4 @@
 #include "Player.h"
-
-#include "Framework/SceneManager.h" 
 #include "camera/Camera.h"
 #include <Windows.h>
 #include <cmath>
@@ -19,26 +17,26 @@ Player::~Player() {
 
 void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine) {
     input_ = input;
-    camera_ = camera;
     engine_ = engine;
 
     // 各コンポーネントの初期化
     movement_.Initialize();
-    weapon_.Initialize(camera_);
-    cameraController_.Initialize(camera_); // ★追加
+    weapon_.Initialize(camera);
+    cameraController_.Initialize(camera);
+    status_.Initialize();
 
     // --- モデルの生成と初期化 ---
     obj_ = std::make_unique<ObjClass>();
-    obj_->Initialize(camera_, "enemy/body.obj");
+    obj_->Initialize(camera, "enemy/body.obj");
     obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
     // --- 攻撃表示用モデルの生成と初期化 ---
     attackObj_ = std::make_unique<ObjClass>();
-    attackObj_->Initialize(camera_, "enemy/body.obj");
+    attackObj_->Initialize(camera, "enemy/body.obj");
 
     // --- 一人称視点用マスク画像の生成と初期化 ---
     maskSprite_ = std::make_unique<Sprite>();
-    maskSprite_->Initialize(camera_, "resources/mask.png");
+    maskSprite_->Initialize(camera, "resources/mask.png");
 
     skillDurationTimer_ = 0;
     skillCooldownTimer_ = 0;
@@ -53,38 +51,27 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     attackCollision_.isActive = false;
     attackCollision_.radius = 1.0f;
 
-    hp_ = kMaxHp;
-    isDead_ = false;
-    invincibleTimer_ = 0;
-
-    knockbackTarget_ = nullptr;
-    knockbackVelocity_ = { 0.0f, 0.0f, 0.0f };
-    knockbackTimer_ = 0;
-
 #ifdef USE_IMGUI
     lineOBB_ = std::make_unique<Line3DRegion>();
-    lineOBB_->Initialize(camera_);
+    lineOBB_->Initialize(camera);
 #endif
 }
 
 void Player::Update() {
-    if (isDead_) return;
+    if (status_.IsDead()) return;
 
-    if (invincibleTimer_ > 0) {
-        invincibleTimer_--;
-    }
-
+    status_.Update();
     movement_.UpdateTimers();
 
 #ifdef USE_IMGUI
     ImGui::Begin("Player");
 
     ImGui::Text("Player Status");
-    float hpFraction = static_cast<float>(hp_) / static_cast<float>(kMaxHp);
+    float hpFraction = static_cast<float>(status_.GetHp()) / static_cast<float>(status_.GetMaxHp());
     if (hpFraction < 0.0f) hpFraction = 0.0f;
 
     char hpText[32];
-    snprintf(hpText, sizeof(hpText), "HP: %d / %d", hp_, kMaxHp);
+    snprintf(hpText, sizeof(hpText), "HP: %d / %d", status_.GetHp(), status_.GetMaxHp());
 
     ImVec4 hpColor;
     if (hpFraction > 0.5f) hpColor = ImVec4(0.2f, 0.8f, 0.2f, 1.0f);
@@ -99,7 +86,6 @@ void Player::Update() {
 
     if (ImGui::BeginTabBar("PlayerTabs")) {
         if (ImGui::BeginTabItem("Settings")) {
-            // ★変更: カメラ関連の変数をPlayerCameraから取得してImGuiに渡す
             ImGui::SliderFloat("Mouse Sensitivity", cameraController_.GetMouseSensitivityPtr(), 0.0f, 100.0f);
             ImGui::DragFloat("Sensitivity Multiplier", cameraController_.GetMouseSensitivityMultiplierPtr(), 0.01f, 0.0f, 1.0f, "%.4f");
             ImGui::Checkbox("Camera Control Enabled", cameraController_.GetCameraControlEnabledPtr());
@@ -132,31 +118,15 @@ void Player::Update() {
     ImGui::End();
 #endif
 
-    // ★追加: マウス操作と視点切り替え処理をPlayerCameraに委譲
     cameraController_.UpdateInput(input_, rotate_);
 
     HandleMovement();
     HandleAttack();
     HandleSkill();
 
-    // 武器クラスの更新
     weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), targetPos_, scale_);
-
-    // ★変更: カメラの追従処理を委譲
     cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration());
-
-    // 吹き飛ばし処理
-    if (knockbackTarget_ && knockbackTimer_ > 0) {
-        Transform& enemyTransform = knockbackTarget_->GetGlobalTransform();
-        enemyTransform.translate.x += knockbackVelocity_.x;
-        enemyTransform.translate.y += knockbackVelocity_.y;
-        enemyTransform.translate.z += knockbackVelocity_.z;
-        knockbackVelocity_.x *= 0.85f;
-        knockbackVelocity_.y *= 0.85f;
-        knockbackVelocity_.z *= 0.85f;
-        knockbackTimer_--;
-        if (knockbackTimer_ <= 0) knockbackTarget_ = nullptr;
-    }
+    status_.UpdateKnockback();
 
 #ifdef USE_IMGUI
     if (input_->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
@@ -195,7 +165,7 @@ void Player::Update() {
 
             Vector4 greenColor = { 0.0f, 1.0f, 0.0f, 1.0f };
 
-            PlayerCollider col = GetCollider();
+            PlayerCollider col = status_.GetCollider(translate_, rotate_, weapon_.GetMissileVibration());
             addSphereLines(col.center, col.radius, greenColor);
 
             if (attackCollision_.isActive && cameraController_.IsCameraControlEnabled()) {
@@ -217,7 +187,7 @@ void Player::Update() {
 }
 
 void Player::Draw() {
-    bool isBlinking = (invincibleTimer_ > 0 && (invincibleTimer_ % 4) < 2);
+    bool isBlinking = (status_.GetInvincibleTimer() > 0 && (status_.GetInvincibleTimer() % 4) < 2);
 
     if (obj_) {
         if (isKarakuriCharged_) {
@@ -231,22 +201,18 @@ void Player::Draw() {
         obj_->SetScale(scale_);
         obj_->Update();
 
-        // ★変更: 視点の判定をPlayerCameraから取得
-        if (!cameraController_.IsFirstPerson() && !isBlinking && !isDead_) {
+        if (!cameraController_.IsFirstPerson() && !isBlinking && !status_.IsDead()) {
             obj_->Draw();
         }
     }
 
-    // ★変更: カメラ操作有効判定をPlayerCameraから取得
-    if (attackObj_ && attackState_ != AttackState::kNone && !isDead_ && cameraController_.IsCameraControlEnabled()) {
+    if (attackObj_ && attackState_ != AttackState::kNone && !status_.IsDead() && cameraController_.IsCameraControlEnabled()) {
         attackObj_->Draw();
     }
 
-    // ★変更: 武器系の描画
-    weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), targetPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, isDead_);
+    weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), targetPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, status_.IsDead());
 
-    // ★変更: 一人称視点の場合のマスク描画
-    if (cameraController_.IsFirstPerson() && !isDead_) {
+    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
         if (maskSprite_) maskSprite_->Draw();
     }
 
@@ -263,39 +229,21 @@ void Player::DrawParticles() {
     weapon_.DrawParticles(engine_);
 }
 
-PlayerCollider Player::GetCollider() const {
-    PlayerCollider col;
-    col.center = translate_ + weapon_.GetMissileVibration();
-    col.center.y += 0.2f;
-    col.radius = kColliderRadius;
-    col.obb.center = col.center;
-    Matrix4x4 rotateMatrix = Math::MakeRotateMatrix(Math::MakeRotateAxisAngleQuaternion({ 0.0f, 1.0f, 0.0f }, rotate_.y));
-    col.obb.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
-    col.obb.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
-    col.obb.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
-    col.obb.size = { 0.3f, 0.3f, 0.3f };
-    return col;
-}
-
 void Player::ApplyDamage(int damage) {
-    if (isDead_ || invincibleTimer_ > 0) return;
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
-    int finalDamage = isCharging ? damage * 2 : damage;
-    hp_ -= finalDamage;
-    if (hp_ <= 0) {
-        hp_ = 0;
-        isDead_ = true;
-        if (engine_ && engine_->GetSceneManager()) {
-            engine_->GetSceneManager()->Request("GameOver");
-        }
-    } else {
-        invincibleTimer_ = 60;
-    }
+    status_.ApplyDamage(damage, isCharging, engine_);
 }
 
 void Player::HandleMovement() {
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
-    movement_.Update(input_, isCharging, isKarakuriCharged_, translate_, rotate_, invincibleTimer_);
+
+    // ★修正箇所: 現在の無敵時間を取得して渡し、増えていたらセットする
+    int currentInvincible = status_.GetInvincibleTimer();
+    movement_.Update(input_, isCharging, isKarakuriCharged_, translate_, rotate_, currentInvincible);
+
+    if (currentInvincible > status_.GetInvincibleTimer()) {
+        status_.SetInvincibleTimer(currentInvincible);
+    }
 }
 
 void Player::HandleAttack() {
@@ -303,7 +251,6 @@ void Player::HandleAttack() {
     if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
 
-    // ★変更: カメラ操作有効判定をPlayerCameraから取得
     if (!cameraController_.IsCameraControlEnabled()) {
         attackState_ = AttackState::kNone;
         attackCollision_.isActive = false;
@@ -431,7 +378,6 @@ void Player::HandleSkill() {
     if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
 
-    // ★変更: カメラ操作有効判定をPlayerCameraから取得
     if (!cameraController_.IsCameraControlEnabled()) return;
 
     if (input_->IsMouseButtonPressed(Mouse::Button::Right)) {
@@ -448,20 +394,5 @@ void Player::HandleSkill() {
 }
 
 void Player::HitAndKnockback(Enemy* enemy) {
-    if (!enemy) return;
-
-    knockbackTarget_ = enemy;
-    knockbackTimer_ = 20;
-
-    Vector3 pPos = translate_;
-    Vector3 ePos = enemy->GetGlobalTransform().translate;
-    Vector3 dir = { ePos.x - pPos.x, 0.0f, ePos.z - pPos.z };
-
-    float len = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
-    if (len > 0.001f) {
-        float power = 2.0f;
-        knockbackVelocity_.x = (dir.x / len) * power;
-        knockbackVelocity_.y = (dir.y / len) * power;
-        knockbackVelocity_.z = (dir.z / len) * power;
-    }
+    status_.HitAndKnockback(enemy, translate_);
 }

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Irufemi.h"
-#include "Engine/Core/Math/Geometry/OBB.h" 
 #include "PlayerMovement.h" 
 #include "PlayerWeapon.h" 
-#include "PlayerCamera.h" // ★追加
+#include "PlayerCamera.h" 
+#include "PlayerStatus.h" 
 #include <memory>
 #include <vector>
 
@@ -21,16 +21,6 @@ struct AttackCollision {
     Vector3 center;
     float radius;
     bool isActive;
-};
-
-/**
- * @struct PlayerCollider
- * @brief プレイヤー自身の当たり判定（攻撃を受ける側）データ
- */
-struct PlayerCollider {
-    Vector3 center;
-    float radius;
-    OBB obb;
 };
 
 class Player {
@@ -53,13 +43,12 @@ public:
     MissileData* GetMissiles() { return weapon_.GetMissiles(); }
     static int GetMaxMissiles() { return PlayerWeapon::GetMaxMissiles(); }
 
-    PlayerCollider GetCollider() const;
+    PlayerCollider GetCollider() const { return status_.GetCollider(translate_, rotate_, weapon_.GetMissileVibration()); }
+    int GetHp() const { return status_.GetHp(); }
+    int GetMaxHp() const { return status_.GetMaxHp(); }
+    bool IsDead() const { return status_.IsDead(); }
+
     void ApplyDamage(int damage);
-
-    int GetHp() const { return hp_; }
-    int GetMaxHp() const { return kMaxHp; }
-    bool IsDead() const { return isDead_; }
-
     void SetTargetPosition(const Vector3& targetPos) { targetPos_ = targetPos; }
     void HitAndKnockback(Enemy* enemy);
 
@@ -70,13 +59,13 @@ private:
 
 private:
     InputManager* input_ = nullptr;
-    Camera* camera_ = nullptr;
     IrufemiEngine* engine_ = nullptr;
 
     // --- コンポーネント群 ---
     PlayerMovement movement_;
     PlayerWeapon weapon_;
-    PlayerCamera cameraController_; // ★追加: カメラを管理するコンポーネント
+    PlayerCamera cameraController_;
+    PlayerStatus status_;
 
     // 3Dモデル本体と分身
     std::unique_ptr<ObjClass> obj_ = nullptr;
@@ -117,18 +106,6 @@ private:
     AttackCollision attackCollision_ = {};
     int attackActiveTimer_ = 0;
     const int kAttackDuration = 20;
-
-    // --- ステータス・やられ判定用 ---
-    const int kMaxHp = 100;
-    int hp_ = kMaxHp;
-    bool isDead_ = false;
-    int invincibleTimer_ = 0;
-    const float kColliderRadius = 1.0f;
-
-    // --- ノックバック（吹き飛ばし）処理用変数 ---
-    Enemy* knockbackTarget_ = nullptr;
-    Vector3 knockbackVelocity_ = { 0.0f, 0.0f, 0.0f };
-    int knockbackTimer_ = 0;
 
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
