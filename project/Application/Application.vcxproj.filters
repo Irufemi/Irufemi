@@ -137,6 +137,9 @@
     </ClCompile>
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Idle.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Beam.cpp" />
+    <ClCompile Include="actors\player\PlayerMovement.cpp">
+      <Filter>actors\player</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -206,5 +209,8 @@
     <ClInclude Include="actors\enemy\EnemyState.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Beam.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Idle.h" />
+    <ClInclude Include="actors\player\PlayerMovement.h">
+      <Filter>actors\player</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

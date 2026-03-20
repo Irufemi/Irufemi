@@ -2,6 +2,7 @@
 
 #include "Irufemi.h"
 #include "Engine/Core/Math/Geometry/OBB.h" // OBBを追加
+#include "PlayerMovement.h" // ★追加
 #include <memory>
 #include <vector>
 
@@ -216,6 +217,9 @@ private:
     Camera* camera_ = nullptr;
     IrufemiEngine* engine_ = nullptr;
 
+    // ★追加: 移動処理を委譲するコンポーネント
+    PlayerMovement movement_;
+
     // --- カメラ・マウス操作用パラメータ ---
     float mouseSensitivity_ = 5.0f;           // マウス感度
     float mouseSensitivityMultiplier_ = 1.0f; // マウス感度の倍率
@@ -261,6 +265,8 @@ private:
     int machineGunFireTimer_ = 0;
     Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
 
+    const float kGravity = 0.02f;  // ★この1行を追加してください
+
     // --- 薬莢（Cartridge）用オブジェクトとデータ ---
     static const int kMaxCartridges = 100;
     std::unique_ptr<ObjClass> cartridgeObjs_[kMaxCartridges];
@@ -289,18 +295,7 @@ private:
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
     Vector3 translate_ = { 0.0f, 0.0f, -50.0f };
 
-    // 移動用物理変数
-    Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
     ViewMode viewMode_ = ViewMode::kThirdPerson;
-    bool isGrounded_ = true;
-
-    // --- 回避用変数 ---
-    int dodgeCooldownTimer_ = 0;         // 回避のクールタイム
-    const int kDodgeCooldownTime = 120;  // クールタイム2秒（60FPS想定）
-    int dodgeDurationTimer_ = 0;         // 回避行動自体の持続時間
-    const int kDodgeDurationTime = 20;   // 回避時間（約0.3秒）
-    Vector3 dodgeDirection_ = { 0.0f, 0.0f, 0.0f }; // 回避する方向
-    const float kDodgeSpeed = 0.6f;      // 回避の移動速度
 
     // --- 近接攻撃判定用 ---
     enum class AttackState {
@@ -328,17 +323,8 @@ private:
     Vector3 knockbackVelocity_ = { 0.0f, 0.0f, 0.0f }; // 吹き飛ぶ速度
     int knockbackTimer_ = 0;                      // 吹き飛ぶ時間（フレーム）
 
-    // パラメータ
-    const float kMoveSpeed = 0.2f;
-    const float kJumpForce = 0.25f;
-    const float kGravity = 0.02f;
-
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
     bool isDebugDrawOBB_ = false;
 #endif
-
-    // フィールドの境界
-    const float kFieldRangeX = 100.0f;
-    const float kFieldRangeZ = 100.0f;
 };
