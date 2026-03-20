@@ -178,6 +178,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="actors\player\PlayerMovement.cpp" />
+    <ClCompile Include="actors\player\PlayerWeapon.cpp" />
     <ClCompile Include="scene\debug\DebugScene.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
@@ -212,6 +213,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="actors\player\PlayerMovement.h" />
+    <ClInclude Include="actors\player\PlayerWeapon.h" />
     <ClInclude Include="scene\debug\DebugScene.h" />
     <ClInclude Include="scene\GameOver\GameOverScene.h" />
     <ClInclude Include="scene\inGame\GameScene.h" />
