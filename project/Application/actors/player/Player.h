@@ -3,7 +3,8 @@
 #include "Irufemi.h"
 #include "Engine/Core/Math/Geometry/OBB.h" 
 #include "PlayerMovement.h" 
-#include "PlayerWeapon.h" // ★追加
+#include "PlayerWeapon.h" 
+#include "PlayerCamera.h" // ★追加
 #include <memory>
 #include <vector>
 
@@ -34,11 +35,6 @@ struct PlayerCollider {
 
 class Player {
 public:
-    enum class ViewMode {
-        kFirstPerson, // 一人称
-        kThirdPerson  // 三人称
-    };
-
     ~Player();
 
     void Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine);
@@ -52,7 +48,6 @@ public:
 
     const AttackCollision& GetAttackCollision() const { return attackCollision_; }
 
-    // ★変更: 弾とミサイル情報の取得を武器コンポーネント経由にする
     MachineGunBullet* GetMachineGunBullets() { return weapon_.GetMachineGunBullets(); }
     static int GetMaxMachineGunBullets() { return PlayerWeapon::GetMaxMachineGunBullets(); }
     MissileData* GetMissiles() { return weapon_.GetMissiles(); }
@@ -72,21 +67,16 @@ private:
     void HandleMovement();
     void HandleAttack();
     void HandleSkill();
-    void UpdateCamera();
 
 private:
     InputManager* input_ = nullptr;
     Camera* camera_ = nullptr;
     IrufemiEngine* engine_ = nullptr;
 
+    // --- コンポーネント群 ---
     PlayerMovement movement_;
-    PlayerWeapon weapon_; // ★追加: 武器を管理するコンポーネント
-
-    // --- カメラ・マウス操作用パラメータ ---
-    float mouseSensitivity_ = 5.0f;
-    float mouseSensitivityMultiplier_ = 1.0f;
-    float cameraPitch_ = -0.1f;
-    bool isCameraControlEnabled_ = true;
+    PlayerWeapon weapon_;
+    PlayerCamera cameraController_; // ★追加: カメラを管理するコンポーネント
 
     // 3Dモデル本体と分身
     std::unique_ptr<ObjClass> obj_ = nullptr;
@@ -113,8 +103,6 @@ private:
     Vector3 scale_ = { 0.3f, 1.0f, 0.3f };
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
     Vector3 translate_ = { 0.0f, 0.0f, -50.0f };
-
-    ViewMode viewMode_ = ViewMode::kThirdPerson;
 
     // --- 近接攻撃判定用 ---
     enum class AttackState {

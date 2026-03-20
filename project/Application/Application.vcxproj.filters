@@ -143,6 +143,9 @@
     <ClCompile Include="actors\player\PlayerWeapon.cpp">
       <Filter>actors\player</Filter>
     </ClCompile>
+    <ClCompile Include="actors\player\PlayerCamera.cpp">
+      <Filter>actors\player</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\inGame\GameScene.h">
@@ -216,6 +219,9 @@
       <Filter>actors\player</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\PlayerWeapon.h">
+      <Filter>actors\player</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\player\PlayerCamera.h">
       <Filter>actors\player</Filter>
     </ClInclude>
   </ItemGroup>

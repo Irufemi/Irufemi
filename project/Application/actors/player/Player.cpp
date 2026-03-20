@@ -22,8 +22,10 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     camera_ = camera;
     engine_ = engine;
 
+    // 各コンポーネントの初期化
     movement_.Initialize();
-    weapon_.Initialize(camera_); // ★追加
+    weapon_.Initialize(camera_);
+    cameraController_.Initialize(camera_); // ★追加
 
     // --- モデルの生成と初期化 ---
     obj_ = std::make_unique<ObjClass>();
@@ -63,7 +65,6 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     lineOBB_ = std::make_unique<Line3DRegion>();
     lineOBB_->Initialize(camera_);
 #endif
-    isCameraControlEnabled_ = true;
 }
 
 void Player::Update() {
@@ -74,10 +75,6 @@ void Player::Update() {
     }
 
     movement_.UpdateTimers();
-
-    if (input_->IsKeyPressed(VK_F2)) {
-        isCameraControlEnabled_ = !isCameraControlEnabled_;
-    }
 
 #ifdef USE_IMGUI
     ImGui::Begin("Player");
@@ -102,9 +99,10 @@ void Player::Update() {
 
     if (ImGui::BeginTabBar("PlayerTabs")) {
         if (ImGui::BeginTabItem("Settings")) {
-            ImGui::SliderFloat("Mouse Sensitivity", &mouseSensitivity_, 0.0f, 100.0f);
-            ImGui::DragFloat("Sensitivity Multiplier", &mouseSensitivityMultiplier_, 0.01f, 0.0f, 1.0f, "%.4f");
-            ImGui::Checkbox("Camera Control Enabled", &isCameraControlEnabled_);
+            // ★変更: カメラ関連の変数をPlayerCameraから取得してImGuiに渡す
+            ImGui::SliderFloat("Mouse Sensitivity", cameraController_.GetMouseSensitivityPtr(), 0.0f, 100.0f);
+            ImGui::DragFloat("Sensitivity Multiplier", cameraController_.GetMouseSensitivityMultiplierPtr(), 0.01f, 0.0f, 1.0f, "%.4f");
+            ImGui::Checkbox("Camera Control Enabled", cameraController_.GetCameraControlEnabledPtr());
 
             if (skillDurationTimer_ > 0) {
                 ImGui::Text("Skill ACTIVE (Firing): %d", skillDurationTimer_);
@@ -134,38 +132,20 @@ void Player::Update() {
     ImGui::End();
 #endif
 
-    if (isCameraControlEnabled_) {
-        Vector2 mouseDelta = input_->GetMouseDelta();
-        float sensitivityMult = mouseSensitivity_ * mouseSensitivityMultiplier_ * 0.001f;
-        rotate_.y += mouseDelta.x * sensitivityMult;
-        cameraPitch_ += mouseDelta.y * sensitivityMult;
-
-        if (viewMode_ == ViewMode::kThirdPerson) {
-            if (cameraPitch_ > 0.25f) cameraPitch_ = 0.25f;
-            if (cameraPitch_ < -0.3f) cameraPitch_ = -0.3f;
-        } else {
-            if (cameraPitch_ > 0.25f) cameraPitch_ = 0.25f;
-            if (cameraPitch_ < -1.3f) cameraPitch_ = -1.3f;
-        }
-    }
+    // ★追加: マウス操作と視点切り替え処理をPlayerCameraに委譲
+    cameraController_.UpdateInput(input_, rotate_);
 
     HandleMovement();
     HandleAttack();
     HandleSkill();
 
-    // ★変更: 武器クラスの更新処理を呼び出す
-    weapon_.Update(translate_, rotate_, cameraPitch_, targetPos_, scale_);
+    // 武器クラスの更新
+    weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), targetPos_, scale_);
 
-    if (input_->IsKeyPressed('V')) {
-        viewMode_ = (viewMode_ == ViewMode::kThirdPerson) ? ViewMode::kFirstPerson : ViewMode::kThirdPerson;
-        if (viewMode_ == ViewMode::kThirdPerson) {
-            if (cameraPitch_ > 0.25f) cameraPitch_ = 0.25f;
-            if (cameraPitch_ < -0.3f) cameraPitch_ = -0.3f;
-        }
-    }
+    // ★変更: カメラの追従処理を委譲
+    cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration());
 
-    UpdateCamera();
-
+    // 吹き飛ばし処理
     if (knockbackTarget_ && knockbackTimer_ > 0) {
         Transform& enemyTransform = knockbackTarget_->GetGlobalTransform();
         enemyTransform.translate.x += knockbackVelocity_.x;
@@ -218,7 +198,7 @@ void Player::Update() {
             PlayerCollider col = GetCollider();
             addSphereLines(col.center, col.radius, greenColor);
 
-            if (attackCollision_.isActive && isCameraControlEnabled_) {
+            if (attackCollision_.isActive && cameraController_.IsCameraControlEnabled()) {
                 addSphereLines(attackCollision_.center, attackCollision_.radius, greenColor);
             }
 
@@ -246,25 +226,27 @@ void Player::Draw() {
             obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
         }
 
-        // ★変更: 振動を武器クラスから取得
         obj_->SetPosition(translate_ + weapon_.GetMissileVibration());
         obj_->SetRotate(rotate_);
         obj_->SetScale(scale_);
         obj_->Update();
 
-        if (viewMode_ != ViewMode::kFirstPerson && !isBlinking && !isDead_) {
+        // ★変更: 視点の判定をPlayerCameraから取得
+        if (!cameraController_.IsFirstPerson() && !isBlinking && !isDead_) {
             obj_->Draw();
         }
     }
 
-    if (attackObj_ && attackState_ != AttackState::kNone && !isDead_ && isCameraControlEnabled_) {
+    // ★変更: カメラ操作有効判定をPlayerCameraから取得
+    if (attackObj_ && attackState_ != AttackState::kNone && !isDead_ && cameraController_.IsCameraControlEnabled()) {
         attackObj_->Draw();
     }
 
-    // ★変更: 武器系の描画を委譲
-    weapon_.Draw(translate_, rotate_, cameraPitch_, targetPos_, static_cast<int>(viewMode_), isBlinking, isDead_);
+    // ★変更: 武器系の描画
+    weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), targetPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, isDead_);
 
-    if (viewMode_ == ViewMode::kFirstPerson && !isDead_) {
+    // ★変更: 一人称視点の場合のマスク描画
+    if (cameraController_.IsFirstPerson() && !isDead_) {
         if (maskSprite_) maskSprite_->Draw();
     }
 
@@ -283,7 +265,6 @@ void Player::DrawParticles() {
 
 PlayerCollider Player::GetCollider() const {
     PlayerCollider col;
-    // ★変更: 振動を武器クラスから取得
     col.center = translate_ + weapon_.GetMissileVibration();
     col.center.y += 0.2f;
     col.radius = kColliderRadius;
@@ -322,7 +303,8 @@ void Player::HandleAttack() {
     if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
 
-    if (!isCameraControlEnabled_) {
+    // ★変更: カメラ操作有効判定をPlayerCameraから取得
+    if (!cameraController_.IsCameraControlEnabled()) {
         attackState_ = AttackState::kNone;
         attackCollision_.isActive = false;
         attackActiveTimer_ = 0;
@@ -449,7 +431,8 @@ void Player::HandleSkill() {
     if (ImGui::GetIO().WantCaptureMouse) return;
 #endif
 
-    if (!isCameraControlEnabled_) return;
+    // ★変更: カメラ操作有効判定をPlayerCameraから取得
+    if (!cameraController_.IsCameraControlEnabled()) return;
 
     if (input_->IsMouseButtonPressed(Mouse::Button::Right)) {
         if (skillDurationTimer_ <= 0 && skillCooldownTimer_ <= 0) {
@@ -461,54 +444,6 @@ void Player::HandleSkill() {
                 skillDurationTimer_ = 180;
             }
         }
-    }
-}
-
-void Player::UpdateCamera() {
-    if (!camera_) return;
-
-    Vector3 cameraPos;
-    const float kCameraJumpFollowRatio = 0.8f;
-
-    Vector3 lookAtTarget = {
-        translate_.x,
-        translate_.y + 1.5f,
-        translate_.z
-    };
-
-    if (viewMode_ == ViewMode::kThirdPerson) {
-        float distance = 5.0f;
-        float cosPitch = std::cos(cameraPitch_);
-        float sinPitch = std::sin(cameraPitch_);
-        float cosYaw = std::cos(rotate_.y);
-        float sinYaw = std::sin(rotate_.y);
-
-        cameraPos.x = lookAtTarget.x - (sinYaw * cosPitch * distance);
-        cameraPos.y = lookAtTarget.y + (sinPitch * distance);
-        cameraPos.z = lookAtTarget.z - (cosYaw * cosPitch * distance);
-
-        // ★変更: 振動を武器クラスから取得
-        cameraPos.x += weapon_.GetMissileVibration().x * 0.5f;
-        cameraPos.y += weapon_.GetMissileVibration().y * 0.5f;
-        cameraPos.z += weapon_.GetMissileVibration().z * 0.5f;
-
-        if (cameraPos.y < 0.2f) cameraPos.y = 0.2f;
-
-        camera_->SetTranslate(cameraPos);
-        camera_->SetRotate({ cameraPitch_, rotate_.y, 0.0f });
-    } else {
-        cameraPos.x = translate_.x;
-        cameraPos.y = 1.0f + (translate_.y * kCameraJumpFollowRatio);
-        cameraPos.z = translate_.z;
-
-        cameraPos.x += weapon_.GetMissileVibration().x * 0.5f;
-        cameraPos.y += weapon_.GetMissileVibration().y * 0.5f;
-        cameraPos.z += weapon_.GetMissileVibration().z * 0.5f;
-
-        if (cameraPos.y < 0.2f) cameraPos.y = 0.2f;
-
-        camera_->SetTranslate(cameraPos);
-        camera_->SetRotate({ cameraPitch_, rotate_.y, 0.0f });
     }
 }
 
