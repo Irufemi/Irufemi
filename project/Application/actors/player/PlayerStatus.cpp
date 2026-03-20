@@ -31,9 +31,9 @@ void PlayerStatus::UpdateKnockback() {
         enemyTransform.translate.z += knockbackVelocity_.z;
 
         // 摩擦（徐々に減速させる）
-        knockbackVelocity_.x *= 0.85f;
-        knockbackVelocity_.y *= 0.85f;
-        knockbackVelocity_.z *= 0.85f;
+        knockbackVelocity_.x *= kKnockbackFriction;
+        knockbackVelocity_.y *= kKnockbackFriction;
+        knockbackVelocity_.z *= kKnockbackFriction;
 
         knockbackTimer_--;
         if (knockbackTimer_ <= 0) {
@@ -43,24 +43,17 @@ void PlayerStatus::UpdateKnockback() {
 }
 
 void PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engine) {
-    // 死亡時や無敵中はダメージを受けない
     if (isDead_ || invincibleTimer_ > 0) return;
 
-    // チャージ中ならダメージ2倍
-    int finalDamage = isCharging ? damage * 2 : damage;
-    hp_ -= finalDamage;
+    if (isCharging) {
+        hp_ -= damage / 2; // チャージ中はダメージ半減
+    } else {
+        hp_ -= damage;
+    }
 
     if (hp_ <= 0) {
         hp_ = 0;
         isDead_ = true;
-
-        // 死亡時にゲームオーバーシーンへ遷移
-        if (engine && engine->GetSceneManager()) {
-            engine->GetSceneManager()->Request("GameOver");
-        }
-    } else {
-        // ダメージを受けたら60フレーム（約1秒）無敵になる
-        invincibleTimer_ = 60;
     }
 }
 
@@ -68,18 +61,17 @@ void PlayerStatus::HitAndKnockback(Enemy* enemy, const Vector3& playerTranslate)
     if (!enemy) return;
 
     knockbackTarget_ = enemy;
-    knockbackTimer_ = 20;
+    knockbackTimer_ = kKnockbackDuration;
 
     Vector3 pPos = playerTranslate;
     Vector3 ePos = enemy->GetGlobalTransform().translate;
     Vector3 dir = { ePos.x - pPos.x, 0.0f, ePos.z - pPos.z };
 
     float len = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
-    if (len > 0.001f) {
-        float power = 2.0f; // 吹き飛ばす力
-        knockbackVelocity_.x = (dir.x / len) * power;
-        knockbackVelocity_.y = (dir.y / len) * power;
-        knockbackVelocity_.z = (dir.z / len) * power;
+    if (len > kKnockbackMinDistance) {
+        knockbackVelocity_.x = (dir.x / len) * kKnockbackPower;
+        knockbackVelocity_.y = (dir.y / len) * kKnockbackPower;
+        knockbackVelocity_.z = (dir.z / len) * kKnockbackPower;
     }
 }
 
@@ -92,10 +84,15 @@ PlayerCollider PlayerStatus::GetCollider(const Vector3& playerTranslate, const V
     col.radius = kColliderRadius;
     col.obb.center = col.center;
 
-    Matrix4x4 rotateMatrix = Math::MakeRotateMatrix(Math::MakeRotateAxisAngleQuaternion({ 0.0f, 1.0f, 0.0f }, playerRotate.y));
-    col.obb.orientations[0] = { rotateMatrix.m[0][0], rotateMatrix.m[0][1], rotateMatrix.m[0][2] };
-    col.obb.orientations[1] = { rotateMatrix.m[1][0], rotateMatrix.m[1][1], rotateMatrix.m[1][2] };
-    col.obb.orientations[2] = { rotateMatrix.m[2][0], rotateMatrix.m[2][1], rotateMatrix.m[2][2] };
+    // Y軸（ヨー角）の回転から直接OBBの各軸の方向ベクトルを計算（コンパイルエラー回避）
+    float cosY = std::cos(playerRotate.y);
+    float sinY = std::sin(playerRotate.y);
+
+    // OBBのローカルX軸、Y軸、Z軸の向きを設定
+    col.obb.orientations[0] = { cosY, 0.0f, -sinY }; // X軸
+    col.obb.orientations[1] = { 0.0f, 1.0f, 0.0f };  // Y軸
+    col.obb.orientations[2] = { sinY, 0.0f, cosY };  // Z軸
+
     col.obb.size = { 0.3f, 0.3f, 0.3f };
 
     return col;

@@ -52,10 +52,22 @@ private:
     Camera* camera_ = nullptr;
 
     // --- カメラ・マウス操作用パラメータ ---
-    float mouseSensitivity_ = 5.0f;           // マウス感度
-    float mouseSensitivityMultiplier_ = 1.0f; // マウス感度の倍率
-    float cameraPitch_ = -0.1f;               // カメラの上下の角度（ピッチ）
-    bool isCameraControlEnabled_ = true;      // カメラ操作の有効/無効フラグ
+    float mouseSensitivity_ = 5.0f;
+    float mouseSensitivityMultiplier_ = 1.0f;
+    float cameraPitch_ = -0.1f;
+    bool isCameraControlEnabled_ = true;
+    ViewMode viewMode_ = ViewMode::kThirdPerson;
 
-    ViewMode viewMode_ = ViewMode::kThirdPerson; // 視点モード
+    // --- マジックナンバーを定数化 ---
+    static constexpr float kMouseSensitivityBase = 0.001f;
+    static constexpr float kMaxCameraPitchThirdPerson = 0.25f;
+    static constexpr float kMinCameraPitchThirdPerson = -0.3f;
+
+    // 一人称視点用の定数（必要に応じて調整）
+    static constexpr float kMaxCameraPitchFirstPerson = 0.8f;
+    static constexpr float kMinCameraPitchFirstPerson = -0.8f;
+
+    static constexpr float kCameraDistanceThirdPerson = 5.0f;
+    static constexpr float kCameraMinY = 0.2f;
+    static constexpr float kCameraJumpFollowRatio = 0.5f;
 };

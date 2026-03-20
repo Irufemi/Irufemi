@@ -51,14 +51,21 @@ public:
 
 private:
     // --- ステータス・やられ判定用 ---
-    const int kMaxHp = 100;           // 最大体力
-    int hp_ = kMaxHp;                 // 現在の体力
-    bool isDead_ = false;             // 死亡フラグ
-    int invincibleTimer_ = 0;         // 無敵時間タイマー
-    const float kColliderRadius = 1.0f; // 当たり判定の半径
+    static constexpr int kMaxHp = 100;           // 最大体力
+    static constexpr float kColliderRadius = 1.0f; // プレイヤーのやられ判定半径
 
-    // --- ノックバック（吹き飛ばし）処理用変数 ---
-    Enemy* knockbackTarget_ = nullptr;                 // 現在吹き飛ばしている敵のポインタ
-    Vector3 knockbackVelocity_ = { 0.0f, 0.0f, 0.0f }; // 吹き飛ばす速度
-    int knockbackTimer_ = 0;                           // 吹き飛ばしを適用するフレーム数
+    // --- ノックバック用定数 ---
+    static constexpr int kKnockbackDuration = 20;
+    static constexpr float kKnockbackPower = 2.0f;
+    static constexpr float kKnockbackFriction = 0.85f;
+    static constexpr float kKnockbackMinDistance = 0.001f;
+
+    int hp_ = kMaxHp;
+    bool isDead_ = false;
+    int invincibleTimer_ = 0;
+
+    // 敵を吹き飛ばす（ノックバック）用データ
+    Enemy* knockbackTarget_ = nullptr;
+    Vector3 knockbackVelocity_ = { 0.0f, 0.0f, 0.0f };
+    int knockbackTimer_ = 0;
 };

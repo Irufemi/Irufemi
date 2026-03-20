@@ -21,39 +21,24 @@ void PlayerCamera::UpdateInput(InputManager* input, Vector3& playerRotate) {
     // --- マウスによる視点操作 ---
     if (isCameraControlEnabled_) {
         Vector2 mouseDelta = input->GetMouseDelta();
-        float sensitivityMult = mouseSensitivity_ * mouseSensitivityMultiplier_ * 0.001f;
+        float sensitivityMult = mouseSensitivity_ * mouseSensitivityMultiplier_ * kMouseSensitivityBase;
 
         playerRotate.y += mouseDelta.x * sensitivityMult;
         cameraPitch_ += mouseDelta.y * sensitivityMult;
 
         if (viewMode_ == ViewMode::kThirdPerson) {
             // 正の値が見下ろし、負の値が見上げ
-            if (cameraPitch_ > 0.25f) cameraPitch_ = 0.25f;
-            if (cameraPitch_ < -0.3f) cameraPitch_ = -0.3f;
+            if (cameraPitch_ > kMaxCameraPitchThirdPerson) cameraPitch_ = kMaxCameraPitchThirdPerson;
+            if (cameraPitch_ < kMinCameraPitchThirdPerson) cameraPitch_ = kMinCameraPitchThirdPerson;
         } else {
-            if (cameraPitch_ > 0.25f) cameraPitch_ = 0.25f;
-            if (cameraPitch_ < -1.3f) cameraPitch_ = -1.3f;
-        }
-    }
-
-    // --- 視点切り替え(Vキー) ---
-    if (input->IsKeyPressed('V')) {
-        viewMode_ = (viewMode_ == ViewMode::kThirdPerson) ? ViewMode::kFirstPerson : ViewMode::kThirdPerson;
-
-        // 視点を切り替えた直後の補正
-        if (viewMode_ == ViewMode::kThirdPerson) {
-            if (cameraPitch_ > 0.25f) cameraPitch_ = 0.25f;
-            if (cameraPitch_ < -0.3f) cameraPitch_ = -0.3f;
+            if (cameraPitch_ > kMaxCameraPitchFirstPerson) cameraPitch_ = kMaxCameraPitchFirstPerson;
+            if (cameraPitch_ < kMinCameraPitchFirstPerson) cameraPitch_ = kMinCameraPitchFirstPerson;
         }
     }
 }
 
 void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration) {
-    if (!camera_) return;
-
-    Vector3 cameraPos;
-    const float kCameraJumpFollowRatio = 0.8f;
-
+    Vector3 cameraPos = { 0.0f, 0.0f, 0.0f };
     Vector3 lookAtTarget = {
         playerTranslate.x,
         playerTranslate.y + 1.5f,
@@ -61,7 +46,7 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
     };
 
     if (viewMode_ == ViewMode::kThirdPerson) {
-        float distance = 5.0f;
+        float distance = kCameraDistanceThirdPerson;
         float cosPitch = std::cos(cameraPitch_);
         float sinPitch = std::sin(cameraPitch_);
         float cosYaw = std::cos(playerRotate.y);
@@ -76,8 +61,8 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         cameraPos.y += missileVibration.y * 0.5f;
         cameraPos.z += missileVibration.z * 0.5f;
 
-        if (cameraPos.y < 0.2f) {
-            cameraPos.y = 0.2f;
+        if (cameraPos.y < kCameraMinY) {
+            cameraPos.y = kCameraMinY;
         }
 
         camera_->SetTranslate(cameraPos);
@@ -87,14 +72,9 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         cameraPos.y = 1.0f + (playerTranslate.y * kCameraJumpFollowRatio);
         cameraPos.z = playerTranslate.z;
 
-        // 一人称視点でも揺らす
         cameraPos.x += missileVibration.x * 0.5f;
         cameraPos.y += missileVibration.y * 0.5f;
         cameraPos.z += missileVibration.z * 0.5f;
-
-        if (cameraPos.y < 0.2f) {
-            cameraPos.y = 0.2f;
-        }
 
         camera_->SetTranslate(cameraPos);
         camera_->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });
