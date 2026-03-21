@@ -213,6 +213,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\EnemyParameters.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h" />
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
+    <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="actors\player\PlayerMovement.h" />
     <ClInclude Include="actors\player\PlayerWeapon.h" />

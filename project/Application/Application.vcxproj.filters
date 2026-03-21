@@ -10,15 +10,6 @@
     <Filter Include="Application">
       <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="actors">
-      <UniqueIdentifier>{490d274c-e2b4-4b8c-a942-e7053c118b00}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actors\player">
-      <UniqueIdentifier>{c7a866e3-5957-4bef-b573-cc39ef55055c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actors\enemy">
-      <UniqueIdentifier>{76850a7a-5d4f-4ae6-852d-335cd761d210}</UniqueIdentifier>
-    </Filter>
     <Filter Include="contents">
       <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
     </Filter>
@@ -27,21 +18,6 @@
     </Filter>
     <Filter Include="contents\Effect">
       <UniqueIdentifier>{36a4bbf6-55cb-47ff-979e-a57e76b57f86}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actors\enemy\body">
-      <UniqueIdentifier>{2e18bd5c-ce49-4fb6-abb1-8a1812fc561f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actors\enemy\head">
-      <UniqueIdentifier>{1587a22d-b6f6-4698-b861-ddd5d265b618}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actors\enemy\head\left">
-      <UniqueIdentifier>{2fe67ef0-f88a-459a-8139-781b8a38264b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actors\enemy\head\mid">
-      <UniqueIdentifier>{5468ce93-7c4a-44bf-ad6c-499a7d66faf3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="actors\enemy\head\right">
-      <UniqueIdentifier>{9670f63d-0276-4875-ae4f-d9206afcd7fb}</UniqueIdentifier>
     </Filter>
     <Filter Include="Scene\Clear">
       <UniqueIdentifier>{10005089-1114-4451-b83e-4c222dd4993b}</UniqueIdentifier>
@@ -63,6 +39,39 @@
     </Filter>
     <Filter Include="contents\Skydome">
       <UniqueIdentifier>{a2e5f410-816b-4e06-a443-0f90dfb32db7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors">
+      <UniqueIdentifier>{490d274c-e2b4-4b8c-a942-e7053c118b00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\player">
+      <UniqueIdentifier>{c7a866e3-5957-4bef-b573-cc39ef55055c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy">
+      <UniqueIdentifier>{76850a7a-5d4f-4ae6-852d-335cd761d210}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Body">
+      <UniqueIdentifier>{2e18bd5c-ce49-4fb6-abb1-8a1812fc561f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Head">
+      <UniqueIdentifier>{1587a22d-b6f6-4698-b861-ddd5d265b618}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Head\Left">
+      <UniqueIdentifier>{2fe67ef0-f88a-459a-8139-781b8a38264b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Head\Mid">
+      <UniqueIdentifier>{5468ce93-7c4a-44bf-ad6c-499a7d66faf3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Head\Right">
+      <UniqueIdentifier>{9670f63d-0276-4875-ae4f-d9206afcd7fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Beam">
+      <UniqueIdentifier>{001f63c9-472b-4a22-8633-69f7be14ddd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\AI">
+      <UniqueIdentifier>{27d5ebf6-da80-4750-9990-bbcab7e43d84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Animation">
+      <UniqueIdentifier>{67c953c6-1e02-47c9-b901-1451502d90d7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -94,13 +103,13 @@
       <Filter>Application</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\Enemy.cpp">
-      <Filter>actors\enemy</Filter>
+      <Filter>Actors\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\EnemyParameters.cpp">
-      <Filter>actors\enemy</Filter>
+      <Filter>Actors\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="actors\player\Player.cpp">
-      <Filter>actors\player</Filter>
+      <Filter>Actors\player</Filter>
     </ClCompile>
     <ClCompile Include="contents\field\Field.cpp">
       <Filter>contents\field</Filter>
@@ -109,25 +118,16 @@
       <Filter>contents\Effect</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\Body\Body.cpp">
-      <Filter>actors\enemy\body</Filter>
-    </ClCompile>
-    <ClCompile Include="actors\enemy\AI\EnemyAI.cpp">
-      <Filter>actors\enemy</Filter>
+      <Filter>Actors\Enemy\Body</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\Head\Left\HeadLeft.cpp">
-      <Filter>actors\enemy\head\left</Filter>
+      <Filter>Actors\Enemy\Head\Left</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\Head\Mid\HeadMid.cpp">
-      <Filter>actors\enemy\head\mid</Filter>
+      <Filter>Actors\Enemy\Head\Mid</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\Head\Right\HeadRight.cpp">
-      <Filter>actors\enemy\head\right</Filter>
-    </ClCompile>
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimation.cpp">
-      <Filter>actors\enemy</Filter>
-    </ClCompile>
-    <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp">
-      <Filter>actors\enemy</Filter>
+      <Filter>Actors\Enemy\Head\Right</Filter>
     </ClCompile>
     <ClCompile Include="scene\GameOver\GameOverScene.cpp">
       <Filter>Scene\GameOver</Filter>
@@ -135,19 +135,32 @@
     <ClCompile Include="contents\skydome\Skydome.cpp">
       <Filter>contents\Skydome</Filter>
     </ClCompile>
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Idle.cpp" />
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Beam.cpp" />
     <ClCompile Include="actors\player\PlayerMovement.cpp">
-      <Filter>actors\player</Filter>
+      <Filter>Actors\player</Filter>
     </ClCompile>
     <ClCompile Include="actors\player\PlayerWeapon.cpp">
-      <Filter>actors\player</Filter>
+      <Filter>Actors\player</Filter>
     </ClCompile>
     <ClCompile Include="actors\player\PlayerCamera.cpp">
-      <Filter>actors\player</Filter>
+      <Filter>Actors\player</Filter>
     </ClCompile>
     <ClCompile Include="actors\player\PlayerStatus.cpp">
-      <Filter>actors\player</Filter>
+      <Filter>Actors\player</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\AI\EnemyAI.cpp">
+      <Filter>Actors\Enemy\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimation.cpp">
+      <Filter>Actors\Enemy\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Beam.cpp">
+      <Filter>Actors\Enemy\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Idle.cpp">
+      <Filter>Actors\Enemy\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp">
+      <Filter>Actors\Enemy\Beam</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -176,59 +189,70 @@
       <Filter>Application</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Enemy.h">
-      <Filter>actors\enemy</Filter>
+      <Filter>Actors\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\EnemyParameters.h">
-      <Filter>actors\enemy</Filter>
+      <Filter>Actors\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\Player.h">
-      <Filter>actors\player</Filter>
+      <Filter>Actors\player</Filter>
     </ClInclude>
     <ClInclude Include="contents\effect\Effect.h">
       <Filter>contents\Effect</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Body\Body.h">
-      <Filter>actors\enemy\body</Filter>
-    </ClInclude>
-    <ClInclude Include="actors\enemy\AI\EnemyAI.h">
-      <Filter>actors\enemy</Filter>
+      <Filter>Actors\Enemy\Body</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Head\Left\HeadLeft.h">
-      <Filter>actors\enemy\head\left</Filter>
+      <Filter>Actors\Enemy\Head\Left</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Head\Mid\HeadMid.h">
-      <Filter>actors\enemy\head\mid</Filter>
+      <Filter>Actors\Enemy\Head\Mid</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Head\Right\HeadRight.h">
-      <Filter>actors\enemy\head\right</Filter>
+      <Filter>Actors\Enemy\Head\Right</Filter>
     </ClInclude>
     <ClInclude Include="contents\field\Field.h">
       <Filter>contents\field</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h">
-      <Filter>actors\enemy</Filter>
-    </ClInclude>
-    <ClInclude Include="actors\enemy\Beam\EnemyBeam.h">
-      <Filter>actors\enemy</Filter>
-    </ClInclude>
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>Scene\GameOver</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\Animation\IEnemyAnimationState.h" />
-    <ClInclude Include="actors\enemy\EnemyState.h" />
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Beam.h" />
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Idle.h" />
     <ClInclude Include="actors\player\PlayerMovement.h">
-      <Filter>actors\player</Filter>
+      <Filter>Actors\player</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\PlayerWeapon.h">
-      <Filter>actors\player</Filter>
+      <Filter>Actors\player</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\PlayerCamera.h">
-      <Filter>actors\player</Filter>
+      <Filter>Actors\player</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\PlayerStatus.h">
-      <Filter>actors\player</Filter>
+      <Filter>Actors\player</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\skydome\Skydome.h">
+      <Filter>contents\Skydome</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\EnemyState.h">
+      <Filter>Actors\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\AI\EnemyAI.h">
+      <Filter>Actors\Enemy\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h">
+      <Filter>Actors\Enemy\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Beam.h">
+      <Filter>Actors\Enemy\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Idle.h">
+      <Filter>Actors\Enemy\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Beam\EnemyBeam.h">
+      <Filter>Actors\Enemy\Beam</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Animation\IEnemyAnimationState.h">
+      <Filter>Actors\Enemy\Animation</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
