@@ -36,7 +36,7 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
 
     // --- 一人称視点用マスク画像の生成と初期化 ---
     maskSprite_ = std::make_unique<Sprite>();
-    maskSprite_->Initialize(camera, "resources/mask.png");
+    maskSprite_->Initialize(camera, "resources/texture/player/mask.png");
 
     skillDurationTimer_ = 0;
     skillCooldownTimer_ = 0;
