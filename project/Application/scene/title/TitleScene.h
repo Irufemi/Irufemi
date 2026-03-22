@@ -8,6 +8,7 @@
 class IrufemiEngine;
 class Camera;
 class DebugCamera;
+class Sprite;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
@@ -45,6 +46,9 @@ public: // メンバ関数(システム)
 private: // メンバ関数(内部ヘルパ)
 
 private: // メンバ変数(ゲーム)
+
+    // シーン表示仮置きスプライト
+    std::unique_ptr<Sprite> sampleSprite_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン

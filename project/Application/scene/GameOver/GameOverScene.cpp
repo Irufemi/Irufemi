@@ -64,6 +64,10 @@ void GameOverScene::Initialize(IrufemiEngine* engine) {
     backSprite_->SetColor(Vector4{ 228.0f / 255.0f,95.0f / 255.0f,130.0f / 255.0f,1.0f });
     backSprite_->Update();
 
+    // シーン表示仮置きスプライトの初期化
+    sampleSprite_ = std::make_unique<Sprite>();
+    sampleSprite_->Initialize(camera_.get(), "resources/texture/gameOver/gameOver.png");
+
 }
 
 void GameOverScene::Update() {
@@ -121,6 +125,9 @@ void GameOverScene::Update() {
         engine_->GetSceneManager()->Request("Title");
     }
 
+    // シーン表示仮置きスプライトの更新
+    sampleSprite_->Update();
+
     // 背景スプライトの更新
     backSprite_->Update();
 
@@ -158,5 +165,8 @@ void GameOverScene::Draw() {
 
     // 背景スプライトの描画
     backSprite_->Draw();
+
+    // シーン表示仮置きスプライトの描画
+    sampleSprite_->Draw();
 
 }

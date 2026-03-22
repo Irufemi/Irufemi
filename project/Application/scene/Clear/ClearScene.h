@@ -42,6 +42,9 @@ private: // メンバ関数(内部ヘルパ)
 
 private: // メンバ変数(ゲーム)
 
+    // シーン表示仮置きスプライト
+    std::unique_ptr<Sprite> sampleSprite_ = nullptr;
+
     // 仮置き背景スプライト
     std::unique_ptr<Sprite> backSprite_ = nullptr;
 

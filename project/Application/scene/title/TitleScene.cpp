@@ -56,6 +56,11 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
+
+    // シーン表示仮置きスプライトの初期化
+    sampleSprite_ = std::make_unique<Sprite>();
+    sampleSprite_->Initialize(camera_.get(),"resources/texture/title/title.png");
+    
 }
 
 // 更新
@@ -114,6 +119,9 @@ void TitleScene::Update() {
         engine_->GetSceneManager()->Request("InGame");
     }
 
+    // シーン表示仮置きスプライトの更新
+    sampleSprite_->Update();
+
     // =====
     // ↑ゲームの更新
     // =====
@@ -141,5 +149,12 @@ void TitleScene::Update() {
 }
 
 void TitleScene::Draw() {
+
+    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    engine_->ApplySpritePSO();
+
+    // シーン表示仮置きスプライトの描画
+    sampleSprite_->Draw();
 
 }

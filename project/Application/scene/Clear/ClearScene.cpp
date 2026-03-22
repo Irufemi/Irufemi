@@ -64,6 +64,10 @@ void ClearScene::Initialize(IrufemiEngine* engine) {
     backSprite_->SetColor(Vector4{ 95.0f / 255.0f,205.0f / 255.0f,228.0f / 255.0f,1.0f });
     backSprite_->Update();
 
+    // シーン表示仮置きスプライトの初期化
+    sampleSprite_ = std::make_unique<Sprite>();
+    sampleSprite_->Initialize(camera_.get(), "resources/texture/clear/clear.png");
+
 }
 
 void ClearScene::Update() {
@@ -120,6 +124,9 @@ void ClearScene::Update() {
         engine_->GetSceneManager()->Request("Title");
     }
 
+    // シーン表示仮置きスプライトの更新
+    sampleSprite_->Update();
+
     // 背景スプライトの更新
     backSprite_->Update();
 
@@ -157,5 +164,8 @@ void ClearScene::Draw() {
 
     // 背景スプライトの描画
     backSprite_->Draw();
+
+    // シーン表示仮置きスプライトの描画
+    sampleSprite_->Draw();
 
 }
