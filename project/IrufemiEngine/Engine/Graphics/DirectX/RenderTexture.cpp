@@ -1,7 +1,6 @@
 #include "RenderTexture.h"
 #include "DirectXCommon.h"
 #include "DescriptorPool.h"
-#include "Renderer/Object2D/Sprite/Sprite.h"
 #include "Engine/Manager/DrawManager.h"
 #include <cassert>
 
@@ -37,24 +36,8 @@ void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t
     // (最初の BeginRenderTexture で StateBefore = PIXEL_SHADER_RESOURCE と矛盾しないようにするため)
 }
 
+// Draw メソッドは DrawManager を使用するように変更済み
 void RenderTexture::Draw(DrawManager* drawManager) {
-    if (!sprite_) {
-        // 必要になったタイミングでスプライトを初期化 (カメラが必要なため)
-        // ここでは便宜上、DrawManager または外部からカメラを拾ってくる必要があるが、
-        // 今回は簡略化のため、DebugScene 側で一度だけ InitializeSprite() を呼ぶ運用にするか、
-        // あるいは Draw 引数にカメラを追加する。
-        return;
-    }
-    
-    // ハンドルを差し替え
-    sprite_->GetD3D12Resource()->textureHandle_ = srvHandleGPU_;
-    sprite_->SetSize(static_cast<float>(width_), static_cast<float>(height_));
-    sprite_->Draw();
-}
-
-// スプライトの初期化 (カメラが必要なため分離)
-void RenderTexture::InitializeSprite(Camera* camera) {
-    if (sprite_) return;
-    sprite_ = std::make_unique<Sprite>();
-    sprite_->Initialize(camera, "resources/uvChecker.png"); // ダミー
+    if (!drawManager) return;
+    drawManager->DrawRenderTexture(this);
 }

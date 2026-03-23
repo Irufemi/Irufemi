@@ -292,11 +292,50 @@ ID3D12PipelineState* PSOManager::GetVoxelParticle(BlendMode blend, DepthWrite de
     D3D12_BLEND_DESC bd = MakeBlend(blend);
     D3D12_DEPTH_STENCIL_DESC dd = MakeDepth(depth);
 
-    // VoxelParticleはTRIANGLEトポロジでインスタンシング描画
-    auto pso = CreatePSO(set, bd, dd, cull, true); // 第5引数に true を追加
+    // VoxelParticleは通常の入力レイアウトを使用する
+    auto pso = CreatePSO(set, bd, dd, cull);
     if (!pso) { return nullptr; }
     cache_[key] = pso;
     return pso.Get();
+}
+
+ID3D12PipelineState* PSOManager::GetCopyImage() {
+    if (!copyImageShaders_.vsBlob || !copyImageShaders_.psBlob) return nullptr;
+
+    // キャッシュキー
+    constexpr uint64_t kCopyTag = 0x434F5059494D47ull; 
+    Key key{ static_cast<uint64_t>(Hash(copyImageShaders_, BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::None) ^ kCopyTag) };
+
+    if (auto it = cache_.find(key); it != cache_.end()) {
+        return it->second.Get();
+    }
+
+    // 直接作成 (デバッグ・確実性の理由)
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.InputLayout = { nullptr, 0 }; // 頂点バッファなし(SV_VertexID)
+    desc.VS = { copyImageShaders_.vsBlob->GetBufferPointer(), copyImageShaders_.vsBlob->GetBufferSize() };
+    desc.PS = { copyImageShaders_.psBlob->GetBufferPointer(), copyImageShaders_.psBlob->GetBufferSize() };
+    desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
+    desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+    desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Disable);
+    desc.DSVFormat = dsvFormat_;
+    desc.NumRenderTargets = 1;
+    desc.RTVFormats[0] = rtvFormat_;
+    desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    desc.SampleDesc.Count = 1;
+    desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for CopyImage");
+    
+    if (SUCCEEDED(hr)) {
+        cache_[key] = pso;
+        return pso.Get();
+    }
+    return nullptr;
 }
 
 void PSOManager::ClearCache() { cache_.clear(); }
@@ -311,7 +350,12 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSO(
 {
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();
-    desc.InputLayout = inputLayout_;
+    // useNullInputLayout が true の場合は InputLayout を空にする(SV_VertexID使用時など)
+    if (useNullInputLayout) {
+        desc.InputLayout = { nullptr, 0 };
+    } else {
+        desc.InputLayout = inputLayout_;
+    }
     desc.VS = { shaders.vsBlob->GetBufferPointer(), shaders.vsBlob->GetBufferSize() };
     desc.PS = { shaders.psBlob->GetBufferPointer(), shaders.psBlob->GetBufferSize() };
     // GSがある場合のみ設定

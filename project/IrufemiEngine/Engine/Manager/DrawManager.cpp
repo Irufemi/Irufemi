@@ -719,3 +719,24 @@ void DrawManager::SetRenderTargetToBackBuffer() {
     commandList_->RSSetViewports(1, &dxCommon_->GetViewport());
     commandList_->RSSetScissorRects(1, &dxCommon_->GetScissorRect());
 }
+
+void DrawManager::DrawRenderTexture(RenderTexture* renderTexture) {
+    if (!renderTexture) return;
+
+    // 1. PSOの取得と設定
+    ID3D12PipelineState* pso = dxCommon_->GetPSOManager()->GetCopyImage();
+    if (!pso) return;
+    commandList_->SetPipelineState(pso);
+
+    // 2. ルートシグネチャの設定
+    commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+
+    // 3. 形状の設定 (三角形リスト)
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // 4. テクスチャの設定 (RootParameter[2])
+    commandList_->SetGraphicsRootDescriptorTable(2, renderTexture->GetSrvHandleGPU());
+
+    // 5. 描画 (3頂点のインデックスなし描画: SV_VertexIDを使用するためVBいらず)
+    commandList_->DrawInstanced(3, 1, 0, 0);
+}

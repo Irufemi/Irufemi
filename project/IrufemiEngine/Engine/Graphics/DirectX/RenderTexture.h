@@ -8,7 +8,6 @@
 
 class DirectXCommon;
 class DrawManager;
-class Sprite;
 class Camera;
 
 class RenderTexture {
@@ -18,15 +17,16 @@ public:
 
     void Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor);
     
-    // スプライトの初期化
-    void InitializeSprite(Camera* camera);
+    // スプライトの初期化 (廃止予定だが、互換性のために残すか?)
+    // 今回は全画面コピーに移行するため、基本的には不要
+    // void InitializeSprite(Camera* camera);
 
     // 現在のターゲットに対して自身を描画
     void Draw(DrawManager* drawManager);
 
     ID3D12Resource* GetResource() const { return resource_.Get(); }
     D3D12_CPU_DESCRIPTOR_HANDLE GetRtvHandle() const { return rtvHandle_; }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandle() const { return srvHandleGPU_; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU() const { return srvHandleGPU_; }
     
     uint32_t GetWidth() const { return width_; }
     uint32_t GetHeight() const { return height_; }
@@ -43,6 +43,4 @@ private:
     uint32_t width_ = 0;
     uint32_t height_ = 0;
     DXGI_FORMAT format_ = DXGI_FORMAT_UNKNOWN;
-
-    std::unique_ptr<Sprite> sprite_;
 };

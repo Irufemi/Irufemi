@@ -187,7 +187,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     // RenderTextureの初期化
     renderTexture_ = std::make_unique<RenderTexture>();
     renderTexture_->Initialize(engine_->GetDirectXCommon(), engine_->GetClientWidth(), engine_->GetClientHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, { 1.0f, 0.0f, 0.0f, 1.0f });
-    renderTexture_->InitializeSprite(camera_.get());
+    // renderTexture_->InitializeSprite(camera_.get()); // 全画面コピーに移行したため不要
 
     // エンジンのデフォルトクリアカラーを「青」に設定
     engine_->SetClearColor(Vector4{ 0.1f, 0.25f, 0.5f, 1.0f });
@@ -599,7 +599,6 @@ void DebugScene::Draw() {
     // (エンジンの PreDraw ですでにクリア済みのバックバッファに描画対象を戻します)
     engine_->GetDrawManager()->SetRenderTargetToBackBuffer();
 
-    // 4. RenderTextureの内容を画面に描画（確認用のイメージが「ImGuiしか画面に出ていない」と言っているので、
-    // ここで Draw を呼ばないのが指示通りですが、必要に応じて有効にしてください）
-    // renderTexture_->Draw(engine_->GetDrawManager());
+    // 4. RenderTextureの内容を画面に描画（全画面コピー）
+    renderTexture_->Draw(engine_->GetDrawManager());
 }

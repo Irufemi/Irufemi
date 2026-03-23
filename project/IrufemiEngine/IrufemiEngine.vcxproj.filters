@@ -139,6 +139,12 @@
     <Filter Include="Renderer\VoxelParticle">
       <UniqueIdentifier>{46c98e66-7664-4ee7-8848-05ded49a5872}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Graphics\Shaders\Basic">
+      <UniqueIdentifier>{70e3de15-f76d-4b96-9a14-59ccc3b0034f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Shaders\PostProcess">
+      <UniqueIdentifier>{0402a0e3-ea3b-40d3-a3a4-6b845bfe7408}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
@@ -640,104 +646,47 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Application\resources\shaders\Object2D.hlsli">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </None>
-    <None Include="..\Application\resources\shaders\Object3d.hlsli">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </None>
-    <None Include="..\Application\resources\shaders\Particle.hlsli">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </None>
-    <None Include="..\Application\resources\shaders\GeometryShaderHeader.hlsli">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </None>
-    <None Include="..\Application\resources\shaders\Line.hlsli">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </None>
-    <None Include="..\Application\resources\shaders\LineInstanced.hlsli">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </None>
-    <None Include="..\Application\resources\shaders\SkinningObject3D.hlsli">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </None>
-    <None Include="..\Application\resources\shaders\Skybox.hlsli">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </None>
-    <None Include="..\Application\resources\shaders\ParticleGPU.hlsli">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </None>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">
       <Filter>Engine\Compute</Filter>
     </None>
     <None Include="..\Application\resources\shaders\PerFrame.hlsli">
       <Filter>Engine\Compute</Filter>
     </None>
+    <None Include="..\Application\resources\shaders\Object2D.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\Object3d.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\Skybox.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\Line.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\LineInstanced.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\CopyImage.hlsli">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\GeometryShaderHeader.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\Particle.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\ParticleGPU.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\SkinningObject3D.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
     <None Include="..\Application\resources\shaders\VoxelParticle.hlsli">
-      <Filter>Engine\Graphics\Shaders</Filter>
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="..\Application\resources\shaders\Object2D.PS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Object2D.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Object3d.PS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Object3d.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Particle.PS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Particle.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Region.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.PS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Line.PS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Line.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\LineInstanced.PS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\LineInstanced.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\SkinningObject3D.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Skybox.PS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Skybox.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\ParticleGPU.PS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\ParticleGPU.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Skinning.CS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\InitializeParticle.CS.hlsl">
       <Filter>Renderer\ParticleGPU\Shaders</Filter>
     </FxCompile>
@@ -756,11 +705,77 @@
     <FxCompile Include="..\Application\resources\shaders\EmitVoxel.CS.hlsl">
       <Filter>Renderer\VoxelParticle</Filter>
     </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Object2D.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Object2D.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Object3d.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Object3d.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Skybox.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Skybox.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Line.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Line.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\LineInstanced.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\LineInstanced.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\CopyImage.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\CopyImage.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Particle.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Particle.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ParticleGPU.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ParticleGPU.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Region.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Skinning.CS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\SkinningObject3D.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\VoxelParticle.PS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\VoxelParticle.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders</Filter>
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

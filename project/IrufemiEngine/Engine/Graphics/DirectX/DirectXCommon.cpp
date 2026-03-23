@@ -650,6 +650,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr <IDxcBlob> object3DPSBlob = CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(object3DPSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr <IDxcBlob> copyImageVSBlob = CompileShader(L"resources/shaders/CopyImage.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(copyImageVSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr <IDxcBlob> copyImagePSBlob = CompileShader(L"resources/shaders/CopyImage.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(copyImagePSBlob != nullptr);
+
     Microsoft::WRL::ComPtr <IDxcBlob> particleVSBlob = CompileShader(L"resources/shaders/Particle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(particleVSBlob != nullptr);
 
@@ -819,6 +825,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     );
 
     //実際に生成
+    psoManager_->SetCopyImageShaders({ copyImageVSBlob, copyImagePSBlob });
+    psoManager_->GetCopyImage(); // 事前生成
+
     // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
 
