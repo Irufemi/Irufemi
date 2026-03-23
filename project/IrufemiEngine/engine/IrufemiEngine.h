@@ -14,6 +14,7 @@
 #include "Engine/Core/Utility/Log.h"
 #include "Framework/SceneManager.h"
 #include "Engine/Core/Math/Vector4.h"
+#include "Engine/Graphics/DirectX/RenderTexture.h"
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
@@ -215,4 +216,7 @@ private: // メンバ変数
     std::chrono::steady_clock::time_point lastFrameTime_{};
     float deltaTime_ = 0.0f;
     float totalTime_ = 0.0f;
+
+    // --- 全画面用 RenderTexture ---
+    std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;
 };

@@ -3,7 +3,7 @@
 #include "Framework/IScene.h"
 
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
-#include "Engine/Graphics/DirectX/RenderTexture.h"
+#include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Irufemi.h"
 
 #include <memory>
@@ -95,7 +95,6 @@ private: // メンバ変数(ゲーム)
     bool isActiveSneakWalk_ = false;
 
     std::unique_ptr<Skybox> skybox_ = nullptr;
-    std::unique_ptr<RenderTexture> renderTexture_ = nullptr;
 
     // --- ライト ---
     bool isActiveSkybox_ = false;

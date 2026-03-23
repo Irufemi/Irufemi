@@ -208,6 +208,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Skybox::SetEngine(this);
     GPUParticleSystem::SetDXCommon(dxCommon_.get());
     VoxelParticleSystem::SetEngine(this);
+
+    // --- 全画面用 RenderTexture の初期化 ---
+    mainRenderTexture_ = std::make_unique<RenderTexture>();
+    mainRenderTexture_->Initialize(dxCommon_.get(), GetClientWidth(), GetClientHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -322,11 +326,25 @@ void IrufemiEngine::StartFrame() {
 void IrufemiEngine::ProcessFrame() {
     // 描画処理に入る前にImGui::Renderを積む
     ui->QueueDrawCommands();
+    
+    // 1. バックバッファをクリア (念のため)
     drawManager->PreDraw(clearColor_, 1.0f, 0);
+
+    // 2. メインの描画先を RenderTexture に切り替え、指定のクリアカラーでクリア
+    drawManager->BeginRenderTexture(mainRenderTexture_.get(), Vector4{ clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
 }
 
 // フレーム終了処理
 void IrufemiEngine::EndFrame() {
+    // 3. RenderTexture への描画を終了 (SRV状態へ遷移)
+    drawManager->EndRenderTexture(mainRenderTexture_.get());
+
+    // 4. 描画先をバックバッファに戻す
+    drawManager->SetRenderTargetToBackBuffer();
+
+    // 5. RenderTexture の内容をバックバッファに全画面コピー
+    mainRenderTexture_->Draw(drawManager.get());
+
     // 描画後処理
     ui->QueuePostDrawCommands();
     drawManager->PostDraw();
