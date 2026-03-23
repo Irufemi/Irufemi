@@ -720,13 +720,17 @@ void DrawManager::SetRenderTargetToBackBuffer() {
     commandList_->RSSetScissorRects(1, &dxCommon_->GetScissorRect());
 }
 
-void DrawManager::DrawRenderTexture(RenderTexture* renderTexture) {
+void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso) {
     if (!renderTexture) return;
 
-    // 1. PSOの取得と設定
-    ID3D12PipelineState* pso = dxCommon_->GetPSOManager()->GetCopyImage();
-    if (!pso) return;
-    commandList_->SetPipelineState(pso);
+    // 1. PSOの設定 (引数が渡された場合はそれを使用、そうでなければデフォルトのCopyImage)
+    if (pso) {
+        commandList_->SetPipelineState(pso);
+    } else {
+        ID3D12PipelineState* defaultPso = dxCommon_->GetPSOManager()->GetCopyImage();
+        if (!defaultPso) return;
+        commandList_->SetPipelineState(defaultPso);
+    }
 
     // 2. ルートシグネチャの設定
     commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());

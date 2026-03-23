@@ -77,9 +77,15 @@ public:
 
     ID3D12PipelineState* GetVoxelParticle(BlendMode blend, DepthWrite depth, CullMode cull);
 
-    // 追加: CopyImage 用(ポストプロフェス等)
+    // 追加: ポストプロセス用
     void SetCopyImageShaders(const ShaderSet& shaders) { copyImageShaders_ = shaders; }
     ID3D12PipelineState* GetCopyImage();
+
+    void SetGrayscaleShaders(const ShaderSet& shaders) { grayscaleShaders_ = shaders; }
+    ID3D12PipelineState* GetGrayscale();
+
+    void SetSepiaShaders(const ShaderSet& shaders) { sepiaShaders_ = shaders; }
+    ID3D12PipelineState* GetSepia();
 
     void ClearCache();
 
@@ -108,7 +114,9 @@ private:
     ShaderSet skyboxShaders_{};
     ShaderSet gpuParticleShaders_{};
     ShaderSet voxelParticleShaders_{};
-    ShaderSet copyImageShaders_{}; // 追加
+    ShaderSet copyImageShaders_{};
+    ShaderSet grayscaleShaders_{};
+    ShaderSet sepiaShaders_{};
 
     struct Key {
         uint64_t hash;

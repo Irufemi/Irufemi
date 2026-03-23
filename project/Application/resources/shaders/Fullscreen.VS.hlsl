@@ -1,4 +1,4 @@
-#include "CopyImage.hlsli"
+#include "Fullscreen.hlsli"
 static const uint kNumVertex = 3;
 static const float4 kPositions[kNumVertex] = {
     {-1.0f, 1.0f, 0.0f, 1.0f}, // 左上

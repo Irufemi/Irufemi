@@ -10,7 +10,9 @@ void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t
     format_ = format;
 
     // リソースの作成
-    resource_ = dxCommon->CreateRenderTextureResource(dxCommon->GetDevice(), width, height, format, clearColor);
+    // ポストプロセス用のバッファなどはクリアカラーが動的に変わる可能性があるため、
+    // 最適化されたクリアカラーを無効（nullptr）にして生成する
+    resource_ = dxCommon->CreateRenderTextureResource(dxCommon->GetDevice(), width, height, format, nullptr);
 
     // RTVの作成
     rtvIndex_ = dxCommon->AllocateRTVIndex();
@@ -37,7 +39,7 @@ void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t
 }
 
 // Draw メソッドは DrawManager を使用するように変更済み
-void RenderTexture::Draw(DrawManager* drawManager) {
+void RenderTexture::Draw(DrawManager* drawManager, ID3D12PipelineState* pso) {
     if (!drawManager) return;
-    drawManager->DrawRenderTexture(this);
+    drawManager->DrawRenderTexture(this, pso);
 }

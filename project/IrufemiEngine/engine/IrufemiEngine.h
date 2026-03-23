@@ -29,6 +29,13 @@ class SceneManager;
 class DebugUI;
 
 class IrufemiEngine {
+public: // 内部型
+    enum class PostProcessMode {
+        None,
+        Grayscale,
+        Sepia
+    };
+
 public: // メンバ関数
     // コンストラクタ
     IrufemiEngine() = default;
@@ -139,6 +146,9 @@ public: // セッター
     // 追加: Vector4 版
     void SetClearColor(const Vector4& c) { clearColor_ = { c.x, c.y, c.z, c.w }; }
 
+    PostProcessMode GetPostProcessMode() const { return postProcessMode_; }
+    void SetPostProcessMode(PostProcessMode mode) { postProcessMode_ = mode; }
+
     void SetCursorLocked(bool lock);
 
     // 状態からPSOを適用してBind(引数なしで使うやつ)
@@ -219,4 +229,5 @@ private: // メンバ変数
 
     // --- 全画面用 RenderTexture ---
     std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;
+    PostProcessMode postProcessMode_ = PostProcessMode::None;
 };

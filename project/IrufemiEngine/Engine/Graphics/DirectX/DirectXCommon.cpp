@@ -170,7 +170,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         D3D12_MESSAGE_ID denyIds[] = {
             //Windows11でのDXGIデバッグプレイヤーとDX12デバッグプレイヤーの相互作用バグによるエラーメッセージ
             //https://stackoverflow.com/questions/69805245/directXx-12-application-is-crashing-in-windows-11
-            D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE
+            D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE,
+            // クリアカラーが動的な場合に発生するパフォーマンス警告を抑制
+            D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE
         };
         //抑制するレベル
         D3D12_MESSAGE_SEVERITY severties[] = { D3D12_MESSAGE_SEVERITY_INFO };
@@ -650,11 +652,17 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr <IDxcBlob> object3DPSBlob = CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(object3DPSBlob != nullptr);
 
-    Microsoft::WRL::ComPtr <IDxcBlob> copyImageVSBlob = CompileShader(L"resources/shaders/CopyImage.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
-    assert(copyImageVSBlob != nullptr);
+    Microsoft::WRL::ComPtr <IDxcBlob> fullscreenVSBlob = CompileShader(L"resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(fullscreenVSBlob != nullptr);
 
-    Microsoft::WRL::ComPtr <IDxcBlob> copyImagePSBlob = CompileShader(L"resources/shaders/CopyImage.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
-    assert(copyImagePSBlob != nullptr);
+    Microsoft::WRL::ComPtr <IDxcBlob> fullscreenPSBlob = CompileShader(L"resources/shaders/CopyImage.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(fullscreenPSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> grayscalePSBlob = CompileShader(L"resources/shaders/Grayscale.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(grayscalePSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> sepiaPSBlob = CompileShader(L"resources/shaders/Sepia.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(sepiaPSBlob != nullptr);
 
     Microsoft::WRL::ComPtr <IDxcBlob> particleVSBlob = CompileShader(L"resources/shaders/Particle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(particleVSBlob != nullptr);
@@ -825,8 +833,14 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     );
 
     //実際に生成
-    psoManager_->SetCopyImageShaders({ copyImageVSBlob, copyImagePSBlob });
+    psoManager_->SetCopyImageShaders({ fullscreenVSBlob, fullscreenPSBlob });
     psoManager_->GetCopyImage(); // 事前生成
+
+    psoManager_->SetGrayscaleShaders({ fullscreenVSBlob, grayscalePSBlob });
+    psoManager_->GetGrayscale();
+
+    psoManager_->SetSepiaShaders({ fullscreenVSBlob, sepiaPSBlob });
+    psoManager_->GetSepia();
 
     // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
@@ -884,6 +898,10 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (skinningObject3DVSBlob) { skinningObject3DVSBlob.Reset(); }
     if (skyboxVSBlob) { skyboxVSBlob.Reset(); }
     if (skyboxPSBlob) { skyboxPSBlob.Reset(); }
+    if (fullscreenVSBlob) { fullscreenVSBlob.Reset(); }
+    if (fullscreenPSBlob) { fullscreenPSBlob.Reset(); }
+    if (grayscalePSBlob) { grayscalePSBlob.Reset(); }
+    if (sepiaPSBlob) { sepiaPSBlob.Reset(); }
     if (skinningCSBlob) { skinningCSBlob.Reset(); }
     if (gpuParticleInitializeCSBlob) { gpuParticleInitializeCSBlob.Reset(); }
     if (gpuParticleEmitCSBlob) { gpuParticleEmitCSBlob.Reset(); }
@@ -1387,7 +1405,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
 
 }
 
-Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor) {
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4* clearColor) {
 	// 1. metadataを基にResourceの設定
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Width = width; //Textureの幅
@@ -1405,11 +1423,15 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResourc
 
 	// 3. ClearValueの設定
 	D3D12_CLEAR_VALUE clearValue{};
-	clearValue.Format = format;
-	clearValue.Color[0] = clearColor.x;
-	clearValue.Color[1] = clearColor.y;
-	clearValue.Color[2] = clearColor.z;
-	clearValue.Color[3] = clearColor.w;
+	D3D12_CLEAR_VALUE* pClearValue = nullptr;
+	if (clearColor) {
+		clearValue.Format = format;
+		clearValue.Color[0] = clearColor->x;
+		clearValue.Color[1] = clearColor->y;
+		clearValue.Color[2] = clearColor->z;
+		clearValue.Color[3] = clearColor->w;
+		pClearValue = &clearValue;
+	}
 
 	// 4. Resourceを生成する
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
@@ -1418,7 +1440,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResourc
 		D3D12_HEAP_FLAG_NONE, //Heapの特殊な設定。
 		&resourceDesc, //Resourceの設定
 		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // 最初はSRVとして扱える状態で生成する
-		&clearValue, // Clear最適値。
+		pClearValue, // Clear最適値。指定がなければnullptr
 		IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
 	);
 	assert(SUCCEEDED(hr));

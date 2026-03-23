@@ -294,6 +294,7 @@ void IrufemiEngine::Execute() {
 #ifdef USE_IMGUI
         ui->FPSDebug();
         ui->DebugSceneSelector(sceneManager_.get());
+        ui->DebugPostProcess(this);
 #endif // _DEBUG
 
         // 更新
@@ -342,8 +343,23 @@ void IrufemiEngine::EndFrame() {
     // 4. 描画先をバックバッファに戻す
     drawManager->SetRenderTargetToBackBuffer();
 
-    // 5. RenderTexture の内容をバックバッファに全画面コピー
-    mainRenderTexture_->Draw(drawManager.get());
+    // 5. RenderTexture の内容をバックバッファに全画面コピー (ポストプロセス適用)
+    ID3D12PipelineState* pso = nullptr;
+    switch (postProcessMode_) {
+    case PostProcessMode::None:
+        pso = GetPSOManager()->GetCopyImage();
+        break;
+    case PostProcessMode::Grayscale:
+        pso = GetPSOManager()->GetGrayscale();
+        break;
+    case PostProcessMode::Sepia:
+        pso = GetPSOManager()->GetSepia();
+        break;
+    }
+
+    if (pso) {
+        mainRenderTexture_->Draw(drawManager.get(), pso);
+    }
 
     // 描画後処理
     ui->QueuePostDrawCommands();

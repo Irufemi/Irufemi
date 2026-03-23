@@ -338,6 +338,76 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
     return nullptr;
 }
 
+ID3D12PipelineState* PSOManager::GetGrayscale() {
+    if (!grayscaleShaders_.vsBlob || !grayscaleShaders_.psBlob) return nullptr;
+
+    constexpr uint64_t kGrayTag = 0x4752415953434Cull; // "GRAY SCL"
+    Key key{ static_cast<uint64_t>(Hash(grayscaleShaders_, BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::None) ^ kGrayTag) };
+
+    if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.InputLayout = { nullptr, 0 };
+    desc.VS = { grayscaleShaders_.vsBlob->GetBufferPointer(), grayscaleShaders_.vsBlob->GetBufferSize() };
+    desc.PS = { grayscaleShaders_.psBlob->GetBufferPointer(), grayscaleShaders_.psBlob->GetBufferSize() };
+    desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
+    desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+    desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Disable);
+    desc.DSVFormat = dsvFormat_;
+    desc.NumRenderTargets = 1;
+    desc.RTVFormats[0] = rtvFormat_;
+    desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    desc.SampleDesc.Count = 1;
+    desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for Grayscale");
+    
+    if (SUCCEEDED(hr)) {
+        cache_[key] = pso;
+        return pso.Get();
+    }
+    return nullptr;
+}
+
+ID3D12PipelineState* PSOManager::GetSepia() {
+    if (!sepiaShaders_.vsBlob || !sepiaShaders_.psBlob) return nullptr;
+
+    constexpr uint64_t kSepiaTag = 0x53455049415447ull; // "SEPI ATG"
+    Key key{ static_cast<uint64_t>(Hash(sepiaShaders_, BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::None) ^ kSepiaTag) };
+
+    if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.InputLayout = { nullptr, 0 };
+    desc.VS = { sepiaShaders_.vsBlob->GetBufferPointer(), sepiaShaders_.vsBlob->GetBufferSize() };
+    desc.PS = { sepiaShaders_.psBlob->GetBufferPointer(), sepiaShaders_.psBlob->GetBufferSize() };
+    desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
+    desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+    desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Disable);
+    desc.DSVFormat = dsvFormat_;
+    desc.NumRenderTargets = 1;
+    desc.RTVFormats[0] = rtvFormat_;
+    desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    desc.SampleDesc.Count = 1;
+    desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for Sepia");
+    
+    if (SUCCEEDED(hr)) {
+        cache_[key] = pso;
+        return pso.Get();
+    }
+    return nullptr;
+}
+
 void PSOManager::ClearCache() { cache_.clear(); }
 
 // PSOManager.cpp に追加

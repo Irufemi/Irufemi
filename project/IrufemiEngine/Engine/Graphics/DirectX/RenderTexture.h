@@ -22,7 +22,7 @@ public:
     // void InitializeSprite(Camera* camera);
 
     // 現在のターゲットに対して自身を描画
-    void Draw(DrawManager* drawManager);
+    void Draw(DrawManager* drawManager, ID3D12PipelineState* pso = nullptr);
 
     ID3D12Resource* GetResource() const { return resource_.Get(); }
     D3D12_CPU_DESCRIPTOR_HANDLE GetRtvHandle() const { return rtvHandle_; }

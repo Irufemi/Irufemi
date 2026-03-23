@@ -667,9 +667,6 @@
     <None Include="..\Application\resources\shaders\LineInstanced.hlsli">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </None>
-    <None Include="..\Application\resources\shaders\CopyImage.hlsli">
-      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
-    </None>
     <None Include="..\Application\resources\shaders\GeometryShaderHeader.hlsli">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </None>
@@ -684,6 +681,9 @@
     </None>
     <None Include="..\Application\resources\shaders\VoxelParticle.hlsli">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\Fullscreen.hlsli">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -738,9 +738,6 @@
     <FxCompile Include="..\Application\resources\shaders\CopyImage.PS.hlsl">
       <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\CopyImage.VS.hlsl">
-      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
-    </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </FxCompile>
@@ -776,6 +773,15 @@
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\VoxelParticle.VS.hlsl">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Sepia.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Grayscale.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Fullscreen.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

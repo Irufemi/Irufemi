@@ -31,6 +31,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Engine/IrufemiEngine.h"
 #include "Renderer/Material.h"
 #include "Renderer/Particle/Data/ParticleMaterial.h"
 #include "Resource/Model/Data/ObjModel.h"
@@ -1036,6 +1037,23 @@ void DebugUI::DebugPsoSettings(
     if (ImGui::Combo(cullLabel.c_str(), &cullIdx, cullNames, IM_ARRAYSIZE(cullNames))) {
         *cullMode = static_cast<PSOManager::CullMode>(cullIdx);
     }
+#endif // USE_IMGUI
+}
+
+void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
+#ifdef USE_IMGUI
+    if (!engine) return;
+
+    ImGui::Begin("Post Processing");
+
+    int currentMode = static_cast<int>(engine->GetPostProcessMode());
+    const char* modes[] = { "None", "Grayscale", "Sepia" };
+
+    if (ImGui::Combo("Mode", &currentMode, modes, IM_ARRAYSIZE(modes))) {
+        engine->SetPostProcessMode(static_cast<IrufemiEngine::PostProcessMode>(currentMode));
+    }
+
+    ImGui::End();
 #endif // USE_IMGUI
 }
 
