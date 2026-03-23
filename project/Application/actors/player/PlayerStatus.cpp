@@ -54,6 +54,11 @@ void PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engin
     if (hp_ <= 0) {
         hp_ = 0;
         isDead_ = true;
+
+        if (engine) {
+
+            engine->GetSceneManager()->Request("GameOver");
+        }
     }
 }
 
