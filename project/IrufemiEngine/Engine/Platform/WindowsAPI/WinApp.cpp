@@ -12,6 +12,8 @@
 #include <DbgHelp.h>
 #include <strsafe.h>
 
+#define ENABLE_ESCAPE_EXIT 1 // 1: 有効, 0: 無効
+
 #pragma comment(lib,"winmm.lib")
 #pragma comment(lib,"Dbghelp.lib")
 
@@ -163,8 +165,13 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
     case WM_KEYDOWN:
+#if ENABLE_ESCAPE_EXIT
+        if (wParam == VK_ESCAPE) {
+            PostMessage(hWnd, WM_CLOSE, 0, 0);
+        }
+#endif
+#if defined(_DEBUG) || defined(DEVELOPMENT)
         if (wParam == VK_F3) {
             cursorLocked_ = !cursorLocked_; // 状態をトグル
             if (inputManager_) {
@@ -173,8 +180,8 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 }
             }
         }
-        return 0;
 #endif
+        return 0;
     case WM_MOUSEWHEEL:
         if (inputManager_) {
             if (auto* mouse = inputManager_->GetMouse()) {
