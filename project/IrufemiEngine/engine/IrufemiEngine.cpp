@@ -212,6 +212,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // --- 全画面用 RenderTexture の初期化 ---
     mainRenderTexture_ = std::make_unique<RenderTexture>();
     mainRenderTexture_->Initialize(dxCommon_.get(), GetClientWidth(), GetClientHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
+
+    // --- Vignette ConstantBuffer の初期化 ---
+    vignetteCB_ = dxCommon_->CreateBufferResource(sizeof(VignetteParams));
+    vignetteCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedVignette_));
+    *mappedVignette_ = vignetteParams_;
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -355,10 +360,21 @@ void IrufemiEngine::EndFrame() {
     case PostProcessMode::Sepia:
         pso = GetPSOManager()->GetSepia();
         break;
+    case PostProcessMode::Vignette:
+        pso = GetPSOManager()->GetVignette();
+        break;
     }
 
     if (pso) {
-        mainRenderTexture_->Draw(drawManager.get(), pso);
+        if (postProcessMode_ == PostProcessMode::Vignette) {
+            // パラメータを更新
+            if (mappedVignette_) {
+                *mappedVignette_ = vignetteParams_;
+            }
+            mainRenderTexture_->Draw(drawManager.get(), pso, vignetteCB_->GetGPUVirtualAddress());
+        } else {
+            mainRenderTexture_->Draw(drawManager.get(), pso);
+        }
     }
 
     // 描画後処理

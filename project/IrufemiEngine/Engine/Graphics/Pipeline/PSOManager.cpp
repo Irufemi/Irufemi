@@ -408,6 +408,41 @@ ID3D12PipelineState* PSOManager::GetSepia() {
     return nullptr;
 }
 
+ID3D12PipelineState* PSOManager::GetVignette() {
+    if (!vignetteShaders_.vsBlob || !vignetteShaders_.psBlob) return nullptr;
+
+    constexpr uint64_t kVignetteTag = 0x5649474E455454ull; // "VIGNET T"
+    Key key{ static_cast<uint64_t>(Hash(vignetteShaders_, BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::None) ^ kVignetteTag) };
+
+    if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.InputLayout = { nullptr, 0 };
+    desc.VS = { vignetteShaders_.vsBlob->GetBufferPointer(), vignetteShaders_.vsBlob->GetBufferSize() };
+    desc.PS = { vignetteShaders_.psBlob->GetBufferPointer(), vignetteShaders_.psBlob->GetBufferSize() };
+    desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
+    desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+    desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Disable);
+    desc.DSVFormat = dsvFormat_;
+    desc.NumRenderTargets = 1;
+    desc.RTVFormats[0] = rtvFormat_;
+    desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    desc.SampleDesc.Count = 1;
+    desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for Vignette");
+    
+    if (SUCCEEDED(hr)) {
+        cache_[key] = pso;
+        return pso.Get();
+    }
+    return nullptr;
+}
+
 void PSOManager::ClearCache() { cache_.clear(); }
 
 // PSOManager.cpp に追加

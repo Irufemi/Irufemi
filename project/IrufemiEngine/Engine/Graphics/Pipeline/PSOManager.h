@@ -87,6 +87,9 @@ public:
     void SetSepiaShaders(const ShaderSet& shaders) { sepiaShaders_ = shaders; }
     ID3D12PipelineState* GetSepia();
 
+    void SetVignetteShaders(const ShaderSet& shaders) { vignetteShaders_ = shaders; }
+    ID3D12PipelineState* GetVignette();
+
     void ClearCache();
 
 private:
@@ -117,6 +120,7 @@ private:
     ShaderSet copyImageShaders_{};
     ShaderSet grayscaleShaders_{};
     ShaderSet sepiaShaders_{};
+    ShaderSet vignetteShaders_{};
 
     struct Key {
         uint64_t hash;

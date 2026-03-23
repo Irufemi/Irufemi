@@ -107,7 +107,7 @@ public: //メンバ関数
     void SetRenderTargetToBackBuffer();
 
     // RenderTexture を全画面に描画(ポストプロセス用)
-    void DrawRenderTexture(class RenderTexture* renderTexture, ID3D12PipelineState* pso = nullptr);
+    void DrawRenderTexture(class RenderTexture* renderTexture, ID3D12PipelineState* pso = nullptr, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress = 0);
 
     // フレーム単位の共通データを設定
     void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);

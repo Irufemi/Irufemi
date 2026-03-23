@@ -1047,10 +1047,16 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
     ImGui::Begin("Post Processing");
 
     int currentMode = static_cast<int>(engine->GetPostProcessMode());
-    const char* modes[] = { "None", "Grayscale", "Sepia" };
+    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette" };
 
     if (ImGui::Combo("Mode", &currentMode, modes, IM_ARRAYSIZE(modes))) {
         engine->SetPostProcessMode(static_cast<IrufemiEngine::PostProcessMode>(currentMode));
+    }
+
+    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::Vignette) {
+        auto& params = engine->GetVignetteParams();
+        ImGui::DragFloat("Vignette Scale", &params.scale, 0.1f, 0.0f, 100.0f);
+        ImGui::DragFloat("Vignette Power", &params.power, 0.01f, 0.0f, 10.0f);
     }
 
     ImGui::End();

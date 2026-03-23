@@ -720,7 +720,7 @@ void DrawManager::SetRenderTargetToBackBuffer() {
     commandList_->RSSetScissorRects(1, &dxCommon_->GetScissorRect());
 }
 
-void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso) {
+void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress) {
     if (!renderTexture) return;
 
     // 1. PSOの設定 (引数が渡された場合はそれを使用、そうでなければデフォルトのCopyImage)
@@ -740,6 +740,11 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
 
     // 4. テクスチャの設定 (RootParameter[2])
     commandList_->SetGraphicsRootDescriptorTable(2, renderTexture->GetSrvHandleGPU());
+
+    // 追加: ConstantBuffer の設定 (引数があれば RootParameter[0] にセット)
+    if (cbvAddress != 0) {
+        commandList_->SetGraphicsRootConstantBufferView(0, cbvAddress);
+    }
 
     // 5. 描画 (3頂点のインデックスなし描画: SV_VertexIDを使用するためVBいらず)
     commandList_->DrawInstanced(3, 1, 0, 0);
