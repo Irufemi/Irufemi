@@ -746,6 +746,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> vignettePSBlob = CompileShader(L"resources/shaders/Vignette.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(vignettePSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> smoothingPSBlob = CompileShader(L"resources/shaders/Smoothing.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(smoothingPSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -848,6 +851,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     psoManager_->SetVignetteShaders({ fullscreenVSBlob, vignettePSBlob });
     psoManager_->GetVignette();
 
+    psoManager_->SetSmoothingShaders({ fullscreenVSBlob, smoothingPSBlob });
+    psoManager_->GetSmoothing();
+
     // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
 
@@ -909,6 +915,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (grayscalePSBlob) { grayscalePSBlob.Reset(); }
     if (sepiaPSBlob) { sepiaPSBlob.Reset(); }
     if (vignettePSBlob) { vignettePSBlob.Reset(); }
+    if (smoothingPSBlob) { smoothingPSBlob.Reset(); }
     if (skinningCSBlob) { skinningCSBlob.Reset(); }
     if (gpuParticleInitializeCSBlob) { gpuParticleInitializeCSBlob.Reset(); }
     if (gpuParticleEmitCSBlob) { gpuParticleEmitCSBlob.Reset(); }

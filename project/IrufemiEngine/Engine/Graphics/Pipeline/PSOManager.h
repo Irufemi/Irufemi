@@ -90,6 +90,9 @@ public:
     void SetVignetteShaders(const ShaderSet& shaders) { vignetteShaders_ = shaders; }
     ID3D12PipelineState* GetVignette();
 
+    void SetSmoothingShaders(const ShaderSet& shaders) { smoothingShaders_ = shaders; }
+    ID3D12PipelineState* GetSmoothing();
+
     void ClearCache();
 
 private:
@@ -121,6 +124,7 @@ private:
     ShaderSet grayscaleShaders_{};
     ShaderSet sepiaShaders_{};
     ShaderSet vignetteShaders_{};
+    ShaderSet smoothingShaders_{};
 
     struct Key {
         uint64_t hash;

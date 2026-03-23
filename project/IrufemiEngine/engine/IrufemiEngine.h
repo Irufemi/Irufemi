@@ -34,13 +34,18 @@ public: // 内部型
         None,
         Grayscale,
         Sepia,
-        Vignette
+        Vignette,
+        Smoothing
     };
 
     // --- Vignette ポストプロセス用 ---
     struct VignetteParams {
         float scale = 16.0f;
         float power = 0.8f;
+    };
+
+    struct SmoothingParams {
+        int32_t kernelSize = 3;
     };
 
 public: // メンバ関数
@@ -156,6 +161,7 @@ public: // セッター
     PostProcessMode GetPostProcessMode() const { return postProcessMode_; }
     void SetPostProcessMode(PostProcessMode mode) { postProcessMode_ = mode; }
     VignetteParams& GetVignetteParams() { return vignetteParams_; }
+    SmoothingParams& GetSmoothingParams() { return smoothingParams_; }
 
     void SetCursorLocked(bool lock);
 
@@ -242,4 +248,8 @@ private: // メンバ変数
     VignetteParams vignetteParams_;
     Microsoft::WRL::ComPtr<ID3D12Resource> vignetteCB_ = nullptr;
     VignetteParams* mappedVignette_ = nullptr;
+
+    SmoothingParams smoothingParams_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> smoothingCB_ = nullptr;
+    SmoothingParams* mappedSmoothing_ = nullptr;
 };

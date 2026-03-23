@@ -217,6 +217,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     vignetteCB_ = dxCommon_->CreateBufferResource(sizeof(VignetteParams));
     vignetteCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedVignette_));
     *mappedVignette_ = vignetteParams_;
+
+    // --- Smoothing ConstantBuffer の初期化 ---
+    smoothingCB_ = dxCommon_->CreateBufferResource(sizeof(SmoothingParams));
+    smoothingCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedSmoothing_));
+    *mappedSmoothing_ = smoothingParams_;
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -363,6 +368,9 @@ void IrufemiEngine::EndFrame() {
     case PostProcessMode::Vignette:
         pso = GetPSOManager()->GetVignette();
         break;
+    case PostProcessMode::Smoothing:
+        pso = GetPSOManager()->GetSmoothing();
+        break;
     }
 
     if (pso) {
@@ -372,6 +380,12 @@ void IrufemiEngine::EndFrame() {
                 *mappedVignette_ = vignetteParams_;
             }
             mainRenderTexture_->Draw(drawManager.get(), pso, vignetteCB_->GetGPUVirtualAddress());
+        } else if (postProcessMode_ == PostProcessMode::Smoothing) {
+            // パラメータを更新
+            if (mappedSmoothing_) {
+                *mappedSmoothing_ = smoothingParams_;
+            }
+            mainRenderTexture_->Draw(drawManager.get(), pso, smoothingCB_->GetGPUVirtualAddress());
         } else {
             mainRenderTexture_->Draw(drawManager.get(), pso);
         }

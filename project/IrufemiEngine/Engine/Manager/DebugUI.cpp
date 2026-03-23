@@ -1047,7 +1047,7 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
     ImGui::Begin("Post Processing");
 
     int currentMode = static_cast<int>(engine->GetPostProcessMode());
-    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette" };
+    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing" };
 
     if (ImGui::Combo("Mode", &currentMode, modes, IM_ARRAYSIZE(modes))) {
         engine->SetPostProcessMode(static_cast<IrufemiEngine::PostProcessMode>(currentMode));
@@ -1057,6 +1057,19 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
         auto& params = engine->GetVignetteParams();
         ImGui::DragFloat("Vignette Scale", &params.scale, 0.1f, 0.0f, 100.0f);
         ImGui::DragFloat("Vignette Power", &params.power, 0.01f, 0.0f, 10.0f);
+    }
+
+    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::Smoothing) {
+        auto& params = engine->GetSmoothingParams();
+        // カーネルサイズは奇数にする必要がある(3, 5, 7...)
+        if (ImGui::SliderInt("Kernel Size", &params.kernelSize, 1, 31)) {
+            if (params.kernelSize < 1) params.kernelSize = 1;
+            if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
+                // 偶数なら1足して奇数にする
+                params.kernelSize += 1;
+            }
+        }
+        ImGui::Text("Notice: Square kernel size must be odd.");
     }
 
     ImGui::End();
