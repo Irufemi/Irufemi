@@ -183,6 +183,14 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         skybox_ = std::make_unique<Skybox>();
         skybox_->Initialize(camera_.get(),"resources/rostock_laage_airport_4k.dds");
     }
+
+    // RenderTextureの初期化
+    renderTexture_ = std::make_unique<RenderTexture>();
+    renderTexture_->Initialize(engine_->GetDirectXCommon(), engine_->GetClientWidth(), engine_->GetClientHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, { 1.0f, 0.0f, 0.0f, 1.0f });
+    renderTexture_->InitializeSprite(camera_.get());
+
+    // エンジンのデフォルトクリアカラーを「青」に設定
+    engine_->SetClearColor(Vector4{ 0.1f, 0.25f, 0.5f, 1.0f });
 }
 
 // 更新
@@ -484,6 +492,8 @@ void DebugScene::Update() {
 
 void DebugScene::Draw() {
 
+    // 1. RenderTextureへの描画開始 (画像2のPIX通り、クリア色を「赤」にします)
+    engine_->GetDrawManager()->BeginRenderTexture(renderTexture_.get(), { 1.0f, 0.0f, 0.0f, 1.0f });
 
     if (isActiveSkybox_) {
         skybox_->Draw();
@@ -582,4 +592,14 @@ void DebugScene::Draw() {
         sprite_->Draw();
     }
 
+    // 2. RenderTextureへの描画終了
+    engine_->GetDrawManager()->EndRenderTexture(renderTexture_.get());
+
+    // 3. 通常の描画（SwapChain）の描画先に戻す
+    // (エンジンの PreDraw ですでにクリア済みのバックバッファに描画対象を戻します)
+    engine_->GetDrawManager()->SetRenderTargetToBackBuffer();
+
+    // 4. RenderTextureの内容を画面に描画（確認用のイメージが「ImGuiしか画面に出ていない」と言っているので、
+    // ここで Draw を呼ばないのが指示通りですが、必要に応じて有効にしてください）
+    // renderTexture_->Draw(engine_->GetDrawManager());
 }

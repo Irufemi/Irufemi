@@ -668,3 +668,54 @@ void DrawManager::DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferVi
     // 描画コール
     commandList_->DrawInstanced(6, instanceCount, 0, 0);
 }
+void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor) {
+    // 1. Transition Barrier (SRV -> RenderTarget)
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = rt->GetResource();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    commandList_->ResourceBarrier(1, &barrier);
+
+    // 2. Set Render Target
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rt->GetRtvHandle();
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
+    commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+
+    // 3. Clear
+    commandList_->ClearRenderTargetView(rtvHandle, &clearColor.x, 0, nullptr);
+    commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+    // 4. Set Viewport/Scissor
+    D3D12_VIEWPORT viewport{ 0.0f, 0.0f, static_cast<float>(rt->GetWidth()), static_cast<float>(rt->GetHeight()), 0.0f, 1.0f };
+    D3D12_RECT scissor{ 0, 0, static_cast<long>(rt->GetWidth()), static_cast<long>(rt->GetHeight()) };
+    commandList_->RSSetViewports(1, &viewport);
+    commandList_->RSSetScissorRects(1, &scissor);
+
+    // 5. Descriptor Heaps (念のため再設定)
+    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+}
+
+void DrawManager::EndRenderTexture(RenderTexture* rt) {
+    // 1. Transition Barrier (RenderTarget -> SRV)
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = rt->GetResource();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    commandList_->ResourceBarrier(1, &barrier);
+}
+
+void DrawManager::SetRenderTargetToBackBuffer() {
+    const UINT backIdx = dxCommon_->GetSwapChain()->GetCurrentBackBufferIndex();
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = dxCommon_->GetRtvHandles(backIdx);
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
+    commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+
+    // ビューポートとシザーを元に戻す
+    commandList_->RSSetViewports(1, &dxCommon_->GetViewport());
+    commandList_->RSSetScissorRects(1, &dxCommon_->GetScissorRect());
+}

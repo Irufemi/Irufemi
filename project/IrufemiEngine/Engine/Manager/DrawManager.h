@@ -9,6 +9,8 @@
 #include "Engine/Graphics/Data/PointLight.h"
 #include "Engine/Graphics/Data/SpotLight.h"
 #include "Engine/Graphics/Data/AreaLight.h"
+#include "Engine/Graphics/DirectX/RenderTexture.h"
+#include "Engine/Core/Math/Vector4.h"
 #include <vector>
 #include <memory>
 
@@ -95,6 +97,14 @@ public: //メンバ関数
         uint8_t clearStencil = 0
     );
     void PostDraw();
+
+    // RenderTexture への描画開始
+    void BeginRenderTexture(class RenderTexture* rt, const struct Vector4& clearColor);
+    // RenderTexture への描画終了
+    void EndRenderTexture(class RenderTexture* rt);
+
+    // レンダーターゲットをバックバッファに戻す
+    void SetRenderTargetToBackBuffer();
 
     // フレーム単位の共通データを設定
     void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);

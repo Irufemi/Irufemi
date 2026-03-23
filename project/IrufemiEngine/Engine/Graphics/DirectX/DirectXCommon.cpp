@@ -240,8 +240,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     //作成関数を使う
 
-    //RTV用のヒープでディスクリプタの数は2。RTVはShader内で触るものではないので、ShaderVisibleはfalse
-    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+    //RTV用のヒープでデスクリプタの数は32。RTVはShader内で触るものではないので、ShaderVisibleはfalse
+    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 32, false);
+    nextRtvIndex_ = 2; // 0, 1 は SwapChain 用
 
     //SRV用のヒープをDescriptorPoolで作成
     srvPool_ = std::make_unique<DescriptorPool>();
@@ -988,6 +989,11 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t in
     return GetGPUDescriptorHandle(dsvDescriptorHeap_, descriptorSizeDSV, index);
 }
 
+uint32_t DirectXCommon::AllocateRTVIndex() {
+    assert(nextRtvIndex_ < 32);
+    return nextRtvIndex_++;
+}
+
 /*三角形の色を変えよう*/
 
 Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_t sizeInBytes) {
@@ -1370,4 +1376,42 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
     assert(SUCCEEDED(hr));
     return descriptorHeap;
 
+}
+
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor) {
+	// 1. metadataを基にResourceの設定
+	D3D12_RESOURCE_DESC resourceDesc{};
+	resourceDesc.Width = width; //Textureの幅
+	resourceDesc.Height = height; //Textureの高さ
+	resourceDesc.MipLevels = 1; //mipmapの数
+	resourceDesc.DepthOrArraySize = 1; // 奥行きor 配列Textureの配列数
+	resourceDesc.Format = format; //TextureのFormat
+	resourceDesc.SampleDesc.Count = 1; //サンプリングカウント。1固定。
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; //Textureの次元数。
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET; // RenderTargetとして利用可能にする
+
+	// 2. 利用するHeapの設定
+	D3D12_HEAP_PROPERTIES heapProperties{};
+	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT; // 当然VRAM上に作る
+
+	// 3. ClearValueの設定
+	D3D12_CLEAR_VALUE clearValue{};
+	clearValue.Format = format;
+	clearValue.Color[0] = clearColor.x;
+	clearValue.Color[1] = clearColor.y;
+	clearValue.Color[2] = clearColor.z;
+	clearValue.Color[3] = clearColor.w;
+
+	// 4. Resourceを生成する
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
+	HRESULT hr = device->CreateCommittedResource(
+		&heapProperties, //Heapの設定
+		D3D12_HEAP_FLAG_NONE, //Heapの特殊な設定。
+		&resourceDesc, //Resourceの設定
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // 最初はSRVとして扱える状態で生成する
+		&clearValue, // Clear最適値。
+		IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
+	);
+	assert(SUCCEEDED(hr));
+	return resource;
 }
