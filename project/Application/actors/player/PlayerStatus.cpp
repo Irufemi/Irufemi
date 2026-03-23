@@ -46,7 +46,7 @@ void PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engin
     if (isDead_ || invincibleTimer_ > 0) return;
 
     if (isCharging) {
-        hp_ -= damage / 2; // チャージ中はダメージ半減
+        hp_ -= damage / 2; 
     } else {
         hp_ -= damage;
     }
