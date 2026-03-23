@@ -35,7 +35,8 @@ public: // 内部型
         Grayscale,
         Sepia,
         Vignette,
-        Smoothing
+        Smoothing,
+        GaussianFilter
     };
 
     // --- Vignette ポストプロセス用 ---
@@ -45,6 +46,11 @@ public: // 内部型
     };
 
     struct SmoothingParams {
+        int32_t kernelSize = 3;
+    };
+
+    struct GaussianParams {
+        float sigma = 2.0f;
         int32_t kernelSize = 3;
     };
 
@@ -162,6 +168,7 @@ public: // セッター
     void SetPostProcessMode(PostProcessMode mode) { postProcessMode_ = mode; }
     VignetteParams& GetVignetteParams() { return vignetteParams_; }
     SmoothingParams& GetSmoothingParams() { return smoothingParams_; }
+    GaussianParams& GetGaussianParams() { return gaussianParams_; }
 
     void SetCursorLocked(bool lock);
 
@@ -252,4 +259,8 @@ private: // メンバ変数
     SmoothingParams smoothingParams_;
     Microsoft::WRL::ComPtr<ID3D12Resource> smoothingCB_ = nullptr;
     SmoothingParams* mappedSmoothing_ = nullptr;
+
+    GaussianParams gaussianParams_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> gaussianCB_ = nullptr;
+    GaussianParams* mappedGaussian_ = nullptr;
 };

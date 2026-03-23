@@ -222,6 +222,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     smoothingCB_ = dxCommon_->CreateBufferResource(sizeof(SmoothingParams));
     smoothingCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedSmoothing_));
     *mappedSmoothing_ = smoothingParams_;
+
+    // --- Gaussian ConstantBuffer の初期化 ---
+    gaussianCB_ = dxCommon_->CreateBufferResource(sizeof(GaussianParams));
+    gaussianCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedGaussian_));
+    *mappedGaussian_ = gaussianParams_;
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -371,6 +376,9 @@ void IrufemiEngine::EndFrame() {
     case PostProcessMode::Smoothing:
         pso = GetPSOManager()->GetSmoothing();
         break;
+    case PostProcessMode::GaussianFilter:
+        pso = GetPSOManager()->GetGaussianFilter();
+        break;
     }
 
     if (pso) {
@@ -386,6 +394,12 @@ void IrufemiEngine::EndFrame() {
                 *mappedSmoothing_ = smoothingParams_;
             }
             mainRenderTexture_->Draw(drawManager.get(), pso, smoothingCB_->GetGPUVirtualAddress());
+        } else if (postProcessMode_ == PostProcessMode::GaussianFilter) {
+            // パラメータを更新
+            if (mappedGaussian_) {
+                *mappedGaussian_ = gaussianParams_;
+            }
+            mainRenderTexture_->Draw(drawManager.get(), pso, gaussianCB_->GetGPUVirtualAddress());
         } else {
             mainRenderTexture_->Draw(drawManager.get(), pso);
         }

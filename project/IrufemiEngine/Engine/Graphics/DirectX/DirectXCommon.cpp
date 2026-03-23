@@ -749,6 +749,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> smoothingPSBlob = CompileShader(L"resources/shaders/Smoothing.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(smoothingPSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> gaussianFilterPSBlob = CompileShader(L"resources/shaders/GaussianFilter.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(gaussianFilterPSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -853,6 +856,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     psoManager_->SetSmoothingShaders({ fullscreenVSBlob, smoothingPSBlob });
     psoManager_->GetSmoothing();
+
+    psoManager_->SetGaussianFilterShaders({ fullscreenVSBlob, gaussianFilterPSBlob });
+    psoManager_->GetGaussianFilter();
 
     // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);

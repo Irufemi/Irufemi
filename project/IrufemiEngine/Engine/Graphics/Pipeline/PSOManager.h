@@ -93,6 +93,9 @@ public:
     void SetSmoothingShaders(const ShaderSet& shaders) { smoothingShaders_ = shaders; }
     ID3D12PipelineState* GetSmoothing();
 
+    void SetGaussianFilterShaders(const ShaderSet& shaders) { gaussianFilterShaders_ = shaders; }
+    ID3D12PipelineState* GetGaussianFilter();
+
     void ClearCache();
 
 private:
@@ -125,6 +128,7 @@ private:
     ShaderSet sepiaShaders_{};
     ShaderSet vignetteShaders_{};
     ShaderSet smoothingShaders_{};
+    ShaderSet gaussianFilterShaders_{};
 
     struct Key {
         uint64_t hash;

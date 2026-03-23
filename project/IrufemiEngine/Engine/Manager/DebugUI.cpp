@@ -1047,7 +1047,7 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
     ImGui::Begin("Post Processing");
 
     int currentMode = static_cast<int>(engine->GetPostProcessMode());
-    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing" };
+    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter" };
 
     if (ImGui::Combo("Mode", &currentMode, modes, IM_ARRAYSIZE(modes))) {
         engine->SetPostProcessMode(static_cast<IrufemiEngine::PostProcessMode>(currentMode));
@@ -1066,6 +1066,18 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
             if (params.kernelSize < 1) params.kernelSize = 1;
             if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
                 // 偶数なら1足して奇数にする
+                params.kernelSize += 1;
+            }
+        }
+        ImGui::Text("Notice: Square kernel size must be odd.");
+    }
+    
+    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::GaussianFilter) {
+        auto& params = engine->GetGaussianParams();
+        ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
+        if (ImGui::SliderInt("Kernel Size", &params.kernelSize, 1, 31)) {
+            if (params.kernelSize < 1) params.kernelSize = 1;
+            if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
                 params.kernelSize += 1;
             }
         }
