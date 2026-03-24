@@ -238,6 +238,14 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     radialBlurCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedRadialBlur_));
     *mappedRadialBlur_ = radialBlurParams_;
 
+    // Dissolve
+    dissolveCB_ = dxCommon_->CreateBufferResource(sizeof(DissolveParams));
+    dissolveCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedDissolve_));
+
+    // ノイズテクスチャのロード (resources 直下に配置されている想定)
+    dissolveNoiseHandle_[0] = textureManager->GetTextureHandle("resources/noise0.png");
+    dissolveNoiseHandle_[1] = textureManager->GetTextureHandle("resources/noise1.png");
+
     // --- 深度バッファの SRV 作成 ---
     depthSrvIndex_ = dxCommon_->GetSrvPool()->Allocate();
     depthSrvHandleGPU_ = dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_);
@@ -406,6 +414,9 @@ void IrufemiEngine::EndFrame() {
     case PostProcessMode::RadialBlur:
         pso = GetPSOManager()->GetRadialBlur();
         break;
+    case PostProcessMode::Dissolve:
+        pso = GetPSOManager()->GetDissolve();
+        break;
     }
 
     if (pso) {
@@ -459,6 +470,17 @@ void IrufemiEngine::EndFrame() {
                 *mappedRadialBlur_ = radialBlurParams_;
             }
             mainRenderTexture_->Draw(drawManager.get(), pso, radialBlurCB_->GetGPUVirtualAddress());
+        } else if (postProcessMode_ == PostProcessMode::Dissolve) {
+            // パラメータを更新
+            if (mappedDissolve_) {
+                *mappedDissolve_ = dissolveParams_;
+            }
+            // 選択されたノイズテクスチャのハンドルを取得
+            int noiseIdx = std::clamp(dissolveParams_.noiseType, 0, 1);
+            D3D12_GPU_DESCRIPTOR_HANDLE noiseHandle = dissolveNoiseHandle_[noiseIdx];
+
+            // DrawRendererTexture を通じて t0(画面) と t1(ノイズ, Root12) をバインドして描画
+            mainRenderTexture_->Draw(drawManager.get(), pso, dissolveCB_->GetGPUVirtualAddress(), noiseHandle);
         } else {
             mainRenderTexture_->Draw(drawManager.get(), pso);
         }

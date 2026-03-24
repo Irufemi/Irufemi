@@ -1047,7 +1047,7 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
     ImGui::Begin("Post Processing");
 
     int currentMode = static_cast<int>(engine->GetPostProcessMode());
-    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur" };
+    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve" };
 
     if (ImGui::Combo("Mode", &currentMode, modes, IM_ARRAYSIZE(modes))) {
         engine->SetPostProcessMode(static_cast<IrufemiEngine::PostProcessMode>(currentMode));
@@ -1094,6 +1094,16 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
         ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Blur Width", &params.blurWidth, 0.001f, 0.0f, 0.1f);
         ImGui::SliderInt("Samples", &params.numSamples, 1, 100);
+    }
+
+    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::Dissolve) {
+        auto& params = engine->GetDissolveParams();
+        ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
+        ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
+        ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
+
+        const char* noiseTypes[] = { "Noise 0", "Noise 1" };
+        ImGui::Combo("Noise Type", &params.noiseType, noiseTypes, IM_ARRAYSIZE(noiseTypes));
     }
 
     ImGui::End();

@@ -135,7 +135,6 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
         //指定した機能レベルでデバイスが生成できたかを確認
         if (SUCCEEDED(hr)) {
-            //生成できたのでログ出力を行ってループを抜ける
             Log::OutPutLog(log_->GetLogStream(), std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
             auto msg = std::format("Resource[{}] created at {} in {}:{}\n", "ID3D12Device", static_cast<const void*>(device_.Get()), __FILE__, __LINE__);
             OutputDebugStringA(msg.c_str());
@@ -758,6 +757,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> radialBlurPSBlob = CompileShader(L"resources/shaders/RadialBlur.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(radialBlurPSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> dissolvePSBlob = CompileShader(L"resources/shaders/Dissolve.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(dissolvePSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -871,6 +873,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     psoManager_->SetRadialBlurShaders({ fullscreenVSBlob, radialBlurPSBlob });
     psoManager_->GetRadialBlur();
+
+    psoManager_->SetDissolveShaders({ fullscreenVSBlob, dissolvePSBlob });
+    psoManager_->GetDissolve();
 
     // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);

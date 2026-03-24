@@ -26,6 +26,8 @@
 #include <functional>
 #include <string>
 #include <array>
+#include <chrono>
+#include <algorithm>
 
 class SceneManager;
 class DebugUI;
@@ -40,7 +42,8 @@ public: // 内部型
         Smoothing,
         GaussianFilter,
         DepthBasedOutline,
-        RadialBlur
+        RadialBlur,
+        Dissolve,
     };
 
     // --- Vignette ポストプロセス用 ---
@@ -66,6 +69,13 @@ public: // 内部型
 
     struct OutlineParams {
         Matrix4x4 projectionInverse;
+    };
+
+    struct DissolveParams {
+        Vector4 edgeColor;
+        float threshold;
+        float edgeRange;
+        int32_t noiseType; // 0: noise0, 1: noise1
     };
 
 public: // メンバ関数
@@ -181,6 +191,8 @@ public: // セッター
     PostProcessMode GetPostProcessMode() const { return postProcessMode_; }
     void SetPostProcessMode(PostProcessMode mode) { postProcessMode_ = mode; }
     VignetteParams& GetVignetteParams() { return vignetteParams_; }
+    OutlineParams& GetOutlineParams() { return outlineParams_; }
+    DissolveParams& GetDissolveParams() { return dissolveParams_; }
     SmoothingParams& GetSmoothingParams() { return smoothingParams_; }
     GaussianParams& GetGaussianParams() { return gaussianParams_; }
     RadialBlurParams& GetRadialBlurParams() { return radialBlurParams_; }
@@ -288,4 +300,10 @@ private: // メンバ変数
     OutlineParams outlineParams_;
     Microsoft::WRL::ComPtr<ID3D12Resource> outlineCB_ = nullptr;
     OutlineParams* mappedOutline_ = nullptr;
+
+    // Dissolve
+    DissolveParams dissolveParams_ = { {1.0f, 0.4f, 0.3f, 1.0f}, 0.0f, 0.03f, 0 };
+    Microsoft::WRL::ComPtr<ID3D12Resource> dissolveCB_;
+    DissolveParams* mappedDissolve_ = nullptr;
+    std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 2> dissolveNoiseHandle_; // 0: noise0, 1: noise1
 };
