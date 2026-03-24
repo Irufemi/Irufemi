@@ -99,6 +99,9 @@ public:
     void SetDepthBasedOutlineShaders(const ShaderSet& shaders) { depthBasedOutlineShaders_ = shaders; }
     ID3D12PipelineState* GetDepthBasedOutline();
 
+    void SetRadialBlurShaders(const ShaderSet& shaders) { radialBlurShaders_ = shaders; }
+    ID3D12PipelineState* GetRadialBlur();
+
     void ClearCache();
 
 private:
@@ -133,6 +136,7 @@ private:
     ShaderSet smoothingShaders_{};
     ShaderSet gaussianFilterShaders_{};
     ShaderSet depthBasedOutlineShaders_{};
+    ShaderSet radialBlurShaders_{};
 
     struct Key {
         uint64_t hash;

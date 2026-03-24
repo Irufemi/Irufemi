@@ -755,6 +755,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> depthBasedOutlinePSBlob = CompileShader(L"resources/shaders/DepthBasedOutline.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(depthBasedOutlinePSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> radialBlurPSBlob = CompileShader(L"resources/shaders/RadialBlur.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(radialBlurPSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -865,6 +868,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     psoManager_->SetDepthBasedOutlineShaders({ fullscreenVSBlob, depthBasedOutlinePSBlob });
     psoManager_->GetDepthBasedOutline();
+
+    psoManager_->SetRadialBlurShaders({ fullscreenVSBlob, radialBlurPSBlob });
+    psoManager_->GetRadialBlur();
 
     // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);

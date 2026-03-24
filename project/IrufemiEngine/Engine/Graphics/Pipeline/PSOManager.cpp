@@ -549,6 +549,42 @@ ID3D12PipelineState* PSOManager::GetDepthBasedOutline() {
     return nullptr;
 }
 
+ID3D12PipelineState* PSOManager::GetRadialBlur() {
+    if (!radialBlurShaders_.vsBlob || !radialBlurShaders_.psBlob) return nullptr;
+
+    constexpr uint64_t kRadialBlurTag = 0x52414449414Cull; // "RADIAL"
+    Key key{ Hash(radialBlurShaders_, BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kRadialBlurTag };
+
+    if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.InputLayout = { nullptr, 0 };
+    desc.VS = { radialBlurShaders_.vsBlob->GetBufferPointer(), radialBlurShaders_.vsBlob->GetBufferSize() };
+    desc.PS = { radialBlurShaders_.psBlob->GetBufferPointer(), radialBlurShaders_.psBlob->GetBufferSize() };
+    desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
+    desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+    desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Off);
+    desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+    desc.NumRenderTargets = 1;
+    desc.RTVFormats[0] = rtvFormat_;
+    desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    desc.SampleDesc.Count = 1;
+    desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr) && "CreateGraphicsPipelineState failed for RadialBlur");
+
+    if (SUCCEEDED(hr)) {
+        cache_[key] = pso;
+        return pso.Get();
+    }
+    return nullptr;
+}
+
+
 void PSOManager::ClearCache() { cache_.clear(); }
 
 // PSOManager.cpp に追加

@@ -1047,7 +1047,7 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
     ImGui::Begin("Post Processing");
 
     int currentMode = static_cast<int>(engine->GetPostProcessMode());
-    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline" };
+    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur" };
 
     if (ImGui::Combo("Mode", &currentMode, modes, IM_ARRAYSIZE(modes))) {
         engine->SetPostProcessMode(static_cast<IrufemiEngine::PostProcessMode>(currentMode));
@@ -1087,6 +1087,13 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
     if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::DepthBasedOutline) {
         ImGui::Text("Mode: Depth Based Outline (Prewitt Filter)");
         ImGui::Text("Notice: Uses depth buffer to detect edges.");
+    }
+
+    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::RadialBlur) {
+        auto& params = engine->GetRadialBlurParams();
+        ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Blur Width", &params.blurWidth, 0.001f, 0.0f, 0.1f);
+        ImGui::SliderInt("Samples", &params.numSamples, 1, 100);
     }
 
     ImGui::End();

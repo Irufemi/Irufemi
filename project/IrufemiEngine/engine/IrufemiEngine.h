@@ -14,6 +14,7 @@
 #include "Engine/Core/Utility/Log.h"
 #include "Framework/SceneManager.h"
 #include "Engine/Core/Math/Vector4.h"
+#include "Engine/Core/Math/Vector2.h"
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Graphics/DirectX/RenderTexture.h"
 #include <memory>
@@ -38,7 +39,8 @@ public: // 内部型
         Vignette,
         Smoothing,
         GaussianFilter,
-        DepthBasedOutline
+        DepthBasedOutline,
+        RadialBlur
     };
 
     // --- Vignette ポストプロセス用 ---
@@ -54,6 +56,12 @@ public: // 内部型
     struct GaussianParams {
         float sigma = 2.0f;
         int32_t kernelSize = 3;
+    };
+
+    struct RadialBlurParams {
+        Vector2 center = { 0.5f, 0.5f };
+        float blurWidth = 0.01f;
+        int32_t numSamples = 10;
     };
 
     struct OutlineParams {
@@ -175,6 +183,7 @@ public: // セッター
     VignetteParams& GetVignetteParams() { return vignetteParams_; }
     SmoothingParams& GetSmoothingParams() { return smoothingParams_; }
     GaussianParams& GetGaussianParams() { return gaussianParams_; }
+    RadialBlurParams& GetRadialBlurParams() { return radialBlurParams_; }
 
     void SetCursorLocked(bool lock);
 
@@ -267,8 +276,11 @@ private: // メンバ変数
     SmoothingParams* mappedSmoothing_ = nullptr;
 
     GaussianParams gaussianParams_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> gaussianCB_ = nullptr;
+    RadialBlurParams radialBlurParams_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> gaussianCB_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> radialBlurCB_;
     GaussianParams* mappedGaussian_ = nullptr;
+    RadialBlurParams* mappedRadialBlur_ = nullptr;
 
     uint32_t depthSrvIndex_ = 0;
     D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandleGPU_{};

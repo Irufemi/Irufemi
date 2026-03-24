@@ -233,6 +233,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     outlineCB_ = dxCommon_->CreateBufferResource(sizeof(OutlineParams));
     outlineCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedOutline_));
 
+    // --- RadialBlur ConstantBuffer の初期化 ---
+    radialBlurCB_ = dxCommon_->CreateBufferResource(sizeof(RadialBlurParams));
+    radialBlurCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedRadialBlur_));
+    *mappedRadialBlur_ = radialBlurParams_;
+
     // --- 深度バッファの SRV 作成 ---
     depthSrvIndex_ = dxCommon_->GetSrvPool()->Allocate();
     depthSrvHandleGPU_ = dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_);
@@ -398,6 +403,9 @@ void IrufemiEngine::EndFrame() {
     case PostProcessMode::DepthBasedOutline:
         pso = GetPSOManager()->GetDepthBasedOutline();
         break;
+    case PostProcessMode::RadialBlur:
+        pso = GetPSOManager()->GetRadialBlur();
+        break;
     }
 
     if (pso) {
@@ -445,6 +453,12 @@ void IrufemiEngine::EndFrame() {
             barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
             barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
             dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
+        } else if (postProcessMode_ == PostProcessMode::RadialBlur) {
+            // パラメータを更新
+            if (mappedRadialBlur_) {
+                *mappedRadialBlur_ = radialBlurParams_;
+            }
+            mainRenderTexture_->Draw(drawManager.get(), pso, radialBlurCB_->GetGPUVirtualAddress());
         } else {
             mainRenderTexture_->Draw(drawManager.get(), pso);
         }

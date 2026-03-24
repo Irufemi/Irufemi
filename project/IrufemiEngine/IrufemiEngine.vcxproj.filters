@@ -795,5 +795,8 @@
     <FxCompile Include="..\Application\resources\shaders\DepthBasedOutline.PS.hlsl">
       <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\RadialBlur.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
