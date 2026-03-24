@@ -304,7 +304,7 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
 
     // キャッシュキー
     constexpr uint64_t kCopyTag = 0x434F5059494D47ull; 
-    Key key{ static_cast<uint64_t>(Hash(copyImageShaders_, BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::None) ^ kCopyTag) };
+    Key key{ static_cast<uint64_t>(Hash(copyImageShaders_, BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kCopyTag) };
 
     if (auto it = cache_.find(key); it != cache_.end()) {
         return it->second.Get();
@@ -319,8 +319,8 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
     desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
     desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-    desc.DepthStencilState = MakeDepth(DepthWrite::Disable);
-    desc.DSVFormat = dsvFormat_;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Off);
+    desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
     desc.NumRenderTargets = 1;
     desc.RTVFormats[0] = rtvFormat_;
     desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -342,7 +342,7 @@ ID3D12PipelineState* PSOManager::GetGrayscale() {
     if (!grayscaleShaders_.vsBlob || !grayscaleShaders_.psBlob) return nullptr;
 
     constexpr uint64_t kGrayTag = 0x4752415953434Cull; // "GRAY SCL"
-    Key key{ static_cast<uint64_t>(Hash(grayscaleShaders_, BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::None) ^ kGrayTag) };
+    Key key{ static_cast<uint64_t>(Hash(grayscaleShaders_, BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kGrayTag) };
 
     if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
 
@@ -354,8 +354,8 @@ ID3D12PipelineState* PSOManager::GetGrayscale() {
     desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
     desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-    desc.DepthStencilState = MakeDepth(DepthWrite::Disable);
-    desc.DSVFormat = dsvFormat_;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Off);
+    desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
     desc.NumRenderTargets = 1;
     desc.RTVFormats[0] = rtvFormat_;
     desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -377,7 +377,7 @@ ID3D12PipelineState* PSOManager::GetSepia() {
     if (!sepiaShaders_.vsBlob || !sepiaShaders_.psBlob) return nullptr;
 
     constexpr uint64_t kSepiaTag = 0x53455049415447ull; // "SEPI ATG"
-    Key key{ static_cast<uint64_t>(Hash(sepiaShaders_, BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::None) ^ kSepiaTag) };
+    Key key{ static_cast<uint64_t>(Hash(sepiaShaders_, BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kSepiaTag) };
 
     if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
 
@@ -389,8 +389,8 @@ ID3D12PipelineState* PSOManager::GetSepia() {
     desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
     desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-    desc.DepthStencilState = MakeDepth(DepthWrite::Disable);
-    desc.DSVFormat = dsvFormat_;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Off);
+    desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
     desc.NumRenderTargets = 1;
     desc.RTVFormats[0] = rtvFormat_;
     desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -412,7 +412,7 @@ ID3D12PipelineState* PSOManager::GetVignette() {
     if (!vignetteShaders_.vsBlob || !vignetteShaders_.psBlob) return nullptr;
 
     constexpr uint64_t kVignetteTag = 0x5649474E455454ull; // "VIGNET T"
-    Key key{ static_cast<uint64_t>(Hash(vignetteShaders_, BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::None) ^ kVignetteTag) };
+    Key key{ static_cast<uint64_t>(Hash(vignetteShaders_, BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kVignetteTag) };
 
     if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
 
@@ -424,8 +424,8 @@ ID3D12PipelineState* PSOManager::GetVignette() {
     desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
     desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-    desc.DepthStencilState = MakeDepth(DepthWrite::Disable);
-    desc.DSVFormat = dsvFormat_;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Off);
+    desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
     desc.NumRenderTargets = 1;
     desc.RTVFormats[0] = rtvFormat_;
     desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -447,7 +447,7 @@ ID3D12PipelineState* PSOManager::GetSmoothing() {
     if (!smoothingShaders_.vsBlob || !smoothingShaders_.psBlob) return nullptr;
 
     constexpr uint64_t kSmoothingTag = 0x534D4F4F5448ull; // "SMOOTH"
-    Key key{ static_cast<uint64_t>(Hash(smoothingShaders_, BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::None) ^ kSmoothingTag) };
+    Key key{ static_cast<uint64_t>(Hash(smoothingShaders_, BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kSmoothingTag) };
 
     if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
 
@@ -459,8 +459,8 @@ ID3D12PipelineState* PSOManager::GetSmoothing() {
     desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
     desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-    desc.DepthStencilState = MakeDepth(DepthWrite::Disable);
-    desc.DSVFormat = dsvFormat_;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Off);
+    desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
     desc.NumRenderTargets = 1;
     desc.RTVFormats[0] = rtvFormat_;
     desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -482,7 +482,7 @@ ID3D12PipelineState* PSOManager::GetGaussianFilter() {
     if (!gaussianFilterShaders_.vsBlob || !gaussianFilterShaders_.psBlob) return nullptr;
 
     constexpr uint64_t kGaussianTag = 0x474155535349ull; // "GAUSSI"
-    Key key{ static_cast<uint64_t>(Hash(gaussianFilterShaders_, BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::None) ^ kGaussianTag) };
+    Key key{ static_cast<uint64_t>(Hash(gaussianFilterShaders_, BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kGaussianTag) };
 
     if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
 
@@ -494,8 +494,8 @@ ID3D12PipelineState* PSOManager::GetGaussianFilter() {
     desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
     desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-    desc.DepthStencilState = MakeDepth(DepthWrite::Disable);
-    desc.DSVFormat = dsvFormat_;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Off);
+    desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
     desc.NumRenderTargets = 1;
     desc.RTVFormats[0] = rtvFormat_;
     desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -506,6 +506,42 @@ ID3D12PipelineState* PSOManager::GetGaussianFilter() {
     HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
     assert(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for GaussianFilter");
     
+    if (SUCCEEDED(hr)) {
+        cache_[key] = pso;
+        return pso.Get();
+    }
+    return nullptr;
+}
+
+ID3D12PipelineState* PSOManager::GetDepthBasedOutline() {
+    if (!depthBasedOutlineShaders_.vsBlob || !depthBasedOutlineShaders_.psBlob) return nullptr;
+
+    // "OUTLIN" tag
+    constexpr uint64_t kOutlineTag = 0x4F55544C494Eull;
+    Key key{ Hash(depthBasedOutlineShaders_, BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kOutlineTag };
+
+    if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.InputLayout = { nullptr, 0 };
+    desc.VS = { depthBasedOutlineShaders_.vsBlob->GetBufferPointer(), depthBasedOutlineShaders_.vsBlob->GetBufferSize() };
+    desc.PS = { depthBasedOutlineShaders_.psBlob->GetBufferPointer(), depthBasedOutlineShaders_.psBlob->GetBufferSize() };
+    desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
+    desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+    desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+    desc.DepthStencilState = MakeDepth(DepthWrite::Off);
+    desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+    desc.NumRenderTargets = 1;
+    desc.RTVFormats[0] = rtvFormat_;
+    desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    desc.SampleDesc.Count = 1;
+    desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr) && "CreateGraphicsPipelineState failed for DepthBasedOutline");
+
     if (SUCCEEDED(hr)) {
         cache_[key] = pso;
         return pso.Get();
@@ -687,9 +723,15 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
 D3D12_DEPTH_STENCIL_DESC PSOManager::MakeDepth(DepthWrite w)
 {
     D3D12_DEPTH_STENCIL_DESC d{};
-    d.DepthEnable = TRUE;                                      // Depth の機能を有効化する(既存コメント踏襲)
-    d.DepthWriteMask = (w == DepthWrite::Enable) ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO; // 書き込みします/しません
-    d.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;            // つまり、近ければ描画される(既存コメント踏襲)
+    if (w == DepthWrite::Off) {
+        d.DepthEnable = FALSE;
+        d.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+        d.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+    } else {
+        d.DepthEnable = TRUE;
+        d.DepthWriteMask = (w == DepthWrite::Enable) ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+        d.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    }
     return d;
 }
 

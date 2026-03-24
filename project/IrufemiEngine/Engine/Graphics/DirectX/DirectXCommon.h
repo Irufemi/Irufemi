@@ -92,6 +92,7 @@ public: // ゲッター
 	int32_t& GetClientHeight() { return clientHeight_; }
 	PSOManager* GetPSOManager() { return psoManager_.get(); }
 	DescriptorPool* GetSrvPool() const { return srvPool_.get(); }
+	ID3D12Resource* GetDepthStencilResource() const { return depthStencilResource_.Get(); }
 
 	// Compute Shader用
 	ID3D12RootSignature* GetComputeRootSignature() const { return computeRootSignature_.Get(); }

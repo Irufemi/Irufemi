@@ -1047,7 +1047,7 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
     ImGui::Begin("Post Processing");
 
     int currentMode = static_cast<int>(engine->GetPostProcessMode());
-    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter" };
+    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline" };
 
     if (ImGui::Combo("Mode", &currentMode, modes, IM_ARRAYSIZE(modes))) {
         engine->SetPostProcessMode(static_cast<IrufemiEngine::PostProcessMode>(currentMode));
@@ -1082,6 +1082,11 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
             }
         }
         ImGui::Text("Notice: Square kernel size must be odd.");
+    }
+
+    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::DepthBasedOutline) {
+        ImGui::Text("Mode: Depth Based Outline (Prewitt Filter)");
+        ImGui::Text("Notice: Uses depth buffer to detect edges.");
     }
 
     ImGui::End();

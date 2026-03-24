@@ -14,6 +14,7 @@
 #include "Engine/Core/Utility/Log.h"
 #include "Framework/SceneManager.h"
 #include "Engine/Core/Math/Vector4.h"
+#include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Graphics/DirectX/RenderTexture.h"
 #include <memory>
 #include <Windows.h>
@@ -36,7 +37,8 @@ public: // 内部型
         Sepia,
         Vignette,
         Smoothing,
-        GaussianFilter
+        GaussianFilter,
+        DepthBasedOutline
     };
 
     // --- Vignette ポストプロセス用 ---
@@ -52,6 +54,10 @@ public: // 内部型
     struct GaussianParams {
         float sigma = 2.0f;
         int32_t kernelSize = 3;
+    };
+
+    struct OutlineParams {
+        Matrix4x4 projectionInverse;
     };
 
 public: // メンバ関数
@@ -263,4 +269,11 @@ private: // メンバ変数
     GaussianParams gaussianParams_;
     Microsoft::WRL::ComPtr<ID3D12Resource> gaussianCB_ = nullptr;
     GaussianParams* mappedGaussian_ = nullptr;
+
+    uint32_t depthSrvIndex_ = 0;
+    D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandleGPU_{};
+
+    OutlineParams outlineParams_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> outlineCB_ = nullptr;
+    OutlineParams* mappedOutline_ = nullptr;
 };

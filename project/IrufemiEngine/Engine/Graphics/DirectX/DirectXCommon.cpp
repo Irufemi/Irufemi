@@ -467,7 +467,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     staticSamplers[0].ShaderRegister = 0; //レジスタ番号0を使う
     staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     // CLAMP Sampler (s1)
-    staticSamplers[1].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+    staticSamplers[1].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
     staticSamplers[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
     staticSamplers[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
     staticSamplers[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -752,6 +752,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> gaussianFilterPSBlob = CompileShader(L"resources/shaders/GaussianFilter.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(gaussianFilterPSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> depthBasedOutlinePSBlob = CompileShader(L"resources/shaders/DepthBasedOutline.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(depthBasedOutlinePSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -859,6 +862,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     psoManager_->SetGaussianFilterShaders({ fullscreenVSBlob, gaussianFilterPSBlob });
     psoManager_->GetGaussianFilter();
+
+    psoManager_->SetDepthBasedOutlineShaders({ fullscreenVSBlob, depthBasedOutlinePSBlob });
+    psoManager_->GetDepthBasedOutline();
 
     // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
@@ -1374,7 +1380,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureR
     resourceDesc.Height = height; //Textureの高さ
     resourceDesc.MipLevels = 1; //mipmapの数
     resourceDesc.DepthOrArraySize = 1; //奥行き or 配列Textureの配列数
-    resourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; //DepthStencilとして利用可能なフォーマット
+    resourceDesc.Format = DXGI_FORMAT_R24G8_TYPELESS; // 深度バッファとして使いつつ、SRVで読み込むためにTYPELESSにする
     resourceDesc.SampleDesc.Count = 1; //サンプリングカウント。1固定
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; //2次元
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL; // DepthStencilとして使う通知
@@ -1388,7 +1394,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureR
     //深度地のクリア設定
     D3D12_CLEAR_VALUE depthClearValue{};
     depthClearValue.DepthStencil.Depth = 1.0f; // 1.0f(最大値)でクリア
-    depthClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; //フォーマット。Resourceと合わせる。
+    depthClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // クリアには実際の深度フォーマットを指定
 
     ///Resourceの生成
 

@@ -19,7 +19,7 @@
 class PSOManager {
 public:
 
-    enum class DepthWrite { Enable, Disable };
+    enum class DepthWrite { Enable, Disable, Off };
 
     // 追加: Cull 決定用(Depth と同様に扱う)
     enum class CullMode { Back, Front, None };
@@ -96,6 +96,9 @@ public:
     void SetGaussianFilterShaders(const ShaderSet& shaders) { gaussianFilterShaders_ = shaders; }
     ID3D12PipelineState* GetGaussianFilter();
 
+    void SetDepthBasedOutlineShaders(const ShaderSet& shaders) { depthBasedOutlineShaders_ = shaders; }
+    ID3D12PipelineState* GetDepthBasedOutline();
+
     void ClearCache();
 
 private:
@@ -129,6 +132,7 @@ private:
     ShaderSet vignetteShaders_{};
     ShaderSet smoothingShaders_{};
     ShaderSet gaussianFilterShaders_{};
+    ShaderSet depthBasedOutlineShaders_{};
 
     struct Key {
         uint64_t hash;

@@ -709,18 +709,22 @@ void DrawManager::EndRenderTexture(RenderTexture* rt) {
     commandList_->ResourceBarrier(1, &barrier);
 }
 
-void DrawManager::SetRenderTargetToBackBuffer() {
+void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
     const UINT backIdx = dxCommon_->GetSwapChain()->GetCurrentBackBufferIndex();
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = dxCommon_->GetRtvHandles(backIdx);
-    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
-    commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+    if (useDepth) {
+        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
+        commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+    } else {
+        commandList_->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+    }
 
     // ビューポートとシザーを元に戻す
     commandList_->RSSetViewports(1, &dxCommon_->GetViewport());
     commandList_->RSSetScissorRects(1, &dxCommon_->GetScissorRect());
 }
 
-void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress) {
+void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle) {
     if (!renderTexture) return;
 
     // 1. PSOの設定 (引数が渡された場合はそれを使用、そうでなければデフォルトのCopyImage)
@@ -740,6 +744,11 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
 
     // 4. テクスチャの設定 (RootParameter[2])
     commandList_->SetGraphicsRootDescriptorTable(2, renderTexture->GetSrvHandleGPU());
+
+    // 深度テクスチャの設定 (RootParameter[12])
+    if (depthSrvHandle.ptr != 0) {
+        commandList_->SetGraphicsRootDescriptorTable(12, depthSrvHandle);
+    }
 
     // 追加: ConstantBuffer の設定 (引数があれば RootParameter[0] にセット)
     if (cbvAddress != 0) {

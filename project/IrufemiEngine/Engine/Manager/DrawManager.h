@@ -104,10 +104,10 @@ public: //メンバ関数
     void EndRenderTexture(class RenderTexture* rt);
 
     // レンダーターゲットをバックバッファに戻す
-    void SetRenderTargetToBackBuffer();
+    void SetRenderTargetToBackBuffer(bool useDepth = true);
 
     // RenderTexture を全画面に描画(ポストプロセス用)
-    void DrawRenderTexture(class RenderTexture* renderTexture, ID3D12PipelineState* pso = nullptr, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress = 0);
+    void DrawRenderTexture(class RenderTexture* renderTexture, ID3D12PipelineState* pso = nullptr, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress = 0, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle = { 0 });
 
     // フレーム単位の共通データを設定
     void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);
@@ -146,6 +146,8 @@ public: //メンバ関数
     void DispatchSkinning(const D3D12_GPU_DESCRIPTOR_HANDLE& palette, const D3D12_GPU_DESCRIPTOR_HANDLE& inputVertex, const D3D12_GPU_DESCRIPTOR_HANDLE& influence, const D3D12_GPU_DESCRIPTOR_HANDLE& outputVertex, const D3D12_GPU_VIRTUAL_ADDRESS& skinningInformation, const float& verticesSize);
 
     void DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const UINT& instanceCount);
+
+    CameraForGPU* GetCameraData() const { return cameraData_; }
 
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
 };

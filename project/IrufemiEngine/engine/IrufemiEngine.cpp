@@ -1,6 +1,7 @@
 #include "IrufemiEngine.h"
 
 #include "Engine/Core/Math/Random/Random.h"
+#include "Engine/Core/Math/Geometry/Math.h"
 
 #include <cassert>
 #include <DbgHelp.h>
@@ -227,6 +228,21 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     gaussianCB_ = dxCommon_->CreateBufferResource(sizeof(GaussianParams));
     gaussianCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedGaussian_));
     *mappedGaussian_ = gaussianParams_;
+
+    // --- Outline ConstantBuffer の初期化 ---
+    outlineCB_ = dxCommon_->CreateBufferResource(sizeof(OutlineParams));
+    outlineCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedOutline_));
+
+    // --- 深度バッファの SRV 作成 ---
+    depthSrvIndex_ = dxCommon_->GetSrvPool()->Allocate();
+    depthSrvHandleGPU_ = dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC depthSrvDesc{};
+    depthSrvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+    depthSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    depthSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    depthSrvDesc.Texture2D.MipLevels = 1;
+    dxCommon_->GetDevice()->CreateShaderResourceView(dxCommon_->GetDepthStencilResource(), &depthSrvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -356,7 +372,7 @@ void IrufemiEngine::EndFrame() {
     drawManager->EndRenderTexture(mainRenderTexture_.get());
 
     // 4. 描画先をバックバッファに戻す
-    drawManager->SetRenderTargetToBackBuffer();
+    drawManager->SetRenderTargetToBackBuffer(false);
 
     // 5. RenderTexture の内容をバックバッファに全画面コピー (ポストプロセス適用)
     ID3D12PipelineState* pso = nullptr;
@@ -379,6 +395,9 @@ void IrufemiEngine::EndFrame() {
     case PostProcessMode::GaussianFilter:
         pso = GetPSOManager()->GetGaussianFilter();
         break;
+    case PostProcessMode::DepthBasedOutline:
+        pso = GetPSOManager()->GetDepthBasedOutline();
+        break;
     }
 
     if (pso) {
@@ -400,6 +419,32 @@ void IrufemiEngine::EndFrame() {
                 *mappedGaussian_ = gaussianParams_;
             }
             mainRenderTexture_->Draw(drawManager.get(), pso, gaussianCB_->GetGPUVirtualAddress());
+        } else if (postProcessMode_ == PostProcessMode::DepthBasedOutline) {
+            // 1. 深度バッファを PixelShaderResource に遷移
+            D3D12_RESOURCE_BARRIER barrier{};
+            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
+            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
+
+            // 2. パラメータ更新 (逆投影行列)
+            if (mappedOutline_) {
+                if (auto* cameraData = drawManager->GetCameraData()) {
+                    outlineParams_.projectionInverse = Math::Inverse(cameraData->projection);
+                }
+                *mappedOutline_ = outlineParams_;
+            }
+
+            // 3. 描画実行 (第4引数に深度 SRV を渡す)
+            mainRenderTexture_->Draw(drawManager.get(), pso, outlineCB_->GetGPUVirtualAddress(), depthSrvHandleGPU_);
+
+            // 4. 深度バッファを DEPTH_WRITE に戻す
+            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+            dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
         } else {
             mainRenderTexture_->Draw(drawManager.get(), pso);
         }
