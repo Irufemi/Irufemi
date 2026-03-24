@@ -248,7 +248,7 @@ void Player::HandleMovement() {
 
 void Player::HandleAttack() {
 #ifdef USE_IMGUI
-    if (ImGui::GetIO().WantCaptureMouse) return;
+    if (!engine_->IsCursorLocked() && ImGui::GetIO().WantCaptureMouse) return;
 #endif
 
     if (!cameraController_.IsCameraControlEnabled()) {
@@ -375,7 +375,7 @@ void Player::HandleSkill() {
     }
 
 #ifdef USE_IMGUI
-    if (ImGui::GetIO().WantCaptureMouse) return;
+    if (!engine_->IsCursorLocked() && ImGui::GetIO().WantCaptureMouse) return;
 #endif
 
     if (!cameraController_.IsCameraControlEnabled()) return;

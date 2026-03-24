@@ -9,10 +9,6 @@
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-// ImGuiWindowFlags_NoDocking が未定義の場合は定義する
-#ifndef ImGuiWindowFlags_NoDocking
-#define ImGuiWindowFlags_NoDocking (1 << 13)
-#endif
 #endif // USE_IMGUI
 #include <vector>
 #include <string>
@@ -31,6 +27,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Engine/IrufemiEngine.h"
 #include "Renderer/Material.h"
 #include "Renderer/Particle/Data/ParticleMaterial.h"
 #include "Resource/Model/Data/ObjModel.h"
@@ -53,6 +50,8 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
+
+    ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplWin32_Init(hwnd);
 
     DescriptorPool* srvPool = dxCommon->GetSrvPool();
@@ -628,7 +627,6 @@ void DebugUI::FPSDebug() {
     ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
     ImGuiWindowFlags flags =
         ImGuiWindowFlags_NoDecoration |
-        ImGuiWindowFlags_NoDocking |
         ImGuiWindowFlags_AlwaysAutoResize |
         ImGuiWindowFlags_NoSavedSettings |
         ImGuiWindowFlags_NoFocusOnAppearing |
@@ -1036,6 +1034,120 @@ void DebugUI::DebugPsoSettings(
     if (ImGui::Combo(cullLabel.c_str(), &cullIdx, cullNames, IM_ARRAYSIZE(cullNames))) {
         *cullMode = static_cast<PSOManager::CullMode>(cullIdx);
     }
+#endif // USE_IMGUI
+}
+
+void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
+#ifdef USE_IMGUI
+    if (!engine) return;
+
+    auto* ppManager = engine->GetPostProcessManager();
+    if (!ppManager) return;
+
+    ImGui::Begin("Post Processing");
+
+    const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping" };
+    auto activeModes = ppManager->GetActiveModes();
+
+    if (ImGui::Button("Clear All Effects")) {
+        ppManager->ClearActiveModes();
+        activeModes.clear();
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Available Effects:");
+
+    // エフェクト選択
+    for (int i = 1; i < 12; ++i) { // None 以外を表示
+        PostProcessMode m = static_cast<PostProcessMode>(i);
+        bool isEnabled = std::find(activeModes.begin(), activeModes.end(), m) != activeModes.end();
+        
+        if (ImGui::Checkbox(modeNames[i], &isEnabled)) {
+            if (isEnabled) {
+                ppManager->AddActiveMode(m);
+            } else {
+                activeModes.erase(std::remove(activeModes.begin(), activeModes.end(), m), activeModes.end());
+                ppManager->SetActiveModes(activeModes);
+            }
+        }
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Active Stack (Draw Order):");
+    if (activeModes.empty()) {
+        ImGui::TextDisabled("(No effects active - Clean Copy)");
+    } else {
+        for (size_t i = 0; i < activeModes.size(); ++i) {
+            ImGui::BulletText("%d: %s", static_cast<int>(i + 1), modeNames[static_cast<int>(activeModes[i])]);
+        }
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Parameters:");
+
+    // 有効な全てのエフェクトのパラメータを表示
+    for (auto mode : activeModes) {
+        if (ImGui::TreeNode(modeNames[static_cast<int>(mode)])) {
+            if (mode == PostProcessMode::Vignette) {
+                auto& params = ppManager->GetVignetteParams();
+                ImGui::DragFloat("Vignette Scale", &params.scale, 0.1f, 0.0f, 100.0f);
+                ImGui::DragFloat("Vignette Power", &params.power, 0.01f, 0.0f, 10.0f);
+            }
+            else if (mode == PostProcessMode::Smoothing) {
+                auto& params = ppManager->GetSmoothingParams();
+                if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
+                    if (params.kernelSize < 1) params.kernelSize = 1;
+                    if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
+                        params.kernelSize += 1;
+                    }
+                }
+            }
+            else if (mode == PostProcessMode::GaussianFilter) {
+                auto& params = ppManager->GetGaussianParams();
+                ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
+                if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
+                    if (params.kernelSize < 1) params.kernelSize = 1;
+                    if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
+                        params.kernelSize += 1;
+                    }
+                }
+            }
+            else if (mode == PostProcessMode::DepthBasedOutline) {
+                ImGui::Text("Mode: Depth Based Outline (Prewitt Filter)");
+            }
+            else if (mode == PostProcessMode::RadialBlur) {
+                auto& params = ppManager->GetRadialBlurParams();
+                ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
+                ImGui::DragFloat("Blur Width", &params.blurWidth, 0.001f, 0.0f, 0.1f);
+                ImGui::SliderInt("Samples", reinterpret_cast<int*>(&params.numSamples), 1, 100);
+            }
+            else if (mode == PostProcessMode::Dissolve) {
+                auto& params = ppManager->GetDissolveParams();
+                ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
+                ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
+                ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
+                const char* noiseTypes[] = { "Noise 0", "Noise 1" };
+                ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes, IM_ARRAYSIZE(noiseTypes));
+            }
+            else if (mode == PostProcessMode::Noise) {
+                auto& params = ppManager->GetNoiseParams();
+                ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
+            }
+            else if (mode == PostProcessMode::HSV) {
+                auto& params = ppManager->GetHSVParams();
+                ImGui::DragFloat("HueOffset", &params.hue, 0.001f, -1.0f, 1.0f);
+                ImGui::DragFloat("SaturationOffset", &params.saturation, 0.001f, -1.0f, 1.0f);
+                ImGui::DragFloat("ValueOffset", &params.value, 0.001f, -1.0f, 1.0f);
+            }
+            else if (mode == PostProcessMode::ToneMapping) {
+                auto& params = ppManager->GetToneMappingParams();
+                ImGui::DragFloat("Exposure", &params.exposure, 0.01f, 0.0f, 10.0f);
+            }
+            ImGui::TreePop();
+        }
+    }
+
+    ImGui::End();
 #endif // USE_IMGUI
 }
 

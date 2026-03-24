@@ -1,33 +1,51 @@
 #pragma once
 
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/D3DResourceLeakChecker.h"
-#include "Engine/Platform/Input/InputManager.h"
-#include "Engine/Platform/WindowsAPI/WinApp.h"
-#include "Engine/Manager/DrawManager.h"
-#include "Engine/Manager/DebugUI.h"
-#include "Resource/Texture/TextureManager.h"
-#include "Resource/Audio/AudioManager.h"
-#include "Resource/Model/ModelManager.h"
-#include "Resource/Model/AnimationManager.h"
-#include "Engine/Core/Type/BlendMode.h"
-#include "Engine/Core/Utility/Log.h"
-#include "Framework/SceneManager.h"
-#include "Engine/Core/Math/Vector4.h"
+#include "Graphics/DirectX/DirectXCommon.h"
+#include "Graphics/DirectX/D3DResourceLeakChecker.h"
+#include "Platform/Input/InputManager.h"
+#include "Platform/WindowsAPI/WinApp.h"
+#include "Manager/DrawManager.h"
+#include "Manager/DebugUI.h"
+#include "../Resource/Texture/TextureManager.h"
+#include "../Resource/Audio/AudioManager.h"
+#include "../Resource/Model/ModelManager.h"
+#include "../Resource/Model/AnimationManager.h"
+#include "Core/Type/BlendMode.h"
+#include "Core/Utility/Log.h"
+#include "../Framework/SceneManager.h"
+#include "Core/Math/Vector4.h"
+#include "Core/Math/Vector2.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Graphics/DirectX/RenderTexture.h"
+#include "Graphics/PostProcess/PostProcessManager.h"
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
 #include <dxcapi.h>
-#include <wrl.h>
+#include <wrl/client.h>
 #include <dxgi1_6.h>
 #include <functional>
 #include <string>
 #include <array>
+#include <chrono>
+#include <algorithm>
 
 class SceneManager;
 class DebugUI;
 
 class IrufemiEngine {
+public: // 内部型などは PostProcessManager.h へ移動しました。
+    using PostProcessMode = ::PostProcessMode;
+    using Mode = ::PostProcessMode; // 互換性のため
+    
+    using NoiseParams = PostProcessManager::NoiseParams;
+    using VignetteParams = PostProcessManager::VignetteParams;
+    using SmoothingParams = PostProcessManager::SmoothingParams;
+    using GaussianParams = PostProcessManager::GaussianParams;
+    using RadialBlurParams = PostProcessManager::RadialBlurParams;
+    using OutlineParams = PostProcessManager::OutlineParams;
+    using DissolveParams = PostProcessManager::DissolveParams;
+
 public: // メンバ関数
     // コンストラクタ
     IrufemiEngine() = default;
@@ -49,9 +67,11 @@ public: // メンバ関数
     /// 追加: クリアカラーを引数で指定できる Initialize(std::array)
     void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                     const std::array<float, 4>& clearColor);
-    // 追加: Vector4 版
     void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                     const Vector4& clearColor);
+
+    // 追加: リサイズ対応
+    void OnResize(int32_t width, int32_t height);
 
      // --- Application からの注入用コールバック型とセッター ---
     using SceneRegistrar = std::function<void(SceneManager&)>;
@@ -107,6 +127,11 @@ public: // ゲッター
     TextureManager* GetTextureManager() { return this->textureManager.get(); }
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
+    /** 
+     * @brief ポストプロセス管理者を取得
+     * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
+     */
+    PostProcessManager* GetPostProcessManager() { return postProcessManager_.get(); }
     int32_t& GetClientWidth() { return dxCommon_->GetClientWidth(); }
     int32_t& GetClientHeight() { return dxCommon_->GetClientHeight(); }
     D3D12_VIEWPORT& GetViewport() { return dxCommon_->GetViewport(); }
@@ -138,7 +163,19 @@ public: // セッター
     // 追加: Vector4 版
     void SetClearColor(const Vector4& c) { clearColor_ = { c.x, c.y, c.z, c.w }; }
 
+    PostProcessMode GetPostProcessMode() const { return postProcessManager_->GetMode(); }
+    void SetPostProcessMode(PostProcessMode mode) { postProcessManager_->SetMode(mode); }
+    VignetteParams& GetVignetteParams() { return postProcessManager_->GetVignetteParams(); }
+    OutlineParams& GetOutlineParams() { return postProcessManager_->GetOutlineParams(); }
+    DissolveParams& GetDissolveParams() { return postProcessManager_->GetDissolveParams(); }
+    SmoothingParams& GetSmoothingParams() { return postProcessManager_->GetSmoothingParams(); }
+    GaussianParams& GetGaussianParams() { return postProcessManager_->GetGaussianParams(); }
+    RadialBlurParams& GetRadialBlurParams() { return postProcessManager_->GetRadialBlurParams(); }
+    NoiseParams& GetNoiseParams() { return postProcessManager_->GetNoiseParams(); }
+
+
     void SetCursorLocked(bool lock);
+    bool IsCursorLocked() const;
 
     // 状態からPSOを適用してBind(引数なしで使うやつ)
     void ApplyPSO();
@@ -215,4 +252,9 @@ private: // メンバ変数
     std::chrono::steady_clock::time_point lastFrameTime_{};
     float deltaTime_ = 0.0f;
     float totalTime_ = 0.0f;
+
+    // --- 全画面用 RenderTexture ---
+    std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;
+    std::unique_ptr<PostProcessManager> postProcessManager_ = nullptr;
+    uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
 };

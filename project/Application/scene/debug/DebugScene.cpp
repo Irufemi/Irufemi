@@ -183,6 +183,9 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         skybox_ = std::make_unique<Skybox>();
         skybox_->Initialize(camera_.get(),"resources/rostock_laage_airport_4k.dds");
     }
+
+    // エンジンのデフォルトクリアカラーを「青」に設定
+    engine_->SetClearColor(Vector4{ 0.1f, 0.25f, 0.5f, 1.0f });
 }
 
 // 更新
@@ -483,7 +486,6 @@ void DebugScene::Update() {
 }
 
 void DebugScene::Draw() {
-
 
     if (isActiveSkybox_) {
         skybox_->Draw();

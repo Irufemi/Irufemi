@@ -38,4 +38,5 @@ public: // メンバ関数
 	 * @brief 描画処理
 	 */
 	void Draw();
+
 };

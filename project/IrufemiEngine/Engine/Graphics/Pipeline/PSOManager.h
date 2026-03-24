@@ -19,7 +19,7 @@
 class PSOManager {
 public:
 
-    enum class DepthWrite { Enable, Disable };
+    enum class DepthWrite { Enable, Disable, Off };
 
     // 追加: Cull 決定用(Depth と同様に扱う)
     enum class CullMode { Back, Front, None };
@@ -77,6 +77,10 @@ public:
 
     ID3D12PipelineState* GetVoxelParticle(BlendMode blend, DepthWrite depth, CullMode cull);
 
+    // 追加: ポストプロセス用 (CopyImage は汎用的なため維持)
+    void SetCopyImageShaders(const ShaderSet& shaders) { copyImageShaders_ = shaders; }
+    ID3D12PipelineState* GetCopyImage();
+
     void ClearCache();
 
 private:
@@ -104,6 +108,7 @@ private:
     ShaderSet skyboxShaders_{};
     ShaderSet gpuParticleShaders_{};
     ShaderSet voxelParticleShaders_{};
+    ShaderSet copyImageShaders_{};
 
     struct Key {
         uint64_t hash;

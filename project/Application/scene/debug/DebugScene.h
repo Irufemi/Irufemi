@@ -2,6 +2,8 @@
 
 #include "Framework/IScene.h"
 
+#include "Renderer/Object3D/AnimationModel/AnimationModel.h"
+#include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Irufemi.h"
 
 #include <memory>
@@ -93,6 +95,8 @@ private: // メンバ変数(ゲーム)
     bool isActiveSneakWalk_ = false;
 
     std::unique_ptr<Skybox> skybox_ = nullptr;
+
+    // --- ライト ---
     bool isActiveSkybox_ = false;
 
 private: // メンバ変数(システム)

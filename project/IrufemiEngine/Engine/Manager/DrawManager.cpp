@@ -668,3 +668,93 @@ void DrawManager::DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferVi
     // 描画コール
     commandList_->DrawInstanced(6, instanceCount, 0, 0);
 }
+void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor) {
+    // 1. Transition Barrier (SRV -> RenderTarget)
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = rt->GetResource();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    commandList_->ResourceBarrier(1, &barrier);
+
+    // 2. Set Render Target
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rt->GetRtvHandle();
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
+    commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+
+    // 3. Clear
+    commandList_->ClearRenderTargetView(rtvHandle, &clearColor.x, 0, nullptr);
+    commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+    // 4. Set Viewport/Scissor
+    D3D12_VIEWPORT viewport{ 0.0f, 0.0f, static_cast<float>(rt->GetWidth()), static_cast<float>(rt->GetHeight()), 0.0f, 1.0f };
+    D3D12_RECT scissor{ 0, 0, static_cast<long>(rt->GetWidth()), static_cast<long>(rt->GetHeight()) };
+    commandList_->RSSetViewports(1, &viewport);
+    commandList_->RSSetScissorRects(1, &scissor);
+
+    // 5. Descriptor Heaps (念のため再設定)
+    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+}
+
+void DrawManager::EndRenderTexture(RenderTexture* rt) {
+    // 1. Transition Barrier (RenderTarget -> SRV)
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = rt->GetResource();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    commandList_->ResourceBarrier(1, &barrier);
+}
+
+void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
+    const UINT backIdx = dxCommon_->GetSwapChain()->GetCurrentBackBufferIndex();
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = dxCommon_->GetRtvHandles(backIdx);
+    if (useDepth) {
+        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
+        commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+    } else {
+        commandList_->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+    }
+
+    // ビューポートとシザーを元に戻す
+    commandList_->RSSetViewports(1, &dxCommon_->GetViewport());
+    commandList_->RSSetScissorRects(1, &dxCommon_->GetScissorRect());
+}
+
+void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle) {
+    if (!renderTexture) return;
+
+    // 1. PSOの設定 (引数が渡された場合はそれを使用、そうでなければデフォルトのCopyImage)
+    if (pso) {
+        commandList_->SetPipelineState(pso);
+    } else {
+        ID3D12PipelineState* defaultPso = dxCommon_->GetPSOManager()->GetCopyImage();
+        if (!defaultPso) return;
+        commandList_->SetPipelineState(defaultPso);
+    }
+
+    // 2. ルートシグネチャの設定
+    commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+
+    // 3. 形状の設定 (三角形リスト)
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // 4. テクスチャの設定 (RootParameter[2])
+    commandList_->SetGraphicsRootDescriptorTable(2, renderTexture->GetSrvHandleGPU());
+
+    // 深度テクスチャの設定 (RootParameter[12])
+    if (depthSrvHandle.ptr != 0) {
+        commandList_->SetGraphicsRootDescriptorTable(12, depthSrvHandle);
+    }
+
+    // 追加: ConstantBuffer の設定 (引数があれば RootParameter[0] にセット)
+    if (cbvAddress != 0) {
+        commandList_->SetGraphicsRootConstantBufferView(0, cbvAddress);
+    }
+
+    // 5. 描画 (3頂点のインデックスなし描画: SV_VertexIDを使用するためVBいらず)
+    commandList_->DrawInstanced(3, 1, 0, 0);
+}

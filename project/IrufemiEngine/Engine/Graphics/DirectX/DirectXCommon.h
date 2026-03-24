@@ -10,6 +10,7 @@
 #include "DirectXTex/DirectXTex.h"
 #include "Engine/Graphics/Pipeline/PSOManager.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Engine/Core/Math/Vector4.h"
 
 class Log;
 
@@ -27,6 +28,9 @@ public: // メンバ関数
 
 	// 初期化
 	void Initialize(HWND hwnd, int32_t w, int32_t h);
+
+	// スワップチェーンのリサイズ
+	void ResizeSwapChain(int32_t width, int32_t height);
 
 	void SetLog(Log* log) { log_ = log; }
 
@@ -60,6 +64,8 @@ public: // メンバ関数
 
 	static Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(const Microsoft::WRL::ComPtr<ID3D12Device>& device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 
+	static Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4* clearColor);
+
 	// FPS固定初期化
 	void InitializeFixFPS();
 	// FPS固定更新
@@ -89,6 +95,8 @@ public: // ゲッター
 	int32_t& GetClientHeight() { return clientHeight_; }
 	PSOManager* GetPSOManager() { return psoManager_.get(); }
 	DescriptorPool* GetSrvPool() const { return srvPool_.get(); }
+	ID3D12Resource* GetDepthStencilResource() const { return depthStencilResource_.Get(); }
+	UINT GetCurrentBackBufferIndex() const { return swapChain_->GetCurrentBackBufferIndex(); }
 
 	// Compute Shader用
 	ID3D12RootSignature* GetComputeRootSignature() const { return computeRootSignature_.Get(); }
@@ -106,6 +114,9 @@ public: // ゲッター
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDSVGPUDescriptorHandle(uint32_t index);
 
+	// RTVインデックスの割り当て
+	uint32_t AllocateRTVIndex();
+
 private:
 	/*開発用のUIを出そう*/
 
@@ -113,6 +124,8 @@ private:
 	/// デスクリプタ生成
 	/// </summary>
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+
+	void ReleaseSwapChainResources();
 
 	/// <summary>
 	/// 指定番号のCPUデスクリプタハンドルを取得する
@@ -165,6 +178,7 @@ private: // メンバ変数
 
 	uint32_t descriptorSizeRTV{};
 	uint32_t descriptorSizeDSV{};
+	uint32_t nextRtvIndex_ = 0;
 
 	// --- Depth & Pipeline State ---
 

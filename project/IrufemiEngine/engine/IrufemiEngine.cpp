@@ -1,11 +1,14 @@
 #include "IrufemiEngine.h"
 
-#include "Engine/Core/Math/Random/Random.h"
+#include "Core/Math/Random/Random.h"
+#include "Core/Math/Geometry/Math.h"
 
 #include <cassert>
 #include <DbgHelp.h>
 #include <cstdint>
 #include <format>
+#include <algorithm>
+#include <string>
 
 #include "Renderer/VertexData.h"
 #include "Renderer/D3D12ResourceUtil.h"
@@ -26,10 +29,10 @@
 #include "Renderer/Region/Primitive/TetraRegion.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Renderer/Skybox/Skybox.h"
-#include "Resource/Audio/Bgm.h"
-#include "Resource/Audio/Se.h"
-#include "Resource/Texture/Texture.h"
-#include "Engine/Manager/DebugUI.h"
+#include "../Resource/Audio/Bgm.h"
+#include "../Resource/Audio/Se.h"
+#include "../Resource/Texture/Texture.h"
+#include "Manager/DebugUI.h"
 
 #include "Framework/IScene.h"
 
@@ -208,6 +211,35 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Skybox::SetEngine(this);
     GPUParticleSystem::SetDXCommon(dxCommon_.get());
     VoxelParticleSystem::SetEngine(this);
+
+    // --- 全画面用 RenderTexture の初期化 ---
+    mainRenderTexture_ = std::make_unique<RenderTexture>();
+    mainRenderTexture_->Initialize(dxCommon_.get(), GetClientWidth(), GetClientHeight(), DXGI_FORMAT_R8G8B8A8_UNORM, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
+
+    // --- PostProcessManager の初期化 ---
+    postProcessManager_ = std::make_unique<PostProcessManager>();
+    postProcessManager_->Initialize(dxCommon_->GetDevice(), dxCommon_->GetRootSignature(), DXGI_FORMAT_R8G8B8A8_UNORM);
+    postProcessManager_->InitializeBuffers(GetClientWidth(), GetClientHeight(), dxCommon_.get());
+
+    // ノイズテクスチャのロードとハンドル設定
+    postProcessManager_->SetDissolveNoiseHandle(0, textureManager->GetTextureHandle("resources/noise0.png"));
+    postProcessManager_->SetDissolveNoiseHandle(1, textureManager->GetTextureHandle("resources/noise1.png"));
+
+    // --- 深度バッファの SRV 作成とマネージャーへの設定 ---
+    depthSrvIndex_ = dxCommon_->GetSrvPool()->Allocate();
+    D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandleGPU = dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC depthSrvDesc{};
+    depthSrvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+    depthSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    depthSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    depthSrvDesc.Texture2D.MipLevels = 1;
+    dxCommon_->GetDevice()->CreateShaderResourceView(dxCommon_->GetDepthStencilResource(), &depthSrvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
+
+    postProcessManager_->SetDepthSrvHandle(depthSrvHandleGPU);
+
+    // WinAppに自身(Engine)のポインタを設定
+    winApp_->SetEngine(this);
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -290,13 +322,16 @@ void IrufemiEngine::Execute() {
 #ifdef USE_IMGUI
         ui->FPSDebug();
         ui->DebugSceneSelector(sceneManager_.get());
-#endif // _DEBUG
+        ui->DebugPostProcess(this);
+#endif // USE_IMGUI
 
         // 更新
         sceneManager_->Update();
+    totalTime_ += deltaTime_;
+    postProcessManager_->Update(totalTime_);
 
-        // 入力
-        inputManager_->Update();
+    // インプットを更新
+    inputManager_->Update();
 
         // フレーム途中処理
         ProcessFrame();
@@ -322,11 +357,56 @@ void IrufemiEngine::StartFrame() {
 void IrufemiEngine::ProcessFrame() {
     // 描画処理に入る前にImGui::Renderを積む
     ui->QueueDrawCommands();
+    
+    // 1. バックバッファをクリア (念のため)
     drawManager->PreDraw(clearColor_, 1.0f, 0);
+
+    // 2. メインの描画先を RenderTexture に切り替え、指定のクリアカラーでクリア
+    drawManager->BeginRenderTexture(mainRenderTexture_.get(), Vector4{ clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
 }
 
 // フレーム終了処理
 void IrufemiEngine::EndFrame() {
+    // 3. RenderTexture への描画を終了 (SRV状態へ遷移)
+    drawManager->EndRenderTexture(mainRenderTexture_.get());
+
+    // 4. 描画先をバックバッファに戻す
+    drawManager->SetRenderTargetToBackBuffer(false);
+
+    // 5. ポストプロセス描画の実行
+    // Outline のための深度バッファ遷移 (スタック内のどこかに Outline があれば適用)
+    const auto& activeModes = postProcessManager_->GetActiveModes();
+    bool hasOutline = std::find(activeModes.begin(), activeModes.end(), PostProcessMode::DepthBasedOutline) != activeModes.end();
+
+    if (hasOutline) {
+        D3D12_RESOURCE_BARRIER barrier{};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        barrier.Transition.Subresource = 0; // 深度値のみをターゲットにする
+        dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
+        
+        // 逆投影行列の更新
+        if (auto* cameraData = drawManager->GetCameraData()) {
+            postProcessManager_->GetOutlineParams().projectionInverse = Math::Inverse(cameraData->projection);
+        }
+    }
+
+    // マネージャーに描画を委譲
+    postProcessManager_->Draw(dxCommon_->GetCommandList(), mainRenderTexture_.get(), dxCommon_->GetRtvHandles(dxCommon_->GetCurrentBackBufferIndex()));
+
+    if (hasOutline) {
+        D3D12_RESOURCE_BARRIER barrier{};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+        barrier.Transition.Subresource = 0; // 深度値のみを元に戻す
+        dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
+    }
+
     // 描画後処理
     ui->QueuePostDrawCommands();
     drawManager->PostDraw();
@@ -338,10 +418,41 @@ void IrufemiEngine::EndFrame() {
     }
 }
 
+void IrufemiEngine::OnResize(int32_t width, int32_t height) {
+    if (width <= 0 || height <= 0) return;
+
+    // 1. スワップチェーン、深度バッファのリサイズ
+    dxCommon_->ResizeSwapChain(width, height);
+
+    // 2. メインレンダーテクスチャの再生成
+    mainRenderTexture_->Initialize(dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
+    postProcessManager_->InitializeBuffers(width, height, dxCommon_.get());
+
+    // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)
+    if (depthSrvIndex_ != 0xFFFFFFFF) {
+        D3D12_SHADER_RESOURCE_VIEW_DESC depthSrvDesc{};
+        depthSrvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+        depthSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        depthSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        depthSrvDesc.Texture2D.MipLevels = 1;
+        dxCommon_->GetDevice()->CreateShaderResourceView(dxCommon_->GetDepthStencilResource(), &depthSrvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
+
+        // ポストプロセスマネージャーに新しいSRVハンドルを設定
+        postProcessManager_->SetDepthSrvHandle(dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_));
+    }
+}
+
 void IrufemiEngine::SetCursorLocked(bool lock) {
     if (winApp_) {
         winApp_->SetCursorLocked(lock);
     }
+}
+
+bool IrufemiEngine::IsCursorLocked() const {
+    if (winApp_) {
+        return winApp_->IsCursorLocked();
+    }
+    return false;
 }
 
 void IrufemiEngine::ApplyPSO() {

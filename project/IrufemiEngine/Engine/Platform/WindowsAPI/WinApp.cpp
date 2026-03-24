@@ -7,6 +7,7 @@
 #include "Engine/Platform/Input/InputManager.h"
 #include "Engine/Platform/Input/Mouse.h"
 #include "Engine/Manager/DebugUI.h"
+#include "Engine/IrufemiEngine.h"
 
 #include <Windows.h>
 #include <DbgHelp.h>
@@ -206,8 +207,15 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         return 0;
     case WM_SIZE:
-        clientWidth_ = LOWORD(lParam);
-        clientHeight_ = HIWORD(lParam);
+        if (wParam != SIZE_MINIMIZED && engine_) {
+            int width = LOWORD(lParam);
+            int height = HIWORD(lParam);
+            if (width > 0 && height > 0) {
+                clientWidth_ = width;
+                clientHeight_ = height;
+                engine_->OnResize(width, height);
+            }
+        }
         return 0;
     case WM_CLOSE:
         DestroyWindow(hWnd);

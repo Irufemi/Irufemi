@@ -13,6 +13,7 @@
 // 前方宣言
 class TextureManager;
 class SceneManager;
+class IrufemiEngine;
 class D3D12ResourceUtil;
 class D3D12ResourceUtilParticle;
 struct Transform;
@@ -134,6 +135,9 @@ public: // メンバ関数
 
     // シーンセレクタ
     void DebugSceneSelector(SceneManager* sm);
+
+    // ポストプロセスのデバッグUI
+    void DebugPostProcess(IrufemiEngine* engine);
 
     // PSO設定(ブレンド、深度、カリング)のデバッグUI
     static void DebugPsoSettings(

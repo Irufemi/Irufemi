@@ -41,7 +41,7 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
         if (!IsImageExtImpl(ext)) { continue; }
 
-        const std::string key = p.string();
+        const std::string key = p.generic_string();
         // 既にあるならスキップ
         if (textures_.find(key) != textures_.end()) { continue; }
 

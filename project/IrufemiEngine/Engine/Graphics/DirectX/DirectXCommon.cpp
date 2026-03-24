@@ -135,7 +135,6 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
         //指定した機能レベルでデバイスが生成できたかを確認
         if (SUCCEEDED(hr)) {
-            //生成できたのでログ出力を行ってループを抜ける
             Log::OutPutLog(log_->GetLogStream(), std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
             auto msg = std::format("Resource[{}] created at {} in {}:{}\n", "ID3D12Device", static_cast<const void*>(device_.Get()), __FILE__, __LINE__);
             OutputDebugStringA(msg.c_str());
@@ -170,7 +169,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         D3D12_MESSAGE_ID denyIds[] = {
             //Windows11でのDXGIデバッグプレイヤーとDX12デバッグプレイヤーの相互作用バグによるエラーメッセージ
             //https://stackoverflow.com/questions/69805245/directXx-12-application-is-crashing-in-windows-11
-            D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE
+            D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE,
+            // クリアカラーが動的な場合に発生するパフォーマンス警告を抑制
+            D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE
         };
         //抑制するレベル
         D3D12_MESSAGE_SEVERITY severties[] = { D3D12_MESSAGE_SEVERITY_INFO };
@@ -240,8 +241,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     //作成関数を使う
 
-    //RTV用のヒープでディスクリプタの数は2。RTVはShader内で触るものではないので、ShaderVisibleはfalse
-    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+    //RTV用のヒープでデスクリプタの数は32。RTVはShader内で触るものではないので、ShaderVisibleはfalse
+    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 32, false);
+    nextRtvIndex_ = 2; // 0, 1 は SwapChain 用
 
     //SRV用のヒープをDescriptorPoolで作成
     srvPool_ = std::make_unique<DescriptorPool>();
@@ -464,7 +466,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     staticSamplers[0].ShaderRegister = 0; //レジスタ番号0を使う
     staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL; //PixelShaderで使う
     // CLAMP Sampler (s1)
-    staticSamplers[1].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+    staticSamplers[1].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
     staticSamplers[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
     staticSamplers[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
     staticSamplers[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -649,6 +651,18 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr <IDxcBlob> object3DPSBlob = CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(object3DPSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr <IDxcBlob> fullscreenVSBlob = CompileShader(L"resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(fullscreenVSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr <IDxcBlob> fullscreenPSBlob = CompileShader(L"resources/shaders/CopyImage.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(fullscreenPSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> grayscalePSBlob = CompileShader(L"resources/shaders/Grayscale.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(grayscalePSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> sepiaPSBlob = CompileShader(L"resources/shaders/Sepia.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(sepiaPSBlob != nullptr);
+
     Microsoft::WRL::ComPtr <IDxcBlob> particleVSBlob = CompileShader(L"resources/shaders/Particle.VS.hlsl", L"vs_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(particleVSBlob != nullptr);
 
@@ -728,6 +742,27 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> voxelParticlePSBlob_ = CompileShader(L"resources/shaders/VoxelParticle.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(voxelParticlePSBlob_ != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> vignettePSBlob = CompileShader(L"resources/shaders/Vignette.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(vignettePSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> smoothingPSBlob = CompileShader(L"resources/shaders/Smoothing.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(smoothingPSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> gaussianFilterPSBlob = CompileShader(L"resources/shaders/GaussianFilter.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(gaussianFilterPSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> depthBasedOutlinePSBlob = CompileShader(L"resources/shaders/DepthBasedOutline.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(depthBasedOutlinePSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> radialBlurPSBlob = CompileShader(L"resources/shaders/RadialBlur.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(radialBlurPSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> dissolvePSBlob = CompileShader(L"resources/shaders/Dissolve.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(dissolvePSBlob != nullptr);
+
+    Microsoft::WRL::ComPtr<IDxcBlob> noisePSBlob = CompileShader(L"resources/shaders/Noise.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(noisePSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -801,7 +836,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         device_.Get(),
         rootSignature_.Get(),
         inputLayoutDesc,
-        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+        DXGI_FORMAT_R8G8B8A8_UNORM,
         DXGI_FORMAT_D24_UNORM_S8_UINT,
         D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
         objectShaders,
@@ -874,6 +909,12 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (skinningObject3DVSBlob) { skinningObject3DVSBlob.Reset(); }
     if (skyboxVSBlob) { skyboxVSBlob.Reset(); }
     if (skyboxPSBlob) { skyboxPSBlob.Reset(); }
+    if (fullscreenVSBlob) { fullscreenVSBlob.Reset(); }
+    if (fullscreenPSBlob) { fullscreenPSBlob.Reset(); }
+    if (grayscalePSBlob) { grayscalePSBlob.Reset(); }
+    if (sepiaPSBlob) { sepiaPSBlob.Reset(); }
+    if (vignettePSBlob) { vignettePSBlob.Reset(); }
+    if (smoothingPSBlob) { smoothingPSBlob.Reset(); }
     if (skinningCSBlob) { skinningCSBlob.Reset(); }
     if (gpuParticleInitializeCSBlob) { gpuParticleInitializeCSBlob.Reset(); }
     if (gpuParticleEmitCSBlob) { gpuParticleEmitCSBlob.Reset(); }
@@ -885,6 +926,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (voxelParticleEmitCSBlob) { voxelParticleEmitCSBlob.Reset(); }
     // --- VoxelParticle Update ---
     if (voxelParticleUpdateCSBlob) { voxelParticleUpdateCSBlob.Reset(); }
+    if (noisePSBlob) { noisePSBlob.Reset(); }
 
 
     //頂点リソース用のヒープを生成
@@ -986,6 +1028,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVCPUDescriptorHandle(uint32_t in
 D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t index) {
 
     return GetGPUDescriptorHandle(dsvDescriptorHeap_, descriptorSizeDSV, index);
+}
+
+uint32_t DirectXCommon::AllocateRTVIndex() {
+    assert(nextRtvIndex_ < 32);
+    return nextRtvIndex_++;
 }
 
 /*三角形の色を変えよう*/
@@ -1169,12 +1216,32 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
         assert(false && "Texture file not found");
     }
 
+    // --- sRGB 判定ロジック ---
+    // 【リニアワークフロー対応】
+    // 画像が「色データ」か「数値データ」かをファイル名から判別します。
+    // - 色データ (BaseColor等): sRGB→Linear変換が必要
+    // - 数値データ (Normal/AO等): 変換すると値が壊れるためそのまま読み込む
+    bool isSRGB = true;
+    std::string filePathLower = filePath;
+    std::transform(filePathLower.begin(), filePathLower.end(), filePathLower.begin(), ::tolower);
+    if (filePathLower.find("_n") != std::string::npos ||
+        filePathLower.find("normal") != std::string::npos ||
+        filePathLower.find("_ao") != std::string::npos ||
+        filePathLower.find("_m") != std::string::npos ||
+        filePathLower.find("metallic") != std::string::npos ||
+        filePathLower.find("_r") != std::string::npos ||
+        filePathLower.find("roughness") != std::string::npos) {
+        isSRGB = false;
+    }
+
     HRESULT hr;
     if (StringUtility::EndsWith(filePathW, L".dds")) {
         hr = LoadFromDDSFile(filePathW.c_str(), DDS_FLAGS_NONE, nullptr, image);
     }
     else {
-        hr = LoadFromWICFile(filePathW.c_str(), WIC_FLAGS_FORCE_SRGB, nullptr, image);
+        // カラーテクスチャなら FORCE_SRGB でリニアライズ
+        WIC_FLAGS wicFlags = isSRGB ? WIC_FLAGS_FORCE_SRGB : WIC_FLAGS_NONE;
+        hr = LoadFromWICFile(filePathW.c_str(), wicFlags, nullptr, image);
     }
 
     if (FAILED(hr)) {
@@ -1190,8 +1257,10 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
         mipImages = std::move(image);
     }
     else {
+        // ミップマップ生成時も sRGB 用フィルタを使い分ける
+        TEX_FILTER_FLAGS filter = isSRGB ? TEX_FILTER_SRGB : TEX_FILTER_DEFAULT;
         hr = GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
-            TEX_FILTER_SRGB, 0, mipImages);
+            filter, 0, mipImages);
         if (FAILED(hr)) {
             _com_error err(hr);
             std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(hr) + L")\n";
@@ -1321,7 +1390,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureR
     resourceDesc.Height = height; //Textureの高さ
     resourceDesc.MipLevels = 1; //mipmapの数
     resourceDesc.DepthOrArraySize = 1; //奥行き or 配列Textureの配列数
-    resourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; //DepthStencilとして利用可能なフォーマット
+    resourceDesc.Format = DXGI_FORMAT_R24G8_TYPELESS; // 深度バッファとして使いつつ、SRVで読み込むためにTYPELESSにする
     resourceDesc.SampleDesc.Count = 1; //サンプリングカウント。1固定
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; //2次元
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL; // DepthStencilとして使う通知
@@ -1335,7 +1404,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureR
     //深度地のクリア設定
     D3D12_CLEAR_VALUE depthClearValue{};
     depthClearValue.DepthStencil.Depth = 1.0f; // 1.0f(最大値)でクリア
-    depthClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; //フォーマット。Resourceと合わせる。
+    depthClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // クリアには実際の深度フォーマットを指定
 
     ///Resourceの生成
 
@@ -1370,4 +1439,104 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
     assert(SUCCEEDED(hr));
     return descriptorHeap;
 
+}
+
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4* clearColor) {
+	// 1. metadataを基にResourceの設定
+	D3D12_RESOURCE_DESC resourceDesc{};
+	resourceDesc.Width = width; //Textureの幅
+	resourceDesc.Height = height; //Textureの高さ
+	resourceDesc.MipLevels = 1; //mipmapの数
+	resourceDesc.DepthOrArraySize = 1; // 奥行きor 配列Textureの配列数
+	resourceDesc.Format = format; //TextureのFormat
+	resourceDesc.SampleDesc.Count = 1; //サンプリングカウント。1固定。
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D; //Textureの次元数。
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET; // RenderTargetとして利用可能にする
+
+	// 2. 利用するHeapの設定
+	D3D12_HEAP_PROPERTIES heapProperties{};
+	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT; // 当然VRAM上に作る
+
+	// 3. ClearValueの設定
+	D3D12_CLEAR_VALUE clearValue{};
+	D3D12_CLEAR_VALUE* pClearValue = nullptr;
+	if (clearColor) {
+		clearValue.Format = format;
+		clearValue.Color[0] = clearColor->x;
+		clearValue.Color[1] = clearColor->y;
+		clearValue.Color[2] = clearColor->z;
+		clearValue.Color[3] = clearColor->w;
+		pClearValue = &clearValue;
+	}
+
+	// 4. Resourceを生成する
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
+	HRESULT hr = device->CreateCommittedResource(
+		&heapProperties, //Heapの設定
+		D3D12_HEAP_FLAG_NONE, //Heapの特殊な設定。
+		&resourceDesc, //Resourceの設定
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // 最初はSRVとして扱える状態で生成する
+		pClearValue, // Clear最適値。指定がなければnullptr
+		IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
+	);
+	assert(SUCCEEDED(hr));
+	return resource;
+}
+
+void DirectXCommon::ReleaseSwapChainResources() {
+    for (auto& res : swapChainResources_) {
+        res.Reset();
+    }
+    depthStencilResource_.Reset();
+}
+
+void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
+    if (width <= 0 || height <= 0) return;
+
+    // 1. GPUの完了を待つ (Flush)
+    fenceValue_++;
+    commandQueue_->Signal(fence_.Get(), fenceValue_);
+    if (fence_->GetCompletedValue() < fenceValue_) {
+        fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
+        WaitForSingleObject(fenceEvent_, INFINITE);
+    }
+
+    // 2. 既存のリソースを解放 (ResizeBuffersの前に必須)
+    ReleaseSwapChainResources();
+
+    // 3. バッファサイズの変更
+    DXGI_SWAP_CHAIN_DESC1 desc{};
+    swapChain_->GetDesc1(&desc);
+    HRESULT hr = swapChain_->ResizeBuffers(desc.BufferCount, width, height, desc.Format, desc.Flags);
+    assert(SUCCEEDED(hr));
+
+    clientWidth_ = width;
+    clientHeight_ = height;
+
+    // 4. バックバッファの再取得とRTVの再作成
+    for (uint32_t i = 0; i < desc.BufferCount; ++i) {
+        hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(swapChainResources_[i].GetAddressOf()));
+        assert(SUCCEEDED(hr));
+        device_->CreateRenderTargetView(swapChainResources_[i].Get(), &rtvDesc_, rtvHandles_[i]);
+    }
+
+    // 5. 深度バッファの再生成とDSVの再作成
+    depthStencilResource_ = CreateDepthStencilTextureResource(device_.Get(), width, height);
+    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+    dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    device_->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+
+    // 6. ビューポートとシザーレクトの更新
+    viewport_.Width = static_cast<float>(width);
+    viewport_.Height = static_cast<float>(height);
+    viewport_.TopLeftX = 0;
+    viewport_.TopLeftY = 0;
+    viewport_.MinDepth = 0.0f;
+    viewport_.MaxDepth = 1.0f;
+
+    scissorRect_.left = 0;
+    scissorRect_.top = 0;
+    scissorRect_.right = width;
+    scissorRect_.bottom = height;
 }
