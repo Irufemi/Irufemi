@@ -246,6 +246,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     dissolveNoiseHandle_[0] = textureManager->GetTextureHandle("resources/noise0.png");
     dissolveNoiseHandle_[1] = textureManager->GetTextureHandle("resources/noise1.png");
 
+    // --- Noise 用定数バッファの作成 ---
+    noiseCB_ = dxCommon_->CreateBufferResource(sizeof(NoiseParams));
+    noiseCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedNoise_));
+
     // --- 深度バッファの SRV 作成 ---
     depthSrvIndex_ = dxCommon_->GetSrvPool()->Allocate();
     depthSrvHandleGPU_ = dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_);
@@ -417,6 +421,9 @@ void IrufemiEngine::EndFrame() {
     case PostProcessMode::Dissolve:
         pso = GetPSOManager()->GetDissolve();
         break;
+    case PostProcessMode::Noise:
+        pso = GetPSOManager()->GetNoise();
+        break;
     }
 
     if (pso) {
@@ -481,6 +488,13 @@ void IrufemiEngine::EndFrame() {
 
             // DrawRendererTexture を通じて t0(画面) と t1(ノイズ, Root12) をバインドして描画
             mainRenderTexture_->Draw(drawManager.get(), pso, dissolveCB_->GetGPUVirtualAddress(), noiseHandle);
+        } else if (postProcessMode_ == PostProcessMode::Noise) {
+            // パラメータを更新
+            noiseParams_.time = static_cast<float>(totalTime_);
+            if (mappedNoise_) {
+                *mappedNoise_ = noiseParams_;
+            }
+            mainRenderTexture_->Draw(drawManager.get(), pso, noiseCB_->GetGPUVirtualAddress());
         } else {
             mainRenderTexture_->Draw(drawManager.get(), pso);
         }

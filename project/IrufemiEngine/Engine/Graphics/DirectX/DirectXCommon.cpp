@@ -760,6 +760,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     Microsoft::WRL::ComPtr<IDxcBlob> dissolvePSBlob = CompileShader(L"resources/shaders/Dissolve.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
     assert(dissolvePSBlob != nullptr);
 
+    Microsoft::WRL::ComPtr<IDxcBlob> noisePSBlob = CompileShader(L"resources/shaders/Noise.PS.hlsl", L"ps_6_0", dxcUtils.Get(), dxcCompiler.Get(), includeHandler.Get(), log_->GetLogStream());
+    assert(noisePSBlob != nullptr);
+
 
     // コンパイルが完了したのでdxcUtils、dxcCompiler、includeHandlerを解放
     if (dxcUtils) { dxcUtils.Reset(); }
@@ -877,6 +880,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     psoManager_->SetDissolveShaders({ fullscreenVSBlob, dissolvePSBlob });
     psoManager_->GetDissolve();
 
+    psoManager_->SetNoiseShaders({ fullscreenVSBlob, noisePSBlob });
+    psoManager_->GetNoise();
+
     // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
 
@@ -950,6 +956,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     if (voxelParticleEmitCSBlob) { voxelParticleEmitCSBlob.Reset(); }
     // --- VoxelParticle Update ---
     if (voxelParticleUpdateCSBlob) { voxelParticleUpdateCSBlob.Reset(); }
+    if (noisePSBlob) { noisePSBlob.Reset(); }
 
 
     //頂点リソース用のヒープを生成

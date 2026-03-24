@@ -44,6 +44,12 @@ public: // 内部型
         DepthBasedOutline,
         RadialBlur,
         Dissolve,
+        Noise,
+    };
+    
+    struct NoiseParams {
+        float intensity = 0.5f;
+        float time = 0.0f;
     };
 
     // --- Vignette ポストプロセス用 ---
@@ -196,6 +202,7 @@ public: // セッター
     SmoothingParams& GetSmoothingParams() { return smoothingParams_; }
     GaussianParams& GetGaussianParams() { return gaussianParams_; }
     RadialBlurParams& GetRadialBlurParams() { return radialBlurParams_; }
+    NoiseParams& GetNoiseParams() { return noiseParams_; }
 
     void SetCursorLocked(bool lock);
 
@@ -306,4 +313,8 @@ private: // メンバ変数
     Microsoft::WRL::ComPtr<ID3D12Resource> dissolveCB_;
     DissolveParams* mappedDissolve_ = nullptr;
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 2> dissolveNoiseHandle_; // 0: noise0, 1: noise1
+
+    NoiseParams noiseParams_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;
+    NoiseParams* mappedNoise_ = nullptr;
 };

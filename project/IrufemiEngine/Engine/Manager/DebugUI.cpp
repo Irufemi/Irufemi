@@ -1047,7 +1047,7 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
     ImGui::Begin("Post Processing");
 
     int currentMode = static_cast<int>(engine->GetPostProcessMode());
-    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve" };
+    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise" };
 
     if (ImGui::Combo("Mode", &currentMode, modes, IM_ARRAYSIZE(modes))) {
         engine->SetPostProcessMode(static_cast<IrufemiEngine::PostProcessMode>(currentMode));
@@ -1104,6 +1104,12 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
 
         const char* noiseTypes[] = { "Noise 0", "Noise 1" };
         ImGui::Combo("Noise Type", &params.noiseType, noiseTypes, IM_ARRAYSIZE(noiseTypes));
+    }
+
+    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::Noise) {
+        auto& params = engine->GetNoiseParams();
+        ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
+        ImGui::Text("Notice: Noise changes every frame using totalTime.");
     }
 
     ImGui::End();

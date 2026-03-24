@@ -101,8 +101,10 @@ public:
 
     void SetRadialBlurShaders(const ShaderSet& shaders) { radialBlurShaders_ = shaders; }
     void SetDissolveShaders(const ShaderSet& shaders) { dissolveShaders_ = shaders; }
+    void SetNoiseShaders(const ShaderSet& shaders) { noiseShaders_ = shaders; }
     ID3D12PipelineState* GetRadialBlur();
     ID3D12PipelineState* GetDissolve();
+    ID3D12PipelineState* GetNoise();
 
     void ClearCache();
 
@@ -140,6 +142,7 @@ private:
     ShaderSet depthBasedOutlineShaders_{};
     ShaderSet radialBlurShaders_{};
     ShaderSet dissolveShaders_{};
+    ShaderSet noiseShaders_{};
 
     struct Key {
         uint64_t hash;
@@ -152,6 +155,7 @@ private:
     // 内部ヘルパ
     Microsoft::WRL::ComPtr<ID3D12PipelineState> radialBlur_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> dissolve_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> noisePSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSO(
         const ShaderSet& shaders,
         const D3D12_BLEND_DESC& blendDesc,
