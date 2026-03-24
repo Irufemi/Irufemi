@@ -12,6 +12,7 @@ public:
 	void Initialize();
 	void Update();
 	void Draw();
+
 private:
 	// 外部依存
 	InputManager* input_ = nullptr;

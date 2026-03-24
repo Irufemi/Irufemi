@@ -323,7 +323,7 @@ void IrufemiEngine::Execute() {
         ui->FPSDebug();
         ui->DebugSceneSelector(sceneManager_.get());
         ui->DebugPostProcess(this);
-#endif // _DEBUG
+#endif // USE_IMGUI
 
         // 更新
         sceneManager_->Update();

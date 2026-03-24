@@ -9,10 +9,6 @@
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-// ImGuiWindowFlags_NoDocking が未定義の場合は定義する
-#ifndef ImGuiWindowFlags_NoDocking
-#define ImGuiWindowFlags_NoDocking (1 << 13)
-#endif
 #endif // USE_IMGUI
 #include <vector>
 #include <string>
@@ -54,6 +50,8 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
+
+    ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplWin32_Init(hwnd);
 
     DescriptorPool* srvPool = dxCommon->GetSrvPool();
@@ -629,7 +627,6 @@ void DebugUI::FPSDebug() {
     ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
     ImGuiWindowFlags flags =
         ImGuiWindowFlags_NoDecoration |
-        ImGuiWindowFlags_NoDocking |
         ImGuiWindowFlags_AlwaysAutoResize |
         ImGuiWindowFlags_NoSavedSettings |
         ImGuiWindowFlags_NoFocusOnAppearing |

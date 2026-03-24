@@ -62,6 +62,17 @@ void PostProcessManager::InitializeBuffers(uint32_t width, uint32_t height,
     // (DirectXCommon::CreateRenderTextureResource の仕様に合わせる)
     workTextureStates_[i] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
   }
+
+  // 最終結果保持用テクスチャの初期化
+  if (!resultTexture_) {
+    resultTexture_ = std::make_unique<RenderTexture>();
+  }
+  resultTexture_->Initialize(dxCommon, width, height, rtvFormat_,
+                             {0.0f, 0.0f, 0.0f, 1.0f});
+  if (resultTexture_->GetResource()) {
+    resultTexture_->GetResource()->SetName(L"PostProcess_Result");
+  }
+  resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
 void PostProcessManager::Update(float totalTime) {
@@ -88,48 +99,71 @@ void PostProcessManager::Update(float totalTime) {
 void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
                               RenderTexture *srcTexture,
                               D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle) {
-  if (activeModes_.empty()) {
-    // エフェクトなし（None）の場合は、単に srcTexture を出力へコピー
-    DrawSinglePass(commandList, Mode::None, srcTexture, rtvHandle);
-    return;
-  }
-
   RenderTexture *currentSource = srcTexture;
 
-  for (size_t i = 0; i < activeModes_.size(); ++i) {
-    Mode mode = activeModes_[i];
-    bool isLast = (i == activeModes_.size() - 1);
+  // 1) ポストプロセスをテクスチャ間で実行し、最終結果を resultTexture_ に入れる
+  if (!activeModes_.empty()) {
+    for (size_t i = 0; i < activeModes_.size(); ++i) {
+      Mode mode = activeModes_[i];
+      bool isLast = (i == activeModes_.size() - 1);
 
-    D3D12_CPU_DESCRIPTOR_HANDLE targetHandle;
-    RenderTexture *nextTargetTexture = nullptr;
-    int nextTargetIdx = -1;
+      D3D12_CPU_DESCRIPTOR_HANDLE targetHandle;
+      RenderTexture *nextTargetTexture = nullptr;
+      int nextTargetIdx = -1;
 
-    if (isLast) {
-      targetHandle = rtvHandle;
-    } else {
-      nextTargetIdx = static_cast<int>(i % 2);
-      nextTargetTexture = workTextures_[nextTargetIdx].get();
-      targetHandle = nextTargetTexture->GetRtvHandle();
+      if (isLast) {
+        // 最終パスは resultTexture_ に出力
+        nextTargetTexture = resultTexture_.get();
+        targetHandle = nextTargetTexture->GetRtvHandle();
+        TransitionResource(commandList, nextTargetTexture->GetResource(),
+                           resultTextureState_,
+                           D3D12_RESOURCE_STATE_RENDER_TARGET);
+        resultTextureState_ = D3D12_RESOURCE_STATE_RENDER_TARGET;
+      } else {
+        nextTargetIdx = static_cast<int>(i % 2);
+        nextTargetTexture = workTextures_[nextTargetIdx].get();
+        targetHandle = nextTargetTexture->GetRtvHandle();
 
-      // 現在の状態から RENDER_TARGET へ遷移
-      TransitionResource(commandList, nextTargetTexture->GetResource(),
-                         workTextureStates_[nextTargetIdx],
-                         D3D12_RESOURCE_STATE_RENDER_TARGET);
-      workTextureStates_[nextTargetIdx] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        TransitionResource(commandList, nextTargetTexture->GetResource(),
+                           workTextureStates_[nextTargetIdx],
+                           D3D12_RESOURCE_STATE_RENDER_TARGET);
+        workTextureStates_[nextTargetIdx] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+      }
+
+      DrawSinglePass(commandList, mode, currentSource, targetHandle);
+
+      // 状態遷移
+      if (isLast) {
+        TransitionResource(commandList, nextTargetTexture->GetResource(),
+                           D3D12_RESOURCE_STATE_RENDER_TARGET,
+                           D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        currentSource = nextTargetTexture;
+      } else {
+        TransitionResource(commandList, nextTargetTexture->GetResource(),
+                           D3D12_RESOURCE_STATE_RENDER_TARGET,
+                           D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        workTextureStates_[nextTargetIdx] =
+            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        currentSource = nextTargetTexture;
+      }
     }
-
-    DrawSinglePass(commandList, mode, currentSource, targetHandle);
-
-    if (!isLast) {
-      // 次のパスで読み込むために PIXEL_SHADER_RESOURCE へ遷移
-      TransitionResource(commandList, nextTargetTexture->GetResource(),
-                         D3D12_RESOURCE_STATE_RENDER_TARGET,
-                         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-      workTextureStates_[nextTargetIdx] =
-          D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-      currentSource = nextTargetTexture;
-    }
+  } else {
+    // エフェクトなしの場合は srcTexture を resultTexture_ にコピー
+    TransitionResource(commandList, resultTexture_->GetResource(),
+                       resultTextureState_, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    DrawSinglePass(commandList, Mode::None, srcTexture,
+                   resultTexture_->GetRtvHandle());
+    TransitionResource(commandList, resultTexture_->GetResource(),
+                       D3D12_RESOURCE_STATE_RENDER_TARGET,
+                       D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    currentSource = resultTexture_.get();
   }
+
+  // 2) 最終結果をバックバッファ（提供された rtvHandle）に転送
+  // これにより、既存の全画面表示も維持される
+  DrawSinglePass(commandList, Mode::None, currentSource, rtvHandle);
 }
 
 void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,

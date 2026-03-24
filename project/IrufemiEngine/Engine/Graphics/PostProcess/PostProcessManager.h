@@ -203,6 +203,9 @@ public:
     
     void SetDepthSrvHandle(D3D12_GPU_DESCRIPTOR_HANDLE handle) { depthSrvHandle_ = handle; }
 
+    /** @brief 最終的な描画結果のテクスチャを取得 (ImGui表示用) */
+    RenderTexture* GetResultTexture() const { return resultTexture_.get(); }
+
 private:
     void CreatePSOs();
     void CreateConstantBuffers();
@@ -219,6 +222,8 @@ private:
     
     // ピンポンバッファ
     std::array<std::unique_ptr<RenderTexture>, 2> workTextures_;
+    // 最終結果保持用テクスチャ (ImGui 表示等に使用)
+    std::unique_ptr<RenderTexture> resultTexture_;
 
     // PSOs
     struct PipelineSet {
@@ -261,4 +266,5 @@ private:
 
     // 状態追跡用
     std::array<D3D12_RESOURCE_STATES, 2> workTextureStates_ = { D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE };
+    D3D12_RESOURCE_STATES resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 };

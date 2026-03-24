@@ -59,6 +59,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
     directionalLight_->direction = { 0.0f, -1.0f, 1.0f };
     directionalLight_->intensity = 1.0f;
+
 }
 
 // 更新
