@@ -1,27 +1,28 @@
 #pragma once
 
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/D3DResourceLeakChecker.h"
-#include "Engine/Platform/Input/InputManager.h"
-#include "Engine/Platform/WindowsAPI/WinApp.h"
-#include "Engine/Manager/DrawManager.h"
-#include "Engine/Manager/DebugUI.h"
-#include "Resource/Texture/TextureManager.h"
-#include "Resource/Audio/AudioManager.h"
-#include "Resource/Model/ModelManager.h"
-#include "Resource/Model/AnimationManager.h"
-#include "Engine/Core/Type/BlendMode.h"
-#include "Engine/Core/Utility/Log.h"
-#include "Framework/SceneManager.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Graphics/DirectX/RenderTexture.h"
+#include "Graphics/DirectX/DirectXCommon.h"
+#include "Graphics/DirectX/D3DResourceLeakChecker.h"
+#include "Platform/Input/InputManager.h"
+#include "Platform/WindowsAPI/WinApp.h"
+#include "Manager/DrawManager.h"
+#include "Manager/DebugUI.h"
+#include "../Resource/Texture/TextureManager.h"
+#include "../Resource/Audio/AudioManager.h"
+#include "../Resource/Model/ModelManager.h"
+#include "../Resource/Model/AnimationManager.h"
+#include "Core/Type/BlendMode.h"
+#include "Core/Utility/Log.h"
+#include "../Framework/SceneManager.h"
+#include "Core/Math/Vector4.h"
+#include "Core/Math/Vector2.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Graphics/DirectX/RenderTexture.h"
+#include "Graphics/PostProcess/PostProcessManager.h"
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
 #include <dxcapi.h>
-#include <wrl.h>
+#include <wrl/client.h>
 #include <dxgi1_6.h>
 #include <functional>
 #include <string>
@@ -33,56 +34,17 @@ class SceneManager;
 class DebugUI;
 
 class IrufemiEngine {
-public: // 内部型
-    enum class PostProcessMode {
-        None,
-        Grayscale,
-        Sepia,
-        Vignette,
-        Smoothing,
-        GaussianFilter,
-        DepthBasedOutline,
-        RadialBlur,
-        Dissolve,
-        Noise,
-    };
+public: // 内部型などは PostProcessManager.h へ移動しました。
+    using PostProcessMode = ::PostProcessMode;
+    using Mode = ::PostProcessMode; // 互換性のため
     
-    struct NoiseParams {
-        float intensity = 0.5f;
-        float time = 0.0f;
-    };
-
-    // --- Vignette ポストプロセス用 ---
-    struct VignetteParams {
-        float scale = 16.0f;
-        float power = 0.8f;
-    };
-
-    struct SmoothingParams {
-        int32_t kernelSize = 3;
-    };
-
-    struct GaussianParams {
-        float sigma = 2.0f;
-        int32_t kernelSize = 3;
-    };
-
-    struct RadialBlurParams {
-        Vector2 center = { 0.5f, 0.5f };
-        float blurWidth = 0.01f;
-        int32_t numSamples = 10;
-    };
-
-    struct OutlineParams {
-        Matrix4x4 projectionInverse;
-    };
-
-    struct DissolveParams {
-        Vector4 edgeColor;
-        float threshold;
-        float edgeRange;
-        int32_t noiseType; // 0: noise0, 1: noise1
-    };
+    using NoiseParams = PostProcessManager::NoiseParams;
+    using VignetteParams = PostProcessManager::VignetteParams;
+    using SmoothingParams = PostProcessManager::SmoothingParams;
+    using GaussianParams = PostProcessManager::GaussianParams;
+    using RadialBlurParams = PostProcessManager::RadialBlurParams;
+    using OutlineParams = PostProcessManager::OutlineParams;
+    using DissolveParams = PostProcessManager::DissolveParams;
 
 public: // メンバ関数
     // コンストラクタ
@@ -105,9 +67,11 @@ public: // メンバ関数
     /// 追加: クリアカラーを引数で指定できる Initialize(std::array)
     void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                     const std::array<float, 4>& clearColor);
-    // 追加: Vector4 版
     void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                     const Vector4& clearColor);
+
+    // 追加: リサイズ対応
+    void OnResize(int32_t width, int32_t height);
 
      // --- Application からの注入用コールバック型とセッター ---
     using SceneRegistrar = std::function<void(SceneManager&)>;
@@ -194,17 +158,20 @@ public: // セッター
     // 追加: Vector4 版
     void SetClearColor(const Vector4& c) { clearColor_ = { c.x, c.y, c.z, c.w }; }
 
-    PostProcessMode GetPostProcessMode() const { return postProcessMode_; }
-    void SetPostProcessMode(PostProcessMode mode) { postProcessMode_ = mode; }
-    VignetteParams& GetVignetteParams() { return vignetteParams_; }
-    OutlineParams& GetOutlineParams() { return outlineParams_; }
-    DissolveParams& GetDissolveParams() { return dissolveParams_; }
-    SmoothingParams& GetSmoothingParams() { return smoothingParams_; }
-    GaussianParams& GetGaussianParams() { return gaussianParams_; }
-    RadialBlurParams& GetRadialBlurParams() { return radialBlurParams_; }
-    NoiseParams& GetNoiseParams() { return noiseParams_; }
+    PostProcessMode GetPostProcessMode() const { return postProcessManager_->GetMode(); }
+    void SetPostProcessMode(PostProcessMode mode) { postProcessManager_->SetMode(mode); }
+    VignetteParams& GetVignetteParams() { return postProcessManager_->GetVignetteParams(); }
+    OutlineParams& GetOutlineParams() { return postProcessManager_->GetOutlineParams(); }
+    DissolveParams& GetDissolveParams() { return postProcessManager_->GetDissolveParams(); }
+    SmoothingParams& GetSmoothingParams() { return postProcessManager_->GetSmoothingParams(); }
+    GaussianParams& GetGaussianParams() { return postProcessManager_->GetGaussianParams(); }
+    RadialBlurParams& GetRadialBlurParams() { return postProcessManager_->GetRadialBlurParams(); }
+    NoiseParams& GetNoiseParams() { return postProcessManager_->GetNoiseParams(); }
+
+    PostProcessManager* GetPostProcessManager() { return postProcessManager_.get(); }
 
     void SetCursorLocked(bool lock);
+    bool IsCursorLocked() const;
 
     // 状態からPSOを適用してBind(引数なしで使うやつ)
     void ApplyPSO();
@@ -284,37 +251,6 @@ private: // メンバ変数
 
     // --- 全画面用 RenderTexture ---
     std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;
-    PostProcessMode postProcessMode_ = PostProcessMode::None;
-
-    VignetteParams vignetteParams_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> vignetteCB_ = nullptr;
-    VignetteParams* mappedVignette_ = nullptr;
-
-    SmoothingParams smoothingParams_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> smoothingCB_ = nullptr;
-    SmoothingParams* mappedSmoothing_ = nullptr;
-
-    GaussianParams gaussianParams_;
-    RadialBlurParams radialBlurParams_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> gaussianCB_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> radialBlurCB_;
-    GaussianParams* mappedGaussian_ = nullptr;
-    RadialBlurParams* mappedRadialBlur_ = nullptr;
-
-    uint32_t depthSrvIndex_ = 0;
-    D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandleGPU_{};
-
-    OutlineParams outlineParams_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> outlineCB_ = nullptr;
-    OutlineParams* mappedOutline_ = nullptr;
-
-    // Dissolve
-    DissolveParams dissolveParams_ = { {1.0f, 0.4f, 0.3f, 1.0f}, 0.0f, 0.03f, 0 };
-    Microsoft::WRL::ComPtr<ID3D12Resource> dissolveCB_;
-    DissolveParams* mappedDissolve_ = nullptr;
-    std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 2> dissolveNoiseHandle_; // 0: noise0, 1: noise1
-
-    NoiseParams noiseParams_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;
-    NoiseParams* mappedNoise_ = nullptr;
+    std::unique_ptr<PostProcessManager> postProcessManager_ = nullptr;
+    uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
 };

@@ -77,34 +77,9 @@ public:
 
     ID3D12PipelineState* GetVoxelParticle(BlendMode blend, DepthWrite depth, CullMode cull);
 
-    // 追加: ポストプロセス用
+    // 追加: ポストプロセス用 (CopyImage は汎用的なため維持)
     void SetCopyImageShaders(const ShaderSet& shaders) { copyImageShaders_ = shaders; }
     ID3D12PipelineState* GetCopyImage();
-
-    void SetGrayscaleShaders(const ShaderSet& shaders) { grayscaleShaders_ = shaders; }
-    ID3D12PipelineState* GetGrayscale();
-
-    void SetSepiaShaders(const ShaderSet& shaders) { sepiaShaders_ = shaders; }
-    ID3D12PipelineState* GetSepia();
-
-    void SetVignetteShaders(const ShaderSet& shaders) { vignetteShaders_ = shaders; }
-    ID3D12PipelineState* GetVignette();
-
-    void SetSmoothingShaders(const ShaderSet& shaders) { smoothingShaders_ = shaders; }
-    ID3D12PipelineState* GetSmoothing();
-
-    void SetGaussianFilterShaders(const ShaderSet& shaders) { gaussianFilterShaders_ = shaders; }
-    ID3D12PipelineState* GetGaussianFilter();
-
-    void SetDepthBasedOutlineShaders(const ShaderSet& shaders) { depthBasedOutlineShaders_ = shaders; }
-    ID3D12PipelineState* GetDepthBasedOutline();
-
-    void SetRadialBlurShaders(const ShaderSet& shaders) { radialBlurShaders_ = shaders; }
-    void SetDissolveShaders(const ShaderSet& shaders) { dissolveShaders_ = shaders; }
-    void SetNoiseShaders(const ShaderSet& shaders) { noiseShaders_ = shaders; }
-    ID3D12PipelineState* GetRadialBlur();
-    ID3D12PipelineState* GetDissolve();
-    ID3D12PipelineState* GetNoise();
 
     void ClearCache();
 
@@ -134,15 +109,6 @@ private:
     ShaderSet gpuParticleShaders_{};
     ShaderSet voxelParticleShaders_{};
     ShaderSet copyImageShaders_{};
-    ShaderSet grayscaleShaders_{};
-    ShaderSet sepiaShaders_{};
-    ShaderSet vignetteShaders_{};
-    ShaderSet smoothingShaders_{};
-    ShaderSet gaussianFilterShaders_{};
-    ShaderSet depthBasedOutlineShaders_{};
-    ShaderSet radialBlurShaders_{};
-    ShaderSet dissolveShaders_{};
-    ShaderSet noiseShaders_{};
 
     struct Key {
         uint64_t hash;
@@ -153,9 +119,6 @@ private:
     std::unordered_map<Key, ComPtr, KeyHash> cache_;
 
     // 内部ヘルパ
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> radialBlur_;
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> dissolve_;
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> noisePSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSO(
         const ShaderSet& shaders,
         const D3D12_BLEND_DESC& blendDesc,

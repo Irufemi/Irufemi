@@ -853,36 +853,6 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     );
 
     //実際に生成
-    psoManager_->SetCopyImageShaders({ fullscreenVSBlob, fullscreenPSBlob });
-    psoManager_->GetCopyImage(); // 事前生成
-
-    psoManager_->SetGrayscaleShaders({ fullscreenVSBlob, grayscalePSBlob });
-    psoManager_->GetGrayscale();
-
-    psoManager_->SetSepiaShaders({ fullscreenVSBlob, sepiaPSBlob });
-    psoManager_->GetSepia();
-
-    psoManager_->SetVignetteShaders({ fullscreenVSBlob, vignettePSBlob });
-    psoManager_->GetVignette();
-
-    psoManager_->SetSmoothingShaders({ fullscreenVSBlob, smoothingPSBlob });
-    psoManager_->GetSmoothing();
-
-    psoManager_->SetGaussianFilterShaders({ fullscreenVSBlob, gaussianFilterPSBlob });
-    psoManager_->GetGaussianFilter();
-
-    psoManager_->SetDepthBasedOutlineShaders({ fullscreenVSBlob, depthBasedOutlinePSBlob });
-    psoManager_->GetDepthBasedOutline();
-
-    psoManager_->SetRadialBlurShaders({ fullscreenVSBlob, radialBlurPSBlob });
-    psoManager_->GetRadialBlur();
-
-    psoManager_->SetDissolveShaders({ fullscreenVSBlob, dissolvePSBlob });
-    psoManager_->GetDissolve();
-
-    psoManager_->SetNoiseShaders({ fullscreenVSBlob, noisePSBlob });
-    psoManager_->GetNoise();
-
     // 不透明(深度書き込みあり)
     psoManager_->Get(BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
 
@@ -1489,4 +1459,62 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResourc
 	);
 	assert(SUCCEEDED(hr));
 	return resource;
+}
+
+void DirectXCommon::ReleaseSwapChainResources() {
+    for (auto& res : swapChainResources_) {
+        res.Reset();
+    }
+    depthStencilResource_.Reset();
+}
+
+void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
+    if (width <= 0 || height <= 0) return;
+
+    // 1. GPUの完了を待つ (Flush)
+    fenceValue_++;
+    commandQueue_->Signal(fence_.Get(), fenceValue_);
+    if (fence_->GetCompletedValue() < fenceValue_) {
+        fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
+        WaitForSingleObject(fenceEvent_, INFINITE);
+    }
+
+    // 2. 既存のリソースを解放 (ResizeBuffersの前に必須)
+    ReleaseSwapChainResources();
+
+    // 3. バッファサイズの変更
+    DXGI_SWAP_CHAIN_DESC1 desc{};
+    swapChain_->GetDesc1(&desc);
+    HRESULT hr = swapChain_->ResizeBuffers(desc.BufferCount, width, height, desc.Format, desc.Flags);
+    assert(SUCCEEDED(hr));
+
+    clientWidth_ = width;
+    clientHeight_ = height;
+
+    // 4. バックバッファの再取得とRTVの再作成
+    for (uint32_t i = 0; i < desc.BufferCount; ++i) {
+        hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(swapChainResources_[i].GetAddressOf()));
+        assert(SUCCEEDED(hr));
+        device_->CreateRenderTargetView(swapChainResources_[i].Get(), &rtvDesc_, rtvHandles_[i]);
+    }
+
+    // 5. 深度バッファの再生成とDSVの再作成
+    depthStencilResource_ = CreateDepthStencilTextureResource(device_.Get(), width, height);
+    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+    dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    device_->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+
+    // 6. ビューポートとシザーレクトの更新
+    viewport_.Width = static_cast<float>(width);
+    viewport_.Height = static_cast<float>(height);
+    viewport_.TopLeftX = 0;
+    viewport_.TopLeftY = 0;
+    viewport_.MinDepth = 0.0f;
+    viewport_.MaxDepth = 1.0f;
+
+    scissorRect_.left = 0;
+    scissorRect_.top = 0;
+    scissorRect_.right = width;
+    scissorRect_.bottom = height;
 }

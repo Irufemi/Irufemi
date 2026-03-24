@@ -6,6 +6,7 @@
 
 // 前方宣言
 class InputManager;
+class IrufemiEngine;
 
 class WinApp final {
 public:
@@ -35,6 +36,9 @@ public:
     // InputManagerのポインタを設定
     void SetInputManager(InputManager* inputManager) { inputManager_ = inputManager; }
 
+    // IrufemiEngineのポインタを設定
+    void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
+
     // 静的 WndProc
     static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -60,5 +64,6 @@ private:
     bool comInitialized_ = false;
     bool didRegisterClass_ = false;
     InputManager* inputManager_ = nullptr; // InputManagerへのポインタ
+    IrufemiEngine* engine_ = nullptr;      // IrufemiEngineへのポインタ
     bool cursorLocked_ = true; // カーソル固定状態デフォルト真
 };

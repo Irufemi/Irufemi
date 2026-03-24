@@ -15,7 +15,9 @@ void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t
     resource_ = dxCommon->CreateRenderTextureResource(dxCommon->GetDevice(), width, height, format, nullptr);
 
     // RTVの作成
-    rtvIndex_ = dxCommon->AllocateRTVIndex();
+    if (rtvIndex_ == 0xFFFFFFFF) {
+        rtvIndex_ = dxCommon->AllocateRTVIndex();
+    }
     rtvHandle_ = dxCommon->GetRTVCPUDescriptorHandle(rtvIndex_);
     
     D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
@@ -24,7 +26,9 @@ void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t
     dxCommon->GetDevice()->CreateRenderTargetView(resource_.Get(), &rtvDesc, rtvHandle_);
 
     // SRVの作成
-    srvIndex_ = dxCommon->GetSrvPool()->Allocate();
+    if (srvIndex_ == 0xFFFFFFFF) {
+        srvIndex_ = dxCommon->GetSrvPool()->Allocate();
+    }
     srvHandleGPU_ = dxCommon->GetSrvPool()->GetGPUHandle(srvIndex_);
     
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};

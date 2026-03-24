@@ -1,7 +1,7 @@
 #include "IrufemiEngine.h"
 
-#include "Engine/Core/Math/Random/Random.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Core/Math/Random/Random.h"
+#include "Core/Math/Geometry/Math.h"
 
 #include <cassert>
 #include <DbgHelp.h>
@@ -27,10 +27,10 @@
 #include "Renderer/Region/Primitive/TetraRegion.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Renderer/Skybox/Skybox.h"
-#include "Resource/Audio/Bgm.h"
-#include "Resource/Audio/Se.h"
-#include "Resource/Texture/Texture.h"
-#include "Engine/Manager/DebugUI.h"
+#include "../Resource/Audio/Bgm.h"
+#include "../Resource/Audio/Se.h"
+#include "../Resource/Texture/Texture.h"
+#include "Manager/DebugUI.h"
 
 #include "Framework/IScene.h"
 
@@ -214,45 +214,17 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     mainRenderTexture_ = std::make_unique<RenderTexture>();
     mainRenderTexture_->Initialize(dxCommon_.get(), GetClientWidth(), GetClientHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
 
-    // --- Vignette ConstantBuffer の初期化 ---
-    vignetteCB_ = dxCommon_->CreateBufferResource(sizeof(VignetteParams));
-    vignetteCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedVignette_));
-    *mappedVignette_ = vignetteParams_;
+    // --- PostProcessManager の初期化 ---
+    postProcessManager_ = std::make_unique<PostProcessManager>();
+    postProcessManager_->Initialize(dxCommon_->GetDevice(), dxCommon_->GetRootSignature(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 
-    // --- Smoothing ConstantBuffer の初期化 ---
-    smoothingCB_ = dxCommon_->CreateBufferResource(sizeof(SmoothingParams));
-    smoothingCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedSmoothing_));
-    *mappedSmoothing_ = smoothingParams_;
+    // ノイズテクスチャのロードとハンドル設定
+    postProcessManager_->SetDissolveNoiseHandle(0, textureManager->GetTextureHandle("resources/noise0.png"));
+    postProcessManager_->SetDissolveNoiseHandle(1, textureManager->GetTextureHandle("resources/noise1.png"));
 
-    // --- Gaussian ConstantBuffer の初期化 ---
-    gaussianCB_ = dxCommon_->CreateBufferResource(sizeof(GaussianParams));
-    gaussianCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedGaussian_));
-    *mappedGaussian_ = gaussianParams_;
-
-    // --- Outline ConstantBuffer の初期化 ---
-    outlineCB_ = dxCommon_->CreateBufferResource(sizeof(OutlineParams));
-    outlineCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedOutline_));
-
-    // --- RadialBlur ConstantBuffer の初期化 ---
-    radialBlurCB_ = dxCommon_->CreateBufferResource(sizeof(RadialBlurParams));
-    radialBlurCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedRadialBlur_));
-    *mappedRadialBlur_ = radialBlurParams_;
-
-    // Dissolve
-    dissolveCB_ = dxCommon_->CreateBufferResource(sizeof(DissolveParams));
-    dissolveCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedDissolve_));
-
-    // ノイズテクスチャのロード (resources 直下に配置されている想定)
-    dissolveNoiseHandle_[0] = textureManager->GetTextureHandle("resources/noise0.png");
-    dissolveNoiseHandle_[1] = textureManager->GetTextureHandle("resources/noise1.png");
-
-    // --- Noise 用定数バッファの作成 ---
-    noiseCB_ = dxCommon_->CreateBufferResource(sizeof(NoiseParams));
-    noiseCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedNoise_));
-
-    // --- 深度バッファの SRV 作成 ---
+    // --- 深度バッファの SRV 作成とマネージャーへの設定 ---
     depthSrvIndex_ = dxCommon_->GetSrvPool()->Allocate();
-    depthSrvHandleGPU_ = dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_);
+    D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandleGPU = dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC depthSrvDesc{};
     depthSrvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
@@ -260,6 +232,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     depthSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     depthSrvDesc.Texture2D.MipLevels = 1;
     dxCommon_->GetDevice()->CreateShaderResourceView(dxCommon_->GetDepthStencilResource(), &depthSrvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
+
+    postProcessManager_->SetDepthSrvHandle(depthSrvHandleGPU);
+
+    // WinAppに自身(Engine)のポインタを設定
+    winApp_->SetEngine(this);
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -347,9 +324,11 @@ void IrufemiEngine::Execute() {
 
         // 更新
         sceneManager_->Update();
+    totalTime_ += deltaTime_;
+    postProcessManager_->Update(totalTime_);
 
-        // 入力
-        inputManager_->Update();
+    // インプットを更新
+    inputManager_->Update();
 
         // フレーム途中処理
         ProcessFrame();
@@ -391,113 +370,35 @@ void IrufemiEngine::EndFrame() {
     // 4. 描画先をバックバッファに戻す
     drawManager->SetRenderTargetToBackBuffer(false);
 
-    // 5. RenderTexture の内容をバックバッファに全画面コピー (ポストプロセス適用)
-    ID3D12PipelineState* pso = nullptr;
-    switch (postProcessMode_) {
-    case PostProcessMode::None:
-        pso = GetPSOManager()->GetCopyImage();
-        break;
-    case PostProcessMode::Grayscale:
-        pso = GetPSOManager()->GetGrayscale();
-        break;
-    case PostProcessMode::Sepia:
-        pso = GetPSOManager()->GetSepia();
-        break;
-    case PostProcessMode::Vignette:
-        pso = GetPSOManager()->GetVignette();
-        break;
-    case PostProcessMode::Smoothing:
-        pso = GetPSOManager()->GetSmoothing();
-        break;
-    case PostProcessMode::GaussianFilter:
-        pso = GetPSOManager()->GetGaussianFilter();
-        break;
-    case PostProcessMode::DepthBasedOutline:
-        pso = GetPSOManager()->GetDepthBasedOutline();
-        break;
-    case PostProcessMode::RadialBlur:
-        pso = GetPSOManager()->GetRadialBlur();
-        break;
-    case PostProcessMode::Dissolve:
-        pso = GetPSOManager()->GetDissolve();
-        break;
-    case PostProcessMode::Noise:
-        pso = GetPSOManager()->GetNoise();
-        break;
+    // 5. ポストプロセス描画の実行
+    // Outline のための深度バッファ遷移
+    bool isOutline = (postProcessManager_->GetMode() == PostProcessMode::DepthBasedOutline);
+    if (isOutline) {
+        D3D12_RESOURCE_BARRIER barrier{};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
+        
+        // 逆投影行列の更新
+        if (auto* cameraData = drawManager->GetCameraData()) {
+            postProcessManager_->GetOutlineParams().projectionInverse = Math::Inverse(cameraData->projection);
+        }
     }
 
-    if (pso) {
-        if (postProcessMode_ == PostProcessMode::Vignette) {
-            // パラメータを更新
-            if (mappedVignette_) {
-                *mappedVignette_ = vignetteParams_;
-            }
-            mainRenderTexture_->Draw(drawManager.get(), pso, vignetteCB_->GetGPUVirtualAddress());
-        } else if (postProcessMode_ == PostProcessMode::Smoothing) {
-            // パラメータを更新
-            if (mappedSmoothing_) {
-                *mappedSmoothing_ = smoothingParams_;
-            }
-            mainRenderTexture_->Draw(drawManager.get(), pso, smoothingCB_->GetGPUVirtualAddress());
-        } else if (postProcessMode_ == PostProcessMode::GaussianFilter) {
-            // パラメータを更新
-            if (mappedGaussian_) {
-                *mappedGaussian_ = gaussianParams_;
-            }
-            mainRenderTexture_->Draw(drawManager.get(), pso, gaussianCB_->GetGPUVirtualAddress());
-        } else if (postProcessMode_ == PostProcessMode::DepthBasedOutline) {
-            // 1. 深度バッファを PixelShaderResource に遷移
-            D3D12_RESOURCE_BARRIER barrier{};
-            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-            barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-            barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
-            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-            dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
+    // マネージャーに描画を委譲 (None mode will also call Draw with a copy shader)
+    postProcessManager_->Draw(dxCommon_->GetCommandList(), mainRenderTexture_.get(), dxCommon_->GetRtvHandles(dxCommon_->GetCurrentBackBufferIndex()));
 
-            // 2. パラメータ更新 (逆投影行列)
-            if (mappedOutline_) {
-                if (auto* cameraData = drawManager->GetCameraData()) {
-                    outlineParams_.projectionInverse = Math::Inverse(cameraData->projection);
-                }
-                *mappedOutline_ = outlineParams_;
-            }
-
-            // 3. 描画実行 (第4引数に深度 SRV を渡す)
-            mainRenderTexture_->Draw(drawManager.get(), pso, outlineCB_->GetGPUVirtualAddress(), depthSrvHandleGPU_);
-
-            // 4. 深度バッファを DEPTH_WRITE に戻す
-            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-            dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
-        } else if (postProcessMode_ == PostProcessMode::RadialBlur) {
-            // パラメータを更新
-            if (mappedRadialBlur_) {
-                *mappedRadialBlur_ = radialBlurParams_;
-            }
-            mainRenderTexture_->Draw(drawManager.get(), pso, radialBlurCB_->GetGPUVirtualAddress());
-        } else if (postProcessMode_ == PostProcessMode::Dissolve) {
-            // パラメータを更新
-            if (mappedDissolve_) {
-                *mappedDissolve_ = dissolveParams_;
-            }
-            // 選択されたノイズテクスチャのハンドルを取得
-            int noiseIdx = std::clamp(dissolveParams_.noiseType, 0, 1);
-            D3D12_GPU_DESCRIPTOR_HANDLE noiseHandle = dissolveNoiseHandle_[noiseIdx];
-
-            // DrawRendererTexture を通じて t0(画面) と t1(ノイズ, Root12) をバインドして描画
-            mainRenderTexture_->Draw(drawManager.get(), pso, dissolveCB_->GetGPUVirtualAddress(), noiseHandle);
-        } else if (postProcessMode_ == PostProcessMode::Noise) {
-            // パラメータを更新
-            noiseParams_.time = static_cast<float>(totalTime_);
-            if (mappedNoise_) {
-                *mappedNoise_ = noiseParams_;
-            }
-            mainRenderTexture_->Draw(drawManager.get(), pso, noiseCB_->GetGPUVirtualAddress());
-        } else {
-            mainRenderTexture_->Draw(drawManager.get(), pso);
-        }
+    if (isOutline) {
+        D3D12_RESOURCE_BARRIER barrier{};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+        dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
     }
 
     // 描画後処理
@@ -511,10 +412,40 @@ void IrufemiEngine::EndFrame() {
     }
 }
 
+void IrufemiEngine::OnResize(int32_t width, int32_t height) {
+    if (width <= 0 || height <= 0) return;
+
+    // 1. スワップチェーン、深度バッファのリサイズ
+    dxCommon_->ResizeSwapChain(width, height);
+
+    // 2. メインレンダーテクスチャの再生成
+    mainRenderTexture_->Initialize(dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
+
+    // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)
+    if (depthSrvIndex_ != 0xFFFFFFFF) {
+        D3D12_SHADER_RESOURCE_VIEW_DESC depthSrvDesc{};
+        depthSrvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+        depthSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        depthSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        depthSrvDesc.Texture2D.MipLevels = 1;
+        dxCommon_->GetDevice()->CreateShaderResourceView(dxCommon_->GetDepthStencilResource(), &depthSrvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
+
+        // ポストプロセスマネージャーに新しいSRVハンドルを設定
+        postProcessManager_->SetDepthSrvHandle(dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_));
+    }
+}
+
 void IrufemiEngine::SetCursorLocked(bool lock) {
     if (winApp_) {
         winApp_->SetCursorLocked(lock);
     }
+}
+
+bool IrufemiEngine::IsCursorLocked() const {
+    if (winApp_) {
+        return winApp_->IsCursorLocked();
+    }
+    return false;
 }
 
 void IrufemiEngine::ApplyPSO() {

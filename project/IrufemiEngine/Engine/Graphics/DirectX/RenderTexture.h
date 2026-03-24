@@ -37,8 +37,8 @@ private:
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle_{};
     D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGPU_{};
     
-    uint32_t rtvIndex_ = 0;
-    uint32_t srvIndex_ = 0;
+    uint32_t rtvIndex_ = 0xFFFFFFFF;
+    uint32_t srvIndex_ = 0xFFFFFFFF;
 
     uint32_t width_ = 0;
     uint32_t height_ = 0;

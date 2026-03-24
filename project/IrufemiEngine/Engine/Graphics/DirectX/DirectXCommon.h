@@ -29,6 +29,9 @@ public: // メンバ関数
 	// 初期化
 	void Initialize(HWND hwnd, int32_t w, int32_t h);
 
+	// スワップチェーンのリサイズ
+	void ResizeSwapChain(int32_t width, int32_t height);
+
 	void SetLog(Log* log) { log_ = log; }
 
 	/*三角形の色を変えよう*/
@@ -93,6 +96,7 @@ public: // ゲッター
 	PSOManager* GetPSOManager() { return psoManager_.get(); }
 	DescriptorPool* GetSrvPool() const { return srvPool_.get(); }
 	ID3D12Resource* GetDepthStencilResource() const { return depthStencilResource_.Get(); }
+	UINT GetCurrentBackBufferIndex() const { return swapChain_->GetCurrentBackBufferIndex(); }
 
 	// Compute Shader用
 	ID3D12RootSignature* GetComputeRootSignature() const { return computeRootSignature_.Get(); }
@@ -120,6 +124,8 @@ private:
 	/// デスクリプタ生成
 	/// </summary>
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+
+	void ReleaseSwapChainResources();
 
 	/// <summary>
 	/// 指定番号のCPUデスクリプタハンドルを取得する

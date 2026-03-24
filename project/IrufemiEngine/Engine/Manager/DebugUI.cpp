@@ -1050,32 +1050,33 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
     const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise" };
 
     if (ImGui::Combo("Mode", &currentMode, modes, IM_ARRAYSIZE(modes))) {
-        engine->SetPostProcessMode(static_cast<IrufemiEngine::PostProcessMode>(currentMode));
+        engine->SetPostProcessMode(static_cast<PostProcessMode>(currentMode));
     }
 
-    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::Vignette) {
-        auto& params = engine->GetVignetteParams();
+    auto* ppManager = engine->GetPostProcessManager();
+    if (!ppManager) return;
+
+    if (ppManager->GetMode() == PostProcessMode::Vignette) {
+        auto& params = ppManager->GetVignetteParams();
         ImGui::DragFloat("Vignette Scale", &params.scale, 0.1f, 0.0f, 100.0f);
         ImGui::DragFloat("Vignette Power", &params.power, 0.01f, 0.0f, 10.0f);
     }
 
-    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::Smoothing) {
-        auto& params = engine->GetSmoothingParams();
-        // カーネルサイズは奇数にする必要がある(3, 5, 7...)
-        if (ImGui::SliderInt("Kernel Size", &params.kernelSize, 1, 31)) {
+    if (ppManager->GetMode() == PostProcessMode::Smoothing) {
+        auto& params = ppManager->GetSmoothingParams();
+        if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
             if (params.kernelSize < 1) params.kernelSize = 1;
             if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
-                // 偶数なら1足して奇数にする
                 params.kernelSize += 1;
             }
         }
         ImGui::Text("Notice: Square kernel size must be odd.");
     }
     
-    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::GaussianFilter) {
-        auto& params = engine->GetGaussianParams();
+    if (ppManager->GetMode() == PostProcessMode::GaussianFilter) {
+        auto& params = ppManager->GetGaussianParams();
         ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
-        if (ImGui::SliderInt("Kernel Size", &params.kernelSize, 1, 31)) {
+        if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
             if (params.kernelSize < 1) params.kernelSize = 1;
             if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
                 params.kernelSize += 1;
@@ -1084,30 +1085,30 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
         ImGui::Text("Notice: Square kernel size must be odd.");
     }
 
-    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::DepthBasedOutline) {
+    if (ppManager->GetMode() == PostProcessMode::DepthBasedOutline) {
         ImGui::Text("Mode: Depth Based Outline (Prewitt Filter)");
         ImGui::Text("Notice: Uses depth buffer to detect edges.");
     }
 
-    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::RadialBlur) {
-        auto& params = engine->GetRadialBlurParams();
+    if (ppManager->GetMode() == PostProcessMode::RadialBlur) {
+        auto& params = ppManager->GetRadialBlurParams();
         ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Blur Width", &params.blurWidth, 0.001f, 0.0f, 0.1f);
-        ImGui::SliderInt("Samples", &params.numSamples, 1, 100);
+        ImGui::SliderInt("Samples", reinterpret_cast<int*>(&params.numSamples), 1, 100);
     }
 
-    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::Dissolve) {
-        auto& params = engine->GetDissolveParams();
+    if (ppManager->GetMode() == PostProcessMode::Dissolve) {
+        auto& params = ppManager->GetDissolveParams();
         ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
         ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
         ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
 
         const char* noiseTypes[] = { "Noise 0", "Noise 1" };
-        ImGui::Combo("Noise Type", &params.noiseType, noiseTypes, IM_ARRAYSIZE(noiseTypes));
+        ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes, IM_ARRAYSIZE(noiseTypes));
     }
 
-    if (engine->GetPostProcessMode() == IrufemiEngine::PostProcessMode::Noise) {
-        auto& params = engine->GetNoiseParams();
+    if (ppManager->GetMode() == PostProcessMode::Noise) {
+        auto& params = ppManager->GetNoiseParams();
         ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
         ImGui::Text("Notice: Noise changes every frame using totalTime.");
     }
