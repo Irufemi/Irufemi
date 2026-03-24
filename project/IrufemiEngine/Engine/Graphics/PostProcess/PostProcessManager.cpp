@@ -94,6 +94,8 @@ void PostProcessManager::Update(float totalTime) {
     *mappedOutline_ = outlineParams_;
   if (mappedDissolve_)
     *mappedDissolve_ = dissolveParams_;
+  if (mappedHsv_)
+    *mappedHsv_ = hsvParams_;
 }
 
 void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
@@ -208,6 +210,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   case Mode::Noise:
     cbvAddress = noiseCB_->GetGPUVirtualAddress();
     break;
+  case Mode::HSV:
+    cbvAddress = hsvCB_->GetGPUVirtualAddress();
+    break;
   default:
     break;
   }
@@ -263,6 +268,7 @@ void PostProcessManager::CreatePSOs() {
       {Mode::RadialBlur, L"resources/shaders/RadialBlur.PS.hlsl"},
       {Mode::Dissolve, L"resources/shaders/Dissolve.PS.hlsl"},
       {Mode::Noise, L"resources/shaders/Noise.PS.hlsl"},
+      {Mode::HSV, L"resources/shaders/HSV.PS.hlsl"},
   };
 
   for (const auto &s : shaders) {
@@ -314,6 +320,9 @@ void PostProcessManager::CreateConstantBuffers() {
 
   dissolveCB_ = CreateBuffer(sizeof(DissolveParams));
   dissolveCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedDissolve_));
+
+  hsvCB_ = CreateBuffer(sizeof(HSVParams));
+  hsvCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedHsv_));
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource>

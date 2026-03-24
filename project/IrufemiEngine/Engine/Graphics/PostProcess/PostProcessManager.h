@@ -31,6 +31,7 @@ enum class PostProcessMode {
     RadialBlur,         ///< 放射状ぼかし
     Dissolve,           ///< ディゾルブ（ノイズテクスチャによる消失演出）
     Noise,              ///< ランダムノイズ粒子
+    HSV,                ///< HSV色空間による色調整
 };
 
 class DirectXCommon;
@@ -124,6 +125,16 @@ public:
         int32_t noiseType = 0;                          ///< 使用するノイズテクスチャのインデックス (0 or 1)
     };
 
+    /**
+     * @struct HSVParams
+     * @brief HSVエフェクト用パラメータ
+     */
+    struct HSVParams {
+        float hue = 0.0f;        ///< 色相オフセット (-1.0 ~ 1.0)
+        float saturation = 0.0f; ///< 彩度オフセット (-1.0 ~ 1.0)
+        float value = 0.0f;      ///< 明度オフセット (-1.0 ~ 1.0)
+    };
+
 public:
     /**
      * @brief ポストプロセスの初期化
@@ -196,6 +207,7 @@ public:
     RadialBlurParams& GetRadialBlurParams() { return radialBlurParams_; }
     OutlineParams& GetOutlineParams() { return outlineParams_; }
     DissolveParams& GetDissolveParams() { return dissolveParams_; }
+    HSVParams& GetHSVParams() { return hsvParams_; }
 
     void SetDissolveNoiseHandle(int index, D3D12_GPU_DESCRIPTOR_HANDLE handle) {
         if (index >= 0 && index < 2) dissolveNoiseHandle_[index] = handle;
@@ -230,7 +242,7 @@ private:
         Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     };
     // モードに対応するPSOを保持 (Mode::Noneはnullptr)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 10> psos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 11> psos_;
 
     // Constant Buffers
     Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;
@@ -260,6 +272,10 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> dissolveCB_;
     DissolveParams* mappedDissolve_ = nullptr;
     DissolveParams dissolveParams_;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> hsvCB_;
+    HSVParams* mappedHsv_ = nullptr;
+    HSVParams hsvParams_;
 
     D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 2> dissolveNoiseHandle_{};

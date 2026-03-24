@@ -1046,7 +1046,7 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
 
     ImGui::Begin("Post Processing");
 
-    const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise" };
+    const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV" };
     auto activeModes = ppManager->GetActiveModes();
 
     if (ImGui::Button("Clear All Effects")) {
@@ -1058,7 +1058,7 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
     ImGui::Text("Available Effects:");
 
     // エフェクト選択
-    for (int i = 1; i < 10; ++i) { // None 以外を表示
+    for (int i = 1; i < 11; ++i) { // None 以外を表示
         PostProcessMode m = static_cast<PostProcessMode>(i);
         bool isEnabled = std::find(activeModes.begin(), activeModes.end(), m) != activeModes.end();
         
@@ -1132,6 +1132,12 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
             else if (mode == PostProcessMode::Noise) {
                 auto& params = ppManager->GetNoiseParams();
                 ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
+            }
+            else if (mode == PostProcessMode::HSV) {
+                auto& params = ppManager->GetHSVParams();
+                ImGui::DragFloat("HueOffset", &params.hue, 0.001f, -1.0f, 1.0f);
+                ImGui::DragFloat("SaturationOffset", &params.saturation, 0.001f, -1.0f, 1.0f);
+                ImGui::DragFloat("ValueOffset", &params.value, 0.001f, -1.0f, 1.0f);
             }
             ImGui::TreePop();
         }
