@@ -19,6 +19,39 @@ void PostProcessManager::Initialize(ID3D12Device* device, ID3D12RootSignature* r
     CreatePSOs();
 }
 
+namespace {
+    void TransitionResource(ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter) {
+        if (stateBefore == stateAfter) return;
+        D3D12_RESOURCE_BARRIER barrier{};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = resource;
+        barrier.Transition.StateBefore = stateBefore;
+        barrier.Transition.StateAfter = stateAfter;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        commandList->ResourceBarrier(1, &barrier);
+    }
+}
+
+void PostProcessManager::InitializeBuffers(uint32_t width, uint32_t height, DirectXCommon* dxCommon) {
+    if (!dxCommon) return;
+    for (int i = 0; i < 2; ++i) {
+        if (!workTextures_[i]) {
+            workTextures_[i] = std::make_unique<RenderTexture>();
+        }
+        workTextures_[i]->Initialize(dxCommon, width, height, rtvFormat_, { 0.0f, 0.0f, 0.0f, 1.0f });
+        
+        // デバッグ用に名前を付ける
+        if (workTextures_[i]->GetResource()) {
+            std::wstring name = L"PostProcess_Work" + std::to_wstring(i);
+            workTextures_[i]->GetResource()->SetName(name.c_str());
+        }
+
+        // 生成直後は PIXEL_SHADER_RESOURCE 状態 (DirectXCommon::CreateRenderTextureResource の仕様に合わせる)
+        workTextureStates_[i] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    }
+}
+
 void PostProcessManager::Update(float totalTime) {
     noiseParams_.time = totalTime;
     if (mappedNoise_) {
@@ -35,10 +68,50 @@ void PostProcessManager::Update(float totalTime) {
 }
 
 void PostProcessManager::Draw(ID3D12GraphicsCommandList* commandList, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle) {
-    uint32_t modeIdx = static_cast<uint32_t>(mode_);
-    if (!psos_[modeIdx]) return;
+    if (activeModes_.empty()) {
+        // エフェクトなし（None）の場合は、単に srcTexture を出力へコピー
+        DrawSinglePass(commandList, Mode::None, srcTexture, rtvHandle);
+        return;
+    }
 
-    // レンダーターゲットとビューポートの設定
+    RenderTexture* currentSource = srcTexture;
+
+    for (size_t i = 0; i < activeModes_.size(); ++i) {
+        Mode mode = activeModes_[i];
+        bool isLast = (i == activeModes_.size() - 1);
+
+        D3D12_CPU_DESCRIPTOR_HANDLE targetHandle;
+        RenderTexture* nextTargetTexture = nullptr;
+        int nextTargetIdx = -1;
+
+        if (isLast) {
+            targetHandle = rtvHandle;
+        } else {
+            nextTargetIdx = static_cast<int>(i % 2);
+            nextTargetTexture = workTextures_[nextTargetIdx].get();
+            targetHandle = nextTargetTexture->GetRtvHandle();
+            
+            // 現在の状態から RENDER_TARGET へ遷移
+            TransitionResource(commandList, nextTargetTexture->GetResource(), workTextureStates_[nextTargetIdx], D3D12_RESOURCE_STATE_RENDER_TARGET);
+            workTextureStates_[nextTargetIdx] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        }
+
+        DrawSinglePass(commandList, mode, currentSource, targetHandle);
+
+        if (!isLast) {
+            // 次のパスで読み込むために PIXEL_SHADER_RESOURCE へ遷移
+            TransitionResource(commandList, nextTargetTexture->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            workTextureStates_[nextTargetIdx] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+            currentSource = nextTargetTexture;
+        }
+    }
+}
+
+void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList* commandList, Mode mode, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle) {
+    uint32_t modeIdx = static_cast<uint32_t>(mode);
+    if (modeIdx >= psos_.size() || !psos_[modeIdx]) return;
+
+    // レンダーターゲットの設定
     commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
     
     // PSOとルートシグネチャの設定
@@ -51,7 +124,7 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList* commandList, RenderText
 
     // 定数バッファのバインド (Root0 -> b0)
     D3D12_GPU_VIRTUAL_ADDRESS cbvAddress = 0;
-    switch (mode_) {
+    switch (mode) {
     case Mode::Vignette: cbvAddress = vignetteCB_->GetGPUVirtualAddress(); break;
     case Mode::Smoothing: cbvAddress = smoothingCB_->GetGPUVirtualAddress(); break;
     case Mode::GaussianFilter: cbvAddress = gaussianCB_->GetGPUVirtualAddress(); break;
@@ -66,9 +139,9 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList* commandList, RenderText
     }
 
     // 追加のリソース（深度、ノイズテクスチャ）のバインド (Root12 -> t1)
-    if (mode_ == Mode::DepthBasedOutline) {
+    if (mode == Mode::DepthBasedOutline) {
         commandList->SetGraphicsRootDescriptorTable(12, depthSrvHandle_);
-    } else if (mode_ == Mode::Dissolve) {
+    } else if (mode == Mode::Dissolve) {
         int noiseIdx = (std::max)(0, (std::min)(1, dissolveParams_.noiseType));
         commandList->SetGraphicsRootDescriptorTable(12, dissolveNoiseHandle_[noiseIdx]);
     }

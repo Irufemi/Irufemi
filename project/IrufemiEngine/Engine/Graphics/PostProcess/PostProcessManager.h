@@ -28,6 +28,8 @@ enum class PostProcessMode {
     Noise,
 };
 
+class DirectXCommon;
+
 class PostProcessManager {
 public:
     using Mode = PostProcessMode;
@@ -71,12 +73,22 @@ public:
 
 public:
     void Initialize(ID3D12Device* device, ID3D12RootSignature* rootSig, DXGI_FORMAT rtvFormat);
+    void InitializeBuffers(uint32_t width, uint32_t height, DirectXCommon* dxCommon);
     void Update(float totalTime);
     void Draw(ID3D12GraphicsCommandList* commandList, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle);
 
     // Getters & Setters
-    Mode GetMode() const { return mode_; }
-    void SetMode(Mode mode) { mode_ = mode; }
+    const std::vector<Mode>& GetActiveModes() const { return activeModes_; }
+    void AddActiveMode(Mode mode) { activeModes_.push_back(mode); }
+    void ClearActiveModes() { activeModes_.clear(); }
+    void SetActiveModes(const std::vector<Mode>& modes) { activeModes_ = modes; }
+    
+    // 互換性のための単一セット (既存コード破壊回避)
+    void SetMode(Mode mode) { 
+        activeModes_.clear(); 
+        if (mode != Mode::None) activeModes_.push_back(mode); 
+    }
+    Mode GetMode() const { return activeModes_.empty() ? Mode::None : activeModes_.front(); }
     
     NoiseParams& GetNoiseParams() { return noiseParams_; }
     VignetteParams& GetVignetteParams() { return vignetteParams_; }
@@ -95,6 +107,7 @@ public:
 private:
     void CreatePSOs();
     void CreateConstantBuffers();
+    void DrawSinglePass(ID3D12GraphicsCommandList* commandList, Mode mode, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle);
     Microsoft::WRL::ComPtr<ID3D12Resource> CreateBuffer(size_t size);
 
 private:
@@ -102,7 +115,11 @@ private:
     ID3D12RootSignature* rootSig_ = nullptr;
     DXGI_FORMAT rtvFormat_ = DXGI_FORMAT_UNKNOWN;
 
-    Mode mode_ = Mode::None;
+    Mode mode_ = Mode::None; // 互換性用（内部では不使用にする）
+    std::vector<Mode> activeModes_;
+    
+    // ピンポンバッファ
+    std::array<std::unique_ptr<RenderTexture>, 2> workTextures_;
 
     // PSOs
     struct PipelineSet {
@@ -142,4 +159,7 @@ private:
 
     D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 2> dissolveNoiseHandle_{};
+
+    // 状態追跡用
+    std::array<D3D12_RESOURCE_STATES, 2> workTextureStates_ = { D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE };
 };

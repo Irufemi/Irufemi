@@ -1044,73 +1044,100 @@ void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
 #ifdef USE_IMGUI
     if (!engine) return;
 
-    ImGui::Begin("Post Processing");
-
-    int currentMode = static_cast<int>(engine->GetPostProcessMode());
-    const char* modes[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise" };
-
-    if (ImGui::Combo("Mode", &currentMode, modes, IM_ARRAYSIZE(modes))) {
-        engine->SetPostProcessMode(static_cast<PostProcessMode>(currentMode));
-    }
-
     auto* ppManager = engine->GetPostProcessManager();
     if (!ppManager) return;
 
-    if (ppManager->GetMode() == PostProcessMode::Vignette) {
-        auto& params = ppManager->GetVignetteParams();
-        ImGui::DragFloat("Vignette Scale", &params.scale, 0.1f, 0.0f, 100.0f);
-        ImGui::DragFloat("Vignette Power", &params.power, 0.01f, 0.0f, 10.0f);
+    ImGui::Begin("Post Processing");
+
+    const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise" };
+    auto activeModes = ppManager->GetActiveModes();
+
+    if (ImGui::Button("Clear All Effects")) {
+        ppManager->ClearActiveModes();
+        activeModes.clear();
     }
 
-    if (ppManager->GetMode() == PostProcessMode::Smoothing) {
-        auto& params = ppManager->GetSmoothingParams();
-        if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
-            if (params.kernelSize < 1) params.kernelSize = 1;
-            if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
-                params.kernelSize += 1;
+    ImGui::Separator();
+    ImGui::Text("Available Effects:");
+
+    // エフェクト選択
+    for (int i = 1; i < 10; ++i) { // None 以外を表示
+        PostProcessMode m = static_cast<PostProcessMode>(i);
+        bool isEnabled = std::find(activeModes.begin(), activeModes.end(), m) != activeModes.end();
+        
+        if (ImGui::Checkbox(modeNames[i], &isEnabled)) {
+            if (isEnabled) {
+                ppManager->AddActiveMode(m);
+            } else {
+                activeModes.erase(std::remove(activeModes.begin(), activeModes.end(), m), activeModes.end());
+                ppManager->SetActiveModes(activeModes);
             }
         }
-        ImGui::Text("Notice: Square kernel size must be odd.");
     }
-    
-    if (ppManager->GetMode() == PostProcessMode::GaussianFilter) {
-        auto& params = ppManager->GetGaussianParams();
-        ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
-        if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
-            if (params.kernelSize < 1) params.kernelSize = 1;
-            if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
-                params.kernelSize += 1;
-            }
+
+    ImGui::Separator();
+    ImGui::Text("Active Stack (Draw Order):");
+    if (activeModes.empty()) {
+        ImGui::TextDisabled("(No effects active - Clean Copy)");
+    } else {
+        for (size_t i = 0; i < activeModes.size(); ++i) {
+            ImGui::BulletText("%d: %s", static_cast<int>(i + 1), modeNames[static_cast<int>(activeModes[i])]);
         }
-        ImGui::Text("Notice: Square kernel size must be odd.");
     }
 
-    if (ppManager->GetMode() == PostProcessMode::DepthBasedOutline) {
-        ImGui::Text("Mode: Depth Based Outline (Prewitt Filter)");
-        ImGui::Text("Notice: Uses depth buffer to detect edges.");
-    }
+    ImGui::Separator();
+    ImGui::Text("Parameters:");
 
-    if (ppManager->GetMode() == PostProcessMode::RadialBlur) {
-        auto& params = ppManager->GetRadialBlurParams();
-        ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat("Blur Width", &params.blurWidth, 0.001f, 0.0f, 0.1f);
-        ImGui::SliderInt("Samples", reinterpret_cast<int*>(&params.numSamples), 1, 100);
-    }
-
-    if (ppManager->GetMode() == PostProcessMode::Dissolve) {
-        auto& params = ppManager->GetDissolveParams();
-        ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
-        ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
-        ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
-
-        const char* noiseTypes[] = { "Noise 0", "Noise 1" };
-        ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes, IM_ARRAYSIZE(noiseTypes));
-    }
-
-    if (ppManager->GetMode() == PostProcessMode::Noise) {
-        auto& params = ppManager->GetNoiseParams();
-        ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
-        ImGui::Text("Notice: Noise changes every frame using totalTime.");
+    // 有効な全てのエフェクトのパラメータを表示
+    for (auto mode : activeModes) {
+        if (ImGui::TreeNode(modeNames[static_cast<int>(mode)])) {
+            if (mode == PostProcessMode::Vignette) {
+                auto& params = ppManager->GetVignetteParams();
+                ImGui::DragFloat("Vignette Scale", &params.scale, 0.1f, 0.0f, 100.0f);
+                ImGui::DragFloat("Vignette Power", &params.power, 0.01f, 0.0f, 10.0f);
+            }
+            else if (mode == PostProcessMode::Smoothing) {
+                auto& params = ppManager->GetSmoothingParams();
+                if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
+                    if (params.kernelSize < 1) params.kernelSize = 1;
+                    if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
+                        params.kernelSize += 1;
+                    }
+                }
+            }
+            else if (mode == PostProcessMode::GaussianFilter) {
+                auto& params = ppManager->GetGaussianParams();
+                ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
+                if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
+                    if (params.kernelSize < 1) params.kernelSize = 1;
+                    if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
+                        params.kernelSize += 1;
+                    }
+                }
+            }
+            else if (mode == PostProcessMode::DepthBasedOutline) {
+                ImGui::Text("Mode: Depth Based Outline (Prewitt Filter)");
+            }
+            else if (mode == PostProcessMode::RadialBlur) {
+                auto& params = ppManager->GetRadialBlurParams();
+                ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
+                ImGui::DragFloat("Blur Width", &params.blurWidth, 0.001f, 0.0f, 0.1f);
+                ImGui::SliderInt("Samples", reinterpret_cast<int*>(&params.numSamples), 1, 100);
+            }
+            else if (mode == PostProcessMode::Dissolve) {
+                auto& params = ppManager->GetDissolveParams();
+                ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
+                ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
+                ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
+                const char* noiseTypes[] = { "Noise 0", "Noise 1" };
+                ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes, IM_ARRAYSIZE(noiseTypes));
+            }
+            else if (mode == PostProcessMode::Noise) {
+                auto& params = ppManager->GetNoiseParams();
+                ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
+            }
+            ImGui::TreePop();
+        }
     }
 
     ImGui::End();

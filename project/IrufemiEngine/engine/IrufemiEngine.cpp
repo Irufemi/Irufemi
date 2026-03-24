@@ -7,6 +7,8 @@
 #include <DbgHelp.h>
 #include <cstdint>
 #include <format>
+#include <algorithm>
+#include <string>
 
 #include "Renderer/VertexData.h"
 #include "Renderer/D3D12ResourceUtil.h"
@@ -217,6 +219,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // --- PostProcessManager の初期化 ---
     postProcessManager_ = std::make_unique<PostProcessManager>();
     postProcessManager_->Initialize(dxCommon_->GetDevice(), dxCommon_->GetRootSignature(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+    postProcessManager_->InitializeBuffers(GetClientWidth(), GetClientHeight(), dxCommon_.get());
 
     // ノイズテクスチャのロードとハンドル設定
     postProcessManager_->SetDissolveNoiseHandle(0, textureManager->GetTextureHandle("resources/noise0.png"));
@@ -371,16 +374,18 @@ void IrufemiEngine::EndFrame() {
     drawManager->SetRenderTargetToBackBuffer(false);
 
     // 5. ポストプロセス描画の実行
-    // Outline のための深度バッファ遷移
-    bool isOutline = (postProcessManager_->GetMode() == PostProcessMode::DepthBasedOutline);
-    if (isOutline) {
+    // Outline のための深度バッファ遷移 (スタック内のどこかに Outline があれば適用)
+    const auto& activeModes = postProcessManager_->GetActiveModes();
+    bool hasOutline = std::find(activeModes.begin(), activeModes.end(), PostProcessMode::DepthBasedOutline) != activeModes.end();
+
+    if (hasOutline) {
         D3D12_RESOURCE_BARRIER barrier{};
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
         barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
         barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
         barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        barrier.Transition.Subresource = 0; // 深度値のみをターゲットにする
         dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
         
         // 逆投影行列の更新
@@ -389,15 +394,16 @@ void IrufemiEngine::EndFrame() {
         }
     }
 
-    // マネージャーに描画を委譲 (None mode will also call Draw with a copy shader)
+    // マネージャーに描画を委譲
     postProcessManager_->Draw(dxCommon_->GetCommandList(), mainRenderTexture_.get(), dxCommon_->GetRtvHandles(dxCommon_->GetCurrentBackBufferIndex()));
 
-    if (isOutline) {
+    if (hasOutline) {
         D3D12_RESOURCE_BARRIER barrier{};
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
         barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
         barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
         barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+        barrier.Transition.Subresource = 0; // 深度値のみを元に戻す
         dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
     }
 
@@ -420,6 +426,7 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
 
     // 2. メインレンダーテクスチャの再生成
     mainRenderTexture_->Initialize(dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
+    postProcessManager_->InitializeBuffers(width, height, dxCommon_.get());
 
     // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)
     if (depthSrvIndex_ != 0xFFFFFFFF) {
