@@ -32,6 +32,7 @@ enum class PostProcessMode {
     Dissolve,           ///< ディゾルブ（ノイズテクスチャによる消失演出）
     Noise,              ///< ランダムノイズ粒子
     HSV,                ///< HSV色空間による色調整
+    ToneMapping,        ///< トーンマッピング（ACES）
 };
 
 class DirectXCommon;
@@ -135,6 +136,14 @@ public:
         float value = 0.0f;      ///< 明度オフセット (-1.0 ~ 1.0)
     };
 
+    /**
+     * @struct ToneMappingParams
+     * @brief トーンマッピングエフェクト用パラメータ
+     */
+    struct ToneMappingParams {
+        float exposure = 1.0f;   ///< 露出補正 (0.0 ~ )
+    };
+
 public:
     /**
      * @brief ポストプロセスの初期化
@@ -208,6 +217,7 @@ public:
     OutlineParams& GetOutlineParams() { return outlineParams_; }
     DissolveParams& GetDissolveParams() { return dissolveParams_; }
     HSVParams& GetHSVParams() { return hsvParams_; }
+    ToneMappingParams& GetToneMappingParams() { return toneMappingParams_; }
 
     void SetDissolveNoiseHandle(int index, D3D12_GPU_DESCRIPTOR_HANDLE handle) {
         if (index >= 0 && index < 2) dissolveNoiseHandle_[index] = handle;
@@ -242,9 +252,9 @@ private:
         Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     };
     // モードに対応するPSOを保持 (中間パス用: _UNORM)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 11> psos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 12> psos_;
     // 最終パス用 (スワップチェーン等の _SRGB 形式用)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 11> finalPsos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 12> finalPsos_;
 
     // Constant Buffers
     Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;
@@ -278,6 +288,10 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> hsvCB_;
     HSVParams* mappedHsv_ = nullptr;
     HSVParams hsvParams_;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> toneMappingCB_;
+    ToneMappingParams* mappedToneMapping_ = nullptr;
+    ToneMappingParams toneMappingParams_;
 
     D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 2> dissolveNoiseHandle_{};

@@ -813,5 +813,11 @@
     <FxCompile Include="..\Application\resources\shaders\Noise.PS.hlsl">
       <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ToneMapping.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\HSV.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

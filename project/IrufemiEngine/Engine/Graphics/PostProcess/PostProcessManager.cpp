@@ -96,6 +96,8 @@ void PostProcessManager::Update(float totalTime) {
     *mappedDissolve_ = dissolveParams_;
   if (mappedHsv_)
     *mappedHsv_ = hsvParams_;
+  if (mappedToneMapping_)
+    *mappedToneMapping_ = toneMappingParams_;
 }
 
 void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
@@ -217,6 +219,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   case Mode::HSV:
     cbvAddress = hsvCB_->GetGPUVirtualAddress();
     break;
+  case Mode::ToneMapping:
+    cbvAddress = toneMappingCB_->GetGPUVirtualAddress();
+    break;
   default:
     break;
   }
@@ -273,6 +278,7 @@ void PostProcessManager::CreatePSOs() {
       {Mode::Dissolve, L"resources/shaders/Dissolve.PS.hlsl"},
       {Mode::Noise, L"resources/shaders/Noise.PS.hlsl"},
       {Mode::HSV, L"resources/shaders/HSV.PS.hlsl"},
+      {Mode::ToneMapping, L"resources/shaders/ToneMapping.PS.hlsl"},
   };
 
   for (const auto &s : shaders) {
@@ -333,6 +339,9 @@ void PostProcessManager::CreateConstantBuffers() {
 
   hsvCB_ = CreateBuffer(sizeof(HSVParams));
   hsvCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedHsv_));
+
+  toneMappingCB_ = CreateBuffer(sizeof(ToneMappingParams));
+  toneMappingCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedToneMapping_));
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource>
