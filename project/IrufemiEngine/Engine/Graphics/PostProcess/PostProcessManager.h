@@ -221,7 +221,7 @@ public:
 private:
     void CreatePSOs();
     void CreateConstantBuffers();
-    void DrawSinglePass(ID3D12GraphicsCommandList* commandList, Mode mode, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle);
+    void DrawSinglePass(ID3D12GraphicsCommandList* commandList, Mode mode, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, bool isFinalPass = false);
     Microsoft::WRL::ComPtr<ID3D12Resource> CreateBuffer(size_t size);
 
 private:
@@ -241,8 +241,10 @@ private:
     struct PipelineSet {
         Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     };
-    // モードに対応するPSOを保持 (Mode::Noneはnullptr)
+    // モードに対応するPSOを保持 (中間パス用: _UNORM)
     std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 11> psos_;
+    // 最終パス用 (スワップチェーン等の _SRGB 形式用)
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 11> finalPsos_;
 
     // Constant Buffers
     Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;

@@ -836,7 +836,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
         device_.Get(),
         rootSignature_.Get(),
         inputLayoutDesc,
-        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+        DXGI_FORMAT_R8G8B8A8_UNORM,
         DXGI_FORMAT_D24_UNORM_S8_UINT,
         D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
         objectShaders,

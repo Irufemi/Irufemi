@@ -165,12 +165,13 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
 
   // 2) 最終結果をバックバッファ（提供された rtvHandle）に転送
   // これにより、既存の全画面表示も維持される
-  DrawSinglePass(commandList, Mode::None, currentSource, rtvHandle);
+  DrawSinglePass(commandList, Mode::None, currentSource, rtvHandle, true);
 }
 
 void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
                                         Mode mode, RenderTexture *srcTexture,
-                                        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle) {
+                                        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
+                                        bool isFinalPass) {
   uint32_t modeIdx = static_cast<uint32_t>(mode);
   if (modeIdx >= psos_.size() || !psos_[modeIdx])
     return;
@@ -179,7 +180,10 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
   // PSOとルートシグネチャの設定
-  commandList->SetPipelineState(psos_[modeIdx].Get());
+  ID3D12PipelineState* pso = isFinalPass ? finalPsos_[modeIdx].Get() : psos_[modeIdx].Get();
+  if (!pso) return;
+
+  commandList->SetPipelineState(pso);
   commandList->SetGraphicsRootSignature(rootSig_);
   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -291,11 +295,17 @@ void PostProcessManager::CreatePSOs() {
     desc.InputLayout = {nullptr, 0};
     desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     desc.NumRenderTargets = 1;
-    desc.RTVFormats[0] = rtvFormat_;
     desc.SampleDesc.Count = 1;
 
+    // 中間パス用 (_UNORM)
+    desc.RTVFormats[0] = rtvFormat_;
     device_->CreateGraphicsPipelineState(
         &desc, IID_PPV_ARGS(&psos_[static_cast<uint32_t>(s.mode)]));
+
+    // 最終パス用 (_SRGB)
+    desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    device_->CreateGraphicsPipelineState(
+        &desc, IID_PPV_ARGS(&finalPsos_[static_cast<uint32_t>(s.mode)]));
   }
 }
 

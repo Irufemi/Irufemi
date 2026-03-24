@@ -214,11 +214,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     // --- 全画面用 RenderTexture の初期化 ---
     mainRenderTexture_ = std::make_unique<RenderTexture>();
-    mainRenderTexture_->Initialize(dxCommon_.get(), GetClientWidth(), GetClientHeight(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
+    mainRenderTexture_->Initialize(dxCommon_.get(), GetClientWidth(), GetClientHeight(), DXGI_FORMAT_R8G8B8A8_UNORM, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
 
     // --- PostProcessManager の初期化 ---
     postProcessManager_ = std::make_unique<PostProcessManager>();
-    postProcessManager_->Initialize(dxCommon_->GetDevice(), dxCommon_->GetRootSignature(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+    postProcessManager_->Initialize(dxCommon_->GetDevice(), dxCommon_->GetRootSignature(), DXGI_FORMAT_R8G8B8A8_UNORM);
     postProcessManager_->InitializeBuffers(GetClientWidth(), GetClientHeight(), dxCommon_.get());
 
     // ノイズテクスチャのロードとハンドル設定
@@ -425,7 +425,7 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
     dxCommon_->ResizeSwapChain(width, height);
 
     // 2. メインレンダーテクスチャの再生成
-    mainRenderTexture_->Initialize(dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
+    mainRenderTexture_->Initialize(dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM, { clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
     postProcessManager_->InitializeBuffers(width, height, dxCommon_.get());
 
     // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)
