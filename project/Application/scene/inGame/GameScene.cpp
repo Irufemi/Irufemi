@@ -16,6 +16,7 @@
 #include "actors/enemy/EnemyParameters.h"
 #include "contents/field/Field.h"
 #include "contents/skydome/Skydome.h"
+#include "Graphics/PostProcess/PostProcessManager.h"
 
 #include "Engine/Core/Math/Geometry/Collision.h"
 

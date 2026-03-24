@@ -127,6 +127,11 @@ public: // ゲッター
     TextureManager* GetTextureManager() { return this->textureManager.get(); }
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
+    /** 
+     * @brief ポストプロセス管理者を取得
+     * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
+     */
+    PostProcessManager* GetPostProcessManager() { return postProcessManager_.get(); }
     int32_t& GetClientWidth() { return dxCommon_->GetClientWidth(); }
     int32_t& GetClientHeight() { return dxCommon_->GetClientHeight(); }
     D3D12_VIEWPORT& GetViewport() { return dxCommon_->GetViewport(); }
@@ -168,7 +173,6 @@ public: // セッター
     RadialBlurParams& GetRadialBlurParams() { return postProcessManager_->GetRadialBlurParams(); }
     NoiseParams& GetNoiseParams() { return postProcessManager_->GetNoiseParams(); }
 
-    PostProcessManager* GetPostProcessManager() { return postProcessManager_.get(); }
 
     void SetCursorLocked(bool lock);
     bool IsCursorLocked() const;
