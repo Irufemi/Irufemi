@@ -1216,12 +1216,32 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
         assert(false && "Texture file not found");
     }
 
+    // --- sRGB 判定ロジック ---
+    // 【リニアワークフロー対応】
+    // 画像が「色データ」か「数値データ」かをファイル名から判別します。
+    // - 色データ (BaseColor等): sRGB→Linear変換が必要
+    // - 数値データ (Normal/AO等): 変換すると値が壊れるためそのまま読み込む
+    bool isSRGB = true;
+    std::string filePathLower = filePath;
+    std::transform(filePathLower.begin(), filePathLower.end(), filePathLower.begin(), ::tolower);
+    if (filePathLower.find("_n") != std::string::npos ||
+        filePathLower.find("normal") != std::string::npos ||
+        filePathLower.find("_ao") != std::string::npos ||
+        filePathLower.find("_m") != std::string::npos ||
+        filePathLower.find("metallic") != std::string::npos ||
+        filePathLower.find("_r") != std::string::npos ||
+        filePathLower.find("roughness") != std::string::npos) {
+        isSRGB = false;
+    }
+
     HRESULT hr;
     if (StringUtility::EndsWith(filePathW, L".dds")) {
         hr = LoadFromDDSFile(filePathW.c_str(), DDS_FLAGS_NONE, nullptr, image);
     }
     else {
-        hr = LoadFromWICFile(filePathW.c_str(), WIC_FLAGS_FORCE_SRGB, nullptr, image);
+        // カラーテクスチャなら FORCE_SRGB でリニアライズ
+        WIC_FLAGS wicFlags = isSRGB ? WIC_FLAGS_FORCE_SRGB : WIC_FLAGS_NONE;
+        hr = LoadFromWICFile(filePathW.c_str(), wicFlags, nullptr, image);
     }
 
     if (FAILED(hr)) {
@@ -1237,8 +1257,10 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
         mipImages = std::move(image);
     }
     else {
+        // ミップマップ生成時も sRGB 用フィルタを使い分ける
+        TEX_FILTER_FLAGS filter = isSRGB ? TEX_FILTER_SRGB : TEX_FILTER_DEFAULT;
         hr = GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(),
-            TEX_FILTER_SRGB, 0, mipImages);
+            filter, 0, mipImages);
         if (FAILED(hr)) {
             _com_error err(hr);
             std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(hr) + L")\n";
