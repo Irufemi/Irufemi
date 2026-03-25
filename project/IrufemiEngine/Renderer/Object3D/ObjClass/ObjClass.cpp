@@ -60,7 +60,6 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 }
 
 void ObjClass::Update() {
-
     if (!managedModel_ || !camera_) return;
 
     // オブジェクト全体のワールド行列を計算
@@ -87,10 +86,23 @@ void ObjClass::Update() {
 
     // マテリアル情報をGPUへ転送
     UpdateMaterials();
+
+    // フラグ更新
+    isDirty_ = false;
+    lastViewMatrix_ = camera_->GetViewMatrix();
+    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
 }
 
 void ObjClass::Draw() {
-    if (!managedModel_ || !drawManager_) return;
+    if (!managedModel_ || !drawManager_ || !camera_) return;
+
+    // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+
+    if (isDirty_ || cameraChanged) {
+        Update();
+    }
 
     // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
     drawManager_->DrawModel(managedModel_.get(), GetTransformationGpuAddress(), instanceMaterials_);

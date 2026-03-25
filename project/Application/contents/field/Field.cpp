@@ -48,12 +48,9 @@ void Field::Initialize() {
 }
 
 void Field::Update() {
+#if defined USE_IMGUI
 	pFloor_->Debug();
-	pFloor_->Update();
-	pPZWall_->Update();
-	pMZWall_->Update();
-	pPXWall_->Update();
-	pMXWall_->Update();
+#endif
 }
 
 void Field::Draw() {

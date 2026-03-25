@@ -98,6 +98,9 @@ public: //メンバ関数
     );
     void PostDraw();
 
+    // フレーム共通のルートパラメータをバインド
+    void BindCommonParameters();
+
     // RenderTexture への描画開始
     void BeginRenderTexture(class RenderTexture* rt, const struct Vector4& clearColor);
     // RenderTexture への描画終了

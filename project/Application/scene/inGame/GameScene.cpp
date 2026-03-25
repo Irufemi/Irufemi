@@ -3,17 +3,17 @@
 #include "Framework/SceneManager.h"
 #include "Irufemi.h"
 
-#include "Graphics/Data/AreaLight.h"
-#include "Graphics/Data/CameraForGPU.h"
-#include "Graphics/Data/DirectionalLight.h"
-#include "Graphics/Data/PointLight.h"
-#include "Graphics/Data/SpotLight.h"
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
+#include "Graphics/Data/CameraForGPU.h"
+#include "Graphics/Data/PointLight.h"
+#include "Graphics/Data/SpotLight.h"
+#include "Graphics/Data/DirectionalLight.h"
+#include "Graphics/Data/AreaLight.h"
 
+#include "actors/player/Player.h" 
 #include "actors/enemy/Enemy.h"
 #include "actors/enemy/EnemyParameters.h"
-#include "actors/player/Player.h"
 #include "contents/field/Field.h"
 #include "contents/skydome/Skydome.h"
 #include "Graphics/PostProcess/PostProcessManager.h"
@@ -65,14 +65,8 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
 // 更新
 void GameScene::Update() {
-
-#ifdef USE_IMGUI
-  ImGui::Begin("Debug");
-  ImGui::Checkbox("Debug Camera", &debugMode_);
-  ImGui::End();
-#endif
-
   // =====
+
   // ↓ゲームの更新
   // =====
 
@@ -344,33 +338,8 @@ void GameScene::Update() {
   // ↑ゲームの更新
   // =====
 
-  // --- カメラの更新 ---
-  if (debugMode_) {
-    // デバッグカメラを更新
-    debugCamera_->Update();
-    // デバッグカメラの計算結果をメインカメラに上書きする
-    const Camera &dbgCam = debugCamera_->GetCamera();
-    camera_->SetViewMatrix(dbgCam.GetViewMatrix());
-    camera_->SetTranslate(dbgCam.GetTranslate());
-    camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
-  } else {
-    camera_->Debug("Main Camera");
-    // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
-    camera_->Update();
-  }
-
-  // --- フレーム共通データのセット ---
-  CameraForGPU cameraForGpu;
-  cameraForGpu.view = camera_->GetViewMatrix();
-  cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
-  cameraForGpu.worldPosition = camera_->GetTranslate();
-
-  std::vector<PointLight *> pLights;
-  std::vector<SpotLight *> sLights;
-  std::vector<AreaLight *> aLights;
-
-  engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_,
-                                          pLights, sLights, aLights);
+  // --- カメラとフレームデータの更新 ---
+  UpdateCameraAndFrameData();
 
   // enemyが死んだときクリアシーンに遷移する
   if (boss_ && boss_->IsDead()) {
@@ -408,5 +377,93 @@ void GameScene::Draw() {
     }
 }
 
-void GameScene::PauseUpdate() {}
+void GameScene::PauseUpdate() {
+  UpdateCameraAndFrameData();
+}
 void GameScene::PauseDraw() {}
+
+void GameScene::DrawDebugTab() {
+#ifdef USE_IMGUI
+    if (camera_) {
+        if (ImGui::BeginTabItem("Main Camera")) {
+            ImGui::Checkbox("Debug Camera Mode", &debugMode_);
+            if (debugMode_ && debugCamera_) {
+                if (ImGui::Button("Top-Down")) debugCamera_->SetPreset(DebugCamera::Preset::TopDown, *camera_);
+                ImGui::SameLine();
+                if (ImGui::Button("Diagonal")) debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *camera_);
+                ImGui::SameLine();
+                if (ImGui::Button("Front")) debugCamera_->SetPreset(DebugCamera::Preset::Front, *camera_);
+                ImGui::SameLine();
+                if (ImGui::Button("Snap to Current")) debugCamera_->SetPreset(DebugCamera::Preset::Current, *camera_);
+
+                ImGui::Separator();
+                ImGui::Text("Debug Camera Controls");
+                // DebugCameraの内部Cameraの設定を表示
+                debugCamera_->GetCamera().DrawDebugContents();
+                float dist = debugCamera_->GetDistance();
+                if (ImGui::DragFloat("Orbit Distance", &dist, 0.1f, 1.0f, 1000.0f)) {
+                    debugCamera_->SetDistance(dist);
+                }
+            } else {
+                camera_->DrawDebugContents();
+            }
+            ImGui::EndTabItem();
+        }
+    }
+    DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+    if (ImGui::BeginTabItem("InGame")) {
+
+        ImGui::Checkbox("Debug Camera", &debugMode_);
+        ImGui::EndTabItem();
+    }
+#endif
+}
+
+void GameScene::UpdateCameraAndFrameData() {
+    // --- デバッグカメラのトグル ('P' キー) ---
+    if (PressedDIK(0x19 /*DIK_P*/)) {
+        debugMode_ = !debugMode_;
+        if (debugMode_) {
+            if (isFirstDebug_) {
+                debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *camera_);
+                isFirstDebug_ = false;
+            }
+        } else {
+            // デバッグカメラ OFF 時、通常カメラの状態を一度強制更新して復元を確実にする
+            if (player_) player_->Update();
+            camera_->Update();
+        }
+    }
+
+    // --- カメラの更新 ---
+    if (debugMode_) {
+        // デバッグカメラを更新
+        debugCamera_->Update();
+        // デバッグカメラの計算結果をメインカメラに上書きする
+        const Camera& dbgCam = debugCamera_->GetCamera();
+        camera_->SetViewMatrix(dbgCam.GetViewMatrix());
+        camera_->SetTranslate(dbgCam.GetTranslate());
+        camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
+    } else {
+        // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
+        camera_->Update();
+    }
+
+    // --- フレーム共通データのセット ---
+    CameraForGPU cameraForGpu;
+    cameraForGpu.view = camera_->GetViewMatrix();
+    cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
+    cameraForGpu.worldPosition = camera_->GetTranslate();
+
+    // ライトリストの構築 (スマートポインタから生ポインタへ)
+    std::vector<PointLight*> pLights;
+    for (auto& pl : pointLights_) pLights.push_back(pl.get());
+    std::vector<SpotLight*> sLights;
+    for (auto& sl : spotLights_) sLights.push_back(sl.get());
+    std::vector<AreaLight*> aLights;
+    for (auto& al : areaLights_) aLights.push_back(al.get());
+
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
+}
+
+

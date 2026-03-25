@@ -80,4 +80,8 @@ private:
 
     std::vector<Transform> instances_;
     bool                   instanceDirty_ = false;
+
+    // 行列更新の最適化用
+    Matrix4x4 lastViewMatrix_ = {};
+    Matrix4x4 lastProjectionMatrix_ = {};
 };

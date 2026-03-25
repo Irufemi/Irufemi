@@ -88,16 +88,33 @@ void TriangleClass::Update() {
     worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f; worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
     resource_->transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
-    *resource_->transformationData_ = {
-        resource_->transformationMatrix_.WVP,
-        resource_->transformationMatrix_.world,
-        resource_->transformationMatrix_.WorldInverseTranspose
-    };
+    if (resource_->transformationData_) {
+        *resource_->transformationData_ = {
+            resource_->transformationMatrix_.WVP,
+            resource_->transformationMatrix_.world,
+            resource_->transformationMatrix_.WorldInverseTranspose
+        };
+    }
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+
+    // フラグ更新
+    isDirty_ = false;
+    lastViewMatrix_ = camera_->GetViewMatrix();
+    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
 }
 
 void TriangleClass::Draw() {
+    if (!resource_ || !drawManager_ || !camera_) return;
+
+    // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+
+    if (isDirty_ || cameraChanged) {
+        Update();
+    }
+
     // POINTLIST で 1 点入力 → GS で生成
     drawManager_->DrawTriangle(this);
 }

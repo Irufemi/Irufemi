@@ -137,5 +137,9 @@ private:
   bool needsInitialize_ = true;
   uint32_t debugFrameCount_ = 0; // デバッグログ用
 
+  // 行列更新の最適化用
+  Matrix4x4 lastViewMatrix_ = {};
+  Matrix4x4 lastProjectionMatrix_ = {};
+
   static IrufemiEngine *engine_;
 };

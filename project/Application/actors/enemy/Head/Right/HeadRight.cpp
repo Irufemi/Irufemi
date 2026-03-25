@@ -1,4 +1,5 @@
 #include "HeadRight.h"
+#include "Renderer/Object3D/ObjClass/ObjClass.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 #include "camera/Camera.h"
 #include "actors/enemy/EnemyParameters.h"
@@ -15,6 +16,9 @@ void HeadRight::Initialize(Camera* camera, const Vector3& initialPos) {
   basePosition_ = initialPos;
   obj_->SetPosition(basePosition_);
   obj_->SetColor(baseColor_);
+
+  voxelSystem_ = std::make_unique<VoxelParticleSystem>();
+  voxelSystem_->Initialize("enemy/head.obj", {16, 16, 16}, camera);
 }
 
 void HeadRight::Update() {
@@ -88,7 +92,6 @@ void HeadRight::Update() {
       color.w = baseColor_.w + (damageColor.w - baseColor_.w) * t;
     }
     obj_->SetColor(color);
-    obj_->Update();
   }
 }
 

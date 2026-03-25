@@ -214,11 +214,13 @@ void SphereClass::Update() {
         Math::Transpose(Math::Inverse(worldForNormal));
 
     // 定数バッファへ全フィールドを書き込む
-    *resource_->transformationData_ = {
-        resource_->transformationMatrix_.WVP,
-        resource_->transformationMatrix_.world,
-        resource_->transformationMatrix_.WorldInverseTranspose
-    };
+    if (resource_->transformationData_) {
+        *resource_->transformationData_ = {
+            resource_->transformationMatrix_.WVP,
+            resource_->transformationMatrix_.world,
+            resource_->transformationMatrix_.WorldInverseTranspose
+        };
+    }
 
     // SRVが無効なら毎フレーム保険で hasTexture をオフ
     if (resource_->textureHandle_.ptr == 0) {
@@ -226,9 +228,24 @@ void SphereClass::Update() {
     }
 
     resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+
+    // フラグ更新
+    isDirty_ = false;
+    lastViewMatrix_ = camera_->GetViewMatrix();
+    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
 }
 
 void SphereClass::Draw() {
+    if (!resource_ || !drawManager_ || !camera_) return;
+
+    // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+
+    if (isDirty_ || cameraChanged) {
+        Update();
+    }
+
     if (drawManager_) {
         drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
     }

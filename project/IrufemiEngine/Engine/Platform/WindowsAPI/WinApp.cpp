@@ -13,7 +13,7 @@
 #include <DbgHelp.h>
 #include <strsafe.h>
 
-#define ENABLE_ESCAPE_EXIT 1 // 1: 有効, 0: 無効
+#define ENABLE_ESCAPE_EXIT 0 // 1: 有効, 0: 無効
 
 #pragma comment(lib,"winmm.lib")
 #pragma comment(lib,"Dbghelp.lib")
@@ -121,6 +121,19 @@ void WinApp::SetCursorLocked(bool lock) {
     }
 }
 
+void WinApp::SetInputManager(InputManager* inputManager) {
+    inputManager_ = inputManager;
+    // InputManagerがセットされた時点で、現在のロック状態を適用する
+    if (inputManager_) {
+        if (auto* mouse = inputManager_->GetMouse()) {
+            // ウィンドウが既にアクティブならロックを適用
+            if (GetFocus() == hwnd_) {
+                mouse->SetLocked(cursorLocked_);
+            }
+        }
+    }
+}
+
 bool WinApp::ProcessMessages() {
     MSG msg{};
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
@@ -156,6 +169,13 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
         }
     }
 #endif // USE_IMGUI
+
+    if (msg == WM_SETCURSOR) {
+        if (pThis && pThis->IsCursorLocked()) {
+            SetCursor(nullptr);
+            return TRUE;
+        }
+    }
 
     if (pThis) {
         return pThis->HandleMessage(hWnd, msg, wParam, lParam);

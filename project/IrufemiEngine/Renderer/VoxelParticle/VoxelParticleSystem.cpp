@@ -102,14 +102,14 @@ void VoxelParticleSystem::Update(float deltaTime) {
 }
 
 void VoxelParticleSystem::Draw() {
-  if (voxelCount_ == 0)
+  if (!voxelBuffer_ || !engine_ || !camera_)
     return;
 
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
 
   // 1. Compute Shader dispatch (Deferred from Initialize and Update)
-  
+
   // デスクリプタヒープの設定
   ID3D12DescriptorHeap *ppHeaps[] = {dxCommon->GetSrvPool()->GetHeap()};
   commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
@@ -167,14 +167,15 @@ void VoxelParticleSystem::Draw() {
   barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
   barrier.Transition.pResource = particleBuffer_.Get();
   barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
   barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
   commandList->ResourceBarrier(1, &barrier);
 
   // VoxelParticle 専用PSOを取得してバインド
   engine_->GetDrawManager()->BindPSO(drawPSO_.Get());
 
-  commandList->SetGraphicsRootSignature(dxCommon->GetRootSignature());
+  // コンピュートシェーダー実行後にグラフィックスのルートシグネチャと共通パラメータを再バインド
+  engine_->GetDrawManager()->BindCommonParameters();
   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   commandList->IASetVertexBuffers(0, 1, &cubeVertexBufferView_);
   commandList->IASetIndexBuffer(&cubeIndexBufferView_);
@@ -190,7 +191,7 @@ void VoxelParticleSystem::Draw() {
   commandList->DrawIndexedInstanced(cubeIndexCount_, voxelCount_, 0, 0, 0);
 
   // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
   barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
   commandList->ResourceBarrier(1, &barrier);
 }

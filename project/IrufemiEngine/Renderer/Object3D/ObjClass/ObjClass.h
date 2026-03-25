@@ -45,6 +45,11 @@ private:
     TransformationMatrix* transformationData_ = nullptr;
 
     Camera* camera_ = nullptr;
+    
+    // 行列更新の最適化用
+    bool isDirty_ = true;
+    Matrix4x4 lastViewMatrix_ = {};
+    Matrix4x4 lastProjectionMatrix_ = {};
 
     static TextureManager* textureManager_;
     static DrawManager* drawManager_;
@@ -67,19 +72,19 @@ public: //メンバ関数
 
     // Transform 系ゲッター/セッター (オブジェクト全体のTransformを操作するように変更)
     const Vector3& GetPosition() const { return transform_.translate; }
-    void SetPosition(const Vector3& position) { transform_.translate = position; }
+    void SetPosition(const Vector3& position) { transform_.translate = position; isDirty_ = true; }
 
     const Vector3& GetRotate() const { return transform_.rotate; }
-    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
-    void SetRotateX(const float& rotate) { transform_.rotate.x = rotate; }
-    void SetRotateY(const float& rotate) { transform_.rotate.y = rotate; }
-    void SetRotateZ(const float& rotate) { transform_.rotate.z = rotate; }
+    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; isDirty_ = true; }
+    void SetRotateX(const float& rotate) { transform_.rotate.x = rotate; isDirty_ = true; }
+    void SetRotateY(const float& rotate) { transform_.rotate.y = rotate; isDirty_ = true; }
+    void SetRotateZ(const float& rotate) { transform_.rotate.z = rotate; isDirty_ = true; }
 
     // 拡縮
     const Vector3& GetScale() const { return transform_.scale; }
-    void SetScale(const Vector3& scale) { transform_.scale = scale; }
+    void SetScale(const Vector3& scale) { transform_.scale = scale; isDirty_ = true; }
     const Transform& GetTransform() const { return transform_; }
-    void SetTransform(const Transform& transform) { transform_ = transform; }
+    void SetTransform(const Transform& transform) { transform_ = transform; isDirty_ = true; }
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
     void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
 

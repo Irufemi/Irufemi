@@ -159,12 +159,22 @@ void ModelRegion::BuildInstanceBuffer(bool force) {
     instanceBuffer_->Unmap(0, nullptr);
 
     instanceDirty_ = false;
+
+    // カメラ行列を保存
+    lastViewMatrix_ = camera_->GetViewMatrix();
+    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
 }
 
 void ModelRegion::Draw() {
     if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || instances_.empty()) { return; }
 
-    BuildInstanceBuffer(true);
+    // カメラの行列が変更されたかチェック
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+
+    if (instanceDirty_ || cameraChanged) {
+        BuildInstanceBuffer(true);
+    }
 
     drawManager_->DrawModelRegion(this);
 }

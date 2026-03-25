@@ -34,7 +34,7 @@ public:
     void SetCursorLocked(bool lock);
 
     // InputManagerのポインタを設定
-    void SetInputManager(InputManager* inputManager) { inputManager_ = inputManager; }
+    void SetInputManager(InputManager* inputManager);
 
     // IrufemiEngineのポインタを設定
     void SetEngine(IrufemiEngine* engine) { engine_ = engine; }

@@ -59,8 +59,14 @@ public: // ゲッター・セッター
     // 指定したインデックスのメッシュのマテリアルを取得(書き込み可能)
     ObjMaterial* GetMaterial(size_t meshIndex);
 
-    void SetColor(const Vector4& color) { color_ = color; }
+    void SetColor(const Vector4& color) { color_ = color; isDirty_ = true; }
     const Vector4& GetColor() const { return color_; }
+
+    void SetTranslate(const Vector3& translate) { transform_.translate = translate; isDirty_ = true; }
+    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; isDirty_ = true; }
+    void SetScale(const Vector3& scale) { transform_.scale = scale; isDirty_ = true; }
+    void SetTransform(const Transform& transform) { transform_ = transform; isDirty_ = true; }
+    const Transform& GetTransform() const { return transform_; }
 
 
     static void SetIrufemiEngine(IrufemiEngine* engine) { engine_ = engine; }
@@ -107,4 +113,9 @@ private: // メンバ変数
     // --- 追加：関節表示用のインスタンス描画機構 ---
     std::unique_ptr<SphereRegion> jointSpheres_;
     std::unique_ptr<Line3DRegion> boneLines_;
+
+    // 行列更新の最適化用
+    bool isDirty_ = true;
+    Matrix4x4 lastViewMatrix_ = {};
+    Matrix4x4 lastProjectionMatrix_ = {};
 };

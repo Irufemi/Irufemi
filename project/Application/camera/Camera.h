@@ -3,7 +3,7 @@
 #include "Engine/Core/Math/Vector2.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Matrix4x4.h"
-#include <numbers>
+#include "Engine/Core/Math/Matrix4x4.h"
 
 /**
  * @class Camera
@@ -116,11 +116,18 @@ public: // メンバ関数
      */
     void Update();
 
+
     /**
-     * @brief デバッグ表示
-     * @param cameraName デバッグ表示用のカメラ名
+     * @brief デバッグ用タブを表示します
+     * @param label タブのラベル
      */
-    void Debug(const char* cameraName);
+    void DrawDebugTab(const char* label);
+    
+    /**
+     * @brief デバッグUIの内容表示 (TabItemなし)
+     */
+    void DrawDebugContents();
+
 
     //セッター
 

@@ -15,6 +15,11 @@ public:
     virtual void Update() = 0;
     virtual void Draw() = 0;
 
+    // --- デバッグ機能 ---
+    // エンジン共通のデバッグウィンドウにタブを追加する
+    virtual void DrawDebugTab() {}
+
+
     // --- ポーズ機能 ---
     // ポーズ中の更新(デフォルトは空実装)
     virtual void PauseUpdate() {}

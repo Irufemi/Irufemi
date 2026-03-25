@@ -187,147 +187,157 @@ void DebugUI::DebugLights(
     [[maybe_unused]] std::vector<std::unique_ptr<SpotLight>>& spotLights,
     [[maybe_unused]] std::vector<std::unique_ptr<AreaLight>>& areaLights) {
 #ifdef USE_IMGUI
-    // Light Editor タブ
-    if (ImGui::BeginTabItem("Light Editor")) {
-        ImGui::SeparatorText("PointLight Template");
-        ImGui::ColorEdit4("PL Color", &templatePointLight_->color.x);
-        ImGui::DragFloat3("PL Position", &templatePointLight_->position.x, 0.01f);
-        ImGui::DragFloat("PL Intensity", &templatePointLight_->intensity, 0.01f, 0.0f);
-        ImGui::DragFloat("PL Radius", &templatePointLight_->radius, 0.01f, 0.0f);
-        ImGui::DragFloat("PL Decay", &templatePointLight_->decay, 0.01f, 0.0f);
-        if (ImGui::Button("Add PointLight to Scene")) {
-            auto newLight = std::make_unique<PointLight>(*templatePointLight_);
-            pointLights.push_back(std::move(newLight));
-        }
+    // Lights 統合タブ
+    if (ImGui::BeginTabItem("Lights")) {
+        if (ImGui::BeginTabBar("LightTabs")) {
 
-        ImGui::Separator();
-
-        ImGui::SeparatorText("SpotLight Template");
-        ImGui::ColorEdit4("SL Color", &templateSpotLight_->color.x);
-        ImGui::DragFloat3("SL Position", &templateSpotLight_->position.x, 0.01f);
-        ImGui::DragFloat("SL Intensity", &templateSpotLight_->intensity, 0.01f, 0.0f);
-        ImGui::DragFloat3("SL Direction", &templateSpotLight_->direction.x, 0.01f);
-        templateSpotLight_->direction = Math::Normalize(templateSpotLight_->direction);
-        ImGui::DragFloat("SL Distance", &templateSpotLight_->distance, 0.01f, 0.0f);
-        ImGui::DragFloat("SL Decay", &templateSpotLight_->decay, 0.01f, 0.0f);
-        ImGui::DragFloat("SL CosAngle", &templateSpotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
-        if (ImGui::Button("Add SpotLight to Scene")) {
-            auto newLight = std::make_unique<SpotLight>(*templateSpotLight_);
-            spotLights.push_back(std::move(newLight));
-        }
-
-        ImGui::Separator();
-
-        ImGui::SeparatorText("AreaLight Template");
-        ImGui::ColorEdit4("AL Color", &templateAreaLight_->color.x);
-        ImGui::DragFloat3("AL Position", &templateAreaLight_->position.x, 0.01f);
-        ImGui::DragFloat("AL Intensity", &templateAreaLight_->intensity, 0.01f, 0.0f);
-        ImGui::DragFloat3("AL Direction", &templateAreaLight_->direction.x, 0.01f);
-        templateAreaLight_->direction = Math::Normalize(templateAreaLight_->direction);
-        ImGui::DragFloat("AL Range", &templateAreaLight_->range, 0.01f, 0.0f);
-        ImGui::DragFloat2("AL Size", &templateAreaLight_->size.x, 0.01f, 0.0f);
-        if (ImGui::Button("Add AreaLight to Scene")) {
-            auto newLight = std::make_unique<AreaLight>(*templateAreaLight_);
-            areaLights.push_back(std::move(newLight));
-        }
-
-        ImGui::EndTabItem();
-    }
-
-    // DirectionalLight タブ
-    if (directionalLight && ImGui::BeginTabItem("DirectionalLight")) {
-        ImGui::ColorEdit4("Color", &directionalLight->color.x);
-        ImGui::DragFloat3("Direction", &directionalLight->direction.x, 0.01f);
-        directionalLight->direction = Math::Normalize(directionalLight->direction);
-        ImGui::DragFloat("Intensity", &directionalLight->intensity, 0.01f, 0.0f);
-        ImGui::EndTabItem();
-    }
-
-    // PointLights タブ
-    if (ImGui::BeginTabItem("PointLights")) {
-        int pointLightToRemove = -1;
-        for (size_t i = 0; i < pointLights.size(); ++i) {
-            auto& light = pointLights[i];
-            std::string label = "PointLight " + std::to_string(i);
-            if (ImGui::CollapsingHeader(label.c_str())) {
-                ImGui::PushID(static_cast<int>(i));
-                if (ImGui::Button("[-] Remove")) {
-                    pointLightToRemove = static_cast<int>(i);
+            // Light Editor タブ
+            if (ImGui::BeginTabItem("Editor")) {
+                ImGui::SeparatorText("PointLight Template");
+                ImGui::ColorEdit4("PL Color", &templatePointLight_->color.x);
+                ImGui::DragFloat3("PL Position", &templatePointLight_->position.x, 0.01f);
+                ImGui::DragFloat("PL Intensity", &templatePointLight_->intensity, 0.01f, 0.0f);
+                ImGui::DragFloat("PL Radius", &templatePointLight_->radius, 0.01f, 0.0f);
+                ImGui::DragFloat("PL Decay", &templatePointLight_->decay, 0.01f, 0.0f);
+                if (ImGui::Button("Add PointLight to Scene")) {
+                    auto newLight = std::make_unique<PointLight>(*templatePointLight_);
+                    pointLights.push_back(std::move(newLight));
                 }
-                ImGui::SameLine();
-                ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
-                ImGui::ColorEdit4("Color", &light->color.x);
-                ImGui::DragFloat3("Position", &light->position.x, 0.01f);
-                ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
-                ImGui::DragFloat("Radius", &light->radius, 0.01f, 0.0f);
-                ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
-                ImGui::PopID();
+
+                ImGui::Separator();
+
+                ImGui::SeparatorText("SpotLight Template");
+                ImGui::ColorEdit4("SL Color", &templateSpotLight_->color.x);
+                ImGui::DragFloat3("SL Position", &templateSpotLight_->position.x, 0.01f);
+                ImGui::DragFloat("SL Intensity", &templateSpotLight_->intensity, 0.01f, 0.0f);
+                ImGui::DragFloat3("SL Direction", &templateSpotLight_->direction.x, 0.01f);
+                templateSpotLight_->direction = Math::Normalize(templateSpotLight_->direction);
+                ImGui::DragFloat("SL Distance", &templateSpotLight_->distance, 0.01f, 0.0f);
+                ImGui::DragFloat("SL Decay", &templateSpotLight_->decay, 0.01f, 0.0f);
+                ImGui::DragFloat("SL CosAngle", &templateSpotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
+                if (ImGui::Button("Add SpotLight to Scene")) {
+                    auto newLight = std::make_unique<SpotLight>(*templateSpotLight_);
+                    spotLights.push_back(std::move(newLight));
+                }
+
+                ImGui::Separator();
+
+                ImGui::SeparatorText("AreaLight Template");
+                ImGui::ColorEdit4("AL Color", &templateAreaLight_->color.x);
+                ImGui::DragFloat3("AL Position", &templateAreaLight_->position.x, 0.01f);
+                ImGui::DragFloat("AL Intensity", &templateAreaLight_->intensity, 0.01f, 0.0f);
+                ImGui::DragFloat3("AL Direction", &templateAreaLight_->direction.x, 0.01f);
+                templateAreaLight_->direction = Math::Normalize(templateAreaLight_->direction);
+                ImGui::DragFloat("AL Range", &templateAreaLight_->range, 0.01f, 0.0f);
+                ImGui::DragFloat2("AL Size", &templateAreaLight_->size.x, 0.01f, 0.0f);
+                if (ImGui::Button("Add AreaLight to Scene")) {
+                    auto newLight = std::make_unique<AreaLight>(*templateAreaLight_);
+                    areaLights.push_back(std::move(newLight));
+                }
+
+                ImGui::EndTabItem();
             }
-        }
-        if (pointLightToRemove != -1) {
-            pointLights.erase(pointLights.begin() + pointLightToRemove);
+
+            // DirectionalLight タブ
+            if (directionalLight && ImGui::BeginTabItem("Directional")) {
+                ImGui::ColorEdit4("Color", &directionalLight->color.x);
+                ImGui::DragFloat3("Direction", &directionalLight->direction.x, 0.01f);
+                directionalLight->direction = Math::Normalize(directionalLight->direction);
+                ImGui::DragFloat("Intensity", &directionalLight->intensity, 0.01f, 0.0f);
+                ImGui::EndTabItem();
+            }
+
+            // PointLights タブ
+            if (ImGui::BeginTabItem("Point")) {
+                int pointLightToRemove = -1;
+                for (size_t i = 0; i < pointLights.size(); ++i) {
+                    auto& light = pointLights[i];
+                    std::string label = "PointLight " + std::to_string(i);
+                    if (ImGui::CollapsingHeader(label.c_str())) {
+                        ImGui::PushID(static_cast<int>(i));
+                        if (ImGui::Button("[-] Remove")) {
+                            pointLightToRemove = static_cast<int>(i);
+                        }
+                        ImGui::SameLine();
+                        ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
+                        ImGui::ColorEdit4("Color", &light->color.x);
+                        ImGui::DragFloat3("Position", &light->position.x, 0.01f);
+                        ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
+                        ImGui::DragFloat("Radius", &light->radius, 0.01f, 0.0f);
+                        ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
+                        ImGui::PopID();
+                    }
+                }
+                if (pointLightToRemove != -1) {
+                    pointLights.erase(pointLights.begin() + pointLightToRemove);
+                }
+                ImGui::EndTabItem();
+            }
+
+            // SpotLights タブ
+            if (ImGui::BeginTabItem("Spot")) {
+                int spotLightToRemove = -1;
+                for (size_t i = 0; i < spotLights.size(); ++i) {
+                    auto& light = spotLights[i];
+                    std::string label = "SpotLight " + std::to_string(i);
+                    if (ImGui::CollapsingHeader(label.c_str())) {
+                        ImGui::PushID(static_cast<int>(i + pointLights.size()));
+                        if (ImGui::Button("[-] Remove")) {
+                            spotLightToRemove = static_cast<int>(i);
+                        }
+                        ImGui::SameLine();
+                        ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
+                        ImGui::ColorEdit4("Color", &light->color.x);
+                        ImGui::DragFloat3("Position", &light->position.x, 0.01f);
+                        ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
+                        ImGui::DragFloat3("Direction", &light->direction.x, 0.01f);
+                        light->direction = Math::Normalize(light->direction);
+                        ImGui::DragFloat("Distance", &light->distance, 0.01f, 0.0f);
+                        ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
+                        ImGui::DragFloat("CosAngle", &light->cosAngle, 0.01f, 0.0f, 1.0f);
+                        ImGui::PopID();
+                    }
+                }
+                if (spotLightToRemove != -1) {
+                    spotLights.erase(spotLights.begin() + spotLightToRemove);
+                }
+                ImGui::EndTabItem();
+            }
+
+            // AreaLights タブ
+            if (ImGui::BeginTabItem("Area")) {
+                int areaLightToRemove = -1;
+                for (size_t i = 0; i < areaLights.size(); ++i) {
+                    auto& light = areaLights[i];
+                    std::string label = "AreaLight " + std::to_string(i);
+                    if (ImGui::CollapsingHeader(label.c_str())) {
+                        ImGui::PushID(static_cast<int>(i + pointLights.size() + spotLights.size()));
+                        if (ImGui::Button("[-] Remove")) {
+                            areaLightToRemove = static_cast<int>(i);
+                        }
+                        ImGui::SameLine();
+                        ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
+                        ImGui::ColorEdit4("Color", &light->color.x);
+                        ImGui::DragFloat3("Position", &light->position.x, 0.01f);
+                        ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
+                        ImGui::DragFloat3("Direction", &light->direction.x, 0.01f);
+                        light->direction = Math::Normalize(light->direction);
+                        ImGui::DragFloat("Range", &light->range, 0.01f, 0.0f);
+                        ImGui::DragFloat2("Size", &light->size.x, 0.01f, 0.0f);
+                        ImGui::PopID();
+                    }
+                }
+                if (areaLightToRemove != -1) {
+                    areaLights.erase(areaLights.begin() + areaLightToRemove);
+                }
+                ImGui::EndTabItem();
+            }
+
+            ImGui::EndTabBar();
         }
         ImGui::EndTabItem();
     }
 
-    // SpotLights タブ
-    if (ImGui::BeginTabItem("SpotLights")) {
-        int spotLightToRemove = -1;
-        for (size_t i = 0; i < spotLights.size(); ++i) {
-            auto& light = spotLights[i];
-            std::string label = "SpotLight " + std::to_string(i);
-            if (ImGui::CollapsingHeader(label.c_str())) {
-                ImGui::PushID(static_cast<int>(i + pointLights.size()));
-                if (ImGui::Button("[-] Remove")) {
-                    spotLightToRemove = static_cast<int>(i);
-                }
-                ImGui::SameLine();
-                ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
-                ImGui::ColorEdit4("Color", &light->color.x);
-                ImGui::DragFloat3("Position", &light->position.x, 0.01f);
-                ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
-                ImGui::DragFloat3("Direction", &light->direction.x, 0.01f);
-                light->direction = Math::Normalize(light->direction);
-                ImGui::DragFloat("Distance", &light->distance, 0.01f, 0.0f);
-                ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
-                ImGui::DragFloat("CosAngle", &light->cosAngle, 0.01f, 0.0f, 1.0f);
-                ImGui::PopID();
-            }
-        }
-        if (spotLightToRemove != -1) {
-            spotLights.erase(spotLights.begin() + spotLightToRemove);
-        }
-        ImGui::EndTabItem();
-    }
-
-    // AreaLights タブ
-    if (ImGui::BeginTabItem("AreaLights")) {
-        int areaLightToRemove = -1;
-        for (size_t i = 0; i < areaLights.size(); ++i) {
-            auto& light = areaLights[i];
-            std::string label = "AreaLight " + std::to_string(i);
-            if (ImGui::CollapsingHeader(label.c_str())) {
-                ImGui::PushID(static_cast<int>(i + pointLights.size() + spotLights.size()));
-                if (ImGui::Button("[-] Remove")) {
-                    areaLightToRemove = static_cast<int>(i);
-                }
-                ImGui::SameLine();
-                ImGui::Checkbox("IsActive", reinterpret_cast<bool*>(&light->isActive));
-                ImGui::ColorEdit4("Color", &light->color.x);
-                ImGui::DragFloat3("Position", &light->position.x, 0.01f);
-                ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
-                ImGui::DragFloat3("Direction", &light->direction.x, 0.01f);
-                light->direction = Math::Normalize(light->direction);
-                ImGui::DragFloat("Range", &light->range, 0.01f, 0.0f);
-                ImGui::DragFloat2("Size", &light->size.x, 0.01f, 0.0f);
-                ImGui::PopID();
-            }
-        }
-        if (areaLightToRemove != -1) {
-            areaLights.erase(areaLights.begin() + areaLightToRemove);
-        }
-        ImGui::EndTabItem();
-    }
 
 #endif
 }
@@ -614,6 +624,7 @@ void DebugUI::DebugSphereInfo([[maybe_unused]] Sphere& sphere) {
 // FPS/FrameTime オーバーレイ
 void DebugUI::FPSDebug() {
 #ifdef USE_IMGUI
+    if (!showPerformance_) return;
 
     ImGuiIO& io = ImGui::GetIO();
     const float fpsNow = io.Framerate;
@@ -969,34 +980,35 @@ void DebugUI::UpdatePerfStats_([[maybe_unused]] float newFrameMs) {
 #endif // USE_IMGUI
 }
 
-void DebugUI::DebugSceneSelector([[maybe_unused]] SceneManager* sm) {
+void DebugUI::SceneSelectorTab([[maybe_unused]] SceneManager* sm) {
 #ifdef USE_IMGUI
-
     if (!sm) { return; }
 
-    const auto names = sm->GetRegisteredKeys();
-    if (names.empty()) { return; }
+    if (ImGui::BeginTabItem("Scene Selector")) {
+        const auto names = sm->GetRegisteredKeys();
+        if (names.empty()) { ImGui::EndTabItem(); return; }
 
-    // 現在シーンのインデックス
-    int currentIdx = 0;
-    for (int i = 0; i < static_cast<int>(names.size()); ++i) {
-        if (names[i] == sm->GetCurrent()) { currentIdx = i; break; }
-    }
-
-    ImGui::Begin("Scene Selector");
-    if (ImGui::BeginCombo("Scene", names[currentIdx].c_str())) {
+        // 現在シーンのインデックス
+        int currentIdx = 0;
         for (int i = 0; i < static_cast<int>(names.size()); ++i) {
-            bool selected = (i == currentIdx);
-            if (ImGui::Selectable(names[i].c_str(), selected)) {
-                sm->Request(names[i]); // 次フレーム頭で切替
-            }
-            if (selected) { ImGui::SetItemDefaultFocus(); }
+            if (names[i] == sm->GetCurrent()) { currentIdx = i; break; }
         }
-        ImGui::EndCombo();
+
+        if (ImGui::BeginCombo("Scene", names[currentIdx].c_str())) {
+            for (int i = 0; i < static_cast<int>(names.size()); ++i) {
+                bool selected = (i == currentIdx);
+                if (ImGui::Selectable(names[i].c_str(), selected)) {
+                    sm->Request(names[i]); // 次フレーム頭で切替
+                }
+                if (selected) { ImGui::SetItemDefaultFocus(); }
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::EndTabItem();
     }
-    ImGui::End();
 #endif // USE_IMGUI
 }
+
 
 void DebugUI::DebugPsoSettings(
     [[maybe_unused]] BlendMode* blendMode,
@@ -1037,117 +1049,128 @@ void DebugUI::DebugPsoSettings(
 #endif // USE_IMGUI
 }
 
-void DebugUI::DebugPostProcess([[maybe_unused]] IrufemiEngine* engine) {
+void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
 #ifdef USE_IMGUI
     if (!engine) return;
 
-    auto* ppManager = engine->GetPostProcessManager();
-    if (!ppManager) return;
+    if (ImGui::BeginTabItem("Post Processing")) {
+        auto* ppManager = engine->GetPostProcessManager();
+        if (!ppManager) { ImGui::EndTabItem(); return; }
 
-    ImGui::Begin("Post Processing");
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping" };
+        auto activeModes = ppManager->GetActiveModes();
 
-    const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping" };
-    auto activeModes = ppManager->GetActiveModes();
-
-    if (ImGui::Button("Clear All Effects")) {
-        ppManager->ClearActiveModes();
-        activeModes.clear();
-    }
-
-    ImGui::Separator();
-    ImGui::Text("Available Effects:");
-
-    // エフェクト選択
-    for (int i = 1; i < 12; ++i) { // None 以外を表示
-        PostProcessMode m = static_cast<PostProcessMode>(i);
-        bool isEnabled = std::find(activeModes.begin(), activeModes.end(), m) != activeModes.end();
-        
-        if (ImGui::Checkbox(modeNames[i], &isEnabled)) {
-            if (isEnabled) {
-                ppManager->AddActiveMode(m);
-            } else {
-                activeModes.erase(std::remove(activeModes.begin(), activeModes.end(), m), activeModes.end());
-                ppManager->SetActiveModes(activeModes);
-            }
+        if (ImGui::Button("Clear All Effects")) {
+            ppManager->ClearActiveModes();
+            activeModes.clear();
         }
-    }
 
-    ImGui::Separator();
-    ImGui::Text("Active Stack (Draw Order):");
-    if (activeModes.empty()) {
-        ImGui::TextDisabled("(No effects active - Clean Copy)");
-    } else {
-        for (size_t i = 0; i < activeModes.size(); ++i) {
-            ImGui::BulletText("%d: %s", static_cast<int>(i + 1), modeNames[static_cast<int>(activeModes[i])]);
-        }
-    }
+        ImGui::Separator();
+        ImGui::Text("Available Effects:");
 
-    ImGui::Separator();
-    ImGui::Text("Parameters:");
+        // エフェクト選択
+        for (int i = 1; i < 12; ++i) { // None 以外を表示
+            PostProcessMode m = static_cast<PostProcessMode>(i);
+            bool isEnabled = std::find(activeModes.begin(), activeModes.end(), m) != activeModes.end();
 
-    // 有効な全てのエフェクトのパラメータを表示
-    for (auto mode : activeModes) {
-        if (ImGui::TreeNode(modeNames[static_cast<int>(mode)])) {
-            if (mode == PostProcessMode::Vignette) {
-                auto& params = ppManager->GetVignetteParams();
-                ImGui::DragFloat("Vignette Scale", &params.scale, 0.1f, 0.0f, 100.0f);
-                ImGui::DragFloat("Vignette Power", &params.power, 0.01f, 0.0f, 10.0f);
-            }
-            else if (mode == PostProcessMode::Smoothing) {
-                auto& params = ppManager->GetSmoothingParams();
-                if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
-                    if (params.kernelSize < 1) params.kernelSize = 1;
-                    if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
-                        params.kernelSize += 1;
-                    }
+            if (ImGui::Checkbox(modeNames[i], &isEnabled)) {
+                if (isEnabled) {
+                    ppManager->AddActiveMode(m);
+                } else {
+                    activeModes.erase(std::remove(activeModes.begin(), activeModes.end(), m), activeModes.end());
+                    ppManager->SetActiveModes(activeModes);
                 }
             }
-            else if (mode == PostProcessMode::GaussianFilter) {
-                auto& params = ppManager->GetGaussianParams();
-                ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
-                if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
-                    if (params.kernelSize < 1) params.kernelSize = 1;
-                    if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
-                        params.kernelSize += 1;
-                    }
-                }
-            }
-            else if (mode == PostProcessMode::DepthBasedOutline) {
-                ImGui::Text("Mode: Depth Based Outline (Prewitt Filter)");
-            }
-            else if (mode == PostProcessMode::RadialBlur) {
-                auto& params = ppManager->GetRadialBlurParams();
-                ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
-                ImGui::DragFloat("Blur Width", &params.blurWidth, 0.001f, 0.0f, 0.1f);
-                ImGui::SliderInt("Samples", reinterpret_cast<int*>(&params.numSamples), 1, 100);
-            }
-            else if (mode == PostProcessMode::Dissolve) {
-                auto& params = ppManager->GetDissolveParams();
-                ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
-                ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
-                ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
-                const char* noiseTypes[] = { "Noise 0", "Noise 1" };
-                ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes, IM_ARRAYSIZE(noiseTypes));
-            }
-            else if (mode == PostProcessMode::Noise) {
-                auto& params = ppManager->GetNoiseParams();
-                ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
-            }
-            else if (mode == PostProcessMode::HSV) {
-                auto& params = ppManager->GetHSVParams();
-                ImGui::DragFloat("HueOffset", &params.hue, 0.001f, -1.0f, 1.0f);
-                ImGui::DragFloat("SaturationOffset", &params.saturation, 0.001f, -1.0f, 1.0f);
-                ImGui::DragFloat("ValueOffset", &params.value, 0.001f, -1.0f, 1.0f);
-            }
-            else if (mode == PostProcessMode::ToneMapping) {
-                auto& params = ppManager->GetToneMappingParams();
-                ImGui::DragFloat("Exposure", &params.exposure, 0.01f, 0.0f, 10.0f);
-            }
-            ImGui::TreePop();
         }
-    }
 
-    ImGui::End();
+        ImGui::Separator();
+        ImGui::Text("Active Stack (Draw Order):");
+        if (activeModes.empty()) {
+            ImGui::TextDisabled("(No effects active - Clean Copy)");
+        } else {
+            for (size_t i = 0; i < activeModes.size(); ++i) {
+                ImGui::BulletText("%d: %s", static_cast<int>(i + 1), modeNames[static_cast<int>(activeModes[i])]);
+            }
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Parameters:");
+
+        // 有効な全てのエフェクトのパラメータを表示
+        for (auto mode : activeModes) {
+            if (ImGui::TreeNode(modeNames[static_cast<int>(mode)])) {
+                if (mode == PostProcessMode::Vignette) {
+                    auto& params = ppManager->GetVignetteParams();
+                    ImGui::DragFloat("Vignette Scale", &params.scale, 0.1f, 0.0f, 100.0f);
+                    ImGui::DragFloat("Vignette Power", &params.power, 0.01f, 0.0f, 10.0f);
+                } else if (mode == PostProcessMode::Smoothing) {
+                    auto& params = ppManager->GetSmoothingParams();
+                    if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
+                        if (params.kernelSize < 1) params.kernelSize = 1;
+                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
+                            params.kernelSize += 1;
+                        }
+                    }
+                } else if (mode == PostProcessMode::GaussianFilter) {
+                    auto& params = ppManager->GetGaussianParams();
+                    ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
+                    if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
+                        if (params.kernelSize < 1) params.kernelSize = 1;
+                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
+                            params.kernelSize += 1;
+                        }
+                    }
+                } else if (mode == PostProcessMode::DepthBasedOutline) {
+                    ImGui::Text("Mode: Depth Based Outline (Prewitt Filter)");
+                } else if (mode == PostProcessMode::RadialBlur) {
+                    auto& params = ppManager->GetRadialBlurParams();
+                    ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
+                    ImGui::DragFloat("Blur Width", &params.blurWidth, 0.001f, 0.0f, 0.1f);
+                    ImGui::SliderInt("Samples", reinterpret_cast<int*>(&params.numSamples), 1, 100);
+                } else if (mode == PostProcessMode::Dissolve) {
+                    auto& params = ppManager->GetDissolveParams();
+                    ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
+                    ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
+                    ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
+                    const char* noiseTypes[] = { "Noise 0", "Noise 1" };
+                    ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes, IM_ARRAYSIZE(noiseTypes));
+                } else if (mode == PostProcessMode::Noise) {
+                    auto& params = ppManager->GetNoiseParams();
+                    ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
+                } else if (mode == PostProcessMode::HSV) {
+                    auto& params = ppManager->GetHSVParams();
+                    ImGui::DragFloat("HueOffset", &params.hue, 0.001f, -1.0f, 1.0f);
+                    ImGui::DragFloat("SaturationOffset", &params.saturation, 0.001f, -1.0f, 1.0f);
+                    ImGui::DragFloat("ValueOffset", &params.value, 0.001f, -1.0f, 1.0f);
+                } else if (mode == PostProcessMode::ToneMapping) {
+                    auto& params = ppManager->GetToneMappingParams();
+                    ImGui::DragFloat("Exposure", &params.exposure, 0.01f, 0.0f, 10.0f);
+                }
+                ImGui::TreePop();
+            }
+        }
+        ImGui::EndTabItem();
+    }
 #endif // USE_IMGUI
 }
+
+void DebugUI::BeginEngineDebugWindow() {
+#ifdef USE_IMGUI
+    ImGui::Begin("Engine");
+
+    // 項目の上部分にチェックボックスを配置
+    ImGui::Checkbox("Performance Info", &showPerformance_);
+    ImGui::Separator();
+
+    ImGui::BeginTabBar("EngineTabs");
+#endif
+}
+
+void DebugUI::EndEngineDebugWindow() {
+#ifdef USE_IMGUI
+    ImGui::EndTabBar();
+    ImGui::End();
+#endif
+}
+
 

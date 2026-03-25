@@ -155,19 +155,35 @@ void CubeClass::Update() {
     worldForNormal.m[3][3] = 1.0f;
     resource_->transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
-    *resource_->transformationData_ = {
-        resource_->transformationMatrix_.WVP,
-        resource_->transformationMatrix_.world,
-        resource_->transformationMatrix_.WorldInverseTranspose
-    };
+    if (resource_->transformationData_) {
+        *resource_->transformationData_ = {
+            resource_->transformationMatrix_.WVP,
+            resource_->transformationMatrix_.world,
+            resource_->transformationMatrix_.WorldInverseTranspose
+        };
+    }
 
     if (resource_->textureHandle_.ptr == 0) {
         resource_->materialData_->hasTexture = false;
     }
 
+    // フラグ更新
+    isDirty_ = false;
+    lastViewMatrix_ = camera_->GetViewMatrix();
+    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
 }
 
 void CubeClass::Draw() {
+    if (!resource_ || !drawManager_ || !camera_) return;
+
+    // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+
+    if (isDirty_ || cameraChanged) {
+        Update();
+    }
+
     if (drawManager_) {
         drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
     }

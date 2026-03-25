@@ -42,6 +42,8 @@ public: // メンバ関数(システム)
      * @brief 描画処理
      */
     void Draw() override;
+    void DrawDebugTab() override;
+
 
 private: // メンバ関数(内部ヘルパ)
 

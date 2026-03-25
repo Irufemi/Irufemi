@@ -1,4 +1,5 @@
 #include "HeadMid.h"
+#include "Renderer/Object3D/ObjClass/ObjClass.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 #include "camera/Camera.h"
 #include "actors/enemy/EnemyParameters.h"
@@ -91,7 +92,6 @@ void HeadMid::Update() {
       color.w = baseColor_.w + (damageColor.w - baseColor_.w) * t;
     }
     obj_->SetColor(color);
-    obj_->Update();
   }
 }
 

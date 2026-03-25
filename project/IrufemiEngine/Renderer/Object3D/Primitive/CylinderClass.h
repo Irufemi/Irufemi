@@ -76,11 +76,17 @@ public: // メンバ関数
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
 
-    void SetInfo(const Cylinder& info) { info_ = info; }
-    void SetCenter(const Vector3& center) { info_.center = center; }
-    void SetRadius(float radius) { info_.radius = radius; }
-    void SetHeight(float height) { info_.height = height; }
-    void SetRotate(const Vector3& rotate) { resource_->transform_.rotate = rotate; }
-    void SetColor(const Vector4& color) { resource_->materialData_->color = color; }
+    void SetInfo(const Cylinder& info) { info_ = info; isDirty_ = true; }
+    void SetCenter(const Vector3& center) { info_.center = center; isDirty_ = true; }
+    void SetRadius(float radius) { info_.radius = radius; isDirty_ = true; }
+    void SetHeight(float height) { info_.height = height; isDirty_ = true; }
+    void SetRotate(const Vector3& rotate) { if (resource_) resource_->transform_.rotate = rotate; isDirty_ = true; }
+    void SetColor(const Vector4& color) { if (resource_ && resource_->materialData_) resource_->materialData_->color = color; }
+
+private:
+    // 行列更新の最適化用
+    bool isDirty_ = true;
+    Matrix4x4 lastViewMatrix_ = {};
+    Matrix4x4 lastProjectionMatrix_ = {};
 };
 

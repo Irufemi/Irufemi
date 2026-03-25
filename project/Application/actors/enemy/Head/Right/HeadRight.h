@@ -1,11 +1,12 @@
-#pragma once
-#include "Irufemi.h"
+#include "Engine/Core/Math/Transform.h"
 #include <memory>
 #include "Engine/Core/Math/Geometry/OBB.h"
+#include "Engine/Core/Math/Vector4.h"
 
 class Camera;
 class IrufemiEngine;
 class VoxelParticleSystem;
+class ObjClass;
 
 class HeadRight {
 public:

@@ -95,5 +95,9 @@ private: // メンバ変数(resource)
     // engine(ポインタ参照)
     static IrufemiEngine* engine_;
 
+    // 行列更新の最適化用
+    bool isDirty_ = true;
+    Matrix4x4 lastViewMatrix_ = {};
+    Matrix4x4 lastProjectionMatrix_ = {};
 };
 

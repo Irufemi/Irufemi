@@ -4,8 +4,6 @@
 #include "Engine/Core/Math/Geometry/Math.h"
 
 #include <cmath>
-#include <string>
-#include <cstdlib>
 #include <algorithm>
 
 
@@ -34,17 +32,23 @@ void Camera::Update() {
     UpdateMatrix();
 }
 
-void Camera::Debug([[maybe_unused]] const char* cameraName) {
-#if defined USE_IMGUI
-    std::string name = std::string("Camera: ") + cameraName;
 
-    // ImGui(デバッグ時のみ)
-    ImGui::Begin(name.c_str());
-    ImGui::DragFloat3("translate", &translate_.x, 0.1f);
-    ImGui::DragFloat3("rotate", &rotate_.x, 0.1f);
-    ImGui::End();
+void Camera::DrawDebugTab([[maybe_unused]] const char* label) {
+#if defined USE_IMGUI
+    if (ImGui::BeginTabItem(label)) {
+        DrawDebugContents();
+        ImGui::EndTabItem();
+    }
 #endif
 }
+
+void Camera::DrawDebugContents() {
+#if defined USE_IMGUI
+    ImGui::DragFloat3("translate", &translate_.x, 0.1f);
+    ImGui::DragFloat3("rotate", &rotate_.x, 0.1f);
+#endif
+}
+
 
 Matrix4x4 Camera::GetViewProjectionMatrix2D() {
     return viewMatrix_ * orthographicMatrix_;

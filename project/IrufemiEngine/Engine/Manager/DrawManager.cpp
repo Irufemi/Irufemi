@@ -158,13 +158,7 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     // --- フレーム共通CBV/SRVをここで一度だけバインド ---
-    commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
-    commandList_->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
-    commandList_->SetGraphicsRootConstantBufferView(5, frameData_.camera);
-    commandList_->SetGraphicsRootConstantBufferView(3, frameData_.directionalLight);
-    commandList_->SetGraphicsRootConstantBufferView(6, frameData_.pointLights);
-    commandList_->SetGraphicsRootConstantBufferView(7, frameData_.spotLights);
-    commandList_->SetGraphicsRootConstantBufferView(10, frameData_.areaLights);
+    BindCommonParameters();
 
     //// 環境マップをバインド
     //if (environmentMapHandle_.ptr != 0) {
@@ -757,4 +751,15 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
 
     // 5. 描画 (3頂点のインデックスなし描画: SV_VertexIDを使用するためVBいらず)
     commandList_->DrawInstanced(3, 1, 0, 0);
+}
+void DrawManager::BindCommonParameters() {
+    if (!commandList_ || !dxCommon_) return;
+
+    commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    commandList_->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
+    commandList_->SetGraphicsRootConstantBufferView(5, frameData_.camera);
+    commandList_->SetGraphicsRootConstantBufferView(3, frameData_.directionalLight);
+    commandList_->SetGraphicsRootConstantBufferView(6, frameData_.pointLights);
+    commandList_->SetGraphicsRootConstantBufferView(7, frameData_.spotLights);
+    commandList_->SetGraphicsRootConstantBufferView(10, frameData_.areaLights);
 }

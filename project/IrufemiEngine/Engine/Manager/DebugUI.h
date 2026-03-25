@@ -58,6 +58,8 @@ private: // メンバ変数
     float cachedFps_ = 0.0f;
     void UpdatePerfStats_(float newFrameMs); // ★集計用内部関数
 
+    bool showPerformance_ = true; // ★パフォーマンス情報の表示フラグ
+
     // --- ImGui用ライト編集テンプレート ---
     static std::unique_ptr<PointLight> templatePointLight_;
     static std::unique_ptr<SpotLight> templateSpotLight_;
@@ -134,10 +136,17 @@ public: // メンバ関数
     void FPSDebug();
 
     // シーンセレクタ
-    void DebugSceneSelector(SceneManager* sm);
+    void SceneSelectorTab(SceneManager* sm);
 
     // ポストプロセスのデバッグUI
-    void DebugPostProcess(IrufemiEngine* engine);
+    void PostProcessTab(IrufemiEngine* engine);
+
+    // 統合デバッグウィンドウの開始
+    void BeginEngineDebugWindow();
+
+    // 統合デバッグウィンドウの終了
+    void EndEngineDebugWindow();
+
 
     // PSO設定(ブレンド、深度、カリング)のデバッグUI
     static void DebugPsoSettings(

@@ -71,12 +71,12 @@ public: //メンバ関数
 
     // サイズとアンカーの設定
     void SetSize(const float& width, const float& height);
-    void SetAnchor(const float& ax, const float& ay);
+    void SetAnchor(const float& ax, const float& ay) { anchor_ = { ax, ay }; isDirty_ = true; }
     const Vector2& GetSize() const { return size_; }
     const Vector2& GetAnchor() const { return anchor_; }
 
     // 位置API(アンカー基準の座標を設定/取得)
-    void SetPosition(const float& x, const float& y, const float& z = 0.0f);
+    void SetPosition(const float& x, const float& y, const float& z = 0.0f) { if (resource_) { resource_->transform_.translate = { x, y, z }; } isDirty_ = true; }
     const Vector2 GetPosition2D() const;
 
     // 便利エイリアス
@@ -84,17 +84,17 @@ public: //メンバ関数
     void SetPositionCenter(const float& x, const float& y) { SetAnchor(0.5f, 0.5f); SetPosition(x, y); }
 
     // 回転
-    const Vector3& GetRotation()const { return resource_->transform_.rotate; }
-    void SetRotation(const float& rotate) { resource_->transform_.rotate = Vector3{ 0.0f,0.0f,rotate }; }
+    const Vector3& GetRotation()const { return resource_ ? resource_->transform_.rotate : Vector3{}; }
+    void SetRotation(const float& rotate) { if (resource_) { resource_->transform_.rotate = Vector3{ 0.0f,0.0f,rotate }; } isDirty_ = true; }
 
     // 色
     const Vector4& GetColor()const { return resource_->materialData_->color; }
     void SetColor(const Vector4& color) { resource_->materialData_->color = color; }
 
     // フリップAPI
-    void SetFlip(bool flipX, bool flipY) { isFlipX_ = flipX; isFlipY_ = flipY; }
-    void SetFlipX(bool flip) { isFlipX_ = flip; }
-    void SetFlipY(bool flip) { isFlipY_ = flip; }
+    void SetFlip(bool flipX, bool flipY) { isFlipX_ = flipX; isFlipY_ = flipY; isDirty_ = true; }
+    void SetFlipX(bool flip) { isFlipX_ = flip; isDirty_ = true; }
+    void SetFlipY(bool flip) { isFlipY_ = flip; isDirty_ = true; }
     bool IsFlipX() const { return isFlipX_; }
     bool IsFlipY() const { return isFlipY_; }
 
@@ -106,4 +106,10 @@ public: //メンバ関数
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+
+private:
+    // 行列更新の最適化用
+    bool isDirty_ = true;
+    Matrix4x4 lastViewMatrix_ = {};
+    Matrix4x4 lastProjectionMatrix_ = {};
 };
