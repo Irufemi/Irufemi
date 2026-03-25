@@ -231,7 +231,16 @@ void Player::DrawParticles() {
 
 void Player::ApplyDamage(int damage) {
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
-    status_.ApplyDamage(damage, isCharging, engine_);
+
+    // チャージ中ならダメージを2倍にする
+    int finalDamage = damage;
+    if (isCharging) {
+        finalDamage *= 2;
+    }
+
+    // status_.ApplyDamage に渡す際、第2引数（isCharging/軽減フラグ）を false にすることで
+    // status側での軽減処理を無効化し、倍になったダメージをそのまま適用させます。
+    status_.ApplyDamage(finalDamage, false, engine_);
 }
 
 void Player::HandleMovement() {
