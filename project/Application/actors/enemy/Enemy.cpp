@@ -131,6 +131,7 @@ void Enemy::Update(Player *player) {
            globalTransform_.rotate,
            worldPosWithoutOffset},
           &worldPosWithOffset);
+      bodies_[i]->Update();
     }
   }
 
@@ -144,6 +145,7 @@ void Enemy::Update(Player *player) {
       head->SetTransform({globalTransform_.scale, globalTransform_.rotate,
                           worldPosWithoutOffset},
                          &worldPosWithOffset);
+      head->Update();
     }
   };
   updateHead(headLeft_, headLeftLocalTransform_, headLeftOffset_);
