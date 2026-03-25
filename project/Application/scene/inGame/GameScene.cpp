@@ -120,7 +120,7 @@ void GameScene::Update() {
       // 1. 近接攻撃の判定
       if (attackCol.isActive &&
           Collision::IsOBBSphereCollision(part->GetOBB(), attackSphere)) {
-        part->ApplyDamage(100); // 仮のダメージ量
+        part->ApplyDamage(20); // 仮のダメージ量
         if (part->GetHP() <= 0) {
           // 攻撃方向：プレイヤーから対象部位へのベクトル
           Vector3 attackDir = Math::Normalize(
@@ -172,7 +172,7 @@ void GameScene::Update() {
         missileSphere.radius = 2.0f; // ミサイルの当たり判定を大きめに
         if (Collision::IsOBBSphereCollision(part->GetOBB(), missileSphere)) {
           missiles[k].isActive = false;    // ミサイル消滅
-          part->ApplyDamage(50); // ミサイルのダメージ
+          part->ApplyDamage(200); // ミサイルのダメージ
           if (part->GetHP() <= 0) {
             Vector3 attackDir = Math::Normalize(missiles[k].velocity);
             part->OnDestroyed(attackDir,
