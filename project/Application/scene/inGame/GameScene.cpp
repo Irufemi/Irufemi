@@ -3,17 +3,17 @@
 #include "Framework/SceneManager.h"
 #include "Irufemi.h"
 
-#include "camera/Camera.h"
-#include "camera/DebugCamera.h"
+#include "Graphics/Data/AreaLight.h"
 #include "Graphics/Data/CameraForGPU.h"
+#include "Graphics/Data/DirectionalLight.h"
 #include "Graphics/Data/PointLight.h"
 #include "Graphics/Data/SpotLight.h"
-#include "Graphics/Data/DirectionalLight.h"
-#include "Graphics/Data/AreaLight.h"
+#include "camera/Camera.h"
+#include "camera/DebugCamera.h"
 
-#include "actors/player/Player.h" 
 #include "actors/enemy/Enemy.h"
 #include "actors/enemy/EnemyParameters.h"
+#include "actors/player/Player.h"
 #include "contents/field/Field.h"
 #include "contents/skydome/Skydome.h"
 #include "Graphics/PostProcess/PostProcessManager.h"
@@ -24,36 +24,37 @@
 
 GameScene::GameScene() {}
 
-GameScene::~GameScene() {
-}
+GameScene::~GameScene() {}
 
-void GameScene::Initialize(IrufemiEngine* engine) {
-    engine_ = engine;
+void GameScene::Initialize(IrufemiEngine *engine) {
+  engine_ = engine;
 
-    camera_ = std::make_unique<Camera>();
-    camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
-    camera_->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });
-    camera_->UpdateMatrix();
+  camera_ = std::make_unique<Camera>();
+  camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+  camera_->SetTranslate(Vector3{0.0f, 0.0f, -10.0f});
+  camera_->UpdateMatrix();
 
-    debugCamera_ = std::make_unique<DebugCamera>();
-    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
-    debugMode_ = false;
+  debugCamera_ = std::make_unique<DebugCamera>();
+  debugCamera_->Initialize(engine_->GetInputManager(),
+                           engine_->GetClientWidth(),
+                           engine_->GetClientHeight());
+  debugMode_ = false;
 
-    // ★マウスはエンジン(InputManager)が管理している
-    // GameScene での初期化・保持は不要になりました
+  // ★マウスはエンジン(InputManager)が管理している
+  // GameScene での初期化・保持は不要になりました
 
-    // プレイヤーの初期化（エンジン側のポインタのみ渡す）
-    player_ = std::make_unique<Player>();
-    player_->Initialize(engine_->GetInputManager(), camera_.get(), engine_);
+  // プレイヤーの初期化（エンジン側のポインタのみ渡す）
+  player_ = std::make_unique<Player>();
+  player_->Initialize(engine_->GetInputManager(), camera_.get(), engine_);
 
-    boss_ = std::make_unique<Enemy>();
-    boss_->Initialize(camera_.get(), engine_);
+  boss_ = std::make_unique<Enemy>();
+  boss_->Initialize(camera_.get(), engine_);
 
-    field_ = std::make_unique<Field>(camera_.get(), engine_);
-    field_->Initialize();
+  field_ = std::make_unique<Field>(camera_.get(), engine_);
+  field_->Initialize();
 
-    skydome_ = std::make_unique<Skydome>();
-    skydome_->Initialize(camera_.get());
+  skydome_ = std::make_unique<Skydome>();
+  skydome_->Initialize(camera_.get());
 
     directionalLight_ = std::make_unique<DirectionalLight>();
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -75,7 +76,7 @@ void GameScene::Update() {
   // ↓ゲームの更新
   // =====
 
-    // 独自のマウス更新は二重更新（デルタ値の消失）の原因になるため削除
+  // 独自のマウス更新は二重更新（デルタ値の消失）の原因になるため削除
 
   // プレイヤーの更新
   if (player_ && !debugMode_) {
@@ -113,6 +114,24 @@ void GameScene::Update() {
       }
     }
 
+    // Player vs Enemy Parts (Any active parts)
+    auto checkPlayerHitPart = [&](auto *part) {
+      if (!part || part->IsCompletelyDead())
+        return;
+
+      Sphere playerColliderSphere;
+      playerColliderSphere.center = player_->GetCollider().center;
+      playerColliderSphere.radius = player_->GetCollider().radius;
+
+      if (Collision::IsOBBSphereCollision(part->GetOBB(), playerColliderSphere)) {
+        player_->ApplyDamage(10); 
+      }
+    };
+    for (int i = 0; i < 3; ++i) checkPlayerHitPart(boss_->GetBody(i));
+    checkPlayerHitPart(boss_->GetHeadLeft());
+    checkPlayerHitPart(boss_->GetHeadMid());
+    checkPlayerHitPart(boss_->GetHeadRight());
+
     auto checkAndDamage = [&](auto *part) {
       if (!part || part->GetHP() <= 0 || part->IsBlownAway())
         return;
@@ -135,8 +154,9 @@ void GameScene::Update() {
         attackOBB.orientations[0] = {1, 0, 0};
         attackOBB.orientations[1] = {0, 1, 0};
         attackOBB.orientations[2] = {0, 0, 1};
-        attackOBB.size = {attackCol.radius * 1.5f, attackCol.radius * 1.5f, attackCol.radius * 1.5f};
-        
+        attackOBB.size = {attackCol.radius * 1.5f, attackCol.radius * 1.5f,
+                          attackCol.radius * 1.5f};
+
         // 攻撃方向を考慮した初速ではじけさせる
         Vector3 attackDir = Math::Normalize(
             Math::Subtract(part->GetTransform().translate, playerPos));
@@ -152,8 +172,8 @@ void GameScene::Update() {
         bulletSphere.center = bullets[j].position;
         bulletSphere.radius = 1.0f; // 余裕を持たせた半径
         if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
-          bullets[j].isActive = false;     // 弾丸消滅
-          part->ApplyDamage(10); // マシンガンのダメージ
+          bullets[j].isActive = false; // 弾丸消滅
+          part->ApplyDamage(10);       // マシンガンのダメージ
           if (part->GetHP() <= 0) {
             Vector3 attackDir = Math::Normalize(bullets[j].velocity);
             part->OnDestroyed(attackDir,
@@ -204,7 +224,8 @@ void GameScene::Update() {
           return;
 
         // OBB同士の判定(部位 vs 部位)
-        // projectile->GetOBB() は親ループで1度だけ取得・計算するようにキャッシュ
+        // projectile->GetOBB()
+        // は親ループで1度だけ取得・計算するようにキャッシュ
         if (Collision::IsOBBCollision(projectileOBB, target->GetOBB())) {
           Vector3 vel = projectile->GetBlowVelocity();
           Vector3 diff = Math::Subtract(projectile->GetTransform().translate,
@@ -250,16 +271,60 @@ void GameScene::Update() {
             // 衝突エフェクト（部位同士の衝突）
             // ターゲットのOBBをそのままはじける領域として指定
             target->ScatterAt(Math::Multiply(-0.5f, vel), target->GetOBB());
-            projectile->ScatterAt(Math::Multiply(-0.5f, reflect), projectile->GetOBB());
+            projectile->ScatterAt(Math::Multiply(-0.5f, reflect),
+                                  projectile->GetOBB());
           }
         }
       };
 
-      for (int i = 0; i < 3; ++i)
+      auto checkTargetProjectile = [&](auto *target) {
+        if (!target || (void*)target == (void*)projectile || !target->IsBlownAway() || target->IsCompletelyDead())
+          return;
+
+        if (Collision::IsOBBCollision(projectileOBB, target->GetOBB())) {
+          Vector3 vel1 = projectile->GetBlowVelocity();
+          Vector3 vel2 = target->GetBlowVelocity();
+
+          Vector3 diff = Math::Subtract(projectile->GetTransform().translate, target->GetTransform().translate);
+          Vector3 normal = {diff.x, 0.0f, diff.z};
+          float normalLen = Math::Length(normal);
+          if (normalLen > 0.001f) {
+            normal = {normal.x / normalLen, 0.0f, normal.z / normalLen};
+          } else {
+            normal = {0.0f, 0.0f, 1.0f};
+          }
+
+          // 相対速度
+          Vector3 relVel = Math::Subtract(vel1, vel2);
+          float dot = Math::Dot(relVel, normal);
+
+          if (dot < 0.0f) {
+            Vector3 change = Math::Multiply(dot, normal);
+            Vector3 bounce1 = Math::Subtract(vel1, change);
+            Vector3 bounce2 = Math::Add(vel2, change);
+            
+            bounce1.y = 0.0f;
+            bounce2.y = 0.0f;
+
+            projectile->SetBlowVelocity(bounce1);
+            target->SetBlowVelocity(bounce2);
+
+            projectile->ScatterAt(Math::Multiply(-0.5f, bounce1), projectile->GetOBB());
+            target->ScatterAt(Math::Multiply(-0.5f, bounce2), target->GetOBB());
+          }
+        }
+      };
+
+      for (int i = 0; i < 3; ++i) {
         checkTarget(boss_->GetBody(i));
+        checkTargetProjectile(boss_->GetBody(i));
+      }
       checkTarget(boss_->GetHeadLeft());
+      checkTargetProjectile(boss_->GetHeadLeft());
       checkTarget(boss_->GetHeadMid());
+      checkTargetProjectile(boss_->GetHeadMid());
       checkTarget(boss_->GetHeadRight());
+      checkTargetProjectile(boss_->GetHeadRight());
     };
 
     for (int i = 0; i < 3; ++i)
@@ -289,8 +354,8 @@ void GameScene::Update() {
     camera_->SetTranslate(dbgCam.GetTranslate());
     camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
   } else {
-      camera_->Debug("Main Camera");
-      // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
+    camera_->Debug("Main Camera");
+    // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
     camera_->Update();
   }
 
@@ -318,20 +383,20 @@ void GameScene::Update() {
 // 描画
 void GameScene::Draw() {
 
-    engine_->SetBlend(BlendMode::kBlendModeNormal);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-    engine_->SetCull(PSOManager::CullMode::Back);
-    engine_->ApplyPSO();
+  engine_->SetBlend(BlendMode::kBlendModeNormal);
+  engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+  engine_->SetCull(PSOManager::CullMode::Back);
+  engine_->ApplyPSO();
 
-    skydome_->Draw();
+  skydome_->Draw();
 
-    if (field_) {
-        field_->Draw();
-    }
+  if (field_) {
+    field_->Draw();
+  }
 
-    if (player_) {
-        player_->Draw();
-    }
+  if (player_) {
+    player_->Draw();
+  }
 
     if (boss_) {
         boss_->Draw(engine_);
