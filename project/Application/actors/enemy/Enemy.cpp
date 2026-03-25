@@ -402,6 +402,7 @@ void Enemy::Draw(IrufemiEngine* engine) {
 
   if (stompEffects_) {
       // 必要なら engine->ApplyPSO(); など
+      engine->ApplyPSO();
       stompEffects_->Draw();
   }
 
