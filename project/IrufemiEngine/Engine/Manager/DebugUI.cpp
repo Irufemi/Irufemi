@@ -624,6 +624,7 @@ void DebugUI::DebugSphereInfo([[maybe_unused]] Sphere& sphere) {
 // FPS/FrameTime オーバーレイ
 void DebugUI::FPSDebug() {
 #ifdef USE_IMGUI
+    if (!showPerformance_) return;
 
     ImGuiIO& io = ImGui::GetIO();
     const float fpsNow = io.Framerate;
@@ -1156,6 +1157,11 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
 void DebugUI::BeginEngineDebugWindow() {
 #ifdef USE_IMGUI
     ImGui::Begin("Engine");
+
+    // 項目の上部分にチェックボックスを配置
+    ImGui::Checkbox("Performance Info", &showPerformance_);
+    ImGui::Separator();
+
     ImGui::BeginTabBar("EngineTabs");
 #endif
 }

@@ -58,6 +58,8 @@ private: // メンバ変数
     float cachedFps_ = 0.0f;
     void UpdatePerfStats_(float newFrameMs); // ★集計用内部関数
 
+    bool showPerformance_ = true; // ★パフォーマンス情報の表示フラグ
+
     // --- ImGui用ライト編集テンプレート ---
     static std::unique_ptr<PointLight> templatePointLight_;
     static std::unique_ptr<SpotLight> templateSpotLight_;
