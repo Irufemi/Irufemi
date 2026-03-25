@@ -79,6 +79,35 @@ void DebugCamera::Update() {
     camera_.UpdateMatrix();
 }
 
-void DebugCamera::Debug() {
-    camera_.Debug("DebugCamera");
-}
+
+void DebugCamera::SetPreset(Preset preset, const Camera& mainCamera) {
+    switch (preset) {
+    case Preset::TopDown:
+        camera_.SetRotate({ Math::PIDiv2, 0.0f, 0.0f });
+        target_ = { 0.0f, 0.0f, 0.0f };
+        distance_ = 50.0f;
+        break;
+    case Preset::Diagonal:
+        camera_.SetRotate({ 0.6f, 0.78f, 0.0f }); // 約35度見下ろし、45度回転
+        target_ = { 0.0f, 0.0f, 0.0f };
+        distance_ = 50.0f;
+        break;
+    case Preset::Front:
+        camera_.SetRotate({ 0.0f, 0.0f, 0.0f });
+        target_ = { 0.0f, 0.0f, 0.0f };
+        distance_ = 50.0f;
+        break;
+    case Preset::Current: {
+        // 現在のメインカメラの回転をコピー
+        camera_.SetRotate(mainCamera.GetRotate());
+        // メインカメラの位置にくるように target を調整
+        Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(camera_.GetRotate());
+        Vector3 offset = { 0.0f, 0.0f, -distance_ };
+        offset = Math::TransformNormal(offset, rotMat);
+        target_ = Math::Subtract(mainCamera.GetTranslate(), offset);
+        break;
+    }
+    }
+    camera_.UpdateMatrix();
+}
+

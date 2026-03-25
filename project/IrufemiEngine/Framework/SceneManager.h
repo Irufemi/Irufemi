@@ -29,6 +29,8 @@ public:
     void Draw();
 
     const Key& GetCurrent() const;
+    IScene* GetCurrentScene() const { return current_.get(); }
+
 
     // 並び順は登録順
     std::vector<Key> GetRegisteredKeys() const;

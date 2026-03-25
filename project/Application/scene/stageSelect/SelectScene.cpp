@@ -58,35 +58,8 @@ void SelectScene::Initialize(IrufemiEngine* engine) {
 
 void SelectScene::Update() {
 
-#if defined USE_IMGUI
-
-    ImGui::Begin("SelectScene");
-    if (ImGui::BeginTabBar("SelectSceneTabs")) {
-
-        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
-
-        // Texture タブ
-        if (ImGui::BeginTabItem("Texture")) {
-            if (ImGui::Button("allLoadActivate")) {
-                engine_->GetTextureManager()->LoadAllFromFolder("resources/");
-            }
-            ImGui::EndTabItem();
-        }
-
-        // Debug タブ
-        if (ImGui::BeginTabItem("Debug")) {
-            ImGui::Checkbox("debugMode", &debugMode_);
-            ImGui::EndTabItem();
-        }
-
-        ImGui::EndTabBar();
-    }
-
-    ImGui::End();
-
-#endif // USE_IMGUI
-
     // --- カメラの更新 ---
+
     if (debugMode_) {
         // デバッグカメラを更新
         debugCamera_->Update();
@@ -145,3 +118,44 @@ void SelectScene::Draw() {
     engine_->ApplySpritePSO();
 
 }
+
+void SelectScene::DrawDebugTab() {
+#if defined USE_IMGUI
+    if (camera_) {
+        if (ImGui::BeginTabItem("Main Camera")) {
+            ImGui::Checkbox("Debug Camera Mode", &debugMode_);
+            if (debugMode_ && debugCamera_) {
+                if (ImGui::Button("Top-Down")) debugCamera_->SetPreset(DebugCamera::Preset::TopDown, *camera_);
+                ImGui::SameLine();
+                if (ImGui::Button("Diagonal")) debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *camera_);
+                ImGui::SameLine();
+                if (ImGui::Button("Front")) debugCamera_->SetPreset(DebugCamera::Preset::Front, *camera_);
+                ImGui::SameLine();
+                if (ImGui::Button("Snap to Current")) debugCamera_->SetPreset(DebugCamera::Preset::Current, *camera_);
+
+                ImGui::Separator();
+                ImGui::Text("Debug Camera Controls");
+                debugCamera_->GetCamera().DrawDebugContents();
+                float dist = debugCamera_->GetDistance();
+                if (ImGui::DragFloat("Orbit Distance", &dist, 0.1f, 1.0f, 1000.0f)) {
+                    debugCamera_->SetDistance(dist);
+                }
+            } else {
+                camera_->DrawDebugContents();
+            }
+            ImGui::EndTabItem();
+        }
+    }
+    DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+
+    // Texture タブ
+    if (ImGui::BeginTabItem("Texture")) {
+        if (ImGui::Button("allLoadActivate")) {
+            engine_->GetTextureManager()->LoadAllFromFolder("resources/");
+        }
+        ImGui::EndTabItem();
+    }
+#endif
+}
+
+

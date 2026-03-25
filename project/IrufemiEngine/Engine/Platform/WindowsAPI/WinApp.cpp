@@ -13,7 +13,7 @@
 #include <DbgHelp.h>
 #include <strsafe.h>
 
-#define ENABLE_ESCAPE_EXIT 1 // 1: 有効, 0: 無効
+#define ENABLE_ESCAPE_EXIT 0 // 1: 有効, 0: 無効
 
 #pragma comment(lib,"winmm.lib")
 #pragma comment(lib,"Dbghelp.lib")

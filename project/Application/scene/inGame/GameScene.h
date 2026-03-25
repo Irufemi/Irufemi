@@ -30,6 +30,8 @@ public:
     void PauseUpdate() override;
     void PauseDraw() override;
     bool IsPausable() const override { return true; }
+    void DrawDebugTab() override;
+
 
 private:
     IrufemiEngine* engine_ = nullptr;

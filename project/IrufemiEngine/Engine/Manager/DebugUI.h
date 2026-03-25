@@ -134,10 +134,17 @@ public: // メンバ関数
     void FPSDebug();
 
     // シーンセレクタ
-    void DebugSceneSelector(SceneManager* sm);
+    void SceneSelectorTab(SceneManager* sm);
 
     // ポストプロセスのデバッグUI
-    void DebugPostProcess(IrufemiEngine* engine);
+    void PostProcessTab(IrufemiEngine* engine);
+
+    // 統合デバッグウィンドウの開始
+    void BeginEngineDebugWindow();
+
+    // 統合デバッグウィンドウの終了
+    void EndEngineDebugWindow();
+
 
     // PSO設定(ブレンド、深度、カリング)のデバッグUI
     static void DebugPsoSettings(

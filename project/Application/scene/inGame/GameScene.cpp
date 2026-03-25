@@ -65,13 +65,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 // 更新
 void GameScene::Update() {
 
-#ifdef USE_IMGUI
-  ImGui::Begin("Debug");
-  ImGui::Checkbox("Debug Camera", &debugMode_);
-  ImGui::End();
-#endif
-
   // =====
+
   // ↓ゲームの更新
   // =====
 
@@ -289,7 +284,6 @@ void GameScene::Update() {
     camera_->SetTranslate(dbgCam.GetTranslate());
     camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
   } else {
-      camera_->Debug("Main Camera");
       // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
     camera_->Update();
   }
@@ -345,3 +339,42 @@ void GameScene::Draw() {
 
 void GameScene::PauseUpdate() {}
 void GameScene::PauseDraw() {}
+
+void GameScene::DrawDebugTab() {
+#ifdef USE_IMGUI
+    if (camera_) {
+        if (ImGui::BeginTabItem("Main Camera")) {
+            ImGui::Checkbox("Debug Camera Mode", &debugMode_);
+            if (debugMode_ && debugCamera_) {
+                if (ImGui::Button("Top-Down")) debugCamera_->SetPreset(DebugCamera::Preset::TopDown, *camera_);
+                ImGui::SameLine();
+                if (ImGui::Button("Diagonal")) debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *camera_);
+                ImGui::SameLine();
+                if (ImGui::Button("Front")) debugCamera_->SetPreset(DebugCamera::Preset::Front, *camera_);
+                ImGui::SameLine();
+                if (ImGui::Button("Snap to Current")) debugCamera_->SetPreset(DebugCamera::Preset::Current, *camera_);
+
+                ImGui::Separator();
+                ImGui::Text("Debug Camera Controls");
+                // DebugCameraの内部Cameraの設定を表示
+                debugCamera_->GetCamera().DrawDebugContents();
+                float dist = debugCamera_->GetDistance();
+                if (ImGui::DragFloat("Orbit Distance", &dist, 0.1f, 1.0f, 1000.0f)) {
+                    debugCamera_->SetDistance(dist);
+                }
+            } else {
+                camera_->DrawDebugContents();
+            }
+            ImGui::EndTabItem();
+        }
+    }
+    DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+    if (ImGui::BeginTabItem("InGame")) {
+
+        ImGui::Checkbox("Debug Camera", &debugMode_);
+        ImGui::EndTabItem();
+    }
+#endif
+}
+
+

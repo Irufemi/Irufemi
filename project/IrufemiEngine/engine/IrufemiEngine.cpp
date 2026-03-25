@@ -321,9 +321,15 @@ void IrufemiEngine::Execute() {
 
 #ifdef USE_IMGUI
         ui->FPSDebug();
-        ui->DebugSceneSelector(sceneManager_.get());
-        ui->DebugPostProcess(this);
+        ui->BeginEngineDebugWindow();
+        ui->SceneSelectorTab(sceneManager_.get());
+        ui->PostProcessTab(this);
+        if (auto* scene = sceneManager_->GetCurrentScene()) {
+            scene->DrawDebugTab();
+        }
+        ui->EndEngineDebugWindow();
 #endif // USE_IMGUI
+
 
         // 更新
         sceneManager_->Update();

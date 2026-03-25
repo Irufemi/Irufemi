@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Core/Math/Vector3.h"
-#include "Core/Math/Matrix4x4.h"
-#include "Core/Math/Geometry/Math.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "camera/Camera.h"
 
@@ -55,5 +53,21 @@ public: //メンバ関数
      * @return Camera& カメラオブジェクト
     */
     Camera& GetCamera() { return camera_; }
+    
+    /**
+     * @brief プリセット視点の設定
+     */
+    enum class Preset {
+        TopDown,     // 見下ろし
+        Diagonal,    // 斜め見下ろし
+        Front,       // 正面
+        Current      // 現在のカメラに合わせる
+    };
+    void SetPreset(Preset preset, const Camera& mainCamera);
+
+    // セッター/ゲッター
+    void SetTarget(const Vector3& target) { target_ = target; }
+    void SetDistance(float distance) { distance_ = distance; }
+    float GetDistance() const { return distance_; }
 };
 
