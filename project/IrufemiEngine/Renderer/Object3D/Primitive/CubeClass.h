@@ -48,7 +48,9 @@ public:
 
     // Getters / Setters
     D3D12ResourceUtil* GetD3D12Resource() { return resource_.get(); }
-    void SetCenter(const Vector3& c) { center_ = c; }
+    void SetPosition(const Vector3& c) { center_ = c; isDirty_ = true; }
+    void SetRotate(const Vector3& rot) { if (resource_) resource_->transform_.rotate = rot; isDirty_ = true; }
+    void SetScale(const Vector3& scale) { if (resource_) resource_->transform_.scale = scale; isDirty_ = true; }
 
     // SetSize: 互換性維持用と depth を受け取るオーバーロード
     void SetSize(float width, float height) { SetSize(width, height, width); }
@@ -57,4 +59,10 @@ public:
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+
+private:
+    // 行列更新の最適化用
+    bool isDirty_ = true;
+    Matrix4x4 lastViewMatrix_ = {};
+    Matrix4x4 lastProjectionMatrix_ = {};
 };

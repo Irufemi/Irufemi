@@ -102,14 +102,30 @@ void VoxelParticleSystem::Update(float deltaTime) {
 }
 
 void VoxelParticleSystem::Draw() {
-  if (voxelCount_ == 0)
+  if (!voxelBuffer_ || !engine_ || !camera_)
     return;
+
+  // カメラの行列が変更されたかチェック
+  bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                        std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+
+  if (cameraChanged) {
+      // カメラが動いた場合は定数バッファを更新する必要があるため Update(0) を呼ぶ
+      // ( deltaTime=0 なのでパーティクルの移動は進まない )
+      Update(0.0f);
+  }
 
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
 
   // 1. Compute Shader dispatch (Deferred from Initialize and Update)
   
+  // カメラ行列を保存
+  if (camera_) {
+      lastViewMatrix_ = camera_->GetViewMatrix();
+      lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+  }
+
   // デスクリプタヒープの設定
   ID3D12DescriptorHeap *ppHeaps[] = {dxCommon->GetSrvPool()->GetHeap()};
   commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);

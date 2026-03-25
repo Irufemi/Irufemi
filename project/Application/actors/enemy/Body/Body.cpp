@@ -92,7 +92,6 @@ void Body::Update() {
       color.w = baseColor_.w + (damageColor.w - baseColor_.w) * t;
     }
     obj_->SetColor(color);
-    obj_->Update();
   }
 }
 

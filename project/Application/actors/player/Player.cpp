@@ -199,7 +199,6 @@ void Player::Draw() {
         obj_->SetPosition(translate_ + weapon_.GetMissileVibration());
         obj_->SetRotate(rotate_);
         obj_->SetScale(scale_);
-        obj_->Update();
 
         if (!cameraController_.IsFirstPerson() && !isBlinking && !status_.IsDead()) {
             obj_->Draw();
@@ -294,7 +293,6 @@ void Player::HandleAttack() {
                 float hammerSize = 0.8f + (chargeRate * 0.4f);
                 Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * 1.5f * hammerSize, scale_.z * hammerSize };
                 attackObj_->SetScale(hammerScale);
-                attackObj_->Update();
             }
         } else {
             attackState_ = AttackState::kAttacking;
@@ -332,7 +330,6 @@ void Player::HandleAttack() {
                 float hammerSize = 0.8f + (currentChargeRate_ * 0.4f);
                 Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * 1.5f * hammerSize, scale_.z * hammerSize };
                 attackObj_->SetScale(hammerScale);
-                attackObj_->Update();
             }
 
             attackActiveTimer_--;

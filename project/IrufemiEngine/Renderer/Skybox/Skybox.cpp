@@ -120,6 +120,11 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
 
     *transformationData_ = transformationMatrix_;
 
+    // フラグ更新
+    isDirty_ = false;
+    lastViewMatrix_ = camera_->GetViewMatrix();
+    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+
     TextureManager* textureManager_ = engine_->GetTextureManager();
 
     auto textureNames = textureManager_->GetTextureNames();
@@ -153,9 +158,22 @@ void Skybox::Update() {
     if (transformationData_) {
         *transformationData_ = transformationMatrix_;
     }
+    // フラグ更新
+    isDirty_ = false;
+    lastViewMatrix_ = camera_->GetViewMatrix();
+    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
 }
 
 void Skybox::Draw() {
+    if (!vertexResource_ || !indexResource_ || !camera_ || !engine_) return;
+
+    // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+
+    if (isDirty_ || cameraChanged) {
+        Update();
+    }
 
     DrawManager* drawManager = engine_->GetDrawManager();
 

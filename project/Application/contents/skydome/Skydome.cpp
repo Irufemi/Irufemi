@@ -33,8 +33,6 @@ void Skydome::Draw() {
 
 	model_->SetTransform(worldTransform_);
 
-	model_->Update();
-
 	// 3Dモデル描画
 	model_->Draw();
 }

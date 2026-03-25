@@ -12,6 +12,7 @@
 #include "Graphics/Data/AreaLight.h"
 
 #include "actors/player/Player.h" 
+#include "actors/player/PlayerWeapon.h"
 #include "actors/enemy/Enemy.h"
 #include "actors/enemy/EnemyParameters.h"
 #include "contents/field/Field.h"
@@ -64,7 +65,6 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 
 // 更新
 void GameScene::Update() {
-
   // =====
 
   // ↓ゲームの更新
@@ -274,32 +274,8 @@ void GameScene::Update() {
   // ↑ゲームの更新
   // =====
 
-  // --- カメラの更新 ---
-  if (debugMode_) {
-    // デバッグカメラを更新
-    debugCamera_->Update();
-    // デバッグカメラの計算結果をメインカメラに上書きする
-    const Camera &dbgCam = debugCamera_->GetCamera();
-    camera_->SetViewMatrix(dbgCam.GetViewMatrix());
-    camera_->SetTranslate(dbgCam.GetTranslate());
-    camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
-  } else {
-      // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
-    camera_->Update();
-  }
-
-  // --- フレーム共通データのセット ---
-  CameraForGPU cameraForGpu;
-  cameraForGpu.view = camera_->GetViewMatrix();
-  cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
-  cameraForGpu.worldPosition = camera_->GetTranslate();
-
-  std::vector<PointLight *> pLights;
-  std::vector<SpotLight *> sLights;
-  std::vector<AreaLight *> aLights;
-
-  engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_,
-                                          pLights, sLights, aLights);
+  // --- カメラとフレームデータの更新 ---
+  UpdateCameraAndFrameData();
 
   // enemyが死んだときクリアシーンに遷移する
   if (boss_ && boss_->IsDead()) {
@@ -337,7 +313,9 @@ void GameScene::Draw() {
     }
 }
 
-void GameScene::PauseUpdate() {}
+void GameScene::PauseUpdate() {
+  UpdateCameraAndFrameData();
+}
 void GameScene::PauseDraw() {}
 
 void GameScene::DrawDebugTab() {
@@ -375,6 +353,53 @@ void GameScene::DrawDebugTab() {
         ImGui::EndTabItem();
     }
 #endif
+}
+
+void GameScene::UpdateCameraAndFrameData() {
+    // --- デバッグカメラのトグル ('P' キー) ---
+    if (PressedDIK(0x19 /*DIK_P*/)) {
+        debugMode_ = !debugMode_;
+        if (debugMode_) {
+            if (isFirstDebug_) {
+                debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *camera_);
+                isFirstDebug_ = false;
+            }
+        } else {
+            // デバッグカメラ OFF 時、通常カメラの状態を一度強制更新して復元を確実にする
+            if (player_) player_->Update();
+            camera_->Update();
+        }
+    }
+
+    // --- カメラの更新 ---
+    if (debugMode_) {
+        // デバッグカメラを更新
+        debugCamera_->Update();
+        // デバッグカメラの計算結果をメインカメラに上書きする
+        const Camera& dbgCam = debugCamera_->GetCamera();
+        camera_->SetViewMatrix(dbgCam.GetViewMatrix());
+        camera_->SetTranslate(dbgCam.GetTranslate());
+        camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
+    } else {
+        // 通常カメラの更新（プレイヤーのカメラ位置を反映する）
+        camera_->Update();
+    }
+
+    // --- フレーム共通データのセット ---
+    CameraForGPU cameraForGpu;
+    cameraForGpu.view = camera_->GetViewMatrix();
+    cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
+    cameraForGpu.worldPosition = camera_->GetTranslate();
+
+    // ライトリストの構築 (スマートポインタから生ポインタへ)
+    std::vector<PointLight*> pLights;
+    for (auto& pl : pointLights_) pLights.push_back(pl.get());
+    std::vector<SpotLight*> sLights;
+    for (auto& sl : spotLights_) sLights.push_back(sl.get());
+    std::vector<AreaLight*> aLights;
+    for (auto& al : areaLights_) aLights.push_back(al.get());
+
+    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
 

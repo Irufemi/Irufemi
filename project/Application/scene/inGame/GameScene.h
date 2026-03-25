@@ -38,6 +38,7 @@ private:
     std::unique_ptr<Camera> camera_ = nullptr;
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
     bool debugMode_ = false;
+    bool isFirstDebug_ = true;
 
     // マウスは InputManager から取得するため削除
 
@@ -52,4 +53,7 @@ private:
     std::vector<std::unique_ptr<PointLight>> pointLights_;
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
+
+    // カメラとフレームデータの更新ロジックを共通化
+    void UpdateCameraAndFrameData();
 };

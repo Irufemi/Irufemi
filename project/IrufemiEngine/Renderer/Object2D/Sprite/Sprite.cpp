@@ -150,7 +150,10 @@ void Sprite::Update() {
         Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, pos);
     resource_->transformationMatrix_.WVP =
         Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
-    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
+    
+    if (resource_->transformationData_) {
+        *resource_->transformationData_ = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world };
+    }
 
     // ---- UV 変換(flip → crop → userUV)----
      // userUV: 既存の uvTransform(回転/スクロール)
@@ -176,9 +179,26 @@ void Sprite::Update() {
     Matrix4x4 base = Math::Multiply(cropUV, userUV);
     resource_->materialData_->uvTransform = Math::Multiply(flipUV, base);
 
+    // フラグ更新
+    isDirty_ = false;
+    // Sprite は Orthographic 行列を使っているため、カメラの Orthographic 設定が変わった場合のみ更新が必要
+    // ただし、DrawManager 側で ProjectionView として Orthographic を扱っている可能性がある。
+    // ここでは念のため ViewMatrix と OrthographicMatrix を追跡する。
+    lastViewMatrix_ = camera_->GetViewMatrix();
+    lastProjectionMatrix_ = camera_->GetOrthographicMatrix();
 }
 
 void Sprite::Draw() {
+    if (!resource_ || !drawManager_ || !camera_) return;
+
+    // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &camera_->GetOrthographicMatrix(), sizeof(Matrix4x4)) != 0);
+
+    if (isDirty_ || cameraChanged) {
+        Update();
+    }
+
     drawManager_->DrawObject2D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
 }
 
@@ -187,18 +207,6 @@ void Sprite::SetSize(const float& width, const float& height) {
     size_.y = height;
     // 実サイズはscaleで表現
     resource_->transform_.scale = { size_.x, size_.y, 1.0f };
-}
-
-void Sprite::SetAnchor(const float& ax, const float& ay) {
-    anchor_.x = ax;
-    anchor_.y = ay;
-}
-
-void Sprite::SetPosition(const float& x, const float& y, const float& z) {
-    resource_->transform_.translate.x = x;
-    resource_->transform_.translate.y = y;
-    resource_->transform_.translate.z = z;
-    // 毎フレーム Update() で WVP を再計算しているため、ここでの再計算は不要
 }
 
 const Vector2 Sprite::GetPosition2D() const {

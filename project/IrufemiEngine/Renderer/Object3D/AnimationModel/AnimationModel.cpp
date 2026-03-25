@@ -184,12 +184,23 @@ void AnimationModel::Update() {
     // マテリアル情報をGPUへ転送
     UpdateMaterials();
 
+    // フラグ更新
+    isDirty_ = false;
+    lastViewMatrix_ = camera_->GetViewMatrix();
+    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
 }
 
 // 描画
 void AnimationModel::Draw() {
+    if (!managedModel_ || !engine_ || !camera_) return;
 
-    if (!managedModel_ || !engine_) return;
+    // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+
+    if (isDirty_ || cameraChanged) {
+        Update();
+    }
 
     // --- 追加：骨格（球体の集合）を一括描画 ---
     if (jointSpheres_ && !skeleton_.joints.empty()) {
