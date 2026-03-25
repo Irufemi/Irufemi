@@ -46,10 +46,13 @@ void PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engin
     if (isDead_ || invincibleTimer_ > 0) return;
 
     if (isCharging) {
-        hp_ -= damage / 2; 
+        hp_ -= damage / 2;
     } else {
         hp_ -= damage;
     }
+
+    // ★追加：ダメージを受けた直後に無敵時間を付与（60フレーム ＝ 約1秒）
+    invincibleTimer_ = 60;
 
     if (hp_ <= 0) {
         hp_ = 0;
