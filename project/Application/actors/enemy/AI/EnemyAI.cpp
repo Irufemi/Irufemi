@@ -30,16 +30,25 @@ void EnemyAI::Update() {
         attackWaitTimer_ += 1.0f / 60.0f;
         if (attackWaitTimer_ >= attackInterval_) {
             isWaitingForNextAttack_ = false;
-            enemy_->SetState(EnemyState::Attack_Beam); // ここでビーム状態へ
+
+            // ★交互に切り替えるロジック
+            if (nextIsStomp_) {
+                enemy_->SetState(EnemyState::Attack_Stomp);
+            } else {
+                enemy_->SetState(EnemyState::Attack_Beam);
+            }
+            nextIsStomp_ = !nextIsStomp_; // 次回のために反転
         }
-    }
+
     // 3. 攻撃中：アニメーションが完了したか監視
-    else {
+    } else {
         if (enemy_->GetAnimation()->HasFinishedAttack()) {
-            // 攻撃が終わったので待機モードへ移行
+            enemy_->SetState(EnemyState::Idle);
             isWaitingForNextAttack_ = true;
             attackWaitTimer_ = 0.0f;
-            enemy_->SetState(EnemyState::Idle);
+
+            // 次の攻撃を交互にするためにフラグを反転
+            nextIsStomp_ = !nextIsStomp_;
         }
     }
 }
