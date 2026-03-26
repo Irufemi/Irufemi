@@ -507,7 +507,8 @@ void DebugUI::DebugMaterialByParticle([[maybe_unused]] ParticleMaterial* materia
 }
 
 // 画像
-void DebugUI::DebugTexture(Object3DResource* resource, int& selectedTextureIndex) {
+void DebugUI::DebugTexture([[maybe_unused]] Object3DResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
+#ifdef USE_IMGUI
     if (textureManager_ && resource) {
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
@@ -525,9 +526,11 @@ void DebugUI::DebugTexture(Object3DResource* resource, int& selectedTextureIndex
             }
         }
     }
+#endif
 }
 
-void DebugUI::DebugTexture(Object2DResource* resource, int& selectedTextureIndex) {
+void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
+#ifdef USE_IMGUI
     if (textureManager_ && resource) {
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
@@ -545,9 +548,11 @@ void DebugUI::DebugTexture(Object2DResource* resource, int& selectedTextureIndex
             }
         }
     }
+#endif
 }
 
-void DebugUI::DebugTexture(ParticleResource* resource, int& selectedTextureIndex) {
+void DebugUI::DebugTexture([[maybe_unused]] ParticleResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
+#ifdef USE_IMGUI
     if (textureManager_ && resource) {
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
@@ -565,6 +570,7 @@ void DebugUI::DebugTexture(ParticleResource* resource, int& selectedTextureIndex
             }
         }
     }
+#endif
 }
 
 // DirectionalLight
