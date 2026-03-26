@@ -31,7 +31,10 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Renderer/Material.h"
 #include "Renderer/Particle/Data/ParticleMaterial.h"
 #include "Resource/Model/Data/ObjModel.h"
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/LineInstanced/LineResource.h"
+#include "Renderer/Object3D/Object3DResource.h"
+#include "Renderer/Object2D/Object2DResource.h"
+#include "Renderer/Particle/ParticleResource.h"
 #include "Engine/Core/Math/Geometry/Math.h"
 
 // 静的宣言
@@ -451,7 +454,7 @@ void DebugUI::DebugMaterialBy2D([[maybe_unused]] Material* materialData) {
 }
 
 // Particle 専用マテリアルのデバッグ表示
-void DebugUI::DebugMaterialParticle([[maybe_unused]] ParticleMaterial* materialData) {
+void DebugUI::DebugMaterialByParticle([[maybe_unused]] ParticleMaterial* materialData) {
 #ifdef USE_IMGUI
 
     if (!materialData) return;
@@ -504,10 +507,8 @@ void DebugUI::DebugMaterialParticle([[maybe_unused]] ParticleMaterial* materialD
 }
 
 // 画像
-void DebugUI::DebugTexture([[maybe_unused]] D3D12ResourceUtil* resource, [[maybe_unused]] int& selectedTextureIndex) {
-#ifdef USE_IMGUI
-
-    if (textureManager_) {
+void DebugUI::DebugTexture(Object3DResource* resource, int& selectedTextureIndex) {
+    if (textureManager_ && resource) {
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
         if (!textureNames.empty()) {
@@ -519,21 +520,15 @@ void DebugUI::DebugTexture([[maybe_unused]] D3D12ResourceUtil* resource, [[maybe
                         selectedTextureIndex = i;
                         resource->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]);
                     }
-                    if (isSelected) {
-                        ImGui::SetItemDefaultFocus();
-                    }
                 }
                 ImGui::EndCombo();
             }
         }
     }
-#endif // USE_IMGUI
 }
 
-void DebugUI::DebugTexture([[maybe_unused]] D3D12ResourceUtilParticle* resource, [[maybe_unused]] int& selectedTextureIndex) {
-#ifdef USE_IMGUI
-
-    if (textureManager_) {
+void DebugUI::DebugTexture(Object2DResource* resource, int& selectedTextureIndex) {
+    if (textureManager_ && resource) {
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
         if (!textureNames.empty()) {
@@ -545,15 +540,31 @@ void DebugUI::DebugTexture([[maybe_unused]] D3D12ResourceUtilParticle* resource,
                         selectedTextureIndex = i;
                         resource->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]);
                     }
-                    if (isSelected) {
-                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+        }
+    }
+}
+
+void DebugUI::DebugTexture(ParticleResource* resource, int& selectedTextureIndex) {
+    if (textureManager_ && resource) {
+        auto textureNames = textureManager_->GetTextureNames();
+        std::sort(textureNames.begin(), textureNames.end());
+        if (!textureNames.empty()) {
+            const char* preview = textureNames[selectedTextureIndex].c_str();
+            if (ImGui::BeginCombo("Texture", preview)) {
+                for (int i = 0; i < static_cast<int>(textureNames.size()); ++i) {
+                    bool isSelected = (i == selectedTextureIndex);
+                    if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
+                        selectedTextureIndex = i;
+                        resource->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]);
                     }
                 }
                 ImGui::EndCombo();
             }
         }
     }
-#endif // USE_IMGUI
 }
 
 // DirectionalLight
@@ -1172,5 +1183,3 @@ void DebugUI::EndEngineDebugWindow() {
     ImGui::End();
 #endif
 }
-
-

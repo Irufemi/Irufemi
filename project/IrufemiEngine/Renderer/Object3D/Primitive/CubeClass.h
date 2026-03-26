@@ -8,7 +8,7 @@
 #include <string>
 
 #include "Application/camera/Camera.h"
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/Object3D/Object3DResource.h"
 
 // 前方宣言
 class TextureManager;
@@ -24,7 +24,7 @@ protected:
     float depth_ = 1.0f;  // 奥行(Z)
 
     // D3D12リソース
-    std::unique_ptr<D3D12ResourceUtil> resource_ = nullptr;
+    std::unique_ptr<Object3DResource> resource_ = nullptr;
 
     int selectedTextureIndex_ = 0;
 
@@ -47,7 +47,7 @@ public:
     void Debug(const char* cubeName = " ");
 
     // Getters / Setters
-    D3D12ResourceUtil* GetD3D12Resource() { return resource_.get(); }
+    Object3DResource* GetD3D12Resource() { return resource_.get(); }
     void SetPosition(const Vector3& c) { center_ = c; isDirty_ = true; }
     void SetRotate(const Vector3& rot) { if (resource_) resource_->transform_.rotate = rot; isDirty_ = true; }
     void SetScale(const Vector3& scale) { if (resource_) resource_->transform_.scale = scale; isDirty_ = true; }

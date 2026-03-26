@@ -23,67 +23,47 @@ void CubeClass::Initialize(Camera* camera, float width, float height, float dept
     height_ = height;
     depth_ = depth;
 
-    // D3D12ResourceUtil の生成
-    resource_ = std::make_unique<D3D12ResourceUtil>();
-
-    // サイズ反映(中心原点)
-    const float hx = width_ * 0.5f;
-    const float hy = height_ * 0.5f;
-    const float hz = depth_ * 0.5f;
-
     // PrimitiveManager から標準リソースを取得
     const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(PrimitiveType::Cube);
 
-    // リソース割当・データ転送（定数バッファのみ）
-    resource_->CreateResource(); // Vertex/Index 以外を生成するために必要だが、現状の実装に合わせる
-    resource_->Map();
+    // Object3DResource の生成
+    resource_ = std::make_unique<Object3DResource>();
 
     // 共有バッファの View とインデックス数を設定
     resource_->vertexBufferView_ = primitiveResource.vertexBufferView;
     resource_->indexBufferView_ = primitiveResource.indexBufferView;
     resource_->indexCount_ = primitiveResource.indexCount;
 
+    // リソース割当・データ転送（定数バッファのみ）
+    resource_->CreateResource();
+    resource_->Map();
+
     // マテリアル初期化
-    resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->materialData_->enableLighting = true;
-    resource_->materialData_->hasTexture = true;
-    resource_->materialData_->lightingMode = 2;
-    resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-    resource_->materialData_->shininess = 64.0f;
+    if (resource_->materialData_) {
+        resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
+        resource_->materialData_->enableLighting = true;
+        resource_->materialData_->hasTexture = true;
+        resource_->materialData_->lightingMode = 2;
+        resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+        resource_->materialData_->shininess = 64.0f;
+    }
 
     // transformation
     resource_->transform_.translate = center_;
     resource_->transform_.scale = Vector3{ 1.0f,1.0f,1.0f };
-    Vector3 effectiveScale{ 1.0f,1.0f,1.0f };
-    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
-    resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-
-    Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
-    worldForNormal.m[3][0] = worldForNormal.m[3][1] = worldForNormal.m[3][2] = 0.0f;
-    worldForNormal.m[3][3] = 1.0f;
-    resource_->transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-
-    *resource_->transformationData_ = {
-        resource_->transformationMatrix_.WVP,
-        resource_->transformationMatrix_.world,
-        resource_->transformationMatrix_.WorldInverseTranspose
-    };
+    
+    Update();
 
     // テクスチャハンドル設定
     if (textureManager_) {
+        resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
-        if (!textureNames.empty()) {
-            resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
-            auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
-            if (it != textureNames.end()) selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
-            else selectedTextureIndex_ = 0;
-        } else {
-            resource_->textureHandle_.ptr = 0;
-        }
+        auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
+        selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
 
-    if (resource_->textureHandle_.ptr == 0) {
+    if (resource_->textureHandle_.ptr == 0 && resource_->materialData_) {
         resource_->materialData_->hasTexture = false;
     }
 }
@@ -97,27 +77,29 @@ void CubeClass::SetSize(float width, float height, float depth) {
 }
 
 void CubeClass::Update() {
+    if (!resource_ || !camera_) return;
+
     // 位置/回転/スケールに応じてワールド行列を再計算する
     resource_->transform_.translate = center_;
-    Vector3 effectiveScale{ 1.0f, 1.0f, 1.0f };
-    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
-    resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+    
+    // 実スケール = 設定サイズ × 係数
+    Vector3 effectiveScale{
+        width_ * resource_->transform_.scale.x,
+        height_ * resource_->transform_.scale.y,
+        depth_ * resource_->transform_.scale.z
+    };
 
-    Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
-    worldForNormal.m[3][0] = worldForNormal.m[3][1] = worldForNormal.m[3][2] = 0.0f;
-    worldForNormal.m[3][3] = 1.0f;
-    resource_->transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+    // 一時的にスケールを上書きして行列更新
+    Vector3 originalScale = resource_->transform_.scale;
+    resource_->transform_.scale = effectiveScale;
+    resource_->UpdateTransform(*camera_);
+    resource_->transform_.scale = originalScale;
 
-    if (resource_->transformationData_) {
-        *resource_->transformationData_ = {
-            resource_->transformationMatrix_.WVP,
-            resource_->transformationMatrix_.world,
-            resource_->transformationMatrix_.WorldInverseTranspose
-        };
-    }
-
-    if (resource_->textureHandle_.ptr == 0) {
-        resource_->materialData_->hasTexture = false;
+    if (resource_->materialData_) {
+        if (resource_->textureHandle_.ptr == 0) {
+            resource_->materialData_->hasTexture = false;
+        }
+        resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
     }
 
     // フラグ更新
@@ -137,9 +119,7 @@ void CubeClass::Draw() {
         Update();
     }
 
-    if (drawManager_) {
-        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, resource_->indexCount_);
-    }
+    drawManager_->DrawObject3D(resource_.get());
 }
 
 void CubeClass::Debug(const char* cubeName) {

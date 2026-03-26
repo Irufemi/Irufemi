@@ -1,6 +1,6 @@
 #pragma once
 #include "Application/camera/Camera.h"
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/Particle/ParticleResource.h"
 #include "Renderer/Particle/Data/Particle.h"
 #include "Renderer/Particle/Data/Emitter.h"
 #include "Renderer/Particle/IParticleBehavior.h"
@@ -32,8 +32,8 @@ public:
 	void Debug(const char* particleName = "");
 
 	uint32_t GetInstanceCount() const { return numInstance_; }
-	D3D12ResourceUtilParticle* GetD3D12Resource() { return resource_.get(); }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvHandleGPU_; }
+	ParticleResource* GetD3D12Resource() { return resource_.get(); }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return resource_ ? resource_->instancingSrvHandleGPU_ : D3D12_GPU_DESCRIPTOR_HANDLE{}; }
 
 	static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
 	static void SetDrawManager(DrawManager* drawM) { s_drawManager_ = drawM; }
@@ -90,16 +90,14 @@ private:
 	std::list<Particle> Emit(const Emitter& emitter, std::mt19937& randomEngine);
 
 private:
-	static constexpr uint32_t kNumMaxInstance_ = 4096;
+	static constexpr uint32_t kNumMaxInstance_ = ParticleResource::kNumMaxInstance;
 	static constexpr float kDeltatime_ = 1.0f / 60.0f;
 
-	std::unique_ptr<D3D12ResourceUtilParticle> resource_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource_ = nullptr;
-	ParticleForGPU* instancingData_ = nullptr;
+	std::unique_ptr<ParticleResource> resource_ = nullptr;
 	uint32_t numInstance_ = 0;
-	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU_{} ;
-	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU_{} ;
 	uint32_t instancingSrvIndex_ = UINT32_MAX;
+	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU_{} ;
+	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU_{} ; // インデックス解放用に保持
 
 	Camera* camera_ = nullptr;
 	Matrix4x4 billboardMatrix_{};

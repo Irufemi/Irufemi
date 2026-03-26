@@ -14,14 +14,19 @@
 #include "Renderer/Region/Primitive/SphereRegion.h"
 #include "Renderer/Region/Primitive/TetraRegion.h"
 #include "Renderer/Particle/ParticleSystem.h"
+#include "Renderer/Particle/ParticleResource.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Renderer/Skybox//Skybox.h"
+#include "Renderer/Object3D/Object3DResource.h"
+#include "Renderer/Object2D/Object2DResource.h"
 
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/LineInstanced/LineResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Resource/Model/ModelManager.h"
 #include "Engine/Graphics/Data/CameraForGPU.h"
 #include "Engine/Graphics/Data/DirectionalLight.h"
+#include "Engine/Graphics/Data/PointLight.h"
+#include "Engine/Graphics/Data/SpotLight.h"
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "Engine/Core/Math/Geometry/Math.h"
 #include "Resource/Model/Data/SkinCluster.h"
@@ -287,72 +292,47 @@ void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
 }
 
 
-void DrawManager::DrawObject2D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
+void DrawManager::DrawObject2D(const Object2DResource* resource) {
+    if (!resource) return;
 
-    // 3. バッファ設定(VBV、IBV、Topology)
-
-    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    //VBVを設定
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView);
-    //IBVを設定
-    commandList_->IASetIndexBuffer(&indexBufferView);
+    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
-    // 4. 定数バッファ(CBV)やライト用CBVの設定
+    commandList_->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
 
-    ///CBVを設定する
-
-    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-
-    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView(1, transformationResource->GetGPUVirtualAddress());
-
-    // 5. テクスチャ用のDescriptor Table設定(SRV)
-
-    /*テクスチャを貼ろう*/
-
-    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable(2, textureHandle);
-
-    // 6. 描画
-
-    /*三角形を表示しよう*/
-
-    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
-
+    commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
-void DrawManager::DrawParticle(ParticleSystem* resource) {
-
+void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instanceCount) {
     // インスタンス数が0の場合は描画しない
-    if (resource->GetInstanceCount() == 0) {
+    if (instanceCount == 0) {
         return;
     }
 
     // IA 設定: VB/IB/Topology
-    commandList_->IASetVertexBuffers(0, 1, &resource->GetD3D12Resource()->vertexBufferView_);
-    commandList_->IASetIndexBuffer(&resource->GetD3D12Resource()->indexBufferView_);
+    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // --- CBV のバインド ---
     // 0: 既存のマテリアル CBV(互換性維持のために常にバインド)
     //    (rootParameters[0] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView(0, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
 
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)
-    auto instancing = resource->GetInstancingSrvHandleGPU();
-    assert(instancing.ptr != 0 && "Instancing SRV handle is null or invalid");
-    commandList_->SetGraphicsRootDescriptorTable(4, resource->GetInstancingSrvHandleGPU());
+    assert(resource->instancingSrvHandleGPU_.ptr != 0 && "Instancing SRV handle is null or invalid");
+    commandList_->SetGraphicsRootDescriptorTable(4, resource->instancingSrvHandleGPU_);
 
     // テクスチャ (PS t0)
-    commandList_->SetGraphicsRootDescriptorTable(2, resource->GetD3D12Resource()->textureHandle_);
+    commandList_->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
 
     // 描画コール: インデックス数 × インスタンス数
     commandList_->DrawIndexedInstanced(
-        resource->GetD3D12Resource()->indexCount_,
-        resource->GetInstanceCount(),
+        resource->indexCount_,
+        instanceCount,
         0, 0, 0
     );
 }
@@ -402,14 +382,13 @@ void DrawManager::DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
     commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
 }
 
-void DrawManager::DrawLineInstanced(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount) {
-
-    if (instanceCount == 0) return;
+void DrawManager::DrawLineInstanced(const LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount) {
+    if (!resource || instanceCount == 0) return;
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView);
-    commandList_->IASetIndexBuffer(&indexBufferView);
+    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
     // SRV (VS t1)
     commandList_->SetGraphicsRootDescriptorTable(11, instancingSrvHandleGPU);
@@ -477,38 +456,18 @@ void DrawManager::DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
     commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 }
 
-void DrawManager::DrawObject3D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
-    /*三角形を表示しよう*/
-    //RootSignatureを設定。PSOに設定しているけど別途指定が必要
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
-    //IBVを設定
-    commandList_->IASetIndexBuffer(&indexBufferView);
-    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
+void DrawManager::DrawObject3D(const Object3DResource* resource) {
+    if (!resource) return;
+    
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
-    /*三角形の色を変えよう*/
+    commandList_->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
 
-    ///CBVを設定する
-
-    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-
-    /*三角形を動かそう*/
-
-    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView(1, transformationResource->GetGPUVirtualAddress());
-
-    /*テクスチャを貼ろう*/
-
-    ///DescriptorTableを設定する
-
-    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable(2, textureHandle);
-
-    /*三角形を表示しよう*/
-
-    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+    commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
 

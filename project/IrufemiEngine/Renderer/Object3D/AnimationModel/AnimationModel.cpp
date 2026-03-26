@@ -13,6 +13,7 @@
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Application/camera/Camera.h"
 #include <cmath>
+#include <cassert>
 
 // 静的メンバ定義
 IrufemiEngine* AnimationModel::engine_ = nullptr;
@@ -21,11 +22,6 @@ AnimationModel::AnimationModel() {}
 AnimationModel::~AnimationModel() {
     if (transformationResource_) {
         transformationResource_->Unmap(0, nullptr);
-    }
-    for (size_t i = 0; i < instanceMaterials_.size(); ++i) {
-        if (instanceMaterials_[i] && instanceMaterials_[i]->materialResource) {
-            instanceMaterials_[i]->materialResource->Unmap(0, nullptr);
-        }
     }
 }
 
@@ -47,25 +43,29 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
     transformationResource_ = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
     transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
 
-    // インスタンス固有のマテリアルリソースを生成
-    instanceMaterials_.resize(managedModel_->gpuMaterials.size());
-    mappedMaterials_.resize(managedModel_->gpuMaterials.size());
-    for (size_t i = 0; i < managedModel_->gpuMaterials.size(); ++i) {
-        instanceMaterials_[i] = std::make_shared<GpuMaterial>();
-        instanceMaterials_[i]->materialResource = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(Material));
-        instanceMaterials_[i]->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedMaterials_[i]));
-        // 共有のテクスチャハンドルをコピー
-        instanceMaterials_[i]->textureHandle = managedModel_->gpuMaterials[i]->textureHandle;
-    }
+    // 各メッシュ用リソースの生成
+    meshResources_.clear();
+    for (size_t i = 0; i < managedModel_->gpuMeshes.size(); ++i) {
+        auto res = std::make_unique<Object3DResource>();
+        
+        // 変換行列リソースを借用
+        res->SetExternalTransformationResource(transformationResource_, transformationData_);
+        
+        const auto& gpuMesh = managedModel_->gpuMeshes[i];
+        res->vertexBufferView_ = gpuMesh->vertexBufferView;
+        res->indexBufferView_ = gpuMesh->indexBufferView;
+        res->indexCount_ = gpuMesh->indexCount;
+        
+        res->CreateResource();
+        res->Map();
 
-    // ノードアニメーション用のリソース確保
-    if (managedModel_->cpuModel->skinClusterData.empty()) {
-        meshTransformationResources_.resize(managedModel_->cpuModel->meshes.size());
-        meshTransformationData_.resize(managedModel_->cpuModel->meshes.size());
-        for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
-            meshTransformationResources_[i] = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
-            meshTransformationResources_[i]->Map(0, nullptr, reinterpret_cast<void**>(&meshTransformationData_[i]));
+        // 初期テクスチャハンドルをコピー
+        const auto& gpuMaterial = (i < managedModel_->gpuMaterials.size()) ? managedModel_->gpuMaterials[i] : nullptr;
+        if (gpuMaterial) {
+            res->textureHandle_ = gpuMaterial->textureHandle;
         }
+
+        meshResources_.push_back(std::move(res));
     }
 
     assert(engine_ && "AnimationModel::Initialize: AnimationManager is not set.");
@@ -224,25 +224,19 @@ void AnimationModel::Draw() {
     engine_->ApplyPSO();
 
     // 3. 全メッシュをループして描画
-    for (size_t i = 0; i < managedModel_->gpuMeshes.size(); ++i) {
-        const auto& gpuMesh = managedModel_->gpuMeshes[i];
-        const auto& gpuMaterial = (i < instanceMaterials_.size()) ? instanceMaterials_[i] : managedModel_->gpuMaterials[i];
+    for (size_t i = 0; i < meshResources_.size(); ++i) {
+        auto& res = meshResources_[i];
 
-        if (!gpuMesh || !gpuMaterial) continue;
+        // スキニング中なら VBV を一時的に差し替える
+        D3D12_VERTEX_BUFFER_VIEW originalVBV = res->vertexBufferView_;
+        if (!managedModel_->cpuModel->skinClusterData.empty()) {
+            res->vertexBufferView_ = skinCluster_.skinnedVertexBufferView;
+        }
 
-        // VBVの選択 (スキニング済みか元か)
-        const D3D12_VERTEX_BUFFER_VIEW& VBV = (!managedModel_->cpuModel->skinClusterData.empty())
-            ? skinCluster_.skinnedVertexBufferView
-            : gpuMesh->vertexBufferView;
+        engine_->GetDrawManager()->DrawObject3D(res.get());
 
-        engine_->GetDrawManager()->DrawObject3D(
-            VBV,
-            gpuMesh->indexBufferView,
-            gpuMaterial->materialResource,
-            transformationResource_,
-            gpuMaterial->textureHandle,
-            gpuMesh->indexCount
-        );
+        // 元に戻す
+        res->vertexBufferView_ = originalVBV;
     }
 }
 
@@ -276,19 +270,19 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
 }
 
 void AnimationModel::UpdateMaterials() {
-    if (!managedModel_ || !managedModel_->cpuModel || mappedMaterials_.empty()) {
+    if (!managedModel_ || !managedModel_->cpuModel || meshResources_.empty()) {
         return;
     }
 
     // 全メッシュのマテリアルを更新
     for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
-        // インデックスが範囲内か確認
-        if (i >= mappedMaterials_.size() || !mappedMaterials_[i]) {
-            continue;
-        }
+        if (i >= meshResources_.size()) break;
+
+        auto& res = meshResources_[i];
+        if (!res->materialData_) continue;
 
         const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
-        Material* mappedData = mappedMaterials_[i];
+        Material* mappedData = res->materialData_;
 
         // インスタンスカラーとマテリアルカラーを乗算
         mappedData->color.x = cpuMat.color.x * color_.x;

@@ -1,5 +1,5 @@
-#include "Engine/Manager/PrimitiveManager.h"
-#include "Renderer/D3D12ResourceUtil.h"
+#include "PrimitiveManager.h"
+#include "Renderer/Core/BaseResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector2.h"
@@ -66,7 +66,7 @@ const PrimitiveResource& PrimitiveManager::GetStandardResource(PrimitiveType typ
 }
 
 void PrimitiveManager::CreateGPUResource(const PrimitiveData& data, PrimitiveResource& resource) {
-    auto* dxCommon = D3D12ResourceUtil::dxCommon_;
+    auto* dxCommon = BaseResource::GetDirectXCommon();
     if (!dxCommon) return;
 
     resource.indexCount = static_cast<uint32_t>(data.indices.size());

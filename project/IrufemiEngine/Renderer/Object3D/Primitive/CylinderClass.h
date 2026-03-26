@@ -1,14 +1,15 @@
 #pragma once
-
 #include <cstdint>
-
-#include "Application/camera/Camera.h"
+#include <string>
 #include <vector>
 #include <d3d12.h>
 #include <wrl.h>
 #include <memory>
-#include "Renderer/D3D12ResourceUtil.h"
 #include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Vector4.h"
+#include "Engine/Core/Math/Matrix4x4.h"
+#include "Application/camera/Camera.h"
+#include "Renderer/Object3D/Object3DResource.h"
 
 // 前方宣言
 class TextureManager;
@@ -37,7 +38,7 @@ protected: // メンバ変数
     const float kThetaEvery_ = pi_ * 2.0f / static_cast<float>(kSubdivision_);
 
     // D3D12 リソース
-    std::unique_ptr<D3D12ResourceUtil> resource_ = nullptr;
+    std::unique_ptr<Object3DResource> resource_ = nullptr;
 
     int selectedTextureIndex_ = 0;
 
@@ -66,7 +67,7 @@ public: // メンバ関数
     void Debug(const char* cylinderName = " ");
 
     // 補助
-    D3D12ResourceUtil* GetD3D12Resource() { return this->resource_.get(); }
+    Object3DResource* GetD3D12Resource() { return this->resource_.get(); }
     void AddRotateY(float value) { this->resource_->transform_.rotate.y += value; }
 
     // 情報アクセス

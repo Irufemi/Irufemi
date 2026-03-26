@@ -10,7 +10,7 @@
 #include "Engine/Core/Math/Vector4.h"
 #include "Engine/Core/Math/Transform.h"
 #include "Renderer/TransformationMatrix.h"
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/LineInstanced/LineResource.h"
 
 // 前方宣言
 class Camera;
@@ -32,7 +32,7 @@ public:
     void Draw();
 
     // --- DrawManager から参照する Getter 群 ---
-    D3D12ResourceUtilLine* GetBaseResource() const { return baseLineResource_.get(); }
+    LineResource* GetBaseResource() const { return baseLineResource_.get(); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_; }
     UINT GetInstanceCountU32() const { return static_cast<UINT>(activeCount_); }
 
@@ -67,7 +67,7 @@ private:
     static DescriptorPool* s_srvAllocator_;
 
     Camera* camera_ = nullptr;
-    std::unique_ptr<D3D12ResourceUtilLine> baseLineResource_ = nullptr;
+    std::unique_ptr<LineResource> baseLineResource_ = nullptr;
 
     std::vector<LineInstance> instances_;
     size_t activeCount_ = 0;

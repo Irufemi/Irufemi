@@ -1,4 +1,4 @@
-#include "Renderer/Object3D/Primitive/SphereClass.h"
+#include "SphereClass.h"
 
 #include "Engine/Manager/PrimitiveManager.h"
 #include <cmath>
@@ -24,8 +24,8 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
     // PrimitiveManager から標準リソースを取得
     const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(PrimitiveType::Sphere);
 
-    // D3D12ResourceUtilの生成
-    resource_ = std::make_unique<D3D12ResourceUtil>();
+    // Object3DResourceの生成
+    resource_ = std::make_unique<Object3DResource>();
 
     // 共有バッファの View とインデックス数を設定
     resource_->vertexBufferView_ = primitiveResource.vertexBufferView;
@@ -41,83 +41,33 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
     // 共有リソースを使用するため、個別のバッファへのコピーは不要
 
     //マテリアル
-
-    resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->materialData_->enableLighting = true;
-    resource_->materialData_->hasTexture = true;
-    resource_->materialData_->lightingMode = 2;
-    resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-    resource_->materialData_->shininess = 64.0f;
+    if (resource_->materialData_) {
+        resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
+        resource_->materialData_->enableLighting = true;
+        resource_->materialData_->hasTexture = true;
+        resource_->materialData_->lightingMode = 2;
+        resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+        resource_->materialData_->shininess = 64.0f;
+    }
 
     //transformationMatrix
-
     resource_->transform_.translate = info_.center;
-
-    // scaleは係数として扱う(初期値は等方1)
     resource_->transform_.scale = Vector3{ 1.0f,1.0f,1.0f };
 
-    // 実スケール = 半径 × 係数
-    Vector3 effectiveScale{
-        info_.radius * resource_->transform_.scale.x,
-        info_.radius * resource_->transform_.scale.y,
-        info_.radius * resource_->transform_.scale.z
-    };
+    Update();
 
-    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
-
-    resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-
-    // 法線変換用：平行移動を除いた World を使う
-    Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
-    worldForNormal.m[3][0] = 0.0f;
-    worldForNormal.m[3][1] = 0.0f;
-    worldForNormal.m[3][2] = 0.0f;
-    worldForNormal.m[3][3] = 1.0f;
-
-    // 逆転置行列を計算
-    resource_->transformationMatrix_.WorldInverseTranspose =
-        Math::Transpose(Math::Inverse(worldForNormal));
-
-    // 定数バッファへ全フィールドを書き込む
-    *resource_->transformationData_ = {
-        resource_->transformationMatrix_.WVP,
-        resource_->transformationMatrix_.world,
-        resource_->transformationMatrix_.WorldInverseTranspose
-    };
-
-
-    auto textureNames = textureManager_->GetTextureNames();
-    std::sort(textureNames.begin(), textureNames.end());
-    if (!textureNames.empty()) {
-
+    if (textureManager_) {
         resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
-        // コンボボックス用に selectedIndex を初期化
+        auto textureNames = textureManager_->GetTextureNames();
+        std::sort(textureNames.begin(), textureNames.end());
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
-        if (it != textureNames.end()) {
-            selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
-        } else {
-            selectedTextureIndex_ = 0;
-        }
-
-    } else {
-        resource_->textureHandle_.ptr = 0;
+        selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
-
-    // --- 追加: 実行時チェックとフォールバック ---
-    if (resource_->textureHandle_.ptr == 0) {
-        resource_->materialData_->hasTexture = false;
-        OutputDebugStringA("[SphereClass] textureHandle is NULL -> using no-texture fallback\n");
-    } else {
-        resource_->materialData_->hasTexture = true;
-        char buf[256];
-        sprintf_s(buf, "[SphereClass] textureHandle.ptr = %llu\n", static_cast<unsigned long long>(resource_->textureHandle_.ptr));
-        OutputDebugStringA(buf);
-    }
-
 }
 
 void SphereClass::Update() {
+    if (!resource_ || !camera_) return;
 
     // Release でも必ず論理情報を実トランスフォームに反映する
     resource_->transform_.translate = info_.center;
@@ -129,36 +79,21 @@ void SphereClass::Update() {
         info_.radius * resource_->transform_.scale.z
     };
 
-    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
+    // 一時的にスケールを上書きして行列更新
+    Vector3 originalScale = resource_->transform_.scale;
+    resource_->transform_.scale = effectiveScale;
+    resource_->UpdateTransform(*camera_);
+    resource_->transform_.scale = originalScale;
 
-    resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-
-    // 法線変換用：平行移動を除いた World を使う
-    Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
-    worldForNormal.m[3][0] = 0.0f;
-    worldForNormal.m[3][1] = 0.0f;
-    worldForNormal.m[3][2] = 0.0f;
-    worldForNormal.m[3][3] = 1.0f;
-
-    // 逆転置行列を計算
-    resource_->transformationMatrix_.WorldInverseTranspose =
-        Math::Transpose(Math::Inverse(worldForNormal));
-
-    // 定数バッファへ全フィールドを書き込む
-    if (resource_->transformationData_) {
-        *resource_->transformationData_ = {
-            resource_->transformationMatrix_.WVP,
-            resource_->transformationMatrix_.world,
-            resource_->transformationMatrix_.WorldInverseTranspose
-        };
+    // UV Transform 更新
+    if (resource_->materialData_) {
+        resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+        
+        // SRVが無効なら毎フレーム保険で hasTexture をオフ
+        if (resource_->textureHandle_.ptr == 0) {
+            resource_->materialData_->hasTexture = false;
+        }
     }
-
-    // SRVが無効なら毎フレーム保険で hasTexture をオフ
-    if (resource_->textureHandle_.ptr == 0) {
-        resource_->materialData_->hasTexture = false;
-    }
-
-    resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 
     // フラグ更新
     isDirty_ = false;
@@ -177,9 +112,7 @@ void SphereClass::Draw() {
         Update();
     }
 
-    if (drawManager_) {
-        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, resource_->indexCount_);
-    }
+    drawManager_->DrawObject3D(resource_.get());
 }
 
 void SphereClass::Debug([[maybe_unused]] const char* sphereName) {

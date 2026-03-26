@@ -18,8 +18,9 @@ DebugUI* ParticleSystem::s_ui_ = nullptr;
 
 ParticleSystem::~ParticleSystem() {
     if (instancingSrvIndex_ != UINT32_MAX && s_srvPool_ && resource_) {
-        if (auto* dx = resource_->GetDirectXCommon()) {
-            s_srvPool_->FreeAfterFence(instancingSrvIndex_, dx->GetFenceValue());
+        if (auto* dx = BaseResource::GetDirectXCommon()) {
+            uint64_t fv = dx->GetFenceValue();
+            s_srvPool_->FreeAfterFence(instancingSrvIndex_, fv);
         }
         instancingSrvIndex_ = UINT32_MAX;
         instancingSrvHandleCPU_ = {};
@@ -36,13 +37,10 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
 
     // 初回呼び出し時のみリソースを生成
     if (!resource_) {
-        resource_ = std::make_unique<D3D12ResourceUtilParticle>();
+        resource_ = std::make_unique<ParticleResource>();
     }
-    if (!instancingResource_) {
-        // Instancing 用バッファ
-        instancingResource_ = resource_->GetDirectXCommon()->CreateBufferResource(sizeof(ParticleForGPU) * kNumMaxInstance_);
-        instancingResource_->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_));
-    }
+    // リソース物理生成
+    resource_->CreateResource();
 
     // デバッグ用の Line3DRegion を初期化
     if (!debugLineRegion_) {
@@ -94,8 +92,9 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     }
 
     // 既存の静的インデックス運用は廃止。確保できている場合のみ SRV を作成
-    if (instancingSrvHandleCPU_.ptr != 0) {
-        resource_->GetDirectXCommon()->GetDevice()->CreateShaderResourceView(instancingResource_.Get(), &instancingDesc, instancingSrvHandleCPU_);
+    if (instancingSrvHandleCPU_.ptr != 0 && resource_->instancingResource_) {
+        BaseResource::GetDirectXCommon()->GetDevice()->CreateShaderResourceView(resource_->instancingResource_.Get(), &instancingDesc, instancingSrvHandleCPU_);
+        resource_->instancingSrvHandleGPU_ = instancingSrvHandleGPU_;
     }
 
     // 頂点/インデックスデータをクリア (共有リソース利用のため個別のリストを初期化)
@@ -107,9 +106,6 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     resource_->vertexBufferView_ = primitiveRes.vertexBufferView;
     resource_->indexBufferView_ = primitiveRes.indexBufferView;
     resource_->indexCount_ = primitiveRes.indexCount;
-
-    // リソースのメモリを確保(または再利用)。リストが空なので頂点/インデックスバッファは生成されない
-    resource_->CreateResource();
 
     // 書き込めるようにする
     resource_->Map();
@@ -190,9 +186,11 @@ void ParticleSystem::Update() {
                 worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             }
             Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-            instancingData_[numInstance_].world = worldMatrix;
-            instancingData_[numInstance_].WVP = worldViewProjectionMatrix;
-            instancingData_[numInstance_].color = particleIterator->color;
+            if (resource_->instancingData_) {
+                resource_->instancingData_[numInstance_].world = worldMatrix;
+                resource_->instancingData_[numInstance_].WVP = worldViewProjectionMatrix;
+                resource_->instancingData_[numInstance_].color = particleIterator->color;
+            }
 
             numInstance_++; // 生きているParticleの数を1つカウントする
 
@@ -226,7 +224,7 @@ void ParticleSystem::Draw()
 
         // 描画
         if (s_drawManager_) {
-            s_drawManager_->DrawParticle(this);
+            s_drawManager_->DrawParticle(resource_.get(), numInstance_);
         }
 
         // エンジン状態を復元(PSOの切り替えは呼び出し側で制御するため Apply は行わない)
@@ -236,7 +234,7 @@ void ParticleSystem::Draw()
     } else {
         // エンジン参照がない場合は従来通り(安全策)
         if (s_drawManager_) {
-            s_drawManager_->DrawParticle(this);
+            s_drawManager_->DrawParticle(resource_.get(), numInstance_);
         }
     }
 
@@ -513,10 +511,9 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 ImGui::EndTabItem();
             }
 
-            // レンダリングタブ
             if (ImGui::BeginTabItem("Rendering")) {
                 s_ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-                s_ui_->DebugMaterialParticle(resource_->materialData_);
+                s_ui_->DebugMaterialByParticle(resource_->materialData_);
                 s_ui_->DebugUvTransform(resource_->uvTransform_);
 
                 // --- Ring パラメータ UI ---

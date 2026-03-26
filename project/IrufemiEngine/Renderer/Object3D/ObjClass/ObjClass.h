@@ -2,13 +2,14 @@
 #include <d3d12.h>
 #include <string>
 #include "Application/camera/Camera.h"
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/TransformationMatrix.h"
 #include <wrl.h>
 #include <cstdint>
 #include <memory>
 #include <vector>
 #include "Engine/Core/Math/Transform.h"
 #include "Resource/Model/Data/ObjModel.h"
+#include "Renderer/Object3D/Object3DResource.h"
 
 // 前方宣言
 class TextureManager;
@@ -36,11 +37,10 @@ private:
     TransformationMatrix transformationMatrix_{};
     Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // インスタンスカラー
 
-    // インスタンス固有のマテリアル
-    std::vector<std::shared_ptr<GpuMaterial>> instanceMaterials_;
-    std::vector<Material*> mappedMaterials_;
+    // 各メッシュ用リソース (マテリアルや頂点Viewを保持)
+    std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
-    // 変換行列用リソース
+    // 共通の変換行列リソース (全メッシュで共有)
     Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_;
     TransformationMatrix* transformationData_ = nullptr;
 

@@ -3,9 +3,10 @@
 #include <vector>
 #include <array>
 #include <d3d12.h>
+#include <string>
 
 #include "Engine/Core/Shape/Triangle.h"
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/Object3D/Object3DResource.h"
 #include "Application/camera/Camera.h"
 #include <wrl.h>
 #include <memory>
@@ -17,7 +18,7 @@ class DebugUI;
 
 class TriangleClass {
 private:
-    std::unique_ptr<D3D12ResourceUtil> resource_ = nullptr;
+    std::unique_ptr<Object3DResource> resource_ = nullptr;
     int selectedTextureIndex_ = 0;
 
     Camera* camera_ = nullptr;
@@ -40,7 +41,7 @@ public:
     void Debug(const char* triangleName = "");
 
     // ゲッター/セッター
-    D3D12ResourceUtil* GetD3D12Resource() { return resource_.get(); }
+    Object3DResource* GetD3D12Resource() { return resource_.get(); }
 
     void SetTransform(const Transform& transform) { if (resource_) resource_->transform_ = transform; isDirty_ = true; }
     const Transform& GetTransform() const { return resource_ ? resource_->transform_ : sDefaultTransform_; }
