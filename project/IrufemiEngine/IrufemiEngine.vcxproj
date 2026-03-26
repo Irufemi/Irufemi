@@ -165,6 +165,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object3D\ObjClass\ObjClass.cpp" />
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp" />
     <ClCompile Include="Renderer\Particle\ParticleSystem.cpp" />
+    <ClCompile Include="Renderer\Core\BaseResource.cpp" />
+    <ClCompile Include="Renderer\Object2D\Object2DResource.cpp" />
+    <ClCompile Include="Renderer\Object3D\Object3DResource.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\SphereClass.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\TriangleClass.cpp" />
     <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp" />
@@ -178,14 +181,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\System\EffectSystem.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DescriptorAllocator.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DescriptorPool.cpp" />
-    <ClCompile Include="Renderer\Particle\IParticleBehavior.cpp" />
+    <ClCompile Include="Renderer\Particle\ParticleResource.cpp" />
+    <ClCompile Include="Renderer\LineInstanced\LineResource.cpp" />
     <ClCompile Include="Renderer\LineInstanced\LineClass.cpp" />
-    <ClCompile Include="Engine\Manager\PrimitiveManager.cpp" />
-    <ClCompile Include="Renderer\LineInstanced\Data\LineMaterial.h" />
-    <ClCompile Include="Renderer\LineInstanced\Data\LineVertexData.h" />
     <ClCompile Include="Engine\Core\Math\Matrix4x4.cpp" />
     <ClCompile Include="Engine\Core\Math\Quaternion.cpp" />
     <ClCompile Include="Renderer\Particle\Data\Particle.cpp" />
+    <ClCompile Include="Renderer\Particle\IParticleBehavior.cpp" />
     <ClCompile Include="Engine\Core\Math\Vector2.cpp" />
     <ClCompile Include="Resource\Audio\Se.cpp" />
     <ClCompile Include="Resource\Model\ModelManager.cpp" />
@@ -193,7 +195,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Platform\Input\Mouse.cpp" />
     <ClCompile Include="Engine\Core\Math\Vector4.cpp" />
     <ClCompile Include="Renderer\Skybox\Skybox.cpp" />
-    <ClCompile Include="Renderer\D3D12ResourceUtil.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DirectXCommon.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\RenderTexture.cpp" />
     <ClCompile Include="Engine\IrufemiEngine.cpp" />
@@ -207,6 +208,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Manager\DebugUI.cpp" />
     <ClCompile Include="Engine\Manager\DrawManager.cpp" />
     <ClCompile Include="Engine\Platform\Input\InputManager.cpp" />
+    <ClCompile Include="Engine\Manager\PrimitiveManager.cpp" />
     <ClCompile Include="Resource\Texture\TextureManager.cpp" />
     <ClCompile Include="Engine\Core\Math\Vector3 .cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\PSOManager.cpp" />
@@ -235,6 +237,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object3D\ObjClass\ObjClass.h" />
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h" />
     <ClInclude Include="Renderer\Particle\ParticleSystem.h" />
+    <ClInclude Include="Renderer\Core\BaseResource.h" />
+    <ClInclude Include="Renderer\Object2D\Object2DResource.h" />
+    <ClInclude Include="Renderer\Object3D\Object3DResource.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\SphereClass.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\TriangleClass.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\Collision.h" />
@@ -261,6 +266,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Math\Geometry\Math.h" />
     <ClInclude Include="Engine\Platform\Input\GamePad.h" />
     <ClInclude Include="Engine\Platform\Input\Keyboard.h" />
+    <ClInclude Include="Renderer\Particle\ParticleResource.h" />
+    <ClInclude Include="Renderer\LineInstanced\LineResource.h" />
     <ClInclude Include="Renderer\Particle\IParticleBehavior.h" />
     <ClInclude Include="Engine\Manager\PrimitiveManager.h" />
     <ClInclude Include="Resource\Model\Data\AnimationTransform.h" />
@@ -268,6 +275,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Manager\DebugUI.h" />
     <ClInclude Include="Engine\Manager\DrawManager.h" />
     <ClInclude Include="Engine\Platform\Input\InputManager.h" />
+    <ClInclude Include="Renderer\LineInstanced\Data\LineMaterial.h" />
+    <ClInclude Include="Renderer\LineInstanced\Data\LineVertexData.h" />
     <ClInclude Include="Resource\Texture\TextureManager.h" />
     <ClInclude Include="Resource\Audio\VoiceCallback.h" />
     <ClInclude Include="Resource\Model\Data\Animation.h" />
@@ -324,7 +333,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\SceneManager.h" />
     <ClInclude Include="Resource\Audio\Se.h" />
     <ClInclude Include="Renderer\Skybox\Skybox.h" />
-    <ClInclude Include="Renderer\D3D12ResourceUtil.h" />
     <ClInclude Include="Resource\Audio\Sound.h" />
     <ClInclude Include="Resource\Texture\Texture.h" />
     <ClInclude Include="Engine\Core\Utility\StringUtility.h" />
@@ -339,7 +347,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="..\Application\resources\shaders\Line.hlsli" />
     <None Include="..\Application\resources\shaders\LineInstanced.hlsli" />
     <None Include="..\Application\resources\shaders\Object2D.hlsli" />
-    <None Include="..\Application\resources\shaders\Object3d.hlsli" />
+    <None Include="..\Application\resources\shaders\Object3D.hlsli" />
     <None Include="..\Application\resources\shaders\Particle.hlsli" />
     <None Include="..\Application\resources\shaders\ParticleGPU.hlsli" />
     <None Include="..\Application\resources\shaders\PerFrame.hlsli" />
@@ -477,12 +485,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Object3d.PS.hlsl">
+    <FxCompile Include="..\Application\resources\shaders\Object3D.PS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Object3d.VS.hlsl">
+    <FxCompile Include="..\Application\resources\shaders\Object3D.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

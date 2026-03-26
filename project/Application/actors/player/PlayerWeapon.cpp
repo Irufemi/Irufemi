@@ -32,10 +32,10 @@ void PlayerWeapon::Initialize(Camera* camera) {
 
     // --- マズルフラッシュパーティクルの初期化 ---
     muzzleFlashLeft_ = std::make_unique<ParticleSystem>();
-    muzzleFlashLeft_->Initialize(camera_, "resources/whiteTexture.png", ParticleType::kMuzzleFlash, ParticlePrimitiveShape::Circle);
+    muzzleFlashLeft_->Initialize(camera_, "resources/whiteTexture.png", ParticleType::kMuzzleFlash, PrimitiveType::Circle);
     muzzleFlashLeft_->SetBlend(BlendMode::kBlendModeNormal);
     muzzleFlashRight_ = std::make_unique<ParticleSystem>();
-    muzzleFlashRight_->Initialize(camera_, "resources/whiteTexture.png", ParticleType::kMuzzleFlash, ParticlePrimitiveShape::Circle);
+    muzzleFlashRight_->Initialize(camera_, "resources/whiteTexture.png", ParticleType::kMuzzleFlash, PrimitiveType::Circle);
     muzzleFlashRight_->SetBlend(BlendMode::kBlendModeNormal);
 
     // --- 加算合成マズルフラッシュの初期化 ---

@@ -19,11 +19,6 @@ ObjClass::~ObjClass() {
     if (transformationResource_) {
         transformationResource_->Unmap(0, nullptr);
     }
-    for (size_t i = 0; i < instanceMaterials_.size(); ++i) {
-        if (instanceMaterials_[i] && instanceMaterials_[i]->materialResource) {
-            instanceMaterials_[i]->materialResource->Unmap(0, nullptr);
-        }
-    }
 }
 
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
@@ -38,22 +33,37 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         return;
     }
 
-    // 変換行列リソースの生成とマップ
+    // 変換行列リソースの生成とマップ (全メッシュ共有用)
     assert(drawManager_ && "DrawManager is not set. Cannot get DirectXCommon.");
     transformationResource_ = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
     transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
 
-    // インスタンス固有のマテリアルリソースを生成
-    instanceMaterials_.resize(managedModel_->gpuMaterials.size());
-    mappedMaterials_.resize(managedModel_->gpuMaterials.size());
-    for (size_t i = 0; i < managedModel_->gpuMaterials.size(); ++i) {
-        instanceMaterials_[i] = std::make_shared<GpuMaterial>();
-        instanceMaterials_[i]->materialResource = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(Material));
-        instanceMaterials_[i]->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedMaterials_[i]));
-        // 共有のテクスチャハンドルをコピー
-        instanceMaterials_[i]->textureHandle = managedModel_->gpuMaterials[i]->textureHandle;
-    }
+    // インスタンス固有の各メッシュ用リソースを生成
+    meshResources_.clear();
+    for (size_t i = 0; i < managedModel_->gpuMeshes.size(); ++i) {
+        auto res = std::make_unique<Object3DResource>();
+        
+        // 外部の変換行列リソースを借用
+        res->SetExternalTransformationResource(transformationResource_, transformationData_);
+        
+        // メッシュ固有の View を設定
+        const auto& gpuMesh = managedModel_->gpuMeshes[i];
+        res->vertexBufferView_ = gpuMesh->vertexBufferView;
+        res->indexBufferView_ = gpuMesh->indexBufferView;
+        res->indexCount_ = gpuMesh->indexCount;
+        
+        // マテリアルリソース等の生成
+        res->CreateResource();
+        res->Map();
+        
+        // 初期テクスチャハンドルを共有データからコピー
+        const auto& gpuMaterial = (i < managedModel_->gpuMaterials.size()) ? managedModel_->gpuMaterials[i] : nullptr;
+        if (gpuMaterial) {
+            res->textureHandle_ = gpuMaterial->textureHandle;
+        }
 
+        meshResources_.push_back(std::move(res));
+    }
 
     // 初回Updateを呼んでおく
     Update();
@@ -104,8 +114,10 @@ void ObjClass::Draw() {
         Update();
     }
 
-    // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
-    drawManager_->DrawModel(managedModel_.get(), GetTransformationGpuAddress(), instanceMaterials_);
+    // モデル内の全メッシュを描画
+    for (auto& res : meshResources_) {
+        drawManager_->DrawObject3D(res.get());
+    }
 }
 
 void ObjClass::Debug([[maybe_unused]] const char* objName) {
@@ -186,19 +198,19 @@ void ObjClass::SetColor(const Vector4& color) {
 }
 
 void ObjClass::UpdateMaterials() {
-    if (!managedModel_ || !managedModel_->cpuModel || mappedMaterials_.empty()) {
+    if (!managedModel_ || !managedModel_->cpuModel || meshResources_.empty()) {
         return;
     }
 
     // 全メッシュのマテリアルを更新
     for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
-        // インデックスが範囲内か確認
-        if (i >= mappedMaterials_.size() || !mappedMaterials_[i]) {
-            continue;
-        }
+        if (i >= meshResources_.size()) break;
+
+        auto& res = meshResources_[i];
+        if (!res->materialData_) continue;
 
         const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
-        Material* mappedData = mappedMaterials_[i];
+        Material* mappedData = res->materialData_;
 
         // インスタンスカラーとマテリアルカラーを乗算
         mappedData->color.x = cpuMat.color.x * color_.x;

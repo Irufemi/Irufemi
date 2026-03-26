@@ -2,8 +2,9 @@
 
 #include <d3d12.h>
 #include <vector>
+#include <string>
 #include <cstdint>
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/Object2D/Object2DResource.h"
 #include "Engine/Core/Math/Vector2.h" 
 #include <wrl.h>
 #include <memory>
@@ -17,7 +18,7 @@ class Camera;
 class Sprite {
 private:
 
-    std::unique_ptr<D3D12ResourceUtil> resource_ = nullptr;
+    std::unique_ptr<Object2DResource> resource_ = nullptr;
 
     bool isRotateY_ = true;
 
@@ -67,7 +68,7 @@ public: //メンバ関数
     void Debug(const char* spriteName = "");
 
     // ゲッター
-    D3D12ResourceUtil* GetD3D12Resource() { return this->resource_.get(); }
+    Object2DResource* GetD3D12Resource() { return this->resource_.get(); }
 
     // サイズとアンカーの設定
     void SetSize(const float& width, const float& height);

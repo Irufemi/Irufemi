@@ -22,8 +22,7 @@ class SphereClass;
 class ObjClass;
 class ParticleSystem;
 class CylinderClass;
-class D3D12ResourceUtil;
-class D3D12ResourceUtilLine;
+class TetraRegion;
 class ModelRegion;
 class SphereRegion;
 class TetraRegion;
@@ -119,34 +118,32 @@ public: //メンバ関数
     void SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle);
     D3D12_GPU_DESCRIPTOR_HANDLE GetEnvironmentMap() const { return environmentMapHandle_; }
 
-    void DrawTriangle(
-        TriangleClass* triangle
-    );
 
-    void DrawParticle(ParticleSystem* resource);
+    void DrawParticle(const class ParticleResource* resource, uint32_t instanceCount);
 
     void DrawModelRegion(ModelRegion* region);
 
     void DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount);
 
     // LineInstancedシェーダー用描画関数
-    void DrawLineInstanced(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
+    void DrawLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
 
     // Object3Dシェーダー用描画関数
-    void DrawObject3D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
+    void DrawObject3D(const class Object3DResource* resource);
 
     // Object2Dシェーダー用描画関数
-    void DrawObject2D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
+    void DrawObject2D(const class Object2DResource* resource);
 
-    // Skyboxシェーダー用描画関数
+    // Skybox用描画関数
     void DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
 
-    // モデル描画用の関数
-    void DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const std::vector<std::shared_ptr<GpuMaterial>>& materials);
+    // スキニング計算の実行
+    void DispatchSkinning(const SkinCluster& skinCluster, const ManagedModel* model, uint32_t numVertices);
 
-    void DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster, const D3D12_GPU_DESCRIPTOR_HANDLE& skinnedVertexSrv, D3D12_GPU_VIRTUAL_ADDRESS skinningInfoGpuVA, uint32_t numVertices, const std::vector<std::shared_ptr<GpuMaterial>>& materials);
+    // UAVバリアの実行
+    void ExecuteUAVBarrier(ID3D12Resource* resource);
 
-    void DispatchSkinning(const D3D12_GPU_DESCRIPTOR_HANDLE& palette, const D3D12_GPU_DESCRIPTOR_HANDLE& inputVertex, const D3D12_GPU_DESCRIPTOR_HANDLE& influence, const D3D12_GPU_DESCRIPTOR_HANDLE& outputVertex, const D3D12_GPU_VIRTUAL_ADDRESS& skinningInformation, const float& verticesSize);
+    // Object2Dシェーダー用描画関数
 
     void DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const UINT& instanceCount);
 

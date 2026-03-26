@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 #include "Application/camera/Camera.h"
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/Object2D/Object2DResource.h"
 
 // 前方宣言
 class TextureManager;
@@ -24,7 +24,7 @@ protected:
     uint32_t subdivision_ = 64; // 周方向分割
 
     // D3D12 リソース
-    std::unique_ptr<D3D12ResourceUtil> resource_ = nullptr;
+    std::unique_ptr<Object2DResource> resource_ = nullptr;
 
     // 参照(非所有)
     static TextureManager* textureManager_;

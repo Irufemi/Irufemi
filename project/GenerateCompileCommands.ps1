@@ -70,9 +70,9 @@ foreach ($proj in $projects) {
                 $cmdStr = $cmdArgs -join " "
                 
                 $cmdObj = [ordered]@{
-                    directory = $proj.DirectoryName.Replace('\', '/')
-                    command   = $cmdStr.Replace('\', '/')
-                    file      = $absFile.Replace('\', '/')
+                    directory = $slnDir.TrimEnd('\').Replace('\', '/')
+                    command   = $cmdStr.Replace($slnDir, "./").Replace('\', '/')
+                    file      = $absFile.Replace($slnDir, "./").Replace('\', '/')
                 }
                 $commands += $cmdObj
             } catch { }
@@ -91,9 +91,9 @@ foreach ($proj in $projects) {
                 $cmdStr = $cmdArgs -join " "
                 
                 $cmdObj = [ordered]@{
-                    directory = $proj.DirectoryName.Replace('\', '/')
-                    command   = $cmdStr.Replace('\', '/')
-                    file      = $absFile.Replace('\', '/')
+                    directory = $slnDir.TrimEnd('\').Replace('\', '/')
+                    command   = $cmdStr.Replace($slnDir, "./").Replace('\', '/')
+                    file      = $absFile.Replace($slnDir, "./").Replace('\', '/')
                 }
                 $commands += $cmdObj
             } catch { }
