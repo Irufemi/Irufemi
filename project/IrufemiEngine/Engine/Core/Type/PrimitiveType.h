@@ -9,6 +9,9 @@ enum class PrimitiveType {
     Tetra,
     Circle,
     Ring,
-    Skybox
-
+    Skybox,
+    Cone,
+    Torus,
+    IcoSphere,
+    Grid
 };

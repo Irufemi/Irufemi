@@ -41,6 +41,10 @@ const PrimitiveData& PrimitiveManager::GetPrimitiveData(PrimitiveType type) {
     case PrimitiveType::Circle:   data = CreateCircle(0.5f, 32); break;
     case PrimitiveType::Ring:     data = CreateRing(0.2f, 0.5f, 0.0f, 360.0f, 32, false); break;
     case PrimitiveType::Skybox:   data = CreateCube(1.0f, 1.0f, 1.0f); break;
+    case PrimitiveType::Cone:     data = CreateCone(0.5f, 1.0f, 32); break;
+    case PrimitiveType::Torus:    data = CreateTorus(0.4f, 0.1f, 32, 16); break;
+    case PrimitiveType::IcoSphere: data = CreateIcoSphere(0.5f, 2); break;
+    case PrimitiveType::Grid:     data = CreateGrid(1.0f, 1.0f, 10, 10); break;
     default: break;
     }
 
@@ -338,6 +342,115 @@ PrimitiveData PrimitiveManager::CreateCircle(float radius, uint32_t segments) {
     }
     for (uint32_t i = 0; i < segments; ++i) {
         data.indices.push_back(0); data.indices.push_back(i + 1); data.indices.push_back(i + 2);
+    }
+    return data;
+}
+
+PrimitiveData PrimitiveManager::CreateCone(float radius, float height, uint32_t segments) {
+    PrimitiveData data;
+    const float pi = std::numbers::pi_v<float>;
+    const float radianPerDivide = 2.0f * pi / static_cast<float>(segments);
+    data.vertices.push_back({ { 0.0f, height * 0.5f, 0.0f, 1.0f }, { 0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } });
+    data.vertices.push_back({ { 0.0f, -height * 0.5f, 0.0f, 1.0f }, { 0.5f, 0.5f }, { 0.0f, -1.0f, 0.0f } });
+    for (uint32_t i = 0; i <= segments; ++i) {
+        float rad = static_cast<float>(i) * radianPerDivide;
+        float s = std::sin(rad), c = std::cos(rad);
+        float u = static_cast<float>(i) / segments;
+        float nx = c, ny = radius / height, nz = s;
+        float nlen = std::sqrt(nx * nx + ny * ny + nz * nz);
+        data.vertices.push_back({ { c * radius, -height * 0.5f, s * radius, 1.0f }, { u, 1.0f }, { nx / nlen, ny / nlen, nz / nlen } });
+        data.vertices.push_back({ { c * radius, -height * 0.5f, s * radius, 1.0f }, { u, 1.0f }, { 0.0f, -1.0f, 0.0f } });
+    }
+    for (uint32_t i = 0; i < segments; ++i) {
+        uint32_t base = 2 + i * 2;
+        data.indices.push_back(0); data.indices.push_back(base + 2); data.indices.push_back(base);
+        data.indices.push_back(1); data.indices.push_back(base + 1); data.indices.push_back(base + 3);
+    }
+    return data;
+}
+
+PrimitiveData PrimitiveManager::CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments) {
+    PrimitiveData data;
+    const float pi = std::numbers::pi_v<float>;
+    for (uint32_t j = 0; j <= minorSegments; ++j) {
+        float v = static_cast<float>(j) / minorSegments;
+        float phi = v * 2.0f * pi;
+        float cosPhi = std::cos(phi), sinPhi = std::sin(phi);
+        for (uint32_t i = 0; i <= majorSegments; ++i) {
+            float u = static_cast<float>(i) / majorSegments;
+            float theta = u * 2.0f * pi;
+            float cosTheta = std::cos(theta), sinTheta = std::sin(theta);
+            VertexData vertex;
+            vertex.position = { (majorRadius + minorRadius * cosPhi) * cosTheta, (majorRadius + minorRadius * cosPhi) * sinTheta, minorRadius * sinPhi, 1.0f };
+            vertex.normal = { cosPhi * cosTheta, cosPhi * sinTheta, sinPhi };
+            vertex.texcoord = { u, v };
+            data.vertices.push_back(vertex);
+        }
+    }
+    for (uint32_t j = 0; j < minorSegments; ++j) {
+        for (uint32_t i = 0; i < majorSegments; ++i) {
+            uint32_t base = j * (majorSegments + 1) + i;
+            data.indices.push_back(base); data.indices.push_back(base + majorSegments + 1); data.indices.push_back(base + 1);
+            data.indices.push_back(base + 1); data.indices.push_back(base + majorSegments + 1); data.indices.push_back(base + majorSegments + 2);
+        }
+    }
+    return data;
+}
+
+PrimitiveData PrimitiveManager::CreateIcoSphere(float radius, uint32_t subdivision) {
+    PrimitiveData data;
+    const float t = (1.0f + std::sqrt(5.0f)) / 2.0f;
+    std::vector<Vector3> verts = {{-1,t,0}, {1,t,0}, {-1,-t,0}, {1,-t,0}, {0,-1,t}, {0,1,t}, {0,-1,-t}, {0,1,-t}, {t,0,-1}, {t,0,1}, {-t,0,-1}, {-t,0,1}};
+    for (auto& v : verts) {
+        float len = std::sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+        v = {v.x/len*radius, v.y/len*radius, v.z/len*radius};
+    }
+    struct Triangle { uint32_t v1, v2, v3; };
+    std::vector<Triangle> triangles = {{0,11,5},{0,5,1},{0,1,7},{0,7,10},{0,10,11},{1,5,9},{5,11,4},{11,10,2},{10,7,6},{7,1,8},{3,9,4},{3,4,2},{3,2,6},{3,6,8},{3,8,9},{4,9,5},{2,4,11},{6,2,10},{8,6,7},{9,8,1}};
+    auto getMiddle = [&](uint32_t p1, uint32_t p2, std::map<uint64_t, uint32_t>& cache) {
+        uint64_t key = (std::min(p1,p2) << 32) | std::max(p1,p2);
+        if (cache.count(key)) return cache[key];
+        Vector3 v1 = verts[p1], v2 = verts[p2];
+        Vector3 m = {(v1.x+v2.x)/2,(v1.y+v2.y)/2,(v1.z+v2.z)/2};
+        float l = std::sqrt(m.x*m.x+m.y*m.y+m.z*m.z);
+        verts.push_back({m.x/l*radius, m.y/l*radius, m.z/l*radius});
+        return cache[key] = (uint32_t)verts.size()-1;
+    };
+    for (uint32_t i=0; i<subdivision; ++i) {
+        std::vector<Triangle> next; std::map<uint64_t, uint32_t> cache;
+        for (auto& tri : triangles) {
+            uint32_t a = getMiddle(tri.v1, tri.v2, cache), b = getMiddle(tri.v2, tri.v3, cache), c = getMiddle(tri.v3, tri.v1, cache);
+            next.push_back({tri.v1,a,c}); next.push_back({tri.v2,b,a}); next.push_back({tri.v3,c,b}); next.push_back({a,b,c});
+        }
+        triangles = next;
+    }
+    const float pi = std::numbers::pi_v<float>;
+    for (const auto& v : verts) {
+        VertexData vd; vd.position = {v.x,v.y,v.z,1.0f}; vd.normal = {v.x/radius,v.y/radius,v.z/radius};
+        vd.texcoord = {0.5f + std::atan2(v.z, v.x)/(2.0f*pi), 0.5f - std::asin(v.y/radius)/pi};
+        data.vertices.push_back(vd);
+    }
+    for (const auto& tri : triangles) { data.indices.push_back(tri.v1); data.indices.push_back(tri.v2); data.indices.push_back(tri.v3); }
+    return data;
+}
+
+PrimitiveData PrimitiveManager::CreateGrid(float width, float height, uint32_t xSegments, uint32_t ySegments) {
+    PrimitiveData data;
+    float hx = width*0.5f, hy = height*0.5f;
+    float dx = width/xSegments, dy = height/ySegments;
+    for (uint32_t y=0; y<=ySegments; ++y) {
+        for (uint32_t x=0; x<=xSegments; ++x) {
+            VertexData v; v.position = {-hx+x*dx, -hy+y*dy, 0.0f, 1.0f};
+            v.texcoord = {(float)x/xSegments, 1.0f-(float)y/ySegments}; v.normal = {0.0f,0.0f,-1.0f};
+            data.vertices.push_back(v);
+        }
+    }
+    for (uint32_t y=0; y<ySegments; ++y) {
+        for (uint32_t x=0; x<xSegments; ++x) {
+            uint32_t base = y*(xSegments+1)+x;
+            data.indices.push_back(base); data.indices.push_back(base+xSegments+2); data.indices.push_back(base+1);
+            data.indices.push_back(base); data.indices.push_back(base+xSegments+1); data.indices.push_back(base+xSegments+2);
+        }
     }
     return data;
 }

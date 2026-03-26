@@ -57,6 +57,10 @@ public:
     static PrimitiveData CreateSphere(float radius, uint32_t subdivision);
     static PrimitiveData CreateCube(float width, float height, float depth);
     static PrimitiveData CreateCylinder(float radius, float height, uint32_t segments);
+    static PrimitiveData CreateCone(float radius, float height, uint32_t segments);
+    static PrimitiveData CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments);
+    static PrimitiveData CreateIcoSphere(float radius, uint32_t subdivision);
+    static PrimitiveData CreateGrid(float width, float height, uint32_t xSegments, uint32_t ySegments);
     static PrimitiveData CreateRing(float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV);
     static PrimitiveData CreatePlane(float width = 1.0f, float height = 1.0f);
     static PrimitiveData CreateTriangle();
