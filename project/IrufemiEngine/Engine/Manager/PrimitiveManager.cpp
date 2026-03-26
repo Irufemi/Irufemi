@@ -408,7 +408,7 @@ PrimitiveData PrimitiveManager::CreateIcoSphere(float radius, uint32_t subdivisi
     struct Triangle { uint32_t v1, v2, v3; };
     std::vector<Triangle> triangles = {{0,11,5},{0,5,1},{0,1,7},{0,7,10},{0,10,11},{1,5,9},{5,11,4},{11,10,2},{10,7,6},{7,1,8},{3,9,4},{3,4,2},{3,2,6},{3,6,8},{3,8,9},{4,9,5},{2,4,11},{6,2,10},{8,6,7},{9,8,1}};
     auto getMiddle = [&](uint32_t p1, uint32_t p2, std::map<uint64_t, uint32_t>& cache) {
-        uint64_t key = (std::min(p1,p2) << 32) | std::max(p1,p2);
+        uint64_t key = (static_cast<uint64_t>((std::min)(p1, p2)) << 32) | (std::max)(p1, p2);
         if (cache.count(key)) return cache[key];
         Vector3 v1 = verts[p1], v2 = verts[p2];
         Vector3 m = {(v1.x+v2.x)/2,(v1.y+v2.y)/2,(v1.z+v2.z)/2};
