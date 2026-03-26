@@ -7,7 +7,7 @@
 #include <memory>
 
 #include "Engine/Core/shape/Plane.h"
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/Object3D/Object3DResource.h"
 #include "Application/camera/Camera.h"
 #include <wrl.h>
 
@@ -22,7 +22,7 @@ private: //メンバ変数
 
     Plane info_{};
 
-    std::unique_ptr<D3D12ResourceUtil> resource_ = nullptr;
+    std::unique_ptr<Object3DResource> resource_ = nullptr;
 
     int selectedTextureIndex_ = 0;
 
@@ -52,7 +52,7 @@ public: //メンバ関数
     void Debug(const char* planeName = "");
 
     //ゲッター
-    D3D12ResourceUtil* GetD3D12Resource() { return this->resource_.get(); }
+    Object3DResource* GetD3D12Resource() { return this->resource_.get(); }
 
     // Planeの情報を取得
     Plane GetInfo() const { return info_; }

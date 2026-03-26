@@ -10,6 +10,7 @@
 #include "Resource/Model/Data/ObjModel.h"
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
+#include "Renderer/Object3D/Object3DResource.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>
@@ -26,6 +27,7 @@ class Line3DRegion;
 struct ManagedModel;
 struct GpuMaterial;
 struct Material;
+struct ObjMaterial; // 追加
 
 
 class AnimationModel {
@@ -80,17 +82,12 @@ private: // メンバ変数
     TransformationMatrix transformationMatrix_{};
     Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // インスタンスカラー
 
-    // インスタンス固有のマテリアル
-    std::vector<std::shared_ptr<GpuMaterial>> instanceMaterials_;
-    std::vector<Material*> mappedMaterials_;
+    // --- 描画リソース (新アーキテクチャ) ---
+    std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
-    // 変換行列用リソース
+    // 共通の変換行列リソース
     Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_;
     TransformationMatrix* transformationData_ = nullptr;
-
-    // メッシュごとの変換行列リソース
-    std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> meshTransformationResources_;
-    std::vector<TransformationMatrix*> meshTransformationData_;
     std::map<std::string, Matrix4x4> nodeWorldMatrices_;
 
     Camera* camera_ = nullptr;

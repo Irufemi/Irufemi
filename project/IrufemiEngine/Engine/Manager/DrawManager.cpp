@@ -14,14 +14,19 @@
 #include "Renderer/Region/Primitive/SphereRegion.h"
 #include "Renderer/Region/Primitive/TetraRegion.h"
 #include "Renderer/Particle/ParticleSystem.h"
+#include "Renderer/Particle/ParticleResource.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Renderer/Skybox//Skybox.h"
+#include "Renderer/Object3D/Object3DResource.h"
+#include "Renderer/Object2D/Object2DResource.h"
 
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/LineInstanced/LineResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Resource/Model/ModelManager.h"
 #include "Engine/Graphics/Data/CameraForGPU.h"
 #include "Engine/Graphics/Data/DirectionalLight.h"
+#include "Engine/Graphics/Data/PointLight.h"
+#include "Engine/Graphics/Data/SpotLight.h"
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "Engine/Core/Math/Geometry/Math.h"
 #include "Resource/Model/Data/SkinCluster.h"
@@ -286,114 +291,48 @@ void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
     environmentMapHandle_ = envMapHandle;
 }
 
-void DrawManager::DrawTriangle(
-    TriangleClass* triangle
-) {
 
-    /*三角形を表示しよう*/
-    //RootSignatureを設定。PSOに設定しているけど別途指定が必要
-    commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
-    commandList_->IASetVertexBuffers(0, 1, &triangle->GetD3D12Resource()->vertexBufferView_); // VBVを設定
-    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
-    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+void DrawManager::DrawObject2D(const Object2DResource* resource) {
+    if (!resource) return;
 
-    /*三角形の色を変えよう*/
-
-    ///CBVを設定する
-
-    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView(0, triangle->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
-
-    /*三角形を動かそう*/
-
-    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView(1, triangle->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
-
-    // ↓ ここから追加
-    // GSパイプライン用のwvp CBufferをルートパラメータ[8]に設定
-    commandList_->SetGraphicsRootConstantBufferView(8, triangle->GetD3D12Resource()->transformationResource_->GetGPUVirtualAddress());
-    // ↑ ここまで追加
-
-    /*テクスチャを貼ろう*/
-
-    ///DescriptorTableを設定する
-
-    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable(2, triangle->GetD3D12Resource()->textureHandle_);
-
-    /*三角形を表示しよう*/
-
-    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    commandList_->DrawInstanced(static_cast<UINT>(triangle->GetD3D12Resource()->vertexDataList_.size()), 1, 0, 0);
-
-}
-
-void DrawManager::DrawObject2D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
-
-    // 3. バッファ設定(VBV、IBV、Topology)
-
-    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    //VBVを設定
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView);
-    //IBVを設定
-    commandList_->IASetIndexBuffer(&indexBufferView);
+    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
-    // 4. 定数バッファ(CBV)やライト用CBVの設定
+    commandList_->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
 
-    ///CBVを設定する
-
-    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-
-    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView(1, transformationResource->GetGPUVirtualAddress());
-
-    // 5. テクスチャ用のDescriptor Table設定(SRV)
-
-    /*テクスチャを貼ろう*/
-
-    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable(2, textureHandle);
-
-    // 6. 描画
-
-    /*三角形を表示しよう*/
-
-    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
-
+    commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
-void DrawManager::DrawParticle(ParticleSystem* resource) {
-
+void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instanceCount) {
     // インスタンス数が0の場合は描画しない
-    if (resource->GetInstanceCount() == 0) {
+    if (instanceCount == 0) {
         return;
     }
 
     // IA 設定: VB/IB/Topology
-    commandList_->IASetVertexBuffers(0, 1, &resource->GetD3D12Resource()->vertexBufferView_);
-    commandList_->IASetIndexBuffer(&resource->GetD3D12Resource()->indexBufferView_);
+    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // --- CBV のバインド ---
     // 0: 既存のマテリアル CBV(互換性維持のために常にバインド)
     //    (rootParameters[0] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView(0, resource->GetD3D12Resource()->materialResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
 
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)
-    auto instancing = resource->GetInstancingSrvHandleGPU();
-    assert(instancing.ptr != 0 && "Instancing SRV handle is null or invalid");
-    commandList_->SetGraphicsRootDescriptorTable(4, resource->GetInstancingSrvHandleGPU());
+    assert(resource->instancingSrvHandleGPU_.ptr != 0 && "Instancing SRV handle is null or invalid");
+    commandList_->SetGraphicsRootDescriptorTable(4, resource->instancingSrvHandleGPU_);
 
     // テクスチャ (PS t0)
-    commandList_->SetGraphicsRootDescriptorTable(2, resource->GetD3D12Resource()->textureHandle_);
+    commandList_->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
 
     // 描画コール: インデックス数 × インスタンス数
     commandList_->DrawIndexedInstanced(
-        static_cast<UINT>(resource->GetD3D12Resource()->indexDataList_.size()),
-        resource->GetInstanceCount(),
+        resource->indexCount_,
+        instanceCount,
         0, 0, 0
     );
 }
@@ -443,14 +382,13 @@ void DrawManager::DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
     commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
 }
 
-void DrawManager::DrawLineInstanced(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount) {
-
-    if (instanceCount == 0) return;
+void DrawManager::DrawLineInstanced(const LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount) {
+    if (!resource || instanceCount == 0) return;
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView);
-    commandList_->IASetIndexBuffer(&indexBufferView);
+    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
     // SRV (VS t1)
     commandList_->SetGraphicsRootDescriptorTable(11, instancingSrvHandleGPU);
@@ -459,112 +397,38 @@ void DrawManager::DrawLineInstanced(const D3D12_VERTEX_BUFFER_VIEW& vertexBuffer
     commandList_->DrawIndexedInstanced(2, instanceCount, 0, 0, 0);
 }
 
-void DrawManager::DrawModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const std::vector<std::shared_ptr<GpuMaterial>>& materials) {
-    if (!model || !model->cpuModel || !dxCommon_) return;
-
-    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    // モデル内の全メッシュをループして描画
-    for (size_t i = 0; i < model->gpuMeshes.size(); ++i) {
-        const auto& gpuMesh = model->gpuMeshes[i];
-        const auto& gpuMaterial = (i < materials.size() && materials[i]) ? materials[i] : model->gpuMaterials[i];
-
-        if (!gpuMesh || !gpuMaterial) continue;
-
-        // IA (頂点/インデックス)
-        commandList_->IASetVertexBuffers(0, 1, &gpuMesh->vertexBufferView);
-
-        if (gpuMesh->indexCount > 0) {
-            commandList_->IASetIndexBuffer(&gpuMesh->indexBufferView);
-        }
-
-        // CBV (マテリアル/Transform)
-        commandList_->SetGraphicsRootConstantBufferView(0, gpuMaterial->materialResource->GetGPUVirtualAddress());
-        commandList_->SetGraphicsRootConstantBufferView(1, transformGpuVA);
-
-        // SRV (テクスチャ)
-        commandList_->SetGraphicsRootDescriptorTable(2, gpuMaterial->textureHandle);
-
-        // 描画コマンド
-        if (gpuMesh->indexCount > 0) {
-            commandList_->DrawIndexedInstanced(gpuMesh->indexCount, 1, 0, 0, 0);
-        } else {
-            commandList_->DrawInstanced(gpuMesh->vertexCount, 1, 0, 0);
-        }
-    }
-}
-
-void DrawManager::DrawAnimationModel(const ManagedModel* model, D3D12_GPU_VIRTUAL_ADDRESS transformGpuVA, const SkinCluster& skinCluster, const D3D12_GPU_DESCRIPTOR_HANDLE& skinnedVertexSrv, D3D12_GPU_VIRTUAL_ADDRESS skinningInfoGpuVA, uint32_t numVertices, const std::vector<std::shared_ptr<GpuMaterial>>& materials)
-{
-    if (!model || !model->cpuModel || !dxCommon_) return;
+void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const ManagedModel* model, uint32_t numVertices) {
+    if (!model || !model->gpuMeshes[0] || !dxCommon_) return;
 
     // --- コンピュートシェーダーによるスキニング実行 ---
     // PSOをコンピュート用に切り替え
     commandList_->SetPipelineState(dxCommon_->GetSkinningComputePSO());
 
+    // RootSignatureはSkipして共通のComputeRootSignatureを使用する想定
+    // (PSO設定時にセットされているはずだが、念のため管理が必要な場合はここでセット)
+
     // Parameterの設定
+    // 0: Palette (t0)
     commandList_->SetComputeRootDescriptorTable(0, skinCluster.paletteSrvHandle.second);
-    commandList_->SetComputeRootDescriptorTable(1, model->gpuMeshes[0]->vertexSrvHandle); // 入力頂点(t1)
+    // 1: Input Vertices (t1) (最初のメッシュの頂点を使用)
+    commandList_->SetComputeRootDescriptorTable(1, model->gpuMeshes[0]->vertexSrvHandle);
+    // 2: Influences (t2)
     commandList_->SetComputeRootDescriptorTable(2, skinCluster.influenceSrvHandle.second);
+    // 3: Output Vertices (u0)
     commandList_->SetComputeRootDescriptorTable(3, skinCluster.skinnedVertexUavHandle.second);
-    commandList_->SetComputeRootConstantBufferView(4, skinningInfoGpuVA);
+    // 4: Skinning Information (b0)
+    commandList_->SetComputeRootConstantBufferView(4, skinCluster.skinningInformationResource->GetGPUVirtualAddress());
 
     // Dispatch
     commandList_->Dispatch((numVertices + 1023) / 1024, 1, 1);
+}
 
-    // --- UAVバリア ---
-    // スキニング計算結果(UAV)を、頂点シェーダーの入力(SRV)として使えるようにするためのバリア
+void DrawManager::ExecuteUAVBarrier(ID3D12Resource* resource) {
+    if (!resource) return;
     D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = skinCluster.skinnedVertexResource.Get();
+    barrier.UAV.pResource = resource;
     commandList_->ResourceBarrier(1, &barrier);
-
-    // --- グラフィックスパイプラインでの描画 ---
-    // PSOをグラフィックス用に切り替え (呼び出し元で ApplyPSO が呼ばれている想定)
-    commandList_->SetPipelineState(dxCommon_->GetPSOManager()->Get(BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back));
-
-    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    // Skinning用のMatrixPaletteをSRVとしてバインド
-    // (VSでも参照する可能性があるため、ここではコメントアウトせず残す)
-    commandList_->SetGraphicsRootDescriptorTable(4, skinCluster.paletteSrvHandle.second);
-
-    // モデル内の全メッシュをループして描画
-    for (size_t i = 0; i < model->gpuMeshes.size(); ++i) {
-        const auto& gpuMesh = model->gpuMeshes[i];
-        const auto& gpuMaterial = (i < materials.size() && materials[i]) ? materials[i] : model->gpuMaterials[i];
-
-        if (!gpuMesh || !gpuMaterial) continue;
-
-        // セットするバッファの配列を用意
-        D3D12_VERTEX_BUFFER_VIEW vbvs[1];
-        UINT vbvCount = 0;
-
-        // 1. コンピュートシェーダーで計算済みの頂点バッファをセット
-        vbvs[vbvCount] = skinCluster.skinnedVertexBufferView;
-        vbvCount++;
-
-        // 実際に存在するバッファの数（1つ）だけをGPUに教える
-        commandList_->IASetVertexBuffers(0, vbvCount, vbvs);
-
-        if (gpuMesh->indexCount > 0) {
-            commandList_->IASetIndexBuffer(&gpuMesh->indexBufferView);
-        }
-
-        // CBV (マテリアル/Transform)
-        commandList_->SetGraphicsRootConstantBufferView(0, gpuMaterial->materialResource->GetGPUVirtualAddress());
-        commandList_->SetGraphicsRootConstantBufferView(1, transformGpuVA);
-
-        // SRV (テクスチャ)
-        commandList_->SetGraphicsRootDescriptorTable(2, gpuMaterial->textureHandle);
-
-        // 描画コマンド
-        if (gpuMesh->indexCount > 0) {
-            commandList_->DrawIndexedInstanced(gpuMesh->indexCount, 1, 0, 0, 0);
-        } else {
-            commandList_->DrawInstanced(gpuMesh->vertexCount, 1, 0, 0);
-        }
-    }
 }
 
 void DrawManager::DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
@@ -592,54 +456,20 @@ void DrawManager::DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
     commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 }
 
-void DrawManager::DrawObject3D(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
-    /*三角形を表示しよう*/
-    //RootSignatureを設定。PSOに設定しているけど別途指定が必要
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
-    //IBVを設定
-    commandList_->IASetIndexBuffer(&indexBufferView);
-    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
+void DrawManager::DrawObject3D(const Object3DResource* resource) {
+    if (!resource) return;
+    
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
-    /*三角形の色を変えよう*/
+    commandList_->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
 
-    ///CBVを設定する
-
-    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-
-    /*三角形を動かそう*/
-
-    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView(1, transformationResource->GetGPUVirtualAddress());
-
-    /*テクスチャを貼ろう*/
-
-    ///DescriptorTableを設定する
-
-    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable(2, textureHandle);
-
-    /*三角形を表示しよう*/
-
-    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。インスタンスについては今後
-    commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+    commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
-void DrawManager::DispatchSkinning(const D3D12_GPU_DESCRIPTOR_HANDLE& palette, const D3D12_GPU_DESCRIPTOR_HANDLE& inputVertex, const D3D12_GPU_DESCRIPTOR_HANDLE& influence, const D3D12_GPU_DESCRIPTOR_HANDLE& outputVertex, const D3D12_GPU_VIRTUAL_ADDRESS& skinningInformation, const float& verticesSize) {
-
-
-    // Parameterの設定
-    commandList_->SetComputeRootDescriptorTable(0, palette);
-    commandList_->SetComputeRootDescriptorTable(1, inputVertex);
-    commandList_->SetComputeRootDescriptorTable(2, influence);
-    commandList_->SetComputeRootDescriptorTable(3, outputVertex);
-    commandList_->SetComputeRootConstantBufferView(4, skinningInformation);
-
-    // Dispatch
-    commandList_->Dispatch(static_cast<UINT>(verticesSize + 1023 / 1024), 1, 1);
-
-}
 
 void DrawManager::DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const UINT& instanceCount) {
 

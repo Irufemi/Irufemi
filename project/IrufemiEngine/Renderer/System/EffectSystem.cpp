@@ -6,7 +6,7 @@
 void AuraEffect::Initialize(Camera* camera) {
 	particleSystem_ = std::make_unique<ParticleSystem>();
 	// オーラ用のパーティクル設定
-	particleSystem_->Initialize(camera, "resources/gradationLine.png", ParticleType::Normal, ParticlePrimitiveShape::Cylinder);
+	particleSystem_->Initialize(camera, "resources/gradationLine.png", ParticleType::Normal, PrimitiveType::Cylinder);
 	particleSystem_->SetEmitterArea({ 0.0f, 0.0f, 0.0f });
 	particleSystem_->SetEmitterCount(1);
 	particleSystem_->SetEmitterFrequency(100.0f); // 自動では発生させない
@@ -50,7 +50,7 @@ void AuraEffect::Play(const Transform& transform) {
 void HitEffect::Initialize(Camera* camera) {
 	// リング状エフェクト
 	ringParticle_ = std::make_unique<ParticleSystem>();
-	ringParticle_->Initialize(camera, "resources/gradationLine.png", ParticleType::Normal, ParticlePrimitiveShape::Ring);
+	ringParticle_->Initialize(camera, "resources/gradationLine.png", ParticleType::Normal, PrimitiveType::Ring);
 	ringParticle_->SetEmitterCount(1);
 	ringParticle_->SetEmitterFrequency(100.0f);
 	ringParticle_->SetParticleScale({ 0.1f, 0.1f, 1.0f }, { 2.0f, 2.0f, 1.0f });
@@ -59,7 +59,7 @@ void HitEffect::Initialize(Camera* camera) {
 
 	// 火花エフェクト
 	sparkParticle_ = std::make_unique<ParticleSystem>();
-	sparkParticle_->Initialize(camera, "resources/circle.png", ParticleType::kHitEffect, ParticlePrimitiveShape::Plane);
+	sparkParticle_->Initialize(camera, "resources/circle.png", ParticleType::kHitEffect, PrimitiveType::Plane);
 }
 
 void HitEffect::Update() {

@@ -14,7 +14,7 @@ void Line3DRegion::Initialize(Camera* camera) {
     camera_ = camera;
     instances_.resize(maxInstances_);
 
-    baseLineResource_ = std::make_unique<D3D12ResourceUtilLine>();
+    baseLineResource_ = std::make_unique<LineResource>();
     baseLineResource_->CreateResource();
     baseLineResource_->Map();
 
@@ -24,14 +24,6 @@ void Line3DRegion::Initialize(Camera* camera) {
 
     baseLineResource_->indexData_[0] = 0;
     baseLineResource_->indexData_[1] = 1;
-
-    baseLineResource_->vertexBufferView_.BufferLocation = baseLineResource_->vertexResource_->GetGPUVirtualAddress();
-    baseLineResource_->vertexBufferView_.StrideInBytes = sizeof(LineVertexData);
-    baseLineResource_->vertexBufferView_.SizeInBytes = sizeof(LineVertexData) * 2;
-
-    baseLineResource_->indexBufferView_.BufferLocation = baseLineResource_->indexResource_->GetGPUVirtualAddress();
-    baseLineResource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * 2;
-    baseLineResource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
 }
 
 void Line3DRegion::Update() {
@@ -101,7 +93,7 @@ void Line3DRegion::BuildInstanceBuffer(bool force) {
 void Line3DRegion::Draw() {
     if (activeCount_ == 0) return;
     BuildInstanceBuffer();
-    drawManager_->DrawLineInstanced(baseLineResource_->vertexBufferView_, baseLineResource_->indexBufferView_, instancingSrvGPU_, GetInstanceCountU32());
+    drawManager_->DrawLineInstanced(baseLineResource_.get(), instancingSrvGPU_, GetInstanceCountU32());
 }
 
 void Line3DRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
