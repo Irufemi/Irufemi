@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Renderer/VertexData.h"
-#include "Engine/Core/Type/PrimitiveType.h"
-#include "Renderer/Particle/Data/Particle.h"
+#include "../../Renderer/VertexData.h"
+#include "../Core/Type/PrimitiveType.h"
+#include "../../Renderer/Particle/Data/Particle.h"
 #include <cstdint>
 #include <vector>
 #include <map>

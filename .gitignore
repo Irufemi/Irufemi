@@ -89,3 +89,4 @@ debuglog.txt
 .cache/
 **/.cache/
 /gakkousuraido
+/project/compile_commands.json
