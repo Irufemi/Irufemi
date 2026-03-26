@@ -1,6 +1,7 @@
-#include "PlaneClass.h"
+#include "Renderer/Object3D/Primitive/PlaneClass.h"
 #include "Engine/Core/Math/Geometry/Math.h"
 #include "Engine/Manager/DrawManager.h"
+#include "Engine/Manager/PrimitiveManager.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Texture/TextureManager.h"
 
@@ -10,51 +11,23 @@
 TextureManager* PlaneClass::textureManager_ = nullptr;
 DrawManager* PlaneClass::drawManager_ = nullptr;
 DebugUI* PlaneClass::ui_ = nullptr;
-
 void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
-
     this->camera_ = camera;
+
+    // PrimitiveManager から標準リソースを取得
+    const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(PrimitiveType::Plane);
 
     // D3D12ResourceUtilを生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
-    // ローカルXY平面上の4頂点(-Z向き)
-    //  v3(-0.5,0.5,0)----v2(0.5,0.5,0)
-    //      |                |
-    //      |                |
-    //  v0(-0.5,-0.5,0)--v1(0.5,-0.5,0)
-    resource_->vertexDataList_.push_back({ { -0.5f, -0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } }); // v0
-    resource_->vertexDataList_.push_back({ {  0.5f, -0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } }); // v1
-    resource_->vertexDataList_.push_back({ {  0.5f,  0.5f, 0.0f, 1.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } }); // v2
-    resource_->vertexDataList_.push_back({ { -0.5f,  0.5f, 0.0f, 1.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } }); // v3
+    // 共有バッファの View とインデックス数を設定
+    resource_->vertexBufferView_ = primitiveResource.vertexBufferView;
+    resource_->indexBufferView_ = primitiveResource.indexBufferView;
+    resource_->indexCount_ = primitiveResource.indexCount;
 
-    // 2トライアングル (-Z向き)
-    resource_->indexDataList_.push_back(0);
-    resource_->indexDataList_.push_back(2);
-    resource_->indexDataList_.push_back(1);
-    resource_->indexDataList_.push_back(0);
-    resource_->indexDataList_.push_back(3);
-    resource_->indexDataList_.push_back(2);
-
-    // リソースのメモリを確保
+    // リソースのメモリを確保 (定数バッファのみ)
     resource_->CreateResource();
-
-    // 書き込めるようにする
     resource_->Map();
-
-    // 頂点バッファビュー
-    resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-    resource_->vertexBufferView_.BufferLocation = resource_->vertexResource_->GetGPUVirtualAddress();
-    resource_->vertexBufferView_.StrideInBytes = sizeof(VertexData);
-    resource_->vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(resource_->vertexDataList_.size());
-    std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
-
-    // インデックスバッファビュー
-    resource_->indexBufferView_ = D3D12_INDEX_BUFFER_VIEW{};
-    resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();
-    resource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * static_cast<UINT>(resource_->indexDataList_.size());
-    resource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
-    std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
 
     // マテリアル
     resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
@@ -189,7 +162,7 @@ void PlaneClass::Draw() {
     }
 
     if (drawManager_) {
-        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
+        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, resource_->indexCount_);
     }
 }
 

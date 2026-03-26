@@ -1,9 +1,10 @@
-#include "TriangleClass.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Renderer/Object3D/Primitive/TriangleClass.h"
+#include "Engine/Manager/PrimitiveManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Manager/DebugUI.h"
-
+#include "Engine/Core/Math/Geometry/Math.h"
+#include <string>
 #include <algorithm>
 
 TextureManager* TriangleClass::textureManager_ = nullptr;
@@ -11,43 +12,25 @@ DrawManager* TriangleClass::drawManager_ = nullptr;
 DebugUI* TriangleClass::ui_ = nullptr;
 
 void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
-
     this->camera_ = camera;
+
+    // PrimitiveManager から標準リソースを取得
+    const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(PrimitiveType::Triangle);
 
     // D3D12ResourceUtilを生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
-    // 入力頂点は1点のみ(GS で増やす)
-    resource_->vertexDataList_.clear();
-    resource_->vertexDataList_.push_back({ { 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } ,{0.0f,0.0f,-1.0f} });
-
-    // インデックスは使わない(空でOK)
-    resource_->indexDataList_.clear();
+    // 共有バッファの View とインデックス数を設定
+    resource_->vertexBufferView_ = primitiveResource.vertexBufferView;
+    resource_->indexBufferView_ = primitiveResource.indexBufferView;
+    resource_->indexCount_ = primitiveResource.indexCount;
 
     // リソース確保と Map
     resource_->CreateResource();
     resource_->Map();
 
-    // VBV 設定とデータ転送
-    resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-    resource_->vertexBufferView_.BufferLocation = resource_->vertexResource_->GetGPUVirtualAddress();
-    resource_->vertexBufferView_.StrideInBytes = sizeof(VertexData);
-    resource_->vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(resource_->vertexDataList_.size());
-    std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
-
-    // IBV は未使用だが、0要素のままで問題なし(DrawTriangle では IB を設定しない)
-    resource_->indexBufferView_ = {};
-    if (resource_->indexResource_) {
-        resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();
-        resource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * static_cast<UINT>(resource_->indexDataList_.size());
-        resource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
-        if (!resource_->indexDataList_.empty()) {
-            std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
-        }
-    }
-
     // マテリアル
-    resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
+    resource_->materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
     resource_->materialData_->enableLighting = true;
     resource_->materialData_->hasTexture = true;
     resource_->materialData_->lightingMode = 2;
@@ -70,17 +53,18 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
     };
 
     // テクスチャ
-    auto textureNames = textureManager_->GetTextureNames();
-    std::sort(textureNames.begin(), textureNames.end());
-    if (!textureNames.empty()) {
-        resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
-        auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
-        selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
+    if (textureManager_) {
+        auto textureNames = textureManager_->GetTextureNames();
+        std::sort(textureNames.begin(), textureNames.end());
+        if (!textureNames.empty()) {
+            resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
+            auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
+            selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
+        }
     }
 }
 
 void TriangleClass::Update() {
-
     resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
 
@@ -115,11 +99,11 @@ void TriangleClass::Draw() {
         Update();
     }
 
-    // POINTLIST で 1 点入力 → GS で生成
-    drawManager_->DrawTriangle(this);
+    // 共有リソースを使用して描画
+    drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, resource_->indexCount_);
 }
 
-void TriangleClass::Debug([[maybe_unused]] const char* triangleName) {
+void TriangleClass::Debug(const char* triangleName) {
 #if defined USE_IMGUI
     std::string name = std::string("Triangle: ") + triangleName;
     ImGui::Begin(name.c_str());

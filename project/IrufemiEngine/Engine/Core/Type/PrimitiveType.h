@@ -7,6 +7,8 @@ enum class PrimitiveType {
     Cylinder,
     Sphere,
     Tetra,
-    Skybox,
+    Circle,
+    Ring,
+    Skybox
 
 };

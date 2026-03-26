@@ -1,5 +1,6 @@
-#include "SphereClass.h"
+#include "Renderer/Object3D/Primitive/SphereClass.h"
 
+#include "Engine/Manager/PrimitiveManager.h"
 #include <cmath>
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
@@ -20,94 +21,24 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
 
     this->camera_ = camera;
 
+    // PrimitiveManager から標準リソースを取得
+    const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(PrimitiveType::Sphere);
+
     // D3D12ResourceUtilの生成
     resource_ = std::make_unique<D3D12ResourceUtil>();
 
-    //上と下で頂点は重なるがtexcoordがおかしくなるので必要
+    // 共有バッファの View とインデックス数を設定
+    resource_->vertexBufferView_ = primitiveResource.vertexBufferView;
+    resource_->indexBufferView_ = primitiveResource.indexBufferView;
+    resource_->indexCount_ = primitiveResource.indexCount;
 
-    //緯度の方向に分割
-    for (uint32_t latIndex = 0; latIndex <= kSubdivision_; ++latIndex) {
-        float lat = -pi_ / 2.0f + kLatEvery_ * latIndex; //θ
-
-        //経度の方向に分割しながら線を描く
-        for (uint32_t lonIndex = 0; lonIndex <= kSubdivision_; ++lonIndex) {
-
-            float lon = lonIndex * kLonEvery_; //φ
-
-            //頂点にデータを入力する。基準点a
-
-             //頂点リソースにデータを書き込む
-
-            resource_->vertexDataList_.push_back( //左下
-                {
-                    {
-                        std::cos(lat) * std::cos(lon),
-                        std::sin(lat),
-                        std::cos(lat) * std::sin(lon),
-                        1.0f
-                    },
-                    {
-                        static_cast<float>(lonIndex) / static_cast<float>(kSubdivision_),
-                        1.0f - static_cast<float>(latIndex) / static_cast<float>(kSubdivision_)
-                    }
-                }
-            );
-
-        }
-    }
-
-    for (uint32_t i = 0; i < static_cast<uint32_t>(resource_->vertexDataList_.size()); ++i) {
-        resource_->vertexDataList_[i].normal.x = resource_->vertexDataList_[i].position.x;
-        resource_->vertexDataList_[i].normal.y = resource_->vertexDataList_[i].position.y;
-        resource_->vertexDataList_[i].normal.z = resource_->vertexDataList_[i].position.z;
-    }
-
-    /*頂点インデックス*/
-
-    for (uint32_t latIndex = 0; latIndex < kSubdivision_; ++latIndex) {
-        for (uint32_t lonIndex = 0; lonIndex < kSubdivision_; ++lonIndex) {
-            resource_->indexDataList_.push_back((kSubdivision_ + 1) * latIndex + lonIndex);
-            resource_->indexDataList_.push_back((kSubdivision_ + 1) * (latIndex + 1) + lonIndex);//左上
-            resource_->indexDataList_.push_back((kSubdivision_ + 1) * latIndex + (lonIndex + 1));//右下
-            resource_->indexDataList_.push_back((kSubdivision_ + 1) * (latIndex + 1) + lonIndex);//左上
-            resource_->indexDataList_.push_back((kSubdivision_ + 1) * (latIndex + 1) + (lonIndex + 1));//右上
-            resource_->indexDataList_.push_back((kSubdivision_ + 1) * latIndex + (lonIndex + 1));//右下
-        }
-    }
-
-    // メモリを確保
+    // メモリを確保 (定数バッファのみ生成するために必要)
     resource_->CreateResource();
 
     // 書き込みをできる状態にする
     resource_->Map();
 
-    //頂点バッファ
-
-    resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-
-    resource_->vertexBufferView_.BufferLocation = resource_->vertexResource_->GetGPUVirtualAddress();
-    resource_->vertexBufferView_.StrideInBytes = sizeof(VertexData);
-    resource_->vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(resource_->vertexDataList_.size());
-
-    std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
-
-    /*頂点インデックス*/
-
-    ///Index用のあれやこれやを作る
-
-    resource_->indexBufferView_ = D3D12_INDEX_BUFFER_VIEW{};
-    //リソースの先頭のアドレスから使う
-    resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();
-    //使用するリソースのサイズ
-    resource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * static_cast<UINT>(resource_->indexDataList_.size());
-    //インデックスはint32_tとする
-    resource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
-
-    ///IndexResourceにデータを書き込む
-
-    //インデックスリソースにデータを書き込む
-
-    std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
+    // 共有リソースを使用するため、個別のバッファへのコピーは不要
 
     //マテリアル
 
@@ -247,7 +178,7 @@ void SphereClass::Draw() {
     }
 
     if (drawManager_) {
-        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
+        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, resource_->indexCount_);
     }
 }
 

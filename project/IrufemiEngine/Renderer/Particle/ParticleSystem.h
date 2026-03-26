@@ -12,6 +12,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include "Engine/Core/Type/PrimitiveType.h"
 
 // 前方宣言
 class TextureManager;
@@ -25,7 +26,7 @@ public:
 	ParticleSystem() = default;
 	~ParticleSystem();
 
-	void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png", ParticleType type = ParticleType::Normal, ParticlePrimitiveShape shape = ParticlePrimitiveShape::Plane);
+	void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png", ParticleType type = ParticleType::Normal, PrimitiveType shape = PrimitiveType::Plane);
 	void Update();
 	void Draw();
 	void Debug(const char* particleName = "");
@@ -110,7 +111,7 @@ private:
 	Emitter emitter_;
 	std::unique_ptr<IParticleBehavior> behavior_ = nullptr; // 振る舞いクラスへのポインタ
 	ParticleType particleType_ = ParticleType::Normal;
-	ParticlePrimitiveShape primitiveShape_ = ParticlePrimitiveShape::Plane;
+	PrimitiveType primitiveShape_ = PrimitiveType::Plane;
 
 	std::random_device seedGenerator_;
 	std::mt19937 randomEngine_;

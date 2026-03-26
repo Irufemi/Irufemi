@@ -214,23 +214,35 @@ void AnimationModel::Draw() {
         boneLines_->Draw();
     }
 
-    engine_->ApplyPSO();
-    // スキニングの有無で描画関数を切り替え
-
+    // 1. スキニングの実行
     if (!managedModel_->cpuModel->skinClusterData.empty()) {
-        // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
-        engine_->GetDrawManager()->DrawAnimationModel(
-            managedModel_.get(),
-            GetTransformationGpuAddress(),
-            skinCluster_,
-            skinCluster_.skinnedVertexSrvHandle.second,
-            skinCluster_.skinningInformationResource->GetGPUVirtualAddress(),
-            skinCluster_.mappedSkinningInformation->numVertices,
-            instanceMaterials_
+        engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
+        engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource.Get());
+    }
+
+    // 2. グラフィックスPSOの適用
+    engine_->ApplyPSO();
+
+    // 3. 全メッシュをループして描画
+    for (size_t i = 0; i < managedModel_->gpuMeshes.size(); ++i) {
+        const auto& gpuMesh = managedModel_->gpuMeshes[i];
+        const auto& gpuMaterial = (i < instanceMaterials_.size()) ? instanceMaterials_[i] : managedModel_->gpuMaterials[i];
+
+        if (!gpuMesh || !gpuMaterial) continue;
+
+        // VBVの選択 (スキニング済みか元か)
+        const D3D12_VERTEX_BUFFER_VIEW& VBV = (!managedModel_->cpuModel->skinClusterData.empty())
+            ? skinCluster_.skinnedVertexBufferView
+            : gpuMesh->vertexBufferView;
+
+        engine_->GetDrawManager()->DrawObject3D(
+            VBV,
+            gpuMesh->indexBufferView,
+            gpuMaterial->materialResource,
+            transformationResource_,
+            gpuMaterial->textureHandle,
+            gpuMesh->indexCount
         );
-    } else {
-        // メッシュごとに描画
-        engine_->GetDrawManager()->DrawModel(managedModel_.get(), GetTransformationGpuAddress(), instanceMaterials_);
     }
 }
 

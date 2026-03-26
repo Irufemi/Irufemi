@@ -112,6 +112,9 @@ public: //メンバ変数
     //頂点インデックスバッファ
     D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
 
+    // インデックス数
+    uint32_t indexCount_ = 0;
+
 #pragma endregion
 
 #pragma region ID3D12Resource
@@ -183,6 +186,9 @@ public: //メンバ変数
 
     //頂点インデックスバッファ
     D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
+
+    // インデックス数
+    uint32_t indexCount_ = 0;
 
 #pragma endregion
 

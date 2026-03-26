@@ -33,6 +33,7 @@
 #include "../Resource/Audio/Se.h"
 #include "../Resource/Texture/Texture.h"
 #include "Manager/DebugUI.h"
+#include "Manager/PrimitiveManager.h"
 
 #include "Framework/IScene.h"
 
@@ -280,6 +281,7 @@ void IrufemiEngine::Finalize() {
         drawManager->Finalize();
         drawManager.reset();
     }
+    PrimitiveManager::Finalize();
     if (ui) {
         ui->Shutdown();
         ui.reset();

@@ -104,8 +104,22 @@ void ObjClass::Draw() {
         Update();
     }
 
-    // モデルと、このオブジェクトが持つ変換行列リソースのGPUアドレスを渡して描画を依頼
-    drawManager_->DrawModel(managedModel_.get(), GetTransformationGpuAddress(), instanceMaterials_);
+    // モデル内の全メッシュをループして描画
+    for (size_t i = 0; i < managedModel_->gpuMeshes.size(); ++i) {
+        const auto& gpuMesh = managedModel_->gpuMeshes[i];
+        const auto& gpuMaterial = (i < instanceMaterials_.size()) ? instanceMaterials_[i] : managedModel_->gpuMaterials[i];
+
+        if (!gpuMesh || !gpuMaterial) continue;
+
+        drawManager_->DrawObject3D(
+            gpuMesh->vertexBufferView,
+            gpuMesh->indexBufferView,
+            gpuMaterial->materialResource,
+            transformationResource_,
+            gpuMaterial->textureHandle,
+            gpuMesh->indexCount
+        );
+    }
 }
 
 void ObjClass::Debug([[maybe_unused]] const char* objName) {

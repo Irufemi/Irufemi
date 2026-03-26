@@ -1,5 +1,5 @@
 #define NOMINMAX
-#include "CubeClass.h"
+#include "Renderer/Object3D/Primitive/CubeClass.h"
 
 #include <algorithm>
 #include <string>
@@ -10,6 +10,7 @@
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Manager/PrimitiveManager.h"
 
 TextureManager* CubeClass::textureManager_ = nullptr;
 DrawManager* CubeClass::drawManager_ = nullptr;
@@ -30,65 +31,17 @@ void CubeClass::Initialize(Camera* camera, float width, float height, float dept
     const float hy = height_ * 0.5f;
     const float hz = depth_ * 0.5f;
 
-    // 頂点データ(24頂点)
-    resource_->vertexDataList_ = {
-        // 前面 (-Z)
-        { { -hx, -hy, -hz, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } }, // 0
-        { { -hx,  hy, -hz, 1.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } }, // 1
-        { {  hx, -hy, -hz, 1.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } }, // 2
-        { {  hx,  hy, -hz, 1.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } }, // 3
-        // 背面 (+Z)
-        { {  hx, -hy,  hz, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } }, // 4
-        { {  hx,  hy,  hz, 1.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } }, // 5
-        { { -hx, -hy,  hz, 1.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } }, // 6
-        { { -hx,  hy,  hz, 1.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } }, // 7
-        // 左面 (-X)
-        { { -hx, -hy,  hz, 1.0f }, { 0.0f, 1.0f }, { -1.0f, 0.0f, 0.0f } }, // 8
-        { { -hx,  hy,  hz, 1.0f }, { 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f } }, // 9
-        { { -hx, -hy, -hz, 1.0f }, { 1.0f, 1.0f }, { -1.0f, 0.0f, 0.0f } }, // 10
-        { { -hx,  hy, -hz, 1.0f }, { 1.0f, 0.0f }, { -1.0f, 0.0f, 0.0f } }, // 11
-        // 右面 (+X)
-        { {  hx, -hy, -hz, 1.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } }, // 12
-        { {  hx,  hy, -hz, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } }, // 13
-        { {  hx, -hy,  hz, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } }, // 14
-        { {  hx,  hy,  hz, 1.0f }, { 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } }, // 15
-        // 下面 (-Y)
-        { { -hx, -hy, -hz, 1.0f }, { 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } }, // 16
-        { {  hx, -hy, -hz, 1.0f }, { 1.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } }, // 17
-        { { -hx, -hy,  hz, 1.0f }, { 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } }, // 18
-        { {  hx, -hy,  hz, 1.0f }, { 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } }, // 19
-        // 上面 (+Y)
-        { { -hx,  hy,  hz, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } }, // 20
-        { {  hx,  hy,  hz, 1.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } }, // 21
-        { { -hx,  hy, -hz, 1.0f }, { 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } }, // 22
-        { {  hx,  hy, -hz, 1.0f }, { 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } }  // 23
-    };
+    // PrimitiveManager から標準リソースを取得
+    const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(PrimitiveType::Cube);
 
-    // インデックスデータ
-    resource_->indexDataList_ = {
-        0, 1, 2, 2, 1, 3, // 前面
-        4, 5, 6, 6, 5, 7, // 背面
-        8, 9, 10, 10, 9, 11, // 左面
-        12, 13, 14, 14, 13, 15, // 右面
-        16, 17, 18, 18, 17, 19, // 下面
-        20, 21, 22, 22, 21, 23  // 上面
-    };
-
-    // リソース割当・データ転送
-    resource_->CreateResource();
+    // リソース割当・データ転送（定数バッファのみ）
+    resource_->CreateResource(); // Vertex/Index 以外を生成するために必要だが、現状の実装に合わせる
     resource_->Map();
 
-    resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-    resource_->vertexBufferView_.BufferLocation = resource_->vertexResource_->GetGPUVirtualAddress();
-    resource_->vertexBufferView_.StrideInBytes = sizeof(VertexData);
-    resource_->vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(resource_->vertexDataList_.size());
-    std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
-
-    resource_->indexBufferView_ = D3D12_INDEX_BUFFER_VIEW{};
-    resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();
-    resource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * static_cast<UINT>(resource_->indexDataList_.size());
-    resource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
-    std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
+    // 共有バッファの View とインデックス数を設定
+    resource_->vertexBufferView_ = primitiveResource.vertexBufferView;
+    resource_->indexBufferView_ = primitiveResource.indexBufferView;
+    resource_->indexCount_ = primitiveResource.indexCount;
 
     // マテリアル初期化
     resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
@@ -185,7 +138,7 @@ void CubeClass::Draw() {
     }
 
     if (drawManager_) {
-        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
+        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, resource_->indexCount_);
     }
 }
 
