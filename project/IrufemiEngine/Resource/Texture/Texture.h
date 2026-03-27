@@ -19,6 +19,7 @@ public:
     ~Texture();
 
     void Initialize(const std::string& filePath);
+    void InitializeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height);
 
     const D3D12_GPU_DESCRIPTOR_HANDLE& GetTextureSrvHandleGPU()const { return textureSrvHandleGPU_; }
 
