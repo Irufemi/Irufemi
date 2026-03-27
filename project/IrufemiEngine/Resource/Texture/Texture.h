@@ -9,30 +9,66 @@
 class DirectXCommon;
 class DescriptorPool;
 
+/**
+ * @class Texture
+ * @brief 個別のテクスチャリソースを管理するクラス
+ * @details DirectX 12 のリソース（ID3D12Resource）と SRV ハンドルを保持し、データのロードと初期化を行います。
+ */
 class Texture {
 public:
+    /** @name 静的メンバ設定 */
+    ///@{
     static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
     static void SetDescriptorPool(DescriptorPool* pool) { s_srvPool_ = pool; }
     static DescriptorPool* GetDescriptorPool() { return s_srvPool_; }
+    ///@}
 
+    /**
+     * @brief コンストラクタ
+     */
     Texture() ;
+
+    /**
+     * @brief デストラクタ
+     */
     ~Texture();
 
+    /**
+     * @brief ファイルからテクスチャを初期化
+     * @param[in] filePath 画像ファイルのパス
+     */
     void Initialize(const std::string& filePath);
+
+    /**
+     * @brief メモリ上のピクセルデータからテクスチャを初期化
+     * @param[in] name 識別名
+     * @param[in] pixels ピクセルデータ（RGBA8想定）
+     * @param[in] width 横幅
+     * @param[in] height 縦幅
+     */
     void InitializeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height);
 
+    /**
+     * @brief GPU側のSRVハンドルを取得
+     */
     const D3D12_GPU_DESCRIPTOR_HANDLE& GetTextureSrvHandleGPU()const { return textureSrvHandleGPU_; }
 
-    // ScratchImageを取得
+    /**
+     * @brief ScratchImage（CPU側の画像データ）を取得
+     */
     const DirectX::ScratchImage* GetScratchImage() const { return &mipImages_; }
 
-    // サイズ取得(TextureManager::GetTextureSize から呼ばれる)
+    /** @name サイズ取得 */
+    ///@{
     uint32_t GetWidth()  const { return width_; }
     uint32_t GetHeight() const { return height_; }
+    ///@}
 
-    // 既存互換(段階移行用)
+    /** @name 下位互換用（段階移行用） */
+    ///@{
     static uint32_t GetStaticSRVIndex() { return index_; }
     static void AddStaticSRVIndex() { index_++; }
+    ///@}
 
 protected:
     D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU_{};
