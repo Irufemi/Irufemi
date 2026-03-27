@@ -73,6 +73,11 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
         srvPool->GetGPUHandle(imguiIndex)
     );
 
+    // フォントアトラスをビルドし、テクスチャをGPUにアップロードする
+    io.Fonts->Build();
+    ImGui_ImplDX12_CreateDeviceObjects();
+    ImGui_ImplDX12_UpdateTexture(io.Fonts->TexData);
+
     // テンプレートライトの初期化
     templatePointLight_ = std::make_unique<PointLight>();
     templatePointLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };

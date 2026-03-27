@@ -221,6 +221,8 @@ void DebugScene::Update() {
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
     ImGui::Checkbox("Skybox", &isActiveSkybox_);
     ImGui::End();
+
+    ImGui::ShowDemoWindow();
 #endif
 
     // 3D
