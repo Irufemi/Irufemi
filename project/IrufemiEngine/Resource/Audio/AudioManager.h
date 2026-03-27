@@ -1,12 +1,13 @@
 #pragma once
 
-#include "Sound.h" // 音声データクラス
+#include "Sound.h"
+#include "VoiceInstance.h"
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-// IXAudio2SourceVoice構造体を前方宣言(ヘッダの依存関係を減らすため)
+// IXAudio2SourceVoice構造体を前方宣言
 struct IXAudio2SourceVoice;
 
 class AudioManager {
@@ -22,8 +23,8 @@ private:
     // ロードした音声データをファイル名をキーにして保持するマップ
     std::map<std::string, std::shared_ptr<Sound>> soundRegistry_;
 
-    // 再生中の SourceVoice を一元管理
-    std::vector<IXAudio2SourceVoice*> activeVoices_;
+    // 再生中の VoiceInstance を一元管理
+    std::vector<std::shared_ptr<VoiceInstance>> activeVoices_;
 
     // カテゴリ名 → その中にあるファイル名リスト(ソート済み)
     std::map<std::string, std::vector<std::string>> categoryMap_;
@@ -32,7 +33,7 @@ private:
     bool finalized_{ false };
 
     // 追加: 管理対象か判定
-    bool IsManagedVoice(IXAudio2SourceVoice* voice) const;
+    bool IsManagedVoice(std::shared_ptr<VoiceInstance> instance) const;
 
 public:
     // コンストラクタ
@@ -62,12 +63,15 @@ public:
     // 利用可能なサウンドカテゴリ一覧(サブフォルダ名)を取得
     std::vector<std::string> GetCategories() const;
 
-    // サウンドを再生し、再生中のボイスへのポインタを返す
-    IXAudio2SourceVoice* Play(
+    // 追加: 毎フレームの更新処理(終了したボイスのクリーンアップ)
+    void Update();
+
+    // サウンドを再生し、再生中のインスタンスへの弱参照を返す
+    std::weak_ptr<VoiceInstance> Play(
         std::shared_ptr<Sound> soundData, bool loop = false, float volume = 1.0f);
 
     // 再生中のボイスを停止し、破棄する
-    void Stop(IXAudio2SourceVoice*& voice);
+    void Stop(std::weak_ptr<VoiceInstance>& instance);
     void StopAll(); // 追加: 全Voice停止(Finalize内で利用)
 
     // 追加: 重複を避けてファイルからロード or 取得(TextureManager風)

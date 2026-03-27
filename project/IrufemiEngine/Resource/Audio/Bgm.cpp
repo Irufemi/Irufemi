@@ -100,23 +100,15 @@ void Bgm::PlayFirstTrack() {
 }
 
 void Bgm::Stop() {
-    if (voice_) {
-        if (audioManager_) {
-            audioManager_->Stop(voice_);
-        } else {
-            // audioManager_ がない場合は最低限 Stop を試みる(安全策)
-            voice_->Stop(0);
-            voice_->DestroyVoice();
-            voice_ = nullptr;
-        }
-        voice_ = nullptr;
+    if (audioManager_) {
+        audioManager_->Stop(voice_);
     }
 }
 
 void Bgm::SetVolume(float volume) {
     volume_ = volume;
-    if (voice_) {
-        voice_->SetVolume(volume_);
+    if (auto v = voice_.lock()) {
+        v->SetVolume(volume_);
     }
 }
 
@@ -136,7 +128,7 @@ void Bgm::Debug() {
         bool loop = fixedLoop_;
         if (ImGui::Checkbox("Loop", &loop)) {
             fixedLoop_ = loop;
-            if (voice_) {
+            if (!voice_.expired()) {
                 // ループ変更を反映するため再生し直し
                 PlayFixed();
             }

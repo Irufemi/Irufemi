@@ -73,8 +73,19 @@ void AudioManager::Finalize() {
     assert(SUCCEEDED(hr));
 }
 
-bool AudioManager::IsManagedVoice(IXAudio2SourceVoice* voice) const {
-    return std::find(activeVoices_.begin(), activeVoices_.end(), voice) != activeVoices_.end();
+bool AudioManager::IsManagedVoice(std::shared_ptr<VoiceInstance> instance) const {
+    return std::find(activeVoices_.begin(), activeVoices_.end(), instance) != activeVoices_.end();
+}
+
+void AudioManager::Update() {
+    // 終了したボイスをリストから削除
+    // 削除されると shared_ptr の参照が外れ、VoiceInstance のデストラクタで DestroyVoice される
+    activeVoices_.erase(
+        std::remove_if(activeVoices_.begin(), activeVoices_.end(),
+            [](const std::shared_ptr<VoiceInstance>& instance) {
+                return instance->GetCallback()->IsFinished();
+            }),
+        activeVoices_.end());
 }
 
 void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {
@@ -147,16 +158,17 @@ std::vector<std::string> AudioManager::GetCategories() const {
     return cats;
 }
 
-IXAudio2SourceVoice* AudioManager::Play(std::shared_ptr<Sound> soundData, bool loop, float volume) {
-    if (finalized_) return nullptr;
+std::weak_ptr<VoiceInstance> AudioManager::Play(std::shared_ptr<Sound> soundData, bool loop, float volume) {
+    if (finalized_) return {};
     if (!pXAudio2_ || !soundData) {
-        return nullptr;
+        return {};
     }
 
+    auto callback = std::make_unique<VoiceCallback>();
     IXAudio2SourceVoice* pSourceVoice{ nullptr };
-    HRESULT hr = pXAudio2_->CreateSourceVoice(&pSourceVoice, soundData->GetFormat());
+    HRESULT hr = pXAudio2_->CreateSourceVoice(&pSourceVoice, soundData->GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, callback.get());
     if (FAILED(hr) || !pSourceVoice) {
-        return nullptr;
+        return {};
     }
 
     // 音量を設定
@@ -179,42 +191,28 @@ IXAudio2SourceVoice* AudioManager::Play(std::shared_ptr<Sound> soundData, bool l
     hr = pSourceVoice->Start(0);
     assert(SUCCEEDED(hr));
 
-    // 生成したソースボイスのポインタを返す(外部で音量変更などに使うため)
-    // 管理リストに追加してから返す
-    activeVoices_.push_back(pSourceVoice);
-    return pSourceVoice;
+    // 管理インスタンスを生成してリストに追加
+    auto instance = std::make_shared<VoiceInstance>(pSourceVoice, std::move(callback));
+    activeVoices_.push_back(instance);
+    return instance;
 }
 
-void AudioManager::Stop(IXAudio2SourceVoice*& voice) {
-    if (!voice) return;
+void AudioManager::Stop(std::weak_ptr<VoiceInstance>& instance) {
+    auto locked = instance.lock();
+    if (!locked) return;
 
-    // 追加: Finalize 後 or 未管理の Voice は触らず呼び出し側だけクリア
-    if (finalized_ || !IsManagedVoice(voice)) {
-        voice = nullptr;
+    if (finalized_ || !IsManagedVoice(locked)) {
         return;
     }
 
-    if (voice) {
-        voice->Stop(0);
-        voice->DestroyVoice();
-        // 管理リストから安全に除去
-        auto it = std::remove(activeVoices_.begin(), activeVoices_.end(), voice);
-        if (it != activeVoices_.end()) {
-            activeVoices_.erase(it, activeVoices_.end());
-        }
-        voice = nullptr;  // 呼び出し側ポインタもクリア
+    // 管理リストから除去 (shared_ptr が外れて VoiceInstance のデストラクタで破棄される)
+    auto it = std::remove(activeVoices_.begin(), activeVoices_.end(), locked);
+    if (it != activeVoices_.end()) {
+        activeVoices_.erase(it, activeVoices_.end());
     }
 }
 
 void AudioManager::StopAll() {
-    // すべてのSourceVoiceを安全に停止・Destroy
-    for (auto& voice : activeVoices_) {
-        if (voice) {
-            voice->Stop(0);
-            voice->DestroyVoice();
-            voice = nullptr;
-        }
-    }
     activeVoices_.clear();
 }
 

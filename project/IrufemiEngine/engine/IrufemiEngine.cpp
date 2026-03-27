@@ -337,6 +337,7 @@ void IrufemiEngine::Execute() {
 
 
         // 更新
+        audioManager_->Update();
         sceneManager_->Update();
     totalTime_ += deltaTime_;
     postProcessManager_->Update(totalTime_);
