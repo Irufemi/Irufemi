@@ -3,6 +3,7 @@
 #include "DirectXTex/d3dx12.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include <cassert>
 
 DirectXCommon* Texture::dxCommon_ = nullptr;
 uint32_t Texture::index_ = 0;
@@ -74,6 +75,45 @@ void Texture::Initialize(const std::string& filePath) {
             textureSrvHandleGPU_ = D3D12_GPU_DESCRIPTOR_HANDLE{ 0 };
         }
     }
+
+    dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
+}
+
+void Texture::InitializeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height) {
+    this->filePath_ = name;
+    this->width_ = width;
+    this->height_ = height;
+
+    // sRGB フォーマットで初期化
+    HRESULT hr = mipImages_.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, width, height, 1, 1);
+    assert(SUCCEEDED(hr));
+
+    // ピクセルデータのコピー
+    memcpy(mipImages_.GetImage(0, 0, 0)->pixels, pixels, width * height * sizeof(uint32_t));
+
+    const DirectX::TexMetadata& metadata = mipImages_.GetMetadata();
+    textureResource_ = dxCommon_->CreateTextureResource(metadata);
+    intermediateResource_ = dxCommon_->UploadTextureData(textureResource_.Get(), mipImages_);
+
+    dxCommon_->ReleaseAfterFence(intermediateResource_);
+    intermediateResource_ = nullptr;
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    srvDesc.Format = metadata.format;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    uint32_t indexForSrv = UINT32_MAX;
+    if (s_srvPool_) {
+        indexForSrv = s_srvPool_->Allocate();
+        if (indexForSrv != DescriptorPool::kInvalid) {
+            srvIndex_ = indexForSrv;
+            textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(indexForSrv);
+            textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(indexForSrv);
+        }
+    }
+    // Static カウンタ fallback は省略(基本 pool がある前提)
 
     dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
 }

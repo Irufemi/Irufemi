@@ -5,12 +5,12 @@
 #include <cstdint>
 #include <array>
 #include <wrl.h>
-#include "Renderer/TransformationMatrix.h"
-#include "Engine/Graphics/Data/PointLight.h"
-#include "Engine/Graphics/Data/SpotLight.h"
-#include "Engine/Graphics/Data/AreaLight.h"
-#include "Engine/Graphics/DirectX/RenderTexture.h"
-#include "Engine/Core/Math/Vector4.h"
+#include "../../Renderer/TransformationMatrix.h"
+#include "../Graphics/Data/PointLight.h"
+#include "../Graphics/Data/SpotLight.h"
+#include "../Graphics/Data/AreaLight.h"
+#include "../Graphics/DirectX/RenderTexture.h"
+#include "../Core/Math/Vector4.h"
 #include <vector>
 #include <memory>
 
@@ -41,9 +41,15 @@ struct GpuMaterial;
 struct DirectionalLight;
 struct CameraForGPU;
 
-//描画のCommandListを積む順番
+// 描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
 
+/**
+ * @class DrawManager
+ * @brief 描画コマンドの発行とパイプライン管理を担うクラス
+ * @details 各レンダラーからの描画リクエストを受け取り、適切な順序でコマンドリストに積みます。
+ *          ライト情報の管理や、RenderTexture を用いたポストプロセス実行の制御も行います。
+ */
 class DrawManager {
 private:
 
@@ -85,69 +91,148 @@ private:
 
 public: //メンバ関数
 
+    /** @name 初期化・終了処理 */
+    ///@{
     void Initialize(DirectXCommon* dx);
     void Finalize();
+    ///@}
 
+    /** @name パイプライン・描画フロー制御 */
+    ///@{
+    /**
+     * @brief パイプラインステートをバインドする
+     * @param[in] pso バインドするパイプラインステート
+     */
     void BindPSO(ID3D12PipelineState* pso);
 
+    /**
+     * @brief フレームの描画開始処理
+     * @details レンダーターゲットのクリアとビューポートの設定を行います。
+     */
     void PreDraw(
         std::array<float, 4> clearColor = { 0.1f, 0.25f, 0.5f, 1.0f },
         float clearDepth = 1.0f,
         uint8_t clearStencil = 0
     );
+
+    /**
+     * @brief フレームの描画終了処理
+     * @details リソースバリアの変更とコマンドリストのクローズ準備を行います。
+     */
     void PostDraw();
 
-    // フレーム共通のルートパラメータをバインド
+    /**
+     * @brief フレーム共通のルートパラメータをバインドする
+     * @details カメラ、ライト、各種管理用定数バッファを一括でレジスタに設定します。
+     */
     void BindCommonParameters();
+    ///@}
 
-    // RenderTexture への描画開始
+    /** @name レンダーターゲット・ポストプロセス操作 */
+    ///@{
+    /**
+     * @brief 指定した RenderTexture への描画を開始する
+     * @param[in] rt 出力先の RenderTexture
+     * @param[in] clearColor 背景クリア色
+     */
     void BeginRenderTexture(class RenderTexture* rt, const struct Vector4& clearColor);
-    // RenderTexture への描画終了
+
+    /**
+     * @brief RenderTexture への描画を終了する
+     * @param[in] rt 描画していた RenderTexture
+     */
     void EndRenderTexture(class RenderTexture* rt);
 
-    // レンダーターゲットをバックバッファに戻す
+    /**
+     * @brief レンダーターゲットをバックバッファ（画面）に戻す
+     * @param[in] useDepth 深度バッファを使用するかどうか
+     */
     void SetRenderTargetToBackBuffer(bool useDepth = true);
 
-    // RenderTexture を全画面に描画(ポストプロセス用)
+    /**
+     * @brief RenderTexture を全画面に描画（ポストプロセス用）
+     * @param[in] renderTexture 描画元のテクスチャ
+     * @param[in] pso 使用するポストプロセス用パイプラインステート
+     * @param[in] cbvAddress 追加の定数バッファアドレス（オプション）
+     * @param[in] depthSrvHandle 深度テクスチャのハンドル（オプション）
+     */
     void DrawRenderTexture(class RenderTexture* renderTexture, ID3D12PipelineState* pso = nullptr, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress = 0, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle = { 0 });
+    ///@}
 
-    // フレーム単位の共通データを設定
+    /** @name 共通データ設定 */
+    ///@{
+    /**
+     * @brief フレーム単位の共通データを定数バッファに書き込む
+     */
     void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);
 
-    // 環境マップ設定用
+    /**
+     * @brief 環境マップを設定する
+     * @param[in] envMapHandle 環境マップテクスチャのGPUハンドル
+     */
     void SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle);
     D3D12_GPU_DESCRIPTOR_HANDLE GetEnvironmentMap() const { return environmentMapHandle_; }
+    ///@}
 
-
+    /** @name 各種オブジェクト描画メソッド */
+    ///@{
+    /**
+     * @brief パーティクルの描画（インスタンシング）
+     */
     void DrawParticle(const class ParticleResource* resource, uint32_t instanceCount);
 
+    /**
+     * @brief 矩形領域（Region）の描画
+     */
     void DrawModelRegion(ModelRegion* region);
 
+    /**
+     * @brief 汎用的な領域描画（頂点バッファ・インデックスバッファ直接指定）
+     */
     void DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount);
 
-    // LineInstancedシェーダー用描画関数
+    /**
+     * @brief インスタンス化された線の描画
+     */
     void DrawLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
 
-    // Object3Dシェーダー用描画関数
+    /**
+     * @brief 3Dオブジェクトの標準描画
+     */
     void DrawObject3D(const class Object3DResource* resource);
 
-    // Object2Dシェーダー用描画関数
+    /**
+     * @brief 2Dオブジェクト（スプライト等）の標準描画
+     */
     void DrawObject2D(const class Object2DResource* resource);
 
-    // Skybox用描画関数
+    /**
+     * @brief スカイボックスの描画
+     */
     void DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
 
-    // スキニング計算の実行
+    /**
+     * @brief GPUパーティクルの描画（直接バッファ指定）
+     */
+    void DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const UINT& instanceCount);
+    ///@}
+
+    /** @name コンピュートシェーダ（GPGPU）操作 */
+    ///@{
+    /**
+     * @brief スキニング計算（Compute Shader）の実行
+     */
     void DispatchSkinning(const SkinCluster& skinCluster, const ManagedModel* model, uint32_t numVertices);
 
-    // UAVバリアの実行
+    /**
+     * @brief UAVバリアの実行（リソース競合の解決）
+     */
     void ExecuteUAVBarrier(ID3D12Resource* resource);
+    ///@}
 
-    // Object2Dシェーダー用描画関数
-
-    void DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const UINT& instanceCount);
-
+    /** @name 状態取得・ユーティリティ */
+    ///@{
     CameraForGPU* GetCameraData() const { return cameraData_; }
-
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
+    ///@}
 };

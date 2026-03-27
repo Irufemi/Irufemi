@@ -7,7 +7,8 @@
 #include <mutex>  
 #include <d3d12.h>
 #include <wrl.h>
-#include "Resource/Texture/Texture.h" 
+#include "Texture.h"
+#include "../../../externals/DirectXTex/DirectXTex.h"
 
 // 前方宣言
 namespace DirectX {
@@ -16,33 +17,72 @@ namespace DirectX {
 
 class DirectXCommon;
 
+/**
+ * @class TextureManager
+ * @brief テクスチャのロードと管理を一括して行うマネージャクラス
+ * @details テクスチャの重複ロードを防ぐためのキャッシュ機構を持ち、IDによる指定でSRVハンドルを提供します。
+ */
 class TextureManager {
 public:
+    /**
+     * @brief コンストラクタ
+     */
     TextureManager() = default;
+
+    /**
+     * @brief デストラクタ
+     */
     ~TextureManager() = default;
 
-    // 初期化
+    /**
+     * @brief 初期化
+     * @param[in] dxCommon DirectX 12 基礎クラスのポインタ
+     */
     void Initialize(DirectXCommon* dxCommon);
 
-    // フォルダからロード
+    /**
+     * @brief 指定フォルダ内のすべての画像をロードする
+     * @param[in] folderPath ロード対象のフォルダパス
+     */
     void LoadAllFromFolder(const std::string& folderPath);
 
-    // ファイルパス/名前でSRVハンドルを取得(未ロードならロードしてキャッシュ)
+    /**
+     * @brief テクスチャ名からGPU側のSRVハンドルを取得
+     * @details 未ロードの場合はロードを試みます。
+     * @param[in] name ファイルパスまたは識別名
+     * @return GPU側のSRVハンドル
+     */
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle(const std::string& name) const;
 
-    // CPUでアクセス可能な画像データを取得
+    /**
+     * @brief テクスチャ名からCPU側の画像データを取得
+     * @param[in] name ファイルパスまたは識別名
+     * @return ScratchImageへのポインタ
+     */
     const DirectX::ScratchImage* GetScratchImage(const std::string& name) const;
 
-    // テクスチャ名一覧
+    /**
+     * @brief ロード済みのテクスチャ名一覧を取得
+     */
     std::vector<std::string> GetTextureNames() const;
 
-    // 白テクスチャの作成(フォールバック)
+    /**
+     * @brief フォールバック用のダミー白テクスチャを生成する
+     */
     void CreateWhiteDummyTexture();
 
-    // テクスチャサイズ取得
+    /**
+     * @brief テクスチャのピクセルサイズを取得
+     * @param[in] name 識別名
+     * @param[out] outWidth 幅の出力先
+     * @param[out] outHeight 高さの出力先
+     * @return 取得成功なら true
+     */
     bool GetTextureSize(const std::string& name, uint32_t& outWidth, uint32_t& outHeight) const;
 
-    // 白テクスチャハンドル取得
+    /**
+     * @brief 白テクスチャのGPUハンドルを取得
+     */
     D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() const { return whiteTextureHandle_; }
 
 private:

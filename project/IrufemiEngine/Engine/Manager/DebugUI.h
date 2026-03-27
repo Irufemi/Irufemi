@@ -6,8 +6,8 @@
 #include <cstddef>        
 #include <memory>
 #include <vector>
-#include "Engine/Core/Type/BlendMode.h"
-#include "Engine/Graphics/Pipeline/PSOManager.h"
+#include "../Core/Type/BlendMode.h"
+#include "../Graphics/Pipeline/PSOManager.h"
 
 
 // 前方宣言
@@ -36,6 +36,12 @@ struct ObjMaterial;
 #endif // USE_IMGUI
 
 
+/**
+ * @class DebugUI
+ * @brief ImGuiを使用したデバッグインターフェースを管理するクラス
+ * @details 画面上に各種パラメータ（ライト、トランスフォーム、マテリアル等）を調整・確認するためのUIを表示します。
+ *          パフォーマンス計測（FPS/フレーム時間）機能も備えています。
+ */
 class DebugUI{
 private: // メンバ変数
 
@@ -68,28 +74,51 @@ private: // メンバ変数
 
 public: // メンバ関数
 
-    // 初期化
+    /** @name 初期化・終了処理 */
+    ///@{
+    /**
+     * @brief 初期化
+     */
     void Initialize(HWND hwnd, DirectXCommon* dxCommon);
 
-    // TextureManagerをセット
+    /**
+     * @brief TextureManagerをセットする
+     */
     void SetTextureManager(TextureManager* textureManager) { this->textureManager_ = textureManager; }
 
-    // 終了処理
+    /**
+     * @brief 終了処理
+     */
     void Shutdown();
+    ///@}
+
 #ifdef USE_IMGUI
     static LRESULT WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // USE_IMGUI
 
-    // フレーム開始
+    /** @name フレーム制御 */
+    ///@{
+    /**
+     * @brief フレーム開始処理
+     */
     void FrameStart();
 
-    // 描画処理に入る前にコマンドを積む
+    /**
+     * @brief 描画コマンドの積み込み
+     */
     void QueueDrawCommands();
 
-    // 描画処理が終わったタイミングでコマンドを積む
+    /**
+     * @brief ポストプロセス以降の描画コマンド積み込み
+     */
     void QueuePostDrawCommands();
+    ///@}
 
-    // --- ライトデバッグ ---
+    /** @name ライト・座標系のデバッグ */
+    ///@{
+    /**
+     * @brief ライト全体の編集UIを表示する
+     */
     static void DebugLights(
         DirectionalLight* directionalLight,
         std::vector<std::unique_ptr<PointLight>>& pointLights,
@@ -97,65 +126,87 @@ public: // メンバ関数
         std::vector<std::unique_ptr<AreaLight>>& areaLights
     );
 
-    // Transform
+    /**
+     * @brief 3Dトランスフォームの編集
+     */
     static void DebugTransform(Transform& transform);
 
+    /**
+     * @brief 2Dトランスフォーム（スプライト用）の編集
+     */
     static void DebugTransform2D(Transform& transform);
 
-
+    /**
+     * @brief トランスフォーム情報のテキスト表示
+     */
     static void TextTransform(Transform& transform, const char* name = "");
+    ///@}
 
-    // Material
+    /** @name マテリアル・テクスチャのデバッグ */
+    ///@{
     static void DebugMaterialBy3D(Material* material);
     
-    // Material
     static void DebugMaterialBy2D(Material* material);
 
-    // ObjMaterialのデバッグ表示
     static void DebugObjMaterial(ObjMaterial* material, const char* unique_id = "");
 
-    // Particle 専用マテリアルのデバッグ表示
     static void DebugMaterialByParticle(ParticleMaterial* material);
 
-    // 画像
+    /**
+     * @brief テクスチャの選択・変更UI
+     */
     void DebugTexture(Object3DResource* resource, int& selectedTextureIndex);
     void DebugTexture(Object2DResource* resource, int& selectedTextureIndex);
     void DebugTexture(ParticleResource* resource, int& selectedTextureIndex);
 
-    // DirectionalLight
     static void DebugDirectionalLight(DirectionalLight* directionalLightData);
 
-    // UvTransform
     static void DebugUvTransform(Transform& uvTransform);
 
-    // UvTransform
     static void DebugUvTransform(Matrix4x4& uvTransform);
+    ///@}
 
-    // Sphere
+    /** @name エンジン情報のデバッグ */
+    ///@{
+    /**
+     * @brief 形状情報の表示（球体等）
+     */
     static void DebugSphereInfo(Sphere& sphere);
 
-    // FPS/FrameTime オーバーレイ
+    /**
+     * @brief パフォーマンスオーバーレイの表示（FPS/ms表示）
+     */
     void FPSDebug();
 
-    // シーンセレクタ
+    /**
+     * @brief シーン切り替えタブの表示
+     */
     void SceneSelectorTab(SceneManager* sm);
 
-    // ポストプロセスのデバッグUI
+    /**
+     * @brief ポストプロセス調整タブの表示
+     */
     void PostProcessTab(IrufemiEngine* engine);
 
-    // 統合デバッグウィンドウの開始
+    /**
+     * @brief 統合デバッグウィンドウの開始
+     */
     void BeginEngineDebugWindow();
 
-    // 統合デバッグウィンドウの終了
+    /**
+     * @brief 統合デバッグウィンドウの終了
+     */
     void EndEngineDebugWindow();
 
 
-    // PSO設定(ブレンド、深度、カリング)のデバッグUI
+    /**
+     * @brief PSO設定（描画ステート）の編集UI
+     */
     static void DebugPsoSettings(
         BlendMode* blendMode,
         PSOManager::DepthWrite* depthWrite,
         PSOManager::CullMode* cullMode,
         const char* unique_id = "##PsoSettings"
     );
+    ///@}
 };
-

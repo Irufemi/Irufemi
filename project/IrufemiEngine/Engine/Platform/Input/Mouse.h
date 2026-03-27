@@ -1,38 +1,66 @@
 #pragma once
 #include <Windows.h>
-#include "Engine/Core/Math/Vector2.h"
+#include "../../Core/Math/Vector2.h"
 
+/**
+ * @class Mouse
+ * @brief マウス入力を管理するクラス
+ * @details ボタン状態、カーソル位置、ホイール回転量の取得に加え、
+ *          マウスカーソルのロック（中央固定）制御も行います。
+ */
 class Mouse {
 public:
+    /** @enum Button
+     *  @brief マウスのボタン識別子
+     */
     enum class Button {
-        Left,
-        Right,
-        Middle,
+        Left,   ///< 左ボタン
+        Right,  ///< 右ボタン
+        Middle, ///< 中ボタン（ホイールクリック）
     };
 
     Mouse() = default;
     ~Mouse() = default;
 
+    /** @name 初期化・更新 */
+    ///@{
     void Initialize(HWND hwnd);
     void Update();
+    ///@}
 
-    // ボタン入力
+    /** @name ボタン入力状態 */
+    ///@{
     bool IsButtonDown(Button button) const;
+    /** @brief ボタンが押された瞬間か判定 */
     bool IsButtonPressed(Button button) const;
+    /** @brief ボタンが離された瞬間か判定 */
     bool IsButtonReleased(Button button) const;
+    ///@}
 
-    // マウス位置
+    /** @name カーソル座標・移動量 */
+    ///@{
+    /** @brief 現在のマウス座標（スクリーン空間）を取得 */
     const Vector2& GetPosition() const { return position_; }
+    /** @brief 前フレームからの移動量を取得 */
     const Vector2& GetDelta() const { return delta_; }
+    ///@}
 
-    // ホイール
+    /** @name ホイール操作 */
+    ///@{
+    /** @brief ホイールの回転差分を取得 */
     float GetWheelDelta() const;
-
-    // WinAppからホイール差分を設定するためのセッター
+    /** @brief ホイール差分を設定する（Windows メッセージから呼び出し） */
     void SetWheelDelta(float delta) { wheelDelta_ = delta; }
+    ///@}
 
-    // ロック状態の設定
+    /** @name カーソル制御 */
+    ///@{
+    /**
+     * @brief マウスをウィンドウ中央にロックするか設定する
+     * @param[in] locked true でロック（FPS等で使用）、false で解除
+     */
     void SetLocked(bool locked);
+    ///@}
 
 private:
     HWND hwnd_ = nullptr;
