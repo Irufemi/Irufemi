@@ -126,7 +126,8 @@ private:
     const float kGravity = 0.02f;
 
     // --- 誘導ミサイル用 ---
-    static const int kMaxMissiles = 4;
+    // ★修正: 8個以上同時に飛ぶことを考慮し、余裕を持たせて16に変更
+    static const int kMaxMissiles = 16;
     std::unique_ptr<ObjClass> missileObjs_[kMaxMissiles];
     MissileData missiles_[kMaxMissiles] = {};
     const float kMissileSpeed = 0.8f;

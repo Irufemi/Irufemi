@@ -18,6 +18,15 @@ void PlayerCamera::UpdateInput(InputManager* input, Vector3& playerRotate) {
         isCameraControlEnabled_ = !isCameraControlEnabled_;
     }
 
+    // ★追加: Vキーで一人称視点 / 三人称視点を切り替える
+    if (input->IsKeyPressed('V')) {
+        if (viewMode_ == ViewMode::kThirdPerson) {
+            viewMode_ = ViewMode::kFirstPerson;
+        } else {
+            viewMode_ = ViewMode::kThirdPerson;
+        }
+    }
+
     // --- マウスによる視点操作 ---
     if (isCameraControlEnabled_) {
         Vector2 mouseDelta = input->GetMouseDelta();

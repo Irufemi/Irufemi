@@ -13,10 +13,6 @@ class Camera;
 class Line3DRegion;
 class Enemy;
 
-/**
- * @struct AttackCollision
- * @brief プレイヤーの攻撃判定（攻撃を当てる側）データ
- */
 struct AttackCollision {
     Vector3 center;
     float radius;
@@ -32,7 +28,6 @@ public:
     void Draw();
     void DrawParticles();
 
-    // ゲッター
     const Vector3& GetTranslate() const { return translate_; }
     const Vector3& GetRotate() const { return rotate_; }
 
@@ -49,7 +44,12 @@ public:
     bool IsDead() const { return status_.IsDead(); }
 
     void ApplyDamage(int damage);
+
+    // ターゲット設定関係
     void SetTargetPosition(const Vector3& targetPos) { targetPos_ = targetPos; }
+    void SetIsTargetingEnemy(bool isTargeting) { isTargetingEnemy_ = isTargeting; }
+    bool GetIsTargetingEnemy() const { return isTargetingEnemy_; }
+
     void HitAndKnockback(Enemy* enemy);
 
 private:
@@ -61,22 +61,22 @@ private:
     InputManager* input_ = nullptr;
     IrufemiEngine* engine_ = nullptr;
 
-    // --- コンポーネント群 ---
     PlayerMovement movement_;
     PlayerWeapon weapon_;
     PlayerCamera cameraController_;
     PlayerStatus status_;
 
-    // 3Dモデル本体と分身
     std::unique_ptr<ObjClass> obj_ = nullptr;
     std::unique_ptr<ObjClass> attackObj_ = nullptr;
-
-    // --- 一人称視点用マスク画像スプライト ---
+    std::unique_ptr<ObjClass> targetMarkerObj_ = nullptr;
     std::unique_ptr<Sprite> maskSprite_ = nullptr;
 
-    Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
+    // ★ポイント: 照準座標を「ミサイル用」と「機関銃用」で分ける
+    Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f }; // ミサイルのオートエイム用（常に敵の座標が入る）
+    Vector3 aimPos_ = { 0.0f, 0.0f, 0.0f };    // 機関銃とマーカー用（画面外なら前方になる）
 
-    // --- スキルとからくりチャージ用 ---
+    bool isTargetingEnemy_ = false;
+
     int skillDurationTimer_ = 0;
     int skillCooldownTimer_ = 0;
     const int kSkillCooldownTime = 300;
@@ -88,12 +88,10 @@ private:
     int karakuriActiveTimer_ = 0;
     const int kKarakuriActiveTime = 1200;
 
-    // トランスフォーム
     Vector3 scale_ = { 0.3f, 1.0f, 0.3f };
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
     Vector3 translate_ = { 0.0f, 0.0f, -50.0f };
 
-    // --- 近接攻撃判定用 ---
     enum class AttackState {
         kNone,
         kCharging,
@@ -107,22 +105,21 @@ private:
     int attackActiveTimer_ = 0;
     const int kAttackDuration = 20;
 
-    // --- 攻撃用定数（マジックナンバー解消） ---
-    static constexpr float kMaxChargeTime = 60.0f;               // チャージ最大フレーム数
-    static constexpr float kHammerAngleOffset = 1.5f;            // 構え時の角度オフセット
-    static constexpr float kSwingTotalAngle = 3.0f;              // スイング時の総回転角度
-    static constexpr float kHammerRotX = 1.57f;                  // ハンマーのX軸傾き
+    static constexpr float kMaxChargeTime = 60.0f;
+    static constexpr float kHammerAngleOffset = 1.5f;
+    static constexpr float kSwingTotalAngle = 3.0f;
+    static constexpr float kHammerRotX = 1.57f;
 
-    static constexpr float kSwingBaseRadius = 2.5f;              // 基本スイング半径
-    static constexpr float kSwingRadiusChargeBonus = 0.5f;       // チャージによる半径増加量
+    static constexpr float kSwingBaseRadius = 2.5f;
+    static constexpr float kSwingRadiusChargeBonus = 0.5f;
 
-    static constexpr float kHammerBaseHeight = 1.0f;             // ハンマーの基準高さ
-    static constexpr float kHammerSwaySpeed = 0.5f;              // 構え中の揺れ速度
-    static constexpr float kHammerSwayAmplitude = 0.1f;          // 構え中の揺れ幅
+    static constexpr float kHammerBaseHeight = 1.0f;
+    static constexpr float kHammerSwaySpeed = 0.5f;
+    static constexpr float kHammerSwayAmplitude = 0.1f;
 
-    static constexpr float kHammerBaseSize = 0.8f;               // ハンマーの基本サイズ
-    static constexpr float kHammerSizeChargeBonus = 0.4f;        // チャージによるサイズ増加量
-    static constexpr float kHammerScaleYMultiplier = 1.5f;       // ハンマーの縦長スケール倍率
+    static constexpr float kHammerBaseSize = 0.8f;
+    static constexpr float kHammerSizeChargeBonus = 0.4f;
+    static constexpr float kHammerScaleYMultiplier = 1.5f;
 
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
