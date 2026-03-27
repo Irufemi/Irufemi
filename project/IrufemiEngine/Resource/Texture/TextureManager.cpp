@@ -60,7 +60,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& 
         D3D12_GPU_DESCRIPTOR_HANDLE h = it->second->GetTextureSrvHandleGPU();
         if (h.ptr == 0) {
             // フォールバック
-            if (whiteTextureHandle.ptr != 0) return whiteTextureHandle;
+            if (whiteTextureHandle_.ptr != 0) return whiteTextureHandle_;
         }
         return h;
     }
@@ -69,8 +69,8 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& 
     auto tex = std::make_shared<Texture>();
     tex->Initialize(name);
     D3D12_GPU_DESCRIPTOR_HANDLE handle = tex->GetTextureSrvHandleGPU();
-    if (handle.ptr == 0 && whiteTextureHandle.ptr != 0) {
-        handle = whiteTextureHandle;
+    if (handle.ptr == 0 && whiteTextureHandle_.ptr != 0) {
+        handle = whiteTextureHandle_;
     }
     textures_.emplace(name, std::move(tex));
     return handle;
@@ -99,7 +99,7 @@ std::vector<std::string> TextureManager::GetTextureNames() const {
 }
 
 void TextureManager::CreateWhiteDummyTexture() {
-    if (whiteTextureHandle.ptr != 0) return;
+    if (whiteTextureHandle_.ptr != 0) return;
     if (!dxCommon_) { OutputDebugStringA("CreateWhiteDummyTexture: dxCommon_ is null\n"); return; }
 
     DescriptorPool* srvPool = dxCommon_->GetSrvPool();
@@ -128,7 +128,7 @@ void TextureManager::CreateWhiteDummyTexture() {
     HRESULT hr = dxCommon_->GetDevice()->CreateCommittedResource(
         &heapProp, D3D12_HEAP_FLAG_NONE,
         &texDesc, D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr, IID_PPV_ARGS(&whiteTextureResource)
+        nullptr, IID_PPV_ARGS(&whiteTextureResource_)
     );
     if (FAILED(hr)) { OutputDebugStringA("CreateWhiteDummyTexture: CreateCommittedResource(texture) failed\n"); return; }
 
@@ -154,11 +154,11 @@ void TextureManager::CreateWhiteDummyTexture() {
     subresource.RowPitch = texDesc.Width * 4;
     subresource.SlicePitch = subresource.RowPitch * texDesc.Height;
 
-    UpdateSubresources(dxCommon_->GetCommandList(), whiteTextureResource.Get(), uploadResource.Get(), 0, 0, 1, &subresource);
+    UpdateSubresources(dxCommon_->GetCommandList(), whiteTextureResource_.Get(), uploadResource.Get(), 0, 0, 1, &subresource);
 
     D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = whiteTextureResource.Get();
+    barrier.Transition.pResource = whiteTextureResource_.Get();
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
@@ -195,8 +195,8 @@ void TextureManager::CreateWhiteDummyTexture() {
     srvDesc.Texture2D.MipLevels = 1;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-    dxCommon_->GetDevice()->CreateShaderResourceView(whiteTextureResource.Get(), &srvDesc, cpuHandle);
-    whiteTextureHandle = gpuHandle;
+    dxCommon_->GetDevice()->CreateShaderResourceView(whiteTextureResource_.Get(), &srvDesc, cpuHandle);
+    whiteTextureHandle_ = gpuHandle;
 
     // ログ
     auto msg = std::format("CreateWhiteDummyTexture: created SRV cpu.ptr={:#x} gpu.ptr={:#x} at index {}\n",

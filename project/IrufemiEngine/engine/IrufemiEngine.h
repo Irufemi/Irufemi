@@ -49,7 +49,7 @@ public: // 内部型などは PostProcessManager.h へ移動しました。
 public: // メンバ関数
     // コンストラクタ
     IrufemiEngine() = default;
-    //デストラクタ
+    // デストラクタ
     ~IrufemiEngine();
 
     // ループ丸ごと実行
@@ -121,10 +121,10 @@ public: // ゲッター
     uint64_t& GetFenceValue() { return dxCommon_->GetFenceValue(); }
     DirectXCommon* GetDirectXCommon() { return this->dxCommon_.get(); }
     InputManager* GetInputManager() { return this->inputManager_.get(); }
-    DrawManager* GetDrawManager() { return this->drawManager.get(); }
-    DebugUI* GetDebugUI() { return this->ui.get(); }
+    DrawManager* GetDrawManager() { return this->drawManager_.get(); }
+    DebugUI* GetDebugUI() { return this->ui_.get(); }
     AudioManager* GetAudioManager() { return this->audioManager_.get(); }
-    TextureManager* GetTextureManager() { return this->textureManager.get(); }
+    TextureManager* GetTextureManager() { return this->textureManager_.get(); }
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
     /** 
@@ -217,13 +217,13 @@ private: // メンバ変数
     std::unique_ptr <InputManager> inputManager_ = nullptr;
     
     // DrawManager
-    std::unique_ptr <DrawManager> drawManager = nullptr;
+    std::unique_ptr<DrawManager> drawManager_ = nullptr;
     
     // DebugUI
-    std::unique_ptr <DebugUI> ui = nullptr;
+    std::unique_ptr<DebugUI> ui_ = nullptr;
     
     // TextureManager
-    std::unique_ptr <TextureManager> textureManager = nullptr;
+    std::unique_ptr<TextureManager> textureManager_ = nullptr;
     
     // AudioManager
     std::unique_ptr<AudioManager> audioManager_ = nullptr;
@@ -237,10 +237,10 @@ private: // メンバ変数
     // AnimationManager
     std::unique_ptr<AnimationManager> animationManager_ = nullptr;
 
-    //画面の色
+    // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };
 
-    //バックバッファのインデックス
+    // バックバッファのインデックス
     UINT backBufferIndex_{};
     
     // Application から注入

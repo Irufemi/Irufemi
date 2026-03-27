@@ -43,7 +43,7 @@ public:
     bool GetTextureSize(const std::string& name, uint32_t& outWidth, uint32_t& outHeight) const;
 
     // 白テクスチャハンドル取得
-    D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() const { return whiteTextureHandle; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() const { return whiteTextureHandle_; }
 
 private:
     DirectXCommon* dxCommon_ = nullptr;
@@ -52,7 +52,7 @@ private:
     mutable std::unordered_map<std::string, std::shared_ptr<Texture>> textures_;
 
     // フォールバック白テクスチャ
-    Microsoft::WRL::ComPtr<ID3D12Resource> whiteTextureResource;
-    D3D12_GPU_DESCRIPTOR_HANDLE whiteTextureHandle{ 0 };
+    Microsoft::WRL::ComPtr<ID3D12Resource> whiteTextureResource_;
+    D3D12_GPU_DESCRIPTOR_HANDLE whiteTextureHandle_{ 0 };
 
 };
