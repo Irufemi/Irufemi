@@ -24,35 +24,51 @@ struct PrimitiveResource {
     uint32_t indexCount;
 };
 
+/**
+ * @class PrimitiveManager
+ * @brief プリミティブ形状（球、立方体、平面等）のメッシュデータを管理するクラス
+ * @details 頻繁に使用される標準的な形状の CPU データおよび GPU リソース（頂点/インデックスバッファ）をキャッシュし、
+ *          効率的な再利用を可能にします。
+ */
 class PrimitiveManager
 {
 public:
-    /// <summary>
-    /// インスタンスを取得する
-    /// </summary>
+    /** @name インスタンス管理 */
+    ///@{
+    /**
+     * @brief シングルトンインスタンスを取得する
+     */
     static PrimitiveManager* GetInstance();
 
-    /// <summary>
-    /// 全リソースを解放する
-    /// </summary>
+    /**
+     * @brief 全リソースを解放する
+     */
     static void Finalize();
+    ///@}
 
-    /// <summary>
-    /// 指定した形状のプリミティブデータを取得する（CPUキャッシュ）
-    /// </summary>
+    /** @name キャッシュデータの取得 */
+    ///@{
+    /**
+     * @brief 指定した形状のプリミティブデータを取得する（CPUキャッシュ）
+     * @param[in] type 形状のタイプ
+     * @return 頂点とインデックスのリストを含む PrimitiveData
+     */
     const PrimitiveData& GetPrimitiveData(PrimitiveType type);
 
-    /// <summary>
-    /// 指定した形状の頂点データのみを取得する
-    /// </summary>
+    /**
+     * @brief 指定した形状の頂点データのみを取得する
+     */
     const std::vector<VertexData>& GetVertices(PrimitiveType type);
 
-    /// <summary>
-    /// 指定した形状の GPU リソース（BufferView）を取得する（GPUキャッシュ）
-    /// 標準設定（サイズ1.0等）のバッファを共有します。
-    /// </summary>
+    /**
+     * @brief 指定した形状の GPU リソース（BufferView）を取得する（GPUキャッシュ）
+     * @details 標準設定（サイズ1.0等）のバッファを共有します。
+     */
     const PrimitiveResource& GetStandardResource(PrimitiveType type);
+    ///@}
 
+    /** @name 形状生成メソッド（静的） */
+    ///@{
     // 個別生成用（キャッシュしない。特殊なパラメータが必要な場合用）
     static PrimitiveData CreateSphere(float radius, uint32_t subdivision);
     static PrimitiveData CreateCube(float width, float height, float depth);
@@ -66,6 +82,7 @@ public:
     static PrimitiveData CreateTriangle();
     static PrimitiveData CreateTetra();
     static PrimitiveData CreateCircle(float radius, uint32_t segments);
+    ///@}
 
 private:
     PrimitiveManager() = default;
@@ -73,7 +90,9 @@ private:
     PrimitiveManager(const PrimitiveManager&) = delete;
     PrimitiveManager& operator=(const PrimitiveManager&) = delete;
 
-    // リソース生成補助
+    /**
+     * @brief GPUリソースの生成補助
+     */
     void CreateGPUResource(const PrimitiveData& data, PrimitiveResource& resource);
 
 private:
