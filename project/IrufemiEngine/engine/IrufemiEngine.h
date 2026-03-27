@@ -33,6 +33,11 @@
 class SceneManager;
 class DebugUI;
 
+/**
+ * @class IrufemiEngine
+ * @brief IrufemiEngine 全体を制御するメインクラス
+ * @details エンジンの初期化、メインループ、終了処理を管理し、各マネージャへのアクセスを提供します。
+ */
 class IrufemiEngine {
 public: // 内部型などは PostProcessManager.h へ移動しました。
     using PostProcessMode = ::PostProcessMode;
@@ -47,62 +52,103 @@ public: // 内部型などは PostProcessManager.h へ移動しました。
     using DissolveParams = PostProcessManager::DissolveParams;
 
 public: // メンバ関数
-    // コンストラクタ
+    /**
+     * @brief コンストラクタ
+     */
     IrufemiEngine() = default;
-    //デストラクタ
+
+    /**
+     * @brief デストラクタ
+     */
     ~IrufemiEngine();
 
-    // ループ丸ごと実行
+    /**
+     * @brief メインループの実行
+     * @details ウィンドウが閉じられるまで、Initialize から Finalize までのフローを制御します。
+     */
     void Execute();
 
-   /// <summary>
-    ///  初期化
-    /// </summary>
+    /**
+     * @brief エンジンの初期化
+     * @param[in] title ウィンドウタイトル
+     * @param[in] clientWidth 画面横幅 (デフォルト: 1280)
+     * @param[in] clientHeight 画面縦幅 (デフォルト: 720)
+     */
     void Initialize(const std::wstring& title, const int32_t& clientWidth = 1280, const int32_t& clientHeight = 720);
    
-    /// 追加: クリアカラーを引数で指定できる Initialize(float RGBA)
+    /**
+     * @brief エンジンの初期化（クリアカラー指定付き）
+     * @param[in] title ウィンドウタイトル
+     * @param[in] clientWidth 画面横幅
+     * @param[in] clientHeight 画面縦幅
+     * @param[in] r クリアカラー（赤）
+     * @param[in] g クリアカラー（緑）
+     * @param[in] b クリアカラー（青）
+     * @param[in] a クリアカラー（アルファ）
+     */
    void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                     float r, float g, float b, float a = 1.0f);
     
-    /// 追加: クリアカラーを引数で指定できる Initialize(std::array)
+    /**
+     * @brief エンジンの初期化（クリアカラー指定付き - std::array版）
+     */
     void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                     const std::array<float, 4>& clearColor);
+
+    /**
+     * @brief エンジンの初期化（クリアカラー指定付き - Vector4版）
+     */
     void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                     const Vector4& clearColor);
 
-    // 追加: リサイズ対応
+    /**
+     * @brief ウィンドウリサイズ時の処理
+     * @param[in] width 新しい横幅
+     * @param[in] height 新しい縦幅
+     */
     void OnResize(int32_t width, int32_t height);
 
      // --- Application からの注入用コールバック型とセッター ---
     using SceneRegistrar = std::function<void(SceneManager&)>;
    
+    /**
+     * @brief シーン登録用コールバックの設定
+     * @param[in] registrar シーン登録を行う関数
+     */
     void SetSceneRegistrar(SceneRegistrar registrar) { sceneRegistrar_ = std::move(registrar); }
+
+    /**
+     * @brief 起動時に読み込むシーン名の設定
+     * @param[in] name シーン名
+     */
     void SetInitialSceneName(std::string name) { initialSceneName_ = std::move(name); }
 
  private: // メンバ関数(内部処理)
 
-    /// <summary>
-    /// 解放
-    /// </summary>
+    /**
+     * @brief 終了処理
+     */
     void Finalize();
 
-    /// <summary>
-    /// フレーム開始処理
-    /// </summary>
+    /**
+     * @brief フレーム開始処理
+     */
     void StartFrame();
 
-    /// <summary>
-    /// フレーム途中処理
-    /// </summary>
+    /**
+     * @brief フレーム更新処理
+     */
     void ProcessFrame();
 
-    /// <summary>
-    /// フレーム終了処理
-    /// </summary>
+    /**
+     * @brief フレーム終了処理
+     */
     void EndFrame();
 
 public: // ゲッター
 
+    /** @name グラフィックス関連の取得 */
+    ///@{
     ID3D12GraphicsCommandList* GetCommandList() { return dxCommon_->GetCommandList(); }
     ID3D12Device* GetDevice() { return dxCommon_->GetDevice(); }
     HWND GetHwnd() { return dxCommon_->GetHwnd(); }
@@ -119,12 +165,16 @@ public: // ゲッター
     ID3D12Resource* GetSwapChainResources(UINT index) { return dxCommon_->GetSwapChainResources(index); }
     D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return dxCommon_->GetRtvHandles(index); }
     uint64_t& GetFenceValue() { return dxCommon_->GetFenceValue(); }
+    ///@}
+
+    /** @name マネージャ類の取得 */
+    ///@{
     DirectXCommon* GetDirectXCommon() { return this->dxCommon_.get(); }
     InputManager* GetInputManager() { return this->inputManager_.get(); }
-    DrawManager* GetDrawManager() { return this->drawManager.get(); }
-    DebugUI* GetDebugUI() { return this->ui.get(); }
+    DrawManager* GetDrawManager() { return this->drawManager_.get(); }
+    DebugUI* GetDebugUI() { return this->ui_.get(); }
     AudioManager* GetAudioManager() { return this->audioManager_.get(); }
-    TextureManager* GetTextureManager() { return this->textureManager.get(); }
+    TextureManager* GetTextureManager() { return this->textureManager_.get(); }
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
     /** 
@@ -132,11 +182,16 @@ public: // ゲッター
      * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
      */
     PostProcessManager* GetPostProcessManager() { return postProcessManager_.get(); }
+    ///@}
+
+    /** @name 画面情報の取得 */
+    ///@{
     int32_t& GetClientWidth() { return dxCommon_->GetClientWidth(); }
     int32_t& GetClientHeight() { return dxCommon_->GetClientHeight(); }
     D3D12_VIEWPORT& GetViewport() { return dxCommon_->GetViewport(); }
     D3D12_RECT& GetScissorRect() { return dxCommon_->GetScissorRect(); }
     PSOManager* GetPSOManager() { return dxCommon_->GetPSOManager(); }
+    ///@}
 
     // 時間関連のゲッター
     float GetDeltaTime() const { return deltaTime_; }
@@ -217,13 +272,13 @@ private: // メンバ変数
     std::unique_ptr <InputManager> inputManager_ = nullptr;
     
     // DrawManager
-    std::unique_ptr <DrawManager> drawManager = nullptr;
+    std::unique_ptr<DrawManager> drawManager_ = nullptr;
     
     // DebugUI
-    std::unique_ptr <DebugUI> ui = nullptr;
+    std::unique_ptr<DebugUI> ui_ = nullptr;
     
     // TextureManager
-    std::unique_ptr <TextureManager> textureManager = nullptr;
+    std::unique_ptr<TextureManager> textureManager_ = nullptr;
     
     // AudioManager
     std::unique_ptr<AudioManager> audioManager_ = nullptr;
@@ -237,10 +292,10 @@ private: // メンバ変数
     // AnimationManager
     std::unique_ptr<AnimationManager> animationManager_ = nullptr;
 
-    //画面の色
+    // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };
 
-    //バックバッファのインデックス
+    // バックバッファのインデックス
     UINT backBufferIndex_{};
     
     // Application から注入

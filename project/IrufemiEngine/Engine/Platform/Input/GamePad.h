@@ -8,21 +8,35 @@ enum class Stick8 {
     Neutral, Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft
 };
 
+/**
+ * @class GamePad
+ * @brief ゲームパッド入力を管理するクラス
+ * @details XInput を使用してゲームパッドの状態を取得します。
+ *          ボタン入力、アナログスティック、デッドゾーン処理、8方向変換などの機能を提供します。
+ */
 class GamePad {
 public:
     GamePad() = default;
     ~GamePad() = default;
 
+    /** @name 初期化・更新 */
+    ///@{
     void Initialize();
     void Update();
+    ///@}
 
-    // ボタン
+    /** @name ボタン入力状態 */
+    ///@{
     bool IsButtonDown(WORD button) const;
     bool IsButtonUp(WORD button) const;
-    bool IsButtonPressed(WORD button) const;   // 立ち上がり
-    bool IsButtonReleased(WORD button) const;  // 立ち下がり
+    /** @brief ボタンが押された瞬間か判定（立ち上がり） */
+    bool IsButtonPressed(WORD button) const;
+    /** @brief ボタンが離された瞬間か判定（立ち下がり） */
+    bool IsButtonReleased(WORD button) const;
+    ///@}
 
-    // アナログ
+    /** @name アナログスティック・トリガー */
+    ///@{
     float GetLeftStickX()  const;
     float GetLeftStickY()  const;
     float GetRightStickX() const;
@@ -30,18 +44,28 @@ public:
     float GetLeftTrigger() const;
     float GetRightTrigger() const;
 
-    // デッドゾーン設定(必要なら外から変更可)
+    /** @brief スティックのデッドゾーンを設定 */
     void SetLeftDeadZone(float dz) { deadZoneLeft_ = dz; }
     void SetRightDeadZone(float dz) { deadZoneRight_ = dz; }
+    ///@}
 
-    // ★ 接続とインデックス
+    /** @name 接続状態・インデックス */
+    ///@{
+    /** @brief コントローラーが接続されているか取得 */
     bool IsConnected() const { return connected_; }
+    /** @brief 使用するコントローラーのインデックス (0~3) を設定 */
     void SetIndex(int idx) { index_ = idx; }
+    ///@}
 
-    // ★ 状態取得
+    /** @name 状態取得 */
+    ///@{
+    /** @brief XINPUT_STATE を直接取得 */
     const XINPUT_STATE& GetState() const { return state_; }
+    ///@}
 
-    // ★ 8方向(左スティック)
+    /** @name スティック8方向入力 */
+    ///@{
+    /** @brief 左スティックの状態を8方向に変換して取得 */
     Stick8 Left8(float threshold = 0.30f) const;
     bool Left8Is(Stick8 dir, float threshold = 0.30f) const;
     bool Left8Pressed(Stick8 dir, float threshold = 0.30f) const;
@@ -56,8 +80,10 @@ public:
     bool LUpLeft(float th = 0.30f) const;
     bool LDownRight(float th = 0.30f) const;
     bool LDownLeft(float th = 0.30f) const;
+    ///@}
 
-    // ★ D-Pad 8方向
+    /** @name D-Pad 8方向入力 */
+    ///@{
     Stick8 DPad8Now() const;
     bool DPad8Is(Stick8 dir) const;
     bool DPad8Pressed(Stick8 dir) const;
@@ -69,13 +95,15 @@ public:
     bool DPadLeft() const;  bool DPadLeftPressed() const;  bool DPadLeftReleased() const;
     bool DPadRight() const; bool DPadRightPressed() const; bool DPadRightReleased() const;
 
-    // 斜め
+    // 斜め方向ショートカット
     bool DPadUpRightDown() const;   bool DPadUpRightPressed() const;   bool DPadUpRightReleased() const;
     bool DPadUpLeftDown() const;    bool DPadUpLeftPressed() const;    bool DPadUpLeftReleased() const;
     bool DPadDownRightDown() const; bool DPadDownRightPressed() const; bool DPadDownRightReleased() const;
     bool DPadDownLeftDown() const;  bool DPadDownLeftPressed() const;  bool DPadDownLeftReleased() const;
+    ///@}
 
-    // ★ トリガ(アナログ＆しきい値デジタル)
+    /** @name トリガー（しきい値デジタル判定） */
+    ///@{
     float LeftTriggerAnalog(float deadzone = 30.0f)  const;
     float RightTriggerAnalog(float deadzone = 30.0f) const;
     bool LeftTriggerDown(uint8_t threshold = 30) const;
@@ -84,26 +112,30 @@ public:
     bool RightTriggerDown(uint8_t threshold = 30) const;
     bool RightTriggerPressed(uint8_t threshold = 30) const;
     bool RightTriggerReleased(uint8_t threshold = 30) const;
+
+    /** @brief 左右いずれかのトリガーの状態を判定
+     *  @param[in] right true で右トリガー、false で左トリガーを判定
+     */
     bool TriggerDown(bool right, uint8_t threshold = 30) const;
     bool TriggerPressed(bool right, uint8_t threshold = 30) const;
     bool TriggerReleased(bool right, uint8_t threshold = 30) const;
+    ///@}
 
-    // ★ RB/LB ショートカット
+    /** @name 特殊ボタンショートカット */
+    ///@{
     bool LBDown() const;     bool LBPressed() const;     bool LBReleased() const;
     bool RBDown() const;     bool RBPressed() const;     bool RBReleased() const;
+    bool StartDown() const;  bool StartPressed() const;  bool StartReleased() const;
+    ///@}
 
-    // START ボタンショートカット
-    bool StartDown() const;      bool StartPressed() const;      bool StartReleased() const;
-
-    // (任意)Y 反転
+    /** @brief Y軸の判定を反転させるか設定 */
     void SetInvertY(bool inv) { invertY_ = inv; }
 
 private:
-
-    // ★ ラジアル正規化(円形DZ): Controller と同等の内部ヘルパ
+    /** @brief ラジアル正規化（円形デッドゾーン処理） */
     static std::pair<float, float> RadialNormalize(short x, short y, int dz);
 
-    // ★ 8方向化ヘルパ
+    /** @brief スティック入力の8方向変換ヘルパー */
     static Stick8 Stick8From(short x, short y, int dz, bool invertY, float threshold);
 
     XINPUT_STATE state_{};

@@ -1,14 +1,20 @@
 #pragma once
 
-#include "Sound.h" // 音声データクラス
+#include "Sound.h"
+#include "VoiceInstance.h"
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-// IXAudio2SourceVoice構造体を前方宣言(ヘッダの依存関係を減らすため)
+// IXAudio2SourceVoice構造体を前方宣言
 struct IXAudio2SourceVoice;
 
+/**
+ * @class AudioManager
+ * @brief XAudio2 を使用した音声再生とリソース管理を行うマネージャクラス
+ * @details サウンドデータのロード、再生中のボイス（VoiceInstance）の管理、およびカテゴリごとの整理を行います。
+ */
 class AudioManager {
 private:
     // コピー禁止
@@ -22,58 +28,112 @@ private:
     // ロードした音声データをファイル名をキーにして保持するマップ
     std::map<std::string, std::shared_ptr<Sound>> soundRegistry_;
 
-    // 再生中の SourceVoice を一元管理
-    std::vector<IXAudio2SourceVoice*> activeVoices_;
+    // 再生中の VoiceInstance を一元管理
+    std::vector<std::shared_ptr<VoiceInstance>> activeVoices_;
 
     // カテゴリ名 → その中にあるファイル名リスト(ソート済み)
     std::map<std::string, std::vector<std::string>> categoryMap_;
 
-    // 追加: ファイナライズ済みフラグ
+    // ファイナライズ済みフラグ
     bool finalized_{ false };
 
-    // 追加: 管理対象か判定
-    bool IsManagedVoice(IXAudio2SourceVoice* voice) const;
+    /**
+     * @brief 管理対象のボイスかどうか判定する
+     */
+    bool IsManagedVoice(std::shared_ptr<VoiceInstance> instance) const;
 
 public:
-    // コンストラクタ
+    /**
+     * @brief コンストラクタ
+     */
     AudioManager() = default;
-    // デストラクタ
+
+    /**
+     * @brief デストラクタ
+     */
     ~AudioManager();
 
-    // オーディオエンジンの初期化・終了処理
+    /**
+     * @brief XAudio2 エンジンの初期化
+     */
     void Initialize();
+
+    /**
+     * @brief 終了処理
+     * @details すべての再生中ボイスを停止し、リソースを解放します。
+     */
     void Finalize();
 
-    //Media Foundationの初期化
+    /**
+     * @brief Media Foundation の開始処理
+     */
     void StartUp();
 
-    // 指定フォルダから対応する音声ファイルをすべてロードする
+    /**
+     * @brief 指定フォルダから対応する音声ファイルをすべてロードする
+     * @param[in] folderPath ロード対象のフォルダパス
+     */
     void LoadAllSoundsFromFolder(const std::string& folderPath);
 
-    // サブフォルダ単位でロードするオーバーロード版
+    /**
+     * @brief サブフォルダをカテゴリとしてロードする
+     * @param[in] folderPath ロード対象のパス
+     * @param[in] category カテゴリ名
+     */
     void LoadSoundsFromFolder(const std::string& folderPath, const std::string& category);
 
-    // カテゴリ(サブフォルダ)単位でソート済みのサウンド名一覧を取得する
+    /**
+     * @brief カテゴリ内のサウンド名一覧を取得（ソート済み）
+     */
     std::vector<std::string> GetSoundNames(const std::string& category) const;
 
-    // 名前を指定してロード済みのサウンドデータを取得する
+    /**
+     * @brief ロード済みのサウンドデータを取得
+     */
     std::shared_ptr<Sound> GetSoundData(const std::string& name) const;
 
-    // 利用可能なサウンドカテゴリ一覧(サブフォルダ名)を取得
+    /**
+     * @brief 利用可能なサウンドカテゴリ一覧を取得
+     */
     std::vector<std::string> GetCategories() const;
 
-    // サウンドを再生し、再生中のボイスへのポインタを返す
-    IXAudio2SourceVoice* Play(
+    /**
+     * @brief 毎フレームの更新処理
+     * @details 再生が終了したボイスのクリーンアップなどを行います。
+     */
+    void Update();
+
+    /**
+     * @brief サウンドを再生する
+     * @param[in] soundData ロード済みのサウンドデータ
+     * @param[in] loop ループ再生するか
+     * @param[in] volume 音量 (0.0 ～ 1.0)
+     * @return 再生中インスタンスへの弱参照。操作が必要な場合に保持してください。
+     */
+    std::weak_ptr<VoiceInstance> Play(
         std::shared_ptr<Sound> soundData, bool loop = false, float volume = 1.0f);
 
-    // 再生中のボイスを停止し、破棄する
-    void Stop(IXAudio2SourceVoice*& voice);
-    void StopAll(); // 追加: 全Voice停止(Finalize内で利用)
+    /**
+     * @brief 再生中のサウンドを停止する
+     * @param[in] instance 停止させたいインスタンスの弱参照
+     */
+    void Stop(std::weak_ptr<VoiceInstance>& instance);
 
-    // 追加: 重複を避けてファイルからロード or 取得(TextureManager風)
-    // key が空なら filePath をキーにする
+    /**
+     * @brief すべての再生中サウンドを強制停止する
+     */
+    void StopAll();
+
+    /**
+     * @brief 重複を避けてファイルからロードまたは取得する
+     * @param[in] filePath ファイルパス
+     * @param[in] key 識別キー（省略時はファイルパスをキーにする）
+     * @return サウンドデータへの共有ポインタ
+     */
     std::shared_ptr<Sound> GetOrLoadSoundByFile(const std::string& filePath, const std::string& key = "");
 
-    // 追加: 指定キーを保持しているか
+    /**
+     * @brief 指定キーのサウンドがロード済みか確認する
+     */
     bool HasSound(const std::string& key) const;
-};
+};

@@ -1,15 +1,17 @@
 #pragma once
 #include <d3d12.h>
 #include <string>
-#include "Application/camera/Camera.h"
-#include "Renderer/TransformationMatrix.h"
+#include "../../../../Application/camera/Camera.h"
+#include "../../TransformationMatrix.h"
 #include <wrl.h>
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include "Engine/Core/Math/Transform.h"
-#include "Resource/Model/Data/ObjModel.h"
-#include "Renderer/Object3D/Object3DResource.h"
+#include "../../../Engine/Core/Math/Transform.h"
+#include "../../../Engine/Core/Math/Vector4.h"
+#include "../../../Engine/Core/Math/Matrix4x4.h"
+#include "../../../Resource/Model/Data/ObjModel.h"
+#include "../Object3DResource.h"
 
 // 前方宣言
 class TextureManager;
@@ -27,6 +29,11 @@ struct Material;
 // https://creativecommons.org/publicdomain/zero/1.0/deed.ja
 //==========================
 
+/**
+ * @class ObjClass
+ * @brief 3Dモデル（OBJ/GLTF等）のインスタンスを描画・管理するクラス
+ * @details ModelManager から取得した共有モデルデータを参照し、個別の位置・回転・拡縮やマテリアル設定を保持します。
+ */
 class ObjClass {
 private:
     // 共有モデルデータ(CPU/GPU)
@@ -56,21 +63,48 @@ private:
     static DebugUI* ui_;
     static ModelManager* modelManager_;
 
-    // CPU側のマテリアルデータをGPUリソースへ転送する
+    /**
+     * @brief CPU側のマテリアルデータをGPUリソースへ転送する（内部用）
+     */
     void UpdateMaterials();
 
 public: //メンバ関数
 
-    //デストラクタ
+    /**
+     * @brief デストラクタ
+     */
     ~ObjClass();
-    //初期化
+
+    /**
+     * @brief 初期化
+     * @param[in] camera 使用するカメラ
+     * @param[in] filename モデルファイル名（ModelManager経由でロード）
+     */
     void Initialize(Camera* camera, const std::string& filename = "plane.obj");
+
+    /**
+     * @brief 更新処理
+     * @details ワールド行列の計算と定数バッファへの転送を行います。
+     */
     void Update();
+
+    /**
+     * @brief 描画コマンドの積み込み
+     */
     void Draw();
+
+    /**
+     * @brief デバッグ用UIの表示
+     */
     void Debug(const char* objName = " ");
+
+    /**
+     * @brief デバッグ用タブの表示
+     */
     void DebugTab();
 
-    // Transform 系ゲッター/セッター (オブジェクト全体のTransformを操作するように変更)
+    /** @name Transform 操作 */
+    ///@{
     const Vector3& GetPosition() const { return transform_.translate; }
     void SetPosition(const Vector3& position) { transform_.translate = position; isDirty_ = true; }
 
@@ -80,42 +114,56 @@ public: //メンバ関数
     void SetRotateY(const float& rotate) { transform_.rotate.y = rotate; isDirty_ = true; }
     void SetRotateZ(const float& rotate) { transform_.rotate.z = rotate; isDirty_ = true; }
 
-    // 拡縮
     const Vector3& GetScale() const { return transform_.scale; }
     void SetScale(const Vector3& scale) { transform_.scale = scale; isDirty_ = true; }
     const Transform& GetTransform() const { return transform_; }
     void SetTransform(const Transform& transform) { transform_ = transform; isDirty_ = true; }
+    ///@}
+
+    /** @name 行列・計算結果の取得 */
+    ///@{
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
     void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
-
-    // --- マテリアル関連のメソッド ---
-
-    // モデルが持つメッシュ数を取得
-    size_t GetMeshCount() const;
-
-    // 指定したインデックスのメッシュのマテリアルを取得(読み取り専用)
-    const ObjMaterial* GetMaterial(size_t meshIndex) const;
-
-    // 指定したインデックスのメッシュのマテリアルを取得(書き込み可能)
-    ObjMaterial* GetMaterial(size_t meshIndex);
-
-    // すべてのメッシュのライティングを一括で設定
-    void SetEnableLightingToAllMeshes(bool enable);
-
-    // インスタンスのアルファ値を設定
-    void SetAlpha(float alpha);
-
-    // インスタンスの色を一括で設定
-    void SetColor(const Vector4& color);
-
-    // 描画用の変換行列リソースのGPUアドレスを取得
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
         return transformationResource_->GetGPUVirtualAddress();
     }
+    ///@}
 
+    /** @name マテリアル・外観の操作 */
+    ///@{
+    /**
+     * @brief モデルが持つメッシュ数を取得
+     */
+    size_t GetMeshCount() const;
+
+    /**
+     * @brief 指定したインデックスのメッシュのマテリアルを取得
+     */
+    const ObjMaterial* GetMaterial(size_t meshIndex) const;
+    ObjMaterial* GetMaterial(size_t meshIndex);
+
+    /**
+     * @brief すべてのメッシュのライティングを一括で有効/無効化する
+     */
+    void SetEnableLightingToAllMeshes(bool enable);
+
+    /**
+     * @brief インスタンス全体のアルファ値を設定
+     */
+    void SetAlpha(float alpha);
+
+    /**
+     * @brief インスタンス全体の色を設定
+     */
+    void SetColor(const Vector4& color);
+    ///@}
+
+    /** @name 静的メンバ設定（エンジン内部用） */
+    ///@{
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
     static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
+    ///@}
 };
 

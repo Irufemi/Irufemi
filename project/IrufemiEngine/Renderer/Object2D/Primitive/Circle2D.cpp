@@ -34,16 +34,14 @@ void Circle2D::Initialize(Camera* camera, const std::string& textureName, uint32
 
     // テクスチャ設定
     if (textureManager_) {
+        resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
+
+        // デバッグUI用のインデックス更新
         auto names = textureManager_->GetTextureNames();
         std::sort(names.begin(), names.end());
-        if (!names.empty()) {
-            int idx = 0;
-            if (!textureName.empty()) {
-                auto it = std::find(names.begin(), names.end(), textureName);
-                if (it != names.end()) idx = static_cast<int>(std::distance(names.begin(), it));
-            }
-            selectedTextureIndex_ = std::clamp(idx, 0, static_cast<int>(names.size()) - 1);
-            resource_->textureHandle_ = textureManager_->GetTextureHandle(names[selectedTextureIndex_]);
+        auto it = std::find(names.begin(), names.end(), textureName);
+        if (it != names.end()) {
+            selectedTextureIndex_ = static_cast<int>(std::distance(names.begin(), it));
         }
     }
     resource_->materialData_->hasTexture = useTexture_;

@@ -109,16 +109,16 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     }
 
     // テクスチャ管理
-    textureManager = std::make_unique<TextureManager>();
-    textureManager->Initialize(dxCommon_.get());
+    textureManager_ = std::make_unique<TextureManager>();
+    textureManager_->Initialize(dxCommon_.get());
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-    textureManager->LoadAllFromFolder("resources/");
+    textureManager_->LoadAllFromFolder("resources/");
 #endif
 
     // モデル管理
     modelManager_ = std::make_unique<ModelManager>();
-    modelManager_->Initialize(dxCommon_.get(),textureManager.get()); // dxCommon を渡す
+    modelManager_->Initialize(dxCommon_.get(), textureManager_.get()); // dxCommon を渡す
     ObjClass::SetModelManager(modelManager_.get());
     ModelRegion::SetModelManager(modelManager_.get()); // Regionにも設定
 
@@ -136,12 +136,12 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
         std::vector<uint32_t> used;
         // 白テクスチャ
-        if (auto white = textureManager->GetWhiteTextureHandle(); white.ptr != 0) {
+        if (auto white = textureManager_->GetWhiteTextureHandle(); white.ptr != 0) {
             if (auto idx = toIndex(white); idx != DescriptorPool::kInvalid) used.push_back(idx);
         }
         // テクスチャキャッシュ
-        for (auto& name : textureManager->GetTextureNames()) {
-            auto h = textureManager->GetTextureHandle(name);
+        for (const std::string& name : textureManager_->GetTextureNames()) {
+            auto h = textureManager_->GetTextureHandle(name);
             if (auto idx = toIndex(h); idx != DescriptorPool::kInvalid) used.push_back(idx);
         }
         for (uint32_t i = 0; i < srvPool->BaseIndex(); ++i) used.push_back(i);
@@ -158,53 +158,53 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     winApp_->SetInputManager(inputManager_.get());
 
     // UI
-    ui = std::make_unique <DebugUI>();
-    ui->Initialize(winApp_->GetHwnd(), dxCommon_.get());
-    Sprite::SetDebugUI(ui.get());
-    Circle2D::SetDebugUI(ui.get());
-    ObjClass::SetDebugUI(ui.get());
-    SphereClass::SetDebugUI(ui.get());
-    TriangleClass::SetDebugUI(ui.get());
-    CubeClass::SetDebugUI(ui.get());
-    PlaneClass::SetDebugUI(ui.get());
-    CylinderClass::SetDebugUI(ui.get());
-    ParticleSystem::SetDebugUI(ui.get());
+    ui_ = std::make_unique<DebugUI>();
+    ui_->Initialize(winApp_->GetHwnd(), dxCommon_.get());
+    Sprite::SetDebugUI(ui_.get());
+    Circle2D::SetDebugUI(ui_.get());
+    ObjClass::SetDebugUI(ui_.get());
+    SphereClass::SetDebugUI(ui_.get());
+    TriangleClass::SetDebugUI(ui_.get());
+    CubeClass::SetDebugUI(ui_.get());
+    PlaneClass::SetDebugUI(ui_.get());
+    CylinderClass::SetDebugUI(ui_.get());
+    ParticleSystem::SetDebugUI(ui_.get());
 
     // 描画
-    drawManager = std::make_unique<DrawManager>();
-    drawManager->Initialize(dxCommon_.get());
-    Sprite::SetDrawManager(drawManager.get());
-    Circle2D::SetDrawManager(drawManager.get());
-    ObjClass::SetDrawManager(drawManager.get());
-    SphereClass::SetDrawManager(drawManager.get());
-    TriangleClass::SetDrawManager(drawManager.get());
-    CubeClass::SetDrawManager(drawManager.get());
-    PlaneClass::SetDrawManager(drawManager.get());
-    CylinderClass::SetDrawManager(drawManager.get());
-    ModelRegion::SetDrawManager(drawManager.get());
-    SphereRegion::SetDrawManager(drawManager.get());
-    TetraRegion::SetDrawManager(drawManager.get());
-    ParticleSystem::SetDrawManager(drawManager.get());
-    GPUParticleSystem::SetDrawManager(drawManager.get());
+    drawManager_ = std::make_unique<DrawManager>();
+    drawManager_->Initialize(dxCommon_.get());
+    Sprite::SetDrawManager(drawManager_.get());
+    Circle2D::SetDrawManager(drawManager_.get());
+    ObjClass::SetDrawManager(drawManager_.get());
+    SphereClass::SetDrawManager(drawManager_.get());
+    TriangleClass::SetDrawManager(drawManager_.get());
+    CubeClass::SetDrawManager(drawManager_.get());
+    PlaneClass::SetDrawManager(drawManager_.get());
+    CylinderClass::SetDrawManager(drawManager_.get());
+    ModelRegion::SetDrawManager(drawManager_.get());
+    SphereRegion::SetDrawManager(drawManager_.get());
+    TetraRegion::SetDrawManager(drawManager_.get());
+    ParticleSystem::SetDrawManager(drawManager_.get());
+    GPUParticleSystem::SetDrawManager(drawManager_.get());
     ParticleSystem::SetEngine(this);
     GPUParticleSystem::SetEngine(this);
-    Line3DRegion::SetDrawManager(drawManager.get());
+    Line3DRegion::SetDrawManager(drawManager_.get());
 
-    // テクスチャ
-    ui->SetTextureManager(textureManager.get());
-    Sprite::SetTextureManager(textureManager.get());
-    Circle2D::SetTextureManager(textureManager.get());
-    ObjClass::SetTextureManager(textureManager.get());
-    SphereClass::SetTextureManager(textureManager.get());
-    TriangleClass::SetTextureManager(textureManager.get());
-    CubeClass::SetTextureManager(textureManager.get());
-    PlaneClass::SetTextureManager(textureManager.get());
-    CylinderClass::SetTextureManager(textureManager.get());
-    ModelRegion::SetTextureManager(textureManager.get());
-    SphereRegion::SetTextureManager(textureManager.get());
-    TetraRegion::SetTextureManager(textureManager.get());
-    ParticleSystem::SetTextureManager(textureManager.get());
-    GPUParticleSystem::SetTextureManager(textureManager.get());
+    // テクスチャ設定の注入
+    ui_->SetTextureManager(textureManager_.get());
+    Sprite::SetTextureManager(textureManager_.get());
+    Circle2D::SetTextureManager(textureManager_.get());
+    ObjClass::SetTextureManager(textureManager_.get());
+    SphereClass::SetTextureManager(textureManager_.get());
+    TriangleClass::SetTextureManager(textureManager_.get());
+    CubeClass::SetTextureManager(textureManager_.get());
+    PlaneClass::SetTextureManager(textureManager_.get());
+    CylinderClass::SetTextureManager(textureManager_.get());
+    ModelRegion::SetTextureManager(textureManager_.get());
+    SphereRegion::SetTextureManager(textureManager_.get());
+    TetraRegion::SetTextureManager(textureManager_.get());
+    ParticleSystem::SetTextureManager(textureManager_.get());
+    GPUParticleSystem::SetTextureManager(textureManager_.get());
 
     animationManager_ = std::make_unique<AnimationManager>();
     animationManager_->Initialize(dxCommon_.get());
@@ -226,8 +226,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     postProcessManager_->InitializeBuffers(GetClientWidth(), GetClientHeight(), dxCommon_.get());
 
     // ノイズテクスチャのロードとハンドル設定
-    postProcessManager_->SetDissolveNoiseHandle(0, textureManager->GetTextureHandle("resources/noise0.png"));
-    postProcessManager_->SetDissolveNoiseHandle(1, textureManager->GetTextureHandle("resources/noise1.png"));
+    postProcessManager_->SetDissolveNoiseHandle(0, textureManager_->GetTextureHandle("resources/noise0.png"));
+    postProcessManager_->SetDissolveNoiseHandle(1, textureManager_->GetTextureHandle("resources/noise1.png"));
 
     // --- 深度バッファの SRV 作成とマネージャーへの設定 ---
     depthSrvIndex_ = dxCommon_->GetSrvPool()->Allocate();
@@ -280,17 +280,17 @@ void IrufemiEngine::Finalize() {
         audioManager_->Finalize();
         audioManager_.reset();
     }
-    if (drawManager) {
-        drawManager->Finalize();
-        drawManager.reset();
+    if (drawManager_) {
+        drawManager_->Finalize();
+        drawManager_.reset();
     }
     PrimitiveManager::Finalize();
-    if (ui) {
-        ui->Shutdown();
-        ui.reset();
+    if (ui_) {
+        ui_->Shutdown();
+        ui_.reset();
     }
-    if (textureManager) {
-        textureManager.reset();
+    if (textureManager_) {
+        textureManager_.reset();
     }
     if (modelManager_) {
         modelManager_.reset();
@@ -321,22 +321,23 @@ void IrufemiEngine::Execute() {
         // フレーム開始時の時間更新
         StartFrame();
 
-        // ImGui
-        ui->FrameStart();
+        // ImGui_
+        ui_->FrameStart();
 
 #ifdef USE_IMGUI
-        ui->FPSDebug();
-        ui->BeginEngineDebugWindow();
-        ui->SceneSelectorTab(sceneManager_.get());
-        ui->PostProcessTab(this);
+        ui_->FPSDebug();
+        ui_->BeginEngineDebugWindow();
+        ui_->SceneSelectorTab(sceneManager_.get());
+        ui_->PostProcessTab(this);
         if (auto* scene = sceneManager_->GetCurrentScene()) {
             scene->DrawDebugTab();
         }
-        ui->EndEngineDebugWindow();
+        ui_->EndEngineDebugWindow();
 #endif // USE_IMGUI
 
 
         // 更新
+        audioManager_->Update();
         sceneManager_->Update();
     totalTime_ += deltaTime_;
     postProcessManager_->Update(totalTime_);
@@ -366,23 +367,23 @@ void IrufemiEngine::StartFrame() {
 
 // フレーム途中処理
 void IrufemiEngine::ProcessFrame() {
-    // 描画処理に入る前にImGui::Renderを積む
-    ui->QueueDrawCommands();
+    // 描画処理に入る前にImGui_::Renderを積む
+    ui_->QueueDrawCommands();
     
     // 1. バックバッファをクリア (念のため)
-    drawManager->PreDraw(clearColor_, 1.0f, 0);
+    drawManager_->PreDraw(clearColor_, 1.0f, 0);
 
     // 2. メインの描画先を RenderTexture に切り替え、指定のクリアカラーでクリア
-    drawManager->BeginRenderTexture(mainRenderTexture_.get(), Vector4{ clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
+    drawManager_->BeginRenderTexture(mainRenderTexture_.get(), Vector4{ clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
 }
 
 // フレーム終了処理
 void IrufemiEngine::EndFrame() {
     // 3. RenderTexture への描画を終了 (SRV状態へ遷移)
-    drawManager->EndRenderTexture(mainRenderTexture_.get());
+    drawManager_->EndRenderTexture(mainRenderTexture_.get());
 
     // 4. 描画先をバックバッファに戻す
-    drawManager->SetRenderTargetToBackBuffer(false);
+    drawManager_->SetRenderTargetToBackBuffer(false);
 
     // 5. ポストプロセス描画の実行
     // Outline のための深度バッファ遷移 (スタック内のどこかに Outline があれば適用)
@@ -400,7 +401,7 @@ void IrufemiEngine::EndFrame() {
         dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
         
         // 逆投影行列の更新
-        if (auto* cameraData = drawManager->GetCameraData()) {
+        if (auto* cameraData = drawManager_->GetCameraData()) {
             postProcessManager_->GetOutlineParams().projectionInverse = Math::Inverse(cameraData->projection);
         }
     }
@@ -419,14 +420,17 @@ void IrufemiEngine::EndFrame() {
     }
 
     // 描画後処理
-    ui->QueuePostDrawCommands();
-    drawManager->PostDraw();
+    ui_->QueuePostDrawCommands();
+    drawManager_->PostDraw();
 
     // 5) フレーム終端で遅延解放の回収(フェンス完了値を渡す)
     if (auto* srvPool = dxCommon_->GetSrvPool()) {
         const uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
         srvPool->GarbageCollect(completed);
     }
+ 
+	// --- 追加: 中間リソースの遅延解放を実行 ---
+	dxCommon_->ClearPendingResources();
 }
 
 void IrufemiEngine::OnResize(int32_t width, int32_t height) {
@@ -469,48 +473,48 @@ bool IrufemiEngine::IsCursorLocked() const {
 void IrufemiEngine::ApplyPSO() {
     auto* pso = GetPSOManager()->Get(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "PSO is null. Check PSOManager::Initialize and shader blobs.");
-    if (pso) { drawManager->BindPSO(pso); }
+    if (pso) { drawManager_->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplyParticlePSO() {
     auto* pso = GetPSOManager()->GetParticle(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Particle PSO is null. Check particle shader setup.");
-    if (pso) { drawManager->BindPSO(pso); }
+    if (pso) { drawManager_->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplySpritePSO() {
     auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_, currentCull_);
-    if (pso) { drawManager->BindPSO(pso); }
+    if (pso) { drawManager_->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplyRegionPSO() {
     auto* pso = GetPSOManager()->GetRegion(currentBlend_, currentDepth_, currentCull_);
-    drawManager->BindPSO(pso);
+    drawManager_->BindPSO(pso);
 }
 
 void IrufemiEngine::ApplyByGeometryShaderPSO() {
     auto* pso = GetPSOManager()->GetByGeometryShader(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "ByGeometryShader PSO is null. Check PSOManager::Initialize and shader blobs.");
-    if (pso) { drawManager->BindPSO(pso); }
+    if (pso) { drawManager_->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplyLinePSO() {
     auto* pso = GetPSOManager()->GetLine(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Line PSO is null. Check PSOManager::Initialize and shader blobs.");
-    if (pso) { drawManager->BindPSO(pso); }
+    if (pso) { drawManager_->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplyLineInstancedPSO() {
     auto* pso = GetPSOManager()->GetLineInstanced(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "LineInstanced PSO is null. Check PSOManager::Initialize and shader blobs.");
-    if (pso) { drawManager->BindPSO(pso); }
+    if (pso) { drawManager_->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplySkinningPSO()
 {
     auto* pso = GetPSOManager()->GetSkinning(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Skinning PSO is null. Check PSOManager::Initialize and shader blobs.");
-    if (pso) { drawManager->BindPSO(pso); }
+    if (pso) { drawManager_->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplySkyboxPSO()
@@ -518,11 +522,11 @@ void IrufemiEngine::ApplySkyboxPSO()
     // Skyboxは内側から見るので、前面カリング
     auto* pso = GetPSOManager()->GetSkybox(PSOManager::CullMode::Front);
     assert(pso && "Skybox PSO is null. Check Skybox shader setup.");
-    if (pso) { drawManager->BindPSO(pso); }
+    if (pso) { drawManager_->BindPSO(pso); }
 }
 
 void IrufemiEngine::ApplyGpuParticlePSO() {
     auto* pso = GetPSOManager()->GetGpuParticle(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "GpuParticle PSO is null. Check GpuParticle shader setup.");
-    if (pso) { drawManager->BindPSO(pso); }
+    if (pso) { drawManager_->BindPSO(pso); }
 }

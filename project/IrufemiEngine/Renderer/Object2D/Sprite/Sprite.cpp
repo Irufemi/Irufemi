@@ -51,6 +51,9 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
     // VB/IB作成とMapが済んだ後に一度アンカーを頂点に反映しておく
     ApplyAnchorToVertices();
 
+    // デフォルトサイズを設定(テクスチャがない場合や読み込み失敗時の保険)
+    SetSize(size_.x, size_.y);
+
     // 初回の行列計算
     resource_->UpdateTransform(*camera_);
 

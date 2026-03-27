@@ -63,7 +63,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
 
     // CPUモデルロード
     auto pair = SplitDirectoryAndFile(fullPath);
-    auto cpuModel = std::make_shared<ObjModel>(ModelManager::LoadModelFileM(pair.first, pair.second));
+    auto cpuModel = std::make_shared<ObjModel>(ModelManager::LoadModelFromFile(pair.first, pair.second));
 
     // GPUリソース生成
     auto managedModel = std::make_shared<ManagedModel>();
@@ -126,7 +126,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
         materialData->enableLighting = cpuMesh.material.enableLighting;
         materialData->uvTransform = cpuMesh.material.uvTransform;
         materialData->shininess = cpuMesh.material.shininess;
-        //materialData->environmentCoefficient = cpuMesh.material.environmentCoefficient; // この行を追加
+        //materialData->environmentCoefficient = cpuMesh.material.environmentCoefficient;
         materialData->hasTexture = !cpuMesh.material.textureFilePath.empty();
         materialData->lightingMode = cpuMesh.material.enableLighting ? 2 : 0;
         if (materialData->color.w <= 0.0f) { materialData->color.w = 1.0f; }
@@ -135,7 +135,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
         if (materialData->hasTexture) {
             gpuMaterial->textureHandle = textureManager_->GetTextureHandle(cpuMesh.material.textureFilePath);
         } else {
-            gpuMaterial->textureHandle = textureManager_->GetTextureHandle("resources/whiteTexture.png");
+            gpuMaterial->textureHandle = textureManager_->GetWhiteTextureHandle();
         }
         managedModel->gpuMaterials.push_back(std::move(gpuMaterial));
     }
@@ -672,7 +672,7 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
             aiQuaternion rotate;
             bindPoseMatrixAssimp.Decompose(scale, rotate, translate);
             Matrix4x4 bindPoseMatrix = Math::MakeAffineMatrix(Vector3{ scale.x,scale.y,scale.z }, Quaternion{ rotate.x,-rotate.y,-rotate.z,rotate.w }, Vector3{ -translate.x,translate.y,translate.z });
-            jointWeightData.inverseBndPoseMatrix = Math::Inverse(bindPoseMatrix);
+            jointWeightData.inverseBindPoseMatrix = Math::Inverse(bindPoseMatrix);
 
             /// Weight情報を取り出す
 
@@ -724,7 +724,7 @@ void ProcessNode(aiNode* node, const aiScene* scene, std::vector<ObjMesh>& meshe
 }
 
 // ObjModel Node 対応 Assimp 版
-ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const std::string& filename) {
+ObjModel ModelManager::LoadModelFromFile(const std::string& directoryPath, const std::string& filename) {
     ObjModel objModel;
 
     /* いろんなフォーマットのモデルが読みたい */
@@ -870,7 +870,7 @@ ObjModel ModelManager::LoadModelFileM(const std::string& directoryPath, const st
             bindPoseMatrixAssimp.Decompose(scale, rotate, translate);
             // Assimpは左手座標系変換済みなので、そのままMatrixを作成
             Matrix4x4 bindPoseMatrix = Math::MakeAffineMatrix({ scale.x, scale.y, scale.z }, { rotate.x, rotate.y, rotate.z, rotate.w }, { translate.x, translate.y, translate.z });
-            jointWeightData.inverseBndPoseMatrix = Math::Inverse(bindPoseMatrix);
+            jointWeightData.inverseBindPoseMatrix = Math::Inverse(bindPoseMatrix);
 
             // Weight情報を取り出す
             for (uint32_t weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex) {

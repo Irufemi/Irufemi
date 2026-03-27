@@ -15,6 +15,11 @@ class DrawManager;
 class DebugUI;
 class Camera;
 
+/**
+ * @class Sprite
+ * @brief 2Dスプライトを描画・管理するクラス
+ * @details テクスチャの表示、座標変換（位置・回転・拡縮）、アンカーポイントの設定、トリミング（Rect指定）などを行います。
+ */
 class Sprite {
 private:
 
@@ -48,65 +53,123 @@ private:
     Vector2 texRectLeftTop_{ 0.0f, 0.0f }; // px
     Vector2 texRectSize_{ 0.0f, 0.0f };    // px
 
-    // 現在のテクスチャ解像度にスプライトサイズを合わせる
+    /**
+     * @brief 現在のテクスチャ解像度にスプライトサイズを合わせる（内部用）
+     */
     void AdjustTextureSize(); 
 
-    // アンカー反映で頂点ローカル座標を更新
+    /**
+     * @brief アンカー反映で頂点ローカル座標を更新（内部用）
+     */
     void ApplyAnchorToVertices();
 
 public: //メンバ関数
-    //デストラクタ
+    /**
+     * @brief デストラクタ
+     */
     ~Sprite() = default;
 
-    //初期化
+    /**
+     * @brief 初期化
+     * @param[in] camera 使用するカメラ
+     * @param[in] textureName 使用するテクスチャ名（ファイルパス）
+     */
     void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
-    //更新
+
+    /**
+     * @brief 更新処理
+     * @details 行列計算や定数バッファの更新を行います。
+     */
     void Update();
-    // 描画
+
+    /**
+     * @brief 描画コマンドの積み込み
+     */
     void Draw();
-    // デバッグ
+
+    /**
+     * @brief デバッグ用UIの表示
+     * @param[in] spriteName UIに表示する名前
+     */
     void Debug(const char* spriteName = "");
 
-    // ゲッター
+    /** @name ゲッター */
+    ///@{
     Object2DResource* GetD3D12Resource() { return this->resource_.get(); }
-
-    // サイズとアンカーの設定
-    void SetSize(const float& width, const float& height);
-    void SetAnchor(const float& ax, const float& ay) { anchor_ = { ax, ay }; isDirty_ = true; }
     const Vector2& GetSize() const { return size_; }
     const Vector2& GetAnchor() const { return anchor_; }
-
-    // 位置API(アンカー基準の座標を設定/取得)
-    void SetPosition(const float& x, const float& y, const float& z = 0.0f) { if (resource_) { resource_->transform_.translate = { x, y, z }; } isDirty_ = true; }
     const Vector2 GetPosition2D() const;
-
-    // 便利エイリアス
-    void SetPositionTopLeft(const float& x, const float& y) { SetAnchor(0.0f, 0.0f); SetPosition(x, y); }
-    void SetPositionCenter(const float& x, const float& y) { SetAnchor(0.5f, 0.5f); SetPosition(x, y); }
-
-    // 回転
     const Vector3& GetRotation()const { return resource_ ? resource_->transform_.rotate : Vector3{}; }
+    const Vector4& GetColor()const { return resource_->materialData_->color; }
+    bool IsFlipX() const { return isFlipX_; }
+    bool IsFlipY() const { return isFlipY_; }
+    ///@}
+
+    /** @name 設定用API */
+    ///@{
+    /**
+     * @brief スプライトのサイズを設定
+     */
+    void SetSize(const float& width, const float& height);
+
+    /**
+     * @brief アンカーポイント（原点位置）を設定
+     * @param[in] ax X座標 (0:左, 0.5:中央, 1:右)
+     * @param[in] ay Y座標 (0:上, 0.5:中央, 1:下)
+     */
+    void SetAnchor(const float& ax, const float& ay) { anchor_ = { ax, ay }; isDirty_ = true; }
+
+    /**
+     * @brief 位置を設定
+     */
+    void SetPosition(const float& x, const float& y, const float& z = 0.0f) { if (resource_) { resource_->transform_.translate = { x, y, z }; } isDirty_ = true; }
+
+    /**
+     * @brief 回転を設定（Z軸回転）
+     */
     void SetRotation(const float& rotate) { if (resource_) { resource_->transform_.rotate = Vector3{ 0.0f,0.0f,rotate }; } isDirty_ = true; }
 
-    // 色
-    const Vector4& GetColor()const { return resource_->materialData_->color; }
+    /**
+     * @brief 色（RGBA）を設定
+     */
     void SetColor(const Vector4& color) { resource_->materialData_->color = color; }
 
-    // フリップAPI
+    /**
+     * @brief 反転状態を一括設定
+     */
     void SetFlip(bool flipX, bool flipY) { isFlipX_ = flipX; isFlipY_ = flipY; isDirty_ = true; }
     void SetFlipX(bool flip) { isFlipX_ = flip; isDirty_ = true; }
     void SetFlipY(bool flip) { isFlipY_ = flip; isDirty_ = true; }
-    bool IsFlipX() const { return isFlipX_; }
-    bool IsFlipY() const { return isFlipY_; }
 
-    //テクスチャ範囲指定(ピクセル)。成功時 true(テクスチャサイズ未取得時は false)
+    /**
+     * @brief テクスチャ内の切り出し範囲をピクセル単位で指定
+     * @param[in] x 左上X
+     * @param[in] y 左上Y
+     * @param[in] w 幅
+     * @param[in] h 高さ
+     * @param[in] autoResize trueならスプライト自体のサイズも切り出しサイズに合わせる
+     * @return 成功なら true
+     */
     bool SetTextureRectPixels(int x, int y, int w, int h, bool autoResize = false);
-    // 範囲指定を解除(フルテクスチャに戻す)
-    void ClearTextureRect();
 
+    /**
+     * @brief 切り出し指定を解除し、テクスチャ全体を表示するように戻す
+     */
+    void ClearTextureRect();
+    ///@}
+
+    /** @name 便利エイリアス */
+    ///@{
+    void SetPositionTopLeft(const float& x, const float& y) { SetAnchor(0.0f, 0.0f); SetPosition(x, y); }
+    void SetPositionCenter(const float& x, const float& y) { SetAnchor(0.5f, 0.5f); SetPosition(x, y); }
+    ///@}
+
+    /** @name 静的メンバ設定（エンジン内部用） */
+    ///@{
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    ///@}
 
 private:
     // 行列更新の最適化用
