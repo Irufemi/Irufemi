@@ -402,7 +402,7 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
             continue;
         }
         // (*it).secondにはjointのindexが入っているので、該当のindexのinverseBindPoseMatrixを代入
-        skinCluster.inverseBindPoseMatrices[(*it).second] = jointWeight.second.inverseBndPoseMatrix;
+        skinCluster.inverseBindPoseMatrices[(*it).second] = jointWeight.second.inverseBindPoseMatrix;
         for (const auto& vertexWeight : jointWeight.second.vertexWeights) {
             auto& currentInfluence = skinCluster.mappedInfluence[vertexWeight.vertexIndex]; // 該当のvertexIndexのinfluence情報を参照しておく
             for (uint32_t index = 0; index < kNumMaxInfluence; ++index) { // 空いているところに入れる
@@ -486,7 +486,7 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
         if (it == skeleton.jointMap.end()) {
             continue;
         }
-        skinCluster.inverseBindPoseMatrices[(*it).second] = jointWeight.second.inverseBndPoseMatrix;
+        skinCluster.inverseBindPoseMatrices[(*it).second] = jointWeight.second.inverseBindPoseMatrix;
         for (const auto& vertexWeight : jointWeight.second.vertexWeights) {
             auto& currentInfluence = skinCluster.mappedInfluence[vertexWeight.vertexIndex];
             for (uint32_t index = 0; index < kNumMaxInfluence; ++index) {
