@@ -7,7 +7,8 @@
 #include <mutex>  
 #include <d3d12.h>
 #include <wrl.h>
-#include "Resource/Texture/Texture.h" 
+#include "Texture.h"
+#include "../../../externals/DirectXTex/DirectXTex.h"
 
 // 前方宣言
 namespace DirectX {

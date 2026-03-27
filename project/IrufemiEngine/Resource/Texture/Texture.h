@@ -4,7 +4,7 @@
 #include <string>
 #include <wrl.h>
 #include <cstdint>
-#include "DirectXTex/DirectXTex.h"
+#include "../../../externals/DirectXTex/DirectXTex.h"
 
 class DirectXCommon;
 class DescriptorPool;

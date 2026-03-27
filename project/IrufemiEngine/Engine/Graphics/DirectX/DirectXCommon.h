@@ -7,10 +7,10 @@
 #include <chrono>
 #include <vector>
 
-#include "DirectXTex/DirectXTex.h"
-#include "Engine/Graphics/Pipeline/PSOManager.h"
-#include "Engine/Graphics/DirectX/DescriptorPool.h"
-#include "Engine/Core/Math/Vector4.h"
+#include "../../../../externals/DirectXTex/DirectXTex.h"
+#include "../Pipeline/PSOManager.h"
+#include "DescriptorPool.h"
+#include "../../Core/Math/Vector4.h"
 
 class Log;
 
