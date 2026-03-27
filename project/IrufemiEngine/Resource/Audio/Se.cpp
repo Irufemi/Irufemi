@@ -57,22 +57,14 @@ void Se::Play(bool loop) {
 }
 
 void Se::Stop() {
-    if (!voice_) return;
-
     if (audioManager_) {
         audioManager_->Stop(voice_);
-    } else {
-        // safety fallback
-        voice_->Stop(0);
-        voice_->DestroyVoice();
-        voice_ = nullptr;
     }
-    voice_ = nullptr;
 }
 
 void Se::SetVolume(float volume) {
     volume_ = volume;
-    if (voice_) {
-        voice_->SetVolume(volume_);
+    if (auto v = voice_.lock()) {
+        v->SetVolume(volume_);
     }
 }

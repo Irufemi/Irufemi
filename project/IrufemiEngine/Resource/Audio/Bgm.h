@@ -6,7 +6,7 @@
 
 class Bgm {
 private:
-    IXAudio2SourceVoice* voice_ = nullptr;
+    std::weak_ptr<VoiceInstance> voice_;
     float volume_ = 0.1f;
     int selectedCat_ = 0;
     int selectedTrack_ = 0;

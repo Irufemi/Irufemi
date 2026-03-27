@@ -12,6 +12,7 @@
 #include "Renderer/VertexData.h"
 #include "DirectXTex/d3dx12.h"
 #include <thread>
+#include <algorithm>
 
 void DirectXCommon::Finalize() {
 
@@ -40,7 +41,6 @@ void DirectXCommon::Finalize() {
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
     voxelParticleUpdatePSO_.Reset();
     voxelParticleEmitPSO_.Reset();
-    voxelParticleUpdatePSO_.Reset();
     gpuParticleUpdatePSO_.Reset();
     gpuParticleInitializePSO_.Reset();
     skinningComputePSO_.Reset();
@@ -234,8 +234,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     //DescriptorSize
 
-    descriptorSizeRTV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    descriptorSizeDSV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+    descriptorSizeRTV_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    descriptorSizeDSV_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
     /*開発用のUIを出そう*/
 
@@ -272,7 +272,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rtvHandles_[0] = rtvStartHandle;
     device_->CreateRenderTargetView(swapChainResources_[0].Get(), &rtvDesc_, rtvHandles_[0]);
     //2つ目のディスクリプタハンドルを得る(自力で)
-    rtvHandles_[1].ptr = rtvHandles_[0].ptr + device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    rtvHandles_[1].ptr = rtvHandles_[0].ptr + descriptorSizeRTV_;
     //2つ目を作る
     device_->CreateRenderTargetView(swapChainResources_[1].Get(), &rtvDesc_, rtvHandles_[1]);
 
@@ -1011,23 +1011,23 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetGPUDescriptorHandle(const Microsof
 
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetRTVCPUDescriptorHandle(uint32_t index) {
 
-    return GetCPUDescriptorHandle(rtvDescriptorHeap_, descriptorSizeRTV, index);
+    return GetCPUDescriptorHandle(rtvDescriptorHeap_, descriptorSizeRTV_, index);
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetRTVGPUDescriptorHandle(uint32_t index) {
 
-    return GetGPUDescriptorHandle(rtvDescriptorHeap_, descriptorSizeRTV, index);
+    return GetGPUDescriptorHandle(rtvDescriptorHeap_, descriptorSizeRTV_, index);
 }
 
 
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVCPUDescriptorHandle(uint32_t index) {
 
-    return GetCPUDescriptorHandle(dsvDescriptorHeap_, descriptorSizeDSV, index);
+    return GetCPUDescriptorHandle(dsvDescriptorHeap_, descriptorSizeDSV_, index);
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t index) {
 
-    return GetGPUDescriptorHandle(dsvDescriptorHeap_, descriptorSizeDSV, index);
+    return GetGPUDescriptorHandle(dsvDescriptorHeap_, descriptorSizeDSV_, index);
 }
 
 uint32_t DirectXCommon::AllocateRTVIndex() {
@@ -1539,4 +1539,17 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
     scissorRect_.top = 0;
     scissorRect_.right = width;
     scissorRect_.bottom = height;
+}
+ 
+void DirectXCommon::ReleaseAfterFence(Microsoft::WRL::ComPtr<ID3D12Resource> resource) {
+	if (!resource) return;
+	pendingResources_.push_back({ fenceValue_ + 1, resource });
+}
+ 
+void DirectXCommon::ClearPendingResources() {
+	uint64_t completed = fence_->GetCompletedValue();
+	auto it = std::remove_if(pendingResources_.begin(), pendingResources_.end(), [completed](const PendingResource& res) {
+		return res.fenceValue <= completed;
+	});
+	pendingResources_.erase(it, pendingResources_.end());
 }

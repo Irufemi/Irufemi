@@ -44,7 +44,7 @@ public: // メンバ関数
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata& metadata);
 
-	static DirectX::ScratchImage LoadTexture(const std::string& flilePath);
+	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
 
 	static Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
 		//CompilerするShaderファイルへのパス
@@ -70,6 +70,12 @@ public: // メンバ関数
 	void InitializeFixFPS();
 	// FPS固定更新
 	void UpdateFixFPS();
+ 
+	// --- リソース遅延解放 ---
+	// 指定したリソースを現在のフェンス完了後に解放するように登録する
+	void ReleaseAfterFence(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
+	// 完了したリソースを実際に解放する
+	void ClearPendingResources();
 
 public: // ゲッター
 
@@ -176,8 +182,8 @@ private: // メンバ変数
 	std::unique_ptr<DescriptorPool> srvPool_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap_ = nullptr;
 
-	uint32_t descriptorSizeRTV{};
-	uint32_t descriptorSizeDSV{};
+	uint32_t descriptorSizeRTV_ = 0;
+	uint32_t descriptorSizeDSV_ = 0;
 	uint32_t nextRtvIndex_ = 0;
 
 	// --- Depth & Pipeline State ---
@@ -209,5 +215,12 @@ private: // メンバ変数
 
 	// 記録時間(FPS固定用)
 	std::chrono::steady_clock::time_point  reference_;
+ 
+	// --- リソース遅延解放用 ---
+	struct PendingResource {
+		uint64_t fenceValue;
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+	};
+	std::vector<PendingResource> pendingResources_;
 };
 
