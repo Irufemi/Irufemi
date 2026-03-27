@@ -199,6 +199,7 @@ void Player::Draw() {
         obj_->SetPosition(translate_ + weapon_.GetMissileVibration());
         obj_->SetRotate(rotate_);
         obj_->SetScale(scale_);
+        obj_->Update();
 
         if (!cameraController_.IsFirstPerson() && !isBlinking && !status_.IsDead()) {
             obj_->Draw();
@@ -279,14 +280,14 @@ void Player::HandleAttack() {
     case AttackState::kCharging:
         if (isLButtonDown) {
             chargeTimer_++;
-            float chargeRate = static_cast<float>(chargeTimer_) / 60.0f;
+            float chargeRate = static_cast<float>(chargeTimer_) / kMaxChargeTime;
             if (chargeRate > 1.0f) chargeRate = 1.0f;
 
-            float currentAngle = rotate_.y + 1.5f;
+            float currentAngle = rotate_.y + kHammerAngleOffset;
             float sinA = std::sin(currentAngle);
             float cosA = std::cos(currentAngle);
-            float swingRadius = 2.5f;
-            float hammerHeight = 1.0f + (std::sin(static_cast<float>(chargeTimer_) * 0.5f) * 0.1f * chargeRate);
+            float swingRadius = kSwingBaseRadius;
+            float hammerHeight = kHammerBaseHeight + (std::sin(static_cast<float>(chargeTimer_) * kHammerSwaySpeed) * kHammerSwayAmplitude * chargeRate);
 
             Vector3 hammerPos;
             hammerPos.x = translate_.x + sinA * swingRadius;
@@ -297,20 +298,21 @@ void Player::HandleAttack() {
                 attackObj_->SetPosition(hammerPos + weapon_.GetMissileVibration());
                 Vector3 swingRot = rotate_;
                 swingRot.y = currentAngle;
-                swingRot.x = 1.57f;
+                swingRot.x = kHammerRotX;
                 attackObj_->SetRotate(swingRot);
-                float hammerSize = 0.8f + (chargeRate * 0.4f);
-                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * 1.5f * hammerSize, scale_.z * hammerSize };
+                float hammerSize = kHammerBaseSize + (chargeRate * kHammerSizeChargeBonus);
+                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * kHammerScaleYMultiplier * hammerSize, scale_.z * hammerSize };
                 attackObj_->SetScale(hammerScale);
+                attackObj_->Update();
             }
         } else {
             attackState_ = AttackState::kAttacking;
             attackActiveTimer_ = kAttackDuration;
             attackCollision_.isActive = true;
-            currentChargeRate_ = static_cast<float>(chargeTimer_) / 60.0f;
+            currentChargeRate_ = static_cast<float>(chargeTimer_) / kMaxChargeTime;
             if (currentChargeRate_ > 1.0f) currentChargeRate_ = 1.0f;
 
-            float hammerSize = 0.8f + (currentChargeRate_ * 0.4f);
+            float hammerSize = kHammerBaseSize + (currentChargeRate_ * kHammerSizeChargeBonus);
             attackCollision_.radius = hammerSize;
         }
         break;
@@ -318,13 +320,13 @@ void Player::HandleAttack() {
     case AttackState::kAttacking:
         if (attackActiveTimer_ > 0) {
             float t = 1.0f - (static_cast<float>(attackActiveTimer_) / kAttackDuration);
-            float swingAngleOffset = 1.5f - (3.0f * t);
+            float swingAngleOffset = kHammerAngleOffset - (kSwingTotalAngle * t);
             float currentAngle = rotate_.y + swingAngleOffset;
             float sinA = std::sin(currentAngle);
             float cosA = std::cos(currentAngle);
 
-            float swingRadius = 2.5f + (currentChargeRate_ * 0.5f);
-            float hammerHeight = 1.0f;
+            float swingRadius = kSwingBaseRadius + (currentChargeRate_ * kSwingRadiusChargeBonus);
+            float hammerHeight = kHammerBaseHeight;
 
             attackCollision_.center.x = translate_.x + sinA * swingRadius;
             attackCollision_.center.y = translate_.y + hammerHeight;
@@ -334,11 +336,12 @@ void Player::HandleAttack() {
                 attackObj_->SetPosition(attackCollision_.center + weapon_.GetMissileVibration());
                 Vector3 swingRot = rotate_;
                 swingRot.y = currentAngle;
-                swingRot.x = 1.57f;
+                swingRot.x = kHammerRotX;
                 attackObj_->SetRotate(swingRot);
-                float hammerSize = 0.8f + (currentChargeRate_ * 0.4f);
-                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * 1.5f * hammerSize, scale_.z * hammerSize };
+                float hammerSize = kHammerBaseSize + (currentChargeRate_ * kHammerSizeChargeBonus);
+                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * kHammerScaleYMultiplier * hammerSize, scale_.z * hammerSize };
                 attackObj_->SetScale(hammerScale);
+                attackObj_->Update();
             }
 
             attackActiveTimer_--;
