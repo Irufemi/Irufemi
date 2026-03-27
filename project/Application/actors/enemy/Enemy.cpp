@@ -87,6 +87,19 @@ void Enemy::Update(Player *player) {
     beam_.reset();
   }
 
+  if (stompEffects_ && state_ != EnemyState::Attack_Stomp) {
+      if (!stompEffects_->IsActive()) {
+          stompEffects_.reset();
+      }
+  }
+
+  if (stompEffects_) {
+      stompEffects_->Update(1.0f / 60.0f, player);
+
+      // もしエフェクトが終了していたらメモリを解放してnullptrに戻す（お好みで）
+      // if (!stompEffects_->IsActive()) { stompEffects_.reset(); }
+  }
+
   // だるま落とし落下物理
   float targetY = 0.0f;
   bool triggeredShake = false;
@@ -367,9 +380,8 @@ void Enemy::Update(Player *player) {
   }
 }
 
-void Enemy::Draw(IrufemiEngine *engine) {
-  if (!isActive_)
-    return;
+void Enemy::Draw(IrufemiEngine* engine) {
+  if (!isActive_) return;
   for (auto &body : bodies_) {
     if (body && !body->IsCompletelyDead()) {
       body->Draw(engine);
@@ -383,9 +395,15 @@ void Enemy::Draw(IrufemiEngine *engine) {
     headRight_->Draw(engine);
 
   // ビームを描画
-  if (beam_) {
+  if (beam_ ) {
     engine->ApplyPSO();
     beam_->Draw();
+  }
+
+  if (stompEffects_) {
+      // 必要なら engine->ApplyPSO(); など
+      engine->ApplyPSO();
+      stompEffects_->Draw();
   }
 
 #ifdef USE_IMGUI
@@ -403,6 +421,18 @@ void Enemy::FireBeam() {
     beam_ = std::make_unique<EnemyBeam>();
     beam_->Initialize(camera_, GetHeadMidWorldMatrix());
   }
+}
+
+void Enemy::FireStomp(const Vector3& position) {
+    // インスタンスがなければ作成（ビームの FireBeam と同じ流れ）
+    if (!stompEffects_) {
+        stompEffects_ = std::make_unique<EnemyStompEffects>();
+        // ビームがカメラを必要とするように、スタンプもここでカメラを渡して初期化
+        stompEffects_->Initialize(camera_);
+    }
+
+    // エフェクトを発動
+    stompEffects_->Fire(position);
 }
 
 Matrix4x4 Enemy::GetHeadMidWorldMatrix() const {

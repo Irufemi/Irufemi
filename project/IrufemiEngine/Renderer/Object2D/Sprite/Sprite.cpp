@@ -15,13 +15,13 @@ DebugUI* Sprite::ui_ = nullptr;
 
 void Sprite::Initialize(Camera* camera, const std::string& textureName) {
     this->camera_ = camera;
-    resource_ = std::make_unique<D3D12ResourceUtil>();
+    resource_ = std::make_unique<Object2DResource>();
 
     // 頂点はユニットクワッド(0..1)に統一(サイズはscaleで与える)
     // 左下
     resource_->vertexDataList_.push_back({ { 0.0f,1.0f,0.0f,1.0f }, { 0.0f,1.0f } ,{0.0f,0.0f,-1.0f} });
     // 左上
-    resource_->vertexDataList_.push_back({ { 0.0f,0.0f,0.0f,1.0f }, { 0.0f,0.0f},{0.0f,0.0f,-1.0f} });
+    resource_->vertexDataList_.push_back({ { 0.0f,0.0f,0.0f,1.0f }, { 0.0f,0.00 },{0.0f,0.0f,-1.0f} });
     // 右下
     resource_->vertexDataList_.push_back({ { 1.0f,1.0f,0.0f,1.0f }, { 1.0f,1.0f } ,{0.0f,0.0f,-1.0f} });
     // 右上
@@ -40,83 +40,51 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
     // 書き込めるようにする
     resource_->Map();
 
-    //頂点バッファ
-
-    resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-
-    resource_->vertexBufferView_.BufferLocation = resource_->vertexResource_->GetGPUVirtualAddress();
-    resource_->vertexBufferView_.StrideInBytes = sizeof(VertexData);
-    resource_->vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(resource_->vertexDataList_.size());
-
-    std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
-
-    /*頂点インデックス*/
-
-    ///Index用のあれやこれやを作る
-
-    resource_->indexBufferView_ = D3D12_INDEX_BUFFER_VIEW{};
-    //リソースの先頭のアドレスから使う
-    resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();
-    //使用するリソースのサイズはインデックス6つ分のサイズ
-    resource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * 6;
-    //インデックスはint32_tとする
-    resource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
-
-    ///IndexResourceにデータを書き込む
-    //インデックスリソースにデータを書き込む
-
-    std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
+    // データのコピー
+    if (resource_->vertexData_) {
+        std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
+    }
+    if (resource_->indexData_) {
+        std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
+    }
 
     // VB/IB作成とMapが済んだ後に一度アンカーを頂点に反映しておく
     ApplyAnchorToVertices();
 
-    // --- 初回の行列計算(アンカー分は頂点側で処理するので引かない) ---
-    Vector3 pos = resource_->transform_.translate;
-    resource_->transformationMatrix_.world =
-        Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, pos);
-    resource_->transformationMatrix_.WVP =
-        Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
-    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP,resource_->transformationMatrix_.world };
+    // 初回の行列計算
+    resource_->UpdateTransform(*camera_);
 
-    //マテリアル
+    // マテリアル
+    if (resource_->materialData_) {
+        resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
+        resource_->materialData_->enableLighting = false;
+        resource_->materialData_->hasTexture = true;
+        resource_->materialData_->lightingMode = 2;
+        resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+    }
 
-    resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->materialData_->enableLighting = false;
-    resource_->materialData_->hasTexture = true;
-    resource_->materialData_->lightingMode = 2;
-    resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-
-    // --- 必ず指定テクスチャをロード＆ハンドル取得 ---
+    // テクスチャ設定
     if (textureManager_) {
-        // 指定名で必ずロード/取得(未ロードならロード)
         resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
-        // テクスチャサイズを直接取得して反映
+        // テクスチャサイズを直接取得して描画サイズに反映
         uint32_t tw = 0, th = 0;
         if (textureManager_->GetTextureSize(textureName, tw, th) && tw > 0 && th > 0) {
             textureSize_ = { static_cast<float>(tw), static_cast<float>(th) };
             SetSize(textureSize_.x, textureSize_.y);
-
-            // 行列を更新(サイズ反映後)
-            Vector3 pos3 = resource_->transform_.translate;
-            resource_->transformationMatrix_.world = Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, pos3);
-            resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
-            *resource_->transformationData_ = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world };
+            resource_->UpdateTransform(*camera_);
         }
 
-        // デバッグUI(コンボ)用に selectedTextureIndex_ を既存ロジックで決める
+        // デバッグUI(コンボ)の初期インデックス決定
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
-        if (!textureNames.empty()) {
-            auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
-            selectedTextureIndex_ = (it != textureNames.end())
-                ? static_cast<int>(std::distance(textureNames.begin(), it))
-                : 0;
-        }
+        auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
+        selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
 }
 
 void Sprite::Update() {
+    if (!resource_ || !camera_) return;
 
     // DebugUI でのテクスチャ選択変更に追随してサイズを更新
     if (textureManager_) {
@@ -128,7 +96,7 @@ void Sprite::Update() {
             if (textureManager_->GetTextureSize(names[selectedTextureIndex_], tw, th) && tw > 0 && th > 0) {
                 textureSize_ = { static_cast<float>(tw), static_cast<float>(th) };
 
-                // 追加: 範囲指定中なら新サイズに合わせて再クランプ
+                // 範囲指定中なら新サイズに合わせて再クランプ
                 if (useTexRect_) {
                     SetTextureRectPixels(
                         static_cast<int>(texRectLeftTop_.x),
@@ -144,46 +112,35 @@ void Sprite::Update() {
     // アンカーの変更を頂点へ反映
     ApplyAnchorToVertices();
 
-    // 行列更新
-    Vector3 pos = resource_->transform_.translate;
-    resource_->transformationMatrix_.world =
-        Math::MakeAffineMatrix(resource_->transform_.scale, resource_->transform_.rotate, pos);
-    resource_->transformationMatrix_.WVP =
-        Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
-    
-    if (resource_->transformationData_) {
-        *resource_->transformationData_ = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world };
+    // 基本的な行列更新
+    resource_->UpdateTransform(*camera_);
+
+    // UV 変換(flip → crop → userUV)
+    if (resource_->materialData_) {
+        // userUV: 既存の uvTransform(回転/スクロール)
+        Matrix4x4 userUV = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+
+        // crop: px指定 → 正規化UVに変換
+        Matrix4x4 cropUV = Math::MakeIdentity4x4();
+        if (useTexRect_ && textureSize_.x > 0.0f && textureSize_.y > 0.0f) {
+            float u0 = texRectLeftTop_.x / textureSize_.x;
+            float v0 = texRectLeftTop_.y / textureSize_.y;
+            float du = texRectSize_.x / textureSize_.x;
+            float dv = texRectSize_.y / textureSize_.y;
+            cropUV = Math::MakeAffineMatrix(Vector3{ du, dv, 1.0f }, Vector3{ 0.0f,0.0f,0.0f }, Vector3{ u0, v0, 0.0f });
+        }
+
+        // flip を最初に、次に crop、最後に userUV を適用
+        Vector3 flipScale{ isFlipX_ ? -1.0f : 1.0f, isFlipY_ ? -1.0f : 1.0f, 1.0f };
+        Vector3 flipTrans{ isFlipX_ ? 1.0f : 0.0f, isFlipY_ ? 1.0f : 0.0f, 0.0f };
+        Matrix4x4 flipUV = Math::MakeAffineMatrix(flipScale, Vector3{ 0.0f,0.0f,0.0f }, flipTrans);
+
+        Matrix4x4 base = Math::Multiply(cropUV, userUV);
+        resource_->materialData_->uvTransform = Math::Multiply(flipUV, base);
     }
-
-    // ---- UV 変換(flip → crop → userUV)----
-     // userUV: 既存の uvTransform(回転/スクロール)
-    Matrix4x4 userUV =
-        Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
-
-    // crop: px指定 → 正規化UVに変換
-    Matrix4x4 cropUV = Math::MakeIdentity4x4();
-    if (useTexRect_ && textureSize_.x > 0.0f && textureSize_.y > 0.0f) {
-        float u0 = texRectLeftTop_.x / textureSize_.x;
-        float v0 = texRectLeftTop_.y / textureSize_.y;
-        float du = texRectSize_.x / textureSize_.x;
-        float dv = texRectSize_.y / textureSize_.y;
-        cropUV = Math::MakeAffineMatrix(Vector3{ du, dv, 1.0f }, Vector3{ 0.0f,0.0f,0.0f }, Vector3{ u0, v0, 0.0f });
-    }
-
-    // flip を最初に、次に crop、最後に userUV を適用
-    Vector3 flipScale{ isFlipX_ ? -1.0f : 1.0f, isFlipY_ ? -1.0f : 1.0f, 1.0f };
-    Vector3 flipTrans{ isFlipX_ ? 1.0f : 0.0f, isFlipY_ ? 1.0f : 0.0f, 0.0f };
-    Matrix4x4 flipUV = Math::MakeAffineMatrix(flipScale, Vector3{ 0.0f,0.0f,0.0f }, flipTrans);
-
-    // mul(row, M) を想定: input * (flip * crop * userUV)
-    Matrix4x4 base = Math::Multiply(cropUV, userUV);
-    resource_->materialData_->uvTransform = Math::Multiply(flipUV, base);
 
     // フラグ更新
     isDirty_ = false;
-    // Sprite は Orthographic 行列を使っているため、カメラの Orthographic 設定が変わった場合のみ更新が必要
-    // ただし、DrawManager 側で ProjectionView として Orthographic を扱っている可能性がある。
-    // ここでは念のため ViewMatrix と OrthographicMatrix を追跡する。
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetOrthographicMatrix();
 }
@@ -199,28 +156,33 @@ void Sprite::Draw() {
         Update();
     }
 
-    drawManager_->DrawObject2D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
+    drawManager_->DrawObject2D(resource_.get());
 }
 
 void Sprite::SetSize(const float& width, const float& height) {
     size_.x = width;
     size_.y = height;
     // 実サイズはscaleで表現
-    resource_->transform_.scale = { size_.x, size_.y, 1.0f };
+    if (resource_) {
+        resource_->transform_.scale = { size_.x, size_.y, 1.0f };
+    }
 }
 
 const Vector2 Sprite::GetPosition2D() const {
+    if (!resource_) return { 0.0f, 0.0f };
     return { resource_->transform_.translate.x, resource_->transform_.translate.y };
 }
 
 void Sprite::ApplyAnchorToVertices() {
-    // アンカーによるローカル頂点のずらし(資料通り)
+    if (!resource_ || !resource_->vertexData_) return;
+
+    // アンカーによるローカル頂点のずらし
     const float left = 0.0f - anchor_.x;
     const float right = 1.0f - anchor_.x;
     const float top = 0.0f - anchor_.y;
     const float bottom = 1.0f - anchor_.y;
 
-    // 頂点の並びは初期生成と同じインデックスに合わせる
+    // 頂点の並び
     // 0: 左下, 1: 左上, 2: 右下, 3: 右上
     resource_->vertexData_[0].position = { left,  bottom, 0.0f, 1.0f };
     resource_->vertexData_[1].position = { left,  top,    0.0f, 1.0f };
@@ -228,7 +190,6 @@ void Sprite::ApplyAnchorToVertices() {
     resource_->vertexData_[3].position = { right, top,    0.0f, 1.0f };
 }
 
-// テクスチャ範囲指定API 
 bool Sprite::SetTextureRectPixels(int x, int y, int w, int h, bool autoResize) {
     if (textureSize_.x <= 0.0f || textureSize_.y <= 0.0f) return false;
 
@@ -257,7 +218,6 @@ void Sprite::ClearTextureRect() {
     texRectSize_ = { 0.0f, 0.0f };
 }
 
-// 追加: 現在選択されているテクスチャの解像度でスプライトサイズを合わせる
 void Sprite::AdjustTextureSize() {
     if (!textureManager_) return;
 
@@ -275,76 +235,62 @@ void Sprite::AdjustTextureSize() {
 }
 
 void Sprite::Debug([[maybe_unused]] const char* spriteName) {
-
 #if defined USE_IMGUI
     std::string name = std::string("Sprite: ") + spriteName;
-
-    //ImGui
-
-    //カメラウィンドウを作り出す
     ImGui::Begin(name.c_str());
 
-    ui_->DebugTransform2D(resource_->transform_);
+    if (ui_ && resource_) {
+        ui_->DebugTransform2D(resource_->transform_);
+        ui_->DebugMaterialBy2D(resource_->materialData_);
+        ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+        ui_->DebugUvTransform(resource_->uvTransform_);
 
-    ui_->DebugMaterialBy2D(resource_->materialData_);
+        ImGui::Checkbox("Flip X", &isFlipX_);
+        ImGui::Checkbox("Flip Y", &isFlipY_);
+        ImGui::Separator();
 
-    ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-
-    ui_->DebugUvTransform(resource_->uvTransform_);
-
-    ImGui::Checkbox("Flip X", &isFlipX_);
-
-    ImGui::Checkbox("Flip Y", &isFlipY_);
-
-    ImGui::Separator();
-    // Anchor/Size 操作
-    float a[2] = { anchor_.x, anchor_.y };
-    if (ImGui::SliderFloat2("Anchor (0..1)", a, 0.0f, 1.0f)) {
-        SetAnchor(a[0], a[1]);
-    }
-    if (ImGui::SmallButton("TopLeft (0,0)")) { SetAnchor(0.0f, 0.0f); }
-    ImGui::SameLine();
-    if (ImGui::SmallButton("Center (0.5,0.5)")) { SetAnchor(0.5f, 0.5f); }
-    ImGui::SameLine();
-    if (ImGui::SmallButton("BottomRight (1,1)")) { SetAnchor(1.0f, 1.0f); }
-
-    float sz[2] = { size_.x, size_.y };
-    if (ImGui::DragFloat2("Size (px)", sz, 1.0f, 1.0f, 8192.0f)) {
-        SetSize(sz[0], sz[1]);
-    }
-
-    // 実効矩形の確認表示(アンカー適用後のTopLeft/BottomRight)
-    const float left = resource_->transform_.translate.x - anchor_.x * size_.x;
-    const float top = resource_->transform_.translate.y - anchor_.y * size_.y;
-    const float right = left + size_.x;
-    const float bottom = top + size_.y;
-    ImGui::Text("Rect L=%.1f T=%.1f R=%.1f B=%.1f", left, top, right, bottom);
-
-    // 切り出しUI
-    if (ImGui::CollapsingHeader("Texture Rect (px)")) {
-        bool enabled = useTexRect_;
-        if (ImGui::Checkbox("Enable", &enabled)) {
-            useTexRect_ = enabled;
-            if (!useTexRect_) ClearTextureRect();
+        float a[2] = { anchor_.x, anchor_.y };
+        if (ImGui::SliderFloat2("Anchor (0..1)", a, 0.0f, 1.0f)) {
+            SetAnchor(a[0], a[1]);
         }
-        int lt[2] = { static_cast<int>(texRectLeftTop_.x), static_cast<int>(texRectLeftTop_.y) };
-        int szpx[2] = { static_cast<int>(texRectSize_.x), static_cast<int>(texRectSize_.y) };
-        bool changed = false;
-        changed |= ImGui::DragInt2("LeftTop", lt, 1);
-        changed |= ImGui::DragInt2("Size", szpx, 1);
-        if (changed && enabled) {
-            SetTextureRectPixels(lt[0], lt[1], std::max(1, szpx[0]), std::max(1, szpx[1]), false);
-        }
-        if (ImGui::SmallButton("Reset Full")) {
-            ClearTextureRect();
-        }
-        ImGui::Text("TexSize: (%.0f, %.0f)", textureSize_.x, textureSize_.y);
-    }
+        if (ImGui::SmallButton("TopLeft (0,0)")) { SetAnchor(0.0f, 0.0f); }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Center (0.5,0.5)")) { SetAnchor(0.5f, 0.5f); }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("BottomRight (1,1)")) { SetAnchor(1.0f, 1.0f); }
 
-    //入力終了
+        float sz[2] = { size_.x, size_.y };
+        if (ImGui::DragFloat2("Size (px)", sz, 1.0f, 1.0f, 8192.0f)) {
+            SetSize(sz[0], sz[1]);
+        }
+
+        const float left = resource_->transform_.translate.x - anchor_.x * size_.x;
+        const float top = resource_->transform_.translate.y - anchor_.y * size_.y;
+        const float right = left + size_.x;
+        const float bottom = top + size_.y;
+        ImGui::Text("Rect L=%.1f T=%.1f R=%.1f B=%.1f", left, top, right, bottom);
+
+        if (ImGui::CollapsingHeader("Texture Rect (px)")) {
+            bool enabled = useTexRect_;
+            if (ImGui::Checkbox("Enable", &enabled)) {
+                useTexRect_ = enabled;
+                if (!useTexRect_) ClearTextureRect();
+            }
+            int lt[2] = { static_cast<int>(texRectLeftTop_.x), static_cast<int>(texRectLeftTop_.y) };
+            int szpx[2] = { static_cast<int>(texRectSize_.x), static_cast<int>(texRectSize_.y) };
+            bool changed = false;
+            changed |= ImGui::DragInt2("LeftTop", lt, 1);
+            changed |= ImGui::DragInt2("Size", szpx, 1);
+            if (changed && enabled) {
+                SetTextureRectPixels(lt[0], lt[1], std::max(1, szpx[0]), std::max(1, szpx[1]), false);
+            }
+            if (ImGui::SmallButton("Reset Full")) {
+                ClearTextureRect();
+            }
+            ImGui::Text("TexSize: (%.0f, %.0f)", textureSize_.x, textureSize_.y);
+        }
+    }
     ImGui::End();
-
-#endif // _DEBUG
-
+#endif
     Update();
 }

@@ -16,7 +16,7 @@ void Circle2D::Initialize(Camera* camera, const std::string& textureName, uint32
     camera_ = camera;
     subdivision_ = std::max<uint32_t>(3, subdiv & ~1u); // 偶数に丸め、最低3
 
-    resource_ = std::make_unique<D3D12ResourceUtil>();
+    resource_ = std::make_unique<Object2DResource>();
 
     // 頂点/インデックス生成
     BuildUnitCircleFan(subdivision_);
@@ -25,19 +25,8 @@ void Circle2D::Initialize(Camera* camera, const std::string& textureName, uint32
     resource_->CreateResource();
     resource_->Map();
 
-    // VB/IBビュー
-    resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-    resource_->vertexBufferView_.BufferLocation = resource_->vertexResource_->GetGPUVirtualAddress();
-    resource_->vertexBufferView_.StrideInBytes = sizeof(VertexData);
-    resource_->vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(resource_->vertexDataList_.size());
-
+    // 頂点/インデックスデータの転送
     std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
-
-    resource_->indexBufferView_ = D3D12_INDEX_BUFFER_VIEW{};
-    resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();
-    resource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * static_cast<UINT>(resource_->indexDataList_.size());
-    resource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
-
     std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
 
     // マテリアル/WVP 初期設定
@@ -155,7 +144,7 @@ void Circle2D::Update() {
 }
 
 void Circle2D::Draw() {
-    drawManager_->DrawObject2D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
+    drawManager_->DrawObject2D(resource_.get());
 }
 
 void Circle2D::SetInfo(const Circle2DInfo& info) {

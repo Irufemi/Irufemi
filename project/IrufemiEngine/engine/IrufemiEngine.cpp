@@ -11,7 +11,12 @@
 #include <string>
 
 #include "Renderer/VertexData.h"
-#include "Renderer/D3D12ResourceUtil.h"
+#include "Renderer/Core/BaseResource.h"
+#include "Renderer/Object3D/Object3DResource.h"
+#include "Renderer/Object2D/Object2DResource.h"
+#include "Renderer/Particle/ParticleResource.h"
+#include "Renderer/LineInstanced/LineResource.h"
+#include "Renderer/LineInstanced/LineResource.h"
 #include "Renderer/Object2D/Sprite/Sprite.h"
 #include "Renderer/Object2D/Primitive/Circle2D.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
@@ -33,6 +38,7 @@
 #include "../Resource/Audio/Se.h"
 #include "../Resource/Texture/Texture.h"
 #include "Manager/DebugUI.h"
+#include "Manager/PrimitiveManager.h"
 
 #include "Framework/IScene.h"
 
@@ -83,9 +89,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     dxCommon_->SetLog(log_.get());
     dxCommon_->Initialize(winApp_->GetHwnd(), winApp_->GetClientWidth(), winApp_->GetClientHeight());
 
-    D3D12ResourceUtil::SetDirectXCommon(dxCommon_.get());
-    D3D12ResourceUtilParticle::SetDirectXCommon(dxCommon_.get());
-    D3D12ResourceUtilLine::SetDirectXCommon(dxCommon_.get());
+    BaseResource::SetDirectXCommon(dxCommon_.get());
     ModelRegion::SetDirectXCommon(dxCommon_.get());
     SphereRegion::SetDirectXCommon(dxCommon_.get());
     TetraRegion::SetDirectXCommon(dxCommon_.get());
@@ -280,6 +284,7 @@ void IrufemiEngine::Finalize() {
         drawManager->Finalize();
         drawManager.reset();
     }
+    PrimitiveManager::Finalize();
     if (ui) {
         ui->Shutdown();
         ui.reset();

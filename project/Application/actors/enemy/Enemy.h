@@ -3,6 +3,7 @@
 #include "AI/EnemyAI.h"
 #include "Animation/EnemyAnimation.h"
 #include "Beam/EnemyBeam.h"
+#include "StompEffects/EnemyStompEffects.h"
 #include "Body/Body.h"
 #include "Head/Left/HeadLeft.h"
 #include "Head/Mid/HeadMid.h"
@@ -29,6 +30,10 @@ public:
     bool IsFiringBeam() const { return beam_ != nullptr; }
     bool IsFiringRealBeam() const { return animation_ != nullptr && animation_->IsFiring(); }
     EnemyBeam* GetBeam() const { return beam_.get(); }
+    
+    // --- スタンプ制御用 ---
+    void FireStomp(const Vector3& position);
+    EnemyStompEffects* GetStompEffects() const { return stompEffects_.get(); }
 
     // --- アクセサ（AIやAnimationから操作用） ---
     Transform& GetGlobalTransform() { return globalTransform_; }
@@ -71,6 +76,9 @@ private:
 
     // ビームのインスタンス管理
     std::unique_ptr<EnemyBeam> beam_ = nullptr;
+
+    // スタンプのインスタンス管理
+    std::unique_ptr<EnemyStompEffects> stompEffects_;
 
     // トランスフォーム
     Transform globalTransform_;

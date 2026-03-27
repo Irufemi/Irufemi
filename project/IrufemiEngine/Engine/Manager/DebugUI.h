@@ -14,8 +14,9 @@
 class TextureManager;
 class SceneManager;
 class IrufemiEngine;
-class D3D12ResourceUtil;
-class D3D12ResourceUtilParticle;
+class Object3DResource;
+class Object2DResource;
+class ParticleResource;
 struct Transform;
 struct Matrix4x4;
 struct DirectionalLight;
@@ -114,11 +115,12 @@ public: // メンバ関数
     static void DebugObjMaterial(ObjMaterial* material, const char* unique_id = "");
 
     // Particle 専用マテリアルのデバッグ表示
-    static void DebugMaterialParticle(ParticleMaterial* material);
+    static void DebugMaterialByParticle(ParticleMaterial* material);
 
     // 画像
-    void DebugTexture(D3D12ResourceUtil * resource_,int & selectedTextureIndex_);
-    void DebugTexture(D3D12ResourceUtilParticle* resource, int& selectedTextureIndex);
+    void DebugTexture(Object3DResource* resource, int& selectedTextureIndex);
+    void DebugTexture(Object2DResource* resource, int& selectedTextureIndex);
+    void DebugTexture(ParticleResource* resource, int& selectedTextureIndex);
 
     // DirectionalLight
     static void DebugDirectionalLight(DirectionalLight* directionalLightData);

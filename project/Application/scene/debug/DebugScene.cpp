@@ -467,19 +467,17 @@ void DebugScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
-    engine_->ApplyByGeometryShaderPSO();
+
+    engine_->ApplyPSO();
 
     if (isActiveTriangle_) {
         triangle_->Draw();
     }
-
-    engine_->ApplyPSO();
-
-    if (isActiveCube_) {
-        cube_->Draw();
-    }
     if (isActivePlane_) {
         plane_->Draw();
+    }
+    if (isActiveCube_) {
+        cube_->Draw();
     }
     if (isActiveSphere_) {
         sphere_->Draw();

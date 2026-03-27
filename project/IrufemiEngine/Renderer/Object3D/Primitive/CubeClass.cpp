@@ -1,5 +1,5 @@
 #define NOMINMAX
-#include "CubeClass.h"
+#include "Renderer/Object3D/Primitive/CubeClass.h"
 
 #include <algorithm>
 #include <string>
@@ -10,6 +10,7 @@
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Manager/PrimitiveManager.h"
 
 TextureManager* CubeClass::textureManager_ = nullptr;
 DrawManager* CubeClass::drawManager_ = nullptr;
@@ -22,115 +23,47 @@ void CubeClass::Initialize(Camera* camera, float width, float height, float dept
     height_ = height;
     depth_ = depth;
 
-    // D3D12ResourceUtil の生成
-    resource_ = std::make_unique<D3D12ResourceUtil>();
+    // PrimitiveManager から標準リソースを取得
+    const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(PrimitiveType::Cube);
 
-    // サイズ反映(中心原点)
-    const float hx = width_ * 0.5f;
-    const float hy = height_ * 0.5f;
-    const float hz = depth_ * 0.5f;
+    // Object3DResource の生成
+    resource_ = std::make_unique<Object3DResource>();
 
-    // 頂点データ(24頂点)
-    resource_->vertexDataList_ = {
-        // 前面 (-Z)
-        { { -hx, -hy, -hz, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } }, // 0
-        { { -hx,  hy, -hz, 1.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } }, // 1
-        { {  hx, -hy, -hz, 1.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } }, // 2
-        { {  hx,  hy, -hz, 1.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } }, // 3
-        // 背面 (+Z)
-        { {  hx, -hy,  hz, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } }, // 4
-        { {  hx,  hy,  hz, 1.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } }, // 5
-        { { -hx, -hy,  hz, 1.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } }, // 6
-        { { -hx,  hy,  hz, 1.0f }, { 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } }, // 7
-        // 左面 (-X)
-        { { -hx, -hy,  hz, 1.0f }, { 0.0f, 1.0f }, { -1.0f, 0.0f, 0.0f } }, // 8
-        { { -hx,  hy,  hz, 1.0f }, { 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f } }, // 9
-        { { -hx, -hy, -hz, 1.0f }, { 1.0f, 1.0f }, { -1.0f, 0.0f, 0.0f } }, // 10
-        { { -hx,  hy, -hz, 1.0f }, { 1.0f, 0.0f }, { -1.0f, 0.0f, 0.0f } }, // 11
-        // 右面 (+X)
-        { {  hx, -hy, -hz, 1.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } }, // 12
-        { {  hx,  hy, -hz, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } }, // 13
-        { {  hx, -hy,  hz, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } }, // 14
-        { {  hx,  hy,  hz, 1.0f }, { 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } }, // 15
-        // 下面 (-Y)
-        { { -hx, -hy, -hz, 1.0f }, { 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } }, // 16
-        { {  hx, -hy, -hz, 1.0f }, { 1.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } }, // 17
-        { { -hx, -hy,  hz, 1.0f }, { 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } }, // 18
-        { {  hx, -hy,  hz, 1.0f }, { 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } }, // 19
-        // 上面 (+Y)
-        { { -hx,  hy,  hz, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } }, // 20
-        { {  hx,  hy,  hz, 1.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } }, // 21
-        { { -hx,  hy, -hz, 1.0f }, { 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } }, // 22
-        { {  hx,  hy, -hz, 1.0f }, { 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } }  // 23
-    };
+    // 共有バッファの View とインデックス数を設定
+    resource_->vertexBufferView_ = primitiveResource.vertexBufferView;
+    resource_->indexBufferView_ = primitiveResource.indexBufferView;
+    resource_->indexCount_ = primitiveResource.indexCount;
 
-    // インデックスデータ
-    resource_->indexDataList_ = {
-        0, 1, 2, 2, 1, 3, // 前面
-        4, 5, 6, 6, 5, 7, // 背面
-        8, 9, 10, 10, 9, 11, // 左面
-        12, 13, 14, 14, 13, 15, // 右面
-        16, 17, 18, 18, 17, 19, // 下面
-        20, 21, 22, 22, 21, 23  // 上面
-    };
-
-    // リソース割当・データ転送
+    // リソース割当・データ転送（定数バッファのみ）
     resource_->CreateResource();
     resource_->Map();
 
-    resource_->vertexBufferView_ = D3D12_VERTEX_BUFFER_VIEW{};
-    resource_->vertexBufferView_.BufferLocation = resource_->vertexResource_->GetGPUVirtualAddress();
-    resource_->vertexBufferView_.StrideInBytes = sizeof(VertexData);
-    resource_->vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(resource_->vertexDataList_.size());
-    std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
-
-    resource_->indexBufferView_ = D3D12_INDEX_BUFFER_VIEW{};
-    resource_->indexBufferView_.BufferLocation = resource_->indexResource_->GetGPUVirtualAddress();
-    resource_->indexBufferView_.SizeInBytes = sizeof(uint32_t) * static_cast<UINT>(resource_->indexDataList_.size());
-    resource_->indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
-    std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
-
     // マテリアル初期化
-    resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->materialData_->enableLighting = true;
-    resource_->materialData_->hasTexture = true;
-    resource_->materialData_->lightingMode = 2;
-    resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-    resource_->materialData_->shininess = 64.0f;
+    if (resource_->materialData_) {
+        resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
+        resource_->materialData_->enableLighting = true;
+        resource_->materialData_->hasTexture = true;
+        resource_->materialData_->lightingMode = 2;
+        resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+        resource_->materialData_->shininess = 64.0f;
+    }
 
     // transformation
     resource_->transform_.translate = center_;
     resource_->transform_.scale = Vector3{ 1.0f,1.0f,1.0f };
-    Vector3 effectiveScale{ 1.0f,1.0f,1.0f };
-    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
-    resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-
-    Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
-    worldForNormal.m[3][0] = worldForNormal.m[3][1] = worldForNormal.m[3][2] = 0.0f;
-    worldForNormal.m[3][3] = 1.0f;
-    resource_->transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-
-    *resource_->transformationData_ = {
-        resource_->transformationMatrix_.WVP,
-        resource_->transformationMatrix_.world,
-        resource_->transformationMatrix_.WorldInverseTranspose
-    };
+    
+    Update();
 
     // テクスチャハンドル設定
     if (textureManager_) {
+        resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
         auto textureNames = textureManager_->GetTextureNames();
         std::sort(textureNames.begin(), textureNames.end());
-        if (!textureNames.empty()) {
-            resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
-            auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
-            if (it != textureNames.end()) selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
-            else selectedTextureIndex_ = 0;
-        } else {
-            resource_->textureHandle_.ptr = 0;
-        }
+        auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
+        selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
 
-    if (resource_->textureHandle_.ptr == 0) {
+    if (resource_->textureHandle_.ptr == 0 && resource_->materialData_) {
         resource_->materialData_->hasTexture = false;
     }
 }
@@ -144,27 +77,29 @@ void CubeClass::SetSize(float width, float height, float depth) {
 }
 
 void CubeClass::Update() {
+    if (!resource_ || !camera_) return;
+
     // 位置/回転/スケールに応じてワールド行列を再計算する
     resource_->transform_.translate = center_;
-    Vector3 effectiveScale{ 1.0f, 1.0f, 1.0f };
-    resource_->transformationMatrix_.world = Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
-    resource_->transformationMatrix_.WVP = Math::Multiply(resource_->transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+    
+    // 実スケール = 設定サイズ × 係数
+    Vector3 effectiveScale{
+        width_ * resource_->transform_.scale.x,
+        height_ * resource_->transform_.scale.y,
+        depth_ * resource_->transform_.scale.z
+    };
 
-    Matrix4x4 worldForNormal = resource_->transformationMatrix_.world;
-    worldForNormal.m[3][0] = worldForNormal.m[3][1] = worldForNormal.m[3][2] = 0.0f;
-    worldForNormal.m[3][3] = 1.0f;
-    resource_->transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+    // 一時的にスケールを上書きして行列更新
+    Vector3 originalScale = resource_->transform_.scale;
+    resource_->transform_.scale = effectiveScale;
+    resource_->UpdateTransform(*camera_);
+    resource_->transform_.scale = originalScale;
 
-    if (resource_->transformationData_) {
-        *resource_->transformationData_ = {
-            resource_->transformationMatrix_.WVP,
-            resource_->transformationMatrix_.world,
-            resource_->transformationMatrix_.WorldInverseTranspose
-        };
-    }
-
-    if (resource_->textureHandle_.ptr == 0) {
-        resource_->materialData_->hasTexture = false;
+    if (resource_->materialData_) {
+        if (resource_->textureHandle_.ptr == 0) {
+            resource_->materialData_->hasTexture = false;
+        }
+        resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
     }
 
     // フラグ更新
@@ -184,9 +119,7 @@ void CubeClass::Draw() {
         Update();
     }
 
-    if (drawManager_) {
-        drawManager_->DrawObject3D(resource_->vertexBufferView_, resource_->indexBufferView_, resource_->materialResource_, resource_->transformationResource_, resource_->textureHandle_, static_cast<UINT>(resource_->indexDataList_.size()));
-    }
+    drawManager_->DrawObject3D(resource_.get());
 }
 
 void CubeClass::Debug(const char* cubeName) {
