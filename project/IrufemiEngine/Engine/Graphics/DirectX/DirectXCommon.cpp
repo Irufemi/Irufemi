@@ -12,6 +12,7 @@
 #include "Renderer/VertexData.h"
 #include "DirectXTex/d3dx12.h"
 #include <thread>
+#include <algorithm>
 
 void DirectXCommon::Finalize() {
 
@@ -1539,4 +1540,17 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
     scissorRect_.top = 0;
     scissorRect_.right = width;
     scissorRect_.bottom = height;
+}
+ 
+void DirectXCommon::ReleaseAfterFence(Microsoft::WRL::ComPtr<ID3D12Resource> resource) {
+	if (!resource) return;
+	pendingResources_.push_back({ fenceValue_ + 1, resource });
+}
+ 
+void DirectXCommon::ClearPendingResources() {
+	uint64_t completed = fence_->GetCompletedValue();
+	auto it = std::remove_if(pendingResources_.begin(), pendingResources_.end(), [completed](const PendingResource& res) {
+		return res.fenceValue <= completed;
+	});
+	pendingResources_.erase(it, pendingResources_.end());
 }

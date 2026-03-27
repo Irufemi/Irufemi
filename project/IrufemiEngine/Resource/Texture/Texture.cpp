@@ -29,6 +29,10 @@ void Texture::Initialize(const std::string& filePath) {
     textureResource_ = dxCommon_->CreateTextureResource(metadata);
     intermediateResource_ = dxCommon_->UploadTextureData(textureResource_.Get(), mipImages_);
 
+	// --- 追加: アップロード完了後に中間リソースを解放するように登録し、自身は手放す ---
+	dxCommon_->ReleaseAfterFence(intermediateResource_);
+	intermediateResource_ = nullptr;
+
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
     srvDesc.Format = metadata.format;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;

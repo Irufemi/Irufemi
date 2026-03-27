@@ -427,6 +427,9 @@ void IrufemiEngine::EndFrame() {
         const uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
         srvPool->GarbageCollect(completed);
     }
+ 
+	// --- 追加: 中間リソースの遅延解放を実行 ---
+	dxCommon_->ClearPendingResources();
 }
 
 void IrufemiEngine::OnResize(int32_t width, int32_t height) {
