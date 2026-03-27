@@ -396,31 +396,51 @@ void PlayerWeapon::FireMachineGunBullet(const Vector3& startPos, const Vector3& 
             bullets_[i].position = startPos;
             bullets_[i].timer = 60;
 
+            // --- 追加・変更箇所ここから ---
+            // ① プレイヤーの正面ベクトルを計算
+            float cosPitch = std::cos(cameraPitch);
+            float sinPitch = std::sin(cameraPitch);
+            Vector3 playerForward = { std::sin(playerRotate.y) * cosPitch, -sinPitch, std::cos(playerRotate.y) * cosPitch };
+
+            // ② プレイヤーから敵へのベクトルを計算
             Vector3 playerCenter = { playerTranslate.x, playerTranslate.y + 1.0f, playerTranslate.z };
             Vector3 aimPos = { targetPos.x, targetPos.y + 1.0f, targetPos.z };
-            Vector3 toTarget = {
+            Vector3 toEnemy = {
                 aimPos.x - playerCenter.x,
                 aimPos.y - playerCenter.y,
                 aimPos.z - playerCenter.z
             };
 
-            float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
+            // toEnemyを正規化
+            float dist = std::sqrt(toEnemy.x * toEnemy.x + toEnemy.y * toEnemy.y + toEnemy.z * toEnemy.z);
             if (dist > 0.001f) {
-                toTarget.x /= dist;
-                toTarget.y /= dist;
-                toTarget.z /= dist;
+                toEnemy.x /= dist;
+                toEnemy.y /= dist;
+                toEnemy.z /= dist;
             } else {
-                float cosPitch = std::cos(cameraPitch);
-                float sinPitch = std::sin(cameraPitch);
-                toTarget = { std::sin(playerRotate.y) * cosPitch, -sinPitch, std::cos(playerRotate.y) * cosPitch };
+                // 距離が近すぎる場合は正面を向く
+                toEnemy = playerForward;
+            }
+
+            // ③ 内積で前方にいるか判定
+            float dot = (playerForward.x * toEnemy.x) + (playerForward.y * toEnemy.y) + (playerForward.z * toEnemy.z);
+
+            Vector3 fireDir;
+            // 0.5f より大きいなら前方にいる（必要に応じてこの数値を調整してください。1.0に近いほど正面限定になります）
+            if (dot > 0.5f) {
+                fireDir = toEnemy; // オートエイム
+            } else {
+                fireDir = playerForward; // 正面撃ち
             }
 
             float bulletSpeed = 3.0f;
             bullets_[i].velocity = {
-                toTarget.x * bulletSpeed,
-                toTarget.y * bulletSpeed,
-                toTarget.z * bulletSpeed
+                fireDir.x * bulletSpeed,
+                fireDir.y * bulletSpeed,
+                fireDir.z * bulletSpeed
             };
+            // --- 追加・変更箇所ここまで ---
+
             break;
         }
     }
