@@ -254,7 +254,7 @@ private: // メンバ変数
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> swapChainResources_[2] = { nullptr };
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc_{};
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles_[2]{};
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles_[4]{};
 
 	// --- Descriptor Heaps ---
 

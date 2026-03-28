@@ -243,7 +243,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 
     //RTV用のヒープでデスクリプタの数は32。RTVはShader内で触るものではないので、ShaderVisibleはfalse
     rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 32, false);
-    nextRtvIndex_ = 2; // 0, 1 は SwapChain 用
+    nextRtvIndex_ = 4; // 0, 1 は SwapChain 用、2, 3 は ImGui 用に予約
 
     //SRV用のヒープをDescriptorPoolで作成
     srvPool_ = std::make_unique<DescriptorPool>();
@@ -275,6 +275,14 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rtvHandles_[1].ptr = rtvHandles_[0].ptr + descriptorSizeRTV_;
     //2つ目を作る
     device_->CreateRenderTargetView(swapChainResources_[1].Get(), &rtvDesc_, rtvHandles_[1]);
+
+    // --- ImGui用 RTV (UNORM形式) ---
+    D3D12_RENDER_TARGET_VIEW_DESC imGuiRtvDesc = rtvDesc_;
+    imGuiRtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    rtvHandles_[2].ptr = rtvHandles_[1].ptr + descriptorSizeRTV_;
+    device_->CreateRenderTargetView(swapChainResources_[0].Get(), &imGuiRtvDesc, rtvHandles_[2]);
+    rtvHandles_[3].ptr = rtvHandles_[2].ptr + descriptorSizeRTV_;
+    device_->CreateRenderTargetView(swapChainResources_[1].Get(), &imGuiRtvDesc, rtvHandles_[3]);
 
     /*前後関係を正しくしよう*/
 
