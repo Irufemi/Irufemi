@@ -2,7 +2,7 @@
 #include "DebugUI.h"
 #include <Windows.h>
 
-#define USE_EDITER
+// #define USE_EDITER
 
 /*開発のUIを出そう*/
 
