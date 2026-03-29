@@ -32,6 +32,8 @@ struct ObjMaterial;
 #ifdef USE_IMGUI
 
 #include "imgui/imgui.h"
+#include "imgui/ImGuizmo.h"
+
 
 #endif // USE_IMGUI
 

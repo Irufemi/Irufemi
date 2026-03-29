@@ -9,6 +9,8 @@
 #include "Graphics/Data/SpotLight.h"
 #include "Graphics/Data/DirectionalLight.h"
 #include "Graphics/Data/AreaLight.h"
+#include "IrufemiEngine/Engine/Core/Math/Geometry/Math.h"
+
 
 // デストラクタ
 DebugScene::~DebugScene() {
@@ -221,6 +223,8 @@ void DebugScene::Update() {
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
     ImGui::Checkbox("Skybox", &isActiveSkybox_);
     ImGui::End();
+
+    ImGui::ShowDemoWindow();
 #endif
 
     // 3D
@@ -237,6 +241,41 @@ void DebugScene::Update() {
             cube_ = std::make_unique<CubeClass>();
             cube_->Initialize(camera_.get());
         }
+
+#ifdef USE_IMGUI
+        // ImGuizmo の操作
+        ImGuizmo::BeginFrame();
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+
+        Matrix4x4 view = camera_->GetViewMatrix();
+        Matrix4x4 projection = camera_->GetPerspectiveFovMatrix();
+        auto& transform = cube_->GetD3D12Resource()->transform_;
+        Matrix4x4 world = Math::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+
+        if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], gizmoOperation_, gizmoMode_, &world.m[0][0])) {
+            float pos[3], rot[3], scale[3];
+            ImGuizmo::DecomposeMatrixToComponents(&world.m[0][0], pos, rot, scale);
+
+            cube_->SetPosition({ pos[0], pos[1], pos[2] });
+            cube_->SetRotate({ rot[0] * Math::PI / 180.0f, rot[1] * Math::PI / 180.0f, rot[2] * Math::PI / 180.0f });
+            cube_->SetScale({ scale[0], scale[1], scale[2] });
+        }
+
+        // ギズモ設定UI
+        ImGui::Begin("Gizmo Settings");
+        if (ImGui::RadioButton("Translate", gizmoOperation_ == ImGuizmo::TRANSLATE)) gizmoOperation_ = ImGuizmo::TRANSLATE;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Rotate", gizmoOperation_ == ImGuizmo::ROTATE)) gizmoOperation_ = ImGuizmo::ROTATE;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Scale", gizmoOperation_ == ImGuizmo::SCALE)) gizmoOperation_ = ImGuizmo::SCALE;
+
+        if (ImGui::RadioButton("Local", gizmoMode_ == ImGuizmo::LOCAL)) gizmoMode_ = ImGuizmo::LOCAL;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("World", gizmoMode_ == ImGuizmo::WORLD)) gizmoMode_ = ImGuizmo::WORLD;
+        ImGui::End();
+#endif
+
         cube_->Debug("Cube");
         cube_->Update();
     }
