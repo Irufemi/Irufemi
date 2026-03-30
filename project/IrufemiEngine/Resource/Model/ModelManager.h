@@ -16,6 +16,7 @@
 #include "Resource/Model/Data/MaterialData.h"
 #include "Resource/Model/Data/VoxelizedModel.h"
 #include "Engine/Core/Math/Geometry/Math.h"
+#include <atomic>
 
 // 前方宣言
 struct aiNode;
@@ -26,6 +27,7 @@ struct aiMaterial;
 struct Node;
 class DirectXCommon;
 class TextureManager;
+class ThreadPool;
 
 /**
  * @struct GpuMesh
@@ -55,9 +57,18 @@ struct GpuMaterial {
  * @brief CPU/GPU両方のデータを統合して管理する単位
  */
 struct ManagedModel {
+    enum class LoadingStatus {
+        Pending,
+        Loading,
+        Loaded,
+        Failed
+    };
+
     std::shared_ptr<ObjModel> cpuModel;
     std::vector<std::shared_ptr<GpuMesh>> gpuMeshes;
     std::vector<std::shared_ptr<GpuMaterial>> gpuMaterials;
+    
+    std::atomic<LoadingStatus> status = LoadingStatus::Pending;
 };
 
 /**
@@ -76,8 +87,8 @@ struct ManagedModel {
  */
 class ModelManager {
 public:
-    ModelManager() = default;
-    ~ModelManager() = default;
+    ModelManager();
+    ~ModelManager();
 
     /**
      * @brief マネージャの初期化
@@ -98,6 +109,13 @@ public:
      * @return 取得した ManagedModel への共有ポインタ。失敗時は nullptr。
      */
     std::shared_ptr<ManagedModel> GetModel(const std::string& filename);
+
+    /**
+     * @brief モデルを非同期でロードする。即座に ManagedModel を返すが、 status を確認する必要がある。
+     * @param filename ファイル名
+     * @return 準備中の ManagedModel への共有ポインタ
+     */
+    std::shared_ptr<ManagedModel> GetModelAsync(const std::string& filename);
 
     /**
      * @brief 指定したフォルダ以下のモデルをすべて先行ロードする
@@ -164,6 +182,11 @@ private:
      */
     std::string FindFileRecursive(const std::string& filename) const;
 
+    /**
+     * @brief モデルの読み込み実体（内部用）
+     */
+    void LoadInternal(std::shared_ptr<ManagedModel> model, const std::string& fullPath);
+
     // --- 旧形式との互換性用もしくは内部ユーティリティ ---
     static bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
     static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
@@ -180,4 +203,5 @@ private:
     mutable std::mutex mutex_;
     std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
+    std::unique_ptr<ThreadPool> threadPool_;
 };

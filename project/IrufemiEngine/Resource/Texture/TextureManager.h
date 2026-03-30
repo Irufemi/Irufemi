@@ -90,6 +90,7 @@ private:
 
     // key: ファイルパス(または識別名)、value: Texture オブジェクト
     mutable std::unordered_map<std::string, std::shared_ptr<Texture>> textures_;
+    mutable std::mutex mutex_;
 
     // フォールバック白テクスチャ
     Microsoft::WRL::ComPtr<ID3D12Resource> whiteTextureResource_;

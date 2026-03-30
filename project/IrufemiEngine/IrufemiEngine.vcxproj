@@ -223,6 +223,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Math\Vector3Int.h" />
+    <ClInclude Include="Engine\Core\System\ThreadPool.h" />
     <ClInclude Include="Engine\Core\Type\PerFrame.h" />
     <ClInclude Include="Engine\Core\Type\PerView.h" />
     <ClInclude Include="Engine\Core\Type\Voxel.h" />

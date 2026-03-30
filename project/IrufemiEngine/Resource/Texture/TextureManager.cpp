@@ -43,56 +43,87 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
 
         const std::string key = p.generic_string();
         // 既にあるならスキップ
-        if (textures_.find(key) != textures_.end()) { continue; }
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            if (textures_.find(key) != textures_.end()) { continue; }
+        }
 
         // 実際にロードしてキャッシュ
         auto tex = std::make_shared<Texture>();
         tex->Initialize(key);
-        textures_.emplace(key, std::move(tex));
+
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            textures_.emplace(key, std::move(tex));
+        }
     }
 }
 
 // 取得(未ロードならロードしてキャッシュ)
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& name) const {
     // 既存キー検索
-    auto it = textures_.find(name);
-    if (it != textures_.end()) {
-        D3D12_GPU_DESCRIPTOR_HANDLE h = it->second->GetTextureSrvHandleGPU();
-        if (h.ptr == 0) {
-            // フォールバック
-            if (whiteTextureHandle_.ptr != 0) return whiteTextureHandle_;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = textures_.find(name);
+        if (it != textures_.end()) {
+            D3D12_GPU_DESCRIPTOR_HANDLE h = it->second->GetTextureSrvHandleGPU();
+            if (h.ptr == 0) {
+                // フォールバック
+                if (whiteTextureHandle_.ptr != 0) return whiteTextureHandle_;
+            }
+            return h;
         }
-        return h;
     }
 
-    // キャッシュ更新
+    // キャッシュ更新 (ロード処理自体はロックの外で行うのが望ましいが、二重ロード防止のため再度チェック)
     auto tex = std::make_shared<Texture>();
     tex->Initialize(name);
     D3D12_GPU_DESCRIPTOR_HANDLE handle = tex->GetTextureSrvHandleGPU();
     if (handle.ptr == 0 && whiteTextureHandle_.ptr != 0) {
         handle = whiteTextureHandle_;
     }
-    textures_.emplace(name, std::move(tex));
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        // 他のスレッドが先に書き込んでいる可能性があるため、存在確認
+        auto it = textures_.find(name);
+        if (it != textures_.end()) {
+            return it->second->GetTextureSrvHandleGPU();
+        }
+        textures_.emplace(name, std::move(tex));
+    }
     return handle;
 }
 
 const DirectX::ScratchImage* TextureManager::GetScratchImage(const std::string& name) const
 {
     // 既存キー検索
-    auto it = textures_.find(name);
-    if (it != textures_.end()) {
-        return it->second->GetScratchImage();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = textures_.find(name);
+        if (it != textures_.end()) {
+            return it->second->GetScratchImage();
+        }
     }
 
     // キャッシュになければロード
     auto tex = std::make_shared<Texture>();
     tex->Initialize(name);
-    textures_.emplace(name, tex);
+    
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = textures_.find(name);
+        if (it != textures_.end()) {
+            return it->second->GetScratchImage();
+        }
+        textures_.emplace(name, tex);
+    }
     return tex->GetScratchImage();
 }
 
 std::vector<std::string> TextureManager::GetTextureNames() const {
     std::vector<std::string> keys;
+    std::lock_guard<std::mutex> lock(mutex_);
     keys.reserve(textures_.size());
     for (auto& kv : textures_) keys.push_back(kv.first);
     return keys;
@@ -109,7 +140,10 @@ void TextureManager::CreateWhiteDummyTexture() {
     tex->InitializeFromMemory("white", whitePixels, 2, 2);
     
     whiteTextureHandle_ = tex->GetTextureSrvHandleGPU();
-    textures_.emplace("white", tex);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        textures_.emplace("white", tex);
+    }
 
     // ログ
     auto msg = std::format("CreateWhiteDummyTexture: created 'white' texture handle ptr={:#x}\n",
@@ -118,6 +152,7 @@ void TextureManager::CreateWhiteDummyTexture() {
 }
 
 bool TextureManager::GetTextureSize(const std::string& name, uint32_t& outWidth, uint32_t& outHeight) const {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto it = textures_.find(name);
     if (it == textures_.end()) { return false; }
     outWidth = it->second->GetWidth();
