@@ -36,6 +36,11 @@ bool SceneManager::ChangeTo(const Key& next) {
 }
 
 void SceneManager::Update() {
+    // モデルの読み込み待ちがある場合は、シーンの更新を止める
+    if (engine_->GetObjModelManager() && !engine_->GetObjModelManager()->IsAllLoaded()) {
+        return;
+    }
+
     // 入力同期
     IScene::SyncInput(engine_);
 
@@ -57,6 +62,11 @@ void SceneManager::Update() {
     }
 
     if (current_) {
+        // ロード中（Initialize等で始まった分を含む）なら更新を止める
+        if (engine_->GetObjModelManager() && !engine_->GetObjModelManager()->IsAllLoaded()) {
+            return;
+        }
+
         if (isPaused_) {
             // ポーズ中
             current_->PauseUpdate();
@@ -69,6 +79,11 @@ void SceneManager::Update() {
 }
 
 void SceneManager::Draw() {
+    // モデルの読み込み待ちがある場合は、シーンの描画を止める（背景のみの状態にする）
+    if (engine_->GetObjModelManager() && !engine_->GetObjModelManager()->IsAllLoaded()) {
+        return;
+    }
+
     if (current_) {
         // 通常の描画
         current_->Draw();

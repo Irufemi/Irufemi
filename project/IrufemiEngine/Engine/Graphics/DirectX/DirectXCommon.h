@@ -6,6 +6,7 @@
 #include <memory>
 #include <chrono>
 #include <vector>
+#include <mutex>
 
 #include "../../../../externals/DirectXTex/DirectXTex.h"
 #include "../Pipeline/PSOManager.h"
@@ -302,5 +303,12 @@ private: // メンバ変数
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 	};
 	std::vector<PendingResource> pendingResources_;
+
+	// --- 非同期転送用 ---
+	std::mutex uploadMutex_;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> uploadCommandAllocator_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> uploadCommandList_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Fence> uploadFence_ = nullptr;
+	uint64_t uploadFenceValue_ = 0;
 };
 

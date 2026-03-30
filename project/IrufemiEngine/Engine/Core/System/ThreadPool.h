@@ -93,7 +93,7 @@ auto ThreadPool::Enqueue(F&& f, Args&&... args)
     return res;
 }
 
-inline ThreadPool::~ThreadPool() {
+inline ThreadPool::~ThreadPool() {  
     stop_ = true;
     condition_.notify_all();
     for(std::thread &worker: workers_) {

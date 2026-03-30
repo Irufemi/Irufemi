@@ -101,6 +101,9 @@ std::shared_ptr<ManagedModel> ModelManager::GetModelAsync(const std::string& fil
 
     OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Request async load: {}\n", GetCurrentThreadId(), filename).c_str());
 
+    // 進捗カウンタをインクリメント
+    pendingTaskCount_++;
+
     // タスクをキューイング
     threadPool_->Enqueue([this, managedModel, fullPath, key]() {
         LoadInternal(managedModel, fullPath);
@@ -110,6 +113,12 @@ std::shared_ptr<ManagedModel> ModelManager::GetModelAsync(const std::string& fil
 }
 
 void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, const std::string& fullPath) {
+    // スコープを抜けるときに必ずデクリメントするためのガード
+    struct CountGuard {
+        std::atomic<uint32_t>& count;
+        ~CountGuard() { count--; }
+    } guard{ pendingTaskCount_ };
+
     std::string key = SplitDirectoryAndFile(fullPath).second;
     OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker START: {}\n", GetCurrentThreadId(), key).c_str());
 

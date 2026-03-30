@@ -52,6 +52,9 @@ void DirectXCommon::Finalize() {
     dsvDescriptorHeap_.Reset();
     swapChainResources_[0].Reset();
     swapChainResources_[1].Reset();
+    uploadCommandList_.Reset();
+    uploadCommandAllocator_.Reset();
+    uploadFence_.Reset();
     commandList_.Reset();
     commandAllocator_.Reset();
     commandQueue_.Reset();
@@ -211,6 +214,17 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator_.Get(), nullptr, IID_PPV_ARGS(commandList_.GetAddressOf()));
     //コマンドリストの生成がうまくいかなかったので起動できない
     assert(SUCCEEDED(hr));
+ 
+	// --- 転送専用コマンド系の生成 ---
+	hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(uploadCommandAllocator_.GetAddressOf()));
+	assert(SUCCEEDED(hr));
+	hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, uploadCommandAllocator_.Get(), nullptr, IID_PPV_ARGS(uploadCommandList_.GetAddressOf()));
+	assert(SUCCEEDED(hr));
+	uploadCommandList_->Close(); // 最初は閉じておく
+
+	// 転送専用フェンスの生成
+	hr = device_->CreateFence(uploadFenceValue_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(uploadFence_.GetAddressOf()));
+	assert(SUCCEEDED(hr));
 
     ///SwapChainを生成する
 
@@ -1102,25 +1116,23 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateUAVBufferResource(si
 
 /*テクスチャを正しく配置しよう*/
 
-[[nodiscard]] //戻り値を破棄しないように
 Microsoft::WRL::ComPtr<ID3D12Resource>  DirectXCommon::UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages) {
-    ///IntermediateResource(中間リソース)
+	// --- スレッドセーフ化と完了同期の導入 ---
+	std::lock_guard<std::mutex> lock(uploadMutex_);
 
+    ///IntermediateResource(中間リソース)
     std::vector<D3D12_SUBRESOURCE_DATA> subResources;
-    //1. PrepareUploadを利用して、読み込んだデータからDirectX12用のSubResource(サブリソース)の配列を作成する(SubResourceは、MipMapの1枚1枚ぐらいのイメージでいると良い)
     DirectX::PrepareUpload(device_.Get(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subResources);
-    //2. SubResourceの数を基に、コピー元となるIntermediateResourceに必要なサイズを計算する
     uint64_t intermediateSize = GetRequiredIntermediateSize(texture.Get(), 0, UINT(subResources.size()));
-    //3. 計算したサイズでIntermediateResourceを作る
     Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(intermediateSize);
 
-    ///データ転送をコマンドに積む
+    ///専用コマンドリストのリセットと記録
+	uploadCommandAllocator_->Reset();
+	uploadCommandList_->Reset(uploadCommandAllocator_.Get(), nullptr);
 
-    UpdateSubresources(commandList_.Get(), texture.Get(), intermediateResource.Get(), 0, 0, UINT(subResources.size()), subResources.data());
+    UpdateSubresources(uploadCommandList_.Get(), texture.Get(), intermediateResource.Get(), 0, 0, UINT(subResources.size()), subResources.data());
 
-    ///ResourceStateを変更し、IntermediateResourceを返す
-
-    //Textureへの転送後は利用できるよう、D3D12_RESOURCE_STATE_COPY_DESTからD3D12_RESOURCE_STATE_GENERIC_READへResourceStateを変更する
+    //Textureへの転送後は利用できるよう、ResourceStateを変更
     D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -1128,7 +1140,22 @@ Microsoft::WRL::ComPtr<ID3D12Resource>  DirectXCommon::UploadTextureData(const M
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
-    commandList_->ResourceBarrier(1, &barrier);
+    uploadCommandList_->ResourceBarrier(1, &barrier);
+
+	// 実行と同期
+	uploadCommandList_->Close();
+	ID3D12CommandList* ppCommandLists[] = { uploadCommandList_.Get() };
+	commandQueue_->ExecuteCommandLists(1, ppCommandLists);
+
+	// FenceによるGPU完了待ち
+	uploadFenceValue_++;
+	commandQueue_->Signal(uploadFence_.Get(), uploadFenceValue_);
+	if (uploadFence_->GetCompletedValue() < uploadFenceValue_) {
+		HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+		uploadFence_->SetEventOnCompletion(uploadFenceValue_, event);
+		WaitForSingleObject(event, INFINITE);
+		CloseHandle(event);
+	}
 
     return intermediateResource;
 }

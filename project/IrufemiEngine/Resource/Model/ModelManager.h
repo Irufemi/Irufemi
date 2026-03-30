@@ -128,6 +128,16 @@ public:
      * @return キーのリスト
      */
     std::vector<std::string> GetCachedKeys() const;
+ 
+    /**
+     * @brief 現在の非同期ロードタスクの数を取得
+     */
+    uint32_t GetPendingTaskCount() const { return pendingTaskCount_.load(); }
+ 
+    /**
+     * @brief すべてのロードタスクが完了したかを取得
+     */
+    bool IsAllLoaded() const { return pendingTaskCount_.load() == 0; }
 
     /**
      * @brief 参照されなくなったキャッシュエントリーを削除する
@@ -204,4 +214,5 @@ private:
     std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
     std::unique_ptr<ThreadPool> threadPool_;
+    std::atomic<uint32_t> pendingTaskCount_{ 0 };
 };
