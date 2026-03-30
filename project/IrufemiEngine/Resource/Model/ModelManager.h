@@ -10,6 +10,9 @@
 #include <sstream>
 #include <cassert>
 #include <wrl.h>
+#include <future>
+#include <type_traits>
+#include "../../Engine/Core/System/ThreadPool.h"
 #include <d3d12.h>
 #include "Resource/Model/Data/ObjModel.h"
 #include "Resource/Model/Data/ModelData.h"
@@ -27,7 +30,6 @@ struct aiMaterial;
 struct Node;
 class DirectXCommon;
 class TextureManager;
-class ThreadPool;
 
 /**
  * @struct GpuMesh
@@ -138,6 +140,41 @@ public:
      * @brief すべてのロードタスクが完了したかを取得
      */
     bool IsAllLoaded() const { return pendingTaskCount_.load() == 0; }
+
+    /**
+     * @brief 汎用的な非同期タスクをキューに追加し、 pendingTaskCount_ を管理する
+     * @tparam F 関数型
+     * @tparam Args 引数型
+     * @param f 実行する関数
+     * @param args 関数の引数
+     * @return 実行結果を取得するための std::future
+     */
+    template <class F, class... Args>
+    auto EnqueueTask(F &&f, Args &&...args)
+        -> std::future<typename std::invoke_result_t<F, Args...>> {
+      using return_type = typename std::invoke_result_t<F, Args...>;
+
+      // 進捗カウンタをインクリメント
+      pendingTaskCount_++;
+
+      // タスクをラップしてカウンタをデクリメントするようにする
+      auto task = std::make_shared<std::packaged_task<return_type()>>(
+          [this, f = std::forward<F>(f),
+           ... args = std::forward<Args>(args)]() mutable {
+            struct CountGuard {
+              std::atomic<uint32_t> &count;
+              ~CountGuard() { count--; }
+            } guard{pendingTaskCount_};
+            return std::invoke(std::move(f), std::move(args)...);
+          });
+
+      std::future<return_type> res = task->get_future();
+      {
+        // ThreadPoolへ投入
+        threadPool_->Enqueue([task]() { (*task)(); });
+      }
+      return res;
+    }
 
     /**
      * @brief 参照されなくなったキャッシュエントリーを削除する

@@ -95,7 +95,7 @@ auto ThreadPool::Enqueue(F&& f, Args&&... args)
 
 inline ThreadPool::~ThreadPool() {  
     stop_ = true;
-    condition_.notify_all();
+    condition_.notify_all();        
     for(std::thread &worker: workers_) {
         if (worker.joinable()) {
             worker.join();

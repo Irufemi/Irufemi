@@ -9,6 +9,8 @@
 #include <memory>
 #include <string>
 #include <wrl.h>
+#include <atomic>
+#include <mutex>
 
 
 // 前方宣言
@@ -55,6 +57,15 @@ struct VoxelEmitter {
 
 class VoxelParticleSystem {
 public:
+  enum class LoadingStatus {
+    Pending,
+    Loading,
+    ReadyToCreateResources,
+    Loaded,
+    Failed
+  };
+
+public:
   VoxelParticleSystem() = default;
   ~VoxelParticleSystem() = default;
 
@@ -83,10 +94,14 @@ public:
     return emitterData_.time < (emitterData_.lifeTime + 2.0f);
   }
 
+  bool IsLoaded() const { return status_.load() == LoadingStatus::Loaded; }
+  LoadingStatus GetStatus() const { return status_.load(); }
+
 private:
   void CreateResources();
   void CreatePSO();
   void CreateCubeMesh(float sizeX, float sizeY, float sizeZ);
+  void FinishInitialization();
 
 private:
   Camera *camera_ = nullptr;
@@ -140,6 +155,9 @@ private:
   // 行列更新の最適化用
   Matrix4x4 lastViewMatrix_ = {};
   Matrix4x4 lastProjectionMatrix_ = {};
+
+  std::atomic<LoadingStatus> status_ = LoadingStatus::Pending;
+  std::mutex voxelModelMutex_;
 
   static IrufemiEngine *engine_;
 };
