@@ -2,6 +2,8 @@
 #include "DebugUI.h"
 #include <Windows.h>
 
+// #define USE_EDITER
+
 /*開発のUIを出そう*/
 
 #ifdef USE_IMGUI
@@ -55,6 +57,11 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     ImGui::StyleColorsDark();
 
     ImGuiIO& io = ImGui::GetIO();
+#ifdef USE_EDITER
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Dockingを有効にする
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // マルチビューポートを有効にする
+#endif // USE_EDITER
+
     ImGui_ImplWin32_Init(hwnd);
 
     DescriptorPool* srvPool = dxCommon->GetSrvPool();
@@ -67,11 +74,16 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     ImGui_ImplDX12_Init(
         dxCommon->GetDevice(),
         dxCommon->GetSwapChainDesc().BufferCount,
-        dxCommon->GetRtvDesc().Format,
+        dxCommon->GetSwapChainDesc().Format, // スワップチェーン作成用にUNORMフォーマットを使用
         srvHeap,
         srvPool->GetCPUHandle(imguiIndex),
         srvPool->GetGPUHandle(imguiIndex)
     );
+
+    // フォントアトラスをビルドし、テクスチャをGPUにアップロードする
+    io.Fonts->Build();
+    ImGui_ImplDX12_CreateDeviceObjects();
+    ImGui_ImplDX12_UpdateTexture(io.Fonts->TexData);
 
     // テンプレートライトの初期化
     templatePointLight_ = std::make_unique<PointLight>();
@@ -100,6 +112,9 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     templateAreaLight_->range = 10.0f;
     templateAreaLight_->size = { 1.0f, 1.0f };
     templateAreaLight_->isActive = 1;
+
+
+
 
 #endif // USE_IMGUI
 }
@@ -172,14 +187,21 @@ void DebugUI::QueuePostDrawCommands() {
 
     ///ImGuiを描画する
 
-    //描画用のDescriptorHeapの設定
-    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
-    dxCommon_->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
+    // レンダーターゲットの設定 (Main Window) - ImGui用にUNORM版RTV(index 2, 3)を使用する
+    uint32_t imGuiRtvIndex = dxCommon_->GetCurrentBackBufferIndex() + 2;
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = dxCommon_->GetRTVCPUDescriptorHandle(imGuiRtvIndex);
+    dxCommon_->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
     ///ImGuiを描画する
 
     //実際のcommandListのImGuiの描画コマンドを積む
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon_->GetCommandList());
+
+    // マルチビューポートの更新処理
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault(nullptr, (void*)dxCommon_->GetCommandList());
+    }
 
 #endif // USE_IMGUI
 }
