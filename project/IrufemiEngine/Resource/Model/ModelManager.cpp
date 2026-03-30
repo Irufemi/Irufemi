@@ -2,6 +2,9 @@
 #include "Engine/Core/System/ThreadPool.h"
 #include <filesystem>
 #include <Windows.h>
+#include <chrono>
+#include <thread>
+#include <format>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -45,12 +48,17 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
     if (!managedModel) return nullptr;
 
     // ロード完了を待機 (同期ロードとしての振る舞い)
+    if (managedModel->status.load() != ManagedModel::LoadingStatus::Loaded) {
+        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Waiting for load: {}\n", GetCurrentThreadId(), filename).c_str());
+    }
+
     while (managedModel->status.load() == ManagedModel::LoadingStatus::Loading || 
            managedModel->status.load() == ManagedModel::LoadingStatus::Pending) {
         std::this_thread::yield();
     }
 
     if (managedModel->status.load() == ManagedModel::LoadingStatus::Failed) {
+        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Load failed (waited): {}\n", GetCurrentThreadId(), filename).c_str());
         return nullptr;
     }
 
@@ -63,6 +71,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModelAsync(const std::string& fil
         std::lock_guard<std::mutex> lock(mutex_);
         if (auto it = cache_.find(key); it != cache_.end()) {
             if (auto sp = it->second.lock()) {
+                OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Cache hit: {}\n", GetCurrentThreadId(), filename).c_str());
                 return sp;
             }
         }
@@ -90,16 +99,20 @@ std::shared_ptr<ManagedModel> ModelManager::GetModelAsync(const std::string& fil
         cache_[key] = managedModel;
     }
 
+    OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Request async load: {}\n", GetCurrentThreadId(), filename).c_str());
+
     // タスクをキューイング
     threadPool_->Enqueue([this, managedModel, fullPath, key]() {
         LoadInternal(managedModel, fullPath);
-        DebugLogLoad(key, (managedModel->status.load() == ManagedModel::LoadingStatus::Loaded) ? managedModel->cpuModel->meshes.size() : 0);
     });
 
     return managedModel;
 }
 
 void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, const std::string& fullPath) {
+    std::string key = SplitDirectoryAndFile(fullPath).second;
+    OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker START: {}\n", GetCurrentThreadId(), key).c_str());
+
     managedModel->status.store(ManagedModel::LoadingStatus::Loading);
 
     try {
@@ -178,8 +191,10 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
         }
 
         managedModel->status.store(ManagedModel::LoadingStatus::Loaded);
+        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker FINISH: {}\n", GetCurrentThreadId(), key).c_str());
     } catch (...) {
         managedModel->status.store(ManagedModel::LoadingStatus::Failed);
+        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker FAILED: {}\n", GetCurrentThreadId(), key).c_str());
     }
 }
 
