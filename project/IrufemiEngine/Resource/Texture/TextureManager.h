@@ -9,6 +9,11 @@
 #include <wrl.h>
 #include "Texture.h"
 #include "../../../externals/DirectXTex/DirectXTex.h"
+#include "../../Engine/Core/System/ThreadPool.h"
+#include <atomic>
+#include <future>
+#include <type_traits>
+#include <functional>
 
 // 前方宣言
 namespace DirectX {
@@ -85,12 +90,48 @@ public:
      */
     D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() const { return whiteTextureHandle_; }
 
+    /**
+     * @brief すべてのロードタスクが完了したかを取得
+     */
+    bool IsAllLoaded() const { return pendingTaskCount_.load() == 0; }
+
+    /**
+     * @brief 非同期タスクの実行
+     */
+    template <class F, class... Args>
+    std::future<void> EnqueueTask(F&& f, Args&&... args) {
+        pendingTaskCount_++;
+        auto task = std::make_shared<std::packaged_task<void()>>(
+            std::bind(
+                [this](auto&& func, auto&&... params) mutable {
+                struct CountGuard {
+                    std::atomic<uint32_t>& count;
+                    ~CountGuard() { count--; }
+                } guard{ pendingTaskCount_ };
+                std::invoke(std::move(func), std::move(params)...);
+            },
+                std::forward<F>(f), std::forward<Args>(args)...
+                )
+        );
+        std::future<void> res = task->get_future();
+        threadPool_->Enqueue([task]() { (*task)(); });
+        return res;
+    }
+
+    /**
+     * @brief 白テクスチャのリソースを取得
+     */
+    ID3D12Resource* GetWhiteTextureResource() const { return whiteTextureResource_.Get(); }
+
 private:
     DirectXCommon* dxCommon_ = nullptr;
 
     // key: ファイルパス(または識別名)、value: Texture オブジェクト
     mutable std::unordered_map<std::string, std::shared_ptr<Texture>> textures_;
     mutable std::mutex mutex_;
+
+    std::unique_ptr<ThreadPool> threadPool_;
+    std::atomic<uint32_t> pendingTaskCount_{ 0 };
 
     // フォールバック白テクスチャ
     Microsoft::WRL::ComPtr<ID3D12Resource> whiteTextureResource_;

@@ -1,16 +1,16 @@
-#include "TextureManager.h"
-
 #include <filesystem>
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
-#include <format>
 #include <cstdint>
+#include <thread>
+#include <format>
 
-#include "Engine/Graphics/DirectX/DescriptorPool.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "DirectXTex/DirectXTex.h"
-#include "DirectXTex/d3dx12.h"
+#include "TextureManager.h"
+#include "../../Engine/Graphics/DirectX/DescriptorPool.h"
+#include "../../Engine/Graphics/DirectX/DirectXCommon.h"
+#include "../../../externals/DirectXTex/DirectXTex.h"
+#include "../../../externals/DirectXTex/d3dx12.h"
 
 static bool IsImageExtImpl(const std::string& extLower) {
     static const char* exts[] = { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".dds" };
@@ -24,17 +24,22 @@ static bool IsImageExtImpl(const std::string& extLower) {
 void TextureManager::Initialize(DirectXCommon* dxCommon) {
     dxCommon_ = dxCommon;
     Texture::SetDirectXCommon(dxCommon_);
-    // フォールバックを必ず作る
+
+    // ThreadPoolの生成 (論理コア数分)
+    threadPool_ = std::make_unique<ThreadPool>(std::thread::hardware_concurrency());
+
+    // フォールバック用の白テクスチャ生成と登録
     CreateWhiteDummyTexture();
+    if (whiteTextureResource_.Get()) {
+        Texture::SetWhiteTextureResource(whiteTextureResource_.Get());
+    }
 }
 
 // 指定フォルダ配下を走査してロード(キーはフルパス文字列)
 void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
-    namespace fs = std::filesystem;
-    fs::path root(folderPath);
-    if (!fs::exists(root)) { return; }
+    if (!std::filesystem::exists(folderPath)) { return; }
 
-    for (auto& entry : fs::recursive_directory_iterator(root)) {
+    for (auto& entry : std::filesystem::recursive_directory_iterator(folderPath)) {
         if (!entry.is_regular_file()) { continue; }
         auto p = entry.path();
         auto ext = p.extension().string();
@@ -42,57 +47,50 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
         if (!IsImageExtImpl(ext)) { continue; }
 
         const std::string key = p.generic_string();
-        // 既にあるならスキップ
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            if (textures_.find(key) != textures_.end()) { continue; }
-        }
-
-        // 実際にロードしてキャッシュ
-        auto tex = std::make_shared<Texture>();
-        tex->Initialize(key);
-
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            textures_.emplace(key, std::move(tex));
-        }
+        
+        // 非同期ロード開始
+        GetTextureHandle(key);
     }
 }
 
-// 取得(未ロードならロードしてキャッシュ)
+// 取得(未ロードなら非同期ロード開始)
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& name) const {
     // 既存キー検索
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = textures_.find(name);
         if (it != textures_.end()) {
-            D3D12_GPU_DESCRIPTOR_HANDLE h = it->second->GetTextureSrvHandleGPU();
-            if (h.ptr == 0) {
-                // フォールバック
-                if (whiteTextureHandle_.ptr != 0) return whiteTextureHandle_;
-            }
-            return h;
+            return it->second->GetTextureSrvHandleGPU();
         }
     }
 
-    // キャッシュ更新 (ロード処理自体はロックの外で行うのが望ましいが、二重ロード防止のため再度チェック)
+    // 新規ロード
     auto tex = std::make_shared<Texture>();
-    tex->Initialize(name);
-    D3D12_GPU_DESCRIPTOR_HANDLE handle = tex->GetTextureSrvHandleGPU();
-    if (handle.ptr == 0 && whiteTextureHandle_.ptr != 0) {
-        handle = whiteTextureHandle_;
+    
+    // メタデータ（サイズ）のみ同期的に取得して設定
+    DirectX::TexMetadata metadata = dxCommon_->GetTextureMetadata(name);
+    if (metadata.width > 0 && metadata.height > 0) {
+        tex->SetSize(static_cast<uint32_t>(metadata.width), static_cast<uint32_t>(metadata.height));
     }
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        // 他のスレッドが先に書き込んでいる可能性があるため、存在確認
+        // 二重登録防止
         auto it = textures_.find(name);
         if (it != textures_.end()) {
             return it->second->GetTextureSrvHandleGPU();
         }
-        textures_.emplace(name, std::move(tex));
+        textures_.emplace(name, tex);
     }
-    return handle;
+
+    // 非同期タスクとして投入
+    // constメソッド内で非同期タスクを開始するため、メンバへの直接アクセスに注意
+    const_cast<TextureManager*>(this)->EnqueueTask([tex, name]() {
+        tex->Initialize(name);
+    });
+
+    // Textureのコンストラクタで既に白テクスチャが割り当てられたハンドルが返る
+    return tex->GetTextureSrvHandleGPU();
 }
 
 const DirectX::ScratchImage* TextureManager::GetScratchImage(const std::string& name) const
@@ -106,7 +104,7 @@ const DirectX::ScratchImage* TextureManager::GetScratchImage(const std::string& 
         }
     }
 
-    // キャッシュになければロード
+    // キャッシュになければロード (このメソッドは現在同期的に動くが、セーフティのためにハンドル経由の使用が推奨される)
     auto tex = std::make_shared<Texture>();
     tex->Initialize(name);
     
@@ -131,7 +129,7 @@ std::vector<std::string> TextureManager::GetTextureNames() const {
 
 void TextureManager::CreateWhiteDummyTexture() {
     if (whiteTextureHandle_.ptr != 0) return;
-    if (!dxCommon_) { OutputDebugStringA("CreateWhiteDummyTexture: dxCommon_ is null\n"); return; }
+    if (!dxCommon_) { return; }
 
     // 2x2 白テクスチャ
     uint32_t whitePixels[4] = { 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu };
@@ -139,16 +137,16 @@ void TextureManager::CreateWhiteDummyTexture() {
     auto tex = std::make_shared<Texture>();
     tex->InitializeFromMemory("white", whitePixels, 2, 2);
     
+    // バックアップ用リソースとしても保持
+    whiteTextureResource_ = dxCommon_->CreateTextureResource(tex->GetScratchImage()->GetMetadata());
+    dxCommon_->UploadTextureData(whiteTextureResource_, *tex->GetScratchImage());
+    dxCommon_->ReleaseAfterFence(whiteTextureResource_);
+
     whiteTextureHandle_ = tex->GetTextureSrvHandleGPU();
     {
         std::lock_guard<std::mutex> lock(mutex_);
         textures_.emplace("white", tex);
     }
-
-    // ログ
-    auto msg = std::format("CreateWhiteDummyTexture: created 'white' texture handle ptr={:#x}\n",
-        static_cast<uintptr_t>(whiteTextureHandle_.ptr));
-    OutputDebugStringA(msg.c_str());
 }
 
 bool TextureManager::GetTextureSize(const std::string& name, uint32_t& outWidth, uint32_t& outHeight) const {

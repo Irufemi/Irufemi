@@ -7,10 +7,10 @@
 #include <filesystem>
 #include <comdef.h>
 
-#include "Engine/Core/Utility/Log.h"
-#include "Engine/Core/Utility/StringUtility.h"
-#include "Renderer/VertexData.h"
-#include "DirectXTex/d3dx12.h"
+#include "../../Core/Utility/Log.h"
+#include "../../Core/Utility/StringUtility.h"
+#include "../../../Renderer/VertexData.h"
+#include "../../../../externals/DirectXTex/d3dx12.h"
 #include <thread>
 #include <algorithm>
 
@@ -1305,6 +1305,19 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
     }
 
     return mipImages;
+}
+
+DirectX::TexMetadata DirectXCommon::GetTextureMetadata(const std::string& filePath) {
+    using namespace DirectX;
+    std::wstring filePathW = ConvertString(filePath);
+    TexMetadata metadata{};
+    if (StringUtility::EndsWith(filePathW, L".dds")) {
+        GetMetadataFromDDSFile(filePathW.c_str(), DDS_FLAGS_NONE, metadata);
+    }
+    else {
+        GetMetadataFromWICFile(filePathW.c_str(), WIC_FLAGS_NONE, metadata);
+    }
+    return metadata;
 }
 
 // FPS固定初期化

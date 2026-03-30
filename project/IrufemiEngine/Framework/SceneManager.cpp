@@ -1,9 +1,9 @@
-#include "Framework/SceneManager.h"
-#include "Framework/IScene.h"
-#include "Engine/IrufemiEngine.h"
-#include <Windows.h> // VK_ESCAPE のためにインクルード
-#include "Engine/Platform/Input/InputManager.h" // InputManager をインクルード
-#include "Engine/Platform/Input/Mouse.h"
+#include "SceneManager.h"
+#include "IScene.h"
+#include "../Engine/IrufemiEngine.h"
+#include <Windows.h>
+#include "../Engine/Platform/Input/InputManager.h"
+#include "../Engine/Platform/Input/Mouse.h"
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {}
 
@@ -36,8 +36,10 @@ bool SceneManager::ChangeTo(const Key& next) {
 }
 
 void SceneManager::Update() {
-    // モデルの読み込み待ちがある場合は、シーンの更新を止める
-    if (engine_->GetObjModelManager() && !engine_->GetObjModelManager()->IsAllLoaded()) {
+    // モデル・テクスチャの読み込み待ちがある場合は、シーンの更新を止める
+    bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
+    bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
+    if (!modelsLoaded || !texturesLoaded) {
         return;
     }
 
@@ -63,7 +65,8 @@ void SceneManager::Update() {
 
     if (current_) {
         // ロード中（Initialize等で始まった分を含む）なら更新を止める
-        if (engine_->GetObjModelManager() && !engine_->GetObjModelManager()->IsAllLoaded()) {
+        if ((engine_->GetObjModelManager() && !engine_->GetObjModelManager()->IsAllLoaded()) ||
+            (engine_->GetTextureManager() && !engine_->GetTextureManager()->IsAllLoaded())) {
             return;
         }
 
@@ -79,8 +82,10 @@ void SceneManager::Update() {
 }
 
 void SceneManager::Draw() {
-    // モデルの読み込み待ちがある場合は、シーンの描画を止める（背景のみの状態にする）
-    if (engine_->GetObjModelManager() && !engine_->GetObjModelManager()->IsAllLoaded()) {
+    // モデル・テクスチャの読み込み待ちがある場合は、シーンの描画を止める（背景のみの状態にする）
+    bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
+    bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
+    if (!modelsLoaded || !texturesLoaded) {
         return;
     }
 

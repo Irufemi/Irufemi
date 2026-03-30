@@ -83,6 +83,13 @@ public: // メンバ関数
 	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
 
 	/**
+	 * @brief テクスチャメタデータの取得（ヘッダのみ読み込み）
+	 * @param[in] filePath ファイルパス
+	 * @return メタデータ
+	 */
+	static DirectX::TexMetadata GetTextureMetadata(const std::string& filePath);
+
+	/**
 	 * @brief シェーダのコンパイル
 	 */
 	static Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
