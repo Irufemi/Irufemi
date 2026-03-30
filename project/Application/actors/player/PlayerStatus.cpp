@@ -51,15 +51,14 @@ void PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engin
         hp_ -= damage;
     }
 
-    // ★追加：ダメージを受けた直後に無敵時間を付与（60フレーム ＝ 約1秒）
-    invincibleTimer_ = 60;
+    // ★修正：定数を使用して被ダメージ時の無敵時間を付与
+    invincibleTimer_ = kInvincibleFramesOnDamage;
 
     if (hp_ <= 0) {
         hp_ = 0;
         isDead_ = true;
 
         if (engine) {
-
             engine->GetSceneManager()->Request("GameOver");
         }
     }
@@ -88,7 +87,8 @@ PlayerCollider PlayerStatus::GetCollider(const Vector3& playerTranslate, const V
 
     // やられ判定にもミサイル発射時の振動を反映させる
     col.center = playerTranslate + missileVibration;
-    col.center.y += 0.2f;
+    // ★修正：定数を使用してやられ判定のYオフセットを決定
+    col.center.y += kColliderOffsetY;
     col.radius = kColliderRadius;
     col.obb.center = col.center;
 
@@ -101,7 +101,8 @@ PlayerCollider PlayerStatus::GetCollider(const Vector3& playerTranslate, const V
     col.obb.orientations[1] = { 0.0f, 1.0f, 0.0f };  // Y軸
     col.obb.orientations[2] = { sinY, 0.0f, cosY };  // Z軸
 
-    col.obb.size = { 0.3f, 0.3f, 0.3f };
+    // ★修正：定数を使用してOBBのサイズを指定
+    col.obb.size = { kColliderObbSize, kColliderObbSize, kColliderObbSize };
 
     return col;
 }

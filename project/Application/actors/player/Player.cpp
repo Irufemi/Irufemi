@@ -28,7 +28,6 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     obj_->Initialize(camera, "enemy/body.obj");
     obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
-    // ★修正: 攻撃モデルと判定をプレイヤー位置に合わせて無効化し、最初の1撃バグを防ぐ
     attackObj_ = std::make_unique<ObjClass>();
     attackObj_->Initialize(camera, "enemy/body.obj");
     attackObj_->SetPosition(translate_);
@@ -125,13 +124,11 @@ void Player::Update() {
 
     cameraController_.UpdateInput(input_, rotate_);
 
-    // ★修正: 画面に敵がいない場合は、機関銃用の照準(aimPos_)をプレイヤーが向いている方向の奥に設定
     if (!isTargetingEnemy_) {
         float sinY = std::sin(rotate_.y);
         float cosY = std::cos(rotate_.y);
-        aimPos_ = { translate_.x + sinY * 100.0f, translate_.y, translate_.z + cosY * 100.0f };
+        aimPos_ = { translate_.x + sinY * kAimDistance, translate_.y, translate_.z + cosY * kAimDistance };
     } else {
-        // 画面に敵がいれば敵の座標をそのまま機関銃の照準にする
         aimPos_ = targetPos_;
     }
 
@@ -144,7 +141,6 @@ void Player::Update() {
     HandleAttack();
     HandleSkill();
 
-    // 機関銃は aimPos_ に向かって撃つ（画面外なら前方になる）
     weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, scale_);
     cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration());
     status_.UpdateKnockback();
@@ -217,7 +213,10 @@ void Player::Draw() {
             obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
         }
 
-        obj_->SetPosition(translate_ + weapon_.GetMissileVibration());
+        Vector3 drawPos = translate_ + weapon_.GetMissileVibration();
+        drawPos.y += kModelOffsetY;
+
+        obj_->SetPosition(drawPos);
         obj_->SetRotate(rotate_);
         obj_->SetScale(scale_);
         obj_->Update();
@@ -413,19 +412,14 @@ void Player::HandleSkill() {
     if (input_->IsMouseButtonPressed(Mouse::Button::Right)) {
         if (skillDurationTimer_ <= 0 && skillCooldownTimer_ <= 0) {
             if (isKarakuriCharged_) {
-
-                // ★修正: 画面に映っている(isTargetingEnemy_==true)なら倍の数(2回ループで8個)発射！
-                // 画面外なら1回ループ(4個)。
                 int fireCount = isTargetingEnemy_ ? 2 : 1;
                 for (int i = 0; i < fireCount; ++i) {
-                    // ミサイルは常に敵の座標(targetPos_)に向かってオートエイム！
                     weapon_.FireMissileSkill(translate_, rotate_, targetPos_);
                 }
-
-                skillDurationTimer_ = 120;
+                skillDurationTimer_ = kMissileSkillDuration;
             } else {
                 weapon_.StartMachineGunSkill();
-                skillDurationTimer_ = 180;
+                skillDurationTimer_ = kMachineGunSkillDuration;
             }
         }
     }

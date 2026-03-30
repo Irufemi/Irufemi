@@ -88,7 +88,7 @@ private:
     int karakuriActiveTimer_ = 0;
     const int kKarakuriActiveTime = 1200;
 
-    Vector3 scale_ = { 0.3f, 1.0f, 0.3f };
+    Vector3 scale_ = { 0.3f, 0.5f, 0.3f };
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
     Vector3 translate_ = { 0.0f, 0.0f, -50.0f };
 
@@ -120,6 +120,11 @@ private:
     static constexpr float kHammerBaseSize = 0.8f;
     static constexpr float kHammerSizeChargeBonus = 0.4f;
     static constexpr float kHammerScaleYMultiplier = 1.5f;
+
+    static constexpr float kModelOffsetY = 0.4f;              // モデル描画位置のY軸オフセット
+    static constexpr float kAimDistance = 100.0f;             // 画面外の場合の照準距離
+    static constexpr int kMissileSkillDuration = 120;         // ミサイルスキルの持続時間
+    static constexpr int kMachineGunSkillDuration = 180;      // 機関銃スキルの持続時間
 
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
