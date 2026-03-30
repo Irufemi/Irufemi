@@ -35,6 +35,9 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
     if (!threadPool_) {
         threadPool_ = std::make_unique<ThreadPool>(4); // 推奨された4スレッド
     }
+    if (!taskGroup_) {
+        taskGroup_ = std::make_shared<TaskGroup>();
+    }
 }
 
 void ModelManager::SetRootDirectory(std::string root) {
@@ -101,11 +104,8 @@ std::shared_ptr<ManagedModel> ModelManager::GetModelAsync(const std::string& fil
 
     OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Request async load: {}\n", GetCurrentThreadId(), filename).c_str());
 
-    // 進捗カウンタをインクリメント
-    pendingTaskCount_++;
-
-    // タスクをキューイング
-    threadPool_->Enqueue([this, managedModel, fullPath, key]() {
+    // タスクをキューイング (TaskGroup 経由)
+    threadPool_->Enqueue(taskGroup_, [this, managedModel, fullPath]() {
         LoadInternal(managedModel, fullPath);
     });
 
@@ -113,11 +113,6 @@ std::shared_ptr<ManagedModel> ModelManager::GetModelAsync(const std::string& fil
 }
 
 void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, const std::string& fullPath) {
-    // スコープを抜けるときに必ずデクリメントするためのガード
-    struct CountGuard {
-        std::atomic<uint32_t>& count;
-        ~CountGuard() { count--; }
-    } guard{ pendingTaskCount_ };
 
     std::string key = SplitDirectoryAndFile(fullPath).second;
     OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker START: {}\n", GetCurrentThreadId(), key).c_str());

@@ -659,6 +659,9 @@
     <ClInclude Include="Engine\Core\System\ThreadPool.h">
       <Filter>Engine\Core\System</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Core\System\TaskGroup.h">
+      <Filter>Engine\Core\System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">

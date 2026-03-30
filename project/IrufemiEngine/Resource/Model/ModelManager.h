@@ -13,6 +13,7 @@
 #include <future>
 #include <type_traits>
 #include "../../Engine/Core/System/ThreadPool.h"
+#include "../../Engine/Core/System/TaskGroup.h"
 #include <d3d12.h>
 #include "Resource/Model/Data/ObjModel.h"
 #include "Resource/Model/Data/ModelData.h"
@@ -134,12 +135,12 @@ public:
     /**
      * @brief 現在の非同期ロードタスクの数を取得
      */
-    uint32_t GetPendingTaskCount() const { return pendingTaskCount_.load(); }
+    uint32_t GetPendingTaskCount() const { return taskGroup_->GetPendingCount(); }
  
     /**
      * @brief すべてのロードタスクが完了したかを取得
      */
-    bool IsAllLoaded() const { return pendingTaskCount_.load() == 0; }
+    bool IsAllLoaded() const { return taskGroup_->IsAllDone(); }
 
     /**
      * @brief 汎用的な非同期タスクをキューに追加し、 pendingTaskCount_ を管理する
@@ -152,28 +153,7 @@ public:
     template <class F, class... Args>
     auto EnqueueTask(F &&f, Args &&...args)
         -> std::future<typename std::invoke_result_t<F, Args...>> {
-      using return_type = typename std::invoke_result_t<F, Args...>;
-
-      // 進捗カウンタをインクリメント
-      pendingTaskCount_++;
-
-      // タスクをラップしてカウンタをデクリメントするようにする
-      auto task = std::make_shared<std::packaged_task<return_type()>>(
-          [this, f = std::forward<F>(f),
-           ... args = std::forward<Args>(args)]() mutable {
-            struct CountGuard {
-              std::atomic<uint32_t> &count;
-              ~CountGuard() { count--; }
-            } guard{pendingTaskCount_};
-            return std::invoke(std::move(f), std::move(args)...);
-          });
-
-      std::future<return_type> res = task->get_future();
-      {
-        // ThreadPoolへ投入
-        threadPool_->Enqueue([task]() { (*task)(); });
-      }
-      return res;
+      return threadPool_->Enqueue(taskGroup_, std::forward<F>(f), std::forward<Args>(args)...);
     }
 
     /**
@@ -251,5 +231,5 @@ private:
     std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
     std::unique_ptr<ThreadPool> threadPool_;
-    std::atomic<uint32_t> pendingTaskCount_{ 0 };
-};
+    std::shared_ptr<TaskGroup> taskGroup_;
+};

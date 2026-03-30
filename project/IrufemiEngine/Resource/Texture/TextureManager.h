@@ -10,6 +10,7 @@
 #include "Texture.h"
 #include "../../../externals/DirectXTex/DirectXTex.h"
 #include "../../Engine/Core/System/ThreadPool.h"
+#include "../../Engine/Core/System/TaskGroup.h"
 #include <atomic>
 #include <future>
 #include <type_traits>
@@ -93,29 +94,15 @@ public:
     /**
      * @brief すべてのロードタスクが完了したかを取得
      */
-    bool IsAllLoaded() const { return pendingTaskCount_.load() == 0; }
+    bool IsAllLoaded() const { return taskGroup_->IsAllDone(); }
 
     /**
      * @brief 非同期タスクの実行
      */
     template <class F, class... Args>
-    std::future<void> EnqueueTask(F&& f, Args&&... args) {
-        pendingTaskCount_++;
-        auto task = std::make_shared<std::packaged_task<void()>>(
-            std::bind(
-                [this](auto&& func, auto&&... params) mutable {
-                struct CountGuard {
-                    std::atomic<uint32_t>& count;
-                    ~CountGuard() { count--; }
-                } guard{ pendingTaskCount_ };
-                std::invoke(std::move(func), std::move(params)...);
-            },
-                std::forward<F>(f), std::forward<Args>(args)...
-                )
-        );
-        std::future<void> res = task->get_future();
-        threadPool_->Enqueue([task]() { (*task)(); });
-        return res;
+    auto EnqueueTask(F&& f, Args&&... args) 
+        -> std::future<typename std::invoke_result_t<F, Args...>> {
+        return threadPool_->Enqueue(taskGroup_, std::forward<F>(f), std::forward<Args>(args)...);
     }
 
     /**
@@ -131,7 +118,7 @@ private:
     mutable std::mutex mutex_;
 
     std::unique_ptr<ThreadPool> threadPool_;
-    std::atomic<uint32_t> pendingTaskCount_{ 0 };
+    std::shared_ptr<TaskGroup> taskGroup_;
 
     // フォールバック白テクスチャ
     Microsoft::WRL::ComPtr<ID3D12Resource> whiteTextureResource_;

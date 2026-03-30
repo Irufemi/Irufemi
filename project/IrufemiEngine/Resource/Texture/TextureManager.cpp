@@ -26,7 +26,12 @@ void TextureManager::Initialize(DirectXCommon* dxCommon) {
     Texture::SetDirectXCommon(dxCommon_);
 
     // ThreadPoolの生成 (論理コア数分)
-    threadPool_ = std::make_unique<ThreadPool>(std::thread::hardware_concurrency());
+    if (!threadPool_) {
+        threadPool_ = std::make_unique<ThreadPool>(std::thread::hardware_concurrency());
+    }
+    if (!taskGroup_) {
+        taskGroup_ = std::make_shared<TaskGroup>();
+    }
 
     // フォールバック用の白テクスチャ生成と登録
     CreateWhiteDummyTexture();

@@ -8,6 +8,7 @@
 #include <functional>
 #include <future>
 #include <atomic>
+#include "TaskGroup.h"
 
 /**
  * @class ThreadPool
@@ -36,6 +37,13 @@ public:
      */
     template<class F, class... Args>
     auto Enqueue(F&& f, Args&&... args) 
+        -> std::future<typename std::invoke_result_t<F, Args...>>;
+
+    /**
+     * @brief タスクを特定の TaskGroup に紐付けてキューに追加し、future を返す
+     */
+    template<class F, class... Args>
+    auto Enqueue(std::shared_ptr<TaskGroup> group, F&& f, Args&&... args) 
         -> std::future<typename std::invoke_result_t<F, Args...>>;
 
 private:
@@ -88,6 +96,37 @@ auto ThreadPool::Enqueue(F&& f, Args&&... args)
             throw std::runtime_error("Enqueue on stopped ThreadPool");
         }
         tasks_.emplace([task]() { (*task)(); });
+    }
+    condition_.notify_one();
+    return res;
+}
+
+template<class F, class... Args>
+auto ThreadPool::Enqueue(std::shared_ptr<TaskGroup> group, F&& f, Args&&... args) 
+    -> std::future<typename std::invoke_result_t<F, Args...>> {
+    if (group) {
+        group->NotifyTaskStarted();
+    }
+
+    using return_type = typename std::invoke_result_t<F, Args...>;
+    auto task = std::make_shared<std::packaged_task<return_type()>>(
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...)
+    );
+
+    std::future<return_type> res = task->get_future();
+    {
+        std::unique_lock<std::mutex> lock(queueMutex_);
+        if (stop_) {
+            if (group) group->NotifyTaskFinished();
+            throw std::runtime_error("Enqueue on stopped ThreadPool");
+        }
+        
+        tasks_.emplace([task, group]() {
+            (*task)();
+            if (group) {
+                group->NotifyTaskFinished();
+            }
+        });
     }
     condition_.notify_one();
     return res;
