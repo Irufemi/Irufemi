@@ -50,7 +50,7 @@ void EnemyStompEffects::Update(float deltaTime, Player* player) {
         float t = timer_ / params_.explosionDuration;
 
         // イージング：最初は速く、後半はゆっくり広がる
-        float easeOut = 1.0f - std::pow(1.0f - t, 2);
+        float easeOut = 1.0f - static_cast<float>(std::pow(1.0f - t, 2));
         float currentScale = Lerp(1.0f, params_.explosionMaxRadius, easeOut);
 
         explosionTransform_.scale = { currentScale * params_.ringScale.x, currentScale * params_.ringScale.y, currentScale * params_.ringScale.z };
