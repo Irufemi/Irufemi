@@ -9,6 +9,12 @@
 #include <wrl.h>
 #include "Texture.h"
 #include "../../../externals/DirectXTex/DirectXTex.h"
+#include "../../Engine/Core/System/ThreadPool.h"
+#include "../../Engine/Core/System/TaskGroup.h"
+#include <atomic>
+#include <future>
+#include <type_traits>
+#include <functional>
 
 // 前方宣言
 namespace DirectX {
@@ -85,11 +91,50 @@ public:
      */
     D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() const { return whiteTextureHandle_; }
 
+    /**
+     * @brief すべてのロードタスクが完了したかを取得
+     */
+    bool IsAllLoaded() const { return taskGroup_->IsAllDone(); }
+
+    /**
+     * @brief 非同期タスクの実行（シーンの状態による自動判定）
+     */
+    template <class F, class... Args>
+    auto EnqueueTask(F&& f, Args&&... args) 
+        -> std::future<typename std::invoke_result_t<F, Args...>> {
+        bool isCritical = IsCurrentSceneInitializing();
+        return EnqueueTask(isCritical, std::forward<F>(f), std::forward<Args>(args)...);
+    }
+
+    /**
+     * @brief 優先度を指定して非同期タスクを実行
+     */
+    template <class F, class... Args>
+    auto EnqueueTask(bool isCritical, F&& f, Args&&... args) 
+        -> std::future<typename std::invoke_result_t<F, Args...>> {
+        auto &group = isCritical ? taskGroup_ : backgroundTaskGroup_;
+        return threadPool_->Enqueue(group, std::forward<F>(f), std::forward<Args>(args)...);
+    }
+
+    /**
+     * @brief 白テクスチャのリソースを取得
+     */
+    ID3D12Resource* GetWhiteTextureResource() const { return whiteTextureResource_.Get(); }
+
 private:
+    /**
+     * @brief 現在のシーンが初期化中かどうかを判定する
+     */
+    bool IsCurrentSceneInitializing() const;
     DirectXCommon* dxCommon_ = nullptr;
 
     // key: ファイルパス(または識別名)、value: Texture オブジェクト
     mutable std::unordered_map<std::string, std::shared_ptr<Texture>> textures_;
+    mutable std::mutex mutex_;
+
+    std::unique_ptr<ThreadPool> threadPool_;
+    std::shared_ptr<TaskGroup> taskGroup_;           ///< 重要タスク用
+    std::shared_ptr<TaskGroup> backgroundTaskGroup_; ///< バックグラウンド用
 
     // フォールバック白テクスチャ
     Microsoft::WRL::ComPtr<ID3D12Resource> whiteTextureResource_;

@@ -18,6 +18,12 @@
 
 IrufemiEngine *VoxelParticleSystem::engine_ = nullptr;
 
+VoxelParticleSystem::~VoxelParticleSystem() {
+  if (initializeFuture_.valid()) {
+    initializeFuture_.wait();
+  }
+}
+
 void VoxelParticleSystem::Initialize(const std::string &modelName,
                                      const Vector3Int &resolution,
                                      Camera *camera) {
@@ -28,54 +34,87 @@ void VoxelParticleSystem::Initialize(const std::string &modelName,
   modelManager_ = engine_->GetObjModelManager();
   textureManager_ = engine_->GetTextureManager();
 
-  // 1. モデルをボクセル化
-  auto managedModel = modelManager_->GetModel(modelName);
-  if (!managedModel || !managedModel->cpuModel) {
-    assert(false && "Failed to get model for voxelization.");
+  status_.store(LoadingStatus::Loading);
+
+  // 非同期でボクセル化を開始
+  initializeFuture_ = modelManager_->EnqueueTask([this, modelName, resolution]() {
+    auto managedModel = modelManager_->GetModel(modelName);
+    if (!managedModel || !managedModel->cpuModel) {
+      status_.store(LoadingStatus::Failed);
+      assert(false && "Failed to get model for voxelization.");
+      return;
+    }
+
+    // 重い計算（ボクセル化）
+    auto vModel = std::make_unique<VoxelizedModel>(ModelManager::VoxelizeModel(
+        *managedModel->cpuModel, resolution, textureManager_));
+
+    {
+      std::lock_guard<std::mutex> lock(voxelModelMutex_);
+      voxelModel_ = std::move(vModel);
+      voxelCount_ = static_cast<uint32_t>(voxelModel_->voxels.size());
+    }
+
+    if (voxelCount_ == 0) {
+      status_.store(LoadingStatus::Failed);
+      OutputDebugStringA("[Voxel] ERROR: Voxel count is ZERO.\n");
+      return;
+    }
+
+    // 計算完了
+    status_.store(LoadingStatus::ReadyToCreateResources);
+  });
+}
+
+void VoxelParticleSystem::FinishInitialization() {
+  if (status_.load() != LoadingStatus::ReadyToCreateResources) {
     return;
   }
-  voxelModel_ = std::make_unique<VoxelizedModel>(ModelManager::VoxelizeModel(
-      *managedModel->cpuModel, resolution, textureManager_));
-  voxelCount_ = static_cast<uint32_t>(voxelModel_->voxels.size());
-  
-  // デバッグログ：生成されたボクセル数を出力
-  char log[256];
-  sprintf_s(log, "[Voxel] Voxel Count: %u\n", voxelCount_);
-  OutputDebugStringA(log);
-  if (voxelCount_ == 0) {
-    OutputDebugStringA("[Voxel] WARNING: Voxel count is ZERO. Voxelization failed or model is too small.\n");
-    return; // ボクセルがなければ何もしない
-  }
 
-  // 2. 立方体メッシュの作成 (ボクセルサイズを計算して渡す)
-  float voxelW = (voxelModel_->aabbMax.x - voxelModel_->aabbMin.x) /
-                 voxelModel_->resolution.x;
-  float voxelH = (voxelModel_->aabbMax.y - voxelModel_->aabbMin.y) /
-                 voxelModel_->resolution.y;
-  float voxelD = (voxelModel_->aabbMax.z - voxelModel_->aabbMin.z) /
-                 voxelModel_->resolution.z;
+  // 1. 立方体メッシュの作成 (ボクセルサイズを計算して渡す)
+  float voxelW, voxelH, voxelD;
+  {
+    std::lock_guard<std::mutex> lock(voxelModelMutex_);
+    voxelW = (voxelModel_->aabbMax.x - voxelModel_->aabbMin.x) /
+                   voxelModel_->resolution.x;
+    voxelH = (voxelModel_->aabbMax.y - voxelModel_->aabbMin.y) /
+                   voxelModel_->resolution.y;
+    voxelD = (voxelModel_->aabbMax.z - voxelModel_->aabbMin.z) /
+                   voxelModel_->resolution.z;
+  }
   CreateCubeMesh(voxelW, voxelH, voxelD);
 
-  // 3. GPUリソースの作成
+  // 2. GPUリソースの作成
   CreateResources();
 
-  // 4. PSOの作成
+  // 3. PSOの作成
   CreatePSO();
 
-  // 5. 定数バッファのマッピング
+  // 4. 定数バッファのマッピング
   HRESULT hr = emitterConstantBuffer_->Map(
       0, nullptr, reinterpret_cast<void **>(&mappedEmitterData_));
   assert(SUCCEEDED(hr));
   hr = perViewConstantBuffer_->Map(
       0, nullptr, reinterpret_cast<void **>(&mappedPerViewData_));
   assert(SUCCEEDED(hr));
+  hr = perFrameConstantBuffer_->Map(
+      0, nullptr, reinterpret_cast<void **>(&mappedPerFrameData_));
+  assert(SUCCEEDED(hr));
 
-  // 6. 初期化 Dispatch は最初の Draw まで遅延させる
   needsInitialize_ = true;
+  status_.store(LoadingStatus::Loaded);
+
+  char log[256];
+  sprintf_s(log, "[Voxel] Async Initialization Finished. Count: %u\n", voxelCount_);
+  OutputDebugStringA(log);
 }
 
 void VoxelParticleSystem::Update(float deltaTime) {
-  if (voxelCount_ == 0)
+  if (status_.load() == LoadingStatus::ReadyToCreateResources) {
+    FinishInitialization();
+  }
+
+  if (status_.load() != LoadingStatus::Loaded || voxelCount_ == 0)
     return;
 
   // エミッターデータ更新
@@ -102,7 +141,7 @@ void VoxelParticleSystem::Update(float deltaTime) {
 }
 
 void VoxelParticleSystem::Draw() {
-  if (!voxelBuffer_ || !engine_ || !camera_)
+  if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_ || !camera_)
     return;
 
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();

@@ -1,9 +1,9 @@
-#include "Framework/SceneManager.h"
-#include "Framework/IScene.h"
-#include "Engine/IrufemiEngine.h"
-#include <Windows.h> // VK_ESCAPE のためにインクルード
-#include "Engine/Platform/Input/InputManager.h" // InputManager をインクルード
-#include "Engine/Platform/Input/Mouse.h"
+#include "SceneManager.h"
+#include "IScene.h"
+#include "../Engine/IrufemiEngine.h"
+#include <Windows.h>
+#include "../Engine/Platform/Input/InputManager.h"
+#include "../Engine/Platform/Input/Mouse.h"
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {}
 
@@ -29,13 +29,24 @@ bool SceneManager::ChangeTo(const Key& next) {
     current_.reset();
     current_ = it->second();
     currentName_ = next;
+    
+    isInitializing_ = true;
     current_->Initialize(engine_);
+    isInitializing_ = false;
+
     isPaused_ = false; // シーン切り替え時にポーズを解除
     engine_->SetCursorLocked(true); // シーン開始時はマウスをロック
     return true;
 }
 
 void SceneManager::Update() {
+    // モデル・テクスチャの読み込み待ちがある場合は、シーンの更新を止める
+    bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
+    bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
+    if (!modelsLoaded || !texturesLoaded) {
+        return;
+    }
+
     // 入力同期
     IScene::SyncInput(engine_);
 
@@ -57,6 +68,12 @@ void SceneManager::Update() {
     }
 
     if (current_) {
+        // ロード中（Initialize等で始まった分を含む）なら更新を止める
+        if ((engine_->GetObjModelManager() && !engine_->GetObjModelManager()->IsAllLoaded()) ||
+            (engine_->GetTextureManager() && !engine_->GetTextureManager()->IsAllLoaded())) {
+            return;
+        }
+
         if (isPaused_) {
             // ポーズ中
             current_->PauseUpdate();
@@ -69,6 +86,13 @@ void SceneManager::Update() {
 }
 
 void SceneManager::Draw() {
+    // モデル・テクスチャの読み込み待ちがある場合は、シーンの描画を止める（背景のみの状態にする）
+    bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
+    bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
+    if (!modelsLoaded || !texturesLoaded) {
+        return;
+    }
+
     if (current_) {
         // 通常の描画
         current_->Draw();
