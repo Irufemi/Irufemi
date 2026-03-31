@@ -1,6 +1,7 @@
 # Irufemi Engine
 
-DirectX12をベースにした自作3Dゲームエンジンです。
+DirectX 12をベースにした、高機能な自作3Dゲームエンジンです。
+グラフィックスプログラミングの学習から応用的なレンダリング技術の構築を目的として開発されています。
 
 [![DebugBuild](https://github.com/Irufemi/CG3/actions/workflows/DebugBuild.yml/badge.svg)](https://github.com/Irufemi/CG3/actions/workflows/DebugBuild.yml)
 [![ReleaseBuild](https://github.com/Irufemi/CG3/actions/workflows/ReleaseBuild.yml/badge.svg)](https://github.com/Irufemi/CG3/actions/workflows/ReleaseBuild.yml)
@@ -9,81 +10,81 @@ DirectX12をベースにした自作3Dゲームエンジンです。
 
 ## 概要
 
-このプロジェクトは、3Dグラフィックスプログラミングの学習を目的として開発されているゲームエンジンです。
-DirectX 12のAPIを直接的に利用し、レンダリングの基礎から応用までを実装しています。
+このプロジェクトは、DirectX 12 APIを直接利用した低レイヤーからのレンダリングパイプラインを構築しており、並列処理や非同期読み込み、高度なシェーダー技術の実装を行っています。
 
 ## 主な機能
 
-- **レンダリング**
-  - DirectX 12ベースのレンダリングパイプライン
-  - スプライト、三角形、球、立方体などの基本図形の描画
-  - モデルデータ（`.obj`, `.gltf`）の読み込みと描画
-  - 平行光源、点光源、スポットライト
-  - パーティクルシステム
-- **モデルとアニメーション**
-  - Assimpライブラリによる3Dモデルのインポート
-  - スケルタルアニメーションの再生
-- **その他**
-  - ImGuiによるデバッグUI
-  - 自作の算術ライブラリ（Vector, Matrix, Quaternion）
+### 1. レンダリング (Rendering)
+- **DirectX 12 描画基盤**: 効率的なディスクリプタ管理とコマンドリスト構築。
+- **パーティクルシステム**:
+  - **GPU Particle**: 計算シェーダーを活用した大量の粒子シミュレーション。
+  - **Voxel Particle**: ボクセルベースの物理挙動を持つパーティクル。
+- **環境描画**: スカイボックス、動的なライト設定（平行光源、点光源、スポットライト）。
+- **ポストプロセス管理**: マルチパスレンダリングに対応し、以下のエフェクトをサポート。
+  - **カラー**: グレースケール、セピア、HSV調整、トーンマッピング (ACES)。
+  - **ぼかし**: 平滑化、ガウスぼかし、放射状ぼかし。
+  - **演出**: ビネット、ディゾルブ、ノイズ、アウトライン。
+
+### 2. モデル & アニメーション (Model & Animation)
+- **アセットインポート**: Assimpライブラリによる多種多様な3Dモデル（.obj, .gltf等）の読み込み。
+- **スケルタルアニメーション**: インスタンスごとの再生制御、ボーンによる変形。
+
+### 3. システム & 基盤 (System & Infrastructure)
+- **非同期リソース管理**: シーン更新を止めないスレッドプールによる非同期ロード。
+- **リファクタリング済み基盤**: FPSコントローラー、シェーダーコンパイラの分離。
+- **サウンドシステム**: XAudio2による音声データの読み込みと再生。
+- **算術ライブラリ**: 独自の Vector, Matrix, Quaternion クラス。
+
+### 4. デバッグ・ツール (Tools)
+- **Debug UI**: ImGui を使用したリアルタイムなパラメータ調整。
+- **Doxygen 対応**: ほぼ全コードに対してドキュメントコメントを完備。
+
+## プロジェクト構成
+
+```text
+C:.
+├── project                # VS ソリューション・プロジェクト
+│   └── IrufemiEngine      # エンジン本体
+│       ├── Engine         # 基盤システム (Graphics, Platform, Manager)
+│       ├── Renderer       # レンダリング関連 (Object3D, Particle, PostProcess)
+│       ├── Resource       # リソース管理 (Texture, Model, Audio)
+│       └── Framework      # アプリケーションフレームワーク
+└── ...
+```
+
+## アセットパイプライン
+
+### 1. 3Dモデルのエクスポート
+- **ルール**: Blender等のツールでは **デフォルト設定（Y-up / 右手座標系）** でエクスポートしてください。
+- **処理**: エンジン内部（Assimp読み込み時）でDirectX用の左手座標系へ自動変換されます。
+
+### 2. テクスチャ命名規則 (Linear Workflow)
+リニアワークフローを正確に行うため、ファイル名による自動判別を行っています。
+- **数値データ (Linear)**: 以下の接尾辞を含めることでガンマ補正をスキップします。
+  - `_n` / `normal` (法線)
+  - `_ao` (AO)
+  - `_m` / `metallic` (メタリック)
+  - `_r` / `roughness` (ラフネス)
+- **カラーデータ (sRGB)**: 上記以外はすべて色として扱われ、自動的にリニアライズされます。
+
+## 開発ガイドライン
+
+- **エンコード**: Unicode (UTF-8 署名なし) を厳守。
+- **コメント**: ヘッダーファイルには Doxygen 形式での注釈を記述。
+- **設計**: 疎結合を意識し、可能な限りインターフェースと実装を分離。
 
 ## 動作環境
 
-- Windows 10 / 11
-- Visual Studio 2022
-- Windows SDK (バージョン: 10.0.26100.7175 以降)
-
-## ビルド方法
-
-1. このリポジトリをクローンします。
-2. `Irufemi.sln` を Visual Studio 2022 で開きます。
-3. ソリューションをビルドします。
+- **OS**: Windows 10 / 11
+- **IDE**: Visual Studio 2022
+- **SDK**: Windows SDK 10.0.26100.7175 以上推奨
 
 ## 使用ライブラリ
 
-このプロジェクトは、以下のサードパーティ製ライブラリに依存しています。
-
-- [Assimp](https://github.com/assimp/assimp) - 3Dモデル読み込み
-- [Dear ImGui](https://github.com/ocornut/imgui) - デバッグUI
-- [DirectX 12 Agility SDK](https://devblogs.microsoft.com/directx/directx12agility/) - DirectX 12 API
-- (その他あれば追記)
-
-## 3Dモデルのアセットパイプラインについて
-
-このプロジェクトでは、3Dモデルの読み込みに **Assimp** ライブラリを使用しています。
-
-モデルをロードする際、Assimpの `aiProcess_MakeLeftHanded` フラグを利用して、**すべてのモデルデータをDirectXの左手座標系に自動で変換**しています。
-
-### モデル作成者・プログラマー向けのルール
-
-- **BlenderなどのDCCツールからモデルをエクスポートする際は、ツールのデフォルト設定（Y-upの右手座標系）のままエクスポートしてください。**
-- 座標系変換のための特別なエクスポート設定は不要です。
-
-このルールにより、エクスポート時の設定ミスを防ぎ、`.obj` や `.gltf` といった異なるフォーマットでも一貫した取り扱いが可能になります。
-
-## テクスチャの命名規則と色空間について
-
-このエンジンは**リニアワークフロー**を採用しています。テクスチャの種類（色データか数値データか）を適切に扱うため、ファイル名に基づいた自動判別を行っています。
-
-### 自動判別のルール
-
-- **カラーデータ (sRGB)**
-    - 対象: BaseColor, Diffuse, UI画像など
-    - 命名規則: **制約なし**（デフォルトで色として扱われます）
-    - 処理: 読み込み時にリニア変換（リニアライズ）が行われます。
-
-- **数値データ (Linear)**
-    - 対象: NormalMap, AO, Metallic, Roughnessなど
-    - 命名規則: ファイル名に以下のキーワードを含めてください。
-        - 法線: `_n`, `normal`
-        - AO: `_ao`
-        - メタリック: `_m`, `metallic`
-        - ラフネス: `_r`, `roughness`
-    - 処理: 数値の変換を行わず、生のデータとして読み込みます。
-
-この規則に従うことで、ライティング計算の結果が物理的に正しくなり、意図した通りの質感を得ることができます。
+- [Assimp](https://github.com/assimp/assimp)
+- [Dear ImGui](https://github.com/ocornut/imgui)
+- [DirectX 12 Agility SDK](https://devblogs.microsoft.com/directx/directx12agility/)
 
 ## ライセンス
 
-このプロジェクトは [MIT License](LICENSE.txt) の下で公開されています。
-ただし、依存するライブラリについては、それぞれのライセンスに従ってください。
+このエンジンのソースコードは [MIT License](LICENSE.txt) の下で提供されています。各ライブラリのライセンスについては個別の規定に従ってください。
