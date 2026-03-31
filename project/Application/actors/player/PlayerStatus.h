@@ -51,8 +51,12 @@ public:
 
 private:
     // --- ステータス・やられ判定用 ---
-    static constexpr int kMaxHp = 100;           // 最大体力
+    static constexpr int kMaxHp = 100;             // 最大体力
     static constexpr float kColliderRadius = 1.0f; // プレイヤーのやられ判定半径
+
+    static constexpr int kInvincibleFramesOnDamage = 60; // 被弾時の無敵フレーム数
+    static constexpr float kColliderOffsetY = 0.2f;      // 当たり判定中心のY軸オフセット
+    static constexpr float kColliderObbSize = 0.3f;      // OBBの各軸のサイズ（XYZ共通）
 
     // --- ノックバック用定数 ---
     static constexpr int kKnockbackDuration = 20;

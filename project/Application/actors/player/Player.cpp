@@ -19,22 +19,25 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     input_ = input;
     engine_ = engine;
 
-    // 各コンポーネントの初期化
     movement_.Initialize();
     weapon_.Initialize(camera);
     cameraController_.Initialize(camera);
     status_.Initialize();
 
-    // --- モデルの生成と初期化 ---
     obj_ = std::make_unique<ObjClass>();
     obj_->Initialize(camera, "enemy/body.obj");
     obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
-    // --- 攻撃表示用モデルの生成と初期化 ---
     attackObj_ = std::make_unique<ObjClass>();
     attackObj_->Initialize(camera, "enemy/body.obj");
+    attackObj_->SetPosition(translate_);
+    attackObj_->Update();
 
-    // --- 一人称視点用マスク画像の生成と初期化 ---
+    targetMarkerObj_ = std::make_unique<ObjClass>();
+    targetMarkerObj_->Initialize(camera, "enemy/body.obj");
+    targetMarkerObj_->SetColor({ 0.0f, 1.0f, 0.0f, 0.5f });
+    targetMarkerObj_->SetScale({ 0.5f, 0.5f, 0.5f });
+
     maskSprite_ = std::make_unique<Sprite>();
     maskSprite_->Initialize(camera, "resources/texture/player/mask.png");
 
@@ -47,9 +50,10 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     attackState_ = AttackState::kNone;
     chargeTimer_ = 0;
     currentChargeRate_ = 0.0f;
-    attackCollision_.center = {};
+
+    attackCollision_.center = translate_;
     attackCollision_.isActive = false;
-    attackCollision_.radius = 1.0f;
+    attackCollision_.radius = 0.0f;
 
 #ifdef USE_IMGUI
     lineOBB_ = std::make_unique<Line3DRegion>();
@@ -120,11 +124,24 @@ void Player::Update() {
 
     cameraController_.UpdateInput(input_, rotate_);
 
+    if (!isTargetingEnemy_) {
+        float sinY = std::sin(rotate_.y);
+        float cosY = std::cos(rotate_.y);
+        aimPos_ = { translate_.x + sinY * kAimDistance, translate_.y, translate_.z + cosY * kAimDistance };
+    } else {
+        aimPos_ = targetPos_;
+    }
+
+    if (targetMarkerObj_) {
+        targetMarkerObj_->SetPosition(aimPos_);
+        targetMarkerObj_->Update();
+    }
+
     HandleMovement();
     HandleAttack();
     HandleSkill();
 
-    weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), targetPos_, scale_);
+    weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, scale_);
     cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration());
     status_.UpdateKnockback();
 
@@ -196,7 +213,10 @@ void Player::Draw() {
             obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
         }
 
-        obj_->SetPosition(translate_ + weapon_.GetMissileVibration());
+        Vector3 drawPos = translate_ + weapon_.GetMissileVibration();
+        drawPos.y += kModelOffsetY;
+
+        obj_->SetPosition(drawPos);
         obj_->SetRotate(rotate_);
         obj_->SetScale(scale_);
         obj_->Update();
@@ -210,7 +230,11 @@ void Player::Draw() {
         attackObj_->Draw();
     }
 
-    weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), targetPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, status_.IsDead());
+    if (isTargetingEnemy_ && targetMarkerObj_ && !status_.IsDead()) {
+        targetMarkerObj_->Draw();
+    }
+
+    weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, status_.IsDead());
 
     if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
         if (maskSprite_) maskSprite_->Draw();
@@ -232,21 +256,17 @@ void Player::DrawParticles() {
 void Player::ApplyDamage(int damage) {
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
 
-    // チャージ中ならダメージを2倍にする
     int finalDamage = damage;
     if (isCharging) {
         finalDamage *= 2;
     }
 
-    // status_.ApplyDamage に渡す際、第2引数（isCharging/軽減フラグ）を false にすることで
-    // status側での軽減処理を無効化し、倍になったダメージをそのまま適用させます。
     status_.ApplyDamage(finalDamage, false, engine_);
 }
 
 void Player::HandleMovement() {
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
 
-    // ★修正箇所: 現在の無敵時間を取得して渡し、増えていたらセットする
     int currentInvincible = status_.GetInvincibleTimer();
     movement_.Update(input_, isCharging, isKarakuriCharged_, translate_, rotate_, currentInvincible);
 
@@ -392,11 +412,14 @@ void Player::HandleSkill() {
     if (input_->IsMouseButtonPressed(Mouse::Button::Right)) {
         if (skillDurationTimer_ <= 0 && skillCooldownTimer_ <= 0) {
             if (isKarakuriCharged_) {
-                weapon_.FireMissileSkill(translate_, rotate_, targetPos_);
-                skillDurationTimer_ = 120;
+                int fireCount = isTargetingEnemy_ ? 2 : 1;
+                for (int i = 0; i < fireCount; ++i) {
+                    weapon_.FireMissileSkill(translate_, rotate_, targetPos_);
+                }
+                skillDurationTimer_ = kMissileSkillDuration;
             } else {
                 weapon_.StartMachineGunSkill();
-                skillDurationTimer_ = 180;
+                skillDurationTimer_ = kMachineGunSkillDuration;
             }
         }
     }

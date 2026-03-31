@@ -82,7 +82,33 @@ void GameScene::Update() {
     if (player_ && !debugMode_) {
         // ★プレイヤーにボスの座標を毎フレーム教える（機関銃とミサイルのオートエイム用）
         if (boss_) {
-            player_->SetTargetPosition(boss_->GetGlobalTransform().translate);
+            Vector3 bossPos = boss_->GetGlobalTransform().translate;
+            player_->SetTargetPosition(bossPos);
+
+            // ★追加: ボスが画面（プレイヤーの前方）にいるかどうかの判定
+            Vector3 playerPos = player_->GetTranslate();
+            Vector3 toBoss = Math::Subtract(bossPos, playerPos);
+            float len = Math::Length(toBoss);
+            bool inScreen = false;
+            
+            if (len > kMathEpsilon) {
+                // プレイヤーからボスへの方向ベクトル
+                toBoss = { toBoss.x / len, toBoss.y / len, toBoss.z / len };
+                
+                // プレイヤーが向いている方向ベクトル
+                float sinY = std::sin(player_->GetRotate().y);
+                float cosY = std::cos(player_->GetRotate().y);
+                Vector3 playerForward = { sinY, 0.0f, cosY };
+                
+                // 内積で前方にいるかを判定（0.0fより大きければ前方180度以内にいる）
+                float dot = Math::Dot(toBoss, playerForward);
+                if (dot > 0.0f) {
+                    inScreen = true;
+                }
+            }
+            
+            // 判定結果をプレイヤーに渡す（これでミサイル倍増や機関銃の挙動が切り替わります）
+            player_->SetIsTargetingEnemy(inScreen);
         }
         player_->Update();
     }
@@ -471,4 +497,3 @@ void GameScene::UpdateCameraAndFrameData() {
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
-
