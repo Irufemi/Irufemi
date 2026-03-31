@@ -147,11 +147,10 @@ public:
 public:
     /**
      * @brief ポストプロセスの初期化
-     * @param device D3D12デバイス
-     * @param rootSig ルートシグネチャ
+     * @param dxCommon DirectX基盤クラス
      * @param rtvFormat 最終的な出力先のRTVフォーマット
      */
-    void Initialize(ID3D12Device* device, ID3D12RootSignature* rootSig, DXGI_FORMAT rtvFormat);
+    void Initialize(DirectXCommon* dxCommon, DXGI_FORMAT rtvFormat);
 
     /**
      * @brief 作業用バッファ（ピンポンバッファ）の初期化
@@ -235,6 +234,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> CreateBuffer(size_t size);
 
 private:
+    DirectXCommon* dxCommon_ = nullptr;
     ID3D12Device* device_ = nullptr;
     ID3D12RootSignature* rootSig_ = nullptr;
     DXGI_FORMAT rtvFormat_ = DXGI_FORMAT_UNKNOWN;

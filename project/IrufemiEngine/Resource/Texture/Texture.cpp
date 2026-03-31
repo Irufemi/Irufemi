@@ -1,15 +1,35 @@
 #include "Texture.h"
-#include "DirectXTex/DirectXTex.h"
-#include "DirectXTex/d3dx12.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "../../../externals/DirectXTex/DirectXTex.h"
+#include "../../../externals/DirectXTex/d3dx12.h"
+#include "../../Engine/Graphics/DirectX/DirectXCommon.h"
+#include "../../Engine/Graphics/DirectX/DescriptorPool.h"
 #include <cassert>
 
 DirectXCommon* Texture::dxCommon_ = nullptr;
 uint32_t Texture::index_ = 0;
 DescriptorPool* Texture::s_srvPool_ = nullptr;
+ID3D12Resource* Texture::s_whiteResource_ = nullptr;
 
-Texture::Texture() = default;
+Texture::Texture() {
+    // コンストラクタでSRV枠を先に確保して、暫定的に白テクスチャを割り当てておく
+    if (s_srvPool_) {
+        srvIndex_ = s_srvPool_->Allocate();
+        if (srvIndex_ != DescriptorPool::kInvalid) {
+            textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(srvIndex_);
+            textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(srvIndex_);
+
+            // とりあえず白テクスチャでSRVを作っておく(セーフティ)
+            if (s_whiteResource_ && dxCommon_) {
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+                srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+                srvDesc.Texture2D.MipLevels = 1;
+                dxCommon_->GetDevice()->CreateShaderResourceView(s_whiteResource_, &srvDesc, textureSrvHandleCPU_);
+            }
+        }
+    }
+}
 
 Texture::~Texture() {
     if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
@@ -21,99 +41,84 @@ Texture::~Texture() {
 
 void Texture::Initialize(const std::string& filePath) {
     this->filePath_ = filePath;
+    status_.store(LoadingStatus::Loading);
 
-    mipImages_ = dxCommon_->LoadTexture(filePath_);
-    const DirectX::TexMetadata& metadata = mipImages_.GetMetadata();
-    width_ = static_cast<uint32_t>(metadata.width);
-    height_ = static_cast<uint32_t>(metadata.height);
+    try {
+        mipImages_ = dxCommon_->LoadTexture(filePath_);
+        const DirectX::TexMetadata& metadata = mipImages_.GetMetadata();
+        width_ = static_cast<uint32_t>(metadata.width);
+        height_ = static_cast<uint32_t>(metadata.height);
 
-    textureResource_ = dxCommon_->CreateTextureResource(metadata);
-    intermediateResource_ = dxCommon_->UploadTextureData(textureResource_.Get(), mipImages_);
+        textureResource_ = dxCommon_->CreateTextureResource(metadata);
+        intermediateResource_ = dxCommon_->UploadTextureData(textureResource_.Get(), mipImages_);
 
-	// --- 追加: アップロード完了後に中間リソースを解放するように登録し、自身は手放す ---
-	dxCommon_->ReleaseAfterFence(intermediateResource_);
-	intermediateResource_ = nullptr;
+        // --- アップロード完了後に中間リソースを解放するように登録 ---
+        dxCommon_->ReleaseAfterFence(intermediateResource_);
+        intermediateResource_ = nullptr;
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-    srvDesc.Format = metadata.format;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = metadata.format;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-    if (metadata.IsCubemap()) {
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-        srvDesc.TextureCube.MostDetailedMip = 0;
-        srvDesc.TextureCube.MipLevels = UINT_MAX;
-        srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-    }
-    else {
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
-    }
-
-
-    // 1) allocator 優先
-    uint32_t indexForSrv = UINT32_MAX;
-    if (s_srvPool_) {
-        indexForSrv = s_srvPool_->Allocate();
-        if (indexForSrv != DescriptorPool::kInvalid) {
-            srvIndex_ = indexForSrv;
-            textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(indexForSrv);
-            textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(indexForSrv);
-        } else {
-            indexForSrv = UINT32_MAX; // fallback
+        if (metadata.IsCubemap()) {
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+            srvDesc.TextureCube.MostDetailedMip = 0;
+            srvDesc.TextureCube.MipLevels = UINT_MAX;
+            srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
         }
-    }
-    // 2) fallback: 既存の静的カウンタ
-    if (indexForSrv == UINT32_MAX) {
-        index_ += 1;
-        indexForSrv = index_;
-        if (s_srvPool_) {
-            textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(indexForSrv);
-            textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(indexForSrv);
-        } else {
-            // s_srvPool_ が nullptr の場合は安全なデフォルト値を設定
-            textureSrvHandleCPU_ = D3D12_CPU_DESCRIPTOR_HANDLE{ 0 };
-            textureSrvHandleGPU_ = D3D12_GPU_DESCRIPTOR_HANDLE{ 0 };
+        else {
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+            srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
         }
-    }
 
-    dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
+        // SRV上書き (コンストラクタで確保済みの textureSrvHandleCPU_ を使用)
+        if (textureSrvHandleCPU_.ptr != 0) {
+            dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
+        }
+
+        status_.store(LoadingStatus::Loaded);
+    }
+    catch (...) {
+        status_.store(LoadingStatus::Failed);
+        // 失敗してもSRV自体は白テクスチャを指したままなので描画上は安全
+    }
 }
 
 void Texture::InitializeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height) {
     this->filePath_ = name;
     this->width_ = width;
     this->height_ = height;
+    status_.store(LoadingStatus::Loading);
 
-    // sRGB フォーマットで初期化
-    HRESULT hr = mipImages_.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, width, height, 1, 1);
-    assert(SUCCEEDED(hr));
+    try {
+        // sRGB フォーマットで初期化
+        HRESULT hr = mipImages_.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, width, height, 1, 1);
+        assert(SUCCEEDED(hr));
 
-    // ピクセルデータのコピー
-    memcpy(mipImages_.GetImage(0, 0, 0)->pixels, pixels, width * height * sizeof(uint32_t));
+        // ピクセルデータのコピー
+        memcpy(mipImages_.GetImage(0, 0, 0)->pixels, pixels, width * height * sizeof(uint32_t));
 
-    const DirectX::TexMetadata& metadata = mipImages_.GetMetadata();
-    textureResource_ = dxCommon_->CreateTextureResource(metadata);
-    intermediateResource_ = dxCommon_->UploadTextureData(textureResource_.Get(), mipImages_);
+        const DirectX::TexMetadata& metadata = mipImages_.GetMetadata();
+        textureResource_ = dxCommon_->CreateTextureResource(metadata);
+        intermediateResource_ = dxCommon_->UploadTextureData(textureResource_.Get(), mipImages_);
 
-    dxCommon_->ReleaseAfterFence(intermediateResource_);
-    intermediateResource_ = nullptr;
+        dxCommon_->ReleaseAfterFence(intermediateResource_);
+        intermediateResource_ = nullptr;
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-    srvDesc.Format = metadata.format;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels = 1;
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = metadata.format;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MipLevels = 1;
 
-    uint32_t indexForSrv = UINT32_MAX;
-    if (s_srvPool_) {
-        indexForSrv = s_srvPool_->Allocate();
-        if (indexForSrv != DescriptorPool::kInvalid) {
-            srvIndex_ = indexForSrv;
-            textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(indexForSrv);
-            textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(indexForSrv);
+        // SRV上書き
+        if (textureSrvHandleCPU_.ptr != 0) {
+            dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
         }
-    }
-    // Static カウンタ fallback は省略(基本 pool がある前提)
 
-    dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
+        status_.store(LoadingStatus::Loaded);
+    }
+    catch (...) {
+        status_.store(LoadingStatus::Failed);
+    }
 }

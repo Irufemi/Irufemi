@@ -87,6 +87,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // DirectX 基盤
     dxCommon_ = std::make_unique<DirectXCommon>();
     dxCommon_->SetLog(log_.get());
+    dxCommon_->SetEngine(this);
     dxCommon_->Initialize(winApp_->GetHwnd(), winApp_->GetClientWidth(), winApp_->GetClientHeight());
 
     BaseResource::SetDirectXCommon(dxCommon_.get());
@@ -222,7 +223,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     // --- PostProcessManager の初期化 ---
     postProcessManager_ = std::make_unique<PostProcessManager>();
-    postProcessManager_->Initialize(dxCommon_->GetDevice(), dxCommon_->GetRootSignature(), DXGI_FORMAT_R8G8B8A8_UNORM);
+    postProcessManager_->Initialize(dxCommon_.get(), DXGI_FORMAT_R8G8B8A8_UNORM);
     postProcessManager_->InitializeBuffers(GetClientWidth(), GetClientHeight(), dxCommon_.get());
 
     // ノイズテクスチャのロードとハンドル設定
@@ -270,6 +271,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 }
 
 void IrufemiEngine::Finalize() {
+    if (ui_) {
+        ui_->Shutdown();
+        ui_.reset();
+    }
     if (sceneManager_) {
         sceneManager_.reset();
     }
@@ -285,10 +290,6 @@ void IrufemiEngine::Finalize() {
         drawManager_.reset();
     }
     PrimitiveManager::Finalize();
-    if (ui_) {
-        ui_->Shutdown();
-        ui_.reset();
-    }
     if (textureManager_) {
         textureManager_.reset();
     }

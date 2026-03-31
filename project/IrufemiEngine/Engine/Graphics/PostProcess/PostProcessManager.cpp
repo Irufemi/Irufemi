@@ -12,11 +12,11 @@
 #include <string>
 #include <wrl/client.h>
 
-void PostProcessManager::Initialize(ID3D12Device *device,
-                                    ID3D12RootSignature *rootSig,
+void PostProcessManager::Initialize(DirectXCommon* dxCommon,
                                     DXGI_FORMAT rtvFormat) {
-  device_ = device;
-  rootSig_ = rootSig;
+  dxCommon_ = dxCommon;
+  device_ = dxCommon->GetDevice();
+  rootSig_ = dxCommon->GetRootSignature();
   rtvFormat_ = rtvFormat;
 
   CreateConstantBuffers();
@@ -243,24 +243,10 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
 }
 
 void PostProcessManager::CreatePSOs() {
-  // DXCの初期化 (一時的にローカルで)
-  Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils;
-  Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler;
-  Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler;
-  DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
-  DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
-  dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
-
-  // ログ出力用ダミー (本当は IrufemiEngine から渡すべきだが、今は std::cout
-  // で代用するか Log を使う)
+  auto* shaderCompiler = dxCommon_->GetShaderCompiler();
   std::ostream &logStream = std::cout; // 仮
 
-  auto Compile = [&](const std::wstring &path, const wchar_t *profile) {
-    return DirectXCommon::CompileShader(path, profile, dxcUtils, dxcCompiler,
-                                        includeHandler, logStream);
-  };
-
-  auto vsBlob = Compile(L"resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0");
+  auto vsBlob = shaderCompiler->Compile(L"resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", logStream);
 
   struct ShaderPath {
     Mode mode;
@@ -282,7 +268,7 @@ void PostProcessManager::CreatePSOs() {
   };
 
   for (const auto &s : shaders) {
-    auto psBlob = Compile(s.path, L"ps_6_0");
+    auto psBlob = shaderCompiler->Compile(s.path, L"ps_6_0", logStream);
     if (!psBlob)
       continue;
 

@@ -4,6 +4,7 @@
 #include <string>
 #include <wrl.h>
 #include <cstdint>
+#include <atomic>
 #include "../../../externals/DirectXTex/DirectXTex.h"
 
 class DirectXCommon;
@@ -16,11 +17,19 @@ class DescriptorPool;
  */
 class Texture {
 public:
+    enum class LoadingStatus {
+        Pending,
+        Loading,
+        Loaded,
+        Failed
+    };
+
     /** @name 静的メンバ設定 */
     ///@{
     static void SetDirectXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
     static void SetDescriptorPool(DescriptorPool* pool) { s_srvPool_ = pool; }
     static DescriptorPool* GetDescriptorPool() { return s_srvPool_; }
+    static void SetWhiteTextureResource(ID3D12Resource* resource) { s_whiteResource_ = resource; }
     ///@}
 
     /**
@@ -32,6 +41,11 @@ public:
      * @brief デストラクタ
      */
     ~Texture();
+
+    /**
+     * @brief ロード状態の取得
+     */
+    LoadingStatus GetStatus() const { return status_.load(); }
 
     /**
      * @brief ファイルからテクスチャを初期化
@@ -58,10 +72,11 @@ public:
      */
     const DirectX::ScratchImage* GetScratchImage() const { return &mipImages_; }
 
-    /** @name サイズ取得 */
+    /** @name サイズ取得・設定 */
     ///@{
     uint32_t GetWidth()  const { return width_; }
     uint32_t GetHeight() const { return height_; }
+    void SetSize(uint32_t width, uint32_t height) { width_ = width; height_ = height; }
     ///@}
 
     /** @name 下位互換用（段階移行用） */
@@ -81,8 +96,11 @@ protected:
     static uint32_t index_; // 互換用
     uint32_t srvIndex_ = UINT32_MAX; // allocator で確保した index
 
+    std::atomic<LoadingStatus> status_{ LoadingStatus::Pending };
+
     static DirectXCommon* dxCommon_;
     static DescriptorPool* s_srvPool_;
+    static ID3D12Resource* s_whiteResource_;
 
     uint32_t width_ = 0;
     uint32_t height_ = 0;

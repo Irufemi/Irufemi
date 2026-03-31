@@ -1,7 +1,10 @@
-#define NOMINMAX
 #include "ModelManager.h"
+#include "Engine/Core/System/ThreadPool.h"
 #include <filesystem>
 #include <Windows.h>
+#include <chrono>
+#include <thread>
+#include <format>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -9,7 +12,10 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Resource/Texture/TextureManager.h"
+#include "Engine/IrufemiEngine.h"
+#include "Framework/SceneManager.h"
 #include "Renderer/Material.h"
+#include "Renderer/VertexData.h"
 #include "Resource/Model/Data/Node.h"
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
@@ -19,11 +25,23 @@
 // キャッシュ系(インスタンス)
 //======================
 
+ModelManager::ModelManager() = default;
+ModelManager::~ModelManager() = default;
+
 void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureManager) {
     dxCommon_ = dxCommon;
     textureManager_ = textureManager; // 追加
     if (rootDir_.empty()) {
         rootDir_ = "resources/model";
+    }
+    if (!threadPool_) {
+        threadPool_ = std::make_unique<ThreadPool>(4); // 推奨された4スレッド
+    }
+    if (!taskGroup_) {
+        taskGroup_ = std::make_shared<TaskGroup>();
+    }
+    if (!backgroundTaskGroup_) {
+        backgroundTaskGroup_ = std::make_shared<TaskGroup>();
     }
 }
 
@@ -34,11 +52,34 @@ void ModelManager::SetRootDirectory(std::string root) {
 }
 
 std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename) {
-    const std::string key = filename; // キーはファイル名自体にする
+    auto managedModel = GetModelAsync(filename);
+    if (!managedModel) return nullptr;
+
+    // ロード完了を待機 (同期ロードとしての振る舞い)
+    if (managedModel->status.load() != ManagedModel::LoadingStatus::Loaded) {
+        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Waiting for load: {}\n", GetCurrentThreadId(), filename).c_str());
+    }
+
+    while (managedModel->status.load() == ManagedModel::LoadingStatus::Loading || 
+           managedModel->status.load() == ManagedModel::LoadingStatus::Pending) {
+        std::this_thread::yield();
+    }
+
+    if (managedModel->status.load() == ManagedModel::LoadingStatus::Failed) {
+        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Load failed (waited): {}\n", GetCurrentThreadId(), filename).c_str());
+        return nullptr;
+    }
+
+    return managedModel;
+}
+
+std::shared_ptr<ManagedModel> ModelManager::GetModelAsync(const std::string& filename) {
+    const std::string key = filename;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         if (auto it = cache_.find(key); it != cache_.end()) {
             if (auto sp = it->second.lock()) {
+                OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Cache hit: {}\n", GetCurrentThreadId(), filename).c_str());
                 return sp;
             }
         }
@@ -46,107 +87,133 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
 
     // ファイルパスを解決
     std::string fullPath;
-    // パス区切り文字が含まれているかチェック
     if (filename.find('/') != std::string::npos || filename.find('\\') != std::string::npos) {
-        // 含まれている場合は、ルートディレクトリからの相対パスとして扱う
         fullPath = NormalizeAndResolve(filename);
     } else {
-        // 含まれていない場合は、再帰的にファイルを検索
         fullPath = FindFileRecursive(filename);
     }
 
     if (fullPath.empty() || !std::filesystem::exists(fullPath)) {
-        // ファイルが見つからない場合のエラーハンドリング
         OutputDebugStringA(("[ModelManager] File not found: " + filename + "\n").c_str());
         return nullptr;
     }
 
-    // CPUモデルロード
-    auto pair = SplitDirectoryAndFile(fullPath);
-    auto cpuModel = std::make_shared<ObjModel>(ModelManager::LoadModelFromFile(pair.first, pair.second));
-
-    // GPUリソース生成
+    // 非同期ロード用のプロキシ作成
     auto managedModel = std::make_shared<ManagedModel>();
-    managedModel->cpuModel = cpuModel;
-    managedModel->gpuMeshes.reserve(cpuModel->meshes.size());
-    managedModel->gpuMaterials.reserve(cpuModel->meshes.size()); // 追加
-
-    for (const auto& cpuMesh : cpuModel->meshes) {
-        auto gpuMesh = std::make_shared<GpuMesh>();
-
-        // Vertex Buffer
-        if (!cpuMesh.vertices.empty()) {
-            const size_t vbSize = sizeof(VertexData) * cpuMesh.vertices.size();
-            gpuMesh->vertexResource = dxCommon_->CreateBufferResource(vbSize);
-            gpuMesh->vertexCount = static_cast<UINT>(cpuMesh.vertices.size());
-            gpuMesh->vertexBufferView.BufferLocation = gpuMesh->vertexResource->GetGPUVirtualAddress();
-            gpuMesh->vertexBufferView.SizeInBytes = static_cast<UINT>(vbSize);
-            gpuMesh->vertexBufferView.StrideInBytes = sizeof(VertexData);
-            VertexData* vbData = nullptr;
-            gpuMesh->vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vbData));
-            std::memcpy(vbData, cpuMesh.vertices.data(), vbSize);
-            gpuMesh->vertexResource->Unmap(0, nullptr);
-
-            // 頂点バッファのSRVを作成
-            uint32_t srvIndex = dxCommon_->GetSrvPool()->Allocate();
-            assert(srvIndex != DescriptorPool::kInvalid);
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-            srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-            srvDesc.Buffer.FirstElement = 0;
-            srvDesc.Buffer.NumElements = gpuMesh->vertexCount;
-            srvDesc.Buffer.StructureByteStride = sizeof(VertexData);
-            dxCommon_->GetDevice()->CreateShaderResourceView(gpuMesh->vertexResource.Get(), &srvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(srvIndex));
-            gpuMesh->vertexSrvHandle = dxCommon_->GetSrvPool()->GetGPUHandle(srvIndex);
-        }
-
-        // Index Buffer (あれば)
-        if (!cpuMesh.indices.empty()) {
-            const size_t ibSize = sizeof(uint32_t) * cpuMesh.indices.size();
-            gpuMesh->indexResource = dxCommon_->CreateBufferResource(ibSize);
-            gpuMesh->indexCount = static_cast<UINT>(cpuMesh.indices.size());
-            gpuMesh->indexBufferView.BufferLocation = gpuMesh->indexResource->GetGPUVirtualAddress();
-            gpuMesh->indexBufferView.SizeInBytes = static_cast<UINT>(ibSize);
-            gpuMesh->indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-            uint32_t* ibData = nullptr;
-            gpuMesh->indexResource->Map(0, nullptr, reinterpret_cast<void**>(&ibData));
-            std::memcpy(ibData, cpuMesh.indices.data(), ibSize);
-            gpuMesh->indexResource->Unmap(0, nullptr);
-        }
-        managedModel->gpuMeshes.push_back(std::move(gpuMesh));
-
-        // Materialリソース生成
-        auto gpuMaterial = std::make_shared<GpuMaterial>();
-        gpuMaterial->materialResource = dxCommon_->CreateBufferResource(sizeof(Material));
-        Material* materialData = nullptr;
-        gpuMaterial->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-
-        materialData->color = cpuMesh.material.color;
-        materialData->enableLighting = cpuMesh.material.enableLighting;
-        materialData->uvTransform = cpuMesh.material.uvTransform;
-        materialData->shininess = cpuMesh.material.shininess;
-        //materialData->environmentCoefficient = cpuMesh.material.environmentCoefficient;
-        materialData->hasTexture = !cpuMesh.material.textureFilePath.empty();
-        materialData->lightingMode = cpuMesh.material.enableLighting ? 2 : 0;
-        if (materialData->color.w <= 0.0f) { materialData->color.w = 1.0f; }
-
-        // テクスチャハンドル取得
-        if (materialData->hasTexture) {
-            gpuMaterial->textureHandle = textureManager_->GetTextureHandle(cpuMesh.material.textureFilePath);
-        } else {
-            gpuMaterial->textureHandle = textureManager_->GetWhiteTextureHandle();
-        }
-        managedModel->gpuMaterials.push_back(std::move(gpuMaterial));
-    }
+    managedModel->status.store(ManagedModel::LoadingStatus::Pending);
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
         cache_[key] = managedModel;
     }
 
-    DebugLogLoad(key, managedModel->cpuModel->meshes.size());
+    OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Request async load: {}\n", GetCurrentThreadId(), filename).c_str());
+
+    // タスクをキューイング (TaskGroup 経由)
+    threadPool_->Enqueue(taskGroup_, [this, managedModel, fullPath]() {
+        LoadInternal(managedModel, fullPath);
+    });
+
     return managedModel;
+}
+
+void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, const std::string& fullPath) {
+
+    std::string key = SplitDirectoryAndFile(fullPath).second;
+    OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker START: {}\n", GetCurrentThreadId(), key).c_str());
+
+    managedModel->status.store(ManagedModel::LoadingStatus::Loading);
+
+    try {
+        // CPUモデルロード
+        auto pair = SplitDirectoryAndFile(fullPath);
+        managedModel->cpuModel = std::make_shared<ObjModel>(ModelManager::LoadModelFromFile(pair.first, pair.second));
+
+        // GPUリソース生成
+        managedModel->gpuMeshes.reserve(managedModel->cpuModel->meshes.size());
+        managedModel->gpuMaterials.reserve(managedModel->cpuModel->meshes.size());
+
+        for (const auto& cpuMesh : managedModel->cpuModel->meshes) {
+            auto gpuMesh = std::make_shared<GpuMesh>();
+
+            // Vertex Buffer
+            if (!cpuMesh.vertices.empty()) {
+                const size_t vbSize = sizeof(VertexData) * cpuMesh.vertices.size();
+                gpuMesh->vertexResource = dxCommon_->CreateBufferResource(vbSize);
+                gpuMesh->vertexCount = static_cast<UINT>(cpuMesh.vertices.size());
+                gpuMesh->vertexBufferView.BufferLocation = gpuMesh->vertexResource->GetGPUVirtualAddress();
+                gpuMesh->vertexBufferView.SizeInBytes = static_cast<UINT>(vbSize);
+                gpuMesh->vertexBufferView.StrideInBytes = sizeof(VertexData);
+                VertexData* vbData = nullptr;
+                gpuMesh->vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vbData));
+                std::memcpy(vbData, cpuMesh.vertices.data(), vbSize);
+                gpuMesh->vertexResource->Unmap(0, nullptr);
+
+                uint32_t srvIndex = dxCommon_->GetSrvPool()->Allocate();
+                assert(srvIndex != DescriptorPool::kInvalid);
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+                srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+                srvDesc.Buffer.FirstElement = 0;
+                srvDesc.Buffer.NumElements = gpuMesh->vertexCount;
+                srvDesc.Buffer.StructureByteStride = sizeof(VertexData);
+                dxCommon_->GetDevice()->CreateShaderResourceView(gpuMesh->vertexResource.Get(), &srvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(srvIndex));
+                gpuMesh->vertexSrvHandle = dxCommon_->GetSrvPool()->GetGPUHandle(srvIndex);
+            }
+
+            // Index Buffer
+            if (!cpuMesh.indices.empty()) {
+                const size_t ibSize = sizeof(uint32_t) * cpuMesh.indices.size();
+                gpuMesh->indexResource = dxCommon_->CreateBufferResource(ibSize);
+                gpuMesh->indexCount = static_cast<UINT>(cpuMesh.indices.size());
+                gpuMesh->indexBufferView.BufferLocation = gpuMesh->indexResource->GetGPUVirtualAddress();
+                gpuMesh->indexBufferView.SizeInBytes = static_cast<UINT>(ibSize);
+                gpuMesh->indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+                uint32_t* ibData = nullptr;
+                gpuMesh->indexResource->Map(0, nullptr, reinterpret_cast<void**>(&ibData));
+                std::memcpy(ibData, cpuMesh.indices.data(), ibSize);
+                gpuMesh->indexResource->Unmap(0, nullptr);
+            }
+            managedModel->gpuMeshes.push_back(std::move(gpuMesh));
+
+            // Materialリソース生成
+            auto gpuMaterial = std::make_shared<GpuMaterial>();
+            gpuMaterial->materialResource = dxCommon_->CreateBufferResource(sizeof(Material));
+            Material* materialData = nullptr;
+            gpuMaterial->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
+
+            materialData->color = cpuMesh.material.color;
+            materialData->enableLighting = cpuMesh.material.enableLighting;
+            materialData->uvTransform = cpuMesh.material.uvTransform;
+            materialData->shininess = cpuMesh.material.shininess;
+            materialData->hasTexture = !cpuMesh.material.textureFilePath.empty();
+            materialData->lightingMode = cpuMesh.material.enableLighting ? 2 : 0;
+            if (materialData->color.w <= 0.0f) { materialData->color.w = 1.0f; }
+
+            if (materialData->hasTexture) {
+                gpuMaterial->textureHandle = textureManager_->GetTextureHandle(cpuMesh.material.textureFilePath);
+            } else {
+                gpuMaterial->textureHandle = textureManager_->GetWhiteTextureHandle();
+            }
+            managedModel->gpuMaterials.push_back(std::move(gpuMaterial));
+        }
+
+        managedModel->status.store(ManagedModel::LoadingStatus::Loaded);
+        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker FINISH: {}\n", GetCurrentThreadId(), key).c_str());
+    } catch (...) {
+        managedModel->status.store(ManagedModel::LoadingStatus::Failed);
+        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker FAILED: {}\n", GetCurrentThreadId(), key).c_str());
+    }
+}
+
+bool ModelManager::IsCurrentSceneInitializing() const {
+    if (!dxCommon_) return false;
+    auto engine = dxCommon_->GetEngine();
+    if (!engine) return false;
+    auto sceneManager = engine->GetSceneManager();
+    if (!sceneManager) return false;
+    return sceneManager->IsInitializing();
 }
 
 void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {

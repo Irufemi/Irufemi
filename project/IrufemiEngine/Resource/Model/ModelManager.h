@@ -10,12 +10,17 @@
 #include <sstream>
 #include <cassert>
 #include <wrl.h>
+#include <future>
+#include <type_traits>
+#include "../../Engine/Core/System/ThreadPool.h"
+#include "../../Engine/Core/System/TaskGroup.h"
 #include <d3d12.h>
 #include "Resource/Model/Data/ObjModel.h"
 #include "Resource/Model/Data/ModelData.h"
 #include "Resource/Model/Data/MaterialData.h"
 #include "Resource/Model/Data/VoxelizedModel.h"
 #include "Engine/Core/Math/Geometry/Math.h"
+#include <atomic>
 
 // 前方宣言
 struct aiNode;
@@ -55,9 +60,18 @@ struct GpuMaterial {
  * @brief CPU/GPU両方のデータを統合して管理する単位
  */
 struct ManagedModel {
+    enum class LoadingStatus {
+        Pending,
+        Loading,
+        Loaded,
+        Failed
+    };
+
     std::shared_ptr<ObjModel> cpuModel;
     std::vector<std::shared_ptr<GpuMesh>> gpuMeshes;
     std::vector<std::shared_ptr<GpuMaterial>> gpuMaterials;
+    
+    std::atomic<LoadingStatus> status = LoadingStatus::Pending;
 };
 
 /**
@@ -76,8 +90,8 @@ struct ManagedModel {
  */
 class ModelManager {
 public:
-    ModelManager() = default;
-    ~ModelManager() = default;
+    ModelManager();
+    ~ModelManager();
 
     /**
      * @brief マネージャの初期化
@@ -100,6 +114,13 @@ public:
     std::shared_ptr<ManagedModel> GetModel(const std::string& filename);
 
     /**
+     * @brief モデルを非同期でロードする。即座に ManagedModel を返すが、 status を確認する必要がある。
+     * @param filename ファイル名
+     * @return 準備中の ManagedModel への共有ポインタ
+     */
+    std::shared_ptr<ManagedModel> GetModelAsync(const std::string& filename);
+
+    /**
      * @brief 指定したフォルダ以下のモデルをすべて先行ロードする
      * @param relativeFolder ルートディレクトリからの相対パス
      */
@@ -110,6 +131,43 @@ public:
      * @return キーのリスト
      */
     std::vector<std::string> GetCachedKeys() const;
+ 
+    /**
+     * @brief 現在の非同期ロードタスクの数を取得
+     */
+    uint32_t GetPendingTaskCount() const { return taskGroup_->GetPendingCount(); }
+ 
+    /**
+     * @brief すべてのロードタスクが完了したかを取得
+     */
+    bool IsAllLoaded() const { return taskGroup_->IsAllDone(); }
+
+    /**
+     * @brief 汎用的な非同期タスクをキューに追加し、判定フラグに基づいてリソースの待機対象にするかを決定する
+     * @details シーンの Initialize 中であれば Critical、Update 中であれば Background として扱います（引数で明示指定も可能）。
+     * @tparam F 関数型
+     * @tparam Args 引数型
+     * @param f 実行する関数
+     * @param args 関数の引数
+     * @return 実行結果を取得するための std::future
+     */
+    template <class F, class... Args>
+    auto EnqueueTask(F &&f, Args &&...args)
+        -> std::future<typename std::invoke_result_t<F, Args...>> {
+      bool isCritical = IsCurrentSceneInitializing();
+      return EnqueueTask(isCritical, std::forward<F>(f), std::forward<Args>(args)...);
+    }
+
+    /**
+     * @brief 優先度を指定して汎用的な非同期タスクをキューに追加する
+     * @param isCritical true の場合、完了するまで SceneManager はシーンの更新・描画を待機します。
+     */
+    template <class F, class... Args>
+    auto EnqueueTask(bool isCritical, F &&f, Args &&...args)
+        -> std::future<typename std::invoke_result_t<F, Args...>> {
+      auto &group = isCritical ? taskGroup_ : backgroundTaskGroup_;
+      return threadPool_->Enqueue(group, std::forward<F>(f), std::forward<Args>(args)...);
+    }
 
     /**
      * @brief 参照されなくなったキャッシュエントリーを削除する
@@ -164,6 +222,16 @@ private:
      */
     std::string FindFileRecursive(const std::string& filename) const;
 
+    /**
+     * @brief モデルの読み込み実体（内部用）
+     */
+    void LoadInternal(std::shared_ptr<ManagedModel> model, const std::string& fullPath);
+
+    /**
+     * @brief 現在のシーンが初期化中かどうかを判定する
+     */
+    bool IsCurrentSceneInitializing() const;
+
     // --- 旧形式との互換性用もしくは内部ユーティリティ ---
     static bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
     static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
@@ -180,4 +248,7 @@ private:
     mutable std::mutex mutex_;
     std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
-};
+    std::unique_ptr<ThreadPool> threadPool_;
+    std::shared_ptr<TaskGroup> taskGroup_;           ///< 重要タスク用（シーンを止める）
+    std::shared_ptr<TaskGroup> backgroundTaskGroup_; ///< バックグラウンド用（シーンを止めない）
+};
