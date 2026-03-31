@@ -1108,6 +1108,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         ImGui::Text("Available Effects:");
 
         // エフェクト選択
+        ImGui::PushID("AvailableEffects");
         for (int i = 1; i < 12; ++i) { // None 以外を表示
             PostProcessMode m = static_cast<PostProcessMode>(i);
             bool isEnabled = std::find(activeModes.begin(), activeModes.end(), m) != activeModes.end();
@@ -1121,6 +1122,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                 }
             }
         }
+        ImGui::PopID();
 
         ImGui::Separator();
         ImGui::Text("Active Stack (Draw Order):");
@@ -1136,6 +1138,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         ImGui::Text("Parameters:");
 
         // 有効な全てのエフェクトのパラメータを表示
+        ImGui::PushID("Parameters");
         for (auto mode : activeModes) {
             if (ImGui::TreeNode(modeNames[static_cast<int>(mode)])) {
                 if (mode == PostProcessMode::Vignette) {
@@ -1188,6 +1191,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                 ImGui::TreePop();
             }
         }
+        ImGui::PopID();
         ImGui::EndTabItem();
     }
 #endif // USE_IMGUI
