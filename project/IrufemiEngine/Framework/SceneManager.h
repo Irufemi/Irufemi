@@ -83,16 +83,21 @@ public:
     void TogglePause() { isPaused_ = !isPaused_; }
     /** @brief ポーズ中かどうかを取得 */
     bool IsPaused() const { return isPaused_; }
+
+    /** @brief シーンの初期化（Initialize）実行中かどうかを取得 */
+    bool IsInitializing() const { return isInitializing_; }
     ///@}
 
 private:
     IrufemiEngine* engine_ = nullptr; ///< エンジン本体への参照
-    std::unique_ptr<IScene> current_{}; ///< 現在実行中のシーンインスタンス
-    Key currentName_{};  ///< 現在のシーン名
-    Key pending_{};      ///< 次フレームで切り替え予定のシーン名
 
     std::unordered_map<Key, Factory> factories_; ///< シーン識別名と生成関数のマップ
     std::vector<Key> order_; ///< 登録されたシーン名のリスト（順序保持用）
 
+    std::unique_ptr<IScene> current_{}; ///< 現在実行中のシーンインスタンス
+    Key currentName_{};  ///< 現在のシーン名
+    Key pending_{};      ///< 次フレームで切り替え予定のシーン名
+
     bool isPaused_ = false; ///< ゲーム全体の一時停止フラグ
+    bool isInitializing_ = false; ///< シーンの初期化（Initialize）実行中フラグ
 };

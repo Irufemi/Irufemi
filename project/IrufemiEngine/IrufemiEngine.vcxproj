@@ -155,6 +155,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Graphics\DirectX\FrameRateController.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectX\ShaderCompiler.cpp" />
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Renderer\Object2D\Sprite\Sprite.cpp" />
     <ClCompile Include="Renderer\Object3D\AnimationModel\AnimationModel.cpp">
@@ -228,6 +230,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Type\PerFrame.h" />
     <ClInclude Include="Engine\Core\Type\PerView.h" />
     <ClInclude Include="Engine\Core\Type\Voxel.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\FrameRateController.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\ShaderCompiler.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Renderer\VoxelParticle\VoxelParticleSystem.h" />
     <ClInclude Include="Resource\Model\Data\VoxelizedModel.h" />

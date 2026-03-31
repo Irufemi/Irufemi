@@ -11,6 +11,7 @@
 #include <wrl.h>
 #include <atomic>
 #include <mutex>
+#include <future>
 
 
 // 前方宣言
@@ -67,7 +68,7 @@ public:
 
 public:
   VoxelParticleSystem() = default;
-  ~VoxelParticleSystem() = default;
+  ~VoxelParticleSystem();
 
   static void SetEngine(IrufemiEngine *engine) { engine_ = engine; }
 
@@ -158,6 +159,7 @@ private:
 
   std::atomic<LoadingStatus> status_ = LoadingStatus::Pending;
   std::mutex voxelModelMutex_;
+  std::future<void> initializeFuture_;
 
   static IrufemiEngine *engine_;
 };

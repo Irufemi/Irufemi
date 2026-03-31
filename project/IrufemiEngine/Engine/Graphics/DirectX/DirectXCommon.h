@@ -7,6 +7,10 @@
 #include <chrono>
 #include <vector>
 #include <mutex>
+#include <string>
+
+#include "FrameRateController.h"
+#include "ShaderCompiler.h"
 
 #include "../../../../externals/DirectXTex/DirectXTex.h"
 #include "../Pipeline/PSOManager.h"
@@ -14,6 +18,7 @@
 #include "../../Core/Math/Vector4.h"
 
 class Log;
+class IrufemiEngine;
 
 /**
  * @class DirectXCommon
@@ -89,17 +94,7 @@ public: // メンバ関数
 	 */
 	static DirectX::TexMetadata GetTextureMetadata(const std::string& filePath);
 
-	/**
-	 * @brief シェーダのコンパイル
-	 */
-	static Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(
-		const std::wstring& filePath,
-		const wchar_t* profile,
-		const Microsoft::WRL::ComPtr<IDxcUtils>& dxcUtils,
-		const Microsoft::WRL::ComPtr<IDxcCompiler3>& dxcCompiler,
-		const Microsoft::WRL::ComPtr<IDxcIncludeHandler>& includeHandler,
-		std::ostream& os
-	);
+	// ShaderCompilerに委譲したため、ここからは削除
 
 	/**
 	 * @brief 深度ステンシルテクスチャリソースの生成
@@ -124,12 +119,12 @@ public: // メンバ関数
 	/**
 	 * @brief FPS固定のための初期化
 	 */
-	void InitializeFixFPS();
+	void InitializeFixFPS() { fpsController_->Initialize(); }
 
 	/**
 	 * @brief FPS固定のための更新
 	 */
-	void UpdateFixFPS();
+	void UpdateFixFPS() { fpsController_->Update(); }
  
 	/**
 	 * @brief リソースの遅延解放登録
@@ -141,6 +136,16 @@ public: // メンバ関数
 	 * @brief 待機中のリソースを解放する
 	 */
 	void ClearPendingResources();
+
+	/**
+	 * @brief エンジン本体へのポインタを設定
+	 */
+	void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
+
+	/**
+	 * @brief エンジン本体へのポインタを取得
+	 */
+	IrufemiEngine* GetEngine() const { return engine_; }
 
 public: // ゲッター
 
@@ -194,6 +199,8 @@ public: // ゲッター
 	int32_t& GetClientHeight() { return clientHeight_; }
 	PSOManager* GetPSOManager() { return psoManager_.get(); }
 	ID3D12Resource* GetDepthStencilResource() const { return depthStencilResource_.Get(); }
+	ShaderCompiler* GetShaderCompiler() const { return shaderCompiler_.get(); }
+	FrameRateController* GetFPSController() const { return fpsController_.get(); }
 	///@}
 
 	/** @name Compute Shader 関連の取得 */
@@ -230,6 +237,24 @@ private:
 	 * @brief GPUデスクリプタハンドルの取得
 	 */
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index);
+
+private: // 初期化用プライベートメソッド
+
+	/** @name 初期化工程の分割 */
+	///@{
+	void EnableDebugLayer();
+	void InitializeDXGI();
+	void CreateDevice();
+	void SetInfoQueue();
+	void CreateCommandObjects();
+	void CreateSwapChain();
+	void CreateDescriptorHeaps();
+	void InitializeRenderTargets();
+	void CreateDepthStencil();
+	void CreateFence();
+	void CreateRootSignatures();
+	void CreatePSOs();
+	///@}
 
 private: // メンバ変数
 
@@ -301,9 +326,10 @@ private: // メンバ変数
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleEmitPSO_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleUpdatePSO_ = nullptr;
 
-	// 記録時間(FPS固定用)
-	std::chrono::steady_clock::time_point  reference_;
- 
+	// --- 制御用クラス ---
+	std::unique_ptr<FrameRateController> fpsController_ = nullptr;
+	std::unique_ptr<ShaderCompiler> shaderCompiler_ = nullptr;
+
 	// --- リソース遅延解放用 ---
 	struct PendingResource {
 		uint64_t fenceValue;
@@ -317,5 +343,8 @@ private: // メンバ変数
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> uploadCommandList_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Fence> uploadFence_ = nullptr;
 	uint64_t uploadFenceValue_ = 0;
+
+	// エンジン本体への参照
+	IrufemiEngine* engine_ = nullptr;
 };
 

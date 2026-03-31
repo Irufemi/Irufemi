@@ -143,7 +143,8 @@ public:
     bool IsAllLoaded() const { return taskGroup_->IsAllDone(); }
 
     /**
-     * @brief 汎用的な非同期タスクをキューに追加し、 pendingTaskCount_ を管理する
+     * @brief 汎用的な非同期タスクをキューに追加し、判定フラグに基づいてリソースの待機対象にするかを決定する
+     * @details シーンの Initialize 中であれば Critical、Update 中であれば Background として扱います（引数で明示指定も可能）。
      * @tparam F 関数型
      * @tparam Args 引数型
      * @param f 実行する関数
@@ -153,7 +154,19 @@ public:
     template <class F, class... Args>
     auto EnqueueTask(F &&f, Args &&...args)
         -> std::future<typename std::invoke_result_t<F, Args...>> {
-      return threadPool_->Enqueue(taskGroup_, std::forward<F>(f), std::forward<Args>(args)...);
+      bool isCritical = IsCurrentSceneInitializing();
+      return EnqueueTask(isCritical, std::forward<F>(f), std::forward<Args>(args)...);
+    }
+
+    /**
+     * @brief 優先度を指定して汎用的な非同期タスクをキューに追加する
+     * @param isCritical true の場合、完了するまで SceneManager はシーンの更新・描画を待機します。
+     */
+    template <class F, class... Args>
+    auto EnqueueTask(bool isCritical, F &&f, Args &&...args)
+        -> std::future<typename std::invoke_result_t<F, Args...>> {
+      auto &group = isCritical ? taskGroup_ : backgroundTaskGroup_;
+      return threadPool_->Enqueue(group, std::forward<F>(f), std::forward<Args>(args)...);
     }
 
     /**
@@ -214,6 +227,11 @@ private:
      */
     void LoadInternal(std::shared_ptr<ManagedModel> model, const std::string& fullPath);
 
+    /**
+     * @brief 現在のシーンが初期化中かどうかを判定する
+     */
+    bool IsCurrentSceneInitializing() const;
+
     // --- 旧形式との互換性用もしくは内部ユーティリティ ---
     static bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
     static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
@@ -231,5 +249,6 @@ private:
     std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
     std::unique_ptr<ThreadPool> threadPool_;
-    std::shared_ptr<TaskGroup> taskGroup_;
+    std::shared_ptr<TaskGroup> taskGroup_;           ///< 重要タスク用（シーンを止める）
+    std::shared_ptr<TaskGroup> backgroundTaskGroup_; ///< バックグラウンド用（シーンを止めない）
 };

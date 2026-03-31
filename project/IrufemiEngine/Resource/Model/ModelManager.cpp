@@ -12,6 +12,8 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Resource/Texture/TextureManager.h"
+#include "Engine/IrufemiEngine.h"
+#include "Framework/SceneManager.h"
 #include "Renderer/Material.h"
 #include "Renderer/VertexData.h"
 #include "Resource/Model/Data/Node.h"
@@ -37,6 +39,9 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
     }
     if (!taskGroup_) {
         taskGroup_ = std::make_shared<TaskGroup>();
+    }
+    if (!backgroundTaskGroup_) {
+        backgroundTaskGroup_ = std::make_shared<TaskGroup>();
     }
 }
 
@@ -200,6 +205,15 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
         managedModel->status.store(ManagedModel::LoadingStatus::Failed);
         OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker FAILED: {}\n", GetCurrentThreadId(), key).c_str());
     }
+}
+
+bool ModelManager::IsCurrentSceneInitializing() const {
+    if (!dxCommon_) return false;
+    auto engine = dxCommon_->GetEngine();
+    if (!engine) return false;
+    auto sceneManager = engine->GetSceneManager();
+    if (!sceneManager) return false;
+    return sceneManager->IsInitializing();
 }
 
 void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {

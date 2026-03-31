@@ -11,6 +11,8 @@
 #include "../../Engine/Graphics/DirectX/DirectXCommon.h"
 #include "../../../externals/DirectXTex/DirectXTex.h"
 #include "../../../externals/DirectXTex/d3dx12.h"
+#include "../../Engine/IrufemiEngine.h"
+#include "../../Framework/SceneManager.h"
 
 static bool IsImageExtImpl(const std::string& extLower) {
     static const char* exts[] = { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".dds" };
@@ -31,6 +33,9 @@ void TextureManager::Initialize(DirectXCommon* dxCommon) {
     }
     if (!taskGroup_) {
         taskGroup_ = std::make_shared<TaskGroup>();
+    }
+    if (!backgroundTaskGroup_) {
+        backgroundTaskGroup_ = std::make_shared<TaskGroup>();
     }
 
     // フォールバック用の白テクスチャ生成と登録
@@ -161,4 +166,13 @@ bool TextureManager::GetTextureSize(const std::string& name, uint32_t& outWidth,
     outWidth = it->second->GetWidth();
     outHeight = it->second->GetHeight();
     return true;
+}
+
+bool TextureManager::IsCurrentSceneInitializing() const {
+    if (!dxCommon_) return false;
+    auto engine = dxCommon_->GetEngine();
+    if (!engine) return false;
+    auto sceneManager = engine->GetSceneManager();
+    if (!sceneManager) return false;
+    return sceneManager->IsInitializing();
 }

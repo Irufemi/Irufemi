@@ -326,6 +326,12 @@
     <ClCompile Include="Renderer\Object3D\Object3DResource.cpp" />
     <ClCompile Include="Renderer\Particle\ParticleResource.cpp" />
     <ClCompile Include="Renderer\LineInstanced\LineResource.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectX\ShaderCompiler.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectX\FrameRateController.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -661,6 +667,12 @@
     </ClInclude>
     <ClInclude Include="Engine\Core\System\TaskGroup.h">
       <Filter>Engine\Core\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\ShaderCompiler.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\FrameRateController.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

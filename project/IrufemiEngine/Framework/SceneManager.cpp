@@ -29,7 +29,11 @@ bool SceneManager::ChangeTo(const Key& next) {
     current_.reset();
     current_ = it->second();
     currentName_ = next;
+    
+    isInitializing_ = true;
     current_->Initialize(engine_);
+    isInitializing_ = false;
+
     isPaused_ = false; // シーン切り替え時にポーズを解除
     engine_->SetCursorLocked(true); // シーン開始時はマウスをロック
     return true;

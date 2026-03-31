@@ -97,12 +97,23 @@ public:
     bool IsAllLoaded() const { return taskGroup_->IsAllDone(); }
 
     /**
-     * @brief 非同期タスクの実行
+     * @brief 非同期タスクの実行（シーンの状態による自動判定）
      */
     template <class F, class... Args>
     auto EnqueueTask(F&& f, Args&&... args) 
         -> std::future<typename std::invoke_result_t<F, Args...>> {
-        return threadPool_->Enqueue(taskGroup_, std::forward<F>(f), std::forward<Args>(args)...);
+        bool isCritical = IsCurrentSceneInitializing();
+        return EnqueueTask(isCritical, std::forward<F>(f), std::forward<Args>(args)...);
+    }
+
+    /**
+     * @brief 優先度を指定して非同期タスクを実行
+     */
+    template <class F, class... Args>
+    auto EnqueueTask(bool isCritical, F&& f, Args&&... args) 
+        -> std::future<typename std::invoke_result_t<F, Args...>> {
+        auto &group = isCritical ? taskGroup_ : backgroundTaskGroup_;
+        return threadPool_->Enqueue(group, std::forward<F>(f), std::forward<Args>(args)...);
     }
 
     /**
@@ -111,6 +122,10 @@ public:
     ID3D12Resource* GetWhiteTextureResource() const { return whiteTextureResource_.Get(); }
 
 private:
+    /**
+     * @brief 現在のシーンが初期化中かどうかを判定する
+     */
+    bool IsCurrentSceneInitializing() const;
     DirectXCommon* dxCommon_ = nullptr;
 
     // key: ファイルパス(または識別名)、value: Texture オブジェクト
@@ -118,7 +133,8 @@ private:
     mutable std::mutex mutex_;
 
     std::unique_ptr<ThreadPool> threadPool_;
-    std::shared_ptr<TaskGroup> taskGroup_;
+    std::shared_ptr<TaskGroup> taskGroup_;           ///< 重要タスク用
+    std::shared_ptr<TaskGroup> backgroundTaskGroup_; ///< バックグラウンド用
 
     // フォールバック白テクスチャ
     Microsoft::WRL::ComPtr<ID3D12Resource> whiteTextureResource_;

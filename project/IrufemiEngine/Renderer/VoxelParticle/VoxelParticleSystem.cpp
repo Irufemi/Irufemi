@@ -18,6 +18,12 @@
 
 IrufemiEngine *VoxelParticleSystem::engine_ = nullptr;
 
+VoxelParticleSystem::~VoxelParticleSystem() {
+  if (initializeFuture_.valid()) {
+    initializeFuture_.wait();
+  }
+}
+
 void VoxelParticleSystem::Initialize(const std::string &modelName,
                                      const Vector3Int &resolution,
                                      Camera *camera) {
@@ -31,7 +37,7 @@ void VoxelParticleSystem::Initialize(const std::string &modelName,
   status_.store(LoadingStatus::Loading);
 
   // 非同期でボクセル化を開始
-  modelManager_->EnqueueTask([this, modelName, resolution]() {
+  initializeFuture_ = modelManager_->EnqueueTask([this, modelName, resolution]() {
     auto managedModel = modelManager_->GetModel(modelName);
     if (!managedModel || !managedModel->cpuModel) {
       status_.store(LoadingStatus::Failed);
