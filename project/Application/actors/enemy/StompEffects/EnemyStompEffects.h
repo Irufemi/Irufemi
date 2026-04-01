@@ -1,7 +1,6 @@
 #pragma once
 #include "core/math/Transform.h"
 #include "core/math/Vector4.h"
-#include "core/math/geometry/OBB.h"
 #include <memory>
 #include <algorithm>
 
@@ -18,6 +17,13 @@ public:
         KeepAndWarning, // 2. 最大サイズで維持 ＋ 警告（赤らむ）
         FinalExplosion, // 3. 下から上へ噴き上がる爆発
         Finished        // 4. 終了
+    };
+
+    // --- OBB構造体 ---
+    struct OBB {
+        Vector3 center;          // 中心点
+        Vector3 orientations[3]; // 各軸の方向ベクトル
+        Vector3 size;            // 各軸の半分の長さ（ハーフサイズ）
     };
 
     // --- 全てのパラメータをここに集約 ---
@@ -41,8 +47,9 @@ public:
 
         // 3. 再爆発（噴き上がり）
         float finalExplosionDuration = 1.0f;
-        float finalExplosionMaxHeight = 30.0f;  // 上に伸びる高さ
+        float finalExplosionMaxHeight = 300.0f;  // 上に伸びる高さ
         float finalExplosionMaxRadius = 165.0f;  // 噴き出す横幅
+        int finalExplosionDamage = 50;
     };
 
     void Initialize(Camera* camera);

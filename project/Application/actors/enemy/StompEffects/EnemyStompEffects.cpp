@@ -131,7 +131,7 @@ void EnemyStompEffects::Update(float deltaTime, Player* player) {
         // ※ピボットがモデルの中心にある場合、座標を上にずらす
         finalExplosionTransform_.translate.y = (basePosition_.y + params_.ringGroundOffset) + (currentH * 0.5f);
 
-        finalExplosionObj_->SetColor({ 1.0f, 0.5f, 0.2f, Lerp(1.0f, 0.0f, t) });
+        finalExplosionObj_->SetColor({ 1.0f, 1.0f, 1.0f, Lerp(1.0f, 0.0f, t) });
 
         // OBB更新と判定
         UpdateFinalExplosionOBB();
