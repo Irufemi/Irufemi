@@ -159,6 +159,14 @@ private:
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
     Camera* camera_ = nullptr;
+
+    // デスクリプタインデックスの保持
+    uint32_t emitterSrvIndex_ = 0xFFFFFFFF;
+    uint32_t perFrameSrvIndex_ = 0xFFFFFFFF;
+    uint32_t particleUavIndex_ = 0xFFFFFFFF;
+    uint32_t particleSrvIndex_ = 0xFFFFFFFF;
+    uint32_t freeListIndexUavIndex_ = 0xFFFFFFFF;
+    uint32_t freeListUavIndex_ = 0xFFFFFFFF;
     ///@}
 };
 

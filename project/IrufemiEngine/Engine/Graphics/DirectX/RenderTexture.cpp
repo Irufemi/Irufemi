@@ -3,8 +3,16 @@
 #include "DescriptorPool.h"
 #include "Engine/Manager/DrawManager.h"
 #include <cassert>
+#include <iostream>
+
+RenderTexture::~RenderTexture() {
+    if (dxCommon_ && dxCommon_->GetSrvPool()) {
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+    }
+}
 
 void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor) {
+    dxCommon_ = dxCommon;
     width_ = width;
     height_ = height;
     format_ = format;

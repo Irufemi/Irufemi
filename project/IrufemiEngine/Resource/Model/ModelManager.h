@@ -37,6 +37,8 @@ class TextureManager;
  * @brief GPU上に転送されたメッシュリソースを保持する構造体
  */
 struct GpuMesh {
+    GpuMesh() = default;
+    ~GpuMesh();
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;
     Microsoft::WRL::ComPtr<ID3D12Resource> indexResource;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
@@ -44,6 +46,9 @@ struct GpuMesh {
     UINT vertexCount = 0;
     UINT indexCount = 0;
     D3D12_GPU_DESCRIPTOR_HANDLE vertexSrvHandle{};
+    uint32_t srvIndex = 0xFFFFFFFF;
+    
+    static DirectXCommon* sDxCommon;
 };
 
 /**

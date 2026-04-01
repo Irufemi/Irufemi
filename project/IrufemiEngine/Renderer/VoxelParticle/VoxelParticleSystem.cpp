@@ -22,6 +22,14 @@ VoxelParticleSystem::~VoxelParticleSystem() {
   if (initializeFuture_.valid()) {
     initializeFuture_.wait();
   }
+  if (engine_) {
+    if (auto *srvPool = engine_->GetSrvPool()) {
+      uint64_t fv = engine_->GetDirectXCommon()->GetFenceValue();
+      srvPool->FreeAfterFence(voxelSrvIndex_, fv);
+      srvPool->FreeAfterFence(particleUavIndex_, fv);
+      srvPool->FreeAfterFence(particleSrvIndex_, fv);
+    }
+  }
 }
 
 void VoxelParticleSystem::Initialize(const std::string &modelName,
@@ -407,6 +415,7 @@ void VoxelParticleSystem::CreateResources() {
   voxelBuffer_->Unmap(0, nullptr);
 
   uint32_t voxelSrvIndex = srvPool->Allocate();
+  voxelSrvIndex_ = voxelSrvIndex;
   voxelSrvHandleCPU_ = srvPool->GetCPUHandle(voxelSrvIndex);
   voxelSrvHandleGPU_ = srvPool->GetGPUHandle(voxelSrvIndex);
 
@@ -427,6 +436,7 @@ void VoxelParticleSystem::CreateResources() {
 
   // UAV
   uint32_t particleUavIndex = srvPool->Allocate();
+  particleUavIndex_ = particleUavIndex;
   particleUavHandleCPU_ = srvPool->GetCPUHandle(particleUavIndex);
   particleUavHandleGPU_ = srvPool->GetGPUHandle(particleUavIndex);
 
@@ -441,6 +451,7 @@ void VoxelParticleSystem::CreateResources() {
 
   // SRV
   uint32_t particleSrvIndex = srvPool->Allocate();
+  particleSrvIndex_ = particleSrvIndex;
   particleSrvHandleCPU_ = srvPool->GetCPUHandle(particleSrvIndex);
   particleSrvHandleGPU_ = srvPool->GetGPUHandle(particleSrvIndex);
 

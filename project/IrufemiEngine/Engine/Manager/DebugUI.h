@@ -74,6 +74,8 @@ private: // メンバ変数
     static std::unique_ptr<SpotLight> templateSpotLight_;
     static std::unique_ptr<AreaLight> templateAreaLight_;
 
+    uint32_t srvIndex_ = 0xFFFFFFFF;
+
 public: // メンバ関数
 
     /** @name 初期化・終了処理 */

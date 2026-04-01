@@ -68,16 +68,16 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     ID3D12DescriptorHeap* srvHeap = srvPool->GetHeap();
 
     // ImGui用にディスクリプタを1つ確保
-    const uint32_t imguiIndex = srvPool->Allocate();
-    assert(imguiIndex != DescriptorPool::kInvalid);
+    srvIndex_ = srvPool->Allocate();
+    assert(srvIndex_ != DescriptorPool::kInvalid);
 
     ImGui_ImplDX12_Init(
         dxCommon->GetDevice(),
         dxCommon->GetSwapChainDesc().BufferCount,
         dxCommon->GetSwapChainDesc().Format, // スワップチェーン作成用にUNORMフォーマットを使用
         srvHeap,
-        srvPool->GetCPUHandle(imguiIndex),
-        srvPool->GetGPUHandle(imguiIndex)
+        srvPool->GetCPUHandle(srvIndex_),
+        srvPool->GetGPUHandle(srvIndex_)
     );
 
     // フォントアトラスをビルドし、テクスチャをGPUにアップロードする
@@ -146,6 +146,11 @@ void DebugUI::Shutdown() {
     ImGui_ImplDX12_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
+
+    if (dxCommon_ && dxCommon_->GetSrvPool()) {
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        srvIndex_ = DescriptorPool::kInvalid;
+    }
 
 #endif // USE_IMGUI
 }

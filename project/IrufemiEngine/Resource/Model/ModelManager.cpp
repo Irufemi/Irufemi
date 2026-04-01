@@ -25,11 +25,20 @@
 // キャッシュ系(インスタンス)
 //======================
 
+DirectXCommon* GpuMesh::sDxCommon = nullptr;
+
+GpuMesh::~GpuMesh() {
+    if (sDxCommon && sDxCommon->GetSrvPool() && srvIndex != 0xFFFFFFFF) {
+        sDxCommon->GetSrvPool()->FreeAfterFence(srvIndex, sDxCommon->GetFenceValue());
+    }
+}
+
 ModelManager::ModelManager() = default;
 ModelManager::~ModelManager() = default;
 
 void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureManager) {
     dxCommon_ = dxCommon;
+    GpuMesh::sDxCommon = dxCommon;
     textureManager_ = textureManager; // 追加
     if (rootDir_.empty()) {
         rootDir_ = "resources/model";
@@ -149,8 +158,8 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
                 std::memcpy(vbData, cpuMesh.vertices.data(), vbSize);
                 gpuMesh->vertexResource->Unmap(0, nullptr);
 
-                uint32_t srvIndex = dxCommon_->GetSrvPool()->Allocate();
-                assert(srvIndex != DescriptorPool::kInvalid);
+                gpuMesh->srvIndex = dxCommon_->GetSrvPool()->Allocate();
+                assert(gpuMesh->srvIndex != DescriptorPool::kInvalid);
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
                 srvDesc.Format = DXGI_FORMAT_UNKNOWN;
                 srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -158,8 +167,8 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
                 srvDesc.Buffer.FirstElement = 0;
                 srvDesc.Buffer.NumElements = gpuMesh->vertexCount;
                 srvDesc.Buffer.StructureByteStride = sizeof(VertexData);
-                dxCommon_->GetDevice()->CreateShaderResourceView(gpuMesh->vertexResource.Get(), &srvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(srvIndex));
-                gpuMesh->vertexSrvHandle = dxCommon_->GetSrvPool()->GetGPUHandle(srvIndex);
+                dxCommon_->GetDevice()->CreateShaderResourceView(gpuMesh->vertexResource.Get(), &srvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(gpuMesh->srvIndex));
+                gpuMesh->vertexSrvHandle = dxCommon_->GetSrvPool()->GetGPUHandle(gpuMesh->srvIndex);
             }
 
             // Index Buffer
