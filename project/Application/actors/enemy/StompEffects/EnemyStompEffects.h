@@ -1,6 +1,8 @@
 #pragma once
 #include "core/math/Transform.h"
+#include "core/math/Vector4.h"
 #include <memory>
+#include <algorithm>
 
 // 前方宣言
 class Camera;
@@ -9,39 +11,51 @@ class ObjClass;
 
 class EnemyStompEffects {
 public:
-    // --- パラメータ調整用構造体 ---
-    // 全てのマジックナンバーをここに集約しました。
-    // ヘッダーの数値を書き換えるだけで挙動を調整できます。
-    struct Parameters {
-        // 1. 爆発の設定
-        float explosionDuration = 2.0f;            // 爆発が消えるまでの時間（秒）
-        float explosionMaxRadius = 40.0f;          // 爆発の最大半径
-        float explosionInitialAlpha = 0.8f;        // 爆発開始時の透明度
-        float explosionDamageActiveTime = 0.3f;    // 爆発のダメージ判定が有効な進捗（0.0～1.0）
-
-        // 2. リング（衝撃波）の設定
-        Vector3 ringScale = { 1.2f, 0.5f, 1.2f };  // リングの大きさ
-        float ringDuration = 5.0f;                 // リングが消えるまでの時間（秒）
-        float ringMaxRadius = 160.0f;              // リングが到達する最大半径
-        float ringThickness = 2.5f;                // リングの当たり判定の幅（ドーナツの厚み）
-        float ringHeight = 0.01f;                  // リングモデル自体のYスケール（厚み）
-        float ringAlpha = 0.5f;                    // リングの透明度（今回は固定）
-        float ringGroundOffset = -2.6f;            // ★リングの高さ。足元なら0.0、高いならマイナス値を試してください
+    // --- 状態定義 ---
+    enum class Phase {
+        Expanding,      // 1. リング拡大
+        KeepAndWarning, // 2. 最大サイズで維持 ＋ 警告（赤らむ）
+        FinalExplosion, // 3. 下から上へ噴き上がる爆発
+        Finished        // 4. 終了
     };
 
-    /// @brief 初期化
+    // --- OBB構造体 ---
+    struct OBB {
+        Vector3 center;          // 中心点
+        Vector3 orientations[3]; // 各軸の方向ベクトル
+        Vector3 size;            // 各軸の半分の長さ（ハーフサイズ）
+    };
+
+    // --- 全てのパラメータをここに集約 ---
+    struct Parameters {
+        // 1. 最初の足元爆発
+        float explosionDuration = 2.0f;
+        float explosionMaxRadius = 40.0f;
+        float explosionInitialAlpha = 0.8f;
+        float explosionDamageActiveTime = 0.3f;
+
+        // 2. リング（予兆範囲）
+        Vector3 ringScale = { 1.2f, 0.5f, 1.2f };
+        float ringExpandDuration = 5.0f;
+        float ringMaxRadius = 160.0f;
+        float ringThickness = 2.5f;
+        float ringHeight = 0.01f;      // ★復活させました
+        float ringGroundOffset = -2.6f;
+        Vector4 ringColorNormal = { 1.0f, 0.0f, 0.0f, 0.5f };
+        Vector4 ringColorWarning = { 1.0f, 1.0f, 0.0f, 1.0f };
+        float ringKeepDuration = 2.0f;
+
+        // 3. 再爆発（噴き上がり）
+        float finalExplosionDuration = 1.0f;
+        float finalExplosionMaxHeight = 300.0f;  // 上に伸びる高さ
+        float finalExplosionMaxRadius = 165.0f;  // 噴き出す横幅
+        int finalExplosionDamage = 50;
+    };
+
     void Initialize(Camera* camera);
-
-    /// @brief 更新処理
     void Update(float deltaTime, Player* player);
-
-    /// @brief 描画処理
     void Draw();
-
-    /// @brief エフェクトの開始
     void Fire(const Vector3& position);
-
-    /// @brief エフェクトが実行中かどうか
     bool IsActive() const { return isActive_; }
 
     /// @brief デバッグ描画（当たり判定等の可視化用）
@@ -51,29 +65,31 @@ public:
     void SetParameters(const Parameters& params) { params_ = params; }
 
 private:
-    // --- 外部参照 ---
+    // 判定用ヘルパー
+    void UpdateFinalExplosionOBB();
+    bool CheckOBBCollision(const OBB& obb, const Vector3& point);
+
     Camera* camera_ = nullptr;
     std::unique_ptr<ObjClass> explosionObj_ = nullptr;
     std::unique_ptr<ObjClass> ringObj_ = nullptr;
+    std::unique_ptr<ObjClass> finalExplosionObj_ = nullptr; // 噴き上がり用モデル
 
-    // --- トランスフォーム ---
     Transform explosionTransform_;
     Transform ringTransform_;
+    Transform finalExplosionTransform_;
 
-    // --- 状態管理 ---
     bool isActive_ = false;
-    float timer_ = 0.0f;
-    Vector3 basePosition_; // 発生時の中心座標を保持
+    Phase currentPhase_ = Phase::Expanding;
+    float globalTimer_ = 0.0f; // 最初の爆発用
+    float phaseTimer_ = 0.0f;  // リング・再爆発フェーズ用
+    Vector3 basePosition_;
 
-    // パラメータの実体
     Parameters params_;
+    OBB finalExplosionOBB_;
 
-    // 多段ヒット防止フラグ
     bool hasDealtExplosionDamage_ = false;
     bool hasDealtRingDamage_ = false;
+    bool hasDealtFinalDamage_ = false;
 
-    // ヘルパー：線形補間
-    float Lerp(float start, float end, float t) {
-        return start + (end - start) * t;
-    }
+    float Lerp(float start, float end, float t) { return start + (end - start) * t; }
 };
