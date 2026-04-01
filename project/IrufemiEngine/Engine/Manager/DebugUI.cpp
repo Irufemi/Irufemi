@@ -1174,6 +1174,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                     ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
                     ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
                     ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
+                    ImGui::ColorEdit4("Background Color", &params.backgroundColor.x);
                     const char* noiseTypes[] = { "Noise 0", "Noise 1" };
                     ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes, IM_ARRAYSIZE(noiseTypes));
                 } else if (mode == PostProcessMode::Noise) {

@@ -181,6 +181,16 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   // レンダーターゲットの設定
   commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
+  // 描画前にターゲットをクリアする（Shaderで discard された箇所が背景色として残るように）
+  float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+  if (mode == Mode::Dissolve) {
+    clearColor[0] = dissolveParams_.backgroundColor.x;
+    clearColor[1] = dissolveParams_.backgroundColor.y;
+    clearColor[2] = dissolveParams_.backgroundColor.z;
+    clearColor[3] = dissolveParams_.backgroundColor.w;
+  }
+  commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
   // PSOとルートシグネチャの設定
   ID3D12PipelineState* pso = isFinalPass ? finalPsos_[modeIdx].Get() : psos_[modeIdx].Get();
   if (!pso) return;

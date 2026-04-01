@@ -121,6 +121,7 @@ public:
      */
     struct DissolveParams {
         Vector4 edgeColor = { 1.0f, 0.4f, 0.3f, 1.0f }; ///< 境界線の色
+        Vector4 backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< 背景色 (追加)
         float threshold = 0.0f;                         ///< 消失しきい値 (0.0 ~ 1.0)
         float edgeRange = 0.03f;                        ///< 境界線の幅
         int32_t noiseType = 0;                          ///< 使用するノイズテクスチャのインデックス (0 or 1)
