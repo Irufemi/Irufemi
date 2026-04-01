@@ -343,6 +343,8 @@ void Enemy::Update(Player *player) {
         addObbLines(headRight_->GetOBB());
       if (beam_)
         addObbLines(beam_->GetOBB());
+      if (stompEffects_)
+        stompEffects_->DrawDebug(lineOBB_.get());
     }
     lineOBB_->Update();
   }

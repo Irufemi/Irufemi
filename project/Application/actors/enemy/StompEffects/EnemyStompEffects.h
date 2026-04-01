@@ -44,6 +44,9 @@ public:
     /// @brief エフェクトが実行中かどうか
     bool IsActive() const { return isActive_; }
 
+    /// @brief デバッグ描画（当たり判定等の可視化用）
+    void DrawDebug(class Line3DRegion* lineRegion);
+
     /// @brief パラメータを外部から設定する
     void SetParameters(const Parameters& params) { params_ = params; }
 
