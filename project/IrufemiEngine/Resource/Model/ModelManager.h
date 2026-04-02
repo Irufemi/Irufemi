@@ -66,10 +66,10 @@ struct GpuMaterial {
  */
 struct ManagedModel {
     enum class LoadingStatus {
-        Pending,
-        Loading,
-        Loaded,
-        Failed
+        Pending = 0,
+        Loading = 1,
+        Loaded = 2,
+        Failed = 3
     };
 
     std::shared_ptr<ObjModel> cpuModel;

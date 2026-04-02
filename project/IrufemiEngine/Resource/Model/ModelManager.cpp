@@ -19,6 +19,8 @@
 #include "Resource/Model/Data/Node.h"
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
+#include <thread>
+#include <algorithm>
 #include <limits>
 
 //======================
@@ -64,13 +66,12 @@ std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename
     auto managedModel = GetModelAsync(filename);
     if (!managedModel) return nullptr;
 
-    // ロード完了を待機 (同期ロードとしての振る舞い)
-    if (managedModel->status.load() != ManagedModel::LoadingStatus::Loaded) {
-        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Waiting for load: {}\n", GetCurrentThreadId(), filename).c_str());
-    }
-
-    while (managedModel->status.load() == ManagedModel::LoadingStatus::Loading || 
-           managedModel->status.load() == ManagedModel::LoadingStatus::Pending) {
+    // ロード中か待機中であれば、確定状態（Loaded or Failed）になるまで待機
+    while (true) {
+        auto status = managedModel->status.load();
+        if (status == ManagedModel::LoadingStatus::Loaded || status == ManagedModel::LoadingStatus::Failed) {
+            break;
+        }
         std::this_thread::yield();
     }
 
@@ -206,6 +207,30 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
                 gpuMaterial->textureHandle = textureManager_->GetWhiteTextureHandle();
             }
             managedModel->gpuMaterials.push_back(std::move(gpuMaterial));
+        }
+
+
+        // --- すべてのテクスチャのロード完了を待機 ---
+        std::vector<std::string> texturePaths;
+        for (const auto& mesh : managedModel->cpuModel->meshes) {
+            if (!mesh.material.textureFilePath.empty()) {
+                texturePaths.push_back(mesh.material.textureFilePath);
+            }
+        }
+
+        bool allTexturesReady = false;
+        while (!allTexturesReady) {
+            allTexturesReady = true;
+            for (const auto& path : texturePaths) {
+                auto status = textureManager_->GetTextureStatus(path);
+                if (status == Texture::LoadingStatus::Loading || status == Texture::LoadingStatus::Pending) {
+                    allTexturesReady = false;
+                    break;
+                }
+            }
+            if (!allTexturesReady) {
+                std::this_thread::yield(); // 他のロードタスク（TextureManager側）に CPU を譲る
+            }
         }
 
         managedModel->status.store(ManagedModel::LoadingStatus::Loaded);

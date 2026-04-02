@@ -95,12 +95,22 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& 
 
     // 非同期タスクとして投入
     // constメソッド内で非同期タスクを開始するため、メンバへの直接アクセスに注意
+
     const_cast<TextureManager*>(this)->EnqueueTask([tex, name]() {
         tex->Initialize(name);
     });
 
     // Textureのコンストラクタで既に白テクスチャが割り当てられたハンドルが返る
     return tex->GetTextureSrvHandleGPU();
+}
+
+Texture::LoadingStatus TextureManager::GetTextureStatus(const std::string& name) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = textures_.find(name);
+    if (it == textures_.end()) {
+        return Texture::LoadingStatus::Failed;
+    }
+    return it->second->GetStatus();
 }
 
 const DirectX::ScratchImage* TextureManager::GetScratchImage(const std::string& name) const

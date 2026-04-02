@@ -25,11 +25,10 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
     camera_ = camera;
 
     assert(modelManager_ && "ObjClass::Initialize: ModelManager is not set.");
-    // ModelManagerから共有モデルを取得するだけ
     managedModel_ = modelManager_->GetModel(filename);
+    auto status = managedModel_->status.load();
 
-    if (!managedModel_ || !managedModel_->cpuModel) {
-        OutputDebugStringA("[ObjClass] Initialize: model load failed.\n");
+    if (status != ManagedModel::LoadingStatus::Loaded || !managedModel_->cpuModel) {
         return;
     }
 
@@ -104,7 +103,9 @@ void ObjClass::Update() {
 }
 
 void ObjClass::Draw() {
-    if (!managedModel_ || !drawManager_ || !camera_) return;
+    if (!managedModel_ || !drawManager_ || !camera_) {
+        return;
+    }
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
