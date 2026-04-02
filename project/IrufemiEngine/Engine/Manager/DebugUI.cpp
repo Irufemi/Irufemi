@@ -30,8 +30,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Engine/IrufemiEngine.h"
-#include "Renderer/Material.h"
-#include "Renderer/Particle/Data/ParticleMaterial.h"
+#include "Engine/Graphics/Data/Material.h"
 #include "Resource/Model/Data/ObjModel.h"
 #include "Renderer/LineInstanced/LineResource.h"
 #include "Renderer/Object3D/Object3DResource.h"
@@ -481,7 +480,7 @@ void DebugUI::DebugMaterialBy2D([[maybe_unused]] Material* materialData) {
 }
 
 // Particle 専用マテリアルのデバッグ表示
-void DebugUI::DebugMaterialByParticle([[maybe_unused]] ParticleMaterial* materialData) {
+void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
 #ifdef USE_IMGUI
 
     if (!materialData) return;

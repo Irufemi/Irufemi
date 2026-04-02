@@ -4,7 +4,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include "../VertexData.h"
-#include "../Material.h"
+#include "../../Engine/Graphics/Data/Material.h"
 #include "../TransformationMatrix.h"
 #include "../../Engine/Core/Math/Transform.h"
 

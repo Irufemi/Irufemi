@@ -1,7 +1,7 @@
 #include "Region.h"
-
 #include <cassert>
 #include <cstring>
+#include <vector>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Application/camera/Camera.h"
@@ -9,8 +9,8 @@
 #include "Engine/Manager/DrawManager.h"
 #include "Resource/Model/ModelManager.h"
 #include "Engine/Core/Math/Geometry/Math.h"
-#include "Engine/Core/Math/Transform.h"
-#include "Renderer/Material.h"
+#include "Renderer/VertexData.h"
+#include "Engine/Graphics/Data/Material.h"
 #include "Engine/Graphics/Data/DirectionalLight.h"
 #include "Engine/Graphics/Data/CameraForGPU.h"
 

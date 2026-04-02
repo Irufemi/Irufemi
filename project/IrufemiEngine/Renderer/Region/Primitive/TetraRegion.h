@@ -9,7 +9,7 @@
 #include <cassert>
 
 #include "Renderer/VertexData.h"
-#include "Renderer/Material.h"
+#include "Engine/Graphics/Data/Material.h"
 #include "Engine/Core/Math/Geometry/Math.h"
 #include "Engine/Core/Math/Transform.h"
 #include "Engine/Core/Math/Matrix4x4.h"

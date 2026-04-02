@@ -14,20 +14,19 @@
 class TextureManager;
 class SceneManager;
 class IrufemiEngine;
+class DirectXCommon;
 class Object3DResource;
 class Object2DResource;
 class ParticleResource;
+struct Material;
+struct ObjMaterial;
 struct Transform;
 struct Matrix4x4;
 struct DirectionalLight;
 struct PointLight;
 struct SpotLight;
 struct AreaLight;
-struct Material;
 struct Sphere;
-class DirectXCommon;
-struct ParticleMaterial;
-struct ObjMaterial;
 
 #ifdef USE_IMGUI
 
@@ -154,7 +153,7 @@ public: // メンバ関数
 
     static void DebugObjMaterial(ObjMaterial* material, const char* unique_id = "");
 
-    static void DebugMaterialByParticle(ParticleMaterial* material);
+    static void DebugMaterialByParticle(Material* material);
 
     /**
      * @brief テクスチャの選択・変更UI

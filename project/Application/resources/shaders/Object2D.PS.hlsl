@@ -1,21 +1,9 @@
 // - αカットアウト(閾値0.5)のみ
 // - ライティング関連は削除
 
-#include "./Object2D.hlsli" // 2D用の入出力定義へ切替
+#include "./Object2D.hlsli" // 2D用の入出力定義へと変更
+#include "Material.hlsli"
 
-struct Material
-{
-	float32_t4 color;
-
-    // 以下はCPU側との互換性のため残置(本PSでは未使用)
-	int32_t enableLighting; // 未使用
-	int32_t hasTexture; // 使用
-	int32_t lightingMode; // 未使用
-	float padding; // 未使用
-
-    // UV変換は使用
-	float32_t4x4 uvTransform;
-};
 ConstantBuffer<Material> gMaterial : register(b0);
 
 struct PixelShaderOutput

@@ -25,7 +25,7 @@ void ParticleResource::CreateResource() {
     }
 
     if (!materialResource_) {
-        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(ParticleMaterial));
+        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(Material));
     }
 
     // インスタンシング用バッファの作成

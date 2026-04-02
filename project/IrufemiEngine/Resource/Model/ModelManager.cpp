@@ -14,7 +14,7 @@
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Framework/SceneManager.h"
-#include "Renderer/Material.h"
+#include "Engine/Graphics/Data/Material.h"
 #include "Renderer/VertexData.h"
 #include "Resource/Model/Data/Node.h"
 #include "Resource/Model/Data/Skeleton.h"

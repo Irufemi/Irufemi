@@ -15,11 +15,16 @@
 #include "../../Engine/Core/System/ThreadPool.h"
 #include "../../Engine/Core/System/TaskGroup.h"
 #include <d3d12.h>
-#include "Resource/Model/Data/ObjModel.h"
-#include "Resource/Model/Data/ModelData.h"
-#include "Resource/Model/Data/MaterialData.h"
-#include "Resource/Model/Data/VoxelizedModel.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Data/ObjModel.h"
+#include "Data/ModelData.h"
+#include "Data/MaterialData.h"
+#include "Data/VoxelizedModel.h"
+#include "../../Engine/Core/Math/Vector3Int.h"
+#include "../../Engine/Core/Math/Matrix4x4.h"
+#include "../../Engine/Core/Math/Vector3.h"
+#include "../../Engine/Core/Math/Vector4.h"
+#include "../../Engine/Core/Math/Vector2.h"
+#include "../../Engine/Core/Math/Geometry/Math.h"
 #include <atomic>
 
 // 前方宣言

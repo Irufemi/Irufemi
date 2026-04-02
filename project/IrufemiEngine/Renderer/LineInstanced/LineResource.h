@@ -4,7 +4,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include "Data/LineVertexData.h"
-#include "Data/LineMaterial.h"
+#include "../../Engine/Graphics/Data/Material.h"
 #include "../TransformationMatrix.h"
 #include "../../Engine/Core/Math/Transform.h"
 
@@ -33,7 +33,7 @@ public:
     uint32_t indexCount_ = 0;
 
     // --- マテリアル ---
-    LineMaterial* materialData_ = nullptr;
+    Material* materialData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
 
     // --- トランスフォーム ---
