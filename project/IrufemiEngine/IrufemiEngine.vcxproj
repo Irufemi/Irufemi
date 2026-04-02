@@ -231,6 +231,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Type\PerView.h" />
     <ClInclude Include="Engine\Core\Type\Voxel.h" />
     <ClInclude Include="Engine\Graphics\DirectX\FrameRateController.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\RootSignatureConfig.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShaderCompiler.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Renderer\VoxelParticle\VoxelParticleSystem.h" />
