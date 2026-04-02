@@ -66,7 +66,7 @@ void EnemyStompEffects::Update(float deltaTime, Player* player) {
         if (!hasDealtExplosionDamage_ && t < params_.explosionDamageActiveTime) {
             Vector3 diff = Math::Subtract(player->GetTranslate(), basePosition_);
             if (Math::Length(diff) <= currentScale) {
-                // player->ApplyDamage(30);
+                player->ApplyDamage(params_.explosionDamage);
                 hasDealtExplosionDamage_ = true;
             }
         }
@@ -81,15 +81,6 @@ void EnemyStompEffects::Update(float deltaTime, Player* player) {
 
         ringTransform_.scale = { currentRadius, params_.ringHeight, currentRadius };
         ringObj_->SetColor(params_.ringColorNormal);
-
-        if (!hasDealtRingDamage_) {
-            Vector3 diff = Math::Subtract(player->GetTranslate(), basePosition_);
-            float dist = Math::Length(diff);
-            if (dist >= (currentRadius - params_.ringThickness) && dist <= (currentRadius + params_.ringThickness)) {
-                // player->ApplyDamage(10);
-                hasDealtRingDamage_ = true;
-            }
-        }
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::KeepAndWarning;
@@ -140,7 +131,7 @@ void EnemyStompEffects::Update(float deltaTime, Player* player) {
         UpdateFinalExplosionOBB();
         if (!hasDealtFinalDamage_) {
             if (CheckOBBCollision(finalExplosionOBB_, player->GetTranslate())) {
-                // player->ApplyDamage(params_.finalExplosionDamage);
+                player->ApplyDamage(params_.finalExplosionDamage);
                 hasDealtFinalDamage_ = true;
             }
         }
@@ -230,38 +221,42 @@ void EnemyStompEffects::DrawDebug(Line3DRegion* lineRegion) {
         }
     }
 
-    // --- リングの当たり判定描画（円盤の縁） ---
-    if (phaseTimer_ < params_.ringExpandDuration) {
-        float t = phaseTimer_ / params_.ringExpandDuration;
-        float currentRadius = Lerp(1.0f, params_.ringMaxRadius, t);
-        float innerRadius = currentRadius - params_.ringThickness;
-        float outerRadius = currentRadius + params_.ringThickness;
-        float yPos = basePosition_.y + params_.ringGroundOffset;
+    // --- 噴き上がり爆発の当たり判定描画 (OBB) ---
+    if (currentPhase_ == Phase::FinalExplosion) {
+        Vector4 color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 赤色で判定を描画
 
-        Vector4 color = { 1.0f, 0.0f, 1.0f, 1.0f }; // 紫色でリング判定を描画
+        // 8つの頂点を計算
+        Vector3 v[8];
+        const Vector3& c = finalExplosionOBB_.center;
+        const Vector3* axis = finalExplosionOBB_.orientations;
+        const Vector3& s = finalExplosionOBB_.size;
 
-        const int segments = 32;
-        const float step = (2.0f * 3.14159265f) / segments;
-
-        for (int i = 0; i < segments; ++i) {
-            float theta1 = i * step;
-            float theta2 = (i + 1) * step;
-
-            // 内側のリング (XZ平面)
-            Vector3 in1 = { basePosition_.x + innerRadius * std::cos(theta1), yPos, basePosition_.z + innerRadius * std::sin(theta1) };
-            Vector3 in2 = { basePosition_.x + innerRadius * std::cos(theta2), yPos, basePosition_.z + innerRadius * std::sin(theta2) };
-            lineRegion->AddInstance(in1, in2, color);
-
-            // 外側のリング (XZ平面)
-            Vector3 out1 = { basePosition_.x + outerRadius * std::cos(theta1), yPos, basePosition_.z + outerRadius * std::sin(theta1) };
-            Vector3 out2 = { basePosition_.x + outerRadius * std::cos(theta2), yPos, basePosition_.z + outerRadius * std::sin(theta2) };
-            lineRegion->AddInstance(out1, out2, color);
-
-            // 内側と外側を繋ぐ線（必要であれば）
-            if (i % 4 == 0) {
-                lineRegion->AddInstance(in1, out1, color);
-            }
+        for (int i = 0; i < 8; ++i) {
+            v[i] = c;
+            Vector3 offset = { 0,0,0 };
+            // 各軸の寄与を加算 (iの各ビットで符号を決定)
+            offset = Math::Add(offset, Math::Multiply((i & 1) ? s.x : -s.x, axis[0]));
+            offset = Math::Add(offset, Math::Multiply((i & 2) ? s.y : -s.y, axis[1]));
+            offset = Math::Add(offset, Math::Multiply((i & 4) ? s.z : -s.z, axis[2]));
+            v[i] = Math::Add(v[i], offset);
         }
+
+        // 12辺を描画
+        // X
+        lineRegion->AddInstance(v[0], v[1], color);
+        lineRegion->AddInstance(v[2], v[3], color);
+        lineRegion->AddInstance(v[4], v[5], color);
+        lineRegion->AddInstance(v[6], v[7], color);
+        // Y
+        lineRegion->AddInstance(v[0], v[2], color);
+        lineRegion->AddInstance(v[1], v[3], color);
+        lineRegion->AddInstance(v[4], v[6], color);
+        lineRegion->AddInstance(v[5], v[7], color);
+        // Z
+        lineRegion->AddInstance(v[0], v[4], color);
+        lineRegion->AddInstance(v[1], v[5], color);
+        lineRegion->AddInstance(v[2], v[6], color);
+        lineRegion->AddInstance(v[3], v[7], color);
     }
 }
 
