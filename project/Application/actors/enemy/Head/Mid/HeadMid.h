@@ -18,7 +18,7 @@ public:
 
   void SetPosition(const Vector3& pos);
 
-  void ApplyDamage(int damage);
+  bool ApplyDamage(int damage);
 
   void SetHP(int hp) { hp_ = hp; }
   int GetHP() const { return hp_; }

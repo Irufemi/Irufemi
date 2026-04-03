@@ -43,7 +43,7 @@ public:
     int GetMaxHp() const { return status_.GetMaxHp(); }
     bool IsDead() const { return status_.IsDead(); }
 
-    void ApplyDamage(int damage);
+    bool ApplyDamage(int damage);
 
     // ターゲット設定関係
     void SetTargetPosition(const Vector3& targetPos) { targetPos_ = targetPos; }

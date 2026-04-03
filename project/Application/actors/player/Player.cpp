@@ -253,7 +253,7 @@ void Player::DrawParticles() {
     weapon_.DrawParticles(engine_);
 }
 
-void Player::ApplyDamage(int damage) {
+bool Player::ApplyDamage(int damage) {
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
 
     int finalDamage = damage;
@@ -261,7 +261,7 @@ void Player::ApplyDamage(int damage) {
         finalDamage *= 2;
     }
 
-    status_.ApplyDamage(finalDamage, false, engine_);
+    return status_.ApplyDamage(finalDamage, false, engine_);
 }
 
 void Player::HandleMovement() {

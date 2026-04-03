@@ -42,8 +42,8 @@ void PlayerStatus::UpdateKnockback() {
     }
 }
 
-void PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engine) {
-    if (isDead_ || invincibleTimer_ > 0) return;
+bool PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engine) {
+    if (isDead_ || invincibleTimer_ > 0) return false;
 
     if (isCharging) {
         hp_ -= damage / 2;

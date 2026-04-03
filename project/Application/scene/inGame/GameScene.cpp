@@ -1,4 +1,5 @@
 #include "GameScene.h"
+#include <format>
 
 #include "Framework/SceneManager.h"
 #include "Irufemi.h"
@@ -136,7 +137,40 @@ void GameScene::Update() {
             if (Collision::IsOBBSphereCollision(boss_->GetBeam()->GetOBB(),
                 playerColliderSphere)) {
                 // ビームに当たった場合プレイヤーにダメージを与える
-                player_->ApplyDamage(kDamageBeamToPlayer);
+                if (player_->ApplyDamage(kDamageBeamToPlayer)) {
+                    OutputDebugStringA(std::format("Player Hit by Beam: {} damage\n", kDamageBeamToPlayer).c_str());
+                }
+            }
+        }
+
+        // Player vs EnemyStompEffects
+        if (boss_->GetStompEffects() && boss_->GetStompEffects()->IsActive()) {
+            EnemyStompEffects* stomp = boss_->GetStompEffects();
+            Sphere playerColliderSphere;
+            playerColliderSphere.center = player_->GetCollider().center;
+            playerColliderSphere.radius = player_->GetCollider().radius;
+
+            // 1. 足元爆発の判定
+            if (stomp->IsExplosionDamageActive() && !stomp->HasDealtExplosionDamage()) {
+                Sphere explosionSphere;
+                explosionSphere.center = stomp->GetBasePosition();
+                explosionSphere.radius = stomp->GetExplosionRadius();
+                if (Collision::IsSphereCollision(explosionSphere, playerColliderSphere)) {
+                    if (player_->ApplyDamage(stomp->GetExplosionDamage())) {
+                        stomp->SetDealtExplosionDamage(true);
+                        OutputDebugStringA(std::format("Player Hit by Stomp Explosion: {} damage\n", stomp->GetExplosionDamage()).c_str());
+                    }
+                }
+            }
+
+            // 2. 噴き上がり爆発の判定
+            if (stomp->IsFinalExplosionActive() && !stomp->HasDealtFinalDamage()) {
+                if (Collision::IsOBBSphereCollision(stomp->GetFinalExplosionOBB(), playerColliderSphere)) {
+                    if (player_->ApplyDamage(stomp->GetFinalExplosionDamage())) {
+                        stomp->SetDealtFinalDamage(true);
+                        OutputDebugStringA(std::format("Player Hit by Stomp Final: {} damage\n", stomp->GetFinalExplosionDamage()).c_str());
+                    }
+                }
             }
         }
 
@@ -150,7 +184,9 @@ void GameScene::Update() {
             playerColliderSphere.radius = player_->GetCollider().radius;
 
             if (Collision::IsOBBSphereCollision(part->GetOBB(), playerColliderSphere)) {
-                player_->ApplyDamage(kDamagePartToPlayer);
+                if (player_->ApplyDamage(kDamagePartToPlayer)) {
+                    OutputDebugStringA(std::format("Player Hit by Enemy Part: {} damage\n", kDamagePartToPlayer).c_str());
+                }
             }
             };
         for (int i = 0; i < kEnemyBodyPartsCount; ++i) checkPlayerHitPart(boss_->GetBody(i));
@@ -165,7 +201,9 @@ void GameScene::Update() {
             // 1. 近接攻撃の判定
             if (attackCol.isActive &&
                 Collision::IsOBBSphereCollision(part->GetOBB(), attackSphere)) {
-                part->ApplyDamage(kDamageMeleeToEnemy);
+                if (part->ApplyDamage(kDamageMeleeToEnemy)) {
+                    OutputDebugStringA(std::format("Enemy Part Hit by Player Melee: {} damage\n", kDamageMeleeToEnemy).c_str());
+                }
                 if (part->GetHP() <= 0) {
                     // 攻撃方向：プレイヤーから対象部位へのベクトル
                     Vector3 attackDir = Math::Normalize(
@@ -200,7 +238,9 @@ void GameScene::Update() {
                 bulletSphere.radius = kMachineGunBulletRadius; // 余裕を持たせた半径
                 if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
                     bullets[j].isActive = false; // 弾丸消滅
-                    part->ApplyDamage(kDamageMachineGunToEnemy); // マシンガンのダメージ
+                    if (part->ApplyDamage(kDamageMachineGunToEnemy)) { // マシンガンのダメージ
+                        OutputDebugStringA(std::format("Enemy Part Hit by MachineGun: {} damage\n", kDamageMachineGunToEnemy).c_str());
+                    }
                     if (part->GetHP() <= 0) {
                         Vector3 attackDir = Math::Normalize(bullets[j].velocity);
                         part->OnDestroyed(attackDir,
@@ -219,7 +259,9 @@ void GameScene::Update() {
                 missileSphere.radius = kMissileRadius; // ミサイルの当たり判定を大きめに
                 if (Collision::IsOBBSphereCollision(part->GetOBB(), missileSphere)) {
                     missiles[k].isActive = false;    // ミサイル消滅
-                    part->ApplyDamage(kDamageMissileToEnemy); // ミサイルのダメージ
+                    if (part->ApplyDamage(kDamageMissileToEnemy)) { // ミサイルのダメージ
+                        OutputDebugStringA(std::format("Enemy Part Hit by Missile: {} damage\n", kDamageMissileToEnemy).c_str());
+                    }
                     if (part->GetHP() <= 0) {
                         Vector3 attackDir = Math::Normalize(missiles[k].velocity);
                         part->OnDestroyed(attackDir,
@@ -273,7 +315,9 @@ void GameScene::Update() {
                     // なら、部位がターゲットに向かって飛んできている（めり込み・連続ヒット防止）
                     if (dot < 0.0f) {
                         // 当たった部位のみにダメージを与える
-                        target->ApplyDamage(kDamageProjectilePartToEnemy);
+                        if (target->ApplyDamage(kDamageProjectilePartToEnemy)) {
+                            OutputDebugStringA(std::format("Enemy Part Hit by Flying Projectile Part: {} damage\n", kDamageProjectilePartToEnemy).c_str());
+                        }
 
                         // 反射ベクトル: R = V - 2(V・N)N
                         Vector3 reflect =
