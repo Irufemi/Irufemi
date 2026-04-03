@@ -4,7 +4,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include "../VertexData.h"
-#include "Data/ParticleMaterial.h"
+#include "../../Engine/Graphics/Data/Material.h"
 #include "Data/Particle.h"
 #include "../../Engine/Core/Math/Transform.h"
 
@@ -32,7 +32,7 @@ public:
 
     // --- マテリアル ---
     Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
-    ParticleMaterial* materialData_ = nullptr;
+    Material* materialData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
 
     // --- インスタンシングバッファ (StructuredBuffer) ---

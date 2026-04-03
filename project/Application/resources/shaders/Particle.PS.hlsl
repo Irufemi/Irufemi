@@ -1,17 +1,9 @@
-/*テクスチャを貼ろう*/
-
 #include "Particle.hlsli"
+#include "Material.hlsli"
 
 /*三角形の色を変えよう*/
 
-struct ParticleMaterial
-{
-	float32_t4 color;
-	int32_t useClampSampler; // 0: WRAP, 1: CLAMP
-	float3 pad;
-	float32_t4x4 uvTransform;
-};
-ConstantBuffer<ParticleMaterial> gMaterial : register(b0);
+ConstantBuffer<Material> gMaterial : register(b0);
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;

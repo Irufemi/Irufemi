@@ -12,6 +12,7 @@
 #include "../../../Engine/Core/Math/Matrix4x4.h"
 #include "../../../Resource/Model/Data/ObjModel.h"
 #include "../Object3DResource.h"
+#include "../../../Engine/Graphics/Data/Material.h"
 
 // 前方宣言
 class TextureManager;
@@ -19,7 +20,7 @@ class DrawManager;
 class DebugUI;
 class ModelManager;
 struct ManagedModel;
-struct GpuMaterial;
+struct ObjMaterial;
 struct Material;
 
 //==========================

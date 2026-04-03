@@ -299,9 +299,9 @@ void DrawManager::DrawObject2D(const Object2DResource* resource) {
     commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
-    commandList_->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->transformationResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
@@ -319,15 +319,15 @@ void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instan
 
     // --- CBV のバインド ---
     // 0: 既存のマテリアル CBV(互換性維持のために常にバインド)
-    //    (rootParameters[0] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
+    //    (rootParameters[(UINT)RootSlot::Material] に対応、PixelShader 側の b0 想定)
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
 
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)
     assert(resource->instancingSrvHandleGPU_.ptr != 0 && "Instancing SRV handle is null or invalid");
-    commandList_->SetGraphicsRootDescriptorTable(4, resource->instancingSrvHandleGPU_);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, resource->instancingSrvHandleGPU_);
 
     // テクスチャ (PS t0)
-    commandList_->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
     // 描画コール: インデックス数 × インスタンス数
     commandList_->DrawIndexedInstanced(
@@ -350,9 +350,9 @@ void DrawManager::DrawModelRegion(ModelRegion* region) {
     }
 
     // CBV/SRV設定 (インスタンスリソースから)
-    commandList_->SetGraphicsRootConstantBufferView(0, region->GetMaterialResource()->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootDescriptorTable(2, region->GetTextureHandle());
-    commandList_->SetGraphicsRootDescriptorTable(4, region->GetInstancingSrvHandleGPU());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, region->GetMaterialResource()->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, region->GetTextureHandle());
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, region->GetInstancingSrvHandleGPU());
 
     // 描画
     if (gpuMesh->indexCount > 0) {
@@ -372,11 +372,11 @@ void DrawManager::DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
     commandList_->IASetIndexBuffer(&indexBufferView);
 
     // CBV (PS)
-    commandList_->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());          // PS b0
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, materialResource->GetGPUVirtualAddress());          // PS b0
 
     // SRV (PS t0 / VS t0)
-    commandList_->SetGraphicsRootDescriptorTable(2, textureHandle);            // PS t0
-    commandList_->SetGraphicsRootDescriptorTable(4, instancingSrvHandleGPU);   // VS t0
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);            // PS t0
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, instancingSrvHandleGPU);   // VS t0
 
     // Draw
     commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
@@ -391,7 +391,7 @@ void DrawManager::DrawLineInstanced(const LineResource* resource, const D3D12_GP
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
     // SRV (VS t1)
-    commandList_->SetGraphicsRootDescriptorTable(11, instancingSrvHandleGPU);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, instancingSrvHandleGPU);
 
     // Draw
     commandList_->DrawIndexedInstanced(2, instanceCount, 0, 0, 0);
@@ -442,15 +442,15 @@ void DrawManager::DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
     ///CBVを設定する
 
     //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, materialResource->GetGPUVirtualAddress());
 
     //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView(1, transformationResource->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, transformationResource->GetGPUVirtualAddress());
 
     ///DescriptorTableを設定する
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable(2, textureHandle);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);
 
     //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。
     commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
@@ -463,9 +463,9 @@ void DrawManager::DrawObject3D(const Object3DResource* resource) {
     commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
-    commandList_->SetGraphicsRootConstantBufferView(0, resource->materialResource_->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootConstantBufferView(1, resource->transformationResource_->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootDescriptorTable(2, resource->textureHandle_);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->transformationResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
@@ -478,16 +478,16 @@ void DrawManager::DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferVi
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // --- CBV のバインド ---
-    // (rootParameters[0] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView(0, perView);
+    // (rootParameters[(UINT)RootSlot::Material] に対応、PixelShader 側の b0 想定)
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, perView);
 
-    commandList_->SetGraphicsRootConstantBufferView(1, material);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, material);
 
     // --- SRVのバインド ---
     // テクスチャ (PS t0)
-    commandList_->SetGraphicsRootDescriptorTable(2, textureHandle);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);
     // パーティクルデータ (VS t0)
-    commandList_->SetGraphicsRootDescriptorTable(4, particleSrv);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, particleSrv);
 
     // 描画コール
     commandList_->DrawInstanced(6, instanceCount, 0, 0);
@@ -566,17 +566,17 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
     // 3. 形状の設定 (三角形リスト)
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // 4. テクスチャの設定 (RootParameter[2])
-    commandList_->SetGraphicsRootDescriptorTable(2, renderTexture->GetSrvHandleGPU());
+    // 4. テクスチャの設定 (RootParameter[(UINT)RootSlot::Texture])
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, renderTexture->GetSrvHandleGPU());
 
-    // 深度テクスチャの設定 (RootParameter[12])
+    // 深度テクスチャの設定 (RootParameter[(UINT)RootSlot::EnvironmentMap])
     if (depthSrvHandle.ptr != 0) {
-        commandList_->SetGraphicsRootDescriptorTable(12, depthSrvHandle);
+        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvironmentMap, depthSrvHandle);
     }
 
-    // 追加: ConstantBuffer の設定 (引数があれば RootParameter[0] にセット)
+    // 追加: ConstantBuffer の設定 (引数があれば RootParameter[(UINT)RootSlot::Material] にセット)
     if (cbvAddress != 0) {
-        commandList_->SetGraphicsRootConstantBufferView(0, cbvAddress);
+        commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, cbvAddress);
     }
 
     // 5. 描画 (3頂点のインデックスなし描画: SV_VertexIDを使用するためVBいらず)
@@ -587,9 +587,9 @@ void DrawManager::BindCommonParameters() {
 
     commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     commandList_->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
-    commandList_->SetGraphicsRootConstantBufferView(5, frameData_.camera);
-    commandList_->SetGraphicsRootConstantBufferView(3, frameData_.directionalLight);
-    commandList_->SetGraphicsRootConstantBufferView(6, frameData_.pointLights);
-    commandList_->SetGraphicsRootConstantBufferView(7, frameData_.spotLights);
-    commandList_->SetGraphicsRootConstantBufferView(10, frameData_.areaLights);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Camera, frameData_.camera);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::DirectionalLight, frameData_.directionalLight);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::PointLights, frameData_.pointLights);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::SpotLights, frameData_.spotLights);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::AreaLights, frameData_.areaLights);
 }

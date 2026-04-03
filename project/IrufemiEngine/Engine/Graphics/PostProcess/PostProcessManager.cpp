@@ -181,6 +181,16 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   // レンダーターゲットの設定
   commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
+  // 描画前にターゲットをクリアする（Shaderで discard された箇所が背景色として残るように）
+  float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+  if (mode == Mode::Dissolve) {
+    clearColor[0] = dissolveParams_.backgroundColor.x;
+    clearColor[1] = dissolveParams_.backgroundColor.y;
+    clearColor[2] = dissolveParams_.backgroundColor.z;
+    clearColor[3] = dissolveParams_.backgroundColor.w;
+  }
+  commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
   // PSOとルートシグネチャの設定
   ID3D12PipelineState* pso = isFinalPass ? finalPsos_[modeIdx].Get() : psos_[modeIdx].Get();
   if (!pso) return;
@@ -190,7 +200,7 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   // ソーステクスチャのバインド (Root2 -> t0)
-  commandList->SetGraphicsRootDescriptorTable(2, srcTexture->GetSrvHandleGPU());
+  commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, srcTexture->GetSrvHandleGPU());
 
   // 定数バッファのバインド (Root0 -> b0)
   D3D12_GPU_VIRTUAL_ADDRESS cbvAddress = 0;
@@ -226,15 +236,15 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
     break;
   }
   if (cbvAddress != 0) {
-    commandList->SetGraphicsRootConstantBufferView(0, cbvAddress);
+    commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, cbvAddress);
   }
 
   // 追加のリソース（深度、ノイズテクスチャ）のバインド (Root12 -> t1)
   if (mode == Mode::DepthBasedOutline) {
-    commandList->SetGraphicsRootDescriptorTable(12, depthSrvHandle_);
+    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvironmentMap, depthSrvHandle_);
   } else if (mode == Mode::Dissolve) {
     int noiseIdx = (std::max)(0, (std::min)(1, dissolveParams_.noiseType));
-    commandList->SetGraphicsRootDescriptorTable(12,
+    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvironmentMap,
                                                 dissolveNoiseHandle_[noiseIdx]);
   }
 

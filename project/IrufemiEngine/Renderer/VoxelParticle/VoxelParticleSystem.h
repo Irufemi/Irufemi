@@ -129,6 +129,11 @@ private:
   D3D12_CPU_DESCRIPTOR_HANDLE particleUavHandleCPU_{};
   D3D12_GPU_DESCRIPTOR_HANDLE particleUavHandleGPU_{};
 
+  // デスクリプタインデックスの保持
+  uint32_t voxelSrvIndex_ = 0xFFFFFFFF;
+  uint32_t particleUavIndex_ = 0xFFFFFFFF;
+  uint32_t particleSrvIndex_ = 0xFFFFFFFF;
+
   // メッシュビュー
   D3D12_VERTEX_BUFFER_VIEW cubeVertexBufferView_{};
   D3D12_INDEX_BUFFER_VIEW cubeIndexBufferView_{};

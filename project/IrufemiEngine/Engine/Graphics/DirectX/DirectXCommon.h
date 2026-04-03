@@ -11,6 +11,7 @@
 
 #include "FrameRateController.h"
 #include "ShaderCompiler.h"
+#include "RootSignatureConfig.h"
 
 #include "../../../../externals/DirectXTex/DirectXTex.h"
 #include "../Pipeline/PSOManager.h"

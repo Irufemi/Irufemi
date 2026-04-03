@@ -11,6 +11,7 @@
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
 #include "Renderer/Object3D/Object3DResource.h"
+#include "Engine/Graphics/Data/Material.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>
@@ -25,9 +26,8 @@ class IrufemiEngine;
 class SphereRegion;
 class Line3DRegion;
 struct ManagedModel;
-struct GpuMaterial;
+struct ObjMaterial; 
 struct Material;
-struct ObjMaterial; // 追加
 
 
 class AnimationModel {
