@@ -45,6 +45,12 @@ void EnemyStompEffects::Fire(const Vector3& position) {
     explosionTransform_.rotate = { 0,0,0 };
     ringTransform_.rotate = { 0,0,0 };
     finalExplosionTransform_.rotate = { 0,0,0 };
+
+    // スケール初期化（前回の攻撃の残りをクリア）
+    explosionTransform_.scale = { 1.0f, 1.0f, 1.0f };
+    ringTransform_.scale = { 1.0f, params_.ringHeight, 1.0f };
+    finalExplosionTransform_.scale = { params_.ringMaxRadius, 0.01f, params_.ringMaxRadius };
+    UpdateFinalExplosionOBB();
 }
 
 void EnemyStompEffects::Update(float deltaTime) {
@@ -98,6 +104,14 @@ void EnemyStompEffects::Update(float deltaTime) {
         if (t >= 1.0f) {
             currentPhase_ = Phase::FinalExplosion;
             phaseTimer_ = 0.0f;
+
+            // フェーズ遷移したフレームで即座に初期状態でOBBを更新する
+            // これを行わないと、前回の攻撃の最大サイズ（170f等）が1フレームだけ判定されてしまう
+            float initR = params_.ringMaxRadius;
+            float initH = 0.01f;
+            finalExplosionTransform_.scale = { initR, initH, initR };
+            finalExplosionTransform_.translate.y = (basePosition_.y + params_.ringGroundOffset) + (initH * 0.5f);
+            UpdateFinalExplosionOBB();
         }
     }
     break;

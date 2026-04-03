@@ -42,7 +42,7 @@ public:
         // 3. 再爆発（噴き上がり）
         float finalExplosionDuration = 1.0f;
         float finalExplosionMaxHeight = 30.0f;  // 上に伸びる高さ
-        float finalExplosionMaxRadius = 185.0f;  // 噴き出す横幅
+        float finalExplosionMaxRadius = 170.0f;  // 噴き出す横幅
         int finalExplosionDamage = 50;
     };
 
