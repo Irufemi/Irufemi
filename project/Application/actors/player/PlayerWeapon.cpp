@@ -129,29 +129,37 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
         Vector3 rot = { 0.0f, 0.0f, 0.0f };
         float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
 
-        // ★修正: 敵が画面内（正面から約60度以内）にいるか判定
-        bool isEnemyOnScreen = false;
-        if (dist > 0.001f) {
-            float cosP = std::cos(cameraPitch);
-            Vector3 forwardP = { std::sin(playerRotate.y) * cosP, -std::sin(cameraPitch), std::cos(playerRotate.y) * cosP };
-            Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
+        // ★修正: 照準に近いほど吸い寄せる（エイムアシスト）
+        float cosP = std::cos(cameraPitch);
+        float sinP = std::sin(cameraPitch);
+        Vector3 playerForward = { std::sin(playerRotate.y) * cosP, -sinP, std::cos(playerRotate.y) * cosP };
 
-            // 内積(Dot)で角度をチェック。0.5f は視野角120度相当
-            float dot = forwardP.x * toTargetNorm.x + forwardP.y * toTargetNorm.y + forwardP.z * toTargetNorm.z;
-            if (dot > 0.5f) {
-                isEnemyOnScreen = true;
+        Vector3 blendedForward = playerForward;
+
+        if (dist > 0.001f) {
+            Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
+            float dot = playerForward.x * toTargetNorm.x + playerForward.y * toTargetNorm.y + playerForward.z * toTargetNorm.z;
+
+            float assistThreshold = 0.8f;
+            if (dot > assistThreshold) {
+                float assistRatio = (dot - assistThreshold) / (1.0f - assistThreshold);
+                assistRatio = std::pow(assistRatio, 1.5f);
+
+                blendedForward.x = playerForward.x * (1.0f - assistRatio) + toTargetNorm.x * assistRatio;
+                blendedForward.y = playerForward.y * (1.0f - assistRatio) + toTargetNorm.y * assistRatio;
+                blendedForward.z = playerForward.z * (1.0f - assistRatio) + toTargetNorm.z * assistRatio;
+
+                float fLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.y * blendedForward.y + blendedForward.z * blendedForward.z);
+                blendedForward.x /= fLen;
+                blendedForward.y /= fLen;
+                blendedForward.z /= fLen;
             }
         }
 
-        // 画面内にいるなら敵を向き、そうでないならカメラ（プレイヤー）の正面を向く
-        if (isEnemyOnScreen) {
-            rot.y = std::atan2(toTarget.x, toTarget.z);
-            float xzLen = std::sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
-            rot.x = std::atan2(-toTarget.y, xzLen);
-        } else {
-            rot.y = playerRotate.y;
-            rot.x = cameraPitch;
-        }
+        // ブレンドされたベクトルから回転角(rot)を再計算する
+        rot.y = std::atan2(blendedForward.x, blendedForward.z);
+        float xzLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.z * blendedForward.z);
+        rot.x = std::atan2(-blendedForward.y, xzLen);
 
         // 機関銃モデルの位置に機関銃振動を反映
         machineGunObjLeft_->SetPosition(leftShoulder + machineGunVibration_);
@@ -328,26 +336,36 @@ void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector
             Vector3 rot = { 0.0f, 0.0f, 0.0f };
             float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
 
-            // ★修正: 弾を発射する位置を決めるためにも画面内判定を使う
-            bool isEnemyOnScreen = false;
+            // ★修正: 照準に近いほど吸い寄せる（エイムアシスト）
+            float cosP = std::cos(cameraPitch);
+            float sinP = std::sin(cameraPitch);
+            Vector3 playerForward = { std::sin(playerRotate.y) * cosP, -sinP, std::cos(playerRotate.y) * cosP };
+
+            Vector3 blendedForward = playerForward;
+
             if (dist > 0.001f) {
-                float cosP = std::cos(cameraPitch);
-                Vector3 forwardP = { std::sin(playerRotate.y) * cosP, -std::sin(cameraPitch), std::cos(playerRotate.y) * cosP };
                 Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
-                float dot = forwardP.x * toTargetNorm.x + forwardP.y * toTargetNorm.y + forwardP.z * toTargetNorm.z;
-                if (dot > 0.5f) {
-                    isEnemyOnScreen = true;
+                float dot = playerForward.x * toTargetNorm.x + playerForward.y * toTargetNorm.y + playerForward.z * toTargetNorm.z;
+
+                float assistThreshold = 0.8f;
+                if (dot > assistThreshold) {
+                    float assistRatio = (dot - assistThreshold) / (1.0f - assistThreshold);
+                    assistRatio = std::pow(assistRatio, 1.5f);
+
+                    blendedForward.x = playerForward.x * (1.0f - assistRatio) + toTargetNorm.x * assistRatio;
+                    blendedForward.y = playerForward.y * (1.0f - assistRatio) + toTargetNorm.y * assistRatio;
+                    blendedForward.z = playerForward.z * (1.0f - assistRatio) + toTargetNorm.z * assistRatio;
+
+                    float fLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.y * blendedForward.y + blendedForward.z * blendedForward.z);
+                    blendedForward.x /= fLen;
+                    blendedForward.y /= fLen;
+                    blendedForward.z /= fLen;
                 }
             }
 
-            if (isEnemyOnScreen) {
-                rot.y = std::atan2(toTarget.x, toTarget.z);
-                float xzLen = std::sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
-                rot.x = std::atan2(-toTarget.y, xzLen);
-            } else {
-                rot.y = playerRotate.y;
-                rot.x = cameraPitch;
-            }
+            rot.y = std::atan2(blendedForward.x, blendedForward.z);
+            float xzLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.z * blendedForward.z);
+            rot.x = std::atan2(-blendedForward.y, xzLen);
 
             float muzzleOffsetSize = (kMachineGunModelSize.z * 0.5f) * kMachineGunScale.z;
             float cosRotX = std::cos(rot.x);
@@ -408,26 +426,39 @@ void PlayerWeapon::FireMachineGunBullet(const Vector3& startPos, const Vector3& 
             float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
             Vector3 forward;
 
-            // ★修正: 弾の軌道も敵が画面内にいるか判断して撃ち分ける
-            bool isEnemyOnScreen = false;
+            // ★修正: 照準に近いほど吸い寄せる（エイムアシスト）
             float sinY = std::sin(playerRotate.y);
             float cosY = std::cos(playerRotate.y);
             float cosP = std::cos(cameraPitch);
             float sinP = std::sin(cameraPitch);
             Vector3 playerForward = { sinY * cosP, -sinP, cosY * cosP };
 
+            forward = playerForward; // デフォルトは照準（正面）方向
+
             if (dist > 0.001f) {
                 Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
                 float dot = playerForward.x * toTargetNorm.x + playerForward.y * toTargetNorm.y + playerForward.z * toTargetNorm.z;
-                if (dot > 0.5f) {
-                    isEnemyOnScreen = true;
-                }
-            }
 
-            if (isEnemyOnScreen) {
-                forward = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
-            } else {
-                forward = playerForward;
+                // 0.8f（正面から約36度以内）ならアシスト開始、1.0f（完全な真正面）で最大アシスト
+                float assistThreshold = 0.8f;
+                if (dot > assistThreshold) {
+                    // 0.0(アシストなし) ～ 1.0(完全吸い付き) の割合を計算
+                    float assistRatio = (dot - assistThreshold) / (1.0f - assistThreshold);
+
+                    // 吸い付きをより自然にするため、カーブをかける（任意）
+                    assistRatio = std::pow(assistRatio, 1.5f);
+
+                    // 照準方向と敵方向のベクトルをブレンド（合成）
+                    forward.x = playerForward.x * (1.0f - assistRatio) + toTargetNorm.x * assistRatio;
+                    forward.y = playerForward.y * (1.0f - assistRatio) + toTargetNorm.y * assistRatio;
+                    forward.z = playerForward.z * (1.0f - assistRatio) + toTargetNorm.z * assistRatio;
+
+                    // 正規化
+                    float fLen = std::sqrt(forward.x * forward.x + forward.y * forward.y + forward.z * forward.z);
+                    forward.x /= fLen;
+                    forward.y /= fLen;
+                    forward.z /= fLen;
+                }
             }
 
             float bulletSpeed = 5.0f;
