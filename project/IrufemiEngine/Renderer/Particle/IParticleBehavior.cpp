@@ -252,6 +252,30 @@ void MissileSmokeBehavior::MakeNewParticle(Particle& particle, std::mt19937& ran
 }
 void MissileSmokeBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {}
 
+void BulletTrailBehavior::Initialize(Emitter* emitter) {
+	emitter->count = 1;
+	emitter->area = { 0.2f, 0.2f, 0.2f }; // 少し拡散させる
+	emitter->velocityMin = { -0.1f, -0.1f, -0.1f };
+	emitter->velocityMax = { 0.1f, 0.1f, 0.1f };
+	emitter->startScale = { 1.5f, 1.5f, 1.5f }; // 演出をさらに拡大
+	emitter->endScale = { 0.0f, 0.0f, 0.0f };
+	emitter->startColor = { 1.0f, 1.0f, 0.5f, 1.0f }; // より白に近い黄色
+	emitter->endColor = { 1.0f, 0.2f, 0.0f, 0.0f };
+	emitter->colorMode = ParticleColorMode::kNone;
+}
+void BulletTrailBehavior::Update(Particle& particle, [[maybe_unused]] float deltaTime) {
+	// その場に留まる
+	particle.velocity *= 0.0f;
+}
+void BulletTrailBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
+	std::uniform_real_distribution<float> distTime(0.15f, 0.25f); // わずかに寿命を伸ばす
+	std::uniform_real_distribution<float> distScale(0.8f, 1.2f);
+	particle.startScale = emitter.startScale * distScale(randomEngine);
+	particle.endScale = emitter.endScale;
+	particle.lifeTime = distTime(randomEngine);
+}
+void BulletTrailBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {}
+
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
 	switch (type) {
@@ -269,6 +293,8 @@ std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
 		return std::make_unique<MissileFireBehavior>();
 	case ParticleType::kMissileSmoke:
 		return std::make_unique<MissileSmokeBehavior>();
+	case ParticleType::kBulletTrail:
+		return std::make_unique<BulletTrailBehavior>();
 	case ParticleType::Normal:
 	default:
 		return std::make_unique<NormalBehavior>();
