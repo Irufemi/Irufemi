@@ -37,6 +37,14 @@ public:
      */
     void Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration);
 
+    /**
+     * @brief 死亡時（吹き飛び時）のドラマチックなカメラワーク
+     * @param playerTranslate 吹き飛ぶプレイヤーの座標
+     * @param yaw 死亡した瞬間のヨー角（回転によるカメラのブレを防ぐため）
+     * @param deathTimer 死亡してからの経過フレーム
+     */
+    void UpdateDeathCamera(const Vector3& playerTranslate, float yaw, int deathTimer);
+
     // --- ゲッター ---
     float GetCameraPitch() const { return cameraPitch_; }
     ViewMode GetViewMode() const { return viewMode_; }

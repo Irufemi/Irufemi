@@ -89,3 +89,58 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         camera_->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });
     }
 }
+
+void PlayerCamera::UpdateDeathCamera(const Vector3& playerTranslate, float yaw, int deathTimer) {
+    // ★調整：初期距離を少し離し、ズームアウトを速くする
+    float distance = kCameraDistanceThirdPerson * 1.5f + (deathTimer * 0.3f);
+
+    // ★変更：カメラをプレイヤーの背面方向（吹き飛ぶ方向）の「斜め前」に配置する
+    // プレイヤーは yaw（向いていた方向）の背面（180度）へ飛ぶので、
+    // カメラは yaw から少しずらした位置（斜め前）から捉えるのが良い。
+    float cameraAngle = yaw + 0.5f; // 正面から少しずらす（約30度）
+
+    // カメラの高さ用の角度（少し上から見下ろすように配置）
+    float heightOffsetPitch = 0.3f; // 少し高めに調整 
+    float cosPitch = std::cos(heightOffsetPitch);
+    float sinPitch = std::sin(heightOffsetPitch);
+
+    float cosAngle = std::cos(cameraAngle);
+    float sinAngle = std::sin(cameraAngle);
+
+    Vector3 cameraPos;
+    // プレイヤーの斜め前上空にカメラを配置
+    cameraPos.x = playerTranslate.x - (sinAngle * cosPitch * distance);
+    cameraPos.y = playerTranslate.y + (sinPitch * distance);
+    cameraPos.z = playerTranslate.z - (cosAngle * cosPitch * distance);
+
+    // 地面にめり込まないように制限
+    if (cameraPos.y < kCameraMinY) {
+        cameraPos.y = kCameraMinY;
+    }
+
+    camera_->SetTranslate(cameraPos);
+
+    // ★修正: カメラの向きを常にプレイヤーの少し上に向ける (LookAt)
+    // 回転するモデル全体を捉えやすくするため、ターゲット位置を少し高く設定
+    Vector3 lookAtTarget = {
+        playerTranslate.x,
+        playerTranslate.y + 1.5f,
+        playerTranslate.z
+    };
+
+    Vector3 toPlayer = {
+        lookAtTarget.x - cameraPos.x,
+        lookAtTarget.y - cameraPos.y,
+        lookAtTarget.z - cameraPos.z
+    };
+
+    // ベクトルからYaw角（左右の向き）を計算
+    float lookYaw = std::atan2(toPlayer.x, toPlayer.z);
+
+    // ベクトルからPitch角（上下の向き）を計算
+    float horizontalDist = std::sqrt(toPlayer.x * toPlayer.x + toPlayer.z * toPlayer.z);
+    float lookPitch = -std::atan2(toPlayer.y, horizontalDist);
+
+    // 計算した角度をカメラに適用
+    camera_->SetRotate({ lookPitch, lookYaw, 0.0f });
+}

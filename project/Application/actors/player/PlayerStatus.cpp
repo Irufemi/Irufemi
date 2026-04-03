@@ -58,9 +58,8 @@ void PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engin
         hp_ = 0;
         isDead_ = true;
 
-        if (engine) {
-            engine->GetSceneManager()->Request("GameOver");
-        }
+        // ★修正: ここにあった即座にGameOverへ遷移する処理を削除しました。
+        // これにより、GameScene側の演出タイマーが正しく機能するようになります。
     }
 }
 

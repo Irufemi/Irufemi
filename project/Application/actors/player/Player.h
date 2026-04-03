@@ -43,6 +43,9 @@ public:
     int GetMaxHp() const { return status_.GetMaxHp(); }
     bool IsDead() const { return status_.IsDead(); }
 
+    // ★追加: 死亡演出が最後まで終わったかどうかのフラグを取得
+    bool IsDeathAnimationFinished() const { return isDeathAnimationFinished_; }
+
     void ApplyDamage(int damage);
 
     // ターゲット設定関係
@@ -71,7 +74,6 @@ private:
     std::unique_ptr<ObjClass> targetMarkerObj_ = nullptr;
     std::unique_ptr<Sprite> maskSprite_ = nullptr;
 
-    // ★ポイント: 照準座標を「ミサイル用」と「機関銃用」で分ける
     Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f }; // ミサイルのオートエイム用（常に敵の座標が入る）
     Vector3 aimPos_ = { 0.0f, 0.0f, 0.0f };    // 機関銃とマーカー用（画面外なら前方になる）
 
@@ -125,6 +127,16 @@ private:
     static constexpr float kAimDistance = 100.0f;             // 画面外の場合の照準距離
     static constexpr int kMissileSkillDuration = 120;         // ミサイルスキルの持続時間
     static constexpr int kMachineGunSkillDuration = 180;      // 機関銃スキルの持続時間
+
+    // --- 死亡時の演出用変数 ---
+    int deathTimer_ = 0;
+    Vector3 deathVelocity_ = { 0.0f, 0.0f, 0.0f };
+    Vector3 deathAngularVelocity_ = { 0.0f, 0.0f, 0.0f };
+    float deathYaw_ = 0.0f;
+
+    // ★追加: 演出終了判定フラグと時間
+    bool isDeathAnimationFinished_ = false;
+    static constexpr int kDeathAnimationDuration = 180; // 演出にかけるフレーム数（約3秒）
 
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;

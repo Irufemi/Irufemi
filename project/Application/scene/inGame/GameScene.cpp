@@ -90,23 +90,23 @@ void GameScene::Update() {
             Vector3 toBoss = Math::Subtract(bossPos, playerPos);
             float len = Math::Length(toBoss);
             bool inScreen = false;
-            
+
             if (len > kMathEpsilon) {
                 // プレイヤーからボスへの方向ベクトル
                 toBoss = { toBoss.x / len, toBoss.y / len, toBoss.z / len };
-                
+
                 // プレイヤーが向いている方向ベクトル
                 float sinY = std::sin(player_->GetRotate().y);
                 float cosY = std::cos(player_->GetRotate().y);
                 Vector3 playerForward = { sinY, 0.0f, cosY };
-                
+
                 // 内積で前方にいるかを判定（0.0fより大きければ前方180度以内にいる）
                 float dot = Math::Dot(toBoss, playerForward);
                 if (dot > 0.0f) {
                     inScreen = true;
                 }
             }
-            
+
             // 判定結果をプレイヤーに渡す（これでミサイル倍増や機関銃の挙動が切り替わります）
             player_->SetIsTargetingEnemy(inScreen);
         }
@@ -376,7 +376,14 @@ void GameScene::Update() {
     // enemyが死んだときクリアシーンに遷移する
     if (boss_ && boss_->IsDead()) {
         if (engine_ && engine_->GetSceneManager()) {
-            engine_->GetSceneManager()->Request("Clear");
+            engine_->GetSceneManager()->Request("Clear"); // クリアシーンへの遷移
+        }
+    }
+
+    // ★追加: プレイヤーの死亡演出が終了したときゲームオーバーシーンに遷移する
+    if (player_ && player_->IsDeathAnimationFinished()) {
+        if (engine_ && engine_->GetSceneManager()) {
+            engine_->GetSceneManager()->Request("GameOver"); // "GameOver" は実際のシーン名に合わせてください
         }
     }
 }
@@ -497,3 +504,4 @@ void GameScene::UpdateCameraAndFrameData() {
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
+
