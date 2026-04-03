@@ -31,46 +31,50 @@ void EnemyAnimState_Stomp::Update(Enemy* enemy, Player* player, float deltaTime)
     if (attackTimer_ < endHold) {
         Vector3 playerPos = player->GetTranslate();
         Vector3 myPos = enemy->GetGlobalTransform().translate;
-
-        // ターゲットへの方向ベクトル
         Vector3 toPlayer = Math::Subtract(playerPos, myPos);
-        // Y軸回転（向き）を計算
         enemy->GetGlobalTransform().rotate.y = std::atan2(toPlayer.x, toPlayer.z);
     }
 
     // --- 1. 地上での予兆（緩急のある屈伸とマルチ振動） ---
     if (attackTimer_ < endSquat) {
-        // 【緩急】tの3乗を使うことで、後半にかけて一気に深く沈み込む演出
         float t = attackTimer_ / squatTime;
         float easeIn = t * t * t;
-        enemy->GetGlobalTransform().scale.y = initialScaleY_ * (1.0f - easeIn * 0.6f);
+        enemy->GetGlobalTransform().scale.y = initialScaleY_ * (1.0f - easeIn * 0.5f);
 
-        // 【部位別振動】溜めが進むほど激しく、かつ軸をバラバラにする
-        float shakeStrength = easeIn * 0.8f;
-
-        // 中央：上下に激しく揺れる（エネルギーの充填）
-        enemy->GetHeadMidOffset().y = std::sin(attackTimer_ * 80.0f) * shakeStrength;
-        // 左：左右に揺れる
-        enemy->GetHeadLeftOffset().x = std::sin(attackTimer_ * 95.0f) * shakeStrength;
-        // 右：前後に揺れる
-        enemy->GetHeadRightOffset().z = std::cos(attackTimer_ * 110.0f) * shakeStrength;
+        // 徐々に強くなる振動
+        float shakeStrength = easeIn * 0.5f;
+        enemy->GetHeadMidOffset().y = std::sin(attackTimer_ * 60.0f) * shakeStrength;
+        enemy->GetHeadLeftOffset().x = std::sin(attackTimer_ * 75.0f) * shakeStrength;
+        enemy->GetHeadRightOffset().z = std::cos(attackTimer_ * 80.0f) * shakeStrength;
     }
-    // --- 2. 溜めの極致（静寂） ---
+    // --- 2. 溜めの極致（高周波の微振動） ---
     else if (attackTimer_ < endHold) {
-        // 飛び上がる直前、全ての振動をピタッと止める（嵐の前の静けさ）
-        enemy->GetGlobalTransform().scale.y = initialScaleY_ * 0.4f;
+        // 圧縮された状態（一番縮んだ状態）を維持
+        enemy->GetGlobalTransform().scale.y = initialScaleY_ * 0.5f;
+
+        // 【ここを修正】完全に止めず、超高速で細かく震わせる
+        // 周波数を150.0f以上に上げることで「キチキチ」とした限界感を出す
+        float microShake = 0.15f;
+        float speed = 180.0f;
+
+        enemy->GetHeadMidOffset().y = std::sin(attackTimer_ * speed) * microShake;
+        enemy->GetHeadLeftOffset().x = std::cos(attackTimer_ * (speed + 10.0f)) * microShake;
+        enemy->GetHeadRightOffset().z = std::sin(attackTimer_ * (speed - 5.0f)) * microShake;
+
+        // さらに、体全体（Transformの座標）もわずかに震わせるとより「力」を感じます
+        enemy->GetGlobalTransform().translate.x += std::sin(attackTimer_ * 200.0f) * 0.05f;
+    }
+    // --- 3. 爆発的ジャンプ ---
+    else if (attackTimer_ < endJump) {
+        // 溜めた微振動を一気に解放して上昇
+        float t = (attackTimer_ - endHold) / jumpTime;
+        enemy->GetGlobalTransform().scale.y = initialScaleY_ * (0.5f + t * 2.0f);
+        enemy->GetGlobalTransform().translate.y += 4.0f; // より速く！
+
+        // ジャンプの瞬間はオフセットをリセット
         enemy->GetHeadMidOffset() = { 0,0,0 };
         enemy->GetHeadLeftOffset() = { 0,0,0 };
         enemy->GetHeadRightOffset() = { 0,0,0 };
-    }
-    // --- 3. 超高速ジャンプ ---
-    else if (attackTimer_ < endJump) {
-        // 溜めたバネを解放するように、一気に縦長になりながら上昇
-        float t = (attackTimer_ - endHold) / jumpTime;
-        enemy->GetGlobalTransform().scale.y = initialScaleY_ * (0.4f + t * 1.8f);
-
-        // フレームごとの移動量を大きくして「消えた」ように見せる
-        enemy->GetGlobalTransform().translate.y += 3.5f;
     }
     // --- 4. プレイヤー頭上への回り込み ---
     else if (attackTimer_ < endHover) {
