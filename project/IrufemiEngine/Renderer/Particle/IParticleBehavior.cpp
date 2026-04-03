@@ -257,7 +257,7 @@ void BulletTrailBehavior::Initialize(Emitter* emitter) {
 	emitter->area = { 0.2f, 0.2f, 0.2f }; // 少し拡散させる
 	emitter->velocityMin = { -0.1f, -0.1f, -0.1f };
 	emitter->velocityMax = { 0.1f, 0.1f, 0.1f };
-	emitter->startScale = { 0.5f, 0.5f, 0.5f }; // さらに大きく
+	emitter->startScale = { 1.5f, 1.5f, 1.5f }; // 演出をさらに拡大
 	emitter->endScale = { 0.0f, 0.0f, 0.0f };
 	emitter->startColor = { 1.0f, 1.0f, 0.5f, 1.0f }; // より白に近い黄色
 	emitter->endColor = { 1.0f, 0.2f, 0.0f, 0.0f };

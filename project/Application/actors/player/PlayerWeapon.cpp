@@ -203,7 +203,7 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
             float bxzLen = std::sqrt(bullets_[i].velocity.x * bullets_[i].velocity.x + bullets_[i].velocity.z * bullets_[i].velocity.z);
             bRot.x = std::atan2(-bullets_[i].velocity.y, bxzLen);
             bulletObjs_[i]->SetRotate(bRot);
-            bulletObjs_[i]->SetScale({ 0.05f, 0.05f, 0.2f });
+            bulletObjs_[i]->SetScale({ 0.06f, 0.06f, 0.24f }); // 弾本体をさらに小型化
             bulletObjs_[i]->Update();
             bulletObjs_[i]->Draw();
         }
