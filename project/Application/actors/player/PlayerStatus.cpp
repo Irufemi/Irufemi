@@ -62,6 +62,8 @@ bool PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engin
             engine->GetSceneManager()->Request("GameOver");
         }
     }
+
+    return true;
 }
 
 void PlayerStatus::HitAndKnockback(Enemy* enemy, const Vector3& playerTranslate) {
