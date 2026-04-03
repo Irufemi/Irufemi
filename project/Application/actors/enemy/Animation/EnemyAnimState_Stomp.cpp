@@ -19,8 +19,8 @@ void EnemyAnimState_Stomp::Update(Enemy* enemy, Player* player, float deltaTime)
 
     // --- フェーズ時間設定 ---
     float squatTime = 0.7f;   // じっくり深く沈み込む
-    float holdTime = 1.6f;    // 完全に動きを止める「溜め」
-    float jumpTime = 0.25f;   // 一瞬で空へ消える（爆発的速度）
+    float holdTime = 1.2f;    // 完全に動きを止める「溜め」
+    float jumpTime = 0.35f;   // 一瞬で空へ消える（爆発的速度）
 
     float endSquat = squatTime;
     float endHold = endSquat + holdTime;
