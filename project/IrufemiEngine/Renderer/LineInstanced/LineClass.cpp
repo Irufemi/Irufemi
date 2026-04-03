@@ -10,6 +10,13 @@ DirectXCommon* Line3DRegion::dx_ = nullptr;
 DrawManager* Line3DRegion::drawManager_ = nullptr;
 DescriptorPool* Line3DRegion::s_srvAllocator_ = nullptr;
 
+Line3DRegion::~Line3DRegion() {
+    if (s_srvAllocator_ && instancingSrvIndex_ != UINT32_MAX) {
+        s_srvAllocator_->FreeAfterFence(instancingSrvIndex_, dx_->GetFenceValue());
+        instancingSrvIndex_ = UINT32_MAX;
+    }
+}
+
 void Line3DRegion::Initialize(Camera* camera) {
     camera_ = camera;
     instances_.resize(maxInstances_);

@@ -27,7 +27,7 @@ void LineResource::CreateResource() {
     }
 
     if (!materialResource_) {
-        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(LineMaterial));
+        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(Material));
     }
     if (!transformationResource_) {
         transformationResource_ = s_dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));

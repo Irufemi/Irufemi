@@ -30,8 +30,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Engine/IrufemiEngine.h"
-#include "Renderer/Material.h"
-#include "Renderer/Particle/Data/ParticleMaterial.h"
+#include "Engine/Graphics/Data/Material.h"
 #include "Resource/Model/Data/ObjModel.h"
 #include "Renderer/LineInstanced/LineResource.h"
 #include "Renderer/Object3D/Object3DResource.h"
@@ -68,16 +67,16 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     ID3D12DescriptorHeap* srvHeap = srvPool->GetHeap();
 
     // ImGui用にディスクリプタを1つ確保
-    const uint32_t imguiIndex = srvPool->Allocate();
-    assert(imguiIndex != DescriptorPool::kInvalid);
+    srvIndex_ = srvPool->Allocate();
+    assert(srvIndex_ != DescriptorPool::kInvalid);
 
     ImGui_ImplDX12_Init(
         dxCommon->GetDevice(),
         dxCommon->GetSwapChainDesc().BufferCount,
         dxCommon->GetSwapChainDesc().Format, // スワップチェーン作成用にUNORMフォーマットを使用
         srvHeap,
-        srvPool->GetCPUHandle(imguiIndex),
-        srvPool->GetGPUHandle(imguiIndex)
+        srvPool->GetCPUHandle(srvIndex_),
+        srvPool->GetGPUHandle(srvIndex_)
     );
 
     // フォントアトラスをビルドし、テクスチャをGPUにアップロードする
@@ -146,6 +145,11 @@ void DebugUI::Shutdown() {
     ImGui_ImplDX12_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
+
+    if (dxCommon_ && dxCommon_->GetSrvPool()) {
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        srvIndex_ = DescriptorPool::kInvalid;
+    }
 
 #endif // USE_IMGUI
 }
@@ -476,7 +480,7 @@ void DebugUI::DebugMaterialBy2D([[maybe_unused]] Material* materialData) {
 }
 
 // Particle 専用マテリアルのデバッグ表示
-void DebugUI::DebugMaterialByParticle([[maybe_unused]] ParticleMaterial* materialData) {
+void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
 #ifdef USE_IMGUI
 
     if (!materialData) return;
@@ -1174,6 +1178,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                     ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
                     ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
                     ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
+                    ImGui::ColorEdit4("Background Color", &params.backgroundColor.x);
                     const char* noiseTypes[] = { "Noise 0", "Noise 1" };
                     ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes, IM_ARRAYSIZE(noiseTypes));
                 } else if (mode == PostProcessMode::Noise) {

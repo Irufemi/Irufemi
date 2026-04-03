@@ -42,8 +42,8 @@ void PlayerStatus::UpdateKnockback() {
     }
 }
 
-void PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engine) {
-    if (isDead_ || invincibleTimer_ > 0) return;
+bool PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engine) {
+    if (isDead_ || invincibleTimer_ > 0) return false;
 
     if (isCharging) {
         hp_ -= damage / 2;
@@ -61,6 +61,8 @@ void PlayerStatus::ApplyDamage(int damage, bool isCharging, IrufemiEngine* engin
         // ★修正: ここにあった即座にGameOverへ遷移する処理を削除しました。
         // これにより、GameScene側の演出タイマーが正しく機能するようになります。
     }
+
+    return true;
 }
 
 void PlayerStatus::HitAndKnockback(Enemy* enemy, const Vector3& playerTranslate) {

@@ -173,12 +173,13 @@ OBB HeadRight::GetOBB() const {
     return obb;
 }
 
-void HeadRight::ApplyDamage(int damage) {
+bool HeadRight::ApplyDamage(int damage) {
   hp_ -= damage;
   if (hp_ < 0) {
     hp_ = 0;
   }
   damageFlashTimer_ = EnemyParameters::GetInstance()->GetDamageFlashDuration();
+  return true;
 }
 
 void HeadRight::ScatterAt(const Vector3& velocity, const OBB& collisionArea) {

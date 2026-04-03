@@ -22,7 +22,7 @@ class DescriptorPool;
 class Line3DRegion {
 public:
     Line3DRegion() = default;
-    ~Line3DRegion() = default;
+    ~Line3DRegion();
 
     void Initialize(Camera* camera);
     void Update();

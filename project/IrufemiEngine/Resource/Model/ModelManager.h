@@ -15,11 +15,16 @@
 #include "../../Engine/Core/System/ThreadPool.h"
 #include "../../Engine/Core/System/TaskGroup.h"
 #include <d3d12.h>
-#include "Resource/Model/Data/ObjModel.h"
-#include "Resource/Model/Data/ModelData.h"
-#include "Resource/Model/Data/MaterialData.h"
-#include "Resource/Model/Data/VoxelizedModel.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Data/ObjModel.h"
+#include "Data/ModelData.h"
+#include "Data/MaterialData.h"
+#include "Data/VoxelizedModel.h"
+#include "../../Engine/Core/Math/Vector3Int.h"
+#include "../../Engine/Core/Math/Matrix4x4.h"
+#include "../../Engine/Core/Math/Vector3.h"
+#include "../../Engine/Core/Math/Vector4.h"
+#include "../../Engine/Core/Math/Vector2.h"
+#include "../../Engine/Core/Math/Geometry/Math.h"
 #include <atomic>
 
 // 前方宣言
@@ -37,6 +42,8 @@ class TextureManager;
  * @brief GPU上に転送されたメッシュリソースを保持する構造体
  */
 struct GpuMesh {
+    GpuMesh() = default;
+    ~GpuMesh();
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;
     Microsoft::WRL::ComPtr<ID3D12Resource> indexResource;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
@@ -44,6 +51,9 @@ struct GpuMesh {
     UINT vertexCount = 0;
     UINT indexCount = 0;
     D3D12_GPU_DESCRIPTOR_HANDLE vertexSrvHandle{};
+    uint32_t srvIndex = 0xFFFFFFFF;
+    
+    static DirectXCommon* sDxCommon;
 };
 
 /**
@@ -61,10 +71,10 @@ struct GpuMaterial {
  */
 struct ManagedModel {
     enum class LoadingStatus {
-        Pending,
-        Loading,
-        Loaded,
-        Failed
+        Pending = 0,
+        Loading = 1,
+        Loaded = 2,
+        Failed = 3
     };
 
     std::shared_ptr<ObjModel> cpuModel;

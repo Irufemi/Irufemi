@@ -271,38 +271,69 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 }
 
 void IrufemiEngine::Finalize() {
+    // 依存関係に基づき、上位レイヤーから下位レイヤーの順で破棄する
+
+    // 1. シーン・UI
+    if (sceneManager_) {
+        sceneManager_.reset();
+    }
     if (ui_) {
         ui_->Shutdown();
         ui_.reset();
     }
-    if (sceneManager_) {
-        sceneManager_.reset();
-    }
-    if (inputManager_) {
-        inputManager_.reset();
-    }
-    if (audioManager_) {
-        audioManager_->Finalize();
-        audioManager_.reset();
-    }
+
+    // 2. 描画・ポストプロセス系
     if (drawManager_) {
         drawManager_->Finalize();
         drawManager_.reset();
     }
-    PrimitiveManager::Finalize();
-    if (textureManager_) {
-        textureManager_.reset();
+    if (postProcessManager_) {
+        postProcessManager_.reset();
     }
+    if (mainRenderTexture_) {
+        mainRenderTexture_.reset();
+    }
+
+    // 3. アニメーション・モデル (テクスチャに依存)
+    if (animationManager_) {
+        animationManager_.reset();
+    }
+    // ModelManagerは破棄時にスレッドをJoinするため、TextureManagerより先に破棄する必要がある
     if (modelManager_) {
         modelManager_.reset();
     }
-    if (dxCommon_) {
-        dxCommon_->Finalize(); dxCommon_.reset();
+
+    // 4. テクスチャ (DirectX基盤に依存)
+    if (textureManager_) {
+        textureManager_.reset();
     }
+
+    // 5. その他
+    PrimitiveManager::Finalize();
+    if (audioManager_) {
+        audioManager_->Finalize();
+        audioManager_.reset();
+    }
+    if (inputManager_) {
+        inputManager_.reset();
+    }
+
+    // 6. DirectX基盤
+    if (dxCommon_) {
+        if (dxCommon_->GetSrvPool() && depthSrvIndex_ != 0xFFFFFFFF) {
+            dxCommon_->GetSrvPool()->FreeAfterFence(depthSrvIndex_, dxCommon_->GetFenceValue());
+            depthSrvIndex_ = 0xFFFFFFFF;
+        }
+        dxCommon_->Finalize();
+        dxCommon_.reset();
+    }
+
+    // 7. OS・ウィンドウ
     if (winApp_) {
         winApp_.reset();
     }
 }
+
 
 void IrufemiEngine::Execute() {
     // SceneManager 構築(エンジンは所有のみ)

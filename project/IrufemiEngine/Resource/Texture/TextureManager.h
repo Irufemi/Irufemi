@@ -92,7 +92,14 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() const { return whiteTextureHandle_; }
 
     /**
-     * @brief すべてのロードタスクが完了したかを取得
+     * @brief テクスチャのロード状態を取得する
+     * @param[in] name ファイルパスまたは識別名
+     * @return ロード状態。存在しない場合は Failed を返す
+     */
+    Texture::LoadingStatus GetTextureStatus(const std::string& name) const;
+
+    /**
+     * @brief すべてのロードタスク（背景タスクを含む）が完了しているかを取得
      */
     bool IsAllLoaded() const { return taskGroup_->IsAllDone(); }
 

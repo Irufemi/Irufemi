@@ -1,7 +1,6 @@
 #include "EnemyStompEffects.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Irufemi.h" 
-#include "Player.h"
 #include "core/math/geometry/Math.h"
 #include <cmath>
 #include <algorithm>
@@ -48,8 +47,8 @@ void EnemyStompEffects::Fire(const Vector3& position) {
     finalExplosionTransform_.rotate = { 0,0,0 };
 }
 
-void EnemyStompEffects::Update(float deltaTime, Player* player) {
-    if (!isActive_ || !player) return;
+void EnemyStompEffects::Update(float deltaTime) {
+    if (!isActive_) return;
 
     globalTimer_ += deltaTime;
     phaseTimer_ += deltaTime;
@@ -62,14 +61,6 @@ void EnemyStompEffects::Update(float deltaTime, Player* player) {
 
         explosionTransform_.scale = { currentScale, currentScale, currentScale };
         explosionObj_->SetColor({ 1.0f, 0.4f, 0.0f, Lerp(params_.explosionInitialAlpha, 0.0f, t) });
-
-        if (!hasDealtExplosionDamage_ && t < params_.explosionDamageActiveTime) {
-            Vector3 diff = Math::Subtract(player->GetTranslate(), basePosition_);
-            if (Math::Length(diff) <= currentScale) {
-                player->ApplyDamage(params_.explosionDamage);
-                hasDealtExplosionDamage_ = true;
-            }
-        }
     }
 
     // --- 2. リングと噴き上がり爆発のフェーズ管理 ---
@@ -127,14 +118,8 @@ void EnemyStompEffects::Update(float deltaTime, Player* player) {
 
         finalExplosionObj_->SetColor({ 1.0f, 1.0f, 1.0f, Lerp(1.0f, 0.0f, t) });
 
-        // OBB更新と判定
+        // OBB更新
         UpdateFinalExplosionOBB();
-        if (!hasDealtFinalDamage_) {
-            if (CheckOBBCollision(finalExplosionOBB_, player->GetTranslate())) {
-                player->ApplyDamage(params_.finalExplosionDamage);
-                hasDealtFinalDamage_ = true;
-            }
-        }
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::Finished;
@@ -174,15 +159,16 @@ void EnemyStompEffects::UpdateFinalExplosionOBB() {
     finalExplosionOBB_.size.z = finalExplosionTransform_.scale.z * 0.5f;
 }
 
-bool EnemyStompEffects::CheckOBBCollision(const OBB& obb, const Vector3& point) {
-    Vector3 d = Math::Subtract(point, obb.center);
-    for (int i = 0; i < 3; ++i) {
-        float distance = std::abs(Math::Dot(d, obb.orientations[i]));
-        if (distance > obb.size.x && i == 0) return false;
-        if (distance > obb.size.y && i == 1) return false;
-        if (distance > obb.size.z && i == 2) return false;
-    }
-    return true;
+bool EnemyStompEffects::IsExplosionDamageActive() const {
+    if (globalTimer_ >= params_.explosionDuration) return false;
+    float t = globalTimer_ / params_.explosionDuration;
+    return t < params_.explosionDamageActiveTime;
+}
+
+float EnemyStompEffects::GetExplosionRadius() const {
+    float t = (std::min)(1.0f, globalTimer_ / params_.explosionDuration);
+    float easeOut = 1.0f - static_cast<float>(std::pow(1.0f - t, 2));
+    return Lerp(1.0f, params_.explosionMaxRadius, easeOut);
 }
 
 void EnemyStompEffects::DrawDebug(Line3DRegion* lineRegion) {
@@ -265,4 +251,4 @@ void EnemyStompEffects::Draw() {
     if (globalTimer_ < params_.explosionDuration) explosionObj_->Draw();
     if (currentPhase_ != Phase::Finished) ringObj_->Draw();
     if (currentPhase_ == Phase::FinalExplosion) finalExplosionObj_->Draw();
-}
+}
