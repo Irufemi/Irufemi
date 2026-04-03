@@ -9,6 +9,7 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Renderer/VertexData.h"
+#include "Engine/Graphics/DirectX/RootSignatureConfig.h"
 #include "Resource/Model/ModelManager.h"
 #include <cassert>
 #include <cstdio>
@@ -227,13 +228,13 @@ void VoxelParticleSystem::Draw() {
   commandList->IASetVertexBuffers(0, 1, &cubeVertexBufferView_);
   commandList->IASetIndexBuffer(&cubeIndexBufferView_);
 
-  // RootParameter: [8]CBV(PerView), [1]CBV(VoxelEmitter), [11]SRV(ParticleData)
+  // RootParameter: [Special]CBV(PerView), [Transform]CBV(VoxelEmitter), [LineInstancing]SRV(ParticleData)
   commandList->SetGraphicsRootConstantBufferView(
-      8, perViewConstantBuffer_->GetGPUVirtualAddress()); // b6 (PerView)
+      (UINT)RootSlot::Special, perViewConstantBuffer_->GetGPUVirtualAddress()); // b6 (PerView)
   commandList->SetGraphicsRootConstantBufferView(
-      1, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0 (VoxelEmitter)
+      (UINT)RootSlot::Transform, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0 (VoxelEmitter)
   commandList->SetGraphicsRootDescriptorTable(
-      11, particleSrvHandleGPU_); // t1 (ParticleData)
+      (UINT)RootSlot::LineInstancing, particleSrvHandleGPU_); // t1 (ParticleData)
 
   commandList->DrawIndexedInstanced(cubeIndexCount_, voxelCount_, 0, 0, 0);
 

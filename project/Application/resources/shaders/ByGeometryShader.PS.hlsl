@@ -17,9 +17,9 @@ struct PixelShaderOutput
 Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
 SamplerState gSampler : register(s0); //Samplerのregisterはs
 
-/*LambertianReflectance*/
+/*Light Common & DirectionalLight*/
 
-ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
+ConstantBuffer<LightCommonData> gLightCommon : register(b1);
 
 /*PhongReflectionModel*/
 
@@ -33,12 +33,12 @@ struct Camera
 };
 ConstantBuffer<Camera> gCamera : register(b2);
 
-/*PointLight*/
+/*Structured Light Buffers*/
 
-ConstantBuffer<PointLight> gPointLight : register(b3);
-
-/*SpotLight*/
-ConstantBuffer<SpotLight> gSpotLight : register(b4);
+StructuredBuffer<PointLight> gPointLights : register(t2);
+StructuredBuffer<SpotLight> gSpotLights : register(t3);
+// AreaLight は現状使われていないようだが、レジスタ定義のみ追加（または省略可。ここでは定義して整合性を取る）
+StructuredBuffer<AreaLight> gAreaLights : register(t4);
 
 /*テクスチャを貼ろう*/
 
@@ -99,13 +99,17 @@ PixelShaderOutput main(GeometryShaderOutput input)
 			float3 totalSpecular = 0;
 
 			// 平行光源
-			ApplyDirectionalLight(gDirectionalLight, gMaterial, context, totalDiffuse, totalSpecular);
+			ApplyDirectionalLight(gLightCommon.directionalLight, gMaterial, context, totalDiffuse, totalSpecular);
 
-			// 点光源 (単一)
-			ApplyPointLight(gPointLight, gMaterial, context, totalDiffuse, totalSpecular);
+			// 点光源
+			for (uint32_t i = 0; i < gLightCommon.pointLightCount; ++i) {
+				ApplyPointLight(gPointLights[i], gMaterial, context, totalDiffuse, totalSpecular);
+			}
 
-			// スポットライト (単一)
-			ApplySpotLight(gSpotLight, gMaterial, context, totalDiffuse, totalSpecular);
+			// スポットライト
+			for (uint32_t j = 0; j < gLightCommon.spotLightCount; ++j) {
+				ApplySpotLight(gSpotLights[j], gMaterial, context, totalDiffuse, totalSpecular);
+			}
 
 			// 拡散反射・鏡面反射の合成
 			output.color.rgb = (totalDiffuse * gMaterial.color.rgb * textureColor.rgb) + totalSpecular;
