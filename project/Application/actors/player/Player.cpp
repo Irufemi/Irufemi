@@ -41,6 +41,13 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     maskSprite_ = std::make_unique<Sprite>();
     maskSprite_->Initialize(camera, "resources/texture/player/mask.png");
 
+    // ★追加: キラン☆演出用 plane.obj の初期化
+    starObj_ = std::make_unique<ObjClass>();
+    starObj_->Initialize(camera, "plane.obj"); // ユーザー指定の plane.obj
+    starObj_->SetColor({ 5.0f, 5.0f, 1.0f, 1.0f }); // 光る黄色に設定
+    starScale_ = { 0.0f, 0.0f, 0.0f };
+    starRotationZ_ = 0.0f;
+
     skillDurationTimer_ = 0;
     skillCooldownTimer_ = 0;
     karakuriChargeTimer_ = 0;
@@ -101,18 +108,32 @@ void Player::Update() {
 
         deathTimer_++;
 
-        deathVelocity_.y += 0.02f; // 上へ加速
+        int flashTime = kDeathAnimationDuration - 40; // 終了の40フレーム前に光らせる
 
-        // 遠近感を強調するため、少し経ってから徐々にモデルのスケールを小さくしていく
-        if (deathTimer_ > 30) {
-            scale_.x *= 0.96f;
-            scale_.y *= 0.96f;
-            scale_.z *= 0.96f;
-        }
+        if (deathTimer_ < flashTime) {
+            deathVelocity_.y += 0.02f; // 上へ加速
 
-        // 完全に小さくなったら0に固定する
-        if (scale_.x < 0.01f) {
-            scale_ = { 0.0f, 0.0f, 0.0f };
+            // 遠近感を強調するため、少し経ってから徐々にモデルのスケールを小さくしていく
+            if (deathTimer_ > 30) {
+                scale_.x *= 0.96f;
+                scale_.y *= 0.96f;
+                scale_.z *= 0.96f;
+            }
+        } else if (deathTimer_ == flashTime) {
+            // 星になる瞬間！ピタッと止まる
+            deathVelocity_ = { 0.0f, 0.0f, 0.0f };
+            deathAngularVelocity_ = { 0.0f, 0.0f, 0.0f };
+            scale_ = { 0.0f, 0.0f, 0.0f }; // プレイヤー本体は消す
+
+            // ★plane.objを使って星の演出を開始！
+            starScale_ = { 6.0f, 6.0f, 6.0f }; // 最初は大きく表示
+            starRotationZ_ = 0.0f;
+        } else if (deathTimer_ > flashTime) {
+            // ★plane.objを回転させながら徐々に小さくする
+            starRotationZ_ += 0.5f; // くるくる回す速度
+            starScale_.x *= 0.88f;  // シュッと小さくしていく
+            starScale_.y *= 0.88f;
+            starScale_.z *= 0.88f;
         }
 
         translate_.x += deathVelocity_.x;
@@ -137,6 +158,26 @@ void Player::Update() {
 
         // 敵の目線から、プレイヤーの座標を見つめ続ける
         cameraController_.UpdateDeathCamera(deathCameraPos_, translate_);
+
+        // ★星モデルの座標と回転（ビルボード）を更新
+        if (starObj_ && deathTimer_ >= flashTime) {
+            // カメラから星へのベクトルを計算して、カメラの方を向かせる（LookAt）
+            Vector3 toCamera = {
+                deathCameraPos_.x - translate_.x,
+                deathCameraPos_.y - translate_.y,
+                deathCameraPos_.z - translate_.z
+            };
+            float lookYaw = std::atan2(toCamera.x, toCamera.z);
+            float horizontalDist = std::sqrt(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
+            float lookPitch = -std::atan2(toCamera.y, horizontalDist);
+
+            starObj_->SetPosition(translate_);
+            // XとYの回転でカメラの方向を向きつつ、Zの回転でくるくる回す！
+            // ※もしplane.objの裏面が描画されず見えない場合は、lookYaw に 3.14159f を足してください
+            starObj_->SetRotate({ lookPitch, lookYaw, starRotationZ_ });
+            starObj_->SetScale(starScale_);
+            starObj_->Update();
+        }
 
         return;
     }
@@ -305,8 +346,9 @@ void Player::Draw() {
         obj_->Update();
 
         if (status_.IsDead()) {
-            // スケールが残っている間だけ描画
-            if (scale_.x > 0.0f) {
+            // 星になる前まではプレイヤー本体を描画する
+            int flashTime = kDeathAnimationDuration - 40;
+            if (deathTimer_ < flashTime) {
                 obj_->Draw();
             }
         } else if (!cameraController_.IsFirstPerson() && !isBlinking) {
@@ -314,12 +356,17 @@ void Player::Draw() {
         }
     }
 
+    // ★追加: 星（plane.obj）の描画
+    if (status_.IsDead() && starObj_ && deathTimer_ >= kDeathAnimationDuration - 40 && starScale_.x > 0.01f) {
+        starObj_->Draw();
+    }
+
     if (attackObj_ && attackState_ != AttackState::kNone && !status_.IsDead() && cameraController_.IsCameraControlEnabled()) {
         attackObj_->Draw();
     }
 
     if (isTargetingEnemy_ && targetMarkerObj_ && !status_.IsDead()) {
-        // targetMarkerObj_->Draw();
+        targetMarkerObj_->Draw();
     }
 
     weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, status_.IsDead());

@@ -136,6 +136,11 @@ private:
 
     Vector3 deathCameraPos_ = { 0.0f, 0.0f, 0.0f };
 
+    // ★追加: キラン☆演出用の星モデル (plane.obj)
+    std::unique_ptr<ObjClass> starObj_ = nullptr;
+    Vector3 starScale_ = { 0.0f, 0.0f, 0.0f };
+    float starRotationZ_ = 0.0f;
+
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
     bool isDebugDrawOBB_ = false;
