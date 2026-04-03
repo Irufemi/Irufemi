@@ -46,7 +46,7 @@ public:
     // ★追加: 死亡演出が最後まで終わったかどうかのフラグを取得
     bool IsDeathAnimationFinished() const { return isDeathAnimationFinished_; }
 
-    void ApplyDamage(int damage);
+    bool ApplyDamage(int damage);
 
     // ターゲット設定関係
     void SetTargetPosition(const Vector3& targetPos) { targetPos_ = targetPos; }
