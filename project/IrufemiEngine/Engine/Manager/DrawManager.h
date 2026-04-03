@@ -63,13 +63,9 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> spotLightResource_;
     Microsoft::WRL::ComPtr<ID3D12Resource> areaLightResource_;
 
-    // SRV ハンドルとインデックス
-    D3D12_GPU_DESCRIPTOR_HANDLE pointLightSrvHandle_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE spotLightSrvHandle_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE areaLightSrvHandle_{};
-    uint32_t pointLightSrvIndex_ = 0xFFFFFFFFu;
-    uint32_t spotLightSrvIndex_ = 0xFFFFFFFFu;
-    uint32_t areaLightSrvIndex_ = 0xFFFFFFFFu;
+    // ライト SRV テーブルの先頭ハンドルとベースインデックス
+    D3D12_GPU_DESCRIPTOR_HANDLE lightSrvHandle_{};
+    uint32_t lightSrvBaseIndex_ = 0xFFFFFFFFu;
 
     // カメラやライト共通情報を格納するリソース
     Microsoft::WRL::ComPtr<ID3D12Resource> frameResource_;

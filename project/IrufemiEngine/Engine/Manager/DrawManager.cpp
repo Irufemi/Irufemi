@@ -89,19 +89,15 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     spotLightResource_ = dxCommon_->CreateBufferResource(sizeof(SpotLight) * kMaxLights);
     areaLightResource_ = dxCommon_->CreateBufferResource(sizeof(AreaLight) * kMaxLights);
 
-    // SRV の生成
+    // ライト SRV デスクリプタの一括確保 (Point, Spot, Area 用に 3 つ)
     auto pool = dxCommon_->GetSrvPool();
-    pointLightSrvIndex_ = pool->Allocate();
-    spotLightSrvIndex_ = pool->Allocate();
-    areaLightSrvIndex_ = pool->Allocate();
+    lightSrvBaseIndex_ = pool->Allocate(3);
+    lightSrvHandle_ = pool->GetGPUHandle(lightSrvBaseIndex_);
 
-    pool->CreateSRVForStructuredBuffer(pointLightSrvIndex_, pointLightResource_.Get(), kMaxLights, sizeof(PointLight));
-    pool->CreateSRVForStructuredBuffer(spotLightSrvIndex_, spotLightResource_.Get(), kMaxLights, sizeof(SpotLight));
-    pool->CreateSRVForStructuredBuffer(areaLightSrvIndex_, areaLightResource_.Get(), kMaxLights, sizeof(AreaLight));
-
-    pointLightSrvHandle_ = pool->GetGPUHandle(pointLightSrvIndex_);
-    spotLightSrvHandle_ = pool->GetGPUHandle(spotLightSrvIndex_);
-    areaLightSrvHandle_ = pool->GetGPUHandle(areaLightSrvIndex_);
+    // StructuredBuffer SRV の作成
+    pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 0, pointLightResource_.Get(), kMaxLights, sizeof(PointLight));
+    pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 1, spotLightResource_.Get(), kMaxLights, sizeof(SpotLight));
+    pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 2, areaLightResource_.Get(), kMaxLights, sizeof(AreaLight));
 }
 
 void DrawManager::Finalize() {
@@ -113,12 +109,15 @@ void DrawManager::Finalize() {
     spotLightResource_.Reset();
     areaLightResource_.Reset();
 
-    // SRV の解放
-    if (dxCommon_ && dxCommon_->GetSrvPool()) {
-        auto pool = dxCommon_->GetSrvPool();
-        if (pointLightSrvIndex_ != 0xFFFFFFFFu) pool->Free(pointLightSrvIndex_);
-        if (spotLightSrvIndex_ != 0xFFFFFFFFu) pool->Free(spotLightSrvIndex_);
-        if (areaLightSrvIndex_ != 0xFFFFFFFFu) pool->Free(areaLightSrvIndex_);
+    // SRVの解放
+    auto* srvPool = dxCommon_->GetSrvPool();
+    uint64_t fv = dxCommon_->GetFenceValue();
+    if (srvPool && lightSrvBaseIndex_ != 0xFFFFFFFFu) {
+        // 連続した3つのデスクリプタを個別に返却 (Freeは1つずつ用のため)
+        for (uint32_t i = 0; i < 3; ++i) {
+            srvPool->FreeAfterFence(lightSrvBaseIndex_ + i, fv);
+        }
+        lightSrvBaseIndex_ = 0xFFFFFFFFu;
     }
 
     dxCommon_ = nullptr;
@@ -281,10 +280,11 @@ void DrawManager::PostDraw() {
 void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights) {
     if (cameraData_) { *cameraData_ = camera; }
     if (lightCommonData_) {
+        // ライト共通データの更新（b1）
         lightCommonData_->directionalLight = light;
-        lightCommonData_->pointLightCount = static_cast<uint32_t>(pointLights.size());
-        lightCommonData_->spotLightCount = static_cast<uint32_t>(spotLights.size());
-        lightCommonData_->areaLightCount = static_cast<uint32_t>(areaLights.size());
+        lightCommonData_->pointLightCount = static_cast<int32_t>(pointLights.size());
+        lightCommonData_->spotLightCount = static_cast<int32_t>(spotLights.size());
+        lightCommonData_->areaLightCount = static_cast<int32_t>(areaLights.size());
     }
 
     // 各 StructuredBuffer へ書き込み
@@ -469,7 +469,7 @@ void DrawManager::DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);
 
-    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。
+    //描画！（DrawCall/ドローコール）。3頂点で1つのインスタンス。
     commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 }
 
@@ -606,6 +606,7 @@ void DrawManager::BindCommonParameters() {
     commandList_->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Camera, frameData_.camera);
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, frameData_.lightCommon);
-    // ライトSRVを一括バインド (t2, t3, t4)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, pointLightSrvHandle_);
+
+    // 点光源、スポットライト、面光源を１つのテーブル（Slot 6）で一括設定
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, lightSrvHandle_);
 }
