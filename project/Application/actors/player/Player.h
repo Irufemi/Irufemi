@@ -43,9 +43,10 @@ public:
     int GetMaxHp() const { return status_.GetMaxHp(); }
     bool IsDead() const { return status_.IsDead(); }
 
-    void ApplyDamage(int damage);
+    bool IsDeathAnimationFinished() const { return isDeathAnimationFinished_; }
 
-    // ターゲット設定関係
+    bool ApplyDamage(int damage);
+
     void SetTargetPosition(const Vector3& targetPos) { targetPos_ = targetPos; }
     void SetIsTargetingEnemy(bool isTargeting) { isTargetingEnemy_ = isTargeting; }
     bool GetIsTargetingEnemy() const { return isTargetingEnemy_; }
@@ -71,9 +72,8 @@ private:
     std::unique_ptr<ObjClass> targetMarkerObj_ = nullptr;
     std::unique_ptr<Sprite> maskSprite_ = nullptr;
 
-    // ★ポイント: 照準座標を「ミサイル用」と「機関銃用」で分ける
-    Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f }; // ミサイルのオートエイム用（常に敵の座標が入る）
-    Vector3 aimPos_ = { 0.0f, 0.0f, 0.0f };    // 機関銃とマーカー用（画面外なら前方になる）
+    Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
+    Vector3 aimPos_ = { 0.0f, 0.0f, 0.0f };
 
     bool isTargetingEnemy_ = false;
 
@@ -121,10 +121,25 @@ private:
     static constexpr float kHammerSizeChargeBonus = 0.4f;
     static constexpr float kHammerScaleYMultiplier = 1.5f;
 
-    static constexpr float kModelOffsetY = 0.4f;              // モデル描画位置のY軸オフセット
-    static constexpr float kAimDistance = 100.0f;             // 画面外の場合の照準距離
-    static constexpr int kMissileSkillDuration = 120;         // ミサイルスキルの持続時間
-    static constexpr int kMachineGunSkillDuration = 180;      // 機関銃スキルの持続時間
+    static constexpr float kModelOffsetY = 0.4f;
+    static constexpr float kAimDistance = 100.0f;
+    static constexpr int kMissileSkillDuration = 120;
+    static constexpr int kMachineGunSkillDuration = 180;
+
+    // --- 死亡時の演出用変数 ---
+    int deathTimer_ = 0;
+    Vector3 deathVelocity_ = { 0.0f, 0.0f, 0.0f };
+    Vector3 deathAngularVelocity_ = { 0.0f, 0.0f, 0.0f };
+    float deathYaw_ = 0.0f;
+    bool isDeathAnimationFinished_ = false;
+    static constexpr int kDeathAnimationDuration = 180;
+
+    Vector3 deathCameraPos_ = { 0.0f, 0.0f, 0.0f };
+
+    // ★追加: キラン☆演出用の星モデル (plane.obj)
+    std::unique_ptr<ObjClass> starObj_ = nullptr;
+    Vector3 starScale_ = { 0.0f, 0.0f, 0.0f };
+    float starRotationZ_ = 0.0f;
 
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;

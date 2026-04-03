@@ -1,7 +1,6 @@
 #include "EnemyStompEffects.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Irufemi.h" 
-#include "Player.h"
 #include "core/math/geometry/Math.h"
 #include <cmath>
 #include <algorithm>
@@ -46,10 +45,16 @@ void EnemyStompEffects::Fire(const Vector3& position) {
     explosionTransform_.rotate = { 0,0,0 };
     ringTransform_.rotate = { 0,0,0 };
     finalExplosionTransform_.rotate = { 0,0,0 };
+
+    // スケール初期化（前回の攻撃の残りをクリア）
+    explosionTransform_.scale = { 1.0f, 1.0f, 1.0f };
+    ringTransform_.scale = { 1.0f, params_.ringHeight, 1.0f };
+    finalExplosionTransform_.scale = { params_.ringMaxRadius, 0.01f, params_.ringMaxRadius };
+    UpdateFinalExplosionOBB();
 }
 
-void EnemyStompEffects::Update(float deltaTime, Player* player) {
-    if (!isActive_ || !player) return;
+void EnemyStompEffects::Update(float deltaTime) {
+    if (!isActive_) return;
 
     globalTimer_ += deltaTime;
     phaseTimer_ += deltaTime;
@@ -62,14 +67,6 @@ void EnemyStompEffects::Update(float deltaTime, Player* player) {
 
         explosionTransform_.scale = { currentScale, currentScale, currentScale };
         explosionObj_->SetColor({ 1.0f, 0.4f, 0.0f, Lerp(params_.explosionInitialAlpha, 0.0f, t) });
-
-        if (!hasDealtExplosionDamage_ && t < params_.explosionDamageActiveTime) {
-            Vector3 diff = Math::Subtract(player->GetTranslate(), basePosition_);
-            if (Math::Length(diff) <= currentScale) {
-                player->ApplyDamage(params_.explosionDamage);
-                hasDealtExplosionDamage_ = true;
-            }
-        }
     }
 
     // --- 2. リングと噴き上がり爆発のフェーズ管理 ---
@@ -107,6 +104,14 @@ void EnemyStompEffects::Update(float deltaTime, Player* player) {
         if (t >= 1.0f) {
             currentPhase_ = Phase::FinalExplosion;
             phaseTimer_ = 0.0f;
+
+            // フェーズ遷移したフレームで即座に初期状態でOBBを更新する
+            // これを行わないと、前回の攻撃の最大サイズ（170f等）が1フレームだけ判定されてしまう
+            float initR = params_.ringMaxRadius;
+            float initH = 0.01f;
+            finalExplosionTransform_.scale = { initR, initH, initR };
+            finalExplosionTransform_.translate.y = (basePosition_.y + params_.ringGroundOffset) + (initH * 0.5f);
+            UpdateFinalExplosionOBB();
         }
     }
     break;
@@ -125,16 +130,10 @@ void EnemyStompEffects::Update(float deltaTime, Player* player) {
         // ※ピボットがモデルの中心にある場合、座標を上にずらす
         finalExplosionTransform_.translate.y = (basePosition_.y + params_.ringGroundOffset) + (currentH * 0.5f);
 
-        finalExplosionObj_->SetColor({ 1.0f, 1.0f, 1.0f, Lerp(1.0f, 0.0f, t) });
+        finalExplosionObj_->SetColor({ 1.0f, 0.5f, 0.2f, Lerp(1.0f, 0.0f, t) });
 
-        // OBB更新と判定
+        // OBB更新
         UpdateFinalExplosionOBB();
-        if (!hasDealtFinalDamage_) {
-            if (CheckOBBCollision(finalExplosionOBB_, player->GetTranslate())) {
-                player->ApplyDamage(params_.finalExplosionDamage);
-                hasDealtFinalDamage_ = true;
-            }
-        }
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::Finished;
@@ -174,15 +173,16 @@ void EnemyStompEffects::UpdateFinalExplosionOBB() {
     finalExplosionOBB_.size.z = finalExplosionTransform_.scale.z * 0.5f;
 }
 
-bool EnemyStompEffects::CheckOBBCollision(const OBB& obb, const Vector3& point) {
-    Vector3 d = Math::Subtract(point, obb.center);
-    for (int i = 0; i < 3; ++i) {
-        float distance = std::abs(Math::Dot(d, obb.orientations[i]));
-        if (distance > obb.size.x && i == 0) return false;
-        if (distance > obb.size.y && i == 1) return false;
-        if (distance > obb.size.z && i == 2) return false;
-    }
-    return true;
+bool EnemyStompEffects::IsExplosionDamageActive() const {
+    if (globalTimer_ >= params_.explosionDuration) return false;
+    float t = globalTimer_ / params_.explosionDuration;
+    return t < params_.explosionDamageActiveTime;
+}
+
+float EnemyStompEffects::GetExplosionRadius() const {
+    float t = (std::min)(1.0f, globalTimer_ / params_.explosionDuration);
+    float easeOut = 1.0f - static_cast<float>(std::pow(1.0f - t, 2));
+    return Lerp(1.0f, params_.explosionMaxRadius, easeOut);
 }
 
 void EnemyStompEffects::DrawDebug(Line3DRegion* lineRegion) {
@@ -265,4 +265,4 @@ void EnemyStompEffects::Draw() {
     if (globalTimer_ < params_.explosionDuration) explosionObj_->Draw();
     if (currentPhase_ != Phase::Finished) ringObj_->Draw();
     if (currentPhase_ == Phase::FinalExplosion) finalExplosionObj_->Draw();
-}
+}

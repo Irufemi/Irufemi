@@ -49,5 +49,7 @@ enum class ParticleType {
 	kMuzzleFlash, // 銃口の火花
 	kMissileFire, // ミサイルの炎
 	kMissileSmoke, // ミサイルの煙
+	kBulletTrail, // 弾道トレイル
+	kEjectionMist, // 排莢時の霧状の煙
 	// 他の種類をここに追加
 };

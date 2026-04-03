@@ -32,7 +32,7 @@ public:
     void UpdateKnockback();
 
     // ダメージ処理
-    void ApplyDamage(int damage, bool isCharging, IrufemiEngine* engine);
+    bool ApplyDamage(int damage, bool isCharging, IrufemiEngine* engine);
 
     // 敵を吹き飛ばす処理の開始
     void HitAndKnockback(Enemy* enemy, const Vector3& playerTranslate);

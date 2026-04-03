@@ -94,7 +94,7 @@ void Enemy::Update(Player *player) {
   }
 
   if (stompEffects_) {
-      stompEffects_->Update(1.0f / 60.0f, player);
+      stompEffects_->Update(1.0f / 60.0f);
 
       // もしエフェクトが終了していたらメモリを解放してnullptrに戻す（お好みで）
       // if (!stompEffects_->IsActive()) { stompEffects_.reset(); }

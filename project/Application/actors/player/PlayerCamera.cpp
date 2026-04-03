@@ -13,12 +13,9 @@ void PlayerCamera::Initialize(Camera* camera) {
 }
 
 void PlayerCamera::UpdateInput(InputManager* input, Vector3& playerRotate) {
-    // F2キーでカメラ操作の有効/無効を切り替え
     if (input->IsKeyPressed(VK_F2)) {
         isCameraControlEnabled_ = !isCameraControlEnabled_;
     }
-
-    // ★追加: Vキーで一人称視点 / 三人称視点を切り替える
     if (input->IsKeyPressed('V')) {
         if (viewMode_ == ViewMode::kThirdPerson) {
             viewMode_ = ViewMode::kFirstPerson;
@@ -27,7 +24,6 @@ void PlayerCamera::UpdateInput(InputManager* input, Vector3& playerRotate) {
         }
     }
 
-    // --- マウスによる視点操作 ---
     if (isCameraControlEnabled_) {
         Vector2 mouseDelta = input->GetMouseDelta();
         float sensitivityMult = mouseSensitivity_ * mouseSensitivityMultiplier_ * kMouseSensitivityBase;
@@ -36,7 +32,6 @@ void PlayerCamera::UpdateInput(InputManager* input, Vector3& playerRotate) {
         cameraPitch_ += mouseDelta.y * sensitivityMult;
 
         if (viewMode_ == ViewMode::kThirdPerson) {
-            // 正の値が見下ろし、負の値が見上げ
             if (cameraPitch_ > kMaxCameraPitchThirdPerson) cameraPitch_ = kMaxCameraPitchThirdPerson;
             if (cameraPitch_ < kMinCameraPitchThirdPerson) cameraPitch_ = kMinCameraPitchThirdPerson;
         } else {
@@ -65,7 +60,6 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         cameraPos.y = lookAtTarget.y + (sinPitch * distance);
         cameraPos.z = lookAtTarget.z - (cosYaw * cosPitch * distance);
 
-        // カメラにも発射時の振動を少しだけブレンドして、画面全体を揺らす
         cameraPos.x += missileVibration.x * 0.5f;
         cameraPos.y += missileVibration.y * 0.5f;
         cameraPos.z += missileVibration.z * 0.5f;
@@ -88,4 +82,22 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         camera_->SetTranslate(cameraPos);
         camera_->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });
     }
+}
+
+void PlayerCamera::UpdateDeathCamera(const Vector3& cameraPos, const Vector3& playerTranslate) {
+    // 敵目線にカメラを固定する
+    camera_->SetTranslate(cameraPos);
+
+    // 飛んでいくプレイヤーを常に見つめる（LookAt）
+    Vector3 toPlayer = {
+        playerTranslate.x - cameraPos.x,
+        playerTranslate.y - cameraPos.y,
+        playerTranslate.z - cameraPos.z
+    };
+
+    float lookYaw = std::atan2(toPlayer.x, toPlayer.z);
+    float horizontalDist = std::sqrt(toPlayer.x * toPlayer.x + toPlayer.z * toPlayer.z);
+    float lookPitch = -std::atan2(toPlayer.y, horizontalDist);
+
+    camera_->SetRotate({ lookPitch, lookYaw, 0.0f });
 }

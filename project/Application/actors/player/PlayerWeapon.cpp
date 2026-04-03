@@ -52,6 +52,18 @@ void PlayerWeapon::Initialize(Camera* camera) {
     missileSmoke_ = std::make_unique<ParticleSystem>();
     missileSmoke_->Initialize(camera_, "resources/circle.png", ParticleType::kMissileSmoke);
 
+    bulletTrail_ = std::make_unique<ParticleSystem>();
+    bulletTrail_->Initialize(camera_, "resources/circle.png", ParticleType::kBulletTrail);
+    bulletTrail_->SetBlend(BlendMode::kBlendModeAdd);
+
+    ejectionMistLeft_ = std::make_unique<ParticleSystem>();
+    ejectionMistLeft_->Initialize(camera_, "resources/circle.png", ParticleType::kEjectionMist);
+    ejectionMistLeft_->SetBlend(BlendMode::kBlendModeAdd);
+
+    ejectionMistRight_ = std::make_unique<ParticleSystem>();
+    ejectionMistRight_->Initialize(camera_, "resources/circle.png", ParticleType::kEjectionMist);
+    ejectionMistRight_->SetBlend(BlendMode::kBlendModeAdd);
+
     // --- 薬莢モデルの初期化 ---
     for (int i = 0; i < kMaxCartridges; ++i) {
         cartridgeObjs_[i] = std::make_unique<ObjClass>();
@@ -105,6 +117,9 @@ void PlayerWeapon::Update(const Vector3& playerTranslate, const Vector3& playerR
     if (muzzleFlashAddRight_) muzzleFlashAddRight_->Update();
     if (missileFire_) missileFire_->Update();
     if (missileSmoke_) missileSmoke_->Update();
+    if (bulletTrail_) bulletTrail_->Update();
+    if (ejectionMistLeft_) ejectionMistLeft_->Update();
+    if (ejectionMistRight_) ejectionMistRight_->Update();
 }
 
 void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, int viewMode, bool isBlinking, bool isDead) {
@@ -124,29 +139,37 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
         Vector3 rot = { 0.0f, 0.0f, 0.0f };
         float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
 
-        // ★修正: 敵が画面内（正面から約60度以内）にいるか判定
-        bool isEnemyOnScreen = false;
-        if (dist > 0.001f) {
-            float cosP = std::cos(cameraPitch);
-            Vector3 forwardP = { std::sin(playerRotate.y) * cosP, -std::sin(cameraPitch), std::cos(playerRotate.y) * cosP };
-            Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
+        // ★修正: 照準に近いほど吸い寄せる（エイムアシスト）
+        float cosP = std::cos(cameraPitch);
+        float sinP = std::sin(cameraPitch);
+        Vector3 playerForward = { std::sin(playerRotate.y) * cosP, -sinP, std::cos(playerRotate.y) * cosP };
 
-            // 内積(Dot)で角度をチェック。0.5f は視野角120度相当
-            float dot = forwardP.x * toTargetNorm.x + forwardP.y * toTargetNorm.y + forwardP.z * toTargetNorm.z;
-            if (dot > 0.5f) {
-                isEnemyOnScreen = true;
+        Vector3 blendedForward = playerForward;
+
+        if (dist > 0.001f) {
+            Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
+            float dot = playerForward.x * toTargetNorm.x + playerForward.y * toTargetNorm.y + playerForward.z * toTargetNorm.z;
+
+            float assistThreshold = 0.8f;
+            if (dot > assistThreshold) {
+                float assistRatio = (dot - assistThreshold) / (1.0f - assistThreshold);
+                assistRatio = std::pow(assistRatio, 1.5f);
+
+                blendedForward.x = playerForward.x * (1.0f - assistRatio) + toTargetNorm.x * assistRatio;
+                blendedForward.y = playerForward.y * (1.0f - assistRatio) + toTargetNorm.y * assistRatio;
+                blendedForward.z = playerForward.z * (1.0f - assistRatio) + toTargetNorm.z * assistRatio;
+
+                float fLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.y * blendedForward.y + blendedForward.z * blendedForward.z);
+                blendedForward.x /= fLen;
+                blendedForward.y /= fLen;
+                blendedForward.z /= fLen;
             }
         }
 
-        // 画面内にいるなら敵を向き、そうでないならカメラ（プレイヤー）の正面を向く
-        if (isEnemyOnScreen) {
-            rot.y = std::atan2(toTarget.x, toTarget.z);
-            float xzLen = std::sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
-            rot.x = std::atan2(-toTarget.y, xzLen);
-        } else {
-            rot.y = playerRotate.y;
-            rot.x = cameraPitch;
-        }
+        // ブレンドされたベクトルから回転角(rot)を再計算する
+        rot.y = std::atan2(blendedForward.x, blendedForward.z);
+        float xzLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.z * blendedForward.z);
+        rot.x = std::atan2(-blendedForward.y, xzLen);
 
         // 機関銃モデルの位置に機関銃振動を反映
         machineGunObjLeft_->SetPosition(leftShoulder + machineGunVibration_);
@@ -198,7 +221,7 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
             float bxzLen = std::sqrt(bullets_[i].velocity.x * bullets_[i].velocity.x + bullets_[i].velocity.z * bullets_[i].velocity.z);
             bRot.x = std::atan2(-bullets_[i].velocity.y, bxzLen);
             bulletObjs_[i]->SetRotate(bRot);
-            bulletObjs_[i]->SetScale({ 0.05f, 0.05f, 0.2f });
+            bulletObjs_[i]->SetScale({ 0.06f, 0.06f, 0.24f }); // 弾本体をさらに小型化
             bulletObjs_[i]->Update();
             bulletObjs_[i]->Draw();
         }
@@ -230,6 +253,9 @@ void PlayerWeapon::DrawParticles(IrufemiEngine* engine) {
     if (muzzleFlashAddRight_) muzzleFlashAddRight_->Draw();
     if (missileFire_) missileFire_->Draw();
     if (missileSmoke_) missileSmoke_->Draw();
+    if (bulletTrail_) bulletTrail_->Draw();
+    if (ejectionMistLeft_) ejectionMistLeft_->Draw();
+    if (ejectionMistRight_) ejectionMistRight_->Draw();
 }
 
 void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& playerScale) {
@@ -322,26 +348,36 @@ void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector
             Vector3 rot = { 0.0f, 0.0f, 0.0f };
             float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
 
-            // ★修正: 弾を発射する位置を決めるためにも画面内判定を使う
-            bool isEnemyOnScreen = false;
+            // ★修正: 照準に近いほど吸い寄せる（エイムアシスト）
+            float cosP = std::cos(cameraPitch);
+            float sinP = std::sin(cameraPitch);
+            Vector3 playerForward = { std::sin(playerRotate.y) * cosP, -sinP, std::cos(playerRotate.y) * cosP };
+
+            Vector3 blendedForward = playerForward;
+
             if (dist > 0.001f) {
-                float cosP = std::cos(cameraPitch);
-                Vector3 forwardP = { std::sin(playerRotate.y) * cosP, -std::sin(cameraPitch), std::cos(playerRotate.y) * cosP };
                 Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
-                float dot = forwardP.x * toTargetNorm.x + forwardP.y * toTargetNorm.y + forwardP.z * toTargetNorm.z;
-                if (dot > 0.5f) {
-                    isEnemyOnScreen = true;
+                float dot = playerForward.x * toTargetNorm.x + playerForward.y * toTargetNorm.y + playerForward.z * toTargetNorm.z;
+
+                float assistThreshold = 0.8f;
+                if (dot > assistThreshold) {
+                    float assistRatio = (dot - assistThreshold) / (1.0f - assistThreshold);
+                    assistRatio = std::pow(assistRatio, 1.5f);
+
+                    blendedForward.x = playerForward.x * (1.0f - assistRatio) + toTargetNorm.x * assistRatio;
+                    blendedForward.y = playerForward.y * (1.0f - assistRatio) + toTargetNorm.y * assistRatio;
+                    blendedForward.z = playerForward.z * (1.0f - assistRatio) + toTargetNorm.z * assistRatio;
+
+                    float fLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.y * blendedForward.y + blendedForward.z * blendedForward.z);
+                    blendedForward.x /= fLen;
+                    blendedForward.y /= fLen;
+                    blendedForward.z /= fLen;
                 }
             }
 
-            if (isEnemyOnScreen) {
-                rot.y = std::atan2(toTarget.x, toTarget.z);
-                float xzLen = std::sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
-                rot.x = std::atan2(-toTarget.y, xzLen);
-            } else {
-                rot.y = playerRotate.y;
-                rot.x = cameraPitch;
-            }
+            rot.y = std::atan2(blendedForward.x, blendedForward.z);
+            float xzLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.z * blendedForward.z);
+            rot.x = std::atan2(-blendedForward.y, xzLen);
 
             float muzzleOffsetSize = (kMachineGunModelSize.z * 0.5f) * kMachineGunScale.z;
             float cosRotX = std::cos(rot.x);
@@ -353,22 +389,24 @@ void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector
             FireMachineGunBullet(muzzleLeft, playerTranslate, playerRotate, cameraPitch, targetPos);
             EjectCartridge(leftShoulder, false, playerTranslate, playerRotate, targetPos);
 
-            if (muzzleSmokeLeft_) muzzleSmokeLeft_->PlayHitEffect(leftShoulder);
+            // if (muzzleSmokeLeft_) muzzleSmokeLeft_->PlayHitEffect(leftShoulder); // 既存の煙を停止
             if (muzzleFlashLeft_) muzzleFlashLeft_->PlayHitEffect(muzzleLeft);
             if (muzzleFlashAddLeft_) {
                 muzzleFlashAddLeft_->PlayHitEffect(muzzleLeft);
                 muzzleFlashAddLeft_->PlayHitEffect(muzzleLeft);
             }
+            if (ejectionMistLeft_) ejectionMistLeft_->PlayHitEffect({ leftShoulder.x - rightX * 0.3f, leftShoulder.y, leftShoulder.z - rightZ * 0.3f });
 
             FireMachineGunBullet(muzzleRight, playerTranslate, playerRotate, cameraPitch, targetPos);
             EjectCartridge(rightShoulder, true, playerTranslate, playerRotate, targetPos);
 
-            if (muzzleSmokeRight_) muzzleSmokeRight_->PlayHitEffect(rightShoulder);
+            // if (muzzleSmokeRight_) muzzleSmokeRight_->PlayHitEffect(rightShoulder); // 既存の煙を停止
             if (muzzleFlashRight_) muzzleFlashRight_->PlayHitEffect(muzzleRight);
             if (muzzleFlashAddRight_) {
                 muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
                 muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
             }
+            if (ejectionMistRight_) ejectionMistRight_->PlayHitEffect({ rightShoulder.x + rightX * 0.3f, rightShoulder.y, rightShoulder.z + rightZ * 0.3f });
         }
     }
 
@@ -377,6 +415,8 @@ void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector
             bullets_[i].position.x += bullets_[i].velocity.x;
             bullets_[i].position.y += bullets_[i].velocity.y;
             bullets_[i].position.z += bullets_[i].velocity.z;
+
+            if (bulletTrail_) bulletTrail_->PlayHitEffect(bullets_[i].position, 2);
 
             bullets_[i].timer--;
             if (bullets_[i].timer <= 0) {
@@ -400,26 +440,39 @@ void PlayerWeapon::FireMachineGunBullet(const Vector3& startPos, const Vector3& 
             float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
             Vector3 forward;
 
-            // ★修正: 弾の軌道も敵が画面内にいるか判断して撃ち分ける
-            bool isEnemyOnScreen = false;
+            // ★修正: 照準に近いほど吸い寄せる（エイムアシスト）
             float sinY = std::sin(playerRotate.y);
             float cosY = std::cos(playerRotate.y);
             float cosP = std::cos(cameraPitch);
             float sinP = std::sin(cameraPitch);
             Vector3 playerForward = { sinY * cosP, -sinP, cosY * cosP };
 
+            forward = playerForward; // デフォルトは照準（正面）方向
+
             if (dist > 0.001f) {
                 Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
                 float dot = playerForward.x * toTargetNorm.x + playerForward.y * toTargetNorm.y + playerForward.z * toTargetNorm.z;
-                if (dot > 0.5f) {
-                    isEnemyOnScreen = true;
-                }
-            }
 
-            if (isEnemyOnScreen) {
-                forward = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
-            } else {
-                forward = playerForward;
+                // 0.8f（正面から約36度以内）ならアシスト開始、1.0f（完全な真正面）で最大アシスト
+                float assistThreshold = 0.8f;
+                if (dot > assistThreshold) {
+                    // 0.0(アシストなし) ～ 1.0(完全吸い付き) の割合を計算
+                    float assistRatio = (dot - assistThreshold) / (1.0f - assistThreshold);
+
+                    // 吸い付きをより自然にするため、カーブをかける（任意）
+                    assistRatio = std::pow(assistRatio, 1.5f);
+
+                    // 照準方向と敵方向のベクトルをブレンド（合成）
+                    forward.x = playerForward.x * (1.0f - assistRatio) + toTargetNorm.x * assistRatio;
+                    forward.y = playerForward.y * (1.0f - assistRatio) + toTargetNorm.y * assistRatio;
+                    forward.z = playerForward.z * (1.0f - assistRatio) + toTargetNorm.z * assistRatio;
+
+                    // 正規化
+                    float fLen = std::sqrt(forward.x * forward.x + forward.y * forward.y + forward.z * forward.z);
+                    forward.x /= fLen;
+                    forward.y /= fLen;
+                    forward.z /= fLen;
+                }
             }
 
             float bulletSpeed = 5.0f;

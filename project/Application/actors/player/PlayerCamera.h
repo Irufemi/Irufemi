@@ -16,26 +16,16 @@ public:
     PlayerCamera() = default;
     ~PlayerCamera() = default;
 
-    /**
-     * @brief 初期化処理
-     * @param camera 制御するCameraポインタ
-     */
     void Initialize(Camera* camera);
-
-    /**
-     * @brief マウス・キーボード入力によるカメラ操作（視点移動・切り替え）
-     * @param input InputManagerポインタ
-     * @param playerRotate プレイヤーの回転（参照渡しで更新される）
-     */
     void UpdateInput(InputManager* input, Vector3& playerRotate);
+    void Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration);
 
     /**
-     * @brief カメラの座標と回転をプレイヤーに追従させる
-     * @param playerTranslate プレイヤーの座標
-     * @param playerRotate プレイヤーの回転
-     * @param missileVibration 武器クラスからのミサイル振動（カメラを揺らすため）
+     * @brief 死亡時（吹き飛び時）のドラマチックなカメラワーク
+     * @param cameraPos カメラを配置する座標（敵の目線など）
+     * @param playerTranslate 飛んでいくプレイヤーの座標
      */
-    void Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration);
+    void UpdateDeathCamera(const Vector3& cameraPos, const Vector3& playerTranslate);
 
     // --- ゲッター ---
     float GetCameraPitch() const { return cameraPitch_; }
@@ -51,19 +41,16 @@ public:
 private:
     Camera* camera_ = nullptr;
 
-    // --- カメラ・マウス操作用パラメータ ---
     float mouseSensitivity_ = 5.0f;
     float mouseSensitivityMultiplier_ = 1.0f;
     float cameraPitch_ = -0.1f;
     bool isCameraControlEnabled_ = true;
     ViewMode viewMode_ = ViewMode::kThirdPerson;
 
-    // --- マジックナンバーを定数化 ---
     static constexpr float kMouseSensitivityBase = 0.001f;
     static constexpr float kMaxCameraPitchThirdPerson = 0.25f;
     static constexpr float kMinCameraPitchThirdPerson = -0.3f;
 
-    // 一人称視点用の定数（必要に応じて調整）
     static constexpr float kMaxCameraPitchFirstPerson = 0.8f;
     static constexpr float kMinCameraPitchFirstPerson = -0.8f;
 
