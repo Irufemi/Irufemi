@@ -55,6 +55,8 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     attackCollision_.isActive = false;
     attackCollision_.radius = 0.0f;
 
+    scale_ = { 0.3f, 0.5f, 0.3f };
+
     // 死亡演出用変数の初期化
     deathTimer_ = 0;
     deathVelocity_ = { 0.0f, 0.0f, 0.0f };
@@ -69,57 +71,73 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
 }
 
 void Player::Update() {
-    // ====== 死亡時のド派手な吹き飛び演出 ======
+    // ====== 死亡時の敵目線＆彼方へ消え去る演出 ======
     if (status_.IsDead()) {
         if (deathTimer_ == 0) {
-            // 死亡した瞬間の向きを保存（カメラ用）
             deathYaw_ = rotate_.y;
 
-            // プレイヤーの背面方向かつ上方向に吹き飛ばす
-            float backwardSpeed = 1.5f + (std::rand() % 100) / 100.0f; // 1.5 ~ 2.5
-            float upwardSpeed = 2.0f + (std::rand() % 100) / 100.0f;   // 2.0 ~ 3.0
+            // 敵と密着していてもめり込まないように、
+            // 「死亡した瞬間のプレイヤーから見て前方40、高さ20」にカメラを固定
+            float sY = std::sin(deathYaw_);
+            float cY = std::cos(deathYaw_);
+            deathCameraPos_ = {
+                translate_.x + sY * 40.0f,
+                translate_.y + 20.0f,
+                translate_.z + cY * 40.0f
+            };
 
-            float sinY = std::sin(deathYaw_);
-            float cosY = std::cos(deathYaw_);
+            // 敵から見て奥（プレイヤーの背面斜め上）へ吹っ飛ぶ
+            float backwardSpeed = 0.8f + (std::rand() % 100) / 100.0f;
+            float upwardSpeed = 1.5f + (std::rand() % 100) / 100.0f;
 
-            deathVelocity_.x = -sinY * backwardSpeed;
+            deathVelocity_.x = -sY * backwardSpeed;
             deathVelocity_.y = upwardSpeed;
-            deathVelocity_.z = -cosY * backwardSpeed;
+            deathVelocity_.z = -cY * backwardSpeed;
 
-            // ランダムに少し横ブレさせる
-            deathVelocity_.x += ((std::rand() % 100) / 100.0f - 0.5f);
-            deathVelocity_.z += ((std::rand() % 100) / 100.0f - 0.5f);
-
-            // 激しいきりもみ回転
-            deathAngularVelocity_.x = 0.2f + ((std::rand() % 100) / 500.0f);
-            deathAngularVelocity_.y = 0.4f + ((std::rand() % 100) / 500.0f);
-            deathAngularVelocity_.z = 0.2f + ((std::rand() % 100) / 500.0f);
+            deathAngularVelocity_.x = 0.8f;
+            deathAngularVelocity_.y = 1.2f;
+            deathAngularVelocity_.z = 0.5f;
         }
 
         deathTimer_++;
 
-        // 指定したフレーム数が経過したら演出終了フラグを立てる
-        if (deathTimer_ >= kDeathAnimationDuration) {
-            isDeathAnimationFinished_ = true;
+        deathVelocity_.y += 0.02f; // 上へ加速
+
+        // 遠近感を強調するため、少し経ってから徐々にモデルのスケールを小さくしていく
+        if (deathTimer_ > 30) {
+            scale_.x *= 0.96f;
+            scale_.y *= 0.96f;
+            scale_.z *= 0.96f;
         }
 
-        // 重力を適用して放物線を描かせる
-        deathVelocity_.y -= 0.1f;
+        // 完全に小さくなったら0に固定する
+        if (scale_.x < 0.01f) {
+            scale_ = { 0.0f, 0.0f, 0.0f };
+        }
 
-        // 速度を適用
         translate_.x += deathVelocity_.x;
         translate_.y += deathVelocity_.y;
         translate_.z += deathVelocity_.z;
 
-        // 回転を適用
+        // 天球を超えないように制限
+        if (translate_.y > 80.0f) translate_.y = 80.0f;
+        float limitXZ = 95.0f;
+        if (translate_.x > limitXZ) translate_.x = limitXZ;
+        if (translate_.x < -limitXZ) translate_.x = -limitXZ;
+        if (translate_.z > limitXZ) translate_.z = limitXZ;
+        if (translate_.z < -limitXZ) translate_.z = -limitXZ;
+
         rotate_.x += deathAngularVelocity_.x;
         rotate_.y += deathAngularVelocity_.y;
         rotate_.z += deathAngularVelocity_.z;
 
-        // 死亡時専用のカメラワークを呼ぶ
-        cameraController_.UpdateDeathCamera(translate_, deathYaw_, deathTimer_);
+        if (deathTimer_ >= kDeathAnimationDuration) {
+            isDeathAnimationFinished_ = true;
+        }
 
-        // 死亡時はここで処理を終え、通常の移動や攻撃はスキップする
+        // 敵の目線から、プレイヤーの座標を見つめ続ける
+        cameraController_.UpdateDeathCamera(deathCameraPos_, translate_);
+
         return;
     }
     // ==========================================
@@ -270,13 +288,12 @@ void Player::Draw() {
         if (isKarakuriCharged_) {
             obj_->SetColor({ 1.0f, 0.8f, 0.0f, 1.0f });
         } else if (status_.IsDead()) {
-            obj_->SetColor({ 0.3f, 0.3f, 0.3f, 1.0f }); // 死亡時は少し暗くする
+            obj_->SetColor({ 0.15f, 0.15f, 0.15f, 1.0f }); // 飛んでいる間はシルエット
         } else {
             obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
         }
 
         Vector3 drawPos = translate_;
-        // ★死亡時にはミサイルの振動を反映させない（きりもみ回転が見づらくなるため）
         if (!status_.IsDead()) {
             drawPos += weapon_.GetMissileVibration();
         }
@@ -287,9 +304,11 @@ void Player::Draw() {
         obj_->SetScale(scale_);
         obj_->Update();
 
-        // ★修正：死亡時は一人称視点モードでも、点滅中（無敵時間）でも強制的にモデルを描画する
         if (status_.IsDead()) {
-            obj_->Draw();
+            // スケールが残っている間だけ描画
+            if (scale_.x > 0.0f) {
+                obj_->Draw();
+            }
         } else if (!cameraController_.IsFirstPerson() && !isBlinking) {
             obj_->Draw();
         }
