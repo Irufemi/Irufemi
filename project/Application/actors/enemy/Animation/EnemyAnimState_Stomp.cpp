@@ -20,11 +20,27 @@ void EnemyAnimState_Stomp::Update(Enemy* enemy, Player* player, float deltaTime)
     float endHold = endSquat + holdTime_;
     float endJump = endHold + jumpTime_;
     float endHover = endJump + hoverTime_;
+    float totalRecoveryTime = landSquatHoldTime_ + landRiseTime_;
 
-    // --- 0. プレイヤーを常に向く（地上予兆中） ---
+    // --- 0. プレイヤーを「補間しながら」向く（地上予兆中） ---
     if (attackTimer_ < endHold) {
-        Vector3 toPlayer = Math::Subtract(player->GetTranslate(), enemy->GetGlobalTransform().translate);
-        enemy->GetGlobalTransform().rotate.y = std::atan2(toPlayer.x, toPlayer.z);
+        Vector3 playerPos = player->GetTranslate();
+        Vector3 myPos = enemy->GetGlobalTransform().translate;
+        Vector3 toPlayer = Math::Subtract(playerPos, myPos);
+
+        // 目標となる角度（ラジアン）
+        float targetAngle = std::atan2(toPlayer.x, toPlayer.z);
+        // 現在の角度
+        float currentAngle = enemy->GetGlobalTransform().rotate.y;
+
+        // 角度の差分を計算（180度を超えた時の最短ルート計算）
+        float angleDiff = targetAngle - currentAngle;
+        while (angleDiff > Math::PI) angleDiff -= Math::PI * 2;
+        while (angleDiff < -Math::PI) angleDiff += Math::PI * 2;
+
+        // 補間して回転を更新
+        // deltaTimeとスピードを掛けることで、フレームレートに依存せず滑らかに回転
+        enemy->GetGlobalTransform().rotate.y += angleDiff * rotationInterpolationSpeed_ * deltaTime;
     }
 
     // --- 1. 地上での予兆（屈伸） ---
@@ -80,17 +96,63 @@ void EnemyAnimState_Stomp::Update(Enemy* enemy, Player* player, float deltaTime)
         Vector3& pos = enemy->GetGlobalTransform().translate;
         pos.y -= dropSpeed_;
 
+        // 落下中は少し縦に伸ばすとスピード感が出ます
+        enemy->GetGlobalTransform().scale.y = initialScaleY_ * 1.2f;
+
         if (pos.y <= groundY_) {
             pos.y = groundY_;
             hasHitGround_ = true;
-            enemy->FireStomp(pos);
-            attackTimer_ = endHover;
+
+            // 【着地瞬間】一気に押し潰す！
+            enemy->GetGlobalTransform().scale.y = initialScaleY_ * landSquatScale_;
+
+            enemy->FireStomp(pos); // 衝撃波エフェクト
+            attackTimer_ = endHover; // タイマーを着地硬直の開始時間に合わせる
         }
     }
-    // --- 6. 着地硬直 ---
+    // --- 6. 着地硬直（ずっしり復帰） ---
     else {
         float t = attackTimer_ - endHover;
-        if (t >= recoveryTime_) {
+
+        // タイムラインの目印を計算
+        float endSquatDown = landSquatDownTime_;
+        float endSquatHold = endSquatDown + landSquatHoldTime_;
+        float endTotal = endSquatHold + landRiseTime_;
+
+        if (t < endSquatDown) {
+            // 【ステップ1：衝撃の伝播】ググッと潰れていく
+            float subT = t / landSquatDownTime_;
+            // 線形ではなく、勢いよく潰れ始めてゆっくり止まるイージング
+            float easeOut = 1.0f - std::pow(1.0f - subT, 2.0f);
+
+            // 落下中の1.2倍からlandSquatScale_へ
+            float startScale = 1.2f;
+            enemy->GetGlobalTransform().scale.y = initialScaleY_ * (startScale + easeOut * (landSquatScale_ - startScale));
+
+        } else if (t < endSquatHold) {
+            // 【ステップ2：溜め】最大まで潰れた状態で微振動
+            enemy->GetGlobalTransform().scale.y = initialScaleY_ * landSquatScale_;
+
+            // 地面にめり込む微振動
+            float microShake = 0.15f;
+            enemy->GetGlobalTransform().translate.x += std::sin(t * 160.0f) * microShake;
+
+        } else if (t < endTotal) {
+            // 【ステップ3：ずっしり復帰】
+            float riseT = (t - endSquatHold) / landRiseTime_;
+
+            // 非常に重そうに立ち上がるためのイージング (4次関数)
+            float easeOutRise = 1.0f - std::pow(1.0f - riseT, 4.0f);
+
+            enemy->GetGlobalTransform().scale.y = initialScaleY_ * (landSquatScale_ + easeOutRise * (1.0f - landSquatScale_));
+
+            // 復帰中の余韻振動（徐々に弱まる）
+            float shake = std::sin(riseT * 20.0f) * (1.0f - riseT) * 0.1f;
+            enemy->GetHeadMidOffset().y = shake;
+
+        } else {
+            // 全工程終了
+            enemy->GetGlobalTransform().scale.y = initialScaleY_;
             hasFinishedAttack_ = true;
         }
     }

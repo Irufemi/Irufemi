@@ -16,6 +16,7 @@ private:
     bool hasTeleported_ = false;
     bool hasHitGround_ = false;
     float initialScaleY_ = 1.0f;
+    float rotationInterpolationSpeed_ = 5.0f; // 回転の追従速度（大きいほど速い）
 
     // --- 調整用パラメータ (ここをいじるだけで挙動が変わります) ---
 
@@ -25,6 +26,10 @@ private:
     float jumpTime_ = 0.35f;        // 飛び上がりにかける時間
     float hoverTime_ = 2.5f;        // プレイヤー頭上での待機時間
     float recoveryTime_ = 1.2f;     // 着地後の硬直時間
+    float landSquatScale_ = 0.35f;  // 着地した瞬間にどれだけ潰れるか（小さいほど深く潰れる）
+    float landSquatDownTime_ = 0.4f; // 地面についてから最大まで「潰れる」時間
+    float landSquatHoldTime_ = 0.2f;  // 最大まで潰れたまま「耐える」時間
+    float landRiseTime_ = 3.0f;       // 元のサイズに「戻る」時間
 
     // 【演出の強さ設定】
     float maxSquatScale_ = 0.5f;    // 最大まで縮んだ時のスケール倍率
