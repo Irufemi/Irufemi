@@ -18,9 +18,9 @@ struct PixelShaderOutput
 Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
 SamplerState gSampler : register(s0); //Samplerのregisterはs
 
-/*LambertianReflectance*/
+/*Light Common & DirectionalLight*/
 
-ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
+ConstantBuffer<LightCommonData> gLightCommon : register(b1);
 
 /*PhongReflectionModel*/
 
@@ -34,30 +34,11 @@ struct Camera
 };
 ConstantBuffer<Camera> gCamera : register(b2);
 
-/*PointLight*/
+/*Structured Light Buffers*/
 
-#define MAX_POINT_LIGHTS 4
-struct PointLights
-{
-	PointLight lights[MAX_POINT_LIGHTS];
-};
-ConstantBuffer<PointLights> gPointLights : register(b3);
-
-
-/*SpotLight*/
-#define MAX_SPOT_LIGHTS 4
-struct SpotLights
-{
-	SpotLight lights[MAX_SPOT_LIGHTS];
-};
-ConstantBuffer<SpotLights> gSpotLights : register(b4);
-
-#define MAX_AREA_LIGHTS 4
-struct AreaLights
-{
-	AreaLight lights[MAX_AREA_LIGHTS];
-};
-ConstantBuffer<AreaLights> gAreaLights : register(b7);
+StructuredBuffer<PointLight> gPointLights : register(t2);
+StructuredBuffer<SpotLight> gSpotLights : register(t3);
+StructuredBuffer<AreaLight> gAreaLights : register(t4);
 
 /*周囲の映り込み*/
 
@@ -114,21 +95,21 @@ PixelShaderOutput main(VertexShaderOutput input)
 			float3 totalSpecular = 0;
 
 			// 平行光源
-			ApplyDirectionalLight(gDirectionalLight, gMaterial, context, totalDiffuse, totalSpecular);
+			ApplyDirectionalLight(gLightCommon.directionalLight, gMaterial, context, totalDiffuse, totalSpecular);
 
 			// 点光源
-			for (int i = 0; i < MAX_POINT_LIGHTS; ++i) {
-				ApplyPointLight(gPointLights.lights[i], gMaterial, context, totalDiffuse, totalSpecular);
+			for (uint32_t i = 0; i < gLightCommon.pointLightCount; ++i) {
+				ApplyPointLight(gPointLights[i], gMaterial, context, totalDiffuse, totalSpecular);
 			}
 
 			// スポットライト
-			for (int i = 0; i < MAX_SPOT_LIGHTS; ++i) {
-				ApplySpotLight(gSpotLights.lights[i], gMaterial, context, totalDiffuse, totalSpecular);
+			for (uint32_t j = 0; j < gLightCommon.spotLightCount; ++j) {
+				ApplySpotLight(gSpotLights[j], gMaterial, context, totalDiffuse, totalSpecular);
 			}
 
 			// エリアライト
-			for (int i = 0; i < MAX_AREA_LIGHTS; ++i) {
-				ApplyAreaLight(gAreaLights.lights[i], gMaterial, context, totalDiffuse, totalSpecular);
+			for (uint32_t k = 0; k < gLightCommon.areaLightCount; ++k) {
+				ApplyAreaLight(gAreaLights[k], gMaterial, context, totalDiffuse, totalSpecular);
 			}
 
 			// 拡散反射・鏡面反射の合成

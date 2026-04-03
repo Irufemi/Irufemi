@@ -230,6 +230,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Type\PerFrame.h" />
     <ClInclude Include="Engine\Core\Type\PerView.h" />
     <ClInclude Include="Engine\Core\Type\Voxel.h" />
+    <ClInclude Include="Engine\Graphics\Data\LightCommonData.h" />
+    <ClInclude Include="Engine\Graphics\Data\Material.h" />
+    <ClInclude Include="Engine\Graphics\Data\SceneGPUStructs.h" />
     <ClInclude Include="Engine\Graphics\DirectX\FrameRateController.h" />
     <ClInclude Include="Engine\Graphics\DirectX\RootSignatureConfig.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShaderCompiler.h" />

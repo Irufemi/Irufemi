@@ -6,6 +6,7 @@
 #include <array>
 #include <wrl.h>
 #include "../../Renderer/TransformationMatrix.h"
+#include "../Graphics/Data/LightCommonData.h"
 #include "../Graphics/Data/PointLight.h"
 #include "../Graphics/Data/SpotLight.h"
 #include "../Graphics/Data/AreaLight.h"
@@ -56,36 +57,28 @@ private:
     DirectXCommon* dxCommon_ = nullptr;
     ID3D12GraphicsCommandList* commandList_ = nullptr; // コマンドリストをキャッシュ
 
-    // シェーダーで定義したライトの最大数
-    static const int kMaxPointLights = 4;
-    static const int kMaxSpotLights = 4;
-    static const int kMaxAreaLights = 4;
+    // ライト関連のリソース
+    Microsoft::WRL::ComPtr<ID3D12Resource> pointLightResource_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> spotLightResource_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> areaLightResource_;
 
-    // ライト配列を格納する構造体
-    struct PointLights {
-        PointLight lights[kMaxPointLights];
-    };
-    struct SpotLights {
-        SpotLight lights[kMaxSpotLights];
-    };
-    struct AreaLights {
-        AreaLight lights[kMaxAreaLights];
-    };
+    // SRV ハンドルとインデックス
+    D3D12_GPU_DESCRIPTOR_HANDLE pointLightSrvHandle_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE spotLightSrvHandle_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE areaLightSrvHandle_{};
+    uint32_t pointLightSrvIndex_ = 0xFFFFFFFFu;
+    uint32_t spotLightSrvIndex_ = 0xFFFFFFFFu;
+    uint32_t areaLightSrvIndex_ = 0xFFFFFFFFu;
 
-    // カメラやライトの定数バッファを一時的に保持するリソース
+    // カメラやライト共通情報を格納するリソース
     Microsoft::WRL::ComPtr<ID3D12Resource> frameResource_;
     struct FrameData {
         D3D12_GPU_VIRTUAL_ADDRESS camera;
-        D3D12_GPU_VIRTUAL_ADDRESS directionalLight;
-        D3D12_GPU_VIRTUAL_ADDRESS pointLights;
-        D3D12_GPU_VIRTUAL_ADDRESS spotLights;
-        D3D12_GPU_VIRTUAL_ADDRESS areaLights;
+        D3D12_GPU_VIRTUAL_ADDRESS lightCommon; // register b1
     } frameData_{};
+
     CameraForGPU* cameraData_ = nullptr;
-    DirectionalLight* directionalLightData_ = nullptr;
-    PointLights* pointLightsData_ = nullptr;
-    SpotLights* spotLightsData_ = nullptr;
-    AreaLights* areaLightsData_ = nullptr;
+    LightCommonData* lightCommonData_ = nullptr;
 
     D3D12_GPU_DESCRIPTOR_HANDLE environmentMapHandle_{}; // 環境マップ用SRVハンドル
 

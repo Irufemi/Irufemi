@@ -5,17 +5,25 @@
 struct DirectionalLight {
     float32_t4 color;
     float32_t3 direction;
-    float intensity;
+    float32_t intensity;
+};
+
+struct LightCommonData {
+    DirectionalLight directionalLight;
+    uint32_t pointLightCount;
+    uint32_t spotLightCount;
+    uint32_t areaLightCount;
+    uint32_t padding;
 };
 
 struct PointLight {
     float32_t4 color;
     float32_t3 position;
-    float intensity;
-    float radius;
-    float decay;
+    float32_t intensity;
+    float32_t radius;
+    float32_t decay;
     int32_t isActive;
-    float padding;
+    float32_t padding;
 };
 
 struct SpotLight {
@@ -28,18 +36,18 @@ struct SpotLight {
     float32_t cosAngle;
     float32_t falloff;
     int32_t isActive;
-    float32_t3 padding;
+    float32_t4 padding; // 80バイト合わせ
 };
 
 struct AreaLight {
-    float4 color;
-    float3 position;
-    float intensity;
-    float3 direction;
-    float range;
-    float2 size;
+    float32_t4 color;
+    float32_t3 position;
+    float32_t intensity;
+    float32_t3 direction;
+    float32_t range;
+    float32_t2 size;
     int32_t isActive;
-    float padding;
+    float32_t padding; // 64バイト合わせ
 };
 
 // --- 計算用コンテキスト ---

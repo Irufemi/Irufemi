@@ -24,5 +24,5 @@ struct SpotLight{
     //!< 有効フラグ
     int32_t isActive;
 private:
-    float padding[3];
+    float padding[4]; // 16byteアラインメント用 (合計80バイト)
 };

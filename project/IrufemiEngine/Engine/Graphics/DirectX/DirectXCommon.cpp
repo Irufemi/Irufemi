@@ -290,9 +290,9 @@ void DirectXCommon::CreateRootSignatures() {
         rootParameters[(UINT)RootSlot::Texture].DescriptorTable.pDescriptorRanges = descriptorRange;
         rootParameters[(UINT)RootSlot::Texture].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
 
-        rootParameters[(UINT)RootSlot::DirectionalLight].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[(UINT)RootSlot::DirectionalLight].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-        rootParameters[(UINT)RootSlot::DirectionalLight].Descriptor.ShaderRegister = 1;
+        rootParameters[(UINT)RootSlot::LightCommon].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::LightCommon].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        rootParameters[(UINT)RootSlot::LightCommon].Descriptor.ShaderRegister = 1;
 
         rootParameters[(UINT)RootSlot::InstancingData].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         rootParameters[(UINT)RootSlot::InstancingData].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
@@ -303,13 +303,25 @@ void DirectXCommon::CreateRootSignatures() {
         rootParameters[(UINT)RootSlot::Camera].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[(UINT)RootSlot::Camera].Descriptor.ShaderRegister = 2;
 
-        rootParameters[(UINT)RootSlot::PointLights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::PointLights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         rootParameters[(UINT)RootSlot::PointLights].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::PointLights].Descriptor.ShaderRegister = 3;
+        D3D12_DESCRIPTOR_RANGE rangePointLights[1] = {};
+        rangePointLights[0].BaseShaderRegister = 2; // t2
+        rangePointLights[0].NumDescriptors = 1;
+        rangePointLights[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangePointLights[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        rootParameters[(UINT)RootSlot::PointLights].DescriptorTable.pDescriptorRanges = rangePointLights;
+        rootParameters[(UINT)RootSlot::PointLights].DescriptorTable.NumDescriptorRanges = 1;
 
-        rootParameters[(UINT)RootSlot::SpotLights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::SpotLights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         rootParameters[(UINT)RootSlot::SpotLights].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::SpotLights].Descriptor.ShaderRegister = 4;
+        D3D12_DESCRIPTOR_RANGE rangeSpotLights[1] = {};
+        rangeSpotLights[0].BaseShaderRegister = 3; // t3
+        rangeSpotLights[0].NumDescriptors = 1;
+        rangeSpotLights[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeSpotLights[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        rootParameters[(UINT)RootSlot::SpotLights].DescriptorTable.pDescriptorRanges = rangeSpotLights;
+        rootParameters[(UINT)RootSlot::SpotLights].DescriptorTable.NumDescriptorRanges = 1;
 
         rootParameters[(UINT)RootSlot::Unused8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[(UINT)RootSlot::Unused8].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -319,9 +331,15 @@ void DirectXCommon::CreateRootSignatures() {
         rootParameters[(UINT)RootSlot::Unused9].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         rootParameters[(UINT)RootSlot::Unused9].Descriptor.ShaderRegister = 5;
 
-        rootParameters[(UINT)RootSlot::AreaLights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::AreaLights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         rootParameters[(UINT)RootSlot::AreaLights].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::AreaLights].Descriptor.ShaderRegister = 7;
+        D3D12_DESCRIPTOR_RANGE rangeAreaLights[1] = {};
+        rangeAreaLights[0].BaseShaderRegister = 4; // t4
+        rangeAreaLights[0].NumDescriptors = 1;
+        rangeAreaLights[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeAreaLights[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        rootParameters[(UINT)RootSlot::AreaLights].DescriptorTable.pDescriptorRanges = rangeAreaLights;
+        rootParameters[(UINT)RootSlot::AreaLights].DescriptorTable.NumDescriptorRanges = 1;
 
         D3D12_DESCRIPTOR_RANGE rangeLine[1] = {};
         rangeLine[0].BaseShaderRegister = 1; 
