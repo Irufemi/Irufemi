@@ -15,12 +15,28 @@ private:
     bool hasFinishedAttack_ = false;
     bool hasTeleported_ = false;
     bool hasHitGround_ = false;
-
-    // --- 調整用パラメータ ---
-    float anticipationTime_ = 3.0f; // 地上での予兆（プルプル）
-    float hoverTime_ = 2.5f;        // プレイヤー頭上でのタメ（プルプル）
-    float dropSpeed_ = 1.5f;        // 落下速度倍率
-    float recoveryTime_ = 1.2f;     // 着地後の硬直
-    float stompHeight_ = 40.0f;     // どの高さまでテレポートするか
     float initialScaleY_ = 1.0f;
+
+    // --- 調整用パラメータ (ここをいじるだけで挙動が変わります) ---
+
+    // 【フェーズ時間設定】
+    float squatTime_ = 0.6f;        // 屈伸にかける時間
+    float holdTime_ = 1.2f;         // 溜め（微振動）の時間
+    float jumpTime_ = 0.35f;        // 飛び上がりにかける時間
+    float hoverTime_ = 2.5f;        // プレイヤー頭上での待機時間
+    float recoveryTime_ = 1.2f;     // 着地後の硬直時間
+
+    // 【演出の強さ設定】
+    float maxSquatScale_ = 0.5f;    // 最大まで縮んだ時のスケール倍率
+    float jumpStretchScale_ = 2.0f; // ジャンプした瞬間の縦伸び倍率
+
+    float squatShakeStrength_ = 0.5f; // 屈伸中の振動の最大幅
+    float holdShakeStrength_ = 0.15f; // 溜め中の微振動の幅
+    float holdShakeSpeed_ = 180.0f;   // 溜め中の微振動の速さ
+
+    // 【移動・高さ設定】
+    float jumpUpSpeed_ = 4.0f;      // ジャンプ時の上昇量(フレーム毎)
+    float dropSpeed_ = 1.5f;        // 落下速度
+    float stompHeight_ = 40.0f;     // 攻撃を開始する高度
+    float groundY_ = 3.0f;          // 地面の高さ判定
 };
