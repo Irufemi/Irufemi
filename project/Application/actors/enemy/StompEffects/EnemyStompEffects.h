@@ -26,7 +26,7 @@ public:
         float explosionMaxRadius = 40.0f;
         float explosionInitialAlpha = 0.8f;
         float explosionDamageActiveTime = 0.3f;
-        int explosionDamage = 10;
+        int explosionDamage = 50;
 
         // 2. リング（予兆範囲）
         Vector3 ringScale = { 1.2f, 0.5f, 1.2f };
@@ -41,8 +41,8 @@ public:
 
         // 3. 再爆発（噴き上がり）
         float finalExplosionDuration = 1.0f;
-        float finalExplosionMaxHeight = 300.0f;  // 上に伸びる高さ
-        float finalExplosionMaxRadius = 165.0f;  // 噴き出す横幅
+        float finalExplosionMaxHeight = 30.0f;  // 上に伸びる高さ
+        float finalExplosionMaxRadius = 185.0f;  // 噴き出す横幅
         int finalExplosionDamage = 50;
     };
 

@@ -22,4 +22,5 @@ private:
     float dropSpeed_ = 1.5f;        // 落下速度倍率
     float recoveryTime_ = 1.2f;     // 着地後の硬直
     float stompHeight_ = 40.0f;     // どの高さまでテレポートするか
+    float initialScaleY_ = 1.0f;
 };
