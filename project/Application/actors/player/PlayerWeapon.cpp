@@ -56,6 +56,14 @@ void PlayerWeapon::Initialize(Camera* camera) {
     bulletTrail_->Initialize(camera_, "resources/circle.png", ParticleType::kBulletTrail);
     bulletTrail_->SetBlend(BlendMode::kBlendModeAdd);
 
+    ejectionMistLeft_ = std::make_unique<ParticleSystem>();
+    ejectionMistLeft_->Initialize(camera_, "resources/circle.png", ParticleType::kEjectionMist);
+    ejectionMistLeft_->SetBlend(BlendMode::kBlendModeAdd);
+
+    ejectionMistRight_ = std::make_unique<ParticleSystem>();
+    ejectionMistRight_->Initialize(camera_, "resources/circle.png", ParticleType::kEjectionMist);
+    ejectionMistRight_->SetBlend(BlendMode::kBlendModeAdd);
+
     // --- 薬莢モデルの初期化 ---
     for (int i = 0; i < kMaxCartridges; ++i) {
         cartridgeObjs_[i] = std::make_unique<ObjClass>();
@@ -110,6 +118,8 @@ void PlayerWeapon::Update(const Vector3& playerTranslate, const Vector3& playerR
     if (missileFire_) missileFire_->Update();
     if (missileSmoke_) missileSmoke_->Update();
     if (bulletTrail_) bulletTrail_->Update();
+    if (ejectionMistLeft_) ejectionMistLeft_->Update();
+    if (ejectionMistRight_) ejectionMistRight_->Update();
 }
 
 void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, int viewMode, bool isBlinking, bool isDead) {
@@ -236,6 +246,8 @@ void PlayerWeapon::DrawParticles(IrufemiEngine* engine) {
     if (missileFire_) missileFire_->Draw();
     if (missileSmoke_) missileSmoke_->Draw();
     if (bulletTrail_) bulletTrail_->Draw();
+    if (ejectionMistLeft_) ejectionMistLeft_->Draw();
+    if (ejectionMistRight_) ejectionMistRight_->Draw();
 }
 
 void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& playerScale) {
@@ -359,22 +371,24 @@ void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector
             FireMachineGunBullet(muzzleLeft, playerTranslate, playerRotate, cameraPitch, targetPos);
             EjectCartridge(leftShoulder, false, playerTranslate, playerRotate, targetPos);
 
-            if (muzzleSmokeLeft_) muzzleSmokeLeft_->PlayHitEffect(leftShoulder);
+            // if (muzzleSmokeLeft_) muzzleSmokeLeft_->PlayHitEffect(leftShoulder); // 既存の煙を停止
             if (muzzleFlashLeft_) muzzleFlashLeft_->PlayHitEffect(muzzleLeft);
             if (muzzleFlashAddLeft_) {
                 muzzleFlashAddLeft_->PlayHitEffect(muzzleLeft);
                 muzzleFlashAddLeft_->PlayHitEffect(muzzleLeft);
             }
+            if (ejectionMistLeft_) ejectionMistLeft_->PlayHitEffect({ leftShoulder.x - rightX * 0.3f, leftShoulder.y, leftShoulder.z - rightZ * 0.3f });
 
             FireMachineGunBullet(muzzleRight, playerTranslate, playerRotate, cameraPitch, targetPos);
             EjectCartridge(rightShoulder, true, playerTranslate, playerRotate, targetPos);
 
-            if (muzzleSmokeRight_) muzzleSmokeRight_->PlayHitEffect(rightShoulder);
+            // if (muzzleSmokeRight_) muzzleSmokeRight_->PlayHitEffect(rightShoulder); // 既存の煙を停止
             if (muzzleFlashRight_) muzzleFlashRight_->PlayHitEffect(muzzleRight);
             if (muzzleFlashAddRight_) {
                 muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
                 muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
             }
+            if (ejectionMistRight_) ejectionMistRight_->PlayHitEffect({ rightShoulder.x + rightX * 0.3f, rightShoulder.y, rightShoulder.z + rightZ * 0.3f });
         }
     }
 
