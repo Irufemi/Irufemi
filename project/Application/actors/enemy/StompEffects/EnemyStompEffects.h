@@ -26,7 +26,7 @@ public:
         float explosionMaxRadius = 40.0f;
         float explosionInitialAlpha = 0.8f;
         float explosionDamageActiveTime = 0.3f;
-        int explosionDamage = 10;
+        int explosionDamage = 50;
 
         // 2. リング（予兆範囲）
         Vector3 ringScale = { 1.2f, 0.5f, 1.2f };
