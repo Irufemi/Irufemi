@@ -263,6 +263,18 @@ void BulletTrailBehavior::Initialize(Emitter* emitter) {
 	emitter->endColor = { 1.0f, 0.2f, 0.0f, 0.0f };
 	emitter->colorMode = ParticleColorMode::kNone;
 }
+void EjectionMistBehavior::Initialize(Emitter* emitter) {
+	emitter->count = 2;
+	emitter->area = { 0.25f, 0.25f, 0.25f }; // 発生範囲を少し広げる
+	emitter->velocityMin = { -1.5f, -0.2f, -1.5f }; // 広がりを少し強化
+	emitter->velocityMax = { 1.5f, 1.2f, 1.5f };
+	emitter->startScale = { 0.8f, 0.8f, 1.0f }; // 初期サイズを少しアップ
+	emitter->endScale = { 5.0f, 5.0f, 1.0f }; // 最大サイズを 2.5 -> 5.0 に拡大
+	emitter->startColor = { 0.9f, 0.9f, 0.9f, 0.12f }; // 不透明度を 0.25 -> 0.12 に低下（より薄く）
+	emitter->endColor = { 1.0f, 1.0f, 1.0f, 0.0f };
+	emitter->colorMode = ParticleColorMode::kNone;
+}
+
 void BulletTrailBehavior::Update(Particle& particle, [[maybe_unused]] float deltaTime) {
 	// その場に留まる
 	particle.velocity *= 0.0f;
@@ -275,6 +287,20 @@ void BulletTrailBehavior::MakeNewParticle(Particle& particle, std::mt19937& rand
 	particle.lifeTime = distTime(randomEngine);
 }
 void BulletTrailBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {}
+
+void EjectionMistBehavior::Update([[maybe_unused]] Particle& particle, [[maybe_unused]] float deltaTime) {
+	// 空気抵抗でゆっくり止まる
+	particle.velocity *= 0.9f;
+}
+void EjectionMistBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
+	std::uniform_real_distribution<float> distTime(0.8f, 1.2f);
+	particle.lifeTime = distTime(randomEngine);
+	particle.startScale = emitter.startScale;
+	particle.endScale = emitter.endScale;
+	particle.startColor = emitter.startColor;
+	particle.endColor = emitter.endColor;
+}
+void EjectionMistBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unused]] DebugUI* ui, [[maybe_unused]] ParticleSystem* particleSystem) {}
 
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
@@ -295,6 +321,8 @@ std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
 		return std::make_unique<MissileSmokeBehavior>();
 	case ParticleType::kBulletTrail:
 		return std::make_unique<BulletTrailBehavior>();
+	case ParticleType::kEjectionMist:
+		return std::make_unique<EjectionMistBehavior>();
 	case ParticleType::Normal:
 	default:
 		return std::make_unique<NormalBehavior>();

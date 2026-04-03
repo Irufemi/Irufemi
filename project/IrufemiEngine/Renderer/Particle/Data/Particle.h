@@ -50,5 +50,6 @@ enum class ParticleType {
 	kMissileFire, // ミサイルの炎
 	kMissileSmoke, // ミサイルの煙
 	kBulletTrail, // 弾道トレイル
+	kEjectionMist, // 排莢時の霧状の煙
 	// 他の種類をここに追加
 };

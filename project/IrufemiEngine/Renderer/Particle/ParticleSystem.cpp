@@ -139,7 +139,7 @@ void ParticleSystem::Update() {
     if (isUpdate_ && particleType_ != ParticleType::kHitEffect && 
         particleType_ != ParticleType::kMuzzleSmoke && particleType_ != ParticleType::kMuzzleFlash &&
         particleType_ != ParticleType::kMissileFire && particleType_ != ParticleType::kMissileSmoke &&
-        particleType_ != ParticleType::kBulletTrail) {
+        particleType_ != ParticleType::kBulletTrail && particleType_ != ParticleType::kEjectionMist) {
         emitter_.frequencyTime += kDeltatime_; // 時刻を進める
         if (emitter_.frequency <= emitter_.frequencyTime) { // 頻度より大きいなら発生
             particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
@@ -384,7 +384,8 @@ void ParticleSystem::PlayHitEffect(const Vector3& position) {
         particleType_ == ParticleType::kMuzzleFlash ||
         particleType_ == ParticleType::kMissileFire ||
         particleType_ == ParticleType::kMissileSmoke ||
-        particleType_ == ParticleType::kBulletTrail) {
+        particleType_ == ParticleType::kBulletTrail ||
+        particleType_ == ParticleType::kEjectionMist) {
         emitter_.transform.translate = position;
         particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
     }
@@ -396,7 +397,8 @@ void ParticleSystem::PlayHitEffect(const Vector3& position, uint32_t count) {
         particleType_ == ParticleType::kMuzzleFlash ||
         particleType_ == ParticleType::kMissileFire ||
         particleType_ == ParticleType::kMissileSmoke ||
-        particleType_ == ParticleType::kBulletTrail) {
+        particleType_ == ParticleType::kBulletTrail ||
+        particleType_ == ParticleType::kEjectionMist) {
         Emitter customEmitter = emitter_;
         customEmitter.transform.translate = position;
         customEmitter.count = count;
