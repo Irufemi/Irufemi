@@ -129,5 +129,16 @@ public:
 	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
 };
 
+/// <summary>
+/// 弾道トレイルの振る舞い
+/// </summary>
+class BulletTrailBehavior : public IParticleBehavior {
+public:
+	void Initialize(Emitter* emitter) override;
+	void Update(Particle& particle, float deltaTime) override;
+	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
+};
+
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type);

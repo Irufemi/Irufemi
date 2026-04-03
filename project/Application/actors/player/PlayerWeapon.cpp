@@ -52,6 +52,10 @@ void PlayerWeapon::Initialize(Camera* camera) {
     missileSmoke_ = std::make_unique<ParticleSystem>();
     missileSmoke_->Initialize(camera_, "resources/circle.png", ParticleType::kMissileSmoke);
 
+    bulletTrail_ = std::make_unique<ParticleSystem>();
+    bulletTrail_->Initialize(camera_, "resources/circle.png", ParticleType::kBulletTrail);
+    bulletTrail_->SetBlend(BlendMode::kBlendModeAdd);
+
     // --- 薬莢モデルの初期化 ---
     for (int i = 0; i < kMaxCartridges; ++i) {
         cartridgeObjs_[i] = std::make_unique<ObjClass>();
@@ -105,6 +109,7 @@ void PlayerWeapon::Update(const Vector3& playerTranslate, const Vector3& playerR
     if (muzzleFlashAddRight_) muzzleFlashAddRight_->Update();
     if (missileFire_) missileFire_->Update();
     if (missileSmoke_) missileSmoke_->Update();
+    if (bulletTrail_) bulletTrail_->Update();
 }
 
 void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, int viewMode, bool isBlinking, bool isDead) {
@@ -230,6 +235,7 @@ void PlayerWeapon::DrawParticles(IrufemiEngine* engine) {
     if (muzzleFlashAddRight_) muzzleFlashAddRight_->Draw();
     if (missileFire_) missileFire_->Draw();
     if (missileSmoke_) missileSmoke_->Draw();
+    if (bulletTrail_) bulletTrail_->Draw();
 }
 
 void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& playerScale) {
@@ -377,6 +383,8 @@ void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector
             bullets_[i].position.x += bullets_[i].velocity.x;
             bullets_[i].position.y += bullets_[i].velocity.y;
             bullets_[i].position.z += bullets_[i].velocity.z;
+
+            if (bulletTrail_) bulletTrail_->PlayHitEffect(bullets_[i].position, 2);
 
             bullets_[i].timer--;
             if (bullets_[i].timer <= 0) {
