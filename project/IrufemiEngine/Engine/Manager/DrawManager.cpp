@@ -185,10 +185,10 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     // --- フレーム共通CBV/SRVをここで一度だけバインド ---
     BindCommonParameters();
 
-    //// 環境マップをバインド
-    //if (environmentMapHandle_.ptr != 0) {
-    //    commandList_->SetGraphicsRootDescriptorTable(12, environmentMapHandle_);
-    //}
+    // 環境マップをバインド
+    if (environmentMapHandle_.ptr != 0) {
+        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, environmentMapHandle_);
+    }
 }
 
 void DrawManager::PostDraw() {
@@ -341,7 +341,7 @@ void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instan
 
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)
     assert(resource->instancingSrvHandleGPU_.ptr != 0 && "Instancing SRV handle is null or invalid");
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, resource->instancingSrvHandleGPU_);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, resource->instancingSrvHandleGPU_);
 
     // テクスチャ (PS t0)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
@@ -369,7 +369,7 @@ void DrawManager::DrawModelRegion(ModelRegion* region) {
     // CBV/SRV設定 (インスタンスリソースから)
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, region->GetMaterialResource()->GetGPUVirtualAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, region->GetTextureHandle());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, region->GetInstancingSrvHandleGPU());
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, region->GetInstancingSrvHandleGPU());
 
     // 描画
     if (gpuMesh->indexCount > 0) {
@@ -393,7 +393,7 @@ void DrawManager::DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
 
     // SRV (PS t0 / VS t0)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);            // PS t0
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, instancingSrvHandleGPU);   // VS t0
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, instancingSrvHandleGPU);   // VS t0
 
     // Draw
     commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
@@ -504,7 +504,7 @@ void DrawManager::DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferVi
     // テクスチャ (PS t0)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);
     // パーティクルデータ (VS t0)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, particleSrv);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, particleSrv);
 
     // 描画コール
     commandList_->DrawInstanced(6, instanceCount, 0, 0);
@@ -586,9 +586,9 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
     // 4. テクスチャの設定 (RootParameter[(UINT)RootSlot::Texture])
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, renderTexture->GetSrvHandleGPU());
 
-    // 深度テクスチャの設定 (RootParameter[(UINT)RootSlot::EnvironmentMap])
+    // 深度テクスチャの設定 (RootParameter[(UINT)RootSlot::EnvMap])
     if (depthSrvHandle.ptr != 0) {
-        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvironmentMap, depthSrvHandle);
+        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, depthSrvHandle);
     }
 
     // 追加: ConstantBuffer の設定 (引数があれば RootParameter[(UINT)RootSlot::Material] にセット)
@@ -606,7 +606,6 @@ void DrawManager::BindCommonParameters() {
     commandList_->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Camera, frameData_.camera);
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, frameData_.lightCommon);
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::PointLights, pointLightSrvHandle_);
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::SpotLights, spotLightSrvHandle_);
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::AreaLights, areaLightSrvHandle_);
+    // ライトSRVを一括バインド (t2, t3, t4)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, pointLightSrvHandle_);
 }

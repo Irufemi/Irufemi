@@ -11,6 +11,7 @@
 #include "../Graphics/Data/SpotLight.h"
 #include "../Graphics/Data/AreaLight.h"
 #include "../Graphics/DirectX/RenderTexture.h"
+#include "../Graphics/DirectX/RootSignatureConfig.h"
 #include "../Core/Math/Vector4.h"
 #include <vector>
 #include <memory>
