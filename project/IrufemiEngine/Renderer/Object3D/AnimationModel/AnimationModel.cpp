@@ -7,7 +7,6 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Model/AnimationManager.h"
-#include "Renderer/Material.h"
 #include "Resource/Model/Data/ObjModel.h"
 #include "Renderer/Region/Primitive/SphereRegion.h"
 #include "Renderer/LineInstanced/LineClass.h"

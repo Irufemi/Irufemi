@@ -13,7 +13,7 @@ class Camera;
 class RenderTexture {
 public:
     RenderTexture() = default;
-    ~RenderTexture() = default;
+    ~RenderTexture();
 
     void Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor);
     
@@ -43,4 +43,5 @@ private:
     uint32_t width_ = 0;
     uint32_t height_ = 0;
     DXGI_FORMAT format_ = DXGI_FORMAT_UNKNOWN;
+    DirectXCommon* dxCommon_ = nullptr;
 };

@@ -297,6 +297,10 @@ void IrufemiEngine::Finalize() {
         modelManager_.reset();
     }
     if (dxCommon_) {
+        if (dxCommon_->GetSrvPool() && depthSrvIndex_ != 0xFFFFFFFF) {
+            dxCommon_->GetSrvPool()->FreeAfterFence(depthSrvIndex_, dxCommon_->GetFenceValue());
+            depthSrvIndex_ = 0xFFFFFFFF;
+        }
         dxCommon_->Finalize(); dxCommon_.reset();
     }
     if (winApp_) {
