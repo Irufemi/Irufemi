@@ -156,7 +156,6 @@ private:
   bool isEmitting_ = false;
   bool hasExploded_ = false;
   bool needsInitialize_ = true;
-  uint32_t debugFrameCount_ = 0; // デバッグログ用
 
   // 行列更新の最適化用
   Matrix4x4 lastViewMatrix_ = {};

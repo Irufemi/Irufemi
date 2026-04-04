@@ -197,15 +197,6 @@ void VoxelParticleSystem::Draw() {
   commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
   commandList->ResourceBarrier(1, &uavBarrier);
 
-  // --- デバッグログ ---
-  if (++debugFrameCount_ >= 60) {
-    debugFrameCount_ = 0;
-    char logMsg[128];
-    sprintf_s(logMsg, "[Voxel Draw][Ptr:%p] count:%u hasExploded:%d\n",
-              this, voxelCount_, hasExploded_ ? 1 : 0);
-    OutputDebugStringA(logMsg);
-  }
-
   // 2. Graphics Draw
   if (!hasExploded_)
     return;
