@@ -26,6 +26,7 @@
 #include "Renderer/Object3D/Primitive/CubeClass.h"
 #include "Renderer/Object3D/Primitive/PlaneClass.h"
 #include "Renderer/Object3D/Primitive/CylinderClass.h"
+#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
@@ -169,6 +170,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     CubeClass::SetDebugUI(ui_.get());
     PlaneClass::SetDebugUI(ui_.get());
     CylinderClass::SetDebugUI(ui_.get());
+    PrimitiveObjects3DClass::SetDebugUI(ui_.get());
     ParticleSystem::SetDebugUI(ui_.get());
 
     // 描画
@@ -187,6 +189,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     TetraRegion::SetDrawManager(drawManager_.get());
     ParticleSystem::SetDrawManager(drawManager_.get());
     GPUParticleSystem::SetDrawManager(drawManager_.get());
+    PrimitiveObjects3DClass::SetDrawManager(drawManager_.get());
     ParticleSystem::SetEngine(this);
     GPUParticleSystem::SetEngine(this);
     Line3DRegion::SetDrawManager(drawManager_.get());
@@ -206,6 +209,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     TetraRegion::SetTextureManager(textureManager_.get());
     ParticleSystem::SetTextureManager(textureManager_.get());
     GPUParticleSystem::SetTextureManager(textureManager_.get());
+    PrimitiveObjects3DClass::SetTextureManager(textureManager_.get());
 
     animationManager_ = std::make_unique<AnimationManager>();
     animationManager_->Initialize(dxCommon_.get());

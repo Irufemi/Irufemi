@@ -59,8 +59,7 @@ void CubeClass::Initialize(Camera* camera, float width, float height, float dept
     // テクスチャハンドル設定
     if (textureManager_) {
         resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
-        auto textureNames = textureManager_->GetTextureNames();
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
         selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
@@ -152,8 +151,7 @@ void CubeClass::Debug(const char* cubeName) {
         // 現在のテクスチャ名を復元して Initialize を呼ぶ(UI 保持のため)
         std::string currentTextureName = "resources/uvChecker.png";
         if (textureManager_) {
-            auto textureNames = textureManager_->GetTextureNames();
-            std::sort(textureNames.begin(), textureNames.end());
+            auto textureNames = textureManager_->GetTextureNamesForDebug();
             if (!textureNames.empty()) {
                 if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
                     currentTextureName = textureNames[selectedTextureIndex_];

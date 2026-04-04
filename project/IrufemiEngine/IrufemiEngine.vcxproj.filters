@@ -332,6 +332,9 @@
     <ClCompile Include="Engine\Graphics\DirectX\FrameRateController.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.cpp">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -680,6 +683,9 @@
     <ClInclude Include="Engine\Graphics\Data\Material.h" />
     <ClInclude Include="Engine\Graphics\Data\SceneGPUStructs.h" />
     <ClInclude Include="Engine\Graphics\Data\LightCommonData.h" />
+    <ClInclude Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.h">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">

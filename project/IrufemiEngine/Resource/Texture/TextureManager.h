@@ -73,6 +73,16 @@ public:
     std::vector<std::string> GetTextureNames() const;
 
     /**
+     * @brief デバッグ表示用にロード済みのテクスチャ名一覧を取得（キューブマップ除外、ソート済み）
+     */
+    std::vector<std::string> GetTextureNamesForDebug() const;
+
+    /**
+     * @brief デバッグ表示用にロード済みのキューブマップ名一覧を取得（キューブマップのみ、ソート済み）
+     */
+    std::vector<std::string> GetCubeMapNamesForDebug() const;
+
+    /**
      * @brief フォールバック用のダミー白テクスチャを生成する
      */
     void CreateWhiteDummyTexture();

@@ -117,10 +117,8 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     resource_->materialData_->useClampSampler = (primitiveShape_ == PrimitiveType::Ring || primitiveShape_ == PrimitiveType::Cylinder);
 
     if (textureManager_) {
-        auto textureNames = textureManager_->GetTextureNames();
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         if (!textureNames.empty()) {
-
             resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
             // コンボボックス用に selectedIndex を初期化
@@ -304,8 +302,7 @@ void ParticleSystem::SetTexture(const std::string& textureFilePath) {
     if (!textureManager_) {
         return;
     }
-    auto textureNames = textureManager_->GetTextureNames();
-    std::sort(textureNames.begin(), textureNames.end());
+    auto textureNames = textureManager_->GetTextureNamesForDebug();
     auto it = std::find(textureNames.begin(), textureNames.end(), textureFilePath);
 
     if (it != textureNames.end()) {
@@ -464,8 +461,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         primitiveShape_ = static_cast<PrimitiveType>(currentShape);
                         std::string currentTextureName = "resources/circle.png";
                         if (textureManager_) {
-                            auto textureNames = textureManager_->GetTextureNames();
-                            std::sort(textureNames.begin(), textureNames.end());
+                            auto textureNames = textureManager_->GetTextureNamesForDebug();
                             if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
                                 currentTextureName = textureNames[selectedTextureIndex_];
                             }
@@ -555,8 +551,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         // 現在のテクスチャ名を復元して Initialize を呼ぶ(UI 保持のため)
                         std::string currentTextureName = "resources/circle.png";
                         if (textureManager_) {
-                            auto textureNames = textureManager_->GetTextureNames();
-                            std::sort(textureNames.begin(), textureNames.end());
+                            auto textureNames = textureManager_->GetTextureNamesForDebug();
                             if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
                                 currentTextureName = textureNames[selectedTextureIndex_];
                             } else {
@@ -592,8 +587,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
                         std::string currentTextureName = "resources/circle.png";
                         if (textureManager_) {
-                            auto textureNames = textureManager_->GetTextureNames();
-                            std::sort(textureNames.begin(), textureNames.end());
+                            auto textureNames = textureManager_->GetTextureNamesForDebug();
                             if (!textureNames.empty()) {
                                 if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
                                     currentTextureName = textureNames[selectedTextureIndex_];

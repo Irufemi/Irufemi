@@ -53,8 +53,7 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
         resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
         
         // デバッグUI用のインデックス更新
-        auto textureNames = textureManager_->GetTextureNames();
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
         selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }

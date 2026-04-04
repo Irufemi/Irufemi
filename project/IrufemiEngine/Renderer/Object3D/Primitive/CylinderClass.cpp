@@ -52,8 +52,7 @@ void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
     // テクスチャ
     if (textureManager_) {
         resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
-        auto textureNames = textureManager_->GetTextureNames();
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
         selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
