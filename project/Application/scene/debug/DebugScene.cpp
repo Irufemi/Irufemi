@@ -183,7 +183,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveSkybox_) {
         skybox_ = std::make_unique<Skybox>();
-        skybox_->Initialize(camera_.get(),"resources/rostock_laage_airport_4k.dds");
+        skybox_->Initialize(camera_.get(), "whiteCubeMap"/*"resources/rostock_laage_airport_4k.dds"*/);
     }
 
     // エンジンのデフォルトクリアカラーを「青」に設定
@@ -489,11 +489,11 @@ void DebugScene::Update() {
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 
-    //// 環境マップをDrawManagerに設定
-    //if (isActiveSkybox_) {
-    //    D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle = engine_->GetTextureManager()->GetTextureHandle("resources/rostock_laage_airport_4k.dds");
-    //    engine_->GetDrawManager()->SetEnvironmentMap(envMapHandle);
-    //}
+    // 環境マップをDrawManagerに設定
+    if (isActiveSkybox_) {
+        D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle = skybox_->GetTextureHandle();
+        engine_->GetDrawManager()->SetEnvironmentMap(envMapHandle);
+    }
 }
 
 void DebugScene::Draw() {
@@ -622,6 +622,9 @@ void DebugScene::DrawDebugTab() {
             }
             ImGui::EndTabItem();
         }
+    }
+    if (isActiveSkybox_ && skybox_) {
+        skybox_->Debug();
     }
     DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 #endif

@@ -27,8 +27,14 @@ struct ObjMaterial {
 
     bool enableLighting = true;
 
-    // 環境マップの映り込み係数
-    float environmentCoefficient = 1.0f;
+    // ライティングモード (0:None, 1:Lambert, 2:Half-Lambert)
+    int32_t lightingMode = 2;
+
+    // サンプラー設定 (0:WRAP, 1:CLAMP)
+    int32_t useClampSampler = 0;
+
+    // 環境マップの映り込み係数 (デフォルトは反射なし)
+    float environmentCoefficient = 0.0f;
 
     Matrix4x4 uvTransform = Math::MakeIdentity4x4();
 

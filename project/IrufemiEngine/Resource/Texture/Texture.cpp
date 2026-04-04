@@ -122,3 +122,47 @@ void Texture::InitializeFromMemory(const std::string& name, const uint32_t* pixe
         status_.store(LoadingStatus::Failed);
     }
 }
+
+void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height) {
+    this->filePath_ = name;
+    this->width_ = width;
+    this->height_ = height;
+    status_.store(LoadingStatus::Loading);
+
+    try {
+        // CubeMap として初期化
+        HRESULT hr = mipImages_.InitializeCube(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, width, height, 1, 1);
+        assert(SUCCEEDED(hr));
+
+        // 6面分のピクセルデータのコピー
+        for (size_t i = 0; i < 6; ++i) {
+            const DirectX::Image* img = mipImages_.GetImage(0, i, 0);
+            memcpy(img->pixels, pixels + (i * width * height), width * height * sizeof(uint32_t));
+        }
+
+        const DirectX::TexMetadata& metadata = mipImages_.GetMetadata();
+        textureResource_ = dxCommon_->CreateTextureResource(metadata);
+        intermediateResource_ = dxCommon_->UploadTextureData(textureResource_.Get(), mipImages_);
+
+        dxCommon_->ReleaseAfterFence(intermediateResource_);
+        intermediateResource_ = nullptr;
+
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = metadata.format;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+        srvDesc.TextureCube.MostDetailedMip = 0;
+        srvDesc.TextureCube.MipLevels = 1;
+        srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+
+        // SRV上書き
+        if (textureSrvHandleCPU_.ptr != 0) {
+            dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
+        }
+
+        status_.store(LoadingStatus::Loaded);
+    }
+    catch (...) {
+        status_.store(LoadingStatus::Failed);
+    }
+}

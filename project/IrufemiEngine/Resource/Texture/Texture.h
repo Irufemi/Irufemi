@@ -63,6 +63,15 @@ public:
     void InitializeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height);
 
     /**
+     * @brief メモリ上のピクセルデータからキューブマップを初期化
+     * @param[in] name 識別名
+     * @param[in] pixels ピクセルデータ（RGBA8想定、6面分連続）
+     * @param[in] width 横幅
+     * @param[in] height 縦幅
+     */
+    void InitializeCubeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height);
+
+    /**
      * @brief GPU側のSRVハンドルを取得
      */
     const D3D12_GPU_DESCRIPTOR_HANDLE& GetTextureSrvHandleGPU()const { return textureSrvHandleGPU_; }

@@ -447,6 +447,35 @@ void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_u
 #endif // USE_IMGUI
 }
 
+void DebugUI::DebugMaterialOverrides(float* envCoef, int32_t* lightingMode, int32_t* useClamp, int32_t* enableLighting, const char* unique_id) {
+#ifdef USE_IMGUI
+    std::string id = unique_id;
+    if (ImGui::TreeNode(("Material Overrides" + id).c_str())) {
+        ImGui::DragFloat(("Env Coefficient" + id).c_str(), envCoef, 0.01f, 0.00f, 10.0f);
+
+        const char* lightingItems[] = { "Model Default", "None", "Lambert", "Half-Lambert" };
+        int currentLighting = *lightingMode + 1; // -1 -> 0
+        if (ImGui::Combo(("Lighting Mode" + id).c_str(), &currentLighting, lightingItems, IM_ARRAYSIZE(lightingItems))) {
+            *lightingMode = currentLighting - 1;
+        }
+
+        const char* clampItems[] = { "Model Default", "WRAP", "CLAMP" };
+        int currentClamp = *useClamp + 1; // -1 -> 0
+        if (ImGui::Combo(("Sampler Mode" + id).c_str(), &currentClamp, clampItems, IM_ARRAYSIZE(clampItems))) {
+            *useClamp = currentClamp - 1;
+        }
+
+        const char* enableItems[] = { "Model Default", "OFF", "ON" };
+        int currentEnable = *enableLighting + 1; // -1 -> 0
+        if (ImGui::Combo(("Enable Lighting" + id).c_str(), &currentEnable, enableItems, IM_ARRAYSIZE(enableItems))) {
+            *enableLighting = currentEnable - 1;
+        }
+
+        ImGui::TreePop();
+    }
+#endif
+}
+
 // Material
 void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
 #ifdef USE_IMGUI
@@ -464,7 +493,7 @@ void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
             materialData->lightingMode = currentMode;
         }
         ImGui::DragFloat("Shininess", &materialData->shininess);
-        //ImGui::DragFloat("Environment Coefficient", &materialData->environmentCoefficient, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Environment Coefficient", &materialData->environmentCoefficient, 0.01f, 0.0f, 1.0f);
     }
 #endif // USE_IMGUI
 }

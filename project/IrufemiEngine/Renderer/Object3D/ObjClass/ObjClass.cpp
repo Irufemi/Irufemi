@@ -135,6 +135,7 @@ void ObjClass::DebugTab() {
     if (ui_) {
         ui_->DebugTransform(transform_);
         ImGui::ColorEdit4("Color", &color_.x); // インスタンスカラーを編集
+        ui_->DebugMaterialOverrides(&environmentCoefficient_, &lightingModeOverride_, &useClampSamplerOverride_, &enableLightingOverride_, "##OcOverrides");
 
         // ImGuiでマテリアルを編集
         if (managedModel_ && managedModel_->cpuModel) {
@@ -183,11 +184,8 @@ ObjMaterial* ObjClass::GetMaterial(size_t meshIndex) {
 }
 
 void ObjClass::SetEnableLightingToAllMeshes(bool enable) {
-    if (managedModel_ && managedModel_->cpuModel) {
-        for (auto& mesh : managedModel_->cpuModel->meshes) {
-            mesh.material.enableLighting = enable;
-        }
-    }
+    enableLightingOverride_ = enable ? 1 : 0;
+    isDirty_ = true;
 }
 
 void ObjClass::SetAlpha(float alpha) {
@@ -218,12 +216,27 @@ void ObjClass::UpdateMaterials() {
         mappedData->color.y = cpuMat.color.y * color_.y;
         mappedData->color.z = cpuMat.color.z * color_.z;
         mappedData->color.w = cpuMat.color.w * color_.w;
+        if (mappedData->color.w <= 0.0f) { mappedData->color.w = 1.0f; }
 
-        mappedData->enableLighting = cpuMat.enableLighting;
+        // ライティングの有効状態 (個別上書き優先)
+        int32_t finalEnableLighting = (enableLightingOverride_ != -1) ? (enableLightingOverride_ == 1) : (cpuMat.enableLighting ? 1 : 0);
+        mappedData->enableLighting = finalEnableLighting;
+
         mappedData->uvTransform = cpuMat.uvTransform;
         mappedData->shininess = cpuMat.shininess;
         mappedData->hasTexture = !cpuMat.textureFilePath.empty();
-        mappedData->lightingMode = cpuMat.enableLighting ? 2 : 0;
-        if (mappedData->color.w <= 0.0f) { mappedData->color.w = 1.0f; }
+
+        // 映り込み係数 (モデル値 * インスタンス係数)
+        mappedData->environmentCoefficient = cpuMat.environmentCoefficient * environmentCoefficient_;
+
+        // ライティングモード (個別上書き優先、指定なしならモデル値、ライティング無効なら0)
+        if (lightingModeOverride_ != -1) {
+            mappedData->lightingMode = lightingModeOverride_;
+        } else {
+            mappedData->lightingMode = finalEnableLighting ? cpuMat.lightingMode : 0;
+        }
+
+        // サンプラー設定 (個別上書き優先)
+        mappedData->useClampSampler = (useClampSamplerOverride_ != -1) ? useClampSamplerOverride_ : cpuMat.useClampSampler;
     }
 }

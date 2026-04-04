@@ -10,7 +10,7 @@ struct Material {
     int32_t enableLighting;      //!< ライティング有効フラグ
     int32_t hasTexture;          //!< テクスチャ有効フラグ
     int32_t lightingMode;        //!< 0:None, 1:Lambert, 2:Half-Lambert
-    float32_t padding;           //!< パディング (16byteアラインメント用)
+    float32_t environmentCoefficient; //!< 環境マップの映り込み係数
     
     float32_t4x4 uvTransform;    //!< UV座標変換行列
     
