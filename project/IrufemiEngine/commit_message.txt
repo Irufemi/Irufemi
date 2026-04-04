@@ -1,4 +1,0 @@
-引数のバインド順序をルートシグネチャのスロット定義に合わせるように修正。
-- Slot 0 (RootSlot::Material) に materialAddress を割り当て
-- Slot 1 (RootSlot::Transform) に perViewAddress を割り当て
-これにより、GPU Validation Layer が報告していた境界外アクセスエラー (EXECUTION ERROR #961) を解消。
