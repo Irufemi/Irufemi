@@ -109,6 +109,11 @@ public:
     Texture::LoadingStatus GetTextureStatus(const std::string& name) const;
 
     /**
+     * @brief キューブマップかどうかを取得
+     */
+    bool IsCubeMap(const std::string& name) const;
+
+    /**
      * @brief すべてのロードタスク（背景タスクを含む）が完了しているかを取得
      */
     bool IsAllLoaded() const { return taskGroup_->IsAllDone(); }

@@ -192,12 +192,20 @@ void Skybox::Draw() {
 
 void Skybox::Debug() {
 #ifdef USE_IMGUI
-    if (ImGui::TreeNode("Skybox")) {
-        TextureManager* textureManager = engine_->GetTextureManager();
-        auto textureNames = textureManager->GetTextureNames();
-        std::sort(textureNames.begin(), textureNames.end());
+        if (ImGui::CollapsingHeader("Skybox")) {
+            TextureManager* textureManager = engine_->GetTextureManager();
+            auto allNames = textureManager->GetTextureNames();
+            std::vector<std::string> textureNames;
+            
+            // CubeMap のみを表示リストに加える
+            for (const auto& name : allNames) {
+                if (textureManager->IsCubeMap(name)) {
+                    textureNames.push_back(name);
+                }
+            }
+            std::sort(textureNames.begin(), textureNames.end());
 
-        if (!textureNames.empty()) {
+            if (!textureNames.empty()) {
             if (ImGui::Combo("Texture", &selectedTextureIndex_, [](void* data, int idx) {
                 auto* names = reinterpret_cast<std::vector<std::string>*>(data);
                 if (idx < 0 || idx >= static_cast<int>(names->size())) return (const char*)nullptr;
@@ -213,10 +221,7 @@ void Skybox::Debug() {
                     textureHandle_ = textureManager->GetTextureHandle(selectedName);
                 }
             }
-        } else {
-            ImGui::Text("No textures available");
         }
-        ImGui::TreePop();
     }
 #endif
 }

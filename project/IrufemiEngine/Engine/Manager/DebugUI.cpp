@@ -565,8 +565,15 @@ void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
 void DebugUI::DebugTexture([[maybe_unused]] Object3DResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
-        auto textureNames = textureManager_->GetTextureNames();
+        auto allNames = textureManager_->GetTextureNames();
+        std::vector<std::string> textureNames;
+        for (const auto& name : allNames) {
+            if (!textureManager_->IsCubeMap(name)) {
+                textureNames.push_back(name);
+            }
+        }
         std::sort(textureNames.begin(), textureNames.end());
+        
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();
             if (ImGui::BeginCombo("Texture", preview)) {
@@ -587,8 +594,15 @@ void DebugUI::DebugTexture([[maybe_unused]] Object3DResource* resource, [[maybe_
 void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
-        auto textureNames = textureManager_->GetTextureNames();
+        auto allNames = textureManager_->GetTextureNames();
+        std::vector<std::string> textureNames;
+        for (const auto& name : allNames) {
+            if (!textureManager_->IsCubeMap(name)) {
+                textureNames.push_back(name);
+            }
+        }
         std::sort(textureNames.begin(), textureNames.end());
+        
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();
             if (ImGui::BeginCombo("Texture", preview)) {
@@ -609,8 +623,15 @@ void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_
 void DebugUI::DebugTexture([[maybe_unused]] ParticleResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
-        auto textureNames = textureManager_->GetTextureNames();
+        auto allNames = textureManager_->GetTextureNames();
+        std::vector<std::string> textureNames;
+        for (const auto& name : allNames) {
+            if (!textureManager_->IsCubeMap(name)) {
+                textureNames.push_back(name);
+            }
+        }
         std::sort(textureNames.begin(), textureNames.end());
+        
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();
             if (ImGui::BeginCombo("Texture", preview)) {

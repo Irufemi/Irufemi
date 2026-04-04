@@ -209,3 +209,13 @@ bool TextureManager::IsCurrentSceneInitializing() const {
     if (!sceneManager) return false;
     return sceneManager->IsInitializing();
 }
+
+bool TextureManager::IsCubeMap(const std::string& name) const {
+    if (name == "whiteCubeMap") return true;
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = textures_.find(name);
+    if (it != textures_.end()) {
+        return it->second->IsCubemap();
+    }
+    return false;
+}

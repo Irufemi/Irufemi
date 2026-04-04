@@ -60,7 +60,8 @@ void Texture::Initialize(const std::string& filePath) {
         srvDesc.Format = metadata.format;
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-        if (metadata.IsCubemap()) {
+        isCubemap_ = metadata.IsCubemap();
+        if (isCubemap_) {
             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
             srvDesc.TextureCube.MostDetailedMip = 0;
             srvDesc.TextureCube.MipLevels = UINT_MAX;
@@ -160,6 +161,7 @@ void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* 
             dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
         }
 
+        isCubemap_ = true;
         status_.store(LoadingStatus::Loaded);
     }
     catch (...) {

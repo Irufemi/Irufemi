@@ -48,6 +48,11 @@ public:
     LoadingStatus GetStatus() const { return status_.load(); }
 
     /**
+     * @brief キューブマップかどうか
+     */
+    bool IsCubemap() const { return isCubemap_; }
+
+    /**
      * @brief ファイルからテクスチャを初期化
      * @param[in] filePath 画像ファイルのパス
      */
@@ -106,6 +111,8 @@ protected:
     uint32_t srvIndex_ = UINT32_MAX; // allocator で確保した index
 
     std::atomic<LoadingStatus> status_{ LoadingStatus::Pending };
+
+    bool isCubemap_ = false;
 
     static DirectXCommon* dxCommon_;
     static DescriptorPool* s_srvPool_;
