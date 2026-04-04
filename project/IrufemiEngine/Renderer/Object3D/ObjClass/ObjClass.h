@@ -44,6 +44,10 @@ private:
     Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     TransformationMatrix transformationMatrix_{};
     Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // インスタンスカラー
+    float environmentCoefficient_ = 1.0f; // インスタンス環境マップ係数
+    int32_t lightingModeOverride_ = -1; // -1:使用しない, 0以上:上書き
+    int32_t useClampSamplerOverride_ = -1; // -1:使用しない, 0以上:上書き
+    int32_t enableLightingOverride_ = -1; // -1:使用しない, 0以上:上書き
 
     // 各メッシュ用リソース (マテリアルや頂点Viewを保持)
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
@@ -157,6 +161,10 @@ public: //メンバ関数
      * @brief インスタンス全体の色を設定
      */
     void SetColor(const Vector4& color);
+    void SetEnvironmentCoefficient(float coefficient) { environmentCoefficient_ = coefficient; isDirty_ = true; }
+    void SetLightingModeOverride(int32_t mode) { lightingModeOverride_ = mode; isDirty_ = true; }
+    void SetUseClampSamplerOverride(int32_t useClamp) { useClampSamplerOverride_ = useClamp; isDirty_ = true; }
+    void SetEnableLightingOverride(int32_t enable) { enableLightingOverride_ = enable; isDirty_ = true; }
     ///@}
 
     /** @name 静的メンバ設定（エンジン内部用） */

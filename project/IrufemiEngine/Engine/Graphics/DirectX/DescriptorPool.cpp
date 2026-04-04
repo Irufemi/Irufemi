@@ -17,23 +17,25 @@ void DescriptorPool::Initialize(ID3D12Device* device) {
     nextIndex_ = 0;
 }
 
-uint32_t DescriptorPool::Allocate() {
+uint32_t DescriptorPool::Allocate(uint32_t count) {
     std::lock_guard<std::mutex> lock(mutex_);
-    uint32_t index = kInvalid;
-
-    if (!freeList_.empty()) {
-        index = freeList_.back();
+    
+    // 単発確保かつフリーリストがある場合はそこから返す
+    if (count == 1 && !freeList_.empty()) {
+        uint32_t index = freeList_.back();
         freeList_.pop_back();
-    } else {
-        if (nextIndex_ < kMaxSRVCount) {
-            index = nextIndex_++;
-        }
+        return index;
     }
 
-    if (index == kInvalid) {
-        // 必要に応じてエラー処理
+    // 複数確保、またはフリーリストが空の場合は nextIndex_ から末尾を切り出す
+    // (nextIndex_ から確保することで確実に連続性が保証される)
+    if (nextIndex_ + count > kMaxSRVCount) {
+        assert(false && "DescriptorPool is full.");
+        return kInvalid;
     }
 
+    uint32_t index = nextIndex_;
+    nextIndex_ += count;
     return index;
 }
 

@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
-
-#include "Engine/Core/Math/Vector2.h"
+#include "../Math/Vector3.h"
+#include "../Math/Vector4.h"
+#include "../Math/Vector2.h"
 
 // ボクセル化された個々のキューブの情報
 struct Voxel {

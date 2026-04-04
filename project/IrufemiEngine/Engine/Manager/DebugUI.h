@@ -167,6 +167,17 @@ public: // メンバ関数
     static void DebugUvTransform(Transform& uvTransform);
 
     static void DebugUvTransform(Matrix4x4& uvTransform);
+
+    /**
+     * @brief マテリアルの個別オーバーライド設定を編集するUI
+     */
+    static void DebugMaterialOverrides(
+        float* envCoef,
+        int32_t* lightingMode,
+        int32_t* useClamp,
+        int32_t* enableLighting,
+        const char* unique_id = ""
+    );
     ///@}
 
     /** @name エンジン情報のデバッグ */

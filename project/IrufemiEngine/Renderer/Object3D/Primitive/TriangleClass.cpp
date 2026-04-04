@@ -42,9 +42,11 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
         resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
         resource_->materialData_->enableLighting = true;
         resource_->materialData_->hasTexture = true;
-        resource_->materialData_->lightingMode = 2;
+        resource_->materialData_->lightingMode = 3;
         resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-        resource_->materialData_->shininess = 64.0f;
+        resource_->materialData_->metallic = 0.0f;
+        resource_->materialData_->roughness = 0.5f;
+        resource_->materialData_->environmentCoefficient = 0.0f;
     }
 
     if (textureManager_) {
@@ -82,7 +84,7 @@ void TriangleClass::Draw() {
     }
 
     // 共有リソースを使用して描画
-    drawManager_->DrawObject3D(resource_.get());
+    drawManager_->DrawStandard3D(resource_.get());
 }
 
 void TriangleClass::Debug(const char* triangleName) {

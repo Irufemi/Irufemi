@@ -677,6 +677,9 @@
     <ClInclude Include="Engine\Graphics\DirectX\RootSignatureConfig.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Graphics\Data\Material.h" />
+    <ClInclude Include="Engine\Graphics\Data\SceneGPUStructs.h" />
+    <ClInclude Include="Engine\Graphics\Data\LightCommonData.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">

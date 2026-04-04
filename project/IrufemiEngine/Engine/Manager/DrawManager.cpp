@@ -68,32 +68,36 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     dxCommon_ = dx;
     commandList_ = dx->GetCommandList();
 
-    // 各CBVのサイズを256バイトアラインメントに切り上げる
+    // 定数バッファのサイズ (256バイトアラインメント)
     const size_t cameraSize = (sizeof(CameraForGPU) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
-    const size_t directionalLightSize = (sizeof(DirectionalLight) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
-    const size_t pointLightsSize = (sizeof(PointLights) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
-    const size_t spotLightsSize = (sizeof(SpotLights) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
-    const size_t areaLightsSize = (sizeof(AreaLights) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+    const size_t lightCommonSize = (sizeof(LightCommonData) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
 
-    // フレームリソースを生成(全ライトとカメラを格納できるサイズ)
-    const UINT frameResSize = static_cast<UINT>(cameraSize + directionalLightSize + pointLightsSize + spotLightsSize + areaLightsSize);
-    frameResource_ = dxCommon_->CreateBufferResource(frameResSize);
+    // フレーム定数バッファ (Camera + LightCommonData)
+    frameResource_ = dxCommon_->CreateBufferResource(cameraSize + lightCommonSize);
     uint8_t* mapped = nullptr;
     frameResource_->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
 
-    // 各データのポインタとGPUアドレスをキャッシュ
-    uintptr_t mappedAddress = reinterpret_cast<uintptr_t>(mapped);
-    cameraData_ = reinterpret_cast<CameraForGPU*>(mappedAddress);
-    directionalLightData_ = reinterpret_cast<DirectionalLight*>(mappedAddress + cameraSize);
-    pointLightsData_ = reinterpret_cast<PointLights*>(mappedAddress + cameraSize + directionalLightSize);
-    spotLightsData_ = reinterpret_cast<SpotLights*>(mappedAddress + cameraSize + directionalLightSize + pointLightsSize);
-    areaLightsData_ = reinterpret_cast<AreaLights*>(mappedAddress + cameraSize + directionalLightSize + pointLightsSize + spotLightsSize);
+    cameraData_ = reinterpret_cast<CameraForGPU*>(mapped);
+    lightCommonData_ = reinterpret_cast<LightCommonData*>(mapped + cameraSize);
 
     frameData_.camera = frameResource_->GetGPUVirtualAddress();
-    frameData_.directionalLight = frameData_.camera + cameraSize;
-    frameData_.pointLights = frameData_.directionalLight + directionalLightSize;
-    frameData_.spotLights = frameData_.pointLights + pointLightsSize;
-    frameData_.areaLights = frameData_.spotLights + spotLightsSize;
+    frameData_.lightCommon = frameData_.camera + cameraSize;
+
+    // StructuredBuffer の初期化 (ひとまず1024個分を確保)
+    const uint32_t kMaxLights = 1024;
+    pointLightResource_ = dxCommon_->CreateBufferResource(sizeof(PointLight) * kMaxLights);
+    spotLightResource_ = dxCommon_->CreateBufferResource(sizeof(SpotLight) * kMaxLights);
+    areaLightResource_ = dxCommon_->CreateBufferResource(sizeof(AreaLight) * kMaxLights);
+
+    // ライト SRV デスクリプタの一括確保 (Point, Spot, Area 用に 3 つ)
+    auto pool = dxCommon_->GetSrvPool();
+    lightSrvBaseIndex_ = pool->Allocate(3);
+    lightSrvHandle_ = pool->GetGPUHandle(lightSrvBaseIndex_);
+
+    // StructuredBuffer SRV の作成
+    pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 0, pointLightResource_.Get(), kMaxLights, sizeof(PointLight));
+    pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 1, spotLightResource_.Get(), kMaxLights, sizeof(SpotLight));
+    pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 2, areaLightResource_.Get(), kMaxLights, sizeof(AreaLight));
 }
 
 void DrawManager::Finalize() {
@@ -101,6 +105,21 @@ void DrawManager::Finalize() {
         frameResource_->Unmap(0, nullptr);
         frameResource_.Reset();
     }
+    pointLightResource_.Reset();
+    spotLightResource_.Reset();
+    areaLightResource_.Reset();
+
+    // SRVの解放
+    auto* srvPool = dxCommon_->GetSrvPool();
+    uint64_t fv = dxCommon_->GetFenceValue();
+    if (srvPool && lightSrvBaseIndex_ != 0xFFFFFFFFu) {
+        // 連続した3つのデスクリプタを個別に返却 (Freeは1つずつ用のため)
+        for (uint32_t i = 0; i < 3; ++i) {
+            srvPool->FreeAfterFence(lightSrvBaseIndex_ + i, fv);
+        }
+        lightSrvBaseIndex_ = 0xFFFFFFFFu;
+    }
+
     dxCommon_ = nullptr;
     commandList_ = nullptr;
 }
@@ -165,10 +184,10 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     // --- フレーム共通CBV/SRVをここで一度だけバインド ---
     BindCommonParameters();
 
-    //// 環境マップをバインド
-    //if (environmentMapHandle_.ptr != 0) {
-    //    commandList_->SetGraphicsRootDescriptorTable(12, environmentMapHandle_);
-    //}
+    // 環境マップをバインド
+    if (environmentMapHandle_.ptr != 0) {
+        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, environmentMapHandle_);
+    }
 }
 
 void DrawManager::PostDraw() {
@@ -260,31 +279,29 @@ void DrawManager::PostDraw() {
 
 void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights) {
     if (cameraData_) { *cameraData_ = camera; }
-    if (directionalLightData_) { *directionalLightData_ = light; }
-    if (pointLightsData_) {
-        for (int i = 0; i < kMaxPointLights; ++i) {
-            pointLightsData_->lights[i].isActive = (i < pointLights.size());
-            if (pointLightsData_->lights[i].isActive) {
-                pointLightsData_->lights[i] = *pointLights[i];
-            }
-        }
+    if (lightCommonData_) {
+        // ライト共通データの更新（b1）
+        lightCommonData_->directionalLight = light;
+        lightCommonData_->pointLightCount = static_cast<int32_t>(pointLights.size());
+        lightCommonData_->spotLightCount = static_cast<int32_t>(spotLights.size());
+        lightCommonData_->areaLightCount = static_cast<int32_t>(areaLights.size());
     }
-    if (spotLightsData_) {
-        for (int i = 0; i < kMaxSpotLights; ++i) {
-            spotLightsData_->lights[i].isActive = (i < spotLights.size());
-            if (spotLightsData_->lights[i].isActive) {
-                spotLightsData_->lights[i] = *spotLights[i];
-            }
+
+    // 各 StructuredBuffer へ書き込み
+    auto copyLights = [](ID3D12Resource* res, const auto& lightVec) {
+        if (!res || lightVec.empty()) return;
+        using LightType = std::remove_pointer_t<typename std::decay_t<decltype(lightVec)>::value_type>;
+        LightType* mapped = nullptr;
+        res->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
+        for (size_t i = 0; i < lightVec.size(); ++i) {
+            mapped[i] = *lightVec[i];
         }
-    }
-    if (areaLightsData_) {
-        for (int i = 0; i < kMaxAreaLights; ++i) {
-            areaLightsData_->lights[i].isActive = (i < areaLights.size());
-            if (areaLightsData_->lights[i].isActive) {
-                areaLightsData_->lights[i] = *areaLights[i];
-            }
-        }
-    }
+        res->Unmap(0, nullptr);
+    };
+
+    copyLights(pointLightResource_.Get(), pointLights);
+    copyLights(spotLightResource_.Get(), spotLights);
+    copyLights(areaLightResource_.Get(), areaLights);
 }
 
 void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
@@ -292,10 +309,49 @@ void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
 }
 
 
-void DrawManager::DrawObject2D(const Object2DResource* resource) {
-    if (!resource) return;
+void DrawManager::DrawVoxelParticle(
+    uint32_t instanceCount,
+    const D3D12_VERTEX_BUFFER_VIEW& vbv,
+    const D3D12_INDEX_BUFFER_VIEW& ibv,
+    uint32_t indexCount,
+    D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
+    D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
+    D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle
+) {
+    if (!commandList_) return;
 
+    // 共通パラメータのバインド
+    BindCommonParameters();
+
+    // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // 頂点バッファとインデックスバッファの設定
+    commandList_->IASetVertexBuffers(0, 1, &vbv);
+    commandList_->IASetIndexBuffer(&ibv);
+
+    // VoxelParticle 特有のバインド
+    // Slot 1: Transform (b0) <- Emitter
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, emitterAddress);
+    // Slot 7: Special (b6) <- PerView
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, perViewAddress);
+    // Slot 9: LineInstancing (t1) <- ParticleData
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, particleDataHandle);
+
+    // 描画！
+    commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
+}
+
+void DrawManager::DrawSprite(const Object2DResource* resource) {
+    if (!resource || !commandList_) return;
+
+    // 共通パラメータのバインド
+    BindCommonParameters();
+
+    // トポロジ設定
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // 頂点バッファとインデックスバッファの設定
     commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
@@ -324,7 +380,7 @@ void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instan
 
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)
     assert(resource->instancingSrvHandleGPU_.ptr != 0 && "Instancing SRV handle is null or invalid");
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, resource->instancingSrvHandleGPU_);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, resource->instancingSrvHandleGPU_);
 
     // テクスチャ (PS t0)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
@@ -352,7 +408,7 @@ void DrawManager::DrawModelRegion(ModelRegion* region) {
     // CBV/SRV設定 (インスタンスリソースから)
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, region->GetMaterialResource()->GetGPUVirtualAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, region->GetTextureHandle());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, region->GetInstancingSrvHandleGPU());
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, region->GetInstancingSrvHandleGPU());
 
     // 描画
     if (gpuMesh->indexCount > 0) {
@@ -376,7 +432,7 @@ void DrawManager::DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
 
     // SRV (PS t0 / VS t0)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);            // PS t0
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, instancingSrvHandleGPU);   // VS t0
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, instancingSrvHandleGPU);   // VS t0
 
     // Draw
     commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
@@ -452,44 +508,60 @@ void DrawManager::DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);
 
-    //描画！(DrawCall/ドローコール)。3頂点で1つのインスタンス。
+    //描画！（DrawCall/ドローコール）。3頂点で1つのインスタンス。
     commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 }
 
-void DrawManager::DrawObject3D(const Object3DResource* resource) {
-    if (!resource) return;
+void DrawManager::DrawStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+    if (!resource || !commandList_) return;
     
+    // 共通パラメータのバインド
+    BindCommonParameters();
+
+    // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+
+    // 頂点バッファの設定 (オーバーライドがあれば優先)
+    if (vertexBufferViewOverride) {
+        commandList_->IASetVertexBuffers(0, 1, vertexBufferViewOverride);
+    } else {
+        commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    }
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
+    // 各種リソースのバインド
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->transformationResource_->GetGPUVirtualAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
+    // 描画
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
 
-void DrawManager::DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const UINT& instanceCount) {
+void DrawManager::DrawGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS perViewAddress, D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, uint32_t instanceCount) {
+    if (!commandList_) return;
 
-    // IA 設定: VB/IB/Topology
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView);
+    // 共通パラメータのバインド
+    BindCommonParameters();
+
+    // IA 設定: VB/Topology
+    commandList_->IASetVertexBuffers(0, 1, &vbv);
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // --- CBV のバインド ---
     // (rootParameters[(UINT)RootSlot::Material] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, perView);
-
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, material);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, materialAddress);
+    // (rootParameters[(UINT)RootSlot::Transform] に対応、VertexShader 側の b0 想定)
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, perViewAddress);
 
     // --- SRVのバインド ---
     // テクスチャ (PS t0)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);
-    // パーティクルデータ (VS t0)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::InstancingData, particleSrv);
+    // パーティクルデータ (VS t0 -> Slot 5: Instancing)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, particleSrvHandle);
 
-    // 描画コール
+    // 描画コール (6頂点で1つのビルボード)
     commandList_->DrawInstanced(6, instanceCount, 0, 0);
 }
 void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor) {
@@ -569,9 +641,9 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
     // 4. テクスチャの設定 (RootParameter[(UINT)RootSlot::Texture])
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, renderTexture->GetSrvHandleGPU());
 
-    // 深度テクスチャの設定 (RootParameter[(UINT)RootSlot::EnvironmentMap])
+    // 深度テクスチャの設定 (RootParameter[(UINT)RootSlot::EnvMap])
     if (depthSrvHandle.ptr != 0) {
-        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvironmentMap, depthSrvHandle);
+        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, depthSrvHandle);
     }
 
     // 追加: ConstantBuffer の設定 (引数があれば RootParameter[(UINT)RootSlot::Material] にセット)
@@ -588,8 +660,8 @@ void DrawManager::BindCommonParameters() {
     commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     commandList_->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Camera, frameData_.camera);
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::DirectionalLight, frameData_.directionalLight);
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::PointLights, frameData_.pointLights);
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::SpotLights, frameData_.spotLights);
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::AreaLights, frameData_.areaLights);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, frameData_.lightCommon);
+
+    // 点光源、スポットライト、面光源を１つのテーブル（Slot 6）で一括設定
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, lightSrvHandle_);
 }

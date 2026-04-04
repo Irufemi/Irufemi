@@ -366,7 +366,7 @@ void Player::Draw() {
     }
 
     if (isTargetingEnemy_ && targetMarkerObj_ && !status_.IsDead()) {
-        targetMarkerObj_->Draw();
+        // targetMarkerObj_->Draw();
     }
 
     weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, status_.IsDead());

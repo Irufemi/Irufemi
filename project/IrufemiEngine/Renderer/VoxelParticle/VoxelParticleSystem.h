@@ -1,10 +1,10 @@
 #pragma once
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector3Int.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "Resource/Model/Data/VoxelizedModel.h"
-#include "Engine/Core/Type/PerView.h"
+#include "../../Engine/Core/Math/Matrix4x4.h"
+#include "../../Engine/Core/Math/Vector3.h"
+#include "../../Engine/Core/Math/Vector3Int.h"
+#include "../../Engine/Core/Math/Vector4.h"
+#include "../../Resource/Model/Data/VoxelizedModel.h"
+#include "../../Engine/Core/Type/PerView.h"
 #include <d3d12.h>
 #include <memory>
 #include <string>
@@ -156,7 +156,6 @@ private:
   bool isEmitting_ = false;
   bool hasExploded_ = false;
   bool needsInitialize_ = true;
-  uint32_t debugFrameCount_ = 0; // デバッグログ用
 
   // 行列更新の最適化用
   Matrix4x4 lastViewMatrix_ = {};

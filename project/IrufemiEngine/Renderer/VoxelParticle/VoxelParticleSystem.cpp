@@ -9,6 +9,7 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Renderer/VertexData.h"
+#include "Engine/Graphics/DirectX/RootSignatureConfig.h"
 #include "Resource/Model/ModelManager.h"
 #include <cassert>
 #include <cstdio>
@@ -196,15 +197,6 @@ void VoxelParticleSystem::Draw() {
   commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
   commandList->ResourceBarrier(1, &uavBarrier);
 
-  // --- デバッグログ ---
-  if (++debugFrameCount_ >= 60) {
-    debugFrameCount_ = 0;
-    char logMsg[128];
-    sprintf_s(logMsg, "[Voxel Draw][Ptr:%p] count:%u hasExploded:%d\n",
-              this, voxelCount_, hasExploded_ ? 1 : 0);
-    OutputDebugStringA(logMsg);
-  }
-
   // 2. Graphics Draw
   if (!hasExploded_)
     return;
@@ -221,21 +213,16 @@ void VoxelParticleSystem::Draw() {
   // VoxelParticle 専用PSOを取得してバインド
   engine_->GetDrawManager()->BindPSO(drawPSO_.Get());
 
-  // コンピュートシェーダー実行後にグラフィックスのルートシグネチャと共通パラメータを再バインド
-  engine_->GetDrawManager()->BindCommonParameters();
-  commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  commandList->IASetVertexBuffers(0, 1, &cubeVertexBufferView_);
-  commandList->IASetIndexBuffer(&cubeIndexBufferView_);
-
-  // RootParameter: [8]CBV(PerView), [1]CBV(VoxelEmitter), [11]SRV(ParticleData)
-  commandList->SetGraphicsRootConstantBufferView(
-      8, perViewConstantBuffer_->GetGPUVirtualAddress()); // b6 (PerView)
-  commandList->SetGraphicsRootConstantBufferView(
-      1, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0 (VoxelEmitter)
-  commandList->SetGraphicsRootDescriptorTable(
-      11, particleSrvHandleGPU_); // t1 (ParticleData)
-
-  commandList->DrawIndexedInstanced(cubeIndexCount_, voxelCount_, 0, 0, 0);
+  // DrawManager を通じて描画を実行 (内部で共通パラメータとトポロジを設定)
+  engine_->GetDrawManager()->DrawVoxelParticle(
+      voxelCount_,
+      cubeVertexBufferView_,
+      cubeIndexBufferView_,
+      cubeIndexCount_,
+      perViewConstantBuffer_->GetGPUVirtualAddress(),
+      emitterConstantBuffer_->GetGPUVirtualAddress(),
+      particleSrvHandleGPU_
+  );
 
   // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
   barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;

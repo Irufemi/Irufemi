@@ -264,86 +264,96 @@ void DirectXCommon::CreateFence() {
 void DirectXCommon::CreateRootSignatures() {
     // --- 通常描画用 RootSignature ---
     {
-        D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-        descriptorRange[0].BaseShaderRegister = 0;
-        descriptorRange[0].NumDescriptors = 1;
-        descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-        descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        // --- ディスクリプタレンジの定義 ---
 
-        D3D12_DESCRIPTOR_RANGE descriptorRangeForInstancing[1] = {};
-        descriptorRangeForInstancing[0].BaseShaderRegister = 0;
-        descriptorRangeForInstancing[0].NumDescriptors = 1;
-        descriptorRangeForInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-        descriptorRangeForInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        D3D12_DESCRIPTOR_RANGE rangeTexture[1] = {};
+        rangeTexture[0].BaseShaderRegister = 0; // t0
+        rangeTexture[0].NumDescriptors = 1;
+        rangeTexture[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeTexture[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-        D3D12_ROOT_PARAMETER rootParameters[13] = {};
-        rootParameters[(UINT)RootSlot::Material].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[(UINT)RootSlot::Material].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::Material].Descriptor.ShaderRegister = 0;
-
-        rootParameters[(UINT)RootSlot::Transform].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[(UINT)RootSlot::Transform].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-        rootParameters[(UINT)RootSlot::Transform].Descriptor.ShaderRegister = 0;
-
-        rootParameters[(UINT)RootSlot::Texture].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        rootParameters[(UINT)RootSlot::Texture].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::Texture].DescriptorTable.pDescriptorRanges = descriptorRange;
-        rootParameters[(UINT)RootSlot::Texture].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
-
-        rootParameters[(UINT)RootSlot::DirectionalLight].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[(UINT)RootSlot::DirectionalLight].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-        rootParameters[(UINT)RootSlot::DirectionalLight].Descriptor.ShaderRegister = 1;
-
-        rootParameters[(UINT)RootSlot::InstancingData].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        rootParameters[(UINT)RootSlot::InstancingData].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-        rootParameters[(UINT)RootSlot::InstancingData].DescriptorTable.pDescriptorRanges = descriptorRangeForInstancing;
-        rootParameters[(UINT)RootSlot::InstancingData].DescriptorTable.NumDescriptorRanges = 1;
-
-        rootParameters[(UINT)RootSlot::Camera].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[(UINT)RootSlot::Camera].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-        rootParameters[(UINT)RootSlot::Camera].Descriptor.ShaderRegister = 2;
-
-        rootParameters[(UINT)RootSlot::PointLights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[(UINT)RootSlot::PointLights].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::PointLights].Descriptor.ShaderRegister = 3;
-
-        rootParameters[(UINT)RootSlot::SpotLights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[(UINT)RootSlot::SpotLights].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::SpotLights].Descriptor.ShaderRegister = 4;
-
-        rootParameters[(UINT)RootSlot::Unused8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[(UINT)RootSlot::Unused8].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-        rootParameters[(UINT)RootSlot::Unused8].Descriptor.ShaderRegister = 6;
-
-        rootParameters[(UINT)RootSlot::Unused9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[(UINT)RootSlot::Unused9].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::Unused9].Descriptor.ShaderRegister = 5;
-
-        rootParameters[(UINT)RootSlot::AreaLights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        rootParameters[(UINT)RootSlot::AreaLights].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::AreaLights].Descriptor.ShaderRegister = 7;
-
-        D3D12_DESCRIPTOR_RANGE rangeLine[1] = {};
-        rangeLine[0].BaseShaderRegister = 1; 
-        rangeLine[0].NumDescriptors = 1;
-        rangeLine[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-        rangeLine[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-        rootParameters[(UINT)RootSlot::LineInstancing].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        rootParameters[(UINT)RootSlot::LineInstancing].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-        rootParameters[(UINT)RootSlot::LineInstancing].DescriptorTable.pDescriptorRanges = rangeLine;
-        rootParameters[(UINT)RootSlot::LineInstancing].DescriptorTable.NumDescriptorRanges = _countof(rangeLine);
+        D3D12_DESCRIPTOR_RANGE rangeInstancing[1] = {};
+        rangeInstancing[0].BaseShaderRegister = 0; // t0
+        rangeInstancing[0].NumDescriptors = 1;
+        rangeInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
         D3D12_DESCRIPTOR_RANGE rangeEnv[1] = {};
-        rangeEnv[0].BaseShaderRegister = 1; 
+        rangeEnv[0].BaseShaderRegister = 1; // t1
         rangeEnv[0].NumDescriptors = 1;
         rangeEnv[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         rangeEnv[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-        rootParameters[(UINT)RootSlot::EnvironmentMap].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        rootParameters[(UINT)RootSlot::EnvironmentMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::EnvironmentMap].DescriptorTable.pDescriptorRanges = rangeEnv;
-        rootParameters[(UINT)RootSlot::EnvironmentMap].DescriptorTable.NumDescriptorRanges = _countof(rangeEnv);
+        D3D12_DESCRIPTOR_RANGE rangeLine[1] = {};
+        rangeLine[0].BaseShaderRegister = 1; // t1
+        rangeLine[0].NumDescriptors = 1;
+        rangeLine[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeLine[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+        // ライトSRVテーブル (t2, t3, t4 を一括バインド)
+        D3D12_DESCRIPTOR_RANGE rangeLights[1] = {};
+        rangeLights[0].BaseShaderRegister = 2; // t2 から開始
+        rangeLights[0].NumDescriptors = 3;     // t2, t3, t4 の3つ分
+        rangeLights[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeLights[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+        // --- ルートパラメータの定義 ---
+        D3D12_ROOT_PARAMETER rootParameters[10] = {};
+
+        // Slot 0: Material (b0, PS)
+        rootParameters[(UINT)RootSlot::Material].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::Material].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::Material].Descriptor.ShaderRegister = 0;
+
+        // Slot 1: Transform (b0, VS)
+        rootParameters[(UINT)RootSlot::Transform].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::Transform].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        rootParameters[(UINT)RootSlot::Transform].Descriptor.ShaderRegister = 0;
+
+        // Slot 2: Texture (t0, PS)
+        rootParameters[(UINT)RootSlot::Texture].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::Texture].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::Texture].DescriptorTable.pDescriptorRanges = rangeTexture;
+        rootParameters[(UINT)RootSlot::Texture].DescriptorTable.NumDescriptorRanges = 1;
+
+        // Slot 3: LightCommon (b1, ALL)
+        rootParameters[(UINT)RootSlot::LightCommon].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::LightCommon].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        rootParameters[(UINT)RootSlot::LightCommon].Descriptor.ShaderRegister = 1;
+
+        // Slot 4: Instancing (t0, VS)
+        rootParameters[(UINT)RootSlot::Instancing].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::Instancing].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        rootParameters[(UINT)RootSlot::Instancing].DescriptorTable.pDescriptorRanges = rangeInstancing;
+        rootParameters[(UINT)RootSlot::Instancing].DescriptorTable.NumDescriptorRanges = 1;
+
+        // Slot 5: Camera (b2, ALL)
+        rootParameters[(UINT)RootSlot::Camera].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::Camera].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        rootParameters[(UINT)RootSlot::Camera].Descriptor.ShaderRegister = 2;
+
+        // Slot 6: Lights (t2-t4, PS)
+        rootParameters[(UINT)RootSlot::Lights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::Lights].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::Lights].DescriptorTable.pDescriptorRanges = rangeLights;
+        rootParameters[(UINT)RootSlot::Lights].DescriptorTable.NumDescriptorRanges = 1;
+
+        // Slot 7: Special (b6, ALL)
+        rootParameters[(UINT)RootSlot::Special].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::Special].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        rootParameters[(UINT)RootSlot::Special].Descriptor.ShaderRegister = 6;
+
+        // Slot 8: EnvMap (t1, PS)
+        rootParameters[(UINT)RootSlot::EnvMap].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::EnvMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::EnvMap].DescriptorTable.pDescriptorRanges = rangeEnv;
+        rootParameters[(UINT)RootSlot::EnvMap].DescriptorTable.NumDescriptorRanges = 1;
+
+        // Slot 9: LineInstancing (t1, VS)
+        rootParameters[(UINT)RootSlot::LineInstancing].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::LineInstancing].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        rootParameters[(UINT)RootSlot::LineInstancing].DescriptorTable.pDescriptorRanges = rangeLine;
+        rootParameters[(UINT)RootSlot::LineInstancing].DescriptorTable.NumDescriptorRanges = 1;
 
         D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;

@@ -48,6 +48,11 @@ public:
     LoadingStatus GetStatus() const { return status_.load(); }
 
     /**
+     * @brief キューブマップかどうか
+     */
+    bool IsCubemap() const { return isCubemap_; }
+
+    /**
      * @brief ファイルからテクスチャを初期化
      * @param[in] filePath 画像ファイルのパス
      */
@@ -61,6 +66,15 @@ public:
      * @param[in] height 縦幅
      */
     void InitializeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height);
+
+    /**
+     * @brief メモリ上のピクセルデータからキューブマップを初期化
+     * @param[in] name 識別名
+     * @param[in] pixels ピクセルデータ（RGBA8想定、6面分連続）
+     * @param[in] width 横幅
+     * @param[in] height 縦幅
+     */
+    void InitializeCubeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height);
 
     /**
      * @brief GPU側のSRVハンドルを取得
@@ -97,6 +111,8 @@ protected:
     uint32_t srvIndex_ = UINT32_MAX; // allocator で確保した index
 
     std::atomic<LoadingStatus> status_{ LoadingStatus::Pending };
+
+    bool isCubemap_ = false;
 
     static DirectXCommon* dxCommon_;
     static DescriptorPool* s_srvPool_;

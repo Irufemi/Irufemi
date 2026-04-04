@@ -159,7 +159,7 @@ void Sprite::Draw() {
         Update();
     }
 
-    drawManager_->DrawObject2D(resource_.get());
+    drawManager_->DrawSprite(resource_.get());
 }
 
 void Sprite::SetSize(const float& width, const float& height) {

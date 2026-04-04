@@ -40,6 +40,7 @@ void TextureManager::Initialize(DirectXCommon* dxCommon) {
 
     // フォールバック用の白テクスチャ生成と登録
     CreateWhiteDummyTexture();
+    CreateWhiteCubeMap();
     if (whiteTextureResource_.Get()) {
         Texture::SetWhiteTextureResource(whiteTextureResource_.Get());
     }
@@ -169,6 +170,28 @@ void TextureManager::CreateWhiteDummyTexture() {
     }
 }
 
+void TextureManager::CreateWhiteCubeMap() {
+    if (whiteCubeMapHandle_.ptr != 0) return;
+    if (!dxCommon_) { return; }
+
+    // 1x1 6面 白テクスチャ
+    uint32_t whitePixels[6] = { 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu };
+
+    auto tex = std::make_shared<Texture>();
+    tex->InitializeCubeFromMemory("whiteCubeMap", whitePixels, 1, 1);
+
+    // バックアップ用リソースとして保持
+    whiteCubeMapResource_ = dxCommon_->CreateTextureResource(tex->GetScratchImage()->GetMetadata());
+    dxCommon_->UploadTextureData(whiteCubeMapResource_, *tex->GetScratchImage());
+    dxCommon_->ReleaseAfterFence(whiteCubeMapResource_);
+
+    whiteCubeMapHandle_ = tex->GetTextureSrvHandleGPU();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        textures_.emplace("whiteCubeMap", tex);
+    }
+}
+
 bool TextureManager::GetTextureSize(const std::string& name, uint32_t& outWidth, uint32_t& outHeight) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = textures_.find(name);
@@ -185,4 +208,14 @@ bool TextureManager::IsCurrentSceneInitializing() const {
     auto sceneManager = engine->GetSceneManager();
     if (!sceneManager) return false;
     return sceneManager->IsInitializing();
+}
+
+bool TextureManager::IsCubeMap(const std::string& name) const {
+    if (name == "whiteCubeMap") return true;
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = textures_.find(name);
+    if (it != textures_.end()) {
+        return it->second->IsCubemap();
+    }
+    return false;
 }

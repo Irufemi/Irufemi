@@ -547,5 +547,8 @@ void GameScene::UpdateCameraAndFrameData() {
     for (auto& al : areaLights_) aLights.push_back(al.get());
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
+
+    // 環境マップ（白色CubeMap）を設定
+    engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
 }
 

@@ -6,6 +6,9 @@
 #include "Engine/Manager/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Application/camera/Camera.h"
+#ifdef USE_IMGUI
+#include "imgui/imgui.h"
+#endif
 
 IrufemiEngine* Skybox::engine_ = nullptr;
 
@@ -127,22 +130,26 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
 
     TextureManager* textureManager_ = engine_->GetTextureManager();
 
-    auto textureNames = textureManager_->GetTextureNames();
-    std::sort(textureNames.begin(), textureNames.end());
-    if (!textureNames.empty()) {
-
-        textureHandle_ = textureManager_->GetTextureHandle(textureName);
-
-        // コンボボックス用に selectedIndex を初期化
-        auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
-        if (it != textureNames.end()) {
-            selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
-        } else {
-            selectedTextureIndex_ = 0;
-        }
-
+    if (textureName == "whiteCubeMap") {
+        textureHandle_ = textureManager_->GetWhiteCubeMapHandle();
     } else {
-        textureHandle_.ptr = 0;
+        auto textureNames = textureManager_->GetTextureNames();
+        std::sort(textureNames.begin(), textureNames.end());
+        if (!textureNames.empty()) {
+
+            textureHandle_ = textureManager_->GetTextureHandle(textureName);
+
+            // コンボボックス用に selectedIndex を初期化
+            auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
+            if (it != textureNames.end()) {
+                selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
+            } else {
+                selectedTextureIndex_ = 0;
+            }
+
+        } else {
+            textureHandle_.ptr = 0;
+        }
     }
 
 
@@ -184,6 +191,39 @@ void Skybox::Draw() {
 }
 
 void Skybox::Debug() {
+#ifdef USE_IMGUI
+        if (ImGui::CollapsingHeader("Skybox")) {
+            TextureManager* textureManager = engine_->GetTextureManager();
+            auto allNames = textureManager->GetTextureNames();
+            std::vector<std::string> textureNames;
+            
+            // CubeMap のみを表示リストに加える
+            for (const auto& name : allNames) {
+                if (textureManager->IsCubeMap(name)) {
+                    textureNames.push_back(name);
+                }
+            }
+            std::sort(textureNames.begin(), textureNames.end());
+
+            if (!textureNames.empty()) {
+            if (ImGui::Combo("Texture", &selectedTextureIndex_, [](void* data, int idx) {
+                auto* names = reinterpret_cast<std::vector<std::string>*>(data);
+                if (idx < 0 || idx >= static_cast<int>(names->size())) return (const char*)nullptr;
+                return (*names)[idx].c_str();
+            }, &textureNames, static_cast<int>(textureNames.size()))) {
+                // 選択が変更された
+                std::string selectedName = textureNames[selectedTextureIndex_];
+                if (selectedName == "whiteCubeMap") {
+                    textureHandle_ = textureManager->GetWhiteCubeMapHandle();
+                } else if (selectedName == "white") {
+                    textureHandle_ = textureManager->GetWhiteTextureHandle();
+                } else {
+                    textureHandle_ = textureManager->GetTextureHandle(selectedName);
+                }
+            }
+        }
+    }
+#endif
 }
 
 void Skybox::CreateResource() {

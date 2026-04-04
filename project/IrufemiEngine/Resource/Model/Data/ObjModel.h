@@ -20,15 +20,21 @@ struct ObjMaterial {
     Vector3 ambient = { 0.1f, 0.1f, 0.1f };
     // Ks
     Vector3 specular = { 1.0f, 1.0f, 1.0f };
-    // Ns
-    float shininess = 64.0f;  
-    // d
+    
+    float roughness = 0.5f;  
+    float metallic = 0.0f;
     float alpha = 1.0f;    
 
     bool enableLighting = true;
 
+    // ライティングモード (0:None, 1:Lambert, 2:Half-Lambert, 3:PBR)
+    int32_t lightingMode = 3;
+
+    // サンプラー設定 (0:WRAP, 1:CLAMP)
+    int32_t useClampSampler = 0;
+
     // 環境マップの映り込み係数
-    float environmentCoefficient = 1.0f;
+    float environmentCoefficient = 0.0f;
 
     Matrix4x4 uvTransform = Math::MakeIdentity4x4();
 

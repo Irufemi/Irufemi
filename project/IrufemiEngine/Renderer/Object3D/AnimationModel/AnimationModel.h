@@ -70,6 +70,13 @@ public: // ゲッター・セッター
     void SetTransform(const Transform& transform) { transform_ = transform; isDirty_ = true; }
     const Transform& GetTransform() const { return transform_; }
 
+    void SetEnvironmentCoefficient(float coefficient) { environmentCoefficient_ = coefficient; isDirty_ = true; }
+    float GetEnvironmentCoefficient() const { return environmentCoefficient_; }
+
+    void SetLightingModeOverride(int32_t mode) { lightingModeOverride_ = mode; isDirty_ = true; }
+    void SetUseClampSamplerOverride(int32_t useClamp) { useClampSamplerOverride_ = useClamp; isDirty_ = true; }
+    void SetEnableLightingOverride(int32_t enable) { enableLightingOverride_ = enable; isDirty_ = true; }
+
 
     static void SetIrufemiEngine(IrufemiEngine* engine) { engine_ = engine; }
 
@@ -81,6 +88,10 @@ private: // メンバ変数
     Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     TransformationMatrix transformationMatrix_{};
     Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // インスタンスカラー
+    float environmentCoefficient_ = 1.0f; // インスタンス環境マップ係数
+    int32_t lightingModeOverride_ = -1; // -1:使用しない, 0以上:上書き
+    int32_t useClampSamplerOverride_ = -1; // -1:使用しない, 0以上:上書き
+    int32_t enableLightingOverride_ = -1; // -1:使用しない, 0以上:上書き
 
     // --- 描画リソース (新アーキテクチャ) ---
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;

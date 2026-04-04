@@ -6,10 +6,12 @@
 #include <array>
 #include <wrl.h>
 #include "../../Renderer/TransformationMatrix.h"
+#include "../Graphics/Data/LightCommonData.h"
 #include "../Graphics/Data/PointLight.h"
 #include "../Graphics/Data/SpotLight.h"
 #include "../Graphics/Data/AreaLight.h"
 #include "../Graphics/DirectX/RenderTexture.h"
+#include "../Graphics/DirectX/RootSignatureConfig.h"
 #include "../Core/Math/Vector4.h"
 #include <vector>
 #include <memory>
@@ -56,36 +58,24 @@ private:
     DirectXCommon* dxCommon_ = nullptr;
     ID3D12GraphicsCommandList* commandList_ = nullptr; // コマンドリストをキャッシュ
 
-    // シェーダーで定義したライトの最大数
-    static const int kMaxPointLights = 4;
-    static const int kMaxSpotLights = 4;
-    static const int kMaxAreaLights = 4;
+    // ライト関連のリソース
+    Microsoft::WRL::ComPtr<ID3D12Resource> pointLightResource_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> spotLightResource_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> areaLightResource_;
 
-    // ライト配列を格納する構造体
-    struct PointLights {
-        PointLight lights[kMaxPointLights];
-    };
-    struct SpotLights {
-        SpotLight lights[kMaxSpotLights];
-    };
-    struct AreaLights {
-        AreaLight lights[kMaxAreaLights];
-    };
+    // ライト SRV テーブルの先頭ハンドルとベースインデックス
+    D3D12_GPU_DESCRIPTOR_HANDLE lightSrvHandle_{};
+    uint32_t lightSrvBaseIndex_ = 0xFFFFFFFFu;
 
-    // カメラやライトの定数バッファを一時的に保持するリソース
+    // カメラやライト共通情報を格納するリソース
     Microsoft::WRL::ComPtr<ID3D12Resource> frameResource_;
     struct FrameData {
         D3D12_GPU_VIRTUAL_ADDRESS camera;
-        D3D12_GPU_VIRTUAL_ADDRESS directionalLight;
-        D3D12_GPU_VIRTUAL_ADDRESS pointLights;
-        D3D12_GPU_VIRTUAL_ADDRESS spotLights;
-        D3D12_GPU_VIRTUAL_ADDRESS areaLights;
+        D3D12_GPU_VIRTUAL_ADDRESS lightCommon; // register b1
     } frameData_{};
+
     CameraForGPU* cameraData_ = nullptr;
-    DirectionalLight* directionalLightData_ = nullptr;
-    PointLights* pointLightsData_ = nullptr;
-    SpotLights* spotLightsData_ = nullptr;
-    AreaLights* areaLightsData_ = nullptr;
+    LightCommonData* lightCommonData_ = nullptr;
 
     D3D12_GPU_DESCRIPTOR_HANDLE environmentMapHandle_{}; // 環境マップ用SRVハンドル
 
@@ -197,14 +187,26 @@ public: //メンバ関数
     void DrawLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
 
     /**
-     * @brief 3Dオブジェクトの標準描画
+     * @brief 標準的な3Dオブジェクトの描画 (Object3d.hlsl)
+     * @param vertexBufferViewOverride スキニング等でVBVを差し替えたい場合に指定
      */
-    void DrawObject3D(const class Object3DResource* resource);
+    void DrawStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
 
     /**
-     * @brief 2Dオブジェクト（スプライト等）の標準描画
+     * @brief 2Dオブジェクト（スプライト等）の標準描画 (Sprite.hlsl)
      */
-    void DrawObject2D(const class Object2DResource* resource);
+    void DrawSprite(const class Object2DResource* resource);
+
+    // VoxelParticle 用の描画 (VoxelParticle.hlsl)
+    void DrawVoxelParticle(
+        uint32_t instanceCount,
+        const D3D12_VERTEX_BUFFER_VIEW& vbv,
+        const D3D12_INDEX_BUFFER_VIEW& ibv,
+        uint32_t indexCount,
+        D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
+        D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
+        D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle
+    );
 
     /**
      * @brief スカイボックスの描画
@@ -212,9 +214,16 @@ public: //メンバ関数
     void DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
 
     /**
-     * @brief GPUパーティクルの描画（直接バッファ指定）
+     * @brief GPUパーティクルのインスタンス描画 (GPUParticle.hlsl)
      */
-    void DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const UINT& instanceCount);
+    void DrawGPUParticle(
+        const D3D12_VERTEX_BUFFER_VIEW& vbv,
+        D3D12_GPU_VIRTUAL_ADDRESS materialAddress,
+        D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
+        D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle,
+        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle,
+        uint32_t instanceCount
+    );
     ///@}
 
     /** @name コンピュートシェーダ（GPGPU）操作 */

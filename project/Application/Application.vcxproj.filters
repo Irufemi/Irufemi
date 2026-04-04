@@ -75,10 +75,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="scene\inGame\GameScene.cpp">
+    <ClCompile Include="scene\InGame\GameScene.cpp">
       <Filter>Scene\InGame</Filter>
     </ClCompile>
-    <ClCompile Include="scene\title\TitleScene.cpp">
+    <ClCompile Include="scene\Title\TitleScene.cpp">
       <Filter>Scene\Title</Filter>
     </ClCompile>
     <ClCompile Include="scene\Clear\ClearScene.cpp">
@@ -90,10 +90,10 @@
     <ClCompile Include="camera\DebugCamera.cpp">
       <Filter>camera</Filter>
     </ClCompile>
-    <ClCompile Include="scene\debug\DebugScene.cpp">
+    <ClCompile Include="scene\Debug\DebugScene.cpp">
       <Filter>Scene\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="scene\stageSelect\SelectScene.cpp">
+    <ClCompile Include="scene\StageSelect\SelectScene.cpp">
       <Filter>Scene\StatgeSelect</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
@@ -166,10 +166,10 @@
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="scene\inGame\GameScene.h">
+    <ClInclude Include="scene\InGame\GameScene.h">
       <Filter>Scene\InGame</Filter>
     </ClInclude>
-    <ClInclude Include="scene\title\TitleScene.h">
+    <ClInclude Include="scene\Title\TitleScene.h">
       <Filter>Scene\Title</Filter>
     </ClInclude>
     <ClInclude Include="scene\Clear\ClearScene.h">
@@ -181,10 +181,10 @@
     <ClInclude Include="camera\DebugCamera.h">
       <Filter>camera</Filter>
     </ClInclude>
-    <ClInclude Include="scene\debug\DebugScene.h">
+    <ClInclude Include="scene\Debug\DebugScene.h">
       <Filter>Scene\Debug</Filter>
     </ClInclude>
-    <ClInclude Include="scene\stageSelect\SelectScene.h">
+    <ClInclude Include="scene\StageSelect\SelectScene.h">
       <Filter>Scene\StatgeSelect</Filter>
     </ClInclude>
     <ClInclude Include="GameApplication.h">

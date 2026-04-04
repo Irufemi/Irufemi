@@ -17,9 +17,9 @@ struct PixelShaderOutput
 Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
 SamplerState gSampler : register(s0); //Samplerのregisterはs
 
-/*LambertianReflectance*/
+/*Light Common & DirectionalLight*/
 
-ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
+ConstantBuffer<LightCommonData> gLightCommon : register(b1);
 
 /*PhongReflectionModel*/
 
@@ -33,12 +33,12 @@ struct Camera
 };
 ConstantBuffer<Camera> gCamera : register(b2);
 
-/*PointLight*/
+/*Structured Light Buffers*/
 
-ConstantBuffer<PointLight> gPointLight : register(b3);
-
-/*SpotLight*/
-ConstantBuffer<SpotLight> gSpotLight : register(b4);
+StructuredBuffer<PointLight> gPointLights : register(t2);
+StructuredBuffer<SpotLight> gSpotLights : register(t3);
+// AreaLight は現状使われていないようだが、レジスタ定義のみ追加（または省略可。ここでは定義して整合性を取る）
+StructuredBuffer<AreaLight> gAreaLights : register(t4);
 
 /*テクスチャを貼ろう*/
 
@@ -53,9 +53,12 @@ PixelShaderOutput main(GeometryShaderOutput input)
 	float4 transformedUV = mul(float32_t4(input.uv, 0.0f, 1.0f), gMaterial.uvTransform);
 	float32_t4 textureColor = gTexture.Sample(gSampler, transformedUV.xy);
 	
+	// sRGB -> Linear (ガンマ補正解除)
+	textureColor.rgb = pow(abs(textureColor.rgb), 2.2f);
+	
 	/*2値抜き*/
 		
-	/// disxard
+	/// discard
 		
 	// textureのα値が0.5以下の時にPixelを棄却
 	if (textureColor.a <= 0.5)
@@ -70,23 +73,16 @@ PixelShaderOutput main(GeometryShaderOutput input)
 	}
 	
 	/*テクスチャを貼ろう*/
+	float3 albedo = gMaterial.color.rgb * textureColor.rgb;
 	
 	///Lightingの計算を行う
 	
 	if (gMaterial.enableLighting != 0) //Lightingする場合
 	{
-	
 		if (gMaterial.lightingMode == 0)
 		{
-			if (gMaterial.hasTexture == 1)
-			{
-				output.color = gMaterial.color * textureColor;
-			}
-			else
-			{
-				output.color = gMaterial.color;
-				output.color.a = 1.0f;
-			}
+			output.color.rgb = albedo;
+			output.color.a = gMaterial.color.a * textureColor.a;
 		}
 		else
 		{
@@ -99,33 +95,26 @@ PixelShaderOutput main(GeometryShaderOutput input)
 			float3 totalSpecular = 0;
 
 			// 平行光源
-			ApplyDirectionalLight(gDirectionalLight, gMaterial, context, totalDiffuse, totalSpecular);
+			ApplyDirectionalLight(gLightCommon.directionalLight, gMaterial, albedo, context, totalDiffuse, totalSpecular);
 
-			// 点光源 (単一)
-			ApplyPointLight(gPointLight, gMaterial, context, totalDiffuse, totalSpecular);
+			// 点光源
+			for (uint32_t i = 0; i < gLightCommon.pointLightCount; ++i) {
+				ApplyPointLight(gPointLights[i], gMaterial, albedo, context, totalDiffuse, totalSpecular);
+			}
 
-			// スポットライト (単一)
-			ApplySpotLight(gSpotLight, gMaterial, context, totalDiffuse, totalSpecular);
+			// スポットライト
+			for (uint32_t j = 0; j < gLightCommon.spotLightCount; ++j) {
+				ApplySpotLight(gSpotLights[j], gMaterial, albedo, context, totalDiffuse, totalSpecular);
+			}
 
 			// 拡散反射・鏡面反射の合成
-			output.color.rgb = (totalDiffuse * gMaterial.color.rgb * textureColor.rgb) + totalSpecular;
-			
-			if (gMaterial.hasTexture == 1)
-			{
-				// アルファは今まで通り
-				output.color.a = gMaterial.color.a * textureColor.a;
-			}
-			else
-			{
-				output.color.a = 1.0f;
-			}
+			output.color.rgb = totalDiffuse + totalSpecular;
+			output.color.a = gMaterial.color.a * textureColor.a;
 		}
 		
 		/*2値抜き*/
 		
-		/// disxard
-		
-		// output.aolorのα値が0の時にPixelを棄却
+		// output.colorのα値が0の時にPixelを棄却
 		if (output.color.a == 0.0)
 		{
 			discard;
@@ -133,18 +122,12 @@ PixelShaderOutput main(GeometryShaderOutput input)
 	}
 	else
 	{
-	
-		if (gMaterial.hasTexture == 1)
-		{
-			output.color = gMaterial.color * textureColor;
-		}
-		else
-		{
-			output.color = gMaterial.color;
-			output.color.a = 1.0f;
-		}
-		
+		output.color.rgb = albedo;
+		output.color.a = gMaterial.color.a * textureColor.a;
 	}
+	
+	// Linear -> sRGB (ガンマ補正)
+	output.color.rgb = pow(abs(output.color.rgb), 1.0f / 2.2f);
 	
 	return output;
 }

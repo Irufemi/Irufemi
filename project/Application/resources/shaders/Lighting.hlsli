@@ -5,17 +5,25 @@
 struct DirectionalLight {
     float32_t4 color;
     float32_t3 direction;
-    float intensity;
+    float32_t intensity;
+};
+
+struct LightCommonData {
+    DirectionalLight directionalLight;
+    uint32_t pointLightCount;
+    uint32_t spotLightCount;
+    uint32_t areaLightCount;
+    uint32_t padding;
 };
 
 struct PointLight {
     float32_t4 color;
     float32_t3 position;
-    float intensity;
-    float radius;
-    float decay;
+    float32_t intensity;
+    float32_t radius;
+    float32_t decay;
     int32_t isActive;
-    float padding;
+    float32_t padding;
 };
 
 struct SpotLight {
@@ -28,18 +36,18 @@ struct SpotLight {
     float32_t cosAngle;
     float32_t falloff;
     int32_t isActive;
-    float32_t3 padding;
+    float32_t4 padding; // 80バイト合わせ
 };
 
 struct AreaLight {
-    float4 color;
-    float3 position;
-    float intensity;
-    float3 direction;
-    float range;
-    float2 size;
+    float32_t4 color;
+    float32_t3 position;
+    float32_t intensity;
+    float32_t3 direction;
+    float32_t range;
+    float32_t2 size;
     int32_t isActive;
-    float padding;
+    float32_t padding; // 64バイト合わせ
 };
 
 // --- 計算用コンテキスト ---
@@ -51,6 +59,8 @@ struct LightContext {
 };
 
 // --- ライティング計算関数 ---
+
+static const float32_t PI = 3.14159265f;
 
 /**
  * 拡散反射強度を計算する (Lambert / Half-Lambert)
@@ -68,76 +78,174 @@ float CalculateDiffuseFactor(float3 normal, float3 lightDir, int mode) {
 /**
  * 鏡面反射強度を計算する (Blinn-Phong)
  */
-float CalculateSpecularFactor(float3 normal, float3 lightDir, float3 toEye, float shininess) {
+float CalculateSpecularFactor(float3 normal, float3 lightDir, float3 toEye, float roughness) {
     float3 halfVector = normalize(-lightDir + toEye);
     float NdotH = dot(normal, halfVector);
+    float shininess = (1.0f - roughness) * 100.0f; // 簡易変換
     return pow(saturate(NdotH), shininess);
+}
+
+// --- PBR関数 (Cook-Torrance BRDF) ---
+
+/**
+ * 法線分布関数 (Trowbridge-Reitz GGX)
+ */
+float DistributionGGX(float3 N, float3 H, float roughness) {
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = saturate(dot(N, H));
+    float NdotH2 = NdotH * NdotH;
+    
+    float num = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+    
+    return num / max(denom, 0.0000001);
+}
+
+/**
+ * 幾何減衰関数 (Smith-Schlick GGX)
+ */
+float GeometrySchlickGGX(float NdotV, float roughness) {
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    
+    float num = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+    
+    return num / denom;
+}
+
+float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
+    float NdotV = saturate(dot(N, V));
+    float NdotL = saturate(dot(N, -L));
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+    
+    return ggx1 * ggx2;
+}
+
+/**
+ * フレネル反射率 (Schlick's approximation)
+ */
+float3 FresnelSchlick(float cosTheta, float3 F0) {
+    return F0 + (1.0 - F0) * pow(saturate(1.0 - cosTheta), 5.0);
+}
+
+/**
+ * PBR ライティング計算 (Cook-Torrance BRDF)
+ */
+void CalculatePBR(LightContext context, float3 lightDir, float3 lightColor, float intensity, Material material, float3 albedo, inout float3 diffuseColor, inout float3 specularColor) {
+    float3 N = context.normal;
+    float3 V = context.toEye;
+    float3 L = -lightDir;
+    float3 H = normalize(V + L);
+    
+    // F0 (垂直入射時の反射率) 
+    // 非金属は 0.04 固定、金属はアルベド（テクスチャ * ベースカラー）を使用
+    float3 F0 = float3(0.04, 0.04, 0.04);
+    F0 = lerp(F0, albedo, material.metallic);
+    
+    // Cook-Torrance BRDF
+    float D = DistributionGGX(N, H, material.roughness);
+    float G = GeometrySmith(N, V, lightDir, material.roughness);
+    float3 F = FresnelSchlick(saturate(dot(H, V)), F0);
+    
+    float3 numerator = D * G * F;
+    float denominator = 4.0 * saturate(dot(N, V)) * saturate(dot(N, L)) + 0.0001;
+    float3 specular = numerator / denominator;
+    
+    float3 kS = F;
+    float3 kD = (float3(1.0, 1.0, 1.0) - kS) * (1.0 - material.metallic);
+    
+    float NdotL = saturate(dot(N, L));
+    float3 radiance = lightColor * intensity;
+    
+    diffuseColor += kD * albedo / PI * radiance * NdotL;
+    specularColor += specular * radiance * NdotL;
 }
 
 /**
  * 平行光源の計算
  */
-void ApplyDirectionalLight(DirectionalLight light, Material material, LightContext context, inout float3 diffuseColor, inout float3 specularColor) {
-    float diffuseFactor = CalculateDiffuseFactor(context.normal, light.direction, material.lightingMode);
-    float specularFactor = CalculateSpecularFactor(context.normal, light.direction, context.toEye, material.shininess);
-    
-    diffuseColor += light.color.rgb * light.intensity * diffuseFactor;
-    specularColor += light.color.rgb * light.intensity * specularFactor;
+void ApplyDirectionalLight(DirectionalLight light, Material material, float3 albedo, LightContext context, inout float3 diffuseColor, inout float3 specularColor) {
+    if (material.lightingMode == 3) { // PBR
+        CalculatePBR(context, light.direction, light.color.rgb, light.intensity, material, albedo, diffuseColor, specularColor);
+    } else {
+        float diffuseFactor = CalculateDiffuseFactor(context.normal, light.direction, material.lightingMode);
+        float specularFactor = CalculateSpecularFactor(context.normal, light.direction, context.toEye, material.roughness);
+        
+        diffuseColor += albedo * light.color.rgb * light.intensity * diffuseFactor;
+        specularColor += light.color.rgb * light.intensity * specularFactor;
+    }
 }
 
 /**
  * 点光源の計算
  */
-void ApplyPointLight(PointLight light, Material material, LightContext context, inout float3 diffuseColor, inout float3 specularColor) {
+void ApplyPointLight(PointLight light, Material material, float3 albedo, LightContext context, inout float3 diffuseColor, inout float3 specularColor) {
     if (light.isActive == 0) return;
 
     float3 lightDir = normalize(context.worldPosition - light.position);
-    
-    float diffuseFactor = CalculateDiffuseFactor(context.normal, lightDir, material.lightingMode);
-    float specularFactor = CalculateSpecularFactor(context.normal, lightDir, context.toEye, material.shininess);
+    float d = length(context.worldPosition - light.position);
+    float attenuation = saturate(1.0f - d / max(light.radius, 0.0001f));
+    attenuation = pow(attenuation, light.decay);
 
-    diffuseColor += light.color.rgb * light.intensity * diffuseFactor;
-    specularColor += light.color.rgb * light.intensity * specularFactor;
+    if (material.lightingMode == 3) { // PBR
+        CalculatePBR(context, lightDir, light.color.rgb, light.intensity * attenuation, material, albedo, diffuseColor, specularColor);
+    } else {
+        float diffuseFactor = CalculateDiffuseFactor(context.normal, lightDir, material.lightingMode);
+        float specularFactor = CalculateSpecularFactor(context.normal, lightDir, context.toEye, material.roughness);
+
+        diffuseColor += albedo * light.color.rgb * light.intensity * diffuseFactor * attenuation;
+        specularColor += light.color.rgb * light.intensity * specularFactor * attenuation;
+    }
 }
 
 /**
  * スポットライトの計算
  */
-void ApplySpotLight(SpotLight light, Material material, LightContext context, inout float3 diffuseColor, inout float3 specularColor) {
+void ApplySpotLight(SpotLight light, Material material, float3 albedo, LightContext context, inout float3 diffuseColor, inout float3 specularColor) {
     if (light.isActive == 0) return;
 
     float3 lightDir = normalize(context.worldPosition - light.position);
     float d = length(context.worldPosition - light.position);
     
-    // 距離減衰
     float attenuation = pow(saturate(1.0f - d / max(light.distance, 1e-5f)), light.decay);
     
-    // 角度減衰
     float cosAngle = dot(lightDir, light.direction);
     float falloff = saturate((cosAngle - light.cosAngle) / (1.0f - light.cosAngle));
     
     float factor = attenuation * falloff;
 
-    float diffuseFactor = CalculateDiffuseFactor(context.normal, lightDir, material.lightingMode);
-    float specularFactor = CalculateSpecularFactor(context.normal, lightDir, context.toEye, material.shininess);
+    if (material.lightingMode == 3) { // PBR
+        CalculatePBR(context, lightDir, light.color.rgb, light.intensity * factor, material, albedo, diffuseColor, specularColor);
+    } else {
+        float diffuseFactor = CalculateDiffuseFactor(context.normal, lightDir, material.lightingMode);
+        float specularFactor = CalculateSpecularFactor(context.normal, lightDir, context.toEye, material.roughness);
 
-    diffuseColor += light.color.rgb * light.intensity * diffuseFactor * factor;
-    specularColor += light.color.rgb * light.intensity * specularFactor * factor;
+        diffuseColor += albedo * light.color.rgb * light.intensity * diffuseFactor * factor;
+        specularColor += light.color.rgb * light.intensity * specularFactor * factor;
+    }
 }
 
 /**
  * エリアライトの計算
  */
-void ApplyAreaLight(AreaLight light, Material material, LightContext context, inout float3 diffuseColor, inout float3 specularColor) {
+void ApplyAreaLight(AreaLight light, Material material, float3 albedo, LightContext context, inout float3 diffuseColor, inout float3 specularColor) {
     if (light.isActive == 0) return;
 
-    float3 lightDir = light.direction; // エリアライトは方向固定の簡易実装と仮定
+    float3 lightDir = light.direction;
     float d = length(context.worldPosition - light.position);
     float attenuation = pow(saturate(1.0f - d / max(light.range, 1e-5f)), 1.0f);
 
-    float diffuseFactor = CalculateDiffuseFactor(context.normal, lightDir, material.lightingMode);
-    float specularFactor = CalculateSpecularFactor(context.normal, lightDir, context.toEye, material.shininess);
+    if (material.lightingMode == 3) { // PBR
+        CalculatePBR(context, lightDir, light.color.rgb, light.intensity * attenuation, material, albedo, diffuseColor, specularColor);
+    } else {
+        float diffuseFactor = CalculateDiffuseFactor(context.normal, lightDir, material.lightingMode);
+        float specularFactor = CalculateSpecularFactor(context.normal, lightDir, context.toEye, material.roughness);
 
-    diffuseColor += light.color.rgb * light.intensity * diffuseFactor * attenuation;
-    specularColor += light.color.rgb * light.intensity * specularFactor * attenuation;
+        diffuseColor += albedo * light.color.rgb * light.intensity * diffuseFactor * attenuation;
+        specularColor += light.color.rgb * light.intensity * specularFactor * attenuation;
+    }
 }

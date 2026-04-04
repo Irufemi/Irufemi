@@ -78,6 +78,11 @@ public:
     void CreateWhiteDummyTexture();
 
     /**
+     * @brief フォールバック用のダミー白CubeMapを生成する
+     */
+    void CreateWhiteCubeMap();
+
+    /**
      * @brief テクスチャのピクセルサイズを取得
      * @param[in] name 識別名
      * @param[out] outWidth 幅の出力先
@@ -92,11 +97,21 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() const { return whiteTextureHandle_; }
 
     /**
+     * @brief 白CubeMapテクスチャのGPUハンドルを取得
+     */
+    D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteCubeMapHandle() const { return whiteCubeMapHandle_; }
+
+    /**
      * @brief テクスチャのロード状態を取得する
      * @param[in] name ファイルパスまたは識別名
      * @return ロード状態。存在しない場合は Failed を返す
      */
     Texture::LoadingStatus GetTextureStatus(const std::string& name) const;
+
+    /**
+     * @brief キューブマップかどうかを取得
+     */
+    bool IsCubeMap(const std::string& name) const;
 
     /**
      * @brief すべてのロードタスク（背景タスクを含む）が完了しているかを取得
@@ -146,5 +161,9 @@ private:
     // フォールバック白テクスチャ
     Microsoft::WRL::ComPtr<ID3D12Resource> whiteTextureResource_;
     D3D12_GPU_DESCRIPTOR_HANDLE whiteTextureHandle_{ 0 };
+
+    // フォールバック白CubeMap
+    Microsoft::WRL::ComPtr<ID3D12Resource> whiteCubeMapResource_;
+    D3D12_GPU_DESCRIPTOR_HANDLE whiteCubeMapHandle_{ 0 };
 
 };

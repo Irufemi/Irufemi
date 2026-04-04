@@ -110,10 +110,11 @@ void TetraRegion::CreateMaterialResources() {
     mat->color = { 1,1,1,1 };
     mat->enableLighting = true;
     mat->hasTexture = true;
-    mat->lightingMode = 2;
+    mat->lightingMode = 3;
     mat->uvTransform = Math::MakeIdentity4x4();
-    mat->shininess = 32.0f;
-    //mat->environmentCoefficient = 1.0f; // この行を追加
+    mat->metallic = 0.0f;
+    mat->roughness = 0.5f;
+    mat->environmentCoefficient = 0.0f;
 }
 
 void TetraRegion::EnsureSharedTexture(const std::string& textureName) {

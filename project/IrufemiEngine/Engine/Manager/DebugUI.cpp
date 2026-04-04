@@ -436,7 +436,8 @@ void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_u
 
     ImGui::ColorEdit4(("Color" + id_str).c_str(), &material->color.x);
     ImGui::Checkbox(("Enable Lighting" + id_str).c_str(), &material->enableLighting);
-    ImGui::DragFloat(("Shininess" + id_str).c_str(), &material->shininess, 1.0f, 1.0f, 256.0f);
+    ImGui::DragFloat(("Metallic" + id_str).c_str(), &material->metallic, 0.01f, 0.0f, 1.0f);
+    ImGui::DragFloat(("Roughness" + id_str).c_str(), &material->roughness, 0.01f, 0.0f, 1.0f);
     ImGui::DragFloat(("Environment Coefficient" + id_str).c_str(), &material->environmentCoefficient, 0.01f, 0.0f, 1.0f);
 
     // UV Transform
@@ -445,6 +446,35 @@ void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_u
         ImGui::TreePop();
     }
 #endif // USE_IMGUI
+}
+
+void DebugUI::DebugMaterialOverrides(float* envCoef, int32_t* lightingMode, int32_t* useClamp, int32_t* enableLighting, const char* unique_id) {
+#ifdef USE_IMGUI
+    std::string id = unique_id;
+    if (ImGui::TreeNode(("Material Overrides" + id).c_str())) {
+        ImGui::DragFloat(("Env Coefficient" + id).c_str(), envCoef, 0.01f, 0.00f, 10.0f);
+
+        const char* lightingItems[] = { "Model Default", "None", "Lambert", "Half-Lambert", "PBR" };
+        int currentLighting = *lightingMode + 1; // -1 -> 0
+        if (ImGui::Combo(("Lighting Mode" + id).c_str(), &currentLighting, lightingItems, IM_ARRAYSIZE(lightingItems))) {
+            *lightingMode = currentLighting - 1;
+        }
+
+        const char* clampItems[] = { "Model Default", "WRAP", "CLAMP" };
+        int currentClamp = *useClamp + 1; // -1 -> 0
+        if (ImGui::Combo(("Sampler Mode" + id).c_str(), &currentClamp, clampItems, IM_ARRAYSIZE(clampItems))) {
+            *useClamp = currentClamp - 1;
+        }
+
+        const char* enableItems[] = { "Model Default", "OFF", "ON" };
+        int currentEnable = *enableLighting + 1; // -1 -> 0
+        if (ImGui::Combo(("Enable Lighting" + id).c_str(), &currentEnable, enableItems, IM_ARRAYSIZE(enableItems))) {
+            *enableLighting = currentEnable - 1;
+        }
+
+        ImGui::TreePop();
+    }
+#endif
 }
 
 // Material
@@ -458,13 +488,14 @@ void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
             materialData->enableLighting = enableLighting;
         }
         // lightingMode選択
-        const char* items[] = { "NonLighting", "Lambert", "HalfLambert" };
+        const char* items[] = { "NonLighting", "Lambert", "HalfLambert", "PBR" };
         int currentMode = materialData->lightingMode;
         if (ImGui::Combo("LightingMode", &currentMode, items, IM_ARRAYSIZE(items))) {
             materialData->lightingMode = currentMode;
         }
-        ImGui::DragFloat("Shininess", &materialData->shininess);
-        //ImGui::DragFloat("Environment Coefficient", &materialData->environmentCoefficient, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Metallic", &materialData->metallic, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Roughness", &materialData->roughness, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Environment Coefficient", &materialData->environmentCoefficient, 0.01f, 0.0f, 1.0f);
     }
 #endif // USE_IMGUI
 }
@@ -536,8 +567,15 @@ void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
 void DebugUI::DebugTexture([[maybe_unused]] Object3DResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
-        auto textureNames = textureManager_->GetTextureNames();
+        auto allNames = textureManager_->GetTextureNames();
+        std::vector<std::string> textureNames;
+        for (const auto& name : allNames) {
+            if (!textureManager_->IsCubeMap(name)) {
+                textureNames.push_back(name);
+            }
+        }
         std::sort(textureNames.begin(), textureNames.end());
+        
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();
             if (ImGui::BeginCombo("Texture", preview)) {
@@ -558,8 +596,15 @@ void DebugUI::DebugTexture([[maybe_unused]] Object3DResource* resource, [[maybe_
 void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
-        auto textureNames = textureManager_->GetTextureNames();
+        auto allNames = textureManager_->GetTextureNames();
+        std::vector<std::string> textureNames;
+        for (const auto& name : allNames) {
+            if (!textureManager_->IsCubeMap(name)) {
+                textureNames.push_back(name);
+            }
+        }
         std::sort(textureNames.begin(), textureNames.end());
+        
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();
             if (ImGui::BeginCombo("Texture", preview)) {
@@ -580,8 +625,15 @@ void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_
 void DebugUI::DebugTexture([[maybe_unused]] ParticleResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
-        auto textureNames = textureManager_->GetTextureNames();
+        auto allNames = textureManager_->GetTextureNames();
+        std::vector<std::string> textureNames;
+        for (const auto& name : allNames) {
+            if (!textureManager_->IsCubeMap(name)) {
+                textureNames.push_back(name);
+            }
+        }
         std::sort(textureNames.begin(), textureNames.end());
+        
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();
             if (ImGui::BeginCombo("Texture", preview)) {

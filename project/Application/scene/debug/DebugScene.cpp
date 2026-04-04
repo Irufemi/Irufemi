@@ -183,7 +183,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveSkybox_) {
         skybox_ = std::make_unique<Skybox>();
-        skybox_->Initialize(camera_.get(),"resources/rostock_laage_airport_4k.dds");
+        skybox_->Initialize(camera_.get(), "resources/rostock_laage_airport_4k.dds");
     }
 
     // エンジンのデフォルトクリアカラーを「青」に設定
@@ -276,7 +276,6 @@ void DebugScene::Update() {
         ImGui::End();
 #endif
 
-        cube_->Debug("Cube");
         cube_->Update();
     }
     if (isActivePlane_) {
@@ -284,7 +283,6 @@ void DebugScene::Update() {
             plane_ = std::make_unique<PlaneClass>();
             plane_->Initialize(camera_.get());
         }
-        plane_->Debug("Plane");
         plane_->Update();
     }
     if (isActiveSphere_) {
@@ -292,7 +290,6 @@ void DebugScene::Update() {
             sphere_ = std::make_unique<SphereClass>();
             sphere_->Initialize(camera_.get());
         }
-        sphere_->Debug("Sphere");
         sphere_->Update();
     }
     if (isActiveCylinder_) {
@@ -300,7 +297,6 @@ void DebugScene::Update() {
             cylinder_ = std::make_unique<CylinderClass>();
             cylinder_->Initialize(camera_.get());
         }
-        cylinder_->Debug("Cylinder");
         cylinder_->Update();
     }
     if (isActiveObj_) {
@@ -308,7 +304,6 @@ void DebugScene::Update() {
             obj_ = std::make_unique<ObjClass>();
             obj_->Initialize(camera_.get(), "sample/plane.gltf");
         }
-        obj_->Debug("Plane");
         obj_->Update();
     }
     if (isActiveUtashTeapot_) {
@@ -348,7 +343,6 @@ void DebugScene::Update() {
             suzanne_ = std::make_unique<ObjClass>();
             suzanne_->Initialize(camera_.get(), "sample/suzanne.obj");
         }
-        suzanne_->Debug("Suzanne");
         suzanne_->Update();
     }
     if (isActiveFence_) {
@@ -427,7 +421,6 @@ void DebugScene::Update() {
             skybox_ = std::make_unique<Skybox>();
             skybox_->Initialize(camera_.get(),"resources/rostock_laage_airport_4k.dds");
         }
-        skybox_->Debug();
         skybox_->Update();
     }
 
@@ -489,11 +482,11 @@ void DebugScene::Update() {
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 
-    //// 環境マップをDrawManagerに設定
-    //if (isActiveSkybox_) {
-    //    D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle = engine_->GetTextureManager()->GetTextureHandle("resources/rostock_laage_airport_4k.dds");
-    //    engine_->GetDrawManager()->SetEnvironmentMap(envMapHandle);
-    //}
+    // 環境マップをDrawManagerに設定
+    if (isActiveSkybox_) {
+        D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle = skybox_->GetTextureHandle();
+        engine_->GetDrawManager()->SetEnvironmentMap(envMapHandle);
+    }
 }
 
 void DebugScene::Draw() {
@@ -623,6 +616,15 @@ void DebugScene::DrawDebugTab() {
             ImGui::EndTabItem();
         }
     }
+    if (isActiveSkybox_ && skybox_) {
+        skybox_->Debug();
+    }
+
+    if (isActiveCube_ && cube_) cube_->Debug("Cube");
+    if (isActivePlane_ && plane_) plane_->Debug("Plane");
+    if (isActiveSphere_ && sphere_) sphere_ ->Debug("Sphere");
+    if (isActiveCylinder_ && cylinder_) cylinder_->Debug("Cylinder");
+
     DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 #endif
 }

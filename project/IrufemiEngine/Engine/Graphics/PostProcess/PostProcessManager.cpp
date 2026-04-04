@@ -241,10 +241,10 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
 
   // 追加のリソース（深度、ノイズテクスチャ）のバインド (Root12 -> t1)
   if (mode == Mode::DepthBasedOutline) {
-    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvironmentMap, depthSrvHandle_);
+    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, depthSrvHandle_);
   } else if (mode == Mode::Dissolve) {
     int noiseIdx = (std::max)(0, (std::min)(1, dissolveParams_.noiseType));
-    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvironmentMap,
+    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap,
                                                 dissolveNoiseHandle_[noiseIdx]);
   }
 

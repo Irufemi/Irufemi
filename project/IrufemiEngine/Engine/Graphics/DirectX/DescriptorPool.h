@@ -16,7 +16,7 @@ public:
     DescriptorPool() = default;
     void Initialize(ID3D12Device* device);
 
-    uint32_t Allocate();
+    uint32_t Allocate(uint32_t count = 1);
     void Free(uint32_t index);
     void FreeAfterFence(uint32_t index, uint64_t safeFence);
     void GarbageCollect(uint64_t completedFence);

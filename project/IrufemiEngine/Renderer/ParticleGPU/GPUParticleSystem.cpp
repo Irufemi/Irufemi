@@ -290,7 +290,7 @@ void GPUParticleSystem::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::None);
       
-    drawManager_->DrawParticleGPU(
+    drawManager_->DrawGPUParticle(
         vertexBufferView_,
         materialResource_->GetGPUVirtualAddress(),
         perViewResource_->GetGPUVirtualAddress(),

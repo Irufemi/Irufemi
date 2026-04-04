@@ -18,9 +18,9 @@ struct PixelShaderOutput
 Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
 SamplerState gSampler : register(s0); //Samplerのregisterはs
 
-/*LambertianReflectance*/
+/*Light Common & DirectionalLight*/
 
-ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
+ConstantBuffer<LightCommonData> gLightCommon : register(b1);
 
 /*PhongReflectionModel*/
 
@@ -34,36 +34,17 @@ struct Camera
 };
 ConstantBuffer<Camera> gCamera : register(b2);
 
-/*PointLight*/
+/*Structured Light Buffers*/
 
-#define MAX_POINT_LIGHTS 4
-struct PointLights
-{
-	PointLight lights[MAX_POINT_LIGHTS];
-};
-ConstantBuffer<PointLights> gPointLights : register(b3);
-
-
-/*SpotLight*/
-#define MAX_SPOT_LIGHTS 4
-struct SpotLights
-{
-	SpotLight lights[MAX_SPOT_LIGHTS];
-};
-ConstantBuffer<SpotLights> gSpotLights : register(b4);
-
-#define MAX_AREA_LIGHTS 4
-struct AreaLights
-{
-	AreaLight lights[MAX_AREA_LIGHTS];
-};
-ConstantBuffer<AreaLights> gAreaLights : register(b7);
+StructuredBuffer<PointLight> gPointLights : register(t2);
+StructuredBuffer<SpotLight> gSpotLights : register(t3);
+StructuredBuffer<AreaLight> gAreaLights : register(t4);
 
 /*周囲の映り込み*/
 
 /// 環境マップを追加する
 
-//TextureCube<float32_t4> gEnviromentTexture : register(t1);
+TextureCube<float32_t4> gEnviromentTexture : register(t1);
 
 /*テクスチャを貼ろう*/
 
@@ -78,18 +59,15 @@ PixelShaderOutput main(VertexShaderOutput input)
 	float4 transformedUV = mul(float32_t4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
 	float32_t4 textureColor = gTexture.Sample(gSampler, transformedUV.xy);
 	
+    // sRGB -> Linear (ガンマ補正解除)
+    textureColor.rgb = pow(abs(textureColor.rgb), 2.2f);
+    
 	/*2値抜き*/
 		
-	/// disxard
+	/// discard
 		
 	// textureのα値が0.5以下の時にPixelを棄却
 	if (textureColor.a <= 0.5)
-	{
-		discard;
-	}
-		
-	// textureのα値が0の時にPixelを棄却
-	if (textureColor.a == 0.0)
 	{
 		discard;
 	}
@@ -98,49 +76,56 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	if (gMaterial.enableLighting != 0) //Lightingする場合
 	{
-	
-		if (gMaterial.lightingMode == 0)
-		{
-			output.color = gMaterial.color * textureColor;
+		LightContext context;
+		context.normal = normalize(input.normal);
+		context.worldPosition = input.worldPosition;
+		context.toEye = normalize(gCamera.worldPosition - input.worldPosition);
+
+		float3 albedo = gMaterial.color.rgb * textureColor.rgb;
+		float3 totalDiffuse = 0;
+		float3 totalSpecular = 0;
+
+		// 平行光源
+		ApplyDirectionalLight(gLightCommon.directionalLight, gMaterial, albedo, context, totalDiffuse, totalSpecular);
+
+		// 点光源
+		for (uint32_t i = 0; i < gLightCommon.pointLightCount; ++i) {
+			ApplyPointLight(gPointLights[i], gMaterial, albedo, context, totalDiffuse, totalSpecular);
 		}
-		else
-		{
-			LightContext context;
-			context.normal = normalize(input.normal);
-			context.worldPosition = input.worldPosition;
-			context.toEye = normalize(gCamera.worldPosition - input.worldPosition);
 
-			float3 totalDiffuse = 0;
-			float3 totalSpecular = 0;
+		// スポットライト
+		for (uint32_t j = 0; j < gLightCommon.spotLightCount; ++j) {
+			ApplySpotLight(gSpotLights[j], gMaterial, albedo, context, totalDiffuse, totalSpecular);
+		}
 
-			// 平行光源
-			ApplyDirectionalLight(gDirectionalLight, gMaterial, context, totalDiffuse, totalSpecular);
+		// エリアライト
+		for (uint32_t k = 0; k < gLightCommon.areaLightCount; ++k) {
+			ApplyAreaLight(gAreaLights[k], gMaterial, albedo, context, totalDiffuse, totalSpecular);
+		}
 
-			// 点光源
-			for (int i = 0; i < MAX_POINT_LIGHTS; ++i) {
-				ApplyPointLight(gPointLights.lights[i], gMaterial, context, totalDiffuse, totalSpecular);
-			}
-
-			// スポットライト
-			for (int i = 0; i < MAX_SPOT_LIGHTS; ++i) {
-				ApplySpotLight(gSpotLights.lights[i], gMaterial, context, totalDiffuse, totalSpecular);
-			}
-
-			// エリアライト
-			for (int i = 0; i < MAX_AREA_LIGHTS; ++i) {
-				ApplyAreaLight(gAreaLights.lights[i], gMaterial, context, totalDiffuse, totalSpecular);
-			}
-
-			// 拡散反射・鏡面反射の合成
-			output.color.rgb = (totalDiffuse * gMaterial.color.rgb * textureColor.rgb) + totalSpecular;
+		// 拡散反射・鏡面反射の合成
+		if (gMaterial.lightingMode == 0) {
+			output.color.rgb = albedo;
+		} else {
+			output.color.rgb = totalDiffuse + totalSpecular;
+		}
 			
-			// アルファ
-			output.color.a = gMaterial.color.a * textureColor.a;
-		}
+		// 環境マップ（簡易Specular IBL）
+		float32_t3 reflectedVector = reflect(-context.toEye, context.normal);
+		float32_t4 enviromentColor = gEnviromentTexture.Sample(gSampler, reflectedVector);
+		// ガンマ解除
+		enviromentColor.rgb = pow(abs(enviromentColor.rgb), 2.2f);
 		
-		/*2値抜き*/
+		// フレネルによる反射率の計算 (F0)
+		// 金属の場合はアルベドを、非金属の場合は 0.04 をベースにする
+		float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, gMaterial.metallic);
+		float3 F = FresnelSchlick(saturate(dot(context.normal, context.toEye)), F0);
 		
-		/// disxard
+		// 映り込みの合成 (Roughnessが高いほど反射が鈍くなる近似)
+		output.color.rgb += enviromentColor.rgb * F * (1.0f - gMaterial.roughness) * gMaterial.environmentCoefficient;
+		
+		// アルファ
+		output.color.a = gMaterial.color.a * textureColor.a;
 		
 		// output.colorのα値が0の時にPixelを棄却
 		if (output.color.a == 0.0)
@@ -150,23 +135,11 @@ PixelShaderOutput main(VertexShaderOutput input)
 	}
 	else
 	{
-	
 		output.color = gMaterial.color * textureColor;
-		
 	}
 	
-	///*周囲の映り込み*/
-	
-	///// 環境マップを追加する
-	
-	//if (gMaterial.enableLighting != 0)
-	//{
-	//	float32_t3 cameraToPosition = normalize(input.worldPosition - gCamera.worldPosition);
-	//	float32_t3 reflectedVector = reflect(cameraToPosition, normalize(input.normal));
-	//	float32_t4 enviromentColor = gEnviromentTexture.Sample(gSampler, reflectedVector);
-	
-	//	output.color.rgb += enviromentColor.rgb * gMaterial.environmentCoefficient;
-	//}
-	
+    // Linear -> sRGB (ガンマ補正)
+    output.color.rgb = pow(abs(output.color.rgb), 1.0f / 2.2f);
+
 	return output;
-}
+}
