@@ -223,7 +223,8 @@ void ObjClass::UpdateMaterials() {
         mappedData->enableLighting = finalEnableLighting;
 
         mappedData->uvTransform = cpuMat.uvTransform;
-        mappedData->shininess = cpuMat.shininess;
+        mappedData->metallic = cpuMat.metallic;
+        mappedData->roughness = cpuMat.roughness;
         mappedData->hasTexture = !cpuMat.textureFilePath.empty();
 
         // 映り込み係数 (モデル値 * インスタンス係数)

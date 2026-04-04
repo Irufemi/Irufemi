@@ -56,11 +56,12 @@ void ModelRegion::CreateMaterialResources(const ObjMesh& mesh) {
     mat->color = mesh.material.color;
     mat->enableLighting = mesh.material.enableLighting;
     mat->uvTransform = mesh.material.uvTransform;
-    mat->shininess = mesh.material.shininess;
-    mat->environmentCoefficient = mesh.material.environmentCoefficient;
+    mat->metallic = mesh.material.metallic;
+    mat->roughness = mesh.material.roughness;
+    mat->environmentCoefficient = 0.0f;
     // hasTexture は EnsureSharedTexture で設定するため、ここではパスの有無で仮設定
     mat->hasTexture = !mesh.material.textureFilePath.empty();
-    mat->lightingMode = mesh.material.enableLighting ? 2 : 0; // ライティングモードを適切に設定
+    mat->lightingMode = mesh.material.enableLighting ? 3 : 0; // ライティングモードをPBR(3)に設定
 
     if (mat->color.w <= 0.0f) { mat->color.w = 1.0f; }
 }

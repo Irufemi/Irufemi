@@ -135,10 +135,11 @@ void SphereRegion::CreateMaterialResources() {
     mat->color = { 1,1,1,1 };
     mat->enableLighting = true;
     mat->hasTexture = true; // 実際の有無は EnsureSharedTexture で調整
-    mat->lightingMode = 2;
+    mat->lightingMode = 3;
     mat->uvTransform = Math::MakeIdentity4x4();
-    mat->shininess = 64.0f;
-    mat->environmentCoefficient = 1.0f;
+    mat->metallic = 0.0f;
+    mat->roughness = 0.5f;
+    mat->environmentCoefficient = 0.0f;
 }
 
 void SphereRegion::EnsureSharedTexture(const std::string& textureName) {

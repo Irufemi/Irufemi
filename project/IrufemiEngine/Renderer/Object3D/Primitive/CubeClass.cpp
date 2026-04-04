@@ -43,9 +43,11 @@ void CubeClass::Initialize(Camera* camera, float width, float height, float dept
         resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
         resource_->materialData_->enableLighting = true;
         resource_->materialData_->hasTexture = true;
-        resource_->materialData_->lightingMode = 2;
+        resource_->materialData_->lightingMode = 3;
         resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-        resource_->materialData_->shininess = 64.0f;
+        resource_->materialData_->metallic = 0.0f;
+        resource_->materialData_->roughness = 0.5f;
+        resource_->materialData_->environmentCoefficient = 0.0f;
     }
 
     // transformation

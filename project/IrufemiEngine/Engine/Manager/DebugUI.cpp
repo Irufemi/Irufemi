@@ -436,7 +436,8 @@ void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_u
 
     ImGui::ColorEdit4(("Color" + id_str).c_str(), &material->color.x);
     ImGui::Checkbox(("Enable Lighting" + id_str).c_str(), &material->enableLighting);
-    ImGui::DragFloat(("Shininess" + id_str).c_str(), &material->shininess, 1.0f, 1.0f, 256.0f);
+    ImGui::DragFloat(("Metallic" + id_str).c_str(), &material->metallic, 0.01f, 0.0f, 1.0f);
+    ImGui::DragFloat(("Roughness" + id_str).c_str(), &material->roughness, 0.01f, 0.0f, 1.0f);
     ImGui::DragFloat(("Environment Coefficient" + id_str).c_str(), &material->environmentCoefficient, 0.01f, 0.0f, 1.0f);
 
     // UV Transform
@@ -453,7 +454,7 @@ void DebugUI::DebugMaterialOverrides(float* envCoef, int32_t* lightingMode, int3
     if (ImGui::TreeNode(("Material Overrides" + id).c_str())) {
         ImGui::DragFloat(("Env Coefficient" + id).c_str(), envCoef, 0.01f, 0.00f, 10.0f);
 
-        const char* lightingItems[] = { "Model Default", "None", "Lambert", "Half-Lambert" };
+        const char* lightingItems[] = { "Model Default", "None", "Lambert", "Half-Lambert", "PBR" };
         int currentLighting = *lightingMode + 1; // -1 -> 0
         if (ImGui::Combo(("Lighting Mode" + id).c_str(), &currentLighting, lightingItems, IM_ARRAYSIZE(lightingItems))) {
             *lightingMode = currentLighting - 1;
@@ -487,12 +488,13 @@ void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
             materialData->enableLighting = enableLighting;
         }
         // lightingMode選択
-        const char* items[] = { "NonLighting", "Lambert", "HalfLambert" };
+        const char* items[] = { "NonLighting", "Lambert", "HalfLambert", "PBR" };
         int currentMode = materialData->lightingMode;
         if (ImGui::Combo("LightingMode", &currentMode, items, IM_ARRAYSIZE(items))) {
             materialData->lightingMode = currentMode;
         }
-        ImGui::DragFloat("Shininess", &materialData->shininess);
+        ImGui::DragFloat("Metallic", &materialData->metallic, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Roughness", &materialData->roughness, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Environment Coefficient", &materialData->environmentCoefficient, 0.01f, 0.0f, 1.0f);
     }
 #endif // USE_IMGUI

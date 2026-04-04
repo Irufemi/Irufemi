@@ -196,9 +196,11 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
             materialData->color = cpuMesh.material.color;
             materialData->enableLighting = cpuMesh.material.enableLighting;
             materialData->uvTransform = cpuMesh.material.uvTransform;
-            materialData->shininess = cpuMesh.material.shininess;
+            materialData->metallic = cpuMesh.material.metallic;
+            materialData->roughness = cpuMesh.material.roughness;
             materialData->hasTexture = !cpuMesh.material.textureFilePath.empty();
-            materialData->lightingMode = cpuMesh.material.enableLighting ? 2 : 0;
+            materialData->environmentCoefficient = 0.0f;
+            materialData->lightingMode = cpuMesh.material.enableLighting ? 3 : 0;
             if (materialData->color.w <= 0.0f) { materialData->color.w = 1.0f; }
 
             if (materialData->hasTexture) {
@@ -631,7 +633,10 @@ ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std:
                         >> materialMap[currentName].specular.y
                         >> materialMap[currentName].specular.z;
                 } else if (mtlId == "Ns") {
-                    ms >> materialMap[currentName].shininess;
+                    float ns = 0.0f;
+                    ms >> ns;
+                    // Ns (0-1000) を Roughness (0-1) に変換 (簡易的な近似)
+                    materialMap[currentName].roughness = std::clamp(1.0f - (ns / 1000.0f), 0.0f, 1.0f);
                 } else if (mtlId == "d" || mtlId == "Tr") {
                     ms >> materialMap[currentName].alpha;
                 } else if (mtlId == "map_Kd") {
@@ -862,9 +867,12 @@ ObjModel ModelManager::LoadModelFromFile(const std::string& directoryPath, const
         out.color = { 1.0f,1.0f,1.0f,1.0f };
         out.ambient = { 0.0f,0.0f,0.0f };
         out.specular = { 0.0f,0.0f,0.0f };
-        out.shininess = 64.0f;
+        out.roughness = 0.5f;
+        out.metallic = 0.0f;
         out.alpha = 1.0f;
         out.enableLighting = true;
+        out.lightingMode = 3; // PBR
+        out.environmentCoefficient = 0.0f;
         out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
 
         // Diffuse テクスチャ (埋め込み "*0" 等は今回は未対応)
@@ -913,7 +921,9 @@ ObjModel ModelManager::LoadModelFromFile(const std::string& directoryPath, const
         }
         float shininess = 0.0f;
         if (m->Get(AI_MATKEY_SHININESS, shininess) == aiReturn_SUCCESS) {
-            out.shininess = shininess > 0.0f ? shininess : 64.0f;
+            // Shininess (Blinn-Phong) から Roughness への変換
+            // Roughness = sqrt(2 / (shininess + 2)) が一般的な近似
+            out.roughness = std::clamp(std::sqrt(2.0f / (shininess + 2.0f)), 0.0f, 1.0f);
         }
         float opacity = 1.0f;
         if (m->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS) {
