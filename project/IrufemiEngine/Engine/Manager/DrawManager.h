@@ -187,14 +187,26 @@ public: //メンバ関数
     void DrawLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
 
     /**
-     * @brief 3Dオブジェクトの標準描画
+     * @brief 標準的な3Dオブジェクトの描画 (Object3d.hlsl)
+     * @param vertexBufferViewOverride スキニング等でVBVを差し替えたい場合に指定
      */
-    void DrawObject3D(const class Object3DResource* resource);
+    void DrawStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
 
     /**
-     * @brief 2Dオブジェクト（スプライト等）の標準描画
+     * @brief 2Dオブジェクト（スプライト等）の標準描画 (Sprite.hlsl)
      */
-    void DrawObject2D(const class Object2DResource* resource);
+    void DrawSprite(const class Object2DResource* resource);
+
+    // VoxelParticle 用の描画 (VoxelParticle.hlsl)
+    void DrawVoxelParticle(
+        uint32_t instanceCount,
+        const D3D12_VERTEX_BUFFER_VIEW& vbv,
+        const D3D12_INDEX_BUFFER_VIEW& ibv,
+        uint32_t indexCount,
+        D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
+        D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
+        D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle
+    );
 
     /**
      * @brief スカイボックスの描画
@@ -202,9 +214,16 @@ public: //メンバ関数
     void DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
 
     /**
-     * @brief GPUパーティクルの描画（直接バッファ指定）
+     * @brief GPUパーティクルのインスタンス描画 (GPUParticle.hlsl)
      */
-    void DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const UINT& instanceCount);
+    void DrawGPUParticle(
+        const D3D12_VERTEX_BUFFER_VIEW& vbv,
+        D3D12_GPU_VIRTUAL_ADDRESS materialAddress,
+        D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
+        D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle,
+        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle,
+        uint32_t instanceCount
+    );
     ///@}
 
     /** @name コンピュートシェーダ（GPGPU）操作 */

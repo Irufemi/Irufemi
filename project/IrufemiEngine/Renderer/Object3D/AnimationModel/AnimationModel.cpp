@@ -226,16 +226,12 @@ void AnimationModel::Draw() {
     for (size_t i = 0; i < meshResources_.size(); ++i) {
         auto& res = meshResources_[i];
 
-        // スキニング中なら VBV を一時的に差し替える
-        D3D12_VERTEX_BUFFER_VIEW originalVBV = res->vertexBufferView_;
+        // スキニング中なら VBV を差し替えて描画
         if (!managedModel_->cpuModel->skinClusterData.empty()) {
-            res->vertexBufferView_ = skinCluster_.skinnedVertexBufferView;
+            engine_->GetDrawManager()->DrawStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView);
+        } else {
+            engine_->GetDrawManager()->DrawStandard3D(res.get());
         }
-
-        engine_->GetDrawManager()->DrawObject3D(res.get());
-
-        // 元に戻す
-        res->vertexBufferView_ = originalVBV;
     }
 }
 

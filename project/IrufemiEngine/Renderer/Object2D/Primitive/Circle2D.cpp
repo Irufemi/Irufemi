@@ -142,7 +142,7 @@ void Circle2D::Update() {
 }
 
 void Circle2D::Draw() {
-    drawManager_->DrawObject2D(resource_.get());
+    drawManager_->DrawSprite(resource_.get());
 }
 
 void Circle2D::SetInfo(const Circle2DInfo& info) {

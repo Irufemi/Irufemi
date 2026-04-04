@@ -309,10 +309,49 @@ void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
 }
 
 
-void DrawManager::DrawObject2D(const Object2DResource* resource) {
-    if (!resource) return;
+void DrawManager::DrawVoxelParticle(
+    uint32_t instanceCount,
+    const D3D12_VERTEX_BUFFER_VIEW& vbv,
+    const D3D12_INDEX_BUFFER_VIEW& ibv,
+    uint32_t indexCount,
+    D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
+    D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
+    D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle
+) {
+    if (!commandList_) return;
 
+    // 共通パラメータのバインド
+    BindCommonParameters();
+
+    // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // 頂点バッファとインデックスバッファの設定
+    commandList_->IASetVertexBuffers(0, 1, &vbv);
+    commandList_->IASetIndexBuffer(&ibv);
+
+    // VoxelParticle 特有のバインド
+    // Slot 1: Transform (b0) <- Emitter
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, emitterAddress);
+    // Slot 7: Special (b6) <- PerView
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, perViewAddress);
+    // Slot 9: LineInstancing (t1) <- ParticleData
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, particleDataHandle);
+
+    // 描画！
+    commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
+}
+
+void DrawManager::DrawSprite(const Object2DResource* resource) {
+    if (!resource || !commandList_) return;
+
+    // 共通パラメータのバインド
+    BindCommonParameters();
+
+    // トポロジ設定
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // 頂点バッファとインデックスバッファの設定
     commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
@@ -473,40 +512,56 @@ void DrawManager::DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
     commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
 }
 
-void DrawManager::DrawObject3D(const Object3DResource* resource) {
-    if (!resource) return;
+void DrawManager::DrawStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+    if (!resource || !commandList_) return;
     
+    // 共通パラメータのバインド
+    BindCommonParameters();
+
+    // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+
+    // 頂点バッファの設定 (オーバーライドがあれば優先)
+    if (vertexBufferViewOverride) {
+        commandList_->IASetVertexBuffers(0, 1, vertexBufferViewOverride);
+    } else {
+        commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    }
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
+    // 各種リソースのバインド
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->transformationResource_->GetGPUVirtualAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
+    // 描画
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
 
-void DrawManager::DrawParticleGPU(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_GPU_VIRTUAL_ADDRESS& perView, const D3D12_GPU_VIRTUAL_ADDRESS& material, const D3D12_GPU_DESCRIPTOR_HANDLE& particleSrv, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const UINT& instanceCount) {
+void DrawManager::DrawGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS perViewAddress, D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, uint32_t instanceCount) {
+    if (!commandList_) return;
 
-    // IA 設定: VB/IB/Topology
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView);
+    // 共通パラメータのバインド
+    BindCommonParameters();
+
+    // IA 設定: VB/Topology
+    commandList_->IASetVertexBuffers(0, 1, &vbv);
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // --- CBV のバインド ---
     // (rootParameters[(UINT)RootSlot::Material] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, perView);
-
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, material);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, materialAddress);
+    // (rootParameters[(UINT)RootSlot::Transform] に対応、VertexShader 側の b0 想定)
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, perViewAddress);
 
     // --- SRVのバインド ---
     // テクスチャ (PS t0)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);
-    // パーティクルデータ (VS t0)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, particleSrv);
+    // パーティクルデータ (VS t0 -> Slot 5: Instancing)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, particleSrvHandle);
 
-    // 描画コール
+    // 描画コール (6頂点で1つのビルボード)
     commandList_->DrawInstanced(6, instanceCount, 0, 0);
 }
 void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor) {

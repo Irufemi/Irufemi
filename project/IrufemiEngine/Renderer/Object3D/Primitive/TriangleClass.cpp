@@ -82,7 +82,7 @@ void TriangleClass::Draw() {
     }
 
     // 共有リソースを使用して描画
-    drawManager_->DrawObject3D(resource_.get());
+    drawManager_->DrawStandard3D(resource_.get());
 }
 
 void TriangleClass::Debug(const char* triangleName) {

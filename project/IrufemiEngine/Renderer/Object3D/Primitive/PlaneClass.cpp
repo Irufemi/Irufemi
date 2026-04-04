@@ -104,7 +104,7 @@ void PlaneClass::Draw() {
         Update();
     }
 
-    drawManager_->DrawObject3D(resource_.get());
+    drawManager_->DrawStandard3D(resource_.get());
 }
 
 void PlaneClass::Debug([[maybe_unused]] const char* planeName) {

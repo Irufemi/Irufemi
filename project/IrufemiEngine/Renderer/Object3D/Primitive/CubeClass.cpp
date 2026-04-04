@@ -119,7 +119,7 @@ void CubeClass::Draw() {
         Update();
     }
 
-    drawManager_->DrawObject3D(resource_.get());
+    drawManager_->DrawStandard3D(resource_.get());
 }
 
 void CubeClass::Debug(const char* cubeName) {

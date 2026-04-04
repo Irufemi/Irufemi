@@ -222,21 +222,16 @@ void VoxelParticleSystem::Draw() {
   // VoxelParticle 専用PSOを取得してバインド
   engine_->GetDrawManager()->BindPSO(drawPSO_.Get());
 
-  // コンピュートシェーダー実行後にグラフィックスのルートシグネチャと共通パラメータを再バインド
-  engine_->GetDrawManager()->BindCommonParameters();
-  commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  commandList->IASetVertexBuffers(0, 1, &cubeVertexBufferView_);
-  commandList->IASetIndexBuffer(&cubeIndexBufferView_);
-
-  // RootParameter: [Special]CBV(PerView), [Transform]CBV(VoxelEmitter), [LineInstancing]SRV(ParticleData)
-  commandList->SetGraphicsRootConstantBufferView(
-      (UINT)RootSlot::Special, perViewConstantBuffer_->GetGPUVirtualAddress()); // b6 (PerView)
-  commandList->SetGraphicsRootConstantBufferView(
-      (UINT)RootSlot::Transform, emitterConstantBuffer_->GetGPUVirtualAddress()); // b0 (VoxelEmitter)
-  commandList->SetGraphicsRootDescriptorTable(
-      (UINT)RootSlot::LineInstancing, particleSrvHandleGPU_); // t1 (ParticleData)
-
-  commandList->DrawIndexedInstanced(cubeIndexCount_, voxelCount_, 0, 0, 0);
+  // DrawManager を通じて描画を実行 (内部で共通パラメータとトポロジを設定)
+  engine_->GetDrawManager()->DrawVoxelParticle(
+      voxelCount_,
+      cubeVertexBufferView_,
+      cubeIndexBufferView_,
+      cubeIndexCount_,
+      perViewConstantBuffer_->GetGPUVirtualAddress(),
+      emitterConstantBuffer_->GetGPUVirtualAddress(),
+      particleSrvHandleGPU_
+  );
 
   // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
   barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;

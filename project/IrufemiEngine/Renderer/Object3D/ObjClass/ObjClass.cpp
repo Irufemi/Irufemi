@@ -117,7 +117,7 @@ void ObjClass::Draw() {
 
     // モデル内の全メッシュを描画
     for (auto& res : meshResources_) {
-        drawManager_->DrawObject3D(res.get());
+        drawManager_->DrawStandard3D(res.get());
     }
 }
 
