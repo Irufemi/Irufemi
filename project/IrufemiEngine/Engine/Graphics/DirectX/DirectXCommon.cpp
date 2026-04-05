@@ -1048,7 +1048,15 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
     for (uint32_t i = 0; i < desc.BufferCount; ++i) {
         hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(swapChainResources_[i].GetAddressOf()));
         assert(SUCCEEDED(hr));
+        
+        // メイン RTV (SRGB)
         device_->CreateRenderTargetView(swapChainResources_[i].Get(), &rtvDesc_, rtvHandles_[i]);
+
+        // ImGui用 RTV (UNORM) も再作成
+        D3D12_RENDER_TARGET_VIEW_DESC imGuiRtvDesc = rtvDesc_;
+        imGuiRtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        rtvHandles_[i + 2].ptr = rtvHandles_[1].ptr + ((i + 1) * descriptorSizeRTV_);
+        device_->CreateRenderTargetView(swapChainResources_[i].Get(), &imGuiRtvDesc, rtvHandles_[i + 2]);
     }
 
     // 5. 深度バッファの再生成とDSVの再作成
