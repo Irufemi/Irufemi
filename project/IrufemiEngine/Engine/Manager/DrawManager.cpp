@@ -359,8 +359,7 @@ void DrawManager::DrawVoxelParticle(
 ) {
     if (!commandList_) return;
 
-    // 共通パラメータのバインド
-    BindCommonParameters();
+
 
     // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -384,8 +383,7 @@ void DrawManager::DrawVoxelParticle(
 void DrawManager::DrawSprite(const Object2DResource* resource) {
     if (!resource || !commandList_) return;
 
-    // 共通パラメータのバインド
-    BindCommonParameters();
+
 
     // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -554,8 +552,7 @@ void DrawManager::DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, c
 void DrawManager::DrawStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
     if (!resource || !commandList_) return;
     
-    // 共通パラメータのバインド
-    BindCommonParameters();
+
 
     // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -580,9 +577,6 @@ void DrawManager::DrawStandard3D(const Object3DResource* resource, const D3D12_V
 
 void DrawManager::DrawGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS perViewAddress, D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, uint32_t instanceCount) {
     if (!commandList_) return;
-
-    // 共通パラメータのバインド
-    BindCommonParameters();
 
     // IA 設定: VB/Topology
     commandList_->IASetVertexBuffers(0, 1, &vbv);

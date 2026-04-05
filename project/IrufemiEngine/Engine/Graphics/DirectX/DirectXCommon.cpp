@@ -216,7 +216,7 @@ void DirectXCommon::CreateSwapChain() {
 }
 
 void DirectXCommon::CreateDescriptorHeaps() {
-    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 32, false);
+    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 64, false);
     nextRtvIndex_ = 4; // 0, 1 は SwapChain 用、2, 3 は ImGui 用に予約
 
     srvPool_ = std::make_unique<DescriptorPool>();
@@ -636,7 +636,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t in
 }
 
 uint32_t DirectXCommon::AllocateRTVIndex() {
-    assert(nextRtvIndex_ < 32);
+    assert(nextRtvIndex_ < 64);
     return nextRtvIndex_++;
 }
 
@@ -739,10 +739,8 @@ Microsoft::WRL::ComPtr<ID3D12Resource>  DirectXCommon::UploadTextureData(const M
 	uploadFenceValue_++;
 	commandQueue_->Signal(uploadFence_.Get(), uploadFenceValue_);
 	if (uploadFence_->GetCompletedValue() < uploadFenceValue_) {
-		HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-		uploadFence_->SetEventOnCompletion(uploadFenceValue_, event);
-		WaitForSingleObject(event, INFINITE);
-		CloseHandle(event);
+		uploadFence_->SetEventOnCompletion(uploadFenceValue_, fenceEvent_);
+		WaitForSingleObject(fenceEvent_, INFINITE);
 	}
 
     return intermediateResource;
