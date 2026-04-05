@@ -222,7 +222,8 @@ void DirectXCommon::CreateDescriptorHeaps() {
     srvPool_ = std::make_unique<DescriptorPool>();
     srvPool_->Initialize(device_.Get());
 
-    dsvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+    dsvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 16, false);
+    nextDsvIndex_ = 1; // 0 はメインの深度バッファ
 }
 
 void DirectXCommon::InitializeRenderTargets() {
@@ -297,8 +298,15 @@ void DirectXCommon::CreateRootSignatures() {
         rangeLights[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         rangeLights[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+        // シャドウマップ (t5)
+        D3D12_DESCRIPTOR_RANGE rangeShadow[1] = {};
+        rangeShadow[0].BaseShaderRegister = 5; // t5
+        rangeShadow[0].NumDescriptors = 1;
+        rangeShadow[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeShadow[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
         // --- ルートパラメータの定義 ---
-        D3D12_ROOT_PARAMETER rootParameters[10] = {};
+        D3D12_ROOT_PARAMETER rootParameters[11] = {};
 
         // Slot 0: Material (b0, PS)
         rootParameters[(UINT)RootSlot::Material].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -355,7 +363,13 @@ void DirectXCommon::CreateRootSignatures() {
         rootParameters[(UINT)RootSlot::LineInstancing].DescriptorTable.pDescriptorRanges = rangeLine;
         rootParameters[(UINT)RootSlot::LineInstancing].DescriptorTable.NumDescriptorRanges = 1;
 
-        D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
+        // Slot 10: ShadowMap (t5, PS)
+        rootParameters[(UINT)RootSlot::ShadowMap].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::ShadowMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.pDescriptorRanges = rangeShadow;
+        rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.NumDescriptorRanges = 1;
+
+        D3D12_STATIC_SAMPLER_DESC staticSamplers[3] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
         staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -373,6 +387,16 @@ void DirectXCommon::CreateRootSignatures() {
         staticSamplers[1].MaxLOD = D3D12_FLOAT32_MAX;
         staticSamplers[1].ShaderRegister = 1;
         staticSamplers[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+        staticSamplers[2].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        staticSamplers[2].AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        staticSamplers[2].AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        staticSamplers[2].AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        staticSamplers[2].ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+        staticSamplers[2].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+        staticSamplers[2].MaxLOD = D3D12_FLOAT32_MAX;
+        staticSamplers[2].ShaderRegister = 2; // s2
+        staticSamplers[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
         D3D12_ROOT_SIGNATURE_DESC rsDesc{};
         rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -485,6 +509,8 @@ void DirectXCommon::CreatePSOs() {
     auto psGpuParticle = shaderCompiler_->Compile(L"resources/shaders/ParticleGPU.PS.hlsl", L"ps_6_0", logStream);
     auto vsVoxel = shaderCompiler_->Compile(L"resources/shaders/VoxelParticle.VS.hlsl", L"vs_6_0", logStream);
     auto psVoxel = shaderCompiler_->Compile(L"resources/shaders/VoxelParticle.PS.hlsl", L"ps_6_0", logStream);
+    auto vsShadow = shaderCompiler_->Compile(L"resources/shaders/ShadowMap.VS.hlsl", L"vs_6_0", logStream);
+    auto vsShadowSkin = shaderCompiler_->Compile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", L"vs_6_0", logStream);
 
     auto csSkin = shaderCompiler_->Compile(L"resources/shaders/Skinning.CS.hlsl", L"cs_6_0", logStream);
     auto csGpuInit = shaderCompiler_->Compile(L"resources/shaders/InitializeParticle.CS.hlsl", L"cs_6_0", logStream);
@@ -522,7 +548,9 @@ void DirectXCommon::CreatePSOs() {
         { vsSkin, ps3d },
         { vsSkybox, psSkybox },
         { vsGpuParticle, psGpuParticle },
-        { vsVoxel, psVoxel }
+        { vsVoxel, psVoxel },
+        { vsShadow, nullptr },     // shadowShaders
+        { vsShadowSkin, nullptr }  // shadowSkinningShaders
     );
 
     // --- Compute PSO生成 ---
@@ -610,6 +638,11 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t in
 uint32_t DirectXCommon::AllocateRTVIndex() {
     assert(nextRtvIndex_ < 32);
     return nextRtvIndex_++;
+}
+
+uint32_t DirectXCommon::AllocateDSVIndex() {
+    assert(nextDsvIndex_ < 16);
+    return nextDsvIndex_++;
 }
 
 /*三角形の色を変えよう*/

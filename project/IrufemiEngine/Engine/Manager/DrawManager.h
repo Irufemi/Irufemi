@@ -16,6 +16,8 @@
 #include <vector>
 #include <memory>
 
+class ShadowMap;
+
 // 前方宣言
 class DirectXCommon;
 class Sprite;
@@ -79,10 +81,18 @@ private:
 
     D3D12_GPU_DESCRIPTOR_HANDLE environmentMapHandle_{}; // 環境マップ用SRVハンドル
 
+    // シャドウマップ・レンダーターゲット関連
+    std::unique_ptr<ShadowMap> shadowMap_;
+    bool isShadowPass_ = false;
+    class RenderTexture* currentRenderTexture_ = nullptr;
+
 public: //メンバ関数
 
     /** @name 初期化・終了処理 */
     ///@{
+    DrawManager();
+    ~DrawManager();
+
     void Initialize(DirectXCommon* dx);
     void Finalize();
     ///@}
@@ -94,6 +104,9 @@ public: //メンバ関数
      * @param[in] pso バインドするパイプラインステート
      */
     void BindPSO(ID3D12PipelineState* pso);
+    void BeginShadowPass();
+    void EndShadowPass();
+    bool IsShadowPass() const { return isShadowPass_; }
 
     /**
      * @brief フレームの描画開始処理
@@ -243,5 +256,6 @@ public: //メンバ関数
     ///@{
     CameraForGPU* GetCameraData() const { return cameraData_; }
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
+    ShadowMap* GetShadowMap() const { return shadowMap_.get(); }
     ///@}
 };

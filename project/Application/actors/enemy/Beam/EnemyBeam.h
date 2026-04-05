@@ -15,7 +15,7 @@ public:
     void Update(const Vector3& headPos, const Vector3& playerPos);
 
     // 描画
-    void Draw();
+    void Draw(class IrufemiEngine* engine);
 
     // --- 当たり判定・状態管理 ---
     OBB GetOBB() const;

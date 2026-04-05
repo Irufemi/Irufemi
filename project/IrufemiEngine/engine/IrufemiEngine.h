@@ -55,7 +55,7 @@ public: // メンバ関数
     /**
      * @brief コンストラクタ
      */
-    IrufemiEngine() = default;
+    IrufemiEngine();
 
     /**
      * @brief デストラクタ
@@ -243,6 +243,8 @@ public: // セッター
     void ApplySkinningPSO();
     void ApplySkyboxPSO();
     void ApplyGpuParticlePSO();
+    void ApplyShadowPSO();          // シャドウマップ(通常)
+    void ApplyShadowSkinningPSO();  // シャドウマップ(スキニング)
 
 public:
     // 状態(現在のブレンドと深度書き込み)

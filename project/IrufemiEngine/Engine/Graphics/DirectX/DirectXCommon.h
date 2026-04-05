@@ -221,6 +221,11 @@ public: // ゲッター
 	 */
 	uint32_t AllocateRTVIndex();
 
+	/**
+	 * @brief DSVインデックスの割り当て
+	 */
+	uint32_t AllocateDSVIndex();
+
 private:
 	/**
 	 * @brief デスクリプタヒープの生成（内部用）
@@ -299,6 +304,7 @@ private: // メンバ変数
 	uint32_t descriptorSizeRTV_ = 0;
 	uint32_t descriptorSizeDSV_ = 0;
 	uint32_t nextRtvIndex_ = 0;
+	uint32_t nextDsvIndex_ = 0;
 
 	// --- Depth & Pipeline State ---
 

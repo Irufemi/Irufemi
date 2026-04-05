@@ -335,6 +335,9 @@
     <ClCompile Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.cpp">
       <Filter>Renderer\Object3D\Primitive</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectX\ShadowMap.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -686,6 +689,9 @@
     <ClInclude Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.h">
       <Filter>Renderer\Object3D\Primitive</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\ShadowMap.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">
@@ -852,6 +858,12 @@
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\HSV.PS.hlsl">
       <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ShadowMapSkinning.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ShadowMap.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

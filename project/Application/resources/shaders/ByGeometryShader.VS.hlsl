@@ -1,6 +1,8 @@
 #include "Object3d.hlsli"
+#include "Lighting.hlsli"
 
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b6);
+ConstantBuffer<LightCommonData> gLightCommonData : register(b1);
 
 struct VertexShaderInput
 {
@@ -22,6 +24,9 @@ VertexShaderOutput main(VertexShaderInput input)
 	
 	// worldPositionにもワールド座標を格納
 	output.worldPosition = output.position.xyz;
+
+	// シャドウマッピング用の座標変換
+	output.shadowPos = mul(output.position, gLightCommonData.viewProjection);
 
 	return output;
 }

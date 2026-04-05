@@ -1,5 +1,7 @@
 #include "IrufemiEngine.h"
 
+IrufemiEngine::IrufemiEngine() = default;
+
 #include "Core/Math/Random/Random.h"
 #include "Core/Math/Geometry/Math.h"
 
@@ -507,6 +509,10 @@ bool IrufemiEngine::IsCursorLocked() const {
 }
 
 void IrufemiEngine::ApplyPSO() {
+    if (drawManager_->IsShadowPass()) {
+        ApplyShadowPSO();
+        return;
+    }
     auto* pso = GetPSOManager()->Get(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager_->BindPSO(pso); }
@@ -548,6 +554,10 @@ void IrufemiEngine::ApplyLineInstancedPSO() {
 
 void IrufemiEngine::ApplySkinningPSO()
 {
+    if (drawManager_->IsShadowPass()) {
+        ApplyShadowSkinningPSO();
+        return;
+    }
     auto* pso = GetPSOManager()->GetSkinning(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Skinning PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager_->BindPSO(pso); }
@@ -566,3 +576,15 @@ void IrufemiEngine::ApplyGpuParticlePSO() {
     assert(pso && "GpuParticle PSO is null. Check GpuParticle shader setup.");
     if (pso) { drawManager_->BindPSO(pso); }
 }
+void IrufemiEngine::ApplyShadowPSO() {
+    auto* pso = GetPSOManager()->GetShadow(currentCull_);
+    assert(pso && "Shadow PSO is null. Check shadow shader setup.");
+    if (pso) { drawManager_->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplyShadowSkinningPSO() {
+    auto* pso = GetPSOManager()->GetShadowSkinning(currentCull_);
+    assert(pso && "ShadowSkinning PSO is null. Check shadow shader setup.");
+    if (pso) { drawManager_->BindPSO(pso); }
+}
+

@@ -153,6 +153,11 @@ void VoxelParticleSystem::Draw() {
   if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_ || !camera_)
     return;
 
+  // シャドウパス中は描画しない
+  if (engine_->GetDrawManager()->IsShadowPass()) {
+      return;
+  }
+
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
 

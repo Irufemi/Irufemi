@@ -54,8 +54,9 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
     obj_->Update();
 }
 
-void EnemyBeam::Draw() {
-    if (obj_ && isActive_) {
+void EnemyBeam::Draw(IrufemiEngine* engine) {
+    if (obj_ && isActive_ && engine) {
+        engine->ApplyPSO();
         obj_->Draw();
     }
 }

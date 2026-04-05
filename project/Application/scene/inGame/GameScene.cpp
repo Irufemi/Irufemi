@@ -22,6 +22,8 @@
 #include "Engine/Core/Math/Geometry/Collision.h"
 
 #include <Windows.h>
+#include "Engine/IrufemiEngine.h"
+#include "Engine/Graphics/Pipeline/PSOManager.h"
 
 namespace {
     // --- ローカル定数（座標やベクトルなどの初期値） ---
@@ -435,6 +437,22 @@ void GameScene::Update() {
 // 描画
 void GameScene::Draw() {
 
+    // --- 1. シャドウパス (ライト視点での深度描画) ---
+    engine_->GetDrawManager()->BeginShadowPass();
+
+    // 影の描画 (スキニングモデル)
+    // エンジン側の ApplySkinningPSO が ShadowPass フラグを自動的に見て適切なPSOを選択します
+    if (player_) {
+        player_->Draw();
+    }
+    if (boss_) {
+        // boss_が Actor なら Draw() で ApplySkinningPSO を呼ぶはず
+        boss_->Draw(engine_);
+    }
+
+    engine_->GetDrawManager()->EndShadowPass();
+
+    // --- 2. メインパス (通常描画) ---
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);

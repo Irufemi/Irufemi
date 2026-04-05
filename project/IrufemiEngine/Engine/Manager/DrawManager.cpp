@@ -30,6 +30,7 @@
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "Engine/Core/Math/Geometry/Math.h"
 #include "Resource/Model/Data/SkinCluster.h"
+#include "Engine/Graphics/DirectX/ShadowMap.h"
 
 
 namespace {
@@ -63,6 +64,9 @@ namespace {
         gNullSpotLightVA = gNullSpotLight->GetGPUVirtualAddress();
     }
 } // anonymous
+
+DrawManager::DrawManager() {}
+DrawManager::~DrawManager() {}
 
 void DrawManager::Initialize(DirectXCommon* dx) {
     dxCommon_ = dx;
@@ -98,6 +102,10 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 0, pointLightResource_.Get(), kMaxLights, sizeof(PointLight));
     pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 1, spotLightResource_.Get(), kMaxLights, sizeof(SpotLight));
     pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 2, areaLightResource_.Get(), kMaxLights, sizeof(AreaLight));
+
+    // シャドウマップの初期化 (2048x2048)
+    shadowMap_ = std::make_unique<ShadowMap>();
+    shadowMap_->Initialize(dxCommon_, 2048, 2048);
 }
 
 void DrawManager::Finalize() {
@@ -158,6 +166,9 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
     //TransitionBarrierを張る
     commandList_->ResourceBarrier(1, &barrier);
+
+    // レンダーターゲット追跡の更新 (バックバッファ)
+    currentRenderTexture_ = nullptr;
 
     /*画面の色を変えよう*/
 
@@ -285,6 +296,34 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLigh
         lightCommonData_->pointLightCount = static_cast<int32_t>(pointLights.size());
         lightCommonData_->spotLightCount = static_cast<int32_t>(spotLights.size());
         lightCommonData_->areaLightCount = static_cast<int32_t>(areaLights.size());
+
+        // ライト視点行列の更新 (平行光源)
+        Vector3 lightDir = Math::Normalize(light.direction);
+        // 方向が真上または真下の場合は Up を変える
+        Vector3 up = { 0, 1, 0 };
+        if (std::abs(lightDir.y) > 0.999f) { up = { 0, 0, 1 }; }
+
+        Vector3 target = { 0, 0, 0 };
+        Vector3 eye = Math::Subtract(target, Math::Multiply(200.0f, lightDir));
+
+        // 簡易 LookAt 行列作成
+        Vector3 zaxis = Math::Normalize(Math::Subtract(target, eye));
+        Vector3 xaxis = Math::Normalize(Math::Cross(up, zaxis));
+        Vector3 yaxis = Math::Cross(zaxis, xaxis);
+
+        Matrix4x4 view{};
+        view.m[0][0] = xaxis.x; view.m[0][1] = yaxis.x; view.m[0][2] = zaxis.x; view.m[0][3] = 0;
+        view.m[1][0] = xaxis.y; view.m[1][1] = yaxis.y; view.m[1][2] = zaxis.y; view.m[1][3] = 0;
+        view.m[2][0] = xaxis.z; view.m[2][1] = yaxis.z; view.m[2][2] = zaxis.z; view.m[2][3] = 0;
+        view.m[3][0] = -Math::Dot(xaxis, eye);
+        view.m[3][1] = -Math::Dot(yaxis, eye);
+        view.m[3][2] = -Math::Dot(zaxis, eye);
+        view.m[3][3] = 1;
+
+        // 正投影行列 (フィールド範囲 200x200 をカバーするように 256x256 程度に設定)
+        Matrix4x4 proj = Math::MakeOrthographicMatrix(-128.0f, 128.0f, 128.0f, -128.0f, 0.1f, 512.0f);
+        
+        lightCommonData_->viewProjection = Math::Multiply(view, proj);
     }
 
     // 各 StructuredBuffer へ書き込み
@@ -574,6 +613,9 @@ void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColo
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     commandList_->ResourceBarrier(1, &barrier);
 
+    // レンダーターゲットを追跡
+    currentRenderTexture_ = rt;
+
     // 2. Set Render Target
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rt->GetRtvHandle();
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
@@ -618,6 +660,9 @@ void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
     // ビューポートとシザーを元に戻す
     commandList_->RSSetViewports(1, &dxCommon_->GetViewport());
     commandList_->RSSetScissorRects(1, &dxCommon_->GetScissorRect());
+
+    // レンダーターゲット追跡のリセット
+    currentRenderTexture_ = nullptr;
 }
 
 void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle) {
@@ -664,4 +709,86 @@ void DrawManager::BindCommonParameters() {
 
     // 点光源、スポットライト、面光源を１つのテーブル（Slot 6）で一括設定
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, lightSrvHandle_);
+
+    // シャドウマップをバインド (Slot 10 / register t5) - シャドウパス中はバインドしない
+    if (shadowMap_ && !isShadowPass_) {
+        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::ShadowMap, shadowMap_->GetSrvHandle());
+    }
 }
+
+void DrawManager::BeginShadowPass() {
+    if (!shadowMap_) return;
+    isShadowPass_ = true;
+
+    // 1. Transition Barrier (SRV -> DepthWrite)
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = shadowMap_->GetResource();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    commandList_->ResourceBarrier(1, &barrier);
+
+    // 2. Clear
+    shadowMap_->Clear(commandList_);
+
+    // 3. Set DSV and Viewport
+    shadowMap_->BeginRender(commandList_);
+
+    // 4. ライト行列の更新 (平行光源)
+    if (lightCommonData_) {
+        Vector3 lightDir = Math::Normalize(lightCommonData_->directionalLight.direction);
+        // シーン全体をカバーするようにライトの位置と範囲を設定
+        Vector3 lightPos = Math::Multiply(-100.0f, lightDir);
+        
+        // 簡単な LookAt 回転行列の作成
+        float yaw = std::atan2(lightDir.x, lightDir.z);
+        float pitch = -std::asin(lightDir.y);
+        Matrix4x4 lightRotation = Math::MakeRotateXYZMatrix(pitch, yaw, 0.0f);
+        Matrix4x4 lightView = Math::Inverse(Math::Multiply(Math::MakeTranslateMatrix(lightPos), lightRotation));
+        
+        // 正射影行列 (広めに設定)
+        Matrix4x4 lightOrtho = Math::MakeOrthographicMatrix(-100.0f, 100.0f, 100.0f, -100.0f, 0.1f, 300.0f);
+        lightCommonData_->viewProjection = Math::Multiply(lightView, lightOrtho);
+    }
+
+    // DescriptorHeap再設定
+    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+    // バインド (ライト行列を定数バッファに反映させるため)
+    BindCommonParameters();
+}
+
+void DrawManager::EndShadowPass() {
+    if (!shadowMap_) return;
+    isShadowPass_ = false;
+
+    // 1. Transition Barrier (DepthWrite -> SRV)
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = shadowMap_->GetResource();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    commandList_->ResourceBarrier(1, &barrier);
+
+    // 2. レンダーターゲットを復帰させる
+    if (currentRenderTexture_) {
+        // 元の RenderTexture があればそれを再設定 (クリアはしない)
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = currentRenderTexture_->GetRtvHandle();
+        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
+        commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+
+        // ビューポート等も復帰
+        D3D12_VIEWPORT viewport{ 0.0f, 0.0f, static_cast<float>(currentRenderTexture_->GetWidth()), static_cast<float>(currentRenderTexture_->GetHeight()), 0.0f, 1.0f };
+        D3D12_RECT scissor{ 0, 0, static_cast<long>(currentRenderTexture_->GetWidth()), static_cast<long>(currentRenderTexture_->GetHeight()) };
+        commandList_->RSSetViewports(1, &viewport);
+        commandList_->RSSetScissorRects(1, &scissor);
+    }
+    else {
+        // なければバックバッファに戻す
+        SetRenderTargetToBackBuffer(true);
+    }
+}
+
