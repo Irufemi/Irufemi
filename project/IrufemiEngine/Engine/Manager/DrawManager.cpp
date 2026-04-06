@@ -107,9 +107,11 @@ void DrawManager::Initialize(DirectXCommon* dx) {
         pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 2, fr.areaLightResource.Get(), kMaxLights, sizeof(AreaLight));
     }
 
-    // シャドウマップの初期化 (2048x2048)
-    shadowMap_ = std::make_unique<ShadowMap>();
-    shadowMap_->Initialize(dxCommon_, 2048, 2048);
+    // シャドウマップの初期化 (2048x2048) - 全フレーム分
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        shadowMaps_[i] = std::make_unique<ShadowMap>();
+        shadowMaps_[i]->Initialize(dxCommon_, 2048, 2048);
+    }
 }
 
 void DrawManager::Finalize() {
@@ -131,6 +133,10 @@ void DrawManager::Finalize() {
             }
             fr.lightSrvBaseIndex = 0xFFFFFFFFu;
         }
+    }
+
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        shadowMaps_[i].reset();
     }
 
     dxCommon_ = nullptr;
@@ -707,29 +713,31 @@ void DrawManager::BindCommonParameters() {
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, fr.lightSrvHandle);
 
     // シャドウマップをバインド (Slot 10 / register t5) - シャドウパス中はバインドしない
-    if (shadowMap_ && !isShadowPass_) {
-        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::ShadowMap, shadowMap_->GetSrvHandle());
+    ShadowMap* shadowMap = GetShadowMap();
+    if (shadowMap && !isShadowPass_) {
+        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::ShadowMap, shadowMap->GetSrvHandle());
     }
 }
 
 void DrawManager::BeginShadowPass() {
-    if (!shadowMap_) return;
+    ShadowMap* shadowMap = GetShadowMap();
+    if (!shadowMap) return;
     isShadowPass_ = true;
 
     // 1. Transition Barrier (SRV -> DepthWrite)
     D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = shadowMap_->GetResource();
+    barrier.Transition.pResource = shadowMap->GetResource();
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     commandList_->ResourceBarrier(1, &barrier);
 
     // 2. Clear
-    shadowMap_->Clear(commandList_);
+    shadowMap->Clear(commandList_);
 
     // 3. Set DSV and Viewport
-    shadowMap_->BeginRender(commandList_);
+    shadowMap->BeginRender(commandList_);
 
     // 4. ライト行列の更新 (平行光源)
     auto& fr = frameResources_[dxCommon_->GetFrameIndex()];
@@ -758,13 +766,14 @@ void DrawManager::BeginShadowPass() {
 }
 
 void DrawManager::EndShadowPass() {
-    if (!shadowMap_) return;
+    ShadowMap* shadowMap = GetShadowMap();
+    if (!shadowMap) return;
     isShadowPass_ = false;
 
     // 1. Transition Barrier (DepthWrite -> SRV)
     D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = shadowMap_->GetResource();
+    barrier.Transition.pResource = shadowMap->GetResource();
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;

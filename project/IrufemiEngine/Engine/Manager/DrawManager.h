@@ -85,7 +85,7 @@ private:
     D3D12_GPU_DESCRIPTOR_HANDLE environmentMapHandle_{}; // 環境マップ用SRVハンドル
 
     // シャドウマップ・レンダーターゲット関連
-    std::unique_ptr<ShadowMap> shadowMap_;
+    std::array<std::unique_ptr<ShadowMap>, kMaxFramesInFlight> shadowMaps_;
     bool isShadowPass_ = false;
     class RenderTexture* currentRenderTexture_ = nullptr;
 
@@ -259,6 +259,6 @@ public: //メンバ関数
     ///@{
     CameraForGPU* GetCameraData() const { return frameResources_[dxCommon_->GetFrameIndex()].cameraData; }
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
-    ShadowMap* GetShadowMap() const { return shadowMap_.get(); }
+    ShadowMap* GetShadowMap() const { return shadowMaps_[dxCommon_->GetFrameIndex()].get(); }
     ///@}
 };
