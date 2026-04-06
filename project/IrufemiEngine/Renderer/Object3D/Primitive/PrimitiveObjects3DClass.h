@@ -112,6 +112,7 @@ public:
     TransformComponent& GetTransform() { return transform_; }
     MeshComponent& GetMesh() { return mesh_; }
     MaterialComponent& GetMaterial() { return material_; }
+    bool IsCullingEnabled() const { return isCullingEnabled_; }
 
     // --- ヘルパーSetter ---
     void SetPosition(const Vector3& pos) { transform_.transform.translate = pos; transform_.isDirty = true; }
@@ -120,6 +121,7 @@ public:
     void SetColor(const Vector4& color) { material_.color = color; }
     void SetTexture(const std::string& path) { material_.texturePath = path; }
     void SetShape(PrimitiveType type) { mesh_.ChangeMesh(type); transform_.isDirty = true; }
+    void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
 
     // --- 静的各種マネージャの設定 ---
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
@@ -130,6 +132,7 @@ private:
     TransformComponent transform_; //!< トランスフォームコンポーネント
     MeshComponent mesh_;           //!< メッシュコンポーネント
     MaterialComponent material_;   //!< マテリアルコンポーネント
+    bool isCullingEnabled_ = true; //!< 視錐台カリングの有効フラグ
 
     Camera* camera_ = nullptr;     //!< 保持しているカメラ
 

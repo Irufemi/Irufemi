@@ -4,6 +4,9 @@
 #include "Application/camera/Camera.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Core/Shape/Sphere.h"
 
 #include <array>
 #include <algorithm>
@@ -204,60 +207,86 @@ void TetraRegion::ClearInstances() {
 
 void TetraRegion::BuildInstanceBuffer(bool force) {
     const bool useWorlds = !instanceWorlds_.empty();
-    const uint32_t count = static_cast<uint32_t>(useWorlds ? instanceWorlds_.size() : instances_.size());
-    if (count == 0) { return; }
+    const uint32_t totalCount = static_cast<uint32_t>(useWorlds ? instanceWorlds_.size() : instances_.size());
+    if (totalCount == 0) { 
+        visibleInstanceCount_ = 0;
+        return; 
+    }
     if (!force && !instanceDirty_) { return; }
 
-    CreateOrResizeInstanceBuffer(count);
-
-    std::vector<InstanceData> temp(count);
     const Matrix4x4 view = camera_->GetViewMatrix();
     const Matrix4x4 proj = camera_->GetPerspectiveFovMatrix();
+    const Frustum& frustum = camera_->GetFrustum();
+    const float baseRadius = GetModelVertexRadius();
+
+    std::vector<InstanceData> temp;
+    temp.reserve(totalCount);
 
     if (useWorlds) {
-        for (uint32_t i = 0; i < count; ++i) {
+        for (uint32_t i = 0; i < totalCount; ++i) {
             const Matrix4x4& world = instanceWorlds_[i];
-            Matrix4x4 wvp = Math::Multiply(world, Math::Multiply(view, proj));
+            
+            if (isCullingEnabled_) {
+                // 位置とスケールの抽出
+                Vector3 pos = { world.m[3][0], world.m[3][1], world.m[3][2] };
+                // 簡易的な均等スケール抽出
+                float scale = std::sqrt(world.m[0][0]*world.m[0][0] + world.m[0][1]*world.m[0][1] + world.m[0][2]*world.m[0][2]);
+                
+                Sphere boundingSphere;
+                boundingSphere.center = pos;
+                boundingSphere.radius = baseRadius * scale * 1.1f;
+                if (!Collision::IsCollision(frustum, boundingSphere)) continue;
+            }
 
+            InstanceData data;
+            data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
             Matrix4x4 worldForNormal = world;
-            worldForNormal.m[3][0] = 0.0f;
-            worldForNormal.m[3][1] = 0.0f;
-            worldForNormal.m[3][2] = 0.0f;
+            worldForNormal.m[3][0] = worldForNormal.m[3][1] = worldForNormal.m[3][2] = 0.0f;
             worldForNormal.m[3][3] = 1.0f;
-
-            temp[i].WVP = wvp;
-            temp[i].World = world;
-            temp[i].WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-            temp[i].color = (i < instanceWorldColors_.size()) ? instanceWorldColors_[i] : Vector4{ 1,1,1,1 };
+            data.World = world;
+            data.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+            data.color = (i < instanceWorldColors_.size()) ? instanceWorldColors_[i] : Vector4{ 1,1,1,1 };
+            temp.push_back(data);
         }
     } else {
-        // Transform系の色配列をサイズ同期
         if (instanceColors_.size() != instances_.size()) {
             instanceColors_.resize(instances_.size(), Vector4{ 1,1,1,1 });
         }
-
-        for (uint32_t i = 0; i < count; ++i) {
+        for (uint32_t i = 0; i < totalCount; ++i) {
             const Transform& inst = instances_[i];
+
+            if (isCullingEnabled_) {
+                float maxScale = (std::max)({ inst.scale.x, inst.scale.y, inst.scale.z });
+                Sphere boundingSphere;
+                boundingSphere.center = inst.translate;
+                boundingSphere.radius = baseRadius * maxScale * 1.1f;
+                if (!Collision::IsCollision(frustum, boundingSphere)) continue;
+            }
+
+            InstanceData data;
             Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
-            Matrix4x4 wvp = Math::Multiply(world, Math::Multiply(view, proj));
-
+            data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
             Matrix4x4 worldForNormal = world;
-            worldForNormal.m[3][0] = 0.0f;
-            worldForNormal.m[3][1] = 0.0f;
-            worldForNormal.m[3][2] = 0.0f;
+            worldForNormal.m[3][0] = worldForNormal.m[3][1] = worldForNormal.m[3][2] = 0.0f;
             worldForNormal.m[3][3] = 1.0f;
-
-            temp[i].WVP = wvp;
-            temp[i].World = world;
-            temp[i].WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-            temp[i].color = instanceColors_[i];
+            data.World = world;
+            data.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+            data.color = instanceColors_[i];
+            temp.push_back(data);
         }
     }
 
+    visibleInstanceCount_ = static_cast<uint32_t>(temp.size());
+    if (visibleInstanceCount_ == 0) {
+        instanceDirty_ = false;
+        return;
+    }
+
+    CreateOrResizeInstanceBuffer(totalCount);
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
-    std::memcpy(dst, temp.data(), sizeof(InstanceData) * count);
+    std::memcpy(dst, temp.data(), sizeof(InstanceData) * visibleInstanceCount_);
     instanceBuffer_->Unmap(0, nullptr);
 
     instanceDirty_ = false;

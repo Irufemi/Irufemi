@@ -27,6 +27,7 @@ struct PointLight;
 struct SpotLight;
 struct AreaLight;
 struct Sphere;
+struct Animation;
 
 #ifdef USE_IMGUI
 
@@ -178,6 +179,11 @@ public: // メンバ関数
         int32_t* enableLighting,
         const char* unique_id = ""
     );
+
+    /**
+     * @brief アニメーション制御UI
+     */
+    static void DebugAnimationControl(const Animation& animation, float& currentTime, const char* unique_id = "");
     ///@}
 
     /** @name エンジン情報のデバッグ */

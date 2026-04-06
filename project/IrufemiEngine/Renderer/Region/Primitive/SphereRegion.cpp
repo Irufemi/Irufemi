@@ -4,6 +4,9 @@
 #include "Application/camera/Camera.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Core/Shape/Sphere.h"
 
 DirectXCommon* SphereRegion::dx_ = nullptr;
 TextureManager* SphereRegion::textureManager_ = nullptr;
@@ -232,30 +235,44 @@ void SphereRegion::ClearInstances() {
 }
 
 void SphereRegion::BuildInstanceBuffer(bool force) {
-    if (instances_.empty()) { return; }
+    if (instances_.empty()) { 
+        visibleInstanceCount_ = 0;
+        return; 
+    }
     if (!force && !instanceDirty_) { return; }
 
-    const UINT count = static_cast<UINT>(instances_.size());
-    const UINT stride = sizeof(InstanceData);
-    const UINT sizeInBytes = stride * count;
-
-    // 今回は毎回作り直し(必要ならサイズ比較して再利用可)
-    CreateOrResizeInstanceBuffer(count);
-
-    std::vector<InstanceData> temp(count);
+    const UINT totalCount = static_cast<UINT>(instances_.size());
+    std::vector<InstanceData> temp;
+    temp.reserve(totalCount);
 
     const Matrix4x4 view = camera_->GetViewMatrix();
     const Matrix4x4 proj = camera_->GetPerspectiveFovMatrix();
+    const Frustum& frustum = camera_->GetFrustum();
 
     // 色配列サイズをインスタンス数に合わせる
     if (instanceColors_.size() != instances_.size()) {
         instanceColors_.resize(instances_.size(), { 1,1,1,1 });
     }
 
-    for (UINT i = 0; i < count; ++i) {
+    for (UINT i = 0; i < totalCount; ++i) {
         const Transform& inst = instances_[i];
+
+        // 視錐台カリング
+        if (isCullingEnabled_) {
+            float maxScale = (std::max)({ inst.scale.x, inst.scale.y, inst.scale.z });
+            Sphere boundingSphere;
+            boundingSphere.center = inst.translate;
+            // 単位球(半径1.0) * スケール * マージン
+            boundingSphere.radius = 1.0f * maxScale * 1.1f;
+
+            if (!Collision::IsCollision(frustum, boundingSphere)) {
+                continue; // 判定によりスキップ
+            }
+        }
+
+        InstanceData data;
         Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
-        Matrix4x4 wvp = Math::Multiply(world, Math::Multiply(view, proj));
+        data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
 
         Matrix4x4 worldForNormal = world;
         worldForNormal.m[3][0] = 0.0f;
@@ -263,16 +280,26 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
         worldForNormal.m[3][2] = 0.0f;
         worldForNormal.m[3][3] = 1.0f;
 
-        temp[i].WVP = wvp;
-        temp[i].World = world;
-        temp[i].WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-        temp[i].color = instanceColors_[i];
+        data.World = world;
+        data.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+        data.color = instanceColors_[i];
+        
+        temp.push_back(data);
     }
+
+    visibleInstanceCount_ = static_cast<uint32_t>(temp.size());
+    if (visibleInstanceCount_ == 0) {
+        instanceDirty_ = false;
+        return;
+    }
+
+    // インスタンスバッファの再確保または更新
+    CreateOrResizeInstanceBuffer(totalCount);
 
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
-    std::memcpy(dst, temp.data(), sizeInBytes);
+    std::memcpy(dst, temp.data(), sizeof(InstanceData) * visibleInstanceCount_);
     instanceBuffer_->Unmap(0, nullptr);
 
     instanceDirty_ = false;

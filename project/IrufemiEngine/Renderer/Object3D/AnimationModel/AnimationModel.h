@@ -79,6 +79,8 @@ public: // ゲッター・セッター
 
 
     static void SetIrufemiEngine(IrufemiEngine* engine) { engine_ = engine; }
+    void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+    bool IsCullingEnabled() const { return isCullingEnabled_; }
 
 private: // メンバ変数
     // 共有モデルデータ(CPU/GPU)
@@ -124,6 +126,7 @@ private: // メンバ変数
 
     // 行列更新の最適化用
     bool isDirty_ = true;
+    bool isCullingEnabled_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };

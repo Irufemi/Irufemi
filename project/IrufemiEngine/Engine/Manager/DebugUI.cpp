@@ -32,6 +32,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/Data/Material.h"
 #include "Resource/Model/Data/ObjModel.h"
+#include "Resource/Model/Data/Animation.h"
 #include "Renderer/LineInstanced/LineResource.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Renderer/Object2D/Object2DResource.h"
@@ -472,6 +473,16 @@ void DebugUI::DebugMaterialOverrides(float* envCoef, int32_t* lightingMode, int3
             *enableLighting = currentEnable - 1;
         }
 
+        ImGui::TreePop();
+    }
+#endif
+}
+
+void DebugUI::DebugAnimationControl([[maybe_unused]] const Animation& animation, [[maybe_unused]] float& currentTime, [[maybe_unused]] const char* unique_id) {
+#ifdef USE_IMGUI
+    std::string id = unique_id;
+    if (ImGui::TreeNode(("Animation Control" + id).c_str())) {
+        ImGui::SliderFloat(("Time" + id).c_str(), &currentTime, 0.0f, animation.duration);
         ImGui::TreePop();
     }
 #endif

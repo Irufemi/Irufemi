@@ -8,6 +8,10 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Application/camera/Camera.h"
 #include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Core/Shape/Sphere.h"
+#include "Engine/Core/Shape/Sphere.h"
 
 #ifdef USE_IMGUI
 #include "imgui/imgui.h"
@@ -129,6 +133,33 @@ void PrimitiveObjects3DClass::Draw() {
 void PrimitiveObjects3DClass::Draw(const Camera& camera) {
     if (!mesh_.resource || !drawManager_) return;
 
+    // 視錐台カリング
+    if (isCullingEnabled_) {
+        // 形状に応じた基本半径（ユニットサイズ1.0想定）
+        float baseRadius = 0.5f;
+        switch (mesh_.type) {
+        case PrimitiveType::Cube:      baseRadius = 0.866f; break; // 1/2 * sqrt(3)
+        case PrimitiveType::Cylinder:
+        case PrimitiveType::Cone:
+        case PrimitiveType::Plane:
+        case PrimitiveType::Triangle:
+        case PrimitiveType::Tetra:     baseRadius = 0.707f; break; // 1/2 * sqrt(2)
+        default:                       baseRadius = 0.500f; break;
+        }
+
+        // スケールを考慮した最終半径（異方性スケールの最大値を採用）
+        float maxScale = (std::max)({ transform_.transform.scale.x, transform_.transform.scale.y, transform_.transform.scale.z });
+        float finalRadius = baseRadius * maxScale;
+
+        Sphere boundingSphere;
+        boundingSphere.center = transform_.transform.translate;
+        boundingSphere.radius = finalRadius * 1.1f; // 10%のマージン
+
+        if (!Collision::IsCollision(camera.GetFrustum(), boundingSphere)) {
+            return; // 描画スキップ
+        }
+    }
+
     // 描画実行
     drawManager_->DrawStandard3D(mesh_.resource.get());
 }
@@ -157,6 +188,7 @@ void PrimitiveObjects3DClass::Debug(const char* label) {
         if (ImGui::DragFloat3("Position", &transform_.transform.translate.x, 0.01f)) transform_.isDirty = true;
         if (ImGui::DragFloat3("Rotation", &transform_.transform.rotate.x, 0.01f)) transform_.isDirty = true;
         if (ImGui::DragFloat3("Scale", &transform_.transform.scale.x, 0.01f)) transform_.isDirty = true;
+        ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
     }
 
     // --- Material Component ---

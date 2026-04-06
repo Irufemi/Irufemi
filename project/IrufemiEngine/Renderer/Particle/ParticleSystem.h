@@ -134,6 +134,9 @@ public:
 	bool IsShowEmitterAABB() const { return showEmitterAABB_; }
 	void SetShowFieldAABB(bool show) { showFieldAABB_ = show; }
 	bool IsShowFieldAABB() const { return showFieldAABB_; }
+
+	void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+	bool IsCullingEnabled() const { return isCullingEnabled_; }
 	///@}
 
 private:
@@ -196,6 +199,7 @@ private:
 	// デバッグ表示フラグ
 	bool showEmitterAABB_ = true; ///< エミッター範囲の表示
 	bool showFieldAABB_ = true;   ///< フィールド範囲の表示
+	bool isCullingEnabled_ = true; ///< 視錐台カリングの有効フラグ
 
 	// 描画設定のセッター(Debug UI で設定され、Draw の直前にエンジンへ反映する)
 	BlendMode selectedBlend_ = BlendMode::kBlendModeAdd; ///< ブレンドモード

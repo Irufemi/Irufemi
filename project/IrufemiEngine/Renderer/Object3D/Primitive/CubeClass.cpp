@@ -11,6 +11,10 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Engine/Core/Math/Geometry/Math.h"
 #include "Engine/Manager/PrimitiveManager.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Core/Shape/Sphere.h"
+#include "Engine/Core/Shape/Sphere.h"
 
 TextureManager* CubeClass::textureManager_ = nullptr;
 DrawManager* CubeClass::drawManager_ = nullptr;
@@ -112,6 +116,23 @@ void CubeClass::Update() {
 void CubeClass::Draw() {
     if (!resource_ || !drawManager_ || !camera_) return;
 
+    // 視錐台カリング
+    if (isCullingEnabled_) {
+        // 3軸サイズとスケールを考慮した境界球半径
+        float rx = width_ * resource_->transform_.scale.x;
+        float ry = height_ * resource_->transform_.scale.y;
+        float rz = depth_ * resource_->transform_.scale.z;
+        float finalRadius = 0.5f * (std::sqrt)(rx * rx + ry * ry + rz * rz);
+
+        Sphere boundingSphere;
+        boundingSphere.center = center_;
+        boundingSphere.radius = finalRadius * 1.1f; // 10%のマージン
+
+        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+            return; // 描画スキップ
+        }
+    }
+
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
                           std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
@@ -132,6 +153,7 @@ void CubeClass::Debug(const char* cubeName) {
     ui_->DebugTransform(resource_->transform_);
     ui_->DebugMaterialBy3D(resource_->materialData_);
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+    ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
 
     // サイズ編集 UI(変更時は Initialize で再生成)
     float w = width_;

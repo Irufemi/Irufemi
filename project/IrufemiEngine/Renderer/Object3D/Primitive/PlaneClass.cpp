@@ -5,8 +5,11 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Texture/TextureManager.h"
 
-#include <algorithm>
-#include <array>
+#include "Application/camera/Camera.h"
+#include <wrl.h>
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Core/Shape/Sphere.h"
 
 TextureManager* PlaneClass::textureManager_ = nullptr;
 DrawManager* PlaneClass::drawManager_ = nullptr;
@@ -97,6 +100,21 @@ void PlaneClass::Update() {
 void PlaneClass::Draw() {
     if (!resource_ || !drawManager_ || !camera_) return;
 
+    // 視錐台カリング
+    if (isCullingEnabled_) {
+        // 単位正方形 (-0.5 to 0.5) を想定し、最大スケールから半径を算出
+        float maxScale = (std::max)({ resource_->transform_.scale.x, resource_->transform_.scale.y, resource_->transform_.scale.z });
+        float finalRadius = 0.7071f * maxScale; // 0.5 * sqrt(2)
+
+        Sphere boundingSphere;
+        boundingSphere.center = resource_->transform_.translate;
+        boundingSphere.radius = finalRadius * 1.1f; // 10%のマージン
+
+        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+            return; // 描画スキップ
+        }
+    }
+
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
                           std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
@@ -117,6 +135,7 @@ void PlaneClass::Debug([[maybe_unused]] const char* planeName) {
     ui_->DebugTransform(resource_->transform_);
     ui_->DebugMaterialBy3D(resource_->materialData_);
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+    ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
     ui_->DebugUvTransform(resource_->uvTransform_);
 
     ImGui::End();

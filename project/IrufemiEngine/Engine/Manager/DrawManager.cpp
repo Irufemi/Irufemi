@@ -151,9 +151,9 @@ void DrawManager::BindPSO(ID3D12PipelineState* pso) {
 
 void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uint8_t clearStencil) {
 
-    // 1. GPU同期 (これから使うフレームのリソースが空くまで待つ)
+    // 1. GPU同期 (これから使うスロットが前回の使用（通し番号）を終えるまで待つ)
     ID3D12Fence* fence = dxCommon_->GetFence();
-    uint64_t waitValue = dxCommon_->GetFenceValue(); // 現在のインデックスに対応する期待フェンス値
+    uint64_t waitValue = dxCommon_->GetFenceValue(); // このスロットが最後に使われた時の通し番号
     if (fence->GetCompletedValue() < waitValue) {
         fence->SetEventOnCompletion(waitValue, dxCommon_->GetFenceEvent());
         WaitForSingleObject(dxCommon_->GetFenceEvent(), INFINITE);
@@ -281,11 +281,11 @@ void DrawManager::PostDraw() {
     }
 
 
-    // 1. フェンスをシグナル (待機せずにGPUに進捗を記録させる)
-    uint64_t& fenceValue = dxCommon_->GetFenceValue();
-    fenceValue++;
-    dxCommon_->GetCommandQueue()->Signal(dxCommon_->GetFence(), fenceValue);
-
+    // 1. フェンスをシグナル (通し番号をインクリメントして記録)
+    uint64_t nextValue = dxCommon_->IncrementGlobalFence();
+    dxCommon_->GetFenceValue() = nextValue; // このスロットの完了番号として保存
+    dxCommon_->GetCommandQueue()->Signal(dxCommon_->GetFence(), nextValue);
+ 
     // 2. 次のフレームへインデックスを進める
     dxCommon_->AdvanceFrameIndex();
 

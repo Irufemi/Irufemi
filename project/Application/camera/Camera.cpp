@@ -115,6 +115,9 @@ void Camera::UpdateMatrix() {
     UpdatePerspectiveFovMatrix();
     UpdateOrthographicMatrix();
     UpdateViewportMatrix();
+
+    // 視錐台の更新
+    frustum_.SetFromViewProjection(viewMatrix_ * perspectiveFovMatrix_);
 }
 
 // カメラ行列を取得する

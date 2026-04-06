@@ -78,6 +78,8 @@ public: //メンバ関数
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+    bool IsCullingEnabled() const { return isCullingEnabled_; }
 
     void SetInfo(const Sphere& info) { info_ = info; isDirty_ = true; }
     void SetCenter(const Vector3& center) { info_.center = center; isDirty_ = true; }
@@ -88,6 +90,7 @@ public: //メンバ関数
 private:
     // 行列更新の最適化用
     bool isDirty_ = true;
+    bool isCullingEnabled_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };

@@ -15,9 +15,10 @@ void DirectXCommon::Finalize() {
     // GPU同期 (全フレームの完了を待機)
     if (commandQueue_ && fence_) {
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-            commandQueue_->Signal(fence_.Get(), ++fenceValues_[i]);
-            if (fence_->GetCompletedValue() < fenceValues_[i]) {
-                fence_->SetEventOnCompletion(fenceValues_[i], fenceEvent_);
+            uint64_t fv = IncrementGlobalFence();
+            commandQueue_->Signal(fence_.Get(), fv);
+            if (fence_->GetCompletedValue() < fv) {
+                fence_->SetEventOnCompletion(fv, fenceEvent_);
                 WaitForSingleObject(fenceEvent_, INFINITE);
             }
         }
@@ -1031,10 +1032,10 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
 
     // 1. GPUの完了を待つ (Flush)
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        fenceValues_[i]++;
-        commandQueue_->Signal(fence_.Get(), fenceValues_[i]);
-        if (fence_->GetCompletedValue() < fenceValues_[i]) {
-            fence_->SetEventOnCompletion(fenceValues_[i], fenceEvent_);
+        uint64_t fv = IncrementGlobalFence();
+        commandQueue_->Signal(fence_.Get(), fv);
+        if (fence_->GetCompletedValue() < fv) {
+            fence_->SetEventOnCompletion(fv, fenceEvent_);
             WaitForSingleObject(fenceEvent_, INFINITE);
         }
     }
@@ -1089,7 +1090,9 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
  
 void DirectXCommon::ReleaseAfterFence(Microsoft::WRL::ComPtr<ID3D12Resource> resource) {
 	if (!resource) return;
-	pendingResources_.push_back({ fenceValues_[frameIndex_] + 1, resource });
+	// 現在のフレームがPostDrawで発行する予定のフェンス値を予測、または直近の値を記録
+	// 安全のため、次の IncrementGlobalFence で発行される値、あるいは現在のスロットの値をベースにする
+	pendingResources_.push_back({ globalFenceValue_ + 1, resource });
 }
  
 void DirectXCommon::ClearPendingResources() {

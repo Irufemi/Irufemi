@@ -246,6 +246,7 @@ private:
     static bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
     static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
     static Node ReadNode(aiNode* node);
+    static void CalculateBoundingSphere(ObjModel& model);
 
     // 以下の古い形式は非推奨または内部管理用に限定
     static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);

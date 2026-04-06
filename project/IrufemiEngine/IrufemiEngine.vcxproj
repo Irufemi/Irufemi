@@ -226,6 +226,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\VoxelParticle\VoxelParticleSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h" />
     <ClInclude Include="Engine\Core\Math\Vector3Int.h" />
     <ClInclude Include="Engine\Core\System\TaskGroup.h" />
     <ClInclude Include="Engine\Core\System\ThreadPool.h" />

@@ -692,6 +692,9 @@
     <ClInclude Include="Engine\Graphics\DirectX\ShadowMap.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h">
+      <Filter>Engine\Core\Math\Geometry</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">

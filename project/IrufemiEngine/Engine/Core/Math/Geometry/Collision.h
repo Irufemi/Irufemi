@@ -10,6 +10,7 @@ struct Line;
 struct Triangle;
 struct AABB;
 struct OBB;
+struct Frustum;
 
 namespace Collision {
 
@@ -238,5 +239,10 @@ namespace Collision {
     /// OBBとAABBの衝突判定
     /// </summary>
     bool IsOBBAABBCollision(const OBB& obb, const AABB& aabb);
+
+    /// <summary>
+    /// 視錐台と球の衝突判定（カリング用）
+    /// </summary>
+    bool IsCollision(const Frustum& frustum, const Sphere& sphere);
 
 } // namespace Collision

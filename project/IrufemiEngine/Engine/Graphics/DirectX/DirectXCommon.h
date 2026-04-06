@@ -178,6 +178,9 @@ public: // ゲッター
 	HANDLE& GetFenceEvent() { return fenceEvent_; }
 	uint64_t& GetFenceValue() { return fenceValues_[frameIndex_]; }
 	uint64_t GetFenceValue(uint32_t index) const { return fenceValues_[index]; }
+	uint64_t GetGlobalFenceValue() const { return globalFenceValue_; }
+	uint64_t IncrementGlobalFence() { return ++globalFenceValue_; }
+	uint64_t GetCurrentFrameFenceValue() const { return globalFenceValue_ + 1; }
 	///@}
 
 	/** @name デスクリプタヒープ・ハンドルの取得 */
@@ -324,6 +327,7 @@ private: // メンバ変数
 
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence_ = nullptr;
 	uint64_t fenceValues_[kMaxFramesInFlight]{};
+	uint64_t globalFenceValue_ = 0;
 	HANDLE fenceEvent_ = nullptr;
 	uint32_t frameIndex_ = 0;
 

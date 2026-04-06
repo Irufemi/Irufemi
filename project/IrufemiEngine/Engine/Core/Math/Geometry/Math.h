@@ -446,4 +446,12 @@ namespace Math {
 
     Vector3 Perpendicular(const Vector3& vector);
 
+    /**
+     * @brief 値を最小値と最大値の間にクランプする
+     */
+    template <typename T>
+    constexpr const T& Clamp(const T& v, const T& lo, const T& hi) {
+        return (v < lo) ? lo : (hi < v) ? hi : v;
+    }
+
 }

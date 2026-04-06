@@ -34,13 +34,15 @@ public:
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
     static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
     static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; }
+    void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+    bool IsCullingEnabled() const { return isCullingEnabled_; }
 
     // --- DrawManager から参照する Getter 群 ---
     const GpuMesh* GetGpuMesh() const; // 共有メッシュ取得
     ID3D12Resource* GetMaterialResource() { return materialResource_.Get(); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_; }
-    UINT GetInstanceCount() const { return static_cast<UINT>(instances_.size()); }
+    UINT GetInstanceCount() const { return visibleInstanceCount_; }
 
 private:
     struct InstanceData {
@@ -80,6 +82,8 @@ private:
 
     std::vector<Transform> instances_;
     bool                   instanceDirty_ = false;
+    bool                   isCullingEnabled_ = true;
+    uint32_t               visibleInstanceCount_ = 0;
 
     // 行列更新の最適化用
     Matrix4x4 lastViewMatrix_ = {};
