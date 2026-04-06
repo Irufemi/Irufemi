@@ -12,12 +12,14 @@
 void DirectXCommon::Finalize() {
 
 
-    // GPU同期
+    // GPU同期 (全フレームの完了を待機)
     if (commandQueue_ && fence_) {
-        commandQueue_->Signal(fence_.Get(), ++fenceValue_);
-        if (fence_->GetCompletedValue() < fenceValue_) {
-            fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
-            WaitForSingleObject(fenceEvent_, INFINITE);
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            commandQueue_->Signal(fence_.Get(), ++fenceValues_[i]);
+            if (fence_->GetCompletedValue() < fenceValues_[i]) {
+                fence_->SetEventOnCompletion(fenceValues_[i], fenceEvent_);
+                WaitForSingleObject(fenceEvent_, INFINITE);
+            }
         }
     }
 
@@ -51,7 +53,9 @@ void DirectXCommon::Finalize() {
     uploadCommandAllocator_.Reset();
     uploadFence_.Reset();
     commandList_.Reset();
-    commandAllocator_.Reset();
+    for (auto& allocator : commandAllocators_) {
+        allocator.Reset();
+    }
     commandQueue_.Reset();
     fence_.Reset();
     swapChain_.Reset();
@@ -178,11 +182,14 @@ void DirectXCommon::CreateCommandObjects() {
     HRESULT hr = device_->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(commandQueue_.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
-    hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocators_[i].GetAddressOf()));
+        assert(SUCCEEDED(hr));
+    }
 
-    hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator_.Get(), nullptr, IID_PPV_ARGS(commandList_.GetAddressOf()));
+    hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators_[0].Get(), nullptr, IID_PPV_ARGS(commandList_.GetAddressOf()));
     assert(SUCCEEDED(hr));
+    commandList_->Close();
 
     // 転送専用コマンド系の生成
     hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(uploadCommandAllocator_.GetAddressOf()));
@@ -255,7 +262,7 @@ void DirectXCommon::CreateDepthStencil() {
 }
 
 void DirectXCommon::CreateFence() {
-    HRESULT hr = device_->CreateFence(fenceValue_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
+    HRESULT hr = device_->CreateFence(fenceValues_[0], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
     fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -1023,11 +1030,13 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
     if (width <= 0 || height <= 0) return;
 
     // 1. GPUの完了を待つ (Flush)
-    fenceValue_++;
-    commandQueue_->Signal(fence_.Get(), fenceValue_);
-    if (fence_->GetCompletedValue() < fenceValue_) {
-        fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
-        WaitForSingleObject(fenceEvent_, INFINITE);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        fenceValues_[i]++;
+        commandQueue_->Signal(fence_.Get(), fenceValues_[i]);
+        if (fence_->GetCompletedValue() < fenceValues_[i]) {
+            fence_->SetEventOnCompletion(fenceValues_[i], fenceEvent_);
+            WaitForSingleObject(fenceEvent_, INFINITE);
+        }
     }
 
     // 2. 既存のリソースを解放 (ResizeBuffersの前に必須)
@@ -1080,7 +1089,7 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
  
 void DirectXCommon::ReleaseAfterFence(Microsoft::WRL::ComPtr<ID3D12Resource> resource) {
 	if (!resource) return;
-	pendingResources_.push_back({ fenceValue_ + 1, resource });
+	pendingResources_.push_back({ fenceValues_[frameIndex_] + 1, resource });
 }
  
 void DirectXCommon::ClearPendingResources() {

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Math/Quaternion.h"
+#include "../Vector2.h"
+#include "../Vector3.h"
+#include "../Vector4.h"
+#include "../Matrix4x4.h"
+#include "../Quaternion.h"
 #include <numbers>
 
 //前方宣言

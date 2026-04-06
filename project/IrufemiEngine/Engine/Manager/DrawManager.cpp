@@ -21,16 +21,16 @@
 #include "Renderer/Object2D/Object2DResource.h"
 
 #include "Renderer/LineInstanced/LineResource.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Resource/Model/ModelManager.h"
-#include "Engine/Graphics/Data/CameraForGPU.h"
-#include "Engine/Graphics/Data/DirectionalLight.h"
-#include "Engine/Graphics/Data/PointLight.h"
-#include "Engine/Graphics/Data/SpotLight.h"
-#include "Engine/Graphics/Data/AreaLight.h"
-#include "Engine/Core/Math/Geometry/Math.h"
-#include "Resource/Model/Data/SkinCluster.h"
-#include "Engine/Graphics/DirectX/ShadowMap.h"
+#include "../Graphics/DirectX/DirectXCommon.h"
+#include "../../Resource/Model/ModelManager.h"
+#include "../Graphics/Data/CameraForGPU.h"
+#include "../Graphics/Data/DirectionalLight.h"
+#include "../Graphics/Data/PointLight.h"
+#include "../Graphics/Data/SpotLight.h"
+#include "../Graphics/Data/AreaLight.h"
+#include "../Core/Math/Geometry/Math.h"
+#include "../../Resource/Model/Data/SkinCluster.h"
+#include "../Graphics/DirectX/ShadowMap.h"
 
 
 namespace {
@@ -75,33 +75,37 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     // 定数バッファのサイズ (256バイトアラインメント)
     const size_t cameraSize = (sizeof(CameraForGPU) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
     const size_t lightCommonSize = (sizeof(LightCommonData) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
-
-    // フレーム定数バッファ (Camera + LightCommonData)
-    frameResource_ = dxCommon_->CreateBufferResource(cameraSize + lightCommonSize);
-    uint8_t* mapped = nullptr;
-    frameResource_->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
-
-    cameraData_ = reinterpret_cast<CameraForGPU*>(mapped);
-    lightCommonData_ = reinterpret_cast<LightCommonData*>(mapped + cameraSize);
-
-    frameData_.camera = frameResource_->GetGPUVirtualAddress();
-    frameData_.lightCommon = frameData_.camera + cameraSize;
-
-    // StructuredBuffer の初期化 (ひとまず1024個分を確保)
     const uint32_t kMaxLights = 1024;
-    pointLightResource_ = dxCommon_->CreateBufferResource(sizeof(PointLight) * kMaxLights);
-    spotLightResource_ = dxCommon_->CreateBufferResource(sizeof(SpotLight) * kMaxLights);
-    areaLightResource_ = dxCommon_->CreateBufferResource(sizeof(AreaLight) * kMaxLights);
 
-    // ライト SRV デスクリプタの一括確保 (Point, Spot, Area 用に 3 つ)
-    auto pool = dxCommon_->GetSrvPool();
-    lightSrvBaseIndex_ = pool->Allocate(3);
-    lightSrvHandle_ = pool->GetGPUHandle(lightSrvBaseIndex_);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        auto& fr = frameResources_[i];
 
-    // StructuredBuffer SRV の作成
-    pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 0, pointLightResource_.Get(), kMaxLights, sizeof(PointLight));
-    pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 1, spotLightResource_.Get(), kMaxLights, sizeof(SpotLight));
-    pool->CreateSRVForStructuredBuffer(lightSrvBaseIndex_ + 2, areaLightResource_.Get(), kMaxLights, sizeof(AreaLight));
+        // フレーム定数バッファ (Camera + LightCommonData)
+        fr.frameResource = dxCommon_->CreateBufferResource(cameraSize + lightCommonSize);
+        uint8_t* mapped = nullptr;
+        fr.frameResource->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
+
+        fr.cameraData = reinterpret_cast<CameraForGPU*>(mapped);
+        fr.lightCommonData = reinterpret_cast<LightCommonData*>(mapped + cameraSize);
+
+        fr.frameData.camera = fr.frameResource->GetGPUVirtualAddress();
+        fr.frameData.lightCommon = fr.frameData.camera + cameraSize;
+
+        // StructuredBuffer の初期化 (ひとまず1024個分を確保)
+        fr.pointLightResource = dxCommon_->CreateBufferResource(sizeof(PointLight) * kMaxLights);
+        fr.spotLightResource = dxCommon_->CreateBufferResource(sizeof(SpotLight) * kMaxLights);
+        fr.areaLightResource = dxCommon_->CreateBufferResource(sizeof(AreaLight) * kMaxLights);
+
+        // ライト SRV デスクリプタの一括確保 (Point, Spot, Area 用に 3 つ)
+        auto pool = dxCommon_->GetSrvPool();
+        fr.lightSrvBaseIndex = pool->Allocate(3);
+        fr.lightSrvHandle = pool->GetGPUHandle(fr.lightSrvBaseIndex);
+
+        // StructuredBuffer SRV の作成
+        pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 0, fr.pointLightResource.Get(), kMaxLights, sizeof(PointLight));
+        pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 1, fr.spotLightResource.Get(), kMaxLights, sizeof(SpotLight));
+        pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 2, fr.areaLightResource.Get(), kMaxLights, sizeof(AreaLight));
+    }
 
     // シャドウマップの初期化 (2048x2048)
     shadowMap_ = std::make_unique<ShadowMap>();
@@ -109,23 +113,24 @@ void DrawManager::Initialize(DirectXCommon* dx) {
 }
 
 void DrawManager::Finalize() {
-    if (frameResource_) {
-        frameResource_->Unmap(0, nullptr);
-        frameResource_.Reset();
-    }
-    pointLightResource_.Reset();
-    spotLightResource_.Reset();
-    areaLightResource_.Reset();
-
-    // SRVの解放
     auto* srvPool = dxCommon_->GetSrvPool();
-    uint64_t fv = dxCommon_->GetFenceValue();
-    if (srvPool && lightSrvBaseIndex_ != 0xFFFFFFFFu) {
-        // 連続した3つのデスクリプタを個別に返却 (Freeは1つずつ用のため)
-        for (uint32_t i = 0; i < 3; ++i) {
-            srvPool->FreeAfterFence(lightSrvBaseIndex_ + i, fv);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        auto& fr = frameResources_[i];
+        if (fr.frameResource) {
+            fr.frameResource->Unmap(0, nullptr);
+            fr.frameResource.Reset();
         }
-        lightSrvBaseIndex_ = 0xFFFFFFFFu;
+        fr.pointLightResource.Reset();
+        fr.spotLightResource.Reset();
+        fr.areaLightResource.Reset();
+
+        // SRVの解放
+        if (srvPool && fr.lightSrvBaseIndex != 0xFFFFFFFFu) {
+            for (uint32_t j = 0; j < 3; ++j) {
+                srvPool->FreeAfterFence(fr.lightSrvBaseIndex + j, dxCommon_->GetFenceValue(i));
+            }
+            fr.lightSrvBaseIndex = 0xFFFFFFFFu;
+        }
     }
 
     dxCommon_ = nullptr;
@@ -139,6 +144,23 @@ void DrawManager::BindPSO(ID3D12PipelineState* pso) {
 }
 
 void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uint8_t clearStencil) {
+
+    // 1. GPU同期 (これから使うフレームのリソースが空くまで待つ)
+    ID3D12Fence* fence = dxCommon_->GetFence();
+    uint64_t waitValue = dxCommon_->GetFenceValue(); // 現在のインデックスに対応する期待フェンス値
+    if (fence->GetCompletedValue() < waitValue) {
+        fence->SetEventOnCompletion(waitValue, dxCommon_->GetFenceEvent());
+        WaitForSingleObject(dxCommon_->GetFenceEvent(), INFINITE);
+    }
+
+    // 2. コマンドリストとアロケータのリセット (現在のフレーム用)
+    ID3D12CommandAllocator* allocator = dxCommon_->GetCommandAllocator();
+    HRESULT hr = allocator->Reset();
+    assert(SUCCEEDED(hr));
+    hr = commandList_->Reset(allocator, nullptr);
+    assert(SUCCEEDED(hr));
+
+    // バックバッファとRTV/DSVの取得 (これはスワップチェーン依存なのでそのままでよい)
 
     // バックバッファとRTV/DSVの取得
     const UINT backIdx = dxCommon_->GetSwapChain()->GetCurrentBackBufferIndex();
@@ -253,49 +275,27 @@ void DrawManager::PostDraw() {
     }
 
 
-    /*完璧な画面クリアを目指して*/
-
-    ///GPUにSignal(シグナル)を送る
-
-    //Fenceの値を更新
+    // 1. フェンスをシグナル (待機せずにGPUに進捗を記録させる)
     uint64_t& fenceValue = dxCommon_->GetFenceValue();
     fenceValue++;
-    //GPUがここまでたどり着いたときに、Fenceの値を指定した値に代入するようにSignalを送る
     dxCommon_->GetCommandQueue()->Signal(dxCommon_->GetFence(), fenceValue);
 
-    ///Fenceの値を確認してGPUを待つ
-
-    //Fenceの値が指定したSignal値にたどり着いているか確認する
-    //GetCompletedValueの初期値はFence作成時に渡した初期値
-    if (dxCommon_->GetFence()->GetCompletedValue() < fenceValue) {
-        //指定したSignalにたどり着いていないので、たどり着くまで待つようにイベントを設定する
-        dxCommon_->GetFence()->SetEventOnCompletion(fenceValue, dxCommon_->GetFenceEvent());
-        //イベント待つ
-        WaitForSingleObject(dxCommon_->GetFenceEvent(), INFINITE);
-    }
+    // 2. 次のフレームへインデックスを進める
+    dxCommon_->AdvanceFrameIndex();
 
     dxCommon_->UpdateFixFPS();
-
-    /*画面の色を変えよう*/
-
-    ///コマンドを積み込んで確定させる
-
-    //次のフレーム用のコマンドリストを準備
-    hr = dxCommon_->GetCommandAllocator()->Reset();
-    assert(SUCCEEDED(hr));
-    hr = commandList_->Reset(dxCommon_->GetCommandAllocator(), nullptr);
-    assert(SUCCEEDED(hr));
-
 }
 
 void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights) {
-    if (cameraData_) { *cameraData_ = camera; }
-    if (lightCommonData_) {
+    auto& fr = frameResources_[dxCommon_->GetFrameIndex()];
+
+    if (fr.cameraData) { *fr.cameraData = camera; }
+    if (fr.lightCommonData) {
         // ライト共通データの更新（b1）
-        lightCommonData_->directionalLight = light;
-        lightCommonData_->pointLightCount = static_cast<int32_t>(pointLights.size());
-        lightCommonData_->spotLightCount = static_cast<int32_t>(spotLights.size());
-        lightCommonData_->areaLightCount = static_cast<int32_t>(areaLights.size());
+        fr.lightCommonData->directionalLight = light;
+        fr.lightCommonData->pointLightCount = static_cast<int32_t>(pointLights.size());
+        fr.lightCommonData->spotLightCount = static_cast<int32_t>(spotLights.size());
+        fr.lightCommonData->areaLightCount = static_cast<int32_t>(areaLights.size());
 
         // ライト視点行列の更新 (平行光源)
         Vector3 lightDir = Math::Normalize(light.direction);
@@ -323,7 +323,7 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLigh
         // 正投影行列 (フィールド範囲 200x200 をカバーするように 256x256 程度に設定)
         Matrix4x4 proj = Math::MakeOrthographicMatrix(-128.0f, 128.0f, 128.0f, -128.0f, 0.1f, 512.0f);
         
-        lightCommonData_->viewProjection = Math::Multiply(view, proj);
+        fr.lightCommonData->viewProjection = Math::Multiply(view, proj);
     }
 
     // 各 StructuredBuffer へ書き込み
@@ -338,9 +338,9 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLigh
         res->Unmap(0, nullptr);
     };
 
-    copyLights(pointLightResource_.Get(), pointLights);
-    copyLights(spotLightResource_.Get(), spotLights);
-    copyLights(areaLightResource_.Get(), areaLights);
+    copyLights(fr.pointLightResource.Get(), pointLights);
+    copyLights(fr.spotLightResource.Get(), spotLights);
+    copyLights(fr.areaLightResource.Get(), areaLights);
 }
 
 void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
@@ -698,11 +698,13 @@ void DrawManager::BindCommonParameters() {
 
     commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     commandList_->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Camera, frameData_.camera);
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, frameData_.lightCommon);
+
+    auto& fr = frameResources_[dxCommon_->GetFrameIndex()];
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Camera, fr.frameData.camera);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, fr.frameData.lightCommon);
 
     // 点光源、スポットライト、面光源を１つのテーブル（Slot 6）で一括設定
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, lightSrvHandle_);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, fr.lightSrvHandle);
 
     // シャドウマップをバインド (Slot 10 / register t5) - シャドウパス中はバインドしない
     if (shadowMap_ && !isShadowPass_) {
@@ -730,8 +732,9 @@ void DrawManager::BeginShadowPass() {
     shadowMap_->BeginRender(commandList_);
 
     // 4. ライト行列の更新 (平行光源)
-    if (lightCommonData_) {
-        Vector3 lightDir = Math::Normalize(lightCommonData_->directionalLight.direction);
+    auto& fr = frameResources_[dxCommon_->GetFrameIndex()];
+    if (fr.lightCommonData) {
+        Vector3 lightDir = Math::Normalize(fr.lightCommonData->directionalLight.direction);
         // シーン全体をカバーするようにライトの位置と範囲を設定
         Vector3 lightPos = Math::Multiply(-100.0f, lightDir);
         
@@ -743,7 +746,7 @@ void DrawManager::BeginShadowPass() {
         
         // 正射影行列 (広めに設定)
         Matrix4x4 lightOrtho = Math::MakeOrthographicMatrix(-100.0f, 100.0f, 100.0f, -100.0f, 0.1f, 300.0f);
-        lightCommonData_->viewProjection = Math::Multiply(lightView, lightOrtho);
+        fr.lightCommonData->viewProjection = Math::Multiply(lightView, lightOrtho);
     }
 
     // DescriptorHeap再設定

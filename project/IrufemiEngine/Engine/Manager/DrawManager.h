@@ -11,6 +11,7 @@
 #include "../Graphics/Data/SpotLight.h"
 #include "../Graphics/Data/AreaLight.h"
 #include "../Graphics/DirectX/RenderTexture.h"
+#include "../Graphics/DirectX/DirectXCommon.h" // kMaxFramesInFlight のために追加
 #include "../Graphics/DirectX/RootSignatureConfig.h"
 #include "../Core/Math/Vector4.h"
 #include <vector>
@@ -60,24 +61,26 @@ private:
     DirectXCommon* dxCommon_ = nullptr;
     ID3D12GraphicsCommandList* commandList_ = nullptr; // コマンドリストをキャッシュ
 
-    // ライト関連のリソース
-    Microsoft::WRL::ComPtr<ID3D12Resource> pointLightResource_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> spotLightResource_;
-    Microsoft::WRL::ComPtr<ID3D12Resource> areaLightResource_;
+    // 各フレームごとの動的リソース
+    struct FrameResource {
+        Microsoft::WRL::ComPtr<ID3D12Resource> frameResource;
+        Microsoft::WRL::ComPtr<ID3D12Resource> pointLightResource;
+        Microsoft::WRL::ComPtr<ID3D12Resource> spotLightResource;
+        Microsoft::WRL::ComPtr<ID3D12Resource> areaLightResource;
 
-    // ライト SRV テーブルの先頭ハンドルとベースインデックス
-    D3D12_GPU_DESCRIPTOR_HANDLE lightSrvHandle_{};
-    uint32_t lightSrvBaseIndex_ = 0xFFFFFFFFu;
+        CameraForGPU* cameraData = nullptr;
+        LightCommonData* lightCommonData = nullptr;
 
-    // カメラやライト共通情報を格納するリソース
-    Microsoft::WRL::ComPtr<ID3D12Resource> frameResource_;
-    struct FrameData {
-        D3D12_GPU_VIRTUAL_ADDRESS camera;
-        D3D12_GPU_VIRTUAL_ADDRESS lightCommon; // register b1
-    } frameData_{};
-
-    CameraForGPU* cameraData_ = nullptr;
-    LightCommonData* lightCommonData_ = nullptr;
+        D3D12_GPU_DESCRIPTOR_HANDLE lightSrvHandle{};
+        uint32_t lightSrvBaseIndex = 0xFFFFFFFFu;
+        
+        // カメラやライト共通情報を格納するデータ
+        struct FrameData {
+            D3D12_GPU_VIRTUAL_ADDRESS camera;
+            D3D12_GPU_VIRTUAL_ADDRESS lightCommon; // register b1
+        } frameData{};
+    };
+    std::array<FrameResource, kMaxFramesInFlight> frameResources_;
 
     D3D12_GPU_DESCRIPTOR_HANDLE environmentMapHandle_{}; // 環境マップ用SRVハンドル
 
@@ -254,7 +257,7 @@ public: //メンバ関数
 
     /** @name 状態取得・ユーティリティ */
     ///@{
-    CameraForGPU* GetCameraData() const { return cameraData_; }
+    CameraForGPU* GetCameraData() const { return frameResources_[dxCommon_->GetFrameIndex()].cameraData; }
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
     ShadowMap* GetShadowMap() const { return shadowMap_.get(); }
     ///@}

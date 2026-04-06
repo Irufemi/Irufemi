@@ -12,6 +12,7 @@
 #include "FrameRateController.h"
 #include "ShaderCompiler.h"
 #include "RootSignatureConfig.h"
+#include <array>
 
 #include "../../../../externals/DirectXTex/DirectXTex.h"
 #include "../Pipeline/PSOManager.h"
@@ -20,6 +21,11 @@
 
 class Log;
 class IrufemiEngine;
+
+/**
+ * @brief 同時実行フレーム数 (トリプルバッファリング)
+ */
+static const uint32_t kMaxFramesInFlight = 3;
 
 /**
  * @class DirectXCommon
@@ -154,7 +160,7 @@ public: // ゲッター
 	///@{
 	ID3D12Device* GetDevice() { return device_.Get(); }
 	ID3D12CommandQueue* GetCommandQueue() { return commandQueue_.Get(); }
-	ID3D12CommandAllocator* GetCommandAllocator() { return commandAllocator_.Get(); }
+	ID3D12CommandAllocator* GetCommandAllocator() { return commandAllocators_[frameIndex_].Get(); }
 	ID3D12GraphicsCommandList* GetCommandList() { return commandList_.Get(); }
 	///@}
 
@@ -170,7 +176,8 @@ public: // ゲッター
 	///@{
 	ID3D12Fence* GetFence() { return fence_.Get(); }
 	HANDLE& GetFenceEvent() { return fenceEvent_; }
-	uint64_t& GetFenceValue() { return fenceValue_; }
+	uint64_t& GetFenceValue() { return fenceValues_[frameIndex_]; }
+	uint64_t GetFenceValue(uint32_t index) const { return fenceValues_[index]; }
 	///@}
 
 	/** @name デスクリプタヒープ・ハンドルの取得 */
@@ -202,6 +209,8 @@ public: // ゲッター
 	ID3D12Resource* GetDepthStencilResource() const { return depthStencilResource_.Get(); }
 	ShaderCompiler* GetShaderCompiler() const { return shaderCompiler_.get(); }
 	FrameRateController* GetFPSController() const { return fpsController_.get(); }
+	uint32_t GetFrameIndex() const { return frameIndex_; }
+	void AdvanceFrameIndex() { frameIndex_ = (frameIndex_ + 1) % kMaxFramesInFlight; }
 	///@}
 
 	/** @name Compute Shader 関連の取得 */
@@ -284,7 +293,7 @@ private: // メンバ変数
 	Microsoft::WRL::ComPtr<ID3D12Debug1> debugController_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Device> device_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocators_[kMaxFramesInFlight];
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_ = nullptr;
 
 	// --- SwapChain & Render Targets ---
@@ -314,8 +323,9 @@ private: // メンバ変数
 	// --- Synchronization --
 
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence_ = nullptr;
-	uint64_t fenceValue_ = 0;
+	uint64_t fenceValues_[kMaxFramesInFlight]{};
 	HANDLE fenceEvent_ = nullptr;
+	uint32_t frameIndex_ = 0;
 
 	// Log(ポインタ参照)
 	Log* log_ = nullptr;
