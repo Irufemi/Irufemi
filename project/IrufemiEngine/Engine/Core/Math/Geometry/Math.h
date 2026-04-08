@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Math/Quaternion.h"
+#include "../Vector2.h"
+#include "../Vector3.h"
+#include "../Vector4.h"
+#include "../Matrix4x4.h"
+#include "../Quaternion.h"
 #include <numbers>
 
 //前方宣言
@@ -445,5 +445,13 @@ namespace Math {
 #pragma endregion
 
     Vector3 Perpendicular(const Vector3& vector);
+
+    /**
+     * @brief 値を最小値と最大値の間にクランプする
+     */
+    template <typename T>
+    constexpr const T& Clamp(const T& v, const T& lo, const T& hi) {
+        return (v < lo) ? lo : (hi < v) ? hi : v;
+    }
 
 }

@@ -29,6 +29,8 @@ public:
     static void SetTextureManager(TextureManager* tm);
     static void SetDrawManager(DrawManager* dm);
     static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; } // 追加
+    void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+    bool IsCullingEnabled() const { return isCullingEnabled_; }
 
     ~TetraRegion(); // SRV遅延解放
 
@@ -59,7 +61,7 @@ public:
     void AddInstanceByVertexRadius(const Vector3& center, float worldVertexRadius, const Vector3& rotate = {0,0,0});
 
     UINT                        GetInstanceCount() const {
-        return static_cast<UINT>(instanceWorlds_.empty() ? instances_.size() : instanceWorlds_.size());
+        return visibleInstanceCount_;
     }
 
 private:
@@ -114,4 +116,7 @@ private:
     // モデル辺長
     float edgeLength_ = 1.0f;
     bool  meshDirty_ = false;
+
+    bool     isCullingEnabled_ = true;
+    uint32_t visibleInstanceCount_ = 0;
 };

@@ -148,6 +148,40 @@ std::vector<std::string> TextureManager::GetTextureNames() const {
     return keys;
 }
 
+std::vector<std::string> TextureManager::GetTextureNamesForDebug() const {
+    std::vector<std::string> keys;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        keys.reserve(textures_.size());
+        for (auto& kv : textures_) {
+            // キューブマップを除外
+            if (!kv.second->IsCubemap() && kv.first != "whiteCubeMap") {
+                keys.push_back(kv.first);
+            }
+        }
+    }
+    // アルファベット順にソート
+    std::sort(keys.begin(), keys.end());
+    return keys;
+}
+
+std::vector<std::string> TextureManager::GetCubeMapNamesForDebug() const {
+    std::vector<std::string> keys;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        keys.reserve(textures_.size());
+        for (auto& kv : textures_) {
+            // キューブマップのみを抽出
+            if (kv.second->IsCubemap() || kv.first == "whiteCubeMap") {
+                keys.push_back(kv.first);
+            }
+        }
+    }
+    // アルファベット順にソート
+    std::sort(keys.begin(), keys.end());
+    return keys;
+}
+
 void TextureManager::CreateWhiteDummyTexture() {
     if (whiteTextureHandle_.ptr != 0) return;
     if (!dxCommon_) { return; }

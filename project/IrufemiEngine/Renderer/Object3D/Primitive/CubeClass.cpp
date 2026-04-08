@@ -11,6 +11,10 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Engine/Core/Math/Geometry/Math.h"
 #include "Engine/Manager/PrimitiveManager.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Core/Shape/Sphere.h"
+#include "Engine/Core/Shape/Sphere.h"
 
 TextureManager* CubeClass::textureManager_ = nullptr;
 DrawManager* CubeClass::drawManager_ = nullptr;
@@ -59,8 +63,7 @@ void CubeClass::Initialize(Camera* camera, float width, float height, float dept
     // テクスチャハンドル設定
     if (textureManager_) {
         resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
-        auto textureNames = textureManager_->GetTextureNames();
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
         selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
@@ -113,6 +116,23 @@ void CubeClass::Update() {
 void CubeClass::Draw() {
     if (!resource_ || !drawManager_ || !camera_) return;
 
+    // 視錐台カリング
+    if (isCullingEnabled_) {
+        // 3軸サイズとスケールを考慮した境界球半径
+        float rx = width_ * resource_->transform_.scale.x;
+        float ry = height_ * resource_->transform_.scale.y;
+        float rz = depth_ * resource_->transform_.scale.z;
+        float finalRadius = 0.5f * (std::sqrt)(rx * rx + ry * ry + rz * rz);
+
+        Sphere boundingSphere;
+        boundingSphere.center = center_;
+        boundingSphere.radius = finalRadius * 1.1f; // 10%のマージン
+
+        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+            return; // 描画スキップ
+        }
+    }
+
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
                           std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
@@ -133,6 +153,7 @@ void CubeClass::Debug(const char* cubeName) {
     ui_->DebugTransform(resource_->transform_);
     ui_->DebugMaterialBy3D(resource_->materialData_);
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+    ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
 
     // サイズ編集 UI(変更時は Initialize で再生成)
     float w = width_;
@@ -152,8 +173,7 @@ void CubeClass::Debug(const char* cubeName) {
         // 現在のテクスチャ名を復元して Initialize を呼ぶ(UI 保持のため)
         std::string currentTextureName = "resources/uvChecker.png";
         if (textureManager_) {
-            auto textureNames = textureManager_->GetTextureNames();
-            std::sort(textureNames.begin(), textureNames.end());
+            auto textureNames = textureManager_->GetTextureNamesForDebug();
             if (!textureNames.empty()) {
                 if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
                     currentTextureName = textureNames[selectedTextureIndex_];

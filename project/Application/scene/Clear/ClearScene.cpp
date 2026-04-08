@@ -91,9 +91,9 @@ void ClearScene::Update() {
     // ↓ゲームの更新
     // =====
 
-    // Spaceキーが押されていたらステージ選択へ
+    // Spaceキーが押されていたらタイトルへ演出付きで遷移（1.0秒）
     if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
-        engine_->GetSceneManager()->Request("Title");
+        engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
     }
 
     // シーン表示仮置きスプライトの更新

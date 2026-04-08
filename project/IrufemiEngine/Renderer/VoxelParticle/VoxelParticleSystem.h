@@ -165,5 +165,7 @@ private:
   std::mutex voxelModelMutex_;
   std::future<void> initializeFuture_;
 
+  bool needsUpdateCS_ = false;
+
   static IrufemiEngine *engine_;
 };

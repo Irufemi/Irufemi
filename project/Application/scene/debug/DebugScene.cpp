@@ -186,6 +186,12 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         skybox_->Initialize(camera_.get(), "resources/rostock_laage_airport_4k.dds");
     }
 
+    if (isActivePrimitiveObj_) {
+        primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
+        primitiveObj_->Initialize(camera_.get(), PrimitiveType::Cube);
+        primitiveObj_->SetPosition({ 2.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
+    }
+
     // エンジンのデフォルトクリアカラーを「青」に設定
     engine_->SetClearColor(Vector4{ 0.1f, 0.25f, 0.5f, 1.0f });
 }
@@ -222,6 +228,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("Walk", &isActiveWalk_);
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
     ImGui::Checkbox("Skybox", &isActiveSkybox_);
+    ImGui::Checkbox("PrimitiveObj", &isActivePrimitiveObj_);
     ImGui::End();
 
     ImGui::ShowDemoWindow();
@@ -424,6 +431,14 @@ void DebugScene::Update() {
         skybox_->Update();
     }
 
+    if (isActivePrimitiveObj_) {
+        if (!primitiveObj_) {
+            primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
+            primitiveObj_->Initialize(camera_.get(), PrimitiveType::Cube);
+        }
+        primitiveObj_->Update();
+    }
+
     // 2D
 
     if (isActiveSprite_) {
@@ -551,6 +566,10 @@ void DebugScene::Draw() {
         sneakWalk_->Draw();
     }
 
+    if (isActivePrimitiveObj_) {
+        primitiveObj_->Draw();
+    }
+
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
 
@@ -624,6 +643,8 @@ void DebugScene::DrawDebugTab() {
     if (isActivePlane_ && plane_) plane_->Debug("Plane");
     if (isActiveSphere_ && sphere_) sphere_ ->Debug("Sphere");
     if (isActiveCylinder_ && cylinder_) cylinder_->Debug("Cylinder");
+
+    if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
 
     DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 #endif

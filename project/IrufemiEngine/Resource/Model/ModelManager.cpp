@@ -689,6 +689,9 @@ ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std:
     // 手書きパーサでは階層情報はないため空 Node
     objModel.rootNode = Node{};
 
+    // 境界球を計算
+    CalculateBoundingSphere(objModel);
+
     return objModel;
 }
 
@@ -999,6 +1002,9 @@ ObjModel ModelManager::LoadModelFromFile(const std::string& directoryPath, const
 
     objModel.rootNode = ReadNode(scene->mRootNode);
 
+    // 境界球を計算
+    CalculateBoundingSphere(objModel);
+
     return objModel;
 }
 
@@ -1038,6 +1044,47 @@ Node ModelManager::ReadNode(aiNode* node) {
         result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
     }
     return result;
+}
+
+void ModelManager::CalculateBoundingSphere(ObjModel& model) {
+    Vector3 minV = { (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)() };
+    Vector3 maxV = { (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)() };
+    bool hasVertices = false;
+
+    // 1pass: 全メッシュの頂点を走査してAABBを求める
+    for (const auto& mesh : model.meshes) {
+        for (const auto& vertex : mesh.vertices) {
+            minV.x = (std::min)(minV.x, vertex.position.x);
+            minV.y = (std::min)(minV.y, vertex.position.y);
+            minV.z = (std::min)(minV.z, vertex.position.z);
+            maxV.x = (std::max)(maxV.x, vertex.position.x);
+            maxV.y = (std::max)(maxV.y, vertex.position.y);
+            maxV.z = (std::max)(maxV.z, vertex.position.z);
+            hasVertices = true;
+        }
+    }
+
+    if (!hasVertices) {
+        model.boundingSphere.center = { 0, 0, 0 };
+        model.boundingSphere.radius = 0.0f;
+        return;
+    }
+
+    // 中心点をAABBの重心とする
+    model.boundingSphere.center = (minV + maxV) * 0.5f;
+
+    // 2pass: 中心点から最も遠い頂点までの距離を半径とする
+    float maxDistSq = 0.0f;
+    for (const auto& mesh : model.meshes) {
+        for (const auto& vertex : mesh.vertices) {
+            Vector3 pos = { vertex.position.x, vertex.position.y, vertex.position.z };
+            Vector3 diff = pos - model.boundingSphere.center;
+            float distSq = Math::Dot(diff, diff);
+            maxDistSq = (std::max)(maxDistSq, distSq);
+        }
+    }
+
+    model.boundingSphere.radius = std::sqrt(maxDistSq);
 }
 
 namespace {
@@ -1133,7 +1180,7 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
 
     // 1. AABB(バウンディングボックス)の計算
     result.aabbMin = { (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)() };
-    result.aabbMax = { std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest() };
+    result.aabbMax = { (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)() };
 
     for (const auto& mesh : model.meshes) {
         for (const auto& vertex : mesh.vertices) {

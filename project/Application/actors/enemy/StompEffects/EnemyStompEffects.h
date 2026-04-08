@@ -48,7 +48,7 @@ public:
 
     void Initialize(Camera* camera);
     void Update(float deltaTime);
-    void Draw();
+    void Draw(class IrufemiEngine* engine);
     void Fire(const Vector3& position);
     bool IsActive() const { return isActive_; }
 

@@ -168,5 +168,9 @@ private:
     uint32_t freeListIndexUavIndex_ = 0xFFFFFFFF;
     uint32_t freeListUavIndex_ = 0xFFFFFFFF;
     ///@}
+
+    bool isCullingEnabled_ = true;
+    bool isCulled_ = false;
+    bool needsUpdateCS_ = false; ///< CSによる更新が必要か（Update呼び出しに同期）
 };
 

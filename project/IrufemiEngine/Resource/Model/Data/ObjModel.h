@@ -9,6 +9,7 @@
 #include "Node.h"             
 #include "../../../Engine/Core/Math/Geometry/Math.h"
 #include "JointWeightData.h"
+#include "../../../Engine/Core/Shape/Sphere.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -55,4 +56,5 @@ struct ObjModel {
     std::vector<ObjMesh> meshes;
     Node rootNode; // 追加: シーン階層ルート
     std::map<std::string, JointWeightData> skinClusterData;
+    Sphere boundingSphere; // 追加: モデル全体の境界球
 };

@@ -57,6 +57,7 @@ private:
     TransformationMatrix* transformationData_ = nullptr;
 
     Camera* camera_ = nullptr;
+    bool isCullingEnabled_ = true;
     
     // 行列更新の最適化用
     bool isDirty_ = true;
@@ -165,6 +166,7 @@ public: //メンバ関数
     void SetLightingModeOverride(int32_t mode) { lightingModeOverride_ = mode; isDirty_ = true; }
     void SetUseClampSamplerOverride(int32_t useClamp) { useClampSamplerOverride_ = useClamp; isDirty_ = true; }
     void SetEnableLightingOverride(int32_t enable) { enableLightingOverride_ = enable; isDirty_ = true; }
+    void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     ///@}
 
     /** @name 静的メンバ設定（エンジン内部用） */

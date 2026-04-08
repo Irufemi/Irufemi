@@ -33,6 +33,8 @@ enum class PostProcessMode {
     Noise,              ///< ランダムノイズ粒子
     HSV,                ///< HSV色空間による色調整
     ToneMapping,        ///< トーンマッピング（ACES）
+    Fade,               ///< フェード（指定色への塗りつぶし）
+    Slide,              ///< スライド（ワイプ演出）
 };
 
 class DirectXCommon;
@@ -145,6 +147,24 @@ public:
         float exposure = 1.0f;   ///< 露出補正 (0.0 ~ )
     };
 
+    /**
+     * @struct FadeParams
+     * @brief フェードエフェクト用パラメータ
+     */
+    struct FadeParams {
+        Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< フェード色
+        float intensity = 0.0f;                      ///< 強度 (0.0 ~ 1.0)
+    };
+
+    /**
+     * @struct SlideParams
+     * @brief スライドエフェクト用パラメータ
+     */
+    struct SlideParams {
+        Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< スライドの色
+        float threshold = 0.0f;                      ///< 進行度 (0.0 ~ 1.0)
+    };
+
 public:
     /**
      * @brief ポストプロセスの初期化
@@ -218,6 +238,8 @@ public:
     DissolveParams& GetDissolveParams() { return dissolveParams_; }
     HSVParams& GetHSVParams() { return hsvParams_; }
     ToneMappingParams& GetToneMappingParams() { return toneMappingParams_; }
+    FadeParams& GetFadeParams() { return fadeParams_; }
+    SlideParams& GetSlideParams() { return slideParams_; }
 
     void SetDissolveNoiseHandle(int index, D3D12_GPU_DESCRIPTOR_HANDLE handle) {
         if (index >= 0 && index < 2) dissolveNoiseHandle_[index] = handle;
@@ -253,9 +275,9 @@ private:
         Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     };
     // モードに対応するPSOを保持 (中間パス用: _UNORM)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 12> psos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 14> psos_;
     // 最終パス用 (スワップチェーン等の _SRGB 形式用)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 12> finalPsos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 14> finalPsos_;
 
     // Constant Buffers
     Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;
@@ -293,6 +315,14 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> toneMappingCB_;
     ToneMappingParams* mappedToneMapping_ = nullptr;
     ToneMappingParams toneMappingParams_;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> fadeCB_;
+    FadeParams* mappedFade_ = nullptr;
+    FadeParams fadeParams_;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> slideCB_;
+    SlideParams* mappedSlide_ = nullptr;
+    SlideParams slideParams_;
 
     D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 2> dissolveNoiseHandle_{};

@@ -12,12 +12,15 @@
 void DirectXCommon::Finalize() {
 
 
-    // GPU同期
+    // GPU同期 (全フレームの完了を待機)
     if (commandQueue_ && fence_) {
-        commandQueue_->Signal(fence_.Get(), ++fenceValue_);
-        if (fence_->GetCompletedValue() < fenceValue_) {
-            fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
-            WaitForSingleObject(fenceEvent_, INFINITE);
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            uint64_t fv = IncrementGlobalFence();
+            commandQueue_->Signal(fence_.Get(), fv);
+            if (fence_->GetCompletedValue() < fv) {
+                fence_->SetEventOnCompletion(fv, fenceEvent_);
+                WaitForSingleObject(fenceEvent_, INFINITE);
+            }
         }
     }
 
@@ -51,7 +54,9 @@ void DirectXCommon::Finalize() {
     uploadCommandAllocator_.Reset();
     uploadFence_.Reset();
     commandList_.Reset();
-    commandAllocator_.Reset();
+    for (auto& allocator : commandAllocators_) {
+        allocator.Reset();
+    }
     commandQueue_.Reset();
     fence_.Reset();
     swapChain_.Reset();
@@ -178,11 +183,14 @@ void DirectXCommon::CreateCommandObjects() {
     HRESULT hr = device_->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(commandQueue_.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
-    hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocator_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocators_[i].GetAddressOf()));
+        assert(SUCCEEDED(hr));
+    }
 
-    hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator_.Get(), nullptr, IID_PPV_ARGS(commandList_.GetAddressOf()));
+    hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators_[0].Get(), nullptr, IID_PPV_ARGS(commandList_.GetAddressOf()));
     assert(SUCCEEDED(hr));
+    commandList_->Close();
 
     // 転送専用コマンド系の生成
     hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(uploadCommandAllocator_.GetAddressOf()));
@@ -216,13 +224,14 @@ void DirectXCommon::CreateSwapChain() {
 }
 
 void DirectXCommon::CreateDescriptorHeaps() {
-    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 32, false);
+    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 128, false);
     nextRtvIndex_ = 4; // 0, 1 は SwapChain 用、2, 3 は ImGui 用に予約
 
     srvPool_ = std::make_unique<DescriptorPool>();
     srvPool_->Initialize(device_.Get());
 
-    dsvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+    dsvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 16, false);
+    nextDsvIndex_ = 1; // 0 はメインの深度バッファ
 }
 
 void DirectXCommon::InitializeRenderTargets() {
@@ -254,7 +263,7 @@ void DirectXCommon::CreateDepthStencil() {
 }
 
 void DirectXCommon::CreateFence() {
-    HRESULT hr = device_->CreateFence(fenceValue_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
+    HRESULT hr = device_->CreateFence(fenceValues_[0], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
     assert(SUCCEEDED(hr));
 
     fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -297,8 +306,15 @@ void DirectXCommon::CreateRootSignatures() {
         rangeLights[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         rangeLights[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+        // シャドウマップ (t5)
+        D3D12_DESCRIPTOR_RANGE rangeShadow[1] = {};
+        rangeShadow[0].BaseShaderRegister = 5; // t5
+        rangeShadow[0].NumDescriptors = 1;
+        rangeShadow[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeShadow[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
         // --- ルートパラメータの定義 ---
-        D3D12_ROOT_PARAMETER rootParameters[10] = {};
+        D3D12_ROOT_PARAMETER rootParameters[11] = {};
 
         // Slot 0: Material (b0, PS)
         rootParameters[(UINT)RootSlot::Material].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -355,7 +371,13 @@ void DirectXCommon::CreateRootSignatures() {
         rootParameters[(UINT)RootSlot::LineInstancing].DescriptorTable.pDescriptorRanges = rangeLine;
         rootParameters[(UINT)RootSlot::LineInstancing].DescriptorTable.NumDescriptorRanges = 1;
 
-        D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
+        // Slot 10: ShadowMap (t5, PS)
+        rootParameters[(UINT)RootSlot::ShadowMap].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::ShadowMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.pDescriptorRanges = rangeShadow;
+        rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.NumDescriptorRanges = 1;
+
+        D3D12_STATIC_SAMPLER_DESC staticSamplers[3] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
         staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -373,6 +395,16 @@ void DirectXCommon::CreateRootSignatures() {
         staticSamplers[1].MaxLOD = D3D12_FLOAT32_MAX;
         staticSamplers[1].ShaderRegister = 1;
         staticSamplers[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+        staticSamplers[2].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        staticSamplers[2].AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        staticSamplers[2].AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        staticSamplers[2].AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        staticSamplers[2].ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+        staticSamplers[2].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+        staticSamplers[2].MaxLOD = D3D12_FLOAT32_MAX;
+        staticSamplers[2].ShaderRegister = 2; // s2
+        staticSamplers[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
         D3D12_ROOT_SIGNATURE_DESC rsDesc{};
         rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -485,6 +517,8 @@ void DirectXCommon::CreatePSOs() {
     auto psGpuParticle = shaderCompiler_->Compile(L"resources/shaders/ParticleGPU.PS.hlsl", L"ps_6_0", logStream);
     auto vsVoxel = shaderCompiler_->Compile(L"resources/shaders/VoxelParticle.VS.hlsl", L"vs_6_0", logStream);
     auto psVoxel = shaderCompiler_->Compile(L"resources/shaders/VoxelParticle.PS.hlsl", L"ps_6_0", logStream);
+    auto vsShadow = shaderCompiler_->Compile(L"resources/shaders/ShadowMap.VS.hlsl", L"vs_6_0", logStream);
+    auto vsShadowSkin = shaderCompiler_->Compile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", L"vs_6_0", logStream);
 
     auto csSkin = shaderCompiler_->Compile(L"resources/shaders/Skinning.CS.hlsl", L"cs_6_0", logStream);
     auto csGpuInit = shaderCompiler_->Compile(L"resources/shaders/InitializeParticle.CS.hlsl", L"cs_6_0", logStream);
@@ -522,7 +556,9 @@ void DirectXCommon::CreatePSOs() {
         { vsSkin, ps3d },
         { vsSkybox, psSkybox },
         { vsGpuParticle, psGpuParticle },
-        { vsVoxel, psVoxel }
+        { vsVoxel, psVoxel },
+        { vsShadow, nullptr },     // shadowShaders
+        { vsShadowSkin, nullptr }  // shadowSkinningShaders
     );
 
     // --- Compute PSO生成 ---
@@ -608,8 +644,37 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t in
 }
 
 uint32_t DirectXCommon::AllocateRTVIndex() {
-    assert(nextRtvIndex_ < 32);
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    if (!freeRtvIndices_.empty()) {
+        uint32_t index = freeRtvIndices_.back();
+        freeRtvIndices_.pop_back();
+        return index;
+    }
+    assert(nextRtvIndex_ < 128);
     return nextRtvIndex_++;
+}
+
+uint32_t DirectXCommon::AllocateDSVIndex() {
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    if (!freeDsvIndices_.empty()) {
+        uint32_t index = freeDsvIndices_.back();
+        freeDsvIndices_.pop_back();
+        return index;
+    }
+    assert(nextDsvIndex_ < 16);
+    return nextDsvIndex_++;
+}
+
+void DirectXCommon::FreeRTVIndex(uint32_t index) {
+    if (index == 0xFFFFFFFF) return;
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    pendingFreeRtvs_.push_back({ globalFenceValue_, index });
+}
+
+void DirectXCommon::FreeDSVIndex(uint32_t index) {
+    if (index == 0xFFFFFFFF) return;
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    pendingFreeDsvs_.push_back({ globalFenceValue_, index });
 }
 
 /*三角形の色を変えよう*/
@@ -669,10 +734,8 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateUAVBufferResource(si
     return bufferResource;
 }
 
-/*テクスチャを正しく配置しよう*/
-
 Microsoft::WRL::ComPtr<ID3D12Resource>  DirectXCommon::UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages) {
-	// --- スレッドセーフ化と完了同期の導入 ---
+	// --- スレッドセーフ化 ---
 	std::lock_guard<std::mutex> lock(uploadMutex_);
 
     ///IntermediateResource(中間リソース)
@@ -697,20 +760,17 @@ Microsoft::WRL::ComPtr<ID3D12Resource>  DirectXCommon::UploadTextureData(const M
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
     uploadCommandList_->ResourceBarrier(1, &barrier);
 
-	// 実行と同期
+	// 実行
 	uploadCommandList_->Close();
 	ID3D12CommandList* ppCommandLists[] = { uploadCommandList_.Get() };
 	commandQueue_->ExecuteCommandLists(1, ppCommandLists);
 
-	// FenceによるGPU完了待ち
+	// FenceによるGPU完了待ちを非同期化
 	uploadFenceValue_++;
 	commandQueue_->Signal(uploadFence_.Get(), uploadFenceValue_);
-	if (uploadFence_->GetCompletedValue() < uploadFenceValue_) {
-		HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-		uploadFence_->SetEventOnCompletion(uploadFenceValue_, event);
-		WaitForSingleObject(event, INFINITE);
-		CloseHandle(event);
-	}
+	
+	// 中間リソースを遅延解放に登録
+	ReleaseAfterFence(intermediateResource);
 
     return intermediateResource;
 }
@@ -992,11 +1052,13 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
     if (width <= 0 || height <= 0) return;
 
     // 1. GPUの完了を待つ (Flush)
-    fenceValue_++;
-    commandQueue_->Signal(fence_.Get(), fenceValue_);
-    if (fence_->GetCompletedValue() < fenceValue_) {
-        fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
-        WaitForSingleObject(fenceEvent_, INFINITE);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        uint64_t fv = IncrementGlobalFence();
+        commandQueue_->Signal(fence_.Get(), fv);
+        if (fence_->GetCompletedValue() < fv) {
+            fence_->SetEventOnCompletion(fv, fenceEvent_);
+            WaitForSingleObject(fenceEvent_, INFINITE);
+        }
     }
 
     // 2. 既存のリソースを解放 (ResizeBuffersの前に必須)
@@ -1015,7 +1077,15 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
     for (uint32_t i = 0; i < desc.BufferCount; ++i) {
         hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(swapChainResources_[i].GetAddressOf()));
         assert(SUCCEEDED(hr));
+        
+        // メイン RTV (SRGB)
         device_->CreateRenderTargetView(swapChainResources_[i].Get(), &rtvDesc_, rtvHandles_[i]);
+
+        // ImGui用 RTV (UNORM) も再作成
+        D3D12_RENDER_TARGET_VIEW_DESC imGuiRtvDesc = rtvDesc_;
+        imGuiRtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        rtvHandles_[i + 2].ptr = rtvHandles_[1].ptr + ((i + 1) * descriptorSizeRTV_);
+        device_->CreateRenderTargetView(swapChainResources_[i].Get(), &imGuiRtvDesc, rtvHandles_[i + 2]);
     }
 
     // 5. 深度バッファの再生成とDSVの再作成
@@ -1041,13 +1111,35 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
  
 void DirectXCommon::ReleaseAfterFence(Microsoft::WRL::ComPtr<ID3D12Resource> resource) {
 	if (!resource) return;
-	pendingResources_.push_back({ fenceValue_ + 1, resource });
+	std::lock_guard<std::mutex> lock(pendingMutex_);
+	pendingResources_.push_back({ globalFenceValue_ + 1, resource });
 }
  
 void DirectXCommon::ClearPendingResources() {
 	uint64_t completed = fence_->GetCompletedValue();
+	std::lock_guard<std::mutex> lock(pendingMutex_);
+
+	// リソースの回収
 	auto it = std::remove_if(pendingResources_.begin(), pendingResources_.end(), [completed](const PendingResource& res) {
 		return res.fenceValue <= completed;
 	});
 	pendingResources_.erase(it, pendingResources_.end());
+
+	// RTV デスクリプタの回収
+	auto rtvIt = std::remove_if(pendingFreeRtvs_.begin(), pendingFreeRtvs_.end(), [completed](const PendingDescriptor& d) {
+		return d.fenceValue <= completed;
+	});
+	for (auto d = rtvIt; d != pendingFreeRtvs_.end(); ++d) {
+		freeRtvIndices_.push_back(d->index);
+	}
+	pendingFreeRtvs_.erase(rtvIt, pendingFreeRtvs_.end());
+
+	// DSV デスクリプタの回収
+	auto dsvIt = std::remove_if(pendingFreeDsvs_.begin(), pendingFreeDsvs_.end(), [completed](const PendingDescriptor& d) {
+		return d.fenceValue <= completed;
+	});
+	for (auto d = dsvIt; d != pendingFreeDsvs_.end(); ++d) {
+		freeDsvIndices_.push_back(d->index);
+	}
+	pendingFreeDsvs_.erase(dsvIt, pendingFreeDsvs_.end());
 }

@@ -1,5 +1,7 @@
 #include "IrufemiEngine.h"
 
+IrufemiEngine::IrufemiEngine() = default;
+
 #include "Core/Math/Random/Random.h"
 #include "Core/Math/Geometry/Math.h"
 
@@ -26,6 +28,7 @@
 #include "Renderer/Object3D/Primitive/CubeClass.h"
 #include "Renderer/Object3D/Primitive/PlaneClass.h"
 #include "Renderer/Object3D/Primitive/CylinderClass.h"
+#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
@@ -169,6 +172,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     CubeClass::SetDebugUI(ui_.get());
     PlaneClass::SetDebugUI(ui_.get());
     CylinderClass::SetDebugUI(ui_.get());
+    PrimitiveObjects3DClass::SetDebugUI(ui_.get());
     ParticleSystem::SetDebugUI(ui_.get());
 
     // 描画
@@ -187,6 +191,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     TetraRegion::SetDrawManager(drawManager_.get());
     ParticleSystem::SetDrawManager(drawManager_.get());
     GPUParticleSystem::SetDrawManager(drawManager_.get());
+    PrimitiveObjects3DClass::SetDrawManager(drawManager_.get());
     ParticleSystem::SetEngine(this);
     GPUParticleSystem::SetEngine(this);
     Line3DRegion::SetDrawManager(drawManager_.get());
@@ -206,6 +211,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     TetraRegion::SetTextureManager(textureManager_.get());
     ParticleSystem::SetTextureManager(textureManager_.get());
     GPUParticleSystem::SetTextureManager(textureManager_.get());
+    PrimitiveObjects3DClass::SetTextureManager(textureManager_.get());
 
     animationManager_ = std::make_unique<AnimationManager>();
     animationManager_->Initialize(dxCommon_.get());
@@ -242,6 +248,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     dxCommon_->GetDevice()->CreateShaderResourceView(dxCommon_->GetDepthStencilResource(), &depthSrvDesc, dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
 
     postProcessManager_->SetDepthSrvHandle(depthSrvHandleGPU);
+
+    // --- SceneTransition の初期化 ---
+    sceneTransition_ = std::make_unique<SceneTransition>();
+    sceneTransition_->Initialize(postProcessManager_.get());
 
     // WinAppに自身(Engine)のポインタを設定
     winApp_->SetEngine(this);
@@ -371,8 +381,9 @@ void IrufemiEngine::Execute() {
         // 更新
         audioManager_->Update();
         sceneManager_->Update();
-    totalTime_ += deltaTime_;
-    postProcessManager_->Update(totalTime_);
+        totalTime_ += deltaTime_;
+        postProcessManager_->Update(totalTime_);
+        sceneTransition_->Update(deltaTime_);
 
     // インプットを更新
     inputManager_->Update();
@@ -460,9 +471,9 @@ void IrufemiEngine::EndFrame() {
         const uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
         srvPool->GarbageCollect(completed);
     }
- 
-	// --- 追加: 中間リソースの遅延解放を実行 ---
-	dxCommon_->ClearPendingResources();
+  
+    // --- 追加: 中間リソースの遅延解放を実行 ---
+    dxCommon_->ClearPendingResources();
 }
 
 void IrufemiEngine::OnResize(int32_t width, int32_t height) {
@@ -503,6 +514,10 @@ bool IrufemiEngine::IsCursorLocked() const {
 }
 
 void IrufemiEngine::ApplyPSO() {
+    if (drawManager_->IsShadowPass()) {
+        ApplyShadowPSO();
+        return;
+    }
     auto* pso = GetPSOManager()->Get(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager_->BindPSO(pso); }
@@ -544,6 +559,10 @@ void IrufemiEngine::ApplyLineInstancedPSO() {
 
 void IrufemiEngine::ApplySkinningPSO()
 {
+    if (drawManager_->IsShadowPass()) {
+        ApplyShadowSkinningPSO();
+        return;
+    }
     auto* pso = GetPSOManager()->GetSkinning(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "Skinning PSO is null. Check PSOManager::Initialize and shader blobs.");
     if (pso) { drawManager_->BindPSO(pso); }
@@ -560,5 +579,16 @@ void IrufemiEngine::ApplySkyboxPSO()
 void IrufemiEngine::ApplyGpuParticlePSO() {
     auto* pso = GetPSOManager()->GetGpuParticle(currentBlend_, currentDepth_, currentCull_);
     assert(pso && "GpuParticle PSO is null. Check GpuParticle shader setup.");
+    if (pso) { drawManager_->BindPSO(pso); }
+}
+void IrufemiEngine::ApplyShadowPSO() {
+    auto* pso = GetPSOManager()->GetShadow(currentCull_);
+    assert(pso && "Shadow PSO is null. Check shadow shader setup.");
+    if (pso) { drawManager_->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplyShadowSkinningPSO() {
+    auto* pso = GetPSOManager()->GetShadowSkinning(currentCull_);
+    assert(pso && "ShadowSkinning PSO is null. Check shadow shader setup.");
     if (pso) { drawManager_->BindPSO(pso); }
 }

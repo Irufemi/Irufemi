@@ -66,7 +66,9 @@ public:
         ShaderSet skinningShaders = {},
         ShaderSet skyboxShaders = {},
         ShaderSet gpuParticleShaders = {},
-        ShaderSet voxelParticleShaders = {}
+        ShaderSet voxelParticleShaders = {},
+        ShaderSet shadowShaders = {},       // シャドウマップ用 (通常)
+        ShaderSet shadowSkinningShaders = {} // シャドウマップ用 (スキニング)
     );
 
     /** @name PSO取得（各種コンポーネント用） */
@@ -93,6 +95,10 @@ public:
     ID3D12PipelineState* GetGpuParticle(BlendMode blend, DepthWrite depth, CullMode cull);
     /** @brief Voxelパーティクル描画用 */
     ID3D12PipelineState* GetVoxelParticle(BlendMode blend, DepthWrite depth, CullMode cull);
+    /** @brief シャドウマップ生成用 (通常) */
+    ID3D12PipelineState* GetShadow(CullMode cull);
+    /** @brief シャドウマップ生成用 (スキニング) */
+    ID3D12PipelineState* GetShadowSkinning(CullMode cull);
     ///@}
 
     /** @name ポストプロセス・コピー */
@@ -133,6 +139,8 @@ private:
     ShaderSet gpuParticleShaders_{};
     ShaderSet voxelParticleShaders_{};
     ShaderSet copyImageShaders_{};
+    ShaderSet shadowShaders_{};
+    ShaderSet shadowSkinningShaders_{};
 
     /** @brief キャッシュキー構造体 */
     struct Key {
@@ -158,6 +166,10 @@ private:
         const D3D12_BLEND_DESC& blendDesc,
         const D3D12_DEPTH_STENCIL_DESC& depthDesc,
         D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
+        CullMode cull) const;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreateShadowPSO(
+        const ShaderSet& shaders,
         CullMode cull) const;
 
     /** @brief BlendMode から D3D12_BLEND_DESC を作成 */

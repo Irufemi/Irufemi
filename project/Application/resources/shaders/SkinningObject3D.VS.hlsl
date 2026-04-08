@@ -1,8 +1,10 @@
 /*テクスチャを貼ろう*/
 
 #include "SkinningObject3D.hlsli"
+#include "Lighting.hlsli"
 
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
+ConstantBuffer<LightCommonData> gLightCommonData : register(b1);
 
 /*三角形を表示しよう*/
 
@@ -74,10 +76,14 @@ VertexShaderOutput main(VertexShaderInput input)
 	/*Skinning*/
 	Skinned skinned = Skinning(input); // まずSkinning計算を行って、Skinning後の頂点情報を手に入れる。ここでの頂点もSkeletonSpace
 	// Skinning結果を使って変換
+	float4 worldPos = mul(skinned.position, gTransformationMatrix.World);
 	output.position = mul(skinned.position, gTransformationMatrix.WVP);
-	output.worldPosition = mul(skinned.position, gTransformationMatrix.World).xyz;
+	output.worldPosition = worldPos.xyz;
 	output.texcoord = input.texcoord;
 	output.normal = normalize(mul(skinned.normal, (float32_t3x3) gTransformationMatrix.WorldInverseTranspose));
+
+	// シャドウマッピング用の座標変換
+	output.shadowPos = mul(worldPos, gLightCommonData.viewProjection);
 	
 	return output;
 }

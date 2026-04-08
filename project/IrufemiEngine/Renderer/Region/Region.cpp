@@ -8,7 +8,12 @@
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Resource/Model/ModelManager.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Core/Shape/Sphere.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Resource/Texture/TextureManager.h"
 #include "Renderer/VertexData.h"
 #include "Engine/Graphics/Data/Material.h"
 #include "Engine/Graphics/Data/DirectionalLight.h"
@@ -123,23 +128,39 @@ void ModelRegion::ClearInstances() {
 }
 
 void ModelRegion::BuildInstanceBuffer(bool force) {
-    if (instances_.empty()) { return; }
+    if (instances_.empty()) { 
+        visibleInstanceCount_ = 0;
+        return; 
+    }
     if (!force && !instanceDirty_) { return; }
 
-    const UINT count = static_cast<UINT>(instances_.size());
-    const UINT stride = sizeof(InstanceData);
-    const UINT sizeInBytes = stride * count;
+    const UINT totalCount = static_cast<UINT>(instances_.size());
+    
+    // フィルタリング後のデータを格納する一時ベクタ
+    std::vector<InstanceData> temp;
+    temp.reserve(totalCount);
 
-    CreateOrResizeInstanceBuffer(count);
-
-    std::vector<InstanceData> temp(count);
     const Matrix4x4 view = camera_->GetViewMatrix();
     const Matrix4x4 proj = camera_->GetPerspectiveFovMatrix();
-    for (UINT i = 0; i < count; ++i) {
-        const Transform& inst = instances_[i];
+    const Frustum& frustum = camera_->GetFrustum();
+    float modelRadius = managedModel_ ? managedModel_->cpuModel->boundingSphere.radius : 0.0f;
 
+    for (const auto& inst : instances_) {
+        // 視錐台カリング
+        if (isCullingEnabled_ && camera_) {
+            float maxScale = (std::max)({ inst.scale.x, inst.scale.y, inst.scale.z });
+            Sphere boundingSphere = managedModel_->cpuModel->boundingSphere;
+            boundingSphere.center = inst.translate;
+            boundingSphere.radius = modelRadius * maxScale * 1.1f;
+
+            if (!Collision::IsCollision(frustum, boundingSphere)) {
+                continue; // 画面外ならスキップ
+            }
+        }
+
+        InstanceData data;
         Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
-        Matrix4x4 wvp = Math::Multiply(world, Math::Multiply(view, proj));
+        data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
 
         Matrix4x4 worldForNormal = world;
         worldForNormal.m[3][0] = 0.0f;
@@ -147,16 +168,26 @@ void ModelRegion::BuildInstanceBuffer(bool force) {
         worldForNormal.m[3][2] = 0.0f;
         worldForNormal.m[3][3] = 1.0f;
 
-        temp[i].WVP = wvp;
-        temp[i].World = world;
-        temp[i].WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-        temp[i].color = { 1,1,1,1 };
+        data.World = world;
+        data.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+        data.color = { 1,1,1,1 };
+        
+        temp.push_back(data);
     }
+
+    visibleInstanceCount_ = static_cast<uint32_t>(temp.size());
+    if (visibleInstanceCount_ == 0) {
+        instanceDirty_ = false;
+        return;
+    }
+
+    // バッファ確保（全インスタンス分確保しておく）
+    CreateOrResizeInstanceBuffer(totalCount);
 
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
-    std::memcpy(dst, temp.data(), sizeInBytes);
+    std::memcpy(dst, temp.data(), sizeof(InstanceData) * visibleInstanceCount_);
     instanceBuffer_->Unmap(0, nullptr);
 
     instanceDirty_ = false;

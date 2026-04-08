@@ -9,6 +9,10 @@
 #include "Engine/Core/Math/Geometry/Math.h"
 #include <string>
 #include <algorithm>
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Core/Shape/Sphere.h"
+#include "Engine/Core/Shape/Sphere.h"
 #include <cstdio>
 #include <Windows.h>
 
@@ -61,8 +65,7 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
     if (textureManager_) {
         resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
-        auto textureNames = textureManager_->GetTextureNames();
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
         selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
@@ -106,6 +109,23 @@ void SphereClass::Update() {
 void SphereClass::Draw() {
     if (!resource_ || !drawManager_ || !camera_) return;
 
+    // 視錐台カリング
+    if (isCullingEnabled_) {
+        // 実スケール = 半径 × 係数
+        float rx = info_.radius * resource_->transform_.scale.x;
+        float ry = info_.radius * resource_->transform_.scale.y;
+        float rz = info_.radius * resource_->transform_.scale.z;
+        float finalRadius = (std::max)({ rx, ry, rz });
+
+        Sphere boundingSphere;
+        boundingSphere.center = info_.center;
+        boundingSphere.radius = finalRadius * 1.1f; // 10%のマージン
+
+        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+            return; // 描画スキップ
+        }
+    }
+
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
                           std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
@@ -140,6 +160,8 @@ void SphereClass::Debug([[maybe_unused]] const char* sphereName) {
     ui_->DebugMaterialBy3D(resource_->materialData_);
 
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
+
+    ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
 
     ui_->DebugUvTransform(resource_->uvTransform_);
 

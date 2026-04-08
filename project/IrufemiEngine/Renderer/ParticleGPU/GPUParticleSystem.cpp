@@ -7,6 +7,8 @@
 #include "Resource/Texture/TextureManager.h"
 #include "Renderer/VertexData.h"
 #include "Application/camera/Camera.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
 #include <cassert>
 
 // 静的メンバ変数の実体定義
@@ -21,7 +23,7 @@ GPUParticleSystem::GPUParticleSystem() = default;
 // デストラクタ
 GPUParticleSystem::~GPUParticleSystem() {
     if (auto* srvPool = dxCommon_ ? dxCommon_->GetSrvPool() : nullptr) {
-        uint64_t fv = dxCommon_->GetFenceValue();
+        uint64_t fv = dxCommon_->GetCurrentFrameFenceValue();
         srvPool->FreeAfterFence(emitterSrvIndex_, fv);
         srvPool->FreeAfterFence(perFrameSrvIndex_, fv);
         srvPool->FreeAfterFence(particleUavIndex_, fv);
@@ -208,6 +210,20 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
 // 更新
 void GPUParticleSystem::Update() {
+    if (!emitterSphere_ || !camera_) return;
+
+    isCulled_ = false;
+    if (isCullingEnabled_) {
+        Sphere boundingSphere;
+        boundingSphere.center = emitterSphere_->translate;
+        // GPUパーティクルは拡散が激しいため、放出半径の3倍を境界とする
+        boundingSphere.radius = emitterSphere_->radius * 3.0f;
+
+        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+            isCulled_ = true;
+            return; // 画面外なら計算（CS）をスキップ
+        }
+    }
 
     /*Particleを発生させる*/
 
@@ -224,45 +240,6 @@ void GPUParticleSystem::Update() {
         emitterSphere_->emit = 0;
     }
 
-    /*GPUParticle*/
-
-    ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
-
-    // ディスクリプタヒープを設定
-    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
-    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
-    commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
-
-    // UAVバリアの設定
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = nullptr; // グローバルUAVバリア
-
-    // Emit
-    commandList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
-    commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
-    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
-    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
-    commandList->SetComputeRootConstantBufferView(4, emitterSphereResource_->GetGPUVirtualAddress());
-    commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
-    commandList->Dispatch(1, 1, 1);
-
-    // Emitの完了を待つ
-    commandList->ResourceBarrier(1, &barrier);
-
-    // Update
-    commandList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
-    commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
-    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
-    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
-    commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
-    commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
-
-    // Updateの完了を待つ
-    commandList->ResourceBarrier(1, &barrier);
-
-
     perViewData_->viewProjection = camera_->GetViewProjectionMatrix3D();
 
     // backToFrontMatrix_の設定(面の向きをカメラの方向にしてあるのでここは調整なし。0でOK)
@@ -275,12 +252,68 @@ void GPUParticleSystem::Update() {
     billboardMatrix_.m[3][2] = 0.0f;
 
     perViewData_->billboardMatrix = billboardMatrix_;
+
+    needsUpdateCS_ = true;
 }
 
 // 描画
 void GPUParticleSystem::Draw() {
 
+    if (isCulled_) return;
+
     /*GPUParticle*/
+
+    ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+
+    // 1. Compute Shader dispatch (Update/Emit) - Only if Update() was called
+    if (needsUpdateCS_) {
+        // デスクリプタヒープを設定
+        ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+        commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+        commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
+
+        // UAVバリアの設定
+        D3D12_RESOURCE_BARRIER uavBarrier{};
+        uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        uavBarrier.UAV.pResource = nullptr; // グローバルUAVバリア
+
+        // Emit
+        commandList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
+        commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+        commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+        commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+        commandList->SetComputeRootConstantBufferView(4, emitterSphereResource_->GetGPUVirtualAddress());
+        commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
+        commandList->Dispatch(1, 1, 1);
+
+        // Emitの完了を待つ
+        commandList->ResourceBarrier(1, &uavBarrier);
+
+        // Update
+        commandList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
+        commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+        commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+        commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+        commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
+        commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
+
+        // Updateの完了を待つ
+        commandList->ResourceBarrier(1, &uavBarrier);
+
+        needsUpdateCS_ = false;
+    }
+
+    // 2. Graphics Draw
+
+    // リソースバリヤー: UAV -> ShaderResource (読み取り)
+    D3D12_RESOURCE_BARRIER transitionBarrier{};
+    transitionBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    transitionBarrier.Transition.pResource = particleResource_.Get();
+    transitionBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    transitionBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    transitionBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    commandList->ResourceBarrier(1, &transitionBarrier);
 
     // 4. 1を利用してParticleのInstance描画を行う
 
@@ -298,9 +331,20 @@ void GPUParticleSystem::Draw() {
         textureHandle_,
         kMaxParticles
     );
+
+    // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
+    transitionBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    transitionBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    commandList->ResourceBarrier(1, &transitionBarrier);
 }
 
 // デバッグ
 void GPUParticleSystem::Debug() {
-
+#if defined(USE_IMGUI)
+    ImGui::Begin("GPUParticleSystem");
+    ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
+    ImGui::DragFloat3("Emitter Pos", &emitterSphere_->translate.x, 0.1f);
+    ImGui::DragFloat("Emitter Radius", &emitterSphere_->radius, 0.1f, 0.0f, 100.0f);
+    ImGui::End();
+#endif
 }

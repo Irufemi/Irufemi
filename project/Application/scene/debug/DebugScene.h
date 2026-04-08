@@ -3,6 +3,7 @@
 #include "Framework/IScene.h"
 
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
+#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "Irufemi.h"
 
 #include <memory>
@@ -98,6 +99,9 @@ private: // メンバ変数(ゲーム)
 
     // --- ライト ---
     bool isActiveSkybox_ = false;
+
+    std::unique_ptr<PrimitiveObjects3DClass> primitiveObj_ = nullptr;
+    bool isActivePrimitiveObj_ = true;
 
 private: // メンバ変数(システム)
     // エンジン

@@ -32,6 +32,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/Data/Material.h"
 #include "Resource/Model/Data/ObjModel.h"
+#include "Resource/Model/Data/Animation.h"
 #include "Renderer/LineInstanced/LineResource.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Renderer/Object2D/Object2DResource.h"
@@ -477,6 +478,16 @@ void DebugUI::DebugMaterialOverrides(float* envCoef, int32_t* lightingMode, int3
 #endif
 }
 
+void DebugUI::DebugAnimationControl([[maybe_unused]] const Animation& animation, [[maybe_unused]] float& currentTime, [[maybe_unused]] const char* unique_id) {
+#ifdef USE_IMGUI
+    std::string id = unique_id;
+    if (ImGui::TreeNode(("Animation Control" + id).c_str())) {
+        ImGui::SliderFloat(("Time" + id).c_str(), &currentTime, 0.0f, animation.duration);
+        ImGui::TreePop();
+    }
+#endif
+}
+
 // Material
 void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
 #ifdef USE_IMGUI
@@ -567,14 +578,7 @@ void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
 void DebugUI::DebugTexture([[maybe_unused]] Object3DResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
-        auto allNames = textureManager_->GetTextureNames();
-        std::vector<std::string> textureNames;
-        for (const auto& name : allNames) {
-            if (!textureManager_->IsCubeMap(name)) {
-                textureNames.push_back(name);
-            }
-        }
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();
@@ -596,14 +600,7 @@ void DebugUI::DebugTexture([[maybe_unused]] Object3DResource* resource, [[maybe_
 void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
-        auto allNames = textureManager_->GetTextureNames();
-        std::vector<std::string> textureNames;
-        for (const auto& name : allNames) {
-            if (!textureManager_->IsCubeMap(name)) {
-                textureNames.push_back(name);
-            }
-        }
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();
@@ -625,14 +622,7 @@ void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_
 void DebugUI::DebugTexture([[maybe_unused]] ParticleResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
-        auto allNames = textureManager_->GetTextureNames();
-        std::vector<std::string> textureNames;
-        for (const auto& name : allNames) {
-            if (!textureManager_->IsCubeMap(name)) {
-                textureNames.push_back(name);
-            }
-        }
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();

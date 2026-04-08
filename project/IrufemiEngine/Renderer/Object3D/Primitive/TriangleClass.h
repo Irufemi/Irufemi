@@ -25,6 +25,7 @@ private:
 
     // 行列更新の最適化用
     bool isDirty_ = true;
+    bool isCullingEnabled_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 
@@ -61,6 +62,8 @@ public:
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+    bool IsCullingEnabled() const { return isCullingEnabled_; }
 
 private:
     static inline Transform sDefaultTransform_{};

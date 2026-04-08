@@ -26,7 +26,9 @@ void PSOManager::Initialize(
     ShaderSet skinningShaders,
     ShaderSet skyboxShaders,
     ShaderSet gpuParticleShaders,
-    ShaderSet voxelParticleShaders
+    ShaderSet voxelParticleShaders,
+    ShaderSet shadowShaders,
+    ShaderSet shadowSkinningShaders
 )
 {
     device_ = device;
@@ -61,6 +63,8 @@ void PSOManager::Initialize(
     skyboxShaders_ = skyboxShaders;
     gpuParticleShaders_ = gpuParticleShaders;
     voxelParticleShaders_ = voxelParticleShaders;
+    shadowShaders_ = shadowShaders;
+    shadowSkinningShaders_ = shadowSkinningShaders;
 
     cache_.clear();
 }
@@ -298,6 +302,8 @@ ID3D12PipelineState* PSOManager::GetVoxelParticle(BlendMode blend, DepthWrite de
     cache_[key] = pso;
     return pso.Get();
 }
+
+// シャドウマップ関連の PSO 取得は、ファイル後半の実装（shadowShaders_ 等を使用するもの）に一新されました。
 
 ID3D12PipelineState* PSOManager::GetCopyImage() {
     if (!copyImageShaders_.vsBlob || !copyImageShaders_.psBlob) return nullptr;
@@ -547,4 +553,68 @@ uint64_t PSOManager::Hash(const ShaderSet& s, BlendMode b, DepthWrite d, CullMod
     h = FNV1a(&d, sizeof(d), h);
     h = FNV1a(&c, sizeof(c), h);
     return h;
+}
+
+ID3D12PipelineState* PSOManager::GetShadow(CullMode cull) {
+    const ShaderSet& set = (shadowShaders_.vsBlob) ? shadowShaders_ : objectShaders_;
+    constexpr uint64_t kShadowTag = 0x534841444F57ull; 
+    Key key{ Hash(set, BlendMode::kBlendModeNone, DepthWrite::Enable, cull) ^ kShadowTag };
+
+    auto it = cache_.find(key);
+    if (it != cache_.end()) return it->second.Get();
+
+    auto p = CreateShadowPSO(set, cull);
+    if (!p) return nullptr;
+    cache_[key] = p;
+    return p.Get();
+}
+
+ID3D12PipelineState* PSOManager::GetShadowSkinning(CullMode cull) {
+    const ShaderSet& set = (shadowSkinningShaders_.vsBlob) ? shadowSkinningShaders_ : skinningShaders_;
+    constexpr uint64_t kShadowSkinningTag = 0x5348534B494Eull;
+    Key key{ Hash(set, BlendMode::kBlendModeNone, DepthWrite::Enable, cull) ^ kShadowSkinningTag };
+
+    auto it = cache_.find(key);
+    if (it != cache_.end()) return it->second.Get();
+
+    auto p = CreateShadowPSO(set, cull);
+    if (!p) return nullptr;
+    cache_[key] = p;
+    return p.Get();
+}
+
+Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreateShadowPSO(const ShaderSet& shaders, CullMode cull) const {
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.InputLayout = inputLayout_;
+
+    assert(shaders.vsBlob && "Shadow pass requires a Vertex Shader");
+    desc.VS = { shaders.vsBlob->GetBufferPointer(), shaders.vsBlob->GetBufferSize() };
+    desc.PS = { nullptr, 0 }; // 深度のみなので PS はなし
+
+    desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
+    desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+
+    switch (cull) {
+    case CullMode::Back: desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK; break;
+    case CullMode::Front: desc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT; break;
+    case CullMode::None: default: desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; break;
+    }
+
+    // シャドウバイアス設定 (シャドウアクネ対策)
+    desc.RasterizerState.DepthBias = 3000;
+    desc.RasterizerState.SlopeScaledDepthBias = 1.0f;
+    desc.RasterizerState.DepthClipEnable = TRUE;
+
+    desc.DepthStencilState = MakeDepth(DepthWrite::Enable);
+    desc.DSVFormat = dsvFormat_;
+    desc.NumRenderTargets = 0; // カラー出力なし
+    desc.PrimitiveTopologyType = topology_;
+    desc.SampleDesc.Count = 1;
+    desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr) && "CreateShadowPSO failed");
+    return pso;
 }

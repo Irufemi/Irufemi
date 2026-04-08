@@ -3,6 +3,9 @@
 // 出力は Object3d.hlsli の VertexShaderOutput に合わせる
 
 #include "./Object3d.hlsli"
+#include "./Lighting.hlsli"
+
+ConstantBuffer<LightCommonData> gLightCommonData : register(b1);
 
 struct InstanceData
 {
@@ -39,6 +42,9 @@ VertexShaderOutput main(VertexShaderInput input, uint32_t instanceId : SV_Instan
     // ワールド座標(PS 側で視線方向などに使用)
 	float32_t4 worldPos = mul(input.position, inst.World);
 	output.worldPosition = worldPos.xyz;
+
+	// シャドウマッピング用の座標変換
+	output.shadowPos = mul(worldPos, gLightCommonData.viewProjection);
 
 	return output;
 }

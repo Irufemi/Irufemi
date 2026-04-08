@@ -79,8 +79,7 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
         }
 
         // デバッグUI(コンボ)の初期インデックス決定
-        auto textureNames = textureManager_->GetTextureNames();
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
         selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
@@ -91,8 +90,7 @@ void Sprite::Update() {
 
     // DebugUI でのテクスチャ選択変更に追随してサイズを更新
     if (textureManager_) {
-        auto names = textureManager_->GetTextureNames();
-        std::sort(names.begin(), names.end());
+        auto names = textureManager_->GetTextureNamesForDebug();
         if (!names.empty()) {
             selectedTextureIndex_ = std::clamp(selectedTextureIndex_, 0, static_cast<int>(names.size()) - 1);
             uint32_t tw = 0, th = 0;
@@ -224,8 +222,7 @@ void Sprite::ClearTextureRect() {
 void Sprite::AdjustTextureSize() {
     if (!textureManager_) return;
 
-    auto names = textureManager_->GetTextureNames();
-    std::sort(names.begin(), names.end());
+    auto names = textureManager_->GetTextureNamesForDebug();
     if (names.empty()) return;
 
     selectedTextureIndex_ = std::clamp(selectedTextureIndex_, 0, static_cast<int>(names.size()) - 1);

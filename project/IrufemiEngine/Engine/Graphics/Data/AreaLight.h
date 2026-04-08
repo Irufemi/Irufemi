@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
+#include "../../Core/Math/Vector2.h"
+#include "../../Core/Math/Vector3.h"
+#include "../../Core/Math/Vector4.h"
 #include <cstdint>
 
 struct AreaLight {

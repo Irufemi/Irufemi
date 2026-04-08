@@ -3,6 +3,7 @@
 #include "../../IrufemiEngine/Engine/Core/Math/Vector2.h"
 #include "../../IrufemiEngine/Engine/Core/Math/Vector3.h"
 #include "../../IrufemiEngine/Engine/Core/Math/Matrix4x4.h"
+#include "../../IrufemiEngine/Engine/Core/Math/Geometry/Frustum.h"
 
 /**
  * @class Camera
@@ -200,6 +201,7 @@ public: // メンバ関数
      * @return const Matrix4x4& ビューポート変換行列
      */
     const Matrix4x4& GetViewportMatrix() const { return viewportMatrix_; }
+    const Frustum& GetFrustum() const { return frustum_; }
 
     Matrix4x4 GetViewProjectionMatrix2D();
 
@@ -241,6 +243,7 @@ public: // メンバ関数
 private:
     float shakeIntensity_ = 0.0f;
     int shakeFrames_ = 0;
+    Frustum frustum_;
 
 public:
     /**

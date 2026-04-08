@@ -102,6 +102,9 @@ void ObjClass::Update() {
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
 }
 
+#include "../../../Engine/Core/Math/Geometry/Collision.h"
+#include "../../../Engine/Core/Shape/Sphere.h"
+
 void ObjClass::Draw() {
     if (!managedModel_ || !drawManager_ || !camera_) {
         return;
@@ -113,6 +116,24 @@ void ObjClass::Draw() {
 
     if (isDirty_ || cameraChanged) {
         Update();
+    }
+
+    // 視錐台カリング
+    if (isCullingEnabled_ && managedModel_->cpuModel) {
+        const Sphere& modelSphere = managedModel_->cpuModel->boundingSphere;
+
+        // ワールド空間の境界球を計算
+        Sphere worldSphere;
+        worldSphere.center = Math::Transform(modelSphere.center, transformationMatrix_.world);
+
+        // スケールの最大値を適用して半径を変換
+        float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
+        worldSphere.radius = modelSphere.radius * maxScale * 1.1f; // 10% マージン
+
+        // 判定
+        if (!Collision::IsCollision(camera_->GetFrustum(), worldSphere)) {
+            return; // 描画スキップ
+        }
     }
 
     // モデル内の全メッシュを描画
@@ -133,6 +154,7 @@ void ObjClass::Debug([[maybe_unused]] const char* objName) {
 void ObjClass::DebugTab() {
 #if defined USE_IMGUI
     if (ui_) {
+        ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
         ui_->DebugTransform(transform_);
         ImGui::ColorEdit4("Color", &color_.x); // インスタンスカラーを編集
         ui_->DebugMaterialOverrides(&environmentCoefficient_, &lightingModeOverride_, &useClampSamplerOverride_, &enableLightingOverride_, "##OcOverrides");

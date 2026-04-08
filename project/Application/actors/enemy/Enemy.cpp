@@ -397,16 +397,13 @@ void Enemy::Draw(IrufemiEngine* engine) {
     headRight_->Draw(engine);
 
   // ビームを描画
-  if (beam_ ) {
-    engine->ApplyPSO();
-    beam_->Draw();
+  if (beam_) {
+    beam_->Draw(engine);
   }
 
-  if (stompEffects_) {
-      // 必要なら engine->ApplyPSO(); など
-      engine->ApplyPSO();
-      stompEffects_->Draw();
-  }
+    if (stompEffects_) {
+        stompEffects_->Draw(engine);
+    }
 
 #ifdef USE_IMGUI
   if (lineOBB_ && isDebugDrawOBB_ && engine_) {

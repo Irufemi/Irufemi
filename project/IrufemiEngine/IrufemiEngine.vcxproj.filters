@@ -332,6 +332,15 @@
     <ClCompile Include="Engine\Graphics\DirectX\FrameRateController.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.cpp">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectX\ShadowMap.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\SceneTransition.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -680,6 +689,18 @@
     <ClInclude Include="Engine\Graphics\Data\Material.h" />
     <ClInclude Include="Engine\Graphics\Data\SceneGPUStructs.h" />
     <ClInclude Include="Engine\Graphics\Data\LightCommonData.h" />
+    <ClInclude Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.h">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\ShadowMap.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h">
+      <Filter>Engine\Core\Math\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\SceneTransition.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">
@@ -845,6 +866,18 @@
       <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\HSV.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ShadowMapSkinning.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\ShadowMap.VS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Slide.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\Fade.PS.hlsl">
       <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>

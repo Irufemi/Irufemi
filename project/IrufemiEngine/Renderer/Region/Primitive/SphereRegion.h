@@ -28,6 +28,8 @@ public:
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
     static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; } // 追加
+    void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+    bool IsCullingEnabled() const { return isCullingEnabled_; }
 
     ~SphereRegion(); // 追加(遅延解放で返却)
 
@@ -69,7 +71,7 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_; }
     UINT                        GetIndexCount() const { return indexCount_; }
-    UINT                        GetInstanceCount() const { return static_cast<UINT>(instances_.size()); }
+    UINT                        GetInstanceCount() const { return visibleInstanceCount_; }
 
 private:
     struct InstanceData {
@@ -122,4 +124,6 @@ private:
     std::vector<Transform> instances_;
     std::vector<Vector4>   instanceColors_;
     bool                   instanceDirty_ = false;
+    bool                   isCullingEnabled_ = true;
+    uint32_t               visibleInstanceCount_ = 0;
 };

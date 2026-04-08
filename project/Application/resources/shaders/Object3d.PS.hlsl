@@ -17,6 +17,7 @@ struct PixelShaderOutput
 
 Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
 SamplerState gSampler : register(s0); //Samplerのregisterはs
+SamplerComparisonState gShadowSampler : register(s2); // 比較サンプラー
 
 /*Light Common & DirectionalLight*/
 
@@ -45,6 +46,7 @@ StructuredBuffer<AreaLight> gAreaLights : register(t4);
 /// 環境マップを追加する
 
 TextureCube<float32_t4> gEnviromentTexture : register(t1);
+Texture2D<float32_t> gShadowMap : register(t5);
 
 /*テクスチャを貼ろう*/
 
@@ -85,8 +87,15 @@ PixelShaderOutput main(VertexShaderOutput input)
 		float3 totalDiffuse = 0;
 		float3 totalSpecular = 0;
 
-		// 平行光源
-		ApplyDirectionalLight(gLightCommon.directionalLight, gMaterial, albedo, context, totalDiffuse, totalSpecular);
+		// シャドウファクターの計算
+		float shadowFactor = CalculateShadow(input.shadowPos, gShadowMap, gShadowSampler);
+
+		// 平行光源 (影を適用)
+		float3 dirDiffuse = 0;
+		float3 dirSpecular = 0;
+		ApplyDirectionalLight(gLightCommon.directionalLight, gMaterial, albedo, context, dirDiffuse, dirSpecular);
+		totalDiffuse += dirDiffuse * shadowFactor;
+		totalSpecular += dirSpecular * shadowFactor;
 
 		// 点光源
 		for (uint32_t i = 0; i < gLightCommon.pointLightCount; ++i) {

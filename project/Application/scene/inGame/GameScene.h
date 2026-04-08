@@ -34,51 +34,40 @@ public:
 
 private:
 
-    // システム・構成
+    // --- システム・構成定数 ---
+    
     // 敵パーツ数
     static constexpr int kEnemyBodyPartsCount = 3;
     // デバッグカメラ切替キー('P')
     static constexpr int kKeyDebugCameraToggle = 0x19;
 
+    // --- 当たり判定定数 ---
+
     // プレイヤー被ダメージ
-    // ビーム被弾
-    static constexpr int kDamageBeamToPlayer = 10;
-    // 敵部位接触
-    static constexpr int kDamagePartToPlayer = 10;
+    static constexpr int kDamageBeamToPlayer = 10;           ///< ビーム被弾
+    static constexpr int kDamagePartToPlayer = 10;           ///< 敵部位接触
 
     // 敵被ダメージ
-    // 近接攻撃
-    static constexpr int kDamageMeleeToEnemy = 20;
-    // マシンガン
-    static constexpr int kDamageMachineGunToEnemy = 10;
-    // ミサイル
-    static constexpr int kDamageMissileToEnemy = 200;
-    // 部位同士の衝突
-    static constexpr int kDamageProjectilePartToEnemy = 500;
+    static constexpr int kDamageMeleeToEnemy = 20;           ///< 近接攻撃
+    static constexpr int kDamageMachineGunToEnemy = 10;      ///< マシンガン
+    static constexpr int kDamageMissileToEnemy = 200;        ///< ミサイル
+    static constexpr int kDamageProjectilePartToEnemy = 500; ///< 部位同士の衝突
 
     // 当たり判定(半径)
-    // マシンガン
-    static constexpr float kMachineGunBulletRadius = 1.0f;
-    // ミサイル
-    static constexpr float kMissileRadius = 2.0f;
+    static constexpr float kMachineGunBulletRadius = 1.0f;   ///< マシンガン
+    static constexpr float kMissileRadius = 2.0f;            ///< ミサイル
 
     // エフェクト・物理演算
-    // 近接攻撃エフェクト倍率
-    static constexpr float kMeleeEffectSizeMultiplier = 1.5f;
-    // 近接攻撃の部位吹き飛び初速倍率
-    static constexpr float kMeleeScatterSpeedMultiplier = 1.0f;
-    // 衝突時の反発係数
-    static constexpr float kCollisionScatterMultiplier = -0.5f;
-    // ゼロ除算防止用微小値
-    static constexpr float kMathEpsilon = 0.001f;
+    static constexpr float kMeleeEffectSizeMultiplier = 1.5f;   ///< 近接攻撃エフェクト倍率
+    static constexpr float kMeleeScatterSpeedMultiplier = 1.0f;  ///< 近接攻撃の部位吹き飛び初速倍率
+    static constexpr float kCollisionScatterMultiplier = -0.5f; ///< 衝突時の反発係数
+    static constexpr float kMathEpsilon = 0.001f;               ///< ゼロ除算防止用微小値
 
-    // デバッグUI
-    // カメラ距離スライダー変化量
-    static constexpr float kDebugCameraDragSpeed = 0.1f;
-    // カメラ最小距離
-    static constexpr float kDebugCameraDistMin = 1.0f;
-    // カメラ最大距離
-    static constexpr float kDebugCameraDistMax = 1000.0f;
+    // --- デバッグUI定数 ---
+    
+    static constexpr float kDebugCameraDragSpeed = 0.1f;    ///< カメラ距離スライダー変化量
+    static constexpr float kDebugCameraDistMin = 1.0f;      ///< カメラ最小距離
+    static constexpr float kDebugCameraDistMax = 1000.0f;   ///< カメラ最大距離
 
     // --------------------------------
 
@@ -87,8 +76,6 @@ private:
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
     bool debugMode_ = false;
     bool isFirstDebug_ = true;
-
-    // マウスは InputManager から取得するため削除
 
     // ゲームオブジェクト
     std::unique_ptr<Player> player_ = nullptr;
@@ -102,6 +89,30 @@ private:
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
 
-    // カメラとフレームデータの更新ロジックを共通化
+    // --- 内部整理用メソッド ---
+
+    /**
+     * @brief 全ての当たり判定をチェックする
+     */
+    void CheckAllCollisions();
+
+    /**
+     * @brief プレイヤーから敵への当たり判定（近接、弾丸、ミサイル）
+     */
+    void CheckPlayerToEnemyCollisions();
+
+    /**
+     * @brief 敵からプレイヤーへの当たり判定（ビーム、スタンプ、部位接触）
+     */
+    void CheckEnemyToPlayerCollisions();
+
+    /**
+     * @brief 吹き飛んだ部位同士、または部位と敵の当たり判定
+     */
+    void CheckFlyingPartsCollisions();
+
+    /**
+     * @brief カメラとフレームデータの更新
+     */
     void UpdateCameraAndFrameData();
 };

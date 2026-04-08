@@ -5,6 +5,9 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Manager/DebugUI.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Shape/Sphere.h"
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Model/AnimationManager.h"
 #include "Resource/Model/Data/ObjModel.h"
@@ -191,7 +194,21 @@ void AnimationModel::Update() {
 
 // 描画
 void AnimationModel::Draw() {
-    if (!managedModel_ || !engine_ || !camera_) return;
+    if (!managedModel_ || !camera_ || meshResources_.empty()) return;
+
+    // 視錐台カリング
+    if (isCullingEnabled_) {
+        float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
+        
+        Sphere boundingSphere;
+        boundingSphere.center = transform_.translate;
+        // アニメーションによる広がりを考慮し、モデル境界球の1.5倍のマージンを設定
+        boundingSphere.radius = managedModel_->cpuModel->boundingSphere.radius * maxScale * 1.5f;
+
+        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+            return; // 描画スキップ
+        }
+    }
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
@@ -241,9 +258,17 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
     std::string name = std::string("AnimationModel: ") + objName;
     ImGui::Begin(name.c_str());
     if (engine_) {
-        engine_->GetDebugUI()->DebugTransform(transform_);
+        auto* ui_ = engine_->GetDebugUI();
+        ui_->DebugTransform(transform_);
+        ui_->DebugAnimationControl(animation_, animationTime_);
+        ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
+
+        if (ImGui::Button("Reset Animation Time")) {
+            animationTime_ = 0.0f;
+        }
+
         ImGui::ColorEdit4("Color", &color_.x); // インスタンスカラーを編集
-        engine_->GetDebugUI()->DebugMaterialOverrides(&environmentCoefficient_, &lightingModeOverride_, &useClampSamplerOverride_, &enableLightingOverride_, "##AmOverrides");
+        ui_->DebugMaterialOverrides(&environmentCoefficient_, &lightingModeOverride_, &useClampSamplerOverride_, &enableLightingOverride_, "##AmOverrides");
 
         // ImGuiでマテリアルを編集
         if (managedModel_ && managedModel_->cpuModel) {
@@ -254,7 +279,7 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
                     if (mat) {
                         // unique_id を渡してコントロールIDの衝突を避ける
                         std::string unique_id = "##" + std::to_string(i);
-                        engine_->GetDebugUI()->DebugObjMaterial(mat, unique_id.c_str());
+                        ui_->DebugObjMaterial(mat, unique_id.c_str());
                     }
                     ImGui::TreePop();
                 }

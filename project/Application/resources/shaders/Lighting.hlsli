@@ -10,6 +10,7 @@ struct DirectionalLight {
 
 struct LightCommonData {
     DirectionalLight directionalLight;
+    float32_t4x4 viewProjection;
     uint32_t pointLightCount;
     uint32_t spotLightCount;
     uint32_t areaLightCount;
@@ -61,6 +62,36 @@ struct LightContext {
 // --- ライティング計算関数 ---
 
 static const float32_t PI = 3.14159265f;
+
+/**
+ * シャドウファクターを計算する (0.0: 影, 1.0: 光)
+ */
+float CalculateShadow(float4 shadowPos, Texture2D<float> shadowMap, SamplerComparisonState shadowSampler) {
+    // 同次座標系からUV座標系に変換 (-1~1 -> 0~1)
+    float3 projectedPos = shadowPos.xyz / shadowPos.w;
+    float2 uv = projectedPos.xy * float2(0.5, -0.5) + float2(0.5, 0.5);
+    float currentDepth = projectedPos.z;
+
+    // 範囲外は影にしない
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        return 1.0;
+    }
+
+    // 遠すぎる場合は影にしない (Orthographic の Z 範囲外)
+    if (currentDepth < 0.0 || currentDepth > 1.0) {
+        return 1.0;
+    }
+
+    // シャドウバイアス (シャドウアクネ対策)
+    float bias = 0.0005; // 0.001 から少し調整
+
+    // ハードウェア比較サンプラーを使用してサンプリング (PCFが効く)
+    // SampleCmpLevelZero は比較結果を 0.0~1.0 で返す
+    float shadowFactor = shadowMap.SampleCmpLevelZero(shadowSampler, uv, currentDepth - bias);
+
+    // 影を完全に真っ暗にせず、少し明るくする (0.5 ~ 1.0 にマップ)
+    return 0.5 + shadowFactor * 0.5;
+}
 
 /**
  * 拡散反射強度を計算する (Lambert / Half-Lambert)

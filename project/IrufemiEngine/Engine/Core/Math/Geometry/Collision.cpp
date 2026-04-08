@@ -1,12 +1,14 @@
 #include "Collision.h"
-
 #include "Math.h"
-#include "Engine/Core/Math/Geometry/AABB.h"
-#include "Engine/Core/Shape/LinePrimitive.h"
-#include "Engine/Core/Shape/Plane.h"
-#include "Engine/Core/Shape/Sphere.h"
-#include "Engine/Core/Shape/Triangle.h"
-#include "Engine/Core/Math/Geometry/OBB.h"
+#include "AABB.h"
+#include "OBB.h"
+#include "Frustum.h"
+#include "../../Shape/Plane.h"
+#include "../../Shape/Sphere.h"
+#include "../../Shape/Triangle.h"
+#include "../../Shape/LinePrimitive.h"
+#include "../Matrix4x4.h"
+#include <array>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -173,7 +175,7 @@ namespace Collision {
     bool IsCollision(const AABB& aabb, const Sphere& sphere) {
 
         // 最近接点を求める
-        Vector3 closestPoint{ std::clamp(sphere.center.x, aabb.min.x, aabb.max.x), std::clamp(sphere.center.y, aabb.min.y, aabb.max.y), std::clamp(sphere.center.z, aabb.min.z, aabb.max.z) };
+        Vector3 closestPoint{ Math::Clamp(sphere.center.x, aabb.min.x, aabb.max.x), Math::Clamp(sphere.center.y, aabb.min.y, aabb.max.y), Math::Clamp(sphere.center.z, aabb.min.z, aabb.max.z) };
         // 最近接点と球の中心との距離を求める
         float distance = Math::Length(Math::Subtract(closestPoint, sphere.center));
         // 距離が半径よりも小さければ衝突
@@ -195,10 +197,10 @@ namespace Collision {
         if (segment.diff.x != 0.0f) {
             float tx1 = (aabb.min.x - segment.origin.x) / segment.diff.x;
             float tx2 = (aabb.max.x - segment.origin.x) / segment.diff.x;
-            float tNearX = std::min(tx1, tx2);
-            float tFarX = std::max(tx1, tx2);
-            tMin = std::max(tMin, tNearX);
-            tMax = std::min(tMax, tFarX);
+            float tNearX = (std::min)(tx1, tx2);
+            float tFarX = (std::max)(tx1, tx2);
+            tMin = (std::max)(tMin, tNearX);
+            tMax = (std::min)(tMax, tFarX);
         } else {
             if (segment.origin.x < aabb.min.x || segment.origin.x > aabb.max.x) {
                 return false;
@@ -209,10 +211,10 @@ namespace Collision {
         if (segment.diff.y != 0.0f) {
             float ty1 = (aabb.min.y - segment.origin.y) / segment.diff.y;
             float ty2 = (aabb.max.y - segment.origin.y) / segment.diff.y;
-            float tNearY = std::min(ty1, ty2);
-            float tFarY = std::max(ty1, ty2);
-            tMin = std::max(tMin, tNearY);
-            tMax = std::min(tMax, tFarY);
+            float tNearY = (std::min)(ty1, ty2);
+            float tFarY = (std::max)(ty1, ty2);
+            tMin = (std::max)(tMin, tNearY);
+            tMax = (std::min)(tMax, tFarY);
         } else {
             if (segment.origin.y < aabb.min.y || segment.origin.y > aabb.max.y) {
                 return false;
@@ -223,10 +225,10 @@ namespace Collision {
         if (segment.diff.z != 0.0f) {
             float tz1 = (aabb.min.z - segment.origin.z) / segment.diff.z;
             float tz2 = (aabb.max.z - segment.origin.z) / segment.diff.z;
-            float tNearZ = std::min(tz1, tz2);
-            float tFarZ = std::max(tz1, tz2);
-            tMin = std::max(tMin, tNearZ);
-            tMax = std::min(tMax, tFarZ);
+            float tNearZ = (std::min)(tz1, tz2);
+            float tFarZ = (std::max)(tz1, tz2);
+            tMin = (std::max)(tMin, tNearZ);
+            tMax = (std::min)(tMax, tFarZ);
         } else {
             if (segment.origin.z < aabb.min.z || segment.origin.z > aabb.max.z) {
                 return false;
@@ -244,16 +246,16 @@ namespace Collision {
     // AABBと半直線の衝突判定
     bool IsCollision(const AABB& aabb, const Ray& ray) {
         float tMin = 0.0f;
-        float tMax = std::numeric_limits<float>::max(); // 無限遠まで判定する
+        float tMax = (std::numeric_limits<float>::max)(); // 無限遠まで判定する
 
         // x軸
         if (ray.diff.x != 0.0f) {
             float tx1 = (aabb.min.x - ray.origin.x) / ray.diff.x;
             float tx2 = (aabb.max.x - ray.origin.x) / ray.diff.x;
-            float tNearX = std::min(tx1, tx2);
-            float tFarX = std::max(tx1, tx2);
-            tMin = std::max(tMin, tNearX);
-            tMax = std::min(tMax, tFarX);
+            float tNearX = (std::min)(tx1, tx2);
+            float tFarX = (std::max)(tx1, tx2);
+            tMin = (std::max)(tMin, tNearX);
+            tMax = (std::min)(tMax, tFarX);
         } else {
             // x軸が0ならRayはX方向に進まない ⇒ AABBのX範囲にoriginがないなら衝突なし
             if (ray.origin.x < aabb.min.x || ray.origin.x > aabb.max.x) {
@@ -265,10 +267,10 @@ namespace Collision {
         if (ray.diff.y != 0.0f) {
             float ty1 = (aabb.min.y - ray.origin.y) / ray.diff.y;
             float ty2 = (aabb.max.y - ray.origin.y) / ray.diff.y;
-            float tNearY = std::min(ty1, ty2);
-            float tFarY = std::max(ty1, ty2);
-            tMin = std::max(tMin, tNearY);
-            tMax = std::min(tMax, tFarY);
+            float tNearY = (std::min)(ty1, ty2);
+            float tFarY = (std::max)(ty1, ty2);
+            tMin = (std::max)(tMin, tNearY);
+            tMax = (std::min)(tMax, tFarY);
         } else {
             if (ray.origin.y < aabb.min.y || ray.origin.y > aabb.max.y) {
                 return false;
@@ -279,10 +281,10 @@ namespace Collision {
         if (ray.diff.z != 0.0f) {
             float tz1 = (aabb.min.z - ray.origin.z) / ray.diff.z;
             float tz2 = (aabb.max.z - ray.origin.z) / ray.diff.z;
-            float tNearZ = std::min(tz1, tz2);
-            float tFarZ = std::max(tz1, tz2);
-            tMin = std::max(tMin, tNearZ);
-            tMax = std::min(tMax, tFarZ);
+            float tNearZ = (std::min)(tz1, tz2);
+            float tFarZ = (std::max)(tz1, tz2);
+            tMin = (std::max)(tMin, tNearZ);
+            tMax = (std::min)(tMax, tFarZ);
         } else {
             if (ray.origin.z < aabb.min.z || ray.origin.z > aabb.max.z) {
                 return false;
@@ -299,17 +301,17 @@ namespace Collision {
 
     // AABBと直線の衝突判定
     bool IsCollision(const AABB& aabb, const Line& line) {
-        float tMin = -std::numeric_limits<float>::max(); // 無限負方向
-        float tMax = std::numeric_limits<float>::max();  // 無限正方向
+        float tMin = -(std::numeric_limits<float>::max)(); // 無限負方向
+        float tMax = (std::numeric_limits<float>::max)();  // 無限正方向
 
         // x軸
         if (line.diff.x != 0.0f) {
             float tx1 = (aabb.min.x - line.origin.x) / line.diff.x;
             float tx2 = (aabb.max.x - line.origin.x) / line.diff.x;
-            float tNearX = std::min(tx1, tx2);
-            float tFarX = std::max(tx1, tx2);
-            tMin = std::max(tMin, tNearX);
-            tMax = std::min(tMax, tFarX);
+            float tNearX = (std::min)(tx1, tx2);
+            float tFarX = (std::max)(tx1, tx2);
+            tMin = (std::max)(tMin, tNearX);
+            tMax = (std::min)(tMax, tFarX);
         } else {
             if (line.origin.x < aabb.min.x || line.origin.x > aabb.max.x) {
                 return false;
@@ -320,10 +322,10 @@ namespace Collision {
         if (line.diff.y != 0.0f) {
             float ty1 = (aabb.min.y - line.origin.y) / line.diff.y;
             float ty2 = (aabb.max.y - line.origin.y) / line.diff.y;
-            float tNearY = std::min(ty1, ty2);
-            float tFarY = std::max(ty1, ty2);
-            tMin = std::max(tMin, tNearY);
-            tMax = std::min(tMax, tFarY);
+            float tNearY = (std::min)(ty1, ty2);
+            float tFarY = (std::max)(ty1, ty2);
+            tMin = (std::max)(tMin, tNearY);
+            tMax = (std::min)(tMax, tFarY);
         } else {
             if (line.origin.y < aabb.min.y || line.origin.y > aabb.max.y) {
                 return false;
@@ -334,10 +336,10 @@ namespace Collision {
         if (line.diff.z != 0.0f) {
             float tz1 = (aabb.min.z - line.origin.z) / line.diff.z;
             float tz2 = (aabb.max.z - line.origin.z) / line.diff.z;
-            float tNearZ = std::min(tz1, tz2);
-            float tFarZ = std::max(tz1, tz2);
-            tMin = std::max(tMin, tNearZ);
-            tMax = std::min(tMax, tFarZ);
+            float tNearZ = (std::min)(tz1, tz2);
+            float tFarZ = (std::max)(tz1, tz2);
+            tMin = (std::max)(tMin, tNearZ);
+            tMax = (std::min)(tMax, tFarZ);
         } else {
             if (line.origin.z < aabb.min.z || line.origin.z > aabb.max.z) {
                 return false;
@@ -377,9 +379,9 @@ namespace Collision {
         // OBBのローカル空間では、OBBは原点中心のAABBとして扱える
         // 範囲は [-size, size]
         Vector3 closestPoint = {
-            std::clamp(localPos.x, -obb.size.x, obb.size.x),
-            std::clamp(localPos.y, -obb.size.y, obb.size.y),
-            std::clamp(localPos.z, -obb.size.z, obb.size.z)
+            Math::Clamp(localPos.x, -obb.size.x, obb.size.x),
+            Math::Clamp(localPos.y, -obb.size.y, obb.size.y),
+            Math::Clamp(localPos.z, -obb.size.z, obb.size.z)
         };
 
         // 3. ローカル空間での最近接点と球の中心(localPos)の距離を判定
@@ -450,11 +452,11 @@ namespace Collision {
                 float t1 = (-sizeArr[i] - originArr[i]) / diffArr[i];
                 float t2 = (sizeArr[i] - originArr[i]) / diffArr[i];
 
-                float tNear = std::min(t1, t2);
-                float tFar = std::max(t1, t2);
+                float tNear = (std::min)(t1, t2);
+                float tFar = (std::max)(t1, t2);
 
-                tMin = std::max(tMin, tNear);
-                tMax = std::min(tMax, tFar);
+                tMin = (std::max)(tMin, tNear);
+                tMax = (std::min)(tMax, tFar);
             }
         }
 
@@ -491,8 +493,8 @@ namespace Collision {
             } else {
                 float t1 = (-sizeArr[i] - originArr[i]) / diffArr[i];
                 float t2 = (sizeArr[i] - originArr[i]) / diffArr[i];
-                tMin = std::max(tMin, std::min(t1, t2));
-                tMax = std::min(tMax, std::max(t1, t2));
+                tMin = (std::max)(tMin, (std::min)(t1, t2));
+                tMax = (std::min)(tMax, (std::max)(t1, t2));
             }
         }
 
@@ -617,6 +619,20 @@ namespace Collision {
         return IsCollision(obb, aabbAsObb);
     }
 
+    // 視錐台と球の衝突判定（カリング用）
+    bool IsCollision(const Frustum& frustum, const Sphere& sphere) {
+        // すべての平面に対して、球が外面（法線と反対側）に完全に出ていないかチェックする
+        for (const auto& plane : frustum.planes) {
+            // 平面方程式は Dot(N, P) - D = 0 (D = plane.distance)
+            // 点Pの平面からの距離は Dot(N, P) - D
+            // これが -sphere.radius より小さければ、球は平面の外側（法線と反対側）に完全にある
+            if (Math::Dot(plane.normal, sphere.center) - plane.distance < -sphere.radius) {
+                return false; // 1つでも平面の外側にあれば、視錐台の外
+            }
+        }
+        return true; // すべての平面の内側、または境界と重なっている
+    }
+
     // 球と球の衝突判定
     bool IsSphereCollision(const Sphere& s1, const Sphere& s2) {
         // 2つの球の中心点間の距離を求める
@@ -722,7 +738,7 @@ namespace Collision {
 
     // AABBと球の衝突判定
     bool IsAABBSphereCollision(const AABB& aabb, const Sphere& sphere) {
-        Vector3 closestPoint{ std::clamp(sphere.center.x, aabb.min.x, aabb.max.x), std::clamp(sphere.center.y, aabb.min.y, aabb.max.y), std::clamp(sphere.center.z, aabb.min.z, aabb.max.z) };
+        Vector3 closestPoint{ Math::Clamp(sphere.center.x, aabb.min.x, aabb.max.x), Math::Clamp(sphere.center.y, aabb.min.y, aabb.max.y), Math::Clamp(sphere.center.z, aabb.min.z, aabb.max.z) };
         float distance = Math::Length(Math::Subtract(closestPoint, sphere.center));
         if (distance <= sphere.radius) {
             return true;
@@ -739,10 +755,10 @@ namespace Collision {
         if (segment.diff.x != 0.0f) {
             float tx1 = (aabb.min.x - segment.origin.x) / segment.diff.x;
             float tx2 = (aabb.max.x - segment.origin.x) / segment.diff.x;
-            float tNearX = std::min(tx1, tx2);
-            float tFarX = std::max(tx1, tx2);
-            tMin = std::max(tMin, tNearX);
-            tMax = std::min(tMax, tFarX);
+            float tNearX = (std::min)(tx1, tx2);
+            float tFarX = (std::max)(tx1, tx2);
+            tMin = (std::max)(tMin, tNearX);
+            tMax = (std::min)(tMax, tFarX);
         } else {
             if (segment.origin.x < aabb.min.x || segment.origin.x > aabb.max.x) {
                 return false;
@@ -753,10 +769,10 @@ namespace Collision {
         if (segment.diff.y != 0.0f) {
             float ty1 = (aabb.min.y - segment.origin.y) / segment.diff.y;
             float ty2 = (aabb.max.y - segment.origin.y) / segment.diff.y;
-            float tNearY = std::min(ty1, ty2);
-            float tFarY = std::max(ty1, ty2);
-            tMin = std::max(tMin, tNearY);
-            tMax = std::min(tMax, tFarY);
+            float tNearY = (std::min)(ty1, ty2);
+            float tFarY = (std::max)(ty1, ty2);
+            tMin = (std::max)(tMin, tNearY);
+            tMax = (std::min)(tMax, tFarY);
         } else {
             if (segment.origin.y < aabb.min.y || segment.origin.y > aabb.max.y) {
                 return false;
@@ -767,10 +783,10 @@ namespace Collision {
         if (segment.diff.z != 0.0f) {
             float tz1 = (aabb.min.z - segment.origin.z) / segment.diff.z;
             float tz2 = (aabb.max.z - segment.origin.z) / segment.diff.z;
-            float tNearZ = std::min(tz1, tz2);
-            float tFarZ = std::max(tz1, tz2);
-            tMin = std::max(tMin, tNearZ);
-            tMax = std::min(tMax, tFarZ);
+            float tNearZ = (std::min)(tz1, tz2);
+            float tFarZ = (std::max)(tz1, tz2);
+            tMin = (std::max)(tMin, tNearZ);
+            tMax = (std::min)(tMax, tFarZ);
         } else {
             if (segment.origin.z < aabb.min.z || segment.origin.z > aabb.max.z) {
                 return false;
@@ -783,16 +799,16 @@ namespace Collision {
     // AABBと半直線の衝突判定
     bool IsAABBRayCollision(const AABB& aabb, const Ray& ray) {
         float tMin = 0.0f;
-        float tMax = std::numeric_limits<float>::max();
+        float tMax = (std::numeric_limits<float>::max)();
 
         // x軸
         if (ray.diff.x != 0.0f) {
             float tx1 = (aabb.min.x - ray.origin.x) / ray.diff.x;
             float tx2 = (aabb.max.x - ray.origin.x) / ray.diff.x;
-            float tNearX = std::min(tx1, tx2);
-            float tFarX = std::max(tx1, tx2);
-            tMin = std::max(tMin, tNearX);
-            tMax = std::min(tMax, tFarX);
+            float tNearX = (std::min)(tx1, tx2);
+            float tFarX = (std::max)(tx1, tx2);
+            tMin = (std::max)(tMin, tNearX);
+            tMax = (std::min)(tMax, tFarX);
         } else {
             if (ray.origin.x < aabb.min.x || ray.origin.x > aabb.max.x) {
                 return false;
@@ -803,10 +819,10 @@ namespace Collision {
         if (ray.diff.y != 0.0f) {
             float ty1 = (aabb.min.y - ray.origin.y) / ray.diff.y;
             float ty2 = (aabb.max.y - ray.origin.y) / ray.diff.y;
-            float tNearY = std::min(ty1, ty2);
-            float tFarY = std::max(ty1, ty2);
-            tMin = std::max(tMin, tNearY);
-            tMax = std::min(tMax, tFarY);
+            float tNearY = (std::min)(ty1, ty2);
+            float tFarY = (std::max)(ty1, ty2);
+            tMin = (std::max)(tMin, tNearY);
+            tMax = (std::min)(tMax, tFarY);
         } else {
             if (ray.origin.y < aabb.min.y || ray.origin.y > aabb.max.y) {
                 return false;
@@ -817,10 +833,10 @@ namespace Collision {
         if (ray.diff.z != 0.0f) {
             float tz1 = (aabb.min.z - ray.origin.z) / ray.diff.z;
             float tz2 = (aabb.max.z - ray.origin.z) / ray.diff.z;
-            float tNearZ = std::min(tz1, tz2);
-            float tFarZ = std::max(tz1, tz2);
-            tMin = std::max(tMin, tNearZ);
-            tMax = std::min(tMax, tFarZ);
+            float tNearZ = (std::min)(tz1, tz2);
+            float tFarZ = (std::max)(tz1, tz2);
+            tMin = (std::max)(tMin, tNearZ);
+            tMax = (std::min)(tMax, tFarZ);
         } else {
             if (ray.origin.z < aabb.min.z || ray.origin.z > aabb.max.z) {
                 return false;
@@ -832,17 +848,17 @@ namespace Collision {
 
     // AABBと直線の衝突判定
     bool IsAABBLineCollision(const AABB& aabb, const Line& line) {
-        float tMin = -std::numeric_limits<float>::max();
-        float tMax = std::numeric_limits<float>::max();
+        float tMin = -(std::numeric_limits<float>::max)();
+        float tMax = (std::numeric_limits<float>::max)();
 
         // x軸
         if (line.diff.x != 0.0f) {
             float tx1 = (aabb.min.x - line.origin.x) / line.diff.x;
             float tx2 = (aabb.max.x - line.origin.x) / line.diff.x;
-            float tNearX = std::min(tx1, tx2);
-            float tFarX = std::max(tx1, tx2);
-            tMin = std::max(tMin, tNearX);
-            tMax = std::min(tMax, tFarX);
+            float tNearX = (std::min)(tx1, tx2);
+            float tFarX = (std::max)(tx1, tx2);
+            tMin = (std::max)(tMin, tNearX);
+            tMax = (std::min)(tMax, tFarX);
         } else {
             if (line.origin.x < aabb.min.x || line.origin.x > aabb.max.x) {
                 return false;
@@ -853,10 +869,10 @@ namespace Collision {
         if (line.diff.y != 0.0f) {
             float ty1 = (aabb.min.y - line.origin.y) / line.diff.y;
             float ty2 = (aabb.max.y - line.origin.y) / line.diff.y;
-            float tNearY = std::min(ty1, ty2);
-            float tFarY = std::max(ty1, ty2);
-            tMin = std::max(tMin, tNearY);
-            tMax = std::min(tMax, tFarY);
+            float tNearY = (std::min)(ty1, ty2);
+            float tFarY = (std::max)(ty1, ty2);
+            tMin = (std::max)(tMin, tNearY);
+            tMax = (std::min)(tMax, tFarY);
         } else {
             if (line.origin.y < aabb.min.y || line.origin.y > aabb.max.y) {
                 return false;
@@ -867,10 +883,10 @@ namespace Collision {
         if (line.diff.z != 0.0f) {
             float tz1 = (aabb.min.z - line.origin.z) / line.diff.z;
             float tz2 = (aabb.max.z - line.origin.z) / line.diff.z;
-            float tNearZ = std::min(tz1, tz2);
-            float tFarZ = std::max(tz1, tz2);
-            tMin = std::max(tMin, tNearZ);
-            tMax = std::min(tMax, tFarZ);
+            float tNearZ = (std::min)(tz1, tz2);
+            float tFarZ = (std::max)(tz1, tz2);
+            tMin = (std::max)(tMin, tNearZ);
+            tMax = (std::min)(tMax, tFarZ);
         } else {
             if (line.origin.z < aabb.min.z || line.origin.z > aabb.max.z) {
                 return false;

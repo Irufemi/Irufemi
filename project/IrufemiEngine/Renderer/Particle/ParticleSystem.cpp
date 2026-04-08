@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <numbers>
 #include "Engine/Manager/PrimitiveManager.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
 
 DescriptorPool* ParticleSystem::s_srvPool_ = nullptr;
 TextureManager* ParticleSystem::textureManager_ = nullptr;
@@ -117,10 +119,8 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     resource_->materialData_->useClampSampler = (primitiveShape_ == PrimitiveType::Ring || primitiveShape_ == PrimitiveType::Cylinder);
 
     if (textureManager_) {
-        auto textureNames = textureManager_->GetTextureNames();
-        std::sort(textureNames.begin(), textureNames.end());
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
         if (!textureNames.empty()) {
-
             resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
             // コンボボックス用に selectedIndex を初期化
@@ -210,6 +210,33 @@ void ParticleSystem::Update() {
 
 void ParticleSystem::Draw()
 {
+    if (!resource_ || !s_drawManager_ || !camera_ || (numInstance_ == 0 && particles_.empty())) {
+        return;
+    }
+
+    // 視錐台カリング
+    if (isCullingEnabled_) {
+        // 放出範囲の対角長(の半分)をベース半径とする
+        float emitterRadius = (std::max)({ emitter_.area.x, emitter_.area.y, emitter_.area.z }) * 0.5f;
+
+        // 速度の最大値を取得
+        float maxVelX = (std::max)(std::abs(emitter_.velocityMin.x), std::abs(emitter_.velocityMax.x));
+        float maxVelY = (std::max)(std::abs(emitter_.velocityMin.y), std::abs(emitter_.velocityMax.y));
+        float maxVelZ = (std::max)(std::abs(emitter_.velocityMin.z), std::abs(emitter_.velocityMax.z));
+        float maxVel = (std::sqrt)(maxVelX * maxVelX + maxVelY * maxVelY + maxVelZ * maxVelZ);
+
+        // 粒子が拡散する最大距離（ライフタイムを考慮、安全のため5秒分）
+        float spreadRadius = maxVel * 5.0f;
+
+        Sphere boundingSphere;
+        boundingSphere.center = emitter_.transform.translate;
+        boundingSphere.radius = (emitterRadius + spreadRadius) * 1.1f; // 10%のマージン
+
+        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+            return; // 描画処理をスキップ
+        }
+    }
+
     // 1) パーティクル本体を描画(選択された Blend/Depth/Cull を描画直前にエンジンへセットして PSO を適用)
     if (s_engine_) {
         // 現在のエンジン状態を保存しておく
@@ -304,8 +331,7 @@ void ParticleSystem::SetTexture(const std::string& textureFilePath) {
     if (!textureManager_) {
         return;
     }
-    auto textureNames = textureManager_->GetTextureNames();
-    std::sort(textureNames.begin(), textureNames.end());
+    auto textureNames = textureManager_->GetTextureNamesForDebug();
     auto it = std::find(textureNames.begin(), textureNames.end(), textureFilePath);
 
     if (it != textureNames.end()) {
@@ -453,6 +479,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
                 ImGui::Checkbox("update", &isUpdate_);
                 ImGui::Checkbox("useBillboard", &useBillboard_);
+                ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
 
                 ImGui::Separator();
 
@@ -464,8 +491,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         primitiveShape_ = static_cast<PrimitiveType>(currentShape);
                         std::string currentTextureName = "resources/circle.png";
                         if (textureManager_) {
-                            auto textureNames = textureManager_->GetTextureNames();
-                            std::sort(textureNames.begin(), textureNames.end());
+                            auto textureNames = textureManager_->GetTextureNamesForDebug();
                             if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
                                 currentTextureName = textureNames[selectedTextureIndex_];
                             }
@@ -555,8 +581,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         // 現在のテクスチャ名を復元して Initialize を呼ぶ(UI 保持のため)
                         std::string currentTextureName = "resources/circle.png";
                         if (textureManager_) {
-                            auto textureNames = textureManager_->GetTextureNames();
-                            std::sort(textureNames.begin(), textureNames.end());
+                            auto textureNames = textureManager_->GetTextureNamesForDebug();
                             if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
                                 currentTextureName = textureNames[selectedTextureIndex_];
                             } else {
@@ -592,8 +617,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
                         std::string currentTextureName = "resources/circle.png";
                         if (textureManager_) {
-                            auto textureNames = textureManager_->GetTextureNames();
-                            std::sort(textureNames.begin(), textureNames.end());
+                            auto textureNames = textureManager_->GetTextureNamesForDebug();
                             if (!textureNames.empty()) {
                                 if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(textureNames.size())) {
                                     currentTextureName = textureNames[selectedTextureIndex_];
