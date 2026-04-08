@@ -363,7 +363,7 @@ void GameScene::CheckFlyingPartsCollisions() {
             if (Collision::IsOBBCollision(projectileOBB, target->GetOBB())) {
                 Vector3 vel = projectile->GetBlowVelocity();
                 Vector3 diff = Math::Subtract(projectile->GetTransform().translate, target->GetTransform().translate);
-                Vector3 normal = Math::Normalize({ diff.x, 0.0f, diff.z });
+                Vector3 normal = Math::Normalize(Vector3{ diff.x, 0.0f, diff.z });
                 if (Math::Length(normal) < kMathEpsilon) normal = kDefaultNormalZ;
 
                 float dot = Math::Dot(vel, normal);
@@ -387,7 +387,7 @@ void GameScene::CheckFlyingPartsCollisions() {
                 Vector3 vel1 = projectile->GetBlowVelocity();
                 Vector3 vel2 = target->GetBlowVelocity();
                 Vector3 diff = Math::Subtract(projectile->GetTransform().translate, target->GetTransform().translate);
-                Vector3 normal = Math::Normalize({ diff.x, 0.0f, diff.z });
+                Vector3 normal = Math::Normalize(Vector3{ diff.x, 0.0f, diff.z });
                 if (Math::Length(normal) < kMathEpsilon) normal = kDefaultNormalZ;
 
                 Vector3 relVel = Math::Subtract(vel1, vel2);
