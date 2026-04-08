@@ -249,6 +249,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     postProcessManager_->SetDepthSrvHandle(depthSrvHandleGPU);
 
+    // --- SceneTransition の初期化 ---
+    sceneTransition_ = std::make_unique<SceneTransition>();
+    sceneTransition_->Initialize(postProcessManager_.get());
+
     // WinAppに自身(Engine)のポインタを設定
     winApp_->SetEngine(this);
 }
@@ -377,8 +381,9 @@ void IrufemiEngine::Execute() {
         // 更新
         audioManager_->Update();
         sceneManager_->Update();
-    totalTime_ += deltaTime_;
-    postProcessManager_->Update(totalTime_);
+        totalTime_ += deltaTime_;
+        postProcessManager_->Update(totalTime_);
+        sceneTransition_->Update(deltaTime_);
 
     // インプットを更新
     inputManager_->Update();
@@ -466,9 +471,9 @@ void IrufemiEngine::EndFrame() {
         const uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
         srvPool->GarbageCollect(completed);
     }
- 
-	// --- 追加: 中間リソースの遅延解放を実行 ---
-	dxCommon_->ClearPendingResources();
+  
+    // --- 追加: 中間リソースの遅延解放を実行 ---
+    dxCommon_->ClearPendingResources();
 }
 
 void IrufemiEngine::OnResize(int32_t width, int32_t height) {
@@ -587,4 +592,3 @@ void IrufemiEngine::ApplyShadowSkinningPSO() {
     assert(pso && "ShadowSkinning PSO is null. Check shadow shader setup.");
     if (pso) { drawManager_->BindPSO(pso); }
 }
-

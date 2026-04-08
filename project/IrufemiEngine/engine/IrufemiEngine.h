@@ -13,6 +13,7 @@
 #include "Core/Type/BlendMode.h"
 #include "Core/Utility/Log.h"
 #include "../Framework/SceneManager.h"
+#include "../Framework/SceneTransition.h"
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Matrix4x4.h"
@@ -182,6 +183,9 @@ public: // ゲッター
      * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
      */
     PostProcessManager* GetPostProcessManager() { return postProcessManager_.get(); }
+
+    /** @brief 画面遷移管理者を取得 */
+    SceneTransition* GetSceneTransition() { return sceneTransition_.get(); }
     ///@}
 
     /** @name 画面情報の取得 */
@@ -313,5 +317,6 @@ private: // メンバ変数
     // --- 全画面用 RenderTexture ---
     std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;
     std::unique_ptr<PostProcessManager> postProcessManager_ = nullptr;
+    std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
 };

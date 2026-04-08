@@ -419,17 +419,19 @@ void GameScene::Update() {
     // --- カメラとフレームデータの更新 ---
     UpdateCameraAndFrameData();
 
-    // enemyが死んだときクリアシーンに遷移する
+    // enemyが死んだときクリアシーンに演出付きで遷移する
+    // RadialBlur演出を使用（1.5秒）
     if (boss_ && boss_->IsDead()) {
         if (engine_ && engine_->GetSceneManager()) {
-            engine_->GetSceneManager()->Request("Clear"); // クリアシーンへの遷移
+            engine_->GetSceneManager()->TransitionTo("Clear", SceneTransition::Type::RadialBlur, 1.5f);
         }
     }
 
-    // ★追加: プレイヤーの死亡演出が終了したときゲームオーバーシーンに遷移する
+    // ★追加: プレイヤーの死亡演出が終了したときゲームオーバーシーンに演出付きで遷移する
+    // Dissolve演出を使用（2.0秒）
     if (player_ && player_->IsDeathAnimationFinished()) {
         if (engine_ && engine_->GetSceneManager()) {
-            engine_->GetSceneManager()->Request("GameOver"); // "GameOver" は実際のシーン名に合わせてください
+            engine_->GetSceneManager()->TransitionTo("GameOver", SceneTransition::Type::Dissolve, 2.0f);
         }
     }
 }

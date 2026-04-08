@@ -39,6 +39,17 @@ bool SceneManager::ChangeTo(const Key& next) {
     return true;
 }
 
+void SceneManager::TransitionTo(const Key& next, SceneTransition::Type type, float duration) {
+    if (transitionPhase_ != TransitionPhase::None) return; // 二重遷移防止
+
+    pendingTransition_ = next;
+    pendingType_ = type;
+    pendingDuration_ = duration;
+    transitionPhase_ = TransitionPhase::Closing;
+
+    engine_->GetSceneTransition()->Start(type, duration, true);
+}
+
 void SceneManager::Update() {
     // モデル・テクスチャの読み込み待ちがある場合は、シーンの更新を止める
     bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
@@ -61,10 +72,28 @@ void SceneManager::Update() {
         }
     }
 
-    // シーン切り替え処理
+    // シーン切り替え要求（即時）
     if (!pending_.empty()) {
         ChangeTo(pending_);
         pending_.clear();
+    }
+
+    // --- 遷移プロセスの更新 ---
+    if (transitionPhase_ == TransitionPhase::Closing) {
+        // フェードアウト完了待ち
+        if (engine_->GetSceneTransition()->IsOutFinished()) {
+            ChangeTo(pendingTransition_);
+            pendingTransition_.clear();
+            transitionPhase_ = TransitionPhase::Opening;
+            // フェードイン開始
+            engine_->GetSceneTransition()->Start(pendingType_, pendingDuration_, false);
+        }
+    }
+    else if (transitionPhase_ == TransitionPhase::Opening) {
+        // フェードイン完了待ち
+        if (engine_->GetSceneTransition()->IsFinished()) {
+            transitionPhase_ = TransitionPhase::None;
+        }
     }
 
     if (current_) {
@@ -80,7 +109,10 @@ void SceneManager::Update() {
         }
         else {
             // 通常更新
-            current_->Update();
+            // ※フェードイン中 (Opening) は Update を呼ばない
+            if (transitionPhase_ != TransitionPhase::Opening) {
+                current_->Update();
+            }
         }
     }
 }

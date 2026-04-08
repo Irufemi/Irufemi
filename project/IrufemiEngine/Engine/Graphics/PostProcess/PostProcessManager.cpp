@@ -98,6 +98,10 @@ void PostProcessManager::Update(float totalTime) {
     *mappedHsv_ = hsvParams_;
   if (mappedToneMapping_)
     *mappedToneMapping_ = toneMappingParams_;
+  if (mappedFade_)
+    *mappedFade_ = fadeParams_;
+  if (mappedSlide_)
+    *mappedSlide_ = slideParams_;
 }
 
 void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
@@ -232,6 +236,12 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   case Mode::ToneMapping:
     cbvAddress = toneMappingCB_->GetGPUVirtualAddress();
     break;
+  case Mode::Fade:
+    cbvAddress = fadeCB_->GetGPUVirtualAddress();
+    break;
+  case Mode::Slide:
+    cbvAddress = slideCB_->GetGPUVirtualAddress();
+    break;
   default:
     break;
   }
@@ -275,6 +285,8 @@ void PostProcessManager::CreatePSOs() {
       {Mode::Noise, L"resources/shaders/Noise.PS.hlsl"},
       {Mode::HSV, L"resources/shaders/HSV.PS.hlsl"},
       {Mode::ToneMapping, L"resources/shaders/ToneMapping.PS.hlsl"},
+      {Mode::Fade, L"resources/shaders/Fade.PS.hlsl"},
+      {Mode::Slide, L"resources/shaders/Slide.PS.hlsl"},
   };
 
   for (const auto &s : shaders) {
@@ -338,6 +350,12 @@ void PostProcessManager::CreateConstantBuffers() {
 
   toneMappingCB_ = CreateBuffer(sizeof(ToneMappingParams));
   toneMappingCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedToneMapping_));
+
+  fadeCB_ = CreateBuffer(sizeof(FadeParams));
+  fadeCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedFade_));
+
+  slideCB_ = CreateBuffer(sizeof(SlideParams));
+  slideCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedSlide_));
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource>

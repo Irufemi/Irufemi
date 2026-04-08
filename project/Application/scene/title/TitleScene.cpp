@@ -87,9 +87,10 @@ void TitleScene::Update() {
     // ↓ゲームの更新
     // =====
 
-    // SPACEキーを押したらシーン遷移をリクエスト
+    // SPACEキーを押したらシーン遷移を演出付きで実行
+    // Slide演出を使用（1.0秒）
     if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
-        engine_->GetSceneManager()->Request("InGame");
+        engine_->GetSceneManager()->TransitionTo("InGame", SceneTransition::Type::Slide, 1.0f);
     }
 
     // シーン表示仮置きスプライトの更新

@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "SceneTransition.h"
 
 class IrufemiEngine;
 class IScene;
@@ -21,6 +22,13 @@ public:
     using Key = std::string;
     /** @brief シーン生成関数の型定義 */
     using Factory = std::function<std::unique_ptr<IScene>()>;
+
+    /** @brief 遷移フェーズ */
+    enum class TransitionPhase {
+        None,     ///< 通常時
+        Closing,  ///< フェードアウト中（現在のシーンをUpdateし続ける）
+        Opening   ///< フェードイン中（新しいシーンをUpdateしない）
+    };
 
     /**
      * @brief コンストラクタ
@@ -49,6 +57,14 @@ public:
      * @return 切り替えに成功したら true
      */
     bool ChangeTo(const Key& next);
+
+    /**
+     * @brief 演出を伴うシーン切替を開始する
+     * @param[in] next 次のシーン名
+     * @param[in] type 演出タイプ
+     * @param[in] duration 演出時間（秒）
+     */
+    void TransitionTo(const Key& next, SceneTransition::Type type, float duration);
     ///@}
 
     /** @name 更新・描画 */
@@ -100,4 +116,10 @@ private:
 
     bool isPaused_ = false; ///< ゲーム全体の一時停止フラグ
     bool isInitializing_ = false; ///< シーンの初期化（Initialize）実行中フラグ
+
+    // --- 遷移管理用 ---
+    TransitionPhase transitionPhase_ = TransitionPhase::None;
+    Key pendingTransition_{};
+    SceneTransition::Type pendingType_ = SceneTransition::Type::Fade;
+    float pendingDuration_ = 1.0f;
 };
