@@ -145,6 +145,18 @@ public: // メンバ関数
 	void ClearPendingResources();
 
 	/**
+	 * @brief RTVインデックスの解放
+	 * @param[in] index 解放するインデックス
+	 */
+	void FreeRTVIndex(uint32_t index);
+
+	/**
+	 * @brief DSVインデックスの解放
+	 * @param[in] index 解放するインデックス
+	 */
+	void FreeDSVIndex(uint32_t index);
+
+	/**
 	 * @brief エンジン本体へのポインタを設定
 	 */
 	void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
@@ -357,6 +369,19 @@ private: // メンバ変数
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 	};
 	std::vector<PendingResource> pendingResources_;
+
+	// --- デスクリプタ再利用用 ---
+	struct PendingDescriptor {
+		uint64_t fenceValue;
+		uint32_t index;
+	};
+	std::vector<uint32_t> freeRtvIndices_;
+	std::vector<uint32_t> freeDsvIndices_;
+	std::vector<PendingDescriptor> pendingFreeRtvs_;
+	std::vector<PendingDescriptor> pendingFreeDsvs_;
+
+	// --- スレッド安全用 ---
+	std::mutex pendingMutex_;
 
 	// --- 非同期転送用 ---
 	std::mutex uploadMutex_;

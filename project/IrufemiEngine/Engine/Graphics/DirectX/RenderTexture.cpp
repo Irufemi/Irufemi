@@ -1,13 +1,17 @@
 #include "RenderTexture.h"
 #include "DirectXCommon.h"
 #include "DescriptorPool.h"
-#include "Engine/Manager/DrawManager.h"
+#include "../../Manager/DrawManager.h"
 #include <cassert>
-#include <iostream>
 
 RenderTexture::~RenderTexture() {
-    if (dxCommon_ && dxCommon_->GetSrvPool()) {
-        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+    if (dxCommon_) {
+        if (dxCommon_->GetSrvPool() && srvIndex_ != 0xFFFFFFFF) {
+            dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        }
+        if (rtvIndex_ != 0xFFFFFFFF) {
+            dxCommon_->FreeRTVIndex(rtvIndex_);
+        }
     }
 }
 

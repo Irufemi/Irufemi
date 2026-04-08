@@ -4,11 +4,15 @@
 #include <cassert>
 
 ShadowMap::~ShadowMap() {
-    // SRV の解放（DescriptorPool が管理している場合）
+    // SRV の解放
     if (dxCommon_ && dxCommon_->GetSrvPool()) {
         if (srvIndex_ != 0xFFFFFFFF) {
             dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
         }
+    }
+    // DSV の解放
+    if (dxCommon_ && dsvIndex_ != 0xFFFFFFFF) {
+        dxCommon_->FreeDSVIndex(dsvIndex_);
     }
 }
 

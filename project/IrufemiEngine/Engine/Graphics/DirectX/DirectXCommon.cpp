@@ -224,7 +224,7 @@ void DirectXCommon::CreateSwapChain() {
 }
 
 void DirectXCommon::CreateDescriptorHeaps() {
-    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 64, false);
+    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 128, false);
     nextRtvIndex_ = 4; // 0, 1 は SwapChain 用、2, 3 は ImGui 用に予約
 
     srvPool_ = std::make_unique<DescriptorPool>();
@@ -644,13 +644,37 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t in
 }
 
 uint32_t DirectXCommon::AllocateRTVIndex() {
-    assert(nextRtvIndex_ < 64);
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    if (!freeRtvIndices_.empty()) {
+        uint32_t index = freeRtvIndices_.back();
+        freeRtvIndices_.pop_back();
+        return index;
+    }
+    assert(nextRtvIndex_ < 128);
     return nextRtvIndex_++;
 }
 
 uint32_t DirectXCommon::AllocateDSVIndex() {
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    if (!freeDsvIndices_.empty()) {
+        uint32_t index = freeDsvIndices_.back();
+        freeDsvIndices_.pop_back();
+        return index;
+    }
     assert(nextDsvIndex_ < 16);
     return nextDsvIndex_++;
+}
+
+void DirectXCommon::FreeRTVIndex(uint32_t index) {
+    if (index == 0xFFFFFFFF) return;
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    pendingFreeRtvs_.push_back({ globalFenceValue_, index });
+}
+
+void DirectXCommon::FreeDSVIndex(uint32_t index) {
+    if (index == 0xFFFFFFFF) return;
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    pendingFreeDsvs_.push_back({ globalFenceValue_, index });
 }
 
 /*三角形の色を変えよう*/
@@ -710,10 +734,8 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateUAVBufferResource(si
     return bufferResource;
 }
 
-/*テクスチャを正しく配置しよう*/
-
 Microsoft::WRL::ComPtr<ID3D12Resource>  DirectXCommon::UploadTextureData(const Microsoft::WRL::ComPtr<ID3D12Resource>& texture, const DirectX::ScratchImage& mipImages) {
-	// --- スレッドセーフ化と完了同期の導入 ---
+	// --- スレッドセーフ化 ---
 	std::lock_guard<std::mutex> lock(uploadMutex_);
 
     ///IntermediateResource(中間リソース)
@@ -738,18 +760,17 @@ Microsoft::WRL::ComPtr<ID3D12Resource>  DirectXCommon::UploadTextureData(const M
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
     uploadCommandList_->ResourceBarrier(1, &barrier);
 
-	// 実行と同期
+	// 実行
 	uploadCommandList_->Close();
 	ID3D12CommandList* ppCommandLists[] = { uploadCommandList_.Get() };
 	commandQueue_->ExecuteCommandLists(1, ppCommandLists);
 
-	// FenceによるGPU完了待ち
+	// FenceによるGPU完了待ちを非同期化
 	uploadFenceValue_++;
 	commandQueue_->Signal(uploadFence_.Get(), uploadFenceValue_);
-	if (uploadFence_->GetCompletedValue() < uploadFenceValue_) {
-		uploadFence_->SetEventOnCompletion(uploadFenceValue_, fenceEvent_);
-		WaitForSingleObject(fenceEvent_, INFINITE);
-	}
+	
+	// 中間リソースを遅延解放に登録
+	ReleaseAfterFence(intermediateResource);
 
     return intermediateResource;
 }
@@ -1090,15 +1111,35 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
  
 void DirectXCommon::ReleaseAfterFence(Microsoft::WRL::ComPtr<ID3D12Resource> resource) {
 	if (!resource) return;
-	// 現在のフレームがPostDrawで発行する予定のフェンス値を予測、または直近の値を記録
-	// 安全のため、次の IncrementGlobalFence で発行される値、あるいは現在のスロットの値をベースにする
+	std::lock_guard<std::mutex> lock(pendingMutex_);
 	pendingResources_.push_back({ globalFenceValue_ + 1, resource });
 }
  
 void DirectXCommon::ClearPendingResources() {
 	uint64_t completed = fence_->GetCompletedValue();
+	std::lock_guard<std::mutex> lock(pendingMutex_);
+
+	// リソースの回収
 	auto it = std::remove_if(pendingResources_.begin(), pendingResources_.end(), [completed](const PendingResource& res) {
 		return res.fenceValue <= completed;
 	});
 	pendingResources_.erase(it, pendingResources_.end());
+
+	// RTV デスクリプタの回収
+	auto rtvIt = std::remove_if(pendingFreeRtvs_.begin(), pendingFreeRtvs_.end(), [completed](const PendingDescriptor& d) {
+		return d.fenceValue <= completed;
+	});
+	for (auto d = rtvIt; d != pendingFreeRtvs_.end(); ++d) {
+		freeRtvIndices_.push_back(d->index);
+	}
+	pendingFreeRtvs_.erase(rtvIt, pendingFreeRtvs_.end());
+
+	// DSV デスクリプタの回収
+	auto dsvIt = std::remove_if(pendingFreeDsvs_.begin(), pendingFreeDsvs_.end(), [completed](const PendingDescriptor& d) {
+		return d.fenceValue <= completed;
+	});
+	for (auto d = dsvIt; d != pendingFreeDsvs_.end(); ++d) {
+		freeDsvIndices_.push_back(d->index);
+	}
+	pendingFreeDsvs_.erase(dsvIt, pendingFreeDsvs_.end());
 }
