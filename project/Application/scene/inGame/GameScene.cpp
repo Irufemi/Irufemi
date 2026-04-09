@@ -255,7 +255,7 @@ void GameScene::CheckEnemyToPlayerCollisions() {
     playerColliderSphere.radius = player_->GetCollider().radius;
 
     // EnemyBeam の判定
-    if (boss_->GetBeam() && boss_->GetBeam()->IsActive() && boss_->IsFiringRealBeam()) {
+    if (boss_->GetBeam() && boss_->GetBeam()->IsAttackActive() && boss_->IsFiringRealBeam()) {
         if (Collision::IsOBBSphereCollision(boss_->GetBeam()->GetOBB(), playerColliderSphere)) {
             if (player_->ApplyDamage(kDamageBeamToPlayer)) {
                 OutputDebugStringA(std::format("Player Hit by Beam: {} damage\n", kDamageBeamToPlayer).c_str());
