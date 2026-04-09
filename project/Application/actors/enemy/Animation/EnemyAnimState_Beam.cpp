@@ -53,10 +53,10 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
         float tAngleY = std::atan2(target.x - enemy->GetGlobalTransform().translate.x, target.z - enemy->GetGlobalTransform().translate.z);
         enemy->GetGlobalTransform().rotate.y += NormalizeAngle(tAngleY - enemy->GetGlobalTransform().rotate.y) * beamRotateSpeed_;
 
-        enemy->FireBeam(); // ここでビーム生成をトリガー
+        enemy->FireBeam();
         if (beam) {
-            beam->SetActive(true);
-            beam->SetThickness(0.2f);
+            beam->SetTelegraphActive(true);
+            beam->SetTelegraphThickness(0.2f);
             beam->Update(headPos, target);
         }
     }
@@ -98,14 +98,19 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
                 float f = (fireProgress - fadeOutStartThreshold_) / (1.0f - fadeOutStartThreshold_);
                 thickness += (std::pow(f, 3.0f) * beamThicknessFire_ * beamExpandScale_);
             }
-            beam->SetThickness(thickness);
+            beam->SetTelegraphActive(false);
+            beam->SetAttackActive(true);
+            beam->SetAttackThickness(thickness);
             beam->Update(headPos, lockedTargetPos_);
         }
     }
     // 4. 硬直
     else if (attackTimer_ < endStun) {
         isFiring_ = false;
-        if (beam) beam->SetActive(false);
+        if (beam) {
+            beam->SetTelegraphActive(false);
+            beam->SetAttackActive(false);
+        }
         enemy->GetGlobalTransform().rotate.x += (0.0f - enemy->GetGlobalTransform().rotate.x) * returnSpeed_;
 
         float sp = shakeBaseSpeed_ * 0.5f;
@@ -141,7 +146,10 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
 }
 
 void EnemyAnimState_Beam::Exit(Enemy* enemy) {
-    if (auto* beam = enemy->GetBeam()) beam->SetActive(false);
+    if (auto* beam = enemy->GetBeam()) {
+        beam->SetTelegraphActive(false);
+        beam->SetAttackActive(false);
+    }
 }
 
 float EnemyAnimState_Beam::NormalizeAngle(float angle) {
