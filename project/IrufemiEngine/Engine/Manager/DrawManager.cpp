@@ -306,7 +306,8 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLigh
         // シャドウマップの行列更新
         ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
         if (shadowMap) {
-            shadowMap->UpdateMatrix(light.direction);
+            // カメラの位置を注視点として追従させる
+            shadowMap->UpdateMatrix(light.direction, camera.worldPosition, 128.0f);
             fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();
         }
     }

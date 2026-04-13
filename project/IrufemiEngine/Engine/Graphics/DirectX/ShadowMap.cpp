@@ -8,10 +8,8 @@
 namespace {
     // シャドウマップのパラメータ定数
     const float kLightDistance = 200.0f;        // ライトの距離
-    const float kOrthoSize = 128.0f;            // 正投影の範囲 (ハーフサイズ)
     const float kNearClip = 0.1f;               // ニアクリップ
     const float kFarClip = 512.0f;              // ファークリップ
-    const Vector3 kSceneCenter = { 0, 0, 0 };   // シーンの注視点
 }
 
 ShadowMap::~ShadowMap() {
@@ -131,7 +129,7 @@ void ShadowMap::Clear(ID3D12GraphicsCommandList* commandList) {
     commandList->ClearDepthStencilView(dsvHandleCPU_, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
-void ShadowMap::UpdateMatrix(const Vector3& lightDir) {
+void ShadowMap::UpdateMatrix(const Vector3& lightDir, const Vector3& targetPos, float orthoSize) {
     // 方向の正規化
     Vector3 lightDirNormalized = Math::Normalize(lightDir);
 
@@ -142,10 +140,10 @@ void ShadowMap::UpdateMatrix(const Vector3& lightDir) {
     }
 
     // ライト位置の計算 (注視点から距離を離す)
-    Vector3 eye = Math::Subtract(kSceneCenter, Math::Multiply(kLightDistance, lightDirNormalized));
+    Vector3 eye = Math::Subtract(targetPos, Math::Multiply(kLightDistance, lightDirNormalized));
 
     // ビュー行列の作成 (手動計算版)
-    Vector3 zaxis = Math::Normalize(Math::Subtract(kSceneCenter, eye));
+    Vector3 zaxis = Math::Normalize(Math::Subtract(targetPos, eye));
     Vector3 xaxis = Math::Normalize(Math::Cross(up, zaxis));
     Vector3 yaxis = Math::Cross(zaxis, xaxis);
 
@@ -159,7 +157,7 @@ void ShadowMap::UpdateMatrix(const Vector3& lightDir) {
     view.m[3][3] = 1;
 
     // 正投影行列の作成
-    Matrix4x4 proj = Math::MakeOrthographicMatrix(-kOrthoSize, kOrthoSize, kOrthoSize, -kOrthoSize, kNearClip, kFarClip);
+    Matrix4x4 proj = Math::MakeOrthographicMatrix(-orthoSize, orthoSize, orthoSize, -orthoSize, kNearClip, kFarClip);
 
     // 合成
     viewProjection_ = Math::Multiply(view, proj);

@@ -47,8 +47,10 @@ public:
     /**
      * @brief ライトの方向からビュー投影行列を更新する
      * @param lightDir ライトの方向ベクトル
+     * @param targetPos 追従対象の座標（デフォルトは原点）
+     * @param orthoSize 表示範囲のサイズ（デフォルト値: 128.0f）
      */
-    void UpdateMatrix(const Vector3& lightDir);
+    void UpdateMatrix(const Vector3& lightDir, const Vector3& targetPos = { 0, 0, 0 }, float orthoSize = 128.0f);
 
     /** @name ゲッター */
     ///@{
