@@ -303,33 +303,12 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLigh
         fr.lightCommonData->spotLightCount = static_cast<int32_t>(spotLights.size());
         fr.lightCommonData->areaLightCount = static_cast<int32_t>(areaLights.size());
 
-        // ライト視点行列の更新 (平行光源)
-        Vector3 lightDir = Math::Normalize(light.direction);
-        // 方向が真上または真下の場合は Up を変える
-        Vector3 up = { 0, 1, 0 };
-        if (std::abs(lightDir.y) > 0.999f) { up = { 0, 0, 1 }; }
-
-        Vector3 target = { 0, 0, 0 };
-        Vector3 eye = Math::Subtract(target, Math::Multiply(200.0f, lightDir));
-
-        // 簡易 LookAt 行列作成
-        Vector3 zaxis = Math::Normalize(Math::Subtract(target, eye));
-        Vector3 xaxis = Math::Normalize(Math::Cross(up, zaxis));
-        Vector3 yaxis = Math::Cross(zaxis, xaxis);
-
-        Matrix4x4 view{};
-        view.m[0][0] = xaxis.x; view.m[0][1] = yaxis.x; view.m[0][2] = zaxis.x; view.m[0][3] = 0;
-        view.m[1][0] = xaxis.y; view.m[1][1] = yaxis.y; view.m[1][2] = zaxis.y; view.m[1][3] = 0;
-        view.m[2][0] = xaxis.z; view.m[2][1] = yaxis.z; view.m[2][2] = zaxis.z; view.m[2][3] = 0;
-        view.m[3][0] = -Math::Dot(xaxis, eye);
-        view.m[3][1] = -Math::Dot(yaxis, eye);
-        view.m[3][2] = -Math::Dot(zaxis, eye);
-        view.m[3][3] = 1;
-
-        // 正投影行列 (フィールド範囲 200x200 をカバーするように 256x256 程度に設定)
-        Matrix4x4 proj = Math::MakeOrthographicMatrix(-128.0f, 128.0f, 128.0f, -128.0f, 0.1f, 512.0f);
-        
-        fr.lightCommonData->viewProjection = Math::Multiply(view, proj);
+        // シャドウマップの行列更新
+        ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
+        if (shadowMap) {
+            shadowMap->UpdateMatrix(light.direction);
+            fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();
+        }
     }
 
     // 各 StructuredBuffer へ書き込み
@@ -724,44 +703,21 @@ void DrawManager::BeginShadowPass() {
     if (!shadowMap) return;
     isShadowPass_ = true;
 
-    // 1. Transition Barrier (SRV -> DepthWrite)
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = shadowMap->GetResource();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    commandList_->ResourceBarrier(1, &barrier);
+    // 1. シャドウマップの準備 (バリア遷移、クリア、DSVセット)
+    shadowMap->Begin(commandList_);
 
-    // 2. Clear
-    shadowMap->Clear(commandList_);
-
-    // 3. Set DSV and Viewport
-    shadowMap->BeginRender(commandList_);
-
-    // 4. ライト行列の更新 (平行光源)
+    // 2. ライト行列を定数バッファに反映
     auto& fr = frameResources_[dxCommon_->GetFrameIndex()];
     if (fr.lightCommonData) {
-        Vector3 lightDir = Math::Normalize(fr.lightCommonData->directionalLight.direction);
-        // シーン全体をカバーするようにライトの位置と範囲を設定
-        Vector3 lightPos = Math::Multiply(-100.0f, lightDir);
-        
-        // 簡単な LookAt 回転行列の作成
-        float yaw = std::atan2(lightDir.x, lightDir.z);
-        float pitch = -std::asin(lightDir.y);
-        Matrix4x4 lightRotation = Math::MakeRotateXYZMatrix(pitch, yaw, 0.0f);
-        Matrix4x4 lightView = Math::Inverse(Math::Multiply(Math::MakeTranslateMatrix(lightPos), lightRotation));
-        
-        // 正射影行列 (広めに設定)
-        Matrix4x4 lightOrtho = Math::MakeOrthographicMatrix(-100.0f, 100.0f, 100.0f, -100.0f, 0.1f, 300.0f);
-        fr.lightCommonData->viewProjection = Math::Multiply(lightView, lightOrtho);
+        // すでに SetFrameData で計算済みだが、念のため最新の状態を反映
+        fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();
     }
 
-    // DescriptorHeap再設定
+    // 3. DescriptorHeap再設定
     ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
     commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-    // バインド (ライト行列を定数バッファに反映させるため)
+    // 4. バインド (ライト行列を定数バッファに反映させるため)
     BindCommonParameters();
 }
 
@@ -770,14 +726,8 @@ void DrawManager::EndShadowPass() {
     if (!shadowMap) return;
     isShadowPass_ = false;
 
-    // 1. Transition Barrier (DepthWrite -> SRV)
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = shadowMap->GetResource();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    commandList_->ResourceBarrier(1, &barrier);
+    // 1. バリア遷移を元に戻す (DepthWrite -> SRV)
+    shadowMap->End(commandList_);
 
     // 2. レンダーターゲットを復帰させる
     if (currentRenderTexture_) {

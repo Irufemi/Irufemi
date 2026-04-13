@@ -2,6 +2,8 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <cstdint>
+#include "../../Core/Math/Matrix4x4.h"
+#include "../../Core/Math/Vector3.h"
 
 class DirectXCommon;
 
@@ -25,10 +27,16 @@ public:
     void Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height);
 
     /**
-     * @brief 描画開始処理（DSV のセットとビューポート設定）
+     * @brief 描画開始処理（バリア遷移、DSV のセット、ビューポート設定）
      * @param commandList コマンドリスト
      */
-    void BeginRender(ID3D12GraphicsCommandList* commandList);
+    void Begin(ID3D12GraphicsCommandList* commandList);
+
+    /**
+     * @brief 描画終了処理（バリア遷移を元に戻す）
+     * @param commandList コマンドリスト
+     */
+    void End(ID3D12GraphicsCommandList* commandList);
 
     /**
      * @brief 深度バッファのクリア
@@ -36,11 +44,18 @@ public:
      */
     void Clear(ID3D12GraphicsCommandList* commandList);
 
+    /**
+     * @brief ライトの方向からビュー投影行列を更新する
+     * @param lightDir ライトの方向ベクトル
+     */
+    void UpdateMatrix(const Vector3& lightDir);
+
     /** @name ゲッター */
     ///@{
     D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandle() const { return srvHandleGPU_; }
     D3D12_CPU_DESCRIPTOR_HANDLE GetDsvHandle() const { return dsvHandleCPU_; }
     ID3D12Resource* GetResource() const { return resource_.Get(); }
+    const Matrix4x4& GetViewProjection() const { return viewProjection_; }
     ///@}
 
 private:
@@ -59,4 +74,7 @@ private:
     // ビューポート・シザーレクト
     D3D12_VIEWPORT viewport_{};
     D3D12_RECT scissorRect_{};
+
+    // 行列
+    Matrix4x4 viewProjection_{};
 };
