@@ -10,6 +10,8 @@
 #include "Core/Math/Matrix4x4.h"
 #include "Core/Math/Quaternion.h"
 #include "Core/Math/QuaternionTransform.h"
+#include "Core/Math/NumericalSequence.h"
+
 
 #include "Core/Math/Geometry/AABB.h"
 #include "Core/Math/Geometry/OBB.h"
