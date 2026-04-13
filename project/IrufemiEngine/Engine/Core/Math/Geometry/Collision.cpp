@@ -1,5 +1,5 @@
 #include "Collision.h"
-#include "Math.h"
+#include "../Math.h"
 #include "AABB.h"
 #include "OBB.h"
 #include "Frustum.h"
@@ -16,40 +16,21 @@
 namespace Collision {
 
     // 球と球の衝突判定
-    bool IsCollision(const Vector3& s1_center, const float& s1_radius, const Vector3& s2_center, const float& s2_radius) {
-
-        // 2つの球の中心点間の距離を求める
-        float distance = Math::Length(Math::Subtract(s2_center, s1_center));
-        // 半径の合計よりも短ければ衝突
-        if (distance <= s1_radius + s2_radius) {
-            // 当たった処理を諸々
-            return true;
-        }
-
-        return false;
+    bool IsCollision(Vector3 s1_center, float s1_radius, Vector3 s2_center, float s2_radius) {
+        float distance = Math::Length(s2_center - s1_center);
+        return distance <= s1_radius + s2_radius;
     }
 
     // 球と球の衝突判定
     bool IsCollision(const Sphere& s1, const Sphere& s2) {
-
-        // 2つの球の中心点間の距離を求める
-        float distance = Math::Length(Math::Subtract(s2.center, s1.center));
-        // 半径の合計よりも短ければ衝突
-        if (distance <= s1.radius + s2.radius) {
-            // 当たった処理を諸々
-            return true;
-        }
-
-        return false;
+        float distance = Math::Length(s1.center - s2.center);
+        return distance <= s1.radius + s2.radius;
     }
 
     // 平面と球の衝突判定
     bool IsCollision(const Sphere& sphere, const Plane& plane) {
-        float k = std::fabs(Math::Dot(plane.normal, sphere.center) - plane.distance);
-        if (k <= sphere.radius) {
-            return true;
-        }
-        return false;
+        float k = std::abs(Math::Dot(plane.normal, sphere.center) - plane.distance);
+        return k <= sphere.radius;
     }
 
     // 線分と平面の衝突判定

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Vector3.h"
+#include "../Math/Vector2.h"
+#include "../Math/Vector3.h"
 
 struct Line {
 	Vector3 origin; //!< 始点

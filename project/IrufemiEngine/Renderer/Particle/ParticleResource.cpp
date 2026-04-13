@@ -1,6 +1,6 @@
 #include "ParticleResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 
 ParticleResource::~ParticleResource() {
     Unmap();

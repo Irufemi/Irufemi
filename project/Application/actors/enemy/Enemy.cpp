@@ -6,7 +6,7 @@
 #include "Player.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "camera/Camera.h"
-#include "core/math/geometry/Math.h"
+#include "Core/Math/Math.h"
 #include <cmath>
 #include <manager/debugUI.h>
 #include <string>

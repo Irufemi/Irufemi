@@ -1,7 +1,7 @@
 #include "EnemyAnimState_Stomp.h"
 #include "Enemy.h"
 #include "actors/player/Player.h"
-#include "core/math/geometry/Math.h"
+#include "Core/Math/Math.h"
 #include <cmath>
 
 void EnemyAnimState_Stomp::Enter(Enemy* enemy) {

@@ -1,5 +1,5 @@
 #include "EnemyBeam.h"
-#include "core/math/geometry/Math.h"
+#include "Core/Math/Math.h"
 #include <cmath>
 
 void EnemyBeam::Initialize(Camera* camera, const Matrix4x4& muzzleMatrix) {

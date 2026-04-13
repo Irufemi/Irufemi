@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "Engine/Core/Math/Quaternion.h" // 追加
+#include "../Math/Vector2.h"
+#include "../Math/Vector3.h"
+#include "../Math/Vector4.h"
+#include "../Math/Quaternion.h"
 
 // 線形補間
 float Lerp(float pos1, float pos2, float t);

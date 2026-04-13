@@ -1,7 +1,7 @@
 #include "EnemyStompEffects.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Irufemi.h" 
-#include "core/math/geometry/Math.h"
+#include "Core/Math/Math.h"
 #include <cmath>
 #include <algorithm>
 
@@ -267,4 +267,4 @@ void EnemyStompEffects::Draw(IrufemiEngine* engine) {
     if (currentPhase_ != Phase::Finished) ringObj_->Draw();
     if (currentPhase_ == Phase::FinalExplosion) finalExplosionObj_->Draw();
 }
-
+

@@ -249,7 +249,7 @@
     <ClCompile Include="Engine\Core\Math\Vector4.cpp">
       <Filter>Engine\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Math\Vector3 .cpp">
+    <ClCompile Include="Engine\Core\Math\Vector3.cpp">
       <Filter>Engine\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Core\Math\Vector2.cpp">
@@ -279,8 +279,8 @@
     <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp">
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Math\Geometry\Math.cpp">
-      <Filter>Engine\Core\Math\Geometry</Filter>
+    <ClCompile Include="Engine\Core\Math\MathFunction.cpp">
+      <Filter>Engine\Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Core\Utility\Ease.cpp">
       <Filter>Engine\Core\Math\Geometry</Filter>
@@ -340,6 +340,9 @@
     </ClCompile>
     <ClCompile Include="Framework\SceneTransition.cpp">
       <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Math\NumericalSequence.cpp">
+      <Filter>Engine\Core\Math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -580,7 +583,10 @@
     <ClInclude Include="Engine\Core\Math\Geometry\Collision.h">
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Math\Geometry\Math.h">
+    <ClInclude Include="Engine\Core\Math\Math.h">
+      <Filter>Engine\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Math\MathFunction.h">
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Utility\Ease.h">
@@ -700,6 +706,9 @@
     </ClInclude>
     <ClInclude Include="Framework\SceneTransition.h">
       <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Math\NumericalSequence.h">
+      <Filter>Engine\Core\Math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

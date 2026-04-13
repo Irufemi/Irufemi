@@ -24,7 +24,7 @@
 #include "../../Engine/Core/Math/Vector3.h"
 #include "../../Engine/Core/Math/Vector4.h"
 #include "../../Engine/Core/Math/Vector2.h"
-#include "../../Engine/Core/Math/Geometry/Math.h"
+#include "../../Engine/Core/Math/Math.h"
 #include <atomic>
 
 // 前方宣言

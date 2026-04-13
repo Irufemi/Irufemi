@@ -28,7 +28,7 @@
 #include "../Graphics/Data/PointLight.h"
 #include "../Graphics/Data/SpotLight.h"
 #include "../Graphics/Data/AreaLight.h"
-#include "../Core/Math/Geometry/Math.h"
+#include "../Core/Math/Math.h"
 #include "../../Resource/Model/Data/SkinCluster.h"
 #include "../Graphics/DirectX/ShadowMap.h"
 

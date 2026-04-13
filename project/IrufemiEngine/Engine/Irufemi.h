@@ -15,7 +15,7 @@
 
 #include "Core/Math/Geometry/AABB.h"
 #include "Core/Math/Geometry/OBB.h"
-#include "Core/Math/Geometry/Math.h"
+#include "Core/Math/Math.h"
 #include "Core/Math/Geometry/Collision.h"
 #include "Core/Math/Random/Random.h"
 #include "Core/Utility/Ease.h"
