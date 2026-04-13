@@ -682,35 +682,17 @@ void DebugScene::DrawDebugTab() {
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
 
-    if (auto* mat = ImGui::GetStateStorage()) {
-        if (ImGui::CollapsingHeader("Lightning Crawl Demo")) {
-            ImGui::Checkbox("Active", &isActiveLightningCrawl_);
-            if (lightningParamsData_) {
-                ImGui::ColorEdit4("Color", &lightningParamsData_->color.x);
-                ImGui::DragFloat("Speed", &lightningParamsData_->speed, 0.01f, 0.0f, 10.0f);
-                ImGui::DragFloat("Intensity", &lightningParamsData_->intensity, 0.1f, 0.0f, 100.0f);
-                ImGui::DragFloat("Noise Scale", &lightningParamsData_->noiseScale, 0.01f, 0.01f, 20.0f);
-                ImGui::DragFloat("Threshold", &lightningParamsData_->noiseThreshold, 0.001f, 0.0f, 1.0f);
-            }
-            if (lightningCylinder_) {
-                // Cylinder の内部形状パラメータを調整
-                Cylinder info = lightningCylinder_->GetInfo();
-                bool changed = false;
-                if (ImGui::DragFloat3("Center", &info.center.x, 0.1f)) changed = true;
-                if (ImGui::DragFloat("Radius", &info.radius, 0.1f, 0.01f, 10.0f)) changed = true;
-                if (ImGui::DragFloat("Height", &info.height, 0.1f, 0.01f, 50.0f)) changed = true;
-                
-                if (changed) {
-                    lightningCylinder_->SetInfo(info);
-                }
+    if (lightningCylinder_) {
+        // オブジェクト標準のデバッグUI（形状やマテリアル）を表示
+        lightningCylinder_->Debug("Lightning Cylinder");
 
-                // 回転（これは Resource 側）
-                Vector3 rot = lightningCylinder_->GetD3D12Resource()->transform_.rotate;
-                if (ImGui::DragFloat3("Rotate", &rot.x, 0.01f)) {
-                    lightningCylinder_->SetRotate(rot);
-                }
-            }
+        // 同じウィンドウ名で再開して、電撃特有のパラメータを「追記」する
+        if (ImGui::Begin("Cylinder: Lightning Cylinder")) {
+            ImGui::Separator();
+            ImGui::Checkbox("Active Lightning Crawl", &isActiveLightningCrawl_);
+            DebugUI::DebugLightning(lightningParamsData_);
         }
+        ImGui::End();
     }
 
     DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);

@@ -38,6 +38,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Renderer/Object2D/Object2DResource.h"
 #include "Renderer/Particle/ParticleResource.h"
 #include "Engine/Core/Math/Math.h"
+#include "Engine/Graphics/Data/LightningParams.h"
 
 // 静的宣言
 std::unique_ptr<PointLight> DebugUI::templatePointLight_;
@@ -1269,5 +1270,30 @@ void DebugUI::EndEngineDebugWindow() {
 #ifdef USE_IMGUI
     ImGui::EndTabBar();
     ImGui::End();
+#endif
+}
+
+void DebugUI::DebugLightning([[maybe_unused]] LightningParams* params) {
+#ifdef USE_IMGUI
+    if (!params) return;
+
+    if (ImGui::TreeNode("Lightning Crawl Settings")) {
+        ImGui::Separator();
+        ImGui::Text("Surface Settings");
+        ImGui::ColorEdit4("Surface Color", &params->color.x);
+        ImGui::DragFloat("Surface Speed", &params->speed, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat("Surface Intensity", &params->intensity, 0.1f, 0.0f, 100.0f);
+        ImGui::DragFloat("Surface Noise Scale", &params->noiseScale, 0.01f, 0.01f, 20.0f);
+        ImGui::DragFloat("Surface Threshold", &params->noiseThreshold, 0.001f, 0.0f, 1.0f);
+
+        ImGui::Separator();
+        ImGui::Text("Core Settings");
+        ImGui::ColorEdit4("Core Color", &params->coreColor.x);
+        ImGui::DragFloat("Core Intensity", &params->coreIntensity, 0.1f, 0.0f, 100.0f);
+        ImGui::DragFloat("Core Threshold", &params->coreThreshold, 0.001f, 0.0f, 1.0f);
+        ImGui::DragFloat("Core Scale", &params->coreScale, 0.01f, 0.01f, 20.0f);
+        
+        ImGui::TreePop();
+    }
 #endif
 }
