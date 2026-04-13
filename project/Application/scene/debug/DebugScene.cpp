@@ -90,7 +90,9 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
     isActiveSneakWalk_ = false;
-    isActiveSkybox_ = true; 
+    isActiveSkybox_ = false;
+    isActivePrimitiveObj_ = false;
+    isActiveLightningCrawl_ = true;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -194,6 +196,23 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
 
     // エンジンのデフォルトクリアカラーを「青」に設定
     engine_->SetClearColor(Vector4{ 0.1f, 0.25f, 0.5f, 1.0f });
+
+    // 電撃エフェクトの初期化
+    lightningCylinder_ = std::make_unique<CylinderClass>();
+    lightningCylinder_->Initialize(camera_.get());
+    lightningCylinder_->SetRadius(0.2f); // ビームっぽく細長く
+    lightningCylinder_->SetHeight(10.0f);
+    lightningCylinder_->SetCenter({ -2.0f, 0.0f, 0.0f });
+
+    lightningParamsResource_ = engine_->GetDirectXCommon()->CreateBufferResource(sizeof(LightningParams));
+    lightningParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightningParamsData_));
+    if (lightningParamsData_) {
+        *lightningParamsData_ = LightningParams();
+        lightningParamsData_->noiseThreshold = 0.2f; // 出現しやすくする
+        lightningParamsData_->intensity = 5.0f;      // 輝きを強める
+    }
+
+    lightningCylinder_->SetCullingEnabled(false); // 確実に描画されるように一旦OFF
 }
 
 // 更新
@@ -229,6 +248,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
     ImGui::Checkbox("Skybox", &isActiveSkybox_);
     ImGui::Checkbox("PrimitiveObj", &isActivePrimitiveObj_);
+    ImGui::Checkbox("Lightning Crawl", &isActiveLightningCrawl_);
     ImGui::End();
 
     ImGui::ShowDemoWindow();
@@ -426,17 +446,20 @@ void DebugScene::Update() {
     if (isActiveSkybox_) {
         if (!skybox_) {
             skybox_ = std::make_unique<Skybox>();
-            skybox_->Initialize(camera_.get(),"resources/rostock_laage_airport_4k.dds");
+            skybox_->Initialize(camera_.get(), "resources/rostock_laage_airport_4k.dds");
         }
         skybox_->Update();
     }
-
     if (isActivePrimitiveObj_) {
         if (!primitiveObj_) {
             primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
             primitiveObj_->Initialize(camera_.get(), PrimitiveType::Cube);
         }
         primitiveObj_->Update();
+    }
+
+    if (isActiveLightningCrawl_) {
+        lightningCylinder_->Update();
     }
 
     // 2D
@@ -481,6 +504,8 @@ void DebugScene::Update() {
     cameraForGpu.view = camera_->GetViewMatrix();
     cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
     cameraForGpu.worldPosition = camera_->GetTranslate();
+    cameraForGpu.time = engine_->GetTotalTime();
+    cameraForGpu.deltaTime = engine_->GetDeltaTime();
 
     std::vector<PointLight*> pLights;
     for (const auto& light : pointLights_) {
@@ -570,6 +595,17 @@ void DebugScene::Draw() {
         primitiveObj_->Draw();
     }
 
+    if (isActiveLightningCrawl_) {
+        engine_->SetBlend(BlendMode::kBlendModeAdd);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine_->SetCull(PSOManager::CullMode::None);
+        
+        engine_->ApplyLightningCrawlPSO();
+        engine_->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
+        
+        lightningCylinder_->Draw();
+    }
+
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
 
@@ -645,6 +681,37 @@ void DebugScene::DrawDebugTab() {
     if (isActiveCylinder_ && cylinder_) cylinder_->Debug("Cylinder");
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
+
+    if (auto* mat = ImGui::GetStateStorage()) {
+        if (ImGui::CollapsingHeader("Lightning Crawl Demo")) {
+            ImGui::Checkbox("Active", &isActiveLightningCrawl_);
+            if (lightningParamsData_) {
+                ImGui::ColorEdit4("Color", &lightningParamsData_->color.x);
+                ImGui::DragFloat("Speed", &lightningParamsData_->speed, 0.01f, 0.0f, 10.0f);
+                ImGui::DragFloat("Intensity", &lightningParamsData_->intensity, 0.1f, 0.0f, 100.0f);
+                ImGui::DragFloat("Noise Scale", &lightningParamsData_->noiseScale, 0.01f, 0.01f, 20.0f);
+                ImGui::DragFloat("Threshold", &lightningParamsData_->noiseThreshold, 0.001f, 0.0f, 1.0f);
+            }
+            if (lightningCylinder_) {
+                // Cylinder の内部形状パラメータを調整
+                Cylinder info = lightningCylinder_->GetInfo();
+                bool changed = false;
+                if (ImGui::DragFloat3("Center", &info.center.x, 0.1f)) changed = true;
+                if (ImGui::DragFloat("Radius", &info.radius, 0.1f, 0.01f, 10.0f)) changed = true;
+                if (ImGui::DragFloat("Height", &info.height, 0.1f, 0.01f, 50.0f)) changed = true;
+                
+                if (changed) {
+                    lightningCylinder_->SetInfo(info);
+                }
+
+                // 回転（これは Resource 側）
+                Vector3 rot = lightningCylinder_->GetD3D12Resource()->transform_.rotate;
+                if (ImGui::DragFloat3("Rotate", &rot.x, 0.01f)) {
+                    lightningCylinder_->SetRotate(rot);
+                }
+            }
+        }
+    }
 
     DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 #endif

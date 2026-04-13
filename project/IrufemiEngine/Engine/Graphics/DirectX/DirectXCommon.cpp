@@ -519,6 +519,7 @@ void DirectXCommon::CreatePSOs() {
     auto psVoxel = shaderCompiler_->Compile(L"resources/shaders/VoxelParticle.PS.hlsl", L"ps_6_0", logStream);
     auto vsShadow = shaderCompiler_->Compile(L"resources/shaders/ShadowMap.VS.hlsl", L"vs_6_0", logStream);
     auto vsShadowSkin = shaderCompiler_->Compile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", L"vs_6_0", logStream);
+    auto psLightning = shaderCompiler_->Compile(L"resources/shaders/LightningCrawl.PS.hlsl", L"ps_6_0", logStream);
 
     auto csSkin = shaderCompiler_->Compile(L"resources/shaders/Skinning.CS.hlsl", L"cs_6_0", logStream);
     auto csGpuInit = shaderCompiler_->Compile(L"resources/shaders/InitializeParticle.CS.hlsl", L"cs_6_0", logStream);
@@ -558,7 +559,8 @@ void DirectXCommon::CreatePSOs() {
         { vsGpuParticle, psGpuParticle },
         { vsVoxel, psVoxel },
         { vsShadow, nullptr },     // shadowShaders
-        { vsShadowSkin, nullptr }  // shadowSkinningShaders
+        { vsShadowSkin, nullptr }, // shadowSkinningShaders
+        { vs3d, psLightning }     // lightningShaders [NEW]
     );
 
     // --- Compute PSO生成 ---

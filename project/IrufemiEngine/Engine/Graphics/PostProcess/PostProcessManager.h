@@ -35,6 +35,7 @@ enum class PostProcessMode {
     ToneMapping,        ///< トーンマッピング（ACES）
     Fade,               ///< フェード（指定色への塗りつぶし）
     Slide,              ///< スライド（ワイプ演出）
+    Bloom,              ///< ブルーム（高輝度抽出による発光）
 };
 
 class DirectXCommon;
@@ -165,6 +166,18 @@ public:
         float threshold = 0.0f;                      ///< 進行度 (0.0 ~ 1.0)
     };
 
+    /**
+     * @struct BloomParams
+     * @brief ブルームエフェクト用パラメータ
+     */
+    struct BloomParams {
+        Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
+        float threshold = 0.8f;             ///< 高輝度抽出のしきい値
+        float sigma = 3.0f;                 ///< ぼかしの強さ
+        float intensity = 1.0f;             ///< ブルームの強度
+        int32_t kernelSize = 21;            ///< ぼかしのカーネルサイズ
+    };
+
 public:
     /**
      * @brief ポストプロセスの初期化
@@ -240,6 +253,7 @@ public:
     ToneMappingParams& GetToneMappingParams() { return toneMappingParams_; }
     FadeParams& GetFadeParams() { return fadeParams_; }
     SlideParams& GetSlideParams() { return slideParams_; }
+    BloomParams& GetBloomParams() { return bloomParams_; }
 
     void SetDissolveNoiseHandle(int index, D3D12_GPU_DESCRIPTOR_HANDLE handle) {
         if (index >= 0 && index < 2) dissolveNoiseHandle_[index] = handle;
@@ -253,7 +267,7 @@ public:
 private:
     void CreatePSOs();
     void CreateConstantBuffers();
-    void DrawSinglePass(ID3D12GraphicsCommandList* commandList, Mode mode, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, bool isFinalPass = false);
+    void DrawSinglePass(ID3D12GraphicsCommandList* commandList, Mode mode, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, bool isFinalPass = false, ID3D12PipelineState* psoOverride = nullptr);
     Microsoft::WRL::ComPtr<ID3D12Resource> CreateBuffer(size_t size);
 
 private:
@@ -275,9 +289,15 @@ private:
         Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     };
     // モードに対応するPSOを保持 (中間パス用: _UNORM)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 14> psos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 15> psos_;
     // 最終パス用 (スワップチェーン等の _SRGB 形式用)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 14> finalPsos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 15> finalPsos_;
+
+    // ブルーム専用 PSO (内部のパス用)
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomExtractPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomBlurHPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomBlurVPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomCombinePSO_;
 
     // Constant Buffers
     Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;
@@ -323,6 +343,10 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> slideCB_;
     SlideParams* mappedSlide_ = nullptr;
     SlideParams slideParams_;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> bloomCB_;
+    BloomParams* mappedBloom_ = nullptr;
+    BloomParams bloomParams_;
 
     D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 2> dissolveNoiseHandle_{};

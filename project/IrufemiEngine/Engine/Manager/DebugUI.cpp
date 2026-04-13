@@ -1142,7 +1142,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1155,7 +1155,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
 
         // エフェクト選択
         ImGui::PushID("AvailableEffects");
-        for (int i = 1; i < 12; ++i) { // None 以外を表示
+        for (int i = 1; i < (int)IM_ARRAYSIZE(modeNames); ++i) { // None 以外を表示
             PostProcessMode m = static_cast<PostProcessMode>(i);
             bool isEnabled = std::find(activeModes.begin(), activeModes.end(), m) != activeModes.end();
 
@@ -1234,6 +1234,15 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                 } else if (mode == PostProcessMode::ToneMapping) {
                     auto& params = ppManager->GetToneMappingParams();
                     ImGui::DragFloat("Exposure", &params.exposure, 0.01f, 0.0f, 10.0f);
+                } else if (mode == PostProcessMode::Bloom) {
+                    auto& params = ppManager->GetBloomParams();
+                    ImGui::DragFloat("Threshold", &params.threshold, 0.01f, 0.0f, 5.0f);
+                    ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
+                    ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
+                    if (ImGui::SliderInt("Kernel Size", &params.kernelSize, 1, 51)) {
+                        if (params.kernelSize < 1) params.kernelSize = 1;
+                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0) params.kernelSize += 1;
+                    }
                 }
                 ImGui::TreePop();
             }

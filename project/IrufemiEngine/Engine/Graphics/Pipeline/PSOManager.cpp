@@ -28,7 +28,8 @@ void PSOManager::Initialize(
     ShaderSet gpuParticleShaders,
     ShaderSet voxelParticleShaders,
     ShaderSet shadowShaders,
-    ShaderSet shadowSkinningShaders
+    ShaderSet shadowSkinningShaders,
+    ShaderSet lightningShaders
 )
 {
     device_ = device;
@@ -65,6 +66,7 @@ void PSOManager::Initialize(
     voxelParticleShaders_ = voxelParticleShaders;
     shadowShaders_ = shadowShaders;
     shadowSkinningShaders_ = shadowSkinningShaders;
+    lightningShaders_ = lightningShaders;
 
     cache_.clear();
 }
@@ -299,6 +301,19 @@ ID3D12PipelineState* PSOManager::GetVoxelParticle(BlendMode blend, DepthWrite de
     // VoxelParticleは通常の入力レイアウトを使用する
     auto pso = CreatePSO(set, bd, dd, cull);
     if (!pso) { return nullptr; }
+    cache_[key] = pso;
+    return pso.Get();
+}
+
+ID3D12PipelineState* PSOManager::GetLightningCrawl(BlendMode blend, DepthWrite depth, CullMode cull) {
+    const ShaderSet& set = (lightningShaders_.psBlob) ? lightningShaders_ : objectShaders_;
+    constexpr uint64_t kLightningTag = 0x4C49474854ull; // "LIGHT"
+    Key key{ Hash(set, blend, depth, cull) ^ kLightningTag };
+
+    if (auto it = cache_.find(key); it != cache_.end()) return it->second.Get();
+
+    auto pso = CreatePSO(set, MakeBlend(blend), MakeDepth(depth), cull);
+    if (!pso) return nullptr;
     cache_[key] = pso;
     return pso.Get();
 }
