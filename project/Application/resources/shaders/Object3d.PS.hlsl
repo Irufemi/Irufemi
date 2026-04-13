@@ -88,7 +88,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 		float3 totalSpecular = 0;
 
 		// シャドウファクターの計算
-		float shadowFactor = CalculateShadow(input.shadowPos, gShadowMap, gShadowSampler);
+		float shadowFactor = CalculateShadow(input.shadowPos, gShadowMap, gShadowSampler, context.normal, gLightCommon.directionalLight.direction);
 
 		// 平行光源 (影を適用)
 		float3 dirDiffuse = 0;
