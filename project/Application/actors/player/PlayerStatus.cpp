@@ -1,5 +1,5 @@
 #include "PlayerStatus.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Framework/SceneManager.h" 
 #include "../enemy/Enemy.h"
 #include <cmath>

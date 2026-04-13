@@ -9,7 +9,7 @@
 #include "Graphics/Data/SpotLight.h"
 #include "Graphics/Data/DirectionalLight.h"
 #include "Graphics/Data/AreaLight.h"
-#include "IrufemiEngine/Engine/Core/Math/Geometry/Math.h"
+#include "IrufemiEngine/Engine/Core/Math/Math.h"
 
 
 // デストラクタ

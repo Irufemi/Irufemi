@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -207,7 +207,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Core\Utility\Log.cpp" />
     <ClCompile Include="Engine\Platform\WindowsAPI\WinApp.cpp" />
     <ClCompile Include="Engine\Core\Utility\Ease.cpp" />
-    <ClCompile Include="Engine\Core\Math\MathFunction.cpp" />
+    <ClCompile Include="Engine\Core\Math\Geometry\Math.cpp" />
     <ClCompile Include="Engine\Platform\Input\GamePad.cpp" />
     <ClCompile Include="Engine\Platform\Input\Keyboard.cpp" />
     <ClCompile Include="Resource\Audio\AudioManager.cpp" />
@@ -216,7 +216,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Platform\Input\InputManager.cpp" />
     <ClCompile Include="Engine\Manager\PrimitiveManager.cpp" />
     <ClCompile Include="Resource\Texture\TextureManager.cpp" />
-    <ClCompile Include="Engine\Core\Math\Vector3.cpp" />
+    <ClCompile Include="Engine\Core\Math\Vector3 .cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\PSOManager.cpp" />
     <ClCompile Include="Framework\IScene.cpp" />
     <ClCompile Include="Framework\SceneManager.cpp" />
@@ -282,8 +282,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Utility\Log.h" />
     <ClInclude Include="Engine\Platform\WindowsAPI\WinApp.h" />
     <ClInclude Include="Engine\Core\Utility\Ease.h" />
-    <ClInclude Include="Engine\Core\Math\Math.h" />
-    <ClInclude Include="Engine\Core\Math\MathFunction.h" />
+    <ClInclude Include="Engine\Core\Math\Geometry\Math.h" />
     <ClInclude Include="Engine\Platform\Input\GamePad.h" />
     <ClInclude Include="Engine\Platform\Input\Keyboard.h" />
     <ClInclude Include="Renderer\Particle\ParticleResource.h" />

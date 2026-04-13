@@ -10,7 +10,7 @@
 
 #include "../../VertexData.h"            // VertexData
 #include "../../../Engine/Graphics/Data/Material.h"              // Material
-#include "../../../Engine/Core/Math/Geometry/Math.h"              // MakeAffineMatrix など
+#include "../../../Engine/Core/Math/Math.h"              // MakeAffineMatrix など
 #include "../../../Engine/Core/Math/Transform.h"             // Transform
 #include "../../../Engine/Graphics/Data/DirectionalLight.h"      // DirectionalLight
 #include "../../../Engine/Graphics/Data/CameraForGPU.h"          // CameraForGPU

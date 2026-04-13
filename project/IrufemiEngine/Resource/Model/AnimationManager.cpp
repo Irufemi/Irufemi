@@ -2,7 +2,7 @@
 
 #include "Data/Animation.h"
 #include "Engine/Core/Utility/Ease.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Data/ModelData.h"
 #include "Data/ObjModel.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"

@@ -7,7 +7,7 @@
 #include "../../../Renderer/VertexData.h"
 #include "ModelData.h"
 #include "Node.h"             
-#include "../../../Engine/Core/Math/Geometry/Math.h"
+#include "../../../Engine/Core/Math/Math.h"
 #include "JointWeightData.h"
 #include "../../../Engine/Core/Shape/Sphere.h"
 #include <string>

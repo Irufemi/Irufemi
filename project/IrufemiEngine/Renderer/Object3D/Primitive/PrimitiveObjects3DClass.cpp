@@ -7,7 +7,7 @@
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Application/camera/Camera.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Math/Geometry/Frustum.h"
 #include "Engine/Core/Shape/Sphere.h"

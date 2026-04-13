@@ -3,7 +3,7 @@
 IrufemiEngine::IrufemiEngine() = default;
 
 #include "Core/Math/Random/Random.h"
-#include "Core/Math/Geometry/Math.h"
+#include "Core/Math/Math.h"
 
 #include <cassert>
 #include <DbgHelp.h>

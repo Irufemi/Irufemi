@@ -6,7 +6,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Engine/Core/Math/Transform.h"
 #include "Renderer/VertexData.h"
 #include "Resource/Model/Data/ObjModel.h"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "Engine/Core/Math/Vector3.h"
+#include "../Math/Vector3.h"
 
 struct Sphere {
     //!< 中心点

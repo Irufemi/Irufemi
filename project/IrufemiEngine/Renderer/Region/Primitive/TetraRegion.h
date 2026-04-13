@@ -10,7 +10,7 @@
 
 #include "Renderer/VertexData.h"
 #include "Engine/Graphics/Data/Material.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Engine/Core/Math/Transform.h"
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Math/Vector4.h"

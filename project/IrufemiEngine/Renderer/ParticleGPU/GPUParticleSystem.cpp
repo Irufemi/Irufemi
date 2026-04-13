@@ -3,7 +3,7 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Engine/Manager/DrawManager.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Renderer/VertexData.h"
 #include "Application/camera/Camera.h"

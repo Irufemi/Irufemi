@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Irufemi.h"
 #include <cmath>
 

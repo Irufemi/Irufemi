@@ -3,7 +3,7 @@
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 #include "camera/Camera.h"
 #include "actors/enemy/EnemyParameters.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Engine/IrufemiEngine.h"
 #include <algorithm>
 

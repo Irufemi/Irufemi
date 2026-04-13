@@ -1,7 +1,7 @@
 #include "Object3DResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Application/camera/Camera.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 
 Object3DResource::~Object3DResource() {
     Unmap();

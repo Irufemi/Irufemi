@@ -1,5 +1,5 @@
 #include "PlayerWeapon.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include <cmath>
 #include <cstdlib>

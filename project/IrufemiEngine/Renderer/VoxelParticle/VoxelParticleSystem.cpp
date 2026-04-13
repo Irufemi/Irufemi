@@ -1,7 +1,7 @@
 #define NOMINMAX
 #include "VoxelParticleSystem.h"
 #include "Application/camera/Camera.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/Pipeline/PSOManager.h"

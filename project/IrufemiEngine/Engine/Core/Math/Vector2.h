@@ -1,34 +1,72 @@
 #pragma once
 
-/// <summary>
-/// 2次元ベクトル
-/// </summary>
+/**
+ * @struct Vector2
+ * @brief 2次元ベクトル
+ */
 struct Vector2 final {
 	float x;
 	float y;
 
-	// 添え字演算子
+	/**
+	 * @brief 添え字演算子
+	 * @param index 成分のインデックス (0:x, 1:y)
+	 * @return 成分への参照
+	 */
 	float& operator[](int index);
+
+	/**
+	 * @brief 添え字演算子 (const)
+	 * @param index 成分のインデックス (0:x, 1:y)
+	 * @return 成分の値
+	 */
 	float operator[](int index) const;
 
-	// 複合代入演算子
-	Vector2& operator+=(const Vector2& rhs);
-	Vector2& operator-=(const Vector2& rhs);
+	/** @name 複合代入演算子 */
+	/** @{ */
+	Vector2& operator+=(Vector2 rhs);
+	Vector2& operator-=(Vector2 rhs);
 	Vector2& operator*=(float s);
 	Vector2& operator/=(float s);
+	/** @} */
 };
 
-// --- 非メンバ演算子 ---
+/** @name 非メンバ演算子 */
+/** @{ */
 
-// ベクトル同士の加減算
-Vector2 operator+(const Vector2& lhs, const Vector2& rhs);
-Vector2 operator-(const Vector2& lhs, const Vector2& rhs);
+/**
+ * @brief ベクトル同士の加算
+ */
+Vector2 operator+(Vector2 lhs, Vector2 rhs);
 
-// 単項演算子
-Vector2 operator+(const Vector2& v); // 正号
-Vector2 operator-(const Vector2& v); // 符号反転
+/**
+ * @brief ベクトル同士の減算
+ */
+Vector2 operator-(Vector2 lhs, Vector2 rhs);
 
-// スカラーとの乗除算
-Vector2 operator*(const Vector2& v, float s);
-Vector2 operator*(float s, const Vector2& v); // 可換性のため
-Vector2 operator/(const Vector2& v, float s);
+/**
+ * @brief 単項演算子 +
+ */
+Vector2 operator+(Vector2 v);
+
+/**
+ * @brief 単項演算子 - (符号反転)
+ */
+Vector2 operator-(Vector2 v);
+
+/**
+ * @brief スカラー乗算
+ */
+Vector2 operator*(Vector2 v, float s);
+
+/**
+ * @brief スカラー乗算 (可換)
+ */
+Vector2 operator*(float s, Vector2 v);
+
+/**
+ * @brief スカラー除算
+ */
+Vector2 operator/(Vector2 v, float s);
+
+/** @} */

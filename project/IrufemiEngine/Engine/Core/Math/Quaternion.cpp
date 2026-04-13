@@ -1,42 +1,28 @@
 #include "Quaternion.h"
-
 #include <stdexcept>
-
-// --- 添え字演算子 ---
+#include <cassert>
 
 float& Quaternion::operator[](int index) {
 	switch (index) {
-	case 0:
-		return x;
-	case 1:
-		return y;
-	case 2:
-		return z;
-	case 3:
-		return w;
-	default:
-		throw std::out_of_range("Quaternion index out of range");
+	case 0: return x;
+	case 1: return y;
+	case 2: return z;
+	case 3: return w;
+	default: throw std::out_of_range("Quaternion index out of range");
 	}
 }
 
 float Quaternion::operator[](int index) const {
 	switch (index) {
-	case 0:
-		return x;
-	case 1:
-		return y;
-	case 2:
-		return z;
-	case 3:
-		return w;
-	default:
-		throw std::out_of_range("Quaternion index out of range");
+	case 0: return x;
+	case 1: return y;
+	case 2: return z;
+	case 3: return w;
+	default: throw std::out_of_range("Quaternion index out of range");
 	}
 }
 
-// --- 複合代入演算子 ---
-
-Quaternion& Quaternion::operator+=(const Quaternion& rhs) {
+Quaternion& Quaternion::operator+=(Quaternion rhs) {
 	x += rhs.x;
 	y += rhs.y;
 	z += rhs.z;
@@ -44,7 +30,7 @@ Quaternion& Quaternion::operator+=(const Quaternion& rhs) {
 	return *this;
 }
 
-Quaternion& Quaternion::operator-=(const Quaternion& rhs) {
+Quaternion& Quaternion::operator-=(Quaternion rhs) {
 	x -= rhs.x;
 	y -= rhs.y;
 	z -= rhs.z;
@@ -52,7 +38,6 @@ Quaternion& Quaternion::operator-=(const Quaternion& rhs) {
 	return *this;
 }
 
-// スカラー乗算の複合代入
 Quaternion& Quaternion::operator*=(float s) {
 	x *= s;
 	y *= s;
@@ -61,35 +46,52 @@ Quaternion& Quaternion::operator*=(float s) {
 	return *this;
 }
 
-// スカラー除算の複合代入
 Quaternion& Quaternion::operator/=(float s) {
-	x /= s;
-	y /= s;
-	z /= s;
-	w /= s;
+	assert(s != 0.0f && "Division by zero");
+	const float inv = 1.0f / s;
+	x *= inv;
+	y *= inv;
+	z *= inv;
+	w *= inv;
 	return *this;
 }
 
-// --- 非メンバ演算子 ---
+Quaternion operator+(Quaternion lhs, Quaternion rhs) {
+	return { lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w };
+}
 
-Quaternion operator+(const Quaternion& lhs, const Quaternion& rhs) { return { lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w }; }
+Quaternion operator-(Quaternion lhs, Quaternion rhs) {
+	return { lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w };
+}
 
-Quaternion operator-(const Quaternion& lhs, const Quaternion& rhs) { return { lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w }; }
+Quaternion operator+(Quaternion q) {
+	return q;
+}
 
-// 単項演算子 + (正号)
-Quaternion operator+(const Quaternion& q) { return q; }
+Quaternion operator-(Quaternion q) {
+	return { -q.x, -q.y, -q.z, -q.w };
+}
 
-// 単項演算子 - (符号反転)
-Quaternion operator-(const Quaternion& q) { return { -q.x, -q.y, -q.z, -q.w }; }
+Quaternion operator*(Quaternion q, float s) {
+	return { q.x * s, q.y * s, q.z * s, q.w * s };
+}
 
-// スカラー乗算
-Quaternion operator*(const Quaternion& q, float s) { return { q.x * s, q.y * s, q.z * s, q.w * s }; }
-
-// スカラー乗算 (可換性)
-Quaternion operator*(float s, const Quaternion& q) {
-	// 既存の q * s を呼び出す
+Quaternion operator*(float s, Quaternion q) {
 	return q * s;
 }
 
-// スカラー除算
-Quaternion operator/(const Quaternion& q, float s) { return { q.x / s, q.y / s, q.z / s, q.w / s }; }
+Quaternion operator/(Quaternion q, float s) {
+	assert(s != 0.0f && "Division by zero");
+	const float inv = 1.0f / s;
+	return { q.x * inv, q.y * inv, q.z * inv, q.w * inv };
+}
+
+Quaternion operator*(const Quaternion& lhs, const Quaternion& rhs) {
+    return {
+        lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y,
+        lhs.w * rhs.y - lhs.x * rhs.z + lhs.y * rhs.w + lhs.z * rhs.x,
+        lhs.w * rhs.z + lhs.x * rhs.y - lhs.y * rhs.x + lhs.z * rhs.w,
+        lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z
+    };
+}
+

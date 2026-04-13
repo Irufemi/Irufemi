@@ -1,6 +1,6 @@
 #include "Vector4.h"
 
-Vector4& Vector4::operator+=(const Vector4& other)
+Vector4& Vector4::operator+=(Vector4 other)
 {
 	x += other.x;
 	y += other.y;
@@ -9,7 +9,7 @@ Vector4& Vector4::operator+=(const Vector4& other)
 	return *this;
 }
 
-Vector4& Vector4::operator-=(const Vector4& other)
+Vector4& Vector4::operator-=(Vector4 other)
 {
 	x -= other.x;
 	y -= other.y;
@@ -36,41 +36,39 @@ Vector4& Vector4::operator/=(float s)
 	return *this;
 }
 
+Vector4 Vector4::operator+() const
+{
+	return *this;
+}
+
 Vector4 Vector4::operator-() const
 {
-	return Vector4(-x, -y, -z, -w);
+	return {-x, -y, -z, -w};
 }
 
-const Vector4 operator+(const Vector4& v1, const Vector4& v2)
+Vector4 operator+(Vector4 v1, Vector4 v2)
 {
-	Vector4 temp(v1);
-	temp += v2;
-	return temp;
+	return { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w };
 }
 
-const Vector4 operator-(const Vector4& v1, const Vector4& v2)
+Vector4 operator-(Vector4 v1, Vector4 v2)
 {
-	Vector4 temp(v1);
-	temp -= v2;
-	return temp;
+	return { v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w };
 }
 
-const Vector4 operator*(const Vector4& v, float s)
+Vector4 operator*(Vector4 v, float s)
 {
-	Vector4 temp(v);
-	temp *= s;
-	return temp;
+	return { v.x * s, v.y * s, v.z * s, v.w * s };
 }
 
-const Vector4 operator*(float s, const Vector4& v)
+Vector4 operator*(float s, Vector4 v)
 {
 	return v * s;
 }
 
-const Vector4 operator/(const Vector4& v, float s)
+Vector4 operator/(Vector4 v, float s)
 {
-	Vector4 temp(v);
-	temp /= s;
-	return temp;
+	return { v.x / s, v.y / s, v.z / s, v.w / s };
 }
+
 

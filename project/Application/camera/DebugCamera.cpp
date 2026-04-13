@@ -2,7 +2,7 @@
 #include "DebugCamera.h"
 #include "Engine/Platform/Input/Mouse.h"
 #include "Engine/Platform/Input/Keyboard.h"
-#include "Core/Math/Geometry/Math.h"
+#include "Core/Math/Math.h"
 #include <algorithm>
 #include <string>
 
@@ -110,4 +110,4 @@ void DebugCamera::SetPreset(Preset preset, const Camera& mainCamera) {
     }
     camera_.UpdateMatrix();
 }
-
+

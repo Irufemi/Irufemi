@@ -1,7 +1,7 @@
 #include "AnimationModel.h"
 
 #include "Engine/IrufemiEngine.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Manager/DebugUI.h"

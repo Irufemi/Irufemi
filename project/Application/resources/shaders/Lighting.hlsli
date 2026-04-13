@@ -66,7 +66,7 @@ static const float32_t PI = 3.14159265f;
 /**
  * シャドウファクターを計算する (0.0: 影, 1.0: 光)
  */
-float CalculateShadow(float4 shadowPos, Texture2D<float> shadowMap, SamplerComparisonState shadowSampler) {
+float CalculateShadow(float4 shadowPos, Texture2D<float> shadowMap, SamplerComparisonState shadowSampler, float3 normal, float3 lightDir) {
     // 同次座標系からUV座標系に変換 (-1~1 -> 0~1)
     float3 projectedPos = shadowPos.xyz / shadowPos.w;
     float2 uv = projectedPos.xy * float2(0.5, -0.5) + float2(0.5, 0.5);
@@ -82,12 +82,23 @@ float CalculateShadow(float4 shadowPos, Texture2D<float> shadowMap, SamplerCompa
         return 1.0;
     }
 
-    // シャドウバイアス (シャドウアクネ対策)
-    float bias = 0.0005; // 0.001 から少し調整
+    // スロープスケールバイアス (シャドウアクネ対策)
+    // 面がライトに対して傾いているほどバイアスを大きくする
+    float bias = max(0.005 * (1.0 - dot(normal, -lightDir)), 0.0005);
 
-    // ハードウェア比較サンプラーを使用してサンプリング (PCFが効く)
-    // SampleCmpLevelZero は比較結果を 0.0~1.0 で返す
-    float shadowFactor = shadowMap.SampleCmpLevelZero(shadowSampler, uv, currentDepth - bias);
+    // 3x3 PCF (Percentage Closer Filtering) によるソフトシャドウ
+    float shadowFactor = 0.0;
+    const float2 texelSize = 1.0 / 2048.0; // シャドウマップのテクセルサイズ
+
+    [unroll]
+    for (float y = -1.0; y <= 1.0; y += 1.0) {
+        [unroll]
+        for (float x = -1.0; x <= 1.0; x += 1.0) {
+            float2 offset = float2(x, y) * texelSize;
+            shadowFactor += shadowMap.SampleCmpLevelZero(shadowSampler, uv + offset, currentDepth - bias);
+        }
+    }
+    shadowFactor /= 9.0;
 
     // 影を完全に真っ暗にせず、少し明るくする (0.5 ~ 1.0 にマップ)
     return 0.5 + shadowFactor * 0.5;

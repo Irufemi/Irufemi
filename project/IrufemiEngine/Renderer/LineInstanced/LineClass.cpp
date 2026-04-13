@@ -4,7 +4,7 @@
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
-#include "Engine/Core/Math/Geometry/Math.h"
+#include "Engine/Core/Math/Math.h"
 
 DirectXCommon* Line3DRegion::dx_ = nullptr;
 DrawManager* Line3DRegion::drawManager_ = nullptr;
