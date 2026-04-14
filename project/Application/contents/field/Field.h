@@ -4,6 +4,7 @@
 class Camera;
 class InputManager;
 class IrufemiEngine;
+class Building;
 
 class Field{
 public:
@@ -26,5 +27,7 @@ private:
 	std::unique_ptr<PlaneClass> pPXWall_ = nullptr;
 	std::unique_ptr<PlaneClass> pMXWall_ = nullptr;
 	std::unique_ptr<ObjClass> floor_ = nullptr;
+
+	std::unique_ptr<Building> building_ = nullptr;
 };
 

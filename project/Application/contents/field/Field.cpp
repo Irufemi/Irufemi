@@ -1,6 +1,7 @@
 #include "Field.h"
 
 #include "camera/Camera.h"
+#include "building/building.h"
 
 Field::Field(Camera* camera, IrufemiEngine* engine) {
 	camera_ = camera;
@@ -45,11 +46,21 @@ void Field::Initialize() {
 	pMXWall_->SetRotate({ 0.0f,-1.57f, 0.0f });
 	pMXWall_->SetTranslate({ -100.0f,5.0f,0.0f });
 	pMXWall_->SetColor({ 0.0f,0.0f,1.0f,1.0f });
+
+	building_ = std::make_unique<Building>();
+	building_->Initialize(camera_, engine_);
 }
 
 void Field::Update() {
+	if (building_) {
+		building_->Update();
+	}
+
 #if defined USE_IMGUI
 	pFloor_->Debug();
+	if (building_) {
+		building_->DrawImGui();
+	}
 #endif
 }
 
@@ -59,4 +70,8 @@ void Field::Draw() {
 	pMZWall_->Draw();
 	pPXWall_->Draw();
 	pMXWall_->Draw();
+
+	if (building_) {
+		building_->Draw();
+	}
 }
