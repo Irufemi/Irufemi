@@ -249,6 +249,13 @@ public: // セッター
     void ApplyGpuParticlePSO();
     void ApplyShadowPSO();          // シャドウマップ(通常)
     void ApplyShadowSkinningPSO();  // シャドウマップ(スキニング)
+    void ApplyLightningCrawlPSO();  // 電撃エフェクト [NEW]
+
+    /**
+     * @brief 電撃エフェクト用パラメータを特設スロットにバインドする
+     * @param address LightningParams 構造体の GPU 仮想アドレス
+     */
+    void BindLightningParams(D3D12_GPU_VIRTUAL_ADDRESS address);
 
 public:
     // 状態(現在のブレンドと深度書き込み)

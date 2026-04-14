@@ -28,6 +28,7 @@ struct SpotLight;
 struct AreaLight;
 struct Sphere;
 struct Animation;
+struct LightningParams;
 
 #ifdef USE_IMGUI
 
@@ -179,6 +180,11 @@ public: // メンバ関数
         int32_t* enableLighting,
         const char* unique_id = ""
     );
+    
+    /**
+     * @brief 電撃エフェクト調整UI
+     */
+    static void DebugLightning(LightningParams* params);
 
     /**
      * @brief アニメーション制御UI

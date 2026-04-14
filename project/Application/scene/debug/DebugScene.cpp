@@ -90,7 +90,9 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
     isActiveSneakWalk_ = false;
-    isActiveSkybox_ = true; 
+    isActiveSkybox_ = false;
+    isActivePrimitiveObj_ = false;
+    isActiveLightningCrawl_ = true;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -183,17 +185,34 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveSkybox_) {
         skybox_ = std::make_unique<Skybox>();
-        skybox_->Initialize(camera_.get(), "resources/rostock_laage_airport_4k.dds");
+        skybox_->Initialize(camera_.get(), "resources/qwantani_night_puresky_1k_cubemap.dds");
     }
 
     if (isActivePrimitiveObj_) {
         primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
         primitiveObj_->Initialize(camera_.get(), PrimitiveType::Cube);
-        primitiveObj_->SetPosition({ 2.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
+        primitiveObj_->SetPosition({ 0.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
     }
 
     // エンジンのデフォルトクリアカラーを「青」に設定
     engine_->SetClearColor(Vector4{ 0.1f, 0.25f, 0.5f, 1.0f });
+
+    // 電撃エフェクトの初期化
+    lightningCylinder_ = std::make_unique<CylinderClass>();
+    lightningCylinder_->Initialize(camera_.get());
+    lightningCylinder_->SetRadius(0.2f); // ビームっぽく細長く
+    lightningCylinder_->SetHeight(10.0f);
+    lightningCylinder_->SetCenter({ -2.0f, 0.0f, 0.0f });
+
+    lightningParamsResource_ = engine_->GetDirectXCommon()->CreateBufferResource(sizeof(LightningParams));
+    lightningParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightningParamsData_));
+    if (lightningParamsData_) {
+        *lightningParamsData_ = LightningParams();
+        lightningParamsData_->noiseThreshold = 0.2f; // 出現しやすくする
+        lightningParamsData_->intensity = 5.0f;      // 輝きを強める
+    }
+
+    lightningCylinder_->SetCullingEnabled(false); // 確実に描画されるように一旦OFF
 }
 
 // 更新
@@ -229,6 +248,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
     ImGui::Checkbox("Skybox", &isActiveSkybox_);
     ImGui::Checkbox("PrimitiveObj", &isActivePrimitiveObj_);
+    ImGui::Checkbox("Lightning Crawl", &isActiveLightningCrawl_);
     ImGui::End();
 
     ImGui::ShowDemoWindow();
@@ -426,17 +446,20 @@ void DebugScene::Update() {
     if (isActiveSkybox_) {
         if (!skybox_) {
             skybox_ = std::make_unique<Skybox>();
-            skybox_->Initialize(camera_.get(),"resources/rostock_laage_airport_4k.dds");
+            skybox_->Initialize(camera_.get(), "resources/qwantani_night_puresky_1k_cubemap.dds");
         }
         skybox_->Update();
     }
-
     if (isActivePrimitiveObj_) {
         if (!primitiveObj_) {
             primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
             primitiveObj_->Initialize(camera_.get(), PrimitiveType::Cube);
         }
         primitiveObj_->Update();
+    }
+
+    if (isActiveLightningCrawl_) {
+        lightningCylinder_->Update();
     }
 
     // 2D
@@ -481,6 +504,8 @@ void DebugScene::Update() {
     cameraForGpu.view = camera_->GetViewMatrix();
     cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
     cameraForGpu.worldPosition = camera_->GetTranslate();
+    cameraForGpu.time = engine_->GetTotalTime();
+    cameraForGpu.deltaTime = engine_->GetDeltaTime();
 
     std::vector<PointLight*> pLights;
     for (const auto& light : pointLights_) {
@@ -570,6 +595,17 @@ void DebugScene::Draw() {
         primitiveObj_->Draw();
     }
 
+    if (isActiveLightningCrawl_) {
+        engine_->SetBlend(BlendMode::kBlendModeAdd);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine_->SetCull(PSOManager::CullMode::None);
+        
+        engine_->ApplyLightningCrawlPSO();
+        engine_->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
+        
+        lightningCylinder_->Draw();
+    }
+
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
 
@@ -645,6 +681,19 @@ void DebugScene::DrawDebugTab() {
     if (isActiveCylinder_ && cylinder_) cylinder_->Debug("Cylinder");
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
+
+    if (lightningCylinder_) {
+        // オブジェクト標準のデバッグUI（形状やマテリアル）を表示
+        lightningCylinder_->Debug("Lightning Cylinder");
+
+        // 同じウィンドウ名で再開して、電撃特有のパラメータを「追記」する
+        if (ImGui::Begin("Cylinder: Lightning Cylinder")) {
+            ImGui::Separator();
+            ImGui::Checkbox("Active Lightning Crawl", &isActiveLightningCrawl_);
+            DebugUI::DebugLightning(lightningParamsData_);
+        }
+        ImGui::End();
+    }
 
     DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 #endif

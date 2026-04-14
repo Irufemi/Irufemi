@@ -592,3 +592,16 @@ void IrufemiEngine::ApplyShadowSkinningPSO() {
     assert(pso && "ShadowSkinning PSO is null. Check shadow shader setup.");
     if (pso) { drawManager_->BindPSO(pso); }
 }
+
+void IrufemiEngine::ApplyLightningCrawlPSO() {
+    auto* pso = GetPSOManager()->GetLightningCrawl(currentBlend_, currentDepth_, currentCull_);
+    assert(pso && "LightningCrawl PSO is null. Check shader setup.");
+    if (pso) {
+        drawManager_->BindPSO(pso);
+    }
+}
+
+void IrufemiEngine::BindLightningParams(D3D12_GPU_VIRTUAL_ADDRESS address) {
+    if (address == 0) return;
+    GetCommandList()->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, address);
+}

@@ -5,6 +5,7 @@
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "Irufemi.h"
+#include "Graphics/Data/LightningParams.h"
 
 #include <memory>
 #include <vector>
@@ -102,6 +103,12 @@ private: // メンバ変数(ゲーム)
 
     std::unique_ptr<PrimitiveObjects3DClass> primitiveObj_ = nullptr;
     bool isActivePrimitiveObj_ = true;
+
+    // --- 電撃エフェクトデモ ---
+    bool isActiveLightningCrawl_ = false;
+    std::unique_ptr<CylinderClass> lightningCylinder_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsResource_ = nullptr;
+    LightningParams* lightningParamsData_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン
