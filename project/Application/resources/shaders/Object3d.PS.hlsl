@@ -61,8 +61,8 @@ PixelShaderOutput main(VertexShaderOutput input)
 	float4 transformedUV = mul(float32_t4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
 	float32_t4 textureColor = gTexture.Sample(gSampler, transformedUV.xy);
 	
-    // sRGB -> Linear (ガンマ補正解除)
-    textureColor.rgb = pow(abs(textureColor.rgb), 2.2f);
+    // sRGB -> Linear はハードウェアサンプラー（_SRGB形式）に任せるため削除
+    textureColor.rgb = textureColor.rgb;
     
 	/*2値抜き*/
 		
@@ -122,8 +122,8 @@ PixelShaderOutput main(VertexShaderOutput input)
 		// 環境マップ（簡易Specular IBL）
 		float32_t3 reflectedVector = reflect(-context.toEye, context.normal);
 		float32_t4 enviromentColor = gEnviromentTexture.Sample(gSampler, reflectedVector);
-		// ガンマ解除
-		enviromentColor.rgb = pow(abs(enviromentColor.rgb), 2.2f);
+		// ガンマ解除はハードウェアに任せるため削除
+		enviromentColor.rgb = enviromentColor.rgb;
 		
 		// フレネルによる反射率の計算 (F0)
 		// 金属の場合はアルベドを、非金属の場合は 0.04 をベースにする
@@ -147,8 +147,8 @@ PixelShaderOutput main(VertexShaderOutput input)
 		output.color = gMaterial.color * textureColor;
 	}
 	
-    // Linear -> sRGB (ガンマ補正)
-    output.color.rgb = pow(abs(output.color.rgb), 1.0f / 2.2f);
+    // Linear -> sRGB はハードウェア RTV (_SRGB形式) に任せるため削除
+    output.color.rgb = output.color.rgb;
 
 	return output;
 }

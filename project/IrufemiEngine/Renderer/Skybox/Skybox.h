@@ -82,6 +82,8 @@ private: // メンバ変数(resource)
     // Material
     struct SkyboxMaterial {
         Vector4 color;
+        float intensity;
+        float padding[3];
     };
     SkyboxMaterial* materialData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;

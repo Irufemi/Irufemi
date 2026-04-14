@@ -185,13 +185,13 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActiveSkybox_) {
         skybox_ = std::make_unique<Skybox>();
-        skybox_->Initialize(camera_.get(), "resources/rostock_laage_airport_4k.dds");
+        skybox_->Initialize(camera_.get(), "resources/qwantani_night_puresky_1k_cubemap.dds");
     }
 
     if (isActivePrimitiveObj_) {
         primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
         primitiveObj_->Initialize(camera_.get(), PrimitiveType::Cube);
-        primitiveObj_->SetPosition({ 2.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
+        primitiveObj_->SetPosition({ 0.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
     }
 
     // エンジンのデフォルトクリアカラーを「青」に設定
@@ -446,7 +446,7 @@ void DebugScene::Update() {
     if (isActiveSkybox_) {
         if (!skybox_) {
             skybox_ = std::make_unique<Skybox>();
-            skybox_->Initialize(camera_.get(), "resources/rostock_laage_airport_4k.dds");
+            skybox_->Initialize(camera_.get(), "resources/qwantani_night_puresky_1k_cubemap.dds");
         }
         skybox_->Update();
     }

@@ -116,6 +116,7 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
 
     // material
     materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
+    materialData_->intensity = 1.0f;
 
     Matrix4x4 worldMatrix = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 
@@ -209,6 +210,7 @@ void Skybox::Debug() {
                     textureHandle_ = textureManager->GetTextureHandle(selectedName);
                 }
             }
+            ImGui::SliderFloat("Intensity", &materialData_->intensity, 0.0f, 10.0f);
         }
     }
 #endif
