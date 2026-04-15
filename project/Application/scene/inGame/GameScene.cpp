@@ -104,6 +104,13 @@ void GameScene::Update() {
         boss_->Update(player_.get());
     }
 
+    // --- 当たり判定有効無効のトグル (F4) ---
+    if (engine_->GetInputManager()->IsKeyPressedDIK(0x3E /*DIK_F4*/)) {
+      isCollisionEnabled_ = !isCollisionEnabled_;
+      OutputDebugStringA(isCollisionEnabled_ ? "Collision: ENABLED\n"
+                                             : "Collision: DISABLED\n");
+    }
+
     // --- 当たり判定の実行 ---
     CheckAllCollisions();
 
@@ -237,7 +244,7 @@ void GameScene::UpdateCameraAndFrameData() {
 // --- 当たり判定の実装 ---
 
 void GameScene::CheckAllCollisions() {
-    if (!player_ || !boss_) return;
+    if (!player_ || !boss_ || !isCollisionEnabled_) return;
 
     // 敵からプレイヤーへの攻撃
     CheckEnemyToPlayerCollisions();

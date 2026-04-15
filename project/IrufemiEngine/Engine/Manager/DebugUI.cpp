@@ -721,13 +721,9 @@ void DebugUI::FPSDebug() {
 
     // ウィンドウ
     ImGui::SetNextWindowBgAlpha(0.50f);
-    ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f), ImGuiCond_FirstUseEver);
     ImGuiWindowFlags flags =
-        ImGuiWindowFlags_NoDecoration |
-        ImGuiWindowFlags_AlwaysAutoResize |
-        ImGuiWindowFlags_NoSavedSettings |
-        ImGuiWindowFlags_NoFocusOnAppearing |
-        ImGuiWindowFlags_NoNav;
+        ImGuiWindowFlags_AlwaysAutoResize;
 
     if (ImGui::Begin("Performance", nullptr, flags)) {
         const size_t count = historyFilled_ ? kPerfHistoryCount_ : historyIndex_;

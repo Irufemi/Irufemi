@@ -88,6 +88,9 @@ private:
     std::vector<std::unique_ptr<PointLight>> pointLights_;
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
+    
+    // 当たり判定の有効化フラグ
+    bool isCollisionEnabled_ = true;
 
     // --- 内部整理用メソッド ---
 
