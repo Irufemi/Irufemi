@@ -201,6 +201,9 @@
     <ClCompile Include="Resource\Texture\TextureManager.cpp">
       <Filter>Resource\Texture</Filter>
     </ClCompile>
+    <ClCompile Include="Resource\Texture\TextureUtility.cpp">
+      <Filter>Resource\Texture</Filter>
+    </ClCompile>
     <ClCompile Include="Resource\Texture\Texture.cpp">
       <Filter>Resource\Texture</Filter>
     </ClCompile>
@@ -392,6 +395,9 @@
       <Filter>Engine\DebugUI</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Texture\TextureManager.h">
+      <Filter>Resource\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\Texture\TextureUtility.h">
       <Filter>Resource\Texture</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Texture\Texture.h">

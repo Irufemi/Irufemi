@@ -15,15 +15,23 @@
 class Camera;
 class IrufemiEngine;
 
+/**
+ * @class Skybox
+ * @brief スカイボックスの描画を管理するクラス
+ */
 class Skybox
 {
+public:
+    // デフォルトのテクスチャパス
+    static inline const std::string kDefaultTexturePath = "resources/rostock_laage_airport_4k.dds";
+
 public: // メンバ関数
     // コンストラクタ
     Skybox();
     // デストラクタ
     ~Skybox();
     // 初期化
-    void Initialize(Camera* camera, const std::string& textureName = "resources/rostock_laage_airport_4k.dds");
+    void Initialize(Camera* camera, const std::string& textureName = kDefaultTexturePath);
     // 更新
     void Update();
     // 描画
