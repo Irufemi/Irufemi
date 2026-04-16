@@ -109,8 +109,8 @@ private:
     void UpdateDebugUI();
     bool isDebugDrawOBB_ = false;
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
-    IrufemiEngine* engine_ = nullptr;
 #endif
+    IrufemiEngine* engine_ = nullptr;
 
   bool isActive_ = false;
   bool isDead_ = false;

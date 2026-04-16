@@ -15,8 +15,8 @@ Enemy::~Enemy() {}
 
 void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   camera_ = camera;
-#ifdef USE_IMGUI
   engine_ = engine;
+#ifdef USE_IMGUI
   lineOBB_ = std::make_unique<Line3DRegion>();
   lineOBB_->Initialize(camera_);
 #endif
