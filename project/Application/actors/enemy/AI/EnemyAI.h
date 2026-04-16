@@ -6,9 +6,11 @@ class EnemyAI {
 public:
     ~EnemyAI();
     void Initialize(Enemy* enemy);
-    void Update();
+    void Update(float deltaTime);
 
 private:
+    const float kZeroThreshold = 0.0f;
+
     Enemy* enemy_ = nullptr;
     float timer_ = 0.0f;           // 汎用タイマー
     float attackWaitTimer_ = 0.0f; // 攻撃終了後の待機用タイマー

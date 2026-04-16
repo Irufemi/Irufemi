@@ -72,7 +72,7 @@ void Enemy::Update(Player *player) {
 
   if (!isDead_) {
     if (ai_)
-      ai_->Update();
+      ai_->Update(engine_->GetDeltaTime());
     if (animation_)
       animation_->Update(player, 1.0f / 60.0f);
   }
