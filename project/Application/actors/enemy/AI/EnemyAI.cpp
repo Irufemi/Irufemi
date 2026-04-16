@@ -6,18 +6,18 @@ EnemyAI::~EnemyAI() {}
 
 void EnemyAI::Initialize(Enemy* enemy) {
     enemy_ = enemy;
-    timer_ = 0.0f;
-    attackWaitTimer_ = 0.0f;
+    timer_ = kZeroThreshold;
+    attackWaitTimer_ = kZeroThreshold;
     isWaitingForNextAttack_ = false;
     isFirstAttackStarted_ = false; // 初期化
 }
 
-void EnemyAI::Update() {
+void EnemyAI::Update(float deltaTime) {
     if (!enemy_) return;
 
     // 1. 最初の待機時間を消化
     if (!isFirstAttackStarted_) {
-        timer_ += 1.0f / 60.0f;
+        timer_ += deltaTime;
         if (timer_ >= startDelay_) {
             isFirstAttackStarted_ = true;
             enemy_->SetState(EnemyState::Attack_Beam);
@@ -27,7 +27,7 @@ void EnemyAI::Update() {
 
     // 2. 次の攻撃までの待機処理 (待機フラグが立っている間)
     if (isWaitingForNextAttack_) {
-        attackWaitTimer_ += 1.0f / 60.0f;
+        attackWaitTimer_ += deltaTime;
         if (attackWaitTimer_ >= attackInterval_) {
             isWaitingForNextAttack_ = false;
 
@@ -45,7 +45,7 @@ void EnemyAI::Update() {
         if (enemy_->GetAnimation()->HasFinishedAttack()) {
             enemy_->SetState(EnemyState::Idle);
             isWaitingForNextAttack_ = true;
-            attackWaitTimer_ = 0.0f;
+            attackWaitTimer_ = kZeroThreshold;
 
             // 次の攻撃を交互にするためにフラグを反転
             nextIsStomp_ = !nextIsStomp_;
