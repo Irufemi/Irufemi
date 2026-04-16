@@ -1,7 +1,9 @@
 #include "DirectXCommon.h"
 
+#include "Resource/Texture/TextureUtility.h"
 #include <string>
 #include <cassert>
+#include <vector>
 #include <comdef.h>
 
 #include "../../Core/Utility/Log.h"
@@ -519,6 +521,7 @@ void DirectXCommon::CreatePSOs() {
     auto psVoxel = shaderCompiler_->Compile(L"resources/shaders/VoxelParticle.PS.hlsl", L"ps_6_0", logStream);
     auto vsShadow = shaderCompiler_->Compile(L"resources/shaders/ShadowMap.VS.hlsl", L"vs_6_0", logStream);
     auto vsShadowSkin = shaderCompiler_->Compile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", L"vs_6_0", logStream);
+    auto psLightning = shaderCompiler_->Compile(L"resources/shaders/LightningCrawl.PS.hlsl", L"ps_6_0", logStream);
 
     auto csSkin = shaderCompiler_->Compile(L"resources/shaders/Skinning.CS.hlsl", L"cs_6_0", logStream);
     auto csGpuInit = shaderCompiler_->Compile(L"resources/shaders/InitializeParticle.CS.hlsl", L"cs_6_0", logStream);
@@ -558,7 +561,8 @@ void DirectXCommon::CreatePSOs() {
         { vsGpuParticle, psGpuParticle },
         { vsVoxel, psVoxel },
         { vsShadow, nullptr },     // shadowShaders
-        { vsShadowSkin, nullptr }  // shadowSkinningShaders
+        { vsShadowSkin, nullptr }, // shadowSkinningShaders
+        { vs3d, psLightning }     // lightningShaders [NEW]
     );
 
     // --- Compute PSO生成 ---
@@ -882,8 +886,18 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
     }
 
     HRESULT hr;
-    if (StringUtility::EndsWith(filePathW, L".dds")) {
+    TextureUtility::TextureFileType fileType = TextureUtility::GetTextureFileType(filePathW);
+
+    if (fileType == TextureUtility::TextureFileType::DDS) {
         hr = LoadFromDDSFile(filePathW.c_str(), DDS_FLAGS_NONE, nullptr, image);
+        
+        // 8bit 系のフォーマットかつカラーマップ（normal等でない）であれば sRGB 形式へ変更
+        if (SUCCEEDED(hr) && isSRGB) {
+            const auto& metadata = image.GetMetadata();
+            if (DirectX::FormatDataType(metadata.format) != DirectX::FORMAT_TYPE_FLOAT) {
+                image.OverrideFormat(DirectX::MakeSRGB(metadata.format));
+            }
+        }
     }
     else {
         WIC_FLAGS wicFlags = isSRGB ? WIC_FLAGS_FORCE_SRGB : WIC_FLAGS_NONE;

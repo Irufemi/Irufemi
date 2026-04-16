@@ -216,6 +216,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Platform\Input\InputManager.cpp" />
     <ClCompile Include="Engine\Manager\PrimitiveManager.cpp" />
     <ClCompile Include="Resource\Texture\TextureManager.cpp" />
+    <ClCompile Include="Resource\Texture\TextureUtility.cpp" />
     <ClCompile Include="Engine\Core\Math\Vector3.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\PSOManager.cpp" />
     <ClCompile Include="Framework\IScene.cpp" />
@@ -237,6 +238,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Type\PerView.h" />
     <ClInclude Include="Engine\Core\Type\Voxel.h" />
     <ClInclude Include="Engine\Graphics\Data\LightCommonData.h" />
+    <ClInclude Include="Engine\Graphics\Data\LightningParams.h" />
     <ClInclude Include="Engine\Graphics\Data\Material.h" />
     <ClInclude Include="Engine\Graphics\Data\SceneGPUStructs.h" />
     <ClInclude Include="Engine\Graphics\DirectX\FrameRateController.h" />
@@ -298,6 +300,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\LineInstanced\Data\LineMaterial.h" />
     <ClInclude Include="Renderer\LineInstanced\Data\LineVertexData.h" />
     <ClInclude Include="Resource\Texture\TextureManager.h" />
+    <ClInclude Include="Resource\Texture\TextureUtility.h" />
     <ClInclude Include="Resource\Audio\VoiceCallback.h" />
     <ClInclude Include="Resource\Model\Data\Animation.h" />
     <ClInclude Include="Engine\Graphics\Data\AreaLight.h" />
@@ -365,6 +368,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="..\Application\resources\shaders\Fullscreen.hlsli" />
     <None Include="..\Application\resources\shaders\GeometryShaderHeader.hlsli" />
     <None Include="..\Application\resources\shaders\Lighting.hlsli" />
+    <None Include="..\Application\resources\shaders\LightningUtility.hlsli" />
     <None Include="..\Application\resources\shaders\Line.hlsli" />
     <None Include="..\Application\resources\shaders\LineInstanced.hlsli" />
     <None Include="..\Application\resources\shaders\Object2D.hlsli" />
@@ -474,6 +478,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\LightningCrawl.PS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

@@ -201,6 +201,9 @@
     <ClCompile Include="Resource\Texture\TextureManager.cpp">
       <Filter>Resource\Texture</Filter>
     </ClCompile>
+    <ClCompile Include="Resource\Texture\TextureUtility.cpp">
+      <Filter>Resource\Texture</Filter>
+    </ClCompile>
     <ClCompile Include="Resource\Texture\Texture.cpp">
       <Filter>Resource\Texture</Filter>
     </ClCompile>
@@ -392,6 +395,9 @@
       <Filter>Engine\DebugUI</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Texture\TextureManager.h">
+      <Filter>Resource\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\Texture\TextureUtility.h">
       <Filter>Resource\Texture</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Texture\Texture.h">
@@ -710,6 +716,9 @@
     <ClInclude Include="Engine\Core\Math\NumericalSequence.h">
       <Filter>Engine\Core\Math</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Graphics\Data\LightningParams.h">
+      <Filter>Engine\Graphics\Data</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">
@@ -752,6 +761,9 @@
       <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </None>
     <None Include="..\Application\resources\shaders\Lighting.hlsli" />
+    <None Include="..\Application\resources\shaders\LightningUtility.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Application\resources\shaders\InitializeParticle.CS.hlsl">
@@ -888,6 +900,9 @@
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\Fade.PS.hlsl">
       <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\LightningCrawl.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

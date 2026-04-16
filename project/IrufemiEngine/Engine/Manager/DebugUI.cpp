@@ -38,6 +38,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Renderer/Object2D/Object2DResource.h"
 #include "Renderer/Particle/ParticleResource.h"
 #include "Engine/Core/Math/Math.h"
+#include "Engine/Graphics/Data/LightningParams.h"
 
 // 静的宣言
 std::unique_ptr<PointLight> DebugUI::templatePointLight_;
@@ -1138,7 +1139,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1151,7 +1152,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
 
         // エフェクト選択
         ImGui::PushID("AvailableEffects");
-        for (int i = 1; i < 12; ++i) { // None 以外を表示
+        for (int i = 1; i < (int)IM_ARRAYSIZE(modeNames); ++i) { // None 以外を表示
             PostProcessMode m = static_cast<PostProcessMode>(i);
             bool isEnabled = std::find(activeModes.begin(), activeModes.end(), m) != activeModes.end();
 
@@ -1230,6 +1231,15 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                 } else if (mode == PostProcessMode::ToneMapping) {
                     auto& params = ppManager->GetToneMappingParams();
                     ImGui::DragFloat("Exposure", &params.exposure, 0.01f, 0.0f, 10.0f);
+                } else if (mode == PostProcessMode::Bloom) {
+                    auto& params = ppManager->GetBloomParams();
+                    ImGui::DragFloat("Threshold", &params.threshold, 0.01f, 0.0f, 5.0f);
+                    ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
+                    ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
+                    if (ImGui::SliderInt("Kernel Size", &params.kernelSize, 1, 51)) {
+                        if (params.kernelSize < 1) params.kernelSize = 1;
+                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0) params.kernelSize += 1;
+                    }
                 }
                 ImGui::TreePop();
             }
@@ -1256,5 +1266,30 @@ void DebugUI::EndEngineDebugWindow() {
 #ifdef USE_IMGUI
     ImGui::EndTabBar();
     ImGui::End();
+#endif
+}
+
+void DebugUI::DebugLightning([[maybe_unused]] LightningParams* params) {
+#ifdef USE_IMGUI
+    if (!params) return;
+
+    if (ImGui::TreeNode("Lightning Crawl Settings")) {
+        ImGui::Separator();
+        ImGui::Text("Surface Settings");
+        ImGui::ColorEdit4("Surface Color", &params->color.x);
+        ImGui::DragFloat("Surface Speed", &params->speed, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat("Surface Intensity", &params->intensity, 0.1f, 0.0f, 100.0f);
+        ImGui::DragFloat("Surface Noise Scale", &params->noiseScale, 0.01f, 0.01f, 20.0f);
+        ImGui::DragFloat("Surface Threshold", &params->noiseThreshold, 0.001f, 0.0f, 1.0f);
+
+        ImGui::Separator();
+        ImGui::Text("Core Settings");
+        ImGui::ColorEdit4("Core Color", &params->coreColor.x);
+        ImGui::DragFloat("Core Intensity", &params->coreIntensity, 0.1f, 0.0f, 100.0f);
+        ImGui::DragFloat("Core Threshold", &params->coreThreshold, 0.001f, 0.0f, 1.0f);
+        ImGui::DragFloat("Core Scale", &params->coreScale, 0.01f, 0.01f, 20.0f);
+        
+        ImGui::TreePop();
+    }
 #endif
 }

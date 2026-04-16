@@ -115,6 +115,11 @@ private:
     void CheckFlyingPartsCollisions();
 
     /**
+     * @brief プレイヤーと敵の座標に基づき、動的なポイントライトのパラメータを計算・更新する
+     */
+    void UpdateDynamicLights();
+
+    /**
      * @brief カメラとフレームデータの更新
      */
     void UpdateCameraAndFrameData();

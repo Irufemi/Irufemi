@@ -102,6 +102,8 @@ void PostProcessManager::Update(float totalTime) {
     *mappedFade_ = fadeParams_;
   if (mappedSlide_)
     *mappedSlide_ = slideParams_;
+  if (mappedBloom_)
+    *mappedBloom_ = bloomParams_;
 }
 
 void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
@@ -135,10 +137,55 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         TransitionResource(commandList, nextTargetTexture->GetResource(),
                            workTextureStates_[nextTargetIdx],
                            D3D12_RESOURCE_STATE_RENDER_TARGET);
-        workTextureStates_[nextTargetIdx] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        workTextureStates_[nextTargetIdx] =
+            D3D12_RESOURCE_STATE_RENDER_TARGET;
       }
 
-      DrawSinglePass(commandList, mode, currentSource, targetHandle);
+      if (mode == Mode::Bloom) {
+          // Bloom は特殊なマルチパス処理を行う
+          RenderTexture* bloomExtract = workTextures_[0].get();
+          RenderTexture* blurH = workTextures_[1].get();
+          RenderTexture* blurV = workTextures_[0].get(); // 前のバッファに戻る
+
+          // 0. Workバッファを書き込み可能状態に遷移 (抽出用)
+          TransitionResource(commandList, bloomExtract->GetResource(), workTextureStates_[0], D3D12_RESOURCE_STATE_RENDER_TARGET);
+          workTextureStates_[0] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+          // 1. 高輝度抽出 (src -> work0)
+          DrawSinglePass(commandList, Mode::None, currentSource, bloomExtract->GetRtvHandle(), false, bloomExtractPSO_.Get());
+          TransitionResource(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          
+          // 2. 横ぼかし (work0 -> work1)
+          bloomParams_.direction = { 1.0f, 0.0f };
+          if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
+          TransitionResource(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+          DrawSinglePass(commandList, Mode::None, bloomExtract, blurH->GetRtvHandle(), false, bloomBlurHPSO_.Get());
+          TransitionResource(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          
+          // 3. 縦ぼかし (work1 -> work0)
+          bloomParams_.direction = { 0.0f, 1.0f };
+          if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
+          TransitionResource(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+          DrawSinglePass(commandList, Mode::None, blurH, blurV->GetRtvHandle(), false, bloomBlurVPSO_.Get());
+          TransitionResource(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          
+          // 4. 合成 (src + work0 -> nextTarget)
+          // ※最後だけ DrawSinglePass を呼び出してターゲットに書き込む
+          commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
+          commandList->SetPipelineState(bloomCombinePSO_.Get());
+          commandList->SetGraphicsRootSignature(rootSig_);
+          commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+          commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, currentSource->GetSrvHandleGPU());
+          commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, blurV->GetSrvHandleGPU()); // t1 にぼけ画像をセット
+          commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, bloomCB_->GetGPUVirtualAddress());
+          commandList->DrawInstanced(3, 1, 0, 0);
+
+          // 状態のリセット（ピンポン管理が壊れないように）
+          workTextureStates_[0] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+          workTextureStates_[1] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+      } else {
+          DrawSinglePass(commandList, mode, currentSource, targetHandle);
+      }
 
       // 状態遷移
       if (isLast) {
@@ -177,9 +224,10 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
 void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
                                         Mode mode, RenderTexture *srcTexture,
                                         D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
-                                        bool isFinalPass) {
+                                        bool isFinalPass,
+                                        ID3D12PipelineState* psoOverride) {
   uint32_t modeIdx = static_cast<uint32_t>(mode);
-  if (modeIdx >= psos_.size() || !psos_[modeIdx])
+  if (!psoOverride && (modeIdx >= psos_.size() || !psos_[modeIdx]))
     return;
 
   // レンダーターゲットの設定
@@ -196,7 +244,10 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
   // PSOとルートシグネチャの設定
-  ID3D12PipelineState* pso = isFinalPass ? finalPsos_[modeIdx].Get() : psos_[modeIdx].Get();
+  ID3D12PipelineState* pso = psoOverride;
+  if (!pso) {
+      pso = isFinalPass ? finalPsos_[modeIdx].Get() : psos_[modeIdx].Get();
+  }
   if (!pso) return;
 
   commandList->SetPipelineState(pso);
@@ -242,6 +293,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   case Mode::Slide:
     cbvAddress = slideCB_->GetGPUVirtualAddress();
     break;
+  case Mode::Bloom:
+    cbvAddress = bloomCB_->GetGPUVirtualAddress();
+    break;
   default:
     break;
   }
@@ -253,9 +307,8 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   if (mode == Mode::DepthBasedOutline) {
     commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, depthSrvHandle_);
   } else if (mode == Mode::Dissolve) {
-    int noiseIdx = (std::max)(0, (std::min)(1, dissolveParams_.noiseType));
-    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap,
-                                                dissolveNoiseHandle_[noiseIdx]);
+    int32_t noiseIdx = (std::max)(int32_t(0), (std::min)(int32_t(1), dissolveParams_.noiseType));
+    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, dissolveNoiseHandle_[noiseIdx]);
   }
 
   // 描画実行 (3頂点インデックスなし)
@@ -287,6 +340,7 @@ void PostProcessManager::CreatePSOs() {
       {Mode::ToneMapping, L"resources/shaders/ToneMapping.PS.hlsl"},
       {Mode::Fade, L"resources/shaders/Fade.PS.hlsl"},
       {Mode::Slide, L"resources/shaders/Slide.PS.hlsl"},
+      {Mode::Bloom, L"resources/shaders/CopyImage.PS.hlsl"},
   };
 
   for (const auto &s : shaders) {
@@ -321,6 +375,36 @@ void PostProcessManager::CreatePSOs() {
     device_->CreateGraphicsPipelineState(
         &desc, IID_PPV_ARGS(&finalPsos_[static_cast<uint32_t>(s.mode)]));
   }
+
+  // --- ブルーム用個別 PSO ---
+  auto extractPS = shaderCompiler->Compile(L"resources/shaders/HighLuminanceExtract.PS.hlsl", L"ps_6_0", logStream);
+  auto blurPS = shaderCompiler->Compile(L"resources/shaders/GaussianBlur.PS.hlsl", L"ps_6_0", logStream);
+  auto combinePS = shaderCompiler->Compile(L"resources/shaders/BloomCombine.PS.hlsl", L"ps_6_0", logStream);
+
+  D3D12_GRAPHICS_PIPELINE_STATE_DESC bloomDesc{};
+  bloomDesc.pRootSignature = rootSig_;
+  bloomDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+  bloomDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+  bloomDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+  bloomDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+  bloomDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+  bloomDesc.DepthStencilState.DepthEnable = FALSE;
+  bloomDesc.DepthStencilState.StencilEnable = FALSE;
+  bloomDesc.InputLayout = {nullptr, 0};
+  bloomDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+  bloomDesc.NumRenderTargets = 1;
+  bloomDesc.RTVFormats[0] = rtvFormat_;
+  bloomDesc.SampleDesc.Count = 1;
+
+  bloomDesc.PS = {extractPS->GetBufferPointer(), extractPS->GetBufferSize()};
+  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomExtractPSO_));
+
+  bloomDesc.PS = {blurPS->GetBufferPointer(), blurPS->GetBufferSize()};
+  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurHPSO_));
+  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurVPSO_));
+
+  bloomDesc.PS = {combinePS->GetBufferPointer(), combinePS->GetBufferSize()};
+  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomCombinePSO_));
 }
 
 void PostProcessManager::CreateConstantBuffers() {
@@ -356,6 +440,9 @@ void PostProcessManager::CreateConstantBuffers() {
 
   slideCB_ = CreateBuffer(sizeof(SlideParams));
   slideCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedSlide_));
+
+  bloomCB_ = CreateBuffer(sizeof(BloomParams));
+  bloomCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedBloom_));
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource>

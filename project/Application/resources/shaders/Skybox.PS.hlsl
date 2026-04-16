@@ -3,6 +3,7 @@
 struct Material
 {
 	float32_t4 color;
+	float32_t intensity;
 };
 ConstantBuffer<Material> gMaterial : register(b0);
 
@@ -20,7 +21,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	float32_t4 textureColor = gTexture.Sample(gSampler, input.texcoord);
 	
-	output.color = textureColor * gMaterial.color;
+	output.color = textureColor * gMaterial.color * gMaterial.intensity;
 	
 	return output;
 }

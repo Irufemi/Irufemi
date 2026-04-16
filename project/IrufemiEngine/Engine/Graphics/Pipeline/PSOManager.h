@@ -68,7 +68,8 @@ public:
         ShaderSet gpuParticleShaders = {},
         ShaderSet voxelParticleShaders = {},
         ShaderSet shadowShaders = {},       // シャドウマップ用 (通常)
-        ShaderSet shadowSkinningShaders = {} // シャドウマップ用 (スキニング)
+        ShaderSet shadowSkinningShaders = {}, // シャドウマップ用 (スキニング)
+        ShaderSet lightningShaders = {}     // 電撃エフェクト用 [NEW]
     );
 
     /** @name PSO取得（各種コンポーネント用） */
@@ -99,6 +100,8 @@ public:
     ID3D12PipelineState* GetShadow(CullMode cull);
     /** @brief シャドウマップ生成用 (スキニング) */
     ID3D12PipelineState* GetShadowSkinning(CullMode cull);
+    /** @brief 電撃エフェクト (Lightning Crawl) 用 [NEW] */
+    ID3D12PipelineState* GetLightningCrawl(BlendMode blend, DepthWrite depth, CullMode cull);
     ///@}
 
     /** @name ポストプロセス・コピー */
@@ -141,6 +144,7 @@ private:
     ShaderSet copyImageShaders_{};
     ShaderSet shadowShaders_{};
     ShaderSet shadowSkinningShaders_{};
+    ShaderSet lightningShaders_{}; // [NEW]
 
     /** @brief キャッシュキー構造体 */
     struct Key {

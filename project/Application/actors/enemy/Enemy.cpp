@@ -78,9 +78,7 @@ void Enemy::Update(Player *player) {
   }
 
 #ifdef USE_IMGUI
-  if (engine_ && engine_->GetInputManager()->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
-    isDebugDrawOBB_ = !isDebugDrawOBB_;
-  }
+  UpdateDebugUI();
 #endif
 
   if (state_ != EnemyState::Attack_Beam && beam_) {
@@ -165,7 +163,143 @@ void Enemy::Update(Player *player) {
   updateHead(headMid_, headMidLocalTransform_, headMidOffset_);
   updateHead(headRight_, headRightLocalTransform_, headRightOffset_);
 
+
+
+  // enemyが完全に死んでいるかの判定（全ての部位がボクセル含めて消滅したか）
+  if (headMid_->IsCompletelyDead() && headLeft_->IsCompletelyDead() &&
+      headRight_->IsCompletelyDead()) {
+    bool allPartsGone = true;
+    for (int i = 0; i < 3; ++i) {
+      if (bodies_[i] && !bodies_[i]->IsCompletelyDead()) {
+        allPartsGone = false;
+        break;
+      }
+    }
+    if (allPartsGone) {
+      isActive_ =
+          false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
+    }
+
+    // 論理的な死亡判定（HP全損）
+    if (!isDead_) {
+      bool allHpZero = true;
+      for (int i = 0; i < 3; ++i) {
+        if (bodies_[i] && bodies_[i]->GetHP() > 0) {
+          allHpZero = false;
+          break;
+        }
+      }
+      if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
+          headRight_->GetHP() <= 0) {
+        isDead_ = true;
+      }
+    }
+  }
+}
+
+void Enemy::Draw(IrufemiEngine* engine) {
+  if (!isActive_) return;
+  for (auto &body : bodies_) {
+    if (body && !body->IsCompletelyDead()) {
+      body->Draw(engine);
+    }
+  }
+  if (headLeft_ && !headLeft_->IsCompletelyDead())
+    headLeft_->Draw(engine);
+  if (headMid_ && !headMid_->IsCompletelyDead())
+    headMid_->Draw(engine);
+  if (headRight_ && !headRight_->IsCompletelyDead())
+    headRight_->Draw(engine);
+
+  // ビームを描画
+  if (beam_) {
+    beam_->Draw(engine);
+  }
+
+    if (stompEffects_) {
+        stompEffects_->Draw(engine);
+    }
+
 #ifdef USE_IMGUI
+  if (lineOBB_ && isDebugDrawOBB_ && engine_) {
+    engine_->ApplyLineInstancedPSO();
+    lineOBB_->Draw();
+    engine_->ApplyPSO(); // restore
+  }
+#endif
+}
+
+// ビームの発射命令（トリガー）
+void Enemy::FireBeam() {
+  if (!beam_) {
+    beam_ = std::make_unique<EnemyBeam>();
+    beam_->Initialize(camera_, GetHeadMidWorldMatrix());
+  }
+}
+
+void Enemy::FireStomp(const Vector3& position) {
+    // インスタンスがなければ作成（ビームの FireBeam と同じ流れ）
+    if (!stompEffects_) {
+        stompEffects_ = std::make_unique<EnemyStompEffects>();
+        // ビームがカメラを必要とするように、スタンプもここでカメラを渡して初期化
+        stompEffects_->Initialize(camera_);
+    }
+
+    // エフェクトを発動
+    stompEffects_->Fire(position);
+}
+
+Matrix4x4 Enemy::GetHeadMidWorldMatrix() const {
+  // globalTransform_.rotate には EnemyAnimation で計算した
+  // 「プレイヤーを向くための X回転とY回転」が入っている必要があります
+  Matrix4x4 globalMat = Math::MakeAffineMatrix(
+      globalTransform_.scale,
+      globalTransform_.rotate, // ここに X(上下) と Y(左右) が入っていればOK
+      globalTransform_.translate);
+
+  Vector3 localPos =
+      Math::Add(headMidLocalTransform_.translate, headMidOffset_);
+
+  return Math::Multiply(Math::MakeAffineMatrix(
+                            {1, 1, 1}, headMidLocalTransform_.rotate, localPos),
+                        globalMat);
+}
+
+OBB Enemy::GetOBB() const {
+  OBB obb;
+  // globalTransform_ から中心座標、回転、サイズを抽出して設定
+  obb.center = globalTransform_.translate;
+
+  // 各軸の方向ベクトル（回転から算出）
+  Matrix4x4 rotateMat = Math::MakeRotateXYZMatrix(globalTransform_.rotate);
+  obb.orientations[0] = {rotateMat.m[0][0], rotateMat.m[0][1],
+                         rotateMat.m[0][2]};
+  obb.orientations[1] = {rotateMat.m[1][0], rotateMat.m[1][1],
+                         rotateMat.m[1][2]};
+  obb.orientations[2] = {rotateMat.m[2][0], rotateMat.m[2][1],
+                         rotateMat.m[2][2]};
+
+  // 半径（サイズ）の設定
+  obb.size = {2.0f, 4.0f, 2.0f}; // 敵の見た目に合わせた仮のサイズ
+
+  return obb;
+}
+
+void Enemy::SetState(EnemyState newState) {
+  state_ = newState;
+
+  // ★重要：アニメーションクラスにも「状態が変わったよ！」と教えてあげる
+  if (animation_) {
+    animation_->ChangeState(newState);
+  }
+}
+
+#ifdef USE_IMGUI
+void Enemy::UpdateDebugUI() {
+  if (engine_ && engine_->GetInputManager()->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
+    isDebugDrawOBB_ = !isDebugDrawOBB_;
+  }
+
   ImGui::Begin("Enemy HP Status");
 
   ImGui::Text("Enemy Status");
@@ -348,133 +482,5 @@ void Enemy::Update(Player *player) {
     }
     lineOBB_->Update();
   }
+}
 #endif
-
-  // enemyが完全に死んでいるかの判定（全ての部位がボクセル含めて消滅したか）
-  if (headMid_->IsCompletelyDead() && headLeft_->IsCompletelyDead() &&
-      headRight_->IsCompletelyDead()) {
-    bool allPartsGone = true;
-    for (int i = 0; i < 3; ++i) {
-      if (bodies_[i] && !bodies_[i]->IsCompletelyDead()) {
-        allPartsGone = false;
-        break;
-      }
-    }
-    if (allPartsGone) {
-      isActive_ =
-          false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
-    }
-
-    // 論理的な死亡判定（HP全損）
-    if (!isDead_) {
-      bool allHpZero = true;
-      for (int i = 0; i < 3; ++i) {
-        if (bodies_[i] && bodies_[i]->GetHP() > 0) {
-          allHpZero = false;
-          break;
-        }
-      }
-      if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
-          headRight_->GetHP() <= 0) {
-        isDead_ = true;
-      }
-    }
-  }
-}
-
-void Enemy::Draw(IrufemiEngine* engine) {
-  if (!isActive_) return;
-  for (auto &body : bodies_) {
-    if (body && !body->IsCompletelyDead()) {
-      body->Draw(engine);
-    }
-  }
-  if (headLeft_ && !headLeft_->IsCompletelyDead())
-    headLeft_->Draw(engine);
-  if (headMid_ && !headMid_->IsCompletelyDead())
-    headMid_->Draw(engine);
-  if (headRight_ && !headRight_->IsCompletelyDead())
-    headRight_->Draw(engine);
-
-  // ビームを描画
-  if (beam_) {
-    beam_->Draw(engine);
-  }
-
-    if (stompEffects_) {
-        stompEffects_->Draw(engine);
-    }
-
-#ifdef USE_IMGUI
-  if (lineOBB_ && isDebugDrawOBB_ && engine_) {
-    engine_->ApplyLineInstancedPSO();
-    lineOBB_->Draw();
-    engine_->ApplyPSO(); // restore
-  }
-#endif
-}
-
-// ビームの発射命令（トリガー）
-void Enemy::FireBeam() {
-  if (!beam_) {
-    beam_ = std::make_unique<EnemyBeam>();
-    beam_->Initialize(camera_, GetHeadMidWorldMatrix());
-  }
-}
-
-void Enemy::FireStomp(const Vector3& position) {
-    // インスタンスがなければ作成（ビームの FireBeam と同じ流れ）
-    if (!stompEffects_) {
-        stompEffects_ = std::make_unique<EnemyStompEffects>();
-        // ビームがカメラを必要とするように、スタンプもここでカメラを渡して初期化
-        stompEffects_->Initialize(camera_);
-    }
-
-    // エフェクトを発動
-    stompEffects_->Fire(position);
-}
-
-Matrix4x4 Enemy::GetHeadMidWorldMatrix() const {
-  // globalTransform_.rotate には EnemyAnimation で計算した
-  // 「プレイヤーを向くための X回転とY回転」が入っている必要があります
-  Matrix4x4 globalMat = Math::MakeAffineMatrix(
-      globalTransform_.scale,
-      globalTransform_.rotate, // ここに X(上下) と Y(左右) が入っていればOK
-      globalTransform_.translate);
-
-  Vector3 localPos =
-      Math::Add(headMidLocalTransform_.translate, headMidOffset_);
-
-  return Math::Multiply(Math::MakeAffineMatrix(
-                            {1, 1, 1}, headMidLocalTransform_.rotate, localPos),
-                        globalMat);
-}
-
-OBB Enemy::GetOBB() const {
-  OBB obb;
-  // globalTransform_ から中心座標、回転、サイズを抽出して設定
-  obb.center = globalTransform_.translate;
-
-  // 各軸の方向ベクトル（回転から算出）
-  Matrix4x4 rotateMat = Math::MakeRotateXYZMatrix(globalTransform_.rotate);
-  obb.orientations[0] = {rotateMat.m[0][0], rotateMat.m[0][1],
-                         rotateMat.m[0][2]};
-  obb.orientations[1] = {rotateMat.m[1][0], rotateMat.m[1][1],
-                         rotateMat.m[1][2]};
-  obb.orientations[2] = {rotateMat.m[2][0], rotateMat.m[2][1],
-                         rotateMat.m[2][2]};
-
-  // 半径（サイズ）の設定
-  obb.size = {2.0f, 4.0f, 2.0f}; // 敵の見た目に合わせた仮のサイズ
-
-  return obb;
-}
-
-void Enemy::SetState(EnemyState newState) {
-  state_ = newState;
-
-  // ★重要：アニメーションクラスにも「状態が変わったよ！」と教えてあげる
-  if (animation_) {
-    animation_->ChangeState(newState);
-  }
-}
