@@ -12,9 +12,6 @@ public:
     bool IsFiring() const override { return isFiring_; }
 
 private:
-    float NormalizeAngle(float angle);
-
-private:
     // --- 内部タイマーとフラグ ---
     float attackTimer_ = 0.0f;
     float totalTimer_ = 0.0f; // 振動用の継続時間

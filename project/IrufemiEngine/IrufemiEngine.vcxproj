@@ -216,6 +216,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Platform\Input\InputManager.cpp" />
     <ClCompile Include="Engine\Manager\PrimitiveManager.cpp" />
     <ClCompile Include="Resource\Texture\TextureManager.cpp" />
+    <ClCompile Include="Resource\Texture\TextureUtility.cpp" />
     <ClCompile Include="Engine\Core\Math\Vector3.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\PSOManager.cpp" />
     <ClCompile Include="Framework\IScene.cpp" />
@@ -299,6 +300,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\LineInstanced\Data\LineMaterial.h" />
     <ClInclude Include="Renderer\LineInstanced\Data\LineVertexData.h" />
     <ClInclude Include="Resource\Texture\TextureManager.h" />
+    <ClInclude Include="Resource\Texture\TextureUtility.h" />
     <ClInclude Include="Resource\Audio\VoiceCallback.h" />
     <ClInclude Include="Resource\Model\Data\Animation.h" />
     <ClInclude Include="Engine\Graphics\Data\AreaLight.h" />

@@ -2,12 +2,9 @@
 #include "Enemy.h"
 #include "Beam/EnemyBeam.h"
 #include "actors/player/Player.h"
+#include "Engine/Core/Math/Math.h"
 #include <cmath>
 #include <algorithm>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846f
-#endif
 
 void EnemyAnimState_Beam::Enter(Enemy* enemy) {
     attackTimer_ = 0.0f;
@@ -51,7 +48,7 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
         Vector3 target = (player) ? player->GetTranslate() : Vector3{ 0,0,0 };
         target.y += 1.0f;
         float tAngleY = std::atan2(target.x - enemy->GetGlobalTransform().translate.x, target.z - enemy->GetGlobalTransform().translate.z);
-        enemy->GetGlobalTransform().rotate.y += NormalizeAngle(tAngleY - enemy->GetGlobalTransform().rotate.y) * beamRotateSpeed_;
+        enemy->GetGlobalTransform().rotate.y += Math::NormalizeAngle(tAngleY - enemy->GetGlobalTransform().rotate.y) * beamRotateSpeed_;
 
         enemy->FireBeam();
         if (beam) {
@@ -125,7 +122,7 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
     // 5. 一呼吸
     else if (attackTimer_ < endRecovery) {
         float recProgress = (attackTimer_ - endStun) / recoveryTime_;
-        float breathCurve = std::sin(recProgress * (float)M_PI);
+        float breathCurve = std::sin(recProgress * Math::PI);
         float currentExhaustion = (1.0f - recProgress) * exhaustionDepth_ - (breathCurve * 0.5f);
 
         auto ApplyExhaustion = [&](Vector3& offset) {
@@ -150,10 +147,4 @@ void EnemyAnimState_Beam::Exit(Enemy* enemy) {
         beam->SetTelegraphActive(false);
         beam->SetAttackActive(false);
     }
-}
-
-float EnemyAnimState_Beam::NormalizeAngle(float angle) {
-    while (angle > (float)M_PI) angle -= 2.0f * (float)M_PI;
-    while (angle < -(float)M_PI) angle += 2.0f * (float)M_PI;
-    return angle;
 }

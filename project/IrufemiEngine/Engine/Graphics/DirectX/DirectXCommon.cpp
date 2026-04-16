@@ -1,7 +1,9 @@
 #include "DirectXCommon.h"
 
+#include "Resource/Texture/TextureUtility.h"
 #include <string>
 #include <cassert>
+#include <vector>
 #include <comdef.h>
 
 #include "../../Core/Utility/Log.h"
@@ -884,7 +886,9 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
     }
 
     HRESULT hr;
-    if (StringUtility::EndsWith(filePathW, L".dds")) {
+    TextureUtility::TextureFileType fileType = TextureUtility::GetTextureFileType(filePathW);
+
+    if (fileType == TextureUtility::TextureFileType::DDS) {
         hr = LoadFromDDSFile(filePathW.c_str(), DDS_FLAGS_NONE, nullptr, image);
         
         // 8bit 系のフォーマットかつカラーマップ（normal等でない）であれば sRGB 形式へ変更
