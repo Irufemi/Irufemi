@@ -22,12 +22,20 @@ struct VertexShaderOutput
 	float32_t4 color : COLOR0;
 };
 
-struct EmitterSphere
+struct GPUParticleEmitter
 {
-	float32_t3 translate;
-	float32_t radius;
-	int32_t count;
-	float32_t frequency;
-	float32_t frequencyTime;
-	int32_t emit;
+	uint32_t type;          // 0: Sphere, 1: Beam
+	float32_t3 translate;   // 位置
+
+	int32_t count;          // 放出数
+	float32_t frequency;    // 頻度
+	float32_t frequencyTime;// タイマー
+	int32_t emit;           // 放出フラグ
+
+	float32_t radius;       // Sphere用: 半径
+	float32_t3 direction;   // Beam用: 方向
+
+	float32_t spread;       // Beam用: 広がり（0: 直線, 1: 全方位）
+	float32_t velocity;     // Beam用: 速度
+	float32_t2 pad;
 };

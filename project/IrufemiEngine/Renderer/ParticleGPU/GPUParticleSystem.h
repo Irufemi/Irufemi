@@ -42,24 +42,29 @@ struct ParticleGPUMaterial {
 };
 
 /**
- * @struct EmitterSphere
- * @brief 球体状のパーティクル放出器設定（CSで参照）
+ * @struct GPUParticleEmitter
+ * @brief パーティクル放出器の設定（統合版）
+ * @details HLSL側の GPUParticleEmitter と構造を一致させています。
  */
-struct EmitterSphere {
-    Vector3 translate;  ///< 放出中心位置
-    float radius;       ///< 放出半径
-    uint32_t count;     ///< 1回の放出数
-    float frequency;    ///< 放出間隔
-    float frequencyTime; ///< 放出タイマー
-    uint32_t emit;      ///< 1: 放出許可, 0: 停止
+struct GPUParticleEmitter {
+    uint32_t type = 0;          ///< 0: Sphere, 1: Beam
+    Vector3 translate = {0,0,0}; ///< 放出中心位置
+    int32_t count = 0;          ///< 1回の放出数
+    float frequency = 0.1f;     ///< 放出間隔
+    float frequencyTime = 0.0f; ///< 放出タイマー
+    int32_t emit = 0;           ///< 1: 放出許可, 0: 停止
+
+    // Type specific
+    float radius = 1.0f;        ///< Sphere用: 半径
+    Vector3 direction = {0,0,1}; ///< Beam用: 方向
+    float spread = 0.1f;        ///< Beam用: 広がり
+    float velocity = 1.0f;      ///< Beam用: 速度
+    float pad[2] = {0,0};
 };
 
 /**
  * @class GPUParticleSystem
  * @brief Compute Shader を使用した、大量の粒子を GPU 上でシミュレーション・描画するクラス
- * @details 粒子の生成、更新、描画の全工程を GPU 側で行うことで、
- *          CPU 側の負荷を抑えつつ数万〜数十万規模のパーティクル演出を可能にします。
- *          フリーリストによる効率的な粒子メモリ管理を行っています。
  */
 class GPUParticleSystem
 {
@@ -69,18 +74,42 @@ public:
 
     /** @name 初期化・更新・描画 */
     ///@{
-    /**
-     * @brief 初期化
-     * @param[in] camera 描画用カメラ
-     * @param[in] textureName 使用するテクスチャパス
-     */
     void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png");
-    /** @brief CS による粒子更新・放出の実行 */
     void Update();
-    /** @brief インスタンシング描画の実行 */
     void Draw();
-    /** @brief DebugUI によるパラメータ調整 */
     void Debug();
+    ///@}
+
+    /** @name 汎用エミッター設定 */
+    ///@{
+    /** @brief 粒子の発生ON/OFF */
+    void SetEmit(bool emit) { if (emitter_) emitter_->emit = emit ? 1 : 0; }
+    /** @brief パーティクルの基本色を設定 */
+    void SetColor(const Vector4& color) { if (materialData_) materialData_->color = color; }
+    ///@}
+
+    /** @name タイプ別エミッター設定 */
+    ///@{
+    /**
+     * @brief 球体エミッターの設定
+     * @param pos 中心位置
+     * @param radius 半径
+     * @param count 一度の放出数
+     * @param frequency 放出頻度（秒）
+     */
+    void SetSphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency);
+
+    /**
+     * @brief ビームエミッターの設定
+     * @param pos 発射位置
+     * @param direction 発射方向
+     * @param radius 発生半径（太さ）
+     * @param velocity 粒子の速度
+     * @param spread 広がり（0: 直線 ～ 1.0: 全方位への影響度）
+     * @param count 一度の放出数
+     * @param frequency 放出頻度（秒）
+     */
+    void SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, uint32_t count, float frequency);
     ///@}
 
     /** @name 静的マネージャ設定 */
@@ -97,19 +126,19 @@ private:
     static TextureManager* textureManager_;
     static IrufemiEngine* engine_;
 
-    static const uint32_t kMaxParticles = 1024; ///< 最大同時生存数
+    static const uint32_t kMaxParticles = 32768;
 
-    /** @name エミッターリソース（UAV/SRV） */
+    /** @name エミッターリソース */
     ///@{
-    EmitterSphere* emitterSphere_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> emitterSphereResource_;
-    D3D12_CPU_DESCRIPTOR_HANDLE emitterSphereUavHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE emitterSphereUavHandleGPU_{};
-    D3D12_CPU_DESCRIPTOR_HANDLE emitterSphereSrvHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE emitterSphereSrvHandleGPU_{};
+    GPUParticleEmitter* emitter_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> emitterResource_;
+    D3D12_CPU_DESCRIPTOR_HANDLE emitterUavHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE emitterUavHandleGPU_{};
+    D3D12_CPU_DESCRIPTOR_HANDLE emitterSrvHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE emitterSrvHandleGPU_{};
     ///@}
 
-    /** @name フレーム共有データ */
+    /** @name 各種リソース */
     ///@{
     PerFrame* perFrameData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> perFrameResource_;
@@ -117,50 +146,38 @@ private:
     D3D12_GPU_DESCRIPTOR_HANDLE perFrameUavHandleGPU_{};
     D3D12_CPU_DESCRIPTOR_HANDLE perFrameSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE perFrameSrvHandleGPU_{};
-    ///@}
 
-    /** @name 粒子メインデータ（RWStructuredBuffer） */
-    ///@{
     ParticleCS* particleData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> particleResource_;
     D3D12_CPU_DESCRIPTOR_HANDLE particleUavHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE particleUavHandleGPU_{};
     D3D12_CPU_DESCRIPTOR_HANDLE particleSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandleGPU_{};
-    ///@}
 
-    /** @name フリーリスト管理（カウンタとインデックス） */
-    ///@{
-    int32_t* freeListIndex_ = nullptr; ///< 空きスロットの現在の数
+    int32_t* freeListIndex_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> freeListIndexResource_;
     D3D12_CPU_DESCRIPTOR_HANDLE freeListIndexUavHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE freeListIndexUavHandleGPU_{};
     D3D12_CPU_DESCRIPTOR_HANDLE freeListIndexSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE freeListIndexSrvHandleGPU_{};
 
-    int32_t* freeList_ = nullptr; ///< 空きスロット番号の配列
+    int32_t* freeList_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> freeListResource_;
     D3D12_CPU_DESCRIPTOR_HANDLE freeListUavHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE freeListUavHandleGPU_{};
     D3D12_CPU_DESCRIPTOR_HANDLE freeListSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE freeListSrvHandleGPU_{};
-    ///@}
 
-    /** @name 描画用リソース */
-    ///@{
     Microsoft::WRL::ComPtr<ID3D12Resource> perViewResource_;
     PerView* perViewData_ = nullptr;
-
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
-
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
     ParticleGPUMaterial* materialData_ = nullptr;
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
     Camera* camera_ = nullptr;
 
-    // デスクリプタインデックスの保持
     uint32_t emitterSrvIndex_ = 0xFFFFFFFF;
     uint32_t perFrameSrvIndex_ = 0xFFFFFFFF;
     uint32_t particleUavIndex_ = 0xFFFFFFFF;
@@ -171,6 +188,6 @@ private:
 
     bool isCullingEnabled_ = true;
     bool isCulled_ = false;
-    bool needsUpdateCS_ = false; ///< CSによる更新が必要か（Update呼び出しに同期）
+    bool isInitializedCS_ = false;
+    bool needsUpdateCS_ = false;
 };
-

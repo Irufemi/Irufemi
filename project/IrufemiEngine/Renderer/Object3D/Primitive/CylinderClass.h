@@ -72,6 +72,10 @@ public: // メンバ関数
 
     // 情報アクセス
     Cylinder GetInfo() const { return info_; }
+    Vector3 GetCenter() const { return info_.center; }
+    Vector3 GetRight() const;
+    Vector3 GetUp() const;
+    Vector3 GetDirection() const;
 
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }

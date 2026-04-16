@@ -3,17 +3,20 @@
 #include "core/math/Transform.h"
 #include "core/math/geometry/OBB.h"
 #include <memory>
-
+#include <wrl.h>
+#include "IrufemiEngine/Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "IrufemiEngine/Engine/Graphics/Data/LightningParams.h"
+#include "IrufemiEngine/Renderer/Object3D/Primitive/CylinderClass.h"
 class Camera;
 
 class EnemyBeam {
 public:
     /**
-     * @brief 初期化
+     * @brief 初期化（リソース確保とプリロード）
      * @param camera カメラ
-     * @param muzzleMatrix 発射口のワールド行列
+     * @param engine エンジンポインタ
      */
-    void Initialize(Camera* camera, const Matrix4x4& muzzleMatrix);
+    void Initialize(Camera* camera, class IrufemiEngine* engine);
 
     /**
      * @brief 更新
@@ -32,7 +35,7 @@ public:
     void SetTelegraphActive(bool active) { isTelegraphActive_ = active; }
     /** @brief 予兆ビームがアクティブか */
     bool IsTelegraphActive() const { return isTelegraphActive_; }
-    /** @brief 予兆ビームの太さ設定 */
+    /** @brief 予兆ビームの太さ（直径）設定 */
     void SetTelegraphThickness(float thickness) { telegraphThickness_ = thickness; }
     /** @brief 予兆ビームの色設定 */
     void SetTelegraphColor(const Vector4& color) { if (telegraphObj_) telegraphObj_->SetColor(color); }
@@ -41,10 +44,10 @@ public:
     void SetAttackActive(bool active) { isAttackActive_ = active; }
     /** @brief 攻撃ビームがアクティブか */
     bool IsAttackActive() const { return isAttackActive_; }
-    /** @brief 攻撃ビームの太さ設定 */
+    /** @brief 攻撃ビームの太さ（直径）設定 */
     void SetAttackThickness(float thickness) { attackThickness_ = thickness; }
     /** @brief 攻撃ビームの色設定 */
-    void SetAttackColor(const Vector4& color) { if (attackObj_) attackObj_->SetColor(color); }
+    void SetAttackColor(const Vector4& color) { if (attackCylinder_) attackCylinder_->SetColor(color); }
 
     /** @brief 攻撃判定用のOBBを取得 */
     OBB GetOBB() const;
@@ -60,11 +63,22 @@ private:
     bool isTelegraphActive_ = false;
 
     // 攻撃用
-    std::unique_ptr<ObjClass> attackObj_ = nullptr;
+    std::unique_ptr<CylinderClass> attackCylinder_ = nullptr;
     Transform attackTransform_;
-    float attackThickness_ = 1.0f;
+    float attackThickness_ = 0.5f;
     float attackForwardOffset_ = 0.0f;
     bool isAttackActive_ = false;
+
+    // アニメーション用
+    float attackTimer_ = 0.0f;
+    float attackExpandTime_ = 0.15f; // ビームが最大まで伸びる時間(秒)
+
+    // 電撃エフェクト用（プラズマ表現）
+    Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsResource_;
+    LightningParams* lightningParamsData_ = nullptr;
+
+    // 放出エフェクト用（パーティクル表現）
+    std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
 
     float beamLength_ = 100.0f;
     bool isExpired_ = false;
