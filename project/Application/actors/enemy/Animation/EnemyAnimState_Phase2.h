@@ -39,13 +39,13 @@ private:
     // --- 調整用パラメータ群（マジックナンバー排除） ---
 
     // 高度制御
-    const float kLowHeight = 2.5f;        // プレイヤーに近い時の高度 (m)
-    const float kHighHeight = 12.0f;      // プレイヤーから遠い時の高度 (m)
+    const float kLowHeight = 3.5f;        // プレイヤーに近い時の高度 (m)
+    const float kHighHeight = 15.0f;      // プレイヤーから遠い時の高度 (m)
     const float kHeightChangeDistMin = 15.0f; // この距離より近ければ最低高度
     const float kHeightChangeDistMax = 35.0f; // この距離より遠ければ最高高度
 
     // 移動速度・挙動
-    const float kSpeedMultiplier = 0.25f;  // 全体的な移動の素早さ係数（低いほどどっしり動く）
+    const float kSpeedMultiplier = 0.22f;  // 全体的な移動の素早さ係数（低いほどどっしり動く）
     const float kFrictionBase = 0.82f;     // ブレーキの強さ（低いほど急に止まる）
     const float kFieldLimit = 90.0f;       // フィールドの移動制限範囲 (±m)
     const float kWanderArrivalDist = 8.0f; // 目的地に到着したとみなす距離 (m)
