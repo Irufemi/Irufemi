@@ -176,6 +176,12 @@ PrimitiveData PrimitiveManager::CreateCube(float width, float height, float dept
 
 PrimitiveData PrimitiveManager::CreateSphere(float radius, uint32_t subdivision) {
     PrimitiveData data;
+    GenerateSphereVertices(data, radius, subdivision);
+    GenerateSphereIndices(data, subdivision);
+    return data;
+}
+
+void PrimitiveManager::GenerateSphereVertices(PrimitiveData& data, float radius, uint32_t subdivision) {
     const float pi = std::numbers::pi_v<float>;
     const float latEvery = pi / static_cast<float>(subdivision);
     const float lonEvery = 2.0f * pi / static_cast<float>(subdivision);
@@ -199,7 +205,9 @@ PrimitiveData PrimitiveManager::CreateSphere(float radius, uint32_t subdivision)
             data.vertices.push_back(v);
         }
     }
+}
 
+void PrimitiveManager::GenerateSphereIndices(PrimitiveData& data, uint32_t subdivision) {
     for (uint32_t latIndex = 0; latIndex < subdivision; ++latIndex) {
         for (uint32_t lonIndex = 0; lonIndex < subdivision; ++lonIndex) {
             uint32_t base = (subdivision + 1) * latIndex + lonIndex;
@@ -211,11 +219,16 @@ PrimitiveData PrimitiveManager::CreateSphere(float radius, uint32_t subdivision)
             data.indices.push_back(base + 1);
         }
     }
-    return data;
 }
 
 PrimitiveData PrimitiveManager::CreateCylinder(float radius, float height, uint32_t segments) {
     PrimitiveData data;
+    GenerateCylinderVertices(data, radius, height, segments);
+    GenerateCylinderIndices(data, segments);
+    return data;
+}
+
+void PrimitiveManager::GenerateCylinderVertices(PrimitiveData& data, float radius, float height, uint32_t segments) {
     const float pi = std::numbers::pi_v<float>;
     const float radianPerDivide = 2.0f * pi / static_cast<float>(segments);
 
@@ -231,13 +244,16 @@ PrimitiveData PrimitiveManager::CreateCylinder(float radius, float height, uint3
         float u = static_cast<float>(i) / segments;
         float uNext = static_cast<float>(i + 1) / segments;
 
-        uint32_t base = static_cast<uint32_t>(data.vertices.size());
-        
         data.vertices.push_back({ { c * radius, -height * 0.5f, s * radius, 1.0f }, { u, 1.0f }, { c, 0.0f, s } });
         data.vertices.push_back({ { c * radius,  height * 0.5f, s * radius, 1.0f }, { u, 0.0f }, { c, 0.0f, s } });
         data.vertices.push_back({ { cNext * radius, -height * 0.5f, sNext * radius, 1.0f }, { uNext, 1.0f }, { cNext, 0.0f, sNext } });
         data.vertices.push_back({ { cNext * radius,  height * 0.5f, sNext * radius, 1.0f }, { uNext, 0.0f }, { cNext, 0.0f, sNext } });
+    }
+}
 
+void PrimitiveManager::GenerateCylinderIndices(PrimitiveData& data, uint32_t segments) {
+    for (uint32_t i = 0; i < segments; ++i) {
+        uint32_t base = i * 4;
         data.indices.push_back(base);
         data.indices.push_back(base + 1);
         data.indices.push_back(base + 2);
@@ -245,11 +261,16 @@ PrimitiveData PrimitiveManager::CreateCylinder(float radius, float height, uint3
         data.indices.push_back(base + 3);
         data.indices.push_back(base + 2);
     }
-    return data;
 }
 
 PrimitiveData PrimitiveManager::CreateRing(float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV) {
     PrimitiveData data;
+    GenerateRingVertices(data, innerRadius, outerRadius, startAngle, endAngle, segments, verticalUV);
+    GenerateRingIndices(data, segments);
+    return data;
+}
+
+void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV) {
     const float pi = std::numbers::pi_v<float>;
     float startRad = startAngle * (pi / 180.0f);
     float endRad = endAngle * (pi / 180.0f);
@@ -267,7 +288,6 @@ PrimitiveData PrimitiveManager::CreateRing(float innerRadius, float outerRadius,
         float u = static_cast<float>(i) / segments;
         float uNext = static_cast<float>(i + 1) / segments;
 
-        uint32_t base = static_cast<uint32_t>(data.vertices.size());
         VertexData v0, v1, v2, v3;
         v0.position = { c0 * outerRadius, s0 * outerRadius, 0.0f, 1.0f };
         v1.position = { c1 * outerRadius, s1 * outerRadius, 0.0f, 1.0f };
@@ -285,11 +305,15 @@ PrimitiveData PrimitiveManager::CreateRing(float innerRadius, float outerRadius,
 
         data.vertices.push_back(v0); data.vertices.push_back(v1);
         data.vertices.push_back(v2); data.vertices.push_back(v3);
+    }
+}
 
+void PrimitiveManager::GenerateRingIndices(PrimitiveData& data, uint32_t segments) {
+    for (uint32_t i = 0; i < segments; ++i) {
+        uint32_t base = i * 4;
         data.indices.push_back(base); data.indices.push_back(base + 2); data.indices.push_back(base + 1);
         data.indices.push_back(base + 1); data.indices.push_back(base + 2); data.indices.push_back(base + 3);
     }
-    return data;
 }
 
 PrimitiveData PrimitiveManager::CreateTetra() {
@@ -371,6 +395,12 @@ PrimitiveData PrimitiveManager::CreateCone(float radius, float height, uint32_t 
 
 PrimitiveData PrimitiveManager::CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments) {
     PrimitiveData data;
+    GenerateTorusVertices(data, majorRadius, minorRadius, majorSegments, minorSegments);
+    GenerateTorusIndices(data, majorSegments, minorSegments);
+    return data;
+}
+
+void PrimitiveManager::GenerateTorusVertices(PrimitiveData& data, float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments) {
     const float pi = std::numbers::pi_v<float>;
     for (uint32_t j = 0; j <= minorSegments; ++j) {
         float v = static_cast<float>(j) / minorSegments;
@@ -387,6 +417,9 @@ PrimitiveData PrimitiveManager::CreateTorus(float majorRadius, float minorRadius
             data.vertices.push_back(vertex);
         }
     }
+}
+
+void PrimitiveManager::GenerateTorusIndices(PrimitiveData& data, uint32_t majorSegments, uint32_t minorSegments) {
     for (uint32_t j = 0; j < minorSegments; ++j) {
         for (uint32_t i = 0; i < majorSegments; ++i) {
             uint32_t base = j * (majorSegments + 1) + i;
@@ -394,7 +427,6 @@ PrimitiveData PrimitiveManager::CreateTorus(float majorRadius, float minorRadius
             data.indices.push_back(base + 1); data.indices.push_back(base + majorSegments + 1); data.indices.push_back(base + majorSegments + 2);
         }
     }
-    return data;
 }
 
 PrimitiveData PrimitiveManager::CreateIcoSphere(float radius, uint32_t subdivision) {

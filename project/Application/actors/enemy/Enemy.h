@@ -106,6 +106,7 @@ private:
     bool isFalling_[4] = { false, false, false, false };
 
 #ifdef USE_IMGUI
+    void UpdateDebugUI();
     bool isDebugDrawOBB_ = false;
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
     IrufemiEngine* engine_ = nullptr;

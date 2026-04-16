@@ -394,5 +394,12 @@ namespace Math {
         return (v < lo) ? lo : (hi < v) ? hi : v;
     }
 
+    /**
+     * @brief 角度を -PI から PI の範囲に正規化する
+     * @param angle 正規化する角度(ラジアン)
+     * @return -PI ~ PI に収まった角度
+     */
+    float NormalizeAngle(float angle);
+
 }
 

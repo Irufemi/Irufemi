@@ -532,4 +532,10 @@ namespace Math {
         return Math::Normalize(Vector3{ 0.0f, -vector.z, vector.y });
     }
 
+    float NormalizeAngle(float angle) {
+        while (angle > PI) angle -= 2.0f * PI;
+        while (angle < -PI) angle += 2.0f * PI;
+        return angle;
+    }
+
 }

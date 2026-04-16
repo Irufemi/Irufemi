@@ -95,6 +95,19 @@ private:
      */
     void CreateGPUResource(const PrimitiveData& data, PrimitiveResource& resource);
 
+    // --- 頂点生成・インデックス生成の分割ヘルパー ---
+    static void GenerateSphereVertices(PrimitiveData& data, float radius, uint32_t subdivision);
+    static void GenerateSphereIndices(PrimitiveData& data, uint32_t subdivision);
+    
+    static void GenerateCylinderVertices(PrimitiveData& data, float radius, float height, uint32_t segments);
+    static void GenerateCylinderIndices(PrimitiveData& data, uint32_t segments);
+
+    static void GenerateRingVertices(PrimitiveData& data, float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV);
+    static void GenerateRingIndices(PrimitiveData& data, uint32_t segments);
+
+    static void GenerateTorusVertices(PrimitiveData& data, float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments);
+    static void GenerateTorusIndices(PrimitiveData& data, uint32_t majorSegments, uint32_t minorSegments);
+
 private:
     static PrimitiveManager* instance;
 
