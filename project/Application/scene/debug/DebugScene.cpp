@@ -84,7 +84,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveFence_ = false;
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
-    isActiveGPUParticle_ = false;
+    isActiveGPUParticle_ = true;
     isActiveVoxelParticle_ = false;
     isActiveEffect_ = false;
     isActiveAnimatedCube_ = false;
@@ -681,6 +681,10 @@ void DebugScene::DrawDebugTab() {
     if (isActiveCylinder_ && cylinder_) cylinder_->Debug("Cylinder");
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
+
+    if (isActiveGPUParticle_ && gpuParticle_) {
+        gpuParticle_->Debug();
+    }
 
     if (lightningCylinder_) {
         // オブジェクト標準のデバッグUI（形状やマテリアル）を表示

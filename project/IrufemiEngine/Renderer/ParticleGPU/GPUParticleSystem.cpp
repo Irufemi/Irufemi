@@ -9,6 +9,7 @@
 #include "Application/camera/Camera.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Manager/PrimitiveManager.h"
 #include <cassert>
 
 // 静的メンバ変数の実体定義
@@ -150,28 +151,8 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     materialData_->uvTransform = Math::MakeIdentity4x4();
     materialData_->useClampSampler = 0;
 
-    // 頂点バッファ
-    vertexResource_ = dxCommon_->CreateBufferResource(sizeof(VertexData) * 6);
-    VertexData* vertexData = nullptr;
-    vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-    // 四角ポリゴン
-    vertexData[0].position = { -1.0f, 1.0f, 0.0f, 1.0f };
-    vertexData[0].texcoord = { 0.0f, 0.0f };
-    vertexData[1].position = { 1.0f, 1.0f, 0.0f, 1.0f };
-    vertexData[1].texcoord = { 1.0f, 0.0f };
-    vertexData[2].position = { -1.0f, -1.0f, 0.0f, 1.0f };
-    vertexData[2].texcoord = { 0.0f, 1.0f };
-    vertexData[3].position = { -1.0f, -1.0f, 0.0f, 1.0f };
-    vertexData[3].texcoord = { 0.0f, 1.0f };
-    vertexData[4].position = { 1.0f, 1.0f, 0.0f, 1.0f };
-    vertexData[4].texcoord = { 1.0f, 0.0f };
-    vertexData[5].position = { 1.0f, -1.0f, 0.0f, 1.0f };
-    vertexData[5].texcoord = { 1.0f, 1.0f };
-    vertexResource_->Unmap(0, nullptr);
-
-    vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
-    vertexBufferView_.SizeInBytes = sizeof(VertexData) * 6;
-    vertexBufferView_.StrideInBytes = sizeof(VertexData);
+    // 形状の初期設定 (デフォルトは Quad/Plane)
+    SetPrimitive(PrimitiveType::Plane);
 
     textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
@@ -179,7 +160,34 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     isInitializedCS_ = false;
 
     // デフォルトでスフィアエミッターを設定
-    SetSphereEmitter(Vector3(0, 0, 0), 1.0f, 10, 0.5f);
+    SetSphereEmitter(Vector3(0, 0, 0), 2.0f, 30, 0.1f);
+    
+    // Milestone 1: 初期調整 (レガシー演出の復元)
+    emitter_->minLife = 0.4f;
+    emitter_->maxLife = 0.8f;
+    emitter_->startScaleMin = { 0.2f, 0.2f, 0.2f };
+    emitter_->startScaleMax = { 0.5f, 0.5f, 0.5f };
+    emitter_->endScaleMin = { 0.01f, 0.01f, 0.01f };
+    emitter_->endScaleMax = { 0.1f, 0.1f, 0.1f };
+    emitter_->startColorMin = { 1.0f, 1.0f, 0.3f, 1.0f }; // 黄色
+    emitter_->startColorMax = { 1.0f, 1.0f, 0.4f, 1.0f };
+    emitter_->endColorMin = { 1.0f, 0.1f, 0.0f, 0.0f };   // 赤（フェードアウト）
+    emitter_->endColorMax = { 1.0f, 0.5f, 0.1f, 0.0f };   // オレンジ（フェードアウト）
+    emitter_->colorMode = 0;
+    emitter_->gravity = 0.0f;
+    emitter_->damping = 0.0f;
+    emitter_->jitter = 0.01f; // 座標のゆらぎ
+    emitter_->isBillboard = 1;
+    emitter_->burstCount = 0;
+    
+    // Milestone 3: 初期設定
+    emitter_->atlasRows = 1;
+    emitter_->atlasCols = 1;
+    emitter_->groundHeight = -100.0f;
+    emitter_->bounce = 0.5f;
+    emitter_->attractorStrength = 0.0f;
+    emitter_->attractorPos = { 0, 0, 0 };
+
     SetEmit(true);
 
     perFrameData_->deltaTime = engine_->GetDeltaTime();
@@ -189,6 +197,30 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 // 更新
 void GPUParticleSystem::Update() {
     if (!emitter_ || !camera_) return;
+
+    // 前フレームの射出予約をリセット
+    emitter_->burstCount = 0;
+
+    if (!isPlaying_) {
+        // 放出は止めるが、既存の粒子の更新（Update CS）は必要かもしれないので
+        // emit フラグだけ操作して UpdateCS は継続する方針
+        emitter_->emit = 0;
+    }
+
+    float dt = engine_->GetDeltaTime();
+
+    // 持続時間制御
+    if (isPlaying_ && duration_ > 0.0f) {
+        totalTime_ += dt;
+        if (totalTime_ >= duration_) {
+            if (isLooping_) {
+                totalTime_ = 0.0f;
+                // ※ループ時は必要なら一瞬だけ全クリアする等の処理を検討
+            } else {
+                Stop();
+            }
+        }
+    }
 
     isCulled_ = false;
     if (isCullingEnabled_) {
@@ -209,18 +241,21 @@ void GPUParticleSystem::Update() {
 
     /*Particleを発生させる*/
 
-    emitter_->frequencyTime += engine_->GetDeltaTime(); // δタイムを加算
-    perFrameData_->time = engine_->GetTotalTime();
-    perFrameData_->deltaTime = engine_->GetDeltaTime();
+    if (isPlaying_) {
+        emitter_->frequencyTime += dt; // δタイムを加算
+    }
 
-    // 射出間隔を上回ったら射出許可を出して時間を調整
-    if (emitter_->frequency <= emitter_->frequencyTime) {
-        if (emitter_->emit) { // そもそもEmitフラグが立っている時のみ
+    perFrameData_->time = engine_->GetTotalTime();
+    perFrameData_->deltaTime = dt;
+
+    // 射出間隔を上回ったら射出予約に加算
+    if (emitter_->emit) {
+        while (emitter_->frequency <= emitter_->frequencyTime && emitter_->frequency > 0.0f) {
+            emitter_->burstCount += (uint32_t)emitter_->count;
             emitter_->frequencyTime -= emitter_->frequency;
-            // シェーダー側でこれを見て放出。1フレームに複数回出る可能性は今のところ考慮しない
-        } else {
-            emitter_->frequencyTime = 0; // Emit停止中ならタイマーリセット
         }
+    } else {
+        emitter_->frequencyTime = 0.0f; // Emit停止中ならタイマーリセット
     }
 
     perViewData_->viewProjection = camera_->GetViewProjectionMatrix3D();
@@ -294,10 +329,17 @@ void GPUParticleSystem::Draw() {
         commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+        commandList->SetComputeRootConstantBufferView(4, emitterResource_->GetGPUVirtualAddress());
         commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
         commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
         commandList->ResourceBarrier(1, &uavBarrier);
+
+        // burstCountをリセット（EmitParticle.CS で処理した後にリセットしたいが
+        // CPU側ですぐリセットすると CS 実行前に 0 になる恐れがある。
+        // ただし、Dispatch 直前なのでここでは問題ないはず。本来は CS 内で 0 に落とすのが安全だが
+        // StructuredBuffer ではないので不可。
+        // 射出予約カウントのリセットは Update 冒頭へ移動
 
         needsUpdateCS_ = false;
     }
@@ -311,6 +353,7 @@ void GPUParticleSystem::Draw() {
     transitionBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     commandList->ResourceBarrier(1, &transitionBarrier);
 
+    commandList->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     engine_->ApplyGpuParticlePSO();
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
@@ -318,8 +361,11 @@ void GPUParticleSystem::Draw() {
       
     drawManager_->DrawGPUParticle(
         vertexBufferView_,
+        indexBufferView_,
+        indexCount_,
         materialResource_->GetGPUVirtualAddress(),
         perViewResource_->GetGPUVirtualAddress(),
+        emitterResource_->GetGPUVirtualAddress(),
         particleSrvHandleGPU_,
         textureHandle_,
         kMaxParticles
@@ -335,25 +381,99 @@ void GPUParticleSystem::Debug() {
 #if defined(USE_IMGUI)
     ImGui::Begin("GPUParticleSystem");
     ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
+    
+    if (ImGui::Button("Play")) Play(); ImGui::SameLine();
+    if (ImGui::Button("Stop")) Stop(); ImGui::SameLine();
+    if (ImGui::Button("Clear")) Clear();
+
+    ImGui::Separator();
+
     if (emitter_) {
-        ImGui::Text("Type: %s", emitter_->type == 0 ? "Sphere" : "Beam");
+        const char* typeNames[] = { "Sphere", "Beam", "Ring", "Cylinder" };
+        int type = (int)emitter_->type;
+        if (ImGui::Combo("Type", &type, typeNames, IM_ARRAYSIZE(typeNames))) {
+            emitter_->type = (uint32_t)type;
+        }
+
         ImGui::DragFloat3("Translate", &emitter_->translate.x, 0.1f);
-        if (emitter_->type == 0) {
+        
+        if (emitter_->type == 0 || emitter_->type == 2 || emitter_->type == 3) {
             ImGui::DragFloat("Radius", &emitter_->radius, 0.1f, 0.0f, 100.0f);
-        } else {
+        }
+        if (emitter_->type == 1) {
             ImGui::DragFloat3("Direction", &emitter_->direction.x, 0.01f);
             ImGui::DragFloat("Velocity", &emitter_->velocity, 0.1f);
             ImGui::DragFloat("Spread", &emitter_->spread, 0.01f, 0.0f, 1.0f);
         }
+
         ImGui::DragInt("Count", (int*)&emitter_->count, 1, 0, 100);
         ImGui::DragFloat("Frequency", &emitter_->frequency, 0.01f, 0.001f, 10.0f);
+        
         bool emit = emitter_->emit != 0;
         if (ImGui::Checkbox("Emit", &emit)) {
             emitter_->emit = emit ? 1 : 0;
         }
+
+        ImGui::Separator();
+        ImGui::Text("Particle Randomization");
+        ImGui::DragFloat2("Life Range", &emitter_->minLife, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat3("Start Scale Min", &emitter_->startScaleMin.x, 0.01f);
+        ImGui::DragFloat3("Start Scale Max", &emitter_->startScaleMax.x, 0.01f);
+        ImGui::DragFloat3("End Scale Min", &emitter_->endScaleMin.x, 0.01f);
+        ImGui::DragFloat3("End Scale Max", &emitter_->endScaleMax.x, 0.01f);
+
+        ImGui::ColorEdit4("Start Color Min", &emitter_->startColorMin.x);
+        ImGui::ColorEdit4("Start Color Max", &emitter_->startColorMax.x);
+        ImGui::ColorEdit4("End Color Min", &emitter_->endColorMin.x);
+        ImGui::ColorEdit4("End Color Max", &emitter_->endColorMax.x);
+
+        ImGui::Separator();
+        ImGui::Text("Physics");
+        ImGui::DragFloat("Gravity", &emitter_->gravity, 0.01f);
+        ImGui::DragFloat("Damping", &emitter_->damping, 0.001f, 0.0f, 1.0f);
+        ImGui::DragFloat("Jitter", &emitter_->jitter, 0.001f, 0.0f, 0.5f);
+        
+        bool billboard = emitter_->isBillboard != 0;
+        if (ImGui::Checkbox("Billboard", &billboard)) {
+            SetBillboard(billboard);
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Mesh Shape");
+        const char* primitiveNames[] = { "Triangle", "Plane", "Cube", "Cylinder", "Sphere", "Tetra", "Circle", "Ring" };
+        int currentPrim = (int)primitiveType_;
+        if (ImGui::Combo("Particle Mesh", &currentPrim, primitiveNames, 8)) {
+            SetPrimitive((PrimitiveType)currentPrim);
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Animation (Atlas)");
+        ImGui::DragInt("Rows", (int*)&emitter_->atlasRows, 1, 1, 16);
+        ImGui::DragInt("Cols", (int*)&emitter_->atlasCols, 1, 1, 16);
+
+        ImGui::Separator();
+        ImGui::Text("Physics Extension");
+        ImGui::DragFloat("Ground Height", &emitter_->groundHeight, 0.1f, -100.0f, 100.0f);
+        ImGui::DragFloat("Bounce", &emitter_->bounce, 0.01f, 0.0f, 1.0f);
+        
+        ImGui::DragFloat3("Attractor Pos", &emitter_->attractorPos.x, 0.1f);
+        ImGui::DragFloat("Attractor Strength", &emitter_->attractorStrength, 0.1f, -100.0f, 100.0f);
+
+        if (ImGui::Button("Burst (10)")) Emit(10);
     }
     ImGui::End();
 #endif
+}
+
+void GPUParticleSystem::Clear() {
+    isInitializedCS_ = false;
+    totalTime_ = 0.0f;
+}
+
+void GPUParticleSystem::Emit(uint32_t count) {
+    if (emitter_) {
+        emitter_->burstCount += count;
+    }
 }
 
 void GPUParticleSystem::SetSphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency) {
@@ -375,4 +495,62 @@ void GPUParticleSystem::SetBeamEmitter(const Vector3& pos, const Vector3& direct
     emitter_->spread = spread;
     emitter_->count = (int32_t)count;
     emitter_->frequency = frequency;
+}
+
+void GPUParticleSystem::SetEmit(bool emit) {
+    if (emitter_) emitter_->emit = emit ? 1 : 0;
+}
+
+void GPUParticleSystem::SetPrimitive(PrimitiveType type) {
+    primitiveType_ = type;
+    const auto& res = PrimitiveManager::GetInstance()->GetStandardResource(type);
+    vertexBufferView_ = res.vertexBufferView;
+    indexBufferView_ = res.indexBufferView;
+    indexCount_ = res.indexCount;
+}
+
+void GPUParticleSystem::SetBillboard(bool isBillboard) {
+    if (emitter_) emitter_->isBillboard = isBillboard ? 1 : 0;
+}
+
+void GPUParticleSystem::SetRingEmitter(const Vector3& pos, float radius, float thickness, uint32_t count, float frequency) {
+    if (!emitter_) return;
+    emitter_->type = 2;
+    emitter_->translate = pos;
+    emitter_->radius = radius;
+    emitter_->spread = thickness; // spreadをthicknessとして流用
+    emitter_->count = (int32_t)count;
+    emitter_->frequency = frequency;
+}
+
+void GPUParticleSystem::SetCylinderEmitter(const Vector3& pos, const Vector3& direction, float radius, float height, uint32_t count, float frequency) {
+    if (!emitter_) return;
+    emitter_->type = 3;
+    emitter_->translate = pos;
+    emitter_->direction = direction;
+    emitter_->radius = radius;
+    emitter_->velocity = height; // velocityをheightとして流用
+    emitter_->count = (int32_t)count;
+    emitter_->frequency = frequency;
+}
+
+void GPUParticleSystem::SetTextureAtlas(uint32_t rows, uint32_t cols) {
+    if (emitter_) {
+        emitter_->atlasRows = rows;
+        emitter_->atlasCols = cols;
+    }
+}
+
+void GPUParticleSystem::SetGroundCollision(float height, float bounce) {
+    if (emitter_) {
+        emitter_->groundHeight = height;
+        emitter_->bounce = bounce;
+    }
+}
+
+void GPUParticleSystem::SetAttractor(const Vector3& pos, float strength) {
+    if (emitter_) {
+        emitter_->attractorPos = pos;
+        emitter_->attractorStrength = strength;
+    }
 }

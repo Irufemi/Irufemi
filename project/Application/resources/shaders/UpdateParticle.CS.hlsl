@@ -1,70 +1,81 @@
 #include "ParticleGPU.hlsli"
+#include "RandomGenerator.hlsli"
 #include "PerFrame.hlsli"
 
-static const uint32_t kMaxParticles = 32768;
+static const uint kMaxParticles = 32768;
 
 RWStructuredBuffer<Particle> gParticles : register(u0);
-RWStructuredBuffer<int32_t> gFreeListIndex : register(u1);
-RWStructuredBuffer<int32_t> gFreeList : register(u2);
+RWStructuredBuffer<int> gFreeListIndex : register(u1);
+RWStructuredBuffer<int> gFreeList : register(u2);
+ConstantBuffer<GPUParticleEmitter> gEmitter : register(b0);
 ConstantBuffer<PerFrame> gPerFrame : register(b1);
 
-// 簡易的なハッシュ関数
-float rand(uint seed) {
-    seed = (seed ^ 61) ^ (seed >> 16);
-    seed *= 9;
-    seed = seed ^ (seed >> 4);
-    seed *= 0x27d4eb2d;
-    seed = seed ^ (seed >> 15);
-    return float(seed & 0xffffff) / 16777216.0;
-}
-
 [numthreads(1024, 1, 1)]
-void main(uint32_t3 DTid : SV_DispatchThreadID)
+void main(uint3 DTid : SV_DispatchThreadID)
 {
-    uint32_t particleIndex = DTid.x;
+    uint particleIndex = DTid.x;
     if (particleIndex < kMaxParticles)
     {
-        if (gParticles[particleIndex].color.a > 0.0f)
+        if (gParticles[particleIndex].currentTime < gParticles[particleIndex].lifeTime)
         {
-            // 進捗 (0.0: 生まれたて, 1.0: 寿命)
-            float t = gParticles[particleIndex].currentTime / gParticles[particleIndex].lifeTime;
+            float dt = gPerFrame.deltaTime;
             
-            // 1. 移動更新（わずかなゆらぎ(Jitter)を追加）
-            float rndX = rand(particleIndex + (uint)gPerFrame.time * 100) * 2.0 - 1.0;
-            float rndY = rand(particleIndex + (uint)gPerFrame.time * 200 + 1) * 2.0 - 1.0;
-            float3 jitter = float3(rndX, rndY, 0.0) * 0.01f; // 進行方向に垂直な面での微振動感覚
-            
-            gParticles[particleIndex].translate += gParticles[particleIndex].velocity + jitter;
-            gParticles[particleIndex].currentTime += gPerFrame.deltaTime;
-
-            // 2. カラー更新: 高温（黄）-> 低温（赤）への遷移
-            float3 brightColor = float3(1.0f, 1.0f, 0.3f); // コアカラー
-            float3 darkColor   = float3(1.0f, 0.1f, 0.0f); // 外装カラー
-            gParticles[particleIndex].color.rgb = lerp(brightColor, darkColor, saturate(t * 1.5f));
-            
-            float alpha = 1.0f - saturate(t);
-            gParticles[particleIndex].color.a = alpha;
-
-            // 3. スケール更新: ライフサイクルに合わせて少し膨張してから消滅
-            // 0.5付近で最大、後半で急激に縮小
-            float scaleFactor = sin(saturate(t) * 3.141592f);
-            // 元のスケール（Emit時に設定されたもの）をベースにするのが理想だが
-            // ここでは簡易的に 1.5倍まで膨らませる
-            if (t > 0.0f) {
-                // translate等と同様に毎フレーム上書き or 係数掛け
-                // EmitParticle側で初期スケールを大きめに設定し、ここでは徐々に小さくする
-                gParticles[particleIndex].scale *= (1.0f - gPerFrame.deltaTime * 2.0f);
+            // 座標のゆらぎ (Jitter)
+            if (gEmitter.jitter > 0.0f) {
+                RandomGenerator rng;
+                rng.seed = uint3(particleIndex, (uint)gPerFrame.time, (uint)gPerFrame.time + 100);
+                float3 randomVal = rng.Generate3d() * 2.0f - 1.0f;
+                gParticles[particleIndex].translate += randomVal * gEmitter.jitter;
             }
 
+            // 進捗 (0.0: 生まれたて, 1.0: 寿命)
+            float t = saturate(gParticles[particleIndex].currentTime / gParticles[particleIndex].lifeTime);
+            
+            // アトラクター (引力)
+            if (abs(gEmitter.attractorStrength) > 0.0001f) {
+                float3 dir = gEmitter.attractorPos - gParticles[particleIndex].translate;
+                float distSq = max(dot(dir, dir), 0.01f);
+                float3 force = normalize(dir) * (gEmitter.attractorStrength / distSq);
+                gParticles[particleIndex].velocity += force * dt;
+            }
+
+            // 物理更新: 重力と空気抵抗
+            gParticles[particleIndex].velocity.y -= gEmitter.gravity * dt;
+            gParticles[particleIndex].velocity *= pow(saturate(1.0f - gEmitter.damping), dt * 60.0f); // 60fps基準の減衰
+
+            // 移動更新
+            gParticles[particleIndex].translate += gParticles[particleIndex].velocity;
+            
+            // 床衝突判定
+            if (gParticles[particleIndex].translate.y < gEmitter.groundHeight) {
+                gParticles[particleIndex].translate.y = gEmitter.groundHeight;
+                gParticles[particleIndex].velocity.y *= -gEmitter.bounce;
+                // XZ平面の摩擦（簡易的に減衰）
+                gParticles[particleIndex].velocity.xz *= 0.8f;
+            }
+
+            gParticles[particleIndex].currentTime += dt;
+
+            // 回転更新 (自転)
+            gParticles[particleIndex].rotation += gParticles[particleIndex].rotateSpeed * dt;
+
+            // カラー更新: Start -> End Lerp
+            gParticles[particleIndex].color = lerp(gParticles[particleIndex].startColor, gParticles[particleIndex].endColor, t);
+            
+            // スケール更新: Start -> End Lerp
+            gParticles[particleIndex].scale = lerp(gParticles[particleIndex].startScale, gParticles[particleIndex].endScale, t);
+
             // 寿命終了判定
-            if (gParticles[particleIndex].color.a <= 0.0f)
+            if (gParticles[particleIndex].currentTime >= gParticles[particleIndex].lifeTime)
             {
-                gParticles[particleIndex].scale = float32_t3(0.0f, 0.0f, 0.0f);
-                int32_t freeListIndex;
+                gParticles[particleIndex].scale = float3(0.0f, 0.0f, 0.0f);
+                gParticles[particleIndex].color.a = 0.0f;
+
+                int freeListIndex;
                 InterlockedAdd(gFreeListIndex[0], 1, freeListIndex);
-                if ((freeListIndex + 1) < (int32_t)kMaxParticles)
+                if ((freeListIndex + 1) < (int)kMaxParticles)
                 {
-                    gFreeList[freeListIndex + 1] = particleIndex;
+                    gFreeList[freeListIndex + 1] = (int)particleIndex;
                 }
                 else
                 {

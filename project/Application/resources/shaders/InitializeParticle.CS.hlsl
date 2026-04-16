@@ -1,18 +1,15 @@
-
 #include "ParticleGPU.hlsli"
 
-static const uint32_t kMaxParticles = 32768;
+static const uint kMaxParticles = 32768;
 
 RWStructuredBuffer<Particle> gParticles : register(u0);
-
-RWStructuredBuffer<int32_t> gFreeListIndex : register(u1);
-
-RWStructuredBuffer<int32_t> gFreeList : register(u2);
+RWStructuredBuffer<int> gFreeListIndex : register(u1);
+RWStructuredBuffer<int> gFreeList : register(u2);
 
 [numthreads(1024, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-	uint32_t particleIndex = DTid.x;
+	uint particleIndex = DTid.x;
 	
 	if (particleIndex == 0)
 	{
@@ -21,9 +18,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
 	
 	if (particleIndex < kMaxParticles)
 	{
-		// Particle構造体の全要素を0で埋めるという書き方
+		// Particle構造体の全要素を0で埋める
 		gParticles[particleIndex] = (Particle) 0;
-		gFreeList[particleIndex] = particleIndex;
-
+		gFreeList[particleIndex] = (int)particleIndex;
 	}
 }
