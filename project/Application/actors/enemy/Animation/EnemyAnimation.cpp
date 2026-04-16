@@ -1,23 +1,25 @@
 #include "EnemyAnimation.h"
 #include "IEnemyAnimationState.h"
-#include "EnemyAnimState_Idle.h"
-#include "EnemyAnimState_Beam.h"
-#include "EnemyAnimState_Stomp.h"
-#include "EnemyAnimState_Phase2.h"
+#include "EnemyAnimState/Phase1/Idle/Idle.h"
+#include "EnemyAnimState/Phase1/Beam/Beam.h"
+#include "EnemyAnimState/Phase1/Stomp/Stomp.h"
+#include "EnemyAnimState/Phase2/Bite/Bite.h"
+#include "EnemyAnimState/Phase2/Phase2.h"
 #include "Enemy.h"
 
 // コンストラクタ
 EnemyAnimation::EnemyAnimation() = default;
 
-// ★重要：ここで定義することで IEnemyAnimationState の中身が判明している状態で破棄が生成される
+// デストラクタ
 EnemyAnimation::~EnemyAnimation() = default;
 
 void EnemyAnimation::Initialize(Enemy* enemy) {
     enemy_ = enemy;
-    stateMap_[EnemyState::Idle] = std::make_unique<EnemyAnimState_Idle>();
-    stateMap_[EnemyState::Attack_Beam] = std::make_unique<EnemyAnimState_Beam>();
-    stateMap_[EnemyState::Attack_Stomp] = std::make_unique<EnemyAnimState_Stomp>();
-    stateMap_[EnemyState::Phase2] = std::make_unique<EnemyAnimState_Phase2>();
+    stateMap_[EnemyState::Idle] = std::make_unique<Idle>();
+    stateMap_[EnemyState::Attack_Beam] = std::make_unique<Beam>();
+    stateMap_[EnemyState::Attack_Stomp] = std::make_unique<Stomp>();
+    stateMap_[EnemyState::Attack_Bite] = std::make_unique<Bite>();
+    stateMap_[EnemyState::Phase2] = std::make_unique<Phase2>();
 
     ChangeState(EnemyState::Idle);
 }

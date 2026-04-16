@@ -1,4 +1,4 @@
-#include "EnemyAnimState_Phase2.h"
+#include "Phase2.h"
 #include "Enemy.h"
 #include "actors/player/Player.h"
 #include "Engine/Core/Math/Math.h"
@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cstdlib>
 
-void EnemyAnimState_Phase2::Enter(Enemy* enemy) {
+void Phase2::Enter(Enemy* enemy) {
     globalTimer_ = 0.0f;
     
     // 首の初期化
@@ -29,10 +29,14 @@ void EnemyAnimState_Phase2::Enter(Enemy* enemy) {
         
         // 分離の勢い
         headStates_[i].velocity = { (float)(i - 1) * 0.3f, 0.4f, (float)(i - 1) * 0.3f };
+
+        // カミツキステートの個別初期化
+        biteStates_[i] = std::make_unique<Bite>();
+        biteStates_[i]->SetHeadIndex(i);
     }
 }
 
-void EnemyAnimState_Phase2::Update(Enemy* enemy, Player* player, float deltaTime) {
+void Phase2::Update(Enemy* enemy, Player* player, float deltaTime) {
     globalTimer_ += deltaTime;
 
     for (int i = 0; i < 3; ++i) {
@@ -62,10 +66,10 @@ void EnemyAnimState_Phase2::Update(Enemy* enemy, Player* player, float deltaTime
     ApplyRepulsion(enemy);
 }
 
-void EnemyAnimState_Phase2::Exit(Enemy* enemy) {
+void Phase2::Exit(Enemy* enemy) {
 }
 
-void EnemyAnimState_Phase2::UpdateFloating(int i, HeadState& state, Enemy* enemy, Player* player, float deltaTime) {
+void Phase2::UpdateFloating(int i, HeadState& state, Enemy* enemy, Player* player, float deltaTime) {
     Transform& headT = (i == 0) ? enemy->GetHeadLeftLocalTransform() :
                        (i == 1) ? enemy->GetHeadMidLocalTransform() :
                                   enemy->GetHeadRightLocalTransform();
@@ -75,15 +79,13 @@ void EnemyAnimState_Phase2::UpdateFloating(int i, HeadState& state, Enemy* enemy
     float distToPlayer = Math::Length(toPlayer);
 
     // --- 高度の動的制御 ---
-    // プレイヤーに近いほど低く(kLowHeight)、遠いほど高く(kHighHeight)飛ぶ
     float heightT = (distToPlayer - kHeightChangeDistMin) / (kHeightChangeDistMax - kHeightChangeDistMin);
     heightT = std::clamp(heightT, 0.0f, 1.0f);
     float targetHeight = kLowHeight + heightT * (kHighHeight - kLowHeight);
     
-    // 目的地のY座標を現在のダイナミック高度で上書き
-    state.wanderTarget.y = targetHeight + std::sin(globalTimer_ * 1.5f + (float)i) * 1.0f; // 僅かに上下に揺らす
+    state.wanderTarget.y = targetHeight + std::sin(globalTimer_ * 1.5f + (float)i) * 1.0f;
 
-    // 目的地に到達（または十分接近）したら次の目的地へ
+    // 目的地更新
     Vector3 diffToTarget = Math::Subtract(state.wanderTarget, headT.translate);
     if (Math::Length(diffToTarget) < kWanderArrivalDist) {
         state.wanderTarget = {
@@ -93,62 +95,49 @@ void EnemyAnimState_Phase2::UpdateFloating(int i, HeadState& state, Enemy* enemy
         };
     }
 
-    // スプリング物理で移動（加速度・ブレーキを外部パラメータ化）
+    // 移動物理
     float currentAccel = state.springStrength * kSpeedMultiplier;
     state.velocity = Math::Add(state.velocity, Math::Multiply(currentAccel, diffToTarget));
     state.velocity = Math::Multiply(state.friction, state.velocity);
     headT.translate = Math::Add(headT.translate, state.velocity);
 
-    // 回転制御（進行方向を向く）
+    // 回転
     if (Math::Length(state.velocity) > 0.01f) {
         Vector3 moveDir = Math::Normalize(state.velocity);
         float targetRotY = std::atan2(moveDir.x, moveDir.z);
         headT.rotate.y += Math::NormalizeAngle(targetRotY - headT.rotate.y) * 0.1f;
 
-        // 体の傾き
         float speed = Math::Length(state.velocity);
-        headT.rotate.x = speed * 0.3f; // スピードに応じて前傾
+        headT.rotate.x = speed * 0.3f;
         headT.rotate.z = -std::sin(globalTimer_ * 2.0f + (float)i) * 0.08f;
     }
 
-    // 攻撃への遷移判定
+    // 攻撃遷移
     if (state.behaviorTimer > kBiteCooldown && distToPlayer < kBiteDistThreshold) {
         state.mode = HeadState::Mode::Biting;
         state.behaviorTimer = 0.0f;
+        if (biteStates_[i]) {
+            biteStates_[i]->Enter(enemy);
+        }
     } else if (state.behaviorTimer > kBeamCooldown && distToPlayer > kBeamDistThreshold) {
         state.mode = HeadState::Mode::Beaming;
         state.behaviorTimer = 0.0f;
     }
 }
 
-void EnemyAnimState_Phase2::UpdateBiting(int i, HeadState& state, Enemy* enemy, Player* player, float deltaTime) {
-    Transform& headT = (i == 0) ? enemy->GetHeadLeftLocalTransform() :
-                       (i == 1) ? enemy->GetHeadMidLocalTransform() :
-                                  enemy->GetHeadRightLocalTransform();
-    Vector3 playerPos = (player) ? player->GetTranslate() : Vector3{ 0, 0, 0 };
-
-    // ロックオン
-    Vector3 toPlayer = Math::Subtract(playerPos, headT.translate);
-    headT.rotate.y = std::atan2(toPlayer.x, toPlayer.z);
-    float distXZ = std::sqrt(toPlayer.x * toPlayer.x + toPlayer.z * toPlayer.z);
-    headT.rotate.x = -std::atan2(toPlayer.y, distXZ);
-
-    if (state.behaviorTimer < 0.8f) {
-        // 溜め
-        Vector3 backDir = Math::Normalize(Math::Subtract(headT.translate, playerPos));
-        headT.translate = Math::Add(headT.translate, Math::Multiply(0.04f, backDir));
-    } else if (state.behaviorTimer < 1.2f) {
-        // 突進
-        Vector3 rushDir = Math::Normalize(Math::Subtract(playerPos, headT.translate));
-        headT.translate = Math::Add(headT.translate, Math::Multiply(0.8f, rushDir));
-        state.velocity = { 0, 0, 0 }; 
-    } else {
-        state.mode = HeadState::Mode::Recovering;
-        state.behaviorTimer = 0.0f;
+void Phase2::UpdateBiting(int i, HeadState& state, Enemy* enemy, Player* player, float deltaTime) {
+    // 独立したステートクラスに更新を委譲
+    if (biteStates_[i]) {
+        biteStates_[i]->Update(enemy, player, deltaTime);
+        if (biteStates_[i]->IsFinished()) {
+            state.mode = HeadState::Mode::Recovering;
+            state.behaviorTimer = 0.0f;
+            biteStates_[i]->Exit(enemy);
+        }
     }
 }
 
-void EnemyAnimState_Phase2::UpdateBeaming(int i, HeadState& state, Enemy* enemy, Player* player, float deltaTime) {
+void Phase2::UpdateBeaming(int i, HeadState& state, Enemy* enemy, Player* player, float deltaTime) {
     Transform& headT = (i == 0) ? enemy->GetHeadLeftLocalTransform() :
                        (i == 1) ? enemy->GetHeadMidLocalTransform() :
                                   enemy->GetHeadRightLocalTransform();
@@ -175,7 +164,7 @@ void EnemyAnimState_Phase2::UpdateBeaming(int i, HeadState& state, Enemy* enemy,
     }
 }
 
-void EnemyAnimState_Phase2::ApplyRepulsion(Enemy* enemy) {
+void Phase2::ApplyRepulsion(Enemy* enemy) {
     Transform* transforms[3] = {
         &enemy->GetHeadLeftLocalTransform(),
         &enemy->GetHeadMidLocalTransform(),

@@ -175,11 +175,12 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="contents\field\building\building.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimation.cpp" />
     <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp" />
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Idle.cpp" />
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Beam.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Idle\Idle.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Beam\Beam.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Stomp\Stomp.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Bite\Bite.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.cpp" />
     <ClCompile Include="contents\skydome\Skydome.cpp" />
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Stomp.cpp" />
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Phase2.cpp" />
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="actors\player\PlayerMovement.cpp" />
@@ -200,8 +201,11 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="scene\Title\TitleScene.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Beam.h" />
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Idle.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Idle\Idle.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Beam\Beam.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Stomp\Stomp.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Bite\Bite.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.h" />
     <ClInclude Include="actors\enemy\Animation\IEnemyAnimationState.h" />
     <ClInclude Include="actors\enemy\Body\Body.h" />
     <ClInclude Include="actors\enemy\AI\EnemyAI.h" />
@@ -221,8 +225,6 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h" />
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
     <ClInclude Include="contents\skydome\Skydome.h" />
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Stomp.h" />
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Phase2.h" />
     <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="actors\player\PlayerMovement.h" />

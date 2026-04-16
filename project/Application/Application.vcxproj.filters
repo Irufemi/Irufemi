@@ -73,6 +73,27 @@
     <Filter Include="Actors\Enemy\Animation">
       <UniqueIdentifier>{67c953c6-1e02-47c9-b901-1451502d90d7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Actors\Enemy\Animation\EnemyAnimState">
+      <UniqueIdentifier>{81a4b2c3-d4e5-f6a7-b8c9-d0e1f2a3b4c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase1">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase1\Idle">
+      <UniqueIdentifier>{b2c3d4e5-f6a7-b8c9-d0e1-f2a3b4c5d6e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase1\Beam">
+      <UniqueIdentifier>{c3d4e5f6-a7b8-c9d0-e1f2-a3b4c5d6e7f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase1\Stomp">
+      <UniqueIdentifier>{d4e5f6a7-b8c9-d0e1-f2a3-b4c5d6e7f8g9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase2">
+      <UniqueIdentifier>{e5f6a7b8-c9d0-e1f2-a3b4-c5d6e7f8g9h0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase2\Bite">
+      <UniqueIdentifier>{f6a7b8c9-d0e1-f2a3-b4c5-d6e7f8g9h0i1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene\InGame\GameScene.cpp">
@@ -156,20 +177,23 @@
     <ClCompile Include="actors\enemy\Animation\EnemyAnimation.cpp">
       <Filter>Actors\Enemy\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Beam.cpp">
-      <Filter>Actors\Enemy\Animation</Filter>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Idle\Idle.cpp">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\Idle</Filter>
     </ClCompile>
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Idle.cpp">
-      <Filter>Actors\Enemy\Animation</Filter>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Beam\Beam.cpp">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\Beam</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Stomp\Stomp.cpp">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\Stomp</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Bite\Bite.cpp">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2\Bite</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.cpp">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp">
       <Filter>Actors\Enemy\Beam</Filter>
-    </ClCompile>
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Stomp.cpp">
-      <Filter>Actors\Enemy\Animation</Filter>
-    </ClCompile>
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Phase2.cpp">
-      <Filter>Actors\Enemy\Animation</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
   </ItemGroup>
@@ -255,22 +279,25 @@
     <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h">
       <Filter>Actors\Enemy\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Beam.h">
-      <Filter>Actors\Enemy\Animation</Filter>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Idle\Idle.h">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\Idle</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Idle.h">
-      <Filter>Actors\Enemy\Animation</Filter>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Beam\Beam.h">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\Beam</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Stomp\Stomp.h">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\Stomp</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Bite\Bite.h">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2\Bite</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.h">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h">
       <Filter>Actors\Enemy\Beam</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Animation\IEnemyAnimationState.h">
-      <Filter>Actors\Enemy\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Stomp.h">
-      <Filter>Actors\Enemy\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Phase2.h">
       <Filter>Actors\Enemy\Animation</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />

@@ -1,15 +1,17 @@
 #pragma once
-#include "IEnemyAnimationState.h"
+#include "../../IEnemyAnimationState.h"
+#include "Bite/Bite.h"
 #include "core/math/Vector3.h"
 #include "core/math/Transform.h"
 #include <vector>
 #include <array>
+#include <memory>
 
 /**
  * @brief 第2形態（首の独立浮遊）ステート
  * 3つの首が個別に徘徊し、プレイヤーとの距離に応じて高度や攻撃パターンを変化させます。
  */
-class EnemyAnimState_Phase2 : public IEnemyAnimationState {
+class Phase2 : public IEnemyAnimationState {
 public:
     void Enter(Enemy* enemy) override;
     void Update(Enemy* enemy, Player* player, float deltaTime) override;
@@ -63,6 +65,7 @@ private:
     // -------------------------------------------
 
     std::array<HeadState, 3> headStates_;
+    std::array<std::unique_ptr<Bite>, 3> biteStates_;
     float globalTimer_ = 0.0f;
 
     void UpdateFloating(int index, HeadState& state, Enemy* enemy, Player* player, float deltaTime);

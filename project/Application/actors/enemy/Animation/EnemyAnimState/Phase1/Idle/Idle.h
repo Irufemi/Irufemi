@@ -1,8 +1,11 @@
 #pragma once
-#include "IEnemyAnimationState.h"
+#include "../../../IEnemyAnimationState.h"
 #include "core/math/Vector3.h"
 
-class EnemyAnimState_Idle : public IEnemyAnimationState {
+/**
+ * @brief 待機ステート
+ */
+class Idle : public IEnemyAnimationState {
 public:
     void Enter(Enemy* enemy) override {}
     void Update(Enemy* enemy, Player* player, float deltaTime) override;
