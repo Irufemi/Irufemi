@@ -142,13 +142,20 @@ void Enemy::Update(Player *player) {
   // 頭部描画更新
   auto updateHead = [&](auto &head, Transform &localT, Vector3 &offset) {
     if (head) {
-      Vector3 worldPosWithOffset =
-          Math::Transform(Math::Add(localT.translate, offset), globalMat);
-      Vector3 worldPosWithoutOffset =
-          Math::Transform(localT.translate, globalMat);
-      head->SetTransform({globalTransform_.scale, globalTransform_.rotate,
-                          worldPosWithoutOffset},
-                         &worldPosWithOffset);
+      if (!isPhase2_) {
+          // 通常時: 親子関係（globalMat）を使ってワールド座標を計算
+          Vector3 worldPosWithOffset =
+              Math::Transform(Math::Add(localT.translate, offset), globalMat);
+          Vector3 worldPosWithoutOffset =
+              Math::Transform(localT.translate, globalMat);
+          head->SetTransform({globalTransform_.scale, globalTransform_.rotate,
+                              worldPosWithoutOffset},
+                             &worldPosWithOffset);
+      } else {
+          // フェーズ2: localT をそのままワールド座標として扱う（親子関係からの独立）
+          // localT.translate には AnimationState が直接ワールド座標を書き込む想定
+          head->SetTransform({globalTransform_.scale, localT.rotate, localT.translate}, nullptr);
+      }
       head->Update();
     }
   };
@@ -158,7 +165,22 @@ void Enemy::Update(Player *player) {
 
 
 
-  // enemyが完全に死んでいるかの判定（全ての部位がボクセル含めて消滅したか）
+  // 1. フェーズ2移行判定：ボディが全損した瞬間に移行する
+  if (!isDead_ && !isPhase2_) {
+    bool allBodiesZero = true;
+    for (int i = 0; i < 3; ++i) {
+      if (bodies_[i] && bodies_[i]->GetHP() > 0) {
+        allBodiesZero = false;
+        break;
+      }
+    }
+    if (allBodiesZero) {
+      isPhase2_ = true;
+      SetState(EnemyState::Phase2);
+    }
+  }
+
+  // 2. 死亡判定（全ての部位がボクセル含めて消滅したか）
   if (headMid_->IsCompletelyDead() && headLeft_->IsCompletelyDead() &&
       headRight_->IsCompletelyDead()) {
     bool allPartsGone = true;
@@ -173,7 +195,7 @@ void Enemy::Update(Player *player) {
           false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
     }
 
-    // 論理的な死亡判定（HP全損）
+    // 論理的な死亡判定（全てのHP全損）
     if (!isDead_) {
       bool allHpZero = true;
       for (int i = 0; i < 3; ++i) {

@@ -15,6 +15,11 @@ void EnemyAI::Initialize(Enemy* enemy) {
 void EnemyAI::Update(float deltaTime) {
     if (!enemy_) return;
 
+    // フェーズ2中は、個別の首が自律行動するため既存のAIルーチンを停止する
+    if (enemy_->GetState() == EnemyState::Phase2) {
+        return;
+    }
+
     // 1. 最初の待機時間を消化
     if (!isFirstAttackStarted_) {
         timer_ += deltaTime;

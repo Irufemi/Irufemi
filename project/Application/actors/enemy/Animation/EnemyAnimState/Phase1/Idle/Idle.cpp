@@ -1,8 +1,8 @@
-#include "EnemyAnimState_Idle.h"
+#include "Idle.h"
 #include "Enemy.h"
 #include <cmath>
 
-void EnemyAnimState_Idle::Update(Enemy* enemy, Player* player, float deltaTime) {
+void Idle::Update(Enemy* enemy, Player* player, float deltaTime) {
     timer_ += deltaTime;
     float ls = lerpSpeed_;
 

@@ -52,6 +52,9 @@ public:
     void SetState(EnemyState newState);
     EnemyState GetState() const { return state_; }
 
+    bool GetIsPhase2() const { return isPhase2_; }
+    void SetIsPhase2(bool isPhase2) { isPhase2_ = isPhase2; }
+
     // アニメーションクラスへのアクセス用
     EnemyAnimation* GetAnimation() const { return animation_.get(); }
 
@@ -98,6 +101,7 @@ private:
     std::unique_ptr<EnemyAnimation> animation_ = nullptr;
 
     EnemyState state_ = EnemyState::Idle;
+    bool isPhase2_ = false;
     Camera* camera_ = nullptr;
 
     // パラメータ

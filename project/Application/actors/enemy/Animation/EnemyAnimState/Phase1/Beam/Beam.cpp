@@ -1,4 +1,4 @@
-#include "EnemyAnimState_Beam.h"
+#include "Beam.h"
 #include "Enemy.h"
 #include "Beam/EnemyBeam.h"
 #include "actors/player/Player.h"
@@ -6,21 +6,19 @@
 #include <cmath>
 #include <algorithm>
 
-void EnemyAnimState_Beam::Enter(Enemy* enemy) {
+void Beam::Enter(Enemy* enemy) {
     attackTimer_ = 0.0f;
     isLockedOn_ = false;
     isFiring_ = false;
-    hasFinishedAttack_ = false; // これが重要
-    // totalTimer_ は継続させてOK
+    hasFinishedAttack_ = false;
 }
 
-void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
+void Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
     attackTimer_ += deltaTime;
-    totalTimer_ += deltaTime; // 振動計算用の timer_ 代わり
+    totalTimer_ += deltaTime; 
 
     EnemyBeam* beam = enemy->GetBeam();
     Matrix4x4 headMatrix = enemy->GetHeadMidWorldMatrix();
-    // 元の headExtensionY_ を使用した座標計算
     Vector3 headPos = { headMatrix.m[3][0], headMatrix.m[3][1] + headExtensionY_, headMatrix.m[3][2] };
 
     float endCharge = chargeTime_;
@@ -29,7 +27,7 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
     float endStun = endFire + stunTime_;
     float endRecovery = endStun + recoveryTime_;
 
-    // 1. チャージ（追尾 ＆ 各部バラバラの震え ＆ 徐々に前傾）
+    // 1. チャージ
     if (attackTimer_ < endCharge) {
         float sp = shakeBaseSpeed_;
         enemy->GetGlobalTransform().rotate.x += (fireLeanAngleX_ - enemy->GetGlobalTransform().rotate.x) * 0.05f;
@@ -71,7 +69,7 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
 
         if (beam) beam->Update(headPos, lockedTargetPos_);
     }
-    // 3. 本射（激しい全身振動 ＆ 前傾維持）
+    // 3. 本射
     else if (attackTimer_ < endFire) {
         isFiring_ = true;
         float fireProgress = (attackTimer_ - endAnticipation) / fireTime_;
@@ -119,7 +117,7 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
         SetStunPos(enemy->GetHeadLeftOffset(), 1.1f);
         SetStunPos(enemy->GetHeadRightOffset(), 0.9f);
     }
-    // 5. 一呼吸
+    // 5. 復帰
     else if (attackTimer_ < endRecovery) {
         float recProgress = (attackTimer_ - endStun) / recoveryTime_;
         float breathCurve = std::sin(recProgress * Math::PI);
@@ -142,7 +140,7 @@ void EnemyAnimState_Beam::Update(Enemy* enemy, Player* player, float deltaTime) 
     }
 }
 
-void EnemyAnimState_Beam::Exit(Enemy* enemy) {
+void Beam::Exit(Enemy* enemy) {
     if (auto* beam = enemy->GetBeam()) {
         beam->SetTelegraphActive(false);
         beam->SetAttackActive(false);
