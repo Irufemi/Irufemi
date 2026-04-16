@@ -179,6 +179,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Beam.cpp" />
     <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Stomp.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState_Phase2.cpp" />
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="actors\player\PlayerMovement.cpp" />
@@ -221,6 +222,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
     <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Stomp.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState_Phase2.h" />
     <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="actors\player\PlayerMovement.h" />

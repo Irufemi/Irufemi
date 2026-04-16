@@ -3,6 +3,7 @@
 #include "EnemyAnimState_Idle.h"
 #include "EnemyAnimState_Beam.h"
 #include "EnemyAnimState_Stomp.h"
+#include "EnemyAnimState_Phase2.h"
 #include "Enemy.h"
 
 // コンストラクタ
@@ -16,6 +17,7 @@ void EnemyAnimation::Initialize(Enemy* enemy) {
     stateMap_[EnemyState::Idle] = std::make_unique<EnemyAnimState_Idle>();
     stateMap_[EnemyState::Attack_Beam] = std::make_unique<EnemyAnimState_Beam>();
     stateMap_[EnemyState::Attack_Stomp] = std::make_unique<EnemyAnimState_Stomp>();
+    stateMap_[EnemyState::Phase2] = std::make_unique<EnemyAnimState_Phase2>();
 
     ChangeState(EnemyState::Idle);
 }
