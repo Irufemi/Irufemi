@@ -1,5 +1,6 @@
 #include "GameScene.h"
 #include <format>
+#include <algorithm>
 
 #include "Framework/SceneManager.h"
 #include "Irufemi.h"
@@ -67,6 +68,14 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
     directionalLight_->direction = kDefaultLightDir;
     directionalLight_->intensity = 1.0f;
+
+    auto pLight = std::make_unique<PointLight>();
+    pLight->color = { 1.0f, 0.9f, 0.8f, 1.0f }; // やや暖色寄りの白
+    pLight->intensity = 5.0f;
+    pLight->radius = 30.0f;
+    pLight->decay = 1.0f;
+    pLight->isActive = 1;
+    pointLights_.push_back(std::move(pLight));
 }
 
 void GameScene::Update() {
@@ -112,6 +121,9 @@ void GameScene::Update() {
     }
 
     skydome_->Update();
+
+    // ライトのパラメータ更新
+    UpdateDynamicLights();
 
     // =====
     // ↑ゲームの更新
@@ -232,6 +244,36 @@ void GameScene::UpdateCameraAndFrameData() {
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
     engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
+}
+
+void GameScene::UpdateDynamicLights() {
+    if (pointLights_.empty() || !player_ || !boss_) return;
+
+    PointLight* pLight = pointLights_[0].get();
+    pLight->isActive = 1;
+
+    Vector3 pPos = player_->GetTranslate();
+    Vector3 bPos = boss_->GetGlobalTransform().translate;
+
+    Vector3 midPos = Math::Add(pPos, bPos);
+    midPos.x *= 0.5f;
+    midPos.z *= 0.5f;
+
+    // Enemyのジャンプによる光源の急激な上下動を防ぐため、
+    // 光源のY軸（高さ）は上空からの見下ろしに最適な固定値とする。
+    // ボスの通常時の頭上より少し高い位置（35.0f〜40.0fなど）
+    midPos.y = 40.0f;
+    
+    pLight->position = midPos;
+
+    // 2. 二人の距離に基づく範囲と強度の計算
+    float distance = Math::Length(Math::Subtract(bPos, pPos));
+    
+    // 距離の 2.0倍程度を半径にする（最低でも40.0f程度は確保し、上空からの光が届くようにする）
+    pLight->radius = (std::max)(40.0f, distance * 2.0f);
+    
+    // 距離が離れるほど強度を少し上げる
+    pLight->intensity = 3.0f + (distance * 0.1f);
 }
 
 // --- 当たり判定の実装 ---
