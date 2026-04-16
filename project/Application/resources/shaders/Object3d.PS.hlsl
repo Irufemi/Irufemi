@@ -45,7 +45,7 @@ StructuredBuffer<AreaLight> gAreaLights : register(t4);
 
 /// 環境マップを追加する
 
-TextureCube<float32_t4> gEnviromentTexture : register(t1);
+TextureCube<float32_t4> gEnvironmentTexture : register(t1);
 Texture2D<float32_t> gShadowMap : register(t5);
 
 /*テクスチャを貼ろう*/
@@ -119,11 +119,19 @@ PixelShaderOutput main(VertexShaderOutput input)
 			output.color.rgb = totalDiffuse + totalSpecular;
 		}
 			
-		// 環境マップ（簡易Specular IBL）
+		/// <summary>
+		/// 環境マップ（簡易Specular IBL）の取得
+		/// Roughnessが高いほどミップマップレベルを上げ、ぼけた反射にする
+		/// </summary>
 		float32_t3 reflectedVector = reflect(-context.toEye, context.normal);
-		float32_t4 enviromentColor = gEnviromentTexture.Sample(gSampler, reflectedVector);
+		
+		uint envWidth, envHeight, envMipLevels;
+		gEnvironmentTexture.GetDimensions(0, envWidth, envHeight, envMipLevels);
+		float mipLevel = gMaterial.roughness * float(envMipLevels - 1);
+		
+		float32_t4 environmentColor = gEnvironmentTexture.SampleLevel(gSampler, reflectedVector, mipLevel);
 		// ガンマ解除はハードウェアに任せるため削除
-		enviromentColor.rgb = enviromentColor.rgb;
+		environmentColor.rgb = environmentColor.rgb;
 		
 		// フレネルによる反射率の計算 (F0)
 		// 金属の場合はアルベドを、非金属の場合は 0.04 をベースにする
@@ -131,7 +139,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 		float3 F = FresnelSchlick(saturate(dot(context.normal, context.toEye)), F0);
 		
 		// 映り込みの合成 (Roughnessが高いほど反射が鈍くなる近似)
-		output.color.rgb += enviromentColor.rgb * F * (1.0f - gMaterial.roughness) * gMaterial.environmentCoefficient;
+		output.color.rgb += environmentColor.rgb * F * (1.0f - gMaterial.roughness) * gMaterial.environmentCoefficient;
 		
 		// アルファ
 		output.color.a = gMaterial.color.a * textureColor.a;
