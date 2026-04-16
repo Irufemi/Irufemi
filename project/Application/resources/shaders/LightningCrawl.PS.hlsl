@@ -44,7 +44,8 @@ PixelShaderOutput main(VertexShaderOutput input) {
     // --- 1. Surface Crawl (表面を這う電撃) ---
     // UVを3次元の円筒座標に変換してサンプリングすることで、シームレス化を実現
     float angle = uv.x * TAU;
-    float3 pSurf = float3(cos(angle), sin(angle), uv.y);
+    // v方向(uv.y)に時間を引くことで、プラズマが前方に流れるアニメーションを付ける
+    float3 pSurf = float3(cos(angle), sin(angle), uv.y - time * 2.0);
     float3 pTime = float3(time * 0.2, time * 0.1, time * 0.3);
     
     float32_t nSurf = fBm(pSurf * gLightning.noiseScale + pTime);
@@ -62,8 +63,8 @@ PixelShaderOutput main(VertexShaderOutput input) {
     float32_t3 N = normalize(input.normal);
     float32_t fresnel = saturate(dot(N, V));
     
-    // 芯用のノイズもシームレスに
-    float3 pCore = float3(cos(angle), sin(angle), uv.y * 0.5);
+    // 芯用のノイズもシームレスに前方へ流す
+    float3 pCore = float3(cos(angle), sin(angle), uv.y * 0.5 - time * 3.0);
     float3 pTimeCore = float3(time * 1.0, -time * 0.5, time * 0.8);
     float32_t nCore = fBm(pCore * gLightning.coreScale + pTimeCore);
 

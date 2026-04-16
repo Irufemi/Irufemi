@@ -154,3 +154,21 @@ void CylinderClass::Debug([[maybe_unused]] const char* cylinderName) {
     ImGui::End();
 #endif
 }
+
+Vector3 CylinderClass::GetRight() const {
+    if (!resource_) return { 1, 0, 0 };
+    Matrix4x4 mat = Math::MakeRotateXYZMatrix(resource_->transform_.rotate);
+    return { mat.m[0][0], mat.m[0][1], mat.m[0][2] };
+}
+
+Vector3 CylinderClass::GetUp() const {
+    if (!resource_) return { 0, 1, 0 };
+    Matrix4x4 mat = Math::MakeRotateXYZMatrix(resource_->transform_.rotate);
+    return { mat.m[1][0], mat.m[1][1], mat.m[1][2] };
+}
+
+Vector3 CylinderClass::GetDirection() const {
+    if (!resource_) return { 0, 0, 1 };
+    Matrix4x4 mat = Math::MakeRotateXYZMatrix(resource_->transform_.rotate);
+    return { mat.m[2][0], mat.m[2][1], mat.m[2][2] };
+}

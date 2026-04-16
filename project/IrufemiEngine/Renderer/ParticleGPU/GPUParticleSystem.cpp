@@ -45,25 +45,26 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
     auto* srvPool = dxCommon_->GetSrvPool();
 
-    /*EmitterSphere*/
-    emitterSphereResource_ = dxCommon_->CreateBufferResource(sizeof(EmitterSphere));
-    emitterSphereResource_->Map(0, nullptr, reinterpret_cast<void**>(&emitterSphere_));
+    /*Emitter*/
+    emitterResource_ = dxCommon_->CreateBufferResource(sizeof(GPUParticleEmitter));
+    emitterResource_->Map(0, nullptr, reinterpret_cast<void**>(&emitter_));
+    *emitter_ = GPUParticleEmitter(); // 初期化
 
     perFrameResource_ = dxCommon_->CreateBufferResource(sizeof(PerFrame));
     perFrameResource_->Map(0, nullptr, reinterpret_cast<void**>(&perFrameData_));
 
     // SRV
     emitterSrvIndex_ = srvPool->Allocate();
-    emitterSphereSrvHandleCPU_ = srvPool->GetCPUHandle(emitterSrvIndex_);
-    emitterSphereSrvHandleGPU_ = srvPool->GetGPUHandle(emitterSrvIndex_);
+    emitterSrvHandleCPU_ = srvPool->GetCPUHandle(emitterSrvIndex_);
+    emitterSrvHandleGPU_ = srvPool->GetGPUHandle(emitterSrvIndex_);
     D3D12_SHADER_RESOURCE_VIEW_DESC emitterSrvDesc{};
     emitterSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
     emitterSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     emitterSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     emitterSrvDesc.Buffer.FirstElement = 0;
     emitterSrvDesc.Buffer.NumElements = 1;
-    emitterSrvDesc.Buffer.StructureByteStride = sizeof(EmitterSphere);
-    dxCommon_->GetDevice()->CreateShaderResourceView(emitterSphereResource_.Get(), &emitterSrvDesc, emitterSphereSrvHandleCPU_);
+    emitterSrvDesc.Buffer.StructureByteStride = sizeof(GPUParticleEmitter);
+    dxCommon_->GetDevice()->CreateShaderResourceView(emitterResource_.Get(), &emitterSrvDesc, emitterSrvHandleCPU_);
 
     // perFrame SRV
     perFrameSrvIndex_ = srvPool->Allocate();
@@ -174,35 +175,12 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
     textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
-    // 3. 1のResourceに対する初期化処理をCSで行う
-    ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+    // CS初期化フラグを下ろす（実際の初期化はDraw()内で行う）
+    isInitializedCS_ = false;
 
-    // ディスクリプタヒープを設定
-    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
-    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
-    commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
-    commandList->SetPipelineState(dxCommon_->GetGpuParticleInitializePSO());
-    commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
-    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
-    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
-
-    commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
-
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = nullptr; // グローバルUAVバリア
-    commandList->ResourceBarrier(1, &barrier);
-
-
-    /*Particleを発生させる*/
-
-    emitterSphere_->count = 10;
-    emitterSphere_->frequency = 0.5f;
-    emitterSphere_->frequencyTime = 0.0f;
-    emitterSphere_->translate = Vector3(0.0f, 0.0f, 0.0f);
-    emitterSphere_->radius = 1.0f;
-    emitterSphere_->emit = 1;
+    // デフォルトでスフィアエミッターを設定
+    SetSphereEmitter(Vector3(0, 0, 0), 1.0f, 10, 0.5f);
+    SetEmit(true);
 
     perFrameData_->deltaTime = engine_->GetDeltaTime();
 
@@ -210,14 +188,18 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
 // 更新
 void GPUParticleSystem::Update() {
-    if (!emitterSphere_ || !camera_) return;
+    if (!emitter_ || !camera_) return;
 
     isCulled_ = false;
     if (isCullingEnabled_) {
         Sphere boundingSphere;
-        boundingSphere.center = emitterSphere_->translate;
-        // GPUパーティクルは拡散が激しいため、放出半径の3倍を境界とする
-        boundingSphere.radius = emitterSphere_->radius * 3.0f;
+        boundingSphere.center = emitter_->translate;
+        // Boundingを計算。Sphereなら半径*3、Beamなら広めに設定
+        if (emitter_->type == 0) {
+            boundingSphere.radius = emitter_->radius * 3.0f;
+        } else {
+            boundingSphere.radius = 50.0f; // ビームは長いので広めに
+        }
 
         if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
             isCulled_ = true;
@@ -227,17 +209,18 @@ void GPUParticleSystem::Update() {
 
     /*Particleを発生させる*/
 
-    emitterSphere_->frequencyTime += engine_->GetDeltaTime(); // δタイムを加算
+    emitter_->frequencyTime += engine_->GetDeltaTime(); // δタイムを加算
     perFrameData_->time = engine_->GetTotalTime();
     perFrameData_->deltaTime = engine_->GetDeltaTime();
 
     // 射出間隔を上回ったら射出許可を出して時間を調整
-    if (emitterSphere_->frequency <= emitterSphere_->frequencyTime) {
-        emitterSphere_->frequencyTime -= emitterSphere_->frequency;
-        emitterSphere_->emit = 1;
-    // 射出間隔を上回っていないので、射出許可は出せない
-    } else {
-        emitterSphere_->emit = 0;
+    if (emitter_->frequency <= emitter_->frequencyTime) {
+        if (emitter_->emit) { // そもそもEmitフラグが立っている時のみ
+            emitter_->frequencyTime -= emitter_->frequency;
+            // シェーダー側でこれを見て放出。1フレームに複数回出る可能性は今のところ考慮しない
+        } else {
+            emitter_->frequencyTime = 0; // Emit停止中ならタイマーリセット
+        }
     }
 
     perViewData_->viewProjection = camera_->GetViewProjectionMatrix3D();
@@ -261,33 +244,49 @@ void GPUParticleSystem::Draw() {
 
     if (isCulled_) return;
 
-    /*GPUParticle*/
-
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+
+    // 0. 未初期化の場合、CSでバッファを初期化する
+    if (!isInitializedCS_) {
+        ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+        commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+        commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
+        commandList->SetPipelineState(dxCommon_->GetGpuParticleInitializePSO());
+        commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+        commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+        commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+
+        commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
+
+        D3D12_RESOURCE_BARRIER barrier{};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        barrier.UAV.pResource = nullptr;
+        commandList->ResourceBarrier(1, &barrier);
+
+        isInitializedCS_ = true;
+    }
 
     // 1. Compute Shader dispatch (Update/Emit) - Only if Update() was called
     if (needsUpdateCS_) {
-        // デスクリプタヒープを設定
         ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
         commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
         commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
 
-        // UAVバリアの設定
         D3D12_RESOURCE_BARRIER uavBarrier{};
         uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        uavBarrier.UAV.pResource = nullptr; // グローバルUAVバリア
+        uavBarrier.UAV.pResource = nullptr;
 
         // Emit
         commandList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
         commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
-        commandList->SetComputeRootConstantBufferView(4, emitterSphereResource_->GetGPUVirtualAddress());
+        commandList->SetComputeRootConstantBufferView(4, emitterResource_->GetGPUVirtualAddress());
         commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
         commandList->Dispatch(1, 1, 1);
 
-        // Emitの完了を待つ
         commandList->ResourceBarrier(1, &uavBarrier);
 
         // Update
@@ -298,15 +297,12 @@ void GPUParticleSystem::Draw() {
         commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
         commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
-        // Updateの完了を待つ
         commandList->ResourceBarrier(1, &uavBarrier);
 
         needsUpdateCS_ = false;
     }
 
     // 2. Graphics Draw
-
-    // リソースバリヤー: UAV -> ShaderResource (読み取り)
     D3D12_RESOURCE_BARRIER transitionBarrier{};
     transitionBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     transitionBarrier.Transition.pResource = particleResource_.Get();
@@ -315,12 +311,9 @@ void GPUParticleSystem::Draw() {
     transitionBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     commandList->ResourceBarrier(1, &transitionBarrier);
 
-    // 4. 1を利用してParticleのInstance描画を行う
-
     engine_->ApplyGpuParticlePSO();
-
     engine_->SetBlend(BlendMode::kBlendModeAdd);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->SetCull(PSOManager::CullMode::None);
       
     drawManager_->DrawGPUParticle(
@@ -332,7 +325,6 @@ void GPUParticleSystem::Draw() {
         kMaxParticles
     );
 
-    // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
     transitionBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
     transitionBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     commandList->ResourceBarrier(1, &transitionBarrier);
@@ -343,8 +335,44 @@ void GPUParticleSystem::Debug() {
 #if defined(USE_IMGUI)
     ImGui::Begin("GPUParticleSystem");
     ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
-    ImGui::DragFloat3("Emitter Pos", &emitterSphere_->translate.x, 0.1f);
-    ImGui::DragFloat("Emitter Radius", &emitterSphere_->radius, 0.1f, 0.0f, 100.0f);
+    if (emitter_) {
+        ImGui::Text("Type: %s", emitter_->type == 0 ? "Sphere" : "Beam");
+        ImGui::DragFloat3("Translate", &emitter_->translate.x, 0.1f);
+        if (emitter_->type == 0) {
+            ImGui::DragFloat("Radius", &emitter_->radius, 0.1f, 0.0f, 100.0f);
+        } else {
+            ImGui::DragFloat3("Direction", &emitter_->direction.x, 0.01f);
+            ImGui::DragFloat("Velocity", &emitter_->velocity, 0.1f);
+            ImGui::DragFloat("Spread", &emitter_->spread, 0.01f, 0.0f, 1.0f);
+        }
+        ImGui::DragInt("Count", (int*)&emitter_->count, 1, 0, 100);
+        ImGui::DragFloat("Frequency", &emitter_->frequency, 0.01f, 0.001f, 10.0f);
+        bool emit = emitter_->emit != 0;
+        if (ImGui::Checkbox("Emit", &emit)) {
+            emitter_->emit = emit ? 1 : 0;
+        }
+    }
     ImGui::End();
 #endif
+}
+
+void GPUParticleSystem::SetSphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency) {
+    if (!emitter_) return;
+    emitter_->type = 0;
+    emitter_->translate = pos;
+    emitter_->radius = radius;
+    emitter_->count = (int32_t)count;
+    emitter_->frequency = frequency;
+}
+
+void GPUParticleSystem::SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, uint32_t count, float frequency) {
+    if (!emitter_) return;
+    emitter_->type = 1;
+    emitter_->translate = pos;
+    emitter_->direction = direction;
+    emitter_->radius = radius;
+    emitter_->velocity = velocity;
+    emitter_->spread = spread;
+    emitter_->count = (int32_t)count;
+    emitter_->frequency = frequency;
 }

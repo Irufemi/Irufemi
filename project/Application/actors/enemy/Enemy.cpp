@@ -62,6 +62,12 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   animation_ = std::make_unique<EnemyAnimation>();
   animation_->Initialize(this);
 
+  // ビームとエフェクトの事前初期化（ヒッチ対策）
+  beam_ = std::make_unique<EnemyBeam>();
+  beam_->Initialize(camera_, engine_);
+  stompEffects_ = std::make_unique<EnemyStompEffects>();
+  stompEffects_->Initialize(camera_);
+
   isActive_ = true;
   isDead_ = false;
 }
@@ -81,21 +87,8 @@ void Enemy::Update(Player *player) {
   UpdateDebugUI();
 #endif
 
-  if (state_ != EnemyState::Attack_Beam && beam_) {
-    beam_.reset();
-  }
-
-  if (stompEffects_ && state_ != EnemyState::Attack_Stomp) {
-      if (!stompEffects_->IsActive()) {
-          stompEffects_.reset();
-      }
-  }
-
   if (stompEffects_) {
       stompEffects_->Update(1.0f / 60.0f);
-
-      // もしエフェクトが終了していたらメモリを解放してnullptrに戻す（お好みで）
-      // if (!stompEffects_->IsActive()) { stompEffects_.reset(); }
   }
 
   // だるま落とし落下物理
@@ -253,22 +246,13 @@ void Enemy::Draw(IrufemiEngine* engine) {
 
 // ビームの発射命令（トリガー）
 void Enemy::FireBeam() {
-  if (!beam_) {
-    beam_ = std::make_unique<EnemyBeam>();
-    beam_->Initialize(camera_, GetHeadMidWorldMatrix());
-  }
+  // すでに Initialize で生成済みのため、ここでは何もしない（アニメーション状態で制御）
 }
 
 void Enemy::FireStomp(const Vector3& position) {
-    // インスタンスがなければ作成（ビームの FireBeam と同じ流れ）
-    if (!stompEffects_) {
-        stompEffects_ = std::make_unique<EnemyStompEffects>();
-        // ビームがカメラを必要とするように、スタンプもここでカメラを渡して初期化
-        stompEffects_->Initialize(camera_);
+    if (stompEffects_) {
+        stompEffects_->Fire(position);
     }
-
-    // エフェクトを発動
-    stompEffects_->Fire(position);
 }
 
 Matrix4x4 Enemy::GetHeadMidWorldMatrix() const {
