@@ -126,6 +126,9 @@
     <ClCompile Include="actors\enemy\Head\Mid\HeadMid.cpp">
       <Filter>Actors\Enemy\Head\Mid</Filter>
     </ClCompile>
+    <ClCompile Include="actors\enemy\Head\Head.cpp">
+      <Filter>Actors\Enemy\Head</Filter>
+    </ClCompile>
     <ClCompile Include="actors\enemy\Head\Right\HeadRight.cpp">
       <Filter>Actors\Enemy\Head\Right</Filter>
     </ClCompile>
@@ -210,6 +213,9 @@
     </ClInclude>
     <ClInclude Include="actors\enemy\Head\Mid\HeadMid.h">
       <Filter>Actors\Enemy\Head\Mid</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Head\Head.h">
+      <Filter>Actors\Enemy\Head</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Head\Right\HeadRight.h">
       <Filter>Actors\Enemy\Head\Right</Filter>

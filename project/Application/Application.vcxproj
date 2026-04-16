@@ -163,6 +163,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="actors\enemy\AI\EnemyAI.cpp" />
     <ClCompile Include="actors\enemy\Head\Left\HeadLeft.cpp" />
     <ClCompile Include="actors\enemy\Head\Mid\HeadMid.cpp" />
+    <ClCompile Include="actors\enemy\Head\Head.cpp" />
     <ClCompile Include="actors\enemy\Head\Right\HeadRight.cpp" />
     <ClCompile Include="actors\player\Player.cpp" />
     <ClCompile Include="camera\Camera.cpp" />
@@ -206,6 +207,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\EnemyState.h" />
     <ClInclude Include="actors\enemy\Head\Left\HeadLeft.h" />
     <ClInclude Include="actors\enemy\Head\Mid\HeadMid.h" />
+    <ClInclude Include="actors\enemy\Head\Head.h" />
     <ClInclude Include="actors\enemy\Head\Right\HeadRight.h" />
     <ClInclude Include="actors\player\Player.h" />
     <ClInclude Include="camera\Camera.h" />

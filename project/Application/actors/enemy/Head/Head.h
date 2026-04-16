@@ -1,0 +1,62 @@
+#pragma once
+#include "Engine/Core/Math/Transform.h"
+#include <memory>
+#include "Engine/Core/Math/Geometry/OBB.h"
+#include "Engine/Core/Math/Vector4.h"
+
+class Camera;
+class IrufemiEngine;
+class VoxelParticleSystem;
+class ObjClass;
+
+class Head {
+public:
+  Head();
+  virtual ~Head();
+
+  void Initialize(Camera* camera, const Vector3& initialPos);
+  void Update();
+  void Draw(IrufemiEngine* engine);
+
+  void SetPosition(const Vector3& pos);
+
+  bool ApplyDamage(int damage);
+
+  void SetHP(int hp) { hp_ = hp; }
+  int GetHP() const { return hp_; }
+
+  // Transformを一括設定する（回転やスケールも含めて上書き）
+  void SetTransform(const Transform& transform, const Vector3* drawWorldPos = nullptr);
+  const Transform& GetTransform() const { return transform_; }
+
+  void OnDestroyed(const Vector3& attackDir, float blowSpeed);
+  bool IsCompletelyDead() const;
+  bool IsBlownAway() const { return isBlownAway_; }
+
+  const Vector3& GetBlowVelocity() const { return blowVelocity_; }
+  void SetBlowVelocity(const Vector3& v) { blowVelocity_ = v; }
+
+  OBB GetOBB() const;
+
+  // 指定した位置でパーティクルをはじけさせる
+  void ScatterAt(const Vector3& velocity, const OBB& collisionArea);
+
+protected:
+  Vector4 baseColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+
+private:
+  std::unique_ptr<ObjClass> obj_ = nullptr;
+  Vector3 basePosition_ = {};
+  Transform transform_ = {}; // OBB計算や吹き飛び時の姿勢保持用
+  float timer_ = 0.0f; // 既存のタイマー
+  int hp_ = 0;
+
+  float damageFlashTimer_ = 0.0f;
+
+  // 吹き飛び・消滅用
+  bool isBlownAway_ = false;
+  Vector3 blowVelocity_ = {};
+  float disappearTimer_ = 0.0f;
+
+  std::unique_ptr<VoxelParticleSystem> voxelSystem_ = nullptr;
+};
