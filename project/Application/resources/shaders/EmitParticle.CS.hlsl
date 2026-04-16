@@ -1,54 +1,90 @@
 #include "ParticleGPU.hlsli"
-#include "RandomGenerator.hlsli"
 #include "PerFrame.hlsli"
 
+static const uint32_t kMaxParticles = 32768;
+
 RWStructuredBuffer<Particle> gParticles : register(u0);
-
 RWStructuredBuffer<int32_t> gFreeListIndex : register(u1);
-
 RWStructuredBuffer<int32_t> gFreeList : register(u2);
-
-ConstantBuffer<EmitterSphere> gEmitter : register(b0);
-
+ConstantBuffer<GPUParticleEmitter> gEmitter : register(b0);
 ConstantBuffer<PerFrame> gPerFrame : register(b1);
 
-// 今回スレッド数は1。複数のEmitterを扱い、同時に処理したいような場合は適宜スレッド数を増やすと良い
+float rand(uint seed) {
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return float(seed & 0xffffff) / 16777216.0;
+}
+
 [numthreads(1, 1, 1)]
 void main(uint32_t3 DTid : SV_DispatchThreadID)
 {
-	int32_t kMaxParticles = 1024;
-	if (gEmitter.emit != 0) // 射出許可が出たので射出
-	{
-		// コンストラクタはないので、このように初期化すると良い。構造体的に初期化することは可能
-		RandomGenerator generator;
-		generator.seed = DTid.x * 12345 + uint3(1, 7, 11) * (uint) (gPerFrame.time * 1000.0f);
-		// Generate3d呼ぶたびにseedが変わるので結果全ての乱数が変わる
-		for (uint32_t countIndex = 0; countIndex < gEmitter.count; ++countIndex)
-		{
-			int32_t freeListIndex;
-			// FreeListのIndexを1つ前に設定し、現在のIndexを取得する
-			InterlockedAdd(gFreeListIndex[0], -1, freeListIndex);
-			if (0 <= freeListIndex && freeListIndex < kMaxParticles)
-			{
-				uint32_t particleIndex = gFreeList[freeListIndex];
-				// Particleの初期化
-				gParticles[particleIndex].scale = generator.Generate3d();
-				gParticles[particleIndex].translate = gEmitter.translate; // エミッターの位置から発生
-				gParticles[particleIndex].color.rgb = generator.Generate3d();
-				gParticles[particleIndex].color.a = 1.0f;
-				gParticles[particleIndex].velocity = (generator.Generate3d() * 2.0f - 1.0f) / 5.0f;
-				gParticles[particleIndex].lifeTime = generator.Generate1d() * 2.0f + 1.0f; // 1～3秒の寿命
-				gParticles[particleIndex].currentTime = 0.0f;
-			}
-			else
-			{
-				// 発生させられなかったので、減らしてしまった分もとに戻す。これを忘れると発生させなかった分だけどんどんIndexが減ってしまう
-				InterlockedAdd(gFreeListIndex[0], 1);
-				// Emit中にParticleは消えないので、この後発生することはないためbreakして終わらせる
-				break;
-			}
-		}
-	}
-	
-	
+    if (gEmitter.emit == 0) return;
+
+    // 放出周期チェック
+    if (gEmitter.frequencyTime < gEmitter.frequency) return;
+
+    for (int32_t i = 0; i < gEmitter.count; ++i)
+    {
+        int32_t freeListIndex;
+        InterlockedAdd(gFreeListIndex[0], -1, freeListIndex);
+
+        if (freeListIndex >= 0)
+        {
+            uint32_t particleIndex = gFreeList[freeListIndex];
+            
+            // 乱数シードの生成（フレーム時間とインデックスを組み合わせる）
+            uint seed = (uint)gPerFrame.time * 1000 + i + particleIndex;
+            float r1 = rand(seed);
+            float r2 = rand(seed + 1337);
+            float r3 = rand(seed + 7777);
+
+            gParticles[particleIndex].currentTime = 0.0f;
+            gParticles[particleIndex].lifeTime = 0.4f + r1 * 0.4f; // 0.4 ~ 0.8秒
+
+            if (gEmitter.type == 0) // Sphere
+            {
+                float phi = r1 * 2.0f * 3.141592f;
+                float theta = r2 * 3.141592f;
+                float3 offset = float3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi)) * (r3 * gEmitter.radius);
+                gParticles[particleIndex].translate = gEmitter.translate + offset;
+                gParticles[particleIndex].velocity = normalize(offset) * 0.05f;
+            }
+            else if (gEmitter.type == 1) // Beam
+            {
+                float3 L = normalize(gEmitter.direction);
+                float3 up = abs(L.y) < 0.999f ? float3(0,1,0) : float3(1,0,0);
+                float3 side = normalize(cross(up, L));
+                float3 upVec = cross(L, side);
+
+                // 放出位置（円柱の断面状に分散）
+                float angle = r1 * 2.0f * 3.141592f;
+                float dist = sqrt(r2) * gEmitter.radius;
+                float3 offset = (side * cos(angle) + upVec * sin(angle)) * dist;
+
+                gParticles[particleIndex].translate = gEmitter.translate + offset;
+                
+                // 初速にバラつき（プラズマ的な噴出感）
+                float3 spreadDir = (side * (r1 * 2 - 1) + upVec * (r2 * 2 - 1)) * gEmitter.spread;
+                gParticles[particleIndex].velocity = (L + spreadDir) * (gEmitter.velocity * (0.8f + r3 * 0.4f));
+            }
+
+            // 配色: イエロー（コア）〜オレンジ（外装）のランダム
+            float3 colorCore = float3(1.0f, 1.0f, 0.4f);
+            float3 colorOuter = float3(1.0f, 0.5f, 0.1f);
+            gParticles[particleIndex].color.rgb = lerp(colorOuter, colorCore, r1);
+            gParticles[particleIndex].color.a = 1.0f;
+            
+            // 初期スケール
+            float sc = 0.05f + r2 * 0.15f;
+            gParticles[particleIndex].scale = float3(sc, sc, sc);
+        }
+        else
+        {
+            InterlockedAdd(gFreeListIndex[0], 1);
+            break;
+        }
+    }
 }
