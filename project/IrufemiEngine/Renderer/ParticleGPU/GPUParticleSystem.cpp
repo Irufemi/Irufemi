@@ -10,7 +10,11 @@
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Math/Geometry/Frustum.h"
 #include "Engine/Manager/PrimitiveManager.h"
+#include "Engine/Manager/DebugUI.h"
+#include "Renderer/LineInstanced/LineClass.h"
 #include <cassert>
+#include <vector>
+#include <algorithm>
 
 // 静的メンバ変数の実体定義
 DirectXCommon* GPUParticleSystem::dxCommon_ = nullptr;
@@ -45,6 +49,11 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     camera_ = camera;
 
     auto* srvPool = dxCommon_->GetSrvPool();
+
+    if (!debugLineRegion_) {
+        debugLineRegion_ = std::make_unique<Line3DRegion>();
+        debugLineRegion_->Initialize(camera_);
+    }
 
     /*Emitter*/
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -156,6 +165,13 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     // 形状の初期設定 (デフォルトは Quad/Plane)
     SetPrimitive(PrimitiveType::Plane);
 
+    if (textureManager_) {
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
+        auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
+        if (it != textureNames.end()) {
+            selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
+        }
+    }
     textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
     // CS初期化フラグを下ろす（実際の初期化はDraw()内で行う）
@@ -278,6 +294,10 @@ void GPUParticleSystem::Update() {
     *emitterMapped_[frameIndex] = *emitter_;
     *perFrameMapped_[frameIndex] = *perFrameData_;
 
+    if (debugLineRegion_) {
+        debugLineRegion_->Update();
+    }
+
     needsUpdateCS_ = true;
 }
 
@@ -329,7 +349,11 @@ void GPUParticleSystem::Draw() {
         commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
         commandList->SetComputeRootConstantBufferView(4, emitterResource_[frameIndex]->GetGPUVirtualAddress());
         commandList->SetComputeRootConstantBufferView(5, perFrameResource_[frameIndex]->GetGPUVirtualAddress());
-        commandList->Dispatch(1, 1, 1);
+        
+        uint32_t emitCount = emitterMapped_[frameIndex]->burstCount;
+        if (emitCount > 0) {
+            commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
+        }
 
         commandList->ResourceBarrier(1, &uavBarrier);
 
@@ -363,10 +387,10 @@ void GPUParticleSystem::Draw() {
     commandList->ResourceBarrier(1, &transitionBarrier);
 
     commandList->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    engine_->SetBlend(selectedBlend_);
+    engine_->SetDepthWrite(selectedDepth_);
+    engine_->SetCull(selectedCull_);
     engine_->ApplyGpuParticlePSO();
-    engine_->SetBlend(BlendMode::kBlendModeAdd);
-    engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    engine_->SetCull(PSOManager::CullMode::None);
       
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
 
@@ -385,25 +409,67 @@ void GPUParticleSystem::Draw() {
     transitionBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
     transitionBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     commandList->ResourceBarrier(1, &transitionBarrier);
+
+#if USE_IMGUI
+    if (debugLineRegion_) {
+        engine_->ApplyLineInstancedPSO();
+        debugLineRegion_->Draw();
+    }
+#endif
 }
 
 // デバッグ
 void GPUParticleSystem::Debug() {
 #if defined(USE_IMGUI)
+
+    if (debugLineRegion_) {
+        debugLineRegion_->ClearInstances();
+    }
+
+    if (showEmitterArea_ && emitter_) {
+        Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f };
+        if (emitter_->type == 0) {
+            DrawSphereWireframe(emitter_->translate, emitter_->radius, color);
+        } else if (emitter_->type == 1) {
+            // Beamの簡易描画
+            Vector3 top = emitter_->translate + Math::Normalize(emitter_->direction) * 50.0f; // 50mまで描画
+            DrawCylinderWireframe(emitter_->translate, emitter_->direction, emitter_->radius, 50.0f, color);
+        } else if (emitter_->type == 2) {
+            // Ring (内側・外側の円、厚み（スプレッド）の表現は簡易化)
+            DrawCircle(emitter_->translate, emitter_->radius, {0,1,0}, color);
+            DrawCircle(emitter_->translate, emitter_->radius - emitter_->spread, {0,1,0}, color);
+        } else if (emitter_->type == 3) {
+            // Cylinder (velocity を height として使っている)
+            DrawCylinderWireframe(emitter_->translate, emitter_->direction, emitter_->radius, emitter_->velocity, color);
+        } else if (emitter_->type == 4) {
+            // Box
+            Vector3 minP = emitter_->translate - emitter_->areaSize * 0.5f;
+            Vector3 maxP = emitter_->translate + emitter_->areaSize * 0.5f;
+            DrawAABB(minP, maxP, color);
+        }
+    }
+
     ImGui::Begin("GPUParticleSystem");
     ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
+    ImGui::Checkbox("Show Emitter Area", &showEmitterArea_);
     
     if (ImGui::Button("Play")) Play(); ImGui::SameLine();
     if (ImGui::Button("Stop")) Stop(); ImGui::SameLine();
     if (ImGui::Button("Clear")) Clear();
 
     ImGui::Separator();
+    DebugUI::DebugPsoSettings(&selectedBlend_, &selectedDepth_, &selectedCull_, "##GPUPso");
+
+    ImGui::Separator();
 
     if (emitter_) {
-        const char* typeNames[] = { "Sphere", "Beam", "Ring", "Cylinder" };
+        const char* typeNames[] = { "Sphere", "Beam", "Ring", "Cylinder", "Box" };
         int type = (int)emitter_->type;
         if (ImGui::Combo("Type", &type, typeNames, IM_ARRAYSIZE(typeNames))) {
             emitter_->type = (uint32_t)type;
+            if (type == 4 && emitter_->areaSize.x == 0 && emitter_->areaSize.y == 0 && emitter_->areaSize.z == 0) {
+                emitter_->areaSize = { 10.0f, 10.0f, 10.0f };
+            }
         }
 
         ImGui::DragFloat3("Translate", &emitter_->translate.x, 0.1f);
@@ -411,12 +477,17 @@ void GPUParticleSystem::Debug() {
         if (emitter_->type == 0 || emitter_->type == 2 || emitter_->type == 3) {
             ImGui::DragFloat("Radius", &emitter_->radius, 0.1f, 0.0f, 100.0f);
         }
-        if (emitter_->type == 1) {
-            ImGui::DragFloat3("Direction", &emitter_->direction.x, 0.01f);
-            ImGui::DragFloat("Velocity", &emitter_->velocity, 0.1f);
-            ImGui::DragFloat("Spread", &emitter_->spread, 0.01f, 0.0f, 1.0f);
+        if (emitter_->type == 4) {
+            ImGui::DragFloat3("Area Size", &emitter_->areaSize.x, 0.1f, 0.0f, 100.0f);
         }
+        
+        ImGui::Separator();
+        ImGui::Text("Velocity & Direction");
+        ImGui::DragFloat3("Direction", &emitter_->direction.x, 0.01f);
+        ImGui::DragFloat("Velocity", &emitter_->velocity, 0.01f);
+        ImGui::DragFloat("Spread (Radial)", &emitter_->spread, 0.01f, 0.0f, 5.0f);
 
+        ImGui::Separator();
         ImGui::DragInt("Count", (int*)&emitter_->count, 1, 0, 100);
         ImGui::DragFloat("Frequency", &emitter_->frequency, 0.01f, 0.001f, 10.0f);
         
@@ -455,6 +526,17 @@ void GPUParticleSystem::Debug() {
         int currentPrim = (int)primitiveType_;
         if (ImGui::Combo("Particle Mesh", &currentPrim, primitiveNames, 8)) {
             SetPrimitive((PrimitiveType)currentPrim);
+        }
+
+        if (textureManager_ && !textureManager_->GetTextureNamesForDebug().empty()) {
+            auto textureNames = textureManager_->GetTextureNamesForDebug();
+            std::vector<const char*> namesCStr;
+            for (const auto& name : textureNames) {
+                namesCStr.push_back(name.c_str());
+            }
+            if (ImGui::Combo("Texture", &selectedTextureIndex_, namesCStr.data(), (int)namesCStr.size())) {
+                SetTexture(textureNames[selectedTextureIndex_]);
+            }
         }
 
         ImGui::Separator();
@@ -524,6 +606,16 @@ void GPUParticleSystem::SetBillboard(bool isBillboard) {
     if (emitter_) emitter_->isBillboard = isBillboard ? 1 : 0;
 }
 
+void GPUParticleSystem::SetTexture(const std::string& textureFilePath) {
+    if (!textureManager_) return;
+    auto textureNames = textureManager_->GetTextureNamesForDebug();
+    auto it = std::find(textureNames.begin(), textureNames.end(), textureFilePath);
+    if (it != textureNames.end()) {
+        textureHandle_ = textureManager_->GetTextureHandle(textureFilePath);
+        selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
+    }
+}
+
 void GPUParticleSystem::SetRingEmitter(const Vector3& pos, float radius, float thickness, uint32_t count, float frequency) {
     if (!emitter_) return;
     emitter_->type = 2;
@@ -541,6 +633,15 @@ void GPUParticleSystem::SetCylinderEmitter(const Vector3& pos, const Vector3& di
     emitter_->direction = direction;
     emitter_->radius = radius;
     emitter_->velocity = height; // velocityをheightとして流用
+    emitter_->count = (int32_t)count;
+    emitter_->frequency = frequency;
+}
+
+void GPUParticleSystem::SetBoxEmitter(const Vector3& pos, const Vector3& size, uint32_t count, float frequency) {
+    if (!emitter_) return;
+    emitter_->type = 4;
+    emitter_->translate = pos;
+    emitter_->areaSize = size;
     emitter_->count = (int32_t)count;
     emitter_->frequency = frequency;
 }
@@ -563,5 +664,61 @@ void GPUParticleSystem::SetAttractor(const Vector3& pos, float strength) {
     if (emitter_) {
         emitter_->attractorPos = pos;
         emitter_->attractorStrength = strength;
+    }
+}
+
+void GPUParticleSystem::DrawAABB(const Vector3& min, const Vector3& max, const Vector4& color) {
+    if (!debugLineRegion_) return;
+    
+    Vector3 v[8] = {
+        { min.x, min.y, min.z }, { max.x, min.y, min.z }, { min.x, max.y, min.z }, { max.x, max.y, min.z },
+        { min.x, min.y, max.z }, { max.x, min.y, max.z }, { min.x, max.y, max.z }, { max.x, max.y, max.z }
+    };
+
+    debugLineRegion_->AddInstance(v[0], v[1], color); debugLineRegion_->AddInstance(v[1], v[3], color);
+    debugLineRegion_->AddInstance(v[3], v[2], color); debugLineRegion_->AddInstance(v[2], v[0], color);
+    debugLineRegion_->AddInstance(v[4], v[5], color); debugLineRegion_->AddInstance(v[5], v[7], color);
+    debugLineRegion_->AddInstance(v[7], v[6], color); debugLineRegion_->AddInstance(v[6], v[4], color);
+    debugLineRegion_->AddInstance(v[0], v[4], color); debugLineRegion_->AddInstance(v[1], v[5], color);
+    debugLineRegion_->AddInstance(v[2], v[6], color); debugLineRegion_->AddInstance(v[3], v[7], color);
+}
+
+void GPUParticleSystem::DrawCircle(const Vector3& center, float radius, const Vector3& axis, const Vector4& color) {
+    if (!debugLineRegion_) return;
+    Vector3 up = Math::Normalize(axis);
+    Vector3 right = Math::Normalize(std::abs(up.y) > 0.9f ? Math::Cross({1,0,0}, up) : Math::Cross({0,1,0}, up));
+    Vector3 forward = Math::Cross(right, up);
+
+    const int segments = 32;
+    Vector3 prevPos = center + right * radius;
+    for (int i = 1; i <= segments; ++i) {
+        float angle = (float)i / segments * 3.141592f * 2.0f;
+        Vector3 pos = center + (right * std::cos(angle) + forward * std::sin(angle)) * radius;
+        debugLineRegion_->AddInstance(prevPos, pos, color);
+        prevPos = pos;
+    }
+}
+
+void GPUParticleSystem::DrawSphereWireframe(const Vector3& center, float radius, const Vector4& color) {
+    DrawCircle(center, radius, {1,0,0}, color);
+    DrawCircle(center, radius, {0,1,0}, color);
+    DrawCircle(center, radius, {0,0,1}, color);
+}
+
+void GPUParticleSystem::DrawCylinderWireframe(const Vector3& center, const Vector3& direction, float radius, float height, const Vector4& color) {
+    if (!debugLineRegion_) return;
+    Vector3 dir = Math::Normalize(direction);
+    Vector3 top = center + dir * height;
+    
+    DrawCircle(center, radius, dir, color);
+    DrawCircle(top, radius, dir, color);
+    
+    Vector3 right = Math::Normalize(std::abs(dir.y) > 0.9f ? Math::Cross({1,0,0}, dir) : Math::Cross({0,1,0}, dir));
+    Vector3 forward = Math::Cross(right, dir);
+    
+    for (int i = 0; i < 4; ++i) {
+        float angle = (float)i / 4.0f * 3.141592f * 2.0f;
+        Vector3 offset = (right * std::cos(angle) + forward * std::sin(angle)) * radius;
+        debugLineRegion_->AddInstance(center + offset, top + offset, color);
     }
 }

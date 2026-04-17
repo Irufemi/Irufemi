@@ -7,6 +7,7 @@
 #include "../../Engine/Graphics/Data/Material.h"
 #include "Data/Particle.h"
 #include "../../Engine/Core/Math/Transform.h"
+#include "../../Engine/Graphics/DirectX/DirectXCommon.h"
 
 class ParticleResource : public BaseResource {
 public:
@@ -37,9 +38,9 @@ public:
 
     // --- インスタンシングバッファ (StructuredBuffer) ---
     static constexpr uint32_t kNumMaxInstance = 4096;
-    ParticleForGPU* instancingData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource_ = nullptr;
-    D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU_{};
+    ParticleForGPU* instancingData_[kMaxFramesInFlight] = { nullptr };
+    Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource_[kMaxFramesInFlight] = { nullptr };
+    D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU_[kMaxFramesInFlight]{};
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
 };

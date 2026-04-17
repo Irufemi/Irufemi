@@ -10,7 +10,7 @@ RWStructuredBuffer<int> gFreeList : register(u2);
 ConstantBuffer<GPUParticleEmitter> gEmitter : register(b0);
 ConstantBuffer<PerFrame> gPerFrame : register(b1);
 
-[numthreads(1, 1, 1)]
+[numthreads(1024, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
     // 放出数の計算（通常放出 + バースト放出）
@@ -18,10 +18,11 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
     if (emitCount <= 0) return;
 
-    for (int i = 0; i < emitCount; ++i)
-    {
-        int freeListIndex;
-        InterlockedAdd(gFreeListIndex[0], -1, freeListIndex);
+    int i = (int)DTid.x;
+    if (i >= emitCount) return;
+
+    int freeListIndex;
+    InterlockedAdd(gFreeListIndex[0], -1, freeListIndex);
 
         if (freeListIndex >= 0)
         {
@@ -48,7 +49,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 float theta = r_pos.y * 3.141592f;
                 float3 offset = float3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi)) * (r_pos.z * gEmitter.radius);
                 gParticles[particleIndex].translate = gEmitter.translate + offset;
-                gParticles[particleIndex].velocity = normalize(offset) * 0.05f;
+                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                gParticles[particleIndex].velocity = (gEmitter.direction + radialDir * gEmitter.spread) * gEmitter.velocity;
             }
             else if (gEmitter.type == 1) // Beam
             {
@@ -68,12 +70,13 @@ void main(uint3 DTid : SV_DispatchThreadID)
             else if (gEmitter.type == 2) // Ring
             {
                 float angle = rng.Generate1d() * 2.0f * 3.141592f;
-                // radius: 外径, spread: 内側への厚み
-                float r = gEmitter.radius - (rng.Generate1d() * gEmitter.spread);
+                // radius: 外径, 厚みは既存の計算でspreadを流用していたが、放射強度のspreadと被るのでここでは固定値の0.1などに固定するか、そのまま使う
+                float r = gEmitter.radius - (rng.Generate1d() * 0.1f);
                 float3 offset = float3(cos(angle), 0, sin(angle)) * r;
                 
                 gParticles[particleIndex].translate = gEmitter.translate + offset;
-                gParticles[particleIndex].velocity = normalize(offset) * 0.05f;
+                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                gParticles[particleIndex].velocity = (gEmitter.direction + radialDir * gEmitter.spread) * gEmitter.velocity;
             }
             else if (gEmitter.type == 3) // Cylinder
             {
@@ -90,6 +93,13 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 gParticles[particleIndex].translate = gEmitter.translate + offset;
                 gParticles[particleIndex].velocity = L * 0.05f;
             }
+            else if (gEmitter.type == 4) // Box
+            {
+                float3 offset = (r_pos - float3(0.5f, 0.5f, 0.5f)) * gEmitter.areaSize;
+                gParticles[particleIndex].translate = gEmitter.translate + offset;
+                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                gParticles[particleIndex].velocity = (gEmitter.direction + radialDir * gEmitter.spread) * gEmitter.velocity;
+            }
 
             // スケール初期化
             gParticles[particleIndex].startScale = lerp(gEmitter.startScaleMin, gEmitter.startScaleMax, r_scale);
@@ -101,14 +111,12 @@ void main(uint3 DTid : SV_DispatchThreadID)
             gParticles[particleIndex].endColor = lerp(gEmitter.endColorMin, gEmitter.endColorMax, r_color);
             gParticles[particleIndex].color = gParticles[particleIndex].startColor;
 
-            // 回転初期化
-            gParticles[particleIndex].rotation = rng.Generate3d() * 2.0f * 3.141592f;
-            gParticles[particleIndex].rotateSpeed = (rng.Generate3d() * 2.0f - 1.0f) * 3.141592f;
-        }
-        else
-        {
-            InterlockedAdd(gFreeListIndex[0], 1);
-            break;
-        }
+        // 回転初期化
+        gParticles[particleIndex].rotation = rng.Generate3d() * 2.0f * 3.141592f;
+        gParticles[particleIndex].rotateSpeed = (rng.Generate3d() * 2.0f - 1.0f) * 3.141592f;
+    }
+    else
+    {
+        InterlockedAdd(gFreeListIndex[0], 1);
     }
 }

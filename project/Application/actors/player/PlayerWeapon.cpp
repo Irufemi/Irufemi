@@ -122,6 +122,68 @@ void PlayerWeapon::Update(const Vector3& playerTranslate, const Vector3& playerR
     if (ejectionMistRight_) ejectionMistRight_->Update();
 }
 
+void PlayerWeapon::UpdateParticlesOnly() {
+    // 薬莢の更新
+    UpdateCartridges();
+
+    // 既存の弾の更新
+    for (int i = 0; i < kMaxBullets; ++i) {
+        if (bullets_[i].isActive) {
+            bullets_[i].position.x += bullets_[i].velocity.x;
+            bullets_[i].position.y += bullets_[i].velocity.y;
+            bullets_[i].position.z += bullets_[i].velocity.z;
+
+            if (bulletTrail_) bulletTrail_->PlayHitEffect(bullets_[i].position, 2);
+
+            bullets_[i].timer--;
+            if (bullets_[i].timer <= 0) {
+                bullets_[i].isActive = false;
+            }
+        }
+    }
+
+    // ミサイルの慣性移動とパーティクル更新
+    for (int i = 0; i < kMaxMissiles; ++i) {
+        if (missiles_[i].isActive) {
+            missiles_[i].position.x += missiles_[i].velocity.x;
+            missiles_[i].position.y += missiles_[i].velocity.y;
+            missiles_[i].position.z += missiles_[i].velocity.z;
+
+            float missileHalfLength = 1.2f; // playerScale.z を 1.0 だと仮定した場合の固定値
+            float vx = missiles_[i].velocity.x;
+            float vy = missiles_[i].velocity.y;
+            float vz = missiles_[i].velocity.z;
+            float speed = std::sqrt(vx * vx + vy * vy + vz * vz);
+            Vector3 tailPos = missiles_[i].position;
+
+            if (speed > 0.001f) {
+                tailPos.x -= (vx / speed) * missileHalfLength;
+                tailPos.y -= (vy / speed) * missileHalfLength;
+                tailPos.z -= (vz / speed) * missileHalfLength;
+            }
+
+            if (missileFire_) missileFire_->PlayHitEffect(tailPos, 3);
+            if (missileSmoke_) missileSmoke_->PlayHitEffect(tailPos, 2);
+
+            missiles_[i].timer--;
+            if (missiles_[i].timer <= 0) missiles_[i].isActive = false;
+        }
+    }
+
+    // パーティクルの更新
+    if (muzzleSmokeLeft_) muzzleSmokeLeft_->Update();
+    if (muzzleSmokeRight_) muzzleSmokeRight_->Update();
+    if (muzzleFlashLeft_) muzzleFlashLeft_->Update();
+    if (muzzleFlashRight_) muzzleFlashRight_->Update();
+    if (muzzleFlashAddLeft_) muzzleFlashAddLeft_->Update();
+    if (muzzleFlashAddRight_) muzzleFlashAddRight_->Update();
+    if (missileFire_) missileFire_->Update();
+    if (missileSmoke_) missileSmoke_->Update();
+    if (bulletTrail_) bulletTrail_->Update();
+    if (ejectionMistLeft_) ejectionMistLeft_->Update();
+    if (ejectionMistRight_) ejectionMistRight_->Update();
+}
+
 void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, int viewMode, bool isBlinking, bool isDead) {
     if (machineGunObjLeft_ && machineGunObjRight_ && !isDead) {
         float sinY = std::sin(playerRotate.y);

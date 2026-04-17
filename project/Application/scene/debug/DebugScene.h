@@ -104,6 +104,9 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<PrimitiveObjects3DClass> primitiveObj_ = nullptr;
     bool isActivePrimitiveObj_ = true;
 
+    // --- ImGuiデモ ---
+    bool isActiveImGuiDemo_ = false;
+
     // --- 電撃エフェクトデモ ---
     bool isActiveLightningCrawl_ = false;
     std::unique_ptr<CylinderClass> lightningCylinder_ = nullptr;

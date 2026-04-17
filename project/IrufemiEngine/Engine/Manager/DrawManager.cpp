@@ -402,8 +402,9 @@ void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instan
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
 
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)
-    assert(resource->instancingSrvHandleGPU_.ptr != 0 && "Instancing SRV handle is null or invalid");
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, resource->instancingSrvHandleGPU_);
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+    assert(resource->instancingSrvHandleGPU_[frameIndex].ptr != 0 && "Instancing SRV handle is null or invalid");
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, resource->instancingSrvHandleGPU_[frameIndex]);
 
     // テクスチャ (PS t0)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);

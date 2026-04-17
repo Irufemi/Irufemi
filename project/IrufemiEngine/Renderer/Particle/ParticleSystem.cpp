@@ -19,14 +19,16 @@ IrufemiEngine* ParticleSystem::s_engine_ = nullptr;
 DebugUI* ParticleSystem::s_ui_ = nullptr;
 
 ParticleSystem::~ParticleSystem() {
-    if (instancingSrvIndex_ != UINT32_MAX && s_srvPool_ && resource_) {
-        if (auto* dx = BaseResource::GetDirectXCommon()) {
-            uint64_t fv = dx->GetFenceValue();
-            s_srvPool_->FreeAfterFence(instancingSrvIndex_, fv);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (instancingSrvIndex_[i] != UINT32_MAX && s_srvPool_ && resource_) {
+            if (auto* dx = BaseResource::GetDirectXCommon()) {
+                uint64_t fv = dx->GetFenceValue();
+                s_srvPool_->FreeAfterFence(instancingSrvIndex_[i], fv);
+            }
+            instancingSrvIndex_[i] = UINT32_MAX;
+            instancingSrvHandleCPU_[i] = {};
+            instancingSrvHandleGPU_[i] = {};
         }
-        instancingSrvIndex_ = UINT32_MAX;
-        instancingSrvHandleCPU_ = {};
-        instancingSrvHandleGPU_ = {};
     }
 }
 
@@ -77,26 +79,30 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     instancingDesc.Buffer.StructureByteStride = sizeof(ParticleForGPU);
 
     // SRV スロット確保(初回のみ)
-    if (instancingSrvIndex_ == UINT32_MAX) {
-        auto* alloc = s_srvPool_;
-        if (!alloc) {
-            OutputDebugStringA("ParticleSystem::Initialize: SRV allocator is null\n");
-        } else {
-            uint32_t idx = alloc->Allocate();
-            if (idx == DescriptorPool::kInvalid) {
-                OutputDebugStringA("ParticleSystem::Initialize: SRV Allocate failed\n");
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (instancingSrvIndex_[i] == UINT32_MAX) {
+            auto* alloc = s_srvPool_;
+            if (!alloc) {
+                OutputDebugStringA("ParticleSystem::Initialize: SRV allocator is null\n");
             } else {
-                instancingSrvIndex_ = idx;
-                instancingSrvHandleCPU_ = alloc->GetCPUHandle(idx);
-                instancingSrvHandleGPU_ = alloc->GetGPUHandle(idx);
+                uint32_t idx = alloc->Allocate();
+                if (idx == DescriptorPool::kInvalid) {
+                    OutputDebugStringA("ParticleSystem::Initialize: SRV Allocate failed\n");
+                } else {
+                    instancingSrvIndex_[i] = idx;
+                    instancingSrvHandleCPU_[i] = alloc->GetCPUHandle(idx);
+                    instancingSrvHandleGPU_[i] = alloc->GetGPUHandle(idx);
+                }
             }
         }
     }
 
     // 既存の静的インデックス運用は廃止。確保できている場合のみ SRV を作成
-    if (instancingSrvHandleCPU_.ptr != 0 && resource_->instancingResource_) {
-        BaseResource::GetDirectXCommon()->GetDevice()->CreateShaderResourceView(resource_->instancingResource_.Get(), &instancingDesc, instancingSrvHandleCPU_);
-        resource_->instancingSrvHandleGPU_ = instancingSrvHandleGPU_;
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (instancingSrvHandleCPU_[i].ptr != 0 && resource_->instancingResource_[i]) {
+            BaseResource::GetDirectXCommon()->GetDevice()->CreateShaderResourceView(resource_->instancingResource_[i].Get(), &instancingDesc, instancingSrvHandleCPU_[i]);
+            resource_->instancingSrvHandleGPU_[i] = instancingSrvHandleGPU_[i];
+        }
     }
 
     // 頂点/インデックスデータをクリア (共有リソース利用のため個別のリストを初期化)
@@ -187,10 +193,12 @@ void ParticleSystem::Update() {
                 worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             }
             Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-            if (resource_->instancingData_) {
-                resource_->instancingData_[numInstance_].world = worldMatrix;
-                resource_->instancingData_[numInstance_].WVP = worldViewProjectionMatrix;
-                resource_->instancingData_[numInstance_].color = particleIterator->color;
+            
+            uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+            if (resource_->instancingData_[frameIndex]) {
+                resource_->instancingData_[frameIndex][numInstance_].world = worldMatrix;
+                resource_->instancingData_[frameIndex][numInstance_].WVP = worldViewProjectionMatrix;
+                resource_->instancingData_[frameIndex][numInstance_].color = particleIterator->color;
             }
 
             numInstance_++; // 生きているParticleの数を1つカウントする

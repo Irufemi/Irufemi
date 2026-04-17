@@ -93,6 +93,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveSkybox_ = false;
     isActivePrimitiveObj_ = false;
     isActiveLightningCrawl_ = true;
+    isActiveImGuiDemo_ = false;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -249,9 +250,12 @@ void DebugScene::Update() {
     ImGui::Checkbox("Skybox", &isActiveSkybox_);
     ImGui::Checkbox("PrimitiveObj", &isActivePrimitiveObj_);
     ImGui::Checkbox("Lightning Crawl", &isActiveLightningCrawl_);
+    ImGui::Checkbox("ImGui Demo", &isActiveImGuiDemo_);
     ImGui::End();
 
-    ImGui::ShowDemoWindow();
+    if (isActiveImGuiDemo_) {
+        ImGui::ShowDemoWindow();
+    }
 #endif
 
     // 3D
@@ -686,7 +690,7 @@ void DebugScene::DrawDebugTab() {
         gpuParticle_->Debug();
     }
 
-    if (lightningCylinder_) {
+    if (isActiveLightningCrawl_ && lightningCylinder_) {
         // オブジェクト標準のデバッグUI（形状やマテリアル）を表示
         lightningCylinder_->Debug("Lightning Cylinder");
 

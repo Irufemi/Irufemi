@@ -6,6 +6,8 @@
 #include "../../Engine/Core/Type/PerFrame.h"
 #include "../../Engine/Core/Type/PerView.h"
 #include "../../Engine/Core/Type/PrimitiveType.h"
+#include "../../Engine/Core/Type/BlendMode.h"
+#include "../../Engine/Graphics/Pipeline/PSOManager.h"
 #include <wrl.h>
 #include <d3d12.h>
 #include <string>
@@ -16,6 +18,7 @@ class DrawManager;
 class TextureManager;
 class Camera;
 class IrufemiEngine;
+class Line3DRegion;
 
 #include "../../Engine/Graphics/DirectX/DirectXCommon.h"
 
@@ -121,6 +124,10 @@ struct GPUParticleEmitter {
     // float4 x 16
     Vector3 attractorPos;
     uint32_t pad5;
+
+    // float4 x 17
+    Vector3 areaSize;
+    uint32_t pad6;
 };
 
 /**
@@ -164,6 +171,15 @@ public:
     void SetPrimitive(PrimitiveType type);
     /** @brief ビルボードのON/OFF */
     void SetBillboard(bool isBillboard);
+    /** @brief 使用するテクスチャを切り替える */
+    void SetTexture(const std::string& textureFilePath);
+
+    /** @name 描画設定（パイプライン） */
+    ///@{
+    void SetBlend(BlendMode blend) { selectedBlend_ = blend; }
+    void SetDepthWrite(PSOManager::DepthWrite depth) { selectedDepth_ = depth; }
+    void SetCull(PSOManager::CullMode cull) { selectedCull_ = cull; }
+    ///@}
     ///@}
 
     /** @name タイプ別エミッター設定 */
@@ -199,6 +215,15 @@ public:
      * @param frequency 放出頻度（秒）
      */
     void SetCylinderEmitter(const Vector3& pos, const Vector3& direction, float radius, float height, uint32_t count, float frequency);
+
+    /**
+     * @brief ボックス（直方体）エミッターの設定
+     * @param pos 中心位置
+     * @param size ボックスの各軸のサイズ（幅、高さ、奥行き）
+     * @param count 一度の放出数
+     * @param frequency 放出頻度（秒）
+     */
+    void SetBoxEmitter(const Vector3& pos, const Vector3& size, uint32_t count, float frequency);
     ///@}
 
     /** @name 静的マネージャ設定 */
@@ -210,6 +235,10 @@ public:
     ///@}
 
 private:
+    void DrawAABB(const Vector3& min, const Vector3& max, const Vector4& color);
+    void DrawCircle(const Vector3& center, float radius, const Vector3& axis, const Vector4& color);
+    void DrawSphereWireframe(const Vector3& center, float radius, const Vector4& color);
+    void DrawCylinderWireframe(const Vector3& center, const Vector3& direction, float radius, float height, const Vector4& color);
     static DirectXCommon* dxCommon_;
     static DrawManager* drawManager_;
     static TextureManager* textureManager_;
@@ -275,6 +304,7 @@ private:
     ParticleGPUMaterial* materialData_ = nullptr;
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
+    int selectedTextureIndex_ = 0;
     Camera* camera_ = nullptr;
 
     uint32_t emitterSrvIndex_ = 0xFFFFFFFF;
@@ -289,4 +319,11 @@ private:
     bool isCulled_ = false;
     bool isInitializedCS_ = false;
     bool needsUpdateCS_ = false;
+
+    BlendMode selectedBlend_ = BlendMode::kBlendModeAdd;
+    PSOManager::DepthWrite selectedDepth_ = PSOManager::DepthWrite::Disable;
+    PSOManager::CullMode selectedCull_ = PSOManager::CullMode::None;
+
+    std::unique_ptr<Line3DRegion> debugLineRegion_;
+    bool showEmitterArea_ = true;
 };

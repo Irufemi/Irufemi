@@ -29,8 +29,10 @@ void ParticleResource::CreateResource() {
     }
 
     // インスタンシング用バッファの作成
-    if (!instancingResource_) {
-        instancingResource_ = s_dxCommon_->CreateBufferResource(sizeof(ParticleForGPU) * kNumMaxInstance);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (!instancingResource_[i]) {
+            instancingResource_[i] = s_dxCommon_->CreateBufferResource(sizeof(ParticleForGPU) * kNumMaxInstance);
+        }
     }
 }
 
@@ -44,8 +46,10 @@ void ParticleResource::Map() {
     if (materialResource_) {
         materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
     }
-    if (instancingResource_) {
-        instancingResource_->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_));
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (instancingResource_[i]) {
+            instancingResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_[i]));
+        }
     }
 }
 
@@ -62,8 +66,10 @@ void ParticleResource::Unmap() {
         materialResource_->Unmap(0, nullptr);
         materialData_ = nullptr;
     }
-    if (instancingResource_) {
-        instancingResource_->Unmap(0, nullptr);
-        instancingData_ = nullptr;
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (instancingResource_[i]) {
+            instancingResource_[i]->Unmap(0, nullptr);
+            instancingData_[i] = nullptr;
+        }
     }
 }

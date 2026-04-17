@@ -18,29 +18,23 @@
 //	}
 //};
 
-// 上記の学校資料を基にXorshiftを使用するRandomGeneratorを作成する
 class RandomGenerator
 {
-    // Xorshiftは整数(uint)で計算するのが基本
+    // 既存互換のためuint3で定義（実際の計算はxを使用）
 	uint3 seed;
 
-    // 0.0f ～ 1.0f の範囲の乱数を3つ(xyz)生成する
-	float3 Generate3d()
-	{
-        // Xorshiftのアルゴリズム（ビットをズラして混ぜる）
-		seed ^= (seed << 13);
-		seed ^= (seed >> 17);
-		seed ^= (seed << 5);
-
-        // uintの最大値(4294967295)で割って、0.0～1.0のfloatに変換
-		return float3(seed) / 4294967295.0f;
-	}
-    
-    // 0.0f ～ 1.0f の乱数を1つ生成する
+    // 高品質なPCGベースの1D乱数ジェネレータ
 	float Generate1d()
 	{
-        
-		return Generate3d().x;
+		seed.x = seed.x * 747796405u + 2891336453u;
+        uint word = ((seed.x >> ((seed.x >> 28u) + 4u)) ^ seed.x) * 277803737u;
+        word = (word >> 22u) ^ word;
+		return float(word) / 4294967295.0f;
+	}
 
+    // 0.0f ～ 1.0f の範囲の独立した乱数を3つ(xyz)生成する
+	float3 Generate3d()
+	{
+		return float3(Generate1d(), Generate1d(), Generate1d());
 	}
 };

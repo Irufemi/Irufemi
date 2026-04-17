@@ -94,4 +94,8 @@ struct GPUParticleEmitter
 	// float4 x 16
 	float3 attractorPos;
 	uint pad5;
+
+	// float4 x 17
+	float3 areaSize;
+	uint pad6;
 };

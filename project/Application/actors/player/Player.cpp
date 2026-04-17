@@ -159,6 +159,9 @@ void Player::Update() {
         // 敵の目線から、プレイヤーの座標を見つめ続ける
         cameraController_.UpdateDeathCamera(deathCameraPos_, translate_);
 
+        // カメラ更新後にパーティクルのみ更新し、WVP行列を最新化する
+        weapon_.UpdateParticlesOnly();
+
         // ★星モデルの座標と回転（ビルボード）を更新
         if (starObj_ && deathTimer_ >= flashTime) {
             // カメラから星へのベクトルを計算して、カメラの方を向かせる（LookAt）
