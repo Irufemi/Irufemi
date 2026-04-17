@@ -239,6 +239,26 @@ private:
     void DrawCircle(const Vector3& center, float radius, const Vector3& axis, const Vector4& color);
     void DrawSphereWireframe(const Vector3& center, float radius, const Vector4& color);
     void DrawCylinderWireframe(const Vector3& center, const Vector3& direction, float radius, float height, const Vector4& color);
+
+    /**
+     * @brief DirectX12の各種リソースとディスクリプタ（SRV/UAV）の生成を行う
+     */
+    void CreateBuffersAndViews();
+
+    /**
+     * @brief コンピュートシェーダ（初期化、更新、放出）を実行する
+     * @param commandList D3D12コマンドリスト
+     */
+    void DispatchComputeShaders(ID3D12GraphicsCommandList* commandList);
+
+    /** @name ImGuiデバッグ用描画分割 */
+    ///@{
+    void DebugGeneralSettings();
+    void DebugEmitterSettings();
+    void DebugShapeSettings();
+    void DebugPhysicsSettings();
+    ///@}
+
     static DirectXCommon* dxCommon_;
     static DrawManager* drawManager_;
     static TextureManager* textureManager_;
