@@ -349,7 +349,11 @@ void GPUParticleSystem::Draw() {
         commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
         commandList->SetComputeRootConstantBufferView(4, emitterResource_[frameIndex]->GetGPUVirtualAddress());
         commandList->SetComputeRootConstantBufferView(5, perFrameResource_[frameIndex]->GetGPUVirtualAddress());
-        commandList->Dispatch(1, 1, 1);
+        
+        uint32_t emitCount = emitterMapped_[frameIndex]->burstCount;
+        if (emitCount > 0) {
+            commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
+        }
 
         commandList->ResourceBarrier(1, &uavBarrier);
 

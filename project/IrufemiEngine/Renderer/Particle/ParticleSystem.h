@@ -58,7 +58,10 @@ public:
 	///@{
 	uint32_t GetInstanceCount() const { return numInstance_; }
 	ParticleResource* GetD3D12Resource() { return resource_.get(); }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return resource_ ? resource_->instancingSrvHandleGPU_ : D3D12_GPU_DESCRIPTOR_HANDLE{}; }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { 
+		uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+		return resource_ ? resource_->instancingSrvHandleGPU_[frameIndex] : D3D12_GPU_DESCRIPTOR_HANDLE{}; 
+	}
 	///@}
 
 	/** @name 静的マネージャ設定 */
@@ -153,9 +156,9 @@ private:
 
 	std::unique_ptr<ParticleResource> resource_ = nullptr;
 	uint32_t numInstance_ = 0;
-	uint32_t instancingSrvIndex_ = UINT32_MAX;
-	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU_{} ;
-	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU_{} ; // インデックス解放用に保持
+	uint32_t instancingSrvIndex_[kMaxFramesInFlight] = { UINT32_MAX, UINT32_MAX, UINT32_MAX };
+	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU_[kMaxFramesInFlight]{} ;
+	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU_[kMaxFramesInFlight]{} ; // インデックス解放用に保持
 
 	Camera* camera_ = nullptr;
 	Matrix4x4 billboardMatrix_{};

@@ -142,6 +142,34 @@ void PlayerWeapon::UpdateParticlesOnly() {
         }
     }
 
+    // ミサイルの慣性移動とパーティクル更新
+    for (int i = 0; i < kMaxMissiles; ++i) {
+        if (missiles_[i].isActive) {
+            missiles_[i].position.x += missiles_[i].velocity.x;
+            missiles_[i].position.y += missiles_[i].velocity.y;
+            missiles_[i].position.z += missiles_[i].velocity.z;
+
+            float missileHalfLength = 1.2f; // playerScale.z を 1.0 だと仮定した場合の固定値
+            float vx = missiles_[i].velocity.x;
+            float vy = missiles_[i].velocity.y;
+            float vz = missiles_[i].velocity.z;
+            float speed = std::sqrt(vx * vx + vy * vy + vz * vz);
+            Vector3 tailPos = missiles_[i].position;
+
+            if (speed > 0.001f) {
+                tailPos.x -= (vx / speed) * missileHalfLength;
+                tailPos.y -= (vy / speed) * missileHalfLength;
+                tailPos.z -= (vz / speed) * missileHalfLength;
+            }
+
+            if (missileFire_) missileFire_->PlayHitEffect(tailPos, 3);
+            if (missileSmoke_) missileSmoke_->PlayHitEffect(tailPos, 2);
+
+            missiles_[i].timer--;
+            if (missiles_[i].timer <= 0) missiles_[i].isActive = false;
+        }
+    }
+
     // パーティクルの更新
     if (muzzleSmokeLeft_) muzzleSmokeLeft_->Update();
     if (muzzleSmokeRight_) muzzleSmokeRight_->Update();

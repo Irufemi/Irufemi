@@ -10,7 +10,7 @@ RWStructuredBuffer<int> gFreeList : register(u2);
 ConstantBuffer<GPUParticleEmitter> gEmitter : register(b0);
 ConstantBuffer<PerFrame> gPerFrame : register(b1);
 
-[numthreads(1, 1, 1)]
+[numthreads(1024, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
     // 放出数の計算（通常放出 + バースト放出）
@@ -18,10 +18,11 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
     if (emitCount <= 0) return;
 
-    for (int i = 0; i < emitCount; ++i)
-    {
-        int freeListIndex;
-        InterlockedAdd(gFreeListIndex[0], -1, freeListIndex);
+    int i = (int)DTid.x;
+    if (i >= emitCount) return;
+
+    int freeListIndex;
+    InterlockedAdd(gFreeListIndex[0], -1, freeListIndex);
 
         if (freeListIndex >= 0)
         {
@@ -110,14 +111,12 @@ void main(uint3 DTid : SV_DispatchThreadID)
             gParticles[particleIndex].endColor = lerp(gEmitter.endColorMin, gEmitter.endColorMax, r_color);
             gParticles[particleIndex].color = gParticles[particleIndex].startColor;
 
-            // 回転初期化
-            gParticles[particleIndex].rotation = rng.Generate3d() * 2.0f * 3.141592f;
-            gParticles[particleIndex].rotateSpeed = (rng.Generate3d() * 2.0f - 1.0f) * 3.141592f;
-        }
-        else
-        {
-            InterlockedAdd(gFreeListIndex[0], 1);
-            break;
-        }
+        // 回転初期化
+        gParticles[particleIndex].rotation = rng.Generate3d() * 2.0f * 3.141592f;
+        gParticles[particleIndex].rotateSpeed = (rng.Generate3d() * 2.0f - 1.0f) * 3.141592f;
+    }
+    else
+    {
+        InterlockedAdd(gFreeListIndex[0], 1);
     }
 }
