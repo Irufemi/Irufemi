@@ -48,7 +48,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 float theta = r_pos.y * 3.141592f;
                 float3 offset = float3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi)) * (r_pos.z * gEmitter.radius);
                 gParticles[particleIndex].translate = gEmitter.translate + offset;
-                gParticles[particleIndex].velocity = normalize(offset) * 0.05f;
+                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                gParticles[particleIndex].velocity = (gEmitter.direction + radialDir * gEmitter.spread) * gEmitter.velocity;
             }
             else if (gEmitter.type == 1) // Beam
             {
@@ -68,12 +69,13 @@ void main(uint3 DTid : SV_DispatchThreadID)
             else if (gEmitter.type == 2) // Ring
             {
                 float angle = rng.Generate1d() * 2.0f * 3.141592f;
-                // radius: 外径, spread: 内側への厚み
-                float r = gEmitter.radius - (rng.Generate1d() * gEmitter.spread);
+                // radius: 外径, 厚みは既存の計算でspreadを流用していたが、放射強度のspreadと被るのでここでは固定値の0.1などに固定するか、そのまま使う
+                float r = gEmitter.radius - (rng.Generate1d() * 0.1f);
                 float3 offset = float3(cos(angle), 0, sin(angle)) * r;
                 
                 gParticles[particleIndex].translate = gEmitter.translate + offset;
-                gParticles[particleIndex].velocity = normalize(offset) * 0.05f;
+                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                gParticles[particleIndex].velocity = (gEmitter.direction + radialDir * gEmitter.spread) * gEmitter.velocity;
             }
             else if (gEmitter.type == 3) // Cylinder
             {
@@ -89,6 +91,13 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 float3 offset = (side * cos(angle) + upVec * sin(angle)) * r + L * h;
                 gParticles[particleIndex].translate = gEmitter.translate + offset;
                 gParticles[particleIndex].velocity = L * 0.05f;
+            }
+            else if (gEmitter.type == 4) // Box
+            {
+                float3 offset = (r_pos - float3(0.5f, 0.5f, 0.5f)) * gEmitter.areaSize;
+                gParticles[particleIndex].translate = gEmitter.translate + offset;
+                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                gParticles[particleIndex].velocity = (gEmitter.direction + radialDir * gEmitter.spread) * gEmitter.velocity;
             }
 
             // スケール初期化
