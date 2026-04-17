@@ -122,6 +122,40 @@ void PlayerWeapon::Update(const Vector3& playerTranslate, const Vector3& playerR
     if (ejectionMistRight_) ejectionMistRight_->Update();
 }
 
+void PlayerWeapon::UpdateParticlesOnly() {
+    // 薬莢の更新
+    UpdateCartridges();
+
+    // 既存の弾の更新
+    for (int i = 0; i < kMaxBullets; ++i) {
+        if (bullets_[i].isActive) {
+            bullets_[i].position.x += bullets_[i].velocity.x;
+            bullets_[i].position.y += bullets_[i].velocity.y;
+            bullets_[i].position.z += bullets_[i].velocity.z;
+
+            if (bulletTrail_) bulletTrail_->PlayHitEffect(bullets_[i].position, 2);
+
+            bullets_[i].timer--;
+            if (bullets_[i].timer <= 0) {
+                bullets_[i].isActive = false;
+            }
+        }
+    }
+
+    // パーティクルの更新
+    if (muzzleSmokeLeft_) muzzleSmokeLeft_->Update();
+    if (muzzleSmokeRight_) muzzleSmokeRight_->Update();
+    if (muzzleFlashLeft_) muzzleFlashLeft_->Update();
+    if (muzzleFlashRight_) muzzleFlashRight_->Update();
+    if (muzzleFlashAddLeft_) muzzleFlashAddLeft_->Update();
+    if (muzzleFlashAddRight_) muzzleFlashAddRight_->Update();
+    if (missileFire_) missileFire_->Update();
+    if (missileSmoke_) missileSmoke_->Update();
+    if (bulletTrail_) bulletTrail_->Update();
+    if (ejectionMistLeft_) ejectionMistLeft_->Update();
+    if (ejectionMistRight_) ejectionMistRight_->Update();
+}
+
 void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, int viewMode, bool isBlinking, bool isDead) {
     if (machineGunObjLeft_ && machineGunObjRight_ && !isDead) {
         float sinY = std::sin(playerRotate.y);

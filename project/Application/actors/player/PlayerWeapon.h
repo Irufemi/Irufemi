@@ -56,6 +56,11 @@ public:
     // 毎フレームの更新（振動、弾の移動、薬莢の物理挙動など）
     void Update(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, const Vector3& playerScale);
 
+    /**
+     * @brief 死亡演出中など、武器の発射制御をスキップしてパーティクルや弾の移動・寿命更新のみを行う
+     */
+    void UpdateParticlesOnly();
+
     // 描画処理 (viewMode は Player::ViewMode の値を int にキャストして受け取る。0=一人称)
     void Draw(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, int viewMode, bool isBlinking, bool isDead);
     void DrawParticles(IrufemiEngine* engine);
