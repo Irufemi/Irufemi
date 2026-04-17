@@ -5,17 +5,20 @@
 #include "../../Engine/Core/Math/Matrix4x4.h"
 #include "../../Engine/Core/Type/PerFrame.h"
 #include "../../Engine/Core/Type/PerView.h"
+#include "../../Engine/Core/Type/PrimitiveType.h"
 #include <wrl.h>
 #include <d3d12.h>
 #include <string>
 #include <random>
 
 // 前方宣言
-class DirectXCommon;
 class DrawManager;
 class TextureManager;
 class Camera;
 class IrufemiEngine;
+
+#include "../../Engine/Graphics/DirectX/DirectXCommon.h"
+
 
 /**
  * @struct ParticleCS
@@ -28,6 +31,14 @@ struct ParticleCS {
     Vector3 velocity;  ///< 速度
     float currentTime; ///< 現在の経過時間
     Vector4 color;     ///< 色
+
+    // 拡張パラメータ
+    Vector3 rotation;     ///< 回転角
+    Vector3 rotateSpeed;  ///< 回転速度
+    Vector3 startScale;   ///< 開始スケール
+    Vector3 endScale;     ///< 終了スケール
+    Vector4 startColor;   ///< 開始色
+    Vector4 endColor;     ///< 終了色
 };
 
 /**
@@ -47,19 +58,69 @@ struct ParticleGPUMaterial {
  * @details HLSL側の GPUParticleEmitter と構造を一致させています。
  */
 struct GPUParticleEmitter {
-    uint32_t type = 0;          ///< 0: Sphere, 1: Beam
+    // float4 x 1
+    uint32_t type = 0;          ///< 0: Sphere, 1: Beam, 2: Ring, 3: Cylinder
     Vector3 translate = {0,0,0}; ///< 放出中心位置
+
+    // float4 x 2
     int32_t count = 0;          ///< 1回の放出数
     float frequency = 0.1f;     ///< 放出間隔
     float frequencyTime = 0.0f; ///< 放出タイマー
     int32_t emit = 0;           ///< 1: 放出許可, 0: 停止
 
-    // Type specific
-    float radius = 1.0f;        ///< Sphere用: 半径
+    // float4 x 3
+    float radius = 1.0f;        ///< Sphere/Ring/Cylinder用: 半径
     Vector3 direction = {0,0,1}; ///< Beam用: 方向
+
+    // float4 x 4
     float spread = 0.1f;        ///< Beam用: 広がり
     float velocity = 1.0f;      ///< Beam用: 速度
-    float pad[2] = {0,0};
+    float minLife = 1.0f;       ///< 最小寿命
+    float maxLife = 1.0f;       ///< 最大寿命
+
+    // float4 x 5
+    Vector3 startScaleMin = {1.0f, 1.0f, 1.0f}; ///< 開始スケール最小
+    float pad0;
+    // float4 x 6
+    Vector3 startScaleMax = {1.0f, 1.0f, 1.0f}; ///< 開始スケール最大
+    float pad1;
+    // float4 x 7
+    Vector3 endScaleMin = {1.0f, 1.0f, 1.0f};   ///< 終了スケール最小
+    float pad2;
+    // float4 x 8
+    Vector3 endScaleMax = {1.0f, 1.0f, 1.0f};   ///< 終了スケール最大
+    float pad3;
+
+    // float4 x 9
+    Vector4 startColorMin = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 開始色最小
+    // float4 x 10
+    Vector4 startColorMax = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 開始色最大
+    // float4 x 11
+    Vector4 endColorMin = {1.0f, 1.0f, 1.0f, 1.0f};   ///< 終了色最小
+    // float4 x 12
+    Vector4 endColorMax = {1.0f, 1.0f, 1.0f, 1.0f};   ///< 終了色最大
+
+    // float4 x 13
+    uint32_t colorMode = 0;     ///< カラーモード
+    float gravity = 0.0f;       ///< 重力
+    float damping = 0.0f;       ///< 空気抵抗
+    uint32_t isBillboard = 1;   ///< ビルボードフラグ
+
+    // float4 x 14
+    uint32_t burstCount;
+    float jitter;
+    uint32_t atlasRows;
+    uint32_t atlasCols;
+
+    // float4 x 15
+    float groundHeight;
+    float bounce;
+    float attractorStrength;
+    uint32_t pad4;
+
+    // float4 x 16
+    Vector3 attractorPos;
+    uint32_t pad5;
 };
 
 /**
@@ -80,36 +141,64 @@ public:
     void Debug();
     ///@}
 
+    /** @name 再生制御 */
+    ///@{
+    void Play() { isPlaying_ = true; if (emitter_) emitter_->emit = 1; }
+    void Stop() { isPlaying_ = false; if (emitter_) emitter_->emit = 0; }
+    void Pause() { isPlaying_ = false; }
+    void Resume() { isPlaying_ = true; }
+    void Clear();
+
+    void SetLoop(bool loop) { isLooping_ = loop; }
+    void SetDuration(float duration) { duration_ = duration; }
+    void Emit(uint32_t count);
+    ///@}
+
     /** @name 汎用エミッター設定 */
     ///@{
     /** @brief 粒子の発生ON/OFF */
-    void SetEmit(bool emit) { if (emitter_) emitter_->emit = emit ? 1 : 0; }
+    void SetEmit(bool emit);
     /** @brief パーティクルの基本色を設定 */
     void SetColor(const Vector4& color) { if (materialData_) materialData_->color = color; }
+    /** @brief 3Dメッシュ形状を設定 */
+    void SetPrimitive(PrimitiveType type);
+    /** @brief ビルボードのON/OFF */
+    void SetBillboard(bool isBillboard);
     ///@}
 
     /** @name タイプ別エミッター設定 */
     ///@{
-    /**
-     * @brief 球体エミッターの設定
-     * @param pos 中心位置
-     * @param radius 半径
-     * @param count 一度の放出数
-     * @param frequency 放出頻度（秒）
-     */
     void SetSphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency);
+    void SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, uint32_t count, float frequency);
+
+    /** @name アトラス・物理挙動設定 */
+    /** @brief テクスチャアトラス（Flipbook）設定 */
+    void SetTextureAtlas(uint32_t rows, uint32_t cols);
+    /** @brief 床衝突設定 */
+    void SetGroundCollision(float height, float bounce);
+    /** @brief アトラクター（引力源）設定 */
+    void SetAttractor(const Vector3& pos, float strength);
 
     /**
-     * @brief ビームエミッターの設定
-     * @param pos 発射位置
-     * @param direction 発射方向
-     * @param radius 発生半径（太さ）
-     * @param velocity 粒子の速度
-     * @param spread 広がり（0: 直線 ～ 1.0: 全方位への影響度）
+     * @brief リングエミッターの設定
+     * @param pos 中心位置
+     * @param radius 半径
+     * @param thickness 厚み
      * @param count 一度の放出数
      * @param frequency 放出頻度（秒）
      */
-    void SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, uint32_t count, float frequency);
+    void SetRingEmitter(const Vector3& pos, float radius, float thickness, uint32_t count, float frequency);
+
+    /**
+     * @brief 円柱エミッターの設定
+     * @param pos 中心位置
+     * @param direction 円柱の方向
+     * @param radius 半径
+     * @param height 高さ
+     * @param count 一度の放出数
+     * @param frequency 放出頻度（秒）
+     */
+    void SetCylinderEmitter(const Vector3& pos, const Vector3& direction, float radius, float height, uint32_t count, float frequency);
     ///@}
 
     /** @name 静的マネージャ設定 */
@@ -128,22 +217,28 @@ private:
 
     static const uint32_t kMaxParticles = 32768;
 
+    /** @name 再生状態フラグ */
+    bool isPlaying_ = true;
+    bool isLooping_ = true;
+    float duration_ = -1.0f; // -1: 無限
+    float totalTime_ = 0.0f;
+
     /** @name エミッターリソース */
     ///@{
-    GPUParticleEmitter* emitter_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> emitterResource_;
-    D3D12_CPU_DESCRIPTOR_HANDLE emitterUavHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE emitterUavHandleGPU_{};
+    GPUParticleEmitter* emitterMapped_[kMaxFramesInFlight] = {nullptr};
+    GPUParticleEmitter emitterData_{};
+    GPUParticleEmitter* emitter_ = &emitterData_; // CPU側のマスターへのポインタ
+    Microsoft::WRL::ComPtr<ID3D12Resource> emitterResource_[kMaxFramesInFlight];
     D3D12_CPU_DESCRIPTOR_HANDLE emitterSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE emitterSrvHandleGPU_{};
     ///@}
 
     /** @name 各種リソース */
     ///@{
-    PerFrame* perFrameData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> perFrameResource_;
-    D3D12_CPU_DESCRIPTOR_HANDLE perFrameUavHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE perFrameUavHandleGPU_{};
+    PerFrame* perFrameMapped_[kMaxFramesInFlight] = {nullptr};
+    PerFrame perFrameDataStruct_{};
+    PerFrame* perFrameData_ = &perFrameDataStruct_; // CPU側のマスターへのポインタ
+    Microsoft::WRL::ComPtr<ID3D12Resource> perFrameResource_[kMaxFramesInFlight];
     D3D12_CPU_DESCRIPTOR_HANDLE perFrameSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE perFrameSrvHandleGPU_{};
 
@@ -172,6 +267,10 @@ private:
     PerView* perViewData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+    D3D12_INDEX_BUFFER_VIEW indexBufferView_{}; // NEW: インデックスバッファ
+    uint32_t indexCount_ = 0;                  // NEW: インデックス数
+    PrimitiveType primitiveType_ = PrimitiveType::Plane; // 現在の形状
+
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
     ParticleGPUMaterial* materialData_ = nullptr;
 

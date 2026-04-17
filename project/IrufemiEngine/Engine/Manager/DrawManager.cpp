@@ -561,7 +561,17 @@ void DrawManager::DrawStandard3D(const Object3DResource* resource, const D3D12_V
 }
 
 
-void DrawManager::DrawGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS perViewAddress, D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, uint32_t instanceCount) {
+void DrawManager::DrawGPUParticle(
+    const D3D12_VERTEX_BUFFER_VIEW& vbv,
+    const D3D12_INDEX_BUFFER_VIEW& ibv,
+    uint32_t indexCount,
+    D3D12_GPU_VIRTUAL_ADDRESS materialAddress,
+    D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
+    D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
+    D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle,
+    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle,
+    uint32_t instanceCount
+) {
     if (!commandList_) return;
 
     // IA 設定: VB/Topology
@@ -573,6 +583,8 @@ void DrawManager::DrawGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, D3D12_GPU
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, materialAddress);
     // (rootParameters[(UINT)RootSlot::Transform] に対応、VertexShader 側の b0 想定)
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, perViewAddress);
+    // エミッター設定 (RootSlot::Special -> register b6)
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, emitterAddress);
 
     // --- SRVのバインド ---
     // テクスチャ (PS t0)
@@ -580,8 +592,13 @@ void DrawManager::DrawGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, D3D12_GPU
     // パーティクルデータ (VS t0 -> Slot 5: Instancing)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, particleSrvHandle);
 
-    // 描画コール (6頂点で1つのビルボード)
-    commandList_->DrawInstanced(6, instanceCount, 0, 0);
+    if (indexCount > 0) {
+        commandList_->IASetIndexBuffer(&ibv);
+        commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
+    } else {
+        // 従来のビルボード互換
+        commandList_->DrawInstanced(6, instanceCount, 0, 0);
+    }
 }
 void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor) {
     // 1. Transition Barrier (SRV -> RenderTarget)

@@ -1,36 +1,76 @@
-
 #include "ParticleGPU.hlsli"
 
 StructuredBuffer<Particle> gParticles : register(t0);
 ConstantBuffer<PerView> gPerView : register(b0);
+ConstantBuffer<GPUParticleEmitter> gEmitter : register(b6); // Special Slot
 
 struct VertexShaderInput
 {
-	float32_t4 position : POSITION0;
-	
-	/*テクスチャを貼ろう*/
-	
-	///VertexShaderをtexcoord対応する
-	
-	float32_t2 texcoord : TEXCOORD0;
-	
-    /*LambertianReflectance*/
-	
-	float32_t3 normal : NORMAL0;
-	
+	float4 position : POSITION0;
+	float2 texcoord : TEXCOORD0;
+	float3 normal : NORMAL0;
 };
 
-VertexShaderOutput main(VertexShaderInput input, uint32_t instanceId : SV_InstanceID) 
+// 回転行列の作成 (XYZ)
+float4x4 MakeRotationMatrix(float3 rotate)
+{
+    float3 c = cos(rotate);
+    float3 s = sin(rotate);
+
+    float4x4 mX = { 1, 0, 0, 0, 0, c.x, s.x, 0, 0, -s.x, c.x, 0, 0, 0, 0, 1 };
+    float4x4 mY = { c.y, 0, -s.y, 0, 0, 1, 0, 0, s.y, 0, c.y, 0, 0, 0, 0, 1 };
+    float4x4 mZ = { c.z, s.z, 0, 0, -s.z, c.z, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+
+    return mul(mZ, mul(mX, mY));
+}
+
+VertexShaderOutput main(VertexShaderInput input, uint instanceId : SV_InstanceID) 
 {
 	VertexShaderOutput output;
 	Particle particle = gParticles[instanceId];
-	float32_t4x4 worldMatrix = gPerView.billboardMatrix; // worldMatrixを作る
-	worldMatrix[0] *= particle.scale.x;
-	worldMatrix[1] *= particle.scale.y;
-	worldMatrix[2] *= particle.scale.z;
+	
+    float4x4 worldMatrix;
+    
+    if (gEmitter.isBillboard != 0)
+    {
+        worldMatrix = gPerView.billboardMatrix;
+        worldMatrix[0] *= particle.scale.x;
+        worldMatrix[1] *= particle.scale.y;
+        worldMatrix[2] *= particle.scale.z;
+    }
+    else
+    {
+        // 3D回転 (SRT)
+        float4x4 rotateMatrix = MakeRotationMatrix(particle.rotation);
+        float4x4 scaleMatrix = {
+            particle.scale.x, 0, 0, 0,
+            0, particle.scale.y, 0, 0,
+            0, 0, particle.scale.z, 0,
+            0, 0, 0, 1
+        };
+        worldMatrix = mul(scaleMatrix, rotateMatrix);
+    }
+    
 	worldMatrix[3].xyz = particle.translate;
+    
 	output.position = mul(input.position, mul(worldMatrix, gPerView.viewProjection));
-	output.texcoord = input.texcoord;
+	
+    // UV アニメーション (テクスチャアトラス)
+    float2 uv = input.texcoord;
+    uint totalFrames = gEmitter.atlasRows * gEmitter.atlasCols;
+    if (totalFrames > 1)
+    {
+        float t = saturate(particle.currentTime / particle.lifeTime);
+        uint frameIndex = (uint)(t * (float)totalFrames);
+        frameIndex = min(frameIndex, totalFrames - 1);
+        
+        uint row = frameIndex / gEmitter.atlasCols;
+        uint col = frameIndex % gEmitter.atlasCols;
+        
+        float2 frameSize = 1.0f / float2(gEmitter.atlasCols, gEmitter.atlasRows);
+        uv = (uv + float2(col, row)) * frameSize;
+    }
+    output.texcoord = uv;
 	output.color = particle.color;
 	return output;
 }
