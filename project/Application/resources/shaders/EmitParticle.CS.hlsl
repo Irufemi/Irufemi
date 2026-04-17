@@ -39,7 +39,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
             float r_vel   = rng.Generate1d();
 
             gParticles[particleIndex].currentTime = 0.0f;
-            gParticles[particleIndex].lifeTime = lerp(gEmitter.minLife, gEmitter.maxLife, r_life);
+            gParticles[particleIndex].lifeTime = max(lerp(gEmitter.minLife, gEmitter.maxLife, r_life), 0.0001f);
 
             // 放出形状別の初期位置・速度設定
             if (gEmitter.type == 0) // Sphere

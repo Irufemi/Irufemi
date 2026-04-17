@@ -47,12 +47,14 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     auto* srvPool = dxCommon_->GetSrvPool();
 
     /*Emitter*/
-    emitterResource_ = dxCommon_->CreateBufferResource(sizeof(GPUParticleEmitter));
-    emitterResource_->Map(0, nullptr, reinterpret_cast<void**>(&emitter_));
-    *emitter_ = GPUParticleEmitter(); // 初期化
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        emitterResource_[i] = dxCommon_->CreateBufferResource(sizeof(GPUParticleEmitter));
+        emitterResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&emitterMapped_[i]));
 
-    perFrameResource_ = dxCommon_->CreateBufferResource(sizeof(PerFrame));
-    perFrameResource_->Map(0, nullptr, reinterpret_cast<void**>(&perFrameData_));
+        perFrameResource_[i] = dxCommon_->CreateBufferResource(sizeof(PerFrame));
+        perFrameResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&perFrameMapped_[i]));
+    }
+    *emitter_ = GPUParticleEmitter(); // 初期化マスター
 
     // SRV
     emitterSrvIndex_ = srvPool->Allocate();
@@ -65,7 +67,7 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     emitterSrvDesc.Buffer.FirstElement = 0;
     emitterSrvDesc.Buffer.NumElements = 1;
     emitterSrvDesc.Buffer.StructureByteStride = sizeof(GPUParticleEmitter);
-    dxCommon_->GetDevice()->CreateShaderResourceView(emitterResource_.Get(), &emitterSrvDesc, emitterSrvHandleCPU_);
+    dxCommon_->GetDevice()->CreateShaderResourceView(emitterResource_[0].Get(), &emitterSrvDesc, emitterSrvHandleCPU_);
 
     // perFrame SRV
     perFrameSrvIndex_ = srvPool->Allocate();
@@ -78,7 +80,7 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     perFrameSrvDesc.Buffer.FirstElement = 0;
     perFrameSrvDesc.Buffer.NumElements = 1;
     perFrameSrvDesc.Buffer.StructureByteStride = sizeof(PerFrame);
-    dxCommon_->GetDevice()->CreateShaderResourceView(perFrameResource_.Get(), &perFrameSrvDesc, perFrameSrvHandleCPU_);
+    dxCommon_->GetDevice()->CreateShaderResourceView(perFrameResource_[0].Get(), &perFrameSrvDesc, perFrameSrvHandleCPU_);
 
 
     /*GPUParticle*/
@@ -271,6 +273,11 @@ void GPUParticleSystem::Update() {
 
     perViewData_->billboardMatrix = billboardMatrix_;
 
+    // フレームインデックスを取得して現在のフレーム用のGPUバッファにマスターデータをコピー
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+    *emitterMapped_[frameIndex] = *emitter_;
+    *perFrameMapped_[frameIndex] = *perFrameData_;
+
     needsUpdateCS_ = true;
 }
 
@@ -313,13 +320,15 @@ void GPUParticleSystem::Draw() {
         uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
         uavBarrier.UAV.pResource = nullptr;
 
+        uint32_t frameIndex = dxCommon_->GetFrameIndex();
+
         // Emit
         commandList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
         commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
-        commandList->SetComputeRootConstantBufferView(4, emitterResource_->GetGPUVirtualAddress());
-        commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
+        commandList->SetComputeRootConstantBufferView(4, emitterResource_[frameIndex]->GetGPUVirtualAddress());
+        commandList->SetComputeRootConstantBufferView(5, perFrameResource_[frameIndex]->GetGPUVirtualAddress());
         commandList->Dispatch(1, 1, 1);
 
         commandList->ResourceBarrier(1, &uavBarrier);
@@ -329,8 +338,8 @@ void GPUParticleSystem::Draw() {
         commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
-        commandList->SetComputeRootConstantBufferView(4, emitterResource_->GetGPUVirtualAddress());
-        commandList->SetComputeRootConstantBufferView(5, perFrameResource_->GetGPUVirtualAddress());
+        commandList->SetComputeRootConstantBufferView(4, emitterResource_[frameIndex]->GetGPUVirtualAddress());
+        commandList->SetComputeRootConstantBufferView(5, perFrameResource_[frameIndex]->GetGPUVirtualAddress());
         commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
         commandList->ResourceBarrier(1, &uavBarrier);
@@ -359,13 +368,15 @@ void GPUParticleSystem::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->SetCull(PSOManager::CullMode::None);
       
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+
     drawManager_->DrawGPUParticle(
         vertexBufferView_,
         indexBufferView_,
         indexCount_,
         materialResource_->GetGPUVirtualAddress(),
         perViewResource_->GetGPUVirtualAddress(),
-        emitterResource_->GetGPUVirtualAddress(),
+        emitterResource_[frameIndex]->GetGPUVirtualAddress(),
         particleSrvHandleGPU_,
         textureHandle_,
         kMaxParticles

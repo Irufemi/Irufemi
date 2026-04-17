@@ -12,11 +12,12 @@
 #include <random>
 
 // 前方宣言
-class DirectXCommon;
 class DrawManager;
 class TextureManager;
 class Camera;
 class IrufemiEngine;
+
+#include "../../Engine/Graphics/DirectX/DirectXCommon.h"
 
 
 /**
@@ -224,20 +225,20 @@ private:
 
     /** @name エミッターリソース */
     ///@{
-    GPUParticleEmitter* emitter_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> emitterResource_;
-    D3D12_CPU_DESCRIPTOR_HANDLE emitterUavHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE emitterUavHandleGPU_{};
+    GPUParticleEmitter* emitterMapped_[kMaxFramesInFlight] = {nullptr};
+    GPUParticleEmitter emitterData_{};
+    GPUParticleEmitter* emitter_ = &emitterData_; // CPU側のマスターへのポインタ
+    Microsoft::WRL::ComPtr<ID3D12Resource> emitterResource_[kMaxFramesInFlight];
     D3D12_CPU_DESCRIPTOR_HANDLE emitterSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE emitterSrvHandleGPU_{};
     ///@}
 
     /** @name 各種リソース */
     ///@{
-    PerFrame* perFrameData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> perFrameResource_;
-    D3D12_CPU_DESCRIPTOR_HANDLE perFrameUavHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE perFrameUavHandleGPU_{};
+    PerFrame* perFrameMapped_[kMaxFramesInFlight] = {nullptr};
+    PerFrame perFrameDataStruct_{};
+    PerFrame* perFrameData_ = &perFrameDataStruct_; // CPU側のマスターへのポインタ
+    Microsoft::WRL::ComPtr<ID3D12Resource> perFrameResource_[kMaxFramesInFlight];
     D3D12_CPU_DESCRIPTOR_HANDLE perFrameSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE perFrameSrvHandleGPU_{};
 
