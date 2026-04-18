@@ -166,6 +166,9 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     hr = commandList_->Reset(allocator, nullptr);
     assert(SUCCEEDED(hr));
 
+    // フレーム開始時に、ポーズ中でSetFrameDataが呼ばれなくてもバッファが常に同期待ちにならないようキャッシュを現在のバッファへコピーする
+    SyncCachedFrameData();
+
     // バックバッファとRTV/DSVの取得 (これはスワップチェーン依存なのでそのままでよい)
 
     // バックバッファとRTV/DSVの取得
@@ -293,21 +296,37 @@ void DrawManager::PostDraw() {
 }
 
 void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights) {
+    cachedCamera_ = camera;
+    cachedDirectionalLight_ = light;
+    
+    cachedPointLights_.clear();
+    for (auto* pl : pointLights) cachedPointLights_.push_back(*pl);
+    
+    cachedSpotLights_.clear();
+    for (auto* sl : spotLights) cachedSpotLights_.push_back(*sl);
+    
+    cachedAreaLights_.clear();
+    for (auto* al : areaLights) cachedAreaLights_.push_back(*al);
+    
+    SyncCachedFrameData();
+}
+
+void DrawManager::SyncCachedFrameData() {
     auto& fr = frameResources_[dxCommon_->GetFrameIndex()];
 
-    if (fr.cameraData) { *fr.cameraData = camera; }
+    if (fr.cameraData) { *fr.cameraData = cachedCamera_; }
     if (fr.lightCommonData) {
         // ライト共通データの更新（b1）
-        fr.lightCommonData->directionalLight = light;
-        fr.lightCommonData->pointLightCount = static_cast<int32_t>(pointLights.size());
-        fr.lightCommonData->spotLightCount = static_cast<int32_t>(spotLights.size());
-        fr.lightCommonData->areaLightCount = static_cast<int32_t>(areaLights.size());
+        fr.lightCommonData->directionalLight = cachedDirectionalLight_;
+        fr.lightCommonData->pointLightCount = static_cast<int32_t>(cachedPointLights_.size());
+        fr.lightCommonData->spotLightCount = static_cast<int32_t>(cachedSpotLights_.size());
+        fr.lightCommonData->areaLightCount = static_cast<int32_t>(cachedAreaLights_.size());
 
         // シャドウマップの行列更新
         ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
         if (shadowMap) {
             // カメラの位置を注視点として追従させる
-            shadowMap->UpdateMatrix(light.direction, camera.worldPosition, 128.0f);
+            shadowMap->UpdateMatrix(cachedDirectionalLight_.direction, cachedCamera_.worldPosition, 128.0f);
             fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();
         }
     }
@@ -319,14 +338,14 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLigh
         LightType* mapped = nullptr;
         res->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
         for (size_t i = 0; i < lightVec.size(); ++i) {
-            mapped[i] = *lightVec[i];
+            mapped[i] = lightVec[i];
         }
         res->Unmap(0, nullptr);
     };
 
-    copyLights(fr.pointLightResource.Get(), pointLights);
-    copyLights(fr.spotLightResource.Get(), spotLights);
-    copyLights(fr.areaLightResource.Get(), areaLights);
+    copyLights(fr.pointLightResource.Get(), cachedPointLights_);
+    copyLights(fr.spotLightResource.Get(), cachedSpotLights_);
+    copyLights(fr.areaLightResource.Get(), cachedAreaLights_);
 }
 
 void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {

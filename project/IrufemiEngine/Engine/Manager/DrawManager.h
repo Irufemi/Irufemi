@@ -10,6 +10,8 @@
 #include "../Graphics/Data/PointLight.h"
 #include "../Graphics/Data/SpotLight.h"
 #include "../Graphics/Data/AreaLight.h"
+#include "../Graphics/Data/CameraForGPU.h"
+#include "../Graphics/Data/DirectionalLight.h"
 #include "../Graphics/DirectX/RenderTexture.h"
 #include "../Graphics/DirectX/DirectXCommon.h" // kMaxFramesInFlight のために追加
 #include "../Graphics/DirectX/RootSignatureConfig.h"
@@ -43,8 +45,6 @@ struct SkinCluster;
 struct GpuMaterial;
 
 // 構造体を前方宣言
-struct DirectionalLight;
-struct CameraForGPU;
 
 // 描画のCommandListを積む順番
 // Viewport → RootSignature → Pipeline → Topology → Buffers → CBV → SRV → Draw
@@ -171,6 +171,20 @@ public: //メンバ関数
      * @brief フレーム単位の共通データを定数バッファに書き込む
      */
     void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);
+
+    /**
+     * @brief キャッシュされたフレームデータを用いて現在のフレームバッファを同期する（ポーズなどでSetFrameDataが呼ばれなかった時用）
+     */
+    void SyncCachedFrameData();
+    
+private:
+    CameraForGPU cachedCamera_{};
+    DirectionalLight cachedDirectionalLight_{};
+    std::vector<PointLight> cachedPointLights_;
+    std::vector<SpotLight> cachedSpotLights_;
+    std::vector<AreaLight> cachedAreaLights_;
+    
+public:
 
     /**
      * @brief 環境マップを設定する

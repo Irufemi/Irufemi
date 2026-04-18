@@ -77,6 +77,8 @@ void TriangleClass::Update() {
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    
+    resource_->MakeDirty();
 }
 
 void TriangleClass::Draw() {
@@ -103,9 +105,9 @@ void TriangleClass::Draw() {
 
     if (isDirty_ || cameraChanged) {
         Update();
-    } else {
-        resource_->SyncGPUData();
     }
+    
+    resource_->SyncIfDirty();
 
     // 共有リソースを使用して描画
     drawManager_->DrawStandard3D(resource_.get());

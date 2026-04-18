@@ -64,11 +64,22 @@ public:
         }
     }
 
-    void SyncGPUData() {
-        uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-        if (transformationData_[frameIndex]) {
-            *transformationData_[frameIndex] = transformationMatrix_;
+    int32_t dirtyFramesLeft_ = kMaxFramesInFlight; // 変更があったら指定フレーム数だけ全バッファに伝播させる
+    uint32_t lastSyncedFrameIndex_ = UINT32_MAX;
+    void MakeDirty() { dirtyFramesLeft_ = kMaxFramesInFlight; }
+
+    void SyncIfDirty() {
+        if (dirtyFramesLeft_ > 0) {
+            uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+            if (transformationData_[frameIndex]) {
+                *transformationData_[frameIndex] = transformationMatrix_;
+            }
+            SyncMaterialData();
+            
+            if (lastSyncedFrameIndex_ != frameIndex) {
+                dirtyFramesLeft_--;
+                lastSyncedFrameIndex_ = frameIndex;
+            }
         }
-        SyncMaterialData();
     }
 };

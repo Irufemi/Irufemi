@@ -102,10 +102,28 @@ void ObjClass::Update() {
     // マテリアル情報をGPUへ転送
     UpdateMaterials();
 
-    // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    
+    MakeDirty();
+}
+
+void ObjClass::SyncIfDirty() {
+    if (dirtyFramesLeft_ > 0) {
+        uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
+        if (transformationData_[frameIndex]) {
+            *transformationData_[frameIndex] = transformationMatrix_;
+        }
+        for (auto& res : meshResources_) {
+            res->SyncMaterialData();
+        }
+        
+        if (lastSyncedFrameIndex_ != frameIndex) {
+            dirtyFramesLeft_--;
+            lastSyncedFrameIndex_ = frameIndex;
+        }
+    }
 }
 
 #include "../../../Engine/Core/Math/Geometry/Collision.h"
@@ -122,15 +140,9 @@ void ObjClass::Draw() {
 
     if (isDirty_ || cameraChanged) {
         Update();
-    } else {
-        uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
-        if (transformationData_[frameIndex]) {
-            *transformationData_[frameIndex] = transformationMatrix_;
-        }
-        for (auto& res : meshResources_) {
-            res->SyncMaterialData();
-        }
     }
+    
+    SyncIfDirty();
 
     // 視錐台カリング
     if (isCullingEnabled_ && managedModel_->cpuModel) {
@@ -226,10 +238,12 @@ void ObjClass::SetEnableLightingToAllMeshes(bool enable) {
 
 void ObjClass::SetAlpha(float alpha) {
     color_.w = alpha;
+    isDirty_ = true;
 }
 
 void ObjClass::SetColor(const Vector4& color) {
     color_ = color;
+    isDirty_ = true;
 }
 
 void ObjClass::UpdateMaterials() {

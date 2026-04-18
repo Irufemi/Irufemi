@@ -191,10 +191,28 @@ void AnimationModel::Update() {
     // マテリアル情報をGPUへ転送
     UpdateMaterials();
 
-    // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    
+    MakeDirty();
+}
+
+void AnimationModel::SyncIfDirty() {
+    if (dirtyFramesLeft_ > 0) {
+        uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+        if (transformationData_[frameIndex]) {
+            *transformationData_[frameIndex] = transformationMatrix_;
+        }
+        for (auto& res : meshResources_) {
+            res->SyncMaterialData();
+        }
+        
+        if (lastSyncedFrameIndex_ != frameIndex) {
+            dirtyFramesLeft_--;
+            lastSyncedFrameIndex_ = frameIndex;
+        }
+    }
 }
 
 // 描画
@@ -221,15 +239,9 @@ void AnimationModel::Draw() {
 
     if (isDirty_ || cameraChanged) {
         Update();
-    } else {
-        uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-        if (transformationData_[frameIndex]) {
-            *transformationData_[frameIndex] = transformationMatrix_;
-        }
-        for (auto& res : meshResources_) {
-            res->SyncMaterialData();
-        }
     }
+    
+    SyncIfDirty();
 
     // --- 追加：骨格（球体の集合）を一括描画 ---
     if (jointSpheres_ && !skeleton_.joints.empty()) {

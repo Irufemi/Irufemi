@@ -96,6 +96,8 @@ void CylinderClass::Update() {
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    
+    resource_->MakeDirty();
 }
 
 void CylinderClass::Draw() {
@@ -125,9 +127,9 @@ void CylinderClass::Draw() {
 
     if (isDirty_ || cameraChanged) {
         Update();
-    } else {
-        resource_->SyncGPUData();
     }
+    
+    resource_->SyncIfDirty();
 
     drawManager_->DrawStandard3D(resource_.get());
 }

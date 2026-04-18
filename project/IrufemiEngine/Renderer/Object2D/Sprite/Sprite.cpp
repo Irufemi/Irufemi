@@ -146,6 +146,8 @@ void Sprite::Update() {
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetOrthographicMatrix();
+    
+    resource_->MakeDirty();
 }
 
 void Sprite::Draw() {
@@ -157,10 +159,9 @@ void Sprite::Draw() {
 
     if (isDirty_ || cameraChanged) {
         Update();
-    } else {
-        // マルチバッファ環境下では行列やマテリアル計算をスキップしても、現在のフレーム用のGPUバッファへの書き込みは必須
-        resource_->SyncGPUData();
     }
+    
+    resource_->SyncIfDirty();
 
     drawManager_->DrawSprite(resource_.get());
 }
