@@ -8,22 +8,6 @@
 #include <algorithm>
 #include <utility>
 
-PrimitiveManager* PrimitiveManager::instance = nullptr;
-
-PrimitiveManager* PrimitiveManager::GetInstance() {
-    if (!instance) {
-        instance = new PrimitiveManager();
-    }
-    return instance;
-}
-
-void PrimitiveManager::Finalize() {
-    if (instance) {
-        delete instance;
-        instance = nullptr;
-    }
-}
-
 const PrimitiveData& PrimitiveManager::GetPrimitiveData(PrimitiveType type) {
     auto it = cpuCache_.find(type);
     if (it != cpuCache_.end()) {
