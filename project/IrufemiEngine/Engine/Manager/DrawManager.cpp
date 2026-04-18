@@ -378,8 +378,8 @@ void DrawManager::DrawSprite(const Object2DResource* resource) {
     commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->transformationResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
@@ -399,7 +399,7 @@ void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instan
     // --- CBV のバインド ---
     // 0: 既存のマテリアル CBV(互換性維持のために常にバインド)
     //    (rootParameters[(UINT)RootSlot::Material] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
 
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
@@ -553,8 +553,8 @@ void DrawManager::DrawStandard3D(const Object3DResource* resource, const D3D12_V
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
     // 各種リソースのバインド
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->transformationResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
     // 描画

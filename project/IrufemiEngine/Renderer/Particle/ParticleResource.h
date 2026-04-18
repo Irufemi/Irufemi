@@ -33,14 +33,31 @@ public:
 
     // --- マテリアル ---
     Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
-    Material* materialData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
+    Material cpuMaterialData_{};
+    Material* GetMaterialData() { return &cpuMaterialData_; }
+    
+    Material* materialData_[kMaxFramesInFlight] = { nullptr };
+    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_[kMaxFramesInFlight];
 
     // --- インスタンシングバッファ (StructuredBuffer) ---
     static constexpr uint32_t kNumMaxInstance = 4096;
     ParticleForGPU* instancingData_[kMaxFramesInFlight] = { nullptr };
-    Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource_[kMaxFramesInFlight] = { nullptr };
+    Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource_[kMaxFramesInFlight];
     D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU_[kMaxFramesInFlight]{};
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
+
+    D3D12_GPU_VIRTUAL_ADDRESS GetInstancingVAddress() const {
+        return instancingResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
+    }
+    
+    void SyncMaterialData() {
+        uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+        if (materialData_[frameIndex]) {
+            *materialData_[frameIndex] = cpuMaterialData_;
+        }
+    }
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const {
+        return materialResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
+    }
 };

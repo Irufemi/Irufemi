@@ -46,7 +46,7 @@ public: // メンバ関数
 
     // 描画用の変換行列リソースのGPUアドレスを取得
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
-        return transformationResource_->GetGPUVirtualAddress();
+        return transformationResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
     }
 
 private: // メンバ関数(内部ヘルパ)
@@ -99,8 +99,8 @@ private: // メンバ変数
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
     // 共通の変換行列リソース
-    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_;
-    TransformationMatrix* transformationData_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_[kMaxFramesInFlight];
+    TransformationMatrix* transformationData_[kMaxFramesInFlight] = { nullptr };
     std::map<std::string, Matrix4x4> nodeWorldMatrices_;
 
     Camera* camera_ = nullptr;

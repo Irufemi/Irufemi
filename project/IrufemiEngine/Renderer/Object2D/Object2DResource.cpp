@@ -25,11 +25,13 @@ void Object2DResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    if (!materialResource_) {
-        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(Material));
-    }
-    if (!transformationResource_) {
-        transformationResource_ = s_dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (!materialResource_[i]) {
+            materialResource_[i] = s_dxCommon_->CreateBufferResource(sizeof(Material));
+        }
+        if (!transformationResource_[i]) {
+            transformationResource_[i] = s_dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
+        }
     }
 }
 
@@ -40,11 +42,13 @@ void Object2DResource::Map() {
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
     }
-    if (materialResource_) {
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-    }
-    if (transformationResource_) {
-        transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (materialResource_[i]) {
+            materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&materialData_[i]));
+        }
+        if (transformationResource_[i]) {
+            transformationResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_[i]));
+        }
     }
 }
 
@@ -57,13 +61,15 @@ void Object2DResource::Unmap() {
         indexResource_->Unmap(0, nullptr);
         indexData_ = nullptr;
     }
-    if (materialResource_) {
-        materialResource_->Unmap(0, nullptr);
-        materialData_ = nullptr;
-    }
-    if (transformationResource_) {
-        transformationResource_->Unmap(0, nullptr);
-        transformationData_ = nullptr;
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (materialResource_[i]) {
+            materialResource_[i]->Unmap(0, nullptr);
+            materialData_[i] = nullptr;
+        }
+        if (transformationResource_[i]) {
+            transformationResource_[i]->Unmap(0, nullptr);
+            transformationData_[i] = nullptr;
+        }
     }
 }
 
@@ -74,10 +80,11 @@ void Object2DResource::UpdateTransform(const Camera& camera) {
     // 2D なので正射影行列を掛ける
     transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, camera.GetOrthographicMatrix());
 
-    *transformationData_ = transformationMatrix_;
-
-    // UVTransform も更新
-    if (materialData_) {
-        materialData_->uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
+    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    if (transformationData_[frameIndex]) {
+        *transformationData_[frameIndex] = transformationMatrix_;
     }
+
+    // CPU側のマテリアルキャッシュにのみ反映させる
+    cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
 }

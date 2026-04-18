@@ -61,15 +61,15 @@ void PrimitiveObjects3DClass::MeshComponent::ChangeMesh(PrimitiveType newType) {
 // --- MaterialComponent ---
 
 void PrimitiveObjects3DClass::MaterialComponent::UpdateMaterial(Object3DResource* resource, TextureManager* textureManager) {
-    if (!resource || !resource->materialData_) return;
+    if (!resource || !resource->GetMaterialData()) return;
 
     // マテリアルパラメータの反映
-    resource->materialData_->color = color;
-    resource->materialData_->enableLighting = enableLighting;
-    resource->materialData_->lightingMode = lightingMode;
-    resource->materialData_->metallic = metallic;
-    resource->materialData_->roughness = roughness;
-    resource->materialData_->hasTexture = !texturePath.empty();
+    resource->GetMaterialData()->color = color;
+    resource->GetMaterialData()->enableLighting = enableLighting;
+    resource->GetMaterialData()->lightingMode = lightingMode;
+    resource->GetMaterialData()->metallic = metallic;
+    resource->GetMaterialData()->roughness = roughness;
+    resource->GetMaterialData()->hasTexture = !texturePath.empty();
 
     // テクスチャハンドルの更新
     if (textureManager && !texturePath.empty()) {
@@ -77,10 +77,10 @@ void PrimitiveObjects3DClass::MaterialComponent::UpdateMaterial(Object3DResource
         
         // ハンドルが取得できなかった場合はテクスチャ無効にする
         if (resource->textureHandle_.ptr == 0) {
-            resource->materialData_->hasTexture = false;
+            resource->GetMaterialData()->hasTexture = false;
         }
     } else {
-        resource->materialData_->hasTexture = false;
+        resource->GetMaterialData()->hasTexture = false;
     }
 }
 
@@ -122,6 +122,8 @@ void PrimitiveObjects3DClass::Update() {
 
     // マテリアル情報の最新化
     material_.UpdateMaterial(mesh_.resource.get(), textureManager_);
+    
+    mesh_.resource->SyncMaterialData();
 }
 
 void PrimitiveObjects3DClass::Draw() {

@@ -44,15 +44,15 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
     resource_->UpdateTransform(*camera_);
 
     // マテリアル初期設定
-    if (resource_->materialData_) {
-        resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-        resource_->materialData_->enableLighting = true;
-        resource_->materialData_->hasTexture = true;
-        resource_->materialData_->lightingMode = 3;
-        resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-        resource_->materialData_->metallic = 0.0f;
-        resource_->materialData_->roughness = 0.5f;
-        resource_->materialData_->environmentCoefficient = 0.0f;
+    if (resource_->GetMaterialData()) {
+        resource_->GetMaterialData()->color = { 1.0f,1.0f,1.0f,1.0f };
+        resource_->GetMaterialData()->enableLighting = true;
+        resource_->GetMaterialData()->hasTexture = true;
+        resource_->GetMaterialData()->lightingMode = 3;
+        resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
+        resource_->GetMaterialData()->metallic = 0.0f;
+        resource_->GetMaterialData()->roughness = 0.5f;
+        resource_->GetMaterialData()->environmentCoefficient = 0.0f;
     }
 
     if (textureManager_) {
@@ -70,6 +70,8 @@ void TriangleClass::Update() {
 
     // 行列更新
     resource_->UpdateTransform(*camera_);
+    
+    resource_->SyncMaterialData();
 
     // フラグ更新
     isDirty_ = false;
@@ -101,6 +103,8 @@ void TriangleClass::Draw() {
 
     if (isDirty_ || cameraChanged) {
         Update();
+    } else {
+        resource_->SyncGPUData();
     }
 
     // 共有リソースを使用して描画
@@ -113,7 +117,7 @@ void TriangleClass::Debug(const char* triangleName) {
     ImGui::Begin(name.c_str());
     if (ui_) {
         ui_->DebugTransform(resource_->transform_);
-        ui_->DebugMaterialBy3D(resource_->materialData_);
+        ui_->DebugMaterialBy3D(resource_->GetMaterialData());
         ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
         ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
         ui_->DebugUvTransform(resource_->uvTransform_);

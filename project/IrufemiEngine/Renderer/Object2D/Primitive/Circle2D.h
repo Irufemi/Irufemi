@@ -59,11 +59,11 @@ public:
     void SetRadius(float radius);
 
     // 見た目
-    void SetColor(const Vector4& color) { resource_->materialData_->color = color; }
+    void SetColor(const Vector4& color) { resource_->GetMaterialData()->color = color; }
     void SetRotateZ(float rad) { resource_->transform_.rotate = { 0.0f, 0.0f, rad }; }
 
     // テクスチャ制御
-    void SetUseTexture(bool use) { useTexture_ = use; resource_->materialData_->hasTexture = use; }
+    void SetUseTexture(bool use) { useTexture_ = use; resource_->GetMaterialData()->hasTexture = use; }
     bool SetTextureByName(const std::string& textureName); // 名前からハンドル設定＆選択更新
 
     // 共有マネージャ設定

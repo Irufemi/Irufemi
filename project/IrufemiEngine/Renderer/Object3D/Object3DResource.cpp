@@ -25,11 +25,14 @@ void Object3DResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    if (!materialResource_) {
-        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(Material));
-    }
-    if (!transformationResource_) {
-        transformationResource_ = s_dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (!materialResource_[i]) {
+            materialResource_[i] = s_dxCommon_->CreateBufferResource(sizeof(Material));
+        }
+        // 外部から借用していない場合のみ内部で作成
+        if (!transformationResource_[i]) {
+            transformationResource_[i] = s_dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
+        }
     }
 }
 
@@ -40,11 +43,13 @@ void Object3DResource::Map() {
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
     }
-    if (materialResource_) {
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-    }
-    if (transformationResource_) {
-        transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (materialResource_[i]) {
+            materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&materialData_[i]));
+        }
+        if (transformationResource_[i]) {
+            transformationResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_[i]));
+        }
     }
 }
 
@@ -57,13 +62,16 @@ void Object3DResource::Unmap() {
         indexResource_->Unmap(0, nullptr);
         indexData_ = nullptr;
     }
-    if (materialResource_) {
-        materialResource_->Unmap(0, nullptr);
-        materialData_ = nullptr;
-    }
-    if (transformationResource_) {
-        transformationResource_->Unmap(0, nullptr);
-        transformationData_ = nullptr;
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (materialResource_[i]) {
+            materialResource_[i]->Unmap(0, nullptr);
+            materialData_[i] = nullptr;
+        }
+        // 外部バッファの借用中はこのクラス自体では Unmap しない
+        if (transformationResource_[i]) {
+            transformationResource_[i]->Unmap(0, nullptr);
+            transformationData_[i] = nullptr;
+        }
     }
 }
 
@@ -83,15 +91,18 @@ void Object3DResource::UpdateTransform(const Camera& camera) {
     // 逆転置行列を計算
     transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
-    *transformationData_ = transformationMatrix_;
-
-    // マテリアルの UVTransform 更新
-    if (materialData_) {
-        materialData_->uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
+    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    if (transformationData_[frameIndex]) {
+        *transformationData_[frameIndex] = transformationMatrix_;
     }
+
+    // マテリアルの CPUキャッシュ更新 (明示的な SyncMaterialData() 呼び出しが必要)
+    cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
 }
 
-void Object3DResource::SetExternalTransformationResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, TransformationMatrix* data) {
-    transformationResource_ = resource;
-    transformationData_ = data;
+void Object3DResource::SetExternalTransformationResource(Microsoft::WRL::ComPtr<ID3D12Resource>* resources, TransformationMatrix** data) {
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        transformationResource_[i] = resources[i];
+        transformationData_[i] = data[i];
+    }
 }

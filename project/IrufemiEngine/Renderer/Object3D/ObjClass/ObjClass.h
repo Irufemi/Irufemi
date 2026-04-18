@@ -53,8 +53,8 @@ private:
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
     // 共通の変換行列リソース (全メッシュで共有)
-    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_;
-    TransformationMatrix* transformationData_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_[kMaxFramesInFlight];
+    TransformationMatrix* transformationData_[kMaxFramesInFlight] = { nullptr };
 
     Camera* camera_ = nullptr;
     bool isCullingEnabled_ = true;
@@ -131,7 +131,7 @@ public: //メンバ関数
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
     void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
-        return transformationResource_->GetGPUVirtualAddress();
+        return transformationResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
     }
     ///@}
 

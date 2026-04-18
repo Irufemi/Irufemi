@@ -1,6 +1,7 @@
 #pragma once
 #include "../Core/BaseResource.h"
 #include <vector>
+#include "../../Engine/Graphics/DirectX/DirectXCommon.h"
 #include <wrl.h>
 #include <d3d12.h>
 #include "../VertexData.h"
@@ -36,16 +37,44 @@ public:
 
     // --- マテリアル ---
     Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
-    Material* materialData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
+    Material cpuMaterialData_{};
+    Material* GetMaterialData() { return &cpuMaterialData_; }
+    
+    Material* materialData_[kMaxFramesInFlight] = { nullptr };
+    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_[kMaxFramesInFlight];
 
     // --- トランスフォーム ---
     Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
-    TransformationMatrix* transformationData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_ = nullptr;
+    TransformationMatrix* transformationData_[kMaxFramesInFlight] = { nullptr };
+    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_[kMaxFramesInFlight];
+    
+    const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
+
+    // --- getters ---
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const {
+        return materialResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
+    }
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const {
+        return transformationResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
+    }
+    
+    void SyncMaterialData() {
+        uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+        if (materialData_[frameIndex]) {
+            *materialData_[frameIndex] = cpuMaterialData_;
+        }
+    }
+
+    void SyncGPUData() {
+        uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+        if (transformationData_[frameIndex]) {
+            *transformationData_[frameIndex] = transformationMatrix_;
+        }
+        SyncMaterialData();
+    }
     // --- 外部リソースの借用 (ObjClass/AnimationModel等で共有するため) ---
-    void SetExternalTransformationResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, TransformationMatrix* data);
+    void SetExternalTransformationResource(Microsoft::WRL::ComPtr<ID3D12Resource>* resources, TransformationMatrix** data);
 
     // --- テクスチャ ---
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};

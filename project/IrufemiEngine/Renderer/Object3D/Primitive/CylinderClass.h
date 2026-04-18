@@ -88,7 +88,7 @@ public: // メンバ関数
     void SetRadius(float radius) { info_.radius = radius; isDirty_ = true; }
     void SetHeight(float height) { info_.height = height; isDirty_ = true; }
     void SetRotate(const Vector3& rotate) { if (resource_) resource_->transform_.rotate = rotate; isDirty_ = true; }
-    void SetColor(const Vector4& color) { if (resource_ && resource_->materialData_) resource_->materialData_->color = color; }
+    void SetColor(const Vector4& color) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->color = color; }
 
 private:
     // 行列更新の最適化用

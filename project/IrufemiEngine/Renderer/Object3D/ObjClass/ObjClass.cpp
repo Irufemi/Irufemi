@@ -16,8 +16,11 @@ DebugUI* ObjClass::ui_ = nullptr;
 ModelManager* ObjClass::modelManager_ = nullptr;
 
 ObjClass::~ObjClass() {
-    if (transformationResource_) {
-        transformationResource_->Unmap(0, nullptr);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (transformationResource_[i]) {
+            transformationResource_[i]->Unmap(0, nullptr);
+            transformationData_[i] = nullptr;
+        }
     }
 }
 
@@ -34,8 +37,10 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 
     // 変換行列リソースの生成とマップ (全メッシュ共有用)
     assert(drawManager_ && "DrawManager is not set. Cannot get DirectXCommon.");
-    transformationResource_ = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
-    transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        transformationResource_[i] = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
+        transformationResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_[i]));
+    }
 
     // インスタンス固有の各メッシュ用リソースを生成
     meshResources_.clear();
@@ -89,8 +94,9 @@ void ObjClass::Update() {
     transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
     // 計算した行列をマップ済みのリソースにコピー
-    if (transformationData_) {
-        *transformationData_ = transformationMatrix_;
+    uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
+    if (transformationData_[frameIndex]) {
+        *transformationData_[frameIndex] = transformationMatrix_;
     }
 
     // マテリアル情報をGPUへ転送
@@ -116,6 +122,14 @@ void ObjClass::Draw() {
 
     if (isDirty_ || cameraChanged) {
         Update();
+    } else {
+        uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
+        if (transformationData_[frameIndex]) {
+            *transformationData_[frameIndex] = transformationMatrix_;
+        }
+        for (auto& res : meshResources_) {
+            res->SyncMaterialData();
+        }
     }
 
     // 視錐台カリング
@@ -228,10 +242,10 @@ void ObjClass::UpdateMaterials() {
         if (i >= meshResources_.size()) break;
 
         auto& res = meshResources_[i];
-        if (!res->materialData_) continue;
+        if (!res->GetMaterialData()) continue;
 
         const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
-        Material* mappedData = res->materialData_;
+        Material* mappedData = res->GetMaterialData();
 
         // インスタンスカラーとマテリアルカラーを乗算
         mappedData->color.x = cpuMat.color.x * color_.x;
@@ -261,5 +275,7 @@ void ObjClass::UpdateMaterials() {
 
         // サンプラー設定 (個別上書き優先)
         mappedData->useClampSampler = (useClampSamplerOverride_ != -1) ? useClampSamplerOverride_ : cpuMat.useClampSampler;
+        
+        res->SyncMaterialData();
     }
 }

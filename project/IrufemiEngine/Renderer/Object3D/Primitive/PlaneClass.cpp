@@ -33,15 +33,15 @@ void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
     resource_->Map();
 
     // マテリアル
-    if (resource_->materialData_) {
-        resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-        resource_->materialData_->enableLighting = true;
-        resource_->materialData_->hasTexture = true;
-        resource_->materialData_->lightingMode = 3;
-        resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-        resource_->materialData_->metallic = 0.0f;
-        resource_->materialData_->roughness = 0.5f;
-        resource_->materialData_->environmentCoefficient = 0.0f;
+    if (resource_->GetMaterialData()) {
+        resource_->GetMaterialData()->color = { 1.0f,1.0f,1.0f,1.0f };
+        resource_->GetMaterialData()->enableLighting = true;
+        resource_->GetMaterialData()->hasTexture = true;
+        resource_->GetMaterialData()->lightingMode = 3;
+        resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
+        resource_->GetMaterialData()->metallic = 0.0f;
+        resource_->GetMaterialData()->roughness = 0.5f;
+        resource_->GetMaterialData()->environmentCoefficient = 0.0f;
     }
 
     Update();
@@ -62,14 +62,16 @@ void PlaneClass::Update() {
     resource_->UpdateTransform(*camera_);
 
     // UV行列
-    if (resource_->materialData_) {
-        resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+    if (resource_->GetMaterialData()) {
+        resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+        
+        resource_->SyncMaterialData();
     }
 
     // 平面情報をワールド空間で更新
     {
         // 平行移動を除いた行列
-        Matrix4x4 m = resource_->transformationData_->world;
+        Matrix4x4 m = resource_->transformationMatrix_.world;
         m.m[3][0] = m.m[3][1] = m.m[3][2] = 0.0f;
         m.m[3][3] = 1.0f;
 
@@ -82,9 +84,9 @@ void PlaneClass::Update() {
         nWorld = Math::Normalize(nWorld);
 
         Vector3 pWorld{
-            resource_->transformationData_->world.m[3][0],
-            resource_->transformationData_->world.m[3][1],
-            resource_->transformationData_->world.m[3][2]
+            resource_->transformationMatrix_.world.m[3][0],
+            resource_->transformationMatrix_.world.m[3][1],
+            resource_->transformationMatrix_.world.m[3][2]
         };
 
         info_.normal = nWorld;
@@ -121,6 +123,8 @@ void PlaneClass::Draw() {
 
     if (isDirty_ || cameraChanged) {
         Update();
+    } else {
+        resource_->SyncGPUData();
     }
 
     drawManager_->DrawStandard3D(resource_.get());
@@ -133,7 +137,7 @@ void PlaneClass::Debug([[maybe_unused]] const char* planeName) {
     ImGui::Begin(name.c_str());
 
     ui_->DebugTransform(resource_->transform_);
-    ui_->DebugMaterialBy3D(resource_->materialData_);
+    ui_->DebugMaterialBy3D(resource_->GetMaterialData());
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
     ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
     ui_->DebugUvTransform(resource_->uvTransform_);

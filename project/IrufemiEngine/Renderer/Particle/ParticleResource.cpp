@@ -24,12 +24,10 @@ void ParticleResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    if (!materialResource_) {
-        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(Material));
-    }
-
-    // インスタンシング用バッファの作成
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (!materialResource_[i]) {
+            materialResource_[i] = s_dxCommon_->CreateBufferResource(sizeof(Material));
+        }
         if (!instancingResource_[i]) {
             instancingResource_[i] = s_dxCommon_->CreateBufferResource(sizeof(ParticleForGPU) * kNumMaxInstance);
         }
@@ -43,10 +41,10 @@ void ParticleResource::Map() {
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
     }
-    if (materialResource_) {
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-    }
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (materialResource_[i]) {
+            materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&materialData_[i]));
+        }
         if (instancingResource_[i]) {
             instancingResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_[i]));
         }
@@ -62,11 +60,11 @@ void ParticleResource::Unmap() {
         indexResource_->Unmap(0, nullptr);
         indexData_ = nullptr;
     }
-    if (materialResource_) {
-        materialResource_->Unmap(0, nullptr);
-        materialData_ = nullptr;
-    }
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (materialResource_[i]) {
+            materialResource_[i]->Unmap(0, nullptr);
+            materialData_[i] = nullptr;
+        }
         if (instancingResource_[i]) {
             instancingResource_[i]->Unmap(0, nullptr);
             instancingData_[i] = nullptr;

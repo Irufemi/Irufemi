@@ -22,8 +22,11 @@ IrufemiEngine* AnimationModel::engine_ = nullptr;
 
 AnimationModel::AnimationModel() {}
 AnimationModel::~AnimationModel() {
-    if (transformationResource_) {
-        transformationResource_->Unmap(0, nullptr);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (transformationResource_[i]) {
+            transformationResource_[i]->Unmap(0, nullptr);
+            transformationData_[i] = nullptr;
+        }
     }
 }
 
@@ -42,8 +45,10 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
 
     // 変換行列リソースの生成とマップ
     assert(engine_ && "DrawManager is not set. Cannot get DirectXCommon.");
-    transformationResource_ = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
-    transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        transformationResource_[i] = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
+        transformationResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_[i]));
+    }
 
     // 各メッシュ用リソースの生成
     meshResources_.clear();
@@ -123,8 +128,8 @@ void AnimationModel::Update() {
         worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
         worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
         transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-        if (transformationData_) {
-            *transformationData_ = transformationMatrix_;
+        if (transformationData_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()]) {
+            *transformationData_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()] = transformationMatrix_;
         }
     } else {
         // --- ノードアニメーションモデルの更新 ---
@@ -139,8 +144,8 @@ void AnimationModel::Update() {
         transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
         // 計算した行列をマップ済みのリソースにコピー
-        if (transformationData_) {
-            *transformationData_ = transformationMatrix_;
+        if (transformationData_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()]) {
+            *transformationData_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()] = transformationMatrix_;
         }
     }
 
@@ -216,6 +221,14 @@ void AnimationModel::Draw() {
 
     if (isDirty_ || cameraChanged) {
         Update();
+    } else {
+        uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+        if (transformationData_[frameIndex]) {
+            *transformationData_[frameIndex] = transformationMatrix_;
+        }
+        for (auto& res : meshResources_) {
+            res->SyncMaterialData();
+        }
     }
 
     // --- 追加：骨格（球体の集合）を一括描画 ---
@@ -300,10 +313,10 @@ void AnimationModel::UpdateMaterials() {
         if (i >= meshResources_.size()) break;
 
         auto& res = meshResources_[i];
-        if (!res->materialData_) continue;
+        if (!res->GetMaterialData()) continue;
 
         const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
-        Material* mappedData = res->materialData_;
+        Material* mappedData = res->GetMaterialData();
 
         // インスタンスカラーとマテリアルカラーを乗算
         mappedData->color.x = cpuMat.color.x * color_.x;
@@ -333,6 +346,8 @@ void AnimationModel::UpdateMaterials() {
 
         // サンプラー設定 (個別上書き優先)
         mappedData->useClampSampler = (useClampSamplerOverride_ != -1) ? useClampSamplerOverride_ : cpuMat.useClampSampler;
+        
+        res->SyncMaterialData();
     }
 }
 
