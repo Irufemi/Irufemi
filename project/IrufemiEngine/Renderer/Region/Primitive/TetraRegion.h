@@ -7,6 +7,8 @@
 #include <d3d12.h>
 #include <cstdint>
 #include <cassert>
+#include <array>
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
 
 #include "Renderer/VertexData.h"
 #include "Engine/Graphics/Data/Material.h"
@@ -25,6 +27,9 @@ class DescriptorPool; // 追加
 
 class TetraRegion {
 public:
+    TetraRegion() {
+        instancingSrvIndex_.fill(UINT32_MAX);
+    }
     static void SetDirectXCommon(DirectXCommon* dx);
     static void SetTextureManager(TextureManager* tm);
     static void SetDrawManager(DrawManager* dm);
@@ -95,14 +100,15 @@ private:
     D3D12_INDEX_BUFFER_VIEW                indexBufferView_{};
     UINT                                   indexCount_ = 0;
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
+    // マテリアル
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> materialResource_{};
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> instanceBuffer_;
-    D3D12_CPU_DESCRIPTOR_HANDLE            instancingSrvCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE            instancingSrvGPU_{};
-    uint32_t                               instancingSrvIndex_ = UINT32_MAX;
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> instanceBuffer_{};
+    std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            instancingSrvCPU_{};
+    std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            instancingSrvGPU_{};
+    std::array<uint32_t, kMaxFramesInFlight>                               instancingSrvIndex_{};
 
     // Transformベース
     std::vector<Transform> instances_;

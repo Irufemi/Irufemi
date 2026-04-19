@@ -15,11 +15,13 @@ DescriptorPool* SphereRegion::srvPool_ = nullptr; // 追加
 
 SphereRegion::~SphereRegion() {
     // SRV スロットを遅延解放で返す
-    if (instancingSrvIndex_ != UINT32_MAX && srvPool_ && dx_) {
-        srvPool_->FreeAfterFence(instancingSrvIndex_, dx_->GetFenceValue());
-        instancingSrvIndex_ = UINT32_MAX;
-        instancingSrvCPU_ = {};
-        instancingSrvGPU_ = {};
+    if (srvPool_ && dx_) {
+        for (auto& idx : instancingSrvIndex_) {
+            if (idx != UINT32_MAX) {
+                srvPool_->FreeAfterFence(idx, dx_->GetFenceValue());
+                idx = UINT32_MAX;
+            }
+        }
     }
 }
 
@@ -131,18 +133,21 @@ void SphereRegion::CreateMeshBuffers(const std::vector<VertexData>& vertices, co
 }
 
 void SphereRegion::CreateMaterialResources() {
-    // Material
-    materialResource_ = dx_->CreateBufferResource(sizeof(Material));
-    Material* mat = nullptr;
-    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-    mat->color = { 1,1,1,1 };
-    mat->enableLighting = true;
-    mat->hasTexture = true; // 実際の有無は EnsureSharedTexture で調整
-    mat->lightingMode = 3;
-    mat->uvTransform = Math::MakeIdentity4x4();
-    mat->metallic = 0.0f;
-    mat->roughness = 0.5f;
-    mat->environmentCoefficient = 0.0f;
+    // Material (全フレーム分一括で生成)
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        materialResource_[i] = dx_->CreateBufferResource(sizeof(Material));
+        Material* mat = nullptr;
+        materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
+        mat->color = { 1,1,1,1 };
+        mat->enableLighting = true;
+        mat->hasTexture = true; // 実際の有無は EnsureSharedTexture で調整
+        mat->lightingMode = 3;
+        mat->uvTransform = Math::MakeIdentity4x4();
+        mat->metallic = 0.0f;
+        mat->roughness = 0.5f;
+        mat->environmentCoefficient = 0.0f;
+        materialResource_[i]->Unmap(0, nullptr);
+    }
 }
 
 void SphereRegion::EnsureSharedTexture(const std::string& textureName) {
@@ -153,8 +158,11 @@ void SphereRegion::EnsureSharedTexture(const std::string& textureName) {
         textureHandle_ = textureManager_->GetWhiteTextureHandle();
         // マテリアル側の hasTexture は実際のSRV存在に合わせて PS で参照
         Material* mat = nullptr;
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-        mat->hasTexture = (textureHandle_.ptr != 0);
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
+            mat->hasTexture = (textureHandle_.ptr != 0);
+            materialResource_[i]->Unmap(0, nullptr);
+        }
     }
     assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
 }
@@ -166,16 +174,17 @@ void SphereRegion::EnsureLightAndCamera() {
 void SphereRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     const UINT stride = sizeof(InstanceData);
     const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride);
+    uint32_t frameIndex = dx_->GetFrameIndex();
 
-    instanceBuffer_ = dx_->CreateBufferResource(sizeInBytes);
+    instanceBuffer_[frameIndex] = dx_->CreateBufferResource(sizeInBytes);
 
-    if (instancingSrvIndex_ == UINT32_MAX) {
+    if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {
         assert(srvPool_ && "SphereRegion::SetSrvAllocator 未設定");
         uint32_t idx = srvPool_->Allocate();
         if (idx == DescriptorPool::kInvalid) { OutputDebugStringA("SphereRegion: SRV Allocate failed\n"); return; }
-        instancingSrvIndex_ = idx;
-        instancingSrvCPU_ = srvPool_->GetCPUHandle(idx);
-        instancingSrvGPU_ = srvPool_->GetGPUHandle(idx);
+        instancingSrvIndex_[frameIndex] = idx;
+        instancingSrvCPU_[frameIndex] = srvPool_->GetCPUHandle(idx);
+        instancingSrvGPU_[frameIndex] = srvPool_->GetGPUHandle(idx);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
@@ -188,7 +197,7 @@ void SphereRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
     // 同じハンドルに上書き(再利用)
-    dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srv, instancingSrvCPU_);
+    dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_[frameIndex].Get(), &srv, instancingSrvCPU_[frameIndex]);
 }
 
 void SphereRegion::AddInstance(const Transform& t) {
@@ -296,11 +305,12 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
     // インスタンスバッファの再確保または更新
     CreateOrResizeInstanceBuffer(totalCount);
 
+    uint32_t frameIndex = dx_->GetFrameIndex();
     uint8_t* dst = nullptr;
-    HRESULT hr = instanceBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&dst));
+    HRESULT hr = instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
     std::memcpy(dst, temp.data(), sizeof(InstanceData) * visibleInstanceCount_);
-    instanceBuffer_->Unmap(0, nullptr);
+    instanceBuffer_[frameIndex]->Unmap(0, nullptr);
 
     instanceDirty_ = false;
 }
@@ -311,21 +321,27 @@ void SphereRegion::Draw() {
     // 毎フレームインスタンスの WVP 更新
     BuildInstanceBuffer(true);
 
-    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialResource_.Get(), textureHandle_, instancingSrvGPU_, indexCount_, GetInstanceCount());
+    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialResource_[dx_->GetFrameIndex()].Get(), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, GetInstanceCount());
 }
 
 void SphereRegion::SetColor(const Vector4& color) {
     // マテリアル色(テクスチャと乗算される想定)
     Material* mat = nullptr;
-    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-    mat->color = color;
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
+        mat->color = color;
+        materialResource_[i]->Unmap(0, nullptr);
+    }
 }
 
 void SphereRegion::SetEnvironmentCoefficient(float coefficient) {
     Material* mat = nullptr;
-    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-    if (mat) {
-        mat->environmentCoefficient = coefficient;
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
+        if (mat) {
+            mat->environmentCoefficient = coefficient;
+        }
+        materialResource_[i]->Unmap(0, nullptr);
     }
 }
 

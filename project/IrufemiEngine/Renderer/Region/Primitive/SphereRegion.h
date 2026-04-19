@@ -7,6 +7,8 @@
 #include <d3d12.h>
 #include <cstdint>
 #include <cassert>
+#include <array>
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
 
 #include "../../VertexData.h"            // VertexData
 #include "../../../Engine/Graphics/Data/Material.h"              // Material
@@ -23,6 +25,10 @@ class DescriptorPool; // 追加
 
 class SphereRegion {
 public:
+    SphereRegion() {
+        instancingSrvIndex_.fill(UINT32_MAX);
+    }
+
     // 静的セットアップ
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
@@ -67,9 +73,9 @@ public:
     // DrawManager 用 Getter
     D3D12_VERTEX_BUFFER_VIEW&   GetVertexBufferView() { return vertexBufferView_; }
     D3D12_INDEX_BUFFER_VIEW&    GetIndexBufferView() { return indexBufferView_; }
-    ID3D12Resource*             GetMaterialResource() { return materialResource_.Get(); }
+    ID3D12Resource*             GetMaterialResource() { return materialResource_[dx_->GetFrameIndex()].Get(); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[dx_->GetFrameIndex()]; }
     UINT                        GetIndexCount() const { return indexCount_; }
     UINT                        GetInstanceCount() const { return visibleInstanceCount_; }
 
@@ -108,17 +114,17 @@ private:
     D3D12_INDEX_BUFFER_VIEW                indexBufferView_{};
     UINT                                   indexCount_ = 0;
 
-    // マテリアル/ライト/カメラ
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
+    // マテリアル用
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> materialResource_{};
 
     // 共有テクスチャ SRV
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
 
     // インスタンシング StructuredBuffer と SRV
-    Microsoft::WRL::ComPtr<ID3D12Resource> instanceBuffer_;
-    D3D12_CPU_DESCRIPTOR_HANDLE            instancingSrvCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE            instancingSrvGPU_{};
-    uint32_t                               instancingSrvIndex_ = UINT32_MAX; // 1スロット確保して再利用
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> instanceBuffer_{};
+    std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            instancingSrvCPU_{};
+    std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            instancingSrvGPU_{};
+    std::array<uint32_t, kMaxFramesInFlight>                               instancingSrvIndex_{};
 
     // インスタンス群(Transform / Color を保持)
     std::vector<Transform> instances_;

@@ -5,6 +5,8 @@
 #include <string>
 #include <wrl.h>
 #include <d3d12.h>
+#include <array>
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
 
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Core/Math/Transform.h"
@@ -23,6 +25,11 @@ struct GpuMesh;
 
 class ModelRegion {
 public:
+    ModelRegion() {
+        instancingSrvIndex_.fill(UINT32_MAX);
+    }
+    ~ModelRegion();
+
     void Initialize(Camera* camera, const std::string& objFilename);
     void AddInstance(const Transform& t);
     void ClearInstances();
@@ -39,9 +46,9 @@ public:
 
     // --- DrawManager から参照する Getter 群 ---
     const GpuMesh* GetGpuMesh() const; // 共有メッシュ取得
-    ID3D12Resource* GetMaterialResource() { return materialResource_.Get(); }
+    ID3D12Resource* GetMaterialResource() { return materialResource_[dx_->GetFrameIndex()].Get(); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[dx_->GetFrameIndex()]; }
     UINT GetInstanceCount() const { return visibleInstanceCount_; }
 
 private:
@@ -71,14 +78,14 @@ private:
     std::shared_ptr<ManagedModel> managedModel_{};
 
     // インスタンス固有リソース
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> materialResource_{};
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
 
     // インスタンシング用
-    Microsoft::WRL::ComPtr<ID3D12Resource> instanceBuffer_;
-    D3D12_CPU_DESCRIPTOR_HANDLE            instancingSrvCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE            instancingSrvGPU_{};
-    uint32_t                               instancingSrvIndex_ = UINT32_MAX;
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> instanceBuffer_{};
+    std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            instancingSrvCPU_{};
+    std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            instancingSrvGPU_{};
+    std::array<uint32_t, kMaxFramesInFlight>                               instancingSrvIndex_{};
 
     std::vector<Transform> instances_;
     bool                   instanceDirty_ = false;

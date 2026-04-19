@@ -11,9 +11,13 @@ DrawManager* Line3DRegion::drawManager_ = nullptr;
 DescriptorPool* Line3DRegion::s_srvAllocator_ = nullptr;
 
 Line3DRegion::~Line3DRegion() {
-    if (s_srvAllocator_ && instancingSrvIndex_ != UINT32_MAX) {
-        s_srvAllocator_->FreeAfterFence(instancingSrvIndex_, dx_->GetFenceValue());
-        instancingSrvIndex_ = UINT32_MAX;
+    if (s_srvAllocator_ && dx_) {
+        for (uint32_t& idx : instancingSrvIndex_) {
+            if (idx != UINT32_MAX) {
+                s_srvAllocator_->FreeAfterFence(idx, dx_->GetFenceValue());
+                idx = UINT32_MAX;
+            }
+        }
     }
 }
 
@@ -69,7 +73,8 @@ void Line3DRegion::BuildInstanceBuffer(bool force) {
     if (activeCount_ == 0 && !force) return;
 
     CreateOrResizeInstanceBuffer(static_cast<uint32_t>(activeCount_));
-    if (!instanceBuffer_ || !instanceData_) return;
+    uint32_t frameIndex = dx_->GetFrameIndex();
+    if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex]) return;
 
     const Matrix4x4& viewProjection = Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix());
 
@@ -92,32 +97,34 @@ void Line3DRegion::BuildInstanceBuffer(bool force) {
         Matrix4x4 translate = Math::MakeTranslateMatrix(inst.start);
         Matrix4x4 world = scale * rotate * translate;
 
-        instanceData_[i].WVP = world * viewProjection;
-        instanceData_[i].color = inst.color;
+        instanceData_[frameIndex][i].WVP = world * viewProjection;
+        instanceData_[frameIndex][i].color = inst.color;
     }
 }
 
 void Line3DRegion::Draw() {
     if (activeCount_ == 0) return;
     BuildInstanceBuffer();
-    drawManager_->DrawLineInstanced(baseLineResource_.get(), instancingSrvGPU_, GetInstanceCountU32());
+    drawManager_->DrawLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32());
 }
 
 void Line3DRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     if (instanceCount == 0) return;
-    if (instanceCount > instanceCapacity_) {
-        if (instanceBuffer_) {
-            instanceBuffer_->Unmap(0, nullptr);
-            instanceData_ = nullptr;
-            instanceBuffer_.Reset();
+    uint32_t frameIndex = dx_->GetFrameIndex();
+    
+    if (instanceCount > instanceCapacity_[frameIndex]) {
+        if (instanceBuffer_[frameIndex]) {
+            instanceBuffer_[frameIndex]->Unmap(0, nullptr);
+            instanceData_[frameIndex] = nullptr;
+            instanceBuffer_[frameIndex].Reset();
         }
-        instanceCapacity_ = instanceCount;
+        instanceCapacity_[frameIndex] = instanceCount;
 
         D3D12_HEAP_PROPERTIES heapProps{};
         heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
         D3D12_RESOURCE_DESC resDesc{};
         resDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-        resDesc.Width = sizeof(InstanceData) * instanceCapacity_;
+        resDesc.Width = sizeof(InstanceData) * instanceCapacity_[frameIndex];
         resDesc.Height = 1;
         resDesc.DepthOrArraySize = 1;
         resDesc.MipLevels = 1;
@@ -127,25 +134,26 @@ void Line3DRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
         HRESULT hr = dx_->GetDevice()->CreateCommittedResource(
             &heapProps, D3D12_HEAP_FLAG_NONE, &resDesc,
             D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-            IID_PPV_ARGS(instanceBuffer_.GetAddressOf()));
+            IID_PPV_ARGS(instanceBuffer_[frameIndex].GetAddressOf()));
         if (FAILED(hr)) {
-            instanceBuffer_.Reset();
-            instanceCapacity_ = 0;
+            instanceBuffer_[frameIndex].Reset();
+            instanceCapacity_[frameIndex] = 0;
             return;
         }
 
-        instanceBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&instanceData_));
+        instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&instanceData_[frameIndex]));
         EnsureInstancingSRV();
     }
 }
 
 void Line3DRegion::EnsureInstancingSRV() {
-    if (!instanceBuffer_) return;
+    uint32_t frameIndex = dx_->GetFrameIndex();
+    if (!instanceBuffer_[frameIndex]) return;
 
-    if (instancingSrvIndex_ == UINT32_MAX) {
-        instancingSrvIndex_ = s_srvAllocator_->Allocate();
-        instancingSrvCPU_ = s_srvAllocator_->GetCPUHandle(instancingSrvIndex_);
-        instancingSrvGPU_ = s_srvAllocator_->GetGPUHandle(instancingSrvIndex_);
+    if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {
+        instancingSrvIndex_[frameIndex] = s_srvAllocator_->Allocate();
+        instancingSrvCPU_[frameIndex] = s_srvAllocator_->GetCPUHandle(instancingSrvIndex_[frameIndex]);
+        instancingSrvGPU_[frameIndex] = s_srvAllocator_->GetGPUHandle(instancingSrvIndex_[frameIndex]);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
@@ -153,9 +161,9 @@ void Line3DRegion::EnsureInstancingSRV() {
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     srvDesc.Buffer.FirstElement = 0;
-    srvDesc.Buffer.NumElements = instanceCapacity_;
+    srvDesc.Buffer.NumElements = instanceCapacity_[frameIndex];
     srvDesc.Buffer.StructureByteStride = sizeof(InstanceData);
     srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-    dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srvDesc, instancingSrvCPU_);
+    dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_[frameIndex].Get(), &srvDesc, instancingSrvCPU_[frameIndex]);
 }
