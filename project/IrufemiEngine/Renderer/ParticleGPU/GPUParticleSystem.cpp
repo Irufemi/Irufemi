@@ -98,6 +98,10 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
     perFrameData_->deltaTime = engine_->GetDeltaTime();
 
+#if defined(USE_IMGUI)
+    debugLineRegion_ = std::make_unique<Line3DRegion>();
+    debugLineRegion_->Initialize(camera);
+#endif
 }
 
 // 更新
