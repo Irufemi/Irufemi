@@ -22,9 +22,6 @@ IrufemiEngine* AnimationModel::engine_ = nullptr;
 
 AnimationModel::AnimationModel() {}
 AnimationModel::~AnimationModel() {
-    if (transformationResource_) {
-        transformationResource_->Unmap(0, nullptr);
-    }
 }
 
 // 初期化
@@ -40,18 +37,16 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
         return;
     }
 
-    // 変換行列リソースの生成とマップ
-    assert(engine_ && "DrawManager is not set. Cannot get DirectXCommon.");
-    transformationResource_ = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
-    transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+    // 4. 変換行列リソースの生成とマップ (全メッシュ共有用)
+    assert(engine_->GetDrawManager() && "DrawManager is not set.");
+    transformationBuffer_.Initialize(engine_->GetDrawManager()->GetDxCommon());
 
     // 各メッシュ用リソースの生成
     meshResources_.clear();
     for (size_t i = 0; i < managedModel_->gpuMeshes.size(); ++i) {
         auto res = std::make_unique<Object3DResource>();
         
-        // 変換行列リソースを借用
-        res->SetExternalTransformationResource(transformationResource_, transformationData_);
+        res->SetExternalTransformationBuffer(&transformationBuffer_);
         
         const auto& gpuMesh = managedModel_->gpuMeshes[i];
         res->vertexBufferView_ = gpuMesh->vertexBufferView;
@@ -59,7 +54,6 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
         res->indexCount_ = gpuMesh->indexCount;
         
         res->CreateResource();
-        res->Map();
 
         // 初期テクスチャハンドルをコピー
         const auto& gpuMaterial = (i < managedModel_->gpuMaterials.size()) ? managedModel_->gpuMaterials[i] : nullptr;
@@ -123,9 +117,7 @@ void AnimationModel::Update() {
         worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
         worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
         transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-        if (transformationData_) {
-            *transformationData_ = transformationMatrix_;
-        }
+        transformationBuffer_.Update(transformationMatrix_, engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex());
     } else {
         // --- ノードアニメーションモデルの更新 ---
         // オブジェクト全体のワールド行列を計算
@@ -139,9 +131,7 @@ void AnimationModel::Update() {
         transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
         // 計算した行列をマップ済みのリソースにコピー
-        if (transformationData_) {
-            *transformationData_ = transformationMatrix_;
-        }
+        transformationBuffer_.Update(transformationMatrix_, engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex());
     }
 
 
@@ -186,10 +176,31 @@ void AnimationModel::Update() {
     // マテリアル情報をGPUへ転送
     UpdateMaterials();
 
-    // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    
+    MakeDirty();
+}
+
+void AnimationModel::SyncIfDirty() {
+    if (dirtyFramesLeft_ > 0) {
+        uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+        transformationBuffer_.Update(transformationMatrix_, frameIndex);
+        for (auto& res : meshResources_) {
+            res->SyncMaterialData();
+        }
+        
+        // --- 追加: SkinCluster のマルチバッファ同期（ポーズ中の振動対策） ---
+        if (managedModel_ && managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
+            AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
+        }
+        
+        if (lastSyncedFrameIndex_ != frameIndex) {
+            dirtyFramesLeft_--;
+            lastSyncedFrameIndex_ = frameIndex;
+        }
+    }
 }
 
 // 描画
@@ -217,6 +228,8 @@ void AnimationModel::Draw() {
     if (isDirty_ || cameraChanged) {
         Update();
     }
+    
+    SyncIfDirty();
 
     // --- 追加：骨格（球体の集合）を一括描画 ---
     if (jointSpheres_ && !skeleton_.joints.empty()) {
@@ -233,19 +246,21 @@ void AnimationModel::Draw() {
     // 1. スキニングの実行
     if (!managedModel_->cpuModel->skinClusterData.empty()) {
         engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
-        engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource.Get());
+        uint32_t f = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+        engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource[f].Get());
     }
 
     // 2. グラフィックスPSOの適用
     engine_->ApplyPSO();
 
     // 3. 全メッシュをループして描画
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     for (size_t i = 0; i < meshResources_.size(); ++i) {
         auto& res = meshResources_[i];
 
         // スキニング中なら VBV を差し替えて描画
         if (!managedModel_->cpuModel->skinClusterData.empty()) {
-            engine_->GetDrawManager()->DrawStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView);
+            engine_->GetDrawManager()->DrawStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[frameIndex]);
         } else {
             engine_->GetDrawManager()->DrawStandard3D(res.get());
         }
@@ -300,10 +315,10 @@ void AnimationModel::UpdateMaterials() {
         if (i >= meshResources_.size()) break;
 
         auto& res = meshResources_[i];
-        if (!res->materialData_) continue;
+        if (!res->GetMaterialData()) continue;
 
         const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
-        Material* mappedData = res->materialData_;
+        Material* mappedData = res->GetMaterialData();
 
         // インスタンスカラーとマテリアルカラーを乗算
         mappedData->color.x = cpuMat.color.x * color_.x;
@@ -333,6 +348,8 @@ void AnimationModel::UpdateMaterials() {
 
         // サンプラー設定 (個別上書き優先)
         mappedData->useClampSampler = (useClampSamplerOverride_ != -1) ? useClampSamplerOverride_ : cpuMat.useClampSampler;
+        
+        res->SyncMaterialData();
     }
 }
 
@@ -353,7 +370,8 @@ void AnimationModel::UpdateAnimation() {
         AnimationManager::SkeletonUpdate(skeleton_);
 
         // 3. SkinClusterのMatrixPaletteを更新
-        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_);
+        uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
     } else { // ノードアニメーションの場合
         // rootNodeのAnimationを取得
         NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[managedModel_->cpuModel->rootNode.name];

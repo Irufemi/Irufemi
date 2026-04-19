@@ -58,12 +58,12 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
     resource_->UpdateTransform(*camera_);
 
     // マテリアル
-    if (resource_->materialData_) {
-        resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-        resource_->materialData_->enableLighting = false;
-        resource_->materialData_->hasTexture = true;
-        resource_->materialData_->lightingMode = 2;
-        resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+    if (resource_->GetMaterialData()) {
+        resource_->GetMaterialData()->color = { 1.0f,1.0f,1.0f,1.0f };
+        resource_->GetMaterialData()->enableLighting = false;
+        resource_->GetMaterialData()->hasTexture = true;
+        resource_->GetMaterialData()->lightingMode = 2;
+        resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
     }
 
     // テクスチャ設定
@@ -117,7 +117,7 @@ void Sprite::Update() {
     resource_->UpdateTransform(*camera_);
 
     // UV 変換(flip → crop → userUV)
-    if (resource_->materialData_) {
+    if (resource_->GetMaterialData()) {
         // userUV: 既存の uvTransform(回転/スクロール)
         Matrix4x4 userUV = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 
@@ -137,13 +137,17 @@ void Sprite::Update() {
         Matrix4x4 flipUV = Math::MakeAffineMatrix(flipScale, Vector3{ 0.0f,0.0f,0.0f }, flipTrans);
 
         Matrix4x4 base = Math::Multiply(cropUV, userUV);
-        resource_->materialData_->uvTransform = Math::Multiply(flipUV, base);
+        resource_->GetMaterialData()->uvTransform = Math::Multiply(flipUV, base);
+        
+        resource_->SyncMaterialData();
     }
 
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetOrthographicMatrix();
+    
+    resource_->MakeDirty();
 }
 
 void Sprite::Draw() {
@@ -156,6 +160,8 @@ void Sprite::Draw() {
     if (isDirty_ || cameraChanged) {
         Update();
     }
+    
+    resource_->SyncIfDirty();
 
     drawManager_->DrawSprite(resource_.get());
 }
@@ -241,7 +247,7 @@ void Sprite::Debug([[maybe_unused]] const char* spriteName) {
 
     if (ui_ && resource_) {
         ui_->DebugTransform2D(resource_->transform_);
-        ui_->DebugMaterialBy2D(resource_->materialData_);
+        ui_->DebugMaterialBy2D(resource_->GetMaterialData());
         ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
         ui_->DebugUvTransform(resource_->uvTransform_);
 

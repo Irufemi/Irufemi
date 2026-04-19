@@ -120,9 +120,9 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
 
     //マテリアル
 
-    resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-    resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-    resource_->materialData_->useClampSampler = (primitiveShape_ == PrimitiveType::Ring || primitiveShape_ == PrimitiveType::Cylinder);
+    resource_->GetMaterialData()->color = { 1.0f,1.0f,1.0f,1.0f };
+    resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
+    resource_->GetMaterialData()->useClampSampler = (primitiveShape_ == PrimitiveType::Ring || primitiveShape_ == PrimitiveType::Cylinder);
 
     if (textureManager_) {
         auto textureNames = textureManager_->GetTextureNamesForDebug();
@@ -207,7 +207,10 @@ void ParticleSystem::Update() {
 
         ++particleIterator; // 次のイテレーターに進める
     }
-    resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+    resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+    
+    resource_->SyncMaterialData();
+    lastUpdateFrameIndex_ = BaseResource::GetDirectXCommon()->GetFrameIndex();
 
 #if USE_IMGUI
     if (debugLineRegion_) {
@@ -221,6 +224,8 @@ void ParticleSystem::Draw()
     if (!resource_ || !s_drawManager_ || !camera_ || (numInstance_ == 0 && particles_.empty())) {
         return;
     }
+
+    SyncGPUData();
 
     // 視錐台カリング
     if (isCullingEnabled_) {
@@ -283,6 +288,26 @@ void ParticleSystem::Draw()
         debugLineRegion_->Draw();
     }
 #endif
+}
+
+void ParticleSystem::SyncGPUData() {
+    uint32_t currentFrameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    
+    // 今フレームですでにUpdate()が呼ばれている場合は、正しいデータが書き込み済みのためスキップ
+    if (lastUpdateFrameIndex_ == currentFrameIndex) return;
+
+    // 前回のデータ元のフレームインデックス
+    uint32_t prevFrameIndex = (currentFrameIndex + kMaxFramesInFlight - 1) % kMaxFramesInFlight;
+
+    // 前フレームのデータをそのまま丸ごと現在のフレームのバッファへコピーする（明滅対策）
+    if (numInstance_ > 0 && resource_->instancingData_[currentFrameIndex] && resource_->instancingData_[prevFrameIndex]) {
+        std::memcpy(resource_->instancingData_[currentFrameIndex], 
+                    resource_->instancingData_[prevFrameIndex], 
+                    sizeof(ParticleForGPU) * numInstance_);
+    }
+    
+    resource_->SyncMaterialData();
+    lastUpdateFrameIndex_ = currentFrameIndex; // これ以降このフレームでの同期は不要
 }
 
 void ParticleSystem::SetEmitterPosition(const Vector3& position) {
@@ -552,7 +577,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
 
             if (ImGui::BeginTabItem("Rendering")) {
                 s_ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-                s_ui_->DebugMaterialByParticle(resource_->materialData_);
+                s_ui_->DebugMaterialByParticle(resource_->GetMaterialData());
                 s_ui_->DebugUvTransform(resource_->uvTransform_);
 
                 // --- Ring パラメータ UI ---

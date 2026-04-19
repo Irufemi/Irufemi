@@ -100,7 +100,7 @@ public: //メンバ関数
     const Vector2& GetAnchor() const { return anchor_; }
     const Vector2 GetPosition2D() const;
     const Vector3& GetRotation()const { return resource_ ? resource_->transform_.rotate : Vector3{}; }
-    const Vector4& GetColor()const { return resource_->materialData_->color; }
+    const Vector4& GetColor()const { return resource_->GetMaterialData()->color; }
     bool IsFlipX() const { return isFlipX_; }
     bool IsFlipY() const { return isFlipY_; }
     ///@}
@@ -132,7 +132,7 @@ public: //メンバ関数
     /**
      * @brief 色（RGBA）を設定
      */
-    void SetColor(const Vector4& color) { resource_->materialData_->color = color; }
+    void SetColor(const Vector4& color) { resource_->GetMaterialData()->color = color; }
 
     /**
      * @brief 反転状態を一括設定

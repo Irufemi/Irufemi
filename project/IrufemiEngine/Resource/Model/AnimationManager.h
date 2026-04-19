@@ -111,7 +111,8 @@ public: // 静的ヘルパ
     /// </summary>
     /// <param name="skinCluster"></param>
     /// <param name="skeleton"></param>
-    static void SkinClusterUpdate(SkinCluster& skinCluster, const Skeleton& skeleton);
+    /// <param name="frameIndex"></param>
+    static void SkinClusterUpdate(SkinCluster& skinCluster, const Skeleton& skeleton, uint32_t frameIndex);
 
 private: // 内部ヘルパ
     std::string NormalizeAndResolve(const std::string& filename) const;

@@ -22,8 +22,19 @@
 DirectXCommon* ModelRegion::dx_ = nullptr;
 TextureManager* ModelRegion::textureManager_ = nullptr;
 DrawManager* ModelRegion::drawManager_ = nullptr;
-DescriptorPool* ModelRegion::srvPool_ = nullptr;
 ModelManager* ModelRegion::modelManager_ = nullptr;
+DescriptorPool* ModelRegion::srvPool_ = nullptr;
+
+ModelRegion::~ModelRegion() {
+    if (srvPool_ && dx_) {
+        for (auto& idx : instancingSrvIndex_) {
+            if (idx != UINT32_MAX) {
+                srvPool_->FreeAfterFence(idx, dx_->GetFenceValue());
+                idx = UINT32_MAX;
+            }
+        }
+    }
+}
 
 void ModelRegion::Initialize(
     Camera* camera,
@@ -52,23 +63,18 @@ const GpuMesh* ModelRegion::GetGpuMesh() const {
 }
 
 void ModelRegion::CreateMaterialResources(const ObjMesh& mesh) {
-    // マテリアル
-    materialResource_ = dx_->CreateBufferResource(sizeof(Material));
-    Material* mat = nullptr;
-    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-    
-    // ObjMaterial から Material へ必要なデータをコピー
-    mat->color = mesh.material.color;
-    mat->enableLighting = mesh.material.enableLighting;
-    mat->uvTransform = mesh.material.uvTransform;
-    mat->metallic = mesh.material.metallic;
-    mat->roughness = mesh.material.roughness;
-    mat->environmentCoefficient = 0.0f;
-    // hasTexture は EnsureSharedTexture で設定するため、ここではパスの有無で仮設定
-    mat->hasTexture = !mesh.material.textureFilePath.empty();
-    mat->lightingMode = mesh.material.enableLighting ? 3 : 0; // ライティングモードをPBR(3)に設定
-
-    if (mat->color.w <= 0.0f) { mat->color.w = 1.0f; }
+    materialBuffer_.Initialize(dx_);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        materialBuffer_[i]->color = mesh.material.color;
+        materialBuffer_[i]->enableLighting = mesh.material.enableLighting;
+        materialBuffer_[i]->uvTransform = mesh.material.uvTransform;
+        materialBuffer_[i]->metallic = mesh.material.metallic;
+        materialBuffer_[i]->roughness = mesh.material.roughness;
+        materialBuffer_[i]->environmentCoefficient = 0.0f;
+        materialBuffer_[i]->hasTexture = !mesh.material.textureFilePath.empty();
+        materialBuffer_[i]->lightingMode = mesh.material.enableLighting ? 3 : 0;
+        if (materialBuffer_[i]->color.w <= 0.0f) { materialBuffer_[i]->color.w = 1.0f; }
+    }
 }
 
 void ModelRegion::EnsureLightAndCamera() {
@@ -87,22 +93,17 @@ void ModelRegion::EnsureSharedTexture(const ObjMesh& mesh) {
 void ModelRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     const UINT stride = sizeof(InstanceData);
     const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride);
+    uint32_t frameIndex = dx_->GetFrameIndex();
 
-    instanceBuffer_ = dx_->CreateBufferResource(sizeInBytes);
+    instanceBuffer_[frameIndex] = dx_->CreateBufferResource(sizeInBytes);
 
-    if (instancingSrvIndex_ == UINT32_MAX) {
-        if (!srvPool_) {
-            OutputDebugStringA("Region::CreateOrResizeInstanceBuffer: srvAllocator_ is null\n");
-            return;
-        }
+    if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {
+        assert(srvPool_);
         uint32_t idx = srvPool_->Allocate();
-        if (idx == DescriptorPool::kInvalid) {
-            OutputDebugStringA("Region::CreateOrResizeInstanceBuffer: SRV Allocate failed\n");
-            return;
-        }
-        instancingSrvIndex_ = idx;
-        instancingSrvCPU_ = srvPool_->GetCPUHandle(idx);
-        instancingSrvGPU_ = srvPool_->GetGPUHandle(idx);
+        if (idx == DescriptorPool::kInvalid) { OutputDebugStringA("ModelRegion SRV allocate failed\n"); return; }
+        instancingSrvIndex_[frameIndex] = idx;
+        instancingSrvCPU_[frameIndex] = srvPool_->GetCPUHandle(idx);
+        instancingSrvGPU_[frameIndex] = srvPool_->GetGPUHandle(idx);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
@@ -114,7 +115,7 @@ void ModelRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     srv.Buffer.StructureByteStride = stride;
     srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-    dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_.Get(), &srv, instancingSrvCPU_);
+    dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_[frameIndex].Get(), &srv, instancingSrvCPU_[frameIndex]);
 }
 
 void ModelRegion::AddInstance(const Transform& t) {
@@ -181,32 +182,24 @@ void ModelRegion::BuildInstanceBuffer(bool force) {
         return;
     }
 
-    // バッファ確保（全インスタンス分確保しておく）
+    // インスタンスバッファ確保 / 更新
     CreateOrResizeInstanceBuffer(totalCount);
 
+    uint32_t frameIndex = dx_->GetFrameIndex();
     uint8_t* dst = nullptr;
-    HRESULT hr = instanceBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&dst));
+    HRESULT hr = instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
     std::memcpy(dst, temp.data(), sizeof(InstanceData) * visibleInstanceCount_);
-    instanceBuffer_->Unmap(0, nullptr);
+    instanceBuffer_[frameIndex]->Unmap(0, nullptr);
 
     instanceDirty_ = false;
-
-    // カメラ行列を保存
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
 }
 
 void ModelRegion::Draw() {
     if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || instances_.empty()) { return; }
 
-    // カメラの行列が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
-
-    if (instanceDirty_ || cameraChanged) {
-        BuildInstanceBuffer(true);
-    }
+    // 毎フレームインスタンスの WVP 等を更新する (マルチバッファなので常に更新)
+    BuildInstanceBuffer(true);
 
     drawManager_->DrawModelRegion(this);
 }

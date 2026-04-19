@@ -44,7 +44,7 @@ void Circle2D::Initialize(Camera* camera, const std::string& textureName, uint32
             selectedTextureIndex_ = static_cast<int>(std::distance(names.begin(), it));
         }
     }
-    resource_->materialData_->hasTexture = useTexture_;
+    resource_->GetMaterialData()->hasTexture = useTexture_;
 }
 
 void Circle2D::BuildUnitCircleFan(uint32_t subdiv) {
@@ -104,14 +104,15 @@ void Circle2D::InitMaterialAndMatrix() {
         Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP =
         Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
-    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world };
+    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    resource_->transformationBuffer_.Update(resource_->transformationMatrix_, frameIndex);
 
     // マテリアル
-    resource_->materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    resource_->materialData_->enableLighting = false;
-    resource_->materialData_->hasTexture = true;
-    resource_->materialData_->lightingMode = 2;
-    resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+    resource_->GetMaterialData()->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    resource_->GetMaterialData()->enableLighting = false;
+    resource_->GetMaterialData()->hasTexture = true;
+    resource_->GetMaterialData()->lightingMode = 2;
+    resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
 }
 
 void Circle2D::UpdateMatrix() {
@@ -129,7 +130,6 @@ void Circle2D::UpdateMatrix() {
         Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP =
         Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
-    *resource_->transformationData_ = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world };
 }
 
 void Circle2D::Update() {
@@ -138,10 +138,12 @@ void Circle2D::Update() {
     UpdateMatrix();
 
     // UV 変換はSpriteと同様の意味付け(ここではIdentityのまま)
-    resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
+    resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
+    resource_->MakeDirty();
 }
 
 void Circle2D::Draw() {
+    resource_->SyncIfDirty();
     drawManager_->DrawSprite(resource_.get());
 }
 
@@ -176,7 +178,7 @@ void Circle2D::Debug([[maybe_unused]] const char* circleName) {
     std::string name = std::string("Circle2D: ") + circleName;
     ImGui::Begin(name.c_str());
     ui_->DebugTransform2D(resource_->transform_);
-    ui_->DebugMaterialBy2D(resource_->materialData_);
+    ui_->DebugMaterialBy2D(resource_->GetMaterialData());
 
     bool useTex = useTexture_;
     if (ImGui::Checkbox("UseTexture", &useTex)) {

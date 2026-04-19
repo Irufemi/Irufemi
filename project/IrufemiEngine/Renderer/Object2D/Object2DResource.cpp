@@ -25,12 +25,17 @@ void Object2DResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    if (!materialResource_) {
-        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(Material));
+    materialBuffer_.Initialize(s_dxCommon_);
+    for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+        materialBuffer_[i]->color = {1,1,1,1};
+        materialBuffer_[i]->enableLighting = true;
+        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
+        materialBuffer_[i]->metallic = 0.0f;
+        materialBuffer_[i]->roughness = 0.5f;
+        materialBuffer_[i]->environmentCoefficient = 0.0f;
     }
-    if (!transformationResource_) {
-        transformationResource_ = s_dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
-    }
+
+    transformationBuffer_.Initialize(s_dxCommon_);
 }
 
 void Object2DResource::Map() {
@@ -39,12 +44,6 @@ void Object2DResource::Map() {
     }
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
-    }
-    if (materialResource_) {
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-    }
-    if (transformationResource_) {
-        transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
     }
 }
 
@@ -57,27 +56,17 @@ void Object2DResource::Unmap() {
         indexResource_->Unmap(0, nullptr);
         indexData_ = nullptr;
     }
-    if (materialResource_) {
-        materialResource_->Unmap(0, nullptr);
-        materialData_ = nullptr;
-    }
-    if (transformationResource_) {
-        transformationResource_->Unmap(0, nullptr);
-        transformationData_ = nullptr;
-    }
 }
 
 void Object2DResource::UpdateTransform(const Camera& camera) {
-    if (!transformationData_) return;
-
+    
     transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     // 2D なので正射影行列を掛ける
     transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, camera.GetOrthographicMatrix());
 
-    *transformationData_ = transformationMatrix_;
+    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    transformationBuffer_.Update(transformationMatrix_, frameIndex);
 
-    // UVTransform も更新
-    if (materialData_) {
-        materialData_->uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
-    }
+    // CPU側のマテリアルキャッシュにのみ反映させる
+    cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
 }

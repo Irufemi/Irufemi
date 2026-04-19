@@ -50,6 +50,8 @@ public:
 	void Update();
 	/** @brief インスタンシング描画の実行 */
 	void Draw();
+	/** @brief メイン更新がスキップされた場合のGPU同期処理 */
+	void SyncGPUData();
 	/** @brief DebugUI を使用したパラメータ調整機能 */
 	void Debug(const char* particleName = "");
 	///@}
@@ -165,6 +167,7 @@ private:
 	Matrix4x4 backToFrontMatrix_{};
 	bool useBillboard_ = true;
 	bool isUpdate_ = true;
+	uint32_t lastUpdateFrameIndex_ = static_cast<uint32_t>(-1);
 
 	std::list<Particle> particles_; ///< 生存しているパーティクルのリスト
 	Emitter emitter_; ///< パーティクル放出器の設定

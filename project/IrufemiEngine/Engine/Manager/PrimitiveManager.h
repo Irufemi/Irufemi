@@ -3,6 +3,7 @@
 #include "../../Renderer/VertexData.h"
 #include "../Core/Type/PrimitiveType.h"
 #include "../../Renderer/Particle/Data/Particle.h"
+#include "../Core/Pattern/Singleton.h"
 #include <cstdint>
 #include <vector>
 #include <map>
@@ -30,22 +31,11 @@ struct PrimitiveResource {
  * @details 頻繁に使用される標準的な形状の CPU データおよび GPU リソース（頂点/インデックスバッファ）をキャッシュし、
  *          効率的な再利用を可能にします。
  */
-class PrimitiveManager
+class PrimitiveManager : public Singleton<PrimitiveManager>
 {
+    friend class Singleton<PrimitiveManager>;
+
 public:
-    /** @name インスタンス管理 */
-    ///@{
-    /**
-     * @brief シングルトンインスタンスを取得する
-     */
-    static PrimitiveManager* GetInstance();
-
-    /**
-     * @brief 全リソースを解放する
-     */
-    static void Finalize();
-    ///@}
-
     /** @name キャッシュデータの取得 */
     ///@{
     /**
@@ -109,8 +99,6 @@ private:
     static void GenerateTorusIndices(PrimitiveData& data, uint32_t majorSegments, uint32_t minorSegments);
 
 private:
-    static PrimitiveManager* instance;
-
     std::map<PrimitiveType, PrimitiveData> cpuCache_;
     std::map<PrimitiveType, PrimitiveResource> gpuCache_;
 };

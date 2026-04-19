@@ -24,11 +24,16 @@ void ParticleResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    if (!materialResource_) {
-        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(Material));
+    materialBuffer_.Initialize(s_dxCommon_);
+    for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+        materialBuffer_[i]->color = {1,1,1,1};
+        materialBuffer_[i]->enableLighting = true;
+        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
+        materialBuffer_[i]->metallic = 0.0f;
+        materialBuffer_[i]->roughness = 0.5f;
+        materialBuffer_[i]->environmentCoefficient = 0.0f;
     }
 
-    // インスタンシング用バッファの作成
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         if (!instancingResource_[i]) {
             instancingResource_[i] = s_dxCommon_->CreateBufferResource(sizeof(ParticleForGPU) * kNumMaxInstance);
@@ -42,9 +47,6 @@ void ParticleResource::Map() {
     }
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
-    }
-    if (materialResource_) {
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
     }
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         if (instancingResource_[i]) {
@@ -61,10 +63,6 @@ void ParticleResource::Unmap() {
     if (indexResource_) {
         indexResource_->Unmap(0, nullptr);
         indexData_ = nullptr;
-    }
-    if (materialResource_) {
-        materialResource_->Unmap(0, nullptr);
-        materialData_ = nullptr;
     }
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         if (instancingResource_[i]) {

@@ -3,8 +3,9 @@
 #include <d3d12.h>
 #include <memory>
 #include <cstdint>
-#include <vector>
 #include <random>
+#include <array>
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Core/Math/Vector2.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
@@ -21,7 +22,9 @@ class DescriptorPool;
 // 3Dラインのインスタンス描画用クラス
 class Line3DRegion {
 public:
-    Line3DRegion() = default;
+    Line3DRegion() {
+        instancingSrvIndex_.fill(UINT32_MAX);
+    }
     ~Line3DRegion();
 
     void Initialize(Camera* camera);
@@ -33,7 +36,7 @@ public:
 
     // --- DrawManager から参照する Getter 群 ---
     LineResource* GetBaseResource() const { return baseLineResource_.get(); }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[dx_->GetFrameIndex()]; }
     UINT GetInstanceCountU32() const { return static_cast<UINT>(activeCount_); }
 
     // 依存注入
@@ -74,12 +77,12 @@ private:
     size_t maxInstances_ = 8192;
 
     // インスタンシング用 StructuredBuffer と SRV
-    Microsoft::WRL::ComPtr<ID3D12Resource> instanceBuffer_;
-    InstanceData* instanceData_ = nullptr;
-    uint32_t instanceCapacity_ = 0;
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> instanceBuffer_;
+    std::array<InstanceData*, kMaxFramesInFlight> instanceData_{};
+    std::array<uint32_t, kMaxFramesInFlight> instanceCapacity_{};
 
-    uint32_t instancingSrvIndex_ = UINT32_MAX;
-    D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvGPU_{};
+    std::array<uint32_t, kMaxFramesInFlight> instancingSrvIndex_{};
+    std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> instancingSrvCPU_{};
+    std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> instancingSrvGPU_{};
 };
 

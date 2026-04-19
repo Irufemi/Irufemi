@@ -44,15 +44,15 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
     // 共有リソースを使用するため、個別のバッファへのコピーは不要
 
     //マテリアル
-    if (resource_->materialData_) {
-        resource_->materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
-        resource_->materialData_->enableLighting = true;
-        resource_->materialData_->hasTexture = true;
-        resource_->materialData_->lightingMode = 3;
-        resource_->materialData_->uvTransform = Math::MakeIdentity4x4();
-        resource_->materialData_->metallic = 0.0f;
-        resource_->materialData_->roughness = 0.5f;
-        resource_->materialData_->environmentCoefficient = 0.0f;
+    if (resource_->GetMaterialData()) {
+        resource_->GetMaterialData()->color = { 1.0f,1.0f,1.0f,1.0f };
+        resource_->GetMaterialData()->enableLighting = true;
+        resource_->GetMaterialData()->hasTexture = true;
+        resource_->GetMaterialData()->lightingMode = 3;
+        resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
+        resource_->GetMaterialData()->metallic = 0.0f;
+        resource_->GetMaterialData()->roughness = 0.5f;
+        resource_->GetMaterialData()->environmentCoefficient = 0.0f;
     }
 
     //transformationMatrix
@@ -90,19 +90,23 @@ void SphereClass::Update() {
     resource_->transform_.scale = originalScale;
 
     // UV Transform 更新
-    if (resource_->materialData_) {
-        resource_->materialData_->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+    if (resource_->GetMaterialData()) {
+        resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
         
         // SRVが無効なら毎フレーム保険で hasTexture をオフ
         if (resource_->textureHandle_.ptr == 0) {
-            resource_->materialData_->hasTexture = false;
+            resource_->GetMaterialData()->hasTexture = false;
         }
+        
+        resource_->SyncMaterialData();
     }
 
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    
+    resource_->MakeDirty();
 }
 
 void SphereClass::Draw() {
@@ -132,6 +136,8 @@ void SphereClass::Draw() {
     if (isDirty_ || cameraChanged) {
         Update();
     }
+    
+    resource_->SyncIfDirty();
 
     drawManager_->DrawStandard3D(resource_.get());
 }
@@ -156,7 +162,7 @@ void SphereClass::Debug([[maybe_unused]] const char* sphereName) {
     // 位置を SphereInfo に反映(半径は Transform からは変更しない)
     info_.center = resource_->transform_.translate;
 
-    ui_->DebugMaterialBy3D(resource_->materialData_);
+    ui_->DebugMaterialBy3D(resource_->GetMaterialData());
 
     ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
 

@@ -25,12 +25,17 @@ void Object3DResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    if (!materialResource_) {
-        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(Material));
+    materialBuffer_.Initialize(s_dxCommon_);
+    for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+        materialBuffer_[i]->color = {1,1,1,1};
+        materialBuffer_[i]->enableLighting = true;
+        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
+        materialBuffer_[i]->metallic = 0.0f;
+        materialBuffer_[i]->roughness = 0.5f;
+        materialBuffer_[i]->environmentCoefficient = 0.0f;
     }
-    if (!transformationResource_) {
-        transformationResource_ = s_dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
-    }
+
+    internalTransformationBuffer_.Initialize(s_dxCommon_);
 }
 
 void Object3DResource::Map() {
@@ -39,12 +44,6 @@ void Object3DResource::Map() {
     }
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
-    }
-    if (materialResource_) {
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-    }
-    if (transformationResource_) {
-        transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
     }
 }
 
@@ -57,18 +56,10 @@ void Object3DResource::Unmap() {
         indexResource_->Unmap(0, nullptr);
         indexData_ = nullptr;
     }
-    if (materialResource_) {
-        materialResource_->Unmap(0, nullptr);
-        materialData_ = nullptr;
-    }
-    if (transformationResource_) {
-        transformationResource_->Unmap(0, nullptr);
-        transformationData_ = nullptr;
-    }
 }
 
 void Object3DResource::UpdateTransform(const Camera& camera) {
-    if (!transformationData_) return;
+
 
     transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
@@ -83,15 +74,15 @@ void Object3DResource::UpdateTransform(const Camera& camera) {
     // 逆転置行列を計算
     transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
-    *transformationData_ = transformationMatrix_;
-
-    // マテリアルの UVTransform 更新
-    if (materialData_) {
-        materialData_->uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
+    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    if (!externalTransformationBuffer_) {
+        internalTransformationBuffer_.Update(transformationMatrix_, frameIndex);
     }
+
+    // マテリアルの CPUキャッシュ更新 (明示的な SyncMaterialData() 呼び出しが必要)
+    cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
 }
 
-void Object3DResource::SetExternalTransformationResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource, TransformationMatrix* data) {
-    transformationResource_ = resource;
-    transformationData_ = data;
+void Object3DResource::SetExternalTransformationBuffer(ConstantBuffer<TransformationMatrix>* buffer) {
+    externalTransformationBuffer_ = buffer;
 }

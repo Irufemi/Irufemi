@@ -166,6 +166,9 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     hr = commandList_->Reset(allocator, nullptr);
     assert(SUCCEEDED(hr));
 
+    // フレーム開始時に、ポーズ中でSetFrameDataが呼ばれなくてもバッファが常に同期待ちにならないようキャッシュを現在のバッファへコピーする
+    SyncCachedFrameData();
+
     // バックバッファとRTV/DSVの取得 (これはスワップチェーン依存なのでそのままでよい)
 
     // バックバッファとRTV/DSVの取得
@@ -293,21 +296,37 @@ void DrawManager::PostDraw() {
 }
 
 void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights) {
+    cachedCamera_ = camera;
+    cachedDirectionalLight_ = light;
+    
+    cachedPointLights_.clear();
+    for (auto* pl : pointLights) cachedPointLights_.push_back(*pl);
+    
+    cachedSpotLights_.clear();
+    for (auto* sl : spotLights) cachedSpotLights_.push_back(*sl);
+    
+    cachedAreaLights_.clear();
+    for (auto* al : areaLights) cachedAreaLights_.push_back(*al);
+    
+    SyncCachedFrameData();
+}
+
+void DrawManager::SyncCachedFrameData() {
     auto& fr = frameResources_[dxCommon_->GetFrameIndex()];
 
-    if (fr.cameraData) { *fr.cameraData = camera; }
+    if (fr.cameraData) { *fr.cameraData = cachedCamera_; }
     if (fr.lightCommonData) {
         // ライト共通データの更新（b1）
-        fr.lightCommonData->directionalLight = light;
-        fr.lightCommonData->pointLightCount = static_cast<int32_t>(pointLights.size());
-        fr.lightCommonData->spotLightCount = static_cast<int32_t>(spotLights.size());
-        fr.lightCommonData->areaLightCount = static_cast<int32_t>(areaLights.size());
+        fr.lightCommonData->directionalLight = cachedDirectionalLight_;
+        fr.lightCommonData->pointLightCount = static_cast<int32_t>(cachedPointLights_.size());
+        fr.lightCommonData->spotLightCount = static_cast<int32_t>(cachedSpotLights_.size());
+        fr.lightCommonData->areaLightCount = static_cast<int32_t>(cachedAreaLights_.size());
 
         // シャドウマップの行列更新
         ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
         if (shadowMap) {
             // カメラの位置を注視点として追従させる
-            shadowMap->UpdateMatrix(light.direction, camera.worldPosition, 128.0f);
+            shadowMap->UpdateMatrix(cachedDirectionalLight_.direction, cachedCamera_.worldPosition, 128.0f);
             fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();
         }
     }
@@ -319,14 +338,14 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLigh
         LightType* mapped = nullptr;
         res->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
         for (size_t i = 0; i < lightVec.size(); ++i) {
-            mapped[i] = *lightVec[i];
+            mapped[i] = lightVec[i];
         }
         res->Unmap(0, nullptr);
     };
 
-    copyLights(fr.pointLightResource.Get(), pointLights);
-    copyLights(fr.spotLightResource.Get(), spotLights);
-    copyLights(fr.areaLightResource.Get(), areaLights);
+    copyLights(fr.pointLightResource.Get(), cachedPointLights_);
+    copyLights(fr.spotLightResource.Get(), cachedSpotLights_);
+    copyLights(fr.areaLightResource.Get(), cachedAreaLights_);
 }
 
 void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
@@ -378,8 +397,8 @@ void DrawManager::DrawSprite(const Object2DResource* resource) {
     commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->transformationResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
@@ -399,7 +418,7 @@ void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instan
     // --- CBV のバインド ---
     // 0: 既存のマテリアル CBV(互換性維持のために常にバインド)
     //    (rootParameters[(UINT)RootSlot::Material] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
 
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
@@ -488,14 +507,16 @@ void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const Managed
     // (PSO設定時にセットされているはずだが、念のため管理が必要な場合はここでセット)
 
     // Parameterの設定
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+    
     // 0: Palette (t0)
-    commandList_->SetComputeRootDescriptorTable(0, skinCluster.paletteSrvHandle.second);
+    commandList_->SetComputeRootDescriptorTable(0, skinCluster.paletteSrvHandle[frameIndex].second);
     // 1: Input Vertices (t1) (最初のメッシュの頂点を使用)
     commandList_->SetComputeRootDescriptorTable(1, model->gpuMeshes[0]->vertexSrvHandle);
     // 2: Influences (t2)
     commandList_->SetComputeRootDescriptorTable(2, skinCluster.influenceSrvHandle.second);
     // 3: Output Vertices (u0)
-    commandList_->SetComputeRootDescriptorTable(3, skinCluster.skinnedVertexUavHandle.second);
+    commandList_->SetComputeRootDescriptorTable(3, skinCluster.skinnedVertexUavHandle[frameIndex].second);
     // 4: Skinning Information (b0)
     commandList_->SetComputeRootConstantBufferView(4, skinCluster.skinningInformationResource->GetGPUVirtualAddress());
 
@@ -553,8 +574,8 @@ void DrawManager::DrawStandard3D(const Object3DResource* resource, const D3D12_V
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
     // 各種リソースのバインド
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->materialResource_->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->transformationResource_->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
     // 描画

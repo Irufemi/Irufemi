@@ -126,6 +126,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ObjClass::SetModelManager(modelManager_.get());
     ModelRegion::SetModelManager(modelManager_.get()); // Regionにも設定
 
+    // プリミティブ管理（シングルトンの初期化）
+    PrimitiveManager::Initialize();
+
     // 既存SRVの走査で free-list 再構築
     {
         DescriptorPool* srvPool = dxCommon_->GetSrvPool();

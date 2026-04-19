@@ -16,9 +16,6 @@ DebugUI* ObjClass::ui_ = nullptr;
 ModelManager* ObjClass::modelManager_ = nullptr;
 
 ObjClass::~ObjClass() {
-    if (transformationResource_) {
-        transformationResource_->Unmap(0, nullptr);
-    }
 }
 
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
@@ -34,8 +31,7 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 
     // 変換行列リソースの生成とマップ (全メッシュ共有用)
     assert(drawManager_ && "DrawManager is not set. Cannot get DirectXCommon.");
-    transformationResource_ = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
-    transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+    transformationBuffer_.Initialize(drawManager_->GetDxCommon());
 
     // インスタンス固有の各メッシュ用リソースを生成
     meshResources_.clear();
@@ -43,7 +39,7 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         auto res = std::make_unique<Object3DResource>();
         
         // 外部の変換行列リソースを借用
-        res->SetExternalTransformationResource(transformationResource_, transformationData_);
+        res->SetExternalTransformationBuffer(&transformationBuffer_);
         
         // メッシュ固有の View を設定
         const auto& gpuMesh = managedModel_->gpuMeshes[i];
@@ -53,7 +49,6 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         
         // マテリアルリソース等の生成
         res->CreateResource();
-        res->Map();
         
         // 初期テクスチャハンドルを共有データからコピー
         const auto& gpuMaterial = (i < managedModel_->gpuMaterials.size()) ? managedModel_->gpuMaterials[i] : nullptr;
@@ -88,18 +83,30 @@ void ObjClass::Update() {
     worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
     transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
-    // 計算した行列をマップ済みのリソースにコピー
-    if (transformationData_) {
-        *transformationData_ = transformationMatrix_;
-    }
-
     // マテリアル情報をGPUへ転送
     UpdateMaterials();
 
-    // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    
+    MakeDirty();
+}
+
+void ObjClass::SyncIfDirty() {
+    if (dirtyFramesLeft_ > 0) {
+        uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
+        // 変換行列の更新 (全メッシュで共有のバッファを1回だけ更新)
+        transformationBuffer_.Update(transformationMatrix_, frameIndex);
+        for (auto& res : meshResources_) {
+            res->SyncMaterialData();
+        }
+        
+        if (lastSyncedFrameIndex_ != frameIndex) {
+            dirtyFramesLeft_--;
+            lastSyncedFrameIndex_ = frameIndex;
+        }
+    }
 }
 
 #include "../../../Engine/Core/Math/Geometry/Collision.h"
@@ -117,6 +124,8 @@ void ObjClass::Draw() {
     if (isDirty_ || cameraChanged) {
         Update();
     }
+    
+    SyncIfDirty();
 
     // 視錐台カリング
     if (isCullingEnabled_ && managedModel_->cpuModel) {
@@ -212,10 +221,12 @@ void ObjClass::SetEnableLightingToAllMeshes(bool enable) {
 
 void ObjClass::SetAlpha(float alpha) {
     color_.w = alpha;
+    isDirty_ = true;
 }
 
 void ObjClass::SetColor(const Vector4& color) {
     color_ = color;
+    isDirty_ = true;
 }
 
 void ObjClass::UpdateMaterials() {
@@ -228,10 +239,10 @@ void ObjClass::UpdateMaterials() {
         if (i >= meshResources_.size()) break;
 
         auto& res = meshResources_[i];
-        if (!res->materialData_) continue;
+        if (!res->GetMaterialData()) continue;
 
         const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
-        Material* mappedData = res->materialData_;
+        Material* mappedData = res->GetMaterialData();
 
         // インスタンスカラーとマテリアルカラーを乗算
         mappedData->color.x = cpuMat.color.x * color_.x;
@@ -261,5 +272,7 @@ void ObjClass::UpdateMaterials() {
 
         // サンプラー設定 (個別上書き優先)
         mappedData->useClampSampler = (useClampSamplerOverride_ != -1) ? useClampSamplerOverride_ : cpuMat.useClampSampler;
+        
+        res->SyncMaterialData();
     }
 }

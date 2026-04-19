@@ -26,12 +26,12 @@ void LineResource::CreateResource() {
         indexCount_ = 2;
     }
 
-    if (!materialResource_) {
-        materialResource_ = s_dxCommon_->CreateBufferResource(sizeof(Material));
+    materialBuffer_.Initialize(s_dxCommon_);
+    for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+        materialBuffer_[i]->color = {1,1,1,1};
+        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
     }
-    if (!transformationResource_) {
-        transformationResource_ = s_dxCommon_->CreateBufferResource(sizeof(TransformationMatrix));
-    }
+    transformationBuffer_.Initialize(s_dxCommon_);
 }
 
 void LineResource::Map() {
@@ -41,12 +41,7 @@ void LineResource::Map() {
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
     }
-    if (materialResource_) {
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-    }
-    if (transformationResource_) {
-        transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
-    }
+ 
 }
 
 void LineResource::Unmap() {
@@ -58,21 +53,14 @@ void LineResource::Unmap() {
         indexResource_->Unmap(0, nullptr);
         indexData_ = nullptr;
     }
-    if (materialResource_) {
-        materialResource_->Unmap(0, nullptr);
-        materialData_ = nullptr;
-    }
-    if (transformationResource_) {
-        transformationResource_->Unmap(0, nullptr);
-        transformationData_ = nullptr;
-    }
+ 
 }
 
 void LineResource::UpdateTransform(const Camera& camera) {
-    if (!transformationData_) return;
-
     transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
 
-    *transformationData_ = transformationMatrix_;
+    uint32_t frameIndex = s_dxCommon_->GetFrameIndex();
+    transformationBuffer_.Update(transformationMatrix_, frameIndex);
+    materialBuffer_.Update(cpuMaterialData_, frameIndex);
 }

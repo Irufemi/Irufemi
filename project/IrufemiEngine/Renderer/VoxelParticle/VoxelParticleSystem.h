@@ -12,6 +12,9 @@
 #include <atomic>
 #include <mutex>
 #include <future>
+#include <array>
+#include "../../Engine/Graphics/DirectX/DirectXCommon.h"
+#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
 
 // 前方宣言
@@ -115,9 +118,6 @@ private:
   // GPUリソース
   Microsoft::WRL::ComPtr<ID3D12Resource> voxelBuffer_;
   Microsoft::WRL::ComPtr<ID3D12Resource> particleBuffer_;
-  Microsoft::WRL::ComPtr<ID3D12Resource> emitterConstantBuffer_;
-  Microsoft::WRL::ComPtr<ID3D12Resource> perViewConstantBuffer_;
-  Microsoft::WRL::ComPtr<ID3D12Resource> perFrameConstantBuffer_;
   Microsoft::WRL::ComPtr<ID3D12Resource> cubeVertexBuffer_;
   Microsoft::WRL::ComPtr<ID3D12Resource> cubeIndexBuffer_;
 
@@ -146,10 +146,12 @@ private:
   Microsoft::WRL::ComPtr<ID3D12PipelineState> drawPSO_;
 
   VoxelEmitter emitterData_{};
-  VoxelEmitter *mappedEmitterData_ = nullptr;
-  PerView *mappedPerViewData_ = nullptr;
+  ConstantBuffer<VoxelEmitter> emitterBuffer_;
+  
+  ConstantBuffer<PerView> perViewBuffer_;
+  
   struct PerFrame { float time; float deltaTime; };
-  PerFrame *mappedPerFrameData_ = nullptr;
+  ConstantBuffer<PerFrame> perFrameBuffer_;
   PerFrame perFrameData_{};
 
   uint32_t voxelCount_ = 0;

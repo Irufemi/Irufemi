@@ -56,8 +56,8 @@ public:
     void SetRotate(const Vector3& rotate) { if (resource_) resource_->transform_.rotate = rotate; isDirty_ = true; }
     Vector3 GetRotate() const { return resource_ ? resource_->transform_.rotate : Vector3{}; }
 
-    void SetColor(const Vector4& color) { if (resource_ && resource_->materialData_) resource_->materialData_->color = color; }
-    Vector4 GetColor() const { return resource_ && resource_->materialData_ ? resource_->materialData_->color : Vector4{}; }
+    void SetColor(const Vector4& color) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->color = color; }
+    Vector4 GetColor() const { return resource_ && resource_->GetMaterialData() ? resource_->GetMaterialData()->color : Vector4{}; }
 
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
