@@ -50,15 +50,6 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
 
     std::copy(indexDataList_.begin(), indexDataList_.end(), indexData_);
 
-    // マテリアルの初期設定
-    materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    materialData_->intensity = 1.0f;
-
-    // 初期行列の計算
-    Matrix4x4 worldMatrix = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-    transformationMatrix_.WVP = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-    *transformationData_ = transformationMatrix_;
-
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
@@ -95,8 +86,9 @@ void Skybox::Update() {
     transformationMatrix_.WVP = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
 
     // 更新されたWVP行列をGPUリソースにコピーする
-    if (transformationData_) {
-        *transformationData_ = transformationMatrix_;
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    if (transformationData_[frameIndex]) {
+        *transformationData_[frameIndex] = transformationMatrix_;
     }
     // フラグ更新
     isDirty_ = false;
@@ -119,7 +111,8 @@ void Skybox::Draw() {
 
     engine_->ApplySkyboxPSO();
 
-    drawManager->DrawSkybox(vertexBufferView_, indexBufferView_, materialResource_, transformationResource_, textureHandle_, static_cast<UINT>(indexDataList_.size()));
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    drawManager->DrawSkybox(vertexBufferView_, indexBufferView_, materialResource_[frameIndex], transformationResource_[frameIndex], textureHandle_, static_cast<UINT>(indexDataList_.size()));
 
 }
 
@@ -145,7 +138,10 @@ void Skybox::Debug() {
                     textureHandle_ = textureManager->GetTextureHandle(selectedName);
                 }
             }
-            ImGui::SliderFloat("Intensity", &materialData_->intensity, 0.0f, 10.0f);
+            uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+            if (materialData_[frameIndex]) {
+                ImGui::SliderFloat("Intensity", &materialData_[frameIndex]->intensity, 0.0f, 10.0f);
+            }
         }
     }
 #endif
@@ -153,39 +149,58 @@ void Skybox::Debug() {
 
 void Skybox::CreateResource() {
 
-    DirectXCommon* dxCommon = engine_->GetDirectXCommon();
+    DirectXCommon* dxCommon = engine_->GetDrawManager()->GetDxCommon();
 
-    char buf[256];
-    if (!vertexDataList_.empty()) {
+    // 頂点・インデックスの静的リソースは単一バッファのまま
+    if (!vertexResource_) {
         vertexResource_ = dxCommon->CreateBufferResource(sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
-        snprintf(buf, sizeof(buf), "Created SkyboxResource at %p in %s:%d\n", vertexResource_.Get(), __FILE__, __LINE__);
-        OutputDebugStringA(buf);
+        vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
+        vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(vertexDataList_.size());
+        vertexBufferView_.StrideInBytes = sizeof(VertexData);
     }
-    if (!indexDataList_.empty()) {
+    if (!indexResource_) {
         indexResource_ = dxCommon->CreateBufferResource(sizeof(uint32_t) * static_cast<size_t>(indexDataList_.size()));
-        snprintf(buf, sizeof(buf), "Created SkyboxResource at %p in %s:%d\n", indexResource_.Get(), __FILE__, __LINE__);
-        OutputDebugStringA(buf);
+        indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
+        indexBufferView_.SizeInBytes = sizeof(uint32_t) * static_cast<UINT>(indexDataList_.size());
+        indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
     }
-    materialResource_ = dxCommon->CreateBufferResource(sizeof(SkyboxMaterial));
-    snprintf(buf, sizeof(buf), "Created SkyboxResource at %p in %s:%d\n", materialResource_.Get(), __FILE__, __LINE__);
-    OutputDebugStringA(buf);
-    transformationResource_ = dxCommon->CreateBufferResource(sizeof(SkyboxTransformationMatrix));
-    snprintf(buf, sizeof(buf), "Created SkyboxResource at %p in %s:%d\n", transformationResource_.Get(), __FILE__, __LINE__);
-    OutputDebugStringA(buf);
+
+    // マテリアルとワールド変換状態をマルチバッファで確保
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (!materialResource_[i]) {
+            materialResource_[i] = dxCommon->CreateBufferResource(sizeof(SkyboxMaterial));
+        }
+        if (!transformationResource_[i]) {
+            transformationResource_[i] = dxCommon->CreateBufferResource(sizeof(SkyboxTransformationMatrix));
+        }
+    }
 }
 
 void Skybox::MapResource() {
     if (vertexResource_) {
         vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
+        for (size_t i = 0; i < vertexDataList_.size(); ++i) {
+            vertexData_[i] = vertexDataList_[i];
+        }
     }
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
+        for (size_t i = 0; i < indexDataList_.size(); ++i) {
+            indexData_[i] = indexDataList_[i];
+        }
     }
-    if (materialResource_) {
-        materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-    }
-    if (transformationResource_) {
-        transformationResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_));
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (materialResource_[i]) {
+            materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&materialData_[i]));
+            // 初期値
+            materialData_[i]->color = {1.0f, 1.0f, 1.0f, 1.0f};
+            materialData_[i]->intensity = 1.0f;
+        }
+        if (transformationResource_[i]) {
+            transformationResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_[i]));
+            // 初期行列
+            transformationData_[i]->WVP = Math::MakeIdentity4x4();
+        }
     }
 }
 
@@ -195,11 +210,16 @@ void Skybox::UnMapResource() {
     }
     if (indexResource_) {
         indexResource_->Unmap(0, nullptr);
+        indexData_ = nullptr;
     }
-    if (materialResource_) {
-        materialResource_->Unmap(0, nullptr);
-    }
-    if (transformationResource_) {
-        transformationResource_->Unmap(0, nullptr);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (materialResource_[i]) {
+            materialResource_[i]->Unmap(0, nullptr);
+            materialData_[i] = nullptr;
+        }
+        if (transformationResource_[i]) {
+            transformationResource_[i]->Unmap(0, nullptr);
+            transformationData_[i] = nullptr;
+        }
     }
 }

@@ -10,6 +10,8 @@
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Math/Vector4.h"
 #include <vector>
+#include <array>
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
 
 // 前方宣言
 class Camera;
@@ -44,8 +46,6 @@ public: // メンバ関数(セッター/ゲッター)
     // ID3D12Resource関連ゲッター
     const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
     const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return indexBufferView_; }
-    ID3D12Resource* GetMaterialResource() const { return materialResource_.Get(); }
-    ID3D12Resource* GetTransformationResource() const { return transformationResource_.Get(); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     // indexのサイズ取得
     UINT GetIndexSize() const { return static_cast<UINT>(indexDataList_.size()); }
@@ -84,8 +84,8 @@ private: // メンバ変数(resource)
         Matrix4x4 WVP;
     };
     SkyboxTransformationMatrix transformationMatrix_{};
-    SkyboxTransformationMatrix* transformationData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_ = nullptr;
+    std::array<SkyboxTransformationMatrix*, kMaxFramesInFlight> transformationData_ = {nullptr};
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> transformationResource_;
 
     // Material
     struct SkyboxMaterial {
@@ -93,8 +93,8 @@ private: // メンバ変数(resource)
         float intensity;
         float padding[3];
     };
-    SkyboxMaterial* materialData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
+    std::array<SkyboxMaterial*, kMaxFramesInFlight> materialData_ = {nullptr};
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> materialResource_;
 
     // texture
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};

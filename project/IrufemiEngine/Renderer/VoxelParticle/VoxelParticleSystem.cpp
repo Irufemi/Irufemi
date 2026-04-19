@@ -99,16 +99,7 @@ void VoxelParticleSystem::FinishInitialization() {
   // 3. PSOの作成
   CreatePSO();
 
-  // 4. 定数バッファのマッピング
-  HRESULT hr = emitterConstantBuffer_->Map(
-      0, nullptr, reinterpret_cast<void **>(&mappedEmitterData_));
-  assert(SUCCEEDED(hr));
-  hr = perViewConstantBuffer_->Map(
-      0, nullptr, reinterpret_cast<void **>(&mappedPerViewData_));
-  assert(SUCCEEDED(hr));
-  hr = perFrameConstantBuffer_->Map(
-      0, nullptr, reinterpret_cast<void **>(&mappedPerFrameData_));
-  assert(SUCCEEDED(hr));
+  // 4. 定数バッファのマッピング (CreateResources内で実施済みのため削除)
 
   needsInitialize_ = true;
   status_.store(LoadingStatus::Loaded);
@@ -129,22 +120,24 @@ void VoxelParticleSystem::Update(float deltaTime) {
   // エミッターデータ更新
   emitterData_.time += deltaTime;
   emitterData_.emit = isEmitting_ ? 1 : 0;
-  *mappedEmitterData_ = emitterData_;
+  
+  uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+  *mappedEmitterData_[frameIndex] = emitterData_;
 
   // PerFrame データを更新（time と deltaTime を CS シェーダーへ渡す）
   perFrameData_.time = emitterData_.time;
   perFrameData_.deltaTime = deltaTime;
-  *mappedPerFrameData_ = perFrameData_;
+  *mappedPerFrameData_[frameIndex] = perFrameData_;
 
   // PerView 更新（描画用）
-  mappedPerViewData_->viewProjection = camera_->GetViewProjectionMatrix3D();
+  mappedPerViewData_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
   
   // ビルボード行列の計算
   Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix(0.0f);
-  mappedPerViewData_->billboardMatrix = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
-  mappedPerViewData_->billboardMatrix.m[3][0] = 0.0f;
-  mappedPerViewData_->billboardMatrix.m[3][1] = 0.0f;
-  mappedPerViewData_->billboardMatrix.m[3][2] = 0.0f;
+  mappedPerViewData_[frameIndex]->billboardMatrix = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
+  mappedPerViewData_[frameIndex]->billboardMatrix.m[3][0] = 0.0f;
+  mappedPerViewData_[frameIndex]->billboardMatrix.m[3][1] = 0.0f;
+  mappedPerViewData_[frameIndex]->billboardMatrix.m[3][2] = 0.0f;
 
   // Dispatch 処理は Draw に移動 (PreDraw 後に実行するため)
   needsUpdateCS_ = true;
@@ -162,8 +155,22 @@ void VoxelParticleSystem::Draw() {
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
 
+  uint32_t frameIndex = dxCommon->GetFrameIndex();
+  
+  // ポーズ時等の同期漏れ(同フレーム内への直前データコピー)
+  if (!needsUpdateCS_) {
+      *mappedEmitterData_[frameIndex] = emitterData_;
+      *mappedPerFrameData_[frameIndex] = perFrameData_;
+      mappedPerViewData_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
+      Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix(0.0f);
+      mappedPerViewData_[frameIndex]->billboardMatrix = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
+      mappedPerViewData_[frameIndex]->billboardMatrix.m[3][0] = 0.0f;
+      mappedPerViewData_[frameIndex]->billboardMatrix.m[3][1] = 0.0f;
+      mappedPerViewData_[frameIndex]->billboardMatrix.m[3][2] = 0.0f;
+  }
+
   // 1. Compute Shader dispatch (Deferred from Initialize and Update)
-  if (needsUpdateCS_) {
+  if (needsUpdateCS_ || isEmitting_ || needsInitialize_) { // 補正: isEmitting がポーズ中に呼ばれた場合等も考慮
     // デスクリプタヒープの設定
     ID3D12DescriptorHeap *ppHeaps[] = {dxCommon->GetSrvPool()->GetHeap()};
     commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
@@ -188,22 +195,23 @@ void VoxelParticleSystem::Draw() {
       commandList->SetPipelineState(emitPSO_.Get());
       commandList->SetComputeRootDescriptorTable(0, voxelSrvHandleGPU_);    // t0
       commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
-      commandList->SetComputeRootConstantBufferView(4, emitterConstantBuffer_->GetGPUVirtualAddress());
-      commandList->SetComputeRootConstantBufferView(5, perFrameConstantBuffer_->GetGPUVirtualAddress());
+      commandList->SetComputeRootConstantBufferView(4, emitterConstantBuffer_[frameIndex]->GetGPUVirtualAddress());
+      commandList->SetComputeRootConstantBufferView(5, perFrameConstantBuffer_[frameIndex]->GetGPUVirtualAddress());
       commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
       commandList->ResourceBarrier(1, &uavBarrier);
       isEmitting_ = false;
     }
 
     // C. 毎フレームの更新
-    commandList->SetPipelineState(updatePSO_.Get());
-    commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
-    commandList->SetComputeRootConstantBufferView(4, emitterConstantBuffer_->GetGPUVirtualAddress());
-    commandList->SetComputeRootConstantBufferView(5, perFrameConstantBuffer_->GetGPUVirtualAddress());
-    commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
-    commandList->ResourceBarrier(1, &uavBarrier);
-
-    needsUpdateCS_ = false;
+    if (needsUpdateCS_) {
+        commandList->SetPipelineState(updatePSO_.Get());
+        commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
+        commandList->SetComputeRootConstantBufferView(4, emitterConstantBuffer_[frameIndex]->GetGPUVirtualAddress());
+        commandList->SetComputeRootConstantBufferView(5, perFrameConstantBuffer_[frameIndex]->GetGPUVirtualAddress());
+        commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
+        commandList->ResourceBarrier(1, &uavBarrier);
+        needsUpdateCS_ = false;
+    }
   }
 
   // 2. Graphics Draw
@@ -228,8 +236,8 @@ void VoxelParticleSystem::Draw() {
       cubeVertexBufferView_,
       cubeIndexBufferView_,
       cubeIndexCount_,
-      perViewConstantBuffer_->GetGPUVirtualAddress(),
-      emitterConstantBuffer_->GetGPUVirtualAddress(),
+      perViewConstantBuffer_[frameIndex]->GetGPUVirtualAddress(),
+      emitterConstantBuffer_[frameIndex]->GetGPUVirtualAddress(),
       particleSrvHandleGPU_
   );
 
@@ -462,17 +470,19 @@ void VoxelParticleSystem::CreateResources() {
   device_->CreateShaderResourceView(particleBuffer_.Get(), &particleSrvDesc,
                                     particleSrvHandleCPU_);
 
-  // Emitter定数バッファ (256バイトアライメント)
-  emitterConstantBuffer_ = dxCommon->CreateBufferResource((sizeof(VoxelEmitter) + 0xFF) & ~0xFF);
-  emitterConstantBuffer_->Map(0, nullptr, reinterpret_cast<void **>(&mappedEmitterData_));
-  
-  // PerView定数バッファ (256バイトアライメント)
-  perViewConstantBuffer_ = dxCommon->CreateBufferResource((sizeof(PerView) + 0xFF) & ~0xFF);
-  perViewConstantBuffer_->Map(0, nullptr, reinterpret_cast<void **>(&mappedPerViewData_));
+  for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+      // Emitter定数バッファ (256バイトアライメント)
+      emitterConstantBuffer_[i] = dxCommon->CreateBufferResource((sizeof(VoxelEmitter) + 0xFF) & ~0xFF);
+      emitterConstantBuffer_[i]->Map(0, nullptr, reinterpret_cast<void **>(&mappedEmitterData_[i]));
+      
+      // PerView定数バッファ (256バイトアライメント)
+      perViewConstantBuffer_[i] = dxCommon->CreateBufferResource((sizeof(PerView) + 0xFF) & ~0xFF);
+      perViewConstantBuffer_[i]->Map(0, nullptr, reinterpret_cast<void **>(&mappedPerViewData_[i]));
 
-  // PerFrame定数バッファ (256バイトアライメント)
-  perFrameConstantBuffer_ = dxCommon->CreateBufferResource((sizeof(PerFrame) + 0xFF) & ~0xFF);
-  perFrameConstantBuffer_->Map(0, nullptr, reinterpret_cast<void **>(&mappedPerFrameData_));
+      // PerFrame定数バッファ (256バイトアライメント)
+      perFrameConstantBuffer_[i] = dxCommon->CreateBufferResource((sizeof(PerFrame) + 0xFF) & ~0xFF);
+      perFrameConstantBuffer_[i]->Map(0, nullptr, reinterpret_cast<void **>(&mappedPerFrameData_[i]));
+  }
 }
 
 void VoxelParticleSystem::CreatePSO() {
