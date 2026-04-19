@@ -168,23 +168,23 @@ void GPUParticleSystem::Update() {
         emitter_->frequencyTime = 0.0f; // Emit停止中ならタイマーリセット
     }
 
-    perViewData_->viewProjection = camera_->GetViewProjectionMatrix3D();
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+    
+    perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
 
-    // backToFrontMatrix_の設定(面の向きをカメラの方向にしてあるのでここは調整なし。0でOK)
+    // backToFrontMatrix_の設定
     Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
-
-    /// カメラの回転を適用する
     Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
     billboardMatrix_.m[3][0] = 0.0f;
     billboardMatrix_.m[3][1] = 0.0f;
     billboardMatrix_.m[3][2] = 0.0f;
 
-    perViewData_->billboardMatrix = billboardMatrix_;
+    perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
 
     // フレームインデックスを取得して現在のフレーム用のGPUバッファにマスターデータをコピー
-    uint32_t frameIndex = dxCommon_->GetFrameIndex();
-    *emitterMapped_[frameIndex] = *emitter_;
-    *perFrameMapped_[frameIndex] = *perFrameData_;
+    emitterBuffer_.Update(*emitter_, frameIndex);
+    perFrameBuffer_.Update(*perFrameData_, frameIndex);
+    materialBuffer_.Update(cpuMaterialData_, frameIndex);
 
     if (debugLineRegion_) {
         debugLineRegion_->Update();
@@ -201,8 +201,17 @@ void GPUParticleSystem::Draw() {
     // --- 追加: ポーズ時(Updateが呼ばれなかった時)のマルチバッファ同期 ---
     if (!needsUpdateCS_) {
         uint32_t frameIndex = dxCommon_->GetFrameIndex();
-        *emitterMapped_[frameIndex] = *emitter_;
-        *perFrameMapped_[frameIndex] = *perFrameData_;
+        emitterBuffer_.Update(*emitter_, frameIndex);
+        perFrameBuffer_.Update(*perFrameData_, frameIndex);
+        materialBuffer_.Update(cpuMaterialData_, frameIndex);
+        
+        perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
+        Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
+        Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+        billboardMatrix_.m[3][0] = 0.0f;
+        billboardMatrix_.m[3][1] = 0.0f;
+        billboardMatrix_.m[3][2] = 0.0f;
+        perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
     }
 
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
@@ -231,9 +240,9 @@ void GPUParticleSystem::Draw() {
         vertexBufferView_,
         indexBufferView_,
         indexCount_,
-        materialResource_->GetGPUVirtualAddress(),
-        perViewResource_->GetGPUVirtualAddress(),
-        emitterResource_[frameIndex]->GetGPUVirtualAddress(),
+        materialBuffer_.GetGPUVirtualAddress(frameIndex),
+        perViewBuffer_.GetGPUVirtualAddress(frameIndex),
+        emitterBuffer_.GetGPUVirtualAddress(frameIndex),
         particleSrvHandleGPU_,
         textureHandle_,
         kMaxParticles
@@ -513,10 +522,10 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
         commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
-        commandList->SetComputeRootConstantBufferView(4, emitterResource_[frameIndex]->GetGPUVirtualAddress());
-        commandList->SetComputeRootConstantBufferView(5, perFrameResource_[frameIndex]->GetGPUVirtualAddress());
+        commandList->SetComputeRootConstantBufferView(4, emitterBuffer_.GetGPUVirtualAddress(frameIndex));
+        commandList->SetComputeRootConstantBufferView(5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex));
         
-        uint32_t emitCount = emitterMapped_[frameIndex]->burstCount;
+        uint32_t emitCount = emitterBuffer_[frameIndex]->burstCount;
         if (emitCount > 0) {
             commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
         }
@@ -528,8 +537,8 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
         commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
         commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
-        commandList->SetComputeRootConstantBufferView(4, emitterResource_[frameIndex]->GetGPUVirtualAddress());
-        commandList->SetComputeRootConstantBufferView(5, perFrameResource_[frameIndex]->GetGPUVirtualAddress());
+        commandList->SetComputeRootConstantBufferView(4, emitterBuffer_.GetGPUVirtualAddress(frameIndex));
+        commandList->SetComputeRootConstantBufferView(5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex));
         commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
         commandList->ResourceBarrier(1, &uavBarrier);
@@ -662,41 +671,12 @@ void GPUParticleSystem::DebugPhysicsSettings() {
 void GPUParticleSystem::CreateBuffersAndViews() {
     auto* srvPool = dxCommon_->GetSrvPool();
 
-    /*Emitter*/
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        emitterResource_[i] = dxCommon_->CreateBufferResource(sizeof(GPUParticleEmitter));
-        emitterResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&emitterMapped_[i]));
-
-        perFrameResource_[i] = dxCommon_->CreateBufferResource(sizeof(PerFrame));
-        perFrameResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&perFrameMapped_[i]));
-    }
+    /*Emitter と PerFrame の定数バッファ初期化*/
+    emitterBuffer_.Initialize(dxCommon_);
+    perFrameBuffer_.Initialize(dxCommon_);
     *emitter_ = GPUParticleEmitter(); // 初期化マスター
 
-    // SRV
-    emitterSrvIndex_ = srvPool->Allocate();
-    emitterSrvHandleCPU_ = srvPool->GetCPUHandle(emitterSrvIndex_);
-    emitterSrvHandleGPU_ = srvPool->GetGPUHandle(emitterSrvIndex_);
-    D3D12_SHADER_RESOURCE_VIEW_DESC emitterSrvDesc{};
-    emitterSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    emitterSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    emitterSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-    emitterSrvDesc.Buffer.FirstElement = 0;
-    emitterSrvDesc.Buffer.NumElements = 1;
-    emitterSrvDesc.Buffer.StructureByteStride = sizeof(GPUParticleEmitter);
-    dxCommon_->GetDevice()->CreateShaderResourceView(emitterResource_[0].Get(), &emitterSrvDesc, emitterSrvHandleCPU_);
-
-    // perFrame SRV
-    perFrameSrvIndex_ = srvPool->Allocate();
-    perFrameSrvHandleCPU_ = srvPool->GetCPUHandle(perFrameSrvIndex_);
-    perFrameSrvHandleGPU_ = srvPool->GetGPUHandle(perFrameSrvIndex_);
-    D3D12_SHADER_RESOURCE_VIEW_DESC perFrameSrvDesc{};
-    perFrameSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    perFrameSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    perFrameSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-    perFrameSrvDesc.Buffer.FirstElement = 0;
-    perFrameSrvDesc.Buffer.NumElements = 1;
-    perFrameSrvDesc.Buffer.StructureByteStride = sizeof(PerFrame);
-    dxCommon_->GetDevice()->CreateShaderResourceView(perFrameResource_[0].Get(), &perFrameSrvDesc, perFrameSrvHandleCPU_);
+    // SRV (emitter / perFrame の SRV は未使用のため削除)
 
     /*GPUParticle*/
 
@@ -758,13 +738,13 @@ void GPUParticleSystem::CreateBuffersAndViews() {
     dxCommon_->GetDevice()->CreateUnorderedAccessView(freeListResource_.Get(), nullptr, &freeListUavDesc, freeListUavHandleCPU_);
 
     // PerView用リソース
-    perViewResource_ = dxCommon_->CreateBufferResource(sizeof(PerView));
-    perViewResource_->Map(0, nullptr, reinterpret_cast<void**>(&perViewData_));
+    perViewBuffer_.Initialize(dxCommon_);
 
     // Material用リソース
-    materialResource_ = dxCommon_->CreateBufferResource(sizeof(ParticleGPUMaterial));
-    materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-    materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    materialData_->uvTransform = Math::MakeIdentity4x4();
-    materialData_->useClampSampler = 0;
+    materialBuffer_.Initialize(dxCommon_);
+    for(uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        materialBuffer_[i]->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
+        materialBuffer_[i]->useClampSampler = 0;
+    }
 }

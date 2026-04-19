@@ -63,20 +63,17 @@ const GpuMesh* ModelRegion::GetGpuMesh() const {
 }
 
 void ModelRegion::CreateMaterialResources(const ObjMesh& mesh) {
+    materialBuffer_.Initialize(dx_);
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialResource_[i] = dx_->CreateBufferResource(sizeof(Material));
-        Material* mat = nullptr;
-        materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-        mat->color = mesh.material.color;
-        mat->enableLighting = mesh.material.enableLighting;
-        mat->uvTransform = mesh.material.uvTransform;
-        mat->metallic = mesh.material.metallic;
-        mat->roughness = mesh.material.roughness;
-        mat->environmentCoefficient = 0.0f;
-        mat->hasTexture = !mesh.material.textureFilePath.empty();
-        mat->lightingMode = mesh.material.enableLighting ? 3 : 0;
-        if (mat->color.w <= 0.0f) { mat->color.w = 1.0f; }
-        materialResource_[i]->Unmap(0, nullptr);
+        materialBuffer_[i]->color = mesh.material.color;
+        materialBuffer_[i]->enableLighting = mesh.material.enableLighting;
+        materialBuffer_[i]->uvTransform = mesh.material.uvTransform;
+        materialBuffer_[i]->metallic = mesh.material.metallic;
+        materialBuffer_[i]->roughness = mesh.material.roughness;
+        materialBuffer_[i]->environmentCoefficient = 0.0f;
+        materialBuffer_[i]->hasTexture = !mesh.material.textureFilePath.empty();
+        materialBuffer_[i]->lightingMode = mesh.material.enableLighting ? 3 : 0;
+        if (materialBuffer_[i]->color.w <= 0.0f) { materialBuffer_[i]->color.w = 1.0f; }
     }
 }
 

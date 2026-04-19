@@ -719,6 +719,9 @@
     <ClInclude Include="Engine\Graphics\Data\LightningParams.h">
       <Filter>Engine\Graphics\Data</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\ConstantBuffer.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">

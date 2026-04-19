@@ -24,10 +24,17 @@ void ParticleResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
+    materialBuffer_.Initialize(s_dxCommon_);
+    for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+        materialBuffer_[i]->color = {1,1,1,1};
+        materialBuffer_[i]->enableLighting = true;
+        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
+        materialBuffer_[i]->metallic = 0.0f;
+        materialBuffer_[i]->roughness = 0.5f;
+        materialBuffer_[i]->environmentCoefficient = 0.0f;
+    }
+
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        if (!materialResource_[i]) {
-            materialResource_[i] = s_dxCommon_->CreateBufferResource(sizeof(Material));
-        }
         if (!instancingResource_[i]) {
             instancingResource_[i] = s_dxCommon_->CreateBufferResource(sizeof(ParticleForGPU) * kNumMaxInstance);
         }
@@ -42,9 +49,6 @@ void ParticleResource::Map() {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
     }
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        if (materialResource_[i]) {
-            materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&materialData_[i]));
-        }
         if (instancingResource_[i]) {
             instancingResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&instancingData_[i]));
         }
@@ -61,10 +65,6 @@ void ParticleResource::Unmap() {
         indexData_ = nullptr;
     }
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        if (materialResource_[i]) {
-            materialResource_[i]->Unmap(0, nullptr);
-            materialData_[i] = nullptr;
-        }
         if (instancingResource_[i]) {
             instancingResource_[i]->Unmap(0, nullptr);
             instancingData_[i] = nullptr;

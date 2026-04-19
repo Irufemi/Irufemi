@@ -12,6 +12,7 @@
 #include <d3d12.h>
 #include <string>
 #include <random>
+#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
 // 前方宣言
 class DrawManager;
@@ -166,7 +167,7 @@ public:
     /** @brief 粒子の発生ON/OFF */
     void SetEmit(bool emit);
     /** @brief パーティクルの基本色を設定 */
-    void SetColor(const Vector4& color) { if (materialData_) materialData_->color = color; }
+    void SetColor(const Vector4& color) { cpuMaterialData_.color = color; }
     /** @brief 3Dメッシュ形状を設定 */
     void SetPrimitive(PrimitiveType type);
     /** @brief ビルボードのON/OFF */
@@ -274,20 +275,18 @@ private:
 
     /** @name エミッターリソース */
     ///@{
-    GPUParticleEmitter* emitterMapped_[kMaxFramesInFlight] = {nullptr};
     GPUParticleEmitter emitterData_{};
     GPUParticleEmitter* emitter_ = &emitterData_; // CPU側のマスターへのポインタ
-    Microsoft::WRL::ComPtr<ID3D12Resource> emitterResource_[kMaxFramesInFlight];
+    ConstantBuffer<GPUParticleEmitter> emitterBuffer_;
     D3D12_CPU_DESCRIPTOR_HANDLE emitterSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE emitterSrvHandleGPU_{};
     ///@}
 
     /** @name 各種リソース */
     ///@{
-    PerFrame* perFrameMapped_[kMaxFramesInFlight] = {nullptr};
     PerFrame perFrameDataStruct_{};
     PerFrame* perFrameData_ = &perFrameDataStruct_; // CPU側のマスターへのポインタ
-    Microsoft::WRL::ComPtr<ID3D12Resource> perFrameResource_[kMaxFramesInFlight];
+    ConstantBuffer<PerFrame> perFrameBuffer_;
     D3D12_CPU_DESCRIPTOR_HANDLE perFrameSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE perFrameSrvHandleGPU_{};
 
@@ -312,16 +311,15 @@ private:
     D3D12_CPU_DESCRIPTOR_HANDLE freeListSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE freeListSrvHandleGPU_{};
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> perViewResource_;
-    PerView* perViewData_ = nullptr;
+    ConstantBuffer<PerView> perViewBuffer_;
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
     D3D12_INDEX_BUFFER_VIEW indexBufferView_{}; // NEW: インデックスバッファ
     uint32_t indexCount_ = 0;                  // NEW: インデックス数
     PrimitiveType primitiveType_ = PrimitiveType::Plane; // 現在の形状
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_;
-    ParticleGPUMaterial* materialData_ = nullptr;
+    ConstantBuffer<ParticleGPUMaterial> materialBuffer_;
+    ParticleGPUMaterial cpuMaterialData_{ { 1.0f, 1.0f, 1.0f, 1.0f }, 0, {0, 0, 0}, {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1} };
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
     int selectedTextureIndex_ = 0;

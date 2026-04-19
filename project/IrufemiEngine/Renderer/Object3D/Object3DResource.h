@@ -8,6 +8,7 @@
 #include "../../Engine/Graphics/Data/Material.h"
 #include "../TransformationMatrix.h"
 #include "../../Engine/Core/Math/Transform.h"
+#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
 class Camera;
 
@@ -40,30 +41,31 @@ public:
     Material cpuMaterialData_{};
     Material* GetMaterialData() { return &cpuMaterialData_; }
     
-    Material* materialData_[kMaxFramesInFlight] = { nullptr };
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_[kMaxFramesInFlight];
+    ConstantBuffer<Material> materialBuffer_;
 
     // --- トランスフォーム ---
     Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
-    TransformationMatrix* transformationData_[kMaxFramesInFlight] = { nullptr };
-    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_[kMaxFramesInFlight];
+    
+    ConstantBuffer<TransformationMatrix> internalTransformationBuffer_;
+    ConstantBuffer<TransformationMatrix>* externalTransformationBuffer_ = nullptr;
     
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
 
     // --- getters ---
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const {
-        return materialResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
+        return materialBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const {
-        return transformationResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
+        if (externalTransformationBuffer_) {
+            return externalTransformationBuffer_->GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
+        }
+        return internalTransformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
     
     void SyncMaterialData() {
         uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-        if (materialData_[frameIndex]) {
-            *materialData_[frameIndex] = cpuMaterialData_;
-        }
+        materialBuffer_.Update(cpuMaterialData_, frameIndex);
     }
 
     int32_t dirtyFramesLeft_ = kMaxFramesInFlight; // 変更があったら指定フレーム数だけ全バッファに伝播させる
@@ -73,8 +75,10 @@ public:
     void SyncIfDirty() {
         if (dirtyFramesLeft_ > 0) {
             uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-            if (transformationData_[frameIndex]) {
-                *transformationData_[frameIndex] = transformationMatrix_;
+            
+            // 外部バッファがなければ自身を更新
+            if (!externalTransformationBuffer_) {
+                internalTransformationBuffer_.Update(transformationMatrix_, frameIndex);
             }
             SyncMaterialData();
             
@@ -85,7 +89,7 @@ public:
         }
     }
     // --- 外部リソースの借用 (ObjClass/AnimationModel等で共有するため) ---
-    void SetExternalTransformationResource(Microsoft::WRL::ComPtr<ID3D12Resource>* resources, TransformationMatrix** data);
+    void SetExternalTransformationBuffer(ConstantBuffer<TransformationMatrix>* buffer);
 
     // --- テクスチャ ---
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};

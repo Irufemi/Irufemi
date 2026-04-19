@@ -14,6 +14,7 @@
 #include <future>
 #include <array>
 #include "../../Engine/Graphics/DirectX/DirectXCommon.h"
+#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
 
 // 前方宣言
@@ -117,9 +118,6 @@ private:
   // GPUリソース
   Microsoft::WRL::ComPtr<ID3D12Resource> voxelBuffer_;
   Microsoft::WRL::ComPtr<ID3D12Resource> particleBuffer_;
-  std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> emitterConstantBuffer_;
-  std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> perViewConstantBuffer_;
-  std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> perFrameConstantBuffer_;
   Microsoft::WRL::ComPtr<ID3D12Resource> cubeVertexBuffer_;
   Microsoft::WRL::ComPtr<ID3D12Resource> cubeIndexBuffer_;
 
@@ -148,10 +146,12 @@ private:
   Microsoft::WRL::ComPtr<ID3D12PipelineState> drawPSO_;
 
   VoxelEmitter emitterData_{};
-  std::array<VoxelEmitter*, kMaxFramesInFlight> mappedEmitterData_ = {nullptr};
-  std::array<PerView*, kMaxFramesInFlight> mappedPerViewData_ = {nullptr};
+  ConstantBuffer<VoxelEmitter> emitterBuffer_;
+  
+  ConstantBuffer<PerView> perViewBuffer_;
+  
   struct PerFrame { float time; float deltaTime; };
-  std::array<PerFrame*, kMaxFramesInFlight> mappedPerFrameData_ = {nullptr};
+  ConstantBuffer<PerFrame> perFrameBuffer_;
   PerFrame perFrameData_{};
 
   uint32_t voxelCount_ = 0;

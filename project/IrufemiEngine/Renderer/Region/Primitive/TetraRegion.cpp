@@ -108,19 +108,16 @@ void TetraRegion::CreateMeshBuffers(const std::vector<VertexData>& vertices, con
 }
 
 void TetraRegion::CreateMaterialResources() {
+    materialBuffer_.Initialize(dx_);
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialResource_[i] = dx_->CreateBufferResource(sizeof(Material));
-        Material* mat = nullptr;
-        materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-        mat->color = { 1,1,1,1 };
-        mat->enableLighting = true;
-        mat->hasTexture = true; // 仮
-        mat->lightingMode = 3;
-        mat->uvTransform = Math::MakeIdentity4x4();
-        mat->metallic = 0.0f;
-        mat->roughness = 0.5f;
-        mat->environmentCoefficient = 0.0f;
-        materialResource_[i]->Unmap(0, nullptr);
+        materialBuffer_[i]->color = { 1,1,1,1 };
+        materialBuffer_[i]->enableLighting = true;
+        materialBuffer_[i]->hasTexture = true; // 仮
+        materialBuffer_[i]->lightingMode = 3;
+        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
+        materialBuffer_[i]->metallic = 0.0f;
+        materialBuffer_[i]->roughness = 0.5f;
+        materialBuffer_[i]->environmentCoefficient = 0.0f;
     }
 }
 
@@ -130,11 +127,8 @@ void TetraRegion::EnsureSharedTexture(const std::string& textureName) {
     }
     if (textureHandle_.ptr == 0) {
         textureHandle_ = textureManager_->GetWhiteTextureHandle();
-        Material* mat = nullptr;
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-            materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-            mat->hasTexture = (textureHandle_.ptr != 0);
-            materialResource_[i]->Unmap(0, nullptr);
+            materialBuffer_[i]->hasTexture = (textureHandle_.ptr != 0);
         }
     }
     assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
@@ -307,7 +301,7 @@ void TetraRegion::Draw() {
     if (vertexCount_ == 0 || indexCount_ == 0 || (instances_.empty() && instanceWorlds_.empty())) { return; }
     BuildInstanceBuffer(true);
 
-    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialResource_[dx_->GetFrameIndex()].Get(), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, visibleInstanceCount_);
+    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(dx_->GetFrameIndex()), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, visibleInstanceCount_);
 }
 
 // --- サイズ関連 ---
@@ -336,11 +330,8 @@ void TetraRegion::SetEdge(float edge) {
 
 // --- 色設定API ---
 void TetraRegion::SetColor(const Vector4& color) {
-    Material* mat = nullptr;
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-        mat->color = color;
-        materialResource_[i]->Unmap(0, nullptr);
+        materialBuffer_[i]->color = color;
     }
 }
 void TetraRegion::SetInstanceColor(uint32_t index, const Vector4& color) {

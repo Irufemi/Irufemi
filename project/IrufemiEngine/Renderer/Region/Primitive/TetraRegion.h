@@ -11,6 +11,7 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 
 #include "Renderer/VertexData.h"
+#include "Engine/Graphics/DirectX/ConstantBuffer.h"
 #include "Engine/Graphics/Data/Material.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Core/Math/Transform.h"
@@ -65,6 +66,8 @@ public:
     float ComputeScaleFromVertexRadius(float worldVertexRadius) const;
     void AddInstanceByVertexRadius(const Vector3& center, float worldVertexRadius, const Vector3& rotate = {0,0,0});
 
+    ID3D12Resource*                        GetMaterialResource() { return materialBuffer_.GetResource(dx_->GetFrameIndex()); }
+
     UINT                        GetInstanceCount() const {
         return visibleInstanceCount_;
     }
@@ -101,7 +104,7 @@ private:
     UINT                                   indexCount_ = 0;
 
     // マテリアル
-    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> materialResource_{};
+    ConstantBuffer<Material> materialBuffer_;
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
 

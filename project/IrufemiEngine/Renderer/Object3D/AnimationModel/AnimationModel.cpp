@@ -22,12 +22,6 @@ IrufemiEngine* AnimationModel::engine_ = nullptr;
 
 AnimationModel::AnimationModel() {}
 AnimationModel::~AnimationModel() {
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        if (transformationResource_[i]) {
-            transformationResource_[i]->Unmap(0, nullptr);
-            transformationData_[i] = nullptr;
-        }
-    }
 }
 
 // 初期化
@@ -43,20 +37,16 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
         return;
     }
 
-    // 変換行列リソースの生成とマップ
-    assert(engine_ && "DrawManager is not set. Cannot get DirectXCommon.");
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        transformationResource_[i] = engine_->GetDrawManager()->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
-        transformationResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_[i]));
-    }
+    // 4. 変換行列リソースの生成とマップ (全メッシュ共有用)
+    assert(engine_->GetDrawManager() && "DrawManager is not set.");
+    transformationBuffer_.Initialize(engine_->GetDrawManager()->GetDxCommon());
 
     // 各メッシュ用リソースの生成
     meshResources_.clear();
     for (size_t i = 0; i < managedModel_->gpuMeshes.size(); ++i) {
         auto res = std::make_unique<Object3DResource>();
         
-        // 変換行列リソースを借用
-        res->SetExternalTransformationResource(transformationResource_, transformationData_);
+        res->SetExternalTransformationBuffer(&transformationBuffer_);
         
         const auto& gpuMesh = managedModel_->gpuMeshes[i];
         res->vertexBufferView_ = gpuMesh->vertexBufferView;
@@ -64,7 +54,6 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
         res->indexCount_ = gpuMesh->indexCount;
         
         res->CreateResource();
-        res->Map();
 
         // 初期テクスチャハンドルをコピー
         const auto& gpuMaterial = (i < managedModel_->gpuMaterials.size()) ? managedModel_->gpuMaterials[i] : nullptr;
@@ -128,9 +117,7 @@ void AnimationModel::Update() {
         worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
         worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
         transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-        if (transformationData_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()]) {
-            *transformationData_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()] = transformationMatrix_;
-        }
+        transformationBuffer_.Update(transformationMatrix_, engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex());
     } else {
         // --- ノードアニメーションモデルの更新 ---
         // オブジェクト全体のワールド行列を計算
@@ -144,9 +131,7 @@ void AnimationModel::Update() {
         transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
         // 計算した行列をマップ済みのリソースにコピー
-        if (transformationData_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()]) {
-            *transformationData_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()] = transformationMatrix_;
-        }
+        transformationBuffer_.Update(transformationMatrix_, engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex());
     }
 
 
@@ -201,9 +186,7 @@ void AnimationModel::Update() {
 void AnimationModel::SyncIfDirty() {
     if (dirtyFramesLeft_ > 0) {
         uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-        if (transformationData_[frameIndex]) {
-            *transformationData_[frameIndex] = transformationMatrix_;
-        }
+        transformationBuffer_.Update(transformationMatrix_, frameIndex);
         for (auto& res : meshResources_) {
             res->SyncMaterialData();
         }

@@ -105,7 +105,7 @@ void Circle2D::InitMaterialAndMatrix() {
     resource_->transformationMatrix_.WVP =
         Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
     uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-    if(resource_->transformationData_[frameIndex]) { *resource_->transformationData_[frameIndex] = { resource_->transformationMatrix_.WVP, resource_->transformationMatrix_.world }; }
+    resource_->transformationBuffer_.Update(resource_->transformationMatrix_, frameIndex);
 
     // マテリアル
     resource_->GetMaterialData()->color = { 1.0f, 1.0f, 1.0f, 1.0f };

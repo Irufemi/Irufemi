@@ -16,12 +16,6 @@ DebugUI* ObjClass::ui_ = nullptr;
 ModelManager* ObjClass::modelManager_ = nullptr;
 
 ObjClass::~ObjClass() {
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        if (transformationResource_[i]) {
-            transformationResource_[i]->Unmap(0, nullptr);
-            transformationData_[i] = nullptr;
-        }
-    }
 }
 
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
@@ -37,10 +31,7 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 
     // 変換行列リソースの生成とマップ (全メッシュ共有用)
     assert(drawManager_ && "DrawManager is not set. Cannot get DirectXCommon.");
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        transformationResource_[i] = drawManager_->GetDxCommon()->CreateBufferResource(sizeof(TransformationMatrix));
-        transformationResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&transformationData_[i]));
-    }
+    transformationBuffer_.Initialize(drawManager_->GetDxCommon());
 
     // インスタンス固有の各メッシュ用リソースを生成
     meshResources_.clear();
@@ -48,7 +39,7 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         auto res = std::make_unique<Object3DResource>();
         
         // 外部の変換行列リソースを借用
-        res->SetExternalTransformationResource(transformationResource_, transformationData_);
+        res->SetExternalTransformationBuffer(&transformationBuffer_);
         
         // メッシュ固有の View を設定
         const auto& gpuMesh = managedModel_->gpuMeshes[i];
@@ -58,7 +49,6 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
         
         // マテリアルリソース等の生成
         res->CreateResource();
-        res->Map();
         
         // 初期テクスチャハンドルを共有データからコピー
         const auto& gpuMaterial = (i < managedModel_->gpuMaterials.size()) ? managedModel_->gpuMaterials[i] : nullptr;
@@ -93,12 +83,6 @@ void ObjClass::Update() {
     worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
     transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
-    // 計算した行列をマップ済みのリソースにコピー
-    uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
-    if (transformationData_[frameIndex]) {
-        *transformationData_[frameIndex] = transformationMatrix_;
-    }
-
     // マテリアル情報をGPUへ転送
     UpdateMaterials();
 
@@ -112,9 +96,8 @@ void ObjClass::Update() {
 void ObjClass::SyncIfDirty() {
     if (dirtyFramesLeft_ > 0) {
         uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
-        if (transformationData_[frameIndex]) {
-            *transformationData_[frameIndex] = transformationMatrix_;
-        }
+        // 変換行列の更新 (全メッシュで共有のバッファを1回だけ更新)
+        transformationBuffer_.Update(transformationMatrix_, frameIndex);
         for (auto& res : meshResources_) {
             res->SyncMaterialData();
         }

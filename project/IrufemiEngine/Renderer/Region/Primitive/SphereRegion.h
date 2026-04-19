@@ -9,6 +9,7 @@
 #include <cassert>
 #include <array>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/ConstantBuffer.h"
 
 #include "../../VertexData.h"            // VertexData
 #include "../../../Engine/Graphics/Data/Material.h"              // Material
@@ -73,7 +74,7 @@ public:
     // DrawManager 用 Getter
     D3D12_VERTEX_BUFFER_VIEW&   GetVertexBufferView() { return vertexBufferView_; }
     D3D12_INDEX_BUFFER_VIEW&    GetIndexBufferView() { return indexBufferView_; }
-    ID3D12Resource*             GetMaterialResource() { return materialResource_[dx_->GetFrameIndex()].Get(); }
+    ID3D12Resource*             GetMaterialResource() { return materialBuffer_.GetResource(dx_->GetFrameIndex()); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[dx_->GetFrameIndex()]; }
     UINT                        GetIndexCount() const { return indexCount_; }
@@ -114,8 +115,8 @@ private:
     D3D12_INDEX_BUFFER_VIEW                indexBufferView_{};
     UINT                                   indexCount_ = 0;
 
-    // マテリアル用
-    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> materialResource_{};
+    // マテリアル
+    ConstantBuffer<Material> materialBuffer_;
 
     // 共有テクスチャ SRV
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};

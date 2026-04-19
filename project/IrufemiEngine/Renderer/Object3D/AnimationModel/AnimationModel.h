@@ -4,6 +4,11 @@
 #include "Engine/Core/Math/Transform.h"
 #include "Resource/Model/Data/AnimationTransform.h"
 #include "Renderer/TransformationMatrix.h"
+#include "../../../Engine/Core/Math/Vector2.h"
+#include "../../../Engine/Core/Math/Vector3.h"
+#include "../../../Engine/Core/Math/Vector4.h"
+#include "../../../Engine/Core/Math/Transform.h"
+#include "Engine/Graphics/DirectX/ConstantBuffer.h"
 #include "Resource/Model/Data/Animation.h"
 #include "Resource/Model/Data/NodeAnimation.h"
 #include "Resource/Model/Data/ModelData.h"
@@ -46,7 +51,7 @@ public: // メンバ関数
 
     // 描画用の変換行列リソースのGPUアドレスを取得
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
-        return transformationResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
+        return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
 
 private: // メンバ関数(内部ヘルパ)
@@ -98,9 +103,8 @@ private: // メンバ変数
     // --- 描画リソース (新アーキテクチャ) ---
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
-    // 共通の変換行列リソース
-    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_[kMaxFramesInFlight];
-    TransformationMatrix* transformationData_[kMaxFramesInFlight] = { nullptr };
+    // 変換行列用リソース (全メッシュ共有)
+    ConstantBuffer<TransformationMatrix> transformationBuffer_;
     std::map<std::string, Matrix4x4> nodeWorldMatrices_;
 
     Camera* camera_ = nullptr;

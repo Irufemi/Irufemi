@@ -3,6 +3,7 @@
 #include <vector>
 #include <wrl.h>
 #include <d3d12.h>
+#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 #include "Data/LineVertexData.h"
 #include "../../Engine/Graphics/Data/Material.h"
 #include "../TransformationMatrix.h"
@@ -33,12 +34,19 @@ public:
     uint32_t indexCount_ = 0;
 
     // --- マテリアル ---
-    Material* materialData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
+    Material cpuMaterialData_{};
+    ConstantBuffer<Material> materialBuffer_;
 
     // --- トランスフォーム ---
     Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
-    TransformationMatrix* transformationData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_ = nullptr;
+    ConstantBuffer<TransformationMatrix> transformationBuffer_;
+
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const {
+        return materialBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
+    }
+
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const {
+        return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
+    }
 };

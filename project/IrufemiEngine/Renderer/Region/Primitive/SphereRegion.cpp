@@ -134,19 +134,16 @@ void SphereRegion::CreateMeshBuffers(const std::vector<VertexData>& vertices, co
 
 void SphereRegion::CreateMaterialResources() {
     // Material (全フレーム分一括で生成)
+    materialBuffer_.Initialize(dx_);
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialResource_[i] = dx_->CreateBufferResource(sizeof(Material));
-        Material* mat = nullptr;
-        materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-        mat->color = { 1,1,1,1 };
-        mat->enableLighting = true;
-        mat->hasTexture = true; // 実際の有無は EnsureSharedTexture で調整
-        mat->lightingMode = 3;
-        mat->uvTransform = Math::MakeIdentity4x4();
-        mat->metallic = 0.0f;
-        mat->roughness = 0.5f;
-        mat->environmentCoefficient = 0.0f;
-        materialResource_[i]->Unmap(0, nullptr);
+        materialBuffer_[i]->color = { 1,1,1,1 };
+        materialBuffer_[i]->enableLighting = true;
+        materialBuffer_[i]->hasTexture = true; // 実際の有無は EnsureSharedTexture で調整
+        materialBuffer_[i]->lightingMode = 3;
+        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
+        materialBuffer_[i]->metallic = 0.0f;
+        materialBuffer_[i]->roughness = 0.5f;
+        materialBuffer_[i]->environmentCoefficient = 0.0f;
     }
 }
 
@@ -157,11 +154,8 @@ void SphereRegion::EnsureSharedTexture(const std::string& textureName) {
     if (textureHandle_.ptr == 0) {
         textureHandle_ = textureManager_->GetWhiteTextureHandle();
         // マテリアル側の hasTexture は実際のSRV存在に合わせて PS で参照
-        Material* mat = nullptr;
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-            materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-            mat->hasTexture = (textureHandle_.ptr != 0);
-            materialResource_[i]->Unmap(0, nullptr);
+            materialBuffer_[i]->hasTexture = (textureHandle_.ptr != 0);
         }
     }
     assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
@@ -321,27 +315,18 @@ void SphereRegion::Draw() {
     // 毎フレームインスタンスの WVP 更新
     BuildInstanceBuffer(true);
 
-    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialResource_[dx_->GetFrameIndex()].Get(), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, GetInstanceCount());
+    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(dx_->GetFrameIndex()), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, GetInstanceCount());
 }
 
 void SphereRegion::SetColor(const Vector4& color) {
-    // マテリアル色(テクスチャと乗算される想定)
-    Material* mat = nullptr;
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-        mat->color = color;
-        materialResource_[i]->Unmap(0, nullptr);
+        materialBuffer_[i]->color = color;
     }
 }
 
 void SphereRegion::SetEnvironmentCoefficient(float coefficient) {
-    Material* mat = nullptr;
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mat));
-        if (mat) {
-            mat->environmentCoefficient = coefficient;
-        }
-        materialResource_[i]->Unmap(0, nullptr);
+        materialBuffer_[i]->environmentCoefficient = coefficient;
     }
 }
 

@@ -13,6 +13,7 @@
 #include "../../../Resource/Model/Data/ObjModel.h"
 #include "../Object3DResource.h"
 #include "../../../Engine/Graphics/Data/Material.h"
+#include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
 // 前方宣言
 class TextureManager;
@@ -52,9 +53,8 @@ private:
     // 各メッシュ用リソース (マテリアルや頂点Viewを保持)
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
-    // 共通の変換行列リソース (全メッシュで共有)
-    Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource_[kMaxFramesInFlight];
-    TransformationMatrix* transformationData_[kMaxFramesInFlight] = { nullptr };
+    // 変換行列用リソース (全メッシュで共有)
+    ConstantBuffer<TransformationMatrix> transformationBuffer_;
 
     Camera* camera_ = nullptr;
     bool isCullingEnabled_ = true;
@@ -136,7 +136,7 @@ public: //メンバ関数
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
     void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
-        return transformationResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
+        return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
     ///@}
 

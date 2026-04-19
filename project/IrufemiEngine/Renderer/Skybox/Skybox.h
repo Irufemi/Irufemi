@@ -12,6 +12,7 @@
 #include <vector>
 #include <array>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
 // 前方宣言
 class Camera;
@@ -84,8 +85,7 @@ private: // メンバ変数(resource)
         Matrix4x4 WVP;
     };
     SkyboxTransformationMatrix transformationMatrix_{};
-    std::array<SkyboxTransformationMatrix*, kMaxFramesInFlight> transformationData_ = {nullptr};
-    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> transformationResource_;
+    ConstantBuffer<SkyboxTransformationMatrix> transformationBuffer_;
 
     // Material
     struct SkyboxMaterial {
@@ -93,8 +93,7 @@ private: // メンバ変数(resource)
         float intensity;
         float padding[3];
     };
-    std::array<SkyboxMaterial*, kMaxFramesInFlight> materialData_ = {nullptr};
-    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> materialResource_;
+    ConstantBuffer<SkyboxMaterial> materialBuffer_;
 
     // texture
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};

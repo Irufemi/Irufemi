@@ -8,6 +8,7 @@
 #include "Data/Particle.h"
 #include "../../Engine/Core/Math/Transform.h"
 #include "../../Engine/Graphics/DirectX/DirectXCommon.h"
+#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
 class ParticleResource : public BaseResource {
 public:
@@ -36,8 +37,7 @@ public:
     Material cpuMaterialData_{};
     Material* GetMaterialData() { return &cpuMaterialData_; }
     
-    Material* materialData_[kMaxFramesInFlight] = { nullptr };
-    Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_[kMaxFramesInFlight];
+    ConstantBuffer<Material> materialBuffer_;
 
     // --- インスタンシングバッファ (StructuredBuffer) ---
     static constexpr uint32_t kNumMaxInstance = 4096;
@@ -53,11 +53,9 @@ public:
     
     void SyncMaterialData() {
         uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-        if (materialData_[frameIndex]) {
-            *materialData_[frameIndex] = cpuMaterialData_;
-        }
+        materialBuffer_.Update(cpuMaterialData_, frameIndex);
     }
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const {
-        return materialResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
+        return materialBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
 };
