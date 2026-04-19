@@ -507,14 +507,16 @@ void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const Managed
     // (PSO設定時にセットされているはずだが、念のため管理が必要な場合はここでセット)
 
     // Parameterの設定
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+    
     // 0: Palette (t0)
-    commandList_->SetComputeRootDescriptorTable(0, skinCluster.paletteSrvHandle.second);
+    commandList_->SetComputeRootDescriptorTable(0, skinCluster.paletteSrvHandle[frameIndex].second);
     // 1: Input Vertices (t1) (最初のメッシュの頂点を使用)
     commandList_->SetComputeRootDescriptorTable(1, model->gpuMeshes[0]->vertexSrvHandle);
     // 2: Influences (t2)
     commandList_->SetComputeRootDescriptorTable(2, skinCluster.influenceSrvHandle.second);
     // 3: Output Vertices (u0)
-    commandList_->SetComputeRootDescriptorTable(3, skinCluster.skinnedVertexUavHandle.second);
+    commandList_->SetComputeRootDescriptorTable(3, skinCluster.skinnedVertexUavHandle[frameIndex].second);
     // 4: Skinning Information (b0)
     commandList_->SetComputeRootConstantBufferView(4, skinCluster.skinningInformationResource->GetGPUVirtualAddress());
 

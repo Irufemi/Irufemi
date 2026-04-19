@@ -352,29 +352,31 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
 
     /// MatrixPalleteの作成
 
-    // pallete用のResourceを確保
-    skinCluster.paletteResource = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());
-    WellForGPU* mappedPallete = nullptr;
-    skinCluster.paletteResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedPallete));
-    skinCluster.mappedPalette = { mappedPallete,skeleton.joints.size() }; // spanを使ってアクセスするようにする
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        // pallete用のResourceを確保
+        skinCluster.paletteResource[i] = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());
+        WellForGPU* mappedPallete = nullptr;
+        skinCluster.paletteResource[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedPallete));
+        skinCluster.mappedPalette[i] = { mappedPallete, skeleton.joints.size() }; // spanを使ってアクセスするようにする
 
-    // SRV用のインデックスを確保
-    uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
-    assert(paletteSrvIndex != DescriptorPool::kInvalid);
-    skinCluster.paletteSrvHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(paletteSrvIndex);
-    skinCluster.paletteSrvHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(paletteSrvIndex);
+        // SRV用のインデックスを確保
+        uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
+        assert(paletteSrvIndex != DescriptorPool::kInvalid);
+        skinCluster.paletteSrvHandle[i].first = dxCommon_->GetSrvPool()->GetCPUHandle(paletteSrvIndex);
+        skinCluster.paletteSrvHandle[i].second = dxCommon_->GetSrvPool()->GetGPUHandle(paletteSrvIndex);
 
-    // palette用のsrvを作成。StructuredBufferでアクセスできるようにする。
-    D3D12_SHADER_RESOURCE_VIEW_DESC paletteSrvDesc{};
-    paletteSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    paletteSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    paletteSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-    paletteSrvDesc.Buffer.FirstElement = 0;
-    paletteSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-    paletteSrvDesc.Buffer.NumElements = UINT(skeleton.joints.size());
-    paletteSrvDesc.Buffer.StructureByteStride = sizeof(WellForGPU);
+        // palette用のsrvを作成。StructuredBufferでアクセスできるようにする。
+        D3D12_SHADER_RESOURCE_VIEW_DESC paletteSrvDesc{};
+        paletteSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+        paletteSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        paletteSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+        paletteSrvDesc.Buffer.FirstElement = 0;
+        paletteSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+        paletteSrvDesc.Buffer.NumElements = UINT(skeleton.joints.size());
+        paletteSrvDesc.Buffer.StructureByteStride = sizeof(WellForGPU);
 
-    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.paletteResource.Get(), &paletteSrvDesc, skinCluster.paletteSrvHandle.first);
+        dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.paletteResource[i].Get(), &paletteSrvDesc, skinCluster.paletteSrvHandle[i].first);
+    }
 
     /// influence用Resourceの作成
 
@@ -430,25 +432,27 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
     }
 
     /// MatrixPalleteの作成
-    skinCluster.paletteResource = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());
-    WellForGPU* mappedPallete = nullptr;
-    skinCluster.paletteResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedPallete));
-    skinCluster.mappedPalette = { mappedPallete, skeleton.joints.size() };
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        skinCluster.paletteResource[i] = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());
+        WellForGPU* mappedPallete = nullptr;
+        skinCluster.paletteResource[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedPallete));
+        skinCluster.mappedPalette[i] = { mappedPallete, skeleton.joints.size() };
 
-    uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
-    assert(paletteSrvIndex != DescriptorPool::kInvalid);
-    skinCluster.paletteSrvHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(paletteSrvIndex);
-    skinCluster.paletteSrvHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(paletteSrvIndex);
+        uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
+        assert(paletteSrvIndex != DescriptorPool::kInvalid);
+        skinCluster.paletteSrvHandle[i].first = dxCommon_->GetSrvPool()->GetCPUHandle(paletteSrvIndex);
+        skinCluster.paletteSrvHandle[i].second = dxCommon_->GetSrvPool()->GetGPUHandle(paletteSrvIndex);
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC paletteSrvDesc{};
-    paletteSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    paletteSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    paletteSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-    paletteSrvDesc.Buffer.FirstElement = 0;
-    paletteSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-    paletteSrvDesc.Buffer.NumElements = UINT(skeleton.joints.size());
-    paletteSrvDesc.Buffer.StructureByteStride = sizeof(WellForGPU);
-    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.paletteResource.Get(), &paletteSrvDesc, skinCluster.paletteSrvHandle.first);
+        D3D12_SHADER_RESOURCE_VIEW_DESC paletteSrvDesc{};
+        paletteSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+        paletteSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        paletteSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+        paletteSrvDesc.Buffer.FirstElement = 0;
+        paletteSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+        paletteSrvDesc.Buffer.NumElements = UINT(skeleton.joints.size());
+        paletteSrvDesc.Buffer.StructureByteStride = sizeof(WellForGPU);
+        dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.paletteResource[i].Get(), &paletteSrvDesc, skinCluster.paletteSrvHandle[i].first);
+    }
 
     /// influence用Resourceの作成
     skinCluster.influenceResource = dxCommon_->CreateBufferResource(sizeof(VertexInfluence) * totalVertices);
@@ -500,41 +504,43 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
     }
 
     // --- コンピュートシェーダ用のリソース生成 ---
-    // Skinned Vertex Buffer (UAV)
-    skinCluster.skinnedVertexResource = dxCommon_->CreateUAVBufferResource(sizeof(VertexData) * totalVertices);
-    // UAV
-    uint32_t skinnedVertexUavIndex = dxCommon_->GetSrvPool()->Allocate();
-    assert(skinnedVertexUavIndex != DescriptorPool::kInvalid);
-    skinCluster.skinnedVertexUavHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(skinnedVertexUavIndex);
-    skinCluster.skinnedVertexUavHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(skinnedVertexUavIndex);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        // Skinned Vertex Buffer (UAV)
+        skinCluster.skinnedVertexResource[i] = dxCommon_->CreateUAVBufferResource(sizeof(VertexData) * totalVertices);
+        // UAV
+        uint32_t skinnedVertexUavIndex = dxCommon_->GetSrvPool()->Allocate();
+        assert(skinnedVertexUavIndex != DescriptorPool::kInvalid);
+        skinCluster.skinnedVertexUavHandle[i].first = dxCommon_->GetSrvPool()->GetCPUHandle(skinnedVertexUavIndex);
+        skinCluster.skinnedVertexUavHandle[i].second = dxCommon_->GetSrvPool()->GetGPUHandle(skinnedVertexUavIndex);
 
-    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
-    uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-    uavDesc.Buffer.FirstElement = 0;
-    uavDesc.Buffer.NumElements = UINT(totalVertices);
-    uavDesc.Buffer.StructureByteStride = sizeof(VertexData);
-    dxCommon_->GetDevice()->CreateUnorderedAccessView(skinCluster.skinnedVertexResource.Get(), nullptr, &uavDesc, skinCluster.skinnedVertexUavHandle.first);
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
+        uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+        uavDesc.Buffer.FirstElement = 0;
+        uavDesc.Buffer.NumElements = UINT(totalVertices);
+        uavDesc.Buffer.StructureByteStride = sizeof(VertexData);
+        dxCommon_->GetDevice()->CreateUnorderedAccessView(skinCluster.skinnedVertexResource[i].Get(), nullptr, &uavDesc, skinCluster.skinnedVertexUavHandle[i].first);
 
-    // SRV
-    uint32_t skinnedVertexSrvIndex = dxCommon_->GetSrvPool()->Allocate();
-    assert(skinnedVertexSrvIndex != DescriptorPool::kInvalid);
-    skinCluster.skinnedVertexSrvHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(skinnedVertexSrvIndex);
-    skinCluster.skinnedVertexSrvHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(skinnedVertexSrvIndex);
+        // SRV
+        uint32_t skinnedVertexSrvIndex = dxCommon_->GetSrvPool()->Allocate();
+        assert(skinnedVertexSrvIndex != DescriptorPool::kInvalid);
+        skinCluster.skinnedVertexSrvHandle[i].first = dxCommon_->GetSrvPool()->GetCPUHandle(skinnedVertexSrvIndex);
+        skinCluster.skinnedVertexSrvHandle[i].second = dxCommon_->GetSrvPool()->GetGPUHandle(skinnedVertexSrvIndex);
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-    srvDesc.Buffer.FirstElement = 0;
-    srvDesc.Buffer.NumElements = UINT(totalVertices);
-    srvDesc.Buffer.StructureByteStride = sizeof(VertexData);
-    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.skinnedVertexResource.Get(), &srvDesc, skinCluster.skinnedVertexSrvHandle.first);
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+        srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+        srvDesc.Buffer.FirstElement = 0;
+        srvDesc.Buffer.NumElements = UINT(totalVertices);
+        srvDesc.Buffer.StructureByteStride = sizeof(VertexData);
+        dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.skinnedVertexResource[i].Get(), &srvDesc, skinCluster.skinnedVertexSrvHandle[i].first);
 
-    // VBV
-    skinCluster.skinnedVertexBufferView.BufferLocation = skinCluster.skinnedVertexResource->GetGPUVirtualAddress();
-    skinCluster.skinnedVertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * totalVertices);
-    skinCluster.skinnedVertexBufferView.StrideInBytes = sizeof(VertexData);
+        // VBV
+        skinCluster.skinnedVertexBufferView[i].BufferLocation = skinCluster.skinnedVertexResource[i]->GetGPUVirtualAddress();
+        skinCluster.skinnedVertexBufferView[i].SizeInBytes = UINT(sizeof(VertexData) * totalVertices);
+        skinCluster.skinnedVertexBufferView[i].StrideInBytes = sizeof(VertexData);
+    }
 
     // Skinning Information (CBV)
     skinCluster.skinningInformationResource = dxCommon_->CreateBufferResource(sizeof(SkinningInformation));
@@ -546,10 +552,10 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
 }
 
 // SkinClusterの更新
-void AnimationManager::SkinClusterUpdate(SkinCluster& skinCluster, const Skeleton& skeleton) {
+void AnimationManager::SkinClusterUpdate(SkinCluster& skinCluster, const Skeleton& skeleton, uint32_t frameIndex) {
     for (size_t jointIndex = 0; jointIndex < skeleton.joints.size(); ++jointIndex) {
         assert(jointIndex < skinCluster.inverseBindPoseMatrices.size());
-        skinCluster.mappedPalette[jointIndex].skeletonSpaceMatrix = skinCluster.inverseBindPoseMatrices[jointIndex] * skeleton.joints[jointIndex].skeletonSpaceMatrix;
-        skinCluster.mappedPalette[jointIndex].skeletonSpaceInverseTransposeMatrix = Math::Transpose(Math::Inverse(skinCluster.mappedPalette[jointIndex].skeletonSpaceMatrix));
+        skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix = skinCluster.inverseBindPoseMatrices[jointIndex] * skeleton.joints[jointIndex].skeletonSpaceMatrix;
+        skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceInverseTransposeMatrix = Math::Transpose(Math::Inverse(skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix));
     }
 }

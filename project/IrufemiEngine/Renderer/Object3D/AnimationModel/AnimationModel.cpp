@@ -208,6 +208,11 @@ void AnimationModel::SyncIfDirty() {
             res->SyncMaterialData();
         }
         
+        // --- 追加: SkinCluster のマルチバッファ同期（ポーズ中の振動対策） ---
+        if (managedModel_ && managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
+            AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
+        }
+        
         if (lastSyncedFrameIndex_ != frameIndex) {
             dirtyFramesLeft_--;
             lastSyncedFrameIndex_ = frameIndex;
@@ -258,19 +263,21 @@ void AnimationModel::Draw() {
     // 1. スキニングの実行
     if (!managedModel_->cpuModel->skinClusterData.empty()) {
         engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
-        engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource.Get());
+        uint32_t f = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+        engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource[f].Get());
     }
 
     // 2. グラフィックスPSOの適用
     engine_->ApplyPSO();
 
     // 3. 全メッシュをループして描画
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     for (size_t i = 0; i < meshResources_.size(); ++i) {
         auto& res = meshResources_[i];
 
         // スキニング中なら VBV を差し替えて描画
         if (!managedModel_->cpuModel->skinClusterData.empty()) {
-            engine_->GetDrawManager()->DrawStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView);
+            engine_->GetDrawManager()->DrawStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[frameIndex]);
         } else {
             engine_->GetDrawManager()->DrawStandard3D(res.get());
         }
@@ -380,7 +387,8 @@ void AnimationModel::UpdateAnimation() {
         AnimationManager::SkeletonUpdate(skeleton_);
 
         // 3. SkinClusterのMatrixPaletteを更新
-        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_);
+        uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
     } else { // ノードアニメーションの場合
         // rootNodeのAnimationを取得
         NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[managedModel_->cpuModel->rootNode.name];

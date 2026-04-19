@@ -198,6 +198,13 @@ void GPUParticleSystem::Draw() {
 
     if (isCulled_) return;
 
+    // --- 追加: ポーズ時(Updateが呼ばれなかった時)のマルチバッファ同期 ---
+    if (!needsUpdateCS_) {
+        uint32_t frameIndex = dxCommon_->GetFrameIndex();
+        *emitterMapped_[frameIndex] = *emitter_;
+        *perFrameMapped_[frameIndex] = *perFrameData_;
+    }
+
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
     // 1. Compute Shader dispatch (Update/Emit)

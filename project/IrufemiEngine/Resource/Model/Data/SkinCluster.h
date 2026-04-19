@@ -5,8 +5,10 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include <span>
+#include <array>
 #include "VertexInfluence.h"
 #include "WellForGPU.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
 
 struct SkinningInformation {
     uint32_t numVertices;
@@ -17,16 +19,17 @@ struct SkinCluster {
     Microsoft::WRL::ComPtr<ID3D12Resource> influenceResource;
     D3D12_VERTEX_BUFFER_VIEW influenceBufferView;
     std::span<VertexInfluence> mappedInfluence;
-    Microsoft::WRL::ComPtr<ID3D12Resource> paletteResource;
-    std::span<WellForGPU> mappedPalette;
-    std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> paletteSrvHandle;
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> paletteResource;
+    std::array<std::span<WellForGPU>, kMaxFramesInFlight> mappedPalette;
+    std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight> paletteSrvHandle;
 
     // コンピュートシェーダー用リソース
     Microsoft::WRL::ComPtr<ID3D12Resource> skinningInformationResource;
     SkinningInformation* mappedSkinningInformation = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> skinnedVertexResource;
-    D3D12_VERTEX_BUFFER_VIEW skinnedVertexBufferView;
-    std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> skinnedVertexSrvHandle;
+
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> skinnedVertexResource;
+    std::array<D3D12_VERTEX_BUFFER_VIEW, kMaxFramesInFlight> skinnedVertexBufferView;
+    std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight> skinnedVertexSrvHandle;
     std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> influenceSrvHandle;
-    std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> skinnedVertexUavHandle;
+    std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight> skinnedVertexUavHandle;
 };
