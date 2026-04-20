@@ -74,6 +74,8 @@ void PrimitiveObjects3DClass::MaterialComponent::UpdateMaterial(Object3DResource
     resource->GetMaterialData()->metallic = metallic;
     resource->GetMaterialData()->roughness = roughness;
     resource->GetMaterialData()->hasTexture = !texturePath.empty();
+    resource->GetMaterialData()->uvTransform = uvTransform;
+    resource->GetMaterialData()->alphaReference = alphaReference;
 
     // テクスチャハンドルの更新
     if (textureManager && !texturePath.empty()) {

@@ -68,8 +68,8 @@ PixelShaderOutput main(VertexShaderOutput input)
 		
 	/// discard
 		
-	// textureのα値が0.5以下の時にPixelを棄却
-	if (textureColor.a <= 0.5)
+	// textureのα値が alphaReference 以下の時にPixelを棄却
+	if (textureColor.a <= gMaterial.alphaReference)
 	{
 		discard;
 	}

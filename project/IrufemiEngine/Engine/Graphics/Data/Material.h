@@ -21,5 +21,5 @@ struct Material {
     float metallic;              //!< 金属度
     float roughness;             //!< 粗さ
     int32_t useClampSampler;     //!< パーティクル等で使用するサンプラー切替 (0:WRAP, 1:CLAMP)
-    float padding2;              //!< パディング
+    float alphaReference;        //!< ディスカード閾値 (0.0f = 全部描画, 1.0f = 全部棄却)
 };

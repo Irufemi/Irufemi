@@ -91,8 +91,10 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveSneakWalk_ = false;
     isActiveSkybox_ = false;
     isActivePrimitiveObj_ = false;
-    isActiveLightningCrawl_ = true;
+    isActiveGPUParticle_ = false;
+    isActiveLightningCrawl_ = false;
     isActiveImGuiDemo_ = false;
+    isActiveEffectTest_ = true;
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
@@ -190,6 +192,13 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         primitiveObj_->SetPosition({ 0.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
     }
 
+    if (isActiveEffectTest_) {
+        PrimitiveEffect::SetTextureManager(engine_->GetTextureManager());
+        effectTest_ = std::make_unique<PrimitiveEffect>();
+        effectTest_->Initialize(camera_.get(), PrimitiveType::Cylinder, "resources/uvChecker.png");
+        effectTest_->SetCylinderParams(1.0f, 1.0f, 2.0f, 32, false, false, false);
+    }
+
     // エンジンのデフォルトクリアカラーを「青」に設定
     engine_->SetClearColor(Vector4{ 0.1f, 0.25f, 0.5f, 1.0f });
 
@@ -243,6 +252,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
     ImGui::Checkbox("Skybox", &isActiveSkybox_);
     ImGui::Checkbox("PrimitiveObj", &isActivePrimitiveObj_);
+    ImGui::Checkbox("Effect Test (Assignment 01_02)", &isActiveEffectTest_);
     ImGui::Checkbox("Lightning Crawl", &isActiveLightningCrawl_);
     ImGui::Checkbox("ImGui Demo", &isActiveImGuiDemo_);
     ImGui::End();
@@ -448,6 +458,15 @@ void DebugScene::Update() {
         primitiveObj_->Update();
     }
 
+    if (isActiveEffectTest_) {
+        if (!effectTest_) {
+            effectTest_ = std::make_unique<PrimitiveEffect>();
+            effectTest_->Initialize(camera_.get(), PrimitiveType::Cylinder, "resources/uvChecker.png");
+            effectTest_->SetCylinderParams(1.0f, 1.0f, 2.0f, 32, false, false, false);
+        }
+        effectTest_->Update(engine_->GetDeltaTime());
+    }
+
     if (isActiveLightningCrawl_) {
         lightningCylinder_->Update();
     }
@@ -581,6 +600,18 @@ void DebugScene::Draw() {
         primitiveObj_->Draw();
     }
 
+    if (isActiveEffectTest_) {
+        // 現在設定されている CullMode をPSOに反映
+        engine_->SetCull(effectTest_->cullMode_);
+        engine_->ApplyPSO();
+        
+        effectTest_->Draw();
+        
+        // Culling を標準(Back)に戻しておく
+        engine_->SetCull(PSOManager::CullMode::Back);
+        engine_->ApplyPSO();
+    }
+
     if (isActiveSkybox_) {
         skybox_->Draw();
     }
@@ -667,6 +698,10 @@ void DebugScene::DrawDebugTab() {
     if (isActiveCylinder_ && cylinder_) cylinder_->Debug("Cylinder");
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
+
+    if (isActiveEffectTest_ && effectTest_) {
+        effectTest_->Debug("Cylinder Effect Test [Assignment 01_02]");
+    }
 
     if (isActiveGPUParticle_ && gpuParticle_) {
         gpuParticle_->Debug();
