@@ -70,6 +70,7 @@ public:
     // 個別生成用（キャッシュしない。特殊なパラメータが必要な場合用）
     static PrimitiveData CreateSphere(float radius, uint32_t subdivision);
     static PrimitiveData CreateCube(float width, float height, float depth);
+    static PrimitiveData CreateCylinder(float bottomRadius, float topRadius, float height, uint32_t segments, bool hasTop = true, bool hasBottom = true, bool centered = true);
     static PrimitiveData CreateCylinder(float radius, float height, uint32_t segments, bool hasTop = true, bool hasBottom = true);
     static PrimitiveData CreateCone(float radius, float height, uint32_t segments);
     static PrimitiveData CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments);
@@ -97,7 +98,7 @@ private:
     static void GenerateSphereVertices(PrimitiveData& data, float radius, uint32_t subdivision);
     static void GenerateSphereIndices(PrimitiveData& data, uint32_t subdivision);
     
-    static void GenerateCylinderVertices(PrimitiveData& data, float radius, float height, uint32_t segments, bool hasTop, bool hasBottom);
+    static void GenerateCylinderVertices(PrimitiveData& data, float bottomRadius, float topRadius, float height, uint32_t segments, bool hasTop, bool hasBottom, bool centered);
     static void GenerateCylinderIndices(PrimitiveData& data, uint32_t segments, bool hasTop, bool hasBottom);
 
     static void GenerateRingVertices(PrimitiveData& data, float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV);
