@@ -1,18 +1,19 @@
-#include "Phase2_Bite.h"
+#include "Phase2_Tackle.h"
 #include "Enemy.h"
 #include "actors/player/Player.h"
 #include "Engine/Core/Math/Math.h"
 #include <cmath>
 #include <algorithm>
 
-void Phase2_Bite::Enter(Enemy* enemy) {
+void Phase2_Tackle::Enter(Enemy* enemy) {
     timer_ = 0.0f;
     isFinished_ = false;
     isTargetLocked_ = false;
     attackTarget_ = { 0, 0, 0 };
+    rushDir_ = { 0, 0, 0 };
 }
 
-void Phase2_Bite::Update(Enemy* enemy, Player* player, float deltaTime) {
+void Phase2_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
     if (!enemy) return;
 
     timer_ += deltaTime;
@@ -57,12 +58,15 @@ void Phase2_Bite::Update(Enemy* enemy, Player* player, float deltaTime) {
             float distXZ = std::sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
             headT->rotate.x = -std::atan2(toTarget.y, distXZ);
 
+            // 突進方向をここで計算・保持して直線のみにする！
+            rushDir_ = Math::Normalize(toTarget);
+
             isTargetLocked_ = true;
         }
 
         // --- 位置の移動を完全に停止する（明確な隙の提示） ---
         // わずかに顔を上げる（口を開ける溜め）動作だけ行い、translateはいじらない。
-        // こうすることで「場所を決めた」「いまからここに噛みつく」という予備動作になる。
+        // こうすることで「場所を決めた」「いまからここに突っ込む」という予備動作になる。
         Vector3 toTarget = Math::Subtract(attackTarget_, headT->translate);
         float distXZ = std::sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
         float targetRotX = -std::atan2(toTarget.y, distXZ) - 0.5f; // 上を向く
@@ -70,18 +74,19 @@ void Phase2_Bite::Update(Enemy* enemy, Player* player, float deltaTime) {
         headT->rotate.x += (targetRotX - headT->rotate.x) * 0.15f;
     }
     else if (timer_ < kOrbitTime + kStopTime + kRushTime) {
-        // 突進：溜めた顔を勢いよく下に振り下ろしながら目標へ飛び込む
+        // 突進：溜めた顔を勢いよく下に振り下ろしながら目標方向への完全な直進を行う
         Vector3 toTarget = Math::Subtract(attackTarget_, headT->translate);
+        // 顔の向きだけ下に向ける（振り下ろす）
         headT->rotate.x += (-std::atan2(toTarget.y, std::sqrt(toTarget.x*toTarget.x + toTarget.z*toTarget.z)) + 0.3f - headT->rotate.x) * 0.2f;
 
-        Vector3 rushDir = Math::Normalize(Math::Subtract(attackTarget_, headT->translate));
-        headT->translate = Math::Add(headT->translate, Math::Multiply(kRushSpeed, rushDir));
+        // 計算しておいた直線方向 (rushDir_) にだけ進む
+        headT->translate = Math::Add(headT->translate, Math::Multiply(kRushSpeed, rushDir_));
     }
     else {
         isFinished_ = true;
     }
 }
 
-void Phase2_Bite::Exit(Enemy* enemy) {
+void Phase2_Tackle::Exit(Enemy* enemy) {
     // 特になし
 }

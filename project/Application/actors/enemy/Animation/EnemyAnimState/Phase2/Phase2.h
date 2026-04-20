@@ -1,6 +1,6 @@
 #pragma once
 #include "../../IEnemyAnimationState.h"
-#include "Bite/Phase2_Bite.h"
+#include "Tackle/Phase2_Tackle.h"
 #include "Beam/Phase2_Beam.h"
 #include "Idle/Phase2_Idle.h"
 #include "core/math/Vector3.h"
@@ -10,7 +10,7 @@
 
 /**
  * @brief 第2形態（首の独立浮遊）ステート・マネージャー
- * 3つの首の独立したステート（Idle, Biting, Beaming）を管理します。
+ * 3つの首の独立したステート（Idle, Tackling, Beaming）を管理します。
  */
 class Phase2 : public IEnemyAnimationState {
 public:
@@ -23,14 +23,14 @@ public:
 private:
    enum class Mode {
         Idle,
-        Biting,
+        Tackling,
         Beaming
     };
     std::array<Mode, 3> currentModes_;
 
     std::array<std::unique_ptr<Phase2_Idle>, 3> idleStates_;
     std::array<std::unique_ptr<Phase2_Beam>, 3> beamStates_;
-    std::array<std::unique_ptr<Phase2_Bite>, 3> biteStates_;
+    std::array<std::unique_ptr<Phase2_Tackle>, 3> tackleStates_;
 
     // 重なり防止（反発）パラメータ
     const float kRepulsionRadius = 8.0f;    // 首同士が反発し始める距離 (m)

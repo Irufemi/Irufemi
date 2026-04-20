@@ -454,6 +454,7 @@ void Enemy::UpdateDebugUI() {
     lineOBB_->ClearInstances();
     if (isDebugDrawOBB_) {
       auto addObbLines = [&](const OBB &obb) {
+        if (obb.size.x == 0.0f && obb.size.y == 0.0f && obb.size.z == 0.0f) return;
         Vector3 corners[8];
         for (int i = 0; i < 8; ++i) {
           Vector3 offset = {0, 0, 0};

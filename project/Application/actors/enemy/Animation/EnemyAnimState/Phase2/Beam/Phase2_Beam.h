@@ -41,5 +41,7 @@ private:
     float telegraphThicknessBase_ = 0.1f;    // 予告線の基本の太さ
     float telegraphThicknessGrow_ = 0.15f;   // 予告線の太さの増加率
     float telegraphThicknessWait_ = 0.3f;    // 発射直前のロックオン時の予告線の太さ
-    float attackThickness_ = 0.8f;           // 本射ビームの太さ
+    float attackThickness_ = 4.0f;          // 本射ビームの太さ
+    float beamExpandScale_ = 2.5f;           // 後半の膨張スケール
+    float fadeOutStartThreshold_ = 0.85f;    // 膨張開始のしきい値
 };

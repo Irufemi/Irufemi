@@ -122,7 +122,8 @@ void Building::Update() {
             Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f }; // Green
 
             for (auto& inst : instances_) {
-                if (inst.isDestroyed) continue;
+                bool modelGone = inst.isBlownAway && inst.disappearTimer >= BuildingInstance::kDisappearTime;
+                if (inst.isDestroyed || modelGone) continue;
 
                 OBB obb = GetBuildingOBB(static_cast<int>(&inst - &instances_[0]));
 
@@ -403,6 +404,9 @@ OBB Building::GetBuildingOBB(int index) const {
     OBB obb = {};
     if (index < 0 || index >= static_cast<int>(instances_.size())) return obb;
     const auto& inst = instances_[index];
+
+    bool modelGone = inst.isBlownAway && inst.disappearTimer >= BuildingInstance::kDisappearTime;
+    if (modelGone) return obb; // モデル消滅後は判定を消す
 
     obb.center = inst.position;
 

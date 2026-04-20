@@ -75,9 +75,16 @@ void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
         beam->Update(headWorldPos, attackTarget_);
     } else if (timer_ < kBeamFireTime) {
         // 本射
+        float fireProgress = (timer_ - kBeamWaitTime) / (kBeamFireTime - kBeamWaitTime);
+        float thickness = attackThickness_;
+        if (fireProgress > fadeOutStartThreshold_) {
+            float f = (fireProgress - fadeOutStartThreshold_) / (1.0f - fadeOutStartThreshold_);
+            thickness += (std::pow(f, 3.0f) * attackThickness_ * beamExpandScale_);
+        }
+
         beam->SetTelegraphActive(false);
         beam->SetAttackActive(true);
-        beam->SetAttackThickness(attackThickness_);
+        beam->SetAttackThickness(thickness);
         beam->Update(headWorldPos, attackTarget_);
         
         float fireShake = std::sin(globalTimer_ * shakeSpeedFire_) * fireShakeStrength_;

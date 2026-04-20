@@ -147,6 +147,10 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
 }
 
 OBB EnemyBeam::GetOBB() const {
+    if (!isAttackActive_) {
+        return OBB{}; // 攻撃終了後は判定を消す
+    }
+
     OBB obb;
     obb.center = attackCylinder_->GetCenter();
     obb.orientations[0] = attackCylinder_->GetRight();
