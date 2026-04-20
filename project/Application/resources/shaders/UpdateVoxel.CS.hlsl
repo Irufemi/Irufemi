@@ -30,6 +30,17 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 			// 位置更新
 			gParticles[particleIndex].position += gParticles[particleIndex].velocity * gPerFrame.deltaTime;
 
+            // ▼ 追加：Buildingタイプ(1)の場合は床(Y=0)で停止させる
+            if (gEmitter.particleType == 1) {
+                if (gParticles[particleIndex].position.y <= 0.0f) {
+                    gParticles[particleIndex].position.y = 0.0f;
+                    gParticles[particleIndex].velocity.y = 0.0f; // バウンドさせない
+                    // 摩擦で横方向の速度を減衰
+                    gParticles[particleIndex].velocity.x *= 0.5f;
+                    gParticles[particleIndex].velocity.z *= 0.5f;
+                }
+            }
+
 			// 生存時間更新
 			gParticles[particleIndex].life -= (1.0f / gEmitter.lifeTime) * gPerFrame.deltaTime;
         
