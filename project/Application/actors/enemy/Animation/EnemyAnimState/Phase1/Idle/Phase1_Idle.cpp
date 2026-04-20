@@ -1,8 +1,8 @@
-#include "Idle.h"
+#include "Phase1_Idle.h"
 #include "Enemy.h"
 #include <cmath>
 
-void Idle::Update(Enemy* enemy, Player* player, float deltaTime) {
+void Phase1_Idle::Update(Enemy* enemy, Player* player, float deltaTime) {
     timer_ += deltaTime;
     float ls = lerpSpeed_;
 

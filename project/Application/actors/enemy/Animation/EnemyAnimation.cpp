@@ -1,9 +1,9 @@
 #include "EnemyAnimation.h"
 #include "IEnemyAnimationState.h"
-#include "EnemyAnimState/Phase1/Idle/Idle.h"
-#include "EnemyAnimState/Phase1/Beam/Beam.h"
-#include "EnemyAnimState/Phase1/Stomp/Stomp.h"
-#include "EnemyAnimState/Phase2/Bite/Bite.h"
+#include "EnemyAnimState/Phase1/Idle/Phase1_Idle.h"
+#include "EnemyAnimState/Phase1/Beam/Phase1_Beam.h"
+#include "EnemyAnimState/Phase1/Stomp/Phase1_Stomp.h"
+#include "EnemyAnimState/Phase2/Bite/Phase2_Bite.h"
 #include "EnemyAnimState/Phase2/Phase2.h"
 #include "Enemy.h"
 
@@ -15,10 +15,10 @@ EnemyAnimation::~EnemyAnimation() = default;
 
 void EnemyAnimation::Initialize(Enemy* enemy) {
     enemy_ = enemy;
-    stateMap_[EnemyState::Idle] = std::make_unique<Idle>();
-    stateMap_[EnemyState::Attack_Beam] = std::make_unique<Beam>();
-    stateMap_[EnemyState::Attack_Stomp] = std::make_unique<Stomp>();
-    stateMap_[EnemyState::Attack_Bite] = std::make_unique<Bite>();
+    stateMap_[EnemyState::Idle] = std::make_unique<Phase1_Idle>();
+    stateMap_[EnemyState::Attack_Beam] = std::make_unique<Phase1_Beam>();
+    stateMap_[EnemyState::Attack_Stomp] = std::make_unique<Phase1_Stomp>();
+    stateMap_[EnemyState::Attack_Bite] = std::make_unique<Phase2_Bite>();
     stateMap_[EnemyState::Phase2] = std::make_unique<Phase2>();
 
     ChangeState(EnemyState::Idle);

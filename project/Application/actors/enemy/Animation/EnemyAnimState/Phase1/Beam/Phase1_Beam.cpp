@@ -1,4 +1,4 @@
-#include "Beam.h"
+#include "Phase1_Beam.h"
 #include "Enemy.h"
 #include "Beam/EnemyBeam.h"
 #include "actors/player/Player.h"
@@ -6,18 +6,18 @@
 #include <cmath>
 #include <algorithm>
 
-void Beam::Enter(Enemy* enemy) {
+void Phase1_Beam::Enter(Enemy* enemy) {
     attackTimer_ = 0.0f;
     isLockedOn_ = false;
     isFiring_ = false;
     hasFinishedAttack_ = false;
 }
 
-void Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
+void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
     attackTimer_ += deltaTime;
     totalTimer_ += deltaTime; 
 
-    EnemyBeam* beam = enemy->GetBeam();
+    EnemyBeam* beam = enemy->GetBeam(1);
     Matrix4x4 headMatrix = enemy->GetHeadMidWorldMatrix();
     Vector3 headPos = { headMatrix.m[3][0], headMatrix.m[3][1] + headExtensionY_, headMatrix.m[3][2] };
 
@@ -140,8 +140,8 @@ void Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
     }
 }
 
-void Beam::Exit(Enemy* enemy) {
-    if (auto* beam = enemy->GetBeam()) {
+void Phase1_Beam::Exit(Enemy* enemy) {
+    if (auto* beam = enemy->GetBeam(1)) {
         beam->SetTelegraphActive(false);
         beam->SetAttackActive(false);
     }

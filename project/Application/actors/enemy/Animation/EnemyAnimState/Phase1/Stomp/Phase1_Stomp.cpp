@@ -1,10 +1,10 @@
-#include "Stomp.h"
+#include "Phase1_Stomp.h"
 #include "Enemy.h"
 #include "actors/player/Player.h"
 #include "Core/Math/Math.h"
 #include <cmath>
 
-void Stomp::Enter(Enemy* enemy) {
+void Phase1_Stomp::Enter(Enemy* enemy) {
     attackTimer_ = 0.0f;
     hasFinishedAttack_ = false;
     hasTeleported_ = false;
@@ -12,7 +12,7 @@ void Stomp::Enter(Enemy* enemy) {
     initialScaleY_ = enemy->GetGlobalTransform().scale.y;
 }
 
-void Stomp::Update(Enemy* enemy, Player* player, float deltaTime) {
+void Phase1_Stomp::Update(Enemy* enemy, Player* player, float deltaTime) {
     attackTimer_ += deltaTime;
 
     // フェーズ境界の計算
@@ -122,7 +122,7 @@ void Stomp::Update(Enemy* enemy, Player* player, float deltaTime) {
     }
 }
 
-void Stomp::Exit(Enemy* enemy) {
+void Phase1_Stomp::Exit(Enemy* enemy) {
     enemy->GetHeadMidOffset() = { 0,0,0 };
     enemy->GetHeadLeftOffset() = { 0,0,0 };
     enemy->GetHeadRightOffset() = { 0,0,0 };

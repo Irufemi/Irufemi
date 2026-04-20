@@ -333,14 +333,15 @@ void GameScene::CheckEnemyToPlayerCollisions() {
   playerColliderSphere.radius = player_->GetCollider().radius;
 
   // EnemyBeam の判定
-  if (boss_->GetBeam() && boss_->GetBeam()->IsAttackActive() &&
-      boss_->IsFiringRealBeam()) {
-    if (Collision::IsOBBSphereCollision(boss_->GetBeam()->GetOBB(),
-                                        playerColliderSphere)) {
-      if (player_->ApplyDamage(kDamageBeamToPlayer)) {
-        OutputDebugStringA(
-            std::format("Player Hit by Beam: {} damage\n", kDamageBeamToPlayer)
-                .c_str());
+  for (int bi = 0; bi < 3; ++bi) {
+    if (boss_->GetBeam(bi) && boss_->GetBeam(bi)->IsAttackActive()) {
+      if (Collision::IsOBBSphereCollision(boss_->GetBeam(bi)->GetOBB(),
+                                          playerColliderSphere)) {
+        if (player_->ApplyDamage(kDamageBeamToPlayer)) {
+          OutputDebugStringA(
+              std::format("Player Hit by Beam: {} damage\n", kDamageBeamToPlayer)
+                  .c_str());
+        }
       }
     }
   }
@@ -659,13 +660,17 @@ void GameScene::CheckEnemyBuildingCollisions() {
     }
 
     // ビーム → 建物（その場で爆散）
-    if (boss_->GetBeam() && boss_->GetBeam()->IsAttackActive() &&
-        boss_->IsFiringRealBeam()) {
-      if (Collision::IsOBBCollision(boss_->GetBeam()->GetOBB(), bOBB)) {
-        building->MarkDestroyed(i);
-        continue;
+    bool buildingDestroyedByBeam = false;
+    for (int bi = 0; bi < 3; ++bi) {
+      if (boss_->GetBeam(bi) && boss_->GetBeam(bi)->IsAttackActive()) {
+        if (Collision::IsOBBCollision(boss_->GetBeam(bi)->GetOBB(), bOBB)) {
+          building->MarkDestroyed(i);
+          buildingDestroyedByBeam = true;
+          break;
+        }
       }
     }
+    if (buildingDestroyedByBeam) continue;
 
     // スタンプ → 建物（その場で爆散）
     if (boss_->GetStompEffects() && boss_->GetStompEffects()->IsActive()) {
