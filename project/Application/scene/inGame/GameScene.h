@@ -18,6 +18,7 @@ struct SpotLight;
 struct DirectionalLight;
 struct AreaLight;
 class Mouse; // ★追加：Mouseの前方宣言
+class Building;
 
 class GameScene : public IScene {
 public:
@@ -52,6 +53,14 @@ private:
     static constexpr int kDamageMachineGunToEnemy = 10;      ///< マシンガン
     static constexpr int kDamageMissileToEnemy = 200;        ///< ミサイル
     static constexpr int kDamageProjectilePartToEnemy = 500; ///< 部位同士の衝突
+
+    // 建物被ダメージ
+    static constexpr int kDamageMeleeToBuilding = 30;         ///< 近接攻撃→建物
+    static constexpr int kDamageMachineGunToBuilding = 5;     ///< マシンガン→建物
+    static constexpr int kDamageMissileToBuilding = 100;      ///< ミサイル→建物
+    static constexpr int kDamagePartToBuilding = 50;          ///< 飛んだ部位→建物
+    static constexpr int kDamageFlyingBuildingToEnemy = 300;   ///< 飛んだ建物→敵
+    static constexpr int kDamageFlyingBuildingToBuilding = 80; ///< 飛んだ建物→建物
 
     // 当たり判定(半径)
     static constexpr float kMachineGunBulletRadius = 1.0f;   ///< マシンガン
@@ -113,6 +122,31 @@ private:
      * @brief 吹き飛んだ部位同士、または部位と敵の当たり判定
      */
     void CheckFlyingPartsCollisions();
+
+    /**
+     * @brief プレイヤーと建物の当たり判定（押し戻し＋攻撃）
+     */
+    void CheckPlayerBuildingCollisions();
+
+    /**
+     * @brief 敵（本体・ビーム・スタンプ・Bite）と建物の当たり判定
+     */
+    void CheckEnemyBuildingCollisions();
+
+    /**
+     * @brief 飛んだ部位と建物の当たり判定（建物にダメージ＋部位反射）
+     */
+    void CheckFlyingPartsBuildingCollisions();
+
+    /**
+     * @brief 飛んだ建物と敵部位の当たり判定（敵にダメージ＋建物爆散）
+     */
+    void CheckFlyingBuildingsVsEnemyCollisions();
+
+    /**
+     * @brief 飛んだ建物と他の建物の当たり判定
+     */
+    void CheckFlyingBuildingsVsBuildingsCollisions();
 
     /**
      * @brief プレイヤーと敵の座標に基づき、動的なポイントライトのパラメータを計算・更新する

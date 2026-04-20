@@ -72,6 +72,6 @@ void Field::Draw() {
 	pMXWall_->Draw();
 
 	if (building_) {
-		building_->Draw();
+		building_->Draw(engine_);
 	}
 }
