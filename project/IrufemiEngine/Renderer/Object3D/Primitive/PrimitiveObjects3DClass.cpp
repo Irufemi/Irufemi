@@ -44,8 +44,10 @@ void PrimitiveObjects3DClass::MeshComponent::ChangeMesh(PrimitiveType newType) {
     // PrimitiveManager から標準リソースを取得
     const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(type);
 
+    bool isNewResource = false;
     if (!resource) {
         resource = std::make_unique<Object3DResource>();
+        isNewResource = true;
     }
 
     // リソースの共有設定
@@ -53,9 +55,11 @@ void PrimitiveObjects3DClass::MeshComponent::ChangeMesh(PrimitiveType newType) {
     resource->indexBufferView_ = primitiveResource.indexBufferView;
     resource->indexCount_ = primitiveResource.indexCount;
 
-    // 定数バッファ等の生成
-    resource->CreateResource();
-    resource->Map();
+    // 定数バッファ等の生成は最初だけ行う
+    if (isNewResource) {
+        resource->CreateResource();
+        resource->Map();
+    }
 }
 
 // --- MaterialComponent ---
