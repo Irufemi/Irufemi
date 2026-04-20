@@ -294,9 +294,6 @@
     <ClCompile Include="Engine\Core\Utility\Log.cpp">
       <Filter>Engine\Core\Utility</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\System\EffectSystem.cpp">
-      <Filter>Renderer\System</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Object3D\Primitive\TriangleClass.cpp">
       <Filter>Renderer\3D</Filter>
     </ClCompile>
@@ -609,9 +606,6 @@
     </ClInclude>
     <ClInclude Include="Engine\Core\Utility\Log.h">
       <Filter>Engine\Core\Utility</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\System\EffectSystem.h">
-      <Filter>Renderer\System</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Data\SpotLight.h">
       <Filter>Engine\Graphics\Data</Filter>

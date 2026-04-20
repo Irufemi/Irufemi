@@ -86,7 +86,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveParticle_ = false;
     isActiveGPUParticle_ = true;
     isActiveVoxelParticle_ = false;
-    isActiveEffect_ = false;
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
     isActiveSneakWalk_ = false;
@@ -168,10 +167,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         voxelParticle_ = std::make_unique<VoxelParticleSystem>();
         voxelParticle_->Initialize("sample/terrain.obj", { 64,64,64 }, camera_.get());
     }
-    if (isActiveEffect_) {
-        effect_ = std::make_unique<EffectSystem>();
-        effect_->Initialize(camera_.get());
-    }
     if (isActiveAnimatedCube_) {
         animatedCube_ = std::make_unique<AnimationModel>();
         animatedCube_->Initialize(camera_.get(), "sample/AnimatedCube.gltf");
@@ -243,7 +238,6 @@ void DebugScene::Update() {
     ImGui::Checkbox("Particle", &isActiveParticle_);
     ImGui::Checkbox("GPUParticle", &isActiveGPUParticle_);
     ImGui::Checkbox("VoxelParticle", &isActiveVoxelParticle_);
-    ImGui::Checkbox("Effect", &isActiveEffect_);
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
     ImGui::Checkbox("Walk", &isActiveWalk_);
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
@@ -414,14 +408,6 @@ void DebugScene::Update() {
         }
         voxelParticle_->Debug("Voxel Particle");
         voxelParticle_->Update(engine_->GetDeltaTime());
-    }
-    if (isActiveEffect_) {
-        if (!effect_) {
-            effect_ = std::make_unique <EffectSystem>();
-            effect_->Initialize(camera_.get());
-        }
-        effect_->Debug("Effect");
-        effect_->Update();
     }
     if (isActiveAnimatedCube_) {
         if (!animatedCube_) {
@@ -618,10 +604,6 @@ void DebugScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyParticlePSO();
-
-    if (isActiveEffect_) {
-        effect_->Draw();
-    }
 
     if (isActiveParticle_) {
         particle_->Draw();

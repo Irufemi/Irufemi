@@ -84,9 +84,6 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<VoxelParticleSystem> voxelParticle_ = nullptr;
     bool isActiveVoxelParticle_ = false;
 
-    std::unique_ptr<EffectSystem> effect_ = nullptr;
-    bool isActiveEffect_ = false;
-
     std::unique_ptr<AnimationModel> animatedCube_ = nullptr;
     bool isActiveAnimatedCube_ = false;
 
