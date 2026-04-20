@@ -1,4 +1,4 @@
-// インスタンスごとのデータ
+// 繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ縺斐→縺ｮ繝�繝ｼ繧ｿ
 struct InstanceData
 {
 	float32_t4x4 WVP;
