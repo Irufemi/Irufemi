@@ -55,6 +55,14 @@ public:
      * @details 標準設定（サイズ1.0等）のバッファを共有します。
      */
     const PrimitiveResource& GetStandardResource(PrimitiveType type);
+
+    /**
+     * @brief シリンダー形状専用の GPU リソースを取得する（蓋の有無を考慮したGPUキャッシュ）
+     * @param[in] hasTop 上蓋を描画するか
+     * @param[in] hasBottom 下蓋を描画するか
+     * @return 蓋の有無に対応する PrimitiveResource
+     */
+    const PrimitiveResource& GetCylinderResource(bool hasTop, bool hasBottom);
     ///@}
 
     /** @name 形状生成メソッド（静的） */
@@ -62,7 +70,7 @@ public:
     // 個別生成用（キャッシュしない。特殊なパラメータが必要な場合用）
     static PrimitiveData CreateSphere(float radius, uint32_t subdivision);
     static PrimitiveData CreateCube(float width, float height, float depth);
-    static PrimitiveData CreateCylinder(float radius, float height, uint32_t segments);
+    static PrimitiveData CreateCylinder(float radius, float height, uint32_t segments, bool hasTop = true, bool hasBottom = true);
     static PrimitiveData CreateCone(float radius, float height, uint32_t segments);
     static PrimitiveData CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments);
     static PrimitiveData CreateIcoSphere(float radius, uint32_t subdivision);
@@ -89,8 +97,8 @@ private:
     static void GenerateSphereVertices(PrimitiveData& data, float radius, uint32_t subdivision);
     static void GenerateSphereIndices(PrimitiveData& data, uint32_t subdivision);
     
-    static void GenerateCylinderVertices(PrimitiveData& data, float radius, float height, uint32_t segments);
-    static void GenerateCylinderIndices(PrimitiveData& data, uint32_t segments);
+    static void GenerateCylinderVertices(PrimitiveData& data, float radius, float height, uint32_t segments, bool hasTop, bool hasBottom);
+    static void GenerateCylinderIndices(PrimitiveData& data, uint32_t segments, bool hasTop, bool hasBottom);
 
     static void GenerateRingVertices(PrimitiveData& data, float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV);
     static void GenerateRingIndices(PrimitiveData& data, uint32_t segments);
@@ -101,5 +109,6 @@ private:
 private:
     std::map<PrimitiveType, PrimitiveData> cpuCache_;
     std::map<PrimitiveType, PrimitiveResource> gpuCache_;
+    std::map<uint32_t, PrimitiveResource> cylinderGpuCache_;
 };
 

@@ -9,7 +9,7 @@ void EnemyBeam::Initialize(Camera* camera, IrufemiEngine* engine) {
     telegraphObj_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
 
     attackCylinder_ = std::make_unique<CylinderClass>();
-    attackCylinder_->Initialize(camera);
+    attackCylinder_->Initialize(camera, false, false);
     attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
 
     // トランスフォームの初期化（Updateで確定するため、ここではゼロクリア）
