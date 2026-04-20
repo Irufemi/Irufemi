@@ -53,6 +53,20 @@ const PrimitiveResource& PrimitiveManager::GetStandardResource(PrimitiveType typ
     return gpuCache_[type];
 }
 
+const PrimitiveResource& PrimitiveManager::GetCylinderResource(bool hasTop, bool hasBottom) {
+    uint32_t key = (hasTop ? 2 : 0) | (hasBottom ? 1 : 0);
+    auto it = cylinderGpuCache_.find(key);
+    if (it != cylinderGpuCache_.end()) {
+        return it->second;
+    }
+
+    PrimitiveData data = CreateCylinder(0.5f, 1.0f, 32, hasTop, hasBottom);
+    PrimitiveResource resource;
+    CreateGPUResource(data, resource);
+    cylinderGpuCache_[key] = std::move(resource);
+    return cylinderGpuCache_[key];
+}
+
 void PrimitiveManager::CreateGPUResource(const PrimitiveData& data, PrimitiveResource& resource) {
     auto* dxCommon = BaseResource::GetDirectXCommon();
     if (!dxCommon) return;
@@ -205,17 +219,18 @@ void PrimitiveManager::GenerateSphereIndices(PrimitiveData& data, uint32_t subdi
     }
 }
 
-PrimitiveData PrimitiveManager::CreateCylinder(float radius, float height, uint32_t segments) {
+PrimitiveData PrimitiveManager::CreateCylinder(float radius, float height, uint32_t segments, bool hasTop, bool hasBottom) {
     PrimitiveData data;
-    GenerateCylinderVertices(data, radius, height, segments);
-    GenerateCylinderIndices(data, segments);
+    GenerateCylinderVertices(data, radius, height, segments, hasTop, hasBottom);
+    GenerateCylinderIndices(data, segments, hasTop, hasBottom);
     return data;
 }
 
-void PrimitiveManager::GenerateCylinderVertices(PrimitiveData& data, float radius, float height, uint32_t segments) {
+void PrimitiveManager::GenerateCylinderVertices(PrimitiveData& data, float radius, float height, uint32_t segments, bool hasTop, bool hasBottom) {
     const float pi = std::numbers::pi_v<float>;
     const float radianPerDivide = 2.0f * pi / static_cast<float>(segments);
 
+    // 側面
     for (uint32_t i = 0; i < segments; ++i) {
         float rad = static_cast<float>(i) * radianPerDivide;
         float radNext = static_cast<float>(i + 1) * radianPerDivide;
@@ -233,9 +248,32 @@ void PrimitiveManager::GenerateCylinderVertices(PrimitiveData& data, float radiu
         data.vertices.push_back({ { cNext * radius, -height * 0.5f, sNext * radius, 1.0f }, { uNext, 1.0f }, { cNext, 0.0f, sNext } });
         data.vertices.push_back({ { cNext * radius,  height * 0.5f, sNext * radius, 1.0f }, { uNext, 0.0f }, { cNext, 0.0f, sNext } });
     }
+
+    // 上蓋
+    if (hasTop) {
+        data.vertices.push_back({ { 0.0f, height * 0.5f, 0.0f, 1.0f }, { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } }); // 中心
+        for (uint32_t i = 0; i <= segments; ++i) {
+            float rad = static_cast<float>(i) * radianPerDivide;
+            float c = std::cos(rad);
+            float s = std::sin(rad);
+            data.vertices.push_back({ { c * radius, height * 0.5f, s * radius, 1.0f }, { 0.5f + c * 0.5f, 0.5f - s * 0.5f }, { 0.0f, 1.0f, 0.0f } });
+        }
+    }
+
+    // 下蓋
+    if (hasBottom) {
+        data.vertices.push_back({ { 0.0f, -height * 0.5f, 0.0f, 1.0f }, { 0.5f, 0.5f }, { 0.0f, -1.0f, 0.0f } }); // 中心
+        for (uint32_t i = 0; i <= segments; ++i) {
+            float rad = static_cast<float>(i) * radianPerDivide;
+            float c = std::cos(rad);
+            float s = std::sin(rad);
+            data.vertices.push_back({ { c * radius, -height * 0.5f, s * radius, 1.0f }, { 0.5f + c * 0.5f, 0.5f + s * 0.5f }, { 0.0f, -1.0f, 0.0f } });
+        }
+    }
 }
 
-void PrimitiveManager::GenerateCylinderIndices(PrimitiveData& data, uint32_t segments) {
+void PrimitiveManager::GenerateCylinderIndices(PrimitiveData& data, uint32_t segments, bool hasTop, bool hasBottom) {
+    // 側面
     for (uint32_t i = 0; i < segments; ++i) {
         uint32_t base = i * 4;
         data.indices.push_back(base);
@@ -244,6 +282,31 @@ void PrimitiveManager::GenerateCylinderIndices(PrimitiveData& data, uint32_t seg
         data.indices.push_back(base + 1);
         data.indices.push_back(base + 3);
         data.indices.push_back(base + 2);
+    }
+
+    uint32_t vertexOffset = segments * 4; // 側面の頂点数
+
+    // 上蓋
+    if (hasTop) {
+        uint32_t centerIndex = vertexOffset;
+        uint32_t perimeterBase = vertexOffset + 1;
+        for (uint32_t i = 0; i < segments; ++i) {
+            data.indices.push_back(centerIndex);
+            data.indices.push_back(perimeterBase + i);
+            data.indices.push_back(perimeterBase + i + 1);
+        }
+        vertexOffset += 1 + (segments + 1);
+    }
+
+    // 下蓋
+    if (hasBottom) {
+        uint32_t centerIndex = vertexOffset;
+        uint32_t perimeterBase = vertexOffset + 1;
+        for (uint32_t i = 0; i < segments; ++i) {
+            data.indices.push_back(centerIndex);
+            data.indices.push_back(perimeterBase + i + 1); // 法線が下向きのため逆回り
+            data.indices.push_back(perimeterBase + i);
+        }
     }
 }
 
