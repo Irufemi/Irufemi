@@ -612,6 +612,14 @@ void GameScene::CheckPlayerBuildingCollisions() {
       Vector3 attackDir =
           Math::Normalize(Math::Subtract(bOBB.center, playerPos));
       building->ApplyDamage(i, kDamageMeleeToBuilding, attackDir, 0.5f);
+      
+      OBB impactOBB;
+      impactOBB.center = attackSphere.center;
+      impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+      impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+      impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+      impactOBB.size = {attackSphere.radius, attackSphere.radius, attackSphere.radius};
+      building->ScatterAt(i, Math::Multiply(3.0f, attackDir), impactOBB);
     }
 
     // マシンガン
@@ -732,6 +740,7 @@ void GameScene::CheckFlyingPartsBuildingCollisions() {
         Vector3 vel = part->GetBlowVelocity();
         Vector3 dir = Math::Normalize(vel);
         building->ApplyDamage(i, kDamagePartToBuilding, dir, 0.6f);
+        building->ScatterAt(i, Math::Multiply(kCollisionScatterMultiplier, vel), partOBB);
 
         // 部位の反射
         Vector3 diff = Math::Subtract(partOBB.center, bOBB.center);
@@ -782,6 +791,10 @@ void GameScene::CheckFlyingBuildingsVsEnemyCollisions() {
         part->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, vel),
                         partOBB);
       }
+      // 飛んだ建物は部位に当たったので削れる
+      Vector3 velForScatter = building->GetBlowVelocity(buildingIdx);
+      building->ScatterAt(buildingIdx, Math::Multiply(kCollisionScatterMultiplier, velForScatter), partOBB);
+      
       // 飛んだ建物は爆散（即消滅）
       building->MarkDestroyed(buildingIdx);
     }
@@ -832,6 +845,10 @@ void GameScene::CheckFlyingBuildingsVsBuildingsCollisions() {
         // 建物にダメージ
         Vector3 dir = Math::Normalize(flyingVel);
         building->ApplyDamage(ti, kDamageFlyingBuildingToBuilding, dir, 0.4f);
+
+        // 各ビルにパーティクル散らし
+        building->ScatterAt(ti, Math::Multiply(kCollisionScatterMultiplier, flyingVel), flyingOBB);
+        building->ScatterAt(fi, Math::Multiply(kCollisionScatterMultiplier, Math::Multiply(-1.0f, flyingVel)), targetOBB);
 
         // 飛んだ建物は反射
         Vector3 diff = Math::Subtract(flyingOBB.center, targetOBB.center);

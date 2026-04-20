@@ -497,6 +497,16 @@ void Building::DestroyAt(int index, const Vector3& attackDir, float blowSpeed) {
     inst.angularVelocity = { 0.08f, 0.15f, 0.05f };
 }
 
+void Building::ScatterAt(int index, const Vector3& velocity, const OBB& collisionArea) {
+    if (index < 0 || index >= static_cast<int>(instances_.size())) return;
+    auto& inst = instances_[index];
+    
+    // 完全に破壊済み、またはVoxelシステムがない場合は処理しない
+    if (inst.isDestroyed || !inst.voxelSystem) return;
+    
+    inst.voxelSystem->CollisionScatter(inst.position, velocity, inst.rotate, inst.scale, collisionArea);
+}
+
 bool Building::IsBuildingBlownAway(int index) const {
     if (index < 0 || index >= static_cast<int>(instances_.size())) return false;
     return instances_[index].isBlownAway && !instances_[index].isDestroyed;
