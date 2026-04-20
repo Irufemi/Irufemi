@@ -317,6 +317,11 @@ PrimitiveData PrimitiveManager::CreateRing(float innerRadius, float outerRadius,
     return data;
 }
 
+/**
+ * @brief リング（ドーナツ型）の頂点データを生成する
+ * @details 学校資料に準拠し、12時方向を基準（X = -sin, Y = cos）として時計回りに頂点を生成します。
+ *          必要に応じて、U/Vの割り当て方向や描画する角度の範囲を指定可能です。
+ */
 void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV) {
     const float pi = std::numbers::pi_v<float>;
     float startRad = startAngle * (pi / 180.0f);
@@ -336,10 +341,11 @@ void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, float innerRadi
         float uNext = static_cast<float>(i + 1) / segments;
 
         VertexData v0, v1, v2, v3;
-        v0.position = { c0 * outerRadius, s0 * outerRadius, 0.0f, 1.0f };
-        v1.position = { c1 * outerRadius, s1 * outerRadius, 0.0f, 1.0f };
-        v2.position = { c0 * innerRadius, s0 * innerRadius, 0.0f, 1.0f };
-        v3.position = { c1 * innerRadius, s1 * innerRadius, 0.0f, 1.0f };
+        // 資料に基づき X = -sin, Y = cos と計算する（時計回りのポリゴンは維持されるためカリングへの悪影響はなし）
+        v0.position = { -s0 * outerRadius, c0 * outerRadius, 0.0f, 1.0f };
+        v1.position = { -s1 * outerRadius, c1 * outerRadius, 0.0f, 1.0f };
+        v2.position = { -s0 * innerRadius, c0 * innerRadius, 0.0f, 1.0f };
+        v3.position = { -s1 * innerRadius, c1 * innerRadius, 0.0f, 1.0f };
 
         if (verticalUV) {
             v0.texcoord = { 0.0f, u }; v1.texcoord = { 0.0f, uNext };
@@ -348,6 +354,8 @@ void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, float innerRadi
             v0.texcoord = { u, 0.0f }; v1.texcoord = { uNext, 0.0f };
             v2.texcoord = { u, 1.0f }; v3.texcoord = { uNext, 1.0f };
         }
+        
+        // 法線は従来の共通仕様に合わせて-Zを維持する
         v0.normal = v1.normal = v2.normal = v3.normal = { 0.0f, 0.0f, -1.0f };
 
         data.vertices.push_back(v0); data.vertices.push_back(v1);
