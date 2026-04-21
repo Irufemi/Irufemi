@@ -115,6 +115,9 @@ public:
     /** @brief キャッシュされているすべての PSO を破棄する */
     void ClearCache();
 
+    /** @brief ゲームプレイ中によく使われる PSO の組み合わせを事前にコンパイル・キャッシュします */
+    void PreWarmCommonPSOs();
+
 private:
     using ComPtr = Microsoft::WRL::ComPtr<ID3D12PipelineState>;
 

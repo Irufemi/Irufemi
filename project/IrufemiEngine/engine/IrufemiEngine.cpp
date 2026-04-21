@@ -259,6 +259,16 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     // WinAppに自身(Engine)のポインタを設定
     winApp_->SetEngine(this);
+
+    // PSO（パイプラインステート）の事前コンパイルを実行し、実行中のヒッチ（カクつき）を防止
+    if (GetPSOManager()) {
+        GetPSOManager()->PreWarmCommonPSOs();
+    }
+
+    // 初回描画時の遅延ハードウェアコンパイル（JIT）を防止するためのダミー実行
+    if (dxCommon_) {
+        dxCommon_->PreWarmJITCompile();
+    }
 }
 
 // クリアカラーを float 指定できる 初期化

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="camera">
@@ -93,6 +93,12 @@
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase2\Bite">
       <UniqueIdentifier>{f6a7b8c9-d0e1-f2a3-b4c5-d6e7f8g9h0i1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contents\ui">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef0123456789}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="contents\field\building">
+      <UniqueIdentifier>{12345678-abcd-ef01-2345-678901234567}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase2\Beam">
       <UniqueIdentifier>{g7b8c9d0-e1f2-a3b4-c5d6-e7f8g9h0i1j2}</UniqueIdentifier>
@@ -208,6 +214,20 @@
       <Filter>Actors\Enemy\Beam</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
+    <ClCompile Include="contents\ui\EnemyHPBar.cpp">
+      <Filter>contents\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\ui\EnemyPartHPBar.cpp">
+      <Filter>contents\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\ui\PlayerHPBar.cpp">
+      <Filter>contents\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\field\building\building.cpp">
+      <Filter>contents\field\building</Filter>
+    </ClCompile>
+    <ClCompile Include="contents\field\building\building.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\NeckAttack\Phase1_NeckAttack.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\InGame\GameScene.h">

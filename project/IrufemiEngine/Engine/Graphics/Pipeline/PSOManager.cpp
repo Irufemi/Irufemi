@@ -361,6 +361,38 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
 
 void PSOManager::ClearCache() { cache_.clear(); }
 
+void PSOManager::PreWarmCommonPSOs() {
+    // 1. 一般的な3Dオブジェクト (Opaque / 標準描画)
+    for (CullMode cull : {CullMode::Back, CullMode::None}) {
+        Get(BlendMode::kBlendModeNormal, DepthWrite::Enable, cull);
+        GetSkinning(BlendMode::kBlendModeNormal, DepthWrite::Enable, cull);
+    }
+    
+    // 2. エフェクト・パーティクル・HUD系 (Translucent, Additive等)
+    for (BlendMode blend : {BlendMode::kBlendModeNormal, BlendMode::kBlendModeAdd, BlendMode::kBlendModeSubtract}) {
+        GetParticle(blend, DepthWrite::Disable, CullMode::None);
+        GetGpuParticle(blend, DepthWrite::Disable, CullMode::None);
+        GetVoxelParticle(blend, DepthWrite::Disable, CullMode::None);
+        GetSprite(blend, DepthWrite::Off, CullMode::None);
+        GetLightningCrawl(blend, DepthWrite::Disable, CullMode::None);
+        GetLine(blend, DepthWrite::Disable, CullMode::None);
+        GetLineInstanced(blend, DepthWrite::Disable, CullMode::None);
+    }
+
+    // 3. シャドウマップ出力用
+    GetShadow(CullMode::Back);
+    GetShadow(CullMode::Front);
+    GetShadowSkinning(CullMode::Back);
+    GetShadowSkinning(CullMode::Front);
+
+    // 4. スカイボックス
+    GetSkybox(CullMode::Front);
+
+    // 5. デバッグ及びその他
+    GetRegion(BlendMode::kBlendModeNormal, DepthWrite::Disable, CullMode::None);
+    GetCopyImage();
+}
+
 // PSOManager.cpp に追加
 Microsoft::WRL::ComPtr<ID3D12PipelineState> PSOManager::CreatePSO(
     const ShaderSet& shaders,

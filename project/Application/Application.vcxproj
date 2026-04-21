@@ -159,6 +159,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\NeckAttack\Phase1_NeckAttack.cpp" />
     <ClCompile Include="actors\enemy\Body\Body.cpp" />
     <ClCompile Include="actors\enemy\AI\EnemyAI.cpp" />
     <ClCompile Include="actors\enemy\Head\Left\HeadLeft.cpp" />
@@ -184,6 +185,9 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.cpp" />
     <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
+    <ClCompile Include="contents\ui\EnemyHPBar.cpp" />
+    <ClCompile Include="contents\ui\EnemyPartHPBar.cpp" />
+    <ClCompile Include="contents\ui\PlayerHPBar.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="actors\player\PlayerMovement.cpp" />
     <ClCompile Include="actors\player\PlayerWeapon.cpp" />
@@ -205,6 +209,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
   <ItemGroup>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Idle\Phase1_Idle.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Beam\Phase1_Beam.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\NeckAttack\Phase1_NeckAttack.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Stomp\Phase1_Stomp.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Tackle\Phase2_Tackle.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.h" />
@@ -230,6 +235,9 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
     <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />
+    <ClInclude Include="contents\ui\EnemyHPBar.h" />
+    <ClInclude Include="contents\ui\EnemyPartHPBar.h" />
+    <ClInclude Include="contents\ui\PlayerHPBar.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="actors\player\PlayerMovement.h" />
     <ClInclude Include="actors\player\PlayerWeapon.h" />

@@ -17,6 +17,8 @@
 class Camera;
 class IrufemiEngine;
 class Line3DRegion;
+class EnemyHPBar;
+class EnemyPartHPBar;
 
 class Enemy {
 public:
@@ -24,6 +26,10 @@ public:
     void Initialize(Camera* camera, IrufemiEngine* engine = nullptr);
     void Update(Player* player);
     void Draw(IrufemiEngine* engine);
+    
+    // UI関連手続き
+    void Draw3DUI(IrufemiEngine* engine);
+    void Draw2DUI(IrufemiEngine* engine);
 
     // --- ビーム制御用 ---
     void FireBeam(); // ビームを生成する関数
@@ -119,5 +125,9 @@ private:
 
   bool isActive_ = false;
   bool isDead_ = false;
+
+    // UI
+    std::unique_ptr<EnemyHPBar> hpBar_ = nullptr;
+    std::vector<std::unique_ptr<EnemyPartHPBar>> partHPBars_;
 
 };
