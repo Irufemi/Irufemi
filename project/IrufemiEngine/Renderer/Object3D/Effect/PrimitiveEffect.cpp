@@ -1,7 +1,9 @@
 #include "PrimitiveEffect.h"
 #include "../../../Engine/Manager/PrimitiveManager.h"
 #include "../../../Engine/Manager/DrawManager.h"
+#ifdef USE_IMGUI
 #include "../../../../externals/imgui/imgui.h"
+#endif
 #include <vector>
 
 TextureManager* PrimitiveEffect::textureManager_ = nullptr;
@@ -76,6 +78,7 @@ void PrimitiveEffect::SetCylinderParams(float bottomRadius, float topRadius, flo
 }
 
 void PrimitiveEffect::Debug(const char* label) {
+#ifdef USE_IMGUI
     ImGui::Begin(label);
     
     ImGui::Text("--- Transform ---");
@@ -161,4 +164,5 @@ void PrimitiveEffect::Debug(const char* label) {
     }
 
     ImGui::End();
+#endif
 }
