@@ -56,6 +56,7 @@ public:
     void SetUVScrollSpeed(const Vector2& speed) { uvScrollSpeed_ = speed; }
     void SetUVScale(const Vector2& scale) { uvScale_ = scale; }
     void SetAlphaReference(float alphaRef) { primitive_.GetMaterial().alphaReference = alphaRef; }
+    void SetUseClampSampler(int32_t useClamp) { primitive_.GetMaterial().useClampSampler = useClamp; }
     
     // --- カスタム形状パラメータ設定 ---
     void SetCylinderParams(float bottomRadius, float topRadius, float height, uint32_t segments, bool hasTop, bool hasBottom, bool centered);

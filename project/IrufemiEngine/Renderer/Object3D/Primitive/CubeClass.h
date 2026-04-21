@@ -51,6 +51,9 @@ public:
     void SetPosition(const Vector3& c) { center_ = c; isDirty_ = true; }
     void SetRotate(const Vector3& rot) { if (resource_) resource_->transform_.rotate = rot; isDirty_ = true; }
     void SetScale(const Vector3& scale) { if (resource_) resource_->transform_.scale = scale; isDirty_ = true; }
+    void SetColor(const Vector4& color) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->color = color; }
+    void SetAlphaReference(float alphaRef) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->alphaReference = alphaRef; }
+    void SetUseClampSampler(int32_t useClamp) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->useClampSampler = useClamp; }
 
     // SetSize: 互換性維持用と depth を受け取るオーバーロード
     void SetSize(float width, float height) { SetSize(width, height, width); }

@@ -52,6 +52,8 @@ void CubeClass::Initialize(Camera* camera, float width, float height, float dept
         resource_->GetMaterialData()->metallic = 0.0f;
         resource_->GetMaterialData()->roughness = 0.5f;
         resource_->GetMaterialData()->environmentCoefficient = 0.0f;
+        resource_->GetMaterialData()->alphaReference = 0.5f;
+        resource_->GetMaterialData()->useClampSampler = 0;
     }
 
     // transformation
