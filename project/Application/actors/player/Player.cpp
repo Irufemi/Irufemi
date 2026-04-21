@@ -7,6 +7,7 @@
 #include "Engine/Core/Math/Math.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "../enemy/Enemy.h" 
+#include "contents/ui/PlayerHPBar.h"
 
 #ifdef USE_IMGUI
 #include <imgui.h> 
@@ -18,6 +19,7 @@ Player::~Player() {
 void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine) {
     input_ = input;
     engine_ = engine;
+    camera_ = camera;
 
     movement_.Initialize();
     weapon_.Initialize(camera);
@@ -75,6 +77,9 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     lineOBB_ = std::make_unique<Line3DRegion>();
     lineOBB_->Initialize(camera);
 #endif
+
+    hpBar_ = std::make_unique<PlayerHPBar>();
+    hpBar_->Initialize(camera_);
 }
 
 void Player::Update() {
@@ -267,6 +272,11 @@ void Player::Update() {
     cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration());
     status_.UpdateKnockback();
 
+    // プレイヤーとカメラの更新が全て終わった「最新の座標」でUIを更新し、ガタつきを防ぐ
+    if (hpBar_) {
+        hpBar_->Update(this, camera_);
+    }
+
 #ifdef USE_IMGUI
     if (input_->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
         isDebugDrawOBB_ = !isDebugDrawOBB_;
@@ -323,6 +333,12 @@ void Player::Update() {
         lineOBB_->Update();
     }
 #endif
+}
+
+void Player::Draw3DUI() {
+    if (hpBar_ && !status_.IsDead()) {
+        hpBar_->Draw();
+    }
 }
 
 void Player::Draw() {

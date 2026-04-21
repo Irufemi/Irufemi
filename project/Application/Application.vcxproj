@@ -184,6 +184,9 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.cpp" />
     <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
+    <ClCompile Include="contents\ui\EnemyHPBar.cpp" />
+    <ClCompile Include="contents\ui\EnemyPartHPBar.cpp" />
+    <ClCompile Include="contents\ui\PlayerHPBar.cpp" />
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="actors\player\PlayerMovement.cpp" />
     <ClCompile Include="actors\player\PlayerWeapon.cpp" />
@@ -230,6 +233,9 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
     <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />
+    <ClInclude Include="contents\ui\EnemyHPBar.h" />
+    <ClInclude Include="contents\ui\EnemyPartHPBar.h" />
+    <ClInclude Include="contents\ui\PlayerHPBar.h" />
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="actors\player\PlayerMovement.h" />
     <ClInclude Include="actors\player\PlayerWeapon.h" />

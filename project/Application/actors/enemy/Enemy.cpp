@@ -10,6 +10,8 @@
 #include <cmath>
 #include <manager/debugUI.h>
 #include <string>
+#include "contents/ui/EnemyHPBar.h"
+#include "contents/ui/EnemyPartHPBar.h"
 
 Enemy::~Enemy() {}
 
@@ -69,6 +71,20 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   }
   stompEffects_ = std::make_unique<EnemyStompEffects>();
   stompEffects_->Initialize(camera_);
+
+  // --- UI 初期化 ---
+  hpBar_ = std::make_unique<EnemyHPBar>();
+  if (engine_) {
+      hpBar_->Initialize(camera_, engine_->GetClientWidth(), engine_->GetClientHeight());
+  } else {
+      hpBar_->Initialize(camera_, 1280, 720); // フォールバック
+  }
+
+  for (int i = 0; i < 6; ++i) {
+      auto bar = std::make_unique<EnemyPartHPBar>();
+      bar->Initialize(camera_);
+      partHPBars_.push_back(std::move(bar));
+  }
 
   isActive_ = true;
   isDead_ = false;
@@ -212,6 +228,31 @@ void Enemy::Update(Player *player) {
       }
     }
   }
+
+  // --- UI 更新 ---
+  if (hpBar_) {
+      hpBar_->Update(this);
+  }
+
+  auto updatePartBar = [&](int index, auto* part, int maxHp) {
+      if (part && part->GetHP() > 0) {
+          float ratio = (maxHp > 0) ? static_cast<float>(part->GetHP()) / maxHp : 0.0f;
+          Vector3 hpPos = part->GetDrawPosition();
+          float scaleY = part->GetTransform().scale.y;
+          float offsetY = (index >= 3) ? (5.5f * scaleY) : (1.5f * scaleY);
+          hpPos.y += offsetY;
+          partHPBars_[index]->Update(ratio, hpPos, camera_);
+      } else {
+          partHPBars_[index]->Update(0.0f, { 0,0,0 }, nullptr);
+      }
+  };
+  auto* p = EnemyParameters::GetInstance();
+  updatePartBar(0, GetBody(0), p->GetBodyHP());
+  updatePartBar(1, GetBody(1), p->GetBodyHP());
+  updatePartBar(2, GetBody(2), p->GetBodyHP());
+  updatePartBar(3, GetHeadLeft(), p->GetHeadLeftHP());
+  updatePartBar(4, GetHeadMid(), p->GetHeadMidHP());
+  updatePartBar(5, GetHeadRight(), p->GetHeadRightHP());
 }
 
 void Enemy::Draw(IrufemiEngine* engine) {
@@ -263,6 +304,27 @@ bool Enemy::IsHeadDead(int index) const {
 void Enemy::FireStomp(const Vector3& position) {
     if (stompEffects_) {
         stompEffects_->Fire(position);
+    }
+}
+
+void Enemy::Draw3DUI(IrufemiEngine* engine) {
+    if (!isActive_) return;
+    
+    auto drawIfAlive = [&](int index, auto* part) {
+        if (part && part->GetHP() > 0) partHPBars_[index]->Draw();
+    };
+    drawIfAlive(0, GetBody(0));
+    drawIfAlive(1, GetBody(1));
+    drawIfAlive(2, GetBody(2));
+    drawIfAlive(3, GetHeadLeft());
+    drawIfAlive(4, GetHeadMid());
+    drawIfAlive(5, GetHeadRight());
+}
+
+void Enemy::Draw2DUI(IrufemiEngine* engine) {
+    if (!isActive_ || isDead_) return;
+    if (hpBar_) {
+        hpBar_->Draw();
     }
 }
 

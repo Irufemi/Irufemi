@@ -19,6 +19,8 @@ struct DirectionalLight;
 struct AreaLight;
 class Mouse; // ★追加：Mouseの前方宣言
 class Building;
+class EnemyHPBar;
+class EnemyPartHPBar;
 
 class GameScene : public IScene {
 public:
@@ -89,6 +91,7 @@ private:
     // ゲームオブジェクト
     std::unique_ptr<Player> player_ = nullptr;
     std::unique_ptr<Enemy> boss_ = nullptr;
+    // フィールド・スカイドーム
     std::unique_ptr<Field> field_ = nullptr;
     std::unique_ptr<Skydome> skydome_ = nullptr;
 

@@ -12,6 +12,7 @@
 class Camera;
 class Line3DRegion;
 class Enemy;
+class PlayerHPBar;
 
 struct AttackCollision {
     Vector3 center;
@@ -27,6 +28,7 @@ public:
     void Update();
     void Draw();
     void DrawParticles();
+    void Draw3DUI();
 
     const Vector3& GetTranslate() const { return translate_; }
     void SetTranslate(const Vector3& pos) { translate_ = pos; }
@@ -67,11 +69,13 @@ private:
     PlayerWeapon weapon_;
     PlayerCamera cameraController_;
     PlayerStatus status_;
+    Camera* camera_ = nullptr;
 
     std::unique_ptr<ObjClass> obj_ = nullptr;
     std::unique_ptr<ObjClass> attackObj_ = nullptr;
     std::unique_ptr<ObjClass> targetMarkerObj_ = nullptr;
     std::unique_ptr<Sprite> maskSprite_ = nullptr;
+    std::unique_ptr<PlayerHPBar> hpBar_ = nullptr;
 
     Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
     Vector3 aimPos_ = { 0.0f, 0.0f, 0.0f };

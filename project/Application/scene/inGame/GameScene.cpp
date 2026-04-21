@@ -20,6 +20,9 @@
 #include "contents/field/Field.h"
 #include "contents/field/building/building.h"
 #include "contents/skydome/Skydome.h"
+#include "contents/ui/EnemyHPBar.h"
+#include "contents/ui/EnemyPartHPBar.h"
+#include "contents/ui/PlayerHPBar.h"
 
 #include "Engine/Core/Math/Geometry/Collision.h"
 
@@ -180,6 +183,25 @@ void GameScene::Draw() {
     boss_->Draw(engine_);
   if (player_)
     player_->DrawParticles();
+
+  // --- 2.5 3DオブジェクトとしてのUI描画 ---
+  engine_->SetBlend(BlendMode::kBlendModeNormal);
+  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  engine_->ApplyPSO();
+  if (player_) {
+    player_->Draw3DUI();
+  }
+  if (boss_) {
+    boss_->Draw3DUI(engine_);
+  }
+
+  // --- 3. HPバーUI描画（スプライト） ---
+  engine_->SetBlend(BlendMode::kBlendModeNormal);
+  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  engine_->ApplySpritePSO();
+  if (boss_) {
+    boss_->Draw2DUI(engine_);
+  }
 }
 
 void GameScene::PauseUpdate() { UpdateCameraAndFrameData(); }

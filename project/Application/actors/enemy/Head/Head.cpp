@@ -127,10 +127,12 @@ void Head::SetTransform(const Transform& transform, const Vector3* drawWorldPos)
     basePosition_ = transform.translate;
     if (obj_) {
       if (drawWorldPos) {
+        drawPosition_ = *drawWorldPos;
         Transform drawTransform = transform;
         drawTransform.translate = *drawWorldPos;
         obj_->SetTransform(drawTransform);
       } else {
+        drawPosition_ = transform.translate;
         obj_->SetTransform(transform);
       }
     }
