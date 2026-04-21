@@ -68,8 +68,9 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
     rotate.x = std::atan2(-direction.y, distXZ);
 
     if (isTelegraphActive_) {
-        telegraphTransform_.scale = { telegraphThickness_, telegraphThickness_, distance };
-        telegraphTransform_.translate = center;
+        telegraphTransform_.scale = { telegraphThickness_, telegraphThickness_, beamLength_ };
+        Vector3 telegraphCenter = Math::Add(headPos, Math::Multiply(beamLength_ * 0.5f, direction));
+        telegraphTransform_.translate = telegraphCenter;
         telegraphTransform_.rotate = rotate;
         telegraphObj_->SetTransform(telegraphTransform_);
         telegraphObj_->Update();
