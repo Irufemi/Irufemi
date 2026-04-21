@@ -214,33 +214,35 @@ void Enemy::Update(Player *player) {
     }
   }
 
-  // 2. 死亡判定（全ての部位がボクセル含めて消滅したか）
-  if (headMid_->IsCompletelyDead() && headLeft_->IsCompletelyDead() &&
-      headRight_->IsCompletelyDead()) {
-    bool allPartsGone = true;
+  // 2. 死亡判定
+  // 論理的な死亡判定（全てのHP全損）を常に評価する
+  if (!isDead_) {
+    bool allHpZero = true;
     for (int i = 0; i < 3; ++i) {
-      if (bodies_[i] && !bodies_[i]->IsCompletelyDead()) {
-        allPartsGone = false;
+      if (bodies_[i] && bodies_[i]->GetHP() > 0) {
+        allHpZero = false;
         break;
       }
     }
-    if (allPartsGone) {
-      isActive_ =
-          false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
+    if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
+        headRight_->GetHP() <= 0) {
+      isDead_ = true;
     }
+  }
 
-    // 論理的な死亡判定（全てのHP全損）
-    if (!isDead_) {
-      bool allHpZero = true;
+  // 3. 演出完了判定（全ての部位がボクセル含めて消滅したか）
+  if (isDead_ && isActive_) {
+    if (headMid_->IsCompletelyDead() && headLeft_->IsCompletelyDead() &&
+        headRight_->IsCompletelyDead()) {
+      bool allPartsGone = true;
       for (int i = 0; i < 3; ++i) {
-        if (bodies_[i] && bodies_[i]->GetHP() > 0) {
-          allHpZero = false;
+        if (bodies_[i] && !bodies_[i]->IsCompletelyDead()) {
+          allPartsGone = false;
           break;
         }
       }
-      if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
-          headRight_->GetHP() <= 0) {
-        isDead_ = true;
+      if (allPartsGone) {
+        isActive_ = false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
       }
     }
   }
