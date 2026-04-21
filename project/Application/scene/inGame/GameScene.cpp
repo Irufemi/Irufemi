@@ -145,7 +145,9 @@ void GameScene::Update() {
   UpdateCameraAndFrameData();
 
   // シーン遷移
-  if (boss_ && boss_->IsDead()) {
+  // 爆散演出を見定めてクリアにするため、「論理的に死亡（isDead_）」かつ
+  // 「演出終了して非アクティブ化（!GetIsActive()）」したときに遷移を開始する
+  if (boss_ && boss_->IsDead() && !boss_->GetIsActive()) {
     if (engine_ && engine_->GetSceneManager()) {
       engine_->GetSceneManager()->TransitionTo(
           "Clear", SceneTransition::Type::RadialBlur, 1.5f);
@@ -396,7 +398,24 @@ void GameScene::CheckEnemyToPlayerCollisions() {
     if (!part || part->IsCompletelyDead())
       return;
     if (Collision::IsOBBSphereCollision(part->GetOBB(), playerColliderSphere)) {
-      player_->ApplyDamage(kDamagePartToPlayer);
+      if (player_->ApplyDamage(kDamagePartToPlayer)) {
+        // 吹き飛んでいる状態のとき、めり込んで連続ダメージになるのを防ぐため部位を反射（バウンド）させる
+        if (part->IsBlownAway()) {
+          Vector3 toPlayer = Math::Subtract(playerColliderSphere.center, part->GetOBB().center);
+          toPlayer.y = 0.0f;
+          Vector3 normal = Math::Normalize(toPlayer);
+          if (Math::Length(normal) < kMathEpsilon) normal = {0.0f, 0.0f, 1.0f};
+
+          Vector3 vel = part->GetBlowVelocity();
+          float dot = Math::Dot(vel, normal);
+          if (dot > 0.0f) {
+            Vector3 reflect = Math::Subtract(vel, Math::Multiply(2.0f * dot, normal));
+            part->SetBlowVelocity(reflect);
+          } else if (Math::Length(vel) < kMathEpsilon) {
+            part->SetBlowVelocity(Math::Multiply(-2.0f, normal));
+          }
+        }
+      }
     }
   };
   for (int i = 0; i < kEnemyBodyPartsCount; ++i)
@@ -435,6 +454,8 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       }
     }
 
+    if (part->GetHP() <= 0) return; // 既に破壊された場合は後続のヒット判定をスキップ
+
     // マシンガン
     MachineGunBullet *bullets = player_->GetMachineGunBullets();
     for (int i = 0; i < Player::GetMaxMachineGunBullets(); ++i) {
@@ -446,9 +467,12 @@ void GameScene::CheckPlayerToEnemyCollisions() {
         if (part->ApplyDamage(kDamageMachineGunToEnemy) && part->GetHP() <= 0) {
           part->OnDestroyed(Math::Normalize(bullets[i].velocity),
                             EnemyParameters::GetInstance()->GetBlowSpeed());
+          break; // HPが0になったらループを抜けて多重破壊を防止
         }
       }
     }
+
+    if (part->GetHP() <= 0) return; // マシンガンで破壊された場合はミサイルのヒット判定をスキップ
 
     // ミサイル
     MissileData *missiles = player_->GetMissiles();
@@ -461,6 +485,7 @@ void GameScene::CheckPlayerToEnemyCollisions() {
         if (part->ApplyDamage(kDamageMissileToEnemy) && part->GetHP() <= 0) {
           part->OnDestroyed(Math::Normalize(missiles[i].velocity),
                             EnemyParameters::GetInstance()->GetBlowSpeed());
+          break; // HPが0になったらループを抜ける
         }
       }
     }
@@ -533,6 +558,18 @@ void GameScene::CheckFlyingPartsCollisions() {
           b1.y = b2.y = 0.0f;
           projectile->SetBlowVelocity(b1);
           target->SetBlowVelocity(b2);
+
+          // 押し戻し処理（めり込み・反発ループ防止）
+          Vector3 pPos = projectile->GetTransform().translate;
+          Vector3 tPos = target->GetTransform().translate;
+          float dist = Math::Length(diff); // diffは pPos - tPos、Y無理版
+          float idealDist = 4.0f; // 部位のサイズからの概算最小距離
+          if (dist < idealDist) {
+              float pushOut = (idealDist - dist) * 0.5f;
+              projectile->SetPosition(Math::Add(pPos, Math::Multiply(pushOut, normal)));
+              target->SetPosition(Math::Subtract(tPos, Math::Multiply(pushOut, normal)));
+          }
+
           projectile->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b1),
                                 projectile->GetOBB());
           target->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b2),
@@ -676,6 +713,10 @@ void GameScene::CheckEnemyBuildingCollisions() {
   Building *building = field_ ? field_->GetBuilding() : nullptr;
   if (!building || !boss_)
     return;
+
+  // ボス全体が死亡している場合は、本体OBBやビーム等での建物破壊判定をスキップ
+  // （吹き飛んだ部位による演出上の破壊は CheckFlyingPartsBuildingCollisions 等で行う）
+  if (boss_->IsDead()) return;
 
   for (int i = 0; i < building->GetBuildingCount(); ++i) {
     if (!building->IsBuildingAlive(i))
