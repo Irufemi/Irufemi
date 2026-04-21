@@ -14,6 +14,8 @@ public:
 	void Update();
 	void Draw();
 
+	Building* GetBuilding() const { return building_.get(); }
+
 private:
 	// 外部依存
 	InputManager* input_ = nullptr;

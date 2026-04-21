@@ -63,8 +63,10 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   animation_->Initialize(this);
 
   // ビームとエフェクトの事前初期化（ヒッチ対策）
-  beam_ = std::make_unique<EnemyBeam>();
-  beam_->Initialize(camera_, engine_);
+  for (int i = 0; i < 3; ++i) {
+      beams_[i] = std::make_unique<EnemyBeam>();
+      beams_[i]->Initialize(camera_, engine_);
+  }
   stompEffects_ = std::make_unique<EnemyStompEffects>();
   stompEffects_->Initialize(camera_);
 
@@ -227,8 +229,10 @@ void Enemy::Draw(IrufemiEngine* engine) {
     headRight_->Draw(engine);
 
   // ビームを描画
-  if (beam_) {
-    beam_->Draw(engine);
+  for (int i = 0; i < 3; ++i) {
+      if (beams_[i]) {
+          beams_[i]->Draw(engine);
+      }
   }
 
     if (stompEffects_) {
@@ -247,6 +251,13 @@ void Enemy::Draw(IrufemiEngine* engine) {
 // ビームの発射命令（トリガー）
 void Enemy::FireBeam() {
   // すでに Initialize で生成済みのため、ここでは何もしない（アニメーション状態で制御）
+}
+
+bool Enemy::IsHeadDead(int index) const {
+    if (index == 0) return headLeft_ && headLeft_->GetHP() <= 0;
+    if (index == 1) return headMid_ && headMid_->GetHP() <= 0;
+    if (index == 2) return headRight_ && headRight_->GetHP() <= 0;
+    return true;
 }
 
 void Enemy::FireStomp(const Vector3& position) {
@@ -443,6 +454,7 @@ void Enemy::UpdateDebugUI() {
     lineOBB_->ClearInstances();
     if (isDebugDrawOBB_) {
       auto addObbLines = [&](const OBB &obb) {
+        if (obb.size.x == 0.0f && obb.size.y == 0.0f && obb.size.z == 0.0f) return;
         Vector3 corners[8];
         for (int i = 0; i < 8; ++i) {
           Vector3 offset = {0, 0, 0};
@@ -481,8 +493,9 @@ void Enemy::UpdateDebugUI() {
         addObbLines(headMid_->GetOBB());
       if (headRight_ && !headRight_->IsCompletelyDead())
         addObbLines(headRight_->GetOBB());
-      if (beam_)
-        addObbLines(beam_->GetOBB());
+      for (int i = 0; i < 3; ++i) {
+          if (beams_[i]) addObbLines(beams_[i]->GetOBB());
+      }
       if (stompEffects_)
         stompEffects_->DrawDebug(lineOBB_.get());
     }

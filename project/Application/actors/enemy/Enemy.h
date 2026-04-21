@@ -27,9 +27,9 @@ public:
 
     // --- ビーム制御用 ---
     void FireBeam(); // ビームを生成する関数
-    bool IsFiringBeam() const { return beam_ != nullptr; }
+    bool IsFiringBeam(int index) const { return beams_[index] != nullptr; }
     bool IsFiringRealBeam() const { return animation_ != nullptr && animation_->IsFiring(); }
-    EnemyBeam* GetBeam() const { return beam_.get(); }
+    EnemyBeam* GetBeam(int index) const { return beams_[index].get(); }
     
     // --- スタンプ制御用 ---
     void FireStomp(const Vector3& position);
@@ -69,6 +69,7 @@ public:
 
   bool GetIsActive() const { return isActive_; }
   bool IsDead() const { return isDead_; }
+  bool IsHeadDead(int index) const;
 
 private:
     // 各パーツ
@@ -78,7 +79,7 @@ private:
     std::unique_ptr<HeadRight> headRight_ = nullptr;
 
     // ビームのインスタンス管理
-    std::unique_ptr<EnemyBeam> beam_ = nullptr;
+    std::array<std::unique_ptr<EnemyBeam>, 3> beams_;
 
     // スタンプのインスタンス管理
     std::unique_ptr<EnemyStompEffects> stompEffects_;

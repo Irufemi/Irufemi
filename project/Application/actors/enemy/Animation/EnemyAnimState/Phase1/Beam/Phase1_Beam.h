@@ -5,7 +5,7 @@
 /**
  * @brief ビーム攻撃ステート
  */
-class Beam : public IEnemyAnimationState {
+class Phase1_Beam : public IEnemyAnimationState {
 public:
     void Enter(Enemy* enemy) override;
     void Update(Enemy* enemy, Player* player, float deltaTime) override;

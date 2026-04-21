@@ -158,6 +158,10 @@ bool Body::IsCompletelyDead() const {
 }
 
 OBB Body::GetOBB() const {
+    if (isBlownAway_ && disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime()) {
+        return OBB{}; // モデル消滅後は判定を消す
+    }
+
     OBB obb;
     obb.center = transform_.translate;
     

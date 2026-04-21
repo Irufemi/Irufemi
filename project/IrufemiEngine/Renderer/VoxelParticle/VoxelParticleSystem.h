@@ -48,7 +48,7 @@ struct VoxelEmitter {
   Vector3 rotate = {0.0f, 0.0f, 0.0f};
   float pad1 = 0.0f;
   Vector3 scale = {1.0f, 1.0f, 1.0f};
-  float pad0 = 0.0f;
+  uint32_t particleType = 0; // pad0 の代わり
 
   // 衝突判定用 (OBB近似)
   Vector3 collisionCenter;
@@ -67,6 +67,11 @@ public:
     ReadyToCreateResources,
     Loaded,
     Failed
+  };
+
+  enum class ParticleType : uint32_t {
+    Default = 0,
+    Building = 1
   };
 
 public:
@@ -97,6 +102,9 @@ public:
     // 爆散（hasExploded_ = true, time = 0）から lifeTime (+余裕) が経過するまではアクティブ
     return emitterData_.time < (emitterData_.lifeTime + 2.0f);
   }
+
+  void SetParticleType(ParticleType type) { emitterData_.particleType = static_cast<uint32_t>(type); }
+  void SetGravity(float gravity) { emitterData_.gravity = gravity; }
 
   bool IsLoaded() const { return status_.load() == LoadingStatus::Loaded; }
   LoadingStatus GetStatus() const { return status_.load(); }

@@ -29,6 +29,7 @@ public:
     void DrawParticles();
 
     const Vector3& GetTranslate() const { return translate_; }
+    void SetTranslate(const Vector3& pos) { translate_ = pos; }
     const Vector3& GetRotate() const { return rotate_; }
 
     const AttackCollision& GetAttackCollision() const { return attackCollision_; }

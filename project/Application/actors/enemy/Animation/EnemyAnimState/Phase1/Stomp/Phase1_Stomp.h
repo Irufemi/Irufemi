@@ -5,7 +5,7 @@
 /**
  * @brief スタンプ（踏みつけ）攻撃ステート
  */
-class Stomp : public IEnemyAnimationState {
+class Phase1_Stomp : public IEnemyAnimationState {
 public:
     void Enter(Enemy* enemy) override;
     void Update(Enemy* enemy, Player* player, float deltaTime) override;
