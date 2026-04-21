@@ -151,6 +151,9 @@
     <Filter Include="Engine\Core\System">
       <UniqueIdentifier>{6d9e3a1d-37be-492e-af07-22944ff2e1a5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Object3D\Effect">
+      <UniqueIdentifier>{f4fb1d23-3e0c-46b4-9cde-75cceb18a342}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
@@ -294,9 +297,6 @@
     <ClCompile Include="Engine\Core\Utility\Log.cpp">
       <Filter>Engine\Core\Utility</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\System\EffectSystem.cpp">
-      <Filter>Renderer\System</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Object3D\Primitive\TriangleClass.cpp">
       <Filter>Renderer\3D</Filter>
     </ClCompile>
@@ -346,6 +346,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Core\Math\NumericalSequence.cpp">
       <Filter>Engine\Core\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Object3D\Effect\PrimitiveEffect.cpp">
+      <Filter>Renderer\Object3D\Effect</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -610,9 +613,6 @@
     <ClInclude Include="Engine\Core\Utility\Log.h">
       <Filter>Engine\Core\Utility</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\System\EffectSystem.h">
-      <Filter>Renderer\System</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Graphics\Data\SpotLight.h">
       <Filter>Engine\Graphics\Data</Filter>
     </ClInclude>
@@ -721,6 +721,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectX\ConstantBuffer.h">
       <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object3D\Effect\PrimitiveEffect.h">
+      <Filter>Renderer\Object3D\Effect</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

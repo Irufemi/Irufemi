@@ -201,6 +201,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 
     // テクスチャ設定の注入
     ui_->SetTextureManager(textureManager_.get());
+    drawManager_->SetTextureManager(textureManager_.get());
     Sprite::SetTextureManager(textureManager_.get());
     Circle2D::SetTextureManager(textureManager_.get());
     ObjClass::SetTextureManager(textureManager_.get());

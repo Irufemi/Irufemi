@@ -60,8 +60,6 @@
 #include "Renderer/Region/Primitive/TetraRegion.h"
 // Skybox
 #include "Renderer/Skybox/Skybox.h"
-// System(複合)
-#include "Renderer/System/EffectSystem.h"
 
 // 音関連
 #include "Resource/Audio/Bgm.h"

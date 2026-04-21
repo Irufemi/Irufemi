@@ -22,6 +22,7 @@
 class ShadowMap;
 
 // 前方宣言
+class TextureManager;
 class DirectXCommon;
 class Sprite;
 class TriangleClass;
@@ -184,7 +185,15 @@ private:
     std::vector<SpotLight> cachedSpotLights_;
     std::vector<AreaLight> cachedAreaLights_;
     
+    TextureManager* textureManager_ = nullptr; ///< 環境マップフォールバック等に使用するテクスチャマネージャー
+    
 public:
+
+    /**
+     * @brief テクスチャマネージャーのポインタを設定する
+     * @param[in] textureManager 依存注入するテクスチャマネージャーへのポインタ
+     */
+    void SetTextureManager(TextureManager* textureManager) { textureManager_ = textureManager; }
 
     /**
      * @brief 環境マップを設定する
