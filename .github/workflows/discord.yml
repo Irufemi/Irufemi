@@ -17,12 +17,12 @@ jobs:
         webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
         color: "#48f442"
         username: "GitHub Bot"
-        # ƒƒbƒZ[ƒW“à—e‚ğƒJƒXƒ^ƒ}ƒCƒY
+        # ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å†…å®¹ã‚’ã‚«ã‚¹ã‚¿ãƒã‚¤ã‚º
         message: |
-          **${{ github.actor }}** ‚ª `${{ github.ref_name }}` ‚É **${{ github.event_name }}** ‚ğs‚¢‚Ü‚µ‚½B
+          **${{ github.actor }}** ãŒ `${{ github.ref_name }}` ã« **${{ github.event_name }}** ã‚’è¡Œã„ã¾ã—ãŸã€‚
           
-          **ƒŠƒ|ƒWƒgƒŠ:** ${{ github.repository }}
-          **ƒRƒ~ƒbƒgƒƒbƒZ[ƒW:** > ${{ github.event.head_commit.message || github.event.pull_request.title }}
+          **ãƒªãƒã‚¸ãƒˆãƒª:** ${{ github.repository }}
+          **ã‚³ãƒŸãƒƒãƒˆãƒ¡ãƒƒã‚»ãƒ¼ã‚¸:** > ${{ github.event.head_commit.message || github.event.pull_request.title }}
           
-          **Ú×‚Í‚±‚¿‚ç:**
+          **è©³ç´°ã¯ã“ã¡ã‚‰:**
           ${{ github.event.compare || github.event.pull_request.html_url }}
