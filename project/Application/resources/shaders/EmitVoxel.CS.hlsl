@@ -79,7 +79,16 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 	gParticles[voxelIndex].velocity = gEmitter.baseVelocity + moveDir * gEmitter.dispersion;
 
 	gParticles[voxelIndex].color = voxel.color;
-	gParticles[voxelIndex].life = 1.0f; // 寿命を満タンにする
+	
+	float delay = 0.0f;
+	if (gEmitter.particleType == 2) // EnemyBurnout
+	{
+		// 下から崩れるように、ローカルのY座標に応じたディレイを計算
+		float noise = (generator.Generate1d() * 2.0f - 1.0f) * 0.2f;
+		delay = max(0.0f, localPos.y * 0.05f + noise);
+	}
+	
+	gParticles[voxelIndex].life = 1.0f + delay; // 寿命を満タンにする＋ディレイを加算
 	gParticles[voxelIndex].size = 1.0f; // サイズ
 	gParticles[voxelIndex].isActive = 1; // アクティブ化
 	gParticles[voxelIndex].normal = rotatedNormal; // 回転後の法線をコピー
