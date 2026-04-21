@@ -1009,6 +1009,82 @@ UINT DirectXCommon::GetBackBufferIndex(const Microsoft::WRL::ComPtr<IDXGISwapCha
     return swapChain->GetCurrentBackBufferIndex();
 }
 
+void DirectXCommon::PreWarmJITCompile() {
+    std::lock_guard<std::mutex> lock(uploadMutex_);
+    uploadCommandAllocator_->Reset();
+    uploadCommandList_->Reset(uploadCommandAllocator_.Get(), nullptr);
+
+    // --- Compute PSO ---
+    uploadCommandList_->SetComputeRootSignature(computeRootSignature_.Get());
+    
+    // SetPipelineState とダミー Dispatch(0,0,0) を発行し、
+    // NVIDIAやIntelのドライバに対し、最初のDraw()より前に強制的に
+    // ハードウェア専用のISA（機械語）へJITコンパイルさせる
+    ID3D12PipelineState* csPSOs[] = {
+        skinningComputePSO_.Get(),
+        gpuParticleInitializePSO_.Get(),
+        gpuParticleEmitPSO_.Get(),
+        gpuParticleUpdatePSO_.Get(),
+        voxelParticleInitializePSO_.Get(),
+        voxelParticleEmitPSO_.Get(),
+        voxelParticleUpdatePSO_.Get()
+    };
+    for (auto pso : csPSOs) {
+        if (pso) {
+            uploadCommandList_->SetPipelineState(pso);
+        }
+    }
+
+    // --- Graphics PSO (重いもの) ---
+    uploadCommandList_->SetGraphicsRootSignature(rootSignature_.Get());
+    uploadCommandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    
+    if (psoManager_) {
+        // 例: 高負荷な特殊パイプライン(電撃エフェクト等)
+        auto lightningPSO = psoManager_->GetLightningCrawl(BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+        if (lightningPSO) {
+            uploadCommandList_->SetPipelineState(lightningPSO);
+        }
+    }
+
+    uploadCommandList_->Close();
+    ID3D12CommandList* ppCommandLists[] = { uploadCommandList_.Get() };
+    commandQueue_->ExecuteCommandLists(1, ppCommandLists);
+
+    uploadFenceValue_++;
+    commandQueue_->Signal(uploadFence_.Get(), uploadFenceValue_);
+
+    // GPU上のダミー実行とJITコンパイルが完全に終わるのを待機してから進行する
+    HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (uploadFence_->GetCompletedValue() < uploadFenceValue_) {
+        uploadFence_->SetEventOnCompletion(uploadFenceValue_, event);
+        WaitForSingleObject(event, INFINITE);
+    }
+    CloseHandle(event);
+}
+
+void DirectXCommon::ExecuteUploadCommands(std::function<void(ID3D12GraphicsCommandList*)> commands) {
+    std::lock_guard<std::mutex> lock(uploadMutex_);
+    uploadCommandAllocator_->Reset();
+    uploadCommandList_->Reset(uploadCommandAllocator_.Get(), nullptr);
+
+    commands(uploadCommandList_.Get());
+
+    uploadCommandList_->Close();
+    ID3D12CommandList* ppCommandLists[] = { uploadCommandList_.Get() };
+    commandQueue_->ExecuteCommandLists(1, ppCommandLists);
+
+    uploadFenceValue_++;
+    commandQueue_->Signal(uploadFence_.Get(), uploadFenceValue_);
+
+    HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (uploadFence_->GetCompletedValue() < uploadFenceValue_) {
+        uploadFence_->SetEventOnCompletion(uploadFenceValue_, event);
+        WaitForSingleObject(event, INFINITE);
+    }
+    CloseHandle(event);
+}
+
 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(const Microsoft::WRL::ComPtr<ID3D12Device>& device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible) {
 
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap = nullptr;

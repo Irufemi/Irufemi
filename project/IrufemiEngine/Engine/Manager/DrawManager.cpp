@@ -375,7 +375,6 @@ void DrawManager::DrawVoxelParticle(
     // 頂点バッファとインデックスバッファの設定
     commandList_->IASetVertexBuffers(0, 1, &vbv);
     commandList_->IASetIndexBuffer(&ibv);
-
     // VoxelParticle 特有のバインド
     // Slot 1: Transform (b0) <- Emitter
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, emitterAddress);

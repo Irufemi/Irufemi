@@ -62,9 +62,6 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     }
     textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
-    // CS初期化フラグを下ろす（実際の初期化はDraw()内で行う）
-    isInitializedCS_ = false;
-
     // デフォルトでスフィアエミッターを設定
     SetSphereEmitter(Vector3(0, 0, 0), 2.0f, 30, 0.1f);
     
@@ -85,7 +82,7 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     emitter_->jitter = 0.01f; // 座標のゆらぎ
     emitter_->isBillboard = 1;
     emitter_->burstCount = 0;
-    
+
     // Milestone 3: 初期設定
     emitter_->atlasRows = 1;
     emitter_->atlasCols = 1;
@@ -102,6 +99,38 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     debugLineRegion_ = std::make_unique<Line3DRegion>();
     debugLineRegion_->Initialize(camera);
 #endif
+
+    // ゲーム開始時（ローディング中）にCSを使ったバッファ初期化を済ませる
+    if (dxCommon_) {
+        // 同期待ちをさせるため、初回フレームでの遅延をなくす
+        dxCommon_->ExecuteUploadCommands([this](ID3D12GraphicsCommandList* cmdList) {
+            ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+            cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+            cmdList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
+            
+            // 1. 初期化シェーダーの実行 (VRAM上のデータ構造を初期化)
+            cmdList->SetPipelineState(dxCommon_->GetGpuParticleInitializePSO());
+            cmdList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+            cmdList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+            cmdList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+
+            cmdList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
+
+            D3D12_RESOURCE_BARRIER barrier{};
+            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+            barrier.UAV.pResource = nullptr;
+            cmdList->ResourceBarrier(1, &barrier);
+            
+            // 2. Emit / Update シェーダーを空バインドして JIT 誘発
+            // 実行はしない（Descriptor等も最低限のまま）
+            cmdList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
+            cmdList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
+        });
+        isInitializedCS_ = true;
+    } else {
+        isInitializedCS_ = false;
+    }
 }
 
 // 更新
@@ -485,6 +514,7 @@ void GPUParticleSystem::DrawCylinderWireframe(const Vector3& center, const Vecto
 void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* commandList) {
     // 0. 未初期化の場合、CSでバッファを初期化する
     if (!isInitializedCS_) {
+        // すでにInitialize()で実行済みのため本来はここに来ないが、フェールセーフとして残す
         ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
         commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 

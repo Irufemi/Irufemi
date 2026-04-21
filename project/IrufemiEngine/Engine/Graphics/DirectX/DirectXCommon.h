@@ -241,6 +241,17 @@ public: // ゲッター
 	///@}
 
 	/**
+	 * @brief 初回描画時の遅延ハードウェアコンパイル（JIT）を防止するためのダミー実行
+	 */
+	void PreWarmJITCompile();
+
+	/**
+	 * @brief 任意のコマンドリストを同期的にアップロードキューで実行し待機します
+	 * @param[in] commands コマンドを記録する関数（ラムダ等）
+	 */
+	void ExecuteUploadCommands(std::function<void(ID3D12GraphicsCommandList*)> commands);
+
+	/**
 	 * @brief RTVインデックスの割り当て
 	 */
 	uint32_t AllocateRTVIndex();

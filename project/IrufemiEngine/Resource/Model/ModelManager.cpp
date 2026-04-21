@@ -89,7 +89,7 @@ std::shared_ptr<ManagedModel> ModelManager::GetModelAsync(const std::string& fil
         std::lock_guard<std::mutex> lock(mutex_);
         if (auto it = cache_.find(key); it != cache_.end()) {
             if (auto sp = it->second.lock()) {
-                OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Cache hit: {}\n", GetCurrentThreadId(), filename).c_str());
+                // OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Cache hit: {}\n", GetCurrentThreadId(), filename).c_str());
                 return sp;
             }
         }
