@@ -53,6 +53,8 @@ void SphereClass::Initialize(Camera* camera, const std::string& textureName) {
         resource_->GetMaterialData()->metallic = 0.0f;
         resource_->GetMaterialData()->roughness = 0.5f;
         resource_->GetMaterialData()->environmentCoefficient = 0.0f;
+        resource_->GetMaterialData()->alphaReference = 0.5f;
+        resource_->GetMaterialData()->useClampSampler = 0;
     }
 
     //transformationMatrix

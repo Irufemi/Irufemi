@@ -53,6 +53,20 @@ const PrimitiveResource& PrimitiveManager::GetStandardResource(PrimitiveType typ
     return gpuCache_[type];
 }
 
+const PrimitiveResource& PrimitiveManager::GetCylinderResource(bool hasTop, bool hasBottom) {
+    uint32_t key = (hasTop ? 2 : 0) | (hasBottom ? 1 : 0);
+    auto it = cylinderGpuCache_.find(key);
+    if (it != cylinderGpuCache_.end()) {
+        return it->second;
+    }
+
+    PrimitiveData data = CreateCylinder(0.5f, 1.0f, 32, hasTop, hasBottom);
+    PrimitiveResource resource;
+    CreateGPUResource(data, resource);
+    cylinderGpuCache_[key] = std::move(resource);
+    return cylinderGpuCache_[key];
+}
+
 void PrimitiveManager::CreateGPUResource(const PrimitiveData& data, PrimitiveResource& resource) {
     auto* dxCommon = BaseResource::GetDirectXCommon();
     if (!dxCommon) return;
@@ -205,17 +219,26 @@ void PrimitiveManager::GenerateSphereIndices(PrimitiveData& data, uint32_t subdi
     }
 }
 
-PrimitiveData PrimitiveManager::CreateCylinder(float radius, float height, uint32_t segments) {
+PrimitiveData PrimitiveManager::CreateCylinder(float bottomRadius, float topRadius, float height, uint32_t segments, bool hasTop, bool hasBottom, bool centered) {
     PrimitiveData data;
-    GenerateCylinderVertices(data, radius, height, segments);
-    GenerateCylinderIndices(data, segments);
+    GenerateCylinderVertices(data, bottomRadius, topRadius, height, segments, hasTop, hasBottom, centered);
+    GenerateCylinderIndices(data, segments, hasTop, hasBottom);
     return data;
 }
 
-void PrimitiveManager::GenerateCylinderVertices(PrimitiveData& data, float radius, float height, uint32_t segments) {
+PrimitiveData PrimitiveManager::CreateCylinder(float radius, float height, uint32_t segments, bool hasTop, bool hasBottom) {
+    // 既存の実装（敵ビームなど）を壊さないため、上下同じ半径、中心原点(centered=true)として呼び戻す
+    return CreateCylinder(radius, radius, height, segments, hasTop, hasBottom, true);
+}
+
+void PrimitiveManager::GenerateCylinderVertices(PrimitiveData& data, float bottomRadius, float topRadius, float height, uint32_t segments, bool hasTop, bool hasBottom, bool centered) {
     const float pi = std::numbers::pi_v<float>;
     const float radianPerDivide = 2.0f * pi / static_cast<float>(segments);
 
+    float yBottom = centered ? -height * 0.5f : 0.0f;
+    float yTop    = centered ? height * 0.5f : height;
+
+    // 側面
     for (uint32_t i = 0; i < segments; ++i) {
         float rad = static_cast<float>(i) * radianPerDivide;
         float radNext = static_cast<float>(i + 1) * radianPerDivide;
@@ -228,14 +251,38 @@ void PrimitiveManager::GenerateCylinderVertices(PrimitiveData& data, float radiu
         float u = static_cast<float>(i) / segments;
         float uNext = static_cast<float>(i + 1) / segments;
 
-        data.vertices.push_back({ { c * radius, -height * 0.5f, s * radius, 1.0f }, { u, 1.0f }, { c, 0.0f, s } });
-        data.vertices.push_back({ { c * radius,  height * 0.5f, s * radius, 1.0f }, { u, 0.0f }, { c, 0.0f, s } });
-        data.vertices.push_back({ { cNext * radius, -height * 0.5f, sNext * radius, 1.0f }, { uNext, 1.0f }, { cNext, 0.0f, sNext } });
-        data.vertices.push_back({ { cNext * radius,  height * 0.5f, sNext * radius, 1.0f }, { uNext, 0.0f }, { cNext, 0.0f, sNext } });
+        // 資料に合わせて X = -sin, Z = cos のロジックに変更
+        data.vertices.push_back({ { -s * bottomRadius, yBottom, c * bottomRadius, 1.0f }, { u, 1.0f }, { -s, 0.0f, c } });
+        data.vertices.push_back({ { -s * topRadius,    yTop,    c * topRadius,    1.0f }, { u, 0.0f }, { -s, 0.0f, c } });
+        data.vertices.push_back({ { -sNext * bottomRadius, yBottom, cNext * bottomRadius, 1.0f }, { uNext, 1.0f }, { -sNext, 0.0f, cNext } });
+        data.vertices.push_back({ { -sNext * topRadius,    yTop,    cNext * topRadius,    1.0f }, { uNext, 0.0f }, { -sNext, 0.0f, cNext } });
+    }
+
+    // 上蓋
+    if (hasTop) {
+        data.vertices.push_back({ { 0.0f, yTop, 0.0f, 1.0f }, { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } }); // 中心
+        for (uint32_t i = 0; i <= segments; ++i) {
+            float rad = static_cast<float>(i) * radianPerDivide;
+            float c = std::cos(rad);
+            float s = std::sin(rad);
+            data.vertices.push_back({ { -s * topRadius, yTop, c * topRadius, 1.0f }, { 0.5f - s * 0.5f, 0.5f - c * 0.5f }, { 0.0f, 1.0f, 0.0f } });
+        }
+    }
+
+    // 下蓋
+    if (hasBottom) {
+        data.vertices.push_back({ { 0.0f, yBottom, 0.0f, 1.0f }, { 0.5f, 0.5f }, { 0.0f, -1.0f, 0.0f } }); // 中心
+        for (uint32_t i = 0; i <= segments; ++i) {
+            float rad = static_cast<float>(i) * radianPerDivide;
+            float c = std::cos(rad);
+            float s = std::sin(rad);
+            data.vertices.push_back({ { -s * bottomRadius, yBottom, c * bottomRadius, 1.0f }, { 0.5f - s * 0.5f, 0.5f + c * 0.5f }, { 0.0f, -1.0f, 0.0f } });
+        }
     }
 }
 
-void PrimitiveManager::GenerateCylinderIndices(PrimitiveData& data, uint32_t segments) {
+void PrimitiveManager::GenerateCylinderIndices(PrimitiveData& data, uint32_t segments, bool hasTop, bool hasBottom) {
+    // 側面
     for (uint32_t i = 0; i < segments; ++i) {
         uint32_t base = i * 4;
         data.indices.push_back(base);
@@ -244,6 +291,31 @@ void PrimitiveManager::GenerateCylinderIndices(PrimitiveData& data, uint32_t seg
         data.indices.push_back(base + 1);
         data.indices.push_back(base + 3);
         data.indices.push_back(base + 2);
+    }
+
+    uint32_t vertexOffset = segments * 4; // 側面の頂点数
+
+    // 上蓋
+    if (hasTop) {
+        uint32_t centerIndex = vertexOffset;
+        uint32_t perimeterBase = vertexOffset + 1;
+        for (uint32_t i = 0; i < segments; ++i) {
+            data.indices.push_back(centerIndex);
+            data.indices.push_back(perimeterBase + i + 1); // 反転
+            data.indices.push_back(perimeterBase + i);     // 反転
+        }
+        vertexOffset += 1 + (segments + 1);
+    }
+
+    // 下蓋
+    if (hasBottom) {
+        uint32_t centerIndex = vertexOffset;
+        uint32_t perimeterBase = vertexOffset + 1;
+        for (uint32_t i = 0; i < segments; ++i) {
+            data.indices.push_back(centerIndex);
+            data.indices.push_back(perimeterBase + i);     // 反転 (元が i+1, i だったので i, i+1 に戻る)
+            data.indices.push_back(perimeterBase + i + 1); // 反転
+        }
     }
 }
 
@@ -254,6 +326,11 @@ PrimitiveData PrimitiveManager::CreateRing(float innerRadius, float outerRadius,
     return data;
 }
 
+/**
+ * @brief リング（ドーナツ型）の頂点データを生成する
+ * @details 学校資料に準拠し、12時方向を基準（X = -sin, Y = cos）として時計回りに頂点を生成します。
+ *          必要に応じて、U/Vの割り当て方向や描画する角度の範囲を指定可能です。
+ */
 void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV) {
     const float pi = std::numbers::pi_v<float>;
     float startRad = startAngle * (pi / 180.0f);
@@ -273,10 +350,11 @@ void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, float innerRadi
         float uNext = static_cast<float>(i + 1) / segments;
 
         VertexData v0, v1, v2, v3;
-        v0.position = { c0 * outerRadius, s0 * outerRadius, 0.0f, 1.0f };
-        v1.position = { c1 * outerRadius, s1 * outerRadius, 0.0f, 1.0f };
-        v2.position = { c0 * innerRadius, s0 * innerRadius, 0.0f, 1.0f };
-        v3.position = { c1 * innerRadius, s1 * innerRadius, 0.0f, 1.0f };
+        // 資料に基づき X = -sin, Y = cos と計算する（時計回りのポリゴンは維持されるためカリングへの悪影響はなし）
+        v0.position = { -s0 * outerRadius, c0 * outerRadius, 0.0f, 1.0f };
+        v1.position = { -s1 * outerRadius, c1 * outerRadius, 0.0f, 1.0f };
+        v2.position = { -s0 * innerRadius, c0 * innerRadius, 0.0f, 1.0f };
+        v3.position = { -s1 * innerRadius, c1 * innerRadius, 0.0f, 1.0f };
 
         if (verticalUV) {
             v0.texcoord = { 0.0f, u }; v1.texcoord = { 0.0f, uNext };
@@ -285,6 +363,8 @@ void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, float innerRadi
             v0.texcoord = { u, 0.0f }; v1.texcoord = { uNext, 0.0f };
             v2.texcoord = { u, 1.0f }; v3.texcoord = { uNext, 1.0f };
         }
+        
+        // 法線は従来の共通仕様に合わせて-Zを維持する
         v0.normal = v1.normal = v2.normal = v3.normal = { 0.0f, 0.0f, -1.0f };
 
         data.vertices.push_back(v0); data.vertices.push_back(v1);

@@ -31,6 +31,7 @@
 #include "../Core/Math/Math.h"
 #include "../../Resource/Model/Data/SkinCluster.h"
 #include "../Graphics/DirectX/ShadowMap.h"
+#include "../../Resource/Texture/TextureManager.h"
 
 
 namespace {
@@ -229,6 +230,8 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     // 環境マップをバインド
     if (environmentMapHandle_.ptr != 0) {
         commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, environmentMapHandle_);
+    } else if (textureManager_) {
+        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, textureManager_->GetWhiteCubeMapHandle());
     }
 }
 

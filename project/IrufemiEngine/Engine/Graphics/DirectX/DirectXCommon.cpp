@@ -379,7 +379,7 @@ void DirectXCommon::CreateRootSignatures() {
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.pDescriptorRanges = rangeShadow;
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.NumDescriptorRanges = 1;
 
-        D3D12_STATIC_SAMPLER_DESC staticSamplers[3] = {};
+        D3D12_STATIC_SAMPLER_DESC staticSamplers[4] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
         staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -407,6 +407,15 @@ void DirectXCommon::CreateRootSignatures() {
         staticSamplers[2].MaxLOD = D3D12_FLOAT32_MAX;
         staticSamplers[2].ShaderRegister = 2; // s2
         staticSamplers[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+        staticSamplers[3].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        staticSamplers[3].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        staticSamplers[3].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        staticSamplers[3].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        staticSamplers[3].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        staticSamplers[3].MaxLOD = D3D12_FLOAT32_MAX;
+        staticSamplers[3].ShaderRegister = 3; // s3
+        staticSamplers[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
         D3D12_ROOT_SIGNATURE_DESC rsDesc{};
         rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;

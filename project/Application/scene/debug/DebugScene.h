@@ -6,6 +6,7 @@
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "Irufemi.h"
 #include "Graphics/Data/LightningParams.h"
+#include "Renderer/Object3D/Effect/PrimitiveEffect.h"
 
 #include <memory>
 #include <vector>
@@ -84,9 +85,6 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<VoxelParticleSystem> voxelParticle_ = nullptr;
     bool isActiveVoxelParticle_ = false;
 
-    std::unique_ptr<EffectSystem> effect_ = nullptr;
-    bool isActiveEffect_ = false;
-
     std::unique_ptr<AnimationModel> animatedCube_ = nullptr;
     bool isActiveAnimatedCube_ = false;
 
@@ -102,7 +100,10 @@ private: // メンバ変数(ゲーム)
     bool isActiveSkybox_ = false;
 
     std::unique_ptr<PrimitiveObjects3DClass> primitiveObj_ = nullptr;
-    bool isActivePrimitiveObj_ = true;
+    bool isActivePrimitiveObj_ = false;
+
+    std::unique_ptr<PrimitiveEffect> effectTest_ = nullptr;
+    bool isActiveEffectTest_ = true;
 
     // --- ImGuiデモ ---
     bool isActiveImGuiDemo_ = false;

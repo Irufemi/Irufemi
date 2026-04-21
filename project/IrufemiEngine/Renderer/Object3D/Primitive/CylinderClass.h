@@ -55,7 +55,7 @@ public: // メンバ関数
     ~CylinderClass() = default;
 
     // 初期化
-    void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
+    void Initialize(Camera* camera, bool hasTop = true, bool hasBottom = true, const std::string& textureName = "resources/uvChecker.png");
 
     // 更新
     void Update();
@@ -89,6 +89,8 @@ public: // メンバ関数
     void SetHeight(float height) { info_.height = height; isDirty_ = true; }
     void SetRotate(const Vector3& rotate) { if (resource_) resource_->transform_.rotate = rotate; isDirty_ = true; }
     void SetColor(const Vector4& color) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->color = color; }
+    void SetAlphaReference(float alphaRef) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->alphaReference = alphaRef; }
+    void SetUseClampSampler(int32_t useClamp) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->useClampSampler = useClamp; }
 
 private:
     // 行列更新の最適化用
@@ -96,5 +98,8 @@ private:
     bool isCullingEnabled_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
+
+    bool hasTop_ = true;
+    bool hasBottom_ = true;
 };
 

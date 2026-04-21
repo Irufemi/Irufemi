@@ -37,6 +37,9 @@ struct ObjMaterial {
     // 環境マップの映り込み係数
     float environmentCoefficient = 0.0f;
 
+    // アルファテスト用閾値 (0.0f = すべて通す, 1.0f = すべて棄却)
+    float alphaReference = 0.5f;
+
     Matrix4x4 uvTransform = Math::MakeIdentity4x4();
 
     std::string textureFilePath = "";

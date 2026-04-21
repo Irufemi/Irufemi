@@ -65,6 +65,15 @@ public:
         int lightingMode = 3;         //!< ライティングモード (0:None, 1:Lambert, 2:Half-Lambert, 3:PBR)
         float metallic = 0.0f;        //!< 金属度
         float roughness = 0.5f;       //!< 粗さ
+        
+        Matrix4x4 uvTransform = {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        }; //!< UV変換行列（スクロール・反転等用）
+        float alphaReference = 0.0f;                       //!< ディスカード閾値
+        int32_t useClampSampler = 0;                       //!< サンプラー切替 (0:WRAP, 1:CLAMP)
 
         /**
          * @brief マテリアル設定をリソースへ反映する

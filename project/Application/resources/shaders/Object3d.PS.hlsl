@@ -16,7 +16,9 @@ struct PixelShaderOutput
 ///Textureを使う
 
 Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
-SamplerState gSampler : register(s0); //Samplerのregisterはs
+SamplerState gSamplerWrap : register(s0); //Samplerのregisterはs
+SamplerState gSamplerPointClamp : register(s1); // パーティクル用等POINT補間
+SamplerState gSamplerClamp : register(s3); // 新規: 完全クランプ・リニア補間
 SamplerComparisonState gShadowSampler : register(s2); // 比較サンプラー
 
 /*Light Common & DirectionalLight*/
@@ -59,7 +61,15 @@ PixelShaderOutput main(VertexShaderOutput input)
 	///Materialを拡張する
 	
 	float4 transformedUV = mul(float32_t4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
-	float32_t4 textureColor = gTexture.Sample(gSampler, transformedUV.xy);
+	
+	float32_t4 textureColor;
+	if (gMaterial.useClampSampler == 1) {
+		textureColor = gTexture.Sample(gSamplerClamp, transformedUV.xy);
+	} else if (gMaterial.useClampSampler == 2) {
+		textureColor = gTexture.Sample(gSamplerPointClamp, transformedUV.xy);
+	} else {
+		textureColor = gTexture.Sample(gSamplerWrap, transformedUV.xy);
+	}
 	
     // sRGB -> Linear はハードウェアサンプラー（_SRGB形式）に任せるため削除
     textureColor.rgb = textureColor.rgb;
@@ -68,8 +78,8 @@ PixelShaderOutput main(VertexShaderOutput input)
 		
 	/// discard
 		
-	// textureのα値が0.5以下の時にPixelを棄却
-	if (textureColor.a <= 0.5)
+	// textureのα値が alphaReference 以下の時にPixelを棄却
+	if (textureColor.a <= gMaterial.alphaReference)
 	{
 		discard;
 	}
@@ -129,7 +139,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 		gEnvironmentTexture.GetDimensions(0, envWidth, envHeight, envMipLevels);
 		float mipLevel = gMaterial.roughness * float(envMipLevels - 1);
 		
-		float32_t4 environmentColor = gEnvironmentTexture.SampleLevel(gSampler, reflectedVector, mipLevel);
+		float32_t4 environmentColor = gEnvironmentTexture.SampleLevel(gSamplerWrap, reflectedVector, mipLevel);
 		// ガンマ解除はハードウェアに任せるため削除
 		environmentColor.rgb = environmentColor.rgb;
 		
