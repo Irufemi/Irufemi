@@ -5,6 +5,7 @@
 #include "EnemyAnimState/Phase1/Stomp/Phase1_Stomp.h"
 #include "EnemyAnimState/Phase2/Tackle/Phase2_Tackle.h"
 #include "EnemyAnimState/Phase2/Phase2.h"
+#include "EnemyAnimState/Phase1/NeckAttack/Phase1_NeckAttack.h"
 #include "Enemy.h"
 
 // コンストラクタ
@@ -18,6 +19,7 @@ void EnemyAnimation::Initialize(Enemy* enemy) {
     stateMap_[EnemyState::Idle] = std::make_unique<Phase1_Idle>();
     stateMap_[EnemyState::Attack_Beam] = std::make_unique<Phase1_Beam>();
     stateMap_[EnemyState::Attack_Stomp] = std::make_unique<Phase1_Stomp>();
+    stateMap_[EnemyState::Attack_Neck] = std::make_unique<Phase1_NeckAttack>();
     stateMap_[EnemyState::Attack_Bite] = std::make_unique<Phase2_Tackle>();
     stateMap_[EnemyState::Phase2] = std::make_unique<Phase2>();
 

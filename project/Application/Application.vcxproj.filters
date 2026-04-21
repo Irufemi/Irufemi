@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="camera">
@@ -226,6 +226,8 @@
     <ClCompile Include="contents\field\building\building.cpp">
       <Filter>contents\field\building</Filter>
     </ClCompile>
+    <ClCompile Include="contents\field\building\building.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\NeckAttack\Phase1_NeckAttack.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\InGame\GameScene.h">
@@ -337,17 +339,5 @@
       <Filter>Actors\Enemy\Animation</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />
-    <ClInclude Include="contents\ui\EnemyHPBar.h">
-      <Filter>contents\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="contents\ui\EnemyPartHPBar.h">
-      <Filter>contents\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="contents\ui\PlayerHPBar.h">
-      <Filter>contents\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="contents\field\building\building.h">
-      <Filter>contents\field\building</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

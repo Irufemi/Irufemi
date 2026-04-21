@@ -166,9 +166,25 @@ void Enemy::Update(Player *player) {
               Math::Transform(Math::Add(localT.translate, offset), globalMat);
           Vector3 worldPosWithoutOffset =
               Math::Transform(localT.translate, globalMat);
-          head->SetTransform({globalTransform_.scale, globalTransform_.rotate,
-                              worldPosWithoutOffset},
-                             &worldPosWithOffset);
+          Vector3 combinedRotate = Math::Add(globalTransform_.rotate, localT.rotate);
+          Vector3 combinedScale = { globalTransform_.scale.x * localT.scale.x, 
+                                    globalTransform_.scale.y * localT.scale.y, 
+                                    globalTransform_.scale.z * localT.scale.z };
+
+          // モデルを「根元から」回転・伸縮しているように見せるため、
+          // スケールで伸びたローカルY軸方向に合わせてシフトさせる
+          float shiftAmount = 0.0f;
+          if (localT.scale.y > 1.0f) {
+              Vector3 headHalfSize = EnemyParameters::GetInstance()->GetHeadOBBSize();
+              // obb.size はハーフサイズなので、(scale - 1) 倍シフトさせれば下端が固定される
+              shiftAmount = headHalfSize.y * (localT.scale.y - 1.0f);
+          }
+          
+          Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(combinedRotate);
+          Vector3 localUp = { rotMat.m[1][0], rotMat.m[1][1], rotMat.m[1][2] }; 
+          Vector3 shiftedWorldPos = Math::Add(worldPosWithOffset, Math::Multiply(shiftAmount, localUp));
+
+          head->SetTransform({combinedScale, combinedRotate, shiftedWorldPos}, nullptr);
       } else {
           // フェーズ2: localT をそのままワールド座標として扱う（親子関係からの独立）
           // localT.translate には AnimationState が直接ワールド座標を書き込む想定
