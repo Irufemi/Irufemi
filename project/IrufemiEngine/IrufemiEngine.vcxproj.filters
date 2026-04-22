@@ -165,6 +165,9 @@
     <ClCompile Include="Framework\SceneManager.cpp">
       <Filter>Framework\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\LoadingScreen.cpp">
+      <Filter>Framework\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\IrufemiEngine.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
@@ -362,6 +365,9 @@
       <Filter>Resource\Audio</Filter>
     </ClInclude>
     <ClInclude Include="Framework\SceneManager.h">
+      <Filter>Framework\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\LoadingScreen.h">
       <Filter>Framework\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Engine\IrufemiEngine.h">

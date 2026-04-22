@@ -240,6 +240,7 @@ public: // セッター
     void ApplyPSO();
     void ApplyParticlePSO();
     void ApplySpritePSO();
+    void ApplySpritePSOForBackBuffer();
     void ApplyRegionPSO();
     void ApplyByGeometryShaderPSO();
     void ApplyLinePSO();

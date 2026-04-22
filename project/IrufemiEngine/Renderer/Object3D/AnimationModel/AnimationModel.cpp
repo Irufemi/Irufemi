@@ -27,13 +27,21 @@ AnimationModel::~AnimationModel() {
 // 初期化
 void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
     camera_ = camera;
+    filename_ = filename;
 
     assert(engine_ && "AnimationModel::Initialize: ModelManager is not set.");
-    // ModelManagerから共有モデルを取得するだけ
-    managedModel_ = engine_->GetObjModelManager()->GetModel(filename);
+    // 非同期で読み込みを開始し、メインスレッドをブロックしない
+    managedModel_ = engine_->GetObjModelManager()->GetModelAsync(filename);
 
+    // StatusがLoadedであれば直ちに初期化を試みる
+    auto status = managedModel_->status.load();
+    if (status == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
+        InitializeResources();
+    }
+}
+
+void AnimationModel::InitializeResources() {
     if (!managedModel_ || !managedModel_->cpuModel) {
-        OutputDebugStringA("[AnimationModel] Initialize: model load failed.\n");
         return;
     }
 
@@ -65,44 +73,45 @@ void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
     }
 
     assert(engine_ && "AnimationModel::Initialize: AnimationManager is not set.");
-    animation_ = engine_->GetAnimationManager()->LoadAnimationFile(filename);
+    animation_ = engine_->GetAnimationManager()->LoadAnimationFile(filename_);
 
     // Skeletonの生成
     if (managedModel_ && managedModel_->cpuModel) {
-        // ModelManager(またはAnimationManager)にあるNode構造からSkeletonを作成
         skeleton_ = AnimationManager::CreateSkeleton(managedModel_->cpuModel->rootNode);
 
-        // SkinClusterの生成 (スキニングモデルの場合のみ)
         if (!managedModel_->cpuModel->skinClusterData.empty()) {
             skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *managedModel_->cpuModel);
         }
 
-        // 2. SphereRegionの初期化
         jointSpheres_ = std::make_unique<SphereRegion>();
-        jointSpheres_->Initialize(camera, "resources/whiteTexture.png", 16);
+        jointSpheres_->Initialize(camera_, "resources/whiteTexture.png", 16);
 
-        // 3. Jointの数だけ描画用インスタンスを「最初だけ」追加
         for (size_t i = 0; i < skeleton_.joints.size(); ++i) {
             Transform tf{};
-            tf.scale = { 0.01f, 0.01f, 0.01f }; // 関節の大きさ
+            tf.scale = { 0.01f, 0.01f, 0.01f };
             jointSpheres_->AddInstance(tf);
         }
 
-        // ボーン用のLine3DRegionを初期化
         boneLines_ = std::make_unique<Line3DRegion>();
-        boneLines_->Initialize(camera);
+        boneLines_->Initialize(camera_);
     }
 
-    // 初回Updateを呼んでおく
-    Update();
-
     animationTime_ = 0.0f;
+    Update();
 }
 
 // 更新
 void AnimationModel::Update() {
 
     if (!managedModel_ || !camera_) return;
+
+    // 非同期ロードが終わっていれば構築する (遅延初期化)
+    if (managedModel_->status.load() == ManagedModel::LoadingStatus::Loaded && meshResources_.empty()) {
+        InitializeResources();
+    }
+
+    // まだ準備できていない場合はスキップ
+    if (meshResources_.empty()) return;
 
     worldMatrix_ = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 

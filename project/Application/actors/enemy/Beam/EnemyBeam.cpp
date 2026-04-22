@@ -2,6 +2,7 @@
 #include "Core/Math/Math.h"
 #include "IrufemiEngine.h"
 #include <cmath>
+#include <algorithm>
 
 void EnemyBeam::Initialize(Camera* camera, IrufemiEngine* engine) {
     telegraphObj_ = std::make_unique<ObjClass>();
@@ -85,6 +86,14 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
         // プレイヤーまでの距離ではなく、突き抜けるように beamLength_ を使用
         float currentDistance = beamLength_ * easeT;
 
+        // 地面(y=0.0f)との交差判定（ビームを床で止める）
+        if (direction.y < 0.0f) {
+            float distanceToFloor = (0.0f - headPos.y) / direction.y;
+            if (distanceToFloor > 0.0f) {
+                currentDistance = (std::min)(currentDistance, distanceToFloor);
+            }
+        }
+
         // ビームの中心は伸びた距離の半分
         Vector3 currentCenter = Math::Add(headPos, Math::Multiply(currentDistance * 0.5f, direction));
 
@@ -99,9 +108,33 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
         attackCylinder_->Update();
 
         if (gpuParticle_) {
+            // 基準となる太さ(第2形態相当の 4.0f)に対する今回の太さの倍率を計算
+            float thicknessRatio = attackThickness_ / 4.0f;
+            
+            // スケール乗数に合わせて放出量や拡散を変動
+            int emitCount = std::clamp(static_cast<int>(50.0f * thicknessRatio), 50, 400);
+
+            // 平均寿命(例: 0.6秒)で到達点(currentDistance)まで届くように速度を算出
+            // ※HLSL側で velocity が「1フレームの移動量(dt不使用)」として加算されているため、60fps換算で割る
+            float avgLife = 0.6f;
+            float emitVelocity = (currentDistance / avgLife) * (1.0f / 60.0f);
+            float emitSpread = 0.12f * std::sqrt(thicknessRatio); // 太いほど拡散させる
+
+            // 目標地点でパーティクルが消えるように寿命を設定
+            gpuParticle_->SetParticleLife(avgLife - 0.2f, avgLife + 0.2f);
+
+            // シリンダーのスケールに合わせて、放出されるパーティクル自体の大きさも比例させる
+            float sMin = 0.2f * thicknessRatio;
+            float sMax = 0.5f * thicknessRatio;
+            float eMin = 0.01f * thicknessRatio;
+            float eMax = 0.1f * thicknessRatio;
+            gpuParticle_->SetParticleScale(
+                { sMin, sMin, sMin }, { sMax, sMax, sMax },
+                { eMin, eMin, eMin }, { eMax, eMax, eMax }
+            );
+
             // 放出設定：物量と勢いを大幅に強化してレッドドラゴンのブレス感を演出
-            // count: 50 -> 200, velocity: 1.2 -> 2.8, spread: 0.12
-            gpuParticle_->SetBeamEmitter(headPos, direction, attackThickness_ * 0.5f, 2.8f, 0.12f, 200, 0.01f);
+            gpuParticle_->SetBeamEmitter(headPos, direction, attackThickness_ * 0.5f, emitVelocity, emitSpread, emitCount, 0.01f);
             gpuParticle_->SetEmit(true);
             gpuParticle_->Update();
         }

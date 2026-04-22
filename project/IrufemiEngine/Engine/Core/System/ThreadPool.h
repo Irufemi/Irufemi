@@ -133,7 +133,13 @@ auto ThreadPool::Enqueue(std::shared_ptr<TaskGroup> group, F&& f, Args&&... args
 }
 
 inline ThreadPool::~ThreadPool() {  
-    stop_ = true;
+    {
+        std::unique_lock<std::mutex> lock(queueMutex_);
+        stop_ = true;
+        // アプリケーション終了時など、未実行のタスクを破棄して速やかにスレッドを終了させる
+        std::queue<std::function<void()>> emptyQueue;
+        std::swap(tasks_, emptyQueue);
+    }
     condition_.notify_all();        
     for(std::thread &worker: workers_) {
         if (worker.joinable()) {

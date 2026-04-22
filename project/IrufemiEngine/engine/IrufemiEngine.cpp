@@ -476,6 +476,12 @@ void IrufemiEngine::EndFrame() {
         dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
     }
 
+    // 描画先がバックバッファになり、ポストプロセス（暗転など）が掛かった上から
+    // 影響を受けない最前面UIとしてロード画面を描画する
+    if (sceneManager_) {
+        sceneManager_->DrawLoadingUI();
+    }
+
     // 描画後処理
     ui_->QueuePostDrawCommands();
     drawManager_->PostDraw();
@@ -545,6 +551,11 @@ void IrufemiEngine::ApplyParticlePSO() {
 
 void IrufemiEngine::ApplySpritePSO() {
     auto* pso = GetPSOManager()->GetSprite(currentBlend_, currentDepth_, currentCull_);
+    if (pso) { drawManager_->BindPSO(pso); }
+}
+
+void IrufemiEngine::ApplySpritePSOForBackBuffer() {
+    auto* pso = GetPSOManager()->GetSpriteForBackBuffer(currentBlend_, currentDepth_, currentCull_);
     if (pso) { drawManager_->BindPSO(pso); }
 }
 

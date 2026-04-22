@@ -17,7 +17,7 @@ void Body::Initialize(Camera* camera, const Vector3& initialPos) {
   obj_->SetColor(baseColor_);
 
   voxelSystem_ = std::make_unique<VoxelParticleSystem>();
-  voxelSystem_->Initialize("enemy/body.obj", {16, 16, 16}, camera);
+  voxelSystem_->Initialize("enemy/body.obj", {32, 32, 32}, camera);
 }
 
 void Body::Update() {
@@ -54,11 +54,14 @@ void Body::Update() {
     // 消滅タイマーを進める
     float prevTimer = disappearTimer_;
     disappearTimer_ += 1.0f / 60.0f; // 60FPS想定
+    blowTimer_ += 1.0f / 60.0f;
 
     if (prevTimer < EnemyParameters::GetInstance()->GetDisappearTime() &&
         disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime()) {
         // 爆散！
         if (voxelSystem_) {
+            // 端から崩れる燃え尽きエフェクトを指定
+            voxelSystem_->SetParticleType(VoxelParticleSystem::ParticleType::EnemyBurnout);
             voxelSystem_->Explode(basePosition_, blowVelocity_, transform_.rotate, transform_.scale);
         }
     }
@@ -147,6 +150,7 @@ void Body::OnDestroyed(const Vector3& attackDir, float blowSpeed) {
     
     isBlownAway_ = true;
     disappearTimer_ = 0.0f;
+    blowTimer_ = 0.0f;
     blowVelocity_ = Math::Multiply(blowSpeed, attackDir);
     blowVelocity_.y = 0.0f; // Y軸方向への吹き飛びを完全に無くす
 }

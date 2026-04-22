@@ -166,6 +166,59 @@ ID3D12PipelineState* PSOManager::GetSprite(BlendMode blend, DepthWrite depth, Cu
     return pso.Get();
 }
 
+ID3D12PipelineState* PSOManager::GetSpriteForBackBuffer(BlendMode blend, DepthWrite depth, CullMode cull) {
+    const ShaderSet& shaders = (spriteShaders_.vsBlob && spriteShaders_.psBlob)
+        ? spriteShaders_
+        : objectShaders_;
+
+    constexpr uint64_t kSpriteBackBufferTag = 0x5350524242ull; // "SPRBB"
+    Key key{ static_cast<uint64_t>(Hash(shaders, blend, depth, cull) ^ kSpriteBackBufferTag) };
+
+    auto it = cache_.find(key);
+    if (it != cache_.end()) { return it->second.Get(); }
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSig_.Get();
+    desc.VS = { shaders.vsBlob ? shaders.vsBlob->GetBufferPointer() : nullptr,
+                shaders.vsBlob ? shaders.vsBlob->GetBufferSize() : 0 };
+    desc.PS = { shaders.psBlob ? shaders.psBlob->GetBufferPointer() : nullptr,
+                shaders.psBlob ? shaders.psBlob->GetBufferSize() : 0 };
+    desc.InputLayout = inputLayout_;
+    desc.PrimitiveTopologyType = topology_;
+    desc.NumRenderTargets = 1;
+    desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // バックバッファ専用
+    desc.DSVFormat = DXGI_FORMAT_UNKNOWN; // ポストプロセス後はDSVがバインドされていないためUNKNOWNにする
+    desc.SampleMask = UINT_MAX;
+    desc.SampleDesc.Count = 1;
+
+    desc.BlendState = MakeBlend(blend);
+    desc.DepthStencilState = MakeDepth(PSOManager::DepthWrite::Off); // 深度テストも無効化する
+
+    D3D12_RASTERIZER_DESC rast{};
+    rast.FillMode = D3D12_FILL_MODE_SOLID;
+    switch (cull) {
+    case CullMode::Back: rast.CullMode = D3D12_CULL_MODE_BACK; break;
+    case CullMode::Front: rast.CullMode = D3D12_CULL_MODE_FRONT; break;
+    case CullMode::None: default: rast.CullMode = D3D12_CULL_MODE_NONE; break;
+    }
+    rast.FrontCounterClockwise = FALSE;
+    rast.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+    rast.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+    rast.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+    rast.DepthClipEnable = TRUE;
+    rast.MultisampleEnable = FALSE;
+    rast.AntialiasedLineEnable = FALSE;
+    rast.ForcedSampleCount = 0;
+    rast.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+    desc.RasterizerState = rast;
+
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
+    HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    assert(SUCCEEDED(hr));
+    cache_.emplace(key, pso);
+    return pso.Get();
+}
+
 ID3D12PipelineState* PSOManager::GetRegion(BlendMode b, DepthWrite d, CullMode c)
 {
     // 既存のキャッシュ Key 生成を流用(Hash(blocksShaders_, b, d, c))

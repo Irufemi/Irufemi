@@ -444,11 +444,21 @@ void GameScene::CheckPlayerToEnemyCollisions() {
           part->OnDestroyed(attackDir,
                             EnemyParameters::GetInstance()->GetBlowSpeed());
         }
+        // Voxelの飛散方向
         Vector3 scatterDir = Math::Normalize(
             Math::Subtract(part->GetTransform().translate, playerPos));
+        
+        // 接触部分（剣の当たり判定）だけを飛散させるための領域(OBB)を作成
+        OBB hitArea;
+        hitArea.center = attackSphere.center;
+        hitArea.orientations[0] = {1.0f, 0.0f, 0.0f};
+        hitArea.orientations[1] = {0.0f, 1.0f, 0.0f};
+        hitArea.orientations[2] = {0.0f, 0.0f, 1.0f};
+        hitArea.size = {attackSphere.radius, attackSphere.radius, attackSphere.radius};
+
         part->ScatterAt(
             Math::Multiply(kMeleeScatterSpeedMultiplier, scatterDir),
-            part->GetOBB());
+            hitArea);
       }
     }
 
@@ -501,6 +511,12 @@ void GameScene::CheckFlyingPartsCollisions() {
     if (!projectile || !projectile->IsBlownAway() ||
         projectile->IsCompletelyDead())
       return;
+
+    // 吹き飛び直後の即時衝突（自爆）を防ぐためのクールタイム
+    const float kBlowCollisionDelay = 0.2f;
+    if (projectile->GetBlowTimer() < kBlowCollisionDelay)
+      return;
+
     OBB projectileOBB = projectile->GetOBB();
 
     auto checkTarget = [&](auto *target) {

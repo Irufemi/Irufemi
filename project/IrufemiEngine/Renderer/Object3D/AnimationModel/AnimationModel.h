@@ -60,6 +60,8 @@ private: // メンバ関数(内部ヘルパ)
 
     void UpdateAnimation();
 
+    void InitializeResources();
+
 public: // ゲッター・セッター
     // 指定したインデックスのメッシュのマテリアルを取得(読み取り専用)
     const ObjMaterial* GetMaterial(size_t meshIndex) const;
@@ -138,4 +140,6 @@ private: // メンバ変数
     uint32_t lastSyncedFrameIndex_ = UINT32_MAX;
     void MakeDirty() { dirtyFramesLeft_ = kMaxFramesInFlight; }
     void SyncIfDirty();
+
+    std::string filename_;
 };

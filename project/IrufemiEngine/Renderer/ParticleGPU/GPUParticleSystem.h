@@ -175,6 +175,22 @@ public:
     /** @brief 使用するテクスチャを切り替える */
     void SetTexture(const std::string& textureFilePath);
 
+    /**
+     * @brief パーティクルのスケール（開始時と終了時）を動的に設定する
+     * @param startMin 開始時の最小スケール
+     * @param startMax 開始時の最大スケール
+     * @param endMin 終了時の最小スケール
+     * @param endMax 終了時の最大スケール
+     */
+    void SetParticleScale(const Vector3& startMin, const Vector3& startMax, const Vector3& endMin, const Vector3& endMax);
+
+    /**
+     * @brief パーティクルの寿命（最小・最大）を設定する
+     * @param minLife 最小寿命（秒）
+     * @param maxLife 最大寿命（秒）
+     */
+    void SetParticleLife(float minLife, float maxLife);
+
     /** @name 描画設定（パイプライン） */
     ///@{
     void SetBlend(BlendMode blend) { selectedBlend_ = blend; }
