@@ -107,6 +107,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   cooldownWarningSprite_->Initialize(camera_.get(), "resources/texture/inGame/cooldown_warning.png");
   cooldownWarningSprite_->SetSize(400.0f, 100.0f);
   cooldownWarningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f + 15.0f, static_cast<float>(engine_->GetClientHeight()) / 2.0f + 80.0f);
+
 }
 
 void GameScene::Update() {
@@ -253,21 +254,23 @@ void GameScene::Draw() {
     player_->Draw3DUI(boss_.get());
   }
 
-  // --- 操作説明スプライト描画 ---
-  if (player_ && player_->IsKarakuriCharged()) {
-      if (operationChargedSprite_) operationChargedSprite_->Draw();
-      if (numberSpriteTens_) numberSpriteTens_->Draw();
-      if (numberSpriteOnes_) numberSpriteOnes_->Draw();
-  } else {
-      if (operationNormalSprite_) operationNormalSprite_->Draw();
-  }
-
-  // --- クールダウン警告スプライト描画 ---
-  if (player_ && player_->GetCooldownWarningTimer() > 0) {
-      if ((player_->GetCooldownWarningTimer() / 10) % 2 == 0) {
-          if (cooldownWarningSprite_) cooldownWarningSprite_->Draw();
+  // --- 操作説明および警告スプライト描画（3人称視点のみ） ---
+  if (player_ && !player_->IsFirstPerson()) {
+      if (player_->IsKarakuriCharged()) {
+          if (operationChargedSprite_) operationChargedSprite_->Draw();
+          if (numberSpriteTens_) numberSpriteTens_->Draw();
+          if (numberSpriteOnes_) numberSpriteOnes_->Draw();
+      } else {
+          if (operationNormalSprite_) operationNormalSprite_->Draw();
       }
-  }
+
+      // --- クールダウン警告スプライト描画 ---
+      if (player_->GetCooldownWarningTimer() > 0) {
+          if ((player_->GetCooldownWarningTimer() / 10) % 2 == 0) {
+              if (cooldownWarningSprite_) cooldownWarningSprite_->Draw();
+          }
+      }
+  } 
 }
 
 void GameScene::PauseUpdate() { UpdateCameraAndFrameData(); }

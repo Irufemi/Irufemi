@@ -5,16 +5,19 @@
 
 class Camera;
 class PlaneClass;
+class Sprite;
 class Player;
+class IrufemiEngine;
 
 class PlayerHPBar {
 public:
     PlayerHPBar() = default;
     ~PlayerHPBar() = default;
 
-    void Initialize(Camera* camera);
+    void Initialize(Camera* camera, IrufemiEngine* engine);
     void Update(const Player* player, const Camera* camera, bool isFirstPerson);
-    void Draw();
+    void Draw3D();
+    void Draw2D();
 
 private:
     void UpdateBarColor(float hpRatio);
@@ -23,8 +26,17 @@ private:
     std::unique_ptr<PlaneClass> barBg_;
     std::unique_ptr<PlaneClass> barFill_;
 
-    float barMaxWidth_ = 0.0f;
-    float barHeight_ = 0.0f;
+    std::unique_ptr<Sprite> spriteFrame_;
+    std::unique_ptr<Sprite> spriteBg_;
+    std::unique_ptr<Sprite> spriteFill_;
+
+    float barMaxWidth3D_ = 0.0f;
+    float barHeight3D_ = 0.0f;
+
+    float barMaxWidth2D_ = 0.0f;
+    float barHeight2D_ = 0.0f;
+    float barX2D_ = 0.0f;
+    float barY2D_ = 0.0f;
 
     float displayRatio_ = 1.0f;
 };
