@@ -35,7 +35,7 @@ struct VoxelEmitter
 	float3 rotate;
 	float pad1;
 	float3 scale;
-	float pad0;
+	uint particleType;
 
 	// 衝突判定用
 	float3 collisionCenter;

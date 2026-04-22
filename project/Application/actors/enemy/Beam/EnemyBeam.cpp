@@ -9,7 +9,7 @@ void EnemyBeam::Initialize(Camera* camera, IrufemiEngine* engine) {
     telegraphObj_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
 
     attackCylinder_ = std::make_unique<CylinderClass>();
-    attackCylinder_->Initialize(camera);
+    attackCylinder_->Initialize(camera, false, false);
     attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
 
     // トランスフォームの初期化（Updateで確定するため、ここではゼロクリア）
@@ -68,8 +68,9 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
     rotate.x = std::atan2(-direction.y, distXZ);
 
     if (isTelegraphActive_) {
-        telegraphTransform_.scale = { telegraphThickness_, telegraphThickness_, distance };
-        telegraphTransform_.translate = center;
+        telegraphTransform_.scale = { telegraphThickness_, telegraphThickness_, beamLength_ };
+        Vector3 telegraphCenter = Math::Add(headPos, Math::Multiply(beamLength_ * 0.5f, direction));
+        telegraphTransform_.translate = telegraphCenter;
         telegraphTransform_.rotate = rotate;
         telegraphObj_->SetTransform(telegraphTransform_);
         telegraphObj_->Update();
@@ -147,6 +148,10 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
 }
 
 OBB EnemyBeam::GetOBB() const {
+    if (!isAttackActive_) {
+        return OBB{}; // 攻撃終了後は判定を消す
+    }
+
     OBB obb;
     obb.center = attackCylinder_->GetCenter();
     obb.orientations[0] = attackCylinder_->GetRight();

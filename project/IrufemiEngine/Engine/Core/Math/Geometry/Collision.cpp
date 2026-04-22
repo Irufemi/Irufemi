@@ -345,6 +345,8 @@ namespace Collision {
 
     // OBBと球の衝突判定
     bool IsCollision(const OBB& obb, const Sphere& sphere) {
+        if (obb.size.x == 0.0f && obb.size.y == 0.0f && obb.size.z == 0.0f) return false;
+        
         // 1. 球の中心点をOBBのローカル空間に変換する
         // OBBの中心から球の中心へのベクトル
         Vector3 worldRelPos = Math::Subtract(sphere.center, obb.center);
@@ -484,6 +486,9 @@ namespace Collision {
 
     // OBBとOBBの衝突判定
     bool IsCollision(const OBB& a, const OBB& b) {
+        if ((a.size.x == 0.0f && a.size.y == 0.0f && a.size.z == 0.0f) ||
+            (b.size.x == 0.0f && b.size.y == 0.0f && b.size.z == 0.0f)) return false;
+
         // 2つのOBBの各軸(計6本)と、それらの外積(3x3=9本)の計15本を調べる
 
         // 1. 準備：回転行列(相対方向)と中心差分の計算

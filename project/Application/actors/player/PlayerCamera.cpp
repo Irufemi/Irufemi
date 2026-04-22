@@ -64,9 +64,16 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         cameraPos.y += missileVibration.y * 0.5f;
         cameraPos.z += missileVibration.z * 0.5f;
 
+        // 床からのめり込み防止
         if (cameraPos.y < kCameraMinY) {
             cameraPos.y = kCameraMinY;
         }
+        
+        // 壁（フィールド外周）へのめり込み・裏抜け防止
+        if (cameraPos.x > kCameraFieldLimitXZ) cameraPos.x = kCameraFieldLimitXZ;
+        if (cameraPos.x < -kCameraFieldLimitXZ) cameraPos.x = -kCameraFieldLimitXZ;
+        if (cameraPos.z > kCameraFieldLimitXZ) cameraPos.z = kCameraFieldLimitXZ;
+        if (cameraPos.z < -kCameraFieldLimitXZ) cameraPos.z = -kCameraFieldLimitXZ;
 
         camera_->SetTranslate(cameraPos);
         camera_->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });
@@ -78,6 +85,17 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         cameraPos.x += missileVibration.x * 0.5f;
         cameraPos.y += missileVibration.y * 0.5f;
         cameraPos.z += missileVibration.z * 0.5f;
+
+        // 床からのめり込み防止
+        if (cameraPos.y < kCameraMinY) {
+            cameraPos.y = kCameraMinY;
+        }
+
+        // 壁へのめり込み防止
+        if (cameraPos.x > kCameraFieldLimitXZ) cameraPos.x = kCameraFieldLimitXZ;
+        if (cameraPos.x < -kCameraFieldLimitXZ) cameraPos.x = -kCameraFieldLimitXZ;
+        if (cameraPos.z > kCameraFieldLimitXZ) cameraPos.z = kCameraFieldLimitXZ;
+        if (cameraPos.z < -kCameraFieldLimitXZ) cameraPos.z = -kCameraFieldLimitXZ;
 
         camera_->SetTranslate(cameraPos);
         camera_->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });

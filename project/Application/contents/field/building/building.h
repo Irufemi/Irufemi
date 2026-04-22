@@ -65,6 +65,14 @@ public:
     /// @brief 指定建物を即破壊（敵接触や敵攻撃用）
     void DestroyAt(int index, const Vector3& attackDir, float blowSpeed = 0.8f);
 
+    /**
+     * @brief 衝突箇所におけるボクセルパーティクルの飛散表現を行う
+     * @param index 飛散させる建物のインデックス
+     * @param velocity パーティクルが飛散する基準となる速度（方向と強さ）
+     * @param collisionArea 飛散させる領域を示すOBB（この範囲内のボクセルが飛散する）
+     */
+    void ScatterAt(int index, const Vector3& velocity, const OBB& collisionArea);
+
     /// @brief 建物が吹き飛び中か
     bool IsBuildingBlownAway(int index) const;
 

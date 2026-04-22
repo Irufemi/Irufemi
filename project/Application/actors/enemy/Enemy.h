@@ -17,6 +17,8 @@
 class Camera;
 class IrufemiEngine;
 class Line3DRegion;
+class EnemyHPBar;
+class EnemyPartHPBar;
 
 class Enemy {
 public:
@@ -24,12 +26,16 @@ public:
     void Initialize(Camera* camera, IrufemiEngine* engine = nullptr);
     void Update(Player* player);
     void Draw(IrufemiEngine* engine);
+    
+    // UI関連手続き
+    void Draw3DUI(IrufemiEngine* engine);
+    void Draw2DUI(IrufemiEngine* engine);
 
     // --- ビーム制御用 ---
     void FireBeam(); // ビームを生成する関数
-    bool IsFiringBeam() const { return beam_ != nullptr; }
+    bool IsFiringBeam(int index) const { return beams_[index] != nullptr; }
     bool IsFiringRealBeam() const { return animation_ != nullptr && animation_->IsFiring(); }
-    EnemyBeam* GetBeam() const { return beam_.get(); }
+    EnemyBeam* GetBeam(int index) const { return beams_[index].get(); }
     
     // --- スタンプ制御用 ---
     void FireStomp(const Vector3& position);
@@ -69,6 +75,7 @@ public:
 
   bool GetIsActive() const { return isActive_; }
   bool IsDead() const { return isDead_; }
+  bool IsHeadDead(int index) const;
 
 private:
     // 各パーツ
@@ -78,7 +85,7 @@ private:
     std::unique_ptr<HeadRight> headRight_ = nullptr;
 
     // ビームのインスタンス管理
-    std::unique_ptr<EnemyBeam> beam_ = nullptr;
+    std::array<std::unique_ptr<EnemyBeam>, 3> beams_;
 
     // スタンプのインスタンス管理
     std::unique_ptr<EnemyStompEffects> stompEffects_;
@@ -118,5 +125,9 @@ private:
 
   bool isActive_ = false;
   bool isDead_ = false;
+
+    // UI
+    std::unique_ptr<EnemyHPBar> hpBar_ = nullptr;
+    std::vector<std::unique_ptr<EnemyPartHPBar>> partHPBars_;
 
 };

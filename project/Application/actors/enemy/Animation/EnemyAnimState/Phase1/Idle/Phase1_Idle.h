@@ -5,7 +5,7 @@
 /**
  * @brief 待機ステート
  */
-class Idle : public IEnemyAnimationState {
+class Phase1_Idle : public IEnemyAnimationState {
 public:
     void Enter(Enemy* enemy) override {}
     void Update(Enemy* enemy, Player* player, float deltaTime) override;

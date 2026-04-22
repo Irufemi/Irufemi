@@ -59,6 +59,9 @@ public:
     void SetColor(const Vector4& color) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->color = color; }
     Vector4 GetColor() const { return resource_ && resource_->GetMaterialData() ? resource_->GetMaterialData()->color : Vector4{}; }
 
+    void SetAlphaReference(float alphaRef) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->alphaReference = alphaRef; }
+    void SetUseClampSampler(int32_t useClamp) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->useClampSampler = useClamp; }
+
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }

@@ -18,10 +18,12 @@ TextureManager* CylinderClass::textureManager_ = nullptr;
 DrawManager* CylinderClass::drawManager_ = nullptr;
 DebugUI* CylinderClass::ui_ = nullptr;
 
-void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
+void CylinderClass::Initialize(Camera* camera, bool hasTop, bool hasBottom, const std::string& textureName) {
     this->camera_ = camera;
-    // PrimitiveManager から標準リソースを取得
-    const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(PrimitiveType::Cylinder);
+    this->hasTop_ = hasTop;
+    this->hasBottom_ = hasBottom;
+    // PrimitiveManager から指定されたパターンのリソースを取得
+    const auto& primitiveResource = PrimitiveManager::GetInstance()->GetCylinderResource(hasTop, hasBottom);
 
     // Object3DResource の生成
     resource_ = std::make_unique<Object3DResource>();
@@ -45,6 +47,8 @@ void CylinderClass::Initialize(Camera* camera, const std::string& textureName) {
         resource_->GetMaterialData()->metallic = 0.0f;
         resource_->GetMaterialData()->roughness = 0.5f;
         resource_->GetMaterialData()->environmentCoefficient = 0.0f;
+        resource_->GetMaterialData()->alphaReference = 0.5f;
+        resource_->GetMaterialData()->useClampSampler = 0;
     }
 
     // Transform 初期値

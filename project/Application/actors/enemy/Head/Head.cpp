@@ -127,10 +127,12 @@ void Head::SetTransform(const Transform& transform, const Vector3* drawWorldPos)
     basePosition_ = transform.translate;
     if (obj_) {
       if (drawWorldPos) {
+        drawPosition_ = *drawWorldPos;
         Transform drawTransform = transform;
         drawTransform.translate = *drawWorldPos;
         obj_->SetTransform(drawTransform);
       } else {
+        drawPosition_ = transform.translate;
         obj_->SetTransform(transform);
       }
     }
@@ -155,6 +157,10 @@ bool Head::IsCompletelyDead() const {
 }
 
 OBB Head::GetOBB() const {
+    if (isBlownAway_ && disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime()) {
+        return OBB{}; // モデル消滅後は判定を消す
+    }
+
     OBB obb;
     obb.center = transform_.translate;
     
@@ -163,10 +169,11 @@ OBB Head::GetOBB() const {
     obb.orientations[1] = { rotateMat.m[1][0], rotateMat.m[1][1], rotateMat.m[1][2] };
     obb.orientations[2] = { rotateMat.m[2][0], rotateMat.m[2][1], rotateMat.m[2][2] };
     
-    obb.size = EnemyParameters::GetInstance()->GetHeadOBBSize();
+    Vector3 baseSize = EnemyParameters::GetInstance()->GetHeadOBBSize();
+    obb.size = { baseSize.x * transform_.scale.x, baseSize.y * transform_.scale.y, baseSize.z * transform_.scale.z };
     
     // 当たり判定をモデルの下側（原点）から上方向にシフトさせる
-    float offsetY = obb.size.y * 0.7f;
+    float offsetY = baseSize.y * transform_.scale.y * 0.7f;
     Vector3 centerOffset = Math::Multiply(offsetY, obb.orientations[1]);
     obb.center = Math::Add(obb.center, centerOffset);
 

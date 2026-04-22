@@ -508,6 +508,13 @@ void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
         ImGui::DragFloat("Metallic", &materialData->metallic, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Roughness", &materialData->roughness, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Environment Coefficient", &materialData->environmentCoefficient, 0.01f, 0.0f, 1.0f);
+        
+        ImGui::DragFloat("Alpha Reference", &materialData->alphaReference, 0.01f, 0.0f, 1.0f);
+        const char* clampItems[] = { "WRAP (Default)", "CLAMP (Linear)", "CLAMP (Point)" };
+        int currentClamp = materialData->useClampSampler;
+        if (ImGui::Combo("Sampler Mode", &currentClamp, clampItems, IM_ARRAYSIZE(clampItems))) {
+            materialData->useClampSampler = currentClamp;
+        }
     }
 #endif // USE_IMGUI
 }

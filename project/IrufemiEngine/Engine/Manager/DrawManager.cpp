@@ -31,6 +31,7 @@
 #include "../Core/Math/Math.h"
 #include "../../Resource/Model/Data/SkinCluster.h"
 #include "../Graphics/DirectX/ShadowMap.h"
+#include "../../Resource/Texture/TextureManager.h"
 
 
 namespace {
@@ -229,6 +230,8 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     // 環境マップをバインド
     if (environmentMapHandle_.ptr != 0) {
         commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, environmentMapHandle_);
+    } else if (textureManager_) {
+        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, textureManager_->GetWhiteCubeMapHandle());
     }
 }
 
@@ -372,7 +375,6 @@ void DrawManager::DrawVoxelParticle(
     // 頂点バッファとインデックスバッファの設定
     commandList_->IASetVertexBuffers(0, 1, &vbv);
     commandList_->IASetIndexBuffer(&ibv);
-
     // VoxelParticle 特有のバインド
     // Slot 1: Transform (b0) <- Emitter
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, emitterAddress);

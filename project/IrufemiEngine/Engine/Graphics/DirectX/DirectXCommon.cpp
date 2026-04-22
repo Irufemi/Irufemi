@@ -379,7 +379,7 @@ void DirectXCommon::CreateRootSignatures() {
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.pDescriptorRanges = rangeShadow;
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.NumDescriptorRanges = 1;
 
-        D3D12_STATIC_SAMPLER_DESC staticSamplers[3] = {};
+        D3D12_STATIC_SAMPLER_DESC staticSamplers[4] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
         staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -407,6 +407,15 @@ void DirectXCommon::CreateRootSignatures() {
         staticSamplers[2].MaxLOD = D3D12_FLOAT32_MAX;
         staticSamplers[2].ShaderRegister = 2; // s2
         staticSamplers[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+        staticSamplers[3].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        staticSamplers[3].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        staticSamplers[3].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        staticSamplers[3].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        staticSamplers[3].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        staticSamplers[3].MaxLOD = D3D12_FLOAT32_MAX;
+        staticSamplers[3].ShaderRegister = 3; // s3
+        staticSamplers[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
         D3D12_ROOT_SIGNATURE_DESC rsDesc{};
         rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -998,6 +1007,82 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureR
 UINT DirectXCommon::GetBackBufferIndex(const Microsoft::WRL::ComPtr<IDXGISwapChain4>& swapChain) {
     assert(swapChain != nullptr);
     return swapChain->GetCurrentBackBufferIndex();
+}
+
+void DirectXCommon::PreWarmJITCompile() {
+    std::lock_guard<std::mutex> lock(uploadMutex_);
+    uploadCommandAllocator_->Reset();
+    uploadCommandList_->Reset(uploadCommandAllocator_.Get(), nullptr);
+
+    // --- Compute PSO ---
+    uploadCommandList_->SetComputeRootSignature(computeRootSignature_.Get());
+    
+    // SetPipelineState とダミー Dispatch(0,0,0) を発行し、
+    // NVIDIAやIntelのドライバに対し、最初のDraw()より前に強制的に
+    // ハードウェア専用のISA（機械語）へJITコンパイルさせる
+    ID3D12PipelineState* csPSOs[] = {
+        skinningComputePSO_.Get(),
+        gpuParticleInitializePSO_.Get(),
+        gpuParticleEmitPSO_.Get(),
+        gpuParticleUpdatePSO_.Get(),
+        voxelParticleInitializePSO_.Get(),
+        voxelParticleEmitPSO_.Get(),
+        voxelParticleUpdatePSO_.Get()
+    };
+    for (auto pso : csPSOs) {
+        if (pso) {
+            uploadCommandList_->SetPipelineState(pso);
+        }
+    }
+
+    // --- Graphics PSO (重いもの) ---
+    uploadCommandList_->SetGraphicsRootSignature(rootSignature_.Get());
+    uploadCommandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    
+    if (psoManager_) {
+        // 例: 高負荷な特殊パイプライン(電撃エフェクト等)
+        auto lightningPSO = psoManager_->GetLightningCrawl(BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+        if (lightningPSO) {
+            uploadCommandList_->SetPipelineState(lightningPSO);
+        }
+    }
+
+    uploadCommandList_->Close();
+    ID3D12CommandList* ppCommandLists[] = { uploadCommandList_.Get() };
+    commandQueue_->ExecuteCommandLists(1, ppCommandLists);
+
+    uploadFenceValue_++;
+    commandQueue_->Signal(uploadFence_.Get(), uploadFenceValue_);
+
+    // GPU上のダミー実行とJITコンパイルが完全に終わるのを待機してから進行する
+    HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (uploadFence_->GetCompletedValue() < uploadFenceValue_) {
+        uploadFence_->SetEventOnCompletion(uploadFenceValue_, event);
+        WaitForSingleObject(event, INFINITE);
+    }
+    CloseHandle(event);
+}
+
+void DirectXCommon::ExecuteUploadCommands(std::function<void(ID3D12GraphicsCommandList*)> commands) {
+    std::lock_guard<std::mutex> lock(uploadMutex_);
+    uploadCommandAllocator_->Reset();
+    uploadCommandList_->Reset(uploadCommandAllocator_.Get(), nullptr);
+
+    commands(uploadCommandList_.Get());
+
+    uploadCommandList_->Close();
+    ID3D12CommandList* ppCommandLists[] = { uploadCommandList_.Get() };
+    commandQueue_->ExecuteCommandLists(1, ppCommandLists);
+
+    uploadFenceValue_++;
+    commandQueue_->Signal(uploadFence_.Get(), uploadFenceValue_);
+
+    HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (uploadFence_->GetCompletedValue() < uploadFenceValue_) {
+        uploadFence_->SetEventOnCompletion(uploadFenceValue_, event);
+        WaitForSingleObject(event, INFINITE);
+    }
+    CloseHandle(event);
 }
 
 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap(const Microsoft::WRL::ComPtr<ID3D12Device>& device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible) {

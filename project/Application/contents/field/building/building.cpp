@@ -122,7 +122,8 @@ void Building::Update() {
             Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f }; // Green
 
             for (auto& inst : instances_) {
-                if (inst.isDestroyed) continue;
+                bool modelGone = inst.isBlownAway && inst.disappearTimer >= BuildingInstance::kDisappearTime;
+                if (inst.isDestroyed || modelGone) continue;
 
                 OBB obb = GetBuildingOBB(static_cast<int>(&inst - &instances_[0]));
 
@@ -385,7 +386,9 @@ void Building::Generate() {
     // VoxelParticleSystemの初期化（GPUリソース作成はメインスレッドで行う必要がある）
     for (auto& inst : instances_) {
         inst.voxelSystem = std::make_unique<VoxelParticleSystem>();
-        inst.voxelSystem->Initialize("building/block.obj", {8, 8, 8}, camera_);
+        inst.voxelSystem->Initialize("building/block.obj", {16, 16, 16}, camera_);
+        inst.voxelSystem->SetParticleType(VoxelParticleSystem::ParticleType::Building);
+        inst.voxelSystem->SetGravity(40.0f); // 落下感を強くするため重力を上げる
     }
 
     OutputDebugStringA(std::format("Building: {} buildings generated.\n", (int)instances_.size()).c_str());
@@ -403,6 +406,9 @@ OBB Building::GetBuildingOBB(int index) const {
     OBB obb = {};
     if (index < 0 || index >= static_cast<int>(instances_.size())) return obb;
     const auto& inst = instances_[index];
+
+    bool modelGone = inst.isBlownAway && inst.disappearTimer >= BuildingInstance::kDisappearTime;
+    if (modelGone) return obb; // モデル消滅後は判定を消す
 
     obb.center = inst.position;
 
@@ -491,6 +497,16 @@ void Building::DestroyAt(int index, const Vector3& attackDir, float blowSpeed) {
     inst.blowVelocity.y = 0.0f;
 
     inst.angularVelocity = { 0.08f, 0.15f, 0.05f };
+}
+
+void Building::ScatterAt(int index, const Vector3& velocity, const OBB& collisionArea) {
+    if (index < 0 || index >= static_cast<int>(instances_.size())) return;
+    auto& inst = instances_[index];
+    
+    // 完全に破壊済み、またはVoxelシステムがない場合は処理しない
+    if (inst.isDestroyed || !inst.voxelSystem) return;
+    
+    inst.voxelSystem->CollisionScatter(inst.position, velocity, inst.rotate, inst.scale, collisionArea);
 }
 
 bool Building::IsBuildingBlownAway(int index) const {

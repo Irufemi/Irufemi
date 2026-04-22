@@ -10,6 +10,7 @@ void EnemyAI::Initialize(Enemy* enemy) {
     attackWaitTimer_ = kZeroThreshold;
     isWaitingForNextAttack_ = false;
     isFirstAttackStarted_ = false; // 初期化
+    nextAttackIndex_ = 0;
 }
 
 void EnemyAI::Update(float deltaTime) {
@@ -25,7 +26,7 @@ void EnemyAI::Update(float deltaTime) {
         timer_ += deltaTime;
         if (timer_ >= startDelay_) {
             isFirstAttackStarted_ = true;
-            enemy_->SetState(EnemyState::Attack_Beam);
+            enemy_->SetState(EnemyState::Attack_Neck);
         }
         return;
     }
@@ -35,14 +36,15 @@ void EnemyAI::Update(float deltaTime) {
         attackWaitTimer_ += deltaTime;
         if (attackWaitTimer_ >= attackInterval_) {
             isWaitingForNextAttack_ = false;
-
-            // ★交互に切り替えるロジック
-            if (nextIsStomp_) {
-                enemy_->SetState(EnemyState::Attack_Stomp);
-            } else {
+            // ★順番に切り替えるロジック (0: Beam, 1: Stomp, 2: Neck)
+            if (nextAttackIndex_ == 0) {
                 enemy_->SetState(EnemyState::Attack_Beam);
+            } else if (nextAttackIndex_ == 1) {
+                enemy_->SetState(EnemyState::Attack_Stomp);
+            } else if (nextAttackIndex_ == 2) {
+                enemy_->SetState(EnemyState::Attack_Neck);
             }
-            nextIsStomp_ = !nextIsStomp_; // 次回のために反転
+            nextAttackIndex_ = (nextAttackIndex_ + 1) % 3; // 次回のためにインクリメント
         }
 
     // 3. 攻撃中：アニメーションが完了したか監視
@@ -51,9 +53,9 @@ void EnemyAI::Update(float deltaTime) {
             enemy_->SetState(EnemyState::Idle);
             isWaitingForNextAttack_ = true;
             attackWaitTimer_ = kZeroThreshold;
-
-            // 次の攻撃を交互にするためにフラグを反転
-            nextIsStomp_ = !nextIsStomp_;
+            // 次の攻撃を順番にするためにフラグを更新（ここでは何もしない。開始時に更新済みのため）
+            // または、安全のためここでも更新可能だが、Update内で開始時に計算済みなら不要。
+            // ※今回は次ターンの保証のために上でインクリメントしているのでここは削除します。
         }
     }
 }

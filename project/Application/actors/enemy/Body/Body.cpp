@@ -121,19 +121,21 @@ void Body::SetPosition(const Vector3& pos) {
 }
 
 void Body::SetTransform(const Transform& transform, const Vector3* drawWorldPos) {
-  if (!isBlownAway_) { // 吹き飛び中は外部からのTransform上書きを無視する
-      transform_ = transform;
-      basePosition_ = transform.translate;
-      if (obj_) {
-        if (drawWorldPos) {
-          Transform drawTransform = transform;
-          drawTransform.translate = *drawWorldPos;
-          obj_->SetTransform(drawTransform);
-        } else {
-          obj_->SetTransform(transform);
+    if (!isBlownAway_) { // 吹き飛び中は外部からのTransform上書きを無視する
+        transform_ = transform;
+        basePosition_ = transform.translate;
+        if (obj_) {
+          if (drawWorldPos) {
+            drawPosition_ = *drawWorldPos;
+            Transform drawTransform = transform;
+            drawTransform.translate = *drawWorldPos;
+            obj_->SetTransform(drawTransform);
+          } else {
+            drawPosition_ = transform.translate;
+            obj_->SetTransform(transform);
+          }
         }
-      }
-  }
+    }
 }
 
 const Vector3& Body::GetPosition() const {
@@ -158,6 +160,10 @@ bool Body::IsCompletelyDead() const {
 }
 
 OBB Body::GetOBB() const {
+    if (isBlownAway_ && disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime()) {
+        return OBB{}; // モデル消滅後は判定を消す
+    }
+
     OBB obb;
     obb.center = transform_.translate;
     

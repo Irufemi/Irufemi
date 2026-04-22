@@ -20,6 +20,9 @@
 #include "contents/field/Field.h"
 #include "contents/field/building/building.h"
 #include "contents/skydome/Skydome.h"
+#include "contents/ui/EnemyHPBar.h"
+#include "contents/ui/EnemyPartHPBar.h"
+#include "contents/ui/PlayerHPBar.h"
 
 #include "Engine/Core/Math/Geometry/Collision.h"
 
@@ -142,7 +145,9 @@ void GameScene::Update() {
   UpdateCameraAndFrameData();
 
   // シーン遷移
-  if (boss_ && boss_->IsDead()) {
+  // 爆散演出を見定めてクリアにするため、「論理的に死亡（isDead_）」かつ
+  // 「演出終了して非アクティブ化（!GetIsActive()）」したときに遷移を開始する
+  if (boss_ && boss_->IsDead() && !boss_->GetIsActive()) {
     if (engine_ && engine_->GetSceneManager()) {
       engine_->GetSceneManager()->TransitionTo(
           "Clear", SceneTransition::Type::RadialBlur, 1.5f);
@@ -180,6 +185,25 @@ void GameScene::Draw() {
     boss_->Draw(engine_);
   if (player_)
     player_->DrawParticles();
+
+  // --- 2.5 3DオブジェクトとしてのUI描画 ---
+  engine_->SetBlend(BlendMode::kBlendModeNormal);
+  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  engine_->ApplyPSO();
+  if (player_) {
+    player_->Draw3DUI();
+  }
+  if (boss_) {
+    boss_->Draw3DUI(engine_);
+  }
+
+  // --- 3. HPバーUI描画（スプライト） ---
+  engine_->SetBlend(BlendMode::kBlendModeNormal);
+  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  engine_->ApplySpritePSO();
+  if (boss_) {
+    boss_->Draw2DUI(engine_);
+  }
 }
 
 void GameScene::PauseUpdate() { UpdateCameraAndFrameData(); }
@@ -333,14 +357,15 @@ void GameScene::CheckEnemyToPlayerCollisions() {
   playerColliderSphere.radius = player_->GetCollider().radius;
 
   // EnemyBeam の判定
-  if (boss_->GetBeam() && boss_->GetBeam()->IsAttackActive() &&
-      boss_->IsFiringRealBeam()) {
-    if (Collision::IsOBBSphereCollision(boss_->GetBeam()->GetOBB(),
-                                        playerColliderSphere)) {
-      if (player_->ApplyDamage(kDamageBeamToPlayer)) {
-        OutputDebugStringA(
-            std::format("Player Hit by Beam: {} damage\n", kDamageBeamToPlayer)
-                .c_str());
+  for (int bi = 0; bi < 3; ++bi) {
+    if (boss_->GetBeam(bi) && boss_->GetBeam(bi)->IsAttackActive()) {
+      if (Collision::IsOBBSphereCollision(boss_->GetBeam(bi)->GetOBB(),
+                                          playerColliderSphere)) {
+        if (player_->ApplyDamage(kDamageBeamToPlayer)) {
+          OutputDebugStringA(
+              std::format("Player Hit by Beam: {} damage\n", kDamageBeamToPlayer)
+                  .c_str());
+        }
       }
     }
   }
@@ -373,7 +398,24 @@ void GameScene::CheckEnemyToPlayerCollisions() {
     if (!part || part->IsCompletelyDead())
       return;
     if (Collision::IsOBBSphereCollision(part->GetOBB(), playerColliderSphere)) {
-      player_->ApplyDamage(kDamagePartToPlayer);
+      if (player_->ApplyDamage(kDamagePartToPlayer)) {
+        // 吹き飛んでいる状態のとき、めり込んで連続ダメージになるのを防ぐため部位を反射（バウンド）させる
+        if (part->IsBlownAway()) {
+          Vector3 toPlayer = Math::Subtract(playerColliderSphere.center, part->GetOBB().center);
+          toPlayer.y = 0.0f;
+          Vector3 normal = Math::Normalize(toPlayer);
+          if (Math::Length(normal) < kMathEpsilon) normal = {0.0f, 0.0f, 1.0f};
+
+          Vector3 vel = part->GetBlowVelocity();
+          float dot = Math::Dot(vel, normal);
+          if (dot > 0.0f) {
+            Vector3 reflect = Math::Subtract(vel, Math::Multiply(2.0f * dot, normal));
+            part->SetBlowVelocity(reflect);
+          } else if (Math::Length(vel) < kMathEpsilon) {
+            part->SetBlowVelocity(Math::Multiply(-2.0f, normal));
+          }
+        }
+      }
     }
   };
   for (int i = 0; i < kEnemyBodyPartsCount; ++i)
@@ -412,6 +454,8 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       }
     }
 
+    if (part->GetHP() <= 0) return; // 既に破壊された場合は後続のヒット判定をスキップ
+
     // マシンガン
     MachineGunBullet *bullets = player_->GetMachineGunBullets();
     for (int i = 0; i < Player::GetMaxMachineGunBullets(); ++i) {
@@ -423,9 +467,12 @@ void GameScene::CheckPlayerToEnemyCollisions() {
         if (part->ApplyDamage(kDamageMachineGunToEnemy) && part->GetHP() <= 0) {
           part->OnDestroyed(Math::Normalize(bullets[i].velocity),
                             EnemyParameters::GetInstance()->GetBlowSpeed());
+          break; // HPが0になったらループを抜けて多重破壊を防止
         }
       }
     }
+
+    if (part->GetHP() <= 0) return; // マシンガンで破壊された場合はミサイルのヒット判定をスキップ
 
     // ミサイル
     MissileData *missiles = player_->GetMissiles();
@@ -438,6 +485,7 @@ void GameScene::CheckPlayerToEnemyCollisions() {
         if (part->ApplyDamage(kDamageMissileToEnemy) && part->GetHP() <= 0) {
           part->OnDestroyed(Math::Normalize(missiles[i].velocity),
                             EnemyParameters::GetInstance()->GetBlowSpeed());
+          break; // HPが0になったらループを抜ける
         }
       }
     }
@@ -510,6 +558,18 @@ void GameScene::CheckFlyingPartsCollisions() {
           b1.y = b2.y = 0.0f;
           projectile->SetBlowVelocity(b1);
           target->SetBlowVelocity(b2);
+
+          // 押し戻し処理（めり込み・反発ループ防止）
+          Vector3 pPos = projectile->GetTransform().translate;
+          Vector3 tPos = target->GetTransform().translate;
+          float dist = Math::Length(diff); // diffは pPos - tPos、Y無理版
+          float idealDist = 4.0f; // 部位のサイズからの概算最小距離
+          if (dist < idealDist) {
+              float pushOut = (idealDist - dist) * 0.5f;
+              projectile->SetPosition(Math::Add(pPos, Math::Multiply(pushOut, normal)));
+              target->SetPosition(Math::Subtract(tPos, Math::Multiply(pushOut, normal)));
+          }
+
           projectile->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b1),
                                 projectile->GetOBB());
           target->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b2),
@@ -611,6 +671,14 @@ void GameScene::CheckPlayerBuildingCollisions() {
       Vector3 attackDir =
           Math::Normalize(Math::Subtract(bOBB.center, playerPos));
       building->ApplyDamage(i, kDamageMeleeToBuilding, attackDir, 0.5f);
+      
+      OBB impactOBB;
+      impactOBB.center = attackSphere.center;
+      impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+      impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+      impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+      impactOBB.size = {attackSphere.radius, attackSphere.radius, attackSphere.radius};
+      building->ScatterAt(i, Math::Multiply(3.0f, attackDir), impactOBB);
     }
 
     // マシンガン
@@ -646,6 +714,10 @@ void GameScene::CheckEnemyBuildingCollisions() {
   if (!building || !boss_)
     return;
 
+  // ボス全体が死亡している場合は、本体OBBやビーム等での建物破壊判定をスキップ
+  // （吹き飛んだ部位による演出上の破壊は CheckFlyingPartsBuildingCollisions 等で行う）
+  if (boss_->IsDead()) return;
+
   for (int i = 0; i < building->GetBuildingCount(); ++i) {
     if (!building->IsBuildingAlive(i))
       continue;
@@ -659,13 +731,17 @@ void GameScene::CheckEnemyBuildingCollisions() {
     }
 
     // ビーム → 建物（その場で爆散）
-    if (boss_->GetBeam() && boss_->GetBeam()->IsAttackActive() &&
-        boss_->IsFiringRealBeam()) {
-      if (Collision::IsOBBCollision(boss_->GetBeam()->GetOBB(), bOBB)) {
-        building->MarkDestroyed(i);
-        continue;
+    bool buildingDestroyedByBeam = false;
+    for (int bi = 0; bi < 3; ++bi) {
+      if (boss_->GetBeam(bi) && boss_->GetBeam(bi)->IsAttackActive()) {
+        if (Collision::IsOBBCollision(boss_->GetBeam(bi)->GetOBB(), bOBB)) {
+          building->MarkDestroyed(i);
+          buildingDestroyedByBeam = true;
+          break;
+        }
       }
     }
+    if (buildingDestroyedByBeam) continue;
 
     // スタンプ → 建物（その場で爆散）
     if (boss_->GetStompEffects() && boss_->GetStompEffects()->IsActive()) {
@@ -727,6 +803,7 @@ void GameScene::CheckFlyingPartsBuildingCollisions() {
         Vector3 vel = part->GetBlowVelocity();
         Vector3 dir = Math::Normalize(vel);
         building->ApplyDamage(i, kDamagePartToBuilding, dir, 0.6f);
+        building->ScatterAt(i, Math::Multiply(kCollisionScatterMultiplier, vel), partOBB);
 
         // 部位の反射
         Vector3 diff = Math::Subtract(partOBB.center, bOBB.center);
@@ -777,6 +854,10 @@ void GameScene::CheckFlyingBuildingsVsEnemyCollisions() {
         part->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, vel),
                         partOBB);
       }
+      // 飛んだ建物は部位に当たったので削れる
+      Vector3 velForScatter = building->GetBlowVelocity(buildingIdx);
+      building->ScatterAt(buildingIdx, Math::Multiply(kCollisionScatterMultiplier, velForScatter), partOBB);
+      
       // 飛んだ建物は爆散（即消滅）
       building->MarkDestroyed(buildingIdx);
     }
@@ -827,6 +908,10 @@ void GameScene::CheckFlyingBuildingsVsBuildingsCollisions() {
         // 建物にダメージ
         Vector3 dir = Math::Normalize(flyingVel);
         building->ApplyDamage(ti, kDamageFlyingBuildingToBuilding, dir, 0.4f);
+
+        // 各ビルにパーティクル散らし
+        building->ScatterAt(ti, Math::Multiply(kCollisionScatterMultiplier, flyingVel), flyingOBB);
+        building->ScatterAt(fi, Math::Multiply(kCollisionScatterMultiplier, Math::Multiply(-1.0f, flyingVel)), targetOBB);
 
         // 飛んだ建物は反射
         Vector3 diff = Math::Subtract(flyingOBB.center, targetOBB.center);

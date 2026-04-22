@@ -10,6 +10,8 @@
 #include <cmath>
 #include <manager/debugUI.h>
 #include <string>
+#include "contents/ui/EnemyHPBar.h"
+#include "contents/ui/EnemyPartHPBar.h"
 
 Enemy::~Enemy() {}
 
@@ -63,10 +65,26 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   animation_->Initialize(this);
 
   // ビームとエフェクトの事前初期化（ヒッチ対策）
-  beam_ = std::make_unique<EnemyBeam>();
-  beam_->Initialize(camera_, engine_);
+  for (int i = 0; i < 3; ++i) {
+      beams_[i] = std::make_unique<EnemyBeam>();
+      beams_[i]->Initialize(camera_, engine_);
+  }
   stompEffects_ = std::make_unique<EnemyStompEffects>();
   stompEffects_->Initialize(camera_);
+
+  // --- UI 初期化 ---
+  hpBar_ = std::make_unique<EnemyHPBar>();
+  if (engine_) {
+      hpBar_->Initialize(camera_, engine_->GetClientWidth(), engine_->GetClientHeight());
+  } else {
+      hpBar_->Initialize(camera_, 1280, 720); // フォールバック
+  }
+
+  for (int i = 0; i < 6; ++i) {
+      auto bar = std::make_unique<EnemyPartHPBar>();
+      bar->Initialize(camera_);
+      partHPBars_.push_back(std::move(bar));
+  }
 
   isActive_ = true;
   isDead_ = false;
@@ -148,9 +166,25 @@ void Enemy::Update(Player *player) {
               Math::Transform(Math::Add(localT.translate, offset), globalMat);
           Vector3 worldPosWithoutOffset =
               Math::Transform(localT.translate, globalMat);
-          head->SetTransform({globalTransform_.scale, globalTransform_.rotate,
-                              worldPosWithoutOffset},
-                             &worldPosWithOffset);
+          Vector3 combinedRotate = Math::Add(globalTransform_.rotate, localT.rotate);
+          Vector3 combinedScale = { globalTransform_.scale.x * localT.scale.x, 
+                                    globalTransform_.scale.y * localT.scale.y, 
+                                    globalTransform_.scale.z * localT.scale.z };
+
+          // モデルを「根元から」回転・伸縮しているように見せるため、
+          // スケールで伸びたローカルY軸方向に合わせてシフトさせる
+          float shiftAmount = 0.0f;
+          if (localT.scale.y > 1.0f) {
+              Vector3 headHalfSize = EnemyParameters::GetInstance()->GetHeadOBBSize();
+              // obb.size はハーフサイズなので、(scale - 1) 倍シフトさせれば下端が固定される
+              shiftAmount = headHalfSize.y * (localT.scale.y - 1.0f);
+          }
+          
+          Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(combinedRotate);
+          Vector3 localUp = { rotMat.m[1][0], rotMat.m[1][1], rotMat.m[1][2] }; 
+          Vector3 shiftedWorldPos = Math::Add(worldPosWithOffset, Math::Multiply(shiftAmount, localUp));
+
+          head->SetTransform({combinedScale, combinedRotate, shiftedWorldPos}, nullptr);
       } else {
           // フェーズ2: localT をそのままワールド座標として扱う（親子関係からの独立）
           // localT.translate には AnimationState が直接ワールド座標を書き込む想定
@@ -180,36 +214,63 @@ void Enemy::Update(Player *player) {
     }
   }
 
-  // 2. 死亡判定（全ての部位がボクセル含めて消滅したか）
-  if (headMid_->IsCompletelyDead() && headLeft_->IsCompletelyDead() &&
-      headRight_->IsCompletelyDead()) {
-    bool allPartsGone = true;
+  // 2. 死亡判定
+  // 論理的な死亡判定（全てのHP全損）を常に評価する
+  if (!isDead_) {
+    bool allHpZero = true;
     for (int i = 0; i < 3; ++i) {
-      if (bodies_[i] && !bodies_[i]->IsCompletelyDead()) {
-        allPartsGone = false;
+      if (bodies_[i] && bodies_[i]->GetHP() > 0) {
+        allHpZero = false;
         break;
       }
     }
-    if (allPartsGone) {
-      isActive_ =
-          false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
+    if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
+        headRight_->GetHP() <= 0) {
+      isDead_ = true;
     }
+  }
 
-    // 論理的な死亡判定（全てのHP全損）
-    if (!isDead_) {
-      bool allHpZero = true;
+  // 3. 演出完了判定（全ての部位がボクセル含めて消滅したか）
+  if (isDead_ && isActive_) {
+    if (headMid_->IsCompletelyDead() && headLeft_->IsCompletelyDead() &&
+        headRight_->IsCompletelyDead()) {
+      bool allPartsGone = true;
       for (int i = 0; i < 3; ++i) {
-        if (bodies_[i] && bodies_[i]->GetHP() > 0) {
-          allHpZero = false;
+        if (bodies_[i] && !bodies_[i]->IsCompletelyDead()) {
+          allPartsGone = false;
           break;
         }
       }
-      if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
-          headRight_->GetHP() <= 0) {
-        isDead_ = true;
+      if (allPartsGone) {
+        isActive_ = false; // 全ての部位（ボクセル粒子含む）が消滅したら非アクティブにする
       }
     }
   }
+
+  // --- UI 更新 ---
+  if (hpBar_) {
+      hpBar_->Update(this);
+  }
+
+  auto updatePartBar = [&](int index, auto* part, int maxHp) {
+      if (part && part->GetHP() > 0) {
+          float ratio = (maxHp > 0) ? static_cast<float>(part->GetHP()) / maxHp : 0.0f;
+          Vector3 hpPos = part->GetDrawPosition();
+          float scaleY = part->GetTransform().scale.y;
+          float offsetY = (index >= 3) ? (5.5f * scaleY) : (1.5f * scaleY);
+          hpPos.y += offsetY;
+          partHPBars_[index]->Update(ratio, hpPos, camera_);
+      } else {
+          partHPBars_[index]->Update(0.0f, { 0,0,0 }, nullptr);
+      }
+  };
+  auto* p = EnemyParameters::GetInstance();
+  updatePartBar(0, GetBody(0), p->GetBodyHP());
+  updatePartBar(1, GetBody(1), p->GetBodyHP());
+  updatePartBar(2, GetBody(2), p->GetBodyHP());
+  updatePartBar(3, GetHeadLeft(), p->GetHeadLeftHP());
+  updatePartBar(4, GetHeadMid(), p->GetHeadMidHP());
+  updatePartBar(5, GetHeadRight(), p->GetHeadRightHP());
 }
 
 void Enemy::Draw(IrufemiEngine* engine) {
@@ -227,8 +288,10 @@ void Enemy::Draw(IrufemiEngine* engine) {
     headRight_->Draw(engine);
 
   // ビームを描画
-  if (beam_) {
-    beam_->Draw(engine);
+  for (int i = 0; i < 3; ++i) {
+      if (beams_[i]) {
+          beams_[i]->Draw(engine);
+      }
   }
 
     if (stompEffects_) {
@@ -249,9 +312,37 @@ void Enemy::FireBeam() {
   // すでに Initialize で生成済みのため、ここでは何もしない（アニメーション状態で制御）
 }
 
+bool Enemy::IsHeadDead(int index) const {
+    if (index == 0) return headLeft_ && headLeft_->GetHP() <= 0;
+    if (index == 1) return headMid_ && headMid_->GetHP() <= 0;
+    if (index == 2) return headRight_ && headRight_->GetHP() <= 0;
+    return true;
+}
+
 void Enemy::FireStomp(const Vector3& position) {
     if (stompEffects_) {
         stompEffects_->Fire(position);
+    }
+}
+
+void Enemy::Draw3DUI(IrufemiEngine* engine) {
+    if (!isActive_) return;
+    
+    auto drawIfAlive = [&](int index, auto* part) {
+        if (part && part->GetHP() > 0) partHPBars_[index]->Draw();
+    };
+    drawIfAlive(0, GetBody(0));
+    drawIfAlive(1, GetBody(1));
+    drawIfAlive(2, GetBody(2));
+    drawIfAlive(3, GetHeadLeft());
+    drawIfAlive(4, GetHeadMid());
+    drawIfAlive(5, GetHeadRight());
+}
+
+void Enemy::Draw2DUI(IrufemiEngine* engine) {
+    if (!isActive_ || isDead_) return;
+    if (hpBar_) {
+        hpBar_->Draw();
     }
 }
 
@@ -443,6 +534,7 @@ void Enemy::UpdateDebugUI() {
     lineOBB_->ClearInstances();
     if (isDebugDrawOBB_) {
       auto addObbLines = [&](const OBB &obb) {
+        if (obb.size.x == 0.0f && obb.size.y == 0.0f && obb.size.z == 0.0f) return;
         Vector3 corners[8];
         for (int i = 0; i < 8; ++i) {
           Vector3 offset = {0, 0, 0};
@@ -481,8 +573,9 @@ void Enemy::UpdateDebugUI() {
         addObbLines(headMid_->GetOBB());
       if (headRight_ && !headRight_->IsCompletelyDead())
         addObbLines(headRight_->GetOBB());
-      if (beam_)
-        addObbLines(beam_->GetOBB());
+      for (int i = 0; i < 3; ++i) {
+          if (beams_[i]) addObbLines(beams_[i]->GetOBB());
+      }
       if (stompEffects_)
         stompEffects_->DrawDebug(lineOBB_.get());
     }

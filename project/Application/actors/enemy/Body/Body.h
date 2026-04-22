@@ -26,6 +26,7 @@ public:
   // Transformを一括設定する（回転やスケールも含めて上書き）
   void SetTransform(const Transform& transform, const Vector3* drawWorldPos = nullptr);
   const Transform& GetTransform() const { return transform_; }
+  const Vector3& GetDrawPosition() const { return drawPosition_; }
 
   void OnDestroyed(const Vector3& attackDir, float blowSpeed);
   bool IsCompletelyDead() const;
@@ -43,6 +44,7 @@ private:
   std::unique_ptr<ObjClass> obj_ = nullptr;
   Vector3 basePosition_ = {};
   Transform transform_ = {}; // OBB計算や吹き飛び時の姿勢保持のために保存
+  Vector3 drawPosition_ = {}; // アニメーションのオフセット等を含んだ実際の描画位置
 
   int hp_ = 0;
 

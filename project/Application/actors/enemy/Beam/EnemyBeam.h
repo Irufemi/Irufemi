@@ -80,6 +80,6 @@ private:
     // 放出エフェクト用（パーティクル表現）
     std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
 
-    float beamLength_ = 100.0f;
+    float beamLength_ = 500.0f;
     bool isExpired_ = false;
 };

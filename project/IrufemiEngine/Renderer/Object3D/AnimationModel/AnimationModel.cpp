@@ -349,6 +349,9 @@ void AnimationModel::UpdateMaterials() {
         // サンプラー設定 (個別上書き優先)
         mappedData->useClampSampler = (useClampSamplerOverride_ != -1) ? useClampSamplerOverride_ : cpuMat.useClampSampler;
         
+        // アルファテスト用閾値
+        mappedData->alphaReference = cpuMat.alphaReference;
+
         res->SyncMaterialData();
     }
 }
