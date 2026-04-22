@@ -29,7 +29,8 @@ public:
     void Update();
     void Draw();
     void DrawParticles();
-    void Draw3DUI();
+    void Draw3DUI(Enemy* enemy = nullptr);
+    void Draw2DUI(Enemy* enemy = nullptr);
 
     const Vector3& GetTranslate() const { return translate_; }
     void SetTranslate(const Vector3& pos) { translate_ = pos; }
@@ -54,6 +55,7 @@ public:
     void SetTargetPosition(const Vector3& targetPos) { targetPos_ = targetPos; }
     void SetIsTargetingEnemy(bool isTargeting) { isTargetingEnemy_ = isTargeting; }
     bool GetIsTargetingEnemy() const { return isTargetingEnemy_; }
+    bool IsFirstPerson() const { return cameraController_.IsFirstPerson(); }
 
     void HitAndKnockback(Enemy* enemy);
 

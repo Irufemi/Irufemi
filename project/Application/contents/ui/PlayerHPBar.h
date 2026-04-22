@@ -13,7 +13,7 @@ public:
     ~PlayerHPBar() = default;
 
     void Initialize(Camera* camera);
-    void Update(const Player* player, const Camera* camera);
+    void Update(const Player* player, const Camera* camera, bool isFirstPerson);
     void Draw();
 
 private:

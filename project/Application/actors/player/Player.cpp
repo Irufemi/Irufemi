@@ -339,7 +339,7 @@ void Player::Update() {
     }
     // プレイヤーとカメラの更新が全て終わった「最新の座標」でUIを更新し、ガタつきを防ぐ
     if (hpBar_) {
-        hpBar_->Update(this, camera_);
+        hpBar_->Update(this, camera_, cameraController_.IsFirstPerson());
     }
 
 #ifdef USE_IMGUI
@@ -400,9 +400,24 @@ void Player::Update() {
 #endif
 }
 
-void Player::Draw3DUI() {
-    if (hpBar_ && !status_.IsDead()) {
-        hpBar_->Draw();
+void Player::Draw3DUI(Enemy* enemy) {
+    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
+        if (hpBar_) {
+            hpBar_->Draw();
+        }
+        if (enemy) {
+            enemy->Draw3DUI(engine_);
+        }
+    }
+}
+
+void Player::Draw2DUI(Enemy* enemy) {
+    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
+        if (maskSprite_) maskSprite_->Draw();
+        if (aimingSprite_) aimingSprite_->Draw();
+        if (enemy) {
+            enemy->Draw2DUI(engine_);
+        }
     }
 }
 
@@ -459,16 +474,7 @@ void Player::Draw() {
     weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, status_.IsDead());
 
 
-    // 一人称視点時のみ照準を表示
-    if (cameraController_.IsFirstPerson()) {
-        if (aimingSprite_) {
-            aimingSprite_->Draw();
-        }
-    }
-
-    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
-        if (maskSprite_) maskSprite_->Draw();
-    }
+    // 照準とマスクは Draw2DUI で描画するように変更
 
 #ifdef USE_IMGUI
     if (lineOBB_ && isDebugDrawOBB_ && engine_) {

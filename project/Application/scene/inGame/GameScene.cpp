@@ -186,23 +186,21 @@ void GameScene::Draw() {
   if (player_)
     player_->DrawParticles();
 
-  // --- 2.5 3DオブジェクトとしてのUI描画 ---
+  // --- 2.5 HPバーUI描画（スプライト：マスクやエイム） ---
+  engine_->SetBlend(BlendMode::kBlendModeNormal);
+  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  engine_->ApplySpritePSO();
+  if (player_) {
+    player_->Draw2DUI(boss_.get());
+  }
+
+  // --- 3. 3DオブジェクトとしてのUI描画（HPバー） ---
+  // スプライト（マスク）の上に描画するため、スプライト描画の後に 3D PSO を再適用して描画する
   engine_->SetBlend(BlendMode::kBlendModeNormal);
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
   engine_->ApplyPSO();
   if (player_) {
-    player_->Draw3DUI();
-  }
-  if (boss_) {
-    boss_->Draw3DUI(engine_);
-  }
-
-  // --- 3. HPバーUI描画（スプライト） ---
-  engine_->SetBlend(BlendMode::kBlendModeNormal);
-  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-  engine_->ApplySpritePSO();
-  if (boss_) {
-    boss_->Draw2DUI(engine_);
+    player_->Draw3DUI(boss_.get());
   }
 }
 

@@ -60,7 +60,7 @@ void PlayerHPBar::Initialize(Camera *camera) {
     displayRatio_ = 1.0f;
 }
 
-void PlayerHPBar::Update(const Player *player, const Camera* camera) {
+void PlayerHPBar::Update(const Player *player, const Camera* camera, bool isFirstPerson) {
     if (!camera) return;
 
     float currentRatio = 0.0f;
@@ -85,14 +85,26 @@ void PlayerHPBar::Update(const Player *player, const Camera* camera) {
     float fillWidth = barMaxWidth_ * displayRatio_;
     if (fillWidth < 0.001f && displayRatio_ > 0.0f) fillWidth = 0.001f;
 
-    // プレイヤーの位置 + 頭上へのオフセット
     Vector3 basePos = {0.0f, 0.0f, 0.0f};
-    if (player) {
-        basePos = player->GetTranslate();
-        basePos.y += 1.5f; // モデルの少し上（かなり低く）
-    }
+    if (isFirstPerson) {
+        // 一人称視点：カメラの固定位置（画面右上付近）に配置
+        Vector3 camPos = camera->GetTranslate();
+        Vector3 camRot = camera->GetRotate();
+        Matrix4x4 camMat = Math::MakeRotateXYZMatrix(camRot);
 
-    // ※カメラ方向への引き寄せは廃止し、プレイヤー座標にそのままUIを置く
+        Vector3 forward = { camMat.m[2][0], camMat.m[2][1], camMat.m[2][2] };
+        Vector3 right = { camMat.m[0][0], camMat.m[0][1], camMat.m[0][2] };
+        Vector3 up = { camMat.m[1][0], camMat.m[1][1], camMat.m[1][2] };
+
+        // カメラから少し前方に離し、下中央付近に配置
+        basePos = camPos + (forward * 2.0f) + (up * -0.7f);
+    } else {
+        // 三人称視点：プレイヤーの少し上（本来は見えない設定だが、データ更新用に計算）
+        if (player) {
+            basePos = player->GetTranslate();
+            basePos.y += 1.5f;
+        }
+    }
     
     Matrix4x4 billboardMat = Math::MakeAffineMatrix({1.0f, 1.0f, 1.0f}, camera->GetRotate(), basePos);
 
