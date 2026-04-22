@@ -12,6 +12,7 @@
 class Camera;
 class Line3DRegion;
 class Enemy;
+class Sprite;
 
 struct AttackCollision {
     Vector3 center;
@@ -61,6 +62,7 @@ private:
 
 private:
     InputManager* input_ = nullptr;
+    Camera* camera_ = nullptr;
     IrufemiEngine* engine_ = nullptr;
 
     PlayerMovement movement_;
@@ -76,6 +78,7 @@ private:
     Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
     Vector3 aimPos_ = { 0.0f, 0.0f, 0.0f };
 
+    std::unique_ptr<Sprite> aimingSprite_ = nullptr;
     bool isTargetingEnemy_ = false;
 
     int skillDurationTimer_ = 0;
