@@ -554,6 +554,11 @@ void IrufemiEngine::ApplySpritePSO() {
     if (pso) { drawManager_->BindPSO(pso); }
 }
 
+void IrufemiEngine::ApplySpritePSOForBackBuffer() {
+    auto* pso = GetPSOManager()->GetSpriteForBackBuffer(currentBlend_, currentDepth_, currentCull_);
+    if (pso) { drawManager_->BindPSO(pso); }
+}
+
 void IrufemiEngine::ApplyRegionPSO() {
     auto* pso = GetPSOManager()->GetRegion(currentBlend_, currentDepth_, currentCull_);
     drawManager_->BindPSO(pso);

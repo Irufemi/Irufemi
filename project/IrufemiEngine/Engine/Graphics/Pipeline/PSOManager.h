@@ -80,6 +80,8 @@ public:
     ID3D12PipelineState* GetParticle(BlendMode blend, DepthWrite depth, CullMode cull);
     /** @brief 2Dスプライト用 */
     ID3D12PipelineState* GetSprite(BlendMode blend, DepthWrite depth, CullMode cull);
+    /** @brief バックバッファ(SRGB)へ直接描画する2Dスプライト用 */
+    ID3D12PipelineState* GetSpriteForBackBuffer(BlendMode blend, DepthWrite depth, CullMode cull);
     /** @brief デバッグ・エディタ等の領域表示用 */
     ID3D12PipelineState* GetRegion(BlendMode b, DepthWrite d, CullMode c);
     /** @brief ジオメトリシェーダを使用する描画用 */

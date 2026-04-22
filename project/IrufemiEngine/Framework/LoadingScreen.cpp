@@ -27,9 +27,10 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
     float screenH = static_cast<float>(engine->GetClientHeight());
     
     // スプライトのサイズと位置を右下に合わせる
-    nowLoadingText_->SetSize(256.0f, 72.0f);
-    nowLoadingText_->SetAnchor(1.0f, 1.0f); // 右下アンカー
-    nowLoadingText_->SetPosition(screenW - 80.0f, screenH - 30.0f);
+    // AI生成画像は正方形(1:1)なので、縮尺がおかしくならないよう同サイズにする
+    nowLoadingText_->SetSize(256.0f, 256.0f);
+    nowLoadingText_->SetAnchor(1.0f, 0.5f); // 右端・縦中央アンカー
+    nowLoadingText_->SetPosition(screenW - 80.0f, screenH - 45.0f); // ドットの高さと合わせる
     
     // "..." のドットを3つ作る
     for (int i = 0; i < 3; ++i) {
@@ -74,7 +75,7 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
     engine->SetBlend(BlendMode::kBlendModeAdd);
     engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
     
-    engine->ApplySpritePSO();
+    engine->ApplySpritePSOForBackBuffer();
     if (nowLoadingText_) {
         nowLoadingText_->Draw();
     }
