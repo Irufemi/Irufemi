@@ -19,7 +19,7 @@ void Head::Initialize(Camera* camera, const Vector3& initialPos) {
   obj_->SetColor(baseColor_);
 
   voxelSystem_ = std::make_unique<VoxelParticleSystem>();
-  voxelSystem_->Initialize("enemy/head.obj", {16, 16, 16}, camera);
+  voxelSystem_->Initialize("enemy/head.obj", {32, 32, 32}, camera);
 }
 
 void Head::Update() {
