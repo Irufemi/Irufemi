@@ -9,6 +9,7 @@ class IrufemiEngine;
 class Camera;
 class DebugCamera;
 class Sprite;
+class ObjClass;
 struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
@@ -49,8 +50,16 @@ private: // メンバ関数(内部ヘルパ)
 
 private: // メンバ変数(ゲーム)
 
-    // シーン表示仮置きスプライト
-    std::unique_ptr<Sprite> sampleSprite_ = nullptr;
+    // 3Dタイトル文字（七転び八転び）
+    std::unique_ptr<ObjClass> titleTextNana_ = nullptr;
+    std::unique_ptr<ObjClass> titleTextKoro1_ = nullptr;
+    std::unique_ptr<ObjClass> titleTextBi1_ = nullptr;
+    std::unique_ptr<ObjClass> titleTextHati_ = nullptr;
+    std::unique_ptr<ObjClass> titleTextKoro2_ = nullptr;
+    std::unique_ptr<ObjClass> titleTextBi2_ = nullptr;
+
+    // 「Push to Space」文字
+    std::unique_ptr<ObjClass> titleTextPushToSpace_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン
@@ -61,8 +70,12 @@ private: // メンバ変数(システム)
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
 
     bool isChangingScene_ = false;
+    bool isTransitionRequested_ = false; // 遷移処理をSceneManagerに渡したか
+    float transitionDelayTimer_ = 0.0f;  // 決定から遷移開始までの遅延タイマー
+    bool isDrawPushToSpace_ = true;      // 決定時のフラッシュで描画自体をスキップするためのフラグ
 
     bool debugMode_ = false;
+    float animationTime_ = 0.0f; // アニメーション用タイマー
     // ライト
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
     std::vector<std::unique_ptr<PointLight>> pointLights_;
