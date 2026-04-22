@@ -71,7 +71,6 @@ private:
     PlayerWeapon weapon_;
     PlayerCamera cameraController_;
     PlayerStatus status_;
-    Camera* camera_ = nullptr;
 
     std::unique_ptr<ObjClass> obj_ = nullptr;
     std::unique_ptr<ObjClass> attackObj_ = nullptr;
