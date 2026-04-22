@@ -11,6 +11,7 @@
 #include "Graphics/Data/SpotLight.h"
 #include "Graphics/Data/DirectionalLight.h"
 #include "Graphics/Data/AreaLight.h"
+#include "Renderer/Object3D/ObjClass/ObjClass.h"
 
 GameOverScene::~GameOverScene() {
 
@@ -56,18 +57,33 @@ void GameOverScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->direction = { 0.5f,-0.7f,1.0f };
     directionalLight_->intensity = 1.0f;
 
-    // 背景スプライトの初期化
-    backSprite_ = std::make_unique<Sprite>();
-    backSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
-    backSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
-    backSprite_->SetPosition(0.0f, 0.0f);
-    backSprite_->SetColor(Vector4{ 228.0f / 255.0f,95.0f / 255.0f,130.0f / 255.0f,1.0f });
-    backSprite_->Update();
+    // 「GameOver...」文字の初期化
+    goTextG_ = std::make_unique<ObjClass>();
+    goTextG_->Initialize(camera_.get(), "gameOver/text_G.obj");
+    goTextA_ = std::make_unique<ObjClass>();
+    goTextA_->Initialize(camera_.get(), "gameOver/text_q.obj"); // ※ファイル名text_q.objはaとして使用
+    goTextM_ = std::make_unique<ObjClass>();
+    goTextM_->Initialize(camera_.get(), "gameOver/text_m.obj");
+    goTextE1_ = std::make_unique<ObjClass>();
+    goTextE1_->Initialize(camera_.get(), "gameOver/text_e.obj");
+    goTextO_ = std::make_unique<ObjClass>();
+    goTextO_->Initialize(camera_.get(), "gameOver/text_O.obj");
+    goTextV_ = std::make_unique<ObjClass>();
+    goTextV_->Initialize(camera_.get(), "gameOver/text_v.obj");
+    goTextE2_ = std::make_unique<ObjClass>();
+    goTextE2_->Initialize(camera_.get(), "gameOver/text_e.obj");
+    goTextR_ = std::make_unique<ObjClass>();
+    goTextR_->Initialize(camera_.get(), "gameOver/text_r.obj");
+    
+    // text_dot.obj（...）の読み込み
+    goTextDot_ = std::make_unique<ObjClass>();
+    goTextDot_->Initialize(camera_.get(), "gameOver/text_dot.obj");
 
-    // シーン表示仮置きスプライトの初期化
-    sampleSprite_ = std::make_unique<Sprite>();
-    sampleSprite_->Initialize(camera_.get(), "resources/texture/gameOver/gameOver.png");
-
+    // 「Push to Space」文字の初期化
+    textPushToSpace_ = std::make_unique<ObjClass>();
+    textPushToSpace_->Initialize(camera_.get(), "text_pushtospace/text_pushtospace.obj");
+    textPushToSpace_->SetPosition({ 0.0f, -2.5f, 0.0f });
+    textPushToSpace_->SetScale({ 1.0f, 1.0f, 1.0f });
 }
 
 void GameOverScene::Update() {
@@ -92,16 +108,62 @@ void GameOverScene::Update() {
     // ↓ゲームの更新
     // =====
 
-    // Spaceキーが押されていたらタイトルへ演出付きで遷移（1.0秒）
-    if (engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
-        engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
+    // GameOver文字のアニメーション（重苦しいゆっくりとした浮遊）
+    const float goBaseY = 1.0f;
+    const float goPositionsX[9] = {
+        -5.0f, -3.8f, -2.4f, -1.2f, // Game
+         0.4f,  1.6f,  2.8f,  4.0f, // Over
+         5.5f                       // ...
+    };
+
+    ObjClass* goTexts[9] = {
+        goTextG_.get(), goTextA_.get(), goTextM_.get(), goTextE1_.get(),
+        goTextO_.get(), goTextV_.get(), goTextE2_.get(), goTextR_.get(),
+        goTextDot_.get()
+    };
+
+    for (int i = 0; i < 9; ++i) {
+        if (!goTexts[i]) continue;
+        
+        // 重々しいゆっくりとした動き
+        float phase = animationTime_ * 1.5f + i * 0.3f;
+        float offsetY = std::sin(phase) * 0.3f;
+        
+        goTexts[i]->SetPosition({ goPositionsX[i], goBaseY + offsetY, 0.0f });
+        goTexts[i]->SetRotate({ 0.0f, 0.0f, 0.0f });
+        goTexts[i]->SetScale({ 1.2f, 1.2f, 1.2f });
     }
 
-    // シーン表示仮置きスプライトの更新
-    sampleSprite_->Update();
+    // 「Push to Space」文字の明滅
+    if (textPushToSpace_) {
+        animationTime_ += 1.0f / 60.0f;
+        float alpha = 1.0f;
+        isDrawPushToSpace_ = true;
 
-    // 背景スプライトの更新
-    backSprite_->Update();
+        if (!isChangingScene_) {
+            // 待機中：ゆっくりとした明滅
+            alpha = 0.6f + std::sin(animationTime_ * 3.0f) * 0.4f;
+        } else {
+            // 決定後：高速フラッシュ
+            isDrawPushToSpace_ = (std::sin(animationTime_ * 40.0f) > 0.0f);
+        }
+        textPushToSpace_->SetAlpha(alpha);
+    }
+
+    // Spaceキーが押されたらフラグを立てる
+    if (!isChangingScene_ && engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
+        isChangingScene_ = true;
+        transitionDelayTimer_ = 0.0f;
+    }
+
+    // 遷移フラグが立っていればタイマーを進める
+    if (isChangingScene_ && !isTransitionRequested_) {
+        transitionDelayTimer_ += 1.0f / 60.0f;
+        if (transitionDelayTimer_ >= 0.8f) {
+            engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
+            isTransitionRequested_ = true;
+        }
+    }
 
     // =====
     // ↑ゲームの更新
@@ -131,16 +193,26 @@ void GameOverScene::Update() {
 
 void GameOverScene::Draw() {
 
+    // 2Dスプライト描画処理を削除し、直接3Dモデルの描画へ移行
+
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-    engine_->ApplySpritePSO();
+    engine_->SetCull(PSOManager::CullMode::Back);
+    engine_->ApplyPSO();
 
-    // 背景スプライトの描画
-    backSprite_->Draw();
+    if (goTextG_) goTextG_->Draw();
+    if (goTextA_) goTextA_->Draw();
+    if (goTextM_) goTextM_->Draw();
+    if (goTextE1_) goTextE1_->Draw();
+    if (goTextO_) goTextO_->Draw();
+    if (goTextV_) goTextV_->Draw();
+    if (goTextE2_) goTextE2_->Draw();
+    if (goTextR_) goTextR_->Draw();
+    if (goTextDot_) goTextDot_->Draw();
 
-    // シーン表示仮置きスプライトの描画
-    sampleSprite_->Draw();
-
+    if (textPushToSpace_ && isDrawPushToSpace_) {
+        textPushToSpace_->Draw();
+    }
 }
 
 void GameOverScene::DrawDebugTab() {
