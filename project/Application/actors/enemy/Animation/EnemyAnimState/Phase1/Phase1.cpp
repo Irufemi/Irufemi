@@ -1,10 +1,12 @@
 #include "Phase1.h"
+#include "Tackle/Phase1_Tackle.h"
 
 Phase1::Phase1() {
     localStateMap_[EnemyState::Idle] = std::make_unique<Phase1_Idle>();
     localStateMap_[EnemyState::Attack_Beam] = std::make_unique<Phase1_Beam>();
     localStateMap_[EnemyState::Attack_Stomp] = std::make_unique<Phase1_Stomp>();
     localStateMap_[EnemyState::Attack_Neck] = std::make_unique<Phase1_NeckAttack>();
+    localStateMap_[EnemyState::Attack_Tackle] = std::make_unique<Phase1_Tackle>();
 }
 
 void Phase1::Enter(Enemy* enemy) {

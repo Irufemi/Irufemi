@@ -72,6 +72,9 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   stompEffects_ = std::make_unique<EnemyStompEffects>();
   stompEffects_->Initialize(camera_);
 
+  tackleEffects_ = std::make_unique<EnemyTackleEffects>();
+  tackleEffects_->Initialize(camera_);
+
   // --- UI 初期化 ---
   hpBar_ = std::make_unique<EnemyHPBar>();
   if (engine_) {
@@ -107,6 +110,9 @@ void Enemy::Update(Player *player) {
 
   if (stompEffects_) {
       stompEffects_->Update(1.0f / 60.0f);
+  }
+  if (tackleEffects_) {
+      tackleEffects_->Update(1.0f / 60.0f);
   }
 
   // だるま落とし落下物理
@@ -297,6 +303,9 @@ void Enemy::Draw(IrufemiEngine* engine) {
     if (stompEffects_) {
         stompEffects_->Draw(engine);
     }
+    if (tackleEffects_) {
+        tackleEffects_->Draw(engine);
+    }
 
 #ifdef USE_IMGUI
   if (lineOBB_ && isDebugDrawOBB_ && engine_) {
@@ -322,6 +331,18 @@ bool Enemy::IsHeadDead(int index) const {
 void Enemy::FireStomp(const Vector3& position) {
     if (stompEffects_) {
         stompEffects_->Fire(position);
+    }
+}
+
+void Enemy::FireTackleRushWave(const Vector3& position) {
+    if (tackleEffects_) {
+        tackleEffects_->FireRushWave(position);
+    }
+}
+
+void Enemy::FireTackleCrashWave(const Vector3& position) {
+    if (tackleEffects_) {
+        tackleEffects_->FireCrashWave(position);
     }
 }
 

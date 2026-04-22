@@ -4,6 +4,7 @@
 #include "Animation/EnemyAnimation.h"
 #include "Beam/EnemyBeam.h"
 #include "StompEffects/EnemyStompEffects.h"
+#include "TackleEffects/EnemyTackleEffects.h"
 #include "Body/Body.h"
 #include "Head/Left/HeadLeft.h"
 #include "Head/Mid/HeadMid.h"
@@ -40,6 +41,11 @@ public:
     // --- スタンプ制御用 ---
     void FireStomp(const Vector3& position);
     EnemyStompEffects* GetStompEffects() const { return stompEffects_.get(); }
+
+    // --- タックルエフェクト用 ---
+    void FireTackleRushWave(const Vector3& position);
+    void FireTackleCrashWave(const Vector3& position);
+    EnemyTackleEffects* GetTackleEffects() const { return tackleEffects_.get(); }
 
     // --- アクセサ（AIやAnimationから操作用） ---
     Transform& GetGlobalTransform() { return globalTransform_; }
@@ -89,6 +95,7 @@ private:
 
     // スタンプのインスタンス管理
     std::unique_ptr<EnemyStompEffects> stompEffects_;
+    std::unique_ptr<EnemyTackleEffects> tackleEffects_;
 
     // トランスフォーム
     Transform globalTransform_;
