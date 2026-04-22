@@ -21,6 +21,7 @@ class Mouse; // ★追加：Mouseの前方宣言
 class Building;
 class EnemyHPBar;
 class EnemyPartHPBar;
+class Sprite;
 
 class GameScene : public IScene {
 public:
@@ -101,6 +102,13 @@ private:
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
     
+    // 操作説明スプライト
+    std::unique_ptr<Sprite> operationNormalSprite_ = nullptr;
+    std::unique_ptr<Sprite> operationChargedSprite_ = nullptr;
+    std::unique_ptr<Sprite> numberSpriteTens_ = nullptr;
+    std::unique_ptr<Sprite> numberSpriteOnes_ = nullptr;
+    std::unique_ptr<Sprite> cooldownWarningSprite_ = nullptr;
+
     // 当たり判定の有効化フラグ
     bool isCollisionEnabled_ = true;
 

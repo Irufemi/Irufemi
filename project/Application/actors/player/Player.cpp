@@ -58,6 +58,7 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     karakuriChargeTimer_ = 0;
     karakuriActiveTimer_ = 0;
     isKarakuriCharged_ = false;
+    cooldownWarningTimer_ = 0;
 
     attackState_ = AttackState::kNone;
     chargeTimer_ = 0;
@@ -618,6 +619,10 @@ void Player::HandleSkill() {
         skillCooldownTimer_--;
     }
 
+    if (cooldownWarningTimer_ > 0) {
+        cooldownWarningTimer_--;
+    }
+
     if (isKarakuriCharged_) {
         karakuriActiveTimer_--;
         if (karakuriActiveTimer_ <= 0) {
@@ -657,6 +662,9 @@ void Player::HandleSkill() {
                 weapon_.StartMachineGunSkill();
                 skillDurationTimer_ = kMachineGunSkillDuration;
             }
+        } else if (skillDurationTimer_ <= 0 && skillCooldownTimer_ > 0) {
+            // 発動中ではなく、クールダウン中に押された場合のみ警告タイマーをセット
+            cooldownWarningTimer_ = 60; // 1秒間
         }
     }
 }

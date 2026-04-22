@@ -23,6 +23,7 @@
 #include "contents/ui/EnemyHPBar.h"
 #include "contents/ui/EnemyPartHPBar.h"
 #include "contents/ui/PlayerHPBar.h"
+#include "Renderer/Object2D/Sprite/Sprite.h"
 
 #include "Engine/Core/Math/Geometry/Collision.h"
 
@@ -80,6 +81,32 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   pLight->decay = 1.0f;
   pLight->isActive = 1;
   pointLights_.push_back(std::move(pLight));
+
+  // 操作説明スプライトの初期化
+  operationNormalSprite_ = std::make_unique<Sprite>();
+  operationNormalSprite_->Initialize(camera_.get(), "resources/texture/inGame/operation_normal.png");
+  operationNormalSprite_->SetSize(600.0f, 300.0f);
+  operationNormalSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
+
+  operationChargedSprite_ = std::make_unique<Sprite>();
+  operationChargedSprite_->Initialize(camera_.get(), "resources/texture/inGame/operation_charged.png");
+  operationChargedSprite_->SetSize(600.0f, 300.0f);
+  operationChargedSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
+
+  numberSpriteTens_ = std::make_unique<Sprite>();
+  numberSpriteTens_->Initialize(camera_.get(), "resources/texture/inGame/numbers.png");
+  numberSpriteTens_->SetSize(40.0f, 40.0f);
+  numberSpriteTens_->SetPositionTopLeft(340.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
+
+  numberSpriteOnes_ = std::make_unique<Sprite>();
+  numberSpriteOnes_->Initialize(camera_.get(), "resources/texture/inGame/numbers.png");
+  numberSpriteOnes_->SetSize(40.0f, 40.0f);
+  numberSpriteOnes_->SetPositionTopLeft(365.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
+
+  cooldownWarningSprite_ = std::make_unique<Sprite>();
+  cooldownWarningSprite_->Initialize(camera_.get(), "resources/texture/inGame/cooldown_warning.png");
+  cooldownWarningSprite_->SetSize(400.0f, 100.0f);
+  cooldownWarningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f + 15.0f, static_cast<float>(engine_->GetClientHeight()) / 2.0f + 80.0f);
 }
 
 void GameScene::Update() {
@@ -144,6 +171,29 @@ void GameScene::Update() {
   // カメラとフレームデータの更新
   UpdateCameraAndFrameData();
 
+  if (operationNormalSprite_) operationNormalSprite_->Update();
+  if (operationChargedSprite_) operationChargedSprite_->Update();
+  if (cooldownWarningSprite_) cooldownWarningSprite_->Update();
+
+  if (numberSpriteTens_) {
+      int remainingSeconds = 0;
+      if (player_ && player_->IsKarakuriCharged()) {
+          remainingSeconds = player_->GetKarakuriActiveTimer() / 60;
+      }
+      int tens = remainingSeconds / 10;
+      numberSpriteTens_->SetTextureRectPixels(tens * 40, 0, 40, 40, false);
+      numberSpriteTens_->Update();
+  }
+  if (numberSpriteOnes_) {
+      int remainingSeconds = 0;
+      if (player_ && player_->IsKarakuriCharged()) {
+          remainingSeconds = player_->GetKarakuriActiveTimer() / 60;
+      }
+      int ones = remainingSeconds % 10;
+      numberSpriteOnes_->SetTextureRectPixels(ones * 40, 0, 40, 40, false);
+      numberSpriteOnes_->Update();
+  }
+
   // シーン遷移
   // 爆散演出を見定めてクリアにするため、「論理的に死亡（isDead_）」かつ
   // 「演出終了して非アクティブ化（!GetIsActive()）」したときに遷移を開始する
@@ -201,6 +251,22 @@ void GameScene::Draw() {
   engine_->ApplyPSO();
   if (player_) {
     player_->Draw3DUI(boss_.get());
+  }
+
+  // --- 操作説明スプライト描画 ---
+  if (player_ && player_->IsKarakuriCharged()) {
+      if (operationChargedSprite_) operationChargedSprite_->Draw();
+      if (numberSpriteTens_) numberSpriteTens_->Draw();
+      if (numberSpriteOnes_) numberSpriteOnes_->Draw();
+  } else {
+      if (operationNormalSprite_) operationNormalSprite_->Draw();
+  }
+
+  // --- クールダウン警告スプライト描画 ---
+  if (player_ && player_->GetCooldownWarningTimer() > 0) {
+      if ((player_->GetCooldownWarningTimer() / 10) % 2 == 0) {
+          if (cooldownWarningSprite_) cooldownWarningSprite_->Draw();
+      }
   }
 }
 
