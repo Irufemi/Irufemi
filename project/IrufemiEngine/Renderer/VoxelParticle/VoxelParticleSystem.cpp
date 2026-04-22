@@ -310,9 +310,9 @@ void VoxelParticleSystem::CollisionScatter(const Vector3 &position,
 
     // ヒット時の飛散（細かい粒子＋広範囲の拡散）
     emitterData_.particleType = static_cast<uint32_t>(ParticleType::FineScatter);
-    emitterData_.dispersion = 35.0f; // 大幅に拡散
-    emitterData_.lifeTime = 0.5f;    // 一瞬で消えるように寿命を短く
-    emitterData_.gravity = 20.0f;    // 速く落ちるように重力を強める
+    emitterData_.dispersion = 60.0f; // より激しく拡散させる
+    emitterData_.lifeTime = 0.8f;    // 少しだけ寿命を延ばして余韻を作る
+    emitterData_.gravity = 10.0f;    // 重力はやや弱めにして空中に舞うようにする
 
     // 衝突判定用データ設定
     emitterData_.useCollision = 1;

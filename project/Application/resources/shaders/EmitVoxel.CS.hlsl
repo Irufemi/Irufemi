@@ -87,6 +87,13 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 		float noise = (generator.Generate1d() * 2.0f - 1.0f) * 0.2f;
 		delay = max(0.0f, localPos.y * 0.05f + noise);
 	}
+	else if (gEmitter.particleType == 3) // FineScatter (被弾時)
+	{
+		// 元の色をベースにしつつ、衝撃の熱で強烈に発光させる (HDR)
+		float hitNoise = generator.Generate1d();
+		float3 sparkColor = lerp(float3(8.0f, 4.0f, 1.0f), float3(20.0f, 15.0f, 5.0f), hitNoise);
+		gParticles[voxelIndex].color.rgb = voxel.color.rgb * sparkColor;
+	}
 	
 	gParticles[voxelIndex].life = 1.0f + delay; // 寿命を満タンにする＋ディレイを加算
 	gParticles[voxelIndex].size = 1.0f; // サイズ

@@ -45,6 +45,26 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 						gParticles[particleIndex].color.rgb -= float3(8.0f, 8.0f, 8.0f) * gPerFrame.deltaTime;
 						gParticles[particleIndex].color.rgb = max(float3(0.0f, 0.0f, 0.0f), gParticles[particleIndex].color.rgb);
 					}
+				} else if (gEmitter.particleType == 3) {
+					// --- FineScatter (ヒットスパーク) ---
+					// 激しく散った後、空気抵抗で急激に減速
+					gParticles[particleIndex].velocity *= (1.0f - 5.0f * gPerFrame.deltaTime);
+					gParticles[particleIndex].velocity.y -= gEmitter.gravity * gPerFrame.deltaTime;
+					
+					// 乱気流のような揺らぎを加算（飛び散ってからユラユラ舞う）
+					float swayX = sin(gPerFrame.time * 20.0f + particleIndex * 0.2f) * 15.0f;
+					float swayZ = cos(gPerFrame.time * 18.0f + particleIndex * 0.2f) * 15.0f;
+					gParticles[particleIndex].velocity.x += swayX * gPerFrame.deltaTime;
+					gParticles[particleIndex].velocity.z += swayZ * gPerFrame.deltaTime;
+
+					// 時間経過に伴い発光が冷めて元の色・または黒い焦げ跡へ戻っていく
+					float l = gParticles[particleIndex].life;
+					if (l > 0.5f) {
+						gParticles[particleIndex].color.rgb -= float3(5.0f, 15.0f, 20.0f) * gPerFrame.deltaTime; // 最初は火花から赤っぽく冷却
+					} else {
+						gParticles[particleIndex].color.rgb -= float3(20.0f, 10.0f, 5.0f) * gPerFrame.deltaTime; // 赤から黒(灰)・元の色ベースへ
+						gParticles[particleIndex].color.rgb = max(float3(0.0f, 0.0f, 0.0f), gParticles[particleIndex].color.rgb);
+					}
 				} else {
 					// 通常の重力落下
 					gParticles[particleIndex].velocity.y -= gEmitter.gravity * gPerFrame.deltaTime;
@@ -78,8 +98,8 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 				// 燃えカスは早めに小さくなりながら消える
 				gParticles[particleIndex].size = saturate(gParticles[particleIndex].life * 1.5f);
 			} else if (gEmitter.particleType == 3) {
-				// 細かい破片・火の粉（初期サイズを小さく絞り、細かく飛散しているように見せる）
-				gParticles[particleIndex].size = 0.35f * saturate(gParticles[particleIndex].life * 5.0f);
+				// ヒットスパーク（初期サイズを少し大きくし、点滅するように素早く小さくする）
+				gParticles[particleIndex].size = 0.5f * saturate(gParticles[particleIndex].life * 4.0f);
 			} else {
 				gParticles[particleIndex].size = saturate(gParticles[particleIndex].life * 5.0f); // 最後の20%で縮小
 			}
