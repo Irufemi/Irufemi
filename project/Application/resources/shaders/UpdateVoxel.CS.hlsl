@@ -77,6 +77,9 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 			if (gEmitter.particleType == 2) {
 				// 燃えカスは早めに小さくなりながら消える
 				gParticles[particleIndex].size = saturate(gParticles[particleIndex].life * 1.5f);
+			} else if (gEmitter.particleType == 3) {
+				// 細かい破片・火の粉（初期サイズを小さく絞り、細かく飛散しているように見せる）
+				gParticles[particleIndex].size = 0.35f * saturate(gParticles[particleIndex].life * 5.0f);
 			} else {
 				gParticles[particleIndex].size = saturate(gParticles[particleIndex].life * 5.0f); // 最後の20%で縮小
 			}
