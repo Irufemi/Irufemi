@@ -1,11 +1,15 @@
 #include "SceneManager.h"
 #include "IScene.h"
+#include "LoadingScreen.h"
 #include "../Engine/IrufemiEngine.h"
 #include <Windows.h>
 #include "../Engine/Platform/Input/InputManager.h"
 #include "../Engine/Platform/Input/Mouse.h"
 
-SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {}
+SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {
+    loadingScreen_ = std::make_unique<LoadingScreen>();
+    loadingScreen_->Initialize(engine_);
+}
 
 // 登録順を保持しつつ登録
 void SceneManager::Register(const Key& name, Factory f) {
@@ -34,8 +38,15 @@ bool SceneManager::ChangeTo(const Key& next) {
     current_->Initialize(engine_);
     isInitializing_ = false;
 
+    wasLoading_ = false;
+
     isPaused_ = false; // シーン切り替え時にポーズを解除
-    engine_->SetCursorLocked(true); // シーン開始時はマウスをロック
+    
+    /**
+     * @brief ポーズ可能なシーン(ゲーム等)はマウスをロック(非表示)し、
+     *        そうでないシーン(UI操作メイン等)はマウスを表示させる
+     */
+    engine_->SetCursorLocked(current_->IsPausable()); 
     return true;
 }
 
@@ -51,11 +62,22 @@ void SceneManager::TransitionTo(const Key& next, SceneTransition::Type type, flo
 }
 
 void SceneManager::Update() {
-    // モデル・テクスチャの読み込み待ちがある場合は、シーンの更新を止める
+    // モデル・テクスチャのロード状況を確認
     bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
     bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
-    if (!modelsLoaded || !texturesLoaded) {
-        return;
+    bool isLoading = !modelsLoaded || !texturesLoaded;
+
+    if (isLoading != wasLoading_) {
+        if (isLoading) {
+            // ロード中はマウスカーソルを表示させる
+            engine_->SetCursorLocked(false);
+        } else {
+            // ロード完了時に、現在のシーン本来の設定に戻す
+            if (current_) {
+                engine_->SetCursorLocked(current_->IsPausable());
+            }
+        }
+        wasLoading_ = isLoading;
     }
 
     // 入力同期
@@ -67,7 +89,6 @@ void SceneManager::Update() {
         if (input && (IScene::PressedVK(VK_ESCAPE) || input->StartPressed())) {
             TogglePause();
             // ポーズ状態に合わせてマウスのロックを切り替え
-            // ポーズ中ならロック解除（マウス表示）、通常ならロック（非表示）
             engine_->SetCursorLocked(!isPaused_);
         }
     }
@@ -82,10 +103,16 @@ void SceneManager::Update() {
     if (transitionPhase_ == TransitionPhase::Closing) {
         // フェードアウト完了待ち
         if (engine_->GetSceneTransition()->IsOutFinished()) {
-            ChangeTo(pendingTransition_);
+            ChangeTo(pendingTransition_); // 新しいシーンに切り替え、裏ロード開始
             pendingTransition_.clear();
+            transitionPhase_ = TransitionPhase::LoadingWait; // ロード待機フェーズへ
+        }
+    }
+    else if (transitionPhase_ == TransitionPhase::LoadingWait) {
+        // 全てのアセットのロード完了を待つ (画面は真っ暗なまま、上にLoadingScreenが描画される)
+        if (modelsLoaded && texturesLoaded) {
             transitionPhase_ = TransitionPhase::Opening;
-            // フェードイン開始
+            // ロードが完了した瞬間に、フェードインを開始する
             engine_->GetSceneTransition()->Start(pendingType_, pendingDuration_, false);
         }
     }
@@ -96,20 +123,23 @@ void SceneManager::Update() {
         }
     }
 
-    if (current_) {
-        // ロード中（Initialize等で始まった分を含む）なら更新を止める
-        if ((engine_->GetObjModelManager() && !engine_->GetObjModelManager()->IsAllLoaded()) ||
-            (engine_->GetTextureManager() && !engine_->GetTextureManager()->IsAllLoaded())) {
-            return;
+    // ロード中であれば、ここで更新を止めてLoadingUIだけアニメーションさせる
+    if (!modelsLoaded || !texturesLoaded) {
+        if (loadingScreen_) {
+            loadingScreen_->Update(engine_->GetDeltaTime());
         }
+        return;
+    }
 
+    // ロードが完全に終わっている場合のみ、シーン自体のUpdateを回す
+    if (current_) {
         if (isPaused_) {
             // ポーズ中
             current_->PauseUpdate();
         }
         else {
             // 通常更新
-            // ※フェードイン中 (Opening) は Update を呼ばない
+            // ※フェードイン中 (Opening) は Update を呼ばないよう制限
             if (transitionPhase_ != TransitionPhase::Opening) {
                 current_->Update();
             }
@@ -118,7 +148,7 @@ void SceneManager::Update() {
 }
 
 void SceneManager::Draw() {
-    // モデル・テクスチャの読み込み待ちがある場合は、シーンの描画を止める（背景のみの状態にする）
+    // ロード待ちの場合は背景のみ(UIはDrawLoadingUIでバックバッファに直接描画される)
     bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
     bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
     if (!modelsLoaded || !texturesLoaded) {
@@ -139,3 +169,13 @@ const  SceneManager::Key& SceneManager::GetCurrent() const { return currentName_
 
 // 並び順は登録順
 std::vector<SceneManager::Key> SceneManager::GetRegisteredKeys() const { return order_; }
+
+void SceneManager::DrawLoadingUI() {
+    bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
+    bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
+    if (!modelsLoaded || !texturesLoaded) {
+        if (loadingScreen_) {
+            loadingScreen_->Draw(engine_);
+        }
+    }
+}

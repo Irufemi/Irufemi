@@ -64,8 +64,8 @@ private:
     // リソース生成ヘルパ
     void CreateMaterialResources(const ObjMesh& mesh);
     void EnsureSharedTexture(const ObjMesh& mesh);
-    void EnsureLightAndCamera();
     void CreateOrResizeInstanceBuffer(uint32_t instanceCount);
+    void InitializeResources();
 
 private:
     static DirectXCommon*  dx_;
@@ -92,6 +92,7 @@ private:
     std::vector<Transform> instances_;
     bool                   instanceDirty_ = false;
     bool                   isCullingEnabled_ = true;
+    bool                   isResourcesInitialized_ = false;
     uint32_t               visibleInstanceCount_ = 0;
 
     // 行列更新の最適化用

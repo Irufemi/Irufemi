@@ -22,10 +22,18 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
     camera_ = camera;
 
     assert(modelManager_ && "ObjClass::Initialize: ModelManager is not set.");
-    managedModel_ = modelManager_->GetModel(filename);
+    // 非同期で読み込みを開始し、メインスレッドをブロックしない
+    managedModel_ = modelManager_->GetModelAsync(filename);
+    
+    // StatusがLoadedであれば直ちに初期化を試みる
     auto status = managedModel_->status.load();
+    if (status == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
+        InitializeResources();
+    }
+}
 
-    if (status != ManagedModel::LoadingStatus::Loaded || !managedModel_->cpuModel) {
+void ObjClass::InitializeResources() {
+    if (!managedModel_ || !managedModel_->cpuModel) {
         return;
     }
 
@@ -65,6 +73,14 @@ void ObjClass::Initialize(Camera* camera, const std::string& filename) {
 
 void ObjClass::Update() {
     if (!managedModel_ || !camera_) return;
+
+    // 非同期ロードが終わっていればメッシュを構築する (遅延初期化)
+    if (managedModel_->status.load() == ManagedModel::LoadingStatus::Loaded && meshResources_.empty()) {
+        InitializeResources();
+    }
+
+    // まだリソースが準備できていない場合はスキップ
+    if (meshResources_.empty()) return;
 
     // オブジェクト全体のワールド行列を計算
     transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
