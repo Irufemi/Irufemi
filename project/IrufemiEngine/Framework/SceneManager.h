@@ -8,6 +8,7 @@
 
 class IrufemiEngine;
 class IScene;
+#include "LoadingScreen.h"
 
 /**
  * @class SceneManager
@@ -27,6 +28,7 @@ public:
     enum class TransitionPhase {
         None,     ///< 通常時
         Closing,  ///< フェードアウト中（現在のシーンをUpdateし続ける）
+        LoadingWait, ///< ロード完了待機中（画面が暗転したままLoadingScreenのみ動く）
         Opening   ///< フェードイン中（新しいシーンをUpdateしない）
     };
 
@@ -79,6 +81,11 @@ public:
      * @brief 現在のシーンの描画処理
      */
     void Draw();
+
+    /**
+     * @brief ロード画面など、ポストプロセス影響外で描画すべき最前面UIを描画します
+     */
+    void DrawLoadingUI();
     ///@}
 
     /** @name 状態取得 */
@@ -122,4 +129,8 @@ private:
     Key pendingTransition_{};
     SceneTransition::Type pendingType_ = SceneTransition::Type::Fade;
     float pendingDuration_ = 1.0f;
+
+    std::unique_ptr<LoadingScreen> loadingScreen_; ///< 共通のローディング画面
+
+    bool wasLoading_ = false; ///< 前フレームがロード中だったか
 };

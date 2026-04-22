@@ -43,16 +43,26 @@ void ModelRegion::Initialize(
     camera_ = camera;
 
     assert(modelManager_ && "Region::Initialize: ModelManager is not set.");
-    managedModel_ = modelManager_->GetModel(objFilename);
+    managedModel_ = modelManager_->GetModelAsync(objFilename);
+    isResourcesInitialized_ = false;
 
-    assert(managedModel_ && managedModel_->cpuModel && "Region::Initialize: model load failed.");
-    assert(!managedModel_->cpuModel->meshes.empty() && "Model has no mesh.");
+    auto status = managedModel_->status.load();
+    if (status == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
+        InitializeResources();
+    }
+}
+
+void ModelRegion::InitializeResources() {
+    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->meshes.empty()) {
+        return;
+    }
     const auto& mesh = managedModel_->cpuModel->meshes.front();
 
     // インスタンス固有リソースの生成
     CreateMaterialResources(mesh);
-    EnsureLightAndCamera();
     EnsureSharedTexture(mesh);
+    
+    isResourcesInitialized_ = true;
 }
 
 const GpuMesh* ModelRegion::GetGpuMesh() const {
@@ -77,9 +87,6 @@ void ModelRegion::CreateMaterialResources(const ObjMesh& mesh) {
     }
 }
 
-void ModelRegion::EnsureLightAndCamera() {
-    // 初期化済み
-}
 
 void ModelRegion::EnsureSharedTexture(const ObjMesh& mesh) {
     if (!mesh.material.textureFilePath.empty()) {
@@ -129,6 +136,15 @@ void ModelRegion::ClearInstances() {
 }
 
 void ModelRegion::BuildInstanceBuffer(bool force) {
+    if (!isResourcesInitialized_) {
+        if (managedModel_->status.load() == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
+            InitializeResources();
+        } else {
+            visibleInstanceCount_ = 0;
+            return;
+        }
+    }
+
     if (instances_.empty()) { 
         visibleInstanceCount_ = 0;
         return; 

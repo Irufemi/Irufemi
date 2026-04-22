@@ -386,7 +386,7 @@ void Building::Generate() {
     // VoxelParticleSystemの初期化（GPUリソース作成はメインスレッドで行う必要がある）
     for (auto& inst : instances_) {
         inst.voxelSystem = std::make_unique<VoxelParticleSystem>();
-        inst.voxelSystem->Initialize("building/block.obj", {16, 16, 16}, camera_);
+        inst.voxelSystem->Initialize("building/block.obj", {32, 32, 32}, camera_);
         inst.voxelSystem->SetParticleType(VoxelParticleSystem::ParticleType::Building);
         inst.voxelSystem->SetGravity(40.0f); // 落下感を強くするため重力を上げる
     }

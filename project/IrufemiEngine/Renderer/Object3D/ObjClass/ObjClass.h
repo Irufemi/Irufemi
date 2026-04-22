@@ -79,6 +79,11 @@ private:
      */
     void UpdateMaterials();
 
+    /**
+     * @brief ロード完了後にメッシュ等のリソースを構築する（遅延初期化）
+     */
+    void InitializeResources();
+
 public: //メンバ関数
 
     /**

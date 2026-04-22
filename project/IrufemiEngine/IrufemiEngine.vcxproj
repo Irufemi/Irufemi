@@ -221,6 +221,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\Pipeline\PSOManager.cpp" />
     <ClCompile Include="Framework\IScene.cpp" />
     <ClCompile Include="Framework\SceneManager.cpp" />
+    <ClCompile Include="Framework\LoadingScreen.cpp" />
     <ClCompile Include="Resource\Audio\Sound.cpp" />
     <ClCompile Include="Resource\Texture\Texture.cpp" />
     <ClCompile Include="Engine\Core\Utility\StringUtility.cpp" />
@@ -355,6 +356,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Model\Data\WellForGPU.h" />
     <ClInclude Include="Framework\IScene.h" />
     <ClInclude Include="Framework\SceneManager.h" />
+    <ClInclude Include="Framework\LoadingScreen.h" />
     <ClInclude Include="Resource\Audio\Se.h" />
     <ClInclude Include="Renderer\Skybox\Skybox.h" />
     <ClInclude Include="Resource\Audio\Sound.h" />

@@ -33,6 +33,7 @@ public:
   void OnDestroyed(const Vector3& attackDir, float blowSpeed);
   bool IsCompletelyDead() const;
   bool IsBlownAway() const { return isBlownAway_; }
+  float GetBlowTimer() const { return blowTimer_; }
 
   const Vector3& GetBlowVelocity() const { return blowVelocity_; }
   void SetBlowVelocity(const Vector3& v) { blowVelocity_ = v; }
@@ -57,6 +58,7 @@ private:
 
   // 吹き飛び・消滅用
   bool isBlownAway_ = false;
+  float blowTimer_ = 0.0f;
   Vector3 blowVelocity_ = {};
   float disappearTimer_ = 0.0f;
 

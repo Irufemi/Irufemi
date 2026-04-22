@@ -71,7 +71,9 @@ public:
 
   enum class ParticleType : uint32_t {
     Default = 0,
-    Building = 1
+    Building = 1,
+    EnemyBurnout = 2,
+    FineScatter = 3
   };
 
 public:

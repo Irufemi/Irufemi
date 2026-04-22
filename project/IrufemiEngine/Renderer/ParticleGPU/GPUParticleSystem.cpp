@@ -382,6 +382,22 @@ void GPUParticleSystem::SetEmit(bool emit) {
     if (emitter_) emitter_->emit = emit ? 1 : 0;
 }
 
+void GPUParticleSystem::SetParticleScale(const Vector3& startMin, const Vector3& startMax, const Vector3& endMin, const Vector3& endMax) {
+    if (emitter_) {
+        emitter_->startScaleMin = startMin;
+        emitter_->startScaleMax = startMax;
+        emitter_->endScaleMin = endMin;
+        emitter_->endScaleMax = endMax;
+    }
+}
+
+void GPUParticleSystem::SetParticleLife(float minLife, float maxLife) {
+    if (emitter_) {
+        emitter_->minLife = minLife;
+        emitter_->maxLife = maxLife;
+    }
+}
+
 void GPUParticleSystem::SetPrimitive(PrimitiveType type) {
     primitiveType_ = type;
     const auto& res = PrimitiveManager::GetInstance()->GetStandardResource(type);
