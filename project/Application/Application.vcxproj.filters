@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="camera">
@@ -105,6 +105,9 @@
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase2\Idle">
       <UniqueIdentifier>{h8c9d0e1-f2a3-b4c5-d6e7-f8g9h0i1j2k3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\TackleEffects">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -231,6 +234,12 @@
     </ClCompile>
     <ClCompile Include="contents\field\building\building.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\NeckAttack\Phase1_NeckAttack.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Tackle\Phase1_Tackle.cpp">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\enemy\TackleEffects\EnemyTackleEffects.cpp">
+      <Filter>Actors\Enemy\TackleEffects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\InGame\GameScene.h">
@@ -345,5 +354,11 @@
       <Filter>Actors\Enemy\Animation</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Tackle\Phase1_Tackle.h">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\TackleEffects\EnemyTackleEffects.h">
+      <Filter>Actors\Enemy\TackleEffects</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
