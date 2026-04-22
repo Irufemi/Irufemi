@@ -210,6 +210,9 @@
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.cpp">
       <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2</Filter>
     </ClCompile>
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.cpp">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1</Filter>
+    </ClCompile>
     <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp">
       <Filter>Actors\Enemy\Beam</Filter>
     </ClCompile>
@@ -331,6 +334,9 @@
     </ClInclude>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.h">
       <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.h">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h">
       <Filter>Actors\Enemy\Beam</Filter>

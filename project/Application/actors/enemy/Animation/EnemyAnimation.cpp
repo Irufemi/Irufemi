@@ -1,11 +1,7 @@
 #include "EnemyAnimation.h"
 #include "IEnemyAnimationState.h"
-#include "EnemyAnimState/Phase1/Idle/Phase1_Idle.h"
-#include "EnemyAnimState/Phase1/Beam/Phase1_Beam.h"
-#include "EnemyAnimState/Phase1/Stomp/Phase1_Stomp.h"
-#include "EnemyAnimState/Phase2/Tackle/Phase2_Tackle.h"
+#include "EnemyAnimState/Phase1/Phase1.h"
 #include "EnemyAnimState/Phase2/Phase2.h"
-#include "EnemyAnimState/Phase1/NeckAttack/Phase1_NeckAttack.h"
 #include "Enemy.h"
 
 // コンストラクタ
@@ -16,14 +12,11 @@ EnemyAnimation::~EnemyAnimation() = default;
 
 void EnemyAnimation::Initialize(Enemy* enemy) {
     enemy_ = enemy;
-    stateMap_[EnemyState::Idle] = std::make_unique<Phase1_Idle>();
-    stateMap_[EnemyState::Attack_Beam] = std::make_unique<Phase1_Beam>();
-    stateMap_[EnemyState::Attack_Stomp] = std::make_unique<Phase1_Stomp>();
-    stateMap_[EnemyState::Attack_Neck] = std::make_unique<Phase1_NeckAttack>();
-    stateMap_[EnemyState::Attack_Bite] = std::make_unique<Phase2_Tackle>();
+    stateMap_[EnemyState::Phase1] = std::make_unique<Phase1>();
     stateMap_[EnemyState::Phase2] = std::make_unique<Phase2>();
 
-    ChangeState(EnemyState::Idle);
+    // 初期状態はPhase1
+    ChangeState(EnemyState::Phase1);
 }
 
 void EnemyAnimation::Update(Player* player, float deltaTime) {
@@ -33,12 +26,23 @@ void EnemyAnimation::Update(Player* player, float deltaTime) {
 }
 
 void EnemyAnimation::ChangeState(EnemyState newState) {
-    auto it = stateMap_.find(newState);
-    if (it == stateMap_.end()) return;
+    // 根本的なフェーズ切り替えの場合
+    if (newState == EnemyState::Phase1 || newState == EnemyState::Phase2) {
+        auto it = stateMap_.find(newState);
+        if (it == stateMap_.end()) return;
 
-    if (currentState_) currentState_->Exit(enemy_);
-    currentState_ = it->second.get();
-    if (currentState_) currentState_->Enter(enemy_);
+        if (currentState_) currentState_->Exit(enemy_);
+        currentState_ = it->second.get();
+        if (currentState_) currentState_->Enter(enemy_);
+    } else {
+        // Attack_Neckなどの個別ステート切り替え指令が来た場合、現在がPhase1ならPhase1マネージャーに横流しする
+        if (currentState_) {
+            Phase1* phase1 = dynamic_cast<Phase1*>(currentState_);
+            if (phase1) {
+                phase1->ChangeState(newState, enemy_);
+            }
+        }
+    }
 }
 
 bool EnemyAnimation::IsFiring() const {
