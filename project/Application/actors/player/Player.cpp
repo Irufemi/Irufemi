@@ -6,8 +6,10 @@
 #include <cstdio> 
 #include "Engine/Core/Math/Math.h"
 #include "Renderer/LineInstanced/LineClass.h"
+#include "Renderer/Object2D/Sprite/Sprite.h"
 #include "../enemy/Enemy.h" 
 #include "contents/ui/PlayerHPBar.h"
+
 
 #ifdef USE_IMGUI
 #include <imgui.h> 
@@ -18,6 +20,7 @@ Player::~Player() {
 
 void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine) {
     input_ = input;
+    camera_ = camera;
     engine_ = engine;
     camera_ = camera;
 
@@ -72,6 +75,12 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     deathAngularVelocity_ = { 0.0f, 0.0f, 0.0f };
     deathYaw_ = 0.0f;
     isDeathAnimationFinished_ = false;
+
+    aimingSprite_ = std::make_unique<Sprite>();
+    aimingSprite_->Initialize(camera, "resources/texture/player/aiming.png");
+    aimingSprite_->SetSize(96.0f, 96.0f);
+    aimingSprite_->SetColor({ 0.0f, 0.0f, 0.0f, 1.0f });
+    aimingSprite_->SetPositionCenter(640.0f, 360.0f);
 
 #ifdef USE_IMGUI
     lineOBB_ = std::make_unique<Line3DRegion>();
@@ -272,9 +281,65 @@ void Player::Update() {
     cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration());
     status_.UpdateKnockback();
 
+    if (cameraController_.IsFirstPerson()) {
+        if (aimingSprite_) {
+            // エイムアシストを含めた中心的な射撃方向を計算
+            float pitch = cameraController_.GetCameraPitch();
+            float cosP = std::cos(pitch);
+            float sinP = std::sin(pitch);
+            float sinY = std::sin(rotate_.y);
+            float cosY = std::cos(rotate_.y);
+
+            Vector3 playerForward = { sinY * cosP, -sinP, cosY * cosP };
+            Vector3 blendedForward = playerForward;
+
+            if (isTargetingEnemy_) {
+                Vector3 playerCenter = { translate_.x, translate_.y + 1.0f, translate_.z };
+                Vector3 aimPos = { targetPos_.x, targetPos_.y + 1.0f, targetPos_.z };
+                Vector3 toTarget = { aimPos.x - playerCenter.x, aimPos.y - playerCenter.y, aimPos.z - playerCenter.z };
+                float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
+
+                if (dist > 0.001f) {
+                    Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
+                    float dot = Math::Dot(playerForward, toTargetNorm);
+
+                    // エイムアシストの判定（PlayerWeaponと同様のロジック）
+                    float assistThreshold = 0.8f;
+                    if (dot > assistThreshold) {
+                        float assistRatio = std::pow((dot - assistThreshold) / (1.0f - assistThreshold), 1.5f);
+                        // 線形補間
+                        blendedForward = playerForward * (1.0f - assistRatio) + toTargetNorm * assistRatio;
+                        blendedForward = Math::Normalize(blendedForward);
+                    }
+                }
+            }
+
+            // 射撃方向の先にある一定距離のワールド座標を求める
+            Vector3 camPos = camera_->GetTranslate();
+            Vector3 targetWorldPos = {
+                camPos.x + blendedForward.x * kAimDistance,
+                camPos.y + blendedForward.y * kAimDistance,
+                camPos.z + blendedForward.z * kAimDistance
+            };
+
+            // ワールド座標からスクリーン座標に変換
+            Matrix4x4 viewMat = camera_->GetViewMatrix();
+            Matrix4x4 projMat = camera_->GetPerspectiveFovMatrix();
+            Matrix4x4 viewportMat = camera_->GetViewportMatrix();
+
+            Matrix4x4 vpMat = Math::Multiply(viewMat, projMat);
+            Matrix4x4 vpvMat = Math::Multiply(vpMat, viewportMat);
+
+            Vector3 screenPos = Math::Transform(targetWorldPos, vpvMat);
+
+            // スプライトの座標を更新
+            aimingSprite_->SetPosition(screenPos.x, screenPos.y);
+            aimingSprite_->Update();
+        }
+    }
     // プレイヤーとカメラの更新が全て終わった「最新の座標」でUIを更新し、ガタつきを防ぐ
     if (hpBar_) {
-        hpBar_->Update(this, camera_);
+        hpBar_->Update(this, camera_, cameraController_.IsFirstPerson());
     }
 
 #ifdef USE_IMGUI
@@ -335,9 +400,24 @@ void Player::Update() {
 #endif
 }
 
-void Player::Draw3DUI() {
-    if (hpBar_ && !status_.IsDead()) {
-        hpBar_->Draw();
+void Player::Draw3DUI(Enemy* enemy) {
+    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
+        if (hpBar_) {
+            hpBar_->Draw();
+        }
+        if (enemy) {
+            enemy->Draw3DUI(engine_);
+        }
+    }
+}
+
+void Player::Draw2DUI(Enemy* enemy) {
+    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
+        if (maskSprite_) maskSprite_->Draw();
+        if (aimingSprite_) aimingSprite_->Draw();
+        if (enemy) {
+            enemy->Draw2DUI(engine_);
+        }
     }
 }
 
@@ -393,9 +473,8 @@ void Player::Draw() {
 
     weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, status_.IsDead());
 
-    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
-        if (maskSprite_) maskSprite_->Draw();
-    }
+
+    // 照準とマスクは Draw2DUI で描画するように変更
 
 #ifdef USE_IMGUI
     if (lineOBB_ && isDebugDrawOBB_ && engine_) {

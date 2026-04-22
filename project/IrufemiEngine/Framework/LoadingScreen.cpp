@@ -19,7 +19,7 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
     // 生成した「Now Loading」画像をセット
     nowLoadingText_->Initialize(camera_.get(), "resources/texture/load/now_loading.png");
     
-    // 画像はAI生成されたもので、黒背景に文字が含まれる
+    // 画像は黒背景に文字が含まれる
     // 描画時に加算合成(Add)を使うことで、黒を透過させる
     nowLoadingText_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 
@@ -27,7 +27,7 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
     float screenH = static_cast<float>(engine->GetClientHeight());
     
     // スプライトのサイズと位置を右下に合わせる
-    // AI生成画像は正方形(1:1)なので、縮尺がおかしくならないよう同サイズにする
+    // 画像は正方形(1:1)なので、縮尺がおかしくならないよう同サイズにする
     nowLoadingText_->SetSize(256.0f, 256.0f);
     nowLoadingText_->SetAnchor(1.0f, 0.5f); // 右端・縦中央アンカー
     nowLoadingText_->SetPosition(screenW - 80.0f, screenH - 45.0f); // ドットの高さと合わせる
@@ -38,7 +38,7 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
         // Circle2Dは白テクスチャを内部的に使って丸を描く
         dot->Initialize(camera_.get(), "resources/whiteTexture.png", 16); 
         dot->SetUseTexture(false); 
-        dot->SetColor({0.0f, 1.0f, 1.0f, 1.0f}); // 文字のNeon Cyanに合わせた色にする
+        dot->SetColor({1.0f, 1.0f, 1.0f, 1.0f}); // 文字のNeon Cyanに合わせた色にする
         
         // 中心座標をセット: nowLoadingText_ のさらに右側に等間隔で配置
         float baseX = screenW - 65.0f; 
@@ -72,7 +72,7 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
     //黒背景を透過するため加算合成(Add)を使用する
-    engine->SetBlend(BlendMode::kBlendModeAdd);
+    engine->SetBlend(BlendMode::kBlendModeNormal);
     engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
     
     engine->ApplySpritePSOForBackBuffer();

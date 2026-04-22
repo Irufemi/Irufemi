@@ -12,6 +12,7 @@
 class Camera;
 class Line3DRegion;
 class Enemy;
+class Sprite;
 class PlayerHPBar;
 
 struct AttackCollision {
@@ -28,7 +29,8 @@ public:
     void Update();
     void Draw();
     void DrawParticles();
-    void Draw3DUI();
+    void Draw3DUI(Enemy* enemy = nullptr);
+    void Draw2DUI(Enemy* enemy = nullptr);
 
     const Vector3& GetTranslate() const { return translate_; }
     void SetTranslate(const Vector3& pos) { translate_ = pos; }
@@ -53,6 +55,7 @@ public:
     void SetTargetPosition(const Vector3& targetPos) { targetPos_ = targetPos; }
     void SetIsTargetingEnemy(bool isTargeting) { isTargetingEnemy_ = isTargeting; }
     bool GetIsTargetingEnemy() const { return isTargetingEnemy_; }
+    bool IsFirstPerson() const { return cameraController_.IsFirstPerson(); }
 
     void HitAndKnockback(Enemy* enemy);
 
@@ -63,13 +66,13 @@ private:
 
 private:
     InputManager* input_ = nullptr;
+    Camera* camera_ = nullptr;
     IrufemiEngine* engine_ = nullptr;
 
     PlayerMovement movement_;
     PlayerWeapon weapon_;
     PlayerCamera cameraController_;
     PlayerStatus status_;
-    Camera* camera_ = nullptr;
 
     std::unique_ptr<ObjClass> obj_ = nullptr;
     std::unique_ptr<ObjClass> attackObj_ = nullptr;
@@ -80,6 +83,7 @@ private:
     Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
     Vector3 aimPos_ = { 0.0f, 0.0f, 0.0f };
 
+    std::unique_ptr<Sprite> aimingSprite_ = nullptr;
     bool isTargetingEnemy_ = false;
 
     int skillDurationTimer_ = 0;
