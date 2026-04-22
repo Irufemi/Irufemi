@@ -8,5 +8,6 @@ enum class EnemyState {
     Attack_Bite,  // カミツキ攻撃
     Attack_Neck,  // 首振り3連撃
     Damaged,      // 被弾
+    Phase1,       // 第1形態（結合状態）
     Phase2        // 第2形態（首の独立）
 };

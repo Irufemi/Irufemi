@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -183,6 +183,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Idle\Phase2_Idle.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.cpp" />
     <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
     <ClCompile Include="contents\ui\EnemyHPBar.cpp" />
@@ -215,6 +216,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Idle\Phase2_Idle.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.h" />
     <ClInclude Include="actors\enemy\Animation\IEnemyAnimationState.h" />
     <ClInclude Include="actors\enemy\Body\Body.h" />
     <ClInclude Include="actors\enemy\AI\EnemyAI.h" />

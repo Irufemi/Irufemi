@@ -37,7 +37,7 @@ private:
     // --- 各フェーズの時間 ---
     float windUpTime_ = 1.2f;       // 溜め時間
     float sweepTime_ = 2.0f;       // 攻撃時間（遅く・重々しく）
-    float recoveryTime_ = 2.0f;     // 戻り時間
+    float recoveryTime_ = 1.5f;     // 戻り時間
 
     // --- 案2：体圧縮・屈折用パラメータ ---
     float bodySquashDepth_ = -2.5f; // 胴体をどれだけ下へ押し潰すか
