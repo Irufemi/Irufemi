@@ -38,14 +38,14 @@ private:
 
     // パラメータ
     const float kRushWaveLife = 1.0f; // 突進中の波の寿命
-    const float kRushWaveStartScale = 1.0f;
-    const float kRushWaveEndScale = 15.0f;
-    const float kRushWaveStartAlpha = 0.5f;
+    const float kRushWaveStartScale = 10.0f;
+    const float kRushWaveEndScale = 40.0f;
+    const float kRushWaveStartAlpha = 0.9f;
 
     const float kCrashWaveLife = 2.0f; // 激突大爆発の波の寿命
-    const float kCrashWaveStartScale = 10.0f;
-    const float kCrashWaveEndScale = 120.0f;
-    const float kCrashWaveStartAlpha = 0.8f;
+    const float kCrashWaveStartScale = 20.0f;
+    const float kCrashWaveEndScale = 80.0f;
+    const float kCrashWaveStartAlpha = 0.9f;
 
     float Lerp(float start, float end, float t) const { return start + (end - start) * t; }
 };

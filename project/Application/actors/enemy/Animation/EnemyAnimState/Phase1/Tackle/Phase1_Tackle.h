@@ -22,6 +22,7 @@ private:
     Phase currentPhase_ = Phase::PreAttack;
     float stateTimer_ = 0.0f;
     float totalTimer_ = 0.0f;
+    float effectTimer_ = 0.0f;
     bool hasFinished_ = false;
 
     // タックル回数管理

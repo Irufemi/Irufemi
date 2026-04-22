@@ -69,28 +69,33 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
         globalT.translate.x += rushDirection_.x * kRushSpeed;
         globalT.translate.z += rushDirection_.z * kRushSpeed;
         
-        // ★新タックル波エフェクトを発生（0.1秒ごとなど細かく）
-        if (std::fmod(totalTimer_, 0.05f) < deltaTime) {
+        // ★新タックル波エフェクトを発生（0.05秒ごと確実に）
+        effectTimer_ += deltaTime;
+        if (effectTimer_ >= 0.05f) {
              enemy->FireTackleRushWave(globalT.translate);
+             effectTimer_ = 0.0f;
         }
 
+        // 壁にぶつかったか判定（1・2回目でも壁外に行かないようにする）
         bool hitWall = false;
-        if (rushCount_ == kMaxRushCount) {
-            if (std::abs(globalT.translate.x) >= kWallLimit || std::abs(globalT.translate.z) >= kWallLimit) {
-                hitWall = true;
-            }
+        if (std::abs(globalT.translate.x) >= kWallLimit || std::abs(globalT.translate.z) >= kWallLimit) {
+            hitWall = true;
+            // 壁の外に出ないように位置を制限
+            globalT.translate.x = std::clamp(globalT.translate.x, -kWallLimit, kWallLimit);
+            globalT.translate.z = std::clamp(globalT.translate.z, -kWallLimit, kWallLimit);
         }
 
-        if (hitWall) {
+        // 3回目のタックルで壁にドン！した時のみスタン
+        if (hitWall && rushCount_ >= kMaxRushCount) {
              currentPhase_ = Phase::Stun;
              stateTimer_ = 0.0f;
-             globalT.translate.x = std::clamp(globalT.translate.x, -kWallLimit, kWallLimit);
-             globalT.translate.z = std::clamp(globalT.translate.z, -kWallLimit, kWallLimit);
              
              // ★壁ドン激突の大爆発エフェクトを一度だけ発生
              enemy->FireTackleCrashWave(globalT.translate);
 
-        } else if (stateTimer_ >= kRushTime) {
+        } 
+        // 1，2回目のタックルで「時間切れ」または「壁に到達」したら、次に移行
+        else if (stateTimer_ >= kRushTime || hitWall) {
              if (rushCount_ < kMaxRushCount) {
                  currentPhase_ = Phase::Aim;
                  stateTimer_ = 0.0f;

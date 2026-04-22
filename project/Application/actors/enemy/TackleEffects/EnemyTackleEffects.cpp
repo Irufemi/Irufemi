@@ -14,9 +14,9 @@ void EnemyTackleEffects::Initialize(Camera* camera) {
 void EnemyTackleEffects::FireRushWave(const Vector3& position) {
     TackleWave wave;
     wave.transform.translate = position;
-    wave.transform.translate.y = position.y - 1.0f; // 地面付近
+    wave.transform.translate.y = position.y - 2.5f; // 足元に調整
     wave.transform.rotate = { 0, 0, 0 };
-    wave.transform.scale = { kRushWaveStartScale, 0.01f, kRushWaveStartScale };
+    wave.transform.scale = { kRushWaveStartScale, kRushWaveStartScale, kRushWaveStartScale };
     
     wave.timer = 0.0f;
     wave.maxLife = kRushWaveLife;
@@ -29,7 +29,7 @@ void EnemyTackleEffects::FireRushWave(const Vector3& position) {
 void EnemyTackleEffects::FireCrashWave(const Vector3& position) {
     TackleWave wave;
     wave.transform.translate = position;
-    wave.transform.translate.y = position.y - 1.0f; 
+    wave.transform.translate.y = position.y - 2.5f; 
     
     // 縦に広がるようにすることもできるが、まずは巨大なリングベースにする
     wave.transform.rotate = { 0, 0, 0 };
