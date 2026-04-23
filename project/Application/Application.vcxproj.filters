@@ -360,5 +360,10 @@
     <ClInclude Include="actors\enemy\TackleEffects\EnemyTackleEffects.h">
       <Filter>Actors\Enemy\TackleEffects</Filter>
     </ClInclude>
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\NeckAttack\Phase1_NeckAttack.h" />
+    <ClInclude Include="contents\field\building\building.h" />
+    <ClInclude Include="contents\ui\EnemyHPBar.h" />
+    <ClInclude Include="contents\ui\EnemyPartHPBar.h" />
+    <ClInclude Include="contents\ui\PlayerHPBar.h" />
   </ItemGroup>
 </Project>
