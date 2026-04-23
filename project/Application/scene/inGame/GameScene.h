@@ -107,8 +107,12 @@ private:
     // 操作説明スプライト
     std::unique_ptr<Sprite> operationNormalSprite_ = nullptr;
     std::unique_ptr<Sprite> operationChargedSprite_ = nullptr;
+    std::unique_ptr<Sprite> operationNormalSprite1st_ = nullptr;
+    std::unique_ptr<Sprite> operationChargedSprite1st_ = nullptr;
     std::unique_ptr<Sprite> numberSpriteTens_ = nullptr;
     std::unique_ptr<Sprite> numberSpriteOnes_ = nullptr;
+    std::unique_ptr<Sprite> numberSpriteTens1st_ = nullptr;
+    std::unique_ptr<Sprite> numberSpriteOnes1st_ = nullptr;
     std::unique_ptr<Sprite> cooldownWarningSprite_ = nullptr;
 
     // 当たり判定の有効化フラグ

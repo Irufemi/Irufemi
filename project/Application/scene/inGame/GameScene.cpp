@@ -84,14 +84,24 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
   // 操作説明スプライトの初期化
   operationNormalSprite_ = std::make_unique<Sprite>();
-  operationNormalSprite_->Initialize(camera_.get(), "resources/texture/inGame/operation_normal.png");
+  operationNormalSprite_->Initialize(camera_.get(), "resources/texture/inGame/operation_normal_3.png");
   operationNormalSprite_->SetSize(600.0f, 300.0f);
   operationNormalSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
 
   operationChargedSprite_ = std::make_unique<Sprite>();
-  operationChargedSprite_->Initialize(camera_.get(), "resources/texture/inGame/operation_charged.png");
+  operationChargedSprite_->Initialize(camera_.get(), "resources/texture/inGame/operation_charged_3.png");
   operationChargedSprite_->SetSize(600.0f, 300.0f);
   operationChargedSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
+
+  operationNormalSprite1st_ = std::make_unique<Sprite>();
+  operationNormalSprite1st_->Initialize(camera_.get(), "resources/texture/inGame/operation_normal_1.png");
+  operationNormalSprite1st_->SetSize(800.0f, 150.0f);
+  operationNormalSprite1st_->SetPositionTopLeft(460.0f, static_cast<float>(engine_->GetClientHeight()) - 160.0f);
+
+  operationChargedSprite1st_ = std::make_unique<Sprite>();
+  operationChargedSprite1st_->Initialize(camera_.get(), "resources/texture/inGame/operation_charged_1.png");
+  operationChargedSprite1st_->SetSize(800.0f, 150.0f);
+  operationChargedSprite1st_->SetPositionTopLeft(460.0f, static_cast<float>(engine_->GetClientHeight()) - 160.0f);
 
   numberSpriteTens_ = std::make_unique<Sprite>();
   numberSpriteTens_->Initialize(camera_.get(), "resources/texture/inGame/numbers.png");
@@ -102,6 +112,16 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   numberSpriteOnes_->Initialize(camera_.get(), "resources/texture/inGame/numbers.png");
   numberSpriteOnes_->SetSize(40.0f, 40.0f);
   numberSpriteOnes_->SetPositionTopLeft(365.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
+
+  numberSpriteTens1st_ = std::make_unique<Sprite>();
+  numberSpriteTens1st_->Initialize(camera_.get(), "resources/texture/inGame/numbers_white.png");
+  numberSpriteTens1st_->SetSize(24.0f, 24.0f);
+  numberSpriteTens1st_->SetPositionTopLeft(static_cast<float>(engine_->GetClientWidth()) - 85.0f, static_cast<float>(engine_->GetClientHeight()) - 56.0f);
+
+  numberSpriteOnes1st_ = std::make_unique<Sprite>();
+  numberSpriteOnes1st_->Initialize(camera_.get(), "resources/texture/inGame/numbers_white.png");
+  numberSpriteOnes1st_->SetSize(24.0f, 24.0f);
+  numberSpriteOnes1st_->SetPositionTopLeft(static_cast<float>(engine_->GetClientWidth()) - 70.0f, static_cast<float>(engine_->GetClientHeight()) - 56.0f);
 
   cooldownWarningSprite_ = std::make_unique<Sprite>();
   cooldownWarningSprite_->Initialize(camera_.get(), "resources/texture/inGame/cooldown_warning.png");
@@ -174,25 +194,29 @@ void GameScene::Update() {
 
   if (operationNormalSprite_) operationNormalSprite_->Update();
   if (operationChargedSprite_) operationChargedSprite_->Update();
+  if (operationNormalSprite1st_) operationNormalSprite1st_->Update();
+  if (operationChargedSprite1st_) operationChargedSprite1st_->Update();
   if (cooldownWarningSprite_) cooldownWarningSprite_->Update();
 
-  if (numberSpriteTens_) {
+  if (numberSpriteTens_ && numberSpriteOnes_ && numberSpriteTens1st_ && numberSpriteOnes1st_) {
       int remainingSeconds = 0;
       if (player_ && player_->IsKarakuriCharged()) {
           remainingSeconds = player_->GetKarakuriActiveTimer() / 60;
       }
       int tens = remainingSeconds / 10;
-      numberSpriteTens_->SetTextureRectPixels(tens * 40, 0, 40, 40, false);
-      numberSpriteTens_->Update();
-  }
-  if (numberSpriteOnes_) {
-      int remainingSeconds = 0;
-      if (player_ && player_->IsKarakuriCharged()) {
-          remainingSeconds = player_->GetKarakuriActiveTimer() / 60;
-      }
       int ones = remainingSeconds % 10;
-      numberSpriteOnes_->SetTextureRectPixels(ones * 40, 0, 40, 40, false);
-      numberSpriteOnes_->Update();
+
+      if (player_ && player_->IsFirstPerson()) {
+          numberSpriteTens1st_->SetTextureRectPixels(tens * 40, 0, 40, 40, false);
+          numberSpriteTens1st_->Update();
+          numberSpriteOnes1st_->SetTextureRectPixels(ones * 40, 0, 40, 40, false);
+          numberSpriteOnes1st_->Update();
+      } else {
+          numberSpriteTens_->SetTextureRectPixels(tens * 40, 0, 40, 40, false);
+          numberSpriteTens_->Update();
+          numberSpriteOnes_->SetTextureRectPixels(ones * 40, 0, 40, 40, false);
+          numberSpriteOnes_->Update();
+      }
   }
 
   // シーン遷移
@@ -269,6 +293,17 @@ void GameScene::Draw() {
           if ((player_->GetCooldownWarningTimer() / 10) % 2 == 0) {
               if (cooldownWarningSprite_) cooldownWarningSprite_->Draw();
           }
+      }
+  } else if (player_ && player_->IsFirstPerson()) {
+      // --- 1人称視点専用UI描画 ---
+      // スプライトを描画するため念のため SpritePSO を適用
+      engine_->ApplySpritePSO();
+      if (!player_->IsKarakuriCharged()) {
+          if (operationNormalSprite1st_) operationNormalSprite1st_->Draw();
+      } else {
+          if (operationChargedSprite1st_) operationChargedSprite1st_->Draw();
+          if (numberSpriteTens1st_) numberSpriteTens1st_->Draw();
+          if (numberSpriteOnes1st_) numberSpriteOnes1st_->Draw();
       }
   } 
 }
