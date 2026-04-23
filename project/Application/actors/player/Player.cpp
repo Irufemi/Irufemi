@@ -402,9 +402,11 @@ void Player::Update() {
 }
 
 void Player::Draw3DUI(Enemy* enemy) {
-    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
-        if (hpBar_) {
-            hpBar_->Draw3D();
+    if (!status_.IsDead()) {
+        if (!cameraController_.IsFirstPerson()) {
+            if (hpBar_) {
+                hpBar_->Draw3D();
+            }
         }
         if (enemy) {
             enemy->Draw3DUI(engine_);
@@ -413,10 +415,12 @@ void Player::Draw3DUI(Enemy* enemy) {
 }
 
 void Player::Draw2DUI(Enemy* enemy) {
-    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
-        if (maskSprite_) maskSprite_->Draw();
-        if (aimingSprite_) aimingSprite_->Draw();
-        if (hpBar_) hpBar_->Draw2D();
+    if (!status_.IsDead()) {
+        if (cameraController_.IsFirstPerson()) {
+            if (maskSprite_) maskSprite_->Draw();
+            if (aimingSprite_) aimingSprite_->Draw();
+            if (hpBar_) hpBar_->Draw2D();
+        }
         if (enemy) {
             enemy->Draw2DUI(engine_);
         }
