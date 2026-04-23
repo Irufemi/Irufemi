@@ -47,8 +47,9 @@ void Phase1_NeckAttack::Update(Enemy* enemy, Player* player, float deltaTime) {
     if (currentPhase_ == AttackPhase::WindUp) currentPhaseDuration = windUpTime_;
     else if (currentPhase_ == AttackPhase::Sweep) currentPhaseDuration = sweepTime_;
     else if (currentPhase_ == AttackPhase::Recovery) currentPhaseDuration = recoveryTime_;
+    else if (currentPhase_ == AttackPhase::ReturnToIdle) currentPhaseDuration = returnToIdleTime_;
 
-    float progress = std::clamp(phaseTimer_ / currentPhaseDuration, 0.0f, 1.0f);
+    float progress = (currentPhaseDuration > 0.0f) ? std::clamp(phaseTimer_ / currentPhaseDuration, 0.0f, 1.0f) : 0.0f;
     float easeOut = 1.0f - std::pow(1.0f - progress, 3.0f); // イーズアウト
     float easeIn = std::pow(progress, 3.0f); // イーズイン
 
@@ -118,15 +119,19 @@ void Phase1_NeckAttack::Update(Enemy* enemy, Player* player, float deltaTime) {
         float wiggle = std::sin(totalTimer_ * 12.0f - i * 1.5f) * 1.8f * fI;
         targetBodyOffset.x = wiggle;
 
-        // ヘッダーのパラメータで体全体を上下させる
-        targetBodyOffset.y = bodySquashDepth_ * fI + bodyHeightOffset_; 
-
-        if (currentPhase_ == AttackPhase::WindUp) {
-            targetBodyOffset.z = -0.5f * fI * easeOut; 
-        } else if (currentPhase_ == AttackPhase::Sweep) {
-            targetBodyOffset.z = 3.5f * fI * easeIn; // 前方へ鋭く突進！
+        if (currentPhase_ == AttackPhase::ReturnToIdle) {
+            targetBodyOffset = {0.0f, 0.0f, 0.0f};
         } else {
-            targetBodyOffset.z = 3.5f * fI * (1.0f - easeOut);
+            // ヘッダーのパラメータで体全体を上下させる
+            targetBodyOffset.y = bodySquashDepth_ * fI + bodyHeightOffset_; 
+
+            if (currentPhase_ == AttackPhase::WindUp) {
+                targetBodyOffset.z = -0.5f * fI * easeOut; 
+            } else if (currentPhase_ == AttackPhase::Sweep) {
+                targetBodyOffset.z = 3.5f * fI * easeIn; // 前方へ鋭く突進！
+            } else {
+                targetBodyOffset.z = 3.5f * fI * (1.0f - easeOut);
+            }
         }
         
         Vector3& currentBodyOffset = enemy->GetBodyOffset(i);
@@ -146,7 +151,14 @@ void Phase1_NeckAttack::Update(Enemy* enemy, Player* player, float deltaTime) {
     // Recoveryフェーズのための戻り補間率
     float recoveryProgress = (currentPhase_ == AttackPhase::Recovery) ? std::clamp(phaseTimer_ / currentPhaseDuration, 0.0f, 1.0f) : 0.0f;
 
-    if (currentPhase_ == AttackPhase::WindUp || currentPhase_ == AttackPhase::Sweep || currentPhase_ == AttackPhase::Recovery) {
+    if (currentPhase_ == AttackPhase::ReturnToIdle) {
+        // すべての頭を完全にリセット（デフォルト位置へ）
+        for (int i = 0; i < 3; ++i) {
+            targetScales[i] = {1.0f, 1.0f, 1.0f};
+            targetRotates[i] = {0.0f, 0.0f, 0.0f};
+            targetOffsets[i] = {0.0f, 0.0f, 0.0f};
+        }
+    } else if (currentPhase_ == AttackPhase::WindUp || currentPhase_ == AttackPhase::Sweep || currentPhase_ == AttackPhase::Recovery) {
         
         // 攻撃中のスケールと回転のターゲット値の算出
         Vector3 currentTargetScale = {1.0f, 1.0f, 1.0f};
@@ -235,12 +247,14 @@ void Phase1_NeckAttack::Update(Enemy* enemy, Player* player, float deltaTime) {
         } else if (currentPhase_ == AttackPhase::Recovery) {
             currentAttackIndex_++;
             if (currentAttackIndex_ > 2) {
-                currentPhase_ = AttackPhase::Done;
-                hasFinishedAttack_ = true;
-                enemy->SetState(EnemyState::Idle);
+                currentPhase_ = AttackPhase::ReturnToIdle;
             } else {
                 currentPhase_ = AttackPhase::WindUp;
             }
+        } else if (currentPhase_ == AttackPhase::ReturnToIdle) {
+            currentPhase_ = AttackPhase::Done;
+            hasFinishedAttack_ = true;
+            enemy->SetState(EnemyState::Idle);
         }
     }
 }

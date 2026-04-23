@@ -460,6 +460,20 @@ void GameScene::CheckEnemyToPlayerCollisions() {
     }
   }
 
+  // EnemyTackleEffects の判定
+  if (boss_->GetTackleEffects()) {
+    for (auto& wave : boss_->GetTackleEffects()->GetWaves()) {
+      if (!wave.hasDealtDamage) {
+        if (Collision::IsOBBSphereCollision(wave.GetOBB(), playerColliderSphere)) {
+          int damage = wave.isCrash ? kDamageCrashWaveToPlayer : kDamageTackleWaveToPlayer;
+          if (player_->ApplyDamage(damage)) {
+            wave.hasDealtDamage = true;
+          }
+        }
+      }
+    }
+  }
+
   // 敵部位との接触判定
   auto checkHit = [&](auto *part) {
     if (!part || part->IsCompletelyDead())

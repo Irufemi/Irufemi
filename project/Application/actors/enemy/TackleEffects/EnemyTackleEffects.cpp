@@ -85,3 +85,50 @@ void EnemyTackleEffects::Draw(IrufemiEngine* engine) {
         waveObj_->Draw();
     }
 }
+
+OBB EnemyTackleEffects::TackleWave::GetOBB() const {
+    OBB obb;
+    obb.center = transform.translate;
+    // OBBはハーフサイズ（全幅の半分）。高さは適当に持たせる
+    obb.size = { transform.scale.x * 0.5f, 2.0f, transform.scale.z * 0.5f }; 
+
+    Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(transform.rotate);
+    obb.orientations[0] = { rotMat.m[0][0], rotMat.m[0][1], rotMat.m[0][2] };
+    obb.orientations[1] = { rotMat.m[1][0], rotMat.m[1][1], rotMat.m[1][2] };
+    obb.orientations[2] = { rotMat.m[2][0], rotMat.m[2][1], rotMat.m[2][2] };
+
+    return obb;
+}
+
+void EnemyTackleEffects::DrawDebug(Line3DRegion* lineRegion) {
+    if (!lineRegion) return;
+
+    auto addObbLines = [&](const OBB& obb) {
+        if (obb.size.x == 0.0f && obb.size.y == 0.0f && obb.size.z == 0.0f) return;
+        Vector3 corners[8];
+        for (int i = 0; i < 8; ++i) {
+            Vector3 offset = { 0, 0, 0 };
+            offset = Math::Add(offset, Math::Multiply((i & 1) ? obb.size.x : -obb.size.x, obb.orientations[0]));
+            offset = Math::Add(offset, Math::Multiply((i & 2) ? obb.size.y : -obb.size.y, obb.orientations[1]));
+            offset = Math::Add(offset, Math::Multiply((i & 4) ? obb.size.z : -obb.size.z, obb.orientations[2]));
+            corners[i] = Math::Add(obb.center, offset);
+        }
+        Vector4 color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 危険がわかりやすいように赤色
+        lineRegion->AddInstance(corners[0], corners[1], color);
+        lineRegion->AddInstance(corners[1], corners[3], color);
+        lineRegion->AddInstance(corners[3], corners[2], color);
+        lineRegion->AddInstance(corners[2], corners[0], color);
+        lineRegion->AddInstance(corners[4], corners[5], color);
+        lineRegion->AddInstance(corners[5], corners[7], color);
+        lineRegion->AddInstance(corners[7], corners[6], color);
+        lineRegion->AddInstance(corners[6], corners[4], color);
+        lineRegion->AddInstance(corners[0], corners[4], color);
+        lineRegion->AddInstance(corners[1], corners[5], color);
+        lineRegion->AddInstance(corners[2], corners[6], color);
+        lineRegion->AddInstance(corners[3], corners[7], color);
+    };
+
+    for (const auto& wave : waves_) {
+        addObbLines(wave.GetOBB());
+    }
+}

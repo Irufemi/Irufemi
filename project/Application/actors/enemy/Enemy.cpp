@@ -599,6 +599,8 @@ void Enemy::UpdateDebugUI() {
       }
       if (stompEffects_)
         stompEffects_->DrawDebug(lineOBB_.get());
+      if (tackleEffects_)
+        tackleEffects_->DrawDebug(lineOBB_.get());
     }
     lineOBB_->Update();
   }

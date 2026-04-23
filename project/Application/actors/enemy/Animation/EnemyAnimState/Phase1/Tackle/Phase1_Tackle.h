@@ -15,8 +15,10 @@ private:
     enum class Phase {
         PreAttack,  // 押し潰し・首出し・シェイク
         Aim,        // エイム（プレイヤー方向を向く）
+        Wait,       // 突進前のタメ（ロックオン完了後）
         Rush,       // 突進
-        Stun        // 壁にぶつかった時のスタン
+        Stun,       // 壁にぶつかった時のスタン
+        ReturnToIdle// 元の姿勢に戻る
     };
 
     Phase currentPhase_ = Phase::PreAttack;
@@ -31,9 +33,11 @@ private:
 
     // 各フェーズの時間パラメータ
     const float kPreAttackTime = 1.0f; // 潰れる時間
-    const float kAimTime = 0.5f;       // ロックオンする時間
+    const float kAimTime = 0.3f;       // ロックオンする時間
+    const float kWaitTime = 1.2f;      // ロックオン完了後のタメ時間（回避猶予）
     const float kRushTime = 1.5f;      // 最大突進時間（壁に当たるか時間切れまで）
     const float kStunTime = 5.0f;      // スタン時間
+    const float kReturnTime = 1.5f;    // Idleへ戻る時のイージング時間
 
     // 突進パラメータ
     const float kRushSpeed = 3.0f;     // 突進の1フレームあたりの前進量

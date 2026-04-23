@@ -1,6 +1,7 @@
 #pragma once
 #include "core/math/Transform.h"
 #include "core/math/Vector4.h"
+#include "core/math/geometry/OBB.h"
 #include <memory>
 #include <vector>
 #include <list>
@@ -16,6 +17,9 @@ public:
         float maxLife;
         Vector4 color;
         bool isCrash; // trueなら大爆発用、falseなら突進の砂煙用
+        bool hasDealtDamage = false; // ダメージ判定済みフラグ
+
+        OBB GetOBB() const;
     };
 
     void Initialize(Camera* camera);
@@ -28,6 +32,11 @@ public:
     // 壁激突時に1度だけ呼ばれる大爆発エフェクト
     void FireCrashWave(const Vector3& position);
 
+    // 当たり判定用に波のリストを取得
+    std::list<TackleWave>& GetWaves() { return waves_; }
+
+    void DrawDebug(class Line3DRegion* lineRegion);
+
 private:
     Camera* camera_ = nullptr;
     
@@ -37,9 +46,9 @@ private:
     std::list<TackleWave> waves_;
 
     // パラメータ
-    const float kRushWaveLife = 1.0f; // 突進中の波の寿命
+    const float kRushWaveLife = 0.2f; // 突進中の波の寿命
     const float kRushWaveStartScale = 10.0f;
-    const float kRushWaveEndScale = 40.0f;
+    const float kRushWaveEndScale = 20.0f;
     const float kRushWaveStartAlpha = 0.9f;
 
     const float kCrashWaveLife = 2.0f; // 激突大爆発の波の寿命

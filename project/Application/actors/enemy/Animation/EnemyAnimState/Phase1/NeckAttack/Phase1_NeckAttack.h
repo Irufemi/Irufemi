@@ -23,6 +23,7 @@ private:
         WindUp,   // 溜め（体を圧縮）
         Sweep,    // 薙ぎ払い・振り下ろし
         Recovery, // 戻り
+        ReturnToIdle, // 完全に待機姿勢に戻る
         Done
     };
     AttackPhase currentPhase_ = AttackPhase::WindUp;
@@ -38,6 +39,7 @@ private:
     float windUpTime_ = 1.2f;       // 溜め時間
     float sweepTime_ = 2.0f;       // 攻撃時間（遅く・重々しく）
     float recoveryTime_ = 1.5f;     // 戻り時間
+    float returnToIdleTime_ = 1.0f; // Idleに戻る時間
 
     // --- 案2：体圧縮・屈折用パラメータ ---
     float bodySquashDepth_ = -2.5f; // 胴体をどれだけ下へ押し潰すか

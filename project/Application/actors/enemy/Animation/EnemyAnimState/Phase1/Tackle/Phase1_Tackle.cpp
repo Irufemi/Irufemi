@@ -58,6 +58,15 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
         rushDirection_ = { std::sin(globalT.rotate.y), 0.0f, std::cos(globalT.rotate.y) };
 
         if (stateTimer_ >= kAimTime) {
+            currentPhase_ = Phase::Wait;
+            stateTimer_ = 0.0f;
+        }
+        break;
+    }
+
+    case Phase::Wait: {
+        // ロックオン完了後、追尾を止めてタメを作る（回避猶予）
+        if (stateTimer_ >= kWaitTime) {
             currentPhase_ = Phase::Rush;
             stateTimer_ = 0.0f;
             rushCount_++;
@@ -114,6 +123,30 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
         enemy->GetHeadRightOffset().x = std::sin(totalTimer_ * 4.5f) * 0.2f;
 
         if (stateTimer_ >= kStunTime) {
+            currentPhase_ = Phase::ReturnToIdle;
+            stateTimer_ = 0.0f;
+        }
+        break;
+    }
+
+    case Phase::ReturnToIdle: {
+        globalT.scale.y += (kNormalScale - globalT.scale.y) * 0.05f;
+        globalT.rotate.x += (0.0f - globalT.rotate.x) * 0.05f;
+
+        auto easeToZero = [](Vector3& v) {
+            v.x += (0.0f - v.x) * 0.1f;
+            v.y += (0.0f - v.y) * 0.1f;
+            v.z += (0.0f - v.z) * 0.1f;
+        };
+
+        for (int i = 0; i < 3; ++i) {
+            easeToZero(enemy->GetBodyOffset(i));
+        }
+        easeToZero(enemy->GetHeadLeftOffset());
+        easeToZero(enemy->GetHeadMidOffset());
+        easeToZero(enemy->GetHeadRightOffset());
+
+        if (stateTimer_ >= kReturnTime) {
             hasFinished_ = true;
         }
         break;
