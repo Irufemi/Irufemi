@@ -58,6 +58,7 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     karakuriChargeTimer_ = 0;
     karakuriActiveTimer_ = 0;
     isKarakuriCharged_ = false;
+    cooldownWarningTimer_ = 0;
 
     attackState_ = AttackState::kNone;
     chargeTimer_ = 0;
@@ -88,7 +89,7 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
 #endif
 
     hpBar_ = std::make_unique<PlayerHPBar>();
-    hpBar_->Initialize(camera_);
+    hpBar_->Initialize(camera_, engine);
 }
 
 void Player::Update() {
@@ -402,11 +403,11 @@ void Player::Update() {
 
 void Player::Draw3DUI(Enemy* enemy) {
     if (!status_.IsDead()) {
-        if (hpBar_) {
-            hpBar_->Draw();
+        if (!cameraController_.IsFirstPerson()) {
+            if (hpBar_) {
+                hpBar_->Draw3D();
+            }
         }
-    }
-    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
         if (enemy) {
             enemy->Draw3DUI(engine_);
         }
@@ -414,9 +415,12 @@ void Player::Draw3DUI(Enemy* enemy) {
 }
 
 void Player::Draw2DUI(Enemy* enemy) {
-    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
-        if (maskSprite_) maskSprite_->Draw();
-        if (aimingSprite_) aimingSprite_->Draw();
+    if (!status_.IsDead()) {
+        if (cameraController_.IsFirstPerson()) {
+            if (maskSprite_) maskSprite_->Draw();
+            if (aimingSprite_) aimingSprite_->Draw();
+            if (hpBar_) hpBar_->Draw2D();
+        }
         if (enemy) {
             enemy->Draw2DUI(engine_);
         }
@@ -620,6 +624,10 @@ void Player::HandleSkill() {
         skillCooldownTimer_--;
     }
 
+    if (cooldownWarningTimer_ > 0) {
+        cooldownWarningTimer_--;
+    }
+
     if (isKarakuriCharged_) {
         karakuriActiveTimer_--;
         if (karakuriActiveTimer_ <= 0) {
@@ -659,6 +667,9 @@ void Player::HandleSkill() {
                 weapon_.StartMachineGunSkill();
                 skillDurationTimer_ = kMachineGunSkillDuration;
             }
+        } else if (skillDurationTimer_ <= 0 && skillCooldownTimer_ > 0) {
+            // 発動中ではなく、クールダウン中に押された場合のみ警告タイマーをセット
+            cooldownWarningTimer_ = 60; // 1秒間
         }
     }
 }

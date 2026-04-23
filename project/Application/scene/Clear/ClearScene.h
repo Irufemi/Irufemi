@@ -12,6 +12,7 @@ struct PointLight;
 struct SpotLight;
 struct DirectionalLight;
 struct AreaLight;
+class ObjClass;
 
 /**
  * @class ResultScene
@@ -42,13 +43,16 @@ public: // メンバ関数(システム)
 
 private: // メンバ関数(内部ヘルパ)
 
-private: // メンバ変数(ゲーム)
+    // 「Clear!!」文字
+    std::unique_ptr<ObjClass> clearTextC_ = nullptr;
+    std::unique_ptr<ObjClass> clearTextL_ = nullptr;
+    std::unique_ptr<ObjClass> clearTextE_ = nullptr;
+    std::unique_ptr<ObjClass> clearTextA_ = nullptr;
+    std::unique_ptr<ObjClass> clearTextR_ = nullptr;
+    std::unique_ptr<ObjClass> clearTextEx_ = nullptr;
 
-    // シーン表示仮置きスプライト
-    std::unique_ptr<Sprite> sampleSprite_ = nullptr;
-
-    // 仮置き背景スプライト
-    std::unique_ptr<Sprite> backSprite_ = nullptr;
+    // 「Push to Space」文字
+    std::unique_ptr<ObjClass> textPushToSpace_ = nullptr;
 
 private: // メンバ変数(システム)
     // エンジン
@@ -59,6 +63,13 @@ private: // メンバ変数(システム)
     std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
 
     bool debugMode_ = false;
+
+    bool isChangingScene_ = false;
+    bool isTransitionRequested_ = false;
+    float transitionDelayTimer_ = 0.0f;
+    bool isDrawPushToSpace_ = true;
+    float animationTime_ = 0.0f;
+
     // ライト
     std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
     std::vector<std::unique_ptr<PointLight>> pointLights_;

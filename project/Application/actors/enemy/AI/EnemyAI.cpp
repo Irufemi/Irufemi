@@ -26,7 +26,7 @@ void EnemyAI::Update(float deltaTime) {
         timer_ += deltaTime;
         if (timer_ >= startDelay_) {
             isFirstAttackStarted_ = true;
-            enemy_->SetState(EnemyState::Attack_Neck);
+            enemy_->SetState(EnemyState::Attack_Tackle);
         }
         return;
     }
@@ -36,15 +36,17 @@ void EnemyAI::Update(float deltaTime) {
         attackWaitTimer_ += deltaTime;
         if (attackWaitTimer_ >= attackInterval_) {
             isWaitingForNextAttack_ = false;
-            // ★順番に切り替えるロジック (0: Beam, 1: Stomp, 2: Neck)
+            // ★順番に切り替えるロジック (0: Beam, 1: Stomp, 2: Neck, 3: Tackle)
             if (nextAttackIndex_ == 0) {
                 enemy_->SetState(EnemyState::Attack_Beam);
             } else if (nextAttackIndex_ == 1) {
                 enemy_->SetState(EnemyState::Attack_Stomp);
             } else if (nextAttackIndex_ == 2) {
                 enemy_->SetState(EnemyState::Attack_Neck);
+            } else if (nextAttackIndex_ == 3) {
+                enemy_->SetState(EnemyState::Attack_Tackle);
             }
-            nextAttackIndex_ = (nextAttackIndex_ + 1) % 3; // 次回のためにインクリメント
+            nextAttackIndex_ = (nextAttackIndex_ + 1) % 4; // 次回のためにインクリメント
         }
 
     // 3. 攻撃中：アニメーションが完了したか監視

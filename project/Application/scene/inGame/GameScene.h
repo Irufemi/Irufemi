@@ -21,6 +21,7 @@ class Mouse; // ★追加：Mouseの前方宣言
 class Building;
 class EnemyHPBar;
 class EnemyPartHPBar;
+class Sprite;
 
 class GameScene : public IScene {
 public:
@@ -49,20 +50,22 @@ private:
     // プレイヤー被ダメージ
     static constexpr int kDamageBeamToPlayer = 10;           ///< ビーム被弾
     static constexpr int kDamagePartToPlayer = 10;           ///< 敵部位接触
+    static constexpr int kDamageTackleWaveToPlayer = 10;     ///< 突進の砂煙接触
+    static constexpr int kDamageCrashWaveToPlayer = 30;      ///< 壁激突の大爆発接触
 
     // 敵被ダメージ
-    static constexpr int kDamageMeleeToEnemy = 20;           ///< 近接攻撃
-    static constexpr int kDamageMachineGunToEnemy = 10;      ///< マシンガン
-    static constexpr int kDamageMissileToEnemy = 200;        ///< ミサイル
-    static constexpr int kDamageProjectilePartToEnemy = 500; ///< 部位同士の衝突
+    static constexpr int kDamageMeleeToEnemy = 5;           ///< 近接攻撃
+    static constexpr int kDamageMachineGunToEnemy = 3;      ///< マシンガン
+    static constexpr int kDamageMissileToEnemy = 50;        ///< ミサイル
+    static constexpr int kDamageProjectilePartToEnemy = 250; ///< 部位同士の衝突
 
     // 建物被ダメージ
-    static constexpr int kDamageMeleeToBuilding = 30;         ///< 近接攻撃→建物
-    static constexpr int kDamageMachineGunToBuilding = 5;     ///< マシンガン→建物
+    static constexpr int kDamageMeleeToBuilding = 10;         ///< 近接攻撃→建物
+    static constexpr int kDamageMachineGunToBuilding = 6;     ///< マシンガン→建物
     static constexpr int kDamageMissileToBuilding = 100;      ///< ミサイル→建物
     static constexpr int kDamagePartToBuilding = 50;          ///< 飛んだ部位→建物
-    static constexpr int kDamageFlyingBuildingToEnemy = 300;   ///< 飛んだ建物→敵
-    static constexpr int kDamageFlyingBuildingToBuilding = 80; ///< 飛んだ建物→建物
+    static constexpr int kDamageFlyingBuildingToEnemy = 200;   ///< 飛んだ建物→敵
+    static constexpr int kDamageFlyingBuildingToBuilding = 50; ///< 飛んだ建物→建物
 
     // 当たり判定(半径)
     static constexpr float kMachineGunBulletRadius = 1.0f;   ///< マシンガン
@@ -101,6 +104,13 @@ private:
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
     
+    // 操作説明スプライト
+    std::unique_ptr<Sprite> operationNormalSprite_ = nullptr;
+    std::unique_ptr<Sprite> operationChargedSprite_ = nullptr;
+    std::unique_ptr<Sprite> numberSpriteTens_ = nullptr;
+    std::unique_ptr<Sprite> numberSpriteOnes_ = nullptr;
+    std::unique_ptr<Sprite> cooldownWarningSprite_ = nullptr;
+
     // 当たり判定の有効化フラグ
     bool isCollisionEnabled_ = true;
 
