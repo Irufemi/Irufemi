@@ -54,13 +54,13 @@ private:
     static constexpr int kDamageCrashWaveToPlayer = 30;      ///< 壁激突の大爆発接触
 
     // 敵被ダメージ
-    static constexpr int kDamageMeleeToEnemy = 5;           ///< 近接攻撃
+    static constexpr int kDamageMeleeToEnemy = 8;           ///< 近接攻撃
     static constexpr int kDamageMachineGunToEnemy = 3;      ///< マシンガン
     static constexpr int kDamageMissileToEnemy = 50;        ///< ミサイル
     static constexpr int kDamageProjectilePartToEnemy = 250; ///< 部位同士の衝突
 
     // 建物被ダメージ
-    static constexpr int kDamageMeleeToBuilding = 10;         ///< 近接攻撃→建物
+    static constexpr int kDamageMeleeToBuilding = 16;         ///< 近接攻撃→建物
     static constexpr int kDamageMachineGunToBuilding = 6;     ///< マシンガン→建物
     static constexpr int kDamageMissileToBuilding = 100;      ///< ミサイル→建物
     static constexpr int kDamagePartToBuilding = 50;          ///< 飛んだ部位→建物
