@@ -54,8 +54,8 @@ private:
     const float kWanderArrivalDist = 8.0f; 
 
     // 攻撃開始基準
-    const float kBiteDistThreshold = 22.0f;  
-    const float kBiteCooldown = 4.0f;       
-    const float kBeamDistThreshold = 30.0f;  
-    const float kBeamCooldown = 7.0f;       
+    float attackIntervalBase_ = 5.0f;       // 攻撃間隔の基準
+    float attackIntervalVariance_ = 2.0f;   // 攻撃間隔のブレ幅（±この値で 3.0～7.0）
+    float currentAttackCooldown_ = 5.0f;    // 今回の攻撃間隔
+    const float kBiteProbability = 0.7f;     // タックル(Bite)の確率
 };
