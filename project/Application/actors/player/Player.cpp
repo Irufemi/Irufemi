@@ -407,9 +407,11 @@ void Player::Draw3DUI(Enemy* enemy) {
             if (hpBar_) {
                 hpBar_->Draw3D();
             }
-        }
-        if (enemy) {
-            enemy->Draw3DUI(engine_);
+        } else {
+            // ボスや部位のHPバー（3D）は1人称視点のみ表示
+            if (enemy) {
+                enemy->Draw3DUI(engine_);
+            }
         }
     }
 }
@@ -420,9 +422,10 @@ void Player::Draw2DUI(Enemy* enemy) {
             if (maskSprite_) maskSprite_->Draw();
             if (aimingSprite_) aimingSprite_->Draw();
             if (hpBar_) hpBar_->Draw2D();
-        }
-        if (enemy) {
-            enemy->Draw2DUI(engine_);
+            // ボスのHPバー（2D）は1人称視点のみ表示
+            if (enemy) {
+                enemy->Draw2DUI(engine_);
+            }
         }
     }
 }
