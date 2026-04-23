@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -94,7 +94,8 @@
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
 copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
-xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
+xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
+exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -123,7 +124,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
 copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
-xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
+xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
+exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
@@ -155,7 +157,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
 copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
-xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
+xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
+exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -183,6 +186,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Idle\Phase2_Idle.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.cpp" />
     <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
     <ClCompile Include="contents\ui\EnemyHPBar.cpp" />
@@ -205,6 +209,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClCompile Include="scene\Clear\ClearScene.cpp" />
     <ClCompile Include="scene\StageSelect\SelectScene.cpp" />
     <ClCompile Include="scene\Title\TitleScene.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Tackle\Phase1_Tackle.cpp" />
+    <ClCompile Include="actors\enemy\TackleEffects\EnemyTackleEffects.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Idle\Phase1_Idle.h" />
@@ -215,6 +221,7 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Idle\Phase2_Idle.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.h" />
     <ClInclude Include="actors\enemy\Animation\IEnemyAnimationState.h" />
     <ClInclude Include="actors\enemy\Body\Body.h" />
     <ClInclude Include="actors\enemy\AI\EnemyAI.h" />
@@ -249,6 +256,8 @@ xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y</Command>
     <ClInclude Include="scene\Clear\ClearScene.h" />
     <ClInclude Include="scene\StageSelect\SelectScene.h" />
     <ClInclude Include="scene\Title\TitleScene.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Tackle\Phase1_Tackle.h" />
+    <ClInclude Include="actors\enemy\TackleEffects\EnemyTackleEffects.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

@@ -27,7 +27,7 @@ namespace {
     const Vector4 kClearColor = { 0.7f, 0.7f, 0.7f, 1.0f };
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-        = "InGame";
+        = "Title";
 #else
         = "Title";
 #endif

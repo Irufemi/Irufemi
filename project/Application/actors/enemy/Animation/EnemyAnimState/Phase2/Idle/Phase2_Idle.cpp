@@ -24,6 +24,11 @@ void Phase2_Idle::Enter(Enemy* enemy) {
     
     // 分離時の勢いを一度だけ適用するため、timer_が0の時のみ設定（仮の勢い）
     velocity_ = { (float)(headIndex_ - 1) * 0.3f, 0.4f, (float)(headIndex_ - 1) * 0.3f };
+
+    // 次の攻撃までの待機時間をランダムに設定（例: Base=5, Variance=2 なら 3～7秒）
+    float randVal = (float)std::rand() / RAND_MAX;
+    float intervalDist = -attackIntervalVariance_ + (randVal * attackIntervalVariance_ * 2.0f);
+    currentAttackCooldown_ = attackIntervalBase_ + intervalDist;
 }
 
 void Phase2_Idle::Update(Enemy* enemy, Player* player, float deltaTime) {
@@ -78,10 +83,11 @@ void Phase2_Idle::Update(Enemy* enemy, Player* player, float deltaTime) {
     }
 
     // クールダウン中は攻撃遷移しない
-    if (timer_ > cooldownTime_) {
-        if (timer_ > kBiteCooldown && distToPlayer < kBiteDistThreshold) {
+    if (timer_ > currentAttackCooldown_) {
+        float randVal = (float)std::rand() / RAND_MAX;
+        if (randVal < kBiteProbability) {
             wantsToBite_ = true;
-        } else if (timer_ > kBeamCooldown && distToPlayer > kBeamDistThreshold) {
+        } else {
             wantsToBeam_ = true;
         }
     }

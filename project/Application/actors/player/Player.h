@@ -57,6 +57,11 @@ public:
     bool GetIsTargetingEnemy() const { return isTargetingEnemy_; }
     bool IsFirstPerson() const { return cameraController_.IsFirstPerson(); }
 
+    bool IsKarakuriCharged() const { return isKarakuriCharged_; }
+    int GetKarakuriActiveTimer() const { return karakuriActiveTimer_; }
+
+    int GetCooldownWarningTimer() const { return cooldownWarningTimer_; }
+
     void HitAndKnockback(Enemy* enemy);
 
 private:
@@ -89,6 +94,7 @@ private:
     int skillDurationTimer_ = 0;
     int skillCooldownTimer_ = 0;
     const int kSkillCooldownTime = 300;
+    int cooldownWarningTimer_ = 0;
 
     int karakuriChargeTimer_ = 0;
     const int kKarakuriChargeTime = 300;

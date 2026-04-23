@@ -778,10 +778,17 @@ Microsoft::WRL::ComPtr<ID3D12Resource>  DirectXCommon::UploadTextureData(const M
 	ID3D12CommandList* ppCommandLists[] = { uploadCommandList_.Get() };
 	commandQueue_->ExecuteCommandLists(1, ppCommandLists);
 
-	// FenceによるGPU完了待ちを非同期化
+	// FenceによるGPU完了待ちを同期化
 	uploadFenceValue_++;
 	commandQueue_->Signal(uploadFence_.Get(), uploadFenceValue_);
 	
+    if (uploadFence_->GetCompletedValue() < uploadFenceValue_) {
+        HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        uploadFence_->SetEventOnCompletion(uploadFenceValue_, event);
+        WaitForSingleObject(event, INFINITE);
+        CloseHandle(event);
+    }
+
 	// 中間リソースを遅延解放に登録
 	ReleaseAfterFence(intermediateResource);
 
