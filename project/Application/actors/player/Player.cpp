@@ -401,10 +401,12 @@ void Player::Update() {
 }
 
 void Player::Draw3DUI(Enemy* enemy) {
-    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
+    if (!status_.IsDead()) {
         if (hpBar_) {
             hpBar_->Draw();
         }
+    }
+    if (cameraController_.IsFirstPerson() && !status_.IsDead()) {
         if (enemy) {
             enemy->Draw3DUI(engine_);
         }
