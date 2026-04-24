@@ -51,8 +51,11 @@ void PlayerMovement::Update(InputManager* input, bool isCharging, bool isKarakur
         moveX = move.x * cosY + move.z * sinY;
         moveZ = -move.x * sinY + move.z * cosY;
 
-        translate.x += moveX * kMoveSpeed;
-        translate.z += moveZ * kMoveSpeed;
+        float speed = kMoveSpeed;
+        if (isKarakuriCharged) speed *= 1.5f;
+
+        translate.x += moveX * speed;
+        translate.z += moveZ * speed;
 
         if (translate.x > kFieldRangeX)  translate.x = kFieldRangeX;
         if (translate.x < -kFieldRangeX) translate.x = -kFieldRangeX;

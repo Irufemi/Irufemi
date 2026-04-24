@@ -54,7 +54,7 @@ private:
     static constexpr int kDamageCrashWaveToPlayer = 30;      ///< 壁激突の大爆発接触
 
     // 敵被ダメージ
-    static constexpr int kDamageMeleeToEnemy = 8;           ///< 近接攻撃
+    static constexpr int kDamageMeleeToEnemy = 20;           ///< 近接攻撃
     static constexpr int kDamageMachineGunToEnemy = 3;      ///< マシンガン
     static constexpr int kDamageMissileToEnemy = 50;        ///< ミサイル
     static constexpr int kDamageProjectilePartToEnemy = 250; ///< 部位同士の衝突

@@ -84,9 +84,9 @@ void PlayerWeapon::Initialize(Camera* camera) {
     missileVibrationTimer_ = 0;
 }
 
-void PlayerWeapon::Update(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, const Vector3& playerScale) {
+void PlayerWeapon::Update(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, const Vector3& playerScale, bool isKarakuriCharged) {
     // 振動（シェイク）の更新
-    if (machineGunActiveTimer_ <= 0) {
+    if (!isMachineGunFiring_) {
         machineGunVibration_.x *= 0.8f;
         machineGunVibration_.y *= 0.8f;
         machineGunVibration_.z *= 0.8f;
@@ -104,7 +104,7 @@ void PlayerWeapon::Update(const Vector3& playerTranslate, const Vector3& playerR
     }
 
     // 各武器の更新
-    UpdateMissile(targetPos, playerScale);
+    UpdateMissile(targetPos, playerScale, isKarakuriCharged);
     UpdateMachineGun(playerTranslate, playerRotate, cameraPitch, targetPos);
     UpdateCartridges();
 
@@ -292,8 +292,9 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
     // ミサイルの描画
     for (int i = 0; i < kMaxMissiles; ++i) {
         if (missiles_[i].isActive && missileObjs_[i]) {
-            missiles_[i].position.y += missileVibration_.y; // スピード感を出すための振動
-            missileObjs_[i]->SetPosition(missiles_[i].position);
+            Vector3 drawPos = missiles_[i].position;
+            drawPos.y += missileVibration_.y; // スピード感を出すための振動
+            missileObjs_[i]->SetPosition(drawPos);
             Vector3 mRot = { 0.0f, std::atan2(missiles_[i].velocity.x, missiles_[i].velocity.z), 0.0f };
             float xzLen = std::sqrt(missiles_[i].velocity.x * missiles_[i].velocity.x + missiles_[i].velocity.z * missiles_[i].velocity.z);
             mRot.x = std::atan2(-missiles_[i].velocity.y, xzLen);
@@ -320,9 +321,14 @@ void PlayerWeapon::DrawParticles(IrufemiEngine* engine) {
     if (ejectionMistRight_) ejectionMistRight_->Draw();
 }
 
-void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& playerScale) {
+void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& playerScale, bool isKarakuriCharged) {
     for (int i = 0; i < kMaxMissiles; ++i) {
         if (missiles_[i].isActive) {
+            // からくりチャージ中は射程（タイマー）を減らさない（または非常に長くする）
+            if (isKarakuriCharged) {
+                if (missiles_[i].timer < 60) missiles_[i].timer = 60;
+            }
+
             // オートエイムのため、ターゲットの最新座標を更新
             missiles_[i].target = { targetPos.x, targetPos.y + 1.0f, targetPos.z };
 
@@ -341,20 +347,21 @@ void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& player
                 };
 
                 // 旋回性能
-                float turnSpeed = 0.05f;
+                float turnSpeed = isKarakuriCharged ? 1.0f : 0.05f; // チャージ中は即座にターゲットへ向く
                 missiles_[i].velocity.x += (desiredVelocity.x - missiles_[i].velocity.x) * turnSpeed;
                 missiles_[i].velocity.y += (desiredVelocity.y - missiles_[i].velocity.y) * turnSpeed;
                 missiles_[i].velocity.z += (desiredVelocity.z - missiles_[i].velocity.z) * turnSpeed;
             }
 
-            // 速度の正規化
+            // 速度の正規化と適用
             float currentSpeed = std::sqrt(missiles_[i].velocity.x * missiles_[i].velocity.x +
                 missiles_[i].velocity.y * missiles_[i].velocity.y +
                 missiles_[i].velocity.z * missiles_[i].velocity.z);
+            float targetSpeed = isKarakuriCharged ? kMissileSpeed * 1.5f : kMissileSpeed;
             if (currentSpeed > 0.0f) {
-                missiles_[i].velocity.x = (missiles_[i].velocity.x / currentSpeed) * kMissileSpeed;
-                missiles_[i].velocity.y = (missiles_[i].velocity.y / currentSpeed) * kMissileSpeed;
-                missiles_[i].velocity.z = (missiles_[i].velocity.z / currentSpeed) * kMissileSpeed;
+                missiles_[i].velocity.x = (missiles_[i].velocity.x / currentSpeed) * targetSpeed;
+                missiles_[i].velocity.y = (missiles_[i].velocity.y / currentSpeed) * targetSpeed;
+                missiles_[i].velocity.z = (missiles_[i].velocity.z / currentSpeed) * targetSpeed;
             }
 
             missiles_[i].position.x += missiles_[i].velocity.x;
@@ -384,10 +391,14 @@ void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& player
 }
 
 void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos) {
-    if (machineGunActiveTimer_ > 0) {
-        machineGunActiveTimer_--;
-        machineGunFireTimer_--;
+    if (isMachineGunFiring_ && machineGunAmmo_ > 0.0f) {
+        machineGunAmmo_ -= kMachineGunConsumptionRate;
+        if (machineGunAmmo_ <= 0.0f) {
+            machineGunAmmo_ = 0.0f;
+            isMachineGunFiring_ = false;
+        }
 
+        machineGunFireTimer_--;
         if (machineGunFireTimer_ <= 0) {
             machineGunFireTimer_ = 5; // 発射間隔
 
@@ -469,6 +480,12 @@ void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector
                 muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
             }
             if (ejectionMistRight_) ejectionMistRight_->PlayHitEffect({ rightShoulder.x + rightX * 0.3f, rightShoulder.y, rightShoulder.z + rightZ * 0.3f });
+        }
+    } else {
+        // 発射していない時は回復
+        machineGunAmmo_ += kMachineGunRecoveryRate;
+        if (machineGunAmmo_ > kMaxMachineGunAmmo) {
+            machineGunAmmo_ = kMaxMachineGunAmmo;
         }
     }
 
@@ -632,7 +649,7 @@ void PlayerWeapon::EjectCartridge(const Vector3& startPos, bool isRight, const V
 }
 
 void PlayerWeapon::StartMachineGunSkill() {
-    machineGunActiveTimer_ = 180;
+    isMachineGunFiring_ = true;
     machineGunVibrationScale_ = 0.1f;
 }
 
@@ -649,16 +666,28 @@ void PlayerWeapon::FireMissileSkill(const Vector3& playerTranslate, const Vector
             missiles_[i].isActive = true;
             missiles_[i].timer = 120;
             missiles_[i].target = { targetPos.x, targetPos.y + 1.0f, targetPos.z };
-            missiles_[i].position = { playerTranslate.x + sinY * 1.0f, playerTranslate.y + 1.0f, playerTranslate.z + cosY * 1.0f };
 
-            float spreadX = ((std::rand() % 100) / 25.0f) - 2.0f;
-            float spreadY = ((std::rand() % 100) / 25.0f) - 0.5f;
-            float spreadZ = ((std::rand() % 100) / 25.0f) - 2.0f;
+            // 発射位置をプレイヤーの周囲に分散させる
+            float offsetR = ((std::rand() % 100) / 100.0f) * 2.0f + 1.0f; // 半径 1.0 ～ 3.0
+            float offsetTheta = ((std::rand() % 360) * 3.14159f / 180.0f);
+            float offsetX = std::cos(offsetTheta) * offsetR;
+            float offsetY = ((std::rand() % 100) / 100.0f) * 2.0f; // 高さ 0.0 ～ 2.0
+            float offsetZ = std::sin(offsetTheta) * offsetR;
 
-            missiles_[i].velocity = { (sinY * 0.2f) + (spreadX * 0.4f), spreadY * 0.4f, (cosY * 0.2f) + (spreadZ * 0.4f) };
+            missiles_[i].position = { playerTranslate.x + offsetX, playerTranslate.y + offsetY, playerTranslate.z + offsetZ };
+
+            // 初速度を大きく広がる方向に設定
+            float spreadMagnitude = 0.5f + ((std::rand() % 100) / 100.0f) * 0.5f;
+            Vector3 spreadDir = { offsetX, offsetY - 0.5f, offsetZ }; // 外側かつ少し上向き
+            float len = std::sqrt(spreadDir.x * spreadDir.x + spreadDir.y * spreadDir.y + spreadDir.z * spreadDir.z);
+            if (len > 0.001f) {
+                spreadDir.x /= len; spreadDir.y /= len; spreadDir.z /= len;
+            }
+
+            missiles_[i].velocity = { spreadDir.x * spreadMagnitude, spreadDir.y * spreadMagnitude, spreadDir.z * spreadMagnitude };
 
             firedCount++;
-            // 1回のスキル呼び出しにつき4発発射したら終了する
+            // 1回のスキル呼び出しにつき4発発射（合計で8または16発になるように調整）
             if (firedCount >= 4) {
                 break;
             }

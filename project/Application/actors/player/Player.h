@@ -42,6 +42,8 @@ public:
     static int GetMaxMachineGunBullets() { return PlayerWeapon::GetMaxMachineGunBullets(); }
     MissileData* GetMissiles() { return weapon_.GetMissiles(); }
     static int GetMaxMissiles() { return PlayerWeapon::GetMaxMissiles(); }
+    float GetMachineGunAmmo() const { return weapon_.GetMachineGunAmmo(); }
+    float GetMaxMachineGunAmmo() const { return PlayerWeapon::GetMaxMachineGunAmmo(); }
 
     PlayerCollider GetCollider() const { return status_.GetCollider(translate_, rotate_, weapon_.GetMissileVibration()); }
     int GetHp() const { return status_.GetHp(); }
@@ -125,8 +127,8 @@ private:
     static constexpr float kSwingTotalAngle = 3.0f;
     static constexpr float kHammerRotX = 1.57f;
 
-    static constexpr float kSwingBaseRadius = 2.5f;
-    static constexpr float kSwingRadiusChargeBonus = 0.5f;
+    static constexpr float kSwingBaseRadius = 4.0f;
+    static constexpr float kSwingRadiusChargeBonus = 1.5f;
 
     static constexpr float kHammerBaseHeight = 1.0f;
     static constexpr float kHammerSwaySpeed = 0.5f;

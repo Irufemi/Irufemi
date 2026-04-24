@@ -278,7 +278,7 @@ void Player::Update() {
     HandleAttack();
     HandleSkill();
 
-    weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, scale_);
+    weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, scale_, isKarakuriCharged_);
     cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration());
     status_.UpdateKnockback();
 
@@ -448,6 +448,14 @@ void Player::Draw() {
         Vector3 drawPos = translate_;
         if (!status_.IsDead()) {
             drawPos += weapon_.GetMissileVibration();
+
+            // からくりチャージ中（Eキー長押し中）のシェイク演出
+            if (karakuriChargeTimer_ > 0 && !isKarakuriCharged_) {
+                float shakeScale = static_cast<float>(karakuriChargeTimer_) / kKarakuriChargeTime;
+                drawPos.x += ((std::rand() % 100) / 100.0f - 0.5f) * 0.2f * shakeScale;
+                drawPos.y += ((std::rand() % 100) / 100.0f - 0.5f) * 0.2f * shakeScale;
+                drawPos.z += ((std::rand() % 100) / 100.0f - 0.5f) * 0.2f * shakeScale;
+            }
         }
         drawPos.y += kModelOffsetY;
 
@@ -622,7 +630,10 @@ void Player::HandleAttack() {
 void Player::HandleSkill() {
     if (skillDurationTimer_ > 0) {
         skillDurationTimer_--;
-        if (skillDurationTimer_ <= 0) skillCooldownTimer_ = kSkillCooldownTime;
+        if (skillDurationTimer_ <= 0) {
+            // ミサイルの時だけクールダウンをセット（マシンガンはトグルなので別管理）
+            if (isKarakuriCharged_) skillCooldownTimer_ = kSkillCooldownTime;
+        }
     } else if (skillCooldownTimer_ > 0) {
         skillCooldownTimer_--;
     }
@@ -635,6 +646,7 @@ void Player::HandleSkill() {
         karakuriActiveTimer_--;
         if (karakuriActiveTimer_ <= 0) {
             isKarakuriCharged_ = false;
+            weapon_.SetMachineGunFiring(false); // チャージ終了時にマシンガンも止める（任意）
             OutputDebugStringA("Karakuri Charge Ended.\n");
         }
     }
@@ -667,8 +679,8 @@ void Player::HandleSkill() {
                 }
                 skillDurationTimer_ = kMissileSkillDuration;
             } else {
-                weapon_.StartMachineGunSkill();
-                skillDurationTimer_ = kMachineGunSkillDuration;
+                // 機関銃のトグル
+                weapon_.SetMachineGunFiring(!weapon_.IsMachineGunFiring());
             }
         } else if (skillDurationTimer_ <= 0 && skillCooldownTimer_ > 0) {
             // 発動中ではなく、クールダウン中に押された場合のみ警告タイマーをセット
