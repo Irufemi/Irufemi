@@ -54,7 +54,7 @@ private:
     static constexpr float kMaxCameraPitchFirstPerson = 0.8f;
     static constexpr float kMinCameraPitchFirstPerson = -0.8f;
 
-    static constexpr float kCameraDistanceThirdPerson = 5.0f;
+    static constexpr float kCameraDistanceThirdPerson = 7.0f;
     static constexpr float kCameraMinY = 0.2f;
     static constexpr float kCameraJumpFollowRatio = 0.5f;
     // カメラのめり込み防止（フィールドの壁が±100.0fなので少し内側で制限）

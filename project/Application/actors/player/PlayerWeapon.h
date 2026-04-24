@@ -146,6 +146,18 @@ private:
     MissileData missiles_[kMaxMissiles] = {};
     const float kMissileSpeed = 0.8f;
 
+    float missileTurnSpeedNormal_ = 0.04f;
+    float missileTurnSpeedCharged_ = 0.08f;
+    float missileSpreadMagnitudeBase_ = 1.5f;
+    float missileSpreadMagnitudeRand_ = 1.5f;
+
+public:
+    float* GetMissileTurnSpeedNormalPtr() { return &missileTurnSpeedNormal_; }
+    float* GetMissileTurnSpeedChargedPtr() { return &missileTurnSpeedCharged_; }
+    float* GetMissileSpreadMagnitudeBasePtr() { return &missileSpreadMagnitudeBase_; }
+    float* GetMissileSpreadMagnitudeRandPtr() { return &missileSpreadMagnitudeRand_; }
+
+private:
     // --- 機関銃の弾数管理 ---
     bool isMachineGunFiring_ = false;
     float machineGunAmmo_ = 100.0f;

@@ -346,8 +346,8 @@ void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& player
                     (toTarget.z / dist) * kMissileSpeed
                 };
 
-                // 旋回性能
-                float turnSpeed = isKarakuriCharged ? 1.0f : 0.05f; // チャージ中は即座にターゲットへ向く
+                // 旋回性能（追尾）
+                float turnSpeed = isKarakuriCharged ? missileTurnSpeedCharged_ : missileTurnSpeedNormal_; // 弧を描くように追尾速度を緩やかにする
                 missiles_[i].velocity.x += (desiredVelocity.x - missiles_[i].velocity.x) * turnSpeed;
                 missiles_[i].velocity.y += (desiredVelocity.y - missiles_[i].velocity.y) * turnSpeed;
                 missiles_[i].velocity.z += (desiredVelocity.z - missiles_[i].velocity.z) * turnSpeed;
@@ -668,17 +668,17 @@ void PlayerWeapon::FireMissileSkill(const Vector3& playerTranslate, const Vector
             missiles_[i].target = { targetPos.x, targetPos.y + 1.0f, targetPos.z };
 
             // 発射位置をプレイヤーの周囲に分散させる
-            float offsetR = ((std::rand() % 100) / 100.0f) * 2.0f + 1.0f; // 半径 1.0 ～ 3.0
+            float offsetR = ((std::rand() % 100) / 100.0f) * 3.0f + 2.0f; // 半径 2.0 ～ 5.0 (より外側に)
             float offsetTheta = ((std::rand() % 360) * 3.14159f / 180.0f);
             float offsetX = std::cos(offsetTheta) * offsetR;
-            float offsetY = ((std::rand() % 100) / 100.0f) * 2.0f; // 高さ 0.0 ～ 2.0
+            float offsetY = ((std::rand() % 100) / 100.0f) * 3.0f; // 高さ 0.0 ～ 3.0
             float offsetZ = std::sin(offsetTheta) * offsetR;
 
             missiles_[i].position = { playerTranslate.x + offsetX, playerTranslate.y + offsetY, playerTranslate.z + offsetZ };
 
             // 初速度を大きく広がる方向に設定
-            float spreadMagnitude = 0.5f + ((std::rand() % 100) / 100.0f) * 0.5f;
-            Vector3 spreadDir = { offsetX, offsetY - 0.5f, offsetZ }; // 外側かつ少し上向き
+            float spreadMagnitude = missileSpreadMagnitudeBase_ + ((std::rand() % 100) / 100.0f) * missileSpreadMagnitudeRand_; // 外側に飛ぶ力を強くする
+            Vector3 spreadDir = { offsetX, offsetY + 1.5f, offsetZ }; // 外側かつ上向きに膨らませる
             float len = std::sqrt(spreadDir.x * spreadDir.x + spreadDir.y * spreadDir.y + spreadDir.z * spreadDir.z);
             if (len > 0.001f) {
                 spreadDir.x /= len; spreadDir.y /= len; spreadDir.z /= len;

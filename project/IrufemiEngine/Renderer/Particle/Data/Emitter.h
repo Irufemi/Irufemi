@@ -15,12 +15,12 @@ enum class ParticleColorMode {
 
 struct Emitter {
 	Transform transform; //!< エミッタのトランスフォーム
-	uint32_t count; //!< 発生数
+	uint32_t count = 0; //!< 発生数
 	float frequency = 0.5f; //!< 発生頻度
-	float frequencyTime; //!< 頻度用時刻
-	Vector3 area; //!< 発生領域のサイズ
-	Vector3 velocityMin; //!< 初速の最小値
-	Vector3 velocityMax; //!< 初速の最大値
+	float frequencyTime = 0.0f; //!< 頻度用時刻
+	Vector3 area = { 0.0f, 0.0f, 0.0f }; //!< 発生領域のサイズ
+	Vector3 velocityMin = { 0.0f, 0.0f, 0.0f }; //!< 初速の最小値
+	Vector3 velocityMax = { 0.0f, 0.0f, 0.0f }; //!< 初速の最大値
 	Vector3 startScale = { 1.0f, 1.0f, 1.0f };
 	Vector3 endScale = { 1.0f, 1.0f, 1.0f };
 	Vector4 startColor = { 1.0f, 1.0f, 1.0f, 1.0f };

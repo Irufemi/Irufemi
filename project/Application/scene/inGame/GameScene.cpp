@@ -635,8 +635,8 @@ void GameScene::CheckPlayerToEnemyCollisions() {
     // 近接攻撃
     if (attackCol.isActive &&
         Collision::IsOBBSphereCollision(part->GetOBB(), attackSphere)) {
-      int damage = kDamageMeleeToEnemy;
-      if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * 2.5f);
+      int damage = player_->GetDamageMelee();
+      if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMeleeChargeMultiplier());
 
       if (part->ApplyDamage(damage)) {
         if (part->GetHP() <= 0) {
@@ -673,8 +673,8 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       Sphere bulletSphere = {bullets[i].position, kMachineGunBulletRadius};
       if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
         bullets[i].isActive = false;
-        int damage = kDamageMachineGunToEnemy;
-        if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * 1.5f);
+        int damage = player_->GetDamageMachineGun();
+        if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMachineGunChargeMultiplier());
 
         if (part->ApplyDamage(damage) && part->GetHP() <= 0) {
           part->OnDestroyed(Math::Normalize(bullets[i].velocity),
@@ -694,8 +694,8 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       Sphere missileSphere = {missiles[i].position, kMissileRadius};
       if (Collision::IsOBBSphereCollision(part->GetOBB(), missileSphere)) {
         missiles[i].isActive = false;
-        int damage = kDamageMissileToEnemy;
-        if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * 2.0f);
+        int damage = player_->GetDamageMissile();
+        if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMissileChargeMultiplier());
 
         if (part->ApplyDamage(damage) && part->GetHP() <= 0) {
           part->OnDestroyed(Math::Normalize(missiles[i].velocity),

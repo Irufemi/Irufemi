@@ -33,6 +33,9 @@ public:
     const Vector3& GetVelocity() const { return velocity_; }
     bool IsGrounded() const { return isGrounded_; }
 
+    float* GetDodgeSpeedPtr() { return &dodgeSpeed_; }
+    float* GetDodgeSpeedNormalMultiplierPtr() { return &dodgeSpeedNormalMultiplier_; }
+
 private:
     // --- 移動・ジャンプ関連変数 ---
     Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
@@ -44,7 +47,8 @@ private:
     int dodgeDurationTimer_ = 0;         // 回避行動自体の持続時間
     const int kDodgeDurationTime = 30;   // 回避時間（約0.5秒）
     Vector3 dodgeDirection_ = { 0.0f, 0.0f, 0.0f }; // 回避する方向
-    const float kDodgeSpeed = 1.2f;      // 回避の移動速度
+    float dodgeSpeed_ = 1.2f;            // 回避の移動速度
+    float dodgeSpeedNormalMultiplier_ = 0.4f; // 通常時の回避速度倍率
 
     // --- パラメータ ---
     const float kMoveSpeed = 0.2f;
