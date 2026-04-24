@@ -12,6 +12,7 @@ struct SpotLight;
 struct DirectionalLight;
 struct AreaLight;
 class Skybox;
+class AnimationModel;
 
 /**
  * @class CG4Scene
@@ -56,5 +57,15 @@ private: // メンバ変数
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
 
+    bool isActiveSkybox_ = true;
     std::unique_ptr<Skybox> skybox_ = nullptr;
+
+    bool isActiveAnimatedCube_ = false;
+    std::unique_ptr<AnimationModel> animatedCube_ = nullptr;
+
+    bool isActiveWalk_ = false;
+    std::unique_ptr<AnimationModel> walk_ = nullptr;
+
+    bool isActiveSneakWalk_ = false;
+    std::unique_ptr<AnimationModel> sneakWalk_ = nullptr;
 };

@@ -2,6 +2,7 @@
 #include "Irufemi.h"
 #include "camera/Camera.h"
 #include "camera/DebugCamera.h"
+#include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Graphics/Data/CameraForGPU.h"
 #include "Graphics/Data/PointLight.h"
 #include "Graphics/Data/SpotLight.h"
@@ -30,16 +31,20 @@ void CG4Scene::Initialize(IrufemiEngine* engine) {
     directionalLight_->direction = { 0.5f, -0.7f, 1.0f };
     directionalLight_->intensity = 1.0f;
 
-    // Skyboxの初期化
-    skybox_ = std::make_unique<Skybox>();
-    skybox_->Initialize(camera_.get(), "resources/qwantani_night_puresky_1k_cubemap.dds");
+    // Skyboxの初期化（フラグが有効な場合のみ）
+    if (isActiveSkybox_) {
+        skybox_ = std::make_unique<Skybox>();
+        skybox_->Initialize(camera_.get(), "resources/qwantani_night_puresky_1k_cubemap.dds");
+    }
 }
 
 void CG4Scene::Update() {
 #ifdef USE_IMGUI
-    ImGui::Begin("CG4 Settings");
-    ImGui::Text("Welcome to CG4 Scene!");
-    // 必要に応じてトグルなどのUIを追加
+    ImGui::Begin("Activation");
+    ImGui::Checkbox("Skybox", &isActiveSkybox_);
+    ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
+    ImGui::Checkbox("Walk", &isActiveWalk_);
+    ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
     ImGui::End();
 #endif
 
@@ -59,10 +64,38 @@ void CG4Scene::Update() {
     cameraForGpu.worldPosition = camera_->GetTranslate();
 
     // Skyboxの更新と環境マップの設定
-    if (skybox_) {
+    if (isActiveSkybox_) {
+        if (!skybox_) {
+            skybox_ = std::make_unique<Skybox>();
+            skybox_->Initialize(camera_.get(), "resources/qwantani_night_puresky_1k_cubemap.dds");
+        }
         skybox_->Update();
         D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle = skybox_->GetTextureHandle();
         engine_->GetDrawManager()->SetEnvironmentMap(envMapHandle);
+    }
+
+    if (isActiveAnimatedCube_) {
+        if (!animatedCube_) {
+            animatedCube_ = std::make_unique<AnimationModel>();
+            animatedCube_->Initialize(camera_.get(), "sample/AnimatedCube.gltf");
+        }
+        animatedCube_->Update();
+    }
+    
+    if (isActiveWalk_) {
+        if (!walk_) {
+            walk_ = std::make_unique<AnimationModel>();
+            walk_->Initialize(camera_.get(), "sample/walk.gltf");
+        }
+        walk_->Update();
+    }
+
+    if (isActiveSneakWalk_) {
+        if (!sneakWalk_) {
+            sneakWalk_ = std::make_unique<AnimationModel>();
+            sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+        }
+        sneakWalk_->Update();
     }
 
     std::vector<PointLight*> pLights;
@@ -79,8 +112,17 @@ void CG4Scene::Draw() {
     engine_->ApplyPSO();
     
     // オブジェクトの描画があればここに記述
+    if (isActiveAnimatedCube_) {
+        animatedCube_->Draw();
+    }
+    if (isActiveWalk_) {
+        walk_->Draw();
+    }
+    if (isActiveSneakWalk_) {
+        sneakWalk_->Draw();
+    }
 
-    if (skybox_) {
+    if (isActiveSkybox_ && skybox_) {
         skybox_->Draw();
     }
 }
@@ -113,8 +155,18 @@ void CG4Scene::DrawDebugTab() {
         }
     }
     
-    if (skybox_) {
+    if (isActiveSkybox_ && skybox_) {
         skybox_->Debug();
+    }
+    
+    if (isActiveAnimatedCube_ && animatedCube_) {
+        animatedCube_->Debug("AnimatedCube");
+    }
+    if (isActiveWalk_ && walk_) {
+        walk_->Debug("Walk");
+    }
+    if (isActiveSneakWalk_ && sneakWalk_) {
+        sneakWalk_->Debug("SneakWalk");
     }
 
     DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
