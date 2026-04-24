@@ -151,7 +151,7 @@ public:
 
     /** @name 再生制御 */
     ///@{
-    void Play() { isPlaying_ = true; if (emitter_) emitter_->emit = 1; }
+    void Play() { isPlaying_ = true; if (emitter_) emitter_->emit = 1; totalTime_ = 0.0f; }
     void Stop() { isPlaying_ = false; if (emitter_) emitter_->emit = 0; }
     void Pause() { isPlaying_ = false; }
     void Resume() { isPlaying_ = true; }
@@ -190,6 +190,11 @@ public:
      * @param maxLife 最大寿命（秒）
      */
     void SetParticleLife(float minLife, float maxLife);
+
+    /** @brief 放出速度を設定する */
+    void SetVelocity(float velocity) { if (emitter_) emitter_->velocity = velocity; }
+    /** @brief 座標のゆらぎ（Jitter）を設定する */
+    void SetJitter(float jitter) { if (emitter_) emitter_->jitter = jitter; }
 
     /** @name 描画設定（パイプライン） */
     ///@{
@@ -249,6 +254,8 @@ public:
     static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }
     static void SetTextureManager(TextureManager* textureManager) { textureManager_ = textureManager; }
     static void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
+
+    static TextureManager* GetTextureManager() { return textureManager_; }
     ///@}
 
 private:

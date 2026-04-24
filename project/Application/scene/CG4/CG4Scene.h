@@ -13,6 +13,7 @@ struct DirectionalLight;
 struct AreaLight;
 class Skybox;
 class AnimationModel;
+#include "Renderer/Effect/Effect.h"
 
 /**
  * @class CG4Scene
@@ -57,7 +58,7 @@ private: // メンバ変数
     std::vector<std::unique_ptr<SpotLight>> spotLights_;
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
 
-    bool isActiveSkybox_ = true;
+    bool isActiveSkybox_ = false;
     std::unique_ptr<Skybox> skybox_ = nullptr;
 
     bool isActiveAnimatedCube_ = false;
@@ -68,4 +69,7 @@ private: // メンバ変数
 
     bool isActiveSneakWalk_ = false;
     std::unique_ptr<AnimationModel> sneakWalk_ = nullptr;
+
+    bool isActiveEffect_ = true;
+    std::unique_ptr<Effect> effect_ = nullptr;
 };

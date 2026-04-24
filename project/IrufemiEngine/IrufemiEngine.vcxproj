@@ -171,6 +171,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object3D\ObjClass\ObjClass.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.cpp" />
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp" />
+    <ClCompile Include="Renderer\Effect\Effect.cpp" />
     <ClCompile Include="Renderer\Particle\ParticleSystem.cpp" />
     <ClCompile Include="Renderer\Core\BaseResource.cpp" />
     <ClCompile Include="Renderer\Object2D\Object2DResource.cpp" />
@@ -259,6 +260,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\LineInstanced\LineClass.h" />
     <ClInclude Include="Renderer\Object3D\ObjClass\ObjClass.h" />
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h" />
+    <ClInclude Include="Renderer\Effect\Effect.h" />
     <ClInclude Include="Renderer\Particle\ParticleSystem.h" />
     <ClInclude Include="Renderer\Core\BaseResource.h" />
     <ClInclude Include="Renderer\Object2D\Object2DResource.h" />

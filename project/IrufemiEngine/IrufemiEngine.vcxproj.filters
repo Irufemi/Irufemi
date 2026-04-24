@@ -154,6 +154,9 @@
     <Filter Include="Renderer\Object3D\Effect">
       <UniqueIdentifier>{f4fb1d23-3e0c-46b4-9cde-75cceb18a342}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Effect">
+      <UniqueIdentifier>{12345678-abcd-1234-abcd-1234567890ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
@@ -236,6 +239,9 @@
     </ClCompile>
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp">
       <Filter>Renderer\ParticleGPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Effect\Effect.cpp">
+      <Filter>Renderer\Effect</Filter>
     </ClCompile>
     <ClCompile Include="Resource\Audio\AudioManager.cpp">
       <Filter>Resource\Audio</Filter>
@@ -432,6 +438,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h">
       <Filter>Renderer\ParticleGPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Effect\Effect.h">
+      <Filter>Renderer\Effect</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Audio\AudioManager.h">
       <Filter>Resource\Audio</Filter>

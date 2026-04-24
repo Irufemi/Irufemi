@@ -8,7 +8,8 @@
 #include "Graphics/Data/SpotLight.h"
 #include "Graphics/Data/DirectionalLight.h"
 #include "Graphics/Data/AreaLight.h"
-
+#include "Platform/Input/InputManager.h"
+#include "Renderer/Effect/Effect.h"
 CG4Scene::~CG4Scene() = default;
 
 void CG4Scene::Initialize(IrufemiEngine* engine) {
@@ -36,6 +37,10 @@ void CG4Scene::Initialize(IrufemiEngine* engine) {
         skybox_ = std::make_unique<Skybox>();
         skybox_->Initialize(camera_.get(), "resources/qwantani_night_puresky_1k_cubemap.dds");
     }
+
+    // エフェクトの初期化
+    effect_ = std::make_unique<Effect>();
+    effect_->Initialize(camera_.get(), EffectType::kHit);
 }
 
 void CG4Scene::Update() {
@@ -45,6 +50,7 @@ void CG4Scene::Update() {
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
     ImGui::Checkbox("Walk", &isActiveWalk_);
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
+    ImGui::Checkbox("Effect", &isActiveEffect_);
     ImGui::End();
 #endif
 
@@ -98,6 +104,18 @@ void CG4Scene::Update() {
         sneakWalk_->Update();
     }
 
+    // Spaceキーでヒットエフェクト発生テスト
+    if (isActiveEffect_) {
+        if (engine_->GetInputManager()->GetKeyboard()->IsKeyPressed(VK_SPACE)) {
+            Vector3 spawnPos = camera_->GetTranslate();
+            spawnPos.z += 5.0f;
+            effect_->Play(spawnPos);
+        }
+        if (effect_) {
+            effect_->Update();
+        }
+    }
+
     std::vector<PointLight*> pLights;
     std::vector<SpotLight*> sLights;
     std::vector<AreaLight*> aLights;
@@ -124,6 +142,11 @@ void CG4Scene::Draw() {
 
     if (isActiveSkybox_ && skybox_) {
         skybox_->Draw();
+    }
+
+    // エフェクトの描画
+    if (isActiveEffect_ && effect_) {
+        effect_->Draw();
     }
 }
 
@@ -170,5 +193,9 @@ void CG4Scene::DrawDebugTab() {
     }
 
     DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+
+    if (isActiveEffect_ && effect_) {
+        effect_->Debug();
+    }
 #endif
 }

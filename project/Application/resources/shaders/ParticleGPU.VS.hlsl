@@ -33,10 +33,26 @@ VertexShaderOutput main(VertexShaderInput input, uint instanceId : SV_InstanceID
     
     if (gEmitter.isBillboard != 0)
     {
-        worldMatrix = gPerView.billboardMatrix;
-        worldMatrix[0] *= particle.scale.x;
-        worldMatrix[1] *= particle.scale.y;
-        worldMatrix[2] *= particle.scale.z;
+        // Z軸回転の行列を作成
+        float c = cos(particle.rotation.z);
+        float s = sin(particle.rotation.z);
+        float4x4 rotZ = {
+             c, s, 0, 0,
+            -s, c, 0, 0,
+             0, 0, 1, 0,
+             0, 0, 0, 1
+        };
+        
+        // スケール行列の作成
+        float4x4 scaleMatrix = {
+            particle.scale.x, 0, 0, 0,
+            0, particle.scale.y, 0, 0,
+            0, 0, particle.scale.z, 0,
+            0, 0, 0, 1
+        };
+
+        // スケール -> Z軸回転 -> ビルボード（カメラ向き）の順に行列を合成
+        worldMatrix = mul(mul(scaleMatrix, rotZ), gPerView.billboardMatrix);
     }
     else
     {

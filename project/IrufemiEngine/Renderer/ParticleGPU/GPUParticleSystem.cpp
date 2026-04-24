@@ -137,9 +137,6 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 void GPUParticleSystem::Update() {
     if (!emitter_ || !camera_) return;
 
-    // 前フレームの射出予約をリセット
-    emitter_->burstCount = 0;
-
     if (!isPlaying_) {
         // 放出は止めるが、既存の粒子の更新（Update CS）は必要かもしれないので
         // emit フラグだけ操作して UpdateCS は継続する方針
@@ -214,6 +211,17 @@ void GPUParticleSystem::Update() {
     emitterBuffer_.Update(*emitter_, frameIndex);
     perFrameBuffer_.Update(*perFrameData_, frameIndex);
     materialBuffer_.Update(cpuMaterialData_, frameIndex);
+
+    /**
+     * @brief 送信済みのバーストカウントをリセットする
+     * @details これを忘れると、Emit()で追加されたカウントが毎フレーム送信され続け無限生成される
+     */
+    if (emitter_->burstCount > 0) {
+        char debugMsg[256];
+        sprintf_s(debugMsg, "[GPUParticleSystem::Update] frameIndex=%d, burstCount=%d (Resetting to 0)\n", frameIndex, emitter_->burstCount);
+        OutputDebugStringA(debugMsg);
+    }
+    emitter_->burstCount = 0;
 
     if (debugLineRegion_) {
         debugLineRegion_->Update();
@@ -354,6 +362,9 @@ void GPUParticleSystem::Clear() {
 void GPUParticleSystem::Emit(uint32_t count) {
     if (emitter_) {
         emitter_->burstCount += count;
+        char debugMsg[256];
+        sprintf_s(debugMsg, "[GPUParticleSystem::Emit] Added %d, Total burstCount is now %d\n", count, emitter_->burstCount);
+        OutputDebugStringA(debugMsg);
     }
 }
 
@@ -573,6 +584,10 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
         
         uint32_t emitCount = emitterBuffer_[frameIndex]->burstCount;
         if (emitCount > 0) {
+            char debugMsg[256];
+            sprintf_s(debugMsg, "[GPUParticleSystem::Dispatch] frameIndex=%d, emitCount=%d\n", frameIndex, emitCount);
+            OutputDebugStringA(debugMsg);
+
             commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
         }
 
