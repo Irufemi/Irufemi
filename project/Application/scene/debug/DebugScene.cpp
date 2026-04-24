@@ -199,9 +199,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         effectTest_->SetCylinderParams(1.0f, 1.0f, 2.0f, 32, false, false, false);
     }
 
-    // エンジンのデフォルトクリアカラーを「青」に設定
-    engine_->SetClearColor(Vector4{ 0.1f, 0.25f, 0.5f, 1.0f });
-
     // 電撃エフェクトの初期化
     lightningCylinder_ = std::make_unique<CylinderClass>();
     lightningCylinder_->Initialize(camera_.get());
