@@ -242,7 +242,7 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
             }
 
             InstanceData data;
-            data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
+            data.WVP = Math::MakeIdentity4x4();
             Matrix4x4 worldForNormal = world;
             worldForNormal.m[3][0] = worldForNormal.m[3][1] = worldForNormal.m[3][2] = 0.0f;
             worldForNormal.m[3][3] = 1.0f;
@@ -268,7 +268,7 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
 
             InstanceData data;
             Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
-            data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
+            data.WVP = Math::MakeIdentity4x4();
             Matrix4x4 worldForNormal = world;
             worldForNormal.m[3][0] = worldForNormal.m[3][1] = worldForNormal.m[3][2] = 0.0f;
             worldForNormal.m[3][3] = 1.0f;

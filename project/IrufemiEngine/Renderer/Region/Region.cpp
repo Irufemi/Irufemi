@@ -177,7 +177,8 @@ void ModelRegion::BuildInstanceBuffer(bool force) {
 
         InstanceData data;
         Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
-        data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
+        // data.WVP はシェーダーで使わなくなったため計算を省略
+        data.WVP = Math::MakeIdentity4x4();
 
         Matrix4x4 worldForNormal = world;
         worldForNormal.m[3][0] = 0.0f;

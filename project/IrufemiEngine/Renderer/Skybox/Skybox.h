@@ -83,6 +83,8 @@ private: // メンバ変数(resource)
     };
     struct SkyboxTransformationMatrix {
         Matrix4x4 WVP;
+        Matrix4x4 World;
+        Matrix4x4 WorldInverseTranspose;
     };
     SkyboxTransformationMatrix transformationMatrix_{};
     ConstantBuffer<SkyboxTransformationMatrix> transformationBuffer_;

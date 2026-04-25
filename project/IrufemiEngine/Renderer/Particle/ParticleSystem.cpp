@@ -192,12 +192,11 @@ void ParticleSystem::Update() {
                 worldMatrix = Math::Multiply(scaleMatrix, rotateMatrix);
                 worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             }
-            Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-            
             uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
             if (resource_->instancingData_[frameIndex]) {
                 resource_->instancingData_[frameIndex][numInstance_].world = worldMatrix;
-                resource_->instancingData_[frameIndex][numInstance_].WVP = worldViewProjectionMatrix;
+                // WVPはシェーダー側で計算するため省略
+                resource_->instancingData_[frameIndex][numInstance_].WVP = Math::MakeIdentity4x4();
                 resource_->instancingData_[frameIndex][numInstance_].color = particleIterator->color;
             }
 

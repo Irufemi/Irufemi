@@ -90,9 +90,6 @@ void ObjClass::Update() {
         transformationMatrix_.world = managedModel_->cpuModel->rootNode.localMatrix * transformationMatrix_.world;
     }
 
-    Matrix4x4 worldViewProj = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-    transformationMatrix_.WVP = worldViewProj;
-
     // 法線変換用の逆転置行列
     Matrix4x4 worldForNormal = transformationMatrix_.world;
     worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;

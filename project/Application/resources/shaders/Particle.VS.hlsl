@@ -32,6 +32,13 @@ struct VertexShaderInput
 	
 };
 
+struct Camera {
+	float32_t4x4 view;
+	float32_t4x4 projection;
+	float32_t3 worldPosition;
+};
+ConstantBuffer<Camera> gCamera : register(b2);
+
 /*テクスチャを貼ろう*/
 
 VertexShaderOutput main(VertexShaderInput input, uint32_t instanced : SV_InstanceID)
@@ -41,7 +48,9 @@ VertexShaderOutput main(VertexShaderInput input, uint32_t instanced : SV_Instanc
 	
 	/*三角形を動かそう*/
 	
-	output.position = mul(input.position, gParticle[instanced].WVP);
+	float32_t4 worldPos = mul(input.position, gParticle[instanced].World);
+	float4 viewPos = mul(worldPos, gCamera.view);
+	output.position = mul(viewPos, gCamera.projection);
 	
 	/*テクスチャを貼ろう*/
 	

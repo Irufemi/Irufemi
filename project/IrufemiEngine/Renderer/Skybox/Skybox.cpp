@@ -82,8 +82,9 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
 void Skybox::Update() {
 
     Matrix4x4 worldMatrix = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-
-    transformationMatrix_.WVP = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
+    // シェーダー側でgCameraを使用するようになったためWVPの計算を省略
+    transformationMatrix_.WVP = Math::MakeIdentity4x4();
+    transformationMatrix_.World = worldMatrix;
 
     // 更新されたWVP行列をGPUリソースにコピーする
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
@@ -190,6 +191,8 @@ void Skybox::MapResource() {
         if (transformationBuffer_[i]) {
             // 初期行列
             transformationBuffer_[i]->WVP = Math::MakeIdentity4x4();
+            transformationBuffer_[i]->World = Math::MakeIdentity4x4();
+            transformationBuffer_[i]->WorldInverseTranspose = Math::MakeIdentity4x4();
         }
     }
 }

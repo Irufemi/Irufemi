@@ -23,6 +23,13 @@ struct VertexShaderInput
 	float32_t3 normal : NORMAL0;
 };
 
+struct Camera {
+	float32_t4x4 view;
+	float32_t4x4 projection;
+	float32_t3 worldPosition;
+};
+ConstantBuffer<Camera> gCamera : register(b2);
+
 VertexShaderOutput main(VertexShaderInput input, uint32_t instanceId : SV_InstanceID)
 {
 	VertexShaderOutput output;
@@ -30,7 +37,9 @@ VertexShaderOutput main(VertexShaderInput input, uint32_t instanceId : SV_Instan
 	InstanceData inst = gBlocks[instanceId];
 
     // 位置
-	output.position = mul(input.position, inst.WVP);
+	float32_t4 worldPos = mul(input.position, inst.World);
+	float4 viewPos = mul(worldPos, gCamera.view);
+	output.position = mul(viewPos, gCamera.projection);
 
     // UV
 	output.texcoord = input.texcoord;
@@ -40,7 +49,6 @@ VertexShaderOutput main(VertexShaderInput input, uint32_t instanceId : SV_Instan
 	output.normal = normalize(n4.xyz);
 
     // ワールド座標(PS 側で視線方向などに使用)
-	float32_t4 worldPos = mul(input.position, inst.World);
 	output.worldPosition = worldPos.xyz;
 
 	// シャドウマッピング用の座標変換

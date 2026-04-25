@@ -120,7 +120,6 @@ void AnimationModel::Update() {
     // スキニングモデルかノードアニメーションモデルかで処理を分岐
     if (!managedModel_->cpuModel->skinClusterData.empty()) {
         // --- スキニングモデルの更新 ---
-        transformationMatrix_.WVP = worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
         transformationMatrix_.world = worldMatrix_;
         Matrix4x4 worldForNormal = transformationMatrix_.world;
         worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
@@ -130,7 +129,6 @@ void AnimationModel::Update() {
     } else {
         // --- ノードアニメーションモデルの更新 ---
         // オブジェクト全体のワールド行列を計算
-        transformationMatrix_.WVP = localMatrix_ * worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
         transformationMatrix_.world = localMatrix_ * worldMatrix_;
 
         // 法線変換用の逆転置行列

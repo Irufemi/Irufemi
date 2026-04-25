@@ -62,7 +62,7 @@ void Object3DResource::UpdateTransform(const Camera& camera) {
 
 
     transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-    transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
+    // CPU側のマテリアルキャッシュにのみ反映させる
 
     // 法線変換用：平行移動を除いた World を使う
     Matrix4x4 worldForNormal = transformationMatrix_.world;

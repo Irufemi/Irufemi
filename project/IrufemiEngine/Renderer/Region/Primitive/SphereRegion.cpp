@@ -275,7 +275,7 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
 
         InstanceData data;
         Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
-        data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
+        data.WVP = Math::MakeIdentity4x4();
 
         Matrix4x4 worldForNormal = world;
         worldForNormal.m[3][0] = 0.0f;
