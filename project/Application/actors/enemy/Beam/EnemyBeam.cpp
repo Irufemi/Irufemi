@@ -136,6 +136,11 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
             // 放出設定：物量と勢いを大幅に強化してレッドドラゴンのブレス感を演出
             gpuParticle_->SetBeamEmitter(headPos, direction, attackThickness_ * 0.5f, emitVelocity, emitSpread, emitCount, 0.01f);
             gpuParticle_->SetEmit(true);
+            
+            char dbgMsg[256];
+            sprintf_s(dbgMsg, "[EnemyBeam] Update - isAttackActive_: true, emitCount: %d, currentDist: %.1f\n", emitCount, currentDistance);
+            OutputDebugStringA(dbgMsg);
+
             gpuParticle_->Update();
         }
     } else {
@@ -170,6 +175,8 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
 
         // パーティクルの描画（UpdateでのCSディスパッチ含む）
         if (gpuParticle_) {
+            OutputDebugStringA("[EnemyBeam] Draw - Calling gpuParticle_->Draw()\n");
+            engine->ApplyGpuParticlePSO(); // 必須：パーティクル描画用PSOを適用
             gpuParticle_->Draw();
         }
 

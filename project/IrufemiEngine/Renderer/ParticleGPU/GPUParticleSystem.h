@@ -30,6 +30,7 @@ class Line3DRegion;
  */
 struct ParticleCS {
     Vector3 translate; ///< 位置
+    float pad0;
     Vector3 scale;     ///< スケール
     float lifeTime;    ///< 寿命（秒）
     Vector3 velocity;  ///< 速度
@@ -38,9 +39,13 @@ struct ParticleCS {
 
     // 拡張パラメータ
     Vector3 rotation;     ///< 回転角
+    float pad1;
     Vector3 rotateSpeed;  ///< 回転速度
+    float pad2;
     Vector3 startScale;   ///< 開始スケール
+    float pad3;
     Vector3 endScale;     ///< 終了スケール
+    float pad4;
     Vector4 startColor;   ///< 開始色
     Vector4 endColor;     ///< 終了色
 };
@@ -53,7 +58,7 @@ struct ParticleGPUMaterial {
     Vector4 color;             ///< 乗算色
     int32_t useClampSampler = 0; ///< 0: WRAP, 1: CLAMP
     float pad[3];
-    Matrix4x4 uvTransform;     ///< UV変形行列
+    Matrix4x4 uvTransform = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 }; ///< UV Transform
 };
 
 /**
@@ -111,24 +116,24 @@ struct GPUParticleEmitter {
     uint32_t isBillboard = 1;   ///< ビルボードフラグ
 
     // float4 x 14
-    uint32_t burstCount;
-    float jitter;
-    uint32_t atlasRows;
-    uint32_t atlasCols;
+    uint32_t burstCount = 0;
+    float jitter = 0.0f;
+    uint32_t atlasRows = 1;
+    uint32_t atlasCols = 1;
 
     // float4 x 15
-    float groundHeight;
-    float bounce;
-    float attractorStrength;
-    uint32_t pad4;
+    float groundHeight = -100.0f;
+    float bounce = 0.5f;
+    float attractorStrength = 0.0f;
+    uint32_t pad4 = 0;
 
     // float4 x 16
-    Vector3 attractorPos;
-    uint32_t pad5;
+    Vector3 attractorPos = {0,0,0};
+    uint32_t pad5 = 0;
 
     // float4 x 17
-    Vector3 areaSize;
-    uint32_t pad6;
+    Vector3 areaSize = {10,10,10};
+    uint32_t pad6 = 0;
 };
 
 /**
@@ -360,6 +365,10 @@ private:
     bool isCulled_ = false;
     bool isInitializedCS_ = false;
     bool needsUpdateCS_ = false;
+
+    // --- State tracking for multiple pass rendering ---
+    bool isCsDispatchedThisFrame_ = false;
+    uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);
 
     BlendMode selectedBlend_ = BlendMode::kBlendModeAdd;
     PSOManager::DepthWrite selectedDepth_ = PSOManager::DepthWrite::Disable;

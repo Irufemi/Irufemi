@@ -171,9 +171,14 @@ void GPUParticleSystem::Update() {
 
         if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
             isCulled_ = true;
+            OutputDebugStringA("[GPUParticleSystem] Update - Frustum Culled! (Returning early)\n");
             return; // 画面外なら計算（CS）をスキップ
         }
     }
+
+    char msg[256];
+    sprintf_s(msg, "[GPUParticleSystem] Update - Proceeding. isCulled_: %d, emitter_->type: %d\n", isCulled_, emitter_->type);
+    OutputDebugStringA(msg);
 
     /*Particleを発生させる*/
 
@@ -228,15 +233,20 @@ void GPUParticleSystem::Update() {
     }
 
     needsUpdateCS_ = true;
+    isCsDispatchedThisFrame_ = false;
 }
 
 // 描画
 void GPUParticleSystem::Draw() {
 
+    char msg[256];
+    sprintf_s(msg, "[GPUParticleSystem] Draw - isCulled_: %d, needsUpdateCS_: %d\n", isCulled_, needsUpdateCS_);
+    OutputDebugStringA(msg);
+
     if (isCulled_) return;
 
     // --- 追加: ポーズ時(Updateが呼ばれなかった時)のマルチバッファ同期 ---
-    if (!needsUpdateCS_) {
+    if (!needsUpdateCS_ && !isCsDispatchedThisFrame_) {
         uint32_t frameIndex = dxCommon_->GetFrameIndex();
         emitterBuffer_.Update(*emitter_, frameIndex);
         perFrameBuffer_.Update(*perFrameData_, frameIndex);
@@ -423,10 +433,14 @@ void GPUParticleSystem::SetBillboard(bool isBillboard) {
 
 void GPUParticleSystem::SetTexture(const std::string& textureFilePath) {
     if (!textureManager_) return;
+    
+    // 無条件に GetTextureHandle を呼び出し、確実に読み込み＆ハンドル取得を行う
+    textureHandle_ = textureManager_->GetTextureHandle(textureFilePath);
+    
+    // UIコンボボックス用のインデックス同期
     auto textureNames = textureManager_->GetTextureNamesForDebug();
     auto it = std::find(textureNames.begin(), textureNames.end(), textureFilePath);
     if (it != textureNames.end()) {
-        textureHandle_ = textureManager_->GetTextureHandle(textureFilePath);
         selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
     }
 }
@@ -605,6 +619,7 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
         commandList->ResourceBarrier(1, &uavBarrier);
 
         needsUpdateCS_ = false;
+        isCsDispatchedThisFrame_ = true;
     }
 }
 
