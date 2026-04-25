@@ -5,6 +5,7 @@
 #include "../../Engine/Core/Math/Vector4.h"
 #include "../../Resource/Model/Data/VoxelizedModel.h"
 #include "../../Engine/Core/Type/PerView.h"
+#include "../../Engine/Manager/IComputeTask.h"
 #include <d3d12.h>
 #include <memory>
 #include <string>
@@ -59,7 +60,7 @@ struct VoxelEmitter {
 };
 
 
-class VoxelParticleSystem {
+class VoxelParticleSystem : public IComputeTask {
 public:
   enum class LoadingStatus {
     Pending,
@@ -84,6 +85,8 @@ public:
 
   void Initialize(const std::string &modelName, const Vector3Int &resolution,
                   Camera *camera);
+
+  void DispatchCompute() override;
 
   void Update(float deltaTime);
   void Draw();

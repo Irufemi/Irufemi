@@ -115,6 +115,13 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     }
 }
 
+void DrawManager::ExecuteComputePasses() {
+    for (auto* task : computeTasks_) {
+        task->DispatchCompute();
+    }
+    computeTasks_.clear();
+}
+
 void DrawManager::Finalize() {
     auto* srvPool = dxCommon_->GetSrvPool();
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {

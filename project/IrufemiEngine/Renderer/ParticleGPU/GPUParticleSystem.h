@@ -11,6 +11,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include <string>
+#include "Engine/Manager/IComputeTask.h"
 #include <random>
 #include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
@@ -140,7 +141,7 @@ struct GPUParticleEmitter {
  * @class GPUParticleSystem
  * @brief Compute Shader を使用した、大量の粒子を GPU 上でシミュレーション・描画するクラス
  */
-class GPUParticleSystem
+class GPUParticleSystem : public IComputeTask
 {
 public:
     GPUParticleSystem();
@@ -148,6 +149,7 @@ public:
 
     /** @name 初期化・更新・描画 */
     ///@{
+    void DispatchCompute() override;
     void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png");
     void Update();
     void Draw();

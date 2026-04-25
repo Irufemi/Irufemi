@@ -18,6 +18,7 @@
 #include "../Core/Math/Vector4.h"
 #include <vector>
 #include <memory>
+#include "IComputeTask.h"
 
 class ShadowMap;
 
@@ -61,6 +62,8 @@ private:
 
     DirectXCommon* dxCommon_ = nullptr;
     ID3D12GraphicsCommandList* commandList_ = nullptr; // コマンドリストをキャッシュ
+
+    std::vector<IComputeTask*> computeTasks_;
 
     // 各フレームごとの動的リソース
     struct FrameResource {
@@ -133,6 +136,22 @@ public: //メンバ関数
      * @details カメラ、ライト、各種管理用定数バッファを一括でレジスタに設定します。
      */
     void BindCommonParameters();
+
+    /** @name Computeタスク管理 */
+    ///@{
+    /**
+     * @brief 今フレームで実行すべきComputeタスクを登録する
+     * @param task 登録するタスク（GPUParticleSystem等）
+     */
+    void RegisterComputeTask(IComputeTask* task) {
+        computeTasks_.push_back(task);
+    }
+    
+    /**
+     * @brief 登録された全Computeタスクを一括実行し、リストをクリアする
+     */
+    void ExecuteComputePasses();
+    ///@}
     ///@}
 
     /** @name レンダーターゲット・ポストプロセス操作 */

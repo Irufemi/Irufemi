@@ -17,6 +17,7 @@
 #include "Resource/Model/Data/SkinCluster.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Engine/Graphics/Data/Material.h"
+#include "Engine/Manager/IComputeTask.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>
@@ -35,11 +36,13 @@ struct ObjMaterial;
 struct Material;
 
 
-class AnimationModel {
+class AnimationModel : public IComputeTask {
 public: // メンバ関数
 
     AnimationModel();
     ~AnimationModel();
+
+    void DispatchCompute() override;
 
     void Initialize(Camera* camera, const std::string& filename);
 

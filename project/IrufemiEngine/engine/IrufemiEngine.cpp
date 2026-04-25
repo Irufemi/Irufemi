@@ -430,6 +430,10 @@ void IrufemiEngine::ProcessFrame() {
     // 1. バックバッファをクリア (念のため)
     drawManager_->PreDraw(clearColor_, 1.0f, 0);
 
+    // --- Compute Shaderの一括実行 ---
+    // 描画が始まる前に、全Rendererから予約されたComputeタスクを消化する
+    drawManager_->ExecuteComputePasses();
+
     // 2. メインの描画先を RenderTexture に切り替え、指定のクリアカラーでクリア
     drawManager_->BeginRenderTexture(mainRenderTexture_.get(), Vector4{ clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });
 }

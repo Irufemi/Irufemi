@@ -740,6 +740,9 @@
     <ClInclude Include="Renderer\Object3D\Effect\PrimitiveEffect.h">
       <Filter>Renderer\Object3D\Effect</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Manager\IComputeTask.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">

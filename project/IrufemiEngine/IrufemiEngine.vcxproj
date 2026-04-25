@@ -249,6 +249,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\DirectX\ShaderCompiler.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShadowMap.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h" />
+    <ClInclude Include="Engine\Manager\IComputeTask.h" />
     <ClInclude Include="Framework\SceneTransition.h" />
     <ClInclude Include="Renderer\Object3D\Effect\PrimitiveEffect.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.h" />

@@ -212,61 +212,61 @@ void GPUParticleSystem::Update() {
 
     perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
 
-    // フレームインデックスを取得して現在のフレーム用のGPUバッファにマスターデータをコピー
-    emitterBuffer_.Update(*emitter_, frameIndex);
-    perFrameBuffer_.Update(*perFrameData_, frameIndex);
-    materialBuffer_.Update(cpuMaterialData_, frameIndex);
-
-    /**
-     * @brief 送信済みのバーストカウントをリセットする
-     * @details これを忘れると、Emit()で追加されたカウントが毎フレーム送信され続け無限生成される
-     */
-    if (emitter_->burstCount > 0) {
-        char debugMsg[256];
-        sprintf_s(debugMsg, "[GPUParticleSystem::Update] frameIndex=%d, burstCount=%d (Resetting to 0)\n", frameIndex, emitter_->burstCount);
-        OutputDebugStringA(debugMsg);
-    }
-    emitter_->burstCount = 0;
-
     if (debugLineRegion_) {
         debugLineRegion_->Update();
     }
 
     needsUpdateCS_ = true;
-    isCsDispatchedThisFrame_ = false;
+    
+    // エンジンにCompute Shaderの実行を予約する
+    if (engine_ && engine_->GetDrawManager()) {
+        engine_->GetDrawManager()->RegisterComputeTask(this);
+    }
+}
+
+void GPUParticleSystem::DispatchCompute() {
+    if (isCulled_ || !needsUpdateCS_) return;
+
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+    
+    // フレームインデックスを取得して現在のフレーム用のGPUバッファにマスターデータをコピー
+    emitterBuffer_.Update(*emitter_, frameIndex);
+    perFrameBuffer_.Update(*perFrameData_, frameIndex);
+    materialBuffer_.Update(cpuMaterialData_, frameIndex);
+
+    if (emitter_->burstCount > 0) {
+        char debugMsg[256];
+        sprintf_s(debugMsg, "[GPUParticleSystem::DispatchCompute] frameIndex=%d, burstCount=%d (Resetting to 0)\n", frameIndex, emitter_->burstCount);
+        OutputDebugStringA(debugMsg);
+    }
+    
+    ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+    DispatchComputeShaders(commandList);
+
+    // 送信済みのバーストカウントをリセットする
+    emitter_->burstCount = 0;
+    needsUpdateCS_ = false;
 }
 
 // 描画
 void GPUParticleSystem::Draw() {
 
-    char msg[256];
-    sprintf_s(msg, "[GPUParticleSystem] Draw - isCulled_: %d, needsUpdateCS_: %d\n", isCulled_, needsUpdateCS_);
-    OutputDebugStringA(msg);
-
     if (isCulled_) return;
 
-    // --- 追加: ポーズ時(Updateが呼ばれなかった時)のマルチバッファ同期 ---
-    if (!needsUpdateCS_ && !isCsDispatchedThisFrame_) {
-        uint32_t frameIndex = dxCommon_->GetFrameIndex();
-        emitterBuffer_.Update(*emitter_, frameIndex);
-        perFrameBuffer_.Update(*perFrameData_, frameIndex);
-        materialBuffer_.Update(cpuMaterialData_, frameIndex);
-        
-        perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
-        Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
-        Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
-        billboardMatrix_.m[3][0] = 0.0f;
-        billboardMatrix_.m[3][1] = 0.0f;
-        billboardMatrix_.m[3][2] = 0.0f;
-        perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
-    }
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+
+    // 描画パスによってカメラが変わる可能性があるため、毎回の描画で更新
+    perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
+    Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
+    Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+    billboardMatrix_.m[3][0] = 0.0f;
+    billboardMatrix_.m[3][1] = 0.0f;
+    billboardMatrix_.m[3][2] = 0.0f;
+    perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
 
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
-    // 1. Compute Shader dispatch (Update/Emit)
-    DispatchComputeShaders(commandList);
-
-    // 2. Graphics Draw
+    // Graphics Draw
     D3D12_RESOURCE_BARRIER transitionBarrier{};
     transitionBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     transitionBarrier.Transition.pResource = particleResource_.Get();
@@ -281,8 +281,6 @@ void GPUParticleSystem::Draw() {
     engine_->SetCull(selectedCull_);
     engine_->ApplyGpuParticlePSO();
       
-    uint32_t frameIndex = dxCommon_->GetFrameIndex();
-
     drawManager_->DrawGPUParticle(
         vertexBufferView_,
         indexBufferView_,

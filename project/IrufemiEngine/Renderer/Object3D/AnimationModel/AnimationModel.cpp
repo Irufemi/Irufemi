@@ -190,6 +190,11 @@ void AnimationModel::Update() {
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
     
     MakeDirty();
+
+    // スキニングモデルの場合はCompute Shaderの実行を予約する
+    if (!managedModel_->cpuModel->skinClusterData.empty() && engine_ && engine_->GetDrawManager()) {
+        engine_->GetDrawManager()->RegisterComputeTask(this);
+    }
 }
 
 void AnimationModel::SyncIfDirty() {
@@ -210,6 +215,24 @@ void AnimationModel::SyncIfDirty() {
             lastSyncedFrameIndex_ = frameIndex;
         }
     }
+}
+
+void AnimationModel::DispatchCompute() {
+    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->skinClusterData.empty() || !camera_) return;
+
+    if (isCullingEnabled_) {
+        float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
+        Sphere boundingSphere;
+        boundingSphere.center = transform_.translate;
+        boundingSphere.radius = managedModel_->cpuModel->boundingSphere.radius * maxScale * 1.5f;
+        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+            return; // 視錐台カリングされている場合はComputeもスキップ
+        }
+    }
+
+    engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
+    uint32_t f = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource[f].Get());
 }
 
 // 描画
@@ -250,13 +273,6 @@ void AnimationModel::Draw() {
     if (boneLines_ && !skeleton_.joints.empty()) {
         engine_->ApplyLineInstancedPSO();
         boneLines_->Draw();
-    }
-
-    // 1. スキニングの実行
-    if (!managedModel_->cpuModel->skinClusterData.empty()) {
-        engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
-        uint32_t f = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-        engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource[f].Get());
     }
 
     // 2. グラフィックスPSOの適用
