@@ -28,7 +28,7 @@ PixelShaderOutput main(VertexShaderOutput input)
         : float32_t4(1.0f, 1.0f, 1.0f, 1.0f);
 
     // ベースカラー
-	float32_t4 baseColor = texColor * gMaterial.color;
+	float32_t4 baseColor = texColor * gMaterial.color * input.color;
 
     // αカットアウト：テクスチャ使用時のみ(閾値0.5)
     // → 無地半透明(hasTexture == 0)の場合は discard しない(加算/通常ブレンドが効く)

@@ -4,12 +4,8 @@
 
 /// 必要なResourceの定義
 
-struct Vertex
-{
-	float32_t4 position;
-	float32_t2 texcoord;
-	float32_t3 normal;
-};
+#include "VertexData.hlsli"
+
 struct VertexInfluence
 {
 	float32_t4 weight;
@@ -23,11 +19,11 @@ struct SkinningInformation
 // SkinningObject3d.VS.hlslで作ったものと同じPalette
 StructuredBuffer<Well> gMatrixPalette : register(t0);
 // VertexBufferViewのstream)として利用していた入力頂点
-StructuredBuffer<Vertex> gInputVertices : register(t1);
+StructuredBuffer<VertexInput> gInputVertices : register(t1);
 // VertexBufferViewのstream1として利用していた入力インフルエンス
 StructuredBuffer<VertexInfluence> gInfluences : register(t2);
 // Skinning計算後の頂点データ。SkinnedVertex
-RWStructuredBuffer<Vertex> gOutputVertices : register(u0);
+RWStructuredBuffer<VertexInput> gOutputVertices : register(u0);
 // Skinningに関するちょっとした情報
 ConstantBuffer<SkinningInformation> gSkinningInformation : register(b0);
 
@@ -47,12 +43,13 @@ void main(uint32_t3 DTid : SV_DispatchThreadID)
 		
 		// 必要なデータをStructureBufferから取ってくる。
 		// SkinningObject3D.VSでは入力頂点として受け取っていた
-		Vertex input = gInputVertices[vertexIndex];
+		VertexInput input = gInputVertices[vertexIndex];
 		VertexInfluence influence = gInfluences[vertexIndex];
 		
 		// skinning後の頂点を計算
-		Vertex skinned;
+		VertexInput skinned;
 		skinned.texcoord = input.texcoord;
+		skinned.color = input.color; // 頂点カラーはそのままスルー
 		
 		// 計算の方法はSkinningObject3D.VSと同じ
 		// データの取得方法が変わるだけで、原理が変わるわけではない

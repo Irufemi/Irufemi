@@ -4,6 +4,7 @@
 
 #include "./Object3d.hlsli"
 #include "./Lighting.hlsli"
+#include "VertexData.hlsli"
 
 ConstantBuffer<LightCommonData> gLightCommonData : register(b1);
 
@@ -16,13 +17,7 @@ struct InstanceData
 };
 StructuredBuffer<InstanceData> gBlocks : register(t0);
 
-struct VertexShaderInput
-{
-	float32_t4 position : POSITION0;
-	float32_t2 texcoord : TEXCOORD0;
-	float32_t3 normal : NORMAL0;
-};
-
+// struct VertexShaderInput は VertexData.hlsli で定義
 struct Camera {
 	float32_t4x4 view;
 	float32_t4x4 projection;
@@ -30,7 +25,7 @@ struct Camera {
 };
 ConstantBuffer<Camera> gCamera : register(b2);
 
-VertexShaderOutput main(VertexShaderInput input, uint32_t instanceId : SV_InstanceID)
+VertexShaderOutput main(VertexInput input, uint32_t instanceId : SV_InstanceID)
 {
 	VertexShaderOutput output;
 
@@ -53,6 +48,8 @@ VertexShaderOutput main(VertexShaderInput input, uint32_t instanceId : SV_Instan
 
 	// シャドウマッピング用の座標変換
 	output.shadowPos = mul(worldPos, gLightCommonData.viewProjection);
+
+	output.color = input.color * inst.color; // 頂点カラーとインスタンスカラーの乗算
 
 	return output;
 }

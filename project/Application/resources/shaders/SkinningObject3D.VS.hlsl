@@ -43,6 +43,8 @@ struct VertexShaderInput
 	
 	float32_t3 normal : NORMAL0;
 	
+	float32_t4 color : COLOR0;
+	
 	float32_t4 weight : WEIGHT0;
 	int32_t4 index : INDEX0;
 	
@@ -92,6 +94,8 @@ VertexShaderOutput main(VertexShaderInput input)
 
 	// シャドウマッピング用の座標変換
 	output.shadowPos = mul(worldPos, gLightCommonData.viewProjection);
+	
+	output.color = input.color;
 	
 	return output;
 }

@@ -93,7 +93,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 		context.worldPosition = input.worldPosition;
 		context.toEye = normalize(gCamera.worldPosition - input.worldPosition);
 
-		float3 albedo = gMaterial.color.rgb * textureColor.rgb;
+		float3 albedo = gMaterial.color.rgb * textureColor.rgb * input.color.rgb;
 		float3 totalDiffuse = 0;
 		float3 totalSpecular = 0;
 
@@ -152,7 +152,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 		output.color.rgb += environmentColor.rgb * F * (1.0f - gMaterial.roughness) * gMaterial.environmentCoefficient;
 		
 		// アルファ
-		output.color.a = gMaterial.color.a * textureColor.a;
+		output.color.a = gMaterial.color.a * textureColor.a * input.color.a;
 		
 		// output.colorのα値が0の時にPixelを棄却
 		if (output.color.a == 0.0)
@@ -162,7 +162,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	}
 	else
 	{
-		output.color = gMaterial.color * textureColor;
+		output.color = gMaterial.color * textureColor * input.color;
 	}
 	
     // Linear -> sRGB はハードウェア RTV (_SRGB形式) に任せるため削除

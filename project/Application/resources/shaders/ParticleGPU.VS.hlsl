@@ -1,15 +1,11 @@
 #include "ParticleGPU.hlsli"
+#include "VertexData.hlsli"
 
 StructuredBuffer<Particle> gParticles : register(t0);
 ConstantBuffer<PerView> gPerView : register(b0);
 ConstantBuffer<GPUParticleEmitter> gEmitter : register(b6); // Special Slot
 
-struct VertexShaderInput
-{
-	float4 position : POSITION0;
-	float2 texcoord : TEXCOORD0;
-	float3 normal : NORMAL0;
-};
+// struct VertexShaderInput は VertexData.hlsli で定義
 
 // 回転行列の作成 (XYZ)
 float4x4 MakeRotationMatrix(float3 rotate)
@@ -24,7 +20,7 @@ float4x4 MakeRotationMatrix(float3 rotate)
     return mul(mZ, mul(mX, mY));
 }
 
-VertexShaderOutput main(VertexShaderInput input, uint instanceId : SV_InstanceID) 
+VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID) 
 {
 	VertexShaderOutput output;
 	Particle particle = gParticles[instanceId];
@@ -87,6 +83,6 @@ VertexShaderOutput main(VertexShaderInput input, uint instanceId : SV_InstanceID
         uv = (uv + float2(col, row)) * frameSize;
     }
     output.texcoord = uv;
-	output.color = particle.color;
+	output.color = input.color * particle.color;
 	return output;
 }

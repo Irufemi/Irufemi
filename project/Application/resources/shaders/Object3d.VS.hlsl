@@ -3,6 +3,7 @@
 
 #include "Object3d.hlsli"
 #include "Lighting.hlsli"
+#include "VertexData.hlsli"
 
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 ConstantBuffer<LightCommonData> gLightCommonData : register(b1);
@@ -15,21 +16,7 @@ ConstantBuffer<LightCommonData> gLightCommonData : register(b1);
 
 //};
 
-struct VertexShaderInput
-{
-	float32_t4 position : POSITION0;
-	
-	/*テクスチャを貼ろう*/
-	
-	///VertexShaderをtexcoord対応する
-	
-	float32_t2 texcoord : TEXCOORD0;
-	
-    /*LambertianReflectance*/
-	
-	float32_t3 normal : NORMAL0;
-	
-};
+// struct VertexShaderInput は VertexData.hlsli にて定義
 
 struct Camera {
 	float32_t4x4 view;
@@ -40,7 +27,7 @@ ConstantBuffer<Camera> gCamera : register(b2);
 
 /*テクスチャを貼ろう*/
 
-VertexShaderOutput main(VertexShaderInput input)
+VertexShaderOutput main(VertexInput input)
 {
 	VertexShaderOutput output;
 	//output.position = input.position;
@@ -78,6 +65,8 @@ VertexShaderOutput main(VertexShaderInput input)
 	/* Shadow Mapping */
 	// ワールド空間の座標をライトの視点・射影行列で変換
 	output.shadowPos = mul(worldPos, gLightCommonData.viewProjection);
+
+	output.color = input.color; // 頂点カラーを渡す
 
 	return output;
 }

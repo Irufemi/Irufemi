@@ -30,8 +30,9 @@ void Line3DRegion::Initialize(Camera* camera) {
     baseLineResource_->Map();
 
     // 基準となる線の頂点データ (0,0,0) -> (1,0,0)
-    baseLineResource_->vertexData_[0] = { {0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
-    baseLineResource_->vertexData_[1] = { {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
+    // VertexData: position, texcoord, normal, color
+    baseLineResource_->vertexData_[0] = { {0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
+    baseLineResource_->vertexData_[1] = { {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
 
     baseLineResource_->indexData_[0] = 0;
     baseLineResource_->indexData_[1] = 1;

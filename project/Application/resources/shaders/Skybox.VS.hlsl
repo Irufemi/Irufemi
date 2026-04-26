@@ -1,12 +1,9 @@
 #include "skybox.hlsli"
+#include "VertexData.hlsli"
 
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
-struct VertexShaderInput
-{
-	float32_t4 position : POSITION0;
-};
-
+// struct VertexShaderInput は VertexData.hlsli で定義
 
 struct Camera {
 	float32_t4x4 view;
@@ -15,7 +12,7 @@ struct Camera {
 };
 ConstantBuffer<Camera> gCamera : register(b2);
 
-VertexShaderOutput main(VertexShaderInput input)
+VertexShaderOutput main(VertexInput input)
 {
 	VertexShaderOutput output;
 	
@@ -30,6 +27,7 @@ VertexShaderOutput main(VertexShaderInput input)
 	output.position = mul(viewPos, gCamera.projection).xyww;
 	
 	output.texcoord = input.position.xyz;
+	output.color = input.color;
 
 	return output;
 }

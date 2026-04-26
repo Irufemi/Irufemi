@@ -12,10 +12,10 @@ void LineResource::CreateResource() {
 
     // Line は基本 2 頂点
     if (!vertexResource_) {
-        vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(LineVertexData) * 2);
+        vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * 2);
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
-        vertexBufferView_.SizeInBytes = sizeof(LineVertexData) * 2;
-        vertexBufferView_.StrideInBytes = sizeof(LineVertexData);
+        vertexBufferView_.SizeInBytes = sizeof(VertexData) * 2;
+        vertexBufferView_.StrideInBytes = sizeof(VertexData);
     }
 
     if (!indexResource_) {

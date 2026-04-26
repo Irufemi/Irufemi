@@ -4,7 +4,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
-#include "Data/LineVertexData.h"
+#include "../VertexData.h"
 #include "../../Engine/Graphics/Data/Material.h"
 #include "../TransformationMatrix.h"
 #include "../../Engine/Core/Math/Transform.h"
@@ -23,7 +23,7 @@ public:
 
 public:
     // --- 頂点バッファ ---
-    LineVertexData* vertexData_ = nullptr;
+    VertexData* vertexData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 
