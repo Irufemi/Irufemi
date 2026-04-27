@@ -26,7 +26,7 @@
 #include <map>
 #include <wrl.h>
 
-// 前方宣言
+// 蜑肴婿螳｣險
 class Camera;
 class IrufemiEngine;
 class SphereRegion;
@@ -37,7 +37,7 @@ struct Material;
 
 
 class AnimationModel : public IComputeTask {
-public: // メンバ関数
+public: // 繝｡繝ｳ繝宣未謨ｰ
 
     AnimationModel();
     ~AnimationModel();
@@ -52,12 +52,12 @@ public: // メンバ関数
 
     void Debug(const char* objName = " ");
 
-    // 描画用の変換行列リソースのGPUアドレスを取得
+    // 謠冗判逕ｨ縺ｮ螟画鋤陦悟・繝ｪ繧ｽ繝ｼ繧ｹ縺ｮGPU繧｢繝峨Ξ繧ｹ繧貞叙蠕・
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
         return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
 
-private: // メンバ関数(内部ヘルパ)
+private: // 繝｡繝ｳ繝宣未謨ｰ(蜀・Κ繝倥Ν繝・
 
     void UpdateMaterials();
 
@@ -65,10 +65,10 @@ private: // メンバ関数(内部ヘルパ)
 
     void InitializeResources();
 
-public: // ゲッター・セッター
-    // 指定したインデックスのメッシュのマテリアルを取得(読み取り専用)
+public: // 繧ｲ繝・ち繝ｼ繝ｻ繧ｻ繝・ち繝ｼ
+    // 謖・ｮ壹＠縺溘う繝ｳ繝・ャ繧ｯ繧ｹ縺ｮ繝｡繝・す繝･縺ｮ繝槭ユ繝ｪ繧｢繝ｫ繧貞叙蠕・隱ｭ縺ｿ蜿悶ｊ蟆ら畑)
     const ObjMaterial* GetMaterial(size_t meshIndex) const;
-    // 指定したインデックスのメッシュのマテリアルを取得(書き込み可能)
+    // 謖・ｮ壹＠縺溘う繝ｳ繝・ャ繧ｯ繧ｹ縺ｮ繝｡繝・す繝･縺ｮ繝槭ユ繝ｪ繧｢繝ｫ繧貞叙蠕・譖ｸ縺崎ｾｼ縺ｿ蜿ｯ閭ｽ)
     ObjMaterial* GetMaterial(size_t meshIndex);
 
     void SetColor(const Vector4& color) { color_ = color; isDirty_ = true; }
@@ -92,23 +92,23 @@ public: // ゲッター・セッター
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
 
-private: // メンバ変数
-    // 共有モデルデータ(CPU/GPU)
+private: // 繝｡繝ｳ繝仙､画焚
+    // 蜈ｱ譛峨Δ繝・Ν繝・・繧ｿ(CPU/GPU)
     std::shared_ptr<ManagedModel> managedModel_;
 
-    // オブジェクト全体のTransform
+    // 繧ｪ繝悶ず繧ｧ繧ｯ繝亥・菴薙・Transform
     Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     TransformationMatrix transformationMatrix_{};
-    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // インスタンスカラー
-    float environmentCoefficient_ = 1.0f; // インスタンス環境マップ係数
-    int32_t lightingModeOverride_ = -1; // -1:使用しない, 0以上:上書き
-    int32_t useClampSamplerOverride_ = -1; // -1:使用しない, 0以上:上書き
-    int32_t enableLightingOverride_ = -1; // -1:使用しない, 0以上:上書き
+    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // 繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ繧ｫ繝ｩ繝ｼ
+    float environmentCoefficient_ = 1.0f; // 繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ迺ｰ蠅・・繝・・菫よ焚
+    int32_t lightingModeOverride_ = -1; // -1:菴ｿ逕ｨ縺励↑縺・ 0莉･荳・荳頑嶌縺・
+    int32_t useClampSamplerOverride_ = -1; // -1:菴ｿ逕ｨ縺励↑縺・ 0莉･荳・荳頑嶌縺・
+    int32_t enableLightingOverride_ = -1; // -1:菴ｿ逕ｨ縺励↑縺・ 0莉･荳・荳頑嶌縺・
 
-    // --- 描画リソース (新アーキテクチャ) ---
+    // --- 謠冗判繝ｪ繧ｽ繝ｼ繧ｹ (譁ｰ繧｢繝ｼ繧ｭ繝・け繝√Ε) ---
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
-    // 変換行列用リソース (全メッシュ共有)
+    // 螟画鋤陦悟・逕ｨ繝ｪ繧ｽ繝ｼ繧ｹ (蜈ｨ繝｡繝・す繝･蜈ｱ譛・
     ConstantBuffer<TransformationMatrix> transformationBuffer_;
     std::map<std::string, Matrix4x4> nodeWorldMatrices_;
 
@@ -120,7 +120,7 @@ private: // メンバ変数
 
     SkinCluster skinCluster_;
 
-    // ノードアニメーション用の固有Matrix
+    // 繝弱・繝峨い繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ逕ｨ縺ｮ蝗ｺ譛窺atrix
     Matrix4x4 localMatrix_;
 
     Matrix4x4 worldMatrix_;
@@ -129,15 +129,22 @@ private: // メンバ変数
 
     float animationTime_ = 0.0f;
 
-    // --- 追加：関節表示用のインスタンス描画機構 ---
+    // --- 霑ｽ蜉・夐未遽陦ｨ遉ｺ逕ｨ縺ｮ繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ謠冗判讖滓ｧ・---
     std::unique_ptr<SphereRegion> jointSpheres_;
     std::unique_ptr<Line3DRegion> boneLines_;
 
-    // 行列更新の最適化用
+    // 陦悟・譖ｴ譁ｰ縺ｮ譛驕ｩ蛹也畑
     bool isDirty_ = true;
     bool isCullingEnabled_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
+
+    void MarkAsDirty() {
+        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
+    }
+
+private:
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
 
     void SyncBeforeDraw();
 

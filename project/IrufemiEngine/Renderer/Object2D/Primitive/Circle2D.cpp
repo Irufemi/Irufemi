@@ -137,6 +137,7 @@ void Circle2D::Update() {
 
     // UV 変換はSpriteと同様の意味付け(ここではIdentityのまま)
     resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
+    resource_->MarkAsDirty();
 }
 
 void Circle2D::Draw() {

@@ -89,6 +89,8 @@ void PrimitiveObjects3DClass::MaterialComponent::UpdateMaterial(Object3DResource
     } else {
         resource->GetMaterialData()->hasTexture = false;
     }
+    
+    resource->MarkAsDirty();
 }
 
 // --- PrimitiveObjects3DClass ---

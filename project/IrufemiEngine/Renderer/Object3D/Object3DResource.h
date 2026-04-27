@@ -23,27 +23,27 @@ public:
     void UpdateTransform(const Camera& camera);
 
 public:
-    // --- 頂点バッファ ---
+    // --- 鬆らせ繝舌ャ繝輔ぃ ---
     std::vector<VertexData> vertexDataList_{};
     VertexData* vertexData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 
-    // --- インデックスバッファ ---
+    // --- 繧､繝ｳ繝・ャ繧ｯ繧ｹ繝舌ャ繝輔ぃ ---
     std::vector<uint32_t> indexDataList_{};
     uint32_t* indexData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_ = nullptr;
     D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
     uint32_t indexCount_ = 0;
 
-    // --- マテリアル ---
+    // --- 繝槭ユ繝ｪ繧｢繝ｫ ---
     Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     Material cpuMaterialData_{};
     Material* GetMaterialData() { return &cpuMaterialData_; }
     
     ConstantBuffer<Material> materialBuffer_;
 
-    // --- トランスフォーム ---
+    // --- 繝医Λ繝ｳ繧ｹ繝輔か繝ｼ繝 ---
     Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
     
@@ -65,23 +65,30 @@ public:
     
     void SyncBeforeDraw() {
         uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+        if (!isDirtyBuffer_[frameIndex]) return;
+        isDirtyBuffer_[frameIndex] = false;
         
-        // 外部バッファがなければ自身を更新
+        // 螟夜Κ繝舌ャ繝輔ぃ縺後↑縺代ｌ縺ｰ閾ｪ霄ｫ繧呈峩譁ｰ
         if (!externalTransformationBuffer_) {
             internalTransformationBuffer_.Update(transformationMatrix_, frameIndex);
         }
         
-        // マテリアルデータを更新
+        // 繝槭ユ繝ｪ繧｢繝ｫ繝・・繧ｿ繧呈峩譁ｰ
         materialBuffer_.Update(cpuMaterialData_, frameIndex);
     }
     
-    // --- 外部リソースの借用 (ObjClass/AnimationModel等で共有するため) ---
+    // --- 螟夜Κ繝ｪ繧ｽ繝ｼ繧ｹ縺ｮ蛟溽畑 (ObjClass/AnimationModel遲峨〒蜈ｱ譛峨☆繧九◆繧・ ---
     void SetExternalTransformationBuffer(ConstantBuffer<TransformationMatrix>* externalBuffer) {
         externalTransformationBuffer_ = externalBuffer;
     }
 
-    // --- テクスチャ ---
+    // --- 繝・け繧ｹ繝√Ε ---
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
 
-    bool isFirstUpdate_ = true;
+    void MarkAsDirty() {
+        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
+    }
+
+private:
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
 };

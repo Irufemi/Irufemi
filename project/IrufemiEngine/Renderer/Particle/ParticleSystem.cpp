@@ -207,6 +207,7 @@ void ParticleSystem::Update() {
         ++particleIterator; // 次のイテレーターに進める
     }
     resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+    resource_->MarkAsDirty();
     
     resource_->SyncBeforeDraw();
     lastUpdateFrameIndex_ = BaseResource::GetDirectXCommon()->GetFrameIndex();

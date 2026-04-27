@@ -292,8 +292,9 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
     // ミサイルの描画
     for (int i = 0; i < kMaxMissiles; ++i) {
         if (missiles_[i].isActive && missileObjs_[i]) {
-            missiles_[i].position.y += missileVibration_.y; // スピード感を出すための振動
-            missileObjs_[i]->SetPosition(missiles_[i].position);
+            Vector3 drawPos = missiles_[i].position;
+            drawPos.y += missileVibration_.y; // スピード感を出すための振動
+            missileObjs_[i]->SetPosition(drawPos);
             Vector3 mRot = { 0.0f, std::atan2(missiles_[i].velocity.x, missiles_[i].velocity.z), 0.0f };
             float xzLen = std::sqrt(missiles_[i].velocity.x * missiles_[i].velocity.x + missiles_[i].velocity.z * missiles_[i].velocity.z);
             mRot.x = std::atan2(-missiles_[i].velocity.y, xzLen);

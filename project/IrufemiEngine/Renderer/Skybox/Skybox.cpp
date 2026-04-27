@@ -14,9 +14,9 @@
 IrufemiEngine* Skybox::engine_ = nullptr;
 
 
-// コンストラクタ
+// 郢ｧ・ｳ郢晢ｽｳ郢ｧ・ｹ郢晏現ﾎ帷ｹｧ・ｯ郢ｧ・ｿ
 Skybox::Skybox() {}
-// デストラクタ
+// 郢昴・縺帷ｹ晏現ﾎ帷ｹｧ・ｯ郢ｧ・ｿ
 Skybox::~Skybox() {
     UnMapResource();
 }
@@ -24,7 +24,7 @@ Skybox::~Skybox() {
 void Skybox::Initialize(Camera* camera, const std::string& textureName) {
     this->camera_ = camera;
 
-    // PrimitiveManager からスカイボックス用の形状（Cube）を取得
+    // PrimitiveManager 邵ｺ荵晢ｽ臥ｹｧ・ｹ郢ｧ・ｫ郢ｧ・､郢晄㈱繝｣郢ｧ・ｯ郢ｧ・ｹ騾包ｽｨ邵ｺ・ｮ陟厄ｽ｢霑･・ｶ繝ｻ繝ｻube繝ｻ蟲ｨ・定愾髢・ｾ繝ｻ
     PrimitiveManager* primitiveManager = PrimitiveManager::GetInstance();
     const PrimitiveData& primitiveData = primitiveManager->GetPrimitiveData(PrimitiveType::Skybox);
 
@@ -34,7 +34,7 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
     CreateResource();
     MapResource();
 
-    // 頂点バッファの設定
+    // 鬯・ｉ縺帷ｹ晁・繝｣郢晁ｼ斐＜邵ｺ・ｮ髫ｪ・ｭ陞ｳ繝ｻ
     vertexBufferView_ = {};
     vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
     vertexBufferView_.StrideInBytes = sizeof(VertexData);
@@ -42,7 +42,7 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
 
     std::copy(vertexDataList_.begin(), vertexDataList_.end(), vertexData_);
 
-    // インデックスバッファの設定
+    // 郢ｧ・､郢晢ｽｳ郢昴・繝｣郢ｧ・ｯ郢ｧ・ｹ郢晁・繝｣郢晁ｼ斐＜邵ｺ・ｮ髫ｪ・ｭ陞ｳ繝ｻ
     indexBufferView_ = {};
     indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
     indexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(uint32_t) * indexDataList_.size());
@@ -50,7 +50,7 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
 
     std::copy(indexDataList_.begin(), indexDataList_.end(), indexData_);
 
-    // フラグ更新
+    // 郢晁ｼ釆帷ｹｧ・ｰ隴厄ｽｴ隴・ｽｰ
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
@@ -64,7 +64,7 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
         if (!textureNames.empty()) {
             textureHandle_ = textureManager->GetTextureHandle(textureName);
 
-            // コンボボックス用に selectedIndex を初期化
+            // 郢ｧ・ｳ郢晢ｽｳ郢晄㈱繝ｻ郢昴・縺醍ｹｧ・ｹ騾包ｽｨ邵ｺ・ｫ selectedIndex 郢ｧ雋槭・隴帶ｺｷ蝟ｧ
             auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
             if (it != textureNames.end()) {
                 selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
@@ -72,7 +72,7 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
                 selectedTextureIndex_ = 0;
             }
         } else {
-            // テクスチャが見つからない、またはリストが空の場合は白キューブマップを使用
+            // 郢昴・縺醍ｹｧ・ｹ郢昶・ﾎ慕ｸｺ迹夲ｽｦ荵昶命邵ｺ荵晢ｽ臥ｸｺ・ｪ邵ｺ繝ｻﾂ竏壺穐邵ｺ貅倥・郢晢ｽｪ郢ｧ・ｹ郢晏現窶ｲ驕ｨ・ｺ邵ｺ・ｮ陜｣・ｴ陷ｷ蛹ｻ繝ｻ騾具ｽｽ郢ｧ・ｭ郢晢ｽ･郢晢ｽｼ郢晄じ繝ｻ郢昴・繝ｻ郢ｧ蜑・ｽｽ・ｿ騾包ｽｨ
             textureHandle_ = textureManager->GetWhiteCubeMapHandle();
             selectedTextureIndex_ = 0;
         }
@@ -82,10 +82,11 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
 void Skybox::Update() {
 
     Matrix4x4 worldMatrix = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-    // シェーダー側でgCameraを使用するようになったためWVPの計算を省略
+    // 郢ｧ・ｷ郢ｧ・ｧ郢晢ｽｼ郢敖郢晢ｽｼ陋幢ｽｴ邵ｺ・ｧgCamera郢ｧ蜑・ｽｽ・ｿ騾包ｽｨ邵ｺ蜷ｶ・狗ｹｧ蛹ｻ竕ｧ邵ｺ・ｫ邵ｺ・ｪ邵ｺ・｣邵ｺ貅倪螺郢ｧ莉抃P邵ｺ・ｮ髫ｪ閧ｲ・ｮ蜉ｱ・帝ｵ竏ｫ謇・
     transformationMatrix_.WVP = Math::MakeIdentity4x4();
     transformationMatrix_.World = worldMatrix;
-    // フラグ更新
+    // 郢晁ｼ釆帷ｹｧ・ｰ隴厄ｽｴ隴・ｽｰ
+    MarkAsDirty();
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
@@ -93,13 +94,16 @@ void Skybox::Update() {
 
 void Skybox::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    transformationBuffer_.Update(transformationMatrix_, frameIndex);
+    if (isDirtyBuffer_[frameIndex]) {
+        transformationBuffer_.Update(transformationMatrix_, frameIndex);
+        isDirtyBuffer_[frameIndex] = false;
+    }
 }
 
 void Skybox::Draw() {
     if (!vertexResource_ || !indexResource_ || !camera_ || !engine_) return;
 
-    // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
+    // 郢ｧ・ｫ郢晢ｽ｡郢晢ｽｩ邵ｺ・ｮ髯ｦ謔溘・邵ｺ謔滂ｽ､逕ｻ蟲ｩ邵ｺ霈費ｽ檎ｸｺ貅伉ｰ邵ｲ竏壹′郢晄じ縺夂ｹｧ・ｧ郢ｧ・ｯ郢晞メ繝ｻ闖ｴ阮吮ｲ陞溽判蟲ｩ邵ｺ霈費ｽ檎ｸｺ貅伉ｰ郢昶・縺臥ｹ昴・縺・
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
                           std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
@@ -130,7 +134,7 @@ void Skybox::Debug() {
                 if (idx < 0 || idx >= static_cast<int>(names->size())) return (const char*)nullptr;
                 return (*names)[idx].c_str();
             }, &textureNames, static_cast<int>(textureNames.size()))) {
-                // 選択が変更された
+                // 鬩包ｽｸ隰壽ｧｭ窶ｲ陞溽判蟲ｩ邵ｺ霈費ｽ檎ｸｺ繝ｻ
                 std::string selectedName = textureNames[selectedTextureIndex_];
                 if (selectedName == "whiteCubeMap") {
                     textureHandle_ = textureManager->GetWhiteCubeMapHandle();
@@ -153,7 +157,7 @@ void Skybox::CreateResource() {
 
     DirectXCommon* dxCommon = engine_->GetDrawManager()->GetDxCommon();
 
-    // 頂点・インデックスの静的リソースは単一バッファのまま
+    // 鬯・ｉ縺帷ｹ晢ｽｻ郢ｧ・､郢晢ｽｳ郢昴・繝｣郢ｧ・ｯ郢ｧ・ｹ邵ｺ・ｮ鬮ｱ蜥丞飭郢晢ｽｪ郢ｧ・ｽ郢晢ｽｼ郢ｧ・ｹ邵ｺ・ｯ陷雁・ｽｸﾂ郢晁・繝｣郢晁ｼ斐＜邵ｺ・ｮ邵ｺ・ｾ邵ｺ・ｾ
     if (!vertexResource_) {
         vertexResource_ = dxCommon->CreateBufferResource(sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
@@ -167,7 +171,7 @@ void Skybox::CreateResource() {
         indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
     }
 
-    // マテリアルとワールド変換状態をマルチバッファで確保
+    // 郢晄ｧｭ繝ｦ郢晢ｽｪ郢ｧ・｢郢晢ｽｫ邵ｺ・ｨ郢晢ｽｯ郢晢ｽｼ郢晢ｽｫ郢晉甥・､逕ｻ驪､霑･・ｶ隲ｷ荵晢ｽ堤ｹ晄ｧｭﾎ晉ｹ昶・繝ｰ郢昴・繝ｵ郢ｧ・｡邵ｺ・ｧ驕抵ｽｺ闖ｫ繝ｻ
     materialBuffer_.Initialize(dxCommon);
     transformationBuffer_.Initialize(dxCommon);
 }
@@ -187,12 +191,12 @@ void Skybox::MapResource() {
     }
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         if (materialBuffer_[i]) {
-            // 初期値
+            // 陋ｻ譎・ｄ陋滂ｽ､
             materialBuffer_[i]->color = {1.0f, 1.0f, 1.0f, 1.0f};
             materialBuffer_[i]->intensity = 1.0f;
         }
         if (transformationBuffer_[i]) {
-            // 初期行列
+            // 陋ｻ譎・ｄ髯ｦ謔溘・
             transformationBuffer_[i]->WVP = Math::MakeIdentity4x4();
             transformationBuffer_[i]->World = Math::MakeIdentity4x4();
             transformationBuffer_[i]->WorldInverseTranspose = Math::MakeIdentity4x4();

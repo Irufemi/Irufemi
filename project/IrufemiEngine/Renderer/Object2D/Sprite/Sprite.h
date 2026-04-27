@@ -132,7 +132,7 @@ public: //メンバ関数
     /**
      * @brief 色（RGBA）を設定
      */
-    void SetColor(const Vector4& color) { resource_->GetMaterialData()->color = color; }
+    void SetColor(const Vector4& color) { resource_->GetMaterialData()->color = color; resource_->MarkAsDirty(); }
 
     /**
      * @brief 反転状態を一括設定
