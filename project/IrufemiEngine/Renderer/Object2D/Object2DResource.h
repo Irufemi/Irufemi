@@ -56,25 +56,9 @@ public:
         return materialBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
     
-    void SyncMaterialData() {
+    void SyncBeforeDraw() {
         uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+        transformationBuffer_.Update(transformationMatrix_, frameIndex);
         materialBuffer_.Update(cpuMaterialData_, frameIndex);
-    }
-
-    int32_t dirtyFramesLeft_ = kMaxFramesInFlight; // 変更があったら指定フレーム数だけ全バッファに伝播させる
-    uint32_t lastSyncedFrameIndex_ = UINT32_MAX;
-    void MakeDirty() { dirtyFramesLeft_ = kMaxFramesInFlight; }
-
-    void SyncIfDirty() {
-        if (dirtyFramesLeft_ > 0) {
-            uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-            transformationBuffer_.Update(transformationMatrix_, frameIndex);
-            SyncMaterialData();
-            
-            if (lastSyncedFrameIndex_ != frameIndex) {
-                dirtyFramesLeft_--;
-                lastSyncedFrameIndex_ = frameIndex;
-            }
-        }
     }
 };

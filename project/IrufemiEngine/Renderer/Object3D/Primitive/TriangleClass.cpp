@@ -73,14 +73,9 @@ void TriangleClass::Update() {
     // 行列更新
     resource_->UpdateTransform(*camera_);
     
-    resource_->SyncMaterialData();
-
-    // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
-    
-    resource_->MakeDirty();
 }
 
 void TriangleClass::Draw() {
@@ -109,7 +104,8 @@ void TriangleClass::Draw() {
         Update();
     }
     
-    resource_->SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    resource_->SyncBeforeDraw();
 
     // 共有リソースを使用して描画
     drawManager_->DrawStandard3D(resource_.get());

@@ -85,14 +85,15 @@ void Skybox::Update() {
     // シェーダー側でgCameraを使用するようになったためWVPの計算を省略
     transformationMatrix_.WVP = Math::MakeIdentity4x4();
     transformationMatrix_.World = worldMatrix;
-
-    // 更新されたWVP行列をGPUリソースにコピーする
-    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    transformationBuffer_.Update(transformationMatrix_, frameIndex);
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+}
+
+void Skybox::SyncBeforeDraw() {
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    transformationBuffer_.Update(transformationMatrix_, frameIndex);
 }
 
 void Skybox::Draw() {
@@ -105,6 +106,8 @@ void Skybox::Draw() {
     if (isDirty_ || cameraChanged) {
         Update();
     }
+    
+    SyncBeforeDraw();
 
     DrawManager* drawManager = engine_->GetDrawManager();
 

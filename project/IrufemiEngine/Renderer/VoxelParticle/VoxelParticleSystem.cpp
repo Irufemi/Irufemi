@@ -122,12 +122,12 @@ void VoxelParticleSystem::Update(float deltaTime) {
   emitterData_.emit = isEmitting_ ? 1 : 0;
   
   uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-  emitterBuffer_.Update(emitterData_, frameIndex);
-
+  
   // PerFrame データを更新（time と deltaTime を CS シェーダーへ渡す）
   perFrameData_.time = emitterData_.time;
   perFrameData_.deltaTime = deltaTime;
-  perFrameBuffer_.Update(perFrameData_, frameIndex);
+
+    // (バッファへの転送は SyncBeforeDraw で実施)
 
   // PerView 更新（描画用）
   perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
@@ -145,6 +145,12 @@ void VoxelParticleSystem::Update(float deltaTime) {
   }
 }
 
+void VoxelParticleSystem::SyncBeforeDraw() {
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    emitterBuffer_.Update(emitterData_, frameIndex);
+    perFrameBuffer_.Update(perFrameData_, frameIndex);
+}
+
 void VoxelParticleSystem::DispatchCompute() {
   if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_)
     return;
@@ -152,6 +158,8 @@ void VoxelParticleSystem::DispatchCompute() {
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
   uint32_t frameIndex = dxCommon->GetFrameIndex();
+
+  SyncBeforeDraw();
 
   if (needsUpdateCS_ || isEmitting_ || needsInitialize_) {
     ID3D12DescriptorHeap *ppHeaps[] = {dxCommon->GetSrvPool()->GetHeap()};

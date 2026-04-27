@@ -64,9 +64,6 @@ void Object2DResource::UpdateTransform(const Camera& camera) {
     // 2D なので正射影行列を掛ける
     transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, camera.GetOrthographicMatrix());
 
-    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-    transformationBuffer_.Update(transformationMatrix_, frameIndex);
-
     // CPU側のマテリアルキャッシュにのみ反映させる
     cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
 }

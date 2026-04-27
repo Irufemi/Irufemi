@@ -74,15 +74,6 @@ void Object3DResource::UpdateTransform(const Camera& camera) {
     // 逆転置行列を計算
     transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
-    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-    if (!externalTransformationBuffer_) {
-        internalTransformationBuffer_.Update(transformationMatrix_, frameIndex);
-    }
-
-    // マテリアルの CPUキャッシュ更新 (明示的な SyncMaterialData() 呼び出しが必要)
+    // マテリアルの CPUキャッシュ更新 (描画直前の SyncBeforeDraw で GPUへ送られる)
     cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
-}
-
-void Object3DResource::SetExternalTransformationBuffer(ConstantBuffer<TransformationMatrix>* buffer) {
-    externalTransformationBuffer_ = buffer;
 }

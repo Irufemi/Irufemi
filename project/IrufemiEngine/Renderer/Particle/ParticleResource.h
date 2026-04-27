@@ -51,7 +51,7 @@ public:
         return instancingResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
     }
     
-    void SyncMaterialData() {
+    void SyncBeforeDraw() {
         uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
         materialBuffer_.Update(cpuMaterialData_, frameIndex);
     }

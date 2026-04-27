@@ -224,15 +224,19 @@ void GPUParticleSystem::Update() {
     }
 }
 
+void GPUParticleSystem::SyncBeforeDraw() {
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+    emitterBuffer_.Update(*emitter_, frameIndex);
+    perFrameBuffer_.Update(*perFrameData_, frameIndex);
+    materialBuffer_.Update(cpuMaterialData_, frameIndex);
+}
+
 void GPUParticleSystem::DispatchCompute() {
     if (isCulled_ || !needsUpdateCS_) return;
 
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
     
-    // フレームインデックスを取得して現在のフレーム用のGPUバッファにマスターデータをコピー
-    emitterBuffer_.Update(*emitter_, frameIndex);
-    perFrameBuffer_.Update(*perFrameData_, frameIndex);
-    materialBuffer_.Update(cpuMaterialData_, frameIndex);
+    SyncBeforeDraw();
 
     if (emitter_->burstCount > 0) {
         char debugMsg[256];

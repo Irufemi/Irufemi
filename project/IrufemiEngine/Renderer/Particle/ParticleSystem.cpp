@@ -208,7 +208,7 @@ void ParticleSystem::Update() {
     }
     resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
     
-    resource_->SyncMaterialData();
+    resource_->SyncBeforeDraw();
     lastUpdateFrameIndex_ = BaseResource::GetDirectXCommon()->GetFrameIndex();
 
 #if USE_IMGUI
@@ -305,7 +305,7 @@ void ParticleSystem::SyncGPUData() {
                     sizeof(ParticleForGPU) * numInstance_);
     }
     
-    resource_->SyncMaterialData();
+    resource_->SyncBeforeDraw();
     lastUpdateFrameIndex_ = currentFrameIndex; // これ以降このフレームでの同期は不要
 }
 

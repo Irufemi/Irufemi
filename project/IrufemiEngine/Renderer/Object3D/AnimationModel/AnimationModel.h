@@ -139,10 +139,7 @@ private: // メンバ変数
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 
-    int32_t dirtyFramesLeft_ = kMaxFramesInFlight;
-    uint32_t lastSyncedFrameIndex_ = UINT32_MAX;
-    void MakeDirty() { dirtyFramesLeft_ = kMaxFramesInFlight; }
-    void SyncIfDirty();
+    void SyncBeforeDraw();
 
     std::string filename_;
 };

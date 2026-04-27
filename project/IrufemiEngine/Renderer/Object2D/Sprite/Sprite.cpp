@@ -138,16 +138,12 @@ void Sprite::Update() {
 
         Matrix4x4 base = Math::Multiply(cropUV, userUV);
         resource_->GetMaterialData()->uvTransform = Math::Multiply(flipUV, base);
-        
-        resource_->SyncMaterialData();
     }
 
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetOrthographicMatrix();
-    
-    resource_->MakeDirty();
 }
 
 void Sprite::Draw() {
@@ -161,7 +157,8 @@ void Sprite::Draw() {
         Update();
     }
     
-    resource_->SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    resource_->SyncBeforeDraw();
 
     drawManager_->DrawSprite(resource_.get());
 }

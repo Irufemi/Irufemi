@@ -60,7 +60,5 @@ void LineResource::UpdateTransform(const Camera& camera) {
     transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
 
-    uint32_t frameIndex = s_dxCommon_->GetFrameIndex();
-    transformationBuffer_.Update(transformationMatrix_, frameIndex);
-    materialBuffer_.Update(cpuMaterialData_, frameIndex);
+    transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
 }

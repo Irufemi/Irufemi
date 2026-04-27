@@ -367,6 +367,7 @@ private:
     bool isCulled_ = false;
     bool isInitializedCS_ = false;
     bool needsUpdateCS_ = false;
+    void SyncBeforeDraw();
 
     // --- State tracking for multiple pass rendering ---
     bool isCsDispatchedThisFrame_ = false;

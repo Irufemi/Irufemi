@@ -4,6 +4,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <future>
+#include <mutex>
+#include <atomic>
 #include "SceneTransition.h"
 
 class IrufemiEngine;
@@ -26,10 +29,11 @@ public:
 
     /** @brief 遷移フェーズ */
     enum class TransitionPhase {
-        None,     ///< 通常時
-        Closing,  ///< フェードアウト中（現在のシーンをUpdateし続ける）
-        LoadingWait, ///< ロード完了待機中（画面が暗転したままLoadingScreenのみ動く）
-        Opening   ///< フェードイン中（新しいシーンをUpdateしない）
+        None,         ///< 通常時
+        Closing,      ///< フェードアウト中（現在のシーンをUpdateし続ける）
+        Initializing, ///< 別スレッドでシーン破棄・生成中（LoadingScreenを描画）
+        LoadingWait,  ///< ロード完了待機中（画面が暗転したままLoadingScreenのみ動く）
+        Opening       ///< フェードイン中（新しいシーンをUpdateしない）
     };
 
     /**
@@ -133,4 +137,15 @@ private:
     std::unique_ptr<LoadingScreen> loadingScreen_; ///< 共通のローディング画面
 
     bool wasLoading_ = false; ///< 前フレームがロード中だったか
+
+    // --- 非同期読み込み用 ---
+    std::future<void> initFuture_;
+    std::mutex nextSceneMutex_;
+    std::unique_ptr<IScene> nextScene_{};
+    std::atomic<bool> isAsyncInitializing_{false};
+
+    /**
+     * @brief 非同期でのシーン破棄・初期化を開始する
+     */
+    void StartAsyncInitialize(const Key& next);
 };

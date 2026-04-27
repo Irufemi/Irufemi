@@ -125,7 +125,8 @@ void AnimationModel::Update() {
         worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
         worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
         transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-        transformationBuffer_.Update(transformationMatrix_, engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex());
+        
+        // SyncBeforeDraw() で同期するため、ここでは計算のみ行う
     } else {
         // --- ノードアニメーションモデルの更新 ---
         // オブジェクト全体のワールド行列を計算
@@ -138,7 +139,7 @@ void AnimationModel::Update() {
         transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
         // 計算した行列をマップ済みのリソースにコピー
-        transformationBuffer_.Update(transformationMatrix_, engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex());
+        // SyncBeforeDraw() で同期するため、ここでは計算のみ行う
     }
 
 
@@ -186,32 +187,26 @@ void AnimationModel::Update() {
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
-    
-    MakeDirty();
-
     // スキニングモデルの場合はCompute Shaderの実行を予約する
     if (!managedModel_->cpuModel->skinClusterData.empty() && engine_ && engine_->GetDrawManager()) {
         engine_->GetDrawManager()->RegisterComputeTask(this);
     }
 }
 
-void AnimationModel::SyncIfDirty() {
-    if (dirtyFramesLeft_ > 0) {
-        uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-        transformationBuffer_.Update(transformationMatrix_, frameIndex);
-        for (auto& res : meshResources_) {
-            res->SyncMaterialData();
-        }
-        
-        // --- 追加: SkinCluster のマルチバッファ同期（ポーズ中の振動対策） ---
-        if (managedModel_ && managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
-            AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
-        }
-        
-        if (lastSyncedFrameIndex_ != frameIndex) {
-            dirtyFramesLeft_--;
-            lastSyncedFrameIndex_ = frameIndex;
-        }
+void AnimationModel::SyncBeforeDraw() {
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    
+    // 変換行列の更新 (全メッシュで共有)
+    transformationBuffer_.Update(transformationMatrix_, frameIndex);
+    
+    // 各メッシュのマテリアル等の更新
+    for (auto& res : meshResources_) {
+        res->SyncBeforeDraw();
+    }
+    
+    // --- SkinCluster のマルチバッファ同期（ポーズ中の振動対策） ---
+    if (managedModel_ && managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
+        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
     }
 }
 
@@ -259,7 +254,8 @@ void AnimationModel::Draw() {
         Update();
     }
     
-    SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    SyncBeforeDraw();
 
     // --- 追加：骨格（球体の集合）を一括描画 ---
     if (jointSpheres_ && !skeleton_.joints.empty()) {
@@ -374,8 +370,8 @@ void AnimationModel::UpdateMaterials() {
         
         // アルファテスト用閾値
         mappedData->alphaReference = cpuMat.alphaReference;
-
-        res->SyncMaterialData();
+        
+        // (マテリアルバッファへの転送は SyncBeforeDraw() で行われるため、ここでは SyncMaterialData は呼ばない)
     }
 }
 

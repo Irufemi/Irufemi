@@ -297,6 +297,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 void IrufemiEngine::Finalize() {
     // 依存関係に基づき、上位レイヤーから下位レイヤーの順で破棄する
 
+    // アプリケーション終了時、シーン破棄前にGPU処理の完了を待機する
+    if (dxCommon_) {
+        dxCommon_->WaitForGPU();
+    }
+
     // 1. シーン・UI
     if (sceneManager_) {
         sceneManager_.reset();

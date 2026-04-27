@@ -49,4 +49,10 @@ public:
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const {
         return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
+
+    void SyncBeforeDraw() {
+        uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+        transformationBuffer_.Update(transformationMatrix_, frameIndex);
+        materialBuffer_.Update(cpuMaterialData_, frameIndex);
+    }
 };

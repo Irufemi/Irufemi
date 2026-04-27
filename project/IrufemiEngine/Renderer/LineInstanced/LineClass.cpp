@@ -106,6 +106,7 @@ void Line3DRegion::BuildInstanceBuffer(bool force) {
 void Line3DRegion::Draw() {
     if (activeCount_ == 0) return;
     BuildInstanceBuffer();
+    baseLineResource_->SyncBeforeDraw();
     drawManager_->DrawLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32());
 }
 

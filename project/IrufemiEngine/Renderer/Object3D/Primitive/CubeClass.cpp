@@ -107,16 +107,12 @@ void CubeClass::Update() {
             resource_->GetMaterialData()->hasTexture = false;
         }
         resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
-        
-        resource_->SyncMaterialData();
     }
 
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
-
-    resource_->MakeDirty();
 }
 
 void CubeClass::Draw() {
@@ -147,7 +143,8 @@ void CubeClass::Draw() {
         Update();
     }
     
-    resource_->SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    resource_->SyncBeforeDraw();
 
     drawManager_->DrawStandard3D(resource_.get());
 }

@@ -63,34 +63,25 @@ public:
         return internalTransformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
     
-    void SyncMaterialData() {
+    void SyncBeforeDraw() {
         uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+        
+        // 外部バッファがなければ自身を更新
+        if (!externalTransformationBuffer_) {
+            internalTransformationBuffer_.Update(transformationMatrix_, frameIndex);
+        }
+        
+        // マテリアルデータを更新
         materialBuffer_.Update(cpuMaterialData_, frameIndex);
     }
-
-    int32_t dirtyFramesLeft_ = kMaxFramesInFlight; // 変更があったら指定フレーム数だけ全バッファに伝播させる
-    uint32_t lastSyncedFrameIndex_ = UINT32_MAX;
-    void MakeDirty() { dirtyFramesLeft_ = kMaxFramesInFlight; }
-
-    void SyncIfDirty() {
-        if (dirtyFramesLeft_ > 0) {
-            uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-            
-            // 外部バッファがなければ自身を更新
-            if (!externalTransformationBuffer_) {
-                internalTransformationBuffer_.Update(transformationMatrix_, frameIndex);
-            }
-            SyncMaterialData();
-            
-            if (lastSyncedFrameIndex_ != frameIndex) {
-                dirtyFramesLeft_--;
-                lastSyncedFrameIndex_ = frameIndex;
-            }
-        }
-    }
+    
     // --- 外部リソースの借用 (ObjClass/AnimationModel等で共有するため) ---
-    void SetExternalTransformationBuffer(ConstantBuffer<TransformationMatrix>* buffer);
+    void SetExternalTransformationBuffer(ConstantBuffer<TransformationMatrix>* externalBuffer) {
+        externalTransformationBuffer_ = externalBuffer;
+    }
 
     // --- テクスチャ ---
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
+
+    bool isFirstUpdate_ = true;
 };

@@ -129,8 +129,6 @@ void PrimitiveObjects3DClass::Update() {
 
     // マテリアル情報の最新化
     material_.UpdateMaterial(mesh_.resource.get(), textureManager_);
-    
-    mesh_.resource->SyncMaterialData();
 }
 
 void PrimitiveObjects3DClass::Draw() {
@@ -168,6 +166,9 @@ void PrimitiveObjects3DClass::Draw(const Camera& camera) {
             return; // 描画スキップ
         }
     }
+
+    // 描画実行直前のバッファ同期
+    mesh_.resource->SyncBeforeDraw();
 
     // 描画実行
     drawManager_->DrawStandard3D(mesh_.resource.get());

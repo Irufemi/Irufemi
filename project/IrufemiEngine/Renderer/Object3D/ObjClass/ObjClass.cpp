@@ -102,23 +102,16 @@ void ObjClass::Update() {
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
-    
-    MakeDirty();
 }
 
-void ObjClass::SyncIfDirty() {
-    if (dirtyFramesLeft_ > 0) {
-        uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
-        // 変換行列の更新 (全メッシュで共有のバッファを1回だけ更新)
-        transformationBuffer_.Update(transformationMatrix_, frameIndex);
-        for (auto& res : meshResources_) {
-            res->SyncMaterialData();
-        }
-        
-        if (lastSyncedFrameIndex_ != frameIndex) {
-            dirtyFramesLeft_--;
-            lastSyncedFrameIndex_ = frameIndex;
-        }
+void ObjClass::SyncBeforeDraw() {
+    uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
+    // 変換行列の更新 (全メッシュで共有のバッファ)
+    transformationBuffer_.Update(transformationMatrix_, frameIndex);
+    
+    // 各メッシュのマテリアル等の更新
+    for (auto& res : meshResources_) {
+        res->SyncBeforeDraw();
     }
 }
 
@@ -138,7 +131,8 @@ void ObjClass::Draw() {
         Update();
     }
     
-    SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    SyncBeforeDraw();
 
     // 視錐台カリング
     if (isCullingEnabled_ && managedModel_->cpuModel) {
@@ -288,7 +282,5 @@ void ObjClass::UpdateMaterials() {
         
         // アルファテスト用閾値
         mappedData->alphaReference = cpuMat.alphaReference;
-        
-        res->SyncMaterialData();
     }
 }

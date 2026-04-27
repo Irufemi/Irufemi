@@ -36,6 +36,15 @@ public:
         }
     }
 
+    // すべてのフレームバッファ（kMaxFramesInFlight分）に同じデータを書き込む（初期化用）
+    void UpdateAll(const T& data) {
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            if (mappedData_[i]) {
+                *mappedData_[i] = data;
+            }
+        }
+    }
+
     // マッピングされたメモリへの直接アクセス
     T* operator[](uint32_t frameIndex) {
         return mappedData_[frameIndex];

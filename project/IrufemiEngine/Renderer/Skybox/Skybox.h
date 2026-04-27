@@ -110,5 +110,6 @@ private: // メンバ変数(resource)
     bool isDirty_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
+    void SyncBeforeDraw();
 };
 

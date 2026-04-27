@@ -11,18 +11,23 @@
 #include "../../../../externals/DirectXTex/d3dx12.h"
 #include <algorithm>
 
-void DirectXCommon::Finalize() {
+void DirectXCommon::WaitForGPU() {
+    if (commandQueue_ && fence_ && fenceEvent_) {
+        uint64_t fv = IncrementGlobalFence();
+        commandQueue_->Signal(fence_.Get(), fv);
+        if (fence_->GetCompletedValue() < fv) {
+            fence_->SetEventOnCompletion(fv, fenceEvent_);
+            WaitForSingleObject(fenceEvent_, INFINITE);
+        }
+    }
+}
 
+void DirectXCommon::Finalize() {
 
     // GPU同期 (全フレームの完了を待機)
     if (commandQueue_ && fence_) {
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-            uint64_t fv = IncrementGlobalFence();
-            commandQueue_->Signal(fence_.Get(), fv);
-            if (fence_->GetCompletedValue() < fv) {
-                fence_->SetEventOnCompletion(fv, fenceEvent_);
-                WaitForSingleObject(fenceEvent_, INFINITE);
-            }
+            WaitForGPU();
         }
     }
 

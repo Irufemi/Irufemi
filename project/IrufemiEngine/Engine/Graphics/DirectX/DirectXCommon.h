@@ -8,6 +8,7 @@
 #include <vector>
 #include <mutex>
 #include <string>
+#include <atomic>
 
 #include "FrameRateController.h"
 #include "ShaderCompiler.h"
@@ -48,6 +49,11 @@ public: // メンバ関数
 	 * @brief 解放処理
 	 */
 	void Finalize();
+
+	/**
+	 * @brief GPUの全処理が完了するのを同期待機する
+	 */
+	void WaitForGPU();
 
 	/**
 	 * @brief 初期化
@@ -350,7 +356,7 @@ private: // メンバ変数
 
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence_ = nullptr;
 	uint64_t fenceValues_[kMaxFramesInFlight]{};
-	uint64_t globalFenceValue_ = 0;
+	std::atomic<uint64_t> globalFenceValue_{ 0 };
 	HANDLE fenceEvent_ = nullptr;
 	uint32_t frameIndex_ = 0;
 

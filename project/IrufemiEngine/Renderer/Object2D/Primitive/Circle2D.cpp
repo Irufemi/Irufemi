@@ -104,8 +104,6 @@ void Circle2D::InitMaterialAndMatrix() {
         Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP =
         Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
-    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-    resource_->transformationBuffer_.Update(resource_->transformationMatrix_, frameIndex);
 
     // マテリアル
     resource_->GetMaterialData()->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -139,11 +137,10 @@ void Circle2D::Update() {
 
     // UV 変換はSpriteと同様の意味付け(ここではIdentityのまま)
     resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
-    resource_->MakeDirty();
 }
 
 void Circle2D::Draw() {
-    resource_->SyncIfDirty();
+    resource_->SyncBeforeDraw();
     drawManager_->DrawSprite(resource_.get());
 }
 

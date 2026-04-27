@@ -181,6 +181,7 @@ private:
   std::future<void> initializeFuture_;
 
   bool needsUpdateCS_ = false;
+  void SyncBeforeDraw();
 
   static IrufemiEngine *engine_;
 };

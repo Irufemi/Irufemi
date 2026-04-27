@@ -92,16 +92,12 @@ void CylinderClass::Update() {
         if (resource_->textureHandle_.ptr == 0) {
             resource_->GetMaterialData()->hasTexture = false;
         }
-        
-        resource_->SyncMaterialData();
     }
 
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
-    
-    resource_->MakeDirty();
 }
 
 void CylinderClass::Draw() {
@@ -132,8 +128,8 @@ void CylinderClass::Draw() {
     if (isDirty_ || cameraChanged) {
         Update();
     }
-    
-    resource_->SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    resource_->SyncBeforeDraw();
 
     drawManager_->DrawStandard3D(resource_.get());
 }
