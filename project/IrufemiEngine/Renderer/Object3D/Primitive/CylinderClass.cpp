@@ -1,4 +1,4 @@
-#include "Renderer/Object3D/Primitive/CylinderClass.h"
+﻿#include "Renderer/Object3D/Primitive/CylinderClass.h"
 
 #include <cmath>
 #include "Resource/Texture/TextureManager.h"
@@ -178,3 +178,10 @@ Vector3 CylinderClass::GetDirection() const {
     Matrix4x4 mat = Math::MakeRotateXYZMatrix(resource_->transform_.rotate);
     return { mat.m[2][0], mat.m[2][1], mat.m[2][2] };
 }
+
+void CylinderClass::SyncBeforeDraw() {
+    if (resource_) {
+        resource_->SyncBeforeDraw();
+    }
+}
+

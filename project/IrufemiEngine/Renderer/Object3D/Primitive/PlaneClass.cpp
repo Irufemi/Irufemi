@@ -1,4 +1,4 @@
-#include "Renderer/Object3D/Primitive/PlaneClass.h"
+﻿#include "Renderer/Object3D/Primitive/PlaneClass.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Manager/PrimitiveManager.h"
@@ -145,3 +145,10 @@ void PlaneClass::Debug([[maybe_unused]] const char* planeName) {
     ImGui::End();
 #endif
 }
+
+void PlaneClass::SyncBeforeDraw() {
+    if (resource_) {
+        resource_->SyncBeforeDraw();
+    }
+}
+

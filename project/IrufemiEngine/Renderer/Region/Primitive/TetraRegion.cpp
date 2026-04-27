@@ -1,4 +1,4 @@
-#include "TetraRegion.h"
+﻿#include "TetraRegion.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h" // 追加
 #include "Application/camera/Camera.h"
@@ -288,6 +288,7 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
     CreateOrResizeInstanceBuffer(totalCount);
 
     uint32_t frameIndex = dx_->GetFrameIndex();
+    lastUpdateFrameIndex_ = frameIndex;
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
@@ -297,9 +298,14 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
     instanceDirty_ = false;
 }
 
+void TetraRegion::SyncBeforeDraw() {
+    if (vertexCount_ == 0 || indexCount_ == 0 || instances_.empty()) { return; }
+    BuildInstanceBuffer(true);
+}
+
 void TetraRegion::Draw() {
     if (vertexCount_ == 0 || indexCount_ == 0 || (instances_.empty() && instanceWorlds_.empty())) { return; }
-    BuildInstanceBuffer(true);
+    
 
     drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(dx_->GetFrameIndex()), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, visibleInstanceCount_);
 }
@@ -358,3 +364,4 @@ void TetraRegion::SetTextureManager(TextureManager* tm) {
 void TetraRegion::SetDrawManager(DrawManager* dm) {
     drawManager_ = dm;
 }
+

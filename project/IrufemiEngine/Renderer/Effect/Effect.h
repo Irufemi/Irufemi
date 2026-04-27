@@ -1,3 +1,4 @@
+#include "../Core/IRenderable.h"
 #pragma once
 
 #include <memory>
@@ -23,7 +24,7 @@ enum class EffectType {
  * @brief 汎用エフェクトクラス
  * @details EffectType を指定することで、適切な初期化・再生を行う
  */
-class Effect {
+class Effect : public IRenderable {
 public:
     Effect();
     ~Effect();
@@ -43,7 +44,8 @@ public:
     /**
      * @brief エフェクトの描画
      */
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     /**
      * @brief デバッグUIの表示
@@ -80,3 +82,5 @@ private:
     PrimitiveType currentShape_ = PrimitiveType::Plane;
     std::string currentTextureName_ = "resources/circle2.png";
 };
+
+

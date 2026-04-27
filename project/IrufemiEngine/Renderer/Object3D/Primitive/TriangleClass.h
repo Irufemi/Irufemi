@@ -1,3 +1,4 @@
+﻿#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -16,7 +17,7 @@ class TextureManager;
 class DrawManager;
 class DebugUI;
 
-class TriangleClass {
+class TriangleClass : public IRenderable {
 private:
     std::unique_ptr<Object3DResource> resource_ = nullptr;
     int selectedTextureIndex_ = 0;
@@ -38,7 +39,8 @@ public:
 
     void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
     void Update();
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
     void Debug(const char* triangleName = "");
 
     // ゲッター/セッター
@@ -71,3 +73,6 @@ public:
 private:
     static inline Transform sDefaultTransform_{};
 };
+
+
+

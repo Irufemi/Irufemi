@@ -1,3 +1,4 @@
+﻿#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -26,7 +27,7 @@ class TextureManager;
 class DrawManager;
 class DescriptorPool; // 追加
 
-class TetraRegion {
+class TetraRegion : public IRenderable {
 public:
     TetraRegion() {
         instancingSrvIndex_.fill(UINT32_MAX);
@@ -53,7 +54,8 @@ public:
 
     void ClearInstances();
     void BuildInstanceBuffer(bool force = false);
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // 色設定API(SphereRegion と同等)
     void SetColor(const Vector4& color);                 // マテリアル色
@@ -128,4 +130,8 @@ private:
 
     bool     isCullingEnabled_ = true;
     uint32_t visibleInstanceCount_ = 0;
+
+    uint32_t lastUpdateFrameIndex_ = 0;
+    bool isDirty_ = true;
 };
+

@@ -1,3 +1,4 @@
+﻿#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -24,7 +25,7 @@ class TextureManager;
 class DrawManager;
 class DescriptorPool; // 追加
 
-class SphereRegion {
+class SphereRegion : public IRenderable {
 public:
     SphereRegion() {
         instancingSrvIndex_.fill(UINT32_MAX);
@@ -63,7 +64,8 @@ public:
     void BuildInstanceBuffer(bool force = false);
 
     // 描画(事前に DrawManager::PreDraw 済みであること)
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // 色設定(マテリアル全体 or インスタンス個別/一括)
     void SetColor(const Vector4& color);                 // マテリアル色(全体に乗算される前提の色)
@@ -76,7 +78,7 @@ public:
     D3D12_INDEX_BUFFER_VIEW&    GetIndexBufferView() { return indexBufferView_; }
     ID3D12Resource*             GetMaterialResource() { return materialBuffer_.GetResource(dx_->GetFrameIndex()); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[dx_->GetFrameIndex()]; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT                        GetIndexCount() const { return indexCount_; }
     UINT                        GetInstanceCount() const { return visibleInstanceCount_; }
 
@@ -133,4 +135,8 @@ private:
     bool                   instanceDirty_ = false;
     bool                   isCullingEnabled_ = true;
     uint32_t               visibleInstanceCount_ = 0;
+    
+    uint32_t lastUpdateFrameIndex_ = 0;
+    bool isDirty_ = true;
 };
+

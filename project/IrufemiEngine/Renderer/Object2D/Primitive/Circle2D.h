@@ -1,3 +1,4 @@
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <cstdint>
@@ -16,7 +17,7 @@ struct Circle2DInfo {
     float   radius = 1.0f;
 };
 
-class Circle2D {
+class Circle2D : public IRenderable {
 protected:
     Circle2DInfo info_{};
 
@@ -47,7 +48,8 @@ public:
     void Update();
 
     // 描画
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // デバッグ
     void Debug(const char* circleName = " ");
@@ -59,11 +61,11 @@ public:
     void SetRadius(float radius);
 
     // 見た目
-    void SetColor(const Vector4& color) { resource_->GetMaterialData()->color = color; resource_->MarkAsDirty(); }
-    void SetRotateZ(float rad) { resource_->transform_.rotate = { 0.0f, 0.0f, rad }; resource_->MarkAsDirty(); }
+    void SetColor(const Vector4& color) { resource_->GetMaterialData()->color = color; }
+    void SetRotateZ(float rad) { resource_->transform_.rotate = { 0.0f, 0.0f, rad }; }
 
     // テクスチャ制御
-    void SetUseTexture(bool use) { useTexture_ = use; resource_->GetMaterialData()->hasTexture = use; resource_->MarkAsDirty(); }
+    void SetUseTexture(bool use) { useTexture_ = use; resource_->GetMaterialData()->hasTexture = use; }
     bool SetTextureByName(const std::string& textureName); // 名前からハンドル設定＆選択更新
 
     // 共有マネージャ設定
@@ -81,4 +83,7 @@ private:
     // 変換の更新(center/radius/rotate)
     void UpdateMatrix();
 };
+
+
+
 

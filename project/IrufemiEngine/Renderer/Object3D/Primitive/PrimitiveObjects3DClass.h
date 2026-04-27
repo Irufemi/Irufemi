@@ -1,3 +1,4 @@
+﻿#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <memory>
@@ -20,7 +21,7 @@ class DebugUI;
  * @details コンポーネント指向に基づき、メッシュ・マテリアル・トランスフォームの各機能を内部に持ちます。
  *          ImGuiエディタからのリアルタイムな形状変更やプロパティ編集に対応します。
  */
-class PrimitiveObjects3DClass {
+class PrimitiveObjects3DClass : public IRenderable {
 public:
     /**
      * @struct TransformComponent
@@ -103,7 +104,8 @@ public:
     /**
      * @brief 描画処理
      */
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     /**
      * @brief 描画処理（カメラを外部から指定する場合）
@@ -150,3 +152,6 @@ private:
     static DrawManager* drawManager_;
     static DebugUI* ui_;
 };
+
+
+

@@ -1,3 +1,4 @@
+﻿#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -16,8 +17,7 @@ class TextureManager;
 class DrawManager;
 class DebugUI;
 
-class PlaneClass
-{
+class PlaneClass : public IRenderable {
 private: //メンバ変数
 
     Plane info_{};
@@ -46,7 +46,8 @@ public: //メンバ関数
     void Update();
 
     // 描画
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // デバッグ
     void Debug(const char* planeName = "");
@@ -88,3 +89,6 @@ private:
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };
+
+
+

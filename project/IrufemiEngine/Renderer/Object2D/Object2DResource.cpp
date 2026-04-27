@@ -66,5 +66,4 @@ void Object2DResource::UpdateTransform(const Camera& camera) {
 
     // CPU側のマテリアルキャッシュにのみ反映させる
     cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
-    MarkAsDirty();
 }

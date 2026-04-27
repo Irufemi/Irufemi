@@ -1,4 +1,4 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 #include "VoxelParticleSystem.h"
 #include "Application/camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
@@ -147,8 +147,10 @@ void VoxelParticleSystem::Update(float deltaTime) {
 
 void VoxelParticleSystem::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    if (lastUpdateFrame_ == frameIndex) return;
     emitterBuffer_.Update(emitterData_, frameIndex);
     perFrameBuffer_.Update(perFrameData_, frameIndex);
+    lastUpdateFrame_ = frameIndex;
 }
 
 void VoxelParticleSystem::DispatchCompute() {
@@ -218,6 +220,8 @@ void VoxelParticleSystem::Draw() {
   // 2. Graphics Draw
   if (!hasExploded_)
     return;
+
+  SyncBeforeDraw();
 
   // リソースバリヤー: UAV -> ShaderResource (読み取り)
   D3D12_RESOURCE_BARRIER barrier{};

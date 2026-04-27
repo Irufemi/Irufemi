@@ -1,4 +1,4 @@
-#include "SphereClass.h"
+﻿#include "SphereClass.h"
 
 #include "Engine/Manager/PrimitiveManager.h"
 #include <cmath>
@@ -172,5 +172,13 @@ void SphereClass::Debug([[maybe_unused]] const char* sphereName) {
     ImGui::End();
 
 #endif // _DEBUG
+}
+
+
+
+void SphereClass::SyncBeforeDraw() {
+    if (resource_) {
+        resource_->SyncBeforeDraw();
+    }
 }
 

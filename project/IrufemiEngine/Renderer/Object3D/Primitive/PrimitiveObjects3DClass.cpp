@@ -231,3 +231,9 @@ void PrimitiveObjects3DClass::Debug(const char* label) {
     ImGui::End();
 #endif
 }
+
+void PrimitiveObjects3DClass::SyncBeforeDraw() {
+    if (mesh_.resource) {
+        mesh_.resource->SyncBeforeDraw();
+    }
+}

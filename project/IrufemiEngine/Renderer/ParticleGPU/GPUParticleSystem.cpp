@@ -226,9 +226,18 @@ void GPUParticleSystem::Update() {
 
 void GPUParticleSystem::SyncBeforeDraw() {
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
+    
+    // 同一フレーム内で複数回呼び出された場合は無駄な転送を防ぐ
+    // 特に、DispatchCompute後のburstCount=0の再転送（バグ）を防ぐ効果がある
+    if (lastUpdateFrame_ == frameIndex) {
+        return;
+    }
+    
     emitterBuffer_.Update(*emitter_, frameIndex);
     perFrameBuffer_.Update(*perFrameData_, frameIndex);
     materialBuffer_.Update(cpuMaterialData_, frameIndex);
+    
+    lastUpdateFrame_ = frameIndex;
 }
 
 void GPUParticleSystem::DispatchCompute() {

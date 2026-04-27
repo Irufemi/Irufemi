@@ -1,4 +1,4 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 #include "Circle2D.h"
 
 #include "Resource/Texture/TextureManager.h"
@@ -137,11 +137,14 @@ void Circle2D::Update() {
 
     // UV 変換はSpriteと同様の意味付け(ここではIdentityのまま)
     resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
-    resource_->MarkAsDirty();
+}
+
+void Circle2D::SyncBeforeDraw() {
+    resource_->SyncBeforeDraw();
 }
 
 void Circle2D::Draw() {
-    resource_->SyncBeforeDraw();
+    SyncBeforeDraw();
     drawManager_->DrawSprite(resource_.get());
 }
 

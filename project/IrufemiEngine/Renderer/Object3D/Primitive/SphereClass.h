@@ -1,3 +1,4 @@
+﻿#include "../../Core/IRenderable.h"
 #pragma once
 #include <cstdint>
 #include <string>
@@ -17,7 +18,7 @@ class TextureManager;
 class DrawManager;
 class DebugUI;
 
-class SphereClass {
+class SphereClass : public IRenderable {
 protected: //メンバ変数
 
     Sphere info_{};
@@ -64,7 +65,8 @@ public: //メンバ関数
     void Update();
 
     // 描画
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // デバッグ
     void Debug(const char* sphereName = " ");
@@ -96,4 +98,7 @@ private:
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };
+
+
+
 

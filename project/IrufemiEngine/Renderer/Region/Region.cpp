@@ -1,4 +1,4 @@
-#include "Region.h"
+﻿#include "Region.h"
 #include <cassert>
 #include <cstring>
 #include <vector>
@@ -203,6 +203,7 @@ void ModelRegion::BuildInstanceBuffer(bool force) {
     CreateOrResizeInstanceBuffer(totalCount);
 
     uint32_t frameIndex = dx_->GetFrameIndex();
+    lastUpdateFrameIndex_ = frameIndex;
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
@@ -212,11 +213,17 @@ void ModelRegion::BuildInstanceBuffer(bool force) {
     instanceDirty_ = false;
 }
 
+void ModelRegion::SyncBeforeDraw() {
+    if (instanceDirty_) {
+        BuildInstanceBuffer(false);
+    }
+}
+
 void ModelRegion::Draw() {
     if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || instances_.empty()) { return; }
 
     // 毎フレームインスタンスの WVP 等を更新する (マルチバッファなので常に更新)
-    BuildInstanceBuffer(true);
+    SyncBeforeDraw();
 
     drawManager_->DrawModelRegion(this);
 }

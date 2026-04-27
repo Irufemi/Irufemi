@@ -1,4 +1,4 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 #include "Renderer/Object3D/Primitive/CubeClass.h"
 
 #include <algorithm>
@@ -196,3 +196,10 @@ void CubeClass::Debug(const char* cubeName) {
     ImGui::End();
 #endif
 }
+
+void CubeClass::SyncBeforeDraw() {
+    if (resource_) {
+        resource_->SyncBeforeDraw();
+    }
+}
+

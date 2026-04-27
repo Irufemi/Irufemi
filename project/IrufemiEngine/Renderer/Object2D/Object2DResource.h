@@ -23,26 +23,26 @@ public:
     void UpdateTransform(const Camera& camera);
 
 public:
-    // --- 鬯・ｉ縺帷ｹ晁・繝｣郢晁ｼ斐＜ ---
+    // --- 頂点バッファ ---
     std::vector<VertexData> vertexDataList_{};
     VertexData* vertexData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 
-    // --- 郢ｧ・､郢晢ｽｳ郢昴・繝｣郢ｧ・ｯ郢ｧ・ｹ郢晁・繝｣郢晁ｼ斐＜ ---
+    // --- インデックスバッファ ---
     std::vector<uint32_t> indexDataList_{};
     uint32_t* indexData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_ = nullptr;
     D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
     uint32_t indexCount_ = 0;
 
-    // --- 郢晄ｧｭ繝ｦ郢晢ｽｪ郢ｧ・｢郢晢ｽｫ ---
+    // --- マテリアル ---
     Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     Material cpuMaterialData_{};
     Material* GetMaterialData() { return &cpuMaterialData_; }
     ConstantBuffer<Material> materialBuffer_;
 
-    // --- 郢晏現ﾎ帷ｹ晢ｽｳ郢ｧ・ｹ郢晁ｼ斐°郢晢ｽｼ郢晢｣ｰ ---
+    // --- トランスフォーム ---
     Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
     ConstantBuffer<TransformationMatrix> transformationBuffer_;
@@ -56,19 +56,18 @@ public:
         return materialBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
     
-    void SyncBeforeDraw() {
-        uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-        if (!isDirtyBuffer_[frameIndex]) return;
-        isDirtyBuffer_[frameIndex] = false;
-
-        transformationBuffer_.Update(transformationMatrix_, frameIndex);
-        materialBuffer_.Update(cpuMaterialData_, frameIndex);
-    }
-
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
+    
     void MarkAsDirty() {
         for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
     }
-
-private:
-    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
+    
+    void SyncBeforeDraw() {
+        uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+        if (isDirtyBuffer_[frameIndex]) {
+            transformationBuffer_.Update(transformationMatrix_, frameIndex);
+            materialBuffer_.Update(cpuMaterialData_, frameIndex);
+            isDirtyBuffer_[frameIndex] = false;
+        }
+    }
 };

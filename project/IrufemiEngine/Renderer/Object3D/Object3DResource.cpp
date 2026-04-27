@@ -76,5 +76,4 @@ void Object3DResource::UpdateTransform(const Camera& camera) {
 
     // マテリアルの CPUキャッシュ更新 (描画直前の SyncBeforeDraw で GPUへ送られる)
     cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
-    MarkAsDirty();
 }

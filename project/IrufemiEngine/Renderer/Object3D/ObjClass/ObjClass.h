@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <string>
 #include "../../../../Application/camera/Camera.h"
@@ -14,8 +14,9 @@
 #include "../Object3DResource.h"
 #include "../../../Engine/Graphics/Data/Material.h"
 #include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "../../Core/IRenderable.h"
 
-// 蜑肴婿螳｣險
+// 前方宣言
 class TextureManager;
 class DrawManager;
 class DebugUI;
@@ -25,58 +26,49 @@ struct ObjMaterial;
 struct Material;
 
 //==========================
-// obj縺碁・蟶・＆繧後※縺・ｋ繧ｵ繧､繝・
+// objが配布されているサイト
 // https://quaternius.com/
-// 菴ｿ逕ｨ縺吶ｋ蝣ｴ蜷医・繝ｩ繧､繧ｻ繝ｳ繧ｹ縺靴CO縺ｮ繧ゅ・繧貞茜逕ｨ縺吶ｋ
+// 使用する場合はライセンスがCCOのものを利用する
 // https://creativecommons.org/publicdomain/zero/1.0/deed.ja
 //==========================
 
 /**
  * @class ObjClass
- * @brief 3D繝｢繝・Ν・・BJ/GLTF遲会ｼ峨・繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ繧呈緒逕ｻ繝ｻ邂｡逅・☆繧九け繝ｩ繧ｹ
- * @details ModelManager 縺九ｉ蜿門ｾ励＠縺溷・譛峨Δ繝・Ν繝・・繧ｿ繧貞盾辣ｧ縺励∝句挨縺ｮ菴咲ｽｮ繝ｻ蝗櫁ｻ｢繝ｻ諡｡邵ｮ繧・・繝・Μ繧｢繝ｫ險ｭ螳壹ｒ菫晄戟縺励∪縺吶・
+ * @brief 3Dモデル（OBJ/GLTF等）のインスタンスを描画・管理するクラス
+ * @details ModelManager から取得した共有モデルデータを参照し、個別の位置・回転・拡縮やマテリアル設定を保持します。
  */
-class ObjClass {
+class ObjClass : public IRenderable {
 private:
-    // 蜈ｱ譛峨Δ繝・Ν繝・・繧ｿ(CPU/GPU)
+    // 共有モデルデータ(CPU/GPU)
     std::shared_ptr<ManagedModel> managedModel_;
 
-    // 繧ｪ繝悶ず繧ｧ繧ｯ繝亥・菴薙・Transform
+    // オブジェクト全体のTransform
     Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     TransformationMatrix transformationMatrix_{};
-    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // 繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ繧ｫ繝ｩ繝ｼ
-    float environmentCoefficient_ = 1.0f; // 繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ迺ｰ蠅・・繝・・菫よ焚
-    int32_t lightingModeOverride_ = -1; // -1:菴ｿ逕ｨ縺励↑縺・ 0莉･荳・荳頑嶌縺・
-    int32_t useClampSamplerOverride_ = -1; // -1:菴ｿ逕ｨ縺励↑縺・ 0莉･荳・荳頑嶌縺・
-    int32_t enableLightingOverride_ = -1; // -1:菴ｿ逕ｨ縺励↑縺・ 0莉･荳・荳頑嶌縺・
+    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // インスタンスカラー
+    float environmentCoefficient_ = 1.0f; // インスタンス環境マップ係数
+    int32_t lightingModeOverride_ = -1; // -1:使用しない, 0以上:上書き
+    int32_t useClampSamplerOverride_ = -1; // -1:使用しない, 0以上:上書き
+    int32_t enableLightingOverride_ = -1; // -1:使用しない, 0以上:上書き
 
-    // 蜷・Γ繝・す繝･逕ｨ繝ｪ繧ｽ繝ｼ繧ｹ (繝槭ユ繝ｪ繧｢繝ｫ繧・らせView繧剃ｿ晄戟)
+    // 各メッシュ用リソース (マテリアルや頂点Viewを保持)
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
-    // 螟画鋤陦悟・逕ｨ繝ｪ繧ｽ繝ｼ繧ｹ (蜈ｨ繝｡繝・す繝･縺ｧ蜈ｱ譛・
+    // 変換行列用リソース (全メッシュで共有)
     ConstantBuffer<TransformationMatrix> transformationBuffer_;
-    
+
     Camera* camera_ = nullptr;
-
-    // 繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ蟇ｾ蠢懊ヵ繝ｩ繧ｰ
-    bool hasAnimation_ = false;
-
-    // 繧ｫ繝ｪ繝ｳ繧ｰ險ｭ螳・
     bool isCullingEnabled_ = true;
-    bool isCulled_ = false;
-
-    // 譖ｴ譁ｰ邂｡逅・
+    
+    // 行列更新の最適化用
     bool isDirty_ = true;
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
-    
+
     void MarkAsDirty() {
         for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
     }
-
-    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
-
-    void SyncBeforeDraw();
 
     static TextureManager* textureManager_;
     static DrawManager* drawManager_;
@@ -84,68 +76,69 @@ private:
     static ModelManager* modelManager_;
 
     /**
-     * @brief CPU蛛ｴ縺ｮ繝槭ユ繝ｪ繧｢繝ｫ繝・・繧ｿ繧竪PU繝ｪ繧ｽ繝ｼ繧ｹ縺ｸ霆｢騾√☆繧具ｼ亥・驛ｨ逕ｨ・・
+     * @brief CPU側のマテリアルデータをGPUリソースへ転送する（内部用）
      */
     void UpdateMaterials();
 
     /**
-     * @brief 繝ｭ繝ｼ繝牙ｮ御ｺ・ｾ後↓繝｡繝・す繝･遲峨・繝ｪ繧ｽ繝ｼ繧ｹ繧呈ｧ狗ｯ峨☆繧具ｼ磯≦蟒ｶ蛻晄悄蛹厄ｼ・
+     * @brief ロード完了後にメッシュ等のリソースを構築する（遅延初期化）
      */
     void InitializeResources();
 
-public: //繝｡繝ｳ繝宣未謨ｰ
+public: //メンバ関数
 
     /**
-     * @brief 繝・せ繝医Λ繧ｯ繧ｿ
+     * @brief デストラクタ
      */
     ~ObjClass();
 
     /**
-     * @brief 蛻晄悄蛹・
-     * @param[in] camera 菴ｿ逕ｨ縺吶ｋ繧ｫ繝｡繝ｩ
-     * @param[in] filename 繝｢繝・Ν繝輔ぃ繧､繝ｫ蜷搾ｼ・odelManager邨檎罰縺ｧ繝ｭ繝ｼ繝会ｼ・
+     * @brief 初期化
+     * @param[in] camera 使用するカメラ
+     * @param[in] filename モデルファイル名（ModelManager経由でロード）
      */
     void Initialize(Camera* camera, const std::string& filename = "plane.obj");
 
     /**
-     * @brief 譖ｴ譁ｰ蜃ｦ逅・
-     * @details 繝ｯ繝ｼ繝ｫ繝芽｡悟・縺ｮ險育ｮ励→螳壽焚繝舌ャ繝輔ぃ縺ｸ縺ｮ霆｢騾√ｒ陦後＞縺ｾ縺吶・
+     * @brief 更新処理
+     * @details ワールド行列の計算と定数バッファへの転送を行います。
      */
     void Update();
 
     /**
-     * @brief 謠冗判繧ｳ繝槭Φ繝峨・遨阪∩霎ｼ縺ｿ
+     * @brief 描画コマンドの積み込み
      */
-    void Draw();
+     void SyncBeforeDraw() override;
+    void Draw() override;
 
     /**
-     * @brief 繝・ヰ繝・げ逕ｨUI縺ｮ陦ｨ遉ｺ
+     * @brief デバッグ用UIの表示
      */
     void Debug(const char* objName = " ");
 
     /**
-     * @brief 繝・ヰ繝・げ逕ｨ繧ｿ繝悶・陦ｨ遉ｺ
+     * @brief デバッグ用タブの表示
      */
     void DebugTab();
 
-    /** @name Transform 謫堺ｽ・*/
+    /** @name Transform 操作 */
     ///@{
     const Vector3& GetPosition() const { return transform_.translate; }
-    void SetPosition(const Vector3& position) { transform_.translate = position; isDirty_ = true; }
+    void SetPosition(const Vector3& position) { transform_.translate = position; MarkAsDirty(); }
 
     const Vector3& GetRotate() const { return transform_.rotate; }
-    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; isDirty_ = true; }
-    void SetRotateX(const float& rotate) { transform_.rotate.x = rotate; isDirty_ = true; }
-    void SetRotateY(const float& rotate) { transform_.rotate.y = rotate; isDirty_ = true; }
-    void SetRotateZ(const float& rotate) { transform_.rotate.z = rotate; isDirty_ = true; }
+    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; MarkAsDirty(); }
+    void SetRotateX(const float& rotate) { transform_.rotate.x = rotate; MarkAsDirty(); }
+    void SetRotateY(const float& rotate) { transform_.rotate.y = rotate; MarkAsDirty(); }
+    void SetRotateZ(const float& rotate) { transform_.rotate.z = rotate; MarkAsDirty(); }
 
     const Vector3& GetScale() const { return transform_.scale; }
-    void SetScale(const Vector3& scale) { transform_.scale = scale; isDirty_ = true; }
+    void SetScale(const Vector3& scale) { transform_.scale = scale; MarkAsDirty(); }
     const Transform& GetTransform() const { return transform_; }
-    void SetTransform(const Transform& transform) { transform_ = transform; isDirty_ = true; }
+    void SetTransform(const Transform& transform) { transform_ = transform; MarkAsDirty(); }
     ///@}
 
-    /** @name 陦悟・繝ｻ險育ｮ礼ｵ先棡縺ｮ蜿門ｾ・*/
+    /** @name 行列・計算結果の取得 */
     ///@{
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
     void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
@@ -154,31 +147,31 @@ public: //繝｡繝ｳ繝宣未謨ｰ
     }
     ///@}
 
-    /** @name 繝槭ユ繝ｪ繧｢繝ｫ繝ｻ螟冶ｦｳ縺ｮ謫堺ｽ・*/
+    /** @name マテリアル・外観の操作 */
     ///@{
     /**
-     * @brief 繝｢繝・Ν縺梧戟縺､繝｡繝・す繝･謨ｰ繧貞叙蠕・
+     * @brief モデルが持つメッシュ数を取得
      */
     size_t GetMeshCount() const;
 
     /**
-     * @brief 謖・ｮ壹＠縺溘う繝ｳ繝・ャ繧ｯ繧ｹ縺ｮ繝｡繝・す繝･縺ｮ繝槭ユ繝ｪ繧｢繝ｫ繧貞叙蠕・
+     * @brief 指定したインデックスのメッシュのマテリアルを取得
      */
     const ObjMaterial* GetMaterial(size_t meshIndex) const;
     ObjMaterial* GetMaterial(size_t meshIndex);
 
     /**
-     * @brief 縺吶∋縺ｦ縺ｮ繝｡繝・す繝･縺ｮ繝ｩ繧､繝・ぅ繝ｳ繧ｰ繧剃ｸ諡ｬ縺ｧ譛牙柑/辟｡蜉ｹ蛹悶☆繧・
+     * @brief すべてのメッシュのライティングを一括で有効/無効化する
      */
     void SetEnableLightingToAllMeshes(bool enable);
 
     /**
-     * @brief 繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ蜈ｨ菴薙・繧｢繝ｫ繝輔ぃ蛟､繧定ｨｭ螳・
+     * @brief インスタンス全体のアルファ値を設定
      */
     void SetAlpha(float alpha);
 
     /**
-     * @brief 繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ蜈ｨ菴薙・濶ｲ繧定ｨｭ螳・
+     * @brief インスタンス全体の色を設定
      */
     void SetColor(const Vector4& color);
     void SetEnvironmentCoefficient(float coefficient) { environmentCoefficient_ = coefficient; isDirty_ = true; }
@@ -188,7 +181,7 @@ public: //繝｡繝ｳ繝宣未謨ｰ
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     ///@}
 
-    /** @name 髱咏噪繝｡繝ｳ繝占ｨｭ螳夲ｼ医お繝ｳ繧ｸ繝ｳ蜀・Κ逕ｨ・・*/
+    /** @name 静的メンバ設定（エンジン内部用） */
     ///@{
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
@@ -196,4 +189,7 @@ public: //繝｡繝ｳ繝宣未謨ｰ
     static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
     ///@}
 };
+
+
+
 

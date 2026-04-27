@@ -1,4 +1,4 @@
-#include "SphereRegion.h"
+﻿#include "SphereRegion.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h" // 追加
 #include "Application/camera/Camera.h"
@@ -300,6 +300,7 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
     CreateOrResizeInstanceBuffer(totalCount);
 
     uint32_t frameIndex = dx_->GetFrameIndex();
+    lastUpdateFrameIndex_ = frameIndex;
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
@@ -309,11 +310,16 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
     instanceDirty_ = false;
 }
 
+void SphereRegion::SyncBeforeDraw() {
+    if (vertexCount_ == 0 || indexCount_ == 0 || instances_.empty()) { return; }
+    BuildInstanceBuffer(true);
+}
+
 void SphereRegion::Draw() {
     if (vertexCount_ == 0 || indexCount_ == 0 || instances_.empty()) { return; }
 
     // 毎フレームインスタンスの WVP 更新
-    BuildInstanceBuffer(true);
+    
 
     drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(dx_->GetFrameIndex()), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, GetInstanceCount());
 }

@@ -1,4 +1,4 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 #include "Sprite.h"
 
 #include "Engine/Manager/DebugUI.h"
@@ -146,6 +146,10 @@ void Sprite::Update() {
     lastProjectionMatrix_ = camera_->GetOrthographicMatrix();
 }
 
+void Sprite::SyncBeforeDraw() {
+    resource_->SyncBeforeDraw();
+}
+
 void Sprite::Draw() {
     if (!resource_ || !drawManager_ || !camera_) return;
 
@@ -158,7 +162,7 @@ void Sprite::Draw() {
     }
     
     // --- 【追加】描画直前のバッファ同期 ---
-    resource_->SyncBeforeDraw();
+    SyncBeforeDraw();
 
     drawManager_->DrawSprite(resource_.get());
 }

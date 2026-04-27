@@ -1,4 +1,4 @@
-#include "TriangleClass.h"
+﻿#include "TriangleClass.h"
 #include "Application/camera/Camera.h"
 #include <wrl.h>
 #include "Engine/Core/Math/Geometry/Collision.h"
@@ -126,3 +126,10 @@ void TriangleClass::Debug(const char* triangleName) {
 #endif
     Update();
 }
+
+void TriangleClass::SyncBeforeDraw() {
+    if (resource_) {
+        resource_->SyncBeforeDraw();
+    }
+}
+

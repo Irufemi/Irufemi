@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <Windows.h>
 #include <d3d12.h>
@@ -14,63 +14,65 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
-// 蜑肴婿螳｣險
+// 前方宣言
 class Camera;
 class IrufemiEngine;
 
+#include "../Core/IRenderable.h"
+
 /**
  * @class Skybox
- * @brief 繧ｹ繧ｫ繧､繝懊ャ繧ｯ繧ｹ縺ｮ謠冗判繧堤ｮ｡逅・☆繧九け繝ｩ繧ｹ
+ * @brief スカイボックスの描画を管理するクラス
  */
-class Skybox
+class Skybox : public IRenderable
 {
 public:
-    // 繝・ヵ繧ｩ繝ｫ繝医・繝・け繧ｹ繝√Ε繝代せ
+    // デフォルトのテクスチャパス
     static inline const std::string kDefaultTexturePath = "resources/rostock_laage_airport_4k.dds";
 
-public: // 繝｡繝ｳ繝宣未謨ｰ
-    // 繧ｳ繝ｳ繧ｹ繝医Λ繧ｯ繧ｿ
+public: // メンバ関数
+    // コンストラクタ
     Skybox();
-    // 繝・せ繝医Λ繧ｯ繧ｿ
+    // デストラクタ
     ~Skybox();
-    // 蛻晄悄蛹・
+    // 初期化
     void Initialize(Camera* camera, const std::string& textureName = kDefaultTexturePath);
-    // 譖ｴ譁ｰ
+    // 更新
     void Update();
-    // 謠冗判
-    void Draw();
-    // 繝・ヰ繝・げ
+    void SyncBeforeDraw() override;
+    void Draw() override;
+    // デバッグ
     void Debug();
-public: // 繝｡繝ｳ繝宣未謨ｰ(繧ｻ繝・ち繝ｼ/繧ｲ繝・ち繝ｼ)
-    // engine繧ｻ繝・ち繝ｼ
+public: // メンバ関数(セッター/ゲッター)
+    // engineセッター
     static void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
-    // ID3D12Resource髢｢騾｣繧ｲ繝・ち繝ｼ
+    // ID3D12Resource関連ゲッター
     const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
     const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return indexBufferView_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
-    // index縺ｮ繧ｵ繧､繧ｺ蜿門ｾ・
+    // indexのサイズ取得
     UINT GetIndexSize() const { return static_cast<UINT>(indexDataList_.size()); }
-private: // 繝｡繝ｳ繝宣未謨ｰ(蜀・Κ繝倥Ν繝・
-    // ID3D12Resource縺ｮ逕滓・
+private: // メンバ関数(内部ヘルパ)
+    // ID3D12Resourceの生成
     void CreateResource();
-    // ID3D12Resource縺ｮMap
+    // ID3D12ResourceのMap
     void MapResource();
-    // Id3D12Resource縺ｮUnMap
+    // Id3D12ResourceのUnMap
     void UnMapResource();
 
 
-private: // 繝｡繝ｳ繝仙､画焚(resource)
+private: // メンバ変数(resource)
     /// vertex
     std::vector<VertexData> vertexDataList_{};
     VertexData* vertexData_ = nullptr;
-    //鬆らせ繝・・繧ｿ繝舌ャ繝輔ぃ
+    //頂点データバッファ
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
 
     /// index
     std::vector<uint32_t> indexDataList_{};
     uint32_t* indexData_ = nullptr;
-    //鬆らせ繧､繝ｳ繝・ャ繧ｯ繧ｹ繝舌ャ繝輔ぃ
+    //頂点インデックスバッファ
     D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
     Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_ = nullptr;
 
@@ -101,24 +103,20 @@ private: // 繝｡繝ｳ繝仙､画焚(resource)
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
     int selectedTextureIndex_ = 0;
 
-    // 繧ｫ繝｡繝ｩ(繝昴う繝ｳ繧ｿ蜿ら・)
+    // カメラ(ポインタ参照)
     Camera* camera_ = nullptr;
-    // engine(繝昴う繝ｳ繧ｿ蜿ら・)
+    // engine(ポインタ参照)
     static IrufemiEngine* engine_;
 
-    // 陦悟・譖ｴ譁ｰ縺ｮ譛驕ｩ蛹也畑
+    // 行列更新の最適化用
     bool isDirty_ = true;
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
     
     void MarkAsDirty() {
         for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
     }
-
-private:
-    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
-    
-public:
-    void SyncBeforeDraw();
 };
+
 

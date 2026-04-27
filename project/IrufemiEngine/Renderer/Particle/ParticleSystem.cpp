@@ -1,4 +1,4 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 #include "ParticleSystem.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Manager/DebugUI.h"
@@ -207,7 +207,6 @@ void ParticleSystem::Update() {
         ++particleIterator; // 次のイテレーターに進める
     }
     resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
-    resource_->MarkAsDirty();
     
     resource_->SyncBeforeDraw();
     lastUpdateFrameIndex_ = BaseResource::GetDirectXCommon()->GetFrameIndex();
@@ -225,7 +224,7 @@ void ParticleSystem::Draw()
         return;
     }
 
-    SyncGPUData();
+    SyncBeforeDraw();
 
     // 視錐台カリング
     if (isCullingEnabled_) {
@@ -290,24 +289,13 @@ void ParticleSystem::Draw()
 #endif
 }
 
-void ParticleSystem::SyncGPUData() {
+void ParticleSystem::SyncBeforeDraw() {
     uint32_t currentFrameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-    
-    // 今フレームですでにUpdate()が呼ばれている場合は、正しいデータが書き込み済みのためスキップ
-    if (lastUpdateFrameIndex_ == currentFrameIndex) return;
-
-    // 前回のデータ元のフレームインデックス
-    uint32_t prevFrameIndex = (currentFrameIndex + kMaxFramesInFlight - 1) % kMaxFramesInFlight;
-
-    // 前フレームのデータをそのまま丸ごと現在のフレームのバッファへコピーする（明滅対策）
-    if (numInstance_ > 0 && resource_->instancingData_[currentFrameIndex] && resource_->instancingData_[prevFrameIndex]) {
-        std::memcpy(resource_->instancingData_[currentFrameIndex], 
-                    resource_->instancingData_[prevFrameIndex], 
-                    sizeof(ParticleForGPU) * numInstance_);
+    if (lastUpdateFrameIndex_ == currentFrameIndex) {
+        resource_->SyncBeforeDraw();
+        return;
     }
-    
     resource_->SyncBeforeDraw();
-    lastUpdateFrameIndex_ = currentFrameIndex; // これ以降このフレームでの同期は不要
 }
 
 void ParticleSystem::SetEmitterPosition(const Vector3& position) {

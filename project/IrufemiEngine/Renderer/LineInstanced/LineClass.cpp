@@ -1,4 +1,4 @@
-#include "LineClass.h"
+﻿#include "LineClass.h"
 
 #include "Application/camera/Camera.h"
 #include "Engine/Manager/DrawManager.h"
@@ -75,6 +75,7 @@ void Line3DRegion::BuildInstanceBuffer(bool force) {
 
     CreateOrResizeInstanceBuffer(static_cast<uint32_t>(activeCount_));
     uint32_t frameIndex = dx_->GetFrameIndex();
+    lastUpdateFrameIndex_ = frameIndex;
     if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex]) return;
 
     const Matrix4x4& viewProjection = Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix());
@@ -100,6 +101,12 @@ void Line3DRegion::BuildInstanceBuffer(bool force) {
 
         instanceData_[frameIndex][i].WVP = world * viewProjection;
         instanceData_[frameIndex][i].color = inst.color;
+    }
+}
+
+void Line3DRegion::SyncBeforeDraw() {
+    if (isDirty_) {
+        BuildInstanceBuffer();
     }
 }
 
@@ -150,6 +157,7 @@ void Line3DRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 
 void Line3DRegion::EnsureInstancingSRV() {
     uint32_t frameIndex = dx_->GetFrameIndex();
+    lastUpdateFrameIndex_ = frameIndex;
     if (!instanceBuffer_[frameIndex]) return;
 
     if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {

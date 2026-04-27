@@ -1,4 +1,4 @@
-#include "Effect.h"
+﻿#include "Effect.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Texture/TextureManager.h"
@@ -51,8 +51,13 @@ void Effect::Update() {
     }
 }
 
+void Effect::SyncBeforeDraw() {
+    if (gpuParticleSystem_) gpuParticleSystem_->SyncBeforeDraw();
+}
+
 void Effect::Draw() {
     if (gpuParticleSystem_) {
+        SyncBeforeDraw();
         gpuParticleSystem_->Draw();
     }
 }

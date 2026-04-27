@@ -1,3 +1,4 @@
+﻿#include "../Core/IRenderable.h"
 #pragma once
 #include "../../Engine/Core/Math/Matrix4x4.h"
 #include "../../Engine/Core/Math/Vector3.h"
@@ -60,7 +61,7 @@ struct VoxelEmitter {
 };
 
 
-class VoxelParticleSystem : public IComputeTask {
+class VoxelParticleSystem : public IComputeTask , public IRenderable {
 public:
   enum class LoadingStatus {
     Pending,
@@ -175,6 +176,7 @@ private:
   // 行列更新の最適化用
   Matrix4x4 lastViewMatrix_ = {};
   Matrix4x4 lastProjectionMatrix_ = {};
+  uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);
 
   std::atomic<LoadingStatus> status_ = LoadingStatus::Pending;
   std::mutex voxelModelMutex_;

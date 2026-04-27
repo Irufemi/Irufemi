@@ -1,3 +1,4 @@
+﻿#include "../Core/IRenderable.h"
 #pragma once
 
 #include "../../Engine/Core/Math/Vector3.h"
@@ -142,7 +143,7 @@ struct GPUParticleEmitter {
  * @brief Compute Shader を使用した、大量の粒子を GPU 上でシミュレーション・描画するクラス
  */
 class GPUParticleSystem : public IComputeTask
-{
+, public IRenderable {
 public:
     GPUParticleSystem();
     ~GPUParticleSystem();
@@ -152,7 +153,8 @@ public:
     void DispatchCompute() override;
     void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png");
     void Update();
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
     void Debug();
     ///@}
 
@@ -367,7 +369,7 @@ private:
     bool isCulled_ = false;
     bool isInitializedCS_ = false;
     bool needsUpdateCS_ = false;
-    void SyncBeforeDraw();
+    
 
     // --- State tracking for multiple pass rendering ---
     bool isCsDispatchedThisFrame_ = false;
@@ -380,3 +382,4 @@ private:
     std::unique_ptr<Line3DRegion> debugLineRegion_;
     bool showEmitterArea_ = true;
 };
+

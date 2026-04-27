@@ -1,3 +1,4 @@
+#include "../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -25,7 +26,7 @@ class DescriptorPool;
 struct ManagedModel;
 struct GpuMesh;
 
-class ModelRegion {
+class ModelRegion : public IRenderable {
 public:
     ModelRegion() {
         instancingSrvIndex_.fill(UINT32_MAX);
@@ -36,7 +37,8 @@ public:
     void AddInstance(const Transform& t);
     void ClearInstances();
     void BuildInstanceBuffer(bool force = false);
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
@@ -50,7 +52,7 @@ public:
     const GpuMesh* GetGpuMesh() const; // 共有メッシュ取得
     ID3D12Resource* GetMaterialResource() { return materialBuffer_.GetResource(dx_->GetFrameIndex()); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[dx_->GetFrameIndex()]; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT GetInstanceCount() const { return visibleInstanceCount_; }
 
 private:
@@ -94,6 +96,9 @@ private:
     bool                   isCullingEnabled_ = true;
     bool                   isResourcesInitialized_ = false;
     uint32_t               visibleInstanceCount_ = 0;
+
+    uint32_t lastUpdateFrameIndex_ = 0;
+    bool isDirty_ = true;
 
     // 行列更新の最適化用
     Matrix4x4 lastViewMatrix_ = {};
