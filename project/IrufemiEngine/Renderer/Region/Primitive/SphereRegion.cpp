@@ -1,4 +1,4 @@
-﻿#include "SphereRegion.h"
+#include "SphereRegion.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h" // 追加
 #include "Application/camera/Camera.h"
@@ -321,7 +321,7 @@ void SphereRegion::Draw() {
     // 毎フレームインスタンスの WVP 更新
     
 
-    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(dx_->GetFrameIndex()), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, GetInstanceCount());
+    drawManager_->SubmitRegion(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(dx_->GetFrameIndex()), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, GetInstanceCount());
 }
 
 void SphereRegion::SetColor(const Vector4& color) {

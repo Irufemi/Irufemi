@@ -1,4 +1,4 @@
-﻿#define NOMINMAX
+#define NOMINMAX
 #include "Circle2D.h"
 
 #include "Resource/Texture/TextureManager.h"
@@ -128,6 +128,8 @@ void Circle2D::UpdateMatrix() {
         Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
     resource_->transformationMatrix_.WVP =
         Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
+    
+    resource_->MarkAsDirty();
 }
 
 void Circle2D::Update() {
@@ -145,7 +147,7 @@ void Circle2D::SyncBeforeDraw() {
 
 void Circle2D::Draw() {
     SyncBeforeDraw();
-    drawManager_->DrawSprite(resource_.get());
+    drawManager_->SubmitSprite(resource_.get());
 }
 
 void Circle2D::SetInfo(const Circle2DInfo& info) {

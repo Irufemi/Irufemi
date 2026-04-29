@@ -55,6 +55,7 @@ public:
     void Debug(const char* circleName = " ");
 
     // 情報アクセス
+    Object2DResource* GetD3D12Resource() { return resource_.get(); }
     const Circle2DInfo& GetInfo() const { return info_; }
     void SetInfo(const Circle2DInfo& info);
     void SetCenter(const Vector3& center);

@@ -1,4 +1,4 @@
-﻿#define NOMINMAX
+#define NOMINMAX
 #include "Renderer/Object3D/Primitive/CubeClass.h"
 
 #include <algorithm>
@@ -146,7 +146,7 @@ void CubeClass::Draw() {
     // --- 【追加】描画直前のバッファ同期 ---
     resource_->SyncBeforeDraw();
 
-    drawManager_->DrawStandard3D(resource_.get());
+    drawManager_->SubmitStandard3D(resource_.get());
 }
 
 void CubeClass::Debug(const char* cubeName) {

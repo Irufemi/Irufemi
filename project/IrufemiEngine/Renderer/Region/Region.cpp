@@ -1,4 +1,4 @@
-﻿#include "Region.h"
+#include "Region.h"
 #include <cassert>
 #include <cstring>
 #include <vector>
@@ -225,5 +225,5 @@ void ModelRegion::Draw() {
     // 毎フレームインスタンスの WVP 等を更新する (マルチバッファなので常に更新)
     SyncBeforeDraw();
 
-    drawManager_->DrawModelRegion(this);
+    drawManager_->SubmitModelRegion(this);
 }

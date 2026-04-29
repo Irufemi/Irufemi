@@ -14,6 +14,13 @@ public:
     ConstantBuffer() = default;
     ~ConstantBuffer() {
         Unmap();
+        if (dxCommon_) {
+            for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+                if (resources_[i]) {
+                    dxCommon_->ReleaseAfterFence(resources_[i]);
+                }
+            }
+        }
     }
 
     // バッファを生成しマッピングする（kMaxFramesInFlight分）

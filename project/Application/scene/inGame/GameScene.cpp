@@ -243,6 +243,10 @@ void GameScene::Draw() {
     player_->Draw();
   if (boss_)
     boss_->Draw(engine_);
+  
+  // キューに積まれたオブジェクトをシャドウマップへ書き込むため、パス終了前に実行する
+  engine_->GetDrawManager()->ExecuteRenderQueues(engine_);
+  
   engine_->GetDrawManager()->EndShadowPass();
 
   // --- 2. メインパス ---
@@ -382,6 +386,8 @@ void GameScene::UpdateCameraAndFrameData() {
   cameraForGpu.view = camera_->GetViewMatrix();
   cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
   cameraForGpu.worldPosition = camera_->GetTranslate();
+  cameraForGpu.time = engine_->GetTotalTime();
+  cameraForGpu.deltaTime = engine_->GetDeltaTime();
 
   std::vector<PointLight *> pLights;
   for (auto &pl : pointLights_)

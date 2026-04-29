@@ -25,16 +25,20 @@ IrufemiEngine* GPUParticleSystem::engine_ = nullptr;
 // コンストラクタ
 GPUParticleSystem::GPUParticleSystem() = default;
 
-// デストラクタ
 GPUParticleSystem::~GPUParticleSystem() {
-    if (auto* srvPool = dxCommon_ ? dxCommon_->GetSrvPool() : nullptr) {
+    if (dxCommon_) {
         uint64_t fv = dxCommon_->GetCurrentFrameFenceValue();
-        srvPool->FreeAfterFence(emitterSrvIndex_, fv);
-        srvPool->FreeAfterFence(perFrameSrvIndex_, fv);
-        srvPool->FreeAfterFence(particleUavIndex_, fv);
-        srvPool->FreeAfterFence(particleSrvIndex_, fv);
-        srvPool->FreeAfterFence(freeListIndexUavIndex_, fv);
-        srvPool->FreeAfterFence(freeListUavIndex_, fv);
+        if (auto* srvPool = dxCommon_->GetSrvPool()) {
+            srvPool->FreeAfterFence(emitterSrvIndex_, fv);
+            srvPool->FreeAfterFence(perFrameSrvIndex_, fv);
+            srvPool->FreeAfterFence(particleUavIndex_, fv);
+            srvPool->FreeAfterFence(particleSrvIndex_, fv);
+            srvPool->FreeAfterFence(freeListIndexUavIndex_, fv);
+            srvPool->FreeAfterFence(freeListUavIndex_, fv);
+        }
+        dxCommon_->ReleaseAfterFence(particleResource_);
+        dxCommon_->ReleaseAfterFence(freeListIndexResource_);
+        dxCommon_->ReleaseAfterFence(freeListResource_);
     }
 }
 
@@ -171,14 +175,9 @@ void GPUParticleSystem::Update() {
 
         if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
             isCulled_ = true;
-            OutputDebugStringA("[GPUParticleSystem] Update - Frustum Culled! (Returning early)\n");
             return; // 画面外なら計算（CS）をスキップ
         }
     }
-
-    char msg[256];
-    sprintf_s(msg, "[GPUParticleSystem] Update - Proceeding. isCulled_: %d, emitter_->type: %d\n", isCulled_, emitter_->type);
-    OutputDebugStringA(msg);
 
     /*Particleを発生させる*/
 
@@ -246,12 +245,6 @@ void GPUParticleSystem::DispatchCompute() {
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
     
     SyncBeforeDraw();
-
-    if (emitter_->burstCount > 0) {
-        char debugMsg[256];
-        sprintf_s(debugMsg, "[GPUParticleSystem::DispatchCompute] frameIndex=%d, burstCount=%d (Resetting to 0)\n", frameIndex, emitter_->burstCount);
-        OutputDebugStringA(debugMsg);
-    }
     
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
     DispatchComputeShaders(commandList);
@@ -280,21 +273,13 @@ void GPUParticleSystem::Draw() {
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
     // Graphics Draw
-    D3D12_RESOURCE_BARRIER transitionBarrier{};
-    transitionBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    transitionBarrier.Transition.pResource = particleResource_.Get();
-    transitionBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    transitionBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-    transitionBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    commandList->ResourceBarrier(1, &transitionBarrier);
-
     commandList->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     engine_->SetBlend(selectedBlend_);
     engine_->SetDepthWrite(selectedDepth_);
     engine_->SetCull(selectedCull_);
     engine_->ApplyGpuParticlePSO();
       
-    drawManager_->DrawGPUParticle(
+    drawManager_->SubmitGPUParticle(
         vertexBufferView_,
         indexBufferView_,
         indexCount_,
@@ -303,12 +288,9 @@ void GPUParticleSystem::Draw() {
         emitterBuffer_.GetGPUVirtualAddress(frameIndex),
         particleSrvHandleGPU_,
         textureHandle_,
-        kMaxParticles
+        kMaxParticles,
+        particleResource_.Get()
     );
-
-    transitionBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-    transitionBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    commandList->ResourceBarrier(1, &transitionBarrier);
 
 #if USE_IMGUI
     if (debugLineRegion_) {
@@ -383,9 +365,6 @@ void GPUParticleSystem::Clear() {
 void GPUParticleSystem::Emit(uint32_t count) {
     if (emitter_) {
         emitter_->burstCount += count;
-        char debugMsg[256];
-        sprintf_s(debugMsg, "[GPUParticleSystem::Emit] Added %d, Total burstCount is now %d\n", count, emitter_->burstCount);
-        OutputDebugStringA(debugMsg);
     }
 }
 

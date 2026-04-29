@@ -91,6 +91,9 @@ public: // ゲッター・セッター
 
     void MarkAsDirty() {
         for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
+        for(auto& res : meshResources_) {
+            if (res) res->MarkAsDirty();
+        }
     }
 
     static void SetIrufemiEngine(IrufemiEngine* engine) { engine_ = engine; }

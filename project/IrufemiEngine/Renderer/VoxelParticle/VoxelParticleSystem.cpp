@@ -1,4 +1,4 @@
-﻿#define NOMINMAX
+#define NOMINMAX
 #include "VoxelParticleSystem.h"
 #include "Application/camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
@@ -24,11 +24,17 @@ VoxelParticleSystem::~VoxelParticleSystem() {
     initializeFuture_.wait();
   }
   if (engine_) {
-    if (auto *srvPool = engine_->GetSrvPool()) {
-      uint64_t fv = engine_->GetDirectXCommon()->GetCurrentFrameFenceValue();
-      srvPool->FreeAfterFence(voxelSrvIndex_, fv);
-      srvPool->FreeAfterFence(particleUavIndex_, fv);
-      srvPool->FreeAfterFence(particleSrvIndex_, fv);
+    if (auto* dxCommon = engine_->GetDirectXCommon()) {
+      uint64_t fv = dxCommon->GetCurrentFrameFenceValue();
+      if (auto* srvPool = dxCommon->GetSrvPool()) {
+        srvPool->FreeAfterFence(voxelSrvIndex_, fv);
+        srvPool->FreeAfterFence(particleUavIndex_, fv);
+        srvPool->FreeAfterFence(particleSrvIndex_, fv);
+      }
+      dxCommon->ReleaseAfterFence(voxelBuffer_);
+      dxCommon->ReleaseAfterFence(particleBuffer_);
+      dxCommon->ReleaseAfterFence(cubeVertexBuffer_);
+      dxCommon->ReleaseAfterFence(cubeIndexBuffer_);
     }
   }
 }
@@ -213,8 +219,8 @@ void VoxelParticleSystem::Draw() {
       return;
   }
 
-  ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
-  auto *dxCommon = engine_->GetDirectXCommon();
+  auto* engine = engine_;
+  auto* dxCommon = engine_->GetDirectXCommon();
   uint32_t frameIndex = dxCommon->GetFrameIndex();
 
   // 2. Graphics Draw
@@ -223,33 +229,17 @@ void VoxelParticleSystem::Draw() {
 
   SyncBeforeDraw();
 
-  // リソースバリヤー: UAV -> ShaderResource (読み取り)
-  D3D12_RESOURCE_BARRIER barrier{};
-  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  barrier.Transition.pResource = particleBuffer_.Get();
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-  barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-  commandList->ResourceBarrier(1, &barrier);
-
-  // VoxelParticle 専用PSOを取得してバインド
-  engine_->GetDrawManager()->BindPSO(drawPSO_.Get());
-
-  // DrawManager を通じて描画を実行 (内部で共通パラメータとトポロジを設定)
-  engine_->GetDrawManager()->DrawVoxelParticle(
+  engine_->GetDrawManager()->SubmitVoxelParticle(
       voxelCount_,
       cubeVertexBufferView_,
       cubeIndexBufferView_,
       cubeIndexCount_,
       perViewBuffer_.GetGPUVirtualAddress(frameIndex),
       emitterBuffer_.GetGPUVirtualAddress(frameIndex),
-      particleSrvHandleGPU_
+      particleSrvHandleGPU_,
+      particleBuffer_.Get(),
+      drawPSO_.Get()
   );
-
-  // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-  commandList->ResourceBarrier(1, &barrier);
 }
 
 void VoxelParticleSystem::Emit(const Vector3 &position) {

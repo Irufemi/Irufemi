@@ -285,9 +285,9 @@ void AnimationModel::Draw() {
 
         // スキニング中なら VBV を差し替えて描画
         if (!managedModel_->cpuModel->skinClusterData.empty()) {
-            engine_->GetDrawManager()->DrawStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[frameIndex]);
+            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[frameIndex]);
         } else {
-            engine_->GetDrawManager()->DrawStandard3D(res.get());
+            engine_->GetDrawManager()->SubmitStandard3D(res.get());
         }
     }
 }

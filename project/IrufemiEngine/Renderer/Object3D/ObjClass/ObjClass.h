@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <d3d12.h>
 #include <string>
 #include "../../../../Application/camera/Camera.h"
@@ -68,6 +68,9 @@ private:
 
     void MarkAsDirty() {
         for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
+        for(auto& res : meshResources_) {
+            if (res) res->MarkAsDirty();
+        }
     }
 
     static TextureManager* textureManager_;

@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object3D/Primitive/PlaneClass.h"
+#include "Renderer/Object3D/Primitive/PlaneClass.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Manager/PrimitiveManager.h"
@@ -127,7 +127,7 @@ void PlaneClass::Draw() {
     // --- 【追加】描画直前のバッファ同期 ---
     resource_->SyncBeforeDraw();
 
-    drawManager_->DrawStandard3D(resource_.get());
+    drawManager_->SubmitStandard3D(resource_.get());
 }
 
 void PlaneClass::Debug([[maybe_unused]] const char* planeName) {

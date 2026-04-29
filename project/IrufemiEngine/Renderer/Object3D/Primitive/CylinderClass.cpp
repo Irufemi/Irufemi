@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object3D/Primitive/CylinderClass.h"
+#include "Renderer/Object3D/Primitive/CylinderClass.h"
 
 #include <cmath>
 #include "Resource/Texture/TextureManager.h"
@@ -131,7 +131,7 @@ void CylinderClass::Draw() {
     // --- 【追加】描画直前のバッファ同期 ---
     resource_->SyncBeforeDraw();
 
-    drawManager_->DrawStandard3D(resource_.get());
+    drawManager_->SubmitStandard3D(resource_.get());
 }
 
 void CylinderClass::Debug([[maybe_unused]] const char* cylinderName) {

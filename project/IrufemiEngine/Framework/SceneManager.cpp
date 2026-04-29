@@ -230,6 +230,12 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     wasLoading_ = false;
     isPaused_ = false;
     
+    // --- 【重要】---
+    // シーン破棄前に、現在溜まっている描画・コンピュートタスクを破棄する。
+    // これをしないと、裏スレッドでのリソース破棄と並行して、
+    // メインスレッドが古いComputeTaskを実行しようとしてクラッシュ（OBJECT_DELETED_WHILE_STILL_IN_USE）する。
+    engine_->GetDrawManager()->ClearAllQueues();
+    
     initFuture_ = std::async(std::launch::async, [this, factory]() {
         // GPU処理の完了を待つ (リソース解放中のアクセス違反を防ぐ)
         engine_->GetDirectXCommon()->WaitForGPU();

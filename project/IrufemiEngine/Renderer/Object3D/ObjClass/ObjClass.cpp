@@ -106,8 +106,12 @@ void ObjClass::Update() {
 
 void ObjClass::SyncBeforeDraw() {
     uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
-    // 変換行列の更新 (全メッシュで共有のバッファ)
-    transformationBuffer_.Update(transformationMatrix_, frameIndex);
+    
+    if (isDirtyBuffer_[frameIndex]) {
+        // 変換行列の更新 (全メッシュで共有のバッファ)
+        transformationBuffer_.Update(transformationMatrix_, frameIndex);
+        isDirtyBuffer_[frameIndex] = false;
+    }
     
     // 各メッシュのマテリアル等の更新
     for (auto& res : meshResources_) {
@@ -154,7 +158,7 @@ void ObjClass::Draw() {
 
     // モデル内の全メッシュを描画
     for (auto& res : meshResources_) {
-        drawManager_->DrawStandard3D(res.get());
+        drawManager_->SubmitStandard3D(res.get());
     }
 }
 

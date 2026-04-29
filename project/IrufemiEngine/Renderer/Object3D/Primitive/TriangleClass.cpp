@@ -1,4 +1,4 @@
-﻿#include "TriangleClass.h"
+#include "TriangleClass.h"
 #include "Application/camera/Camera.h"
 #include <wrl.h>
 #include "Engine/Core/Math/Geometry/Collision.h"
@@ -108,7 +108,7 @@ void TriangleClass::Draw() {
     resource_->SyncBeforeDraw();
 
     // 共有リソースを使用して描画
-    drawManager_->DrawStandard3D(resource_.get());
+    drawManager_->SubmitStandard3D(resource_.get());
 }
 
 void TriangleClass::Debug(const char* triangleName) {

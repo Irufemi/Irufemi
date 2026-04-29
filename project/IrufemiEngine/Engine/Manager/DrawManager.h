@@ -59,6 +59,104 @@ struct GpuMaterial;
  */
 class DrawManager {
 private:
+public:
+    // --- Render Packets ---
+    struct Standard3DPacket {
+        const class Object3DResource* resource;
+        const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride;
+        BlendMode blendMode;
+        PSOManager::DepthWrite depthWrite;
+        PSOManager::CullMode cullMode;
+    };
+    struct SpritePacket {
+        const class Object2DResource* resource;
+        BlendMode blendMode;
+        PSOManager::DepthWrite depthWrite;
+        PSOManager::CullMode cullMode;
+    };
+    struct ParticlePacket {
+        const class ParticleResource* resource;
+        uint32_t instanceCount;
+        BlendMode blendMode;
+        PSOManager::DepthWrite depthWrite;
+        PSOManager::CullMode cullMode;
+    };
+    struct LinePacket {
+        const class LineResource* resource;
+        D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
+        UINT instanceCount;
+        BlendMode blendMode;
+        PSOManager::DepthWrite depthWrite;
+        PSOManager::CullMode cullMode;
+    };
+    struct GPUParticlePacket {
+        D3D12_VERTEX_BUFFER_VIEW vbv;
+        D3D12_INDEX_BUFFER_VIEW ibv;
+        uint32_t indexCount;
+        D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
+        D3D12_GPU_VIRTUAL_ADDRESS perViewAddress;
+        D3D12_GPU_VIRTUAL_ADDRESS emitterAddress;
+        D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle;
+        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
+        uint32_t instanceCount;
+        ID3D12Resource* particleResource;
+        BlendMode blendMode;
+        PSOManager::DepthWrite depthWrite;
+        PSOManager::CullMode cullMode;
+    };
+    struct VoxelParticlePacket {
+        uint32_t instanceCount;
+        D3D12_VERTEX_BUFFER_VIEW vbv;
+        D3D12_INDEX_BUFFER_VIEW ibv;
+        uint32_t indexCount;
+        D3D12_GPU_VIRTUAL_ADDRESS perViewAddress;
+        D3D12_GPU_VIRTUAL_ADDRESS emitterAddress;
+        D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle;
+        ID3D12Resource* particleResource;
+        ID3D12PipelineState* drawPSO;
+    };
+    struct SkyboxPacket {
+        D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+        D3D12_INDEX_BUFFER_VIEW indexBufferView;
+        Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
+        Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource;
+        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
+        UINT indexCount;
+    };
+    struct RegionPacket {
+        D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+        D3D12_INDEX_BUFFER_VIEW indexBufferView;
+        Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
+        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
+        D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
+        UINT indexCount;
+        UINT instanceCount;
+        BlendMode blendMode;
+        PSOManager::DepthWrite depthWrite;
+        PSOManager::CullMode cullMode;
+    };
+
+private:
+    // --- Render Queues ---
+    std::vector<Standard3DPacket> standard3DQueue_;
+    std::vector<SpritePacket> spriteQueue_;
+    std::vector<ParticlePacket> particleQueue_;
+    std::vector<LinePacket> lineQueue_;
+    std::vector<GPUParticlePacket> gpuParticleQueue_;
+    std::vector<VoxelParticlePacket> voxelParticleQueue_;
+    std::vector<SkyboxPacket> skyboxQueue_;
+    std::vector<RegionPacket> regionQueue_;
+    std::vector<class ModelRegion*> modelRegionQueue_;
+    std::vector<std::function<void()>> postRenderQueue_;
+
+public:
+    // --- Execute Queues ---
+    void ExecuteRenderQueues(class IrufemiEngine* engine);
+    void ClearRenderQueues();
+    void ClearAllQueues() {
+        ClearRenderQueues();
+        computeTasks_.clear();
+    }
 
     DirectXCommon* dxCommon_ = nullptr;
     ID3D12GraphicsCommandList* commandList_ = nullptr; // コマンドリストをキャッシュ
@@ -151,6 +249,11 @@ public: //メンバ関数
      * @brief 登録された全Computeタスクを一括実行し、リストをクリアする
      */
     void ExecuteComputePasses();
+
+    // カスタム描画コールバック用キュー
+    void SubmitPostRender(std::function<void()> drawFunc) {
+        postRenderQueue_.push_back(drawFunc);
+    }
     ///@}
     ///@}
 
@@ -227,64 +330,66 @@ public:
     /**
      * @brief パーティクルの描画（インスタンシング）
      */
-    void DrawParticle(const class ParticleResource* resource, uint32_t instanceCount);
+    void SubmitParticle(const class ParticleResource* resource, uint32_t instanceCount);
+    void DrawParticle(const ParticlePacket& packet);
 
     /**
      * @brief 矩形領域（Region）の描画
      */
-    void DrawModelRegion(ModelRegion* region);
+    void SubmitModelRegion(class ModelRegion* region);
+    void DrawModelRegion(class ModelRegion* region);
 
     /**
      * @brief 汎用的な領域描画（頂点バッファ・インデックスバッファ直接指定）
      */
-    void DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount);
+    void SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount);
+    void DrawRegion(const RegionPacket& packet);
 
     /**
      * @brief インスタンス化された線の描画
      */
-    void DrawLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
+    void SubmitLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
+    void DrawLineInstanced(const LinePacket& packet);
 
     /**
      * @brief 標準的な3Dオブジェクトの描画 (Object3d.hlsl)
      * @param vertexBufferViewOverride スキニング等でVBVを差し替えたい場合に指定
      */
-    void DrawStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
+    void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
+    void DrawStandard3D(const Standard3DPacket& packet);
 
     /**
      * @brief 2Dオブジェクト（スプライト等）の標準描画 (Sprite.hlsl)
      */
-    void DrawSprite(const class Object2DResource* resource);
+    void SubmitSprite(const class Object2DResource* resource);
+    void DrawSprite(const SpritePacket& packet);
 
+
+    /**
+     * @brief スカイボックスの描画
+     */
+    void SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
+    void DrawSkybox(const SkyboxPacket& packet);
+
+    /**
+     * @brief GPUパーティクルのインスタンス描画 (GPUParticle.hlsl)
+     */
+    void SubmitGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, const D3D12_INDEX_BUFFER_VIEW& ibv, uint32_t indexCount, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS perViewAddress, D3D12_GPU_VIRTUAL_ADDRESS emitterAddress, D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, uint32_t instanceCount, ID3D12Resource* particleResource);
+    void DrawGPUParticle(const GPUParticlePacket& packet);
+    
     // VoxelParticle 用の描画 (VoxelParticle.hlsl)
-    void DrawVoxelParticle(
+    void SubmitVoxelParticle(
         uint32_t instanceCount,
         const D3D12_VERTEX_BUFFER_VIEW& vbv,
         const D3D12_INDEX_BUFFER_VIEW& ibv,
         uint32_t indexCount,
         D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
         D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
-        D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle
+        D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle,
+        ID3D12Resource* particleResource,
+        ID3D12PipelineState* drawPSO
     );
-
-    /**
-     * @brief スカイボックスの描画
-     */
-    void DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
-
-    /**
-     * @brief GPUパーティクルのインスタンス描画 (GPUParticle.hlsl)
-     */
-    void DrawGPUParticle(
-        const D3D12_VERTEX_BUFFER_VIEW& vbv,
-        const D3D12_INDEX_BUFFER_VIEW& ibv,
-        uint32_t indexCount,
-        D3D12_GPU_VIRTUAL_ADDRESS materialAddress,
-        D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
-        D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
-        D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle,
-        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle,
-        uint32_t instanceCount
-    );
+    void DrawVoxelParticle(const VoxelParticlePacket& packet);
     ///@}
 
     /** @name コンピュートシェーダ（GPGPU）操作 */

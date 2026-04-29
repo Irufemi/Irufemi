@@ -57,7 +57,6 @@ public:
     }
     
     bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
-    
     void MarkAsDirty() {
         for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
     }
@@ -67,6 +66,12 @@ public:
         if (isDirtyBuffer_[frameIndex]) {
             transformationBuffer_.Update(transformationMatrix_, frameIndex);
             materialBuffer_.Update(cpuMaterialData_, frameIndex);
+            
+            // 頂点データの更新があればGPUに転送
+            if (vertexData_ && !vertexDataList_.empty()) {
+                std::memcpy(vertexData_, vertexDataList_.data(), sizeof(VertexData) * vertexDataList_.size());
+            }
+
             isDirtyBuffer_[frameIndex] = false;
         }
     }

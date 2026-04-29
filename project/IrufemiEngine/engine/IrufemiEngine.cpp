@@ -413,6 +413,9 @@ void IrufemiEngine::Execute() {
         // 描画
         sceneManager_->Draw();
 
+        // ここで溜まった描画パケットを一斉に処理する
+        drawManager_->ExecuteRenderQueues(this);
+
         // 終了処理
         EndFrame();
     }

@@ -1,4 +1,4 @@
-﻿#define NOMINMAX
+#define NOMINMAX
 #include "ParticleSystem.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Manager/DebugUI.h"
@@ -264,7 +264,7 @@ void ParticleSystem::Draw()
 
         // 描画
         if (s_drawManager_) {
-            s_drawManager_->DrawParticle(resource_.get(), numInstance_);
+            s_drawManager_->SubmitParticle(resource_.get(), numInstance_);
         }
 
         // エンジン状態を復元(PSOの切り替えは呼び出し側で制御するため Apply は行わない)
@@ -274,7 +274,7 @@ void ParticleSystem::Draw()
     } else {
         // エンジン参照がない場合は従来通り(安全策)
         if (s_drawManager_) {
-            s_drawManager_->DrawParticle(resource_.get(), numInstance_);
+            s_drawManager_->SubmitParticle(resource_.get(), numInstance_);
         }
     }
 
@@ -291,11 +291,25 @@ void ParticleSystem::Draw()
 
 void ParticleSystem::SyncBeforeDraw() {
     uint32_t currentFrameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    
+    // 今フレームですでにUpdate()が呼ばれている場合は、正しいデータが書き込み済みのためスキップ
     if (lastUpdateFrameIndex_ == currentFrameIndex) {
         resource_->SyncBeforeDraw();
         return;
     }
+
+    // 前回のデータ元のフレームインデックス
+    uint32_t prevFrameIndex = (currentFrameIndex + kMaxFramesInFlight - 1) % kMaxFramesInFlight;
+
+    // 前フレームのデータをそのまま丸ごと現在のフレームのバッファへコピーする（明滅対策）
+    if (numInstance_ > 0 && resource_->instancingData_[currentFrameIndex] && resource_->instancingData_[prevFrameIndex]) {
+        std::memcpy(resource_->instancingData_[currentFrameIndex], 
+                    resource_->instancingData_[prevFrameIndex], 
+                    sizeof(ParticleForGPU) * numInstance_);
+    }
+    
     resource_->SyncBeforeDraw();
+    lastUpdateFrameIndex_ = currentFrameIndex; // これ以降このフレームでの同期は不要
 }
 
 void ParticleSystem::SetEmitterPosition(const Vector3& position) {

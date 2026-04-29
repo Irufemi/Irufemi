@@ -1,4 +1,4 @@
-﻿#include "LineClass.h"
+#include "LineClass.h"
 
 #include "Application/camera/Camera.h"
 #include "Engine/Manager/DrawManager.h"
@@ -114,7 +114,7 @@ void Line3DRegion::Draw() {
     if (activeCount_ == 0) return;
     BuildInstanceBuffer();
     baseLineResource_->SyncBeforeDraw();
-    drawManager_->DrawLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32());
+    drawManager_->SubmitLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32());
 }
 
 void Line3DRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
