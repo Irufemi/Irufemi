@@ -44,7 +44,6 @@ GameScene::~GameScene() {}
 
 void GameScene::Initialize(IrufemiEngine *engine) {
   engine_ = engine;
-  gameTime_ = 0.0f;
 
   camera_ = std::make_unique<Camera>();
   camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
@@ -135,7 +134,6 @@ void GameScene::Update() {
   // =====
   // ↓ゲームの更新
   // =====
-  gameTime_ += engine_->GetDeltaTime();
 
   // プレイヤーの更新
   if (player_ && !debugMode_) {
@@ -382,8 +380,8 @@ void GameScene::UpdateCameraAndFrameData() {
   cameraForGpu.view = camera_->GetViewMatrix();
   cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
   cameraForGpu.worldPosition = camera_->GetTranslate();
-  cameraForGpu.time = gameTime_;
-  cameraForGpu.deltaTime = engine_->GetDeltaTime();
+  cameraForGpu.time = engine_->GetGameTime();
+  cameraForGpu.deltaTime = engine_->GetGameDeltaTime();
 
   std::vector<PointLight *> pLights;
   for (auto &pl : pointLights_)

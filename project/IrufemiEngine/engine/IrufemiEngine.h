@@ -200,6 +200,12 @@ public: // ゲッター
     // 時間関連のゲッター
     float GetDeltaTime() const { return deltaTime_; }
     float GetTotalTime() const { return totalTime_; }
+    
+    // 追加: ポーズ対応のゲーム内時間関連
+    float GetGameTime() const { return gameTime_; }
+    float GetGameDeltaTime() const { return gameDeltaTime_; }
+    float GetTimeScale() const { return timeScale_; }
+    void SetTimeScale(float scale) { timeScale_ = scale; }
 
     // オプション: 取得用
     DescriptorPool* GetSrvPool() const { return dxCommon_->GetSrvPool(); }
@@ -321,6 +327,11 @@ private: // メンバ変数
     std::chrono::steady_clock::time_point lastFrameTime_{};
     float deltaTime_ = 0.0f;
     float totalTime_ = 0.0f;
+
+    // 追加: ポーズ対応のゲーム内時間管理
+    float gameTime_ = 0.0f;
+    float gameDeltaTime_ = 0.0f;
+    float timeScale_ = 1.0f;
 
     // --- 全画面用 RenderTexture ---
     std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;

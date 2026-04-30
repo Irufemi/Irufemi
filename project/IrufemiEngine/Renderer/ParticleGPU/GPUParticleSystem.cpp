@@ -185,8 +185,8 @@ void GPUParticleSystem::Update() {
         emitter_->frequencyTime += dt; // δタイムを加算
     }
 
-    perFrameData_->time = engine_->GetTotalTime();
-    perFrameData_->deltaTime = dt;
+    perFrameData_->time = engine_->GetGameTime();
+    perFrameData_->deltaTime = engine_->GetGameDeltaTime();
 
     // 射出間隔を上回ったら射出予約に加算
     if (emitter_->emit) {

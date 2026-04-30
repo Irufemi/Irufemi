@@ -124,14 +124,15 @@ void VoxelParticleSystem::Update(float deltaTime) {
     return;
 
   // エミッターデータ更新
-  emitterData_.time += deltaTime;
+  float actualDeltaTime = engine_->GetGameDeltaTime();
+  emitterData_.time += actualDeltaTime;
   emitterData_.emit = isEmitting_ ? 1 : 0;
   
   uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
   
   // PerFrame データを更新（time と deltaTime を CS シェーダーへ渡す）
   perFrameData_.time = emitterData_.time;
-  perFrameData_.deltaTime = deltaTime;
+  perFrameData_.deltaTime = actualDeltaTime;
 
     // (バッファへの転送は SyncBeforeDraw で実施)
 

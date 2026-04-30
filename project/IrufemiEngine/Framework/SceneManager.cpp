@@ -44,6 +44,7 @@ bool SceneManager::ChangeTo(const Key& next) {
     wasLoading_ = false;
 
     isPaused_ = false; // シーン切り替え時にポーズを解除
+    engine_->SetTimeScale(1.0f); // 時間の進みもリセット
     
     /**
      * @brief ポーズ可能なシーン(ゲーム等)はマウスをロック(非表示)し、
@@ -93,6 +94,8 @@ void SceneManager::Update() {
             TogglePause();
             // ポーズ状態に合わせてマウスのロックを切り替え
             engine_->SetCursorLocked(!isPaused_);
+            // 時間の進み具合を制御
+            engine_->SetTimeScale(isPaused_ ? 0.0f : 1.0f);
         }
     }
 
@@ -229,6 +232,7 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     isInitializing_ = true;
     wasLoading_ = false;
     isPaused_ = false;
+    engine_->SetTimeScale(1.0f); // 時間の進みをリセット
     
     // --- 【重要】---
     // シーン破棄前に、現在溜まっている描画・コンピュートタスクを破棄する。

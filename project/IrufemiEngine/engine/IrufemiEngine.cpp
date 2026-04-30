@@ -427,6 +427,11 @@ void IrufemiEngine::StartFrame() {
     auto now = std::chrono::steady_clock::now();
     deltaTime_ = std::chrono::duration<float>(now - lastFrameTime_).count();
     totalTime_ = std::chrono::duration<float>(now - startTime_).count();
+    
+    // ゲーム内時間の更新（タイムスケールを適用）
+    gameDeltaTime_ = deltaTime_ * timeScale_;
+    gameTime_ += gameDeltaTime_;
+
     lastFrameTime_ = now;
 }
 
