@@ -29,7 +29,7 @@ public:
     void Draw(IrufemiEngine* engine);
     
     // UI関連手続き
-    void Draw3DUI(IrufemiEngine* engine);
+    void Draw3DUI(IrufemiEngine* engine, bool isUI = false);
     void Draw2DUI(IrufemiEngine* engine);
 
     // --- ビーム制御用 ---

@@ -225,5 +225,15 @@ void ModelRegion::Draw() {
     // 毎フレームインスタンスの WVP 等を更新する (マルチバッファなので常に更新)
     SyncBeforeDraw();
 
-    drawManager_->SubmitModelRegion(this);
+    DrawManager::ModelRegionPacket p{};
+    p.gpuMesh = GetGpuMesh();
+    p.materialResource = GetMaterialResource();
+    p.textureHandle = GetTextureHandle();
+    p.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
+    p.instanceCount = GetInstanceCount();
+    p.blendMode = GetBlendMode();
+    p.depthWrite = GetDepthWrite();
+    p.cullMode = GetCullMode();
+
+    drawManager_->SubmitModelRegion(p);
 }

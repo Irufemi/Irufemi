@@ -432,15 +432,13 @@ void DrawManager::DrawParticle(const ParticlePacket& packet) {
     );
 }
 
-void DrawManager::SubmitModelRegion(ModelRegion* region) {
-    if (!region) return;
-    modelRegionQueue_.push_back(region);
+void DrawManager::SubmitModelRegion(const ModelRegionPacket& packet) {
+    modelRegionQueue_.push_back(packet);
 }
 
-void DrawManager::DrawModelRegion(ModelRegion* region) {
-    if (!region) { return; }
-    const GpuMesh* gpuMesh = region->GetGpuMesh();
-    if (!gpuMesh || gpuMesh->vertexCount == 0 || region->GetInstanceCount() == 0) { return; }
+void DrawManager::DrawModelRegion(const ModelRegionPacket& packet) {
+    const GpuMesh* gpuMesh = packet.gpuMesh;
+    if (!gpuMesh || gpuMesh->vertexCount == 0 || packet.instanceCount == 0) { return; }
 
     // IA設定 (共有リソースから)
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -449,16 +447,20 @@ void DrawManager::DrawModelRegion(ModelRegion* region) {
         commandList_->IASetIndexBuffer(&gpuMesh->indexBufferView);
     }
 
-    // CBV/SRV設定 (インスタンスリソースから)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, region->GetMaterialResource()->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, region->GetTextureHandle());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, region->GetInstancingSrvHandleGPU());
+    // Material (CBV)
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialResource->GetGPUVirtualAddress());
 
-    // 描画
+    // Texture (SRV)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);
+
+    // Instances (SRV)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU);
+
+    // Draw
     if (gpuMesh->indexCount > 0) {
-        commandList_->DrawIndexedInstanced(gpuMesh->indexCount, region->GetInstanceCount(), 0, 0, 0);
+        commandList_->DrawIndexedInstanced(gpuMesh->indexCount, packet.instanceCount, 0, 0, 0);
     } else {
-        commandList_->DrawInstanced(gpuMesh->vertexCount, region->GetInstanceCount(), 0, 0);
+        commandList_->DrawInstanced(gpuMesh->vertexCount, packet.instanceCount, 0, 0);
     }
 }
 
@@ -601,11 +603,22 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12
     if (!resource) return;
     Standard3DPacket p{};
     p.resource = resource;
+    p.vertexBufferViewOverride = vertexBufferViewOverride;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    p.vertexBufferViewOverride = vertexBufferViewOverride;
     standard3DQueue_.push_back(p);
+}
+
+void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+    if (!resource) return;
+    Standard3DPacket p{};
+    p.resource = resource;
+    p.vertexBufferViewOverride = vertexBufferViewOverride;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    ui3DQueue_.push_back(p);
 }
 
 void DrawManager::DrawStandard3D(const Standard3DPacket& packet) {
@@ -990,12 +1003,7 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     DrawWithPSO(regionQueue_, [&](const RegionPacket& p) { DrawRegion(p); });
 
     // 3.5 ModelRegion
-    if (!modelRegionQueue_.empty()) {
-        engine->ApplyPSO();
-        for (auto* region : modelRegionQueue_) {
-            DrawModelRegion(region);
-        }
-    }
+    DrawWithPSO(modelRegionQueue_, [&](const ModelRegionPacket& p) { DrawModelRegion(p); });
     
     // 4. Line
     DrawWithPSO(lineQueue_, [&](const LinePacket& p) { DrawLineInstanced(p); }, false, false, true);
@@ -1031,6 +1039,9 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     // 8. Sprites
     DrawWithPSO(spriteQueue_, [&](const SpritePacket& p) { DrawSprite(p); }, false, true);
 
+    // 8.5 UI 3D Objects (Always drawn on top of Sprites)
+    DrawWithPSO(ui3DQueue_, [&](const Standard3DPacket& p) { DrawStandard3D(p); });
+
     // 9. Post Custom Draws
     for (auto& func : postRenderQueue_) {
         func();
@@ -1041,6 +1052,7 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
 
 void DrawManager::ClearRenderQueues() {
     standard3DQueue_.clear();
+    ui3DQueue_.clear();
     spriteQueue_.clear();
     particleQueue_.clear();
     lineQueue_.clear();

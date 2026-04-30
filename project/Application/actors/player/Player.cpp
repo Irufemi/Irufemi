@@ -401,16 +401,16 @@ void Player::Update() {
 #endif
 }
 
-void Player::Draw3DUI(Enemy* enemy) {
+void Player::Draw3DUI(Enemy* enemy, bool isUI) {
     if (!status_.IsDead()) {
         if (!cameraController_.IsFirstPerson()) {
             if (hpBar_) {
-                hpBar_->Draw3D();
+                hpBar_->Draw3D(isUI);
             }
         } else {
             // ボスや部位のHPバー（3D）は1人称視点のみ表示
             if (enemy) {
-                enemy->Draw3DUI(engine_);
+                enemy->Draw3DUI(engine_, isUI);
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿#include "../../Core/IRenderable.h"
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -48,6 +48,7 @@ public: //メンバ関数
     // 描画
     void SyncBeforeDraw() override;
     void Draw() override;
+    void Draw(bool isUI);
 
     // デバッグ
     void Debug(const char* planeName = "");

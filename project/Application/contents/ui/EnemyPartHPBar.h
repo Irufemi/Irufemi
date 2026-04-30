@@ -32,7 +32,7 @@ public:
     /**
      * @brief 3Dポリゴン描画
      */
-    void Draw();
+    void Draw(bool isUI = false);
 
 private:
     /// HP割合からバーの色を計算する（緑→黄→赤のグラデーション）

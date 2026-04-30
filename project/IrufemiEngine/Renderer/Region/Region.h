@@ -37,8 +37,12 @@ public:
     void AddInstance(const Transform& t);
     void ClearInstances();
     void BuildInstanceBuffer(bool force = false);
+    /**
+     * @brief 描画コマンドの積み込み
+     */
     void SyncBeforeDraw() override;
     void Draw() override;
+    void Draw(bool isUI);
 
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
@@ -54,6 +58,15 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT GetInstanceCount() const { return visibleInstanceCount_; }
+
+    BlendMode GetBlendMode() const { return blendMode_; }
+    void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
+
+    PSOManager::DepthWrite GetDepthWrite() const { return depthWrite_; }
+    void SetDepthWrite(PSOManager::DepthWrite depthWrite) { depthWrite_ = depthWrite; }
+
+    PSOManager::CullMode GetCullMode() const { return cullMode_; }
+    void SetCullMode(PSOManager::CullMode cullMode) { cullMode_ = cullMode; }
 
 private:
     struct InstanceData {
@@ -99,6 +112,11 @@ private:
 
     uint32_t lastUpdateFrameIndex_ = 0;
     bool isDirty_ = true;
+
+    // レンダリングステート
+    BlendMode blendMode_ = BlendMode::kBlendModeNormal;
+    PSOManager::DepthWrite depthWrite_ = PSOManager::DepthWrite::Enable;
+    PSOManager::CullMode cullMode_ = PSOManager::CullMode::Back;
 
     // 行列更新の最適化用
     Matrix4x4 lastViewMatrix_ = {};

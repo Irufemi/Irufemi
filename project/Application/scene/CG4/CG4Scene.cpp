@@ -127,7 +127,6 @@ void CG4Scene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
-    engine_->ApplyPSO();
     
     // オブジェクトの描画があればここに記述
     if (isActiveAnimatedCube_) {

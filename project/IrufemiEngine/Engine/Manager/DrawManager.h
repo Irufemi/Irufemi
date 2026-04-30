@@ -135,10 +135,21 @@ public:
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
     };
+    struct ModelRegionPacket {
+        const struct GpuMesh* gpuMesh;
+        ID3D12Resource* materialResource;
+        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
+        D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
+        UINT instanceCount;
+        BlendMode blendMode;
+        PSOManager::DepthWrite depthWrite;
+        PSOManager::CullMode cullMode;
+    };
 
 private:
     // --- Render Queues ---
     std::vector<Standard3DPacket> standard3DQueue_;
+    std::vector<Standard3DPacket> ui3DQueue_;
     std::vector<SpritePacket> spriteQueue_;
     std::vector<ParticlePacket> particleQueue_;
     std::vector<LinePacket> lineQueue_;
@@ -146,7 +157,7 @@ private:
     std::vector<VoxelParticlePacket> voxelParticleQueue_;
     std::vector<SkyboxPacket> skyboxQueue_;
     std::vector<RegionPacket> regionQueue_;
-    std::vector<class ModelRegion*> modelRegionQueue_;
+    std::vector<ModelRegionPacket> modelRegionQueue_;
     std::vector<std::function<void()>> postRenderQueue_;
 
 public:
@@ -336,8 +347,8 @@ public:
     /**
      * @brief 矩形領域（Region）の描画
      */
-    void SubmitModelRegion(class ModelRegion* region);
-    void DrawModelRegion(class ModelRegion* region);
+    void SubmitModelRegion(const ModelRegionPacket& packet);
+    void DrawModelRegion(const ModelRegionPacket& packet);
 
     /**
      * @brief 汎用的な領域描画（頂点バッファ・インデックスバッファ直接指定）
@@ -356,6 +367,7 @@ public:
      * @param vertexBufferViewOverride スキニング等でVBVを差し替えたい場合に指定
      */
     void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
+    void SubmitUI3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
     void DrawStandard3D(const Standard3DPacket& packet);
 
     /**

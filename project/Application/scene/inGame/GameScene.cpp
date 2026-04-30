@@ -253,7 +253,6 @@ void GameScene::Draw() {
   engine_->SetBlend(BlendMode::kBlendModeNormal);
   engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
   engine_->SetCull(PSOManager::CullMode::Back);
-  engine_->ApplyPSO();
 
   skydome_->Draw();
   if (field_)
@@ -268,18 +267,15 @@ void GameScene::Draw() {
   // --- 2.5 HPバーUI描画（スプライト：マスクやエイム） ---
   engine_->SetBlend(BlendMode::kBlendModeNormal);
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-  engine_->ApplySpritePSO();
   if (player_) {
     player_->Draw2DUI(boss_.get());
   }
 
   // --- 3. 3DオブジェクトとしてのUI描画（HPバー） ---
-  // スプライト（マスク）の上に描画するため、スプライト描画の後に 3D PSO を再適用して描画する
   engine_->SetBlend(BlendMode::kBlendModeNormal);
   engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-  engine_->ApplyPSO();
   if (player_) {
-    player_->Draw3DUI(boss_.get());
+    player_->Draw3DUI(boss_.get(), true);
   }
 
   // --- 操作説明および警告スプライト描画（3人称視点のみ） ---

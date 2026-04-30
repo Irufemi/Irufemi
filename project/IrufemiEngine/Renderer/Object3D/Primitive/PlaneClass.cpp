@@ -99,6 +99,10 @@ void PlaneClass::Update() {
 }
 
 void PlaneClass::Draw() {
+    Draw(false);
+}
+
+void PlaneClass::Draw(bool isUI) {
     if (!resource_ || !drawManager_ || !camera_) return;
 
     // 視錐台カリング
@@ -127,7 +131,11 @@ void PlaneClass::Draw() {
     // --- 【追加】描画直前のバッファ同期 ---
     resource_->SyncBeforeDraw();
 
-    drawManager_->SubmitStandard3D(resource_.get());
+    if (isUI) {
+        drawManager_->SubmitUI3D(resource_.get());
+    } else {
+        drawManager_->SubmitStandard3D(resource_.get());
+    }
 }
 
 void PlaneClass::Debug([[maybe_unused]] const char* planeName) {

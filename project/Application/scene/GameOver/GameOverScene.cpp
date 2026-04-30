@@ -193,12 +193,10 @@ void GameOverScene::Update() {
 
 void GameOverScene::Draw() {
 
-    // 2Dスプライト描画処理を削除し、直接3Dモデルの描画へ移行
-
+    // --- 3D描画 ---
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
-    engine_->ApplyPSO();
 
     if (goTextG_) goTextG_->Draw();
     if (goTextA_) goTextA_->Draw();

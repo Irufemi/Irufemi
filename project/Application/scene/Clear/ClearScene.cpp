@@ -189,13 +189,10 @@ void ClearScene::Update() {
 }
 
 void ClearScene::Draw() {
-
-    // 2Dスプライト描画処理を削除し、直接3Dモデルの描画へ移行
-
+    // --- 3D描画 ---
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
-    engine_->ApplyPSO();
 
     if (clearTextC_) clearTextC_->Draw();
     if (clearTextL_) clearTextL_->Draw();
