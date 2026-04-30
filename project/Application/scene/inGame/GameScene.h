@@ -174,4 +174,6 @@ private:
      * @brief カメラとフレームデータの更新
      */
     void UpdateCameraAndFrameData();
+
+    float gameTime_ = 0.0f; ///< ポーズ中には進まないゲーム内時間
 };
