@@ -185,13 +185,12 @@ void Player::Update() {
                 deathCameraPos_.y - translate_.y,
                 deathCameraPos_.z - translate_.z
             };
-            float lookYaw = std::atan2(toCamera.x, toCamera.z);
+            float lookYaw = std::atan2(toCamera.x, toCamera.z) + 3.14159f;
             float horizontalDist = std::sqrt(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
             float lookPitch = -std::atan2(toCamera.y, horizontalDist);
 
             starObj_->SetPosition(translate_);
             // XとYの回転でカメラの方向を向きつつ、Zの回転でくるくる回す！
-            // ※もしplane.objの裏面が描画されず見えない場合は、lookYaw に 3.14159f を足してください
             starObj_->SetRotate({ lookPitch, lookYaw, starRotationZ_ });
             starObj_->SetScale(starScale_);
             starObj_->Update();
