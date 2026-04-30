@@ -294,7 +294,6 @@ void GPUParticleSystem::Draw() {
 
 #if USE_IMGUI
     if (debugLineRegion_) {
-        engine_->ApplyLineInstancedPSO();
         debugLineRegion_->Draw();
     }
 #endif

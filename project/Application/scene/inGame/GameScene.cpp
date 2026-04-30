@@ -296,8 +296,6 @@ void GameScene::Draw() {
       }
   } else if (player_ && player_->IsFirstPerson()) {
       // --- 1人称視点専用UI描画 ---
-      // スプライトを描画するため念のため SpritePSO を適用
-      engine_->ApplySpritePSO();
       if (!player_->IsKarakuriCharged()) {
           if (operationNormalSprite1st_) operationNormalSprite1st_->Draw();
       } else {

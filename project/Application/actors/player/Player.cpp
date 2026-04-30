@@ -431,9 +431,6 @@ void Player::Draw2DUI(Enemy* enemy) {
 }
 
 void Player::Draw() {
-    if (engine_) {
-        engine_->ApplyPSO();
-    }
     bool isBlinking = (status_.GetInvincibleTimer() > 0 && (status_.GetInvincibleTimer() % 4) < 2);
 
     if (obj_) {
@@ -487,9 +484,7 @@ void Player::Draw() {
 
 #ifdef USE_IMGUI
     if (lineOBB_ && isDebugDrawOBB_ && engine_) {
-        engine_->ApplyLineInstancedPSO();
         lineOBB_->Draw();
-        engine_->ApplyPSO();
     }
 #endif
 }

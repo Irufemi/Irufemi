@@ -161,7 +161,6 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
     if (isTelegraphActive_ && telegraphObj_) {
-        engine->ApplyPSO(); // 予兆は通常描画
         telegraphObj_->Draw();
     }
 

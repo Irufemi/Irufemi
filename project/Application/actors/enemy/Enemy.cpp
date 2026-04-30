@@ -309,9 +309,7 @@ void Enemy::Draw(IrufemiEngine* engine) {
 
 #ifdef USE_IMGUI
   if (lineOBB_ && isDebugDrawOBB_ && engine_) {
-    engine_->ApplyLineInstancedPSO();
     lineOBB_->Draw();
-    engine_->ApplyPSO(); // restore
   }
 #endif
 }

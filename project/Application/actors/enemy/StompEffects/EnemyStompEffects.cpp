@@ -262,7 +262,6 @@ void EnemyStompEffects::DrawDebug(Line3DRegion* lineRegion) {
 
 void EnemyStompEffects::Draw(IrufemiEngine* engine) {
     if (!isActive_ || !engine) return;
-    engine->ApplyPSO();
     if (globalTimer_ < params_.explosionDuration) explosionObj_->Draw();
     if (currentPhase_ != Phase::Finished) ringObj_->Draw();
     if (currentPhase_ == Phase::FinalExplosion) finalExplosionObj_->Draw();

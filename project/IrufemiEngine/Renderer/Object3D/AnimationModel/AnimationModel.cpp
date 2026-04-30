@@ -265,18 +265,15 @@ void AnimationModel::Draw() {
 
     // --- 追加：骨格（球体の集合）を一括描画 ---
     if (jointSpheres_ && !skeleton_.joints.empty()) {
-        engine_->ApplyRegionPSO();
         jointSpheres_->Draw();
     }
 
     // --- 追加：ボーン（線）を一括描画 ---
     if (boneLines_ && !skeleton_.joints.empty()) {
-        engine_->ApplyLineInstancedPSO();
         boneLines_->Draw();
     }
 
-    // 2. グラフィックスPSOの適用
-    engine_->ApplyPSO();
+    // 2. グラフィックスPSOの適用はDrawManagerが行うため削除
 
     // 3. 全メッシュをループして描画
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();

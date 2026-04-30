@@ -281,9 +281,6 @@ void ParticleSystem::Draw()
     // 2) デバッグ線(AABB 等)を描画(Line PSO を確実にバインド)
 #if USE_IMGUI
     if (debugLineRegion_) {
-        if (s_engine_) {
-            s_engine_->ApplyLineInstancedPSO();
-        }
         debugLineRegion_->Draw();
     }
 #endif
