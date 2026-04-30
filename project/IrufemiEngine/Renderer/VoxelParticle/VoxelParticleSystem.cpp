@@ -136,16 +136,6 @@ void VoxelParticleSystem::Update(float deltaTime) {
 
     // (バッファへの転送は SyncBeforeDraw で実施)
 
-  // PerView 更新（描画用）
-  perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
-  
-  // ビルボード行列の計算
-  Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix(0.0f);
-  perViewBuffer_[frameIndex]->billboardMatrix = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
-  perViewBuffer_[frameIndex]->billboardMatrix.m[3][0] = 0.0f;
-  perViewBuffer_[frameIndex]->billboardMatrix.m[3][1] = 0.0f;
-  perViewBuffer_[frameIndex]->billboardMatrix.m[3][2] = 0.0f;
-
   needsUpdateCS_ = true;
   if (engine_ && engine_->GetDrawManager()) {
       engine_->GetDrawManager()->RegisterComputeTask(this);
@@ -154,6 +144,17 @@ void VoxelParticleSystem::Update(float deltaTime) {
 
 void VoxelParticleSystem::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    
+    // PerViewはUpdateが呼ばれなくても毎フレーム必ず最新化する（ポーズ中のカメラ移動・マルチバッファ対策）
+    if (camera_) {
+        perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
+        Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix(0.0f);
+        perViewBuffer_[frameIndex]->billboardMatrix = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
+        perViewBuffer_[frameIndex]->billboardMatrix.m[3][0] = 0.0f;
+        perViewBuffer_[frameIndex]->billboardMatrix.m[3][1] = 0.0f;
+        perViewBuffer_[frameIndex]->billboardMatrix.m[3][2] = 0.0f;
+    }
+    
     if (lastUpdateFrame_ == frameIndex) return;
     emitterBuffer_.Update(emitterData_, frameIndex);
     perFrameBuffer_.Update(perFrameData_, frameIndex);

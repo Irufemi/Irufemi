@@ -197,20 +197,6 @@ void GPUParticleSystem::Update() {
     } else {
         emitter_->frequencyTime = 0.0f; // Emit停止中ならタイマーリセット
     }
-
-    uint32_t frameIndex = dxCommon_->GetFrameIndex();
-    
-    perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
-
-    // backToFrontMatrix_の設定
-    Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
-    Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
-    billboardMatrix_.m[3][0] = 0.0f;
-    billboardMatrix_.m[3][1] = 0.0f;
-    billboardMatrix_.m[3][2] = 0.0f;
-
-    perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
-
     if (debugLineRegion_) {
         debugLineRegion_->Update();
     }
@@ -226,6 +212,17 @@ void GPUParticleSystem::Update() {
 void GPUParticleSystem::SyncBeforeDraw() {
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
     
+    // PerViewはUpdateが呼ばれなくても毎フレーム必ず最新化する（ポーズ中のカメラ移動・マルチバッファ対策）
+    if (camera_) {
+        perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
+        Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
+        Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+        billboardMatrix_.m[3][0] = 0.0f;
+        billboardMatrix_.m[3][1] = 0.0f;
+        billboardMatrix_.m[3][2] = 0.0f;
+        perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
+    }
+
     // 同一フレーム内で複数回呼び出された場合は無駄な転送を防ぐ
     // 特に、DispatchCompute後のburstCount=0の再転送（バグ）を防ぐ効果がある
     if (lastUpdateFrame_ == frameIndex) {
