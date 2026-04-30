@@ -148,6 +148,7 @@ private: // メンバ変数
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
     uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);
+    uint32_t lastSkinnedFrameIndex_ = 0; // スキニングが最後に実行されたフレームインデックス（ポーズ中の不整合対策）
 
     std::string filename_;
 };

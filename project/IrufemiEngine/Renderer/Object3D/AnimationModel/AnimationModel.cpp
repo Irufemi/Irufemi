@@ -232,6 +232,9 @@ void AnimationModel::DispatchCompute() {
     engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
     uint32_t f = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource[f].Get());
+    
+    // スキニングが正常に実行されたフレームを記録（ポーズ中の遅延更新等による不整合を防ぐため）
+    lastSkinnedFrameIndex_ = f;
 }
 
 // 描画
@@ -282,7 +285,7 @@ void AnimationModel::Draw() {
 
         // スキニング中なら VBV を差し替えて描画
         if (!managedModel_->cpuModel->skinClusterData.empty()) {
-            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[frameIndex]);
+            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_]);
         } else {
             engine_->GetDrawManager()->SubmitStandard3D(res.get());
         }
@@ -383,8 +386,9 @@ void AnimationModel::UpdateAnimation() {
 
     // アニメーションの処理
 
-    animationTime_ += 1.0f / 60.0f; // 時刻を進める。1/60で固定してあるが、計測した時間を使って可変フレームを対応したほうが望ましい。
-    animationTime_ = std::fmod(animationTime_, animation_.duration); // 最後まで言ったら最初からリピート再生。リピートしなくても別にいい。
+    // 時刻を進める（タイムスケール対応）
+    animationTime_ += engine_->GetGameDeltaTime();
+    animationTime_ = std::fmod(animationTime_, animation_.duration); // 最後まで行ったら最初からリピート再生。
 
     // スキニングアニメーションの場合
     if (!managedModel_->cpuModel->skinClusterData.empty()) {
