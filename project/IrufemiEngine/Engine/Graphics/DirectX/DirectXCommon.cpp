@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include "DXCommandManager.h"
+#include "DXSwapChainManager.h"
 
 ID3D12CommandQueue* DirectXCommon::GetCommandQueue() { return commandManager_->GetCommandQueue(); }
 ID3D12CommandAllocator* DirectXCommon::GetCommandAllocator() { return commandManager_->GetCommandAllocator(frameIndex_); }
@@ -56,13 +57,11 @@ void DirectXCommon::Finalize() {
         rootSignatureManager_->Finalize();
         rootSignatureManager_.reset();
     }
-    depthStencilResource_.Reset();
-    rtvDescriptorHeap_.Reset();
+    if (swapChainManager_) {
+        swapChainManager_->Finalize();
+        swapChainManager_.reset();
+    }
     srvPool_.reset();
-    dsvDescriptorHeap_.Reset();
-    swapChainResources_[0].Reset();
-    swapChainResources_[1].Reset();
-    swapChain_.Reset();
     device_.Reset();
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
@@ -97,14 +96,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     commandManager_ = std::make_unique<DXCommandManager>();
     commandManager_->Initialize(device_.Get());
 
-    CreateSwapChain();
-    
-    descriptorSizeRTV_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    descriptorSizeDSV_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+    swapChainManager_ = std::make_unique<DXSwapChainManager>();
+    swapChainManager_->Initialize(device_.Get(), dxgiFactory_.Get(), commandManager_->GetCommandQueue(), hwnd_, clientWidth_, clientHeight_);
 
-    CreateDescriptorHeaps();
-    InitializeRenderTargets();
-    CreateDepthStencil();
+    srvPool_ = std::make_unique<DescriptorPool>();
+    srvPool_->Initialize(device_.Get());
     rootSignatureManager_ = std::make_unique<DXRootSignatureManager>();
     rootSignatureManager_->Initialize(device_.Get(), log_);
     CreatePSOs();
@@ -186,68 +182,6 @@ void DirectXCommon::SetInfoQueue() {
     }
 #endif
 }
-
-
-
-void DirectXCommon::CreateSwapChain() {
-    swapChainDesc_.Width = clientWidth_;
-    swapChainDesc_.Height = clientHeight_;
-    swapChainDesc_.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    swapChainDesc_.SampleDesc.Count = 1;
-    swapChainDesc_.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc_.BufferCount = 2;
-    swapChainDesc_.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-
-    HRESULT hr = dxgiFactory_->CreateSwapChainForHwnd(commandManager_->GetCommandQueue(), hwnd_, &swapChainDesc_, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(swapChain_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
-
-    if (dxgiFactory_) { dxgiFactory_.Reset(); }
-
-    for (uint32_t i = 0; i < 2; ++i) {
-        hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(swapChainResources_[i].GetAddressOf()));
-        assert(SUCCEEDED(hr));
-    }
-}
-
-void DirectXCommon::CreateDescriptorHeaps() {
-    rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 128, false);
-    nextRtvIndex_ = 4; // 0, 1 は SwapChain 用、2, 3 は ImGui 用に予約
-
-    srvPool_ = std::make_unique<DescriptorPool>();
-    srvPool_->Initialize(device_.Get());
-
-    dsvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 16, false);
-    nextDsvIndex_ = 1; // 0 はメインの深度バッファ
-}
-
-void DirectXCommon::InitializeRenderTargets() {
-    rtvDesc_.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    rtvDesc_.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle = rtvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
-    for (uint32_t i = 0; i < 2; ++i) {
-        rtvHandles_[i].ptr = rtvStartHandle.ptr + (i * descriptorSizeRTV_);
-        device_->CreateRenderTargetView(swapChainResources_[i].Get(), &rtvDesc_, rtvHandles_[i]);
-    }
-
-    // ImGui用 RTV
-    D3D12_RENDER_TARGET_VIEW_DESC imGuiRtvDesc = rtvDesc_;
-    imGuiRtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    for (uint32_t i = 0; i < 2; ++i) {
-        rtvHandles_[i + 2].ptr = rtvHandles_[1].ptr + ((i + 1) * descriptorSizeRTV_);
-        device_->CreateRenderTargetView(swapChainResources_[i].Get(), &imGuiRtvDesc, rtvHandles_[i + 2]);
-    }
-}
-
-void DirectXCommon::CreateDepthStencil() {
-    depthStencilResource_ = CreateDepthStencilTextureResource(device_.Get(), clientWidth_, clientHeight_);
-
-    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-    dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-    device_->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
-}
-
 
 
 
@@ -371,73 +305,45 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
 
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index)
-{
-    D3D12_CPU_DESCRIPTOR_HANDLE handleCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-    handleCPU.ptr += (descriptorSize * index);
-    return handleCPU;
-}
-
-D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& descriptorHeap, uint32_t descriptorSize, uint32_t index)
-{
-    D3D12_GPU_DESCRIPTOR_HANDLE handleGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
-    handleGPU.ptr += (descriptorSize * index);
-    return handleGPU;
-}
+IDXGISwapChain4* DirectXCommon::GetSwapChain() { return swapChainManager_->GetSwapChain(); }
+ID3D12Resource* DirectXCommon::GetSwapChainResources(UINT index) { return swapChainManager_->GetSwapChainResource(index); }
+UINT DirectXCommon::GetCurrentBackBufferIndex() const { return swapChainManager_->GetCurrentBackBufferIndex(); }
+D3D12_RENDER_TARGET_VIEW_DESC& DirectXCommon::GetRtvDesc() { return swapChainManager_->GetRtvDesc(); }
+ID3D12DescriptorHeap* DirectXCommon::GetDsvDescriptorHeap() { return swapChainManager_->GetDSVDescriptorHeap(); }
+D3D12_CPU_DESCRIPTOR_HANDLE& DirectXCommon::GetRtvHandles(UINT index) { return swapChainManager_->GetRtvHandles(index); }
+ID3D12Resource* DirectXCommon::GetDepthStencilResource() const { return swapChainManager_->GetDepthStencilResource(); }
+DXGI_SWAP_CHAIN_DESC1& DirectXCommon::GetSwapChainDesc() { return swapChainManager_->GetSwapChainDesc(); }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetRTVCPUDescriptorHandle(uint32_t index) {
-
-    return GetCPUDescriptorHandle(rtvDescriptorHeap_, descriptorSizeRTV_, index);
+    return swapChainManager_->GetRTVCPUDescriptorHandle(index);
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetRTVGPUDescriptorHandle(uint32_t index) {
-
-    return GetGPUDescriptorHandle(rtvDescriptorHeap_, descriptorSizeRTV_, index);
+    return swapChainManager_->GetRTVGPUDescriptorHandle(index);
 }
 
-
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVCPUDescriptorHandle(uint32_t index) {
-
-    return GetCPUDescriptorHandle(dsvDescriptorHeap_, descriptorSizeDSV_, index);
+    return swapChainManager_->GetDSVCPUDescriptorHandle(index);
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t index) {
-
-    return GetGPUDescriptorHandle(dsvDescriptorHeap_, descriptorSizeDSV_, index);
+    return swapChainManager_->GetDSVGPUDescriptorHandle(index);
 }
 
 uint32_t DirectXCommon::AllocateRTVIndex() {
-    std::lock_guard<std::mutex> lock(pendingMutex_);
-    if (!freeRtvIndices_.empty()) {
-        uint32_t index = freeRtvIndices_.back();
-        freeRtvIndices_.pop_back();
-        return index;
-    }
-    assert(nextRtvIndex_ < 128);
-    return nextRtvIndex_++;
+    return swapChainManager_->AllocateRTVIndex();
 }
 
 uint32_t DirectXCommon::AllocateDSVIndex() {
-    std::lock_guard<std::mutex> lock(pendingMutex_);
-    if (!freeDsvIndices_.empty()) {
-        uint32_t index = freeDsvIndices_.back();
-        freeDsvIndices_.pop_back();
-        return index;
-    }
-    assert(nextDsvIndex_ < 16);
-    return nextDsvIndex_++;
+    return swapChainManager_->AllocateDSVIndex();
 }
 
 void DirectXCommon::FreeRTVIndex(uint32_t index) {
-    if (index == 0xFFFFFFFF) return;
-    std::lock_guard<std::mutex> lock(pendingMutex_);
-    pendingFreeRtvs_.push_back({ commandManager_->GetGlobalFenceValue(), index });
+    swapChainManager_->FreeRTVIndex(index, commandManager_->GetGlobalFenceValue());
 }
 
 void DirectXCommon::FreeDSVIndex(uint32_t index) {
-    if (index == 0xFFFFFFFF) return;
-    std::lock_guard<std::mutex> lock(pendingMutex_);
-    pendingFreeDsvs_.push_back({ commandManager_->GetGlobalFenceValue(), index });
+    swapChainManager_->FreeDSVIndex(index, commandManager_->GetGlobalFenceValue());
 }
 
 /*三角形の色を変えよう*/
@@ -847,13 +753,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResourc
 	return resource;
 }
 
-void DirectXCommon::ReleaseSwapChainResources() {
-    for (auto& res : swapChainResources_) {
-        res.Reset();
-    }
-    depthStencilResource_.Reset();
-}
-
 void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
     if (width <= 0 || height <= 0) return;
 
@@ -862,41 +761,13 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
         WaitForGPU();
     }
 
-    // 2. 既存のリソースを解放 (ResizeBuffersの前に必須)
-    ReleaseSwapChainResources();
-
-    // 3. バッファサイズの変更
-    DXGI_SWAP_CHAIN_DESC1 desc{};
-    swapChain_->GetDesc1(&desc);
-    HRESULT hr = swapChain_->ResizeBuffers(desc.BufferCount, width, height, desc.Format, desc.Flags);
-    assert(SUCCEEDED(hr));
-
     clientWidth_ = width;
     clientHeight_ = height;
 
-    // 4. バックバッファの再取得とRTVの再作成
-    for (uint32_t i = 0; i < desc.BufferCount; ++i) {
-        hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(swapChainResources_[i].GetAddressOf()));
-        assert(SUCCEEDED(hr));
-        
-        // メイン RTV (SRGB)
-        device_->CreateRenderTargetView(swapChainResources_[i].Get(), &rtvDesc_, rtvHandles_[i]);
+    // DXSwapChainManager 側でバッファ再構築
+    swapChainManager_->ResizeSwapChain(device_.Get(), width, height);
 
-        // ImGui用 RTV (UNORM) も再作成
-        D3D12_RENDER_TARGET_VIEW_DESC imGuiRtvDesc = rtvDesc_;
-        imGuiRtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        rtvHandles_[i + 2].ptr = rtvHandles_[1].ptr + ((i + 1) * descriptorSizeRTV_);
-        device_->CreateRenderTargetView(swapChainResources_[i].Get(), &imGuiRtvDesc, rtvHandles_[i + 2]);
-    }
-
-    // 5. 深度バッファの再生成とDSVの再作成
-    depthStencilResource_ = CreateDepthStencilTextureResource(device_.Get(), width, height);
-    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-    dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-    device_->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
-
-    // 6. ビューポートとシザーレクトの更新
+    // ビューポートとシザーレクトの更新
     viewport_.Width = static_cast<float>(width);
     viewport_.Height = static_cast<float>(height);
     viewport_.TopLeftX = 0;
@@ -926,25 +797,6 @@ void DirectXCommon::ClearPendingResources() {
 	});
 	pendingResources_.erase(it, pendingResources_.end());
 
-	// RTV デスクリプタの回収
-	for (const auto& d : pendingFreeRtvs_) {
-		if (d.fenceValue <= completed) {
-			freeRtvIndices_.push_back(d.index);
-		}
-	}
-	auto rtvIt = std::remove_if(pendingFreeRtvs_.begin(), pendingFreeRtvs_.end(), [completed](const PendingDescriptor& d) {
-		return d.fenceValue <= completed;
-	});
-	pendingFreeRtvs_.erase(rtvIt, pendingFreeRtvs_.end());
-
-	// DSV デスクリプタの回収
-	for (const auto& d : pendingFreeDsvs_) {
-		if (d.fenceValue <= completed) {
-			freeDsvIndices_.push_back(d.index);
-		}
-	}
-	auto dsvIt = std::remove_if(pendingFreeDsvs_.begin(), pendingFreeDsvs_.end(), [completed](const PendingDescriptor& d) {
-		return d.fenceValue <= completed;
-	});
-	pendingFreeDsvs_.erase(dsvIt, pendingFreeDsvs_.end());
+	// デスクリプタの回収をマネージャに委譲
+	swapChainManager_->FlushPendingDescriptors(completed);
 }

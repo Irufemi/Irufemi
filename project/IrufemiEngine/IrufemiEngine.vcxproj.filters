@@ -288,6 +288,9 @@
     <ClCompile Include="Engine\Graphics\DirectX\DXCommandManager.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectX\DXSwapChainManager.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Graphics\DirectX\DXRootSignatureManager.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
@@ -553,6 +556,9 @@
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectX\DXCommandManager.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\DXSwapChainManager.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectX\DXRootSignatureManager.h">
