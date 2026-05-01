@@ -203,6 +203,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Core\Math\Vector4.cpp" />
     <ClCompile Include="Renderer\Skybox\Skybox.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DirectXCommon.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectX\DXCommandManager.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectX\DXRootSignatureManager.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\RenderTexture.cpp" />
     <ClCompile Include="Engine\IrufemiEngine.cpp" />
     <ClCompile Include="Engine\Core\Utility\Log.cpp" />
@@ -285,6 +287,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\DirectX\DescriptorAllocator.h" />
     <ClInclude Include="Engine\Graphics\DirectX\DescriptorPool.h" />
     <ClInclude Include="Engine\Graphics\DirectX\DirectXCommon.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\DXCommandManager.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\DXRootSignatureManager.h" />
     <ClInclude Include="Engine\Graphics\DirectX\RenderTexture.h" />
     <ClInclude Include="Engine\Graphics\DirectX\D3DResourceLeakChecker.h" />
     <ClInclude Include="Engine\IrufemiEngine.h" />

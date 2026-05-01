@@ -19,6 +19,9 @@
 #include "../Pipeline/PSOManager.h"
 #include "DescriptorPool.h"
 #include "../../Core/Math/Vector4.h"
+#include "DXRootSignatureManager.h"
+
+class DXCommandManager;
 
 class Log;
 class IrufemiEngine;
@@ -38,12 +41,12 @@ public: // メンバ関数
 	/**
 	 * @brief コンストラクタ
 	 */
-	DirectXCommon() = default;
+	DirectXCommon();
 
 	/**
 	 * @brief デストラクタ
 	 */
-	~DirectXCommon() = default;
+	~DirectXCommon();
 
 	/**
 	 * @brief 解放処理
@@ -177,9 +180,9 @@ public: // ゲッター
 	/** @name D3D12 コアオブジェクトの取得 */
 	///@{
 	ID3D12Device* GetDevice() { return device_.Get(); }
-	ID3D12CommandQueue* GetCommandQueue() { return commandQueue_.Get(); }
-	ID3D12CommandAllocator* GetCommandAllocator() { return commandAllocators_[frameIndex_].Get(); }
-	ID3D12GraphicsCommandList* GetCommandList() { return commandList_.Get(); }
+	ID3D12CommandQueue* GetCommandQueue();
+	ID3D12CommandAllocator* GetCommandAllocator();
+	ID3D12GraphicsCommandList* GetCommandList();
 	///@}
 
 	/** @name スワップチェーン関連の取得 */
@@ -192,13 +195,13 @@ public: // ゲッター
 
 	/** @name 同期・フェンス関連の取得 */
 	///@{
-	ID3D12Fence* GetFence() { return fence_.Get(); }
-	HANDLE& GetFenceEvent() { return fenceEvent_; }
-	uint64_t& GetFenceValue() { return fenceValues_[frameIndex_]; }
-	uint64_t GetFenceValue(uint32_t index) const { return fenceValues_[index]; }
-	uint64_t GetGlobalFenceValue() const { return globalFenceValue_; }
-	uint64_t IncrementGlobalFence() { return ++globalFenceValue_; }
-	uint64_t GetCurrentFrameFenceValue() const { return globalFenceValue_ + 1; }
+	ID3D12Fence* GetFence();
+	HANDLE GetFenceEvent();
+	uint64_t& GetFenceValue();
+	uint64_t GetFenceValue(uint32_t index) const;
+	uint64_t GetGlobalFenceValue() const;
+	uint64_t IncrementGlobalFence();
+	uint64_t GetCurrentFrameFenceValue() const;
 	///@}
 
 	/** @name デスクリプタヒープ・ハンドルの取得 */
@@ -223,7 +226,7 @@ public: // ゲッター
 	///@{
 	HWND GetHwnd() { return hwnd_; }
 	DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return swapChainDesc_; }
-	ID3D12RootSignature* GetRootSignature() { return rootSignature_.Get(); }
+	ID3D12RootSignature* GetRootSignature() { return rootSignatureManager_->GetGraphicsRootSignature(); }
 	int32_t& GetClientWidth() { return clientWidth_; }
 	int32_t& GetClientHeight() { return clientHeight_; }
 	PSOManager* GetPSOManager() { return psoManager_.get(); }
@@ -236,7 +239,7 @@ public: // ゲッター
 
 	/** @name Compute Shader 関連の取得 */
 	///@{
-	ID3D12RootSignature* GetComputeRootSignature() const { return computeRootSignature_.Get(); }
+	ID3D12RootSignature* GetComputeRootSignature() const { return rootSignatureManager_->GetComputeRootSignature(); }
 	ID3D12PipelineState* GetSkinningComputePSO() const { return skinningComputePSO_.Get(); }
 	ID3D12PipelineState* GetGpuParticleInitializePSO() const { return gpuParticleInitializePSO_.Get(); }
 	ID3D12PipelineState* GetGpuParticleUpdatePSO() const { return gpuParticleUpdatePSO_.Get(); }
@@ -293,13 +296,10 @@ private: // 初期化用プライベートメソッド
 	void InitializeDXGI();
 	void CreateDevice();
 	void SetInfoQueue();
-	void CreateCommandObjects();
 	void CreateSwapChain();
 	void CreateDescriptorHeaps();
 	void InitializeRenderTargets();
 	void CreateDepthStencil();
-	void CreateFence();
-	void CreateRootSignatures();
 	void CreatePSOs();
 	///@}
 
@@ -324,9 +324,7 @@ private: // メンバ変数
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Debug1> debugController_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Device> device_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocators_[kMaxFramesInFlight];
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_ = nullptr;
+	std::unique_ptr<DXCommandManager> commandManager_ = nullptr;
 
 	// --- SwapChain & Render Targets ---
 
@@ -350,14 +348,10 @@ private: // メンバ変数
 	// --- Depth & Pipeline State ---
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_ = nullptr;
+	std::unique_ptr<DXRootSignatureManager> rootSignatureManager_ = nullptr;
 
 	// --- Synchronization --
 
-	Microsoft::WRL::ComPtr<ID3D12Fence> fence_ = nullptr;
-	uint64_t fenceValues_[kMaxFramesInFlight]{};
-	std::atomic<uint64_t> globalFenceValue_{ 0 };
-	HANDLE fenceEvent_ = nullptr;
 	uint32_t frameIndex_ = 0;
 
 	// Log(ポインタ参照)
@@ -367,7 +361,6 @@ private: // メンバ変数
 	std::unique_ptr<PSOManager> psoManager_ = nullptr;
 
 	// --- Compute Shader ---
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> computeRootSignature_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> skinningComputePSO_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleInitializePSO_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleUpdatePSO_ = nullptr;
@@ -401,11 +394,6 @@ private: // メンバ変数
 	std::mutex pendingMutex_;
 
 	// --- 非同期転送用 ---
-	std::mutex uploadMutex_;
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> uploadCommandAllocator_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> uploadCommandList_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Fence> uploadFence_ = nullptr;
-	uint64_t uploadFenceValue_ = 0;
 
 	// エンジン本体への参照
 	IrufemiEngine* engine_ = nullptr;

@@ -160,7 +160,7 @@ public: // ゲッター
     ID3D12CommandQueue* GetCommandQueue() { return dxCommon_->GetCommandQueue(); }
     IDXGISwapChain4* GetSwapChain() { return dxCommon_->GetSwapChain(); }
     ID3D12Fence* GetFence() { return dxCommon_->GetFence(); }
-    HANDLE& GetFenceEvent() { return dxCommon_->GetFenceEvent(); }
+    HANDLE GetFenceEvent() { return dxCommon_->GetFenceEvent(); }
     ID3D12CommandAllocator* GetCommandAllocator() { return dxCommon_->GetCommandAllocator(); }
     ID3D12RootSignature* GetRootSignature() { return dxCommon_->GetRootSignature(); }
     ID3D12DescriptorHeap* GetDsvDescriptorHeap() { return dxCommon_->GetDsvDescriptorHeap(); }

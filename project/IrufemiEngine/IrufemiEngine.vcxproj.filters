@@ -285,6 +285,12 @@
     <ClCompile Include="Engine\Graphics\DirectX\DirectXCommon.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectX\DXCommandManager.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectX\DXRootSignatureManager.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Graphics\DirectX\RenderTexture.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
@@ -544,6 +550,12 @@
       <Filter>Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectX\DirectXCommon.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\DXCommandManager.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\DXRootSignatureManager.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectX\RenderTexture.h">
