@@ -2,9 +2,18 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Application/camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
+#include "Engine/IrufemiEngine.h"
 
 LineResource::~LineResource() {
     Unmap();
+    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetMaterialBufferManager()->Free(materialCbIndex_);
+        }
+        if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetTransformBufferManager()->Free(transformCbIndex_);
+        }
+    }
 }
 
 void LineResource::CreateResource() {
@@ -26,12 +35,18 @@ void LineResource::CreateResource() {
         indexCount_ = 2;
     }
 
-    materialBuffer_.Initialize(s_dxCommon_);
-    for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
-        materialBuffer_[i]->color = {1,1,1,1};
-        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
+    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
+        
+        cpuMaterialData_.color = {1,1,1,1};
+        cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
+        
+        for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+        }
+
+        transformCbIndex_ = engine->GetTransformBufferManager()->Allocate();
     }
-    transformationBuffer_.Initialize(s_dxCommon_);
 }
 
 void LineResource::Map() {
@@ -63,4 +78,29 @@ void LineResource::UpdateTransform(const Camera& camera) {
     transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
 
     MarkAsDirty();
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetMaterialVAddress() const {
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetTransformVAddress() const {
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}
+
+void LineResource::SyncBeforeDraw() {
+    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    if (isDirtyBuffer_[frameIndex]) {
+        if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+            if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
+            }
+            if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
+            }
+        }
+        isDirtyBuffer_[frameIndex] = false;
+    }
 }

@@ -8,6 +8,7 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Model/ModelManager.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/IrufemiEngine.h"
 
 // 静的メンバ定義
 TextureManager* ObjClass::textureManager_ = nullptr;
@@ -16,6 +17,11 @@ DebugUI* ObjClass::ui_ = nullptr;
 ModelManager* ObjClass::modelManager_ = nullptr;
 
 ObjClass::~ObjClass() {
+    if (auto engine = drawManager_->GetDxCommon()->GetEngine()) {
+        if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetTransformBufferManager()->Free(transformCbIndex_);
+        }
+    }
 }
 
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
@@ -39,7 +45,11 @@ void ObjClass::InitializeResources() {
 
     // 変換行列リソースの生成とマップ (全メッシュ共有用)
     assert(drawManager_ && "DrawManager is not set. Cannot get DirectXCommon.");
-    transformationBuffer_.Initialize(drawManager_->GetDxCommon());
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
+        if (auto engine = drawManager_->GetDxCommon()->GetEngine()) {
+            transformCbIndex_ = engine->GetTransformBufferManager()->Allocate();
+        }
+    }
 
     // インスタンス固有の各メッシュ用リソースを生成
     meshResources_.clear();
@@ -47,7 +57,7 @@ void ObjClass::InitializeResources() {
         auto res = std::make_unique<Object3DResource>();
         
         // 外部の変換行列リソースを借用
-        res->SetExternalTransformationBuffer(&transformationBuffer_);
+        res->SetExternalTransformCbIndex(&transformCbIndex_);
         
         // メッシュ固有の View を設定
         const auto& gpuMesh = managedModel_->gpuMeshes[i];
@@ -109,7 +119,11 @@ void ObjClass::SyncBeforeDraw() {
     
     if (isDirtyBuffer_[frameIndex]) {
         // 変換行列の更新 (全メッシュで共有のバッファ)
-        transformationBuffer_.Update(transformationMatrix_, frameIndex);
+        if (auto engine = drawManager_->GetDxCommon()->GetEngine()) {
+            if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
+            }
+        }
         isDirtyBuffer_[frameIndex] = false;
     }
     
@@ -288,3 +302,8 @@ void ObjClass::UpdateMaterials() {
         mappedData->alphaReference = cpuMat.alphaReference;
     }
 }
+
+D3D12_GPU_VIRTUAL_ADDRESS ObjClass::GetTransformationGpuAddress() const {
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return drawManager_->GetDxCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}

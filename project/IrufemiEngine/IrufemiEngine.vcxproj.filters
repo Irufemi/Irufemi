@@ -753,6 +753,9 @@
     <ClInclude Include="Renderer\Core\IRenderable.h">
       <Filter>Renderer\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\DynamicConstantBuffer.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">

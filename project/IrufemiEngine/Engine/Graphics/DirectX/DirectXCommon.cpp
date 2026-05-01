@@ -1238,20 +1238,24 @@ void DirectXCommon::ClearPendingResources() {
 	pendingResources_.erase(it, pendingResources_.end());
 
 	// RTV デスクリプタの回収
+	for (const auto& d : pendingFreeRtvs_) {
+		if (d.fenceValue <= completed) {
+			freeRtvIndices_.push_back(d.index);
+		}
+	}
 	auto rtvIt = std::remove_if(pendingFreeRtvs_.begin(), pendingFreeRtvs_.end(), [completed](const PendingDescriptor& d) {
 		return d.fenceValue <= completed;
 	});
-	for (auto d = rtvIt; d != pendingFreeRtvs_.end(); ++d) {
-		freeRtvIndices_.push_back(d->index);
-	}
 	pendingFreeRtvs_.erase(rtvIt, pendingFreeRtvs_.end());
 
 	// DSV デスクリプタの回収
+	for (const auto& d : pendingFreeDsvs_) {
+		if (d.fenceValue <= completed) {
+			freeDsvIndices_.push_back(d.index);
+		}
+	}
 	auto dsvIt = std::remove_if(pendingFreeDsvs_.begin(), pendingFreeDsvs_.end(), [completed](const PendingDescriptor& d) {
 		return d.fenceValue <= completed;
 	});
-	for (auto d = dsvIt; d != pendingFreeDsvs_.end(); ++d) {
-		freeDsvIndices_.push_back(d->index);
-	}
 	pendingFreeDsvs_.erase(dsvIt, pendingFreeDsvs_.end());
 }

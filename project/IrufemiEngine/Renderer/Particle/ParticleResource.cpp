@@ -1,9 +1,15 @@
 #include "ParticleResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Core/Math/Math.h"
+#include "Engine/IrufemiEngine.h"
 
 ParticleResource::~ParticleResource() {
     Unmap();
+    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetMaterialBufferManager()->Free(materialCbIndex_);
+        }
+    }
 }
 
 void ParticleResource::CreateResource() {
@@ -24,14 +30,19 @@ void ParticleResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    materialBuffer_.Initialize(s_dxCommon_);
-    for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
-        materialBuffer_[i]->color = {1,1,1,1};
-        materialBuffer_[i]->enableLighting = true;
-        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
-        materialBuffer_[i]->metallic = 0.0f;
-        materialBuffer_[i]->roughness = 0.5f;
-        materialBuffer_[i]->environmentCoefficient = 0.0f;
+    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
+        
+        cpuMaterialData_.color = {1,1,1,1};
+        cpuMaterialData_.enableLighting = true;
+        cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
+        cpuMaterialData_.metallic = 0.0f;
+        cpuMaterialData_.roughness = 0.5f;
+        cpuMaterialData_.environmentCoefficient = 0.0f;
+
+        for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+        }
     }
 
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -69,5 +80,22 @@ void ParticleResource::Unmap() {
             instancingResource_[i]->Unmap(0, nullptr);
             instancingData_[i] = nullptr;
         }
+    }
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS ParticleResource::GetMaterialVAddress() const {
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}
+
+void ParticleResource::SyncBeforeDraw() {
+    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    if (isDirtyBuffer_[frameIndex]) {
+        if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+            if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
+            }
+        }
+        isDirtyBuffer_[frameIndex] = false;
     }
 }

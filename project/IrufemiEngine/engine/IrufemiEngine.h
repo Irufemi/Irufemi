@@ -19,6 +19,7 @@
 #include "Core/Math/Matrix4x4.h"
 #include "Graphics/DirectX/RenderTexture.h"
 #include "Graphics/PostProcess/PostProcessManager.h"
+#include "Graphics/DirectX/DynamicConstantBuffer.h"
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
@@ -207,6 +208,9 @@ public: // ゲッター
     float GetTimeScale() const { return timeScale_; }
     void SetTimeScale(float scale) { timeScale_ = scale; }
 
+    DynamicConstantBuffer<Material>* GetMaterialBufferManager() { return materialBufferManager_.get(); }
+    DynamicConstantBuffer<TransformationMatrix>* GetTransformBufferManager() { return transformBufferManager_.get(); }
+
     // オプション: 取得用
     DescriptorPool* GetSrvPool() const { return dxCommon_->GetSrvPool(); }
     
@@ -332,6 +336,10 @@ private: // メンバ変数
     float gameTime_ = 0.0f;
     float gameDeltaTime_ = 0.0f;
     float timeScale_ = 1.0f;
+
+    // --- Dynamic Constant Buffer ---
+    std::unique_ptr<DynamicConstantBuffer<Material>> materialBufferManager_ = nullptr;
+    std::unique_ptr<DynamicConstantBuffer<TransformationMatrix>> transformBufferManager_ = nullptr;
 
     // --- 全画面用 RenderTexture ---
     std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;

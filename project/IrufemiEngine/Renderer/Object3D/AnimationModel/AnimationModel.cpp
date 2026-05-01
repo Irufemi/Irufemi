@@ -22,6 +22,11 @@ IrufemiEngine* AnimationModel::engine_ = nullptr;
 
 AnimationModel::AnimationModel() {}
 AnimationModel::~AnimationModel() {
+    if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+        if (engine_) {
+            engine_->GetTransformBufferManager()->Free(transformCbIndex_);
+        }
+    }
 }
 
 // 初期化
@@ -47,14 +52,16 @@ void AnimationModel::InitializeResources() {
 
     // 4. 変換行列リソースの生成とマップ (全メッシュ共有用)
     assert(engine_->GetDrawManager() && "DrawManager is not set.");
-    transformationBuffer_.Initialize(engine_->GetDrawManager()->GetDxCommon());
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
+        transformCbIndex_ = engine_->GetTransformBufferManager()->Allocate();
+    }
 
     // 各メッシュ用リソースの生成
     meshResources_.clear();
     for (size_t i = 0; i < managedModel_->gpuMeshes.size(); ++i) {
         auto res = std::make_unique<Object3DResource>();
         
-        res->SetExternalTransformationBuffer(&transformationBuffer_);
+        res->SetExternalTransformCbIndex(&transformCbIndex_);
         
         const auto& gpuMesh = managedModel_->gpuMeshes[i];
         res->vertexBufferView_ = gpuMesh->vertexBufferView;
@@ -201,7 +208,9 @@ void AnimationModel::SyncBeforeDraw() {
     }
     
     // 変換行列の更新 (全メッシュで共有)
-    transformationBuffer_.Update(transformationMatrix_, frameIndex);
+    if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+        engine_->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
+    }
     
     // 各メッシュのマテリアル等の更新
     for (auto& res : meshResources_) {
@@ -425,3 +434,8 @@ ObjMaterial* AnimationModel::GetMaterial(size_t meshIndex) {
     }
     return nullptr;
 }
+
+D3D12_GPU_VIRTUAL_ADDRESS AnimationModel::GetTransformationGpuAddress() const {
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}

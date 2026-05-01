@@ -448,7 +448,7 @@ void DrawManager::DrawModelRegion(const ModelRegionPacket& packet) {
     }
 
     // Material (CBV)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialResource->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);
 
     // Texture (SRV)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);
@@ -464,12 +464,12 @@ void DrawManager::DrawModelRegion(const ModelRegionPacket& packet) {
     }
 }
 
-void DrawManager::SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount) {
+void DrawManager::SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount) {
     if (indexCount == 0 || instanceCount == 0) { return; }
     RegionPacket p{};
     p.vertexBufferView = vertexBufferView;
     p.indexBufferView = indexBufferView;
-    p.materialResource = materialResource;
+    p.materialAddress = materialAddress;
     p.textureHandle = textureHandle;
     p.instancingSrvHandleGPU = instancingSrvHandleGPU;
     p.indexCount = indexCount;
@@ -489,7 +489,7 @@ void DrawManager::DrawRegion(const RegionPacket& packet) {
     commandList_->IASetIndexBuffer(&packet.indexBufferView);
 
     // CBV (PS)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialResource->GetGPUVirtualAddress());          // PS b0
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);          // PS b0
 
     // SRV (PS t0 / VS t0)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);            // PS t0
@@ -563,12 +563,12 @@ void DrawManager::ExecuteUAVBarrier(ID3D12Resource* resource) {
     commandList_->ResourceBarrier(1, &barrier);
 }
 
-void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
+void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
     SkyboxPacket p{};
     p.vertexBufferView = vertexBufferView;
     p.indexBufferView = indexBufferView;
-    p.materialResource = materialResource;
-    p.transformationResource = transformationResource;
+    p.materialAddress = materialAddress;
+    p.transformationAddress = transformationAddress;
     p.textureHandle = textureHandle;
     p.indexCount = indexCount;
     skyboxQueue_.push_back(p);
@@ -585,10 +585,10 @@ void DrawManager::DrawSkybox(const SkyboxPacket& packet) {
     ///CBVを設定する
 
     //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialResource->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);
 
     //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.transformationResource->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.transformationAddress);
 
     ///DescriptorTableを設定する
 

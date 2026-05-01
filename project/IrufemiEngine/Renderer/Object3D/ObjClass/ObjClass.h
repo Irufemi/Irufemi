@@ -13,7 +13,7 @@
 #include "../../../Resource/Model/Data/ObjModel.h"
 #include "../Object3DResource.h"
 #include "../../../Engine/Graphics/Data/Material.h"
-#include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "../../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 #include "../../Core/IRenderable.h"
 
 // 前方宣言
@@ -55,7 +55,7 @@ private:
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
     // 変換行列用リソース (全メッシュで共有)
-    ConstantBuffer<TransformationMatrix> transformationBuffer_;
+    uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 
     Camera* camera_ = nullptr;
     bool isCullingEnabled_ = true;
@@ -145,9 +145,7 @@ public: //メンバ関数
     ///@{
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
     void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
-    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
-        return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
-    }
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const;
     ///@}
 
     /** @name マテリアル・外観の操作 */

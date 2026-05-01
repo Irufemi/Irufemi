@@ -55,9 +55,7 @@ public: // メンバ関数
     void Debug(const char* objName = " ");
 
     // 描画用の変換行列リソースのGPUアドレスを取得
-    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
-        return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
-    }
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const;
 
 private: // メンバ関数(内部ヘルパ)
 
@@ -117,7 +115,7 @@ private: // メンバ変数
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
     // 変換行列用リソース (全メッシュ共有)
-    ConstantBuffer<TransformationMatrix> transformationBuffer_;
+    uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
     std::map<std::string, Matrix4x4> nodeWorldMatrices_;
 
     Camera* camera_ = nullptr;

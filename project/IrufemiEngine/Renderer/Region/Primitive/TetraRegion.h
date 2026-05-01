@@ -1,4 +1,4 @@
-﻿#include "../../Core/IRenderable.h"
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -12,7 +12,7 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 
 #include "Renderer/VertexData.h"
-#include "Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 #include "Engine/Graphics/Data/Material.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Core/Math/Transform.h"
@@ -68,7 +68,7 @@ public:
     float ComputeScaleFromVertexRadius(float worldVertexRadius) const;
     void AddInstanceByVertexRadius(const Vector3& center, float worldVertexRadius, const Vector3& rotate = {0,0,0});
 
-    ID3D12Resource*                        GetMaterialResource() { return materialBuffer_.GetResource(dx_->GetFrameIndex()); }
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
 
     UINT                        GetInstanceCount() const {
         return visibleInstanceCount_;
@@ -105,8 +105,8 @@ private:
     D3D12_INDEX_BUFFER_VIEW                indexBufferView_{};
     UINT                                   indexCount_ = 0;
 
-    // マテリアル
-    ConstantBuffer<Material> materialBuffer_;
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
+    Material cpuMaterialData_{};
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
 

@@ -8,7 +8,7 @@
 #include "../../Engine/Graphics/Data/Material.h"
 #include "../TransformationMatrix.h"
 #include "../../Engine/Core/Math/Transform.h"
-#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 
 class Camera;
 
@@ -41,27 +41,20 @@ public:
     Material cpuMaterialData_{};
     Material* GetMaterialData() { return &cpuMaterialData_; }
     
-    ConstantBuffer<Material> materialBuffer_;
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
 
     // --- トランスフォーム ---
     Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
     
-    ConstantBuffer<TransformationMatrix> internalTransformationBuffer_;
-    ConstantBuffer<TransformationMatrix>* externalTransformationBuffer_ = nullptr;
+    uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
+    uint32_t* externalTransformCbIndex_ = nullptr;
     
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
 
     // --- getters ---
-    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const {
-        return materialBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
-    }
-    D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const {
-        if (externalTransformationBuffer_) {
-            return externalTransformationBuffer_->GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
-        }
-        return internalTransformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
-    }
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
     
     bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
     
@@ -70,25 +63,11 @@ public:
     }
 
     
-    void SyncBeforeDraw() {
-        uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-        
-        if (isDirtyBuffer_[frameIndex]) {
-            // 外部バッファがなければ自身を更新
-            if (!externalTransformationBuffer_) {
-                internalTransformationBuffer_.Update(transformationMatrix_, frameIndex);
-            }
-            
-            // マテリアルデータを更新
-            materialBuffer_.Update(cpuMaterialData_, frameIndex);
-            
-            isDirtyBuffer_[frameIndex] = false;
-        }
-    }
+    void SyncBeforeDraw();
     
     // --- 外部リソースの借用 (ObjClass/AnimationModel等で共有するため) ---
-    void SetExternalTransformationBuffer(ConstantBuffer<TransformationMatrix>* externalBuffer) {
-        externalTransformationBuffer_ = externalBuffer;
+    void SetExternalTransformCbIndex(uint32_t* externalCbIndex) {
+        externalTransformCbIndex_ = externalCbIndex;
     }
 
     // --- テクスチャ ---

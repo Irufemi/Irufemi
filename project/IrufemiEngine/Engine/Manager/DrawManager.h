@@ -118,15 +118,15 @@ public:
     struct SkyboxPacket {
         D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
         D3D12_INDEX_BUFFER_VIEW indexBufferView;
-        Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
-        Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource;
+        D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
+        D3D12_GPU_VIRTUAL_ADDRESS transformationAddress;
         D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
         UINT indexCount;
     };
     struct RegionPacket {
         D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
         D3D12_INDEX_BUFFER_VIEW indexBufferView;
-        Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
+        D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
         D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
         UINT indexCount;
@@ -137,7 +137,7 @@ public:
     };
     struct ModelRegionPacket {
         const struct GpuMesh* gpuMesh;
-        ID3D12Resource* materialResource;
+        D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
         D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
         UINT instanceCount;
@@ -353,7 +353,7 @@ public:
     /**
      * @brief 汎用的な領域描画（頂点バッファ・インデックスバッファ直接指定）
      */
-    void SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount);
+    void SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount);
     void DrawRegion(const RegionPacket& packet);
 
     /**
@@ -380,7 +380,7 @@ public:
     /**
      * @brief スカイボックスの描画
      */
-    void SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
+    void SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
     void DrawSkybox(const SkyboxPacket& packet);
 
     /**

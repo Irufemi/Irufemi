@@ -116,7 +116,7 @@ void Skybox::Draw() {
     engine_->ApplySkyboxPSO();
 
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex), transformationBuffer_.GetResource(frameIndex), textureHandle_, static_cast<UINT>(indexDataList_.size()));
+    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), transformationBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), textureHandle_, static_cast<UINT>(indexDataList_.size()));
 
 }
 

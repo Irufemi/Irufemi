@@ -244,6 +244,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Data\Material.h" />
     <ClInclude Include="Engine\Graphics\Data\SceneGPUStructs.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ConstantBuffer.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\DynamicConstantBuffer.h" />
     <ClInclude Include="Engine\Graphics\DirectX\FrameRateController.h" />
     <ClInclude Include="Engine\Graphics\DirectX\RootSignatureConfig.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShaderCompiler.h" />

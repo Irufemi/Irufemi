@@ -8,7 +8,7 @@
 #include <d3d12.h>
 #include <array>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 #include "Engine/Graphics/Data/Material.h"
 
 #include "Engine/Core/Math/Math.h"
@@ -54,7 +54,7 @@ public:
 
     // --- DrawManager から参照する Getter 群 ---
     const GpuMesh* GetGpuMesh() const; // 共有メッシュ取得
-    ID3D12Resource* GetMaterialResource() { return materialBuffer_.GetResource(dx_->GetFrameIndex()); }
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT GetInstanceCount() const { return visibleInstanceCount_; }
@@ -95,7 +95,8 @@ private:
     std::shared_ptr<ManagedModel> managedModel_{};
 
     // インスタンス固有リソース
-    ConstantBuffer<Material> materialBuffer_;
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
+    Material cpuMaterialData_{};
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
 
     // インスタンシング用

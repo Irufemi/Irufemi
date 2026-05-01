@@ -1,4 +1,4 @@
-﻿#include "../../Core/IRenderable.h"
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -10,7 +10,7 @@
 #include <cassert>
 #include <array>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 
 #include "../../VertexData.h"            // VertexData
 #include "../../../Engine/Graphics/Data/Material.h"              // Material
@@ -76,7 +76,7 @@ public:
     // DrawManager 用 Getter
     D3D12_VERTEX_BUFFER_VIEW&   GetVertexBufferView() { return vertexBufferView_; }
     D3D12_INDEX_BUFFER_VIEW&    GetIndexBufferView() { return indexBufferView_; }
-    ID3D12Resource*             GetMaterialResource() { return materialBuffer_.GetResource(dx_->GetFrameIndex()); }
+    D3D12_GPU_VIRTUAL_ADDRESS   GetMaterialVAddress() const;
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT                        GetIndexCount() const { return indexCount_; }
@@ -118,7 +118,8 @@ private:
     UINT                                   indexCount_ = 0;
 
     // マテリアル
-    ConstantBuffer<Material> materialBuffer_;
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
+    Material cpuMaterialData_{};
 
     // 共有テクスチャ SRV
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};

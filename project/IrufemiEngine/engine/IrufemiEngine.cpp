@@ -99,6 +99,13 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     TetraRegion::SetDirectXCommon(dxCommon_.get());
     Line3DRegion::SetDirectXCommon(dxCommon_.get());
 
+    // --- Dynamic Constant Buffer の初期化 ---
+    materialBufferManager_ = std::make_unique<DynamicConstantBuffer<Material>>();
+    materialBufferManager_->Initialize(dxCommon_.get(), 65536); // 最大6万オブジェクト
+
+    transformBufferManager_ = std::make_unique<DynamicConstantBuffer<TransformationMatrix>>();
+    transformBufferManager_->Initialize(dxCommon_.get(), 65536); // 最大6万オブジェクト
+
     // SRV デスクリプタプール
     {
         DescriptorPool* srvPool = dxCommon_->GetSrvPool();
@@ -345,6 +352,14 @@ void IrufemiEngine::Finalize() {
     }
     if (inputManager_) {
         inputManager_.reset();
+    }
+
+    // 5.5 Dynamic Constant Buffers (DirectX基盤に依存するため、dxCommon_より先に破棄)
+    if (materialBufferManager_) {
+        materialBufferManager_.reset();
+    }
+    if (transformBufferManager_) {
+        transformBufferManager_.reset();
     }
 
     // 6. DirectX基盤
