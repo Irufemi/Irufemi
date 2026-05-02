@@ -723,32 +723,24 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
         assert(mesh->HasTextureCoords(0)); // TexcoordがないMeshは今回は非対応
         // ここからMeshの中身(Face)の解析を行っていく
 
-        /// faceを解析する
+        /// vertexを解析する
+        modelData.vertices.resize(mesh->mNumVertices);
+        for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex) {
+            aiVector3D& position = mesh->mVertices[vertexIndex];
+            aiVector3D& normal = mesh->mNormals[vertexIndex];
+            aiVector3D& texcoord = mesh->mTextureCoords[0][vertexIndex];
+            // 右手系->左手系への変換を忘れずに
+            modelData.vertices[vertexIndex].position = { -position.x, position.y, position.z, 1.0f };
+            modelData.vertices[vertexIndex].normal = { -normal.x, normal.y, normal.z };
+            modelData.vertices[vertexIndex].texcoord = { texcoord.x, texcoord.y };
+        }
 
+        /*DrawIndexed*/
+
+        /// Indexを解析する
         for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
             aiFace& face = mesh->mFaces[faceIndex];
             assert(face.mNumIndices == 3); // 三角形のみサポート
-            // ここからfaceの中身(Vertex)の解析を行っていく
-
-            /// vertexを解析する
-            for (uint32_t element = 0; element < face.mNumIndices; ++element) {
-                uint32_t vertexIndex = face.mIndices[element];
-                aiVector3D& position = mesh->mVertices[vertexIndex];
-                aiVector3D& normal = mesh->mNormals[vertexIndex];
-                aiVector3D& texcoord = mesh->mTextureCoords[0][vertexIndex];
-                VertexData vertex;
-                vertex.position = { position.x,position.y,position.z };
-                vertex.normal = { normal.x,normal.y,normal.z };
-                vertex.texcoord = { texcoord.x,texcoord.y };
-                // aiProcess_MakeLeftHandedはz*=-1で、右手->左手に変換するので手動で対処
-                vertex.position.x *= -1.0f;
-                vertex.normal.x *= -1.0f;
-                modelData.vertices.push_back(vertex);
-            }
-
-            /*DrawIndexed*/
-
-            /// Indexを解析する
 
             for (uint32_t element = 0; element < face.mNumIndices; ++element) {
                 uint32_t vertexIndex = face.mIndices[element];
