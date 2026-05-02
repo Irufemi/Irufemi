@@ -54,6 +54,10 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
     CreateBuffersAndViews();
 
+    // 各GPUParticleSystemインスタンスごとに異なるシードを持たせて、乱数系列が完全に被るのを防ぐ
+    static uint32_t s_uniqueSeed = 0;
+    emitter_->randomSeed = ++s_uniqueSeed;
+
     // 形状の初期設定 (デフォルトは Quad/Plane)
     SetPrimitive(PrimitiveType::Plane);
 

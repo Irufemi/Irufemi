@@ -94,11 +94,11 @@ struct GPUParticleEmitter
 	float groundHeight;
 	float bounce;
 	float attractorStrength;
-	uint pad4;
+	uint randomSeed;
 
 	// float4 x 16
 	float3 attractorPos;
-	uint pad5;
+	uint enableRandomRotation;
 
 	// float4 x 17
 	float3 areaSize;
