@@ -4,6 +4,8 @@
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Irufemi.h"
+#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "Engine/Manager/PrimitiveManager.h"
 
 Effect::Effect() = default;
 Effect::~Effect() = default;
@@ -84,6 +86,27 @@ void Effect::Initialize(Camera* camera, EffectType type) {
         particleSystems_.push_back(std::move(ringSystem));
         break;
     }
+    case EffectType::kAura:
+    {
+        isBillboard_ = false;
+        auraObject_ = std::make_unique<PrimitiveObjects3DClass>();
+        auraObject_->Initialize(camera, PrimitiveType::Cylinder, auraConfig_.texture);
+        
+        // 蓋なしのCylinderリソースを取得して差し替える
+        const auto& noCapCylinder = PrimitiveManager::GetInstance()->GetCylinderResource(false, false);
+        if (auraObject_->GetMesh().resource) {
+            auraObject_->GetMesh().resource->vertexBufferView_ = noCapCylinder.vertexBufferView;
+            auraObject_->GetMesh().resource->indexBufferView_ = noCapCylinder.indexBufferView;
+            auraObject_->GetMesh().resource->indexCount_ = noCapCylinder.indexCount;
+        }
+
+        auraObject_->SetCastShadows(false); // エフェクトなので影は不要
+        auraObject_->GetMaterial().enableLighting = false; // ライティング不要
+        auraObject_->GetMaterial().color = auraConfig_.color;
+        auraObject_->GetMaterial().useClampSampler = auraConfig_.useClamp ? 3 : 0; // 3 = U:Wrap, V:Clamp
+        auraObject_->SetScale(auraConfig_.scale); // 初期スケールの適用
+        break;
+    }
     }
 }
 
@@ -98,6 +121,28 @@ void Effect::Update() {
         Vector3 trans = { currentUVOffset_.x, currentUVOffset_.y, 0.0f };
         Matrix4x4 transform = Math::MakeAffineMatrix(scale, rot, trans);
         particleSystems_[1]->SetUVTransform(transform);
+    } else if (type_ == EffectType::kAura && auraObject_) {
+        // スクロール量の加算
+        currentUVOffset_.x += auraConfig_.uvScrollSpeed.x * dt;
+        currentUVOffset_.y += auraConfig_.uvScrollSpeed.y * dt;
+        
+        // flipVが有効な場合はスケールYを反転し、オフセットをずらす
+        float scaleY = auraConfig_.flipV ? -1.0f : 1.0f;
+        float offsetY = auraConfig_.flipV ? currentUVOffset_.y + 1.0f : currentUVOffset_.y;
+
+        Vector3 scale = { 1.0f, scaleY, 1.0f };
+        Vector3 rot = { 0.0f, 0.0f, 0.0f };
+        Vector3 trans = { currentUVOffset_.x, offsetY, 0.0f };
+        
+        // 行列を構築し、MaterialComponentのuvTransformに流し込む
+        auraObject_->GetMaterial().uvTransform = Math::MakeAffineMatrix(scale, rot, trans);
+        auraObject_->GetMaterial().color = auraConfig_.color;
+        auraObject_->GetMaterial().useClampSampler = auraConfig_.useClamp ? 3 : 0; // 3 = U:Wrap, V:Clamp
+        if (auraObject_->GetMaterial().texturePath != auraConfig_.texture) {
+            auraObject_->SetTexture(auraConfig_.texture);
+        }
+        
+        auraObject_->Update();
     }
 
     for (auto& sys : particleSystems_) {
@@ -109,11 +154,35 @@ void Effect::SyncBeforeDraw() {
     for (auto& sys : particleSystems_) {
         sys->SyncBeforeDraw();
     }
+    if (type_ == EffectType::kAura && auraObject_) {
+        auraObject_->SyncBeforeDraw();
+    }
 }
 
 void Effect::Draw() {
     for (auto& sys : particleSystems_) {
         sys->Draw();
+    }
+    if (type_ == EffectType::kAura && auraObject_) {
+        auto* engine = GPUParticleSystem::GetEngine();
+        
+        // 現在のステートを退避
+        BlendMode prevBlend = engine->currentBlend_;
+        PSOManager::DepthWrite prevDepth = engine->currentDepth_;
+        PSOManager::CullMode prevCull = engine->currentCull_;
+
+        // エフェクト用のステートを設定
+        engine->SetBlend(blendMode_);
+        engine->SetDepthWrite(depthWrite_);
+        engine->SetCull(cullMode_);
+
+        // 描画
+        auraObject_->Draw();
+
+        // ステートを元に戻す
+        engine->SetBlend(prevBlend);
+        engine->SetDepthWrite(prevDepth);
+        engine->SetCull(prevCull);
     }
 }
 
@@ -124,7 +193,7 @@ void Effect::Debug(const char* name) {
             
             // --- 共通設定タブ ---
             if (ImGui::BeginTabItem("Common Settings")) {
-                const char* typeNames[] = { "Hit", "Impact" };
+                const char* typeNames[] = { "Hit", "Impact", "Aura" };
                 int currentType = static_cast<int>(type_);
                 if (ImGui::Combo("Effect Type", &currentType, typeNames, IM_ARRAYSIZE(typeNames))) {
                     if (camera_) {
@@ -298,6 +367,37 @@ void Effect::Debug(const char* name) {
                     }
                     ImGui::EndTabItem();
                 }
+            } else if (type_ == EffectType::kAura) {
+                if (ImGui::BeginTabItem("Aura Specific Config")) {
+                    bool changed = false;
+                    
+                    if (auto* tm = GPUParticleSystem::GetTextureManager()) {
+                        auto textureNames = tm->GetTextureNamesForDebug();
+                        if (ImGui::BeginCombo("Aura Texture", auraConfig_.texture.c_str())) {
+                            for (size_t i = 0; i < textureNames.size(); i++) {
+                                bool is_selected = (auraConfig_.texture == textureNames[i]);
+                                if (ImGui::Selectable(textureNames[i].c_str(), is_selected)) {
+                                    auraConfig_.texture = textureNames[i];
+                                    changed = true;
+                                }
+                                if (is_selected) ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+                    }
+                    
+                    if (ImGui::ColorEdit4("Color", &auraConfig_.color.x)) changed = true;
+                    if (ImGui::DragFloat3("Scale (Radius X/Z, Height Y)", &auraConfig_.scale.x, 0.1f)) changed = true;
+                    if (ImGui::DragFloat2("UV Scroll Speed", &auraConfig_.uvScrollSpeed.x, 0.1f)) changed = true;
+                    if (ImGui::Checkbox("Flip V", &auraConfig_.flipV)) changed = true;
+                    if (ImGui::Checkbox("Use Clamp", &auraConfig_.useClamp)) changed = true;
+                    
+                    if (changed && auraObject_) {
+                        auraObject_->SetScale(auraConfig_.scale);
+                    }
+                    
+                    ImGui::EndTabItem();
+                }
             }
             ImGui::EndTabBar();
         }
@@ -332,6 +432,12 @@ void Effect::Play(const Vector3& position) {
             particleSystems_[1]->SetSphereEmitter(ringPos, 0.0f, impactConfig_.ringEmitCount, 0.0f);
             particleSystems_[1]->SetVelocity(0.0f);
             particleSystems_[1]->Emit(impactConfig_.ringEmitCount);
+        }
+        break;
+    case EffectType::kAura:
+        if (auraObject_) {
+            auraObject_->SetPosition(position);
+            auraObject_->SetScale(auraConfig_.scale);
         }
         break;
     }

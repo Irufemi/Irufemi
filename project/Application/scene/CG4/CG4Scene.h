@@ -74,6 +74,6 @@ private: // メンバ変数
     bool isActiveEffect_ = true;
     std::unique_ptr<Effect> effect_ = nullptr;
 
-    bool isActiveRing_ = true;
+    bool isActiveRing_ = false;
     std::unique_ptr<RingClass> testRing_ = nullptr;
 };

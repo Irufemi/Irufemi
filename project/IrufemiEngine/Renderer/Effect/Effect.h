@@ -15,6 +15,7 @@
 
 class GPUParticleSystem;
 class Camera;
+class PrimitiveObjects3DClass;
 
 /**
  * @enum EffectType
@@ -23,6 +24,7 @@ class Camera;
 enum class EffectType {
     kHit,       // ヒットエフェクト（星型に広がる斬撃など）
     kImpact, // スライドの表現（PlaneとRingの複合ヒットエフェクト）
+    kAura,      // オーラエフェクト
     // 今後増えるエフェクトの種類をここに追加
 };
 
@@ -110,13 +112,24 @@ struct ImpactConfig {
     Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
+struct AuraConfig {
+    Vector3 scale = { 1.0f, 1.0f, 1.0f };
+    Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vector2 uvScrollSpeed = { -0.1f, 0.0f }; // 横にゆっくり流れるように変更
+    bool flipV = true;
+    bool useClamp = true; // 新規追加したサンプラー(U:Wrap, V:Clamp)が適用されるためtrueをデフォルトに
+    std::string texture = "resources/gradationLine.png";
+};
+
 private:
     Camera* camera_ = nullptr; // 再初期化用にカメラを保持
     std::vector<std::unique_ptr<GPUParticleSystem>> particleSystems_;
+    std::unique_ptr<PrimitiveObjects3DClass> auraObject_;
     EffectType type_;
 
     HitEffectConfig hitConfig_;
     ImpactConfig impactConfig_;
+    AuraConfig auraConfig_;
     Vector2 currentUVOffset_ = { 0.0f, 0.0f };
     
     // 全エフェクト共通の設定

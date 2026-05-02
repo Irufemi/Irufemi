@@ -20,6 +20,7 @@ struct PixelShaderOutput
 Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
 SamplerState gSamplerWrap : register(s0); //Samplerのregisterはs
 SamplerState gSamplerClamp : register(s1);
+SamplerState gSamplerWrapClamp : register(s4); // U:Wrap, V:Clamp
 
 /*テクスチャを貼ろう*/
 
@@ -34,7 +35,11 @@ PixelShaderOutput main(VertexShaderOutput input)
 	float4 transformedUV = mul(float32_t4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
 	float32_t4 textureColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	if (gMaterial.useClampSampler != 0)
+	if (gMaterial.useClampSampler == 3)
+	{
+		textureColor = gTexture.Sample(gSamplerWrapClamp, transformedUV.xy);
+	}
+	else if (gMaterial.useClampSampler != 0)
 	{
 		textureColor = gTexture.Sample(gSamplerClamp, transformedUV.xy);
 	}

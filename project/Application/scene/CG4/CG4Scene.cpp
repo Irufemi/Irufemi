@@ -41,7 +41,7 @@ void CG4Scene::Initialize(IrufemiEngine* engine) {
 
     // エフェクトの初期化
     effect_ = std::make_unique<Effect>();
-    effect_->Initialize(camera_.get(), EffectType::kHit);
+    effect_->Initialize(camera_.get(), EffectType::kAura);
 
     // テスト用リングの初期化
     testRing_ = std::make_unique<RingClass>();
