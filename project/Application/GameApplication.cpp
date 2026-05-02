@@ -18,7 +18,6 @@
 #if defined(_DEBUG) || defined(DEVELOPMENT)
 #include "scene/debug/DebugScene.h"
 #endif
-#include "scene/CG4/CG4Scene.h"
 
 namespace {
     // --- ゲーム固有の定数 ---
@@ -28,9 +27,9 @@ namespace {
     const Vector4 kClearColor = { 0.1f, 0.25f, 0.5f, 1.0f };
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-        = "CG4";
+        = "InGame";
 #else
-        = "CG4";
+        = "Title";
 #endif
 
     // --- シーン登録処理 ---
@@ -43,7 +42,6 @@ namespace {
 #if defined(_DEBUG) || defined(DEVELOPMENT)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
-        sm.Register("CG4", [] { return std::make_unique<CG4Scene>(); });
 
     }
 }

@@ -37,9 +37,6 @@
     <Filter Include="Scene\Title">
       <UniqueIdentifier>{52b04192-3ea4-4077-b32c-a2d4e50999b5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Scene\CG4">
-      <UniqueIdentifier>{e7d48d1e-8e4a-4a2b-bb3b-123456789abc}</UniqueIdentifier>
-    </Filter>
     <Filter Include="contents\Skydome">
       <UniqueIdentifier>{a2e5f410-816b-4e06-a443-0f90dfb32db7}</UniqueIdentifier>
     </Filter>
@@ -119,9 +116,6 @@
     </ClCompile>
     <ClCompile Include="scene\Title\TitleScene.cpp">
       <Filter>Scene\Title</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\CG4\CG4Scene.cpp">
-      <Filter>Scene\CG4</Filter>
     </ClCompile>
     <ClCompile Include="scene\Clear\ClearScene.cpp">
       <Filter>Scene\Clear</Filter>
@@ -253,9 +247,6 @@
     </ClInclude>
     <ClInclude Include="scene\Title\TitleScene.h">
       <Filter>Scene\Title</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\CG4\CG4Scene.h">
-      <Filter>Scene\CG4</Filter>
     </ClInclude>
     <ClInclude Include="scene\Clear\ClearScene.h">
       <Filter>Scene\Clear</Filter>
