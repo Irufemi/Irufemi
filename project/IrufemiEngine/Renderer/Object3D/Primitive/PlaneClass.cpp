@@ -66,8 +66,6 @@ void PlaneClass::Update() {
     // UV行列
     if (resource_->GetMaterialData()) {
         resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
-        
-        resource_->SyncMaterialData();
     }
 
     // 平面情報をワールド空間で更新
@@ -95,15 +93,16 @@ void PlaneClass::Update() {
         info_.distance = (nWorld.x * pWorld.x) + (nWorld.y * pWorld.y) + (nWorld.z * pWorld.z);
     }
 
-    // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
-    
-    resource_->MakeDirty();
 }
 
 void PlaneClass::Draw() {
+    Draw(false);
+}
+
+void PlaneClass::Draw(bool isUI) {
     if (!resource_ || !drawManager_ || !camera_) return;
 
     // 視錐台カリング
@@ -129,9 +128,14 @@ void PlaneClass::Draw() {
         Update();
     }
     
-    resource_->SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    resource_->SyncBeforeDraw();
 
-    drawManager_->DrawStandard3D(resource_.get());
+    if (isUI) {
+        drawManager_->SubmitUI3D(resource_.get());
+    } else {
+        drawManager_->SubmitStandard3D(resource_.get(), nullptr, castShadows_);
+    }
 }
 
 void PlaneClass::Debug([[maybe_unused]] const char* planeName) {
@@ -149,3 +153,10 @@ void PlaneClass::Debug([[maybe_unused]] const char* planeName) {
     ImGui::End();
 #endif
 }
+
+void PlaneClass::SyncBeforeDraw() {
+    if (resource_) {
+        resource_->SyncBeforeDraw();
+    }
+}
+

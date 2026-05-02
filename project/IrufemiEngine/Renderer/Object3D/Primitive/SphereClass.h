@@ -1,3 +1,4 @@
+#include "../../Core/IRenderable.h"
 #pragma once
 #include <cstdint>
 #include <string>
@@ -17,7 +18,7 @@ class TextureManager;
 class DrawManager;
 class DebugUI;
 
-class SphereClass {
+class SphereClass : public IRenderable {
 protected: //メンバ変数
 
     Sphere info_{};
@@ -64,7 +65,8 @@ public: //メンバ関数
     void Update();
 
     // 描画
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // デバッグ
     void Debug(const char* sphereName = " ");
@@ -80,6 +82,8 @@ public: //メンバ関数
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
     void SetInfo(const Sphere& info) { info_ = info; isDirty_ = true; }
     void SetCenter(const Vector3& center) { info_.center = center; isDirty_ = true; }
@@ -93,7 +97,11 @@ private:
     // 行列更新の最適化用
     bool isDirty_ = true;
     bool isCullingEnabled_ = true;
+    bool castShadows_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };
+
+
+
 

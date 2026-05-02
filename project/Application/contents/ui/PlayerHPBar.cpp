@@ -153,10 +153,10 @@ void PlayerHPBar::Update(const Player *player, const Camera* camera, bool isFirs
     }
 }
 
-void PlayerHPBar::Draw3D() {
-    if (barFrame_) barFrame_->Draw();
-    if (barBg_) barBg_->Draw();
-    if (barFill_) barFill_->Draw();
+void PlayerHPBar::Draw3D(bool isUI) {
+    if (barFrame_) barFrame_->Draw(isUI);
+    if (barBg_) barBg_->Draw(isUI);
+    if (barFill_) barFill_->Draw(isUI);
 }
 
 void PlayerHPBar::Draw2D() {

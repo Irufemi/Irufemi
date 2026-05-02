@@ -99,6 +99,13 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     TetraRegion::SetDirectXCommon(dxCommon_.get());
     Line3DRegion::SetDirectXCommon(dxCommon_.get());
 
+    // --- Dynamic Constant Buffer の初期化 ---
+    materialBufferManager_ = std::make_unique<DynamicConstantBuffer<Material>>();
+    materialBufferManager_->Initialize(dxCommon_.get(), 65536); // 最大6万オブジェクト
+
+    transformBufferManager_ = std::make_unique<DynamicConstantBuffer<TransformationMatrix>>();
+    transformBufferManager_->Initialize(dxCommon_.get(), 65536); // 最大6万オブジェクト
+
     // SRV デスクリプタプール
     {
         DescriptorPool* srvPool = dxCommon_->GetSrvPool();
@@ -297,6 +304,11 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 void IrufemiEngine::Finalize() {
     // 依存関係に基づき、上位レイヤーから下位レイヤーの順で破棄する
 
+    // アプリケーション終了時、シーン破棄前にGPU処理の完了を待機する
+    if (dxCommon_) {
+        dxCommon_->WaitForGPU();
+    }
+
     // 1. シーン・UI
     if (sceneManager_) {
         sceneManager_.reset();
@@ -340,6 +352,14 @@ void IrufemiEngine::Finalize() {
     }
     if (inputManager_) {
         inputManager_.reset();
+    }
+
+    // 5.5 Dynamic Constant Buffers (DirectX基盤に依存するため、dxCommon_より先に破棄)
+    if (materialBufferManager_) {
+        materialBufferManager_.reset();
+    }
+    if (transformBufferManager_) {
+        transformBufferManager_.reset();
     }
 
     // 6. DirectX基盤
@@ -408,6 +428,9 @@ void IrufemiEngine::Execute() {
         // 描画
         sceneManager_->Draw();
 
+        // ここで溜まった描画パケットを一斉に処理する
+        drawManager_->ExecuteRenderQueues(this);
+
         // 終了処理
         EndFrame();
     }
@@ -419,6 +442,11 @@ void IrufemiEngine::StartFrame() {
     auto now = std::chrono::steady_clock::now();
     deltaTime_ = std::chrono::duration<float>(now - lastFrameTime_).count();
     totalTime_ = std::chrono::duration<float>(now - startTime_).count();
+    
+    // ゲーム内時間の更新（タイムスケールを適用）
+    gameDeltaTime_ = deltaTime_ * timeScale_;
+    gameTime_ += gameDeltaTime_;
+
     lastFrameTime_ = now;
 }
 
@@ -429,6 +457,10 @@ void IrufemiEngine::ProcessFrame() {
     
     // 1. バックバッファをクリア (念のため)
     drawManager_->PreDraw(clearColor_, 1.0f, 0);
+
+    // --- Compute Shaderの一括実行 ---
+    // 描画が始まる前に、全Rendererから予約されたComputeタスクを消化する
+    drawManager_->ExecuteComputePasses();
 
     // 2. メインの描画先を RenderTexture に切り替え、指定のクリアカラーでクリア
     drawManager_->BeginRenderTexture(mainRenderTexture_.get(), Vector4{ clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3] });

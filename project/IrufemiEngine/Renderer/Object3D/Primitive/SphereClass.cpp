@@ -99,16 +99,12 @@ void SphereClass::Update() {
         if (resource_->textureHandle_.ptr == 0) {
             resource_->GetMaterialData()->hasTexture = false;
         }
-        
-        resource_->SyncMaterialData();
     }
 
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
-    
-    resource_->MakeDirty();
 }
 
 void SphereClass::Draw() {
@@ -139,9 +135,10 @@ void SphereClass::Draw() {
         Update();
     }
     
-    resource_->SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    resource_->SyncBeforeDraw();
 
-    drawManager_->DrawStandard3D(resource_.get());
+    drawManager_->SubmitStandard3D(resource_.get(), nullptr, castShadows_);
 }
 
 void SphereClass::Debug([[maybe_unused]] const char* sphereName) {
@@ -175,5 +172,13 @@ void SphereClass::Debug([[maybe_unused]] const char* sphereName) {
     ImGui::End();
 
 #endif // _DEBUG
+}
+
+
+
+void SphereClass::SyncBeforeDraw() {
+    if (resource_) {
+        resource_->SyncBeforeDraw();
+    }
 }
 

@@ -8,6 +8,7 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Model/ModelManager.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/IrufemiEngine.h"
 
 // 静的メンバ定義
 TextureManager* ObjClass::textureManager_ = nullptr;
@@ -16,6 +17,11 @@ DebugUI* ObjClass::ui_ = nullptr;
 ModelManager* ObjClass::modelManager_ = nullptr;
 
 ObjClass::~ObjClass() {
+    if (auto engine = drawManager_->GetDxCommon()->GetEngine()) {
+        if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetTransformBufferManager()->Free(transformCbIndex_);
+        }
+    }
 }
 
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
@@ -39,7 +45,11 @@ void ObjClass::InitializeResources() {
 
     // 変換行列リソースの生成とマップ (全メッシュ共有用)
     assert(drawManager_ && "DrawManager is not set. Cannot get DirectXCommon.");
-    transformationBuffer_.Initialize(drawManager_->GetDxCommon());
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
+        if (auto engine = drawManager_->GetDxCommon()->GetEngine()) {
+            transformCbIndex_ = engine->GetTransformBufferManager()->Allocate();
+        }
+    }
 
     // インスタンス固有の各メッシュ用リソースを生成
     meshResources_.clear();
@@ -47,7 +57,7 @@ void ObjClass::InitializeResources() {
         auto res = std::make_unique<Object3DResource>();
         
         // 外部の変換行列リソースを借用
-        res->SetExternalTransformationBuffer(&transformationBuffer_);
+        res->SetExternalTransformCbIndex(&transformCbIndex_);
         
         // メッシュ固有の View を設定
         const auto& gpuMesh = managedModel_->gpuMeshes[i];
@@ -90,9 +100,6 @@ void ObjClass::Update() {
         transformationMatrix_.world = managedModel_->cpuModel->rootNode.localMatrix * transformationMatrix_.world;
     }
 
-    Matrix4x4 worldViewProj = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-    transformationMatrix_.WVP = worldViewProj;
-
     // 法線変換用の逆転置行列
     Matrix4x4 worldForNormal = transformationMatrix_.world;
     worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
@@ -105,23 +112,24 @@ void ObjClass::Update() {
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
-    
-    MakeDirty();
 }
 
-void ObjClass::SyncIfDirty() {
-    if (dirtyFramesLeft_ > 0) {
-        uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
-        // 変換行列の更新 (全メッシュで共有のバッファを1回だけ更新)
-        transformationBuffer_.Update(transformationMatrix_, frameIndex);
-        for (auto& res : meshResources_) {
-            res->SyncMaterialData();
+void ObjClass::SyncBeforeDraw() {
+    uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
+    
+    if (isDirtyBuffer_[frameIndex]) {
+        // 変換行列の更新 (全メッシュで共有のバッファ)
+        if (auto engine = drawManager_->GetDxCommon()->GetEngine()) {
+            if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
+            }
         }
-        
-        if (lastSyncedFrameIndex_ != frameIndex) {
-            dirtyFramesLeft_--;
-            lastSyncedFrameIndex_ = frameIndex;
-        }
+        isDirtyBuffer_[frameIndex] = false;
+    }
+    
+    // 各メッシュのマテリアル等の更新
+    for (auto& res : meshResources_) {
+        res->SyncBeforeDraw();
     }
 }
 
@@ -137,11 +145,12 @@ void ObjClass::Draw() {
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
                           std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
-    if (isDirty_ || cameraChanged) {
+    if (isDirtyBuffer_[BaseResource::GetDirectXCommon()->GetFrameIndex()] || cameraChanged) {
         Update();
     }
     
-    SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    SyncBeforeDraw();
 
     // 視錐台カリング
     if (isCullingEnabled_ && managedModel_->cpuModel) {
@@ -163,7 +172,7 @@ void ObjClass::Draw() {
 
     // モデル内の全メッシュを描画
     for (auto& res : meshResources_) {
-        drawManager_->DrawStandard3D(res.get());
+        drawManager_->SubmitStandard3D(res.get(), nullptr, castShadows_);
     }
 }
 
@@ -232,17 +241,17 @@ ObjMaterial* ObjClass::GetMaterial(size_t meshIndex) {
 
 void ObjClass::SetEnableLightingToAllMeshes(bool enable) {
     enableLightingOverride_ = enable ? 1 : 0;
-    isDirty_ = true;
+    MarkAsDirty();
 }
 
 void ObjClass::SetAlpha(float alpha) {
     color_.w = alpha;
-    isDirty_ = true;
+    MarkAsDirty();
 }
 
 void ObjClass::SetColor(const Vector4& color) {
     color_ = color;
-    isDirty_ = true;
+    MarkAsDirty();
 }
 
 void ObjClass::UpdateMaterials() {
@@ -291,7 +300,10 @@ void ObjClass::UpdateMaterials() {
         
         // アルファテスト用閾値
         mappedData->alphaReference = cpuMat.alphaReference;
-        
-        res->SyncMaterialData();
     }
 }
+
+D3D12_GPU_VIRTUAL_ADDRESS ObjClass::GetTransformationGpuAddress() const {
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return drawManager_->GetDxCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}

@@ -24,10 +24,10 @@ namespace {
     const int32_t kClientWidth = 1280;
     const int32_t kClientHeight = 720;
     const std::wstring kTitle = L"3122_七転び八転び";
-    const Vector4 kClearColor = { 0.7f, 0.7f, 0.7f, 1.0f };
+    const Vector4 kClearColor = { 0.1f, 0.25f, 0.5f, 1.0f };
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-        = "Title";
+        = "InGame";
 #else
         = "Title";
 #endif

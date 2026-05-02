@@ -254,21 +254,8 @@ void GameScene::Update() {
 }
 
 void GameScene::Draw() {
-  // --- 1. シャドウパス ---
-  engine_->GetDrawManager()->BeginShadowPass();
-  if (player_)
-    player_->Draw();
-  if (boss_)
-    boss_->Draw(engine_);
-  engine_->GetDrawManager()->EndShadowPass();
-
-  // --- 2. メインパス ---
-  engine_->SetBlend(BlendMode::kBlendModeNormal);
-  engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-  engine_->SetCull(PSOManager::CullMode::Back);
-  engine_->ApplyPSO();
-
-  skydome_->Draw();
+  if (skydome_)
+    skydome_->Draw();
   if (field_)
     field_->Draw();
   if (player_)
@@ -278,21 +265,14 @@ void GameScene::Draw() {
   if (player_)
     player_->DrawParticles();
 
-  // --- 2.5 HPバーUI描画（スプライト：マスクやエイム） ---
-  engine_->SetBlend(BlendMode::kBlendModeNormal);
-  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-  engine_->ApplySpritePSO();
+  // --- HPバーUI描画（スプライト：マスクやエイム） ---
   if (player_) {
     player_->Draw2DUI(boss_.get());
   }
 
-  // --- 3. 3DオブジェクトとしてのUI描画（HPバー） ---
-  // スプライト（マスク）の上に描画するため、スプライト描画の後に 3D PSO を再適用して描画する
-  engine_->SetBlend(BlendMode::kBlendModeNormal);
-  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-  engine_->ApplyPSO();
+  // --- 3DオブジェクトとしてのUI描画（HPバー） ---
   if (player_) {
-    player_->Draw3DUI(boss_.get());
+    player_->Draw3DUI(boss_.get(), true);
   }
 
   // --- 操作説明および警告スプライト描画（3人称視点のみ） ---
@@ -313,8 +293,6 @@ void GameScene::Draw() {
       }
   } else if (player_ && player_->IsFirstPerson()) {
       // --- 1人称視点専用UI描画 ---
-      // スプライトを描画するため念のため SpritePSO を適用
-      engine_->ApplySpritePSO();
       if (!player_->IsKarakuriCharged()) {
           if (operationNormalSprite1st_) operationNormalSprite1st_->Draw();
       } else {
@@ -462,6 +440,8 @@ void GameScene::UpdateCameraAndFrameData() {
   cameraForGpu.view = camera_->GetViewMatrix();
   cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
   cameraForGpu.worldPosition = camera_->GetTranslate();
+  cameraForGpu.time = engine_->GetGameTime();
+  cameraForGpu.deltaTime = engine_->GetGameDeltaTime();
 
   std::vector<PointLight *> pLights;
   for (auto &pl : pointLights_)
@@ -508,6 +488,19 @@ void GameScene::UpdateDynamicLights() {
 
   // 距離が離れるほど強度を少し上げる
   pLight->intensity = 3.0f + (distance * 0.1f);
+
+  // --- 3. シャドウマップパラメータの計算 ---
+  // プレイヤーとボスの中心を注視点とする
+  Vector3 shadowTargetPos = midPos;
+  // Y軸はプレイヤーやボスの高さに合わせておく（高すぎると影の範囲から外れる可能性があるため）
+  shadowTargetPos.y = (std::min)(pPos.y, bPos.y); 
+
+  // 距離に応じて描画範囲（orthoSize）を決定
+  // 余裕を持たせるためにマージン(例えば20.0f)を追加。最低限のサイズとして40.0fを担保。
+  float shadowOrthoSize = (std::max)(40.0f, distance * 0.6f + 20.0f);
+
+  // DrawManagerにカスタムシャドウパラメータを設定
+  engine_->GetDrawManager()->SetShadowParameters(shadowTargetPos, shadowOrthoSize);
 }
 
 // --- 当たり判定の実装 ---

@@ -1,16 +1,13 @@
 #include "Object3d.hlsli"
 #include "Lighting.hlsli"
+#include "VertexData.hlsli"
 
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 ConstantBuffer<LightCommonData> gLightCommonData : register(b1);
 
-struct VertexShaderInput {
-    float32_t4 position : POSITION0;
-    float32_t2 texcoord : TEXCOORD0;
-    float32_t3 normal : NORMAL0;
-};
+// struct VertexShaderInput は VertexData.hlsli で定義
 
-VertexShaderOutput main(VertexShaderInput input) {
+VertexShaderOutput main(VertexInput input) {
     VertexShaderOutput output;
     
     // ワールド座標の計算
@@ -24,6 +21,7 @@ VertexShaderOutput main(VertexShaderInput input) {
     output.normal = normalize(mul(input.normal, (float32_t3x3)gTransformationMatrix.WorldInverseTranspose));
     output.worldPosition = worldPos.xyz;
     output.shadowPos = output.position; // 自身がライト空間座標
+    output.color = input.color;
     
     return output;
 }

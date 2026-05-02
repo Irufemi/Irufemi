@@ -1,3 +1,4 @@
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -16,8 +17,7 @@ class TextureManager;
 class DrawManager;
 class DebugUI;
 
-class PlaneClass
-{
+class PlaneClass : public IRenderable {
 private: //メンバ変数
 
     Plane info_{};
@@ -46,7 +46,9 @@ public: //メンバ関数
     void Update();
 
     // 描画
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
+    void Draw(bool isUI);
 
     // デバッグ
     void Debug(const char* planeName = "");
@@ -80,11 +82,17 @@ public: //メンバ関数
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
 private:
     // 行列更新の最適化用
     bool isDirty_ = true;
     bool isCullingEnabled_ = true;
+    bool castShadows_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };
+
+
+

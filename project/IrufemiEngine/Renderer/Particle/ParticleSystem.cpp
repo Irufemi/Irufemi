@@ -192,12 +192,11 @@ void ParticleSystem::Update() {
                 worldMatrix = Math::Multiply(scaleMatrix, rotateMatrix);
                 worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
             }
-            Matrix4x4 worldViewProjectionMatrix = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-            
             uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
             if (resource_->instancingData_[frameIndex]) {
                 resource_->instancingData_[frameIndex][numInstance_].world = worldMatrix;
-                resource_->instancingData_[frameIndex][numInstance_].WVP = worldViewProjectionMatrix;
+                // WVPはシェーダー側で計算するため省略
+                resource_->instancingData_[frameIndex][numInstance_].WVP = Math::MakeIdentity4x4();
                 resource_->instancingData_[frameIndex][numInstance_].color = particleIterator->color;
             }
 
@@ -209,7 +208,7 @@ void ParticleSystem::Update() {
     }
     resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
     
-    resource_->SyncMaterialData();
+    resource_->SyncBeforeDraw();
     lastUpdateFrameIndex_ = BaseResource::GetDirectXCommon()->GetFrameIndex();
 
 #if USE_IMGUI
@@ -225,7 +224,7 @@ void ParticleSystem::Draw()
         return;
     }
 
-    SyncGPUData();
+    SyncBeforeDraw();
 
     // 視錐台カリング
     if (isCullingEnabled_) {
@@ -265,7 +264,7 @@ void ParticleSystem::Draw()
 
         // 描画
         if (s_drawManager_) {
-            s_drawManager_->DrawParticle(resource_.get(), numInstance_);
+            s_drawManager_->SubmitParticle(resource_.get(), numInstance_);
         }
 
         // エンジン状態を復元(PSOの切り替えは呼び出し側で制御するため Apply は行わない)
@@ -275,26 +274,26 @@ void ParticleSystem::Draw()
     } else {
         // エンジン参照がない場合は従来通り(安全策)
         if (s_drawManager_) {
-            s_drawManager_->DrawParticle(resource_.get(), numInstance_);
+            s_drawManager_->SubmitParticle(resource_.get(), numInstance_);
         }
     }
 
     // 2) デバッグ線(AABB 等)を描画(Line PSO を確実にバインド)
 #if USE_IMGUI
     if (debugLineRegion_) {
-        if (s_engine_) {
-            s_engine_->ApplyLineInstancedPSO();
-        }
         debugLineRegion_->Draw();
     }
 #endif
 }
 
-void ParticleSystem::SyncGPUData() {
+void ParticleSystem::SyncBeforeDraw() {
     uint32_t currentFrameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
     
     // 今フレームですでにUpdate()が呼ばれている場合は、正しいデータが書き込み済みのためスキップ
-    if (lastUpdateFrameIndex_ == currentFrameIndex) return;
+    if (lastUpdateFrameIndex_ == currentFrameIndex) {
+        resource_->SyncBeforeDraw();
+        return;
+    }
 
     // 前回のデータ元のフレームインデックス
     uint32_t prevFrameIndex = (currentFrameIndex + kMaxFramesInFlight - 1) % kMaxFramesInFlight;
@@ -306,7 +305,7 @@ void ParticleSystem::SyncGPUData() {
                     sizeof(ParticleForGPU) * numInstance_);
     }
     
-    resource_->SyncMaterialData();
+    resource_->SyncBeforeDraw();
     lastUpdateFrameIndex_ = currentFrameIndex; // これ以降このフレームでの同期は不要
 }
 

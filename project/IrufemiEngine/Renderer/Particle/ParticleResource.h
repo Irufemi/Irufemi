@@ -8,7 +8,7 @@
 #include "Data/Particle.h"
 #include "../../Engine/Core/Math/Transform.h"
 #include "../../Engine/Graphics/DirectX/DirectXCommon.h"
-#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 
 class ParticleResource : public BaseResource {
 public:
@@ -37,7 +37,7 @@ public:
     Material cpuMaterialData_{};
     Material* GetMaterialData() { return &cpuMaterialData_; }
     
-    ConstantBuffer<Material> materialBuffer_;
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
 
     // --- インスタンシングバッファ (StructuredBuffer) ---
     static constexpr uint32_t kNumMaxInstance = 4096;
@@ -51,11 +51,12 @@ public:
         return instancingResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
     }
     
-    void SyncMaterialData() {
-        uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-        materialBuffer_.Update(cpuMaterialData_, frameIndex);
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
+    
+    void MarkAsDirty() {
+        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
     }
-    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const {
-        return materialBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
-    }
+    
+    void SyncBeforeDraw();
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
 };

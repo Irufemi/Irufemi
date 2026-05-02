@@ -1,3 +1,4 @@
+#include "../Core/IRenderable.h"
 #pragma once
 
 #include <d3d12.h>
@@ -20,7 +21,7 @@ class DirectXCommon;
 class DescriptorPool;
 
 // 3Dラインのインスタンス描画用クラス
-class Line3DRegion {
+class Line3DRegion : public IRenderable {
 public:
     Line3DRegion() {
         instancingSrvIndex_.fill(UINT32_MAX);
@@ -32,11 +33,12 @@ public:
     void AddInstance(const Vector3& start, const Vector3& end, const Vector4& color, float life = 1.0f);
     void ClearInstances();
     void BuildInstanceBuffer(bool force = false);
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // --- DrawManager から参照する Getter 群 ---
     LineResource* GetBaseResource() const { return baseLineResource_.get(); }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[dx_->GetFrameIndex()]; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT GetInstanceCountU32() const { return static_cast<UINT>(activeCount_); }
 
     // 依存注入
@@ -81,8 +83,10 @@ private:
     std::array<InstanceData*, kMaxFramesInFlight> instanceData_{};
     std::array<uint32_t, kMaxFramesInFlight> instanceCapacity_{};
 
+    uint32_t lastUpdateFrameIndex_ = 0;
+    bool isDirty_ = true;
+
     std::array<uint32_t, kMaxFramesInFlight> instancingSrvIndex_{};
     std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> instancingSrvCPU_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> instancingSrvGPU_{};
 };
-

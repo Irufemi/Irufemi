@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <Windows.h>
 #include <d3d12.h>
@@ -18,11 +18,13 @@
 class Camera;
 class IrufemiEngine;
 
+#include "../Core/IRenderable.h"
+
 /**
  * @class Skybox
  * @brief スカイボックスの描画を管理するクラス
  */
-class Skybox
+class Skybox : public IRenderable
 {
 public:
     // デフォルトのテクスチャパス
@@ -37,8 +39,8 @@ public: // メンバ関数
     void Initialize(Camera* camera, const std::string& textureName = kDefaultTexturePath);
     // 更新
     void Update();
-    // 描画
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
     // デバッグ
     void Debug();
 public: // メンバ関数(セッター/ゲッター)
@@ -83,6 +85,8 @@ private: // メンバ変数(resource)
     };
     struct SkyboxTransformationMatrix {
         Matrix4x4 WVP;
+        Matrix4x4 World;
+        Matrix4x4 WorldInverseTranspose;
     };
     SkyboxTransformationMatrix transformationMatrix_{};
     ConstantBuffer<SkyboxTransformationMatrix> transformationBuffer_;
@@ -106,7 +110,13 @@ private: // メンバ変数(resource)
 
     // 行列更新の最適化用
     bool isDirty_ = true;
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
+    
+    void MarkAsDirty() {
+        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
+    }
 };
+
 

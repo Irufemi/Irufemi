@@ -2,9 +2,19 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Application/camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
+#include "Engine/IrufemiEngine.h"
 
 Object3DResource::~Object3DResource() {
     Unmap();
+    
+    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetMaterialBufferManager()->Free(materialCbIndex_);
+        }
+        if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetTransformBufferManager()->Free(transformCbIndex_);
+        }
+    }
 }
 
 void Object3DResource::CreateResource() {
@@ -25,17 +35,22 @@ void Object3DResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    materialBuffer_.Initialize(s_dxCommon_);
-    for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
-        materialBuffer_[i]->color = {1,1,1,1};
-        materialBuffer_[i]->enableLighting = true;
-        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
-        materialBuffer_[i]->metallic = 0.0f;
-        materialBuffer_[i]->roughness = 0.5f;
-        materialBuffer_[i]->environmentCoefficient = 0.0f;
-    }
+    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
+        
+        cpuMaterialData_.color = {1,1,1,1};
+        cpuMaterialData_.enableLighting = true;
+        cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
+        cpuMaterialData_.metallic = 0.0f;
+        cpuMaterialData_.roughness = 0.5f;
+        cpuMaterialData_.environmentCoefficient = 0.0f;
+        
+        for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+        }
 
-    internalTransformationBuffer_.Initialize(s_dxCommon_);
+        transformCbIndex_ = engine->GetTransformBufferManager()->Allocate();
+    }
 }
 
 void Object3DResource::Map() {
@@ -62,7 +77,7 @@ void Object3DResource::UpdateTransform(const Camera& camera) {
 
 
     transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-    transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
+    // CPU側のマテリアルキャッシュにのみ反映させる
 
     // 法線変換用：平行移動を除いた World を使う
     Matrix4x4 worldForNormal = transformationMatrix_.world;
@@ -74,15 +89,42 @@ void Object3DResource::UpdateTransform(const Camera& camera) {
     // 逆転置行列を計算
     transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
-    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-    if (!externalTransformationBuffer_) {
-        internalTransformationBuffer_.Update(transformationMatrix_, frameIndex);
-    }
-
-    // マテリアルの CPUキャッシュ更新 (明示的な SyncMaterialData() 呼び出しが必要)
+    // マテリアルの CPUキャッシュ更新 (描画直前の SyncBeforeDraw で GPUへ送られる)
     cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
+    
+    MarkAsDirty();
 }
 
-void Object3DResource::SetExternalTransformationBuffer(ConstantBuffer<TransformationMatrix>* buffer) {
-    externalTransformationBuffer_ = buffer;
+D3D12_GPU_VIRTUAL_ADDRESS Object3DResource::GetMaterialVAddress() const {
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
+
+D3D12_GPU_VIRTUAL_ADDRESS Object3DResource::GetTransformVAddress() const {
+    if (externalTransformCbIndex_) {
+        return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(*externalTransformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    }
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}
+
+void Object3DResource::SyncBeforeDraw() {
+    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    
+    if (isDirtyBuffer_[frameIndex]) {
+        if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+            // 外部バッファがなければ自身を更新
+            if (!externalTransformCbIndex_ && transformCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
+            }
+            
+            // マテリアルデータを更新
+            if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
+            }
+        }
+        
+        isDirtyBuffer_[frameIndex] = false;
+    }
+}
+

@@ -1,6 +1,7 @@
 struct Particle
 {
 	float3 translate;
+	float pad0;
 	float3 scale;
 	float lifeTime;
 	float3 velocity;
@@ -9,9 +10,13 @@ struct Particle
 
 	// 拡張パラメータ
 	float3 rotation;
+	float pad1;
 	float3 rotateSpeed;
+	float pad2;
 	float3 startScale;
+	float pad3;
 	float3 endScale;
+	float pad4;
 	float4 startColor;
 	float4 endColor;
 };

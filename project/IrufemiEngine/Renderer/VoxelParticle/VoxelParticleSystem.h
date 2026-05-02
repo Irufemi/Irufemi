@@ -1,3 +1,4 @@
+﻿#include "../Core/IRenderable.h"
 #pragma once
 #include "../../Engine/Core/Math/Matrix4x4.h"
 #include "../../Engine/Core/Math/Vector3.h"
@@ -5,6 +6,7 @@
 #include "../../Engine/Core/Math/Vector4.h"
 #include "../../Resource/Model/Data/VoxelizedModel.h"
 #include "../../Engine/Core/Type/PerView.h"
+#include "../../Engine/Manager/IComputeTask.h"
 #include <d3d12.h>
 #include <memory>
 #include <string>
@@ -59,7 +61,7 @@ struct VoxelEmitter {
 };
 
 
-class VoxelParticleSystem {
+class VoxelParticleSystem : public IComputeTask , public IRenderable {
 public:
   enum class LoadingStatus {
     Pending,
@@ -84,6 +86,8 @@ public:
 
   void Initialize(const std::string &modelName, const Vector3Int &resolution,
                   Camera *camera);
+
+  void DispatchCompute() override;
 
   void Update(float deltaTime);
   void Draw();
@@ -172,12 +176,14 @@ private:
   // 行列更新の最適化用
   Matrix4x4 lastViewMatrix_ = {};
   Matrix4x4 lastProjectionMatrix_ = {};
+  uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);
 
   std::atomic<LoadingStatus> status_ = LoadingStatus::Pending;
   std::mutex voxelModelMutex_;
   std::future<void> initializeFuture_;
 
   bool needsUpdateCS_ = false;
+  void SyncBeforeDraw();
 
   static IrufemiEngine *engine_;
 };

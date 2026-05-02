@@ -30,6 +30,9 @@ bool SceneManager::ChangeTo(const Key& next) {
     auto it = factories_.find(next);
     if (it == factories_.end()) { return false; }
 
+    // シーン破棄前にGPU処理の完了を待つ (リソース解放中のアクセス違反を防ぐ)
+    engine_->GetDirectXCommon()->WaitForGPU();
+
     current_.reset();
     current_ = it->second();
     currentName_ = next;
@@ -41,6 +44,7 @@ bool SceneManager::ChangeTo(const Key& next) {
     wasLoading_ = false;
 
     isPaused_ = false; // シーン切り替え時にポーズを解除
+    engine_->SetTimeScale(1.0f); // 時間の進みもリセット
     
     /**
      * @brief ポーズ可能なシーン(ゲーム等)はマウスをロック(非表示)し、
@@ -65,7 +69,7 @@ void SceneManager::Update() {
     // モデル・テクスチャのロード状況を確認
     bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
     bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
-    bool isLoading = !modelsLoaded || !texturesLoaded;
+    bool isLoading = (transitionPhase_ == TransitionPhase::Initializing) || !modelsLoaded || !texturesLoaded;
 
     if (isLoading != wasLoading_) {
         if (isLoading) {
@@ -90,12 +94,15 @@ void SceneManager::Update() {
             TogglePause();
             // ポーズ状態に合わせてマウスのロックを切り替え
             engine_->SetCursorLocked(!isPaused_);
+            // 時間の進み具合を制御
+            engine_->SetTimeScale(isPaused_ ? 0.0f : 1.0f);
         }
     }
 
     // シーン切り替え要求（即時）
     if (!pending_.empty()) {
-        ChangeTo(pending_);
+        StartAsyncInitialize(pending_); // 即時切替の場合も非同期初期化を開始する
+        transitionPhase_ = TransitionPhase::Initializing;
         pending_.clear();
     }
 
@@ -103,8 +110,28 @@ void SceneManager::Update() {
     if (transitionPhase_ == TransitionPhase::Closing) {
         // フェードアウト完了待ち
         if (engine_->GetSceneTransition()->IsOutFinished()) {
-            ChangeTo(pendingTransition_); // 新しいシーンに切り替え、裏ロード開始
+            StartAsyncInitialize(pendingTransition_); // 新しいシーンに非同期で切り替え、裏ロード開始
             pendingTransition_.clear();
+            transitionPhase_ = TransitionPhase::Initializing; // 初期化フェーズへ
+        }
+    }
+    else if (transitionPhase_ == TransitionPhase::Initializing) {
+        // バックグラウンドでのシーン破棄・初期化完了待ち
+        if (!isAsyncInitializing_.load()) {
+            if (initFuture_.valid()) {
+                initFuture_.get(); // 例外があればキャッチ
+            }
+            
+            {
+                std::lock_guard<std::mutex> lock(nextSceneMutex_);
+                current_ = std::move(nextScene_);
+            }
+            
+            isInitializing_ = false;
+            
+            // ポーズ可能なシーンかどうかに応じてマウスをロック
+            engine_->SetCursorLocked(current_->IsPausable());
+            
             transitionPhase_ = TransitionPhase::LoadingWait; // ロード待機フェーズへ
         }
     }
@@ -112,6 +139,18 @@ void SceneManager::Update() {
         // 全てのアセットのロード完了を待つ (画面は真っ暗なまま、上にLoadingScreenが描画される)
         if (modelsLoaded && texturesLoaded) {
             transitionPhase_ = TransitionPhase::Opening;
+            
+            // ---------------------------------------------------------
+            // 【重要】フェードイン中 (Opening) は Update() がスキップされるため、
+            // そのまま Draw() が呼ばれると、未初期化の定数バッファ（ゼロ行列）や
+            // 前シーンのカメラデータが使われてしまい、深刻な点滅・描画崩れが発生する。
+            // これを防ぐため、ロード完了直後に強制的に1回だけ Update() を回し、
+            // 全オブジェクトの初回更新（UpdateAll等）とカメラ設定を済ませる。
+            // ---------------------------------------------------------
+            if (current_) {
+                current_->Update();
+            }
+
             // ロードが完了した瞬間に、フェードインを開始する
             engine_->GetSceneTransition()->Start(pendingType_, pendingDuration_, false);
         }
@@ -123,8 +162,11 @@ void SceneManager::Update() {
         }
     }
 
+    // ロード中かどうかを最新の状態で再評価する（非同期初期化が開始された直後を考慮）
+    isLoading = (transitionPhase_ == TransitionPhase::Initializing) || !modelsLoaded || !texturesLoaded;
+
     // ロード中であれば、ここで更新を止めてLoadingUIだけアニメーションさせる
-    if (!modelsLoaded || !texturesLoaded) {
+    if (isLoading) {
         if (loadingScreen_) {
             loadingScreen_->Update(engine_->GetDeltaTime());
         }
@@ -151,7 +193,7 @@ void SceneManager::Draw() {
     // ロード待ちの場合は背景のみ(UIはDrawLoadingUIでバックバッファに直接描画される)
     bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
     bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
-    if (!modelsLoaded || !texturesLoaded) {
+    if (transitionPhase_ == TransitionPhase::Initializing || !modelsLoaded || !texturesLoaded) {
         return;
     }
 
@@ -173,9 +215,48 @@ std::vector<SceneManager::Key> SceneManager::GetRegisteredKeys() const { return 
 void SceneManager::DrawLoadingUI() {
     bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
     bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
-    if (!modelsLoaded || !texturesLoaded) {
+    if (transitionPhase_ == TransitionPhase::Initializing || !modelsLoaded || !texturesLoaded) {
         if (loadingScreen_) {
             loadingScreen_->Draw(engine_);
         }
     }
+}
+
+void SceneManager::StartAsyncInitialize(const Key& next) {
+    auto it = factories_.find(next);
+    if (it == factories_.end()) { return; }
+
+    Factory factory = it->second;
+    currentName_ = next;
+    isAsyncInitializing_.store(true);
+    isInitializing_ = true;
+    wasLoading_ = false;
+    isPaused_ = false;
+    engine_->SetTimeScale(1.0f); // 時間の進みをリセット
+    
+    // --- 【重要】---
+    // シーン破棄前に、現在溜まっている描画・コンピュートタスクを破棄する。
+    // これをしないと、裏スレッドでのリソース破棄と並行して、
+    // メインスレッドが古いComputeTaskを実行しようとしてクラッシュ（OBJECT_DELETED_WHILE_STILL_IN_USE）する。
+    engine_->GetDrawManager()->ClearAllQueues();
+    
+    initFuture_ = std::async(std::launch::async, [this, factory]() {
+        // GPU処理の完了を待つ (リソース解放中のアクセス違反を防ぐ)
+        engine_->GetDirectXCommon()->WaitForGPU();
+        
+        // 現在のシーンを破棄
+        current_.reset();
+        
+        // 新しいシーンを生成して初期化
+        auto newScene = factory();
+        newScene->Initialize(engine_);
+        
+        // メインスレッドへ渡すための準備
+        {
+            std::lock_guard<std::mutex> lock(nextSceneMutex_);
+            nextScene_ = std::move(newScene);
+        }
+        
+        isAsyncInitializing_.store(false);
+    });
 }

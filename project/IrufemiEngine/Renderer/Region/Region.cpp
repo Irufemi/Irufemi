@@ -4,6 +4,7 @@
 #include <vector>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Engine/IrufemiEngine.h"
 #include "Application/camera/Camera.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
@@ -32,6 +33,11 @@ ModelRegion::~ModelRegion() {
                 srvPool_->FreeAfterFence(idx, dx_->GetFenceValue());
                 idx = UINT32_MAX;
             }
+        }
+    }
+    if (auto engine = dx_->GetEngine()) {
+        if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetMaterialBufferManager()->Free(materialCbIndex_);
         }
     }
 }
@@ -73,17 +79,25 @@ const GpuMesh* ModelRegion::GetGpuMesh() const {
 }
 
 void ModelRegion::CreateMaterialResources(const ObjMesh& mesh) {
-    materialBuffer_.Initialize(dx_);
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialBuffer_[i]->color = mesh.material.color;
-        materialBuffer_[i]->enableLighting = mesh.material.enableLighting;
-        materialBuffer_[i]->uvTransform = mesh.material.uvTransform;
-        materialBuffer_[i]->metallic = mesh.material.metallic;
-        materialBuffer_[i]->roughness = mesh.material.roughness;
-        materialBuffer_[i]->environmentCoefficient = 0.0f;
-        materialBuffer_[i]->hasTexture = !mesh.material.textureFilePath.empty();
-        materialBuffer_[i]->lightingMode = mesh.material.enableLighting ? 3 : 0;
-        if (materialBuffer_[i]->color.w <= 0.0f) { materialBuffer_[i]->color.w = 1.0f; }
+    if (auto engine = dx_->GetEngine()) {
+        if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
+            materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
+        }
+    }
+    cpuMaterialData_.color = mesh.material.color;
+    cpuMaterialData_.enableLighting = mesh.material.enableLighting;
+    cpuMaterialData_.uvTransform = mesh.material.uvTransform;
+    cpuMaterialData_.metallic = mesh.material.metallic;
+    cpuMaterialData_.roughness = mesh.material.roughness;
+    cpuMaterialData_.environmentCoefficient = 0.0f;
+    cpuMaterialData_.hasTexture = !mesh.material.textureFilePath.empty();
+    cpuMaterialData_.lightingMode = mesh.material.enableLighting ? 3 : 0;
+    if (cpuMaterialData_.color.w <= 0.0f) { cpuMaterialData_.color.w = 1.0f; }
+
+    if (auto engine = dx_->GetEngine()) {
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+        }
     }
 }
 
@@ -177,7 +191,8 @@ void ModelRegion::BuildInstanceBuffer(bool force) {
 
         InstanceData data;
         Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
-        data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
+        // data.WVP はシェーダーで使わなくなったため計算を省略
+        data.WVP = Math::MakeIdentity4x4();
 
         Matrix4x4 worldForNormal = world;
         worldForNormal.m[3][0] = 0.0f;
@@ -202,6 +217,7 @@ void ModelRegion::BuildInstanceBuffer(bool force) {
     CreateOrResizeInstanceBuffer(totalCount);
 
     uint32_t frameIndex = dx_->GetFrameIndex();
+    lastUpdateFrameIndex_ = frameIndex;
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
@@ -211,11 +227,33 @@ void ModelRegion::BuildInstanceBuffer(bool force) {
     instanceDirty_ = false;
 }
 
+void ModelRegion::SyncBeforeDraw() {
+    if (instanceDirty_) {
+        BuildInstanceBuffer(false);
+    }
+}
+
 void ModelRegion::Draw() {
     if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || instances_.empty()) { return; }
 
     // 毎フレームインスタンスの WVP 等を更新する (マルチバッファなので常に更新)
-    BuildInstanceBuffer(true);
+    SyncBeforeDraw();
 
-    drawManager_->DrawModelRegion(this);
+    DrawManager::ModelRegionPacket p{};
+    p.gpuMesh = GetGpuMesh();
+    p.materialAddress = GetMaterialVAddress();
+    p.textureHandle = GetTextureHandle();
+    p.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
+    p.instanceCount = GetInstanceCount();
+    p.blendMode = GetBlendMode();
+    p.depthWrite = GetDepthWrite();
+    p.cullMode = GetCullMode();
+    p.castShadows = GetCastShadows();
+
+    drawManager_->SubmitModelRegion(p);
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS ModelRegion::GetMaterialVAddress() const {
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return dx_->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, dx_->GetFrameIndex());
 }

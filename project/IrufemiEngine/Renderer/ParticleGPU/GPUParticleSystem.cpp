@@ -25,16 +25,20 @@ IrufemiEngine* GPUParticleSystem::engine_ = nullptr;
 // コンストラクタ
 GPUParticleSystem::GPUParticleSystem() = default;
 
-// デストラクタ
 GPUParticleSystem::~GPUParticleSystem() {
-    if (auto* srvPool = dxCommon_ ? dxCommon_->GetSrvPool() : nullptr) {
+    if (dxCommon_) {
         uint64_t fv = dxCommon_->GetCurrentFrameFenceValue();
-        srvPool->FreeAfterFence(emitterSrvIndex_, fv);
-        srvPool->FreeAfterFence(perFrameSrvIndex_, fv);
-        srvPool->FreeAfterFence(particleUavIndex_, fv);
-        srvPool->FreeAfterFence(particleSrvIndex_, fv);
-        srvPool->FreeAfterFence(freeListIndexUavIndex_, fv);
-        srvPool->FreeAfterFence(freeListUavIndex_, fv);
+        if (auto* srvPool = dxCommon_->GetSrvPool()) {
+            srvPool->FreeAfterFence(emitterSrvIndex_, fv);
+            srvPool->FreeAfterFence(perFrameSrvIndex_, fv);
+            srvPool->FreeAfterFence(particleUavIndex_, fv);
+            srvPool->FreeAfterFence(particleSrvIndex_, fv);
+            srvPool->FreeAfterFence(freeListIndexUavIndex_, fv);
+            srvPool->FreeAfterFence(freeListUavIndex_, fv);
+        }
+        dxCommon_->ReleaseAfterFence(particleResource_);
+        dxCommon_->ReleaseAfterFence(freeListIndexResource_);
+        dxCommon_->ReleaseAfterFence(freeListResource_);
     }
 }
 
@@ -137,9 +141,6 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 void GPUParticleSystem::Update() {
     if (!emitter_ || !camera_) return;
 
-    // 前フレームの射出予約をリセット
-    emitter_->burstCount = 0;
-
     if (!isPlaying_) {
         // 放出は止めるが、既存の粒子の更新（Update CS）は必要かもしれないので
         // emit フラグだけ操作して UpdateCS は継続する方針
@@ -184,8 +185,8 @@ void GPUParticleSystem::Update() {
         emitter_->frequencyTime += dt; // δタイムを加算
     }
 
-    perFrameData_->time = engine_->GetTotalTime();
-    perFrameData_->deltaTime = dt;
+    perFrameData_->time = engine_->GetGameTime();
+    perFrameData_->deltaTime = engine_->GetGameDeltaTime();
 
     // 射出間隔を上回ったら射出予約に加算
     if (emitter_->emit) {
@@ -196,44 +197,23 @@ void GPUParticleSystem::Update() {
     } else {
         emitter_->frequencyTime = 0.0f; // Emit停止中ならタイマーリセット
     }
-
-    uint32_t frameIndex = dxCommon_->GetFrameIndex();
-    
-    perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
-
-    // backToFrontMatrix_の設定
-    Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
-    Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
-    billboardMatrix_.m[3][0] = 0.0f;
-    billboardMatrix_.m[3][1] = 0.0f;
-    billboardMatrix_.m[3][2] = 0.0f;
-
-    perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
-
-    // フレームインデックスを取得して現在のフレーム用のGPUバッファにマスターデータをコピー
-    emitterBuffer_.Update(*emitter_, frameIndex);
-    perFrameBuffer_.Update(*perFrameData_, frameIndex);
-    materialBuffer_.Update(cpuMaterialData_, frameIndex);
-
     if (debugLineRegion_) {
         debugLineRegion_->Update();
     }
 
     needsUpdateCS_ = true;
+    
+    // エンジンにCompute Shaderの実行を予約する
+    if (engine_ && engine_->GetDrawManager()) {
+        engine_->GetDrawManager()->RegisterComputeTask(this);
+    }
 }
 
-// 描画
-void GPUParticleSystem::Draw() {
-
-    if (isCulled_) return;
-
-    // --- 追加: ポーズ時(Updateが呼ばれなかった時)のマルチバッファ同期 ---
-    if (!needsUpdateCS_) {
-        uint32_t frameIndex = dxCommon_->GetFrameIndex();
-        emitterBuffer_.Update(*emitter_, frameIndex);
-        perFrameBuffer_.Update(*perFrameData_, frameIndex);
-        materialBuffer_.Update(cpuMaterialData_, frameIndex);
-        
+void GPUParticleSystem::SyncBeforeDraw() {
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+    
+    // PerViewはUpdateが呼ばれなくても毎フレーム必ず最新化する（ポーズ中のカメラ移動・マルチバッファ対策）
+    if (camera_) {
         perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
         Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
         Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
@@ -243,29 +223,60 @@ void GPUParticleSystem::Draw() {
         perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
     }
 
-    ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+    // 同一フレーム内で複数回呼び出された場合は無駄な転送を防ぐ
+    // 特に、DispatchCompute後のburstCount=0の再転送（バグ）を防ぐ効果がある
+    if (lastUpdateFrame_ == frameIndex) {
+        return;
+    }
+    
+    emitterBuffer_.Update(*emitter_, frameIndex);
+    perFrameBuffer_.Update(*perFrameData_, frameIndex);
+    materialBuffer_.Update(cpuMaterialData_, frameIndex);
+    
+    lastUpdateFrame_ = frameIndex;
+}
 
-    // 1. Compute Shader dispatch (Update/Emit)
+void GPUParticleSystem::DispatchCompute() {
+    if (isCulled_ || !needsUpdateCS_) return;
+
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+    
+    SyncBeforeDraw();
+    
+    ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
     DispatchComputeShaders(commandList);
 
-    // 2. Graphics Draw
-    D3D12_RESOURCE_BARRIER transitionBarrier{};
-    transitionBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    transitionBarrier.Transition.pResource = particleResource_.Get();
-    transitionBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    transitionBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-    transitionBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    commandList->ResourceBarrier(1, &transitionBarrier);
+    // 送信済みのバーストカウントをリセットする
+    emitter_->burstCount = 0;
+    needsUpdateCS_ = false;
+}
 
+// 描画
+void GPUParticleSystem::Draw() {
+
+    if (isCulled_) return;
+
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
+
+    // 描画パスによってカメラが変わる可能性があるため、毎回の描画で更新
+    perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
+    Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
+    Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+    billboardMatrix_.m[3][0] = 0.0f;
+    billboardMatrix_.m[3][1] = 0.0f;
+    billboardMatrix_.m[3][2] = 0.0f;
+    perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
+
+    ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+
+    // Graphics Draw
     commandList->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     engine_->SetBlend(selectedBlend_);
     engine_->SetDepthWrite(selectedDepth_);
     engine_->SetCull(selectedCull_);
     engine_->ApplyGpuParticlePSO();
       
-    uint32_t frameIndex = dxCommon_->GetFrameIndex();
-
-    drawManager_->DrawGPUParticle(
+    drawManager_->SubmitGPUParticle(
         vertexBufferView_,
         indexBufferView_,
         indexCount_,
@@ -274,16 +285,12 @@ void GPUParticleSystem::Draw() {
         emitterBuffer_.GetGPUVirtualAddress(frameIndex),
         particleSrvHandleGPU_,
         textureHandle_,
-        kMaxParticles
+        kMaxParticles,
+        particleResource_.Get()
     );
-
-    transitionBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-    transitionBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    commandList->ResourceBarrier(1, &transitionBarrier);
 
 #if USE_IMGUI
     if (debugLineRegion_) {
-        engine_->ApplyLineInstancedPSO();
         debugLineRegion_->Draw();
     }
 #endif
@@ -412,10 +419,14 @@ void GPUParticleSystem::SetBillboard(bool isBillboard) {
 
 void GPUParticleSystem::SetTexture(const std::string& textureFilePath) {
     if (!textureManager_) return;
+    
+    // 無条件に GetTextureHandle を呼び出し、確実に読み込み＆ハンドル取得を行う
+    textureHandle_ = textureManager_->GetTextureHandle(textureFilePath);
+    
+    // UIコンボボックス用のインデックス同期
     auto textureNames = textureManager_->GetTextureNamesForDebug();
     auto it = std::find(textureNames.begin(), textureNames.end(), textureFilePath);
     if (it != textureNames.end()) {
-        textureHandle_ = textureManager_->GetTextureHandle(textureFilePath);
         selectedTextureIndex_ = static_cast<int>(std::distance(textureNames.begin(), it));
     }
 }
@@ -573,6 +584,10 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
         
         uint32_t emitCount = emitterBuffer_[frameIndex]->burstCount;
         if (emitCount > 0) {
+            char debugMsg[256];
+            sprintf_s(debugMsg, "[GPUParticleSystem::Dispatch] frameIndex=%d, emitCount=%d\n", frameIndex, emitCount);
+            OutputDebugStringA(debugMsg);
+
             commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
         }
 
@@ -590,6 +605,7 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
         commandList->ResourceBarrier(1, &uavBarrier);
 
         needsUpdateCS_ = false;
+        isCsDispatchedThisFrame_ = true;
     }
 }
 

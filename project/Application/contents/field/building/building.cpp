@@ -163,15 +163,7 @@ void Building::Draw(IrufemiEngine* engine) {
         // 完全消滅済みでもボクセルパーティクルがあれば描画
         if (inst.isDestroyed) {
             if (inst.voxelSystem && inst.voxelSystem->IsActive()) {
-                engine->SetBlend(BlendMode::kBlendModeNormal);
-                engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
-                engine->SetCull(PSOManager::CullMode::Back);
                 inst.voxelSystem->Draw();
-                // VoxelParticle描画後に標準PSOを復元
-                engine->SetBlend(BlendMode::kBlendModeNormal);
-                engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
-                engine->SetCull(PSOManager::CullMode::Back);
-                engine->ApplyPSO();
             }
             continue;
         }
@@ -182,7 +174,6 @@ void Building::Draw(IrufemiEngine* engine) {
             engine->SetBlend(BlendMode::kBlendModeNormal);
             engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
             engine->SetCull(PSOManager::CullMode::Back);
-            engine->ApplyPSO();
             inst.obj->Draw();
         }
 
@@ -199,13 +190,10 @@ void Building::Draw(IrufemiEngine* engine) {
     engine->SetBlend(BlendMode::kBlendModeNormal);
     engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine->SetCull(PSOManager::CullMode::Back);
-    engine->ApplyPSO();
 
 #ifdef USE_IMGUI
     if (debugLines_ && isDebugDraw_ && engine_) {
-        engine_->ApplyLineInstancedPSO();
         debugLines_->Draw();
-        engine_->ApplyPSO();
     }
 #endif
 }

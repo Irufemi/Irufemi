@@ -1,3 +1,4 @@
+﻿#include "../Core/IRenderable.h"
 #pragma once
 #include "../../../Application/camera/Camera.h"
 #include "ParticleResource.h"
@@ -31,7 +32,7 @@ class IrufemiEngine;
  * @details 粒子の放出（Emit）、更新（Update）、インスタンシングによる一括描画（Draw）を制御します。
  *          IParticleBehavior を通じて粒子の挙動（移動、色変化等）をカスタマイズ可能です。
  */
-class ParticleSystem {
+class ParticleSystem : public IRenderable {
 public:
 	ParticleSystem() = default;
 	~ParticleSystem();
@@ -49,7 +50,8 @@ public:
 	/** @brief 全粒子の更新とエミッターからの放出 */
 	void Update();
 	/** @brief インスタンシング描画の実行 */
-	void Draw();
+	void SyncBeforeDraw() override;
+    void Draw() override;
 	/** @brief メイン更新がスキップされた場合のGPU同期処理 */
 	void SyncGPUData();
 	/** @brief DebugUI を使用したパラメータ調整機能 */
@@ -62,7 +64,7 @@ public:
 	ParticleResource* GetD3D12Resource() { return resource_.get(); }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { 
 		uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-		return resource_ ? resource_->instancingSrvHandleGPU_[frameIndex] : D3D12_GPU_DESCRIPTOR_HANDLE{}; 
+		return resource_ ? resource_->instancingSrvHandleGPU_[lastUpdateFrameIndex_] : D3D12_GPU_DESCRIPTOR_HANDLE{}; 
 	}
 	///@}
 
@@ -212,3 +214,4 @@ private:
 	PSOManager::DepthWrite selectedDepth_ = PSOManager::DepthWrite::Disable; ///< デプス書き込み
 	PSOManager::CullMode selectedCull_ = PSOManager::CullMode::None; ///< カリングモード
 };
+

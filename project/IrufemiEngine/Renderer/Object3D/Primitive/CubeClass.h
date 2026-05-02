@@ -1,3 +1,4 @@
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <cstdint>
@@ -15,7 +16,7 @@ class TextureManager;
 class DrawManager;
 class DebugUI;
 
-class CubeClass {
+class CubeClass : public IRenderable {
 protected:
     // 中心位置 + サイズ(幅, 高さ, 奥行)
     Vector3 center_{ 0.0f, 0.0f, 0.0f };
@@ -43,7 +44,8 @@ public:
     void Initialize(Camera* camera, float width = 1.0f, float height = 1.0f, float depth = 1.0f, const std::string& textureName = "resources/uvChecker.png");
 
     void Update();
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
     void Debug(const char* cubeName = " ");
 
     // Getters / Setters
@@ -64,11 +66,16 @@ public:
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
 private:
     // 行列更新の最適化用
     bool isDirty_ = true;
     bool isCullingEnabled_ = true;
+    bool castShadows_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };
+
+

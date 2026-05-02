@@ -1,3 +1,4 @@
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -16,7 +17,7 @@ class TextureManager;
 class DrawManager;
 class DebugUI;
 
-class TriangleClass {
+class TriangleClass : public IRenderable {
 private:
     std::unique_ptr<Object3DResource> resource_ = nullptr;
     int selectedTextureIndex_ = 0;
@@ -26,6 +27,7 @@ private:
     // 行列更新の最適化用
     bool isDirty_ = true;
     bool isCullingEnabled_ = true;
+    bool castShadows_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 
@@ -38,7 +40,8 @@ public:
 
     void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
     void Update();
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
     void Debug(const char* triangleName = "");
 
     // ゲッター/セッター
@@ -67,7 +70,12 @@ public:
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
 private:
     static inline Transform sDefaultTransform_{};
 };
+
+
+

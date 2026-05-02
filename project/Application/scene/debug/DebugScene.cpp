@@ -199,9 +199,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         effectTest_->SetCylinderParams(1.0f, 1.0f, 2.0f, 32, false, false, false);
     }
 
-    // エンジンのデフォルトクリアカラーを「青」に設定
-    engine_->SetClearColor(Vector4{ 0.1f, 0.25f, 0.5f, 1.0f });
-
     // 電撃エフェクトの初期化
     lightningCylinder_ = std::make_unique<CylinderClass>();
     lightningCylinder_->Initialize(camera_.get());
@@ -617,14 +614,30 @@ void DebugScene::Draw() {
     }
 
     if (isActiveLightningCrawl_) {
-        engine_->SetBlend(BlendMode::kBlendModeAdd);
-        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-        engine_->SetCull(PSOManager::CullMode::None);
-        
-        engine_->ApplyLightningCrawlPSO();
-        engine_->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
-        
-        lightningCylinder_->Draw();
+        // lightningCylinder_->Draw() だと RenderQueue に回されてしまい専用PSOが上書きされるため、
+        // 不透明描画の後に専用PSOを適用して描画するよう SubmitPostRender に積む
+        lightningCylinder_->SyncBeforeDraw();
+
+        engine_->GetDrawManager()->SubmitPostRender([this]() {
+            engine_->SetBlend(BlendMode::kBlendModeAdd);
+            engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+            engine_->SetCull(PSOManager::CullMode::None);
+
+            engine_->ApplyLightningCrawlPSO();
+            engine_->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
+
+            DrawManager::Standard3DPacket packet{};
+            packet.resource = lightningCylinder_->GetD3D12Resource();
+            packet.blendMode = BlendMode::kBlendModeAdd;
+            packet.depthWrite = PSOManager::DepthWrite::Disable;
+            packet.cullMode = PSOManager::CullMode::None;
+            engine_->GetDrawManager()->DrawStandard3D(packet);
+
+            // 状態を戻す
+            engine_->SetBlend(BlendMode::kBlendModeNormal);
+            engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+            engine_->SetCull(PSOManager::CullMode::Back);
+        });
     }
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);

@@ -1,3 +1,4 @@
+#include "../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -7,7 +8,7 @@
 #include <d3d12.h>
 #include <array>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 #include "Engine/Graphics/Data/Material.h"
 
 #include "Engine/Core/Math/Math.h"
@@ -25,7 +26,7 @@ class DescriptorPool;
 struct ManagedModel;
 struct GpuMesh;
 
-class ModelRegion {
+class ModelRegion : public IRenderable {
 public:
     ModelRegion() {
         instancingSrvIndex_.fill(UINT32_MAX);
@@ -36,7 +37,12 @@ public:
     void AddInstance(const Transform& t);
     void ClearInstances();
     void BuildInstanceBuffer(bool force = false);
-    void Draw();
+    /**
+     * @brief 描画コマンドの積み込み
+     */
+    void SyncBeforeDraw() override;
+    void Draw() override;
+    void Draw(bool isUI);
 
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
@@ -48,10 +54,22 @@ public:
 
     // --- DrawManager から参照する Getter 群 ---
     const GpuMesh* GetGpuMesh() const; // 共有メッシュ取得
-    ID3D12Resource* GetMaterialResource() { return materialBuffer_.GetResource(dx_->GetFrameIndex()); }
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[dx_->GetFrameIndex()]; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT GetInstanceCount() const { return visibleInstanceCount_; }
+
+    BlendMode GetBlendMode() const { return blendMode_; }
+    void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
+
+    PSOManager::DepthWrite GetDepthWrite() const { return depthWrite_; }
+    void SetDepthWrite(PSOManager::DepthWrite depthWrite) { depthWrite_ = depthWrite; }
+
+    PSOManager::CullMode GetCullMode() const { return cullMode_; }
+    void SetCullMode(PSOManager::CullMode cullMode) { cullMode_ = cullMode; }
+
+    bool GetCastShadows() const { return castShadows_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
 
 private:
     struct InstanceData {
@@ -80,7 +98,8 @@ private:
     std::shared_ptr<ManagedModel> managedModel_{};
 
     // インスタンス固有リソース
-    ConstantBuffer<Material> materialBuffer_;
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
+    Material cpuMaterialData_{};
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
 
     // インスタンシング用
@@ -94,6 +113,15 @@ private:
     bool                   isCullingEnabled_ = true;
     bool                   isResourcesInitialized_ = false;
     uint32_t               visibleInstanceCount_ = 0;
+
+    uint32_t lastUpdateFrameIndex_ = 0;
+    bool isDirty_ = true;
+
+    // レンダリングステート
+    BlendMode blendMode_ = BlendMode::kBlendModeNormal;
+    PSOManager::DepthWrite depthWrite_ = PSOManager::DepthWrite::Enable;
+    PSOManager::CullMode cullMode_ = PSOManager::CullMode::Back;
+    bool castShadows_ = true;
 
     // 行列更新の最適化用
     Matrix4x4 lastViewMatrix_ = {};

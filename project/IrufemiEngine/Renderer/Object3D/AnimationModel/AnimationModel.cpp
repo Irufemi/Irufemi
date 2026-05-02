@@ -22,6 +22,11 @@ IrufemiEngine* AnimationModel::engine_ = nullptr;
 
 AnimationModel::AnimationModel() {}
 AnimationModel::~AnimationModel() {
+    if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+        if (engine_) {
+            engine_->GetTransformBufferManager()->Free(transformCbIndex_);
+        }
+    }
 }
 
 // 初期化
@@ -47,14 +52,16 @@ void AnimationModel::InitializeResources() {
 
     // 4. 変換行列リソースの生成とマップ (全メッシュ共有用)
     assert(engine_->GetDrawManager() && "DrawManager is not set.");
-    transformationBuffer_.Initialize(engine_->GetDrawManager()->GetDxCommon());
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
+        transformCbIndex_ = engine_->GetTransformBufferManager()->Allocate();
+    }
 
     // 各メッシュ用リソースの生成
     meshResources_.clear();
     for (size_t i = 0; i < managedModel_->gpuMeshes.size(); ++i) {
         auto res = std::make_unique<Object3DResource>();
         
-        res->SetExternalTransformationBuffer(&transformationBuffer_);
+        res->SetExternalTransformCbIndex(&transformCbIndex_);
         
         const auto& gpuMesh = managedModel_->gpuMeshes[i];
         res->vertexBufferView_ = gpuMesh->vertexBufferView;
@@ -120,17 +127,16 @@ void AnimationModel::Update() {
     // スキニングモデルかノードアニメーションモデルかで処理を分岐
     if (!managedModel_->cpuModel->skinClusterData.empty()) {
         // --- スキニングモデルの更新 ---
-        transformationMatrix_.WVP = worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
         transformationMatrix_.world = worldMatrix_;
         Matrix4x4 worldForNormal = transformationMatrix_.world;
         worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
         worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
         transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
-        transformationBuffer_.Update(transformationMatrix_, engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex());
+        
+        // SyncBeforeDraw() で同期するため、ここでは計算のみ行う
     } else {
         // --- ノードアニメーションモデルの更新 ---
         // オブジェクト全体のワールド行列を計算
-        transformationMatrix_.WVP = localMatrix_ * worldMatrix_ * (camera_->GetViewMatrix() * camera_->GetPerspectiveFovMatrix());
         transformationMatrix_.world = localMatrix_ * worldMatrix_;
 
         // 法線変換用の逆転置行列
@@ -140,7 +146,7 @@ void AnimationModel::Update() {
         transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
 
         // 計算した行列をマップ済みのリソースにコピー
-        transformationBuffer_.Update(transformationMatrix_, engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex());
+        // SyncBeforeDraw() で同期するため、ここでは計算のみ行う
     }
 
 
@@ -188,28 +194,56 @@ void AnimationModel::Update() {
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
-    
-    MakeDirty();
+    // スキニングモデルの場合はCompute Shaderの実行を予約する
+    if (!managedModel_->cpuModel->skinClusterData.empty() && engine_ && engine_->GetDrawManager()) {
+        engine_->GetDrawManager()->RegisterComputeTask(this);
+    }
 }
 
-void AnimationModel::SyncIfDirty() {
-    if (dirtyFramesLeft_ > 0) {
-        uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-        transformationBuffer_.Update(transformationMatrix_, frameIndex);
-        for (auto& res : meshResources_) {
-            res->SyncMaterialData();
-        }
-        
-        // --- 追加: SkinCluster のマルチバッファ同期（ポーズ中の振動対策） ---
-        if (managedModel_ && managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
-            AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
-        }
-        
-        if (lastSyncedFrameIndex_ != frameIndex) {
-            dirtyFramesLeft_--;
-            lastSyncedFrameIndex_ = frameIndex;
+void AnimationModel::SyncBeforeDraw() {
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    
+    if (lastUpdateFrame_ == frameIndex) {
+        return;
+    }
+    
+    // 変換行列の更新 (全メッシュで共有)
+    if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+        engine_->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
+    }
+    
+    // 各メッシュのマテリアル等の更新
+    for (auto& res : meshResources_) {
+        res->SyncBeforeDraw();
+    }
+    
+    // --- SkinCluster のマルチバッファ同期（ポーズ中の振動対策） ---
+    if (managedModel_ && managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
+        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
+    }
+    
+    lastUpdateFrame_ = frameIndex;
+}
+
+void AnimationModel::DispatchCompute() {
+    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->skinClusterData.empty() || !camera_) return;
+
+    if (isCullingEnabled_) {
+        float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
+        Sphere boundingSphere;
+        boundingSphere.center = transform_.translate;
+        boundingSphere.radius = managedModel_->cpuModel->boundingSphere.radius * maxScale * 1.5f;
+        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+            return; // 視錐台カリングされている場合はComputeもスキップ
         }
     }
+
+    engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
+    uint32_t f = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource[f].Get());
+    
+    // スキニングが正常に実行されたフレームを記録（ポーズ中の遅延更新等による不整合を防ぐため）
+    lastSkinnedFrameIndex_ = f;
 }
 
 // 描画
@@ -234,33 +268,24 @@ void AnimationModel::Draw() {
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
                           std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
-    if (isDirty_ || cameraChanged) {
+    if (isDirtyBuffer_[BaseResource::GetDirectXCommon()->GetFrameIndex()] || cameraChanged) {
         Update();
     }
     
-    SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    SyncBeforeDraw();
 
     // --- 追加：骨格（球体の集合）を一括描画 ---
     if (jointSpheres_ && !skeleton_.joints.empty()) {
-        engine_->ApplyRegionPSO();
         jointSpheres_->Draw();
     }
 
     // --- 追加：ボーン（線）を一括描画 ---
     if (boneLines_ && !skeleton_.joints.empty()) {
-        engine_->ApplyLineInstancedPSO();
         boneLines_->Draw();
     }
 
-    // 1. スキニングの実行
-    if (!managedModel_->cpuModel->skinClusterData.empty()) {
-        engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
-        uint32_t f = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-        engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource[f].Get());
-    }
-
-    // 2. グラフィックスPSOの適用
-    engine_->ApplyPSO();
+    // 2. グラフィックスPSOの適用はDrawManagerが行うため削除
 
     // 3. 全メッシュをループして描画
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
@@ -269,9 +294,9 @@ void AnimationModel::Draw() {
 
         // スキニング中なら VBV を差し替えて描画
         if (!managedModel_->cpuModel->skinClusterData.empty()) {
-            engine_->GetDrawManager()->DrawStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[frameIndex]);
+            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_], castShadows_);
         } else {
-            engine_->GetDrawManager()->DrawStandard3D(res.get());
+            engine_->GetDrawManager()->SubmitStandard3D(res.get(), nullptr, castShadows_);
         }
     }
 }
@@ -360,8 +385,8 @@ void AnimationModel::UpdateMaterials() {
         
         // アルファテスト用閾値
         mappedData->alphaReference = cpuMat.alphaReference;
-
-        res->SyncMaterialData();
+        
+        // (マテリアルバッファへの転送は SyncBeforeDraw() で行われるため、ここでは SyncMaterialData は呼ばない)
     }
 }
 
@@ -370,8 +395,9 @@ void AnimationModel::UpdateAnimation() {
 
     // アニメーションの処理
 
-    animationTime_ += 1.0f / 60.0f; // 時刻を進める。1/60で固定してあるが、計測した時間を使って可変フレームを対応したほうが望ましい。
-    animationTime_ = std::fmod(animationTime_, animation_.duration); // 最後まで言ったら最初からリピート再生。リピートしなくても別にいい。
+    // 時刻を進める（タイムスケール対応）
+    animationTime_ += engine_->GetGameDeltaTime();
+    animationTime_ = std::fmod(animationTime_, animation_.duration); // 最後まで行ったら最初からリピート再生。
 
     // スキニングアニメーションの場合
     if (!managedModel_->cpuModel->skinClusterData.empty()) {
@@ -408,3 +434,8 @@ ObjMaterial* AnimationModel::GetMaterial(size_t meshIndex) {
     }
     return nullptr;
 }
+
+D3D12_GPU_VIRTUAL_ADDRESS AnimationModel::GetTransformationGpuAddress() const {
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}

@@ -92,16 +92,12 @@ void CylinderClass::Update() {
         if (resource_->textureHandle_.ptr == 0) {
             resource_->GetMaterialData()->hasTexture = false;
         }
-        
-        resource_->SyncMaterialData();
     }
 
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
-    
-    resource_->MakeDirty();
 }
 
 void CylinderClass::Draw() {
@@ -132,10 +128,10 @@ void CylinderClass::Draw() {
     if (isDirty_ || cameraChanged) {
         Update();
     }
-    
-    resource_->SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    resource_->SyncBeforeDraw();
 
-    drawManager_->DrawStandard3D(resource_.get());
+    drawManager_->SubmitStandard3D(resource_.get(), nullptr, castShadows_);
 }
 
 void CylinderClass::Debug([[maybe_unused]] const char* cylinderName) {
@@ -182,3 +178,10 @@ Vector3 CylinderClass::GetDirection() const {
     Matrix4x4 mat = Math::MakeRotateXYZMatrix(resource_->transform_.rotate);
     return { mat.m[2][0], mat.m[2][1], mat.m[2][2] };
 }
+
+void CylinderClass::SyncBeforeDraw() {
+    if (resource_) {
+        resource_->SyncBeforeDraw();
+    }
+}
+

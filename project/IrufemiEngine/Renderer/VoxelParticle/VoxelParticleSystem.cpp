@@ -24,11 +24,17 @@ VoxelParticleSystem::~VoxelParticleSystem() {
     initializeFuture_.wait();
   }
   if (engine_) {
-    if (auto *srvPool = engine_->GetSrvPool()) {
-      uint64_t fv = engine_->GetDirectXCommon()->GetCurrentFrameFenceValue();
-      srvPool->FreeAfterFence(voxelSrvIndex_, fv);
-      srvPool->FreeAfterFence(particleUavIndex_, fv);
-      srvPool->FreeAfterFence(particleSrvIndex_, fv);
+    if (auto* dxCommon = engine_->GetDirectXCommon()) {
+      uint64_t fv = dxCommon->GetCurrentFrameFenceValue();
+      if (auto* srvPool = dxCommon->GetSrvPool()) {
+        srvPool->FreeAfterFence(voxelSrvIndex_, fv);
+        srvPool->FreeAfterFence(particleUavIndex_, fv);
+        srvPool->FreeAfterFence(particleSrvIndex_, fv);
+      }
+      dxCommon->ReleaseAfterFence(voxelBuffer_);
+      dxCommon->ReleaseAfterFence(particleBuffer_);
+      dxCommon->ReleaseAfterFence(cubeVertexBuffer_);
+      dxCommon->ReleaseAfterFence(cubeIndexBuffer_);
     }
   }
 }
@@ -118,60 +124,54 @@ void VoxelParticleSystem::Update(float deltaTime) {
     return;
 
   // エミッターデータ更新
-  emitterData_.time += deltaTime;
+  float actualDeltaTime = engine_->GetGameDeltaTime();
+  emitterData_.time += actualDeltaTime;
   emitterData_.emit = isEmitting_ ? 1 : 0;
   
   uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-  emitterBuffer_.Update(emitterData_, frameIndex);
-
+  
   // PerFrame データを更新（time と deltaTime を CS シェーダーへ渡す）
   perFrameData_.time = emitterData_.time;
-  perFrameData_.deltaTime = deltaTime;
-  perFrameBuffer_.Update(perFrameData_, frameIndex);
+  perFrameData_.deltaTime = actualDeltaTime;
 
-  // PerView 更新（描画用）
-  perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
-  
-  // ビルボード行列の計算
-  Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix(0.0f);
-  perViewBuffer_[frameIndex]->billboardMatrix = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
-  perViewBuffer_[frameIndex]->billboardMatrix.m[3][0] = 0.0f;
-  perViewBuffer_[frameIndex]->billboardMatrix.m[3][1] = 0.0f;
-  perViewBuffer_[frameIndex]->billboardMatrix.m[3][2] = 0.0f;
+    // (バッファへの転送は SyncBeforeDraw で実施)
 
-  // Dispatch 処理は Draw に移動 (PreDraw 後に実行するため)
   needsUpdateCS_ = true;
+  if (engine_ && engine_->GetDrawManager()) {
+      engine_->GetDrawManager()->RegisterComputeTask(this);
+  }
 }
 
-void VoxelParticleSystem::Draw() {
-  if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_ || !camera_)
-    return;
+void VoxelParticleSystem::SyncBeforeDraw() {
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    
+    // PerViewはUpdateが呼ばれなくても毎フレーム必ず最新化する（ポーズ中のカメラ移動・マルチバッファ対策）
+    if (camera_) {
+        perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
+        Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix(0.0f);
+        perViewBuffer_[frameIndex]->billboardMatrix = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
+        perViewBuffer_[frameIndex]->billboardMatrix.m[3][0] = 0.0f;
+        perViewBuffer_[frameIndex]->billboardMatrix.m[3][1] = 0.0f;
+        perViewBuffer_[frameIndex]->billboardMatrix.m[3][2] = 0.0f;
+    }
+    
+    if (lastUpdateFrame_ == frameIndex) return;
+    emitterBuffer_.Update(emitterData_, frameIndex);
+    perFrameBuffer_.Update(perFrameData_, frameIndex);
+    lastUpdateFrame_ = frameIndex;
+}
 
-  // シャドウパス中は描画しない
-  if (engine_->GetDrawManager()->IsShadowPass()) {
-      return;
-  }
+void VoxelParticleSystem::DispatchCompute() {
+  if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_)
+    return;
 
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
-
   uint32_t frameIndex = dxCommon->GetFrameIndex();
-  
-  // ポーズ時等の同期漏れ(同フレーム内への直前データコピー)
-  if (!needsUpdateCS_) {
-      emitterBuffer_.Update(emitterData_, frameIndex);
-      perFrameBuffer_.Update(perFrameData_, frameIndex);
-      perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
-      Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix(0.0f);
-      perViewBuffer_[frameIndex]->billboardMatrix = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
-      perViewBuffer_[frameIndex]->billboardMatrix.m[3][0] = 0.0f;
-      perViewBuffer_[frameIndex]->billboardMatrix.m[3][1] = 0.0f;
-      perViewBuffer_[frameIndex]->billboardMatrix.m[3][2] = 0.0f;
-  }
 
-  // 1. Compute Shader dispatch (Deferred from Initialize and Update)
-  if (needsUpdateCS_ || isEmitting_ || needsInitialize_) { // 補正: isEmitting がポーズ中に呼ばれた場合等も考慮
-    // デスクリプタヒープの設定
+  SyncBeforeDraw();
+
+  if (needsUpdateCS_ || isEmitting_ || needsInitialize_) {
     ID3D12DescriptorHeap *ppHeaps[] = {dxCommon->GetSrvPool()->GetHeap()};
     commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
     commandList->SetComputeRootSignature(dxCommon->GetComputeRootSignature());
@@ -180,7 +180,6 @@ void VoxelParticleSystem::Draw() {
     uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
     uavBarrier.UAV.pResource = particleBuffer_.Get();
 
-    // A. 初期化
     if (needsInitialize_) {
       commandList->SetPipelineState(initializePSO_.Get());
       commandList->SetComputeRootDescriptorTable(0, voxelSrvHandleGPU_);    // t0
@@ -190,7 +189,6 @@ void VoxelParticleSystem::Draw() {
       needsInitialize_ = false;
     }
 
-    // B. エミット
     if (isEmitting_) {
       commandList->SetPipelineState(emitPSO_.Get());
       commandList->SetComputeRootDescriptorTable(0, voxelSrvHandleGPU_);    // t0
@@ -202,7 +200,6 @@ void VoxelParticleSystem::Draw() {
       isEmitting_ = false;
     }
 
-    // C. 毎フレームの更新
     if (needsUpdateCS_) {
         commandList->SetPipelineState(updatePSO_.Get());
         commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
@@ -213,38 +210,38 @@ void VoxelParticleSystem::Draw() {
         needsUpdateCS_ = false;
     }
   }
+}
+
+void VoxelParticleSystem::Draw() {
+  if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_ || !camera_)
+    return;
+
+  // シャドウパス中は描画しない
+  if (engine_->GetDrawManager()->IsShadowPass()) {
+      return;
+  }
+
+  auto* engine = engine_;
+  auto* dxCommon = engine_->GetDirectXCommon();
+  uint32_t frameIndex = dxCommon->GetFrameIndex();
 
   // 2. Graphics Draw
   if (!hasExploded_)
     return;
 
-  // リソースバリヤー: UAV -> ShaderResource (読み取り)
-  D3D12_RESOURCE_BARRIER barrier{};
-  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  barrier.Transition.pResource = particleBuffer_.Get();
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-  barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-  commandList->ResourceBarrier(1, &barrier);
+  SyncBeforeDraw();
 
-  // VoxelParticle 専用PSOを取得してバインド
-  engine_->GetDrawManager()->BindPSO(drawPSO_.Get());
-
-  // DrawManager を通じて描画を実行 (内部で共通パラメータとトポロジを設定)
-  engine_->GetDrawManager()->DrawVoxelParticle(
+  engine_->GetDrawManager()->SubmitVoxelParticle(
       voxelCount_,
       cubeVertexBufferView_,
       cubeIndexBufferView_,
       cubeIndexCount_,
       perViewBuffer_.GetGPUVirtualAddress(frameIndex),
       emitterBuffer_.GetGPUVirtualAddress(frameIndex),
-      particleSrvHandleGPU_
+      particleSrvHandleGPU_,
+      particleBuffer_.Get(),
+      drawPSO_.Get()
   );
-
-  // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-  commandList->ResourceBarrier(1, &barrier);
 }
 
 void VoxelParticleSystem::Emit(const Vector3 &position) {

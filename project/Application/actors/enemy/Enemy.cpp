@@ -309,9 +309,7 @@ void Enemy::Draw(IrufemiEngine* engine) {
 
 #ifdef USE_IMGUI
   if (lineOBB_ && isDebugDrawOBB_ && engine_) {
-    engine_->ApplyLineInstancedPSO();
     lineOBB_->Draw();
-    engine_->ApplyPSO(); // restore
   }
 #endif
 }
@@ -346,11 +344,11 @@ void Enemy::FireTackleCrashWave(const Vector3& position) {
     }
 }
 
-void Enemy::Draw3DUI(IrufemiEngine* engine) {
+void Enemy::Draw3DUI(IrufemiEngine* engine, bool isUI) {
     if (!isActive_) return;
     
     auto drawIfAlive = [&](int index, auto* part) {
-        if (part && part->GetHP() > 0) partHPBars_[index]->Draw();
+        if (part && part->GetHP() > 0) partHPBars_[index]->Draw(isUI);
     };
     drawIfAlive(0, GetBody(0));
     drawIfAlive(1, GetBody(1));

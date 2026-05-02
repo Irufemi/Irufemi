@@ -30,8 +30,9 @@ void Line3DRegion::Initialize(Camera* camera) {
     baseLineResource_->Map();
 
     // 基準となる線の頂点データ (0,0,0) -> (1,0,0)
-    baseLineResource_->vertexData_[0] = { {0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
-    baseLineResource_->vertexData_[1] = { {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
+    // VertexData: position, texcoord, normal, color
+    baseLineResource_->vertexData_[0] = { {0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
+    baseLineResource_->vertexData_[1] = { {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
 
     baseLineResource_->indexData_[0] = 0;
     baseLineResource_->indexData_[1] = 1;
@@ -74,6 +75,7 @@ void Line3DRegion::BuildInstanceBuffer(bool force) {
 
     CreateOrResizeInstanceBuffer(static_cast<uint32_t>(activeCount_));
     uint32_t frameIndex = dx_->GetFrameIndex();
+    lastUpdateFrameIndex_ = frameIndex;
     if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex]) return;
 
     const Matrix4x4& viewProjection = Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix());
@@ -102,10 +104,17 @@ void Line3DRegion::BuildInstanceBuffer(bool force) {
     }
 }
 
+void Line3DRegion::SyncBeforeDraw() {
+    if (isDirty_) {
+        BuildInstanceBuffer();
+    }
+}
+
 void Line3DRegion::Draw() {
     if (activeCount_ == 0) return;
     BuildInstanceBuffer();
-    drawManager_->DrawLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32());
+    baseLineResource_->SyncBeforeDraw();
+    drawManager_->SubmitLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32());
 }
 
 void Line3DRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
@@ -148,6 +157,7 @@ void Line3DRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 
 void Line3DRegion::EnsureInstancingSRV() {
     uint32_t frameIndex = dx_->GetFrameIndex();
+    lastUpdateFrameIndex_ = frameIndex;
     if (!instanceBuffer_[frameIndex]) return;
 
     if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {

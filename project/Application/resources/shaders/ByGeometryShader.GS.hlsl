@@ -226,6 +226,13 @@
 
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b6);
 
+struct Camera {
+	float32_t4x4 view;
+	float32_t4x4 projection;
+	float32_t3 worldPosition;
+};
+ConstantBuffer<Camera> gCamera : register(b2);
+
 /* 点から三角形を出力(ワールド空間版)*/
 [maxvertexcount(3)]
 void main(
@@ -247,19 +254,19 @@ void main(
 
     // 1頂点目 (CW: A)
 	v.worldPosition = basePos + offsetA;
-	v.svpos = mul(float4(v.worldPosition, 1.0f), gTransformationMatrix.WVP);
+	v.svpos = mul(mul(float4(v.worldPosition, 1.0f), gCamera.view), gCamera.projection);
 	v.uv = float2(0.5f, 0.0f); // UV座標を設定
 	output.Append(v);
 
     // 2頂点目 (CW: C)
 	v.worldPosition = basePos + offsetC;
-	v.svpos = mul(float4(v.worldPosition, 1.0f), gTransformationMatrix.WVP);
+	v.svpos = mul(mul(float4(v.worldPosition, 1.0f), gCamera.view), gCamera.projection);
 	v.uv = float2(1.0f, 1.0f); // UV座標を設定
 	output.Append(v);
 
     // 3頂点目 (CW: B)
 	v.worldPosition = basePos + offsetB;
-	v.svpos = mul(float4(v.worldPosition, 1.0f), gTransformationMatrix.WVP);
+	v.svpos = mul(mul(float4(v.worldPosition, 1.0f), gCamera.view), gCamera.projection);
 	v.uv = float2(0.0f, 1.0f); // UV座標を設定
 	output.Append(v);
 }

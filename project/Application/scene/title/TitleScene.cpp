@@ -217,7 +217,6 @@ void TitleScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
-    engine_->ApplyPSO();
 
     if (titleTextNana_) titleTextNana_->Draw();
     if (titleTextKoro1_) titleTextKoro1_->Draw();

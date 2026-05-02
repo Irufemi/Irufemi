@@ -1,19 +1,14 @@
 #include "VoxelParticle.hlsli"
+#include "VertexData.hlsli"
 
-// 頂点シェーダーの入力
-struct VSInput
-{
-	float4 position : POSITION0;
-	float2 texcoord : TEXCOORD0;
-	float3 normal : NORMAL0;
-};
+// struct VSInput は VertexData.hlsli (VertexInput) で定義
 
 // パーティクルごとのデータ
 StructuredBuffer<VoxelParticle> gParticles : register(t1);
 ConstantBuffer<PerView> gPerView : register(b6);
 ConstantBuffer<VoxelEmitter> gEmitter : register(b0);
 
-VertexShaderOutput main(VSInput input, uint instanceID : SV_InstanceID)
+VertexShaderOutput main(VertexInput input, uint instanceID : SV_InstanceID)
 {
 	VertexShaderOutput output;
 	VoxelParticle particle = gParticles[instanceID];
@@ -49,7 +44,7 @@ VertexShaderOutput main(VSInput input, uint instanceID : SV_InstanceID)
     
     // UVと色
 	output.texcoord = input.texcoord;
-	output.color = particle.color;
+	output.color = input.color * particle.color;
 
 	return output;
 }

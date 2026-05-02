@@ -82,16 +82,18 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
 void Skybox::Update() {
 
     Matrix4x4 worldMatrix = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-
-    transformationMatrix_.WVP = Math::Multiply(worldMatrix, Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix()));
-
-    // 更新されたWVP行列をGPUリソースにコピーする
-    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    transformationBuffer_.Update(transformationMatrix_, frameIndex);
+    // シェーダー側でgCameraを使用するようになったためWVPの計算を省略
+    transformationMatrix_.WVP = Math::MakeIdentity4x4();
+    transformationMatrix_.World = worldMatrix;
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+}
+
+void Skybox::SyncBeforeDraw() {
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    transformationBuffer_.Update(transformationMatrix_, frameIndex);
 }
 
 void Skybox::Draw() {
@@ -101,16 +103,20 @@ void Skybox::Draw() {
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
                           std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
-    if (isDirty_ || cameraChanged) {
+    if (isDirtyBuffer_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()] || cameraChanged) {
         Update();
     }
+    
+    SyncBeforeDraw();
+
+    SyncBeforeDraw();
 
     DrawManager* drawManager = engine_->GetDrawManager();
 
     engine_->ApplySkyboxPSO();
 
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    drawManager->DrawSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex), transformationBuffer_.GetResource(frameIndex), textureHandle_, static_cast<UINT>(indexDataList_.size()));
+    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), transformationBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), textureHandle_, static_cast<UINT>(indexDataList_.size()));
 
 }
 
@@ -190,6 +196,8 @@ void Skybox::MapResource() {
         if (transformationBuffer_[i]) {
             // 初期行列
             transformationBuffer_[i]->WVP = Math::MakeIdentity4x4();
+            transformationBuffer_[i]->World = Math::MakeIdentity4x4();
+            transformationBuffer_[i]->WorldInverseTranspose = Math::MakeIdentity4x4();
         }
     }
 }
@@ -203,3 +211,5 @@ void Skybox::UnMapResource() {
         indexData_ = nullptr;
     }
 }
+
+
