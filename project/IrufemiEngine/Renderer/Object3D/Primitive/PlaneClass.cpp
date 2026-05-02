@@ -134,7 +134,7 @@ void PlaneClass::Draw(bool isUI) {
     if (isUI) {
         drawManager_->SubmitUI3D(resource_.get());
     } else {
-        drawManager_->SubmitStandard3D(resource_.get());
+        drawManager_->SubmitStandard3D(resource_.get(), nullptr, castShadows_);
     }
 }
 
