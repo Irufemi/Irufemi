@@ -318,9 +318,32 @@ private:
     std::vector<SpotLight> cachedSpotLights_;
     std::vector<AreaLight> cachedAreaLights_;
     
+    // シャドウマップのカスタムパラメータ
+    Vector3 shadowTargetPos_{ 0, 0, 0 };
+    float shadowOrthoSize_{ 128.0f };
+    bool useCustomShadowParams_{ false };
+
     TextureManager* textureManager_ = nullptr; ///< 環境マップフォールバック等に使用するテクスチャマネージャー
     
 public:
+
+    /**
+     * @brief シャドウマップの注視点とサイズをカスタマイズする
+     * @param targetPos 注視点（通常はプレイヤーとボスの中心）
+     * @param orthoSize 描画範囲（通常はプレイヤーとボスの距離に基づく）
+     */
+    void SetShadowParameters(const Vector3& targetPos, float orthoSize) {
+        shadowTargetPos_ = targetPos;
+        shadowOrthoSize_ = orthoSize;
+        useCustomShadowParams_ = true;
+    }
+
+    /**
+     * @brief カスタムシャドウパラメータをリセットし、デフォルト（カメラ追従）に戻す
+     */
+    void ResetShadowParameters() {
+        useCustomShadowParams_ = false;
+    }
 
     /**
      * @brief テクスチャマネージャーのポインタを設定する

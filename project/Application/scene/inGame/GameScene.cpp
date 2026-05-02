@@ -239,6 +239,8 @@ void GameScene::Update() {
 void GameScene::Draw() {
   // --- 1. シャドウパス ---
   engine_->GetDrawManager()->BeginShadowPass();
+  if (field_)
+    field_->Draw();
   if (player_)
     player_->Draw();
   if (boss_)
@@ -428,6 +430,19 @@ void GameScene::UpdateDynamicLights() {
 
   // 距離が離れるほど強度を少し上げる
   pLight->intensity = 3.0f + (distance * 0.1f);
+
+  // --- 3. シャドウマップパラメータの計算 ---
+  // プレイヤーとボスの中心を注視点とする
+  Vector3 shadowTargetPos = midPos;
+  // Y軸はプレイヤーやボスの高さに合わせておく（高すぎると影の範囲から外れる可能性があるため）
+  shadowTargetPos.y = (std::min)(pPos.y, bPos.y); 
+
+  // 距離に応じて描画範囲（orthoSize）を決定
+  // 余裕を持たせるためにマージン(例えば20.0f)を追加。最低限のサイズとして40.0fを担保。
+  float shadowOrthoSize = (std::max)(40.0f, distance * 0.6f + 20.0f);
+
+  // DrawManagerにカスタムシャドウパラメータを設定
+  engine_->GetDrawManager()->SetShadowParameters(shadowTargetPos, shadowOrthoSize);
 }
 
 // --- 当たり判定の実装 ---

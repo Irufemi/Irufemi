@@ -336,8 +336,9 @@ void DrawManager::SyncCachedFrameData() {
         // シャドウマップの行列更新
         ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
         if (shadowMap) {
-            // カメラの位置を注視点として追従させる
-            shadowMap->UpdateMatrix(cachedDirectionalLight_.direction, cachedCamera_.worldPosition, 128.0f);
+            Vector3 targetPos = useCustomShadowParams_ ? shadowTargetPos_ : cachedCamera_.worldPosition;
+            float orthoSize = useCustomShadowParams_ ? shadowOrthoSize_ : 128.0f;
+            shadowMap->UpdateMatrix(cachedDirectionalLight_.direction, targetPos, orthoSize);
             fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();
         }
     }
