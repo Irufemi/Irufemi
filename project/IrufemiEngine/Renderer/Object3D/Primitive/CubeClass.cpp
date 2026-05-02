@@ -146,7 +146,7 @@ void CubeClass::Draw() {
     // --- 【追加】描画直前のバッファ同期 ---
     resource_->SyncBeforeDraw();
 
-    drawManager_->SubmitStandard3D(resource_.get());
+    drawManager_->SubmitStandard3D(resource_.get(), nullptr, castShadows_);
 }
 
 void CubeClass::Debug(const char* cubeName) {

@@ -1,4 +1,4 @@
-﻿#include "../../Core/IRenderable.h"
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <cstdint>
@@ -66,11 +66,14 @@ public:
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
 private:
     // 行列更新の最適化用
     bool isDirty_ = true;
     bool isCullingEnabled_ = true;
+    bool castShadows_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };

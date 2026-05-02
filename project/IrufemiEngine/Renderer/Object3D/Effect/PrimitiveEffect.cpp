@@ -17,6 +17,9 @@ void PrimitiveEffect::Initialize(Camera* camera, PrimitiveType type, const std::
     // 半透明対応のためアルファ1にしておく
     primitive_.GetMaterial().color.w = 1.0f;
 
+    // エフェクトなので影はデフォルトでオフ
+    primitive_.SetCastShadows(false);
+
     isCylinderMode_ = (type == PrimitiveType::Cylinder);
 }
 

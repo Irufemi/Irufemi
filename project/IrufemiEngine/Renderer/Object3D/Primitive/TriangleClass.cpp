@@ -108,7 +108,7 @@ void TriangleClass::Draw() {
     resource_->SyncBeforeDraw();
 
     // 共有リソースを使用して描画
-    drawManager_->SubmitStandard3D(resource_.get());
+    drawManager_->SubmitStandard3D(resource_.get(), nullptr, castShadows_);
 }
 
 void TriangleClass::Debug(const char* triangleName) {

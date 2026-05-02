@@ -1,4 +1,4 @@
-﻿#include "../../Core/IRenderable.h"
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include "../Primitive/PrimitiveObjects3DClass.h"
@@ -59,6 +59,9 @@ public:
     void SetUVScale(const Vector2& scale) { uvScale_ = scale; }
     void SetAlphaReference(float alphaRef) { primitive_.GetMaterial().alphaReference = alphaRef; }
     void SetUseClampSampler(int32_t useClamp) { primitive_.GetMaterial().useClampSampler = useClamp; }
+    
+    void SetCastShadows(bool cast) { primitive_.SetCastShadows(cast); }
+    bool GetCastShadows() const { return primitive_.GetCastShadows(); }
     
     // --- カスタム形状パラメータ設定 ---
     void SetCylinderParams(float bottomRadius, float topRadius, float height, uint32_t segments, bool hasTop, bool hasBottom, bool centered);
