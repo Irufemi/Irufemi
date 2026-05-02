@@ -62,10 +62,10 @@ private: // メンバ変数
     bool isActiveSkybox_ = false;
     std::unique_ptr<Skybox> skybox_ = nullptr;
 
-    bool isActiveAnimatedCube_ = true;
+    bool isActiveAnimatedCube_ = false;
     std::unique_ptr<AnimationModel> animatedCube_ = nullptr;
 
-    bool isActiveWalk_ = false;
+    bool isActiveWalk_ = true;
     std::unique_ptr<AnimationModel> walk_ = nullptr;
 
     bool isActiveSneakWalk_ = false;
