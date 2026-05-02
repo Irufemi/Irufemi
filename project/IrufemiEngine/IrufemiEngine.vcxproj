@@ -168,6 +168,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Renderer\Object3D\Effect\PrimitiveEffect.cpp" />
+    <ClCompile Include="Renderer\Object3D\BaseModel\BaseModel.cpp" />
     <ClCompile Include="Renderer\Object3D\ObjClass\ObjClass.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.cpp" />
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp" />
@@ -266,6 +267,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object3D\Primitive\CubeClass.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\RingClass.h" />
     <ClInclude Include="Renderer\LineInstanced\LineClass.h" />
+    <ClInclude Include="Renderer\Object3D\BaseModel\BaseModel.h" />
     <ClInclude Include="Renderer\Object3D\ObjClass\ObjClass.h" />
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h" />
     <ClInclude Include="Renderer\Effect\Effect.h" />

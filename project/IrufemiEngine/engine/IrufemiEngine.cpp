@@ -21,6 +21,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/LineInstanced/LineResource.h"
 #include "Renderer/Object2D/Sprite/Sprite.h"
 #include "Renderer/Object2D/Primitive/Circle2D.h"
+#include "Renderer/Object3D/BaseModel/BaseModel.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Renderer/Object3D/Primitive/SphereClass.h"
@@ -131,7 +132,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // モデル管理
     modelManager_ = std::make_unique<ModelManager>();
     modelManager_->Initialize(dxCommon_.get(), textureManager_.get()); // dxCommon を渡す
-    ObjClass::SetModelManager(modelManager_.get());
+
     ModelRegion::SetModelManager(modelManager_.get()); // Regionにも設定
 
     // プリミティブ管理（シングルトンの初期化）
@@ -177,7 +178,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ui_->Initialize(winApp_->GetHwnd(), dxCommon_.get());
     Sprite::SetDebugUI(ui_.get());
     Circle2D::SetDebugUI(ui_.get());
-    ObjClass::SetDebugUI(ui_.get());
+
     SphereClass::SetDebugUI(ui_.get());
     TriangleClass::SetDebugUI(ui_.get());
     CubeClass::SetDebugUI(ui_.get());
@@ -192,7 +193,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     drawManager_->Initialize(dxCommon_.get());
     Sprite::SetDrawManager(drawManager_.get());
     Circle2D::SetDrawManager(drawManager_.get());
-    ObjClass::SetDrawManager(drawManager_.get());
+
     SphereClass::SetDrawManager(drawManager_.get());
     TriangleClass::SetDrawManager(drawManager_.get());
     CubeClass::SetDrawManager(drawManager_.get());
@@ -214,7 +215,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     drawManager_->SetTextureManager(textureManager_.get());
     Sprite::SetTextureManager(textureManager_.get());
     Circle2D::SetTextureManager(textureManager_.get());
-    ObjClass::SetTextureManager(textureManager_.get());
+
     SphereClass::SetTextureManager(textureManager_.get());
     TriangleClass::SetTextureManager(textureManager_.get());
     CubeClass::SetTextureManager(textureManager_.get());
@@ -231,7 +232,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     animationManager_ = std::make_unique<AnimationManager>();
     animationManager_->Initialize(dxCommon_.get());
 
-    AnimationModel::SetIrufemiEngine(this);
+    BaseModel::SetIrufemiEngine(this);
     winApp_->SetInputManager(inputManager_.get());
 
     Skybox::SetEngine(this);
