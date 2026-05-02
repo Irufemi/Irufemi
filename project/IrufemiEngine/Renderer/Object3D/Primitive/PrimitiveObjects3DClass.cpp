@@ -173,7 +173,7 @@ void PrimitiveObjects3DClass::Draw(const Camera& camera) {
     mesh_.resource->SyncBeforeDraw();
 
     // 描画実行
-    drawManager_->SubmitStandard3D(mesh_.resource.get());
+    drawManager_->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
 }
 
 void PrimitiveObjects3DClass::Debug(const char* label) {

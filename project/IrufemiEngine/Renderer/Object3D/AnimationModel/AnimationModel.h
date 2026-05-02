@@ -97,6 +97,8 @@ public: // ゲッター・セッター
     static void SetIrufemiEngine(IrufemiEngine* engine) { engine_ = engine; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
 private: // メンバ変数
     // 共有モデルデータ(CPU/GPU)
@@ -143,6 +145,7 @@ private: // メンバ変数
     bool isDirty_ = true;
     bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
     bool isCullingEnabled_ = true;
+    bool castShadows_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
     uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);

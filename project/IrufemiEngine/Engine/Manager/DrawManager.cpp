@@ -465,7 +465,7 @@ void DrawManager::DrawModelRegion(const ModelRegionPacket& packet) {
     }
 }
 
-void DrawManager::SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount) {
+void DrawManager::SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount, bool castShadows) {
     if (indexCount == 0 || instanceCount == 0) { return; }
     RegionPacket p{};
     p.vertexBufferView = vertexBufferView;
@@ -478,6 +478,7 @@ void DrawManager::SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    p.castShadows = castShadows;
     regionQueue_.push_back(p);
 }
 
@@ -600,7 +601,7 @@ void DrawManager::DrawSkybox(const SkyboxPacket& packet) {
     commandList_->DrawIndexedInstanced(packet.indexCount, 1, 0, 0, 0);
 }
 
-void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows) {
     if (!resource) return;
     Standard3DPacket p{};
     p.resource = resource;
@@ -608,6 +609,7 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    p.castShadows = castShadows;
     standard3DQueue_.push_back(p);
 }
 
@@ -961,6 +963,36 @@ void DrawManager::EndShadowPass() {
 }
 
 void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
+    // --- Phase 1: Shadow Pass ---
+    BeginShadowPass();
+
+    auto DrawShadowsWithPSO = [&](auto& queue, auto drawFunc) {
+        if (queue.empty()) return;
+        
+        PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
+        bool first = true;
+        
+        for (const auto& p : queue) {
+            if (!p.castShadows) continue;
+            
+            if (first || p.cullMode != currentCull) {
+                engine->SetCull(p.cullMode);
+                engine->ApplyPSO(); // BeginShadowPass中なので自動的にShadowPSOが適用される
+                currentCull = p.cullMode;
+                first = false;
+            }
+            drawFunc(p);
+        }
+    };
+
+    DrawShadowsWithPSO(standard3DQueue_, [&](const Standard3DPacket& p) { DrawStandard3D(p); });
+    DrawShadowsWithPSO(regionQueue_, [&](const RegionPacket& p) { DrawRegion(p); });
+    DrawShadowsWithPSO(modelRegionQueue_, [&](const ModelRegionPacket& p) { DrawModelRegion(p); });
+
+    EndShadowPass();
+
+    // --- Phase 2: Main Pass ---
+
     // 1. Skybox
     if (!skyboxQueue_.empty()) {
         engine->ApplySkyboxPSO();

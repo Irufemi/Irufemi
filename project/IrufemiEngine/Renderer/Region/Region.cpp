@@ -248,6 +248,7 @@ void ModelRegion::Draw() {
     p.blendMode = GetBlendMode();
     p.depthWrite = GetDepthWrite();
     p.cullMode = GetCullMode();
+    p.castShadows = GetCastShadows();
 
     drawManager_->SubmitModelRegion(p);
 }

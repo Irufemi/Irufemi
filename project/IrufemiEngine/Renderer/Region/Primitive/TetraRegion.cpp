@@ -319,7 +319,7 @@ void TetraRegion::Draw() {
     if (vertexCount_ == 0 || indexCount_ == 0 || (instances_.empty() && instanceWorlds_.empty())) { return; }
     
 
-    drawManager_->SubmitRegion(vertexBufferView_, indexBufferView_, GetMaterialVAddress(), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, visibleInstanceCount_);
+    drawManager_->SubmitRegion(vertexBufferView_, indexBufferView_, GetMaterialVAddress(), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, visibleInstanceCount_, castShadows_);
 }
 
 // --- サイズ関連 ---

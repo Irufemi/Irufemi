@@ -333,7 +333,7 @@ void SphereRegion::Draw() {
     // 毎フレームインスタンスの WVP 更新
     
 
-    drawManager_->SubmitRegion(vertexBufferView_, indexBufferView_, GetMaterialVAddress(), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, GetInstanceCount());
+    drawManager_->SubmitRegion(vertexBufferView_, indexBufferView_, GetMaterialVAddress(), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, GetInstanceCount(), castShadows_);
 }
 
 void SphereRegion::SetColor(const Vector4& color) {

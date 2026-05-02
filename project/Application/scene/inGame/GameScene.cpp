@@ -237,26 +237,8 @@ void GameScene::Update() {
 }
 
 void GameScene::Draw() {
-  // --- 1. シャドウパス ---
-  engine_->GetDrawManager()->BeginShadowPass();
-  if (field_)
-    field_->Draw();
-  if (player_)
-    player_->Draw();
-  if (boss_)
-    boss_->Draw(engine_);
-  
-  // キューに積まれたオブジェクトをシャドウマップへ書き込むため、パス終了前に実行する
-  engine_->GetDrawManager()->ExecuteRenderQueues(engine_);
-  
-  engine_->GetDrawManager()->EndShadowPass();
-
-  // --- 2. メインパス ---
-  engine_->SetBlend(BlendMode::kBlendModeNormal);
-  engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-  engine_->SetCull(PSOManager::CullMode::Back);
-
-  skydome_->Draw();
+  if (skydome_)
+    skydome_->Draw();
   if (field_)
     field_->Draw();
   if (player_)
@@ -266,16 +248,12 @@ void GameScene::Draw() {
   if (player_)
     player_->DrawParticles();
 
-  // --- 2.5 HPバーUI描画（スプライト：マスクやエイム） ---
-  engine_->SetBlend(BlendMode::kBlendModeNormal);
-  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  // --- HPバーUI描画（スプライト：マスクやエイム） ---
   if (player_) {
     player_->Draw2DUI(boss_.get());
   }
 
-  // --- 3. 3DオブジェクトとしてのUI描画（HPバー） ---
-  engine_->SetBlend(BlendMode::kBlendModeNormal);
-  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  // --- 3DオブジェクトとしてのUI描画（HPバー） ---
   if (player_) {
     player_->Draw3DUI(boss_.get(), true);
   }

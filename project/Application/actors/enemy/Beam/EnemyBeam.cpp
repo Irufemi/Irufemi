@@ -15,10 +15,12 @@ void EnemyBeam::Initialize(Camera* camera, IrufemiEngine* engine) {
     telegraphObj_ = std::make_unique<ObjClass>();
     telegraphObj_->Initialize(camera, "sample/block.obj");
     telegraphObj_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
+    telegraphObj_->SetCastShadows(false);
 
     attackCylinder_ = std::make_unique<CylinderClass>();
     attackCylinder_->Initialize(camera, false, false);
     attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
+    attackCylinder_->SetCastShadows(false);
 
     // トランスフォームの初期化（Updateで確定するため、ここではゼロクリア）
     telegraphTransform_.translate = { 0, 0, 0 };

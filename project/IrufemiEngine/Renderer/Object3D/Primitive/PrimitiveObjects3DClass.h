@@ -1,4 +1,4 @@
-﻿#include "../../Core/IRenderable.h"
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <memory>
@@ -133,6 +133,8 @@ public:
     void SetTexture(const std::string& path) { material_.texturePath = path; }
     void SetShape(PrimitiveType type) { mesh_.ChangeMesh(type); transform_.isDirty = true; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
     // --- 静的各種マネージャの設定 ---
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
@@ -144,6 +146,7 @@ private:
     MeshComponent mesh_;           //!< メッシュコンポーネント
     MaterialComponent material_;   //!< マテリアルコンポーネント
     bool isCullingEnabled_ = true; //!< 視錐台カリングの有効フラグ
+    bool castShadows_ = true;      //!< 影を落とすフラグ
 
     Camera* camera_ = nullptr;     //!< 保持しているカメラ
 

@@ -59,6 +59,7 @@ private:
 
     Camera* camera_ = nullptr;
     bool isCullingEnabled_ = true;
+    bool castShadows_ = true;
     
     // 行列更新の最適化用
     bool isDirty_ = true;
@@ -180,6 +181,8 @@ public: //メンバ関数
     void SetUseClampSamplerOverride(int32_t useClamp) { useClampSamplerOverride_ = useClamp; isDirty_ = true; }
     void SetEnableLightingOverride(int32_t enable) { enableLightingOverride_ = enable; isDirty_ = true; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
     ///@}
 
     /** @name 静的メンバ設定（エンジン内部用） */

@@ -68,6 +68,9 @@ public:
     PSOManager::CullMode GetCullMode() const { return cullMode_; }
     void SetCullMode(PSOManager::CullMode cullMode) { cullMode_ = cullMode; }
 
+    bool GetCastShadows() const { return castShadows_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+
 private:
     struct InstanceData {
         Matrix4x4 WVP;
@@ -118,6 +121,7 @@ private:
     BlendMode blendMode_ = BlendMode::kBlendModeNormal;
     PSOManager::DepthWrite depthWrite_ = PSOManager::DepthWrite::Enable;
     PSOManager::CullMode cullMode_ = PSOManager::CullMode::Back;
+    bool castShadows_ = true;
 
     // 行列更新の最適化用
     Matrix4x4 lastViewMatrix_ = {};

@@ -172,7 +172,7 @@ void ObjClass::Draw() {
 
     // モデル内の全メッシュを描画
     for (auto& res : meshResources_) {
-        drawManager_->SubmitStandard3D(res.get());
+        drawManager_->SubmitStandard3D(res.get(), nullptr, castShadows_);
     }
 }
 

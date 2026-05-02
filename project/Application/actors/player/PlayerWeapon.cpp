@@ -19,6 +19,7 @@ void PlayerWeapon::Initialize(Camera* camera) {
         bulletObjs_[i] = std::make_unique<ObjClass>();
         bulletObjs_[i]->Initialize(camera_, "enemy/body.obj");
         bulletObjs_[i]->SetColor({ 1.0f, 1.0f, 0.0f, 1.0f });
+        bulletObjs_[i]->SetCastShadows(false);
         bullets_[i].isActive = false;
     }
     machineGunActiveTimer_ = 0;
@@ -69,6 +70,7 @@ void PlayerWeapon::Initialize(Camera* camera) {
         cartridgeObjs_[i] = std::make_unique<ObjClass>();
         cartridgeObjs_[i]->Initialize(camera_, "enemy/body.obj");
         cartridgeObjs_[i]->SetColor({ 0.8f, 0.6f, 0.1f, 1.0f });
+        cartridgeObjs_[i]->SetCastShadows(false);
         cartridges_[i].isActive = false;
     }
 
@@ -76,6 +78,7 @@ void PlayerWeapon::Initialize(Camera* camera) {
     for (int i = 0; i < kMaxMissiles; ++i) {
         missileObjs_[i] = std::make_unique<ObjClass>();
         missileObjs_[i]->Initialize(camera_, "enemy/body.obj");
+        missileObjs_[i]->SetCastShadows(false);
         missiles_[i].isActive = false;
     }
 

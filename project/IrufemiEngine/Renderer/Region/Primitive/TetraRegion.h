@@ -38,6 +38,8 @@ public:
     static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; } // 追加
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
     ~TetraRegion(); // SRV遅延解放
 
@@ -133,5 +135,6 @@ private:
 
     uint32_t lastUpdateFrameIndex_ = 0;
     bool isDirty_ = true;
+    bool castShadows_ = true;
 };
 

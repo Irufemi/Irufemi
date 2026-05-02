@@ -67,6 +67,7 @@ public:
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        bool castShadows;
     };
     struct SpritePacket {
         const class Object2DResource* resource;
@@ -134,6 +135,7 @@ public:
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        bool castShadows;
     };
     struct ModelRegionPacket {
         const struct GpuMesh* gpuMesh;
@@ -144,6 +146,7 @@ public:
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        bool castShadows;
     };
 
 private:
@@ -376,7 +379,7 @@ public:
     /**
      * @brief 汎用的な領域描画（頂点バッファ・インデックスバッファ直接指定）
      */
-    void SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount);
+    void SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount, bool castShadows = true);
     void DrawRegion(const RegionPacket& packet);
 
     /**
@@ -389,7 +392,7 @@ public:
      * @brief 標準的な3Dオブジェクトの描画 (Object3d.hlsl)
      * @param vertexBufferViewOverride スキニング等でVBVを差し替えたい場合に指定
      */
-    void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
+    void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = true);
     void SubmitUI3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
     void DrawStandard3D(const Standard3DPacket& packet);
 
