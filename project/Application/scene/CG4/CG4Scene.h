@@ -15,6 +15,7 @@ class Skybox;
 class AnimationModel;
 #include "Renderer/Object3D/Primitive/RingClass.h"
 #include "Renderer/Effect/Effect.h"
+#include "Renderer/ParticleGPU/GPUParticleSystem.h"
 
 /**
  * @class CG4Scene
@@ -73,6 +74,9 @@ private: // メンバ変数
 
     bool isActiveEffect_ = false;
     std::unique_ptr<Effect> effect_ = nullptr;
+
+    bool isActiveGPUParticle_ = false;
+    std::unique_ptr<GPUParticleSystem> gpuParticleSystem_ = nullptr;
 
     bool isActiveRing_ = false;
     std::unique_ptr<RingClass> testRing_ = nullptr;

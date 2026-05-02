@@ -11,6 +11,7 @@
 #include "Platform/Input/InputManager.h"
 #include "Renderer/Effect/Effect.h"
 #include "Renderer/Object3D/Primitive/RingClass.h"
+#include "Renderer/ParticleGPU/GPUParticleSystem.h"
 CG4Scene::~CG4Scene() = default;
 
 void CG4Scene::Initialize(IrufemiEngine* engine) {
@@ -56,6 +57,7 @@ void CG4Scene::Update() {
     ImGui::Checkbox("Walk", &isActiveWalk_);
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
     ImGui::Checkbox("Effect", &isActiveEffect_);
+    ImGui::Checkbox("GPUParticle", &isActiveGPUParticle_);
     ImGui::Checkbox("Ring", &isActiveRing_);
     ImGui::End();
 #endif
@@ -122,6 +124,14 @@ void CG4Scene::Update() {
         }
     }
 
+    if (isActiveGPUParticle_) {
+        if (!gpuParticleSystem_) {
+            gpuParticleSystem_ = std::make_unique<GPUParticleSystem>();
+            gpuParticleSystem_->Initialize(camera_.get(), "resources/circle.png");
+        }
+        gpuParticleSystem_->Update();
+    }
+
     if (isActiveRing_ && testRing_) {
         testRing_->Update();
     }
@@ -129,6 +139,11 @@ void CG4Scene::Update() {
     std::vector<PointLight*> pLights;
     std::vector<SpotLight*> sLights;
     std::vector<AreaLight*> aLights;
+
+    // 描画前同期
+    if (isActiveEffect_ && effect_) {
+        effect_->SyncBeforeDraw();
+    }
 
     engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
@@ -161,6 +176,11 @@ void CG4Scene::Draw() {
     // リングの描画
     if (isActiveRing_ && testRing_) {
         testRing_->Draw();
+    }
+
+    // GPUParticleの描画
+    if (isActiveGPUParticle_ && gpuParticleSystem_) {
+        gpuParticleSystem_->Draw();
     }
 }
 
@@ -210,6 +230,10 @@ void CG4Scene::DrawDebugTab() {
 
     if (isActiveEffect_ && effect_) {
         effect_->Debug();
+    }
+
+    if (isActiveGPUParticle_ && gpuParticleSystem_) {
+        gpuParticleSystem_->Debug();
     }
 
     if (isActiveRing_ && testRing_) {
