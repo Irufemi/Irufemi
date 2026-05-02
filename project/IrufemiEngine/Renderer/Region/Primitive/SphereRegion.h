@@ -1,3 +1,4 @@
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -9,7 +10,7 @@
 #include <cassert>
 #include <array>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 
 #include "../../VertexData.h"            // VertexData
 #include "../../../Engine/Graphics/Data/Material.h"              // Material
@@ -24,7 +25,7 @@ class TextureManager;
 class DrawManager;
 class DescriptorPool; // 追加
 
-class SphereRegion {
+class SphereRegion : public IRenderable {
 public:
     SphereRegion() {
         instancingSrvIndex_.fill(UINT32_MAX);
@@ -37,6 +38,8 @@ public:
     static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; } // 追加
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
     ~SphereRegion(); // 追加(遅延解放で返却)
 
@@ -63,7 +66,8 @@ public:
     void BuildInstanceBuffer(bool force = false);
 
     // 描画(事前に DrawManager::PreDraw 済みであること)
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // 色設定(マテリアル全体 or インスタンス個別/一括)
     void SetColor(const Vector4& color);                 // マテリアル色(全体に乗算される前提の色)
@@ -74,9 +78,9 @@ public:
     // DrawManager 用 Getter
     D3D12_VERTEX_BUFFER_VIEW&   GetVertexBufferView() { return vertexBufferView_; }
     D3D12_INDEX_BUFFER_VIEW&    GetIndexBufferView() { return indexBufferView_; }
-    ID3D12Resource*             GetMaterialResource() { return materialBuffer_.GetResource(dx_->GetFrameIndex()); }
+    D3D12_GPU_VIRTUAL_ADDRESS   GetMaterialVAddress() const;
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[dx_->GetFrameIndex()]; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT                        GetIndexCount() const { return indexCount_; }
     UINT                        GetInstanceCount() const { return visibleInstanceCount_; }
 
@@ -116,7 +120,8 @@ private:
     UINT                                   indexCount_ = 0;
 
     // マテリアル
-    ConstantBuffer<Material> materialBuffer_;
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
+    Material cpuMaterialData_{};
 
     // 共有テクスチャ SRV
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
@@ -133,4 +138,9 @@ private:
     bool                   instanceDirty_ = false;
     bool                   isCullingEnabled_ = true;
     uint32_t               visibleInstanceCount_ = 0;
+    
+    uint32_t lastUpdateFrameIndex_ = 0;
+    bool isDirty_ = true;
+    bool castShadows_ = true;
 };
+

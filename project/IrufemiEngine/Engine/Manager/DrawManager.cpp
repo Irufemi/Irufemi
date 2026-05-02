@@ -23,6 +23,7 @@
 #include "Renderer/LineInstanced/LineResource.h"
 #include "../Graphics/DirectX/DirectXCommon.h"
 #include "../../Resource/Model/ModelManager.h"
+#include "../../engine/IrufemiEngine.h"
 #include "../Graphics/Data/CameraForGPU.h"
 #include "../Graphics/Data/DirectionalLight.h"
 #include "../Graphics/Data/PointLight.h"
@@ -113,6 +114,13 @@ void DrawManager::Initialize(DirectXCommon* dx) {
         shadowMaps_[i] = std::make_unique<ShadowMap>();
         shadowMaps_[i]->Initialize(dxCommon_, 2048, 2048);
     }
+}
+
+void DrawManager::ExecuteComputePasses() {
+    for (auto* task : computeTasks_) {
+        task->DispatchCompute();
+    }
+    computeTasks_.clear();
 }
 
 void DrawManager::Finalize() {
@@ -328,8 +336,9 @@ void DrawManager::SyncCachedFrameData() {
         // シャドウマップの行列更新
         ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
         if (shadowMap) {
-            // カメラの位置を注視点として追従させる
-            shadowMap->UpdateMatrix(cachedDirectionalLight_.direction, cachedCamera_.worldPosition, 128.0f);
+            Vector3 targetPos = useCustomShadowParams_ ? shadowTargetPos_ : cachedCamera_.worldPosition;
+            float orthoSize = useCustomShadowParams_ ? shadowOrthoSize_ : 128.0f;
+            shadowMap->UpdateMatrix(cachedDirectionalLight_.direction, targetPos, orthoSize);
             fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();
         }
     }
@@ -356,41 +365,20 @@ void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
 }
 
 
-void DrawManager::DrawVoxelParticle(
-    uint32_t instanceCount,
-    const D3D12_VERTEX_BUFFER_VIEW& vbv,
-    const D3D12_INDEX_BUFFER_VIEW& ibv,
-    uint32_t indexCount,
-    D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
-    D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
-    D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle
-) {
-    if (!commandList_) return;
 
-
-
-    // トポロジ設定
-    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    // 頂点バッファとインデックスバッファの設定
-    commandList_->IASetVertexBuffers(0, 1, &vbv);
-    commandList_->IASetIndexBuffer(&ibv);
-    // VoxelParticle 特有のバインド
-    // Slot 1: Transform (b0) <- Emitter
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, emitterAddress);
-    // Slot 7: Special (b6) <- PerView
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, perViewAddress);
-    // Slot 9: LineInstancing (t1) <- ParticleData
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, particleDataHandle);
-
-    // 描画！
-    commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
+void DrawManager::SubmitSprite(const Object2DResource* resource) {
+    if (!resource) return;
+    SpritePacket p{};
+    p.resource = resource;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    spriteQueue_.push_back(p);
 }
 
-void DrawManager::DrawSprite(const Object2DResource* resource) {
+void DrawManager::DrawSprite(const SpritePacket& packet) {
+    const Object2DResource* resource = packet.resource;
     if (!resource || !commandList_) return;
-
-
 
     // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -406,11 +394,20 @@ void DrawManager::DrawSprite(const Object2DResource* resource) {
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
-void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instanceCount) {
-    // インスタンス数が0の場合は描画しない
-    if (instanceCount == 0) {
-        return;
-    }
+void DrawManager::SubmitParticle(const ParticleResource* resource, uint32_t instanceCount) {
+    if (!resource || instanceCount == 0) return;
+    ParticlePacket p{};
+    p.resource = resource;
+    p.instanceCount = instanceCount;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    particleQueue_.push_back(p);
+}
+
+void DrawManager::DrawParticle(const ParticlePacket& packet) {
+    const ParticleResource* resource = packet.resource;
+    if (!resource || !commandList_ || packet.instanceCount == 0) return;
 
     // IA 設定: VB/IB/Topology
     commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
@@ -418,8 +415,6 @@ void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instan
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // --- CBV のバインド ---
-    // 0: 既存のマテリアル CBV(互換性維持のために常にバインド)
-    //    (rootParameters[(UINT)RootSlot::Material] に対応、PixelShader 側の b0 想定)
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
 
     // インスタンス用 SRV (VS 側で参照するインスタンス配列)
@@ -433,15 +428,18 @@ void DrawManager::DrawParticle(const ParticleResource* resource, uint32_t instan
     // 描画コール: インデックス数 × インスタンス数
     commandList_->DrawIndexedInstanced(
         resource->indexCount_,
-        instanceCount,
+        packet.instanceCount,
         0, 0, 0
     );
 }
 
-void DrawManager::DrawModelRegion(ModelRegion* region) {
-    if (!region) { return; }
-    const GpuMesh* gpuMesh = region->GetGpuMesh();
-    if (!gpuMesh || gpuMesh->vertexCount == 0 || region->GetInstanceCount() == 0) { return; }
+void DrawManager::SubmitModelRegion(const ModelRegionPacket& packet) {
+    modelRegionQueue_.push_back(packet);
+}
+
+void DrawManager::DrawModelRegion(const ModelRegionPacket& packet) {
+    const GpuMesh* gpuMesh = packet.gpuMesh;
+    if (!gpuMesh || gpuMesh->vertexCount == 0 || packet.instanceCount == 0) { return; }
 
     // IA設定 (共有リソースから)
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -450,41 +448,74 @@ void DrawManager::DrawModelRegion(ModelRegion* region) {
         commandList_->IASetIndexBuffer(&gpuMesh->indexBufferView);
     }
 
-    // CBV/SRV設定 (インスタンスリソースから)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, region->GetMaterialResource()->GetGPUVirtualAddress());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, region->GetTextureHandle());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, region->GetInstancingSrvHandleGPU());
+    // Material (CBV)
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);
 
-    // 描画
+    // Texture (SRV)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);
+
+    // Instances (SRV)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU);
+
+    // Draw
     if (gpuMesh->indexCount > 0) {
-        commandList_->DrawIndexedInstanced(gpuMesh->indexCount, region->GetInstanceCount(), 0, 0, 0);
+        commandList_->DrawIndexedInstanced(gpuMesh->indexCount, packet.instanceCount, 0, 0, 0);
     } else {
-        commandList_->DrawInstanced(gpuMesh->vertexCount, region->GetInstanceCount(), 0, 0);
+        commandList_->DrawInstanced(gpuMesh->vertexCount, packet.instanceCount, 0, 0);
     }
 }
 
-void DrawManager::DrawRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount) {
-
+void DrawManager::SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount, bool castShadows) {
     if (indexCount == 0 || instanceCount == 0) { return; }
+    RegionPacket p{};
+    p.vertexBufferView = vertexBufferView;
+    p.indexBufferView = indexBufferView;
+    p.materialAddress = materialAddress;
+    p.textureHandle = textureHandle;
+    p.instancingSrvHandleGPU = instancingSrvHandleGPU;
+    p.indexCount = indexCount;
+    p.instanceCount = instanceCount;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    p.castShadows = castShadows;
+    regionQueue_.push_back(p);
+}
+
+void DrawManager::DrawRegion(const RegionPacket& packet) {
+    if (packet.indexCount == 0 || packet.instanceCount == 0) { return; }
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView);
-    commandList_->IASetIndexBuffer(&indexBufferView);
+    commandList_->IASetVertexBuffers(0, 1, &packet.vertexBufferView);
+    commandList_->IASetIndexBuffer(&packet.indexBufferView);
 
     // CBV (PS)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, materialResource->GetGPUVirtualAddress());          // PS b0
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);          // PS b0
 
     // SRV (PS t0 / VS t0)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);            // PS t0
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, instancingSrvHandleGPU);   // VS t0
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);            // PS t0
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU);   // VS t0
 
     // Draw
-    commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
+    commandList_->DrawIndexedInstanced(packet.indexCount, packet.instanceCount, 0, 0, 0);
 }
 
-void DrawManager::DrawLineInstanced(const LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount) {
+void DrawManager::SubmitLineInstanced(const LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount) {
     if (!resource || instanceCount == 0) return;
+    LinePacket p{};
+    p.resource = resource;
+    p.instancingSrvHandleGPU = instancingSrvHandleGPU;
+    p.instanceCount = instanceCount;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    lineQueue_.push_back(p);
+}
+
+void DrawManager::DrawLineInstanced(const LinePacket& packet) {
+    const LineResource* resource = packet.resource;
+    if (!resource || packet.instanceCount == 0) return;
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -492,10 +523,10 @@ void DrawManager::DrawLineInstanced(const LineResource* resource, const D3D12_GP
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
     // SRV (VS t1)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, instancingSrvHandleGPU);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, packet.instancingSrvHandleGPU);
 
     // Draw
-    commandList_->DrawIndexedInstanced(2, instanceCount, 0, 0, 0);
+    commandList_->DrawIndexedInstanced(2, packet.instanceCount, 0, 0, 0);
 }
 
 void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const ManagedModel* model, uint32_t numVertices) {
@@ -534,42 +565,75 @@ void DrawManager::ExecuteUAVBarrier(ID3D12Resource* resource) {
     commandList_->ResourceBarrier(1, &barrier);
 }
 
-void DrawManager::DrawSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, Microsoft::WRL::ComPtr<ID3D12Resource> materialResource, Microsoft::WRL::ComPtr<ID3D12Resource> transformationResource, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
+void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
+    SkyboxPacket p{};
+    p.vertexBufferView = vertexBufferView;
+    p.indexBufferView = indexBufferView;
+    p.materialAddress = materialAddress;
+    p.transformationAddress = transformationAddress;
+    p.textureHandle = textureHandle;
+    p.indexCount = indexCount;
+    skyboxQueue_.push_back(p);
+}
 
-    commandList_->IASetVertexBuffers(0, 1, &vertexBufferView); // VBVを設定
+void DrawManager::DrawSkybox(const SkyboxPacket& packet) {
+
+    commandList_->IASetVertexBuffers(0, 1, &packet.vertexBufferView); // VBVを設定
     //IBVを設定
-    commandList_->IASetIndexBuffer(&indexBufferView);
+    commandList_->IASetIndexBuffer(&packet.indexBufferView);
     //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     ///CBVを設定する
 
     //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, materialResource->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);
 
     //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, transformationResource->GetGPUVirtualAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.transformationAddress);
 
     ///DescriptorTableを設定する
 
     //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);
 
     //描画！（DrawCall/ドローコール）。3頂点で1つのインスタンス。
-    commandList_->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+    commandList_->DrawIndexedInstanced(packet.indexCount, 1, 0, 0, 0);
 }
 
-void DrawManager::DrawStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows) {
+    if (!resource) return;
+    Standard3DPacket p{};
+    p.resource = resource;
+    p.vertexBufferViewOverride = vertexBufferViewOverride;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    p.castShadows = castShadows;
+    standard3DQueue_.push_back(p);
+}
+
+void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+    if (!resource) return;
+    Standard3DPacket p{};
+    p.resource = resource;
+    p.vertexBufferViewOverride = vertexBufferViewOverride;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    ui3DQueue_.push_back(p);
+}
+
+void DrawManager::DrawStandard3D(const Standard3DPacket& packet) {
+    const Object3DResource* resource = packet.resource;
     if (!resource || !commandList_) return;
     
-
-
     // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // 頂点バッファの設定 (オーバーライドがあれば優先)
-    if (vertexBufferViewOverride) {
-        commandList_->IASetVertexBuffers(0, 1, vertexBufferViewOverride);
+    if (packet.vertexBufferViewOverride) {
+        commandList_->IASetVertexBuffers(0, 1, packet.vertexBufferViewOverride);
     } else {
         commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
     }
@@ -585,7 +649,7 @@ void DrawManager::DrawStandard3D(const Object3DResource* resource, const D3D12_V
 }
 
 
-void DrawManager::DrawGPUParticle(
+void DrawManager::SubmitGPUParticle(
     const D3D12_VERTEX_BUFFER_VIEW& vbv,
     const D3D12_INDEX_BUFFER_VIEW& ibv,
     uint32_t indexCount,
@@ -594,36 +658,144 @@ void DrawManager::DrawGPUParticle(
     D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
     D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle,
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle,
-    uint32_t instanceCount
-) {
+    uint32_t instanceCount,
+    ID3D12Resource* particleResource
+    ) {
+    if (instanceCount == 0) return;
+    GPUParticlePacket p{};
+    p.vbv = vbv;
+    p.ibv = ibv;
+    p.indexCount = indexCount;
+    p.materialAddress = materialAddress;
+    p.perViewAddress = perViewAddress;
+    p.emitterAddress = emitterAddress;
+    p.particleSrvHandle = particleSrvHandle;
+    p.textureHandle = textureHandle;
+    p.instanceCount = instanceCount;
+    p.particleResource = particleResource;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    gpuParticleQueue_.push_back(p);
+}
+
+void DrawManager::DrawGPUParticle(const GPUParticlePacket& packet) {
     if (!commandList_) return;
 
+    // リソースバリヤー: UAV -> ShaderResource (読み取り)
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = packet.particleResource;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    if (packet.particleResource) {
+        commandList_->ResourceBarrier(1, &barrier);
+    }
+
     // IA 設定: VB/Topology
-    commandList_->IASetVertexBuffers(0, 1, &vbv);
+    commandList_->IASetVertexBuffers(0, 1, &packet.vbv);
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // --- CBV のバインド ---
     // (rootParameters[(UINT)RootSlot::Material] に対応、PixelShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, materialAddress);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);
     // (rootParameters[(UINT)RootSlot::Transform] に対応、VertexShader 側の b0 想定)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, perViewAddress);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.perViewAddress);
     // エミッター設定 (RootSlot::Special -> register b6)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, emitterAddress);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, packet.emitterAddress);
 
     // --- SRVのバインド ---
     // テクスチャ (PS t0)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureHandle);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);
     // パーティクルデータ (VS t0 -> Slot 5: Instancing)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, particleSrvHandle);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.particleSrvHandle);
 
-    if (indexCount > 0) {
-        commandList_->IASetIndexBuffer(&ibv);
-        commandList_->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
+    if (packet.indexCount > 0) {
+        commandList_->IASetIndexBuffer(&packet.ibv);
+        commandList_->DrawIndexedInstanced(packet.indexCount, packet.instanceCount, 0, 0, 0);
     } else {
         // 従来のビルボード互換
-        commandList_->DrawInstanced(6, instanceCount, 0, 0);
+        commandList_->DrawInstanced(6, packet.instanceCount, 0, 0);
+    }
+
+    // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
+    if (packet.particleResource) {
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        commandList_->ResourceBarrier(1, &barrier);
     }
 }
+
+void DrawManager::SubmitVoxelParticle(
+    uint32_t instanceCount,
+    const D3D12_VERTEX_BUFFER_VIEW& vbv,
+    const D3D12_INDEX_BUFFER_VIEW& ibv,
+    uint32_t indexCount,
+    D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
+    D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
+    D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle,
+    ID3D12Resource* particleResource,
+    ID3D12PipelineState* drawPSO
+) {
+    if (instanceCount == 0) return;
+    VoxelParticlePacket p{};
+    p.instanceCount = instanceCount;
+    p.vbv = vbv;
+    p.ibv = ibv;
+    p.indexCount = indexCount;
+    p.perViewAddress = perViewAddress;
+    p.emitterAddress = emitterAddress;
+    p.particleDataHandle = particleDataHandle;
+    p.particleResource = particleResource;
+    p.drawPSO = drawPSO;
+    voxelParticleQueue_.push_back(p);
+}
+
+void DrawManager::DrawVoxelParticle(const VoxelParticlePacket& packet) {
+    if (!commandList_) return;
+
+    // リソースバリヤー: UAV -> ShaderResource (読み取り)
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = packet.particleResource;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    if (packet.particleResource) {
+        commandList_->ResourceBarrier(1, &barrier);
+    }
+
+    // VoxelParticle 専用PSOをバインド
+    if (packet.drawPSO) {
+        commandList_->SetPipelineState(packet.drawPSO);
+    }
+
+    // トポロジ設定
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // 頂点バッファとインデックスバッファの設定
+    commandList_->IASetVertexBuffers(0, 1, &packet.vbv);
+    commandList_->IASetIndexBuffer(&packet.ibv);
+
+    // VoxelParticle 特有のバインド
+    // Slot 1: Transform (b0) <- Emitter
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.emitterAddress);
+    // Slot 7: Special (b6) <- PerView
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, packet.perViewAddress);
+    // Slot 9: LineInstancing (t1) <- ParticleData
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, packet.particleDataHandle);
+
+    commandList_->DrawIndexedInstanced(packet.indexCount, packet.instanceCount, 0, 0, 0);
+
+    // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
+    if (packet.particleResource) {
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        commandList_->ResourceBarrier(1, &barrier);
+    }
+}
+
 void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor) {
     // 1. Transition Barrier (SRV -> RenderTarget)
     D3D12_RESOURCE_BARRIER barrier{};
@@ -790,3 +962,137 @@ void DrawManager::EndShadowPass() {
     }
 }
 
+void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
+    // --- Phase 1: Shadow Pass ---
+    BeginShadowPass();
+
+    auto DrawShadowsWithPSO = [&](auto& queue, auto drawFunc) {
+        if (queue.empty()) return;
+        
+        PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
+        bool first = true;
+        
+        for (const auto& p : queue) {
+            if (!p.castShadows) continue;
+            
+            if (first || p.cullMode != currentCull) {
+                engine->SetCull(p.cullMode);
+                engine->ApplyPSO(); // BeginShadowPass中なので自動的にShadowPSOが適用される
+                currentCull = p.cullMode;
+                first = false;
+            }
+            drawFunc(p);
+        }
+    };
+
+    DrawShadowsWithPSO(standard3DQueue_, [&](const Standard3DPacket& p) { DrawStandard3D(p); });
+    DrawShadowsWithPSO(regionQueue_, [&](const RegionPacket& p) { DrawRegion(p); });
+    DrawShadowsWithPSO(modelRegionQueue_, [&](const ModelRegionPacket& p) { DrawModelRegion(p); });
+
+    EndShadowPass();
+
+    // --- Phase 2: Main Pass ---
+
+    // 1. Skybox
+    if (!skyboxQueue_.empty()) {
+        engine->ApplySkyboxPSO();
+        for (const auto& p : skyboxQueue_) {
+            DrawSkybox(p);
+        }
+    }
+    
+    // Helper lambda to apply PSO efficiently
+    auto DrawWithPSO = [&](auto& queue, auto drawFunc, bool isParticle = false, bool isSprite = false, bool isLine = false) {
+        if (queue.empty()) return;
+        
+        BlendMode currentBlend = BlendMode::kBlendModeNormal;
+        PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
+        PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
+        bool first = true;
+        
+        for (const auto& p : queue) {
+            if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
+                engine->SetBlend(p.blendMode);
+                engine->SetDepthWrite(p.depthWrite);
+                engine->SetCull(p.cullMode);
+                if (isParticle) engine->ApplyParticlePSO();
+                else if (isSprite) engine->ApplySpritePSO();
+                else if (isLine) engine->ApplyLineInstancedPSO();
+                else engine->ApplyPSO(); // Standard3D or Region
+                
+                currentBlend = p.blendMode;
+                currentDepth = p.depthWrite;
+                currentCull = p.cullMode;
+                first = false;
+            }
+            drawFunc(p);
+        }
+    };
+    
+    // 2. Standard 3D (Opaque and Alpha blend)
+    DrawWithPSO(standard3DQueue_, [&](const Standard3DPacket& p) { DrawStandard3D(p); });
+    
+    // 3. Region
+    DrawWithPSO(regionQueue_, [&](const RegionPacket& p) { DrawRegion(p); });
+
+    // 3.5 ModelRegion
+    DrawWithPSO(modelRegionQueue_, [&](const ModelRegionPacket& p) { DrawModelRegion(p); });
+    
+    // 4. Line
+    DrawWithPSO(lineQueue_, [&](const LinePacket& p) { DrawLineInstanced(p); }, false, false, true);
+
+    // 5. Particles
+    DrawWithPSO(particleQueue_, [&](const ParticlePacket& p) { DrawParticle(p); }, true);
+
+    // 6. GPU Particles
+    if (!gpuParticleQueue_.empty()) {
+        BlendMode currentBlend = BlendMode::kBlendModeNormal;
+        PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
+        PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
+        bool first = true;
+        for (const auto& p : gpuParticleQueue_) {
+            if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
+                engine->SetBlend(p.blendMode);
+                engine->SetDepthWrite(p.depthWrite);
+                engine->SetCull(p.cullMode);
+                engine->ApplyGpuParticlePSO();
+                currentBlend = p.blendMode; currentDepth = p.depthWrite; currentCull = p.cullMode;
+                first = false;
+            }
+            DrawGPUParticle(p);
+        }
+    }
+    // 7. Voxel Particles
+    if (!voxelParticleQueue_.empty()) {
+        for (const auto& p : voxelParticleQueue_) {
+            DrawVoxelParticle(p);
+        }
+    }
+
+    // 8. Sprites
+    DrawWithPSO(spriteQueue_, [&](const SpritePacket& p) { DrawSprite(p); }, false, true);
+
+    // 8.5 UI 3D Objects (Always drawn on top of Sprites)
+    DrawWithPSO(ui3DQueue_, [&](const Standard3DPacket& p) { DrawStandard3D(p); });
+
+    // 9. Post Custom Draws
+    for (auto& func : postRenderQueue_) {
+        func();
+    }
+
+    ClearRenderQueues();
+}
+
+void DrawManager::ClearRenderQueues() {
+    standard3DQueue_.clear();
+    ui3DQueue_.clear();
+    spriteQueue_.clear();
+    particleQueue_.clear();
+    lineQueue_.clear();
+    gpuParticleQueue_.clear();
+    voxelParticleQueue_.clear();
+    skyboxQueue_.clear();
+    regionQueue_.clear();
+    modelRegionQueue_.clear();
+    postRenderQueue_.clear();
+}

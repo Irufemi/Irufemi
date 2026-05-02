@@ -14,6 +14,13 @@ public:
     ConstantBuffer() = default;
     ~ConstantBuffer() {
         Unmap();
+        if (dxCommon_) {
+            for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+                if (resources_[i]) {
+                    dxCommon_->ReleaseAfterFence(resources_[i]);
+                }
+            }
+        }
     }
 
     // バッファを生成しマッピングする（kMaxFramesInFlight分）
@@ -33,6 +40,15 @@ public:
     void Update(const T& data, uint32_t frameIndex) {
         if (mappedData_[frameIndex]) {
             *mappedData_[frameIndex] = data;
+        }
+    }
+
+    // すべてのフレームバッファ（kMaxFramesInFlight分）に同じデータを書き込む（初期化用）
+    void UpdateAll(const T& data) {
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            if (mappedData_[i]) {
+                *mappedData_[i] = data;
+            }
         }
     }
 

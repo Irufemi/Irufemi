@@ -16,6 +16,7 @@ public:
      * @param camera カメラ
      * @param engine エンジンポインタ
      */
+    ~EnemyBeam();
     void Initialize(Camera* camera, class IrufemiEngine* engine);
 
     /**
@@ -82,4 +83,5 @@ private:
 
     float beamLength_ = 500.0f;
     bool isExpired_ = false;
+    class IrufemiEngine* engine_ = nullptr;
 };

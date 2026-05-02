@@ -8,7 +8,7 @@
 #include "../TransformationMatrix.h"
 #include "../../Engine/Core/Math/Transform.h"
 #include "../../Engine/Graphics/DirectX/DirectXCommon.h"
-#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 
 class Camera;
 
@@ -40,41 +40,22 @@ public:
     Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     Material cpuMaterialData_{};
     Material* GetMaterialData() { return &cpuMaterialData_; }
-    ConstantBuffer<Material> materialBuffer_;
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
 
     // --- トランスフォーム ---
     Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
-    ConstantBuffer<TransformationMatrix> transformationBuffer_;
+    uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
 
-    D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const {
-        return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
-    }
-    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const {
-        return materialBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
+    
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
+    void MarkAsDirty() {
+        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
     }
     
-    void SyncMaterialData() {
-        uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-        materialBuffer_.Update(cpuMaterialData_, frameIndex);
-    }
-
-    int32_t dirtyFramesLeft_ = kMaxFramesInFlight; // 変更があったら指定フレーム数だけ全バッファに伝播させる
-    uint32_t lastSyncedFrameIndex_ = UINT32_MAX;
-    void MakeDirty() { dirtyFramesLeft_ = kMaxFramesInFlight; }
-
-    void SyncIfDirty() {
-        if (dirtyFramesLeft_ > 0) {
-            uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-            transformationBuffer_.Update(transformationMatrix_, frameIndex);
-            SyncMaterialData();
-            
-            if (lastSyncedFrameIndex_ != frameIndex) {
-                dirtyFramesLeft_--;
-                lastSyncedFrameIndex_ = frameIndex;
-            }
-        }
-    }
+    void SyncBeforeDraw();
 };

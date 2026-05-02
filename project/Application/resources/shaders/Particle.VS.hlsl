@@ -1,6 +1,7 @@
 /*テクスチャを貼ろう*/
 
 #include "./Particle.hlsli"
+#include "VertexData.hlsli"
 
 /*三角形を動かそう*/
 
@@ -16,32 +17,27 @@ struct ParticleForGPU
 };
 StructuredBuffer<ParticleForGPU> gParticle : register(t0);
 
-struct VertexShaderInput
-{
-	float32_t4 position : POSITION0;
-	
-	/*テクスチャを貼ろう*/
-	
-	///VertexShaderをtexcoord対応する
-	
-	float32_t2 texcoord : TEXCOORD0;
-	
-    /*LambertianReflectance*/
-	
-	float32_t3 normal : NORMAL0;
-	
+// struct VertexShaderInput は VertexData.hlsli で定義
+
+struct Camera {
+	float32_t4x4 view;
+	float32_t4x4 projection;
+	float32_t3 worldPosition;
 };
+ConstantBuffer<Camera> gCamera : register(b2);
 
 /*テクスチャを貼ろう*/
 
-VertexShaderOutput main(VertexShaderInput input, uint32_t instanced : SV_InstanceID)
+VertexShaderOutput main(VertexInput input, uint32_t instanced : SV_InstanceID)
 {
 	VertexShaderOutput output;
 	//output.position = input.position;
 	
 	/*三角形を動かそう*/
 	
-	output.position = mul(input.position, gParticle[instanced].WVP);
+	float32_t4 worldPos = mul(input.position, gParticle[instanced].World);
+	float4 viewPos = mul(worldPos, gCamera.view);
+	output.position = mul(viewPos, gCamera.projection);
 	
 	/*テクスチャを貼ろう*/
 	
@@ -54,7 +50,7 @@ VertexShaderOutput main(VertexShaderInput input, uint32_t instanced : SV_Instanc
 	
 	///法線の座標系を変換してPixelShaderに送る
 	
-	output.color = gParticle[instanced].color;
+	output.color = input.color * gParticle[instanced].color;
 	
 	/*三角形を表示しよう*/
 

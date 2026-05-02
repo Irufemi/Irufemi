@@ -2,9 +2,18 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Application/camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
+#include "Engine/IrufemiEngine.h"
 
 Object2DResource::~Object2DResource() {
     Unmap();
+    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetMaterialBufferManager()->Free(materialCbIndex_);
+        }
+        if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetTransformBufferManager()->Free(transformCbIndex_);
+        }
+    }
 }
 
 void Object2DResource::CreateResource() {
@@ -25,17 +34,22 @@ void Object2DResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    materialBuffer_.Initialize(s_dxCommon_);
-    for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
-        materialBuffer_[i]->color = {1,1,1,1};
-        materialBuffer_[i]->enableLighting = true;
-        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
-        materialBuffer_[i]->metallic = 0.0f;
-        materialBuffer_[i]->roughness = 0.5f;
-        materialBuffer_[i]->environmentCoefficient = 0.0f;
-    }
+    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
+        
+        cpuMaterialData_.color = {1,1,1,1};
+        cpuMaterialData_.enableLighting = true;
+        cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
+        cpuMaterialData_.metallic = 0.0f;
+        cpuMaterialData_.roughness = 0.5f;
+        cpuMaterialData_.environmentCoefficient = 0.0f;
 
-    transformationBuffer_.Initialize(s_dxCommon_);
+        for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+        }
+
+        transformCbIndex_ = engine->GetTransformBufferManager()->Allocate();
+    }
 }
 
 void Object2DResource::Map() {
@@ -64,9 +78,39 @@ void Object2DResource::UpdateTransform(const Camera& camera) {
     // 2D なので正射影行列を掛ける
     transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, camera.GetOrthographicMatrix());
 
-    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-    transformationBuffer_.Update(transformationMatrix_, frameIndex);
-
     // CPU側のマテリアルキャッシュにのみ反映させる
     cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
+
+    MarkAsDirty();
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetTransformVAddress() const {
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetMaterialVAddress() const {
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}
+
+void Object2DResource::SyncBeforeDraw() {
+    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    if (isDirtyBuffer_[frameIndex]) {
+        if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+            if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
+            }
+            if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
+            }
+        }
+        
+        // 頂点データの更新があればGPUに転送
+        if (vertexData_ && !vertexDataList_.empty()) {
+            std::memcpy(vertexData_, vertexDataList_.data(), sizeof(VertexData) * vertexDataList_.size());
+        }
+
+        isDirtyBuffer_[frameIndex] = false;
+    }
 }

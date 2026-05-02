@@ -1,4 +1,5 @@
 #pragma once
+#include "../../Core/IRenderable.h"
 
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Math/Transform.h"
@@ -17,6 +18,7 @@
 #include "Resource/Model/Data/SkinCluster.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Engine/Graphics/Data/Material.h"
+#include "Engine/Manager/IComputeTask.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>
@@ -35,24 +37,25 @@ struct ObjMaterial;
 struct Material;
 
 
-class AnimationModel {
+class AnimationModel : public IComputeTask, public IRenderable {
 public: // メンバ関数
 
     AnimationModel();
     ~AnimationModel();
 
+    void DispatchCompute() override;
+
     void Initialize(Camera* camera, const std::string& filename);
 
     void Update();
 
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     void Debug(const char* objName = " ");
 
     // 描画用の変換行列リソースのGPUアドレスを取得
-    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
-        return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
-    }
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const;
 
 private: // メンバ関数(内部ヘルパ)
 
@@ -68,26 +71,34 @@ public: // ゲッター・セッター
     // 指定したインデックスのメッシュのマテリアルを取得(書き込み可能)
     ObjMaterial* GetMaterial(size_t meshIndex);
 
-    void SetColor(const Vector4& color) { color_ = color; isDirty_ = true; }
+    void SetColor(const Vector4& color) { color_ = color; MarkAsDirty(); }
     const Vector4& GetColor() const { return color_; }
 
-    void SetTranslate(const Vector3& translate) { transform_.translate = translate; isDirty_ = true; }
-    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; isDirty_ = true; }
-    void SetScale(const Vector3& scale) { transform_.scale = scale; isDirty_ = true; }
-    void SetTransform(const Transform& transform) { transform_ = transform; isDirty_ = true; }
+    void SetTranslate(const Vector3& translate) { transform_.translate = translate; MarkAsDirty(); }
+    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; MarkAsDirty(); }
+    void SetScale(const Vector3& scale) { transform_.scale = scale; MarkAsDirty(); }
+    void SetTransform(const Transform& transform) { transform_ = transform; MarkAsDirty(); }
     const Transform& GetTransform() const { return transform_; }
 
-    void SetEnvironmentCoefficient(float coefficient) { environmentCoefficient_ = coefficient; isDirty_ = true; }
+    void SetEnvironmentCoefficient(float coefficient) { environmentCoefficient_ = coefficient; MarkAsDirty(); }
     float GetEnvironmentCoefficient() const { return environmentCoefficient_; }
 
-    void SetLightingModeOverride(int32_t mode) { lightingModeOverride_ = mode; isDirty_ = true; }
-    void SetUseClampSamplerOverride(int32_t useClamp) { useClampSamplerOverride_ = useClamp; isDirty_ = true; }
-    void SetEnableLightingOverride(int32_t enable) { enableLightingOverride_ = enable; isDirty_ = true; }
+    void SetLightingModeOverride(int32_t mode) { lightingModeOverride_ = mode; MarkAsDirty(); }
+    void SetUseClampSamplerOverride(int32_t useClamp) { useClampSamplerOverride_ = useClamp; MarkAsDirty(); }
+    void SetEnableLightingOverride(int32_t enable) { enableLightingOverride_ = enable; MarkAsDirty(); }
 
+    void MarkAsDirty() {
+        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
+        for(auto& res : meshResources_) {
+            if (res) res->MarkAsDirty();
+        }
+    }
 
     static void SetIrufemiEngine(IrufemiEngine* engine) { engine_ = engine; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
 private: // メンバ変数
     // 共有モデルデータ(CPU/GPU)
@@ -106,7 +117,7 @@ private: // メンバ変数
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
     // 変換行列用リソース (全メッシュ共有)
-    ConstantBuffer<TransformationMatrix> transformationBuffer_;
+    uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
     std::map<std::string, Matrix4x4> nodeWorldMatrices_;
 
     Camera* camera_ = nullptr;
@@ -132,14 +143,13 @@ private: // メンバ変数
 
     // 行列更新の最適化用
     bool isDirty_ = true;
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
     bool isCullingEnabled_ = true;
+    bool castShadows_ = true;
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
-
-    int32_t dirtyFramesLeft_ = kMaxFramesInFlight;
-    uint32_t lastSyncedFrameIndex_ = UINT32_MAX;
-    void MakeDirty() { dirtyFramesLeft_ = kMaxFramesInFlight; }
-    void SyncIfDirty();
+    uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);
+    uint32_t lastSkinnedFrameIndex_ = 0; // スキニングが最後に実行されたフレームインデックス（ポーズ中の不整合対策）
 
     std::string filename_;
 };

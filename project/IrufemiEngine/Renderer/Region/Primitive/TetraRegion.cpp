@@ -1,5 +1,6 @@
 #include "TetraRegion.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h" // 追加
 #include "Application/camera/Camera.h"
 #include "Resource/Texture/TextureManager.h"
@@ -108,16 +109,24 @@ void TetraRegion::CreateMeshBuffers(const std::vector<VertexData>& vertices, con
 }
 
 void TetraRegion::CreateMaterialResources() {
-    materialBuffer_.Initialize(dx_);
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialBuffer_[i]->color = { 1,1,1,1 };
-        materialBuffer_[i]->enableLighting = true;
-        materialBuffer_[i]->hasTexture = true; // 仮
-        materialBuffer_[i]->lightingMode = 3;
-        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
-        materialBuffer_[i]->metallic = 0.0f;
-        materialBuffer_[i]->roughness = 0.5f;
-        materialBuffer_[i]->environmentCoefficient = 0.0f;
+    if (auto engine = dx_->GetEngine()) {
+        if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
+            materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
+        }
+    }
+    cpuMaterialData_.color = { 1,1,1,1 };
+    cpuMaterialData_.enableLighting = true;
+    cpuMaterialData_.hasTexture = true; // 仮
+    cpuMaterialData_.lightingMode = 3;
+    cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
+    cpuMaterialData_.metallic = 0.0f;
+    cpuMaterialData_.roughness = 0.5f;
+    cpuMaterialData_.environmentCoefficient = 0.0f;
+
+    if (auto engine = dx_->GetEngine()) {
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+        }
     }
 }
 
@@ -127,8 +136,11 @@ void TetraRegion::EnsureSharedTexture(const std::string& textureName) {
     }
     if (textureHandle_.ptr == 0) {
         textureHandle_ = textureManager_->GetWhiteTextureHandle();
-        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-            materialBuffer_[i]->hasTexture = (textureHandle_.ptr != 0);
+        cpuMaterialData_.hasTexture = (textureHandle_.ptr != 0);
+        if (auto engine = dx_->GetEngine()) {
+            for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+                engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+            }
         }
     }
     assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
@@ -242,7 +254,7 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
             }
 
             InstanceData data;
-            data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
+            data.WVP = Math::MakeIdentity4x4();
             Matrix4x4 worldForNormal = world;
             worldForNormal.m[3][0] = worldForNormal.m[3][1] = worldForNormal.m[3][2] = 0.0f;
             worldForNormal.m[3][3] = 1.0f;
@@ -268,7 +280,7 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
 
             InstanceData data;
             Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
-            data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
+            data.WVP = Math::MakeIdentity4x4();
             Matrix4x4 worldForNormal = world;
             worldForNormal.m[3][0] = worldForNormal.m[3][1] = worldForNormal.m[3][2] = 0.0f;
             worldForNormal.m[3][3] = 1.0f;
@@ -288,6 +300,7 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
     CreateOrResizeInstanceBuffer(totalCount);
 
     uint32_t frameIndex = dx_->GetFrameIndex();
+    lastUpdateFrameIndex_ = frameIndex;
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
@@ -297,11 +310,16 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
     instanceDirty_ = false;
 }
 
+void TetraRegion::SyncBeforeDraw() {
+    if (vertexCount_ == 0 || indexCount_ == 0 || instances_.empty()) { return; }
+    BuildInstanceBuffer(true);
+}
+
 void TetraRegion::Draw() {
     if (vertexCount_ == 0 || indexCount_ == 0 || (instances_.empty() && instanceWorlds_.empty())) { return; }
-    BuildInstanceBuffer(true);
+    
 
-    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(dx_->GetFrameIndex()), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, visibleInstanceCount_);
+    drawManager_->SubmitRegion(vertexBufferView_, indexBufferView_, GetMaterialVAddress(), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, visibleInstanceCount_, castShadows_);
 }
 
 // --- サイズ関連 ---
@@ -330,8 +348,11 @@ void TetraRegion::SetEdge(float edge) {
 
 // --- 色設定API ---
 void TetraRegion::SetColor(const Vector4& color) {
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialBuffer_[i]->color = color;
+    cpuMaterialData_.color = color;
+    if (auto engine = dx_->GetEngine()) {
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+        }
     }
 }
 void TetraRegion::SetInstanceColor(uint32_t index, const Vector4& color) {
@@ -357,4 +378,10 @@ void TetraRegion::SetTextureManager(TextureManager* tm) {
 }
 void TetraRegion::SetDrawManager(DrawManager* dm) {
     drawManager_ = dm;
+}
+
+
+D3D12_GPU_VIRTUAL_ADDRESS TetraRegion::GetMaterialVAddress() const {
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return dx_->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, dx_->GetFrameIndex());
 }

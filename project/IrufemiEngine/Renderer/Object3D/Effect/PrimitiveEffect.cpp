@@ -166,3 +166,9 @@ void PrimitiveEffect::Debug(const char* label) {
     ImGui::End();
 #endif
 }
+
+
+void PrimitiveEffect::SyncBeforeDraw() {
+    primitive_.SyncBeforeDraw();
+}
+

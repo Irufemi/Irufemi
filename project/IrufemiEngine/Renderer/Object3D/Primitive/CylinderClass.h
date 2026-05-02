@@ -1,3 +1,4 @@
+﻿#include "../../Core/IRenderable.h"
 #pragma once
 #include <cstdint>
 #include <string>
@@ -22,7 +23,7 @@ struct Cylinder {
     float   height = 1.0f; // Y 方向の高さ
 };
 
-class CylinderClass {
+class CylinderClass : public IRenderable {
 protected: // メンバ変数
 
     Cylinder info_{};
@@ -61,7 +62,8 @@ public: // メンバ関数
     void Update();
 
     // 描画
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // デバッグ
     void Debug(const char* cylinderName = " ");
@@ -102,4 +104,7 @@ private:
     bool hasTop_ = true;
     bool hasBottom_ = true;
 };
+
+
+
 

@@ -1,4 +1,5 @@
 #include "Line.hlsli"
+#include "VertexData.hlsli"
 
 struct TransformationMatrix
 {
@@ -8,20 +9,17 @@ struct TransformationMatrix
 };
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
-struct VertexShaderInput
-{
-	float32_t4 position : POSITION0;
-};
+// struct VertexShaderInput は VertexData.hlsli で定義
 
-VertexShaderOutput main(VertexShaderInput input)
+VertexShaderOutput main(VertexInput input)
 {
 	VertexShaderOutput output;
 
     // WVP だけで投影
 	output.position = mul(input.position, gTransformationMatrix.WVP);
 
-    // VS はカラーを決めない。PS 側で material に基づき決定する。
-	output.color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+    // VS は頂点カラーをそのままPSへ渡す。PS側で material カラーと乗算する。
+	output.color = input.color;
 
 	return output;
 }

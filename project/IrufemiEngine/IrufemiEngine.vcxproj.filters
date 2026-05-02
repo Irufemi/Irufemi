@@ -154,6 +154,12 @@
     <Filter Include="Renderer\Object3D\Effect">
       <UniqueIdentifier>{f4fb1d23-3e0c-46b4-9cde-75cceb18a342}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Effect">
+      <UniqueIdentifier>{12345678-abcd-1234-abcd-1234567890ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Core">
+      <UniqueIdentifier>{22a83614-e6a1-4622-9ef5-9ba30bae461b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
@@ -237,6 +243,9 @@
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp">
       <Filter>Renderer\ParticleGPU</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Effect\Effect.cpp">
+      <Filter>Renderer\Effect</Filter>
+    </ClCompile>
     <ClCompile Include="Resource\Audio\AudioManager.cpp">
       <Filter>Resource\Audio</Filter>
     </ClCompile>
@@ -274,6 +283,15 @@
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\DirectX\DirectXCommon.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectX\DXCommandManager.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectX\DXSwapChainManager.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\DirectX\DXRootSignatureManager.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\DirectX\RenderTexture.cpp">
@@ -327,7 +345,6 @@
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp">
       <Filter>Engine\Graphics\PostProcess</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Core\BaseResource.cpp" />
     <ClCompile Include="Renderer\Object2D\Object2DResource.cpp" />
     <ClCompile Include="Renderer\Object3D\Object3DResource.cpp" />
     <ClCompile Include="Renderer\Particle\ParticleResource.cpp" />
@@ -352,6 +369,9 @@
     </ClCompile>
     <ClCompile Include="Renderer\Object3D\Effect\PrimitiveEffect.cpp">
       <Filter>Renderer\Object3D\Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Core\BaseResource.cpp">
+      <Filter>Renderer\Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -432,6 +452,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h">
       <Filter>Renderer\ParticleGPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Effect\Effect.h">
+      <Filter>Renderer\Effect</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Audio\AudioManager.h">
       <Filter>Resource\Audio</Filter>
@@ -530,6 +553,15 @@
       <Filter>Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectX\DirectXCommon.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\DXCommandManager.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\DXSwapChainManager.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\DXRootSignatureManager.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectX\RenderTexture.h">
@@ -682,7 +714,6 @@
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h">
       <Filter>Engine\Graphics\PostProcess</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Core\BaseResource.h" />
     <ClInclude Include="Renderer\Object2D\Object2DResource.h" />
     <ClInclude Include="Renderer\Object3D\Object3DResource.h" />
     <ClInclude Include="Renderer\Particle\ParticleResource.h" />
@@ -730,6 +761,18 @@
     </ClInclude>
     <ClInclude Include="Renderer\Object3D\Effect\PrimitiveEffect.h">
       <Filter>Renderer\Object3D\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Manager\IComputeTask.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Core\BaseResource.h">
+      <Filter>Renderer\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Core\IRenderable.h">
+      <Filter>Renderer\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\DirectX\DynamicConstantBuffer.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

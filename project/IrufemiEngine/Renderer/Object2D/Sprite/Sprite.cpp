@@ -138,16 +138,16 @@ void Sprite::Update() {
 
         Matrix4x4 base = Math::Multiply(cropUV, userUV);
         resource_->GetMaterialData()->uvTransform = Math::Multiply(flipUV, base);
-        
-        resource_->SyncMaterialData();
     }
 
     // フラグ更新
     isDirty_ = false;
     lastViewMatrix_ = camera_->GetViewMatrix();
     lastProjectionMatrix_ = camera_->GetOrthographicMatrix();
-    
-    resource_->MakeDirty();
+}
+
+void Sprite::SyncBeforeDraw() {
+    resource_->SyncBeforeDraw();
 }
 
 void Sprite::Draw() {
@@ -161,9 +161,10 @@ void Sprite::Draw() {
         Update();
     }
     
-    resource_->SyncIfDirty();
+    // --- 【追加】描画直前のバッファ同期 ---
+    SyncBeforeDraw();
 
-    drawManager_->DrawSprite(resource_.get());
+    drawManager_->SubmitSprite(resource_.get());
 }
 
 void Sprite::SetSize(const float& width, const float& height) {
@@ -173,6 +174,7 @@ void Sprite::SetSize(const float& width, const float& height) {
     if (resource_) {
         resource_->transform_.scale = { size_.x, size_.y, 1.0f };
     }
+    isDirty_ = true;
 }
 
 const Vector2 Sprite::GetPosition2D() const {
@@ -181,7 +183,7 @@ const Vector2 Sprite::GetPosition2D() const {
 }
 
 void Sprite::ApplyAnchorToVertices() {
-    if (!resource_ || !resource_->vertexData_) return;
+    if (!resource_ || resource_->vertexDataList_.size() < 4) return;
 
     // アンカーによるローカル頂点のずらし
     const float left = 0.0f - anchor_.x;
@@ -191,10 +193,10 @@ void Sprite::ApplyAnchorToVertices() {
 
     // 頂点の並び
     // 0: 左下, 1: 左上, 2: 右下, 3: 右上
-    resource_->vertexData_[0].position = { left,  bottom, 0.0f, 1.0f };
-    resource_->vertexData_[1].position = { left,  top,    0.0f, 1.0f };
-    resource_->vertexData_[2].position = { right, bottom, 0.0f, 1.0f };
-    resource_->vertexData_[3].position = { right, top,    0.0f, 1.0f };
+    resource_->vertexDataList_[0].position = { left,  bottom, 0.0f, 1.0f };
+    resource_->vertexDataList_[1].position = { left,  top,    0.0f, 1.0f };
+    resource_->vertexDataList_[2].position = { right, bottom, 0.0f, 1.0f };
+    resource_->vertexDataList_[3].position = { right, top,    0.0f, 1.0f };
 }
 
 bool Sprite::SetTextureRectPixels(int x, int y, int w, int h, bool autoResize) {
@@ -216,6 +218,7 @@ bool Sprite::SetTextureRectPixels(int x, int y, int w, int h, bool autoResize) {
     if (autoResize) {
         SetSize(texRectSize_.x, texRectSize_.y);
     }
+    isDirty_ = true;
     return true;
 }
 
@@ -223,6 +226,7 @@ void Sprite::ClearTextureRect() {
     useTexRect_ = false;
     texRectLeftTop_ = { 0.0f, 0.0f };
     texRectSize_ = { 0.0f, 0.0f };
+    isDirty_ = true;
 }
 
 void Sprite::AdjustTextureSize() {

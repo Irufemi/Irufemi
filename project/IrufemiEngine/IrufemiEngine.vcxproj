@@ -171,6 +171,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object3D\ObjClass\ObjClass.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.cpp" />
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp" />
+    <ClCompile Include="Renderer\Effect\Effect.cpp" />
     <ClCompile Include="Renderer\Particle\ParticleSystem.cpp" />
     <ClCompile Include="Renderer\Core\BaseResource.cpp" />
     <ClCompile Include="Renderer\Object2D\Object2DResource.cpp" />
@@ -202,6 +203,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Core\Math\Vector4.cpp" />
     <ClCompile Include="Renderer\Skybox\Skybox.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DirectXCommon.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectX\DXCommandManager.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectX\DXSwapChainManager.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectX\DXRootSignatureManager.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\RenderTexture.cpp" />
     <ClCompile Include="Engine\IrufemiEngine.cpp" />
     <ClCompile Include="Engine\Core\Utility\Log.cpp" />
@@ -243,12 +247,15 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Data\Material.h" />
     <ClInclude Include="Engine\Graphics\Data\SceneGPUStructs.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ConstantBuffer.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\DynamicConstantBuffer.h" />
     <ClInclude Include="Engine\Graphics\DirectX\FrameRateController.h" />
     <ClInclude Include="Engine\Graphics\DirectX\RootSignatureConfig.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShaderCompiler.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShadowMap.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h" />
+    <ClInclude Include="Engine\Manager\IComputeTask.h" />
     <ClInclude Include="Framework\SceneTransition.h" />
+    <ClInclude Include="Renderer\Core\IRenderable.h" />
     <ClInclude Include="Renderer\Object3D\Effect\PrimitiveEffect.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.h" />
     <ClInclude Include="Renderer\VoxelParticle\VoxelParticleSystem.h" />
@@ -259,6 +266,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\LineInstanced\LineClass.h" />
     <ClInclude Include="Renderer\Object3D\ObjClass\ObjClass.h" />
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h" />
+    <ClInclude Include="Renderer\Effect\Effect.h" />
     <ClInclude Include="Renderer\Particle\ParticleSystem.h" />
     <ClInclude Include="Renderer\Core\BaseResource.h" />
     <ClInclude Include="Renderer\Object2D\Object2DResource.h" />
@@ -280,6 +288,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\DirectX\DescriptorAllocator.h" />
     <ClInclude Include="Engine\Graphics\DirectX\DescriptorPool.h" />
     <ClInclude Include="Engine\Graphics\DirectX\DirectXCommon.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\DXCommandManager.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\DXSwapChainManager.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\DXRootSignatureManager.h" />
     <ClInclude Include="Engine\Graphics\DirectX\RenderTexture.h" />
     <ClInclude Include="Engine\Graphics\DirectX\D3DResourceLeakChecker.h" />
     <ClInclude Include="Engine\IrufemiEngine.h" />

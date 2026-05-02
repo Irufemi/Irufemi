@@ -125,14 +125,14 @@ void EnemyPartHPBar::Update(float hpRatio, const Vector3& targetWorldPos, const 
     UpdateBarColor(displayRatio_);
 }
 
-void EnemyPartHPBar::Draw() {
+void EnemyPartHPBar::Draw(bool isUI) {
     // 描画順: 枠 → 背景 → 充填
     if (barFrame_)
-        barFrame_->Draw();
+        barFrame_->Draw(isUI);
     if (barBg_)
-        barBg_->Draw();
+        barBg_->Draw(isUI);
     if (barFill_)
-        barFill_->Draw();
+        barFill_->Draw(isUI);
 }
 
 void EnemyPartHPBar::UpdateBarColor(float hpRatio) {

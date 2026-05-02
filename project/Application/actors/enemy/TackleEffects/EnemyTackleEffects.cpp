@@ -76,7 +76,6 @@ void EnemyTackleEffects::Update(float deltaTime) {
 
 void EnemyTackleEffects::Draw(IrufemiEngine* engine) {
     if (!engine) return;
-    engine->ApplyPSO();
 
     for (auto& wave : waves_) {
         waveObj_->SetTransform(wave.transform);

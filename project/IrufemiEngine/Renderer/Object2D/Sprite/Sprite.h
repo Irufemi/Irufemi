@@ -1,3 +1,4 @@
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <d3d12.h>
@@ -20,7 +21,7 @@ class Camera;
  * @brief 2Dスプライトを描画・管理するクラス
  * @details テクスチャの表示、座標変換（位置・回転・拡縮）、アンカーポイントの設定、トリミング（Rect指定）などを行います。
  */
-class Sprite {
+class Sprite : public IRenderable {
 private:
 
     std::unique_ptr<Object2DResource> resource_ = nullptr;
@@ -85,7 +86,8 @@ public: //メンバ関数
     /**
      * @brief 描画コマンドの積み込み
      */
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     /**
      * @brief デバッグ用UIの表示
@@ -132,7 +134,7 @@ public: //メンバ関数
     /**
      * @brief 色（RGBA）を設定
      */
-    void SetColor(const Vector4& color) { resource_->GetMaterialData()->color = color; }
+    void SetColor(const Vector4& color) { resource_->GetMaterialData()->color = color; isDirty_ = true; }
 
     /**
      * @brief 反転状態を一括設定
@@ -177,3 +179,5 @@ private:
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };
+
+

@@ -1,3 +1,4 @@
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <vector>
@@ -11,7 +12,7 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 
 #include "Renderer/VertexData.h"
-#include "Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 #include "Engine/Graphics/Data/Material.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Core/Math/Transform.h"
@@ -26,7 +27,7 @@ class TextureManager;
 class DrawManager;
 class DescriptorPool; // 追加
 
-class TetraRegion {
+class TetraRegion : public IRenderable {
 public:
     TetraRegion() {
         instancingSrvIndex_.fill(UINT32_MAX);
@@ -37,6 +38,8 @@ public:
     static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; } // 追加
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
 
     ~TetraRegion(); // SRV遅延解放
 
@@ -53,7 +56,8 @@ public:
 
     void ClearInstances();
     void BuildInstanceBuffer(bool force = false);
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // 色設定API(SphereRegion と同等)
     void SetColor(const Vector4& color);                 // マテリアル色
@@ -66,7 +70,7 @@ public:
     float ComputeScaleFromVertexRadius(float worldVertexRadius) const;
     void AddInstanceByVertexRadius(const Vector3& center, float worldVertexRadius, const Vector3& rotate = {0,0,0});
 
-    ID3D12Resource*                        GetMaterialResource() { return materialBuffer_.GetResource(dx_->GetFrameIndex()); }
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
 
     UINT                        GetInstanceCount() const {
         return visibleInstanceCount_;
@@ -103,8 +107,8 @@ private:
     D3D12_INDEX_BUFFER_VIEW                indexBufferView_{};
     UINT                                   indexCount_ = 0;
 
-    // マテリアル
-    ConstantBuffer<Material> materialBuffer_;
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
+    Material cpuMaterialData_{};
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
 
@@ -128,4 +132,9 @@ private:
 
     bool     isCullingEnabled_ = true;
     uint32_t visibleInstanceCount_ = 0;
+
+    uint32_t lastUpdateFrameIndex_ = 0;
+    bool isDirty_ = true;
+    bool castShadows_ = true;
 };
+

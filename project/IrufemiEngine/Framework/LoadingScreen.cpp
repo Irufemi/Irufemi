@@ -77,12 +77,18 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
     
     engine->ApplySpritePSOForBackBuffer();
     if (nowLoadingText_) {
-        nowLoadingText_->Draw();
+        nowLoadingText_->SyncBeforeDraw();
+        DrawManager::SpritePacket packet{};
+        packet.resource = nowLoadingText_->GetD3D12Resource();
+        engine->GetDrawManager()->DrawSprite(packet);
     }
     
     for (int i = 0; i < dotCount_; ++i) {
         if (i < dots_.size()) {
-            dots_[i]->Draw();
+            dots_[i]->SyncBeforeDraw();
+            DrawManager::SpritePacket packet{};
+            packet.resource = dots_[i]->GetD3D12Resource();
+            engine->GetDrawManager()->DrawSprite(packet);
         }
     }
 }

@@ -19,6 +19,7 @@ void PlayerWeapon::Initialize(Camera* camera) {
         bulletObjs_[i] = std::make_unique<ObjClass>();
         bulletObjs_[i]->Initialize(camera_, "enemy/body.obj");
         bulletObjs_[i]->SetColor({ 1.0f, 1.0f, 0.0f, 1.0f });
+        bulletObjs_[i]->SetCastShadows(false);
         bullets_[i].isActive = false;
     }
     machineGunActiveTimer_ = 0;
@@ -69,6 +70,7 @@ void PlayerWeapon::Initialize(Camera* camera) {
         cartridgeObjs_[i] = std::make_unique<ObjClass>();
         cartridgeObjs_[i]->Initialize(camera_, "enemy/body.obj");
         cartridgeObjs_[i]->SetColor({ 0.8f, 0.6f, 0.1f, 1.0f });
+        cartridgeObjs_[i]->SetCastShadows(false);
         cartridges_[i].isActive = false;
     }
 
@@ -76,6 +78,7 @@ void PlayerWeapon::Initialize(Camera* camera) {
     for (int i = 0; i < kMaxMissiles; ++i) {
         missileObjs_[i] = std::make_unique<ObjClass>();
         missileObjs_[i]->Initialize(camera_, "enemy/body.obj");
+        missileObjs_[i]->SetCastShadows(false);
         missiles_[i].isActive = false;
     }
 
@@ -292,8 +295,9 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
     // ミサイルの描画
     for (int i = 0; i < kMaxMissiles; ++i) {
         if (missiles_[i].isActive && missileObjs_[i]) {
-            missiles_[i].position.y += missileVibration_.y; // スピード感を出すための振動
-            missileObjs_[i]->SetPosition(missiles_[i].position);
+            Vector3 drawPos = missiles_[i].position;
+            drawPos.y += missileVibration_.y; // スピード感を出すための振動
+            missileObjs_[i]->SetPosition(drawPos);
             Vector3 mRot = { 0.0f, std::atan2(missiles_[i].velocity.x, missiles_[i].velocity.z), 0.0f };
             float xzLen = std::sqrt(missiles_[i].velocity.x * missiles_[i].velocity.x + missiles_[i].velocity.z * missiles_[i].velocity.z);
             mRot.x = std::atan2(-missiles_[i].velocity.y, xzLen);

@@ -115,7 +115,6 @@ void SelectScene::Draw() {
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    engine_->ApplySpritePSO();
 
 }
 

@@ -19,6 +19,7 @@
 #include "Core/Math/Matrix4x4.h"
 #include "Graphics/DirectX/RenderTexture.h"
 #include "Graphics/PostProcess/PostProcessManager.h"
+#include "Graphics/DirectX/DynamicConstantBuffer.h"
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
@@ -159,7 +160,7 @@ public: // ゲッター
     ID3D12CommandQueue* GetCommandQueue() { return dxCommon_->GetCommandQueue(); }
     IDXGISwapChain4* GetSwapChain() { return dxCommon_->GetSwapChain(); }
     ID3D12Fence* GetFence() { return dxCommon_->GetFence(); }
-    HANDLE& GetFenceEvent() { return dxCommon_->GetFenceEvent(); }
+    HANDLE GetFenceEvent() { return dxCommon_->GetFenceEvent(); }
     ID3D12CommandAllocator* GetCommandAllocator() { return dxCommon_->GetCommandAllocator(); }
     ID3D12RootSignature* GetRootSignature() { return dxCommon_->GetRootSignature(); }
     ID3D12DescriptorHeap* GetDsvDescriptorHeap() { return dxCommon_->GetDsvDescriptorHeap(); }
@@ -200,6 +201,15 @@ public: // ゲッター
     // 時間関連のゲッター
     float GetDeltaTime() const { return deltaTime_; }
     float GetTotalTime() const { return totalTime_; }
+    
+    // 追加: ポーズ対応のゲーム内時間関連
+    float GetGameTime() const { return gameTime_; }
+    float GetGameDeltaTime() const { return gameDeltaTime_; }
+    float GetTimeScale() const { return timeScale_; }
+    void SetTimeScale(float scale) { timeScale_ = scale; }
+
+    DynamicConstantBuffer<Material>* GetMaterialBufferManager() { return materialBufferManager_.get(); }
+    DynamicConstantBuffer<TransformationMatrix>* GetTransformBufferManager() { return transformBufferManager_.get(); }
 
     // オプション: 取得用
     DescriptorPool* GetSrvPool() const { return dxCommon_->GetSrvPool(); }
@@ -321,6 +331,15 @@ private: // メンバ変数
     std::chrono::steady_clock::time_point lastFrameTime_{};
     float deltaTime_ = 0.0f;
     float totalTime_ = 0.0f;
+
+    // 追加: ポーズ対応のゲーム内時間管理
+    float gameTime_ = 0.0f;
+    float gameDeltaTime_ = 0.0f;
+    float timeScale_ = 1.0f;
+
+    // --- Dynamic Constant Buffer ---
+    std::unique_ptr<DynamicConstantBuffer<Material>> materialBufferManager_ = nullptr;
+    std::unique_ptr<DynamicConstantBuffer<TransformationMatrix>> transformBufferManager_ = nullptr;
 
     // --- 全画面用 RenderTexture ---
     std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;

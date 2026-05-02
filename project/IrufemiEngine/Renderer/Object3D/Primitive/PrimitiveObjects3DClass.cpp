@@ -89,6 +89,8 @@ void PrimitiveObjects3DClass::MaterialComponent::UpdateMaterial(Object3DResource
     } else {
         resource->GetMaterialData()->hasTexture = false;
     }
+    
+    resource->MarkAsDirty();
 }
 
 // --- PrimitiveObjects3DClass ---
@@ -129,8 +131,6 @@ void PrimitiveObjects3DClass::Update() {
 
     // マテリアル情報の最新化
     material_.UpdateMaterial(mesh_.resource.get(), textureManager_);
-    
-    mesh_.resource->SyncMaterialData();
 }
 
 void PrimitiveObjects3DClass::Draw() {
@@ -169,8 +169,11 @@ void PrimitiveObjects3DClass::Draw(const Camera& camera) {
         }
     }
 
+    // 描画実行直前のバッファ同期
+    mesh_.resource->SyncBeforeDraw();
+
     // 描画実行
-    drawManager_->DrawStandard3D(mesh_.resource.get());
+    drawManager_->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
 }
 
 void PrimitiveObjects3DClass::Debug(const char* label) {
@@ -227,4 +230,10 @@ void PrimitiveObjects3DClass::Debug(const char* label) {
 
     ImGui::End();
 #endif
+}
+
+void PrimitiveObjects3DClass::SyncBeforeDraw() {
+    if (mesh_.resource) {
+        mesh_.resource->SyncBeforeDraw();
+    }
 }

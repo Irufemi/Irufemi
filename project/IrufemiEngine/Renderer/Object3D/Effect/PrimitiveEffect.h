@@ -1,3 +1,4 @@
+﻿#include "../../Core/IRenderable.h"
 #pragma once
 
 #include "../Primitive/PrimitiveObjects3DClass.h"
@@ -17,7 +18,7 @@
  * - Cullingモードの動的切り替え
  * - 特別な形状パラメータ（Cylinderの上下半径分離など）の再生成機能
  */
-class PrimitiveEffect {
+class PrimitiveEffect : public IRenderable {
 public:
     PrimitiveEffect() = default;
     ~PrimitiveEffect() = default;
@@ -42,7 +43,8 @@ public:
      * @brief 描画処理
      * @details CullMode を一時的に本クラスの設定に合わせて描画し、その後元に戻す等の処理をします（必要ならパイプライン経由対応）
      */
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     /**
      * @brief デバッグ・表示用UIの描画
@@ -83,3 +85,6 @@ private:
     bool cylHasBottom_ = false;
     bool cylCentered_ = false;
 };
+
+
+

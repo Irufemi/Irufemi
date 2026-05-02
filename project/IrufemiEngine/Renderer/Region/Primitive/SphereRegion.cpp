@@ -1,5 +1,6 @@
 #include "SphereRegion.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h" // 追加
 #include "Application/camera/Camera.h"
 #include "Resource/Texture/TextureManager.h"
@@ -134,16 +135,24 @@ void SphereRegion::CreateMeshBuffers(const std::vector<VertexData>& vertices, co
 
 void SphereRegion::CreateMaterialResources() {
     // Material (全フレーム分一括で生成)
-    materialBuffer_.Initialize(dx_);
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialBuffer_[i]->color = { 1,1,1,1 };
-        materialBuffer_[i]->enableLighting = true;
-        materialBuffer_[i]->hasTexture = true; // 実際の有無は EnsureSharedTexture で調整
-        materialBuffer_[i]->lightingMode = 3;
-        materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
-        materialBuffer_[i]->metallic = 0.0f;
-        materialBuffer_[i]->roughness = 0.5f;
-        materialBuffer_[i]->environmentCoefficient = 0.0f;
+    if (auto engine = dx_->GetEngine()) {
+        if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
+            materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
+        }
+    }
+    cpuMaterialData_.color = { 1,1,1,1 };
+    cpuMaterialData_.enableLighting = true;
+    cpuMaterialData_.hasTexture = true; // 実際の有無は EnsureSharedTexture で調整
+    cpuMaterialData_.lightingMode = 3;
+    cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
+    cpuMaterialData_.metallic = 0.0f;
+    cpuMaterialData_.roughness = 0.5f;
+    cpuMaterialData_.environmentCoefficient = 0.0f;
+
+    if (auto engine = dx_->GetEngine()) {
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+        }
     }
 }
 
@@ -154,8 +163,11 @@ void SphereRegion::EnsureSharedTexture(const std::string& textureName) {
     if (textureHandle_.ptr == 0) {
         textureHandle_ = textureManager_->GetWhiteTextureHandle();
         // マテリアル側の hasTexture は実際のSRV存在に合わせて PS で参照
-        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-            materialBuffer_[i]->hasTexture = (textureHandle_.ptr != 0);
+        cpuMaterialData_.hasTexture = (textureHandle_.ptr != 0);
+        if (auto engine = dx_->GetEngine()) {
+            for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+                engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+            }
         }
     }
     assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
@@ -275,7 +287,7 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
 
         InstanceData data;
         Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
-        data.WVP = Math::Multiply(world, Math::Multiply(view, proj));
+        data.WVP = Math::MakeIdentity4x4();
 
         Matrix4x4 worldForNormal = world;
         worldForNormal.m[3][0] = 0.0f;
@@ -300,6 +312,7 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
     CreateOrResizeInstanceBuffer(totalCount);
 
     uint32_t frameIndex = dx_->GetFrameIndex();
+    lastUpdateFrameIndex_ = frameIndex;
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&dst));
     assert(SUCCEEDED(hr));
@@ -309,24 +322,35 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
     instanceDirty_ = false;
 }
 
+void SphereRegion::SyncBeforeDraw() {
+    if (vertexCount_ == 0 || indexCount_ == 0 || instances_.empty()) { return; }
+    BuildInstanceBuffer(true);
+}
+
 void SphereRegion::Draw() {
     if (vertexCount_ == 0 || indexCount_ == 0 || instances_.empty()) { return; }
 
     // 毎フレームインスタンスの WVP 更新
-    BuildInstanceBuffer(true);
+    
 
-    drawManager_->DrawRegion(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(dx_->GetFrameIndex()), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, GetInstanceCount());
+    drawManager_->SubmitRegion(vertexBufferView_, indexBufferView_, GetMaterialVAddress(), textureHandle_, instancingSrvGPU_[dx_->GetFrameIndex()], indexCount_, GetInstanceCount(), castShadows_);
 }
 
 void SphereRegion::SetColor(const Vector4& color) {
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialBuffer_[i]->color = color;
+    cpuMaterialData_.color = color;
+    if (auto engine = dx_->GetEngine()) {
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+        }
     }
 }
 
 void SphereRegion::SetEnvironmentCoefficient(float coefficient) {
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        materialBuffer_[i]->environmentCoefficient = coefficient;
+    cpuMaterialData_.environmentCoefficient = coefficient;
+    if (auto engine = dx_->GetEngine()) {
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+        }
     }
 }
 
@@ -343,4 +367,9 @@ void SphereRegion::SetAllInstanceColor(const Vector4& color) {
     if (instanceColors_.empty()) { return; }
     std::fill(instanceColors_.begin(), instanceColors_.end(), color);
     instanceDirty_ = true;
+}
+
+D3D12_GPU_VIRTUAL_ADDRESS SphereRegion::GetMaterialVAddress() const {
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    return dx_->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, dx_->GetFrameIndex());
 }

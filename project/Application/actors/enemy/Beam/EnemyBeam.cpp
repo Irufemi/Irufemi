@@ -3,15 +3,24 @@
 #include "IrufemiEngine.h"
 #include <cmath>
 #include <algorithm>
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
+
+EnemyBeam::~EnemyBeam() {
+    if (lightningParamsResource_ && engine_ && engine_->GetDirectXCommon()) {
+        engine_->GetDirectXCommon()->ReleaseAfterFence(lightningParamsResource_);
+    }
+}
 
 void EnemyBeam::Initialize(Camera* camera, IrufemiEngine* engine) {
     telegraphObj_ = std::make_unique<ObjClass>();
     telegraphObj_->Initialize(camera, "sample/block.obj");
     telegraphObj_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
+    telegraphObj_->SetCastShadows(false);
 
     attackCylinder_ = std::make_unique<CylinderClass>();
     attackCylinder_->Initialize(camera, false, false);
     attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
+    attackCylinder_->SetCastShadows(false);
 
     // トランスフォームの初期化（Updateで確定するため、ここではゼロクリア）
     telegraphTransform_.translate = { 0, 0, 0 };
@@ -23,6 +32,8 @@ void EnemyBeam::Initialize(Camera* camera, IrufemiEngine* engine) {
     attackTransform_.rotate = { 0, 0, 0 };
     attackTransform_.scale = { 1.0f, 1.0f, 1.0f };
     attackForwardOffset_ = beamLength_ * 0.5f;
+
+    engine_ = engine;
 
     if (engine) {
         lightningParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(LightningParams));
@@ -136,6 +147,7 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
             // 放出設定：物量と勢いを大幅に強化してレッドドラゴンのブレス感を演出
             gpuParticle_->SetBeamEmitter(headPos, direction, attackThickness_ * 0.5f, emitVelocity, emitSpread, emitCount, 0.01f);
             gpuParticle_->SetEmit(true);
+
             gpuParticle_->Update();
         }
     } else {
@@ -151,32 +163,43 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
     if (isTelegraphActive_ && telegraphObj_) {
-        engine->ApplyPSO(); // 予兆は通常描画
         telegraphObj_->Draw();
     }
 
     if (isAttackActive_ && attackCylinder_) {
-        // 電撃・プラズマ表現のPSO適用
-        engine->SetBlend(BlendMode::kBlendModeAdd);
-        engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
-        engine->SetCull(PSOManager::CullMode::None);
+        // attackCylinder_->Draw() だと RenderQueue に回されてしまい専用PSOが上書きされるため、
+        // 不透明描画の後に専用PSOを適用して描画するよう SubmitPostRender に積む
+        attackCylinder_->SyncBeforeDraw();
 
-        engine->ApplyLightningCrawlPSO();
-        if (lightningParamsResource_) {
-            engine->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
-        }
+        engine->GetDrawManager()->SubmitPostRender([engine, this]() {
+            engine->SetBlend(BlendMode::kBlendModeAdd);
+            engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
+            engine->SetCull(PSOManager::CullMode::None);
 
-        attackCylinder_->Draw();
+            engine->ApplyLightningCrawlPSO();
+            if (lightningParamsResource_) {
+                engine->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
+            }
+
+            DrawManager::Standard3DPacket packet{};
+            packet.resource = attackCylinder_->GetD3D12Resource();
+            packet.blendMode = BlendMode::kBlendModeAdd;
+            packet.depthWrite = PSOManager::DepthWrite::Disable;
+            packet.cullMode = PSOManager::CullMode::None;
+            engine->GetDrawManager()->DrawStandard3D(packet);
+
+            // 状態を戻す
+            engine->SetBlend(BlendMode::kBlendModeNormal);
+            engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
+            engine->SetCull(PSOManager::CullMode::Back);
+        });
 
         // パーティクルの描画（UpdateでのCSディスパッチ含む）
         if (gpuParticle_) {
+            OutputDebugStringA("[EnemyBeam] Draw - Calling gpuParticle_->Draw()\n");
+            // gpuParticle_ も Queue に入るため、ここでは通常通り呼ぶ
             gpuParticle_->Draw();
         }
-
-        // 状態を戻す
-        engine->SetBlend(BlendMode::kBlendModeNormal);
-        engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
-        engine->SetCull(PSOManager::CullMode::Back);
     }
 }
 

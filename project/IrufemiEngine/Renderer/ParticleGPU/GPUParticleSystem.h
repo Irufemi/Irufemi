@@ -1,3 +1,4 @@
+﻿#include "../Core/IRenderable.h"
 #pragma once
 
 #include "../../Engine/Core/Math/Vector3.h"
@@ -11,6 +12,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include <string>
+#include "Engine/Manager/IComputeTask.h"
 #include <random>
 #include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
@@ -30,6 +32,7 @@ class Line3DRegion;
  */
 struct ParticleCS {
     Vector3 translate; ///< 位置
+    float pad0;
     Vector3 scale;     ///< スケール
     float lifeTime;    ///< 寿命（秒）
     Vector3 velocity;  ///< 速度
@@ -38,9 +41,13 @@ struct ParticleCS {
 
     // 拡張パラメータ
     Vector3 rotation;     ///< 回転角
+    float pad1;
     Vector3 rotateSpeed;  ///< 回転速度
+    float pad2;
     Vector3 startScale;   ///< 開始スケール
+    float pad3;
     Vector3 endScale;     ///< 終了スケール
+    float pad4;
     Vector4 startColor;   ///< 開始色
     Vector4 endColor;     ///< 終了色
 };
@@ -53,7 +60,7 @@ struct ParticleGPUMaterial {
     Vector4 color;             ///< 乗算色
     int32_t useClampSampler = 0; ///< 0: WRAP, 1: CLAMP
     float pad[3];
-    Matrix4x4 uvTransform;     ///< UV変形行列
+    Matrix4x4 uvTransform = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 }; ///< UV Transform
 };
 
 /**
@@ -111,47 +118,49 @@ struct GPUParticleEmitter {
     uint32_t isBillboard = 1;   ///< ビルボードフラグ
 
     // float4 x 14
-    uint32_t burstCount;
-    float jitter;
-    uint32_t atlasRows;
-    uint32_t atlasCols;
+    uint32_t burstCount = 0;
+    float jitter = 0.0f;
+    uint32_t atlasRows = 1;
+    uint32_t atlasCols = 1;
 
     // float4 x 15
-    float groundHeight;
-    float bounce;
-    float attractorStrength;
-    uint32_t pad4;
+    float groundHeight = -100.0f;
+    float bounce = 0.5f;
+    float attractorStrength = 0.0f;
+    uint32_t pad4 = 0;
 
     // float4 x 16
-    Vector3 attractorPos;
-    uint32_t pad5;
+    Vector3 attractorPos = {0,0,0};
+    uint32_t pad5 = 0;
 
     // float4 x 17
-    Vector3 areaSize;
-    uint32_t pad6;
+    Vector3 areaSize = {10,10,10};
+    uint32_t pad6 = 0;
 };
 
 /**
  * @class GPUParticleSystem
  * @brief Compute Shader を使用した、大量の粒子を GPU 上でシミュレーション・描画するクラス
  */
-class GPUParticleSystem
-{
+class GPUParticleSystem : public IComputeTask
+, public IRenderable {
 public:
     GPUParticleSystem();
     ~GPUParticleSystem();
 
     /** @name 初期化・更新・描画 */
     ///@{
+    void DispatchCompute() override;
     void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png");
     void Update();
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
     void Debug();
     ///@}
 
     /** @name 再生制御 */
     ///@{
-    void Play() { isPlaying_ = true; if (emitter_) emitter_->emit = 1; }
+    void Play() { isPlaying_ = true; if (emitter_) emitter_->emit = 1; totalTime_ = 0.0f; }
     void Stop() { isPlaying_ = false; if (emitter_) emitter_->emit = 0; }
     void Pause() { isPlaying_ = false; }
     void Resume() { isPlaying_ = true; }
@@ -190,6 +199,11 @@ public:
      * @param maxLife 最大寿命（秒）
      */
     void SetParticleLife(float minLife, float maxLife);
+
+    /** @brief 放出速度を設定する */
+    void SetVelocity(float velocity) { if (emitter_) emitter_->velocity = velocity; }
+    /** @brief 座標のゆらぎ（Jitter）を設定する */
+    void SetJitter(float jitter) { if (emitter_) emitter_->jitter = jitter; }
 
     /** @name 描画設定（パイプライン） */
     ///@{
@@ -249,6 +263,8 @@ public:
     static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }
     static void SetTextureManager(TextureManager* textureManager) { textureManager_ = textureManager; }
     static void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
+
+    static TextureManager* GetTextureManager() { return textureManager_; }
     ///@}
 
 private:
@@ -353,6 +369,11 @@ private:
     bool isCulled_ = false;
     bool isInitializedCS_ = false;
     bool needsUpdateCS_ = false;
+    
+
+    // --- State tracking for multiple pass rendering ---
+    bool isCsDispatchedThisFrame_ = false;
+    uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);
 
     BlendMode selectedBlend_ = BlendMode::kBlendModeAdd;
     PSOManager::DepthWrite selectedDepth_ = PSOManager::DepthWrite::Disable;
@@ -361,3 +382,4 @@ private:
     std::unique_ptr<Line3DRegion> debugLineRegion_;
     bool showEmitterArea_ = true;
 };
+

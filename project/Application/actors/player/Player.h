@@ -29,7 +29,7 @@ public:
     void Update();
     void Draw();
     void DrawParticles();
-    void Draw3DUI(Enemy* enemy = nullptr);
+    void Draw3DUI(Enemy* enemy = nullptr, bool isUI = false);
     void Draw2DUI(Enemy* enemy = nullptr);
 
     const Vector3& GetTranslate() const { return translate_; }

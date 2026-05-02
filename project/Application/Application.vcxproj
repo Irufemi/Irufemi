@@ -209,6 +209,7 @@ exit 0</Command>
     <ClCompile Include="scene\Clear\ClearScene.cpp" />
     <ClCompile Include="scene\StageSelect\SelectScene.cpp" />
     <ClCompile Include="scene\Title\TitleScene.cpp" />
+    <ClCompile Include="scene\CG4\CG4Scene.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Tackle\Phase1_Tackle.cpp" />
     <ClCompile Include="actors\enemy\TackleEffects\EnemyTackleEffects.cpp" />
   </ItemGroup>
@@ -256,6 +257,7 @@ exit 0</Command>
     <ClInclude Include="scene\Clear\ClearScene.h" />
     <ClInclude Include="scene\StageSelect\SelectScene.h" />
     <ClInclude Include="scene\Title\TitleScene.h" />
+    <ClInclude Include="scene\CG4\CG4Scene.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Tackle\Phase1_Tackle.h" />
     <ClInclude Include="actors\enemy\TackleEffects\EnemyTackleEffects.h" />
   </ItemGroup>

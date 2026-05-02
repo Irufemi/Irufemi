@@ -185,13 +185,12 @@ void Player::Update() {
                 deathCameraPos_.y - translate_.y,
                 deathCameraPos_.z - translate_.z
             };
-            float lookYaw = std::atan2(toCamera.x, toCamera.z);
+            float lookYaw = std::atan2(toCamera.x, toCamera.z) + 3.14159f;
             float horizontalDist = std::sqrt(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
             float lookPitch = -std::atan2(toCamera.y, horizontalDist);
 
             starObj_->SetPosition(translate_);
             // XとYの回転でカメラの方向を向きつつ、Zの回転でくるくる回す！
-            // ※もしplane.objの裏面が描画されず見えない場合は、lookYaw に 3.14159f を足してください
             starObj_->SetRotate({ lookPitch, lookYaw, starRotationZ_ });
             starObj_->SetScale(starScale_);
             starObj_->Update();
@@ -401,16 +400,16 @@ void Player::Update() {
 #endif
 }
 
-void Player::Draw3DUI(Enemy* enemy) {
+void Player::Draw3DUI(Enemy* enemy, bool isUI) {
     if (!status_.IsDead()) {
         if (!cameraController_.IsFirstPerson()) {
             if (hpBar_) {
-                hpBar_->Draw3D();
+                hpBar_->Draw3D(isUI);
             }
         } else {
             // ボスや部位のHPバー（3D）は1人称視点のみ表示
             if (enemy) {
-                enemy->Draw3DUI(engine_);
+                enemy->Draw3DUI(engine_, isUI);
             }
         }
     }
@@ -431,9 +430,6 @@ void Player::Draw2DUI(Enemy* enemy) {
 }
 
 void Player::Draw() {
-    if (engine_) {
-        engine_->ApplyPSO();
-    }
     bool isBlinking = (status_.GetInvincibleTimer() > 0 && (status_.GetInvincibleTimer() % 4) < 2);
 
     if (obj_) {
@@ -487,9 +483,7 @@ void Player::Draw() {
 
 #ifdef USE_IMGUI
     if (lineOBB_ && isDebugDrawOBB_ && engine_) {
-        engine_->ApplyLineInstancedPSO();
         lineOBB_->Draw();
-        engine_->ApplyPSO();
     }
 #endif
 }

@@ -3,8 +3,8 @@
 #include <vector>
 #include <wrl.h>
 #include <d3d12.h>
-#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
-#include "Data/LineVertexData.h"
+#include "../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
+#include "../VertexData.h"
 #include "../../Engine/Graphics/Data/Material.h"
 #include "../TransformationMatrix.h"
 #include "../../Engine/Core/Math/Transform.h"
@@ -23,7 +23,7 @@ public:
 
 public:
     // --- 頂点バッファ ---
-    LineVertexData* vertexData_ = nullptr;
+    VertexData* vertexData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 
@@ -35,18 +35,21 @@ public:
 
     // --- マテリアル ---
     Material cpuMaterialData_{};
-    ConstantBuffer<Material> materialBuffer_;
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
 
     // --- トランスフォーム ---
     Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
-    ConstantBuffer<TransformationMatrix> transformationBuffer_;
+    uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 
-    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const {
-        return materialBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
+
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
+    
+    void MarkAsDirty() {
+        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
     }
 
-    D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const {
-        return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
-    }
+    void SyncBeforeDraw();
 };

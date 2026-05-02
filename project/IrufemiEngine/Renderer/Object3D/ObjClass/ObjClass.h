@@ -13,7 +13,8 @@
 #include "../../../Resource/Model/Data/ObjModel.h"
 #include "../Object3DResource.h"
 #include "../../../Engine/Graphics/Data/Material.h"
-#include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "../../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
+#include "../../Core/IRenderable.h"
 
 // 前方宣言
 class TextureManager;
@@ -36,7 +37,7 @@ struct Material;
  * @brief 3Dモデル（OBJ/GLTF等）のインスタンスを描画・管理するクラス
  * @details ModelManager から取得した共有モデルデータを参照し、個別の位置・回転・拡縮やマテリアル設定を保持します。
  */
-class ObjClass {
+class ObjClass : public IRenderable {
 private:
     // 共有モデルデータ(CPU/GPU)
     std::shared_ptr<ManagedModel> managedModel_;
@@ -54,20 +55,24 @@ private:
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;
 
     // 変換行列用リソース (全メッシュで共有)
-    ConstantBuffer<TransformationMatrix> transformationBuffer_;
+    uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 
     Camera* camera_ = nullptr;
     bool isCullingEnabled_ = true;
+    bool castShadows_ = true;
     
     // 行列更新の最適化用
     bool isDirty_ = true;
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 
-    int32_t dirtyFramesLeft_ = kMaxFramesInFlight;
-    uint32_t lastSyncedFrameIndex_ = UINT32_MAX;
-    void MakeDirty() { dirtyFramesLeft_ = kMaxFramesInFlight; }
-    void SyncIfDirty();
+    void MarkAsDirty() {
+        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
+        for(auto& res : meshResources_) {
+            if (res) res->MarkAsDirty();
+        }
+    }
 
     static TextureManager* textureManager_;
     static DrawManager* drawManager_;
@@ -107,7 +112,8 @@ public: //メンバ関数
     /**
      * @brief 描画コマンドの積み込み
      */
-    void Draw();
+     void SyncBeforeDraw() override;
+    void Draw() override;
 
     /**
      * @brief デバッグ用UIの表示
@@ -122,27 +128,25 @@ public: //メンバ関数
     /** @name Transform 操作 */
     ///@{
     const Vector3& GetPosition() const { return transform_.translate; }
-    void SetPosition(const Vector3& position) { transform_.translate = position; isDirty_ = true; }
+    void SetPosition(const Vector3& position) { transform_.translate = position; MarkAsDirty(); }
 
     const Vector3& GetRotate() const { return transform_.rotate; }
-    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; isDirty_ = true; }
-    void SetRotateX(const float& rotate) { transform_.rotate.x = rotate; isDirty_ = true; }
-    void SetRotateY(const float& rotate) { transform_.rotate.y = rotate; isDirty_ = true; }
-    void SetRotateZ(const float& rotate) { transform_.rotate.z = rotate; isDirty_ = true; }
+    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; MarkAsDirty(); }
+    void SetRotateX(const float& rotate) { transform_.rotate.x = rotate; MarkAsDirty(); }
+    void SetRotateY(const float& rotate) { transform_.rotate.y = rotate; MarkAsDirty(); }
+    void SetRotateZ(const float& rotate) { transform_.rotate.z = rotate; MarkAsDirty(); }
 
     const Vector3& GetScale() const { return transform_.scale; }
-    void SetScale(const Vector3& scale) { transform_.scale = scale; isDirty_ = true; }
+    void SetScale(const Vector3& scale) { transform_.scale = scale; MarkAsDirty(); }
     const Transform& GetTransform() const { return transform_; }
-    void SetTransform(const Transform& transform) { transform_ = transform; isDirty_ = true; }
+    void SetTransform(const Transform& transform) { transform_ = transform; MarkAsDirty(); }
     ///@}
 
     /** @name 行列・計算結果の取得 */
     ///@{
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
     void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
-    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const {
-        return transformationBuffer_.GetGPUVirtualAddress(BaseResource::GetDirectXCommon()->GetFrameIndex());
-    }
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformationGpuAddress() const;
     ///@}
 
     /** @name マテリアル・外観の操作 */
@@ -177,6 +181,8 @@ public: //メンバ関数
     void SetUseClampSamplerOverride(int32_t useClamp) { useClampSamplerOverride_ = useClamp; isDirty_ = true; }
     void SetEnableLightingOverride(int32_t enable) { enableLightingOverride_ = enable; isDirty_ = true; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
     ///@}
 
     /** @name 静的メンバ設定（エンジン内部用） */
@@ -187,4 +193,7 @@ public: //メンバ関数
     static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
     ///@}
 };
+
+
+
 

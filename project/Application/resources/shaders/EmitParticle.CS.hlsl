@@ -29,7 +29,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
             uint particleIndex = (uint)gFreeList[freeListIndex];
             
             // 乱数生成器の初期化
-            uint seedValue = (uint)gPerFrame.time * 1000 + i + particleIndex;
+            // iとparticleIndexが連動して相殺するのを防ぐため素数を掛ける
+            uint seedValue = (uint)gPerFrame.time * 100000 + (i * 1337) + particleIndex;
             RandomGenerator rng;
             rng.seed = uint3(seedValue, seedValue + 111, seedValue + 222);
 

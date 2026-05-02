@@ -1,3 +1,4 @@
+#include "../../Core/IRenderable.h"
 #pragma once
 
 #include <cstdint>
@@ -16,7 +17,7 @@ struct Circle2DInfo {
     float   radius = 1.0f;
 };
 
-class Circle2D {
+class Circle2D : public IRenderable {
 protected:
     Circle2DInfo info_{};
 
@@ -47,12 +48,14 @@ public:
     void Update();
 
     // 描画
-    void Draw();
+    void SyncBeforeDraw() override;
+    void Draw() override;
 
     // デバッグ
     void Debug(const char* circleName = " ");
 
     // 情報アクセス
+    Object2DResource* GetD3D12Resource() { return resource_.get(); }
     const Circle2DInfo& GetInfo() const { return info_; }
     void SetInfo(const Circle2DInfo& info);
     void SetCenter(const Vector3& center);
@@ -81,4 +84,7 @@ private:
     // 変換の更新(center/radius/rotate)
     void UpdateMatrix();
 };
+
+
+
 
