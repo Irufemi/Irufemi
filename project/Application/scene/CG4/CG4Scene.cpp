@@ -10,6 +10,7 @@
 #include "Graphics/Data/AreaLight.h"
 #include "Platform/Input/InputManager.h"
 #include "Renderer/Effect/Effect.h"
+#include "Renderer/Object3D/Primitive/RingClass.h"
 CG4Scene::~CG4Scene() = default;
 
 void CG4Scene::Initialize(IrufemiEngine* engine) {
@@ -41,6 +42,10 @@ void CG4Scene::Initialize(IrufemiEngine* engine) {
     // エフェクトの初期化
     effect_ = std::make_unique<Effect>();
     effect_->Initialize(camera_.get(), EffectType::kHit);
+
+    // テスト用リングの初期化
+    testRing_ = std::make_unique<RingClass>();
+    testRing_->Initialize(camera_.get());
 }
 
 void CG4Scene::Update() {
@@ -51,6 +56,7 @@ void CG4Scene::Update() {
     ImGui::Checkbox("Walk", &isActiveWalk_);
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
     ImGui::Checkbox("Effect", &isActiveEffect_);
+    ImGui::Checkbox("Ring", &isActiveRing_);
     ImGui::End();
 #endif
 
@@ -116,6 +122,10 @@ void CG4Scene::Update() {
         }
     }
 
+    if (isActiveRing_ && testRing_) {
+        testRing_->Update();
+    }
+
     std::vector<PointLight*> pLights;
     std::vector<SpotLight*> sLights;
     std::vector<AreaLight*> aLights;
@@ -146,6 +156,11 @@ void CG4Scene::Draw() {
     // エフェクトの描画
     if (isActiveEffect_ && effect_) {
         effect_->Draw();
+    }
+
+    // リングの描画
+    if (isActiveRing_ && testRing_) {
+        testRing_->Draw();
     }
 }
 
@@ -195,6 +210,10 @@ void CG4Scene::DrawDebugTab() {
 
     if (isActiveEffect_ && effect_) {
         effect_->Debug();
+    }
+
+    if (isActiveRing_ && testRing_) {
+        testRing_->Debug("Test Ring");
     }
 #endif
 }

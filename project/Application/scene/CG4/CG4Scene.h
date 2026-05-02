@@ -13,6 +13,7 @@ struct DirectionalLight;
 struct AreaLight;
 class Skybox;
 class AnimationModel;
+#include "Renderer/Object3D/Primitive/RingClass.h"
 #include "Renderer/Effect/Effect.h"
 
 /**
@@ -72,4 +73,7 @@ private: // メンバ変数
 
     bool isActiveEffect_ = true;
     std::unique_ptr<Effect> effect_ = nullptr;
+
+    bool isActiveRing_ = true;
+    std::unique_ptr<RingClass> testRing_ = nullptr;
 };

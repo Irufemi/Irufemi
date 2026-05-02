@@ -28,6 +28,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object3D/Primitive/CubeClass.h"
 #include "Renderer/Object3D/Primitive/PlaneClass.h"
 #include "Renderer/Object3D/Primitive/CylinderClass.h"
+#include "Renderer/Object3D/Primitive/RingClass.h"
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
@@ -182,6 +183,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     CubeClass::SetDebugUI(ui_.get());
     PlaneClass::SetDebugUI(ui_.get());
     CylinderClass::SetDebugUI(ui_.get());
+    RingClass::SetDebugUI(ui_.get());
     PrimitiveObjects3DClass::SetDebugUI(ui_.get());
     ParticleSystem::SetDebugUI(ui_.get());
 
@@ -196,6 +198,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     CubeClass::SetDrawManager(drawManager_.get());
     PlaneClass::SetDrawManager(drawManager_.get());
     CylinderClass::SetDrawManager(drawManager_.get());
+    RingClass::SetDrawManager(drawManager_.get());
     ModelRegion::SetDrawManager(drawManager_.get());
     SphereRegion::SetDrawManager(drawManager_.get());
     TetraRegion::SetDrawManager(drawManager_.get());
@@ -217,6 +220,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     CubeClass::SetTextureManager(textureManager_.get());
     PlaneClass::SetTextureManager(textureManager_.get());
     CylinderClass::SetTextureManager(textureManager_.get());
+    RingClass::SetTextureManager(textureManager_.get());
     ModelRegion::SetTextureManager(textureManager_.get());
     SphereRegion::SetTextureManager(textureManager_.get());
     TetraRegion::SetTextureManager(textureManager_.get());

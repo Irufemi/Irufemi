@@ -319,11 +319,23 @@ void PrimitiveManager::GenerateCylinderIndices(PrimitiveData& data, uint32_t seg
     }
 }
 
-PrimitiveData PrimitiveManager::CreateRing(float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV) {
+PrimitiveData PrimitiveManager::CreateRing(const RingParams& params) {
     PrimitiveData data;
-    GenerateRingVertices(data, innerRadius, outerRadius, startAngle, endAngle, segments, verticalUV);
-    GenerateRingIndices(data, segments);
+    GenerateRingVertices(data, params);
+    GenerateRingIndices(data, params.segments);
     return data;
+}
+
+PrimitiveData PrimitiveManager::CreateRing(float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV) {
+    RingParams params;
+    params.innerRadius = innerRadius;
+    params.startOuterRadius = outerRadius;
+    params.endOuterRadius = outerRadius;
+    params.startAngle = startAngle;
+    params.endAngle = endAngle;
+    params.segments = segments;
+    params.verticalUV = verticalUV;
+    return CreateRing(params);
 }
 
 /**
@@ -331,32 +343,58 @@ PrimitiveData PrimitiveManager::CreateRing(float innerRadius, float outerRadius,
  * @details 学校資料に準拠し、12時方向を基準（X = -sin, Y = cos）として時計回りに頂点を生成します。
  *          必要に応じて、U/Vの割り当て方向や描画する角度の範囲を指定可能です。
  */
-void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV) {
+void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, const RingParams& params) {
     const float pi = std::numbers::pi_v<float>;
-    float startRad = startAngle * (pi / 180.0f);
-    float endRad = endAngle * (pi / 180.0f);
+    float startRad = params.startAngle * (pi / 180.0f);
+    float endRad = params.endAngle * (pi / 180.0f);
     if (endRad <= startRad) endRad += 2.0f * pi;
     float arc = endRad - startRad;
-    float radianPerDivide = arc / static_cast<float>(segments);
+    float radianPerDivide = arc / static_cast<float>(params.segments);
+    float fadeRangeRad = params.fadeRangeAngle * (pi / 180.0f);
 
-    for (uint32_t i = 0; i < segments; ++i) {
+    for (uint32_t i = 0; i < params.segments; ++i) {
         float a0 = startRad + i * radianPerDivide;
         float a1 = startRad + (i + 1) * radianPerDivide;
 
         float s0 = std::sin(a0), c0 = std::cos(a0);
         float s1 = std::sin(a1), c1 = std::cos(a1);
 
-        float u = static_cast<float>(i) / segments;
-        float uNext = static_cast<float>(i + 1) / segments;
+        float u = static_cast<float>(i) / params.segments;
+        float uNext = static_cast<float>(i + 1) / params.segments;
+
+        // 外径の補間 (Lerp)
+        float outerRad0 = params.startOuterRadius + (params.endOuterRadius - params.startOuterRadius) * u;
+        float outerRad1 = params.startOuterRadius + (params.endOuterRadius - params.startOuterRadius) * uNext;
+
+        // アルファフェードの計算
+        auto calculateAlpha = [&](float currentAngleRad) {
+            if (fadeRangeRad <= 0.0f) return 1.0f;
+            
+            float distanceFromStart = currentAngleRad - startRad;
+            float distanceFromEnd = endRad - currentAngleRad;
+
+            float alpha = 1.0f;
+            if (distanceFromStart < fadeRangeRad) {
+                float t = distanceFromStart / fadeRangeRad;
+                alpha = params.startAlpha + (1.0f - params.startAlpha) * t;
+            } else if (distanceFromEnd < fadeRangeRad) {
+                float t = distanceFromEnd / fadeRangeRad;
+                alpha = params.endAlpha + (1.0f - params.endAlpha) * t;
+            }
+            return alpha;
+        };
+
+        float alpha0 = calculateAlpha(a0);
+        float alpha1 = calculateAlpha(a1);
 
         VertexData v0, v1, v2, v3;
         // 資料に基づき X = -sin, Y = cos と計算する（時計回りのポリゴンは維持されるためカリングへの悪影響はなし）
-        v0.position = { -s0 * outerRadius, c0 * outerRadius, 0.0f, 1.0f };
-        v1.position = { -s1 * outerRadius, c1 * outerRadius, 0.0f, 1.0f };
-        v2.position = { -s0 * innerRadius, c0 * innerRadius, 0.0f, 1.0f };
-        v3.position = { -s1 * innerRadius, c1 * innerRadius, 0.0f, 1.0f };
+        v0.position = { -s0 * outerRad0, c0 * outerRad0, 0.0f, 1.0f };
+        v1.position = { -s1 * outerRad1, c1 * outerRad1, 0.0f, 1.0f };
+        v2.position = { -s0 * params.innerRadius, c0 * params.innerRadius, 0.0f, 1.0f };
+        v3.position = { -s1 * params.innerRadius, c1 * params.innerRadius, 0.0f, 1.0f };
 
-        if (verticalUV) {
+        if (params.verticalUV) {
             v0.texcoord = { 0.0f, u }; v1.texcoord = { 0.0f, uNext };
             v2.texcoord = { 1.0f, u }; v3.texcoord = { 1.0f, uNext };
         } else {
@@ -366,6 +404,12 @@ void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, float innerRadi
         
         // 法線は従来の共通仕様に合わせて-Zを維持する
         v0.normal = v1.normal = v2.normal = v3.normal = { 0.0f, 0.0f, -1.0f };
+
+        // 頂点カラーの設定
+        v0.color = { params.outerColor.x, params.outerColor.y, params.outerColor.z, params.outerColor.w * alpha0 };
+        v1.color = { params.outerColor.x, params.outerColor.y, params.outerColor.z, params.outerColor.w * alpha1 };
+        v2.color = { params.innerColor.x, params.innerColor.y, params.innerColor.z, params.innerColor.w * alpha0 };
+        v3.color = { params.innerColor.x, params.innerColor.y, params.innerColor.z, params.innerColor.w * alpha1 };
 
         data.vertices.push_back(v0); data.vertices.push_back(v1);
         data.vertices.push_back(v2); data.vertices.push_back(v3);
