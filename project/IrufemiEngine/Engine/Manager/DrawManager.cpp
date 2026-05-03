@@ -349,6 +349,16 @@ void DrawManager::SubmitSprite(const Object2DResource* resource) {
     spriteQueue_.push_back(p);
 }
 
+void DrawManager::SubmitTopMostSprite(const Object2DResource* resource) {
+    if (!resource) return;
+    SpritePacket p{};
+    p.resource = resource;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    topMostSpriteQueue_.push_back(p);
+}
+
 void DrawManager::DrawSprite(const SpritePacket& packet) {
     const Object2DResource* resource = packet.resource;
     if (!resource || !commandList_) return;
@@ -1024,6 +1034,31 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     ClearRenderQueues();
 }
 
+void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
+    if (topMostSpriteQueue_.empty()) return;
+
+    BlendMode currentBlend = BlendMode::kBlendModeNormal;
+    PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
+    PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
+    bool first = true;
+    
+    for (const auto& p : topMostSpriteQueue_) {
+        if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
+            engine->SetBlend(p.blendMode);
+            engine->SetDepthWrite(p.depthWrite);
+            engine->SetCull(p.cullMode);
+            // バックバッファへ直接描画する特別なPSOを適用
+            engine->ApplySpritePSOForBackBuffer();
+            
+            currentBlend = p.blendMode;
+            currentDepth = p.depthWrite;
+            currentCull = p.cullMode;
+            first = false;
+        }
+        DrawSprite(p);
+    }
+}
+
 void DrawManager::ClearRenderQueues() {
     standard3DQueue_.clear();
     ui3DQueue_.clear();
@@ -1036,4 +1071,5 @@ void DrawManager::ClearRenderQueues() {
     regionQueue_.clear();
     modelRegionQueue_.clear();
     postRenderQueue_.clear();
+    topMostSpriteQueue_.clear();
 }

@@ -163,9 +163,13 @@ private:
     std::vector<ModelRegionPacket> modelRegionQueue_;
     std::vector<std::function<void()>> postRenderQueue_;
 
+    // 最前面UI描画用キュー (PostProcess適用後のバックバッファに直接描画)
+    std::vector<SpritePacket> topMostSpriteQueue_;
+
 public:
     // --- Execute Queues ---
     void ExecuteRenderQueues(class IrufemiEngine* engine);
+    void ExecuteTopMostQueues(class IrufemiEngine* engine); // 最前面UIの描画キューを消化する
     void ClearRenderQueues();
     void ClearAllQueues() {
         ClearRenderQueues();
@@ -400,6 +404,7 @@ public:
      * @brief 2Dオブジェクト（スプライト等）の標準描画 (Sprite.hlsl)
      */
     void SubmitSprite(const class Object2DResource* resource);
+    void SubmitTopMostSprite(const class Object2DResource* resource); // 最前面UI描画用
     void DrawSprite(const SpritePacket& packet);
 
 

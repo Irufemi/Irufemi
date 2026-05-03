@@ -507,6 +507,9 @@ void IrufemiEngine::EndFrame() {
         sceneManager_->DrawLoadingUI();
     }
 
+    // --- 追加: 最前面UIキューの消化 ---
+    drawManager_->ExecuteTopMostQueues(this);
+
     // 描画後処理
     ui_->QueuePostDrawCommands();
     drawManager_->PostDraw();
