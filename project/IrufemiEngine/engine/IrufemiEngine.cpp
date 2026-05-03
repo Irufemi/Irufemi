@@ -14,6 +14,7 @@ IrufemiEngine::IrufemiEngine() = default;
 
 #include "Renderer/VertexData.h"
 #include "Renderer/Core/BaseResource.h"
+#include "Graphics/DirectX/DirectXUtils.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Renderer/Object2D/Object2DResource.h"
 #include "Renderer/Particle/ParticleResource.h"
@@ -485,14 +486,7 @@ void IrufemiEngine::EndFrame() {
     bool hasOutline = std::find(activeModes.begin(), activeModes.end(), PostProcessMode::DepthBasedOutline) != activeModes.end();
 
     if (hasOutline) {
-        D3D12_RESOURCE_BARRIER barrier{};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-        barrier.Transition.Subresource = 0; // 深度値のみをターゲットにする
-        dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
+        DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
         
         // 逆投影行列の更新
         if (auto* cameraData = drawManager_->GetCameraData()) {
@@ -504,13 +498,7 @@ void IrufemiEngine::EndFrame() {
     postProcessManager_->Draw(dxCommon_->GetCommandList(), mainRenderTexture_.get(), dxCommon_->GetRtvHandles(dxCommon_->GetCurrentBackBufferIndex()));
 
     if (hasOutline) {
-        D3D12_RESOURCE_BARRIER barrier{};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-        barrier.Transition.Subresource = 0; // 深度値のみを元に戻す
-        dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
+        DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, 0);
     }
 
     // 描画先がバックバッファになり、ポストプロセス（暗転など）が掛かった上から

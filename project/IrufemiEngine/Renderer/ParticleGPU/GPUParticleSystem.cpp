@@ -1,6 +1,7 @@
 #include "GPUParticleSystem.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DirectXUtils.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Core/Math/Math.h"
@@ -125,10 +126,16 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
             cmdList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
-            D3D12_RESOURCE_BARRIER barrier{};
-            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-            barrier.UAV.pResource = nullptr;
-            cmdList->ResourceBarrier(1, &barrier);
+            /**
+             * @brief 初期化終了後の UAV バリア
+             * @details [設計ルール] グローバルバリア (pResource=nullptr) はGPU並列効率を低下させるため禁止。
+             * 読み書きを行う3つのリソースを明示してバリアを張る。
+             */
+            DirectXUtils::UAVBarriers(cmdList, {
+                particleResource_.Get(),
+                freeListIndexResource_.Get(),
+                freeListResource_.Get()
+            });
             
             // 2. Emit / Update シェーダーを空バインドして JIT 誘発
             // 実行はしない（Descriptor等も最低限のまま）
@@ -557,10 +564,10 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
 
         commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
-        D3D12_RESOURCE_BARRIER barrier{};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        barrier.UAV.pResource = nullptr;
-        commandList->ResourceBarrier(1, &barrier);
+        // 初期化実行後にバリアを張る
+        DirectXUtils::UAVBarriers(commandList, {
+            particleResource_.Get(), freeListIndexResource_.Get(), freeListResource_.Get()
+        });
 
         isInitializedCS_ = true;
     }
@@ -571,10 +578,6 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
         commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
         commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
-
-        D3D12_RESOURCE_BARRIER uavBarrier{};
-        uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        uavBarrier.UAV.pResource = nullptr;
 
         uint32_t frameIndex = dxCommon_->GetFrameIndex();
 
@@ -595,7 +598,10 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
             commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
         }
 
-        commandList->ResourceBarrier(1, &uavBarrier);
+        // Emitフェーズの書き込み完了を保証するためバリアを張る
+        DirectXUtils::UAVBarriers(commandList, {
+            particleResource_.Get(), freeListIndexResource_.Get(), freeListResource_.Get()
+        });
 
         // Update
         commandList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
@@ -606,7 +612,10 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
         commandList->SetComputeRootConstantBufferView(5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex));
         commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
-        commandList->ResourceBarrier(1, &uavBarrier);
+        // Updateフェーズ完了後のバリア
+        DirectXUtils::UAVBarriers(commandList, {
+            particleResource_.Get(), freeListIndexResource_.Get(), freeListResource_.Get()
+        });
 
         needsUpdateCS_ = false;
         isCsDispatchedThisFrame_ = true;

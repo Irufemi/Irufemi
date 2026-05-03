@@ -1,5 +1,6 @@
 #include "ShadowMap.h"
 #include "DirectXCommon.h"
+#include "DirectXUtils.h"
 #include "DescriptorPool.h"
 #include "../../Core/Math/Math.h"
 #include <cassert>
@@ -95,13 +96,7 @@ void ShadowMap::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t hei
 
 void ShadowMap::Begin(ID3D12GraphicsCommandList* commandList) {
     // 1. Transition Barrier (SRV -> DepthWrite)
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = resource_.Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    commandList->ResourceBarrier(1, &barrier);
+    DirectXUtils::TransitionBarrier(commandList, resource_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
     // 2. Clear
     Clear(commandList);
@@ -116,13 +111,7 @@ void ShadowMap::Begin(ID3D12GraphicsCommandList* commandList) {
 
 void ShadowMap::End(ID3D12GraphicsCommandList* commandList) {
     // 1. Transition Barrier (DepthWrite -> SRV)
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = resource_.Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    commandList->ResourceBarrier(1, &barrier);
+    DirectXUtils::TransitionBarrier(commandList, resource_.Get(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 void ShadowMap::Clear(ID3D12GraphicsCommandList* commandList) {

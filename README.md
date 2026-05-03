@@ -81,12 +81,15 @@ C:.
 - **エンコード**: Unicode (UTF-8 署名なし) を厳守。
 - **コメント**: ヘッダーファイルには Doxygen 形式での注釈を記述。
 - **GPUリソース管理**: 描画において「毎フレーム内容が更新されるデータ」を作成する場合、生の `ID3D12Resource` を直接 `Map`/`Unmap` することは避け、必ず `ConstantBuffer<T>` または `std::array<ComPtr<ID3D12Resource>, kMaxFramesInFlight>` を利用してマルチバッファ化すること。
+- **リソース同期 (Resource Barrier)**: 
+  - `pResource = nullptr` を用いた UAV のグローバルバリアは、GPU の並列実行効率を低下させるため使用禁止とします。
+  - バリア構築処理はコードが冗長になりやすいため、各マネージャークラス（`DXCommandManager`等）のメンバ関数にはせず、特定のクラスに依存しない静的ユーティリティ関数（`DirectXUtils::TransitionBarrier` や `DirectXUtils::UAVBarriers` 等）として `DirectXUtils.h` に集約しています。これにより、どのコマンドリスト（メイン用・転送用）に対しても疎結合で安全にバリアを適用できる設計としています。バリアを張る際は必ずこのユーティリティを使用してください。
 - **設計**: 疎結合を意識し、可能な限りインターフェースと実装を分離。
 
 ## 動作環境
 
 - **OS**: Windows 10 / 11
-- **IDE**: Visual Studio 2022
+- **IDE**: Visual Studio 2026
 - **SDK**: Windows SDK 10.0.26100.7175 以上推奨
 
 ## 使用ライブラリ
