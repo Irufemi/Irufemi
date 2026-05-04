@@ -31,16 +31,11 @@ namespace DirectXUtils {
         cmdList->ResourceBarrier(1, &barrier);
     }
 
-    /**
-     * @brief 単一リソースの UAV バリアを構築し、コマンドリストに積むヘルパー関数
-     * @param cmdList コマンドリスト
-     * @param resource 対象のリソース
-     */
     inline void UAVBarrier(
         ID3D12GraphicsCommandList* cmdList,
-        ID3D12Resource* resource) 
+        ID3D12Resource* resource = nullptr) 
     {
-        if (!resource || !cmdList) return;
+        if (!cmdList) return;
         D3D12_RESOURCE_BARRIER barrier{};
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;

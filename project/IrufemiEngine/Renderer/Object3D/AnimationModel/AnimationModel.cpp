@@ -234,7 +234,6 @@ void AnimationModel::DispatchCompute() {
 
     engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
     uint32_t f = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource[f].Get());
     
     // スキニングが正常に実行されたフレームを記録（ポーズ中の遅延更新等による不整合を防ぐため）
     lastSkinnedFrameIndex_ = f;

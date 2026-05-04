@@ -29,7 +29,7 @@ ConstantBuffer<SkinningInformation> gSkinningInformation : register(b0);
 
 /// ComputeShaderを作成する
 
-[numthreads(1024, 1, 1)] // ←一度にComputeShader内のthreadを起動する数。
+[numthreads(256, 1, 1)] // ←一度にComputeShader内のthreadを起動する数。
 void main(uint32_t3 DTid : SV_DispatchThreadID)
 {
 	

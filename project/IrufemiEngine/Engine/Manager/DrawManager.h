@@ -445,7 +445,7 @@ public:
     /**
      * @brief UAVバリアの実行（リソース競合の解決）
      */
-    void ExecuteUAVBarrier(ID3D12Resource* resource);
+    void ExecuteUAVBarrier(ID3D12Resource* resource = nullptr);
     ///@}
 
     /** @name 状態取得・ユーティリティ */

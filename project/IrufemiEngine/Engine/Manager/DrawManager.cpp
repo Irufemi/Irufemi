@@ -121,6 +121,13 @@ void DrawManager::ExecuteComputePasses() {
     for (auto* task : computeTasks_) {
         task->DispatchCompute();
     }
+    
+    // パイプラインのボトルネック解消のため、各モデルごとではなく
+    // 全てのコンピュートタスクのディスパッチ完了後に一括してグローバルUAVバリアを発行する
+    if (!computeTasks_.empty()) {
+        ExecuteUAVBarrier(nullptr);
+    }
+    
     computeTasks_.clear();
 }
 
@@ -536,8 +543,8 @@ void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const Managed
     // 4: Skinning Information (b0)
     commandList_->SetComputeRootConstantBufferView(4, skinCluster.skinningInformationResource->GetGPUVirtualAddress());
 
-    // Dispatch
-    commandList_->Dispatch((numVertices + 1023) / 1024, 1, 1);
+    // Dispatch (numthreads = 256)
+    commandList_->Dispatch((numVertices + 255) / 256, 1, 1);
 }
 
 void DrawManager::ExecuteUAVBarrier(ID3D12Resource* resource) {
