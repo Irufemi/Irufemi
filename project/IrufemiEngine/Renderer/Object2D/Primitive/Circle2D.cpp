@@ -147,7 +147,11 @@ void Circle2D::SyncBeforeDraw() {
 
 void Circle2D::Draw() {
     SyncBeforeDraw();
-    drawManager_->SubmitSprite(resource_.get());
+    if (isTopMost_) {
+        drawManager_->SubmitTopMostSprite(resource_.get());
+    } else {
+        drawManager_->SubmitSprite(resource_.get());
+    }
 }
 
 void Circle2D::SetInfo(const Circle2DInfo& info) {

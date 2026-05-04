@@ -164,7 +164,11 @@ void Sprite::Draw() {
     // --- 【追加】描画直前のバッファ同期 ---
     SyncBeforeDraw();
 
-    drawManager_->SubmitSprite(resource_.get());
+    if (isTopMost_) {
+        drawManager_->SubmitTopMostSprite(resource_.get());
+    } else {
+        drawManager_->SubmitSprite(resource_.get());
+    }
 }
 
 void Sprite::SetSize(const float& width, const float& height) {

@@ -11,7 +11,6 @@ class IEnemyAnimationState;
 class EnemyAnimation {
 public:
     EnemyAnimation();
-    // ★重要：ヘッダーで = default を書くと「不完全な型の削除」エラーになります
     ~EnemyAnimation();
 
     void Initialize(Enemy* enemy);

@@ -109,7 +109,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.pDescriptorRanges = rangeShadow;
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.NumDescriptorRanges = 1;
 
-        D3D12_STATIC_SAMPLER_DESC staticSamplers[4] = {};
+        D3D12_STATIC_SAMPLER_DESC staticSamplers[5] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
         staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -147,6 +147,16 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         staticSamplers[3].ShaderRegister = 3; // s3
         staticSamplers[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+        // s4: UはWRAP、VはCLAMP (横スクロール対応等)
+        staticSamplers[4].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        staticSamplers[4].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        staticSamplers[4].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        staticSamplers[4].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        staticSamplers[4].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        staticSamplers[4].MaxLOD = D3D12_FLOAT32_MAX;
+        staticSamplers[4].ShaderRegister = 4; // s4
+        staticSamplers[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
         D3D12_ROOT_SIGNATURE_DESC rsDesc{};
         rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         rsDesc.pParameters = rootParameters;
@@ -172,12 +182,13 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         srvRanges[1] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t1
         srvRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t2
 
-        D3D12_DESCRIPTOR_RANGE uavRanges[3];
+        D3D12_DESCRIPTOR_RANGE uavRanges[4];
         uavRanges[0] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u0
         uavRanges[1] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u1
         uavRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u2
+        uavRanges[3] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u3
 
-        D3D12_ROOT_PARAMETER computeRootParameters[8] = {};
+        D3D12_ROOT_PARAMETER computeRootParameters[10] = {};
         computeRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         computeRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         computeRootParameters[0].DescriptorTable.pDescriptorRanges = &srvRanges[0];
@@ -215,6 +226,17 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         computeRootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         computeRootParameters[7].DescriptorTable.pDescriptorRanges = &uavRanges[2];
         computeRootParameters[7].DescriptorTable.NumDescriptorRanges = 1;
+
+        computeRootParameters[8].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        computeRootParameters[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[8].DescriptorTable.pDescriptorRanges = &uavRanges[3];
+        computeRootParameters[8].DescriptorTable.NumDescriptorRanges = 1;
+
+        computeRootParameters[9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        computeRootParameters[9].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[9].Constants.ShaderRegister = 2; // b2
+        computeRootParameters[9].Constants.Num32BitValues = 2; // k, j
+        computeRootParameters[9].Constants.RegisterSpace = 0;
 
         D3D12_ROOT_SIGNATURE_DESC computeRSDesc{};
         computeRSDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;

@@ -35,6 +35,7 @@ protected:
 
     // 状態
     bool useTexture_ = true;
+    bool isTopMost_ = false; // 最前面UIフラグ
     int  selectedTextureIndex_ = 0;
 
 public:
@@ -60,6 +61,15 @@ public:
     void SetInfo(const Circle2DInfo& info);
     void SetCenter(const Vector3& center);
     void SetRadius(float radius);
+
+    /** @name 最前面描画設定 */
+    ///@{
+    /**
+     * @brief ポストプロセスの影響を受けない最前面のUIとして描画するかを設定する
+     * @param[in] isTopMost trueなら最前面(バックバッファ直接)に描画する
+     */
+    void SetTopMost(bool isTopMost) { isTopMost_ = isTopMost; }
+    ///@}
 
     // 見た目
     void SetColor(const Vector4& color) { resource_->GetMaterialData()->color = color; }

@@ -4,6 +4,7 @@
  */
 #include "PostProcessManager.h"
 #include "../DirectX/DirectXCommon.h"
+#include "../DirectX/DirectXUtils.h"
 #include <algorithm>
 #include <cassert>
 #include <d3d12.h>
@@ -23,23 +24,6 @@ void PostProcessManager::Initialize(DirectXCommon* dxCommon,
   CreatePSOs();
 }
 
-namespace {
-void TransitionResource(ID3D12GraphicsCommandList *commandList,
-                        ID3D12Resource *resource,
-                        D3D12_RESOURCE_STATES stateBefore,
-                        D3D12_RESOURCE_STATES stateAfter) {
-  if (stateBefore == stateAfter)
-    return;
-  D3D12_RESOURCE_BARRIER barrier{};
-  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-  barrier.Transition.pResource = resource;
-  barrier.Transition.StateBefore = stateBefore;
-  barrier.Transition.StateAfter = stateAfter;
-  barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-  commandList->ResourceBarrier(1, &barrier);
-}
-} // namespace
 
 void PostProcessManager::InitializeBuffers(uint32_t width, uint32_t height,
                                            DirectXCommon *dxCommon) {
@@ -125,18 +109,22 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         // 最終パスは resultTexture_ に出力
         nextTargetTexture = resultTexture_.get();
         targetHandle = nextTargetTexture->GetRtvHandle();
-        TransitionResource(commandList, nextTargetTexture->GetResource(),
-                           resultTextureState_,
-                           D3D12_RESOURCE_STATE_RENDER_TARGET);
+        if (resultTextureState_ != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+            DirectXUtils::TransitionBarrier(commandList, nextTargetTexture->GetResource(),
+                               resultTextureState_,
+                               D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
         resultTextureState_ = D3D12_RESOURCE_STATE_RENDER_TARGET;
       } else {
         nextTargetIdx = static_cast<int>(i % 2);
         nextTargetTexture = workTextures_[nextTargetIdx].get();
         targetHandle = nextTargetTexture->GetRtvHandle();
 
-        TransitionResource(commandList, nextTargetTexture->GetResource(),
-                           workTextureStates_[nextTargetIdx],
-                           D3D12_RESOURCE_STATE_RENDER_TARGET);
+        if (workTextureStates_[nextTargetIdx] != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+            DirectXUtils::TransitionBarrier(commandList, nextTargetTexture->GetResource(),
+                               workTextureStates_[nextTargetIdx],
+                               D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
         workTextureStates_[nextTargetIdx] =
             D3D12_RESOURCE_STATE_RENDER_TARGET;
       }
@@ -148,26 +136,28 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
           RenderTexture* blurV = workTextures_[0].get(); // 前のバッファに戻る
 
           // 0. Workバッファを書き込み可能状態に遷移 (抽出用)
-          TransitionResource(commandList, bloomExtract->GetResource(), workTextureStates_[0], D3D12_RESOURCE_STATE_RENDER_TARGET);
+          if (workTextureStates_[0] != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+              DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), workTextureStates_[0], D3D12_RESOURCE_STATE_RENDER_TARGET);
+          }
           workTextureStates_[0] = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
           // 1. 高輝度抽出 (src -> work0)
           DrawSinglePass(commandList, Mode::None, currentSource, bloomExtract->GetRtvHandle(), false, bloomExtractPSO_.Get());
-          TransitionResource(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
           
           // 2. 横ぼかし (work0 -> work1)
           bloomParams_.direction = { 1.0f, 0.0f };
           if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
-          TransitionResource(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+          DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
           DrawSinglePass(commandList, Mode::None, bloomExtract, blurH->GetRtvHandle(), false, bloomBlurHPSO_.Get());
-          TransitionResource(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
           
           // 3. 縦ぼかし (work1 -> work0)
           bloomParams_.direction = { 0.0f, 1.0f };
           if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
-          TransitionResource(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+          DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
           DrawSinglePass(commandList, Mode::None, blurH, blurV->GetRtvHandle(), false, bloomBlurVPSO_.Get());
-          TransitionResource(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
           
           // 4. 合成 (src + work0 -> nextTarget)
           // ※最後だけ DrawSinglePass を呼び出してターゲットに書き込む
@@ -189,13 +179,13 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
 
       // 状態遷移
       if (isLast) {
-        TransitionResource(commandList, nextTargetTexture->GetResource(),
+        DirectXUtils::TransitionBarrier(commandList, nextTargetTexture->GetResource(),
                            D3D12_RESOURCE_STATE_RENDER_TARGET,
                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
         currentSource = nextTargetTexture;
       } else {
-        TransitionResource(commandList, nextTargetTexture->GetResource(),
+        DirectXUtils::TransitionBarrier(commandList, nextTargetTexture->GetResource(),
                            D3D12_RESOURCE_STATE_RENDER_TARGET,
                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         workTextureStates_[nextTargetIdx] =
@@ -205,11 +195,13 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
     }
   } else {
     // エフェクトなしの場合は srcTexture を resultTexture_ にコピー
-    TransitionResource(commandList, resultTexture_->GetResource(),
-                       resultTextureState_, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (resultTextureState_ != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+        DirectXUtils::TransitionBarrier(commandList, resultTexture_->GetResource(),
+                           resultTextureState_, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    }
     DrawSinglePass(commandList, Mode::None, srcTexture,
                    resultTexture_->GetRtvHandle());
-    TransitionResource(commandList, resultTexture_->GetResource(),
+    DirectXUtils::TransitionBarrier(commandList, resultTexture_->GetResource(),
                        D3D12_RESOURCE_STATE_RENDER_TARGET,
                        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;

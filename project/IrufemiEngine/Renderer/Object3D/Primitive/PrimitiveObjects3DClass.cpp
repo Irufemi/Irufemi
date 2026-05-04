@@ -62,6 +62,24 @@ void PrimitiveObjects3DClass::MeshComponent::ChangeMesh(PrimitiveType newType) {
     }
 }
 
+void PrimitiveObjects3DClass::MeshComponent::ChangeMesh(const PrimitiveData& data) {
+    if (!resource) {
+        resource = std::make_unique<Object3DResource>();
+        resource->CreateResource();
+        resource->Map();
+    }
+
+    // 動的にリソースを生成し、自身で所有権を持つ
+    PrimitiveResource customResource;
+    PrimitiveManager::GetInstance()->CreateGPUResource(data, customResource);
+
+    resource->vertexResource_ = customResource.vertexResource;
+    resource->indexResource_ = customResource.indexResource;
+    resource->vertexBufferView_ = customResource.vertexBufferView;
+    resource->indexBufferView_ = customResource.indexBufferView;
+    resource->indexCount_ = customResource.indexCount;
+}
+
 // --- MaterialComponent ---
 
 void PrimitiveObjects3DClass::MaterialComponent::UpdateMaterial(Object3DResource* resource, TextureManager* textureManager) {
@@ -116,6 +134,11 @@ void PrimitiveObjects3DClass::Initialize(Camera* camera, PrimitiveType type, con
     // 初回のトランスフォーム更新
     transform_.isDirty = true;
     Update();
+}
+
+void PrimitiveObjects3DClass::ReinitializeMesh(const PrimitiveData& data) {
+    mesh_.ChangeMesh(data);
+    transform_.isDirty = true;
 }
 
 void PrimitiveObjects3DClass::Update() {

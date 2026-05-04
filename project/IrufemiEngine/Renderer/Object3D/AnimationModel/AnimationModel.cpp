@@ -17,16 +17,10 @@
 #include <cmath>
 #include <cassert>
 
-// 静的メンバ定義
-IrufemiEngine* AnimationModel::engine_ = nullptr;
+
 
 AnimationModel::AnimationModel() {}
 AnimationModel::~AnimationModel() {
-    if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
-        if (engine_) {
-            engine_->GetTransformBufferManager()->Free(transformCbIndex_);
-        }
-    }
 }
 
 // 初期化
@@ -240,7 +234,6 @@ void AnimationModel::DispatchCompute() {
 
     engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
     uint32_t f = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    engine_->GetDrawManager()->ExecuteUAVBarrier(skinCluster_.skinnedVertexResource[f].Get());
     
     // スキニングが正常に実行されたフレームを記録（ポーズ中の遅延更新等による不整合を防ぐため）
     lastSkinnedFrameIndex_ = f;
@@ -339,56 +332,7 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
 #endif
 }
 
-void AnimationModel::UpdateMaterials() {
-    if (!managedModel_ || !managedModel_->cpuModel || meshResources_.empty()) {
-        return;
-    }
 
-    // 全メッシュのマテリアルを更新
-    for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
-        if (i >= meshResources_.size()) break;
-
-        auto& res = meshResources_[i];
-        if (!res->GetMaterialData()) continue;
-
-        const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
-        Material* mappedData = res->GetMaterialData();
-
-        // インスタンスカラーとマテリアルカラーを乗算
-        mappedData->color.x = cpuMat.color.x * color_.x;
-        mappedData->color.y = cpuMat.color.y * color_.y;
-        mappedData->color.z = cpuMat.color.z * color_.z;
-        mappedData->color.w = cpuMat.color.w * color_.w;
-        if (mappedData->color.w <= 0.0f) { mappedData->color.w = 1.0f; }
-
-        // ライティングの有効状態 (個別上書き優先)
-        int32_t finalEnableLighting = (enableLightingOverride_ != -1) ? (enableLightingOverride_ == 1) : (cpuMat.enableLighting ? 1 : 0);
-        mappedData->enableLighting = finalEnableLighting;
-
-        mappedData->uvTransform = cpuMat.uvTransform;
-        mappedData->metallic = cpuMat.metallic;
-        mappedData->roughness = cpuMat.roughness;
-        mappedData->hasTexture = !cpuMat.textureFilePath.empty();
-
-        // 映り込み係数 (モデル値 * インスタンス係数)
-        mappedData->environmentCoefficient = cpuMat.environmentCoefficient * environmentCoefficient_;
-
-        // ライティングモード (個別上書き優先、指定なしならモデル値、ライティング無効なら0)
-        if (lightingModeOverride_ != -1) {
-            mappedData->lightingMode = lightingModeOverride_;
-        } else {
-            mappedData->lightingMode = finalEnableLighting ? cpuMat.lightingMode : 0;
-        }
-
-        // サンプラー設定 (個別上書き優先)
-        mappedData->useClampSampler = (useClampSamplerOverride_ != -1) ? useClampSamplerOverride_ : cpuMat.useClampSampler;
-        
-        // アルファテスト用閾値
-        mappedData->alphaReference = cpuMat.alphaReference;
-        
-        // (マテリアルバッファへの転送は SyncBeforeDraw() で行われるため、ここでは SyncMaterialData は呼ばない)
-    }
-}
 
 
 void AnimationModel::UpdateAnimation() {
@@ -421,21 +365,4 @@ void AnimationModel::UpdateAnimation() {
     }
 }
 
-const ObjMaterial* AnimationModel::GetMaterial(size_t meshIndex) const {
-    if (managedModel_ && managedModel_->cpuModel && meshIndex < managedModel_->cpuModel->meshes.size()) {
-        return &managedModel_->cpuModel->meshes[meshIndex].material;
-    }
-    return nullptr;
-}
-
-ObjMaterial* AnimationModel::GetMaterial(size_t meshIndex) {
-    if (managedModel_ && managedModel_->cpuModel && meshIndex < managedModel_->cpuModel->meshes.size()) {
-        return &managedModel_->cpuModel->meshes[meshIndex].material;
-    }
-    return nullptr;
-}
-
-D3D12_GPU_VIRTUAL_ADDRESS AnimationModel::GetTransformationGpuAddress() const {
-    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
-    return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
-}
+

@@ -98,6 +98,7 @@ public:
         D3D12_GPU_VIRTUAL_ADDRESS perViewAddress;
         D3D12_GPU_VIRTUAL_ADDRESS emitterAddress;
         D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle;
+        D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle;
         D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
         uint32_t instanceCount;
         ID3D12Resource* particleResource;
@@ -163,9 +164,13 @@ private:
     std::vector<ModelRegionPacket> modelRegionQueue_;
     std::vector<std::function<void()>> postRenderQueue_;
 
+    // 最前面UI描画用キュー (PostProcess適用後のバックバッファに直接描画)
+    std::vector<SpritePacket> topMostSpriteQueue_;
+
 public:
     // --- Execute Queues ---
     void ExecuteRenderQueues(class IrufemiEngine* engine);
+    void ExecuteTopMostQueues(class IrufemiEngine* engine); // 最前面UIの描画キューを消化する
     void ClearRenderQueues();
     void ClearAllQueues() {
         ClearRenderQueues();
@@ -400,6 +405,7 @@ public:
      * @brief 2Dオブジェクト（スプライト等）の標準描画 (Sprite.hlsl)
      */
     void SubmitSprite(const class Object2DResource* resource);
+    void SubmitTopMostSprite(const class Object2DResource* resource); // 最前面UI描画用
     void DrawSprite(const SpritePacket& packet);
 
 
@@ -412,7 +418,7 @@ public:
     /**
      * @brief GPUパーティクルのインスタンス描画 (GPUParticle.hlsl)
      */
-    void SubmitGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, const D3D12_INDEX_BUFFER_VIEW& ibv, uint32_t indexCount, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS perViewAddress, D3D12_GPU_VIRTUAL_ADDRESS emitterAddress, D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, uint32_t instanceCount, ID3D12Resource* particleResource);
+    void SubmitGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, const D3D12_INDEX_BUFFER_VIEW& ibv, uint32_t indexCount, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS perViewAddress, D3D12_GPU_VIRTUAL_ADDRESS emitterAddress, D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, uint32_t instanceCount, ID3D12Resource* particleResource);
     void DrawGPUParticle(const GPUParticlePacket& packet);
     
     // VoxelParticle 用の描画 (VoxelParticle.hlsl)
@@ -440,7 +446,7 @@ public:
     /**
      * @brief UAVバリアの実行（リソース競合の解決）
      */
-    void ExecuteUAVBarrier(ID3D12Resource* resource);
+    void ExecuteUAVBarrier(ID3D12Resource* resource = nullptr);
     ///@}
 
     /** @name 状態取得・ユーティリティ */

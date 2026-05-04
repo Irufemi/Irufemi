@@ -64,7 +64,7 @@ private:
     bool isTelegraphActive_ = false;
 
     // 攻撃用
-    std::unique_ptr<CylinderClass> attackCylinder_ = nullptr;
+    std::shared_ptr<CylinderClass> attackCylinder_ = nullptr;
     Transform attackTransform_;
     float attackThickness_ = 0.5f;
     float attackForwardOffset_ = 0.0f;

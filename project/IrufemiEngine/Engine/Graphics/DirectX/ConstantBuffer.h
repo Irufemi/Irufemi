@@ -72,7 +72,7 @@ public:
 private:
     void Unmap() {
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-            if (resources_[i]) {
+            if (resources_[i] && mappedData_[i]) {
                 resources_[i]->Unmap(0, nullptr);
                 mappedData_[i] = nullptr;
             }

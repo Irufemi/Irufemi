@@ -109,11 +109,13 @@ private:
     PrimitiveManager(const PrimitiveManager&) = delete;
     PrimitiveManager& operator=(const PrimitiveManager&) = delete;
 
+public:
     /**
      * @brief GPUリソースの生成補助
      */
     void CreateGPUResource(const PrimitiveData& data, PrimitiveResource& resource);
 
+private:
     // --- 頂点生成・インデックス生成の分割ヘルパー ---
     static void GenerateSphereVertices(PrimitiveData& data, float radius, uint32_t subdivision);
     static void GenerateSphereIndices(PrimitiveData& data, uint32_t subdivision);

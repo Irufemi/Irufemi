@@ -4,6 +4,7 @@
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DirectXUtils.h"
 #include "Engine/Graphics/Pipeline/PSOManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Manager/DebugUI.h"
@@ -176,16 +177,12 @@ void VoxelParticleSystem::DispatchCompute() {
     commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
     commandList->SetComputeRootSignature(dxCommon->GetComputeRootSignature());
 
-    D3D12_RESOURCE_BARRIER uavBarrier{};
-    uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    uavBarrier.UAV.pResource = particleBuffer_.Get();
-
     if (needsInitialize_) {
       commandList->SetPipelineState(initializePSO_.Get());
       commandList->SetComputeRootDescriptorTable(0, voxelSrvHandleGPU_);    // t0
       commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_); // u0
       commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
-      commandList->ResourceBarrier(1, &uavBarrier);
+      DirectXUtils::UAVBarrier(commandList, particleBuffer_.Get());
       needsInitialize_ = false;
     }
 
@@ -196,7 +193,7 @@ void VoxelParticleSystem::DispatchCompute() {
       commandList->SetComputeRootConstantBufferView(4, emitterBuffer_.GetGPUVirtualAddress(frameIndex));
       commandList->SetComputeRootConstantBufferView(5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex));
       commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
-      commandList->ResourceBarrier(1, &uavBarrier);
+      DirectXUtils::UAVBarrier(commandList, particleBuffer_.Get());
       isEmitting_ = false;
     }
 
@@ -206,7 +203,7 @@ void VoxelParticleSystem::DispatchCompute() {
         commandList->SetComputeRootConstantBufferView(4, emitterBuffer_.GetGPUVirtualAddress(frameIndex));
         commandList->SetComputeRootConstantBufferView(5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex));
         commandList->Dispatch((voxelCount_ + 63) / 64, 1, 1);
-        commandList->ResourceBarrier(1, &uavBarrier);
+        DirectXUtils::UAVBarrier(commandList, particleBuffer_.Get());
         needsUpdateCS_ = false;
     }
   }

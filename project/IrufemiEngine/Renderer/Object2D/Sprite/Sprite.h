@@ -166,6 +166,15 @@ public: //メンバ関数
     void SetPositionCenter(const float& x, const float& y) { SetAnchor(0.5f, 0.5f); SetPosition(x, y); }
     ///@}
 
+    /** @name 最前面描画設定 */
+    ///@{
+    /**
+     * @brief ポストプロセスの影響を受けない最前面のUIとして描画するかを設定する
+     * @param[in] isTopMost trueなら最前面(バックバッファ直接)に描画する
+     */
+    void SetTopMost(bool isTopMost) { isTopMost_ = isTopMost; }
+    ///@}
+
     /** @name 静的メンバ設定（エンジン内部用） */
     ///@{
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
@@ -176,6 +185,7 @@ public: //メンバ関数
 private:
     // 行列更新の最適化用
     bool isDirty_ = true;
+    bool isTopMost_ = false; // 最前面UIフラグ
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };

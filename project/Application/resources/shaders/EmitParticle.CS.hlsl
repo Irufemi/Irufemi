@@ -24,7 +24,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     int freeListIndex;
     InterlockedAdd(gFreeListIndex[0], -1, freeListIndex);
 
-        if (freeListIndex >= 0)
+        if (freeListIndex >= 0 && freeListIndex < (int)kMaxParticles)
         {
             uint particleIndex = (uint)gFreeList[freeListIndex];
             
