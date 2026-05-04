@@ -94,7 +94,7 @@ public:
 private:
     void Unmap() {
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-            if (resources_[i]) {
+            if (resources_[i] && mappedRawData_[i]) {
                 resources_[i]->Unmap(0, nullptr);
                 mappedRawData_[i] = nullptr;
             }

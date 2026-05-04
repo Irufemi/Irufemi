@@ -135,7 +135,7 @@ void DrawManager::Finalize() {
     auto* srvPool = dxCommon_->GetSrvPool();
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         auto& fr = frameResources_[i];
-        if (fr.frameResource) {
+        if (fr.frameResource && fr.cameraData) {
             fr.frameResource->Unmap(0, nullptr);
             fr.frameResource.Reset();
         }

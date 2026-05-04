@@ -67,16 +67,16 @@ void ParticleResource::Map() {
 }
 
 void ParticleResource::Unmap() {
-    if (vertexResource_) {
+    if (vertexResource_ && vertexData_) {
         vertexResource_->Unmap(0, nullptr);
         vertexData_ = nullptr;
     }
-    if (indexResource_) {
+    if (indexResource_ && indexData_) {
         indexResource_->Unmap(0, nullptr);
         indexData_ = nullptr;
     }
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        if (instancingResource_[i]) {
+    for (int i = 0; i < kMaxFramesInFlight; ++i) {
+        if (instancingResource_[i] && instancingData_[i]) {
             instancingResource_[i]->Unmap(0, nullptr);
             instancingData_[i] = nullptr;
         }

@@ -62,11 +62,11 @@ void Object2DResource::Map() {
 }
 
 void Object2DResource::Unmap() {
-    if (vertexResource_) {
+    if (vertexResource_ && vertexData_) {
         vertexResource_->Unmap(0, nullptr);
         vertexData_ = nullptr;
     }
-    if (indexResource_) {
+    if (indexResource_ && indexData_) {
         indexResource_->Unmap(0, nullptr);
         indexData_ = nullptr;
     }

@@ -186,7 +186,7 @@ void GPUParticleSystem::Update() {
 
         if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
             isCulled_ = true;
-            return; // 画面外なら計算（CS）をスキップ
+            // 画面外でも計算（CS）は継続させるため、returnによる打ち切りは行わない
         }
     }
 
@@ -248,7 +248,8 @@ void GPUParticleSystem::SyncBeforeDraw() {
 }
 
 void GPUParticleSystem::DispatchCompute() {
-    if (isCulled_ || !needsUpdateCS_) return;
+    // カリングされていても、計算（シミュレーション）は継続する
+    if (!needsUpdateCS_) return;
 
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
     
