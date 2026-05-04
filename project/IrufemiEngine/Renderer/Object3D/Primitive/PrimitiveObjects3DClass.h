@@ -14,6 +14,7 @@ class Camera;
 class TextureManager;
 class DrawManager;
 class DebugUI;
+struct PrimitiveData;
 
 /**
  * @class PrimitiveObjects3DClass
@@ -52,6 +53,12 @@ public:
          * @param[in] newType 新しい形状タイプ
          */
         void ChangeMesh(PrimitiveType newType);
+
+        /**
+         * @brief カスタムの PrimitiveData を用いて独自にメッシュリソースを再生成する
+         * @param[in] data 再生成に使用する頂点・インデックスデータ
+         */
+        void ChangeMesh(const PrimitiveData& data);
     };
 
     /**
@@ -132,6 +139,13 @@ public:
     void SetColor(const Vector4& color) { material_.color = color; }
     void SetTexture(const std::string& path) { material_.texturePath = path; }
     void SetShape(PrimitiveType type) { mesh_.ChangeMesh(type); transform_.isDirty = true; }
+
+    /**
+     * @brief カスタムの PrimitiveData を用いて現在のリソースを破棄し再初期化する
+     * @param[in] data 再生成に使用する頂点・インデックスデータ
+     */
+    void ReinitializeMesh(const PrimitiveData& data);
+
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     void SetCastShadows(bool cast) { castShadows_ = cast; }
     bool GetCastShadows() const { return castShadows_; }

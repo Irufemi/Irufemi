@@ -70,14 +70,8 @@ void PrimitiveEffect::SetCylinderParams(float bottomRadius, float topRadius, flo
     PrimitiveData customData = PrimitiveManager::CreateCylinder(bottomRadius, topRadius, height, segments, hasTop, hasBottom, centered);
     
     // 生成したカスタムデータをObject3DResourceへ転送する処理
-    // ※今回は PrimitiveObjects3DClass が Resource のCreateResource等を隠蔽しているため、
-    // 一度 CPU キャッシュのような形で扱わせるか、Resource側で直接入れ替える必要がありますが、
-    // 簡易的に PrimitiveManager の内部を呼び出して GPUデータを更新する方法をとるか、再 Init します。
-    // (ここではPrimitiveObjects側に直接転送機能がないため、標準の SetShape を呼ぶか、特別対応する)
-    
-    // ※ 簡略化：今回は PrimitiveManager 側のキャッシュに依存せず直接作り直す機能がないため、
-    // PrimitiveObjects3DClass 自体にリロード機能を持たせたいですが、一時的に SetShape してごまかします（標準データに戻る可能性あり）
-    // （必要に応じて Object3DResource::CreateResource(customData) を呼ぶように拡張可）
+    // 新しく追加された ReinitializeMesh メソッドを使用し、動的にリソースを再生成して置き換えます。
+    primitive_.ReinitializeMesh(customData);
 }
 
 void PrimitiveEffect::Debug(const char* label) {
@@ -161,8 +155,7 @@ void PrimitiveEffect::Debug(const char* label) {
         changed |= ImGui::Checkbox("Centered", &cylCentered_);
 
         if (changed) {
-            // SetCylinderParams(cylBottomRadius_, cylTopRadius_, cylHeight_, cylSegments_, cylHasTop_, cylHasBottom_, cylCentered_);
-            // 注意：ここでメッシュデータを再生成・転送する必要があります。
+            SetCylinderParams(cylBottomRadius_, cylTopRadius_, cylHeight_, cylSegments_, cylHasTop_, cylHasBottom_, cylCentered_);
         }
     }
 
