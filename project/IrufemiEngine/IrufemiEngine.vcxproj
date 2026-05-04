@@ -167,7 +167,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Effect\PrimitiveEffect.cpp" />
     <ClCompile Include="Renderer\Object3D\ObjClass\ObjClass.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.cpp" />
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp" />
@@ -186,6 +185,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object3D\Primitive\CylinderClass.cpp" />
     <ClCompile Include="Renderer\Object2D\Primitive\Circle2D.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\CubeClass.cpp" />
+    <ClCompile Include="Renderer\Object3D\Primitive\RingClass.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DescriptorAllocator.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DescriptorPool.cpp" />
     <ClCompile Include="Renderer\Particle\ParticleResource.cpp" />
@@ -256,13 +256,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Manager\IComputeTask.h" />
     <ClInclude Include="Framework\SceneTransition.h" />
     <ClInclude Include="Renderer\Core\IRenderable.h" />
-    <ClInclude Include="Renderer\Object3D\Effect\PrimitiveEffect.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.h" />
     <ClInclude Include="Renderer\VoxelParticle\VoxelParticleSystem.h" />
     <ClInclude Include="Resource\Model\Data\VoxelizedModel.h" />
     <ClInclude Include="Engine\Irufemi.h" />
     <ClInclude Include="Renderer\Object2D\Sprite\Sprite.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\CubeClass.h" />
+    <ClInclude Include="Renderer\Object3D\Primitive\RingClass.h" />
     <ClInclude Include="Renderer\LineInstanced\LineClass.h" />
     <ClInclude Include="Renderer\Object3D\ObjClass\ObjClass.h" />
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h" />

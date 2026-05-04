@@ -5,10 +5,17 @@
 #include <string>
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
+#include "Engine/Core/Math/Vector2.h"
+#include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Type/PrimitiveType.h"
+#include "Engine/Core/Type/BlendMode.h"
+#include "Engine/Graphics/Pipeline/PSOManager.h"
+#include <vector>
+#include <memory>
 
 class GPUParticleSystem;
 class Camera;
+class PrimitiveObjects3DClass;
 
 /**
  * @enum EffectType
@@ -16,6 +23,8 @@ class Camera;
  */
 enum class EffectType {
     kHit,       // ヒットエフェクト（星型に広がる斬撃など）
+    kImpact, // スライドの表現（PlaneとRingの複合ヒットエフェクト）
+    kAura,      // オーラエフェクト
     // 今後増えるエフェクトの種類をここに追加
 };
 
@@ -71,16 +80,67 @@ struct HitEffectConfig {
     int emitCount = 8;
 };
 
+struct ImpactConfig {
+    PrimitiveType planeShape = PrimitiveType::Plane;
+    std::string planeTexture = "resources/circle2.png";
+    PrimitiveType ringShape = PrimitiveType::Ring;
+    std::string ringTexture = "resources/gradationLine.png";
+
+    Vector2 uvScale = { 5.0f, 1.0f }; // RingのU方向スケール
+    Vector2 uvScrollSpeed = { 1.0f, 0.0f }; // Ringのスクロール速度
+    bool useClamp = true; // Ringの白丸回避用
+    
+    // Plane固有設定
+    bool planeEnableRandomRotation = true;
+    int planeEmitCount = 4;
+    
+    // Ring固有設定
+    bool ringEnableRandomRotation = false;
+    int ringEmitCount = 1;
+    
+    float jitter = 0.0f; // 座標のゆらぎ（時間経過での移動を防ぐため0.0）
+    Vector3 planeStartScaleMin = { 0.05f, 0.4f, 1.0f };
+    Vector3 planeStartScaleMax = { 0.05f, 1.5f, 1.0f };
+    Vector3 ringStartScaleMin = { 0.8f, 0.8f, 1.0f };
+    Vector3 ringStartScaleMax = { 0.8f, 0.8f, 1.0f };
+    Vector3 planeEndScaleMin = { 0.05f, 0.0f, 1.0f };
+    Vector3 planeEndScaleMax = { 0.05f, 0.0f, 1.0f };
+    Vector3 ringEndScaleMin = { 0.0f, 0.0f, 0.0f };
+    Vector3 ringEndScaleMax = { 0.0f, 0.0f, 0.0f };
+    float lifeMin = 2.0f;
+    float lifeMax = 2.0f;
+    Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+};
+
+struct AuraConfig {
+    Vector3 scale = { 1.0f, 1.0f, 1.0f };
+    Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vector2 uvScrollSpeed = { -0.1f, 0.0f }; // 横にゆっくり流れるように変更
+    bool flipV = true;
+    bool useClamp = true; // 新規追加したサンプラー(U:Wrap, V:Clamp)が適用されるためtrueをデフォルトに
+    std::string texture = "resources/gradationLine.png";
+};
+
 private:
     Camera* camera_ = nullptr; // 再初期化用にカメラを保持
-    std::unique_ptr<GPUParticleSystem> gpuParticleSystem_;
+    std::vector<std::unique_ptr<GPUParticleSystem>> particleSystems_;
+    std::unique_ptr<PrimitiveObjects3DClass> auraObject_;
     EffectType type_;
 
     HitEffectConfig hitConfig_;
+    ImpactConfig impactConfig_;
+    AuraConfig auraConfig_;
+    Vector2 currentUVOffset_ = { 0.0f, 0.0f };
     
     // 全エフェクト共通の設定
     PrimitiveType currentShape_ = PrimitiveType::Plane;
     std::string currentTextureName_ = "resources/circle2.png";
+
+    // 描画設定
+    BlendMode blendMode_ = BlendMode::kBlendModeAdd;
+    PSOManager::DepthWrite depthWrite_ = PSOManager::DepthWrite::Disable;
+    PSOManager::CullMode cullMode_ = PSOManager::CullMode::None;
+    bool isBillboard_ = true;
 };
 
 

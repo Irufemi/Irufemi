@@ -17,7 +17,7 @@ void EnemyBeam::Initialize(Camera* camera, IrufemiEngine* engine) {
     telegraphObj_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     telegraphObj_->SetCastShadows(false);
 
-    attackCylinder_ = std::make_unique<CylinderClass>();
+    attackCylinder_ = std::make_shared<CylinderClass>();
     attackCylinder_->Initialize(camera, false, false);
     attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     attackCylinder_->SetCastShadows(false);
@@ -171,18 +171,22 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
         // 不透明描画の後に専用PSOを適用して描画するよう SubmitPostRender に積む
         attackCylinder_->SyncBeforeDraw();
 
-        engine->GetDrawManager()->SubmitPostRender([engine, this]() {
+        engine->GetDrawManager()->SubmitPostRender([
+            engine, 
+            capturedCylinder = attackCylinder_, 
+            capturedLightning = lightningParamsResource_
+        ]() {
             engine->SetBlend(BlendMode::kBlendModeAdd);
             engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
             engine->SetCull(PSOManager::CullMode::None);
 
             engine->ApplyLightningCrawlPSO();
-            if (lightningParamsResource_) {
-                engine->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
+            if (capturedLightning) {
+                engine->BindLightningParams(capturedLightning->GetGPUVirtualAddress());
             }
 
             DrawManager::Standard3DPacket packet{};
-            packet.resource = attackCylinder_->GetD3D12Resource();
+            packet.resource = capturedCylinder->GetD3D12Resource();
             packet.blendMode = BlendMode::kBlendModeAdd;
             packet.depthWrite = PSOManager::DepthWrite::Disable;
             packet.cullMode = PSOManager::CullMode::None;

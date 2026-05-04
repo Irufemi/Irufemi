@@ -1,4 +1,4 @@
-﻿#include "../Core/IRenderable.h"
+#include "../Core/IRenderable.h"
 #pragma once
 
 #include "../../Engine/Core/Math/Vector3.h"
@@ -52,16 +52,7 @@ struct ParticleCS {
     Vector4 endColor;     ///< 終了色
 };
 
-/**
- * @struct ParticleGPUMaterial
- * @brief GPUパーティクル描画用のマテリアル設定
- */
-struct ParticleGPUMaterial {
-    Vector4 color;             ///< 乗算色
-    int32_t useClampSampler = 0; ///< 0: WRAP, 1: CLAMP
-    float pad[3];
-    Matrix4x4 uvTransform = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 }; ///< UV Transform
-};
+#include "Engine/Graphics/Data/Material.h"
 
 /**
  * @struct GPUParticleEmitter
@@ -127,11 +118,11 @@ struct GPUParticleEmitter {
     float groundHeight = -100.0f;
     float bounce = 0.5f;
     float attractorStrength = 0.0f;
-    uint32_t pad4 = 0;
+    uint32_t randomSeed = 0; // 各エミッターごとの乱数シード
 
     // float4 x 16
     Vector3 attractorPos = {0,0,0};
-    uint32_t pad5 = 0;
+    uint32_t enableRandomRotation = 1; // 1: ランダム回転あり, 0: なし
 
     // float4 x 17
     Vector3 areaSize = {10,10,10};
@@ -184,6 +175,13 @@ public:
     /** @brief 使用するテクスチャを切り替える */
     void SetTexture(const std::string& textureFilePath);
 
+    /** @brief UVの変換行列（スケール・スクロール用）を設定する */
+    void SetUVTransform(const Matrix4x4& transform) { cpuMaterialData_.uvTransform = transform; }
+    /** @brief 中心部の白丸対策などでSamplerをCLAMPにするか設定する */
+    void SetUseClampSampler(bool useClamp) { cpuMaterialData_.useClampSampler = useClamp ? 1 : 0; }
+    /** @brief アルファテストのしきい値（この値以下のアルファを持つピクセルを破棄）を設定する */
+    void SetAlphaReference(float alphaRef) { cpuMaterialData_.alphaReference = alphaRef; }
+
     /**
      * @brief パーティクルのスケール（開始時と終了時）を動的に設定する
      * @param startMin 開始時の最小スケール
@@ -204,6 +202,7 @@ public:
     void SetVelocity(float velocity) { if (emitter_) emitter_->velocity = velocity; }
     /** @brief 座標のゆらぎ（Jitter）を設定する */
     void SetJitter(float jitter) { if (emitter_) emitter_->jitter = jitter; }
+    void SetEnableRandomRotation(bool enable) { if (emitter_) emitter_->enableRandomRotation = enable ? 1 : 0; }
 
     /** @name 描画設定（パイプライン） */
     ///@{
@@ -263,6 +262,7 @@ public:
     static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }
     static void SetTextureManager(TextureManager* textureManager) { textureManager_ = textureManager; }
     static void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
+    static IrufemiEngine* GetEngine() { return engine_; }
 
     static TextureManager* GetTextureManager() { return textureManager_; }
     ///@}
@@ -304,6 +304,7 @@ private:
     bool isLooping_ = true;
     float duration_ = -1.0f; // -1: 無限
     float totalTime_ = 0.0f;
+    float timeSinceStop_ = 0.0f;
 
     /** @name エミッターリソース */
     ///@{
@@ -343,6 +344,14 @@ private:
     D3D12_CPU_DESCRIPTOR_HANDLE freeListSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE freeListSrvHandleGPU_{};
 
+    Microsoft::WRL::ComPtr<ID3D12Resource> sortResource_;
+    D3D12_CPU_DESCRIPTOR_HANDLE sortUavHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE sortUavHandleGPU_{};
+    D3D12_CPU_DESCRIPTOR_HANDLE sortSrvHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE sortSrvHandleGPU_{};
+    uint32_t sortIndex_ = 0xFFFFFFFF;
+    uint32_t sortSrvIndex_ = 0xFFFFFFFF;
+
     ConstantBuffer<PerView> perViewBuffer_;
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
@@ -350,8 +359,19 @@ private:
     uint32_t indexCount_ = 0;                  // NEW: インデックス数
     PrimitiveType primitiveType_ = PrimitiveType::Plane; // 現在の形状
 
-    ConstantBuffer<ParticleGPUMaterial> materialBuffer_;
-    ParticleGPUMaterial cpuMaterialData_{ { 1.0f, 1.0f, 1.0f, 1.0f }, 0, {0, 0, 0}, {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1} };
+    ConstantBuffer<Material> materialBuffer_;
+    Material cpuMaterialData_{
+        { 1.0f, 1.0f, 1.0f, 1.0f }, // color
+        0, // enableLighting
+        1, // hasTexture
+        0, // lightingMode
+        0.0f, // environmentCoefficient
+        {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1}, // uvTransform
+        0.0f, // metallic
+        0.0f, // roughness
+        0, // useClampSampler
+        0.0f // alphaReference
+    };
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
     int selectedTextureIndex_ = 0;

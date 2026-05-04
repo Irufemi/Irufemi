@@ -1,6 +1,7 @@
 #include "GPUParticleSystem.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Engine/Graphics/DirectX/DirectXUtils.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Core/Math/Math.h"
@@ -35,10 +36,13 @@ GPUParticleSystem::~GPUParticleSystem() {
             srvPool->FreeAfterFence(particleSrvIndex_, fv);
             srvPool->FreeAfterFence(freeListIndexUavIndex_, fv);
             srvPool->FreeAfterFence(freeListUavIndex_, fv);
+            srvPool->FreeAfterFence(sortIndex_, fv);
+            srvPool->FreeAfterFence(sortSrvIndex_, fv);
         }
         dxCommon_->ReleaseAfterFence(particleResource_);
         dxCommon_->ReleaseAfterFence(freeListIndexResource_);
         dxCommon_->ReleaseAfterFence(freeListResource_);
+        dxCommon_->ReleaseAfterFence(sortResource_);
     }
 }
 
@@ -53,6 +57,10 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
     camera_ = camera;
 
     CreateBuffersAndViews();
+
+    // 各GPUParticleSystemインスタンスごとに異なるシードを持たせて、乱数系列が完全に被るのを防ぐ
+    static uint32_t s_uniqueSeed = 0;
+    emitter_->randomSeed = ++s_uniqueSeed;
 
     // 形状の初期設定 (デフォルトは Quad/Plane)
     SetPrimitive(PrimitiveType::Plane);
@@ -121,10 +129,16 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
             cmdList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
-            D3D12_RESOURCE_BARRIER barrier{};
-            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-            barrier.UAV.pResource = nullptr;
-            cmdList->ResourceBarrier(1, &barrier);
+            /**
+             * @brief 初期化終了後の UAV バリア
+             * @details [設計ルール] グローバルバリア (pResource=nullptr) はGPU並列効率を低下させるため禁止。
+             * 読み書きを行う3つのリソースを明示してバリアを張る。
+             */
+            DirectXUtils::UAVBarriers(cmdList, {
+                particleResource_.Get(),
+                freeListIndexResource_.Get(),
+                freeListResource_.Get()
+            });
             
             // 2. Emit / Update シェーダーを空バインドして JIT 誘発
             // 実行はしない（Descriptor等も最低限のまま）
@@ -175,7 +189,7 @@ void GPUParticleSystem::Update() {
 
         if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
             isCulled_ = true;
-            return; // 画面外なら計算（CS）をスキップ
+            // 画面外でも計算（CS）は継続させるため、returnによる打ち切りは行わない
         }
     }
 
@@ -183,6 +197,9 @@ void GPUParticleSystem::Update() {
 
     if (isPlaying_) {
         emitter_->frequencyTime += dt; // δタイムを加算
+        timeSinceStop_ = 0.0f;         // 停止タイマーをリセット
+    } else {
+        timeSinceStop_ += dt;          // 停止してからの時間を計測
     }
 
     perFrameData_->time = engine_->GetGameTime();
@@ -201,10 +218,15 @@ void GPUParticleSystem::Update() {
         debugLineRegion_->Update();
     }
 
-    needsUpdateCS_ = true;
+    // パーティクルが生存している可能性がある場合のみCSの更新フラグを立てる
+    if (isPlaying_ || timeSinceStop_ <= emitter_->maxLife + 0.1f) {
+        needsUpdateCS_ = true;
+    } else {
+        needsUpdateCS_ = false; // 完全に休眠
+    }
     
     // エンジンにCompute Shaderの実行を予約する
-    if (engine_ && engine_->GetDrawManager()) {
+    if (engine_ && engine_->GetDrawManager() && needsUpdateCS_) {
         engine_->GetDrawManager()->RegisterComputeTask(this);
     }
 }
@@ -221,6 +243,7 @@ void GPUParticleSystem::SyncBeforeDraw() {
         billboardMatrix_.m[3][1] = 0.0f;
         billboardMatrix_.m[3][2] = 0.0f;
         perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
+        perViewBuffer_[frameIndex]->worldPosition = camera_->GetTranslate();
     }
 
     // 同一フレーム内で複数回呼び出された場合は無駄な転送を防ぐ
@@ -230,6 +253,9 @@ void GPUParticleSystem::SyncBeforeDraw() {
     }
     
     emitterBuffer_.Update(*emitter_, frameIndex);
+    // [Fix] 転送した直後にCPU側の蓄積カウントをリセットすることで、次フレームへの意図せぬ持ち越しを防ぐ
+    emitter_->burstCount = 0;
+    
     perFrameBuffer_.Update(*perFrameData_, frameIndex);
     materialBuffer_.Update(cpuMaterialData_, frameIndex);
     
@@ -237,7 +263,8 @@ void GPUParticleSystem::SyncBeforeDraw() {
 }
 
 void GPUParticleSystem::DispatchCompute() {
-    if (isCulled_ || !needsUpdateCS_) return;
+    // カリングされていても、計算（シミュレーション）は継続する
+    if (!needsUpdateCS_) return;
 
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
     
@@ -246,8 +273,6 @@ void GPUParticleSystem::DispatchCompute() {
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
     DispatchComputeShaders(commandList);
 
-    // 送信済みのバーストカウントをリセットする
-    emitter_->burstCount = 0;
     needsUpdateCS_ = false;
 }
 
@@ -266,6 +291,7 @@ void GPUParticleSystem::Draw() {
     billboardMatrix_.m[3][1] = 0.0f;
     billboardMatrix_.m[3][2] = 0.0f;
     perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
+    perViewBuffer_[frameIndex]->worldPosition = camera_->GetTranslate();
 
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
@@ -284,6 +310,7 @@ void GPUParticleSystem::Draw() {
         perViewBuffer_.GetGPUVirtualAddress(frameIndex),
         emitterBuffer_.GetGPUVirtualAddress(frameIndex),
         particleSrvHandleGPU_,
+        sortSrvHandleGPU_,
         textureHandle_,
         kMaxParticles,
         particleResource_.Get()
@@ -539,75 +566,84 @@ void GPUParticleSystem::DrawCylinderWireframe(const Vector3& center, const Vecto
 }
 
 void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* commandList) {
-    // 0. 未初期化の場合、CSでバッファを初期化する
-    if (!isInitializedCS_) {
-        // すでにInitialize()で実行済みのため本来はここに来ないが、フェールセーフとして残す
-        ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
-        commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-        commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
-        commandList->SetPipelineState(dxCommon_->GetGpuParticleInitializePSO());
-        commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
-        commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
-        commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+    commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
 
-        commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
+    uint32_t frameIndex = dxCommon_->GetFrameIndex();
 
-        D3D12_RESOURCE_BARRIER barrier{};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        barrier.UAV.pResource = nullptr;
-        commandList->ResourceBarrier(1, &barrier);
-
-        isInitializedCS_ = true;
+    // Emit
+    commandList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
+    commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+    commandList->SetComputeRootConstantBufferView(4, emitterBuffer_.GetGPUVirtualAddress(frameIndex));
+    commandList->SetComputeRootConstantBufferView(5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex));
+    
+    uint32_t emitCount = emitterBuffer_[frameIndex]->burstCount;
+    if (emitCount > 0) {
+        commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
     }
 
-    // 1. Compute Shader dispatch (Update/Emit) - Only if Update() was called
-    if (needsUpdateCS_) {
-        ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
-        commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+    // Emitフェーズの書き込み完了を保証するためバリアを張る
+    DirectXUtils::UAVBarriers(commandList, {
+        particleResource_.Get(), freeListIndexResource_.Get(), freeListResource_.Get()
+    });
 
-        commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
+    // Update
+    commandList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
+    commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+    commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+    commandList->SetComputeRootConstantBufferView(4, emitterBuffer_.GetGPUVirtualAddress(frameIndex));
+    commandList->SetComputeRootConstantBufferView(5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex));
+    commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
 
-        D3D12_RESOURCE_BARRIER uavBarrier{};
-        uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        uavBarrier.UAV.pResource = nullptr;
-
-        uint32_t frameIndex = dxCommon_->GetFrameIndex();
-
-        // Emit
-        commandList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
-        commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
-        commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
-        commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
-        commandList->SetComputeRootConstantBufferView(4, emitterBuffer_.GetGPUVirtualAddress(frameIndex));
-        commandList->SetComputeRootConstantBufferView(5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex));
-        
-        uint32_t emitCount = emitterBuffer_[frameIndex]->burstCount;
-        if (emitCount > 0) {
-            char debugMsg[256];
-            sprintf_s(debugMsg, "[GPUParticleSystem::Dispatch] frameIndex=%d, emitCount=%d\n", frameIndex, emitCount);
-            OutputDebugStringA(debugMsg);
-
-            commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
+    // Updateフェーズ完了後のバリア
+    DirectXUtils::UAVBarriers(commandList, {
+        particleResource_.Get(), freeListIndexResource_.Get(), freeListResource_.Get()
+    });
+    
+    // --- Bitonic Sort Phase ---
+    // 1. Init Sort List
+    commandList->SetPipelineState(dxCommon_->GetGpuParticleInitSortPSO());
+    // Descriptor table mapping for InitParticleSort.CS.hlsl:
+    // t0: Particle (u0 in RootSig index 0, wait, it's bound as SRV to slot 0)
+    commandList->SetComputeRootDescriptorTable(0, particleSrvHandleGPU_);
+    // u0: SortList (Slot 8 in our RootSig setup)
+    commandList->SetComputeRootDescriptorTable(8, sortUavHandleGPU_);
+    // b0: PerView (Slot 4 in RootSig)
+    commandList->SetComputeRootConstantBufferView(4, perViewBuffer_.GetGPUVirtualAddress(frameIndex));
+    
+    commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
+    
+    // Wait for Init
+    DirectXUtils::UAVBarriers(commandList, { sortResource_.Get() });
+    
+    // 2. Execute Bitonic Sort
+    commandList->SetPipelineState(dxCommon_->GetGpuParticleBitonicSortPSO());
+    commandList->SetComputeRootDescriptorTable(8, sortUavHandleGPU_); // u0
+    
+    for (uint32_t k = 2; k <= kMaxParticles; k <<= 1) {
+        for (uint32_t j = k >> 1; j > 0; j >>= 1) {
+            commandList->SetComputeRoot32BitConstant(9, k, 0); // b2, uint k
+            commandList->SetComputeRoot32BitConstant(9, j, 1); // b2, uint j
+            
+            commandList->Dispatch(kMaxParticles / 1024, 1, 1);
+            
+            DirectXUtils::UAVBarriers(commandList, { sortResource_.Get() });
         }
-
-        commandList->ResourceBarrier(1, &uavBarrier);
-
-        // Update
-        commandList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
-        commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
-        commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
-        commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
-        commandList->SetComputeRootConstantBufferView(4, emitterBuffer_.GetGPUVirtualAddress(frameIndex));
-        commandList->SetComputeRootConstantBufferView(5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex));
-        commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
-
-        commandList->ResourceBarrier(1, &uavBarrier);
-
-        needsUpdateCS_ = false;
-        isCsDispatchedThisFrame_ = true;
     }
+    
+    // Ensure sorting is completely done before graphics queue uses it
+    DirectXUtils::TransitionBarrier(commandList, sortResource_.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
+    needsUpdateCS_ = false;
+    isCsDispatchedThisFrame_ = true;
 }
+
+
 
 void GPUParticleSystem::DebugGeneralSettings() {
 #if defined(USE_IMGUI)
@@ -798,6 +834,35 @@ void GPUParticleSystem::CreateBuffersAndViews() {
     freeListUavDesc.Buffer.NumElements = kMaxParticles;
     freeListUavDesc.Buffer.StructureByteStride = sizeof(int32_t);
     dxCommon_->GetDevice()->CreateUnorderedAccessView(freeListResource_.Get(), nullptr, &freeListUavDesc, freeListUavHandleCPU_);
+
+    // sortResource
+    sortResource_ = dxCommon_->CreateUAVBufferResource((sizeof(float) + sizeof(uint32_t)) * kMaxParticles);
+    sortIndex_ = srvPool->Allocate();
+    sortUavHandleCPU_ = srvPool->GetCPUHandle(sortIndex_);
+    sortUavHandleGPU_ = srvPool->GetGPUHandle(sortIndex_);
+    sortSrvHandleCPU_ = sortUavHandleCPU_; // 同じディスクリプタヒープ領域を使用
+    sortSrvHandleGPU_ = sortUavHandleGPU_; 
+    // UAV
+    D3D12_UNORDERED_ACCESS_VIEW_DESC sortUavDesc{};
+    sortUavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    sortUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    sortUavDesc.Buffer.FirstElement = 0;
+    sortUavDesc.Buffer.NumElements = kMaxParticles;
+    sortUavDesc.Buffer.StructureByteStride = sizeof(float) + sizeof(uint32_t);
+    dxCommon_->GetDevice()->CreateUnorderedAccessView(sortResource_.Get(), nullptr, &sortUavDesc, sortUavHandleCPU_);
+    
+    // SRV
+    sortSrvIndex_ = srvPool->Allocate();
+    sortSrvHandleCPU_ = srvPool->GetCPUHandle(sortSrvIndex_);
+    sortSrvHandleGPU_ = srvPool->GetGPUHandle(sortSrvIndex_);
+    D3D12_SHADER_RESOURCE_VIEW_DESC sortSrvDesc{};
+    sortSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    sortSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    sortSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    sortSrvDesc.Buffer.FirstElement = 0;
+    sortSrvDesc.Buffer.NumElements = kMaxParticles;
+    sortSrvDesc.Buffer.StructureByteStride = sizeof(float) + sizeof(uint32_t);
+    dxCommon_->GetDevice()->CreateShaderResourceView(sortResource_.Get(), &sortSrvDesc, sortSrvHandleCPU_);
 
     // PerView用リソース
     perViewBuffer_.Initialize(dxCommon_);

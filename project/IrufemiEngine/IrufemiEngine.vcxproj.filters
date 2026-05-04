@@ -151,9 +151,7 @@
     <Filter Include="Engine\Core\System">
       <UniqueIdentifier>{6d9e3a1d-37be-492e-af07-22944ff2e1a5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\Object3D\Effect">
-      <UniqueIdentifier>{f4fb1d23-3e0c-46b4-9cde-75cceb18a342}</UniqueIdentifier>
-    </Filter>
+
     <Filter Include="Renderer\Effect">
       <UniqueIdentifier>{12345678-abcd-1234-abcd-1234567890ab}</UniqueIdentifier>
     </Filter>
@@ -324,6 +322,9 @@
     <ClCompile Include="Renderer\Object3D\Primitive\CubeClass.cpp">
       <Filter>Renderer\Object3D\Primitive</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Object3D\Primitive\RingClass.cpp">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer\Object3D\Primitive\CylinderClass.cpp">
       <Filter>Renderer\Object3D\Primitive</Filter>
     </ClCompile>
@@ -367,9 +368,7 @@
     <ClCompile Include="Engine\Core\Math\NumericalSequence.cpp">
       <Filter>Engine\Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Effect\PrimitiveEffect.cpp">
-      <Filter>Renderer\Object3D\Effect</Filter>
-    </ClCompile>
+
     <ClCompile Include="Renderer\Core\BaseResource.cpp">
       <Filter>Renderer\Core</Filter>
     </ClCompile>
@@ -675,6 +674,9 @@
     <ClInclude Include="Renderer\Object3D\Primitive\CubeClass.h">
       <Filter>Renderer\Object3D\Primitive</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Object3D\Primitive\RingClass.h">
+      <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClInclude>
     <ClInclude Include="Renderer\Object3D\Primitive\CylinderClass.h">
       <Filter>Renderer\Object3D\Primitive</Filter>
     </ClInclude>
@@ -759,9 +761,7 @@
     <ClInclude Include="Engine\Graphics\DirectX\ConstantBuffer.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Effect\PrimitiveEffect.h">
-      <Filter>Renderer\Object3D\Effect</Filter>
-    </ClInclude>
+
     <ClInclude Include="Engine\Manager\IComputeTask.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>

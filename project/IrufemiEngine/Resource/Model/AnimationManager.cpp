@@ -266,14 +266,28 @@ void AnimationManager::SkeletonUpdate(Skeleton& skeleton) {
 
 // Skeletonに対してAnimationを適用する
 void AnimationManager::ApplyAnimation(Skeleton& skeleton, const Animation& animation, float animationTime) {
-    for (Joint& joint : skeleton.joints) {
-        // 対象のJointのAnimationがあれば、値の適用を行う。下記のif文はC++17から可能になった初期化付きif文。
-        if (auto it = animation.nodeAnimations.find(joint.name); it != animation.nodeAnimations.end()) {
-            const NodeAnimation& rootNodeAnimation = (*it).second;
-            joint.transform.translate = CalculateValue(rootNodeAnimation.translate, animationTime);
-            joint.transform.rotate = CalculateValue(rootNodeAnimation.rotate, animationTime);
-            joint.transform.scale = CalculateValue(rootNodeAnimation.scale, animationTime);
+    // アニメーションが変更された場合（または初回）のみ、バインディングを再構築する
+    if (skeleton.lastAppliedAnimation != &animation) {
+        skeleton.lastAppliedAnimation = &animation;
+        skeleton.activeAnimationBindings.clear();
+
+        // アニメーション側のノード名から、対象のジョイントを探してキャッシュ
+        for (const auto& [nodeName, nodeAnimation] : animation.nodeAnimations) {
+            auto it = skeleton.jointMap.find(nodeName);
+            if (it != skeleton.jointMap.end()) {
+                skeleton.activeAnimationBindings.push_back({ it->second, &nodeAnimation });
+            }
         }
+    }
+
+    // キャッシュを使って毎フレームの文字列検索 (std::map::find) を排除！
+    for (const auto& binding : skeleton.activeAnimationBindings) {
+        Joint& joint = skeleton.joints[binding.first];
+        const NodeAnimation& rootNodeAnimation = *binding.second;
+
+        joint.transform.translate = CalculateValue(rootNodeAnimation.translate, animationTime);
+        joint.transform.rotate = CalculateValue(rootNodeAnimation.rotate, animationTime);
+        joint.transform.scale = CalculateValue(rootNodeAnimation.scale, animationTime);
     }
 }
 

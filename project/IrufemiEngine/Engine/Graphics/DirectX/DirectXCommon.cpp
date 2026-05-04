@@ -13,6 +13,7 @@
 
 #include "DXCommandManager.h"
 #include "DXSwapChainManager.h"
+#include "DirectXUtils.h"
 
 ID3D12CommandQueue* DirectXCommon::GetCommandQueue() { return commandManager_->GetCommandQueue(); }
 ID3D12CommandAllocator* DirectXCommon::GetCommandAllocator() { return commandManager_->GetCommandAllocator(frameIndex_); }
@@ -52,6 +53,8 @@ void DirectXCommon::Finalize() {
     voxelParticleEmitPSO_.Reset();
     gpuParticleUpdatePSO_.Reset();
     gpuParticleInitializePSO_.Reset();
+    gpuParticleInitSortPSO_.Reset();
+    gpuParticleBitonicSortPSO_.Reset();
     skinningComputePSO_.Reset();
     if (rootSignatureManager_) {
         rootSignatureManager_->Finalize();
@@ -219,6 +222,8 @@ void DirectXCommon::CreatePSOs() {
     auto csGpuInit = shaderCompiler_->Compile(L"resources/shaders/InitializeParticle.CS.hlsl", L"cs_6_0", logStream);
     auto csGpuEmit = shaderCompiler_->Compile(L"resources/shaders/EmitParticle.CS.hlsl", L"cs_6_0", logStream);
     auto csGpuUpdate = shaderCompiler_->Compile(L"resources/shaders/UpdateParticle.CS.hlsl", L"cs_6_0", logStream);
+    auto csGpuInitSort = shaderCompiler_->Compile(L"resources/shaders/InitParticleSort.CS.hlsl", L"cs_6_0", logStream);
+    auto csGpuBitonicSort = shaderCompiler_->Compile(L"resources/shaders/BitonicSort.CS.hlsl", L"cs_6_0", logStream);
     auto csVoxelInit = shaderCompiler_->Compile(L"resources/shaders/InitializeVoxel.CS.hlsl", L"cs_6_0", logStream);
     auto csVoxelEmit = shaderCompiler_->Compile(L"resources/shaders/EmitVoxel.CS.hlsl", L"cs_6_0", logStream);
     auto csVoxelUpdate = shaderCompiler_->Compile(L"resources/shaders/UpdateVoxel.CS.hlsl", L"cs_6_0", logStream);
@@ -271,6 +276,8 @@ void DirectXCommon::CreatePSOs() {
     createComputePSO(csGpuInit, gpuParticleInitializePSO_);
     createComputePSO(csGpuEmit, gpuParticleEmitPSO_);
     createComputePSO(csGpuUpdate, gpuParticleUpdatePSO_);
+    createComputePSO(csGpuInitSort, gpuParticleInitSortPSO_);
+    createComputePSO(csGpuBitonicSort, gpuParticleBitonicSortPSO_);
     createComputePSO(csVoxelInit, voxelParticleInitializePSO_);
     createComputePSO(csVoxelEmit, voxelParticleEmitPSO_);
     createComputePSO(csVoxelUpdate, voxelParticleUpdatePSO_);
@@ -416,14 +423,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource>  DirectXCommon::UploadTextureData(const M
         UpdateSubresources(cmdList, texture.Get(), intermediateResource.Get(), 0, 0, UINT(subResources.size()), subResources.data());
 
         //Textureへの転送後は利用できるよう、ResourceStateを変更
-        D3D12_RESOURCE_BARRIER barrier{};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        barrier.Transition.pResource = texture.Get();
-        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
-        cmdList->ResourceBarrier(1, &barrier);
+        DirectXUtils::TransitionBarrier(cmdList, texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ);
     });
 
 	// 中間リソースを遅延解放に登録
@@ -668,6 +668,8 @@ void DirectXCommon::PreWarmJITCompile() {
             gpuParticleInitializePSO_.Get(),
             gpuParticleEmitPSO_.Get(),
             gpuParticleUpdatePSO_.Get(),
+            gpuParticleInitSortPSO_.Get(),
+            gpuParticleBitonicSortPSO_.Get(),
             voxelParticleInitializePSO_.Get(),
             voxelParticleEmitPSO_.Get(),
             voxelParticleUpdatePSO_.Get()

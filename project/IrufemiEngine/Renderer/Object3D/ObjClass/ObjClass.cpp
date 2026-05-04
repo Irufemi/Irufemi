@@ -11,25 +11,16 @@
 #include "Engine/IrufemiEngine.h"
 
 // 静的メンバ定義
-TextureManager* ObjClass::textureManager_ = nullptr;
-DrawManager* ObjClass::drawManager_ = nullptr;
-DebugUI* ObjClass::ui_ = nullptr;
-ModelManager* ObjClass::modelManager_ = nullptr;
 
-ObjClass::~ObjClass() {
-    if (auto engine = drawManager_->GetDxCommon()->GetEngine()) {
-        if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
-            engine->GetTransformBufferManager()->Free(transformCbIndex_);
-        }
-    }
-}
+
+ObjClass::~ObjClass() {}
 
 void ObjClass::Initialize(Camera* camera, const std::string& filename) {
     camera_ = camera;
 
-    assert(modelManager_ && "ObjClass::Initialize: ModelManager is not set.");
+    assert(engine_ && "ObjClass::Initialize: Engine is not set.");
     // 非同期で読み込みを開始し、メインスレッドをブロックしない
-    managedModel_ = modelManager_->GetModelAsync(filename);
+    managedModel_ = engine_->GetObjModelManager()->GetModelAsync(filename);
     
     // StatusがLoadedであれば直ちに初期化を試みる
     auto status = managedModel_->status.load();
@@ -43,11 +34,9 @@ void ObjClass::InitializeResources() {
         return;
     }
 
-    // 変換行列リソースの生成とマップ (全メッシュ共有用)
-    assert(drawManager_ && "DrawManager is not set. Cannot get DirectXCommon.");
     if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
-        if (auto engine = drawManager_->GetDxCommon()->GetEngine()) {
-            transformCbIndex_ = engine->GetTransformBufferManager()->Allocate();
+        if (engine_) {
+            transformCbIndex_ = engine_->GetTransformBufferManager()->Allocate();
         }
     }
 
@@ -115,13 +104,13 @@ void ObjClass::Update() {
 }
 
 void ObjClass::SyncBeforeDraw() {
-    uint32_t frameIndex = drawManager_->GetDxCommon()->GetFrameIndex();
+    uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     
     if (isDirtyBuffer_[frameIndex]) {
         // 変換行列の更新 (全メッシュで共有のバッファ)
-        if (auto engine = drawManager_->GetDxCommon()->GetEngine()) {
+        if (engine_) {
             if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
-                engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
+                engine_->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
             }
         }
         isDirtyBuffer_[frameIndex] = false;
@@ -137,7 +126,7 @@ void ObjClass::SyncBeforeDraw() {
 #include "../../../Engine/Core/Shape/Sphere.h"
 
 void ObjClass::Draw() {
-    if (!managedModel_ || !drawManager_ || !camera_) {
+    if (!managedModel_ || !engine_ || !engine_->GetDrawManager() || !camera_) {
         return;
     }
 
@@ -172,7 +161,7 @@ void ObjClass::Draw() {
 
     // モデル内の全メッシュを描画
     for (auto& res : meshResources_) {
-        drawManager_->SubmitStandard3D(res.get(), nullptr, castShadows_);
+        engine_->GetDrawManager()->SubmitStandard3D(res.get(), nullptr, castShadows_);
     }
 }
 
@@ -187,7 +176,8 @@ void ObjClass::Debug([[maybe_unused]] const char* objName) {
 
 void ObjClass::DebugTab() {
 #if defined USE_IMGUI
-    if (ui_) {
+    if (engine_) {
+        auto ui_ = engine_->GetDebugUI();
         ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
         ui_->DebugTransform(transform_);
         ImGui::ColorEdit4("Color", &color_.x); // インスタンスカラーを編集
@@ -218,92 +208,4 @@ void ObjClass::DebugTab() {
 #endif
 }
 
-size_t ObjClass::GetMeshCount() const {
-    if (managedModel_ && managedModel_->cpuModel) {
-        return managedModel_->cpuModel->meshes.size();
-    }
-    return 0;
-}
-
-const ObjMaterial* ObjClass::GetMaterial(size_t meshIndex) const {
-    if (managedModel_ && managedModel_->cpuModel && meshIndex < managedModel_->cpuModel->meshes.size()) {
-        return &managedModel_->cpuModel->meshes[meshIndex].material;
-    }
-    return nullptr;
-}
-
-ObjMaterial* ObjClass::GetMaterial(size_t meshIndex) {
-    if (managedModel_ && managedModel_->cpuModel && meshIndex < managedModel_->cpuModel->meshes.size()) {
-        return &managedModel_->cpuModel->meshes[meshIndex].material;
-    }
-    return nullptr;
-}
-
-void ObjClass::SetEnableLightingToAllMeshes(bool enable) {
-    enableLightingOverride_ = enable ? 1 : 0;
-    MarkAsDirty();
-}
-
-void ObjClass::SetAlpha(float alpha) {
-    color_.w = alpha;
-    MarkAsDirty();
-}
-
-void ObjClass::SetColor(const Vector4& color) {
-    color_ = color;
-    MarkAsDirty();
-}
-
-void ObjClass::UpdateMaterials() {
-    if (!managedModel_ || !managedModel_->cpuModel || meshResources_.empty()) {
-        return;
-    }
-
-    // 全メッシュのマテリアルを更新
-    for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
-        if (i >= meshResources_.size()) break;
-
-        auto& res = meshResources_[i];
-        if (!res->GetMaterialData()) continue;
-
-        const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
-        Material* mappedData = res->GetMaterialData();
-
-        // インスタンスカラーとマテリアルカラーを乗算
-        mappedData->color.x = cpuMat.color.x * color_.x;
-        mappedData->color.y = cpuMat.color.y * color_.y;
-        mappedData->color.z = cpuMat.color.z * color_.z;
-        mappedData->color.w = cpuMat.color.w * color_.w;
-        if (mappedData->color.w <= 0.0f) { mappedData->color.w = 1.0f; }
-
-        // ライティングの有効状態 (個別上書き優先)
-        int32_t finalEnableLighting = (enableLightingOverride_ != -1) ? (enableLightingOverride_ == 1) : (cpuMat.enableLighting ? 1 : 0);
-        mappedData->enableLighting = finalEnableLighting;
-
-        mappedData->uvTransform = cpuMat.uvTransform;
-        mappedData->metallic = cpuMat.metallic;
-        mappedData->roughness = cpuMat.roughness;
-        mappedData->hasTexture = !cpuMat.textureFilePath.empty();
-
-        // 映り込み係数 (モデル値 * インスタンス係数)
-        mappedData->environmentCoefficient = cpuMat.environmentCoefficient * environmentCoefficient_;
-
-        // ライティングモード (個別上書き優先、指定なしならモデル値、ライティング無効なら0)
-        if (lightingModeOverride_ != -1) {
-            mappedData->lightingMode = lightingModeOverride_;
-        } else {
-            mappedData->lightingMode = finalEnableLighting ? cpuMat.lightingMode : 0;
-        }
-
-        // サンプラー設定 (個別上書き優先)
-        mappedData->useClampSampler = (useClampSamplerOverride_ != -1) ? useClampSamplerOverride_ : cpuMat.useClampSampler;
-        
-        // アルファテスト用閾値
-        mappedData->alphaReference = cpuMat.alphaReference;
-    }
-}
-
-D3D12_GPU_VIRTUAL_ADDRESS ObjClass::GetTransformationGpuAddress() const {
-    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
-    return drawManager_->GetDxCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
-}
+

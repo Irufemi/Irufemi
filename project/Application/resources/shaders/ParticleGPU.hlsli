@@ -25,6 +25,14 @@ struct PerView
 {
 	float4x4 viewProjection;
 	float4x4 billboardMatrix;
+	float3 worldPosition;
+	float pad;
+};
+
+struct ParticleSortData
+{
+	float depth;
+	uint particleIndex;
 };
 
 struct VertexShaderOutput
@@ -94,11 +102,11 @@ struct GPUParticleEmitter
 	float groundHeight;
 	float bounce;
 	float attractorStrength;
-	uint pad4;
+	uint randomSeed;
 
 	// float4 x 16
 	float3 attractorPos;
-	uint pad5;
+	uint enableRandomRotation;
 
 	// float4 x 17
 	float3 areaSize;

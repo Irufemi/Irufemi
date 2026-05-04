@@ -24,13 +24,13 @@ void main(uint3 DTid : SV_DispatchThreadID)
     int freeListIndex;
     InterlockedAdd(gFreeListIndex[0], -1, freeListIndex);
 
-        if (freeListIndex >= 0)
+        if (freeListIndex >= 0 && freeListIndex < (int)kMaxParticles)
         {
             uint particleIndex = (uint)gFreeList[freeListIndex];
             
             // 乱数生成器の初期化
-            // iとparticleIndexが連動して相殺するのを防ぐため素数を掛ける
-            uint seedValue = (uint)gPerFrame.time * 100000 + (i * 1337) + particleIndex;
+            // iとparticleIndexが連動して相殺するのを防ぐため素数を掛ける。さらにエミッターごとのシードを加味して完全一致を防ぐ。
+            uint seedValue = (uint)gPerFrame.time * 100000 + (i * 1337) + particleIndex + (gEmitter.randomSeed * 77777);
             RandomGenerator rng;
             rng.seed = uint3(seedValue, seedValue + 111, seedValue + 222);
 
@@ -112,11 +112,16 @@ void main(uint3 DTid : SV_DispatchThreadID)
             gParticles[particleIndex].endColor = lerp(gEmitter.endColorMin, gEmitter.endColorMax, r_color);
             gParticles[particleIndex].color = gParticles[particleIndex].startColor;
 
-        // 回転初期化
-        gParticles[particleIndex].rotation = rng.Generate3d() * 2.0f * 3.141592f;
-        gParticles[particleIndex].rotateSpeed = (rng.Generate3d() * 2.0f - 1.0f) * 3.141592f;
-    }
-    else
+            // 回転初期化
+            if (gEmitter.enableRandomRotation != 0) {
+                gParticles[particleIndex].rotation = rng.Generate3d() * 2.0f * 3.141592f;
+                gParticles[particleIndex].rotateSpeed = (rng.Generate3d() * 2.0f - 1.0f) * 3.141592f;
+            } else {
+                gParticles[particleIndex].rotation = float3(0.0f, 0.0f, 0.0f);
+                gParticles[particleIndex].rotateSpeed = float3(0.0f, 0.0f, 0.0f);
+            }
+        }
+        else
     {
         InterlockedAdd(gFreeListIndex[0], 1);
     }

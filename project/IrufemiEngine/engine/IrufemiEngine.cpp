@@ -14,6 +14,7 @@ IrufemiEngine::IrufemiEngine() = default;
 
 #include "Renderer/VertexData.h"
 #include "Renderer/Core/BaseResource.h"
+#include "Graphics/DirectX/DirectXUtils.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Renderer/Object2D/Object2DResource.h"
 #include "Renderer/Particle/ParticleResource.h"
@@ -21,6 +22,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/LineInstanced/LineResource.h"
 #include "Renderer/Object2D/Sprite/Sprite.h"
 #include "Renderer/Object2D/Primitive/Circle2D.h"
+#include "Renderer/Object3D/BaseModel/BaseModel.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Renderer/Object3D/Primitive/SphereClass.h"
@@ -28,6 +30,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object3D/Primitive/CubeClass.h"
 #include "Renderer/Object3D/Primitive/PlaneClass.h"
 #include "Renderer/Object3D/Primitive/CylinderClass.h"
+#include "Renderer/Object3D/Primitive/RingClass.h"
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
@@ -130,7 +133,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // モデル管理
     modelManager_ = std::make_unique<ModelManager>();
     modelManager_->Initialize(dxCommon_.get(), textureManager_.get()); // dxCommon を渡す
-    ObjClass::SetModelManager(modelManager_.get());
+
     ModelRegion::SetModelManager(modelManager_.get()); // Regionにも設定
 
     // プリミティブ管理（シングルトンの初期化）
@@ -176,12 +179,13 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ui_->Initialize(winApp_->GetHwnd(), dxCommon_.get());
     Sprite::SetDebugUI(ui_.get());
     Circle2D::SetDebugUI(ui_.get());
-    ObjClass::SetDebugUI(ui_.get());
+
     SphereClass::SetDebugUI(ui_.get());
     TriangleClass::SetDebugUI(ui_.get());
     CubeClass::SetDebugUI(ui_.get());
     PlaneClass::SetDebugUI(ui_.get());
     CylinderClass::SetDebugUI(ui_.get());
+    RingClass::SetDebugUI(ui_.get());
     PrimitiveObjects3DClass::SetDebugUI(ui_.get());
     ParticleSystem::SetDebugUI(ui_.get());
 
@@ -190,12 +194,13 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     drawManager_->Initialize(dxCommon_.get());
     Sprite::SetDrawManager(drawManager_.get());
     Circle2D::SetDrawManager(drawManager_.get());
-    ObjClass::SetDrawManager(drawManager_.get());
+
     SphereClass::SetDrawManager(drawManager_.get());
     TriangleClass::SetDrawManager(drawManager_.get());
     CubeClass::SetDrawManager(drawManager_.get());
     PlaneClass::SetDrawManager(drawManager_.get());
     CylinderClass::SetDrawManager(drawManager_.get());
+    RingClass::SetDrawManager(drawManager_.get());
     ModelRegion::SetDrawManager(drawManager_.get());
     SphereRegion::SetDrawManager(drawManager_.get());
     TetraRegion::SetDrawManager(drawManager_.get());
@@ -211,12 +216,13 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     drawManager_->SetTextureManager(textureManager_.get());
     Sprite::SetTextureManager(textureManager_.get());
     Circle2D::SetTextureManager(textureManager_.get());
-    ObjClass::SetTextureManager(textureManager_.get());
+
     SphereClass::SetTextureManager(textureManager_.get());
     TriangleClass::SetTextureManager(textureManager_.get());
     CubeClass::SetTextureManager(textureManager_.get());
     PlaneClass::SetTextureManager(textureManager_.get());
     CylinderClass::SetTextureManager(textureManager_.get());
+    RingClass::SetTextureManager(textureManager_.get());
     ModelRegion::SetTextureManager(textureManager_.get());
     SphereRegion::SetTextureManager(textureManager_.get());
     TetraRegion::SetTextureManager(textureManager_.get());
@@ -227,7 +233,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     animationManager_ = std::make_unique<AnimationManager>();
     animationManager_->Initialize(dxCommon_.get());
 
-    AnimationModel::SetIrufemiEngine(this);
+    BaseModel::SetIrufemiEngine(this);
     winApp_->SetInputManager(inputManager_.get());
 
     Skybox::SetEngine(this);
@@ -480,14 +486,7 @@ void IrufemiEngine::EndFrame() {
     bool hasOutline = std::find(activeModes.begin(), activeModes.end(), PostProcessMode::DepthBasedOutline) != activeModes.end();
 
     if (hasOutline) {
-        D3D12_RESOURCE_BARRIER barrier{};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-        barrier.Transition.Subresource = 0; // 深度値のみをターゲットにする
-        dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
+        DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
         
         // 逆投影行列の更新
         if (auto* cameraData = drawManager_->GetCameraData()) {
@@ -499,13 +498,7 @@ void IrufemiEngine::EndFrame() {
     postProcessManager_->Draw(dxCommon_->GetCommandList(), mainRenderTexture_.get(), dxCommon_->GetRtvHandles(dxCommon_->GetCurrentBackBufferIndex()));
 
     if (hasOutline) {
-        D3D12_RESOURCE_BARRIER barrier{};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Transition.pResource = dxCommon_->GetDepthStencilResource();
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-        barrier.Transition.Subresource = 0; // 深度値のみを元に戻す
-        dxCommon_->GetCommandList()->ResourceBarrier(1, &barrier);
+        DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, 0);
     }
 
     // 描画先がバックバッファになり、ポストプロセス（暗転など）が掛かった上から
@@ -513,6 +506,9 @@ void IrufemiEngine::EndFrame() {
     if (sceneManager_) {
         sceneManager_->DrawLoadingUI();
     }
+
+    // --- 追加: 最前面UIキューの消化 ---
+    drawManager_->ExecuteTopMostQueues(this);
 
     // 描画後処理
     ui_->QueuePostDrawCommands();

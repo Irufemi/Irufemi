@@ -2,6 +2,7 @@
 #include "VertexData.hlsli"
 
 StructuredBuffer<Particle> gParticles : register(t0);
+StructuredBuffer<ParticleSortData> gSortList : register(t1);
 ConstantBuffer<PerView> gPerView : register(b0);
 ConstantBuffer<GPUParticleEmitter> gEmitter : register(b6); // Special Slot
 
@@ -23,7 +24,15 @@ float4x4 MakeRotationMatrix(float3 rotate)
 VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID) 
 {
 	VertexShaderOutput output;
-	Particle particle = gParticles[instanceId];
+    
+    ParticleSortData sortData = gSortList[instanceId];
+	Particle particle = gParticles[sortData.particleIndex];
+    
+    // ソート時に付与したdepthが負の場合は死んでいるパーティクルなので描画しない
+    if (sortData.depth < 0.0f)
+    {
+        particle.scale = float3(0.0f, 0.0f, 0.0f);
+    }
 	
     float4x4 worldMatrix;
     

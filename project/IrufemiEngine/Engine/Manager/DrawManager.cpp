@@ -22,6 +22,7 @@
 
 #include "Renderer/LineInstanced/LineResource.h"
 #include "../Graphics/DirectX/DirectXCommon.h"
+#include "../Graphics/DirectX/DirectXUtils.h"
 #include "../../Resource/Model/ModelManager.h"
 #include "../../engine/IrufemiEngine.h"
 #include "../Graphics/Data/CameraForGPU.h"
@@ -120,6 +121,13 @@ void DrawManager::ExecuteComputePasses() {
     for (auto* task : computeTasks_) {
         task->DispatchCompute();
     }
+    
+    // パイプラインのボトルネック解消のため、各モデルごとではなく
+    // 全てのコンピュートタスクのディスパッチ完了後に一括してグローバルUAVバリアを発行する
+    if (!computeTasks_.empty()) {
+        ExecuteUAVBarrier(nullptr);
+    }
+    
     computeTasks_.clear();
 }
 
@@ -127,7 +135,7 @@ void DrawManager::Finalize() {
     auto* srvPool = dxCommon_->GetSrvPool();
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         auto& fr = frameResources_[i];
-        if (fr.frameResource) {
+        if (fr.frameResource && fr.cameraData) {
             fr.frameResource->Unmap(0, nullptr);
             fr.frameResource.Reset();
         }
@@ -190,22 +198,8 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
 
     ///TransitionBarrierを張るコード
 
-    //TransitionBarrierの設定
-    D3D12_RESOURCE_BARRIER barrier{};
-    //今回のバリアはTransition
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    //Noneにしておく
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    //バリアを張る対象のリソース。現在のバックバッファに対して行う
-    barrier.Transition.pResource = backBuffer;
-    // リソースバリアの SubResource を D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES にして明示
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    //遷移前(現在)のResourceState
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    //遷移後のResourceState
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    //TransitionBarrierを張る
-    commandList_->ResourceBarrier(1, &barrier);
+    // TransitionBarrierの設定（Present -> RenderTarget）
+    DirectXUtils::TransitionBarrier(commandList_, backBuffer, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     // レンダーターゲット追跡の更新 (バックバッファ)
     currentRenderTexture_ = nullptr;
@@ -248,24 +242,10 @@ void DrawManager::PostDraw() {
     const UINT backIdx = dxCommon_->GetSwapChain()->GetCurrentBackBufferIndex();
     ID3D12Resource* backBuffer = dxCommon_->GetSwapChainResources(backIdx);
 
-    D3D12_RESOURCE_BARRIER barrier{};
-
     /*完璧な画面クリアを目指して*/
 
-    //今回のバリアはTransition
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    //Noneにしておく
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    //バリアを張る対象のリソース。現在のバックバッファに対して行う
-    barrier.Transition.pResource = backBuffer;
-    // リソースバリアの SubResource を D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES にして明示
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    //画面に描く処理はすべて終わり、画面に映すので、状態を遷移
-    //今回はRenderTargetからPresentにする
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-    //TransitionBarrierを張る
-    commandList_->ResourceBarrier(1, &barrier);
+    //画面に描く処理はすべて終わり、画面に映すので、状態を遷移（RenderTarget -> Present）
+    DirectXUtils::TransitionBarrier(commandList_, backBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
     /*画面の色を変えよう*/
 
@@ -374,6 +354,16 @@ void DrawManager::SubmitSprite(const Object2DResource* resource) {
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
     spriteQueue_.push_back(p);
+}
+
+void DrawManager::SubmitTopMostSprite(const Object2DResource* resource) {
+    if (!resource) return;
+    SpritePacket p{};
+    p.resource = resource;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    topMostSpriteQueue_.push_back(p);
 }
 
 void DrawManager::DrawSprite(const SpritePacket& packet) {
@@ -553,16 +543,12 @@ void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const Managed
     // 4: Skinning Information (b0)
     commandList_->SetComputeRootConstantBufferView(4, skinCluster.skinningInformationResource->GetGPUVirtualAddress());
 
-    // Dispatch
-    commandList_->Dispatch((numVertices + 1023) / 1024, 1, 1);
+    // Dispatch (numthreads = 256)
+    commandList_->Dispatch((numVertices + 255) / 256, 1, 1);
 }
 
 void DrawManager::ExecuteUAVBarrier(ID3D12Resource* resource) {
-    if (!resource) return;
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = resource;
-    commandList_->ResourceBarrier(1, &barrier);
+    DirectXUtils::UAVBarrier(commandList_, resource);
 }
 
 void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
@@ -657,6 +643,7 @@ void DrawManager::SubmitGPUParticle(
     D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
     D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
     D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle,
+    D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle,
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle,
     uint32_t instanceCount,
     ID3D12Resource* particleResource
@@ -670,6 +657,7 @@ void DrawManager::SubmitGPUParticle(
     p.perViewAddress = perViewAddress;
     p.emitterAddress = emitterAddress;
     p.particleSrvHandle = particleSrvHandle;
+    p.sortListSrvHandle = sortListSrvHandle;
     p.textureHandle = textureHandle;
     p.instanceCount = instanceCount;
     p.particleResource = particleResource;
@@ -683,14 +671,8 @@ void DrawManager::DrawGPUParticle(const GPUParticlePacket& packet) {
     if (!commandList_) return;
 
     // リソースバリヤー: UAV -> ShaderResource (読み取り)
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = packet.particleResource;
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     if (packet.particleResource) {
-        commandList_->ResourceBarrier(1, &barrier);
+        DirectXUtils::TransitionBarrier(commandList_, packet.particleResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
 
     // IA 設定: VB/Topology
@@ -710,6 +692,9 @@ void DrawManager::DrawGPUParticle(const GPUParticlePacket& packet) {
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);
     // パーティクルデータ (VS t0 -> Slot 5: Instancing)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.particleSrvHandle);
+    
+    // ソートデータ (VS t1 -> Slot 9: LineInstancing)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, packet.sortListSrvHandle);
 
     if (packet.indexCount > 0) {
         commandList_->IASetIndexBuffer(&packet.ibv);
@@ -721,9 +706,7 @@ void DrawManager::DrawGPUParticle(const GPUParticlePacket& packet) {
 
     // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
     if (packet.particleResource) {
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        commandList_->ResourceBarrier(1, &barrier);
+        DirectXUtils::TransitionBarrier(commandList_, packet.particleResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     }
 }
 
@@ -756,14 +739,8 @@ void DrawManager::DrawVoxelParticle(const VoxelParticlePacket& packet) {
     if (!commandList_) return;
 
     // リソースバリヤー: UAV -> ShaderResource (読み取り)
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = packet.particleResource;
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     if (packet.particleResource) {
-        commandList_->ResourceBarrier(1, &barrier);
+        DirectXUtils::TransitionBarrier(commandList_, packet.particleResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
 
     // VoxelParticle 専用PSOをバインド
@@ -790,21 +767,13 @@ void DrawManager::DrawVoxelParticle(const VoxelParticlePacket& packet) {
 
     // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
     if (packet.particleResource) {
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        commandList_->ResourceBarrier(1, &barrier);
+        DirectXUtils::TransitionBarrier(commandList_, packet.particleResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     }
 }
 
 void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor) {
     // 1. Transition Barrier (SRV -> RenderTarget)
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = rt->GetResource();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    commandList_->ResourceBarrier(1, &barrier);
+    DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     // レンダーターゲットを追跡
     currentRenderTexture_ = rt;
@@ -831,13 +800,7 @@ void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColo
 
 void DrawManager::EndRenderTexture(RenderTexture* rt) {
     // 1. Transition Barrier (RenderTarget -> SRV)
-    D3D12_RESOURCE_BARRIER barrier{};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = rt->GetResource();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    commandList_->ResourceBarrier(1, &barrier);
+    DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
@@ -1083,6 +1046,31 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     ClearRenderQueues();
 }
 
+void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
+    if (topMostSpriteQueue_.empty()) return;
+
+    BlendMode currentBlend = BlendMode::kBlendModeNormal;
+    PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
+    PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
+    bool first = true;
+    
+    for (const auto& p : topMostSpriteQueue_) {
+        if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
+            engine->SetBlend(p.blendMode);
+            engine->SetDepthWrite(p.depthWrite);
+            engine->SetCull(p.cullMode);
+            // バックバッファへ直接描画する特別なPSOを適用
+            engine->ApplySpritePSOForBackBuffer();
+            
+            currentBlend = p.blendMode;
+            currentDepth = p.depthWrite;
+            currentCull = p.cullMode;
+            first = false;
+        }
+        DrawSprite(p);
+    }
+}
+
 void DrawManager::ClearRenderQueues() {
     standard3DQueue_.clear();
     ui3DQueue_.clear();
@@ -1095,4 +1083,5 @@ void DrawManager::ClearRenderQueues() {
     regionQueue_.clear();
     modelRegionQueue_.clear();
     postRenderQueue_.clear();
+    topMostSpriteQueue_.clear();
 }

@@ -46,8 +46,14 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
         dot->SetCenter({baseX + i * 20.0f, baseY, 0.0f});
         dot->SetRadius(4.0f);
         
+        // 最前面UIとして登録
+        dot->SetTopMost(true);
+
         dots_.push_back(std::move(dot));
     }
+
+    // 最前面UIとして登録
+    nowLoadingText_->SetTopMost(true);
 }
 
 void LoadingScreen::Update(float deltaTime) {
@@ -71,24 +77,13 @@ void LoadingScreen::Update(float deltaTime) {
 void LoadingScreen::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
-    //黒背景を透過するため加算合成(Add)を使用する
-    engine->SetBlend(BlendMode::kBlendModeNormal);
-    engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    
-    engine->ApplySpritePSOForBackBuffer();
     if (nowLoadingText_) {
-        nowLoadingText_->SyncBeforeDraw();
-        DrawManager::SpritePacket packet{};
-        packet.resource = nowLoadingText_->GetD3D12Resource();
-        engine->GetDrawManager()->DrawSprite(packet);
+        nowLoadingText_->Draw();
     }
     
     for (int i = 0; i < dotCount_; ++i) {
         if (i < dots_.size()) {
-            dots_[i]->SyncBeforeDraw();
-            DrawManager::SpritePacket packet{};
-            packet.resource = dots_[i]->GetD3D12Resource();
-            engine->GetDrawManager()->DrawSprite(packet);
+            dots_[i]->Draw();
         }
     }
 }

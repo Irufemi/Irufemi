@@ -49,13 +49,16 @@ void PlayerWeapon::Initialize(Camera* camera) {
 
     missileFire_ = std::make_unique<ParticleSystem>();
     missileFire_->Initialize(camera_, "resources/circle.png", ParticleType::kMissileFire);
+    missileFire_->SetCullingEnabled(false);
 
     missileSmoke_ = std::make_unique<ParticleSystem>();
     missileSmoke_->Initialize(camera_, "resources/circle.png", ParticleType::kMissileSmoke);
+    missileSmoke_->SetCullingEnabled(false);
 
     bulletTrail_ = std::make_unique<ParticleSystem>();
     bulletTrail_->Initialize(camera_, "resources/circle.png", ParticleType::kBulletTrail);
     bulletTrail_->SetBlend(BlendMode::kBlendModeAdd);
+    bulletTrail_->SetCullingEnabled(false);
 
     ejectionMistLeft_ = std::make_unique<ParticleSystem>();
     ejectionMistLeft_->Initialize(camera_, "resources/circle.png", ParticleType::kEjectionMist);

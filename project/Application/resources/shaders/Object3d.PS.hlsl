@@ -19,6 +19,7 @@ Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
 SamplerState gSamplerWrap : register(s0); //Samplerのregisterはs
 SamplerState gSamplerPointClamp : register(s1); // パーティクル用等POINT補間
 SamplerState gSamplerClamp : register(s3); // 新規: 完全クランプ・リニア補間
+SamplerState gSamplerWrapClamp : register(s4); // U:Wrap, V:Clamp (横スクロール対応等)
 SamplerComparisonState gShadowSampler : register(s2); // 比較サンプラー
 
 /*Light Common & DirectionalLight*/
@@ -67,6 +68,8 @@ PixelShaderOutput main(VertexShaderOutput input)
 		textureColor = gTexture.Sample(gSamplerClamp, transformedUV.xy);
 	} else if (gMaterial.useClampSampler == 2) {
 		textureColor = gTexture.Sample(gSamplerPointClamp, transformedUV.xy);
+	} else if (gMaterial.useClampSampler == 3) {
+		textureColor = gTexture.Sample(gSamplerWrapClamp, transformedUV.xy);
 	} else {
 		textureColor = gTexture.Sample(gSamplerWrap, transformedUV.xy);
 	}
