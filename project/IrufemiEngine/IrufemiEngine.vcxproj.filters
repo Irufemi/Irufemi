@@ -136,6 +136,9 @@
     <Filter Include="Renderer\Object3D\ObjClass">
       <UniqueIdentifier>{679e9638-af18-4026-8501-9e4d5620bba7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Object3D\BaseModel">
+      <UniqueIdentifier>{2df4c3a1-12b2-4d1d-91b4-e4d5f8c7b8e1}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Renderer\VoxelParticle">
       <UniqueIdentifier>{46c98e66-7664-4ee7-8848-05ded49a5872}</UniqueIdentifier>
     </Filter>
@@ -339,6 +342,9 @@
     </ClCompile>
     <ClCompile Include="Renderer\Object3D\ObjClass\ObjClass.cpp">
       <Filter>Renderer\Object3D\ObjClass</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Object3D\BaseModel\BaseModel.cpp">
+      <Filter>Renderer\Object3D\BaseModel</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\VoxelParticle\VoxelParticleSystem.cpp">
       <Filter>Renderer\VoxelParticle</Filter>
@@ -697,6 +703,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\Object3D\ObjClass\ObjClass.h">
       <Filter>Renderer\Object3D\ObjClass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object3D\BaseModel\BaseModel.h">
+      <Filter>Renderer\Object3D\BaseModel</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Type\Voxel.h">
       <Filter>Engine\Core\Type</Filter>
