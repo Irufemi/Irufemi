@@ -304,6 +304,7 @@ private:
     bool isLooping_ = true;
     float duration_ = -1.0f; // -1: 無限
     float totalTime_ = 0.0f;
+    float timeSinceStop_ = 0.0f;
 
     /** @name エミッターリソース */
     ///@{
