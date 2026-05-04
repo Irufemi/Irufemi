@@ -36,10 +36,13 @@ GPUParticleSystem::~GPUParticleSystem() {
             srvPool->FreeAfterFence(particleSrvIndex_, fv);
             srvPool->FreeAfterFence(freeListIndexUavIndex_, fv);
             srvPool->FreeAfterFence(freeListUavIndex_, fv);
+            srvPool->FreeAfterFence(sortIndex_, fv);
+            srvPool->FreeAfterFence(sortSrvIndex_, fv);
         }
         dxCommon_->ReleaseAfterFence(particleResource_);
         dxCommon_->ReleaseAfterFence(freeListIndexResource_);
         dxCommon_->ReleaseAfterFence(freeListResource_);
+        dxCommon_->ReleaseAfterFence(sortResource_);
     }
 }
 
@@ -232,6 +235,7 @@ void GPUParticleSystem::SyncBeforeDraw() {
         billboardMatrix_.m[3][1] = 0.0f;
         billboardMatrix_.m[3][2] = 0.0f;
         perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
+        perViewBuffer_[frameIndex]->worldPosition = camera_->GetTranslate();
     }
 
     // 同一フレーム内で複数回呼び出された場合は無駄な転送を防ぐ
@@ -278,6 +282,7 @@ void GPUParticleSystem::Draw() {
     billboardMatrix_.m[3][1] = 0.0f;
     billboardMatrix_.m[3][2] = 0.0f;
     perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
+    perViewBuffer_[frameIndex]->worldPosition = camera_->GetTranslate();
 
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
@@ -296,6 +301,7 @@ void GPUParticleSystem::Draw() {
         perViewBuffer_.GetGPUVirtualAddress(frameIndex),
         emitterBuffer_.GetGPUVirtualAddress(frameIndex),
         particleSrvHandleGPU_,
+        sortSrvHandleGPU_,
         textureHandle_,
         kMaxParticles,
         particleResource_.Get()
@@ -592,10 +598,6 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
         
         uint32_t emitCount = emitterBuffer_[frameIndex]->burstCount;
         if (emitCount > 0) {
-            char debugMsg[256];
-            sprintf_s(debugMsg, "[GPUParticleSystem::Dispatch] frameIndex=%d, emitCount=%d\n", frameIndex, emitCount);
-            OutputDebugStringA(debugMsg);
-
             commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
         }
 
@@ -617,9 +619,48 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
         DirectXUtils::UAVBarriers(commandList, {
             particleResource_.Get(), freeListIndexResource_.Get(), freeListResource_.Get()
         });
+        
+        // --- Bitonic Sort Phase ---
+        // 1. Init Sort List
+        commandList->SetPipelineState(dxCommon_->GetGpuParticleInitSortPSO());
+        // Descriptor table mapping for InitParticleSort.CS.hlsl:
+        // t0: Particle (u0 in RootSig index 0, wait, it's bound as SRV to slot 0)
+        commandList->SetComputeRootDescriptorTable(0, particleSrvHandleGPU_);
+        // u0: SortList (Slot 8 in our RootSig setup)
+        commandList->SetComputeRootDescriptorTable(8, sortUavHandleGPU_);
+        // b0: PerView (Slot 4 in RootSig)
+        commandList->SetComputeRootConstantBufferView(4, perViewBuffer_.GetGPUVirtualAddress(frameIndex));
+        
+        commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
+        
+        // Wait for Init
+        DirectXUtils::UAVBarriers(commandList, { sortResource_.Get() });
+        
+        // 2. Execute Bitonic Sort
+        commandList->SetPipelineState(dxCommon_->GetGpuParticleBitonicSortPSO());
+        commandList->SetComputeRootDescriptorTable(8, sortUavHandleGPU_); // u0
+        
+        for (uint32_t k = 2; k <= kMaxParticles; k <<= 1) {
+            for (uint32_t j = k >> 1; j > 0; j >>= 1) {
+                commandList->SetComputeRoot32BitConstant(9, k, 0); // b2, uint k
+                commandList->SetComputeRoot32BitConstant(9, j, 1); // b2, uint j
+                
+                commandList->Dispatch(kMaxParticles / 1024, 1, 1);
+                
+                DirectXUtils::UAVBarriers(commandList, { sortResource_.Get() });
+            }
+        }
+        
+        // Ensure sorting is completely done before graphics queue uses it
+        DirectXUtils::TransitionBarrier(commandList, sortResource_.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
         needsUpdateCS_ = false;
         isCsDispatchedThisFrame_ = true;
+    }
+    else {
+        // もしCSが走らなかった場合でも、描画で使うため SRV に戻しておく必要がある
+        // （本来ならCSループ外で管理するのが綺麗だが、今回はDispatchとDrawが別キューでないためここで安全に行う）
+        DirectXUtils::TransitionBarrier(commandList, sortResource_.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
 }
 
@@ -812,6 +853,35 @@ void GPUParticleSystem::CreateBuffersAndViews() {
     freeListUavDesc.Buffer.NumElements = kMaxParticles;
     freeListUavDesc.Buffer.StructureByteStride = sizeof(int32_t);
     dxCommon_->GetDevice()->CreateUnorderedAccessView(freeListResource_.Get(), nullptr, &freeListUavDesc, freeListUavHandleCPU_);
+
+    // sortResource
+    sortResource_ = dxCommon_->CreateUAVBufferResource((sizeof(float) + sizeof(uint32_t)) * kMaxParticles);
+    sortIndex_ = srvPool->Allocate();
+    sortUavHandleCPU_ = srvPool->GetCPUHandle(sortIndex_);
+    sortUavHandleGPU_ = srvPool->GetGPUHandle(sortIndex_);
+    sortSrvHandleCPU_ = sortUavHandleCPU_; // 同じディスクリプタヒープ領域を使用
+    sortSrvHandleGPU_ = sortUavHandleGPU_; 
+    // UAV
+    D3D12_UNORDERED_ACCESS_VIEW_DESC sortUavDesc{};
+    sortUavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    sortUavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    sortUavDesc.Buffer.FirstElement = 0;
+    sortUavDesc.Buffer.NumElements = kMaxParticles;
+    sortUavDesc.Buffer.StructureByteStride = sizeof(float) + sizeof(uint32_t);
+    dxCommon_->GetDevice()->CreateUnorderedAccessView(sortResource_.Get(), nullptr, &sortUavDesc, sortUavHandleCPU_);
+    
+    // SRV
+    sortSrvIndex_ = srvPool->Allocate();
+    sortSrvHandleCPU_ = srvPool->GetCPUHandle(sortSrvIndex_);
+    sortSrvHandleGPU_ = srvPool->GetGPUHandle(sortSrvIndex_);
+    D3D12_SHADER_RESOURCE_VIEW_DESC sortSrvDesc{};
+    sortSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    sortSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    sortSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    sortSrvDesc.Buffer.FirstElement = 0;
+    sortSrvDesc.Buffer.NumElements = kMaxParticles;
+    sortSrvDesc.Buffer.StructureByteStride = sizeof(float) + sizeof(uint32_t);
+    dxCommon_->GetDevice()->CreateShaderResourceView(sortResource_.Get(), &sortSrvDesc, sortSrvHandleCPU_);
 
     // PerView用リソース
     perViewBuffer_.Initialize(dxCommon_);

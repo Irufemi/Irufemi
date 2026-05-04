@@ -53,6 +53,8 @@ void DirectXCommon::Finalize() {
     voxelParticleEmitPSO_.Reset();
     gpuParticleUpdatePSO_.Reset();
     gpuParticleInitializePSO_.Reset();
+    gpuParticleInitSortPSO_.Reset();
+    gpuParticleBitonicSortPSO_.Reset();
     skinningComputePSO_.Reset();
     if (rootSignatureManager_) {
         rootSignatureManager_->Finalize();
@@ -220,6 +222,8 @@ void DirectXCommon::CreatePSOs() {
     auto csGpuInit = shaderCompiler_->Compile(L"resources/shaders/InitializeParticle.CS.hlsl", L"cs_6_0", logStream);
     auto csGpuEmit = shaderCompiler_->Compile(L"resources/shaders/EmitParticle.CS.hlsl", L"cs_6_0", logStream);
     auto csGpuUpdate = shaderCompiler_->Compile(L"resources/shaders/UpdateParticle.CS.hlsl", L"cs_6_0", logStream);
+    auto csGpuInitSort = shaderCompiler_->Compile(L"resources/shaders/InitParticleSort.CS.hlsl", L"cs_6_0", logStream);
+    auto csGpuBitonicSort = shaderCompiler_->Compile(L"resources/shaders/BitonicSort.CS.hlsl", L"cs_6_0", logStream);
     auto csVoxelInit = shaderCompiler_->Compile(L"resources/shaders/InitializeVoxel.CS.hlsl", L"cs_6_0", logStream);
     auto csVoxelEmit = shaderCompiler_->Compile(L"resources/shaders/EmitVoxel.CS.hlsl", L"cs_6_0", logStream);
     auto csVoxelUpdate = shaderCompiler_->Compile(L"resources/shaders/UpdateVoxel.CS.hlsl", L"cs_6_0", logStream);
@@ -272,6 +276,8 @@ void DirectXCommon::CreatePSOs() {
     createComputePSO(csGpuInit, gpuParticleInitializePSO_);
     createComputePSO(csGpuEmit, gpuParticleEmitPSO_);
     createComputePSO(csGpuUpdate, gpuParticleUpdatePSO_);
+    createComputePSO(csGpuInitSort, gpuParticleInitSortPSO_);
+    createComputePSO(csGpuBitonicSort, gpuParticleBitonicSortPSO_);
     createComputePSO(csVoxelInit, voxelParticleInitializePSO_);
     createComputePSO(csVoxelEmit, voxelParticleEmitPSO_);
     createComputePSO(csVoxelUpdate, voxelParticleUpdatePSO_);
@@ -662,6 +668,8 @@ void DirectXCommon::PreWarmJITCompile() {
             gpuParticleInitializePSO_.Get(),
             gpuParticleEmitPSO_.Get(),
             gpuParticleUpdatePSO_.Get(),
+            gpuParticleInitSortPSO_.Get(),
+            gpuParticleBitonicSortPSO_.Get(),
             voxelParticleInitializePSO_.Get(),
             voxelParticleEmitPSO_.Get(),
             voxelParticleUpdatePSO_.Get()

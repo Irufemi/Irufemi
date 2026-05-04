@@ -4,4 +4,6 @@
 struct PerView {
     Matrix4x4 viewProjection;
     Matrix4x4 billboardMatrix;
+    Vector3 worldPosition;
+    float pad;
 };

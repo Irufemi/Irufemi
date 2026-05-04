@@ -343,6 +343,14 @@ private:
     D3D12_CPU_DESCRIPTOR_HANDLE freeListSrvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE freeListSrvHandleGPU_{};
 
+    Microsoft::WRL::ComPtr<ID3D12Resource> sortResource_;
+    D3D12_CPU_DESCRIPTOR_HANDLE sortUavHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE sortUavHandleGPU_{};
+    D3D12_CPU_DESCRIPTOR_HANDLE sortSrvHandleCPU_{};
+    D3D12_GPU_DESCRIPTOR_HANDLE sortSrvHandleGPU_{};
+    uint32_t sortIndex_ = 0xFFFFFFFF;
+    uint32_t sortSrvIndex_ = 0xFFFFFFFF;
+
     ConstantBuffer<PerView> perViewBuffer_;
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};

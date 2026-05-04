@@ -643,6 +643,7 @@ void DrawManager::SubmitGPUParticle(
     D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
     D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
     D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle,
+    D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle,
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle,
     uint32_t instanceCount,
     ID3D12Resource* particleResource
@@ -656,6 +657,7 @@ void DrawManager::SubmitGPUParticle(
     p.perViewAddress = perViewAddress;
     p.emitterAddress = emitterAddress;
     p.particleSrvHandle = particleSrvHandle;
+    p.sortListSrvHandle = sortListSrvHandle;
     p.textureHandle = textureHandle;
     p.instanceCount = instanceCount;
     p.particleResource = particleResource;
@@ -690,6 +692,9 @@ void DrawManager::DrawGPUParticle(const GPUParticlePacket& packet) {
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);
     // パーティクルデータ (VS t0 -> Slot 5: Instancing)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.particleSrvHandle);
+    
+    // ソートデータ (VS t1 -> Slot 9: LineInstancing)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, packet.sortListSrvHandle);
 
     if (packet.indexCount > 0) {
         commandList_->IASetIndexBuffer(&packet.ibv);

@@ -246,6 +246,8 @@ public: // ゲッター
 	ID3D12PipelineState* GetGpuParticleInitializePSO() const { return gpuParticleInitializePSO_.Get(); }
 	ID3D12PipelineState* GetGpuParticleUpdatePSO() const { return gpuParticleUpdatePSO_.Get(); }
 	ID3D12PipelineState* GetGpuParticleEmitPSO() const { return gpuParticleEmitPSO_.Get(); }
+	ID3D12PipelineState* GetGpuParticleInitSortPSO() const { return gpuParticleInitSortPSO_.Get(); }
+	ID3D12PipelineState* GetGpuParticleBitonicSortPSO() const { return gpuParticleBitonicSortPSO_.Get(); }
 	ID3D12PipelineState* GetVoxelParticleInitializePSO() const { return voxelParticleInitializePSO_.Get(); }
 	ID3D12PipelineState* GetVoxelParticleEmitPSO() const { return voxelParticleEmitPSO_.Get(); }
 	ID3D12PipelineState* GetVoxelParticleUpdatePSO() const { return voxelParticleUpdatePSO_.Get(); }
@@ -345,6 +347,8 @@ private: // メンバ変数
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleInitializePSO_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleUpdatePSO_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleEmitPSO_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleInitSortPSO_ = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleBitonicSortPSO_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleInitializePSO_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleEmitPSO_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleUpdatePSO_ = nullptr;
