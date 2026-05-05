@@ -42,6 +42,8 @@ public:
     static int GetMaxMachineGunBullets() { return PlayerWeapon::GetMaxMachineGunBullets(); }
     MissileData* GetMissiles() { return weapon_.GetMissiles(); }
     static int GetMaxMissiles() { return PlayerWeapon::GetMaxMissiles(); }
+    float GetMachineGunAmmo() const { return weapon_.GetMachineGunAmmo(); }
+    float GetMaxMachineGunAmmo() const { return PlayerWeapon::GetMaxMachineGunAmmo(); }
 
     PlayerCollider GetCollider() const { return status_.GetCollider(translate_, rotate_, weapon_.GetMissileVibration()); }
     int GetHp() const { return status_.GetHp(); }
@@ -63,6 +65,13 @@ public:
     int GetCooldownWarningTimer() const { return cooldownWarningTimer_; }
 
     void HitAndKnockback(Enemy* enemy);
+
+    int GetDamageMelee() const { return damageMelee_; }
+    float GetDamageMeleeChargeMultiplier() const { return damageMeleeChargeMultiplier_; }
+    int GetDamageMachineGun() const { return damageMachineGun_; }
+    float GetDamageMachineGunChargeMultiplier() const { return damageMachineGunChargeMultiplier_; }
+    int GetDamageMissile() const { return damageMissile_; }
+    float GetDamageMissileChargeMultiplier() const { return damageMissileChargeMultiplier_; }
 
 private:
     void HandleMovement();
@@ -125,16 +134,24 @@ private:
     static constexpr float kSwingTotalAngle = 3.0f;
     static constexpr float kHammerRotX = 1.57f;
 
-    static constexpr float kSwingBaseRadius = 2.5f;
-    static constexpr float kSwingRadiusChargeBonus = 0.5f;
+    static constexpr float kSwingBaseRadius = 4.0f;
+    static constexpr float kSwingRadiusChargeBonus = 1.5f;
 
     static constexpr float kHammerBaseHeight = 1.0f;
     static constexpr float kHammerSwaySpeed = 0.5f;
     static constexpr float kHammerSwayAmplitude = 0.1f;
 
-    static constexpr float kHammerBaseSize = 0.8f;
-    static constexpr float kHammerSizeChargeBonus = 0.4f;
-    static constexpr float kHammerScaleYMultiplier = 1.5f;
+    float hammerBaseSize_ = 1.6f;
+    float hammerSizeChargeBonus_ = 0.8f;
+    float hammerScaleYMultiplier_ = 2.5f;
+
+    // --- ダメージ関係の変数化 ---
+    int damageMelee_ = 20;
+    float damageMeleeChargeMultiplier_ = 2.5f;
+    int damageMachineGun_ = 3;
+    float damageMachineGunChargeMultiplier_ = 1.5f;
+    int damageMissile_ = 50;
+    float damageMissileChargeMultiplier_ = 2.0f;
 
     static constexpr float kModelOffsetY = 0.4f;
     static constexpr float kAimDistance = 100.0f;

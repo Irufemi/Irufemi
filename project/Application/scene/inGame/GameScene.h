@@ -54,7 +54,7 @@ private:
     static constexpr int kDamageCrashWaveToPlayer = 30;      ///< 壁激突の大爆発接触
 
     // 敵被ダメージ
-    static constexpr int kDamageMeleeToEnemy = 8;           ///< 近接攻撃
+    static constexpr int kDamageMeleeToEnemy = 20;           ///< 近接攻撃
     static constexpr int kDamageMachineGunToEnemy = 3;      ///< マシンガン
     static constexpr int kDamageMissileToEnemy = 50;        ///< ミサイル
     static constexpr int kDamageProjectilePartToEnemy = 250; ///< 部位同士の衝突
@@ -117,6 +117,18 @@ private:
 
     // 当たり判定の有効化フラグ
     bool isCollisionEnabled_ = true;
+
+    // --- ポーズメニュー用UI ---
+    std::unique_ptr<Sprite> pauseBgDimmerSprite_ = nullptr; ///< 背景暗転（グレー）用
+    std::unique_ptr<Sprite> pauseTitleSprite_ = nullptr;
+    std::unique_ptr<Sprite> pauseBackGameSprite_ = nullptr;
+    std::unique_ptr<Sprite> pauseBackTitleSprite_ = nullptr;
+
+    /// @brief 現在選択中のメニュー項目 (0: ゲームに戻る, 1: タイトルに戻る)
+    int pauseMenuIndex_ = 0;
+
+    /// @brief ポーズメニューの明滅アニメーション用タイマー
+    float pauseMenuAnimTimer_ = 0.0f;
 
     // --- 内部整理用メソッド ---
 

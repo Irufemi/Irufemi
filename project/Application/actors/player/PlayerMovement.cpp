@@ -21,8 +21,9 @@ void PlayerMovement::Update(InputManager* input, bool isCharging, bool isKarakur
 
     // 回避行動中の強制移動処理（通常の移動入力を無視する）
     if (dodgeDurationTimer_ > 0) {
-        translate.x += dodgeDirection_.x * kDodgeSpeed;
-        translate.z += dodgeDirection_.z * kDodgeSpeed;
+        float currentDodgeSpeed = isKarakuriCharged ? dodgeSpeed_ : (dodgeSpeed_ * dodgeSpeedNormalMultiplier_);
+        translate.x += dodgeDirection_.x * currentDodgeSpeed;
+        translate.z += dodgeDirection_.z * currentDodgeSpeed;
 
         // フィールド外に出ないように制限
         if (translate.x > kFieldRangeX)  translate.x = kFieldRangeX;
@@ -51,8 +52,11 @@ void PlayerMovement::Update(InputManager* input, bool isCharging, bool isKarakur
         moveX = move.x * cosY + move.z * sinY;
         moveZ = -move.x * sinY + move.z * cosY;
 
-        translate.x += moveX * kMoveSpeed;
-        translate.z += moveZ * kMoveSpeed;
+        float speed = kMoveSpeed;
+        if (isKarakuriCharged) speed *= 1.5f;
+
+        translate.x += moveX * speed;
+        translate.z += moveZ * speed;
 
         if (translate.x > kFieldRangeX)  translate.x = kFieldRangeX;
         if (translate.x < -kFieldRangeX) translate.x = -kFieldRangeX;
@@ -61,29 +65,23 @@ void PlayerMovement::Update(InputManager* input, bool isCharging, bool isKarakur
     }
 
     if (isGrounded_) {
-        // Spaceキーの処理を、からくりチャージ中かどうかで分岐
+        // Spaceキーの処理を、からくりチャージ中かどうかに関わらず回避にする
         if (!isCharging && input->IsKeyPressed(VK_SPACE)) {
-            if (isKarakuriCharged) {
-                // からくりチャージ中：回避アクション
-                if (dodgeCooldownTimer_ <= 0) {
-                    dodgeCooldownTimer_ = kDodgeCooldownTime; // クールタイム2秒
-                    dodgeDurationTimer_ = kDodgeDurationTime; // 回避モーションの時間
-                    invincibleTimer = kDodgeDurationTime;    // 既存の無敵タイマーを利用して回避中を無敵に
+            // 回避アクション
+            if (dodgeCooldownTimer_ <= 0) {
+                dodgeCooldownTimer_ = kDodgeCooldownTime; // クールタイム2秒
+                dodgeDurationTimer_ = kDodgeDurationTime; // 回避モーションの時間
+                invincibleTimer = kDodgeDurationTime;    // 既存の無敵タイマーを利用して回避中を無敵に
 
-                    // 移動入力があればその方向へ、なければ向いている方向（前）へ回避
-                    if (move.x != 0.0f || move.z != 0.0f) {
-                        dodgeDirection_ = { moveX, 0.0f, moveZ };
-                    } else {
-                        float sinY = std::sin(rotate.y);
-                        float cosY = std::cos(rotate.y);
-                        dodgeDirection_ = { sinY, 0.0f, cosY };
-                    }
-                    dodgeDirection_ = Math::Normalize(dodgeDirection_);
+                // 移動入力があればその方向へ、なければ向いている方向（前）へ回避
+                if (move.x != 0.0f || move.z != 0.0f) {
+                    dodgeDirection_ = { moveX, 0.0f, moveZ };
+                } else {
+                    float sinY = std::sin(rotate.y);
+                    float cosY = std::cos(rotate.y);
+                    dodgeDirection_ = { sinY, 0.0f, cosY };
                 }
-            } else {
-                // 通常時：ジャンプ
-                velocity_.y = kJumpForce;
-                isGrounded_ = false;
+                dodgeDirection_ = Math::Normalize(dodgeDirection_);
             }
         }
     } else {

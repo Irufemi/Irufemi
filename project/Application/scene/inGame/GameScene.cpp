@@ -128,6 +128,23 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   cooldownWarningSprite_->SetSize(400.0f, 100.0f);
   cooldownWarningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f + 15.0f, static_cast<float>(engine_->GetClientHeight()) / 2.0f + 80.0f);
 
+  // --- ポーズメニューの初期化 ---
+  pauseBgDimmerSprite_ = std::make_unique<Sprite>();
+  pauseBgDimmerSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+  pauseBgDimmerSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
+  pauseBgDimmerSprite_->SetColor(Vector4{0.1f, 0.1f, 0.1f, 0.6f});
+
+  pauseTitleSprite_ = std::make_unique<Sprite>();
+  pauseTitleSprite_->Initialize(camera_.get(), "resources/texture/pause/text_pausemenu.png");
+  pauseTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.3f);
+
+  pauseBackGameSprite_ = std::make_unique<Sprite>();
+  pauseBackGameSprite_->Initialize(camera_.get(), "resources/texture/pause/text_backgame.png");
+  pauseBackGameSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.5f);
+
+  pauseBackTitleSprite_ = std::make_unique<Sprite>();
+  pauseBackTitleSprite_->Initialize(camera_.get(), "resources/texture/pause/text_backtitle.png");
+  pauseBackTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.65f);
 }
 
 void GameScene::Update() {
@@ -286,9 +303,72 @@ void GameScene::Draw() {
   } 
 }
 
-void GameScene::PauseUpdate() { UpdateCameraAndFrameData(); }
+void GameScene::PauseUpdate() {
+  UpdateCameraAndFrameData();
 
-void GameScene::PauseDraw() {}
+  bool isMenuChanged = false;
+
+  // Wキー or ↑キーで上に移動
+  if (PressedDIK(0x11 /* W */) || PressedDIK(0xC8 /* UP */)) {
+    pauseMenuIndex_--;
+    if (pauseMenuIndex_ < 0) pauseMenuIndex_ = 1;
+    isMenuChanged = true;
+  }
+  // Sキー or ↓キーで下に移動
+  if (PressedDIK(0x1F /* S */) || PressedDIK(0xD0 /* DOWN */)) {
+    pauseMenuIndex_++;
+    if (pauseMenuIndex_ > 1) pauseMenuIndex_ = 0;
+    isMenuChanged = true;
+  }
+
+  // メニューが変更されたらアニメーションタイマーをリセット
+  if (isMenuChanged) {
+    pauseMenuAnimTimer_ = 0.0f;
+  }
+
+  // アニメーションタイマーを進行
+  pauseMenuAnimTimer_ += 1.0f / 60.0f;
+
+  // Space or Enter で決定
+  if (PressedDIK(0x39 /* Space */) || PressedDIK(0x1C /* Enter */)) {
+    if (pauseMenuIndex_ == 0) {
+      // ゲームに戻る
+      engine_->GetSceneManager()->TogglePause();
+    } else if (pauseMenuIndex_ == 1) {
+      // タイトルに戻る (ポーズを解除してから遷移)
+      engine_->GetSceneManager()->TogglePause();
+      engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
+    }
+  }
+
+  // スプライトの定数バッファを更新するため、必ずUpdate()を呼ぶ
+  if (pauseBgDimmerSprite_) pauseBgDimmerSprite_->Update();
+  if (pauseTitleSprite_) pauseTitleSprite_->Update();
+  if (pauseBackGameSprite_) pauseBackGameSprite_->Update();
+  if (pauseBackTitleSprite_) pauseBackTitleSprite_->Update();
+}
+
+void GameScene::PauseDraw() {
+  engine_->SetBlend(BlendMode::kBlendModeNormal);
+  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  engine_->ApplySpritePSO();
+
+  // 背景ディマー描画
+  if (pauseBgDimmerSprite_) pauseBgDimmerSprite_->Draw();
+
+  // ダークソウル風の明滅（サイン波でアルファ値を変動）
+  float animAlpha = 0.7f + 0.3f * std::sin(pauseMenuAnimTimer_ * 5.0f);
+  Vector4 activeColor = {1.0f, 1.0f, 1.0f, animAlpha};
+  Vector4 inactiveColor = {0.3f, 0.3f, 0.3f, 0.9f}; // 非選択時は暗めのグレー
+
+  // 選択状態による色変更
+  if (pauseBackGameSprite_) pauseBackGameSprite_->SetColor(pauseMenuIndex_ == 0 ? activeColor : inactiveColor);
+  if (pauseBackTitleSprite_) pauseBackTitleSprite_->SetColor(pauseMenuIndex_ == 1 ? activeColor : inactiveColor);
+
+  if (pauseTitleSprite_) pauseTitleSprite_->Draw();
+  if (pauseBackGameSprite_) pauseBackGameSprite_->Draw();
+  if (pauseBackTitleSprite_) pauseBackTitleSprite_->Draw();
+}
 
 void GameScene::DrawDebugTab() {
 #ifdef USE_IMGUI
@@ -548,7 +628,10 @@ void GameScene::CheckPlayerToEnemyCollisions() {
     // 近接攻撃
     if (attackCol.isActive &&
         Collision::IsOBBSphereCollision(part->GetOBB(), attackSphere)) {
-      if (part->ApplyDamage(kDamageMeleeToEnemy)) {
+      int damage = player_->GetDamageMelee();
+      if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMeleeChargeMultiplier());
+
+      if (part->ApplyDamage(damage)) {
         if (part->GetHP() <= 0) {
           Vector3 attackDir = Math::Normalize(
               Math::Subtract(part->GetTransform().translate, playerPos));
@@ -583,7 +666,10 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       Sphere bulletSphere = {bullets[i].position, kMachineGunBulletRadius};
       if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
         bullets[i].isActive = false;
-        if (part->ApplyDamage(kDamageMachineGunToEnemy) && part->GetHP() <= 0) {
+        int damage = player_->GetDamageMachineGun();
+        if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMachineGunChargeMultiplier());
+
+        if (part->ApplyDamage(damage) && part->GetHP() <= 0) {
           part->OnDestroyed(Math::Normalize(bullets[i].velocity),
                             EnemyParameters::GetInstance()->GetBlowSpeed());
           break; // HPが0になったらループを抜けて多重破壊を防止
@@ -601,7 +687,10 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       Sphere missileSphere = {missiles[i].position, kMissileRadius};
       if (Collision::IsOBBSphereCollision(part->GetOBB(), missileSphere)) {
         missiles[i].isActive = false;
-        if (part->ApplyDamage(kDamageMissileToEnemy) && part->GetHP() <= 0) {
+        int damage = player_->GetDamageMissile();
+        if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMissileChargeMultiplier());
+
+        if (part->ApplyDamage(damage) && part->GetHP() <= 0) {
           part->OnDestroyed(Math::Normalize(missiles[i].velocity),
                             EnemyParameters::GetInstance()->GetBlowSpeed());
           break; // HPが0になったらループを抜ける

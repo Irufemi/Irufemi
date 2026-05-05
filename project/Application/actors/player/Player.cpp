@@ -247,6 +247,33 @@ void Player::Update() {
             ImGui::DragFloat("MachineGun Vibe Scale", weapon_.GetMachineGunVibrationScalePtr(), 0.001f, 0.0f, 0.5f);
             ImGui::DragFloat("Missile Vibe Scale", weapon_.GetMissileVibrationScalePtr(), 0.001f, 0.0f, 1.0f);
 
+            ImGui::Separator();
+            ImGui::Text("Damage & Multipliers");
+            ImGui::DragInt("Melee Damage", &damageMelee_);
+            ImGui::DragFloat("Melee Charge Multi", &damageMeleeChargeMultiplier_, 0.1f);
+            ImGui::DragInt("MG Damage", &damageMachineGun_);
+            ImGui::DragFloat("MG Charge Multi", &damageMachineGunChargeMultiplier_, 0.1f);
+            ImGui::DragInt("Missile Damage", &damageMissile_);
+            ImGui::DragFloat("Missile Charge Multi", &damageMissileChargeMultiplier_, 0.1f);
+
+            ImGui::Separator();
+            ImGui::Text("Hammer Size");
+            ImGui::DragFloat("Base Size", &hammerBaseSize_, 0.1f);
+            ImGui::DragFloat("Charge Bonus", &hammerSizeChargeBonus_, 0.1f);
+            ImGui::DragFloat("Scale Y Multi", &hammerScaleYMultiplier_, 0.1f);
+
+            ImGui::Separator();
+            ImGui::Text("Movement");
+            ImGui::DragFloat("Dodge Speed", movement_.GetDodgeSpeedPtr(), 0.1f);
+            ImGui::DragFloat("Dodge Normal Multi", movement_.GetDodgeSpeedNormalMultiplierPtr(), 0.05f);
+
+            ImGui::Separator();
+            ImGui::Text("Missile Specs");
+            ImGui::DragFloat("Turn Speed Normal", weapon_.GetMissileTurnSpeedNormalPtr(), 0.01f);
+            ImGui::DragFloat("Turn Speed Charged", weapon_.GetMissileTurnSpeedChargedPtr(), 0.01f);
+            ImGui::DragFloat("Spread Base", weapon_.GetMissileSpreadMagnitudeBasePtr(), 0.1f);
+            ImGui::DragFloat("Spread Rand", weapon_.GetMissileSpreadMagnitudeRandPtr(), 0.1f);
+
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Model")) {
@@ -277,7 +304,7 @@ void Player::Update() {
     HandleAttack();
     HandleSkill();
 
-    weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, scale_);
+    weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, scale_, isKarakuriCharged_);
     cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration());
     status_.UpdateKnockback();
 
@@ -383,7 +410,7 @@ void Player::Update() {
             addSphereLines(col.center, col.radius, greenColor);
 
             if (attackCollision_.isActive && cameraController_.IsCameraControlEnabled()) {
-                addSphereLines(attackCollision_.center, attackCollision_.radius, greenColor);
+                addSphereLines(attackCollision_.center, attackCollision_.radius * 1.05f + 0.2f, greenColor);
             }
 
             MissileData* ms = weapon_.GetMissiles();
@@ -444,6 +471,14 @@ void Player::Draw() {
         Vector3 drawPos = translate_;
         if (!status_.IsDead()) {
             drawPos += weapon_.GetMissileVibration();
+
+            // からくりチャージ中（Eキー長押し中）のシェイク演出
+            if (karakuriChargeTimer_ > 0 && !isKarakuriCharged_) {
+                float shakeScale = static_cast<float>(karakuriChargeTimer_) / kKarakuriChargeTime;
+                drawPos.x += ((std::rand() % 100) / 100.0f - 0.5f) * 0.2f * shakeScale;
+                drawPos.y += ((std::rand() % 100) / 100.0f - 0.5f) * 0.2f * shakeScale;
+                drawPos.z += ((std::rand() % 100) / 100.0f - 0.5f) * 0.2f * shakeScale;
+            }
         }
         drawPos.y += kModelOffsetY;
 
@@ -559,8 +594,8 @@ void Player::HandleAttack() {
                 swingRot.y = currentAngle;
                 swingRot.x = kHammerRotX;
                 attackObj_->SetRotate(swingRot);
-                float hammerSize = kHammerBaseSize + (chargeRate * kHammerSizeChargeBonus);
-                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * kHammerScaleYMultiplier * hammerSize, scale_.z * hammerSize };
+                float hammerSize = hammerBaseSize_ + (chargeRate * hammerSizeChargeBonus_);
+                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
                 attackObj_->SetScale(hammerScale);
                 attackObj_->Update();
             }
@@ -571,8 +606,9 @@ void Player::HandleAttack() {
             currentChargeRate_ = static_cast<float>(chargeTimer_) / kMaxChargeTime;
             if (currentChargeRate_ > 1.0f) currentChargeRate_ = 1.0f;
 
-            float hammerSize = kHammerBaseSize + (currentChargeRate_ * kHammerSizeChargeBonus);
-            attackCollision_.radius = hammerSize;
+            float hammerSize = hammerBaseSize_ + (currentChargeRate_ * hammerSizeChargeBonus_);
+            Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
+            attackCollision_.radius = hammerScale.y * 0.8f; // モデルより少し大きくする
         }
         break;
 
@@ -597,8 +633,8 @@ void Player::HandleAttack() {
                 swingRot.y = currentAngle;
                 swingRot.x = kHammerRotX;
                 attackObj_->SetRotate(swingRot);
-                float hammerSize = kHammerBaseSize + (currentChargeRate_ * kHammerSizeChargeBonus);
-                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * kHammerScaleYMultiplier * hammerSize, scale_.z * hammerSize };
+                float hammerSize = hammerBaseSize_ + (currentChargeRate_ * hammerSizeChargeBonus_);
+                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
                 attackObj_->SetScale(hammerScale);
                 attackObj_->Update();
             }
@@ -616,7 +652,10 @@ void Player::HandleAttack() {
 void Player::HandleSkill() {
     if (skillDurationTimer_ > 0) {
         skillDurationTimer_--;
-        if (skillDurationTimer_ <= 0) skillCooldownTimer_ = kSkillCooldownTime;
+        if (skillDurationTimer_ <= 0) {
+            // ミサイルの時だけクールダウンをセット（マシンガンはトグルなので別管理）
+            if (isKarakuriCharged_) skillCooldownTimer_ = kSkillCooldownTime;
+        }
     } else if (skillCooldownTimer_ > 0) {
         skillCooldownTimer_--;
     }
@@ -629,6 +668,7 @@ void Player::HandleSkill() {
         karakuriActiveTimer_--;
         if (karakuriActiveTimer_ <= 0) {
             isKarakuriCharged_ = false;
+            weapon_.SetMachineGunFiring(false); // チャージ終了時にマシンガンも止める（任意）
             OutputDebugStringA("Karakuri Charge Ended.\n");
         }
     }
@@ -661,8 +701,8 @@ void Player::HandleSkill() {
                 }
                 skillDurationTimer_ = kMissileSkillDuration;
             } else {
-                weapon_.StartMachineGunSkill();
-                skillDurationTimer_ = kMachineGunSkillDuration;
+                // 機関銃のトグル
+                weapon_.SetMachineGunFiring(!weapon_.IsMachineGunFiring());
             }
         } else if (skillDurationTimer_ <= 0 && skillCooldownTimer_ > 0) {
             // 発動中ではなく、クールダウン中に押された場合のみ警告タイマーをセット

@@ -54,7 +54,7 @@ public:
     void Initialize(Camera* camera);
 
     // 毎フレームの更新（振動、弾の移動、薬莢の物理挙動など）
-    void Update(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, const Vector3& playerScale);
+    void Update(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, const Vector3& playerScale, bool isKarakuriCharged);
 
     /**
      * @brief 死亡演出中など、武器の発射制御をスキップしてパーティクルや弾の移動・寿命更新のみを行う
@@ -72,6 +72,12 @@ public:
     // 振動（シェイク）の値を取得（プレイヤー本体やカメラを揺らすため）
     const Vector3& GetMachineGunVibration() const { return machineGunVibration_; }
     const Vector3& GetMissileVibration() const { return missileVibration_; }
+    
+    // 機関銃の発射制御
+    void SetMachineGunFiring(bool firing) { isMachineGunFiring_ = firing; }
+    bool IsMachineGunFiring() const { return isMachineGunFiring_; }
+    float GetMachineGunAmmo() const { return machineGunAmmo_; }
+    static float GetMaxMachineGunAmmo() { return kMaxMachineGunAmmo; }
 
     // ImGui で調整するためのポインタ取得
     float* GetMachineGunVibrationScalePtr() { return &machineGunVibrationScale_; }
@@ -84,7 +90,7 @@ public:
     static int GetMaxMissiles() { return kMaxMissiles; }
 
 private:
-    void UpdateMissile(const Vector3& targetPos, const Vector3& playerScale);
+    void UpdateMissile(const Vector3& targetPos, const Vector3& playerScale, bool isKarakuriCharged);
     void UpdateMachineGun(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos);
     void FireMachineGunBullet(const Vector3& startPos, const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos);
     void UpdateCartridges();
@@ -134,9 +140,28 @@ private:
     const float kGravity = 0.02f;
 
     // --- 誘導ミサイル用 ---
-    // ★修正: 8個以上同時に飛ぶことを考慮し、余裕を持たせて16に変更
+    // ★修正: 16発に戻す
     static const int kMaxMissiles = 16;
     std::unique_ptr<ObjClass> missileObjs_[kMaxMissiles];
     MissileData missiles_[kMaxMissiles] = {};
     const float kMissileSpeed = 0.8f;
+
+    float missileTurnSpeedNormal_ = 0.04f;
+    float missileTurnSpeedCharged_ = 0.08f;
+    float missileSpreadMagnitudeBase_ = 1.5f;
+    float missileSpreadMagnitudeRand_ = 1.5f;
+
+public:
+    float* GetMissileTurnSpeedNormalPtr() { return &missileTurnSpeedNormal_; }
+    float* GetMissileTurnSpeedChargedPtr() { return &missileTurnSpeedCharged_; }
+    float* GetMissileSpreadMagnitudeBasePtr() { return &missileSpreadMagnitudeBase_; }
+    float* GetMissileSpreadMagnitudeRandPtr() { return &missileSpreadMagnitudeRand_; }
+
+private:
+    // --- 機関銃の弾数管理 ---
+    bool isMachineGunFiring_ = false;
+    float machineGunAmmo_ = 100.0f;
+    static constexpr float kMaxMachineGunAmmo = 100.0f;
+    static constexpr float kMachineGunRecoveryRate = 0.4f; // 非発射時の回復量
+    static constexpr float kMachineGunConsumptionRate = 0.8f; // 発射時の消費量
 };
