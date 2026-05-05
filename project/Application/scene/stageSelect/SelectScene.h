@@ -1,17 +1,10 @@
 #pragma once
 
-#include "Framework/IScene.h"
+#include "Framework/BaseScene.h"
 #include "Irufemi.h"
 
 #include <memory>
 #include <vector>
-
-class Camera;
-class DebugCamera;
-struct PointLight;
-struct SpotLight;
-struct DirectionalLight;
-struct AreaLight;
 
 /**
  * @class SelectScene
@@ -19,9 +12,7 @@ struct AreaLight;
  *
  * プレイヤーがプレイするステージを選択し、決定に応じてゲームシーンへ遷移します。
  */
-class SelectScene : public IScene {
-public: // メンバ関数(ゲーム)
-
+class SelectScene : public BaseScene {
 public: // メンバ関数(システム)
     ~SelectScene() override;
 
@@ -42,24 +33,6 @@ public: // メンバ関数(システム)
     void Draw() override;
     void DrawDebugTab() override;
 
-
-private: // メンバ関数(内部ヘルパ)
-
 private: // メンバ変数(ゲーム)
-
-private: // メンバ変数(システム)
-    // エンジン
-    IrufemiEngine* engine_ = nullptr;
-    // カメラ
-    std::unique_ptr<Camera> camera_ = nullptr;
-    // デバッグカメラ
-    std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
-
-    bool debugMode_ = false;
-
-    // ライト
-    std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
-    std::vector<std::unique_ptr<PointLight>> pointLights_;
-    std::vector<std::unique_ptr<SpotLight>> spotLights_;
-    std::vector<std::unique_ptr<AreaLight>> areaLights_;
+    // 必要なゲームロジック用変数があればここに追加
 };

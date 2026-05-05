@@ -4,13 +4,8 @@
 
 #include "Irufemi.h"
 
+#include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
-#include "camera/DebugCamera.h"
-#include "Graphics/Data/CameraForGPU.h"
-#include "Graphics/Data/PointLight.h"
-#include "Graphics/Data/SpotLight.h"
-#include "Graphics/Data/DirectionalLight.h"
-#include "Graphics/Data/AreaLight.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
 
 GameOverScene::~GameOverScene() {
@@ -18,91 +13,44 @@ GameOverScene::~GameOverScene() {
 }
 
 void GameOverScene::Initialize(IrufemiEngine* engine) {
-    engine_ = engine;
+    BaseScene::Initialize(engine);
 
-    // カメラ(2D 正射影)
-    camera_ = std::make_unique<Camera>();
-    camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
-    camera_->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });
-    camera_->UpdateMatrix();
-
-    // デバッグカメラの初期化を追加
-    debugCamera_ = std::make_unique<DebugCamera>();
-    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
-    debugMode_ = false;
-
-    // --- ライトの初期化 ---
-    auto pointLight = std::make_unique<PointLight>();
-    pointLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    pointLight->position = { 0.0f, 5.0f, 0.0f };
-    pointLight->intensity = 1.0f;
-    pointLight->radius = 10.0f;
-    pointLight->decay = 1.0f;
-    pointLight->isActive = 1;
-    pointLights_.push_back(std::move(pointLight));
-
-    auto spotLight = std::make_unique<SpotLight>();
-    spotLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    spotLight->position = { 2.0f, 1.25f, 0.0f };
-    spotLight->distance = 7.0f;
-    spotLight->direction = Math::Normalize(Vector3{ -1.0f,-1.0f,0.0f });
-    spotLight->intensity = 0.0f; // 初期状態ではOFF
-    spotLight->decay = 2.0f;
-    spotLight->cosAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
-    spotLight->isActive = 1;
-    spotLights_.push_back(std::move(spotLight));
-
-    directionalLight_ = std::make_unique<DirectionalLight>();
-    directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
-    directionalLight_->direction = { 0.5f,-0.7f,1.0f };
-    directionalLight_->intensity = 1.0f;
+    // シーン固有のカメラ位置に調整
+    cameraManager_->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
+    cameraManager_->GetActiveCamera()->UpdateMatrix();
 
     // 「GameOver...」文字の初期化
     goTextG_ = std::make_unique<ObjClass>();
-    goTextG_->Initialize(camera_.get(), "gameOver/text_G.obj");
+    goTextG_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_G.obj");
     goTextA_ = std::make_unique<ObjClass>();
-    goTextA_->Initialize(camera_.get(), "gameOver/text_q.obj"); // ※ファイル名text_q.objはaとして使用
+    goTextA_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_q.obj"); // ※ファイル名text_q.objはaとして使用
     goTextM_ = std::make_unique<ObjClass>();
-    goTextM_->Initialize(camera_.get(), "gameOver/text_m.obj");
+    goTextM_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_m.obj");
     goTextE1_ = std::make_unique<ObjClass>();
-    goTextE1_->Initialize(camera_.get(), "gameOver/text_e.obj");
+    goTextE1_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_e.obj");
     goTextO_ = std::make_unique<ObjClass>();
-    goTextO_->Initialize(camera_.get(), "gameOver/text_O.obj");
+    goTextO_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_O.obj");
     goTextV_ = std::make_unique<ObjClass>();
-    goTextV_->Initialize(camera_.get(), "gameOver/text_v.obj");
+    goTextV_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_v.obj");
     goTextE2_ = std::make_unique<ObjClass>();
-    goTextE2_->Initialize(camera_.get(), "gameOver/text_e.obj");
+    goTextE2_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_e.obj");
     goTextR_ = std::make_unique<ObjClass>();
-    goTextR_->Initialize(camera_.get(), "gameOver/text_r.obj");
+    goTextR_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_r.obj");
     
     // text_dot.obj（...）の読み込み
     goTextDot_ = std::make_unique<ObjClass>();
-    goTextDot_->Initialize(camera_.get(), "gameOver/text_dot.obj");
+    goTextDot_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_dot.obj");
 
     // 「Push to Space」文字の初期化
     textPushToSpace_ = std::make_unique<ObjClass>();
-    textPushToSpace_->Initialize(camera_.get(), "text_pushtospace/text_pushtospace.obj");
+    textPushToSpace_->Initialize(cameraManager_->GetActiveCamera(), "text_pushtospace/text_pushtospace.obj");
     textPushToSpace_->SetPosition({ 0.0f, -2.5f, 0.0f });
     textPushToSpace_->SetScale({ 1.0f, 1.0f, 1.0f });
 }
 
 void GameOverScene::Update() {
 
-    // --- カメラの更新 ---
-
-    if (debugMode_) {
-        // デバッグカメラを更新
-        debugCamera_->Update();
-        // デバッグカメラの計算結果をメインカメラに上書きする
-        const Camera& dbgCam = debugCamera_->GetCamera();
-        camera_->SetViewMatrix(dbgCam.GetViewMatrix());
-        camera_->SetTranslate(dbgCam.GetTranslate());
-        camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
-    }
-    else {
-        // 通常カメラの更新
-        camera_->Update();
-    }
+    BaseScene::Update();
 
     // =====
     // ↓ゲームの更新
@@ -151,7 +99,7 @@ void GameOverScene::Update() {
     }
 
     // Spaceキーが押されたらフラグを立てる
-    if (!isChangingScene_ && engine_->GetInputManager()->IsKeyPressed(VK_SPACE)) {
+    if (!isChangingScene_ && IsKeyPressed(VK_SPACE)) {
         isChangingScene_ = true;
         transitionDelayTimer_ = 0.0f;
     }
@@ -168,27 +116,6 @@ void GameOverScene::Update() {
     // =====
     // ↑ゲームの更新
     // =====
-
-    // --- フレーム共通データのセット ---
-    CameraForGPU cameraForGpu;
-    cameraForGpu.view = camera_->GetViewMatrix();
-    cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
-    cameraForGpu.worldPosition = camera_->GetTranslate();
-
-    std::vector<PointLight*> pLights;
-    for (const auto& light : pointLights_) {
-        pLights.push_back(light.get());
-    }
-    std::vector<SpotLight*> sLights;
-    for (const auto& light : spotLights_) {
-        sLights.push_back(light.get());
-    }
-    std::vector<AreaLight*> aLights;
-    for (const auto& light : areaLights_) {
-        aLights.push_back(light.get());
-    }
-
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
 }
 
 void GameOverScene::Draw() {
@@ -215,32 +142,7 @@ void GameOverScene::Draw() {
 
 void GameOverScene::DrawDebugTab() {
 #if defined USE_IMGUI
-    if (camera_) {
-        if (ImGui::BeginTabItem("Main Camera")) {
-            ImGui::Checkbox("Debug Camera Mode", &debugMode_);
-            if (debugMode_ && debugCamera_) {
-                if (ImGui::Button("Top-Down")) debugCamera_->SetPreset(DebugCamera::Preset::TopDown, *camera_);
-                ImGui::SameLine();
-                if (ImGui::Button("Diagonal")) debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *camera_);
-                ImGui::SameLine();
-                if (ImGui::Button("Front")) debugCamera_->SetPreset(DebugCamera::Preset::Front, *camera_);
-                ImGui::SameLine();
-                if (ImGui::Button("Snap to Current")) debugCamera_->SetPreset(DebugCamera::Preset::Current, *camera_);
-
-                ImGui::Separator();
-                ImGui::Text("Debug Camera Controls");
-                debugCamera_->GetCamera().DrawDebugContents();
-                float dist = debugCamera_->GetDistance();
-                if (ImGui::DragFloat("Orbit Distance", &dist, 0.1f, 1.0f, 1000.0f)) {
-                    debugCamera_->SetDistance(dist);
-                }
-            } else {
-                camera_->DrawDebugContents();
-            }
-            ImGui::EndTabItem();
-        }
-    }
-    DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+    BaseScene::DrawDebugTab();
 
     // Texture タブ
     if (ImGui::BeginTabItem("Texture")) {

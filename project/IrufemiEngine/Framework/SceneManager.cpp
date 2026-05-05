@@ -84,13 +84,12 @@ void SceneManager::Update() {
         wasLoading_ = isLoading;
     }
 
-    // 入力同期
-    IScene::SyncInput(engine_);
+    // 入力同期 (削除済)
 
     // 現在のシーンがポーズ可能な場合のみ、ESCキーまたはゲームパッドのスタートボタンでポーズ切り替え
     if (current_ && current_->IsPausable()) {
         InputManager* input = engine_->GetInputManager();
-        if (input && (IScene::PressedVK(VK_ESCAPE) || input->StartPressed())) {
+        if (input && (input->IsKeyPressed(VK_ESCAPE) || input->StartPressed())) {
             TogglePause();
             // ポーズ状態に合わせてマウスのロックを切り替え
             engine_->SetCursorLocked(!isPaused_);

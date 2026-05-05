@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Framework/IScene.h"
+#include "Framework/BaseScene.h"
 
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
@@ -12,14 +12,8 @@
 
 // 前方宣言
 class IrufemiEngine;
-class Camera;
-class DebugCamera;
-struct PointLight;
-struct SpotLight;
-struct DirectionalLight;
-struct AreaLight;
 
-class DebugScene : public IScene {
+class DebugScene : public BaseScene {
 public: // メンバ関数(ゲーム)
     ~DebugScene() override;
     void Initialize(IrufemiEngine* engine) override;
@@ -111,19 +105,6 @@ private: // メンバ変数(ゲーム)
     LightningParams* lightningParamsData_ = nullptr;
 
 private: // メンバ変数(システム)
-    // エンジン
-    IrufemiEngine* engine_ = nullptr;
-    // カメラ
-    std::unique_ptr<Camera> camera_ = nullptr;
-    // デバッグカメラ
-    std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
-
-    bool debugMode_ = false;
-    // ライト
-    std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
-    std::vector<std::unique_ptr<PointLight>> pointLights_;
-    std::vector<std::unique_ptr<SpotLight>> spotLights_;
-    std::vector<std::unique_ptr<AreaLight>> areaLights_;
 
 #ifdef USE_IMGUI
     ImGuizmo::OPERATION gizmoOperation_ = ImGuizmo::TRANSLATE;

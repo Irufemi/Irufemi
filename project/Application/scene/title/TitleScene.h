@@ -1,19 +1,13 @@
 #pragma once
 
-#include "Framework/IScene.h"
+#include "Framework/BaseScene.h"
 
 #include <memory>
 #include <vector>
 
 class IrufemiEngine;
-class Camera;
-class DebugCamera;
 class Sprite;
 class ObjClass;
-struct PointLight;
-struct SpotLight;
-struct DirectionalLight;
-struct AreaLight;
 
 /**
  * @class TitleScene
@@ -22,9 +16,7 @@ struct AreaLight;
  * ゲームの開始をユーザーに促し、入力に応じてステージ選択シーンへ遷移します。
  * タイトルロゴのアニメーションやBGMの再生も担当します。
  */
-class TitleScene : public IScene {
-public: // メンバ関数(ゲーム)
-
+class TitleScene : public BaseScene {
 public: // メンバ関数(システム)
     ~TitleScene() override;
 
@@ -45,9 +37,6 @@ public: // メンバ関数(システム)
     void Draw() override;
     void DrawDebugTab() override;
 
-
-private: // メンバ関数(内部ヘルパ)
-
 private: // メンバ変数(ゲーム)
 
     // 3Dタイトル文字（七転び八転び）
@@ -62,23 +51,10 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<ObjClass> titleTextPushToSpace_ = nullptr;
 
 private: // メンバ変数(システム)
-    // エンジン
-    IrufemiEngine* engine_ = nullptr;
-    // カメラ
-    std::unique_ptr<Camera> camera_ = nullptr;
-    // デバッグカメラ
-    std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
-
     bool isChangingScene_ = false;
     bool isTransitionRequested_ = false; // 遷移処理をSceneManagerに渡したか
     float transitionDelayTimer_ = 0.0f;  // 決定から遷移開始までの遅延タイマー
     bool isDrawPushToSpace_ = true;      // 決定時のフラッシュで描画自体をスキップするためのフラグ
 
-    bool debugMode_ = false;
     float animationTime_ = 0.0f; // アニメーション用タイマー
-    // ライト
-    std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
-    std::vector<std::unique_ptr<PointLight>> pointLights_;
-    std::vector<std::unique_ptr<SpotLight>> spotLights_;
-    std::vector<std::unique_ptr<AreaLight>> areaLights_;
 };

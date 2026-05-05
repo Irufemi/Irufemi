@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Math/Vector3.h"
+#include "Engine/Core/Math/Vector3.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 
