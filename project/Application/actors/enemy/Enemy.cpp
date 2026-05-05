@@ -5,7 +5,7 @@
 #include "IrufemiEngine.h"
 #include "Player.h"
 #include "Renderer/LineInstanced/LineClass.h"
-#include "camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "Core/Math/Math.h"
 #include <cmath>
 #include <manager/debugUI.h>

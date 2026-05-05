@@ -9,7 +9,7 @@
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
 #include "Engine/Core/Math/Matrix4x4.h"
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Engine/Core/Shape/Sphere.h"
 

@@ -5,7 +5,7 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Engine/IrufemiEngine.h"
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Resource/Model/ModelManager.h"

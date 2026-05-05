@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../../IrufemiEngine/Engine/Core/Math/Vector2.h"
-#include "../../IrufemiEngine/Engine/Core/Math/Vector3.h"
-#include "../../IrufemiEngine/Engine/Core/Math/Matrix4x4.h"
-#include "../../IrufemiEngine/Engine/Core/Math/Geometry/Frustum.h"
+#include "Engine/Core/Math/Vector2.h"
+#include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Matrix4x4.h"
+#include "Engine/Core/Math/Geometry/Frustum.h"
 
 /**
  * @class Camera

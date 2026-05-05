@@ -1,6 +1,6 @@
 #include "Field.h"
 
-#include "camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "building/building.h"
 
 Field::Field(Camera* camera, IrufemiEngine* engine) {

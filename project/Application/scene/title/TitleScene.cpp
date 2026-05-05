@@ -5,7 +5,7 @@
 
 #include "Irufemi.h"
 
-#include "camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "camera/DebugCamera.h"
 #include "Graphics/Data/CameraForGPU.h"
 #include "Graphics/Data/PointLight.h"

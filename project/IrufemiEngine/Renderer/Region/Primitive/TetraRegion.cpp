@@ -2,7 +2,7 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h" // 追加
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Core/Math/Geometry/Collision.h"

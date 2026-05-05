@@ -4,7 +4,7 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
 
 #include <algorithm>
