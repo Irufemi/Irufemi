@@ -2,7 +2,7 @@
 #include "../../../../Enemy.h"
 #include "actors/player/Player.h"
 #include "Core/Math/Math.h"
-#include "camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include <cmath>
 #include <algorithm>
 

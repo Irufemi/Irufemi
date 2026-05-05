@@ -13,7 +13,7 @@
 #include "Resource/Model/Data/ObjModel.h"
 #include "Renderer/Region/Primitive/SphereRegion.h"
 #include "Renderer/LineInstanced/LineClass.h"
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include <cmath>
 #include <cassert>
 

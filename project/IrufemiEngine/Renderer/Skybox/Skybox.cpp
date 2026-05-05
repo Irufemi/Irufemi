@@ -5,7 +5,7 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #ifdef USE_IMGUI
 #include "imgui/imgui.h"
 #endif

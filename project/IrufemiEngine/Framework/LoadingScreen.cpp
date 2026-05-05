@@ -2,7 +2,7 @@
 #include "../Engine/IrufemiEngine.h"
 #include "../Renderer/Object2D/Sprite/Sprite.h"
 #include "../Renderer/Object2D/Primitive/Circle2D.h"
-#include "../../Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "../Engine/Graphics/Pipeline/PSOManager.h"
 
 LoadingScreen::LoadingScreen() = default;

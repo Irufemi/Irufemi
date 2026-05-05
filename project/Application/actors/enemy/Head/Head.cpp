@@ -1,7 +1,7 @@
 #include "Head.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
-#include "camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "actors/enemy/EnemyParameters.h"
 #include "Engine/Core/Math/Math.h"
 #include "IrufemiEngine.h"

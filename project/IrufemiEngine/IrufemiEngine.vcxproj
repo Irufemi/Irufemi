@@ -159,6 +159,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\DirectX\FrameRateController.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\ShaderCompiler.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\ShadowMap.cpp" />
+    <ClCompile Include="Engine\Graphics\Camera\Camera.cpp" />
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Framework\SceneTransition.cpp" />
     <ClCompile Include="Renderer\Object2D\Sprite\Sprite.cpp" />
@@ -253,6 +254,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\DirectX\RootSignatureConfig.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShaderCompiler.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShadowMap.h" />
+    <ClInclude Include="Engine\Graphics\Camera\Camera.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Engine\Manager\IComputeTask.h" />
     <ClInclude Include="Framework\SceneTransition.h" />

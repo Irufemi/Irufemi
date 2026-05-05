@@ -5,7 +5,7 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Texture/TextureManager.h"
 
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include <wrl.h>
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Math/Geometry/Frustum.h"

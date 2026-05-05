@@ -170,7 +170,7 @@ exit 0</Command>
     <ClCompile Include="actors\enemy\Head\Head.cpp" />
     <ClCompile Include="actors\enemy\Head\Right\HeadRight.cpp" />
     <ClCompile Include="actors\player\Player.cpp" />
-    <ClCompile Include="camera\Camera.cpp" />
+
     <ClCompile Include="camera\DebugCamera.cpp" />
     <ClCompile Include="contents\effect\Effect.cpp" />
     <ClCompile Include="actors\enemy\Enemy.cpp" />
@@ -231,7 +231,7 @@ exit 0</Command>
     <ClInclude Include="actors\enemy\Head\Head.h" />
     <ClInclude Include="actors\enemy\Head\Right\HeadRight.h" />
     <ClInclude Include="actors\player\Player.h" />
-    <ClInclude Include="camera\Camera.h" />
+
     <ClInclude Include="camera\DebugCamera.h" />
     <ClInclude Include="contents\effect\Effect.h" />
     <ClInclude Include="contents\field\Field.h" />

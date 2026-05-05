@@ -1,6 +1,6 @@
 #include "LineClass.h"
 
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"

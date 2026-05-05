@@ -8,7 +8,7 @@
 
 #include "Engine/Core/Shape/Triangle.h"
 #include "Renderer/Object3D/Object3DResource.h"
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include <wrl.h>
 #include <memory>
 

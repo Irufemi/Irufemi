@@ -1,6 +1,6 @@
-﻿#include "../Core/IRenderable.h"
+#include "../Core/IRenderable.h"
 #pragma once
-#include "../../../Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "ParticleResource.h"
 #include "Data/Particle.h"
 #include "Data/Emitter.h"

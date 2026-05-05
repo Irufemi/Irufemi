@@ -10,7 +10,7 @@
 #include "Graphics/Data/DirectionalLight.h"
 #include "Graphics/Data/PointLight.h"
 #include "Graphics/Data/SpotLight.h"
-#include "camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "camera/DebugCamera.h"
 
 #include "Graphics/PostProcess/PostProcessManager.h"

@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 
 #include "Engine/Manager/DebugUI.h"
 

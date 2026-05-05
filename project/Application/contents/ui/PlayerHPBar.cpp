@@ -1,6 +1,6 @@
 #include "PlayerHPBar.h"
 #include "actors/player/Player.h"
-#include "camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Vector4.h"
 #include "Renderer/Object3D/Primitive/PlaneClass.h"
 #include "Renderer/Object3D/Object3DResource.h"

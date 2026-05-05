@@ -3,7 +3,7 @@
 #include "Irufemi.h"
 #include "actors/enemy/Enemy.h"
 #include "actors/enemy/EnemyParameters.h"
-#include "camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 
 #include <algorithm>
 #include <cmath>

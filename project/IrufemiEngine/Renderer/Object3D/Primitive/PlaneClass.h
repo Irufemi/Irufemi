@@ -9,7 +9,7 @@
 
 #include "Engine/Core/shape/Plane.h"
 #include "Renderer/Object3D/Object3DResource.h"
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include <wrl.h>
 
 // 前方宣言

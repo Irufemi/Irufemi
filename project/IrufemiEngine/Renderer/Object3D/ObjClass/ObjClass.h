@@ -1,7 +1,7 @@
 #pragma once
 #include <d3d12.h>
 #include <string>
-#include "../../../../Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "../../TransformationMatrix.h"
 #include <wrl.h>
 #include <cstdint>

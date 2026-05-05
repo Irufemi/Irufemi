@@ -1,5 +1,5 @@
 #include "Player.h"
-#include "camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include <Windows.h>
 #include <cmath>
 #include <cstdlib>

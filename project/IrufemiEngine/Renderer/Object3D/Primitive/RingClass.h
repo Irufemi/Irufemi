@@ -8,7 +8,7 @@
 #include <memory>
 #include <string>
 
-#include "Application/camera/Camera.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include "Renderer/Object3D/Object3DResource.h"
 
 // 前方宣言
