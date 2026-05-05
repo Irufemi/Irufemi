@@ -1,4 +1,4 @@
-﻿#include "../Core/IRenderable.h"
+#include "../Core/IRenderable.h"
 #pragma once
 #include "../../Engine/Core/Math/Matrix4x4.h"
 #include "../../Engine/Core/Math/Vector3.h"
@@ -84,8 +84,7 @@ public:
 
   static void SetEngine(IrufemiEngine *engine) { engine_ = engine; }
 
-  void Initialize(const std::string &modelName, const Vector3Int &resolution,
-                  Camera *camera);
+  void Initialize(const std::string &modelName, const Vector3Int &resolution);
 
   void DispatchCompute() override;
 
@@ -122,7 +121,7 @@ private:
   void FinishInitialization();
 
 private:
-  Camera *camera_ = nullptr;
+
   ModelManager *modelManager_ = nullptr;
   TextureManager *textureManager_ = nullptr;
   ID3D12Device *device_ = nullptr;

@@ -14,6 +14,7 @@
 #include "Renderer/Region/Primitive/SphereRegion.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Engine/Graphics/Camera/Camera.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
 #include <cmath>
 #include <cassert>
 
@@ -24,8 +25,7 @@ AnimationModel::~AnimationModel() {
 }
 
 // 初期化
-void AnimationModel::Initialize(Camera* camera, const std::string& filename) {
-    camera_ = camera;
+void AnimationModel::Initialize(const std::string& filename) {
     filename_ = filename;
 
     assert(engine_ && "AnimationModel::Initialize: ModelManager is not set.");
@@ -85,7 +85,7 @@ void AnimationModel::InitializeResources() {
         }
 
         jointSpheres_ = std::make_unique<SphereRegion>();
-        jointSpheres_->Initialize(camera_, "resources/whiteTexture.png", 16);
+        jointSpheres_->Initialize("resources/whiteTexture.png", 16);
 
         for (size_t i = 0; i < skeleton_.joints.size(); ++i) {
             Transform tf{};
@@ -94,7 +94,7 @@ void AnimationModel::InitializeResources() {
         }
 
         boneLines_ = std::make_unique<Line3DRegion>();
-        boneLines_->Initialize(camera_);
+        boneLines_->Initialize();
     }
 
     animationTime_ = 0.0f;
@@ -104,7 +104,9 @@ void AnimationModel::InitializeResources() {
 // 更新
 void AnimationModel::Update() {
 
-    if (!managedModel_ || !camera_) return;
+    if (!managedModel_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 非同期ロードが終わっていれば構築する (遅延初期化)
     if (managedModel_->status.load() == ManagedModel::LoadingStatus::Loaded && meshResources_.empty()) {
@@ -186,8 +188,8 @@ void AnimationModel::Update() {
     UpdateMaterials();
 
     isDirty_ = false;
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    lastViewMatrix_ = activeCam->GetViewMatrix();
+    lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
     // スキニングモデルの場合はCompute Shaderの実行を予約する
     if (!managedModel_->cpuModel->skinClusterData.empty() && engine_ && engine_->GetDrawManager()) {
         engine_->GetDrawManager()->RegisterComputeTask(this);
@@ -220,14 +222,16 @@ void AnimationModel::SyncBeforeDraw() {
 }
 
 void AnimationModel::DispatchCompute() {
-    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->skinClusterData.empty() || !camera_) return;
+    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->skinClusterData.empty() || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     if (isCullingEnabled_) {
         float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
         Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         boundingSphere.radius = managedModel_->cpuModel->boundingSphere.radius * maxScale * 1.5f;
-        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 視錐台カリングされている場合はComputeもスキップ
         }
     }
@@ -241,7 +245,9 @@ void AnimationModel::DispatchCompute() {
 
 // 描画
 void AnimationModel::Draw() {
-    if (!managedModel_ || !camera_ || meshResources_.empty()) return;
+    if (!managedModel_ || !engine_ || meshResources_.empty()) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 視錐台カリング
     if (isCullingEnabled_) {
@@ -252,14 +258,14 @@ void AnimationModel::Draw() {
         // アニメーションによる広がりを考慮し、モデル境界球の1.5倍のマージンを設定
         boundingSphere.radius = managedModel_->cpuModel->boundingSphere.radius * maxScale * 1.5f;
 
-        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 描画スキップ
         }
     }
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
     if (isDirtyBuffer_[BaseResource::GetDirectXCommon()->GetFrameIndex()] || cameraChanged) {
         Update();

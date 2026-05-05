@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Framework/IScene.h"
+#include "Framework/BaseScene.h"
 #include <memory>
 #include <vector>
 
@@ -23,7 +23,7 @@ class EnemyHPBar;
 class EnemyPartHPBar;
 class Sprite;
 
-class GameScene : public IScene {
+class GameScene : public BaseScene {
 public:
     GameScene();
     ~GameScene() override;
@@ -85,10 +85,6 @@ private:
 
     // --------------------------------
 
-    IrufemiEngine* engine_ = nullptr;
-    std::unique_ptr<Camera> camera_ = nullptr;
-    std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
-    bool debugMode_ = false;
     bool isFirstDebug_ = true;
 
     // ゲームオブジェクト
@@ -97,12 +93,6 @@ private:
     // フィールド・スカイドーム
     std::unique_ptr<Field> field_ = nullptr;
     std::unique_ptr<Skydome> skydome_ = nullptr;
-
-    // ライト
-    std::unique_ptr<DirectionalLight> directionalLight_ = nullptr;
-    std::vector<std::unique_ptr<PointLight>> pointLights_;
-    std::vector<std::unique_ptr<SpotLight>> spotLights_;
-    std::vector<std::unique_ptr<AreaLight>> areaLights_;
     
     // 操作説明スプライト
     std::unique_ptr<Sprite> operationNormalSprite_ = nullptr;
@@ -181,9 +171,4 @@ private:
      * @brief プレイヤーと敵の座標に基づき、動的なポイントライトのパラメータを計算・更新する
      */
     void UpdateDynamicLights();
-
-    /**
-     * @brief カメラとフレームデータの更新
-     */
-    void UpdateCameraAndFrameData();
 };

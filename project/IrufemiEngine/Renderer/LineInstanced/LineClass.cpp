@@ -5,10 +5,12 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Engine/Core/Math/Math.h"
+#include "Engine/IrufemiEngine.h"
 
 DirectXCommon* Line3DRegion::dx_ = nullptr;
 DrawManager* Line3DRegion::drawManager_ = nullptr;
 DescriptorPool* Line3DRegion::s_srvAllocator_ = nullptr;
+IrufemiEngine* Line3DRegion::engine_ = nullptr;
 
 Line3DRegion::~Line3DRegion() {
     if (s_srvAllocator_ && dx_) {
@@ -21,8 +23,7 @@ Line3DRegion::~Line3DRegion() {
     }
 }
 
-void Line3DRegion::Initialize(Camera* camera) {
-    camera_ = camera;
+void Line3DRegion::Initialize() {
     instances_.resize(maxInstances_);
 
     baseLineResource_ = std::make_unique<LineResource>();
@@ -76,9 +77,12 @@ void Line3DRegion::BuildInstanceBuffer(bool force) {
     CreateOrResizeInstanceBuffer(static_cast<uint32_t>(activeCount_));
     uint32_t frameIndex = dx_->GetFrameIndex();
     lastUpdateFrameIndex_ = frameIndex;
-    if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex]) return;
+    if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex] || !engine_) return;
 
-    const Matrix4x4& viewProjection = Math::Multiply(camera_->GetViewMatrix(), camera_->GetPerspectiveFovMatrix());
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
+
+    const Matrix4x4& viewProjection = Math::Multiply(activeCam->GetViewMatrix(), activeCam->GetPerspectiveFovMatrix());
 
     for (size_t i = 0; i < activeCount_; ++i) {
         const auto& inst = instances_[i];

@@ -41,11 +41,8 @@ VoxelParticleSystem::~VoxelParticleSystem() {
 }
 
 void VoxelParticleSystem::Initialize(const std::string &modelName,
-                                     const Vector3Int &resolution,
-                                     Camera *camera) {
+                                     const Vector3Int &resolution) {
   assert(engine_);
-  assert(camera);
-  camera_ = camera;
   device_ = engine_->GetDevice();
   modelManager_ = engine_->GetObjModelManager();
   textureManager_ = engine_->GetTextureManager();
@@ -147,10 +144,11 @@ void VoxelParticleSystem::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     
     // PerViewはUpdateが呼ばれなくても毎フレーム必ず最新化する（ポーズ中のカメラ移動・マルチバッファ対策）
-    if (camera_) {
-        perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
+    Camera* camera = engine_->GetCameraManager()->GetActiveCamera();
+    if (camera) {
+        perViewBuffer_[frameIndex]->viewProjection = camera->GetViewProjectionMatrix3D();
         Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix(0.0f);
-        perViewBuffer_[frameIndex]->billboardMatrix = Math::Multiply(backToFrontMatrix, camera_->GetCameraMatrix());
+        perViewBuffer_[frameIndex]->billboardMatrix = Math::Multiply(backToFrontMatrix, camera->GetCameraMatrix());
         perViewBuffer_[frameIndex]->billboardMatrix.m[3][0] = 0.0f;
         perViewBuffer_[frameIndex]->billboardMatrix.m[3][1] = 0.0f;
         perViewBuffer_[frameIndex]->billboardMatrix.m[3][2] = 0.0f;
@@ -210,7 +208,7 @@ void VoxelParticleSystem::DispatchCompute() {
 }
 
 void VoxelParticleSystem::Draw() {
-  if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_ || !camera_)
+  if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_)
     return;
 
   // シャドウパス中は描画しない

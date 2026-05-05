@@ -17,9 +17,11 @@
 TextureManager* CylinderClass::textureManager_ = nullptr;
 DrawManager* CylinderClass::drawManager_ = nullptr;
 DebugUI* CylinderClass::ui_ = nullptr;
+IrufemiEngine* CylinderClass::engine_ = nullptr;
 
-void CylinderClass::Initialize(Camera* camera, bool hasTop, bool hasBottom, const std::string& textureName) {
-    this->camera_ = camera;
+#include "Engine/IrufemiEngine.h"
+
+void CylinderClass::Initialize(bool hasTop, bool hasBottom, const std::string& textureName) {
     this->hasTop_ = hasTop;
     this->hasBottom_ = hasBottom;
     // PrimitiveManager から指定されたパターンのリソースを取得
@@ -67,7 +69,9 @@ void CylinderClass::Initialize(Camera* camera, bool hasTop, bool hasBottom, cons
 }
 
 void CylinderClass::Update() {
-    if (!resource_ || !camera_) return;
+    if (!resource_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // Release でも必ず論理情報を実トランスフォームに反映する
     resource_->transform_.translate = info_.center;
@@ -82,7 +86,7 @@ void CylinderClass::Update() {
     // 一時的にスケールを上書きして行列更新
     Vector3 originalScale = resource_->transform_.scale;
     resource_->transform_.scale = effectiveScale;
-    resource_->UpdateTransform(*camera_);
+    resource_->UpdateTransform(*activeCam);
     resource_->transform_.scale = originalScale;
 
     if (resource_->GetMaterialData()) {
@@ -96,12 +100,14 @@ void CylinderClass::Update() {
 
     // フラグ更新
     isDirty_ = false;
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    lastViewMatrix_ = activeCam->GetViewMatrix();
+    lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
 }
 
 void CylinderClass::Draw() {
-    if (!resource_ || !drawManager_ || !camera_) return;
+    if (!resource_ || !drawManager_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 視錐台カリング
     if (isCullingEnabled_) {
@@ -116,14 +122,14 @@ void CylinderClass::Draw() {
         boundingSphere.center = info_.center;
         boundingSphere.radius = finalRadius * 1.1f; // 10%のマージン
 
-        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 描画スキップ
         }
     }
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
     if (isDirty_ || cameraChanged) {
         Update();

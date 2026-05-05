@@ -34,7 +34,7 @@ public: // メンバ関数
 
     void DispatchCompute() override;
 
-    void Initialize(Camera* camera, const std::string& filename);
+    void Initialize(const std::string& filename);
 
     void Update();
 

@@ -16,9 +16,11 @@
 TextureManager* TriangleClass::textureManager_ = nullptr;
 DrawManager* TriangleClass::drawManager_ = nullptr;
 DebugUI* TriangleClass::ui_ = nullptr;
+IrufemiEngine* TriangleClass::engine_ = nullptr;
 
-void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
-    this->camera_ = camera;
+#include "Engine/IrufemiEngine.h"
+
+void TriangleClass::Initialize(const std::string& textureName) {
     resource_ = std::make_unique<Object3DResource>();
 
     // PrimitiveManager から標準の形状データを取得
@@ -40,8 +42,11 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
         std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
     }
 
-    // 初回の行列計算
-    resource_->UpdateTransform(*camera_);
+    if (engine_) {
+        if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+            resource_->UpdateTransform(*activeCam);
+        }
+    }
 
     // マテリアル初期設定
     if (resource_->GetMaterialData()) {
@@ -68,18 +73,22 @@ void TriangleClass::Initialize(Camera* camera, const std::string& textureName) {
 }
 
 void TriangleClass::Update() {
-    if (!resource_ || !camera_) return;
+    if (!resource_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 行列更新
-    resource_->UpdateTransform(*camera_);
+    resource_->UpdateTransform(*activeCam);
     
     isDirty_ = false;
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    lastViewMatrix_ = activeCam->GetViewMatrix();
+    lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
 }
 
 void TriangleClass::Draw() {
-    if (!resource_ || !drawManager_ || !camera_) return;
+    if (!resource_ || !drawManager_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 視錐台カリング
     if (isCullingEnabled_) {
@@ -91,14 +100,14 @@ void TriangleClass::Draw() {
         boundingSphere.center = resource_->transform_.translate;
         boundingSphere.radius = finalRadius * 1.1f; // 10%のマージン
 
-        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 描画スキップ
         }
     }
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
     if (isDirty_ || cameraChanged) {
         Update();

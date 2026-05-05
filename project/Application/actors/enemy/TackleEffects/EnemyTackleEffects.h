@@ -22,7 +22,7 @@ public:
         OBB GetOBB() const;
     };
 
-    void Initialize(Camera* camera);
+    void Initialize();
     void Update(float deltaTime);
     void Draw(class IrufemiEngine* engine);
 

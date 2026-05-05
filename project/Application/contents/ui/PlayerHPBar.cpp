@@ -32,7 +32,8 @@ constexpr float kBgR = 0.08f, kBgG = 0.08f, kBgB = 0.08f, kBgA = 0.35f;         
 constexpr float kFrameR = 0.75f, kFrameG = 0.75f, kFrameB = 0.75f, kFrameA = 0.45f; // 枠の透明度を下げる
 } // namespace
 
-void PlayerHPBar::Initialize(Camera* camera, IrufemiEngine* engine) {
+void PlayerHPBar::Initialize(IrufemiEngine* engine) {
+    engine_ = engine;
     barMaxWidth3D_ = kBarMaxWidth3D;
     barHeight3D_ = kBarHeight3D;
 
@@ -43,38 +44,38 @@ void PlayerHPBar::Initialize(Camera* camera, IrufemiEngine* engine) {
 
     // --- 3D ---
     barFrame_ = std::make_unique<PlaneClass>();
-    barFrame_->Initialize(camera, "resources/whiteTexture.png");
+    barFrame_->Initialize("resources/whiteTexture.png");
     barFrame_->SetScale({barMaxWidth3D_ + kFramePadding3D * 2.0f, barHeight3D_ + kFramePadding3D * 2.0f, 1.0f});
     barFrame_->SetColor(Vector4{kFrameR, kFrameG, kFrameB, kFrameA});
     if (auto* mat = barFrame_->GetD3D12Resource()->GetMaterialData()) { mat->enableLighting = 0; mat->lightingMode = 0; }
 
     barBg_ = std::make_unique<PlaneClass>();
-    barBg_->Initialize(camera, "resources/whiteTexture.png");
+    barBg_->Initialize("resources/whiteTexture.png");
     barBg_->SetScale({barMaxWidth3D_, barHeight3D_, 1.0f});
     barBg_->SetColor(Vector4{kBgR, kBgG, kBgB, kBgA});
     if (auto* mat = barBg_->GetD3D12Resource()->GetMaterialData()) { mat->enableLighting = 0; mat->lightingMode = 0; }
 
     barFill_ = std::make_unique<PlaneClass>();
-    barFill_->Initialize(camera, "resources/whiteTexture.png");
+    barFill_->Initialize("resources/whiteTexture.png");
     barFill_->SetScale({barMaxWidth3D_, barHeight3D_, 1.0f});
     barFill_->SetColor(Vector4{kColorHighR, kColorHighG, kColorHighB, kBarAlpha});
     if (auto* mat = barFill_->GetD3D12Resource()->GetMaterialData()) { mat->enableLighting = 0; mat->lightingMode = 0; }
 
     // --- 2D ---
     spriteFrame_ = std::make_unique<Sprite>();
-    spriteFrame_->Initialize(camera, "resources/whiteTexture.png");
+    spriteFrame_->Initialize("resources/whiteTexture.png");
     spriteFrame_->SetColor(Vector4{kFrameR, kFrameG, kFrameB, kFrameA});
     spriteFrame_->SetSize(barMaxWidth2D_ + kFramePadding2D * 2.0f, barHeight2D_ + kFramePadding2D * 2.0f);
     spriteFrame_->SetPositionTopLeft(barX2D_ - kFramePadding2D, barY2D_ - kFramePadding2D);
 
     spriteBg_ = std::make_unique<Sprite>();
-    spriteBg_->Initialize(camera, "resources/whiteTexture.png");
+    spriteBg_->Initialize("resources/whiteTexture.png");
     spriteBg_->SetColor(Vector4{kBgR, kBgG, kBgB, kBgA});
     spriteBg_->SetSize(barMaxWidth2D_, barHeight2D_);
     spriteBg_->SetPositionTopLeft(barX2D_, barY2D_);
 
     spriteFill_ = std::make_unique<Sprite>();
-    spriteFill_->Initialize(camera, "resources/whiteTexture.png");
+    spriteFill_->Initialize("resources/whiteTexture.png");
     spriteFill_->SetColor(Vector4{kColorHighR, kColorHighG, kColorHighB, kBarAlpha});
     spriteFill_->SetSize(barMaxWidth2D_, barHeight2D_);
     spriteFill_->SetPositionTopLeft(barX2D_, barY2D_);
@@ -82,7 +83,8 @@ void PlayerHPBar::Initialize(Camera* camera, IrufemiEngine* engine) {
     displayRatio_ = 1.0f;
 }
 
-void PlayerHPBar::Update(const Player *player, const Camera* camera, bool isFirstPerson) {
+void PlayerHPBar::Update(const Player *player, bool isFirstPerson) {
+    Camera* camera = engine_ ? engine_->GetCameraManager()->GetActiveCamera() : nullptr;
     if (!camera) return;
 
     float currentRatio = 0.0f;

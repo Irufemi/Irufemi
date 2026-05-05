@@ -30,7 +30,7 @@ constexpr float kBgR = 0.08f, kBgG = 0.08f, kBgB = 0.08f, kBgA = 0.75f;
 constexpr float kFrameR = 0.55f, kFrameG = 0.55f, kFrameB = 0.55f, kFrameA = 0.90f;
 } // namespace
 
-void EnemyHPBar::Initialize(Camera *camera, int screenWidth, int screenHeight) {
+void EnemyHPBar::Initialize(int screenWidth, int screenHeight) {
     // バーのレイアウトを算出
     barMaxWidth_ = static_cast<float>(screenWidth) * kBarWidthRatio;
     barHeight_ = kBarHeight;
@@ -44,7 +44,7 @@ void EnemyHPBar::Initialize(Camera *camera, int screenWidth, int screenHeight) {
 
     // --- 枠線スプライト（一番下のレイヤー） ---
     barFrame_ = std::make_unique<Sprite>();
-    barFrame_->Initialize(camera, "resources/whiteTexture.png");
+    barFrame_->Initialize("resources/whiteTexture.png");
     barFrame_->SetSize(barMaxWidth_ + kFramePadding * 2.0f,
                        barHeight_ + kFramePadding * 2.0f);
     barFrame_->SetPosition(barX_ - kFramePadding, barY_ - kFramePadding);
@@ -54,7 +54,7 @@ void EnemyHPBar::Initialize(Camera *camera, int screenWidth, int screenHeight) {
 
     // --- 背景スプライト ---
     barBg_ = std::make_unique<Sprite>();
-    barBg_->Initialize(camera, "resources/whiteTexture.png");
+    barBg_->Initialize("resources/whiteTexture.png");
     barBg_->SetSize(barMaxWidth_, barHeight_);
     barBg_->SetPosition(barX_, barY_);
     barBg_->SetColor(Vector4{kBgR, kBgG, kBgB, kBgA});
@@ -62,7 +62,7 @@ void EnemyHPBar::Initialize(Camera *camera, int screenWidth, int screenHeight) {
 
     // --- HP充填スプライト ---
     barFill_ = std::make_unique<Sprite>();
-    barFill_->Initialize(camera, "resources/whiteTexture.png");
+    barFill_->Initialize("resources/whiteTexture.png");
     barFill_->SetSize(barMaxWidth_, barHeight_);
     barFill_->SetPosition(barX_, barY_);
     barFill_->SetColor(

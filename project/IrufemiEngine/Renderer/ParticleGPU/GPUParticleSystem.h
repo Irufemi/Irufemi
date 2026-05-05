@@ -142,7 +142,7 @@ public:
     /** @name 初期化・更新・描画 */
     ///@{
     void DispatchCompute() override;
-    void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png");
+    void Initialize(const std::string& textureName = "resources/circle.png");
     void Update();
     void SyncBeforeDraw() override;
     void Draw() override;
@@ -375,7 +375,7 @@ private:
 
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
     int selectedTextureIndex_ = 0;
-    Camera* camera_ = nullptr;
+
 
     uint32_t emitterSrvIndex_ = 0xFFFFFFFF;
     uint32_t perFrameSrvIndex_ = 0xFFFFFFFF;

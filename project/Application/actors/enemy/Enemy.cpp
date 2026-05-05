@@ -15,12 +15,11 @@
 
 Enemy::~Enemy() {}
 
-void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
-  camera_ = camera;
+void Enemy::Initialize(IrufemiEngine *engine) {
   engine_ = engine;
 #ifdef USE_IMGUI
   lineOBB_ = std::make_unique<Line3DRegion>();
-  lineOBB_->Initialize(camera_);
+  lineOBB_->Initialize();
 #endif
 
   EnemyParameters::GetInstance()->Load("resources/Json/enemy/parameters.json");
@@ -34,7 +33,7 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
     bodies_[i] = std::make_unique<Body>();
     bodyLocalTransforms_[i] = {
         {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {-0.5f, (float)i * 2.0f, 0.0f}};
-    bodies_[i]->Initialize(camera, bodyLocalTransforms_[i].translate);
+    bodies_[i]->Initialize(bodyLocalTransforms_[i].translate);
     bodies_[i]->SetHP(EnemyParameters::GetInstance()->GetBodyHP());
     bodyOffsets_[i] = {0.0f, 0.0f, 0.0f};
   }
@@ -44,19 +43,19 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   headLeft_ = std::make_unique<HeadLeft>();
   headLeftLocalTransform_ = {
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {-2.5f, topY, 0.0f}};
-  headLeft_->Initialize(camera, headLeftLocalTransform_.translate);
+  headLeft_->Initialize(headLeftLocalTransform_.translate);
   headLeft_->SetHP(EnemyParameters::GetInstance()->GetHeadLeftHP());
 
   headMid_ = std::make_unique<HeadMid>();
   headMidLocalTransform_ = {
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {-0.5f, topY, 0.0f}};
-  headMid_->Initialize(camera, headMidLocalTransform_.translate);
+  headMid_->Initialize(headMidLocalTransform_.translate);
   headMid_->SetHP(EnemyParameters::GetInstance()->GetHeadMidHP());
 
   headRight_ = std::make_unique<HeadRight>();
   headRightLocalTransform_ = {
       {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {1.5f, topY, 0.0f}};
-  headRight_->Initialize(camera, headRightLocalTransform_.translate);
+  headRight_->Initialize(headRightLocalTransform_.translate);
   headRight_->SetHP(EnemyParameters::GetInstance()->GetHeadRightHP());
 
   ai_ = std::make_unique<EnemyAI>();
@@ -67,25 +66,25 @@ void Enemy::Initialize(Camera *camera, IrufemiEngine *engine) {
   // ビームとエフェクトの事前初期化（ヒッチ対策）
   for (int i = 0; i < 3; ++i) {
       beams_[i] = std::make_unique<EnemyBeam>();
-      beams_[i]->Initialize(camera_, engine_);
+      beams_[i]->Initialize(engine_);
   }
   stompEffects_ = std::make_unique<EnemyStompEffects>();
-  stompEffects_->Initialize(camera_);
+  stompEffects_->Initialize();
 
   tackleEffects_ = std::make_unique<EnemyTackleEffects>();
-  tackleEffects_->Initialize(camera_);
+  tackleEffects_->Initialize();
 
   // --- UI 初期化 ---
   hpBar_ = std::make_unique<EnemyHPBar>();
   if (engine_) {
-      hpBar_->Initialize(camera_, engine_->GetClientWidth(), engine_->GetClientHeight());
+      hpBar_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
   } else {
-      hpBar_->Initialize(camera_, 1280, 720); // フォールバック
+      hpBar_->Initialize(1280, 720); // フォールバック
   }
 
   for (int i = 0; i < 6; ++i) {
       auto bar = std::make_unique<EnemyPartHPBar>();
-      bar->Initialize(camera_);
+      bar->Initialize(engine_);
       partHPBars_.push_back(std::move(bar));
   }
 
@@ -124,8 +123,8 @@ void Enemy::Update(Player *player) {
       bodyLocalTransforms_[i].translate.y += diff * fallSpeed_;
       bool currentlyFalling = std::abs(diff) > 0.1f;
       if (isFalling_[i] && !currentlyFalling && !triggeredShake) {
-        if (camera_)
-          camera_->Shake(shakeIntensity_, 15);
+        if (auto* cam = engine_->GetCameraManager()->GetActiveCamera())
+          cam->Shake(shakeIntensity_, 15);
         triggeredShake = true;
       }
       isFalling_[i] = currentlyFalling;
@@ -265,9 +264,9 @@ void Enemy::Update(Player *player) {
           float scaleY = part->GetTransform().scale.y;
           float offsetY = (index >= 3) ? (5.5f * scaleY) : (1.5f * scaleY);
           hpPos.y += offsetY;
-          partHPBars_[index]->Update(ratio, hpPos, camera_);
+          partHPBars_[index]->Update(ratio, hpPos);
       } else {
-          partHPBars_[index]->Update(0.0f, { 0,0,0 }, nullptr);
+          partHPBars_[index]->Update(0.0f, { 0,0,0 });
       }
   };
   auto* p = EnemyParameters::GetInstance();

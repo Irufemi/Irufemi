@@ -46,7 +46,7 @@ public:
 	 * @param[in] type パーティクルの挙動タイプ
 	 * @param[in] shape パーティクルの形状（板ポリゴン、メッシュ等）
 	 */
-	void Initialize(Camera* camera, const std::string& textureName = "resources/circle.png", ParticleType type = ParticleType::Normal, PrimitiveType shape = PrimitiveType::Plane);
+	void Initialize(const std::string& textureName = "resources/circle.png", ParticleType type = ParticleType::Normal, PrimitiveType shape = PrimitiveType::Plane);
 	/** @brief 全粒子の更新とエミッターからの放出 */
 	void Update();
 	/** @brief インスタンシング描画の実行 */
@@ -164,7 +164,7 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE instancingSrvHandleCPU_[kMaxFramesInFlight]{} ;
 	D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU_[kMaxFramesInFlight]{} ; // インデックス解放用に保持
 
-	Camera* camera_ = nullptr;
+
 	Matrix4x4 billboardMatrix_{};
 	Matrix4x4 backToFrontMatrix_{};
 	bool useBillboard_ = true;

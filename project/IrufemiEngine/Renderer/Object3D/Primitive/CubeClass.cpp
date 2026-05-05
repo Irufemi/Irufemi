@@ -19,10 +19,12 @@
 TextureManager* CubeClass::textureManager_ = nullptr;
 DrawManager* CubeClass::drawManager_ = nullptr;
 DebugUI* CubeClass::ui_ = nullptr;
+IrufemiEngine* CubeClass::engine_ = nullptr;
+
+#include "Engine/IrufemiEngine.h"
 
 // depth を受け取る本体実装
-void CubeClass::Initialize(Camera* camera, float width, float height, float depth, const std::string& textureName) {
-    camera_ = camera;
+void CubeClass::Initialize(float width, float height, float depth, const std::string& textureName) {
     width_ = width;
     height_ = height;
     depth_ = depth;
@@ -84,7 +86,9 @@ void CubeClass::SetSize(float width, float height, float depth) {
 }
 
 void CubeClass::Update() {
-    if (!resource_ || !camera_) return;
+    if (!resource_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 位置/回転/スケールに応じてワールド行列を再計算する
     resource_->transform_.translate = center_;
@@ -99,7 +103,7 @@ void CubeClass::Update() {
     // 一時的にスケールを上書きして行列更新
     Vector3 originalScale = resource_->transform_.scale;
     resource_->transform_.scale = effectiveScale;
-    resource_->UpdateTransform(*camera_);
+    resource_->UpdateTransform(*activeCam);
     resource_->transform_.scale = originalScale;
 
     if (resource_->GetMaterialData()) {
@@ -111,12 +115,14 @@ void CubeClass::Update() {
 
     // フラグ更新
     isDirty_ = false;
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    lastViewMatrix_ = activeCam->GetViewMatrix();
+    lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
 }
 
 void CubeClass::Draw() {
-    if (!resource_ || !drawManager_ || !camera_) return;
+    if (!resource_ || !drawManager_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 視錐台カリング
     if (isCullingEnabled_) {
@@ -130,14 +136,14 @@ void CubeClass::Draw() {
         boundingSphere.center = center_;
         boundingSphere.radius = finalRadius * 1.1f; // 10%のマージン
 
-        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 描画スキップ
         }
     }
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
     if (isDirty_ || cameraChanged) {
         Update();
@@ -190,7 +196,7 @@ void CubeClass::Debug(const char* cubeName) {
 
         // SetSize は内部値更新のみ。再生成は Initialize を呼ぶ
         SetSize(w, h, d);
-        Initialize(camera_, w, h, d, currentTextureName);
+        Initialize(w, h, d, currentTextureName);
     }
 
     ImGui::End();

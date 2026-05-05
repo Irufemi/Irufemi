@@ -40,7 +40,7 @@ public:
     Building();
     ~Building();
 
-    void Initialize(Camera* camera, IrufemiEngine* engine);
+    void Initialize(IrufemiEngine* engine);
     void Update();
     void Draw(IrufemiEngine* engine);
     void DrawImGui();
@@ -97,7 +97,7 @@ private:
     void Generate();
 
 private:
-    Camera* camera_ = nullptr;
+
     IrufemiEngine* engine_ = nullptr;
 
     std::vector<BuildingInstance> instances_;

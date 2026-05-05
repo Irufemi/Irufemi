@@ -17,7 +17,7 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
 
     nowLoadingText_ = std::make_unique<Sprite>();
     // 生成した「Now Loading」画像をセット
-    nowLoadingText_->Initialize(camera_.get(), "resources/texture/load/now_loading.png");
+    nowLoadingText_->Initialize("resources/texture/load/now_loading.png");
     
     // 画像は黒背景に文字が含まれる
     // 描画時に加算合成(Add)を使うことで、黒を透過させる
@@ -36,7 +36,7 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
     for (int i = 0; i < 3; ++i) {
         auto dot = std::make_unique<Circle2D>();
         // Circle2Dは白テクスチャを内部的に使って丸を描く
-        dot->Initialize(camera_.get(), "resources/whiteTexture.png", 16); 
+        dot->Initialize("resources/whiteTexture.png", 16); 
         dot->SetUseTexture(false); 
         dot->SetColor({1.0f, 1.0f, 1.0f, 1.0f}); // 文字のNeon Cyanに合わせた色にする
         

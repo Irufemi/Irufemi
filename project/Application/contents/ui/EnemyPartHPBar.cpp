@@ -26,13 +26,14 @@ constexpr float kBgR = 0.08f, kBgG = 0.08f, kBgB = 0.08f, kBgA = 0.75f;
 constexpr float kFrameR = 0.55f, kFrameG = 0.55f, kFrameB = 0.55f, kFrameA = 0.90f;
 } // namespace
 
-void EnemyPartHPBar::Initialize(Camera *camera) {
+void EnemyPartHPBar::Initialize(IrufemiEngine* engine) {
+    engine_ = engine;
     barMaxWidth_ = kPartBarMaxWidth;
     barHeight_ = kPartBarHeight;
 
     // --- 枠線スプライト（一番奥） ---
     barFrame_ = std::make_unique<PlaneClass>();
-    barFrame_->Initialize(camera, "resources/whiteTexture.png");
+    barFrame_->Initialize("resources/whiteTexture.png");
     barFrame_->SetScale({barMaxWidth_ + kFramePadding * 2.0f, barHeight_ + kFramePadding * 2.0f, 1.0f});
     barFrame_->SetColor(Vector4{kFrameR, kFrameG, kFrameB, kFrameA});
     if (auto* mat = barFrame_->GetD3D12Resource()->GetMaterialData()) {
@@ -42,7 +43,7 @@ void EnemyPartHPBar::Initialize(Camera *camera) {
 
     // --- 背景スプライト（真ん中） ---
     barBg_ = std::make_unique<PlaneClass>();
-    barBg_->Initialize(camera, "resources/whiteTexture.png");
+    barBg_->Initialize("resources/whiteTexture.png");
     barBg_->SetScale({barMaxWidth_, barHeight_, 1.0f});
     barBg_->SetColor(Vector4{kBgR, kBgG, kBgB, kBgA});
     if (auto* mat = barBg_->GetD3D12Resource()->GetMaterialData()) {
@@ -52,7 +53,7 @@ void EnemyPartHPBar::Initialize(Camera *camera) {
 
     // --- HP充填スプライト（一番手前） ---
     barFill_ = std::make_unique<PlaneClass>();
-    barFill_->Initialize(camera, "resources/whiteTexture.png");
+    barFill_->Initialize("resources/whiteTexture.png");
     barFill_->SetScale({barMaxWidth_, barHeight_, 1.0f});
     barFill_->SetColor(Vector4{kColorGreenR, kColorGreenG, kColorGreenB, 1.0f});
     if (auto* mat = barFill_->GetD3D12Resource()->GetMaterialData()) {
@@ -63,7 +64,8 @@ void EnemyPartHPBar::Initialize(Camera *camera) {
     displayRatio_ = 1.0f;
 }
 
-void EnemyPartHPBar::Update(float hpRatio, const Vector3& targetWorldPos, const Camera* camera) {
+void EnemyPartHPBar::Update(float hpRatio, const Vector3& targetWorldPos) {
+    Camera* camera = engine_ ? engine_->GetCameraManager()->GetActiveCamera() : nullptr;
     if (!camera) return;
 
     // 表示用の割合をスムーズに近づける

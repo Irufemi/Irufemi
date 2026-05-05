@@ -18,6 +18,7 @@ DirectXCommon* TetraRegion::dx_ = nullptr;
 TextureManager* TetraRegion::textureManager_ = nullptr;
 DrawManager* TetraRegion::drawManager_ = nullptr;
 DescriptorPool* TetraRegion::srvPool_ = nullptr; // 追加
+IrufemiEngine* TetraRegion::engine_ = nullptr;
 
 TetraRegion::~TetraRegion() {
     if (srvPool_ && dx_) {
@@ -30,10 +31,9 @@ TetraRegion::~TetraRegion() {
     }
 }
 
-void TetraRegion::Initialize(Camera* camera, const std::string& textureName) {
+void TetraRegion::Initialize(const std::string& textureName) {
     assert(dx_ && "Call TetraRegion::SetDirectXCommon first");
     assert(textureManager_ != nullptr);
-    camera_ = camera;
 
     std::vector<VertexData> vertices;
     std::vector<uint32_t> indices;
@@ -229,9 +229,13 @@ void TetraRegion::BuildInstanceBuffer(bool force) {
     }
     if (!force && !instanceDirty_) { return; }
 
-    const Matrix4x4 view = camera_->GetViewMatrix();
-    const Matrix4x4 proj = camera_->GetPerspectiveFovMatrix();
-    const Frustum& frustum = camera_->GetFrustum();
+    if (!engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
+
+    const Matrix4x4 view = activeCam->GetViewMatrix();
+    const Matrix4x4 proj = activeCam->GetPerspectiveFovMatrix();
+    const Frustum& frustum = activeCam->GetFrustum();
     const float baseRadius = GetModelVertexRadius();
 
     std::vector<InstanceData> temp;

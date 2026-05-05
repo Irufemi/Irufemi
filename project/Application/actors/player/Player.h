@@ -25,7 +25,7 @@ class Player {
 public:
     ~Player();
 
-    void Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine);
+    void Initialize(InputManager* input, IrufemiEngine* engine);
     void Update();
     void Draw();
     void DrawParticles();
@@ -79,7 +79,7 @@ private:
 
 private:
     InputManager* input_ = nullptr;
-    Camera* camera_ = nullptr;
+
     IrufemiEngine* engine_ = nullptr;
 
     PlayerMovement movement_;

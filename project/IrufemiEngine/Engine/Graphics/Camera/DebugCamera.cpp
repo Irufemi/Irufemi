@@ -2,7 +2,7 @@
 #include "DebugCamera.h"
 #include "Engine/Platform/Input/Mouse.h"
 #include "Engine/Platform/Input/Keyboard.h"
-#include "Core/Math/Math.h"
+#include "Engine/Core/Math/Math.h"
 #include <algorithm>
 #include <string>
 

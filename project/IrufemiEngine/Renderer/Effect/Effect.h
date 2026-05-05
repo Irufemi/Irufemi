@@ -14,7 +14,6 @@
 #include <memory>
 
 class GPUParticleSystem;
-class Camera;
 class PrimitiveObjects3DClass;
 
 /**
@@ -43,7 +42,7 @@ public:
      * @param camera 使用するカメラ
      * @param type エフェクトの種類
      */
-    void Initialize(Camera* camera, EffectType type);
+    void Initialize(EffectType type);
 
     /**
      * @brief エフェクトの更新
@@ -61,6 +60,7 @@ public:
      * @param name ImGui上で表示するノード名
      */
     void Debug(const char* name = "Effect");
+    static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
     
     /**
      * @brief 指定した座標にエフェクトを発生させる
@@ -122,7 +122,7 @@ struct AuraConfig {
 };
 
 private:
-    Camera* camera_ = nullptr; // 再初期化用にカメラを保持
+    static class IrufemiEngine* engine_;
     std::vector<std::unique_ptr<GPUParticleSystem>> particleSystems_;
     std::unique_ptr<PrimitiveObjects3DClass> auraObject_;
     EffectType type_;

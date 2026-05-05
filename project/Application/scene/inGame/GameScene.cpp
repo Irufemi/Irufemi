@@ -10,8 +10,9 @@
 #include "Graphics/Data/DirectionalLight.h"
 #include "Graphics/Data/PointLight.h"
 #include "Graphics/Data/SpotLight.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
-#include "camera/DebugCamera.h"
+#include "Engine/Graphics/Camera/DebugCamera.h"
 
 #include "Graphics/PostProcess/PostProcessManager.h"
 #include "actors/enemy/Enemy.h"
@@ -43,36 +44,24 @@ GameScene::GameScene() {}
 GameScene::~GameScene() {}
 
 void GameScene::Initialize(IrufemiEngine *engine) {
-  engine_ = engine;
+  BaseScene::Initialize(engine);
 
-  camera_ = std::make_unique<Camera>();
-  camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
-  camera_->SetTranslate(kDefaultCameraPos);
-  camera_->UpdateMatrix();
-
-  debugCamera_ = std::make_unique<DebugCamera>();
-  debugCamera_->Initialize(engine_->GetInputManager(),
-                           engine_->GetClientWidth(),
-                           engine_->GetClientHeight());
-  debugMode_ = false;
+  Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
+  activeCamera->SetTranslate(kDefaultCameraPos);
+  activeCamera->UpdateMatrix();
 
   // プレイヤーの初期化
   player_ = std::make_unique<Player>();
-  player_->Initialize(engine_->GetInputManager(), camera_.get(), engine_);
+  player_->Initialize(engine_->GetInputManager(), engine_);
 
   boss_ = std::make_unique<Enemy>();
-  boss_->Initialize(camera_.get(), engine_);
+  boss_->Initialize(engine_);
 
-  field_ = std::make_unique<Field>(camera_.get(), engine_);
+  field_ = std::make_unique<Field>(engine_);
   field_->Initialize();
 
   skydome_ = std::make_unique<Skydome>();
-  skydome_->Initialize(camera_.get());
-
-  directionalLight_ = std::make_unique<DirectionalLight>();
-  directionalLight_->color = {1.0f, 1.0f, 1.0f, 1.0f};
-  directionalLight_->direction = kDefaultLightDir;
-  directionalLight_->intensity = 1.0f;
+  skydome_->Initialize();
 
   auto pLight = std::make_unique<PointLight>();
   pLight->color = {1.0f, 0.9f, 0.8f, 1.0f}; // やや暖色寄りの白
@@ -84,76 +73,84 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
   // 操作説明スプライトの初期化
   operationNormalSprite_ = std::make_unique<Sprite>();
-  operationNormalSprite_->Initialize(camera_.get(), "resources/texture/inGame/operation_normal_3.png");
+  operationNormalSprite_->Initialize("resources/texture/inGame/operation_normal_3.png");
   operationNormalSprite_->SetSize(600.0f, 300.0f);
   operationNormalSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
 
   operationChargedSprite_ = std::make_unique<Sprite>();
-  operationChargedSprite_->Initialize(camera_.get(), "resources/texture/inGame/operation_charged_3.png");
+  operationChargedSprite_->Initialize("resources/texture/inGame/operation_charged_3.png");
   operationChargedSprite_->SetSize(600.0f, 300.0f);
   operationChargedSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
 
   operationNormalSprite1st_ = std::make_unique<Sprite>();
-  operationNormalSprite1st_->Initialize(camera_.get(), "resources/texture/inGame/operation_normal_1.png");
+  operationNormalSprite1st_->Initialize("resources/texture/inGame/operation_normal_1.png");
   operationNormalSprite1st_->SetSize(800.0f, 150.0f);
   operationNormalSprite1st_->SetPositionTopLeft(460.0f, static_cast<float>(engine_->GetClientHeight()) - 160.0f);
 
   operationChargedSprite1st_ = std::make_unique<Sprite>();
-  operationChargedSprite1st_->Initialize(camera_.get(), "resources/texture/inGame/operation_charged_1.png");
+  operationChargedSprite1st_->Initialize("resources/texture/inGame/operation_charged_1.png");
   operationChargedSprite1st_->SetSize(800.0f, 150.0f);
   operationChargedSprite1st_->SetPositionTopLeft(460.0f, static_cast<float>(engine_->GetClientHeight()) - 160.0f);
 
   numberSpriteTens_ = std::make_unique<Sprite>();
-  numberSpriteTens_->Initialize(camera_.get(), "resources/texture/inGame/numbers.png");
+  numberSpriteTens_->Initialize("resources/texture/inGame/numbers.png");
   numberSpriteTens_->SetSize(40.0f, 40.0f);
   numberSpriteTens_->SetPositionTopLeft(340.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
 
   numberSpriteOnes_ = std::make_unique<Sprite>();
-  numberSpriteOnes_->Initialize(camera_.get(), "resources/texture/inGame/numbers.png");
+  numberSpriteOnes_->Initialize("resources/texture/inGame/numbers.png");
   numberSpriteOnes_->SetSize(40.0f, 40.0f);
   numberSpriteOnes_->SetPositionTopLeft(365.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
 
   numberSpriteTens1st_ = std::make_unique<Sprite>();
-  numberSpriteTens1st_->Initialize(camera_.get(), "resources/texture/inGame/numbers_white.png");
+  numberSpriteTens1st_->Initialize("resources/texture/inGame/numbers_white.png");
   numberSpriteTens1st_->SetSize(24.0f, 24.0f);
   numberSpriteTens1st_->SetPositionTopLeft(static_cast<float>(engine_->GetClientWidth()) - 85.0f, static_cast<float>(engine_->GetClientHeight()) - 56.0f);
 
   numberSpriteOnes1st_ = std::make_unique<Sprite>();
-  numberSpriteOnes1st_->Initialize(camera_.get(), "resources/texture/inGame/numbers_white.png");
+  numberSpriteOnes1st_->Initialize("resources/texture/inGame/numbers_white.png");
   numberSpriteOnes1st_->SetSize(24.0f, 24.0f);
   numberSpriteOnes1st_->SetPositionTopLeft(static_cast<float>(engine_->GetClientWidth()) - 70.0f, static_cast<float>(engine_->GetClientHeight()) - 56.0f);
 
   cooldownWarningSprite_ = std::make_unique<Sprite>();
-  cooldownWarningSprite_->Initialize(camera_.get(), "resources/texture/inGame/cooldown_warning.png");
+  cooldownWarningSprite_->Initialize("resources/texture/inGame/cooldown_warning.png");
   cooldownWarningSprite_->SetSize(400.0f, 100.0f);
   cooldownWarningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f + 15.0f, static_cast<float>(engine_->GetClientHeight()) / 2.0f + 80.0f);
 
   // --- ポーズメニューの初期化 ---
   pauseBgDimmerSprite_ = std::make_unique<Sprite>();
-  pauseBgDimmerSprite_->Initialize(camera_.get(), "resources/whiteTexture.png");
+  pauseBgDimmerSprite_->Initialize("resources/whiteTexture.png");
   pauseBgDimmerSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
   pauseBgDimmerSprite_->SetColor(Vector4{0.1f, 0.1f, 0.1f, 0.6f});
 
   pauseTitleSprite_ = std::make_unique<Sprite>();
-  pauseTitleSprite_->Initialize(camera_.get(), "resources/texture/pause/text_pausemenu.png");
+  pauseTitleSprite_->Initialize("resources/texture/pause/text_pausemenu.png");
   pauseTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.3f);
 
   pauseBackGameSprite_ = std::make_unique<Sprite>();
-  pauseBackGameSprite_->Initialize(camera_.get(), "resources/texture/pause/text_backgame.png");
+  pauseBackGameSprite_->Initialize("resources/texture/pause/text_backgame.png");
   pauseBackGameSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.5f);
 
   pauseBackTitleSprite_ = std::make_unique<Sprite>();
-  pauseBackTitleSprite_->Initialize(camera_.get(), "resources/texture/pause/text_backtitle.png");
+  pauseBackTitleSprite_->Initialize("resources/texture/pause/text_backtitle.png");
   pauseBackTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.65f);
 }
 
 void GameScene::Update() {
+  if (PressedDIK(kKeyDebugCameraToggle)) {
+    isDebugCameraMode_ = !isDebugCameraMode_;
+    if (isDebugCameraMode_ && isFirstDebug_) {
+      debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *engine_->GetCameraManager()->GetActiveCamera());
+      isFirstDebug_ = false;
+    }
+  }
+
   // =====
   // ↓ゲームの更新
   // =====
 
   // プレイヤーの更新
-  if (player_ && !debugMode_) {
+  if (player_ && !isDebugCameraMode_) {
     // ボスの座標を毎フレーム教える
     if (boss_) {
       Vector3 bossPos = boss_->GetGlobalTransform().translate;
@@ -206,8 +203,8 @@ void GameScene::Update() {
   // ↑ゲームの更新
   // =====
 
-  // カメラとフレームデータの更新
-  UpdateCameraAndFrameData();
+  BaseScene::Update();
+  engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
 
   if (operationNormalSprite_) operationNormalSprite_->Update();
   if (operationChargedSprite_) operationChargedSprite_->Update();
@@ -304,18 +301,19 @@ void GameScene::Draw() {
 }
 
 void GameScene::PauseUpdate() {
-  UpdateCameraAndFrameData();
+  BaseScene::Update();
+  engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
 
   bool isMenuChanged = false;
 
   // Wキー or ↑キーで上に移動
-  if (PressedDIK(0x11 /* W */) || PressedDIK(0xC8 /* UP */)) {
+  if (engine_->GetInputManager()->IsKeyPressedDIK(0x11 /* W */) || engine_->GetInputManager()->IsKeyPressedDIK(0xC8 /* UP */)) {
     pauseMenuIndex_--;
     if (pauseMenuIndex_ < 0) pauseMenuIndex_ = 1;
     isMenuChanged = true;
   }
   // Sキー or ↓キーで下に移動
-  if (PressedDIK(0x1F /* S */) || PressedDIK(0xD0 /* DOWN */)) {
+  if (engine_->GetInputManager()->IsKeyPressedDIK(0x1F /* S */) || engine_->GetInputManager()->IsKeyPressedDIK(0xD0 /* DOWN */)) {
     pauseMenuIndex_++;
     if (pauseMenuIndex_ > 1) pauseMenuIndex_ = 0;
     isMenuChanged = true;
@@ -330,7 +328,7 @@ void GameScene::PauseUpdate() {
   pauseMenuAnimTimer_ += 1.0f / 60.0f;
 
   // Space or Enter で決定
-  if (PressedDIK(0x39 /* Space */) || PressedDIK(0x1C /* Enter */)) {
+  if (engine_->GetInputManager()->IsKeyPressedDIK(0x39 /* Space */) || engine_->GetInputManager()->IsKeyPressedDIK(0x1C /* Enter */)) {
     if (pauseMenuIndex_ == 0) {
       // ゲームに戻る
       engine_->GetSceneManager()->TogglePause();
@@ -372,92 +370,11 @@ void GameScene::PauseDraw() {
 
 void GameScene::DrawDebugTab() {
 #ifdef USE_IMGUI
-  if (camera_) {
-    if (ImGui::BeginTabItem("Main Camera")) {
-      ImGui::Checkbox("Debug Camera Mode", &debugMode_);
-      if (debugMode_ && debugCamera_) {
-        if (ImGui::Button("Top-Down"))
-          debugCamera_->SetPreset(DebugCamera::Preset::TopDown, *camera_);
-        ImGui::SameLine();
-        if (ImGui::Button("Diagonal"))
-          debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *camera_);
-        ImGui::SameLine();
-        if (ImGui::Button("Front"))
-          debugCamera_->SetPreset(DebugCamera::Preset::Front, *camera_);
-        ImGui::SameLine();
-        if (ImGui::Button("Snap to Current"))
-          debugCamera_->SetPreset(DebugCamera::Preset::Current, *camera_);
-
-        ImGui::Separator();
-        ImGui::Text("Debug Camera Controls");
-        debugCamera_->GetCamera().DrawDebugContents();
-        float dist = debugCamera_->GetDistance();
-        if (ImGui::DragFloat("Orbit Distance", &dist, kDebugCameraDragSpeed,
-                             kDebugCameraDistMin, kDebugCameraDistMax)) {
-          debugCamera_->SetDistance(dist);
-        }
-      } else {
-        camera_->DrawDebugContents();
-      }
-      ImGui::EndTabItem();
-    }
-  }
-  DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_,
-                       areaLights_);
-  if (ImGui::BeginTabItem("InGame")) {
-    ImGui::Checkbox("Debug Camera", &debugMode_);
-    ImGui::EndTabItem();
-  }
+  BaseScene::DrawDebugTab();
 #endif
 }
 
-void GameScene::UpdateCameraAndFrameData() {
-  if (PressedDIK(kKeyDebugCameraToggle)) {
-    debugMode_ = !debugMode_;
-    if (debugMode_) {
-      if (isFirstDebug_) {
-        debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *camera_);
-        isFirstDebug_ = false;
-      }
-    } else {
-      if (player_)
-        player_->Update();
-      camera_->Update();
-    }
-  }
 
-  if (debugMode_) {
-    debugCamera_->Update();
-    const Camera &dbgCam = debugCamera_->GetCamera();
-    camera_->SetViewMatrix(dbgCam.GetViewMatrix());
-    camera_->SetTranslate(dbgCam.GetTranslate());
-    camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
-  } else {
-    camera_->Update();
-  }
-
-  CameraForGPU cameraForGpu;
-  cameraForGpu.view = camera_->GetViewMatrix();
-  cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
-  cameraForGpu.worldPosition = camera_->GetTranslate();
-  cameraForGpu.time = engine_->GetGameTime();
-  cameraForGpu.deltaTime = engine_->GetGameDeltaTime();
-
-  std::vector<PointLight *> pLights;
-  for (auto &pl : pointLights_)
-    pLights.push_back(pl.get());
-  std::vector<SpotLight *> sLights;
-  for (auto &sl : spotLights_)
-    sLights.push_back(sl.get());
-  std::vector<AreaLight *> aLights;
-  for (auto &al : areaLights_)
-    aLights.push_back(al.get());
-
-  engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_,
-                                          pLights, sLights, aLights);
-  engine_->GetDrawManager()->SetEnvironmentMap(
-      engine_->GetTextureManager()->GetWhiteCubeMapHandle());
-}
 
 void GameScene::UpdateDynamicLights() {
   if (pointLights_.empty() || !player_ || !boss_)

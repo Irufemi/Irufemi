@@ -2,13 +2,8 @@
 
 #include "Framework/SceneManager.h"
 
+#include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
-#include "camera/DebugCamera.h"
-#include "Graphics/Data/CameraForGPU.h"
-#include "Graphics/Data/PointLight.h"
-#include "Graphics/Data/SpotLight.h"
-#include "Graphics/Data/DirectionalLight.h"
-#include "Graphics/Data/AreaLight.h"
 #include "IrufemiEngine/Engine/Core/Math/Math.h"
 
 
@@ -20,44 +15,11 @@ DebugScene::~DebugScene() {
 // 初期化
 void DebugScene::Initialize(IrufemiEngine* engine) {
 
-    engine_ = engine;
-
-    camera_ = std::make_unique<Camera>();
-    camera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
-    camera_->SetTranslate(Vector3{ 0.0f,0.0f,-10.0f });
-
-    // 重要：SetTranslate の後で行列を確実に更新しておく
-    camera_->UpdateMatrix();
-
-    debugCamera_ = std::make_unique<DebugCamera>();
-    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
-    debugMode_ = false;
-
-    // --- ライトの初期化 ---
-    auto pointLight = std::make_unique<PointLight>();
-    pointLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    pointLight->position = { 0.0f, 5.0f, 0.0f };
-    pointLight->intensity = 1.0f;
-    pointLight->radius = 10.0f;
-    pointLight->decay = 1.0f;
-    pointLight->isActive = 1;
-    pointLights_.push_back(std::move(pointLight));
-
-    auto spotLight = std::make_unique<SpotLight>();
-    spotLight->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    spotLight->position = { 2.0f, 1.25f, 0.0f };
-    spotLight->distance = 7.0f;
-    spotLight->direction = Math::Normalize(Vector3{ -1.0f,-1.0f,0.0f });
-    spotLight->intensity = 0.0f; // 初期状態ではOFF
-    spotLight->decay = 2.0f;
-    spotLight->cosAngle = std::cos(std::numbers::pi_v<float> / 3.0f);
-    spotLight->isActive = 1;
-    spotLights_.push_back(std::move(spotLight));
-
-    directionalLight_ = std::make_unique<DirectionalLight>();
-    directionalLight_->color = { 1.0f,1.0f,1.0f,1.0f };
-    directionalLight_->direction = { 0.5f,-0.7f,1.0f };
-    directionalLight_->intensity = 1.0f;
+    BaseScene::Initialize(engine);
+    
+    Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
+    activeCamera->SetTranslate(Vector3{ 0.0f,0.0f,-10.0f });
+    activeCamera->UpdateMatrix();
 
     auto areaLight = std::make_unique<AreaLight>();
     areaLight->color = { 1.0f, 0.5f, 0.5f, 1.0f };
@@ -97,103 +59,103 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
 
     // 課題用スプライトの初期化
     /*imguiSprite_ = std::make_unique<Sprite>();
-    imguiSprite_->Initialize(camera_.get());
+    imguiSprite_->Initialize();
     imguiSprite_->SetPosition(100.0f, 100.0f);*/
 
     if (isActiveSprite_) {
         sprite_ = std::make_unique <Sprite>();
-        sprite_->Initialize(camera_.get());
+        sprite_->Initialize();
     }
     if (isActiveTriangle_) {
         triangle_ = std::make_unique <TriangleClass>();
-        triangle_->Initialize(camera_.get());
+        triangle_->Initialize();
     }
     if (isActiveCube_) {
         cube_ = std::make_unique <CubeClass>();
-        cube_->Initialize(camera_.get());
+        cube_->Initialize();
     }
     if (isActivePlane_) {
         plane_ = std::make_unique<PlaneClass>();
-        plane_->Initialize(camera_.get());
+        plane_->Initialize();
     }
     if (isActiveSphere_) {
         sphere_ = std::make_unique<SphereClass>();
-        sphere_->Initialize(camera_.get());
+        sphere_->Initialize();
     }
     if (isActiveCylinder_) {
         cylinder_ = std::make_unique<CylinderClass>();
-        cylinder_->Initialize(camera_.get());
+        cylinder_->Initialize();
     }
     if (isActiveObj_) {
         obj_ = std::make_unique<ObjClass>();
-        obj_->Initialize(camera_.get(), "sample/plane.gltf");
+        obj_->Initialize("sample/plane.gltf");
     }
     if (isActiveStanfordBunny_) {
         stanfordBunny_ = std::make_unique <ObjClass>();
-        stanfordBunny_->Initialize(camera_.get(), "sample/bunny.obj");
+        stanfordBunny_->Initialize("sample/bunny.obj");
     }
     if (isActiveUtashTeapot_) {
         utashTeapot_ = std::make_unique <ObjClass>();
-        utashTeapot_->Initialize(camera_.get(), "sample/teapot.obj");
+        utashTeapot_->Initialize("sample/teapot.obj");
     }
     if (isActiveMultiMesh_) {
         multiMesh_ = std::make_unique <ObjClass>();
-        multiMesh_->Initialize(camera_.get(), "sample/multiMesh.obj");
+        multiMesh_->Initialize("sample/multiMesh.obj");
     }
     if (isActiveMultiMaterial_) {
         multiMaterial_ = std::make_unique <ObjClass>();
-        multiMaterial_->Initialize(camera_.get(), "sample/multiMaterial.obj");
+        multiMaterial_->Initialize("sample/multiMaterial.obj");
     }
     if (isActiveSuzanne_) {
         suzanne_ = std::make_unique <ObjClass>();
-        suzanne_->Initialize(camera_.get(), "sample/suzanne.obj");
+        suzanne_->Initialize("sample/suzanne.obj");
     }
     if (isActiveFence_) {
         fence_ = std::make_unique <ObjClass>();
-        fence_->Initialize(camera_.get(), "sample/fence.obj");
+        fence_->Initialize("sample/fence.obj");
     }
     if (isActiveTerrain_) {
         terrain_ = std::make_unique <ObjClass>();
-        terrain_->Initialize(camera_.get(), "sample/terrain.obj");
+        terrain_->Initialize("sample/terrain.obj");
     }
     if (isActiveParticle_) {
         particle_ = std::make_unique<ParticleSystem>();
-        particle_->Initialize(camera_.get(), "resources/circle.png",ParticleType::kAccelerationField);
+        particle_->Initialize("resources/circle.png",ParticleType::kAccelerationField);
     }
     if (isActiveGPUParticle_) {
         gpuParticle_ = std::make_unique<GPUParticleSystem>();
-        gpuParticle_->Initialize(camera_.get(), "resources/circle.png");
+        gpuParticle_->Initialize("resources/circle.png");
     }
     if (isActiveVoxelParticle_) {
         voxelParticle_ = std::make_unique<VoxelParticleSystem>();
-        voxelParticle_->Initialize("sample/terrain.obj", { 64,64,64 }, camera_.get());
+        voxelParticle_->Initialize("sample/terrain.obj", { 64,64,64 });
     }
     if (isActiveAnimatedCube_) {
         animatedCube_ = std::make_unique<AnimationModel>();
-        animatedCube_->Initialize(camera_.get(), "sample/AnimatedCube.gltf");
+        animatedCube_->Initialize("sample/AnimatedCube.gltf");
     }
     if (isActiveWalk_) {
         walk_ = std::make_unique<AnimationModel>();
-        walk_->Initialize(camera_.get(), "sample/walk.gltf");
+        walk_->Initialize("sample/walk.gltf");
     }
     if (isActiveSneakWalk_) {
         sneakWalk_ = std::make_unique<AnimationModel>();
-        sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+        sneakWalk_->Initialize("sample/sneakWalk.gltf");
     }
     if (isActiveSkybox_) {
         skybox_ = std::make_unique<Skybox>();
-        skybox_->Initialize(camera_.get(), "resources/qwantani_night_puresky_1k_cubemap.dds");
+        skybox_->Initialize("resources/qwantani_night_puresky_1k_cubemap.dds");
     }
 
     if (isActivePrimitiveObj_) {
         primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
-        primitiveObj_->Initialize(camera_.get(), PrimitiveType::Cube);
+        primitiveObj_->Initialize(PrimitiveType::Cube);
         primitiveObj_->SetPosition({ 0.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
     }
 
     // 電撃エフェクトの初期化
     lightningCylinder_ = std::make_unique<CylinderClass>();
-    lightningCylinder_->Initialize(camera_.get());
+    lightningCylinder_->Initialize();
     lightningCylinder_->SetRadius(0.2f); // ビームっぽく細長く
     lightningCylinder_->SetHeight(10.0f);
     lightningCylinder_->SetCenter({ -2.0f, 0.0f, 0.0f });
@@ -256,14 +218,14 @@ void DebugScene::Update() {
     if (isActiveTriangle_) {
         if (!triangle_) {
             triangle_ = std::make_unique<TriangleClass>();
-            triangle_->Initialize(camera_.get());
+            triangle_->Initialize();
         }
         triangle_->Update();
     }
     if (isActiveCube_) {
         if (!cube_) {
             cube_ = std::make_unique<CubeClass>();
-            cube_->Initialize(camera_.get());
+            cube_->Initialize();
         }
 
 #ifdef USE_IMGUI
@@ -272,8 +234,9 @@ void DebugScene::Update() {
         ImGuiIO& io = ImGui::GetIO();
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
-        Matrix4x4 view = camera_->GetViewMatrix();
-        Matrix4x4 projection = camera_->GetPerspectiveFovMatrix();
+        Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
+        Matrix4x4 view = activeCamera->GetViewMatrix();
+        Matrix4x4 projection = activeCamera->GetPerspectiveFovMatrix();
         auto& transform = cube_->GetD3D12Resource()->transform_;
         Matrix4x4 world = Math::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 
@@ -305,35 +268,35 @@ void DebugScene::Update() {
     if (isActivePlane_) {
         if (!plane_) {
             plane_ = std::make_unique<PlaneClass>();
-            plane_->Initialize(camera_.get());
+            plane_->Initialize();
         }
         plane_->Update();
     }
     if (isActiveSphere_) {
         if (!sphere_) {
             sphere_ = std::make_unique<SphereClass>();
-            sphere_->Initialize(camera_.get());
+            sphere_->Initialize();
         }
         sphere_->Update();
     }
     if (isActiveCylinder_) {
         if (!cylinder_) {
             cylinder_ = std::make_unique<CylinderClass>();
-            cylinder_->Initialize(camera_.get());
+            cylinder_->Initialize();
         }
         cylinder_->Update();
     }
     if (isActiveObj_) {
         if (!obj_) {
             obj_ = std::make_unique<ObjClass>();
-            obj_->Initialize(camera_.get(), "sample/plane.gltf");
+            obj_->Initialize("sample/plane.gltf");
         }
         obj_->Update();
     }
     if (isActiveUtashTeapot_) {
         if (!utashTeapot_) {
             utashTeapot_ = std::make_unique<ObjClass>();
-            utashTeapot_->Initialize(camera_.get(), "sample/teapot.obj");
+            utashTeapot_->Initialize("sample/teapot.obj");
         }
         utashTeapot_->Debug("Utash Teapot");
         utashTeapot_->Update();
@@ -341,7 +304,7 @@ void DebugScene::Update() {
     if (isActiveStanfordBunny_) {
         if (!stanfordBunny_) {
             stanfordBunny_ = std::make_unique<ObjClass>();
-            stanfordBunny_->Initialize(camera_.get(), "sample/bunny.obj");
+            stanfordBunny_->Initialize("sample/bunny.obj");
         }
         stanfordBunny_->Debug("Stanford Bunny");
         stanfordBunny_->Update();
@@ -349,7 +312,7 @@ void DebugScene::Update() {
     if (isActiveMultiMesh_) {
         if (!multiMesh_) {
             multiMesh_ = std::make_unique<ObjClass>();
-            multiMesh_->Initialize(camera_.get(), "sample/multiMesh.obj");
+            multiMesh_->Initialize("sample/multiMesh.obj");
         }
         multiMesh_->Debug("MultiMesh");
         multiMesh_->Update();
@@ -357,7 +320,7 @@ void DebugScene::Update() {
     if (isActiveMultiMaterial_) {
         if (!multiMaterial_) {
             multiMaterial_ = std::make_unique<ObjClass>();
-            multiMaterial_->Initialize(camera_.get(), "sample/multiMaterial.obj");
+            multiMaterial_->Initialize("sample/multiMaterial.obj");
         }
         multiMaterial_->Debug("MultiMaterial");
         multiMaterial_->Update();
@@ -365,14 +328,14 @@ void DebugScene::Update() {
     if (isActiveSuzanne_) {
         if (!suzanne_) {
             suzanne_ = std::make_unique<ObjClass>();
-            suzanne_->Initialize(camera_.get(), "sample/suzanne.obj");
+            suzanne_->Initialize("sample/suzanne.obj");
         }
         suzanne_->Update();
     }
     if (isActiveFence_) {
         if (!fence_) {
             fence_ = std::make_unique<ObjClass>();
-            fence_->Initialize(camera_.get(), "sample/fence.obj");
+            fence_->Initialize("sample/fence.obj");
         }
         fence_->Debug("Fence");
         fence_->Update();
@@ -380,7 +343,7 @@ void DebugScene::Update() {
     if (isActiveTerrain_) {
         if (!terrain_) {
             terrain_ = std::make_unique<ObjClass>();
-            terrain_->Initialize(camera_.get(), "sample/terrain.obj");
+            terrain_->Initialize("sample/terrain.obj");
         }
         terrain_->Debug("Terrain");
         terrain_->Update();
@@ -388,7 +351,7 @@ void DebugScene::Update() {
     if (isActiveParticle_) {
         if (!particle_) {
             particle_ = std::make_unique <ParticleSystem>();
-            particle_->Initialize(camera_.get(), "resources/circle.png", ParticleType::kAccelerationField);
+            particle_->Initialize("resources/circle.png", ParticleType::kAccelerationField);
         }
         particle_->Debug("Particle");
         particle_->Update();
@@ -396,14 +359,14 @@ void DebugScene::Update() {
     if (isActiveGPUParticle_) {
         if (!gpuParticle_) {
             gpuParticle_ = std::make_unique <GPUParticleSystem>();
-            gpuParticle_->Initialize(camera_.get(), "resources/circle.png");
+            gpuParticle_->Initialize("resources/circle.png");
         }
         gpuParticle_->Update();
     }
     if (isActiveVoxelParticle_) {
         if (!voxelParticle_) {
             voxelParticle_ = std::make_unique<VoxelParticleSystem>();
-            voxelParticle_->Initialize("sample/terrain.obj", { 64,64,64 }, camera_.get());
+            voxelParticle_->Initialize("sample/terrain.obj", { 64,64,64 });
         }
         voxelParticle_->Debug("Voxel Particle");
         voxelParticle_->Update(engine_->GetDeltaTime());
@@ -411,7 +374,7 @@ void DebugScene::Update() {
     if (isActiveAnimatedCube_) {
         if (!animatedCube_) {
             animatedCube_ = std::make_unique<AnimationModel>();
-            animatedCube_->Initialize(camera_.get(), "sample/AnimatedCube.gltf");
+            animatedCube_->Initialize("sample/AnimatedCube.gltf");
         }
         animatedCube_->Debug("AnimatedCube");
         animatedCube_->Update();
@@ -419,7 +382,7 @@ void DebugScene::Update() {
     if (isActiveWalk_) {
         if (!walk_) {
             walk_ = std::make_unique<AnimationModel>();
-            walk_->Initialize(camera_.get(), "sample/walk.gltf");
+            walk_->Initialize("sample/walk.gltf");
         }
         walk_->Debug("Walk");
         walk_->Update();
@@ -427,7 +390,7 @@ void DebugScene::Update() {
     if (isActiveSneakWalk_) {
         if (!sneakWalk_) {
             sneakWalk_ = std::make_unique<AnimationModel>();
-            sneakWalk_->Initialize(camera_.get(), "sample/sneakWalk.gltf");
+            sneakWalk_->Initialize("sample/sneakWalk.gltf");
         }
         sneakWalk_->Debug("SneakWalk");
         sneakWalk_->Update();
@@ -435,14 +398,14 @@ void DebugScene::Update() {
     if (isActiveSkybox_) {
         if (!skybox_) {
             skybox_ = std::make_unique<Skybox>();
-            skybox_->Initialize(camera_.get(), "resources/qwantani_night_puresky_1k_cubemap.dds");
+            skybox_->Initialize("resources/qwantani_night_puresky_1k_cubemap.dds");
         }
         skybox_->Update();
     }
     if (isActivePrimitiveObj_) {
         if (!primitiveObj_) {
             primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
-            primitiveObj_->Initialize(camera_.get(), PrimitiveType::Cube);
+            primitiveObj_->Initialize(PrimitiveType::Cube);
         }
         primitiveObj_->Update();
     }
@@ -456,7 +419,7 @@ void DebugScene::Update() {
     if (isActiveSprite_) {
         if (!sprite_) {
             sprite_ = std::make_unique<Sprite>();
-            sprite_->Initialize(camera_.get());
+            sprite_->Initialize();
         }
         sprite_->Debug("Sprite");
         sprite_->Update();
@@ -471,45 +434,7 @@ void DebugScene::Update() {
     // ↑ゲームの更新
     // =====
 
-    // --- カメラの更新 ---
-    if (debugMode_) {
-        // デバッグカメラを更新
-        debugCamera_->Update();
-        // デバッグカメラの計算結果をメインカメラに上書きする
-        const Camera& dbgCam = debugCamera_->GetCamera();
-        camera_->SetViewMatrix(dbgCam.GetViewMatrix());
-        camera_->SetTranslate(dbgCam.GetTranslate());
-        // プロジェクション行列も念のため同期
-        camera_->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
-    }
-    else {
-        // 通常カメラの更新
-        camera_->Update();
-    }
-
-    // --- フレーム共通データのセット ---
-    // 常に camera_ を参照すればOK
-    CameraForGPU cameraForGpu;
-    cameraForGpu.view = camera_->GetViewMatrix();
-    cameraForGpu.projection = camera_->GetPerspectiveFovMatrix();
-    cameraForGpu.worldPosition = camera_->GetTranslate();
-    cameraForGpu.time = engine_->GetTotalTime();
-    cameraForGpu.deltaTime = engine_->GetDeltaTime();
-
-    std::vector<PointLight*> pLights;
-    for (const auto& light : pointLights_) {
-        pLights.push_back(light.get());
-    }
-    std::vector<SpotLight*> sLights;
-    for (const auto& light : spotLights_) {
-        sLights.push_back(light.get());
-    }
-    std::vector<AreaLight*> aLights;
-    for (const auto& light : areaLights_) {
-        aLights.push_back(light.get());
-    }
-
-    engine_->GetDrawManager()->SetFrameData(cameraForGpu, *directionalLight_, pLights, sLights, aLights);
+    BaseScene::Update();
 
     // 環境マップをDrawManagerに設定
     if (isActiveSkybox_) {
@@ -646,32 +571,7 @@ void DebugScene::Draw() {
 
 void DebugScene::DrawDebugTab() {
 #ifdef USE_IMGUI
-    if (camera_) {
-        if (ImGui::BeginTabItem("Main Camera")) {
-            ImGui::Checkbox("Debug Camera Mode", &debugMode_);
-            if (debugMode_ && debugCamera_) {
-                if (ImGui::Button("Top-Down")) debugCamera_->SetPreset(DebugCamera::Preset::TopDown, *camera_);
-                ImGui::SameLine();
-                if (ImGui::Button("Diagonal")) debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *camera_);
-                ImGui::SameLine();
-                if (ImGui::Button("Front")) debugCamera_->SetPreset(DebugCamera::Preset::Front, *camera_);
-                ImGui::SameLine();
-                if (ImGui::Button("Snap to Current")) debugCamera_->SetPreset(DebugCamera::Preset::Current, *camera_);
-
-                ImGui::Separator();
-                ImGui::Text("Debug Camera Controls");
-                debugCamera_->GetCamera().DrawDebugContents();
-                float dist = debugCamera_->GetDistance();
-                if (ImGui::DragFloat("Orbit Distance", &dist, 0.1f, 1.0f, 1000.0f)) {
-                    debugCamera_->SetDistance(dist);
-                }
-            }
-            else {
-                camera_->DrawDebugContents();
-            }
-            ImGui::EndTabItem();
-        }
-    }
+    BaseScene::DrawDebugTab();
     if (isActiveSkybox_ && skybox_) {
         skybox_->Debug();
     }

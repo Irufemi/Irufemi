@@ -13,6 +13,7 @@ DirectXCommon* SphereRegion::dx_ = nullptr;
 TextureManager* SphereRegion::textureManager_ = nullptr;
 DrawManager* SphereRegion::drawManager_ = nullptr;
 DescriptorPool* SphereRegion::srvPool_ = nullptr; // 追加
+IrufemiEngine* SphereRegion::engine_ = nullptr;
 
 SphereRegion::~SphereRegion() {
     // SRV スロットを遅延解放で返す
@@ -26,11 +27,9 @@ SphereRegion::~SphereRegion() {
     }
 }
 
-void SphereRegion::Initialize(Camera* camera, const std::string& textureName, uint32_t subdivision) {
+void SphereRegion::Initialize(const std::string& textureName, uint32_t subdivision) {
     assert(dx_ && "Call SphereRegion::SetDirectXCommon first");
     assert(textureManager_ && "Call SphereRegion::SetTextureManager first");
-    assert(camera);
-    camera_ = camera;
 
     // スフィアメッシュ生成(単位球)
     std::vector<VertexData> vertices;
@@ -260,9 +259,13 @@ void SphereRegion::BuildInstanceBuffer(bool force) {
     std::vector<InstanceData> temp;
     temp.reserve(totalCount);
 
-    const Matrix4x4 view = camera_->GetViewMatrix();
-    const Matrix4x4 proj = camera_->GetPerspectiveFovMatrix();
-    const Frustum& frustum = camera_->GetFrustum();
+    if (!engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
+
+    const Matrix4x4 view = activeCam->GetViewMatrix();
+    const Matrix4x4 proj = activeCam->GetPerspectiveFovMatrix();
+    const Frustum& frustum = activeCam->GetFrustum();
 
     // 色配列サイズをインスタンス数に合わせる
     if (instanceColors_.size() != instances_.size()) {

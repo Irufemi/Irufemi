@@ -7,17 +7,15 @@
 
 #include "Renderer/LineInstanced/LineClass.h"
 
-void EnemyStompEffects::Initialize(Camera* camera) {
-    camera_ = camera;
-
+void EnemyStompEffects::Initialize() {
     explosionObj_ = std::make_unique<ObjClass>();
-    explosionObj_->Initialize(camera_, "sample/block.obj");
+    explosionObj_->Initialize("sample/block.obj");
 
     ringObj_ = std::make_unique<ObjClass>();
-    ringObj_->Initialize(camera_, "sample/block.obj");
+    ringObj_->Initialize("sample/block.obj");
 
     finalExplosionObj_ = std::make_unique<ObjClass>();
-    finalExplosionObj_->Initialize(camera_, "sample/block.obj");
+    finalExplosionObj_->Initialize("sample/block.obj");
 
     isActive_ = false;
 }

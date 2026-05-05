@@ -45,6 +45,8 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "../Resource/Texture/Texture.h"
 #include "Manager/DebugUI.h"
 #include "Manager/PrimitiveManager.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Renderer/Effect/Effect.h"
 
 #include "Framework/IScene.h"
 
@@ -239,6 +241,19 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Skybox::SetEngine(this);
     GPUParticleSystem::SetDXCommon(dxCommon_.get());
     VoxelParticleSystem::SetEngine(this);
+    
+    Circle2D::SetEngine(this);
+    SphereRegion::SetEngine(this);
+    TetraRegion::SetEngine(this);
+    Line3DRegion::SetEngine(this);
+    CubeClass::SetEngine(this);
+    Effect::SetEngine(this);
+    SphereClass::SetEngine(this);
+    TriangleClass::SetEngine(this);
+    PlaneClass::SetEngine(this);
+    CylinderClass::SetEngine(this);
+    RingClass::SetEngine(this);
+    PrimitiveObjects3DClass::SetEngine(this);
 
     // --- 全画面用 RenderTexture の初期化 ---
     mainRenderTexture_ = std::make_unique<RenderTexture>();
@@ -386,6 +401,10 @@ void IrufemiEngine::Finalize() {
 
 
 void IrufemiEngine::Execute() {
+    // CameraManagerの構築
+    cameraManager_ = std::make_unique<CameraManager>();
+    Sprite::SetCameraManager(cameraManager_.get());
+
     // SceneManager 構築(エンジンは所有のみ)
     sceneManager_ = std::make_unique<SceneManager>(this);
 

@@ -14,7 +14,7 @@
 class TextureManager;
 class DrawManager;
 class DebugUI;
-class Camera;
+class CameraManager;
 
 /**
  * @class Sprite
@@ -30,7 +30,7 @@ private:
 
     int selectedTextureIndex_ = 0;
 
-    Camera* camera_ = nullptr;
+    static CameraManager* cameraManager_;
 
     static TextureManager* textureManager_;
 
@@ -72,10 +72,9 @@ public: //メンバ関数
 
     /**
      * @brief 初期化
-     * @param[in] camera 使用するカメラ
      * @param[in] textureName 使用するテクスチャ名（ファイルパス）
      */
-    void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
+    void Initialize(const std::string& textureName = "resources/uvChecker.png");
 
     /**
      * @brief 更新処理
@@ -180,6 +179,7 @@ public: //メンバ関数
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    static void SetCameraManager(CameraManager* camM) { cameraManager_ = camM; }
     ///@}
 
 private:

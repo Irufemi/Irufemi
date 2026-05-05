@@ -18,37 +18,35 @@
 Player::~Player() {
 }
 
-void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engine) {
+void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     input_ = input;
-    camera_ = camera;
     engine_ = engine;
-    camera_ = camera;
 
     movement_.Initialize();
-    weapon_.Initialize(camera);
-    cameraController_.Initialize(camera);
+    weapon_.Initialize();
+    cameraController_.Initialize();
     status_.Initialize();
 
     obj_ = std::make_unique<ObjClass>();
-    obj_->Initialize(camera, "enemy/body.obj");
+    obj_->Initialize("enemy/body.obj");
     obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
     attackObj_ = std::make_unique<ObjClass>();
-    attackObj_->Initialize(camera, "enemy/body.obj");
+    attackObj_->Initialize("enemy/body.obj");
     attackObj_->SetPosition(translate_);
     attackObj_->Update();
 
     targetMarkerObj_ = std::make_unique<ObjClass>();
-    targetMarkerObj_->Initialize(camera, "enemy/body.obj");
+    targetMarkerObj_->Initialize("enemy/body.obj");
     targetMarkerObj_->SetColor({ 0.0f, 1.0f, 0.0f, 0.5f });
     targetMarkerObj_->SetScale({ 0.5f, 0.5f, 0.5f });
 
     maskSprite_ = std::make_unique<Sprite>();
-    maskSprite_->Initialize(camera, "resources/texture/player/mask.png");
+    maskSprite_->Initialize("resources/texture/player/mask.png");
 
     // ★追加: キラン☆演出用 plane.obj の初期化
     starObj_ = std::make_unique<ObjClass>();
-    starObj_->Initialize(camera, "plane.obj"); // ユーザー指定の plane.obj
+    starObj_->Initialize("plane.obj"); // ユーザー指定の plane.obj
     starObj_->SetColor({ 5.0f, 5.0f, 1.0f, 1.0f }); // 光る黄色に設定
     starScale_ = { 0.0f, 0.0f, 0.0f };
     starRotationZ_ = 0.0f;
@@ -78,18 +76,18 @@ void Player::Initialize(InputManager* input, Camera* camera, IrufemiEngine* engi
     isDeathAnimationFinished_ = false;
 
     aimingSprite_ = std::make_unique<Sprite>();
-    aimingSprite_->Initialize(camera, "resources/texture/player/aiming.png");
+    aimingSprite_->Initialize("resources/texture/player/aiming.png");
     aimingSprite_->SetSize(96.0f, 96.0f);
     aimingSprite_->SetColor({ 0.0f, 0.0f, 0.0f, 1.0f });
     aimingSprite_->SetPositionCenter(640.0f, 360.0f);
 
 #ifdef USE_IMGUI
     lineOBB_ = std::make_unique<Line3DRegion>();
-    lineOBB_->Initialize(camera);
+    lineOBB_->Initialize();
 #endif
 
     hpBar_ = std::make_unique<PlayerHPBar>();
-    hpBar_->Initialize(camera_, engine);
+    hpBar_->Initialize(engine);
 }
 
 void Player::Update() {
@@ -172,7 +170,7 @@ void Player::Update() {
         }
 
         // 敵の目線から、プレイヤーの座標を見つめ続ける
-        cameraController_.UpdateDeathCamera(deathCameraPos_, translate_);
+        cameraController_.UpdateDeathCamera(deathCameraPos_, translate_, engine_);
 
         // カメラ更新後にパーティクルのみ更新し、WVP行列を最新化する
         weapon_.UpdateParticlesOnly();
@@ -305,7 +303,7 @@ void Player::Update() {
     HandleSkill();
 
     weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, scale_, isKarakuriCharged_);
-    cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration());
+    cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
     status_.UpdateKnockback();
 
     if (cameraController_.IsFirstPerson()) {
@@ -342,7 +340,7 @@ void Player::Update() {
             }
 
             // 射撃方向の先にある一定距離のワールド座標を求める
-            Vector3 camPos = camera_->GetTranslate();
+            Vector3 camPos = engine_->GetCameraManager()->GetActiveCamera()->GetTranslate();
             Vector3 targetWorldPos = {
                 camPos.x + blendedForward.x * kAimDistance,
                 camPos.y + blendedForward.y * kAimDistance,
@@ -350,9 +348,9 @@ void Player::Update() {
             };
 
             // ワールド座標からスクリーン座標に変換
-            Matrix4x4 viewMat = camera_->GetViewMatrix();
-            Matrix4x4 projMat = camera_->GetPerspectiveFovMatrix();
-            Matrix4x4 viewportMat = camera_->GetViewportMatrix();
+            Matrix4x4 viewMat = engine_->GetCameraManager()->GetActiveCamera()->GetViewMatrix();
+            Matrix4x4 projMat = engine_->GetCameraManager()->GetActiveCamera()->GetPerspectiveFovMatrix();
+            Matrix4x4 viewportMat = engine_->GetCameraManager()->GetActiveCamera()->GetViewportMatrix();
 
             Matrix4x4 vpMat = Math::Multiply(viewMat, projMat);
             Matrix4x4 vpvMat = Math::Multiply(vpMat, viewportMat);
@@ -366,7 +364,7 @@ void Player::Update() {
     }
     // プレイヤーとカメラの更新が全て終わった「最新の座標」でUIを更新し、ガタつきを防ぐ
     if (hpBar_) {
-        hpBar_->Update(this, camera_, cameraController_.IsFirstPerson());
+        hpBar_->Update(this, cameraController_.IsFirstPerson());
     }
 
 #ifdef USE_IMGUI

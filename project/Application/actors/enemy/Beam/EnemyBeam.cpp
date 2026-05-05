@@ -11,14 +11,14 @@ EnemyBeam::~EnemyBeam() {
     }
 }
 
-void EnemyBeam::Initialize(Camera* camera, IrufemiEngine* engine) {
+void EnemyBeam::Initialize(IrufemiEngine* engine) {
     telegraphObj_ = std::make_unique<ObjClass>();
-    telegraphObj_->Initialize(camera, "sample/block.obj");
+    telegraphObj_->Initialize("sample/block.obj");
     telegraphObj_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     telegraphObj_->SetCastShadows(false);
 
     attackCylinder_ = std::make_shared<CylinderClass>();
-    attackCylinder_->Initialize(camera, false, false);
+    attackCylinder_->Initialize();
     attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     attackCylinder_->SetCastShadows(false);
 
@@ -52,7 +52,7 @@ void EnemyBeam::Initialize(Camera* camera, IrufemiEngine* engine) {
         }
 
         gpuParticle_ = std::make_unique<GPUParticleSystem>();
-        gpuParticle_->Initialize(camera, "resources/circle.png");
+        gpuParticle_->Initialize("resources/circle.png");
         gpuParticle_->SetColor({ 1.0f, 0.45f, 0.1f, 1.0f }); // 鮮やかなオレンジプラズマ
         gpuParticle_->SetEmit(false);
     }

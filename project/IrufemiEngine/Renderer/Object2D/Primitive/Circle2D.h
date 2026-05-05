@@ -31,7 +31,7 @@ protected:
     static TextureManager* textureManager_;
     static DrawManager*    drawManager_;
     static DebugUI*        ui_;
-    Camera* camera_ = nullptr;
+    static class IrufemiEngine* engine_;
 
     // 状態
     bool useTexture_ = true;
@@ -43,7 +43,7 @@ public:
     ~Circle2D() = default;
 
     // 初期化(subdivは偶数推奨)
-    void Initialize(Camera* camera, const std::string& textureName = "resources/whiteTexture.png", uint32_t subdiv = 64);
+    void Initialize(const std::string& textureName = "resources/whiteTexture.png", uint32_t subdiv = 64);
 
     // 更新(Debug UIなど)
     void Update();
@@ -83,6 +83,7 @@ public:
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
 
 private:
     // 単位円ディスクのVB/IB作成(中心＋リング)

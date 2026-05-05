@@ -17,9 +17,11 @@
 TextureManager* RingClass::textureManager_ = nullptr;
 DrawManager* RingClass::drawManager_ = nullptr;
 DebugUI* RingClass::ui_ = nullptr;
+IrufemiEngine* RingClass::engine_ = nullptr;
 
-void RingClass::Initialize(Camera* camera, const RingParams& params, const std::string& textureName) {
-    camera_ = camera;
+#include "Engine/IrufemiEngine.h"
+
+void RingClass::Initialize(const RingParams& params, const std::string& textureName) {
     ringParams_ = params;
 
     // リソースの確保と生成
@@ -105,12 +107,14 @@ void RingClass::RebuildResource() {
 }
 
 void RingClass::Update() {
-    if (!resource_ || !camera_) return;
+    if (!resource_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 位置/回転/スケールに応じてワールド行列を再計算する
     resource_->transform_.translate = center_;
     
-    resource_->UpdateTransform(*camera_);
+    resource_->UpdateTransform(*activeCam);
 
     if (resource_->GetMaterialData()) {
         if (resource_->textureHandle_.ptr == 0) {
@@ -121,16 +125,18 @@ void RingClass::Update() {
 
     // フラグ更新
     isDirty_ = false;
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    lastViewMatrix_ = activeCam->GetViewMatrix();
+    lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
 }
 
 void RingClass::Draw() {
-    if (!resource_ || !drawManager_ || !camera_) return;
+    if (!resource_ || !drawManager_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
     if (isDirty_ || cameraChanged) {
         Update();

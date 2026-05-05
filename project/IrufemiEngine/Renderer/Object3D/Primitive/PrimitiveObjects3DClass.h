@@ -101,7 +101,7 @@ public:
      * @param[in] type 初期形状タイプ
      * @param[in] texturePath 使用するテクスチャのパス
      */
-    void Initialize(Camera* camera, PrimitiveType type, const std::string& texturePath = "resources/uvChecker.png");
+    void Initialize(PrimitiveType type, const std::string& texturePath = "resources/uvChecker.png");
 
     /**
      * @brief 更新処理
@@ -154,6 +154,7 @@ public:
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
 
 private:
     TransformComponent transform_; //!< トランスフォームコンポーネント
@@ -162,12 +163,11 @@ private:
     bool isCullingEnabled_ = true; //!< 視錐台カリングの有効フラグ
     bool castShadows_ = true;      //!< 影を落とすフラグ
 
-    Camera* camera_ = nullptr;     //!< 保持しているカメラ
-
     // 静的ポインタ（既存の設計パターンを継承）
     static TextureManager* textureManager_;
     static DrawManager* drawManager_;
     static DebugUI* ui_;
+    static class IrufemiEngine* engine_;
 };
 
 

@@ -51,7 +51,7 @@ public:
     PlayerWeapon() = default;
     ~PlayerWeapon() = default;
 
-    void Initialize(Camera* camera);
+    void Initialize();
 
     // 毎フレームの更新（振動、弾の移動、薬莢の物理挙動など）
     void Update(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, const Vector3& playerScale, bool isKarakuriCharged);

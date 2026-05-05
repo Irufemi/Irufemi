@@ -8,8 +8,9 @@ class Building;
 
 class Field{
 public:
-	Field(Camera* camera, IrufemiEngine* engine);
+	Field(IrufemiEngine* engine);
 	~Field();
+	void Initialize(IrufemiEngine* engine) { engine_ = engine; Initialize(); }
 	void Initialize();
 	void Update();
 	void Draw();
@@ -19,7 +20,7 @@ public:
 private:
 	// 外部依存
 	InputManager* input_ = nullptr;
-	Camera* camera_ = nullptr;
+
 	IrufemiEngine* engine_ = nullptr;
 
 	// マップのモデル

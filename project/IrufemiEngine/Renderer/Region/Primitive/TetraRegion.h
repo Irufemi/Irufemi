@@ -22,7 +22,7 @@
 #include "Engine/Graphics/Data/CameraForGPU.h"
 
 class DirectXCommon;
-class Camera;                       
+class IrufemiEngine;                       
 class TextureManager;
 class DrawManager;
 class DescriptorPool; // 追加
@@ -36,6 +36,7 @@ public:
     static void SetTextureManager(TextureManager* tm);
     static void SetDrawManager(DrawManager* dm);
     static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; } // 追加
+    static void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
     void SetCastShadows(bool cast) { castShadows_ = cast; }
@@ -43,7 +44,7 @@ public:
 
     ~TetraRegion(); // SRV遅延解放
 
-    void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
+    void Initialize(const std::string& textureName = "resources/uvChecker.png");
 
     // Transformベース
     void AddInstance(const Transform& t);
@@ -97,7 +98,7 @@ private:
     static DrawManager* drawManager_;
     static DescriptorPool* srvPool_; // 追加
 
-    Camera* camera_ = nullptr;
+    static IrufemiEngine* engine_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;
     D3D12_VERTEX_BUFFER_VIEW               vertexBufferView_{};

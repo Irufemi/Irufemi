@@ -53,10 +53,9 @@ public: //メンバ関数
 
     /**
      * @brief 初期化
-     * @param[in] camera 使用するカメラ
      * @param[in] filename モデルファイル名（ModelManager経由でロード）
      */
-    void Initialize(Camera* camera, const std::string& filename = "plane.obj");
+    void Initialize(const std::string& filename = "plane.obj");
 
     /**
      * @brief 更新処理

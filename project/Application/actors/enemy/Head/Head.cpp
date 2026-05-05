@@ -11,15 +11,15 @@
 Head::Head() {}
 Head::~Head() {}
 
-void Head::Initialize(Camera* camera, const Vector3& initialPos) {
+void Head::Initialize(const Vector3& initialPos) {
   obj_ = std::make_unique<ObjClass>();
-  obj_->Initialize(camera, "enemy/head.obj");
+  obj_->Initialize("enemy/head.obj");
   basePosition_ = initialPos;
   obj_->SetPosition(basePosition_);
   obj_->SetColor(baseColor_);
 
   voxelSystem_ = std::make_unique<VoxelParticleSystem>();
-  voxelSystem_->Initialize("enemy/head.obj", {32, 32, 32}, camera);
+  voxelSystem_->Initialize("enemy/head.obj", {32, 32, 32});
 }
 
 void Head::Update() {

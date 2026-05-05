@@ -9,15 +9,15 @@
 
 Body::~Body() {}
 
-void Body::Initialize(Camera* camera, const Vector3& initialPos) {
+void Body::Initialize(const Vector3& initialPos) {
   obj_ = std::make_unique<ObjClass>();
-  obj_->Initialize(camera, "enemy/body.obj");
+  obj_->Initialize("enemy/body.obj");
   basePosition_ = initialPos;
   obj_->SetPosition(basePosition_);
   obj_->SetColor(baseColor_);
 
   voxelSystem_ = std::make_unique<VoxelParticleSystem>();
-  voxelSystem_->Initialize("enemy/body.obj", {32, 32, 32}, camera);
+  voxelSystem_->Initialize("enemy/body.obj", {32, 32, 32});
 }
 
 void Body::Update() {

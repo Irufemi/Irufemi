@@ -34,14 +34,14 @@ protected:
     static DrawManager* drawManager_;
     static DebugUI* ui_;
 
-    Camera* camera_ = nullptr;
+    static class IrufemiEngine* engine_;
 
 public:
     CubeClass() = default;
     ~CubeClass() = default;
 
     // 新シグネチャ: depth を明示的に受け取るオーバーロード
-    void Initialize(Camera* camera, float width = 1.0f, float height = 1.0f, float depth = 1.0f, const std::string& textureName = "resources/uvChecker.png");
+    void Initialize(float width = 1.0f, float height = 1.0f, float depth = 1.0f, const std::string& textureName = "resources/uvChecker.png");
 
     void Update();
     void SyncBeforeDraw() override;
@@ -64,6 +64,7 @@ public:
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
     void SetCastShadows(bool cast) { castShadows_ = cast; }

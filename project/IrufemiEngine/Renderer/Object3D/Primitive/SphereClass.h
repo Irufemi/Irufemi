@@ -48,8 +48,7 @@ protected: //メンバ変数
     static DrawManager* drawManager_;
 
     static DebugUI* ui_;
-
-    Camera* camera_ = nullptr;
+    static class IrufemiEngine* engine_;
 
 public: //メンバ関数
     // コンストラクタ
@@ -59,7 +58,7 @@ public: //メンバ関数
     ~SphereClass() = default;
 
     // 初期化
-    void Initialize(Camera* camera,  const std::string& textureName = "resources/uvChecker.png");
+    void Initialize(const std::string& textureName = "resources/uvChecker.png");
 
     // 更新
     void Update();
@@ -80,6 +79,7 @@ public: //メンバ関数
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
     void SetCastShadows(bool cast) { castShadows_ = cast; }

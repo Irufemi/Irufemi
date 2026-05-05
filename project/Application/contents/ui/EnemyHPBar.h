@@ -20,7 +20,7 @@ public:
      * @param screenWidth 画面横幅
      * @param screenHeight 画面縦幅
      */
-    void Initialize(Camera* camera, int screenWidth, int screenHeight);
+    void Initialize(int screenWidth, int screenHeight);
 
     /**
      * @brief 毎フレーム更新（HP割合に基づいてバーの幅と色を更新）

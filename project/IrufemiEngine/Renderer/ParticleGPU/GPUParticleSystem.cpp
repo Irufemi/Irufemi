@@ -47,14 +47,12 @@ GPUParticleSystem::~GPUParticleSystem() {
 }
 
 // 初期化
-void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureName) {
+void GPUParticleSystem::Initialize(const std::string& textureName) {
 
     assert(dxCommon_);
     assert(drawManager_);
     assert(textureManager_);
     assert(engine_);
-
-    camera_ = camera;
 
     CreateBuffersAndViews();
 
@@ -109,7 +107,7 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
 #if defined(USE_IMGUI)
     debugLineRegion_ = std::make_unique<Line3DRegion>();
-    debugLineRegion_->Initialize(camera);
+    debugLineRegion_->Initialize();
 #endif
 
     // ゲーム開始時（ローディング中）にCSを使ったバッファ初期化を済ませる
@@ -153,7 +151,9 @@ void GPUParticleSystem::Initialize(Camera* camera, const std::string& textureNam
 
 // 更新
 void GPUParticleSystem::Update() {
-    if (!emitter_ || !camera_) return;
+    if (!emitter_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     if (!isPlaying_) {
         // 放出は止めるが、既存の粒子の更新（Update CS）は必要かもしれないので
@@ -187,7 +187,7 @@ void GPUParticleSystem::Update() {
             boundingSphere.radius = 50.0f; // ビームは長いので広めに
         }
 
-        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             isCulled_ = true;
             // 画面外でも計算（CS）は継続させるため、returnによる打ち切りは行わない
         }
@@ -235,15 +235,17 @@ void GPUParticleSystem::SyncBeforeDraw() {
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
     
     // PerViewはUpdateが呼ばれなくても毎フレーム必ず最新化する（ポーズ中のカメラ移動・マルチバッファ対策）
-    if (camera_) {
-        perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
-        Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
-        Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
-        billboardMatrix_.m[3][0] = 0.0f;
-        billboardMatrix_.m[3][1] = 0.0f;
-        billboardMatrix_.m[3][2] = 0.0f;
-        perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
-        perViewBuffer_[frameIndex]->worldPosition = camera_->GetTranslate();
+    if (engine_) {
+        if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+            perViewBuffer_[frameIndex]->viewProjection = activeCam->GetViewProjectionMatrix3D();
+            Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
+            Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, activeCam->GetCameraMatrix());
+            billboardMatrix_.m[3][0] = 0.0f;
+            billboardMatrix_.m[3][1] = 0.0f;
+            billboardMatrix_.m[3][2] = 0.0f;
+            perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
+            perViewBuffer_[frameIndex]->worldPosition = activeCam->GetTranslate();
+        }
     }
 
     // 同一フレーム内で複数回呼び出された場合は無駄な転送を防ぐ
@@ -284,14 +286,18 @@ void GPUParticleSystem::Draw() {
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
 
     // 描画パスによってカメラが変わる可能性があるため、毎回の描画で更新
-    perViewBuffer_[frameIndex]->viewProjection = camera_->GetViewProjectionMatrix3D();
-    Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
-    Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
-    billboardMatrix_.m[3][0] = 0.0f;
-    billboardMatrix_.m[3][1] = 0.0f;
-    billboardMatrix_.m[3][2] = 0.0f;
-    perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
-    perViewBuffer_[frameIndex]->worldPosition = camera_->GetTranslate();
+    if (engine_) {
+        if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+            perViewBuffer_[frameIndex]->viewProjection = activeCam->GetViewProjectionMatrix3D();
+            Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
+            Matrix4x4 billboardMatrix_ = Math::Multiply(backToFrontMatrix_, activeCam->GetCameraMatrix());
+            billboardMatrix_.m[3][0] = 0.0f;
+            billboardMatrix_.m[3][1] = 0.0f;
+            billboardMatrix_.m[3][2] = 0.0f;
+            perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
+            perViewBuffer_[frameIndex]->worldPosition = activeCam->GetTranslate();
+        }
+    }
 
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 

@@ -28,7 +28,7 @@ public:
     }
     ~Line3DRegion();
 
-    void Initialize(Camera* camera);
+    void Initialize();
     void Update();
     void AddInstance(const Vector3& start, const Vector3& end, const Vector4& color, float life = 1.0f);
     void ClearInstances();
@@ -45,6 +45,7 @@ public:
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
     static void SetSrvAllocator(DescriptorPool* alloc) { s_srvAllocator_ = alloc; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
+    static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
 
 private:
     struct LineInstance {
@@ -70,8 +71,8 @@ private:
     static DirectXCommon* dx_;
     static DrawManager* drawManager_;
     static DescriptorPool* s_srvAllocator_;
+    static class IrufemiEngine* engine_;
 
-    Camera* camera_ = nullptr;
     std::unique_ptr<LineResource> baseLineResource_ = nullptr;
 
     std::vector<LineInstance> instances_;
