@@ -652,10 +652,7 @@ void Player::HandleAttack() {
 void Player::HandleSkill() {
     if (skillDurationTimer_ > 0) {
         skillDurationTimer_--;
-        if (skillDurationTimer_ <= 0) {
-            // ミサイルの時だけクールダウンをセット（マシンガンはトグルなので別管理）
-            if (isKarakuriCharged_) skillCooldownTimer_ = kSkillCooldownTime;
-        }
+        if (skillDurationTimer_ <= 0) skillCooldownTimer_ = kSkillCooldownTime;
     } else if (skillCooldownTimer_ > 0) {
         skillCooldownTimer_--;
     }
@@ -668,7 +665,6 @@ void Player::HandleSkill() {
         karakuriActiveTimer_--;
         if (karakuriActiveTimer_ <= 0) {
             isKarakuriCharged_ = false;
-            weapon_.SetMachineGunFiring(false); // チャージ終了時にマシンガンも止める（任意）
             OutputDebugStringA("Karakuri Charge Ended.\n");
         }
     }
@@ -701,8 +697,8 @@ void Player::HandleSkill() {
                 }
                 skillDurationTimer_ = kMissileSkillDuration;
             } else {
-                // 機関銃のトグル
-                weapon_.SetMachineGunFiring(!weapon_.IsMachineGunFiring());
+                weapon_.StartMachineGunSkill();
+                skillDurationTimer_ = kMachineGunSkillDuration;
             }
         } else if (skillDurationTimer_ <= 0 && skillCooldownTimer_ > 0) {
             // 発動中ではなく、クールダウン中に押された場合のみ警告タイマーをセット

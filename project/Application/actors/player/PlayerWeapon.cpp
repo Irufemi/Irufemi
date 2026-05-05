@@ -92,7 +92,7 @@ void PlayerWeapon::Initialize(Camera* camera) {
 
 void PlayerWeapon::Update(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, const Vector3& playerScale, bool isKarakuriCharged) {
     // 振動（シェイク）の更新
-    if (!isMachineGunFiring_) {
+    if (machineGunActiveTimer_ <= 0) {
         machineGunVibration_.x *= 0.8f;
         machineGunVibration_.y *= 0.8f;
         machineGunVibration_.z *= 0.8f;
@@ -397,14 +397,10 @@ void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& player
 }
 
 void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos) {
-    if (isMachineGunFiring_ && machineGunAmmo_ > 0.0f) {
-        machineGunAmmo_ -= kMachineGunConsumptionRate;
-        if (machineGunAmmo_ <= 0.0f) {
-            machineGunAmmo_ = 0.0f;
-            isMachineGunFiring_ = false;
-        }
-
+    if (machineGunActiveTimer_ > 0) {
+        machineGunActiveTimer_--;
         machineGunFireTimer_--;
+
         if (machineGunFireTimer_ <= 0) {
             machineGunFireTimer_ = 5; // 発射間隔
 
@@ -486,12 +482,6 @@ void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector
                 muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
             }
             if (ejectionMistRight_) ejectionMistRight_->PlayHitEffect({ rightShoulder.x + rightX * 0.3f, rightShoulder.y, rightShoulder.z + rightZ * 0.3f });
-        }
-    } else {
-        // 発射していない時は回復
-        machineGunAmmo_ += kMachineGunRecoveryRate;
-        if (machineGunAmmo_ > kMaxMachineGunAmmo) {
-            machineGunAmmo_ = kMaxMachineGunAmmo;
         }
     }
 
@@ -655,7 +645,7 @@ void PlayerWeapon::EjectCartridge(const Vector3& startPos, bool isRight, const V
 }
 
 void PlayerWeapon::StartMachineGunSkill() {
-    isMachineGunFiring_ = true;
+    machineGunActiveTimer_ = 180;
     machineGunVibrationScale_ = 0.1f;
 }
 

@@ -73,11 +73,7 @@ public:
     const Vector3& GetMachineGunVibration() const { return machineGunVibration_; }
     const Vector3& GetMissileVibration() const { return missileVibration_; }
     
-    // 機関銃の発射制御
-    void SetMachineGunFiring(bool firing) { isMachineGunFiring_ = firing; }
-    bool IsMachineGunFiring() const { return isMachineGunFiring_; }
-    float GetMachineGunAmmo() const { return machineGunAmmo_; }
-    static float GetMaxMachineGunAmmo() { return kMaxMachineGunAmmo; }
+
 
     // ImGui で調整するためのポインタ取得
     float* GetMachineGunVibrationScalePtr() { return &machineGunVibrationScale_; }
@@ -157,11 +153,4 @@ public:
     float* GetMissileSpreadMagnitudeBasePtr() { return &missileSpreadMagnitudeBase_; }
     float* GetMissileSpreadMagnitudeRandPtr() { return &missileSpreadMagnitudeRand_; }
 
-private:
-    // --- 機関銃の弾数管理 ---
-    bool isMachineGunFiring_ = false;
-    float machineGunAmmo_ = 100.0f;
-    static constexpr float kMaxMachineGunAmmo = 100.0f;
-    static constexpr float kMachineGunRecoveryRate = 0.4f; // 非発射時の回復量
-    static constexpr float kMachineGunConsumptionRate = 0.8f; // 発射時の消費量
 };
