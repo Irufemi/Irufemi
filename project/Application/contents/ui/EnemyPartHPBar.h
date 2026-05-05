@@ -6,6 +6,7 @@
 
 class PlaneClass;
 class Camera;
+class IrufemiEngine;
 
 /**
  * @class EnemyPartHPBar
@@ -17,9 +18,9 @@ public:
 
     /**
      * @brief 初期化
-     * @param camera 描画に使用するカメラ
+     * @param engine エンジン
      */
-    void Initialize(Camera* camera);
+    void Initialize(IrufemiEngine* engine);
 
     /**
      * @brief 毎フレーム更新（HP割合と色を更新し、指定された位置に追従する）
@@ -27,7 +28,7 @@ public:
      * @param targetWorldPos 追従する対象のワールド座標（この上にオフセットをかけて表示する）
      * @param camera 追従するカメラのポインタ
      */
-    void Update(float hpRatio, const Vector3& targetWorldPos, const Camera* camera);
+    void Update(float hpRatio, const Vector3& targetWorldPos);
 
     /**
      * @brief 3Dポリゴン描画
@@ -49,4 +50,5 @@ private:
 
     // アニメーション用（ダメージ時のスムーズな減少）
     float displayRatio_ = 1.0f;
+    IrufemiEngine* engine_ = nullptr;
 };

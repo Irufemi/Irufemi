@@ -7,11 +7,12 @@
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "Engine/Manager/PrimitiveManager.h"
 
+IrufemiEngine* Effect::engine_ = nullptr;
+
 Effect::Effect() = default;
 Effect::~Effect() = default;
 
-void Effect::Initialize(Camera* camera, EffectType type) {
-    camera_ = camera;
+void Effect::Initialize(EffectType type) {
     type_ = type;
     particleSystems_.clear();
     
@@ -21,7 +22,7 @@ void Effect::Initialize(Camera* camera, EffectType type) {
         isBillboard_ = true;
         
         auto system = std::make_unique<GPUParticleSystem>();
-        system->Initialize(camera, currentTextureName_);
+        system->Initialize(currentTextureName_);
         system->SetPrimitive(currentShape_);
         system->SetBlend(blendMode_);
         system->SetDepthWrite(depthWrite_);
@@ -45,7 +46,7 @@ void Effect::Initialize(Camera* camera, EffectType type) {
         
         // Planeエミッター
         auto planeSystem = std::make_unique<GPUParticleSystem>();
-        planeSystem->Initialize(camera, impactConfig_.planeTexture);
+        planeSystem->Initialize(impactConfig_.planeTexture);
         planeSystem->SetPrimitive(impactConfig_.planeShape);
         planeSystem->SetBillboard(isBillboard_);
         planeSystem->SetBlend(blendMode_);
@@ -64,7 +65,7 @@ void Effect::Initialize(Camera* camera, EffectType type) {
         
         // Ringエミッター
         auto ringSystem = std::make_unique<GPUParticleSystem>();
-        ringSystem->Initialize(camera, impactConfig_.ringTexture);
+        ringSystem->Initialize(impactConfig_.ringTexture);
         ringSystem->SetPrimitive(impactConfig_.ringShape);
         ringSystem->SetBillboard(isBillboard_);
         ringSystem->SetBlend(blendMode_);
@@ -90,7 +91,7 @@ void Effect::Initialize(Camera* camera, EffectType type) {
     {
         isBillboard_ = false;
         auraObject_ = std::make_unique<PrimitiveObjects3DClass>();
-        auraObject_->Initialize(camera, PrimitiveType::Cylinder, auraConfig_.texture);
+        auraObject_->Initialize(PrimitiveType::Cylinder, auraConfig_.texture);
         
         // 蓋なしのCylinderリソースを取得して差し替える
         const auto& noCapCylinder = PrimitiveManager::GetInstance()->GetCylinderResource(false, false);
@@ -196,8 +197,8 @@ void Effect::Debug(const char* name) {
                 const char* typeNames[] = { "Hit", "Impact", "Aura" };
                 int currentType = static_cast<int>(type_);
                 if (ImGui::Combo("Effect Type", &currentType, typeNames, IM_ARRAYSIZE(typeNames))) {
-                    if (camera_) {
-                        Initialize(camera_, static_cast<EffectType>(currentType));
+                    if (engine_) {
+                        Initialize(static_cast<EffectType>(currentType));
                     }
                 }
                 

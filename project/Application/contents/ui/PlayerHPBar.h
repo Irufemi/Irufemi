@@ -14,8 +14,8 @@ public:
     PlayerHPBar() = default;
     ~PlayerHPBar() = default;
 
-    void Initialize(Camera* camera, IrufemiEngine* engine);
-    void Update(const Player* player, const Camera* camera, bool isFirstPerson);
+    void Initialize(IrufemiEngine* engine);
+    void Update(const Player* player, bool isFirstPerson);
     void Draw3D(bool isUI = false);
     void Draw2D();
 
@@ -39,4 +39,5 @@ private:
     float barY2D_ = 0.0f;
 
     float displayRatio_ = 1.0f;
+    IrufemiEngine* engine_ = nullptr;
 };

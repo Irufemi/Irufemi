@@ -5,10 +5,9 @@
 #include <cmath>
 #include <algorithm>
 
-void EnemyTackleEffects::Initialize(Camera* camera) {
-    camera_ = camera;
+void EnemyTackleEffects::Initialize() {
     waveObj_ = std::make_unique<ObjClass>();
-    waveObj_->Initialize(camera_, "sample/block.obj");
+    waveObj_->Initialize("sample/block.obj");
 }
 
 void EnemyTackleEffects::FireRushWave(const Vector3& position) {

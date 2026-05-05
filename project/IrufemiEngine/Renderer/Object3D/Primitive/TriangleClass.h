@@ -22,7 +22,7 @@ private:
     std::unique_ptr<Object3DResource> resource_ = nullptr;
     int selectedTextureIndex_ = 0;
 
-    Camera* camera_ = nullptr;
+    static class IrufemiEngine* engine_;
 
     // 行列更新の最適化用
     bool isDirty_ = true;
@@ -38,7 +38,7 @@ private:
 public:
     ~TriangleClass() = default;
 
-    void Initialize(Camera* camera, const std::string& textureName = "resources/uvChecker.png");
+    void Initialize(const std::string& textureName = "resources/uvChecker.png");
     void Update();
     void SyncBeforeDraw() override;
     void Draw() override;
@@ -68,6 +68,7 @@ public:
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
     void SetCastShadows(bool cast) { castShadows_ = cast; }

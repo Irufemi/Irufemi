@@ -9,14 +9,14 @@
 #include "Resource/Model/ModelManager.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/IrufemiEngine.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
 
 // 静的メンバ定義
 
 
 ObjClass::~ObjClass() {}
 
-void ObjClass::Initialize(Camera* camera, const std::string& filename) {
-    camera_ = camera;
+void ObjClass::Initialize(const std::string& filename) {
 
     assert(engine_ && "ObjClass::Initialize: Engine is not set.");
     // 非同期で読み込みを開始し、メインスレッドをブロックしない
@@ -71,7 +71,9 @@ void ObjClass::InitializeResources() {
 }
 
 void ObjClass::Update() {
-    if (!managedModel_ || !camera_) return;
+    if (!managedModel_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 非同期ロードが終わっていればメッシュを構築する (遅延初期化)
     if (managedModel_->status.load() == ManagedModel::LoadingStatus::Loaded && meshResources_.empty()) {
@@ -99,8 +101,8 @@ void ObjClass::Update() {
     UpdateMaterials();
 
     isDirty_ = false;
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    lastViewMatrix_ = activeCam->GetViewMatrix();
+    lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
 }
 
 void ObjClass::SyncBeforeDraw() {
@@ -126,13 +128,15 @@ void ObjClass::SyncBeforeDraw() {
 #include "../../../Engine/Core/Shape/Sphere.h"
 
 void ObjClass::Draw() {
-    if (!managedModel_ || !engine_ || !engine_->GetDrawManager() || !camera_) {
+    if (!managedModel_ || !engine_ || !engine_->GetDrawManager()) {
         return;
     }
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
     if (isDirtyBuffer_[BaseResource::GetDirectXCommon()->GetFrameIndex()] || cameraChanged) {
         Update();
@@ -154,7 +158,7 @@ void ObjClass::Draw() {
         worldSphere.radius = modelSphere.radius * maxScale * 1.1f; // 10% マージン
 
         // 判定
-        if (!Collision::IsCollision(camera_->GetFrustum(), worldSphere)) {
+        if (!Collision::IsCollision(activeCam->GetFrustum(), worldSphere)) {
             return; // 描画スキップ
         }
     }

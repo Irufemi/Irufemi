@@ -6,14 +6,13 @@
 
 #include "Engine/Manager/DebugUI.h"
 
-void Skydome::Initialize(Camera* camera) {
+void Skydome::Initialize() {
 
 	// 引数として受け取ったデータをメンバ変数に記録する
 	// ワールド変換の初期化
-	this->camera_ = camera;
 
 	model_ = std::make_unique<ObjClass>();
-	model_->Initialize(camera_, "skydome.obj");
+	model_->Initialize("skydome.obj");
 	model_->SetEnableLightingToAllMeshes(0);
 
 	worldTransform_ = { Vector3{1.0f,1.0f,1.0f},Vector3{0.0f,0.0f,0.0f},Vector3{0.0f,0.0f,0.0f} };

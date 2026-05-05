@@ -24,7 +24,7 @@ class EnemyPartHPBar;
 class Enemy {
 public:
     ~Enemy();
-    void Initialize(Camera* camera, IrufemiEngine* engine = nullptr);
+    void Initialize(IrufemiEngine* engine = nullptr);
     void Update(Player* player);
     void Draw(IrufemiEngine* engine);
     
@@ -116,7 +116,7 @@ private:
 
     EnemyState state_ = EnemyState::Idle;
     bool isPhase2_ = false;
-    Camera* camera_ = nullptr;
+
 
     // パラメータ
     float fallSpeed_ = 0.01f;     // 落下時の補間速度

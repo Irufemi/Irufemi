@@ -14,7 +14,7 @@ public:
   Head();
   virtual ~Head();
 
-  void Initialize(Camera* camera, const Vector3& initialPos);
+  void Initialize(const Vector3& initialPos);
   void Update();
   void Draw(IrufemiEngine* engine);
 

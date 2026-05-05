@@ -4,20 +4,19 @@
 #include <cmath>
 #include <cstdlib>
 
-void PlayerWeapon::Initialize(Camera* camera) {
-    camera_ = camera;
+void PlayerWeapon::Initialize() {
 
     // --- 機関銃モデルの初期化 ---
     machineGunObjLeft_ = std::make_unique<ObjClass>();
-    machineGunObjLeft_->Initialize(camera_, "enemy/body.obj");
+    machineGunObjLeft_->Initialize("enemy/body.obj");
 
     machineGunObjRight_ = std::make_unique<ObjClass>();
-    machineGunObjRight_->Initialize(camera_, "enemy/body.obj");
+    machineGunObjRight_->Initialize("enemy/body.obj");
 
     // --- 機関銃の弾モデルの初期化 ---
     for (int i = 0; i < kMaxBullets; ++i) {
         bulletObjs_[i] = std::make_unique<ObjClass>();
-        bulletObjs_[i]->Initialize(camera_, "enemy/body.obj");
+        bulletObjs_[i]->Initialize("enemy/body.obj");
         bulletObjs_[i]->SetColor({ 1.0f, 1.0f, 0.0f, 1.0f });
         bulletObjs_[i]->SetCastShadows(false);
         bullets_[i].isActive = false;
@@ -27,51 +26,51 @@ void PlayerWeapon::Initialize(Camera* camera) {
 
     // --- 銃口の煙パーティクルの初期化 ---
     muzzleSmokeLeft_ = std::make_unique<ParticleSystem>();
-    muzzleSmokeLeft_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleSmoke);
+    muzzleSmokeLeft_->Initialize("resources/circle.png", ParticleType::kMuzzleSmoke);
     muzzleSmokeRight_ = std::make_unique<ParticleSystem>();
-    muzzleSmokeRight_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleSmoke);
+    muzzleSmokeRight_->Initialize("resources/circle.png", ParticleType::kMuzzleSmoke);
 
     // --- マズルフラッシュパーティクルの初期化 ---
     muzzleFlashLeft_ = std::make_unique<ParticleSystem>();
-    muzzleFlashLeft_->Initialize(camera_, "resources/whiteTexture.png", ParticleType::kMuzzleFlash, PrimitiveType::Circle);
+    muzzleFlashLeft_->Initialize("resources/whiteTexture.png", ParticleType::kMuzzleFlash, PrimitiveType::Circle);
     muzzleFlashLeft_->SetBlend(BlendMode::kBlendModeNormal);
     muzzleFlashRight_ = std::make_unique<ParticleSystem>();
-    muzzleFlashRight_->Initialize(camera_, "resources/whiteTexture.png", ParticleType::kMuzzleFlash, PrimitiveType::Circle);
+    muzzleFlashRight_->Initialize("resources/whiteTexture.png", ParticleType::kMuzzleFlash, PrimitiveType::Circle);
     muzzleFlashRight_->SetBlend(BlendMode::kBlendModeNormal);
 
     // --- 加算合成マズルフラッシュの初期化 ---
     muzzleFlashAddLeft_ = std::make_unique<ParticleSystem>();
-    muzzleFlashAddLeft_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleFlash);
+    muzzleFlashAddLeft_->Initialize("resources/circle.png", ParticleType::kMuzzleFlash);
     muzzleFlashAddLeft_->SetBlend(BlendMode::kBlendModeAdd);
     muzzleFlashAddRight_ = std::make_unique<ParticleSystem>();
-    muzzleFlashAddRight_->Initialize(camera_, "resources/circle.png", ParticleType::kMuzzleFlash);
+    muzzleFlashAddRight_->Initialize("resources/circle.png", ParticleType::kMuzzleFlash);
     muzzleFlashAddRight_->SetBlend(BlendMode::kBlendModeAdd);
 
     missileFire_ = std::make_unique<ParticleSystem>();
-    missileFire_->Initialize(camera_, "resources/circle.png", ParticleType::kMissileFire);
+    missileFire_->Initialize("resources/circle.png", ParticleType::kMissileFire);
     missileFire_->SetCullingEnabled(false);
 
     missileSmoke_ = std::make_unique<ParticleSystem>();
-    missileSmoke_->Initialize(camera_, "resources/circle.png", ParticleType::kMissileSmoke);
+    missileSmoke_->Initialize("resources/circle.png", ParticleType::kMissileSmoke);
     missileSmoke_->SetCullingEnabled(false);
 
     bulletTrail_ = std::make_unique<ParticleSystem>();
-    bulletTrail_->Initialize(camera_, "resources/circle.png", ParticleType::kBulletTrail);
+    bulletTrail_->Initialize("resources/circle.png", ParticleType::kBulletTrail);
     bulletTrail_->SetBlend(BlendMode::kBlendModeAdd);
     bulletTrail_->SetCullingEnabled(false);
 
     ejectionMistLeft_ = std::make_unique<ParticleSystem>();
-    ejectionMistLeft_->Initialize(camera_, "resources/circle.png", ParticleType::kEjectionMist);
+    ejectionMistLeft_->Initialize("resources/circle.png", ParticleType::kEjectionMist);
     ejectionMistLeft_->SetBlend(BlendMode::kBlendModeAdd);
 
     ejectionMistRight_ = std::make_unique<ParticleSystem>();
-    ejectionMistRight_->Initialize(camera_, "resources/circle.png", ParticleType::kEjectionMist);
+    ejectionMistRight_->Initialize("resources/circle.png", ParticleType::kEjectionMist);
     ejectionMistRight_->SetBlend(BlendMode::kBlendModeAdd);
 
     // --- 薬莢モデルの初期化 ---
     for (int i = 0; i < kMaxCartridges; ++i) {
         cartridgeObjs_[i] = std::make_unique<ObjClass>();
-        cartridgeObjs_[i]->Initialize(camera_, "enemy/body.obj");
+        cartridgeObjs_[i]->Initialize("enemy/body.obj");
         cartridgeObjs_[i]->SetColor({ 0.8f, 0.6f, 0.1f, 1.0f });
         cartridgeObjs_[i]->SetCastShadows(false);
         cartridges_[i].isActive = false;
@@ -80,7 +79,7 @@ void PlayerWeapon::Initialize(Camera* camera) {
     // --- ミサイルモデルとデータの初期化 ---
     for (int i = 0; i < kMaxMissiles; ++i) {
         missileObjs_[i] = std::make_unique<ObjClass>();
-        missileObjs_[i]->Initialize(camera_, "enemy/body.obj");
+        missileObjs_[i]->Initialize("enemy/body.obj");
         missileObjs_[i]->SetCastShadows(false);
         missiles_[i].isActive = false;
     }

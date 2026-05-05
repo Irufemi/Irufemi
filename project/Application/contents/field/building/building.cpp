@@ -22,8 +22,7 @@ Building::Building() {}
 
 Building::~Building() {}
 
-void Building::Initialize(Camera* camera, IrufemiEngine* engine) {
-    camera_ = camera;
+void Building::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 
     LoadJson();
@@ -32,7 +31,7 @@ void Building::Initialize(Camera* camera, IrufemiEngine* engine) {
 #ifdef USE_IMGUI
     if (engine_) {
         debugLines_ = std::make_unique<Line3DRegion>();
-        debugLines_->Initialize(camera_);
+        debugLines_->Initialize();
     }
 #endif
 }
@@ -353,7 +352,7 @@ void Building::Generate() {
     for (auto& pd : placements) {
         BuildingInstance inst;
         inst.obj = std::make_unique<ObjClass>();
-        inst.obj->Initialize(camera_, "building/block.obj");
+        inst.obj->Initialize("building/block.obj");
         inst.position = pd.pos;
         inst.scale = pd.scale;
         inst.rotate = { 0.0f, pd.rotY, 0.0f };
@@ -374,7 +373,7 @@ void Building::Generate() {
     // VoxelParticleSystemの初期化（GPUリソース作成はメインスレッドで行う必要がある）
     for (auto& inst : instances_) {
         inst.voxelSystem = std::make_unique<VoxelParticleSystem>();
-        inst.voxelSystem->Initialize("building/block.obj", {32, 32, 32}, camera_);
+        inst.voxelSystem->Initialize("building/block.obj", {32, 32, 32});
         inst.voxelSystem->SetParticleType(VoxelParticleSystem::ParticleType::Building);
         inst.voxelSystem->SetGravity(40.0f); // 落下感を強くするため重力を上げる
     }

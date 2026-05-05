@@ -46,22 +46,22 @@ GameScene::~GameScene() {}
 void GameScene::Initialize(IrufemiEngine *engine) {
   BaseScene::Initialize(engine);
 
-  Camera* activeCamera = cameraManager_->GetActiveCamera();
+  Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
   activeCamera->SetTranslate(kDefaultCameraPos);
   activeCamera->UpdateMatrix();
 
   // プレイヤーの初期化
   player_ = std::make_unique<Player>();
-  player_->Initialize(engine_->GetInputManager(), activeCamera, engine_);
+  player_->Initialize(engine_->GetInputManager(), engine_);
 
   boss_ = std::make_unique<Enemy>();
-  boss_->Initialize(activeCamera, engine_);
+  boss_->Initialize(engine_);
 
-  field_ = std::make_unique<Field>(activeCamera, engine_);
+  field_ = std::make_unique<Field>(engine_);
   field_->Initialize();
 
   skydome_ = std::make_unique<Skydome>();
-  skydome_->Initialize(activeCamera);
+  skydome_->Initialize();
 
   auto pLight = std::make_unique<PointLight>();
   pLight->color = {1.0f, 0.9f, 0.8f, 1.0f}; // やや暖色寄りの白
@@ -73,66 +73,66 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 
   // 操作説明スプライトの初期化
   operationNormalSprite_ = std::make_unique<Sprite>();
-  operationNormalSprite_->Initialize(activeCamera, "resources/texture/inGame/operation_normal_3.png");
+  operationNormalSprite_->Initialize("resources/texture/inGame/operation_normal_3.png");
   operationNormalSprite_->SetSize(600.0f, 300.0f);
   operationNormalSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
 
   operationChargedSprite_ = std::make_unique<Sprite>();
-  operationChargedSprite_->Initialize(activeCamera, "resources/texture/inGame/operation_charged_3.png");
+  operationChargedSprite_->Initialize("resources/texture/inGame/operation_charged_3.png");
   operationChargedSprite_->SetSize(600.0f, 300.0f);
   operationChargedSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
 
   operationNormalSprite1st_ = std::make_unique<Sprite>();
-  operationNormalSprite1st_->Initialize(activeCamera, "resources/texture/inGame/operation_normal_1.png");
+  operationNormalSprite1st_->Initialize("resources/texture/inGame/operation_normal_1.png");
   operationNormalSprite1st_->SetSize(800.0f, 150.0f);
   operationNormalSprite1st_->SetPositionTopLeft(460.0f, static_cast<float>(engine_->GetClientHeight()) - 160.0f);
 
   operationChargedSprite1st_ = std::make_unique<Sprite>();
-  operationChargedSprite1st_->Initialize(activeCamera, "resources/texture/inGame/operation_charged_1.png");
+  operationChargedSprite1st_->Initialize("resources/texture/inGame/operation_charged_1.png");
   operationChargedSprite1st_->SetSize(800.0f, 150.0f);
   operationChargedSprite1st_->SetPositionTopLeft(460.0f, static_cast<float>(engine_->GetClientHeight()) - 160.0f);
 
   numberSpriteTens_ = std::make_unique<Sprite>();
-  numberSpriteTens_->Initialize(activeCamera, "resources/texture/inGame/numbers.png");
+  numberSpriteTens_->Initialize("resources/texture/inGame/numbers.png");
   numberSpriteTens_->SetSize(40.0f, 40.0f);
   numberSpriteTens_->SetPositionTopLeft(340.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
 
   numberSpriteOnes_ = std::make_unique<Sprite>();
-  numberSpriteOnes_->Initialize(activeCamera, "resources/texture/inGame/numbers.png");
+  numberSpriteOnes_->Initialize("resources/texture/inGame/numbers.png");
   numberSpriteOnes_->SetSize(40.0f, 40.0f);
   numberSpriteOnes_->SetPositionTopLeft(365.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
 
   numberSpriteTens1st_ = std::make_unique<Sprite>();
-  numberSpriteTens1st_->Initialize(activeCamera, "resources/texture/inGame/numbers_white.png");
+  numberSpriteTens1st_->Initialize("resources/texture/inGame/numbers_white.png");
   numberSpriteTens1st_->SetSize(24.0f, 24.0f);
   numberSpriteTens1st_->SetPositionTopLeft(static_cast<float>(engine_->GetClientWidth()) - 85.0f, static_cast<float>(engine_->GetClientHeight()) - 56.0f);
 
   numberSpriteOnes1st_ = std::make_unique<Sprite>();
-  numberSpriteOnes1st_->Initialize(activeCamera, "resources/texture/inGame/numbers_white.png");
+  numberSpriteOnes1st_->Initialize("resources/texture/inGame/numbers_white.png");
   numberSpriteOnes1st_->SetSize(24.0f, 24.0f);
   numberSpriteOnes1st_->SetPositionTopLeft(static_cast<float>(engine_->GetClientWidth()) - 70.0f, static_cast<float>(engine_->GetClientHeight()) - 56.0f);
 
   cooldownWarningSprite_ = std::make_unique<Sprite>();
-  cooldownWarningSprite_->Initialize(activeCamera, "resources/texture/inGame/cooldown_warning.png");
+  cooldownWarningSprite_->Initialize("resources/texture/inGame/cooldown_warning.png");
   cooldownWarningSprite_->SetSize(400.0f, 100.0f);
   cooldownWarningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f + 15.0f, static_cast<float>(engine_->GetClientHeight()) / 2.0f + 80.0f);
 
   // --- ポーズメニューの初期化 ---
   pauseBgDimmerSprite_ = std::make_unique<Sprite>();
-  pauseBgDimmerSprite_->Initialize(activeCamera, "resources/whiteTexture.png");
+  pauseBgDimmerSprite_->Initialize("resources/whiteTexture.png");
   pauseBgDimmerSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
   pauseBgDimmerSprite_->SetColor(Vector4{0.1f, 0.1f, 0.1f, 0.6f});
 
   pauseTitleSprite_ = std::make_unique<Sprite>();
-  pauseTitleSprite_->Initialize(activeCamera, "resources/texture/pause/text_pausemenu.png");
+  pauseTitleSprite_->Initialize("resources/texture/pause/text_pausemenu.png");
   pauseTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.3f);
 
   pauseBackGameSprite_ = std::make_unique<Sprite>();
-  pauseBackGameSprite_->Initialize(activeCamera, "resources/texture/pause/text_backgame.png");
+  pauseBackGameSprite_->Initialize("resources/texture/pause/text_backgame.png");
   pauseBackGameSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.5f);
 
   pauseBackTitleSprite_ = std::make_unique<Sprite>();
-  pauseBackTitleSprite_->Initialize(activeCamera, "resources/texture/pause/text_backtitle.png");
+  pauseBackTitleSprite_->Initialize("resources/texture/pause/text_backtitle.png");
   pauseBackTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.65f);
 }
 
@@ -140,7 +140,7 @@ void GameScene::Update() {
   if (PressedDIK(kKeyDebugCameraToggle)) {
     isDebugCameraMode_ = !isDebugCameraMode_;
     if (isDebugCameraMode_ && isFirstDebug_) {
-      debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *cameraManager_->GetActiveCamera());
+      debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *engine_->GetCameraManager()->GetActiveCamera());
       isFirstDebug_ = false;
     }
   }

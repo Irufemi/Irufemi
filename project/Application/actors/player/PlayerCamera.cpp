@@ -3,8 +3,7 @@
 #include <cmath>
 #include <Windows.h>
 
-void PlayerCamera::Initialize(Camera* camera) {
-    camera_ = camera;
+void PlayerCamera::Initialize() {
     mouseSensitivity_ = 5.0f;
     mouseSensitivityMultiplier_ = 1.0f;
     cameraPitch_ = -0.1f;
@@ -41,7 +40,7 @@ void PlayerCamera::UpdateInput(InputManager* input, Vector3& playerRotate) {
     }
 }
 
-void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration) {
+void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration, IrufemiEngine* engine) {
     Vector3 cameraPos = { 0.0f, 0.0f, 0.0f };
     Vector3 lookAtTarget = {
         playerTranslate.x,
@@ -75,8 +74,10 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         if (cameraPos.z > kCameraFieldLimitXZ) cameraPos.z = kCameraFieldLimitXZ;
         if (cameraPos.z < -kCameraFieldLimitXZ) cameraPos.z = -kCameraFieldLimitXZ;
 
-        camera_->SetTranslate(cameraPos);
-        camera_->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });
+        if (auto* cam = engine->GetCameraManager()->GetActiveCamera()) {
+            cam->SetTranslate(cameraPos);
+            cam->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });
+        }
     } else {
         cameraPos.x = playerTranslate.x;
         cameraPos.y = 1.0f + (playerTranslate.y * kCameraJumpFollowRatio);
@@ -97,14 +98,17 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         if (cameraPos.z > kCameraFieldLimitXZ) cameraPos.z = kCameraFieldLimitXZ;
         if (cameraPos.z < -kCameraFieldLimitXZ) cameraPos.z = -kCameraFieldLimitXZ;
 
-        camera_->SetTranslate(cameraPos);
-        camera_->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });
+        if (auto* cam = engine->GetCameraManager()->GetActiveCamera()) {
+            cam->SetTranslate(cameraPos);
+            cam->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });
+        }
     }
 }
 
-void PlayerCamera::UpdateDeathCamera(const Vector3& cameraPos, const Vector3& playerTranslate) {
+void PlayerCamera::UpdateDeathCamera(const Vector3& cameraPos, const Vector3& playerTranslate, IrufemiEngine* engine) {
     // 敵目線にカメラを固定する
-    camera_->SetTranslate(cameraPos);
+    if (auto* cam = engine->GetCameraManager()->GetActiveCamera()) {
+        cam->SetTranslate(cameraPos);
 
     // 飛んでいくプレイヤーを常に見つめる（LookAt）
     Vector3 toPlayer = {
@@ -117,5 +121,6 @@ void PlayerCamera::UpdateDeathCamera(const Vector3& cameraPos, const Vector3& pl
     float horizontalDist = std::sqrt(toPlayer.x * toPlayer.x + toPlayer.z * toPlayer.z);
     float lookPitch = -std::atan2(toPlayer.y, horizontalDist);
 
-    camera_->SetRotate({ lookPitch, lookYaw, 0.0f });
+        cam->SetRotate({ lookPitch, lookYaw, 0.0f });
+    }
 }

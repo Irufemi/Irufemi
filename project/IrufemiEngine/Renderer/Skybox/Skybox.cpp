@@ -21,8 +21,7 @@ Skybox::~Skybox() {
     UnMapResource();
 }
 
-void Skybox::Initialize(Camera* camera, const std::string& textureName) {
-    this->camera_ = camera;
+void Skybox::Initialize(const std::string& textureName) {
 
     // PrimitiveManager からスカイボックス用の形状（Cube）を取得
     PrimitiveManager* primitiveManager = PrimitiveManager::GetInstance();
@@ -52,8 +51,10 @@ void Skybox::Initialize(Camera* camera, const std::string& textureName) {
 
     // フラグ更新
     isDirty_ = false;
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+        lastViewMatrix_ = activeCam->GetViewMatrix();
+        lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
+    }
 
     TextureManager* textureManager = engine_->GetTextureManager();
 
@@ -87,8 +88,10 @@ void Skybox::Update() {
     transformationMatrix_.World = worldMatrix;
     // フラグ更新
     isDirty_ = false;
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+        lastViewMatrix_ = activeCam->GetViewMatrix();
+        lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
+    }
 }
 
 void Skybox::SyncBeforeDraw() {
@@ -97,11 +100,13 @@ void Skybox::SyncBeforeDraw() {
 }
 
 void Skybox::Draw() {
-    if (!vertexResource_ || !indexResource_ || !camera_ || !engine_) return;
+    if (!vertexResource_ || !indexResource_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
     if (isDirtyBuffer_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()] || cameraChanged) {
         Update();

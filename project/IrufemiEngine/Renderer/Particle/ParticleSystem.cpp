@@ -32,8 +32,7 @@ ParticleSystem::~ParticleSystem() {
     }
 }
 
-void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, ParticleType type, PrimitiveType shape) {
-    this->camera_ = camera;
+void ParticleSystem::Initialize(const std::string& textureName, ParticleType type, PrimitiveType shape) {
     this->primitiveShape_ = shape;
 
     isUpdate_ = true;
@@ -49,7 +48,7 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
     // デバッグ用の Line3DRegion を初期化
     if (!debugLineRegion_) {
         debugLineRegion_ = std::make_unique<Line3DRegion>();
-        debugLineRegion_->Initialize(camera_);
+        debugLineRegion_->Initialize();
     }
 
     // 振る舞いを設定
@@ -64,7 +63,11 @@ void ParticleSystem::Initialize(Camera* camera, const std::string& textureName, 
 
     /// カメラの回転を適用する
     billboardMatrix_ = Math::MakeIdentity4x4();
-    billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+    if (s_engine_) {
+        if (Camera* activeCam = s_engine_->GetCameraManager()->GetActiveCamera()) {
+            billboardMatrix_ = Math::Multiply(backToFrontMatrix_, activeCam->GetCameraMatrix());
+        }
+    }
     billboardMatrix_.m[3][0] = 0.0f;
     billboardMatrix_.m[3][1] = 0.0f;
     billboardMatrix_.m[3][2] = 0.0f;
@@ -154,7 +157,11 @@ void ParticleSystem::Update() {
     }
 
     /// カメラの回転を適用する
-    billboardMatrix_ = Math::Multiply(backToFrontMatrix_, camera_->GetCameraMatrix());
+    if (s_engine_) {
+        if (Camera* activeCam = s_engine_->GetCameraManager()->GetActiveCamera()) {
+            billboardMatrix_ = Math::Multiply(backToFrontMatrix_, activeCam->GetCameraMatrix());
+        }
+    }
     billboardMatrix_.m[3][0] = 0.0f;
     billboardMatrix_.m[3][1] = 0.0f;
     billboardMatrix_.m[3][2] = 0.0f;
@@ -220,9 +227,11 @@ void ParticleSystem::Update() {
 
 void ParticleSystem::Draw()
 {
-    if (!resource_ || !s_drawManager_ || !camera_ || (numInstance_ == 0 && particles_.empty())) {
+    if (!resource_ || !s_drawManager_ || !s_engine_ || (numInstance_ == 0 && particles_.empty())) {
         return;
     }
+    Camera* activeCam = s_engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     SyncBeforeDraw();
 
@@ -244,7 +253,7 @@ void ParticleSystem::Draw()
         boundingSphere.center = emitter_.transform.translate;
         boundingSphere.radius = (emitterRadius + spreadRadius) * 1.1f; // 10%のマージン
 
-        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 描画処理をスキップ
         }
     }
@@ -528,7 +537,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                                 currentTextureName = textureNames[selectedTextureIndex_];
                             }
                         }
-                        Initialize(camera_, currentTextureName, particleType_, primitiveShape_);
+                        Initialize(currentTextureName, particleType_, primitiveShape_);
                     }
                 }
 
@@ -620,7 +629,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                                 currentTextureName = textureNames[0];
                             }
                         }
-                        Initialize(camera_, currentTextureName, particleType_, primitiveShape_);
+                        Initialize(currentTextureName, particleType_, primitiveShape_);
                     }
                 }
 
@@ -658,7 +667,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                                 }
                             }
                         }
-                        Initialize(camera_, currentTextureName, particleType_, primitiveShape_);
+                        Initialize(currentTextureName, particleType_, primitiveShape_);
                     }
                 }
 

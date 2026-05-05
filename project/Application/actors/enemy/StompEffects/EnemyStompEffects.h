@@ -46,7 +46,7 @@ public:
         int finalExplosionDamage = 50;
     };
 
-    void Initialize(Camera* camera);
+    void Initialize();
     void Update(float deltaTime);
     void Draw(class IrufemiEngine* engine);
     void Fire(const Vector3& position);

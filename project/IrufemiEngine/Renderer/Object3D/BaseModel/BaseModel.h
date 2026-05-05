@@ -121,8 +121,6 @@ protected: // メンバ変数
     // 変換行列用リソース (全メッシュ共有)
     uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 
-    Camera* camera_ = nullptr;
-
     static IrufemiEngine* engine_;
 
     // 行列更新の最適化用

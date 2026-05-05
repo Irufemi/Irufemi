@@ -16,16 +16,17 @@ public:
     PlayerCamera() = default;
     ~PlayerCamera() = default;
 
-    void Initialize(Camera* camera);
+    void Initialize();
     void UpdateInput(InputManager* input, Vector3& playerRotate);
-    void Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration);
+    void Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration, IrufemiEngine* engine);
 
     /**
      * @brief 死亡時（吹き飛び時）のドラマチックなカメラワーク
      * @param cameraPos カメラを配置する座標（敵の目線など）
      * @param playerTranslate 飛んでいくプレイヤーの座標
+     * @param engine エンジンへのポインタ
      */
-    void UpdateDeathCamera(const Vector3& cameraPos, const Vector3& playerTranslate);
+    void UpdateDeathCamera(const Vector3& cameraPos, const Vector3& playerTranslate, IrufemiEngine* engine);
 
     // --- ゲッター ---
     float GetCameraPitch() const { return cameraPitch_; }
@@ -39,7 +40,7 @@ public:
     bool* GetCameraControlEnabledPtr() { return &isCameraControlEnabled_; }
 
 private:
-    Camera* camera_ = nullptr;
+
 
     float mouseSensitivity_ = 5.0f;
     float mouseSensitivityMultiplier_ = 1.0f;

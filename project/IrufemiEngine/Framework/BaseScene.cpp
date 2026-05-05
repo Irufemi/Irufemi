@@ -20,14 +20,12 @@ BaseScene::~BaseScene() = default;
 void BaseScene::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 
-    // --- カメラマネージャーの初期化 ---
-    cameraManager_ = std::make_unique<CameraManager>();
-
+    // --- カメラマネージャーの初期化はエンジン側で行われるため、ここではメインカメラの登録のみ行う ---
     auto mainCamera = std::make_shared<Camera>();
     mainCamera->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
     mainCamera->SetTranslate({ 0.0f, 0.0f, -50.0f });
     mainCamera->UpdateMatrix();
-    cameraManager_->AddCamera("Main", mainCamera);
+    engine_->GetCameraManager()->AddCamera("Main", mainCamera);
 
     debugCamera_ = std::make_unique<DebugCamera>();
     debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
@@ -44,7 +42,7 @@ void BaseScene::Update() {
     // 今回は各シーンが個別に実装しているケースを考慮し、Updateでのカメラ行列上書き処理を共通化
     if (isDebugCameraMode_) {
         debugCamera_->Update();
-        Camera* activeCam = cameraManager_->GetActiveCamera();
+        Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
         if (activeCam) {
             const Camera& dbgCam = debugCamera_->GetCamera();
             activeCam->SetViewMatrix(dbgCam.GetViewMatrix());
@@ -52,14 +50,14 @@ void BaseScene::Update() {
             activeCam->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
         }
     } else {
-        cameraManager_->Update();
+        engine_->GetCameraManager()->Update();
     }
 
     SubmitFrameData();
 }
 
 void BaseScene::SubmitFrameData() {
-    Camera* activeCam = cameraManager_->GetActiveCamera();
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;
 
     CameraForGPU cameraForGpu;
@@ -90,7 +88,7 @@ void BaseScene::DrawDebugTab() {
     if (ImGui::BeginTabItem("Camera & Lights")) {
         ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_);
         if (isDebugCameraMode_ && debugCamera_) {
-            Camera* activeCam = cameraManager_->GetActiveCamera();
+            Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
             if (activeCam) {
                 if (ImGui::Button("Top-Down")) debugCamera_->SetPreset(DebugCamera::Preset::TopDown, *activeCam);
                 ImGui::SameLine();
@@ -108,7 +106,7 @@ void BaseScene::DrawDebugTab() {
                 debugCamera_->SetDistance(dist);
             }
         } else {
-            Camera* activeCam = cameraManager_->GetActiveCamera();
+            Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
             if (activeCam) {
                 activeCam->DrawDebugContents();
             }

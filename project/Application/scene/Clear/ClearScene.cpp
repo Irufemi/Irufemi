@@ -16,22 +16,22 @@ void ClearScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
     // シーン固有のカメラ位置に調整
-    cameraManager_->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
-    cameraManager_->GetActiveCamera()->UpdateMatrix();
+    engine_->GetCameraManager()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
+    engine_->GetCameraManager()->GetActiveCamera()->UpdateMatrix();
 
     // 「Clear!!」文字の初期化
     clearTextC_ = std::make_unique<ObjClass>();
-    clearTextC_->Initialize(cameraManager_->GetActiveCamera(), "Clear/text_C.obj");
+    clearTextC_->Initialize("Clear/text_C.obj");
     clearTextL_ = std::make_unique<ObjClass>();
-    clearTextL_->Initialize(cameraManager_->GetActiveCamera(), "Clear/text_l.obj");
+    clearTextL_->Initialize("Clear/text_l.obj");
     clearTextE_ = std::make_unique<ObjClass>();
-    clearTextE_->Initialize(cameraManager_->GetActiveCamera(), "Clear/text_e.obj");
+    clearTextE_->Initialize("Clear/text_e.obj");
     clearTextA_ = std::make_unique<ObjClass>();
-    clearTextA_->Initialize(cameraManager_->GetActiveCamera(), "Clear/text_a.obj");
+    clearTextA_->Initialize("Clear/text_a.obj");
     clearTextR_ = std::make_unique<ObjClass>();
-    clearTextR_->Initialize(cameraManager_->GetActiveCamera(), "Clear/text_r.obj");
+    clearTextR_->Initialize("Clear/text_r.obj");
     clearTextEx_ = std::make_unique<ObjClass>();
-    clearTextEx_->Initialize(cameraManager_->GetActiveCamera(), "Clear/text_!!.obj");
+    clearTextEx_->Initialize("Clear/text_!!.obj");
 
     clearTextC_->SetScale({ 1.5f, 1.5f, 1.5f });
     clearTextL_->SetScale({ 1.5f, 1.5f, 1.5f });
@@ -42,7 +42,7 @@ void ClearScene::Initialize(IrufemiEngine* engine) {
 
     // 「Push to Space」文字の初期化
     textPushToSpace_ = std::make_unique<ObjClass>();
-    textPushToSpace_->Initialize(cameraManager_->GetActiveCamera(), "text_pushtospace/text_pushtospace.obj");
+    textPushToSpace_->Initialize("text_pushtospace/text_pushtospace.obj");
     textPushToSpace_->SetPosition({ 0.0f, -2.5f, 0.0f });
     textPushToSpace_->SetScale({ 1.0f, 1.0f, 1.0f });
 }

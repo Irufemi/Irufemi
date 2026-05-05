@@ -20,14 +20,14 @@ private: // メンバ変数
 	std::unique_ptr<ObjClass> model_ = nullptr;
 
 	// カメラ
-	Camera* camera_ = nullptr;
+
 
 public: // メンバ関数
 	/**
 	 * @brief 初期化処理
 	 * @param camera カメラのポインタ
 	 */
-	void Initialize(Camera* camera);
+	void Initialize();
 
 	/**
 	 * @brief 更新処理

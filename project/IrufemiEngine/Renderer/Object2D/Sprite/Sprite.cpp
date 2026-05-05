@@ -5,6 +5,7 @@
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Core/Math/Math.h"
 
 #include <algorithm>
@@ -12,9 +13,9 @@
 TextureManager* Sprite::textureManager_ = nullptr;
 DrawManager* Sprite::drawManager_ = nullptr;
 DebugUI* Sprite::ui_ = nullptr;
+CameraManager* Sprite::cameraManager_ = nullptr;
 
-void Sprite::Initialize(Camera* camera, const std::string& textureName) {
-    this->camera_ = camera;
+void Sprite::Initialize(const std::string& textureName) {
     resource_ = std::make_unique<Object2DResource>();
 
     // 頂点はユニットクワッド(0..1)に統一(サイズはscaleで与える)
@@ -55,7 +56,11 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
     SetSize(size_.x, size_.y);
 
     // 初回の行列計算
-    resource_->UpdateTransform(*camera_);
+    if (cameraManager_) {
+        if (Camera* activeCam = cameraManager_->GetActiveCamera()) {
+            resource_->UpdateTransform(*activeCam);
+        }
+    }
 
     // マテリアル
     if (resource_->GetMaterialData()) {
@@ -75,7 +80,11 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
         if (textureManager_->GetTextureSize(textureName, tw, th) && tw > 0 && th > 0) {
             textureSize_ = { static_cast<float>(tw), static_cast<float>(th) };
             SetSize(textureSize_.x, textureSize_.y);
-            resource_->UpdateTransform(*camera_);
+            if (cameraManager_) {
+                if (Camera* activeCam = cameraManager_->GetActiveCamera()) {
+                    resource_->UpdateTransform(*activeCam);
+                }
+            }
         }
 
         // デバッグUI(コンボ)の初期インデックス決定
@@ -86,7 +95,9 @@ void Sprite::Initialize(Camera* camera, const std::string& textureName) {
 }
 
 void Sprite::Update() {
-    if (!resource_ || !camera_) return;
+    if (!resource_ || !cameraManager_) return;
+    Camera* activeCam = cameraManager_->GetActiveCamera();
+    if (!activeCam) return;
 
     // DebugUI でのテクスチャ選択変更に追随してサイズを更新
     if (textureManager_) {
@@ -114,7 +125,7 @@ void Sprite::Update() {
     ApplyAnchorToVertices();
 
     // 基本的な行列更新
-    resource_->UpdateTransform(*camera_);
+    resource_->UpdateTransform(*activeCam);
 
     // UV 変換(flip → crop → userUV)
     if (resource_->GetMaterialData()) {
@@ -142,8 +153,8 @@ void Sprite::Update() {
 
     // フラグ更新
     isDirty_ = false;
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetOrthographicMatrix();
+    lastViewMatrix_ = activeCam->GetViewMatrix();
+    lastProjectionMatrix_ = activeCam->GetOrthographicMatrix();
 }
 
 void Sprite::SyncBeforeDraw() {
@@ -151,11 +162,13 @@ void Sprite::SyncBeforeDraw() {
 }
 
 void Sprite::Draw() {
-    if (!resource_ || !drawManager_ || !camera_) return;
+    if (!resource_ || !drawManager_ || !cameraManager_) return;
+    Camera* activeCam = cameraManager_->GetActiveCamera();
+    if (!activeCam) return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &camera_->GetOrthographicMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetOrthographicMatrix(), sizeof(Matrix4x4)) != 0);
 
     if (isDirty_ || cameraChanged) {
         Update();

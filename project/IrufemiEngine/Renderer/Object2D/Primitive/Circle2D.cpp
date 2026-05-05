@@ -11,9 +11,11 @@
 TextureManager* Circle2D::textureManager_ = nullptr;
 DrawManager*    Circle2D::drawManager_ = nullptr;
 DebugUI*        Circle2D::ui_ = nullptr;
+IrufemiEngine*  Circle2D::engine_ = nullptr;
 
-void Circle2D::Initialize(Camera* camera, const std::string& textureName, uint32_t subdiv) {
-    camera_ = camera;
+#include "Engine/IrufemiEngine.h"
+
+void Circle2D::Initialize(const std::string& textureName, uint32_t subdiv) {
     subdivision_ = std::max<uint32_t>(3, subdiv & ~1u); // 偶数に丸め、最低3
 
     resource_ = std::make_unique<Object2DResource>();
@@ -102,8 +104,12 @@ void Circle2D::InitMaterialAndMatrix() {
     // 行列
     resource_->transformationMatrix_.world =
         Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
-    resource_->transformationMatrix_.WVP =
-        Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
+    if (engine_) {
+        if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+            resource_->transformationMatrix_.WVP =
+                Math::Multiply(resource_->transformationMatrix_.world, activeCam->GetOrthographicMatrix());
+        }
+    }
 
     // マテリアル
     resource_->GetMaterialData()->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -126,8 +132,12 @@ void Circle2D::UpdateMatrix() {
 
     resource_->transformationMatrix_.world =
         Math::MakeAffineMatrix(effectiveScale, resource_->transform_.rotate, resource_->transform_.translate);
-    resource_->transformationMatrix_.WVP =
-        Math::Multiply(resource_->transformationMatrix_.world, camera_->GetOrthographicMatrix());
+    if (engine_) {
+        if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+            resource_->transformationMatrix_.WVP =
+                Math::Multiply(resource_->transformationMatrix_.world, activeCam->GetOrthographicMatrix());
+        }
+    }
     
     resource_->MarkAsDirty();
 }

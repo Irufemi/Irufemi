@@ -21,6 +21,9 @@
 TextureManager* PrimitiveObjects3DClass::textureManager_ = nullptr;
 DrawManager* PrimitiveObjects3DClass::drawManager_ = nullptr;
 DebugUI* PrimitiveObjects3DClass::ui_ = nullptr;
+IrufemiEngine* PrimitiveObjects3DClass::engine_ = nullptr;
+
+#include "Engine/IrufemiEngine.h"
 
 // --- TransformComponent ---
 
@@ -113,8 +116,7 @@ void PrimitiveObjects3DClass::MaterialComponent::UpdateMaterial(Object3DResource
 
 // --- PrimitiveObjects3DClass ---
 
-void PrimitiveObjects3DClass::Initialize(Camera* camera, PrimitiveType type, const std::string& texturePath) {
-    camera_ = camera;
+void PrimitiveObjects3DClass::Initialize(PrimitiveType type, const std::string& texturePath) {
     
     // 形状の初期化
     mesh_.ChangeMesh(type);
@@ -142,14 +144,16 @@ void PrimitiveObjects3DClass::ReinitializeMesh(const PrimitiveData& data) {
 }
 
 void PrimitiveObjects3DClass::Update() {
-    if (!mesh_.resource || !camera_) return;
+    if (!mesh_.resource || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 必要に応じてトランスフォーム更新
     if (transform_.isDirty) {
-        transform_.UpdateTransform(mesh_.resource.get(), *camera_);
+        transform_.UpdateTransform(mesh_.resource.get(), *activeCam);
     } else {
         // カメラが動いている可能性を考慮して常に更新（最適化が必要ならフラグ管理を厳密にする）
-        mesh_.resource->UpdateTransform(*camera_);
+        mesh_.resource->UpdateTransform(*activeCam);
     }
 
     // マテリアル情報の最新化
@@ -157,8 +161,9 @@ void PrimitiveObjects3DClass::Update() {
 }
 
 void PrimitiveObjects3DClass::Draw() {
-    if (camera_) {
-        Draw(*camera_);
+    if (!engine_) return;
+    if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+        Draw(*activeCam);
     }
 }
 

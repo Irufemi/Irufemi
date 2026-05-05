@@ -16,34 +16,34 @@ void GameOverScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
     // シーン固有のカメラ位置に調整
-    cameraManager_->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
-    cameraManager_->GetActiveCamera()->UpdateMatrix();
+    engine_->GetCameraManager()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
+    engine_->GetCameraManager()->GetActiveCamera()->UpdateMatrix();
 
     // 「GameOver...」文字の初期化
     goTextG_ = std::make_unique<ObjClass>();
-    goTextG_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_G.obj");
+    goTextG_->Initialize("gameOver/text_G.obj");
     goTextA_ = std::make_unique<ObjClass>();
-    goTextA_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_q.obj"); // ※ファイル名text_q.objはaとして使用
+    goTextA_->Initialize("gameOver/text_q.obj"); // ※ファイル名text_q.objはaとして使用
     goTextM_ = std::make_unique<ObjClass>();
-    goTextM_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_m.obj");
+    goTextM_->Initialize("gameOver/text_m.obj");
     goTextE1_ = std::make_unique<ObjClass>();
-    goTextE1_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_e.obj");
+    goTextE1_->Initialize("gameOver/text_e.obj");
     goTextO_ = std::make_unique<ObjClass>();
-    goTextO_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_O.obj");
+    goTextO_->Initialize("gameOver/text_O.obj");
     goTextV_ = std::make_unique<ObjClass>();
-    goTextV_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_v.obj");
+    goTextV_->Initialize("gameOver/text_v.obj");
     goTextE2_ = std::make_unique<ObjClass>();
-    goTextE2_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_e.obj");
+    goTextE2_->Initialize("gameOver/text_e.obj");
     goTextR_ = std::make_unique<ObjClass>();
-    goTextR_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_r.obj");
+    goTextR_->Initialize("gameOver/text_r.obj");
     
     // text_dot.obj（...）の読み込み
     goTextDot_ = std::make_unique<ObjClass>();
-    goTextDot_->Initialize(cameraManager_->GetActiveCamera(), "gameOver/text_dot.obj");
+    goTextDot_->Initialize("gameOver/text_dot.obj");
 
     // 「Push to Space」文字の初期化
     textPushToSpace_ = std::make_unique<ObjClass>();
-    textPushToSpace_->Initialize(cameraManager_->GetActiveCamera(), "text_pushtospace/text_pushtospace.obj");
+    textPushToSpace_->Initialize("text_pushtospace/text_pushtospace.obj");
     textPushToSpace_->SetPosition({ 0.0f, -2.5f, 0.0f });
     textPushToSpace_->SetScale({ 1.0f, 1.0f, 1.0f });
 }

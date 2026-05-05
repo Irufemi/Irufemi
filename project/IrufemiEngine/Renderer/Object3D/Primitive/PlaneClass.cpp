@@ -14,8 +14,10 @@
 TextureManager* PlaneClass::textureManager_ = nullptr;
 DrawManager* PlaneClass::drawManager_ = nullptr;
 DebugUI* PlaneClass::ui_ = nullptr;
-void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
-    this->camera_ = camera;
+IrufemiEngine* PlaneClass::engine_ = nullptr;
+
+#include "Engine/IrufemiEngine.h"
+void PlaneClass::Initialize(const std::string& textureName) {
 
     // PrimitiveManager から標準リソースを取得
     const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(PrimitiveType::Plane);
@@ -58,10 +60,12 @@ void PlaneClass::Initialize(Camera* camera, const std::string& textureName) {
 }
 
 void PlaneClass::Update() {
-    if (!resource_ || !camera_) return;
+    if (!resource_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // Transform更新
-    resource_->UpdateTransform(*camera_);
+    resource_->UpdateTransform(*activeCam);
 
     // UV行列
     if (resource_->GetMaterialData()) {
@@ -94,8 +98,8 @@ void PlaneClass::Update() {
     }
 
     isDirty_ = false;
-    lastViewMatrix_ = camera_->GetViewMatrix();
-    lastProjectionMatrix_ = camera_->GetPerspectiveFovMatrix();
+    lastViewMatrix_ = activeCam->GetViewMatrix();
+    lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
 }
 
 void PlaneClass::Draw() {
@@ -103,7 +107,9 @@ void PlaneClass::Draw() {
 }
 
 void PlaneClass::Draw(bool isUI) {
-    if (!resource_ || !drawManager_ || !camera_) return;
+    if (!resource_ || !drawManager_ || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
 
     // 視錐台カリング
     if (isCullingEnabled_) {
@@ -115,14 +121,14 @@ void PlaneClass::Draw(bool isUI) {
         boundingSphere.center = resource_->transform_.translate;
         boundingSphere.radius = finalRadius * 1.1f; // 10%のマージン
 
-        if (!Collision::IsCollision(camera_->GetFrustum(), boundingSphere)) {
+        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 描画スキップ
         }
     }
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &camera_->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &camera_->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
 
     if (isDirty_ || cameraChanged) {
         Update();

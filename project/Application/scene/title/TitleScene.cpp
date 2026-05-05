@@ -18,45 +18,45 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
     // シーン固有のカメラ位置に調整
-    cameraManager_->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
-    cameraManager_->GetActiveCamera()->UpdateMatrix();
+    engine_->GetCameraManager()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
+    engine_->GetCameraManager()->GetActiveCamera()->UpdateMatrix();
 
     // --- 3Dタイトル文字の初期化と配置 ---
     // 上段：「七転び」 (Y = 2.0, 少し左寄り)
     titleTextNana_ = std::make_unique<ObjClass>();
-    titleTextNana_->Initialize(cameraManager_->GetActiveCamera(), "title/text/text_nana.obj");
+    titleTextNana_->Initialize("title/text/text_nana.obj");
     titleTextNana_->SetPosition({ -3.5f, 2.0f, 0.0f });
     titleTextNana_->SetScale({ 1.5f, 1.5f, 1.5f });
 
     titleTextKoro1_ = std::make_unique<ObjClass>();
-    titleTextKoro1_->Initialize(cameraManager_->GetActiveCamera(), "title/text/text_koro.obj");
+    titleTextKoro1_->Initialize("title/text/text_koro.obj");
     titleTextKoro1_->SetPosition({ -0.5f, 2.0f, 0.0f });
     titleTextKoro1_->SetScale({ 1.5f, 1.5f, 1.5f });
 
     titleTextBi1_ = std::make_unique<ObjClass>();
-    titleTextBi1_->Initialize(cameraManager_->GetActiveCamera(), "title/text/text_bi.obj");
+    titleTextBi1_->Initialize("title/text/text_bi.obj");
     titleTextBi1_->SetPosition({ 2.5f, 2.0f, 0.0f });
     titleTextBi1_->SetScale({ 1.5f, 1.5f, 1.5f });
 
     // 下段：「八転び」 (Y = 0.0, 少し右寄り)
     titleTextHati_ = std::make_unique<ObjClass>();
-    titleTextHati_->Initialize(cameraManager_->GetActiveCamera(), "title/text/text_hati.obj");
+    titleTextHati_->Initialize("title/text/text_hati.obj");
     titleTextHati_->SetPosition({ -2.5f, 0.0f, 0.0f });
     titleTextHati_->SetScale({ 1.5f, 1.5f, 1.5f });
 
     titleTextKoro2_ = std::make_unique<ObjClass>();
-    titleTextKoro2_->Initialize(cameraManager_->GetActiveCamera(), "title/text/text_koro.obj");
+    titleTextKoro2_->Initialize("title/text/text_koro.obj");
     titleTextKoro2_->SetPosition({ 0.5f, 0.0f, 0.0f });
     titleTextKoro2_->SetScale({ 1.5f, 1.5f, 1.5f });
 
     titleTextBi2_ = std::make_unique<ObjClass>();
-    titleTextBi2_->Initialize(cameraManager_->GetActiveCamera(), "title/text/text_bi.obj");
+    titleTextBi2_->Initialize("title/text/text_bi.obj");
     titleTextBi2_->SetPosition({ 3.5f, 0.0f, 0.0f });
     titleTextBi2_->SetScale({ 1.5f, 1.5f, 1.5f });
 
     // 「Push to Space」文字
     titleTextPushToSpace_ = std::make_unique<ObjClass>();
-    titleTextPushToSpace_->Initialize(cameraManager_->GetActiveCamera(), "text_pushtospace/text_pushtospace.obj");
+    titleTextPushToSpace_->Initialize("text_pushtospace/text_pushtospace.obj");
     titleTextPushToSpace_->SetPosition({ 0.0f, -2.5f, 0.0f });
     titleTextPushToSpace_->SetScale({ 1.0f, 1.0f, 1.0f });
     

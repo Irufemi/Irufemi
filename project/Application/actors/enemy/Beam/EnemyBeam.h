@@ -17,7 +17,7 @@ public:
      * @param engine エンジンポインタ
      */
     ~EnemyBeam();
-    void Initialize(Camera* camera, class IrufemiEngine* engine);
+    void Initialize(class IrufemiEngine* engine);
 
     /**
      * @brief 更新

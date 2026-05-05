@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <Windows.h>
 #include <d3d12.h>
@@ -36,7 +36,7 @@ public: // メンバ関数
     // デストラクタ
     ~Skybox();
     // 初期化
-    void Initialize(Camera* camera, const std::string& textureName = kDefaultTexturePath);
+    void Initialize(const std::string& textureName = kDefaultTexturePath);
     // 更新
     void Update();
     void SyncBeforeDraw() override;
@@ -104,7 +104,7 @@ private: // メンバ変数(resource)
     int selectedTextureIndex_ = 0;
 
     // カメラ(ポインタ参照)
-    Camera* camera_ = nullptr;
+
     // engine(ポインタ参照)
     static IrufemiEngine* engine_;
 

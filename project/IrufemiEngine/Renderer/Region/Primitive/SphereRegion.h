@@ -20,7 +20,7 @@
 #include "../../../Engine/Graphics/Data/CameraForGPU.h"          // CameraForGPU
 
 class DirectXCommon;
-class Camera;
+class IrufemiEngine;
 class TextureManager;
 class DrawManager;
 class DescriptorPool; // 追加
@@ -36,6 +36,7 @@ public:
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
     static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; } // 追加
+    static void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
     void SetCastShadows(bool cast) { castShadows_ = cast; }
@@ -45,7 +46,7 @@ public:
 
     // 初期化：スフィアメッシュ生成 + マテリアル/ライト/カメラ + 共有テクスチャ
     // subdivision: 緯度経度の分割数(SphereClass と同等の 16 を既定)
-    void Initialize(Camera* camera, const std::string& textureName  = "resources/uvChecker.png", uint32_t subdivision = 16);
+    void Initialize(const std::string& textureName  = "resources/uvChecker.png", uint32_t subdivision = 16);
 
     // インスタンス追加(Transform 直接)
     void AddInstance(const Transform& t);
@@ -108,7 +109,7 @@ private:
     static DrawManager* drawManager_;
     static DescriptorPool* srvPool_; // 追加
 
-    Camera* camera_ = nullptr;
+    static IrufemiEngine* engine_;
 
     // メッシュ(VB/IB)
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_;

@@ -38,7 +38,6 @@ protected:
     IrufemiEngine* engine_ = nullptr;
 
     // --- コア機能 ---
-    std::unique_ptr<CameraManager> cameraManager_;
     std::unique_ptr<DebugCamera> debugCamera_;
     bool isDebugCameraMode_ = false;
 
