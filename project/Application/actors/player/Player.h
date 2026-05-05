@@ -42,8 +42,7 @@ public:
     static int GetMaxMachineGunBullets() { return PlayerWeapon::GetMaxMachineGunBullets(); }
     MissileData* GetMissiles() { return weapon_.GetMissiles(); }
     static int GetMaxMissiles() { return PlayerWeapon::GetMaxMissiles(); }
-    float GetMachineGunAmmo() const { return weapon_.GetMachineGunAmmo(); }
-    float GetMaxMachineGunAmmo() const { return PlayerWeapon::GetMaxMachineGunAmmo(); }
+
 
     PlayerCollider GetCollider() const { return status_.GetCollider(translate_, rotate_, weapon_.GetMissileVibration()); }
     int GetHp() const { return status_.GetHp(); }
