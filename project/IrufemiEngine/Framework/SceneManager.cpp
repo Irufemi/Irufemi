@@ -33,25 +33,51 @@ bool SceneManager::ChangeTo(const Key& next) {
     // シーン破棄前にGPU処理の完了を待つ (リソース解放中のアクセス違反を防ぐ)
     engine_->GetDirectXCommon()->WaitForGPU();
 
-    current_.reset();
-    current_ = it->second();
-    currentName_ = next;
+    sceneStack_.clear();
+
+    SceneStackItem item;
+    item.name = next;
+    item.scene = it->second();
     
     isInitializing_ = true;
-    current_->Initialize(engine_);
+    item.scene->Initialize(engine_);
     isInitializing_ = false;
 
+    sceneStack_.push_back(std::move(item));
     wasLoading_ = false;
 
-    isPaused_ = false; // シーン切り替え時にポーズを解除
     engine_->SetTimeScale(1.0f); // 時間の進みもリセット
-    
-    /**
-     * @brief ポーズ可能なシーン(ゲーム等)はマウスをロック(非表示)し、
-     *        そうでないシーン(UI操作メイン等)はマウスを表示させる
-     */
-    engine_->SetCursorLocked(current_->IsPausable()); 
+    engine_->SetCursorLocked(!sceneStack_.back().scene->IsCursorVisible()); 
     return true;
+}
+
+void SceneManager::PushScene(const Key& name) {
+    auto it = factories_.find(name);
+    if (it == factories_.end()) { return; }
+
+    engine_->GetDirectXCommon()->WaitForGPU();
+
+    SceneStackItem item;
+    item.name = name;
+    item.scene = it->second();
+
+    item.scene->Initialize(engine_);
+    sceneStack_.push_back(std::move(item));
+
+    engine_->SetCursorLocked(!sceneStack_.back().scene->IsCursorVisible());
+}
+
+void SceneManager::PopScene() {
+    if (sceneStack_.empty()) return;
+
+    engine_->GetDirectXCommon()->WaitForGPU();
+    sceneStack_.pop_back();
+
+    if (!sceneStack_.empty()) {
+        engine_->SetCursorLocked(!sceneStack_.back().scene->IsCursorVisible());
+    } else {
+        engine_->SetCursorLocked(false);
+    }
 }
 
 void SceneManager::TransitionTo(const Key& next, SceneTransition::Type type, float duration) {
@@ -77,29 +103,16 @@ void SceneManager::Update() {
             engine_->SetCursorLocked(false);
         } else {
             // ロード完了時に、現在のシーン本来の設定に戻す
-            if (current_) {
-                engine_->SetCursorLocked(current_->IsPausable());
+            if (!sceneStack_.empty()) {
+                engine_->SetCursorLocked(!sceneStack_.back().scene->IsCursorVisible());
             }
         }
         wasLoading_ = isLoading;
     }
 
-    // 入力同期 (削除済)
-
-    // 現在のシーンがポーズ可能な場合のみ、ESCキーまたはゲームパッドのスタートボタンでポーズ切り替え
-    if (current_ && current_->IsPausable()) {
-        InputManager* input = engine_->GetInputManager();
-        if (input && (input->IsKeyPressed(VK_ESCAPE) || input->StartPressed())) {
-            TogglePause();
-            // ポーズ状態に合わせてマウスのロックを切り替え
-            engine_->SetCursorLocked(!isPaused_);
-            // 時間の進み具合を制御
-            engine_->SetTimeScale(isPaused_ ? 0.0f : 1.0f);
-        }
-    }
-
     // シーン切り替え要求（即時）
     if (!pending_.empty()) {
+        pendingTransition_ = pending_;
         StartAsyncInitialize(pending_); // 即時切替の場合も非同期初期化を開始する
         transitionPhase_ = TransitionPhase::Initializing;
         pending_.clear();
@@ -123,13 +136,18 @@ void SceneManager::Update() {
             
             {
                 std::lock_guard<std::mutex> lock(nextSceneMutex_);
-                current_ = std::move(nextScene_);
+                SceneStackItem item;
+                item.name = pendingTransition_;
+                item.scene = std::move(nextScene_);
+                sceneStack_.push_back(std::move(item));
             }
             
             isInitializing_ = false;
             
             // ポーズ可能なシーンかどうかに応じてマウスをロック
-            engine_->SetCursorLocked(current_->IsPausable());
+            if (!sceneStack_.empty()) {
+                engine_->SetCursorLocked(!sceneStack_.back().scene->IsCursorVisible());
+            }
             
             transitionPhase_ = TransitionPhase::LoadingWait; // ロード待機フェーズへ
         }
@@ -146,8 +164,8 @@ void SceneManager::Update() {
             // これを防ぐため、ロード完了直後に強制的に1回だけ Update() を回し、
             // 全オブジェクトの初回更新（UpdateAll等）とカメラ設定を済ませる。
             // ---------------------------------------------------------
-            if (current_) {
-                current_->Update();
+            if (!sceneStack_.empty()) {
+                sceneStack_.back().scene->Update();
             }
 
             // ロードが完了した瞬間に、フェードインを開始する
@@ -173,16 +191,25 @@ void SceneManager::Update() {
     }
 
     // ロードが完全に終わっている場合のみ、シーン自体のUpdateを回す
-    if (current_) {
-        if (isPaused_) {
-            // ポーズ中
-            current_->PauseUpdate();
-        }
-        else {
-            // 通常更新
-            // ※フェードイン中 (Opening) は Update を呼ばないよう制限
-            if (transitionPhase_ != TransitionPhase::Opening) {
-                current_->Update();
+    if (!sceneStack_.empty()) {
+        // ※フェードイン中 (Opening) は Update を呼ばないよう制限
+        if (transitionPhase_ != TransitionPhase::Opening) {
+            // 上層（末尾）から順に、UpdateBlocking が true のシーンを見つける
+            int updateStartIndex = static_cast<int>(sceneStack_.size()) - 1;
+            for (int i = static_cast<int>(sceneStack_.size()) - 1; i >= 0; --i) {
+                updateStartIndex = i;
+                if (sceneStack_[i].scene->IsUpdateBlocking()) {
+                    break;
+                }
+            }
+            // 見つけたシーンから上層へ順番に Update を実行
+            size_t initialSize = sceneStack_.size();
+            for (int i = updateStartIndex; i < static_cast<int>(sceneStack_.size()); ++i) {
+                sceneStack_[i].scene->Update();
+                // Update中にPush/Popが行われた場合は、誤作動（同じ入力での即座の反応等）を防ぐためループを抜ける
+                if (sceneStack_.size() != initialSize) {
+                    break;
+                }
             }
         }
     }
@@ -196,17 +223,30 @@ void SceneManager::Draw() {
         return;
     }
 
-    if (current_) {
-        // 通常の描画
-        current_->Draw();
-        // ポーズ中なら、その上にポーズ画面を描画
-        if (isPaused_) {
-            current_->PauseDraw();
+    if (!sceneStack_.empty()) {
+        // 上層（末尾）から順に、DrawBlocking が true のシーンを見つける
+        int drawStartIndex = static_cast<int>(sceneStack_.size()) - 1;
+        for (int i = static_cast<int>(sceneStack_.size()) - 1; i >= 0; --i) {
+            drawStartIndex = i;
+            if (sceneStack_[i].scene->IsDrawBlocking()) {
+                break;
+            }
+        }
+        // 見つけたシーンから上層へ順番に Draw を実行
+        for (int i = drawStartIndex; i < static_cast<int>(sceneStack_.size()); ++i) {
+            sceneStack_[i].scene->Draw();
         }
     }
 }
 
-const  SceneManager::Key& SceneManager::GetCurrent() const { return currentName_; }
+IScene* SceneManager::GetCurrentScene() const {
+    return sceneStack_.empty() ? nullptr : sceneStack_.back().scene.get();
+}
+
+const SceneManager::Key& SceneManager::GetCurrent() const { 
+    static const Key emptyKey = "";
+    return sceneStack_.empty() ? emptyKey : sceneStack_.back().name; 
+}
 
 // 並び順は登録順
 std::vector<SceneManager::Key> SceneManager::GetRegisteredKeys() const { return order_; }
@@ -226,11 +266,9 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     if (it == factories_.end()) { return; }
 
     Factory factory = it->second;
-    currentName_ = next;
     isAsyncInitializing_.store(true);
     isInitializing_ = true;
     wasLoading_ = false;
-    isPaused_ = false;
     engine_->SetTimeScale(1.0f); // 時間の進みをリセット
     
     // --- 【重要】---
@@ -243,8 +281,8 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
         // GPU処理の完了を待つ (リソース解放中のアクセス違反を防ぐ)
         engine_->GetDirectXCommon()->WaitForGPU();
         
-        // 現在のシーンを破棄
-        current_.reset();
+        // 現在のシーンスタックを破棄
+        sceneStack_.clear();
         
         // 新しいシーンを生成して初期化
         auto newScene = factory();

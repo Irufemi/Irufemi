@@ -116,30 +116,6 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   cooldownWarningSprite_->Initialize("resources/texture/inGame/cooldown_warning.png");
   cooldownWarningSprite_->SetSize(400.0f, 100.0f);
   cooldownWarningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f + 15.0f, static_cast<float>(engine_->GetClientHeight()) / 2.0f + 80.0f);
-
-  // --- ポーズメニューの初期化 ---
-  pauseBgDimmerSprite_ = std::make_unique<Sprite>();
-  pauseBgDimmerSprite_->Initialize("resources/whiteTexture.png");
-  pauseBgDimmerSprite_->SetSize(static_cast<float>(engine_->GetClientWidth()), static_cast<float>(engine_->GetClientHeight()));
-  pauseBgDimmerSprite_->SetColor(Vector4{0.1f, 0.1f, 0.1f, 0.6f});
-
-  pauseTitleSprite_ = std::make_unique<Sprite>();
-  pauseTitleSprite_->Initialize("resources/texture/pause/text_pausemenu.png");
-  pauseTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.3f);
-
-  pauseBackGameSprite_ = std::make_unique<Sprite>();
-  pauseBackGameSprite_->Initialize("resources/texture/pause/text_backgame.png");
-  pauseBackGameSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.5f);
-
-  pauseBackTitleSprite_ = std::make_unique<Sprite>();
-  pauseBackTitleSprite_->Initialize("resources/texture/pause/text_backtitle.png");
-  pauseBackTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.65f);
-
-  // UISelectionGroup にメニュー項目を登録
-  pauseMenuSelection_.AddItem(pauseBackGameSprite_.get());
-  pauseMenuSelection_.AddItem(pauseBackTitleSprite_.get());
-  pauseMenuSelection_.SetActiveBaseColor({1.0f, 1.0f, 1.0f, 1.0f});
-  pauseMenuSelection_.SetInactiveColor({0.3f, 0.3f, 0.3f, 0.9f});
 }
 
 void GameScene::Update() {
@@ -149,6 +125,13 @@ void GameScene::Update() {
       debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *engine_->GetCameraManager()->GetActiveCamera());
       isFirstDebug_ = false;
     }
+  }
+
+  // ポーズ画面呼び出し
+  InputManager* input = engine_->GetInputManager();
+  if (input && (input->IsKeyPressed(VK_ESCAPE) || input->StartPressed())) {
+      engine_->GetSceneManager()->PushScene("Pause");
+      return;
   }
 
   // =====
@@ -306,47 +289,6 @@ void GameScene::Draw() {
   } 
 }
 
-void GameScene::PauseUpdate() {
-  BaseScene::Update();
-  engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
-
-  // UISelectionGroup の更新
-  pauseMenuSelection_.Update(engine_->GetInputManager());
-
-  // 決定キーが押された場合の処理
-  if (pauseMenuSelection_.IsDecided()) {
-    if (pauseMenuSelection_.GetSelectedIndex() == 0) {
-      // ゲームに戻る
-      pauseMenuSelection_.Reset(); // ポーズ解除時に状態をリセット
-      engine_->GetSceneManager()->TogglePause();
-    } else if (pauseMenuSelection_.GetSelectedIndex() == 1) {
-      // タイトルに戻る (ポーズを解除してから遷移)
-      pauseMenuSelection_.Reset(); // ポーズ解除時に状態をリセット
-      engine_->GetSceneManager()->TogglePause();
-      engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
-    }
-  }
-
-  // スプライトの定数バッファを更新するため、必ずUpdate()を呼ぶ
-  if (pauseBgDimmerSprite_) pauseBgDimmerSprite_->Update();
-  if (pauseTitleSprite_) pauseTitleSprite_->Update();
-  if (pauseBackGameSprite_) pauseBackGameSprite_->Update();
-  if (pauseBackTitleSprite_) pauseBackTitleSprite_->Update();
-}
-
-void GameScene::PauseDraw() {
-  engine_->SetBlend(BlendMode::kBlendModeNormal);
-  engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-  engine_->ApplySpritePSO();
-
-  // 背景ディマー描画
-  if (pauseBgDimmerSprite_) pauseBgDimmerSprite_->Draw();
-
-  if (pauseTitleSprite_) pauseTitleSprite_->Draw();
-
-  // 選択項目の描画（色変更や明滅は内部で行われる）
-  pauseMenuSelection_.Draw();
-}
 
 void GameScene::DrawDebugTab() {
 #ifdef USE_IMGUI

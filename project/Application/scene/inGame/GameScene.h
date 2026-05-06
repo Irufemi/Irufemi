@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Framework/BaseScene.h"
-#include "Framework/UISelectionGroup.h"
 #include <memory>
 #include <vector>
 
@@ -32,9 +31,7 @@ public:
     void Initialize(IrufemiEngine* engine) override;
     void Update() override;
     void Draw() override;
-    void PauseUpdate() override;
-    void PauseDraw() override;
-    bool IsPausable() const override { return true; }
+    bool IsCursorVisible() const override { return false; }
     void DrawDebugTab() override;
 
 private:
@@ -108,15 +105,6 @@ private:
 
     // 当たり判定の有効化フラグ
     bool isCollisionEnabled_ = true;
-
-    // --- ポーズメニュー用UI ---
-    std::unique_ptr<Sprite> pauseBgDimmerSprite_ = nullptr; ///< 背景暗転（グレー）用
-    std::unique_ptr<Sprite> pauseTitleSprite_ = nullptr;
-    std::unique_ptr<Sprite> pauseBackGameSprite_ = nullptr;
-    std::unique_ptr<Sprite> pauseBackTitleSprite_ = nullptr;
-
-    /// @brief ポーズメニューの選択コントローラー
-    UISelectionGroup pauseMenuSelection_;
 
     // --- 内部整理用メソッド ---
 

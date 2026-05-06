@@ -20,11 +20,13 @@ public:
     virtual void DrawDebugTab() {}
 
 
-    // --- ポーズ機能 ---
-    // ポーズ中の更新(デフォルトは空実装)
-    virtual void PauseUpdate() {}
-    // ポーズ中の描画(デフォルトは空実装)
-    virtual void PauseDraw() {}
-    // このシーンがポーズ可能か(デフォルトは不可)
-    virtual bool IsPausable() const { return false; }
+    // --- スタック管理機能 ---
+    // このシーンが下のシーンの更新(Update)をブロックするか（デフォルトはブロックする）
+    virtual bool IsUpdateBlocking() const { return true; }
+    
+    // このシーンが下のシーンの描画(Draw)をブロックするか（デフォルトはブロックしない）
+    virtual bool IsDrawBlocking() const { return false; }
+    
+    // このシーンでマウスカーソルを表示するか（デフォルトは表示する）
+    virtual bool IsCursorVisible() const { return true; }
 };
