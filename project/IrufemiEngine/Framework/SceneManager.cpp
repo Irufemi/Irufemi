@@ -122,8 +122,8 @@ void SceneManager::Update() {
     if (transitionPhase_ == TransitionPhase::Closing) {
         // フェードアウト完了待ち
         if (engine_->GetSceneTransition()->IsOutFinished()) {
-            StartAsyncInitialize(pendingTransition_); // 新しいシーンに非同期で切り替え、裏ロード開始
-            pendingTransition_.clear();
+            // 新しいシーンに非同期で切り替え、裏ロード開始
+            StartAsyncInitialize(pendingTransition_); 
             transitionPhase_ = TransitionPhase::Initializing; // 初期化フェーズへ
         }
     }
@@ -142,6 +142,7 @@ void SceneManager::Update() {
                 sceneStack_.push_back(std::move(item));
             }
             
+            pendingTransition_.clear(); // ロード完了後にクリアする
             isInitializing_ = false;
             
             // ポーズ可能なシーンかどうかに応じてマウスをロック
@@ -273,18 +274,16 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     
     // --- 【重要】---
     // シーン破棄前に、現在溜まっている描画・コンピュートタスクを破棄する。
-    // これをしないと、裏スレッドでのリソース破棄と並行して、
-    // メインスレッドが古いComputeTaskを実行しようとしてクラッシュ（OBJECT_DELETED_WHILE_STILL_IN_USE）する。
     engine_->GetDrawManager()->ClearAllQueues();
     
+    // GPU処理の完了を待つ (リソース解放中のアクセス違反を防ぐ)
+    engine_->GetDirectXCommon()->WaitForGPU();
+    
+    // 現在のシーンスタックを破棄（メインスレッドで実行）
+    sceneStack_.clear();
+    
     initFuture_ = std::async(std::launch::async, [this, factory]() {
-        // GPU処理の完了を待つ (リソース解放中のアクセス違反を防ぐ)
-        engine_->GetDirectXCommon()->WaitForGPU();
-        
-        // 現在のシーンスタックを破棄
-        sceneStack_.clear();
-        
-        // 新しいシーンを生成して初期化
+        // 新しいシーンを生成して初期化（裏ロード）
         auto newScene = factory();
         newScene->Initialize(engine_);
         
