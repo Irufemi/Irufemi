@@ -134,6 +134,12 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   pauseBackTitleSprite_ = std::make_unique<Sprite>();
   pauseBackTitleSprite_->Initialize("resources/texture/pause/text_backtitle.png");
   pauseBackTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.65f);
+
+  // UISelectionGroup にメニュー項目を登録
+  pauseMenuSelection_.AddItem(pauseBackGameSprite_.get());
+  pauseMenuSelection_.AddItem(pauseBackTitleSprite_.get());
+  pauseMenuSelection_.SetActiveBaseColor({1.0f, 1.0f, 1.0f, 1.0f});
+  pauseMenuSelection_.SetInactiveColor({0.3f, 0.3f, 0.3f, 0.9f});
 }
 
 void GameScene::Update() {
@@ -304,36 +310,18 @@ void GameScene::PauseUpdate() {
   BaseScene::Update();
   engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
 
-  bool isMenuChanged = false;
+  // UISelectionGroup の更新
+  pauseMenuSelection_.Update(engine_->GetInputManager());
 
-  // Wキー or ↑キーで上に移動
-  if (engine_->GetInputManager()->IsKeyPressedDIK(0x11 /* W */) || engine_->GetInputManager()->IsKeyPressedDIK(0xC8 /* UP */)) {
-    pauseMenuIndex_--;
-    if (pauseMenuIndex_ < 0) pauseMenuIndex_ = 1;
-    isMenuChanged = true;
-  }
-  // Sキー or ↓キーで下に移動
-  if (engine_->GetInputManager()->IsKeyPressedDIK(0x1F /* S */) || engine_->GetInputManager()->IsKeyPressedDIK(0xD0 /* DOWN */)) {
-    pauseMenuIndex_++;
-    if (pauseMenuIndex_ > 1) pauseMenuIndex_ = 0;
-    isMenuChanged = true;
-  }
-
-  // メニューが変更されたらアニメーションタイマーをリセット
-  if (isMenuChanged) {
-    pauseMenuAnimTimer_ = 0.0f;
-  }
-
-  // アニメーションタイマーを進行
-  pauseMenuAnimTimer_ += 1.0f / 60.0f;
-
-  // Space or Enter で決定
-  if (engine_->GetInputManager()->IsKeyPressedDIK(0x39 /* Space */) || engine_->GetInputManager()->IsKeyPressedDIK(0x1C /* Enter */)) {
-    if (pauseMenuIndex_ == 0) {
+  // 決定キーが押された場合の処理
+  if (pauseMenuSelection_.IsDecided()) {
+    if (pauseMenuSelection_.GetSelectedIndex() == 0) {
       // ゲームに戻る
+      pauseMenuSelection_.Reset(); // ポーズ解除時に状態をリセット
       engine_->GetSceneManager()->TogglePause();
-    } else if (pauseMenuIndex_ == 1) {
+    } else if (pauseMenuSelection_.GetSelectedIndex() == 1) {
       // タイトルに戻る (ポーズを解除してから遷移)
+      pauseMenuSelection_.Reset(); // ポーズ解除時に状態をリセット
       engine_->GetSceneManager()->TogglePause();
       engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
     }
@@ -354,18 +342,10 @@ void GameScene::PauseDraw() {
   // 背景ディマー描画
   if (pauseBgDimmerSprite_) pauseBgDimmerSprite_->Draw();
 
-  // ダークソウル風の明滅（サイン波でアルファ値を変動）
-  float animAlpha = 0.7f + 0.3f * std::sin(pauseMenuAnimTimer_ * 5.0f);
-  Vector4 activeColor = {1.0f, 1.0f, 1.0f, animAlpha};
-  Vector4 inactiveColor = {0.3f, 0.3f, 0.3f, 0.9f}; // 非選択時は暗めのグレー
-
-  // 選択状態による色変更
-  if (pauseBackGameSprite_) pauseBackGameSprite_->SetColor(pauseMenuIndex_ == 0 ? activeColor : inactiveColor);
-  if (pauseBackTitleSprite_) pauseBackTitleSprite_->SetColor(pauseMenuIndex_ == 1 ? activeColor : inactiveColor);
-
   if (pauseTitleSprite_) pauseTitleSprite_->Draw();
-  if (pauseBackGameSprite_) pauseBackGameSprite_->Draw();
-  if (pauseBackTitleSprite_) pauseBackTitleSprite_->Draw();
+
+  // 選択項目の描画（色変更や明滅は内部で行われる）
+  pauseMenuSelection_.Draw();
 }
 
 void GameScene::DrawDebugTab() {

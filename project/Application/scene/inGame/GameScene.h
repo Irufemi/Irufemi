@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Framework/BaseScene.h"
+#include "Framework/UISelectionGroup.h"
 #include <memory>
 #include <vector>
 
@@ -114,11 +115,8 @@ private:
     std::unique_ptr<Sprite> pauseBackGameSprite_ = nullptr;
     std::unique_ptr<Sprite> pauseBackTitleSprite_ = nullptr;
 
-    /// @brief 現在選択中のメニュー項目 (0: ゲームに戻る, 1: タイトルに戻る)
-    int pauseMenuIndex_ = 0;
-
-    /// @brief ポーズメニューの明滅アニメーション用タイマー
-    float pauseMenuAnimTimer_ = 0.0f;
+    /// @brief ポーズメニューの選択コントローラー
+    UISelectionGroup pauseMenuSelection_;
 
     // --- 内部整理用メソッド ---
 

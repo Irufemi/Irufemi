@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Framework/BaseScene.h"
+#include "Framework/PromptController.h"
+#include "Framework/UIAnimator.h"
 #include "Renderer/Object2D/Sprite/Sprite.h"
 #include <memory>
 #include <vector>
@@ -47,9 +49,6 @@ private: // メンバ変数(ゲーム)
 
 private: // メンバ変数(システム)
 
-    bool isChangingScene_ = false;
-    bool isTransitionRequested_ = false;
-    float transitionDelayTimer_ = 0.0f;
-    bool isDrawPushToSpace_ = true;
-    float animationTime_ = 0.0f;
+    PromptController promptController_;
+    UIAnimator clearTextAnimator_;
 };

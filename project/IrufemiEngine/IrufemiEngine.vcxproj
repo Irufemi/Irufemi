@@ -237,6 +237,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Region\Primitive\SphereRegion.cpp" />
     <ClCompile Include="Renderer\Region\Primitive\TetraRegion.cpp" />
     <ClCompile Include="Renderer\VoxelParticle\VoxelParticleSystem.cpp" />
+    <ClCompile Include="Framework\UIAnimator.cpp" />
+    <ClCompile Include="Framework\PromptController.cpp" />
+    <ClCompile Include="Framework\UISelectionGroup.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h" />
@@ -387,6 +390,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Region\Primitive\TetraRegion.h" />
     <ClInclude Include="Resource\Model\Data\Keyframe.h" />
     <ClInclude Include="Resource\Model\Data\VertexWeightData.h" />
+    <ClInclude Include="Framework\UIAnimator.h" />
+    <ClInclude Include="Framework\PromptController.h" />
+    <ClInclude Include="Framework\UISelectionGroup.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Fullscreen.hlsli" />
