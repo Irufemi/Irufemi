@@ -11,7 +11,6 @@
 
 class IrufemiEngine;
 class IScene;
-#include "LoadingScreen.h"
 
 /**
  * @class SceneManager
@@ -96,11 +95,6 @@ public:
      * @brief 現在のシーンの描画処理
      */
     void Draw();
-
-    /**
-     * @brief ロード画面など、ポストプロセス影響外で描画すべき最前面UIを描画します
-     */
-    void DrawLoadingUI();
     ///@}
 
     /** @name 状態取得 */
@@ -117,6 +111,9 @@ public:
 
     /** @brief シーンの初期化（Initialize）実行中かどうかを取得 */
     bool IsInitializing() const { return isInitializing_; }
+
+    /** @brief ロード画面を表示すべきロード中（または遷移中）かどうかを取得 */
+    bool IsLoading() const;
     ///@}
 
 private:
@@ -141,8 +138,6 @@ private:
     SceneTransition::Type pendingType_ = SceneTransition::Type::Fade;
     float pendingDuration_ = 1.0f;
 
-    std::unique_ptr<LoadingScreen> loadingScreen_; ///< 共通のローディング画面
-
     bool wasLoading_ = false; ///< 前フレームがロード中だったか
 
     // --- 非同期読み込み用 ---
@@ -155,4 +150,27 @@ private:
      * @brief 非同期でのシーン破棄・初期化を開始する
      */
     void StartAsyncInitialize(const Key& next);
+
+    // --- 内部処理用メソッド ---
+    /**
+     * @brief アセットのロード状況をチェックし、マウスカーソルの表示状態を更新する
+     * @return ロード中であれば true を返す
+     */
+    bool UpdateLoadStatus();
+
+    /**
+     * @brief 即時シーン切替要求がある場合の処理を行う
+     */
+    void ProcessImmediateTransition();
+
+    /**
+     * @brief フェード遷移および非同期ロードのステートマシンを進行させる
+     * @param[in,out] isLoading ロード状態フラグ（遷移によってロードが始まった場合は更新される）
+     */
+    void ProcessTransitionPhase(bool& isLoading);
+
+    /**
+     * @brief シーンスタック内のアクティブなシーンの Update を呼び出す
+     */
+    void UpdateActiveScenes();
 };

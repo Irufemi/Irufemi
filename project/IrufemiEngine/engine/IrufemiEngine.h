@@ -14,6 +14,7 @@
 #include "Core/Utility/Log.h"
 #include "../Framework/SceneManager.h"
 #include "../Framework/SceneTransition.h"
+#include "../Framework/LoadingScreen.h"
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Matrix4x4.h"
@@ -218,6 +219,9 @@ public: // ゲッター
     
     // SceneManager参照
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
+    
+    // 追加: アセットがロード中かどうかを判定する
+    bool IsAssetLoading() const;
 
 public: // セッター
     void AddFenceValue(uint32_t index) { dxCommon_->GetFenceValue() += index; }
@@ -311,6 +315,9 @@ private: // メンバ変数
     
     // SceneManager
     std::unique_ptr<SceneManager> sceneManager_ = nullptr;
+    
+    // LoadingScreen (SceneManagerから移管)
+    std::unique_ptr<LoadingScreen> loadingScreen_ = nullptr;
     
     // ModelManager
     std::unique_ptr<ModelManager> modelManager_ = nullptr;

@@ -1,14 +1,11 @@
 #include "SceneManager.h"
 #include "IScene.h"
-#include "LoadingScreen.h"
 #include "../Engine/IrufemiEngine.h"
 #include <Windows.h>
 #include "../Engine/Platform/Input/InputManager.h"
 #include "../Engine/Platform/Input/Mouse.h"
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {
-    loadingScreen_ = std::make_unique<LoadingScreen>();
-    loadingScreen_->Initialize(engine_);
 }
 
 // 登録順を保持しつつ登録
@@ -91,11 +88,8 @@ void SceneManager::TransitionTo(const Key& next, SceneTransition::Type type, flo
     engine_->GetSceneTransition()->Start(type, duration, true);
 }
 
-void SceneManager::Update() {
-    // モデル・テクスチャのロード状況を確認
-    bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
-    bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
-    bool isLoading = (transitionPhase_ == TransitionPhase::Initializing) || !modelsLoaded || !texturesLoaded;
+bool SceneManager::UpdateLoadStatus() {
+    bool isLoading = IsLoading();
 
     if (isLoading != wasLoading_) {
         if (isLoading) {
@@ -109,16 +103,19 @@ void SceneManager::Update() {
         }
         wasLoading_ = isLoading;
     }
+    return isLoading;
+}
 
-    // シーン切り替え要求（即時）
+void SceneManager::ProcessImmediateTransition() {
     if (!pending_.empty()) {
         pendingTransition_ = pending_;
         StartAsyncInitialize(pending_); // 即時切替の場合も非同期初期化を開始する
         transitionPhase_ = TransitionPhase::Initializing;
         pending_.clear();
     }
+}
 
-    // --- 遷移プロセスの更新 ---
+void SceneManager::ProcessTransitionPhase(bool& isLoading) {
     if (transitionPhase_ == TransitionPhase::Closing) {
         // フェードアウト完了待ち
         if (engine_->GetSceneTransition()->IsOutFinished()) {
@@ -155,7 +152,7 @@ void SceneManager::Update() {
     }
     else if (transitionPhase_ == TransitionPhase::LoadingWait) {
         // 全てのアセットのロード完了を待つ (画面は真っ暗なまま、上にLoadingScreenが描画される)
-        if (modelsLoaded && texturesLoaded) {
+        if (!engine_->IsAssetLoading()) {
             transitionPhase_ = TransitionPhase::Opening;
             
             // ---------------------------------------------------------
@@ -181,17 +178,10 @@ void SceneManager::Update() {
     }
 
     // ロード中かどうかを最新の状態で再評価する（非同期初期化が開始された直後を考慮）
-    isLoading = (transitionPhase_ == TransitionPhase::Initializing) || !modelsLoaded || !texturesLoaded;
+    isLoading = IsLoading();
+}
 
-    // ロード中であれば、ここで更新を止めてLoadingUIだけアニメーションさせる
-    if (isLoading) {
-        if (loadingScreen_) {
-            loadingScreen_->Update(engine_->GetDeltaTime());
-        }
-        return;
-    }
-
-    // ロードが完全に終わっている場合のみ、シーン自体のUpdateを回す
+void SceneManager::UpdateActiveScenes() {
     if (!sceneStack_.empty()) {
         // ※フェードイン中 (Opening) は Update を呼ばないよう制限
         if (transitionPhase_ != TransitionPhase::Opening) {
@@ -216,11 +206,28 @@ void SceneManager::Update() {
     }
 }
 
+void SceneManager::Update() {
+    // 1. ロード状況の確認とカーソル制御
+    bool isLoading = UpdateLoadStatus();
+
+    // 2. 即時シーン切り替え要求の処理
+    ProcessImmediateTransition();
+
+    // 3. 遷移プロセスの更新
+    ProcessTransitionPhase(isLoading);
+
+    // ロード中であれば、ここで更新を止めてLoadingUIだけアニメーションさせる
+    if (isLoading) {
+        return;
+    }
+
+    // 4. ロード完了時のみ、シーン自体のUpdateを回す
+    UpdateActiveScenes();
+}
+
 void SceneManager::Draw() {
-    // ロード待ちの場合は背景のみ(UIはDrawLoadingUIでバックバッファに直接描画される)
-    bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
-    bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
-    if (transitionPhase_ == TransitionPhase::Initializing || !modelsLoaded || !texturesLoaded) {
+    // ロード待ちの場合は背景のみ(UIはIrufemiEngine側で描画される)
+    if (IsLoading()) {
         return;
     }
 
@@ -252,14 +259,8 @@ const SceneManager::Key& SceneManager::GetCurrent() const {
 // 並び順は登録順
 std::vector<SceneManager::Key> SceneManager::GetRegisteredKeys() const { return order_; }
 
-void SceneManager::DrawLoadingUI() {
-    bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
-    bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
-    if (transitionPhase_ == TransitionPhase::Initializing || !modelsLoaded || !texturesLoaded) {
-        if (loadingScreen_) {
-            loadingScreen_->Draw(engine_);
-        }
-    }
+bool SceneManager::IsLoading() const {
+    return (transitionPhase_ == TransitionPhase::Initializing) || engine_->IsAssetLoading();
 }
 
 void SceneManager::StartAsyncInitialize(const Key& next) {
