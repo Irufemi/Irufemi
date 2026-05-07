@@ -91,8 +91,7 @@ void SceneManager::TransitionTo(const Key& next, SceneTransition::Type type, flo
     engine_->GetSceneTransition()->Start(type, duration, true);
 }
 
-void SceneManager::Update() {
-    // モデル・テクスチャのロード状況を確認
+bool SceneManager::UpdateLoadStatus() {
     bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
     bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
     bool isLoading = (transitionPhase_ == TransitionPhase::Initializing) || !modelsLoaded || !texturesLoaded;
@@ -109,16 +108,19 @@ void SceneManager::Update() {
         }
         wasLoading_ = isLoading;
     }
+    return isLoading;
+}
 
-    // シーン切り替え要求（即時）
+void SceneManager::ProcessImmediateTransition() {
     if (!pending_.empty()) {
         pendingTransition_ = pending_;
         StartAsyncInitialize(pending_); // 即時切替の場合も非同期初期化を開始する
         transitionPhase_ = TransitionPhase::Initializing;
         pending_.clear();
     }
+}
 
-    // --- 遷移プロセスの更新 ---
+void SceneManager::ProcessTransitionPhase(bool& isLoading) {
     if (transitionPhase_ == TransitionPhase::Closing) {
         // フェードアウト完了待ち
         if (engine_->GetSceneTransition()->IsOutFinished()) {
@@ -155,6 +157,8 @@ void SceneManager::Update() {
     }
     else if (transitionPhase_ == TransitionPhase::LoadingWait) {
         // 全てのアセットのロード完了を待つ (画面は真っ暗なまま、上にLoadingScreenが描画される)
+        bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
+        bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
         if (modelsLoaded && texturesLoaded) {
             transitionPhase_ = TransitionPhase::Opening;
             
@@ -181,17 +185,12 @@ void SceneManager::Update() {
     }
 
     // ロード中かどうかを最新の状態で再評価する（非同期初期化が開始された直後を考慮）
+    bool modelsLoaded = !engine_->GetObjModelManager() || engine_->GetObjModelManager()->IsAllLoaded();
+    bool texturesLoaded = !engine_->GetTextureManager() || engine_->GetTextureManager()->IsAllLoaded();
     isLoading = (transitionPhase_ == TransitionPhase::Initializing) || !modelsLoaded || !texturesLoaded;
+}
 
-    // ロード中であれば、ここで更新を止めてLoadingUIだけアニメーションさせる
-    if (isLoading) {
-        if (loadingScreen_) {
-            loadingScreen_->Update(engine_->GetDeltaTime());
-        }
-        return;
-    }
-
-    // ロードが完全に終わっている場合のみ、シーン自体のUpdateを回す
+void SceneManager::UpdateActiveScenes() {
     if (!sceneStack_.empty()) {
         // ※フェードイン中 (Opening) は Update を呼ばないよう制限
         if (transitionPhase_ != TransitionPhase::Opening) {
@@ -214,6 +213,28 @@ void SceneManager::Update() {
             }
         }
     }
+}
+
+void SceneManager::Update() {
+    // 1. ロード状況の確認とカーソル制御
+    bool isLoading = UpdateLoadStatus();
+
+    // 2. 即時シーン切り替え要求の処理
+    ProcessImmediateTransition();
+
+    // 3. 遷移プロセスの更新
+    ProcessTransitionPhase(isLoading);
+
+    // ロード中であれば、ここで更新を止めてLoadingUIだけアニメーションさせる
+    if (isLoading) {
+        if (loadingScreen_) {
+            loadingScreen_->Update(engine_->GetDeltaTime());
+        }
+        return;
+    }
+
+    // 4. ロード完了時のみ、シーン自体のUpdateを回す
+    UpdateActiveScenes();
 }
 
 void SceneManager::Draw() {

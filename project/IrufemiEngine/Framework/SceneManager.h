@@ -155,4 +155,27 @@ private:
      * @brief 非同期でのシーン破棄・初期化を開始する
      */
     void StartAsyncInitialize(const Key& next);
+
+    // --- 内部処理用メソッド ---
+    /**
+     * @brief アセットのロード状況をチェックし、マウスカーソルの表示状態を更新する
+     * @return ロード中であれば true を返す
+     */
+    bool UpdateLoadStatus();
+
+    /**
+     * @brief 即時シーン切替要求がある場合の処理を行う
+     */
+    void ProcessImmediateTransition();
+
+    /**
+     * @brief フェード遷移および非同期ロードのステートマシンを進行させる
+     * @param[in,out] isLoading ロード状態フラグ（遷移によってロードが始まった場合は更新される）
+     */
+    void ProcessTransitionPhase(bool& isLoading);
+
+    /**
+     * @brief シーンスタック内のアクティブなシーンの Update を呼び出す
+     */
+    void UpdateActiveScenes();
 };
