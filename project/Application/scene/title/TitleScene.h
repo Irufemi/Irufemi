@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Framework/BaseScene.h"
+#include "Framework/PromptController.h"
+#include "Framework/UIAnimator.h"
 
 #include <memory>
 #include <vector>
@@ -51,10 +53,6 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<ObjClass> titleTextPushToSpace_ = nullptr;
 
 private: // メンバ変数(システム)
-    bool isChangingScene_ = false;
-    bool isTransitionRequested_ = false; // 遷移処理をSceneManagerに渡したか
-    float transitionDelayTimer_ = 0.0f;  // 決定から遷移開始までの遅延タイマー
-    bool isDrawPushToSpace_ = true;      // 決定時のフラッシュで描画自体をスキップするためのフラグ
-
-    float animationTime_ = 0.0f; // アニメーション用タイマー
+    PromptController promptController_;
+    UIAnimator titleTextAnimator_;
 };

@@ -65,12 +65,23 @@ public:
     bool ChangeTo(const Key& next);
 
     /**
-     * @brief 演出を伴うシーン切替を開始する
+     * @brief 演出を伴うシーン切替を開始する（スタックはクリアされます）
      * @param[in] next 次のシーン名
      * @param[in] type 演出タイプ
      * @param[in] duration 演出時間（秒）
      */
     void TransitionTo(const Key& next, SceneTransition::Type type, float duration);
+
+    /**
+     * @brief 現在のシーンの上に新しいシーンを重ねる（同期）
+     * @param[in] name 重ねるシーン名
+     */
+    void PushScene(const Key& name);
+
+    /**
+     * @brief 一番上のシーンを破棄し、下のシーンに戻る
+     */
+    void PopScene();
     ///@}
 
     /** @name 更新・描画 */
@@ -96,20 +107,13 @@ public:
     ///@{
     /** @brief 現在のシーン名を取得 */
     const Key& GetCurrent() const;
-    /** @brief 現在のシーンインスタンスを取得 */
-    IScene* GetCurrentScene() const { return current_.get(); }
+    /** @brief 現在一番上のシーンインスタンスを取得 */
+    IScene* GetCurrentScene() const;
 
 
     /** @brief 登録済みの全シーン名を取得（登録順） */
     std::vector<Key> GetRegisteredKeys() const;
     ///@}
-
-    /** @name ポーズ制御 */
-    ///@{
-    /** @brief ポーズ状態を反転させる */
-    void TogglePause() { isPaused_ = !isPaused_; }
-    /** @brief ポーズ中かどうかを取得 */
-    bool IsPaused() const { return isPaused_; }
 
     /** @brief シーンの初期化（Initialize）実行中かどうかを取得 */
     bool IsInitializing() const { return isInitializing_; }
@@ -121,11 +125,14 @@ private:
     std::unordered_map<Key, Factory> factories_; ///< シーン識別名と生成関数のマップ
     std::vector<Key> order_; ///< 登録されたシーン名のリスト（順序保持用）
 
-    std::unique_ptr<IScene> current_{}; ///< 現在実行中のシーンインスタンス
-    Key currentName_{};  ///< 現在のシーン名
+    struct SceneStackItem {
+        Key name;
+        std::unique_ptr<IScene> scene;
+    };
+    std::vector<SceneStackItem> sceneStack_; ///< 現在実行中のシーンスタック
+
     Key pending_{};      ///< 次フレームで切り替え予定のシーン名
 
-    bool isPaused_ = false; ///< ゲーム全体の一時停止フラグ
     bool isInitializing_ = false; ///< シーンの初期化（Initialize）実行中フラグ
 
     // --- 遷移管理用 ---

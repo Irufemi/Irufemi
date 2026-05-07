@@ -46,6 +46,9 @@ void GameOverScene::Initialize(IrufemiEngine* engine) {
     textPushToSpace_->Initialize("text_pushtospace/text_pushtospace.obj");
     textPushToSpace_->SetPosition({ 0.0f, -2.5f, 0.0f });
     textPushToSpace_->SetScale({ 1.0f, 1.0f, 1.0f });
+
+    // プロンプトコントローラーに登録
+    promptController_.SetTarget(textPushToSpace_.get());
 }
 
 void GameOverScene::Update() {
@@ -57,6 +60,7 @@ void GameOverScene::Update() {
     // =====
 
     // GameOver文字のアニメーション（重苦しいゆっくりとした浮遊）
+    goTextAnimator_.Update(1.0f / 60.0f);
     const float goBaseY = 1.0f;
     const float goPositionsX[9] = {
         -5.0f, -3.8f, -2.4f, -1.2f, // Game
@@ -74,43 +78,19 @@ void GameOverScene::Update() {
         if (!goTexts[i]) continue;
         
         // 重々しいゆっくりとした動き
-        float phase = animationTime_ * 1.5f + i * 0.3f;
-        float offsetY = std::sin(phase) * 0.3f;
+        float phaseOffset = i * 0.3f;
+        float offsetY = goTextAnimator_.GetFloatOffset(0.3f, 1.5f, phaseOffset);
         
         goTexts[i]->SetPosition({ goPositionsX[i], goBaseY + offsetY, 0.0f });
         goTexts[i]->SetRotate({ 0.0f, 0.0f, 0.0f });
         goTexts[i]->SetScale({ 1.2f, 1.2f, 1.2f });
     }
 
-    // 「Push to Space」文字の明滅
-    if (textPushToSpace_) {
-        animationTime_ += 1.0f / 60.0f;
-        float alpha = 1.0f;
-        isDrawPushToSpace_ = true;
+    // プロンプトコントローラーの更新
+    promptController_.Update(engine_->GetInputManager());
 
-        if (!isChangingScene_) {
-            // 待機中：ゆっくりとした明滅
-            alpha = 0.6f + std::sin(animationTime_ * 3.0f) * 0.4f;
-        } else {
-            // 決定後：高速フラッシュ
-            isDrawPushToSpace_ = (std::sin(animationTime_ * 40.0f) > 0.0f);
-        }
-        textPushToSpace_->SetAlpha(alpha);
-    }
-
-    // Spaceキーが押されたらフラグを立てる
-    if (!isChangingScene_ && IsKeyPressed(VK_SPACE)) {
-        isChangingScene_ = true;
-        transitionDelayTimer_ = 0.0f;
-    }
-
-    // 遷移フラグが立っていればタイマーを進める
-    if (isChangingScene_ && !isTransitionRequested_) {
-        transitionDelayTimer_ += 1.0f / 60.0f;
-        if (transitionDelayTimer_ >= 0.8f) {
-            engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
-            isTransitionRequested_ = true;
-        }
+    if (promptController_.ShouldTransition()) {
+        engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
     }
 
     // =====
@@ -135,9 +115,7 @@ void GameOverScene::Draw() {
     if (goTextR_) goTextR_->Draw();
     if (goTextDot_) goTextDot_->Draw();
 
-    if (textPushToSpace_ && isDrawPushToSpace_) {
-        textPushToSpace_->Draw();
-    }
+    promptController_.Draw();
 }
 
 void GameOverScene::DrawDebugTab() {

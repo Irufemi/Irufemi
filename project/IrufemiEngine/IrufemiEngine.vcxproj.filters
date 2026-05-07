@@ -384,6 +384,15 @@
     <ClCompile Include="Renderer\Core\BaseResource.cpp">
       <Filter>Renderer\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\UIAnimator.cpp">
+      <Filter>Framework\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\PromptController.cpp">
+      <Filter>Framework\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\UISelectionGroup.cpp">
+      <Filter>Framework\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -791,6 +800,15 @@
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectX\DynamicConstantBuffer.h">
       <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\UIAnimator.h">
+      <Filter>Framework\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\PromptController.h">
+      <Filter>Framework\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\UISelectionGroup.h">
+      <Filter>Framework\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

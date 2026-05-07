@@ -45,6 +45,9 @@ void ClearScene::Initialize(IrufemiEngine* engine) {
     textPushToSpace_->Initialize("text_pushtospace/text_pushtospace.obj");
     textPushToSpace_->SetPosition({ 0.0f, -2.5f, 0.0f });
     textPushToSpace_->SetScale({ 1.0f, 1.0f, 1.0f });
+
+    // プロンプトコントローラーに登録
+    promptController_.SetTarget(textPushToSpace_.get());
 }
 
 void ClearScene::Update() {
@@ -56,6 +59,7 @@ void ClearScene::Update() {
     // =====
 
     // Clear文字のアニメーション（ポップなバウンド）
+    clearTextAnimator_.Update(1.0f / 60.0f);
     const float clearBaseY = 1.0f;
     const float clearPositionsX[6] = { -3.5f, -2.1f, -0.7f, 0.7f, 2.1f, 3.5f };
 
@@ -68,7 +72,8 @@ void ClearScene::Update() {
         if (!clearTexts[i]) continue;
         
         // 文字ごとに位相をずらす（少し早めのテンポ）
-        float phase = animationTime_ * 5.0f - i * 0.5f;
+        float phaseOffset = -i * 0.5f;
+        float phase = clearTextAnimator_.GetTime() * 5.0f + phaseOffset;
         
         // 1. ポップに跳ねる（絶対値のサイン波でバウンド）
         float offsetY = std::abs(std::sin(phase)) * 0.8f;
@@ -80,35 +85,11 @@ void ClearScene::Update() {
         clearTexts[i]->SetRotate({ 0.0f, 0.0f, rotZ });
     }
 
-    // 「Push to Space」文字の明滅
-    if (textPushToSpace_) {
-        animationTime_ += 1.0f / 60.0f;
-        float alpha = 1.0f;
-        isDrawPushToSpace_ = true;
+    // プロンプトコントローラーの更新
+    promptController_.Update(engine_->GetInputManager());
 
-        if (!isChangingScene_) {
-            // 待機中：ゆっくりとした明滅
-            alpha = 0.6f + std::sin(animationTime_ * 3.0f) * 0.4f;
-        } else {
-            // 決定後：高速フラッシュ
-            isDrawPushToSpace_ = (std::sin(animationTime_ * 40.0f) > 0.0f);
-        }
-        textPushToSpace_->SetAlpha(alpha);
-    }
-
-    // Spaceキーが押されたらフラグを立てる
-    if (!isChangingScene_ && IsKeyPressed(VK_SPACE)) {
-        isChangingScene_ = true;
-        transitionDelayTimer_ = 0.0f;
-    }
-
-    // 遷移フラグが立っていればタイマーを進める
-    if (isChangingScene_ && !isTransitionRequested_) {
-        transitionDelayTimer_ += 1.0f / 60.0f;
-        if (transitionDelayTimer_ >= 0.8f) {
-            engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
-            isTransitionRequested_ = true;
-        }
+    if (promptController_.ShouldTransition()) {
+        engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
     }
 
     // =====
@@ -129,9 +110,7 @@ void ClearScene::Draw() {
     if (clearTextR_) clearTextR_->Draw();
     if (clearTextEx_) clearTextEx_->Draw();
 
-    if (textPushToSpace_ && isDrawPushToSpace_) {
-        textPushToSpace_->Draw();
-    }
+    promptController_.Draw();
 }
 
 void ClearScene::DrawDebugTab() {

@@ -20,8 +20,6 @@ public: // メンバ関数(ゲーム)
     void Update() override;
     void Draw() override;
     void DrawDebugTab() override;
-    // このシーンはポーズ可能
-    bool IsPausable() const override { return true; }
 
 private: // メンバ関数(内部ヘルパ)
 

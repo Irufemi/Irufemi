@@ -25,6 +25,9 @@
     <Filter Include="Scene\InGame">
       <UniqueIdentifier>{86fe6dc3-e9e1-4808-a280-aa9dd371aaba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scene\Pause">
+      <UniqueIdentifier>{ab12cd34-56ef-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Scene\Debug">
       <UniqueIdentifier>{0a6ed38f-12d1-4188-b3fa-fb3877f9047d}</UniqueIdentifier>
     </Filter>
@@ -113,6 +116,9 @@
   <ItemGroup>
     <ClCompile Include="scene\InGame\GameScene.cpp">
       <Filter>Scene\InGame</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\Pause\PauseScene.cpp">
+      <Filter>Scene\Pause</Filter>
     </ClCompile>
     <ClCompile Include="scene\Title\TitleScene.cpp">
       <Filter>Scene\Title</Filter>
@@ -242,6 +248,9 @@
   <ItemGroup>
     <ClInclude Include="scene\InGame\GameScene.h">
       <Filter>Scene\InGame</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\Pause\PauseScene.h">
+      <Filter>Scene\Pause</Filter>
     </ClInclude>
     <ClInclude Include="scene\Title\TitleScene.h">
       <Filter>Scene\Title</Filter>
