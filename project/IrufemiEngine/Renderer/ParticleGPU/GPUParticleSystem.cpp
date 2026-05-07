@@ -301,12 +301,15 @@ void GPUParticleSystem::Draw() {
 
     ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
-    // Graphics Draw
-    commandList->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
+    // 現在のステートを退避
+    BlendMode oldBlend = engine_->currentBlend_;
+    PSOManager::DepthWrite oldDepth = engine_->currentDepth_;
+    PSOManager::CullMode oldCull = engine_->currentCull_;
+
+    // パーティクル用のステートを設定
     engine_->SetBlend(selectedBlend_);
     engine_->SetDepthWrite(selectedDepth_);
     engine_->SetCull(selectedCull_);
-    engine_->ApplyGpuParticlePSO();
       
     drawManager_->SubmitGPUParticle(
         vertexBufferView_,
@@ -327,6 +330,11 @@ void GPUParticleSystem::Draw() {
         debugLineRegion_->Draw();
     }
 #endif
+
+    // 退避したステートを元に戻す
+    engine_->SetBlend(oldBlend);
+    engine_->SetDepthWrite(oldDepth);
+    engine_->SetCull(oldCull);
 }
 
 // デバッグ
