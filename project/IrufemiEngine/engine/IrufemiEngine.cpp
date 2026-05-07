@@ -408,6 +408,10 @@ void IrufemiEngine::Execute() {
     // SceneManager 構築(エンジンは所有のみ)
     sceneManager_ = std::make_unique<SceneManager>(this);
 
+    // ローディング画面の構築
+    loadingScreen_ = std::make_unique<LoadingScreen>();
+    loadingScreen_->Initialize(this);
+
     // Application からの登録を反映
     if (sceneRegistrar_) {
         sceneRegistrar_(*sceneManager_);
@@ -440,6 +444,9 @@ void IrufemiEngine::Execute() {
         // 更新
         audioManager_->Update();
         sceneManager_->Update();
+        if (sceneManager_->IsLoading() && loadingScreen_) {
+            loadingScreen_->Update(deltaTime_);
+        }
         totalTime_ += deltaTime_;
         postProcessManager_->Update(totalTime_);
         sceneTransition_->Update(deltaTime_);
@@ -522,8 +529,10 @@ void IrufemiEngine::EndFrame() {
 
     // 描画先がバックバッファになり、ポストプロセス（暗転など）が掛かった上から
     // 影響を受けない最前面UIとしてロード画面を描画する
-    if (sceneManager_) {
-        sceneManager_->DrawLoadingUI();
+    if (sceneManager_ && sceneManager_->IsLoading()) {
+        if (loadingScreen_) {
+            loadingScreen_->Draw(this);
+        }
     }
 
     // --- 追加: 最前面UIキューの消化 ---
@@ -676,4 +685,10 @@ void IrufemiEngine::ApplyLightningCrawlPSO() {
 void IrufemiEngine::BindLightningParams(D3D12_GPU_VIRTUAL_ADDRESS address) {
     if (address == 0) return;
     GetCommandList()->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, address);
+}
+
+bool IrufemiEngine::IsAssetLoading() const {
+    bool modelsLoaded = !modelManager_ || modelManager_->IsAllLoaded();
+    bool texturesLoaded = !textureManager_ || textureManager_->IsAllLoaded();
+    return !modelsLoaded || !texturesLoaded;
 }
