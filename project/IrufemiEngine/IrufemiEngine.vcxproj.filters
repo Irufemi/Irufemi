@@ -864,6 +864,15 @@
     <None Include="..\Application\resources\shaders\LightningUtility.hlsli">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </None>
+    <None Include="..\Application\resources\shaders\Material.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\PostProcess.hlsli">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\VertexData.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Application\resources\shaders\InitializeParticle.CS.hlsl">
@@ -1003,6 +1012,24 @@
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\LightningCrawl.PS.hlsl">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\BitonicSort.CS.hlsl">
+      <Filter>Renderer\ParticleGPU\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\BloomCombine.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\GaussianBlur.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\HighLuminanceExtract.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\InitParticleSort.CS.hlsl">
+      <Filter>Renderer\ParticleGPU\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\PostProcess.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>
