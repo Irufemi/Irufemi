@@ -309,9 +309,14 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
 
 void PostProcessManager::CreatePSOs() {
   auto* shaderCompiler = dxCommon_->GetShaderCompiler();
-  std::ostream &logStream = std::cout; // 仮
+  
+  // --- シェーダコンパイル設定 ---
+  ShaderCompileOptions options;
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+  options.isDebug = true;
+#endif
 
-  auto vsBlob = shaderCompiler->Compile(L"resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", logStream);
+  auto vsBlob = shaderCompiler->Compile(L"resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", options);
 
   struct ShaderPath {
     Mode mode;
@@ -336,7 +341,7 @@ void PostProcessManager::CreatePSOs() {
   };
 
   for (const auto &s : shaders) {
-    auto psBlob = shaderCompiler->Compile(s.path, L"ps_6_0", logStream);
+    auto psBlob = shaderCompiler->Compile(s.path, L"ps_6_0", options);
     if (!psBlob)
       continue;
 
@@ -369,9 +374,9 @@ void PostProcessManager::CreatePSOs() {
   }
 
   // --- ブルーム用個別 PSO ---
-  auto extractPS = shaderCompiler->Compile(L"resources/shaders/HighLuminanceExtract.PS.hlsl", L"ps_6_0", logStream);
-  auto blurPS = shaderCompiler->Compile(L"resources/shaders/GaussianBlur.PS.hlsl", L"ps_6_0", logStream);
-  auto combinePS = shaderCompiler->Compile(L"resources/shaders/BloomCombine.PS.hlsl", L"ps_6_0", logStream);
+  auto extractPS = shaderCompiler->Compile(L"resources/shaders/HighLuminanceExtract.PS.hlsl", L"ps_6_0", options);
+  auto blurPS = shaderCompiler->Compile(L"resources/shaders/GaussianBlur.PS.hlsl", L"ps_6_0", options);
+  auto combinePS = shaderCompiler->Compile(L"resources/shaders/BloomCombine.PS.hlsl", L"ps_6_0", options);
 
   D3D12_GRAPHICS_PIPELINE_STATE_DESC bloomDesc{};
   bloomDesc.pRootSignature = rootSig_;

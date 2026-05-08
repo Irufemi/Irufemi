@@ -3,7 +3,7 @@
 #include "../../Core/Utility/StringUtility.h"
 #include <format>
 #include <cassert>
-#include <format>
+#include <Windows.h>
 
 /**
  * @brief 初期化
@@ -19,67 +19,88 @@ void ShaderCompiler::Initialize() {
 
 /**
  * @brief シェーダのコンパイル
- * @param[in] filePath hlslファイルへのパス
+ * @param[in] filePath HLSLファイルへのパス
  * @param[in] profile コンパイルプロファイル
- * @param[in] os ログ出力用ストリーム
+ * @param[in] options コンパイルオプション
  * @return コンパイルされたシェーダのBlob
  */
 Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     const std::wstring& filePath,
     const wchar_t* profile,
-    std::ostream& os
+    const ShaderCompileOptions& options
 ) {
-    Log::OutPutLog(os, ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n", filePath, profile)));
-
-    // hlslファイルを読む
-    IDxcBlobEncoding* shaderSource = nullptr;
+    // 1. HLSLファイルの読み込み
+    Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
     HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
-    assert(SUCCEEDED(hr));
+    if (FAILED(hr)) {
+        assert(false && "Failed to load shader file.");
+        return nullptr;
+    }
 
     DxcBuffer shaderSourceBuffer;
     shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
     shaderSourceBuffer.Size = shaderSource->GetBufferSize();
     shaderSourceBuffer.Encoding = DXC_CP_UTF8;
 
-    // Compile引数
-    LPCWSTR arguments[] = {
-        filePath.c_str(),
-        L"-E", L"main",
-        L"-T", profile,
-        L"-Zi", L"-Qembed_debug",
-        L"-Od",
-        L"-Zpr",
-    };
+    // 2. コンパイル引数の構築
+    std::vector<LPCWSTR> arguments;
+    arguments.push_back(filePath.c_str());
+    arguments.push_back(L"-E"); arguments.push_back(options.entryPoint.c_str());
+    arguments.push_back(L"-T"); arguments.push_back(profile);
+    arguments.push_back(L"-Zpr"); // 行優先(Row Major)
 
-    // 実際にコンパイル
-    IDxcResult* shaderResult = nullptr;
+    // デバッグ設定
+    if (options.isDebug) {
+        arguments.push_back(L"-Zi");            // デバッグ情報の生成
+        arguments.push_back(L"-Qembed_debug");   // PDBをBlobに埋め込む
+        arguments.push_back(L"-Od");            // 最適化オフ
+    } else {
+        arguments.push_back(L"-O3");            // 最大最適化
+    }
+
+    // マクロ定義の追加
+    std::vector<std::wstring> macroStorage;
+    macroStorage.reserve(options.macros.size());
+    for (const auto& macro : options.macros) {
+        arguments.push_back(L"-D");
+        if (macro.second.empty()) {
+            macroStorage.push_back(macro.first);
+        } else {
+            macroStorage.push_back(macro.first + L"=" + macro.second);
+        }
+        arguments.push_back(macroStorage.back().c_str());
+    }
+
+    // 3. コンパイル実行
+    Microsoft::WRL::ComPtr<IDxcResult> shaderResult;
     hr = dxcCompiler_->Compile(
         &shaderSourceBuffer,
-        arguments,
-        _countof(arguments),
+        arguments.data(),
+        static_cast<UINT32>(arguments.size()),
         includeHandler_.Get(),
         IID_PPV_ARGS(&shaderResult)
     );
     assert(SUCCEEDED(hr));
 
-    // エラー・警告の確認
-    IDxcBlobUtf8* shaderError = nullptr;
+    // 4. エラー・警告の確認
+    Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError;
     shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
     if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
-        Log::OutPutLog(os, shaderError->GetStringPointer());
+        // デバッグ出力
+        std::string errStr = shaderError->GetStringPointer();
+        OutputDebugStringA(errStr.c_str());
+        
+        // ログファイルにも出力
+        // Log::OutPutLog は std::ostream を取るが、グローバルなログストリームへの出力が必要な場合は検討
+        
         assert(false && "Shader Compile Error");
     }
 
-    // 結果の取得
-    Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = nullptr;
-    hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(shaderBlob.GetAddressOf()), nullptr);
+    // 5. コンパイル済みバイナリの取得
+    Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob;
+    hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
     assert(SUCCEEDED(hr));
-
-    Log::OutPutLog(os, ConvertString(std::format(L"CompileShader Success, path:{}\n", filePath)));
-
-    // リソースの解放
-    shaderSource->Release();
-    shaderResult->Release();
 
     return shaderBlob;
 }
+

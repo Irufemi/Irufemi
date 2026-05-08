@@ -190,43 +190,47 @@ void DirectXCommon::SetInfoQueue() {
 
 
 void DirectXCommon::CreatePSOs() {
-    std::ostream& logStream = log_->GetLogStream();
+    // --- シェーダコンパイル設定 ---
+    ShaderCompileOptions options;
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+    options.isDebug = true;
+#endif
 
     // --- シェーダコンパイル ---
-    auto vs3d = shaderCompiler_->Compile(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0", logStream);
-    auto ps3d = shaderCompiler_->Compile(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", logStream);
-    auto vsParticle = shaderCompiler_->Compile(L"resources/shaders/Particle.VS.hlsl", L"vs_6_0", logStream);
-    auto psParticle = shaderCompiler_->Compile(L"resources/shaders/Particle.PS.hlsl", L"ps_6_0", logStream);
-    auto vsSprite = shaderCompiler_->Compile(L"resources/shaders/Object2D.VS.hlsl", L"vs_6_0", logStream);
-    auto psSprite = shaderCompiler_->Compile(L"resources/shaders/Object2D.PS.hlsl", L"ps_6_0", logStream);
-    auto vsRegion = shaderCompiler_->Compile(L"resources/shaders/Region.VS.hlsl", L"vs_6_0", logStream);
-    auto vsGeo = shaderCompiler_->Compile(L"resources/shaders/ByGeometryShader.VS.hlsl", L"vs_6_0", logStream);
-    auto psGeo = shaderCompiler_->Compile(L"resources/shaders/ByGeometryShader.PS.hlsl", L"ps_6_0", logStream);
-    auto gsGeo = shaderCompiler_->Compile(L"resources/shaders/ByGeometryShader.GS.hlsl", L"gs_6_0", logStream);
-    auto vsLine = shaderCompiler_->Compile(L"resources/shaders/Line.VS.hlsl", L"vs_6_0", logStream);
-    auto psLine = shaderCompiler_->Compile(L"resources/shaders/Line.PS.hlsl", L"ps_6_0", logStream);
-    auto vsLineInst = shaderCompiler_->Compile(L"resources/shaders/LineInstanced.VS.hlsl", L"vs_6_0", logStream);
-    auto psLineInst = shaderCompiler_->Compile(L"resources/shaders/LineInstanced.PS.hlsl", L"ps_6_0", logStream);
-    auto vsSkin = shaderCompiler_->Compile(L"resources/shaders/SkinningObject3D.VS.hlsl", L"vs_6_0", logStream);
-    auto vsSkybox = shaderCompiler_->Compile(L"resources/shaders/Skybox.VS.hlsl", L"vs_6_0", logStream);
-    auto psSkybox = shaderCompiler_->Compile(L"resources/shaders/Skybox.PS.hlsl", L"ps_6_0", logStream);
-    auto vsGpuParticle = shaderCompiler_->Compile(L"resources/shaders/ParticleGPU.VS.hlsl", L"vs_6_0", logStream);
-    auto psGpuParticle = shaderCompiler_->Compile(L"resources/shaders/ParticleGPU.PS.hlsl", L"ps_6_0", logStream);
-    auto vsVoxel = shaderCompiler_->Compile(L"resources/shaders/VoxelParticle.VS.hlsl", L"vs_6_0", logStream);
-    auto psVoxel = shaderCompiler_->Compile(L"resources/shaders/VoxelParticle.PS.hlsl", L"ps_6_0", logStream);
-    auto vsShadow = shaderCompiler_->Compile(L"resources/shaders/ShadowMap.VS.hlsl", L"vs_6_0", logStream);
-    auto vsShadowSkin = shaderCompiler_->Compile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", L"vs_6_0", logStream);
-    auto psLightning = shaderCompiler_->Compile(L"resources/shaders/LightningCrawl.PS.hlsl", L"ps_6_0", logStream);
+    auto vs3d = shaderCompiler_->Compile(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0", options);
+    auto ps3d = shaderCompiler_->Compile(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", options);
+    auto vsParticle = shaderCompiler_->Compile(L"resources/shaders/Particle.VS.hlsl", L"vs_6_0", options);
+    auto psParticle = shaderCompiler_->Compile(L"resources/shaders/Particle.PS.hlsl", L"ps_6_0", options);
+    auto vsSprite = shaderCompiler_->Compile(L"resources/shaders/Object2D.VS.hlsl", L"vs_6_0", options);
+    auto psSprite = shaderCompiler_->Compile(L"resources/shaders/Object2D.PS.hlsl", L"ps_6_0", options);
+    auto vsRegion = shaderCompiler_->Compile(L"resources/shaders/Region.VS.hlsl", L"vs_6_0", options);
+    auto vsGeo = shaderCompiler_->Compile(L"resources/shaders/ByGeometryShader.VS.hlsl", L"vs_6_0", options);
+    auto psGeo = shaderCompiler_->Compile(L"resources/shaders/ByGeometryShader.PS.hlsl", L"ps_6_0", options);
+    auto gsGeo = shaderCompiler_->Compile(L"resources/shaders/ByGeometryShader.GS.hlsl", L"gs_6_0", options);
+    auto vsLine = shaderCompiler_->Compile(L"resources/shaders/Line.VS.hlsl", L"vs_6_0", options);
+    auto psLine = shaderCompiler_->Compile(L"resources/shaders/Line.PS.hlsl", L"ps_6_0", options);
+    auto vsLineInst = shaderCompiler_->Compile(L"resources/shaders/LineInstanced.VS.hlsl", L"vs_6_0", options);
+    auto psLineInst = shaderCompiler_->Compile(L"resources/shaders/LineInstanced.PS.hlsl", L"ps_6_0", options);
+    auto vsSkin = shaderCompiler_->Compile(L"resources/shaders/SkinningObject3D.VS.hlsl", L"vs_6_0", options);
+    auto vsSkybox = shaderCompiler_->Compile(L"resources/shaders/Skybox.VS.hlsl", L"vs_6_0", options);
+    auto psSkybox = shaderCompiler_->Compile(L"resources/shaders/Skybox.PS.hlsl", L"ps_6_0", options);
+    auto vsGpuParticle = shaderCompiler_->Compile(L"resources/shaders/ParticleGPU.VS.hlsl", L"vs_6_0", options);
+    auto psGpuParticle = shaderCompiler_->Compile(L"resources/shaders/ParticleGPU.PS.hlsl", L"ps_6_0", options);
+    auto vsVoxel = shaderCompiler_->Compile(L"resources/shaders/VoxelParticle.VS.hlsl", L"vs_6_0", options);
+    auto psVoxel = shaderCompiler_->Compile(L"resources/shaders/VoxelParticle.PS.hlsl", L"ps_6_0", options);
+    auto vsShadow = shaderCompiler_->Compile(L"resources/shaders/ShadowMap.VS.hlsl", L"vs_6_0", options);
+    auto vsShadowSkin = shaderCompiler_->Compile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", L"vs_6_0", options);
+    auto psLightning = shaderCompiler_->Compile(L"resources/shaders/LightningCrawl.PS.hlsl", L"ps_6_0", options);
 
-    auto csSkin = shaderCompiler_->Compile(L"resources/shaders/Skinning.CS.hlsl", L"cs_6_0", logStream);
-    auto csGpuInit = shaderCompiler_->Compile(L"resources/shaders/InitializeParticle.CS.hlsl", L"cs_6_0", logStream);
-    auto csGpuEmit = shaderCompiler_->Compile(L"resources/shaders/EmitParticle.CS.hlsl", L"cs_6_0", logStream);
-    auto csGpuUpdate = shaderCompiler_->Compile(L"resources/shaders/UpdateParticle.CS.hlsl", L"cs_6_0", logStream);
-    auto csGpuInitSort = shaderCompiler_->Compile(L"resources/shaders/InitParticleSort.CS.hlsl", L"cs_6_0", logStream);
-    auto csGpuBitonicSort = shaderCompiler_->Compile(L"resources/shaders/BitonicSort.CS.hlsl", L"cs_6_0", logStream);
-    auto csVoxelInit = shaderCompiler_->Compile(L"resources/shaders/InitializeVoxel.CS.hlsl", L"cs_6_0", logStream);
-    auto csVoxelEmit = shaderCompiler_->Compile(L"resources/shaders/EmitVoxel.CS.hlsl", L"cs_6_0", logStream);
-    auto csVoxelUpdate = shaderCompiler_->Compile(L"resources/shaders/UpdateVoxel.CS.hlsl", L"cs_6_0", logStream);
+    auto csSkin = shaderCompiler_->Compile(L"resources/shaders/Skinning.CS.hlsl", L"cs_6_0", options);
+    auto csGpuInit = shaderCompiler_->Compile(L"resources/shaders/InitializeParticle.CS.hlsl", L"cs_6_0", options);
+    auto csGpuEmit = shaderCompiler_->Compile(L"resources/shaders/EmitParticle.CS.hlsl", L"cs_6_0", options);
+    auto csGpuUpdate = shaderCompiler_->Compile(L"resources/shaders/UpdateParticle.CS.hlsl", L"cs_6_0", options);
+    auto csGpuInitSort = shaderCompiler_->Compile(L"resources/shaders/InitParticleSort.CS.hlsl", L"cs_6_0", options);
+    auto csGpuBitonicSort = shaderCompiler_->Compile(L"resources/shaders/BitonicSort.CS.hlsl", L"cs_6_0", options);
+    auto csVoxelInit = shaderCompiler_->Compile(L"resources/shaders/InitializeVoxel.CS.hlsl", L"cs_6_0", options);
+    auto csVoxelEmit = shaderCompiler_->Compile(L"resources/shaders/EmitVoxel.CS.hlsl", L"cs_6_0", options);
+    auto csVoxelUpdate = shaderCompiler_->Compile(L"resources/shaders/UpdateVoxel.CS.hlsl", L"cs_6_0", options);
 
     // --- 入力レイアウト定義 ---
     D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
