@@ -330,6 +330,79 @@ void IrufemiEngine::Finalize() {
         dxCommon_->WaitForGPU();
     }
 
+    // 静的ポインタのクリア（デストラクタでの不正アクセス防止）
+    BaseResource::SetDirectXCommon(nullptr);
+    ModelRegion::SetDirectXCommon(nullptr);
+    SphereRegion::SetDirectXCommon(nullptr);
+    TetraRegion::SetDirectXCommon(nullptr);
+    Line3DRegion::SetDirectXCommon(nullptr);
+
+    Texture::SetDescriptorPool(nullptr);
+    SphereRegion::SetSrvAllocator(nullptr);
+    ModelRegion::SetSrvAllocator(nullptr);
+    TetraRegion::SetSrvAllocator(nullptr);
+    ParticleSystem::SetSrvPool(nullptr);
+    Line3DRegion::SetSrvAllocator(nullptr);
+
+    Sprite::SetDebugUI(nullptr);
+    Circle2D::SetDebugUI(nullptr);
+    SphereClass::SetDebugUI(nullptr);
+    TriangleClass::SetDebugUI(nullptr);
+    CubeClass::SetDebugUI(nullptr);
+    PlaneClass::SetDebugUI(nullptr);
+    CylinderClass::SetDebugUI(nullptr);
+    RingClass::SetDebugUI(nullptr);
+    PrimitiveObjects3DClass::SetDebugUI(nullptr);
+    ParticleSystem::SetDebugUI(nullptr);
+
+    Sprite::SetDrawManager(nullptr);
+    Circle2D::SetDrawManager(nullptr);
+    SphereClass::SetDrawManager(nullptr);
+    TriangleClass::SetDrawManager(nullptr);
+    CubeClass::SetDrawManager(nullptr);
+    PlaneClass::SetDrawManager(nullptr);
+    CylinderClass::SetDrawManager(nullptr);
+    RingClass::SetDrawManager(nullptr);
+    ModelRegion::SetDrawManager(nullptr);
+    SphereRegion::SetDrawManager(nullptr);
+    TetraRegion::SetDrawManager(nullptr);
+    ParticleSystem::SetDrawManager(nullptr);
+    GPUParticleSystem::SetDrawManager(nullptr);
+    PrimitiveObjects3DClass::SetDrawManager(nullptr);
+    Line3DRegion::SetDrawManager(nullptr);
+
+    Sprite::SetTextureManager(nullptr);
+    Circle2D::SetTextureManager(nullptr);
+    SphereClass::SetTextureManager(nullptr);
+    TriangleClass::SetTextureManager(nullptr);
+    CubeClass::SetTextureManager(nullptr);
+    PlaneClass::SetTextureManager(nullptr);
+    CylinderClass::SetTextureManager(nullptr);
+    RingClass::SetTextureManager(nullptr);
+    ModelRegion::SetTextureManager(nullptr);
+    SphereRegion::SetTextureManager(nullptr);
+    TetraRegion::SetTextureManager(nullptr);
+    ParticleSystem::SetTextureManager(nullptr);
+    GPUParticleSystem::SetTextureManager(nullptr);
+    PrimitiveObjects3DClass::SetTextureManager(nullptr);
+
+    Sprite::SetCameraManager(nullptr);
+    ModelRegion::SetModelManager(nullptr);
+    ParticleSystem::SetEngine(nullptr);
+    GPUParticleSystem::SetEngine(nullptr);
+    BaseModel::SetIrufemiEngine(nullptr);
+    Skybox::SetEngine(nullptr);
+    GPUParticleSystem::SetDXCommon(nullptr);
+    VoxelParticleSystem::SetEngine(nullptr);
+    Circle2D::SetEngine(nullptr);
+    SphereRegion::SetEngine(nullptr);
+    TetraRegion::SetEngine(nullptr);
+    Line3DRegion::SetEngine(nullptr);
+    CubeClass::SetEngine(nullptr);
+    Effect::SetEngine(nullptr);
+    Bgm::SetAudioManager(nullptr);
+    Se::SetAudioManager(nullptr);
+
     // 1. シーン・UI
     if (sceneManager_) {
         sceneManager_.reset();

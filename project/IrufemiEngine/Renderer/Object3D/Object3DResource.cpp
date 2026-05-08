@@ -7,12 +7,14 @@
 Object3DResource::~Object3DResource() {
     Unmap();
     
-    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
-        if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
-            engine->GetMaterialBufferManager()->Free(materialCbIndex_);
-        }
-        if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
-            engine->GetTransformBufferManager()->Free(transformCbIndex_);
+    if (auto dxCommon = BaseResource::GetDirectXCommon()) {
+        if (auto engine = dxCommon->GetEngine()) {
+            if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetMaterialBufferManager()->Free(materialCbIndex_);
+            }
+            if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
+                engine->GetTransformBufferManager()->Free(transformCbIndex_);
+            }
         }
     }
 }
