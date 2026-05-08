@@ -48,4 +48,5 @@ private:
 - [x] `DrawManager::ExecuteRenderQueues()` の中身を削除し、代わりに `renderGraph_->Execute(this, engine);` を呼び出すようにする。
 
 ### 4. （将来拡張）リソーストラッキングと自動バリア
-フェーズ1と2（上記）が完了し安定稼働した後、各 Pass の `Setup()` 経由で「どの RenderTarget を読み書きするか」をグラフに登録し、UAVやSRVの `TransitionBarrier` を `RenderGraph` 側で自動発行する仕組みを構築する。
+- [x] 各 Pass の `Setup()` 経由で「どの RenderTarget を読み書きするか」をグラフに登録する。
+- [x] UAVやSRVの `TransitionBarrier` を `RenderGraph` 側で自動発行する仕組みを構築する。

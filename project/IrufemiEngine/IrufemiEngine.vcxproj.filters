@@ -426,6 +426,9 @@
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.h">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraphBuilder.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ShadowPass.h">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>

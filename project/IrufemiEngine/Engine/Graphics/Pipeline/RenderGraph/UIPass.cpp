@@ -1,6 +1,11 @@
 #include "UIPass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
+#include "RenderGraphBuilder.h"
+
+void UIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
+    // UIPass 自体は特別なバリアを要求しないが、念のため
+}
 
 void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isSprite = false) {

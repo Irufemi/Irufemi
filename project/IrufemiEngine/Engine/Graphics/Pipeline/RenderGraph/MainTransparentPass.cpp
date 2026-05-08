@@ -1,6 +1,14 @@
 #include "MainTransparentPass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
+#include "../../DirectX/ShadowMap.h"
+#include "RenderGraphBuilder.h"
+
+void MainTransparentPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
+    if (auto shadowMap = drawManager->GetShadowMap()) {
+        builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
+}
 
 void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false) {

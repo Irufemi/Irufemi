@@ -1,6 +1,14 @@
 #include "ShadowPass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
+#include "../../DirectX/ShadowMap.h"
+#include "RenderGraphBuilder.h"
+
+void ShadowPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
+    if (auto shadowMap = drawManager->GetShadowMap()) {
+        builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    }
+}
 
 void ShadowPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     drawManager->BeginShadowPass();

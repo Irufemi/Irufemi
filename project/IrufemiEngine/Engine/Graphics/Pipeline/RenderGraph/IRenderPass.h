@@ -4,6 +4,8 @@
 class DrawManager;
 class IrufemiEngine;
 
+class RenderGraphBuilder;
+
 /**
  * @class IRenderPass
  * @brief すべての描画パスの基底となるインターフェース
@@ -15,10 +17,10 @@ public:
 
     /**
      * @brief パスのセットアップ処理
-     * @details 将来的なリソースバリアの自動解決のため、入力・出力リソースの宣言を行う際に使用します。
-     *          （現在はプレースホルダーとして用意）
+     * @details リソースバリアの自動解決のため、入力・出力リソースの要求ステートを登録します。
+     * @param[in,out] builder リソースの使用状態を記録するビルダー
      */
-    virtual void Setup() {}
+    virtual void Setup(RenderGraphBuilder& builder, class DrawManager* drawManager, class IrufemiEngine* engine) {}
 
     /**
      * @brief パスの実行処理

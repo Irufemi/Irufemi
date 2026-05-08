@@ -95,8 +95,7 @@ void ShadowMap::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t hei
 }
 
 void ShadowMap::Begin(ID3D12GraphicsCommandList* commandList) {
-    // 1. Transition Barrier (SRV -> DepthWrite)
-    DirectXUtils::TransitionBarrier(commandList, resource_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    // バリアは RenderGraph 側で自動発行されるためここでは行わない
 
     // 2. Clear
     Clear(commandList);
@@ -110,8 +109,7 @@ void ShadowMap::Begin(ID3D12GraphicsCommandList* commandList) {
 }
 
 void ShadowMap::End(ID3D12GraphicsCommandList* commandList) {
-    // 1. Transition Barrier (DepthWrite -> SRV)
-    DirectXUtils::TransitionBarrier(commandList, resource_.Get(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    // バリアは RenderGraph 側で自動発行されるためここでは行わない
 }
 
 void ShadowMap::Clear(ID3D12GraphicsCommandList* commandList) {

@@ -115,18 +115,21 @@ void DrawManager::Initialize(DirectXCommon* dx) {
         pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 2, fr.areaLightResource.Get(), kMaxLights, sizeof(AreaLight));
     }
 
-    // シャドウマップの初期化 (2048x2048) - 全フレーム分
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        shadowMaps_[i] = std::make_unique<ShadowMap>();
-        shadowMaps_[i]->Initialize(dxCommon_, 2048, 2048);
-    }
-
     // レンダーグラフの構築
     renderGraph_ = std::make_unique<RenderGraph>();
     renderGraph_->AddPass(std::make_unique<ShadowPass>());
     renderGraph_->AddPass(std::make_unique<MainOpaquePass>());
     renderGraph_->AddPass(std::make_unique<MainTransparentPass>());
     renderGraph_->AddPass(std::make_unique<UIPass>());
+
+    // シャドウマップの初期化 (2048x2048) - 全フレーム分
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        shadowMaps_[i] = std::make_unique<ShadowMap>();
+        shadowMaps_[i]->Initialize(dxCommon_, 2048, 2048);
+        
+        // RenderGraph にリソースの初期ステートを登録
+        renderGraph_->RegisterResourceState(shadowMaps_[i]->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
 }
 
 void DrawManager::ExecuteComputePasses() {

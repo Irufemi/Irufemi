@@ -1,6 +1,14 @@
 #include "MainOpaquePass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
+#include "../../DirectX/ShadowMap.h"
+#include "RenderGraphBuilder.h"
+
+void MainOpaquePass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
+    if (auto shadowMap = drawManager->GetShadowMap()) {
+        builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
+}
 
 void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     // 1. Skybox
