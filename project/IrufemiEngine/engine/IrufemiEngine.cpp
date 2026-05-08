@@ -634,9 +634,9 @@ void IrufemiEngine::EndFrame() {
         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
 
     // 逆投影行列の更新
-    if (auto *cameraData = drawManager_->GetCameraData()) {
-      postProcessManager_->GetOutlineParams().projectionInverse =
-          Math::Inverse(cameraData->projection);
+    if (auto* perFrameData = drawManager_->GetPerFrameData()) {
+        postProcessManager_->GetOutlineParams().projectionInverse =
+            Math::Inverse(perFrameData->camera.projection);
     }
   }
 

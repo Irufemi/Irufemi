@@ -76,23 +76,23 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     commandList_ = dx->GetCommandList();
 
     // 定数バッファのサイズ (256バイトアラインメント)
-    const size_t cameraSize = (sizeof(CameraForGPU) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+    const size_t perFrameSize = (sizeof(PerFrameData) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
     const size_t lightCommonSize = (sizeof(LightCommonData) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
     const uint32_t kMaxLights = 1024;
 
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         auto& fr = frameResources_[i];
 
-        // フレーム定数バッファ (Camera + LightCommonData)
-        fr.frameResource = dxCommon_->CreateBufferResource(cameraSize + lightCommonSize);
+        // フレーム定数バッファ (PerFrameData + LightCommonData)
+        fr.frameResource = dxCommon_->CreateBufferResource(perFrameSize + lightCommonSize);
         uint8_t* mapped = nullptr;
         fr.frameResource->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
 
-        fr.cameraData = reinterpret_cast<CameraForGPU*>(mapped);
-        fr.lightCommonData = reinterpret_cast<LightCommonData*>(mapped + cameraSize);
+        fr.perFrameData = reinterpret_cast<PerFrameData*>(mapped);
+        fr.lightCommonData = reinterpret_cast<LightCommonData*>(mapped + perFrameSize);
 
         fr.frameData.camera = fr.frameResource->GetGPUVirtualAddress();
-        fr.frameData.lightCommon = fr.frameData.camera + cameraSize;
+        fr.frameData.lightCommon = fr.frameData.camera + perFrameSize;
 
         // StructuredBuffer の初期化 (ひとまず1024個分を確保)
         fr.pointLightResource = dxCommon_->CreateBufferResource(sizeof(PointLight) * kMaxLights);
@@ -135,7 +135,7 @@ void DrawManager::Finalize() {
     auto* srvPool = dxCommon_->GetSrvPool();
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         auto& fr = frameResources_[i];
-        if (fr.frameResource && fr.cameraData) {
+        if (fr.frameResource && fr.perFrameData) {
             fr.frameResource->Unmap(0, nullptr);
             fr.frameResource.Reset();
         }
@@ -286,8 +286,10 @@ void DrawManager::PostDraw() {
     dxCommon_->UpdateFixFPS();
 }
 
-void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights) {
-    cachedCamera_ = camera;
+void DrawManager::SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights) {
+    cachedPerFrame_.camera = camera;
+    cachedPerFrame_.time = time;
+    cachedPerFrame_.deltaTime = deltaTime;
     cachedDirectionalLight_ = light;
     
     cachedPointLights_.clear();
@@ -305,7 +307,7 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, const DirectionalLigh
 void DrawManager::SyncCachedFrameData() {
     auto& fr = frameResources_[dxCommon_->GetFrameIndex()];
 
-    if (fr.cameraData) { *fr.cameraData = cachedCamera_; }
+    if (fr.perFrameData) { *fr.perFrameData = cachedPerFrame_; }
     if (fr.lightCommonData) {
         // ライト共通データの更新（b1）
         fr.lightCommonData->directionalLight = cachedDirectionalLight_;
@@ -316,7 +318,7 @@ void DrawManager::SyncCachedFrameData() {
         // シャドウマップの行列更新
         ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
         if (shadowMap) {
-            Vector3 targetPos = useCustomShadowParams_ ? shadowTargetPos_ : cachedCamera_.worldPosition;
+            Vector3 targetPos = useCustomShadowParams_ ? shadowTargetPos_ : cachedPerFrame_.camera.worldPosition;
             float orthoSize = useCustomShadowParams_ ? shadowOrthoSize_ : 128.0f;
             shadowMap->UpdateMatrix(cachedDirectionalLight_.direction, targetPos, orthoSize);
             fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();

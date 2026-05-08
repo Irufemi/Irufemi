@@ -10,8 +10,8 @@
 #include "../Graphics/Data/PointLight.h"
 #include "../Graphics/Data/SpotLight.h"
 #include "../Graphics/Data/AreaLight.h"
-#include "../Graphics/Data/CameraForGPU.h"
 #include "../Graphics/Data/DirectionalLight.h"
+#include "../Graphics/Data/SceneGPUStructs.h"
 #include "../Graphics/DirectX/RenderTexture.h"
 #include "../Graphics/DirectX/DirectXCommon.h" // kMaxFramesInFlight のために追加
 #include "../Graphics/DirectX/RootSignatureConfig.h"
@@ -189,7 +189,7 @@ public:
         Microsoft::WRL::ComPtr<ID3D12Resource> spotLightResource;
         Microsoft::WRL::ComPtr<ID3D12Resource> areaLightResource;
 
-        CameraForGPU* cameraData = nullptr;
+        PerFrameData* perFrameData = nullptr;
         LightCommonData* lightCommonData = nullptr;
 
         D3D12_GPU_DESCRIPTOR_HANDLE lightSrvHandle{};
@@ -312,7 +312,7 @@ public: //メンバ関数
     /**
      * @brief フレーム単位の共通データを定数バッファに書き込む
      */
-    void SetFrameData(const CameraForGPU& camera, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);
+    void SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);
 
     /**
      * @brief キャッシュされたフレームデータを用いて現在のフレームバッファを同期する（ポーズなどでSetFrameDataが呼ばれなかった時用）
@@ -320,7 +320,7 @@ public: //メンバ関数
     void SyncCachedFrameData();
     
 private:
-    CameraForGPU cachedCamera_{};
+    PerFrameData cachedPerFrame_{};
     DirectionalLight cachedDirectionalLight_{};
     std::vector<PointLight> cachedPointLights_;
     std::vector<SpotLight> cachedSpotLights_;
@@ -451,7 +451,7 @@ public:
 
     /** @name 状態取得・ユーティリティ */
     ///@{
-    CameraForGPU* GetCameraData() const { return frameResources_[dxCommon_->GetFrameIndex()].cameraData; }
+    PerFrameData* GetPerFrameData() const { return frameResources_[dxCommon_->GetFrameIndex()].perFrameData; }
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
     ShadowMap* GetShadowMap() const { return shadowMaps_[dxCommon_->GetFrameIndex()].get(); }
     ///@}
