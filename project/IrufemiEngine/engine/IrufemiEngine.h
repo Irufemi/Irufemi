@@ -169,6 +169,7 @@ public: // ゲッター
     ID3D12Resource* GetSwapChainResources(UINT index) { return dxCommon_->GetSwapChainResources(index); }
     D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return dxCommon_->GetRtvHandles(index); }
     uint64_t& GetFenceValue() { return dxCommon_->GetFenceValue(); }
+    RenderTexture* GetMainRenderTexture() const { return mainRenderTexture_.get(); }
     ///@}
 
     /** @name マネージャ類の取得 */

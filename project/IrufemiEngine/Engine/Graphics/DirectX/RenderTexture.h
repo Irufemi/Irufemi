@@ -16,6 +16,7 @@ public:
     ~RenderTexture();
 
     void Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor);
+    void InitializeFromResource(DirectXCommon* dxCommon, ID3D12Resource* resource, DXGI_FORMAT format);
     
     // スプライトの初期化 (廃止予定だが、互換性のために残すか?)
     // 今回は全画面コピーに移行するため、基本的には不要

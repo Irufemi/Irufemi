@@ -1,52 +1,27 @@
 # IrufemiEngine 実装・リファクタリング計画
 
-## [進行中] レンダーグラフ（Frame Graph）の導入
+## ✅ [完了] フェーズ3: レンダーグラフ（Frame Graph）の導入とパケット分離
+- [x] **RenderGraphの実装**: `IRenderPass` を基底とした描画パス (`ShadowPass`, `MainOpaquePass`, `MainTransparentPass`, `UIPass`) の構築。
+- [x] **DrawManagerの分割**: 固定的な描画パイプラインを疎結合なパスの集合に置き換え。
+- [x] **RenderPacketsの分離**: `DrawManager` に依存していた描画パケット群を `RenderPackets.h` に分離。パスのラムダ引数を `auto` 化し、簡潔で依存の少ないコードベースに整理。
+- [x] **取扱説明書 (Manual.md) の作成**: エンジン機能の使い方やアーキテクチャルールをまとめたドキュメントの作成。
 
-現在の固定的な描画パイプライン（`DrawManager::ExecuteRenderQueues`）を疎結合な「RenderPass」の集合体に分割し、保守性と拡張性（新しい描画表現の追加）を向上させる。
+---
 
-### 1. クラス設計と新規ファイル
-`IrufemiEngine/Engine/Graphics/Pipeline/RenderGraph/` ディレクトリを新設し、以下のクラスを追加する。
+## 🚀 [進行中] フェーズ4: 計算（Compute）パスの統合と最適化
 
-#### 基底インターフェース `IRenderPass`
-すべての描画パスの基底となるクラス。
-```cpp
-class IRenderPass {
-public:
-    virtual ~IRenderPass() = default;
-    
-    // パスが必要とする入力リソース・出力リソースを宣言する（将来のバリア自動解決用）
-    virtual void Setup() {} 
-    
-    // 実際の描画コマンド（DrawCall）を発行する
-    virtual void Execute(class DrawManager* drawManager, class IrufemiEngine* engine) = 0;
-};
-```
+現在の基盤を活かし、さらなるパフォーマンスと拡張性を得るためのアーキテクチャ最適化フェーズ。
 
-#### 管理クラス `RenderGraph`
-登録された `IRenderPass` を管理し、順次実行する。
-```cpp
-class RenderGraph {
-public:
-    void AddPass(std::unique_ptr<IRenderPass> pass);
-    void Execute(DrawManager* drawManager, IrufemiEngine* engine);
-private:
-    std::vector<std::unique_ptr<IRenderPass>> passes_;
-};
-```
+### 1. Compute Shader の RenderGraph 完全統合（優先度：高）
+現在 `DrawManager::ExecuteComputeTasks()` でグラフ外で実行されているコンピュート処理（GPUパーティクルの更新等）を、レンダーグラフの仕組みに取り込む。
+- [x] `IComputePass`（または `ComputePass`）クラスを新設し、`RenderGraph` に登録できるようにする。
+- [x] 「計算 (Compute) → リソースバリア (UAV) → 描画 (Graphics)」というGPUの全処理フローを RenderGraph 1つで一元管理し、競合バグを根本から防ぐ。
+- [x] 既存の `DrawManager::ExecuteComputePasses` を直接呼び出していた部分を廃止・移行する。
 
-### 2. DrawManager の分割タスク
-現在の `DrawManager` にハードコードされている描画手順を以下のパスに切り出す。
+### 2. ポストプロセス用リソースの再利用（Transient Resources）（優先度：中）
+マルチパスレンダリング（ブルーム、被写界深度等）による VRAM 消費を抑えるためのメモリ管理システム。
+- [ ] RenderGraph内で、あるパスの出力テクスチャが不要になったら、次のパスの入力テクスチャとしてメモリ（VRAM）を使い回す（エイリアシング）仕組みを導入。
 
-- [x] **`ShadowPass`**: シャドウマップへの深度描画を行う。(`BeginShadowPass` ～ `EndShadowPass` の処理)
-- [x] **`MainOpaquePass`**: 不透明オブジェクト（Skybox, 3Dモデル, Regionなど）の描画。深度書き込みON。
-- [x] **`MainTransparentPass`**: 半透明オブジェクト（パーティクル、ライン、GPUパーティクルなど）の描画。深度書き込みOFFのアルファブレンド。
-- [x] **`PostProcessPass`**: `PostProcessManager` と連携し、レンダリング結果にエフェクトを適用。
-- [x] **`UIPass`**: 最前面スプライトや2Dオブジェクトの描画。
-
-### 3. DrawManager 側の修正
-- [x] 各 RenderPass が描画キュー（`standard3DQueue_` 等）にアクセスできるよう、`DrawManager` に `GetStandard3DQueue()` などのアクセサ（Getter）を追加する。
-- [x] `DrawManager::ExecuteRenderQueues()` の中身を削除し、代わりに `renderGraph_->Execute(this, engine);` を呼び出すようにする。
-
-### 4. （将来拡張）リソーストラッキングと自動バリア
-- [x] 各 Pass の `Setup()` 経由で「どの RenderTarget を読み書きするか」をグラフに登録する。
-- [x] UAVやSRVの `TransitionBarrier` を `RenderGraph` 側で自動発行する仕組みを構築する。
+### 3. ECS (Entity Component System) への移行準備（優先度：低）
+アプリケーション側のオブジェクト増加に備えたモダンな設計への準備。
+- [ ] 「Update（更新）」するデータと「Draw（描画）」するデータを完全に分離し、`Player` や `EnemyBeam` などがそれぞれ描画パケットを投げる現状の設計を見直す基盤を作る。

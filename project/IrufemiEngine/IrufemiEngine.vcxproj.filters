@@ -174,7 +174,16 @@
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.cpp">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\PostProcessPass.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\ShadowPass.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.cpp">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.cpp">
@@ -420,10 +429,22 @@
     <ClInclude Include="Engine\Manager\DrawManager.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Manager\RenderPackets.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\PostProcessPass.h">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraphBuilder.h">

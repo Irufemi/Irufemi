@@ -239,7 +239,7 @@ void ModelRegion::Draw() {
     // 毎フレームインスタンスの WVP 等を更新する (マルチバッファなので常に更新)
     SyncBeforeDraw();
 
-    DrawManager::ModelRegionPacket p{};
+    RenderPackets::ModelRegionPacket p{};
     p.gpuMesh = GetGpuMesh();
     p.materialAddress = GetMaterialVAddress();
     p.textureHandle = GetTextureHandle();

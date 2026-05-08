@@ -34,10 +34,10 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     };
 
     // 8. Sprites
-    DrawWithPSO(drawManager->GetSpriteQueue(), [&](const DrawManager::SpritePacket& p) { drawManager->DrawSprite(p); }, true);
+    DrawWithPSO(drawManager->GetSpriteQueue(), [&](const auto& p) { drawManager->DrawSprite(p); }, true);
 
     // 8.5 UI 3D Objects (Always drawn on top of Sprites)
-    DrawWithPSO(drawManager->GetUI3DQueue(), [&](const DrawManager::Standard3DPacket& p) { drawManager->DrawStandard3D(p); }, false);
+    DrawWithPSO(drawManager->GetUI3DQueue(), [&](const auto& p) { drawManager->DrawStandard3D(p); }, false);
 
     // 9. Post Custom Draws
     const auto& postRenderQueue = drawManager->GetPostRenderQueue();

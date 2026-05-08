@@ -64,6 +64,11 @@ class PostProcessManager {
 public:
     using Mode = PostProcessMode;
 
+    struct PostProcessWorkspace {
+        class RenderTexture* workTextures[2] = { nullptr, nullptr };
+        class RenderTexture* bloomExtract = nullptr;
+        class RenderTexture* bloomBlur = nullptr;
+    };
 
     /**
      * @struct NoiseParams
@@ -243,13 +248,7 @@ public:
      */
     void Initialize(DirectXCommon* dxCommon, DXGI_FORMAT rtvFormat);
 
-    /**
-     * @brief 作業用バッファ（ピンポンバッファ）の初期化
-     * @param width 画面幅
-     * @param height 画面高さ
-     * @param dxCommon DirectX基盤クラス
-     */
-    void InitializeBuffers(uint32_t width, uint32_t height, DirectXCommon* dxCommon);
+
 
     /**
      * @brief 更新処理
@@ -262,8 +261,9 @@ public:
      * @param commandList コマンドリスト
      * @param srcTexture 元となるレンダリングテクスチャ（メインの描画結果）
      * @param rtvHandle 最終的な出力先（バックバッファ）のRTV
+     * @param workspace Transient Resource が割り当てられた作業用領域
      */
-    void Draw(ID3D12GraphicsCommandList* commandList, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle);
+    void Draw(ID3D12GraphicsCommandList* commandList, class RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, const PostProcessWorkspace& workspace);
 
     // --- Getters & Setters ---
 
@@ -318,9 +318,6 @@ public:
     
     void SetDepthSrvHandle(D3D12_GPU_DESCRIPTOR_HANDLE handle) { depthSrvHandle_ = handle; }
 
-    /** @brief 最終的な描画結果のテクスチャを取得 (ImGui表示用) */
-    RenderTexture* GetResultTexture() const { return resultTexture_.get(); }
-
 private:
     void CreatePSOs();
     void CreateConstantBuffers();
@@ -335,20 +332,6 @@ private:
 
     Mode mode_ = Mode::None; // 互換性用（内部では不使用にする）
     std::vector<Mode> activeModes_;
-    
-    // ピンポンバッファ
-    std::array<std::unique_ptr<RenderTexture>, 2> workTextures_;
-    D3D12_RESOURCE_STATES workTextureStates_[2] = {D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE};
-
-    // 最終結果保持用テクスチャ (ImGui 表示等に使用)
-    std::unique_ptr<RenderTexture> resultTexture_;
-    D3D12_RESOURCE_STATES resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-
-    // ブルーム専用の中間バッファ
-    std::unique_ptr<RenderTexture> bloomExtractTexture_;
-    std::unique_ptr<RenderTexture> bloomBlurTexture_;
-    D3D12_RESOURCE_STATES bloomExtractState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    D3D12_RESOURCE_STATES bloomBlurState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
     // PSOs
     struct PipelineSet {

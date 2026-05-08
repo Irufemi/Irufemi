@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <d3d12.h>
 #include "RenderGraphBuilder.h"
+#include "TransientResourceManager.h"
 
 class DrawManager;
 class IrufemiEngine;
@@ -43,6 +44,32 @@ public:
     void ResetStates();
 
     /**
+     * @brief 描画実行時に一時リソースの実際のポインタを取得する
+     */
+    ID3D12Resource* GetTransientResource(TransientResourceHandle handle) {
+        if (handle < transientPhysicalResources_.size()) {
+            return transientPhysicalResources_[handle];
+        }
+        return nullptr;
+    }
+
+    /**
+     * @brief 一時リソースの RenderTexture ラッパーを取得する（RTVやSRVが必要な場合）
+     */
+    class RenderTexture* GetTransientRenderTexture(TransientResourceHandle handle) {
+        if (handle < transientRenderTextures_.size()) {
+            return transientRenderTextures_[handle].get();
+        }
+        return nullptr;
+    }
+
+    /**
+     * @brief TransientResourceManagerの初期化
+     */
+    void InitializeTransientResourceManager(class DirectXCommon* dxCommon);
+    TransientResourceManager* GetTransientResourceManager() { return transientResourceManager_.get(); }
+
+    /**
      * @brief 特定のリソースの現在のステートを登録する（初期ステートの通知用）
      */
     void RegisterResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
@@ -50,4 +77,8 @@ public:
 private:
     std::vector<std::unique_ptr<IRenderPass>> passes_;
     std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES> resourceStates_;
+
+    std::unique_ptr<TransientResourceManager> transientResourceManager_;
+    std::vector<ID3D12Resource*> transientPhysicalResources_;
+    std::vector<std::unique_ptr<class RenderTexture>> transientRenderTextures_;
 };

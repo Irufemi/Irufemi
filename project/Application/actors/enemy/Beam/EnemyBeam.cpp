@@ -185,7 +185,7 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
                 engine->BindLightningParams(capturedLightning->GetGPUVirtualAddress());
             }
 
-            DrawManager::Standard3DPacket packet{};
+            RenderPackets::Standard3DPacket packet{};
             packet.resource = capturedCylinder->GetD3D12Resource();
             packet.blendMode = BlendMode::kBlendModeAdd;
             packet.depthWrite = PSOManager::DepthWrite::Disable;
