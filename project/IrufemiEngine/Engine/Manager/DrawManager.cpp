@@ -23,6 +23,11 @@
 #include "Renderer/LineInstanced/LineResource.h"
 #include "../Graphics/DirectX/DirectXCommon.h"
 #include "../Graphics/DirectX/DirectXUtils.h"
+#include "../Graphics/Pipeline/RenderGraph/RenderGraph.h"
+#include "../Graphics/Pipeline/RenderGraph/ShadowPass.h"
+#include "../Graphics/Pipeline/RenderGraph/MainOpaquePass.h"
+#include "../Graphics/Pipeline/RenderGraph/MainTransparentPass.h"
+#include "../Graphics/Pipeline/RenderGraph/UIPass.h"
 #include "../../Resource/Model/ModelManager.h"
 #include "../../engine/IrufemiEngine.h"
 #include "../Graphics/Data/CameraForGPU.h"
@@ -115,6 +120,13 @@ void DrawManager::Initialize(DirectXCommon* dx) {
         shadowMaps_[i] = std::make_unique<ShadowMap>();
         shadowMaps_[i]->Initialize(dxCommon_, 2048, 2048);
     }
+
+    // レンダーグラフの構築
+    renderGraph_ = std::make_unique<RenderGraph>();
+    renderGraph_->AddPass(std::make_unique<ShadowPass>());
+    renderGraph_->AddPass(std::make_unique<MainOpaquePass>());
+    renderGraph_->AddPass(std::make_unique<MainTransparentPass>());
+    renderGraph_->AddPass(std::make_unique<UIPass>());
 }
 
 void DrawManager::ExecuteComputePasses() {
@@ -928,121 +940,8 @@ void DrawManager::EndShadowPass() {
 }
 
 void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
-    // --- Phase 1: Shadow Pass ---
-    BeginShadowPass();
-
-    auto DrawShadowsWithPSO = [&](auto& queue, auto drawFunc) {
-        if (queue.empty()) return;
-        
-        PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
-        bool first = true;
-        
-        for (const auto& p : queue) {
-            if (!p.castShadows) continue;
-            
-            if (first || p.cullMode != currentCull) {
-                engine->SetCull(p.cullMode);
-                engine->ApplyPSO(); // BeginShadowPass中なので自動的にShadowPSOが適用される
-                currentCull = p.cullMode;
-                first = false;
-            }
-            drawFunc(p);
-        }
-    };
-
-    DrawShadowsWithPSO(standard3DQueue_, [&](const Standard3DPacket& p) { DrawStandard3D(p); });
-    DrawShadowsWithPSO(regionQueue_, [&](const RegionPacket& p) { DrawRegion(p); });
-    DrawShadowsWithPSO(modelRegionQueue_, [&](const ModelRegionPacket& p) { DrawModelRegion(p); });
-
-    EndShadowPass();
-
-    // --- Phase 2: Main Pass ---
-
-    // 1. Skybox
-    if (!skyboxQueue_.empty()) {
-        engine->ApplySkyboxPSO();
-        for (const auto& p : skyboxQueue_) {
-            DrawSkybox(p);
-        }
-    }
-    
-    // Helper lambda to apply PSO efficiently
-    auto DrawWithPSO = [&](auto& queue, auto drawFunc, bool isParticle = false, bool isSprite = false, bool isLine = false) {
-        if (queue.empty()) return;
-        
-        BlendMode currentBlend = BlendMode::kBlendModeNormal;
-        PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
-        PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
-        bool first = true;
-        
-        for (const auto& p : queue) {
-            if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
-                engine->SetBlend(p.blendMode);
-                engine->SetDepthWrite(p.depthWrite);
-                engine->SetCull(p.cullMode);
-                if (isParticle) engine->ApplyParticlePSO();
-                else if (isSprite) engine->ApplySpritePSO();
-                else if (isLine) engine->ApplyLineInstancedPSO();
-                else engine->ApplyPSO(); // Standard3D or Region
-                
-                currentBlend = p.blendMode;
-                currentDepth = p.depthWrite;
-                currentCull = p.cullMode;
-                first = false;
-            }
-            drawFunc(p);
-        }
-    };
-    
-    // 2. Standard 3D (Opaque and Alpha blend)
-    DrawWithPSO(standard3DQueue_, [&](const Standard3DPacket& p) { DrawStandard3D(p); });
-    
-    // 3. Region
-    DrawWithPSO(regionQueue_, [&](const RegionPacket& p) { DrawRegion(p); });
-
-    // 3.5 ModelRegion
-    DrawWithPSO(modelRegionQueue_, [&](const ModelRegionPacket& p) { DrawModelRegion(p); });
-    
-    // 4. Line
-    DrawWithPSO(lineQueue_, [&](const LinePacket& p) { DrawLineInstanced(p); }, false, false, true);
-
-    // 5. Particles
-    DrawWithPSO(particleQueue_, [&](const ParticlePacket& p) { DrawParticle(p); }, true);
-
-    // 6. GPU Particles
-    if (!gpuParticleQueue_.empty()) {
-        BlendMode currentBlend = BlendMode::kBlendModeNormal;
-        PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
-        PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
-        bool first = true;
-        for (const auto& p : gpuParticleQueue_) {
-            if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
-                engine->SetBlend(p.blendMode);
-                engine->SetDepthWrite(p.depthWrite);
-                engine->SetCull(p.cullMode);
-                engine->ApplyGpuParticlePSO();
-                currentBlend = p.blendMode; currentDepth = p.depthWrite; currentCull = p.cullMode;
-                first = false;
-            }
-            DrawGPUParticle(p);
-        }
-    }
-    // 7. Voxel Particles
-    if (!voxelParticleQueue_.empty()) {
-        for (const auto& p : voxelParticleQueue_) {
-            DrawVoxelParticle(p);
-        }
-    }
-
-    // 8. Sprites
-    DrawWithPSO(spriteQueue_, [&](const SpritePacket& p) { DrawSprite(p); }, false, true);
-
-    // 8.5 UI 3D Objects (Always drawn on top of Sprites)
-    DrawWithPSO(ui3DQueue_, [&](const Standard3DPacket& p) { DrawStandard3D(p); });
-
-    // 9. Post Custom Draws
-    for (auto& func : postRenderQueue_) {
-        func();
+    if (renderGraph_) {
+        renderGraph_->Execute(this, engine);
     }
 
     ClearRenderQueues();

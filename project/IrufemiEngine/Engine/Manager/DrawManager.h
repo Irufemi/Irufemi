@@ -167,7 +167,24 @@ private:
     // 最前面UI描画用キュー (PostProcess適用後のバックバッファに直接描画)
     std::vector<SpritePacket> topMostSpriteQueue_;
 
+    // レンダーグラフ
+    std::unique_ptr<class RenderGraph> renderGraph_;
+
 public:
+    // --- Queue Getters for RenderPasses ---
+    const std::vector<Standard3DPacket>& GetStandard3DQueue() const { return standard3DQueue_; }
+    const std::vector<Standard3DPacket>& GetUI3DQueue() const { return ui3DQueue_; }
+    const std::vector<SpritePacket>& GetSpriteQueue() const { return spriteQueue_; }
+    const std::vector<ParticlePacket>& GetParticleQueue() const { return particleQueue_; }
+    const std::vector<LinePacket>& GetLineQueue() const { return lineQueue_; }
+    const std::vector<GPUParticlePacket>& GetGPUParticleQueue() const { return gpuParticleQueue_; }
+    const std::vector<VoxelParticlePacket>& GetVoxelParticleQueue() const { return voxelParticleQueue_; }
+    const std::vector<SkyboxPacket>& GetSkyboxQueue() const { return skyboxQueue_; }
+    const std::vector<RegionPacket>& GetRegionQueue() const { return regionQueue_; }
+    const std::vector<ModelRegionPacket>& GetModelRegionQueue() const { return modelRegionQueue_; }
+    const std::vector<std::function<void()>>& GetPostRenderQueue() const { return postRenderQueue_; }
+    const std::vector<SpritePacket>& GetTopMostSpriteQueue() const { return topMostSpriteQueue_; }
+
     // --- Execute Queues ---
     void ExecuteRenderQueues(class IrufemiEngine* engine);
     void ExecuteTopMostQueues(class IrufemiEngine* engine); // 最前面UIの描画キューを消化する
