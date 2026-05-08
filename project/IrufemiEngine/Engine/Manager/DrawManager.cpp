@@ -30,6 +30,7 @@ using namespace RenderPackets;
 #include "../Graphics/Pipeline/RenderGraph/MainOpaquePass.h"
 #include "../Graphics/Pipeline/RenderGraph/MainTransparentPass.h"
 #include "../Graphics/Pipeline/RenderGraph/UIPass.h"
+#include "../Graphics/Pipeline/RenderGraph/PostProcessPass.h"
 #include "../../Resource/Model/ModelManager.h"
 #include "../../engine/IrufemiEngine.h"
 #include "../Graphics/Data/CameraForGPU.h"
@@ -119,11 +120,14 @@ void DrawManager::Initialize(DirectXCommon* dx) {
 
     // レンダーグラフの構築
     renderGraph_ = std::make_unique<RenderGraph>();
+    renderGraph_->InitializeTransientResourceManager(dxCommon_);
+    
     renderGraph_->AddPass(std::make_unique<ComputePass>());
     renderGraph_->AddPass(std::make_unique<ShadowPass>());
     renderGraph_->AddPass(std::make_unique<MainOpaquePass>());
     renderGraph_->AddPass(std::make_unique<MainTransparentPass>());
     renderGraph_->AddPass(std::make_unique<UIPass>());
+    renderGraph_->AddPass(std::make_unique<PostProcessPass>());
 
     // シャドウマップの初期化 (2048x2048) - 全フレーム分
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -947,8 +951,14 @@ void DrawManager::EndShadowPass() {
 
 void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     if (renderGraph_) {
+        // メインレンダリングテクスチャの初期状態を登録 (RenderGraph内で遷移するため)
+        renderGraph_->RegisterResourceState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+
         renderGraph_->Execute(this, engine);
     }
+
+    // RenderGraph 終了後はバックバッファを描画対象とする (TopMost UI など用)
+    SetRenderTargetToBackBuffer(false);
 
     ClearRenderQueues();
 }

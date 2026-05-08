@@ -278,8 +278,6 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // --- PostProcessManager の初期化 ---
   postProcessManager_ = std::make_unique<PostProcessManager>();
   postProcessManager_->Initialize(dxCommon_.get(), DXGI_FORMAT_R8G8B8A8_UNORM);
-  postProcessManager_->InitializeBuffers(GetClientWidth(), GetClientHeight(),
-                                         dxCommon_.get());
 
   // ノイズテクスチャのロードとハンドル設定
   postProcessManager_->SetDissolveNoiseHandle(
@@ -608,44 +606,8 @@ void IrufemiEngine::ProcessFrame() {
 
 // フレーム終了処理
 void IrufemiEngine::EndFrame() {
-  // 3. RenderTexture への描画を終了 (SRV状態へ遷移)
-  drawManager_->EndRenderTexture(mainRenderTexture_.get());
-
-  // 4. 描画先をバックバッファに戻す
-  drawManager_->SetRenderTargetToBackBuffer(false);
-
-  // 5. ポストプロセス描画の実行
-  // Outline のための深度バッファ遷移 (スタック内のどこかに Outline
-  // があれば適用)
-  const auto &activeModes = postProcessManager_->GetActiveModes();
-  bool hasOutline =
-      std::find(activeModes.begin(), activeModes.end(),
-                PostProcessMode::DepthBasedOutline) != activeModes.end();
-
-  if (hasOutline) {
-    DirectXUtils::TransitionBarrier(
-        dxCommon_->GetCommandList(), dxCommon_->GetDepthStencilResource(),
-        D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
-
-    // 逆投影行列の更新
-    if (auto *perFrameData = drawManager_->GetPerFrameData()) {
-      postProcessManager_->GetOutlineParams().projectionInverse =
-          Math::Inverse(perFrameData->camera.projection);
-    }
-  }
-
-  // マネージャーに描画を委譲
-  postProcessManager_->Draw(
-      dxCommon_->GetCommandList(), mainRenderTexture_.get(),
-      dxCommon_->GetRtvHandles(dxCommon_->GetCurrentBackBufferIndex()));
-
-  if (hasOutline) {
-    DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(),
-                                    dxCommon_->GetDepthStencilResource(),
-                                    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                    D3D12_RESOURCE_STATE_DEPTH_WRITE, 0);
-  }
+  // (RenderTexture の SRV 化やバックバッファへの転送、
+  // ポストプロセス処理はすべて RenderGraph 内で行われます)
 
   // 描画先がバックバッファになり、ポストプロセス（暗転など）が掛かった上から
   // 影響を受けない最前面UIとしてロード画面を描画する
@@ -683,7 +645,6 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
   mainRenderTexture_->Initialize(
       dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
       {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
-  postProcessManager_->InitializeBuffers(width, height, dxCommon_.get());
 
   // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)
   if (depthSrvIndex_ != 0xFFFFFFFF) {

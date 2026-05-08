@@ -380,6 +380,7 @@ public:
     /** @name 状態取得・ユーティリティ */
     ///@{
     PerFrameData* GetPerFrameData() const { return frameResources_[dxCommon_->GetFrameIndex()].perFrameData; }
+    class RenderGraph* GetRenderGraph() const { return renderGraph_.get(); }
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
     ShadowMap* GetShadowMap() const { return shadowMaps_[dxCommon_->GetFrameIndex()].get(); }
     ///@}
