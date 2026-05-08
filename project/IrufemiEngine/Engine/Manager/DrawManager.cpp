@@ -25,6 +25,7 @@ using namespace RenderPackets;
 #include "../Graphics/DirectX/DirectXCommon.h"
 #include "../Graphics/DirectX/DirectXUtils.h"
 #include "../Graphics/Pipeline/RenderGraph/RenderGraph.h"
+#include "../Graphics/Pipeline/RenderGraph/ComputePass.h"
 #include "../Graphics/Pipeline/RenderGraph/ShadowPass.h"
 #include "../Graphics/Pipeline/RenderGraph/MainOpaquePass.h"
 #include "../Graphics/Pipeline/RenderGraph/MainTransparentPass.h"
@@ -118,6 +119,7 @@ void DrawManager::Initialize(DirectXCommon* dx) {
 
     // レンダーグラフの構築
     renderGraph_ = std::make_unique<RenderGraph>();
+    renderGraph_->AddPass(std::make_unique<ComputePass>());
     renderGraph_->AddPass(std::make_unique<ShadowPass>());
     renderGraph_->AddPass(std::make_unique<MainOpaquePass>());
     renderGraph_->AddPass(std::make_unique<MainTransparentPass>());

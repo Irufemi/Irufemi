@@ -5,14 +5,12 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Core/Math/Math.h"
 #include "Core/Math/Random/Random.h"
 
-
 #include <DbgHelp.h>
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <format>
 #include <string>
-
 
 #include "../Resource/Audio/Bgm.h"
 #include "../Resource/Audio/Se.h"
@@ -48,7 +46,6 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Skybox/Skybox.h"
 #include "Renderer/VertexData.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
-
 
 #include "Framework/IScene.h"
 
@@ -601,9 +598,7 @@ void IrufemiEngine::ProcessFrame() {
   // 1. バックバッファをクリア (念のため)
   drawManager_->PreDraw(clearColor_, 1.0f, 0);
 
-  // --- Compute Shaderの一括実行 ---
-  // 描画が始まる前に、全Rendererから予約されたComputeタスクを消化する
-  drawManager_->ExecuteComputePasses();
+  // (Compute Shaderの一括実行は、RenderGraph内のComputePassに移行しました)
 
   // 2. メインの描画先を RenderTexture に切り替え、指定のクリアカラーでクリア
   drawManager_->BeginRenderTexture(
@@ -634,9 +629,9 @@ void IrufemiEngine::EndFrame() {
         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0);
 
     // 逆投影行列の更新
-    if (auto* perFrameData = drawManager_->GetPerFrameData()) {
-        postProcessManager_->GetOutlineParams().projectionInverse =
-            Math::Inverse(perFrameData->camera.projection);
+    if (auto *perFrameData = drawManager_->GetPerFrameData()) {
+      postProcessManager_->GetOutlineParams().projectionInverse =
+          Math::Inverse(perFrameData->camera.projection);
     }
   }
 

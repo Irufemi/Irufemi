@@ -14,9 +14,9 @@
 
 ### 1. Compute Shader の RenderGraph 完全統合（優先度：高）
 現在 `DrawManager::ExecuteComputeTasks()` でグラフ外で実行されているコンピュート処理（GPUパーティクルの更新等）を、レンダーグラフの仕組みに取り込む。
-- [ ] `IComputePass`（または `ComputePass`）クラスを新設し、`RenderGraph` に登録できるようにする。
-- [ ] 「計算 (Compute) → リソースバリア (UAV) → 描画 (Graphics)」というGPUの全処理フローを RenderGraph 1つで一元管理し、競合バグを根本から防ぐ。
-- [ ] 既存の `DrawManager::AddComputeTask` を廃止・移行する。
+- [x] `IComputePass`（または `ComputePass`）クラスを新設し、`RenderGraph` に登録できるようにする。
+- [x] 「計算 (Compute) → リソースバリア (UAV) → 描画 (Graphics)」というGPUの全処理フローを RenderGraph 1つで一元管理し、競合バグを根本から防ぐ。
+- [x] 既存の `DrawManager::ExecuteComputePasses` を直接呼び出していた部分を廃止・移行する。
 
 ### 2. ポストプロセス用リソースの再利用（Transient Resources）（優先度：中）
 マルチパスレンダリング（ブルーム、被写界深度等）による VRAM 消費を抑えるためのメモリ管理システム。
