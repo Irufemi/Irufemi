@@ -22,16 +22,55 @@ public:
     BaseScene();
     virtual ~BaseScene();
 
-    // 継承先で必ず呼ぶ
+    // --- 基本サイクル関数 ---
+
+    /**
+     * @brief シーンの初期化。継承先で必ず基底クラスの Initialize を呼んでください。
+     */
     virtual void Initialize(IrufemiEngine* engine) override;
     
-    // 継承先はこれを呼び出すことで、カメラ等の共通更新が行われる
+    /**
+     * @brief 毎フレームの更新。継承先はこれを呼び出すことで、カメラ等の共通更新が行われます。
+     */
     virtual void Update() override;
     
-    // 描画処理（通常は継承先で実装）
+    /**
+     * @brief 毎フレームの描画処理（通常は継承先で実装します）
+     */
     virtual void Draw() override {}
+
+    // --- ライフサイクル関数 ---
     
-    // 共通のデバッグタブ描画
+    /**
+     * @brief シーンの終了処理。リソースの明示的な解放などを行います。
+     */
+    virtual void Finalize() override {}
+
+    /**
+     * @brief シーンが最前面でアクティブになった時に呼ばれます。
+     */
+    virtual void OnEnter() override {}
+
+    /**
+     * @brief シーンが破棄される直前、または完全に非アクティブになる時に呼ばれます。
+     */
+    virtual void OnExit() override {}
+
+    /**
+     * @brief 上に別のシーンがPushされ、このシーンがバックグラウンドに回った時に呼ばれます。
+     */
+    virtual void OnSuspend() override {}
+
+    /**
+     * @brief 上のシーンがPopされ、このシーンが再び最前面に復帰した時に呼ばれます。
+     */
+    virtual void OnResume() override {}
+
+    // --- デバッグ機能 ---
+    
+    /**
+     * @brief 共通のデバッグタブ描画。
+     */
     virtual void DrawDebugTab() override;
 
 protected:

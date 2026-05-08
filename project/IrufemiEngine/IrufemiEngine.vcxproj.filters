@@ -52,6 +52,9 @@
     <Filter Include="Engine\Graphics\Pipeline">
       <UniqueIdentifier>{452da872-ad2a-4d69-8678-683d9a898748}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Graphics\Pipeline\RenderGraph">
+      <UniqueIdentifier>{452da872-ad2a-4d69-8678-683d9a898749}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Core">
       <UniqueIdentifier>{744ea0f6-49f1-4635-93e4-d781f01bce85}</UniqueIdentifier>
     </Filter>
@@ -167,6 +170,21 @@
   <ItemGroup>
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
       <Filter>Engine\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\ShadowPass.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainTransparentPass.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\UIPass.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClCompile>
     <ClCompile Include="Resource\Audio\Bgm.cpp">
       <Filter>Resource\Audio</Filter>
@@ -401,6 +419,27 @@
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
       <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraphBuilder.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ShadowPass.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainTransparentPass.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\UIPass.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>
     <ClInclude Include="Framework\IScene.h">
       <Filter>Framework\Scene</Filter>
@@ -864,6 +903,15 @@
     <None Include="..\Application\resources\shaders\LightningUtility.hlsli">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </None>
+    <None Include="..\Application\resources\shaders\Material.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\PostProcess.hlsli">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </None>
+    <None Include="..\Application\resources\shaders\VertexData.hlsli">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Application\resources\shaders\InitializeParticle.CS.hlsl">
@@ -1003,6 +1051,24 @@
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\LightningCrawl.PS.hlsl">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\BitonicSort.CS.hlsl">
+      <Filter>Renderer\ParticleGPU\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\BloomCombine.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\GaussianBlur.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\HighLuminanceExtract.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\InitParticleSort.CS.hlsl">
+      <Filter>Renderer\ParticleGPU\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\PostProcess.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>
