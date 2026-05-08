@@ -178,6 +178,63 @@ public:
         int32_t kernelSize = 21;            ///< ぼかしのカーネルサイズ
     };
 
+    /**
+     * @struct CombinedParams
+     * @brief 統合ポストプロセス用定数バッファ構造体
+     */
+    struct CombinedParams {
+        int32_t effectCount;
+        int32_t pad0[3]; // HLSLの int4[4] の開始位置（16バイト境界）に合わせるためのパディング
+        int32_t effects[16];
+
+        // Vignette
+        float vignetteScale;
+        float vignettePower;
+
+        // Noise
+        float noiseIntensity;
+        float noiseTime;
+
+        // Dissolve
+        Vector4 dissolveEdgeColor;
+        Vector4 dissolveBackgroundColor;
+        float dissolveThreshold;
+        float dissolveEdgeRange;
+
+        // HSV
+        float hsvHue;
+        float hsvSaturation;
+        float hsvValue;
+
+        // ToneMapping
+        float toneMappingExposure;
+        float pad2[2]; // HLSLの float4(fadeColor) 用に16バイト境界までパディング
+
+        // Fade
+        Vector4 fadeColor;
+        float fadeIntensity;
+        float pad3[3]; // HLSLの float4(slideColor) 用に16バイト境界までパディング
+
+        // Slide
+        Vector4 slideColor;
+        float slideThreshold;
+        float pad4[3]; // HLSLの Matrix(projectionInverse) 用に16バイト境界までパディング
+
+        // Outline
+        Matrix4x4 projectionInverse;
+
+        // Smoothing / Gaussian
+        float gaussianSigma;
+        int32_t gaussianKernelSize;
+        int32_t smoothingKernelSize;
+        float pad5; // HLSLの float2(radialBlurCenter) が境界を跨がないようにパディング
+
+        // RadialBlur
+        Vector2 radialBlurCenter;
+        float radialBlurWidth;
+        int32_t radialBlurSamples;
+    };
+
 public:
     /**
      * @brief ポストプロセスの初期化
@@ -281,8 +338,17 @@ private:
     
     // ピンポンバッファ
     std::array<std::unique_ptr<RenderTexture>, 2> workTextures_;
+    D3D12_RESOURCE_STATES workTextureStates_[2] = {D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE};
+
     // 最終結果保持用テクスチャ (ImGui 表示等に使用)
     std::unique_ptr<RenderTexture> resultTexture_;
+    D3D12_RESOURCE_STATES resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+    // ブルーム専用の中間バッファ
+    std::unique_ptr<RenderTexture> bloomExtractTexture_;
+    std::unique_ptr<RenderTexture> bloomBlurTexture_;
+    D3D12_RESOURCE_STATES bloomExtractState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    D3D12_RESOURCE_STATES bloomBlurState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
     // PSOs
     struct PipelineSet {
@@ -298,6 +364,10 @@ private:
     Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomBlurHPSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomBlurVPSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomCombinePSO_;
+
+    // 統合ポストプロセス用 PSO
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> combinedPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> finalCombinedPSO_;
 
     // Constant Buffers
     Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;
@@ -348,10 +418,12 @@ private:
     BloomParams* mappedBloom_ = nullptr;
     BloomParams bloomParams_;
 
+    Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
+    CombinedParams* mappedCombined_ = nullptr;
+    CombinedParams combinedParams_;
+
     D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 2> dissolveNoiseHandle_{};
 
-    // 状態追跡用
-    std::array<D3D12_RESOURCE_STATES, 2> workTextureStates_ = { D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE };
-    D3D12_RESOURCE_STATES resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+    // 状態追跡用は上に移動済み
 };

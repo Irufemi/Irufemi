@@ -57,6 +57,21 @@ void PostProcessManager::InitializeBuffers(uint32_t width, uint32_t height,
     resultTexture_->GetResource()->SetName(L"PostProcess_Result");
   }
   resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+  // ブルーム専用中間テクスチャの初期化
+  if (!bloomExtractTexture_) {
+    bloomExtractTexture_ = std::make_unique<RenderTexture>();
+  }
+  bloomExtractTexture_->Initialize(dxCommon, width, height, rtvFormat_, {0.0f, 0.0f, 0.0f, 1.0f});
+  if (bloomExtractTexture_->GetResource()) bloomExtractTexture_->GetResource()->SetName(L"Bloom_Extract");
+  bloomExtractState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+  if (!bloomBlurTexture_) {
+    bloomBlurTexture_ = std::make_unique<RenderTexture>();
+  }
+  bloomBlurTexture_->Initialize(dxCommon, width, height, rtvFormat_, {0.0f, 0.0f, 0.0f, 1.0f});
+  if (bloomBlurTexture_->GetResource()) bloomBlurTexture_->GetResource()->SetName(L"Bloom_Blur");
+  bloomBlurState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 }
 
 void PostProcessManager::Update(float totalTime) {
@@ -65,151 +80,213 @@ void PostProcessManager::Update(float totalTime) {
     *mappedNoise_ = noiseParams_;
   }
 
-  // 他のパラメータも必要に応じてマッピング
-  if (mappedVignette_)
-    *mappedVignette_ = vignetteParams_;
-  if (mappedSmoothing_)
-    *mappedSmoothing_ = smoothingParams_;
-  if (mappedGaussian_)
-    *mappedGaussian_ = gaussianParams_;
-  if (mappedRadialBlur_)
-    *mappedRadialBlur_ = radialBlurParams_;
-  if (mappedOutline_)
-    *mappedOutline_ = outlineParams_;
-  if (mappedDissolve_)
-    *mappedDissolve_ = dissolveParams_;
-  if (mappedHsv_)
-    *mappedHsv_ = hsvParams_;
-  if (mappedToneMapping_)
-    *mappedToneMapping_ = toneMappingParams_;
-  if (mappedFade_)
-    *mappedFade_ = fadeParams_;
-  if (mappedSlide_)
-    *mappedSlide_ = slideParams_;
-  if (mappedBloom_)
-    *mappedBloom_ = bloomParams_;
+  // 他のパラメータも同期
+  if (mappedVignette_) *mappedVignette_ = vignetteParams_;
+  if (mappedSmoothing_) *mappedSmoothing_ = smoothingParams_;
+  if (mappedGaussian_) *mappedGaussian_ = gaussianParams_;
+  if (mappedRadialBlur_) *mappedRadialBlur_ = radialBlurParams_;
+  if (mappedOutline_) *mappedOutline_ = outlineParams_;
+  if (mappedDissolve_) *mappedDissolve_ = dissolveParams_;
+  if (mappedHsv_) *mappedHsv_ = hsvParams_;
+  if (mappedToneMapping_) *mappedToneMapping_ = toneMappingParams_;
+  if (mappedFade_) *mappedFade_ = fadeParams_;
+  if (mappedSlide_) *mappedSlide_ = slideParams_;
+  if (mappedBloom_) *mappedBloom_ = bloomParams_;
+
+  // 統合パラメータの同期
+  combinedParams_.vignetteScale = vignetteParams_.scale;
+  combinedParams_.vignettePower = vignetteParams_.power;
+  combinedParams_.noiseIntensity = noiseParams_.intensity;
+  combinedParams_.noiseTime = noiseParams_.time;
+  combinedParams_.dissolveEdgeColor = dissolveParams_.edgeColor;
+  combinedParams_.dissolveBackgroundColor = dissolveParams_.backgroundColor;
+  combinedParams_.dissolveThreshold = dissolveParams_.threshold;
+  combinedParams_.dissolveEdgeRange = dissolveParams_.edgeRange;
+  combinedParams_.hsvHue = hsvParams_.hue;
+  combinedParams_.hsvSaturation = hsvParams_.saturation;
+  combinedParams_.hsvValue = hsvParams_.value;
+  combinedParams_.toneMappingExposure = toneMappingParams_.exposure;
+  combinedParams_.fadeColor = fadeParams_.color;
+  combinedParams_.fadeIntensity = fadeParams_.intensity;
+  combinedParams_.slideColor = slideParams_.color;
+  combinedParams_.slideThreshold = slideParams_.threshold;
+  combinedParams_.projectionInverse = outlineParams_.projectionInverse;
+  combinedParams_.gaussianSigma = gaussianParams_.sigma;
+  combinedParams_.gaussianKernelSize = gaussianParams_.kernelSize;
+  combinedParams_.smoothingKernelSize = smoothingParams_.kernelSize;
+  combinedParams_.radialBlurCenter = radialBlurParams_.center;
+  combinedParams_.radialBlurWidth = radialBlurParams_.blurWidth;
+  combinedParams_.radialBlurSamples = radialBlurParams_.numSamples;
+
+  if (mappedCombined_) {
+    *mappedCombined_ = combinedParams_;
+  }
 }
 
 void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
-                              RenderTexture *srcTexture,
-                              D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle) {
+                               RenderTexture *srcTexture,
+                               D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle) {
   RenderTexture *currentSource = srcTexture;
 
-  // 1) ポストプロセスをテクスチャ間で実行し、最終結果を resultTexture_ に入れる
   if (!activeModes_.empty()) {
-    for (size_t i = 0; i < activeModes_.size(); ++i) {
-      Mode mode = activeModes_[i];
-      bool isLast = (i == activeModes_.size() - 1);
+    size_t modeIdx = 0;
+    int pingPongIdx = 0;
 
-      D3D12_CPU_DESCRIPTOR_HANDLE targetHandle;
-      RenderTexture *nextTargetTexture = nullptr;
-      int nextTargetIdx = -1;
+    while (modeIdx < activeModes_.size()) {
+      Mode mode = activeModes_[modeIdx];
+      bool isLastBatch = false;
 
-      if (isLast) {
-        // 最終パスは resultTexture_ に出力
-        nextTargetTexture = resultTexture_.get();
-        targetHandle = nextTargetTexture->GetRtvHandle();
-        if (resultTextureState_ != D3D12_RESOURCE_STATE_RENDER_TARGET) {
-            DirectXUtils::TransitionBarrier(commandList, nextTargetTexture->GetResource(),
-                               resultTextureState_,
-                               D3D12_RESOURCE_STATE_RENDER_TARGET);
-        }
-        resultTextureState_ = D3D12_RESOURCE_STATE_RENDER_TARGET;
-      } else {
-        nextTargetIdx = static_cast<int>(i % 2);
-        nextTargetTexture = workTextures_[nextTargetIdx].get();
-        targetHandle = nextTargetTexture->GetRtvHandle();
-
-        if (workTextureStates_[nextTargetIdx] != D3D12_RESOURCE_STATE_RENDER_TARGET) {
-            DirectXUtils::TransitionBarrier(commandList, nextTargetTexture->GetResource(),
-                               workTextureStates_[nextTargetIdx],
-                               D3D12_RESOURCE_STATE_RENDER_TARGET);
-        }
-        workTextureStates_[nextTargetIdx] =
-            D3D12_RESOURCE_STATE_RENDER_TARGET;
-      }
-
+      // 1) 非統合エフェクト (Bloom) の処理
       if (mode == Mode::Bloom) {
-          // Bloom は特殊なマルチパス処理を行う
-          RenderTexture* bloomExtract = workTextures_[0].get();
-          RenderTexture* blurH = workTextures_[1].get();
-          RenderTexture* blurV = workTextures_[0].get(); // 前のバッファに戻る
+        isLastBatch = (modeIdx == activeModes_.size() - 1);
+        RenderTexture* nextTarget = isLastBatch ? resultTexture_.get() : workTextures_[pingPongIdx % 2].get();
+        D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = nextTarget->GetRtvHandle();
 
-          // 0. Workバッファを書き込み可能状態に遷移 (抽出用)
-          if (workTextureStates_[0] != D3D12_RESOURCE_STATE_RENDER_TARGET) {
-              DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), workTextureStates_[0], D3D12_RESOURCE_STATE_RENDER_TARGET);
+        if (isLastBatch) {
+          if (resultTextureState_ != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+            DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), resultTextureState_, D3D12_RESOURCE_STATE_RENDER_TARGET);
           }
-          workTextureStates_[0] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+          resultTextureState_ = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        } else {
+          if (workTextureStates_[pingPongIdx % 2] != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+            DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), workTextureStates_[pingPongIdx % 2], D3D12_RESOURCE_STATE_RENDER_TARGET);
+          }
+          workTextureStates_[pingPongIdx % 2] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        }
 
-          // 1. 高輝度抽出 (src -> work0)
-          DrawSinglePass(commandList, Mode::None, currentSource, bloomExtract->GetRtvHandle(), false, bloomExtractPSO_.Get());
-          DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-          
-          // 2. 横ぼかし (work0 -> work1)
-          bloomParams_.direction = { 1.0f, 0.0f };
-          if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
-          DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-          DrawSinglePass(commandList, Mode::None, bloomExtract, blurH->GetRtvHandle(), false, bloomBlurHPSO_.Get());
-          DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-          
-          // 3. 縦ぼかし (work1 -> work0)
-          bloomParams_.direction = { 0.0f, 1.0f };
-          if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
-          DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-          DrawSinglePass(commandList, Mode::None, blurH, blurV->GetRtvHandle(), false, bloomBlurVPSO_.Get());
-          DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-          
-          // 4. 合成 (src + work0 -> nextTarget)
-          // ※最後だけ DrawSinglePass を呼び出してターゲットに書き込む
-          commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
-          commandList->SetPipelineState(bloomCombinePSO_.Get());
-          commandList->SetGraphicsRootSignature(rootSig_);
-          commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-          commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, currentSource->GetSrvHandleGPU());
-          commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, blurV->GetSrvHandleGPU()); // t1 にぼけ画像をセット
-          commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, bloomCB_->GetGPUVirtualAddress());
-          commandList->DrawInstanced(3, 1, 0, 0);
+        // Bloom のマルチパス
+        RenderTexture* bloomExtract = bloomExtractTexture_.get();
+        RenderTexture* blurH = bloomBlurTexture_.get();
+        RenderTexture* blurV = bloomExtractTexture_.get(); // Extractバッファを再利用
 
-          // 状態のリセット（ピンポン管理が壊れないように）
-          workTextureStates_[0] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-          workTextureStates_[1] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-      } else {
-          DrawSinglePass(commandList, mode, currentSource, targetHandle);
+        if (bloomExtractState_ != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+            DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), bloomExtractState_, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            bloomExtractState_ = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        }
+        DrawSinglePass(commandList, Mode::None, currentSource, bloomExtract->GetRtvHandle(), false, bloomExtractPSO_.Get());
+        DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        bloomExtractState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        
+        bloomParams_.direction = { 1.0f, 0.0f };
+        if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
+
+        if (bloomBlurState_ != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+            DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), bloomBlurState_, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            bloomBlurState_ = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        }
+        DrawSinglePass(commandList, Mode::None, bloomExtract, blurH->GetRtvHandle(), false, bloomBlurHPSO_.Get());
+        DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        bloomBlurState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        
+        bloomParams_.direction = { 0.0f, 1.0f };
+        if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
+
+        if (bloomExtractState_ != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+            DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), bloomExtractState_, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            bloomExtractState_ = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        }
+        DrawSinglePass(commandList, Mode::None, blurH, blurV->GetRtvHandle(), false, bloomBlurVPSO_.Get());
+        DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        bloomExtractState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        
+        commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
+        commandList->SetPipelineState(bloomCombinePSO_.Get());
+        commandList->SetGraphicsRootSignature(rootSig_);
+        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, currentSource->GetSrvHandleGPU());
+        commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, blurV->GetSrvHandleGPU());
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, bloomCB_->GetGPUVirtualAddress());
+        commandList->DrawInstanced(3, 1, 0, 0);
+
+        if (isLastBatch) {
+          DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        } else {
+          DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          workTextureStates_[pingPongIdx % 2] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+          pingPongIdx++;
+        }
+        currentSource = nextTarget;
+        modeIdx++;
       }
+      // 2) 統合バッチ
+      else {
+        std::vector<Mode> batch;
+        size_t lookAhead = modeIdx;
+        while (lookAhead < activeModes_.size() && activeModes_[lookAhead] != Mode::Bloom && batch.size() < 16) {
+          batch.push_back(activeModes_[lookAhead]);
+          lookAhead++;
+        }
 
-      // 状態遷移
-      if (isLast) {
-        DirectXUtils::TransitionBarrier(commandList, nextTargetTexture->GetResource(),
-                           D3D12_RESOURCE_STATE_RENDER_TARGET,
-                           D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-        currentSource = nextTargetTexture;
-      } else {
-        DirectXUtils::TransitionBarrier(commandList, nextTargetTexture->GetResource(),
-                           D3D12_RESOURCE_STATE_RENDER_TARGET,
-                           D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        workTextureStates_[nextTargetIdx] =
-            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-        currentSource = nextTargetTexture;
+        isLastBatch = (lookAhead == activeModes_.size());
+        RenderTexture* nextTarget = isLastBatch ? resultTexture_.get() : workTextures_[pingPongIdx % 2].get();
+        D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = nextTarget->GetRtvHandle();
+
+        if (isLastBatch) {
+          if (resultTextureState_ != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+            DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), resultTextureState_, D3D12_RESOURCE_STATE_RENDER_TARGET);
+          }
+          resultTextureState_ = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        } else {
+          if (workTextureStates_[pingPongIdx % 2] != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+            DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), workTextureStates_[pingPongIdx % 2], D3D12_RESOURCE_STATE_RENDER_TARGET);
+          }
+          workTextureStates_[pingPongIdx % 2] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        }
+
+        combinedParams_.effectCount = (int32_t)batch.size();
+        D3D12_GPU_DESCRIPTOR_HANDLE extraSrv = { 0 };
+        for (int i = 0; i < (int)batch.size(); ++i) {
+          combinedParams_.effects[i] = (int32_t)batch[i];
+          if (batch[i] == Mode::DepthBasedOutline) {
+              extraSrv = depthSrvHandle_;
+          } else if (batch[i] == Mode::Dissolve) {
+              int noiseIdx = (dissolveParams_.noiseType <= 0) ? 0 : 1;
+              extraSrv = dissolveNoiseHandle_[noiseIdx];
+          }
+        }
+        if (mappedCombined_) { *mappedCombined_ = combinedParams_; }
+
+        commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
+        float clearColor[] = { 0, 0, 0, 1 };
+        commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
+
+        commandList->SetPipelineState(combinedPSO_.Get());
+        commandList->SetGraphicsRootSignature(rootSig_);
+        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, currentSource->GetSrvHandleGPU());
+        if (extraSrv.ptr != 0) {
+          commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, extraSrv);
+        } else {
+          // HLSL側で t1 レジスタを使用しているため、未バインドだと描画が破棄されるのを防ぐダミーバインド
+          commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, currentSource->GetSrvHandleGPU());
+        }
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, combinedCB_->GetGPUVirtualAddress());
+        commandList->DrawInstanced(3, 1, 0, 0);
+
+        if (isLastBatch) {
+          DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        } else {
+          DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          workTextureStates_[pingPongIdx % 2] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+          pingPongIdx++;
+        }
+        currentSource = nextTarget;
+        modeIdx = lookAhead;
       }
     }
   } else {
-    // エフェクトなしの場合は srcTexture を resultTexture_ にコピー
     if (resultTextureState_ != D3D12_RESOURCE_STATE_RENDER_TARGET) {
-        DirectXUtils::TransitionBarrier(commandList, resultTexture_->GetResource(),
-                           resultTextureState_, D3D12_RESOURCE_STATE_RENDER_TARGET);
+      DirectXUtils::TransitionBarrier(commandList, resultTexture_->GetResource(), resultTextureState_, D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
-    DrawSinglePass(commandList, Mode::None, srcTexture,
-                   resultTexture_->GetRtvHandle());
-    DirectXUtils::TransitionBarrier(commandList, resultTexture_->GetResource(),
-                       D3D12_RESOURCE_STATE_RENDER_TARGET,
-                       D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    DrawSinglePass(commandList, Mode::None, srcTexture, resultTexture_->GetRtvHandle());
+    DirectXUtils::TransitionBarrier(commandList, resultTexture_->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     resultTextureState_ = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     currentSource = resultTexture_.get();
   }
 
-  // 2) 最終結果をバックバッファ（提供された rtvHandle）に転送
-  // これにより、既存の全画面表示も維持される
+  // 最終転送
   DrawSinglePass(commandList, Mode::None, currentSource, rtvHandle, true);
 }
 
@@ -308,10 +385,15 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
 }
 
 void PostProcessManager::CreatePSOs() {
-  auto* shaderCompiler = dxCommon_->GetShaderCompiler();
-  std::ostream &logStream = std::cout; // 仮
+  auto* shaderManager = dxCommon_->GetShaderManager();
+  
+  // --- シェーダコンパイル設定 ---
+  ShaderCompileOptions options;
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+  options.isDebug = true;
+#endif
 
-  auto vsBlob = shaderCompiler->Compile(L"resources/shaders/Fullscreen.VS.hlsl", L"vs_6_0", logStream);
+  auto vsBlob = shaderManager->GetOrCompile(L"resources/shaders/Fullscreen.VS.hlsl", options);
 
   struct ShaderPath {
     Mode mode;
@@ -336,7 +418,7 @@ void PostProcessManager::CreatePSOs() {
   };
 
   for (const auto &s : shaders) {
-    auto psBlob = shaderCompiler->Compile(s.path, L"ps_6_0", logStream);
+    auto psBlob = shaderManager->GetOrCompile(s.path, options);
     if (!psBlob)
       continue;
 
@@ -369,9 +451,9 @@ void PostProcessManager::CreatePSOs() {
   }
 
   // --- ブルーム用個別 PSO ---
-  auto extractPS = shaderCompiler->Compile(L"resources/shaders/HighLuminanceExtract.PS.hlsl", L"ps_6_0", logStream);
-  auto blurPS = shaderCompiler->Compile(L"resources/shaders/GaussianBlur.PS.hlsl", L"ps_6_0", logStream);
-  auto combinePS = shaderCompiler->Compile(L"resources/shaders/BloomCombine.PS.hlsl", L"ps_6_0", logStream);
+  auto extractPS = shaderManager->GetOrCompile(L"resources/shaders/HighLuminanceExtract.PS.hlsl", options);
+  auto blurPS = shaderManager->GetOrCompile(L"resources/shaders/GaussianBlur.PS.hlsl", options);
+  auto combinePS = shaderManager->GetOrCompile(L"resources/shaders/BloomCombine.PS.hlsl", options);
 
   D3D12_GRAPHICS_PIPELINE_STATE_DESC bloomDesc{};
   bloomDesc.pRootSignature = rootSig_;
@@ -395,11 +477,25 @@ void PostProcessManager::CreatePSOs() {
   device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurHPSO_));
   device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurVPSO_));
 
-  bloomDesc.PS = {combinePS->GetBufferPointer(), combinePS->GetBufferSize()};
-  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomCombinePSO_));
+    bloomDesc.PS = {combinePS->GetBufferPointer(), combinePS->GetBufferSize()};
+    device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomCombinePSO_));
+
+    // --- 統合ポストプロセス用 PSO ---
+    auto combinedPS = shaderManager->GetOrCompile(L"resources/shaders/PostProcess.PS.hlsl", options);
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC combinedDesc = bloomDesc; // ベースを流用
+    combinedDesc.PS = {combinedPS->GetBufferPointer(), combinedPS->GetBufferSize()};
+    
+    // 中間パス用
+    combinedDesc.RTVFormats[0] = rtvFormat_;
+    device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&combinedPSO_));
+    // 最終パス用
+    combinedDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&finalCombinedPSO_));
 }
 
 void PostProcessManager::CreateConstantBuffers() {
+    combinedCB_ = CreateBuffer(sizeof(CombinedParams));
+    combinedCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedCombined_));
   noiseCB_ = CreateBuffer(sizeof(NoiseParams));
   noiseCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedNoise_));
 

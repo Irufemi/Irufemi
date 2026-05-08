@@ -22,14 +22,14 @@ struct LightningParams {
 ConstantBuffer<LightningParams> gLightning : register(b6);
 
 // カメラ情報 (register b2 / RootSlot::Camera)
-struct Camera {
+struct PerFrame {
     float32_t4x4 view;
     float32_t4x4 projection;
     float32_t3 worldPosition;
     float32_t time;
     float32_t deltaTime;
 };
-ConstantBuffer<Camera> gCamera : register(b2);
+ConstantBuffer<PerFrame> gPerFrame : register(b2);
 
 struct PixelShaderOutput {
     float32_t4 color : SV_TARGET0;
@@ -39,7 +39,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
     PixelShaderOutput output;
 
     float2 uv = input.texcoord;
-    float32_t time = gCamera.time * gLightning.speed;
+    float32_t time = gPerFrame.time * gLightning.speed;
 
     // --- 1. Surface Crawl (表面を這う電撃) ---
     // UVを3次元の円筒座標に変換してサンプリングすることで、シームレス化を実現
@@ -59,7 +59,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
 
     // --- 2. Core Bolt (内部の芯) ---
     // Fresnel効果: 視線と法線が並行（正面）に近いほど大きくなる
-    float32_t3 V = normalize(gCamera.worldPosition - input.worldPosition);
+    float32_t3 V = normalize(gPerFrame.worldPosition - input.worldPosition);
     float32_t3 N = normalize(input.normal);
     float32_t fresnel = saturate(dot(N, V));
     
