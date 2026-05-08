@@ -30,6 +30,11 @@ bool SceneManager::ChangeTo(const Key& next) {
     // シーン破棄前にGPU処理の完了を待つ (リソース解放中のアクセス違反を防ぐ)
     engine_->GetDirectXCommon()->WaitForGPU();
 
+    // シーン破棄前に、現在のスタックの全シーンを終了させる
+    for (auto it = sceneStack_.rbegin(); it != sceneStack_.rend(); ++it) {
+        it->scene->OnExit();
+        it->scene->Finalize();
+    }
     sceneStack_.clear();
 
     SceneStackItem item;
@@ -39,6 +44,8 @@ bool SceneManager::ChangeTo(const Key& next) {
     isInitializing_ = true;
     item.scene->Initialize(engine_);
     isInitializing_ = false;
+
+    item.scene->OnEnter(); // シーン開始
 
     sceneStack_.push_back(std::move(item));
     wasLoading_ = false;
@@ -54,11 +61,18 @@ void SceneManager::PushScene(const Key& name) {
 
     engine_->GetDirectXCommon()->WaitForGPU();
 
+    if (!sceneStack_.empty()) {
+        // 現在の最前面シーンをサスペンド状態にする（バックグラウンドへ）
+        sceneStack_.back().scene->OnSuspend();
+    }
+
     SceneStackItem item;
     item.name = name;
     item.scene = it->second();
 
     item.scene->Initialize(engine_);
+    item.scene->OnEnter(); // 新しいシーン開始
+
     sceneStack_.push_back(std::move(item));
 
     engine_->SetCursorLocked(!sceneStack_.back().scene->IsCursorVisible());
@@ -68,9 +82,15 @@ void SceneManager::PopScene() {
     if (sceneStack_.empty()) return;
 
     engine_->GetDirectXCommon()->WaitForGPU();
+
+    // 最前面のシーンの終了処理
+    sceneStack_.back().scene->OnExit();
+    sceneStack_.back().scene->Finalize();
     sceneStack_.pop_back();
 
     if (!sceneStack_.empty()) {
+        // 次のシーンが最前面に復帰するためレジューム処理を行う
+        sceneStack_.back().scene->OnResume();
         engine_->SetCursorLocked(!sceneStack_.back().scene->IsCursorVisible());
     } else {
         engine_->SetCursorLocked(false);
@@ -136,6 +156,7 @@ void SceneManager::ProcessTransitionPhase(bool& isLoading) {
                 SceneStackItem item;
                 item.name = pendingTransition_;
                 item.scene = std::move(nextScene_);
+                item.scene->OnEnter(); // 非同期ロード完了後に新しいシーン開始
                 sceneStack_.push_back(std::move(item));
             }
             
@@ -280,7 +301,11 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     // GPU処理の完了を待つ (リソース解放中のアクセス違反を防ぐ)
     engine_->GetDirectXCommon()->WaitForGPU();
     
-    // 現在のシーンスタックを破棄（メインスレッドで実行）
+    // 現在のシーンスタックの全シーンを終了させて破棄（メインスレッドで実行）
+    for (auto it = sceneStack_.rbegin(); it != sceneStack_.rend(); ++it) {
+        it->scene->OnExit();
+        it->scene->Finalize();
+    }
     sceneStack_.clear();
     
     initFuture_ = std::async(std::launch::async, [this, factory]() {
