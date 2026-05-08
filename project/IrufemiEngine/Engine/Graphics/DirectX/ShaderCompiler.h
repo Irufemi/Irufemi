@@ -41,6 +41,13 @@ public:
         const ShaderCompileOptions& options = {}
     );
 
+    /**
+     * @brief ファイル名からプロファイルを推論する
+     * @param[in] filePath HLSLファイルへのパス
+     * @return 推論されたプロファイル文字列
+     */
+    static std::wstring GetInferredProfile(const std::wstring& filePath);
+
 private:
     Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils_;
     Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler_;

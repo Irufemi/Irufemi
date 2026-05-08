@@ -157,7 +157,6 @@
     <Filter Include="Engine\Core\System">
       <UniqueIdentifier>{6d9e3a1d-37be-492e-af07-22944ff2e1a5}</UniqueIdentifier>
     </Filter>
-
     <Filter Include="Renderer\Effect">
       <UniqueIdentifier>{12345678-abcd-1234-abcd-1234567890ab}</UniqueIdentifier>
     </Filter>
@@ -380,7 +379,6 @@
     <ClCompile Include="Engine\Core\Math\NumericalSequence.cpp">
       <Filter>Engine\Core\Math</Filter>
     </ClCompile>
-
     <ClCompile Include="Renderer\Core\BaseResource.cpp">
       <Filter>Renderer\Core</Filter>
     </ClCompile>
@@ -392,6 +390,12 @@
     </ClCompile>
     <ClCompile Include="Framework\UISelectionGroup.cpp">
       <Filter>Framework\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Camera\DebugCamera.cpp" />
+    <ClCompile Include="Engine\Graphics\Camera\CameraManager.cpp" />
+    <ClCompile Include="Framework\BaseScene.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectX\ShaderManager.cpp">
+      <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -788,7 +792,6 @@
     <ClInclude Include="Engine\Graphics\DirectX\ConstantBuffer.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
-
     <ClInclude Include="Engine\Manager\IComputeTask.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
@@ -809,6 +812,12 @@
     </ClInclude>
     <ClInclude Include="Framework\UISelectionGroup.h">
       <Filter>Framework\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Camera\DebugCamera.h" />
+    <ClInclude Include="Engine\Graphics\Camera\CameraManager.h" />
+    <ClInclude Include="Framework\BaseScene.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\ShaderManager.h">
+      <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

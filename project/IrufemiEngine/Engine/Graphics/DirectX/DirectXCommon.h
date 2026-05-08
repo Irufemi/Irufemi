@@ -11,7 +11,7 @@
 #include <atomic>
 
 #include "FrameRateController.h"
-#include "ShaderCompiler.h"
+#include "ShaderManager.h"
 #include "RootSignatureConfig.h"
 #include <array>
 
@@ -233,7 +233,7 @@ public: // ゲッター
 	int32_t& GetClientHeight() { return clientHeight_; }
 	PSOManager* GetPSOManager() { return psoManager_.get(); }
 	ID3D12Resource* GetDepthStencilResource() const;
-	ShaderCompiler* GetShaderCompiler() const { return shaderCompiler_.get(); }
+	ShaderManager* GetShaderManager() const { return shaderManager_.get(); }
 	FrameRateController* GetFPSController() const { return fpsController_.get(); }
 	uint32_t GetFrameIndex() const { return frameIndex_; }
 	void AdvanceFrameIndex() { frameIndex_ = (frameIndex_ + 1) % kMaxFramesInFlight; }
@@ -355,7 +355,7 @@ private: // メンバ変数
 
 	// --- 制御用クラス ---
 	std::unique_ptr<FrameRateController> fpsController_ = nullptr;
-	std::unique_ptr<ShaderCompiler> shaderCompiler_ = nullptr;
+	std::unique_ptr<ShaderManager> shaderManager_ = nullptr;
 
 	// --- リソース遅延解放用 ---
 	struct PendingResource {

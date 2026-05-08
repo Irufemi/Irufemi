@@ -158,6 +158,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Core\Math\NumericalSequence.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\FrameRateController.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\ShaderCompiler.cpp" />
+    <ClCompile Include="Engine\Graphics\DirectX\ShaderManager.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\ShadowMap.cpp" />
     <ClCompile Include="Engine\Graphics\Camera\Camera.cpp" />
     <ClCompile Include="Engine\Graphics\Camera\DebugCamera.cpp" />
@@ -259,6 +260,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\DirectX\FrameRateController.h" />
     <ClInclude Include="Engine\Graphics\DirectX\RootSignatureConfig.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShaderCompiler.h" />
+    <ClInclude Include="Engine\Graphics\DirectX\ShaderManager.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShadowMap.h" />
     <ClInclude Include="Engine\Graphics\Camera\Camera.h" />
     <ClInclude Include="Engine\Graphics\Camera\DebugCamera.h" />

@@ -104,3 +104,18 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     return shaderBlob;
 }
 
+/**
+ * @brief ファイル名からプロファイルを推論する
+ */
+std::wstring ShaderCompiler::GetInferredProfile(const std::wstring& filePath) {
+    if (filePath.find(L".VS.") != std::wstring::npos) return L"vs_6_0";
+    if (filePath.find(L".PS.") != std::wstring::npos) return L"ps_6_0";
+    if (filePath.find(L".GS.") != std::wstring::npos) return L"gs_6_0";
+    if (filePath.find(L".CS.") != std::wstring::npos) return L"cs_6_0";
+    if (filePath.find(L".DS.") != std::wstring::npos) return L"ds_6_0";
+    if (filePath.find(L".HS.") != std::wstring::npos) return L"hs_6_0";
+    
+    // デフォルト
+    return L"ps_6_0";
+}
+
