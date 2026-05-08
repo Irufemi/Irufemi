@@ -37,10 +37,10 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
     };
 
     // 4. Line
-    DrawWithPSO(drawManager->GetLineQueue(), [&](const DrawManager::LinePacket& p) { drawManager->DrawLineInstanced(p); }, false, true);
+    DrawWithPSO(drawManager->GetLineQueue(), [&](const auto& p) { drawManager->DrawLineInstanced(p); }, false, true);
 
     // 5. Particles
-    DrawWithPSO(drawManager->GetParticleQueue(), [&](const DrawManager::ParticlePacket& p) { drawManager->DrawParticle(p); }, true, false);
+    DrawWithPSO(drawManager->GetParticleQueue(), [&](const auto& p) { drawManager->DrawParticle(p); }, true, false);
 
     // 6. GPU Particles
     const auto& gpuParticleQueue = drawManager->GetGPUParticleQueue();

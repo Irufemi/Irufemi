@@ -420,6 +420,9 @@
     <ClInclude Include="Engine\Manager\DrawManager.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Manager\RenderPackets.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>

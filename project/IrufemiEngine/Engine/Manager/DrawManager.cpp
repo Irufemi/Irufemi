@@ -1,4 +1,5 @@
 #include "DrawManager.h"
+using namespace RenderPackets;
 
 #include<Windows.h>
 #include <cassert>
@@ -383,7 +384,7 @@ void DrawManager::SubmitTopMostSprite(const Object2DResource* resource) {
     topMostSpriteQueue_.push_back(p);
 }
 
-void DrawManager::DrawSprite(const SpritePacket& packet) {
+void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
     const Object2DResource* resource = packet.resource;
     if (!resource || !commandList_) return;
 
@@ -412,7 +413,7 @@ void DrawManager::SubmitParticle(const ParticleResource* resource, uint32_t inst
     particleQueue_.push_back(p);
 }
 
-void DrawManager::DrawParticle(const ParticlePacket& packet) {
+void DrawManager::DrawParticle(const RenderPackets::ParticlePacket& packet) {
     const ParticleResource* resource = packet.resource;
     if (!resource || !commandList_ || packet.instanceCount == 0) return;
 
@@ -444,7 +445,7 @@ void DrawManager::SubmitModelRegion(const ModelRegionPacket& packet) {
     modelRegionQueue_.push_back(packet);
 }
 
-void DrawManager::DrawModelRegion(const ModelRegionPacket& packet) {
+void DrawManager::DrawModelRegion(const RenderPackets::ModelRegionPacket& packet) {
     const GpuMesh* gpuMesh = packet.gpuMesh;
     if (!gpuMesh || gpuMesh->vertexCount == 0 || packet.instanceCount == 0) { return; }
 
@@ -489,7 +490,7 @@ void DrawManager::SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
     regionQueue_.push_back(p);
 }
 
-void DrawManager::DrawRegion(const RegionPacket& packet) {
+void DrawManager::DrawRegion(const RenderPackets::RegionPacket& packet) {
     if (packet.indexCount == 0 || packet.instanceCount == 0) { return; }
 
     // IA
@@ -520,7 +521,7 @@ void DrawManager::SubmitLineInstanced(const LineResource* resource, const D3D12_
     lineQueue_.push_back(p);
 }
 
-void DrawManager::DrawLineInstanced(const LinePacket& packet) {
+void DrawManager::DrawLineInstanced(const RenderPackets::LinePacket& packet) {
     const LineResource* resource = packet.resource;
     if (!resource || packet.instanceCount == 0) return;
 
@@ -579,7 +580,7 @@ void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
     skyboxQueue_.push_back(p);
 }
 
-void DrawManager::DrawSkybox(const SkyboxPacket& packet) {
+void DrawManager::DrawSkybox(const RenderPackets::SkyboxPacket& packet) {
 
     commandList_->IASetVertexBuffers(0, 1, &packet.vertexBufferView); // VBVを設定
     //IBVを設定
@@ -627,7 +628,7 @@ void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTE
     ui3DQueue_.push_back(p);
 }
 
-void DrawManager::DrawStandard3D(const Standard3DPacket& packet) {
+void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) {
     const Object3DResource* resource = packet.resource;
     if (!resource || !commandList_) return;
     
@@ -684,7 +685,7 @@ void DrawManager::SubmitGPUParticle(
     gpuParticleQueue_.push_back(p);
 }
 
-void DrawManager::DrawGPUParticle(const GPUParticlePacket& packet) {
+void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
     if (!commandList_) return;
 
     // リソースバリヤー: UAV -> ShaderResource (読み取り)
@@ -752,7 +753,7 @@ void DrawManager::SubmitVoxelParticle(
     voxelParticleQueue_.push_back(p);
 }
 
-void DrawManager::DrawVoxelParticle(const VoxelParticlePacket& packet) {
+void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& packet) {
     if (!commandList_) return;
 
     // リソースバリヤー: UAV -> ShaderResource (読み取り)

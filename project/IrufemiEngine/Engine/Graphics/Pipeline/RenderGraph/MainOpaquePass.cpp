@@ -46,11 +46,11 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     };
     
     // 2. Standard 3D (Opaque and Alpha blend)
-    DrawWithPSO(drawManager->GetStandard3DQueue(), [&](const DrawManager::Standard3DPacket& p) { drawManager->DrawStandard3D(p); });
+    DrawWithPSO(drawManager->GetStandard3DQueue(), [&](const auto& p) { drawManager->DrawStandard3D(p); });
     
     // 3. Region
-    DrawWithPSO(drawManager->GetRegionQueue(), [&](const DrawManager::RegionPacket& p) { drawManager->DrawRegion(p); });
+    DrawWithPSO(drawManager->GetRegionQueue(), [&](const auto& p) { drawManager->DrawRegion(p); });
 
     // 3.5 ModelRegion
-    DrawWithPSO(drawManager->GetModelRegionQueue(), [&](const DrawManager::ModelRegionPacket& p) { drawManager->DrawModelRegion(p); });
+    DrawWithPSO(drawManager->GetModelRegionQueue(), [&](const auto& p) { drawManager->DrawModelRegion(p); });
 }

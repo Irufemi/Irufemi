@@ -522,7 +522,7 @@ void DebugScene::Draw() {
             engine_->ApplyLightningCrawlPSO();
             engine_->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
 
-            DrawManager::Standard3DPacket packet{};
+            RenderPackets::Standard3DPacket packet{};
             packet.resource = lightningCylinder_->GetD3D12Resource();
             packet.blendMode = BlendMode::kBlendModeAdd;
             packet.depthWrite = PSOManager::DepthWrite::Disable;
