@@ -47,19 +47,31 @@ public:
     // 毎フレーム呼ばれる（描画リクエストの送信）
     void Draw() override;
 
+    // --- ライフサイクル関数（必要に応じてオーバーライド） ---
+    // void OnEnter() override;   // アクティブになった時
+    // void OnExit() override;    // 非アクティブ・破棄される直前
+    // void OnSuspend() override; // 上に別のシーンがPushされた時
+    // void OnResume() override;  // 上のシーンがPopされ最前面に戻った時
+
 private:
     std::unique_ptr<ObjClass> playerObj_;
 };
 ```
 
-#### シーン遷移の実行方法
-シーンを移動するには `SceneManager::TransitionTo` を呼び出します。
+#### シーン遷移と重ね合わせ（Push / Pop）
+シーンを完全に移動するには `TransitionTo` を使いますが、ポーズ画面のように**現在のシーンを残したまま一時的な画面を重ねる**場合は `PushScene` を使います。
 ```cpp
-// Update関数の中などで条件を満たした場合
+// 完全に別のシーンへ移動する場合
 if (isClear) {
     // "ClearScene" に遷移する。トランジション効果は Fade で 1.0秒かける
     engine_->GetSceneManager()->TransitionTo("ClearScene", SceneTransition::Type::Fade, 1.0f);
 }
+
+// 現在のシーンの上に一時的なシーン（ポーズ画面など）を重ねる場合
+// engine_->GetSceneManager()->PushScene("PauseScene");
+
+// 重ねたシーンを終了し、元のシーンに戻る場合（PauseScene側で呼ぶ）
+// engine_->GetSceneManager()->PopScene();
 ```
 
 ### 1.3 RenderGraph と DrawManager (描画パイプライン)
@@ -80,10 +92,10 @@ camera->SetTarget({ 0.0f, 0.0f, 0.0f });
 // 行列を更新（位置を変更したら必ず呼ぶ）
 camera->UpdateMatrix();
 
-// ※デバッグカメラへの切り替え
-cameraManager->SetActiveCamera("DebugCamera");
-// 元のカメラに戻す
-cameraManager->SetActiveCamera("MainCamera");
+// ※デバッグカメラへの切り替えについて
+// 以前は CameraManager で切り替えていましたが、現在は BaseScene に統合されています。
+// ImGuiのデバッグタブ「Camera & Lights」から "Debug Camera Mode" のチェックを入れるか、
+// コード内で `isDebugCameraMode_ = true;` とすることでデバッグカメラが有効になります。
 ```
 
 ---
@@ -238,27 +250,27 @@ engine_->GetAudioManager()->Stop(voice);
 
 プレイヤーの操作を受け取ったり、ゲームに必要な計算を行うクラス群です。
 
-### 4.1 InputManager (入力の取得)
-キーボード、マウス、ゲームパッド（XInput互換）の操作をまとめて取得できます。
-（`Scene` の `Update()` 内で `engine_->GetInputManager()` を介してアクセスします）
+### 4.1 InputManager と BaseScene の入力ヘルパー (入力の取得)
+キーボード、マウス、ゲームパッド（XInput互換）の操作を取得できます。
+`BaseScene` を継承したクラスでは、直接 `PressedVK()` や `IsButtonPressed()` などのヘルパー関数を呼び出すのが最も簡単です。
 
 ```cpp
-auto input = engine_->GetInputManager();
+// 【キーボード (BaseScene内での使用例)】
+// Spaceキーが「押された瞬間」か？ (VK: 仮想キーコード)
+if (PressedVK(VK_SPACE)) { ... }
+// Wキーが「押され続けている」か？ (DIK: DirectInput互換キーコード)
+if (DownDIK(DIK_W)) { ... }
 
-// 【キーボード】
-// Spaceキーが「押された瞬間」か？
-if (input->IsKeyPressed(DIK_SPACE)) { ... }
-// Wキーが「押され続けている」か？
-if (input->IsKeyDown(DIK_W)) { ... }
-
-// 【ゲームパッド】
+// 【ゲームパッド (BaseScene内での使用例)】
 // Aボタンが押された瞬間か？
-if (input->IsButtonPressed(XINPUT_GAMEPAD_A)) { ... }
-// 左スティックの入力値 (-1.0f 〜 1.0f)
+if (IsButtonPressed(XINPUT_GAMEPAD_A)) { ... }
+
+// 左スティックの入力値 (-1.0f 〜 1.0f) ※入力値取得は InputManager 経由で行います
+auto input = engine_->GetInputManager();
 float lx = input->GetLeftStickX();
 float ly = input->GetLeftStickY();
 
-// 【マウス】
+// 【マウス (InputManager経由)】
 // 左クリックされたか？
 if (input->IsMouseButtonPressed(Mouse::Button::Left)) { ... }
 // マウスの現在座標 (スクリーン座標)
