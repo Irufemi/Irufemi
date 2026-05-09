@@ -12,6 +12,7 @@ on:
       - AL4
       - CG
       - GE
+      - WP0
 
 jobs:
   check-files:
