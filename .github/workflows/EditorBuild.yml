@@ -1,0 +1,34 @@
+name: EditorBuild
+
+on:
+  push:
+    branches:
+      - master
+      - TD3_01
+      - AL4
+      - CG
+      - GE
+      - WP0
+
+env:
+  # リポジトリのルートディレクトリを基点としたソリューションファイルのパス
+  SOLUTION_FILE_PATH: project/Irufemi.sln
+  # Visual Studio の構成
+  CONFIGURATION: Editor
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Build
+        run: |
+          msbuild ${{ env.SOLUTION_FILE_PATH }} /p:Platform=x64,Configuration=${{ env.CONFIGURATION }},PlatformToolset=v143
