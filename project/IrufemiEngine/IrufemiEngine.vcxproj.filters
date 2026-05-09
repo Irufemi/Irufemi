@@ -403,6 +403,12 @@
     <ClCompile Include="Framework\GameObject.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\TransformComponent.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\MeshRendererComponent.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\SceneTransition.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
@@ -847,6 +853,12 @@
       <Filter>Framework</Filter>
     </ClInclude>
     <ClInclude Include="Framework\GameObject.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\TransformComponent.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\MeshRendererComponent.h">
       <Filter>Framework</Filter>
     </ClInclude>
     <ClInclude Include="Framework\SceneTransition.h">
