@@ -61,6 +61,12 @@ DirectXGame/imgui.ini
 /project/Application/logs/
 /project/Application/imgui.ini
 
+# Application_solo specific
+/project/Application_solo/asset_src/
+/project/Application_solo/logs/
+/project/Application_solo/imgui.ini
+/project/Application_solo/Dumps/
+
 # ====================================================================
 # AntiGravity / AI tools
 # ====================================================================
