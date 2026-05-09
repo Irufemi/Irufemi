@@ -14,6 +14,10 @@ x86/
 [Bb]in/
 [Oo]bj/
 generated/
+
+# Exceptions for scene debug folders
+!project/Application/scene/debug/
+!project/Application_solo/scene/debug/
 project/logs/
 *.pdb
 *.ilk
