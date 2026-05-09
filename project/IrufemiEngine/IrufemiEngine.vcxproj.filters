@@ -400,6 +400,9 @@
     <ClCompile Include="Engine\Graphics\DirectX\ShadowMap.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\GameObject.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\SceneTransition.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
@@ -839,6 +842,12 @@
     </ClInclude>
     <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h">
       <Filter>Engine\Core\Math\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\GameObject.h">
+      <Filter>Framework</Filter>
     </ClInclude>
     <ClInclude Include="Framework\SceneTransition.h">
       <Filter>Framework</Filter>
