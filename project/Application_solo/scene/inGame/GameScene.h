@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Framework/BaseScene.h"
+#include "Framework/GameObject.h"
+#include <memory>
 
 class IrufemiEngine;
 
@@ -16,4 +18,7 @@ public: // メンバ関数(システム)
     void Update() override;
     void Draw() override;
     void DrawDebugTab() override;
+
+private:
+    std::unique_ptr<GameObject> testObject_;
 };

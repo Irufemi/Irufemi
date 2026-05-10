@@ -26,9 +26,9 @@ void MeshRendererComponent::Initialize() {
 void MeshRendererComponent::Update() {
     // TransformComponent があれば、その座標を ObjClass に渡す（同期）
     if (transform_ && obj_) {
-        obj_->transform_.translate_ = transform_->position_;
-        obj_->transform_.rotate_ = transform_->rotation_;
-        obj_->transform_.scale_ = transform_->scale_;
+        obj_->SetTranslate(transform_->position_);
+        obj_->SetRotate(transform_->rotation_);
+        obj_->SetScale(transform_->scale_);
     }
 
     // ObjClass の行列計算などを実行

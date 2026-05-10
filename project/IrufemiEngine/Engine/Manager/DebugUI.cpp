@@ -58,10 +58,10 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     ImGui::StyleColorsDark();
 
     ImGuiIO& io = ImGui::GetIO();
-#ifdef USE_EDITER
+#ifdef EditorMode
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Dockingを有効にする
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // マルチビューポートを有効にする
-#endif // USE_EDITER
+#endif // EditorMode
 
     ImGui_ImplWin32_Init(hwnd);
 

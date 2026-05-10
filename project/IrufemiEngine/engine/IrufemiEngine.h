@@ -6,6 +6,7 @@
 #include "Platform/WindowsAPI/WinApp.h"
 #include "Manager/DrawManager.h"
 #include "Manager/DebugUI.h"
+#include "Manager/EditorManager.h"
 #include "../Resource/Texture/TextureManager.h"
 #include "../Resource/Audio/AudioManager.h"
 #include "../Resource/Model/ModelManager.h"
@@ -307,6 +308,11 @@ private: // メンバ変数
     
     // DebugUI
     std::unique_ptr<DebugUI> ui_ = nullptr;
+    
+#ifdef EditorMode
+    // EditorManager
+    std::unique_ptr<EditorManager> editorManager_ = nullptr;
+#endif
     
     // TextureManager
     std::unique_ptr<TextureManager> textureManager_ = nullptr;

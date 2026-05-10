@@ -274,8 +274,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Platform\Input\GamePad.cpp" />
     <ClCompile Include="Engine\Platform\Input\Keyboard.cpp" />
     <ClCompile Include="Resource\Audio\AudioManager.cpp" />
-    <ClCompile Include="Engine\Manager\DebugUI.cpp" />
     <ClCompile Include="Engine\Manager\DrawManager.cpp" />
+    <ClCompile Include="Engine\Manager\EditorManager.cpp" />
+    <ClCompile Include="Engine\Manager\DebugUI.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\PostProcessPass.cpp" />
@@ -390,6 +391,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Audio\AudioManager.h" />
     <ClInclude Include="Engine\Manager\DebugUI.h" />
     <ClInclude Include="Engine\Manager\DrawManager.h" />
+    <ClInclude Include="Engine\Manager\EditorManager.h" />
     <ClInclude Include="Engine\Manager\RenderPackets.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h" />

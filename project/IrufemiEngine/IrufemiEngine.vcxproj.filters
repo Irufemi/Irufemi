@@ -171,6 +171,12 @@
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Manager\EditorManager.cpp">
+      <Filter>Engine\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Manager\DebugUI.cpp">
+      <Filter>Engine\DebugUI</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.cpp">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClCompile>
@@ -236,9 +242,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Platform\Input\Mouse.cpp">
       <Filter>Engine\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Manager\DebugUI.cpp">
-      <Filter>Engine\DebugUI</Filter>
     </ClCompile>
     <ClCompile Include="Resource\Texture\TextureManager.cpp">
       <Filter>Resource\Texture</Filter>
@@ -436,6 +439,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Manager\EditorManager.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Manager\DebugUI.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Manager\RenderPackets.h">

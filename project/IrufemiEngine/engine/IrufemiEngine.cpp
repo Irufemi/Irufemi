@@ -192,6 +192,10 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // UI
   ui_ = std::make_unique<DebugUI>();
   ui_->Initialize(winApp_->GetHwnd(), dxCommon_.get());
+#ifdef EditorMode
+  editorManager_ = std::make_unique<EditorManager>();
+  editorManager_->Initialize(this);
+#endif
   Sprite::SetDebugUI(ui_.get());
   Circle2D::SetDebugUI(ui_.get());
 
@@ -365,6 +369,11 @@ void IrufemiEngine::Finalize() {
     ui_->Shutdown();
     ui_.reset();
   }
+#ifdef EditorMode
+  if (editorManager_) {
+    editorManager_.reset();
+  }
+#endif
 
   // 2. 描画・ポストプロセス系
   if (drawManager_) {
@@ -535,6 +544,12 @@ void IrufemiEngine::Execute() {
 
     // ImGui_
     ui_->FrameStart();
+
+#ifdef EditorMode
+    if (editorManager_) {
+        editorManager_->DrawEditorUI();
+    }
+#endif
 
 #ifdef USE_IMGUI
     ui_->FPSDebug();
