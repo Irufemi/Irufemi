@@ -11,11 +11,24 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
     auto mainRenderTex = engine->GetMainRenderTexture();
 
     // 入力となるメインレンダリング結果のステート要求
+#ifdef EditorMode
+    // EditorModeでは自身に書き戻すため、一旦CopySourceとして扱う
+    builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+#else
     builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+#endif
 
     workTextureHandles_.clear();
     bloomExtractHandle_ = kInvalidHandle;
     bloomBlurHandle_ = kInvalidHandle;
+
+    D3D12_RESOURCE_DESC desc = mainRenderTex->GetResource()->GetDesc();
+
+#ifdef EditorMode
+    // EditorMode 用の Src 退避テクスチャ (エフェクトの有無に関わらず常に必要)
+    editorSrcHandle_ = builder.CreateTransientResource("PP_EditorSrc", desc);
+    builder.RequireTransientState(editorSrcHandle_, D3D12_RESOURCE_STATE_COPY_DEST);
+#endif
 
     if (!activeModes.empty()) {
         bool hasOutline = false;
@@ -28,8 +41,6 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         if (hasOutline) {
             builder.RequireState(drawManager->GetDxCommon()->GetDepthStencilResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
-
-        D3D12_RESOURCE_DESC desc = mainRenderTex->GetResource()->GetDesc();
         
         // ピンポンバッファ用の一時テクスチャ (最大2枚)
         workTextureHandles_.push_back(builder.CreateTransientResource("PP_Work0", desc));
@@ -82,10 +93,27 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         }
     }
 
+#ifdef EditorMode
+    auto editorSrcTex = renderGraph->GetTransientRenderTexture(editorSrcHandle_);
+    
+    // CopyResource (mainRenderTex -> editorSrcTex)
+    cmdList->CopyResource(editorSrcTex->GetResource(), engine->GetMainRenderTexture()->GetResource());
+
+    // バリア遷移
+    DirectXUtils::TransitionBarrier(cmdList, editorSrcTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+    // EditorMode の場合、最終出力先は mainRenderTexture になる
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
+    ppMgr->Draw(cmdList, editorSrcTex, rtvHandle, workspace);
+
+    // バリア遷移 (mainRenderTex を SRV に戻す)
+    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+#else
     // 最終出力先はバックバッファ
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = drawManager->GetDxCommon()->GetRtvHandles(drawManager->GetDxCommon()->GetCurrentBackBufferIndex());
-
     ppMgr->Draw(cmdList, engine->GetMainRenderTexture(), rtvHandle, workspace);
+#endif
 
     // 深度バッファを元の DEPTH_WRITE に戻す
     if (hasOutline) {

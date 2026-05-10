@@ -9,6 +9,7 @@
 #include "Engine/Graphics/Data/SpotLight.h"
 #include "Engine/Graphics/Data/DirectionalLight.h"
 #include "Engine/Graphics/Data/AreaLight.h"
+#include "GameObject.h"
 
 #ifdef USE_IMGUI
 #include "Engine/Manager/DebugUI.h"
@@ -53,7 +54,25 @@ void BaseScene::Update() {
         engine_->GetCameraManager()->Update();
     }
 
+    // GameObject の更新
+    for (auto& obj : gameObjects_) {
+        if (obj) obj->Update();
+    }
+
     SubmitFrameData();
+}
+
+void BaseScene::Draw() {
+    // GameObject の描画
+    for (auto& obj : gameObjects_) {
+        if (obj) obj->Draw();
+    }
+}
+
+void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
+    if (obj) {
+        gameObjects_.push_back(obj);
+    }
 }
 
 void BaseScene::SubmitFrameData() {

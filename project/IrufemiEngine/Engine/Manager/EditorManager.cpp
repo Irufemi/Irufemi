@@ -4,6 +4,9 @@
 #include "imgui/imgui.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/RenderTexture.h"
+#include "Framework/SceneManager.h"
+#include "Framework/IScene.h"
+#include "Framework/GameObject.h"
 
 void EditorManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
@@ -47,6 +50,8 @@ void EditorManager::DrawEditorUI() {
 
     // 2. 各種エディタパネルの描画
     DrawSceneView();
+    DrawHierarchy();
+    DrawInspector();
 
     ImGui::End(); // Editor DockSpace
 }
@@ -62,6 +67,54 @@ void EditorManager::DrawSceneView() {
         ImVec2 size = ImGui::GetContentRegionAvail();
         // 画像アスペクト比を維持したい場合は別途計算が必要だが、今回はパネルいっぱいに描画
         ImGui::Image((ImTextureID)mainTexture->GetSrvHandleGPU().ptr, size);
+    }
+
+    ImGui::End();
+}
+
+void EditorManager::DrawHierarchy() {
+    ImGui::Begin("Hierarchy");
+
+    if (engine_ && engine_->GetSceneManager()) {
+        auto* currentScene = engine_->GetSceneManager()->GetCurrentScene();
+        if (currentScene) {
+            const auto& gameObjects = currentScene->GetGameObjects();
+            
+            for (size_t i = 0; i < gameObjects.size(); ++i) {
+                const auto& obj = gameObjects[i];
+                if (!obj) continue;
+
+                bool isSelected = false;
+                if (auto selected = selectedObject_.lock()) {
+                    isSelected = (selected == obj);
+                }
+
+                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+                if (isSelected) {
+                    flags |= ImGuiTreeNodeFlags_Selected;
+                }
+
+                ImGui::TreeNodeEx((void*)(intptr_t)i, flags, "%s", obj->GetName().c_str());
+                if (ImGui::IsItemClicked()) {
+                    selectedObject_ = obj;
+                }
+            }
+        }
+    }
+
+    ImGui::End();
+}
+
+void EditorManager::DrawInspector() {
+    ImGui::Begin("Inspector");
+
+    if (auto selected = selectedObject_.lock()) {
+        ImGui::Text("Name: %s", selected->GetName().c_str());
+        ImGui::Separator();
+
+        selected->OnInspectorGUI();
+    } else {
+        ImGui::Text("No object selected.");
     }
 
     ImGui::End();

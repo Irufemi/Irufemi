@@ -4,6 +4,9 @@
 
 // 前方宣言
 class IrufemiEngine;
+class GameObject;
+#include <memory>
+#include <vector>
 
 /// <summary>
 /// Scene系クラスに継承する基底クラス
@@ -29,6 +32,14 @@ public:
      * @brief シーンの毎フレームの描画処理。
      */
     virtual void Draw() = 0;
+
+    /**
+     * @brief シーンが保持する GameObject のリストを取得する
+     */
+    virtual const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const { 
+        static std::vector<std::shared_ptr<GameObject>> empty; 
+        return empty; 
+    }
 
     // --- ライフサイクル管理機能 ---
 

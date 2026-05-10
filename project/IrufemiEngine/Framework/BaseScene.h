@@ -12,6 +12,7 @@ struct DirectionalLight;
 struct PointLight;
 struct SpotLight;
 struct AreaLight;
+class GameObject;
 
 /**
  * @class BaseScene
@@ -35,9 +36,19 @@ public:
     virtual void Update() override;
     
     /**
-     * @brief 毎フレームの描画処理（通常は継承先で実装します）
+     * @brief 毎フレームの描画処理。継承先から呼び出すと GameObject の Draw が自動実行されます。
      */
-    virtual void Draw() override {}
+    virtual void Draw() override;
+
+    /**
+     * @brief シーンに GameObject を追加する
+     */
+    void AddGameObject(std::shared_ptr<GameObject> obj);
+
+    /**
+     * @brief シーンが保持する GameObject のリストを取得する
+     */
+    const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const override { return gameObjects_; }
 
     // --- ライフサイクル関数 ---
     
@@ -75,6 +86,9 @@ public:
 
 protected:
     IrufemiEngine* engine_ = nullptr;
+
+    // --- オブジェクト管理 ---
+    std::vector<std::shared_ptr<GameObject>> gameObjects_;
 
     // --- コア機能 ---
     std::unique_ptr<DebugCamera> debugCamera_;

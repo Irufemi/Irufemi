@@ -15,4 +15,8 @@ private:
     std::vector<TransientResourceHandle> workTextureHandles_;
     TransientResourceHandle bloomExtractHandle_ = kInvalidHandle;
     TransientResourceHandle bloomBlurHandle_ = kInvalidHandle;
+
+#ifdef EditorMode
+    TransientResourceHandle editorSrcHandle_ = kInvalidHandle;
+#endif
 };

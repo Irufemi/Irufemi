@@ -1,8 +1,10 @@
 #pragma once
 
 #ifdef EditorMode
+#include <memory>
 
 class IrufemiEngine;
+class GameObject;
 
 /**
  * @class EditorManager
@@ -15,8 +17,11 @@ public:
 
 private:
     void DrawSceneView();
+    void DrawHierarchy();
+    void DrawInspector();
 
     IrufemiEngine* engine_ = nullptr;
+    std::weak_ptr<GameObject> selectedObject_;
 };
 
 #endif // EditorMode

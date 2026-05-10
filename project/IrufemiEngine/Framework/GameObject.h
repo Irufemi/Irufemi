@@ -33,6 +33,11 @@ public:
     void Draw();
 
     /**
+     * @brief Inspector(EditorMode) 用のGUI描画
+     */
+    void OnInspectorGUI();
+
+    /**
      * @brief 新しいコンポーネントを追加する
      * @tparam T 追加するコンポーネントの型
      * @tparam Args コンストラクタ引数の型

@@ -15,28 +15,26 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
     // テスト用の GameObject を生成
-    testObject_ = std::make_unique<GameObject>("TestPlane");
+    auto testObject = std::make_shared<GameObject>("TestPlane");
 
     // TransformComponent を追加
-    auto* transform = testObject_->AddComponent<TransformComponent>();
+    auto* transform = testObject->AddComponent<TransformComponent>();
     transform->position_ = { 0.0f, 0.0f, 0.0f }; // 原点に配置
 
     // MeshRendererComponent を追加してモデルを読み込む
-    auto* renderer = testObject_->AddComponent<MeshRendererComponent>();
+    auto* renderer = testObject->AddComponent<MeshRendererComponent>();
     renderer->LoadModel("plane.obj");
 
     // 全コンポーネントの初期化
-    testObject_->Initialize();
+    testObject->Initialize();
+
+    // シーンのリストに登録
+    AddGameObject(testObject);
 }
 
 // 更新
 void GameScene::Update() {
-    BaseScene::Update();
-
-    // ECSの更新
-    if (testObject_) {
-        testObject_->Update();
-    }
+    BaseScene::Update(); // これにより GameObject 群の Update が呼ばれる
 
     // BackSpaceキーで遷移テスト
     if (IsKeyPressed(VK_BACK)) {
@@ -45,25 +43,13 @@ void GameScene::Update() {
 }
 
 void GameScene::Draw() {
-    // ECSの描画パケット登録
-    if (testObject_) {
-        testObject_->Draw();
-    }
+    BaseScene::Draw(); // これにより GameObject 群の Draw が呼ばれる
 }
 
 void GameScene::DrawDebugTab() {
 #if defined USE_IMGUI
     BaseScene::DrawDebugTab();
 
-    // EditorMode の時だけインスペクターを表示する
-#if defined EditorMode
-    if (testObject_) {
-        auto* transform = testObject_->GetComponent<TransformComponent>();
-        auto* renderer = testObject_->GetComponent<MeshRendererComponent>();
-
-        if (transform) transform->OnInspectorGUI();
-        if (renderer) renderer->OnInspectorGUI();
-    }
-#endif
+    // InspectorはEditorManager側に移管するため、ここでの描画は削除
 #endif
 }

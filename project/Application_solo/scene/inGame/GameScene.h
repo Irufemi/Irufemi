@@ -18,7 +18,4 @@ public: // メンバ関数(システム)
     void Update() override;
     void Draw() override;
     void DrawDebugTab() override;
-
-private:
-    std::unique_ptr<GameObject> testObject_;
 };

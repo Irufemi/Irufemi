@@ -19,3 +19,11 @@ void GameObject::Draw() {
         comp->Draw();
     }
 }
+
+void GameObject::OnInspectorGUI() {
+#ifdef EditorMode
+    for (auto& comp : components_) {
+        if (comp) comp->OnInspectorGUI();
+    }
+#endif
+}
