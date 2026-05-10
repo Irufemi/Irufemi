@@ -214,6 +214,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\Camera\CameraManager.cpp" />
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Framework\GameObject.cpp" />
+    <ClCompile Include="Framework\PrimitiveRendererComponent.cpp" />
     <ClCompile Include="Framework\TransformComponent.cpp" />
     <ClCompile Include="Framework\MeshRendererComponent.cpp" />
     <ClCompile Include="Framework\SceneTransition.cpp" />
@@ -331,6 +332,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Manager\IComputeTask.h" />
     <ClInclude Include="Framework\Component.h" />
     <ClInclude Include="Framework\GameObject.h" />
+    <ClInclude Include="Framework\PrimitiveRendererComponent.h" />
     <ClInclude Include="Framework\TransformComponent.h" />
     <ClInclude Include="Framework\MeshRendererComponent.h" />
     <ClInclude Include="Framework\SceneTransition.h" />

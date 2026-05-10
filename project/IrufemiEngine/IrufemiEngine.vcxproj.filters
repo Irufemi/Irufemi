@@ -436,6 +436,9 @@
     <ClCompile Include="Engine\Graphics\DirectX\ShaderManager.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\PrimitiveRendererComponent.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -908,6 +911,9 @@
     <ClInclude Include="Framework\BaseScene.h" />
     <ClInclude Include="Engine\Graphics\DirectX\ShaderManager.h">
       <Filter>Engine\Graphics\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\PrimitiveRendererComponent.h">
+      <Filter>Framework</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

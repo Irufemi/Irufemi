@@ -5,7 +5,7 @@
 // ECSコンポーネントのインクルード
 #include "Framework/GameObject.h"
 #include "Framework/TransformComponent.h"
-#include "Framework/MeshRendererComponent.h"
+#include "Framework/PrimitiveRendererComponent.h"
 
 // デストラクタ
 GameScene::~GameScene() = default;
@@ -21,9 +21,10 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     auto* transform = testObject->AddComponent<TransformComponent>();
     transform->position_ = { 0.0f, 0.0f, 0.0f }; // 原点に配置
 
-    // MeshRendererComponent を追加してモデルを読み込む
-    auto* renderer = testObject->AddComponent<MeshRendererComponent>();
-    renderer->LoadModel("plane.obj");
+    // PrimitiveRendererComponent を追加して Plane を描画
+    auto* renderer = testObject->AddComponent<PrimitiveRendererComponent>();
+    renderer->SetShape(PrimitiveType::Plane);
+
 
     // 全コンポーネントの初期化
     testObject->Initialize();
