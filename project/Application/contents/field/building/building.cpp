@@ -10,6 +10,7 @@
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Shape/Sphere.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
+#include "Renderer/Region/ModelRegion.h"
 #include "Engine/IrufemiEngine.h"
 
 #ifdef USE_IMGUI
@@ -24,6 +25,9 @@ Building::~Building() {}
 
 void Building::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
+
+    buildingRegion_ = std::make_unique<ModelRegion>();
+    buildingRegion_->Initialize("building/block.obj");
 
     LoadJson();
     Generate();
@@ -96,14 +100,6 @@ void Building::Update() {
             }
         }
 
-        // ObjClassの座標を同期
-        if (inst.obj) {
-            inst.obj->SetPosition(inst.position);
-            inst.obj->SetRotate(inst.rotate);
-            inst.obj->SetScale(inst.scale);
-            inst.obj->Update();
-        }
-
         // VoxelParticleSystemの更新
         if (inst.voxelSystem) {
             inst.voxelSystem->Update(1.0f / 60.0f);
@@ -158,6 +154,10 @@ void Building::Update() {
 }
 
 void Building::Draw(IrufemiEngine* engine) {
+    if (buildingRegion_) {
+        buildingRegion_->ClearInstances();
+    }
+
     for (auto& inst : instances_) {
         // 完全消滅済みでもボクセルパーティクルがあれば描画
         if (inst.isDestroyed) {
@@ -169,11 +169,14 @@ void Building::Draw(IrufemiEngine* engine) {
 
         // モデル描画（消滅タイマー前のみ）
         bool modelGone = inst.isBlownAway && inst.disappearTimer >= BuildingInstance::kDisappearTime;
-        if (inst.obj && !modelGone) {
-            engine->SetBlend(BlendMode::kBlendModeNormal);
-            engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
-            engine->SetCull(PSOManager::CullMode::Back);
-            inst.obj->Draw();
+        if (!modelGone) {
+            Transform tf;
+            tf.translate = inst.position;
+            tf.rotate = inst.rotate;
+            tf.scale = inst.scale;
+            if (buildingRegion_) {
+                buildingRegion_->AddInstance(tf, {1.0f, 1.0f, 1.0f, 1.0f});
+            }
         }
 
         // VoxelParticleSystemの描画
@@ -183,6 +186,10 @@ void Building::Draw(IrufemiEngine* engine) {
             engine->SetCull(PSOManager::CullMode::Back);
             inst.voxelSystem->Draw();
         }
+    }
+
+    if (buildingRegion_) {
+        buildingRegion_->Draw();
     }
 
     // ループ後に標準PSOを復元（後続の描画に影響しないように）
@@ -351,8 +358,6 @@ void Building::Generate() {
     // 実際にインスタンスを生成
     for (auto& pd : placements) {
         BuildingInstance inst;
-        inst.obj = std::make_unique<ObjClass>();
-        inst.obj->Initialize("building/block.obj");
         inst.position = pd.pos;
         inst.scale = pd.scale;
         inst.rotate = { 0.0f, pd.rotY, 0.0f };
@@ -362,10 +367,6 @@ void Building::Generate() {
         inst.disappearTimer = 0.0f;
         inst.blowVelocity = {};
         inst.angularVelocity = {};
-
-        inst.obj->SetPosition(inst.position);
-        inst.obj->SetScale(inst.scale);
-        inst.obj->SetRotate(inst.rotate);
 
         instances_.push_back(std::move(inst));
     }

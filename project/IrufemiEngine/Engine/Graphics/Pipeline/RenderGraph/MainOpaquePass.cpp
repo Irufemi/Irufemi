@@ -21,7 +21,7 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     }
     
     // Helper lambda to apply PSO efficiently
-    auto DrawWithPSO = [&](const auto& queue, auto drawFunc) {
+    auto DrawWithPSO = [&](const auto& queue, auto applyPSOFunc, auto drawFunc) {
         if (queue.empty()) return;
         
         BlendMode currentBlend = BlendMode::kBlendModeNormal;
@@ -34,7 +34,7 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
                 engine->SetBlend(p.blendMode);
                 engine->SetDepthWrite(p.depthWrite);
                 engine->SetCull(p.cullMode);
-                engine->ApplyPSO();
+                applyPSOFunc();
                 
                 currentBlend = p.blendMode;
                 currentDepth = p.depthWrite;
@@ -46,11 +46,11 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     };
     
     // 2. Standard 3D (Opaque and Alpha blend)
-    DrawWithPSO(drawManager->GetStandard3DQueue(), [&](const auto& p) { drawManager->DrawStandard3D(p); });
+    DrawWithPSO(drawManager->GetStandard3DQueue(), [&]() { engine->ApplyPSO(); }, [&](const auto& p) { drawManager->DrawStandard3D(p); });
     
     // 3. Region
-    DrawWithPSO(drawManager->GetRegionQueue(), [&](const auto& p) { drawManager->DrawRegion(p); });
+    DrawWithPSO(drawManager->GetPrimitiveRegionQueue(), [&]() { engine->ApplyRegionPSO(); }, [&](const auto& p) { drawManager->DrawPrimitiveRegion(p); });
 
     // 3.5 ModelRegion
-    DrawWithPSO(drawManager->GetModelRegionQueue(), [&](const auto& p) { drawManager->DrawModelRegion(p); });
+    DrawWithPSO(drawManager->GetModelRegionQueue(), [&]() { engine->ApplyRegionPSO(); }, [&](const auto& p) { drawManager->DrawModelRegion(p); });
 }

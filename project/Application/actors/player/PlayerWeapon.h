@@ -5,10 +5,10 @@
 #include <vector>
 #include <cstdlib>
 
-// 前方宣言
 class Camera;
 class ParticleSystem;
 class IrufemiEngine;
+class ModelRegion;
 
 /**
  * @struct MissileData
@@ -123,7 +123,7 @@ private:
     std::unique_ptr<ObjClass> machineGunObjRight_ = nullptr;
 
     static const int kMaxBullets = 100;
-    std::unique_ptr<ObjClass> bulletObjs_[kMaxBullets];
+    std::unique_ptr<ModelRegion> bulletRegion_;
     MachineGunBullet bullets_[kMaxBullets] = {};
 
     int machineGunActiveTimer_ = 0;
@@ -131,14 +131,14 @@ private:
 
     // --- 薬莢（Cartridge）用オブジェクトとデータ ---
     static const int kMaxCartridges = 100;
-    std::unique_ptr<ObjClass> cartridgeObjs_[kMaxCartridges];
+    std::unique_ptr<ModelRegion> cartridgeRegion_;
     Cartridge cartridges_[kMaxCartridges] = {};
     const float kGravity = 0.02f;
 
     // --- 誘導ミサイル用 ---
     // ★修正: 16発に戻す
     static const int kMaxMissiles = 16;
-    std::unique_ptr<ObjClass> missileObjs_[kMaxMissiles];
+    std::unique_ptr<ModelRegion> missileRegion_;
     MissileData missiles_[kMaxMissiles] = {};
     const float kMissileSpeed = 0.8f;
 

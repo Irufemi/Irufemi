@@ -11,12 +11,11 @@
 
 class Camera;
 class IrufemiEngine;
-class ObjClass;
+class ModelRegion;
 class VoxelParticleSystem;
 
 /// @brief 個別建物のインスタンスデータ
 struct BuildingInstance {
-    std::unique_ptr<ObjClass> obj;
     std::unique_ptr<VoxelParticleSystem> voxelSystem;
     Vector3 position  = {};
     Vector3 scale     = {};
@@ -101,6 +100,7 @@ private:
     IrufemiEngine* engine_ = nullptr;
 
     std::vector<BuildingInstance> instances_;
+    std::unique_ptr<ModelRegion> buildingRegion_ = nullptr;
 
     // パラメータ
     struct Parameters {

@@ -19,7 +19,7 @@
 // 前方宣言
 class Camera;
 class IrufemiEngine;
-class SphereRegion;
+class PrimitiveRegion;
 class Line3DRegion;
 struct ManagedModel;
 struct ObjMaterial; 
@@ -68,7 +68,7 @@ private: // メンバ変数
     float animationTime_ = 0.0f;
 
     // --- 追加：関節表示用のインスタンス描画機構 ---
-    std::unique_ptr<SphereRegion> jointSpheres_;
+    std::unique_ptr<PrimitiveRegion> jointSpheres_;
     std::unique_ptr<Line3DRegion> boneLines_;
 
     uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);

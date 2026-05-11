@@ -1,6 +1,7 @@
 #include "PlayerWeapon.h"
 #include "Engine/Core/Math/Math.h"
 #include "Renderer/Particle/ParticleSystem.h"
+#include "Renderer/Region/ModelRegion.h"
 #include <cmath>
 #include <cstdlib>
 
@@ -14,11 +15,11 @@ void PlayerWeapon::Initialize() {
     machineGunObjRight_->Initialize("enemy/body.obj");
 
     // --- 機関銃の弾モデルの初期化 ---
+    bulletRegion_ = std::make_unique<ModelRegion>();
+    bulletRegion_->Initialize("enemy/body.obj");
+    bulletRegion_->SetCastShadows(false);
+
     for (int i = 0; i < kMaxBullets; ++i) {
-        bulletObjs_[i] = std::make_unique<ObjClass>();
-        bulletObjs_[i]->Initialize("enemy/body.obj");
-        bulletObjs_[i]->SetColor({ 1.0f, 1.0f, 0.0f, 1.0f });
-        bulletObjs_[i]->SetCastShadows(false);
         bullets_[i].isActive = false;
     }
     machineGunActiveTimer_ = 0;
@@ -68,19 +69,20 @@ void PlayerWeapon::Initialize() {
     ejectionMistRight_->SetBlend(BlendMode::kBlendModeAdd);
 
     // --- 薬莢モデルの初期化 ---
+    cartridgeRegion_ = std::make_unique<ModelRegion>();
+    cartridgeRegion_->Initialize("enemy/body.obj");
+    cartridgeRegion_->SetCastShadows(false);
+
     for (int i = 0; i < kMaxCartridges; ++i) {
-        cartridgeObjs_[i] = std::make_unique<ObjClass>();
-        cartridgeObjs_[i]->Initialize("enemy/body.obj");
-        cartridgeObjs_[i]->SetColor({ 0.8f, 0.6f, 0.1f, 1.0f });
-        cartridgeObjs_[i]->SetCastShadows(false);
         cartridges_[i].isActive = false;
     }
 
     // --- ミサイルモデルとデータの初期化 ---
+    missileRegion_ = std::make_unique<ModelRegion>();
+    missileRegion_->Initialize("enemy/body.obj");
+    missileRegion_->SetCastShadows(false);
+
     for (int i = 0; i < kMaxMissiles; ++i) {
-        missileObjs_[i] = std::make_unique<ObjClass>();
-        missileObjs_[i]->Initialize("enemy/body.obj");
-        missileObjs_[i]->SetCastShadows(false);
         missiles_[i].isActive = false;
     }
 
@@ -270,45 +272,59 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
     }
 
     // 薬莢の描画
-    for (int i = 0; i < kMaxCartridges; ++i) {
-        if (cartridges_[i].isActive && cartridgeObjs_[i]) {
-            cartridgeObjs_[i]->SetPosition(cartridges_[i].position);
-            cartridgeObjs_[i]->SetRotate(cartridges_[i].rotation);
-            cartridgeObjs_[i]->SetScale({ 0.02f, 0.02f, 0.05f });
-            cartridgeObjs_[i]->Update();
-            cartridgeObjs_[i]->Draw();
+    if (cartridgeRegion_) {
+        cartridgeRegion_->ClearInstances();
+        for (int i = 0; i < kMaxCartridges; ++i) {
+            if (cartridges_[i].isActive) {
+                Transform tf;
+                tf.translate = cartridges_[i].position;
+                tf.rotate = cartridges_[i].rotation;
+                tf.scale = { 0.02f, 0.02f, 0.05f };
+                cartridgeRegion_->AddInstance(tf, { 0.8f, 0.6f, 0.1f, 1.0f });
+            }
         }
+        cartridgeRegion_->Draw();
     }
 
     // 機関銃の弾の描画
-    for (int i = 0; i < kMaxBullets; ++i) {
-        if (bullets_[i].isActive && bulletObjs_[i]) {
-            bulletObjs_[i]->SetPosition(bullets_[i].position);
-            Vector3 bRot = { 0.0f, std::atan2(bullets_[i].velocity.x, bullets_[i].velocity.z), 0.0f };
-            float bxzLen = std::sqrt(bullets_[i].velocity.x * bullets_[i].velocity.x + bullets_[i].velocity.z * bullets_[i].velocity.z);
-            bRot.x = std::atan2(-bullets_[i].velocity.y, bxzLen);
-            bulletObjs_[i]->SetRotate(bRot);
-            bulletObjs_[i]->SetScale({ 0.06f, 0.06f, 0.24f }); // 弾本体をさらに小型化
-            bulletObjs_[i]->Update();
-            bulletObjs_[i]->Draw();
+    if (bulletRegion_) {
+        bulletRegion_->ClearInstances();
+        for (int i = 0; i < kMaxBullets; ++i) {
+            if (bullets_[i].isActive) {
+                Vector3 bRot = { 0.0f, std::atan2(bullets_[i].velocity.x, bullets_[i].velocity.z), 0.0f };
+                float bxzLen = std::sqrt(bullets_[i].velocity.x * bullets_[i].velocity.x + bullets_[i].velocity.z * bullets_[i].velocity.z);
+                bRot.x = std::atan2(-bullets_[i].velocity.y, bxzLen);
+
+                Transform tf;
+                tf.translate = bullets_[i].position;
+                tf.rotate = bRot;
+                tf.scale = { 0.06f, 0.06f, 0.24f };
+                bulletRegion_->AddInstance(tf, { 1.0f, 1.0f, 0.0f, 1.0f });
+            }
         }
+        bulletRegion_->Draw();
     }
 
     // ミサイルの描画
-    for (int i = 0; i < kMaxMissiles; ++i) {
-        if (missiles_[i].isActive && missileObjs_[i]) {
-            Vector3 drawPos = missiles_[i].position;
-            drawPos.y += missileVibration_.y; // スピード感を出すための振動
-            missileObjs_[i]->SetPosition(drawPos);
-            Vector3 mRot = { 0.0f, std::atan2(missiles_[i].velocity.x, missiles_[i].velocity.z), 0.0f };
-            float xzLen = std::sqrt(missiles_[i].velocity.x * missiles_[i].velocity.x + missiles_[i].velocity.z * missiles_[i].velocity.z);
-            mRot.x = std::atan2(-missiles_[i].velocity.y, xzLen);
-            missileObjs_[i]->SetRotate(mRot);
-            Vector3 missileScale = { 0.15f, 0.15f, 0.8f };
-            missileObjs_[i]->SetScale(missileScale);
-            missileObjs_[i]->Update();
-            missileObjs_[i]->Draw();
+    if (missileRegion_) {
+        missileRegion_->ClearInstances();
+        for (int i = 0; i < kMaxMissiles; ++i) {
+            if (missiles_[i].isActive) {
+                Vector3 drawPos = missiles_[i].position;
+                drawPos.y += missileVibration_.y; // スピード感を出すための振動
+
+                Vector3 mRot = { 0.0f, std::atan2(missiles_[i].velocity.x, missiles_[i].velocity.z), 0.0f };
+                float xzLen = std::sqrt(missiles_[i].velocity.x * missiles_[i].velocity.x + missiles_[i].velocity.z * missiles_[i].velocity.z);
+                mRot.x = std::atan2(-missiles_[i].velocity.y, xzLen);
+
+                Transform tf;
+                tf.translate = drawPos;
+                tf.rotate = mRot;
+                tf.scale = { 0.15f, 0.15f, 0.8f };
+                missileRegion_->AddInstance(tf, { 1.0f, 1.0f, 1.0f, 1.0f });
+            }
         }
+        missileRegion_->Draw();
     }
 }
 

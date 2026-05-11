@@ -11,7 +11,7 @@
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Model/AnimationManager.h"
 #include "Resource/Model/Data/ObjModel.h"
-#include "Renderer/Region/Primitive/SphereRegion.h"
+#include "Renderer/Region/PrimitiveRegion.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
@@ -84,12 +84,12 @@ void AnimationModel::InitializeResources() {
             skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *managedModel_->cpuModel);
         }
 
-        jointSpheres_ = std::make_unique<SphereRegion>();
-        jointSpheres_->Initialize("resources/whiteTexture.png", 16);
+        jointSpheres_ = std::make_unique<PrimitiveRegion>();
+        jointSpheres_->Initialize(PrimitiveType::Sphere, "resources/whiteTexture.png");
 
         for (size_t i = 0; i < skeleton_.joints.size(); ++i) {
             Transform tf{};
-            tf.scale = { 0.01f, 0.01f, 0.01f };
+            tf.scale = { 0.02f, 0.02f, 0.02f };
             jointSpheres_->AddInstance(tf);
         }
 
@@ -164,7 +164,7 @@ void AnimationModel::Update() {
 
         // SphereRegionのi番目のインスタンスの位置を更新
         Transform tf;
-        tf.scale = { 0.01f, 0.01f, 0.01f };
+        tf.scale = { 0.02f, 0.02f, 0.02f };
         tf.rotate = { 0.0f, 0.0f, 0.0f }; // 球体なので回転は無視でOK
         tf.translate = jointPosition;
 

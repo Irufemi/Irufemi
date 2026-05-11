@@ -11,9 +11,8 @@ using namespace RenderPackets;
 #include "Renderer/Object3D/Primitive/TriangleClass.h"
 #include "Renderer/Object3D/Primitive/CylinderClass.h"
 #include "Renderer/Object3D/Primitive/CubeClass.h"
-#include "Renderer/Region/Region.h"
-#include "Renderer/Region/Primitive/SphereRegion.h"
-#include "Renderer/Region/Primitive/TetraRegion.h"
+#include "Renderer/Region/ModelRegion.h"
+#include "Renderer/Region/PrimitiveRegion.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/Particle/ParticleResource.h"
 #include "Renderer/LineInstanced/LineClass.h"
@@ -479,24 +478,11 @@ void DrawManager::DrawModelRegion(const RenderPackets::ModelRegionPacket& packet
     }
 }
 
-void DrawManager::SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount, bool castShadows) {
-    if (indexCount == 0 || instanceCount == 0) { return; }
-    RegionPacket p{};
-    p.vertexBufferView = vertexBufferView;
-    p.indexBufferView = indexBufferView;
-    p.materialAddress = materialAddress;
-    p.textureHandle = textureHandle;
-    p.instancingSrvHandleGPU = instancingSrvHandleGPU;
-    p.indexCount = indexCount;
-    p.instanceCount = instanceCount;
-    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
-    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
-    p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    p.castShadows = castShadows;
-    regionQueue_.push_back(p);
+void DrawManager::SubmitPrimitiveRegion(const RenderPackets::PrimitiveRegionPacket& packet) {
+    primitiveRegionQueue_.push_back(packet);
 }
 
-void DrawManager::DrawRegion(const RenderPackets::RegionPacket& packet) {
+void DrawManager::DrawPrimitiveRegion(const RenderPackets::PrimitiveRegionPacket& packet) {
     if (packet.indexCount == 0 || packet.instanceCount == 0) { return; }
 
     // IA
@@ -997,7 +983,7 @@ void DrawManager::ClearRenderQueues() {
     gpuParticleQueue_.clear();
     voxelParticleQueue_.clear();
     skyboxQueue_.clear();
-    regionQueue_.clear();
+    primitiveRegionQueue_.clear();
     modelRegionQueue_.clear();
     postRenderQueue_.clear();
     topMostSpriteQueue_.clear();
