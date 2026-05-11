@@ -58,6 +58,14 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     ImGui::StyleColorsDark();
 
     ImGuiIO& io = ImGui::GetIO();
+    
+    // 1. ベースフォント（英数字用）として FiraMono を読み込む
+    io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/Fira_Mono/FiraMono-Regular.ttf", 16.0f);
+
+    // 2. 日本語フォントを MergeMode (結合モード) で読み込み、FiraMono にない文字を補完する
+    ImFontConfig config;
+    config.MergeMode = true;
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msgothic.ttc", 16.0f, &config, io.Fonts->GetGlyphRangesJapanese());
 #ifdef EditorMode
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Dockingを有効にする
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // マルチビューポートを有効にする

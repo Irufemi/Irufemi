@@ -15,6 +15,9 @@
 
 void EditorManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
+    
+    // アプリケーションの実行ディレクトリ（project直下など）をルートとして初期化
+    currentProjectBrowserPath_ = std::filesystem::current_path();
 }
 
 void EditorManager::DrawEditorUI() {
@@ -57,6 +60,7 @@ void EditorManager::DrawEditorUI() {
     DrawSceneView();
     DrawHierarchy();
     DrawInspector();
+    DrawProjectBrowser();
 
     ImGui::End(); // Editor DockSpace
 }
@@ -230,4 +234,45 @@ void EditorManager::DrawInspector() {
 
     ImGui::End();
 }
+
+void EditorManager::DrawProjectBrowser() {
+    ImGui::Begin("Project");
+
+    // 上部に「上へ」戻るボタンと現在のパスを表示
+    if (ImGui::Button("Up") && currentProjectBrowserPath_.has_parent_path()) {
+        currentProjectBrowserPath_ = currentProjectBrowserPath_.parent_path();
+    }
+    ImGui::SameLine();
+    
+    // パスもUTF-8に変換して表示
+    std::string currentPathStr = reinterpret_cast<const char*>(currentProjectBrowserPath_.u8string().c_str());
+    ImGui::Text("%s", currentPathStr.c_str());
+    ImGui::Separator();
+
+    if (std::filesystem::exists(currentProjectBrowserPath_) && std::filesystem::is_directory(currentProjectBrowserPath_)) {
+        for (const auto& entry : std::filesystem::directory_iterator(currentProjectBrowserPath_)) {
+            const auto& path = entry.path();
+            // Windows環境などで日本語パスが文字化けしないよう、UTF-8に変換して取得する
+            std::string filenameString = reinterpret_cast<const char*>(path.filename().u8string().c_str());
+            
+            // フォルダの場合
+            if (entry.is_directory()) {
+                // ダブルクリックでディレクトリを移動
+                if (ImGui::Selectable(("[Folder] " + filenameString).c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
+                    if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                        currentProjectBrowserPath_ = path;
+                        break; // イテレータの無効化を防ぐためループを抜ける
+                    }
+                }
+            } 
+            // ファイルの場合
+            else {
+                ImGui::Selectable(("[File] " + filenameString).c_str());
+            }
+        }
+    }
+
+    ImGui::End();
+}
+
 #endif // EditorMode
