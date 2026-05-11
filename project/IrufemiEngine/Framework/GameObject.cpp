@@ -11,6 +11,9 @@ void GameObject::Initialize() {
     for (auto& comp : components_) {
         comp->Initialize();
     }
+    for (auto& child : children_) {
+        child->Initialize();
+    }
 }
 
 void GameObject::Update() {
@@ -18,12 +21,48 @@ void GameObject::Update() {
     for (auto& comp : components_) {
         comp->Update();
     }
+    for (auto& child : children_) {
+        child->Update();
+    }
 }
 
 void GameObject::Draw() {
     if (!isActive_) return;
     for (auto& comp : components_) {
         comp->Draw();
+    }
+    for (auto& child : children_) {
+        child->Draw();
+    }
+}
+
+void GameObject::AddChild(std::shared_ptr<GameObject> child) {
+    if (!child) return;
+    
+    // 既に親がいる場合は外す
+    if (auto currentParent = child->GetParent()) {
+        currentParent->RemoveChild(child);
+    }
+    
+    child->parent_ = shared_from_this();
+    children_.push_back(child);
+}
+
+void GameObject::RemoveChild(std::shared_ptr<GameObject> child) {
+    auto it = std::find(children_.begin(), children_.end(), child);
+    if (it != children_.end()) {
+        (*it)->parent_.reset();
+        children_.erase(it);
+    }
+}
+
+void GameObject::SetParent(std::shared_ptr<GameObject> parent) {
+    if (parent) {
+        parent->AddChild(shared_from_this());
+    } else {
+        if (auto currentParent = parent_.lock()) {
+            currentParent->RemoveChild(shared_from_this());
+        }
     }
 }
 
@@ -105,6 +144,13 @@ nlohmann::json GameObject::Serialize() const {
         comps.push_back(cj);
     }
     j["components"] = comps;
+    
+    nlohmann::json childrenJson = nlohmann::json::array();
+    for (const auto& child : children_) {
+        childrenJson.push_back(child->Serialize());
+    }
+    j["children"] = childrenJson;
+    
     return j;
 }
 
@@ -126,6 +172,14 @@ void GameObject::Deserialize(const nlohmann::json& j) {
             if (newComp && cj.contains("data")) {
                 newComp->Deserialize(cj["data"]);
             }
+        }
+    }
+    
+    if (j.contains("children") && j["children"].is_array()) {
+        for (const auto& cj : j["children"]) {
+            auto child = std::make_shared<GameObject>();
+            child->Deserialize(cj);
+            AddChild(child);
         }
     }
 }

@@ -58,7 +58,7 @@ void BaseScene::Update() {
 
     // GameObject の更新
     for (auto& obj : gameObjects_) {
-        if (obj) obj->Update();
+        if (obj && !obj->GetParent()) obj->Update();
     }
 
     SubmitFrameData();
@@ -67,7 +67,7 @@ void BaseScene::Update() {
 void BaseScene::Draw() {
     // GameObject の描画
     for (auto& obj : gameObjects_) {
-        if (obj) obj->Draw();
+        if (obj && !obj->GetParent()) obj->Draw();
     }
 }
 
@@ -160,7 +160,9 @@ bool BaseScene::IsButtonPressed(unsigned short button) const { return engine_->G
 void BaseScene::SaveScene(const std::string& filepath) {
     nlohmann::json rootArray = nlohmann::json::array();
     for (const auto& obj : gameObjects_) {
-        rootArray.push_back(obj->Serialize());
+        if (obj && !obj->GetParent()) {
+            rootArray.push_back(obj->Serialize());
+        }
     }
 
     std::ofstream file(filepath);

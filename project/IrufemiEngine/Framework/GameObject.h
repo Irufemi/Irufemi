@@ -12,7 +12,7 @@
  * @brief コンポーネントをアタッチできるエンティティの基底クラス
  * @details ECSアーキテクチャにおけるEntityとして機能し、自身はロジックを持たずComponentを管理します。
  */
-class GameObject {
+class GameObject : public std::enable_shared_from_this<GameObject> {
 public:
     GameObject() = default;
     GameObject(const std::string& name) : name_(name) {}
@@ -93,9 +93,19 @@ public:
     void SetIsActive(bool isActive) { isActive_ = isActive; }
     bool GetIsActive() const { return isActive_; }
 
+    // --- 親子関係 ---
+    void AddChild(std::shared_ptr<GameObject> child);
+    void RemoveChild(std::shared_ptr<GameObject> child);
+    std::shared_ptr<GameObject> GetParent() const { return parent_.lock(); }
+    const std::vector<std::shared_ptr<GameObject>>& GetChildren() const { return children_; }
+    void SetParent(std::shared_ptr<GameObject> parent);
+
 private:
     std::string name_ = "GameObject"; ///< オブジェクトの名前
     bool isActive_ = true;            ///< アクティブ状態フラグ
+    
+    std::weak_ptr<GameObject> parent_; ///< 親オブジェクト
+    std::vector<std::shared_ptr<GameObject>> children_; ///< 子オブジェクトのリスト
 
     std::vector<std::unique_ptr<Component>> components_; ///< 所有するコンポーネントのリスト
     std::unordered_map<std::type_index, std::vector<Component*>> componentMap_; ///< 型検索用のマップ

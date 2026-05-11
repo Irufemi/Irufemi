@@ -20,9 +20,9 @@ void PrimitiveRendererComponent::Initialize() {
 
 void PrimitiveRendererComponent::Update() {
     if (transform_ && primitive_) {
-        primitive_->SetPosition(transform_->position_);
-        primitive_->SetRotate(transform_->rotation_);
-        primitive_->SetScale(transform_->scale_);
+        primitive_->SetPosition(transform_->worldPosition_);
+        primitive_->SetRotate(transform_->worldRotation_);
+        primitive_->SetScale(transform_->worldScale_);
     }
 
     if (primitive_) {

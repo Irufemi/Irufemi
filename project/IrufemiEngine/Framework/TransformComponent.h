@@ -1,6 +1,7 @@
 #pragma once
 #include "Component.h"
 #include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Matrix4x4.h"
 
 class TransformComponent : public Component {
 public:
@@ -8,8 +9,15 @@ public:
     Vector3 rotation_ = { 0.0f, 0.0f, 0.0f }; // Euler angles in radians
     Vector3 scale_ = { 1.0f, 1.0f, 1.0f };
 
+    Vector3 worldPosition_ = { 0.0f, 0.0f, 0.0f };
+    Vector3 worldRotation_ = { 0.0f, 0.0f, 0.0f };
+    Vector3 worldScale_ = { 1.0f, 1.0f, 1.0f };
+
     void Initialize() override {}
-    void Update() override {}
+    void Update() override;
+
+    const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
+    const Matrix4x4& GetLocalMatrix() const { return localMatrix_; }
 
     std::string GetComponentName() const override { return "TransformComponent"; }
     nlohmann::json Serialize() override;
@@ -18,4 +26,8 @@ public:
 #ifdef EditorMode
     void OnInspectorGUI() override;
 #endif
+
+private:
+    Matrix4x4 localMatrix_;
+    Matrix4x4 worldMatrix_;
 };

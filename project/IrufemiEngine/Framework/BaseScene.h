@@ -57,6 +57,16 @@ public:
     const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const override { return gameObjects_; }
 
     /**
+     * @brief 生ポインタから該当する shared_ptr の GameObject を探して返す
+     */
+    std::shared_ptr<GameObject> FindGameObject(GameObject* ptr) {
+        for (auto& obj : gameObjects_) {
+            if (obj.get() == ptr) return obj;
+        }
+        return nullptr;
+    }
+
+    /**
      * @brief 現在のシーン（全GameObject）をファイルに保存する
      */
     void SaveScene(const std::string& filepath);
