@@ -22,6 +22,12 @@ public:
 
     void UpdateTransform(const Camera& camera);
 
+    void SetCustomPSO(ID3D12PipelineState* pso) { customPSO_ = pso; }
+    ID3D12PipelineState* GetCustomPSO() const { return customPSO_; }
+
+    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) { customCBVAddress_ = addr; }
+    D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const { return customCBVAddress_; }
+
 public:
     // --- 頂点バッファ ---
     std::vector<VertexData> vertexDataList_{};
@@ -74,4 +80,7 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
 
     bool isFirstUpdate_ = true;
+
+    ID3D12PipelineState* customPSO_ = nullptr;
+    D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
 };

@@ -102,6 +102,13 @@ public: // ゲッター・セッター
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
     void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
 
+    void SetCustomPSO(ID3D12PipelineState* pso) {
+        for(auto& res : meshResources_) { if(res) res->SetCustomPSO(pso); }
+    }
+    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) {
+        for(auto& res : meshResources_) { if(res) res->SetCustomCBVAddress(addr); }
+    }
+
 protected: // メンバ変数
     // 共有モデルデータ(CPU/GPU)
     std::shared_ptr<ManagedModel> managedModel_;

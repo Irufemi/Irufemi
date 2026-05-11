@@ -27,6 +27,8 @@ namespace RenderPackets {
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         bool castShadows;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct SpritePacket {
@@ -34,6 +36,8 @@ namespace RenderPackets {
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct ParticlePacket {
@@ -42,6 +46,8 @@ namespace RenderPackets {
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct LinePacket {
@@ -51,6 +57,8 @@ namespace RenderPackets {
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct GPUParticlePacket {
@@ -102,6 +110,8 @@ namespace RenderPackets {
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         bool castShadows;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct ModelRegionPacket {
@@ -114,6 +124,8 @@ namespace RenderPackets {
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         bool castShadows;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
 } // namespace RenderPackets

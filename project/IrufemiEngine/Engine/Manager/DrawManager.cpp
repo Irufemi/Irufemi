@@ -606,6 +606,8 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
     p.castShadows = castShadows;
+    p.customPSO = resource->GetCustomPSO();
+    p.customCBVAddress = resource->GetCustomCBVAddress();
     standard3DQueue_.push_back(p);
 }
 
@@ -617,6 +619,8 @@ void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTE
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    p.customPSO = resource->GetCustomPSO();
+    p.customCBVAddress = resource->GetCustomCBVAddress();
     ui3DQueue_.push_back(p);
 }
 
