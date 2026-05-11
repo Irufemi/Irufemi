@@ -222,13 +222,13 @@
     <ClCompile Include="Engine\Platform\WindowsAPI\WinApp.cpp">
       <Filter>Engine\Platform\WinApp</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Region\Primitive\TetraRegion.cpp">
+    <ClCompile Include="Renderer\Region\BaseRegion.cpp">
       <Filter>Renderer\Region</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Region\Region.cpp">
+    <ClCompile Include="Renderer\Region\ModelRegion.cpp">
       <Filter>Renderer\Region</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Region\Primitive\SphereRegion.cpp">
+    <ClCompile Include="Renderer\Region\PrimitiveRegion.cpp">
       <Filter>Renderer\Region</Filter>
     </ClCompile>
     <ClCompile Include="Resource\Audio\Se.cpp">
@@ -489,13 +489,13 @@
     <ClInclude Include="Engine\Platform\WindowsAPI\WinApp.h">
       <Filter>Engine\Platform\WinApp</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Region\Primitive\TetraRegion.h">
+    <ClInclude Include="Renderer\Region\BaseRegion.h">
       <Filter>Renderer\Region</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Region\Region.h">
+    <ClInclude Include="Renderer\Region\ModelRegion.h">
       <Filter>Renderer\Region</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Region\Primitive\SphereRegion.h">
+    <ClInclude Include="Renderer\Region\PrimitiveRegion.h">
       <Filter>Renderer\Region</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Audio\Se.h">

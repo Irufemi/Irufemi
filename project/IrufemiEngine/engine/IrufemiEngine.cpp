@@ -40,9 +40,8 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Particle/ParticleResource.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
-#include "Renderer/Region/Primitive/SphereRegion.h"
-#include "Renderer/Region/Primitive/TetraRegion.h"
-#include "Renderer/Region/Region.h"
+#include "Renderer/Region/ModelRegion.h"
+#include "Renderer/Region/PrimitiveRegion.h"
 #include "Renderer/Skybox/Skybox.h"
 #include "Renderer/VertexData.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
@@ -102,9 +101,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
                         winApp_->GetClientHeight());
 
   BaseResource::SetDirectXCommon(dxCommon_.get());
-  ModelRegion::SetDirectXCommon(dxCommon_.get());
-  SphereRegion::SetDirectXCommon(dxCommon_.get());
-  TetraRegion::SetDirectXCommon(dxCommon_.get());
+  BaseRegion::SetDirectXCommon(dxCommon_.get());
   Line3DRegion::SetDirectXCommon(dxCommon_.get());
 
   // --- Dynamic Constant Buffer の初期化 ---
@@ -123,9 +120,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 
     // 注入
     Texture::SetDescriptorPool(srvPool);
-    SphereRegion::SetSrvAllocator(srvPool);
-    ModelRegion::SetSrvAllocator(srvPool);
-    TetraRegion::SetSrvAllocator(srvPool);
+    BaseRegion::SetSrvAllocator(srvPool);
     ParticleSystem::SetSrvPool(srvPool);
     Line3DRegion::SetSrvAllocator(srvPool);
   }
@@ -216,9 +211,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   PlaneClass::SetDrawManager(drawManager_.get());
   CylinderClass::SetDrawManager(drawManager_.get());
   RingClass::SetDrawManager(drawManager_.get());
-  ModelRegion::SetDrawManager(drawManager_.get());
-  SphereRegion::SetDrawManager(drawManager_.get());
-  TetraRegion::SetDrawManager(drawManager_.get());
+  BaseRegion::SetDrawManager(drawManager_.get());
   ParticleSystem::SetDrawManager(drawManager_.get());
   GPUParticleSystem::SetDrawManager(drawManager_.get());
   PrimitiveObjects3DClass::SetDrawManager(drawManager_.get());
@@ -238,9 +231,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   PlaneClass::SetTextureManager(textureManager_.get());
   CylinderClass::SetTextureManager(textureManager_.get());
   RingClass::SetTextureManager(textureManager_.get());
-  ModelRegion::SetTextureManager(textureManager_.get());
-  SphereRegion::SetTextureManager(textureManager_.get());
-  TetraRegion::SetTextureManager(textureManager_.get());
+  BaseRegion::SetTextureManager(textureManager_.get());
   ParticleSystem::SetTextureManager(textureManager_.get());
   GPUParticleSystem::SetTextureManager(textureManager_.get());
   PrimitiveObjects3DClass::SetTextureManager(textureManager_.get());
@@ -256,8 +247,6 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   VoxelParticleSystem::SetEngine(this);
 
   Circle2D::SetEngine(this);
-  SphereRegion::SetEngine(this);
-  TetraRegion::SetEngine(this);
   Line3DRegion::SetEngine(this);
   CubeClass::SetEngine(this);
   Effect::SetEngine(this);
@@ -395,9 +384,7 @@ void IrufemiEngine::Finalize() {
   // --- 静的ポインタのクリア（デストラクタでの不正アクセス防止） ---
   // 全マネージャとシーンの破棄が完了し、非同期タスクもJoinしたこのタイミングでクリアするのが最も安全
   BaseResource::SetDirectXCommon(nullptr);
-  ModelRegion::SetDirectXCommon(nullptr);
-  SphereRegion::SetDirectXCommon(nullptr);
-  TetraRegion::SetDirectXCommon(nullptr);
+  BaseRegion::SetDirectXCommon(nullptr);
   Line3DRegion::SetDirectXCommon(nullptr);
 
   Texture::SetDescriptorPool(nullptr);
@@ -405,9 +392,7 @@ void IrufemiEngine::Finalize() {
   Texture::SetWhiteTextureResource(nullptr);
   GpuMesh::sDxCommon = nullptr;
 
-  SphereRegion::SetSrvAllocator(nullptr);
-  ModelRegion::SetSrvAllocator(nullptr);
-  TetraRegion::SetSrvAllocator(nullptr);
+  BaseRegion::SetSrvAllocator(nullptr);
   ParticleSystem::SetSrvPool(nullptr);
   Line3DRegion::SetSrvAllocator(nullptr);
 
@@ -430,9 +415,7 @@ void IrufemiEngine::Finalize() {
   PlaneClass::SetDrawManager(nullptr);
   CylinderClass::SetDrawManager(nullptr);
   RingClass::SetDrawManager(nullptr);
-  ModelRegion::SetDrawManager(nullptr);
-  SphereRegion::SetDrawManager(nullptr);
-  TetraRegion::SetDrawManager(nullptr);
+  BaseRegion::SetDrawManager(nullptr);
   ParticleSystem::SetDrawManager(nullptr);
   GPUParticleSystem::SetDrawManager(nullptr);
   PrimitiveObjects3DClass::SetDrawManager(nullptr);
@@ -446,9 +429,7 @@ void IrufemiEngine::Finalize() {
   PlaneClass::SetTextureManager(nullptr);
   CylinderClass::SetTextureManager(nullptr);
   RingClass::SetTextureManager(nullptr);
-  ModelRegion::SetTextureManager(nullptr);
-  SphereRegion::SetTextureManager(nullptr);
-  TetraRegion::SetTextureManager(nullptr);
+  BaseRegion::SetTextureManager(nullptr);
   ParticleSystem::SetTextureManager(nullptr);
   GPUParticleSystem::SetTextureManager(nullptr);
   PrimitiveObjects3DClass::SetTextureManager(nullptr);
@@ -462,8 +443,6 @@ void IrufemiEngine::Finalize() {
   GPUParticleSystem::SetDXCommon(nullptr);
   VoxelParticleSystem::SetEngine(nullptr);
   Circle2D::SetEngine(nullptr);
-  SphereRegion::SetEngine(nullptr);
-  TetraRegion::SetEngine(nullptr);
   Line3DRegion::SetEngine(nullptr);
   CubeClass::SetEngine(nullptr);
   Effect::SetEngine(nullptr);

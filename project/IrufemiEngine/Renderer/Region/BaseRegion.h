@@ -1,6 +1,6 @@
-#include "../Core/IRenderable.h"
 #pragma once
 
+#include "Renderer/Core/IRenderable.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -8,70 +8,72 @@
 #include <d3d12.h>
 #include <array>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
+#include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Engine/Graphics/Data/Material.h"
-
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Core/Math/Transform.h"
-#include "Renderer/VertexData.h"
-#include "Resource/Model/Data/ObjModel.h"
+#include "Engine/Graphics/Pipeline/PSOManager.h"
+#include "Engine/Graphics/Camera/Camera.h"
 
-// 前方宣言
 class Camera;
-class DirectXCommon;
 class TextureManager;
 class DrawManager;
-class ModelManager;
 class DescriptorPool;
-struct ManagedModel;
-struct GpuMesh;
 
-class ModelRegion : public IRenderable {
+class BaseRegion : public IRenderable {
 public:
-    ModelRegion() {
+    BaseRegion() {
         instancingSrvIndex_.fill(UINT32_MAX);
     }
-    ~ModelRegion();
-
-    void Initialize(Camera* camera, const std::string& objFilename);
-    void AddInstance(const Transform& t);
-    void ClearInstances();
-    void BuildInstanceBuffer(bool force = false);
-    /**
-     * @brief 描画コマンドの積み込み
-     */
-    void SyncBeforeDraw() override;
-    void Draw() override;
-    void Draw(bool isUI);
+    virtual ~BaseRegion();
 
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
-    static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
     static void SetSrvAllocator(DescriptorPool* alloc) { srvPool_ = alloc; }
+
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
 
-    // --- DrawManager から参照する Getter 群 ---
-    const GpuMesh* GetGpuMesh() const; // 共有メッシュ取得
+    void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
+    BlendMode GetBlendMode() const { return blendMode_; }
+
+    void SetDepthWrite(PSOManager::DepthWrite depthWrite) { depthWrite_ = depthWrite; }
+    PSOManager::DepthWrite GetDepthWrite() const { return depthWrite_; }
+
+    void SetCullMode(PSOManager::CullMode cullMode) { cullMode_ = cullMode; }
+    PSOManager::CullMode GetCullMode() const { return cullMode_; }
+
+    void SetCastShadows(bool cast) { castShadows_ = cast; }
+    bool GetCastShadows() const { return castShadows_; }
+
+    // Color controls
+    void SetColor(const Vector4& color);
+    void SetEnvironmentCoefficient(float coefficient);
+    void SetInstanceColor(uint32_t index, const Vector4& color);
+    void SetAllInstanceColor(const Vector4& color);
+
+    // Instances
+    void AddInstance(const Transform& t);
+    void AddInstance(const Transform& t, const Vector4& color);
+    void AddInstance(const Vector3& center, float scale = 1.0f, const Vector3& rotate = {0,0,0});
+    void AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color);
+    
+    // World matrix based instances
+    void AddInstanceWorld(const Matrix4x4& world, const Vector4& color = {1,1,1,1});
+
+    void UpdateInstance(uint32_t index, const Transform& t);
+    void ClearInstances();
+
+    virtual void BuildInstanceBuffer(bool force = false);
+    void SyncBeforeDraw() override;
+
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
     D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT GetInstanceCount() const { return visibleInstanceCount_; }
 
-    BlendMode GetBlendMode() const { return blendMode_; }
-    void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
-
-    PSOManager::DepthWrite GetDepthWrite() const { return depthWrite_; }
-    void SetDepthWrite(PSOManager::DepthWrite depthWrite) { depthWrite_ = depthWrite; }
-
-    PSOManager::CullMode GetCullMode() const { return cullMode_; }
-    void SetCullMode(PSOManager::CullMode cullMode) { cullMode_ = cullMode; }
-
-    bool GetCastShadows() const { return castShadows_; }
-    void SetCastShadows(bool cast) { castShadows_ = cast; }
-
-private:
+protected:
     struct InstanceData {
         Matrix4x4 WVP;
         Matrix4x4 World;
@@ -79,51 +81,41 @@ private:
         Vector4   color;
     };
 
-    // リソース生成ヘルパ
-    void CreateMaterialResources(const ObjMesh& mesh);
-    void EnsureSharedTexture(const ObjMesh& mesh);
     void CreateOrResizeInstanceBuffer(uint32_t instanceCount);
-    void InitializeResources();
 
-private:
+    virtual float GetBoundingSphereRadius() const = 0; // for culling
+
+protected:
     static DirectXCommon*  dx_;
     static TextureManager* textureManager_;
     static DrawManager* drawManager_;
-    static ModelManager*    modelManager_;
     static DescriptorPool* srvPool_;
 
     Camera* camera_ = nullptr;
 
-    // 共有モデルデータ(CPU/GPU)
-    std::shared_ptr<ManagedModel> managedModel_{};
-
-    // インスタンス固有リソース
     uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
     Material cpuMaterialData_{};
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
 
-    // インスタンシング用
     std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> instanceBuffer_{};
     std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            instancingSrvCPU_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            instancingSrvGPU_{};
     std::array<uint32_t, kMaxFramesInFlight>                               instancingSrvIndex_{};
 
     std::vector<Transform> instances_;
+    std::vector<Vector4>   instanceColors_;
+    std::vector<Matrix4x4> instanceWorlds_;
+    std::vector<Vector4>   instanceWorldColors_;
+
     bool                   instanceDirty_ = false;
     bool                   isCullingEnabled_ = true;
-    bool                   isResourcesInitialized_ = false;
     uint32_t               visibleInstanceCount_ = 0;
 
     uint32_t lastUpdateFrameIndex_ = 0;
     bool isDirty_ = true;
 
-    // レンダリングステート
     BlendMode blendMode_ = BlendMode::kBlendModeNormal;
     PSOManager::DepthWrite depthWrite_ = PSOManager::DepthWrite::Enable;
     PSOManager::CullMode cullMode_ = PSOManager::CullMode::Back;
     bool castShadows_ = true;
-
-    // 行列更新の最適化用
-    Matrix4x4 lastViewMatrix_ = {};
-    Matrix4x4 lastProjectionMatrix_ = {};
 };

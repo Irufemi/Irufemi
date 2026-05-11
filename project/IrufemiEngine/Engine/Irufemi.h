@@ -55,9 +55,8 @@
 // VoxelParticle
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 // Region
-#include "Renderer/Region/Region.h"
-#include "Renderer/Region/Primitive/SphereRegion.h"
-#include "Renderer/Region/Primitive/TetraRegion.h"
+#include "Renderer/Region/ModelRegion.h"
+#include "Renderer/Region/PrimitiveRegion.h"
 // Skybox
 #include "Renderer/Skybox/Skybox.h"
 
