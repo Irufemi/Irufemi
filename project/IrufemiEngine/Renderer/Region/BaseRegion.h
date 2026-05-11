@@ -91,8 +91,6 @@ protected:
     static DrawManager* drawManager_;
     static DescriptorPool* srvPool_;
 
-    Camera* camera_ = nullptr;
-
     uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
     Material cpuMaterialData_{};
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};

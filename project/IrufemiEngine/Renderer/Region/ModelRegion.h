@@ -18,7 +18,7 @@ public:
 
     static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
 
-    void Initialize(Camera* camera, const std::string& objFilename);
+    void Initialize(const std::string& objFilename);
     
     void Draw() override;
     void Draw(bool isUI);

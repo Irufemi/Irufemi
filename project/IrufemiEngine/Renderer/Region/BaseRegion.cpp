@@ -161,9 +161,14 @@ void BaseRegion::BuildInstanceBuffer(bool force) {
     const Matrix4x4* proj = nullptr;
     const Frustum* frustum = nullptr;
     
-    if (camera_) {
+    Camera* activeCamera = nullptr;
+    if (dx_ && dx_->GetEngine() && dx_->GetEngine()->GetCameraManager()) {
+        activeCamera = dx_->GetEngine()->GetCameraManager()->GetActiveCamera();
+    }
+
+    if (activeCamera) {
         // we can add frustum culling if camera is set
-        frustum = &camera_->GetFrustum();
+        frustum = &activeCamera->GetFrustum();
     }
 
     float modelRadius = GetBoundingSphereRadius();
@@ -172,7 +177,7 @@ void BaseRegion::BuildInstanceBuffer(bool force) {
     for (size_t i = 0; i < instances_.size(); ++i) {
         const auto& inst = instances_[i];
         
-        if (isCullingEnabled_ && camera_ && frustum) {
+        if (isCullingEnabled_ && activeCamera && frustum) {
             float maxScale = (std::max)({ inst.scale.x, inst.scale.y, inst.scale.z });
             Sphere boundingSphere;
             boundingSphere.center = inst.translate;

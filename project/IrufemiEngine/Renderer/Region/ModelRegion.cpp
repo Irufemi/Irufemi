@@ -7,10 +7,7 @@
 
 ModelManager* ModelRegion::modelManager_ = nullptr;
 
-void ModelRegion::Initialize(Camera* camera, const std::string& objFilename) {
-    assert(camera);
-    camera_ = camera;
-
+void ModelRegion::Initialize(const std::string& objFilename) {
     assert(modelManager_ && "ModelRegion::Initialize: ModelManager is not set.");
     managedModel_ = modelManager_->GetModelAsync(objFilename);
     isResourcesInitialized_ = false;
