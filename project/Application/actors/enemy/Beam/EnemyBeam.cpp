@@ -18,7 +18,7 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
     telegraphObj_->SetCastShadows(false);
 
     attackCylinder_ = std::make_shared<CylinderClass>();
-    attackCylinder_->Initialize();
+    attackCylinder_->Initialize(false, false);
     attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     attackCylinder_->SetCastShadows(false);
 
