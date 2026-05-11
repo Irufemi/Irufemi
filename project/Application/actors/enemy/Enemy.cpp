@@ -400,6 +400,20 @@ OBB Enemy::GetOBB() const {
   return obb;
 }
 
+Vector3 Enemy::GetTargetPosition() const {
+    if (isPhase2_) {
+        // 生きている頭を一つ選んで返す（真ん中、左、右の順）
+        if (headMid_ && headMid_->GetHP() > 0) {
+            return headMid_->GetTransform().translate;
+        } else if (headLeft_ && headLeft_->GetHP() > 0) {
+            return headLeft_->GetTransform().translate;
+        } else if (headRight_ && headRight_->GetHP() > 0) {
+            return headRight_->GetTransform().translate;
+        }
+    }
+    return globalTransform_.translate;
+}
+
 void Enemy::SetState(EnemyState newState) {
   state_ = newState;
 

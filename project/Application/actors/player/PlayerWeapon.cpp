@@ -156,6 +156,14 @@ void PlayerWeapon::UpdateParticlesOnly() {
             missiles_[i].position.y += missiles_[i].velocity.y;
             missiles_[i].position.z += missiles_[i].velocity.z;
 
+            // 地面に潜らないようにする
+            if (missiles_[i].position.y < 0.1f) {
+                missiles_[i].position.y = 0.1f;
+                if (missiles_[i].velocity.y < 0.0f) {
+                    missiles_[i].velocity.y = 0.0f;
+                }
+            }
+
             float missileHalfLength = 1.2f; // playerScale.z を 1.0 だと仮定した場合の固定値
             float vx = missiles_[i].velocity.x;
             float vy = missiles_[i].velocity.y;
@@ -389,6 +397,14 @@ void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& player
             missiles_[i].position.y += missiles_[i].velocity.y;
             missiles_[i].position.z += missiles_[i].velocity.z;
 
+            // 地面に潜らないようにする
+            if (missiles_[i].position.y < 0.1f) {
+                missiles_[i].position.y = 0.1f;
+                if (missiles_[i].velocity.y < 0.0f) {
+                    missiles_[i].velocity.y = 0.0f;
+                }
+            }
+
             float missileHalfLength = (6.0f * 0.5f) * (playerScale.z * 0.4f);
             float vx = missiles_[i].velocity.x;
             float vy = missiles_[i].velocity.y;
@@ -413,90 +429,106 @@ void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& player
 
 void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos) {
     if (machineGunActiveTimer_ > 0) {
-        machineGunActiveTimer_--;
-        machineGunFireTimer_--;
+        // 残弾が尽きたら強制停止
+        if (machineGunAmmo_ <= 0) {
+            machineGunActiveTimer_ = 0;
+        } else {
+            machineGunActiveTimer_--;
+            machineGunFireTimer_--;
 
-        if (machineGunFireTimer_ <= 0) {
-            machineGunFireTimer_ = 5; // 発射間隔
+            if (machineGunFireTimer_ <= 0) {
+                machineGunFireTimer_ = 5; // 発射間隔
 
-            machineGunVibration_.x = ((std::rand() % 100) / 100.0f - 0.5f) * machineGunVibrationScale_ * 2.0f;
-            machineGunVibration_.y = ((std::rand() % 100) / 100.0f - 0.5f) * machineGunVibrationScale_ * 2.0f;
-            machineGunVibration_.z = ((std::rand() % 100) / 100.0f - 0.5f) * machineGunVibrationScale_ * 2.0f;
+                machineGunVibration_.x = ((std::rand() % 100) / 100.0f - 0.5f) * machineGunVibrationScale_ * 2.0f;
+                machineGunVibration_.y = ((std::rand() % 100) / 100.0f - 0.5f) * machineGunVibrationScale_ * 2.0f;
+                machineGunVibration_.z = ((std::rand() % 100) / 100.0f - 0.5f) * machineGunVibrationScale_ * 2.0f;
 
-            float sinY = std::sin(playerRotate.y);
-            float cosY = std::cos(playerRotate.y);
-            float rightX = cosY;
-            float rightZ = -sinY;
+                float sinY = std::sin(playerRotate.y);
+                float cosY = std::cos(playerRotate.y);
+                float rightX = cosY;
+                float rightZ = -sinY;
 
-            Vector3 leftShoulder = { playerTranslate.x - rightX * 0.7f, playerTranslate.y + 1.0f, playerTranslate.z - rightZ * 0.7f };
-            Vector3 rightShoulder = { playerTranslate.x + rightX * 0.7f, playerTranslate.y + 1.0f, playerTranslate.z + rightZ * 0.7f };
+                Vector3 leftShoulder = { playerTranslate.x - rightX * 0.7f, playerTranslate.y + 1.0f, playerTranslate.z - rightZ * 0.7f };
+                Vector3 rightShoulder = { playerTranslate.x + rightX * 0.7f, playerTranslate.y + 1.0f, playerTranslate.z + rightZ * 0.7f };
 
-            Vector3 playerCenter = { playerTranslate.x, playerTranslate.y + 1.0f, playerTranslate.z };
-            Vector3 aimPos = { targetPos.x, targetPos.y + 1.0f, targetPos.z };
-            Vector3 toTarget = { aimPos.x - playerCenter.x, aimPos.y - playerCenter.y, aimPos.z - playerCenter.z };
+                Vector3 playerCenter = { playerTranslate.x, playerTranslate.y + 1.0f, playerTranslate.z };
+                Vector3 aimPos = { targetPos.x, targetPos.y + 1.0f, targetPos.z };
+                Vector3 toTarget = { aimPos.x - playerCenter.x, aimPos.y - playerCenter.y, aimPos.z - playerCenter.z };
 
-            Vector3 rot = { 0.0f, 0.0f, 0.0f };
-            float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
+                Vector3 rot = { 0.0f, 0.0f, 0.0f };
+                float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
 
-            // ★修正: 照準に近いほど吸い寄せる（エイムアシスト）
-            float cosP = std::cos(cameraPitch);
-            float sinP = std::sin(cameraPitch);
-            Vector3 playerForward = { std::sin(playerRotate.y) * cosP, -sinP, std::cos(playerRotate.y) * cosP };
+                float cosP = std::cos(cameraPitch);
+                float sinP = std::sin(cameraPitch);
+                Vector3 playerForward = { std::sin(playerRotate.y) * cosP, -sinP, std::cos(playerRotate.y) * cosP };
 
-            Vector3 blendedForward = playerForward;
+                Vector3 blendedForward = playerForward;
 
-            if (dist > 0.001f) {
-                Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
-                float dot = playerForward.x * toTargetNorm.x + playerForward.y * toTargetNorm.y + playerForward.z * toTargetNorm.z;
+                if (dist > 0.001f) {
+                    Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
+                    float dot = playerForward.x * toTargetNorm.x + playerForward.y * toTargetNorm.y + playerForward.z * toTargetNorm.z;
 
-                float assistThreshold = 0.8f;
-                if (dot > assistThreshold) {
-                    float assistRatio = (dot - assistThreshold) / (1.0f - assistThreshold);
-                    assistRatio = std::pow(assistRatio, 1.5f);
+                    float assistThreshold = 0.8f;
+                    if (dot > assistThreshold) {
+                        float assistRatio = (dot - assistThreshold) / (1.0f - assistThreshold);
+                        assistRatio = std::pow(assistRatio, 1.5f);
 
-                    blendedForward.x = playerForward.x * (1.0f - assistRatio) + toTargetNorm.x * assistRatio;
-                    blendedForward.y = playerForward.y * (1.0f - assistRatio) + toTargetNorm.y * assistRatio;
-                    blendedForward.z = playerForward.z * (1.0f - assistRatio) + toTargetNorm.z * assistRatio;
+                        blendedForward.x = playerForward.x * (1.0f - assistRatio) + toTargetNorm.x * assistRatio;
+                        blendedForward.y = playerForward.y * (1.0f - assistRatio) + toTargetNorm.y * assistRatio;
+                        blendedForward.z = playerForward.z * (1.0f - assistRatio) + toTargetNorm.z * assistRatio;
 
-                    float fLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.y * blendedForward.y + blendedForward.z * blendedForward.z);
-                    blendedForward.x /= fLen;
-                    blendedForward.y /= fLen;
-                    blendedForward.z /= fLen;
+                        float fLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.y * blendedForward.y + blendedForward.z * blendedForward.z);
+                        blendedForward.x /= fLen;
+                        blendedForward.y /= fLen;
+                        blendedForward.z /= fLen;
+                    }
                 }
+
+                rot.y = std::atan2(blendedForward.x, blendedForward.z);
+                float xzLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.z * blendedForward.z);
+                rot.x = std::atan2(-blendedForward.y, xzLen);
+
+                float muzzleOffsetSize = (kMachineGunModelSize.z * 0.5f) * kMachineGunScale.z;
+                float cosRotX = std::cos(rot.x);
+                Vector3 forward = { std::sin(rot.y) * cosRotX, -std::sin(rot.x), std::cos(rot.y) * cosRotX };
+
+                Vector3 muzzleLeft = { leftShoulder.x + forward.x * muzzleOffsetSize, leftShoulder.y + forward.y * muzzleOffsetSize, leftShoulder.z + forward.z * muzzleOffsetSize };
+                Vector3 muzzleRight = { rightShoulder.x + forward.x * muzzleOffsetSize, rightShoulder.y + forward.y * muzzleOffsetSize, rightShoulder.z + forward.z * muzzleOffsetSize };
+
+                FireMachineGunBullet(muzzleLeft, playerTranslate, playerRotate, cameraPitch, targetPos);
+                EjectCartridge(leftShoulder, false, playerTranslate, playerRotate, targetPos);
+
+                if (muzzleFlashLeft_) muzzleFlashLeft_->PlayHitEffect(muzzleLeft);
+                if (muzzleFlashAddLeft_) {
+                    muzzleFlashAddLeft_->PlayHitEffect(muzzleLeft);
+                    muzzleFlashAddLeft_->PlayHitEffect(muzzleLeft);
+                }
+                if (ejectionMistLeft_) ejectionMistLeft_->PlayHitEffect({ leftShoulder.x - rightX * 0.3f, leftShoulder.y, leftShoulder.z - rightZ * 0.3f });
+
+                FireMachineGunBullet(muzzleRight, playerTranslate, playerRotate, cameraPitch, targetPos);
+                EjectCartridge(rightShoulder, true, playerTranslate, playerRotate, targetPos);
+
+                if (muzzleFlashRight_) muzzleFlashRight_->PlayHitEffect(muzzleRight);
+                if (muzzleFlashAddRight_) {
+                    muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
+                    muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
+                }
+                if (ejectionMistRight_) ejectionMistRight_->PlayHitEffect({ rightShoulder.x + rightX * 0.3f, rightShoulder.y, rightShoulder.z + rightZ * 0.3f });
+
+                // 発射ごとに残弾を消費（左右合わせて1発分）
+                machineGunAmmo_--;
+                if (machineGunAmmo_ < 0) machineGunAmmo_ = 0;
             }
-
-            rot.y = std::atan2(blendedForward.x, blendedForward.z);
-            float xzLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.z * blendedForward.z);
-            rot.x = std::atan2(-blendedForward.y, xzLen);
-
-            float muzzleOffsetSize = (kMachineGunModelSize.z * 0.5f) * kMachineGunScale.z;
-            float cosRotX = std::cos(rot.x);
-            Vector3 forward = { std::sin(rot.y) * cosRotX, -std::sin(rot.x), std::cos(rot.y) * cosRotX };
-
-            Vector3 muzzleLeft = { leftShoulder.x + forward.x * muzzleOffsetSize, leftShoulder.y + forward.y * muzzleOffsetSize, leftShoulder.z + forward.z * muzzleOffsetSize };
-            Vector3 muzzleRight = { rightShoulder.x + forward.x * muzzleOffsetSize, rightShoulder.y + forward.y * muzzleOffsetSize, rightShoulder.z + forward.z * muzzleOffsetSize };
-
-            FireMachineGunBullet(muzzleLeft, playerTranslate, playerRotate, cameraPitch, targetPos);
-            EjectCartridge(leftShoulder, false, playerTranslate, playerRotate, targetPos);
-
-            // if (muzzleSmokeLeft_) muzzleSmokeLeft_->PlayHitEffect(leftShoulder); // 既存の煙を停止
-            if (muzzleFlashLeft_) muzzleFlashLeft_->PlayHitEffect(muzzleLeft);
-            if (muzzleFlashAddLeft_) {
-                muzzleFlashAddLeft_->PlayHitEffect(muzzleLeft);
-                muzzleFlashAddLeft_->PlayHitEffect(muzzleLeft);
+        }
+    } else {
+        // 停止中: 残弾を自動回復
+        if (machineGunAmmo_ < kMaxMachineGunAmmo) {
+            machineGunAmmoRecoveryTimer_++;
+            if (machineGunAmmoRecoveryTimer_ >= kAmmoRecoveryInterval) {
+                machineGunAmmoRecoveryTimer_ = 0;
+                machineGunAmmo_++;
+                if (machineGunAmmo_ > kMaxMachineGunAmmo) machineGunAmmo_ = kMaxMachineGunAmmo;
             }
-            if (ejectionMistLeft_) ejectionMistLeft_->PlayHitEffect({ leftShoulder.x - rightX * 0.3f, leftShoulder.y, leftShoulder.z - rightZ * 0.3f });
-
-            FireMachineGunBullet(muzzleRight, playerTranslate, playerRotate, cameraPitch, targetPos);
-            EjectCartridge(rightShoulder, true, playerTranslate, playerRotate, targetPos);
-
-            // if (muzzleSmokeRight_) muzzleSmokeRight_->PlayHitEffect(rightShoulder); // 既存の煙を停止
-            if (muzzleFlashRight_) muzzleFlashRight_->PlayHitEffect(muzzleRight);
-            if (muzzleFlashAddRight_) {
-                muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
-                muzzleFlashAddRight_->PlayHitEffect(muzzleRight);
-            }
-            if (ejectionMistRight_) ejectionMistRight_->PlayHitEffect({ rightShoulder.x + rightX * 0.3f, rightShoulder.y, rightShoulder.z + rightZ * 0.3f });
         }
     }
 
@@ -662,6 +694,10 @@ void PlayerWeapon::EjectCartridge(const Vector3& startPos, bool isRight, const V
 void PlayerWeapon::StartMachineGunSkill() {
     machineGunActiveTimer_ = 180;
     machineGunVibrationScale_ = 0.1f;
+}
+
+void PlayerWeapon::StopMachineGunSkill() {
+    machineGunActiveTimer_ = 0;
 }
 
 void PlayerWeapon::FireMissileSkill(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& targetPos) {
