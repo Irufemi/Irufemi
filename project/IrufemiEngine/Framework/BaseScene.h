@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <cstdint>
+#include <string>
 
 // 前方宣言
 class IrufemiEngine;
@@ -54,6 +55,16 @@ public:
      * @brief シーンが保持する GameObject のリストを取得する
      */
     const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const override { return gameObjects_; }
+
+    /**
+     * @brief 現在のシーン（全GameObject）をファイルに保存する
+     */
+    void SaveScene(const std::string& filepath);
+
+    /**
+     * @brief ファイルからシーン（全GameObject）を読み込む
+     */
+    void LoadScene(const std::string& filepath);
 
     // --- ライフサイクル関数 ---
     

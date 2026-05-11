@@ -1,4 +1,6 @@
 #pragma once
+#include <nlohmann/json.hpp>
+#include <string>
 
 class GameObject;
 
@@ -25,6 +27,21 @@ public:
      * @brief 描画処理（レンダラー系コンポーネントでオーバーライド）
      */
     virtual void Draw() {}
+
+    /**
+     * @brief コンポーネントの種類を表す文字列を返す
+     */
+    virtual std::string GetComponentName() const { return "Component"; }
+
+    /**
+     * @brief コンポーネントの状態をJSONにシリアライズする
+     */
+    virtual nlohmann::json Serialize() { return nlohmann::json::object(); }
+
+    /**
+     * @brief JSONからコンポーネントの状態を復元する
+     */
+    virtual void Deserialize(const nlohmann::json& j) { (void)j; }
 
 #ifdef EditorMode
     /**

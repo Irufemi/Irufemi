@@ -11,6 +11,10 @@ public:
     void Initialize() override {}
     void Update() override {}
 
+    std::string GetComponentName() const override { return "TransformComponent"; }
+    nlohmann::json Serialize() override;
+    void Deserialize(const nlohmann::json& j) override;
+
 #ifdef EditorMode
     void OnInspectorGUI() override;
 #endif

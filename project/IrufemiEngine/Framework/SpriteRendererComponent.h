@@ -25,6 +25,10 @@ public:
     void SetTexture(const std::string& texturePath);
     Sprite* GetSprite() const { return sprite_.get(); }
 
+    std::string GetComponentName() const override { return "SpriteRendererComponent"; }
+    nlohmann::json Serialize() override;
+    void Deserialize(const nlohmann::json& j) override;
+
 private:
     std::unique_ptr<Sprite> sprite_;
     TransformComponent* transform_ = nullptr;

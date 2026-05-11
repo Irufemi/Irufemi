@@ -266,6 +266,16 @@ void Sprite::SetTexture(const std::string& textureName) {
     }
 }
 
+std::string Sprite::GetTextureName() const {
+    if (textureManager_) {
+        auto names = textureManager_->GetTextureNamesForDebug();
+        if (selectedTextureIndex_ >= 0 && selectedTextureIndex_ < static_cast<int>(names.size())) {
+            return names[selectedTextureIndex_];
+        }
+    }
+    return "";
+}
+
 void Sprite::AdjustTextureSize() {
     if (!textureManager_) return;
 

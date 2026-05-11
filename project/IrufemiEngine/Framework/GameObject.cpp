@@ -91,3 +91,49 @@ void GameObject::OnInspectorGUI() {
     }
 #endif
 }
+
+nlohmann::json GameObject::Serialize() const {
+    nlohmann::json j;
+    j["name"] = name_;
+    j["isActive"] = isActive_;
+    
+    nlohmann::json comps = nlohmann::json::array();
+    for (const auto& comp : components_) {
+        nlohmann::json cj;
+        cj["type"] = comp->GetComponentName();
+        cj["data"] = comp->Serialize();
+        comps.push_back(cj);
+    }
+    j["components"] = comps;
+    return j;
+}
+
+void GameObject::Deserialize(const nlohmann::json& j) {
+    if (j.contains("name")) name_ = j["name"];
+    if (j.contains("isActive")) isActive_ = j["isActive"];
+    
+    if (j.contains("components")) {
+        for (const auto& cj : j["components"]) {
+            std::string type = cj["type"];
+            Component* newComp = nullptr;
+            
+            // FIXME: 将来的にはファクトリパターン等で動的に生成するのが望ましい
+            if (type == "TransformComponent") newComp = AddComponent<TransformComponent>();
+            else if (type == "MeshRendererComponent") newComp = AddComponent<MeshRendererComponent>();
+            else if (type == "PrimitiveRendererComponent") newComp = AddComponent<PrimitiveRendererComponent>();
+            else if (type == "SpriteRendererComponent") newComp = AddComponent<SpriteRendererComponent>();
+            
+            if (newComp && cj.contains("data")) {
+                newComp->Deserialize(cj["data"]);
+            }
+        }
+    }
+}
+
+std::shared_ptr<GameObject> GameObject::Clone() {
+    auto clone = std::make_shared<GameObject>();
+    clone->Deserialize(this->Serialize());
+    // クローン時は必要に応じて "(Clone)" などを付与
+    clone->SetName(this->GetName() + " (Clone)");
+    return clone;
+}

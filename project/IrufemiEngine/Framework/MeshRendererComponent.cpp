@@ -53,3 +53,16 @@ void MeshRendererComponent::OnInspectorGUI() {
     }
 }
 #endif
+
+nlohmann::json MeshRendererComponent::Serialize() {
+    nlohmann::json j;
+    j["modelName"] = modelName_;
+    return j;
+}
+
+void MeshRendererComponent::Deserialize(const nlohmann::json& j) {
+    if (j.contains("modelName")) {
+        std::string modelName = j["modelName"];
+        LoadModel(modelName);
+    }
+}

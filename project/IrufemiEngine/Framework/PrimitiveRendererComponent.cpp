@@ -152,3 +152,41 @@ void PrimitiveRendererComponent::OnInspectorGUI() {
     }
 }
 #endif
+
+nlohmann::json PrimitiveRendererComponent::Serialize() {
+    nlohmann::json j;
+    j["currentTypeIndex"] = currentTypeIndex_;
+    j["radius"] = radius_;
+    j["subdivisions"] = subdivisions_;
+    j["height"] = height_;
+    j["topRadius"] = topRadius_;
+    j["bottomRadius"] = bottomRadius_;
+    j["hasTop"] = hasTop_;
+    j["hasBottom"] = hasBottom_;
+    j["torusMajorRadius"] = torusMajorRadius_;
+    j["torusMinorRadius"] = torusMinorRadius_;
+    j["torusMajorSegments"] = torusMajorSegments_;
+    j["torusMinorSegments"] = torusMinorSegments_;
+    return j;
+}
+
+void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
+    if (j.contains("currentTypeIndex")) currentTypeIndex_ = j["currentTypeIndex"];
+    if (j.contains("radius")) radius_ = j["radius"];
+    if (j.contains("subdivisions")) subdivisions_ = j["subdivisions"];
+    if (j.contains("height")) height_ = j["height"];
+    if (j.contains("topRadius")) topRadius_ = j["topRadius"];
+    if (j.contains("bottomRadius")) bottomRadius_ = j["bottomRadius"];
+    if (j.contains("hasTop")) hasTop_ = j["hasTop"];
+    if (j.contains("hasBottom")) hasBottom_ = j["hasBottom"];
+    if (j.contains("torusMajorRadius")) torusMajorRadius_ = j["torusMajorRadius"];
+    if (j.contains("torusMinorRadius")) torusMinorRadius_ = j["torusMinorRadius"];
+    if (j.contains("torusMajorSegments")) torusMajorSegments_ = j["torusMajorSegments"];
+    if (j.contains("torusMinorSegments")) torusMinorSegments_ = j["torusMinorSegments"];
+    
+    // 形状を再構築
+    PrimitiveType types[] = { PrimitiveType::Sphere, PrimitiveType::Plane, PrimitiveType::Cube, PrimitiveType::Cylinder, PrimitiveType::Cone, PrimitiveType::Torus };
+    if (currentTypeIndex_ >= 0 && currentTypeIndex_ < 6) {
+        SetShape(types[currentTypeIndex_]);
+    }
+}

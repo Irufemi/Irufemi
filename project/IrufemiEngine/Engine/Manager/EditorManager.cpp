@@ -47,6 +47,22 @@ void EditorManager::DrawEditorUI() {
     // メニューバー
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Save Scene (main_scene.json)")) {
+                if (engine_ && engine_->GetSceneManager()) {
+                    if (auto* baseScene = dynamic_cast<BaseScene*>(engine_->GetSceneManager()->GetCurrentScene())) {
+                        baseScene->SaveScene("resources/scenes/main_scene.json");
+                    }
+                }
+            }
+            if (ImGui::MenuItem("Load Scene (main_scene.json)")) {
+                if (engine_ && engine_->GetSceneManager()) {
+                    if (auto* baseScene = dynamic_cast<BaseScene*>(engine_->GetSceneManager()->GetCurrentScene())) {
+                        baseScene->LoadScene("resources/scenes/main_scene.json");
+                        selectedObject_.reset(); // ロードしたら選択を解除
+                    }
+                }
+            }
+            ImGui::Separator();
             if (ImGui::MenuItem("Exit")) {
                 // 終了処理（PostQuitMessage）
                 PostQuitMessage(0);
@@ -110,8 +126,15 @@ void EditorManager::DrawHierarchy() {
                     selectedObject_ = obj;
                 }
 
-                // アイテムごとの右クリックメニュー (Delete等)
+                // アイテムごとの右クリックメニュー (Delete, Duplicate等)
                 if (ImGui::BeginPopupContextItem("ItemContext", ImGuiPopupFlags_MouseButtonRight)) {
+                    if (ImGui::Selectable("Duplicate")) {
+                        auto* baseScene = dynamic_cast<BaseScene*>(currentScene);
+                        if (baseScene) {
+                            auto clone = obj->Clone();
+                            baseScene->AddGameObject(clone);
+                        }
+                    }
                     if (ImGui::Selectable("Delete")) {
                         auto* baseScene = dynamic_cast<BaseScene*>(currentScene);
                         if (baseScene) {

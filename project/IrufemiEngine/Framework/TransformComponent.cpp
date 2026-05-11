@@ -24,3 +24,29 @@ void TransformComponent::OnInspectorGUI() {
     }
 }
 #endif
+
+nlohmann::json TransformComponent::Serialize() {
+    nlohmann::json j;
+    j["position"] = { position_.x, position_.y, position_.z };
+    j["rotation"] = { rotation_.x, rotation_.y, rotation_.z };
+    j["scale"]    = { scale_.x, scale_.y, scale_.z };
+    return j;
+}
+
+void TransformComponent::Deserialize(const nlohmann::json& j) {
+    if (j.contains("position") && j["position"].is_array() && j["position"].size() == 3) {
+        position_.x = j["position"][0];
+        position_.y = j["position"][1];
+        position_.z = j["position"][2];
+    }
+    if (j.contains("rotation") && j["rotation"].is_array() && j["rotation"].size() == 3) {
+        rotation_.x = j["rotation"][0];
+        rotation_.y = j["rotation"][1];
+        rotation_.z = j["rotation"][2];
+    }
+    if (j.contains("scale") && j["scale"].is_array() && j["scale"].size() == 3) {
+        scale_.x = j["scale"][0];
+        scale_.y = j["scale"][1];
+        scale_.z = j["scale"][2];
+    }
+}

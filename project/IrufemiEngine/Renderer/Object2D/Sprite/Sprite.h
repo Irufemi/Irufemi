@@ -104,6 +104,7 @@ public: //メンバ関数
     const Vector4& GetColor()const { return resource_->GetMaterialData()->color; }
     bool IsFlipX() const { return isFlipX_; }
     bool IsFlipY() const { return isFlipY_; }
+    std::string GetTextureName() const;
     ///@}
 
     /** @name 設定用API */
@@ -182,6 +183,7 @@ public: //メンバ関数
     /** @name 静的メンバ設定（エンジン内部用） */
     ///@{
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
+    static TextureManager* GetTextureManager() { return textureManager_; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
     static void SetCameraManager(CameraManager* camM) { cameraManager_ = camM; }

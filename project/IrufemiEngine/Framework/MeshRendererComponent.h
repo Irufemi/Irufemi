@@ -19,6 +19,10 @@ public:
     void Update() override;
     void Draw() override;
 
+    std::string GetComponentName() const override { return "MeshRendererComponent"; }
+    nlohmann::json Serialize() override;
+    void Deserialize(const nlohmann::json& j) override;
+
 #ifdef EditorMode
     void OnInspectorGUI() override;
 #endif

@@ -10,6 +10,8 @@
 #include "Engine/Graphics/Data/DirectionalLight.h"
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "GameObject.h"
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 #ifdef USE_IMGUI
 #include "Engine/Manager/DebugUI.h"
@@ -154,3 +156,36 @@ bool BaseScene::ReleasedDIK(uint8_t dik) const { return engine_->GetInputManager
 
 bool BaseScene::IsButtonDown(unsigned short button) const { return engine_->GetInputManager()->IsButtonDown(button); }
 bool BaseScene::IsButtonPressed(unsigned short button) const { return engine_->GetInputManager()->IsButtonPressed(button); }
+
+void BaseScene::SaveScene(const std::string& filepath) {
+    nlohmann::json rootArray = nlohmann::json::array();
+    for (const auto& obj : gameObjects_) {
+        rootArray.push_back(obj->Serialize());
+    }
+
+    std::ofstream file(filepath);
+    if (file.is_open()) {
+        file << rootArray.dump(4);
+        file.close();
+    }
+}
+
+void BaseScene::LoadScene(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) return;
+
+    nlohmann::json rootArray;
+    file >> rootArray;
+    file.close();
+
+    gameObjects_.clear();
+
+    if (rootArray.is_array()) {
+        for (const auto& j : rootArray) {
+            auto obj = std::make_shared<GameObject>();
+            obj->Deserialize(j);
+            obj->Initialize();
+            AddGameObject(obj);
+        }
+    }
+}

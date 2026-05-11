@@ -21,6 +21,10 @@ public:
     void OnInspectorGUI() override;
 #endif
 
+    std::string GetComponentName() const override { return "PrimitiveRendererComponent"; }
+    nlohmann::json Serialize() override;
+    void Deserialize(const nlohmann::json& j) override;
+
     // プロパティ操作
     void SetShape(PrimitiveType type);
     void SetColor(const struct Vector4& color);

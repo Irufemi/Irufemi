@@ -4,6 +4,7 @@
 #include <memory>
 #include <typeindex>
 #include <unordered_map>
+#include <nlohmann/json.hpp>
 #include "Component.h"
 
 /**
@@ -36,6 +37,21 @@ public:
      * @brief Inspector(EditorMode) 用のGUI描画
      */
     void OnInspectorGUI();
+
+    /**
+     * @brief 自身と全コンポーネントをJSONにシリアライズ
+     */
+    nlohmann::json Serialize() const;
+
+    /**
+     * @brief JSONから自身と全コンポーネントを復元
+     */
+    void Deserialize(const nlohmann::json& j);
+
+    /**
+     * @brief 自分自身の完全なコピー(クローン)を生成する
+     */
+    std::shared_ptr<GameObject> Clone();
 
     /**
      * @brief 新しいコンポーネントを追加する
