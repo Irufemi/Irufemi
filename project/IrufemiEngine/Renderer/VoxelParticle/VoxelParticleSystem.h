@@ -170,8 +170,6 @@ private:
   VoxelEmitter emitterData_{};
   ConstantBuffer<VoxelEmitter> emitterBuffer_;
   
-  ConstantBuffer<PerView> perViewBuffer_;
-  
   struct PerFrame { float time; float deltaTime; };
   ConstantBuffer<PerFrame> perFrameBuffer_;
   PerFrame perFrameData_{};
@@ -180,10 +178,6 @@ private:
   bool isEmitting_ = false;
   bool hasExploded_ = false;
   bool needsInitialize_ = true;
-
-  // 行列更新の最適化用
-  Matrix4x4 lastViewMatrix_ = {};
-  Matrix4x4 lastProjectionMatrix_ = {};
   uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);
 
   struct AsyncLoadData {

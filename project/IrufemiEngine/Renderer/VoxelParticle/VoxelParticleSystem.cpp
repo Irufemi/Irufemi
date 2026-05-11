@@ -148,17 +148,6 @@ void VoxelParticleSystem::Update(float deltaTime) {
 void VoxelParticleSystem::SyncConstantBuffers() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     
-    // PerViewはUpdateが呼ばれなくても毎フレーム必ず最新化する（ポーズ中のカメラ移動・マルチバッファ対策）
-    Camera* camera = engine_->GetCameraManager()->GetActiveCamera();
-    if (camera) {
-        perViewBuffer_[frameIndex]->viewProjection = camera->GetViewProjectionMatrix3D();
-        Matrix4x4 backToFrontMatrix = Math::MakeRotateYMatrix(0.0f);
-        perViewBuffer_[frameIndex]->billboardMatrix = Math::Multiply(backToFrontMatrix, camera->GetCameraMatrix());
-        perViewBuffer_[frameIndex]->billboardMatrix.m[3][0] = 0.0f;
-        perViewBuffer_[frameIndex]->billboardMatrix.m[3][1] = 0.0f;
-        perViewBuffer_[frameIndex]->billboardMatrix.m[3][2] = 0.0f;
-    }
-    
     if (lastUpdateFrame_ == frameIndex) return;
     emitterBuffer_.Update(emitterData_, frameIndex);
     perFrameBuffer_.Update(perFrameData_, frameIndex);
@@ -232,7 +221,6 @@ void VoxelParticleSystem::Draw() {
       cubeVertexBufferView_,
       cubeIndexBufferView_,
       cubeIndexCount_,
-      perViewBuffer_.GetGPUVirtualAddress(frameIndex),
       emitterBuffer_.GetGPUVirtualAddress(frameIndex),
       particleSrvHandleGPU_,
       particleBuffer_.Get(),
@@ -461,7 +449,6 @@ void VoxelParticleSystem::CreateResources() {
                                     particleSrvHandleCPU_);
 
   emitterBuffer_.Initialize(dxCommon);
-  perViewBuffer_.Initialize(dxCommon);
   perFrameBuffer_.Initialize(dxCommon);
 }
 

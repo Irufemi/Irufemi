@@ -353,7 +353,6 @@ public:
         const D3D12_VERTEX_BUFFER_VIEW& vbv,
         const D3D12_INDEX_BUFFER_VIEW& ibv,
         uint32_t indexCount,
-        D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
         D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
         D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle,
         ID3D12Resource* particleResource,
