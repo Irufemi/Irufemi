@@ -6,7 +6,7 @@
 #include "../../Engine/Core/Math/Vector4.h"
 #include "../../Resource/Model/Data/VoxelizedModel.h"
 #include "../../Engine/Core/Type/PerView.h"
-#include "../../Engine/Manager/IComputeTask.h"
+#include "../../Engine/Graphics/Compute/IComputeTask.h"
 #include <d3d12.h>
 #include <memory>
 #include <string>

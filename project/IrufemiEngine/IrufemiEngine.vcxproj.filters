@@ -429,7 +429,7 @@
     <ClInclude Include="Engine\Manager\DrawManager.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Manager\RenderPackets.h">
+    <ClInclude Include="Engine\Graphics\Data\RenderPackets.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h">
@@ -693,10 +693,10 @@
     <ClInclude Include="Renderer\Material.h">
       <Filter>Engine\Graphics\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\TransformationMatrix.h">
+    <ClInclude Include="Engine\Graphics\Data\TransformationMatrix.h">
       <Filter>Engine\Graphics\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VertexData.h">
+    <ClInclude Include="Engine\Graphics\Data\VertexData.h">
       <Filter>Engine\Graphics\Data</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Data\Spring.h">
@@ -852,7 +852,7 @@
     <ClInclude Include="Engine\Graphics\DirectX\ConstantBuffer.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Manager\IComputeTask.h">
+    <ClInclude Include="Engine\Graphics\Compute\IComputeTask.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Core\BaseResource.h">

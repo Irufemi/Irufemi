@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <array>
 #include <wrl.h>
-#include "../../Renderer/TransformationMatrix.h"
+#include "../Graphics/Data/TransformationMatrix.h"
 #include "../Graphics/Data/LightCommonData.h"
 #include "../Graphics/Data/PointLight.h"
 #include "../Graphics/Data/SpotLight.h"
@@ -18,8 +18,8 @@
 #include "../Core/Math/Vector4.h"
 #include <vector>
 #include <memory>
-#include "IComputeTask.h"
-#include "RenderPackets.h"
+#include "../Graphics/Compute/IComputeTask.h"
+#include "../Graphics/Data/RenderPackets.h"
 
 class ShadowMap;
 

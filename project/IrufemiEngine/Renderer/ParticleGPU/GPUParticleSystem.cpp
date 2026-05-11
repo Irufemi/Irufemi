@@ -6,7 +6,7 @@
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Core/Math/Math.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Renderer/VertexData.h"
+#include "../../Engine/Graphics/Data/VertexData.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Math/Geometry/Frustum.h"
