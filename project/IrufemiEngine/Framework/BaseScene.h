@@ -46,6 +46,11 @@ public:
     void AddGameObject(std::shared_ptr<GameObject> obj);
 
     /**
+     * @brief シーンから GameObject を削除する
+     */
+    void RemoveGameObject(std::shared_ptr<GameObject> obj);
+
+    /**
      * @brief シーンが保持する GameObject のリストを取得する
      */
     const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const override { return gameObjects_; }

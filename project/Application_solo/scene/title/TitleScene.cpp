@@ -22,6 +22,7 @@ void TitleScene::Update() {
 }
 
 void TitleScene::Draw() {
+    BaseScene::Draw();
 }
 
 void TitleScene::DrawDebugTab() {

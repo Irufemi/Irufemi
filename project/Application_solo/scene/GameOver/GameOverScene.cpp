@@ -21,6 +21,7 @@ void GameOverScene::Update() {
 }
 
 void GameOverScene::Draw() {
+    BaseScene::Draw();
 }
 
 void GameOverScene::DrawDebugTab() {

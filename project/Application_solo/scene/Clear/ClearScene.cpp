@@ -21,6 +21,7 @@ void ClearScene::Update() {
 }
 
 void ClearScene::Draw() {
+    BaseScene::Draw();
 }
 
 void ClearScene::DrawDebugTab() {

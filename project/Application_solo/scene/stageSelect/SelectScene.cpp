@@ -21,6 +21,7 @@ void SelectScene::Update() {
 }
 
 void SelectScene::Draw() {
+    BaseScene::Draw();
 }
 
 void SelectScene::DrawDebugTab() {

@@ -21,6 +21,7 @@ void PauseScene::Update() {
 }
 
 void PauseScene::Draw() {
+    BaseScene::Draw();
 }
 
 void PauseScene::DrawDebugTab() {

@@ -75,6 +75,13 @@ void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
     }
 }
 
+void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
+    auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
+    if (it != gameObjects_.end()) {
+        gameObjects_.erase(it);
+    }
+}
+
 void BaseScene::SubmitFrameData() {
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;

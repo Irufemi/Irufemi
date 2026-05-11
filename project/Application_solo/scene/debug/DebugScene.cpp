@@ -444,7 +444,8 @@ void DebugScene::Update() {
 }
 
 void DebugScene::Draw() {
-
+    BaseScene::Draw();
+    
     // 3D
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
