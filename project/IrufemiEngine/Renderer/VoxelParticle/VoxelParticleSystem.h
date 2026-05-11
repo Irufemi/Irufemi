@@ -78,6 +78,18 @@ public:
     FineScatter = 3
   };
 
+  struct VoxelEmitterParams {
+    float lifeTime = 2.0f;
+    float gravity = 9.8f;
+    float dispersion = 5.0f;
+    float convergence = 0.0f;
+    ParticleType particleType = ParticleType::Default;
+
+    static VoxelEmitterParams Default() { return { 2.0f, 9.8f, 5.0f, 0.0f, ParticleType::Default }; }
+    static VoxelEmitterParams Explode() { return { 0.8f, 2.0f, 8.0f, 0.1f, ParticleType::Default }; }
+    static VoxelEmitterParams FineScatter() { return { 0.8f, 10.0f, 60.0f, 0.0f, ParticleType::FineScatter }; }
+  };
+
 public:
   VoxelParticleSystem() = default;
   ~VoxelParticleSystem();
@@ -89,7 +101,8 @@ public:
   void DispatchCompute() override;
 
   void Update(float deltaTime);
-  void Draw();
+  void Draw() override;
+  void SyncBeforeDraw() override {}
   void Debug(const char *name);
 
   void Emit(const Vector3 &position);
@@ -110,6 +123,7 @@ public:
 
   void SetParticleType(ParticleType type) { emitterData_.particleType = static_cast<uint32_t>(type); }
   void SetGravity(float gravity) { emitterData_.gravity = gravity; }
+  void SetParameters(const VoxelEmitterParams& params);
 
   bool IsLoaded() const { return status_.load() == LoadingStatus::Loaded; }
   LoadingStatus GetStatus() const { return status_.load(); }
@@ -121,11 +135,6 @@ private:
   void FinishInitialization();
 
 private:
-
-  ModelManager *modelManager_ = nullptr;
-  TextureManager *textureManager_ = nullptr;
-  ID3D12Device *device_ = nullptr;
-
   std::unique_ptr<VoxelizedModel> voxelModel_;
 
   // GPUリソース
@@ -177,12 +186,18 @@ private:
   Matrix4x4 lastProjectionMatrix_ = {};
   uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);
 
+  struct AsyncLoadData {
+    std::unique_ptr<VoxelizedModel> voxelModel;
+    uint32_t voxelCount = 0;
+    std::atomic<LoadingStatus> status{LoadingStatus::Loading};
+  };
+  std::shared_ptr<AsyncLoadData> asyncData_;
+
   std::atomic<LoadingStatus> status_ = LoadingStatus::Pending;
-  std::mutex voxelModelMutex_;
   std::future<void> initializeFuture_;
 
   bool needsUpdateCS_ = false;
-  void SyncBeforeDraw();
+  void SyncConstantBuffers();
 
   static IrufemiEngine *engine_;
 };

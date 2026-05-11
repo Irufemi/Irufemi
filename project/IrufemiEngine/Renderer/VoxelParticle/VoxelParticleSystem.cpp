@@ -21,9 +21,6 @@
 IrufemiEngine *VoxelParticleSystem::engine_ = nullptr;
 
 VoxelParticleSystem::~VoxelParticleSystem() {
-  if (initializeFuture_.valid()) {
-    initializeFuture_.wait();
-  }
   if (engine_) {
     if (auto* dxCommon = engine_->GetDirectXCommon()) {
       uint64_t fv = dxCommon->GetCurrentFrameFenceValue();
@@ -43,39 +40,38 @@ VoxelParticleSystem::~VoxelParticleSystem() {
 void VoxelParticleSystem::Initialize(const std::string &modelName,
                                      const Vector3Int &resolution) {
   assert(engine_);
-  device_ = engine_->GetDevice();
-  modelManager_ = engine_->GetObjModelManager();
-  textureManager_ = engine_->GetTextureManager();
 
   status_.store(LoadingStatus::Loading);
 
+  auto* modelManager = engine_->GetObjModelManager();
+  auto* textureManager = engine_->GetTextureManager();
+
+  auto asyncData = std::make_shared<AsyncLoadData>();
+  asyncData_ = asyncData;
+
   // 非同期でボクセル化を開始
-  initializeFuture_ = modelManager_->EnqueueTask([this, modelName, resolution]() {
-    auto managedModel = modelManager_->GetModel(modelName);
+  initializeFuture_ = modelManager->EnqueueTask([asyncData, modelName, resolution, modelManager, textureManager]() {
+    auto managedModel = modelManager->GetModel(modelName);
     if (!managedModel || !managedModel->cpuModel) {
-      status_.store(LoadingStatus::Failed);
+      asyncData->status.store(LoadingStatus::Failed);
       assert(false && "Failed to get model for voxelization.");
       return;
     }
 
     // 重い計算（ボクセル化）
     auto vModel = std::make_unique<VoxelizedModel>(ModelManager::VoxelizeModel(
-        *managedModel->cpuModel, resolution, textureManager_));
+        *managedModel->cpuModel, resolution, textureManager));
 
-    {
-      std::lock_guard<std::mutex> lock(voxelModelMutex_);
-      voxelModel_ = std::move(vModel);
-      voxelCount_ = static_cast<uint32_t>(voxelModel_->voxels.size());
-    }
-
-    if (voxelCount_ == 0) {
-      status_.store(LoadingStatus::Failed);
+    if (vModel->voxels.empty()) {
+      asyncData->status.store(LoadingStatus::Failed);
       OutputDebugStringA("[Voxel] ERROR: Voxel count is ZERO.\n");
       return;
     }
 
+    asyncData->voxelCount = static_cast<uint32_t>(vModel->voxels.size());
+    asyncData->voxelModel = std::move(vModel);
     // 計算完了
-    status_.store(LoadingStatus::ReadyToCreateResources);
+    asyncData->status.store(LoadingStatus::ReadyToCreateResources);
   });
 }
 
@@ -86,15 +82,13 @@ void VoxelParticleSystem::FinishInitialization() {
 
   // 1. 立方体メッシュの作成 (ボクセルサイズを計算して渡す)
   float voxelW, voxelH, voxelD;
-  {
-    std::lock_guard<std::mutex> lock(voxelModelMutex_);
-    voxelW = (voxelModel_->aabbMax.x - voxelModel_->aabbMin.x) /
-                   voxelModel_->resolution.x;
-    voxelH = (voxelModel_->aabbMax.y - voxelModel_->aabbMin.y) /
-                   voxelModel_->resolution.y;
-    voxelD = (voxelModel_->aabbMax.z - voxelModel_->aabbMin.z) /
-                   voxelModel_->resolution.z;
-  }
+  voxelW = (voxelModel_->aabbMax.x - voxelModel_->aabbMin.x) /
+                 voxelModel_->resolution.x;
+  voxelH = (voxelModel_->aabbMax.y - voxelModel_->aabbMin.y) /
+                 voxelModel_->resolution.y;
+  voxelD = (voxelModel_->aabbMax.z - voxelModel_->aabbMin.z) /
+                 voxelModel_->resolution.z;
+  
   CreateCubeMesh(voxelW, voxelH, voxelD);
 
   // 2. GPUリソースの作成
@@ -114,8 +108,18 @@ void VoxelParticleSystem::FinishInitialization() {
 }
 
 void VoxelParticleSystem::Update(float deltaTime) {
-  if (status_.load() == LoadingStatus::ReadyToCreateResources) {
-    FinishInitialization();
+  if (asyncData_) {
+    auto s = asyncData_->status.load();
+    if (s == LoadingStatus::ReadyToCreateResources) {
+        voxelModel_ = std::move(asyncData_->voxelModel);
+        voxelCount_ = asyncData_->voxelCount;
+        status_.store(LoadingStatus::ReadyToCreateResources);
+        asyncData_.reset();
+        FinishInitialization();
+    } else if (s == LoadingStatus::Failed) {
+        status_.store(LoadingStatus::Failed);
+        asyncData_.reset();
+    }
   }
 
   if (status_.load() != LoadingStatus::Loaded || voxelCount_ == 0)
@@ -132,7 +136,8 @@ void VoxelParticleSystem::Update(float deltaTime) {
   perFrameData_.time = emitterData_.time;
   perFrameData_.deltaTime = actualDeltaTime;
 
-    // (バッファへの転送は SyncBeforeDraw で実施)
+  // GPUバッファへの同期をUpdate内で1回だけ行う
+  SyncConstantBuffers();
 
   needsUpdateCS_ = true;
   if (engine_ && engine_->GetDrawManager()) {
@@ -140,7 +145,7 @@ void VoxelParticleSystem::Update(float deltaTime) {
   }
 }
 
-void VoxelParticleSystem::SyncBeforeDraw() {
+void VoxelParticleSystem::SyncConstantBuffers() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     
     // PerViewはUpdateが呼ばれなくても毎フレーム必ず最新化する（ポーズ中のカメラ移動・マルチバッファ対策）
@@ -167,8 +172,6 @@ void VoxelParticleSystem::DispatchCompute() {
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
   uint32_t frameIndex = dxCommon->GetFrameIndex();
-
-  SyncBeforeDraw();
 
   if (needsUpdateCS_ || isEmitting_ || needsInitialize_) {
     ID3D12DescriptorHeap *ppHeaps[] = {dxCommon->GetSrvPool()->GetHeap()};
@@ -224,8 +227,6 @@ void VoxelParticleSystem::Draw() {
   if (!hasExploded_)
     return;
 
-  SyncBeforeDraw();
-
   engine_->GetDrawManager()->SubmitVoxelParticle(
       voxelCount_,
       cubeVertexBufferView_,
@@ -244,10 +245,6 @@ void VoxelParticleSystem::Emit(const Vector3 &position) {
   emitterData_.baseVelocity = {0, 0, 0};
   emitterData_.rotate = {0, 0, 0};
   emitterData_.scale = {1, 1, 1};
-  emitterData_.convergence = 0.0f;
-  emitterData_.gravity = 9.8f;
-  emitterData_.dispersion = 5.0f;
-  emitterData_.lifeTime = 2.0f;
   emitterData_.time = 0.0f;
   emitterData_.useCollision = 0; // 衝突判定無効
   isEmitting_ = true;
@@ -299,12 +296,6 @@ void VoxelParticleSystem::CollisionScatter(const Vector3 &position,
     emitterData_.rotate = rotate;
     emitterData_.scale = scale;
     emitterData_.time = 0.0f;
-
-    // ヒット時の飛散（細かい粒子＋広範囲の拡散）
-    emitterData_.particleType = static_cast<uint32_t>(ParticleType::FineScatter);
-    emitterData_.dispersion = 60.0f; // より激しく拡散させる
-    emitterData_.lifeTime = 0.8f;    // 少しだけ寿命を延ばして余韻を作る
-    emitterData_.gravity = 10.0f;    // 重力はやや弱めにして空中に舞うようにする
 
     // 衝突判定用データ設定
     emitterData_.useCollision = 1;
@@ -407,6 +398,7 @@ void VoxelParticleSystem::CreateCubeMesh(float sizeX, float sizeY,
 void VoxelParticleSystem::CreateResources() {
   auto *dxCommon = engine_->GetDirectXCommon();
   auto *srvPool = dxCommon->GetSrvPool();
+  auto *device = engine_->GetDevice();
 
   // Voxelデータ用バッファ (SRV)
   voxelBuffer_ = dxCommon->CreateBufferResource(sizeof(Voxel) * voxelCount_);
@@ -429,7 +421,7 @@ void VoxelParticleSystem::CreateResources() {
   voxelSrvDesc.Buffer.FirstElement = 0;
   voxelSrvDesc.Buffer.NumElements = voxelCount_;
   voxelSrvDesc.Buffer.StructureByteStride = sizeof(Voxel);
-  device_->CreateShaderResourceView(voxelBuffer_.Get(), &voxelSrvDesc,
+  device->CreateShaderResourceView(voxelBuffer_.Get(), &voxelSrvDesc,
                                     voxelSrvHandleCPU_);
 
   // Particleデータ用バッファ (UAV & SRV)
@@ -448,7 +440,7 @@ void VoxelParticleSystem::CreateResources() {
   particleUavDesc.Buffer.FirstElement = 0;
   particleUavDesc.Buffer.NumElements = voxelCount_;
   particleUavDesc.Buffer.StructureByteStride = sizeof(VoxelParticle);
-  device_->CreateUnorderedAccessView(particleBuffer_.Get(), nullptr,
+  device->CreateUnorderedAccessView(particleBuffer_.Get(), nullptr,
                                      &particleUavDesc, particleUavHandleCPU_);
 
   // SRV
@@ -465,7 +457,7 @@ void VoxelParticleSystem::CreateResources() {
   particleSrvDesc.Buffer.FirstElement = 0;
   particleSrvDesc.Buffer.NumElements = voxelCount_;
   particleSrvDesc.Buffer.StructureByteStride = sizeof(VoxelParticle);
-  device_->CreateShaderResourceView(particleBuffer_.Get(), &particleSrvDesc,
+  device->CreateShaderResourceView(particleBuffer_.Get(), &particleSrvDesc,
                                     particleSrvHandleCPU_);
 
   emitterBuffer_.Initialize(dxCommon);
@@ -514,4 +506,12 @@ void VoxelParticleSystem::Debug([[maybe_unused]] const char *name) {
 
 #endif // USE_IMGUI
 
+}
+
+void VoxelParticleSystem::SetParameters(const VoxelEmitterParams& params) {
+    emitterData_.lifeTime = params.lifeTime;
+    emitterData_.gravity = params.gravity;
+    emitterData_.dispersion = params.dispersion;
+    emitterData_.convergence = params.convergence;
+    emitterData_.particleType = static_cast<uint32_t>(params.particleType);
 }
