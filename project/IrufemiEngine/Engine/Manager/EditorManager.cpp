@@ -227,7 +227,13 @@ void EditorManager::DrawInspector() {
     ImGui::Begin("Inspector");
 
     if (auto selected = selectedObject_.lock()) {
-        ImGui::Text("Name: %s", selected->GetName().c_str());
+        char nameBuffer[256];
+        strncpy_s(nameBuffer, selected->GetName().c_str(), sizeof(nameBuffer) - 1);
+        
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 150); // Deleteボタンのスペースを確保
+        if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
+            selected->SetName(nameBuffer);
+        }
         
         // --- オブジェクト削除ボタン（赤色で右端に配置） ---
         ImGui::SameLine(ImGui::GetWindowWidth() - 80);
