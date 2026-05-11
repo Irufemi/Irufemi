@@ -5,6 +5,7 @@
 #include "TransformComponent.h"
 #include "MeshRendererComponent.h"
 #include "PrimitiveRendererComponent.h"
+#include "SpriteRendererComponent.h"
 #endif
 void GameObject::Initialize() {
     for (auto& comp : components_) {
@@ -73,6 +74,15 @@ void GameObject::OnInspectorGUI() {
             ImGui::TextDisabled("PrimitiveRendererComponent (Conflicts with Mesh)");
         } else {
             ImGui::TextDisabled("PrimitiveRendererComponent (Already added)");
+        }
+        
+        ImGui::Separator();
+        
+        bool hasSpriteRenderer = GetComponent<SpriteRendererComponent>() != nullptr;
+        if (!hasSpriteRenderer) {
+            if (ImGui::Selectable("SpriteRendererComponent")) AddComponent<SpriteRendererComponent>();
+        } else {
+            ImGui::TextDisabled("SpriteRendererComponent (Already added)");
         }
         
         // 今後コンポーネントが増えたらここに追加

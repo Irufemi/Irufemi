@@ -157,6 +157,11 @@ public: //メンバ関数
      * @brief 切り出し指定を解除し、テクスチャ全体を表示するように戻す
      */
     void ClearTextureRect();
+    
+    /**
+     * @brief テクスチャを動的に変更する
+     */
+    void SetTexture(const std::string& textureName);
     ///@}
 
     /** @name 便利エイリアス */

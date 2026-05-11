@@ -246,6 +246,26 @@ void Sprite::ClearTextureRect() {
     isDirty_ = true;
 }
 
+void Sprite::SetTexture(const std::string& textureName) {
+    if (!resource_ || !textureManager_) return;
+    
+    resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
+
+    // テクスチャサイズを直接取得して描画サイズに反映
+    uint32_t tw = 0, th = 0;
+    if (textureManager_->GetTextureSize(textureName, tw, th) && tw > 0 && th > 0) {
+        textureSize_ = { static_cast<float>(tw), static_cast<float>(th) };
+        SetSize(textureSize_.x, textureSize_.y);
+        
+        // デバッグ用インデックスの更新
+        auto textureNames = textureManager_->GetTextureNamesForDebug();
+        auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
+        selectedTextureIndex_ = (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
+        
+        isDirty_ = true;
+    }
+}
+
 void Sprite::AdjustTextureSize() {
     if (!textureManager_) return;
 

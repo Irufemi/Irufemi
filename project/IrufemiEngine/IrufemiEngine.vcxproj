@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -215,6 +215,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Framework\GameObject.cpp" />
     <ClCompile Include="Framework\PrimitiveRendererComponent.cpp" />
+    <ClCompile Include="Framework\SpriteRendererComponent.cpp" />
     <ClCompile Include="Framework\TransformComponent.cpp" />
     <ClCompile Include="Framework\MeshRendererComponent.cpp" />
     <ClCompile Include="Framework\SceneTransition.cpp" />
@@ -333,6 +334,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component.h" />
     <ClInclude Include="Framework\GameObject.h" />
     <ClInclude Include="Framework\PrimitiveRendererComponent.h" />
+    <ClInclude Include="Framework\SpriteRendererComponent.h" />
     <ClInclude Include="Framework\TransformComponent.h" />
     <ClInclude Include="Framework\MeshRendererComponent.h" />
     <ClInclude Include="Framework\SceneTransition.h" />

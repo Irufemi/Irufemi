@@ -11,6 +11,7 @@
 #include "Framework/TransformComponent.h"
 #include "Framework/PrimitiveRendererComponent.h"
 #include "Framework/MeshRendererComponent.h"
+#include "Framework/SpriteRendererComponent.h"
 
 void EditorManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
@@ -171,6 +172,19 @@ void EditorManager::DrawHierarchy() {
                             baseScene->AddGameObject(obj);
                         }
                         
+                        ImGui::EndMenu();
+                    }
+                    
+                    if (ImGui::BeginMenu("2D Object")) {
+                        if (ImGui::Selectable("Sprite")) {
+                            auto obj = std::make_shared<GameObject>("Sprite");
+                            obj->AddComponent<TransformComponent>();
+                            auto spriteRenderer = obj->AddComponent<SpriteRendererComponent>();
+                            // テスト用に画面中央らへんに表示する
+                            obj->GetComponent<TransformComponent>()->position_ = { 640.0f, 360.0f, 0.0f };
+                            obj->Initialize();
+                            baseScene->AddGameObject(obj);
+                        }
                         ImGui::EndMenu();
                     }
                 }
