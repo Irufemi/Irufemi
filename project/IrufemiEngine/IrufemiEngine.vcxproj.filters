@@ -421,6 +421,12 @@
     <ClCompile Include="Framework\Component\Collider\AABBColliderComponent.cpp">
       <Filter>Framework\Component\Collider</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\Collider\SphereColliderComponent.cpp">
+      <Filter>Framework\Component\Collider</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp">
+      <Filter>Framework\Component\Collider</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Manager\CollisionManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
@@ -892,6 +898,12 @@
       <Filter>Framework\Component\Collider</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Collider\AABBColliderComponent.h">
+      <Filter>Framework\Component\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Collider\SphereColliderComponent.h">
+      <Filter>Framework\Component\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Collider\OBBColliderComponent.h">
       <Filter>Framework\Component\Collider</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Manager\CollisionManager.h">

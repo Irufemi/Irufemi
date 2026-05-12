@@ -1,0 +1,32 @@
+#pragma once
+#include "ColliderComponent.h"
+#include "Engine/Core/Shape/Sphere.h"
+#include "Engine/Core/Math/Vector3.h"
+#include <string>
+
+class TransformComponent;
+
+class SphereColliderComponent : public ColliderComponent {
+public:
+    SphereColliderComponent();
+    virtual ~SphereColliderComponent() = default;
+
+    void Initialize() override;
+    void Update() override;
+    void DrawDebug() override;
+    void OnInspectorGUI() override;
+    
+    nlohmann::json Serialize() override;
+    void Deserialize(const nlohmann::json& j) override;
+
+    std::string GetComponentName() const override { return "SphereColliderComponent"; }
+    ColliderType GetColliderType() const override { return ColliderType::Sphere; }
+
+    Sphere GetWorldSphere() const;
+
+private:
+    TransformComponent* transform_ = nullptr;
+
+    Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f };
+    float localRadius_   = 1.0f;
+};

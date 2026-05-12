@@ -7,6 +7,8 @@
 #include "Component/Renderer/PrimitiveRendererComponent.h"
 #include "Component/Renderer/SpriteRendererComponent.h"
 #include "Component/Collider/AABBColliderComponent.h"
+#include "Component/Collider/SphereColliderComponent.h"
+#include "Component/Collider/OBBColliderComponent.h"
 #endif
 void GameObject::Initialize() {
     for (auto& comp : components_) {
@@ -121,11 +123,20 @@ void GameObject::OnInspectorGUI() {
         
         // 今後コンポーネントが増えたらここに追加
         if (ImGui::BeginMenu("Collider")) {
-            bool hasAABBCollider = GetComponent<AABBColliderComponent>() != nullptr;
-            if (!hasAABBCollider) {
+            if (!GetComponent<AABBColliderComponent>()) {
                 if (ImGui::Selectable("AABBColliderComponent")) AddComponent<AABBColliderComponent>();
             } else {
                 ImGui::TextDisabled("AABBColliderComponent (Already added)");
+            }
+            if (!GetComponent<SphereColliderComponent>()) {
+                if (ImGui::Selectable("SphereColliderComponent")) AddComponent<SphereColliderComponent>();
+            } else {
+                ImGui::TextDisabled("SphereColliderComponent (Already added)");
+            }
+            if (!GetComponent<OBBColliderComponent>()) {
+                if (ImGui::Selectable("OBBColliderComponent")) AddComponent<OBBColliderComponent>();
+            } else {
+                ImGui::TextDisabled("OBBColliderComponent (Already added)");
             }
             ImGui::EndMenu();
         }
@@ -173,6 +184,8 @@ void GameObject::Deserialize(const nlohmann::json& j) {
             else if (type == "PrimitiveRendererComponent") newComp = AddComponent<PrimitiveRendererComponent>();
             else if (type == "SpriteRendererComponent") newComp = AddComponent<SpriteRendererComponent>();
             else if (type == "AABBColliderComponent") newComp = AddComponent<AABBColliderComponent>();
+            else if (type == "SphereColliderComponent") newComp = AddComponent<SphereColliderComponent>();
+            else if (type == "OBBColliderComponent") newComp = AddComponent<OBBColliderComponent>();
             
             if (newComp && cj.contains("data")) {
                 newComp->Deserialize(cj["data"]);

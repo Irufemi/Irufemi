@@ -1,15 +1,25 @@
 #include "CollisionManager.h"
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Framework/Component/Collider/AABBColliderComponent.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <nlohmann/json.hpp>
+#include <imgui.h>
+
 
 void CollisionManager::Initialize() {
     if (!debugLine_) {
         debugLine_ = std::make_unique<Line3DRegion>();
         debugLine_->Initialize();
     }
+    
+    layerNames_ = { "Default" };
+    LoadLayers(layerConfigFilePath_);
 }
 
 CollisionManager::~CollisionManager() = default;
@@ -44,28 +54,67 @@ void CollisionManager::CheckAllCollisions() {
             ColliderComponent* colB = colliders_[j];
 
             if (!colA || !colB) continue;
+            
+            // レイヤー/マスクによるフィルタリング判定
+            if ((colA->mask_ & colB->layer_) == 0 || (colB->mask_ & colA->layer_) == 0) {
+                continue; // お互いに衝突対象でない場合はスキップ
+            }
 
-            // 両方がAABBColliderの場合のみ判定（拡張時はここで型判定して分岐）
-            if (colA->GetColliderType() == ColliderComponent::ColliderType::AABB &&
-                colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
+            // --- 判定ディスパッチ ---
+            bool isHit = false;
+
+            if (colA->GetColliderType() == ColliderComponent::ColliderType::AABB) {
+                AABB boxA = static_cast<AABBColliderComponent*>(colA)->GetWorldAABB();
                 
-                AABBColliderComponent* aabbA = static_cast<AABBColliderComponent*>(colA);
-                AABBColliderComponent* aabbB = static_cast<AABBColliderComponent*>(colB);
-
-                AABB boxA = aabbA->GetWorldAABB();
-                AABB boxB = aabbB->GetWorldAABB();
-
-                // 既存のMath::IsCollisionなどを使用して判定
-                // ※Collision.h内でグローバルかMath名前空間かに依存
-                // 今回は IsCollision() という名前でオーバーロードされていると想定
-                if (Collision::IsCollision(boxA, boxB)) {
-                    if (colA->onCollisionEnter_) {
-                        colA->onCollisionEnter_(colB);
-                    }
-                    if (colB->onCollisionEnter_) {
-                        colB->onCollisionEnter_(colA);
-                    }
+                if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
+                    AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
+                    isHit = Collision::IsCollision(boxA, boxB);
+                } 
+                else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
+                    Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
+                    isHit = Collision::IsCollision(boxA, sphereB);
                 }
+                else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
+                    OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
+                    isHit = Collision::IsCollision(obbB, boxA); // 引数順序注意
+                }
+            }
+            else if (colA->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
+                Sphere sphereA = static_cast<SphereColliderComponent*>(colA)->GetWorldSphere();
+                
+                if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
+                    AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
+                    isHit = Collision::IsCollision(boxB, sphereA);
+                }
+                else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
+                    Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
+                    isHit = Collision::IsCollision(sphereA, sphereB);
+                }
+                else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
+                    OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
+                    isHit = Collision::IsCollision(obbB, sphereA);
+                }
+            }
+            else if (colA->GetColliderType() == ColliderComponent::ColliderType::OBB) {
+                OBB obbA = static_cast<OBBColliderComponent*>(colA)->GetWorldOBB();
+                
+                if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
+                    AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
+                    isHit = Collision::IsCollision(obbA, boxB);
+                }
+                else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
+                    Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
+                    isHit = Collision::IsCollision(obbA, sphereB);
+                }
+                else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
+                    OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
+                    isHit = Collision::IsCollision(obbA, obbB);
+                }
+            }
+
+            if (isHit) {
+                if (colA->onCollisionEnter_) colA->onCollisionEnter_(colB);
+                if (colB->onCollisionEnter_) colB->onCollisionEnter_(colA);
             }
         }
     }
@@ -97,6 +146,75 @@ void CollisionManager::DrawDebug() {
 
             Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f }; // 緑色
 
+            // AABB
+            // 底面
+            debugLine_->AddInstance(p[0], p[1], color);
+            debugLine_->AddInstance(p[1], p[3], color);
+            debugLine_->AddInstance(p[3], p[2], color);
+            debugLine_->AddInstance(p[2], p[0], color);
+            // 上面
+            debugLine_->AddInstance(p[4], p[5], color);
+            debugLine_->AddInstance(p[5], p[7], color);
+            debugLine_->AddInstance(p[7], p[6], color);
+            debugLine_->AddInstance(p[6], p[4], color);
+            // 縦
+            debugLine_->AddInstance(p[0], p[4], color);
+            debugLine_->AddInstance(p[1], p[5], color);
+            debugLine_->AddInstance(p[2], p[6], color);
+            debugLine_->AddInstance(p[3], p[7], color);
+        }
+        else if (collider->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
+            SphereColliderComponent* sphereCol = static_cast<SphereColliderComponent*>(collider);
+            Sphere sphere = sphereCol->GetWorldSphere();
+            Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f }; // 緑
+            
+            // 簡単な3軸の円弧近似を描画
+            int segments = 32;
+            for (int i = 0; i < segments; ++i) {
+                float theta1 = (static_cast<float>(i) / segments) * 2.0f * 3.14159265f;
+                float theta2 = (static_cast<float>(i + 1) / segments) * 2.0f * 3.14159265f;
+                
+                // X-Y plane
+                Vector3 p1_xy = sphere.center + Vector3{ std::cos(theta1), std::sin(theta1), 0.0f } * sphere.radius;
+                Vector3 p2_xy = sphere.center + Vector3{ std::cos(theta2), std::sin(theta2), 0.0f } * sphere.radius;
+                debugLine_->AddInstance(p1_xy, p2_xy, color);
+                
+                // Y-Z plane
+                Vector3 p1_yz = sphere.center + Vector3{ 0.0f, std::cos(theta1), std::sin(theta1) } * sphere.radius;
+                Vector3 p2_yz = sphere.center + Vector3{ 0.0f, std::cos(theta2), std::sin(theta2) } * sphere.radius;
+                debugLine_->AddInstance(p1_yz, p2_yz, color);
+                
+                // Z-X plane
+                Vector3 p1_zx = sphere.center + Vector3{ std::sin(theta1), 0.0f, std::cos(theta1) } * sphere.radius;
+                Vector3 p2_zx = sphere.center + Vector3{ std::sin(theta2), 0.0f, std::cos(theta2) } * sphere.radius;
+                debugLine_->AddInstance(p1_zx, p2_zx, color);
+            }
+        }
+        else if (collider->GetColliderType() == ColliderComponent::ColliderType::OBB) {
+            OBBColliderComponent* obbCol = static_cast<OBBColliderComponent*>(collider);
+            OBB obb = obbCol->GetWorldOBB();
+            Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f };
+            
+            // 8頂点を計算
+            Vector3 axes[3] = { obb.orientations[0], obb.orientations[1], obb.orientations[2] };
+            Vector3 extents = obb.size;
+            Vector3 center = obb.center;
+            
+            Vector3 dx = axes[0] * extents.x;
+            Vector3 dy = axes[1] * extents.y;
+            Vector3 dz = axes[2] * extents.z;
+            
+            Vector3 p[8] = {
+                center - dx - dy - dz,
+                center + dx - dy - dz,
+                center - dx + dy - dz,
+                center + dx + dy - dz,
+                center - dx - dy + dz,
+                center + dx - dy + dz,
+                center - dx + dy + dz,
+                center + dx + dy + dz
+            };
+            
             // 底面
             debugLine_->AddInstance(p[0], p[1], color);
             debugLine_->AddInstance(p[1], p[3], color);
@@ -117,4 +235,142 @@ void CollisionManager::DrawDebug() {
     
     debugLine_->Update();
     debugLine_->Draw();
+}
+
+void CollisionManager::LoadLayers(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (file.is_open()) {
+        try {
+            nlohmann::json j;
+            file >> j;
+            if (j.contains("layers") && j["layers"].is_array()) {
+                layerNames_.clear();
+                for (const auto& name : j["layers"]) {
+                    layerNames_.push_back(name);
+                }
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to load layers config: " << e.what() << "\n";
+        }
+    }
+}
+
+void CollisionManager::SaveLayers(const std::string& filepath) {
+    nlohmann::json j;
+    j["layers"] = layerNames_;
+    
+    std::ofstream file(filepath);
+    if (file.is_open()) {
+        file << j.dump(4);
+    }
+}
+
+void CollisionManager::AddLayer(const std::string& name) {
+    if (layerNames_.size() < 32) {
+        layerNames_.push_back(name);
+        SaveLayers(layerConfigFilePath_);
+    }
+}
+
+void CollisionManager::RemoveLayer(int index) {
+    if (index > 0 && index < layerNames_.size()) { // Default(index=0)は消せないようにする
+        layerNames_.erase(layerNames_.begin() + index);
+        SaveLayers(layerConfigFilePath_);
+    }
+}
+
+void CollisionManager::DrawLayerInspectorGUI(uint32_t& layer, uint32_t& mask) {
+#ifdef EditorMode
+    ImGui::Separator();
+    ImGui::Text("Collision Settings");
+
+    // レイヤー選択 (ComboBox)
+    int currentLayerIndex = 0;
+    for (int i = 0; i < layerNames_.size(); ++i) {
+        if (layer == (1u << i)) {
+            currentLayerIndex = i;
+            break;
+        }
+    }
+
+    if (ImGui::BeginCombo("Layer", layerNames_[currentLayerIndex].c_str())) {
+        for (int i = 0; i < layerNames_.size(); ++i) {
+            bool isSelected = (currentLayerIndex == i);
+            if (ImGui::Selectable(layerNames_[i].c_str(), isSelected)) {
+                layer = (1u << i);
+            }
+            if (isSelected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    // マスク選択 (TreeNode内にCheckBoxリスト)
+    if (ImGui::TreeNode("Collision Mask")) {
+        // すべて選択/解除ボタン
+        if (ImGui::Button("All")) mask = 0xFFFFFFFF;
+        ImGui::SameLine();
+        if (ImGui::Button("None")) mask = 0;
+
+        for (int i = 0; i < layerNames_.size(); ++i) {
+            bool isMasked = (mask & (1u << i)) != 0;
+            if (ImGui::Checkbox(layerNames_[i].c_str(), &isMasked)) {
+                if (isMasked) mask |= (1u << i);
+                else          mask &= ~(1u << i);
+            }
+        }
+        ImGui::TreePop();
+    }
+
+    // レイヤーの編集UI
+    if (ImGui::Button("Edit Layers...")) {
+        ImGui::OpenPopup("Edit Layers");
+    }
+
+    if (ImGui::BeginPopupModal("Edit Layers", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Manage Collision Layers");
+        ImGui::Separator();
+
+        for (int i = 0; i < layerNames_.size(); ++i) {
+            ImGui::PushID(i);
+            ImGui::Text("%2d: ", i);
+            ImGui::SameLine();
+            
+            if (i == 0) {
+                // Defaultレイヤーは変更不可
+                ImGui::TextDisabled("%s (Fixed)", layerNames_[i].c_str());
+            } else {
+                char nameBuffer[64];
+                strncpy_s(nameBuffer, sizeof(nameBuffer), layerNames_[i].c_str(), _TRUNCATE);
+                
+                ImGui::SetNextItemWidth(150);
+                if (ImGui::InputText("##Name", nameBuffer, sizeof(nameBuffer))) {
+                    layerNames_[i] = nameBuffer;
+                    SaveLayers(layerConfigFilePath_);
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("X")) {
+                    RemoveLayer(i);
+                    // 削除したのでインデックスがずれるため一旦抜ける
+                    ImGui::PopID();
+                    break; 
+                }
+            }
+            ImGui::PopID();
+        }
+
+        if (layerNames_.size() < 32) {
+            if (ImGui::Button("+ Add New Layer")) {
+                AddLayer("New Layer");
+            }
+        } else {
+            ImGui::TextDisabled("Max layers reached (32).");
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Close", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+#endif
 }

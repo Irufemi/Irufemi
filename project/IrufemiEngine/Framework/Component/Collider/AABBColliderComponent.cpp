@@ -33,6 +33,8 @@ void AABBColliderComponent::OnInspectorGUI() {
     if (ImGui::CollapsingHeader("AABB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragFloat3("Offset", &localOffset_.x, 0.1f);
         ImGui::DragFloat3("Size (Extents)", &localSize_.x, 0.1f, 0.0f, 1000.0f);
+        
+        CollisionManager::GetInstance().DrawLayerInspectorGUI(layer_, mask_);
     }
     ImGui::PopID();
 #endif
@@ -70,6 +72,8 @@ nlohmann::json AABBColliderComponent::Serialize() {
     nlohmann::json j;
     j["localOffset"] = { localOffset_.x, localOffset_.y, localOffset_.z };
     j["localSize"] = { localSize_.x, localSize_.y, localSize_.z };
+    j["layer"] = layer_;
+    j["mask"] = mask_;
     return j;
 }
 
@@ -84,4 +88,6 @@ void AABBColliderComponent::Deserialize(const nlohmann::json& j) {
         localSize_.y = j["localSize"][1];
         localSize_.z = j["localSize"][2];
     }
+    if (j.contains("layer")) layer_ = j["layer"];
+    if (j.contains("mask")) mask_ = j["mask"];
 }

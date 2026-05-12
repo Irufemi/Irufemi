@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <memory>
+#include <string>
+#include <nlohmann/json.hpp>
 #include "Renderer/LineInstanced/LineClass.h"
 
 class ColliderComponent;
@@ -37,6 +39,16 @@ public:
     /// @brief デバッグ描画フラグのポインタを取得する（ImGui用）
     bool* GetIsDrawDebugLinePtr() { return &isDrawDebugLine_; }
 
+    // --- 動的レイヤー管理 ---
+    void LoadLayers(const std::string& filepath);
+    void SaveLayers(const std::string& filepath);
+    std::vector<std::string>& GetLayerNames() { return layerNames_; }
+    void AddLayer(const std::string& name);
+    void RemoveLayer(int index);
+    
+    // エディタ用UI
+    void DrawLayerInspectorGUI(uint32_t& layer, uint32_t& mask);
+
 private:
     CollisionManager() = default;
     ~CollisionManager();
@@ -46,5 +58,9 @@ private:
     std::vector<ColliderComponent*> colliders_;
     std::unique_ptr<Line3DRegion> debugLine_;
     
+    // レイヤー名（最大32個）
+    std::vector<std::string> layerNames_;
+    std::string layerConfigFilePath_ = "resources/config/layers.json";
+
     bool isDrawDebugLine_ = true;
 };
