@@ -5,7 +5,7 @@
 #include <typeindex>
 #include <unordered_map>
 #include <nlohmann/json.hpp>
-#include "Component.h"
+#include "Component/Component.h"
 
 /**
  * @class GameObject

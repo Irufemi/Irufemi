@@ -1,8 +1,14 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Framework">
       <UniqueIdentifier>{a98d3cb5-6537-42db-bf19-3b2af2d0c21a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Framework\Component">
+      <UniqueIdentifier>{d3d2b2c3-42e5-4e08-9b8b-3e5f2b3e4e5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Framework\Component\Renderer">
+      <UniqueIdentifier>{e8b9b8b9-e1e5-4e08-9b8b-3e5f2b3e4e5f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer">
       <UniqueIdentifier>{49562265-8288-4286-9d7a-998da039a121}</UniqueIdentifier>
@@ -406,11 +412,11 @@
     <ClCompile Include="Framework\GameObject.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
-    <ClCompile Include="Framework\TransformComponent.cpp">
-      <Filter>Framework</Filter>
+    <ClCompile Include="Framework\Component\TransformComponent.cpp">
+      <Filter>Framework\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Framework\MeshRendererComponent.cpp">
-      <Filter>Framework</Filter>
+    <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp">
+      <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Framework\SceneTransition.cpp">
       <Filter>Framework</Filter>
@@ -436,11 +442,11 @@
     <ClCompile Include="Engine\Graphics\DirectX\ShaderManager.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
-    <ClCompile Include="Framework\PrimitiveRendererComponent.cpp">
-      <Filter>Framework</Filter>
+    <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp">
+      <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Framework\SpriteRendererComponent.cpp">
-      <Filter>Framework</Filter>
+    <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp">
+      <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -864,17 +870,17 @@
     <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h">
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\Component.h">
-      <Filter>Framework</Filter>
+    <ClInclude Include="Framework\Component\Component.h">
+      <Filter>Framework\Component</Filter>
     </ClInclude>
     <ClInclude Include="Framework\GameObject.h">
       <Filter>Framework</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\TransformComponent.h">
-      <Filter>Framework</Filter>
+    <ClInclude Include="Framework\Component\TransformComponent.h">
+      <Filter>Framework\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\MeshRendererComponent.h">
-      <Filter>Framework</Filter>
+    <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h">
+      <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Framework\SceneTransition.h">
       <Filter>Framework</Filter>
@@ -915,11 +921,11 @@
     <ClInclude Include="Engine\Graphics\DirectX\ShaderManager.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\PrimitiveRendererComponent.h">
-      <Filter>Framework</Filter>
+    <ClInclude Include="Framework\Component\Renderer\PrimitiveRendererComponent.h">
+      <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\SpriteRendererComponent.h">
-      <Filter>Framework</Filter>
+    <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h">
+      <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

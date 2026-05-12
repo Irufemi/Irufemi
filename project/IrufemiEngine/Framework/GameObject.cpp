@@ -2,10 +2,10 @@
 
 #ifdef EditorMode
 #include <imgui.h>
-#include "TransformComponent.h"
-#include "MeshRendererComponent.h"
-#include "PrimitiveRendererComponent.h"
-#include "SpriteRendererComponent.h"
+#include "Component/TransformComponent.h"
+#include "Component/Renderer/MeshRendererComponent.h"
+#include "Component/Renderer/PrimitiveRendererComponent.h"
+#include "Component/Renderer/SpriteRendererComponent.h"
 #endif
 void GameObject::Initialize() {
     for (auto& comp : components_) {
@@ -87,6 +87,10 @@ void GameObject::OnInspectorGUI() {
         bool hasTransform = GetComponent<TransformComponent>() != nullptr;
         bool hasMeshRenderer = GetComponent<MeshRendererComponent>() != nullptr;
         bool hasPrimitiveRenderer = GetComponent<PrimitiveRendererComponent>() != nullptr;
+        bool hasSpriteRenderer = GetComponent<SpriteRendererComponent>() != nullptr;
+        
+        // どれか一つのレンダラーが存在するか
+        bool hasAnyRenderer = hasMeshRenderer || hasPrimitiveRenderer || hasSpriteRenderer;
 
         // Transform
         if (!hasTransform) {
@@ -97,31 +101,21 @@ void GameObject::OnInspectorGUI() {
 
         ImGui::Separator();
 
-        // MeshRenderer (Primitive があれば追加不可)
-        if (!hasPrimitiveRenderer && !hasMeshRenderer) {
-            if (ImGui::Selectable("MeshRendererComponent")) AddComponent<MeshRendererComponent>();
-        } else if (hasPrimitiveRenderer) {
-            ImGui::TextDisabled("MeshRendererComponent (Conflicts with Primitive)");
-        } else {
-            ImGui::TextDisabled("MeshRendererComponent (Already added)");
-        }
-
-        // PrimitiveRenderer (Mesh があれば追加不可)
-        if (!hasMeshRenderer && !hasPrimitiveRenderer) {
-            if (ImGui::Selectable("PrimitiveRendererComponent")) AddComponent<PrimitiveRendererComponent>();
-        } else if (hasMeshRenderer) {
-            ImGui::TextDisabled("PrimitiveRendererComponent (Conflicts with Mesh)");
-        } else {
-            ImGui::TextDisabled("PrimitiveRendererComponent (Already added)");
-        }
-        
-        ImGui::Separator();
-        
-        bool hasSpriteRenderer = GetComponent<SpriteRendererComponent>() != nullptr;
-        if (!hasSpriteRenderer) {
-            if (ImGui::Selectable("SpriteRendererComponent")) AddComponent<SpriteRendererComponent>();
-        } else {
-            ImGui::TextDisabled("SpriteRendererComponent (Already added)");
+        // Renderer カテゴリ（サブメニューでリスト化）
+        if (ImGui::BeginMenu("Renderer")) {
+            if (!hasAnyRenderer) {
+                if (ImGui::Selectable("MeshRendererComponent")) AddComponent<MeshRendererComponent>();
+                if (ImGui::Selectable("PrimitiveRendererComponent")) AddComponent<PrimitiveRendererComponent>();
+                if (ImGui::Selectable("SpriteRendererComponent")) AddComponent<SpriteRendererComponent>();
+            } else {
+                if (hasMeshRenderer) ImGui::TextDisabled("MeshRendererComponent (Already added)");
+                else if (hasPrimitiveRenderer) ImGui::TextDisabled("PrimitiveRendererComponent (Already added)");
+                else if (hasSpriteRenderer) ImGui::TextDisabled("SpriteRendererComponent (Already added)");
+                
+                ImGui::Separator();
+                ImGui::TextDisabled("Only one renderer is allowed.");
+            }
+            ImGui::EndMenu();
         }
         
         // 今後コンポーネントが増えたらここに追加

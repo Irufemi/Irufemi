@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -214,10 +214,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\Camera\CameraManager.cpp" />
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Framework\GameObject.cpp" />
-    <ClCompile Include="Framework\PrimitiveRendererComponent.cpp" />
-    <ClCompile Include="Framework\SpriteRendererComponent.cpp" />
-    <ClCompile Include="Framework\TransformComponent.cpp" />
-    <ClCompile Include="Framework\MeshRendererComponent.cpp" />
+    <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp" />
+    <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp" />
+    <ClCompile Include="Framework\Component\TransformComponent.cpp" />
+    <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp" />
     <ClCompile Include="Framework\SceneTransition.cpp" />
     <ClCompile Include="Framework\BaseScene.cpp" />
     <ClCompile Include="Renderer\Object2D\Sprite\Sprite.cpp" />
@@ -331,12 +331,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Camera\CameraManager.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Engine\Manager\IComputeTask.h" />
-    <ClInclude Include="Framework\Component.h" />
+    <ClInclude Include="Framework\Component\Component.h" />
     <ClInclude Include="Framework\GameObject.h" />
-    <ClInclude Include="Framework\PrimitiveRendererComponent.h" />
-    <ClInclude Include="Framework\SpriteRendererComponent.h" />
-    <ClInclude Include="Framework\TransformComponent.h" />
-    <ClInclude Include="Framework\MeshRendererComponent.h" />
+    <ClInclude Include="Framework\Component\Renderer\PrimitiveRendererComponent.h" />
+    <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
+    <ClInclude Include="Framework\Component\TransformComponent.h" />
+    <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h" />
     <ClInclude Include="Framework\SceneTransition.h" />
     <ClInclude Include="Framework\BaseScene.h" />
     <ClInclude Include="Renderer\Core\IRenderable.h" />

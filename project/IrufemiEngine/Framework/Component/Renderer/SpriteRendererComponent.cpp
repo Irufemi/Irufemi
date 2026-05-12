@@ -1,6 +1,6 @@
 #include "SpriteRendererComponent.h"
-#include "GameObject.h"
-#include "TransformComponent.h"
+#include "../../GameObject.h"
+#include "../TransformComponent.h"
 #include "Resource/Texture/TextureManager.h"
 
 #ifdef EditorMode

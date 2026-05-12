@@ -4,8 +4,8 @@
 
 // ECSコンポーネントのインクルード
 #include "Framework/GameObject.h"
-#include "Framework/TransformComponent.h"
-#include "Framework/PrimitiveRendererComponent.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 
 // デストラクタ
 GameScene::~GameScene() = default;

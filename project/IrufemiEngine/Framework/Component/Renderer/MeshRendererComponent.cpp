@@ -1,6 +1,6 @@
-#include "MeshRendererComponent.h"
-#include "GameObject.h"
-#include "TransformComponent.h"
+#include <imgui.h>
+#include "../../GameObject.h"
+#include "../TransformComponent.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
 
 MeshRendererComponent::MeshRendererComponent() {}

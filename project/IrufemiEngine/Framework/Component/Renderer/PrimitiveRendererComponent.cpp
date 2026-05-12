@@ -1,6 +1,6 @@
-#include "PrimitiveRendererComponent.h"
-#include "GameObject.h"
-#include "TransformComponent.h"
+#include <imgui.h>
+#include "../../GameObject.h"
+#include "../TransformComponent.h"
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "Engine/Manager/PrimitiveManager.h"
 #include "Engine/Core/Type/PrimitiveType.h"

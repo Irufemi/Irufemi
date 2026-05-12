@@ -1,5 +1,5 @@
 #pragma once
-#include "Component.h"
+#include "../Component.h"
 #include <memory>
 #include <string>
 #include "Engine/Core/Type/PrimitiveType.h"

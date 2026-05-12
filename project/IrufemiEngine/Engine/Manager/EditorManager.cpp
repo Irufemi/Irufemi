@@ -8,10 +8,10 @@
 #include "Framework/IScene.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
-#include "Framework/TransformComponent.h"
-#include "Framework/PrimitiveRendererComponent.h"
-#include "Framework/MeshRendererComponent.h"
-#include "Framework/SpriteRendererComponent.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/SpriteRendererComponent.h"
 
 void EditorManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
