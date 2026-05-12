@@ -16,8 +16,12 @@ public:
     Keyboard() = default;
     ~Keyboard() = default;
 
+    /** @name 初期化・更新 */
+    ///@{
     void Initialize();
     void Update();
+    void Clear();
+    ///@}
 
     /** @name キー状態の取得 */
     ///@{

@@ -7,6 +7,11 @@ void GamePad::Initialize() {
     ZeroMemory(&prev_, sizeof(prev_));
 }
 
+void GamePad::Clear() {
+    ZeroMemory(&state_, sizeof(state_));
+    ZeroMemory(&prev_, sizeof(prev_));
+}
+
 void GamePad::Update() {
     prev_ = state_;
     ZeroMemory(&state_, sizeof(state_));

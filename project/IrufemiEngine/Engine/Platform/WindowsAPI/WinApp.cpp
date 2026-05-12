@@ -97,6 +97,14 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::w
     clientWidth_ = cr.right - cr.left;
     clientHeight_ = cr.bottom - cr.top;
 
+    // Raw Inputデバイス（マウス）の登録
+    RAWINPUTDEVICE rid[1];
+    rid[0].usUsagePage = 0x01; // HID_USAGE_PAGE_GENERIC
+    rid[0].usUsage = 0x02;     // HID_USAGE_GENERIC_MOUSE
+    rid[0].dwFlags = 0;        // ウィンドウがアクティブな時のみ受け取る
+    rid[0].hwndTarget = hwnd_;
+    RegisterRawInputDevices(rid, 1, sizeof(rid[0]));
+
     return true;
 }
 
@@ -116,7 +124,10 @@ void WinApp::SetCursorLocked(bool lock) {
     cursorLocked_ = lock;
     if (inputManager_) {
         if (auto* mouse = inputManager_->GetMouse()) {
-            mouse->SetLocked(cursorLocked_);
+            // ゲーム画面が最前面の時だけロック状態を反映する
+            if (GetForegroundWindow() == hwnd_) {
+                mouse->SetLocked(cursorLocked_);
+            }
         }
     }
 }
@@ -186,6 +197,29 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+    case WM_INPUT: {
+        UINT dwSize = 0;
+        GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
+        if (dwSize > 0) {
+            std::vector<BYTE> lpb(dwSize);
+            if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, lpb.data(), &dwSize, sizeof(RAWINPUTHEADER)) == dwSize) {
+                RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(lpb.data());
+                if (raw->header.dwType == RIM_TYPEMOUSE) {
+                    if (inputManager_) {
+                        if (auto* mouse = inputManager_->GetMouse()) {
+                            // 通常の相対移動のみ（絶対座標移動等は除外）
+                            if ((raw->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE) == 0) {
+                                float dx = static_cast<float>(raw->data.mouse.lLastX);
+                                float dy = static_cast<float>(raw->data.mouse.lLastY);
+                                mouse->AddRawDelta(dx, dy);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return DefWindowProcW(hWnd, msg, wParam, lParam);
+    }
     case WM_KEYDOWN:
 #if ENABLE_ESCAPE_EXIT
         if (wParam == VK_ESCAPE) {
