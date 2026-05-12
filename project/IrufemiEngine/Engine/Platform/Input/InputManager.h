@@ -106,4 +106,5 @@ private:
     std::unique_ptr<Keyboard> keyboard_{};
     std::unique_ptr<GamePad>  gamepad_{};
     std::unique_ptr<Mouse>    mouse_{};
+    HWND hwnd_ = nullptr;
 };

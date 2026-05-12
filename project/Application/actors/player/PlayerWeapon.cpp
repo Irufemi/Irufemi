@@ -50,6 +50,7 @@ void PlayerWeapon::Initialize() {
     missileFire_ = std::make_unique<ParticleSystem>();
     missileFire_->Initialize("resources/circle.png", ParticleType::kMissileFire);
     missileFire_->SetCullingEnabled(false);
+    missileFire_->SetBlend(BlendMode::kBlendModeAdd);
 
     missileSmoke_ = std::make_unique<ParticleSystem>();
     missileSmoke_->Initialize("resources/circle.png", ParticleType::kMissileSmoke);
@@ -164,7 +165,7 @@ void PlayerWeapon::UpdateParticlesOnly() {
                 }
             }
 
-            float missileHalfLength = 1.2f; // playerScale.z を 1.0 だと仮定した場合の固定値
+            float missileHalfLength = 2.2f; // 描画スケール(Z=0.8)に基づく固定値 (尻尾よりわずかに内側)
             float vx = missiles_[i].velocity.x;
             float vy = missiles_[i].velocity.y;
             float vz = missiles_[i].velocity.z;
@@ -343,8 +344,8 @@ void PlayerWeapon::DrawParticles(IrufemiEngine* engine) {
     if (muzzleFlashRight_) muzzleFlashRight_->Draw();
     if (muzzleFlashAddLeft_) muzzleFlashAddLeft_->Draw();
     if (muzzleFlashAddRight_) muzzleFlashAddRight_->Draw();
-    if (missileFire_) missileFire_->Draw();
     if (missileSmoke_) missileSmoke_->Draw();
+    if (missileFire_) missileFire_->Draw();
     if (bulletTrail_) bulletTrail_->Draw();
     if (ejectionMistLeft_) ejectionMistLeft_->Draw();
     if (ejectionMistRight_) ejectionMistRight_->Draw();
@@ -405,7 +406,7 @@ void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& player
                 }
             }
 
-            float missileHalfLength = (6.0f * 0.5f) * (playerScale.z * 0.4f);
+            float missileHalfLength = 2.2f; // 描画スケール(Z=0.8)に基づく固定値 (尻尾よりわずかに内側)
             float vx = missiles_[i].velocity.x;
             float vy = missiles_[i].velocity.y;
             float vz = missiles_[i].velocity.z;

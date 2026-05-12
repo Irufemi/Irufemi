@@ -1,6 +1,7 @@
 #include "InputManager.h"
 
 void InputManager::Initialize(HWND hwnd) {
+    hwnd_ = hwnd;
     keyboard_ = std::make_unique<Keyboard>();
     gamepad_ = std::make_unique<GamePad>();
     mouse_ = std::make_unique<Mouse>();
@@ -10,6 +11,14 @@ void InputManager::Initialize(HWND hwnd) {
 }
 
 void InputManager::Update() {
+    if (GetForegroundWindow() != hwnd_) {
+        // バックグラウンドにいるときは全入力をクリアして更新をスキップ
+        keyboard_->Clear();
+        gamepad_->Clear();
+        mouse_->Clear();
+        return;
+    }
+
     keyboard_->Update();
     gamepad_->Update();
     mouse_->Update();

@@ -15,6 +15,14 @@ void Mouse::Initialize(HWND hwnd) {
     SetLocked(isLocked_);
 }
 
+void Mouse::Clear() {
+    std::fill(std::begin(currentButtons_), std::end(currentButtons_), 0);
+    std::fill(std::begin(prevButtons_), std::end(prevButtons_), 0);
+    delta_ = { 0.0f, 0.0f };
+    rawDelta_ = { 0.0f, 0.0f };
+    wheelDelta_ = 0.0f;
+}
+
 void Mouse::Update() {
     // 前フレームのボタン状態を保存
     std::copy(std::begin(currentButtons_), std::end(currentButtons_), std::begin(prevButtons_));
@@ -29,23 +37,16 @@ void Mouse::Update() {
     GetCursorPos(&p);
 
     if (isLocked_) {
-        // ロック中の挙動: スクリーン座標の p と中心との相対距離で Delta を出す
+        // ロック中: Raw Input で蓄積された移動量(rawDelta_)をそのまま差分として使う
+        delta_ = rawDelta_;
+        rawDelta_ = { 0.0f, 0.0f }; // 読み取ったらリセット
+
+        // カーソルは画面内に ClipCursor で閉じ込められているため、毎フレーム SetCursorPos で
+        // 中央に戻す必要はない(Raw Inputは画面外判定を受けない)。
+        // 内部座標は論理的に画面中央に固定しておく
         RECT rc;
         GetClientRect(hwnd_, &rc);
-        POINT center = { (rc.right - rc.left) / 2, (rc.bottom - rc.top) / 2 };
-        
-        // 中心座標をスクリーン座標に変換
-        POINT screenCenter = center;
-        ClientToScreen(hwnd_, &screenCenter);
-
-        // Delta を計算 (中心からの移動量)
-        delta_ = { static_cast<float>(p.x - screenCenter.x), static_cast<float>(p.y - screenCenter.y) };
-
-        // 常に中心に戻す (これにより、次のフレームの p がこの中心 + 移動量になる)
-        SetCursorPos(screenCenter.x, screenCenter.y);
-
-        // 内部の position_ はクライアント座標の中央に固定 (UI などのため)
-        position_ = { static_cast<float>(center.x), static_cast<float>(center.y) };
+        position_ = { static_cast<float>((rc.right - rc.left) / 2), static_cast<float>((rc.bottom - rc.top) / 2) };
         prevPosition_ = position_;
     } else {
         // 通常時の挙動: スクリーン座標をクライアント座標に変換して position_ を更新
@@ -53,6 +54,9 @@ void Mouse::Update() {
         prevPosition_ = position_;
         position_ = { static_cast<float>(p.x), static_cast<float>(p.y) };
         delta_ = { position_.x - prevPosition_.x, position_.y - prevPosition_.y };
+        
+        // 通常時もRaw Inputの移動量は蓄積され続けるためクリアしておく
+        rawDelta_ = { 0.0f, 0.0f };
     }
 
     // --- デバッグコード追加 ---
@@ -70,13 +74,13 @@ void Mouse::SetLocked(bool locked) {
     if (isLocked_ != locked) {
         isLocked_ = locked;
         delta_ = { 0.0f, 0.0f };
+        rawDelta_ = { 0.0f, 0.0f };
 
         if (isLocked_ && hwnd_) {
             // 表示を消す
-            // ShowCursor はカウンタなので、ロック時は確実に非表示になるまで呼ぶ
             while (ShowCursor(FALSE) >= 0);
 
-            // クリッピング設定
+            // クリッピング設定 (画面外に出てフォーカスを失うのを防ぐ)
             RECT clientRect;
             GetClientRect(hwnd_, &clientRect);
             POINT topLeft = { clientRect.left, clientRect.top };
@@ -86,7 +90,7 @@ void Mouse::SetLocked(bool locked) {
             RECT clipRect = { topLeft.x, topLeft.y, bottomRight.x, bottomRight.y };
             ClipCursor(&clipRect);
 
-            // 中央へ移動
+            // ロック開始時のみ、一度だけ中央にカーソルを移動させておく
             POINT center = { (clientRect.right - clientRect.left) / 2, (clientRect.bottom - clientRect.top) / 2 };
             position_ = { static_cast<float>(center.x), static_cast<float>(center.y) };
             prevPosition_ = position_;

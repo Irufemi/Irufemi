@@ -204,24 +204,24 @@ void MuzzleFlashBehavior::Debug([[maybe_unused]] Emitter* emitter, [[maybe_unuse
 // MissileFireBehavior
 void MissileFireBehavior::Initialize(Emitter* emitter) {
 	emitter->count = 5;
-	emitter->area = { 0.1f, 0.1f, 0.1f };
-	emitter->velocityMin = { -1.0f, -1.0f, -1.0f };
-	emitter->velocityMax = { 1.0f, 1.0f, 1.0f };
-	emitter->startScale = { 0.5f, 0.5f, 0.5f };
-	emitter->endScale = { 0.1f, 0.1f, 0.1f };
-	emitter->startColor = { 2.0f, 1.5f, 0.5f, 1.0f }; // 高輝度オレンジ
+	emitter->area = { 0.15f, 0.15f, 0.15f };
+	emitter->velocityMin = { -2.0f, -2.0f, -2.0f };
+	emitter->velocityMax = { 2.0f, 2.0f, 2.0f };
+	emitter->startScale = { 1.5f, 1.5f, 1.5f };
+	emitter->endScale = { 0.2f, 0.2f, 0.2f };
+	emitter->startColor = { 4.0f, 1.5f, 0.2f, 1.0f }; // 赤・オレンジ系の強い炎カラー
 	emitter->endColor = { 1.0f, 0.0f, 0.0f, 0.0f };
 	emitter->colorMode = ParticleColorMode::kNone;
 }
 void MissileFireBehavior::Update(Particle& particle, float deltaTime) {
 	// 推進炎なので少し揺らぐ
-	particle.velocity.x += (std::rand() % 100 / 100.0f - 0.5f) * 0.5f;
-	particle.velocity.y += (std::rand() % 100 / 100.0f - 0.5f) * 0.5f;
-	particle.velocity.z += (std::rand() % 100 / 100.0f - 0.5f) * 0.5f;
+	particle.velocity.x += (std::rand() % 100 / 100.0f - 0.5f) * 1.5f;
+	particle.velocity.y += (std::rand() % 100 / 100.0f - 0.5f) * 1.5f;
+	particle.velocity.z += (std::rand() % 100 / 100.0f - 0.5f) * 1.5f;
 }
 void MissileFireBehavior::MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) {
-	std::uniform_real_distribution<float> distTime(0.05f, 0.15f);
-	std::uniform_real_distribution<float> distScale(0.8f, 1.5f);
+	std::uniform_real_distribution<float> distTime(0.1f, 0.3f);
+	std::uniform_real_distribution<float> distScale(1.0f, 1.5f);
 	particle.startScale = emitter.startScale * distScale(randomEngine);
 	particle.endScale = emitter.endScale;
 	particle.lifeTime = distTime(randomEngine);
