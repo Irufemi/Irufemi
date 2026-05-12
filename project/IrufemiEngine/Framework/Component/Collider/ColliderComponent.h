@@ -34,9 +34,14 @@ public:
 
     // --- コールバック機能 ---
     // 衝突時に呼ばれる関数を登録できる
-    std::function<void(ColliderComponent*)> onCollisionEnter_;
+    std::function<void(ColliderComponent*)> onCollisionEnter_; // 衝突した瞬間に呼ばれる
+    std::function<void(ColliderComponent*)> onCollisionStay_;  // 衝突している間呼ばれ続ける
+    std::function<void(ColliderComponent*)> onCollisionExit_;  // 離れた瞬間に呼ばれる
 
     // --- レイヤー設定 ---
     uint32_t layer_ = CollisionLayer::Default;
     uint32_t mask_  = CollisionLayer::All;
+
+    // --- 物理設定 ---
+    bool isTrigger_ = false; ///< trueならすり抜ける(判定のみ), falseなら物理的に押し戻す
 };

@@ -1,7 +1,7 @@
 #pragma once
+#include "../Math.h"
 
 // 前方宣言
-struct Vector3;
 struct Sphere;
 struct Plane;
 struct Segment;
@@ -13,6 +13,25 @@ struct OBB;
 struct Frustum;
 
 namespace Collision {
+
+    /// <summary>
+    /// 押し出し(Kinematic Resolution)用の詳細な衝突結果構造体
+    /// </summary>
+    struct CollisionResult {
+        bool isHit = false;
+        Vector3 normal = { 0.0f, 0.0f, 0.0f }; // 第1引数のオブジェクトを押し出す(反発する)方向の正規化ベクトル
+        float depth = 0.0f;                    // めり込み量
+    };
+
+    // --- 押し出し対応の判定関数群 ---
+    CollisionResult GetCollisionResult(const Sphere& a, const Sphere& b);
+    CollisionResult GetCollisionResult(const AABB& a, const AABB& b);
+    CollisionResult GetCollisionResult(const AABB& aabb, const Sphere& sphere);
+    CollisionResult GetCollisionResult(const OBB& a, const OBB& b);
+    CollisionResult GetCollisionResult(const OBB& obb, const Sphere& sphere);
+    CollisionResult GetCollisionResult(const OBB& obb, const AABB& aabb);
+
+
 
     /// <summary>
     /// 球と球の衝突判定

@@ -34,6 +34,7 @@ void SphereColliderComponent::OnInspectorGUI() {
     if (ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragFloat3("Offset", &localOffset_.x, 0.1f);
         ImGui::DragFloat("Radius", &localRadius_, 0.1f, 0.0f, 1000.0f);
+        ImGui::Checkbox("Is Trigger", &isTrigger_);
         
         CollisionManager::GetInstance().DrawLayerInspectorGUI(layer_, mask_);
     }

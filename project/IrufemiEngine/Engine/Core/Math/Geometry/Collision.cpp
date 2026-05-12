@@ -20,6 +20,212 @@ namespace Collision {
     static float MinFloat(float a, float b) { return a < b ? a : b; }
     static float MaxFloat(float a, float b) { return a > b ? a : b; }
 
+    CollisionResult GetCollisionResult(const Sphere& a, const Sphere& b) {
+        CollisionResult result;
+        Vector3 diff = Math::Subtract(a.center, b.center);
+        float dist = Math::Length(diff);
+        float sumRadius = a.radius + b.radius;
+        if (dist < sumRadius) {
+            result.isHit = true;
+            result.depth = sumRadius - dist;
+            if (dist > 1e-5f) {
+                result.normal = Math::Normalize(diff);
+            } else {
+                result.normal = {0.0f, 1.0f, 0.0f}; // 完全に重なった場合は上方向
+            }
+        }
+        return result;
+    }
+
+    CollisionResult GetCollisionResult(const AABB& a, const AABB& b) {
+        CollisionResult result;
+        float overlapX = (std::min)(a.max.x, b.max.x) - (std::max)(a.min.x, b.min.x);
+        float overlapY = (std::min)(a.max.y, b.max.y) - (std::max)(a.min.y, b.min.y);
+        float overlapZ = (std::min)(a.max.z, b.max.z) - (std::max)(a.min.z, b.min.z);
+
+        if (overlapX > 0 && overlapY > 0 && overlapZ > 0) {
+            result.isHit = true;
+            Vector3 centerA = { (a.min.x + a.max.x) * 0.5f, (a.min.y + a.max.y) * 0.5f, (a.min.z + a.max.z) * 0.5f };
+            Vector3 centerB = { (b.min.x + b.max.x) * 0.5f, (b.min.y + b.max.y) * 0.5f, (b.min.z + b.max.z) * 0.5f };
+
+            if (overlapX <= overlapY && overlapX <= overlapZ) {
+                result.depth = overlapX;
+                result.normal = (centerA.x > centerB.x) ? Vector3{1, 0, 0} : Vector3{-1, 0, 0};
+            } else if (overlapY <= overlapX && overlapY <= overlapZ) {
+                result.depth = overlapY;
+                result.normal = (centerA.y > centerB.y) ? Vector3{0, 1, 0} : Vector3{0, -1, 0};
+            } else {
+                result.depth = overlapZ;
+                result.normal = (centerA.z > centerB.z) ? Vector3{0, 0, 1} : Vector3{0, 0, -1};
+            }
+        }
+        return result;
+    }
+
+    CollisionResult GetCollisionResult(const AABB& aabb, const Sphere& sphere) {
+        CollisionResult result;
+        Vector3 closestPoint = {
+            Math::Clamp(sphere.center.x, aabb.min.x, aabb.max.x),
+            Math::Clamp(sphere.center.y, aabb.min.y, aabb.max.y),
+            Math::Clamp(sphere.center.z, aabb.min.z, aabb.max.z)
+        };
+        Vector3 diffSphere = Math::Subtract(sphere.center, closestPoint);
+        float dist = Math::Length(diffSphere);
+
+        if (dist <= sphere.radius) {
+            result.isHit = true;
+            Vector3 centerAABB = { (aabb.min.x + aabb.max.x) * 0.5f, (aabb.min.y + aabb.max.y) * 0.5f, (aabb.min.z + aabb.max.z) * 0.5f };
+            
+            if (dist > 1e-5f) {
+                result.depth = sphere.radius - dist;
+                // aabbの押し出し方向は、球から遠ざかる方向（closestPointからAABB中心へ向かうおおよその方向、正しくは球中心->最近接点の逆）
+                // 球の中心->最近接点 は、球から見たAABBへのベクトル。よってその逆がAABBの押し出し方向
+                result.normal = Math::Multiply(-1.0f, Math::Normalize(diffSphere));
+            } else {
+                // 中心が完全に中にある場合
+                float dx = (std::min)(sphere.center.x - aabb.min.x, aabb.max.x - sphere.center.x);
+                float dy = (std::min)(sphere.center.y - aabb.min.y, aabb.max.y - sphere.center.y);
+                float dz = (std::min)(sphere.center.z - aabb.min.z, aabb.max.z - sphere.center.z);
+                result.depth = sphere.radius + (std::min)({dx, dy, dz});
+                if (dx <= dy && dx <= dz) result.normal = (centerAABB.x > sphere.center.x) ? Vector3{1,0,0} : Vector3{-1,0,0};
+                else if (dy <= dx && dy <= dz) result.normal = (centerAABB.y > sphere.center.y) ? Vector3{0,1,0} : Vector3{0,-1,0};
+                else result.normal = (centerAABB.z > sphere.center.z) ? Vector3{0,0,1} : Vector3{0,0,-1};
+            }
+        }
+        return result;
+    }
+
+    CollisionResult GetCollisionResult(const OBB& a, const OBB& b) {
+        CollisionResult result;
+        if ((a.size.x == 0.0f && a.size.y == 0.0f && a.size.z == 0.0f) ||
+            (b.size.x == 0.0f && b.size.y == 0.0f && b.size.z == 0.0f)) return result;
+
+        float R[3][3], AbsR[3][3];
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                R[i][j] = Math::Dot(a.orientations[i], b.orientations[j]);
+                AbsR[i][j] = std::abs(R[i][j]) + 1e-6f;
+            }
+        }
+
+        Vector3 tWorld = Math::Subtract(b.center, a.center);
+        Vector3 t = {
+            Math::Dot(tWorld, a.orientations[0]),
+            Math::Dot(tWorld, a.orientations[1]),
+            Math::Dot(tWorld, a.orientations[2])
+        };
+
+        float ra, rb;
+        float minPenetration = (std::numeric_limits<float>::max)();
+        Vector3 bestAxis = {0,0,0};
+        float bestSign = 1.0f;
+
+        auto testAxis = [&](const Vector3& axis, float overlap, float tProj) {
+            if (overlap < 0.0f) return false; // 分離軸が存在した
+            if (overlap < minPenetration) {
+                minPenetration = overlap;
+                bestAxis = axis;
+                bestSign = (tProj < 0.0f) ? 1.0f : -1.0f; // aを遠ざける方向
+            }
+            return true;
+        };
+
+        // --- aの各軸 (3本) ---
+        for (int i = 0; i < 3; i++) {
+            ra = (i == 0) ? a.size.x : (i == 1) ? a.size.y : a.size.z;
+            rb = b.size.x * AbsR[i][0] + b.size.y * AbsR[i][1] + b.size.z * AbsR[i][2];
+            float tProj = (i == 0) ? t.x : (i == 1) ? t.y : t.z;
+            if (!testAxis(a.orientations[i], ra + rb - std::abs(tProj), tProj)) return result;
+        }
+
+        // --- bの各軸 (3本) ---
+        for (int i = 0; i < 3; i++) {
+            ra = a.size.x * AbsR[0][i] + a.size.y * AbsR[1][i] + a.size.z * AbsR[2][i];
+            rb = (i == 0) ? b.size.x : (i == 1) ? b.size.y : b.size.z;
+            float tProj = t.x * R[0][i] + t.y * R[1][i] + t.z * R[2][i];
+            if (!testAxis(b.orientations[i], ra + rb - std::abs(tProj), Math::Dot(tWorld, b.orientations[i]))) return result;
+        }
+
+        // --- aの各軸 x bの各軸 の外積 (9本) ---
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                Vector3 axis = Math::Cross(a.orientations[i], b.orientations[j]);
+                float len = Math::Length(axis);
+                if (len > 1e-4f) {
+                    axis = Math::Normalize(axis);
+                    ra = a.size.x * std::abs(Math::Dot(a.orientations[0], axis)) + a.size.y * std::abs(Math::Dot(a.orientations[1], axis)) + a.size.z * std::abs(Math::Dot(a.orientations[2], axis));
+                    rb = b.size.x * std::abs(Math::Dot(b.orientations[0], axis)) + b.size.y * std::abs(Math::Dot(b.orientations[1], axis)) + b.size.z * std::abs(Math::Dot(b.orientations[2], axis));
+                    float tProj = Math::Dot(tWorld, axis);
+                    if (!testAxis(axis, ra + rb - std::abs(tProj), tProj)) return result;
+                }
+            }
+        }
+
+        result.isHit = true;
+        result.depth = minPenetration;
+        result.normal = Math::Multiply(bestSign, bestAxis);
+        return result;
+    }
+
+    CollisionResult GetCollisionResult(const OBB& obb, const Sphere& sphere) {
+        CollisionResult result;
+        if (obb.size.x == 0.0f && obb.size.y == 0.0f && obb.size.z == 0.0f) return result;
+        
+        Vector3 worldRelPos = Math::Subtract(sphere.center, obb.center);
+        Vector3 localPos = {
+            Math::Dot(worldRelPos, obb.orientations[0]),
+            Math::Dot(worldRelPos, obb.orientations[1]),
+            Math::Dot(worldRelPos, obb.orientations[2])
+        };
+
+        Vector3 closestLocal = {
+            Math::Clamp(localPos.x, -obb.size.x, obb.size.x),
+            Math::Clamp(localPos.y, -obb.size.y, obb.size.y),
+            Math::Clamp(localPos.z, -obb.size.z, obb.size.z)
+        };
+
+        float dist = Math::Length(Math::Subtract(localPos, closestLocal));
+
+        if (dist <= sphere.radius) {
+            result.isHit = true;
+            if (dist > 1e-5f) {
+                result.depth = sphere.radius - dist;
+                Vector3 localNormal = Math::Normalize(Math::Subtract(closestLocal, localPos));
+                result.normal = Math::Add(
+                    Math::Add(Math::Multiply(localNormal.x, obb.orientations[0]), Math::Multiply(localNormal.y, obb.orientations[1])),
+                    Math::Multiply(localNormal.z, obb.orientations[2])
+                );
+            } else {
+                // 完全内包時
+                float dx = obb.size.x - std::abs(localPos.x);
+                float dy = obb.size.y - std::abs(localPos.y);
+                float dz = obb.size.z - std::abs(localPos.z);
+                result.depth = sphere.radius + (std::min)({dx, dy, dz});
+                Vector3 localNormal = {0,0,0};
+                if (dx <= dy && dx <= dz) localNormal.x = (localPos.x < 0) ? 1.0f : -1.0f;
+                else if (dy <= dx && dy <= dz) localNormal.y = (localPos.y < 0) ? 1.0f : -1.0f;
+                else localNormal.z = (localPos.z < 0) ? 1.0f : -1.0f;
+                
+                result.normal = Math::Add(
+                    Math::Add(Math::Multiply(localNormal.x, obb.orientations[0]), Math::Multiply(localNormal.y, obb.orientations[1])),
+                    Math::Multiply(localNormal.z, obb.orientations[2])
+                );
+            }
+        }
+        return result;
+    }
+
+    CollisionResult GetCollisionResult(const OBB& obb, const AABB& aabb) {
+        OBB aabbAsObb;
+        aabbAsObb.center = { (aabb.min.x + aabb.max.x) * 0.5f, (aabb.min.y + aabb.max.y) * 0.5f, (aabb.min.z + aabb.max.z) * 0.5f };
+        aabbAsObb.size = { (aabb.max.x - aabb.min.x) * 0.5f, (aabb.max.y - aabb.min.y) * 0.5f, (aabb.max.z - aabb.min.z) * 0.5f };
+        aabbAsObb.orientations[0] = { 1.0f, 0.0f, 0.0f };
+        aabbAsObb.orientations[1] = { 0.0f, 1.0f, 0.0f };
+        aabbAsObb.orientations[2] = { 0.0f, 0.0f, 1.0f };
+        return GetCollisionResult(obb, aabbAsObb);
+    }
+
+
     // 球と球の衝突判定
     bool IsCollision(Vector3 s1_center, float s1_radius, Vector3 s2_center, float s2_radius) {
         float distance = Math::Length(s2_center - s1_center);

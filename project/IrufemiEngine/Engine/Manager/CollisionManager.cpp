@@ -4,6 +4,8 @@
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
+#include "Framework/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include <algorithm>
 #include <fstream>
@@ -27,6 +29,7 @@ CollisionManager::~CollisionManager() = default;
 
 void CollisionManager::Clear() {
     colliders_.clear();
+    previousCollisions_.clear();
 }
 
 void CollisionManager::RegisterCollider(ColliderComponent* collider) {
@@ -44,81 +47,150 @@ void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
     if (it != colliders_.end()) {
         colliders_.erase(it);
     }
+
+    // 削除されるコライダーが含まれているペアをpreviousCollisions_から削除し、Exitを呼ぶ
+    for (auto iter = previousCollisions_.begin(); iter != previousCollisions_.end(); ) {
+        if (iter->first == collider || iter->second == collider) {
+            ColliderComponent* other = (iter->first == collider) ? iter->second : iter->first;
+            
+            // 削除される側からExitを呼ぶ（任意）
+            if (collider->onCollisionExit_) collider->onCollisionExit_(other);
+            if (other && other->onCollisionExit_) other->onCollisionExit_(collider);
+            
+            iter = previousCollisions_.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
 }
 
 void CollisionManager::CheckAllCollisions() {
-    if (colliders_.size() < 2) return;
+    std::set<std::pair<ColliderComponent*, ColliderComponent*>> currentCollisions;
 
-    for (size_t i = 0; i < colliders_.size(); ++i) {
-        for (size_t j = i + 1; j < colliders_.size(); ++j) {
-            ColliderComponent* colA = colliders_[i];
-            ColliderComponent* colB = colliders_[j];
+    if (colliders_.size() >= 2) {
+        for (size_t i = 0; i < colliders_.size(); ++i) {
+            for (size_t j = i + 1; j < colliders_.size(); ++j) {
+                ColliderComponent* colA = colliders_[i];
+                ColliderComponent* colB = colliders_[j];
 
-            if (!colA || !colB) continue;
-            
-            // レイヤー/マスクによるフィルタリング判定
-            if ((colA->mask_ & colB->layer_) == 0 || (colB->mask_ & colA->layer_) == 0) {
-                continue; // お互いに衝突対象でない場合はスキップ
-            }
+                if (!colA || !colB) continue;
 
-            // --- 判定ディスパッチ ---
-            bool isHit = false;
+                // フィルタリング
+                if ((colA->mask_ & colB->layer_) == 0 || (colB->mask_ & colA->layer_) == 0) {
+                    continue;
+                }
 
-            if (colA->GetColliderType() == ColliderComponent::ColliderType::AABB) {
-                AABB boxA = static_cast<AABBColliderComponent*>(colA)->GetWorldAABB();
-                
-                if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
-                    AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
-                    isHit = Collision::IsCollision(boxA, boxB);
-                } 
-                else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
-                    Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
-                    isHit = Collision::IsCollision(boxA, sphereB);
-                }
-                else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
-                    OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
-                    isHit = Collision::IsCollision(obbB, boxA); // 引数順序注意
-                }
-            }
-            else if (colA->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
-                Sphere sphereA = static_cast<SphereColliderComponent*>(colA)->GetWorldSphere();
-                
-                if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
-                    AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
-                    isHit = Collision::IsCollision(boxB, sphereA);
-                }
-                else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
-                    Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
-                    isHit = Collision::IsCollision(sphereA, sphereB);
-                }
-                else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
-                    OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
-                    isHit = Collision::IsCollision(obbB, sphereA);
-                }
-            }
-            else if (colA->GetColliderType() == ColliderComponent::ColliderType::OBB) {
-                OBB obbA = static_cast<OBBColliderComponent*>(colA)->GetWorldOBB();
-                
-                if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
-                    AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
-                    isHit = Collision::IsCollision(obbA, boxB);
-                }
-                else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
-                    Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
-                    isHit = Collision::IsCollision(obbA, sphereB);
-                }
-                else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
-                    OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
-                    isHit = Collision::IsCollision(obbA, obbB);
-                }
-            }
+                // アドレスでソートしてペアを作成
+                auto pair = colA < colB ? std::make_pair(colA, colB) : std::make_pair(colB, colA);
 
-            if (isHit) {
-                if (colA->onCollisionEnter_) colA->onCollisionEnter_(colB);
-                if (colB->onCollisionEnter_) colB->onCollisionEnter_(colA);
+                // --- 判定ディスパッチ ---
+                Collision::CollisionResult result;
+
+                if (colA->GetColliderType() == ColliderComponent::ColliderType::AABB) {
+                    AABB boxA = static_cast<AABBColliderComponent*>(colA)->GetWorldAABB();
+                    
+                    if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
+                        AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
+                        result = Collision::GetCollisionResult(boxA, boxB);
+                    } 
+                    else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
+                        Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
+                        result = Collision::GetCollisionResult(boxA, sphereB);
+                    }
+                    else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
+                        OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
+                        result = Collision::GetCollisionResult(obbB, boxA); // OBB vs AABB
+                        result.normal = Math::Multiply(-1.0f, result.normal); // OBBを押し出す方向の逆にする
+                    }
+                }
+                else if (colA->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
+                    Sphere sphereA = static_cast<SphereColliderComponent*>(colA)->GetWorldSphere();
+                    
+                    if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
+                        AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
+                        result = Collision::GetCollisionResult(boxB, sphereA);
+                        result.normal = Math::Multiply(-1.0f, result.normal);
+                    }
+                    else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
+                        Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
+                        result = Collision::GetCollisionResult(sphereA, sphereB);
+                    }
+                    else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
+                        OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
+                        result = Collision::GetCollisionResult(obbB, sphereA);
+                        result.normal = Math::Multiply(-1.0f, result.normal);
+                    }
+                }
+                else if (colA->GetColliderType() == ColliderComponent::ColliderType::OBB) {
+                    OBB obbA = static_cast<OBBColliderComponent*>(colA)->GetWorldOBB();
+                    
+                    if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
+                        AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
+                        result = Collision::GetCollisionResult(obbA, boxB);
+                    }
+                    else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
+                        Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
+                        result = Collision::GetCollisionResult(obbA, sphereB);
+                    }
+                    else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
+                        OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
+                        result = Collision::GetCollisionResult(obbA, obbB);
+                    }
+                }
+
+                if (result.isHit) {
+                    currentCollisions.insert(pair);
+
+                    // --- コールバック呼び出し (Enter / Stay) ---
+                    if (previousCollisions_.find(pair) == previousCollisions_.end()) {
+                        // 新規衝突 (Enter)
+                        if (colA->onCollisionEnter_) colA->onCollisionEnter_(colB);
+                        if (colB->onCollisionEnter_) colB->onCollisionEnter_(colA);
+                    } else {
+                        // 継続衝突 (Stay)
+                        if (colA->onCollisionStay_) colA->onCollisionStay_(colB);
+                        if (colB->onCollisionStay_) colB->onCollisionStay_(colA);
+                    }
+
+                    // --- 押し戻し処理 (Kinematic Resolution) ---
+                    if (!colA->isTrigger_ && !colB->isTrigger_) {
+                        TransformComponent* transformA = colA->GetGameObject() ? colA->GetGameObject()->GetComponent<TransformComponent>() : nullptr;
+                        TransformComponent* transformB = colB->GetGameObject() ? colB->GetGameObject()->GetComponent<TransformComponent>() : nullptr;
+
+                        if (transformA && transformB) {
+                            // 両方動く場合は半分の距離ずつ押し戻す
+                            Vector3 pushA = Math::Multiply(result.depth * 0.5f, result.normal);
+                            Vector3 pushB = Math::Multiply(result.depth * 0.5f, Math::Multiply(-1.0f, result.normal));
+                            
+                            transformA->position_ = Math::Add(transformA->position_, pushA);
+                            transformB->position_ = Math::Add(transformB->position_, pushB);
+                        } else if (transformA) {
+                            Vector3 pushA = Math::Multiply(result.depth, result.normal);
+                            transformA->position_ = Math::Add(transformA->position_, pushA);
+                        } else if (transformB) {
+                            Vector3 pushB = Math::Multiply(result.depth, Math::Multiply(-1.0f, result.normal));
+                            transformB->position_ = Math::Add(transformB->position_, pushB);
+                        }
+                    }
+                }
             }
         }
     }
+
+    // --- 離脱処理 (Exit) ---
+    for (const auto& pair : previousCollisions_) {
+        // 前フレームでは当たっていたが、今フレームでは当たっていない
+        if (currentCollisions.find(pair) == currentCollisions.end()) {
+            ColliderComponent* colA = pair.first;
+            ColliderComponent* colB = pair.second;
+            
+            if (colA && colA->onCollisionExit_) colA->onCollisionExit_(colB);
+            if (colB && colB->onCollisionExit_) colB->onCollisionExit_(colA);
+        }
+    }
+
+    // 更新
+    previousCollisions_ = std::move(currentCollisions);
 }
 
 void CollisionManager::DrawDebug() {

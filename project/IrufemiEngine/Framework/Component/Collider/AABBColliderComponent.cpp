@@ -36,6 +36,7 @@ void AABBColliderComponent::OnInspectorGUI() {
     if (ImGui::CollapsingHeader("AABB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragFloat3("Offset", &localOffset_.x, 0.1f);
         ImGui::DragFloat3("Size (Extents)", &localSize_.x, 0.1f, 0.0f, 1000.0f);
+        ImGui::Checkbox("Is Trigger", &isTrigger_);
         
         CollisionManager::GetInstance().DrawLayerInspectorGUI(layer_, mask_);
     }

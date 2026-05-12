@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <set>
 #include <memory>
 #include <string>
 #include <nlohmann/json.hpp>
@@ -96,4 +97,7 @@ private:
         Vector4 color;
     };
     std::vector<DebugRayInfo> debugRays_;
+
+    // 前フレームの衝突ペアを保持（Enter / Stay / Exit 用）
+    std::set<std::pair<ColliderComponent*, ColliderComponent*>> previousCollisions_;
 };
