@@ -448,9 +448,9 @@ void VoxelParticleSystem::CreatePSO() {
   auto *psoManager = dxCommon->GetPSOManager();
 
   // --- Compute PSO ---
-  initializePSO_ = dxCommon->GetVoxelParticleInitializePSO();
-  emitPSO_ = dxCommon->GetVoxelParticleEmitPSO();
-  updatePSO_ = dxCommon->GetVoxelParticleUpdatePSO();
+  initializePSO_ = psoManager->GetComputePSO("VoxelParticleInitialize");
+  emitPSO_ = psoManager->GetComputePSO("VoxelParticleEmit");
+  updatePSO_ = psoManager->GetComputePSO("VoxelParticleUpdate");
   assert(initializePSO_ && emitPSO_ && updatePSO_);
 
   // --- Graphics PSO ---

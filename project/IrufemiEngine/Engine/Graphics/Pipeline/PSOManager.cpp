@@ -167,7 +167,28 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
     return nullptr;
 }
 
-void PSOManager::ClearCache() { cache_.clear(); }
+void PSOManager::RegisterComputeShader(const std::string& name, const Microsoft::WRL::ComPtr<IDxcBlob>& csBlob, ID3D12RootSignature* computeRootSig) {
+    if (!csBlob || !computeRootSig) return;
+    D3D12_COMPUTE_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = computeRootSig;
+    desc.CS = { csBlob->GetBufferPointer(), csBlob->GetBufferSize() };
+    ComPtr pso;
+    HRESULT hr = device_->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso.GetAddressOf()));
+    assert(SUCCEEDED(hr));
+    if (SUCCEEDED(hr)) {
+        computeCache_[name] = pso;
+    }
+}
+
+ID3D12PipelineState* PSOManager::GetComputePSO(const std::string& name) {
+    auto it = computeCache_.find(name);
+    return (it != computeCache_.end()) ? it->second.Get() : nullptr;
+}
+
+void PSOManager::ClearCache() { 
+    cache_.clear(); 
+    computeCache_.clear();
+}
 
 void PSOManager::PreWarmCommonPSOs() {
     // 1. 一般的な3Dオブジェクト (Opaque / 標準描画)

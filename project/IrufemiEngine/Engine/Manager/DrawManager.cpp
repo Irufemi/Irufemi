@@ -534,7 +534,7 @@ void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const Managed
 
     // --- コンピュートシェーダーによるスキニング実行 ---
     // PSOをコンピュート用に切り替え
-    commandList_->SetPipelineState(dxCommon_->GetSkinningComputePSO());
+    commandList_->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("Skinning"));
 
     // RootSignatureはSkipして共通のComputeRootSignatureを使用する想定
     // (PSO設定時にセットされているはずだが、念のため管理が必要な場合はここでセット)

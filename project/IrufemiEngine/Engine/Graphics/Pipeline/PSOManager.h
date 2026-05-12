@@ -88,6 +88,21 @@ public:
      */
     ID3D12PipelineState* GetPSO(const std::string& name, BlendMode blend, DepthWrite depth, CullMode cull);
 
+    /**
+     * @brief コンピュートシェーダの登録
+     * @param name シェーダの識別名
+     * @param csBlob コンピュートシェーダバイナリ
+     * @param computeRootSig コンピュート用ルートシグネチャ
+     */
+    void RegisterComputeShader(const std::string& name, const Microsoft::WRL::ComPtr<IDxcBlob>& csBlob, ID3D12RootSignature* computeRootSig);
+
+    /**
+     * @brief 登録済みコンピュートシェーダを用いたPSOの取得
+     * @param name 登録されたシェーダ名
+     * @return キャッシュされたコンピュートPSO
+     */
+    ID3D12PipelineState* GetComputePSO(const std::string& name);
+
     /** @brief 画面コピー用 PSO を取得 */
     ID3D12PipelineState* GetCopyImage();
     ///@}
@@ -124,6 +139,7 @@ private:
     struct KeyHash { size_t operator()(const Key& k)const { return static_cast<size_t>(k.hash); } };
 
     std::unordered_map<Key, ComPtr, KeyHash> cache_; ///< PSO キャッシュ
+    std::unordered_map<std::string, ComPtr> computeCache_; ///< Compute PSO キャッシュ
 
     /** @name 内部生成ヘルパー */
     ///@{

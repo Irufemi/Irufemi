@@ -49,13 +49,7 @@ void DirectXCommon::Finalize() {
     }
 
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
-    voxelParticleUpdatePSO_.Reset();
-    voxelParticleEmitPSO_.Reset();
-    gpuParticleUpdatePSO_.Reset();
-    gpuParticleInitializePSO_.Reset();
-    gpuParticleInitSortPSO_.Reset();
-    gpuParticleBitonicSortPSO_.Reset();
-    skinningComputePSO_.Reset();
+
     if (rootSignatureManager_) {
         rootSignatureManager_->Finalize();
         rootSignatureManager_.reset();
@@ -293,23 +287,16 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("SpriteForBackBuffer", spriteBBDesc);
 
     // --- Compute PSO生成 ---
-    auto createComputePSO = [&](const Microsoft::WRL::ComPtr<IDxcBlob>& blob, Microsoft::WRL::ComPtr<ID3D12PipelineState>& pso) {
-        D3D12_COMPUTE_PIPELINE_STATE_DESC desc{};
-        desc.pRootSignature = GetComputeRootSignature();
-        desc.CS = { blob->GetBufferPointer(), blob->GetBufferSize() };
-        HRESULT hr = device_->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso.GetAddressOf()));
-        assert(SUCCEEDED(hr));
-    };
-
-    createComputePSO(csSkin, skinningComputePSO_);
-    createComputePSO(csGpuInit, gpuParticleInitializePSO_);
-    createComputePSO(csGpuEmit, gpuParticleEmitPSO_);
-    createComputePSO(csGpuUpdate, gpuParticleUpdatePSO_);
-    createComputePSO(csGpuInitSort, gpuParticleInitSortPSO_);
-    createComputePSO(csGpuBitonicSort, gpuParticleBitonicSortPSO_);
-    createComputePSO(csVoxelInit, voxelParticleInitializePSO_);
-    createComputePSO(csVoxelEmit, voxelParticleEmitPSO_);
-    createComputePSO(csVoxelUpdate, voxelParticleUpdatePSO_);
+    auto computeRootSig = GetComputeRootSignature();
+    psoManager_->RegisterComputeShader("Skinning", csSkin, computeRootSig);
+    psoManager_->RegisterComputeShader("GpuParticleInitialize", csGpuInit, computeRootSig);
+    psoManager_->RegisterComputeShader("GpuParticleEmit", csGpuEmit, computeRootSig);
+    psoManager_->RegisterComputeShader("GpuParticleUpdate", csGpuUpdate, computeRootSig);
+    psoManager_->RegisterComputeShader("GpuParticleInitSort", csGpuInitSort, computeRootSig);
+    psoManager_->RegisterComputeShader("GpuParticleBitonicSort", csGpuBitonicSort, computeRootSig);
+    psoManager_->RegisterComputeShader("VoxelParticleInitialize", csVoxelInit, computeRootSig);
+    psoManager_->RegisterComputeShader("VoxelParticleEmit", csVoxelEmit, computeRootSig);
+    psoManager_->RegisterComputeShader("VoxelParticleUpdate", csVoxelUpdate, computeRootSig);
 
     // --- ビューポート・シザー矩形設定 ---
     viewport_.Width = static_cast<FLOAT>(clientWidth_);
@@ -692,19 +679,13 @@ void DirectXCommon::PreWarmJITCompile() {
         // SetPipelineState とダミー Dispatch(0,0,0) を発行し、
         // NVIDIAやIntelのドライバに対し、最初のDraw()より前に強制的に
         // ハードウェア専用のISA（機械語）へJITコンパイルさせる
-        ID3D12PipelineState* csPSOs[] = {
-            skinningComputePSO_.Get(),
-            gpuParticleInitializePSO_.Get(),
-            gpuParticleEmitPSO_.Get(),
-            gpuParticleUpdatePSO_.Get(),
-            gpuParticleInitSortPSO_.Get(),
-            gpuParticleBitonicSortPSO_.Get(),
-            voxelParticleInitializePSO_.Get(),
-            voxelParticleEmitPSO_.Get(),
-            voxelParticleUpdatePSO_.Get()
+        const char* csNames[] = {
+            "Skinning", "GpuParticleInitialize", "GpuParticleEmit", "GpuParticleUpdate",
+            "GpuParticleInitSort", "GpuParticleBitonicSort", "VoxelParticleInitialize",
+            "VoxelParticleEmit", "VoxelParticleUpdate"
         };
-        for (auto pso : csPSOs) {
-            if (pso) {
+        for (const char* name : csNames) {
+            if (auto pso = psoManager_->GetComputePSO(name)) {
                 uploadCommandList->SetPipelineState(pso);
             }
         }
