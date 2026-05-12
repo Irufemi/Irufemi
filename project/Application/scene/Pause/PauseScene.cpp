@@ -77,7 +77,7 @@ void PauseScene::Update() {
 void PauseScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    engine_->ApplySpritePSO();
+    engine_->ApplyPSO("Sprite");
 
     // 背景ディマー描画
     if (pauseBgDimmerSprite_) pauseBgDimmerSprite_->Draw();

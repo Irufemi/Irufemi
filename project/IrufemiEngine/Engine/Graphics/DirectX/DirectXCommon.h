@@ -242,15 +242,6 @@ public: // ゲッター
 	/** @name Compute Shader 関連の取得 */
 	///@{
 	ID3D12RootSignature* GetComputeRootSignature() const { return rootSignatureManager_->GetComputeRootSignature(); }
-	ID3D12PipelineState* GetSkinningComputePSO() const { return skinningComputePSO_.Get(); }
-	ID3D12PipelineState* GetGpuParticleInitializePSO() const { return gpuParticleInitializePSO_.Get(); }
-	ID3D12PipelineState* GetGpuParticleUpdatePSO() const { return gpuParticleUpdatePSO_.Get(); }
-	ID3D12PipelineState* GetGpuParticleEmitPSO() const { return gpuParticleEmitPSO_.Get(); }
-	ID3D12PipelineState* GetGpuParticleInitSortPSO() const { return gpuParticleInitSortPSO_.Get(); }
-	ID3D12PipelineState* GetGpuParticleBitonicSortPSO() const { return gpuParticleBitonicSortPSO_.Get(); }
-	ID3D12PipelineState* GetVoxelParticleInitializePSO() const { return voxelParticleInitializePSO_.Get(); }
-	ID3D12PipelineState* GetVoxelParticleEmitPSO() const { return voxelParticleEmitPSO_.Get(); }
-	ID3D12PipelineState* GetVoxelParticleUpdatePSO() const { return voxelParticleUpdatePSO_.Get(); }
 	///@}
 
 	/**
@@ -343,15 +334,7 @@ private: // メンバ変数
 	std::unique_ptr<PSOManager> psoManager_ = nullptr;
 
 	// --- Compute Shader ---
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> skinningComputePSO_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleInitializePSO_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleUpdatePSO_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleEmitPSO_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleInitSortPSO_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> gpuParticleBitonicSortPSO_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleInitializePSO_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleEmitPSO_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> voxelParticleUpdatePSO_ = nullptr;
+	// コンピュートシェーダはPSOManagerで一元管理されるようになりました
 
 	// --- 制御用クラス ---
 	std::unique_ptr<FrameRateController> fpsController_ = nullptr;

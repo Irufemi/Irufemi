@@ -44,32 +44,23 @@ void VoxelParticleSystem::Initialize(const std::string &modelName,
   status_.store(LoadingStatus::Loading);
 
   auto* modelManager = engine_->GetObjModelManager();
-  auto* textureManager = engine_->GetTextureManager();
 
   auto asyncData = std::make_shared<AsyncLoadData>();
   asyncData_ = asyncData;
 
-  // 非同期でボクセル化を開始
-  initializeFuture_ = modelManager->EnqueueTask([asyncData, modelName, resolution, modelManager, textureManager]() {
-    auto managedModel = modelManager->GetModel(modelName);
-    if (!managedModel || !managedModel->cpuModel) {
-      asyncData->status.store(LoadingStatus::Failed);
-      assert(false && "Failed to get model for voxelization.");
-      return;
-    }
+  // 非同期でボクセル化（またはキャッシュから取得）を開始
+  initializeFuture_ = modelManager->EnqueueTask([asyncData, modelName, resolution, modelManager]() {
+    // ModelManager側でキャッシュ済みのものがあればそれを返し、無ければ新規計算する
+    auto vModel = modelManager->GetVoxelizedModel(modelName, resolution);
 
-    // 重い計算（ボクセル化）
-    auto vModel = std::make_unique<VoxelizedModel>(ModelManager::VoxelizeModel(
-        *managedModel->cpuModel, resolution, textureManager));
-
-    if (vModel->voxels.empty()) {
+    if (!vModel || vModel->voxels.empty()) {
       asyncData->status.store(LoadingStatus::Failed);
-      OutputDebugStringA("[Voxel] ERROR: Voxel count is ZERO.\n");
+      OutputDebugStringA("[Voxel] ERROR: Voxel count is ZERO or failed to load.\n");
       return;
     }
 
     asyncData->voxelCount = static_cast<uint32_t>(vModel->voxels.size());
-    asyncData->voxelModel = std::move(vModel);
+    asyncData->voxelModel = vModel;
     // 計算完了
     asyncData->status.store(LoadingStatus::ReadyToCreateResources);
   });
@@ -457,13 +448,13 @@ void VoxelParticleSystem::CreatePSO() {
   auto *psoManager = dxCommon->GetPSOManager();
 
   // --- Compute PSO ---
-  initializePSO_ = dxCommon->GetVoxelParticleInitializePSO();
-  emitPSO_ = dxCommon->GetVoxelParticleEmitPSO();
-  updatePSO_ = dxCommon->GetVoxelParticleUpdatePSO();
+  initializePSO_ = psoManager->GetComputePSO("VoxelParticleInitialize");
+  emitPSO_ = psoManager->GetComputePSO("VoxelParticleEmit");
+  updatePSO_ = psoManager->GetComputePSO("VoxelParticleUpdate");
   assert(initializePSO_ && emitPSO_ && updatePSO_);
 
   // --- Graphics PSO ---
-  drawPSO_ = psoManager->GetVoxelParticle(BlendMode::kBlendModeNormal,
+  drawPSO_ = psoManager->GetPSO("VoxelParticle", BlendMode::kBlendModeNormal,
                                           PSOManager::DepthWrite::Enable,
                                           PSOManager::CullMode::Back);
   assert(drawPSO_);

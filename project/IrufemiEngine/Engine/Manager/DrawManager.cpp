@@ -534,7 +534,7 @@ void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const Managed
 
     // --- コンピュートシェーダーによるスキニング実行 ---
     // PSOをコンピュート用に切り替え
-    commandList_->SetPipelineState(dxCommon_->GetSkinningComputePSO());
+    commandList_->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("Skinning"));
 
     // RootSignatureはSkipして共通のComputeRootSignatureを使用する想定
     // (PSO設定時にセットされているはずだが、念のため管理が必要な場合はここでセット)
@@ -963,7 +963,7 @@ void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
             engine->SetDepthWrite(p.depthWrite);
             engine->SetCull(p.cullMode);
             // バックバッファへ直接描画する特別なPSOを適用
-            engine->ApplySpritePSOForBackBuffer();
+            engine->ApplyPSO("SpriteForBackBuffer");
             
             currentBlend = p.blendMode;
             currentDepth = p.depthWrite;

@@ -269,7 +269,7 @@ void ParticleSystem::Draw()
         s_engine_->SetBlend(selectedBlend_);
         s_engine_->SetDepthWrite(selectedDepth_);
         s_engine_->SetCull(selectedCull_);
-        s_engine_->ApplyParticlePSO();
+        s_engine_->ApplyPSO("Particle");
 
         // 描画
         if (s_drawManager_) {

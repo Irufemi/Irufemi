@@ -253,21 +253,11 @@ public: // セッター
     void SetCursorLocked(bool lock);
     bool IsCursorLocked() const;
 
-    // 状態からPSOを適用してBind(引数なしで使うやつ)
-    void ApplyPSO();
-    void ApplyParticlePSO();
-    void ApplySpritePSO();
-    void ApplySpritePSOForBackBuffer();
-    void ApplyRegionPSO();
-    void ApplyByGeometryShaderPSO();
-    void ApplyLinePSO();
-    void ApplyLineInstancedPSO();
-    void ApplySkinningPSO();
-    void ApplySkyboxPSO();
-    void ApplyGpuParticlePSO();
-    void ApplyShadowPSO();          // シャドウマップ(通常)
-    void ApplyShadowSkinningPSO();  // シャドウマップ(スキニング)
-    void ApplyLightningCrawlPSO();  // 電撃エフェクト [NEW]
+    /**
+     * @brief 登録されたシェーダー名と現在の状態からPSOを適用する
+     * @param shaderName 登録済みのシェーダー名 (例: "Object3D", "Sprite", "Particle" 等)
+     */
+    void ApplyPSO(const std::string& shaderName);
 
     /**
      * @brief 電撃エフェクト用パラメータを特設スロットにバインドする

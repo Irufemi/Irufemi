@@ -120,7 +120,7 @@ void GPUParticleSystem::Initialize(const std::string& textureName) {
             cmdList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
             
             // 1. 初期化シェーダーの実行 (VRAM上のデータ構造を初期化)
-            cmdList->SetPipelineState(dxCommon_->GetGpuParticleInitializePSO());
+            cmdList->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleInitialize"));
             cmdList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
             cmdList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
             cmdList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
@@ -140,8 +140,8 @@ void GPUParticleSystem::Initialize(const std::string& textureName) {
             
             // 2. Emit / Update シェーダーを空バインドして JIT 誘発
             // 実行はしない（Descriptor等も最低限のまま）
-            cmdList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
-            cmdList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
+            cmdList->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleEmit"));
+            cmdList->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleUpdate"));
         });
         isInitializedCS_ = true;
     } else {
@@ -588,7 +588,7 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
 
     // Emit
-    commandList->SetPipelineState(dxCommon_->GetGpuParticleEmitPSO());
+    commandList->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleEmit"));
     commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
     commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
     commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
@@ -606,7 +606,7 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
     });
 
     // Update
-    commandList->SetPipelineState(dxCommon_->GetGpuParticleUpdatePSO());
+    commandList->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleUpdate"));
     commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
     commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
     commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
@@ -621,7 +621,7 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
     
     // --- Bitonic Sort Phase ---
     // 1. Init Sort List
-    commandList->SetPipelineState(dxCommon_->GetGpuParticleInitSortPSO());
+    commandList->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleInitSort"));
     // Descriptor table mapping for InitParticleSort.CS.hlsl:
     // t0: Particle (u0 in RootSig index 0, wait, it's bound as SRV to slot 0)
     commandList->SetComputeRootDescriptorTable(0, particleSrvHandleGPU_);
@@ -636,7 +636,7 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
     DirectXUtils::UAVBarriers(commandList, { sortResource_.Get() });
     
     // 2. Execute Bitonic Sort
-    commandList->SetPipelineState(dxCommon_->GetGpuParticleBitonicSortPSO());
+    commandList->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleBitonicSort"));
     commandList->SetComputeRootDescriptorTable(8, sortUavHandleGPU_); // u0
     
     for (uint32_t k = 2; k <= kMaxParticles; k <<= 1) {

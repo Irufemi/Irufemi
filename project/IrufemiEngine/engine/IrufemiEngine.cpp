@@ -656,131 +656,32 @@ bool IrufemiEngine::IsCursorLocked() const {
   return false;
 }
 
-void IrufemiEngine::ApplyPSO() {
+void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
+  // Shadowパスの場合は自動的にシャドウ用シェーダに切り替える(元のコードの仕様維持)
   if (drawManager_->IsShadowPass()) {
-    ApplyShadowPSO();
-    return;
+      if (shaderName == "Object3D") {
+          auto* pso = GetPSOManager()->GetPSO("Shadow", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          if (pso) drawManager_->BindPSO(pso);
+          return;
+      }
+      else if (shaderName == "Skinning") {
+          auto* pso = GetPSOManager()->GetPSO("ShadowSkinning", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          if (pso) drawManager_->BindPSO(pso);
+          return;
+      }
+      // それ以外はシャドウパスでは描画しない(無視)
+      return;
   }
-  auto *pso = GetPSOManager()->Get(currentBlend_, currentDepth_, currentCull_);
-  assert(pso && "PSO is null. Check PSOManager::Initialize and shader blobs.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
+  
+  // Skybox用の特殊対応 (元のコードでは CullMode::Front 決め打ちでブレンドと深度は不要だった)
+  if (shaderName == "Skybox") {
+      auto* pso = GetPSOManager()->GetPSO("Skybox", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Front);
+      if (pso) drawManager_->BindPSO(pso);
+      return;
   }
-}
 
-void IrufemiEngine::ApplyParticlePSO() {
-  auto *pso =
-      GetPSOManager()->GetParticle(currentBlend_, currentDepth_, currentCull_);
-  assert(pso && "Particle PSO is null. Check particle shader setup.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplySpritePSO() {
-  auto *pso =
-      GetPSOManager()->GetSprite(currentBlend_, currentDepth_, currentCull_);
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplySpritePSOForBackBuffer() {
-  auto *pso = GetPSOManager()->GetSpriteForBackBuffer(
-      currentBlend_, currentDepth_, currentCull_);
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyRegionPSO() {
-  auto *pso =
-      GetPSOManager()->GetRegion(currentBlend_, currentDepth_, currentCull_);
-  drawManager_->BindPSO(pso);
-}
-
-void IrufemiEngine::ApplyByGeometryShaderPSO() {
-  auto *pso = GetPSOManager()->GetByGeometryShader(currentBlend_, currentDepth_,
-                                                   currentCull_);
-  assert(pso && "ByGeometryShader PSO is null. Check PSOManager::Initialize "
-                "and shader blobs.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyLinePSO() {
-  auto *pso =
-      GetPSOManager()->GetLine(currentBlend_, currentDepth_, currentCull_);
-  assert(pso &&
-         "Line PSO is null. Check PSOManager::Initialize and shader blobs.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyLineInstancedPSO() {
-  auto *pso = GetPSOManager()->GetLineInstanced(currentBlend_, currentDepth_,
-                                                currentCull_);
-  assert(pso && "LineInstanced PSO is null. Check PSOManager::Initialize and "
-                "shader blobs.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplySkinningPSO() {
-  if (drawManager_->IsShadowPass()) {
-    ApplyShadowSkinningPSO();
-    return;
-  }
-  auto *pso =
-      GetPSOManager()->GetSkinning(currentBlend_, currentDepth_, currentCull_);
-  assert(
-      pso &&
-      "Skinning PSO is null. Check PSOManager::Initialize and shader blobs.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplySkyboxPSO() {
-  // Skyboxは内側から見るので、前面カリング
-  auto *pso = GetPSOManager()->GetSkybox(PSOManager::CullMode::Front);
-  assert(pso && "Skybox PSO is null. Check Skybox shader setup.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyGpuParticlePSO() {
-  auto *pso = GetPSOManager()->GetGpuParticle(currentBlend_, currentDepth_,
-                                              currentCull_);
-  assert(pso && "GpuParticle PSO is null. Check GpuParticle shader setup.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-void IrufemiEngine::ApplyShadowPSO() {
-  auto *pso = GetPSOManager()->GetShadow(currentCull_);
-  assert(pso && "Shadow PSO is null. Check shadow shader setup.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyShadowSkinningPSO() {
-  auto *pso = GetPSOManager()->GetShadowSkinning(currentCull_);
-  assert(pso && "ShadowSkinning PSO is null. Check shadow shader setup.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyLightningCrawlPSO() {
-  auto *pso = GetPSOManager()->GetLightningCrawl(currentBlend_, currentDepth_,
-                                                 currentCull_);
-  assert(pso && "LightningCrawl PSO is null. Check shader setup.");
+  auto* pso = GetPSOManager()->GetPSO(shaderName, currentBlend_, currentDepth_, currentCull_);
+  assert(pso && ("PSO is null for " + shaderName).c_str());
   if (pso) {
     drawManager_->BindPSO(pso);
   }

@@ -135,7 +135,7 @@ private:
   void FinishInitialization();
 
 private:
-  std::unique_ptr<VoxelizedModel> voxelModel_;
+  std::shared_ptr<VoxelizedModel> voxelModel_;
 
   // GPUリソース
   Microsoft::WRL::ComPtr<ID3D12Resource> voxelBuffer_;
@@ -181,7 +181,7 @@ private:
   uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);
 
   struct AsyncLoadData {
-    std::unique_ptr<VoxelizedModel> voxelModel;
+    std::shared_ptr<VoxelizedModel> voxelModel;
     uint32_t voxelCount = 0;
     std::atomic<LoadingStatus> status{LoadingStatus::Loading};
   };

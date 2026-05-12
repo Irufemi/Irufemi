@@ -168,7 +168,7 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
 
     if (isAttackActive_ && attackCylinder_) {
         // 新しいカスタムPSOインジェクション基盤を使用して、専用のシェーダーと定数バッファをセットする
-        attackCylinder_->SetCustomPSO(engine->GetPSOManager()->GetLightningCrawl(BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+        attackCylinder_->SetCustomPSO(engine->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
         if (lightningParamsResource_) {
             attackCylinder_->SetCustomCBVAddress(lightningParamsResource_->GetGPUVirtualAddress());
         }
