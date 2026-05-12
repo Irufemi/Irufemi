@@ -1,5 +1,5 @@
 #include "TransformComponent.h"
-#include "GameObject.h"
+#include "../GameObject.h"
 #include "Engine/Core/Math/MathFunction.h"
 
 #ifdef EditorMode

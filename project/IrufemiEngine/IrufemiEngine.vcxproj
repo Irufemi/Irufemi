@@ -218,6 +218,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\TransformComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp" />
+    <ClCompile Include="Framework\Component\Collider\AABBColliderComponent.cpp" />
+    <ClCompile Include="Engine\Manager\CollisionManager.cpp" />
     <ClCompile Include="Framework\SceneTransition.cpp" />
     <ClCompile Include="Framework\BaseScene.cpp" />
     <ClCompile Include="Renderer\Object2D\Sprite\Sprite.cpp" />
@@ -337,6 +339,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
     <ClInclude Include="Framework\Component\TransformComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h" />
+    <ClInclude Include="Framework\Component\Collider\ColliderComponent.h" />
+    <ClInclude Include="Framework\Component\Collider\AABBColliderComponent.h" />
+    <ClInclude Include="Engine\Manager\CollisionManager.h" />
     <ClInclude Include="Framework\SceneTransition.h" />
     <ClInclude Include="Framework\BaseScene.h" />
     <ClInclude Include="Renderer\Core\IRenderable.h" />

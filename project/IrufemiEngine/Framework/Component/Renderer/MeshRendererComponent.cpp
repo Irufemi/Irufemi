@@ -1,3 +1,4 @@
+#include "MeshRendererComponent.h"
 #include <imgui.h>
 #include "../../GameObject.h"
 #include "../TransformComponent.h"

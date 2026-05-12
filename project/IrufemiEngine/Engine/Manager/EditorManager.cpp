@@ -12,6 +12,7 @@
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "Engine/Manager/CollisionManager.h"
 
 void EditorManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
@@ -83,6 +84,12 @@ void EditorManager::DrawEditorUI() {
 
 void EditorManager::DrawSceneView() {
     ImGui::Begin("Scene");
+
+    // デバッグ線の描画ON/OFF
+    bool* drawCollider = CollisionManager::GetInstance().GetIsDrawDebugLinePtr();
+    if (drawCollider) {
+        ImGui::Checkbox("Draw Colliders", drawCollider);
+    }
 
     // エンジンからメインの描画結果（RenderTexture）を取得して画像として表示
     if (engine_ && engine_->GetMainRenderTexture()) {

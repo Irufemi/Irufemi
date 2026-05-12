@@ -6,6 +6,7 @@
 #include "Component/Renderer/MeshRendererComponent.h"
 #include "Component/Renderer/PrimitiveRendererComponent.h"
 #include "Component/Renderer/SpriteRendererComponent.h"
+#include "Component/Collider/AABBColliderComponent.h"
 #endif
 void GameObject::Initialize() {
     for (auto& comp : components_) {
@@ -119,6 +120,15 @@ void GameObject::OnInspectorGUI() {
         }
         
         // 今後コンポーネントが増えたらここに追加
+        if (ImGui::BeginMenu("Collider")) {
+            bool hasAABBCollider = GetComponent<AABBColliderComponent>() != nullptr;
+            if (!hasAABBCollider) {
+                if (ImGui::Selectable("AABBColliderComponent")) AddComponent<AABBColliderComponent>();
+            } else {
+                ImGui::TextDisabled("AABBColliderComponent (Already added)");
+            }
+            ImGui::EndMenu();
+        }
         
         ImGui::EndPopup();
     }
@@ -162,6 +172,7 @@ void GameObject::Deserialize(const nlohmann::json& j) {
             else if (type == "MeshRendererComponent") newComp = AddComponent<MeshRendererComponent>();
             else if (type == "PrimitiveRendererComponent") newComp = AddComponent<PrimitiveRendererComponent>();
             else if (type == "SpriteRendererComponent") newComp = AddComponent<SpriteRendererComponent>();
+            else if (type == "AABBColliderComponent") newComp = AddComponent<AABBColliderComponent>();
             
             if (newComp && cj.contains("data")) {
                 newComp->Deserialize(cj["data"]);

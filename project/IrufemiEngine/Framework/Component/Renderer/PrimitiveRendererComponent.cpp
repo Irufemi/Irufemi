@@ -1,3 +1,4 @@
+#include "PrimitiveRendererComponent.h"
 #include <imgui.h>
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
@@ -10,8 +11,8 @@ PrimitiveRendererComponent::~PrimitiveRendererComponent() {}
 
 void PrimitiveRendererComponent::Initialize() {
     primitive_ = std::make_unique<PrimitiveObjects3DClass>();
-    // 初期値として Cube を生成
-    primitive_->Initialize(PrimitiveType::Cube);
+    // 設定された形状（デフォルトはCube）で初期化
+    primitive_->Initialize(static_cast<PrimitiveType>(currentTypeIndex_));
 
     if (gameObject_) {
         transform_ = gameObject_->GetComponent<TransformComponent>();
@@ -37,9 +38,9 @@ void PrimitiveRendererComponent::Draw() {
 }
 
 void PrimitiveRendererComponent::SetShape(PrimitiveType type) {
+    currentTypeIndex_ = static_cast<int>(type);
     if (primitive_) {
         primitive_->SetShape(type);
-        currentTypeIndex_ = static_cast<int>(type);
     }
 }
 

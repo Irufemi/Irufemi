@@ -10,6 +10,7 @@
 #include "Engine/Graphics/Data/DirectionalLight.h"
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "GameObject.h"
+#include "Engine/Manager/CollisionManager.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
 
@@ -38,6 +39,9 @@ void BaseScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
     directionalLight_->direction = { 0.5f, -0.7f, 1.0f };
     directionalLight_->intensity = 1.0f;
+    
+    CollisionManager::GetInstance().Initialize();
+    CollisionManager::GetInstance().Clear();
 }
 
 void BaseScene::Update() {
@@ -60,6 +64,8 @@ void BaseScene::Update() {
     for (auto& obj : gameObjects_) {
         if (obj && !obj->GetParent()) obj->Update();
     }
+    
+    CollisionManager::GetInstance().CheckAllCollisions();
 
     SubmitFrameData();
 }
@@ -69,6 +75,10 @@ void BaseScene::Draw() {
     for (auto& obj : gameObjects_) {
         if (obj && !obj->GetParent()) obj->Draw();
     }
+    
+#ifdef EditorMode
+    CollisionManager::GetInstance().DrawDebug();
+#endif
 }
 
 void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {

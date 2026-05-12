@@ -10,6 +10,9 @@
     <Filter Include="Framework\Component\Renderer">
       <UniqueIdentifier>{e8b9b8b9-e1e5-4e08-9b8b-3e5f2b3e4e5f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Framework\Component\Collider">
+      <UniqueIdentifier>{f7b9b8b9-e1e5-4e08-9b8b-3e5f2b3e4e5f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Renderer">
       <UniqueIdentifier>{49562265-8288-4286-9d7a-998da039a121}</UniqueIdentifier>
     </Filter>
@@ -414,6 +417,12 @@
     </ClCompile>
     <ClCompile Include="Framework\Component\TransformComponent.cpp">
       <Filter>Framework\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\Collider\AABBColliderComponent.cpp">
+      <Filter>Framework\Component\Collider</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Manager\CollisionManager.cpp">
+      <Filter>Engine\Manager</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
@@ -878,6 +887,15 @@
     </ClInclude>
     <ClInclude Include="Framework\Component\TransformComponent.h">
       <Filter>Framework\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Collider\ColliderComponent.h">
+      <Filter>Framework\Component\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Collider\AABBColliderComponent.h">
+      <Filter>Framework\Component\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Manager\CollisionManager.h">
+      <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
