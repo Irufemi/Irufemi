@@ -8,6 +8,7 @@ class Camera;
 class IrufemiEngine;
 class VoxelParticleSystem;
 class ObjClass;
+class CylinderClass;
 
 class Head {
 public:
@@ -24,6 +25,8 @@ public:
 
   void SetHP(int hp) { hp_ = hp; }
   int GetHP() const { return hp_; }
+
+  void SetPhase2(bool isPhase2) { isPhase2_ = isPhase2; }
 
   // Transformを一括設定する（回転やスケールも含めて上書き）
   void SetTransform(const Transform& transform, const Vector3* drawWorldPos = nullptr);
@@ -63,4 +66,6 @@ private:
   float disappearTimer_ = 0.0f;
 
   std::unique_ptr<VoxelParticleSystem> voxelSystem_ = nullptr;
+  std::shared_ptr<CylinderClass> thrusterFlame_ = nullptr;
+  bool isPhase2_ = false;
 };

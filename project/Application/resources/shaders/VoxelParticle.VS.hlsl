@@ -3,14 +3,12 @@
 
 // struct VSInput は VertexData.hlsli (VertexInput) で定義
 
+#include "PerFrame.hlsli"
+
 // パーティクルごとのデータ
 StructuredBuffer<VoxelParticle> gParticles : register(t1);
-struct CameraForGPU {
-	float4x4 view;
-	float4x4 projection;
-	float3 worldPosition;
-};
-ConstantBuffer<CameraForGPU> gCamera : register(b2);
+
+ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 ConstantBuffer<VoxelEmitter> gEmitter : register(b0);
 
 VertexShaderOutput main(VertexInput input, uint instanceID : SV_InstanceID)
@@ -41,8 +39,8 @@ VertexShaderOutput main(VertexInput input, uint instanceID : SV_InstanceID)
         worldPos.xyz = float3(0, -10000, 0);
     }
     
-	float4 viewPos = mul(worldPos, gCamera.view);
-	output.position = mul(viewPos, gCamera.projection);
+	float4 viewPos = mul(worldPos, gPerFrame.view);
+	output.position = mul(viewPos, gPerFrame.projection);
 	output.worldPosition = worldPos.xyz;
 
     // 法線変換（パーティクル固有の法線を渡す）

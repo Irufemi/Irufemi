@@ -1,10 +1,12 @@
 #include "Head.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
+#include "Renderer/Object3D/Primitive/CylinderClass.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "actors/enemy/EnemyParameters.h"
 #include "Engine/Core/Math/Math.h"
 #include "IrufemiEngine.h"
+#include "Renderer/ParticleGPU/GPUParticleSystem.h"
 #include <algorithm>
 #include <cmath>
 
@@ -20,6 +22,25 @@ void Head::Initialize(const Vector3& initialPos) {
 
   voxelSystem_ = std::make_unique<VoxelParticleSystem>();
   voxelSystem_->Initialize("enemy/head.obj", {32, 32, 32});
+
+  // ロケット噴射炎の初期化（シリンダーメッシュを使用）
+  thrusterFlame_ = std::make_shared<CylinderClass>();
+  // 蓋なし（hasTop=false, hasBottom=false）の筒として作成
+  thrusterFlame_->Initialize(false, false, "resources/noise0.png");
+  thrusterFlame_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+  thrusterFlame_->SetCastShadows(false);
+
+  // 煙エフェクトの初期化
+  smokeParticle_ = std::make_unique<GPUParticleSystem>();
+  smokeParticle_->Initialize("resources/circle.png");
+  smokeParticle_->SetBillboard(true);
+  smokeParticle_->SetBlend(BlendMode::kBlendModeAlpha);
+  smokeParticle_->SetParticleScale({0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {3.0f, 3.0f, 3.0f}, {5.0f, 5.0f, 5.0f});
+  smokeParticle_->SetParticleLife(1.0f, 2.0f);
+  smokeParticle_->SetVelocity(0.2f);
+  smokeParticle_->SetJitter(0.1f);
+  // 煙なので少し上昇するように重力をマイナス（上方向）に設定
+  smokeParticle_->SetSphereEmitter({0,0,0}, 0.5f, 5, 0.05f); 
 }
 
 void Head::Update() {
@@ -97,6 +118,39 @@ void Head::Update() {
     }
     obj_->SetColor(color);
   }
+
+  // ロケット噴射炎の更新
+  if (thrusterFlame_ && isPhase2_ && !isBlownAway_) {
+    // 首の下端から噴射するように配置
+    // cylinderの高さ方向の中心が center なので、高さを考慮してオフセット
+    float flameHeight = 4.0f * transform_.scale.y;
+    float flameRadius = 0.8f * transform_.scale.x;
+    
+    // 向きは首の回転に合わせる
+    Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(transform_.rotate);
+    Vector3 localDown = { -rotMat.m[1][0], -rotMat.m[1][1], -rotMat.m[1][2] }; // Y軸の下方向
+    
+    // 中心位置を計算（首の原点から少し下にずらした場所がシリンダーの中心）
+    Vector3 flameCenter = Math::Add(drawPosition_, Math::Multiply(flameHeight * 0.5f, localDown));
+    
+    thrusterFlame_->SetCenter(flameCenter);
+    // CylinderClassのSetRotateは通常の状態から Y軸を軸とした回転を想定しているが、
+    // 内部で Math::PI/2.0f 補正が必要な場合がある（EnemyBeam.cppを参考にする）
+    thrusterFlame_->SetRotate(transform_.rotate);
+    thrusterFlame_->SetRadius(flameRadius);
+    thrusterFlame_->SetHeight(flameHeight);
+    thrusterFlame_->Update();
+
+    // 煙エフェクトの更新（炎の先端付近から出す）
+    if (smokeParticle_) {
+        // 炎の先端（中心からさらに localDown 方向に半分進んだ位置）
+        Vector3 smokePos = Math::Add(flameCenter, Math::Multiply(flameHeight * 0.4f, localDown));
+        smokeParticle_->SetSphereEmitter(smokePos, flameRadius * 1.2f, 3, 0.03f);
+        smokeParticle_->Update();
+        // ComputeTask として登録
+        engine_->GetDrawManager()->RegisterComputeTask(smokeParticle_.get());
+    }
+  }
 }
 
 void Head::Draw(IrufemiEngine* engine) {
@@ -113,6 +167,29 @@ void Head::Draw(IrufemiEngine* engine) {
       engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
       engine->SetCull(PSOManager::CullMode::Back);
       voxelSystem_->Draw();
+  }
+
+  // ロケット噴射炎の描画
+  if (thrusterFlame_ && isPhase2_ && !isBlownAway_) {
+    // カスタムPSO(RocketFlame)を適用
+    auto pso = engine->GetPSOManager()->GetPSO("RocketFlame", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+    thrusterFlame_->SetCustomPSO(pso);
+
+    engine->SetBlend(BlendMode::kBlendModeAdd);
+    engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    engine->SetCull(PSOManager::CullMode::None);
+
+    thrusterFlame_->Draw();
+
+    // 煙エフェクトの描画
+    if (smokeParticle_) {
+        smokeParticle_->Draw();
+    }
+
+    // 状態を元に戻す
+    engine->SetBlend(BlendMode::kBlendModeNormal);
+    engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
+    engine->SetCull(PSOManager::CullMode::Back);
   }
 }
 

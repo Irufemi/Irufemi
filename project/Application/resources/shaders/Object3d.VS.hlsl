@@ -18,12 +18,9 @@ ConstantBuffer<LightCommonData> gLightCommonData : register(b1);
 
 // struct VertexShaderInput は VertexData.hlsli にて定義
 
-struct PerFrame {
-	float32_t4x4 view;
-	float32_t4x4 projection;
-	float32_t3 worldPosition;
-};
-ConstantBuffer<PerFrame> gPerFrame : register(b2);
+#include "PerFrame.hlsli"
+
+ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
 /*テクスチャを貼ろう*/
 
