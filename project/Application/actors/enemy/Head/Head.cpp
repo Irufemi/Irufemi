@@ -30,17 +30,6 @@ void Head::Initialize(const Vector3& initialPos) {
   thrusterFlame_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
   thrusterFlame_->SetCastShadows(false);
 
-  // 煙エフェクトの初期化
-  smokeParticle_ = std::make_unique<GPUParticleSystem>();
-  smokeParticle_->Initialize("resources/circle.png");
-  smokeParticle_->SetBillboard(true);
-  smokeParticle_->SetBlend(BlendMode::kBlendModeAlpha);
-  smokeParticle_->SetParticleScale({0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {3.0f, 3.0f, 3.0f}, {5.0f, 5.0f, 5.0f});
-  smokeParticle_->SetParticleLife(1.0f, 2.0f);
-  smokeParticle_->SetVelocity(0.2f);
-  smokeParticle_->SetJitter(0.1f);
-  // 煙なので少し上昇するように重力をマイナス（上方向）に設定
-  smokeParticle_->SetSphereEmitter({0,0,0}, 0.5f, 5, 0.05f); 
 }
 
 void Head::Update() {
@@ -134,22 +123,11 @@ void Head::Update() {
     Vector3 flameCenter = Math::Add(drawPosition_, Math::Multiply(flameHeight * 0.5f, localDown));
     
     thrusterFlame_->SetCenter(flameCenter);
-    // CylinderClassのSetRotateは通常の状態から Y軸を軸とした回転を想定しているが、
-    // 内部で Math::PI/2.0f 補正が必要な場合がある（EnemyBeam.cppを参考にする）
     thrusterFlame_->SetRotate(transform_.rotate);
     thrusterFlame_->SetRadius(flameRadius);
     thrusterFlame_->SetHeight(flameHeight);
     thrusterFlame_->Update();
 
-    // 煙エフェクトの更新（炎の先端付近から出す）
-    if (smokeParticle_) {
-        // 炎の先端（中心からさらに localDown 方向に半分進んだ位置）
-        Vector3 smokePos = Math::Add(flameCenter, Math::Multiply(flameHeight * 0.4f, localDown));
-        smokeParticle_->SetSphereEmitter(smokePos, flameRadius * 1.2f, 3, 0.03f);
-        smokeParticle_->Update();
-        // ComputeTask として登録
-        engine_->GetDrawManager()->RegisterComputeTask(smokeParticle_.get());
-    }
   }
 }
 
@@ -181,10 +159,6 @@ void Head::Draw(IrufemiEngine* engine) {
 
     thrusterFlame_->Draw();
 
-    // 煙エフェクトの描画
-    if (smokeParticle_) {
-        smokeParticle_->Draw();
-    }
 
     // 状態を元に戻す
     engine->SetBlend(BlendMode::kBlendModeNormal);
