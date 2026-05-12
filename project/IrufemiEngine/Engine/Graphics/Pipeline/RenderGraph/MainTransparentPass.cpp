@@ -34,8 +34,8 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
                 if (p.customPSO) {
                     drawManager->BindPSO(p.customPSO);
                 } else {
-                    if (isParticle) engine->ApplyParticlePSO();
-                    else if (isLine) engine->ApplyLineInstancedPSO();
+                    if (isParticle) engine->ApplyPSO("Particle");
+                    else if (isLine) engine->ApplyPSO("LineInstanced");
                 }
                 
                 currentBlend = p.blendMode;
@@ -74,7 +74,7 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
                 engine->SetBlend(p.blendMode);
                 engine->SetDepthWrite(p.depthWrite);
                 engine->SetCull(p.cullMode);
-                engine->ApplyGpuParticlePSO();
+                engine->ApplyPSO("GpuParticle");
                 currentBlend = p.blendMode; currentDepth = p.depthWrite; currentCull = p.cullMode;
                 first = false;
             }

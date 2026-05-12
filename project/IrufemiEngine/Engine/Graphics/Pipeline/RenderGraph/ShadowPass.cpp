@@ -24,7 +24,7 @@ void ShadowPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
             
             if (first || p.cullMode != currentCull) {
                 engine->SetCull(p.cullMode);
-                engine->ApplyPSO(); // BeginShadowPass中なので自動的にShadowPSOが適用される
+                engine->ApplyPSO("Object3D"); // BeginShadowPass中なので自動的にShadowPSOが適用される
                 currentCull = p.cullMode;
                 first = false;
             }

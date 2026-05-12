@@ -963,7 +963,7 @@ void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
             engine->SetDepthWrite(p.depthWrite);
             engine->SetCull(p.cullMode);
             // バックバッファへ直接描画する特別なPSOを適用
-            engine->ApplySpritePSOForBackBuffer();
+            engine->ApplyPSO("SpriteForBackBuffer");
             
             currentBlend = p.blendMode;
             currentDepth = p.depthWrite;

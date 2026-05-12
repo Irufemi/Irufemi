@@ -250,22 +250,47 @@ void DirectXCommon::CreatePSOs() {
         { inputElementDescs, _countof(inputElementDescs) },
         DXGI_FORMAT_R8G8B8A8_UNORM,
         DXGI_FORMAT_D24_UNORM_S8_UINT,
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
-        { vs3d, ps3d },
-        { vsParticle, psParticle },
-        { vsSprite, psSprite },
-        { vsRegion, ps3d },
-        { vsGeo, psGeo, gsGeo },
-        { vsLine, psLine },
-        { vsLineInst, psLineInst },
-        { vsSkin, ps3d },
-        { vsSkybox, psSkybox },
-        { vsGpuParticle, psGpuParticle },
-        { vsVoxel, psVoxel },
-        { vsShadow, nullptr },     // shadowShaders
-        { vsShadowSkin, nullptr }, // shadowSkinningShaders
-        { vs3d, psLightning }     // lightningShaders [NEW]
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
     );
+
+    // --- 各種シェーダの登録 ---
+    psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });
+    psoManager_->RegisterShader("Particle", { { vsParticle, psParticle } });
+    psoManager_->RegisterShader("Sprite", { { vsSprite, psSprite } });
+    psoManager_->RegisterShader("Region", { { vsRegion, ps3d } });
+    
+    // ByGeometryShaderはPOINTトポロジ
+    psoManager_->RegisterShader("ByGeometryShader", { { vsGeo, psGeo, gsGeo }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT });
+    
+    // LineとLineInstancedはLINEトポロジ
+    psoManager_->RegisterShader("Line", { { vsLine, psLine }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
+    psoManager_->RegisterShader("LineInstanced", { { vsLineInst, psLineInst }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
+    
+    psoManager_->RegisterShader("Skinning", { { vsSkin, ps3d } });
+    psoManager_->RegisterShader("Skybox", { { vsSkybox, psSkybox } });
+    psoManager_->RegisterShader("GpuParticle", { { vsGpuParticle, psGpuParticle } });
+    psoManager_->RegisterShader("VoxelParticle", { { vsVoxel, psVoxel } });
+    
+    // シャドウマップ(通常) - 深度のみ
+    PSOManager::PipelineStateDesc shadowDesc{};
+    shadowDesc.shaders = { vsShadow, nullptr };
+    shadowDesc.isDepthOnly = true;
+    psoManager_->RegisterShader("Shadow", shadowDesc);
+
+    // シャドウマップ(スキニング) - 深度のみ
+    PSOManager::PipelineStateDesc shadowSkinDesc{};
+    shadowSkinDesc.shaders = { vsShadowSkin, nullptr };
+    shadowSkinDesc.isDepthOnly = true;
+    psoManager_->RegisterShader("ShadowSkinning", shadowSkinDesc);
+
+    psoManager_->RegisterShader("LightningCrawl", { { vs3d, psLightning } });
+
+    // バックバッファ書き込み用のスプライト設定
+    PSOManager::PipelineStateDesc spriteBBDesc{};
+    spriteBBDesc.shaders = { vsSprite, psSprite };
+    spriteBBDesc.rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    spriteBBDesc.disableDepthTest = true;
+    psoManager_->RegisterShader("SpriteForBackBuffer", spriteBBDesc);
 
     // --- Compute PSO生成 ---
     auto createComputePSO = [&](const Microsoft::WRL::ComPtr<IDxcBlob>& blob, Microsoft::WRL::ComPtr<ID3D12PipelineState>& pso) {
@@ -690,7 +715,7 @@ void DirectXCommon::PreWarmJITCompile() {
         
         if (psoManager_) {
             // 例: 高負荷な特殊パイプライン(電撃エフェクト等)
-            auto lightningPSO = psoManager_->GetLightningCrawl(BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+            auto lightningPSO = psoManager_->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
             if (lightningPSO) {
                 uploadCommandList->SetPipelineState(lightningPSO);
             }

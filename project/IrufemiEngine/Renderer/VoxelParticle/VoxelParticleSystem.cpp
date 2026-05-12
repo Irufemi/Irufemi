@@ -454,7 +454,7 @@ void VoxelParticleSystem::CreatePSO() {
   assert(initializePSO_ && emitPSO_ && updatePSO_);
 
   // --- Graphics PSO ---
-  drawPSO_ = psoManager->GetVoxelParticle(BlendMode::kBlendModeNormal,
+  drawPSO_ = psoManager->GetPSO("VoxelParticle", BlendMode::kBlendModeNormal,
                                           PSOManager::DepthWrite::Enable,
                                           PSOManager::CullMode::Back);
   assert(drawPSO_);

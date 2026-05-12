@@ -14,7 +14,7 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     // 1. Skybox
     const auto& skyboxQueue = drawManager->GetSkyboxQueue();
     if (!skyboxQueue.empty()) {
-        engine->ApplySkyboxPSO();
+        engine->ApplyPSO("Skybox");
         for (const auto& p : skyboxQueue) {
             drawManager->DrawSkybox(p);
         }
@@ -66,11 +66,11 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     };
     
     // 2. Standard 3D (Opaque and Alpha blend)
-    DrawWithPSO(drawManager->GetStandard3DQueue(), [&]() { engine->ApplyPSO(); }, [&](const auto& p) { drawManager->DrawStandard3D(p); });
+    DrawWithPSO(drawManager->GetStandard3DQueue(), [&]() { engine->ApplyPSO("Object3D"); }, [&](const auto& p) { drawManager->DrawStandard3D(p); });
     
-    // 3. Region
-    DrawWithPSO(drawManager->GetPrimitiveRegionQueue(), [&]() { engine->ApplyRegionPSO(); }, [&](const auto& p) { drawManager->DrawPrimitiveRegion(p); });
+    // PrimitiveRegion
+    DrawWithPSO(drawManager->GetPrimitiveRegionQueue(), [&]() { engine->ApplyPSO("Region"); }, [&](const auto& p) { drawManager->DrawPrimitiveRegion(p); });
 
-    // 3.5 ModelRegion
-    DrawWithPSO(drawManager->GetModelRegionQueue(), [&]() { engine->ApplyRegionPSO(); }, [&](const auto& p) { drawManager->DrawModelRegion(p); });
+    // ModelRegion
+    DrawWithPSO(drawManager->GetModelRegionQueue(), [&]() { engine->ApplyPSO("Region"); }, [&](const auto& p) { drawManager->DrawModelRegion(p); });
 }

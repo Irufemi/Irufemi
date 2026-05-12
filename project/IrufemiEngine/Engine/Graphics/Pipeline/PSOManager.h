@@ -45,9 +45,22 @@ public:
         Microsoft::WRL::ComPtr<IDxcBlob> gsBlob; ///< ジオメトリシェーダ（任意）
     };
 
+    /** @struct PipelineStateDesc
+     *  @brief PSO生成に必要な設定をまとめた構造体
+     */
+    struct PipelineStateDesc {
+        ShaderSet shaders;
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        DXGI_FORMAT rtvFormat = DXGI_FORMAT_UNKNOWN; // UNKNOWNの場合はManagerのデフォルトを使用
+        DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN; // UNKNOWNの場合はManagerのデフォルトを使用
+        bool isDepthOnly = false;       // シャドウマップなど、RTVを持たないパス用
+        bool disableDepthTest = false;  // バックバッファ書き込みなど、深度テストを無効化する用
+        bool useNullInputLayout = false;// CopyImageなど、頂点バッファを入力としないパス用
+    };
+
     /**
      * @brief 初期化処理
-     * @details 各種描画コンポーネント用の基本シェーダセットを登録します。
+     * @details デバイスや共通フォーマットを保持します。
      */
     void Initialize(
         ID3D12Device* device,
@@ -55,61 +68,26 @@ public:
         const D3D12_INPUT_LAYOUT_DESC& inputLayout,
         DXGI_FORMAT rtvFormat,
         DXGI_FORMAT dsvFormat,
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
-        ShaderSet objectShaders,         // 既存：Object3D.VS/PS など
-        ShaderSet particleShaders = {}, // パーティクル専用 VS/PS
-        ShaderSet spriteShaders = {},
-        ShaderSet regionShaders = {},
-        ShaderSet byGeometryShaderShaders = {},
-        ShaderSet lineShaders = {},
-        ShaderSet lineInstancedShaders = {},
-        ShaderSet skinningShaders = {},
-        ShaderSet skyboxShaders = {},
-        ShaderSet gpuParticleShaders = {},
-        ShaderSet voxelParticleShaders = {},
-        ShaderSet shadowShaders = {},       // シャドウマップ用 (通常)
-        ShaderSet shadowSkinningShaders = {}, // シャドウマップ用 (スキニング)
-        ShaderSet lightningShaders = {}     // 電撃エフェクト用 [NEW]
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
     );
 
-    /** @name PSO取得（各種コンポーネント用） */
-    ///@{
-    /** @brief 通常オブジェクト用（静的メッシュ等） */
-    ID3D12PipelineState* Get(BlendMode blend, DepthWrite depth, CullMode cull);
-    /** @brief CPU制御パーティクル用 */
-    ID3D12PipelineState* GetParticle(BlendMode blend, DepthWrite depth, CullMode cull);
-    /** @brief 2Dスプライト用 */
-    ID3D12PipelineState* GetSprite(BlendMode blend, DepthWrite depth, CullMode cull);
-    /** @brief バックバッファ(SRGB)へ直接描画する2Dスプライト用 */
-    ID3D12PipelineState* GetSpriteForBackBuffer(BlendMode blend, DepthWrite depth, CullMode cull);
-    /** @brief デバッグ・エディタ等の領域表示用 */
-    ID3D12PipelineState* GetRegion(BlendMode b, DepthWrite d, CullMode c);
-    /** @brief ジオメトリシェーダを使用する描画用 */
-    ID3D12PipelineState* GetByGeometryShader(BlendMode blend, DepthWrite depth, CullMode cull);
-    /** @brief 単一ライン描画用 */
-    ID3D12PipelineState* GetLine(BlendMode blend, DepthWrite depth, CullMode cull);
-    /** @brief インスタンシング対応ライン描画用 */
-    ID3D12PipelineState* GetLineInstanced(BlendMode blend, DepthWrite depth, CullMode cull);
-    /** @brief スキニング（ボーンアニメーション）対応オブジェクト用 */
-    ID3D12PipelineState* GetSkinning(BlendMode blend, DepthWrite depth, CullMode cull);
-    /** @brief スカイボックス用（カリングのみ指定） */
-    ID3D12PipelineState* GetSkybox(CullMode cull);
-    /** @brief GPUパーティクル描画用 */
-    ID3D12PipelineState* GetGpuParticle(BlendMode blend, DepthWrite depth, CullMode cull);
-    /** @brief Voxelパーティクル描画用 */
-    ID3D12PipelineState* GetVoxelParticle(BlendMode blend, DepthWrite depth, CullMode cull);
-    /** @brief シャドウマップ生成用 (通常) */
-    ID3D12PipelineState* GetShadow(CullMode cull);
-    /** @brief シャドウマップ生成用 (スキニング) */
-    ID3D12PipelineState* GetShadowSkinning(CullMode cull);
-    /** @brief 電撃エフェクト (Lightning Crawl) 用 [NEW] */
-    ID3D12PipelineState* GetLightningCrawl(BlendMode blend, DepthWrite depth, CullMode cull);
-    ///@}
+    /**
+     * @brief シェーダの登録
+     * @param name シェーダの識別名
+     * @param desc PSO生成情報
+     */
+    void RegisterShader(const std::string& name, const PipelineStateDesc& desc);
 
-    /** @name ポストプロセス・コピー */
-    ///@{
-    /** @brief 画面コピー用シェーダを設定 */
-    void SetCopyImageShaders(const ShaderSet& shaders) { copyImageShaders_ = shaders; }
+    /**
+     * @brief 登録済みシェーダを用いたPSOの取得
+     * @param name 登録されたシェーダ名
+     * @param blend ブレンドモード
+     * @param depth 深度の扱い
+     * @param cull カリングモード
+     * @return キャッシュまたは新規生成されたPSO
+     */
+    ID3D12PipelineState* GetPSO(const std::string& name, BlendMode blend, DepthWrite depth, CullMode cull);
+
     /** @brief 画面コピー用 PSO を取得 */
     ID3D12PipelineState* GetCopyImage();
     ///@}
@@ -134,22 +112,8 @@ private:
     DXGI_FORMAT dsvFormat_{ DXGI_FORMAT_D24_UNORM_S8_UINT };
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_{ D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE };
 
-    // 各用途ごとのベースシェーダ
-    ShaderSet objectShaders_{};
-    ShaderSet particleShaders_{};
-    ShaderSet spriteShaders_{};
-    ShaderSet blocksShaders_{};
-    ShaderSet byGeometryShaderShaders_{};
-    ShaderSet lineShaders_{};
-    ShaderSet lineInstancedShaders_{};
-    ShaderSet skinningShaders_{};
-    ShaderSet skyboxShaders_{};
-    ShaderSet gpuParticleShaders_{};
-    ShaderSet voxelParticleShaders_{};
-    ShaderSet copyImageShaders_{};
-    ShaderSet shadowShaders_{};
-    ShaderSet shadowSkinningShaders_{};
-    ShaderSet lightningShaders_{}; // [NEW]
+    std::unordered_map<std::string, PipelineStateDesc> shaderRegistry_;
+    ShaderSet copyImageShaders_{}; // GetCopyImage用は内部処理として一旦残す
 
     /** @brief キャッシュキー構造体 */
     struct Key {
@@ -187,6 +151,6 @@ private:
     static D3D12_DEPTH_STENCIL_DESC MakeDepth(DepthWrite w);
 
     /** @brief 設定セット（シェーダ、ブレンド、デプス、カリング）からハッシュ値を計算 */
-    static uint64_t Hash(const ShaderSet& s, BlendMode b, DepthWrite d, CullMode c);
+    static uint64_t Hash(const std::string& name, BlendMode b, DepthWrite d, CullMode c);
     ///@}
 };

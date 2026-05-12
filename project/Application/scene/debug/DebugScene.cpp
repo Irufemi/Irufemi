@@ -450,7 +450,7 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
 
-    engine_->ApplyPSO();
+    engine_->ApplyPSO("Object3D");
 
     if (isActiveTriangle_) {
         triangle_->Draw();
@@ -519,7 +519,7 @@ void DebugScene::Draw() {
             engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
             engine_->SetCull(PSOManager::CullMode::None);
 
-            engine_->ApplyLightningCrawlPSO();
+            engine_->ApplyPSO("LightningCrawl");
             engine_->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
 
             RenderPackets::Standard3DPacket packet{};
@@ -543,7 +543,7 @@ void DebugScene::Draw() {
     engine_->SetCull(PSOManager::CullMode::None);
     engine_->SetBlend(BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    engine_->ApplyParticlePSO();
+    engine_->ApplyPSO("Particle");
 
     if (isActiveParticle_) {
         particle_->Draw();
@@ -561,7 +561,7 @@ void DebugScene::Draw() {
 
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    engine_->ApplySpritePSO();
+    engine_->ApplyPSO("Sprite");
 
     if (isActiveSprite_) {
         sprite_->Draw();
