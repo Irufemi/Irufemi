@@ -5,7 +5,7 @@
 #include <wrl.h>
 #include <cstdint>
 #include <string>
-#include "Renderer/VertexData.h"
+#include "../../Engine/Graphics/Data/VertexData.h"
 #include "Engine/Core/Math/Transform.h"
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Math/Vector4.h"

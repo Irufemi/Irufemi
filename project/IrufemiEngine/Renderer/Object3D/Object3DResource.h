@@ -4,9 +4,9 @@
 #include "../../Engine/Graphics/DirectX/DirectXCommon.h"
 #include <wrl.h>
 #include <d3d12.h>
-#include "../VertexData.h"
+#include "../../Engine/Graphics/Data/VertexData.h"
 #include "../../Engine/Graphics/Data/Material.h"
-#include "../TransformationMatrix.h"
+#include "../../Engine/Graphics/Data/TransformationMatrix.h"
 #include "../../Engine/Core/Math/Transform.h"
 #include "../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 
@@ -21,6 +21,12 @@ public:
     void Unmap() override;
 
     void UpdateTransform(const Camera& camera);
+
+    void SetCustomPSO(ID3D12PipelineState* pso) { customPSO_ = pso; }
+    ID3D12PipelineState* GetCustomPSO() const { return customPSO_; }
+
+    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) { customCBVAddress_ = addr; }
+    D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const { return customCBVAddress_; }
 
 public:
     // --- 頂点バッファ ---
@@ -74,4 +80,7 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
 
     bool isFirstUpdate_ = true;
+
+    ID3D12PipelineState* customPSO_ = nullptr;
+    D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
 };

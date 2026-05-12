@@ -47,6 +47,12 @@ public:
     void SetCastShadows(bool cast) { castShadows_ = cast; }
     bool GetCastShadows() const { return castShadows_; }
 
+    void SetCustomPSO(ID3D12PipelineState* pso) { customPSO_ = pso; }
+    ID3D12PipelineState* GetCustomPSO() const { return customPSO_; }
+
+    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) { customCBVAddress_ = addr; }
+    D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const { return customCBVAddress_; }
+
     // Color controls
     void SetColor(const Vector4& color);
     void SetEnvironmentCoefficient(float coefficient);
@@ -116,4 +122,6 @@ protected:
     PSOManager::DepthWrite depthWrite_ = PSOManager::DepthWrite::Enable;
     PSOManager::CullMode cullMode_ = PSOManager::CullMode::Back;
     bool castShadows_ = true;
+    ID3D12PipelineState* customPSO_ = nullptr;
+    D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
 };

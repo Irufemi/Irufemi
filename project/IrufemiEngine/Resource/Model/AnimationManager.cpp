@@ -7,7 +7,7 @@
 #include "Data/ObjModel.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
-#include "Renderer/VertexData.h"
+#include "../../Engine/Graphics/Data/VertexData.h"
 
 #include <cassert>
 #include <filesystem>
