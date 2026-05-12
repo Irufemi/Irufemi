@@ -156,6 +156,9 @@ private:
     static constexpr float kAimDistance = 100.0f;
     static constexpr int kMissileSkillDuration = 120;
     static constexpr int kMachineGunSkillDuration = 180;
+    static constexpr int kMinAmmoToRestart = 5; // 再発射に必要な最低残弾数
+
+    bool isMachineGunSkillActive_ = false; // 現在のスキルが機関銃かミサイルか
 
     // --- 死亡時の演出用変数 ---
     int deathTimer_ = 0;

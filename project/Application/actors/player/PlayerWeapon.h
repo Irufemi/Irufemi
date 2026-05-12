@@ -65,9 +65,15 @@ public:
     void Draw(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, int viewMode, bool isBlinking, bool isDead);
     void DrawParticles(IrufemiEngine* engine);
 
-    // スキル発動
+    // スキル発動・停止
     void FireMissileSkill(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& targetPos);
     void StartMachineGunSkill();
+    void StopMachineGunSkill();
+
+    // 機関銃の残弾ゲッター（UIなどで使用）
+    int GetMachineGunAmmo() const { return machineGunAmmo_; }
+    int GetMaxMachineGunAmmo() const { return kMaxMachineGunAmmo; }
+    bool IsMachineGunFiring() const { return machineGunActiveTimer_ > 0; }
 
     // 振動（シェイク）の値を取得（プレイヤー本体やカメラを揺らすため）
     const Vector3& GetMachineGunVibration() const { return machineGunVibration_; }
@@ -128,6 +134,12 @@ private:
 
     int machineGunActiveTimer_ = 0;
     int machineGunFireTimer_ = 0;
+
+    // --- 機関銃 弾薬（アモ）システム ---
+    static const int kMaxMachineGunAmmo = 60; // 最大弾薬数（60連射分）
+    int machineGunAmmo_ = kMaxMachineGunAmmo;  // 現在の残弾
+    int machineGunAmmoRecoveryTimer_ = 0;      // 回復間隔タイマー
+    static const int kAmmoRecoveryInterval = 3; // 何フレームに1発回復するか
 
     // --- 薬莢（Cartridge）用オブジェクトとデータ ---
     static const int kMaxCartridges = 100;
