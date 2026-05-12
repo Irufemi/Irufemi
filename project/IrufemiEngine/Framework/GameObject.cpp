@@ -9,6 +9,7 @@
 #include "Component/Collider/AABBColliderComponent.h"
 #include "Component/Collider/SphereColliderComponent.h"
 #include "Component/Collider/OBBColliderComponent.h"
+#include "Component/Collider/RaycastComponent.h"
 #endif
 void GameObject::Initialize() {
     for (auto& comp : components_) {
@@ -67,6 +68,25 @@ void GameObject::SetParent(std::shared_ptr<GameObject> parent) {
             currentParent->RemoveChild(shared_from_this());
         }
     }
+}
+
+void GameObject::RemoveComponent(Component* component) {
+    if (!component) return;
+
+    // TransformComponentは基本として削除不可とする
+    if (component->GetComponentName() == "TransformComponent") return;
+
+    // componentMap_からの削除
+    for (auto& pair : componentMap_) {
+        auto& vec = pair.second;
+        vec.erase(std::remove(vec.begin(), vec.end(), component), vec.end());
+    }
+
+    // components_からの削除
+    components_.erase(std::remove_if(components_.begin(), components_.end(),
+        [component](const std::unique_ptr<Component>& ptr) {
+            return ptr.get() == component;
+        }), components_.end());
 }
 
 void GameObject::OnInspectorGUI() {
@@ -138,6 +158,35 @@ void GameObject::OnInspectorGUI() {
             } else {
                 ImGui::TextDisabled("OBBColliderComponent (Already added)");
             }
+            if (!GetComponent<RaycastComponent>()) {
+                if (ImGui::Selectable("RaycastComponent")) AddComponent<RaycastComponent>();
+            } else {
+                ImGui::TextDisabled("RaycastComponent (Already added)");
+            }
+            ImGui::EndMenu();
+        }
+        
+        ImGui::Separator();
+        
+        if (ImGui::BeginMenu("Remove Component")) {
+            bool hasRemovable = false;
+            for (auto& comp : components_) {
+                if (!comp) continue;
+                std::string compName = comp->GetComponentName();
+                if (compName == "TransformComponent") continue; // Transformは削除不可
+                
+                hasRemovable = true;
+                if (ImGui::Selectable(compName.c_str())) {
+                    RemoveComponent(comp.get());
+                    // 削除後即座にメニューを抜ける（イテレータ保護のため）
+                    ImGui::EndMenu();
+                    ImGui::EndPopup();
+                    return;
+                }
+            }
+            if (!hasRemovable) {
+                ImGui::TextDisabled("No removable components.");
+            }
             ImGui::EndMenu();
         }
         
@@ -186,6 +235,7 @@ void GameObject::Deserialize(const nlohmann::json& j) {
             else if (type == "AABBColliderComponent") newComp = AddComponent<AABBColliderComponent>();
             else if (type == "SphereColliderComponent") newComp = AddComponent<SphereColliderComponent>();
             else if (type == "OBBColliderComponent") newComp = AddComponent<OBBColliderComponent>();
+            else if (type == "RaycastComponent") newComp = AddComponent<RaycastComponent>();
             
             if (newComp && cj.contains("data")) {
                 newComp->Deserialize(cj["data"]);

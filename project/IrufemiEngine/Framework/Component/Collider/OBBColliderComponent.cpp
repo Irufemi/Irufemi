@@ -7,6 +7,10 @@
 
 OBBColliderComponent::OBBColliderComponent() {}
 
+OBBColliderComponent::~OBBColliderComponent() {
+    CollisionManager::GetInstance().UnregisterCollider(this);
+}
+
 void OBBColliderComponent::Initialize() {
     if (gameObject_) {
         transform_ = gameObject_->GetComponent<TransformComponent>();

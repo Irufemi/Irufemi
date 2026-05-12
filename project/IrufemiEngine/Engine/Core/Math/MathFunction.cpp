@@ -405,17 +405,18 @@ namespace Math {
 
     Vector3 ExtractEulerFromMatrix(const Matrix4x4& matrix) {
         Vector3 euler{};
-        float sy = std::sqrt(matrix.m[0][0] * matrix.m[0][0] + matrix.m[1][0] * matrix.m[1][0]);
+        // MakeRotateXYZMatrix (Rx * Ry * Rz) に対応する抽出式
+        float cy = std::sqrt(matrix.m[0][0] * matrix.m[0][0] + matrix.m[0][1] * matrix.m[0][1]);
         constexpr float kEpsilon = 1e-6f;
 
-        if (sy > kEpsilon) {
-            euler.x = std::atan2(matrix.m[2][1], matrix.m[2][2]);
-            euler.y = std::atan2(-matrix.m[2][0], sy);
-            euler.z = std::atan2(matrix.m[1][0], matrix.m[0][0]);
+        if (cy > kEpsilon) {
+            euler.x = std::atan2(matrix.m[1][2], matrix.m[2][2]);
+            euler.y = std::atan2(-matrix.m[0][2], cy);
+            euler.z = std::atan2(matrix.m[0][1], matrix.m[0][0]);
         } else {
-            euler.x = std::atan2(-matrix.m[1][2], matrix.m[1][1]);
-            euler.y = std::atan2(-matrix.m[2][0], sy);
-            euler.z = 0;
+            euler.x = std::atan2(-matrix.m[2][1], matrix.m[1][1]);
+            euler.y = std::atan2(-matrix.m[0][2], cy);
+            euler.z = 0.0f;
         }
         return euler;
     }

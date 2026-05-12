@@ -13,7 +13,7 @@ class TransformComponent;
 class AABBColliderComponent : public ColliderComponent {
 public:
     AABBColliderComponent();
-    virtual ~AABBColliderComponent() = default;
+    ~AABBColliderComponent() override;
 
     void Initialize() override;
     void Update() override;

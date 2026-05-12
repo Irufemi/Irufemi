@@ -12,8 +12,13 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <algorithm>
 
 namespace Collision {
+
+    // Helper functions for min/max
+    static float MinFloat(float a, float b) { return a < b ? a : b; }
+    static float MaxFloat(float a, float b) { return a > b ? a : b; }
 
     // 球と球の衝突判定
     bool IsCollision(Vector3 s1_center, float s1_radius, Vector3 s2_center, float s2_radius) {
@@ -617,6 +622,96 @@ namespace Collision {
             }
         }
         return true; // すべての平面の内側、または境界と重なっている
+    }
+
+    bool IsCollision(const Ray& ray, const AABB& aabb, float& outDistance) {
+        Vector3 dir = Math::Normalize(ray.diff);
+        Vector3 invDir = {
+            dir.x != 0.0f ? 1.0f / dir.x : 0.0f,
+            dir.y != 0.0f ? 1.0f / dir.y : 0.0f,
+            dir.z != 0.0f ? 1.0f / dir.z : 0.0f
+        };
+
+        float tmin = 0.0f;
+        float tmax = 10000.0f; // 十分大きな値
+
+        for (int i = 0; i < 3; ++i) {
+            float origin = i == 0 ? ray.origin.x : (i == 1 ? ray.origin.y : ray.origin.z);
+            float minVal = i == 0 ? aabb.min.x : (i == 1 ? aabb.min.y : aabb.min.z);
+            float maxVal = i == 0 ? aabb.max.x : (i == 1 ? aabb.max.y : aabb.max.z);
+            float invD = i == 0 ? invDir.x : (i == 1 ? invDir.y : invDir.z);
+
+            if (invD != 0.0f) {
+                float t1 = (minVal - origin) * invD;
+                float t2 = (maxVal - origin) * invD;
+
+                tmin = MaxFloat(tmin, MinFloat(t1, t2));
+                tmax = MinFloat(tmax, MaxFloat(t1, t2));
+            } else if (origin < minVal || origin > maxVal) {
+                return false;
+            }
+        }
+
+        if (tmax >= tmin && tmin >= 0.0f) {
+            outDistance = tmin;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool IsCollision(const Ray& ray, const Sphere& sphere, float& outDistance) {
+        Vector3 dir = Math::Normalize(ray.diff);
+        Vector3 m = ray.origin - sphere.center;
+        float b = Math::Dot(m, dir);
+        float c = Math::Dot(m, m) - sphere.radius * sphere.radius;
+
+        // 始点がすでに球の中にある場合
+        if (c > 0.0f && b > 0.0f) return false;
+
+        float discr = b * b - c;
+        if (discr < 0.0f) return false;
+
+        float t = -b - std::sqrt(discr);
+        if (t < 0.0f) t = 0.0f; // 内部から開始した場合
+
+        outDistance = t;
+        return true;
+    }
+
+    bool IsCollision(const Ray& ray, const OBB& obb, float& outDistance) {
+        // OBBのローカル空間にRayを変換してAABBとの判定に帰着させる
+        Vector3 dir = Math::Normalize(ray.diff);
+        Vector3 p = obb.center - ray.origin;
+
+        float tmin = 0.0f;
+        float tmax = 10000.0f;
+
+        Vector3 orientations[3] = { obb.orientations[0], obb.orientations[1], obb.orientations[2] };
+        float size[3] = { obb.size.x, obb.size.y, obb.size.z };
+
+        for (int i = 0; i < 3; ++i) {
+            float e = Math::Dot(orientations[i], p);
+            float f = Math::Dot(orientations[i], dir);
+
+            if (std::abs(f) > 0.0001f) {
+                float t1 = (e + size[i]) / f;
+                float t2 = (e - size[i]) / f;
+
+                if (t1 > t2) std::swap(t1, t2);
+
+                tmin = MaxFloat(tmin, t1);
+                tmax = MinFloat(tmax, t2);
+
+                if (tmin > tmax) return false;
+                if (tmax < 0.0f) return false;
+            } else if (-e - size[i] > 0.0f || -e + size[i] < 0.0f) {
+                return false;
+            }
+        }
+
+        outDistance = tmin > 0.0f ? tmin : tmax;
+        return true;
     }
 
     // 球と球の衝突判定

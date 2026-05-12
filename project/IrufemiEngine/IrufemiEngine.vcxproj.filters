@@ -427,6 +427,9 @@
     <ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp">
       <Filter>Framework\Component\Collider</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\Collider\RaycastComponent.cpp">
+      <Filter>Framework\Component\Collider</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Manager\CollisionManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>

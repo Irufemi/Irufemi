@@ -9,7 +9,7 @@ class TransformComponent;
 class SphereColliderComponent : public ColliderComponent {
 public:
     SphereColliderComponent();
-    virtual ~SphereColliderComponent() = default;
+    ~SphereColliderComponent() override;
 
     void Initialize() override;
     void Update() override;

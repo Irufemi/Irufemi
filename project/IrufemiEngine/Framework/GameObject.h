@@ -87,6 +87,12 @@ public:
         return nullptr;
     }
 
+    /**
+     * @brief コンポーネントを削除する
+     * @param component 削除したいコンポーネントのポインタ
+     */
+    void RemoveComponent(Component* component);
+
     // --- アクセッサ ---
     const std::string& GetName() const { return name_; }
     void SetName(const std::string& name) { name_ = name; }

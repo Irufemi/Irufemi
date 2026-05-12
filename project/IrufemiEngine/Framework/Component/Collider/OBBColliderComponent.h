@@ -9,7 +9,7 @@ class TransformComponent;
 class OBBColliderComponent : public ColliderComponent {
 public:
     OBBColliderComponent();
-    virtual ~OBBColliderComponent() = default;
+    ~OBBColliderComponent() override;
 
     void Initialize() override;
     void Update() override;

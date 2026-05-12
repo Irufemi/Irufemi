@@ -10,6 +10,7 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <imgui.h>
+#include "Engine/Core/Math/MathFunction.h"
 
 
 void CollisionManager::Initialize() {
@@ -122,12 +123,12 @@ void CollisionManager::CheckAllCollisions() {
 
 void CollisionManager::DrawDebug() {
     if (!debugLine_) return;
-    if (!isDrawDebugLine_) return; // フラグがオフなら描画しない
     
     debugLine_->ClearInstances();
     
-    for (ColliderComponent* collider : colliders_) {
-        if (!collider) continue;
+    if (isDrawDebugLine_) {
+        for (ColliderComponent* collider : colliders_) {
+            if (!collider) continue;
         
         if (collider->GetColliderType() == ColliderComponent::ColliderType::AABB) {
             AABBColliderComponent* aabbCol = static_cast<AABBColliderComponent*>(collider);
@@ -231,8 +232,18 @@ void CollisionManager::DrawDebug() {
             debugLine_->AddInstance(p[2], p[6], color);
             debugLine_->AddInstance(p[3], p[7], color);
         }
-    }
+    } // end for colliders_
+    } // end if isDrawDebugLine_
     
+    // Raycastのデバッグ描画（コライダーの描画フラグとは独立して描画）
+    for (const auto& r : debugRays_) {
+        Vector3 dir = Math::Normalize(r.ray.diff);
+        float drawDist = r.distance > 1000.0f ? 1000.0f : r.distance;
+        Vector3 endPoint = r.ray.origin + dir * drawDist;
+        debugLine_->AddInstance(r.ray.origin, endPoint, r.color);
+    }
+    debugRays_.clear();
+
     debugLine_->Update();
     debugLine_->Draw();
 }
@@ -373,4 +384,54 @@ void CollisionManager::DrawLayerInspectorGUI(uint32_t& layer, uint32_t& mask) {
         ImGui::EndPopup();
     }
 #endif
+}
+
+bool CollisionManager::Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDistance, uint32_t layerMask, GameObject* ignoreObject) {
+    hitInfo.isHit = false;
+    hitInfo.distance = maxDistance;
+
+    for (ColliderComponent* collider : colliders_) {
+        if (!collider) continue;
+
+        // 除外オブジェクトならスキップ
+        if (ignoreObject && collider->GetGameObject() == ignoreObject) continue;
+
+        // 指定されたレイヤーマスクに合致するか判定
+        if ((collider->layer_ & layerMask) == 0) continue;
+
+        float distance = 0.0f;
+        bool isHit = false;
+
+        switch (collider->GetColliderType()) {
+        case ColliderComponent::ColliderType::AABB: {
+            AABBColliderComponent* aabbCol = static_cast<AABBColliderComponent*>(collider);
+            isHit = Collision::IsCollision(ray, aabbCol->GetWorldAABB(), distance);
+            break;
+        }
+        case ColliderComponent::ColliderType::Sphere: {
+            SphereColliderComponent* sphereCol = static_cast<SphereColliderComponent*>(collider);
+            isHit = Collision::IsCollision(ray, sphereCol->GetWorldSphere(), distance);
+            break;
+        }
+        case ColliderComponent::ColliderType::OBB: {
+            OBBColliderComponent* obbCol = static_cast<OBBColliderComponent*>(collider);
+            isHit = Collision::IsCollision(ray, obbCol->GetWorldOBB(), distance);
+            break;
+        }
+        }
+
+        if (isHit && distance < hitInfo.distance) {
+            hitInfo.isHit = true;
+            hitInfo.distance = distance;
+            hitInfo.hitCollider = collider;
+            hitInfo.hitObject = collider->GetGameObject();
+            hitInfo.hitPoint = ray.origin + Math::Normalize(ray.diff) * distance;
+        }
+    }
+
+    return hitInfo.isHit;
+}
+
+void CollisionManager::DrawDebugRay(const Ray& ray, float distance, const Vector4& color) {
+    debugRays_.push_back({ ray, distance, color });
 }

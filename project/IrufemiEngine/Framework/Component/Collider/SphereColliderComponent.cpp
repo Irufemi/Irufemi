@@ -8,6 +8,10 @@
 
 SphereColliderComponent::SphereColliderComponent() {}
 
+SphereColliderComponent::~SphereColliderComponent() {
+    CollisionManager::GetInstance().UnregisterCollider(this);
+}
+
 void SphereColliderComponent::Initialize() {
     if (gameObject_) {
         transform_ = gameObject_->GetComponent<TransformComponent>();

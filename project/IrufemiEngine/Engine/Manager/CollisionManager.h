@@ -4,8 +4,20 @@
 #include <string>
 #include <nlohmann/json.hpp>
 #include "Renderer/LineInstanced/LineClass.h"
+#include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Shape/LinePrimitive.h"
 
 class ColliderComponent;
+class GameObject;
+
+/// @brief レイキャストの結果を格納する構造体
+struct RaycastHit {
+    bool isHit = false;
+    GameObject* hitObject = nullptr;
+    ColliderComponent* hitCollider = nullptr;
+    Vector3 hitPoint;
+    float distance = 0.0f;
+};
 
 /**
  * @class CollisionManager
@@ -49,6 +61,19 @@ public:
     // エディタ用UI
     void DrawLayerInspectorGUI(uint32_t& layer, uint32_t& mask);
 
+    // --- レイキャスト ---
+    /// @brief シーン内の全コライダーに対してレイを飛ばし、最も近いオブジェクトを返す
+    /// @param ray 飛ばすレイ
+    /// @param hitInfo 結果が格納される構造体
+    /// @param maxDistance 判定する最大距離
+    /// @param layerMask 判定対象とするレイヤーのビットマスク
+    /// @param ignoreObject 判定から除外するオブジェクト（自分自身を無視するためなど）
+    /// @return 何かに当たった場合はtrue
+    bool Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
+
+    /// @brief デバッグ用のレイを描画キューに追加する
+    void DrawDebugRay(const Ray& ray, float distance, const Vector4& color = {1,0,0,1});
+
 private:
     CollisionManager() = default;
     ~CollisionManager();
@@ -63,4 +88,12 @@ private:
     std::string layerConfigFilePath_ = "resources/config/layers.json";
 
     bool isDrawDebugLine_ = true;
+
+    // Raycast描画キャッシュ
+    struct DebugRayInfo {
+        Ray ray;
+        float distance;
+        Vector4 color;
+    };
+    std::vector<DebugRayInfo> debugRays_;
 };

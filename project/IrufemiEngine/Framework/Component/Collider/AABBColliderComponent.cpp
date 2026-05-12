@@ -4,7 +4,10 @@
 #include "Engine/Manager/CollisionManager.h"
 #include <imgui.h>
 
-AABBColliderComponent::AABBColliderComponent() {
+AABBColliderComponent::AABBColliderComponent() {}
+
+AABBColliderComponent::~AABBColliderComponent() {
+    CollisionManager::GetInstance().UnregisterCollider(this);
 }
 
 void AABBColliderComponent::Initialize() {

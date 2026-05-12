@@ -78,7 +78,22 @@ namespace Collision {
     /// <param name="a"></param>
     /// <param name="b"></param>
     /// <returns></returns>
-    bool IsCollision(const AABB& a, const AABB& b);
+    bool IsCollision(const AABB& aabb1, const AABB& aabb2);
+
+    /// <summary>
+    /// レイとAABBの衝突判定
+    /// </summary>
+    bool IsCollision(const Ray& ray, const AABB& aabb, float& outDistance);
+
+    /// <summary>
+    /// レイと球の衝突判定
+    /// </summary>
+    bool IsCollision(const Ray& ray, const Sphere& sphere, float& outDistance);
+
+    /// <summary>
+    /// レイとOBBの衝突判定
+    /// </summary>
+    bool IsCollision(const Ray& ray, const OBB& obb, float& outDistance);
 
     /// <summary>
     /// AABBと球の衝突判定
