@@ -216,6 +216,10 @@ void Enemy::Update(Player *player) {
     if (allBodiesZero) {
       isPhase2_ = true;
       SetState(EnemyState::Phase2);
+      // 頭部へフェーズ移行を通知（ロケット噴射開始）
+      if (headLeft_) headLeft_->SetPhase2(true);
+      if (headMid_) headMid_->SetPhase2(true);
+      if (headRight_) headRight_->SetPhase2(true);
     }
   }
 

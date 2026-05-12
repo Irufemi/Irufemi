@@ -28,15 +28,9 @@ ConstantBuffer<LightCommonData> gLightCommon : register(b1);
 
 /*PhongReflectionModel*/
 
-/// カメラの位置を送る
+#include "PerFrame.hlsli"
 
-struct PerFrame
-{
-	float32_t4x4 view;
-	float32_t4x4 projection;
-	float32_t3 worldPosition;
-};
-ConstantBuffer<PerFrame> gPerFrame : register(b2);
+ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
 /*Structured Light Buffers*/
 
@@ -94,7 +88,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 		LightContext context;
 		context.normal = normalize(input.normal);
 		context.worldPosition = input.worldPosition;
-		context.toEye = normalize(gPerFrame.worldPosition - input.worldPosition);
+		context.toEye = normalize(gPerFrame.cameraWorldPosition - input.worldPosition);
 
 		float3 albedo = gMaterial.color.rgb * textureColor.rgb * input.color.rgb;
 		float3 totalDiffuse = 0;
