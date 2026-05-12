@@ -650,7 +650,10 @@ void Player::HandleAttack() {
 void Player::HandleSkill() {
     if (skillDurationTimer_ > 0) {
         skillDurationTimer_--;
-        if (skillDurationTimer_ <= 0) skillCooldownTimer_ = kSkillCooldownTime;
+        if (skillDurationTimer_ <= 0 && !isMachineGunSkillActive_) {
+            // ミサイルスキルのみクールダウンを設定
+            skillCooldownTimer_ = kSkillCooldownTime;
+        }
     } else if (skillCooldownTimer_ > 0) {
         skillCooldownTimer_--;
     }
@@ -687,20 +690,32 @@ void Player::HandleSkill() {
     if (!cameraController_.IsCameraControlEnabled()) return;
 
     if (input_->IsMouseButtonPressed(Mouse::Button::Right)) {
-        if (skillDurationTimer_ <= 0 && skillCooldownTimer_ <= 0) {
-            if (isKarakuriCharged_) {
+        if (!isKarakuriCharged_) {
+            // ========== 機関銃スキル（クールダウンなし・弾薬ベース） ==========
+            if (weapon_.IsMachineGunFiring()) {
+                // 発射中 → 右クリックで即停止（クールダウンなし・即再発射可能）
+                weapon_.StopMachineGunSkill();
+                skillDurationTimer_ = 0;
+                isMachineGunSkillActive_ = false;
+            } else if (weapon_.GetMachineGunAmmo() >= kMinAmmoToRestart) {
+                // 停止中 かつ 残弾が最低数以上 → 発射開始
+                weapon_.StartMachineGunSkill();
+                skillDurationTimer_ = kMachineGunSkillDuration;
+                isMachineGunSkillActive_ = true;
+            }
+            // 残弾が最低数未満 → 何もしない（回復待ち）
+        } else {
+            // ========== ミサイルスキル（従来のクールダウン制御） ==========
+            if (skillDurationTimer_ <= 0 && skillCooldownTimer_ <= 0) {
                 int fireCount = isTargetingEnemy_ ? 2 : 1;
                 for (int i = 0; i < fireCount; ++i) {
                     weapon_.FireMissileSkill(translate_, rotate_, targetPos_);
                 }
                 skillDurationTimer_ = kMissileSkillDuration;
-            } else {
-                weapon_.StartMachineGunSkill();
-                skillDurationTimer_ = kMachineGunSkillDuration;
+                isMachineGunSkillActive_ = false;
+            } else if (skillDurationTimer_ <= 0 && skillCooldownTimer_ > 0) {
+                cooldownWarningTimer_ = 60;
             }
-        } else if (skillDurationTimer_ <= 0 && skillCooldownTimer_ > 0) {
-            // 発動中ではなく、クールダウン中に押された場合のみ警告タイマーをセット
-            cooldownWarningTimer_ = 60; // 1秒間
         }
     }
 }

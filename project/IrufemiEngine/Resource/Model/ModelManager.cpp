@@ -15,7 +15,7 @@
 #include "Engine/IrufemiEngine.h"
 #include "Framework/SceneManager.h"
 #include "Engine/Graphics/Data/Material.h"
-#include "Renderer/VertexData.h"
+#include "../../Engine/Graphics/Data/VertexData.h"
 #include "Resource/Model/Data/Node.h"
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
@@ -1420,3 +1420,29 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
     }
     return result;
 }
+
+std::shared_ptr<VoxelizedModel> ModelManager::GetVoxelizedModel(const std::string& filename, const Vector3Int& resolution) {
+    auto managedModel = GetModel(filename);
+    if (!managedModel || !managedModel->cpuModel) {
+        return nullptr;
+    }
+
+    std::lock_guard<std::mutex> lock(managedModel->voxelMutex);
+    
+    // 既に同じ解像度でボクセル化されていれば、それを返す
+    for (const auto& cached : managedModel->cachedVoxelModels) {
+        if (cached->resolution.x == resolution.x &&
+            cached->resolution.y == resolution.y &&
+            cached->resolution.z == resolution.z) {
+            return cached;
+        }
+    }
+
+    // 見つからなければ新規計算して、キャッシュリストに追加
+    auto vModel = std::make_shared<VoxelizedModel>(
+        VoxelizeModel(*managedModel->cpuModel, resolution, textureManager_)
+    );
+    managedModel->cachedVoxelModels.push_back(vModel);
+    
+    return vModel;
+}

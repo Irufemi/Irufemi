@@ -142,7 +142,7 @@ void GameScene::Update() {
   if (player_ && !isDebugCameraMode_) {
     // ボスの座標を毎フレーム教える
     if (boss_) {
-      Vector3 bossPos = boss_->GetGlobalTransform().translate;
+      Vector3 bossPos = boss_->GetTargetPosition();
       player_->SetTargetPosition(bossPos);
 
       // ボスが画面（プレイヤーの前方）にいるかどうかの判定
@@ -306,7 +306,7 @@ void GameScene::UpdateDynamicLights() {
   pLight->isActive = 1;
 
   Vector3 pPos = player_->GetTranslate();
-  Vector3 bPos = boss_->GetGlobalTransform().translate;
+  Vector3 bPos = boss_->GetTargetPosition();
 
   Vector3 midPos = Math::Add(pPos, bPos);
   midPos.x *= 0.5f;

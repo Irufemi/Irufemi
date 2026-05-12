@@ -5,7 +5,7 @@
 #include "Engine/Core/Math/Transform.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
-#include "Renderer/TransformationMatrix.h"
+#include "../../../Engine/Graphics/Data/TransformationMatrix.h"
 #include "Resource/Model/Data/ObjModel.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Engine/Graphics/Data/Material.h"
@@ -101,6 +101,13 @@ public: // ゲッター・セッター
 
     const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
     void SetTransformationMatrix(const TransformationMatrix& transformationMatrix) { transformationMatrix_ = transformationMatrix; }
+
+    void SetCustomPSO(ID3D12PipelineState* pso) {
+        for(auto& res : meshResources_) { if(res) res->SetCustomPSO(pso); }
+    }
+    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) {
+        for(auto& res : meshResources_) { if(res) res->SetCustomCBVAddress(addr); }
+    }
 
 protected: // メンバ変数
     // 共有モデルデータ(CPU/GPU)

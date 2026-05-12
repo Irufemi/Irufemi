@@ -247,8 +247,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Core\Math\Random\Random.cpp" />
     <ClCompile Include="Resource\Model\AnimationManager.cpp" />
     <ClCompile Include="Resource\Audio\Bgm.cpp" />
-    <ClCompile Include="Renderer\Region\Region.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\CylinderClass.cpp" />
+    <ClCompile Include="Renderer\Region\BaseRegion.cpp" />
+    <ClCompile Include="Renderer\Region\ModelRegion.cpp" />
+    <ClCompile Include="Renderer\Region\PrimitiveRegion.cpp" />
     <ClCompile Include="Renderer\Object2D\Primitive\Circle2D.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\CubeClass.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\RingClass.cpp" />
@@ -304,8 +306,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Resource\Audio\Sound.cpp" />
     <ClCompile Include="Resource\Texture\Texture.cpp" />
     <ClCompile Include="Engine\Core\Utility\StringUtility.cpp" />
-    <ClCompile Include="Renderer\Region\Primitive\SphereRegion.cpp" />
-    <ClCompile Include="Renderer\Region\Primitive\TetraRegion.cpp" />
     <ClCompile Include="Renderer\VoxelParticle\VoxelParticleSystem.cpp" />
     <ClCompile Include="Framework\UIAnimator.cpp" />
     <ClCompile Include="Framework\PromptController.cpp" />
@@ -335,7 +335,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Camera\DebugCamera.h" />
     <ClInclude Include="Engine\Graphics\Camera\CameraManager.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h" />
-    <ClInclude Include="Engine\Manager\IComputeTask.h" />
+    <ClInclude Include="Engine\Graphics\Compute\IComputeTask.h" />
     <ClInclude Include="Framework\Component\Component.h" />
     <ClInclude Include="Framework\GameObject.h" />
     <ClInclude Include="Framework\Component\Renderer\PrimitiveRendererComponent.h" />
@@ -379,7 +379,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Resource\Audio\Bgm.h" />
-    <ClInclude Include="Renderer\Region\Region.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\CylinderClass.h" />
     <ClInclude Include="Renderer\Object2D\Primitive\Circle2D.h" />
     <ClInclude Include="Engine\Graphics\DirectX\DescriptorAllocator.h" />
@@ -407,7 +406,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Manager\DebugUI.h" />
     <ClInclude Include="Engine\Manager\DrawManager.h" />
     <ClInclude Include="Engine\Manager\EditorManager.h" />
-    <ClInclude Include="Engine\Manager\RenderPackets.h" />
+    <ClInclude Include="Engine\Graphics\Data\RenderPackets.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.h" />
@@ -462,11 +461,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Audio\Data\SoundData.h" />
     <ClInclude Include="Engine\Graphics\Data\SpotLight.h" />
     <ClInclude Include="Engine\Core\Math\Transform.h" />
-    <ClInclude Include="Renderer\TransformationMatrix.h" />
+    <ClInclude Include="Engine\Graphics\Data\TransformationMatrix.h" />
     <ClInclude Include="Engine\Core\Math\Vector2.h" />
     <ClInclude Include="Engine\Core\Math\Vector3.h" />
     <ClInclude Include="Engine\Core\Math\Vector4.h" />
-    <ClInclude Include="Renderer\VertexData.h" />
+    <ClInclude Include="Engine\Graphics\Data\VertexData.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\PSOManager.h" />
     <ClInclude Include="Resource\Model\Data\Node.h" />
     <ClInclude Include="Resource\Model\ModelManager.h" />
@@ -479,11 +478,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\LoadingScreen.h" />
     <ClInclude Include="Resource\Audio\Se.h" />
     <ClInclude Include="Renderer\Skybox\Skybox.h" />
+    <ClInclude Include="Renderer\Region\BaseRegion.h" />
+    <ClInclude Include="Renderer\Region\ModelRegion.h" />
+    <ClInclude Include="Renderer\Region\PrimitiveRegion.h" />
     <ClInclude Include="Resource\Audio\Sound.h" />
     <ClInclude Include="Resource\Texture\Texture.h" />
     <ClInclude Include="Engine\Core\Utility\StringUtility.h" />
-    <ClInclude Include="Renderer\Region\Primitive\SphereRegion.h" />
-    <ClInclude Include="Renderer\Region\Primitive\TetraRegion.h" />
     <ClInclude Include="Resource\Model\Data\Keyframe.h" />
     <ClInclude Include="Resource\Model\Data\VertexWeightData.h" />
     <ClInclude Include="Framework\UIAnimator.h" />

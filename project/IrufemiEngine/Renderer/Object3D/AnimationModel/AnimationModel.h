@@ -7,7 +7,7 @@
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
 
-#include "Engine/Manager/IComputeTask.h"
+#include "../../../Engine/Graphics/Compute/IComputeTask.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>
@@ -19,7 +19,7 @@
 // 前方宣言
 class Camera;
 class IrufemiEngine;
-class SphereRegion;
+class PrimitiveRegion;
 class Line3DRegion;
 struct ManagedModel;
 struct ObjMaterial; 
@@ -68,7 +68,7 @@ private: // メンバ変数
     float animationTime_ = 0.0f;
 
     // --- 追加：関節表示用のインスタンス描画機構 ---
-    std::unique_ptr<SphereRegion> jointSpheres_;
+    std::unique_ptr<PrimitiveRegion> jointSpheres_;
     std::unique_ptr<Line3DRegion> boneLines_;
 
     uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);

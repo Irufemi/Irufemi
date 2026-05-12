@@ -216,6 +216,10 @@ void Enemy::Update(Player *player) {
     if (allBodiesZero) {
       isPhase2_ = true;
       SetState(EnemyState::Phase2);
+      // 頭部へフェーズ移行を通知（ロケット噴射開始）
+      if (headLeft_) headLeft_->SetPhase2(true);
+      if (headMid_) headMid_->SetPhase2(true);
+      if (headRight_) headRight_->SetPhase2(true);
     }
   }
 
@@ -398,6 +402,20 @@ OBB Enemy::GetOBB() const {
   obb.size = {2.0f, 4.0f, 2.0f}; // 敵の見た目に合わせた仮のサイズ
 
   return obb;
+}
+
+Vector3 Enemy::GetTargetPosition() const {
+    if (isPhase2_) {
+        // 生きている頭を一つ選んで返す（真ん中、左、右の順）
+        if (headMid_ && headMid_->GetHP() > 0) {
+            return headMid_->GetTransform().translate;
+        } else if (headLeft_ && headLeft_->GetHP() > 0) {
+            return headLeft_->GetTransform().translate;
+        } else if (headRight_ && headRight_->GetHP() > 0) {
+            return headRight_->GetTransform().translate;
+        }
+    }
+    return globalTransform_.translate;
 }
 
 void Enemy::SetState(EnemyState newState) {

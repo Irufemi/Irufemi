@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <array>
 #include <wrl.h>
-#include "../../Renderer/TransformationMatrix.h"
+#include "../Graphics/Data/TransformationMatrix.h"
 #include "../Graphics/Data/LightCommonData.h"
 #include "../Graphics/Data/PointLight.h"
 #include "../Graphics/Data/SpotLight.h"
@@ -18,8 +18,8 @@
 #include "../Core/Math/Vector4.h"
 #include <vector>
 #include <memory>
-#include "IComputeTask.h"
-#include "RenderPackets.h"
+#include "../Graphics/Compute/IComputeTask.h"
+#include "../Graphics/Data/RenderPackets.h"
 
 class ShadowMap;
 
@@ -32,10 +32,8 @@ class SphereClass;
 class ObjClass;
 class ParticleSystem;
 class CylinderClass;
-class TetraRegion;
 class ModelRegion;
-class SphereRegion;
-class TetraRegion;
+class PrimitiveRegion;
 class SpriteRegion;
 struct GpuMesh;
 struct ManagedModel;
@@ -71,7 +69,7 @@ private:
     std::vector<RenderPackets::GPUParticlePacket> gpuParticleQueue_;
     std::vector<RenderPackets::VoxelParticlePacket> voxelParticleQueue_;
     std::vector<RenderPackets::SkyboxPacket> skyboxQueue_;
-    std::vector<RenderPackets::RegionPacket> regionQueue_;
+    std::vector<RenderPackets::PrimitiveRegionPacket> primitiveRegionQueue_;
     std::vector<RenderPackets::ModelRegionPacket> modelRegionQueue_;
     std::vector<std::function<void()>> postRenderQueue_;
     
@@ -91,7 +89,7 @@ public:
     const std::vector<RenderPackets::GPUParticlePacket>& GetGPUParticleQueue() const { return gpuParticleQueue_; }
     const std::vector<RenderPackets::VoxelParticlePacket>& GetVoxelParticleQueue() const { return voxelParticleQueue_; }
     const std::vector<RenderPackets::SkyboxPacket>& GetSkyboxQueue() const { return skyboxQueue_; }
-    const std::vector<RenderPackets::RegionPacket>& GetRegionQueue() const { return regionQueue_; }
+    const std::vector<RenderPackets::PrimitiveRegionPacket>& GetPrimitiveRegionQueue() const { return primitiveRegionQueue_; }
     const std::vector<RenderPackets::ModelRegionPacket>& GetModelRegionQueue() const { return modelRegionQueue_; }
     const std::vector<std::function<void()>>& GetPostRenderQueue() const { return postRenderQueue_; }
     const std::vector<RenderPackets::SpritePacket>& GetTopMostSpriteQueue() const { return topMostSpriteQueue_; }
@@ -312,8 +310,8 @@ public:
     /**
      * @brief 汎用的な領域描画（頂点バッファ・インデックスバッファ直接指定）
      */
-    void SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount, bool castShadows = true);
-    void DrawRegion(const RenderPackets::RegionPacket& packet);
+    void SubmitPrimitiveRegion(const RenderPackets::PrimitiveRegionPacket& packet);
+    void DrawPrimitiveRegion(const RenderPackets::PrimitiveRegionPacket& packet);
 
     /**
      * @brief インスタンス化された線の描画
@@ -355,7 +353,6 @@ public:
         const D3D12_VERTEX_BUFFER_VIEW& vbv,
         const D3D12_INDEX_BUFFER_VIEW& ibv,
         uint32_t indexCount,
-        D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
         D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
         D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle,
         ID3D12Resource* particleResource,

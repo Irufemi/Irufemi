@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../Renderer/VertexData.h"
+#include "../../../Engine/Graphics/Data/VertexData.h"
 #include "MaterialData.h"
 #include "Node.h"
 #include "JointWeightData.h"

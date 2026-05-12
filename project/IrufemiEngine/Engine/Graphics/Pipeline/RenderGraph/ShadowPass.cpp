@@ -24,7 +24,7 @@ void ShadowPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
             
             if (first || p.cullMode != currentCull) {
                 engine->SetCull(p.cullMode);
-                engine->ApplyPSO(); // BeginShadowPass中なので自動的にShadowPSOが適用される
+                engine->ApplyPSO("Object3D"); // BeginShadowPass中なので自動的にShadowPSOが適用される
                 currentCull = p.cullMode;
                 first = false;
             }
@@ -33,7 +33,7 @@ void ShadowPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     };
 
     DrawShadowsWithPSO(drawManager->GetStandard3DQueue(), [&](const auto& p) { drawManager->DrawStandard3D(p); });
-    DrawShadowsWithPSO(drawManager->GetRegionQueue(), [&](const auto& p) { drawManager->DrawRegion(p); });
+    DrawShadowsWithPSO(drawManager->GetPrimitiveRegionQueue(), [&](const auto& p) { drawManager->DrawPrimitiveRegion(p); });
     DrawShadowsWithPSO(drawManager->GetModelRegionQueue(), [&](const auto& p) { drawManager->DrawModelRegion(p); });
 
     drawManager->EndShadowPass();

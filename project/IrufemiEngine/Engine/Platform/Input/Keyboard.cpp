@@ -15,6 +15,11 @@ void Keyboard::Update() {
     }
 }
 
+void Keyboard::Clear() {
+    currentKeys_.fill(0);
+    previousKeys_.fill(0);
+}
+
 bool Keyboard::IsKeyDown(uint8_t key) const { return (currentKeys_[key] & 0x80) != 0; }
 bool Keyboard::IsKeyUp(uint8_t key)   const { return (currentKeys_[key] & 0x80) == 0; }
 bool Keyboard::IsKeyPressed(uint8_t key) const {

@@ -5,10 +5,10 @@
 #include <vector>
 #include <cstdlib>
 
-// 前方宣言
 class Camera;
 class ParticleSystem;
 class IrufemiEngine;
+class ModelRegion;
 
 /**
  * @struct MissileData
@@ -65,9 +65,15 @@ public:
     void Draw(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, int viewMode, bool isBlinking, bool isDead);
     void DrawParticles(IrufemiEngine* engine);
 
-    // スキル発動
+    // スキル発動・停止
     void FireMissileSkill(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& targetPos);
     void StartMachineGunSkill();
+    void StopMachineGunSkill();
+
+    // 機関銃の残弾ゲッター（UIなどで使用）
+    int GetMachineGunAmmo() const { return machineGunAmmo_; }
+    int GetMaxMachineGunAmmo() const { return kMaxMachineGunAmmo; }
+    bool IsMachineGunFiring() const { return machineGunActiveTimer_ > 0; }
 
     // 振動（シェイク）の値を取得（プレイヤー本体やカメラを揺らすため）
     const Vector3& GetMachineGunVibration() const { return machineGunVibration_; }
@@ -123,22 +129,28 @@ private:
     std::unique_ptr<ObjClass> machineGunObjRight_ = nullptr;
 
     static const int kMaxBullets = 100;
-    std::unique_ptr<ObjClass> bulletObjs_[kMaxBullets];
+    std::unique_ptr<ModelRegion> bulletRegion_;
     MachineGunBullet bullets_[kMaxBullets] = {};
 
     int machineGunActiveTimer_ = 0;
     int machineGunFireTimer_ = 0;
 
+    // --- 機関銃 弾薬（アモ）システム ---
+    static const int kMaxMachineGunAmmo = 60; // 最大弾薬数（60連射分）
+    int machineGunAmmo_ = kMaxMachineGunAmmo;  // 現在の残弾
+    int machineGunAmmoRecoveryTimer_ = 0;      // 回復間隔タイマー
+    static const int kAmmoRecoveryInterval = 3; // 何フレームに1発回復するか
+
     // --- 薬莢（Cartridge）用オブジェクトとデータ ---
     static const int kMaxCartridges = 100;
-    std::unique_ptr<ObjClass> cartridgeObjs_[kMaxCartridges];
+    std::unique_ptr<ModelRegion> cartridgeRegion_;
     Cartridge cartridges_[kMaxCartridges] = {};
     const float kGravity = 0.02f;
 
     // --- 誘導ミサイル用 ---
     // ★修正: 16発に戻す
     static const int kMaxMissiles = 16;
-    std::unique_ptr<ObjClass> missileObjs_[kMaxMissiles];
+    std::unique_ptr<ModelRegion> missileRegion_;
     MissileData missiles_[kMaxMissiles] = {};
     const float kMissileSpeed = 0.8f;
 

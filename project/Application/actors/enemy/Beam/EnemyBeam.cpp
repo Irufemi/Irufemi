@@ -18,7 +18,7 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
     telegraphObj_->SetCastShadows(false);
 
     attackCylinder_ = std::make_shared<CylinderClass>();
-    attackCylinder_->Initialize();
+    attackCylinder_->Initialize(false, false);
     attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     attackCylinder_->SetCastShadows(false);
 
@@ -167,36 +167,24 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
     }
 
     if (isAttackActive_ && attackCylinder_) {
-        // attackCylinder_->Draw() だと RenderQueue に回されてしまい専用PSOが上書きされるため、
-        // 不透明描画の後に専用PSOを適用して描画するよう SubmitPostRender に積む
-        attackCylinder_->SyncBeforeDraw();
+        // 新しいカスタムPSOインジェクション基盤を使用して、専用のシェーダーと定数バッファをセットする
+        attackCylinder_->SetCustomPSO(engine->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+        if (lightningParamsResource_) {
+            attackCylinder_->SetCustomCBVAddress(lightningParamsResource_->GetGPUVirtualAddress());
+        }
 
-        engine->GetDrawManager()->SubmitPostRender([
-            engine, 
-            capturedCylinder = attackCylinder_, 
-            capturedLightning = lightningParamsResource_
-        ]() {
-            engine->SetBlend(BlendMode::kBlendModeAdd);
-            engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
-            engine->SetCull(PSOManager::CullMode::None);
+        // パケット（キュー）に積まれる描画ステートを設定
+        engine->SetBlend(BlendMode::kBlendModeAdd);
+        engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine->SetCull(PSOManager::CullMode::None);
 
-            engine->ApplyLightningCrawlPSO();
-            if (capturedLightning) {
-                engine->BindLightningParams(capturedLightning->GetGPUVirtualAddress());
-            }
+        // 通常通りDrawを呼ぶだけで、DrawManager内で適切なパスと順序（カスタムPSO付き）で描画される
+        attackCylinder_->Draw();
 
-            RenderPackets::Standard3DPacket packet{};
-            packet.resource = capturedCylinder->GetD3D12Resource();
-            packet.blendMode = BlendMode::kBlendModeAdd;
-            packet.depthWrite = PSOManager::DepthWrite::Disable;
-            packet.cullMode = PSOManager::CullMode::None;
-            engine->GetDrawManager()->DrawStandard3D(packet);
-
-            // 状態を戻す
-            engine->SetBlend(BlendMode::kBlendModeNormal);
-            engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
-            engine->SetCull(PSOManager::CullMode::Back);
-        });
+        // 状態を元に戻す
+        engine->SetBlend(BlendMode::kBlendModeNormal);
+        engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
+        engine->SetCull(PSOManager::CullMode::Back);
 
         // パーティクルの描画（UpdateでのCSディスパッチ含む）
         if (gpuParticle_) {

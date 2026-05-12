@@ -43,13 +43,11 @@ public:
      */
     virtual void Deserialize(const nlohmann::json& j) { (void)j; }
 
-#ifdef EditorMode
     /**
      * @brief エディタ（インスペクター）用UIの描画処理
      * @details ImGuiを用いてパラメータの編集UIを構築します。
      */
     virtual void OnInspectorGUI() {}
-#endif
 
     /**
      * @brief 所属するGameObjectのセット

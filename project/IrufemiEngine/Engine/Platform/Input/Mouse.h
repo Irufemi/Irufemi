@@ -26,6 +26,7 @@ public:
     ///@{
     void Initialize(HWND hwnd);
     void Update();
+    void Clear();
     ///@}
 
     /** @name ボタン入力状態 */
@@ -61,6 +62,14 @@ public:
      */
     void SetLocked(bool locked);
     ///@}
+    
+    /**
+     * @brief Raw Input からの生移動量を蓄積する
+     */
+    void AddRawDelta(float dx, float dy) {
+        rawDelta_.x += dx;
+        rawDelta_.y += dy;
+    }
 
 private:
     HWND hwnd_ = nullptr;
@@ -69,6 +78,7 @@ private:
     Vector2 position_{};
     Vector2 prevPosition_{};
     Vector2 delta_{};
+    Vector2 rawDelta_{}; // Raw Input からの生移動量
     float wheelDelta_ = 0.0f;
     bool isLocked_ = true; // マウスを中央に固定するかどうか
-};
+};

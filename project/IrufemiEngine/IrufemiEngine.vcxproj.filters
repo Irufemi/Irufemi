@@ -237,13 +237,13 @@
     <ClCompile Include="Engine\Platform\WindowsAPI\WinApp.cpp">
       <Filter>Engine\Platform\WinApp</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Region\Primitive\TetraRegion.cpp">
+    <ClCompile Include="Renderer\Region\BaseRegion.cpp">
       <Filter>Renderer\Region</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Region\Region.cpp">
+    <ClCompile Include="Renderer\Region\ModelRegion.cpp">
       <Filter>Renderer\Region</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Region\Primitive\SphereRegion.cpp">
+    <ClCompile Include="Renderer\Region\PrimitiveRegion.cpp">
       <Filter>Renderer\Region</Filter>
     </ClCompile>
     <ClCompile Include="Resource\Audio\Se.cpp">
@@ -477,7 +477,7 @@
     <ClInclude Include="Engine\Manager\DebugUI.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Manager\RenderPackets.h">
+    <ClInclude Include="Engine\Graphics\Data\RenderPackets.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h">
@@ -537,13 +537,13 @@
     <ClInclude Include="Engine\Platform\WindowsAPI\WinApp.h">
       <Filter>Engine\Platform\WinApp</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Region\Primitive\TetraRegion.h">
+    <ClInclude Include="Renderer\Region\BaseRegion.h">
       <Filter>Renderer\Region</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Region\Region.h">
+    <ClInclude Include="Renderer\Region\ModelRegion.h">
       <Filter>Renderer\Region</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Region\Primitive\SphereRegion.h">
+    <ClInclude Include="Renderer\Region\PrimitiveRegion.h">
       <Filter>Renderer\Region</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Audio\Se.h">
@@ -741,10 +741,10 @@
     <ClInclude Include="Renderer\Material.h">
       <Filter>Engine\Graphics\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\TransformationMatrix.h">
+    <ClInclude Include="Engine\Graphics\Data\TransformationMatrix.h">
       <Filter>Engine\Graphics\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VertexData.h">
+    <ClInclude Include="Engine\Graphics\Data\VertexData.h">
       <Filter>Engine\Graphics\Data</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Data\Spring.h">
@@ -927,7 +927,7 @@
     <ClInclude Include="Engine\Graphics\DirectX\ConstantBuffer.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Manager\IComputeTask.h">
+    <ClInclude Include="Engine\Graphics\Compute\IComputeTask.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Core\BaseResource.h">

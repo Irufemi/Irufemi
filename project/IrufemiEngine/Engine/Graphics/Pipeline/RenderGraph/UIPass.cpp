@@ -21,8 +21,8 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
                 engine->SetBlend(p.blendMode);
                 engine->SetDepthWrite(p.depthWrite);
                 engine->SetCull(p.cullMode);
-                if (isSprite) engine->ApplySpritePSO();
-                else engine->ApplyPSO(); // For UI 3D
+                if (isSprite) engine->ApplyPSO("Sprite");
+                else engine->ApplyPSO("Object3D"); // For UI 3D
                 
                 currentBlend = p.blendMode;
                 currentDepth = p.depthWrite;

@@ -49,13 +49,7 @@ void DirectXCommon::Finalize() {
     }
 
     // D3D12解放順: PSO/RootSig→DSV/RTV/SRV→バッファ→コマンド系→フェンス→SwapChain→Device
-    voxelParticleUpdatePSO_.Reset();
-    voxelParticleEmitPSO_.Reset();
-    gpuParticleUpdatePSO_.Reset();
-    gpuParticleInitializePSO_.Reset();
-    gpuParticleInitSortPSO_.Reset();
-    gpuParticleBitonicSortPSO_.Reset();
-    skinningComputePSO_.Reset();
+
     if (rootSignatureManager_) {
         rootSignatureManager_->Finalize();
         rootSignatureManager_.reset();
@@ -221,6 +215,8 @@ void DirectXCommon::CreatePSOs() {
     auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
     auto vsShadowSkin = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", options);
     auto psLightning = shaderManager_->GetOrCompile(L"resources/shaders/LightningCrawl.PS.hlsl", options);
+    auto vsRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.VS.hlsl", options);
+    auto psRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.PS.hlsl", options);
 
     auto csSkin = shaderManager_->GetOrCompile(L"resources/shaders/Skinning.CS.hlsl", options);
     auto csGpuInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeParticle.CS.hlsl", options);
@@ -250,41 +246,60 @@ void DirectXCommon::CreatePSOs() {
         { inputElementDescs, _countof(inputElementDescs) },
         DXGI_FORMAT_R8G8B8A8_UNORM,
         DXGI_FORMAT_D24_UNORM_S8_UINT,
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
-        { vs3d, ps3d },
-        { vsParticle, psParticle },
-        { vsSprite, psSprite },
-        { vsRegion, ps3d },
-        { vsGeo, psGeo, gsGeo },
-        { vsLine, psLine },
-        { vsLineInst, psLineInst },
-        { vsSkin, ps3d },
-        { vsSkybox, psSkybox },
-        { vsGpuParticle, psGpuParticle },
-        { vsVoxel, psVoxel },
-        { vsShadow, nullptr },     // shadowShaders
-        { vsShadowSkin, nullptr }, // shadowSkinningShaders
-        { vs3d, psLightning }     // lightningShaders [NEW]
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
     );
 
-    // --- Compute PSO生成 ---
-    auto createComputePSO = [&](const Microsoft::WRL::ComPtr<IDxcBlob>& blob, Microsoft::WRL::ComPtr<ID3D12PipelineState>& pso) {
-        D3D12_COMPUTE_PIPELINE_STATE_DESC desc{};
-        desc.pRootSignature = GetComputeRootSignature();
-        desc.CS = { blob->GetBufferPointer(), blob->GetBufferSize() };
-        HRESULT hr = device_->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso.GetAddressOf()));
-        assert(SUCCEEDED(hr));
-    };
+    // --- 各種シェーダの登録 ---
+    psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });
+    psoManager_->RegisterShader("Particle", { { vsParticle, psParticle } });
+    psoManager_->RegisterShader("Sprite", { { vsSprite, psSprite } });
+    psoManager_->RegisterShader("Region", { { vsRegion, ps3d } });
+    
+    // ByGeometryShaderはPOINTトポロジ
+    psoManager_->RegisterShader("ByGeometryShader", { { vsGeo, psGeo, gsGeo }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT });
+    
+    // LineとLineInstancedはLINEトポロジ
+    psoManager_->RegisterShader("Line", { { vsLine, psLine }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
+    psoManager_->RegisterShader("LineInstanced", { { vsLineInst, psLineInst }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
+    
+    psoManager_->RegisterShader("Skinning", { { vsSkin, ps3d } });
+    psoManager_->RegisterShader("Skybox", { { vsSkybox, psSkybox } });
+    psoManager_->RegisterShader("GpuParticle", { { vsGpuParticle, psGpuParticle } });
+    psoManager_->RegisterShader("VoxelParticle", { { vsVoxel, psVoxel } });
+    
+    // シャドウマップ(通常) - 深度のみ
+    PSOManager::PipelineStateDesc shadowDesc{};
+    shadowDesc.shaders = { vsShadow, nullptr };
+    shadowDesc.isDepthOnly = true;
+    psoManager_->RegisterShader("Shadow", shadowDesc);
 
-    createComputePSO(csSkin, skinningComputePSO_);
-    createComputePSO(csGpuInit, gpuParticleInitializePSO_);
-    createComputePSO(csGpuEmit, gpuParticleEmitPSO_);
-    createComputePSO(csGpuUpdate, gpuParticleUpdatePSO_);
-    createComputePSO(csGpuInitSort, gpuParticleInitSortPSO_);
-    createComputePSO(csGpuBitonicSort, gpuParticleBitonicSortPSO_);
-    createComputePSO(csVoxelInit, voxelParticleInitializePSO_);
-    createComputePSO(csVoxelEmit, voxelParticleEmitPSO_);
-    createComputePSO(csVoxelUpdate, voxelParticleUpdatePSO_);
+    // シャドウマップ(スキニング) - 深度のみ
+    PSOManager::PipelineStateDesc shadowSkinDesc{};
+    shadowSkinDesc.shaders = { vsShadowSkin, nullptr };
+    shadowSkinDesc.isDepthOnly = true;
+    psoManager_->RegisterShader("ShadowSkinning", shadowSkinDesc);
+
+    psoManager_->RegisterShader("LightningCrawl", { { vs3d, psLightning } });
+    psoManager_->RegisterShader("RocketFlame", { { vsRocket, psRocket } });
+
+    // バックバッファ書き込み用のスプライト設定
+    PSOManager::PipelineStateDesc spriteBBDesc{};
+    spriteBBDesc.shaders = { vsSprite, psSprite };
+    spriteBBDesc.rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    spriteBBDesc.disableDepthTest = true;
+    psoManager_->RegisterShader("SpriteForBackBuffer", spriteBBDesc);
+
+    // --- Compute PSO生成 ---
+    auto computeRootSig = GetComputeRootSignature();
+    psoManager_->RegisterComputeShader("Skinning", csSkin, computeRootSig);
+    psoManager_->RegisterComputeShader("GpuParticleInitialize", csGpuInit, computeRootSig);
+    psoManager_->RegisterComputeShader("GpuParticleEmit", csGpuEmit, computeRootSig);
+    psoManager_->RegisterComputeShader("GpuParticleUpdate", csGpuUpdate, computeRootSig);
+    psoManager_->RegisterComputeShader("GpuParticleInitSort", csGpuInitSort, computeRootSig);
+    psoManager_->RegisterComputeShader("GpuParticleBitonicSort", csGpuBitonicSort, computeRootSig);
+    psoManager_->RegisterComputeShader("VoxelParticleInitialize", csVoxelInit, computeRootSig);
+    psoManager_->RegisterComputeShader("VoxelParticleEmit", csVoxelEmit, computeRootSig);
+    psoManager_->RegisterComputeShader("VoxelParticleUpdate", csVoxelUpdate, computeRootSig);
 
     // --- ビューポート・シザー矩形設定 ---
     viewport_.Width = static_cast<FLOAT>(clientWidth_);
@@ -667,19 +682,13 @@ void DirectXCommon::PreWarmJITCompile() {
         // SetPipelineState とダミー Dispatch(0,0,0) を発行し、
         // NVIDIAやIntelのドライバに対し、最初のDraw()より前に強制的に
         // ハードウェア専用のISA（機械語）へJITコンパイルさせる
-        ID3D12PipelineState* csPSOs[] = {
-            skinningComputePSO_.Get(),
-            gpuParticleInitializePSO_.Get(),
-            gpuParticleEmitPSO_.Get(),
-            gpuParticleUpdatePSO_.Get(),
-            gpuParticleInitSortPSO_.Get(),
-            gpuParticleBitonicSortPSO_.Get(),
-            voxelParticleInitializePSO_.Get(),
-            voxelParticleEmitPSO_.Get(),
-            voxelParticleUpdatePSO_.Get()
+        const char* csNames[] = {
+            "Skinning", "GpuParticleInitialize", "GpuParticleEmit", "GpuParticleUpdate",
+            "GpuParticleInitSort", "GpuParticleBitonicSort", "VoxelParticleInitialize",
+            "VoxelParticleEmit", "VoxelParticleUpdate"
         };
-        for (auto pso : csPSOs) {
-            if (pso) {
+        for (const char* name : csNames) {
+            if (auto pso = psoManager_->GetComputePSO(name)) {
                 uploadCommandList->SetPipelineState(pso);
             }
         }
@@ -690,7 +699,7 @@ void DirectXCommon::PreWarmJITCompile() {
         
         if (psoManager_) {
             // 例: 高負荷な特殊パイプライン(電撃エフェクト等)
-            auto lightningPSO = psoManager_->GetLightningCrawl(BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+            auto lightningPSO = psoManager_->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
             if (lightningPSO) {
                 uploadCommandList->SetPipelineState(lightningPSO);
             }

@@ -67,6 +67,8 @@ public:
     bool GetIsPhase2() const { return isPhase2_; }
     void SetIsPhase2(bool isPhase2) { isPhase2_ = isPhase2; }
 
+    Vector3 GetTargetPosition() const;
+
     // アニメーションクラスへのアクセス用
     EnemyAnimation* GetAnimation() const { return animation_.get(); }
 

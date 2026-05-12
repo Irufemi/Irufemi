@@ -23,6 +23,7 @@ public:
     ///@{
     void Initialize();
     void Update();
+    void Clear();
     ///@}
 
     /** @name ボタン入力状態 */

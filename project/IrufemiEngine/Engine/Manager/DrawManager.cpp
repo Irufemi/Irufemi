@@ -11,9 +11,8 @@ using namespace RenderPackets;
 #include "Renderer/Object3D/Primitive/TriangleClass.h"
 #include "Renderer/Object3D/Primitive/CylinderClass.h"
 #include "Renderer/Object3D/Primitive/CubeClass.h"
-#include "Renderer/Region/Region.h"
-#include "Renderer/Region/Primitive/SphereRegion.h"
-#include "Renderer/Region/Primitive/TetraRegion.h"
+#include "Renderer/Region/ModelRegion.h"
+#include "Renderer/Region/PrimitiveRegion.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/Particle/ParticleResource.h"
 #include "Renderer/LineInstanced/LineClass.h"
@@ -479,24 +478,11 @@ void DrawManager::DrawModelRegion(const RenderPackets::ModelRegionPacket& packet
     }
 }
 
-void DrawManager::SubmitRegion(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, const D3D12_GPU_DESCRIPTOR_HANDLE& textureHandle, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& indexCount, const UINT& instanceCount, bool castShadows) {
-    if (indexCount == 0 || instanceCount == 0) { return; }
-    RegionPacket p{};
-    p.vertexBufferView = vertexBufferView;
-    p.indexBufferView = indexBufferView;
-    p.materialAddress = materialAddress;
-    p.textureHandle = textureHandle;
-    p.instancingSrvHandleGPU = instancingSrvHandleGPU;
-    p.indexCount = indexCount;
-    p.instanceCount = instanceCount;
-    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
-    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
-    p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    p.castShadows = castShadows;
-    regionQueue_.push_back(p);
+void DrawManager::SubmitPrimitiveRegion(const RenderPackets::PrimitiveRegionPacket& packet) {
+    primitiveRegionQueue_.push_back(packet);
 }
 
-void DrawManager::DrawRegion(const RenderPackets::RegionPacket& packet) {
+void DrawManager::DrawPrimitiveRegion(const RenderPackets::PrimitiveRegionPacket& packet) {
     if (packet.indexCount == 0 || packet.instanceCount == 0) { return; }
 
     // IA
@@ -548,7 +534,7 @@ void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const Managed
 
     // --- コンピュートシェーダーによるスキニング実行 ---
     // PSOをコンピュート用に切り替え
-    commandList_->SetPipelineState(dxCommon_->GetSkinningComputePSO());
+    commandList_->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("Skinning"));
 
     // RootSignatureはSkipして共通のComputeRootSignatureを使用する想定
     // (PSO設定時にセットされているはずだが、念のため管理が必要な場合はここでセット)
@@ -620,6 +606,8 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
     p.castShadows = castShadows;
+    p.customPSO = resource->GetCustomPSO();
+    p.customCBVAddress = resource->GetCustomCBVAddress();
     standard3DQueue_.push_back(p);
 }
 
@@ -631,6 +619,8 @@ void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTE
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    p.customPSO = resource->GetCustomPSO();
+    p.customCBVAddress = resource->GetCustomCBVAddress();
     ui3DQueue_.push_back(p);
 }
 
@@ -739,7 +729,6 @@ void DrawManager::SubmitVoxelParticle(
     const D3D12_VERTEX_BUFFER_VIEW& vbv,
     const D3D12_INDEX_BUFFER_VIEW& ibv,
     uint32_t indexCount,
-    D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
     D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
     D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle,
     ID3D12Resource* particleResource,
@@ -751,7 +740,6 @@ void DrawManager::SubmitVoxelParticle(
     p.vbv = vbv;
     p.ibv = ibv;
     p.indexCount = indexCount;
-    p.perViewAddress = perViewAddress;
     p.emitterAddress = emitterAddress;
     p.particleDataHandle = particleDataHandle;
     p.particleResource = particleResource;
@@ -782,8 +770,6 @@ void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& pa
     // VoxelParticle 特有のバインド
     // Slot 1: Transform (b0) <- Emitter
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.emitterAddress);
-    // Slot 7: Special (b6) <- PerView
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, packet.perViewAddress);
     // Slot 9: LineInstancing (t1) <- ParticleData
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, packet.particleDataHandle);
 
@@ -977,7 +963,7 @@ void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
             engine->SetDepthWrite(p.depthWrite);
             engine->SetCull(p.cullMode);
             // バックバッファへ直接描画する特別なPSOを適用
-            engine->ApplySpritePSOForBackBuffer();
+            engine->ApplyPSO("SpriteForBackBuffer");
             
             currentBlend = p.blendMode;
             currentDepth = p.depthWrite;
@@ -997,7 +983,7 @@ void DrawManager::ClearRenderQueues() {
     gpuParticleQueue_.clear();
     voxelParticleQueue_.clear();
     skyboxQueue_.clear();
-    regionQueue_.clear();
+    primitiveRegionQueue_.clear();
     modelRegionQueue_.clear();
     postRenderQueue_.clear();
     topMostSpriteQueue_.clear();

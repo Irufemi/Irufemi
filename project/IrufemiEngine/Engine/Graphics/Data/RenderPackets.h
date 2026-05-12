@@ -3,8 +3,13 @@
 #include <d3d12.h>
 #include <cstdint>
 #include <functional>
-#include "../../Engine/Core/Type/BlendMode.h"
-#include "../../Engine/Graphics/Pipeline/PSOManager.h"
+#include "../../Core/Type/BlendMode.h"
+#include "../Pipeline/PSOManager.h"
+
+/**
+ * @file RenderPackets.h
+ * @brief 描画命令（パケット）の構造体定義群
+ */
 
 // 前方宣言
 class Object3DResource;
@@ -22,6 +27,8 @@ namespace RenderPackets {
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         bool castShadows;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct SpritePacket {
@@ -29,6 +36,8 @@ namespace RenderPackets {
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct ParticlePacket {
@@ -37,6 +46,8 @@ namespace RenderPackets {
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct LinePacket {
@@ -46,6 +57,8 @@ namespace RenderPackets {
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct GPUParticlePacket {
@@ -70,7 +83,6 @@ namespace RenderPackets {
         D3D12_VERTEX_BUFFER_VIEW vbv;
         D3D12_INDEX_BUFFER_VIEW ibv;
         uint32_t indexCount;
-        D3D12_GPU_VIRTUAL_ADDRESS perViewAddress;
         D3D12_GPU_VIRTUAL_ADDRESS emitterAddress;
         D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle;
         ID3D12Resource* particleResource;
@@ -98,6 +110,8 @@ namespace RenderPackets {
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         bool castShadows;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct ModelRegionPacket {
@@ -110,6 +124,8 @@ namespace RenderPackets {
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         bool castShadows;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
 } // namespace RenderPackets

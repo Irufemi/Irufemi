@@ -40,11 +40,10 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Particle/ParticleResource.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
-#include "Renderer/Region/Primitive/SphereRegion.h"
-#include "Renderer/Region/Primitive/TetraRegion.h"
-#include "Renderer/Region/Region.h"
+#include "Renderer/Region/ModelRegion.h"
+#include "Renderer/Region/PrimitiveRegion.h"
 #include "Renderer/Skybox/Skybox.h"
-#include "Renderer/VertexData.h"
+#include "Graphics/Data/VertexData.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 
 #include "Framework/IScene.h"
@@ -102,9 +101,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
                         winApp_->GetClientHeight());
 
   BaseResource::SetDirectXCommon(dxCommon_.get());
-  ModelRegion::SetDirectXCommon(dxCommon_.get());
-  SphereRegion::SetDirectXCommon(dxCommon_.get());
-  TetraRegion::SetDirectXCommon(dxCommon_.get());
+  BaseRegion::SetDirectXCommon(dxCommon_.get());
   Line3DRegion::SetDirectXCommon(dxCommon_.get());
 
   // --- Dynamic Constant Buffer の初期化 ---
@@ -123,9 +120,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 
     // 注入
     Texture::SetDescriptorPool(srvPool);
-    SphereRegion::SetSrvAllocator(srvPool);
-    ModelRegion::SetSrvAllocator(srvPool);
-    TetraRegion::SetSrvAllocator(srvPool);
+    BaseRegion::SetSrvAllocator(srvPool);
     ParticleSystem::SetSrvPool(srvPool);
     Line3DRegion::SetSrvAllocator(srvPool);
   }
@@ -220,9 +215,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   PlaneClass::SetDrawManager(drawManager_.get());
   CylinderClass::SetDrawManager(drawManager_.get());
   RingClass::SetDrawManager(drawManager_.get());
-  ModelRegion::SetDrawManager(drawManager_.get());
-  SphereRegion::SetDrawManager(drawManager_.get());
-  TetraRegion::SetDrawManager(drawManager_.get());
+  BaseRegion::SetDrawManager(drawManager_.get());
   ParticleSystem::SetDrawManager(drawManager_.get());
   GPUParticleSystem::SetDrawManager(drawManager_.get());
   PrimitiveObjects3DClass::SetDrawManager(drawManager_.get());
@@ -242,9 +235,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   PlaneClass::SetTextureManager(textureManager_.get());
   CylinderClass::SetTextureManager(textureManager_.get());
   RingClass::SetTextureManager(textureManager_.get());
-  ModelRegion::SetTextureManager(textureManager_.get());
-  SphereRegion::SetTextureManager(textureManager_.get());
-  TetraRegion::SetTextureManager(textureManager_.get());
+  BaseRegion::SetTextureManager(textureManager_.get());
   ParticleSystem::SetTextureManager(textureManager_.get());
   GPUParticleSystem::SetTextureManager(textureManager_.get());
   PrimitiveObjects3DClass::SetTextureManager(textureManager_.get());
@@ -260,8 +251,6 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   VoxelParticleSystem::SetEngine(this);
 
   Circle2D::SetEngine(this);
-  SphereRegion::SetEngine(this);
-  TetraRegion::SetEngine(this);
   Line3DRegion::SetEngine(this);
   CubeClass::SetEngine(this);
   Effect::SetEngine(this);
@@ -404,9 +393,7 @@ void IrufemiEngine::Finalize() {
   // --- 静的ポインタのクリア（デストラクタでの不正アクセス防止） ---
   // 全マネージャとシーンの破棄が完了し、非同期タスクもJoinしたこのタイミングでクリアするのが最も安全
   BaseResource::SetDirectXCommon(nullptr);
-  ModelRegion::SetDirectXCommon(nullptr);
-  SphereRegion::SetDirectXCommon(nullptr);
-  TetraRegion::SetDirectXCommon(nullptr);
+  BaseRegion::SetDirectXCommon(nullptr);
   Line3DRegion::SetDirectXCommon(nullptr);
 
   Texture::SetDescriptorPool(nullptr);
@@ -414,9 +401,7 @@ void IrufemiEngine::Finalize() {
   Texture::SetWhiteTextureResource(nullptr);
   GpuMesh::sDxCommon = nullptr;
 
-  SphereRegion::SetSrvAllocator(nullptr);
-  ModelRegion::SetSrvAllocator(nullptr);
-  TetraRegion::SetSrvAllocator(nullptr);
+  BaseRegion::SetSrvAllocator(nullptr);
   ParticleSystem::SetSrvPool(nullptr);
   Line3DRegion::SetSrvAllocator(nullptr);
 
@@ -439,9 +424,7 @@ void IrufemiEngine::Finalize() {
   PlaneClass::SetDrawManager(nullptr);
   CylinderClass::SetDrawManager(nullptr);
   RingClass::SetDrawManager(nullptr);
-  ModelRegion::SetDrawManager(nullptr);
-  SphereRegion::SetDrawManager(nullptr);
-  TetraRegion::SetDrawManager(nullptr);
+  BaseRegion::SetDrawManager(nullptr);
   ParticleSystem::SetDrawManager(nullptr);
   GPUParticleSystem::SetDrawManager(nullptr);
   PrimitiveObjects3DClass::SetDrawManager(nullptr);
@@ -455,9 +438,7 @@ void IrufemiEngine::Finalize() {
   PlaneClass::SetTextureManager(nullptr);
   CylinderClass::SetTextureManager(nullptr);
   RingClass::SetTextureManager(nullptr);
-  ModelRegion::SetTextureManager(nullptr);
-  SphereRegion::SetTextureManager(nullptr);
-  TetraRegion::SetTextureManager(nullptr);
+  BaseRegion::SetTextureManager(nullptr);
   ParticleSystem::SetTextureManager(nullptr);
   GPUParticleSystem::SetTextureManager(nullptr);
   PrimitiveObjects3DClass::SetTextureManager(nullptr);
@@ -471,8 +452,6 @@ void IrufemiEngine::Finalize() {
   GPUParticleSystem::SetDXCommon(nullptr);
   VoxelParticleSystem::SetEngine(nullptr);
   Circle2D::SetEngine(nullptr);
-  SphereRegion::SetEngine(nullptr);
-  TetraRegion::SetEngine(nullptr);
   Line3DRegion::SetEngine(nullptr);
   CubeClass::SetEngine(nullptr);
   Effect::SetEngine(nullptr);
@@ -692,131 +671,32 @@ bool IrufemiEngine::IsCursorLocked() const {
   return false;
 }
 
-void IrufemiEngine::ApplyPSO() {
+void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
+  // Shadowパスの場合は自動的にシャドウ用シェーダに切り替える(元のコードの仕様維持)
   if (drawManager_->IsShadowPass()) {
-    ApplyShadowPSO();
-    return;
+      if (shaderName == "Object3D") {
+          auto* pso = GetPSOManager()->GetPSO("Shadow", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          if (pso) drawManager_->BindPSO(pso);
+          return;
+      }
+      else if (shaderName == "Skinning") {
+          auto* pso = GetPSOManager()->GetPSO("ShadowSkinning", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          if (pso) drawManager_->BindPSO(pso);
+          return;
+      }
+      // それ以外はシャドウパスでは描画しない(無視)
+      return;
   }
-  auto *pso = GetPSOManager()->Get(currentBlend_, currentDepth_, currentCull_);
-  assert(pso && "PSO is null. Check PSOManager::Initialize and shader blobs.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
+  
+  // Skybox用の特殊対応 (元のコードでは CullMode::Front 決め打ちでブレンドと深度は不要だった)
+  if (shaderName == "Skybox") {
+      auto* pso = GetPSOManager()->GetPSO("Skybox", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Front);
+      if (pso) drawManager_->BindPSO(pso);
+      return;
   }
-}
 
-void IrufemiEngine::ApplyParticlePSO() {
-  auto *pso =
-      GetPSOManager()->GetParticle(currentBlend_, currentDepth_, currentCull_);
-  assert(pso && "Particle PSO is null. Check particle shader setup.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplySpritePSO() {
-  auto *pso =
-      GetPSOManager()->GetSprite(currentBlend_, currentDepth_, currentCull_);
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplySpritePSOForBackBuffer() {
-  auto *pso = GetPSOManager()->GetSpriteForBackBuffer(
-      currentBlend_, currentDepth_, currentCull_);
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyRegionPSO() {
-  auto *pso =
-      GetPSOManager()->GetRegion(currentBlend_, currentDepth_, currentCull_);
-  drawManager_->BindPSO(pso);
-}
-
-void IrufemiEngine::ApplyByGeometryShaderPSO() {
-  auto *pso = GetPSOManager()->GetByGeometryShader(currentBlend_, currentDepth_,
-                                                   currentCull_);
-  assert(pso && "ByGeometryShader PSO is null. Check PSOManager::Initialize "
-                "and shader blobs.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyLinePSO() {
-  auto *pso =
-      GetPSOManager()->GetLine(currentBlend_, currentDepth_, currentCull_);
-  assert(pso &&
-         "Line PSO is null. Check PSOManager::Initialize and shader blobs.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyLineInstancedPSO() {
-  auto *pso = GetPSOManager()->GetLineInstanced(currentBlend_, currentDepth_,
-                                                currentCull_);
-  assert(pso && "LineInstanced PSO is null. Check PSOManager::Initialize and "
-                "shader blobs.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplySkinningPSO() {
-  if (drawManager_->IsShadowPass()) {
-    ApplyShadowSkinningPSO();
-    return;
-  }
-  auto *pso =
-      GetPSOManager()->GetSkinning(currentBlend_, currentDepth_, currentCull_);
-  assert(
-      pso &&
-      "Skinning PSO is null. Check PSOManager::Initialize and shader blobs.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplySkyboxPSO() {
-  // Skyboxは内側から見るので、前面カリング
-  auto *pso = GetPSOManager()->GetSkybox(PSOManager::CullMode::Front);
-  assert(pso && "Skybox PSO is null. Check Skybox shader setup.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyGpuParticlePSO() {
-  auto *pso = GetPSOManager()->GetGpuParticle(currentBlend_, currentDepth_,
-                                              currentCull_);
-  assert(pso && "GpuParticle PSO is null. Check GpuParticle shader setup.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-void IrufemiEngine::ApplyShadowPSO() {
-  auto *pso = GetPSOManager()->GetShadow(currentCull_);
-  assert(pso && "Shadow PSO is null. Check shadow shader setup.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyShadowSkinningPSO() {
-  auto *pso = GetPSOManager()->GetShadowSkinning(currentCull_);
-  assert(pso && "ShadowSkinning PSO is null. Check shadow shader setup.");
-  if (pso) {
-    drawManager_->BindPSO(pso);
-  }
-}
-
-void IrufemiEngine::ApplyLightningCrawlPSO() {
-  auto *pso = GetPSOManager()->GetLightningCrawl(currentBlend_, currentDepth_,
-                                                 currentCull_);
-  assert(pso && "LightningCrawl PSO is null. Check shader setup.");
+  auto* pso = GetPSOManager()->GetPSO(shaderName, currentBlend_, currentDepth_, currentCull_);
+  assert(pso && ("PSO is null for " + shaderName).c_str());
   if (pso) {
     drawManager_->BindPSO(pso);
   }

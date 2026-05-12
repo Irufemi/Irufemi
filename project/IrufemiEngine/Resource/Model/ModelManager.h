@@ -81,6 +81,15 @@ struct ManagedModel {
     std::vector<std::shared_ptr<GpuMesh>> gpuMeshes;
     std::vector<std::shared_ptr<GpuMaterial>> gpuMaterials;
     
+    /** 
+     * @brief ボクセル化済みモデルのキャッシュリスト（解像度別）
+     * 複数インスタンス間で共有してメモリと初期化時間を節約する
+     */
+    std::vector<std::shared_ptr<VoxelizedModel>> cachedVoxelModels;
+    
+    /** @brief ボクセルキャッシュアクセス用の排他制御ミューテックス */
+    std::mutex voxelMutex;
+    
     std::atomic<LoadingStatus> status = LoadingStatus::Pending;
 };
 
@@ -129,6 +138,15 @@ public:
      * @return 準備中の ManagedModel への共有ポインタ
      */
     std::shared_ptr<ManagedModel> GetModelAsync(const std::string& filename);
+
+    /**
+     * @brief 指定したモデルと解像度のボクセル化データを取得する（キャッシュ対応）
+     * @details 既に同じ解像度でボクセル化されていればキャッシュを返し、なければ新規計算してキャッシュする。
+     * @param filename ボクセル化の元となるモデルファイル名
+     * @param resolution ボクセルの分割数（解像度）
+     * @return 共有される VoxelizedModel へのポインタ（失敗時は nullptr）
+     */
+    std::shared_ptr<VoxelizedModel> GetVoxelizedModel(const std::string& filename, const Vector3Int& resolution);
 
     /**
      * @brief 指定したフォルダ以下のモデルをすべて先行ロードする

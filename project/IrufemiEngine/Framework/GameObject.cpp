@@ -2,6 +2,8 @@
 
 #ifdef EditorMode
 #include <imgui.h>
+#endif
+
 #include "Component/TransformComponent.h"
 #include "Component/Renderer/MeshRendererComponent.h"
 #include "Component/Renderer/PrimitiveRendererComponent.h"
@@ -10,7 +12,6 @@
 #include "Component/Collider/SphereColliderComponent.h"
 #include "Component/Collider/OBBColliderComponent.h"
 #include "Component/Collider/RaycastComponent.h"
-#endif
 void GameObject::Initialize() {
     for (auto& comp : components_) {
         comp->Initialize();
