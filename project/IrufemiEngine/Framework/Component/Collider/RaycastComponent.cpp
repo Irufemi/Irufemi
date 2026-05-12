@@ -2,7 +2,9 @@
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Core/Math/MathFunction.h"
+#ifdef EditorMode
 #include <imgui.h>
+#endif
 
 void RaycastComponent::Initialize() {
     if (gameObject_) {

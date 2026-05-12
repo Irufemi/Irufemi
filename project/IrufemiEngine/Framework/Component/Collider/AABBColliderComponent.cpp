@@ -2,7 +2,9 @@
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"
+#ifdef EditorMode
 #include <imgui.h>
+#endif
 
 AABBColliderComponent::AABBColliderComponent() {}
 

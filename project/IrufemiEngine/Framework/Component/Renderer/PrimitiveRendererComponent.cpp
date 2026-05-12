@@ -1,5 +1,7 @@
 #include "PrimitiveRendererComponent.h"
+#ifdef EditorMode
 #include <imgui.h>
+#endif
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"

@@ -3,7 +3,9 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"
 #include "Engine/Core/Math/MathFunction.h"
+#ifdef EditorMode
 #include <imgui.h>
+#endif
 
 OBBColliderComponent::OBBColliderComponent() {}
 

@@ -11,7 +11,9 @@
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#ifdef EditorMode
 #include <imgui.h>
+#endif
 #include "Engine/Core/Math/MathFunction.h"
 
 
