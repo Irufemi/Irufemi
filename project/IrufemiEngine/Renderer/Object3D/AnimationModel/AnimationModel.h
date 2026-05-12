@@ -7,7 +7,7 @@
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
 
-#include "Engine/Manager/IComputeTask.h"
+#include "../../../Engine/Graphics/Compute/IComputeTask.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>

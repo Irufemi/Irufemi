@@ -12,7 +12,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include <string>
-#include "Engine/Manager/IComputeTask.h"
+#include "../../Engine/Graphics/Compute/IComputeTask.h"
 #include <random>
 #include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
 

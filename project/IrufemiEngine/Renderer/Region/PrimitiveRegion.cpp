@@ -89,6 +89,8 @@ void PrimitiveRegion::Draw() {
     p.depthWrite = GetDepthWrite();
     p.cullMode = GetCullMode();
     p.castShadows = GetCastShadows();
+    p.customPSO = GetCustomPSO();
+    p.customCBVAddress = GetCustomCBVAddress();
 
     drawManager_->SubmitPrimitiveRegion(p);
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Renderer/VertexData.h"
+#include "../Graphics/Data/VertexData.h"
 #include "../Core/Type/PrimitiveType.h"
 #include "../../Renderer/Particle/Data/Particle.h"
 #include "../Core/Pattern/Singleton.h"

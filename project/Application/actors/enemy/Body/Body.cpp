@@ -192,6 +192,7 @@ bool Body::ApplyDamage(int damage) {
 
 void Body::ScatterAt(const Vector3& velocity, const OBB& collisionArea) {
   if (voxelSystem_) {
+    voxelSystem_->SetParameters(VoxelParticleSystem::VoxelEmitterParams::FineScatter());
     voxelSystem_->CollisionScatter(basePosition_, velocity, transform_.rotate,
                                    transform_.scale, collisionArea);
   }

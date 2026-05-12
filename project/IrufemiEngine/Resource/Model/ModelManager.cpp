@@ -15,7 +15,7 @@
 #include "Engine/IrufemiEngine.h"
 #include "Framework/SceneManager.h"
 #include "Engine/Graphics/Data/Material.h"
-#include "Renderer/VertexData.h"
+#include "../../Engine/Graphics/Data/VertexData.h"
 #include "Resource/Model/Data/Node.h"
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"

@@ -274,7 +274,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Camera\DebugCamera.h" />
     <ClInclude Include="Engine\Graphics\Camera\CameraManager.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h" />
-    <ClInclude Include="Engine\Manager\IComputeTask.h" />
+    <ClInclude Include="Engine\Graphics\Compute\IComputeTask.h" />
     <ClInclude Include="Framework\SceneTransition.h" />
     <ClInclude Include="Framework\BaseScene.h" />
     <ClInclude Include="Renderer\Core\IRenderable.h" />
@@ -331,7 +331,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Audio\AudioManager.h" />
     <ClInclude Include="Engine\Manager\DebugUI.h" />
     <ClInclude Include="Engine\Manager\DrawManager.h" />
-    <ClInclude Include="Engine\Manager\RenderPackets.h" />
+    <ClInclude Include="Engine\Graphics\Data\RenderPackets.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.h" />
@@ -386,11 +386,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Audio\Data\SoundData.h" />
     <ClInclude Include="Engine\Graphics\Data\SpotLight.h" />
     <ClInclude Include="Engine\Core\Math\Transform.h" />
-    <ClInclude Include="Renderer\TransformationMatrix.h" />
+    <ClInclude Include="Engine\Graphics\Data\TransformationMatrix.h" />
     <ClInclude Include="Engine\Core\Math\Vector2.h" />
     <ClInclude Include="Engine\Core\Math\Vector3.h" />
     <ClInclude Include="Engine\Core\Math\Vector4.h" />
-    <ClInclude Include="Renderer\VertexData.h" />
+    <ClInclude Include="Engine\Graphics\Data\VertexData.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\PSOManager.h" />
     <ClInclude Include="Resource\Model\Data\Node.h" />
     <ClInclude Include="Resource\Model\ModelManager.h" />

@@ -45,12 +45,7 @@ struct VoxelEmitter
 	float pad2;
 };
 
-// C++側のPerView構造体と一致させる
-struct PerView
-{
-	float4x4 viewProjection;
-	float4x4 billboardMatrix;
-};
+
 
 // 追加: 頂点シェーダー出力構造体
 struct VertexShaderOutput

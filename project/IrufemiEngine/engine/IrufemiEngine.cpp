@@ -43,7 +43,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Region/ModelRegion.h"
 #include "Renderer/Region/PrimitiveRegion.h"
 #include "Renderer/Skybox/Skybox.h"
-#include "Renderer/VertexData.h"
+#include "Graphics/Data/VertexData.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 
 #include "Framework/IScene.h"

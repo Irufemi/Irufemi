@@ -5,7 +5,12 @@
 
 // パーティクルごとのデータ
 StructuredBuffer<VoxelParticle> gParticles : register(t1);
-ConstantBuffer<PerView> gPerView : register(b6);
+struct CameraForGPU {
+	float4x4 view;
+	float4x4 projection;
+	float3 worldPosition;
+};
+ConstantBuffer<CameraForGPU> gCamera : register(b2);
 ConstantBuffer<VoxelEmitter> gEmitter : register(b0);
 
 VertexShaderOutput main(VertexInput input, uint instanceID : SV_InstanceID)
@@ -36,7 +41,8 @@ VertexShaderOutput main(VertexInput input, uint instanceID : SV_InstanceID)
         worldPos.xyz = float3(0, -10000, 0);
     }
     
-	output.position = mul(worldPos, gPerView.viewProjection);
+	float4 viewPos = mul(worldPos, gCamera.view);
+	output.position = mul(viewPos, gCamera.projection);
 	output.worldPosition = worldPos.xyz;
 
     // 法線変換（パーティクル固有の法線を渡す）

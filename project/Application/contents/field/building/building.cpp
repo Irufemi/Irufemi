@@ -494,6 +494,7 @@ void Building::ScatterAt(int index, const Vector3& velocity, const OBB& collisio
     // 完全に破壊済み、またはVoxelシステムがない場合は処理しない
     if (inst.isDestroyed || !inst.voxelSystem) return;
     
+    inst.voxelSystem->SetParameters(VoxelParticleSystem::VoxelEmitterParams::FineScatter());
     inst.voxelSystem->CollisionScatter(inst.position, velocity, inst.rotate, inst.scale, collisionArea);
 }
 
