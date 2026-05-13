@@ -37,6 +37,16 @@ void GameObject::Draw() {
     }
 }
 
+void GameObject::DrawOutlineMask() {
+    if (!isActive_) return;
+    for (auto& comp : components_) {
+        comp->DrawOutlineMask();
+    }
+    for (auto& child : children_) {
+        child->DrawOutlineMask();
+    }
+}
+
 void GameObject::AddChild(std::shared_ptr<GameObject> child) {
     if (!child) return;
     
@@ -95,6 +105,7 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
     component->SetGameObject(this);
     components_.push_back(component);
     componentMap_[typeid(*component)].push_back(component.get());
+    component->Initialize();
 }
 
 void GameObject::RemoveComponent(Component* component) {

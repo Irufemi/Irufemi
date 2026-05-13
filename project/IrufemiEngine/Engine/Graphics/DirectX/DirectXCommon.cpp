@@ -218,6 +218,13 @@ void DirectXCommon::CreatePSOs() {
     auto vsRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.VS.hlsl", options);
     auto psRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.PS.hlsl", options);
 
+#ifdef EditorMode
+    auto vsSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.VS.hlsl", options);
+    auto psSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.PS.hlsl", options);
+    auto vsFullscreen = shaderManager_->GetOrCompile(L"resources/shaders/Fullscreen.VS.hlsl", options);
+    auto psOutlineComp = shaderManager_->GetOrCompile(L"resources/shaders/OutlineComposite.PS.hlsl", options);
+#endif
+
     auto csSkin = shaderManager_->GetOrCompile(L"resources/shaders/Skinning.CS.hlsl", options);
     auto csGpuInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeParticle.CS.hlsl", options);
     auto csGpuEmit = shaderManager_->GetOrCompile(L"resources/shaders/EmitParticle.CS.hlsl", options);
@@ -281,6 +288,22 @@ void DirectXCommon::CreatePSOs() {
 
     psoManager_->RegisterShader("LightningCrawl", { { vs3d, psLightning } });
     psoManager_->RegisterShader("RocketFlame", { { vsRocket, psRocket } });
+
+#ifdef EditorMode
+    PSOManager::PipelineStateDesc maskDesc{};
+    maskDesc.shaders = { vsSelection, psSelection };
+    maskDesc.rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+    maskDesc.dsvFormat = DXGI_FORMAT_UNKNOWN;
+    psoManager_->RegisterShader("SelectionMask", maskDesc);
+    
+    PSOManager::PipelineStateDesc outlineCompDesc{};
+    outlineCompDesc.shaders = { vsFullscreen, psOutlineComp };
+    outlineCompDesc.disableDepthTest = true;
+    outlineCompDesc.useNullInputLayout = true;
+    outlineCompDesc.rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+    outlineCompDesc.dsvFormat = DXGI_FORMAT_UNKNOWN;
+    psoManager_->RegisterShader("OutlineComposite", outlineCompDesc);
+#endif
 
     // バックバッファ書き込み用のスプライト設定
     PSOManager::PipelineStateDesc spriteBBDesc{};

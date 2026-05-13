@@ -2,6 +2,7 @@
 #include "Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Matrix4x4.h"
+#include "Engine/Core/Math/MathFunction.h"
 
 class TransformComponent : public Component {
 public:
@@ -28,6 +29,6 @@ public:
 #endif
 
 private:
-    Matrix4x4 localMatrix_;
-    Matrix4x4 worldMatrix_;
+    Matrix4x4 localMatrix_ = Math::MakeIdentity4x4();
+    Matrix4x4 worldMatrix_ = Math::MakeIdentity4x4();
 };

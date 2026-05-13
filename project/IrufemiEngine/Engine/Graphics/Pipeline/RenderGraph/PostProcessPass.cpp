@@ -12,8 +12,8 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
 
     // 入力となるメインレンダリング結果のステート要求
 #ifdef EditorMode
-    // EditorModeでは自身に書き戻すため、一旦CopySourceとして扱う
-    builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+    // EditorModeでは自身に書き戻すため、最終的な出力先として RENDER_TARGET を要求する
+    builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 #else
     builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 #endif
@@ -97,6 +97,9 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     auto editorSrcTex = renderGraph->GetTransientRenderTexture(editorSrcHandle_);
     
     // CopyResource (mainRenderTex -> editorSrcTex)
+    // RenderGraph によるステート管理のため開始時に RENDER_TARGET から COPY_SOURCE に手動で遷移
+    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
+
     cmdList->CopyResource(editorSrcTex->GetResource(), engine->GetMainRenderTexture()->GetResource());
 
     // バリア遷移
@@ -106,9 +109,8 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     // EditorMode の場合、最終出力先は mainRenderTexture になる
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
     ppMgr->Draw(cmdList, editorSrcTex, rtvHandle, workspace);
-
-    // バリア遷移 (mainRenderTex を SRV に戻す)
-    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    
+    // (末尾での PIXEL_SHADER_RESOURCE への手動遷移は削除。UIPass が RequireState で処理するため)
 #else
     // 最終出力先はバックバッファ
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = drawManager->GetDxCommon()->GetRtvHandles(drawManager->GetDxCommon()->GetCurrentBackBufferIndex());

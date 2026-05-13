@@ -299,6 +299,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\PostProcessPass.cpp" />
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\SelectionOutlinePass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\ShadowPass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.cpp" />
@@ -437,6 +438,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\PostProcessPass.h" />
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\SelectionOutlinePass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraphBuilder.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ShadowPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.h" />

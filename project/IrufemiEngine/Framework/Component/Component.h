@@ -29,6 +29,11 @@ public:
     virtual void Draw() {}
 
     /**
+     * @brief 選択中の輪郭マスク描画処理
+     */
+    virtual void DrawOutlineMask() {}
+
+    /**
      * @brief コンポーネントの種類を表す文字列を返す
      */
     virtual std::string GetComponentName() const { return "Component"; }

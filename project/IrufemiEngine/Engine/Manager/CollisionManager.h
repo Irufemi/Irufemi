@@ -47,7 +47,7 @@ public:
     void CheckAllCollisions();
 
     /// @brief 全コライダーのデバッグ線を描画する
-    void DrawDebug();
+    void DrawDebug(GameObject* selectedObject = nullptr);
 
     /// @brief デバッグ描画フラグのポインタを取得する（ImGui用）
     bool* GetIsDrawDebugLinePtr() { return &isDrawDebugLine_; }

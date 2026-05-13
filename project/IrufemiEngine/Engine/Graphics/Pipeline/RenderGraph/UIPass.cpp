@@ -4,7 +4,9 @@
 #include "RenderGraphBuilder.h"
 
 void UIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
-    // UIPass 自体は特別なバリアを要求しないが、念のため
+#ifdef EditorMode
+    builder.RequireState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+#endif
 }
 
 void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {

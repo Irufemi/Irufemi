@@ -372,6 +372,28 @@ namespace Math {
         };
     }
 
+    Ray ScreenPointToRay(Vector2 mousePos, float screenWidth, float screenHeight, const Matrix4x4& viewProjectionInverse) {
+        // スクリーン座標を NDC (Normalized Device Coordinates) に変換
+        // x: -1.0 ~ 1.0, y: 1.0 ~ -1.0 (DirectXのNDC系)
+        float ndcX = (2.0f * mousePos.x) / screenWidth - 1.0f;
+        float ndcY = 1.0f - (2.0f * mousePos.y) / screenHeight;
+
+        // Nearクリップ面とFarクリップ面でのNDC座標
+        Vector3 ndcNear = { ndcX, ndcY, 0.0f };
+        Vector3 ndcFar  = { ndcX, ndcY, 1.0f };
+
+        // 逆行列を使ってワールド座標に変換
+        Vector3 worldNear = Transform(ndcNear, viewProjectionInverse);
+        Vector3 worldFar  = Transform(ndcFar, viewProjectionInverse);
+
+        // レイを生成 (始点はNear面、方向はNearからFarへ)
+        Ray ray;
+        ray.origin = worldNear;
+        ray.diff = Normalize(worldFar - worldNear);
+
+        return ray;
+    }
+
     Matrix4x4 MakeRotateAxisAngle(Vector3 axis, float angle) {
         float c = std::cos(angle);
         float s = std::sin(angle);

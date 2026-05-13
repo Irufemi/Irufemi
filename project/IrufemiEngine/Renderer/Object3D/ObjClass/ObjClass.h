@@ -68,6 +68,7 @@ public: //メンバ関数
      */
      void SyncBeforeDraw() override;
     void Draw() override;
+    void DrawOutlineMask();
 
     /**
      * @brief デバッグ用UIの表示

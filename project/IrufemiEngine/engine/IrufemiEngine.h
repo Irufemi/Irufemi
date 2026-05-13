@@ -184,6 +184,9 @@ public: // ゲッター
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
     CameraManager* GetCameraManager() { return cameraManager_.get(); }
+#ifdef EditorMode
+    EditorManager* GetEditorManager() { return editorManager_.get(); }
+#endif
     /** 
      * @brief ポストプロセス管理者を取得
      * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。

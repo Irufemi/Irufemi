@@ -302,6 +302,15 @@ namespace Math {
     Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth);
 
     /**
+     * @brief 画面上の2D座標から3D空間のレイ（半直線）を生成する
+     * @param mousePos 画面上のマウス座標
+     * @param screenWidth 画面の幅
+     * @param screenHeight 画面の高さ
+     * @param viewProjectionInverse カメラのビュー・プロジェクション逆行列
+     */
+    Ray ScreenPointToRay(Vector2 mousePos, float screenWidth, float screenHeight, const Matrix4x4& viewProjectionInverse);
+
+    /**
      * @brief 任意軸回転行列の作成
      */
     Matrix4x4 MakeRotateAxisAngle(Vector3 axis, float angle);

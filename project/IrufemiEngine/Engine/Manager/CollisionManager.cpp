@@ -194,15 +194,21 @@ void CollisionManager::CheckAllCollisions() {
     previousCollisions_ = std::move(currentCollisions);
 }
 
-void CollisionManager::DrawDebug() {
+void CollisionManager::DrawDebug(GameObject* selectedObject) {
     if (!debugLine_) return;
     
     debugLine_->ClearInstances();
     
-    if (isDrawDebugLine_) {
-        for (ColliderComponent* collider : colliders_) {
-            if (!collider) continue;
+    for (ColliderComponent* collider : colliders_) {
+        if (!collider) continue;
         
+        bool isSelected = (selectedObject && collider->GetGameObject() == selectedObject);
+        
+        // 全体表示OFFのときでも、選択中のオブジェクトのコライダーは表示する
+        if (!isDrawDebugLine_ && !isSelected) continue;
+
+        Vector4 color = isSelected ? Vector4{ 1.0f, 0.5f, 0.0f, 1.0f } : Vector4{ 0.0f, 1.0f, 0.0f, 1.0f };
+
         if (collider->GetColliderType() == ColliderComponent::ColliderType::AABB) {
             AABBColliderComponent* aabbCol = static_cast<AABBColliderComponent*>(collider);
             AABB aabb = aabbCol->GetWorldAABB();
@@ -217,8 +223,6 @@ void CollisionManager::DrawDebug() {
                 { aabb.min.x, aabb.max.y, aabb.max.z },
                 { aabb.max.x, aabb.max.y, aabb.max.z }
             };
-
-            Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f }; // 緑色
 
             // AABB
             // 底面
@@ -240,7 +244,6 @@ void CollisionManager::DrawDebug() {
         else if (collider->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
             SphereColliderComponent* sphereCol = static_cast<SphereColliderComponent*>(collider);
             Sphere sphere = sphereCol->GetWorldSphere();
-            Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f }; // 緑
             
             // 簡単な3軸の円弧近似を描画
             int segments = 32;
@@ -267,7 +270,6 @@ void CollisionManager::DrawDebug() {
         else if (collider->GetColliderType() == ColliderComponent::ColliderType::OBB) {
             OBBColliderComponent* obbCol = static_cast<OBBColliderComponent*>(collider);
             OBB obb = obbCol->GetWorldOBB();
-            Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f };
             
             // 8頂点を計算
             Vector3 axes[3] = { obb.orientations[0], obb.orientations[1], obb.orientations[2] };
@@ -306,7 +308,6 @@ void CollisionManager::DrawDebug() {
             debugLine_->AddInstance(p[3], p[7], color);
         }
     } // end for colliders_
-    } // end if isDrawDebugLine_
     
     // Raycastのデバッグ描画（コライダーの描画フラグとは独立して描画）
     for (const auto& r : debugRays_) {

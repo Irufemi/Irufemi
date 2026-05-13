@@ -8,6 +8,8 @@
 #include "Engine/Manager/CollisionManager.h"
 #include "../Core/EditorActionManager.h"
 #include "../Core/EditorDragDrop.h"
+#include "Engine/Core/Math/MathFunction.h"
+#include "Framework/GameObject.h"
 
 void SceneViewPanel::Initialize(EditorManager* editorManager) {
     editorManager_ = editorManager;
@@ -45,6 +47,43 @@ void SceneViewPanel::Draw() {
                 }
             }
             ImGui::EndDragDropTarget();
+        }
+        
+        // --- クリックによるピッキング (Raycast) ---
+        // パネルがホバーされていて、左クリックされた瞬間のみ判定
+        if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            ImVec2 mousePos = ImGui::GetMousePos(); // 画面全体の座標
+            ImVec2 minPos = ImGui::GetItemRectMin(); // ImGui::Image() の左上
+            ImVec2 maxPos = ImGui::GetItemRectMax(); // ImGui::Image() の右下
+
+            // 画像領域内がクリックされたか判定
+            if (mousePos.x >= minPos.x && mousePos.x <= maxPos.x &&
+                mousePos.y >= minPos.y && mousePos.y <= maxPos.y) {
+                
+                // Image内のローカル座標に変換
+                Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
+                
+                if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+                    // プロジェクション・ビュー逆行列を計算
+                    Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
+                    Matrix4x4 viewProjInverse = Math::Inverse(viewProj);
+
+                    // レイの生成
+                    Ray ray = Math::ScreenPointToRay(localMousePos, size.x, size.y, viewProjInverse);
+
+                    RaycastHit hit;
+                    // Raycastを実行 (距離1000.0f)
+                    if (CollisionManager::GetInstance().Raycast(ray, hit, 1000.0f)) {
+                        if (hit.hitObject) {
+                            // ヒットしたオブジェクトを選択状態にする
+                            editorManager_->SetSelectedObject(hit.hitObject->shared_from_this());
+                        }
+                    } else {
+                        // 何も当たっていなければ選択を解除
+                        editorManager_->ClearSelectedObject();
+                    }
+                }
+            }
         }
     }
 

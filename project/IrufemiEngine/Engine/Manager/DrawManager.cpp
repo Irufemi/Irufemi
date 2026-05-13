@@ -30,6 +30,7 @@ using namespace RenderPackets;
 #include "../Graphics/Pipeline/RenderGraph/MainTransparentPass.h"
 #include "../Graphics/Pipeline/RenderGraph/UIPass.h"
 #include "../Graphics/Pipeline/RenderGraph/PostProcessPass.h"
+#include "../Graphics/Pipeline/RenderGraph/SelectionOutlinePass.h"
 #include "../../Resource/Model/ModelManager.h"
 #include "../../engine/IrufemiEngine.h"
 #include "../Graphics/Data/CameraForGPU.h"
@@ -127,6 +128,7 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     renderGraph_->AddPass(std::make_unique<MainTransparentPass>());
     renderGraph_->AddPass(std::make_unique<UIPass>());
     renderGraph_->AddPass(std::make_unique<PostProcessPass>());
+    renderGraph_->AddPass(std::make_unique<SelectionOutlinePass>());
 
     // シャドウマップの初期化 (2048x2048) - 全フレーム分
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -624,6 +626,19 @@ void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTE
     ui3DQueue_.push_back(p);
 }
 
+void DrawManager::SubmitOutlineMask(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+    if (!resource) return;
+    Standard3DPacket p{};
+    p.resource = resource;
+    p.vertexBufferViewOverride = vertexBufferViewOverride;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    p.customPSO = resource->GetCustomPSO();
+    p.customCBVAddress = resource->GetCustomCBVAddress();
+    selectionMaskQueue_.push_back(p);
+}
+
 void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) {
     const Object3DResource* resource = packet.resource;
     if (!resource || !commandList_) return;
@@ -977,6 +992,7 @@ void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
 void DrawManager::ClearRenderQueues() {
     standard3DQueue_.clear();
     ui3DQueue_.clear();
+    selectionMaskQueue_.clear();
     spriteQueue_.clear();
     particleQueue_.clear();
     lineQueue_.clear();

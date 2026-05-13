@@ -63,6 +63,7 @@ private:
     // --- Render Queues ---
     std::vector<RenderPackets::Standard3DPacket> standard3DQueue_;
     std::vector<RenderPackets::Standard3DPacket> ui3DQueue_;
+    std::vector<RenderPackets::Standard3DPacket> selectionMaskQueue_;
     std::vector<RenderPackets::SpritePacket> spriteQueue_;
     std::vector<RenderPackets::ParticlePacket> particleQueue_;
     std::vector<RenderPackets::LinePacket> lineQueue_;
@@ -83,6 +84,7 @@ public:
     // --- Queue Getters for RenderPasses ---
     const std::vector<RenderPackets::Standard3DPacket>& GetStandard3DQueue() const { return standard3DQueue_; }
     const std::vector<RenderPackets::Standard3DPacket>& GetUI3DQueue() const { return ui3DQueue_; }
+    const std::vector<RenderPackets::Standard3DPacket>& GetSelectionMaskQueue() const { return selectionMaskQueue_; }
     const std::vector<RenderPackets::SpritePacket>& GetSpriteQueue() const { return spriteQueue_; }
     const std::vector<RenderPackets::ParticlePacket>& GetParticleQueue() const { return particleQueue_; }
     const std::vector<RenderPackets::LinePacket>& GetLineQueue() const { return lineQueue_; }
@@ -325,6 +327,7 @@ public:
      */
     void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = true);
     void SubmitUI3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
+    void SubmitOutlineMask(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
     void DrawStandard3D(const RenderPackets::Standard3DPacket& packet);
 
     /**

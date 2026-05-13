@@ -45,6 +45,12 @@ void MeshRendererComponent::Draw() {
     }
 }
 
+void MeshRendererComponent::DrawOutlineMask() {
+    if (obj_) {
+        obj_->DrawOutlineMask();
+    }
+}
+
 
 
 nlohmann::json MeshRendererComponent::Serialize() {

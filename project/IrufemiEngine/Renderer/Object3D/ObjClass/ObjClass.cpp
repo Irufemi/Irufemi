@@ -182,6 +182,13 @@ void ObjClass::Draw() {
     }
 }
 
+void ObjClass::DrawOutlineMask() {
+    if (!managedModel_ || !engine_ || !engine_->GetDrawManager() || meshResources_.empty()) return;
+    for (auto& res : meshResources_) {
+        engine_->GetDrawManager()->SubmitOutlineMask(res.get(), nullptr);
+    }
+}
+
 void ObjClass::Debug([[maybe_unused]] const char* objName) {
 #if defined USE_IMGUI
     std::string name = std::string("Obj: ") + objName;

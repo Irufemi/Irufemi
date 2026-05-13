@@ -220,6 +220,12 @@ void PSOManager::PreWarmCommonPSOs() {
     // 5. デバッグ及びその他
     GetPSO("Region", BlendMode::kBlendModeNormal, DepthWrite::Disable, CullMode::None);
     GetCopyImage();
+    
+    // 6. エディタ専用パス
+#ifdef EditorMode
+    GetPSO("SelectionMask", BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None);
+    GetPSO("OutlineComposite", BlendMode::kBlendModeNormal, DepthWrite::Off, CullMode::None);
+#endif
 }
 
 

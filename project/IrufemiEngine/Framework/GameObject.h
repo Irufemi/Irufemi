@@ -20,6 +20,7 @@ public:
     void Initialize();
     void Update();
     void Draw();
+    void DrawOutlineMask();
 
     nlohmann::json Serialize() const;
     void Deserialize(const nlohmann::json& j);
