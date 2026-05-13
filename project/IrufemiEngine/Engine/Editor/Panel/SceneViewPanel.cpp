@@ -6,6 +6,8 @@
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/RenderTexture.h"
 #include "Engine/Manager/CollisionManager.h"
+#include "../Core/EditorActionManager.h"
+#include "../Core/EditorDragDrop.h"
 
 void SceneViewPanel::Initialize(EditorManager* editorManager) {
     editorManager_ = editorManager;
@@ -31,6 +33,19 @@ void SceneViewPanel::Draw() {
         ImVec2 size = ImGui::GetContentRegionAvail();
         // 画像アスペクト比を維持したい場合は別途計算が必要だが、今回はパネルいっぱいに描画
         ImGui::Image((ImTextureID)mainTexture->GetSrvHandleGPU().ptr, size);
+        
+        // --- アセットのドラッグ＆ドロップを受け付ける ---
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadAssetPath)) {
+                std::string droppedPathStr = static_cast<const char*>(payload->Data);
+                
+                // EditorActionManager に生成を依頼（Undo履歴にも自動登録される）
+                if (auto am = editorManager_->GetActionManager()) {
+                    am->CreateObjectFromAsset(droppedPathStr);
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
     }
 
     ImGui::End();
