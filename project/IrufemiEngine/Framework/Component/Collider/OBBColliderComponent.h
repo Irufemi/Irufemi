@@ -14,8 +14,9 @@ public:
     void Initialize() override;
     void Update() override;
     void DrawDebug() override;
-    void OnInspectorGUI() override;
-    
+#ifdef EditorMode
+    friend class OBBColliderComponentEditor;
+#endif
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;
 

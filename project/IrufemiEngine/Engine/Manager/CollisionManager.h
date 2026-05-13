@@ -58,9 +58,7 @@ public:
     std::vector<std::string>& GetLayerNames() { return layerNames_; }
     void AddLayer(const std::string& name);
     void RemoveLayer(int index);
-    
-    // エディタ用UI
-    void DrawLayerInspectorGUI(uint32_t& layer, uint32_t& mask);
+    void RenameLayer(int index, const std::string& name);
 
     // --- レイキャスト ---
     /// @brief シーン内の全コライダーに対してレイを飛ばし、最も近いオブジェクトを返す

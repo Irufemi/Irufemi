@@ -3,9 +3,7 @@
 #include "../TransformComponent.h"
 #include "Resource/Texture/TextureManager.h"
 
-#ifdef EditorMode
-#include "imgui/imgui.h"
-#endif
+
 
 SpriteRendererComponent::SpriteRendererComponent() {}
 SpriteRendererComponent::~SpriteRendererComponent() {}
@@ -61,71 +59,7 @@ void SpriteRendererComponent::SetTexture(const std::string& texturePath) {
     }
 }
 
-void SpriteRendererComponent::OnInspectorGUI() {
-#ifdef EditorMode
-    if (ImGui::TreeNodeEx("SpriteRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (sprite_) {
-            bool needUpdate = false;
-            
-            // テクスチャ選択UIをコンポーネント側で完全に構築する
-            TextureManager* tm = Sprite::GetTextureManager();
-            if (tm) {
-                auto names = tm->GetTextureNamesForDebug();
-                int currentIndex = 0;
-                for (int i = 0; i < names.size(); ++i) {
-                    if (names[i] == texturePath_) {
-                        currentIndex = i;
-                        break;
-                    }
-                }
-                const char* currentPreview = names.empty() ? "" : names[currentIndex].c_str();
-                if (ImGui::BeginCombo("Texture", currentPreview)) {
-                    for (int i = 0; i < names.size(); ++i) {
-                        bool isSelected = (currentIndex == i);
-                        if (ImGui::Selectable(names[i].c_str(), isSelected)) {
-                            texturePath_ = names[i];
-                            SetTexture(texturePath_);
-                        }
-                        if (isSelected) ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-            } else {
-                // TextureManagerが無い場合のフォールバック
-                char buffer[256];
-                strncpy_s(buffer, texturePath_.c_str(), sizeof(buffer) - 1);
-                if (ImGui::InputText("TexturePath", buffer, sizeof(buffer))) {
-                    texturePath_ = buffer;
-                    SetTexture(texturePath_);
-                }
-            }
-            
-            if (ImGui::Checkbox("TopMost (Draw over 3D)", &isTopMost_)) {
-                sprite_->SetTopMost(isTopMost_);
-            }
-            if (ImGui::Checkbox("Flip X", &isFlipX_)) needUpdate = true;
-            ImGui::SameLine();
-            if (ImGui::Checkbox("Flip Y", &isFlipY_)) needUpdate = true;
-            
-            if (needUpdate) {
-                sprite_->SetFlip(isFlipX_, isFlipY_);
-            }
 
-            if (ImGui::SliderFloat2("Anchor", anchor_, 0.0f, 1.0f)) {
-                sprite_->SetAnchor(anchor_[0], anchor_[1]);
-            }
-            if (ImGui::DragFloat2("Base Size", size_, 1.0f, 1.0f, 8192.0f)) {
-                // サイズはUpdate内で適用される
-            }
-            
-            if (ImGui::ColorEdit4("Color", &color_.x)) {
-                sprite_->SetColor(color_);
-            }
-        }
-        ImGui::TreePop();
-    }
-#endif
-}
 
 nlohmann::json SpriteRendererComponent::Serialize() {
     nlohmann::json j;

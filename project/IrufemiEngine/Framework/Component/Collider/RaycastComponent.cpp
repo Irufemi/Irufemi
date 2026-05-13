@@ -2,9 +2,7 @@
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Core/Math/MathFunction.h"
-#ifdef EditorMode
-#include <imgui.h>
-#endif
+
 
 void RaycastComponent::Initialize() {
     if (gameObject_) {
@@ -51,42 +49,7 @@ void RaycastComponent::DrawDebug() {
     }
 }
 
-void RaycastComponent::OnInspectorGUI() {
-#ifdef EditorMode
-    ImGui::PushID(this);
-    if (ImGui::CollapsingHeader("Raycast Sensor", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::Checkbox("Show Debug Line", &showDebugLine_);
-        ImGui::DragFloat3("Local Offset", &localOffset_.x, 0.1f);
-        
-        if (ImGui::DragFloat3("Direction", &localDirection_.x, 0.1f)) {
-            // 方向ベクトルがゼロにならないようにする
-            if (Math::Length(localDirection_) < 0.001f) {
-                localDirection_ = { 0.0f, 0.0f, 1.0f };
-            } else {
-                localDirection_ = Math::Normalize(localDirection_);
-            }
-        }
-        
-        ImGui::DragFloat("Max Distance", &maxDistance_, 1.0f, 0.0f, 10000.0f);
 
-        // マスク設定のUI（Layerは持たないためmaskのみ表示）
-        uint32_t dummyLayer = 0;
-        CollisionManager::GetInstance().DrawLayerInspectorGUI(dummyLayer, mask_);
-
-        // デバッグ情報
-        ImGui::Separator();
-        if (hitInfo_.isHit) {
-            ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Hit: %s", 
-                hitInfo_.hitObject ? hitInfo_.hitObject->GetName().c_str() : "Unknown");
-            ImGui::Text("Distance: %.2f", hitInfo_.distance);
-            ImGui::Text("Point: (%.2f, %.2f, %.2f)", hitInfo_.hitPoint.x, hitInfo_.hitPoint.y, hitInfo_.hitPoint.z);
-        } else {
-            ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "No Hit");
-        }
-    }
-    ImGui::PopID();
-#endif
-}
 
 nlohmann::json RaycastComponent::Serialize() {
     nlohmann::json j;

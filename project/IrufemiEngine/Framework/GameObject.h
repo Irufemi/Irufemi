@@ -33,10 +33,7 @@ public:
      */
     void Draw();
 
-    /**
-     * @brief Inspector(EditorMode) 用のGUI描画
-     */
-    void OnInspectorGUI();
+
 
     /**
      * @brief 自身と全コンポーネントをJSONにシリアライズ
@@ -92,6 +89,11 @@ public:
      * @param component 削除したいコンポーネントのポインタ
      */
     void RemoveComponent(Component* component);
+
+    /**
+     * @brief アタッチされているすべてのコンポーネントのリストを取得する
+     */
+    const std::vector<std::unique_ptr<Component>>& GetComponents() const { return components_; }
 
     // --- アクセッサ ---
     const std::string& GetName() const { return name_; }

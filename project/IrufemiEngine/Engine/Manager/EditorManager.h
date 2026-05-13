@@ -9,6 +9,7 @@ class GameObject;
 class IEditorPanel;
 class EditorActionManager;
 class EditorShortcutManager;
+class ComponentEditorRegistry;
 
 /**
  * @class EditorManager
@@ -29,6 +30,7 @@ public:
     
     EditorActionManager* GetActionManager() const { return actionManager_.get(); }
     EditorShortcutManager* GetShortcutManager() const { return shortcutManager_.get(); }
+    ComponentEditorRegistry* GetComponentEditorRegistry() const { return componentEditorRegistry_.get(); }
     
     std::shared_ptr<GameObject> GetSelectedObject() const { return selectedObject_.lock(); }
     void SetSelectedObject(std::shared_ptr<GameObject> obj) { selectedObject_ = obj; }
@@ -42,6 +44,7 @@ private:
 
     std::unique_ptr<EditorActionManager> actionManager_;
     std::unique_ptr<EditorShortcutManager> shortcutManager_;
+    std::unique_ptr<ComponentEditorRegistry> componentEditorRegistry_;
 
     // 各エディタパネル
     std::vector<std::unique_ptr<IEditorPanel>> panels_;

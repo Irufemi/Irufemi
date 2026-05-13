@@ -1,9 +1,5 @@
 #include "GameObject.h"
 
-#ifdef EditorMode
-#include <imgui.h>
-#endif
-
 #include "Component/TransformComponent.h"
 #include "Component/Renderer/MeshRendererComponent.h"
 #include "Component/Renderer/PrimitiveRendererComponent.h"
@@ -90,111 +86,7 @@ void GameObject::RemoveComponent(Component* component) {
         }), components_.end());
 }
 
-void GameObject::OnInspectorGUI() {
-#ifdef EditorMode
-    for (auto& comp : components_) {
-        if (comp) comp->OnInspectorGUI();
-    }
 
-    ImGui::Separator();
-    ImGui::Spacing();
-    
-    // Add Component ボタン（横幅いっぱい）
-    if (ImGui::Button("Add Component", ImVec2(-1, 30))) {
-        ImGui::OpenPopup("AddComponentPopup");
-    }
-
-    // Add Component のポップアップメニュー
-    if (ImGui::BeginPopup("AddComponentPopup")) {
-        
-        // 既存コンポーネントの確認
-        bool hasTransform = GetComponent<TransformComponent>() != nullptr;
-        bool hasMeshRenderer = GetComponent<MeshRendererComponent>() != nullptr;
-        bool hasPrimitiveRenderer = GetComponent<PrimitiveRendererComponent>() != nullptr;
-        bool hasSpriteRenderer = GetComponent<SpriteRendererComponent>() != nullptr;
-        
-        // どれか一つのレンダラーが存在するか
-        bool hasAnyRenderer = hasMeshRenderer || hasPrimitiveRenderer || hasSpriteRenderer;
-
-        // Transform
-        if (!hasTransform) {
-            if (ImGui::Selectable("TransformComponent")) AddComponent<TransformComponent>();
-        } else {
-            ImGui::TextDisabled("TransformComponent (Already added)");
-        }
-
-        ImGui::Separator();
-
-        // Renderer カテゴリ（サブメニューでリスト化）
-        if (ImGui::BeginMenu("Renderer")) {
-            if (!hasAnyRenderer) {
-                if (ImGui::Selectable("MeshRendererComponent")) AddComponent<MeshRendererComponent>();
-                if (ImGui::Selectable("PrimitiveRendererComponent")) AddComponent<PrimitiveRendererComponent>();
-                if (ImGui::Selectable("SpriteRendererComponent")) AddComponent<SpriteRendererComponent>();
-            } else {
-                if (hasMeshRenderer) ImGui::TextDisabled("MeshRendererComponent (Already added)");
-                else if (hasPrimitiveRenderer) ImGui::TextDisabled("PrimitiveRendererComponent (Already added)");
-                else if (hasSpriteRenderer) ImGui::TextDisabled("SpriteRendererComponent (Already added)");
-                
-                ImGui::Separator();
-                ImGui::TextDisabled("Only one renderer is allowed.");
-            }
-            ImGui::EndMenu();
-        }
-        
-        // 今後コンポーネントが増えたらここに追加
-        if (ImGui::BeginMenu("Collider")) {
-            if (!GetComponent<AABBColliderComponent>()) {
-                if (ImGui::Selectable("AABBColliderComponent")) AddComponent<AABBColliderComponent>();
-            } else {
-                ImGui::TextDisabled("AABBColliderComponent (Already added)");
-            }
-            if (!GetComponent<SphereColliderComponent>()) {
-                if (ImGui::Selectable("SphereColliderComponent")) AddComponent<SphereColliderComponent>();
-            } else {
-                ImGui::TextDisabled("SphereColliderComponent (Already added)");
-            }
-            if (!GetComponent<OBBColliderComponent>()) {
-                if (ImGui::Selectable("OBBColliderComponent")) AddComponent<OBBColliderComponent>();
-            } else {
-                ImGui::TextDisabled("OBBColliderComponent (Already added)");
-            }
-            if (!GetComponent<RaycastComponent>()) {
-                if (ImGui::Selectable("RaycastComponent")) AddComponent<RaycastComponent>();
-            } else {
-                ImGui::TextDisabled("RaycastComponent (Already added)");
-            }
-            ImGui::EndMenu();
-        }
-        
-        ImGui::Separator();
-        
-        if (ImGui::BeginMenu("Remove Component")) {
-            bool hasRemovable = false;
-            for (auto& comp : components_) {
-                if (!comp) continue;
-                std::string compName = comp->GetComponentName();
-                if (compName == "TransformComponent") continue; // Transformは削除不可
-                
-                hasRemovable = true;
-                if (ImGui::Selectable(compName.c_str())) {
-                    RemoveComponent(comp.get());
-                    // 削除後即座にメニューを抜ける（イテレータ保護のため）
-                    ImGui::EndMenu();
-                    ImGui::EndPopup();
-                    return;
-                }
-            }
-            if (!hasRemovable) {
-                ImGui::TextDisabled("No removable components.");
-            }
-            ImGui::EndMenu();
-        }
-        
-        ImGui::EndPopup();
-    }
-#endif
-}
 
 nlohmann::json GameObject::Serialize() const {
     nlohmann::json j;

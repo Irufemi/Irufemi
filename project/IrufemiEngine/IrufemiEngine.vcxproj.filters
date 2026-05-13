@@ -198,6 +198,9 @@
     <ClCompile Include="Engine\Editor\Core\EditorTheme.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Editor\Core\ComponentEditorRegistry.cpp">
+      <Filter>Engine\Manager</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Editor\Core\EditorActionManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
@@ -511,6 +514,12 @@
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Editor\Core\EditorTheme.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Core\ComponentEditorRegistry.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Core\IComponentEditor.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Editor\Core\EditorDragDrop.h">
@@ -1008,6 +1017,7 @@
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Framework\Component\Collider\RaycastComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">

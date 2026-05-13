@@ -3,9 +3,7 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"
 #include "Engine/Core/Math/MathFunction.h"
-#ifdef EditorMode
-#include <imgui.h>
-#endif
+
 
 OBBColliderComponent::OBBColliderComponent() {}
 
@@ -29,19 +27,7 @@ void OBBColliderComponent::Update() {
 void OBBColliderComponent::DrawDebug() {
 }
 
-void OBBColliderComponent::OnInspectorGUI() {
-#ifdef EditorMode
-    ImGui::PushID(this);
-    if (ImGui::CollapsingHeader("OBB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::DragFloat3("Offset", &localOffset_.x, 0.1f);
-        ImGui::DragFloat3("Size (Extents)", &localSize_.x, 0.1f, 0.0f, 1000.0f);
-        ImGui::Checkbox("Is Trigger", &isTrigger_);
-        
-        CollisionManager::GetInstance().DrawLayerInspectorGUI(layer_, mask_);
-    }
-    ImGui::PopID();
-#endif
-}
+
 
 OBB OBBColliderComponent::GetWorldOBB() const {
     OBB obb;

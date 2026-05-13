@@ -18,7 +18,7 @@ public:
     void Draw() override;
 
 #ifdef EditorMode
-    void OnInspectorGUI() override;
+    friend class PrimitiveRendererComponentEditor;
 #endif
 
     std::string GetComponentName() const override { return "PrimitiveRendererComponent"; }

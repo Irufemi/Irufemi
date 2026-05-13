@@ -47,7 +47,7 @@ public:
      * @brief エディタ（インスペクター）用UIの描画処理
      * @details ImGuiを用いてパラメータの編集UIを構築します。
      */
-    virtual void OnInspectorGUI() {}
+
 
     /**
      * @brief 所属するGameObjectのセット

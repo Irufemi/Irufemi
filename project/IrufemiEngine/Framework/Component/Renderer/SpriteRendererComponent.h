@@ -20,8 +20,9 @@ public:
     void Initialize() override;
     void Update() override;
     void Draw() override;
-    void OnInspectorGUI() override;
-
+#ifdef EditorMode
+    friend class SpriteRendererComponentEditor;
+#endif
     void SetTexture(const std::string& texturePath);
     Sprite* GetSprite() const { return sprite_.get(); }
 

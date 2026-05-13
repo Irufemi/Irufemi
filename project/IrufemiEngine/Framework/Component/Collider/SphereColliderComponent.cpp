@@ -2,9 +2,7 @@
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"
-#ifdef EditorMode
-#include <imgui.h>
-#endif
+
 #include <algorithm>
 #include <cmath>
 
@@ -30,19 +28,7 @@ void SphereColliderComponent::Update() {
 void SphereColliderComponent::DrawDebug() {
 }
 
-void SphereColliderComponent::OnInspectorGUI() {
-#ifdef EditorMode
-    ImGui::PushID(this);
-    if (ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::DragFloat3("Offset", &localOffset_.x, 0.1f);
-        ImGui::DragFloat("Radius", &localRadius_, 0.1f, 0.0f, 1000.0f);
-        ImGui::Checkbox("Is Trigger", &isTrigger_);
-        
-        CollisionManager::GetInstance().DrawLayerInspectorGUI(layer_, mask_);
-    }
-    ImGui::PopID();
-#endif
-}
+
 
 Sphere SphereColliderComponent::GetWorldSphere() const {
     Sphere sphere;

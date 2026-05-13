@@ -24,6 +24,7 @@
 // Editor Core
 #include "Engine/Editor/Core/EditorActionManager.h"
 #include "Engine/Editor/Core/EditorShortcutManager.h"
+#include "Engine/Editor/Core/ComponentEditorRegistry.h"
 
 // FontAwesome 用のヘッダーを含める
 #include "../../EngineResources/FontAwesome/IconsFontAwesome6.h"
@@ -36,6 +37,9 @@ void EditorManager::Initialize(IrufemiEngine* engine) {
 
     actionManager_ = std::make_unique<EditorActionManager>(this);
     shortcutManager_ = std::make_unique<EditorShortcutManager>(this, actionManager_.get());
+
+    componentEditorRegistry_ = std::make_unique<ComponentEditorRegistry>();
+    componentEditorRegistry_->RegisterAllEditors();
 
     // 各パネルの生成と初期化
     panels_.push_back(std::make_unique<SceneViewPanel>());

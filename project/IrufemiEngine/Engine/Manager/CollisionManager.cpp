@@ -11,9 +11,8 @@
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#ifdef EditorMode
-#include <imgui.h>
-#endif
+#include <iostream>
+#include <nlohmann/json.hpp>
 #include "Engine/Core/Math/MathFunction.h"
 
 
@@ -364,101 +363,14 @@ void CollisionManager::RemoveLayer(int index) {
     }
 }
 
-void CollisionManager::DrawLayerInspectorGUI(uint32_t& layer, uint32_t& mask) {
-#ifdef EditorMode
-    ImGui::Separator();
-    ImGui::Text("Collision Settings");
-
-    // レイヤー選択 (ComboBox)
-    int currentLayerIndex = 0;
-    for (int i = 0; i < layerNames_.size(); ++i) {
-        if (layer == (1u << i)) {
-            currentLayerIndex = i;
-            break;
-        }
+void CollisionManager::RenameLayer(int index, const std::string& name) {
+    if (index > 0 && index < layerNames_.size()) {
+        layerNames_[index] = name;
+        SaveLayers(layerConfigFilePath_);
     }
-
-    if (ImGui::BeginCombo("Layer", layerNames_[currentLayerIndex].c_str())) {
-        for (int i = 0; i < layerNames_.size(); ++i) {
-            bool isSelected = (currentLayerIndex == i);
-            if (ImGui::Selectable(layerNames_[i].c_str(), isSelected)) {
-                layer = (1u << i);
-            }
-            if (isSelected) ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-
-    // マスク選択 (TreeNode内にCheckBoxリスト)
-    if (ImGui::TreeNode("Collision Mask")) {
-        // すべて選択/解除ボタン
-        if (ImGui::Button("All")) mask = 0xFFFFFFFF;
-        ImGui::SameLine();
-        if (ImGui::Button("None")) mask = 0;
-
-        for (int i = 0; i < layerNames_.size(); ++i) {
-            bool isMasked = (mask & (1u << i)) != 0;
-            if (ImGui::Checkbox(layerNames_[i].c_str(), &isMasked)) {
-                if (isMasked) mask |= (1u << i);
-                else          mask &= ~(1u << i);
-            }
-        }
-        ImGui::TreePop();
-    }
-
-    // レイヤーの編集UI
-    if (ImGui::Button("Edit Layers...")) {
-        ImGui::OpenPopup("Edit Layers");
-    }
-
-    if (ImGui::BeginPopupModal("Edit Layers", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("Manage Collision Layers");
-        ImGui::Separator();
-
-        for (int i = 0; i < layerNames_.size(); ++i) {
-            ImGui::PushID(i);
-            ImGui::Text("%2d: ", i);
-            ImGui::SameLine();
-            
-            if (i == 0) {
-                // Defaultレイヤーは変更不可
-                ImGui::TextDisabled("%s (Fixed)", layerNames_[i].c_str());
-            } else {
-                char nameBuffer[64];
-                strncpy_s(nameBuffer, sizeof(nameBuffer), layerNames_[i].c_str(), _TRUNCATE);
-                
-                ImGui::SetNextItemWidth(150);
-                if (ImGui::InputText("##Name", nameBuffer, sizeof(nameBuffer))) {
-                    layerNames_[i] = nameBuffer;
-                    SaveLayers(layerConfigFilePath_);
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("X")) {
-                    RemoveLayer(i);
-                    // 削除したのでインデックスがずれるため一旦抜ける
-                    ImGui::PopID();
-                    break; 
-                }
-            }
-            ImGui::PopID();
-        }
-
-        if (layerNames_.size() < 32) {
-            if (ImGui::Button("+ Add New Layer")) {
-                AddLayer("New Layer");
-            }
-        } else {
-            ImGui::TextDisabled("Max layers reached (32).");
-        }
-
-        ImGui::Separator();
-        if (ImGui::Button("Close", ImVec2(120, 0))) {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-#endif
 }
+
+
 
 bool CollisionManager::Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDistance, uint32_t layerMask, GameObject* ignoreObject) {
     hitInfo.isHit = false;

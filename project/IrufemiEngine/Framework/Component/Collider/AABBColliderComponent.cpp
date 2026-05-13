@@ -2,9 +2,7 @@
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"
-#ifdef EditorMode
-#include <imgui.h>
-#endif
+
 
 AABBColliderComponent::AABBColliderComponent() {}
 
@@ -32,19 +30,7 @@ void AABBColliderComponent::DrawDebug() {
     // AABB aabb = GetWorldAABB();
 }
 
-void AABBColliderComponent::OnInspectorGUI() {
-#ifdef EditorMode
-    ImGui::PushID(this);
-    if (ImGui::CollapsingHeader("AABB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::DragFloat3("Offset", &localOffset_.x, 0.1f);
-        ImGui::DragFloat3("Size (Extents)", &localSize_.x, 0.1f, 0.0f, 1000.0f);
-        ImGui::Checkbox("Is Trigger", &isTrigger_);
-        
-        CollisionManager::GetInstance().DrawLayerInspectorGUI(layer_, mask_);
-    }
-    ImGui::PopID();
-#endif
-}
+
 
 AABB AABBColliderComponent::GetWorldAABB() const {
     AABB aabb;

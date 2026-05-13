@@ -1,7 +1,5 @@
 #include "PrimitiveRendererComponent.h"
-#ifdef EditorMode
-#include <imgui.h>
-#endif
+
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
@@ -94,67 +92,7 @@ void PrimitiveRendererComponent::RebuildMesh() {
     primitive_->ReinitializeMesh(data);
 }
 
-#ifdef EditorMode
-#include <imgui.h>
-void PrimitiveRendererComponent::OnInspectorGUI() {
-    if (ImGui::TreeNodeEx("PrimitiveRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
-        
-        const char* typeNames[] = {
-            "Triangle", "Plane", "Cube", "Cylinder", "Sphere", 
-            "Tetra", "Circle", "Ring", "Skybox", "Cone", 
-            "Torus", "IcoSphere", "Grid"
-        };
-        
-        bool needRebuild = false;
 
-        if (ImGui::Combo("Shape Type", &currentTypeIndex_, typeNames, IM_ARRAYSIZE(typeNames))) {
-            primitive_->SetShape(static_cast<PrimitiveType>(currentTypeIndex_));
-            // 形状が切り替わったらとりあえず標準設定に戻しつつリビルド判定も兼ねる
-            needRebuild = true;
-        }
-
-        PrimitiveType type = static_cast<PrimitiveType>(currentTypeIndex_);
-
-        // 形状ごとの詳細パラメータ UI
-        switch (type) {
-            case PrimitiveType::Sphere:
-            case PrimitiveType::IcoSphere:
-            case PrimitiveType::Circle:
-                if (ImGui::DragFloat("Radius", &radius_, 0.1f, 0.1f, 100.0f)) needRebuild = true;
-                if (ImGui::SliderInt("Subdivisions", &subdivisions_, 3, 64)) needRebuild = true;
-                break;
-                
-            case PrimitiveType::Cylinder:
-                if (ImGui::DragFloat("Top Radius", &topRadius_, 0.1f, 0.0f, 100.0f)) needRebuild = true;
-                if (ImGui::DragFloat("Bottom Radius", &bottomRadius_, 0.1f, 0.0f, 100.0f)) needRebuild = true;
-                if (ImGui::DragFloat("Height", &height_, 0.1f, 0.1f, 100.0f)) needRebuild = true;
-                if (ImGui::SliderInt("Segments", &subdivisions_, 3, 64)) needRebuild = true;
-                if (ImGui::Checkbox("Has Top", &hasTop_)) needRebuild = true;
-                if (ImGui::Checkbox("Has Bottom", &hasBottom_)) needRebuild = true;
-                break;
-                
-            case PrimitiveType::Cone:
-                if (ImGui::DragFloat("Radius", &radius_, 0.1f, 0.1f, 100.0f)) needRebuild = true;
-                if (ImGui::DragFloat("Height", &height_, 0.1f, 0.1f, 100.0f)) needRebuild = true;
-                if (ImGui::SliderInt("Segments", &subdivisions_, 3, 64)) needRebuild = true;
-                break;
-                
-            case PrimitiveType::Torus:
-                if (ImGui::DragFloat("Major Radius", &torusMajorRadius_, 0.1f, 0.1f, 100.0f)) needRebuild = true;
-                if (ImGui::DragFloat("Minor Radius", &torusMinorRadius_, 0.05f, 0.01f, 100.0f)) needRebuild = true;
-                if (ImGui::SliderInt("Major Segments", &torusMajorSegments_, 3, 64)) needRebuild = true;
-                if (ImGui::SliderInt("Minor Segments", &torusMinorSegments_, 3, 64)) needRebuild = true;
-                break;
-        }
-
-        if (needRebuild) {
-            RebuildMesh();
-        }
-        
-        ImGui::TreePop();
-    }
-}
-#endif
 
 nlohmann::json PrimitiveRendererComponent::Serialize() {
     nlohmann::json j;
