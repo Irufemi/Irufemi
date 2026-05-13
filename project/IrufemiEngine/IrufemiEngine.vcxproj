@@ -285,6 +285,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Resource\Audio\AudioManager.cpp" />
     <ClCompile Include="Engine\Manager\DrawManager.cpp" />
     <ClCompile Include="Engine\Manager\EditorManager.cpp" />
+    <ClCompile Include="Engine\Editor\Panel\SceneViewPanel.cpp" />
+    <ClCompile Include="Engine\Editor\Panel\HierarchyPanel.cpp" />
+    <ClCompile Include="Engine\Editor\Panel\InspectorPanel.cpp" />
+    <ClCompile Include="Engine\Editor\Panel\ProjectBrowserPanel.cpp" />
     <ClCompile Include="Engine\Manager\DebugUI.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.cpp" />
@@ -406,6 +410,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Manager\DebugUI.h" />
     <ClInclude Include="Engine\Manager\DrawManager.h" />
     <ClInclude Include="Engine\Manager\EditorManager.h" />
+    <ClInclude Include="Engine\Editor\IEditorPanel.h" />
+    <ClInclude Include="Engine\Editor\Panel\SceneViewPanel.h" />
+    <ClInclude Include="Engine\Editor\Panel\HierarchyPanel.h" />
+    <ClInclude Include="Engine\Editor\Panel\InspectorPanel.h" />
+    <ClInclude Include="Engine\Editor\Panel\ProjectBrowserPanel.h" />
     <ClInclude Include="Engine\Graphics\Data\RenderPackets.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h" />

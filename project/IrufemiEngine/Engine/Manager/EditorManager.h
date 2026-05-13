@@ -2,12 +2,11 @@
 
 #ifdef EditorMode
 #include <memory>
-#include <filesystem>
-
-struct ImGuiTextFilter;
+#include <vector>
 
 class IrufemiEngine;
 class GameObject;
+class IEditorPanel;
 
 /**
  * @class EditorManager
@@ -15,30 +14,28 @@ class GameObject;
  */
 class EditorManager {
 public:
+    EditorManager();
+    ~EditorManager();
+
     void Initialize(IrufemiEngine* engine);
     void DrawEditorUI();
 
+    /** @name 各パネルからアクセスするための状態管理 Getter/Setter */
+    ///@{
+    IrufemiEngine* GetEngine() const { return engine_; }
+    
+    std::shared_ptr<GameObject> GetSelectedObject() const { return selectedObject_.lock(); }
+    void SetSelectedObject(std::shared_ptr<GameObject> obj) { selectedObject_ = obj; }
+    void ClearSelectedObject() { selectedObject_.reset(); }
+    ///@}
+
 private:
-    void DrawSceneView();
-    void DrawHierarchy();
-    void DrawInspector();
-    void DrawProjectBrowser();
-    void DrawProjectBrowserTree(const std::filesystem::path& path);
 
     IrufemiEngine* engine_ = nullptr;
     std::weak_ptr<GameObject> selectedObject_;
-    
-    // Project Browser 用のパス管理
-    std::filesystem::path projectRootPath_;
-    std::filesystem::path currentProjectBrowserPath_;
 
-    // Project Browser 用の検索フィルタ
-    std::unique_ptr<ImGuiTextFilter> projectBrowserFilter_;
-
-    // Project Browser 用のファイル操作状態
-    std::filesystem::path renamingTarget_;
-    char projectBrowserInputBuffer_[256] = "";
-    bool isCreatingFolder_ = false;
+    // 各エディタパネル
+    std::vector<std::unique_ptr<IEditorPanel>> panels_;
 };
 
 #endif // EditorMode

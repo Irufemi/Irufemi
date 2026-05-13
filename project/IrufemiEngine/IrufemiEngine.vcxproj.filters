@@ -183,6 +183,18 @@
     <ClCompile Include="Engine\Manager\EditorManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Editor\Panel\SceneViewPanel.cpp">
+      <Filter>Engine\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Editor\Panel\HierarchyPanel.cpp">
+      <Filter>Engine\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Editor\Panel\InspectorPanel.cpp">
+      <Filter>Engine\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Editor\Panel\ProjectBrowserPanel.cpp">
+      <Filter>Engine\Manager</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Manager\DebugUI.cpp">
       <Filter>Engine\DebugUI</Filter>
     </ClCompile>
@@ -472,6 +484,21 @@
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Manager\EditorManager.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\IEditorPanel.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Panel\SceneViewPanel.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Panel\HierarchyPanel.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Panel\InspectorPanel.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Panel\ProjectBrowserPanel.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Manager\DebugUI.h">
