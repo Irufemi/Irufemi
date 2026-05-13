@@ -49,12 +49,35 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
     children_.push_back(child);
 }
 
+void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
+    if (!child) return;
+
+    if (auto currentParent = child->GetParent()) {
+        currentParent->RemoveChild(child);
+    }
+
+    child->parent_ = shared_from_this();
+    if (index >= children_.size()) {
+        children_.push_back(child);
+    } else {
+        children_.insert(children_.begin() + index, child);
+    }
+}
+
 void GameObject::RemoveChild(std::shared_ptr<GameObject> child) {
     auto it = std::find(children_.begin(), children_.end(), child);
     if (it != children_.end()) {
         (*it)->parent_.reset();
         children_.erase(it);
     }
+}
+
+size_t GameObject::GetChildIndex(std::shared_ptr<GameObject> child) const {
+    auto it = std::find(children_.begin(), children_.end(), child);
+    if (it != children_.end()) {
+        return std::distance(children_.begin(), it);
+    }
+    return (size_t)-1;
 }
 
 void GameObject::SetParent(std::shared_ptr<GameObject> parent) {
@@ -67,6 +90,13 @@ void GameObject::SetParent(std::shared_ptr<GameObject> parent) {
     }
 }
 
+void GameObject::AddComponent(std::shared_ptr<Component> component) {
+    if (!component) return;
+    component->SetGameObject(this);
+    components_.push_back(component);
+    componentMap_[typeid(*component)].push_back(component.get());
+}
+
 void GameObject::RemoveComponent(Component* component) {
     if (!component) return;
 
@@ -74,14 +104,15 @@ void GameObject::RemoveComponent(Component* component) {
     if (component->GetComponentName() == "TransformComponent") return;
 
     // componentMap_からの削除
-    for (auto& pair : componentMap_) {
-        auto& vec = pair.second;
+    auto typeIt = componentMap_.find(typeid(*component));
+    if (typeIt != componentMap_.end()) {
+        auto& vec = typeIt->second;
         vec.erase(std::remove(vec.begin(), vec.end(), component), vec.end());
     }
 
     // components_からの削除
     components_.erase(std::remove_if(components_.begin(), components_.end(),
-        [component](const std::unique_ptr<Component>& ptr) {
+        [component](const std::shared_ptr<Component>& ptr) {
             return ptr.get() == component;
         }), components_.end());
 }
@@ -118,9 +149,8 @@ void GameObject::Deserialize(const nlohmann::json& j) {
     if (j.contains("components")) {
         for (const auto& cj : j["components"]) {
             std::string type = cj["type"];
-            Component* newComp = nullptr;
+            std::shared_ptr<Component> newComp = nullptr;
             
-            // FIXME: 将来的にはファクトリパターン等で動的に生成するのが望ましい
             if (type == "TransformComponent") newComp = AddComponent<TransformComponent>();
             else if (type == "MeshRendererComponent") newComp = AddComponent<MeshRendererComponent>();
             else if (type == "PrimitiveRendererComponent") newComp = AddComponent<PrimitiveRendererComponent>();

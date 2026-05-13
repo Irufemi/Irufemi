@@ -11,6 +11,7 @@
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
 
+#include "EditorCommands.h"
 #include <filesystem>
 #include <algorithm>
 
@@ -104,7 +105,7 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath) {
     }
 
     if (newObj) {
-        baseScene->AddGameObject(newObj);
+        PushAndExecute(std::make_unique<CreateObjectCommand>(baseScene, newObj));
         editorManager_->SetSelectedObject(newObj);
     }
 }
@@ -146,7 +147,7 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
     }
 
     if (obj) {
-        baseScene->AddGameObject(obj);
+        PushAndExecute(std::make_unique<CreateObjectCommand>(baseScene, obj));
         editorManager_->SetSelectedObject(obj);
     }
 }
@@ -160,10 +161,17 @@ void EditorActionManager::DuplicateObject(std::shared_ptr<GameObject> target) {
     if (!baseScene) return;
 
     auto clone = target->Clone();
-    baseScene->AddGameObject(clone);
-    if (auto parent = target->GetParent()) {
-        clone->SetParent(parent);
+    
+    // クローンの場合は親をセットしてから生成コマンドを発行する
+    auto parent = target->GetParent();
+    size_t index = (size_t)-1;
+    if (parent) {
+        index = parent->GetChildIndex(target) + 1; // オリジナルの次に入れる
+    } else {
+        index = baseScene->GetGameObjectIndex(target) + 1;
     }
+
+    PushAndExecute(std::make_unique<CreateObjectCommand>(baseScene, clone, parent, index));
     editorManager_->SetSelectedObject(clone);
 }
 
@@ -175,15 +183,12 @@ void EditorActionManager::DeleteObject(std::shared_ptr<GameObject> target) {
     auto* baseScene = dynamic_cast<BaseScene*>(engine->GetSceneManager()->GetCurrentScene());
     if (!baseScene) return;
 
-    if (auto parent = target->GetParent()) {
-        parent->RemoveChild(target);
-    }
-    baseScene->RemoveGameObject(target);
+    // 削除コマンドの発行
+    PushAndExecute(std::make_unique<DeleteObjectCommand>(baseScene, target));
 
-    if (auto selected = editorManager_->GetSelectedObject()) {
-        if (selected == target) {
-            editorManager_->ClearSelectedObject();
-        }
+    // 削除されたものが選択されていたら解除
+    if (editorManager_->GetSelectedObject() == target) {
+        editorManager_->ClearSelectedObject();
     }
 }
 

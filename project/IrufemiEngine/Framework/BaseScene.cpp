@@ -87,11 +87,28 @@ void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
     }
 }
 
+void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) {
+    if (!obj) return;
+    if (index >= gameObjects_.size()) {
+        gameObjects_.push_back(obj);
+    } else {
+        gameObjects_.insert(gameObjects_.begin() + index, obj);
+    }
+}
+
 void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
     auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
     if (it != gameObjects_.end()) {
         gameObjects_.erase(it);
     }
+}
+
+size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {
+    auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
+    if (it != gameObjects_.end()) {
+        return std::distance(gameObjects_.begin(), it);
+    }
+    return (size_t)-1;
 }
 
 void BaseScene::SubmitFrameData() {

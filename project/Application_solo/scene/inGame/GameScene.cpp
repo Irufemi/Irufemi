@@ -18,11 +18,11 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     auto testObject = std::make_shared<GameObject>("TestPlane");
 
     // TransformComponent を追加
-    auto* transform = testObject->AddComponent<TransformComponent>();
+    auto transform = testObject->AddComponent<TransformComponent>();
     transform->position_ = { 0.0f, 0.0f, 0.0f }; // 原点に配置
 
     // PrimitiveRendererComponent を追加して Plane を描画
-    auto* renderer = testObject->AddComponent<PrimitiveRendererComponent>();
+    auto renderer = testObject->AddComponent<PrimitiveRendererComponent>();
     renderer->SetShape(PrimitiveType::Plane);
 
 

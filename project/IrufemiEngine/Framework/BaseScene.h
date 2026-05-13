@@ -47,6 +47,11 @@ public:
     void AddGameObject(std::shared_ptr<GameObject> obj);
 
     /**
+     * @brief シーンの指定した位置に GameObject を挿入する (Undo用)
+     */
+    void InsertGameObject(std::shared_ptr<GameObject> obj, size_t index);
+
+    /**
      * @brief シーンから GameObject を削除する
      */
     void RemoveGameObject(std::shared_ptr<GameObject> obj);
@@ -55,6 +60,11 @@ public:
      * @brief シーンが保持する GameObject のリストを取得する
      */
     const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const override { return gameObjects_; }
+
+    /**
+     * @brief オブジェクトの現在のインデックスを取得する (Undo用)
+     */
+    size_t GetGameObjectIndex(std::shared_ptr<GameObject> obj) const;
 
     /**
      * @brief 生ポインタから該当する shared_ptr の GameObject を探して返す

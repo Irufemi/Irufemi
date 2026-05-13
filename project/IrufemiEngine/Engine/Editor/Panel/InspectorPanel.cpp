@@ -50,12 +50,8 @@ void InspectorPanel::Draw() {
         ImGui::SameLine(ImGui::GetWindowWidth() - 80);
         EditorTheme::PushDangerButtonStyle();
         if (ImGui::Button("Delete", ImVec2(70, 0))) {
-            auto* engine = editorManager_->GetEngine();
-            if (engine && engine->GetSceneManager()) {
-                if (auto* baseScene = dynamic_cast<BaseScene*>(engine->GetSceneManager()->GetCurrentScene())) {
-                    baseScene->RemoveGameObject(selected);
-                    editorManager_->ClearSelectedObject(); // 選択解除
-                }
+            if (auto actionManager = editorManager_->GetActionManager()) {
+                actionManager->DeleteObject(selected);
             }
         }
         EditorTheme::PopButtonStyle();
@@ -65,8 +61,8 @@ void InspectorPanel::Draw() {
 
         // コンポーネントのUIを描画
         if (auto sel = editorManager_->GetSelectedObject()) {
+            auto* actionManager = editorManager_->GetActionManager();
             if (auto registry = editorManager_->GetComponentEditorRegistry()) {
-                auto* actionManager = editorManager_->GetActionManager();
                 for (const auto& comp : sel->GetComponents()) {
                     registry->DrawComponent(comp.get(), actionManager);
                 }
@@ -87,7 +83,10 @@ void InspectorPanel::Draw() {
                 bool hasAnyRenderer = hasMeshRenderer || hasPrimitiveRenderer || hasSpriteRenderer;
 
                 if (!hasTransform) {
-                    if (ImGui::Selectable("TransformComponent")) sel->AddComponent<TransformComponent>();
+                    if (ImGui::Selectable("TransformComponent")) {
+                        auto comp = std::make_shared<TransformComponent>();
+                        actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                    }
                 } else {
                     ImGui::TextDisabled("TransformComponent (Already added)");
                 }
@@ -96,9 +95,18 @@ void InspectorPanel::Draw() {
 
                 if (ImGui::BeginMenu("Renderer")) {
                     if (!hasAnyRenderer) {
-                        if (ImGui::Selectable("MeshRendererComponent")) sel->AddComponent<MeshRendererComponent>();
-                        if (ImGui::Selectable("PrimitiveRendererComponent")) sel->AddComponent<PrimitiveRendererComponent>();
-                        if (ImGui::Selectable("SpriteRendererComponent")) sel->AddComponent<SpriteRendererComponent>();
+                        if (ImGui::Selectable("MeshRendererComponent")) {
+                            auto comp = std::make_shared<MeshRendererComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
+                        if (ImGui::Selectable("PrimitiveRendererComponent")) {
+                            auto comp = std::make_shared<PrimitiveRendererComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
+                        if (ImGui::Selectable("SpriteRendererComponent")) {
+                            auto comp = std::make_shared<SpriteRendererComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
                     } else {
                         if (hasMeshRenderer) ImGui::TextDisabled("MeshRendererComponent (Already added)");
                         else if (hasPrimitiveRenderer) ImGui::TextDisabled("PrimitiveRendererComponent (Already added)");
@@ -111,19 +119,31 @@ void InspectorPanel::Draw() {
                 
                 if (ImGui::BeginMenu("Collider")) {
                     if (!sel->GetComponent<AABBColliderComponent>()) {
-                        if (ImGui::Selectable("AABBColliderComponent")) sel->AddComponent<AABBColliderComponent>();
+                        if (ImGui::Selectable("AABBColliderComponent")) {
+                            auto comp = std::make_shared<AABBColliderComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
                     } else { ImGui::TextDisabled("AABBColliderComponent (Already added)"); }
                     
                     if (!sel->GetComponent<SphereColliderComponent>()) {
-                        if (ImGui::Selectable("SphereColliderComponent")) sel->AddComponent<SphereColliderComponent>();
+                        if (ImGui::Selectable("SphereColliderComponent")) {
+                            auto comp = std::make_shared<SphereColliderComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
                     } else { ImGui::TextDisabled("SphereColliderComponent (Already added)"); }
                     
                     if (!sel->GetComponent<OBBColliderComponent>()) {
-                        if (ImGui::Selectable("OBBColliderComponent")) sel->AddComponent<OBBColliderComponent>();
+                        if (ImGui::Selectable("OBBColliderComponent")) {
+                            auto comp = std::make_shared<OBBColliderComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
                     } else { ImGui::TextDisabled("OBBColliderComponent (Already added)"); }
                     
                     if (!sel->GetComponent<RaycastComponent>()) {
-                        if (ImGui::Selectable("RaycastComponent")) sel->AddComponent<RaycastComponent>();
+                        if (ImGui::Selectable("RaycastComponent")) {
+                            auto comp = std::make_shared<RaycastComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
                     } else { ImGui::TextDisabled("RaycastComponent (Already added)"); }
                     ImGui::EndMenu();
                 }
@@ -139,7 +159,7 @@ void InspectorPanel::Draw() {
                         
                         hasRemovable = true;
                         if (ImGui::Selectable(compName.c_str())) {
-                            sel->RemoveComponent(comp.get());
+                            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(sel, comp));
                             ImGui::EndMenu();
                             ImGui::EndPopup();
                             break;
