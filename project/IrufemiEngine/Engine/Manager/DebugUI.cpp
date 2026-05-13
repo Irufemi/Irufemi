@@ -10,6 +10,7 @@
 #include "imgui/imgui.h"
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
+#include "../../EngineResources/FontAwesome/IconsFontAwesome6.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // USE_IMGUI
 #include <vector>
@@ -66,6 +67,15 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     ImFontConfig config;
     config.MergeMode = true;
     io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msgothic.ttc", 16.0f, &config, io.Fonts->GetGlyphRangesJapanese());
+
+    // 3. FontAwesome を MergeMode で読み込む
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    icons_config.GlyphMinAdvanceX = 16.0f; // アイコンの等幅調整
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/FontAwesome/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
+
 #ifdef EditorMode
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Dockingを有効にする
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // マルチビューポートを有効にする

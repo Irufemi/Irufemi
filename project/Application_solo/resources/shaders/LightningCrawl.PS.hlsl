@@ -21,15 +21,10 @@ struct LightningParams {
 };
 ConstantBuffer<LightningParams> gLightning : register(b6);
 
+#include "PerFrame.hlsli"
+
 // カメラ情報 (register b2 / RootSlot::Camera)
-struct PerFrame {
-    float32_t4x4 view;
-    float32_t4x4 projection;
-    float32_t3 worldPosition;
-    float32_t time;
-    float32_t deltaTime;
-};
-ConstantBuffer<PerFrame> gPerFrame : register(b2);
+ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
 struct PixelShaderOutput {
     float32_t4 color : SV_TARGET0;
@@ -59,7 +54,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
 
     // --- 2. Core Bolt (内部の芯) ---
     // Fresnel効果: 視線と法線が並行（正面）に近いほど大きくなる
-    float32_t3 V = normalize(gPerFrame.worldPosition - input.worldPosition);
+    float32_t3 V = normalize(gPerFrame.cameraWorldPosition - input.worldPosition);
     float32_t3 N = normalize(input.normal);
     float32_t fresnel = saturate(dot(N, V));
     
