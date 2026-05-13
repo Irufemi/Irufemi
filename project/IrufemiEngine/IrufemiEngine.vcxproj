@@ -424,9 +424,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Editor\Core\EditorTheme.h" />
     <ClInclude Include="Engine\Editor\Core\EditorDragDrop.h" />
     <ClInclude Include="Engine\Editor\Core\IComponentEditor.h" />
-    <ClInclude Include="Engine\Editor\Core\ComponentEditorRegistry.h" />
     <ClInclude Include="Engine\Editor\Core\EditorActionManager.h" />
     <ClInclude Include="Engine\Editor\Core\EditorShortcutManager.h" />
+    <ClInclude Include="Engine\Editor\Core\ICommand.h" />
+    <ClInclude Include="Engine\Editor\Core\EditorCommands.h" />
+    <ClInclude Include="Engine\Editor\Core\ComponentEditorRegistry.h" />
     <ClInclude Include="Engine\Graphics\Data\RenderPackets.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h" />

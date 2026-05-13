@@ -16,6 +16,55 @@
 
 EditorActionManager::EditorActionManager(EditorManager* editor) : editorManager_(editor) {}
 
+void EditorActionManager::PushAndExecute(std::unique_ptr<ICommand> command) {
+    if (!command) return;
+
+    // 操作の実行
+    command->Do();
+
+    // Undoスタックへ追加
+    undoStack_.push_back(std::move(command));
+
+    // 新しい操作をしたのでRedoスタックはクリア
+    redoStack_.clear();
+
+    // 履歴制限
+    if (undoStack_.size() > maxHistory_) {
+        undoStack_.pop_front();
+    }
+}
+
+void EditorActionManager::Undo() {
+    if (undoStack_.empty()) return;
+
+    // Undoスタックから取り出してUndo実行
+    auto command = std::move(undoStack_.back());
+    undoStack_.pop_back();
+
+    command->Undo();
+
+    // Redoスタックへ移動
+    redoStack_.push_back(std::move(command));
+}
+
+void EditorActionManager::Redo() {
+    if (redoStack_.empty()) return;
+
+    // Redoスタックから取り出して再度実行
+    auto command = std::move(redoStack_.back());
+    redoStack_.pop_back();
+
+    command->Do();
+
+    // Undoスタックへ戻す
+    undoStack_.push_back(std::move(command));
+}
+
+void EditorActionManager::ClearHistory() {
+    undoStack_.clear();
+    redoStack_.clear();
+}
+
 void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath) {
     if (!editorManager_) return;
     auto* engine = editorManager_->GetEngine();

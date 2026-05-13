@@ -9,6 +9,8 @@
 #include "Framework/GameObject.h"
 #include "../Core/EditorTheme.h"
 #include "../Core/ComponentEditorRegistry.h"
+#include "../Core/EditorActionManager.h"
+#include "../Core/EditorCommands.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
@@ -33,8 +35,15 @@ void InspectorPanel::Draw() {
         strncpy_s(nameBuffer, selected->GetName().c_str(), sizeof(nameBuffer) - 1);
         
         ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 150); // Deleteボタンのスペースを確保
+        static std::string startName;
         if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
             selected->SetName(nameBuffer);
+        }
+        if (ImGui::IsItemActivated()) startName = selected->GetName();
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            std::string endName = selected->GetName();
+            editorManager_->GetActionManager()->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                startName, endName, [selected](const std::string& s) { selected->SetName(s); }));
         }
         
         // --- オブジェクト削除ボタン（赤色で右端に配置） ---
@@ -57,8 +66,9 @@ void InspectorPanel::Draw() {
         // コンポーネントのUIを描画
         if (auto sel = editorManager_->GetSelectedObject()) {
             if (auto registry = editorManager_->GetComponentEditorRegistry()) {
+                auto* actionManager = editorManager_->GetActionManager();
                 for (const auto& comp : sel->GetComponents()) {
-                    registry->DrawComponent(comp.get());
+                    registry->DrawComponent(comp.get(), actionManager);
                 }
             }
 

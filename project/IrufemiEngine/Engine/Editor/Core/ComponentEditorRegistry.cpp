@@ -25,6 +25,8 @@
 
 // Core
 #include "IComponentEditor.h"
+#include "EditorCommands.h"
+#include "EditorActionManager.h"
 
 // --- Helper Functions ---
 static void DrawCollisionLayerGUI(uint32_t& layer, uint32_t& mask) {
@@ -125,11 +127,24 @@ static void DrawCollisionLayerGUI(uint32_t& layer, uint32_t& mask) {
 
 class TransformComponentEditor : public IComponentEditor {
 public:
-    void Draw(Component* component) override {
+    void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<TransformComponent*>(component);
         if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::DragFloat3("Position", &comp->position_.x, 0.1f);
             
+            // Position
+            static Vector3 startPos;
+            if (ImGui::DragFloat3("Position", &comp->position_.x, 0.1f)) {
+                // ドラッグ中も値は更新されるがコマンドは積まない
+            }
+            if (ImGui::IsItemActivated()) startPos = comp->position_;
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                Vector3 endPos = comp->position_;
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
+                    startPos, endPos, [comp](const Vector3& v) { comp->position_ = v; }));
+            }
+            
+            // Rotation
+            static Vector3 startRot;
             Vector3 rotDegrees = {
                 comp->rotation_.x * (180.0f / 3.14159265f),
                 comp->rotation_.y * (180.0f / 3.14159265f),
@@ -140,8 +155,24 @@ public:
                 comp->rotation_.y = rotDegrees.y * (3.14159265f / 180.0f);
                 comp->rotation_.z = rotDegrees.z * (3.14159265f / 180.0f);
             }
+            if (ImGui::IsItemActivated()) startRot = comp->rotation_;
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                Vector3 endRot = comp->rotation_;
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
+                    startRot, endRot, [comp](const Vector3& v) { comp->rotation_ = v; }));
+            }
 
-            ImGui::DragFloat3("Scale", &comp->scale_.x, 0.1f);
+            // Scale
+            static Vector3 startScale;
+            if (ImGui::DragFloat3("Scale", &comp->scale_.x, 0.1f)) {
+            }
+            if (ImGui::IsItemActivated()) startScale = comp->scale_;
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                Vector3 endScale = comp->scale_;
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
+                    startScale, endScale, [comp](const Vector3& v) { comp->scale_ = v; }));
+            }
+
             ImGui::TreePop();
         }
     }
@@ -149,7 +180,7 @@ public:
 
 class MeshRendererComponentEditor : public IComponentEditor {
 public:
-    void Draw(Component* component) override {
+    void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<MeshRendererComponent*>(component);
         if (ImGui::TreeNodeEx("MeshRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
             IrufemiEngine* engine = BaseModel::GetIrufemiEngine();
@@ -214,7 +245,7 @@ public:
 
 class PrimitiveRendererComponentEditor : public IComponentEditor {
 public:
-    void Draw(Component* component) override {
+    void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<PrimitiveRendererComponent*>(component);
         if (ImGui::TreeNodeEx("PrimitiveRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
             const char* typeNames[] = {
@@ -270,7 +301,7 @@ public:
 
 class SpriteRendererComponentEditor : public IComponentEditor {
 public:
-    void Draw(Component* component) override {
+    void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<SpriteRendererComponent*>(component);
         if (ImGui::TreeNodeEx("SpriteRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
             bool needUpdate = false;
@@ -329,7 +360,7 @@ public:
 
 class AABBColliderComponentEditor : public IComponentEditor {
 public:
-    void Draw(Component* component) override {
+    void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<AABBColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("AABB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -344,7 +375,7 @@ public:
 
 class OBBColliderComponentEditor : public IComponentEditor {
 public:
-    void Draw(Component* component) override {
+    void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<OBBColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("OBB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -359,7 +390,7 @@ public:
 
 class SphereColliderComponentEditor : public IComponentEditor {
 public:
-    void Draw(Component* component) override {
+    void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<SphereColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -374,7 +405,7 @@ public:
 
 class RaycastComponentEditor : public IComponentEditor {
 public:
-    void Draw(Component* component) override {
+    void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<RaycastComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("Raycast", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -432,11 +463,11 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<RaycastComponent, RaycastComponentEditor>();
 }
 
-void ComponentEditorRegistry::DrawComponent(Component* component) {
+void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {
     if (!component) return;
     auto it = editors_.find(typeid(*component));
     if (it != editors_.end()) {
-        it->second->Draw(component);
+        it->second->Draw(component, actionManager);
     } else {
         // デフォルト描画（フォールバック）
         ImGui::Text("No editor registered for %s", typeid(*component).name());

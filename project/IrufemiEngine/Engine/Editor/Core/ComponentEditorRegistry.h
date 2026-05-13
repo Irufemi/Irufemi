@@ -7,6 +7,7 @@
 
 class Component;
 class IComponentEditor;
+class EditorActionManager;
 
 /**
  * @class ComponentEditorRegistry
@@ -25,8 +26,9 @@ public:
     /**
      * @brief 適切なエディタを探してコンポーネントのUIを描画する
      * @param[in] component 描画対象のコンポーネント
+     * @param[in] actionManager Undo/Redo 用のアクションマネージャ
      */
-    void DrawComponent(Component* component);
+    void DrawComponent(Component* component, EditorActionManager* actionManager);
 
 private:
     template<typename TComponent, typename TEditor>

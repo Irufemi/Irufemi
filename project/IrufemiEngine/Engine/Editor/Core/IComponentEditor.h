@@ -2,6 +2,7 @@
 
 #ifdef EditorMode
 class Component;
+class EditorActionManager;
 
 /**
  * @class IComponentEditor
@@ -14,7 +15,8 @@ public:
     /**
      * @brief 渡されたコンポーネントのプロパティをImGuiで描画する
      * @param[in] component 描画対象の基底コンポーネントポインタ
+     * @param[in] actionManager Undo/Redo 用のアクションマネージャ
      */
-    virtual void Draw(Component* component) = 0;
+    virtual void Draw(Component* component, EditorActionManager* actionManager) = 0;
 };
 #endif // EditorMode

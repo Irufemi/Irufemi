@@ -27,5 +27,19 @@ void EditorShortcutManager::Update() {
             actionManager_->DuplicateObject(selected);
         }
     }
+
+    // Ctrl + Z で Undo (Shiftが押されていたら Redo)
+    if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+        if (ImGui::GetIO().KeyShift) {
+            actionManager_->Redo();
+        } else {
+            actionManager_->Undo();
+        }
+    }
+
+    // Ctrl + Y も Redo
+    if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
+        actionManager_->Redo();
+    }
 }
 #endif // EditorMode

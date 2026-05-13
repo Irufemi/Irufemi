@@ -520,19 +520,25 @@
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Editor\Core\ComponentEditorRegistry.h">
-      <Filter>Engine\Manager</Filter>
+      <Filter>Engine\Editor\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Editor\Core\IComponentEditor.h">
-      <Filter>Engine\Manager</Filter>
+      <Filter>Engine\Editor\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Editor\Core\EditorDragDrop.h">
-      <Filter>Engine\Manager</Filter>
+      <Filter>Engine\Editor\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Editor\Core\EditorActionManager.h">
-      <Filter>Engine\Manager</Filter>
+      <Filter>Engine\Editor\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Editor\Core\EditorShortcutManager.h">
-      <Filter>Engine\Manager</Filter>
+      <Filter>Engine\Editor\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Core\ICommand.h">
+      <Filter>Engine\Editor\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Core\EditorCommands.h">
+      <Filter>Engine\Editor\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Manager\DebugUI.h">
       <Filter>Engine\Manager</Filter>
