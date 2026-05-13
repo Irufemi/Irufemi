@@ -204,6 +204,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Core\System\DirectoryWatcher.cpp" />
     <ClCompile Include="Engine\Core\Math\NumericalSequence.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\FrameRateController.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\ShaderCompiler.cpp" />
@@ -326,6 +327,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Math\Vector3Int.h" />
     <ClInclude Include="Engine\Core\System\TaskGroup.h" />
     <ClInclude Include="Engine\Core\System\ThreadPool.h" />
+    <ClInclude Include="Engine\Core\System\DirectoryWatcher.h" />
     <ClInclude Include="Engine\Core\Type\PerFrame.h" />
     <ClInclude Include="Engine\Core\Type\PerView.h" />
     <ClInclude Include="Engine\Core\Type\Voxel.h" />

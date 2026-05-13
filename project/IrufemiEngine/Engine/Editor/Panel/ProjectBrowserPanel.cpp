@@ -5,6 +5,7 @@
 #include "Engine/Manager/EditorManager.h"
 #include "../../../EngineResources/FontAwesome/IconsFontAwesome6.h"
 #include "../Core/EditorDragDrop.h"
+#include "../../Core/System/DirectoryWatcher.h"
 #include <algorithm>
 
 ProjectBrowserPanel::ProjectBrowserPanel() {
@@ -19,49 +20,99 @@ void ProjectBrowserPanel::Initialize(EditorManager* editorManager) {
     // アプリケーションの実行ディレクトリ（project直下など）をルートとして初期化
     projectRootPath_ = std::filesystem::current_path();
     currentProjectBrowserPath_ = projectRootPath_;
+
+    RefreshCache();
+
+    // バックグラウンドでの自動監視を開始
+    directoryWatcher_ = std::make_unique<DirectoryWatcher>(projectRootPath_, [this]() {
+        isCacheDirty_ = true;
+    });
 }
 
-void ProjectBrowserPanel::DrawProjectBrowserTree(const std::filesystem::path& path) {
-    std::string folderName = reinterpret_cast<const char*>(path.filename().u8string().c_str());
+void ProjectBrowserPanel::BuildDirectoryTree(DirectoryNode* node) {
+    if (!std::filesystem::exists(node->path) || !std::filesystem::is_directory(node->path)) {
+        return;
+    }
+
+    try {
+        for (const auto& entry : std::filesystem::directory_iterator(node->path)) {
+            if (entry.is_directory()) {
+                auto childNode = std::make_unique<DirectoryNode>();
+                childNode->path = entry.path();
+                childNode->folderName = reinterpret_cast<const char*>(entry.path().filename().u8string().c_str());
+                BuildDirectoryTree(childNode.get());
+                node->subDirectories.push_back(std::move(childNode));
+            } else if (entry.is_regular_file()) {
+                FileEntry fileEntry;
+                fileEntry.path = entry.path();
+                fileEntry.filenameString = reinterpret_cast<const char*>(entry.path().filename().u8string().c_str());
+                fileEntry.ext = entry.path().extension().string();
+                std::transform(fileEntry.ext.begin(), fileEntry.ext.end(), fileEntry.ext.begin(), ::tolower);
+                fileEntry.isDirectory = false;
+                node->files.push_back(fileEntry);
+            }
+        }
+    } catch (...) {}
+}
+
+void ProjectBrowserPanel::RefreshCache() {
+    auto newRoot = std::make_unique<DirectoryNode>();
+    newRoot->path = projectRootPath_;
+    std::string folderName = reinterpret_cast<const char*>(projectRootPath_.filename().u8string().c_str());
     if (folderName.empty()) folderName = "Root";
+    newRoot->folderName = folderName;
+
+    BuildDirectoryTree(newRoot.get());
+
+    rootNode_ = std::move(newRoot);
+    
+    // カレントパスが存在しなくなっていればルートに戻す
+    if (!std::filesystem::exists(currentProjectBrowserPath_)) {
+        currentProjectBrowserPath_ = projectRootPath_;
+    }
+}
+
+const DirectoryNode* ProjectBrowserPanel::FindNode(const DirectoryNode* node, const std::filesystem::path& targetPath) const {
+    if (!node) return nullptr;
+    if (node->path == targetPath) return node;
+    for (const auto& child : node->subDirectories) {
+        if (const DirectoryNode* found = FindNode(child.get(), targetPath)) {
+            return found;
+        }
+    }
+    return nullptr;
+}
+
+void ProjectBrowserPanel::DrawProjectBrowserTree(const DirectoryNode* node) {
+    if (!node) return;
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
     
     // 現在選択されているフォルダならハイライト
-    if (path == currentProjectBrowserPath_) {
+    if (node->path == currentProjectBrowserPath_) {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
     
     // 中身にフォルダがあるかチェック
-    bool hasSubDirectories = false;
-    if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
-        for (const auto& entry : std::filesystem::directory_iterator(path)) {
-            if (entry.is_directory()) {
-                hasSubDirectories = true;
-                break;
-            }
-        }
-    }
+    bool hasSubDirectories = !node->subDirectories.empty();
 
     if (!hasSubDirectories) {
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
 
     // フォルダ名でツリーノードを描画
-    std::string pathId = path.string();
-    std::string treeLabel = std::string(ICON_FA_FOLDER) + " " + folderName;
+    std::string pathId = node->path.string();
+    std::string treeLabel = std::string(ICON_FA_FOLDER) + " " + node->folderName;
     bool isOpen = ImGui::TreeNodeEx(pathId.c_str(), flags, "%s", treeLabel.c_str());
 
     // クリックされたら右ペインの表示を切り替え
     if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-        currentProjectBrowserPath_ = path;
+        currentProjectBrowserPath_ = node->path;
     }
 
     if (isOpen && hasSubDirectories) {
-        for (const auto& entry : std::filesystem::directory_iterator(path)) {
-            if (entry.is_directory()) {
-                DrawProjectBrowserTree(entry.path());
-            }
+        for (const auto& child : node->subDirectories) {
+            DrawProjectBrowserTree(child.get());
         }
         ImGui::TreePop();
     }
@@ -70,11 +121,25 @@ void ProjectBrowserPanel::DrawProjectBrowserTree(const std::filesystem::path& pa
 void ProjectBrowserPanel::Draw() {
     if (!editorManager_) return;
 
+    // 監視スレッドからの通知があれば自動リフレッシュ
+    if (isCacheDirty_.exchange(false)) {
+        RefreshCache();
+    }
+
     ImGui::Begin("Project");
+
+    // Refreshボタンを追加
+    if (ImGui::Button(ICON_FA_ROTATE_RIGHT " Refresh")) {
+        RefreshCache();
+    }
+    ImGui::SameLine();
 
     // 上部に「上へ」戻るボタンと現在のパスを表示
     if (ImGui::Button("Up") && currentProjectBrowserPath_.has_parent_path()) {
         currentProjectBrowserPath_ = currentProjectBrowserPath_.parent_path();
+        if (currentProjectBrowserPath_.string().length() < projectRootPath_.string().length()) {
+            currentProjectBrowserPath_ = projectRootPath_; // ルートより上には行かない
+        }
     }
     ImGui::SameLine();
     
@@ -95,7 +160,7 @@ void ProjectBrowserPanel::Draw() {
         ImGui::TableSetColumnIndex(0);
         
         ImGui::BeginChild("ProjectTreePane", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-        DrawProjectBrowserTree(projectRootPath_);
+        DrawProjectBrowserTree(rootNode_.get());
         ImGui::EndChild();
 
         // --- 右ペイン（フォルダの中身） ---
@@ -103,32 +168,28 @@ void ProjectBrowserPanel::Draw() {
         
         ImGui::BeginChild("ProjectContentPane", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-        if (std::filesystem::exists(currentProjectBrowserPath_) && std::filesystem::is_directory(currentProjectBrowserPath_)) {
+        const DirectoryNode* currentNode = FindNode(rootNode_.get(), currentProjectBrowserPath_);
+        if (currentNode) {
             float itemWidth = 80.0f;
             float itemHeight = 90.0f;
             float windowVisibleX = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 
-            for (const auto& entry : std::filesystem::directory_iterator(currentProjectBrowserPath_)) {
-                const auto& path = entry.path();
-                // Windows環境などで日本語パスが文字化けしないよう、UTF-8に変換して取得する
-                std::string filenameString = reinterpret_cast<const char*>(path.filename().u8string().c_str());
+            bool refreshNeeded = false; // ループ内でフラグを立てる用
 
+            auto drawEntry = [&](const std::filesystem::path& path, const std::string& filenameString, const std::string& ext, bool isDir) {
                 // フィルタリング（マッチしなければスキップ）
                 if (!projectBrowserFilter_->PassFilter(filenameString.c_str())) {
-                    continue;
+                    return;
                 }
 
                 // 拡張子による色とアイコンの判定
                 ImVec4 textColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // デフォルト白
                 std::string icon = ICON_FA_FILE;
 
-                if (entry.is_directory()) {
+                if (isDir) {
                     icon = ICON_FA_FOLDER;
                     textColor = ImVec4(1.0f, 1.0f, 0.4f, 1.0f); // 黄色
                 } else {
-                    std::string ext = path.extension().string();
-                    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); // 小文字化
-
                     if (ext == ".png" || ext == ".jpg" || ext == ".dds" || ext == ".bmp") {
                         icon = ICON_FA_IMAGE;
                         textColor = ImVec4(0.4f, 0.8f, 1.0f, 1.0f); // 水色
@@ -160,11 +221,11 @@ void ProjectBrowserPanel::Draw() {
                 ImVec2 itemMin = ImGui::GetItemRectMin();
 
                 // フォルダのダブルクリックによる移動
-                if (isDoubleClick && entry.is_directory()) {
+                if (isDoubleClick && isDir) {
                     currentProjectBrowserPath_ = path;
                     ImGui::EndGroup();
                     ImGui::PopID();
-                    break; // イテレータ無効化を防ぐため抜ける
+                    return; // イテレータ的に問題はないがUIとしては抜ける
                 }
 
                 // --- 右クリックメニュー ---
@@ -176,13 +237,14 @@ void ProjectBrowserPanel::Draw() {
                     if (ImGui::MenuItem("Delete")) {
                         try {
                             std::filesystem::remove_all(path);
+                            refreshNeeded = true;
                         } catch (...) {}
                     }
                     ImGui::EndPopup();
                 }
 
                 // --- ドラッグ＆ドロップソース (ファイルのみ) ---
-                if (!entry.is_directory() && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                if (!isDir && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
                     std::string payloadPath;
                     try {
                         payloadPath = reinterpret_cast<const char*>(std::filesystem::relative(path, std::filesystem::current_path()).u8string().c_str());
@@ -203,9 +265,10 @@ void ProjectBrowserPanel::Draw() {
                     if (ImGui::InputText("##rename", projectBrowserInputBuffer_, sizeof(projectBrowserInputBuffer_), ImGuiInputTextFlags_EnterReturnsTrue)) {
                         try {
                             std::string newNameString = projectBrowserInputBuffer_;
-                            if (!newNameString.empty()) {
+                            if (!newNameString.empty() && newNameString != filenameString) {
                                 std::filesystem::path newPath = path.parent_path() / newNameString;
                                 std::filesystem::rename(path, newPath);
+                                refreshNeeded = true;
                             }
                         } catch (...) {}
                         renamingTarget_.clear();
@@ -238,42 +301,60 @@ void ProjectBrowserPanel::Draw() {
                 if (nextItemMaxX < windowVisibleX) {
                     ImGui::SameLine();
                 }
+            }; // drawEntry lambda
+
+            // ディレクトリ一覧を描画
+            for (const auto& childDir : currentNode->subDirectories) {
+                drawEntry(childDir->path, childDir->folderName, "", true);
+                if (currentProjectBrowserPath_ != currentNode->path) break; // 移動した場合はループを抜ける
             }
-        }
-
-    // 新規フォルダ作成の入力フィールド
-    if (isCreatingFolder_) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.4f, 1.0f)); // フォルダの黄色
-        ImGui::Text("%s", ICON_FA_FOLDER);
-        ImGui::PopStyleColor();
-        ImGui::SameLine();
-        ImGui::SetKeyboardFocusHere();
-        ImGui::PushItemWidth(-1);
-        if (ImGui::InputText("##newfolder", projectBrowserInputBuffer_, sizeof(projectBrowserInputBuffer_), ImGuiInputTextFlags_EnterReturnsTrue)) {
-            try {
-                std::string newNameString = projectBrowserInputBuffer_;
-                if (!newNameString.empty()) {
-                    std::filesystem::path newPath = currentProjectBrowserPath_ / newNameString;
-                    std::filesystem::create_directory(newPath);
+            
+            // ファイル一覧を描画
+            if (currentProjectBrowserPath_ == currentNode->path) { // 移動していなければ
+                for (const auto& file : currentNode->files) {
+                    drawEntry(file.path, file.filenameString, file.ext, false);
                 }
-            } catch (...) {}
-            isCreatingFolder_ = false;
-        }
-        ImGui::PopItemWidth();
+            }
 
-        if (!ImGui::IsItemActive() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))) {
-            isCreatingFolder_ = false;
-        }
-    }
+            // 新規フォルダ作成の入力フィールド
+            if (isCreatingFolder_) {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.4f, 1.0f)); // フォルダの黄色
+                ImGui::Text("%s", ICON_FA_FOLDER);
+                ImGui::PopStyleColor();
+                ImGui::SameLine();
+                ImGui::SetKeyboardFocusHere();
+                ImGui::PushItemWidth(-1);
+                if (ImGui::InputText("##newfolder", projectBrowserInputBuffer_, sizeof(projectBrowserInputBuffer_), ImGuiInputTextFlags_EnterReturnsTrue)) {
+                    try {
+                        std::string newNameString = projectBrowserInputBuffer_;
+                        if (!newNameString.empty()) {
+                            std::filesystem::path newPath = currentProjectBrowserPath_ / newNameString;
+                            std::filesystem::create_directory(newPath);
+                            refreshNeeded = true;
+                        }
+                    } catch (...) {}
+                    isCreatingFolder_ = false;
+                }
+                ImGui::PopItemWidth();
 
-    // ウィンドウ全体に対する右クリックメニュー（空白部分用）
-    if (ImGui::BeginPopupContextWindow("ProjectBrowserContext", ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
-        if (ImGui::MenuItem("Create Folder")) {
-            isCreatingFolder_ = true;
-            projectBrowserInputBuffer_[0] = '\0'; // バッファをクリア
+                if (!ImGui::IsItemActive() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))) {
+                    isCreatingFolder_ = false;
+                }
+            }
+            
+            if (refreshNeeded) {
+                RefreshCache();
+            }
+        } // if (currentNode)
+
+        // ウィンドウ全体に対する右クリックメニュー（空白部分用）
+        if (ImGui::BeginPopupContextWindow("ProjectBrowserContext", ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight)) {
+            if (ImGui::MenuItem("Create Folder")) {
+                isCreatingFolder_ = true;
+                projectBrowserInputBuffer_[0] = '\0'; // バッファをクリア
+            }
+            ImGui::EndPopup();
         }
-        ImGui::EndPopup();
-    }
 
         ImGui::EndChild(); // End ProjectContentPane
         ImGui::EndTable(); // End ProjectBrowserTable
