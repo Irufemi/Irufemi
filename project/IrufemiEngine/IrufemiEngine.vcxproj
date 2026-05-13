@@ -289,6 +289,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Editor\Panel\HierarchyPanel.cpp" />
     <ClCompile Include="Engine\Editor\Panel\InspectorPanel.cpp" />
     <ClCompile Include="Engine\Editor\Panel\ProjectBrowserPanel.cpp" />
+    <ClCompile Include="Engine\Editor\Core\EditorTheme.cpp" />
+    <ClCompile Include="Engine\Editor\Core\EditorActionManager.cpp" />
+    <ClCompile Include="Engine\Editor\Core\EditorShortcutManager.cpp" />
     <ClCompile Include="Engine\Manager\DebugUI.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.cpp" />
@@ -415,6 +418,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Editor\Panel\HierarchyPanel.h" />
     <ClInclude Include="Engine\Editor\Panel\InspectorPanel.h" />
     <ClInclude Include="Engine\Editor\Panel\ProjectBrowserPanel.h" />
+    <ClInclude Include="Engine\Editor\Core\EditorTheme.h" />
+    <ClInclude Include="Engine\Editor\Core\EditorDragDrop.h" />
+    <ClInclude Include="Engine\Editor\Core\EditorActionManager.h" />
+    <ClInclude Include="Engine\Editor\Core\EditorShortcutManager.h" />
     <ClInclude Include="Engine\Graphics\Data\RenderPackets.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h" />

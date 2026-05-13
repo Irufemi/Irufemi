@@ -7,10 +7,8 @@
 #include "Framework/SceneManager.h"
 #include "Framework/BaseScene.h"
 #include "Framework/GameObject.h"
-#include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
-#include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "../Core/EditorActionManager.h"
+#include "../Core/EditorDragDrop.h"
 
 #include <functional>
 #include <algorithm>
@@ -78,14 +76,14 @@ void HierarchyPanel::Draw() {
                 // --- Drag and Drop Source ---
                 if (ImGui::BeginDragDropSource()) {
                     GameObject* ptr = obj.get();
-                    ImGui::SetDragDropPayload("GAMEOBJECT", &ptr, sizeof(GameObject*));
+                    ImGui::SetDragDropPayload(EditorDragDrop::PayloadGameObject, &ptr, sizeof(GameObject*));
                     ImGui::Text("Move %s", obj->GetName().c_str());
                     ImGui::EndDragDropSource();
                 }
 
                 // --- Drag and Drop Target ---
                 if (ImGui::BeginDragDropTarget()) {
-                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("GAMEOBJECT")) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadGameObject)) {
                         GameObject* payload_ptr = *(GameObject**)payload->Data;
                         
                         // 自分自身にはDropできない
@@ -102,19 +100,13 @@ void HierarchyPanel::Draw() {
                 // コンテキストメニュー (右クリック)
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::Selectable("Duplicate")) {
-                        auto clone = obj->Clone();
-                        baseScene->AddGameObject(clone); // BaseScene の全体リストに追加
-                        if (auto parent = obj->GetParent()) {
-                            clone->SetParent(parent);
+                        if (auto am = editorManager_->GetActionManager()) {
+                            am->DuplicateObject(obj);
                         }
                     }
                     if (ImGui::Selectable("Delete")) {
-                        if (auto parent = obj->GetParent()) {
-                            parent->RemoveChild(obj);
-                        }
-                        baseScene->RemoveGameObject(obj);
-                        if (auto selected = editorManager_->GetSelectedObject()) {
-                            if (selected == obj) editorManager_->ClearSelectedObject();
+                        if (auto am = editorManager_->GetActionManager()) {
+                            am->DeleteObject(obj);
                         }
                     }
                     ImGui::EndPopup();
@@ -143,47 +135,17 @@ void HierarchyPanel::Draw() {
             // --- 余白でのD&D（ルートへ移動 ＆ アセット配置） ---
             ImGui::InvisibleButton("HierarchyDropZone", ImGui::GetContentRegionAvail());
             if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("GAMEOBJECT")) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadGameObject)) {
                     GameObject* payload_ptr = *(GameObject**)payload->Data;
                     if (auto obj = baseScene->FindGameObject(payload_ptr)) {
                         obj->SetParent(nullptr); // 親を解除してルートに
                     }
                 }
                 // --- アセットのドロップを受け付ける ---
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ASSET_PATH")) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadAssetPath)) {
                     std::string droppedPathStr = static_cast<const char*>(payload->Data);
-                    std::filesystem::path droppedPath(reinterpret_cast<const char8_t*>(droppedPathStr.c_str()));
-                    std::string ext = droppedPath.extension().string();
-                    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
-                    std::shared_ptr<GameObject> newObj = nullptr;
-                    std::string stemString = reinterpret_cast<const char*>(droppedPath.stem().u8string().c_str());
-
-                    if (ext == ".png" || ext == ".jpg" || ext == ".dds" || ext == ".bmp") {
-                        newObj = std::make_shared<GameObject>("Sprite_" + stemString);
-                        newObj->AddComponent<TransformComponent>();
-                        auto spriteRenderer = newObj->AddComponent<SpriteRendererComponent>();
-                        spriteRenderer->SetTexture(droppedPathStr); 
-                        newObj->Initialize();
-                    } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
-                        newObj = std::make_shared<GameObject>("Model_" + stemString);
-                        newObj->AddComponent<TransformComponent>();
-                        auto meshRenderer = newObj->AddComponent<MeshRendererComponent>();
-                        
-                        // 同名ファイルに対応するため、ファイル名だけでなく相対パスを渡す
-                        std::string modelName = droppedPathStr;
-                        std::replace(modelName.begin(), modelName.end(), '\\', '/');
-                        std::string lowerPath = modelName;
-                        std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
-                        if (lowerPath.find("resources/model/") == 0) {
-                            modelName = modelName.substr(16);
-                        }
-                        meshRenderer->LoadModel(modelName); 
-                        newObj->Initialize();
-                    }
-
-                    if (newObj) {
-                        baseScene->AddGameObject(newObj);
+                    if (auto am = editorManager_->GetActionManager()) {
+                        am->CreateObjectFromAsset(droppedPathStr);
                     }
                 }
                 ImGui::EndDragDropTarget();
@@ -191,63 +153,27 @@ void HierarchyPanel::Draw() {
 
             // --- 全体の空白での右クリック「Create」メニューを表示 ---
             if (ImGui::BeginPopupContextItem("HierarchyContextMenu", ImGuiPopupFlags_MouseButtonRight)) {
-                if (ImGui::Selectable("Create Empty")) {
-                    auto obj = std::make_shared<GameObject>("Empty Object");
-                    obj->AddComponent<TransformComponent>();
-                    obj->Initialize();
-                    baseScene->AddGameObject(obj);
-                }
-                
-                if (ImGui::BeginMenu("3D Object")) {
-                    const char* shapes[] = { "Cube", "Sphere", "Cylinder", "Plane" };
-                    PrimitiveType types[] = { PrimitiveType::Cube, PrimitiveType::Sphere, PrimitiveType::Cylinder, PrimitiveType::Plane };
+                if (auto am = editorManager_->GetActionManager()) {
+                    if (ImGui::Selectable("Create Empty")) am->CreatePrimitiveObject("Empty");
                     
-                    for (int i = 0; i < 4; ++i) {
-                        if (ImGui::Selectable(shapes[i])) {
-                            auto obj = std::make_shared<GameObject>(shapes[i]);
-                            obj->AddComponent<TransformComponent>();
-                            auto renderer = obj->AddComponent<PrimitiveRendererComponent>();
-                            renderer->SetShape(types[i]);
-                            obj->Initialize();
-                            baseScene->AddGameObject(obj);
-                        }
+                    if (ImGui::BeginMenu("3D Object")) {
+                        if (ImGui::Selectable("Cube")) am->CreatePrimitiveObject("Cube");
+                        if (ImGui::Selectable("Sphere")) am->CreatePrimitiveObject("Sphere");
+                        if (ImGui::Selectable("Cylinder")) am->CreatePrimitiveObject("Cylinder");
+                        if (ImGui::Selectable("Plane")) am->CreatePrimitiveObject("Plane");
+                        ImGui::Separator();
+                        if (ImGui::Selectable("Model (MeshRenderer)")) am->CreatePrimitiveObject("Model");
+                        ImGui::EndMenu();
                     }
                     
-                    ImGui::Separator();
-                    if (ImGui::Selectable("Model (MeshRenderer)")) {
-                        auto obj = std::make_shared<GameObject>("Model");
-                        obj->AddComponent<TransformComponent>();
-                        obj->AddComponent<MeshRendererComponent>();
-                        obj->Initialize();
-                        baseScene->AddGameObject(obj);
+                    if (ImGui::BeginMenu("2D Object")) {
+                        if (ImGui::Selectable("Sprite")) am->CreatePrimitiveObject("Sprite");
+                        ImGui::EndMenu();
                     }
-                    ImGui::EndMenu();
-                }
-                
-                if (ImGui::BeginMenu("2D Object")) {
-                    if (ImGui::Selectable("Sprite")) {
-                        auto obj = std::make_shared<GameObject>("Sprite");
-                        obj->AddComponent<TransformComponent>();
-                        auto spriteRenderer = obj->AddComponent<SpriteRendererComponent>();
-                        obj->GetComponent<TransformComponent>()->position_ = { 640.0f, 360.0f, 0.0f };
-                        obj->Initialize();
-                        baseScene->AddGameObject(obj);
-                    }
-                    ImGui::EndMenu();
                 }
                 ImGui::EndPopup();
             }
-
-            // --- Deleteキーによる削除対応 ---
-            if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-                if (auto selected = editorManager_->GetSelectedObject()) {
-                    if (auto parent = selected->GetParent()) {
-                        parent->RemoveChild(selected);
-                    }
-                    baseScene->RemoveGameObject(selected);
-                    editorManager_->ClearSelectedObject();
-                }
-            }
+            // --- Deleteキーでの削除ロジックは EditorShortcutManager に移譲したため削除 ---
         }
     }
 

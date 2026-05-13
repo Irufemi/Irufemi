@@ -21,6 +21,10 @@
 #include "Engine/Editor/Panel/InspectorPanel.h"
 #include "Engine/Editor/Panel/ProjectBrowserPanel.h"
 
+// Editor Core
+#include "Engine/Editor/Core/EditorActionManager.h"
+#include "Engine/Editor/Core/EditorShortcutManager.h"
+
 // FontAwesome 用のヘッダーを含める
 #include "../../EngineResources/FontAwesome/IconsFontAwesome6.h"
 
@@ -29,6 +33,9 @@ EditorManager::~EditorManager() = default;
 
 void EditorManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
+
+    actionManager_ = std::make_unique<EditorActionManager>(this);
+    shortcutManager_ = std::make_unique<EditorShortcutManager>(this, actionManager_.get());
 
     // 各パネルの生成と初期化
     panels_.push_back(std::make_unique<SceneViewPanel>());
@@ -41,7 +48,17 @@ void EditorManager::Initialize(IrufemiEngine* engine) {
     }
 }
 
+void EditorManager::Update() {
+    if (shortcutManager_) {
+        shortcutManager_->Update();
+    }
+}
+
 void EditorManager::DrawEditorUI() {
+    if (!engine_ || !engine_->GetMainRenderTexture()) return;
+
+    Update(); // ここでショートカット処理を呼ぶ
+
     // 1. 全画面を覆う DockSpace の背景ウィンドウを作成
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);

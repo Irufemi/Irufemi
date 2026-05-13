@@ -7,6 +7,7 @@
 #include "Framework/SceneManager.h"
 #include "Framework/BaseScene.h"
 #include "Framework/GameObject.h"
+#include "../Core/EditorTheme.h"
 #include <cstring>
 
 void InspectorPanel::Initialize(EditorManager* editorManager) {
@@ -29,9 +30,7 @@ void InspectorPanel::Draw() {
         
         // --- オブジェクト削除ボタン（赤色で右端に配置） ---
         ImGui::SameLine(ImGui::GetWindowWidth() - 80);
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f)); // 赤色
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+        EditorTheme::PushDangerButtonStyle();
         if (ImGui::Button("Delete", ImVec2(70, 0))) {
             auto* engine = editorManager_->GetEngine();
             if (engine && engine->GetSceneManager()) {
@@ -41,7 +40,7 @@ void InspectorPanel::Draw() {
                 }
             }
         }
-        ImGui::PopStyleColor(3);
+        EditorTheme::PopButtonStyle();
         // ------------------------------------------------
 
         ImGui::Separator();

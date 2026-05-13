@@ -7,6 +7,8 @@
 class IrufemiEngine;
 class GameObject;
 class IEditorPanel;
+class EditorActionManager;
+class EditorShortcutManager;
 
 /**
  * @class EditorManager
@@ -18,11 +20,15 @@ public:
     ~EditorManager();
 
     void Initialize(IrufemiEngine* engine);
+    void Update();
     void DrawEditorUI();
 
     /** @name 各パネルからアクセスするための状態管理 Getter/Setter */
     ///@{
     IrufemiEngine* GetEngine() const { return engine_; }
+    
+    EditorActionManager* GetActionManager() const { return actionManager_.get(); }
+    EditorShortcutManager* GetShortcutManager() const { return shortcutManager_.get(); }
     
     std::shared_ptr<GameObject> GetSelectedObject() const { return selectedObject_.lock(); }
     void SetSelectedObject(std::shared_ptr<GameObject> obj) { selectedObject_ = obj; }
@@ -33,6 +39,9 @@ private:
 
     IrufemiEngine* engine_ = nullptr;
     std::weak_ptr<GameObject> selectedObject_;
+
+    std::unique_ptr<EditorActionManager> actionManager_;
+    std::unique_ptr<EditorShortcutManager> shortcutManager_;
 
     // 各エディタパネル
     std::vector<std::unique_ptr<IEditorPanel>> panels_;

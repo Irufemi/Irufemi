@@ -195,6 +195,15 @@
     <ClCompile Include="Engine\Editor\Panel\ProjectBrowserPanel.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Editor\Core\EditorTheme.cpp">
+      <Filter>Engine\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Editor\Core\EditorActionManager.cpp">
+      <Filter>Engine\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Editor\Core\EditorShortcutManager.cpp">
+      <Filter>Engine\Manager</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Manager\DebugUI.cpp">
       <Filter>Engine\DebugUI</Filter>
     </ClCompile>
@@ -499,6 +508,18 @@
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Editor\Panel\ProjectBrowserPanel.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Core\EditorTheme.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Core\EditorDragDrop.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Core\EditorActionManager.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Core\EditorShortcutManager.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Manager\DebugUI.h">

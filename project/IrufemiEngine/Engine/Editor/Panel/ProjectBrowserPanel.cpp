@@ -4,6 +4,7 @@
 #include "imgui/imgui.h"
 #include "Engine/Manager/EditorManager.h"
 #include "../../../EngineResources/FontAwesome/IconsFontAwesome6.h"
+#include "../Core/EditorDragDrop.h"
 #include <algorithm>
 
 ProjectBrowserPanel::ProjectBrowserPanel() {
@@ -189,7 +190,7 @@ void ProjectBrowserPanel::Draw() {
                     } catch (...) {
                         payloadPath = reinterpret_cast<const char*>(path.u8string().c_str());
                     }
-                    ImGui::SetDragDropPayload("DND_ASSET_PATH", payloadPath.c_str(), payloadPath.length() + 1);
+                    ImGui::SetDragDropPayload(EditorDragDrop::PayloadAssetPath, payloadPath.c_str(), payloadPath.length() + 1);
                     ImGui::Text("Place Asset: %s", filenameString.c_str());
                     ImGui::EndDragDropSource();
                 }
