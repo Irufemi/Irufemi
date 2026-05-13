@@ -114,6 +114,8 @@ public: // ゲッター・セッター
 protected: // メンバ変数
     // 共有モデルデータ(CPU/GPU)
     std::shared_ptr<ManagedModel> managedModel_;
+    std::shared_ptr<ManagedModel> nextManagedModel_; // 次フレームで切り替えるためのモデル
+    bool isModelChanged_ = false; // モデル切り替えフラグ
 
     // オブジェクト全体のTransform
     Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };

@@ -301,13 +301,19 @@ void EditorManager::DrawHierarchy() {
                         auto spriteRenderer = newObj->AddComponent<SpriteRendererComponent>();
                         spriteRenderer->SetTexture(droppedPathStr); 
                         newObj->Initialize();
-                    } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".bin") {
+                    } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
                         newObj = std::make_shared<GameObject>("Model_" + stemString);
                         newObj->AddComponent<TransformComponent>();
                         auto meshRenderer = newObj->AddComponent<MeshRendererComponent>();
                         
-                        // エンジンのObjClass等に合わせて、ファイル名のみを渡す
-                        std::string modelName = reinterpret_cast<const char*>(droppedPath.filename().u8string().c_str());
+                        // 同名ファイルに対応するため、ファイル名だけでなく相対パスを渡す
+                        std::string modelName = droppedPathStr;
+                        std::replace(modelName.begin(), modelName.end(), '\\', '/');
+                        std::string lowerPath = modelName;
+                        std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+                        if (lowerPath.find("resources/model/") == 0) {
+                            modelName = modelName.substr(16);
+                        }
                         meshRenderer->LoadModel(modelName); 
                         newObj->Initialize();
                     }
@@ -488,7 +494,7 @@ void EditorManager::DrawProjectBrowser() {
                     if (ext == ".png" || ext == ".jpg" || ext == ".dds" || ext == ".bmp") {
                         icon = ICON_FA_IMAGE;
                         textColor = ImVec4(0.4f, 0.8f, 1.0f, 1.0f); // 水色
-                    } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".bin" || ext == ".mtl") {
+                    } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb" || ext == ".mtl") {
                         icon = ICON_FA_CUBES;
                         textColor = ImVec4(0.4f, 1.0f, 0.4f, 1.0f); // 緑色
                     } else if (ext == ".json") {

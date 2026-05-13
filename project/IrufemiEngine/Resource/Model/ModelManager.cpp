@@ -282,6 +282,42 @@ std::vector<std::string> ModelManager::GetCachedKeys() const {
     return out;
 }
 
+void ModelManager::RefreshAvailableModels() {
+    namespace fs = std::filesystem;
+    std::lock_guard<std::mutex> lock(mutex_);
+    availableModelsCache_.clear();
+    
+    const fs::path rootPath = rootDir_.empty() ? "resources/model" : rootDir_;
+    if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
+        isAvailableModelsCached_ = true;
+        return;
+    }
+
+    for (const auto& entry : fs::recursive_directory_iterator(rootPath)) {
+        if (entry.is_regular_file()) {
+            std::string ext = entry.path().extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(),
+                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+            
+                if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
+                    // 同名ファイル対策として、ルートディレクトリからの相対パスでリスト化する
+                    std::string relPath = std::filesystem::relative(entry.path(), rootDir_).string();
+                    std::replace(relPath.begin(), relPath.end(), '\\', '/');
+                    availableModelsCache_.push_back(relPath);
+                }
+        }
+    }
+    isAvailableModelsCached_ = true;
+}
+
+std::vector<std::string> ModelManager::GetAvailableModels() const {
+    if (!isAvailableModelsCached_) {
+        const_cast<ModelManager*>(this)->RefreshAvailableModels();
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    return availableModelsCache_;
+}
+
 void ModelManager::CollectGarbage() {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto it = cache_.begin(); it != cache_.end();) {

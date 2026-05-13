@@ -159,6 +159,18 @@ public:
      * @return キーのリスト
      */
     std::vector<std::string> GetCachedKeys() const;
+
+    /**
+     * @brief ルートディレクトリ以下のすべての有効なモデルファイル名を取得する（キャッシュ対応）
+     * @return ファイル名のリスト
+     */
+    std::vector<std::string> GetAvailableModels() const;
+
+    /**
+     * @brief 利用可能なモデルファイルのリストを再スキャンして更新する
+     */
+    void RefreshAvailableModels();
+
  
     /**
      * @brief 現在の非同期ロードタスクの数を取得
@@ -277,6 +289,9 @@ private:
     mutable std::mutex mutex_;
     std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
+    
+    mutable std::vector<std::string> availableModelsCache_;
+    mutable bool isAvailableModelsCached_ = false;
     std::unique_ptr<ThreadPool> threadPool_;
     std::shared_ptr<TaskGroup> taskGroup_;           ///< 重要タスク用（シーンを止める）
     std::shared_ptr<TaskGroup> backgroundTaskGroup_; ///< バックグラウンド用（シーンを止めない）

@@ -19,14 +19,9 @@ ObjClass::~ObjClass() {}
 void ObjClass::Initialize(const std::string& filename) {
 
     assert(engine_ && "ObjClass::Initialize: Engine is not set.");
-    // 非同期で読み込みを開始し、メインスレッドをブロックしない
-    managedModel_ = engine_->GetObjModelManager()->GetModelAsync(filename);
-    
-    // StatusがLoadedであれば直ちに初期化を試みる
-    auto status = managedModel_->status.load();
-    if (status == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
-        InitializeResources();
-    }
+    // 描画中のリソース破棄（Use-After-Free）を防ぐため、次フレームのUpdateで切り替えるフラグと変数を設定
+    nextManagedModel_ = engine_->GetObjModelManager()->GetModelAsync(filename);
+    isModelChanged_ = true;
 }
 
 void ObjClass::InitializeResources() {
@@ -71,6 +66,24 @@ void ObjClass::InitializeResources() {
 }
 
 void ObjClass::Update() {
+    // 描画キューにポインタが積まれた後にリソースが破棄されないよう、Updateのタイミングでモデルを切り替える
+    if (isModelChanged_) {
+        if (nextManagedModel_) {
+            auto status = nextManagedModel_->status.load();
+            if (status == ManagedModel::LoadingStatus::Loaded && nextManagedModel_->cpuModel) {
+                managedModel_ = nextManagedModel_;
+                isModelChanged_ = false;
+                nextManagedModel_ = nullptr;
+                InitializeResources();
+            } else if (status == ManagedModel::LoadingStatus::Failed) {
+                isModelChanged_ = false;
+                nextManagedModel_ = nullptr;
+            }
+        } else {
+            isModelChanged_ = false;
+        }
+    }
+
     if (!managedModel_ || !engine_) return;
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;

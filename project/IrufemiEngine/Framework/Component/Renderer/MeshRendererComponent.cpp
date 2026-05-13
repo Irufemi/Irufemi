@@ -61,16 +61,28 @@ void MeshRendererComponent::OnInspectorGUI() {
         
         if (engine && engine->GetObjModelManager()) {
             ModelManager* modelManager = engine->GetObjModelManager();
-            std::vector<std::string> cachedKeys = modelManager->GetCachedKeys();
+            std::vector<std::string> availableModels = modelManager->GetAvailableModels();
             
             // 現在のモデルがリストになければ追加表示用に挿入（表示上のため）
-            if (std::find(cachedKeys.begin(), cachedKeys.end(), modelName_) == cachedKeys.end()) {
-                cachedKeys.push_back(modelName_);
+            if (std::find(availableModels.begin(), availableModels.end(), modelName_) == availableModels.end()) {
+                availableModels.push_back(modelName_);
             }
             
-            // コンボボックスでキャッシュ済みモデルを選択
-            if (ImGui::BeginCombo("Model", modelName_.c_str())) {
-                for (const auto& key : cachedKeys) {
+            // モデル名と横並びでリフレッシュボタンを配置
+            ImGui::Text("Model");
+            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 60.0f);
+            if (ImGui::Button("Refresh")) {
+                modelManager->RefreshAvailableModels();
+                availableModels = modelManager->GetAvailableModels();
+                if (std::find(availableModels.begin(), availableModels.end(), modelName_) == availableModels.end()) {
+                    availableModels.push_back(modelName_);
+                }
+            }
+
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+            // コンボボックスでプロジェクト内の全モデルを選択
+            if (ImGui::BeginCombo("##ModelCombo", modelName_.c_str())) {
+                for (const auto& key : availableModels) {
                     bool isSelected = (modelName_ == key);
                     if (ImGui::Selectable(key.c_str(), isSelected)) {
                         LoadModel(key);
@@ -95,8 +107,15 @@ void MeshRendererComponent::OnInspectorGUI() {
                 std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
                 
                 // 3Dモデルファイルかチェック
-                if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".bin") {
-                    std::string newModelName = reinterpret_cast<const char*>(droppedPath.filename().u8string().c_str());
+                if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
+                    std::string newModelName = droppedPathStr;
+                    std::replace(newModelName.begin(), newModelName.end(), '\\', '/');
+                    // "resources/model/"からの相対パスにする (大文字小文字区別なし)
+                    std::string lowerPath = newModelName;
+                    std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+                    if (lowerPath.find("resources/model/") == 0) {
+                        newModelName = newModelName.substr(16);
+                    }
                     LoadModel(newModelName);
                 }
             }
