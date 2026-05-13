@@ -66,16 +66,6 @@ public:
         return nullptr;
     }
 
-    /**
-     * @brief 現在のシーン（全GameObject）をファイルに保存する
-     */
-    void SaveScene(const std::string& filepath);
-
-    /**
-     * @brief ファイルからシーン（全GameObject）を読み込む
-     */
-    void LoadScene(const std::string& filepath);
-
     // --- ライフサイクル関数 ---
     
     /**

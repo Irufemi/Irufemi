@@ -460,6 +460,9 @@
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\SceneSerializer.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\SceneTransition.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
@@ -971,6 +974,9 @@
     </ClInclude>
     <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\SceneSerializer.h">
+      <Filter>Framework</Filter>
     </ClInclude>
     <ClInclude Include="Framework\SceneTransition.h">
       <Filter>Framework</Filter>

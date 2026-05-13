@@ -166,38 +166,3 @@ bool BaseScene::ReleasedDIK(uint8_t dik) const { return engine_->GetInputManager
 
 bool BaseScene::IsButtonDown(unsigned short button) const { return engine_->GetInputManager()->IsButtonDown(button); }
 bool BaseScene::IsButtonPressed(unsigned short button) const { return engine_->GetInputManager()->IsButtonPressed(button); }
-
-void BaseScene::SaveScene(const std::string& filepath) {
-    nlohmann::json rootArray = nlohmann::json::array();
-    for (const auto& obj : gameObjects_) {
-        if (obj && !obj->GetParent()) {
-            rootArray.push_back(obj->Serialize());
-        }
-    }
-
-    std::ofstream file(filepath);
-    if (file.is_open()) {
-        file << rootArray.dump(4);
-        file.close();
-    }
-}
-
-void BaseScene::LoadScene(const std::string& filepath) {
-    std::ifstream file(filepath);
-    if (!file.is_open()) return;
-
-    nlohmann::json rootArray;
-    file >> rootArray;
-    file.close();
-
-    gameObjects_.clear();
-
-    if (rootArray.is_array()) {
-        for (const auto& j : rootArray) {
-            auto obj = std::make_shared<GameObject>();
-            obj->Deserialize(j);
-            obj->Initialize();
-            AddGameObject(obj);
-        }
-    }
-}

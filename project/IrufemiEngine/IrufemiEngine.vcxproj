@@ -223,6 +223,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\RaycastComponent.cpp" />
     <ClCompile Include="Engine\Manager\CollisionManager.cpp" />
+    <ClCompile Include="Framework\SceneSerializer.cpp" />
     <ClCompile Include="Framework\SceneTransition.cpp" />
     <ClCompile Include="Framework\BaseScene.cpp" />
     <ClCompile Include="Renderer\Object2D\Sprite\Sprite.cpp" />
@@ -356,6 +357,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Collider\OBBColliderComponent.h" />
     <ClInclude Include="Framework\Component\Collider\RaycastComponent.h" />
     <ClInclude Include="Engine\Manager\CollisionManager.h" />
+    <ClInclude Include="Framework\SceneSerializer.h" />
     <ClInclude Include="Framework\SceneTransition.h" />
     <ClInclude Include="Framework\BaseScene.h" />
     <ClInclude Include="Renderer\Core\IRenderable.h" />

@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include "../Engine/Platform/Input/InputManager.h"
 #include "../Engine/Platform/Input/Mouse.h"
+#include "SceneSerializer.h"
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {
 }
@@ -41,9 +42,19 @@ bool SceneManager::ChangeTo(const Key& next) {
     item.name = next;
     item.scene = it->second();
     
+    // データがあればロード
+    bool hasData = SceneSerializer::Load(item.scene.get(), next);
+
     isInitializing_ = true;
     item.scene->Initialize(engine_);
     isInitializing_ = false;
+
+    // データがなくてエディタモードなら、初期状態を自動生成
+#ifdef EditorMode
+    if (!hasData) {
+        SceneSerializer::Save(item.scene.get(), next);
+    }
+#endif
 
     item.scene->OnEnter(); // シーン開始
 
@@ -70,7 +81,18 @@ void SceneManager::PushScene(const Key& name) {
     item.name = name;
     item.scene = it->second();
 
+    // データがあればロード
+    bool hasData = SceneSerializer::Load(item.scene.get(), name);
+
     item.scene->Initialize(engine_);
+
+    // データがなくてエディタモードなら、初期状態を自動生成
+#ifdef EditorMode
+    if (!hasData) {
+        SceneSerializer::Save(item.scene.get(), name);
+    }
+#endif
+
     item.scene->OnEnter(); // 新しいシーン開始
 
     sceneStack_.push_back(std::move(item));
@@ -308,10 +330,22 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     }
     sceneStack_.clear();
     
-    initFuture_ = std::async(std::launch::async, [this, factory]() {
-        // 新しいシーンを生成して初期化（裏ロード）
+    initFuture_ = std::async(std::launch::async, [this, factory, next]() {
+        // 新しいシーンを生成
         auto newScene = factory();
+
+        // データがあればロード
+        bool hasData = SceneSerializer::Load(newScene.get(), next);
+
+        // 初期化（裏ロード）
         newScene->Initialize(engine_);
+
+        // データがなくてエディタモードなら、初期状態を自動生成
+#ifdef EditorMode
+        if (!hasData) {
+            SceneSerializer::Save(newScene.get(), next);
+        }
+#endif
         
         // メインスレッドへ渡すための準備
         {

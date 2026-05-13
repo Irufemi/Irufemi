@@ -187,6 +187,195 @@ gpuParticle_->Initialize("effect/particle_tex.png");
 gpuParticle_->SetColor({ 1.0f, 0.5f, 0.1f, 1.0f });
 gpuParticle_->SetParticleLife(0.5f, 1.0f); // 寿命(最小, 最大)
 
+# IrufemiEngine 取扱説明書 (Manual)
+
+このドキュメントは、IrufemiEngineを利用してゲームを開発するチームメンバーのための総合マニュアルです。
+各機能の役割と、すぐに使えるコードスニペット（コピペ用コード）をまとめています。
+
+---
+
+## 0. プロジェクト構造とコーディングルール (Project Structure)
+
+新しくコードを書いたり、リソースを追加する際は以下の配置ルールに必ず従ってください。
+
+- **`IrufemiEngine/` (エンジンコア)**
+  - 描画パイプラインや汎用的なマネージャーが置かれます。**ゲーム特有のロジックやアクターは絶対にここに書かないでください。**
+- **`Application/` (ゲームロジック)**
+  - プレイヤーの動き、敵のAI、各種シーン（Title, InGame等）の処理はすべてここに作成します。
+- **`resources/` (リソースデータ)**
+  - 3Dモデル（`.obj`, `.gltf`）やテクスチャ（`.png`）、音声（`.wav`）は必ずこのフォルダ以下の適切なディレクトリ（`model/`, `ui/`, `audio/` 等）に配置してください。
+
+---
+
+## 1. エンジンの基本アーキテクチャ (Core Architecture)
+
+### 1.1 IrufemiEngine クラス
+エンジン全体を統括するコアクラスです。`WinApp`（ウィンドウ管理）や `DirectXCommon`（DirectX12初期化）を保持し、メインループ（`Update` と `Draw`）を回します。ゲームアプリケーション全体で1つのインスタンスのみが存在します。
+
+### 1.2 SceneManager と IScene (シーン管理)
+ゲームの画面（タイトル、インゲーム、リザルトなど）を切り替えるための仕組みです。
+新しいシーンを追加する場合は `IScene` または `BaseScene` を継承したクラスを作成します。
+
+#### シーンの作り方
+```cpp
+#pragma once
+#include "Framework/BaseScene.h"
+#include <memory>
+class ObjClass;
+
+class ExampleScene : public BaseScene {
+public:
+    ~ExampleScene() override = default;
+    
+    // シーン遷移時に一度だけ呼ばれる（リソース読み込みなど）
+    void Initialize(IrufemiEngine* engine) override;
+    
+    // 毎フレーム呼ばれる（ロジックの更新）
+    void Update() override;
+    
+    // 毎フレーム呼ばれる（描画リクエストの送信）
+    void Draw() override;
+
+    // --- ライフサイクル関数（必要に応じてオーバーライド） ---
+    // void OnEnter() override;   // アクティブになった時
+    // void OnExit() override;    // 非アクティブ・破棄される直前
+    // void OnSuspend() override; // 上に別のシーンがPushされた時
+    // void OnResume() override;  // 上のシーンがPopされ最前面に戻った時
+
+private:
+    std::unique_ptr<ObjClass> playerObj_;
+};
+```
+
+#### シーン遷移と重ね合わせ（Push / Pop）
+シーンを完全に移動するには `TransitionTo` を使いますが、ポーズ画面のように**現在のシーンを残したまま一時的な画面を重ねる**場合は `PushScene` を使います。
+```cpp
+// 完全に別のシーンへ移動する場合
+if (isClear) {
+    // "ClearScene" に遷移する。トランジション効果は Fade で 1.0秒かける
+    engine_->GetSceneManager()->TransitionTo("ClearScene", SceneTransition::Type::Fade, 1.0f);
+}
+
+// 現在のシーンの上に一時的なシーン（ポーズ画面など）を重ねる場合
+// engine_->GetSceneManager()->PushScene("PauseScene");
+
+// 重ねたシーンを終了し、元のシーンに戻る場合（PauseScene側で呼ぶ）
+// engine_->GetSceneManager()->PopScene();
+```
+
+### 1.3 RenderGraph と DrawManager (描画パイプライン)
+本エンジンの描画は **RenderGraph（レンダーグラフ）** という仕組みで自動管理されています。
+ユーザーが `Draw()` を呼ぶと、すぐに画面に描画されるわけではなく、**DrawManagerのキュー（予約リスト）に登録（Submit）** されます。その後、エンジン側が適切な順序（Opaque → Transparent → UIなど）でまとめてGPUへ描画命令を出します。
+
+### 1.4 カメラの操作 (CameraManager / Camera)
+3D空間を描画するための「視点」を管理します。
+
+```cpp
+auto* cameraManager = engine_->GetCameraManager();
+auto* camera = cameraManager->GetActiveCamera();
+
+// カメラの位置と注視点を設定
+camera->SetTranslate({ 0.0f, 5.0f, -10.0f });
+camera->SetTarget({ 0.0f, 0.0f, 0.0f });
+
+// 行列を更新（位置を変更したら必ず呼ぶ）
+camera->UpdateMatrix();
+
+// ※デバッグカメラへの切り替えについて
+// 以前は CameraManager で切り替えていましたが、現在は BaseScene に統合されています。
+// ImGuiのデバッグタブ「Camera & Lights」から "Debug Camera Mode" のチェックを入れるか、
+// コード内で `isDebugCameraMode_ = true;` とすることでデバッグカメラが有効になります。
+```
+
+---
+
+## 2. 描画・オブジェクトシステム (Rendering System)
+
+画面にモノを表示するための主要なクラス群です。
+
+### 2.1 3Dモデル描画 (`ObjClass` / `AnimationModel`)
+静的な3Dモデルを表示するには `ObjClass` を使います。モデルデータは `ModelManager` を経由して自動的にキャッシュされます。
+
+```cpp
+// 1. 宣言 (ヘッダー)
+std::unique_ptr<ObjClass> model_;
+
+// 2. 初期化 (Initialize)
+model_ = std::make_unique<ObjClass>();
+model_->Initialize("enemy/enemy.obj"); // resources/model/ 以下のパスを指定
+model_->SetPosition({ 0.0f, 0.0f, 10.0f });
+model_->SetScale({ 2.0f, 2.0f, 2.0f });
+
+// 3. 更新 (Update)
+model_->Update(); // ※毎フレーム必ず呼ぶこと（ワールド行列が更新されます）
+
+// 4. 描画 (Draw)
+model_->Draw();   // DrawManagerの標準3D描画キューに登録される
+```
+
+### 2.2 2Dスプライト描画 (`Sprite`)
+画面にUIなどの2D画像を表示するためのクラスです。
+
+```cpp
+// 1. 宣言 (ヘッダー)
+std::unique_ptr<Sprite> sprite_;
+
+// 2. 初期化 (Initialize)
+sprite_ = std::make_unique<Sprite>();
+sprite_->Initialize("ui/title_logo.png"); // resources/ 以下のパスを指定
+sprite_->SetPosition({ 640.0f, 360.0f }); // 画面中央 (1280x720の場合)
+sprite_->SetAnchorPoint({ 0.5f, 0.5f });  // 画像の中心を基準にする
+
+// 3. 更新 (Update)
+sprite_->Update();
+
+// 4. 描画 (Draw)
+sprite_->Draw(); // 通常のUIパスで描画される
+
+// ※ポストプロセス（ブルーム等）の影響を受けない最前面UIとして描画したい場合
+// sprite_->Draw(true); 
+```
+
+### 2.3 プリミティブ形状 (`CubeClass`, `SphereClass`, `CylinderClass`, `LineClass`)
+当たり判定のデバッグ表示や、プロトタイプの作成に便利な組み込み図形です。モデルファイルなしで使えます。
+
+```cpp
+// 1. 宣言 (ヘッダー)
+std::unique_ptr<CubeClass> cube_;
+std::unique_ptr<LineClass> line_;
+
+// 2. 初期化 (Initialize)
+cube_ = std::make_unique<CubeClass>();
+cube_->Initialize();
+cube_->SetColor({ 1.0f, 0.0f, 0.0f, 0.5f }); // 赤色で半透明
+
+line_ = std::make_unique<LineClass>();
+line_->Initialize();
+line_->SetColor({ 0.0f, 1.0f, 0.0f, 1.0f }); // 緑色の線
+
+// 3. 更新と描画 (Update & Draw)
+cube_->SetPosition(playerPos);
+cube_->Update();
+cube_->Draw();
+
+line_->SetStartAndEnd(startPos, endPos);
+line_->Update();
+line_->Draw(); // ライン専用のキューに登録される
+```
+
+### 2.4 パーティクル (`GPUParticleSystem`)
+コンピュートシェーダを利用して数万個のパーティクルを高速に描画するシステムです。
+
+```cpp
+// 1. 宣言 (ヘッダー)
+std::unique_ptr<GPUParticleSystem> gpuParticle_;
+
+// 2. 初期化 (Initialize)
+gpuParticle_ = std::make_unique<GPUParticleSystem>();
+gpuParticle_->Initialize("effect/particle_tex.png");
+gpuParticle_->SetColor({ 1.0f, 0.5f, 0.1f, 1.0f });
+gpuParticle_->SetParticleLife(0.5f, 1.0f); // 寿命(最小, 最大)
+
 // 3. 放出設定と更新 (Update)
 // 発生源の位置、進行方向、広がり、速度、拡散、1フレームの発生数
 gpuParticle_->SetBeamEmitter(position, direction, 1.0f, 0.5f, 0.1f, 100);
@@ -197,7 +386,37 @@ gpuParticle_->Update();
 gpuParticle_->Draw();
 ```
 
+### 2.5 コンポーネントシステム (Component System)
+`ObjClass` などの単体クラスに代わる、モダンなオブジェクト構築手法です。`GameObject` に必要な `Component` を組み合わせて機能を構築します。
+
+```cpp
+// 1. GameObjectの生成
+auto object = std::make_shared<GameObject>("MyEntity");
+
+// 2. コンポーネントのアタッチ
+auto* transform = object->AddComponent<TransformComponent>();
+auto* renderer = object->AddComponent<MeshRendererComponent>();
+
+// 3. パラメータ設定
+transform->SetPosition({0, 10, 0});
+renderer->LoadModel("enemy/boss.obj");
+
+// 4. シーンへの登録（SceneManager経由で管理する場合）
+// scene->AddGameObject(object);
+```
+
+#### 新規コンポーネント作成時のルール
+1. **描画/ロジックの分離**: `OnInspectorGUI()` をコンポーネント内に書くことは**禁止**です。
+2. **フレンド宣言**: エディタ（インスペクター）からプライベート変数を見せるには、ヘッダーに以下の宣言を追加してください。
+```cpp
+#ifdef EditorMode
+    friend class YourComponentEditor; // Registry.cpp内のエディタクラス名
+#endif
+```
+3. **レジストリへの登録**: `ComponentEditorRegistry.cpp` に対応するエディタクラスを実装し、`RegisterAllEditors()` で登録してください。
+
 ---
+
 ## 3. リソース管理 (Resource Management)
 
 ゲームに必要なテクスチャ、3Dモデル、サウンドデータは、エンジン内の各 Manager を通して一元管理（ロード・キャッシュ）されます。
@@ -427,7 +646,18 @@ IrufemiEngine のエディタは、モダンなゲームエンジン（Unity等�
    - **3Dモデルの配置**: `.obj` や `.fbx` などをドラッグ＆ドロップすると、`MeshRendererComponent` がアタッチされた GameObject が自動生成されます。
    - D&D 時にアセットの相対パスが自動的にコンポーネントへセットされるため、すぐに画面上でプレビュー可能です。
 
+### 6.2 コンポーネントエディタの拡張 (Advanced)
+インスペクターに新しいコンポーネントの編集項目を追加する場合：
+
+1. **`Engine/Editor/Core/ComponentEditorRegistry.cpp`** を開きます。
+2. `IComponentEditor` を継承した専用のエディタクラス（例：`class MyComponentEditor`）を作成し、`Draw()` 関数内に ImGui のコードを記述します。
+3. `ComponentEditorRegistry::RegisterAllEditors()` 内で `RegisterEditor<MyComponent, MyComponentEditor>();` を呼び出します。
+4. コンポーネント側のヘッダーで、そのエディタクラスを `friend` 指定します。
+
+これにより、コンポーネント本体のコードを汚すことなく、エディタ機能のみを拡張できます。
+
 ---
 > **ドキュメント更新履歴**
 > - 2026/05: RenderGraph / パケット分離対応を反映、Phase 1~3 および 便利機能（カメラ、ディレクトリ構造、UISelectionGroup）を追記
 > - 2026/05: エディタ機能（Project Browserの2ペイン化、FontAwesome対応、ドラッグ＆ドロップ機能）の解説を追記
+> - 2026/05: コンポーネントシステム（GameObject/Component）の導入と、UIロジックの分離（Registry方式）を追記

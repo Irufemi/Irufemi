@@ -8,6 +8,7 @@
 #include "Framework/IScene.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
+#include "Framework/SceneSerializer.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
@@ -89,17 +90,23 @@ void EditorManager::DrawEditorUI() {
     // メニューバー
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("Save Scene (main_scene.json)")) {
-                if (engine_ && engine_->GetSceneManager()) {
-                    if (auto* baseScene = dynamic_cast<BaseScene*>(engine_->GetSceneManager()->GetCurrentScene())) {
-                        baseScene->SaveScene("resources/scenes/main_scene.json");
-                    }
+            // 現在のシーン名を取得して保存/読込
+            std::string currentSceneName = "";
+            if (engine_ && engine_->GetSceneManager()) {
+                currentSceneName = engine_->GetSceneManager()->GetCurrent();
+            }
+
+            if (ImGui::MenuItem("Save Scene")) {
+                if (engine_ && engine_->GetSceneManager() && !currentSceneName.empty()) {
+                    SceneSerializer::Save(engine_->GetSceneManager()->GetCurrentScene(), currentSceneName);
                 }
             }
-            if (ImGui::MenuItem("Load Scene (main_scene.json)")) {
-                if (engine_ && engine_->GetSceneManager()) {
-                    if (auto* baseScene = dynamic_cast<BaseScene*>(engine_->GetSceneManager()->GetCurrentScene())) {
-                        baseScene->LoadScene("resources/scenes/main_scene.json");
+            if (ImGui::MenuItem("Load Scene")) {
+                if (engine_ && engine_->GetSceneManager() && !currentSceneName.empty()) {
+                    auto* scene = engine_->GetSceneManager()->GetCurrentScene();
+                    if (scene) {
+                        // 既存のオブジェクトを消してからロードしたい場合はここで処理が必要
+                        SceneSerializer::Load(scene, currentSceneName);
                         selectedObject_.reset(); // ロードしたら選択を解除
                     }
                 }
