@@ -3,6 +3,7 @@
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include <cmath>
 
 MeshRendererComponent::MeshRendererComponent() {}
 MeshRendererComponent::~MeshRendererComponent() {}
@@ -49,6 +50,18 @@ void MeshRendererComponent::DrawOutlineMask() {
     if (obj_) {
         obj_->DrawOutlineMask();
     }
+}
+
+Sphere MeshRendererComponent::GetWorldSphere() const {
+    Sphere result = { Vector3{0,0,0}, 1.0f }; // default
+    if (transform_) {
+        result.center = transform_->worldPosition_;
+        // ObjClass の cpuModel があれば正確な半径を取得
+        // ここでは便宜上スケールの最大値を半径として扱う（もしくは定数）
+        float maxScale = std::fmax(transform_->worldScale_.x, std::fmax(transform_->worldScale_.y, transform_->worldScale_.z));
+        result.radius = maxScale;
+    }
+    return result;
 }
 
 

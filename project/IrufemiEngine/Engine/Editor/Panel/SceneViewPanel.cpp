@@ -10,6 +10,10 @@
 #include "../Core/EditorDragDrop.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Framework/GameObject.h"
+#include "Framework/IScene.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
 
 void SceneViewPanel::Initialize(EditorManager* editorManager) {
     editorManager_ = editorManager;
@@ -72,14 +76,44 @@ void SceneViewPanel::Draw() {
                     Ray ray = Math::ScreenPointToRay(localMousePos, size.x, size.y, viewProjInverse);
 
                     RaycastHit hit;
-                    // Raycastを実行 (距離1000.0f)
-                    if (CollisionManager::GetInstance().Raycast(ray, hit, 1000.0f)) {
-                        if (hit.hitObject) {
-                            // ヒットしたオブジェクトを選択状態にする
-                            editorManager_->SetSelectedObject(hit.hitObject->shared_from_this());
+                    // まずコライダーでRaycastを実行
+                    bool isHit = CollisionManager::GetInstance().Raycast(ray, hit, 1000.0f);
+                    
+                    float closestDist = isHit ? hit.distance : 1000.0f;
+                    GameObject* closestObj = isHit ? hit.hitObject : nullptr;
+
+                    // コライダーを持たない描画コンポーネントのみのオブジェクトも判定
+                    if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
+                        for (auto& obj : scene->GetGameObjects()) {
+                            if (!obj || obj.get() == closestObj) continue;
+                            
+                            Sphere bounds;
+                            bool hasBounds = false;
+                            
+                            if (auto meshRenderer = obj->GetComponent<MeshRendererComponent>()) {
+                                bounds = meshRenderer->GetWorldSphere();
+                                hasBounds = true;
+                            } else if (auto primitiveRenderer = obj->GetComponent<PrimitiveRendererComponent>()) {
+                                bounds = primitiveRenderer->GetWorldSphere();
+                                hasBounds = true;
+                            }
+                            
+                            if (hasBounds) {
+                                float dist = 0.0f;
+                                if (Collision::IsCollision(ray, bounds, dist)) {
+                                    if (dist < closestDist) {
+                                        closestDist = dist;
+                                        closestObj = obj.get();
+                                        isHit = true;
+                                    }
+                                }
+                            }
                         }
+                    }
+
+                    if (isHit && closestObj) {
+                        editorManager_->SetSelectedObject(closestObj->shared_from_this());
                     } else {
-                        // 何も当たっていなければ選択を解除
                         editorManager_->ClearSelectedObject();
                     }
                 }

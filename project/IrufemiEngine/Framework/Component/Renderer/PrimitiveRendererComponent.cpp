@@ -5,6 +5,7 @@
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "Engine/Manager/PrimitiveManager.h"
 #include "Engine/Core/Type/PrimitiveType.h"
+#include <cmath>
 
 PrimitiveRendererComponent::PrimitiveRendererComponent() {}
 PrimitiveRendererComponent::~PrimitiveRendererComponent() {}
@@ -130,4 +131,21 @@ void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
     if (currentTypeIndex_ >= 0 && currentTypeIndex_ < 6) {
         SetShape(types[currentTypeIndex_]);
     }
+}
+
+Sphere PrimitiveRendererComponent::GetWorldSphere() const {
+    Sphere result = { Vector3{0,0,0}, 1.0f }; // default
+    if (transform_) {
+        result.center = transform_->worldPosition_;
+        
+        // 形状に応じて大まかな半径を決定
+        float baseRadius = radius_;
+        if (static_cast<PrimitiveType>(currentTypeIndex_) == PrimitiveType::Cube) {
+            baseRadius = 1.0f; // Cubeは1x1x1なので対角線の半分は約0.866だが余裕を持つ
+        }
+        
+        float maxScale = std::fmax(transform_->worldScale_.x, std::fmax(transform_->worldScale_.y, transform_->worldScale_.z));
+        result.radius = baseRadius * maxScale * 2.0f; // 安全マージン
+    }
+    return result;
 }

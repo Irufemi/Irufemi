@@ -2,6 +2,7 @@
 #include "../Component.h"
 #include <memory>
 #include <string>
+#include "Engine/Core/Shape/Sphere.h"
 
 // 前方宣言
 class ObjClass;
@@ -19,6 +20,9 @@ public:
     void Update() override;
     void Draw() override;
     void DrawOutlineMask() override;
+    
+    // エディタのRaycast用
+    Sphere GetWorldSphere() const;
 
     std::string GetComponentName() const override { return "MeshRendererComponent"; }
     nlohmann::json Serialize() override;

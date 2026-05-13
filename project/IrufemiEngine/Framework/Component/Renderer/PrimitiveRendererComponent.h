@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include "Engine/Core/Type/PrimitiveType.h"
+#include "Engine/Core/Shape/Sphere.h"
 
 // 前方宣言
 class PrimitiveObjects3DClass;
@@ -16,6 +17,9 @@ public:
     void Initialize() override;
     void Update() override;
     void Draw() override;
+    
+    // エディタのRaycast用
+    Sphere GetWorldSphere() const;
 
 #ifdef EditorMode
     friend class PrimitiveRendererComponentEditor;
