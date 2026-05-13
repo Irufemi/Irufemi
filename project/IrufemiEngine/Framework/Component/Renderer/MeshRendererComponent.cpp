@@ -49,9 +49,62 @@ void MeshRendererComponent::Draw() {
 
 #ifdef EditorMode
 #include <imgui.h>
+#include <filesystem>
+#include <algorithm>
+#include "Engine/IrufemiEngine.h"
+#include "Resource/Model/ModelManager.h"
+
 void MeshRendererComponent::OnInspectorGUI() {
     if (ImGui::TreeNodeEx("MeshRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::Text("Model: %s", modelName_.c_str());
+        
+        IrufemiEngine* engine = ObjClass::GetIrufemiEngine();
+        
+        if (engine && engine->GetObjModelManager()) {
+            ModelManager* modelManager = engine->GetObjModelManager();
+            std::vector<std::string> cachedKeys = modelManager->GetCachedKeys();
+            
+            // 現在のモデルがリストになければ追加表示用に挿入（表示上のため）
+            if (std::find(cachedKeys.begin(), cachedKeys.end(), modelName_) == cachedKeys.end()) {
+                cachedKeys.push_back(modelName_);
+            }
+            
+            // コンボボックスでキャッシュ済みモデルを選択
+            if (ImGui::BeginCombo("Model", modelName_.c_str())) {
+                for (const auto& key : cachedKeys) {
+                    bool isSelected = (modelName_ == key);
+                    if (ImGui::Selectable(key.c_str(), isSelected)) {
+                        LoadModel(key);
+                    }
+                    if (isSelected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        } else {
+            // エンジンが取得できない場合のフォールバック（通常発生しない）
+            ImGui::Text("Model: %s", modelName_.c_str());
+        }
+
+        // Project Browser からの Drag & Drop (Unityスタイル)
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ASSET_PATH")) {
+                std::string droppedPathStr = static_cast<const char*>(payload->Data);
+                std::filesystem::path droppedPath(reinterpret_cast<const char8_t*>(droppedPathStr.c_str()));
+                std::string ext = droppedPath.extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+                
+                // 3Dモデルファイルかチェック
+                if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".bin") {
+                    std::string newModelName = reinterpret_cast<const char*>(droppedPath.filename().u8string().c_str());
+                    LoadModel(newModelName);
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        ImGui::TextDisabled("(?) Drag & Drop model file from Project Browser");
+
         ImGui::TreePop();
     }
 }

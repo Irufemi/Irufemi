@@ -387,7 +387,13 @@ MaterialData ModelManager::LoadMaterialTemplateFile(const std::string& directory
     MaterialData materialData;
     std::string line; //ファイルから読んだ1行を格納するもの
     std::ifstream file(directoryPath + "/" + filename); //ファイルを開く
-    assert(file.is_open()); //とりあえず開けなかったら止める
+#ifdef EditorMode
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + directoryPath + "/" + filename);
+    }
+#else
+    assert(file.is_open() && "[ModelManager] Failed to open file in LoadMaterialTemplateFile.");
+#endif
 
     ///3. ファイルを読み、MaterialDataを構築
 
@@ -422,7 +428,13 @@ ModelData ModelManager::LoadObjFile(const std::string& directoryPath, const std:
     std::string line; //ファイルから読んだ1行を格納するもの
 
     std::ifstream file(directoryPath + "/" + filename); //ファイルを開く
-    assert(file.is_open()); //とりあえず開けなかったら止める
+#ifdef EditorMode
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + directoryPath + "/" + filename);
+    }
+#else
+    assert(file.is_open() && "[ModelManager] Failed to open file in LoadObjFile.");
+#endif
 
     ///3.ファイルを読み、ModelDataを構築
     while (std::getline(file, line)) {
@@ -545,7 +557,13 @@ ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std:
     std::map<std::string, ObjMaterial> materialMap;
 
     std::ifstream file(directoryPath + "/" + filename);
-    assert(file.is_open());
+#ifdef EditorMode
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + directoryPath + "/" + filename);
+    }
+#else
+    assert(file.is_open() && "[ModelManager] Failed to open file in LoadObjFileM.");
+#endif
 
     std::string line;
     ObjMesh currentMesh;
@@ -608,7 +626,13 @@ ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std:
             std::string mtlFilename;
             s >> mtlFilename;
             std::ifstream mtlFile(directoryPath + "/" + mtlFilename);
-            assert(mtlFile.is_open());
+#ifdef EditorMode
+            if (!mtlFile.is_open()) {
+                throw std::runtime_error("Failed to open mtl file: " + directoryPath + "/" + mtlFilename);
+            }
+#else
+            assert(mtlFile.is_open() && "[ModelManager] Failed to open mtl file in LoadObjFileM.");
+#endif
 
             std::string mtlLine, currentName;
             while (std::getline(mtlFile, mtlLine)) {
@@ -847,7 +871,13 @@ ObjModel ModelManager::LoadModelFromFile(const std::string& directoryPath, const
         aiProcess_MakeLeftHanded; // このフラグを追加
 
     const aiScene* scene = importer.ReadFile(filePath.c_str(), flags);
-    assert(scene && scene->HasMeshes()); // 失敗したらsceneはnullptr / メッシュが無い場合は非対応
+#ifdef EditorMode
+    if (!scene || !scene->HasMeshes()) {
+        throw std::runtime_error("Assimp failed to load model or no meshes found: " + std::string(importer.GetErrorString()));
+    }
+#else
+    assert(scene && scene->HasMeshes() && "[ModelManager] Assimp failed to load model or no meshes found in LoadModelFromFile.");
+#endif
 
     /// material(assimpのaiMaterial)をObjMaterialへ変換
 

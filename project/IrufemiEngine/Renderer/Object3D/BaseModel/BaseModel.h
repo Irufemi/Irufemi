@@ -94,6 +94,8 @@ public: // ゲッター・セッター
     }
 
     static void SetIrufemiEngine(IrufemiEngine* engine) { engine_ = engine; }
+    static IrufemiEngine* GetIrufemiEngine() { return engine_; }
+
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
     void SetCastShadows(bool cast) { castShadows_ = cast; }
