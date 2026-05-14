@@ -19,6 +19,9 @@ public:
     void Initialize() override;
     void Update() override;
     void Draw() override;
+    
+    bool CanUpdateInEditMode() const override { return true; }
+
     IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(obj_.get()); }
     
     // エディタのRaycast用

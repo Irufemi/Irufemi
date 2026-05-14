@@ -18,7 +18,7 @@ public:
     ~GameObject() = default;
 
     void Initialize();
-    void Update();
+    void Update(bool isPlayMode = true);
     void Draw();
     void DrawOutlineMask();
 

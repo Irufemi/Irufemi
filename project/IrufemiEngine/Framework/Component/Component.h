@@ -26,6 +26,12 @@ public:
     virtual void Update() {}
 
     /**
+     * @brief Editモード時にUpdateを実行するかどうか
+     * @details デフォルトはfalse（実行しない）。エディタでのプレビューが必要なコンポーネントはtrueを返す。
+     */
+    virtual bool CanUpdateInEditMode() const { return false; }
+
+    /**
      * @brief 描画処理（レンダラー系コンポーネントでオーバーライド）
      */
     virtual void Draw() {}

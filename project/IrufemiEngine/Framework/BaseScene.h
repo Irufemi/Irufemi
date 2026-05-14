@@ -57,6 +57,11 @@ public:
     void RemoveGameObject(std::shared_ptr<GameObject> obj);
 
     /**
+     * @brief シーン内のすべての GameObject をクリアする（Playモード終了時などの復元用）
+     */
+    void ClearGameObjects();
+
+    /**
      * @brief シーンが保持する GameObject のリストを取得する
      */
     const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const override { return gameObjects_; }

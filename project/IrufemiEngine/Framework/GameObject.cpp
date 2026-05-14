@@ -17,13 +17,17 @@ void GameObject::Initialize() {
     }
 }
 
-void GameObject::Update() {
+void GameObject::Update(bool isPlayMode) {
     if (!isActive_) return;
     for (auto& comp : components_) {
+        // PlayModeでない場合は、エディタで更新可能なコンポーネントのみ更新する
+        if (!isPlayMode && !comp->CanUpdateInEditMode()) {
+            continue;
+        }
         comp->Update();
     }
     for (auto& child : children_) {
-        child->Update();
+        child->Update(isPlayMode);
     }
 }
 

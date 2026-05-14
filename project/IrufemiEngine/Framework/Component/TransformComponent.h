@@ -17,6 +17,8 @@ public:
     void Initialize() override {}
     void Update() override;
 
+    bool CanUpdateInEditMode() const override { return true; }
+
     const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
     const Matrix4x4& GetLocalMatrix() const { return localMatrix_; }
 

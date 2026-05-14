@@ -59,6 +59,33 @@ void EditorManager::Update() {
     }
 }
 
+void EditorManager::EnterPlayMode() {
+    if (!engine_ || !engine_->GetSceneManager()) return;
+    auto scene = engine_->GetSceneManager()->GetCurrentScene();
+    if (!scene) return;
+
+    // 現在のシーン状態をバックアップ
+    SceneSerializer::Save(scene, ".temp_playmode");
+    currentMode_ = EditorModeState::Play;
+}
+
+void EditorManager::ExitPlayMode() {
+    if (!engine_ || !engine_->GetSceneManager()) return;
+    auto scene = engine_->GetSceneManager()->GetCurrentScene();
+    if (!scene) return;
+
+    // プレイモード中の選択状態をクリア
+    ClearSelectedObject();
+
+    if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
+        baseScene->ClearGameObjects();
+    }
+    
+    // バックアップから復元
+    SceneSerializer::Load(scene, ".temp_playmode");
+    currentMode_ = EditorModeState::Edit;
+}
+
 void EditorManager::DrawEditorUI() {
     if (!engine_ || !engine_->GetMainRenderTexture()) return;
 
@@ -120,6 +147,19 @@ void EditorManager::DrawEditorUI() {
         }
         ImGui::EndMenuBar();
     }
+
+    // ツールバー (Play / Stop)
+    ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
+    if (currentMode_ == EditorModeState::Edit) {
+        if (ImGui::Button(ICON_FA_PLAY " Play")) {
+            EnterPlayMode();
+        }
+    } else {
+        if (ImGui::Button(ICON_FA_STOP " Stop")) {
+            ExitPlayMode();
+        }
+    }
+    ImGui::End();
 
     // 2. 各種エディタパネルの描画
     for (auto& panel : panels_) {

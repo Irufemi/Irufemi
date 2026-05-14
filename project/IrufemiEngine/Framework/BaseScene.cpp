@@ -61,12 +61,22 @@ void BaseScene::Update() {
         engine_->GetCameraManager()->Update();
     }
 
+    bool isPlayMode = true;
+#ifdef EditorMode
+    if (engine_ && engine_->GetEditorManager()) {
+        isPlayMode = engine_->GetEditorManager()->IsPlayMode();
+    }
+#endif
+
     // GameObject の更新
     for (auto& obj : gameObjects_) {
-        if (obj && !obj->GetParent()) obj->Update();
+        if (obj && !obj->GetParent()) obj->Update(isPlayMode);
     }
     
-    CollisionManager::GetInstance().CheckAllCollisions();
+    // PlayMode 時のみ衝突判定（イベント発火など）を行う
+    if (isPlayMode) {
+        CollisionManager::GetInstance().CheckAllCollisions();
+    }
 
     SubmitFrameData();
 }
@@ -117,6 +127,10 @@ void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
     if (it != gameObjects_.end()) {
         gameObjects_.erase(it);
     }
+}
+
+void BaseScene::ClearGameObjects() {
+    gameObjects_.clear();
 }
 
 size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {
