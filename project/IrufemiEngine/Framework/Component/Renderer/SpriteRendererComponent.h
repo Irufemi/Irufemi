@@ -20,6 +20,7 @@ public:
     void Initialize() override;
     void Update() override;
     void Draw() override;
+    IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(sprite_.get()); }
 #ifdef EditorMode
     friend class SpriteRendererComponentEditor;
 #endif

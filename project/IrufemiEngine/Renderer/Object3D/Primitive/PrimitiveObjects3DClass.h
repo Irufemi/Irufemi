@@ -113,6 +113,7 @@ public:
      */
     void SyncBeforeDraw() override;
     void Draw() override;
+    void DrawOutlineMask() override;
 
     /**
      * @brief 描画処理（カメラを外部から指定する場合）

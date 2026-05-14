@@ -3,6 +3,7 @@
 #include <string>
 
 class GameObject;
+#include "Renderer/Core/IRenderable.h"
 
 /**
  * @class Component
@@ -29,9 +30,19 @@ public:
     virtual void Draw() {}
 
     /**
+     * @brief 紐づく Renderable オブジェクトを取得する
+     * @details レンダラー系コンポーネントがこれをオーバーライドすることで、アウトライン描画などを共通化します。
+     */
+    virtual IRenderable* GetRenderable() { return nullptr; }
+
+    /**
      * @brief 選択中の輪郭マスク描画処理
      */
-    virtual void DrawOutlineMask() {}
+    virtual void DrawOutlineMask() {
+        if (auto renderable = GetRenderable()) {
+            renderable->DrawOutlineMask();
+        }
+    }
 
     /**
      * @brief コンポーネントの種類を表す文字列を返す

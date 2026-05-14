@@ -204,6 +204,11 @@ void PrimitiveObjects3DClass::Draw(const Camera& camera) {
     drawManager_->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
 }
 
+void PrimitiveObjects3DClass::DrawOutlineMask() {
+    if (!mesh_.resource || !drawManager_) return;
+    drawManager_->SubmitOutlineMask(mesh_.resource.get(), nullptr);
+}
+
 void PrimitiveObjects3DClass::Debug(const char* label) {
 #ifdef USE_IMGUI
     if (!ui_) return;

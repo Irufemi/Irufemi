@@ -46,12 +46,6 @@ void MeshRendererComponent::Draw() {
     }
 }
 
-void MeshRendererComponent::DrawOutlineMask() {
-    if (obj_) {
-        obj_->DrawOutlineMask();
-    }
-}
-
 Sphere MeshRendererComponent::GetWorldSphere() const {
     Sphere result = { Vector3{0,0,0}, 1.0f }; // default
     if (transform_) {

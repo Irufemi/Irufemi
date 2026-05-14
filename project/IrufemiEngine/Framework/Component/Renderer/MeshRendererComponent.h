@@ -19,7 +19,7 @@ public:
     void Initialize() override;
     void Update() override;
     void Draw() override;
-    void DrawOutlineMask() override;
+    IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(obj_.get()); }
     
     // エディタのRaycast用
     Sphere GetWorldSphere() const;

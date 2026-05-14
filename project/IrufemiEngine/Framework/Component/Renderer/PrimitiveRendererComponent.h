@@ -17,6 +17,7 @@ public:
     void Initialize() override;
     void Update() override;
     void Draw() override;
+    IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(primitive_.get()); }
     
     // エディタのRaycast用
     Sphere GetWorldSphere() const;

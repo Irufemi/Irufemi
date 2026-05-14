@@ -20,4 +20,9 @@ public:
      * @details 実際の描画コマンドの積み込み（DrawIndexedInstanced等）を行います。
      */
     virtual void Draw() = 0;
+
+    /**
+     * @brief 選択中の輪郭マスク描画処理
+     */
+    virtual void DrawOutlineMask() {}
 };
