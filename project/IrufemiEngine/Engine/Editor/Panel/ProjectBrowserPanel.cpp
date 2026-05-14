@@ -196,6 +196,9 @@ void ProjectBrowserPanel::Draw() {
                     } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb" || ext == ".mtl") {
                         icon = ICON_FA_CUBES;
                         textColor = ImVec4(0.4f, 1.0f, 0.4f, 1.0f); // 緑色
+                    } else if (ext == ".prefab") {
+                        icon = ICON_FA_CUBE;
+                        textColor = ImVec4(0.2f, 0.6f, 1.0f, 1.0f); // 青色
                     } else if (ext == ".json") {
                         icon = ICON_FA_MAP;
                         textColor = ImVec4(1.0f, 0.6f, 0.2f, 1.0f); // オレンジ色

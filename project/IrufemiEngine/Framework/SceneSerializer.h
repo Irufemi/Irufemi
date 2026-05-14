@@ -1,7 +1,9 @@
 #pragma once
 #include <string>
+#include <memory>
 
 class IScene;
+class GameObject;
 
 /**
  * @class SceneSerializer
@@ -29,6 +31,20 @@ public:
      * @brief 指定したシーン名の JSON ファイルが存在するか確認する
      */
     static bool Exists(const std::string& sceneName);
+
+    /**
+     * @brief 特定の GameObject をプレハブとして保存する
+     * @param obj 保存対象の GameObject
+     * @param filepath 保存先のパス (例: resources/prefabs/MyObject.json)
+     */
+    static bool SavePrefab(std::shared_ptr<GameObject> obj, const std::string& filepath);
+
+    /**
+     * @brief プレハブファイルから GameObject を復元・生成する
+     * @param filepath 読み込むファイルのパス
+     * @return 生成された GameObject の共有ポインタ
+     */
+    static std::shared_ptr<GameObject> LoadPrefab(const std::string& filepath);
 
 private:
     /**

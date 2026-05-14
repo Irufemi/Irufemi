@@ -9,6 +9,7 @@
 #include "Framework/GameObject.h"
 #include "../Core/EditorActionManager.h"
 #include "../Core/EditorDragDrop.h"
+#include "Framework/SceneSerializer.h"
 
 #include <functional>
 #include <algorithm>
@@ -108,6 +109,11 @@ void HierarchyPanel::Draw() {
                         if (auto am = editorManager_->GetActionManager()) {
                             am->DeleteObject(obj);
                         }
+                    }
+                    ImGui::Separator();
+                    if (ImGui::Selectable("Save as Prefab")) {
+                        std::string path = "resources/prefabs/" + obj->GetName() + ".prefab.json";
+                        SceneSerializer::SavePrefab(obj, path);
                     }
                     ImGui::EndPopup();
                 }

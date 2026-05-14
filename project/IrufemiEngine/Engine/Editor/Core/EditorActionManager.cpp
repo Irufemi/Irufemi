@@ -10,6 +10,7 @@
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "Framework/SceneSerializer.h"
 
 #include "EditorCommands.h"
 #include <filesystem>
@@ -102,6 +103,8 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath) {
         }
         meshRenderer->LoadModel(modelName); 
         newObj->Initialize();
+    } else if (ext == ".json" || ext == ".prefab") {
+        newObj = SceneSerializer::LoadPrefab(assetPath);
     }
 
     if (newObj) {

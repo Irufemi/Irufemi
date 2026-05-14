@@ -79,6 +79,48 @@ bool SceneSerializer::Exists(const std::string& sceneName) {
     return fs::exists(GetSceneFilePath(sceneName));
 }
 
+bool SceneSerializer::SavePrefab(std::shared_ptr<GameObject> obj, const std::string& filepath) {
+    if (!obj) return false;
+
+    // 単一のオブジェクトをシリアライズ
+    nlohmann::json root = obj->Serialize();
+
+    fs::path dir = fs::path(filepath).parent_path();
+    if (!fs::exists(dir)) {
+        fs::create_directories(dir);
+    }
+
+    std::ofstream file(filepath);
+    if (file.is_open()) {
+        file << root.dump(4);
+        file.close();
+        return true;
+    }
+
+    return false;
+}
+
+std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filepath) {
+    if (!fs::exists(filepath)) return nullptr;
+
+    std::ifstream file(filepath);
+    if (!file.is_open()) return nullptr;
+
+    nlohmann::json root;
+    try {
+        file >> root;
+    } catch (...) {
+        return nullptr;
+    }
+    file.close();
+
+    auto obj = std::make_shared<GameObject>();
+    obj->Deserialize(root);
+    obj->Initialize();
+
+    return obj;
+}
+
 std::string SceneSerializer::GetSceneFilePath(const std::string& sceneName) {
     return "resources/scenes/" + sceneName + ".json";
 }
