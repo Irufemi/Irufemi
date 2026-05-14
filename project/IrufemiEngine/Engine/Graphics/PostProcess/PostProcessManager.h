@@ -36,6 +36,7 @@ enum class PostProcessMode {
     Fade,               ///< フェード（指定色への塗りつぶし）
     Slide,              ///< スライド（ワイプ演出）
     Bloom,              ///< ブルーム（高輝度抽出による発光）
+    Glitch,             ///< グリッチ（ノイズや色収差による映像の乱れ）
 };
 
 class DirectXCommon;
@@ -184,6 +185,15 @@ public:
     };
 
     /**
+     * @struct GlitchParams
+     * @brief グリッチエフェクト用パラメータ
+     */
+    struct GlitchParams {
+        float intensity = 1.0f; ///< グリッチの強さ
+        float time = 0.0f;      ///< 時間経過（内部で更新される）
+    };
+
+    /**
      * @struct CombinedParams
      * @brief 統合ポストプロセス用定数バッファ構造体
      */
@@ -238,6 +248,11 @@ public:
         Vector2 radialBlurCenter;
         float radialBlurWidth;
         int32_t radialBlurSamples;
+
+        // Glitch
+        float glitchIntensity;
+        float glitchTime;
+        float pad6[2]; // HLSLの float4 境界に合わせるためのパディング
     };
 
 public:
@@ -311,6 +326,7 @@ public:
     FadeParams& GetFadeParams() { return fadeParams_; }
     SlideParams& GetSlideParams() { return slideParams_; }
     BloomParams& GetBloomParams() { return bloomParams_; }
+    GlitchParams& GetGlitchParams() { return glitchParams_; }
 
     void SetDissolveNoiseHandle(int index, D3D12_GPU_DESCRIPTOR_HANDLE handle) {
         if (index >= 0 && index < 2) dissolveNoiseHandle_[index] = handle;
@@ -338,9 +354,9 @@ private:
         Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     };
     // モードに対応するPSOを保持 (中間パス用: _UNORM)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 15> psos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 16> psos_;
     // 最終パス用 (スワップチェーン等の _SRGB 形式用)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 15> finalPsos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 16> finalPsos_;
 
     // ブルーム専用 PSO (内部のパス用)
     Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomExtractPSO_;
@@ -400,6 +416,10 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> bloomCB_;
     BloomParams* mappedBloom_ = nullptr;
     BloomParams bloomParams_;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> glitchCB_;
+    GlitchParams* mappedGlitch_ = nullptr;
+    GlitchParams glitchParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;

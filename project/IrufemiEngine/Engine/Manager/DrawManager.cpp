@@ -939,6 +939,9 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     if (renderGraph_) {
         // メインレンダリングテクスチャの初期状態を登録 (RenderGraph内で遷移するため)
         renderGraph_->RegisterResourceState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        
+        // 深度バッファの初期状態も登録 (DepthBasedOutline 等で参照するため)
+        renderGraph_->RegisterResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
         renderGraph_->Execute(this, engine);
     }

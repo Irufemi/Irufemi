@@ -91,7 +91,7 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     if (hasOutline) {
         DirectXUtils::TransitionBarrier(
             cmdList, drawManager->GetDxCommon()->GetDepthStencilResource(),
-            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, 0
+            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
         );
     }
 }

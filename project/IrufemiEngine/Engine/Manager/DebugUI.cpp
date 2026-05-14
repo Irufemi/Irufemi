@@ -1146,7 +1146,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1247,6 +1247,9 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                         if (params.kernelSize < 1) params.kernelSize = 1;
                         if (params.kernelSize > 1 && params.kernelSize % 2 == 0) params.kernelSize += 1;
                     }
+                } else if (mode == PostProcessMode::Glitch) {
+                    auto& params = ppManager->GetGlitchParams();
+                    ImGui::SliderFloat("Glitch Intensity", &params.intensity, 0.0f, 5.0f);
                 }
                 ImGui::TreePop();
             }

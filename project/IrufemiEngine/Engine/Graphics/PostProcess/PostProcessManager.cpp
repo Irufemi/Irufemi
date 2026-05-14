@@ -45,6 +45,9 @@ void PostProcessManager::Update(float totalTime) {
   if (mappedSlide_) *mappedSlide_ = slideParams_;
   if (mappedBloom_) *mappedBloom_ = bloomParams_;
 
+  glitchParams_.time = totalTime;
+  if (mappedGlitch_) *mappedGlitch_ = glitchParams_;
+
   // 統合パラメータの同期
   combinedParams_.vignetteScale = vignetteParams_.scale;
   combinedParams_.vignettePower = vignetteParams_.power;
@@ -69,6 +72,8 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.radialBlurCenter = radialBlurParams_.center;
   combinedParams_.radialBlurWidth = radialBlurParams_.blurWidth;
   combinedParams_.radialBlurSamples = radialBlurParams_.numSamples;
+  combinedParams_.glitchIntensity = glitchParams_.intensity;
+  combinedParams_.glitchTime = glitchParams_.time;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;
@@ -269,6 +274,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   case Mode::Bloom:
     cbvAddress = bloomCB_->GetGPUVirtualAddress();
     break;
+  case Mode::Glitch:
+    cbvAddress = glitchCB_->GetGPUVirtualAddress();
+    break;
   default:
     break;
   }
@@ -319,6 +327,7 @@ void PostProcessManager::CreatePSOs() {
       {Mode::Fade, L"resources/shaders/Fade.PS.hlsl"},
       {Mode::Slide, L"resources/shaders/Slide.PS.hlsl"},
       {Mode::Bloom, L"resources/shaders/CopyImage.PS.hlsl"},
+      {Mode::Glitch, L"resources/shaders/Glitch.PS.hlsl"},
   };
 
   for (const auto &s : shaders) {
@@ -435,6 +444,9 @@ void PostProcessManager::CreateConstantBuffers() {
 
   bloomCB_ = CreateBuffer(sizeof(BloomParams));
   bloomCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedBloom_));
+
+  glitchCB_ = CreateBuffer(sizeof(GlitchParams));
+  glitchCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedGlitch_));
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource>
