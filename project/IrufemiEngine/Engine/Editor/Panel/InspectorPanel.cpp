@@ -19,6 +19,7 @@
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Framework/Component/Collider/RaycastComponent.h"
+#include "Framework/Component/Script/RotatorComponent.h"
 #include <cstring>
 
 void InspectorPanel::Initialize(EditorManager* editorManager) {
@@ -145,6 +146,16 @@ void InspectorPanel::Draw() {
                             actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
                         }
                     } else { ImGui::TextDisabled("RaycastComponent (Already added)"); }
+                    ImGui::EndMenu();
+                }
+                
+                if (ImGui::BeginMenu("Scripts")) {
+                    if (!sel->GetComponent<RotatorComponent>()) {
+                        if (ImGui::Selectable("RotatorComponent")) {
+                            auto comp = std::make_shared<RotatorComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
+                    } else { ImGui::TextDisabled("RotatorComponent (Already added)"); }
                     ImGui::EndMenu();
                 }
                 

@@ -22,6 +22,7 @@
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Collider/RaycastComponent.h"
+#include "Framework/Component/Script/RotatorComponent.h"
 
 // Core
 #include "IComponentEditor.h"
@@ -445,6 +446,18 @@ public:
     }
 };
 
+class RotatorComponentEditor : public IComponentEditor {
+public:
+    void Draw(Component* component, EditorActionManager* actionManager) override {
+        auto* comp = static_cast<RotatorComponent*>(component);
+        ImGui::PushID(comp);
+        if (ImGui::CollapsingHeader("Rotator Script", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::DragFloat3("Rotation Speed", &comp->rotationSpeedX_, 0.1f);
+        }
+        ImGui::PopID();
+    }
+};
+
 // =======================================================================
 // ComponentEditorRegistry
 // =======================================================================
@@ -461,6 +474,7 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<OBBColliderComponent, OBBColliderComponentEditor>();
     RegisterEditor<SphereColliderComponent, SphereColliderComponentEditor>();
     RegisterEditor<RaycastComponent, RaycastComponentEditor>();
+    RegisterEditor<RotatorComponent, RotatorComponentEditor>();
 }
 
 void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {

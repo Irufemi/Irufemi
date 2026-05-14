@@ -454,6 +454,9 @@
     <ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp">
       <Filter>Framework\Component\Collider</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\Script\RotatorComponent.cpp">
+      <Filter>Framework\Component\Script</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\Component\Collider\RaycastComponent.cpp">
       <Filter>Framework\Component\Collider</Filter>
     </ClCompile>
@@ -980,6 +983,9 @@
     </ClInclude>
     <ClInclude Include="Framework\Component\Collider\OBBColliderComponent.h">
       <Filter>Framework\Component\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Script\RotatorComponent.h">
+      <Filter>Framework\Component\Script</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Manager\CollisionManager.h">
       <Filter>Engine\Manager</Filter>

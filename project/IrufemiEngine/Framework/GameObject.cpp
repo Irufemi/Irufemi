@@ -8,6 +8,7 @@
 #include "Component/Collider/SphereColliderComponent.h"
 #include "Component/Collider/OBBColliderComponent.h"
 #include "Component/Collider/RaycastComponent.h"
+#include "Component/Script/RotatorComponent.h"
 void GameObject::Initialize() {
     for (auto& comp : components_) {
         comp->Initialize();
@@ -174,6 +175,7 @@ void GameObject::Deserialize(const nlohmann::json& j) {
             else if (type == "SphereColliderComponent") newComp = AddComponent<SphereColliderComponent>();
             else if (type == "OBBColliderComponent") newComp = AddComponent<OBBColliderComponent>();
             else if (type == "RaycastComponent") newComp = AddComponent<RaycastComponent>();
+            else if (type == "RotatorComponent") newComp = AddComponent<RotatorComponent>();
             
             if (newComp && cj.contains("data")) {
                 newComp->Deserialize(cj["data"]);

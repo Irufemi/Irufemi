@@ -6,6 +6,7 @@
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/SceneSerializer.h"
 
 // デストラクタ
 GameScene::~GameScene() = default;
@@ -14,23 +15,10 @@ GameScene::~GameScene() = default;
 void GameScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
-    // テスト用の GameObject を生成
-    auto testObject = std::make_shared<GameObject>("TestPlane");
-
-    // TransformComponent を追加
-    auto transform = testObject->AddComponent<TransformComponent>();
-    transform->position_ = { 0.0f, 0.0f, 0.0f }; // 原点に配置
-
-    // PrimitiveRendererComponent を追加して Plane を描画
-    auto renderer = testObject->AddComponent<PrimitiveRendererComponent>();
-    renderer->SetShape(PrimitiveType::Plane);
-
-
-    // 全コンポーネントの初期化
-    testObject->Initialize();
-
-    // シーンのリストに登録
-    AddGameObject(testObject);
+    // C++でのハードコードを廃止し、エディタで保存したJSONをロードする
+    // ※ エディタで作成・保存した GameScene.json がロードされます。
+    // ※ 初回起動時にファイルが無い場合は空のシーンから始まります。
+    SceneSerializer::Load(this, "GameScene");
 }
 
 // 更新
