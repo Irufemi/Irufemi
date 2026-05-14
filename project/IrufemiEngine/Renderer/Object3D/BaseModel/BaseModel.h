@@ -62,6 +62,8 @@ public: // ゲッター・セッター
     void SetPosition(const Vector3& position) { transform_.translate = position; MarkAsDirty(); }
     const Vector3& GetPosition() const { return transform_.translate; }
 
+    std::shared_ptr<ObjModel> GetCpuModel() const;
+
     void SetTranslate(const Vector3& translate) { transform_.translate = translate; MarkAsDirty(); }
 
     void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; MarkAsDirty(); }

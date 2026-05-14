@@ -2,6 +2,7 @@
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Renderer/Core/BaseResource.h"
+#include "Resource/Model/ModelManager.h"
 
 IrufemiEngine* BaseModel::engine_ = nullptr;
 
@@ -16,6 +17,11 @@ BaseModel::~BaseModel() {
 D3D12_GPU_VIRTUAL_ADDRESS BaseModel::GetTransformationGpuAddress() const {
     if (transformCbIndex_ == static_cast<uint32_t>(-1) || !engine_) return 0;
     return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+}
+
+std::shared_ptr<ObjModel> BaseModel::GetCpuModel() const {
+    if (managedModel_) return managedModel_->cpuModel;
+    return nullptr;
 }
 
 size_t BaseModel::GetMeshCount() const {

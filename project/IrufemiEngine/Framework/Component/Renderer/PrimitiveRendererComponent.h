@@ -21,6 +21,7 @@ public:
     
     // エディタのRaycast用
     Sphere GetWorldSphere() const;
+    bool Raycast(const Ray& ray, float& outDistance) const override;
 
 #ifdef EditorMode
     friend class PrimitiveRendererComponentEditor;

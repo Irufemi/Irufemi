@@ -1123,10 +1123,13 @@ void ModelManager::CalculateBoundingSphere(ObjModel& model) {
     }
 
     if (!hasVertices) {
+        model.boundingBox = AABB{ {0,0,0}, {0,0,0} };
         model.boundingSphere.center = { 0, 0, 0 };
         model.boundingSphere.radius = 0.0f;
         return;
     }
+
+    model.boundingBox = AABB{ minV, maxV };
 
     // 中心点をAABBの重心とする
     model.boundingSphere.center = (minV + maxV) * 0.5f;

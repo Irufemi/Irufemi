@@ -23,6 +23,7 @@ public:
     
     // エディタのRaycast用
     Sphere GetWorldSphere() const;
+    bool Raycast(const Ray& ray, float& outDistance) const override;
 
     std::string GetComponentName() const override { return "MeshRendererComponent"; }
     nlohmann::json Serialize() override;

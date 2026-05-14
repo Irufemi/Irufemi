@@ -4,6 +4,7 @@
 
 class GameObject;
 #include "Renderer/Core/IRenderable.h"
+struct Ray;
 
 /**
  * @class Component
@@ -43,6 +44,14 @@ public:
             renderable->DrawOutlineMask();
         }
     }
+
+    /**
+     * @brief レイキャスト判定（エディタでのオブジェクト選択時などに呼ばれる）
+     * @param[in] ray 判定するレイ
+     * @param[out] outDistance レイの始点から衝突点までの距離
+     * @return 衝突した場合は true
+     */
+    virtual bool Raycast(const Ray& ray, float& outDistance) const { return false; }
 
     /**
      * @brief コンポーネントの種類を表す文字列を返す

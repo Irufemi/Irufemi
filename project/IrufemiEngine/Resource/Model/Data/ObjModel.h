@@ -10,6 +10,7 @@
 #include "../../../Engine/Core/Math/Math.h"
 #include "JointWeightData.h"
 #include "../../../Engine/Core/Shape/Sphere.h"
+#include "../../../Engine/Core/Math/Geometry/AABB.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -60,4 +61,5 @@ struct ObjModel {
     Node rootNode; // 追加: シーン階層ルート
     std::map<std::string, JointWeightData> skinClusterData;
     Sphere boundingSphere; // 追加: モデル全体の境界球
+    AABB boundingBox; // 追加: モデル全体のローカルAABB（高精度ピッキング用）
 };

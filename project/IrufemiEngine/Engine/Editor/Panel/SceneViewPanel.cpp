@@ -87,20 +87,9 @@ void SceneViewPanel::Draw() {
                         for (auto& obj : scene->GetGameObjects()) {
                             if (!obj || obj.get() == closestObj) continue;
                             
-                            Sphere bounds;
-                            bool hasBounds = false;
-                            
-                            if (auto meshRenderer = obj->GetComponent<MeshRendererComponent>()) {
-                                bounds = meshRenderer->GetWorldSphere();
-                                hasBounds = true;
-                            } else if (auto primitiveRenderer = obj->GetComponent<PrimitiveRendererComponent>()) {
-                                bounds = primitiveRenderer->GetWorldSphere();
-                                hasBounds = true;
-                            }
-                            
-                            if (hasBounds) {
-                                float dist = 0.0f;
-                                if (Collision::IsCollision(ray, bounds, dist)) {
+                            float dist = 0.0f;
+                            for (auto& comp : obj->GetComponents()) {
+                                if (comp->Raycast(ray, dist)) {
                                     if (dist < closestDist) {
                                         closestDist = dist;
                                         closestObj = obj.get();
