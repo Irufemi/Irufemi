@@ -48,6 +48,13 @@ void Mouse::Update() {
         GetClientRect(hwnd_, &rc);
         position_ = { static_cast<float>((rc.right - rc.left) / 2), static_cast<float>((rc.bottom - rc.top) / 2) };
         prevPosition_ = position_;
+
+        // 毎フレームカーソルを画面中央に固定し直すことで、ウィンドウ端でのクリック漏れ（背面ウィンドウの誤クリック）を防ぐ
+        if (GetForegroundWindow() == hwnd_) {
+            POINT center = { (rc.right - rc.left) / 2, (rc.bottom - rc.top) / 2 };
+            ClientToScreen(hwnd_, &center);
+            SetCursorPos(center.x, center.y);
+        }
     } else {
         // 通常時の挙動: スクリーン座標をクライアント座標に変換して position_ を更新
         ScreenToClient(hwnd_, &p);
