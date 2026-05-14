@@ -45,8 +45,8 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Skybox/Skybox.h"
 #include "Graphics/Data/VertexData.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
-
 #include "Framework/IScene.h"
+#include "Framework/Component/ComponentFactory.h"
 
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "d3d12.lib")
@@ -60,9 +60,11 @@ IrufemiEngine::~IrufemiEngine() { Finalize(); }
 void IrufemiEngine::Initialize(const std::wstring &title,
                                const int32_t &clientWidth,
                                const int32_t &clientHeight) {
-
   /*CrashHandler*/
   SetUnhandledExceptionFilter(WinApp::ExportDump);
+
+  // コンポーネントのファクトリ登録
+  ComponentFactory::RegisterAllCoreComponents();
 
   // 時間計測の開始
   startTime_ = std::chrono::steady_clock::now();

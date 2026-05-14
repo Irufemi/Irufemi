@@ -405,15 +405,29 @@ renderer->LoadModel("enemy/boss.obj");
 // scene->AddGameObject(object);
 ```
 
-#### 新規コンポーネント作成時のルール
-1. **描画/ロジックの分離**: `OnInspectorGUI()` をコンポーネント内に書くことは**禁止**です。
-2. **フレンド宣言**: エディタ（インスペクター）からプライベート変数を見せるには、ヘッダーに以下の宣言を追加してください。
+#### 新規コンポーネント（スクリプト）作成時のルールと自動UI化
+エンジンの「簡易リフレクション」機能により、変数を宣言して `OnRegisterProperties` に書くだけで、**自動でインスペクターにUIが作成され、JSONに保存・復元される**ようになります。手動で ImGui を書いたりシリアライズ関数をオーバーライドする必要はありません。
+
 ```cpp
-#ifdef EditorMode
-    friend class YourComponentEditor; // Registry.cpp内のエディタクラス名
-#endif
+#pragma once
+#include "Framework/Component/Component.h"
+
+class PlayerStatusComponent : public Component {
+public:
+    int hp_ = 100;
+    float speed_ = 5.0f;
+
+    // 1. コンポーネント名を返す
+    std::string GetComponentName() const override { return "PlayerStatusComponent"; }
+
+    // 2. 変数をリフレクションシステムに登録する
+    void OnRegisterProperties() override {
+        RegisterProperty("Max HP", &hp_);
+        RegisterProperty("Move Speed", &speed_);
+    }
+};
 ```
-3. **レジストリへの登録**: `ComponentEditorRegistry.cpp` に対応するエディタクラスを実装し、`RegisterAllEditors()` で登録してください。
+*※作成したスクリプトは `ComponentFactory.cpp` の `RegisterAllCoreComponents` で登録するか、同等の場所でファクトリに登録してください。*
 
 ---
 
@@ -646,15 +660,26 @@ IrufemiEngine のエディタは、モダンなゲームエンジン（Unity等�
    - **3Dモデルの配置**: `.obj` や `.fbx` などをドラッグ＆ドロップすると、`MeshRendererComponent` がアタッチされた GameObject が自動生成されます。
    - D&D 時にアセットの相対パスが自動的にコンポーネントへセットされるため、すぐに画面上でプレビュー可能です。
 
-### 6.2 コンポーネントエディタの拡張 (Advanced)
-インスペクターに新しいコンポーネントの編集項目を追加する場合：
+### 6.2 プレハブ (Prefab) システム
+Unityライクな「オブジェクトのテンプレート化」をサポートしています。
 
-1. **`Engine/Editor/Core/ComponentEditorRegistry.cpp`** を開きます。
-2. `IComponentEditor` を継承した専用のエディタクラス（例：`class MyComponentEditor`）を作成し、`Draw()` 関数内に ImGui のコードを記述します。
-3. `ComponentEditorRegistry::RegisterAllEditors()` 内で `RegisterEditor<MyComponent, MyComponentEditor>();` を呼び出します。
-4. コンポーネント側のヘッダーで、そのエディタクラスを `friend` 指定します。
+1. **Prefabの作成・保存**:
+   - Hierarchy パネルでオブジェクトを右クリックし、「**Save as Prefab**」を選択します。
+   - `resources/prefabs/` 以下に `.prefab.json` として、コンポーネントやパラメータがすべて保存されます。
+2. **エディタからの配置**:
+   - Project Browser に青いキューブのアイコンで表示されます。これを **Scene View** にドラッグ＆ドロップすると、即座にインスタンス化（実体化）して配置されます。
+3. **C++コードからの動的生成 (ランタイム)**:
+   - ゲーム中に「敵」や「弾」をスポーンさせるには、C++コードで以下のように呼び出します。
+   ```cpp
+   #include "Framework/SceneSerializer.h"
 
-これにより、コンポーネント本体のコードを汚すことなく、エディタ機能のみを拡張できます。
+   // Prefabをロードしてインスタンス化
+   auto bullet = SceneSerializer::LoadPrefab("resources/prefabs/Bullet.prefab.json");
+   if (bullet) {
+       bullet->GetComponent<TransformComponent>()->position_ = spawnPos;
+       scene->AddGameObject(bullet);
+   }
+   ```
 
 ---
 > **ドキュメント更新履歴**

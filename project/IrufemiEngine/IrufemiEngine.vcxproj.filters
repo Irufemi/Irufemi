@@ -463,6 +463,9 @@
     <ClCompile Include="Engine\Manager\CollisionManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\ComponentFactory.cpp">
+      <Filter>ソース ファイル\Framework\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
@@ -989,6 +992,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Manager\CollisionManager.h">
       <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\ComponentFactory.h">
+      <Filter>ヘッダー ファイル\Framework\Component</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>

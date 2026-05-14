@@ -4,7 +4,17 @@
 
 class GameObject;
 #include "Renderer/Core/IRenderable.h"
+#include "Engine/Core/Math/Vector2.h"
+#include "Engine/Core/Math/Vector3.h"
 struct Ray;
+
+enum class ComponentPropertyType { Float, Float2, Float3, Int, Bool, String };
+
+struct ComponentProperty {
+    std::string name;
+    ComponentPropertyType type;
+    void* data;
+};
 
 /**
  * @class Component
@@ -60,19 +70,86 @@ public:
     virtual bool Raycast(const Ray& ray, float& outDistance) const { return false; }
 
     /**
+     * @brief 自身の持つ変数をリフレクションシステムに登録する
+     */
+    virtual void OnRegisterProperties() {}
+
+    /**
      * @brief コンポーネントの種類を表す文字列を返す
      */
     virtual std::string GetComponentName() const { return "Component"; }
 
     /**
+     * @brief 登録されたプロパティリストを取得する
+     */
+    const std::vector<ComponentProperty>& GetProperties() const { return properties_; }
+
+    /**
+     * @brief プロパティの登録ヘルパー
+     */
+    void RegisterProperty(const std::string& name, float* ptr) { properties_.push_back({name, ComponentPropertyType::Float, ptr}); }
+    void RegisterProperty(const std::string& name, int* ptr) { properties_.push_back({name, ComponentPropertyType::Int, ptr}); }
+    void RegisterProperty(const std::string& name, bool* ptr) { properties_.push_back({name, ComponentPropertyType::Bool, ptr}); }
+    void RegisterProperty(const std::string& name, std::string* ptr) { properties_.push_back({name, ComponentPropertyType::String, ptr}); }
+    void RegisterProperty(const std::string& name, Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr}); }
+    void RegisterProperty(const std::string& name, Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr}); }
+
+    /**
      * @brief コンポーネントの状態をJSONにシリアライズする
      */
-    virtual nlohmann::json Serialize() { return nlohmann::json::object(); }
+    virtual nlohmann::json Serialize() { 
+        nlohmann::json j = nlohmann::json::object(); 
+        for (const auto& prop : properties_) {
+            switch (prop.type) {
+                case ComponentPropertyType::Float: j[prop.name] = *static_cast<float*>(prop.data); break;
+                case ComponentPropertyType::Int: j[prop.name] = *static_cast<int*>(prop.data); break;
+                case ComponentPropertyType::Bool: j[prop.name] = *static_cast<bool*>(prop.data); break;
+                case ComponentPropertyType::String: j[prop.name] = *static_cast<std::string*>(prop.data); break;
+                case ComponentPropertyType::Float2: {
+                    auto* v = static_cast<Vector2*>(prop.data);
+                    j[prop.name] = { v->x, v->y };
+                    break;
+                }
+                case ComponentPropertyType::Float3: {
+                    auto* v = static_cast<Vector3*>(prop.data);
+                    j[prop.name] = { v->x, v->y, v->z };
+                    break;
+                }
+            }
+        }
+        return j; 
+    }
 
     /**
      * @brief JSONからコンポーネントの状態を復元する
      */
-    virtual void Deserialize(const nlohmann::json& j) { (void)j; }
+    virtual void Deserialize(const nlohmann::json& j) { 
+        for (const auto& prop : properties_) {
+            if (!j.contains(prop.name)) continue;
+            switch (prop.type) {
+                case ComponentPropertyType::Float: *static_cast<float*>(prop.data) = j[prop.name].get<float>(); break;
+                case ComponentPropertyType::Int: *static_cast<int*>(prop.data) = j[prop.name].get<int>(); break;
+                case ComponentPropertyType::Bool: *static_cast<bool*>(prop.data) = j[prop.name].get<bool>(); break;
+                case ComponentPropertyType::String: *static_cast<std::string*>(prop.data) = j[prop.name].get<std::string>(); break;
+                case ComponentPropertyType::Float2: {
+                    auto* v = static_cast<Vector2*>(prop.data);
+                    auto arr = j[prop.name];
+                    if (arr.is_array() && arr.size() >= 2) {
+                        v->x = arr[0].get<float>(); v->y = arr[1].get<float>();
+                    }
+                    break;
+                }
+                case ComponentPropertyType::Float3: {
+                    auto* v = static_cast<Vector3*>(prop.data);
+                    auto arr = j[prop.name];
+                    if (arr.is_array() && arr.size() >= 3) {
+                        v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>();
+                    }
+                    break;
+                }
+            }
+        }
+    }
 
     /**
      * @brief エディタ（インスペクター）用UIの描画処理
@@ -94,4 +171,5 @@ public:
 
 protected:
     GameObject* gameObject_ = nullptr; ///< 親GameObjectへのポインタ
+    std::vector<ComponentProperty> properties_; ///< 自動シリアライズ・UI化用のプロパティリスト
 };

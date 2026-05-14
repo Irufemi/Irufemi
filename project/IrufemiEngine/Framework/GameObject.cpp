@@ -1,5 +1,7 @@
 #include "GameObject.h"
 
+#include "Component/Component.h"
+#include "Component/ComponentFactory.h"
 #include "Component/TransformComponent.h"
 #include "Component/Renderer/MeshRendererComponent.h"
 #include "Component/Renderer/PrimitiveRendererComponent.h"
@@ -110,6 +112,7 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
     component->SetGameObject(this);
     components_.push_back(component);
     componentMap_[typeid(*component)].push_back(component.get());
+    component->OnRegisterProperties();
     component->Initialize();
 }
 
@@ -165,20 +168,13 @@ void GameObject::Deserialize(const nlohmann::json& j) {
     if (j.contains("components")) {
         for (const auto& cj : j["components"]) {
             std::string type = cj["type"];
-            std::shared_ptr<Component> newComp = nullptr;
+            std::shared_ptr<Component> newComp = ComponentFactory::Create(type);
             
-            if (type == "TransformComponent") newComp = AddComponent<TransformComponent>();
-            else if (type == "MeshRendererComponent") newComp = AddComponent<MeshRendererComponent>();
-            else if (type == "PrimitiveRendererComponent") newComp = AddComponent<PrimitiveRendererComponent>();
-            else if (type == "SpriteRendererComponent") newComp = AddComponent<SpriteRendererComponent>();
-            else if (type == "AABBColliderComponent") newComp = AddComponent<AABBColliderComponent>();
-            else if (type == "SphereColliderComponent") newComp = AddComponent<SphereColliderComponent>();
-            else if (type == "OBBColliderComponent") newComp = AddComponent<OBBColliderComponent>();
-            else if (type == "RaycastComponent") newComp = AddComponent<RaycastComponent>();
-            else if (type == "RotatorComponent") newComp = AddComponent<RotatorComponent>();
-            
-            if (newComp && cj.contains("data")) {
-                newComp->Deserialize(cj["data"]);
+            if (newComp) {
+                AddComponent(newComp);
+                if (cj.contains("data")) {
+                    newComp->Deserialize(cj["data"]);
+                }
             }
         }
     }

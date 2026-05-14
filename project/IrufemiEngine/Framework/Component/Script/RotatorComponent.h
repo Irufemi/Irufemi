@@ -21,8 +21,11 @@ public:
 
     std::string GetComponentName() const override { return "RotatorComponent"; }
 
-    nlohmann::json Serialize() override;
-    void Deserialize(const nlohmann::json& j) override;
+    void OnRegisterProperties() override {
+        RegisterProperty("Speed X", &rotationSpeedX_);
+        RegisterProperty("Speed Y", &rotationSpeedY_);
+        RegisterProperty("Speed Z", &rotationSpeedZ_);
+    }
 
     // パラメータ
     float rotationSpeedX_ = 0.0f;

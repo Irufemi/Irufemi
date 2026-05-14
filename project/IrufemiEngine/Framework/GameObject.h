@@ -42,6 +42,7 @@ public:
         components_.push_back(component);
         componentMap_[typeid(T)].push_back(component.get());
         
+        component->OnRegisterProperties();
         component->Initialize();
         return component;
     }

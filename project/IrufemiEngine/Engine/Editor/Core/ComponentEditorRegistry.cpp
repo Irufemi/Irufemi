@@ -446,18 +446,6 @@ public:
     }
 };
 
-class RotatorComponentEditor : public IComponentEditor {
-public:
-    void Draw(Component* component, EditorActionManager* actionManager) override {
-        auto* comp = static_cast<RotatorComponent*>(component);
-        ImGui::PushID(comp);
-        if (ImGui::CollapsingHeader("Rotator Script", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::DragFloat3("Rotation Speed", &comp->rotationSpeedX_, 0.1f);
-        }
-        ImGui::PopID();
-    }
-};
-
 // =======================================================================
 // ComponentEditorRegistry
 // =======================================================================
@@ -474,7 +462,6 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<OBBColliderComponent, OBBColliderComponentEditor>();
     RegisterEditor<SphereColliderComponent, SphereColliderComponentEditor>();
     RegisterEditor<RaycastComponent, RaycastComponentEditor>();
-    RegisterEditor<RotatorComponent, RotatorComponentEditor>();
 }
 
 void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {
@@ -483,8 +470,42 @@ void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionMa
     if (it != editors_.end()) {
         it->second->Draw(component, actionManager);
     } else {
-        // デフォルト描画（フォールバック）
-        ImGui::Text("No editor registered for %s", typeid(*component).name());
+        // --- 簡易リフレクションによるデフォルト描画（フォールバック） ---
+        const auto& props = component->GetProperties();
+        if (!props.empty()) {
+            ImGui::PushID(component);
+            if (ImGui::CollapsingHeader(component->GetComponentName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+                for (const auto& prop : props) {
+                    switch (prop.type) {
+                        case ComponentPropertyType::Float:
+                            ImGui::DragFloat(prop.name.c_str(), static_cast<float*>(prop.data), 0.1f);
+                            break;
+                        case ComponentPropertyType::Int:
+                            ImGui::DragInt(prop.name.c_str(), static_cast<int*>(prop.data), 1);
+                            break;
+                        case ComponentPropertyType::Bool:
+                            ImGui::Checkbox(prop.name.c_str(), static_cast<bool*>(prop.data));
+                            break;
+                        case ComponentPropertyType::Float2:
+                            ImGui::DragFloat2(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
+                            break;
+                        case ComponentPropertyType::Float3:
+                            ImGui::DragFloat3(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
+                            break;
+                        case ComponentPropertyType::String: {
+                            auto* str = static_cast<std::string*>(prop.data);
+                            char buffer[256];
+                            strncpy_s(buffer, sizeof(buffer), str->c_str(), _TRUNCATE);
+                            if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
+                                *str = buffer;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            ImGui::PopID();
+        }
     }
 }
 

@@ -25,16 +25,3 @@ void RotatorComponent::Update() {
     }
 }
 
-nlohmann::json RotatorComponent::Serialize() {
-    nlohmann::json j;
-    j["speed"] = { rotationSpeedX_, rotationSpeedY_, rotationSpeedZ_ };
-    return j;
-}
-
-void RotatorComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("speed")) {
-        rotationSpeedX_ = j["speed"][0];
-        rotationSpeedY_ = j["speed"][1];
-        rotationSpeedZ_ = j["speed"][2];
-    }
-}
