@@ -15,6 +15,7 @@ static const int32_t kPostProcessMode_HSV = 10;
 static const int32_t kPostProcessMode_ToneMapping = 11;
 static const int32_t kPostProcessMode_Fade = 12;
 static const int32_t kPostProcessMode_Slide = 13;
+static const int32_t kPostProcessMode_Glitch = 15;
 
 // --- ヘルパー関数 ---
 
@@ -143,5 +144,34 @@ float32_t3 ApplyDissolve(float32_t3 color, float32_t mask, float32_t threshold, 
     return color + edge * edgeColor;
 }
 
-// 10. Outline (注: 複数サンプリングが必要なため、テクスチャとサンプラーを直接参照するか、呼び出し側でループする)
+// 10. Glitch
+/**
+ * @brief グリッチエフェクトを適用する
+ * @param color 現在のピクセルカラー
+ * @param uv テクスチャ座標
+ * @param time 時間
+ * @param intensity グリッチの強度
+ * @param tex サンプリングする元のテクスチャ
+ * @param smp サンプラステート
+ * @return グリッチ適用後のカラー
+ */
+float32_t3 ApplyGlitch(float32_t3 color, float32_t2 uv, float32_t time, float32_t intensity, Texture2D<float32_t4> tex, SamplerState smp) {
+    // ブロックノイズ判定とUVの水平ズレ
+    float2 block = floor(uv * float2(24.0, 9.0));
+    float noise = rand2dTo1d(block + time);
+    float offsetX = (noise - 0.5) * 0.1 * intensity;
+    float2 displacedUv = saturate(uv + float2(offsetX, 0.0));
+
+    // RGBシフト（色ズレサンプリング）
+    float shift = 0.02 * intensity;
+    float r = tex.SampleLevel(smp, displacedUv + float2(shift, 0.0), 0).r;
+    float g = tex.SampleLevel(smp, displacedUv, 0).g;
+    float b = tex.SampleLevel(smp, displacedUv - float2(shift, 0.0), 0).b;
+    
+    // スキャンラインを加味して返す
+    float scanline = sin(uv.y * 800.0 + time * 10.0) * 0.04 * intensity;
+    return saturate(float32_t3(r, g, b) + scanline);
+}
+
+// 11. Outline (注: 複数サンプリングが必要なため、テクスチャとサンプラーを直接参照するか、呼び出し側でループする)
 // ここでは関数化が難しいため、PS側で直接実装するか、ヘルパーを呼ぶ形にする。

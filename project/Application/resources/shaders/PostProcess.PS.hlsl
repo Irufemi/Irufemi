@@ -48,6 +48,10 @@ struct PostProcessParams {
     float32_t2 radialBlurCenter;
     float32_t radialBlurWidth;
     int32_t radialBlurSamples;
+    
+    // Glitch
+    float32_t glitchIntensity;
+    float32_t glitchTime;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -173,6 +177,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
                     }
                     color.rgb = sum / float32_t(gParams.radialBlurSamples);
                 }
+                break;
+
+            case kPostProcessMode_Glitch:
+                color.rgb = ApplyGlitch(color.rgb, uv, gParams.glitchTime, gParams.glitchIntensity, gTexture, gSampler);
                 break;
         }
     }
