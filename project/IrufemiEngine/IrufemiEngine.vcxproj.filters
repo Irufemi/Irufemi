@@ -178,6 +178,12 @@
     <Filter Include="Framework\Component\UI">
       <UniqueIdentifier>{6f464b55-d7cb-4ee3-957b-b3c74f85a069}</UniqueIdentifier>
     </Filter>
+    <Filter Include="msdfgen">
+      <UniqueIdentifier>{3926e539-ab1e-4853-9d21-3d662ddcfb48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Graphics\Font">
+      <UniqueIdentifier>{b5490a7a-ea34-4ad1-9f51-c30842c53ff4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
@@ -513,6 +519,87 @@
     </ClCompile>
     <ClCompile Include="Framework\Component\UI\CanvasComponent.cpp">
       <Filter>Framework\Component\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\Contour.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\contour-combiners.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\convergent-curve-ordering.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\DistanceMapping.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\edge-coloring.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\EdgeHolder.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\edge-segments.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\edge-selectors.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\equation-solver.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\export-svg.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\MSDFErrorCorrection.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\msdf-error-correction.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\msdfgen.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\Projection.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\rasterization.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\render-sdf.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\save-bmp.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\save-fl32.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\save-rgba.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\save-tiff.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\Scanline.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\sdf-error-estimation.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\Shape.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\core\shape-description.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\ext\import-font.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="..\externals\msdfgen\ext\resolve-shape-geometry.cpp">
+      <Filter>msdfgen</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Graphics\Font\FontManager.cpp">
+      <Filter>Engine\Graphics\Font</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1054,6 +1141,99 @@
     </ClInclude>
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h">
       <Filter>Framework\Component\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\base.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\Bitmap.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\Contour.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\contour-combiners.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\convergent-curve-ordering.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\DistanceMapping.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\EdgeColor.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\edge-coloring.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\EdgeHolder.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\edge-segments.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\edge-selectors.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\equation-solver.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\export-svg.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\generator-config.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\MSDFErrorCorrection.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\msdf-error-correction.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\Projection.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\rasterization.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\render-sdf.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\save-bmp.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\save-fl32.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\save-rgba.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\save-tiff.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\Scanline.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\sdf-error-estimation.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\SDFTransformation.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\Shape.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\shape-description.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\ShapeDistanceFinder.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\externals\msdfgen\core\YAxisOrientation.h">
+      <Filter>msdfgen</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Font\FontManager.h">
+      <Filter>Engine\Graphics\Font</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
