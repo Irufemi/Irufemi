@@ -12,6 +12,9 @@
 #include "GameObject.h"
 #include "Engine/Manager/CollisionManager.h"
 #include "Engine/Manager/EditorManager.h"
+
+#include "SceneSerializer.h"
+#include "Component/TransformComponent.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
 
@@ -117,12 +120,14 @@ void BaseScene::Draw() {
 
 void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
     if (obj) {
+        obj->SetScene(this);
         gameObjects_.push_back(obj);
     }
 }
 
 void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) {
     if (!obj) return;
+    obj->SetScene(this);
     if (index >= gameObjects_.size()) {
         gameObjects_.push_back(obj);
     } else {
@@ -214,6 +219,18 @@ void BaseScene::DrawDebugTab() {
 bool BaseScene::DownVK(uint8_t vk) const { return engine_->GetInputManager()->IsKeyDown(vk); }
 bool BaseScene::PressedVK(uint8_t vk) const { return engine_->GetInputManager()->IsKeyPressed(vk); }
 bool BaseScene::ReleasedVK(uint8_t vk) const { return engine_->GetInputManager()->IsKeyReleased(vk); }
+
+std::shared_ptr<GameObject> BaseScene::InstantiatePrefab(const std::string& prefabPath, const Vector3& position) {
+    auto obj = SceneSerializer::LoadPrefab(prefabPath);
+    if (obj) {
+        if (auto transform = obj->GetComponent<TransformComponent>()) {
+            transform->position_ = position;
+        }
+        AddGameObject(obj);
+    }
+    return obj;
+}
+
 
 bool BaseScene::DownDIK(uint8_t dik) const { return engine_->GetInputManager()->IsKeyDownDIK(dik); }
 bool BaseScene::PressedDIK(uint8_t dik) const { return engine_->GetInputManager()->IsKeyPressedDIK(dik); }

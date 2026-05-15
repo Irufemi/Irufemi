@@ -1,10 +1,31 @@
 #include "SceneManager.h"
 #include "IScene.h"
+#include "BaseScene.h"
 #include "../Engine/IrufemiEngine.h"
 #include <Windows.h>
 #include "../Engine/Platform/Input/InputManager.h"
 #include "../Engine/Platform/Input/Mouse.h"
 #include "SceneSerializer.h"
+
+namespace {
+    /**
+     * @class DataDrivenScene
+     * @brief JSONファイルのみから構築される汎用シーン
+     */
+    class DataDrivenScene : public BaseScene {
+    public:
+        DataDrivenScene(const std::string& sceneFilePath) : sceneFilePath_(sceneFilePath) {}
+        virtual ~DataDrivenScene() = default;
+
+        void Initialize(IrufemiEngine* engine) override {
+            BaseScene::Initialize(engine);
+            SceneSerializer::Load(this, sceneFilePath_);
+        }
+
+    private:
+        std::string sceneFilePath_;
+    };
+}
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {
 }
@@ -129,6 +150,19 @@ void SceneManager::TransitionTo(const Key& next, SceneTransition::Type type, flo
 
     engine_->GetSceneTransition()->Start(type, duration, true);
 }
+
+void SceneManager::LoadScene(const std::string& sceneJsonName, SceneTransition::Type type, float duration) {
+    // 未登録の場合、DataDrivenScene を生成するファクトリを自動登録
+    if (factories_.find(sceneJsonName) == factories_.end()) {
+        Register(sceneJsonName, [sceneJsonName]() {
+            return std::make_unique<DataDrivenScene>(sceneJsonName);
+        });
+    }
+    
+    // 通常の遷移処理に回す
+    TransitionTo(sceneJsonName, type, duration);
+}
+
 
 bool SceneManager::UpdateLoadStatus() {
     bool isLoading = IsLoading();

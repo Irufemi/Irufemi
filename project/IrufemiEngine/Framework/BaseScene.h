@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include "Engine/Core/Math/Vector3.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -60,6 +61,14 @@ public:
      * @brief シーン内のすべての GameObject をクリアする（Playモード終了時などの復元用）
      */
     void ClearGameObjects();
+
+    /**
+     * @brief プレハブ（JSON）からオブジェクトを動的に生成し、シーンに追加する
+     * @param prefabPath プレハブのファイルパス
+     * @param position 初期座標
+     * @return 生成された GameObject のポインタ
+     */
+    std::shared_ptr<GameObject> InstantiatePrefab(const std::string& prefabPath, const Vector3& position = {0,0,0});
 
     /**
      * @brief シーンが保持する GameObject のリストを取得する

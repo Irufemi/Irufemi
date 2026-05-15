@@ -72,6 +72,12 @@ public:
     void TransitionTo(const Key& next, SceneTransition::Type type, float duration);
 
     /**
+     * @brief データ駆動シーン(JSON)への遷移を開始する
+     * @param[in] sceneJsonName 読み込むJSON名 (拡張子なし)
+     */
+    void LoadScene(const std::string& sceneJsonName, SceneTransition::Type type = SceneTransition::Type::Fade, float duration = 1.0f);
+
+    /**
      * @brief 現在のシーンの上に新しいシーンを重ねる（同期）
      * @param[in] name 重ねるシーン名
      */

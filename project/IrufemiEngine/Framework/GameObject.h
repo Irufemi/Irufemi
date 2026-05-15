@@ -7,6 +7,8 @@
 #include <nlohmann/json.hpp>
 #include "Component/Component.h"
 
+class BaseScene;
+
 /**
  * @class GameObject
  * @brief コンポーネントをアタッチできるエンティティの基底クラス
@@ -80,6 +82,9 @@ public:
     void SetIsActive(bool isActive) { isActive_ = isActive; }
     bool GetIsActive() const { return isActive_; }
 
+    void SetScene(BaseScene* scene);
+    BaseScene* GetScene() const { return scene_; }
+
     // --- 親子関係 ---
     void AddChild(std::shared_ptr<GameObject> child);
     void InsertChild(std::shared_ptr<GameObject> child, size_t index);
@@ -101,10 +106,17 @@ public:
     void SendCollisionStay(GameObject* hitObject);
     void SendCollisionExit(GameObject* hitObject);
 
+    // --- 動的生成 ---
+    /**
+     * @brief 所属するシーンにプレハブから新しい GameObject を生成して追加する
+     */
+    std::shared_ptr<GameObject> Instantiate(const std::string& prefabPath, const Vector3& position = {0,0,0});
+
 private:
     std::string name_ = "GameObject";
     bool isActive_ = true;
     bool isDestroyed_ = false;
+    BaseScene* scene_ = nullptr;
     
     std::weak_ptr<GameObject> parent_;
     std::vector<std::shared_ptr<GameObject>> children_;

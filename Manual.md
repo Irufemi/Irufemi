@@ -247,12 +247,21 @@ private:
 };
 ```
 
-#### シーン遷移と重ね合わせ（Push / Pop）
-シーンを完全に移動するには `TransitionTo` を使いますが、ポーズ画面のように**現在のシーンを残したまま一時的な画面を重ねる**場合は `PushScene` を使います。
+#### シーン遷移（自動データ駆動遷移と手動遷移）
+シーンを切り替えるには主に2つの方法があります。
+
+**1. データ駆動の自動遷移 (推奨)**
+あらかじめエディタで作った `Title.json` などを指定して画面を遷移します。C++で専用のシーンクラスを作る必要はありません。
 ```cpp
-// 完全に別のシーンへ移動する場合
+// "Title" (Title.json) を読み込んで遷移。トランジション効果は Fade で 1.0秒かける
+engine_->GetSceneManager()->LoadScene("Title", SceneTransition::Type::Fade, 1.0f);
+```
+
+**2. C++クラスによる手動遷移**
+`BaseScene` を継承した専用クラスへ遷移します。
+```cpp
 if (isClear) {
-    // "ClearScene" に遷移する。トランジション効果は Fade で 1.0秒かける
+    // 登録済みの "ClearScene" クラスに遷移する
     engine_->GetSceneManager()->TransitionTo("ClearScene", SceneTransition::Type::Fade, 1.0f);
 }
 
@@ -446,6 +455,30 @@ public:
         if (hitObject->GetName() == "Enemy") {
             // Destroy() を呼ぶと、現在のフレームの終わりに安全にオブジェクトが破棄(GC)されます
             GetGameObject()->Destroy();
+        }
+    }
+};
+```
+
+#### 動的生成 (Instantiate)
+弾を撃つ、敵を出現させるといった「ゲームプレイ中にオブジェクトを生み出す」処理は、あらかじめ作成したプレハブ（JSON）を指定して呼び出します。
+
+```cpp
+#include "Framework/Component/Component.h"
+#include "Framework/GameObject.h"
+
+class PlayerShooterComponent : public Component {
+public:
+    std::string GetComponentName() const override { return "PlayerShooterComponent"; }
+
+    void Update() override {
+        // 例: 左クリックされたら弾を生成する
+        if (engine_->GetInputManager()->IsMouseButtonPressed(Mouse::Button::Left)) {
+            // 現在の座標を取得
+            Vector3 pos = GetGameObject()->GetComponent<TransformComponent>()->position_;
+            
+            // "resources/scenes/Bullet.json" をもとに、指定した座標へオブジェクトを生成
+            auto bullet = GetGameObject()->Instantiate("Bullet", pos);
         }
     }
 };

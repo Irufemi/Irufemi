@@ -1,4 +1,5 @@
 #include "GameObject.h"
+#include "BaseScene.h"
 
 #include "Component/Component.h"
 #include "Component/ComponentFactory.h"
@@ -17,6 +18,15 @@ void GameObject::Initialize() {
     }
     for (auto& child : children_) {
         child->Initialize();
+    }
+}
+
+void GameObject::SetScene(BaseScene* scene) {
+    scene_ = scene;
+    for (auto& child : children_) {
+        if (child) {
+            child->SetScene(scene);
+        }
     }
 }
 
@@ -213,3 +223,11 @@ void GameObject::SendCollisionExit(GameObject* hitObject) {
         comp->OnCollisionExit(hitObject);
     }
 }
+
+std::shared_ptr<GameObject> GameObject::Instantiate(const std::string& prefabPath, const Vector3& position) {
+    if (scene_) {
+        return scene_->InstantiatePrefab(prefabPath, position);
+    }
+    return nullptr;
+}
+
