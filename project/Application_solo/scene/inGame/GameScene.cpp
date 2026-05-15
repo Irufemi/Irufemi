@@ -15,10 +15,7 @@ GameScene::~GameScene() = default;
 void GameScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
-    // C++でのハードコードを廃止し、エディタで保存したJSONをロードする
-    // ※ エディタで作成・保存した GameScene.json がロードされます。
-    // ※ 初回起動時にファイルが無い場合は空のシーンから始まります。
-    SceneSerializer::Load(this, "GameScene");
+    // JSONからのロードは SceneManager が自動で行うため、ここでは手動で呼ばない
 }
 
 // 更新

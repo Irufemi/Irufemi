@@ -12,10 +12,13 @@ void ButtonComponent::OnRegisterProperties() {
     // 0:Fade, 1:Dissolve, 2:Slide, 3:RadialBlur
     RegisterProperty("Transition Type(0-3)", &transitionType_);
     RegisterProperty("Transition Duration", &transitionDuration_);
+    RegisterProperty("Transition Delay", &transitionDelay_);
+    RegisterProperty("Click Anim Duration", &clickAnimDuration_);
     RegisterProperty("Normal Color", &normalColor_);
     RegisterProperty("Hover Color", &hoverColor_);
     RegisterProperty("Click Color", &clickColor_);
     RegisterProperty("Enable Hover Pulse", &enableHoverPulse_);
+    RegisterProperty("Hitbox Scale", &hitboxScale_);
 }
 
 void ButtonComponent::Initialize() {
@@ -28,27 +31,28 @@ void ButtonComponent::Initialize() {
 bool ButtonComponent::CheckBounds(const Vector2& mousePos) {
     if (!transform_ || !sprite_) return false;
     
-    // スプライトが実際に持つ大きさとスケールを考慮
-    // anchor が 0.5 の場合は中心基準、0.0 の場合は左上基準など、エンジン仕様に合わせて判定
-    // WP0 の SpriteRendererComponent は基本的に Transform の位置に Sprite を描画します。
-    // 今回は簡易的に、位置(x,y)を中心に width/height の矩形と仮定するか、左上起点の矩形として判定します。
-    
     Vector3 pos = transform_->worldPosition_;
     Vector3 scale = transform_->worldScale_;
     
-    // スプライトの元サイズを取得
     auto* s = sprite_->GetSprite();
     if (!s) return false;
     
+    // スプライトのアンカーとサイズを取得
+    Vector2 anchor = s->GetAnchor();
     Vector2 baseSize = s->GetSize();
-    float width = baseSize.x * scale.x;
-    float height = baseSize.y * scale.y;
     
-    // アンカーが 0.5, 0.5 である前提で AABB を作成（SpriteRendererComponent のデフォルトは 0.5, 0.5）
-    float left = pos.x - width * 0.5f;
-    float right = pos.x + width * 0.5f;
-    float top = pos.y - height * 0.5f;
-    float bottom = pos.y + height * 0.5f;
+    // Hitbox Scale を加味した幅・高さを算出
+    // （※sprite_->GetSize() は既に Transform の Scale が適用された描画上のサイズを返すため、
+    //  ここでは scale.x/y を二重に掛けないようにする）
+    float width = baseSize.x * hitboxScale_.x;
+    float height = baseSize.y * hitboxScale_.y;
+    
+    // アンカー位置を加味して当たり判定矩形を計算
+    // （例えば anchor が 0.5 の場合、pos が中心になる）
+    float left = pos.x - width * anchor.x;
+    float right = pos.x + width * (1.0f - anchor.x);
+    float top = pos.y - height * anchor.y;
+    float bottom = pos.y + height * (1.0f - anchor.y);
     
     return (mousePos.x >= left && mousePos.x <= right &&
             mousePos.y >= top && mousePos.y <= bottom);
@@ -69,13 +73,60 @@ void ButtonComponent::Update() {
     isClicked_ = false;
 
     // アニメーターの更新（1/60固定とするか deltaTime を取得するか。簡易的に1/60）
-    // （※本来は GameApplication などの deltaTime が望ましいがUI用に一律でも動作する）
     animator_.Update(1.0f / 60.0f);
 
+    // 遷移待機中の処理（シーン遷移待ち＆クリックアニメーション）
+    if (isTransitionPending_) {
+        float dt = 1.0f / 60.0f; // 簡易フレームレート
+        transitionTimer_ -= dt;
+        
+        // クリック中の色を維持
+        sprite_->GetSprite()->SetColor(clickColor_);
+        
+        // アニメーション（押し込み演出）
+        if (transform_) {
+            float timePassed = transitionDelay_ - transitionTimer_;
+            if (timePassed <= clickAnimDuration_ && clickAnimDuration_ > 0.0f) {
+                // アニメーション中は少し縮小する（0.9倍）
+                transform_->worldScale_ = originalScale_ * 0.9f;
+            } else {
+                // アニメーションが終わったら元のスケールに戻す
+                transform_->worldScale_ = originalScale_;
+            }
+        }
+        
+        // 待機時間が終了したらシーン遷移を実行
+        if (transitionTimer_ <= 0.0f) {
+            isTransitionPending_ = false;
+            
+            if (!onClickLoadScene_.empty()) {
+                SceneTransition::Type type = SceneTransition::Type::Fade;
+                switch (transitionType_) {
+                    case 0: type = SceneTransition::Type::Fade; break;
+                    case 1: type = SceneTransition::Type::Dissolve; break;
+                    case 2: type = SceneTransition::Type::Slide; break;
+                    case 3: type = SceneTransition::Type::RadialBlur; break;
+                }
+                engine->GetSceneManager()->LoadScene(onClickLoadScene_, type, transitionDuration_);
+            }
+        }
+        
+        return; // 遷移待機中はホバー等の他の入力を受け付けない
+    }
+
     if (isHovered_) {
+        // ホバーした瞬間に押下されたらフラグを立てる
+        if (input->IsMouseButtonPressed(Mouse::Button::Left)) {
+            isPressedOnButton_ = true;
+        }
+
         if (input->IsMouseButtonDown(Mouse::Button::Left)) {
-            // 押下中
-            sprite_->GetSprite()->SetColor(clickColor_);
+            // 押下中（ボタン上で押下開始した場合のみ色を変える）
+            if (isPressedOnButton_) {
+                sprite_->GetSprite()->SetColor(clickColor_);
+            } else {
+                sprite_->GetSprite()->SetColor(normalColor_);
+            }
         } else {
             // ホバー中
             Vector4 color = hoverColor_;
@@ -86,21 +137,15 @@ void ButtonComponent::Update() {
             sprite_->GetSprite()->SetColor(color);
             
             // 離された瞬間（クリック完了）
-            if (input->IsMouseButtonReleased(Mouse::Button::Left)) {
+            if (input->IsMouseButtonReleased(Mouse::Button::Left) && isPressedOnButton_) {
                 isClicked_ = true;
                 
                 if (!onClickLoadScene_.empty()) {
-                    // トランジション型変換
-                    SceneTransition::Type type = SceneTransition::Type::Fade;
-                    switch (transitionType_) {
-                        case 0: type = SceneTransition::Type::Fade; break;
-                        case 1: type = SceneTransition::Type::Dissolve; break;
-                        case 2: type = SceneTransition::Type::Slide; break;
-                        case 3: type = SceneTransition::Type::RadialBlur; break;
+                    isTransitionPending_ = true;
+                    transitionTimer_ = transitionDelay_;
+                    if (transform_) {
+                        originalScale_ = transform_->worldScale_;
                     }
-                    
-                    // シーン遷移
-                    engine->GetSceneManager()->LoadScene(onClickLoadScene_, type, transitionDuration_);
                 }
             }
         }
@@ -108,5 +153,10 @@ void ButtonComponent::Update() {
         // 通常状態
         animator_.Reset(); // ホバーが外れたらリセット
         sprite_->GetSprite()->SetColor(normalColor_);
+    }
+
+    // どこかでマウスが離されたらフラグをリセットする
+    if (input->IsMouseButtonReleased(Mouse::Button::Left)) {
+        isPressedOnButton_ = false;
     }
 }

@@ -110,6 +110,11 @@ void PrimitiveObjects3DClass::MaterialComponent::UpdateMaterial(Object3DResource
     } else {
         resource->GetMaterialData()->hasTexture = false;
     }
+
+    // テクスチャハンドルが無効（0）の場合は、強制的に白テクスチャを割り当てることでGPUバリデーションエラーを防ぐ
+    if (resource->textureHandle_.ptr == 0 && textureManager) {
+        resource->textureHandle_ = textureManager->GetTextureHandle("white");
+    }
     
     resource->MarkAsDirty();
 }

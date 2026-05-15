@@ -100,6 +100,11 @@ public:
     const Vector2& GetMousePosition()   const;
     const Vector2& GetMouseDelta()      const;
     float GetMouseWheelDelta()          const;
+    
+    /** @brief エディタ用：仮想的なマウスローカル座標を上書き設定する */
+    void SetVirtualMousePosition(const Vector2& pos, bool enable) {
+        if (mouse_) mouse_->SetVirtualPosition(pos, enable);
+    }
     ///@}
 
 private:

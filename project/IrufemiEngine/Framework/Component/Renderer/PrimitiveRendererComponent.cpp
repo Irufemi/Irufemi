@@ -111,6 +111,21 @@ nlohmann::json PrimitiveRendererComponent::Serialize() {
     j["torusMinorRadius"] = torusMinorRadius_;
     j["torusMajorSegments"] = torusMajorSegments_;
     j["torusMinorSegments"] = torusMinorSegments_;
+    
+    if (primitive_) {
+        const auto& mat = primitive_->GetMaterial();
+        nlohmann::json matJson;
+        matJson["texturePath"] = mat.texturePath;
+        matJson["color"] = { mat.color.x, mat.color.y, mat.color.z, mat.color.w };
+        matJson["enableLighting"] = mat.enableLighting;
+        matJson["lightingMode"] = mat.lightingMode;
+        matJson["metallic"] = mat.metallic;
+        matJson["roughness"] = mat.roughness;
+        matJson["alphaReference"] = mat.alphaReference;
+        matJson["useClampSampler"] = mat.useClampSampler;
+        j["material"] = matJson;
+    }
+    
     return j;
 }
 
@@ -132,6 +147,28 @@ void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
     PrimitiveType types[] = { PrimitiveType::Sphere, PrimitiveType::Plane, PrimitiveType::Cube, PrimitiveType::Cylinder, PrimitiveType::Cone, PrimitiveType::Torus };
     if (currentTypeIndex_ >= 0 && currentTypeIndex_ < 6) {
         SetShape(types[currentTypeIndex_]);
+    }
+    
+    // マテリアル情報の復元
+    if (j.contains("material") && primitive_) {
+        const auto& matJson = j["material"];
+        auto& mat = primitive_->GetMaterial();
+        
+        if (matJson.contains("texturePath")) mat.texturePath = matJson["texturePath"];
+        if (matJson.contains("color") && matJson["color"].is_array() && matJson["color"].size() == 4) {
+            mat.color.x = matJson["color"][0];
+            mat.color.y = matJson["color"][1];
+            mat.color.z = matJson["color"][2];
+            mat.color.w = matJson["color"][3];
+        }
+        if (matJson.contains("enableLighting")) mat.enableLighting = matJson["enableLighting"];
+        if (matJson.contains("lightingMode")) mat.lightingMode = matJson["lightingMode"];
+        if (matJson.contains("metallic")) mat.metallic = matJson["metallic"];
+        if (matJson.contains("roughness")) mat.roughness = matJson["roughness"];
+        if (matJson.contains("alphaReference")) mat.alphaReference = matJson["alphaReference"];
+        if (matJson.contains("useClampSampler")) mat.useClampSampler = matJson["useClampSampler"];
+        
+        primitive_->SetTexture(mat.texturePath);
     }
 }
 

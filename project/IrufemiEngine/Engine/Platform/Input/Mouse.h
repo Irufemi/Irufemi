@@ -40,8 +40,8 @@ public:
 
     /** @name カーソル座標・移動量 */
     ///@{
-    /** @brief 現在のマウス座標（スクリーン空間）を取得 */
-    const Vector2& GetPosition() const { return position_; }
+    /** @brief 現在のマウス座標（スクリーン空間、または設定された仮想ローカル空間）を取得 */
+    const Vector2& GetPosition() const { return useVirtualPosition_ ? virtualPosition_ : position_; }
     /** @brief 前フレームからの移動量を取得 */
     const Vector2& GetDelta() const { return delta_; }
     ///@}
@@ -63,6 +63,17 @@ public:
     void SetLocked(bool locked);
     ///@}
     
+    /** @name 仮想マウス座標制御（エディタ用） */
+    ///@{
+    /**
+     * @brief エディタのSceneViewなどのローカル座標をマウス座標として上書き設定する
+     */
+    void SetVirtualPosition(const Vector2& pos, bool enable) {
+        virtualPosition_ = pos;
+        useVirtualPosition_ = enable;
+    }
+    ///@}
+    
     /**
      * @brief Raw Input からの生移動量を蓄積する
      */
@@ -81,4 +92,7 @@ private:
     Vector2 rawDelta_{}; // Raw Input からの生移動量
     float wheelDelta_ = 0.0f;
     bool isLocked_ = true; // マウスを中央に固定するかどうか
+    
+    bool useVirtualPosition_ = false; // エディタ等からの仮想座標を使用するか
+    Vector2 virtualPosition_{};       // 仮想座標
 };
