@@ -89,9 +89,22 @@ public:
     void SetParent(std::shared_ptr<GameObject> parent);
     size_t GetChildIndex(std::shared_ptr<GameObject> child) const;
 
+    // --- ライフサイクル ---
+    /**
+     * @brief オブジェクトを破棄状態にする（現在のフレームの終わりに削除される）
+     */
+    void Destroy() { isDestroyed_ = true; }
+    bool IsDestroyed() const { return isDestroyed_; }
+
+    // --- イベント伝達 ---
+    void SendCollisionEnter(GameObject* hitObject);
+    void SendCollisionStay(GameObject* hitObject);
+    void SendCollisionExit(GameObject* hitObject);
+
 private:
     std::string name_ = "GameObject";
     bool isActive_ = true;
+    bool isDestroyed_ = false;
     
     std::weak_ptr<GameObject> parent_;
     std::vector<std::shared_ptr<GameObject>> children_;

@@ -70,13 +70,21 @@ void BaseScene::Update() {
 
     // GameObject の更新
     for (auto& obj : gameObjects_) {
-        if (obj && !obj->GetParent()) obj->Update(isPlayMode);
+        if (obj && !obj->GetParent() && !obj->IsDestroyed()) {
+            obj->Update(isPlayMode);
+        }
     }
     
     // PlayMode 時のみ衝突判定（イベント発火など）を行う
     if (isPlayMode) {
         CollisionManager::GetInstance().CheckAllCollisions();
     }
+
+    // 破棄フラグが立ったオブジェクトを一括削除 (GC)
+    gameObjects_.erase(std::remove_if(gameObjects_.begin(), gameObjects_.end(),
+        [](const std::shared_ptr<GameObject>& obj) {
+            return !obj || obj->IsDestroyed();
+        }), gameObjects_.end());
 
     SubmitFrameData();
 }

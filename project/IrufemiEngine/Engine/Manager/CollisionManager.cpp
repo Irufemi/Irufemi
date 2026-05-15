@@ -58,6 +58,9 @@ void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
             if (collider->onCollisionExit_) collider->onCollisionExit_(other);
             if (other && other->onCollisionExit_) other->onCollisionExit_(collider);
             
+            if (collider->GetGameObject()) collider->GetGameObject()->SendCollisionExit(other ? other->GetGameObject() : nullptr);
+            if (other && other->GetGameObject()) other->GetGameObject()->SendCollisionExit(collider ? collider->GetGameObject() : nullptr);
+            
             iter = previousCollisions_.erase(iter);
         } else {
             ++iter;
@@ -147,10 +150,16 @@ void CollisionManager::CheckAllCollisions() {
                         // 新規衝突 (Enter)
                         if (colA->onCollisionEnter_) colA->onCollisionEnter_(colB);
                         if (colB->onCollisionEnter_) colB->onCollisionEnter_(colA);
+                        
+                        if (colA->GetGameObject()) colA->GetGameObject()->SendCollisionEnter(colB->GetGameObject());
+                        if (colB->GetGameObject()) colB->GetGameObject()->SendCollisionEnter(colA->GetGameObject());
                     } else {
                         // 継続衝突 (Stay)
                         if (colA->onCollisionStay_) colA->onCollisionStay_(colB);
                         if (colB->onCollisionStay_) colB->onCollisionStay_(colA);
+                        
+                        if (colA->GetGameObject()) colA->GetGameObject()->SendCollisionStay(colB->GetGameObject());
+                        if (colB->GetGameObject()) colB->GetGameObject()->SendCollisionStay(colA->GetGameObject());
                     }
 
                     // --- 押し戻し処理 (Kinematic Resolution) ---
@@ -187,6 +196,9 @@ void CollisionManager::CheckAllCollisions() {
             
             if (colA && colA->onCollisionExit_) colA->onCollisionExit_(colB);
             if (colB && colB->onCollisionExit_) colB->onCollisionExit_(colA);
+            
+            if (colA && colA->GetGameObject()) colA->GetGameObject()->SendCollisionExit(colB ? colB->GetGameObject() : nullptr);
+            if (colB && colB->GetGameObject()) colB->GetGameObject()->SendCollisionExit(colA ? colA->GetGameObject() : nullptr);
         }
     }
 

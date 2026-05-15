@@ -429,6 +429,28 @@ public:
 ```
 *※作成したスクリプトは `ComponentFactory.cpp` の `RegisterAllCoreComponents` で登録するか、同等の場所でファクトリに登録してください。*
 
+#### 衝突判定とコールバック (OnCollisionEnter / Destroy)
+ゲームロジックとして「何かにぶつかったら壊れる」「ダメージを受ける」といった処理は、Component 内の仮想関数をオーバーライドして実装します。
+
+```cpp
+#include "Framework/Component/Component.h"
+#include "Framework/GameObject.h"
+
+class BulletComponent : public Component {
+public:
+    std::string GetComponentName() const override { return "BulletComponent"; }
+
+    // 当たり判定が行われ、他のコライダーと接触した瞬間に自動で呼ばれます
+    void OnCollisionEnter(GameObject* hitObject) override {
+        // 相手の名前やComponentを見て処理を分ける
+        if (hitObject->GetName() == "Enemy") {
+            // Destroy() を呼ぶと、現在のフレームの終わりに安全にオブジェクトが破棄(GC)されます
+            GetGameObject()->Destroy();
+        }
+    }
+};
+```
+
 ---
 
 ## 3. リソース管理 (Resource Management)

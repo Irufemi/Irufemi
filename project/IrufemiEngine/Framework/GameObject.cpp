@@ -195,3 +195,21 @@ std::shared_ptr<GameObject> GameObject::Clone() {
     clone->SetName(this->GetName() + " (Clone)");
     return clone;
 }
+
+void GameObject::SendCollisionEnter(GameObject* hitObject) {
+    for (auto& comp : components_) {
+        comp->OnCollisionEnter(hitObject);
+    }
+}
+
+void GameObject::SendCollisionStay(GameObject* hitObject) {
+    for (auto& comp : components_) {
+        comp->OnCollisionStay(hitObject);
+    }
+}
+
+void GameObject::SendCollisionExit(GameObject* hitObject) {
+    for (auto& comp : components_) {
+        comp->OnCollisionExit(hitObject);
+    }
+}

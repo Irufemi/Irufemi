@@ -53,6 +53,24 @@ public:
     virtual IRenderable* GetRenderable() { return nullptr; }
 
     /**
+     * @brief 衝突判定コールバック
+     * @details 他のColliderと衝突した瞬間に呼ばれる
+     */
+    virtual void OnCollisionEnter(class GameObject* hitObject) {}
+
+    /**
+     * @brief 衝突判定コールバック
+     * @details 他のColliderと衝突している間呼ばれ続ける
+     */
+    virtual void OnCollisionStay(class GameObject* hitObject) {}
+
+    /**
+     * @brief 衝突判定コールバック
+     * @details 他のColliderとの衝突が終わった瞬間に呼ばれる
+     */
+    virtual void OnCollisionExit(class GameObject* hitObject) {}
+
+    /**
      * @brief 選択中の輪郭マスク描画処理
      */
     virtual void DrawOutlineMask() {
