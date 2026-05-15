@@ -66,13 +66,25 @@ void HierarchyPanel::Draw() {
                     flags |= ImGuiTreeNodeFlags_Selected;
                 }
 
+                // IDスタックでチェックボックス名の競合を防ぐ
+                ImGui::PushID(obj.get());
+
                 // 識別用にポインタアドレスを使う
                 bool isOpen = ImGui::TreeNodeEx((void*)obj.get(), flags, "%s", obj->GetName().c_str());
+
+                // 右端にActive切り替えのチェックボックスを配置
+                ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 30.0f);
+                bool isActive = obj->GetIsActive();
+                if (ImGui::Checkbox("##Active", &isActive)) {
+                    obj->SetIsActive(isActive);
+                }
 
                 // クリックで選択
                 if (ImGui::IsItemClicked()) {
                     editorManager_->SetSelectedObject(obj);
                 }
+                
+                ImGui::PopID();
 
                 // --- Drag and Drop Source ---
                 if (ImGui::BeginDragDropSource()) {

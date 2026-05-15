@@ -18,6 +18,7 @@ void ButtonComponent::OnRegisterProperties() {
     RegisterProperty("Hover Color", &hoverColor_);
     RegisterProperty("Click Color", &clickColor_);
     RegisterProperty("Enable Hover Pulse", &enableHoverPulse_);
+    RegisterProperty("Enable Idle Pulse", &enableIdlePulse_);
     RegisterProperty("Hitbox Scale", &hitboxScale_);
 }
 
@@ -83,15 +84,27 @@ void ButtonComponent::Update() {
         // クリック中の色を維持
         sprite_->GetSprite()->SetColor(clickColor_);
         
-        // アニメーション（押し込み演出）
+        // アニメーション（押し込み ＆ 高速フラッシュ演出）
         if (transform_) {
             float timePassed = transitionDelay_ - transitionTimer_;
             if (timePassed <= clickAnimDuration_ && clickAnimDuration_ > 0.0f) {
                 // アニメーション中は少し縮小する（0.9倍）
                 transform_->worldScale_ = originalScale_ * 0.9f;
+                
+                // 高速フラッシュ演出 (PromptController を参考)
+                bool isVisible = animator_.GetFlashVisibility(40.0f);
+                if (isVisible) {
+                    sprite_->GetSprite()->SetColor(clickColor_);
+                } else {
+                    // 非表示状態（アルファ0）
+                    Vector4 transparentColor = clickColor_;
+                    transparentColor.w = 0.0f;
+                    sprite_->GetSprite()->SetColor(transparentColor);
+                }
             } else {
-                // アニメーションが終わったら元のスケールに戻す
+                // アニメーションが終わったら元のスケールと色に戻す
                 transform_->worldScale_ = originalScale_;
+                sprite_->GetSprite()->SetColor(clickColor_);
             }
         }
         
@@ -150,9 +163,17 @@ void ButtonComponent::Update() {
             }
         }
     } else {
-        // 通常状態
-        animator_.Reset(); // ホバーが外れたらリセット
-        sprite_->GetSprite()->SetColor(normalColor_);
+        // 通常状態（待機中）
+        Vector4 color = normalColor_;
+        if (enableIdlePulse_) {
+            // PromptControllerと同じパルスアニメーション（ベース0.6、振幅0.4、速度3.0）
+            float animAlpha = animator_.GetPulseAlpha(0.6f, 0.4f, 3.0f);
+            color.w *= animAlpha;
+        } else {
+            // アニメーション無効時はリセットしておく
+            animator_.Reset();
+        }
+        sprite_->GetSprite()->SetColor(color);
     }
 
     // どこかでマウスが離されたらフラグをリセットする

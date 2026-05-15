@@ -122,6 +122,7 @@
                         1.0
                     ],
                     "Enable Hover Pulse": true,
+                    "Enable Idle Pulse": true,
                     "Hitbox Scale": [
                         0.8500000238418579,
                         0.699999988079071

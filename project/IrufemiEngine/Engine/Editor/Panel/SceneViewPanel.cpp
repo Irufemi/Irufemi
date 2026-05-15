@@ -16,6 +16,10 @@
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Platform/Input/InputManager.h"
+#include "Engine/Platform/Input/Mouse.h"
+#include "Engine/Platform/Input/Keyboard.h"
+#include <algorithm>
 
 void SceneViewPanel::Initialize(EditorManager* editorManager) {
     editorManager_ = editorManager;
@@ -109,6 +113,72 @@ void SceneViewPanel::Draw() {
                 Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
                 engine->GetInputManager()->SetVirtualMousePosition(scaledVirtualPos, true);
                 
+                // --- エディタカメラ操作 (Blenderライク) ---
+                if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+                    auto* input = engine->GetInputManager();
+                    bool isMiddleButtonDown = input->IsMouseButtonDown(Mouse::Button::Middle);
+                    auto* keyboard = input->GetKeyboard();
+                    bool isShiftDown = keyboard->IsKeyDown(VK_LSHIFT) || keyboard->IsKeyDown(VK_RSHIFT);
+                    Vector2 mouseDelta = input->GetMouseDelta();
+                    
+                    // 初期化されていない場合は現在のカメラからTarget等を逆算する
+                    if (!isCameraInitialized_) {
+                        cameraTarget_ = {0.0f, 0.0f, 0.0f};
+                        cameraDistance_ = 50.0f;
+                        
+                        Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(camera->GetRotate());
+                        Vector3 offset = { 0.0f, 0.0f, -cameraDistance_ };
+                        offset = Math::TransformNormal(offset, rotMat);
+                        cameraTarget_ = Math::Subtract(camera->GetTranslate(), offset);
+                        
+                        isCameraInitialized_ = true;
+                    }
+                    
+                    bool cameraChanged = false;
+                    
+                    if (isMiddleButtonDown) {
+                        if (isShiftDown) {
+                            // パン操作 (Shift + 中ボタンドラッグ)
+                            const float panSpeed = 0.05f;
+                            Matrix4x4 viewInverse = Math::Inverse(camera->GetViewMatrix());
+                            Vector3 right = { viewInverse.m[0][0], viewInverse.m[0][1], viewInverse.m[0][2] };
+                            Vector3 up = { viewInverse.m[1][0], viewInverse.m[1][1], viewInverse.m[1][2] };
+                            cameraTarget_ = Math::Add(cameraTarget_, Math::Multiply(-panSpeed * mouseDelta.x, right));
+                            cameraTarget_ = Math::Add(cameraTarget_, Math::Multiply(panSpeed * mouseDelta.y, up));
+                            cameraChanged = true;
+                        } else {
+                            // オービット操作 (中ボタンドラッグ)
+                            const float rotationSpeed = 0.005f;
+                            Vector3 rotate = camera->GetRotate();
+                            rotate.y += mouseDelta.x * rotationSpeed;
+                            rotate.x += mouseDelta.y * rotationSpeed;
+                            // X軸回転を制限
+                            rotate.x = Math::Clamp(rotate.x, -Math::PIDiv2, Math::PIDiv2);
+                            camera->SetRotate(rotate);
+                            cameraChanged = true;
+                        }
+                    }
+                    
+                    // ズーム操作 (マウスホイール)
+                    float wheelDelta = input->GetMouseWheelDelta();
+                    if (wheelDelta != 0.0f) {
+                        const float zoomSpeed = 2.0f;
+                        cameraDistance_ -= wheelDelta * zoomSpeed;
+                        if (cameraDistance_ < 1.0f) cameraDistance_ = 1.0f; // 最小距離制限
+                        cameraChanged = true;
+                    }
+                    
+                    // カメラの位置を更新
+                    if (cameraChanged || isMiddleButtonDown) {
+                        Vector3 rotate = camera->GetRotate();
+                        Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(rotate);
+                        Vector3 offset = { 0.0f, 0.0f, -cameraDistance_ };
+                        offset = Math::TransformNormal(offset, rotMat);
+                        camera->SetTranslate(Math::Add(cameraTarget_, offset));
+                        camera->UpdateMatrix();
+                    }
+                }
+
                 // クリックされた瞬間のみピッキング判定を行う
                 if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                     bool isHit = false;
@@ -121,7 +191,7 @@ void SceneViewPanel::Draw() {
                         // 逆順（後から追加された＝手前に描画されるもの）から判定
                         for (auto it = gameObjects.rbegin(); it != gameObjects.rend(); ++it) {
                             auto& obj = *it;
-                            if (!obj || obj->IsDestroyed()) continue;
+                            if (!obj || obj->IsDestroyed() || !obj->GetIsActive()) continue;
                             
                             if (auto spriteComp = obj->GetComponent<SpriteRendererComponent>()) {
                                 if (auto transform = obj->GetComponent<TransformComponent>()) {

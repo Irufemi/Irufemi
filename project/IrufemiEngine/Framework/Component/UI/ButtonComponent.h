@@ -37,12 +37,13 @@ private:
     Vector4 clickColor_{ 0.5f, 0.5f, 0.5f, 1.0f };
 
     bool enableHoverPulse_ = true; // ホバー時にサイン波で明滅するかどうか
+    bool enableIdlePulse_ = true;  // 待機中（ホバーしていない時）も明滅するかどうか
 
     // 当たり判定のスケール調整（画像自体の余白などを省くため）
     Vector2 hitboxScale_{ 1.0f, 1.0f };
 
-    float clickAnimDuration_ = 0.2f;    // クリックアニメーションの長さ
-    float transitionDelay_ = 0.2f;      // シーン遷移開始までの待機時間（デフォルトはアニメと同じ）
+    float clickAnimDuration_ = 0.8f;    // クリックアニメーションの長さ（フラッシュなど）
+    float transitionDelay_ = 0.8f;      // シーン遷移開始までの待機時間（デフォルトはアニメと同じ）
 
     // --- 内部状態 ---
     UIAnimator animator_;
