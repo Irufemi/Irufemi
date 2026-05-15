@@ -15,6 +15,9 @@
 #include "../../../Engine/Graphics/Data/Material.h"
 #include "../../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 #include "../BaseModel/BaseModel.h"
+#include "../../../Resource/Model/Data/Skeleton.h"
+#include "../../../Resource/Model/Data/SkinCluster.h"
+#include "../../../Engine/Graphics/Compute/IComputeTask.h"
 
 class TextureManager;
 class DrawManager;
@@ -32,8 +35,9 @@ class ModelManager;
  * @class ObjClass
  * @brief 3Dモデル（OBJ/GLTF等）のインスタンスを描画・管理するクラス
  * @details ModelManager から取得した共有モデルデータを参照し、個別の位置・回転・拡縮やマテリアル設定を保持します。
+ * スキン付きモデルの場合は、バインドポーズによる静的スキニングコンピュートタスクを実行します。
  */
-class ObjClass : public BaseModel {
+class ObjClass : public BaseModel, public IComputeTask {
 
 
 
@@ -79,8 +83,15 @@ public: //メンバ関数
      */
     void DebugTab();
 
+    /**
+     * @brief コンピュートシェーダーを用いたスキニング処理を実行します
+     */
+    void DispatchCompute() override;
 
-
+private:
+    Skeleton skeleton_;
+    SkinCluster skinCluster_;
+    uint32_t lastSkinnedFrameIndex_ = 0;
 
 };
 
