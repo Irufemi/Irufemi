@@ -2,6 +2,7 @@
 
 #ifdef EditorMode
 #include "imgui/imgui.h"
+#include "Engine/IrufemiEngine.h"
 #include "Engine/Manager/EditorManager.h"
 #include "../../../EngineResources/FontAwesome/IconsFontAwesome6.h"
 #include "../Core/EditorDragDrop.h"
@@ -26,6 +27,18 @@ void ProjectBrowserPanel::Initialize(EditorManager* editorManager) {
     // バックグラウンドでの自動監視を開始
     directoryWatcher_ = std::make_unique<DirectoryWatcher>(projectRootPath_, [this]() {
         isCacheDirty_ = true;
+        
+        // エンジンの各マネージャにも再スキャンを通知
+        if (editorManager_) {
+            if (auto* engine = editorManager_->GetEngine()) {
+                if (auto* mm = engine->GetObjModelManager()) {
+                    mm->RefreshAvailableModels();
+                }
+                if (auto* tm = engine->GetTextureManager()) {
+                    tm->LoadAllFromFolder("resources/");
+                }
+            }
+        }
     });
 }
 

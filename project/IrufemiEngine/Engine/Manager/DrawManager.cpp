@@ -956,6 +956,11 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
         renderGraph_->RegisterResourceState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 
         renderGraph_->Execute(this, engine);
+        
+#ifdef EditorMode
+        // RenderGraph 終了後、メインテクスチャを ImGui 等で読み取れるように SRV ステートに戻す
+        DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+#endif
     }
 
     // RenderGraph 終了後はバックバッファを描画対象とする (TopMost UI など用)

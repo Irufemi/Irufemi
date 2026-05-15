@@ -63,4 +63,19 @@ ECSライクな柔軟なエンティティ管理システムの構築。
     - [x] `AudioSourceComponent` の追加と、インスペクターからの音量・Pitch調整・再生テスト機能。
     - [x] `ParticleEmitterComponent` を追加し、エディタ上で放出量・速度・色をリアルタイムに調整できるようにする。
 - [x] **シーン遷移のデータ駆動化**
-    - [x] `SceneManager::LoadScene("Title")` のように、指定した JSON シーンファイルを直接読み込んで画面遷移を行う仕組みの確立。
+    - [x] `SceneManager::LoadScene("Title")` のように、指定した JSON シーンファイルを直接読み込んで画面遷移を行う仕組みの確立。
+
+## 🧹 フェーズ7: エンジンの安定化と保守性の向上 (Stability & Maintenance)
+長期的な開発に耐えうる、堅牢な基盤への磨き上げ。
+- [x] **アプリケーション終了時のリソースリーク（LIVE_DEVICE）の解消**
+    - [x] `PrimitiveManager` (Singleton) の明示的な `Finalize` 呼び出しの追加。
+    - [x] 深度 SRV インデックスなどの動的確保リソースの確実な解放。
+    - [x] `RenderGraph` / `TransientResourceManager` によりフレーム終了時に遅延破棄(`ReleaseAfterFence`)に積まれていた `pendingResources_` のアプリケーション終了時のクリア処理を実装。
+    - [x] D3D12 Debug Layer の `infoQueue` COMポインタによる参照残存を防ぐためのローカルスコープ化。
+- [ ] **メモリ使用量のプロファイリングと最適化**
+    - [ ] `TextureManager` および `ModelManager` の未使用リソース自動開放（LRUキャッシュ等）の検討。
+- [ ] **エラーハンドリングの強化**
+    - [ ] シェーダーコンパイル失敗やファイル欠落時のフォールバック処理の徹底。
+- [ ] **ドキュメントの継続的な整備**
+    - [ ] `Manual.md` へトラブルシューティングセクションを追加。
+

@@ -131,7 +131,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   textureManager_ = std::make_unique<TextureManager>();
   textureManager_->Initialize(dxCommon_.get());
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
   textureManager_->LoadAllFromFolder("resources/");
 #endif
 
@@ -267,7 +267,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   mainRenderTexture_ = std::make_unique<RenderTexture>();
   mainRenderTexture_->Initialize(
       dxCommon_.get(), GetClientWidth(), GetClientHeight(),
-      DXGI_FORMAT_R8G8B8A8_UNORM,
+      DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
       {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
 
   // --- PostProcessManager の初期化 ---
@@ -345,17 +345,28 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 }
 
 void IrufemiEngine::Finalize() {
-  // 依存関係に基づき、上位レイヤーから下位レイヤーの順で破棄する
+  if (isFinalized_) return;
+
+  // 0. シーンと画面遷移・ローディング（これらがリソースの shared_ptr を保持しているため最優先）
+  if (sceneManager_) {
+    sceneManager_.reset();
+  }
+  if (loadingScreen_) {
+    loadingScreen_.reset();
+  }
+  if (sceneTransition_) {
+    sceneTransition_.reset();
+  }
+  if (cameraManager_) {
+    cameraManager_.reset();
+  }
 
   // アプリケーション終了時、シーン破棄前にGPU処理の完了を待機する
   if (dxCommon_) {
     dxCommon_->WaitForGPU();
   }
 
-  // 1. シーン・UI
-  if (sceneManager_) {
-    sceneManager_.reset();
-  }
+  // 1. エディタとUI (描画マネージャ等に依存)
   if (ui_) {
     ui_->Shutdown();
     ui_.reset();
@@ -366,7 +377,7 @@ void IrufemiEngine::Finalize() {
   }
 #endif
 
-  // 2. 描画・ポストプロセス系
+  // 2. 描画・ポストプロセス系 (DirectX基盤に依存)
   if (drawManager_) {
     drawManager_->Finalize();
     drawManager_.reset();
@@ -378,22 +389,26 @@ void IrufemiEngine::Finalize() {
     mainRenderTexture_.reset();
   }
 
-  // 3. アニメーション・モデル (テクスチャに依存)
+  // 3. アニメーション・モデル・テクスチャ (リソースの実体を保持)
   if (animationManager_) {
     animationManager_.reset();
   }
-  // ModelManagerは破棄時にスレッドをJoinするため、TextureManagerより先に破棄する必要がある
   if (modelManager_) {
     modelManager_.reset();
   }
-
-  // 4. テクスチャ (DirectX基盤に依存)
   if (textureManager_) {
     textureManager_.reset();
   }
 
+  // 4. 定数バッファマネージャー (DirectX基盤のリソースを直接保持するため先に破棄)
+  if (materialBufferManager_) {
+    materialBufferManager_.reset();
+  }
+  if (transformBufferManager_) {
+    transformBufferManager_.reset();
+  }
+
   // --- 静的ポインタのクリア（デストラクタでの不正アクセス防止） ---
-  // 全マネージャとシーンの破棄が完了し、非同期タスクもJoinしたこのタイミングでクリアするのが最も安全
   BaseResource::SetDirectXCommon(nullptr);
   BaseRegion::SetDirectXCommon(nullptr);
   Line3DRegion::SetDirectXCommon(nullptr);
@@ -407,6 +422,7 @@ void IrufemiEngine::Finalize() {
   ParticleSystem::SetSrvPool(nullptr);
   Line3DRegion::SetSrvAllocator(nullptr);
 
+  // DebugUI, DrawManager, TextureManager 等の各クラスへの静的セットもクリア
   Sprite::SetDebugUI(nullptr);
   Circle2D::SetDebugUI(nullptr);
   SphereClass::SetDebugUI(nullptr);
@@ -460,9 +476,10 @@ void IrufemiEngine::Finalize() {
   Bgm::SetAudioManager(nullptr);
   Se::SetAudioManager(nullptr);
 
-  // 5. その他
-
+  // 5. シングルトンの破棄 (GPUリソースを保持している可能性があるため dxCommon 破棄前に呼ぶ)
   PrimitiveManager::Finalize();
+
+  // 6. 基盤システム (サウンド・入力)
   if (audioManager_) {
     audioManager_->Finalize();
     audioManager_.reset();
@@ -495,6 +512,8 @@ void IrufemiEngine::Finalize() {
   if (winApp_) {
     winApp_.reset();
   }
+
+  isFinalized_ = true;
 }
 
 void IrufemiEngine::Execute() {
@@ -639,7 +658,7 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
 
   // 2. メインレンダーテクスチャの再生成
   mainRenderTexture_->Initialize(
-      dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
+      dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
       {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
 
   // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)

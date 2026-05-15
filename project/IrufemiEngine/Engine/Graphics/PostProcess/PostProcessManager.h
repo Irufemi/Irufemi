@@ -338,15 +338,16 @@ private:
         Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     };
     // モードに対応するPSOを保持 (中間パス用: _UNORM)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 15> psos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 40> psos_;
     // 最終パス用 (スワップチェーン等の _SRGB 形式用)
-    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 15> finalPsos_;
+    std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, 40> finalPsos_;
 
     // ブルーム専用 PSO (内部のパス用)
     Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomExtractPSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomBlurHPSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomBlurVPSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomCombinePSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> finalBloomCombinePSO_;
 
     // 統合ポストプロセス用 PSO
     Microsoft::WRL::ComPtr<ID3D12PipelineState> combinedPSO_;

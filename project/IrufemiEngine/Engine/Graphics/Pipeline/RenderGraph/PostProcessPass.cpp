@@ -43,13 +43,16 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         }
         
         // ピンポンバッファ用の一時テクスチャ (最大2枚)
-        workTextureHandles_.push_back(builder.CreateTransientResource("PP_Work0", desc));
-        workTextureHandles_.push_back(builder.CreateTransientResource("PP_Work1", desc));
+        // ポストプロセスの中間計算はリニア空間で行うため、UNORM を指定する
+        D3D12_RESOURCE_DESC workDesc = desc;
+        workDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        workTextureHandles_.push_back(builder.CreateTransientResource("PP_Work0", workDesc));
+        workTextureHandles_.push_back(builder.CreateTransientResource("PP_Work1", workDesc));
 
 
         if (hasBloom) {
-            bloomExtractHandle_ = builder.CreateTransientResource("BloomExtract", desc);
-            bloomBlurHandle_ = builder.CreateTransientResource("BloomBlur", desc);
+            bloomExtractHandle_ = builder.CreateTransientResource("BloomExtract", workDesc);
+            bloomBlurHandle_ = builder.CreateTransientResource("BloomBlur", workDesc);
         }
 
         // 初期ステートは全て SRV (内部で書き込み前に RTV に遷移させる)
@@ -114,14 +117,8 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 #else
     // 最終出力先はバックバッファ
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = drawManager->GetDxCommon()->GetRtvHandles(drawManager->GetDxCommon()->GetCurrentBackBufferIndex());
+    
+    // 通常モードでは mainRenderTexture は SRV 状態で渡される必要がある (Setup で RequireState 済み)
     ppMgr->Draw(cmdList, engine->GetMainRenderTexture(), rtvHandle, workspace);
 #endif
-
-    // 深度バッファを元の DEPTH_WRITE に戻す
-    if (hasOutline) {
-        DirectXUtils::TransitionBarrier(
-            cmdList, drawManager->GetDxCommon()->GetDepthStencilResource(),
-            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, 0
-        );
-    }
 }

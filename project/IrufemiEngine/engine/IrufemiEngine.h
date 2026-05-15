@@ -358,4 +358,5 @@ private: // メンバ変数
     std::unique_ptr<PostProcessManager> postProcessManager_ = nullptr;
     std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
+    bool isFinalized_ = false; // 終了処理済みフラグ
 };

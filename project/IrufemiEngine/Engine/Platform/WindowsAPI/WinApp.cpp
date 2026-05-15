@@ -226,7 +226,7 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             PostMessage(hWnd, WM_CLOSE, 0, 0);
         }
 #endif
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         if (wParam == VK_F3) {
             cursorLocked_ = !cursorLocked_; // 状態をトグル
             if (inputManager_) {

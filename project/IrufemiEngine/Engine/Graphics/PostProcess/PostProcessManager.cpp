@@ -120,7 +120,7 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         
         commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
-        commandList->SetPipelineState(isLastBatch ? finalCombinedPSO_.Get() : bloomCombinePSO_.Get());
+        commandList->SetPipelineState(isLastBatch ? finalBloomCombinePSO_.Get() : bloomCombinePSO_.Get());
         commandList->SetGraphicsRootSignature(rootSig_);
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, currentSource->GetSrvHandleGPU());
@@ -293,7 +293,7 @@ void PostProcessManager::CreatePSOs() {
   
   // --- シェーダコンパイル設定 ---
   ShaderCompileOptions options;
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
   options.isDebug = true;
 #endif
 
@@ -382,7 +382,11 @@ void PostProcessManager::CreatePSOs() {
   device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurVPSO_));
 
     bloomDesc.PS = {combinePS->GetBufferPointer(), combinePS->GetBufferSize()};
+    bloomDesc.RTVFormats[0] = rtvFormat_; // 中間パス用 (_UNORM)
     device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomCombinePSO_));
+
+    bloomDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // 最終パス用 (_SRGB)
+    device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&finalBloomCombinePSO_));
 
     // --- 統合ポストプロセス用 PSO ---
     auto combinedPS = shaderManager->GetOrCompile(L"resources/shaders/PostProcess.PS.hlsl", options);

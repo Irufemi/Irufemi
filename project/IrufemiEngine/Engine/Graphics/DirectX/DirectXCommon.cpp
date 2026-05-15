@@ -10,6 +10,8 @@
 #include "../../Core/Utility/StringUtility.h"
 #include "../../../../externals/DirectXTex/d3dx12.h"
 #include <algorithm>
+#include <dxgidebug.h>
+#pragma comment(lib, "dxguid.lib")
 
 #include "DXCommandManager.h"
 #include "DXSwapChainManager.h"
@@ -42,6 +44,9 @@ void DirectXCommon::Finalize() {
         commandManager_.reset();
     }
 
+    // 全てのGPU処理が完了しているので、解放待ちのリソースを直ちに破棄する
+    pendingResources_.clear();
+
     // PSO キャッシュを解放(PSO/RSの参照を切る)
     if (psoManager_) {
         psoManager_->ClearCache();
@@ -59,10 +64,31 @@ void DirectXCommon::Finalize() {
         swapChainManager_.reset();
     }
     srvPool_.reset();
+    
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+    // リーク警告(LIVE_DEVICE等)で強制終了して詳細ログが見れなくなるのを防ぐため、Warningブレークを無効化する
+    {
+        Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+        if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
+            infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false);
+        }
+    }
+#endif
+
     device_.Reset();
 
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-    debugController_.Reset();
+    // DXGI ファクトリとデバッグコントローラの解放
+    dxgiFactory_.Reset();
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+    if (debugController_) {
+        debugController_.Reset();
+    }
+    
+    // 最後に詳細なリークレポートを出力
+    Microsoft::WRL::ComPtr<IDXGIDebug1> dxgiDebug;
+    if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
+        dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+    }
 #endif
 
     if (hwnd_) {
@@ -104,7 +130,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
 }
 
 void DirectXCommon::EnableDebugLayer() {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController_.GetAddressOf())))) {
         //デバッグレイヤーを有効化する
         debugController_->EnableDebugLayer();
@@ -157,7 +183,7 @@ void DirectXCommon::CreateDevice() {
 
 
 void DirectXCommon::SetInfoQueue() {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue = nullptr;
     if (SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
         infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
@@ -186,7 +212,7 @@ void DirectXCommon::SetInfoQueue() {
 void DirectXCommon::CreatePSOs() {
     // --- シェーダコンパイル設定 ---
     ShaderCompileOptions options;
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     options.isDebug = true;
 #endif
 
@@ -251,7 +277,7 @@ void DirectXCommon::CreatePSOs() {
         device_.Get(),
         GetRootSignature(),
         { inputElementDescs, _countof(inputElementDescs) },
-        DXGI_FORMAT_R8G8B8A8_UNORM,
+        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
         DXGI_FORMAT_D24_UNORM_S8_UINT,
         D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
     );
@@ -300,7 +326,7 @@ void DirectXCommon::CreatePSOs() {
     outlineCompDesc.shaders = { vsFullscreen, psOutlineComp };
     outlineCompDesc.disableDepthTest = true;
     outlineCompDesc.useNullInputLayout = true;
-    outlineCompDesc.rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+    outlineCompDesc.rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
     outlineCompDesc.dsvFormat = DXGI_FORMAT_UNKNOWN;
     psoManager_->RegisterShader("OutlineComposite", outlineCompDesc);
 #endif

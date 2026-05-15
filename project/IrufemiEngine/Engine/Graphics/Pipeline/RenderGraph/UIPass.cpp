@@ -5,7 +5,8 @@
 
 void UIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
 #ifdef EditorMode
-    builder.RequireState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    // エディタモードでは、ゲーム内UI(Sprite等)も mainRenderTexture に描き込む必要があるため RENDER_TARGET を要求する
+    builder.RequireState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 #endif
 }
 

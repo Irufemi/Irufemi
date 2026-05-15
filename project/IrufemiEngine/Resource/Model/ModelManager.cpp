@@ -362,7 +362,7 @@ std::pair<std::string, std::string> ModelManager::SplitDirectoryAndFile(const st
 }
 
 void ModelManager::DebugLogLoad(const std::string& key, size_t meshCount) {
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     std::string msg = "[ModelManager] Loaded GPU resources for: " + key +
         " meshes=" + std::to_string(meshCount) + "\n";
     OutputDebugStringA(msg.c_str());
