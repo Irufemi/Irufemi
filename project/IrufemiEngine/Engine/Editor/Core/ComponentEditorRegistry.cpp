@@ -492,6 +492,13 @@ void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionMa
                         case ComponentPropertyType::Float3:
                             ImGui::DragFloat3(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
                             break;
+                        case ComponentPropertyType::Float4:
+                            if (prop.name.find("Color") != std::string::npos || prop.name.find("color") != std::string::npos) {
+                                ImGui::ColorEdit4(prop.name.c_str(), reinterpret_cast<float*>(prop.data));
+                            } else {
+                                ImGui::DragFloat4(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
+                            }
+                            break;
                         case ComponentPropertyType::String: {
                             auto* str = static_cast<std::string*>(prop.data);
                             char buffer[256];

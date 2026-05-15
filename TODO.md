@@ -57,8 +57,8 @@ ECSライクな柔軟なエンティティ管理システムの構築。
     - [x] ランタイム時のプレハブ動的生成（`Instantiate`）処理を整理し、簡単に呼べるようにする。
 - [ ] **2D UI（キャンバス）システムの実装**
     - `CanvasComponent`, `TextComponent`, `ButtonComponent` 等を作成し、タイトル画面やHUD（体力バー・スコア）をエディタ上で配置・編集できるようにする。
-- [ ] **マルチメディアコンポーネントのエディタ対応**
-    - `AudioSourceComponent` の追加と、インスペクターからの音量・Pitch調整・再生テスト機能。
-    - `ParticleEmitterComponent` を追加し、エディタ上で放出量・速度・色をリアルタイムに調整できるようにする。
+- [x] **マルチメディアコンポーネントのエディタ対応**
+    - [x] `AudioSourceComponent` の追加と、インスペクターからの音量・Pitch調整・再生テスト機能。
+    - [x] `ParticleEmitterComponent` を追加し、エディタ上で放出量・速度・色をリアルタイムに調整できるようにする。
 - [x] **シーン遷移のデータ駆動化**
     - [x] `SceneManager::LoadScene("Title")` のように、指定した JSON シーンファイルを直接読み込んで画面遷移を行う仕組みの確立。

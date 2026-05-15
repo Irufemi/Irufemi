@@ -484,6 +484,18 @@ public:
 };
 ```
 
+#### 演出コンポーネント (AudioSource / ParticleEmitter)
+BGMやSEを鳴らしたり、エフェクトを発生させるには、インスペクターからプロパティを設定するだけで動く以下のコンポーネントが便利です。C++でコードを書く必要すらありません。
+
+- **`AudioSourceComponent`**: アタッチしたオブジェクトから音を鳴らします。
+  - `Audio Path`: 再生したい音声ファイルのパス（例: `audio/se/boom.wav`）。
+  - `Play On Awake`: シーン開始時に自動で再生するか。
+  - `Loop`: ループ再生するか。
+- **`ParticleEmitterComponent`**: アタッチしたオブジェクトの位置でエフェクトを発生させます。
+  - `Texture Path`: パーティクルに使う画像パス。
+  - `Emit Type`: 0(球体), 1(ビーム), 2(ボックス), 3(円柱) などの放出形状。
+  - `Color`, `Velocity`, `Emit Count` などで自由にエフェクトを構築できます。
+
 ---
 
 ## 3. リソース管理 (Resource Management)

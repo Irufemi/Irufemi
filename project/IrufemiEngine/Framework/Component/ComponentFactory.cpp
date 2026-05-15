@@ -8,6 +8,8 @@
 #include "Collider/OBBColliderComponent.h"
 #include "Collider/RaycastComponent.h"
 #include "Script/RotatorComponent.h"
+#include "AudioSourceComponent.h"
+#include "Renderer/ParticleEmitterComponent.h"
 
 std::map<std::string, ComponentFactory::CreatorFunc>& ComponentFactory::GetMap() {
     static std::map<std::string, CreatorFunc> factoryMap;
@@ -40,4 +42,6 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("OBBColliderComponent", []() { return std::make_shared<OBBColliderComponent>(); });
     Register("RaycastComponent", []() { return std::make_shared<RaycastComponent>(); });
     Register("RotatorComponent", []() { return std::make_shared<RotatorComponent>(); });
+    Register("AudioSourceComponent", []() { return std::make_shared<AudioSourceComponent>(); });
+    Register("ParticleEmitterComponent", []() { return std::make_shared<ParticleEmitterComponent>(); });
 }

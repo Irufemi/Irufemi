@@ -454,17 +454,11 @@
     <ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp">
       <Filter>Framework\Component\Collider</Filter>
     </ClCompile>
-    <ClCompile Include="Framework\Component\Script\RotatorComponent.cpp">
-      <Filter>Framework\Component\Script</Filter>
-    </ClCompile>
     <ClCompile Include="Framework\Component\Collider\RaycastComponent.cpp">
       <Filter>Framework\Component\Collider</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Manager\CollisionManager.cpp">
       <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Framework\Component\ComponentFactory.cpp">
-      <Filter>ソース ファイル\Framework\Component</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
@@ -502,6 +496,15 @@
     <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Core\System\DirectoryWatcher.cpp" />
+    <ClCompile Include="Framework\Component\ComponentFactory.cpp" />
+    <ClCompile Include="Framework\Component\Script\RotatorComponent.cpp" />
+    <ClCompile Include="Framework\Component\AudioSourceComponent.cpp">
+      <Filter>Framework\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\Renderer\ParticleEmitterComponent.cpp">
+      <Filter>Framework\Component\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -527,27 +530,6 @@
     </ClInclude>
     <ClInclude Include="Engine\Editor\Core\EditorTheme.h">
       <Filter>Engine\Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Core\ComponentEditorRegistry.h">
-      <Filter>Engine\Editor\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Core\IComponentEditor.h">
-      <Filter>Engine\Editor\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Core\EditorDragDrop.h">
-      <Filter>Engine\Editor\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Core\EditorActionManager.h">
-      <Filter>Engine\Editor\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Core\EditorShortcutManager.h">
-      <Filter>Engine\Editor\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Core\ICommand.h">
-      <Filter>Engine\Editor\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Core\EditorCommands.h">
-      <Filter>Engine\Editor\Core</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Manager\DebugUI.h">
       <Filter>Engine\Manager</Filter>
@@ -987,14 +969,8 @@
     <ClInclude Include="Framework\Component\Collider\OBBColliderComponent.h">
       <Filter>Framework\Component\Collider</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\Component\Script\RotatorComponent.h">
-      <Filter>Framework\Component\Script</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Manager\CollisionManager.h">
       <Filter>Engine\Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Framework\Component\ComponentFactory.h">
-      <Filter>ヘッダー ファイル\Framework\Component</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
@@ -1048,6 +1024,22 @@
       <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Collider\RaycastComponent.h" />
+    <ClInclude Include="Engine\Core\System\DirectoryWatcher.h" />
+    <ClInclude Include="Framework\Component\ComponentFactory.h" />
+    <ClInclude Include="Framework\Component\Script\RotatorComponent.h" />
+    <ClInclude Include="Engine\Editor\Core\EditorDragDrop.h" />
+    <ClInclude Include="Engine\Editor\Core\IComponentEditor.h" />
+    <ClInclude Include="Engine\Editor\Core\EditorActionManager.h" />
+    <ClInclude Include="Engine\Editor\Core\EditorShortcutManager.h" />
+    <ClInclude Include="Engine\Editor\Core\ICommand.h" />
+    <ClInclude Include="Engine\Editor\Core\EditorCommands.h" />
+    <ClInclude Include="Engine\Editor\Core\ComponentEditorRegistry.h" />
+    <ClInclude Include="Framework\Component\AudioSourceComponent.h">
+      <Filter>Framework\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Renderer\ParticleEmitterComponent.h">
+      <Filter>Framework\Component\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">

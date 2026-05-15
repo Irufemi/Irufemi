@@ -117,6 +117,11 @@ public:
      */
     virtual void OnResume() override {}
 
+    /**
+     * @brief IrufemiEngine のインスタンスを取得する
+     */
+    IrufemiEngine* GetEngine() const { return engine_; }
+
     // --- デバッグ機能 ---
     
     /**

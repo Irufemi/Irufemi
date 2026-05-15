@@ -6,9 +6,10 @@ class GameObject;
 #include "Renderer/Core/IRenderable.h"
 #include "Engine/Core/Math/Vector2.h"
 #include "Engine/Core/Math/Vector3.h"
+#include "Engine/Core/Math/Vector4.h"
 struct Ray;
 
-enum class ComponentPropertyType { Float, Float2, Float3, Int, Bool, String };
+enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String };
 
 struct ComponentProperty {
     std::string name;
@@ -111,6 +112,7 @@ public:
     void RegisterProperty(const std::string& name, std::string* ptr) { properties_.push_back({name, ComponentPropertyType::String, ptr}); }
     void RegisterProperty(const std::string& name, Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr}); }
     void RegisterProperty(const std::string& name, Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr}); }
+    void RegisterProperty(const std::string& name, Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr}); }
 
     /**
      * @brief コンポーネントの状態をJSONにシリアライズする
@@ -131,6 +133,11 @@ public:
                 case ComponentPropertyType::Float3: {
                     auto* v = static_cast<Vector3*>(prop.data);
                     j[prop.name] = { v->x, v->y, v->z };
+                    break;
+                }
+                case ComponentPropertyType::Float4: {
+                    auto* v = static_cast<Vector4*>(prop.data);
+                    j[prop.name] = { v->x, v->y, v->z, v->w };
                     break;
                 }
             }
@@ -162,6 +169,14 @@ public:
                     auto arr = j[prop.name];
                     if (arr.is_array() && arr.size() >= 3) {
                         v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>();
+                    }
+                    break;
+                }
+                case ComponentPropertyType::Float4: {
+                    auto* v = static_cast<Vector4*>(prop.data);
+                    auto arr = j[prop.name];
+                    if (arr.is_array() && arr.size() >= 4) {
+                        v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>(); v->w = arr[3].get<float>();
                     }
                     break;
                 }
