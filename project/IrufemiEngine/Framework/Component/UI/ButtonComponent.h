@@ -1,0 +1,47 @@
+#pragma once
+#include "../Component.h"
+#include <string>
+#include "Engine/Core/Math/Vector4.h"
+#include "../../UIAnimator.h"
+
+class TransformComponent;
+class SpriteRendererComponent;
+
+/**
+ * @class ButtonComponent
+ * @brief マウスのホバー・クリックを判定し、色変更やシーン遷移を行うUIコンポーネント
+ */
+class ButtonComponent : public Component {
+public:
+    ButtonComponent() = default;
+    ~ButtonComponent() override = default;
+
+    void Initialize() override;
+    void Update() override;
+    
+    std::string GetComponentName() const override { return "ButtonComponent"; }
+    void OnRegisterProperties() override;
+
+    bool IsHovered() const { return isHovered_; }
+    bool IsClicked() const { return isClicked_; }
+
+private:
+    bool CheckBounds(const struct Vector2& mousePos);
+
+    std::string onClickLoadScene_ = ""; // クリック時に自動で遷移するシーン名
+    int transitionType_ = 0;            // 0:Fade, 1:Dissolve, 2:Slide, 3:RadialBlur
+    float transitionDuration_ = 1.0f;   // トランジションにかける時間
+    
+    Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+    Vector4 hoverColor_  = {0.8f, 0.8f, 0.8f, 1.0f};
+    Vector4 clickColor_  = {0.5f, 0.5f, 0.5f, 1.0f};
+
+    bool enableHoverPulse_ = true; // ホバー時にサイン波で明滅するかどうか
+    UIAnimator animator_;
+
+    bool isHovered_ = false;
+    bool isClicked_ = false;
+
+    TransformComponent* transform_ = nullptr;
+    SpriteRendererComponent* sprite_ = nullptr;
+};

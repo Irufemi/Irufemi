@@ -175,6 +175,9 @@
     <Filter Include="Renderer\Core">
       <UniqueIdentifier>{22a83614-e6a1-4622-9ef5-9ba30bae461b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Framework\Component\UI">
+      <UniqueIdentifier>{6f464b55-d7cb-4ee3-957b-b3c74f85a069}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
@@ -504,6 +507,12 @@
     </ClCompile>
     <ClCompile Include="Framework\Component\Renderer\ParticleEmitterComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\UI\ButtonComponent.cpp">
+      <Filter>Framework\Component\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\UI\CanvasComponent.cpp">
+      <Filter>Framework\Component\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1039,6 +1048,12 @@
     </ClInclude>
     <ClInclude Include="Framework\Component\Renderer\ParticleEmitterComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\UI\ButtonComponent.h">
+      <Filter>Framework\Component\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\UI\CanvasComponent.h">
+      <Filter>Framework\Component\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

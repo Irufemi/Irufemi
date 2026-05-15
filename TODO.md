@@ -55,8 +55,10 @@ ECSライクな柔軟なエンティティ管理システムの構築。
     - [x] コライダーの `OnCollisionEnter` などのコールバック処理を Component から簡単に受け取れるようにする。
     - [x] オブジェクトの破棄（`Destroy`）処理を整理し、フレームの終わりに安全に行えるようにする。
     - [x] ランタイム時のプレハブ動的生成（`Instantiate`）処理を整理し、簡単に呼べるようにする。
-- [ ] **2D UI（キャンバス）システムの実装**
-    - `CanvasComponent`, `TextComponent`, `ButtonComponent` 等を作成し、タイトル画面やHUD（体力バー・スコア）をエディタ上で配置・編集できるようにする。
+- [x] **2D UI（キャンバス）システムの実装**
+    - [x] `ButtonComponent` を実装。シーン遷移（フェード等のPostProcess連携）およびホバー/クリック時の色変更に対応。
+    - [x] `CanvasComponent` を実装。子要素全体のアルファ値（フェード）一括管理などに対応。
+    - ※ `TextComponent` は将来的にSDFフォントレンダラーとアトラス生成ツールを開発する際に対応するため保留。
 - [x] **マルチメディアコンポーネントのエディタ対応**
     - [x] `AudioSourceComponent` の追加と、インスペクターからの音量・Pitch調整・再生テスト機能。
     - [x] `ParticleEmitterComponent` を追加し、エディタ上で放出量・速度・色をリアルタイムに調整できるようにする。

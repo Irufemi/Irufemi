@@ -496,6 +496,17 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - `Emit Type`: 0(球体), 1(ビーム), 2(ボックス), 3(円柱) などの放出形状。
   - `Color`, `Velocity`, `Emit Count` などで自由にエフェクトを構築できます。
 
+#### UIコンポーネント (Canvas / Button)
+ゲーム内の2D UIを構築するための専用コンポーネントです。必ず `SpriteRendererComponent` とセットで使用するか、子要素として配置してください。
+
+- **`ButtonComponent`**: マウスカーソルのホバーやクリックを検知し、色を変えたりシーンを遷移させる機能を提供します。
+  - `Load Scene Name`: クリック時に遷移させたいシーン名（例: `InGame`）。空欄の場合は何もしません。
+  - `Transition Type(0-3)`: `0=Fade`, `1=Dissolve`, `2=Slide`, `3=RadialBlur` のいずれかを指定し、遷移時の演出（ポストプロセス）を選択できます。
+  - `Transition Duration`: 遷移演出にかける時間（秒）。
+  - `Normal/Hover/Click Color`: マウスの操作状態に合わせて、アタッチされているSpriteの色を自動的に変化させます。
+- **`CanvasComponent`**: UI要素をグループ化し、アルファ値（透明度）などを一括管理します。
+  - `Group Alpha`: このコンポーネントを持つGameObject自身と、そのすべての子要素にある `SpriteRendererComponent` のアルファ値を一括で制御します。フェードイン・フェードアウトの演出に便利です。
+
 ---
 
 ## 3. リソース管理 (Resource Management)

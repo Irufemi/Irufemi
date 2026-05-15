@@ -216,6 +216,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Framework\Component\AudioSourceComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\ParticleEmitterComponent.cpp" />
+    <ClCompile Include="Framework\Component\UI\ButtonComponent.cpp" />
+    <ClCompile Include="Framework\Component\UI\CanvasComponent.cpp" />
     <ClCompile Include="Framework\GameObject.cpp" />
     <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp" />
@@ -355,6 +357,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\AudioSourceComponent.h" />
     <ClInclude Include="Framework\Component\Component.h" />
     <ClInclude Include="Framework\Component\Renderer\ParticleEmitterComponent.h" />
+    <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
+    <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />
     <ClInclude Include="Framework\GameObject.h" />
     <ClInclude Include="Framework\Component\Renderer\PrimitiveRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
