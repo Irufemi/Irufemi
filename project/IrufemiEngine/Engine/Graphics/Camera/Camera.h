@@ -143,9 +143,15 @@ public: // メンバ関数
      */
     void SetRotate(const Vector3& rotate) { this->rotate_ = rotate; }
 
-    void SetViewMatrix(const Matrix4x4& viewMatrix) { this->viewMatrix_ = viewMatrix; }
+    void SetViewMatrix(const Matrix4x4& viewMatrix) { 
+        this->viewMatrix_ = viewMatrix; 
+        this->frustum_.SetFromViewProjection(this->viewMatrix_ * this->perspectiveFovMatrix_);
+    }
 
-    void SetPerspectiveFovMatrix(const Matrix4x4& perspectiveFovMatrix) { this->perspectiveFovMatrix_ = perspectiveFovMatrix; }
+    void SetPerspectiveFovMatrix(const Matrix4x4& perspectiveFovMatrix) { 
+        this->perspectiveFovMatrix_ = perspectiveFovMatrix; 
+        this->frustum_.SetFromViewProjection(this->viewMatrix_ * this->perspectiveFovMatrix_);
+    }
 
     void SetFarClip(const float& farClip) { this->farClip_ = farClip; }
 
