@@ -119,6 +119,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
 }
 
 void GameScene::Update() {
+#if defined(_DEBUG) || defined(DEVELOPMENT)
   if (PressedDIK(kKeyDebugCameraToggle)) {
     isDebugCameraMode_ = !isDebugCameraMode_;
     if (isDebugCameraMode_ && isFirstDebug_) {
@@ -126,6 +127,7 @@ void GameScene::Update() {
       isFirstDebug_ = false;
     }
   }
+#endif
 
   // ポーズ画面呼び出し
   InputManager* input = engine_->GetInputManager();
@@ -169,12 +171,14 @@ void GameScene::Update() {
     boss_->Update(player_.get());
   }
 
+#if defined(_DEBUG) || defined(DEVELOPMENT)
   // --- 当たり判定有効無効のトグル (F4) ---
   if (engine_->GetInputManager()->IsKeyPressedDIK(0x3E /*DIK_F4*/)) {
     isCollisionEnabled_ = !isCollisionEnabled_;
     OutputDebugStringA(isCollisionEnabled_ ? "Collision: ENABLED\n"
                                            : "Collision: DISABLED\n");
   }
+#endif
 
   // --- 当たり判定の実行 ---
   CheckAllCollisions();
