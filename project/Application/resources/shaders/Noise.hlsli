@@ -1,7 +1,6 @@
-
 /**
- * @file LightningUtility.hlsli
- * @brief 電撃表現用ノイズ・ユーティリティ関数
+ * @file Noise.hlsli
+ * @brief ノイズ・ユーティリティ関数
  */
 
 static const float TAU = 6.28318530718;
