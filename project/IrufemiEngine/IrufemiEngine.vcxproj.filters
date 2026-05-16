@@ -184,6 +184,15 @@
     <Filter Include="Engine\Graphics\Font">
       <UniqueIdentifier>{b5490a7a-ea34-4ad1-9f51-c30842c53ff4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Object2D\Text">
+      <UniqueIdentifier>{1dae2a6e-5dd6-420f-ac5c-2aad2bba371b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Object2D\Primitive">
+      <UniqueIdentifier>{9a4e6452-453b-4e15-b7c0-d3268d938370}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Object2D\Sprite">
+      <UniqueIdentifier>{ada08baa-4eee-4cf8-95b8-0ba6e0f645c9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
@@ -305,12 +314,6 @@
     </ClCompile>
     <ClCompile Include="Renderer\Particle\ParticleSystem.cpp">
       <Filter>Renderer\Particle</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Object2D\Primitive\Circle2D.cpp">
-      <Filter>Renderer\Object2D</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Object2D\Sprite\Sprite.cpp">
-      <Filter>Renderer\Object2D</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\LineInstanced\LineClass.cpp">
       <Filter>Renderer\LineInstanced</Filter>
@@ -601,6 +604,18 @@
     <ClCompile Include="Engine\Graphics\Font\FontManager.cpp">
       <Filter>Engine\Graphics\Font</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Object2D\Text\Text.cpp">
+      <Filter>Renderer\Object2D\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Object2D\Primitive\Circle2D.cpp">
+      <Filter>Renderer\Object2D\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Object2D\Sprite\Sprite.cpp">
+      <Filter>Renderer\Object2D\Sprite</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\Renderer\TextRendererComponent.cpp">
+      <Filter>Framework\Component\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -728,12 +743,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\Particle\IParticleBehavior.h">
       <Filter>Renderer\Particle</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Object2D\Sprite\Sprite.h">
-      <Filter>Renderer\Object2D</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Object2D\Primitive\Circle2D.h">
-      <Filter>Renderer\Object2D</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Skybox\Skybox.h">
       <Filter>Renderer\Skybox</Filter>
@@ -1234,6 +1243,18 @@
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Font\FontManager.h">
       <Filter>Engine\Graphics\Font</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object2D\Text\Text.h">
+      <Filter>Renderer\Object2D\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object2D\Primitive\Circle2D.h">
+      <Filter>Renderer\Object2D\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object2D\Sprite\Sprite.h">
+      <Filter>Renderer\Object2D\Sprite</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h">
+      <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

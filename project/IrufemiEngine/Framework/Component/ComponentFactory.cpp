@@ -3,6 +3,7 @@
 #include "Renderer/MeshRendererComponent.h"
 #include "Renderer/PrimitiveRendererComponent.h"
 #include "Renderer/SpriteRendererComponent.h"
+#include "Renderer/TextRendererComponent.h"
 #include "Collider/AABBColliderComponent.h"
 #include "Collider/SphereColliderComponent.h"
 #include "Collider/OBBColliderComponent.h"
@@ -39,6 +40,7 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("MeshRendererComponent", []() { return std::make_shared<MeshRendererComponent>(); });
     Register("PrimitiveRendererComponent", []() { return std::make_shared<PrimitiveRendererComponent>(); });
     Register("SpriteRendererComponent", []() { return std::make_shared<SpriteRendererComponent>(); });
+    Register("TextRendererComponent", []() { return std::make_shared<TextRendererComponent>(); });
     Register("AABBColliderComponent", []() { return std::make_shared<AABBColliderComponent>(); });
     Register("SphereColliderComponent", []() { return std::make_shared<SphereColliderComponent>(); });
     Register("OBBColliderComponent", []() { return std::make_shared<OBBColliderComponent>(); });

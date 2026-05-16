@@ -11,7 +11,7 @@ void UIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, Irufem
 }
 
 void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
-    auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isSprite = false) {
+    auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
         if (queue.empty()) return;
         
         BlendMode currentBlend = BlendMode::kBlendModeNormal;
@@ -24,8 +24,7 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
                 engine->SetBlend(p.blendMode);
                 engine->SetDepthWrite(p.depthWrite);
                 engine->SetCull(p.cullMode);
-                if (isSprite) engine->ApplyPSO("Sprite");
-                else engine->ApplyPSO("Object3D"); // For UI 3D
+                engine->ApplyPSO(psoName);
                 
                 currentBlend = p.blendMode;
                 currentDepth = p.depthWrite;
@@ -37,10 +36,13 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     };
 
     // 8. Sprites
-    DrawWithPSO(drawManager->GetSpriteQueue(), [&](const auto& p) { drawManager->DrawSprite(p); }, true);
+    DrawWithPSO(drawManager->GetSpriteQueue(), [&](const auto& p) { drawManager->DrawSprite(p); }, "Sprite");
+
+    // 8.1 Texts
+    DrawWithPSO(drawManager->GetTextQueue(), [&](const auto& p) { drawManager->DrawText(p); }, "Text");
 
     // 8.5 UI 3D Objects (Always drawn on top of Sprites)
-    DrawWithPSO(drawManager->GetUI3DQueue(), [&](const auto& p) { drawManager->DrawStandard3D(p); }, false);
+    DrawWithPSO(drawManager->GetUI3DQueue(), [&](const auto& p) { drawManager->DrawStandard3D(p); }, "Object3D");
 
     // 9. Post Custom Draws
     const auto& postRenderQueue = drawManager->GetPostRenderQueue();

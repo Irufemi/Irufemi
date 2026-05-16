@@ -363,4 +363,7 @@
     <ClInclude Include="contents\ui\EnemyPartHPBar.h" />
     <ClInclude Include="contents\ui\PlayerHPBar.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
 </Project>

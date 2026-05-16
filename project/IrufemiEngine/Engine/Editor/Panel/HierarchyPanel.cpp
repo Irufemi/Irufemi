@@ -72,16 +72,16 @@ void HierarchyPanel::Draw() {
                 // 識別用にポインタアドレスを使う
                 bool isOpen = ImGui::TreeNodeEx((void*)obj.get(), flags, "%s", obj->GetName().c_str());
 
+                // クリックで選択 (TreeNodeExがクリックされたかを判定)
+                if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+                    editorManager_->SetSelectedObject(obj);
+                }
+
                 // 右端にActive切り替えのチェックボックスを配置
                 ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 30.0f);
                 bool isActive = obj->GetIsActive();
                 if (ImGui::Checkbox("##Active", &isActive)) {
                     obj->SetIsActive(isActive);
-                }
-
-                // クリックで選択
-                if (ImGui::IsItemClicked()) {
-                    editorManager_->SetSelectedObject(obj);
                 }
                 
                 ImGui::PopID();

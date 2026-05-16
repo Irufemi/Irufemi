@@ -496,8 +496,16 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - `Emit Type`: 0(球体), 1(ビーム), 2(ボックス), 3(円柱) などの放出形状。
   - `Color`, `Velocity`, `Emit Count` などで自由にエフェクトを構築できます。
 
-#### UIコンポーネント (Canvas / Button)
-ゲーム内の2D UIを構築するための専用コンポーネントです。必ず `SpriteRendererComponent` とセットで使用するか、子要素として配置してください。
+#### UIコンポーネント (Canvas / Button / Text)
+ゲーム内の2D UIを構築するための専用コンポーネントです。
+
+- **`TextRendererComponent`**: 高品質なMSDF（マルチチャンネル符号付き距離場）フォントを利用し、任意の文字列を描画するコンポーネントです。動的に必要な文字だけを生成・パッキングするため、メモリ効率が非常に高く、どれだけ拡大しても文字がジャギりません（ぼやけません）。
+  - `Text`: 表示する文字列。複数行の入力（改行）にも対応しています。
+  - `Font ID`: 使用するフォント名（`resources/fonts/` 以下に配置したファイル名、例：`toro_glitch`）。
+  - `Base Scale`: 文字の大きさ。
+  - `Color`: 文字の色と透明度。
+  - `Top Most`: ブルームなどのポストプロセスの影響を受けない、最前面レイヤーに描画するかどうか。
+  - `Alignment`: テキストのアライメント（`0=Left`, `1=Center`, `2=Right`）。複数行の場合は行ごとに適用されます。
 
 - **`ButtonComponent`**: マウスカーソルのホバーやクリックを検知し、色を変えたりシーンを遷移させる機能を提供します。
   - `Load Scene Name`: クリック時に遷移させたいシーン名（例: `InGame`）。空欄の場合は何もしません。
@@ -554,6 +562,21 @@ std::weak_ptr<VoiceInstance> voice = engine_->GetAudioManager()->Play(soundData,
 // 4. 停止
 engine_->GetAudioManager()->Stop(voice);
 ```
+
+### 3.4 FontManager (フォントとテキストの管理)
+TTF等のフォントファイルを読み込み、テキスト描画用の高品質なMSDF画像を動的に生成・キャッシュします。
+
+```cpp
+// 1. フォルダ内の全フォント一括ロード
+engine_->GetFontManager()->LoadAllFromFolder("resources/fonts");
+
+// 2. 【超重要】スパイク（処理落ち）防止のための事前生成
+// ゲーム中に「まだ生成されていない全く新しい文字（複雑な漢字など）」が出現すると、
+// メインスレッドでMSDF画像生成が行われ、一瞬ゲームがカクつく（スパイクする）可能性があります。
+// プレイスルーを滑らかにするため、シーン開始時のロード中などに「使う予定の全文字」を事前生成してください。
+engine_->GetFontManager()->PrecacheText("my_font", L"このシーンで使う予定の会話テキストや、よく使う漢字一覧など...");
+```
+
 
 ---
 
@@ -780,5 +803,6 @@ Unityライクな「オブジェクトのテンプレート化」をサポート
 > - 2026/05: RenderGraph / パケット分離対応を反映、Phase 1~3 および 便利機能（カメラ、ディレクトリ構造、UISelectionGroup）を追記
 > - 2026/05: エディタ機能（Project Browserの2ペイン化、FontAwesome対応、ドラッグ＆ドロップ機能）の解説を追記
 > - 2026/05: コンポーネントシステム（GameObject/Component）の導入と、UIロジックの分離（Registry方式）を追記
+> - 2026/05: 高品質テキスト描画システム (`TextRendererComponent` / `FontManager`) と、Play時の自動保存機能を追記
 > - 2026/05: 終了時のリソースリーク（LIVE_DEVICE）対策とトラブルシューティングを追記
 

@@ -26,6 +26,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object2D/Object2DResource.h"
 #include "Renderer/Object2D/Primitive/Circle2D.h"
 #include "Renderer/Object2D/Sprite/Sprite.h"
+#include "Renderer/Object2D/Text/Text.h"
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Renderer/Object3D/BaseModel/BaseModel.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
@@ -135,6 +136,16 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   textureManager_->LoadAllFromFolder("resources/");
 #endif
 
+  // フォント管理
+  fontManager_ = std::make_unique<FontManager>();
+  fontManager_->Initialize(this);
+  Text::SetFontManager(fontManager_.get());
+
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+  // resources/fonts/ 以下のフォントをすべて自動ロード
+  fontManager_->LoadAllFromFolder("resources/fonts/");
+#endif
+
   // モデル管理
   modelManager_ = std::make_unique<ModelManager>();
   modelManager_->Initialize(dxCommon_.get(),
@@ -166,6 +177,11 @@ void IrufemiEngine::Initialize(const std::wstring &title,
       if (auto idx = toIndex(white); idx != DescriptorPool::kInvalid)
         used.push_back(idx);
     }
+    // フォントアトラス
+    if (fontManager_) {
+      if (auto idx = toIndex(fontManager_->GetAtlasSRV()); idx != DescriptorPool::kInvalid)
+        used.push_back(idx);
+    }
     // テクスチャキャッシュ
     for (const std::string &name : textureManager_->GetTextureNames()) {
       auto h = textureManager_->GetTextureHandle(name);
@@ -194,6 +210,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   editorManager_->Initialize(this);
 #endif
   Sprite::SetDebugUI(ui_.get());
+  Text::SetDebugUI(ui_.get());
   Circle2D::SetDebugUI(ui_.get());
 
   SphereClass::SetDebugUI(ui_.get());
@@ -209,6 +226,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   drawManager_ = std::make_unique<DrawManager>();
   drawManager_->Initialize(dxCommon_.get());
   Sprite::SetDrawManager(drawManager_.get());
+  Text::SetDrawManager(drawManager_.get());
   Circle2D::SetDrawManager(drawManager_.get());
 
   SphereClass::SetDrawManager(drawManager_.get());
@@ -399,6 +417,10 @@ void IrufemiEngine::Finalize() {
   if (textureManager_) {
     textureManager_.reset();
   }
+  if (fontManager_) {
+    fontManager_->Finalize();
+    fontManager_.reset();
+  }
 
   // 4. 定数バッファマネージャー (DirectX基盤のリソースを直接保持するため先に破棄)
   if (materialBufferManager_) {
@@ -517,10 +539,11 @@ void IrufemiEngine::Finalize() {
 }
 
 void IrufemiEngine::Execute() {
-  // CameraManagerの構築
+  // CameraManager設定
   cameraManager_ = std::make_unique<CameraManager>();
   Sprite::SetCameraManager(cameraManager_.get());
-
+  Text::SetCameraManager(cameraManager_.get());
+  
   // SceneManager 構築(エンジンは所有のみ)
   sceneManager_ = std::make_unique<SceneManager>(this);
 

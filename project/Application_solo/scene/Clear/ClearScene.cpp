@@ -15,7 +15,7 @@ void ClearScene::Update() {
     BaseScene::Update();
 
     // BackSpaceキーで遷移テスト
-    if (IsKeyPressed(VK_BACK)) {
+    if (IsKeyPressed(VK_F8)) {
         engine_->GetSceneManager()->TransitionTo("Select", SceneTransition::Type::Slide, 1.0f);
     }
 }

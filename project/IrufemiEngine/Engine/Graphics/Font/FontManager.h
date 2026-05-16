@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <memory>
 #include <d3d12.h>
 #include "Engine/Core/Math/Vector2.h"
@@ -37,6 +38,12 @@ public:
 
     // TTFフォントをロードし、管理対象として登録する
     bool LoadFont(const std::string& fontId, const std::string& ttfPath);
+
+    // 指定フォルダ配下を再帰的に走査し、.ttf / .otf を一括ロードする
+    void LoadAllFromFolder(const std::string& folderPath);
+
+    // ロード済みのフォントIDリストを取得する
+    std::vector<std::string> GetLoadedFontIds() const;
 
     // 文字列を受け取り、まだ生成されていない文字があればMSDFを生成してアトラスに追加する
     void PrecacheText(const std::string& fontId, const std::wstring& text);

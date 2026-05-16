@@ -18,11 +18,13 @@
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "Framework/Component/Renderer/TextRendererComponent.h"
 #include "Framework/Component/Collider/AABBColliderComponent.h"
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Collider/RaycastComponent.h"
 #include "Framework/Component/Script/RotatorComponent.h"
+#include "Engine/Core/Utility/StringUtility.h"
 
 // Core
 #include "IComponentEditor.h"
@@ -359,6 +361,87 @@ public:
     }
 };
 
+class TextRendererComponentEditor : public IComponentEditor {
+public:
+    void Draw(Component* component, EditorActionManager* actionManager) override {
+        auto* comp = static_cast<TextRendererComponent*>(component);
+        if (ImGui::TreeNodeEx("TextRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Text (UTF-8 変換)
+            std::string utf8Text = ConvertString(comp->GetText());
+            char textBuffer[256];
+            strncpy_s(textBuffer, sizeof(textBuffer), utf8Text.c_str(), _TRUNCATE);
+            if (ImGui::InputText("Text", textBuffer, sizeof(textBuffer))) {
+                comp->SetText(ConvertString(std::string(textBuffer)));
+            }
+
+            // Font ID
+            std::string fontId = comp->GetFontId();
+            FontManager* fm = Text::GetFontManager();
+            if (fm) {
+                auto fontIds = fm->GetLoadedFontIds();
+                int currentIndex = 0;
+                for (int i = 0; i < (int)fontIds.size(); ++i) {
+                    if (fontIds[i] == fontId) {
+                        currentIndex = i;
+                        break;
+                    }
+                }
+                const char* currentPreview = fontIds.empty() ? "" : fontIds[currentIndex].c_str();
+                if (ImGui::BeginCombo("Font ID", currentPreview)) {
+                    for (int i = 0; i < fontIds.size(); ++i) {
+                        bool isSelected = (currentIndex == i);
+                        if (ImGui::Selectable(fontIds[i].c_str(), isSelected)) {
+                            comp->SetFontId(fontIds[i]);
+                        }
+                        if (isSelected) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+            } else {
+                char fontBuffer[128];
+                strncpy_s(fontBuffer, sizeof(fontBuffer), fontId.c_str(), _TRUNCATE);
+                if (ImGui::InputText("Font ID", fontBuffer, sizeof(fontBuffer))) {
+                    comp->SetFontId(fontBuffer);
+                }
+            }
+            
+            // Alignment
+            TextAlignment align = comp->GetAlignment();
+            const char* alignments[] = { "Left", "Center", "Right" };
+            if (ImGui::BeginCombo("Alignment", alignments[static_cast<int>(align)])) {
+                for (int i = 0; i < 3; ++i) {
+                    bool isSelected = (static_cast<int>(align) == i);
+                    if (ImGui::Selectable(alignments[i], isSelected)) {
+                        comp->SetAlignment(static_cast<TextAlignment>(i));
+                    }
+                    if (isSelected) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            // Base Scale
+            float scale = comp->GetBaseScale();
+            if (ImGui::DragFloat("Base Scale", &scale, 0.1f, 0.1f, 1000.0f)) {
+                comp->SetBaseScale(scale);
+            }
+
+            // Color
+            Vector4 color = comp->GetColor();
+            if (ImGui::ColorEdit4("Color", &color.x)) {
+                comp->SetColor(color);
+            }
+
+            // TopMost
+            bool isTopMost = comp->IsTopMost();
+            if (ImGui::Checkbox("TopMost", &isTopMost)) {
+                comp->SetTopMost(isTopMost);
+            }
+
+            ImGui::TreePop();
+        }
+    }
+};
+
 class AABBColliderComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
@@ -458,6 +541,7 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<MeshRendererComponent, MeshRendererComponentEditor>();
     RegisterEditor<PrimitiveRendererComponent, PrimitiveRendererComponentEditor>();
     RegisterEditor<SpriteRendererComponent, SpriteRendererComponentEditor>();
+    RegisterEditor<TextRendererComponent, TextRendererComponentEditor>();
     RegisterEditor<AABBColliderComponent, AABBColliderComponentEditor>();
     RegisterEditor<OBBColliderComponent, OBBColliderComponentEditor>();
     RegisterEditor<SphereColliderComponent, SphereColliderComponentEditor>();

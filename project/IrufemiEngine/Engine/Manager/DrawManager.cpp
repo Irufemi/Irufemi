@@ -409,6 +409,43 @@ void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
+void DrawManager::SubmitText(const Object2DResource* resource) {
+    if (!resource) return;
+    SpritePacket p{};
+    p.resource = resource;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    textQueue_.push_back(p);
+}
+
+void DrawManager::SubmitTopMostText(const Object2DResource* resource) {
+    if (!resource) return;
+    SpritePacket p{};
+    p.resource = resource;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    topMostTextQueue_.push_back(p);
+}
+
+void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
+    const Object2DResource* resource = packet.resource;
+    if (!resource || !commandList_) return;
+
+    if (packet.customPSO) {
+        commandList_->SetPipelineState(packet.customPSO);
+    }
+
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
+    commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
+}
+
 void DrawManager::SubmitParticle(const ParticleResource* resource, uint32_t instanceCount) {
     if (!resource || instanceCount == 0) return;
     ParticlePacket p{};
@@ -637,6 +674,18 @@ void DrawManager::SubmitOutlineMask(const Object3DResource* resource, const D3D1
     p.customPSO = resource->GetCustomPSO();
     p.customCBVAddress = resource->GetCustomCBVAddress();
     selectionMaskQueue_.push_back(p);
+}
+
+void DrawManager::SubmitTextOutlineMask(const Object2DResource* resource) {
+    if (!resource) return;
+    SpritePacket p{};
+    p.resource = resource;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    p.customPSO = resource->GetCustomPSO();
+    p.customCBVAddress = resource->GetCustomCBVAddress();
+    selectionMaskQueue2D_.push_back(p);
 }
 
 void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) {
@@ -982,7 +1031,6 @@ void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
             engine->SetBlend(p.blendMode);
             engine->SetDepthWrite(p.depthWrite);
             engine->SetCull(p.cullMode);
-            // バックバッファへ直接描画する特別なPSOを適用
             engine->ApplyPSO("SpriteForBackBuffer");
             
             currentBlend = p.blendMode;
@@ -992,12 +1040,30 @@ void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
         }
         DrawSprite(p);
     }
+
+    first = true;
+    for (const auto& p : topMostTextQueue_) {
+        if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
+            engine->SetBlend(p.blendMode);
+            engine->SetDepthWrite(p.depthWrite);
+            engine->SetCull(p.cullMode);
+            // 本来は TextForBackBuffer のようなPSOが望ましいが、最前面用の Text PSO がなければ通常の Text PSO を使用する
+            engine->ApplyPSO("Text");
+            
+            currentBlend = p.blendMode;
+            currentDepth = p.depthWrite;
+            currentCull = p.cullMode;
+            first = false;
+        }
+        DrawText(p);
+    }
 }
 
 void DrawManager::ClearRenderQueues() {
     standard3DQueue_.clear();
     ui3DQueue_.clear();
     selectionMaskQueue_.clear();
+    selectionMaskQueue2D_.clear();
     spriteQueue_.clear();
     particleQueue_.clear();
     lineQueue_.clear();
@@ -1008,4 +1074,6 @@ void DrawManager::ClearRenderQueues() {
     modelRegionQueue_.clear();
     postRenderQueue_.clear();
     topMostSpriteQueue_.clear();
+    textQueue_.clear();
+    topMostTextQueue_.clear();
 }

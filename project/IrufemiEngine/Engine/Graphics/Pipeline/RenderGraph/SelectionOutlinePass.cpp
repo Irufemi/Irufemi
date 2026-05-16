@@ -8,7 +8,7 @@
 
 void SelectionOutlinePass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
 #ifdef EditorMode
-    if (drawManager->GetSelectionMaskQueue().empty()) return;
+    if (drawManager->GetSelectionMaskQueue().empty() && drawManager->GetSelectionMaskQueue2D().empty()) return;
     
     // MainRenderTarget を更新する (合成用)
     builder.RequireState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -23,8 +23,9 @@ void SelectionOutlinePass::Setup(RenderGraphBuilder& builder, DrawManager* drawM
 
 void SelectionOutlinePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 #ifdef EditorMode
-    const auto& queue = drawManager->GetSelectionMaskQueue();
-    if (queue.empty()) return;
+    const auto& queue3D = drawManager->GetSelectionMaskQueue();
+    const auto& queue2D = drawManager->GetSelectionMaskQueue2D();
+    if (queue3D.empty() && queue2D.empty()) return;
 
     auto* cmdList = drawManager->GetDxCommon()->GetCommandList();
     auto* psoManager = drawManager->GetDxCommon()->GetPSOManager();
@@ -38,11 +39,29 @@ void SelectionOutlinePass::Execute(DrawManager* drawManager, IrufemiEngine* engi
     cmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
     // PSOをバインド (SelectionMask)
-    auto pso = psoManager->GetPSO("SelectionMask", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
-    if (pso) {
-        cmdList->SetPipelineState(pso);
-        for (const auto& p : queue) {
-            drawManager->DrawStandard3D(p);
+    if (!queue3D.empty()) {
+        auto pso = psoManager->GetPSO("SelectionMask", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
+        if (pso) {
+            cmdList->SetPipelineState(pso);
+            for (const auto& p : queue3D) {
+                drawManager->DrawStandard3D(p);
+            }
+        }
+    }
+    
+    // 2D Text用マスク描画
+    if (!queue2D.empty()) {
+        auto psoTextMask = psoManager->GetPSO("SelectionMaskText", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
+        if (psoTextMask) {
+            cmdList->SetPipelineState(psoTextMask);
+            for (const auto& p : queue2D) {
+                // customPSOを使わずに、強制的に psoTextMask で描画するため DrawText 内部ではなくここで設定しているが、
+                // DrawText内部で packet.customPSO が優先されるのを防ぐため packet.customPSO を一時的に psoTextMask にして渡すか、
+                // DrawSprite を使う
+                RenderPackets::SpritePacket pOverride = p;
+                pOverride.customPSO = psoTextMask;
+                drawManager->DrawText(pOverride);
+            }
         }
     }
 

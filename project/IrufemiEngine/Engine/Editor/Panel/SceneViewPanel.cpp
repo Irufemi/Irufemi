@@ -14,6 +14,7 @@
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "Framework/Component/Renderer/TextRendererComponent.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Platform/Input/InputManager.h"
@@ -76,6 +77,27 @@ void SceneViewPanel::Draw() {
                         // オレンジ色の枠線を描画（太さ2.0f）
                         ImGui::GetWindowDrawList()->AddRect(pMin, pMax, IM_COL32(255, 165, 0, 255), 0.0f, 0, 2.0f);
                     }
+                }
+            } else if (auto textComp = selectedObj->GetComponent<TextRendererComponent>()) {
+                if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
+                    Vector3 pos = transform->worldPosition_;
+                    Vector2 minBounds = textComp->GetLocalBoundsMin();
+                    Vector2 maxBounds = textComp->GetLocalBoundsMax();
+                    
+                    // Transformのスケールを適用
+                    float left = pos.x + minBounds.x * transform->worldScale_.x;
+                    float right = pos.x + maxBounds.x * transform->worldScale_.x;
+                    float top = pos.y + minBounds.y * transform->worldScale_.y;
+                    float bottom = pos.y + maxBounds.y * transform->worldScale_.y;
+                    
+                    float scaleX = size.x / 1280.0f;
+                    float scaleY = size.y / 720.0f;
+                    
+                    ImVec2 pMin = ImVec2(minPos.x + left * scaleX, minPos.y + top * scaleY);
+                    ImVec2 pMax = ImVec2(minPos.x + right * scaleX, minPos.y + bottom * scaleY);
+                    
+                    // テキストは白が多いので、オレンジではなく視認性の高い枠線（水色など）を描画
+                    ImGui::GetWindowDrawList()->AddRect(pMin, pMax, IM_COL32(0, 255, 255, 255), 0.0f, 0, 2.0f);
                 }
             }
         }
@@ -211,6 +233,29 @@ void SceneViewPanel::Draw() {
                                             closestObj = obj.get();
                                             isHit = true;
                                             break; // 2DのUIが見つかったら最優先
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Textのピッキング判定
+                            if (!isHit) {
+                                if (auto textComp = obj->GetComponent<TextRendererComponent>()) {
+                                    if (auto transform = obj->GetComponent<TransformComponent>()) {
+                                        Vector3 pos = transform->worldPosition_;
+                                        Vector2 minBounds = textComp->GetLocalBoundsMin();
+                                        Vector2 maxBounds = textComp->GetLocalBoundsMax();
+                                        
+                                        float left = pos.x + minBounds.x * transform->worldScale_.x;
+                                        float right = pos.x + maxBounds.x * transform->worldScale_.x;
+                                        float top = pos.y + minBounds.y * transform->worldScale_.y;
+                                        float bottom = pos.y + maxBounds.y * transform->worldScale_.y;
+                                        
+                                        if (scaledVirtualPos.x >= left && scaledVirtualPos.x <= right &&
+                                            scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
+                                            closestObj = obj.get();
+                                            isHit = true;
+                                            break; // 見つかったら最優先
                                         }
                                     }
                                 }

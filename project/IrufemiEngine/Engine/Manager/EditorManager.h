@@ -65,6 +65,7 @@ private:
     IrufemiEngine* engine_ = nullptr;
     std::weak_ptr<GameObject> selectedObject_;
     EditorModeState currentMode_ = EditorModeState::Edit;
+    std::string playModeStartSceneName_ = "";
 
     std::unique_ptr<EditorActionManager> actionManager_;
     std::unique_ptr<EditorShortcutManager> shortcutManager_;

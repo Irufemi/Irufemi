@@ -34,6 +34,8 @@
 #include <chrono>
 #include <algorithm>
 
+#include "Graphics/Font/FontManager.h"
+
 class SceneManager;
 class DebugUI;
 #include "Graphics/Camera/CameraManager.h"
@@ -180,6 +182,7 @@ public: // ゲッター
     DrawManager* GetDrawManager() { return this->drawManager_.get(); }
     DebugUI* GetDebugUI() { return this->ui_.get(); }
     AudioManager* GetAudioManager() { return this->audioManager_.get(); }
+    FontManager* GetFontManager() { return this->fontManager_.get(); }
     TextureManager* GetTextureManager() { return this->textureManager_.get(); }
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
@@ -319,6 +322,9 @@ private: // メンバ変数
     // LoadingScreen (SceneManagerから移管)
     std::unique_ptr<LoadingScreen> loadingScreen_ = nullptr;
     
+    // FontManager
+    std::unique_ptr<FontManager> fontManager_ = nullptr;
+
     // ModelManager
     std::unique_ptr<ModelManager> modelManager_ = nullptr;
  

@@ -203,6 +203,7 @@ void PSOManager::PreWarmCommonPSOs() {
         GetPSO("GpuParticle", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("VoxelParticle", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("Sprite", blend, DepthWrite::Off, CullMode::None);
+        GetPSO("Text", blend, DepthWrite::Off, CullMode::None);
         GetPSO("LightningCrawl", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("Line", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("LineInstanced", blend, DepthWrite::Disable, CullMode::None);
@@ -224,6 +225,7 @@ void PSOManager::PreWarmCommonPSOs() {
     // 6. エディタ専用パス
 #ifdef EditorMode
     GetPSO("SelectionMask", BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None);
+    GetPSO("SelectionMaskText", BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None);
     GetPSO("OutlineComposite", BlendMode::kBlendModeNormal, DepthWrite::Off, CullMode::None);
 #endif
 }
@@ -249,8 +251,8 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         rt.SrcBlend = D3D12_BLEND_SRC_ALPHA;
         rt.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
         rt.BlendOp = D3D12_BLEND_OP_ADD;
-        rt.SrcBlendAlpha = D3D12_BLEND_ONE; // αの設定：基本は固定(既存コメントと同じ)
-        rt.DestBlendAlpha = D3D12_BLEND_ZERO;
+        rt.SrcBlendAlpha = D3D12_BLEND_ONE; // αの設定
+        rt.DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
         rt.BlendOpAlpha = D3D12_BLEND_OP_ADD;
         break;
 

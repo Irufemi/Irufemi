@@ -64,6 +64,7 @@ private:
     std::vector<RenderPackets::Standard3DPacket> standard3DQueue_;
     std::vector<RenderPackets::Standard3DPacket> ui3DQueue_;
     std::vector<RenderPackets::Standard3DPacket> selectionMaskQueue_;
+    std::vector<RenderPackets::SpritePacket> selectionMaskQueue2D_;
     std::vector<RenderPackets::SpritePacket> spriteQueue_;
     std::vector<RenderPackets::ParticlePacket> particleQueue_;
     std::vector<RenderPackets::LinePacket> lineQueue_;
@@ -76,6 +77,8 @@ private:
     
     // 最前面UI描画用キュー (PostProcess適用後のバックバッファに直接描画)
     std::vector<RenderPackets::SpritePacket> topMostSpriteQueue_;
+    std::vector<RenderPackets::SpritePacket> textQueue_;
+    std::vector<RenderPackets::SpritePacket> topMostTextQueue_;
 
     // レンダーグラフ
     std::unique_ptr<class RenderGraph> renderGraph_;
@@ -85,6 +88,7 @@ public:
     const std::vector<RenderPackets::Standard3DPacket>& GetStandard3DQueue() const { return standard3DQueue_; }
     const std::vector<RenderPackets::Standard3DPacket>& GetUI3DQueue() const { return ui3DQueue_; }
     const std::vector<RenderPackets::Standard3DPacket>& GetSelectionMaskQueue() const { return selectionMaskQueue_; }
+    const std::vector<RenderPackets::SpritePacket>& GetSelectionMaskQueue2D() const { return selectionMaskQueue2D_; }
     const std::vector<RenderPackets::SpritePacket>& GetSpriteQueue() const { return spriteQueue_; }
     const std::vector<RenderPackets::ParticlePacket>& GetParticleQueue() const { return particleQueue_; }
     const std::vector<RenderPackets::LinePacket>& GetLineQueue() const { return lineQueue_; }
@@ -95,6 +99,10 @@ public:
     const std::vector<RenderPackets::ModelRegionPacket>& GetModelRegionQueue() const { return modelRegionQueue_; }
     const std::vector<std::function<void()>>& GetPostRenderQueue() const { return postRenderQueue_; }
     const std::vector<RenderPackets::SpritePacket>& GetTopMostSpriteQueue() const { return topMostSpriteQueue_; }
+    
+    // --- Text Queues ---
+    const std::vector<RenderPackets::SpritePacket>& GetTextQueue() const { return textQueue_; }
+    const std::vector<RenderPackets::SpritePacket>& GetTopMostTextQueue() const { return topMostTextQueue_; }
 
     // --- Execute Queues ---
     void ExecuteRenderQueues(class IrufemiEngine* engine);
@@ -328,6 +336,7 @@ public:
     void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = true);
     void SubmitUI3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
     void SubmitOutlineMask(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
+    void SubmitTextOutlineMask(const class Object2DResource* resource);
     void DrawStandard3D(const RenderPackets::Standard3DPacket& packet);
 
     /**
@@ -337,6 +346,10 @@ public:
     void SubmitTopMostSprite(const class Object2DResource* resource); // 最前面UI描画用
     void DrawSprite(const RenderPackets::SpritePacket& packet);
 
+    // --- Text ---
+    void SubmitText(const class Object2DResource* resource);
+    void SubmitTopMostText(const class Object2DResource* resource);
+    void DrawText(const RenderPackets::SpritePacket& packet);
 
     /**
      * @brief スカイボックスの描画

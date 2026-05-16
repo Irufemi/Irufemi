@@ -64,13 +64,33 @@ void EditorManager::EnterPlayMode() {
     auto scene = engine_->GetSceneManager()->GetCurrentScene();
     if (!scene) return;
 
+    std::string currentSceneName = engine_->GetSceneManager()->GetCurrent();
+    
+    // Play押下時に現在のシーンを実ファイルにも保存する
+    if (!currentSceneName.empty()) {
+        SceneSerializer::Save(scene, currentSceneName);
+    }
+
     // 現在のシーン状態をバックアップ
     SceneSerializer::Save(scene, ".temp_playmode");
+    playModeStartSceneName_ = currentSceneName; // 開始時のシーンを記憶
     currentMode_ = EditorModeState::Play;
 }
 
 void EditorManager::ExitPlayMode() {
     if (!engine_ || !engine_->GetSceneManager()) return;
+    
+    std::string currentSceneName = engine_->GetSceneManager()->GetCurrent();
+
+    // プレイモード中にシーンが変わっていた場合は元のシーンに戻す
+    if (!playModeStartSceneName_.empty() && currentSceneName != playModeStartSceneName_) {
+        engine_->GetSceneManager()->TransitionTo(playModeStartSceneName_, SceneTransition::Type::None, 0.0f);
+        // 非同期でシーンが切り替わるため、この時点での復元は一旦諦めるか、SceneManagerのコールバックで処理する必要がある
+        // 今回はとりあえず元のシーンのファイルをロードし直すことで「保存された状態」に戻るようにする
+        currentMode_ = EditorModeState::Edit;
+        return;
+    }
+
     auto scene = engine_->GetSceneManager()->GetCurrentScene();
     if (!scene) return;
 

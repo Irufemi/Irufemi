@@ -57,5 +57,14 @@ public:
         for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
     }
     
+    // --- カスタム描画設定 ---
+    ID3D12PipelineState* customPSO_ = nullptr;
+    D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
+    
+    void SetCustomPSO(ID3D12PipelineState* pso) { customPSO_ = pso; }
+    ID3D12PipelineState* GetCustomPSO() const { return customPSO_; }
+    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS address) { customCBVAddress_ = address; }
+    D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const { return customCBVAddress_; }
+
     void SyncBeforeDraw();
 };

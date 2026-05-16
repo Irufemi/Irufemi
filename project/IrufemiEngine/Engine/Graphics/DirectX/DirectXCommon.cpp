@@ -223,6 +223,8 @@ void DirectXCommon::CreatePSOs() {
     auto psParticle = shaderManager_->GetOrCompile(L"resources/shaders/Particle.PS.hlsl", options);
     auto vsSprite = shaderManager_->GetOrCompile(L"resources/shaders/Object2D.VS.hlsl", options);
     auto psSprite = shaderManager_->GetOrCompile(L"resources/shaders/Object2D.PS.hlsl", options);
+    auto vsText = shaderManager_->GetOrCompile(L"resources/shaders/Text.VS.hlsl", options);
+    auto psText = shaderManager_->GetOrCompile(L"resources/shaders/Text.PS.hlsl", options);
     auto vsRegion = shaderManager_->GetOrCompile(L"resources/shaders/Region.VS.hlsl", options);
     auto vsGeo = shaderManager_->GetOrCompile(L"resources/shaders/ByGeometryShader.VS.hlsl", options);
     auto psGeo = shaderManager_->GetOrCompile(L"resources/shaders/ByGeometryShader.PS.hlsl", options);
@@ -247,6 +249,7 @@ void DirectXCommon::CreatePSOs() {
 #ifdef EditorMode
     auto vsSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.VS.hlsl", options);
     auto psSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.PS.hlsl", options);
+    auto psSelectionText = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMaskText.PS.hlsl", options);
     auto vsFullscreen = shaderManager_->GetOrCompile(L"resources/shaders/Fullscreen.VS.hlsl", options);
     auto psOutlineComp = shaderManager_->GetOrCompile(L"resources/shaders/OutlineComposite.PS.hlsl", options);
 #endif
@@ -286,6 +289,7 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });
     psoManager_->RegisterShader("Particle", { { vsParticle, psParticle } });
     psoManager_->RegisterShader("Sprite", { { vsSprite, psSprite } });
+    psoManager_->RegisterShader("Text", { { vsText, psText } });
     psoManager_->RegisterShader("Region", { { vsRegion, ps3d } });
     
     // ByGeometryShaderはPOINTトポロジ
@@ -321,6 +325,12 @@ void DirectXCommon::CreatePSOs() {
     maskDesc.rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     maskDesc.dsvFormat = DXGI_FORMAT_UNKNOWN;
     psoManager_->RegisterShader("SelectionMask", maskDesc);
+    
+    // SelectionMaskText
+    PSOManager::PipelineStateDesc maskTextDesc = maskDesc;
+    maskTextDesc.shaders.vsBlob = vsText;
+    maskTextDesc.shaders.psBlob = psSelectionText;
+    psoManager_->RegisterShader("SelectionMaskText", maskTextDesc);
     
     PSOManager::PipelineStateDesc outlineCompDesc{};
     outlineCompDesc.shaders = { vsFullscreen, psOutlineComp };

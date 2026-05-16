@@ -149,5 +149,48 @@
         ],
         "isActive": true,
         "name": "StartButton"
+    },
+    {
+        "children": [],
+        "components": [
+            {
+                "data": {
+                    "position": [
+                        640.0,
+                        200.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "type": "TransformComponent"
+            },
+            {
+                "data": {
+                    "alignment": 1,
+                    "baseScale": 120.0,
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "fontId": "toro_glitch",
+                    "isTopMost": false,
+                    "text": "Title"
+                },
+                "type": "TextRendererComponent"
+            }
+        ],
+        "isActive": true,
+        "name": "TitleText"
     }
 ]
