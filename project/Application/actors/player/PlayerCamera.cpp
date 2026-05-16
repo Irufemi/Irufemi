@@ -12,9 +12,11 @@ void PlayerCamera::Initialize() {
 }
 
 void PlayerCamera::UpdateInput(InputManager* input, Vector3& playerRotate) {
+#if defined(_DEBUG) || defined(DEVELOPMENT)
     if (input->IsKeyPressed(VK_F2)) {
         isCameraControlEnabled_ = !isCameraControlEnabled_;
     }
+#endif
     if (input->IsKeyPressed('V')) {
         if (viewMode_ == ViewMode::kThirdPerson) {
             viewMode_ = ViewMode::kFirstPerson;
