@@ -182,6 +182,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     energyCore_->Initialize(PrimitiveType::Sphere);
     energyCore_->SetScale({ 2.0f, 2.0f, 2.0f });
     energyCore_->SetPosition({ 2.0f, 0.0f, 0.0f }); // 電撃と並べる
+    energyCore_->SetColor({ 0.0f, 0.5f, 1.0f, 1.0f }); // シェーダー汎用化に伴い、青色を明示的に指定
     energyCore_->SetCullingEnabled(false);
     energyCore_->SetCustomPSO(
         engine_->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back)

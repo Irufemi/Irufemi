@@ -62,8 +62,18 @@ public:
      */
     void SetOriginOffset(float offset) { originOffset_ = offset; }
 
+    /** @brief チャージ球の表示設定 */
+    void SetChargeSphereActive(bool active) { isChargeSphereActive_ = active; }
+    /** @brief チャージ球のスケール設定 */
+    void SetChargeSphereScale(float scale) { chargeSphereScale_ = scale; }
+
 private:
     float originOffset_ = 4.0f; //!< ビームの発生起点を前方にずらす距離
+
+    // チャージ球体用
+    std::unique_ptr<PrimitiveObjects3DClass> chargeSphere_ = nullptr;
+    float chargeSphereScale_ = 0.0f;
+    bool isChargeSphereActive_ = false;
 
     // 予兆用
     std::unique_ptr<PrimitiveObjects3DClass> telegraphObj_ = nullptr;

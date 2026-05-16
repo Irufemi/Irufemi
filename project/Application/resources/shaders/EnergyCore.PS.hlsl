@@ -34,8 +34,10 @@
 
 #include "Object3d.hlsli"
 #include "PerFrame.hlsli"
+#include "Material.hlsli"
 
 ConstantBuffer<PerFrameData> gPerFrame : register(b2);
+ConstantBuffer<Material> gMaterial : register(b0);
 
 float hash_original(float2 p)
 {
@@ -167,11 +169,12 @@ PixelShaderOutput main(VertexShaderOutput input)
     // ==========================================
     // 1. Opaque Magma Core (不透明なマグマ部分)
     // ==========================================
-    float3 magmaCol = float3(0.1, 0.2, 0.1); // ベースの暗い緑
+    float3 baseColor = gMaterial.color.rgb;
+    float3 magmaCol = baseColor * 0.2; // ベースの暗い色
     magmaCol = lerp(magmaCol, lava(xy, d, time), 1.0 - smoothstep(-0.015, -0.01, d)); // マグマ
     magmaCol = lerp(magmaCol, float3(1.0, 1.0, 1.0), 1.0 - smoothstep(-0.8, -0.5, d)); // 中心コア（白）
-    magmaCol = lerp(magmaCol, float3(1.0, 0.9, 0.8), smoothstep(-0.01, 0.0, d) * (1.0 - smoothstep(0.0, 0.01, d))); // 黄色のエッジ
-    magmaCol = lerp(magmaCol, float3(1.0, 0.2, 0.0), smoothstep(0.005, 0.011, d) * (1.0 - smoothstep(0.011, 0.012, d))); // 赤のエッジ
+    magmaCol = lerp(magmaCol, baseColor * 1.5, smoothstep(-0.01, 0.0, d) * (1.0 - smoothstep(0.0, 0.01, d))); // エッジ内側
+    magmaCol = lerp(magmaCol, baseColor * 0.8, smoothstep(0.005, 0.011, d) * (1.0 - smoothstep(0.011, 0.012, d))); // エッジ外側
     
     // マグマ本体の不透明度（d=0付近で滑らかに透明になる）
     float magmaAlpha = 1.0 - smoothstep(-0.01, 0.01, d);
@@ -180,8 +183,8 @@ PixelShaderOutput main(VertexShaderOutput input)
     // 2. Additive Glow (加算発光するオーラとフレア)
     // ==========================================
     float3 flareColor = float3(c, c, c); // フレアの光
-    float auraWeight = (1.0 - smoothstep(0.001, 0.15, d)) * 0.8; // 青いオーラの強さ（少し広げて強調）
-    float3 auraColor = float3(0.0, 0.5, 1.0) * auraWeight;
+    float auraWeight = (1.0 - smoothstep(0.001, 0.15, d)) * 0.8; // オーラの強さ（少し広げて強調）
+    float3 auraColor = baseColor * auraWeight;
     
     // マグマの外側だけに加算光を適用する（マグマの中は不透明なマグマ色を優先）
     float3 glowColor = (flareColor + auraColor) * (1.0 - magmaAlpha);

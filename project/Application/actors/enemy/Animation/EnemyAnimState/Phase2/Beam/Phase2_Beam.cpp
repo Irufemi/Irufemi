@@ -63,6 +63,12 @@ void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
 
         beam->SetTelegraphActive(true);
         beam->SetTelegraphThickness(telegraphThicknessBase_ + timer_ * telegraphThicknessGrow_);
+
+        beam->SetChargeSphereActive(true);
+        float progress = timer_ / kBeamChargeTime;
+        float easeT = progress * (2.0f - progress); // イーズアウト
+        beam->SetChargeSphereScale(easeT * 8.0f);
+
         beam->Update(headWorldPos, playerPos);
     } else if (timer_ < kBeamWaitTime) {
         // 停止・ロックオン（シェイクを止めて定位置に戻す）
@@ -72,6 +78,10 @@ void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
         }
         beam->SetTelegraphActive(true);
         beam->SetTelegraphThickness(telegraphThicknessWait_);
+
+        beam->SetChargeSphereActive(true);
+        beam->SetChargeSphereScale(8.0f);
+
         beam->Update(headWorldPos, attackTarget_);
     } else if (timer_ < kBeamFireTime) {
         // 本射
@@ -83,6 +93,7 @@ void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
         }
 
         beam->SetTelegraphActive(false);
+        beam->SetChargeSphereActive(false); // 発射時にチャージ球を消す
         beam->SetAttackActive(true);
         beam->SetAttackThickness(thickness);
         beam->Update(headWorldPos, attackTarget_);
@@ -100,6 +111,7 @@ void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
 void Phase2_Beam::Exit(Enemy* enemy) {
     if (auto* beam = enemy->GetBeam(headIndex_)) {
         beam->SetTelegraphActive(false);
+        beam->SetChargeSphereActive(false);
         beam->SetAttackActive(false);
     }
 }

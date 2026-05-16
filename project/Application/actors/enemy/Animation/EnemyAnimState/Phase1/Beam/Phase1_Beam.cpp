@@ -52,6 +52,12 @@ void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
         if (beam) {
             beam->SetTelegraphActive(true);
             beam->SetTelegraphThickness(0.2f);
+            
+            beam->SetChargeSphereActive(true);
+            float progress = attackTimer_ / chargeTime_;
+            float easeT = progress * (2.0f - progress); // イーズアウト
+            beam->SetChargeSphereScale(easeT * 8.0f); // 最大スケール8.0f
+
             beam->Update(headPos, target);
         }
     }
@@ -67,7 +73,11 @@ void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
         enemy->GetHeadRightOffset() = { 0,0,0 };
         for (int i = 0; i < 3; ++i) enemy->GetBodyOffset(i).x *= 0.5f;
 
-        if (beam) beam->Update(headPos, lockedTargetPos_);
+        if (beam) {
+            beam->SetChargeSphereActive(true);
+            beam->SetChargeSphereScale(8.0f);
+            beam->Update(headPos, lockedTargetPos_);
+        }
     }
     // 3. 本射
     else if (attackTimer_ < endFire) {
@@ -94,6 +104,7 @@ void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
                 thickness += (std::pow(f, 3.0f) * beamThicknessFire_ * beamExpandScale_);
             }
             beam->SetTelegraphActive(false);
+            beam->SetChargeSphereActive(false); // 発射時にチャージ球を消す
             beam->SetAttackActive(true);
             beam->SetAttackThickness(thickness);
             beam->Update(headPos, lockedTargetPos_);
@@ -143,6 +154,7 @@ void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
 void Phase1_Beam::Exit(Enemy* enemy) {
     if (auto* beam = enemy->GetBeam(1)) {
         beam->SetTelegraphActive(false);
+        beam->SetChargeSphereActive(false);
         beam->SetAttackActive(false);
     }
 }

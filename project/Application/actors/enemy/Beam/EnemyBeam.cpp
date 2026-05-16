@@ -22,6 +22,16 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
     attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     attackCylinder_->SetCastShadows(false);
 
+    chargeSphere_ = std::make_unique<PrimitiveObjects3DClass>();
+    chargeSphere_->Initialize(PrimitiveType::Sphere);
+    chargeSphere_->SetColor({ 1.0f, 0.3f, 0.0f, 1.0f }); // レッドドラゴン風の赤オレンジコア
+    chargeSphere_->SetCullingEnabled(false);
+    if (engine) {
+        chargeSphere_->SetCustomPSO(
+            engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back)
+        );
+    }
+
     // トランスフォームの初期化（Updateで確定するため、ここではゼロクリア）
     telegraphTransform_.translate = { 0, 0, 0 };
     telegraphTransform_.rotate = { 0, 0, 0 };
@@ -89,6 +99,23 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
         telegraphObj_->GetTransform().transform = telegraphTransform_;
         telegraphObj_->GetTransform().isDirty = true;
         telegraphObj_->Update();
+    }
+
+    if (isChargeSphereActive_ && chargeSphere_) {
+        Transform t;
+        t.scale = { chargeSphereScale_, chargeSphereScale_, chargeSphereScale_ };
+        t.rotate = rotate;
+        
+        // startPosは頭の表面（中心から前方へ originOffset_ ずらした位置）
+        // そのまま startPos に球の中心を置くと、球の後ろ半分が頭に埋まってしまうため、
+        // 球の半径（スケールの半分）だけさらに前方へ中心をずらす。
+        // ※完全に離れすぎないよう 0.4f（半径より少し内側）を掛けて少しだけめり込ませる
+        float sphereForwardOffset = chargeSphereScale_ * 0.4f;
+        t.translate = Math::Add(startPos, Math::Multiply(sphereForwardOffset, direction));
+
+        chargeSphere_->GetTransform().transform = t;
+        chargeSphere_->GetTransform().isDirty = true;
+        chargeSphere_->Update();
     }
 
     if (isAttackActive_) {
@@ -168,6 +195,10 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
 
     if (isTelegraphActive_ && telegraphObj_) {
         telegraphObj_->Draw();
+    }
+
+    if (isChargeSphereActive_ && chargeSphere_) {
+        chargeSphere_->Draw();
     }
 
     if (isAttackActive_ && attackCylinder_) {
