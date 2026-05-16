@@ -3,6 +3,7 @@
 #ifdef EditorMode
 #include <memory>
 #include <vector>
+#include <string>
 
 class IrufemiEngine;
 class GameObject;

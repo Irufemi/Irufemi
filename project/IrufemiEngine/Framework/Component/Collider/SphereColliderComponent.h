@@ -16,6 +16,7 @@ public:
     void DrawDebug() override;
 #ifdef EditorMode
     friend class SphereColliderComponentEditor;
+    friend class SceneViewPanel;
 #endif
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;

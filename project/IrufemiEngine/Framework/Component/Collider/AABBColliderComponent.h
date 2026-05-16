@@ -20,6 +20,7 @@ public:
     void DrawDebug() override;
 #ifdef EditorMode
     friend class AABBColliderComponentEditor;
+    friend class SceneViewPanel;
 #endif
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;

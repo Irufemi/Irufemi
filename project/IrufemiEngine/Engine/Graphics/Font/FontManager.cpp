@@ -298,7 +298,7 @@ void FontManager::PrecacheText(const std::string& fontId, const std::wstring& te
                     }
                 } else {
                     // アトラスがいっぱいの場合は、毎フレーム再生成を試みるのを防ぐため、仮の文字として登録
-                    Log::Error("Font atlas is full! Could not pack glyph for character.");
+                    OutputDebugStringA("Font atlas is full! Could not pack glyph for character.\n");
                     GlyphInfo info{};
                     info.character = char32;
                     info.width = 0.0f; // 描画されない

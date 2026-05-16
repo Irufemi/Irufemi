@@ -16,6 +16,9 @@
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Framework/Component/Renderer/TextRendererComponent.h"
 #include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Collider/AABBColliderComponent.h"
+#include "Framework/Component/Collider/OBBColliderComponent.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Engine/Platform/Input/Mouse.h"
@@ -36,15 +39,47 @@ void SceneViewPanel::Draw() {
     if (drawCollider) {
         ImGui::Checkbox("Draw Colliders", drawCollider);
     }
+    
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Translate", currentGizmoOperation_ == ImGuizmo::TRANSLATE)) currentGizmoOperation_ = ImGuizmo::TRANSLATE;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Rotate", currentGizmoOperation_ == ImGuizmo::ROTATE)) currentGizmoOperation_ = ImGuizmo::ROTATE;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Scale", currentGizmoOperation_ == ImGuizmo::SCALE)) currentGizmoOperation_ = ImGuizmo::SCALE;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Bounds", currentGizmoOperation_ == ImGuizmo::BOUNDS)) currentGizmoOperation_ = ImGuizmo::BOUNDS;
+    
+    ImGui::SameLine();
+    ImGui::Text("|");
+    ImGui::SameLine();
+    
+    if (ImGui::RadioButton("Local", currentGizmoMode_ == ImGuizmo::LOCAL)) currentGizmoMode_ = ImGuizmo::LOCAL;
+    ImGui::SameLine();
+    if (ImGui::RadioButton("World", currentGizmoMode_ == ImGuizmo::WORLD)) currentGizmoMode_ = ImGuizmo::WORLD;
 
     // エンジンからメインの描画結果（RenderTexture）を取得して画像として表示
     auto* engine = editorManager_->GetEngine();
     if (engine && engine->GetMainRenderTexture()) {
         auto mainTexture = engine->GetMainRenderTexture();
         
-        // パネルの大きさを取得して画像をフィットさせる
-        ImVec2 size = ImGui::GetContentRegionAvail();
-        // 画像アスペクト比を維持したい場合は別途計算が必要だが、今回はパネルいっぱいに描画
+        // パネルの大きさを取得して画像をフィットさせる（16:9を維持する）
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        float aspect = 1280.0f / 720.0f;
+        ImVec2 size;
+        if (avail.x / avail.y > aspect) {
+            size.y = avail.y;
+            size.x = size.y * aspect;
+        } else {
+            size.x = avail.x;
+            size.y = size.x / aspect;
+        }
+
+        // 中央揃えにするためのカーソル位置調整
+        ImVec2 cursor = ImGui::GetCursorPos();
+        cursor.x += (avail.x - size.x) * 0.5f;
+        cursor.y += (avail.y - size.y) * 0.5f;
+        ImGui::SetCursorPos(cursor);
+
         ImGui::Image((ImTextureID)mainTexture->GetSrvHandleGPU().ptr, size);
         
         ImVec2 minPos = ImGui::GetItemRectMin(); // ImGui::Image() の左上
@@ -98,6 +133,94 @@ void SceneViewPanel::Draw() {
                     
                     // テキストは白が多いので、オレンジではなく視認性の高い枠線（水色など）を描画
                     ImGui::GetWindowDrawList()->AddRect(pMin, pMax, IM_COL32(0, 255, 255, 255), 0.0f, 0, 2.0f);
+                }
+            }
+        }
+
+        // --- ImGuizmo の描画領域設定 ---
+        ImGuizmo::SetDrawlist();
+        ImGuizmo::SetRect(minPos.x, minPos.y, size.x, size.y);
+
+        // --- ImGuizmo (トランスフォーム＆バウンディングボックス操作) ---
+        if (auto selectedObj = editorManager_->GetSelectedObject()) {
+            if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+                Matrix4x4 view = camera->GetViewMatrix();
+                Matrix4x4 proj = camera->GetPerspectiveFovMatrix();
+                
+                if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
+                    Matrix4x4 world = transform->GetWorldMatrix();
+
+                    bool manipulated = false;
+                    
+                    if (currentGizmoOperation_ == ImGuizmo::BOUNDS) {
+                        // コライダーのリサイズ操作
+                        if (auto aabbCol = selectedObj->GetComponent<AABBColliderComponent>()) {
+                            float bounds[6] = {
+                                aabbCol->localOffset_.x - aabbCol->localSize_.x,
+                                aabbCol->localOffset_.y - aabbCol->localSize_.y,
+                                aabbCol->localOffset_.z - aabbCol->localSize_.z,
+                                aabbCol->localOffset_.x + aabbCol->localSize_.x,
+                                aabbCol->localOffset_.y + aabbCol->localSize_.y,
+                                aabbCol->localOffset_.z + aabbCol->localSize_.z
+                            };
+                            if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0], nullptr, nullptr, bounds)) {
+                                aabbCol->localOffset_.x = (bounds[0] + bounds[3]) * 0.5f;
+                                aabbCol->localOffset_.y = (bounds[1] + bounds[4]) * 0.5f;
+                                aabbCol->localOffset_.z = (bounds[2] + bounds[5]) * 0.5f;
+                                aabbCol->localSize_.x = (bounds[3] - bounds[0]) * 0.5f;
+                                aabbCol->localSize_.y = (bounds[4] - bounds[1]) * 0.5f;
+                                aabbCol->localSize_.z = (bounds[5] - bounds[2]) * 0.5f;
+                            }
+                        } else if (auto obbCol = selectedObj->GetComponent<OBBColliderComponent>()) {
+                            float bounds[6] = {
+                                obbCol->localOffset_.x - obbCol->localSize_.x,
+                                obbCol->localOffset_.y - obbCol->localSize_.y,
+                                obbCol->localOffset_.z - obbCol->localSize_.z,
+                                obbCol->localOffset_.x + obbCol->localSize_.x,
+                                obbCol->localOffset_.y + obbCol->localSize_.y,
+                                obbCol->localOffset_.z + obbCol->localSize_.z
+                            };
+                            if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0], nullptr, nullptr, bounds)) {
+                                obbCol->localOffset_.x = (bounds[0] + bounds[3]) * 0.5f;
+                                obbCol->localOffset_.y = (bounds[1] + bounds[4]) * 0.5f;
+                                obbCol->localOffset_.z = (bounds[2] + bounds[5]) * 0.5f;
+                                obbCol->localSize_.x = (bounds[3] - bounds[0]) * 0.5f;
+                                obbCol->localSize_.y = (bounds[4] - bounds[1]) * 0.5f;
+                                obbCol->localSize_.z = (bounds[5] - bounds[2]) * 0.5f;
+                            }
+                        } else if (auto sphereCol = selectedObj->GetComponent<SphereColliderComponent>()) {
+                            // 球体はスケール操作で代替
+                            ImGuizmo::OPERATION op = ImGuizmo::SCALE;
+                            if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], op, currentGizmoMode_, &world.m[0][0])) {
+                                manipulated = true; // スケールをオブジェクトに適用
+                            }
+                        } else {
+                            // コライダーがない場合は普通のトランスレートを表示
+                            ImGuizmo::OPERATION op = ImGuizmo::TRANSLATE;
+                            if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], op, currentGizmoMode_, &world.m[0][0])) {
+                                manipulated = true;
+                            }
+                        }
+                    } else {
+                        // 通常のトランスフォーム操作
+                        if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0])) {
+                            manipulated = true;
+                        }
+                    }
+
+                    if (manipulated) {
+                        Vector3 pos, rot, scale;
+                        ImGuizmo::DecomposeMatrixToComponents(&world.m[0][0], &pos.x, &rot.x, &scale.x);
+                        
+                        // Rotは度数法で来るのでラジアンに変換
+                        rot.x = rot.x * Math::PI / 180.0f;
+                        rot.y = rot.y * Math::PI / 180.0f;
+                        rot.z = rot.z * Math::PI / 180.0f;
+                        
+                        transform->position_ = pos;
+                        transform->rotation_ = rot;
+                        transform->scale_ = scale;
+                    }
                 }
             }
         }
@@ -201,8 +324,9 @@ void SceneViewPanel::Draw() {
                     }
                 }
 
-                // クリックされた瞬間のみピッキング判定を行う
-                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                // ImGuizmo操作中・ホバー中はピッキングしない
+                bool isGizmoUsing = ImGuizmo::IsUsing() || ImGuizmo::IsOver();
+                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !isGizmoUsing) {
                     bool isHit = false;
                     GameObject* closestObj = nullptr;
                     float closestDist = 1000.0f;

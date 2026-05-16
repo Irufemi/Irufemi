@@ -84,7 +84,7 @@ void EditorManager::ExitPlayMode() {
 
     // プレイモード中にシーンが変わっていた場合は元のシーンに戻す
     if (!playModeStartSceneName_.empty() && currentSceneName != playModeStartSceneName_) {
-        engine_->GetSceneManager()->TransitionTo(playModeStartSceneName_, SceneTransition::Type::None, 0.0f);
+        engine_->GetSceneManager()->TransitionTo(playModeStartSceneName_, SceneTransition::Type::Fade, 0.0f);
         // 非同期でシーンが切り替わるため、この時点での復元は一旦諦めるか、SceneManagerのコールバックで処理する必要がある
         // 今回はとりあえず元のシーンのファイルをロードし直すことで「保存された状態」に戻るようにする
         currentMode_ = EditorModeState::Edit;

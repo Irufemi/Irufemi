@@ -3,6 +3,8 @@
 #ifdef EditorMode
 #include "../IEditorPanel.h"
 #include "Engine/Core/Math/Vector3.h"
+#include <imgui.h>
+#include "imgui/ImGuizmo.h"
 
 /**
  * @class SceneViewPanel
@@ -20,6 +22,10 @@ private:
     bool isCameraInitialized_ = false;
     Vector3 cameraTarget_ = {0.0f, 0.0f, 0.0f};
     float cameraDistance_ = 50.0f;
+
+    // --- ギズモ用状態 ---
+    ImGuizmo::OPERATION currentGizmoOperation_ = ImGuizmo::TRANSLATE;
+    ImGuizmo::MODE currentGizmoMode_ = ImGuizmo::LOCAL;
 };
 
 #endif // EditorMode
