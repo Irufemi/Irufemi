@@ -46,7 +46,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveFence_ = false;
     isActiveTerrain_ = false;
     isActiveParticle_ = false;
-    isActiveGPUParticle_ = true;
+    isActiveGPUParticle_ = false;
     isActiveVoxelParticle_ = false;
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
@@ -55,6 +55,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActivePrimitiveObj_ = false;
     isActiveGPUParticle_ = false;
     isActiveLightningCrawl_ = false;
+    isActiveEnergyCore_ = true;
     isActiveImGuiDemo_ = false;
 
     // 課題用スプライトの初期化
@@ -169,6 +170,22 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
 
     lightningCylinder_->SetCullingEnabled(false); // 確実に描画されるように一旦OFF
+    lightningCylinder_->SetCustomPSO(
+        engine_->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None)
+    );
+    if (lightningParamsResource_) {
+        lightningCylinder_->SetCustomCBVAddress(lightningParamsResource_->GetGPUVirtualAddress());
+    }
+
+    // エネルギーコアデモの初期化
+    energyCore_ = std::make_unique<PrimitiveObjects3DClass>();
+    energyCore_->Initialize(PrimitiveType::Sphere);
+    energyCore_->SetScale({ 2.0f, 2.0f, 2.0f });
+    energyCore_->SetPosition({ 2.0f, 0.0f, 0.0f }); // 電撃と並べる
+    energyCore_->SetCullingEnabled(false);
+    energyCore_->SetCustomPSO(
+        engine_->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back)
+    );
 }
 
 // 更新
@@ -205,6 +222,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("PrimitiveObj", &isActivePrimitiveObj_);
 
     ImGui::Checkbox("Lightning Crawl", &isActiveLightningCrawl_);
+    ImGui::Checkbox("Energy Core", &isActiveEnergyCore_);
     ImGui::Checkbox("ImGui Demo", &isActiveImGuiDemo_);
     ImGui::End();
 
@@ -413,6 +431,9 @@ void DebugScene::Update() {
     if (isActiveLightningCrawl_) {
         lightningCylinder_->Update();
     }
+    if (isActiveEnergyCore_) {
+        energyCore_->Update();
+    }
 
     // 2D
 
@@ -510,30 +531,33 @@ void DebugScene::Draw() {
     }
 
     if (isActiveLightningCrawl_) {
-        // lightningCylinder_->Draw() だと RenderQueue に回されてしまい専用PSOが上書きされるため、
-        // 不透明描画の後に専用PSOを適用して描画するよう SubmitPostRender に積む
-        lightningCylinder_->SyncBeforeDraw();
+        // パケット（キュー）に積まれる描画ステートを設定
+        engine_->SetBlend(BlendMode::kBlendModeAdd);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine_->SetCull(PSOManager::CullMode::None);
 
-        engine_->GetDrawManager()->SubmitPostRender([this]() {
-            engine_->SetBlend(BlendMode::kBlendModeAdd);
-            engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-            engine_->SetCull(PSOManager::CullMode::None);
+        // 通常通りDrawを呼ぶだけで、DrawManager内で適切なパスと順序（カスタムPSOとCBV付き）で描画される
+        lightningCylinder_->Draw();
 
-            engine_->ApplyPSO("LightningCrawl");
-            engine_->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
+        // 状態を戻す
+        engine_->SetBlend(BlendMode::kBlendModeNormal);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+        engine_->SetCull(PSOManager::CullMode::Back);
+    }
 
-            RenderPackets::Standard3DPacket packet{};
-            packet.resource = lightningCylinder_->GetD3D12Resource();
-            packet.blendMode = BlendMode::kBlendModeAdd;
-            packet.depthWrite = PSOManager::DepthWrite::Disable;
-            packet.cullMode = PSOManager::CullMode::None;
-            engine_->GetDrawManager()->DrawStandard3D(packet);
+    if (isActiveEnergyCore_) {
+        // パケット（キュー）に積まれる描画ステートを設定
+        engine_->SetBlend(BlendMode::kBlendModeAdd);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine_->SetCull(PSOManager::CullMode::None);
 
-            // 状態を戻す
-            engine_->SetBlend(BlendMode::kBlendModeNormal);
-            engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-            engine_->SetCull(PSOManager::CullMode::Back);
-        });
+        // 通常通りDrawを呼ぶだけで、DrawManager内で適切なパスと順序（カスタムPSO付き）で描画される
+        energyCore_->Draw();
+
+        // 状態を戻す
+        engine_->SetBlend(BlendMode::kBlendModeNormal);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+        engine_->SetCull(PSOManager::CullMode::Back);
     }
 
     engine_->SetBlend(BlendMode::kBlendModeAdd);
@@ -598,6 +622,10 @@ void DebugScene::DrawDebugTab() {
             DebugUI::DebugLightning(lightningParamsData_);
         }
         ImGui::End();
+    }
+
+    if (isActiveEnergyCore_ && energyCore_) {
+        energyCore_->Debug("Energy Core Sphere");
     }
 
     DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);

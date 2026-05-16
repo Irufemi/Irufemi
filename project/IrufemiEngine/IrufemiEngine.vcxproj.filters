@@ -1073,6 +1073,9 @@
     <FxCompile Include="..\Application\resources\shaders\LightningCrawl.PS.hlsl">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\EnergyCore.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\BitonicSort.CS.hlsl">
       <Filter>Renderer\ParticleGPU\Shaders</Filter>
     </FxCompile>

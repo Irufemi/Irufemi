@@ -122,6 +122,9 @@ model_->Update(); // ※毎フレーム必ず呼ぶこと（ワールド行列�
 
 // 4. 描画 (Draw)
 model_->Draw();   // DrawManagerの標準3D描画キューに登録される
+
+// ※特殊なエフェクト（カスタムPSO）をモデル表面に適用する場合の例
+// model_->GetResource()->SetCustomPSO(engine_->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModeNormal, DepthWrite::Enable, CullMode::Back));
 ```
 
 ### 2.2 2Dスプライト描画 (`Sprite`)
