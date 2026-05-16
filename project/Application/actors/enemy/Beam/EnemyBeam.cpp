@@ -47,8 +47,8 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
             lightningParamsData_->noiseThreshold = 0.3f;
             lightningParamsData_->coreIntensity = 5.0f;
             lightningParamsData_->coreScale = 2.0f;
-            lightningParamsData_->speed = 4.0f;      // 模様の流れを速く
-            lightningParamsData_->noiseScale = 3.0f; // 模様の密度を上げる
+            lightningParamsData_->speed = 1.0f;      // DebugSceneと同じ速度に調整
+            lightningParamsData_->noiseScale = 1.0f; // DebugSceneと同じ模様密度に調整
         }
 
         gpuParticle_ = std::make_unique<GPUParticleSystem>();
