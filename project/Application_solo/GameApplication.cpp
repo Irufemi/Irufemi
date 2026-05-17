@@ -8,6 +8,11 @@
 
 // memoryでの未定義
 
+#include "Framework/Component/ComponentFactory.h"
+#include "components/RailPathComponent.h"
+#include "components/RailShooterPlayerComponent.h"
+#include "components/RailShooterEnemyComponent.h"
+
 // シーンのインクルード
 #include "scene/title/TitleScene.h"
 #include "scene/stageSelect/SelectScene.h"
@@ -56,6 +61,11 @@ void GameApplication::Run() {
 
     // エンジンの初期化
     engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);
+
+    // 独自コンポーネントの登録
+    ComponentFactory::Register("RailPathComponent", []() { return std::make_shared<RailPathComponent>(); });
+    ComponentFactory::Register("RailShooterPlayerComponent", []() { return std::make_shared<RailShooterPlayerComponent>(); });
+    ComponentFactory::Register("RailShooterEnemyComponent", []() { return std::make_shared<RailShooterEnemyComponent>(); });
 
     // シーンの登録
     engine->SetSceneRegistrar(RegisterScenes);

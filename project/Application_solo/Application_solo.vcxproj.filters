@@ -31,6 +31,9 @@
     <Filter Include="Scene\Title">
       <UniqueIdentifier>{52b04192-3ea4-4077-b32c-a2d4e50999b5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="components">
+      <UniqueIdentifier>{12345678-1234-1234-1234-1234567890ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene\InGame\GameScene.cpp">
@@ -60,6 +63,15 @@
     <ClCompile Include="scene\GameOver\GameOverScene.cpp">
       <Filter>Scene\GameOver</Filter>
     </ClCompile>
+    <ClCompile Include="components\RailPathComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\RailShooterPlayerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\RailShooterEnemyComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\InGame\GameScene.h">
@@ -85,6 +97,15 @@
     </ClInclude>
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>Scene\GameOver</Filter>
+    </ClInclude>
+    <ClInclude Include="components\RailPathComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\RailShooterPlayerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\RailShooterEnemyComponent.h">
+      <Filter>components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

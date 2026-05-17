@@ -230,6 +230,9 @@ exit 0</Command>
     <ClCompile Include="scene\Clear\ClearScene.cpp" />
     <ClCompile Include="scene\StageSelect\SelectScene.cpp" />
     <ClCompile Include="scene\Title\TitleScene.cpp" />
+    <ClCompile Include="components\RailPathComponent.cpp" />
+    <ClCompile Include="components\RailShooterPlayerComponent.cpp" />
+    <ClCompile Include="components\RailShooterEnemyComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -240,6 +243,9 @@ exit 0</Command>
     <ClInclude Include="scene\Clear\ClearScene.h" />
     <ClInclude Include="scene\StageSelect\SelectScene.h" />
     <ClInclude Include="scene\Title\TitleScene.h" />
+    <ClInclude Include="components\RailPathComponent.h" />
+    <ClInclude Include="components\RailShooterPlayerComponent.h" />
+    <ClInclude Include="components\RailShooterEnemyComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

@@ -610,6 +610,32 @@ void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionMa
                             }
                             break;
                         }
+                        case ComponentPropertyType::Float3Array: {
+                            auto* arr = static_cast<std::vector<Vector3>*>(prop.data);
+                            if (ImGui::TreeNode(prop.name.c_str())) {
+                                int size = static_cast<int>(arr->size());
+                                if (ImGui::InputInt("Size", &size)) {
+                                    if (size >= 0) arr->resize(size);
+                                }
+                                ImGui::SameLine();
+                                if (ImGui::Button("+")) {
+                                    arr->push_back(Vector3{0, 0, 0});
+                                }
+                                for (size_t i = 0; i < arr->size(); ++i) {
+                                    ImGui::PushID(static_cast<int>(i));
+                                    ImGui::DragFloat3("##Element", &(*arr)[i].x, 0.1f);
+                                    ImGui::SameLine();
+                                    if (ImGui::Button("-")) {
+                                        arr->erase(arr->begin() + i);
+                                        ImGui::PopID();
+                                        break; // ループを抜けて次フレームで再描画
+                                    }
+                                    ImGui::PopID();
+                                }
+                                ImGui::TreePop();
+                            }
+                            break;
+                        }
                     }
                 }
             }

@@ -9,7 +9,7 @@ class GameObject;
 #include "Engine/Core/Math/Vector4.h"
 struct Ray;
 
-enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String };
+enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array };
 
 struct ComponentProperty {
     std::string name;
@@ -113,6 +113,7 @@ public:
     void RegisterProperty(const std::string& name, Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr}); }
     void RegisterProperty(const std::string& name, Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr}); }
     void RegisterProperty(const std::string& name, Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr}); }
+    void RegisterProperty(const std::string& name, std::vector<Vector3>* ptr) { properties_.push_back({name, ComponentPropertyType::Float3Array, ptr}); }
 
     /**
      * @brief コンポーネントの状態をJSONにシリアライズする
@@ -138,6 +139,15 @@ public:
                 case ComponentPropertyType::Float4: {
                     auto* v = static_cast<Vector4*>(prop.data);
                     j[prop.name] = { v->x, v->y, v->z, v->w };
+                    break;
+                }
+                case ComponentPropertyType::Float3Array: {
+                    auto* arr = static_cast<std::vector<Vector3>*>(prop.data);
+                    nlohmann::json jArray = nlohmann::json::array();
+                    for (const auto& v : *arr) {
+                        jArray.push_back({ v.x, v.y, v.z });
+                    }
+                    j[prop.name] = jArray;
                     break;
                 }
             }
@@ -177,6 +187,19 @@ public:
                     auto arr = j[prop.name];
                     if (arr.is_array() && arr.size() >= 4) {
                         v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>(); v->w = arr[3].get<float>();
+                    }
+                    break;
+                }
+                case ComponentPropertyType::Float3Array: {
+                    auto* vecArr = static_cast<std::vector<Vector3>*>(prop.data);
+                    auto arr = j[prop.name];
+                    if (arr.is_array()) {
+                        vecArr->clear();
+                        for (const auto& item : arr) {
+                            if (item.is_array() && item.size() >= 3) {
+                                vecArr->push_back({item[0].get<float>(), item[1].get<float>(), item[2].get<float>()});
+                            }
+                        }
                     }
                     break;
                 }
