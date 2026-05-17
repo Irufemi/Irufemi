@@ -448,8 +448,14 @@ public:
         auto* comp = static_cast<AABBColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("AABB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::DragFloat3("Offset", &comp->localOffset_.x, 0.1f);
-            ImGui::DragFloat3("Size (Extents)", &comp->localSize_.x, 0.1f, 0.0f, 1000.0f);
+            Vector3 offset = comp->GetLocalOffset();
+            if (ImGui::DragFloat3("Offset", &offset.x, 0.1f)) {
+                comp->SetLocalOffset(offset);
+            }
+            Vector3 size = comp->GetLocalSize();
+            if (ImGui::DragFloat3("Size (Extents)", &size.x, 0.1f, 0.0f, 1000.0f)) {
+                comp->SetLocalSize(size);
+            }
             ImGui::Checkbox("Is Trigger", &comp->isTrigger_);
             DrawCollisionLayerGUI(comp->layer_, comp->mask_);
         }
@@ -463,8 +469,14 @@ public:
         auto* comp = static_cast<OBBColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("OBB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::DragFloat3("Offset", &comp->localOffset_.x, 0.1f);
-            ImGui::DragFloat3("Size (Extents)", &comp->localSize_.x, 0.1f, 0.0f, 1000.0f);
+            Vector3 offset = comp->GetLocalOffset();
+            if (ImGui::DragFloat3("Offset", &offset.x, 0.1f)) {
+                comp->SetLocalOffset(offset);
+            }
+            Vector3 size = comp->GetLocalSize();
+            if (ImGui::DragFloat3("Size (Extents)", &size.x, 0.1f, 0.0f, 1000.0f)) {
+                comp->SetLocalSize(size);
+            }
             ImGui::Checkbox("Is Trigger", &comp->isTrigger_);
             DrawCollisionLayerGUI(comp->layer_, comp->mask_);
         }
@@ -478,8 +490,14 @@ public:
         auto* comp = static_cast<SphereColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::DragFloat3("Offset", &comp->localOffset_.x, 0.1f);
-            ImGui::DragFloat("Radius", &comp->localRadius_, 0.1f, 0.0f, 1000.0f);
+            Vector3 offset = comp->GetLocalOffset();
+            if (ImGui::DragFloat3("Offset", &offset.x, 0.1f)) {
+                comp->SetLocalOffset(offset);
+            }
+            float radius = comp->GetLocalRadius();
+            if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, 1000.0f)) {
+                comp->SetLocalRadius(radius);
+            }
             ImGui::Checkbox("Is Trigger", &comp->isTrigger_);
             DrawCollisionLayerGUI(comp->layer_, comp->mask_);
         }

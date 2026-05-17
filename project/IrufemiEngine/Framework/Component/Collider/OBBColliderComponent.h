@@ -14,10 +14,6 @@ public:
     void Initialize() override;
     void Update() override;
     void DrawDebug() override;
-#ifdef EditorMode
-    friend class OBBColliderComponentEditor;
-    friend class SceneViewPanel;
-#endif
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;
 
@@ -25,6 +21,12 @@ public:
     ColliderType GetColliderType() const override { return ColliderType::OBB; }
 
     OBB GetWorldOBB() const;
+
+    void SetLocalOffset(const Vector3& offset) { localOffset_ = offset; }
+    const Vector3& GetLocalOffset() const { return localOffset_; }
+
+    void SetLocalSize(const Vector3& size) { localSize_ = size; }
+    const Vector3& GetLocalSize() const { return localSize_; }
 
 private:
     TransformComponent* transform_ = nullptr;

@@ -57,7 +57,6 @@ void SceneViewPanel::Draw() {
     ImGui::SameLine();
     if (ImGui::RadioButton("World", currentGizmoMode_ == ImGuizmo::WORLD)) currentGizmoMode_ = ImGuizmo::WORLD;
 
-    // エンジンからメインの描画結果（RenderTexture）を取得して画像として表示
     auto* engine = editorManager_->GetEngine();
     if (engine && engine->GetMainRenderTexture()) {
         auto mainTexture = engine->GetMainRenderTexture();
@@ -95,21 +94,17 @@ void SceneViewPanel::Draw() {
                         Vector2 anchor = sprite->GetAnchor();
                         Vector3 pos = transform->worldPosition_;
                         
-                        // 1280x720 空間での矩形を計算
                         float left = pos.x - sizeScaled.x * anchor.x;
                         float top = pos.y - sizeScaled.y * anchor.y;
                         float right = pos.x + sizeScaled.x * (1.0f - anchor.x);
                         float bottom = pos.y + sizeScaled.y * (1.0f - anchor.y);
                         
-                        // SceneView の Image 内のローカル座標へスケール変換
                         float scaleX = size.x / 1280.0f;
                         float scaleY = size.y / 720.0f;
                         
-                        // ImGuiの画面全体の座標系に変換
                         ImVec2 pMin = ImVec2(minPos.x + left * scaleX, minPos.y + top * scaleY);
                         ImVec2 pMax = ImVec2(minPos.x + right * scaleX, minPos.y + bottom * scaleY);
                         
-                        // オレンジ色の枠線を描画（太さ2.0f）
                         ImGui::GetWindowDrawList()->AddRect(pMin, pMax, IM_COL32(255, 165, 0, 255), 0.0f, 0, 2.0f);
                     }
                 }
@@ -119,7 +114,6 @@ void SceneViewPanel::Draw() {
                     Vector2 minBounds = textComp->GetLocalBoundsMin();
                     Vector2 maxBounds = textComp->GetLocalBoundsMax();
                     
-                    // Transformのスケールを適用
                     float left = pos.x + minBounds.x * transform->worldScale_.x;
                     float right = pos.x + maxBounds.x * transform->worldScale_.x;
                     float top = pos.y + minBounds.y * transform->worldScale_.y;
@@ -131,320 +125,251 @@ void SceneViewPanel::Draw() {
                     ImVec2 pMin = ImVec2(minPos.x + left * scaleX, minPos.y + top * scaleY);
                     ImVec2 pMax = ImVec2(minPos.x + right * scaleX, minPos.y + bottom * scaleY);
                     
-                    // テキストは白が多いので、オレンジではなく視認性の高い枠線（水色など）を描画
                     ImGui::GetWindowDrawList()->AddRect(pMin, pMax, IM_COL32(0, 255, 255, 255), 0.0f, 0, 2.0f);
                 }
             }
         }
 
-        // --- ImGuizmo の描画領域設定 ---
-        ImGuizmo::SetDrawlist();
-        ImGuizmo::SetRect(minPos.x, minPos.y, size.x, size.y);
+        DrawImGuizmo(minPos, size);
+        HandleDragAndDrop();
 
-        // --- ImGuizmo (トランスフォーム＆バウンディングボックス操作) ---
-        if (auto selectedObj = editorManager_->GetSelectedObject()) {
-            if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
-                Matrix4x4 view = camera->GetViewMatrix();
-                Matrix4x4 proj = camera->GetPerspectiveFovMatrix();
-                
-                if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
-                    Matrix4x4 world = transform->GetWorldMatrix();
-
-                    bool manipulated = false;
-                    
-                    if (currentGizmoOperation_ == ImGuizmo::BOUNDS) {
-                        // コライダーのリサイズ操作
-                        if (auto aabbCol = selectedObj->GetComponent<AABBColliderComponent>()) {
-                            float bounds[6] = {
-                                aabbCol->localOffset_.x - aabbCol->localSize_.x,
-                                aabbCol->localOffset_.y - aabbCol->localSize_.y,
-                                aabbCol->localOffset_.z - aabbCol->localSize_.z,
-                                aabbCol->localOffset_.x + aabbCol->localSize_.x,
-                                aabbCol->localOffset_.y + aabbCol->localSize_.y,
-                                aabbCol->localOffset_.z + aabbCol->localSize_.z
-                            };
-                            if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0], nullptr, nullptr, bounds)) {
-                                aabbCol->localOffset_.x = (bounds[0] + bounds[3]) * 0.5f;
-                                aabbCol->localOffset_.y = (bounds[1] + bounds[4]) * 0.5f;
-                                aabbCol->localOffset_.z = (bounds[2] + bounds[5]) * 0.5f;
-                                aabbCol->localSize_.x = (bounds[3] - bounds[0]) * 0.5f;
-                                aabbCol->localSize_.y = (bounds[4] - bounds[1]) * 0.5f;
-                                aabbCol->localSize_.z = (bounds[5] - bounds[2]) * 0.5f;
-                            }
-                        } else if (auto obbCol = selectedObj->GetComponent<OBBColliderComponent>()) {
-                            float bounds[6] = {
-                                obbCol->localOffset_.x - obbCol->localSize_.x,
-                                obbCol->localOffset_.y - obbCol->localSize_.y,
-                                obbCol->localOffset_.z - obbCol->localSize_.z,
-                                obbCol->localOffset_.x + obbCol->localSize_.x,
-                                obbCol->localOffset_.y + obbCol->localSize_.y,
-                                obbCol->localOffset_.z + obbCol->localSize_.z
-                            };
-                            if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0], nullptr, nullptr, bounds)) {
-                                obbCol->localOffset_.x = (bounds[0] + bounds[3]) * 0.5f;
-                                obbCol->localOffset_.y = (bounds[1] + bounds[4]) * 0.5f;
-                                obbCol->localOffset_.z = (bounds[2] + bounds[5]) * 0.5f;
-                                obbCol->localSize_.x = (bounds[3] - bounds[0]) * 0.5f;
-                                obbCol->localSize_.y = (bounds[4] - bounds[1]) * 0.5f;
-                                obbCol->localSize_.z = (bounds[5] - bounds[2]) * 0.5f;
-                            }
-                        } else if (auto sphereCol = selectedObj->GetComponent<SphereColliderComponent>()) {
-                            // 球体はスケール操作で代替
-                            ImGuizmo::OPERATION op = ImGuizmo::SCALE;
-                            if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], op, currentGizmoMode_, &world.m[0][0])) {
-                                manipulated = true; // スケールをオブジェクトに適用
-                            }
-                        } else {
-                            // コライダーがない場合は普通のトランスレートを表示
-                            ImGuizmo::OPERATION op = ImGuizmo::TRANSLATE;
-                            if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], op, currentGizmoMode_, &world.m[0][0])) {
-                                manipulated = true;
-                            }
-                        }
-                    } else {
-                        // 通常のトランスフォーム操作
-                        if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0])) {
-                            manipulated = true;
-                        }
-                    }
-
-                    if (manipulated) {
-                        Vector3 pos, rot, scale;
-                        ImGuizmo::DecomposeMatrixToComponents(&world.m[0][0], &pos.x, &rot.x, &scale.x);
-                        
-                        // Rotは度数法で来るのでラジアンに変換
-                        rot.x = rot.x * Math::PI / 180.0f;
-                        rot.y = rot.y * Math::PI / 180.0f;
-                        rot.z = rot.z * Math::PI / 180.0f;
-                        
-                        transform->position_ = pos;
-                        transform->rotation_ = rot;
-                        transform->scale_ = scale;
-                    }
-                }
-            }
-        }
-
-        
-        // --- アセットのドラッグ＆ドロップを受け付ける ---
-        if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadAssetPath)) {
-                std::string droppedPathStr = static_cast<const char*>(payload->Data);
-                
-                // EditorActionManager に生成を依頼（Undo履歴にも自動登録される）
-                if (auto am = editorManager_->GetActionManager()) {
-                    am->CreateObjectFromAsset(droppedPathStr);
-                }
-            }
-            ImGui::EndDragDropTarget();
-        }
-        
         // --- UI用の仮想マウス座標更新 & クリックによる3Dピッキング ---
-        // パネルがホバーされている間は常に判定を行う
         if (ImGui::IsWindowHovered()) {
             ImVec2 mousePos = ImGui::GetMousePos(); // 画面全体の座標
 
-            // 画像領域内がホバーされているか判定
             if (mousePos.x >= minPos.x && mousePos.x <= maxPos.x &&
                 mousePos.y >= minPos.y && mousePos.y <= maxPos.y) {
                 
-                // Image内のローカル座標に変換
                 Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
-                
-                // UIなどの汎用コンポーネント用にInputManagerへ仮想座標を登録
-                // （ゲームの本来の解像度 1280x720 にスケールを合わせる）
                 float scaleX = 1280.0f / size.x;
                 float scaleY = 720.0f / size.y;
                 Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
+                
                 engine->GetInputManager()->SetVirtualMousePosition(scaledVirtualPos, true);
                 
-                // --- エディタカメラ操作 (Blenderライク) ---
                 if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
-                    auto* input = engine->GetInputManager();
-                    bool isMiddleButtonDown = input->IsMouseButtonDown(Mouse::Button::Middle);
-                    auto* keyboard = input->GetKeyboard();
-                    bool isShiftDown = keyboard->IsKeyDown(VK_LSHIFT) || keyboard->IsKeyDown(VK_RSHIFT);
-                    Vector2 mouseDelta = input->GetMouseDelta();
-                    
-                    // 初期化されていない場合は現在のカメラからTarget等を逆算する
-                    if (!isCameraInitialized_) {
-                        cameraTarget_ = {0.0f, 0.0f, 0.0f};
-                        cameraDistance_ = 50.0f;
-                        
-                        Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(camera->GetRotate());
-                        Vector3 offset = { 0.0f, 0.0f, -cameraDistance_ };
-                        offset = Math::TransformNormal(offset, rotMat);
-                        cameraTarget_ = Math::Subtract(camera->GetTranslate(), offset);
-                        
-                        isCameraInitialized_ = true;
-                    }
-                    
-                    bool cameraChanged = false;
-                    
-                    if (isMiddleButtonDown) {
-                        if (isShiftDown) {
-                            // パン操作 (Shift + 中ボタンドラッグ)
-                            const float panSpeed = 0.05f;
-                            Matrix4x4 viewInverse = Math::Inverse(camera->GetViewMatrix());
-                            Vector3 right = { viewInverse.m[0][0], viewInverse.m[0][1], viewInverse.m[0][2] };
-                            Vector3 up = { viewInverse.m[1][0], viewInverse.m[1][1], viewInverse.m[1][2] };
-                            cameraTarget_ = Math::Add(cameraTarget_, Math::Multiply(-panSpeed * mouseDelta.x, right));
-                            cameraTarget_ = Math::Add(cameraTarget_, Math::Multiply(panSpeed * mouseDelta.y, up));
-                            cameraChanged = true;
-                        } else {
-                            // オービット操作 (中ボタンドラッグ)
-                            const float rotationSpeed = 0.005f;
-                            Vector3 rotate = camera->GetRotate();
-                            rotate.y += mouseDelta.x * rotationSpeed;
-                            rotate.x += mouseDelta.y * rotationSpeed;
-                            // X軸回転を制限
-                            rotate.x = Math::Clamp(rotate.x, -Math::PIDiv2, Math::PIDiv2);
-                            camera->SetRotate(rotate);
-                            cameraChanged = true;
-                        }
-                    }
-                    
-                    // ズーム操作 (マウスホイール)
-                    float wheelDelta = input->GetMouseWheelDelta();
-                    if (wheelDelta != 0.0f) {
-                        const float zoomSpeed = 2.0f;
-                        cameraDistance_ -= wheelDelta * zoomSpeed;
-                        if (cameraDistance_ < 1.0f) cameraDistance_ = 1.0f; // 最小距離制限
-                        cameraChanged = true;
-                    }
-                    
-                    // カメラの位置を更新
-                    if (cameraChanged || isMiddleButtonDown) {
-                        Vector3 rotate = camera->GetRotate();
-                        Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(rotate);
-                        Vector3 offset = { 0.0f, 0.0f, -cameraDistance_ };
-                        offset = Math::TransformNormal(offset, rotMat);
-                        camera->SetTranslate(Math::Add(cameraTarget_, offset));
-                        camera->UpdateMatrix();
-                    }
+                    cameraController_.UpdateCameraInput(camera, engine->GetInputManager());
                 }
 
-                // ImGuizmo操作中・ホバー中はピッキングしない
-                bool isGizmoUsing = ImGuizmo::IsUsing() || ImGuizmo::IsOver();
-                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !isGizmoUsing) {
-                    bool isHit = false;
-                    GameObject* closestObj = nullptr;
-                    float closestDist = 1000.0f;
-
-                    // --- 1. まず 2D (Sprite) のピッキング判定を行う ---
-                    if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
-                        auto gameObjects = scene->GetGameObjects();
-                        // 逆順（後から追加された＝手前に描画されるもの）から判定
-                        for (auto it = gameObjects.rbegin(); it != gameObjects.rend(); ++it) {
-                            auto& obj = *it;
-                            if (!obj || obj->IsDestroyed() || !obj->GetIsActive()) continue;
-                            
-                            if (auto spriteComp = obj->GetComponent<SpriteRendererComponent>()) {
-                                if (auto transform = obj->GetComponent<TransformComponent>()) {
-                                    auto sprite = spriteComp->GetSprite();
-                                    if (sprite) {
-                                        Vector2 sizeScaled = sprite->GetSize();
-                                        Vector2 anchor = sprite->GetAnchor();
-                                        Vector3 pos = transform->worldPosition_;
-                                        
-                                        float left = pos.x - sizeScaled.x * anchor.x;
-                                        float top = pos.y - sizeScaled.y * anchor.y;
-                                        float right = pos.x + sizeScaled.x * (1.0f - anchor.x);
-                                        float bottom = pos.y + sizeScaled.y * (1.0f - anchor.y);
-                                        
-                                        if (scaledVirtualPos.x >= left && scaledVirtualPos.x <= right &&
-                                            scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
-                                            closestObj = obj.get();
-                                            isHit = true;
-                                            break; // 2DのUIが見つかったら最優先
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            // Textのピッキング判定
-                            if (!isHit) {
-                                if (auto textComp = obj->GetComponent<TextRendererComponent>()) {
-                                    if (auto transform = obj->GetComponent<TransformComponent>()) {
-                                        Vector3 pos = transform->worldPosition_;
-                                        Vector2 minBounds = textComp->GetLocalBoundsMin();
-                                        Vector2 maxBounds = textComp->GetLocalBoundsMax();
-                                        
-                                        float left = pos.x + minBounds.x * transform->worldScale_.x;
-                                        float right = pos.x + maxBounds.x * transform->worldScale_.x;
-                                        float top = pos.y + minBounds.y * transform->worldScale_.y;
-                                        float bottom = pos.y + maxBounds.y * transform->worldScale_.y;
-                                        
-                                        if (scaledVirtualPos.x >= left && scaledVirtualPos.x <= right &&
-                                            scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
-                                            closestObj = obj.get();
-                                            isHit = true;
-                                            break; // 見つかったら最優先
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // --- 2. Sprite に当たらなかった場合のみ 3D のピッキングを行う ---
-                    if (!isHit) {
-                        if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
-                            // プロジェクション・ビュー逆行列を計算
-                            Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
-                            Matrix4x4 viewProjInverse = Math::Inverse(viewProj);
-
-                            // レイの生成
-                            Ray ray = Math::ScreenPointToRay(localMousePos, size.x, size.y, viewProjInverse);
-
-                            RaycastHit hit;
-                            // まずコライダーでRaycastを実行
-                            if (CollisionManager::GetInstance().Raycast(ray, hit, 1000.0f)) {
-                                closestDist = hit.distance;
-                                closestObj = hit.hitObject;
-                                isHit = true;
-                            }
-                            
-                            // コライダーを持たない描画コンポーネントのみのオブジェクトも判定
-                            if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
-                                for (auto& obj : scene->GetGameObjects()) {
-                                    if (!obj || obj.get() == closestObj) continue;
-                                    
-                                    float dist = 0.0f;
-                                    for (auto& comp : obj->GetComponents()) {
-                                        if (comp->Raycast(ray, dist)) {
-                                            if (dist < closestDist) {
-                                                closestDist = dist;
-                                                closestObj = obj.get();
-                                                isHit = true;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        } // End of if (auto camera)
-                    }
-
-                    // 最終的な選択の反映
-                    if (isHit && closestObj) {
-                        editorManager_->SetSelectedObject(closestObj->shared_from_this());
-                    } else {
-                        editorManager_->ClearSelectedObject();
-                    }
-                } // End of if (ImGui::IsMouseClicked)
-            
+                HandlePicking(mousePos, minPos, maxPos, size);
+            } else {
+                engine->GetInputManager()->SetVirtualMousePosition({0.0f, 0.0f}, false);
+            }
         } else {
-            // 画像領域外なら仮想マウスを無効化
-            engine->GetInputManager()->SetVirtualMousePosition({0.0f, 0.0f}, false);
+            if (engine && engine->GetInputManager()) {
+                engine->GetInputManager()->SetVirtualMousePosition({0.0f, 0.0f}, false);
+            }
         }
-    } else {
-        // パネルがホバーされていない場合は仮想マウスを無効化
-        if (engine && engine->GetInputManager()) {
-            engine->GetInputManager()->SetVirtualMousePosition({0.0f, 0.0f}, false);
-        }
-    }
     }
 
     ImGui::End();
+}
+
+void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
+    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(minPos.x, minPos.y, size.x, size.y);
+
+    auto* engine = editorManager_->GetEngine();
+    if (auto selectedObj = editorManager_->GetSelectedObject()) {
+        if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+            Matrix4x4 view = camera->GetViewMatrix();
+            Matrix4x4 proj = camera->GetPerspectiveFovMatrix();
+            
+            if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
+                Matrix4x4 world = transform->GetWorldMatrix();
+                bool manipulated = false;
+                
+                if (currentGizmoOperation_ == ImGuizmo::BOUNDS) {
+                    // コライダーのリサイズ操作
+                    if (auto aabbCol = selectedObj->GetComponent<AABBColliderComponent>()) {
+                        Vector3 offset = aabbCol->GetLocalOffset();
+                        Vector3 csize = aabbCol->GetLocalSize();
+                        float bounds[6] = {
+                            offset.x - csize.x, offset.y - csize.y, offset.z - csize.z,
+                            offset.x + csize.x, offset.y + csize.y, offset.z + csize.z
+                        };
+                        if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0], nullptr, nullptr, bounds)) {
+                            aabbCol->SetLocalOffset({
+                                (bounds[0] + bounds[3]) * 0.5f,
+                                (bounds[1] + bounds[4]) * 0.5f,
+                                (bounds[2] + bounds[5]) * 0.5f
+                            });
+                            aabbCol->SetLocalSize({
+                                (bounds[3] - bounds[0]) * 0.5f,
+                                (bounds[4] - bounds[1]) * 0.5f,
+                                (bounds[5] - bounds[2]) * 0.5f
+                            });
+                        }
+                    } else if (auto obbCol = selectedObj->GetComponent<OBBColliderComponent>()) {
+                        Vector3 offset = obbCol->GetLocalOffset();
+                        Vector3 csize = obbCol->GetLocalSize();
+                        float bounds[6] = {
+                            offset.x - csize.x, offset.y - csize.y, offset.z - csize.z,
+                            offset.x + csize.x, offset.y + csize.y, offset.z + csize.z
+                        };
+                        if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0], nullptr, nullptr, bounds)) {
+                            obbCol->SetLocalOffset({
+                                (bounds[0] + bounds[3]) * 0.5f,
+                                (bounds[1] + bounds[4]) * 0.5f,
+                                (bounds[2] + bounds[5]) * 0.5f
+                            });
+                            obbCol->SetLocalSize({
+                                (bounds[3] - bounds[0]) * 0.5f,
+                                (bounds[4] - bounds[1]) * 0.5f,
+                                (bounds[5] - bounds[2]) * 0.5f
+                            });
+                        }
+                    } else if (auto sphereCol = selectedObj->GetComponent<SphereColliderComponent>()) {
+                        ImGuizmo::OPERATION op = ImGuizmo::SCALE;
+                        if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], op, currentGizmoMode_, &world.m[0][0])) {
+                            manipulated = true;
+                        }
+                    } else {
+                        ImGuizmo::OPERATION op = ImGuizmo::TRANSLATE;
+                        if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], op, currentGizmoMode_, &world.m[0][0])) {
+                            manipulated = true;
+                        }
+                    }
+                } else {
+                    if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0])) {
+                        manipulated = true;
+                    }
+                }
+
+                if (manipulated) {
+                    Vector3 pos, rot, mscale;
+                    ImGuizmo::DecomposeMatrixToComponents(&world.m[0][0], &pos.x, &rot.x, &mscale.x);
+                    
+                    rot.x = rot.x * Math::PI / 180.0f;
+                    rot.y = rot.y * Math::PI / 180.0f;
+                    rot.z = rot.z * Math::PI / 180.0f;
+                    
+                    transform->position_ = pos;
+                    transform->rotation_ = rot;
+                    transform->scale_ = mscale;
+                }
+            }
+        }
+    }
+}
+
+void SceneViewPanel::HandleDragAndDrop() {
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadAssetPath)) {
+            std::string droppedPathStr = static_cast<const char*>(payload->Data);
+            if (auto am = editorManager_->GetActionManager()) {
+                am->CreateObjectFromAsset(droppedPathStr);
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+}
+
+void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos, ImVec2 size) {
+    bool isGizmoUsing = ImGuizmo::IsUsing() || ImGuizmo::IsOver();
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !isGizmoUsing) {
+        auto* engine = editorManager_->GetEngine();
+        bool isHit = false;
+        GameObject* closestObj = nullptr;
+        float closestDist = 1000.0f;
+        
+        Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
+        float scaleX = 1280.0f / size.x;
+        float scaleY = 720.0f / size.y;
+        Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
+
+        // --- 1. まず 2D (Sprite) のピッキング判定を行う ---
+        if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
+            auto gameObjects = scene->GetGameObjects();
+            for (auto it = gameObjects.rbegin(); it != gameObjects.rend(); ++it) {
+                auto& obj = *it;
+                if (!obj || obj->IsDestroyed() || !obj->GetIsActive()) continue;
+                
+                if (auto spriteComp = obj->GetComponent<SpriteRendererComponent>()) {
+                    if (auto transform = obj->GetComponent<TransformComponent>()) {
+                        auto sprite = spriteComp->GetSprite();
+                        if (sprite) {
+                            Vector2 sizeScaled = sprite->GetSize();
+                            Vector2 anchor = sprite->GetAnchor();
+                            Vector3 pos = transform->worldPosition_;
+                            
+                            float left = pos.x - sizeScaled.x * anchor.x;
+                            float top = pos.y - sizeScaled.y * anchor.y;
+                            float right = pos.x + sizeScaled.x * (1.0f - anchor.x);
+                            float bottom = pos.y + sizeScaled.y * (1.0f - anchor.y);
+                            
+                            if (scaledVirtualPos.x >= left && scaledVirtualPos.x <= right &&
+                                scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
+                                closestObj = obj.get();
+                                isHit = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (!isHit) {
+                    if (auto textComp = obj->GetComponent<TextRendererComponent>()) {
+                        if (auto transform = obj->GetComponent<TransformComponent>()) {
+                            Vector3 pos = transform->worldPosition_;
+                            Vector2 minBounds = textComp->GetLocalBoundsMin();
+                            Vector2 maxBounds = textComp->GetLocalBoundsMax();
+                            
+                            float left = pos.x + minBounds.x * transform->worldScale_.x;
+                            float right = pos.x + maxBounds.x * transform->worldScale_.x;
+                            float top = pos.y + minBounds.y * transform->worldScale_.y;
+                            float bottom = pos.y + maxBounds.y * transform->worldScale_.y;
+                            
+                            if (scaledVirtualPos.x >= left && scaledVirtualPos.x <= right &&
+                                scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
+                                closestObj = obj.get();
+                                isHit = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- 2. Sprite に当たらなかった場合のみ 3D のピッキングを行う ---
+        if (!isHit) {
+            if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+                Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
+                Matrix4x4 viewProjInverse = Math::Inverse(viewProj);
+                Ray ray = Math::ScreenPointToRay(localMousePos, size.x, size.y, viewProjInverse);
+
+                RaycastHit hit;
+                if (CollisionManager::GetInstance().Raycast(ray, hit, 1000.0f)) {
+                    closestDist = hit.distance;
+                    closestObj = hit.hitObject;
+                    isHit = true;
+                }
+                
+                if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
+                    for (auto& obj : scene->GetGameObjects()) {
+                        if (!obj || obj.get() == closestObj) continue;
+                        
+                        float dist = 0.0f;
+                        for (auto& comp : obj->GetComponents()) {
+                            if (comp->Raycast(ray, dist)) {
+                                if (dist < closestDist) {
+                                    closestDist = dist;
+                                    closestObj = obj.get();
+                                    isHit = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isHit && closestObj) {
+            editorManager_->SetSelectedObject(closestObj->shared_from_this());
+        } else {
+            editorManager_->ClearSelectedObject();
+        }
+    }
 }
 #endif // EditorMode

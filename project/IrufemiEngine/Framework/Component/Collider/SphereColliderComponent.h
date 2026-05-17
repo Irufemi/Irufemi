@@ -14,10 +14,6 @@ public:
     void Initialize() override;
     void Update() override;
     void DrawDebug() override;
-#ifdef EditorMode
-    friend class SphereColliderComponentEditor;
-    friend class SceneViewPanel;
-#endif
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;
 
@@ -25,6 +21,12 @@ public:
     ColliderType GetColliderType() const override { return ColliderType::Sphere; }
 
     Sphere GetWorldSphere() const;
+
+    void SetLocalOffset(const Vector3& offset) { localOffset_ = offset; }
+    const Vector3& GetLocalOffset() const { return localOffset_; }
+
+    void SetLocalRadius(float radius) { localRadius_ = radius; }
+    float GetLocalRadius() const { return localRadius_; }
 
 private:
     TransformComponent* transform_ = nullptr;

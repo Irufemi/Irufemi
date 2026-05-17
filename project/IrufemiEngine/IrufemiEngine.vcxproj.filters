@@ -201,6 +201,9 @@
     <ClCompile Include="Engine\Manager\EditorManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Editor\Utils\EditorCameraController.cpp">
+      <Filter>Engine\Manager</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Editor\Panel\SceneViewPanel.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
@@ -622,6 +625,9 @@
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Manager\EditorManager.h">
+      <Filter>Engine\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Editor\Utils\EditorCameraController.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Editor\IEditorPanel.h">
