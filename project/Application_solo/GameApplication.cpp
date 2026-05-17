@@ -12,6 +12,7 @@
 #include "components/RailPathComponent.h"
 #include "components/RailShooterPlayerComponent.h"
 #include "components/RailShooterEnemyComponent.h"
+#include "components/CameraFollowPlayerComponent.h"
 
 // シーンのインクルード
 #include "scene/title/TitleScene.h"
@@ -66,6 +67,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("RailPathComponent", []() { return std::make_shared<RailPathComponent>(); });
     ComponentFactory::Register("RailShooterPlayerComponent", []() { return std::make_shared<RailShooterPlayerComponent>(); });
     ComponentFactory::Register("RailShooterEnemyComponent", []() { return std::make_shared<RailShooterEnemyComponent>(); });
+    ComponentFactory::Register("CameraFollowPlayerComponent", []() { return std::make_shared<CameraFollowPlayerComponent>(); });
 
     // シーンの登録
     engine->SetSceneRegistrar(RegisterScenes);

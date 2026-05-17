@@ -2,6 +2,8 @@
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h" // 描画オンオフ用
+#include "Engine/IrufemiEngine.h"
+#include "Renderer/Object3D/BaseModel/BaseModel.h"
 
 void RailShooterEnemyComponent::OnRegisterProperties() {
     RegisterProperty("SpawnProgress", &spawnProgress_);
@@ -28,7 +30,11 @@ void RailShooterEnemyComponent::Update() {
     // TODO: プレイヤーの進行度をグローバルまたはManagerから取得して比較
     // ここでは単純に isActive になったら前に進むだけの仮実装
     if (isActive_) {
-        float deltaTime = 1.0f / 60.0f; 
+        // エンジンから正確なゲーム内時間差を取得
+        float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+        if (deltaTime <= 0.0f) {
+            deltaTime = 1.0f / 60.0f;
+        } 
         if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
             // 前方(Z軸正方向など)に進む
             // Transformの rotation_ を元に向きベクトルを計算して足す

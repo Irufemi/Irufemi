@@ -13,6 +13,7 @@
 #include "Renderer/ParticleEmitterComponent.h"
 #include "UI/ButtonComponent.h"
 #include "UI/CanvasComponent.h"
+#include "Camera/CameraComponent.h"
 
 std::map<std::string, ComponentFactory::CreatorFunc>& ComponentFactory::GetMap() {
     static std::map<std::string, CreatorFunc> factoryMap;
@@ -50,4 +51,5 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("ParticleEmitterComponent", []() { return std::make_shared<ParticleEmitterComponent>(); });
     Register("ButtonComponent", []() { return std::make_shared<ButtonComponent>(); });
     Register("CanvasComponent", []() { return std::make_shared<CanvasComponent>(); });
+    Register("CameraComponent", []() { return std::make_shared<CameraComponent>(); });
 }

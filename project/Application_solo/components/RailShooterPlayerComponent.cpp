@@ -5,7 +5,9 @@
 #include "Framework/BaseScene.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Platform/Input/InputManager.h"
-#include "Engine/Platform/Window/GameWindow.h" // GetDeltaTime など用 (※エンジンにより取得方法が異なるため暫定対応)
+#include "Renderer/Object3D/BaseModel/BaseModel.h"
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
 #include <algorithm>
 #include <cmath>
 
@@ -25,15 +27,18 @@ void RailShooterPlayerComponent::Initialize() {
 void RailShooterPlayerComponent::Update() {
     if (!gameObject_) return;
 
-    // 1フレームの経過時間 (仮で1/60秒に固定。本来はGameWindow等から毎フレーム正確な時間差を取得します)
-    float deltaTime = 1.0f / 60.0f; 
+    // 1フレームの経過時間 (エンジンから正確なゲーム内時間差を取得)
+    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    if (deltaTime <= 0.0f) {
+        deltaTime = 1.0f / 60.0f; // 安全策として仮のフレーム時間を設定
+    } 
 
     // シーン内からレール（軌道）のデータを持っているオブジェクトを自動で探し出す
     if (!cachedPath_ && gameObject_->GetScene()) {
         const auto& objs = gameObject_->GetScene()->GetGameObjects();
         for (const auto& obj : objs) {
             if (auto path = obj->GetComponent<RailPathComponent>()) {
-                cachedPath_ = path.get(); // 見つけたら後で使い回すために保存
+                cachedPath_ = path; // 見つけたら後で使い回すために保存
                 break;
             }
         }

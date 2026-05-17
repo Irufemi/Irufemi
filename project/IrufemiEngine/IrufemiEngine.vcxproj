@@ -251,6 +251,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\TransformComponent.cpp" />
     <ClCompile Include="Framework\Component\ComponentFactory.cpp" />
+    <ClCompile Include="Framework\Component\Camera\CameraComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\AABBColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\SphereColliderComponent.cpp" />
@@ -426,6 +427,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
     <ClInclude Include="Framework\Component\TransformComponent.h" />
     <ClInclude Include="Framework\Component\ComponentFactory.h" />
+    <ClInclude Include="Framework\Component\Camera\CameraComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h" />
     <ClInclude Include="Framework\Component\Collider\ColliderComponent.h" />
     <ClInclude Include="Framework\Component\Collider\AABBColliderComponent.h" />

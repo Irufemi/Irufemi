@@ -513,6 +513,7 @@
     </ClCompile>
     <ClCompile Include="Engine\Core\System\DirectoryWatcher.cpp" />
     <ClCompile Include="Framework\Component\ComponentFactory.cpp" />
+    <ClCompile Include="Framework\Component\Camera\CameraComponent.cpp" />
     <ClCompile Include="Framework\Component\Script\RotatorComponent.cpp" />
     <ClCompile Include="Framework\Component\AudioSourceComponent.cpp">
       <Filter>Framework\Component</Filter>
@@ -1137,6 +1138,7 @@
     <ClInclude Include="Framework\Component\Collider\RaycastComponent.h" />
     <ClInclude Include="Engine\Core\System\DirectoryWatcher.h" />
     <ClInclude Include="Framework\Component\ComponentFactory.h" />
+    <ClInclude Include="Framework\Component\Camera\CameraComponent.h" />
     <ClInclude Include="Framework\Component\Script\RotatorComponent.h" />
     <ClInclude Include="Engine\Editor\Core\EditorDragDrop.h" />
     <ClInclude Include="Engine\Editor\Core\IComponentEditor.h" />
