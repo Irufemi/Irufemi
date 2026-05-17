@@ -16,7 +16,7 @@ void PlayerWeapon::Initialize() {
 
     // --- 機関銃の弾モデルの初期化 ---
     bulletRegion_ = std::make_unique<ModelRegion>();
-    bulletRegion_->Initialize("enemy/body.obj");
+    bulletRegion_->Initialize("player/playerBullet.obj");
     bulletRegion_->SetCastShadows(false);
 
     for (int i = 0; i < kMaxBullets; ++i) {
@@ -307,7 +307,7 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
                 Transform tf;
                 tf.translate = bullets_[i].position;
                 tf.rotate = bRot;
-                tf.scale = { 0.06f, 0.06f, 0.24f };
+                tf.scale = { 1.0f, 1.0f, 1.0f };
                 bulletRegion_->AddInstance(tf, { 1.0f, 1.0f, 0.0f, 1.0f });
             }
         }
