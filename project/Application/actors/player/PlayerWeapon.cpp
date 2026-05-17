@@ -71,7 +71,7 @@ void PlayerWeapon::Initialize() {
 
     // --- 薬莢モデルの初期化 ---
     cartridgeRegion_ = std::make_unique<ModelRegion>();
-    cartridgeRegion_->Initialize("enemy/body.obj");
+    cartridgeRegion_->Initialize("player/playerCasing.obj");
     cartridgeRegion_->SetCastShadows(false);
 
     for (int i = 0; i < kMaxCartridges; ++i) {
@@ -288,7 +288,7 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
                 Transform tf;
                 tf.translate = cartridges_[i].position;
                 tf.rotate = cartridges_[i].rotation;
-                tf.scale = { 0.02f, 0.02f, 0.05f };
+                tf.scale = { 1.0f, 1.0f, 1.0f };
                 cartridgeRegion_->AddInstance(tf, { 0.8f, 0.6f, 0.1f, 1.0f });
             }
         }
