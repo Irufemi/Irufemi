@@ -4,10 +4,8 @@
 #include "RenderGraphBuilder.h"
 
 void UIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
-#ifdef EditorMode
-    // エディタモードでは、ゲーム内UI(Sprite等)も mainRenderTexture に描き込む必要があるため RENDER_TARGET を要求する
+    // エディタ・製品版問わず、ゲーム内UI(Sprite等)は mainRenderTexture に描き込むため RENDER_TARGET を要求する
     builder.RequireState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-#endif
 }
 
 void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {

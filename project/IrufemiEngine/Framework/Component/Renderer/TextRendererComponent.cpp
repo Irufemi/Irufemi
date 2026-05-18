@@ -20,6 +20,9 @@ void TextRendererComponent::Initialize() {
     textObj_->SetAlignment(alignment_);
 
     transform_ = gameObject_->GetComponent<TransformComponent>();
+    
+    // ロード画面中に生成を終わらせるため、初期化時に強制アップデート（非同期タスク待ち・頂点生成）
+    textObj_->Update();
 }
 
 void TextRendererComponent::Update() {

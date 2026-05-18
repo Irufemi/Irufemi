@@ -16,6 +16,11 @@ RenderTexture::~RenderTexture() {
 }
 
 void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor) {
+    if (dxCommon_ && srvIndex_ != 0xFFFFFFFF) {
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        srvIndex_ = 0xFFFFFFFF;
+    }
+
     dxCommon_ = dxCommon;
     width_ = width;
     height_ = height;
@@ -55,6 +60,12 @@ void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t
 }
 
 void RenderTexture::InitializeFromResource(DirectXCommon* dxCommon, ID3D12Resource* resource, DXGI_FORMAT format) {
+    if (dxCommon_ && srvIndex_ != 0xFFFFFFFF) {
+        // 以前のフレームでGPUが参照している可能性があるため、フェンス解放キューに入れる
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        srvIndex_ = 0xFFFFFFFF;
+    }
+
     dxCommon_ = dxCommon;
     resource_ = resource;
     format_ = format;

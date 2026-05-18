@@ -132,19 +132,15 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   textureManager_ = std::make_unique<TextureManager>();
   textureManager_->Initialize(dxCommon_.get());
 
-#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
   textureManager_->LoadAllFromFolder("resources/");
-#endif
 
   // フォント管理
   fontManager_ = std::make_unique<FontManager>();
   fontManager_->Initialize(this);
   Text::SetFontManager(fontManager_.get());
 
-#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
   // resources/fonts/ 以下のフォントをすべて自動ロード
   fontManager_->LoadAllFromFolder("resources/fonts/");
-#endif
 
   // モデル管理
   modelManager_ = std::make_unique<ModelManager>();
@@ -756,5 +752,6 @@ void IrufemiEngine::BindLightningParams(D3D12_GPU_VIRTUAL_ADDRESS address) {
 bool IrufemiEngine::IsAssetLoading() const {
   bool modelsLoaded = !modelManager_ || modelManager_->IsAllLoaded();
   bool texturesLoaded = !textureManager_ || textureManager_->IsAllLoaded();
-  return !modelsLoaded || !texturesLoaded;
+  bool fontsLoaded = !fontManager_ || fontManager_->IsAllLoaded();
+  return !modelsLoaded || !texturesLoaded || !fontsLoaded;
 }

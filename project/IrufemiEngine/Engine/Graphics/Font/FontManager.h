@@ -5,6 +5,7 @@
 #include <memory>
 #include <d3d12.h>
 #include "Engine/Core/Math/Vector2.h"
+#include "Engine/Core/System/TaskGroup.h"
 
 class IrufemiEngine;
 
@@ -53,6 +54,9 @@ public:
 
     // シェーダに渡すための動的アトラスSRV(テクスチャ)を取得
     D3D12_GPU_DESCRIPTOR_HANDLE GetAtlasSRV() const;
+
+    // 非同期生成タスクがすべて完了しているかを取得
+    bool IsAllLoaded() const;
 
 private:
     // Pimplイディオム：FreeType, msdfgen, stb_rect_pack などの依存を隠蔽する

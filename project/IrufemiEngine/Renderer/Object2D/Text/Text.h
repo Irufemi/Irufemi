@@ -87,4 +87,5 @@ private:
     
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
+    D3D12_GPU_DESCRIPTOR_HANDLE lastAtlasSrv_ = {0};
 };

@@ -63,6 +63,8 @@ void Text::GenerateVertices() {
     std::vector<float> lineWidths;
     float currentLineWidth = 0.0f;
     float scaleFactor = baseScale_ / 32.0f; // GLYPH_SIZE(32)を基準にスケール
+    
+    bool hasPendingGlyphs = false;
 
     for (wchar_t c : text_) {
         if (c == L'\n') {
@@ -72,6 +74,9 @@ void Text::GenerateVertices() {
         }
         const auto* glyph = fontManager_->GetGlyph(fontId_, c);
         if (glyph) {
+            if (glyph->width < 0.0f) {
+                hasPendingGlyphs = true;
+            }
             currentLineWidth += glyph->advanceX * scaleFactor;
         }
     }
@@ -108,8 +113,13 @@ void Text::GenerateVertices() {
             continue; // 未知の文字
         }
 
-        if (glyph->width <= 0.0f || glyph->height <= 0.0f) {
-            // スペースなどの空白文字、またはダミーキャッシュ(非同期生成中)
+        if (glyph->width < 0.0f) {
+            // ダミーキャッシュ(非同期生成中)
+            hasPendingGlyphs = true;
+            currentX += glyph->advanceX * scaleFactor;
+            continue;
+        } else if (glyph->width == 0.0f || glyph->height == 0.0f) {
+            // スペースなどの空白文字
             currentX += glyph->advanceX * scaleFactor;
             continue;
         }
@@ -154,6 +164,11 @@ void Text::GenerateVertices() {
         localBoundsMax_ = { 0.0f, 0.0f };
     }
 
+    if (hasPendingGlyphs) {
+        // 次のフレームで再試行するためにフラグを立てる
+        isTextDirty_ = true;
+    }
+
     // SRVを設定
     resource_->textureHandle_ = fontManager_->GetAtlasSRV();
 
@@ -175,16 +190,15 @@ void Text::Update() {
     if (!resource_ || !cameraManager_ || !fontManager_) return;
     
     // AtlasのSRVが変わったか(リビルドされた等)、テキストに変更があった場合は再生成
-    static D3D12_GPU_DESCRIPTOR_HANDLE lastAtlasSrv = {0};
     D3D12_GPU_DESCRIPTOR_HANDLE currentAtlas = fontManager_->GetAtlasSRV();
-    if (lastAtlasSrv.ptr != currentAtlas.ptr) {
+    if (lastAtlasSrv_.ptr != currentAtlas.ptr) {
         isTextDirty_ = true;
-        lastAtlasSrv = currentAtlas;
+        lastAtlasSrv_ = currentAtlas;
     }
 
     if (isTextDirty_) {
-        GenerateVertices();
         isTextDirty_ = false;
+        GenerateVertices();
         isDirty_ = true;
     }
 
