@@ -51,6 +51,41 @@ void Building::Update() {
             continue;
         }
 
+        // 出現演出中
+        if (inst.isSpawning) {
+            inst.spawnTimer += 1.0f / 60.0f;
+            float t = inst.spawnTimer / inst.spawnDuration;
+            if (t >= 1.0f) {
+                t = 1.0f;
+                inst.isSpawning = false;
+                inst.position = inst.targetPosition;
+            } else {
+                // 上昇イージング (OutQuad)
+                float easeT = t * (2.0f - t);
+                float currentY = inst.initialY + (inst.targetPosition.y - inst.initialY) * easeT;
+
+                // 地響きのような減衰する左右の揺れ
+                // ビルの太さに比例した揺れの幅
+                float shakeAmp = inst.scale.x * 0.08f;
+                float shakeFactor = 1.0f - t; // 終盤に近づくにつれて減衰
+                
+                // 揺れ成分をサイン・コサイン波で計算
+                float shakeX = std::sin(inst.spawnTimer * 45.0f) * shakeAmp * shakeFactor;
+                float shakeZ = std::cos(inst.spawnTimer * 53.0f) * shakeAmp * shakeFactor;
+
+                inst.position = {
+                    inst.targetPosition.x + shakeX,
+                    currentY,
+                    inst.targetPosition.z + shakeZ
+                };
+            }
+
+            if (inst.voxelSystem) {
+                inst.voxelSystem->Update(1.0f / 60.0f);
+            }
+            continue;
+        }
+
         if (inst.isBlownAway) {
             // 吹き飛び中の移動
             inst.position = Math::Add(inst.position, inst.blowVelocity);
@@ -218,6 +253,14 @@ void Building::DrawImGui() {
         changed |= ImGui::DragFloat("Min Distance", &params_.minDistance, 0.1f, 0.0f, 100.0f);
         changed |= ImGui::DragInt("Building HP", &params_.buildingHp, 1, 1, 10000);
 
+        ImGui::Separator();
+        ImGui::Text("Auto Spawn Settings");
+        changed |= ImGui::DragFloat("Spawn Interval", &params_.spawnInterval, 0.1f, 0.1f, 60.0f);
+        changed |= ImGui::SliderInt("Max Count", &params_.maxCount, 1, 100);
+        changed |= ImGui::DragFloat("Avoid Player Radius", &params_.avoidPlayerRadius, 0.5f, 0.0f, 100.0f);
+        changed |= ImGui::DragFloat("Avoid Boss Radius", &params_.avoidBossRadius, 0.5f, 0.0f, 100.0f);
+        changed |= ImGui::DragFloat("Spawn Duration", &params_.spawnDuration, 0.1f, 0.1f, 10.0f);
+
         // 最小値と最大値の整合性を保つ
         if (params_.minHeight > params_.maxHeight) {
             params_.maxHeight = params_.minHeight;
@@ -239,10 +282,7 @@ void Building::DrawImGui() {
         ImGui::Separator();
 
         // 残存建物数
-        int alive = 0;
-        for (auto& inst : instances_) {
-            if (!inst.isDestroyed && !inst.isBlownAway) alive++;
-        }
+        int alive = GetAliveBuildingCount();
         ImGui::Text("Active Buildings: %d / %d", alive, (int)instances_.size());
 
     }
@@ -274,6 +314,11 @@ void Building::LoadJson() {
         if (b.contains("field_range")) params_.fieldRange = b["field_range"];
         if (b.contains("min_distance")) params_.minDistance = b["min_distance"];
         if (b.contains("building_hp")) params_.buildingHp = b["building_hp"];
+        if (b.contains("spawn_interval")) params_.spawnInterval = b["spawn_interval"];
+        if (b.contains("max_count")) params_.maxCount = b["max_count"];
+        if (b.contains("avoid_player_radius")) params_.avoidPlayerRadius = b["avoid_player_radius"];
+        if (b.contains("avoid_boss_radius")) params_.avoidBossRadius = b["avoid_boss_radius"];
+        if (b.contains("spawn_duration")) params_.spawnDuration = b["spawn_duration"];
         OutputDebugStringA("Building: Parameters loaded from JSON.\n");
     }
 }
@@ -282,13 +327,31 @@ void Building::SaveJson() {
     json j;
     j["building"] = {
         {"count", params_.count},
+        {"count_comment", "初期配置されるビルの個数"},
         {"min_height", params_.minHeight},
+        {"min_height_comment", "ビルの最小高さスケール"},
         {"max_height", params_.maxHeight},
+        {"max_height_comment", "ビルの最大高さスケール"},
         {"min_scale_xz", params_.minScaleXZ},
+        {"min_scale_xz_comment", "ビルの最小幅スケール(XZ)"},
         {"max_scale_xz", params_.maxScaleXZ},
+        {"max_scale_xz_comment", "ビルの最大幅スケール(XZ)"},
         {"field_range", params_.fieldRange},
+        {"field_range_comment", "ビルが生成されるフィールドのXZ範囲(中心からの距離)"},
         {"min_distance", params_.minDistance},
-        {"building_hp", params_.buildingHp}
+        {"min_distance_comment", "ビル同士が生成時に最低限離れるべき距離"},
+        {"building_hp", params_.buildingHp},
+        {"building_hp_comment", "ビルの初期体力値"},
+        {"spawn_interval", params_.spawnInterval},
+        {"spawn_interval_comment", "ビルが自動生成される時間間隔(秒)"},
+        {"max_count", params_.maxCount},
+        {"max_count_comment", "時間経過で自動生成されるビルの最大上限数"},
+        {"avoid_player_radius", params_.avoidPlayerRadius},
+        {"avoid_player_radius_comment", "プレイヤーの現在座標を避ける半径"},
+        {"avoid_boss_radius", params_.avoidBossRadius},
+        {"avoid_boss_radius_comment", "ボスが移動/攻撃対象にしている座標を避ける半径"},
+        {"spawn_duration", params_.spawnDuration},
+        {"spawn_duration_comment", "地面から揺れながら生えてくる演出の時間(秒)"}
     };
 
     std::ofstream file(kJsonFilePath);
@@ -412,7 +475,7 @@ void Building::ClearAllBuildings() {
 bool Building::IsBuildingAlive(int index) const {
     if (index < 0 || index >= static_cast<int>(instances_.size())) return false;
     const auto& inst = instances_[index];
-    return !inst.isDestroyed && !inst.isBlownAway && inst.hp > 0;
+    return !inst.isDestroyed && !inst.isBlownAway && !inst.isSpawning && inst.hp > 0;
 }
 
 OBB Building::GetBuildingOBB(int index) const {
@@ -561,5 +624,115 @@ void Building::MarkDestroyed(int index) {
     }
 
     inst.isDestroyed = true;
+}
+
+int Building::GetAliveBuildingCount() const {
+    int alive = 0;
+    for (const auto& inst : instances_) {
+        if (!inst.isDestroyed && !inst.isBlownAway && inst.hp > 0) {
+            alive++;
+        }
+    }
+    return alive;
+}
+
+void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3& avoidBossPos) {
+    OutputDebugStringA("Building: Spawning a new building dynamically...\n");
+
+    std::random_device seed_gen;
+    std::mt19937 engine(seed_gen());
+    std::uniform_real_distribution<float> distPos(-params_.fieldRange, params_.fieldRange);
+    std::uniform_real_distribution<float> distHeight(params_.minHeight, params_.maxHeight);
+    std::uniform_real_distribution<float> distScaleXZ(params_.minScaleXZ, params_.maxScaleXZ);
+    std::uniform_real_distribution<float> distRot(-3.14159265f, 3.14159265f);
+
+    float scaleXZ = 0.0f;
+    float scaleY = 0.0f;
+    Vector3 pos = { 0.0f, 0.0f, 0.0f };
+    bool isValidPos = false;
+    int maxAttempts = 100;
+
+    for (int attempt = 0; attempt < maxAttempts; ++attempt) {
+        scaleXZ = distScaleXZ(engine);
+        scaleY = distHeight(engine);
+        pos = { distPos(engine), scaleY / 2.0f, distPos(engine) };
+
+        isValidPos = true;
+        float radiusA = scaleXZ * 0.7071f;
+
+        // 既存の建物との当たり判定
+        for (const auto& inst : instances_) {
+            if (inst.isDestroyed) continue;
+
+            float radiusB = inst.scale.x * 0.7071f;
+            float dx = pos.x - inst.position.x;
+            float dz = pos.z - inst.position.z;
+            float distanceSq = dx * dx + dz * dz;
+            float requiredDistance = radiusA + radiusB + params_.minDistance;
+            if (distanceSq < requiredDistance * requiredDistance) {
+                isValidPos = false;
+                break;
+            }
+        }
+
+        if (!isValidPos) continue;
+
+        // プレイヤーを避ける
+        {
+            float dx = pos.x - avoidPlayerPos.x;
+            float dz = pos.z - avoidPlayerPos.z;
+            float distanceSq = dx * dx + dz * dz;
+            float requiredDistance = radiusA + params_.avoidPlayerRadius;
+            if (distanceSq < requiredDistance * requiredDistance) {
+                isValidPos = false;
+            }
+        }
+
+        if (!isValidPos) continue;
+
+        // ボスを避ける
+        {
+            float dx = pos.x - avoidBossPos.x;
+            float dz = pos.z - avoidBossPos.z;
+            float distanceSq = dx * dx + dz * dz;
+            float requiredDistance = radiusA + params_.avoidBossRadius;
+            if (distanceSq < requiredDistance * requiredDistance) {
+                isValidPos = false;
+            }
+        }
+
+        if (isValidPos) break;
+    }
+
+    if (!isValidPos) {
+        OutputDebugStringA("Building: SpawnRandomBuilding failed to find a valid position.\n");
+        return;
+    }
+
+    BuildingInstance inst;
+    inst.scale = { scaleXZ, scaleY, scaleXZ };
+    inst.rotate = { 0.0f, distRot(engine), 0.0f };
+    inst.hp = params_.buildingHp;
+    inst.isBlownAway = false;
+    inst.isDestroyed = false;
+    inst.disappearTimer = 0.0f;
+    inst.blowVelocity = {};
+    inst.angularVelocity = {};
+
+    // 出現演出初期化
+    inst.isSpawning = true;
+    inst.spawnTimer = 0.0f;
+    inst.spawnDuration = params_.spawnDuration;
+    inst.targetPosition = pos;
+    inst.initialY = pos.y - scaleY; // 完全に地中に埋まる高さ
+    inst.position = { pos.x, inst.initialY, pos.z };
+
+    inst.voxelSystem = std::make_unique<VoxelParticleSystem>();
+    inst.voxelSystem->Initialize("building/block.obj", {32, 32, 32});
+    inst.voxelSystem->SetParticleType(VoxelParticleSystem::ParticleType::Building);
+    inst.voxelSystem->SetGravity(40.0f);
+
+    instances_.push_back(std::move(inst));
+    OutputDebugStringA("Building: Spawned a new building dynamically with spawning animation.\n");
 }
 

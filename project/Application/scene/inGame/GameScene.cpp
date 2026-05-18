@@ -183,6 +183,23 @@ void GameScene::Update() {
     field_->Update();
   }
 
+  // --- 建物の時間経過自動生成 ---
+  if (field_ && field_->GetBuilding() && player_ && boss_) {
+    Building* building = field_->GetBuilding();
+    const auto& params = building->GetParams();
+
+    // 生存している建物が上限未満のときのみタイマーを進めて生成する
+    if (building->GetAliveBuildingCount() < params.maxCount) {
+      buildingSpawnTimer_ += 1.0f / 60.0f;
+      if (buildingSpawnTimer_ >= params.spawnInterval) {
+        buildingSpawnTimer_ = 0.0f;
+        building->SpawnRandomBuilding(player_->GetTranslate(), boss_->GetTargetPosition());
+      }
+    } else {
+      buildingSpawnTimer_ = 0.0f;
+    }
+  }
+
   skydome_->Update();
 
   // ライトのパラメータ更新

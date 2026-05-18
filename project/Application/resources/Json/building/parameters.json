@@ -1,12 +1,30 @@
 {
     "building": {
+        "avoid_boss_radius": 30.0,
+        "avoid_boss_radius_comment": "ボスが移動/攻撃対象にしている座標を避ける半径",
+        "avoid_player_radius": 15.0,
+        "avoid_player_radius_comment": "プレイヤーの現在座標を避ける半径",
         "building_hp": 500,
+        "building_hp_comment": "ビルの初期体力値",
         "count": 1,
+        "count_comment": "初期配置されるビルの個数",
         "field_range": 90.0,
+        "field_range_comment": "ビルが生成されるフィールドのXZ範囲(中心からの距離)",
+        "max_count": 20,
+        "max_count_comment": "時間経過で自動生成されるビルの最大上限数",
         "max_height": 40.0,
+        "max_height_comment": "ビルの最大高さスケール",
         "max_scale_xz": 15.0,
+        "max_scale_xz_comment": "ビルの最大幅スケール(XZ)",
         "min_distance": 5.0,
+        "min_distance_comment": "ビル同士が生成時に最低限離れるべき距離",
         "min_height": 5.0,
-        "min_scale_xz": 8.0
+        "min_height_comment": "ビルの最小高さスケール",
+        "min_scale_xz": 8.0,
+        "min_scale_xz_comment": "ビルの最小幅スケール(XZ)",
+        "spawn_duration": 2.0,
+        "spawn_duration_comment": "地面から揺れながら生えてくる演出の時間(秒)",
+        "spawn_interval": 5.0,
+        "spawn_interval_comment": "ビルが自動生成される時間間隔(秒)"
     }
 }

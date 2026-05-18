@@ -30,12 +30,38 @@ struct BuildingInstance {
     Vector3 angularVelocity = {};
     float disappearTimer   = 0.0f;
 
+    // 出現中演出パラメータ
+    bool isSpawning        = false;
+    float spawnTimer       = 0.0f;
+    float spawnDuration    = 2.0f;
+    Vector3 targetPosition = {};
+    float initialY         = 0.0f;
+
     static constexpr float kDisappearTime = 3.0f;
     static constexpr float kFieldBound    = 100.0f;
 };
 
 class Building {
 public:
+    // パラメータ
+    struct Parameters {
+        int count = 10;
+        float minHeight = 10.0f;
+        float maxHeight = 50.0f;
+        float minScaleXZ = 5.0f;
+        float maxScaleXZ = 15.0f;
+        float fieldRange = 90.0f;
+        float minDistance = 5.0f;
+        int buildingHp = 100;
+
+        // 自動生成パラメータ
+        float spawnInterval = 5.0f;
+        int maxCount = 20;
+        float avoidPlayerRadius = 15.0f;
+        float avoidBossRadius = 30.0f;
+        float spawnDuration = 2.0f;
+    };
+
     Building();
     ~Building();
 
@@ -43,6 +69,9 @@ public:
     void Update();
     void Draw(IrufemiEngine* engine);
     void DrawImGui();
+
+    /// @brief パラメータを取得
+    const Parameters& GetParams() const { return params_; }
 
     /// @brief 既存の建物を全て消去し、指定座標に建物を1つだけ配置する（チュートリアル用）
     void ClearAndAddSingleBuilding(const Vector3& position);
@@ -54,6 +83,12 @@ public:
 
     /// @brief 建物の数を取得
     int GetBuildingCount() const { return static_cast<int>(instances_.size()); }
+
+    /// @brief 生存している建物の数を取得
+    int GetAliveBuildingCount() const;
+
+    /// @brief ランダムな位置に新しい建物を1つ生成する（プレイヤーやボスの位置を避ける）
+    void SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3& avoidBossPos);
 
     /// @brief 建物がアクティブか（HP > 0 で吹き飛んでない＆消滅してない）
     bool IsBuildingAlive(int index) const;
@@ -109,16 +144,7 @@ private:
     std::unique_ptr<ModelRegion> buildingRegion_ = nullptr;
 
     // パラメータ
-    struct Parameters {
-        int count = 10;
-        float minHeight = 10.0f;
-        float maxHeight = 50.0f;
-        float minScaleXZ = 5.0f;
-        float maxScaleXZ = 15.0f;
-        float fieldRange = 90.0f;
-        float minDistance = 5.0f;
-        int buildingHp = 100;
-    } params_;
+    Parameters params_;
 
     const std::string kJsonFilePath = "resources/Json/building/parameters.json";
 

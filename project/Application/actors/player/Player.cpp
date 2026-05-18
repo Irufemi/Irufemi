@@ -88,6 +88,20 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
 
     hpBar_ = std::make_unique<PlayerHPBar>();
     hpBar_->Initialize(engine);
+
+    // ★追加: からくりチャージゲージの初期化
+    karakuriGaugeBg_ = std::make_unique<Sprite>();
+    karakuriGaugeBg_->Initialize("resources/whiteTexture.png");
+    karakuriGaugeBg_->SetColor({ 0.2f, 0.2f, 0.0f, 0.5f }); // 暗い黄色
+    karakuriGaugeBg_->SetSize(400.0f, 16.0f);
+    // 中央下部（HPバーの少し上）に配置。画面幅1280, 高さ720想定
+    karakuriGaugeBg_->SetPositionTopLeft(440.0f, 580.0f); 
+
+    karakuriGaugeFill_ = std::make_unique<Sprite>();
+    karakuriGaugeFill_->Initialize("resources/whiteTexture.png");
+    karakuriGaugeFill_->SetColor({ 1.0f, 0.9f, 0.1f, 0.8f }); // 明るい黄色
+    karakuriGaugeFill_->SetSize(0.0f, 16.0f); // 初期幅0
+    karakuriGaugeFill_->SetPositionTopLeft(440.0f, 580.0f);
 }
 
 void Player::Update() {
@@ -367,6 +381,35 @@ void Player::Update() {
         hpBar_->Update(this, cameraController_.IsFirstPerson());
     }
 
+    // ★追加: からくりチャージゲージの更新
+    if (karakuriGaugeBg_ && karakuriGaugeFill_) {
+        if (!isKarakuriCharged_ && karakuriChargeTimer_ > 0) {
+            float ratio = static_cast<float>(karakuriChargeTimer_) / static_cast<float>(kKarakuriChargeTime);
+            if (ratio > 1.0f) ratio = 1.0f;
+            karakuriGaugeFill_->SetSize(400.0f * ratio, 16.0f);
+            
+            karakuriGaugeBg_->Update();
+            karakuriGaugeFill_->Update();
+        }
+    }
+
+    // ジャスト回避の星エフェクト更新
+    if (!status_.IsDead() && starScale_.x > 0.01f) {
+        starRotationZ_ += 0.5f; // くるくる回す速度
+        starScale_.x *= 0.88f;  // シュッと小さくしていく
+        starScale_.y *= 0.88f;
+        starScale_.z *= 0.88f;
+
+        if (starObj_) {
+            starObj_->SetPosition({ translate_.x, translate_.y + 2.0f, translate_.z });
+            // カメラの方を向かせたいが、簡易的に正面に向けるか、今の回転を使用
+            starObj_->SetRotate({ rotate_.x, rotate_.y, starRotationZ_ });
+            starObj_->SetScale(starScale_);
+            starObj_->Update();
+        }
+    }
+
+
 #ifdef USE_IMGUI
     if (input_->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
         isDebugDrawOBB_ = !isDebugDrawOBB_;
@@ -442,10 +485,17 @@ void Player::Draw3DUI(Enemy* enemy, bool isUI, bool isPaused) {
 
 void Player::Draw2DUI(Enemy* enemy) {
     if (!status_.IsDead()) {
+        // 視点に関わらずからくりチャージゲージを描画
+        if (!isKarakuriCharged_ && karakuriChargeTimer_ > 0 && karakuriGaugeBg_ && karakuriGaugeFill_) {
+            karakuriGaugeBg_->Draw();
+            karakuriGaugeFill_->Draw();
+        }
+
         if (cameraController_.IsFirstPerson()) {
             if (maskSprite_) maskSprite_->Draw();
             if (aimingSprite_) aimingSprite_->Draw();
             if (hpBar_) hpBar_->Draw2D();
+
             // ボスのHPバー（2D）は1人称視点のみ表示
             if (enemy) {
                 enemy->Draw2DUI(engine_);
@@ -497,8 +547,12 @@ void Player::Draw() {
     }
 
     // ★追加: 星（plane.obj）の描画
-    if (status_.IsDead() && starObj_ && deathTimer_ >= kDeathAnimationDuration - 40 && starScale_.x > 0.01f) {
-        starObj_->Draw();
+    if (starObj_ && starScale_.x > 0.01f) {
+        if (status_.IsDead() && deathTimer_ >= kDeathAnimationDuration - 40) {
+            starObj_->Draw();
+        } else if (!status_.IsDead()) {
+            starObj_->Draw(); // ジャスト回避エフェクト
+        }
     }
 
     if (attackObj_ && attackState_ != AttackState::kNone && !status_.IsDead() && cameraController_.IsCameraControlEnabled()) {
@@ -526,6 +580,22 @@ void Player::DrawParticles() {
 }
 
 bool Player::ApplyDamage(int damage) {
+    // ジャスト回避の判定
+    if (movement_.IsJustEvasionWindow()) {
+        // ジャスト回避成功！
+        // 無敵時間を大幅に付与（180フレーム = 3秒間）して後続の攻撃を回避
+        status_.SetInvincibleTimer(180); 
+
+        // ジャスト回避成功時のキラン☆演出（死亡時の星モデルを一時的に流用）
+        if (starObj_) {
+            starScale_ = { 4.0f, 4.0f, 4.0f }; // 星を出す
+            starRotationZ_ = 0.0f;
+            // deathTimer_等に依存せず星を描画するため、Drawメソッドでの描画条件を追加する必要がありますが、
+            // 現在は無敵付与による点滅で回避成功が分かります。
+        }
+        return false; // ダメージは受けない
+    }
+
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
 
     int finalDamage = damage;
