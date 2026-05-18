@@ -32,7 +32,7 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
     attackObj_ = std::make_unique<ObjClass>();
-    attackObj_->Initialize("enemy/body.obj");
+    attackObj_->Initialize("player/playerMelee.obj");
     attackObj_->SetPosition(translate_);
     attackObj_->Update();
 
@@ -592,8 +592,8 @@ void Player::HandleAttack() {
                 swingRot.y = currentAngle;
                 swingRot.x = kHammerRotX;
                 attackObj_->SetRotate(swingRot);
-                float hammerSize = hammerBaseSize_ + (chargeRate * hammerSizeChargeBonus_);
-                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
+                float baseScale = 1.0f + (chargeRate * hammerSizeChargeBonus_);
+                Vector3 hammerScale = { baseScale, baseScale, baseScale };
                 attackObj_->SetScale(hammerScale);
                 attackObj_->Update();
             }
@@ -604,9 +604,26 @@ void Player::HandleAttack() {
             currentChargeRate_ = static_cast<float>(chargeTimer_) / kMaxChargeTime;
             if (currentChargeRate_ > 1.0f) currentChargeRate_ = 1.0f;
 
-            float hammerSize = hammerBaseSize_ + (currentChargeRate_ * hammerSizeChargeBonus_);
-            Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
-            attackCollision_.radius = hammerScale.y * 0.8f; // モデルより少し大きくする
+            float baseScale = 1.0f + (currentChargeRate_ * hammerSizeChargeBonus_);
+            Vector3 hammerScale = { baseScale, baseScale, baseScale };
+            attackCollision_.radius = baseScale * 1.5f; // モデル(直径約3m)に合わせて半径1.5m
+
+            // ★追加: ハンマーをスイングした瞬間に風切りエフェクトを発生させる
+            if (swingEffect_) {
+                // ハンマーの高さに合わせて少し上にエフェクトを発生させる
+                Vector3 effectPos = translate_;
+                effectPos.y += kHammerBaseHeight;
+
+                // メッシュ側ですでにXZ平面に寝かせているため、ピッチは0。
+                // ヨーをハンマーの開始角度に合わせることで、軌跡の根本(0度)をハンマー位置に同期し、弧を後ろへ伸ばす
+                Vector3 effectRot = { 0.0f, rotate_.y + kHammerAngleOffset, 0.0f };
+
+                // チャージ率に応じてハンマーの旋回半径を計算し、エフェクトのスケール（半径）を完全に一致させる
+                float currentSwingRadius = kSwingBaseRadius + (currentChargeRate_ * kSwingRadiusChargeBonus);
+                Vector3 effectScale = { currentSwingRadius, 1.0f, currentSwingRadius };
+
+                swingEffect_->Play(effectPos, effectRot, effectScale);
+            }
         }
         break;
 
@@ -631,8 +648,8 @@ void Player::HandleAttack() {
                 swingRot.y = currentAngle;
                 swingRot.x = kHammerRotX;
                 attackObj_->SetRotate(swingRot);
-                float hammerSize = hammerBaseSize_ + (currentChargeRate_ * hammerSizeChargeBonus_);
-                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
+                float baseScale = 1.0f + (currentChargeRate_ * hammerSizeChargeBonus_);
+                Vector3 hammerScale = { baseScale, baseScale, baseScale };
                 attackObj_->SetScale(hammerScale);
                 attackObj_->Update();
             }
