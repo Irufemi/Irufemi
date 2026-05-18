@@ -63,17 +63,18 @@ public:
     Text* GetTextObject() const { return textObj_.get(); }
 
     std::string GetComponentName() const override { return "TextRendererComponent"; }
-    nlohmann::json Serialize() override;
-    void Deserialize(const nlohmann::json& j) override;
+    void OnRegisterProperties() override;
 
 private:
     std::unique_ptr<Text> textObj_;
     TransformComponent* transform_ = nullptr;
     
     std::wstring text_ = L"Text";
+    std::string textU8_ = "Text"; // For Reflection
     std::string fontId_ = "MainFont";
     float baseScale_ = 64.0f;
     Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
     TextAlignment alignment_ = TextAlignment::Left;
+    int alignmentInt_ = 0; // For Reflection (0:Left, 1:Center, 2:Right)
     bool isTopMost_ = false;
 };

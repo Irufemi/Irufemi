@@ -26,7 +26,29 @@ void TextRendererComponent::Initialize() {
 }
 
 void TextRendererComponent::Update() {
-    if (!transform_) return;
+    if (!transform_ || !textObj_) return;
+
+    // Reflection / Deserialize sync
+    std::wstring newText = ConvertString(textU8_);
+    if (text_ != newText) {
+        SetText(newText);
+    }
+    if (textObj_->GetFontId() != fontId_) {
+        SetFontId(fontId_);
+    }
+    if (textObj_->GetBaseScale() != baseScale_) {
+        SetBaseScale(baseScale_);
+    }
+    if (textObj_->GetColor() != color_) {
+        SetColor(color_);
+    }
+    if (textObj_->IsTopMost() != isTopMost_) {
+        SetTopMost(isTopMost_);
+    }
+    auto newAlign = static_cast<TextAlignment>(alignmentInt_);
+    if (alignment_ != newAlign) {
+        SetAlignment(newAlign);
+    }
 
     // Transformの変更をTextオブジェクトに反映
     textObj_->SetPosition(transform_->position_.x, transform_->position_.y, transform_->position_.z);
@@ -57,6 +79,7 @@ bool TextRendererComponent::Raycast(const Ray& ray, float& outDistance) const {
 
 void TextRendererComponent::SetText(const std::wstring& text) {
     text_ = text;
+    textU8_ = ConvertString(text_);
     if (textObj_) {
         textObj_->SetText(text_);
     }
@@ -92,51 +115,22 @@ void TextRendererComponent::SetTopMost(bool isTopMost) {
 
 void TextRendererComponent::SetAlignment(TextAlignment align) {
     alignment_ = align;
+    alignmentInt_ = static_cast<int>(align);
     if (textObj_) {
         textObj_->SetAlignment(alignment_);
     }
 }
 
-nlohmann::json TextRendererComponent::Serialize() {
-    nlohmann::json j = Component::Serialize();
-    // utf-8 std::stringに変換して保存
-    j["text"] = ConvertString(text_);
-    j["fontId"] = fontId_;
-    j["baseScale"] = baseScale_;
-    j["color"] = { color_.x, color_.y, color_.z, color_.w };
-    j["isTopMost"] = isTopMost_;
-    j["alignment"] = static_cast<int>(alignment_);
-    return j;
+void TextRendererComponent::OnRegisterProperties() {
+    textU8_ = ConvertString(text_);
+    alignmentInt_ = static_cast<int>(alignment_);
+
+    RegisterProperty("text", &textU8_);
+    RegisterProperty("fontId", &fontId_);
+    RegisterProperty("baseScale", &baseScale_);
+    RegisterProperty("color", &color_);
+    RegisterProperty("alignment", &alignmentInt_);
+    RegisterProperty("isTopMost", &isTopMost_);
 }
 
-void TextRendererComponent::Deserialize(const nlohmann::json& j) {
-    Component::Deserialize(j);
-    if (j.contains("text")) {
-        text_ = ConvertString(j["text"].get<std::string>());
-    }
-    if (j.contains("fontId")) {
-        fontId_ = j["fontId"].get<std::string>();
-    }
-    if (j.contains("baseScale")) {
-        baseScale_ = j["baseScale"].get<float>();
-    }
-    if (j.contains("color")) {
-        auto c = j["color"];
-        color_ = { c[0], c[1], c[2], c[3] };
-    }
-    if (j.contains("isTopMost")) {
-        isTopMost_ = j["isTopMost"].get<bool>();
-    }
-    if (j.contains("alignment")) {
-        alignment_ = static_cast<TextAlignment>(j["alignment"].get<int>());
-    }
 
-    if (textObj_) {
-        textObj_->SetText(text_);
-        textObj_->SetFontId(fontId_);
-        textObj_->SetBaseScale(baseScale_);
-        textObj_->SetColor(color_);
-        textObj_->SetTopMost(isTopMost_);
-        textObj_->SetAlignment(alignment_);
-    }
-}
