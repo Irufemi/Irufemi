@@ -1,119 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="camera">
-      <UniqueIdentifier>{b2d20bfd-f14e-4085-86ad-27fd4e530cb4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Scene">
-      <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Application">
-      <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="contents">
-      <UniqueIdentifier>{ddd2104b-5808-42fe-b6bb-bec71468865e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="contents\field">
-      <UniqueIdentifier>{87ca9e63-654d-423d-9130-9be2643c6eeb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="contents\Effect">
-      <UniqueIdentifier>{36a4bbf6-55cb-47ff-979e-a57e76b57f86}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\Clear">
-      <UniqueIdentifier>{10005089-1114-4451-b83e-4c222dd4993b}</UniqueIdentifier>
+      <UniqueIdentifier>{10000000-0000-0000-0000-000000000000}</UniqueIdentifier>
     </Filter>
     <Filter Include="Scene\InGame">
-      <UniqueIdentifier>{86fe6dc3-e9e1-4808-a280-aa9dd371aaba}</UniqueIdentifier>
+      <UniqueIdentifier>{10000000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
     <Filter Include="Scene\Pause">
-      <UniqueIdentifier>{ab12cd34-56ef-7890-abcd-ef1234567890}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\Debug">
-      <UniqueIdentifier>{0a6ed38f-12d1-4188-b3fa-fb3877f9047d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\GameOver">
-      <UniqueIdentifier>{1419eb2e-43b5-45d8-acdb-9b3b00918d5f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\StatgeSelect">
-      <UniqueIdentifier>{ff03cd2d-af96-44ae-b342-c150a81581c8}</UniqueIdentifier>
+      <UniqueIdentifier>{10000000-0000-0000-0000-000000000002}</UniqueIdentifier>
     </Filter>
     <Filter Include="Scene\Title">
-      <UniqueIdentifier>{52b04192-3ea4-4077-b32c-a2d4e50999b5}</UniqueIdentifier>
+      <UniqueIdentifier>{10000000-0000-0000-0000-000000000003}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Scene\tutorial">
-      <UniqueIdentifier>{92b04192-3ea4-4077-b32c-a2d4e50tutorial}</UniqueIdentifier>
+    <Filter Include="Scene\Tutorial">
+      <UniqueIdentifier>{10000000-0000-0000-0000-000000000004}</UniqueIdentifier>
     </Filter>
-    <Filter Include="contents\Skydome">
-      <UniqueIdentifier>{a2e5f410-816b-4e06-a443-0f90dfb32db7}</UniqueIdentifier>
+    <Filter Include="Scene\Clear">
+      <UniqueIdentifier>{10000000-0000-0000-0000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\Debug">
+      <UniqueIdentifier>{10000000-0000-0000-0000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\StageSelect">
+      <UniqueIdentifier>{10000000-0000-0000-0000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\GameOver">
+      <UniqueIdentifier>{10000000-0000-0000-0000-000000000008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Camera">
+      <UniqueIdentifier>{20000000-0000-0000-0000-000000000000}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application">
+      <UniqueIdentifier>{30000000-0000-0000-0000-000000000000}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors">
-      <UniqueIdentifier>{490d274c-e2b4-4b8c-a942-e7053c118b00}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Actors\player">
-      <UniqueIdentifier>{c7a866e3-5957-4bef-b573-cc39ef55055c}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000000}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy">
-      <UniqueIdentifier>{76850a7a-5d4f-4ae6-852d-335cd761d210}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000001}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Body">
-      <UniqueIdentifier>{2e18bd5c-ce49-4fb6-abb1-8a1812fc561f}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000002}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Head">
-      <UniqueIdentifier>{1587a22d-b6f6-4698-b861-ddd5d265b618}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000003}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Head\Left">
-      <UniqueIdentifier>{2fe67ef0-f88a-459a-8139-781b8a38264b}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000004}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Head\Mid">
-      <UniqueIdentifier>{5468ce93-7c4a-44bf-ad6c-499a7d66faf3}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000005}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Head\Right">
-      <UniqueIdentifier>{9670f63d-0276-4875-ae4f-d9206afcd7fb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Actors\Enemy\Beam">
-      <UniqueIdentifier>{001f63c9-472b-4a22-8633-69f7be14ddd9}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000006}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\AI">
-      <UniqueIdentifier>{27d5ebf6-da80-4750-9990-bbcab7e43d84}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000007}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Animation">
-      <UniqueIdentifier>{67c953c6-1e02-47c9-b901-1451502d90d7}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000008}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState">
-      <UniqueIdentifier>{81a4b2c3-d4e5-f6a7-b8c9-d0e1f2a3b4c5}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000009}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase1">
-      <UniqueIdentifier>{a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-00000000000A}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase1\Idle">
-      <UniqueIdentifier>{b2c3d4e5-f6a7-b8c9-d0e1-f2a3b4c5d6e7}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-00000000000B}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase1\Beam">
-      <UniqueIdentifier>{c3d4e5f6-a7b8-c9d0-e1f2-a3b4c5d6e7f8}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-00000000000C}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase1\Stomp">
-      <UniqueIdentifier>{d4e5f6a7-b8c9-d0e1-f2a3-b4c5d6e7f8g9}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-00000000000D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase1\Tackle">
+      <UniqueIdentifier>{40000000-0000-0000-0000-00000000000E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase1\NeckAttack">
+      <UniqueIdentifier>{40000000-0000-0000-0000-00000000000F}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase2">
-      <UniqueIdentifier>{e5f6a7b8-c9d0-e1f2-a3b4-c5d6e7f8g9h0}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000010}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase2\Bite">
-      <UniqueIdentifier>{f6a7b8c9-d0e1-f2a3-b4c5-d6e7f8g9h0i1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="contents\ui">
-      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef0123456789}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="contents\field\building">
-      <UniqueIdentifier>{12345678-abcd-ef01-2345-678901234567}</UniqueIdentifier>
+    <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase2\Tackle">
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000011}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase2\Beam">
-      <UniqueIdentifier>{g7b8c9d0-e1f2-a3b4-c5d6-e7f8g9h0i1j2}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000012}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\Animation\EnemyAnimState\Phase2\Idle">
-      <UniqueIdentifier>{h8c9d0e1-f2a3-b4c5-d6e7-f8g9h0i1j2k3}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000013}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\Beam">
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000014}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Enemy\StompEffects">
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000015}</UniqueIdentifier>
     </Filter>
     <Filter Include="Actors\Enemy\TackleEffects">
-      <UniqueIdentifier>{00000000-0000-0000-0000-000000000001}</UniqueIdentifier>
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000016}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actors\Player">
+      <UniqueIdentifier>{40000000-0000-0000-0000-000000000017}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents">
+      <UniqueIdentifier>{50000000-0000-0000-0000-000000000000}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents\Field">
+      <UniqueIdentifier>{50000000-0000-0000-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents\Field\Building">
+      <UniqueIdentifier>{50000000-0000-0000-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents\Effect">
+      <UniqueIdentifier>{50000000-0000-0000-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents\Skydome">
+      <UniqueIdentifier>{50000000-0000-0000-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents\UI">
+      <UniqueIdentifier>{50000000-0000-0000-0000-000000000005}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -127,20 +136,19 @@
       <Filter>Scene\Title</Filter>
     </ClCompile>
     <ClCompile Include="scene\tutorial\TutorialScene.cpp">
-      <Filter>Scene\tutorial</Filter>
+      <Filter>Scene\Tutorial</Filter>
     </ClCompile>
     <ClCompile Include="scene\Clear\ClearScene.cpp">
       <Filter>Scene\Clear</Filter>
     </ClCompile>
-
     <ClCompile Include="camera\DebugCamera.cpp">
-      <Filter>camera</Filter>
+      <Filter>Camera</Filter>
     </ClCompile>
     <ClCompile Include="scene\Debug\DebugScene.cpp">
       <Filter>Scene\Debug</Filter>
     </ClCompile>
     <ClCompile Include="scene\StageSelect\SelectScene.cpp">
-      <Filter>Scene\StatgeSelect</Filter>
+      <Filter>Scene\StageSelect</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Application</Filter>
@@ -155,13 +163,13 @@
       <Filter>Actors\Enemy</Filter>
     </ClCompile>
     <ClCompile Include="actors\player\Player.cpp">
-      <Filter>Actors\player</Filter>
+      <Filter>Actors\Player</Filter>
     </ClCompile>
     <ClCompile Include="contents\field\Field.cpp">
-      <Filter>contents\field</Filter>
+      <Filter>Contents\Field</Filter>
     </ClCompile>
     <ClCompile Include="contents\effect\Effect.cpp">
-      <Filter>contents\Effect</Filter>
+      <Filter>Contents\Effect</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\Body\Body.cpp">
       <Filter>Actors\Enemy\Body</Filter>
@@ -182,19 +190,19 @@
       <Filter>Scene\GameOver</Filter>
     </ClCompile>
     <ClCompile Include="contents\skydome\Skydome.cpp">
-      <Filter>contents\Skydome</Filter>
+      <Filter>Contents\Skydome</Filter>
     </ClCompile>
     <ClCompile Include="actors\player\PlayerMovement.cpp">
-      <Filter>Actors\player</Filter>
+      <Filter>Actors\Player</Filter>
     </ClCompile>
     <ClCompile Include="actors\player\PlayerWeapon.cpp">
-      <Filter>Actors\player</Filter>
+      <Filter>Actors\Player</Filter>
     </ClCompile>
     <ClCompile Include="actors\player\PlayerCamera.cpp">
-      <Filter>Actors\player</Filter>
+      <Filter>Actors\Player</Filter>
     </ClCompile>
     <ClCompile Include="actors\player\PlayerStatus.cpp">
-      <Filter>Actors\player</Filter>
+      <Filter>Actors\Player</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\AI\EnemyAI.cpp">
       <Filter>Actors\Enemy\AI</Filter>
@@ -212,7 +220,7 @@
       <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\Stomp</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Tackle\Phase2_Tackle.cpp">
-      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2\Bite</Filter>
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2\Tackle</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.cpp">
       <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2\Beam</Filter>
@@ -229,23 +237,26 @@
     <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp">
       <Filter>Actors\Enemy\Beam</Filter>
     </ClCompile>
-    <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
+    <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp">
+      <Filter>Actors\Enemy\StompEffects</Filter>
+    </ClCompile>
     <ClCompile Include="contents\ui\EnemyHPBar.cpp">
-      <Filter>contents\ui</Filter>
+      <Filter>Contents\UI</Filter>
     </ClCompile>
     <ClCompile Include="contents\ui\EnemyPartHPBar.cpp">
-      <Filter>contents\ui</Filter>
+      <Filter>Contents\UI</Filter>
     </ClCompile>
     <ClCompile Include="contents\ui\PlayerHPBar.cpp">
-      <Filter>contents\ui</Filter>
+      <Filter>Contents\UI</Filter>
     </ClCompile>
     <ClCompile Include="contents\field\building\building.cpp">
-      <Filter>contents\field\building</Filter>
+      <Filter>Contents\Field\Building</Filter>
     </ClCompile>
-    <ClCompile Include="contents\field\building\building.cpp" />
-    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\NeckAttack\Phase1_NeckAttack.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\NeckAttack\Phase1_NeckAttack.cpp">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\NeckAttack</Filter>
+    </ClCompile>
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Tackle\Phase1_Tackle.cpp">
-      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1</Filter>
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\Tackle</Filter>
     </ClCompile>
     <ClCompile Include="actors\enemy\TackleEffects\EnemyTackleEffects.cpp">
       <Filter>Actors\Enemy\TackleEffects</Filter>
@@ -262,20 +273,19 @@
       <Filter>Scene\Title</Filter>
     </ClInclude>
     <ClInclude Include="scene\tutorial\TutorialScene.h">
-      <Filter>Scene\tutorial</Filter>
+      <Filter>Scene\Tutorial</Filter>
     </ClInclude>
     <ClInclude Include="scene\Clear\ClearScene.h">
       <Filter>Scene\Clear</Filter>
     </ClInclude>
-
     <ClInclude Include="camera\DebugCamera.h">
-      <Filter>camera</Filter>
+      <Filter>Camera</Filter>
     </ClInclude>
     <ClInclude Include="scene\Debug\DebugScene.h">
       <Filter>Scene\Debug</Filter>
     </ClInclude>
     <ClInclude Include="scene\StageSelect\SelectScene.h">
-      <Filter>Scene\StatgeSelect</Filter>
+      <Filter>Scene\StageSelect</Filter>
     </ClInclude>
     <ClInclude Include="GameApplication.h">
       <Filter>Application</Filter>
@@ -287,10 +297,10 @@
       <Filter>Actors\Enemy</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\Player.h">
-      <Filter>Actors\player</Filter>
+      <Filter>Actors\Player</Filter>
     </ClInclude>
     <ClInclude Include="contents\effect\Effect.h">
-      <Filter>contents\Effect</Filter>
+      <Filter>Contents\Effect</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Body\Body.h">
       <Filter>Actors\Enemy\Body</Filter>
@@ -308,25 +318,25 @@
       <Filter>Actors\Enemy\Head\Right</Filter>
     </ClInclude>
     <ClInclude Include="contents\field\Field.h">
-      <Filter>contents\field</Filter>
+      <Filter>Contents\Field</Filter>
     </ClInclude>
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>Scene\GameOver</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\PlayerMovement.h">
-      <Filter>Actors\player</Filter>
+      <Filter>Actors\Player</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\PlayerWeapon.h">
-      <Filter>Actors\player</Filter>
+      <Filter>Actors\Player</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\PlayerCamera.h">
-      <Filter>Actors\player</Filter>
+      <Filter>Actors\Player</Filter>
     </ClInclude>
     <ClInclude Include="actors\player\PlayerStatus.h">
-      <Filter>Actors\player</Filter>
+      <Filter>Actors\Player</Filter>
     </ClInclude>
     <ClInclude Include="contents\skydome\Skydome.h">
-      <Filter>contents\Skydome</Filter>
+      <Filter>Contents\Skydome</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\EnemyState.h">
       <Filter>Actors\Enemy</Filter>
@@ -347,7 +357,7 @@
       <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\Stomp</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Tackle\Phase2_Tackle.h">
-      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2\Bite</Filter>
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2\Tackle</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.h">
       <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase2\Beam</Filter>
@@ -367,17 +377,29 @@
     <ClInclude Include="actors\enemy\Animation\IEnemyAnimationState.h">
       <Filter>Actors\Enemy\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />
+    <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h">
+      <Filter>Actors\Enemy\StompEffects</Filter>
+    </ClInclude>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Tackle\Phase1_Tackle.h">
-      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1</Filter>
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\Tackle</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\TackleEffects\EnemyTackleEffects.h">
       <Filter>Actors\Enemy\TackleEffects</Filter>
     </ClInclude>
-    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\NeckAttack\Phase1_NeckAttack.h" />
-    <ClInclude Include="contents\field\building\building.h" />
-    <ClInclude Include="contents\ui\EnemyHPBar.h" />
-    <ClInclude Include="contents\ui\EnemyPartHPBar.h" />
-    <ClInclude Include="contents\ui\PlayerHPBar.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\NeckAttack\Phase1_NeckAttack.h">
+      <Filter>Actors\Enemy\Animation\EnemyAnimState\Phase1\NeckAttack</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\field\building\building.h">
+      <Filter>Contents\Field\Building</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\ui\EnemyHPBar.h">
+      <Filter>Contents\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\ui\EnemyPartHPBar.h">
+      <Filter>Contents\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\ui\PlayerHPBar.h">
+      <Filter>Contents\UI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
