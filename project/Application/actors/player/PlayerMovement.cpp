@@ -71,7 +71,7 @@ void PlayerMovement::Update(InputManager* input, bool isCharging, bool isKarakur
             if (dodgeCooldownTimer_ <= 0) {
                 dodgeCooldownTimer_ = kDodgeCooldownTime; // クールタイム2秒
                 dodgeDurationTimer_ = kDodgeDurationTime; // 回避モーションの時間
-                invincibleTimer = kDodgeDurationTime;    // 既存の無敵タイマーを利用して回避中を無敵に
+                // ジャスト回避システムのため、回避開始時に無敵を付与しない（または専用処理に任せる）
 
                 // 移動入力があればその方向へ、なければ向いている方向（前）へ回避
                 if (move.x != 0.0f || move.z != 0.0f) {

@@ -367,6 +367,23 @@ void Player::Update() {
         hpBar_->Update(this, cameraController_.IsFirstPerson());
     }
 
+    // ジャスト回避の星エフェクト更新
+    if (!status_.IsDead() && starScale_.x > 0.01f) {
+        starRotationZ_ += 0.5f; // くるくる回す速度
+        starScale_.x *= 0.88f;  // シュッと小さくしていく
+        starScale_.y *= 0.88f;
+        starScale_.z *= 0.88f;
+
+        if (starObj_) {
+            starObj_->SetPosition({ translate_.x, translate_.y + 2.0f, translate_.z });
+            // カメラの方を向かせたいが、簡易的に正面に向けるか、今の回転を使用
+            starObj_->SetRotate({ rotate_.x, rotate_.y, starRotationZ_ });
+            starObj_->SetScale(starScale_);
+            starObj_->Update();
+        }
+    }
+
+
 #ifdef USE_IMGUI
     if (input_->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
         isDebugDrawOBB_ = !isDebugDrawOBB_;
@@ -497,8 +514,12 @@ void Player::Draw() {
     }
 
     // ★追加: 星（plane.obj）の描画
-    if (status_.IsDead() && starObj_ && deathTimer_ >= kDeathAnimationDuration - 40 && starScale_.x > 0.01f) {
-        starObj_->Draw();
+    if (starObj_ && starScale_.x > 0.01f) {
+        if (status_.IsDead() && deathTimer_ >= kDeathAnimationDuration - 40) {
+            starObj_->Draw();
+        } else if (!status_.IsDead()) {
+            starObj_->Draw(); // ジャスト回避エフェクト
+        }
     }
 
     if (attackObj_ && attackState_ != AttackState::kNone && !status_.IsDead() && cameraController_.IsCameraControlEnabled()) {
@@ -526,6 +547,22 @@ void Player::DrawParticles() {
 }
 
 bool Player::ApplyDamage(int damage) {
+    // ジャスト回避の判定
+    if (movement_.IsJustEvasionWindow()) {
+        // ジャスト回避成功！
+        // 無敵時間を大幅に付与（180フレーム = 3秒間）して後続の攻撃を回避
+        status_.SetInvincibleTimer(180); 
+
+        // ジャスト回避成功時のキラン☆演出（死亡時の星モデルを一時的に流用）
+        if (starObj_) {
+            starScale_ = { 4.0f, 4.0f, 4.0f }; // 星を出す
+            starRotationZ_ = 0.0f;
+            // deathTimer_等に依存せず星を描画するため、Drawメソッドでの描画条件を追加する必要がありますが、
+            // 現在は無敵付与による点滅で回避成功が分かります。
+        }
+        return false; // ダメージは受けない
+    }
+
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
 
     int finalDamage = damage;
