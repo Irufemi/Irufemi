@@ -9,11 +9,13 @@
 #include "Renderer/Object2D/Sprite/Sprite.h"
 #include "../enemy/Enemy.h" 
 #include "contents/ui/PlayerHPBar.h"
-
+#include "Renderer/Effect/WeaponTrail.h"
 
 #ifdef USE_IMGUI
 #include <imgui.h> 
 #endif
+
+Player::Player() = default;
 
 Player::~Player() {
 }
@@ -88,6 +90,9 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
 
     hpBar_ = std::make_unique<PlayerHPBar>();
     hpBar_->Initialize(engine);
+
+    weaponTrail_ = std::make_unique<WeaponTrail>();
+    weaponTrail_->Initialize(engine, "resources/gradationLine.png", {1.0f, 0.6f, 0.1f, 1.0f});
 
     // ★追加: からくりチャージゲージの初期化
     karakuriGaugeBg_ = std::make_unique<Sprite>();
@@ -381,6 +386,10 @@ void Player::Update() {
         hpBar_->Update(this, cameraController_.IsFirstPerson());
     }
 
+    if (weaponTrail_) {
+        weaponTrail_->Update();
+    }
+
     // ★追加: からくりチャージゲージの更新
     if (karakuriGaugeBg_ && karakuriGaugeFill_) {
         if (!isKarakuriCharged_ && karakuriChargeTimer_ > 0) {
@@ -559,6 +568,11 @@ void Player::Draw() {
         attackObj_->Draw();
     }
 
+    if (weaponTrail_) {
+        weaponTrail_->SyncBeforeDraw();
+        weaponTrail_->Draw();
+    }
+
     if (isTargetingEnemy_ && targetMarkerObj_ && !status_.IsDead()) {
         // targetMarkerObj_->Draw();
     }
@@ -735,10 +749,23 @@ void Player::HandleAttack() {
                 attackObj_->Update();
             }
 
+            if (weaponTrail_) {
+                Vector3 tipPos = attackCollision_.center + weapon_.GetMissileVibration();
+                // プレイヤーの中心からtipPosへのベクトルを計算し、軌跡を扇形ではなく「帯（リボン）」にする
+                // 根本（basePos）をハンマーの中心とプレイヤーの中心の間に設定（例えば60%の位置）
+                Vector3 basePos;
+                basePos.x = Lerp(translate_.x, tipPos.x, 0.6f);
+                basePos.y = Lerp(translate_.y + kHammerBaseHeight, tipPos.y, 0.6f);
+                basePos.z = Lerp(translate_.z, tipPos.z, 0.6f);
+
+                weaponTrail_->AddPoint(basePos, tipPos);
+            }
+
             attackActiveTimer_--;
             if (attackActiveTimer_ <= 0) {
                 attackCollision_.isActive = false;
                 attackState_ = AttackState::kNone;
+                if (weaponTrail_) weaponTrail_->StopTrail();
             }
         }
         break;

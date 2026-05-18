@@ -153,6 +153,7 @@
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Framework\SceneTransition.cpp" />
     <ClCompile Include="Framework\BaseScene.cpp" />
+    <ClCompile Include="Renderer\Effect\WeaponTrail.cpp" />
     <ClCompile Include="Renderer\Object2D\Sprite\Sprite.cpp" />
     <ClCompile Include="Renderer\Object3D\AnimationModel\AnimationModel.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
@@ -265,6 +266,7 @@
     <ClInclude Include="Framework\SceneTransition.h" />
     <ClInclude Include="Framework\BaseScene.h" />
     <ClInclude Include="Renderer\Core\IRenderable.h" />
+    <ClInclude Include="Renderer\Effect\WeaponTrail.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.h" />
     <ClInclude Include="Renderer\VoxelParticle\VoxelParticleSystem.h" />
     <ClInclude Include="Resource\Model\Data\VoxelizedModel.h" />
