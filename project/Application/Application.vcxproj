@@ -185,6 +185,7 @@ exit 0</Command>
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Idle\Phase2_Idle.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.cpp" />
+    <ClCompile Include="contents\light\DynamicArenaLight.cpp" />
     <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
     <ClCompile Include="contents\ui\EnemyHPBar.cpp" />
@@ -238,6 +239,7 @@ exit 0</Command>
     <ClInclude Include="actors\enemy\EnemyParameters.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h" />
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
+    <ClInclude Include="contents\light\DynamicArenaLight.h" />
     <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />
     <ClInclude Include="contents\ui\EnemyHPBar.h" />

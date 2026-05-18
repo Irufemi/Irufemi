@@ -13,6 +13,7 @@ class Field;
 class Skydome;
 struct PointLight;
 class Sprite;
+class DynamicArenaLight;
 
 enum class TutorialPhase {
     MoveWASD,
@@ -39,7 +40,6 @@ public:
     void DrawDebugTab() override;
 
 private:
-    void UpdateDynamicLights();
     void CheckAllCollisions();
     void CheckPlayerToEnemyCollisions();
     void CheckEnemyToPlayerCollisions();
@@ -62,6 +62,7 @@ private:
     std::unique_ptr<Enemy> boss_ = nullptr;
     std::unique_ptr<Field> field_ = nullptr;
     std::unique_ptr<Skydome> skydome_ = nullptr;
+    std::unique_ptr<DynamicArenaLight> dynamicArenaLight_ = nullptr;
 
     bool isCollisionEnabled_ = true;
 

@@ -124,6 +124,9 @@
     <Filter Include="Contents\UI">
       <UniqueIdentifier>{50000000-0000-0000-0000-000000000005}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Contents\Light">
+      <UniqueIdentifier>{2545d0d3-8115-43aa-85ba-31e16072ccb8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene\InGame\GameScene.cpp">
@@ -140,9 +143,6 @@
     </ClCompile>
     <ClCompile Include="scene\Clear\ClearScene.cpp">
       <Filter>Scene\Clear</Filter>
-    </ClCompile>
-    <ClCompile Include="camera\DebugCamera.cpp">
-      <Filter>Camera</Filter>
     </ClCompile>
     <ClCompile Include="scene\Debug\DebugScene.cpp">
       <Filter>Scene\Debug</Filter>
@@ -261,6 +261,9 @@
     <ClCompile Include="actors\enemy\TackleEffects\EnemyTackleEffects.cpp">
       <Filter>Actors\Enemy\TackleEffects</Filter>
     </ClCompile>
+    <ClCompile Include="contents\light\DynamicArenaLight.cpp">
+      <Filter>Contents\Light</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\InGame\GameScene.h">
@@ -277,9 +280,6 @@
     </ClInclude>
     <ClInclude Include="scene\Clear\ClearScene.h">
       <Filter>Scene\Clear</Filter>
-    </ClInclude>
-    <ClInclude Include="camera\DebugCamera.h">
-      <Filter>Camera</Filter>
     </ClInclude>
     <ClInclude Include="scene\Debug\DebugScene.h">
       <Filter>Scene\Debug</Filter>
@@ -400,6 +400,9 @@
     </ClInclude>
     <ClInclude Include="contents\ui\PlayerHPBar.h">
       <Filter>Contents\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\light\DynamicArenaLight.h">
+      <Filter>Contents\Light</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

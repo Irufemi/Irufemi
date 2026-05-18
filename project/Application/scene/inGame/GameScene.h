@@ -22,6 +22,7 @@ class Building;
 class EnemyHPBar;
 class EnemyPartHPBar;
 class Sprite;
+class DynamicArenaLight;
 
 class GameScene : public BaseScene {
 public:
@@ -92,6 +93,9 @@ private:
     std::unique_ptr<Field> field_ = nullptr;
     std::unique_ptr<Skydome> skydome_ = nullptr;
     
+    // バトル用動的エリアライト
+    std::unique_ptr<DynamicArenaLight> dynamicArenaLight_ = nullptr;
+    
     // 操作説明スプライト
     std::unique_ptr<Sprite> operationNormalSprite_ = nullptr;
     std::unique_ptr<Sprite> operationChargedSprite_ = nullptr;
@@ -152,9 +156,4 @@ private:
      * @brief 飛んだ建物と他の建物の当たり判定
      */
     void CheckFlyingBuildingsVsBuildingsCollisions();
-
-    /**
-     * @brief プレイヤーと敵の座標に基づき、動的なポイントライトのパラメータを計算・更新する
-     */
-    void UpdateDynamicLights();
 };

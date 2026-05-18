@@ -6,7 +6,7 @@
 #include "Framework/SceneManager.h"
 #include "Irufemi.h"
 
-#include "Graphics/Data/PointLight.h"
+#include "contents/light/DynamicArenaLight.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Graphics/Camera/DebugCamera.h"
@@ -63,13 +63,8 @@ void TutorialScene::Initialize(IrufemiEngine* engine) {
     skydome_ = std::make_unique<Skydome>();
     skydome_->Initialize();
 
-    auto pLight = std::make_unique<PointLight>();
-    pLight->color = {1.0f, 0.9f, 0.8f, 1.0f};
-    pLight->intensity = 5.0f;
-    pLight->radius = 30.0f;
-    pLight->decay = 1.0f;
-    pLight->isActive = 1;
-    pointLights_.push_back(std::move(pLight));
+    dynamicArenaLight_ = std::make_unique<DynamicArenaLight>();
+    dynamicArenaLight_->Initialize(engine_, areaLights_);
 
     currentPhase_ = TutorialPhase::MoveWASD;
 }
@@ -119,7 +114,9 @@ void TutorialScene::Update() {
     }
 
     skydome_->Update();
-    UpdateDynamicLights();
+    if (player_ && boss_) {
+        dynamicArenaLight_->Update(player_->GetTranslate(), boss_->GetTargetPosition());
+    }
 
     BaseScene::Update();
     engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
@@ -267,26 +264,6 @@ void TutorialScene::DrawTutorialUI() {
     ImGui::TextWrapped("%s", currentInstruction_);
     ImGui::End();
 #endif
-}
-
-void TutorialScene::UpdateDynamicLights() {
-    if (pointLights_.empty() || !player_ || !boss_) return;
-    PointLight *pLight = pointLights_[0].get();
-    pLight->isActive = 1;
-    Vector3 pPos = player_->GetTranslate();
-    Vector3 bPos = boss_->GetTargetPosition();
-    Vector3 midPos = Math::Add(pPos, bPos);
-    midPos.x *= 0.5f; midPos.z *= 0.5f;
-    midPos.y = 40.0f;
-    pLight->position = midPos;
-    float distance = Math::Length(Math::Subtract(bPos, pPos));
-    pLight->radius = (std::max)(40.0f, distance * 2.0f);
-    pLight->intensity = 3.0f + (distance * 0.1f);
-    
-    Vector3 shadowTargetPos = midPos;
-    shadowTargetPos.y = (std::min)(pPos.y, bPos.y); 
-    float shadowOrthoSize = (std::max)(40.0f, distance * 0.6f + 20.0f);
-    engine_->GetDrawManager()->SetShadowParameters(shadowTargetPos, shadowOrthoSize);
 }
 
 void TutorialScene::CheckAllCollisions() {
