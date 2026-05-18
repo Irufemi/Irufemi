@@ -116,6 +116,10 @@ private:
     const int kKarakuriChargeTime = 300;
     bool isKarakuriCharged_ = false;
 
+    // ★追加: からくりチャージ用のゲージUI
+    std::unique_ptr<Sprite> karakuriGaugeBg_ = nullptr;
+    std::unique_ptr<Sprite> karakuriGaugeFill_ = nullptr;
+
     int karakuriActiveTimer_ = 0;
     const int kKarakuriActiveTime = 1200;
 
