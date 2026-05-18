@@ -636,6 +636,33 @@ void Player::HandleAttack() {
         if (input_->IsMouseButtonPressed(Mouse::Button::Left)) {
             attackState_ = AttackState::kCharging;
             chargeTimer_ = 0;
+
+            /**
+             * @brief 攻撃開始時のモデル座標・回転の初期化
+             * 
+             * @details
+             * 攻撃開始フレームで attackObj_ の座標を直ちにプレイヤー位置へ更新する。
+             * これを行わない場合、次の Draw() 呼び出し時に1フレームだけ
+             * 「前回攻撃が終了した座標」にモデルが描画される（残像が残る）現象が発生する。
+             */
+            float currentAngle = rotate_.y + kHammerAngleOffset;
+            float sinA = std::sin(currentAngle);
+            float cosA = std::cos(currentAngle);
+
+            Vector3 hammerPos;
+            hammerPos.x = translate_.x + sinA * kSwingBaseRadius;
+            hammerPos.y = translate_.y + kHammerBaseHeight;
+            hammerPos.z = translate_.z + cosA * kSwingBaseRadius;
+
+            if (attackObj_) {
+                attackObj_->SetPosition(hammerPos + weapon_.GetMissileVibration());
+                Vector3 swingRot = rotate_;
+                swingRot.y = currentAngle;
+                swingRot.x = kHammerRotX;
+                attackObj_->SetRotate(swingRot);
+                attackObj_->SetScale({ 1.0f, 1.0f, 1.0f });
+                attackObj_->Update();
+            }
         }
         break;
 
