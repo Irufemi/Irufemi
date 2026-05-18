@@ -124,6 +124,100 @@ static void DrawCollisionLayerGUI(uint32_t& layer, uint32_t& mask) {
     }
 }
 
+template<typename T>
+static void DrawColliderCommonProperties(T* comp) {
+    Vector3 offset = comp->GetLocalOffset();
+    if (ImGui::DragFloat3("Offset", &offset.x, 0.1f)) {
+        comp->SetLocalOffset(offset);
+    }
+    
+    if constexpr (std::is_same_v<T, SphereColliderComponent>) {
+        float radius = comp->GetLocalRadius();
+        if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, 1000.0f)) {
+            comp->SetLocalRadius(radius);
+        }
+    } else {
+        Vector3 size = comp->GetLocalSize();
+        if (ImGui::DragFloat3("Size (Extents)", &size.x, 0.1f, 0.0f, 1000.0f)) {
+            comp->SetLocalSize(size);
+        }
+    }
+    
+    ImGui::Checkbox("Is Trigger", &comp->isTrigger_);
+    DrawCollisionLayerGUI(comp->layer_, comp->mask_);
+}
+
+static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager* actionManager) {
+    const auto& props = component->GetProperties();
+    if (props.empty()) return;
+    
+    ImGui::PushID(component);
+    if (ImGui::CollapsingHeader(component->GetComponentName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+        for (const auto& prop : props) {
+            switch (prop.type) {
+                case ComponentPropertyType::Float:
+                    ImGui::DragFloat(prop.name.c_str(), static_cast<float*>(prop.data), 0.1f);
+                    break;
+                case ComponentPropertyType::Int:
+                    ImGui::DragInt(prop.name.c_str(), static_cast<int*>(prop.data), 1);
+                    break;
+                case ComponentPropertyType::Bool:
+                    ImGui::Checkbox(prop.name.c_str(), static_cast<bool*>(prop.data));
+                    break;
+                case ComponentPropertyType::Float2:
+                    ImGui::DragFloat2(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
+                    break;
+                case ComponentPropertyType::Float3:
+                    ImGui::DragFloat3(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
+                    break;
+                case ComponentPropertyType::Float4:
+                    if (prop.name.find("Color") != std::string::npos || prop.name.find("color") != std::string::npos) {
+                        ImGui::ColorEdit4(prop.name.c_str(), reinterpret_cast<float*>(prop.data));
+                    } else {
+                        ImGui::DragFloat4(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
+                    }
+                    break;
+                case ComponentPropertyType::String: {
+                    auto* str = static_cast<std::string*>(prop.data);
+                    char buffer[256];
+                    strncpy_s(buffer, sizeof(buffer), str->c_str(), _TRUNCATE);
+                    if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
+                        *str = buffer;
+                    }
+                    break;
+                }
+                case ComponentPropertyType::Float3Array: {
+                    auto* arr = static_cast<std::vector<Vector3>*>(prop.data);
+                    if (ImGui::TreeNode(prop.name.c_str())) {
+                        int size = static_cast<int>(arr->size());
+                        if (ImGui::InputInt("Size", &size)) {
+                            if (size >= 0) arr->resize(size);
+                        }
+                        ImGui::SameLine();
+                        if (ImGui::Button("+")) {
+                            arr->push_back(Vector3{0, 0, 0});
+                        }
+                        for (size_t i = 0; i < arr->size(); ++i) {
+                            ImGui::PushID(static_cast<int>(i));
+                            ImGui::DragFloat3("##Element", &(*arr)[i].x, 0.1f);
+                            ImGui::SameLine();
+                            if (ImGui::Button("-")) {
+                                arr->erase(arr->begin() + i);
+                                ImGui::PopID();
+                                break; // ループを抜けて次フレームで再描画
+                            }
+                            ImGui::PopID();
+                        }
+                        ImGui::TreePop();
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    ImGui::PopID();
+}
+
 // =======================================================================
 // Custom Editors
 // =======================================================================
@@ -448,16 +542,7 @@ public:
         auto* comp = static_cast<AABBColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("AABB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-            Vector3 offset = comp->GetLocalOffset();
-            if (ImGui::DragFloat3("Offset", &offset.x, 0.1f)) {
-                comp->SetLocalOffset(offset);
-            }
-            Vector3 size = comp->GetLocalSize();
-            if (ImGui::DragFloat3("Size (Extents)", &size.x, 0.1f, 0.0f, 1000.0f)) {
-                comp->SetLocalSize(size);
-            }
-            ImGui::Checkbox("Is Trigger", &comp->isTrigger_);
-            DrawCollisionLayerGUI(comp->layer_, comp->mask_);
+            DrawColliderCommonProperties(comp);
         }
         ImGui::PopID();
     }
@@ -469,16 +554,7 @@ public:
         auto* comp = static_cast<OBBColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("OBB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-            Vector3 offset = comp->GetLocalOffset();
-            if (ImGui::DragFloat3("Offset", &offset.x, 0.1f)) {
-                comp->SetLocalOffset(offset);
-            }
-            Vector3 size = comp->GetLocalSize();
-            if (ImGui::DragFloat3("Size (Extents)", &size.x, 0.1f, 0.0f, 1000.0f)) {
-                comp->SetLocalSize(size);
-            }
-            ImGui::Checkbox("Is Trigger", &comp->isTrigger_);
-            DrawCollisionLayerGUI(comp->layer_, comp->mask_);
+            DrawColliderCommonProperties(comp);
         }
         ImGui::PopID();
     }
@@ -490,16 +566,7 @@ public:
         auto* comp = static_cast<SphereColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-            Vector3 offset = comp->GetLocalOffset();
-            if (ImGui::DragFloat3("Offset", &offset.x, 0.1f)) {
-                comp->SetLocalOffset(offset);
-            }
-            float radius = comp->GetLocalRadius();
-            if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, 1000.0f)) {
-                comp->SetLocalRadius(radius);
-            }
-            ImGui::Checkbox("Is Trigger", &comp->isTrigger_);
-            DrawCollisionLayerGUI(comp->layer_, comp->mask_);
+            DrawColliderCommonProperties(comp);
         }
         ImGui::PopID();
     }
@@ -572,75 +639,7 @@ void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionMa
     if (it != editors_.end()) {
         it->second->Draw(component, actionManager);
     } else {
-        // --- 簡易リフレクションによるデフォルト描画（フォールバック） ---
-        const auto& props = component->GetProperties();
-        if (!props.empty()) {
-            ImGui::PushID(component);
-            if (ImGui::CollapsingHeader(component->GetComponentName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-                for (const auto& prop : props) {
-                    switch (prop.type) {
-                        case ComponentPropertyType::Float:
-                            ImGui::DragFloat(prop.name.c_str(), static_cast<float*>(prop.data), 0.1f);
-                            break;
-                        case ComponentPropertyType::Int:
-                            ImGui::DragInt(prop.name.c_str(), static_cast<int*>(prop.data), 1);
-                            break;
-                        case ComponentPropertyType::Bool:
-                            ImGui::Checkbox(prop.name.c_str(), static_cast<bool*>(prop.data));
-                            break;
-                        case ComponentPropertyType::Float2:
-                            ImGui::DragFloat2(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
-                            break;
-                        case ComponentPropertyType::Float3:
-                            ImGui::DragFloat3(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
-                            break;
-                        case ComponentPropertyType::Float4:
-                            if (prop.name.find("Color") != std::string::npos || prop.name.find("color") != std::string::npos) {
-                                ImGui::ColorEdit4(prop.name.c_str(), reinterpret_cast<float*>(prop.data));
-                            } else {
-                                ImGui::DragFloat4(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
-                            }
-                            break;
-                        case ComponentPropertyType::String: {
-                            auto* str = static_cast<std::string*>(prop.data);
-                            char buffer[256];
-                            strncpy_s(buffer, sizeof(buffer), str->c_str(), _TRUNCATE);
-                            if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
-                                *str = buffer;
-                            }
-                            break;
-                        }
-                        case ComponentPropertyType::Float3Array: {
-                            auto* arr = static_cast<std::vector<Vector3>*>(prop.data);
-                            if (ImGui::TreeNode(prop.name.c_str())) {
-                                int size = static_cast<int>(arr->size());
-                                if (ImGui::InputInt("Size", &size)) {
-                                    if (size >= 0) arr->resize(size);
-                                }
-                                ImGui::SameLine();
-                                if (ImGui::Button("+")) {
-                                    arr->push_back(Vector3{0, 0, 0});
-                                }
-                                for (size_t i = 0; i < arr->size(); ++i) {
-                                    ImGui::PushID(static_cast<int>(i));
-                                    ImGui::DragFloat3("##Element", &(*arr)[i].x, 0.1f);
-                                    ImGui::SameLine();
-                                    if (ImGui::Button("-")) {
-                                        arr->erase(arr->begin() + i);
-                                        ImGui::PopID();
-                                        break; // ループを抜けて次フレームで再描画
-                                    }
-                                    ImGui::PopID();
-                                }
-                                ImGui::TreePop();
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-            ImGui::PopID();
-        }
+        DrawFallbackPropertiesGUI(component, actionManager);
     }
 }
 

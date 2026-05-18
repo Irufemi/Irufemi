@@ -414,8 +414,10 @@ renderer->LoadModel("enemy/boss.obj");
 // scene->AddGameObject(object);
 ```
 
-#### 新規コンポーネント（スクリプト）作成時のルールと自動UI化
-エンジンの「簡易リフレクション」機能により、変数を宣言して `OnRegisterProperties` に書くだけで、**自動でインスペクターにUIが作成され、JSONに保存・復元される**ようになります。手動で ImGui を書いたりシリアライズ関数をオーバーライドする必要はありません。
+#### 新規コンポーネント作成時のルール（自動UI化とメニュー登録）
+エンジンの「簡易リフレクション」と「動的メニュー生成」により、コンポーネントを追加する際の手間が大幅に削減されています。
+変数を宣言して `OnRegisterProperties` に書くだけで、**自動でインスペクターにUIが作成され、JSONに保存・復元される**ようになります。手動で ImGui を書く必要はありません。
+さらに、作成したクラスを `ComponentFactory` に登録するだけで、エディタの「Add Component」メニューにも自動で追加されます（エディタのソースコードを変更する必要はありません）。
 
 ```cpp
 #pragma once
@@ -427,6 +429,8 @@ public:
     float speed_ = 5.0f;
 
     // 1. コンポーネント名を返す
+    // ※この名前に特定のキーワードを含めることで、Add Component メニューのカテゴリが自動で決まります。
+    // （例："Renderer" や "Emitter" -> Renderer枠, "Collider" -> Collider枠, "UI", "Button" -> UI枠）
     std::string GetComponentName() const override { return "PlayerStatusComponent"; }
 
     // 2. 変数をリフレクションシステムに登録する
@@ -436,7 +440,11 @@ public:
     }
 };
 ```
-*※作成したスクリプトは `ComponentFactory.cpp` の `RegisterAllCoreComponents` で登録するか、同等の場所でファクトリに登録してください。*
+*※作成したコンポーネントは、必ず `ComponentFactory.cpp` の `RegisterAllCoreComponents` 関数内（またはゲーム側の初期化処理）でファクトリに登録してください。*
+```cpp
+// 登録例
+ComponentFactory::Register("PlayerStatusComponent", []() { return std::make_shared<PlayerStatusComponent>(); });
+```
 
 #### 衝突判定とコールバック (OnCollisionEnter / Destroy)
 ゲームロジックとして「何かにぶつかったら壊れる」「ダメージを受ける」といった処理は、Component 内の仮想関数をオーバーライドして実装します。
