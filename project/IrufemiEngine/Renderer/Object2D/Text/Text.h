@@ -43,8 +43,10 @@ public:
     void SetPosition(const float& x, const float& y, const float& z = 0.0f) { if(resource_) resource_->transform_.translate = {x,y,z}; isDirty_ = true; }
     void SetRotation(const float& rotate) { if(resource_) resource_->transform_.rotate = {0.0f, 0.0f, rotate}; isDirty_ = true; }
     void SetScale(const float& scaleX, const float& scaleY) { if(resource_) resource_->transform_.scale = {scaleX, scaleY, 1.0f}; isDirty_ = true; }
-    void SetColor(const Vector4& color) { if(resource_) resource_->GetMaterialData()->color = color; isDirty_ = true; }
+    void SetColor(const Vector4& color) { color_ = color; if(resource_) resource_->GetMaterialData()->color = color; isDirty_ = true; }
+    Vector4 GetColor() const { return color_; }
     void SetTopMost(bool isTopMost) { isTopMost_ = isTopMost; }
+    bool IsTopMost() const { return isTopMost_; }
     void SetBaseScale(float baseScale) { baseScale_ = baseScale; isTextDirty_ = true; }
     void SetAlignment(TextAlignment align) { alignment_ = align; isTextDirty_ = true; }
     
@@ -72,6 +74,7 @@ private:
     std::string fontId_ = "MainFont";
     float baseScale_ = 64.0f; // MSDF生成時のピクセルサイズを基準とするスケーリング
     TextAlignment alignment_ = TextAlignment::Left;
+    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
     
     Vector2 localBoundsMin_ = {0.0f, 0.0f};
     Vector2 localBoundsMax_ = {0.0f, 0.0f};

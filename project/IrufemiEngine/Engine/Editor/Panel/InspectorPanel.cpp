@@ -20,6 +20,12 @@
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Framework/Component/Collider/RaycastComponent.h"
 #include "Framework/Component/Script/RotatorComponent.h"
+#include "Framework/Component/Renderer/TextRendererComponent.h"
+#include "Framework/Component/Renderer/ParticleEmitterComponent.h"
+#include "Framework/Component/AudioSourceComponent.h"
+#include "Framework/Component/Camera/CameraComponent.h"
+#include "Framework/Component/UI/ButtonComponent.h"
+#include "Framework/Component/UI/CanvasComponent.h"
 #include <cstring>
 
 void InspectorPanel::Initialize(EditorManager* editorManager) {
@@ -81,7 +87,9 @@ void InspectorPanel::Draw() {
                 bool hasMeshRenderer = sel->GetComponent<MeshRendererComponent>() != nullptr;
                 bool hasPrimitiveRenderer = sel->GetComponent<PrimitiveRendererComponent>() != nullptr;
                 bool hasSpriteRenderer = sel->GetComponent<SpriteRendererComponent>() != nullptr;
-                bool hasAnyRenderer = hasMeshRenderer || hasPrimitiveRenderer || hasSpriteRenderer;
+                bool hasTextRenderer = sel->GetComponent<TextRendererComponent>() != nullptr;
+                bool hasParticleEmitter = sel->GetComponent<ParticleEmitterComponent>() != nullptr;
+                bool hasAnyRenderer = hasMeshRenderer || hasPrimitiveRenderer || hasSpriteRenderer || hasTextRenderer || hasParticleEmitter;
 
                 if (!hasTransform) {
                     if (ImGui::Selectable("TransformComponent")) {
@@ -108,10 +116,20 @@ void InspectorPanel::Draw() {
                             auto comp = std::make_shared<SpriteRendererComponent>();
                             actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
                         }
+                        if (ImGui::Selectable("TextRendererComponent")) {
+                            auto comp = std::make_shared<TextRendererComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
+                        if (ImGui::Selectable("ParticleEmitterComponent")) {
+                            auto comp = std::make_shared<ParticleEmitterComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
                     } else {
                         if (hasMeshRenderer) ImGui::TextDisabled("MeshRendererComponent (Already added)");
                         else if (hasPrimitiveRenderer) ImGui::TextDisabled("PrimitiveRendererComponent (Already added)");
                         else if (hasSpriteRenderer) ImGui::TextDisabled("SpriteRendererComponent (Already added)");
+                        else if (hasTextRenderer) ImGui::TextDisabled("TextRendererComponent (Already added)");
+                        else if (hasParticleEmitter) ImGui::TextDisabled("ParticleEmitterComponent (Already added)");
                         ImGui::Separator();
                         ImGui::TextDisabled("Only one renderer is allowed.");
                     }
@@ -156,6 +174,43 @@ void InspectorPanel::Draw() {
                             actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
                         }
                     } else { ImGui::TextDisabled("RotatorComponent (Already added)"); }
+                    ImGui::EndMenu();
+                }
+                
+                if (ImGui::BeginMenu("Audio")) {
+                    if (!sel->GetComponent<AudioSourceComponent>()) {
+                        if (ImGui::Selectable("AudioSourceComponent")) {
+                            auto comp = std::make_shared<AudioSourceComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
+                    } else { ImGui::TextDisabled("AudioSourceComponent (Already added)"); }
+                    ImGui::EndMenu();
+                }
+
+                if (ImGui::BeginMenu("Camera")) {
+                    if (!sel->GetComponent<CameraComponent>()) {
+                        if (ImGui::Selectable("CameraComponent")) {
+                            auto comp = std::make_shared<CameraComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
+                    } else { ImGui::TextDisabled("CameraComponent (Already added)"); }
+                    ImGui::EndMenu();
+                }
+
+                if (ImGui::BeginMenu("UI")) {
+                    if (!sel->GetComponent<ButtonComponent>()) {
+                        if (ImGui::Selectable("ButtonComponent")) {
+                            auto comp = std::make_shared<ButtonComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
+                    } else { ImGui::TextDisabled("ButtonComponent (Already added)"); }
+                    
+                    if (!sel->GetComponent<CanvasComponent>()) {
+                        if (ImGui::Selectable("CanvasComponent")) {
+                            auto comp = std::make_shared<CanvasComponent>();
+                            actionManager->PushAndExecute(std::make_unique<AddComponentCommand>(sel, comp));
+                        }
+                    } else { ImGui::TextDisabled("CanvasComponent (Already added)"); }
                     ImGui::EndMenu();
                 }
                 

@@ -18,9 +18,14 @@ void SpriteRendererComponent::Initialize() {
     sprite_->SetTopMost(isTopMost_);
     sprite_->SetColor(color_);
     
-    // テクスチャサイズを取得して初期サイズに設定
-    size_[0] = sprite_->GetSize().x;
-    size_[1] = sprite_->GetSize().y;
+    // テクスチャサイズを取得して初期サイズに設定（Deserializeで既にサイズが設定されていない場合のみ）
+    if (size_[0] == 640.0f && size_[1] == 360.0f) { // デフォルト値の場合は上書き
+        size_[0] = sprite_->GetSize().x;
+        size_[1] = sprite_->GetSize().y;
+    } else if (size_[0] == 0.0f && size_[1] == 0.0f) {
+        size_[0] = sprite_->GetSize().x;
+        size_[1] = sprite_->GetSize().y;
+    }
 
     if (gameObject_) {
         transform_ = gameObject_->GetComponent<TransformComponent>();

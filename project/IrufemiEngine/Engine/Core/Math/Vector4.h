@@ -23,6 +23,12 @@ struct Vector4 final {
     Vector4& operator*=(float s);
     Vector4& operator/=(float s);
     /** @} */
+
+    /** @name 比較演算子 */
+    /** @{ */
+    bool operator==(const Vector4& v) const { return x == v.x && y == v.y && z == v.z && w == v.w; }
+    bool operator!=(const Vector4& v) const { return !(*this == v); }
+    /** @} */
 };
 
 /** @name 非メンバ演算子 */

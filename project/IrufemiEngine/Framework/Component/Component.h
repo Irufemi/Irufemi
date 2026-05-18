@@ -208,10 +208,10 @@ public:
     }
 
     /**
-     * @brief エディタ（インスペクター）用UIの描画処理
-     * @details ImGuiを用いてパラメータの編集UIを構築します。
+     * @brief エディタ（インスペクター）用UIの描画処理について
+     * @details エディタ側のカスタムUIを実装したい場合は、OnRegisterProperties() をオーバーライドしてプロパティを登録するか、
+     * Engine/Editor/Core/ComponentEditorRegistry にカスタムエディタ(IComponentEditor)を登録してください。
      */
-
 
     /**
      * @brief 所属するGameObjectのセット

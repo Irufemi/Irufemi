@@ -181,10 +181,19 @@ void GameObject::Deserialize(const nlohmann::json& j) {
             std::shared_ptr<Component> newComp = ComponentFactory::Create(type);
             
             if (newComp) {
-                AddComponent(newComp);
+                // AddComponentと同等の登録処理をInitializeの前に行う
+                newComp->SetGameObject(this);
+                components_.push_back(newComp);
+                componentMap_[typeid(*newComp)].push_back(newComp.get());
+                newComp->OnRegisterProperties();
+                
+                // Initialize前にパラメータを復元する
                 if (cj.contains("data")) {
                     newComp->Deserialize(cj["data"]);
                 }
+                
+                // 復元されたデータを使って初期化
+                newComp->Initialize();
             }
         }
     }
