@@ -678,22 +678,6 @@ void Player::HandleAttack() {
             Vector3 hammerScale = { baseScale, baseScale, baseScale };
             attackCollision_.radius = baseScale * 1.5f; // モデル(直径約3m)に合わせて半径1.5m
 
-            // ★追加: ハンマーをスイングした瞬間に風切りエフェクトを発生させる
-            if (swingEffect_) {
-                // ハンマーの高さに合わせて少し上にエフェクトを発生させる
-                Vector3 effectPos = translate_;
-                effectPos.y += kHammerBaseHeight;
-
-                // メッシュ側ですでにXZ平面に寝かせているため、ピッチは0。
-                // ヨーをハンマーの開始角度に合わせることで、軌跡の根本(0度)をハンマー位置に同期し、弧を後ろへ伸ばす
-                Vector3 effectRot = { 0.0f, rotate_.y + kHammerAngleOffset, 0.0f };
-
-                // チャージ率に応じてハンマーの旋回半径を計算し、エフェクトのスケール（半径）を完全に一致させる
-                float currentSwingRadius = kSwingBaseRadius + (currentChargeRate_ * kSwingRadiusChargeBonus);
-                Vector3 effectScale = { currentSwingRadius, 1.0f, currentSwingRadius };
-
-                swingEffect_->Play(effectPos, effectRot, effectScale);
-            }
         }
         break;
 
