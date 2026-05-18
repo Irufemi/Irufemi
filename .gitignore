@@ -38,6 +38,9 @@ Generated\ Files/
 # Project-specific additions
 # ====================================================================
 
+# Ignore NuGet packages
+/project/packages/
+
 # 1. Prevent build intermediate files (.obj) from being committed
 #    Protects .obj files under resources/ (3D models) while excluding build outputs
 **/Debug/*.obj
