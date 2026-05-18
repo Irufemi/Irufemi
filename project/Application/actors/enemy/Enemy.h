@@ -20,9 +20,11 @@ class IrufemiEngine;
 class Line3DRegion;
 class EnemyHPBar;
 class EnemyPartHPBar;
+class WeaponTrail;
 
 class Enemy {
 public:
+    Enemy();
     ~Enemy();
     void Initialize(IrufemiEngine* engine = nullptr);
     void Update(Player* player);
@@ -46,6 +48,9 @@ public:
     void FireTackleRushWave(const Vector3& position);
     void FireTackleCrashWave(const Vector3& position);
     EnemyTackleEffects* GetTackleEffects() const { return tackleEffects_.get(); }
+
+    // --- トレイルエフェクト用 ---
+    WeaponTrail* GetNeckTrail() const { return neckTrail_.get(); }
 
     // --- アクセサ（AIやAnimationから操作用） ---
     Transform& GetGlobalTransform() { return globalTransform_; }
@@ -102,6 +107,9 @@ private:
     // スタンプのインスタンス管理
     std::unique_ptr<EnemyStompEffects> stompEffects_;
     std::unique_ptr<EnemyTackleEffects> tackleEffects_;
+
+    // 斬撃トレイル
+    std::unique_ptr<WeaponTrail> neckTrail_ = nullptr;
 
     // トランスフォーム
     Transform globalTransform_;

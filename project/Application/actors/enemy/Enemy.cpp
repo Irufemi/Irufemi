@@ -12,7 +12,9 @@
 #include <string>
 #include "contents/ui/EnemyHPBar.h"
 #include "contents/ui/EnemyPartHPBar.h"
+#include "Renderer/Effect/WeaponTrail.h"
 
+Enemy::Enemy() = default;
 Enemy::~Enemy() {}
 
 void Enemy::Initialize(IrufemiEngine *engine) {
@@ -74,6 +76,9 @@ void Enemy::Initialize(IrufemiEngine *engine) {
   tackleEffects_ = std::make_unique<EnemyTackleEffects>();
   tackleEffects_->Initialize();
 
+  neckTrail_ = std::make_unique<WeaponTrail>();
+  neckTrail_->Initialize(engine_, "resources/gradationLine.png", {1.0f, 0.2f, 0.2f, 1.0f}); // エネミーの首振り用の赤いトレイル
+
   // --- UI 初期化 ---
   hpBar_ = std::make_unique<EnemyHPBar>();
   if (engine_) {
@@ -112,6 +117,9 @@ void Enemy::Update(Player *player) {
   }
   if (tackleEffects_) {
       tackleEffects_->Update(1.0f / 60.0f);
+  }
+  if (neckTrail_) {
+      neckTrail_->Update();
   }
 
   // だるま落とし落下物理
@@ -308,6 +316,10 @@ void Enemy::Draw(IrufemiEngine* engine) {
     }
     if (tackleEffects_) {
         tackleEffects_->Draw(engine);
+    }
+    if (neckTrail_) {
+        neckTrail_->SyncBeforeDraw();
+        neckTrail_->Draw();
     }
 
 #ifdef USE_IMGUI

@@ -23,6 +23,8 @@ public:
     void AddPoint(const Vector3& basePos, const Vector3& tipPos);
     void StopTrail();
 
+    void SetThickness(float thickness) { thickness_ = thickness; }
+
 private:
     struct TrailPoint {
         Vector3 basePos;
@@ -34,6 +36,7 @@ private:
     Vector4 baseColor_;
     std::string texturePath_;
     bool isStopped_ = true;
+    float thickness_ = 0.6f; // デフォルトの厚み
 
     IrufemiEngine* engine_ = nullptr;
 
