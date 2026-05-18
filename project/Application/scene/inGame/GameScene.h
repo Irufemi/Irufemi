@@ -110,6 +110,9 @@ private:
     // 当たり判定の有効化フラグ
     bool isCollisionEnabled_ = true;
 
+    // ビルの自動生成タイマー
+    float buildingSpawnTimer_ = 0.0f;
+
     // --- 内部整理用メソッド ---
 
     /**
