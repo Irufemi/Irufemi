@@ -425,10 +425,10 @@ void Player::Update() {
 #endif
 }
 
-void Player::Draw3DUI(Enemy* enemy, bool isUI) {
+void Player::Draw3DUI(Enemy* enemy, bool isUI, bool isPaused) {
     if (!status_.IsDead()) {
         if (!cameraController_.IsFirstPerson()) {
-            if (hpBar_) {
+            if (hpBar_ && !isPaused) {
                 hpBar_->Draw3D(isUI);
             }
         } else {

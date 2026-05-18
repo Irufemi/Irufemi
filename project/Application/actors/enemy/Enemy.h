@@ -69,6 +69,10 @@ public:
 
     Vector3 GetTargetPosition() const;
 
+    // サンドバッグモード設定（AI無効化、死亡・フェーズ2移行の防止）
+    void SetIsSandbagMode(bool isSandbag) { isSandbagMode_ = isSandbag; }
+    bool GetIsSandbagMode() const { return isSandbagMode_; }
+
     // アニメーションクラスへのアクセス用
     EnemyAnimation* GetAnimation() const { return animation_.get(); }
 
@@ -139,4 +143,5 @@ private:
     std::unique_ptr<EnemyHPBar> hpBar_ = nullptr;
     std::vector<std::unique_ptr<EnemyPartHPBar>> partHPBars_;
 
+    bool isSandbagMode_ = false;
 };

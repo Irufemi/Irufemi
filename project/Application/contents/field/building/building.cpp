@@ -382,6 +382,31 @@ void Building::Generate() {
     OutputDebugStringA(std::format("Building: {} buildings generated.\n", (int)instances_.size()).c_str());
 }
 
+void Building::ClearAndAddSingleBuilding(const Vector3& position) {
+    instances_.clear();
+    BuildingInstance inst;
+    inst.position = position;
+    inst.scale = { 3.0f, 10.0f, 3.0f }; // 小さめのビル
+    inst.rotate = { 0.0f, 0.0f, 0.0f };
+    inst.hp = params_.buildingHp; 
+    inst.isBlownAway = false;
+    inst.isDestroyed = false;
+    inst.disappearTimer = 0.0f;
+    inst.blowVelocity = {0.0f, 0.0f, 0.0f};
+    inst.angularVelocity = {0.0f, 0.0f, 0.0f};
+
+    inst.voxelSystem = std::make_unique<VoxelParticleSystem>();
+    inst.voxelSystem->Initialize("building/block.obj", {32, 32, 32});
+    inst.voxelSystem->SetParticleType(VoxelParticleSystem::ParticleType::Building);
+    inst.voxelSystem->SetGravity(40.0f);
+
+    instances_.push_back(std::move(inst));
+}
+
+void Building::ClearAllBuildings() {
+    instances_.clear();
+}
+
 // --- 当たり判定用 ---
 
 bool Building::IsBuildingAlive(int index) const {

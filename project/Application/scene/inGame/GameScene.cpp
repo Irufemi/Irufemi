@@ -262,7 +262,8 @@ void GameScene::Draw() {
 
   // --- 3DオブジェクトとしてのUI描画（HPバー） ---
   if (player_) {
-    player_->Draw3DUI(boss_.get(), true);
+    bool isPaused = (engine_->GetSceneManager()->GetCurrent() == "Pause");
+    player_->Draw3DUI(boss_.get(), true, isPaused);
   }
 
   // --- 操作説明および警告スプライト描画（3人称視点のみ） ---

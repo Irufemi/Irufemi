@@ -97,7 +97,7 @@ void Enemy::Update(Player *player) {
     return;
 
   if (!isDead_) {
-    if (ai_)
+    if (ai_ && !isSandbagMode_)
       ai_->Update(player, engine_->GetDeltaTime());
     if (animation_)
       animation_->Update(player, 1.0f / 60.0f);
@@ -205,7 +205,7 @@ void Enemy::Update(Player *player) {
 
 
   // 1. フェーズ2移行判定：ボディが全損した瞬間に移行する
-  if (!isDead_ && !isPhase2_) {
+  if (!isDead_ && !isPhase2_ && !isSandbagMode_) {
     bool allBodiesZero = true;
     for (int i = 0; i < 3; ++i) {
       if (bodies_[i] && bodies_[i]->GetHP() > 0) {
@@ -225,7 +225,7 @@ void Enemy::Update(Player *player) {
 
   // 2. 死亡判定
   // 論理的な死亡判定（全てのHP全損）を常に評価する
-  if (!isDead_) {
+  if (!isDead_ && !isSandbagMode_) {
     bool allHpZero = true;
     for (int i = 0; i < 3; ++i) {
       if (bodies_[i] && bodies_[i]->GetHP() > 0) {

@@ -81,6 +81,9 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
         srvPool->GetGPUHandle(srvIndex_)
     );
 
+    // 日本語フォントの読み込み
+    io.Fonts->AddFontFromFileTTF("resources/font/Corporate-Logo-Medium-ver3/Corporate-Logo-Medium-ver3.otf", 16.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
+
     // フォントアトラスをビルドし、テクスチャをGPUにアップロードする
     io.Fonts->Build();
     ImGui_ImplDX12_CreateDeviceObjects();

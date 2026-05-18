@@ -36,6 +36,8 @@ public:
     float* GetDodgeSpeedPtr() { return &dodgeSpeed_; }
     float* GetDodgeSpeedNormalMultiplierPtr() { return &dodgeSpeedNormalMultiplier_; }
 
+    void ResetDodgeCooldown() { dodgeCooldownTimer_ = 0; }
+
 private:
     // --- 移動・ジャンプ関連変数 ---
     Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };

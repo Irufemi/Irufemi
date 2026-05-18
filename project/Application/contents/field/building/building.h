@@ -44,6 +44,12 @@ public:
     void Draw(IrufemiEngine* engine);
     void DrawImGui();
 
+    /// @brief 既存の建物を全て消去し、指定座標に建物を1つだけ配置する（チュートリアル用）
+    void ClearAndAddSingleBuilding(const Vector3& position);
+
+    /// @brief 既存の建物を全て消去する
+    void ClearAllBuildings();
+
     // --- 当たり判定用 公開API ---
 
     /// @brief 建物の数を取得

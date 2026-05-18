@@ -29,7 +29,7 @@ public:
     void Update();
     void Draw();
     void DrawParticles();
-    void Draw3DUI(Enemy* enemy = nullptr, bool isUI = false);
+    void Draw3DUI(Enemy* enemy = nullptr, bool isUI = false, bool isPaused = false);
     void Draw2DUI(Enemy* enemy = nullptr);
 
     const Vector3& GetTranslate() const { return translate_; }
@@ -62,6 +62,14 @@ public:
     int GetKarakuriActiveTimer() const { return karakuriActiveTimer_; }
 
     int GetCooldownWarningTimer() const { return cooldownWarningTimer_; }
+
+    // --- チュートリアル用メソッド ---
+    void ResetSkillCooldown() { skillCooldownTimer_ = 0; cooldownWarningTimer_ = 0; }
+    void ForceKarakuriCharge() {
+        isKarakuriCharged_ = true;
+        karakuriActiveTimer_ = kKarakuriActiveTime;
+    }
+    void ResetDodgeCooldown() { movement_.ResetDodgeCooldown(); }
 
     void HitAndKnockback(Enemy* enemy);
 
