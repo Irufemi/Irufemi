@@ -9,11 +9,13 @@
 #include "Renderer/Object2D/Sprite/Sprite.h"
 #include "../enemy/Enemy.h" 
 #include "contents/ui/PlayerHPBar.h"
-
+#include "Renderer/Effect/WeaponTrail.h"
 
 #ifdef USE_IMGUI
 #include <imgui.h> 
 #endif
+
+Player::Player() = default;
 
 Player::~Player() {
 }
@@ -32,7 +34,7 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
     attackObj_ = std::make_unique<ObjClass>();
-    attackObj_->Initialize("enemy/body.obj");
+    attackObj_->Initialize("player/playerMelee.obj");
     attackObj_->SetPosition(translate_);
     attackObj_->Update();
 
@@ -70,6 +72,7 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
 
     // 死亡演出用変数の初期化
     deathTimer_ = 0;
+    deathWaitTimer_ = 0;
     deathVelocity_ = { 0.0f, 0.0f, 0.0f };
     deathAngularVelocity_ = { 0.0f, 0.0f, 0.0f };
     deathYaw_ = 0.0f;
@@ -88,11 +91,46 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
 
     hpBar_ = std::make_unique<PlayerHPBar>();
     hpBar_->Initialize(engine);
+
+    weaponTrail_ = std::make_unique<WeaponTrail>();
+    weaponTrail_->Initialize(engine, "resources/gradationLine.png", {1.0f, 0.6f, 0.1f, 1.0f});
+
+    // ★追加: からくりチャージゲージの初期化
+    karakuriGaugeBg_ = std::make_unique<Sprite>();
+    karakuriGaugeBg_->Initialize("resources/whiteTexture.png");
+    karakuriGaugeBg_->SetColor({ 0.2f, 0.2f, 0.0f, 0.5f }); // 暗い黄色
+    karakuriGaugeBg_->SetSize(400.0f, 16.0f);
+    // 中央下部（HPバーの少し上）に配置。画面幅1280, 高さ720想定
+    karakuriGaugeBg_->SetPositionTopLeft(440.0f, 580.0f); 
+
+    karakuriGaugeFill_ = std::make_unique<Sprite>();
+    karakuriGaugeFill_->Initialize("resources/whiteTexture.png");
+    karakuriGaugeFill_->SetColor({ 1.0f, 0.9f, 0.1f, 0.8f }); // 明るい黄色
+    karakuriGaugeFill_->SetSize(0.0f, 16.0f); // 初期幅0
+    karakuriGaugeFill_->SetPositionTopLeft(440.0f, 580.0f);
+
+    // ★追加: 3D爆発エフェクトプールの事前生成
+    explosionEffects_.clear();
+    for (int i = 0; i < kMaxExplosionEffects; ++i) {
+        auto effect = std::make_unique<Effect>();
+        effect->Initialize(EffectType::kExplosion);
+        explosionEffects_.push_back(std::move(effect));
+    }
 }
 
 void Player::Update() {
-    // ====== 死亡時の敵目線＆彼方へ消え去る演出 ======
+    // ====== 死亡時の待機 + 演出 ======
     if (status_.IsDead()) {
+        // HPが0になってから3秒間（180フレーム）は演出を待機する
+        if (deathWaitTimer_ < kDeathWaitTime) {
+            deathWaitTimer_++;
+            // 待機中はカメラとパーティクルのみ更新（プレイヤーはその場に留まる）
+            weapon_.UpdateParticlesOnly();
+            cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
+            return;
+        }
+
+        // 3秒経過後、死亡演出を開始
         if (deathTimer_ == 0) {
             deathYaw_ = rotate_.y;
 
@@ -367,6 +405,56 @@ void Player::Update() {
         hpBar_->Update(this, cameraController_.IsFirstPerson());
     }
 
+    if (weaponTrail_) {
+        weaponTrail_->Update();
+    }
+
+    // ★追加: からくりチャージゲージの更新
+    if (karakuriGaugeBg_ && karakuriGaugeFill_) {
+        if (isKarakuriCharged_) {
+            // チャージ成功後: 残り時間に応じてゲージを減らす（オレンジ色）
+            float ratio = static_cast<float>(karakuriActiveTimer_) / static_cast<float>(kKarakuriActiveTime);
+            if (ratio < 0.0f) ratio = 0.0f;
+            if (ratio > 1.0f) ratio = 1.0f;
+            karakuriGaugeFill_->SetSize(400.0f * ratio, 16.0f);
+            karakuriGaugeFill_->SetColor({ 1.0f, 0.5f, 0.0f, 0.9f }); // オレンジ色（効果中）
+            karakuriGaugeBg_->Update();
+            karakuriGaugeFill_->Update();
+        } else if (karakuriChargeTimer_ > 0) {
+            // チャージ中: チャージ量に応じてゲージを増やす（黄色）
+            float ratio = static_cast<float>(karakuriChargeTimer_) / static_cast<float>(kKarakuriChargeTime);
+            if (ratio > 1.0f) ratio = 1.0f;
+            karakuriGaugeFill_->SetSize(400.0f * ratio, 16.0f);
+            karakuriGaugeFill_->SetColor({ 1.0f, 0.9f, 0.1f, 0.8f }); // 黄色（チャージ中）
+            karakuriGaugeBg_->Update();
+            karakuriGaugeFill_->Update();
+        }
+    }
+
+    // ジャスト回避の星エフェクト更新
+    if (!status_.IsDead() && starScale_.x > 0.01f) {
+        starRotationZ_ += 0.5f; // くるくる回す速度
+        starScale_.x *= 0.88f;  // シュッと小さくしていく
+        starScale_.y *= 0.88f;
+        starScale_.z *= 0.88f;
+
+        if (starObj_) {
+            starObj_->SetPosition({ translate_.x, translate_.y + 2.0f, translate_.z });
+            // カメラの方を向かせたいが、簡易的に正面に向けるか、今の回転を使用
+            starObj_->SetRotate({ rotate_.x, rotate_.y, starRotationZ_ });
+            starObj_->SetScale(starScale_);
+            starObj_->Update();
+        }
+    }
+
+    // ★追加: 爆発エフェクトの更新
+    for (auto& effect : explosionEffects_) {
+        if (effect->IsActive()) {
+            effect->Update();
+        }
+    }
+
+
 #ifdef USE_IMGUI
     if (input_->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
         isDebugDrawOBB_ = !isDebugDrawOBB_;
@@ -425,10 +513,10 @@ void Player::Update() {
 #endif
 }
 
-void Player::Draw3DUI(Enemy* enemy, bool isUI) {
+void Player::Draw3DUI(Enemy* enemy, bool isUI, bool isPaused) {
     if (!status_.IsDead()) {
         if (!cameraController_.IsFirstPerson()) {
-            if (hpBar_) {
+            if (hpBar_ && !isPaused) {
                 hpBar_->Draw3D(isUI);
             }
         } else {
@@ -442,10 +530,19 @@ void Player::Draw3DUI(Enemy* enemy, bool isUI) {
 
 void Player::Draw2DUI(Enemy* enemy) {
     if (!status_.IsDead()) {
+        // 視点に関わらずからくりチャージゲージを描画
+        // チャージ中 or チャージ成功後（効果時間中）はゲージを表示する
+        bool showKarakuriGauge = isKarakuriCharged_ || karakuriChargeTimer_ > 0;
+        if (showKarakuriGauge && karakuriGaugeBg_ && karakuriGaugeFill_) {
+            karakuriGaugeBg_->Draw();
+            karakuriGaugeFill_->Draw();
+        }
+
         if (cameraController_.IsFirstPerson()) {
             if (maskSprite_) maskSprite_->Draw();
             if (aimingSprite_) aimingSprite_->Draw();
             if (hpBar_) hpBar_->Draw2D();
+
             // ボスのHPバー（2D）は1人称視点のみ表示
             if (enemy) {
                 enemy->Draw2DUI(engine_);
@@ -497,12 +594,21 @@ void Player::Draw() {
     }
 
     // ★追加: 星（plane.obj）の描画
-    if (status_.IsDead() && starObj_ && deathTimer_ >= kDeathAnimationDuration - 40 && starScale_.x > 0.01f) {
-        starObj_->Draw();
+    if (starObj_ && starScale_.x > 0.01f) {
+        if (status_.IsDead() && deathTimer_ >= kDeathAnimationDuration - 40) {
+            starObj_->Draw();
+        } else if (!status_.IsDead()) {
+            starObj_->Draw(); // ジャスト回避エフェクト
+        }
     }
 
     if (attackObj_ && attackState_ != AttackState::kNone && !status_.IsDead() && cameraController_.IsCameraControlEnabled()) {
         attackObj_->Draw();
+    }
+
+    if (weaponTrail_) {
+        weaponTrail_->SyncBeforeDraw();
+        weaponTrail_->Draw();
     }
 
     if (isTargetingEnemy_ && targetMarkerObj_ && !status_.IsDead()) {
@@ -510,6 +616,14 @@ void Player::Draw() {
     }
 
     weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, status_.IsDead());
+
+    // ★追加: 爆発エフェクトの描画
+    for (auto& effect : explosionEffects_) {
+        if (effect->IsActive()) {
+            effect->SyncBeforeDraw();
+            effect->Draw();
+        }
+    }
 
 
     // 照準とマスクは Draw2DUI で描画するように変更
@@ -526,6 +640,22 @@ void Player::DrawParticles() {
 }
 
 bool Player::ApplyDamage(int damage) {
+    // ジャスト回避の判定
+    if (movement_.IsJustEvasionWindow()) {
+        // ジャスト回避成功！
+        // 無敵時間を大幅に付与（180フレーム = 3秒間）して後続の攻撃を回避
+        status_.SetInvincibleTimer(180); 
+
+        // ジャスト回避成功時のキラン☆演出（死亡時の星モデルを一時的に流用）
+        if (starObj_) {
+            starScale_ = { 4.0f, 4.0f, 4.0f }; // 星を出す
+            starRotationZ_ = 0.0f;
+            // deathTimer_等に依存せず星を描画するため、Drawメソッドでの描画条件を追加する必要がありますが、
+            // 現在は無敵付与による点滅で回避成功が分かります。
+        }
+        return false; // ダメージは受けない
+    }
+
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
 
     int finalDamage = damage;
@@ -566,6 +696,33 @@ void Player::HandleAttack() {
         if (input_->IsMouseButtonPressed(Mouse::Button::Left)) {
             attackState_ = AttackState::kCharging;
             chargeTimer_ = 0;
+
+            /**
+             * @brief 攻撃開始時のモデル座標・回転の初期化
+             * 
+             * @details
+             * 攻撃開始フレームで attackObj_ の座標を直ちにプレイヤー位置へ更新する。
+             * これを行わない場合、次の Draw() 呼び出し時に1フレームだけ
+             * 「前回攻撃が終了した座標」にモデルが描画される（残像が残る）現象が発生する。
+             */
+            float currentAngle = rotate_.y + kHammerAngleOffset;
+            float sinA = std::sin(currentAngle);
+            float cosA = std::cos(currentAngle);
+
+            Vector3 hammerPos;
+            hammerPos.x = translate_.x + sinA * kSwingBaseRadius;
+            hammerPos.y = translate_.y + kHammerBaseHeight;
+            hammerPos.z = translate_.z + cosA * kSwingBaseRadius;
+
+            if (attackObj_) {
+                attackObj_->SetPosition(hammerPos + weapon_.GetMissileVibration());
+                Vector3 swingRot = rotate_;
+                swingRot.y = currentAngle;
+                swingRot.x = kHammerRotX;
+                attackObj_->SetRotate(swingRot);
+                attackObj_->SetScale({ 1.0f, 1.0f, 1.0f });
+                attackObj_->Update();
+            }
         }
         break;
 
@@ -592,8 +749,8 @@ void Player::HandleAttack() {
                 swingRot.y = currentAngle;
                 swingRot.x = kHammerRotX;
                 attackObj_->SetRotate(swingRot);
-                float hammerSize = hammerBaseSize_ + (chargeRate * hammerSizeChargeBonus_);
-                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
+                float baseScale = 1.0f + (chargeRate * hammerSizeChargeBonus_);
+                Vector3 hammerScale = { baseScale, baseScale, baseScale };
                 attackObj_->SetScale(hammerScale);
                 attackObj_->Update();
             }
@@ -604,9 +761,10 @@ void Player::HandleAttack() {
             currentChargeRate_ = static_cast<float>(chargeTimer_) / kMaxChargeTime;
             if (currentChargeRate_ > 1.0f) currentChargeRate_ = 1.0f;
 
-            float hammerSize = hammerBaseSize_ + (currentChargeRate_ * hammerSizeChargeBonus_);
-            Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
-            attackCollision_.radius = hammerScale.y * 0.8f; // モデルより少し大きくする
+            float baseScale = 1.0f + (currentChargeRate_ * hammerSizeChargeBonus_);
+            Vector3 hammerScale = { baseScale, baseScale, baseScale };
+            attackCollision_.radius = baseScale * 1.5f; // モデル(直径約3m)に合わせて半径1.5m
+
         }
         break;
 
@@ -631,16 +789,29 @@ void Player::HandleAttack() {
                 swingRot.y = currentAngle;
                 swingRot.x = kHammerRotX;
                 attackObj_->SetRotate(swingRot);
-                float hammerSize = hammerBaseSize_ + (currentChargeRate_ * hammerSizeChargeBonus_);
-                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
+                float baseScale = 1.0f + (currentChargeRate_ * hammerSizeChargeBonus_);
+                Vector3 hammerScale = { baseScale, baseScale, baseScale };
                 attackObj_->SetScale(hammerScale);
                 attackObj_->Update();
+            }
+
+            if (weaponTrail_) {
+                Vector3 tipPos = attackCollision_.center + weapon_.GetMissileVibration();
+                // プレイヤーの中心からtipPosへのベクトルを計算し、軌跡を扇形ではなく「帯（リボン）」にする
+                // 根本（basePos）をハンマーの中心とプレイヤーの中心の間に設定（例えば60%の位置）
+                Vector3 basePos;
+                basePos.x = Lerp(translate_.x, tipPos.x, 0.6f);
+                basePos.y = Lerp(translate_.y + kHammerBaseHeight, tipPos.y, 0.6f);
+                basePos.z = Lerp(translate_.z, tipPos.z, 0.6f);
+
+                weaponTrail_->AddPoint(basePos, tipPos);
             }
 
             attackActiveTimer_--;
             if (attackActiveTimer_ <= 0) {
                 attackCollision_.isActive = false;
                 attackState_ = AttackState::kNone;
+                if (weaponTrail_) weaponTrail_->StopTrail();
             }
         }
         break;
@@ -722,4 +893,13 @@ void Player::HandleSkill() {
 
 void Player::HitAndKnockback(Enemy* enemy) {
     status_.HitAndKnockback(enemy, translate_);
+}
+
+void Player::PlayExplosion(const Vector3& position, float scale) {
+    for (auto& effect : explosionEffects_) {
+        if (!effect->IsActive()) {
+            effect->Play(position, { 0.0f, 0.0f, 0.0f }, { scale, scale, scale });
+            break; // 同時に1つの着弾で1つのみ再生
+        }
+    }
 }

@@ -13,6 +13,7 @@
 #include "scene/GameOver/GameOverScene.h"
 #include "scene/Pause/PauseScene.h"
 #include "scene/inGame/GameScene.h"
+#include "scene/tutorial/TutorialScene.h"
 #include "scene/stageSelect/SelectScene.h"
 #include "scene/title/TitleScene.h"
 
@@ -28,7 +29,7 @@ const std::wstring kTitle = L"3122_七転び八転び";
 const Vector4 kClearColor = {0.1f, 0.25f, 0.5f, 1.0f};
 const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-    = "InGame";
+    = "InGame"; // デバッグ時はチュートリアルから開始
 #else
     = "Title";
 #endif
@@ -37,6 +38,7 @@ const char kInitialScene[]
 void RegisterScenes(SceneManager &sm) {
   sm.Register("Title", [] { return std::make_unique<TitleScene>(); });
   // sm.Register("Select", [] { return std::make_unique<SelectScene>(); });
+  sm.Register("Tutorial", [] { return std::make_unique<TutorialScene>(); });
   sm.Register("InGame", [] { return std::make_unique<GameScene>(); });
   sm.Register("Clear", [] { return std::make_unique<ClearScene>(); });
   sm.Register("GameOver", [] { return std::make_unique<GameOverScene>(); });

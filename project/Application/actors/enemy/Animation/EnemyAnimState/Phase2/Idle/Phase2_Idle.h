@@ -16,6 +16,7 @@ public:
     // 状態遷移の要求フラグ
     bool WantsToBite() const { return wantsToBite_; }
     bool WantsToBeam() const { return wantsToBeam_; }
+    bool WantsToBomb() const { return wantsToBomb_; }
 
     // Phase2側から速度を参照・適用するため
     Vector3& GetVelocity() { return velocity_; }
@@ -33,6 +34,7 @@ private:
 
     bool wantsToBite_ = false;
     bool wantsToBeam_ = false;
+    bool wantsToBomb_ = false;
 
     // 個別パラメータ
     float orbitSpeed_ = 0.3f;

@@ -177,14 +177,17 @@ exit 0</Command>
     <ClCompile Include="contents\field\building\building.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimation.cpp" />
     <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp" />
+    <ClCompile Include="actors\enemy\Bomb\EnemyBomb.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Idle\Phase1_Idle.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Beam\Phase1_Beam.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Stomp\Phase1_Stomp.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Tackle\Phase2_Tackle.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Bomb\Phase2_Bomb.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Idle\Phase2_Idle.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.cpp" />
+    <ClCompile Include="contents\light\DynamicArenaLight.cpp" />
     <ClCompile Include="contents\skydome\Skydome.cpp" />
     <ClCompile Include="actors\enemy\StompEffects\EnemyStompEffects.cpp" />
     <ClCompile Include="contents\ui\EnemyHPBar.cpp" />
@@ -208,6 +211,7 @@ exit 0</Command>
     <ClCompile Include="scene\Clear\ClearScene.cpp" />
     <ClCompile Include="scene\StageSelect\SelectScene.cpp" />
     <ClCompile Include="scene\Title\TitleScene.cpp" />
+    <ClCompile Include="scene\tutorial\TutorialScene.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Tackle\Phase1_Tackle.cpp" />
     <ClCompile Include="actors\enemy\TackleEffects\EnemyTackleEffects.cpp" />
   </ItemGroup>
@@ -218,6 +222,7 @@ exit 0</Command>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Stomp\Phase1_Stomp.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Tackle\Phase2_Tackle.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Bomb\Phase2_Bomb.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Idle\Phase2_Idle.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.h" />
@@ -237,6 +242,8 @@ exit 0</Command>
     <ClInclude Include="actors\enemy\EnemyParameters.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h" />
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
+    <ClInclude Include="contents\light\DynamicArenaLight.h" />
+    <ClInclude Include="actors\enemy\Bomb\EnemyBomb.h" />
     <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />
     <ClInclude Include="contents\ui\EnemyHPBar.h" />
@@ -254,6 +261,7 @@ exit 0</Command>
     <ClInclude Include="scene\Clear\ClearScene.h" />
     <ClInclude Include="scene\StageSelect\SelectScene.h" />
     <ClInclude Include="scene\Title\TitleScene.h" />
+    <ClInclude Include="scene\tutorial\TutorialScene.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Tackle\Phase1_Tackle.h" />
     <ClInclude Include="actors\enemy\TackleEffects\EnemyTackleEffects.h" />
   </ItemGroup>

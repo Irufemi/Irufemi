@@ -33,8 +33,14 @@ public:
     const Vector3& GetVelocity() const { return velocity_; }
     bool IsGrounded() const { return isGrounded_; }
 
+    // ジャスト回避の受付時間内かどうか（回避開始から一定フレーム以内）
+    bool IsJustEvasionWindow() const { return dodgeDurationTimer_ > (kDodgeDurationTime - kJustEvasionFrames); }
+
+
     float* GetDodgeSpeedPtr() { return &dodgeSpeed_; }
     float* GetDodgeSpeedNormalMultiplierPtr() { return &dodgeSpeedNormalMultiplier_; }
+
+    void ResetDodgeCooldown() { dodgeCooldownTimer_ = 0; }
 
 private:
     // --- 移動・ジャンプ関連変数 ---
@@ -46,6 +52,7 @@ private:
     const int kDodgeCooldownTime = 120;  // クールタイム2秒（60FPS想定）
     int dodgeDurationTimer_ = 0;         // 回避行動自体の持続時間
     const int kDodgeDurationTime = 30;   // 回避時間（約0.5秒）
+    const int kJustEvasionFrames = 10;   // ジャスト回避の受付フレーム数（約0.16秒）
     Vector3 dodgeDirection_ = { 0.0f, 0.0f, 0.0f }; // 回避する方向
     float dodgeSpeed_ = 1.2f;            // 回避の移動速度
     float dodgeSpeedNormalMultiplier_ = 0.4f; // 通常時の回避速度倍率

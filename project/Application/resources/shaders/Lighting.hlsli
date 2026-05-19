@@ -272,15 +272,48 @@ void ApplySpotLight(SpotLight light, Material material, float3 albedo, LightCont
 }
 
 /**
- * エリアライトの計算
+ * エリアライトの計算 (代表点近似)
  */
 void ApplyAreaLight(AreaLight light, Material material, float3 albedo, LightContext context, inout float3 diffuseColor, inout float3 specularColor) {
     if (light.isActive == 0) return;
 
-    float3 lightDir = light.direction;
-    float d = length(context.worldPosition - light.position);
-    float attenuation = pow(saturate(1.0f - d / max(light.range, 1e-5f)), 1.0f);
+    // 1. 面光源のローカル基底ベクトルを計算 (directionを法線とする)
+    float3 N_light = normalize(light.direction);
+    // Y軸との外積から右ベクトルを生成 (平行な場合はZ軸を使う)
+    float3 up = abs(N_light.y) < 0.999 ? float3(0, 1, 0) : float3(0, 0, 1);
+    float3 right_light = normalize(cross(up, N_light));
+    float3 up_light = cross(N_light, right_light);
 
+    // 2. 面の中心からピクセルへのベクトルをローカル座標系に射影
+    float3 p0 = context.worldPosition - light.position;
+    float projRight = dot(p0, right_light);
+    float projUp = dot(p0, up_light);
+    
+    // 3. 矩形のサイズ内にクランプして、ピクセルに最も近い「代表点」を求める
+    float halfWidth = light.size.x * 0.5f;
+    float halfHeight = light.size.y * 0.5f;
+    projRight = clamp(projRight, -halfWidth, halfWidth);
+    projUp = clamp(projUp, -halfHeight, halfHeight);
+    
+    // 代表点のワールド座標
+    float3 closestPoint = light.position + right_light * projRight + up_light * projUp;
+    
+    // 4. 代表点からピクセルへの方向と距離
+    float3 lightDir = normalize(context.worldPosition - closestPoint);
+    float d = length(context.worldPosition - closestPoint);
+    
+    // 5. 面の裏側には光を放たないためのカットオフ
+    // N_light(光源の向き)とlightDir(光源からピクセルへの向き)の内積で判定
+    float NdotL_light = dot(N_light, lightDir);
+    if (NdotL_light <= 0.0f) return;
+
+    // 6. 距離減衰と、光源面からの角度による減衰(Lambertian)
+    float attenuation = saturate(1.0f - d / max(light.range, 1e-5f));
+    // 以前のポイントライトに近い明るさを確保するため線形減衰(1乗)とし、
+    // 横方向への光の広がりを確保するため角度減衰を緩和する
+    attenuation *= lerp(0.5f, 1.0f, NdotL_light);
+
+    // 7. 最終的なライティングの適用
     if (material.lightingMode == 3) { // PBR
         CalculatePBR(context, lightDir, light.color.rgb, light.intensity * attenuation, material, albedo, diffuseColor, specularColor);
     } else {

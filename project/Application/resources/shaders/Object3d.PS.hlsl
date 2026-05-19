@@ -123,7 +123,14 @@ PixelShaderOutput main(VertexShaderOutput input)
 		if (gMaterial.lightingMode == 0) {
 			output.color.rgb = albedo;
 		} else {
-			output.color.rgb = totalDiffuse + totalSpecular;
+			// 半球ライト (Hemisphere Light) による環境光の追加
+			// 直接光が当たらない部位の下側や自己遮蔽による影が完全に真っ黒になるのを防ぐ
+			float3 skyColor = float3(0.35f, 0.35f, 0.4f);
+			float3 groundColor = float3(0.1f, 0.1f, 0.12f);
+			float hemiFactor = context.normal.y * 0.5f + 0.5f;
+			float3 ambientColor = lerp(groundColor, skyColor, hemiFactor);
+
+			output.color.rgb = totalDiffuse + totalSpecular + (albedo * ambientColor);
 		}
 			
 		/// <summary>

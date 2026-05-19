@@ -16,6 +16,7 @@
 
 #include "Graphics/PostProcess/PostProcessManager.h"
 #include "actors/enemy/Enemy.h"
+#include "actors/enemy/Body/Body.h"
 #include "actors/enemy/EnemyParameters.h"
 #include "actors/player/Player.h"
 #include "contents/field/Field.h"
@@ -24,6 +25,7 @@
 #include "contents/ui/EnemyHPBar.h"
 #include "contents/ui/EnemyPartHPBar.h"
 #include "contents/ui/PlayerHPBar.h"
+#include "contents/light/DynamicArenaLight.h"
 #include "Renderer/Object2D/Sprite/Sprite.h"
 
 #include "Engine/Core/Math/Geometry/Collision.h"
@@ -63,13 +65,8 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   skydome_ = std::make_unique<Skydome>();
   skydome_->Initialize();
 
-  auto pLight = std::make_unique<PointLight>();
-  pLight->color = {1.0f, 0.9f, 0.8f, 1.0f}; // やや暖色寄りの白
-  pLight->intensity = 5.0f;
-  pLight->radius = 30.0f;
-  pLight->decay = 1.0f;
-  pLight->isActive = 1;
-  pointLights_.push_back(std::move(pLight));
+  dynamicArenaLight_ = std::make_unique<DynamicArenaLight>();
+  dynamicArenaLight_->Initialize(engine_, areaLights_);
 
   // 操作説明スプライトの初期化
   operationNormalSprite_ = std::make_unique<Sprite>();
@@ -187,10 +184,29 @@ void GameScene::Update() {
     field_->Update();
   }
 
+  // --- 建物の時間経過自動生成 ---
+  if (field_ && field_->GetBuilding() && player_ && boss_) {
+    Building* building = field_->GetBuilding();
+    const auto& params = building->GetParams();
+
+    // 生存している建物が上限未満のときのみタイマーを進めて生成する
+    if (building->GetAliveBuildingCount() < params.maxCount) {
+      buildingSpawnTimer_ += 1.0f / 60.0f;
+      if (buildingSpawnTimer_ >= params.spawnInterval) {
+        buildingSpawnTimer_ = 0.0f;
+        building->SpawnRandomBuilding(player_->GetTranslate(), boss_->GetTargetPosition());
+      }
+    } else {
+      buildingSpawnTimer_ = 0.0f;
+    }
+  }
+
   skydome_->Update();
 
   // ライトのパラメータ更新
-  UpdateDynamicLights();
+  if (player_ && boss_) {
+      dynamicArenaLight_->Update(player_->GetTranslate(), boss_->GetTargetPosition());
+  }
 
   // =====
   // ↑ゲームの更新
@@ -262,7 +278,8 @@ void GameScene::Draw() {
 
   // --- 3DオブジェクトとしてのUI描画（HPバー） ---
   if (player_) {
-    player_->Draw3DUI(boss_.get(), true);
+    bool isPaused = (engine_->GetSceneManager()->GetCurrent() == "Pause");
+    player_->Draw3DUI(boss_.get(), true, isPaused);
   }
 
   // --- 操作説明および警告スプライト描画（3人称視点のみ） ---
@@ -301,50 +318,6 @@ void GameScene::DrawDebugTab() {
 }
 
 
-
-void GameScene::UpdateDynamicLights() {
-  if (pointLights_.empty() || !player_ || !boss_)
-    return;
-
-  PointLight *pLight = pointLights_[0].get();
-  pLight->isActive = 1;
-
-  Vector3 pPos = player_->GetTranslate();
-  Vector3 bPos = boss_->GetTargetPosition();
-
-  Vector3 midPos = Math::Add(pPos, bPos);
-  midPos.x *= 0.5f;
-  midPos.z *= 0.5f;
-
-  // Enemyのジャンプによる光源の急激な上下動を防ぐため、
-  // 光源のY軸（高さ）は上空からの見下ろしに最適な固定値とする。
-  // ボスの通常時の頭上より少し高い位置（35.0f〜40.0fなど）
-  midPos.y = 40.0f;
-
-  pLight->position = midPos;
-
-  // 2. 二人の距離に基づく範囲と強度の計算
-  float distance = Math::Length(Math::Subtract(bPos, pPos));
-
-  // 距離の 2.0倍程度を半径にする（最低でも40.0f程度は確保し、上空からの光が届くようにする）
-  pLight->radius = (std::max)(40.0f, distance * 2.0f);
-
-  // 距離が離れるほど強度を少し上げる
-  pLight->intensity = 3.0f + (distance * 0.1f);
-
-  // --- 3. シャドウマップパラメータの計算 ---
-  // プレイヤーとボスの中心を注視点とする
-  Vector3 shadowTargetPos = midPos;
-  // Y軸はプレイヤーやボスの高さに合わせておく（高すぎると影の範囲から外れる可能性があるため）
-  shadowTargetPos.y = (std::min)(pPos.y, bPos.y); 
-
-  // 距離に応じて描画範囲（orthoSize）を決定
-  // 余裕を持たせるためにマージン(例えば20.0f)を追加。最低限のサイズとして40.0fを担保。
-  float shadowOrthoSize = (std::max)(40.0f, distance * 0.6f + 20.0f);
-
-  // DrawManagerにカスタムシャドウパラメータを設定
-  engine_->GetDrawManager()->SetShadowParameters(shadowTargetPos, shadowOrthoSize);
-}
 
 // --- 当たり判定の実装 ---
 
@@ -509,6 +482,24 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       Sphere bulletSphere = {bullets[i].position, kMachineGunBulletRadius};
       if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
         bullets[i].isActive = false;
+        Vector3 hitPoint;
+        Segment segment = { Math::Subtract(bullets[i].position, bullets[i].velocity), bullets[i].velocity };
+        if (Collision::GetOBBSegmentIntersection(part->GetOBB(), segment, hitPoint)) {
+          Vector3 pushDir = Math::Multiply(-1.0f, bullets[i].velocity);
+          float len = Math::Length(pushDir);
+          if (len > 0.001f) pushDir = Math::Normalize(pushDir);
+          else pushDir = { 0.0f, 1.0f, 0.0f };
+          hitPoint = Math::Add(hitPoint, Math::Multiply(0.4f, pushDir));
+        } else {
+          hitPoint = Collision::GetOBBSphereClosestPoint(part->GetOBB(), bulletSphere, 0.4f);
+        }
+        // アニメーションによるビジュアルモデルのズレ（胴体のみ）を同期補正
+        if (dynamic_cast<Body*>(part)) {
+          Vector3 visualOffset = Math::Subtract(part->GetDrawPosition(), part->GetOBB().center);
+          hitPoint = Math::Add(hitPoint, visualOffset);
+        }
+
+        player_->PlayExplosion(hitPoint, 0.25f);
         int damage = player_->GetDamageMachineGun();
         if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMachineGunChargeMultiplier());
 
@@ -530,6 +521,24 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       Sphere missileSphere = {missiles[i].position, kMissileRadius};
       if (Collision::IsOBBSphereCollision(part->GetOBB(), missileSphere)) {
         missiles[i].isActive = false;
+        Vector3 hitPoint;
+        Segment segment = { Math::Subtract(missiles[i].position, missiles[i].velocity), missiles[i].velocity };
+        if (Collision::GetOBBSegmentIntersection(part->GetOBB(), segment, hitPoint)) {
+          Vector3 pushDir = Math::Multiply(-1.0f, missiles[i].velocity);
+          float len = Math::Length(pushDir);
+          if (len > 0.001f) pushDir = Math::Normalize(pushDir);
+          else pushDir = { 0.0f, 1.0f, 0.0f };
+          hitPoint = Math::Add(hitPoint, Math::Multiply(1.0f, pushDir));
+        } else {
+          hitPoint = Collision::GetOBBSphereClosestPoint(part->GetOBB(), missileSphere, 1.0f);
+        }
+        // アニメーションによるビジュアルモデルのズレ（胴体のみ）を同期補正
+        if (dynamic_cast<Body*>(part)) {
+          Vector3 visualOffset = Math::Subtract(part->GetDrawPosition(), part->GetOBB().center);
+          hitPoint = Math::Add(hitPoint, visualOffset);
+        }
+
+        player_->PlayExplosion(hitPoint, 1.2f);
         int damage = player_->GetDamageMissile();
         if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMissileChargeMultiplier());
 

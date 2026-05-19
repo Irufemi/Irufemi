@@ -2,6 +2,8 @@
 #include "actors/enemy/Enemy.h"
 #include "actors/player/Player.h"
 #include "Engine/Core/Math/Math.h"
+#include "Renderer/Effect/WeaponTrail.h"
+#include "actors/enemy/EnemyParameters.h"
 #include <cmath>
 
 void Phase1_NeckAttack::Enter(Enemy* enemy) {
@@ -237,6 +239,61 @@ void Phase1_NeckAttack::Update(Enemy* enemy, Player* player, float deltaTime) {
     applyLerp(enemy->GetHeadMidLocalTransform().rotate, targetRotates[2]);
     applyLerp(enemy->GetHeadMidLocalTransform().scale, targetScales[2]);
 
+    // --- 斬撃トレイルの生成 ---
+    if (currentPhase_ == AttackPhase::Sweep) {
+        if (auto trail = enemy->GetNeckTrail()) {
+            // エネミーの首の太さに合わせてエフェクトも太くする
+            trail->SetThickness(neckThickness_ * 3.0f);
+
+            Vector3 tipPos = {0,0,0};
+            Vector3 basePos = {0,0,0};
+            Head* currentHead = nullptr;
+            Transform headLocalT;
+            Vector3 currentOffset = {0,0,0};
+            
+            if (active == 0) { currentHead = enemy->GetHeadLeft(); headLocalT = enemy->GetHeadLeftLocalTransform(); currentOffset = enemy->GetHeadLeftOffset(); }
+            else if (active == 1) { currentHead = enemy->GetHeadRight(); headLocalT = enemy->GetHeadRightLocalTransform(); currentOffset = enemy->GetHeadRightOffset(); }
+            else if (active == 2) { currentHead = enemy->GetHeadMid(); headLocalT = enemy->GetHeadMidLocalTransform(); currentOffset = enemy->GetHeadMidOffset(); }
+            
+            if (currentHead) {
+                // 1フレーム遅延のある GetDrawPosition() は使わず、最新のトランスフォームから直接ワールド座標を計算する
+                Matrix4x4 globalMat = Math::MakeAffineMatrix(enemy->GetGlobalTransform().scale, enemy->GetGlobalTransform().rotate, enemy->GetGlobalTransform().translate);
+                Vector3 worldPosWithOffset = Math::Transform(Math::Add(headLocalT.translate, currentOffset), globalMat);
+                
+                Vector3 combinedRotate = Math::Add(enemy->GetGlobalTransform().rotate, headLocalT.rotate);
+                Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(combinedRotate);
+                Vector3 localUp = { rotMat.m[1][0], rotMat.m[1][1], rotMat.m[1][2] };
+                // Blenderのモデル原点は「首の一番下」。モデル自体の高さ寸法は 5.2
+                float baseModelHeight = 5.2f;
+
+                // Enemy::Update で実際に行われているモデルの配置座標（shiftedWorldPos）を完全に再現する
+                float headHalfY = EnemyParameters::GetInstance()->GetHeadOBBSize().y;
+                float shiftAmount = 0.0f;
+                if (headLocalT.scale.y > 1.0f) {
+                    shiftAmount = headHalfY * (headLocalT.scale.y - 1.0f);
+                }
+                Vector3 shiftedWorldPos = Math::Add(worldPosWithOffset, Math::Multiply(shiftAmount, localUp));
+
+                // モデルの原点が底面なので、配置座標(shiftedWorldPos)がそのまま「真の首の根本」になる
+                Vector3 trueBase = shiftedWorldPos;
+                
+                // 真の先端は、根本から上方向（localUp）へ、モデルの高さ(5.2) × 最終スケール 分だけ伸ばした位置
+                float combinedScaleY = enemy->GetGlobalTransform().scale.y * headLocalT.scale.y;
+                Vector3 trueTip = Math::Add(trueBase, Math::Multiply(baseModelHeight * combinedScaleY, localUp));
+                
+                // 首の根本（体の中）までエフェクトを描画すると体に埋まってしまうため、
+                // 剣の「刃」に相当する「頭の先端部分（口先）」だけにエフェクトを集中させる (75% 先端側に寄せる)
+                auto lerpVec3 = [&](const Vector3& start, const Vector3& end, float t) {
+                    return Vector3{start.x + (end.x - start.x) * t, start.y + (end.y - start.y) * t, start.z + (end.z - start.z) * t};
+                };
+                basePos = lerpVec3(trueBase, trueTip, 0.75f);
+                tipPos = trueTip;
+            }
+            
+            trail->AddPoint(basePos, tipPos);
+        }
+    }
+
     // --- ステート遷移 ---
     if (phaseTimer_ >= currentPhaseDuration) {
         phaseTimer_ = 0.0f;
@@ -244,6 +301,7 @@ void Phase1_NeckAttack::Update(Enemy* enemy, Player* player, float deltaTime) {
             currentPhase_ = AttackPhase::Sweep;
         } else if (currentPhase_ == AttackPhase::Sweep) {
             currentPhase_ = AttackPhase::Recovery;
+            if (auto trail = enemy->GetNeckTrail()) trail->StopTrail();
         } else if (currentPhase_ == AttackPhase::Recovery) {
             currentAttackIndex_++;
             if (currentAttackIndex_ > 2) {
