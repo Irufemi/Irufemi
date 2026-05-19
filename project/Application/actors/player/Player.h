@@ -34,6 +34,9 @@ public:
     void Draw3DUI(Enemy* enemy = nullptr, bool isUI = false, bool isPaused = false);
     void Draw2DUI(Enemy* enemy = nullptr);
 
+    // ★追加: 弾丸・ミサイル着弾時の3D爆発エフェクト再生
+    void PlayExplosion(const Vector3& position, float scale = 1.0f);
+
     const Vector3& GetTranslate() const { return translate_; }
     void SetTranslate(const Vector3& pos) { translate_ = pos; }
     const Vector3& GetRotate() const { return rotate_; }
@@ -96,6 +99,10 @@ private:
     PlayerWeapon weapon_;
     PlayerCamera cameraController_;
     PlayerStatus status_;
+
+    // ★追加: 3D爆発エフェクトプール
+    std::vector<std::unique_ptr<Effect>> explosionEffects_;
+    static const int kMaxExplosionEffects = 32;
 
     std::unique_ptr<ObjClass> obj_ = nullptr;
     std::unique_ptr<ObjClass> attackObj_ = nullptr;

@@ -16,6 +16,7 @@
 
 #include "Graphics/PostProcess/PostProcessManager.h"
 #include "actors/enemy/Enemy.h"
+#include "actors/enemy/Body/Body.h"
 #include "actors/enemy/EnemyParameters.h"
 #include "actors/player/Player.h"
 #include "contents/field/Field.h"
@@ -481,6 +482,24 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       Sphere bulletSphere = {bullets[i].position, kMachineGunBulletRadius};
       if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
         bullets[i].isActive = false;
+        Vector3 hitPoint;
+        Segment segment = { Math::Subtract(bullets[i].position, bullets[i].velocity), bullets[i].velocity };
+        if (Collision::GetOBBSegmentIntersection(part->GetOBB(), segment, hitPoint)) {
+          Vector3 pushDir = Math::Multiply(-1.0f, bullets[i].velocity);
+          float len = Math::Length(pushDir);
+          if (len > 0.001f) pushDir = Math::Normalize(pushDir);
+          else pushDir = { 0.0f, 1.0f, 0.0f };
+          hitPoint = Math::Add(hitPoint, Math::Multiply(0.4f, pushDir));
+        } else {
+          hitPoint = Collision::GetOBBSphereClosestPoint(part->GetOBB(), bulletSphere, 0.4f);
+        }
+        // アニメーションによるビジュアルモデルのズレ（胴体のみ）を同期補正
+        if (dynamic_cast<Body*>(part)) {
+          Vector3 visualOffset = Math::Subtract(part->GetDrawPosition(), part->GetOBB().center);
+          hitPoint = Math::Add(hitPoint, visualOffset);
+        }
+
+        player_->PlayExplosion(hitPoint, 0.25f);
         int damage = player_->GetDamageMachineGun();
         if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMachineGunChargeMultiplier());
 
@@ -502,6 +521,24 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       Sphere missileSphere = {missiles[i].position, kMissileRadius};
       if (Collision::IsOBBSphereCollision(part->GetOBB(), missileSphere)) {
         missiles[i].isActive = false;
+        Vector3 hitPoint;
+        Segment segment = { Math::Subtract(missiles[i].position, missiles[i].velocity), missiles[i].velocity };
+        if (Collision::GetOBBSegmentIntersection(part->GetOBB(), segment, hitPoint)) {
+          Vector3 pushDir = Math::Multiply(-1.0f, missiles[i].velocity);
+          float len = Math::Length(pushDir);
+          if (len > 0.001f) pushDir = Math::Normalize(pushDir);
+          else pushDir = { 0.0f, 1.0f, 0.0f };
+          hitPoint = Math::Add(hitPoint, Math::Multiply(1.0f, pushDir));
+        } else {
+          hitPoint = Collision::GetOBBSphereClosestPoint(part->GetOBB(), missileSphere, 1.0f);
+        }
+        // アニメーションによるビジュアルモデルのズレ（胴体のみ）を同期補正
+        if (dynamic_cast<Body*>(part)) {
+          Vector3 visualOffset = Math::Subtract(part->GetDrawPosition(), part->GetOBB().center);
+          hitPoint = Math::Add(hitPoint, visualOffset);
+        }
+
+        player_->PlayExplosion(hitPoint, 1.2f);
         int damage = player_->GetDamageMissile();
         if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMissileChargeMultiplier());
 

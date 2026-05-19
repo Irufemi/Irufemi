@@ -133,6 +133,11 @@ public:
 	void SetBlend(BlendMode blend) { selectedBlend_ = blend; }
 	void SetDepthWrite(PSOManager::DepthWrite depth) { selectedDepth_ = depth; }
 	void SetCull(PSOManager::CullMode cull) { selectedCull_ = cull; }
+	void SetUVTransform(const Matrix4x4& transform) {
+		if (resource_) {
+			resource_->GetMaterialData()->uvTransform = transform;
+		}
+	}
 	///@}
 
 	/** @name デバッグ表示切り替え */

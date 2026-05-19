@@ -108,6 +108,14 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     karakuriGaugeFill_->SetColor({ 1.0f, 0.9f, 0.1f, 0.8f }); // 明るい黄色
     karakuriGaugeFill_->SetSize(0.0f, 16.0f); // 初期幅0
     karakuriGaugeFill_->SetPositionTopLeft(440.0f, 580.0f);
+
+    // ★追加: 3D爆発エフェクトプールの事前生成
+    explosionEffects_.clear();
+    for (int i = 0; i < kMaxExplosionEffects; ++i) {
+        auto effect = std::make_unique<Effect>();
+        effect->Initialize(EffectType::kExplosion);
+        explosionEffects_.push_back(std::move(effect));
+    }
 }
 
 void Player::Update() {
@@ -439,6 +447,13 @@ void Player::Update() {
         }
     }
 
+    // ★追加: 爆発エフェクトの更新
+    for (auto& effect : explosionEffects_) {
+        if (effect->IsActive()) {
+            effect->Update();
+        }
+    }
+
 
 #ifdef USE_IMGUI
     if (input_->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
@@ -601,6 +616,14 @@ void Player::Draw() {
     }
 
     weapon_.Draw(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, static_cast<int>(cameraController_.GetViewMode()), isBlinking, status_.IsDead());
+
+    // ★追加: 爆発エフェクトの描画
+    for (auto& effect : explosionEffects_) {
+        if (effect->IsActive()) {
+            effect->SyncBeforeDraw();
+            effect->Draw();
+        }
+    }
 
 
     // 照準とマスクは Draw2DUI で描画するように変更
@@ -870,4 +893,13 @@ void Player::HandleSkill() {
 
 void Player::HitAndKnockback(Enemy* enemy) {
     status_.HitAndKnockback(enemy, translate_);
+}
+
+void Player::PlayExplosion(const Vector3& position, float scale) {
+    for (auto& effect : explosionEffects_) {
+        if (!effect->IsActive()) {
+            effect->Play(position, { 0.0f, 0.0f, 0.0f }, { scale, scale, scale });
+            break; // 同時に1つの着弾で1つのみ再生
+        }
+    }
 }

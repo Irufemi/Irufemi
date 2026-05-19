@@ -200,6 +200,82 @@ gpuParticle_->Update();
 gpuParticle_->Draw();
 ```
 
+### 2.5 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
+
+敵や障害物に弾丸・ミサイルが着弾した際に使用する、リッチな3D爆発エフェクト機能です。3D球体の急速膨張による炎コア、3軸クロス展開される衝撃波リング、全方位に飛び散るGPU火花パーティクルが統合されています。
+
+#### プレイヤーでの事前生成とプール管理の例
+
+弾丸が連射されたり、同時に多数ヒットした場合に備え、事前にエフェクトオブジェクトをプールしておき使い回す設計が推奨されます。
+
+```cpp
+// --- ヘッダー (Player.h) ---
+#include "Renderer/Effect/Effect.h"
+#include <vector>
+#include <memory>
+
+class Player {
+private:
+    std::vector<std::unique_ptr<Effect>> explosionEffects_;
+    static const int kMaxExplosionEffects = 32;
+public:
+    void Initialize(InputManager* input, IrufemiEngine* engine);
+    void Update();
+    void Draw();
+    void PlayExplosion(const Vector3& position);
+};
+
+// --- 実装 (Player.cpp) ---
+void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
+    // プールを事前に生成・初期化
+    explosionEffects_.clear();
+    for (int i = 0; i < kMaxExplosionEffects; ++i) {
+        auto effect = std::make_unique<Effect>();
+        effect->Initialize(EffectType::kExplosion);
+        explosionEffects_.push_back(std::move(effect));
+    }
+}
+
+void Player::Update() {
+    // アクティブなエフェクトのみ毎フレーム更新
+    for (auto& effect : explosionEffects_) {
+        if (effect->IsActive()) {
+            effect->Update();
+        }
+    }
+}
+
+void Player::Draw() {
+    // アクティブなエフェクトの描画・同期
+    for (auto& effect : explosionEffects_) {
+        if (effect->IsActive()) {
+            effect->SyncBeforeDraw();
+            effect->Draw();
+        }
+    }
+}
+
+void Player::PlayExplosion(const Vector3& position) {
+    // プールから空いているエフェクトを探して再生開始
+    for (auto& effect : explosionEffects_) {
+        if (!effect->IsActive()) {
+            effect->Play(position);
+            break;
+        }
+    }
+}
+```
+
+#### 着弾時の呼び出し例 (GameScene.cpp など)
+
+```cpp
+if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
+    bullets[i].isActive = false;
+    // 着弾位置に爆発エフェクトを発生
+    player_->PlayExplosion(bullets[i].position);
+}
+```
+
 ---
 ## 3. リソース管理 (Resource Management)
 
@@ -411,4 +487,4 @@ void ExampleScene::DrawDebugTab() {
 
 ---
 > **ドキュメント更新履歴**
-> - 2026/05: RenderGraph / パケット分離対応を反映、Phase 1~3 および 便利機能（カメラ、ディレクトリ構造、UISelectionGroup）を追記
+> - 2026/05: RenderGraph / パケット分離対応を反映、Phase 1~3 および 便利機能（カメラ、ディレクトリ構造、UISelectionGroup）を追記、3D爆発エフェクト (Effect::kExplosion) 仕様とスニペットの追加

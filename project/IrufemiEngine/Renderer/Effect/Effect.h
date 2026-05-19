@@ -14,6 +14,7 @@
 #include <memory>
 
 class GPUParticleSystem;
+class ParticleSystem;
 class PrimitiveObjects3DClass;
 
 /**
@@ -25,6 +26,7 @@ enum class EffectType {
     kImpact,    // スライドの表現（PlaneとRingの複合ヒットエフェクト）
     kAura,      // オーラエフェクト
     kSwing,     // スイングエフェクト（風切りエフェクト）
+    kExplosion, // ★追加: 3D爆発エフェクト（球体膨張＋パーティクル＋衝撃波）
     // 今後増えるエフェクトの種類をここに追加
 };
 
@@ -155,20 +157,44 @@ struct SwingConfig {
     float swingRotationAngle = 0.0f;                            //!< エフェクト自体の回転は行わず、レールとして固定
 };
 
+/**
+ * @struct ExplosionConfig
+ * @brief 3D爆発エフェクトの設定データ
+ */
+struct ExplosionConfig {
+    PrimitiveType coreShape = PrimitiveType::Sphere;             //!< 3D爆風コアの形状（SphereまたはIcoSphere）
+    std::string coreTexture = "resources/noise0.png";            //!< 爆風テクスチャ（既存のノイズを使用）
+    PrimitiveType waveShape = PrimitiveType::Ring;               //!< 衝撃波の形状
+    std::string waveTexture = "resources/gradationLine.png";     //!< 衝撃波のテクスチャ
+
+    Vector4 color = { 1.0f, 0.4f, 0.05f, 1.0f };                 //!< 燃え上がる高輝度オレンジ
+    Vector3 coreStartScale = { 0.1f, 0.1f, 0.1f };               //!< 爆風の開始サイズ
+    Vector3 coreEndScale = { 5.0f, 5.0f, 5.0f };                 //!< 爆風の終了サイズ（大きく膨張）
+    Vector3 waveStartScale = { 0.5f, 0.5f, 0.5f };               //!< 衝撃波の開始サイズ
+    Vector3 waveEndScale = { 10.0f, 10.0f, 10.0f };              //!< 衝撃波の終了サイズ
+
+    float lifeTime = 0.4f;                                       //!< 爆発の生存時間（秒）
+    Vector2 uvScrollSpeed = { 0.5f, -0.3f };                     //!< コアのうねり用UVスクロール速度
+};
+
 private:
     static class IrufemiEngine* engine_;
     std::vector<std::unique_ptr<GPUParticleSystem>> particleSystems_;
+    std::unique_ptr<ParticleSystem> explosionSparkSystem_; //!< ★今回の実装のみCPUパーティクルを適用
     std::unique_ptr<PrimitiveObjects3DClass> auraObject_;
     std::unique_ptr<PrimitiveObjects3DClass> swingObject_;      //!< スイング用プリミティブオブジェクト
+    std::unique_ptr<PrimitiveObjects3DClass> explosionObject_;  //!< ★追加: 3D爆風コア用
+    std::unique_ptr<PrimitiveObjects3DClass> explosionWaveObject_; //!< ★追加: 衝撃波用
     EffectType type_;
 
     HitEffectConfig hitConfig_;
     ImpactConfig impactConfig_;
     AuraConfig auraConfig_;
     SwingConfig swingConfig_;                                   //!< スイング設定パラメータ
+    ExplosionConfig explosionConfig_;                           //!< ★追加: 3D爆破設定
     Vector2 currentUVOffset_ = { 0.0f, 0.0f };
     
-    // スイング用生存・制御用変数
+    // スイング・爆破用生存・制御用変数
     bool isActive_ = false;                                     //!< アクティブ状態フラグ
     float lifeTimer_ = 0.0f;                                    //!< 残り寿命タイマー
     Vector3 basePosition_ = { 0.0f, 0.0f, 0.0f };               //!< 発生位置キャッシュ
@@ -185,5 +211,3 @@ private:
     PSOManager::CullMode cullMode_ = PSOManager::CullMode::None;
     bool isBillboard_ = true;
 };
-
-
