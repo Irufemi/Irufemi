@@ -226,16 +226,6 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             PostMessage(hWnd, WM_CLOSE, 0, 0);
         }
 #endif
-#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-        if (wParam == VK_F3) {
-            cursorLocked_ = !cursorLocked_; // 状態をトグル
-            if (inputManager_) {
-                if (auto* mouse = inputManager_->GetMouse()) {
-                    mouse->SetLocked(cursorLocked_);
-                }
-            }
-        }
-#endif
         return 0;
     case WM_MOUSEWHEEL:
         if (inputManager_) {
