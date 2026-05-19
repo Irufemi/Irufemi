@@ -5,6 +5,7 @@
 #include "Beam/EnemyBeam.h"
 #include "StompEffects/EnemyStompEffects.h"
 #include "TackleEffects/EnemyTackleEffects.h"
+#include "Bomb/EnemyBomb.h"
 #include "Body/Body.h"
 #include "Head/Left/HeadLeft.h"
 #include "Head/Mid/HeadMid.h"
@@ -39,6 +40,10 @@ public:
     bool IsFiringBeam(int index) const { return beams_[index] != nullptr; }
     bool IsFiringRealBeam() const { return animation_ != nullptr && animation_->IsFiring(); }
     EnemyBeam* GetBeam(int index) const { return beams_[index].get(); }
+    
+    // --- 爆弾制御用 ---
+    void FireBomb(int index, const Vector3& targetPos);
+    EnemyBomb* GetBomb(int index) const { return bombs_[index].get(); }
     
     // --- スタンプ制御用 ---
     void FireStomp(const Vector3& position);
@@ -103,6 +108,9 @@ private:
 
     // ビームのインスタンス管理
     std::array<std::unique_ptr<EnemyBeam>, 3> beams_;
+
+    // 爆弾のインスタンス管理
+    std::array<std::unique_ptr<EnemyBomb>, 3> bombs_;
 
     // スタンプのインスタンス管理
     std::unique_ptr<EnemyStompEffects> stompEffects_;

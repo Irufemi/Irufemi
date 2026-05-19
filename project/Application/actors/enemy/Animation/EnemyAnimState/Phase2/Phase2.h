@@ -2,6 +2,7 @@
 #include "../../IEnemyAnimationState.h"
 #include "Tackle/Phase2_Tackle.h"
 #include "Beam/Phase2_Beam.h"
+#include "Bomb/Phase2_Bomb.h"
 #include "Idle/Phase2_Idle.h"
 #include "core/math/Vector3.h"
 #include "core/math/Transform.h"
@@ -24,13 +25,15 @@ private:
    enum class Mode {
         Idle,
         Tackling,
-        Beaming
+        Beaming,
+        Bombing
     };
     std::array<Mode, 3> currentModes_;
 
     std::array<std::unique_ptr<Phase2_Idle>, 3> idleStates_;
     std::array<std::unique_ptr<Phase2_Beam>, 3> beamStates_;
     std::array<std::unique_ptr<Phase2_Tackle>, 3> tackleStates_;
+    std::array<std::unique_ptr<Phase2_Bomb>, 3> bombStates_;
 
     // 重なり防止（反発）パラメータ
     const float kRepulsionRadius = 8.0f;    // 首同士が反発し始める距離 (m)

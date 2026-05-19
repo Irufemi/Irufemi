@@ -69,6 +69,9 @@ void Enemy::Initialize(IrufemiEngine *engine) {
   for (int i = 0; i < 3; ++i) {
       beams_[i] = std::make_unique<EnemyBeam>();
       beams_[i]->Initialize(engine_);
+      
+      bombs_[i] = std::make_unique<EnemyBomb>();
+      bombs_[i]->Initialize(engine_);
   }
   stompEffects_ = std::make_unique<EnemyStompEffects>();
   stompEffects_->Initialize();
@@ -120,6 +123,11 @@ void Enemy::Update(Player *player) {
   }
   if (neckTrail_) {
       neckTrail_->Update();
+  }
+  for (int i = 0; i < 3; ++i) {
+      if (bombs_[i] && !bombs_[i]->IsExpired()) {
+          bombs_[i]->Update();
+      }
   }
 
   // だるま落とし落下物理
@@ -311,6 +319,13 @@ void Enemy::Draw(IrufemiEngine* engine) {
       }
   }
 
+  // 爆弾を描画
+  for (int i = 0; i < 3; ++i) {
+      if (bombs_[i] && !bombs_[i]->IsExpired()) {
+          bombs_[i]->Draw(engine);
+      }
+  }
+
     if (stompEffects_) {
         stompEffects_->Draw(engine);
     }
@@ -332,6 +347,22 @@ void Enemy::Draw(IrufemiEngine* engine) {
 // ビームの発射命令（トリガー）
 void Enemy::FireBeam() {
   // すでに Initialize で生成済みのため、ここでは何もしない（アニメーション状態で制御）
+}
+
+// 爆弾の発射命令
+void Enemy::FireBomb(int index, const Vector3& targetPos) {
+    if (index >= 0 && index < 3 && bombs_[index]) {
+        Transform* headT = nullptr;
+        if (index == 0) headT = &headLeftLocalTransform_;
+        else if (index == 1) headT = &headMidLocalTransform_;
+        else if (index == 2) headT = &headRightLocalTransform_;
+
+        if (headT) {
+            Vector3 startPos = headT->translate;
+            // フェーズ2では translate がワールド座標になっているためそのまま使用
+            bombs_[index]->Throw(startPos, targetPos);
+        }
+    }
 }
 
 bool Enemy::IsHeadDead(int index) const {
@@ -623,6 +654,10 @@ void Enemy::UpdateDebugUI() {
         addObbLines(headRight_->GetOBB());
       for (int i = 0; i < 3; ++i) {
           if (beams_[i]) addObbLines(beams_[i]->GetOBB());
+          if (bombs_[i] && !bombs_[i]->IsExpired()) {
+              auto obbs = bombs_[i]->GetOBBs();
+              for (const auto& obb : obbs) addObbLines(obb);
+          }
       }
       if (stompEffects_)
         stompEffects_->DrawDebug(lineOBB_.get());
