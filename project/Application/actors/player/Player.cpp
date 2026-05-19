@@ -70,6 +70,7 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
 
     // 死亡演出用変数の初期化
     deathTimer_ = 0;
+    deathWaitTimer_ = 0;
     deathVelocity_ = { 0.0f, 0.0f, 0.0f };
     deathAngularVelocity_ = { 0.0f, 0.0f, 0.0f };
     deathYaw_ = 0.0f;
@@ -105,8 +106,18 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
 }
 
 void Player::Update() {
-    // ====== 死亡時の敵目線＆彼方へ消え去る演出 ======
+    // ====== 死亡時の待機 + 演出 ======
     if (status_.IsDead()) {
+        // HPが0になってから3秒間（180フレーム）は演出を待機する
+        if (deathWaitTimer_ < kDeathWaitTime) {
+            deathWaitTimer_++;
+            // 待機中はカメラとパーティクルのみ更新（プレイヤーはその場に留まる）
+            weapon_.UpdateParticlesOnly();
+            cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
+            return;
+        }
+
+        // 3秒経過後、死亡演出を開始
         if (deathTimer_ == 0) {
             deathYaw_ = rotate_.y;
 
@@ -381,13 +392,23 @@ void Player::Update() {
         hpBar_->Update(this, cameraController_.IsFirstPerson());
     }
 
-    // ★追加: からくりチャージゲージの更新
+    // ★からくりチャージゲージの更新
     if (karakuriGaugeBg_ && karakuriGaugeFill_) {
-        if (!isKarakuriCharged_ && karakuriChargeTimer_ > 0) {
+        if (isKarakuriCharged_) {
+            // チャージ成功後: 残り時間に応じてゲージを減らす（オレンジ色）
+            float ratio = static_cast<float>(karakuriActiveTimer_) / static_cast<float>(kKarakuriActiveTime);
+            if (ratio < 0.0f) ratio = 0.0f;
+            if (ratio > 1.0f) ratio = 1.0f;
+            karakuriGaugeFill_->SetSize(400.0f * ratio, 16.0f);
+            karakuriGaugeFill_->SetColor({ 1.0f, 0.5f, 0.0f, 0.9f }); // オレンジ色（効果中）
+            karakuriGaugeBg_->Update();
+            karakuriGaugeFill_->Update();
+        } else if (karakuriChargeTimer_ > 0) {
+            // チャージ中: チャージ量に応じてゲージを増やす（黄色）
             float ratio = static_cast<float>(karakuriChargeTimer_) / static_cast<float>(kKarakuriChargeTime);
             if (ratio > 1.0f) ratio = 1.0f;
             karakuriGaugeFill_->SetSize(400.0f * ratio, 16.0f);
-            
+            karakuriGaugeFill_->SetColor({ 1.0f, 0.9f, 0.1f, 0.8f }); // 黄色（チャージ中）
             karakuriGaugeBg_->Update();
             karakuriGaugeFill_->Update();
         }
@@ -486,7 +507,9 @@ void Player::Draw3DUI(Enemy* enemy, bool isUI, bool isPaused) {
 void Player::Draw2DUI(Enemy* enemy) {
     if (!status_.IsDead()) {
         // 視点に関わらずからくりチャージゲージを描画
-        if (!isKarakuriCharged_ && karakuriChargeTimer_ > 0 && karakuriGaugeBg_ && karakuriGaugeFill_) {
+        // チャージ中 or チャージ成功後（効果時間中）はゲージを表示する
+        bool showKarakuriGauge = isKarakuriCharged_ || karakuriChargeTimer_ > 0;
+        if (showKarakuriGauge && karakuriGaugeBg_ && karakuriGaugeFill_) {
             karakuriGaugeBg_->Draw();
             karakuriGaugeFill_->Draw();
         }

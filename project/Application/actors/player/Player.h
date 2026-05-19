@@ -179,6 +179,8 @@ private:
     float deathYaw_ = 0.0f;
     bool isDeathAnimationFinished_ = false;
     static constexpr int kDeathAnimationDuration = 180;
+    static constexpr int kDeathWaitTime = 90; // 死亡演出開始まで1.5秒待機（60fps x 1.5）
+    int deathWaitTimer_ = 0; // 死亡待機タイマー
 
     Vector3 deathCameraPos_ = { 0.0f, 0.0f, 0.0f };
 

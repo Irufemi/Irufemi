@@ -165,6 +165,18 @@ void PlayerWeapon::UpdateParticlesOnly() {
                 }
             }
 
+            // フィールド外に出たらミサイルを消す
+            const float kFieldLimitXZ = 95.0f;
+            const float kFieldLimitY  = 80.0f;
+            if (missiles_[i].position.x >  kFieldLimitXZ ||
+                missiles_[i].position.x < -kFieldLimitXZ ||
+                missiles_[i].position.z >  kFieldLimitXZ ||
+                missiles_[i].position.z < -kFieldLimitXZ ||
+                missiles_[i].position.y >  kFieldLimitY) {
+                missiles_[i].isActive = false;
+                continue;
+            }
+
             float missileHalfLength = 2.2f; // 描画スケール(Z=0.8)に基づく固定値 (尻尾よりわずかに内側)
             float vx = missiles_[i].velocity.x;
             float vy = missiles_[i].velocity.y;
@@ -404,6 +416,18 @@ void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& player
                 if (missiles_[i].velocity.y < 0.0f) {
                     missiles_[i].velocity.y = 0.0f;
                 }
+            }
+
+            // フィールド外に出たらミサイルを消す
+            const float kFieldLimitXZ = 95.0f;
+            const float kFieldLimitY  = 80.0f;
+            if (missiles_[i].position.x >  kFieldLimitXZ ||
+                missiles_[i].position.x < -kFieldLimitXZ ||
+                missiles_[i].position.z >  kFieldLimitXZ ||
+                missiles_[i].position.z < -kFieldLimitXZ ||
+                missiles_[i].position.y >  kFieldLimitY) {
+                missiles_[i].isActive = false;
+                continue;
             }
 
             float missileHalfLength = 2.2f; // 描画スケール(Z=0.8)に基づく固定値 (尻尾よりわずかに内側)
