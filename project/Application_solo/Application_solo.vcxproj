@@ -235,6 +235,8 @@ exit 0</Command>
     <ClCompile Include="components\RailShooterPlayerComponent.cpp" />
     <ClCompile Include="components\RailShooterEnemyComponent.cpp" />
     <ClCompile Include="components\CameraFollowPlayerComponent.cpp" />
+    <ClCompile Include="components\DebrisComponent.cpp" />
+    <ClCompile Include="components\DebrisManagerComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -249,6 +251,8 @@ exit 0</Command>
     <ClInclude Include="components\RailShooterPlayerComponent.h" />
     <ClInclude Include="components\RailShooterEnemyComponent.h" />
     <ClInclude Include="components\CameraFollowPlayerComponent.h" />
+    <ClInclude Include="components\DebrisComponent.h" />
+    <ClInclude Include="components\DebrisManagerComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

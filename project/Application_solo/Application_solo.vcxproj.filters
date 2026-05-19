@@ -75,6 +75,12 @@
     <ClCompile Include="components\CameraFollowPlayerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\DebrisComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\DebrisManagerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scene\InGame\GameScene.h">
@@ -111,6 +117,12 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\CameraFollowPlayerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\DebrisComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\DebrisManagerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
   </ItemGroup>

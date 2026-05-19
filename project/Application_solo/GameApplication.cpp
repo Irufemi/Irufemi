@@ -13,6 +13,8 @@
 #include "components/RailShooterPlayerComponent.h"
 #include "components/RailShooterEnemyComponent.h"
 #include "components/CameraFollowPlayerComponent.h"
+#include "components/DebrisComponent.h"
+#include "components/DebrisManagerComponent.h"
 
 // シーンのインクルード
 #include "scene/title/TitleScene.h"
@@ -68,6 +70,8 @@ void GameApplication::Run() {
     ComponentFactory::Register("RailShooterPlayerComponent", []() { return std::make_shared<RailShooterPlayerComponent>(); });
     ComponentFactory::Register("RailShooterEnemyComponent", []() { return std::make_shared<RailShooterEnemyComponent>(); });
     ComponentFactory::Register("CameraFollowPlayerComponent", []() { return std::make_shared<CameraFollowPlayerComponent>(); });
+    ComponentFactory::Register("DebrisComponent", []() { return std::make_shared<DebrisComponent>(); });
+    ComponentFactory::Register("DebrisManagerComponent", []() { return std::make_shared<DebrisManagerComponent>(); });
 
     // シーンの登録
     engine->SetSceneRegistrar(RegisterScenes);

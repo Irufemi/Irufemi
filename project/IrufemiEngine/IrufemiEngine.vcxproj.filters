@@ -1264,6 +1264,9 @@
     <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Core\Utility\ObjectPool.h">
+      <Filter>Engine\Core\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">
