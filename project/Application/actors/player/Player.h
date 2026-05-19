@@ -14,6 +14,7 @@ class Line3DRegion;
 class Enemy;
 class Sprite;
 class PlayerHPBar;
+class WeaponTrail;
 
 struct AttackCollision {
     Vector3 center;
@@ -23,14 +24,18 @@ struct AttackCollision {
 
 class Player {
 public:
+    Player();
     ~Player();
 
     void Initialize(InputManager* input, IrufemiEngine* engine);
     void Update();
     void Draw();
     void DrawParticles();
-    void Draw3DUI(Enemy* enemy = nullptr, bool isUI = false);
+    void Draw3DUI(Enemy* enemy = nullptr, bool isUI = false, bool isPaused = false);
     void Draw2DUI(Enemy* enemy = nullptr);
+
+    // ★追加: 弾丸・ミサイル着弾時の3D爆発エフェクト再生
+    void PlayExplosion(const Vector3& position, float scale = 1.0f);
 
     const Vector3& GetTranslate() const { return translate_; }
     void SetTranslate(const Vector3& pos) { translate_ = pos; }
@@ -63,6 +68,14 @@ public:
 
     int GetCooldownWarningTimer() const { return cooldownWarningTimer_; }
 
+    // --- チュートリアル用メソッド ---
+    void ResetSkillCooldown() { skillCooldownTimer_ = 0; cooldownWarningTimer_ = 0; }
+    void ForceKarakuriCharge() {
+        isKarakuriCharged_ = true;
+        karakuriActiveTimer_ = kKarakuriActiveTime;
+    }
+    void ResetDodgeCooldown() { movement_.ResetDodgeCooldown(); }
+
     void HitAndKnockback(Enemy* enemy);
 
     int GetDamageMelee() const { return damageMelee_; }
@@ -87,11 +100,16 @@ private:
     PlayerCamera cameraController_;
     PlayerStatus status_;
 
+    // ★追加: 3D爆発エフェクトプール
+    std::vector<std::unique_ptr<Effect>> explosionEffects_;
+    static const int kMaxExplosionEffects = 32;
+
     std::unique_ptr<ObjClass> obj_ = nullptr;
     std::unique_ptr<ObjClass> attackObj_ = nullptr;
     std::unique_ptr<ObjClass> targetMarkerObj_ = nullptr;
     std::unique_ptr<Sprite> maskSprite_ = nullptr;
     std::unique_ptr<PlayerHPBar> hpBar_ = nullptr;
+    std::unique_ptr<WeaponTrail> weaponTrail_ = nullptr;
 
     Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
     Vector3 aimPos_ = { 0.0f, 0.0f, 0.0f };
@@ -107,6 +125,10 @@ private:
     int karakuriChargeTimer_ = 0;
     const int kKarakuriChargeTime = 300;
     bool isKarakuriCharged_ = false;
+
+    // ★追加: からくりチャージ用のゲージUI
+    std::unique_ptr<Sprite> karakuriGaugeBg_ = nullptr;
+    std::unique_ptr<Sprite> karakuriGaugeFill_ = nullptr;
 
     int karakuriActiveTimer_ = 0;
     const int kKarakuriActiveTime = 1200;
@@ -167,6 +189,8 @@ private:
     float deathYaw_ = 0.0f;
     bool isDeathAnimationFinished_ = false;
     static constexpr int kDeathAnimationDuration = 180;
+    static constexpr int kDeathWaitTime = 90; // 死亡演出開始まで1.5秒待機（60fps x 1.5）
+    int deathWaitTimer_ = 0; // 死亡待機タイマー
 
     Vector3 deathCameraPos_ = { 0.0f, 0.0f, 0.0f };
 

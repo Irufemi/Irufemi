@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Framework">
@@ -620,6 +620,7 @@
     <ClCompile Include="Framework\Component\Renderer\TextRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Effect\WeaponTrail.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -1267,6 +1268,7 @@
     <ClInclude Include="Engine\Core\Utility\ObjectPool.h">
       <Filter>Engine\Core\Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Effect\WeaponTrail.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">
@@ -1459,6 +1461,9 @@
       <Filter>Engine\Graphics\Shaders\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\LightningCrawl.PS.hlsl">
+      <Filter>Engine\Graphics\Shaders\Basic</Filter>
+    </FxCompile>
+    <FxCompile Include="..\Application\resources\shaders\EnergyCore.PS.hlsl">
       <Filter>Engine\Graphics\Shaders\Basic</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\BitonicSort.CS.hlsl">

@@ -10,6 +10,8 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
+#include "Resource/Model/AnimationManager.h"
+#include "Engine/Graphics/Compute/IComputeTask.h"
 
 // 静的メンバ定義
 
@@ -61,6 +63,15 @@ void ObjClass::InitializeResources() {
         meshResources_.push_back(std::move(res));
     }
 
+    // Skeleton と SkinCluster の初期化 (スキンがある場合)
+    if (managedModel_ && managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
+        skeleton_ = AnimationManager::CreateSkeleton(managedModel_->cpuModel->rootNode);
+        skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *managedModel_->cpuModel);
+        
+        // 静的モデルなのでバインドポーズのままスケルトンを1度更新しておく
+        AnimationManager::SkeletonUpdate(skeleton_);
+    }
+
     // 初回Updateを呼んでおく
     Update();
 }
@@ -101,7 +112,12 @@ void ObjClass::Update() {
 
     // rootNodeの行列を適用(モデルデータに階層情報があれば)
     if (managedModel_->cpuModel) {
-        transformationMatrix_.world = managedModel_->cpuModel->rootNode.localMatrix * transformationMatrix_.world;
+        if (!managedModel_->cpuModel->skinClusterData.empty()) {
+            // スキニングモデルの場合、rootNodeの行列はSkeleton内で処理されるため
+            // World行列には適用しない（二重適用を防ぐ）
+        } else {
+            transformationMatrix_.world = managedModel_->cpuModel->rootNode.localMatrix * transformationMatrix_.world;
+        }
     }
 
     // 法線変換用の逆転置行列
@@ -116,6 +132,11 @@ void ObjClass::Update() {
     isDirty_ = false;
     lastViewMatrix_ = activeCam->GetViewMatrix();
     lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
+
+    // スキニングモデルの場合は Compute Shader の実行を予約する
+    if (managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty() && engine_ && engine_->GetDrawManager()) {
+        engine_->GetDrawManager()->RegisterComputeTask(this);
+    }
 }
 
 void ObjClass::SyncBeforeDraw() {
@@ -134,6 +155,11 @@ void ObjClass::SyncBeforeDraw() {
     // 各メッシュのマテリアル等の更新
     for (auto& res : meshResources_) {
         res->SyncBeforeDraw();
+    }
+
+    // --- SkinCluster のマルチバッファ同期 ---
+    if (managedModel_ && managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
+        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
     }
 }
 
@@ -178,7 +204,11 @@ void ObjClass::Draw() {
 
     // モデル内の全メッシュを描画
     for (auto& res : meshResources_) {
-        engine_->GetDrawManager()->SubmitStandard3D(res.get(), nullptr, castShadows_);
+        if (managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
+            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_], castShadows_);
+        } else {
+            engine_->GetDrawManager()->SubmitStandard3D(res.get(), nullptr, castShadows_);
+        }
     }
 }
 
@@ -187,6 +217,24 @@ void ObjClass::DrawOutlineMask() {
     for (auto& res : meshResources_) {
         engine_->GetDrawManager()->SubmitOutlineMask(res.get(), nullptr);
     }
+}
+void ObjClass::DispatchCompute() {
+    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->skinClusterData.empty() || !engine_) return;
+    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    if (!activeCam) return;
+
+    if (isCullingEnabled_) {
+        float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
+        Sphere boundingSphere;
+        boundingSphere.center = transform_.translate;
+        boundingSphere.radius = managedModel_->cpuModel->boundingSphere.radius * maxScale * 1.5f;
+        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
+            return; // 視錐台カリングされている場合はComputeもスキップ
+        }
+    }
+
+    engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
+    lastSkinnedFrameIndex_ = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
 }
 
 void ObjClass::Debug([[maybe_unused]] const char* objName) {
@@ -232,4 +280,4 @@ void ObjClass::DebugTab() {
 #endif
 }
 
-
+

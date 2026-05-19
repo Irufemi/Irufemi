@@ -5,6 +5,7 @@
 #include "Beam/EnemyBeam.h"
 #include "StompEffects/EnemyStompEffects.h"
 #include "TackleEffects/EnemyTackleEffects.h"
+#include "Bomb/EnemyBomb.h"
 #include "Body/Body.h"
 #include "Head/Left/HeadLeft.h"
 #include "Head/Mid/HeadMid.h"
@@ -20,9 +21,11 @@ class IrufemiEngine;
 class Line3DRegion;
 class EnemyHPBar;
 class EnemyPartHPBar;
+class WeaponTrail;
 
 class Enemy {
 public:
+    Enemy();
     ~Enemy();
     void Initialize(IrufemiEngine* engine = nullptr);
     void Update(Player* player);
@@ -38,6 +41,10 @@ public:
     bool IsFiringRealBeam() const { return animation_ != nullptr && animation_->IsFiring(); }
     EnemyBeam* GetBeam(int index) const { return beams_[index].get(); }
     
+    // --- 爆弾制御用 ---
+    void FireBomb(int index, const Vector3& targetPos);
+    EnemyBomb* GetBomb(int index) const { return bombs_[index].get(); }
+    
     // --- スタンプ制御用 ---
     void FireStomp(const Vector3& position);
     EnemyStompEffects* GetStompEffects() const { return stompEffects_.get(); }
@@ -46,6 +53,9 @@ public:
     void FireTackleRushWave(const Vector3& position);
     void FireTackleCrashWave(const Vector3& position);
     EnemyTackleEffects* GetTackleEffects() const { return tackleEffects_.get(); }
+
+    // --- トレイルエフェクト用 ---
+    WeaponTrail* GetNeckTrail() const { return neckTrail_.get(); }
 
     // --- アクセサ（AIやAnimationから操作用） ---
     Transform& GetGlobalTransform() { return globalTransform_; }
@@ -68,6 +78,10 @@ public:
     void SetIsPhase2(bool isPhase2) { isPhase2_ = isPhase2; }
 
     Vector3 GetTargetPosition() const;
+
+    // サンドバッグモード設定（AI無効化、死亡・フェーズ2移行の防止）
+    void SetIsSandbagMode(bool isSandbag) { isSandbagMode_ = isSandbag; }
+    bool GetIsSandbagMode() const { return isSandbagMode_; }
 
     // アニメーションクラスへのアクセス用
     EnemyAnimation* GetAnimation() const { return animation_.get(); }
@@ -95,9 +109,15 @@ private:
     // ビームのインスタンス管理
     std::array<std::unique_ptr<EnemyBeam>, 3> beams_;
 
+    // 爆弾のインスタンス管理
+    std::array<std::unique_ptr<EnemyBomb>, 3> bombs_;
+
     // スタンプのインスタンス管理
     std::unique_ptr<EnemyStompEffects> stompEffects_;
     std::unique_ptr<EnemyTackleEffects> tackleEffects_;
+
+    // 斬撃トレイル
+    std::unique_ptr<WeaponTrail> neckTrail_ = nullptr;
 
     // トランスフォーム
     Transform globalTransform_;
@@ -139,4 +159,5 @@ private:
     std::unique_ptr<EnemyHPBar> hpBar_ = nullptr;
     std::vector<std::unique_ptr<EnemyPartHPBar>> partHPBars_;
 
+    bool isSandbagMode_ = false;
 };

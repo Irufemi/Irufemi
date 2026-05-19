@@ -9,6 +9,7 @@ class IrufemiEngine;
 class VoxelParticleSystem;
 class ObjClass;
 class CylinderClass;
+class ParticleSystem;
 
 class Head {
 public:
@@ -67,5 +68,10 @@ private:
 
   std::unique_ptr<VoxelParticleSystem> voxelSystem_ = nullptr;
   std::shared_ptr<CylinderClass> thrusterFlame_ = nullptr;
+
+  // パーティクルシステム
+  std::unique_ptr<ParticleSystem> flameParticle_ = nullptr;
+  std::unique_ptr<ParticleSystem> smokeParticle_ = nullptr;
+
   bool isPhase2_ = false;
 };

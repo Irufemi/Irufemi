@@ -7,6 +7,8 @@
 #include "Engine/Core/Math/Math.h"
 #include "IrufemiEngine.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "Renderer/Particle/ParticleSystem.h"
+#include "Renderer/Particle/Data/Particle.h"
 #include <algorithm>
 #include <cmath>
 
@@ -29,6 +31,13 @@ void Head::Initialize(const Vector3& initialPos) {
   thrusterFlame_->Initialize(false, false, "resources/noise0.png");
   thrusterFlame_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
   thrusterFlame_->SetCastShadows(false);
+
+  // パーティクルシステムの初期化
+  flameParticle_ = std::make_unique<ParticleSystem>();
+  flameParticle_->Initialize("resources/circle.png", ParticleType::kMissileFire);
+
+  smokeParticle_ = std::make_unique<ParticleSystem>();
+  smokeParticle_->Initialize("resources/circle.png", ParticleType::kGroundSmoke);
 
 }
 
@@ -128,6 +137,40 @@ void Head::Update() {
     thrusterFlame_->SetHeight(flameHeight);
     thrusterFlame_->Update();
 
+    // パーティクルの放出（中心から首の断面付近へオフセット）
+    float offsetAmount = 1.0f * transform_.scale.y; 
+    Vector3 emissionStartPos = Math::Add(drawPosition_, Math::Multiply(offsetAmount, localDown));
+
+    if (flameParticle_) {
+      flameParticle_->SetEmitterPosition(emissionStartPos);
+      flameParticle_->SetEmitterArea({1.5f, 1.5f, 1.5f}); // 炎の発生範囲
+      // 噴射方向を中心に少しブレさせる
+      Vector3 baseFlameVel = Math::Multiply(12.5f, localDown);
+      float flameSpread = 1.5f;
+      Vector3 minVel = { baseFlameVel.x - flameSpread, baseFlameVel.y - flameSpread, baseFlameVel.z - flameSpread };
+      Vector3 maxVel = { baseFlameVel.x + flameSpread, baseFlameVel.y + flameSpread, baseFlameVel.z + flameSpread };
+      flameParticle_->SetEmitterVelocity(minVel, maxVel);
+      flameParticle_->PlayHitEffect(emissionStartPos, 2);
+    }
+    if (smokeParticle_) {
+      smokeParticle_->SetEmitterPosition(emissionStartPos);
+      smokeParticle_->SetEmitterArea({2.5f, 2.5f, 2.5f}); // 煙の発生範囲
+      // 煙は全方位へ大きく広がりつつ、下方向への勢いも持たせる
+      Vector3 baseSmokeVel = Math::Multiply(7.5f, localDown);
+      float smokeSpread = 3.5f; // 横方向への広がりを強くする
+      Vector3 minVel = { baseSmokeVel.x - smokeSpread, baseSmokeVel.y - smokeSpread, baseSmokeVel.z - smokeSpread };
+      Vector3 maxVel = { baseSmokeVel.x + smokeSpread, baseSmokeVel.y + smokeSpread, baseSmokeVel.z + smokeSpread };
+      smokeParticle_->SetEmitterVelocity(minVel, maxVel);
+      smokeParticle_->PlayHitEffect(emissionStartPos, 10); // さらに発生数を増やしてモクモクにする
+    }
+  }
+
+  // パーティクルシステムの更新
+  if (flameParticle_) {
+    flameParticle_->Update();
+  }
+  if (smokeParticle_) {
+    smokeParticle_->Update();
   }
 }
 
@@ -164,6 +207,16 @@ void Head::Draw(IrufemiEngine* engine) {
     engine->SetBlend(BlendMode::kBlendModeNormal);
     engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine->SetCull(PSOManager::CullMode::Back);
+  }
+
+  // パーティクルの描画
+  if (isPhase2_ && !isBlownAway_) {
+    if (flameParticle_) {
+      flameParticle_->Draw();
+    }
+    if (smokeParticle_) {
+      smokeParticle_->Draw();
+    }
   }
 }
 

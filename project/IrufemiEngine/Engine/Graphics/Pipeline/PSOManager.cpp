@@ -198,13 +198,14 @@ void PSOManager::PreWarmCommonPSOs() {
     }
     
     // 2. エフェクト・パーティクル・HUD系 (Translucent, Additive等)
-    for (BlendMode blend : {BlendMode::kBlendModeNormal, BlendMode::kBlendModeAdd, BlendMode::kBlendModeSubtract}) {
+    for (BlendMode blend : {BlendMode::kBlendModeNormal, BlendMode::kBlendModeAdd, BlendMode::kBlendModeSubtract, BlendMode::kBlendModePremultiplied}) {
         GetPSO("Particle", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("GpuParticle", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("VoxelParticle", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("Sprite", blend, DepthWrite::Off, CullMode::None);
         GetPSO("Text", blend, DepthWrite::Off, CullMode::None);
         GetPSO("LightningCrawl", blend, DepthWrite::Disable, CullMode::None);
+        GetPSO("EnergyCore", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("Line", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("LineInstanced", blend, DepthWrite::Disable, CullMode::None);
     }
@@ -299,7 +300,15 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         rt.DestBlendAlpha = D3D12_BLEND_ONE;
         rt.BlendOpAlpha = D3D12_BLEND_OP_ADD;
         break;
-
+    case BlendMode::kBlendModePremultiplied: // Premultiplied Alpha (src*1 + dst*(1-srcA))
+        rt.BlendEnable = TRUE;
+        rt.SrcBlend = D3D12_BLEND_ONE;
+        rt.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+        rt.BlendOp = D3D12_BLEND_OP_ADD;
+        rt.SrcBlendAlpha = D3D12_BLEND_ONE;
+        rt.DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+        rt.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+        break;
 
     default: break;
     }

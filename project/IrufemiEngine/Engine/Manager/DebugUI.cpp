@@ -99,6 +99,9 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
         srvPool->GetGPUHandle(srvIndex_)
     );
 
+    // 日本語フォントの読み込み
+    io.Fonts->AddFontFromFileTTF("resources/font/Corporate-Logo-Medium-ver3/Corporate-Logo-Medium-ver3.otf", 16.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
+
     // フォントアトラスをビルドし、テクスチャをGPUにアップロードする
     io.Fonts->Build();
     ImGui_ImplDX12_CreateDeviceObjects();
@@ -1164,7 +1167,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1265,6 +1268,9 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                         if (params.kernelSize < 1) params.kernelSize = 1;
                         if (params.kernelSize > 1 && params.kernelSize % 2 == 0) params.kernelSize += 1;
                     }
+                } else if (mode == PostProcessMode::Glitch) {
+                    auto& params = ppManager->GetGlitchParams();
+                    ImGui::SliderFloat("Glitch Intensity", &params.intensity, 0.0f, 5.0f);
                 }
                 ImGui::TreePop();
             }

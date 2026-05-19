@@ -7,5 +7,6 @@ enum class BlendMode {
     kBlendModeSubtract,
     kBlendModeMultiply,
     kBlendModeScreen,
+    kBlendModePremultiplied,
     kCountOfBlendMode,
 };

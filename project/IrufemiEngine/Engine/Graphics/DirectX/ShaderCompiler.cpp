@@ -88,7 +88,13 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
         // デバッグ出力
         std::string errStr = shaderError->GetStringPointer();
-        OutputDebugStringA(errStr.c_str());
+        
+        // どのファイルか分かるようにする
+        std::wstring ws(filePath);
+        std::string fileStr(ws.begin(), ws.end());
+        std::string fullErr = "Shader Compile Error in " + fileStr + ":\n" + errStr;
+        
+        OutputDebugStringA(fullErr.c_str());
         
         // ログファイルにも出力
         // Log::OutPutLog は std::ostream を取るが、グローバルなログストリームへの出力が必要な場合は検討

@@ -16,7 +16,7 @@ void PlayerWeapon::Initialize() {
 
     // --- 機関銃の弾モデルの初期化 ---
     bulletRegion_ = std::make_unique<ModelRegion>();
-    bulletRegion_->Initialize("enemy/body.obj");
+    bulletRegion_->Initialize("player/playerBullet.obj");
     bulletRegion_->SetCastShadows(false);
 
     for (int i = 0; i < kMaxBullets; ++i) {
@@ -71,7 +71,7 @@ void PlayerWeapon::Initialize() {
 
     // --- 薬莢モデルの初期化 ---
     cartridgeRegion_ = std::make_unique<ModelRegion>();
-    cartridgeRegion_->Initialize("enemy/body.obj");
+    cartridgeRegion_->Initialize("player/playerCasing.obj");
     cartridgeRegion_->SetCastShadows(false);
 
     for (int i = 0; i < kMaxCartridges; ++i) {
@@ -163,6 +163,18 @@ void PlayerWeapon::UpdateParticlesOnly() {
                 if (missiles_[i].velocity.y < 0.0f) {
                     missiles_[i].velocity.y = 0.0f;
                 }
+            }
+
+            // フィールド外に出たらミサイルを消す
+            const float kFieldLimitXZ = 95.0f;
+            const float kFieldLimitY  = 80.0f;
+            if (missiles_[i].position.x >  kFieldLimitXZ ||
+                missiles_[i].position.x < -kFieldLimitXZ ||
+                missiles_[i].position.z >  kFieldLimitXZ ||
+                missiles_[i].position.z < -kFieldLimitXZ ||
+                missiles_[i].position.y >  kFieldLimitY) {
+                missiles_[i].isActive = false;
+                continue;
             }
 
             float missileHalfLength = 2.2f; // 描画スケール(Z=0.8)に基づく固定値 (尻尾よりわずかに内側)
@@ -288,7 +300,7 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
                 Transform tf;
                 tf.translate = cartridges_[i].position;
                 tf.rotate = cartridges_[i].rotation;
-                tf.scale = { 0.02f, 0.02f, 0.05f };
+                tf.scale = { 1.0f, 1.0f, 1.0f };
                 cartridgeRegion_->AddInstance(tf, { 0.8f, 0.6f, 0.1f, 1.0f });
             }
         }
@@ -307,7 +319,7 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
                 Transform tf;
                 tf.translate = bullets_[i].position;
                 tf.rotate = bRot;
-                tf.scale = { 0.06f, 0.06f, 0.24f };
+                tf.scale = { 1.0f, 1.0f, 1.0f };
                 bulletRegion_->AddInstance(tf, { 1.0f, 1.0f, 0.0f, 1.0f });
             }
         }
@@ -404,6 +416,18 @@ void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& player
                 if (missiles_[i].velocity.y < 0.0f) {
                     missiles_[i].velocity.y = 0.0f;
                 }
+            }
+
+            // フィールド外に出たらミサイルを消す
+            const float kFieldLimitXZ = 95.0f;
+            const float kFieldLimitY  = 80.0f;
+            if (missiles_[i].position.x >  kFieldLimitXZ ||
+                missiles_[i].position.x < -kFieldLimitXZ ||
+                missiles_[i].position.z >  kFieldLimitXZ ||
+                missiles_[i].position.z < -kFieldLimitXZ ||
+                missiles_[i].position.y >  kFieldLimitY) {
+                missiles_[i].isActive = false;
+                continue;
             }
 
             float missileHalfLength = 2.2f; // 描画スケール(Z=0.8)に基づく固定値 (尻尾よりわずかに内側)

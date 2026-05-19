@@ -243,8 +243,10 @@ void DirectXCommon::CreatePSOs() {
     auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
     auto vsShadowSkin = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", options);
     auto psLightning = shaderManager_->GetOrCompile(L"resources/shaders/LightningCrawl.PS.hlsl", options);
+    auto psEnergyCore = shaderManager_->GetOrCompile(L"resources/shaders/EnergyCore.PS.hlsl", options);
     auto vsRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.VS.hlsl", options);
     auto psRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.PS.hlsl", options);
+    auto psCyberHex = shaderManager_->GetOrCompile(L"resources/shaders/CyberHex.PS.hlsl", options);
 
 #ifdef EditorMode
     auto vsSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.VS.hlsl", options);
@@ -317,7 +319,9 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("ShadowSkinning", shadowSkinDesc);
 
     psoManager_->RegisterShader("LightningCrawl", { { vs3d, psLightning } });
+    psoManager_->RegisterShader("EnergyCore", { { vs3d, psEnergyCore } });
     psoManager_->RegisterShader("RocketFlame", { { vsRocket, psRocket } });
+    psoManager_->RegisterShader("CyberHex", { { vs3d, psCyberHex } });
 
 #ifdef EditorMode
     PSOManager::PipelineStateDesc maskDesc{};
@@ -761,6 +765,10 @@ void DirectXCommon::PreWarmJITCompile() {
             auto lightningPSO = psoManager_->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
             if (lightningPSO) {
                 uploadCommandList->SetPipelineState(lightningPSO);
+            }
+            auto energyCorePSO = psoManager_->GetPSO("EnergyCore", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+            if (energyCorePSO) {
+                uploadCommandList->SetPipelineState(energyCorePSO);
             }
         }
     });

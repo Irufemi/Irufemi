@@ -12,8 +12,8 @@ EnemyBeam::~EnemyBeam() {
 }
 
 void EnemyBeam::Initialize(IrufemiEngine* engine) {
-    telegraphObj_ = std::make_unique<ObjClass>();
-    telegraphObj_->Initialize("sample/block.obj");
+    telegraphObj_ = std::make_unique<PrimitiveObjects3DClass>();
+    telegraphObj_->Initialize(PrimitiveType::Cube, "resources/whiteTexture.png");
     telegraphObj_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     telegraphObj_->SetCastShadows(false);
 
@@ -21,6 +21,16 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
     attackCylinder_->Initialize(false, false);
     attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     attackCylinder_->SetCastShadows(false);
+
+    chargeSphere_ = std::make_unique<PrimitiveObjects3DClass>();
+    chargeSphere_->Initialize(PrimitiveType::Sphere);
+    chargeSphere_->SetColor({ 1.0f, 0.3f, 0.0f, 1.0f }); // レッドドラゴン風の赤オレンジコア
+    chargeSphere_->SetCullingEnabled(false);
+    if (engine) {
+        chargeSphere_->SetCustomPSO(
+            engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back)
+        );
+    }
 
     // トランスフォームの初期化（Updateで確定するため、ここではゼロクリア）
     telegraphTransform_.translate = { 0, 0, 0 };
@@ -47,8 +57,8 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
             lightningParamsData_->noiseThreshold = 0.3f;
             lightningParamsData_->coreIntensity = 5.0f;
             lightningParamsData_->coreScale = 2.0f;
-            lightningParamsData_->speed = 4.0f;      // 模様の流れを速く
-            lightningParamsData_->noiseScale = 3.0f; // 模様の密度を上げる
+            lightningParamsData_->speed = 1.0f;      // DebugSceneと同じ速度に調整
+            lightningParamsData_->noiseScale = 1.0f; // DebugSceneと同じ模様密度に調整
         }
 
         gpuParticle_ = std::make_unique<GPUParticleSystem>();
@@ -79,13 +89,33 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
     float distXZ = std::sqrt(direction.x * direction.x + direction.z * direction.z);
     rotate.x = std::atan2(-direction.y, distXZ);
 
+    Vector3 startPos = Math::Add(headPos, Math::Multiply(originOffset_, direction));
+
     if (isTelegraphActive_) {
         telegraphTransform_.scale = { telegraphThickness_, telegraphThickness_, beamLength_ };
-        Vector3 telegraphCenter = Math::Add(headPos, Math::Multiply(beamLength_ * 0.5f, direction));
+        Vector3 telegraphCenter = Math::Add(startPos, Math::Multiply(beamLength_ * 0.5f, direction));
         telegraphTransform_.translate = telegraphCenter;
         telegraphTransform_.rotate = rotate;
-        telegraphObj_->SetTransform(telegraphTransform_);
+        telegraphObj_->GetTransform().transform = telegraphTransform_;
+        telegraphObj_->GetTransform().isDirty = true;
         telegraphObj_->Update();
+    }
+
+    if (isChargeSphereActive_ && chargeSphere_) {
+        Transform t;
+        t.scale = { chargeSphereScale_, chargeSphereScale_, chargeSphereScale_ };
+        t.rotate = rotate;
+        
+        // startPosは頭の表面（中心から前方へ originOffset_ ずらした位置）
+        // そのまま startPos に球の中心を置くと、球の後ろ半分が頭に埋まってしまうため、
+        // 球の半径（スケールの半分）だけさらに前方へ中心をずらす。
+        // ※完全に離れすぎないよう 0.4f（半径より少し内側）を掛けて少しだけめり込ませる
+        float sphereForwardOffset = chargeSphereScale_ * 0.4f;
+        t.translate = Math::Add(startPos, Math::Multiply(sphereForwardOffset, direction));
+
+        chargeSphere_->GetTransform().transform = t;
+        chargeSphere_->GetTransform().isDirty = true;
+        chargeSphere_->Update();
     }
 
     if (isAttackActive_) {
@@ -98,15 +128,16 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
         float currentDistance = beamLength_ * easeT;
 
         // 地面(y=0.0f)との交差判定（ビームを床で止める）
+        // 断面が浮いて見えないように、床よりもさらに長め（+20.0f）に突き抜けさせる
         if (direction.y < 0.0f) {
-            float distanceToFloor = (0.0f - headPos.y) / direction.y;
+            float distanceToFloor = (0.0f - startPos.y) / direction.y;
             if (distanceToFloor > 0.0f) {
-                currentDistance = (std::min)(currentDistance, distanceToFloor);
+                currentDistance = (std::min)(currentDistance, distanceToFloor + 20.0f);
             }
         }
 
         // ビームの中心は伸びた距離の半分
-        Vector3 currentCenter = Math::Add(headPos, Math::Multiply(currentDistance * 0.5f, direction));
+        Vector3 currentCenter = Math::Add(startPos, Math::Multiply(currentDistance * 0.5f, direction));
 
         attackTransform_.translate = currentCenter;
         attackTransform_.rotate = rotate;
@@ -145,7 +176,7 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
             );
 
             // 放出設定：物量と勢いを大幅に強化してレッドドラゴンのブレス感を演出
-            gpuParticle_->SetBeamEmitter(headPos, direction, attackThickness_ * 0.5f, emitVelocity, emitSpread, emitCount, 0.01f);
+            gpuParticle_->SetBeamEmitter(startPos, direction, attackThickness_ * 0.5f, emitVelocity, emitSpread, emitCount, 0.01f);
             gpuParticle_->SetEmit(true);
 
             gpuParticle_->Update();
@@ -164,6 +195,10 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
 
     if (isTelegraphActive_ && telegraphObj_) {
         telegraphObj_->Draw();
+    }
+
+    if (isChargeSphereActive_ && chargeSphere_) {
+        chargeSphere_->Draw();
     }
 
     if (isAttackActive_ && attackCylinder_) {

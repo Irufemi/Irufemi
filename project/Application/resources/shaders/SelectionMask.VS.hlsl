@@ -15,7 +15,7 @@ cbuffer TransformMatrix : register(b1) {
     matrix WorldInverseTranspose;
 };
 
-PixelInput VSMain(VertexInput input) {
+PixelInput main(VertexInput input) {
     PixelInput output;
     output.pos = mul(input.pos, WVP);
     return output;

@@ -31,8 +31,10 @@ void Phase1_Idle::Update(Enemy* enemy, Player* player, float deltaTime) {
             globalT.rotate.y += diffYaw * trackRotSpeed_ * deltaTime;
 
             // 前進（向いている方向へ）
-            Vector3 forward = { std::sin(globalT.rotate.y), 0.0f, std::cos(globalT.rotate.y) };
-            globalT.translate = Math::Add(globalT.translate, Math::Multiply(creepSpeed_ * deltaTime, forward));
+            if (!enemy->GetIsSandbagMode()) {
+                Vector3 forward = { std::sin(globalT.rotate.y), 0.0f, std::cos(globalT.rotate.y) };
+                globalT.translate = Math::Add(globalT.translate, Math::Multiply(creepSpeed_ * deltaTime, forward));
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-﻿#include "Phase2.h"
+#include "Phase2.h"
 #include "Enemy.h"
 #include "actors/player/Player.h"
 #include "Engine/Core/Math/Math.h"
@@ -16,6 +16,9 @@ void Phase2::Enter(Enemy* enemy) {
 
         tackleStates_[i] = std::make_unique<Phase2_Tackle>();
         tackleStates_[i]->SetHeadIndex(i);
+
+        bombStates_[i] = std::make_unique<Phase2_Bomb>();
+        bombStates_[i]->SetHeadIndex(i);
     }
 }
 
@@ -34,6 +37,10 @@ void Phase2::Update(Enemy* enemy, Player* player, float deltaTime) {
                 idleStates_[i]->Exit(enemy);
                 currentModes_[i] = Mode::Beaming;
                 beamStates_[i]->Enter(enemy);
+            } else if (idleStates_[i]->WantsToBomb()) {
+                idleStates_[i]->Exit(enemy);
+                currentModes_[i] = Mode::Bombing;
+                bombStates_[i]->Enter(enemy);
             }
         } else if (currentModes_[i] == Mode::Tackling) {
             tackleStates_[i]->Update(enemy, player, deltaTime);
@@ -49,6 +56,13 @@ void Phase2::Update(Enemy* enemy, Player* player, float deltaTime) {
                 currentModes_[i] = Mode::Idle;
                 idleStates_[i]->Enter(enemy);
             }
+        } else if (currentModes_[i] == Mode::Bombing) {
+            bombStates_[i]->Update(enemy, player, deltaTime);
+            if (bombStates_[i]->IsFinished()) {
+                bombStates_[i]->Exit(enemy);
+                currentModes_[i] = Mode::Idle;
+                idleStates_[i]->Enter(enemy);
+            }
         }
     }
 
@@ -60,6 +74,7 @@ void Phase2::Exit(Enemy* enemy) {
         if (currentModes_[i] == Mode::Idle) idleStates_[i]->Exit(enemy);
         else if (currentModes_[i] == Mode::Tackling) tackleStates_[i]->Exit(enemy);
         else if (currentModes_[i] == Mode::Beaming) beamStates_[i]->Exit(enemy);
+        else if (currentModes_[i] == Mode::Bombing) bombStates_[i]->Exit(enemy);
     }
 }
 

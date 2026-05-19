@@ -7,6 +7,7 @@
 #include "IrufemiEngine/Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "IrufemiEngine/Engine/Graphics/Data/LightningParams.h"
 #include "IrufemiEngine/Renderer/Object3D/Primitive/CylinderClass.h"
+#include "IrufemiEngine/Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 class Camera;
 
 class EnemyBeam {
@@ -55,9 +56,27 @@ public:
     /** @brief 消滅フラグの取得 */
     bool IsExpired() const { return isExpired_; }
 
+    /**
+     * @brief ビームの発生位置を前方にずらすオフセット量を設定する
+     * @param offset 前方へのオフセット距離（頭の半径など）
+     */
+    void SetOriginOffset(float offset) { originOffset_ = offset; }
+
+    /** @brief チャージ球の表示設定 */
+    void SetChargeSphereActive(bool active) { isChargeSphereActive_ = active; }
+    /** @brief チャージ球のスケール設定 */
+    void SetChargeSphereScale(float scale) { chargeSphereScale_ = scale; }
+
 private:
+    float originOffset_ = 4.0f; //!< ビームの発生起点を前方にずらす距離
+
+    // チャージ球体用
+    std::unique_ptr<PrimitiveObjects3DClass> chargeSphere_ = nullptr;
+    float chargeSphereScale_ = 0.0f;
+    bool isChargeSphereActive_ = false;
+
     // 予兆用
-    std::unique_ptr<ObjClass> telegraphObj_ = nullptr;
+    std::unique_ptr<PrimitiveObjects3DClass> telegraphObj_ = nullptr;
     Transform telegraphTransform_;
     float telegraphThickness_ = 0.2f;
     float telegraphForwardOffset_ = 0.0f;

@@ -1,4 +1,4 @@
-#include "PostProcessPass.h"
+﻿#include "PostProcessPass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
 #include "../../PostProcess/PostProcessManager.h"
@@ -121,4 +121,12 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     // 通常モードでは mainRenderTexture は SRV 状態で渡される必要がある (Setup で RequireState 済み)
     ppMgr->Draw(cmdList, engine->GetMainRenderTexture(), rtvHandle, workspace);
 #endif
+
+    // 深度バッファを元の DEPTH_WRITE に戻す
+    if (hasOutline) {
+        DirectXUtils::TransitionBarrier(
+            cmdList, drawManager->GetDxCommon()->GetDepthStencilResource(),
+            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
+        );
+    }
 }

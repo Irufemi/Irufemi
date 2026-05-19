@@ -6,7 +6,7 @@ struct PixelInput {
     float2 uv : TEXCOORD;
 };
 
-float4 PSMain(PixelInput input) : SV_TARGET {
+float4 main(PixelInput input) : SV_TARGET {
     float2 offset = 1.0f / float2(1280.0f, 720.0f); // TODO: 解像度を動的に
     
     // 単純な十字サンプリングによる膨張（ブラー・エッジ検出）

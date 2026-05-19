@@ -1,5 +1,6 @@
 #pragma once
 #include "Irufemi.h"
+#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 
 class Camera;
 class InputManager;
@@ -24,11 +25,11 @@ private:
 	IrufemiEngine* engine_ = nullptr;
 
 	// マップのモデル
-	std::unique_ptr<PlaneClass> pFloor_ = nullptr;
-	std::unique_ptr<PlaneClass> pPZWall_ = nullptr;
-	std::unique_ptr<PlaneClass> pMZWall_ = nullptr;
-	std::unique_ptr<PlaneClass> pPXWall_ = nullptr;
-	std::unique_ptr<PlaneClass> pMXWall_ = nullptr;
+	std::unique_ptr<PrimitiveObjects3DClass> pFloor_ = nullptr;
+	std::unique_ptr<PrimitiveObjects3DClass> pPZWall_ = nullptr;
+	std::unique_ptr<PrimitiveObjects3DClass> pMZWall_ = nullptr;
+	std::unique_ptr<PrimitiveObjects3DClass> pPXWall_ = nullptr;
+	std::unique_ptr<PrimitiveObjects3DClass> pMXWall_ = nullptr;
 	std::unique_ptr<ObjClass> floor_ = nullptr;
 
 	std::unique_ptr<Building> building_ = nullptr;

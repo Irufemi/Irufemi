@@ -140,6 +140,8 @@ public:
     void SetColor(const Vector4& color) { material_.color = color; }
     void SetTexture(const std::string& path) { material_.texturePath = path; }
     void SetShape(PrimitiveType type) { mesh_.ChangeMesh(type); transform_.isDirty = true; }
+    void SetCustomPSO(ID3D12PipelineState* pso) { if (mesh_.resource) mesh_.resource->SetCustomPSO(pso); }
+    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) { if (mesh_.resource) mesh_.resource->SetCustomCBVAddress(addr); }
 
     /**
      * @brief カスタムの PrimitiveData を用いて現在のリソースを破棄し再初期化する

@@ -279,4 +279,14 @@ namespace Collision {
     /// </summary>
     bool IsCollision(const Frustum& frustum, const Sphere& sphere);
 
+    /// <summary>
+    /// OBB上の、球に最も近い最近接点（ワールド座標）を求め、必要に応じて法線方向に押し出す
+    /// </summary>
+    Vector3 GetOBBSphereClosestPoint(const OBB& obb, const Sphere& sphere, float offset = 0.0f);
+
+    /// <summary>
+    /// OBBと線分（移動軌跡）の最初の交点（ワールド座標）を求める
+    /// </summary>
+    bool GetOBBSegmentIntersection(const OBB& obb, const Segment& segment, Vector3& outIntersection);
+
 } // namespace Collision

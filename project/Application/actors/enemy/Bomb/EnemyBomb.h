@@ -1,0 +1,85 @@
+#pragma once
+#include "Irufemi.h"
+#include "core/math/Transform.h"
+#include "core/math/geometry/OBB.h"
+#include <memory>
+#include <vector>
+#include <wrl.h>
+#include "IrufemiEngine/Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "IrufemiEngine/Engine/Graphics/Data/LightningParams.h"
+#include "IrufemiEngine/Renderer/Object3D/Primitive/CylinderClass.h"
+#include "IrufemiEngine/Renderer/Object3D/Primitive/SphereClass.h"
+
+class Camera;
+class IrufemiEngine;
+
+class EnemyBomb {
+public:
+    ~EnemyBomb();
+    void Initialize(IrufemiEngine* engine);
+    
+    /**
+     * @brief 爆弾を投げる
+     * @param startPos 投擲開始位置
+     * @param targetPos 目標位置（着弾点）
+     */
+    void Throw(const Vector3& startPos, const Vector3& targetPos);
+
+    void Update();
+    void Draw(IrufemiEngine* engine);
+
+    bool IsExpired() const { return isExpired_; }
+    bool IsExploding() const { return state_ == State::Exploding; }
+
+    std::vector<OBB> GetOBBs() const;
+
+private:
+    enum class State {
+        Idle,
+        Flying,
+        Telegraphing,
+        Exploding,
+        Done
+    };
+
+    State state_ = State::Idle;
+
+    // 爆弾本体（飛行中）
+    std::unique_ptr<SphereClass> bombSphere_ = nullptr;
+    Transform bombTransform_;
+    
+    // 飛行用パラメータ
+    Vector3 startPos_;
+    Vector3 targetPos_;
+    float flightTimer_ = 0.0f;
+    float flightDuration_ = 1.0f; // 飛行にかかる時間
+    float throwHeight_ = 10.0f;   // 放物線の高さ
+
+    // 十字爆発の予告用（X軸・Z軸に沿った2つのボックス）
+    std::unique_ptr<ObjClass> telegraphObjX_ = nullptr;
+    std::unique_ptr<ObjClass> telegraphObjZ_ = nullptr;
+    Transform telegraphTransformX_;
+    Transform telegraphTransformZ_;
+
+    // 十字爆発の攻撃用
+    std::shared_ptr<CylinderClass> attackCylinderX_ = nullptr;
+    std::shared_ptr<CylinderClass> attackCylinderZ_ = nullptr;
+    Transform attackTransformX_;
+    Transform attackTransformZ_;
+
+    // 爆発用パラメータ
+    float telegraphTimer_ = 0.0f;
+    float telegraphDuration_ = 1.5f; // 予告時間
+    float explodeTimer_ = 0.0f;
+    float explodeDuration_ = 0.5f;   // 爆発の持続時間
+    float explosionLength_ = 60.0f;  // 爆発の長さ（片側30m）
+    float explosionThickness_ = 3.0f; // 爆発の太さ
+
+    // エフェクト用
+    Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsResource_;
+    LightningParams* lightningParamsData_ = nullptr;
+    std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
+
+    bool isExpired_ = false;
+    IrufemiEngine* engine_ = nullptr;
+};

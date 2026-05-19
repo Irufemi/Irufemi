@@ -1,4 +1,5 @@
 #include "Effect.h"
+#include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Texture/TextureManager.h"
@@ -15,6 +16,7 @@ Effect::~Effect() = default;
 void Effect::Initialize(EffectType type) {
     type_ = type;
     particleSystems_.clear();
+    explosionSparkSystem_ = nullptr;
     
     switch (type_) {
     case EffectType::kHit:
@@ -108,11 +110,88 @@ void Effect::Initialize(EffectType type) {
         auraObject_->SetScale(auraConfig_.scale); // 初期スケールの適用
         break;
     }
+    case EffectType::kSwing:
+    {
+        isBillboard_ = false;
+        swingObject_ = std::make_unique<PrimitiveObjects3DClass>();
+        swingObject_->Initialize(PrimitiveType::Ring, swingConfig_.texture);
+
+        // 風切りスイングに特化したカスタム形状パラメータ（端が尖った半円）
+        RingParams ringParams;
+        ringParams.innerRadius = swingConfig_.innerRadius;
+        ringParams.startOuterRadius = 1.0f;
+        ringParams.endOuterRadius = 1.0f;
+        ringParams.startAngle = swingConfig_.startAngle;
+        ringParams.endAngle = swingConfig_.endAngle;
+        ringParams.segments = 32;
+        ringParams.fadeRangeAngle = swingConfig_.fadeRangeAngle;
+        ringParams.verticalUV = false;
+        ringParams.innerColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        ringParams.outerColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        ringParams.startAlpha = 0.0f;
+        ringParams.endAlpha = 0.0f;
+
+        PrimitiveData ringData = PrimitiveManager::CreateRing(ringParams);
+        
+        // 頂点座標を XZ平面に寝かせる（ハンマーの軌道に沿ったレールにする）
+        for (auto& vertex : ringData.vertices) {
+            float tempY = vertex.position.y;
+            vertex.position.y = 0.0f;               // Y軸を潰してXZ平面に寝かせる
+            vertex.position.z = tempY;              // 元のY(上下)をZ(前後)に変換
+            
+            float tempNy = vertex.normal.y;
+            vertex.normal.y = 0.0f;
+            vertex.normal.z = tempNy;
+        }
+
+        swingObject_->ReinitializeMesh(ringData);
+        
+        swingObject_->SetCastShadows(false); // エフェクトなので影は不要
+        swingObject_->GetMaterial().enableLighting = false; // ライティング不要
+        swingObject_->GetMaterial().color = swingConfig_.color;
+        swingObject_->GetMaterial().useClampSampler = swingConfig_.useClamp ? 3 : 0; // 3 = U:Wrap, V:Clamp
+        swingObject_->SetScale(swingConfig_.startScale);
+        isActive_ = false;
+        break;
+    }
+    case EffectType::kExplosion:
+    {
+        isBillboard_ = false;
+        
+        // 1. 3D球体コア
+        explosionObject_ = std::make_unique<PrimitiveObjects3DClass>();
+        explosionObject_->Initialize(explosionConfig_.coreShape, explosionConfig_.coreTexture);
+        explosionObject_->SetCastShadows(false);
+        explosionObject_->GetMaterial().enableLighting = false;
+        explosionObject_->GetMaterial().color = explosionConfig_.color;
+        explosionObject_->SetScale(explosionConfig_.coreStartScale);
+
+        // 2. 3軸衝撃波リング
+        explosionWaveObject_ = std::make_unique<PrimitiveObjects3DClass>();
+        explosionWaveObject_->Initialize(explosionConfig_.waveShape, explosionConfig_.waveTexture);
+        explosionWaveObject_->SetCastShadows(false);
+        explosionWaveObject_->GetMaterial().enableLighting = false;
+        explosionWaveObject_->GetMaterial().color = explosionConfig_.color;
+        explosionWaveObject_->SetScale(explosionConfig_.waveStartScale);
+
+        // 3. CPUパーティクル（火花用）
+        auto sparkSystem = std::make_unique<ParticleSystem>();
+        sparkSystem->Initialize("resources/circle2.png", ParticleType::kExplosion, PrimitiveType::Plane);
+        sparkSystem->SetBlend(BlendMode::kBlendModeAdd);
+        sparkSystem->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        sparkSystem->SetCull(PSOManager::CullMode::None);
+        sparkSystem->SetParticleColor(explosionConfig_.color, { explosionConfig_.color.x, explosionConfig_.color.y, explosionConfig_.color.z, 0.0f });
+        sparkSystem->SetParticleScale({ 0.05f, 0.05f, 0.05f }, { 0.0f, 0.0f, 0.0f });
+        explosionSparkSystem_ = std::move(sparkSystem);
+
+        isActive_ = false;
+        break;
+    }
     }
 }
 
 void Effect::Update() {
-    float dt = GPUParticleSystem::GetEngine()->GetDeltaTime();
+    float dt = engine_->GetDeltaTime();
     if (type_ == EffectType::kImpact && particleSystems_.size() == 2) {
         currentUVOffset_.x += impactConfig_.uvScrollSpeed.x * dt;
         currentUVOffset_.y += impactConfig_.uvScrollSpeed.y * dt;
@@ -144,10 +223,154 @@ void Effect::Update() {
         }
         
         auraObject_->Update();
+    } else if (type_ == EffectType::kSwing && swingObject_ && isActive_) {
+        lifeTimer_ -= dt;
+        if (lifeTimer_ <= 0.0f) {
+            isActive_ = false;
+        } else {
+            // 生存割合の計算 (0.0f -> 1.0f)
+            float t = 1.0f - (lifeTimer_ / swingConfig_.lifeTime);
+            
+            // スケールを startScale から endScale へ線形補間
+            Vector3 currentScale;
+            currentScale.x = Lerp(swingConfig_.startScale.x, swingConfig_.endScale.x, t) * baseScale_.x;
+            currentScale.y = Lerp(swingConfig_.startScale.y, swingConfig_.endScale.y, t) * baseScale_.y;
+            currentScale.z = Lerp(swingConfig_.startScale.z, swingConfig_.endScale.z, t) * baseScale_.z;
+            swingObject_->SetScale(currentScale);
+            
+            // アルファ値（透明度）をフェードアウト
+            Vector4 currentColor = swingConfig_.color;
+            currentColor.w = Lerp(swingConfig_.color.w, 0.0f, t);
+            swingObject_->GetMaterial().color = currentColor;
+            
+            // 動的にメッシュを再生成し「武器の先端から弧が伸びていく」かつ「残像が消えていく」アニメーションを実装
+            RingParams ringParams;
+            ringParams.innerRadius = swingConfig_.innerRadius;
+            ringParams.startOuterRadius = 1.0f;
+            ringParams.endOuterRadius = 1.0f;
+            
+            // tの進行に合わせて弧を伸ばす。先端が武器を追い越さないよう、進行度tと完全に等速(1.0倍)にする
+            float currentEndAngle = Lerp(0.1f, swingConfig_.endAngle, t);
+            float currentStartAngle = 0.0f;
+            
+            // スイング後半から根本が消えていく。t=1.0の時点でも少し軌跡が残るように0.8倍で止める
+            if (t > 0.5f) {
+                float fadeT = std::clamp((t - 0.5f) * 2.0f, 0.0f, 1.0f);
+                currentStartAngle = Lerp(0.0f, swingConfig_.endAngle * 0.8f, fadeT);
+            }
+            
+            // 先端と根本が逆転しないように最低限の幅を確保
+            if (currentEndAngle <= currentStartAngle + 1.0f) {
+                currentEndAngle = currentStartAngle + 1.0f;
+            }
+            
+            ringParams.startAngle = currentStartAngle;
+            ringParams.endAngle = currentEndAngle;
+            
+            ringParams.segments = 32;
+            ringParams.fadeRangeAngle = swingConfig_.fadeRangeAngle;
+            ringParams.verticalUV = false;
+            ringParams.innerColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+            ringParams.outerColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+            ringParams.startAlpha = 0.0f;
+            ringParams.endAlpha = 0.0f;
+
+            PrimitiveData ringData = PrimitiveManager::CreateRing(ringParams);
+            
+            // 頂点座標を XZ平面に寝かせる
+            for (auto& vertex : ringData.vertices) {
+                float tempY = vertex.position.y;
+                vertex.position.y = 0.0f;
+                vertex.position.z = tempY;
+                float tempNy = vertex.normal.y;
+                vertex.normal.y = 0.0f;
+                vertex.normal.z = tempNy;
+            }
+            swingObject_->ReinitializeMesh(ringData);
+
+            // UVスクロールの更新
+            currentUVOffset_.x += swingConfig_.uvScrollSpeed.x * dt;
+            currentUVOffset_.y += swingConfig_.uvScrollSpeed.y * dt;
+            
+            Vector3 uvScale = { swingConfig_.uvScale.x, swingConfig_.uvScale.y, 1.0f };
+            Vector3 uvRot = { 0.0f, 0.0f, 0.0f };
+            Vector3 uvTrans = { currentUVOffset_.x, currentUVOffset_.y, 0.0f };
+            swingObject_->GetMaterial().uvTransform = Math::MakeAffineMatrix(uvScale, uvRot, uvTrans);
+            swingObject_->GetMaterial().useClampSampler = swingConfig_.useClamp ? 3 : 0;
+            
+            if (swingObject_->GetMaterial().texturePath != swingConfig_.texture) {
+                swingObject_->SetTexture(swingConfig_.texture);
+            }
+            
+            // 最新の位置と回転を反映
+            Vector3 currentRotation = baseRotation_;
+            currentRotation.y -= swingConfig_.swingRotationAngle * t;
+            
+            swingObject_->SetPosition(basePosition_);
+            swingObject_->SetRotate(currentRotation);
+            swingObject_->Update();
+        }
+    } else if (type_ == EffectType::kExplosion && explosionObject_ && isActive_) {
+        lifeTimer_ -= dt;
+        if (lifeTimer_ <= 0.0f) {
+            isActive_ = false;
+        } else {
+            // 生存割合 (0.0f -> 1.0f)
+            float t = 1.0f - (lifeTimer_ / explosionConfig_.lifeTime);
+            
+            // イージング（急激に膨張して減速するイージングアウト）
+            float easeOut = 1.0f - std::pow(1.0f - t, 3.0f); // Cubic Ease Out
+            
+            // 1. 3Dコア球体の更新
+            Vector3 coreScale;
+            coreScale.x = Lerp(explosionConfig_.coreStartScale.x, explosionConfig_.coreEndScale.x, easeOut) * baseScale_.x;
+            coreScale.y = Lerp(explosionConfig_.coreStartScale.y, explosionConfig_.coreEndScale.y, easeOut) * baseScale_.y;
+            coreScale.z = Lerp(explosionConfig_.coreStartScale.z, explosionConfig_.coreEndScale.z, easeOut) * baseScale_.z;
+            explosionObject_->SetScale(coreScale);
+            
+            Vector4 coreColor = explosionConfig_.color;
+            coreColor.w = Lerp(explosionConfig_.color.w, 0.0f, t); // 徐々に透明に
+            explosionObject_->GetMaterial().color = coreColor;
+            
+            // コアのUVスクロールで炎のうねりを表現
+            currentUVOffset_.x += explosionConfig_.uvScrollSpeed.x * dt;
+            currentUVOffset_.y += explosionConfig_.uvScrollSpeed.y * dt;
+            explosionObject_->GetMaterial().uvTransform = Math::MakeAffineMatrix(
+                Vector3{ 1.0f, 1.0f, 1.0f }, Vector3{ 0.0f, 0.0f, 0.0f }, Vector3{ currentUVOffset_.x, currentUVOffset_.y, 0.0f }
+            );
+            
+            explosionObject_->SetPosition(basePosition_);
+            explosionObject_->Update();
+
+            // 2. 衝撃波リングの更新 (スケールが極端に小さい場合は更新を最小限に)
+            if (explosionWaveObject_) {
+                bool isSmallExplosion = (baseScale_.x < 0.5f);
+                Vector3 waveScale;
+                waveScale.x = Lerp(explosionConfig_.waveStartScale.x, explosionConfig_.waveEndScale.x, easeOut) * baseScale_.x;
+                waveScale.y = Lerp(explosionConfig_.waveStartScale.y, explosionConfig_.waveEndScale.y, easeOut) * baseScale_.y;
+                waveScale.z = Lerp(explosionConfig_.waveStartScale.z, explosionConfig_.waveEndScale.z, easeOut) * baseScale_.z;
+                explosionWaveObject_->SetScale(waveScale);
+                
+                Vector4 waveColor = explosionConfig_.color;
+                waveColor.w = Lerp(explosionConfig_.color.w, 0.0f, t);
+                explosionWaveObject_->GetMaterial().color = waveColor;
+                
+                explosionWaveObject_->SetPosition(basePosition_);
+                
+                // 小規模爆発の時は、毎フレームのUpdate回数を減らすため、ここでの1回のみUpdateを行う
+                if (isSmallExplosion) {
+                    explosionWaveObject_->SetRotate({ 0.0f, 0.0f, 0.0f });
+                    explosionWaveObject_->Update();
+                }
+            }
+        }
     }
 
     for (auto& sys : particleSystems_) {
         sys->Update();
+    }
+    if (explosionSparkSystem_) {
+        explosionSparkSystem_->Update();
     }
 }
 
@@ -155,14 +378,35 @@ void Effect::SyncBeforeDraw() {
     for (auto& sys : particleSystems_) {
         sys->SyncBeforeDraw();
     }
+    if (explosionSparkSystem_) {
+        explosionSparkSystem_->SyncBeforeDraw();
+    }
     if (type_ == EffectType::kAura && auraObject_) {
         auraObject_->SyncBeforeDraw();
+    }
+    if (type_ == EffectType::kSwing && swingObject_ && isActive_) {
+        swingObject_->SyncBeforeDraw();
+    }
+    if (type_ == EffectType::kExplosion && isActive_) {
+        bool isSmallExplosion = (baseScale_.x < 0.5f);
+        if (explosionObject_) {
+            explosionObject_->SyncBeforeDraw();
+        }
+        if (explosionWaveObject_) {
+            // 小規模爆発の場合は1枚しか描画しないため、ここで1回だけ同期する
+            if (isSmallExplosion) {
+                explosionWaveObject_->SyncBeforeDraw();
+            }
+        }
     }
 }
 
 void Effect::Draw() {
     for (auto& sys : particleSystems_) {
         sys->Draw();
+    }
+    if (explosionSparkSystem_) {
+        explosionSparkSystem_->Draw();
     }
     if (type_ == EffectType::kAura && auraObject_) {
         auto* engine = GPUParticleSystem::GetEngine();
@@ -185,6 +429,103 @@ void Effect::Draw() {
         engine->SetDepthWrite(prevDepth);
         engine->SetCull(prevCull);
     }
+    if (type_ == EffectType::kSwing && swingObject_ && isActive_) {
+        auto* engine = GPUParticleSystem::GetEngine();
+        
+        // 現在のステートを退避
+        BlendMode prevBlend = engine->currentBlend_;
+        PSOManager::DepthWrite prevDepth = engine->currentDepth_;
+        PSOManager::CullMode prevCull = engine->currentCull_;
+
+        // エフェクト用のステートを設定
+        engine->SetBlend(blendMode_);
+        engine->SetDepthWrite(depthWrite_);
+        engine->SetCull(cullMode_);
+
+        // 平面メッシュに「縦軸の厚み」を持たせるため、Y座標を少しずつズラして3枚（ミルフィーユ状）描画する
+        Vector3 originalPos = basePosition_;
+        
+        // 1枚目（上端）
+        Vector3 topPos = originalPos;
+        topPos.y += 0.6f;
+        swingObject_->SetPosition(topPos);
+        swingObject_->Update();
+        swingObject_->SyncBeforeDraw();
+        swingObject_->Draw();
+
+        // 2枚目（中央）
+        swingObject_->SetPosition(originalPos);
+        swingObject_->Update();
+        swingObject_->SyncBeforeDraw();
+        swingObject_->Draw();
+
+        // 3枚目（下端）
+        Vector3 bottomPos = originalPos;
+        bottomPos.y -= 0.6f;
+        swingObject_->SetPosition(bottomPos);
+        swingObject_->Update();
+        swingObject_->SyncBeforeDraw();
+        swingObject_->Draw();
+        
+        // 位置を元に戻しておく
+        swingObject_->SetPosition(originalPos);
+
+        // ステートを元に戻す
+        engine->SetBlend(prevBlend);
+        engine->SetDepthWrite(prevDepth);
+        engine->SetCull(prevCull);
+    }
+    if (type_ == EffectType::kExplosion && isActive_) {
+        auto* engine = GPUParticleSystem::GetEngine();
+        
+        // 現在のステートを退避
+        BlendMode prevBlend = engine->currentBlend_;
+        PSOManager::DepthWrite prevDepth = engine->currentDepth_;
+        PSOManager::CullMode prevCull = engine->currentCull_;
+
+        // エフェクト用のステートを設定（加算、デプス書き込み無効、カリングなし）
+        engine->SetBlend(BlendMode::kBlendModeAdd);
+        engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine->SetCull(PSOManager::CullMode::None);
+
+        // 1. 3D球体コアを描画
+        if (explosionObject_) {
+            explosionObject_->Draw();
+        }
+
+        // 2. 3軸衝撃波リングを描画（スケールに応じて最適化）
+        if (explosionWaveObject_) {
+            bool isSmallExplosion = (baseScale_.x < 0.5f);
+            
+            // 水平（XZ平面）- マシンガン等の小規模爆発時も必ず描画
+            if (!isSmallExplosion) {
+                explosionWaveObject_->SetRotate({ 0.0f, 0.0f, 0.0f });
+                explosionWaveObject_->Update();
+                explosionWaveObject_->SyncBeforeDraw();
+            }
+            explosionWaveObject_->Draw();
+
+            // スケールが大きい（ミサイル等）時のみ垂直リング（XY, YZ平面）を描画し、描画コールと同期処理を大幅にカット！
+            if (!isSmallExplosion) {
+                // 垂直（XY平面 - ピッチ回転）
+                explosionWaveObject_->SetRotate({ 1.57f, 0.0f, 0.0f });
+                explosionWaveObject_->Update();
+                explosionWaveObject_->SyncBeforeDraw();
+                explosionWaveObject_->Draw();
+
+                // 垂直（YZ平面 - ロール回転）
+                explosionWaveObject_->SetRotate({ 0.0f, 0.0f, 1.57f });
+                explosionWaveObject_->Update();
+                explosionWaveObject_->SyncBeforeDraw();
+                explosionWaveObject_->Draw();
+            }
+        }
+
+        // ステートを元に戻す
+        engine->SetBlend(prevBlend);
+        engine->SetDepthWrite(prevDepth);
+        engine->SetCull(prevCull);
+    }
 }
 
 void Effect::Debug(const char* name) {
@@ -194,7 +535,7 @@ void Effect::Debug(const char* name) {
             
             // --- 共通設定タブ ---
             if (ImGui::BeginTabItem("Common Settings")) {
-                const char* typeNames[] = { "Hit", "Impact", "Aura" };
+                const char* typeNames[] = { "Hit", "Impact", "Aura", "Swing", "Explosion" };
                 int currentType = static_cast<int>(type_);
                 if (ImGui::Combo("Effect Type", &currentType, typeNames, IM_ARRAYSIZE(typeNames))) {
                     if (engine_) {
@@ -228,7 +569,7 @@ void Effect::Debug(const char* name) {
                         if (!particleSystems_.empty()) particleSystems_[0]->SetPrimitive(currentShape_);
                     }
 
-                    if (auto* tm = GPUParticleSystem::GetTextureManager()) {
+                    if (auto* tm = engine_->GetTextureManager()) {
                         auto textureNames = tm->GetTextureNamesForDebug();
                         if (ImGui::BeginCombo("Texture", currentTextureName_.c_str())) {
                             for (size_t i = 0; i < textureNames.size(); i++) {
@@ -281,7 +622,7 @@ void Effect::Debug(const char* name) {
                         impactConfig_.planeShape = static_cast<PrimitiveType>(currentPlaneShape);
                         if (particleSystems_.size() >= 1) particleSystems_[0]->SetPrimitive(impactConfig_.planeShape);
                     }
-                    if (auto* tm = GPUParticleSystem::GetTextureManager()) {
+                    if (auto* tm = engine_->GetTextureManager()) {
                         auto textureNames = tm->GetTextureNamesForDebug();
                         if (ImGui::BeginCombo("Plane Texture", impactConfig_.planeTexture.c_str())) {
                             for (size_t i = 0; i < textureNames.size(); i++) {
@@ -309,7 +650,7 @@ void Effect::Debug(const char* name) {
                         impactConfig_.ringShape = static_cast<PrimitiveType>(currentRingShape);
                         if (particleSystems_.size() >= 2) particleSystems_[1]->SetPrimitive(impactConfig_.ringShape);
                     }
-                    if (auto* tm = GPUParticleSystem::GetTextureManager()) {
+                    if (auto* tm = engine_->GetTextureManager()) {
                         auto textureNames = tm->GetTextureNamesForDebug();
                         if (ImGui::BeginCombo("Ring Texture", impactConfig_.ringTexture.c_str())) {
                             for (size_t i = 0; i < textureNames.size(); i++) {
@@ -372,7 +713,7 @@ void Effect::Debug(const char* name) {
                 if (ImGui::BeginTabItem("Aura Specific Config")) {
                     bool changed = false;
                     
-                    if (auto* tm = GPUParticleSystem::GetTextureManager()) {
+                    if (auto* tm = engine_->GetTextureManager()) {
                         auto textureNames = tm->GetTextureNamesForDebug();
                         if (ImGui::BeginCombo("Aura Texture", auraConfig_.texture.c_str())) {
                             for (size_t i = 0; i < textureNames.size(); i++) {
@@ -399,6 +740,121 @@ void Effect::Debug(const char* name) {
                     
                     ImGui::EndTabItem();
                 }
+            } else if (type_ == EffectType::kSwing) {
+                if (ImGui::BeginTabItem("Swing Specific Config")) {
+                    bool changed = false;
+                    
+                    const char* primitiveShapeNames[] = { "Triangle", "Plane", "Cube", "Cylinder", "Sphere", "Tetra", "Circle", "Ring", "Skybox" };
+                    int currentShape = static_cast<int>(swingConfig_.shape);
+                    if (ImGui::Combo("Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
+                        swingConfig_.shape = static_cast<PrimitiveType>(currentShape);
+                        changed = true;
+                    }
+                    
+                    if (auto* tm = GPUParticleSystem::GetTextureManager()) {
+                        auto textureNames = tm->GetTextureNamesForDebug();
+                        if (ImGui::BeginCombo("Texture", swingConfig_.texture.c_str())) {
+                            for (size_t i = 0; i < textureNames.size(); i++) {
+                                bool is_selected = (swingConfig_.texture == textureNames[i]);
+                                if (ImGui::Selectable(textureNames[i].c_str(), is_selected)) {
+                                    swingConfig_.texture = textureNames[i];
+                                    changed = true;
+                                }
+                                if (is_selected) ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+                    }
+                    
+                    if (ImGui::ColorEdit4("Color", &swingConfig_.color.x)) changed = true;
+                    if (ImGui::DragFloat3("Start Scale", &swingConfig_.startScale.x, 0.1f)) changed = true;
+                    if (ImGui::DragFloat3("End Scale", &swingConfig_.endScale.x, 0.1f)) changed = true;
+                    if (ImGui::DragFloat2("UV Scroll Speed", &swingConfig_.uvScrollSpeed.x, 0.1f)) changed = true;
+                    if (ImGui::DragFloat2("UV Scale", &swingConfig_.uvScale.x, 0.1f)) changed = true;
+                    if (ImGui::DragFloat("Life Time", &swingConfig_.lifeTime, 0.01f, 0.01f, 5.0f)) changed = true;
+                    if (ImGui::Checkbox("Use Clamp", &swingConfig_.useClamp)) changed = true;
+                    
+                    // 新規追加したカスタムパラメータのUI
+                    ImGui::Separator();
+                    ImGui::Text("Ring Shape Settings");
+                    if (ImGui::DragFloat("Inner Radius", &swingConfig_.innerRadius, 0.01f, 0.0f, 1.0f)) changed = true;
+                    if (ImGui::DragFloat("Start Angle", &swingConfig_.startAngle, 1.0f, 0.0f, 360.0f)) changed = true;
+                    if (ImGui::DragFloat("End Angle", &swingConfig_.endAngle, 1.0f, 0.0f, 360.0f)) changed = true;
+                    if (ImGui::DragFloat("Fade Range Angle", &swingConfig_.fadeRangeAngle, 1.0f, 0.0f, 180.0f)) changed = true;
+                    if (ImGui::DragFloat("Swing Rotation Angle (Rad)", &swingConfig_.swingRotationAngle, 0.01f, 0.0f, 6.28f)) changed = true;
+                    
+                    if (changed && swingObject_) {
+                        Initialize(EffectType::kSwing);
+                    }
+                    
+                    ImGui::EndTabItem();
+                }
+            } else if (type_ == EffectType::kExplosion) {
+                if (ImGui::BeginTabItem("Explosion Specific Config")) {
+                    bool changed = false;
+                    
+                    ImGui::Text("--- 3D Core Sphere Settings ---");
+                    const char* primitiveShapeNames[] = { "Triangle", "Plane", "Cube", "Cylinder", "Sphere", "Tetra", "Circle", "Ring", "Skybox", "CylinderCap", "IcoSphere" };
+                    int currentShape = static_cast<int>(explosionConfig_.coreShape);
+                    if (ImGui::Combo("Core Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
+                        explosionConfig_.coreShape = static_cast<PrimitiveType>(currentShape);
+                        changed = true;
+                    }
+                    
+                    if (auto* tm = engine_->GetTextureManager()) {
+                        auto textureNames = tm->GetTextureNamesForDebug();
+                        if (ImGui::BeginCombo("Core Texture", explosionConfig_.coreTexture.c_str())) {
+                            for (size_t i = 0; i < textureNames.size(); i++) {
+                                bool is_selected = (explosionConfig_.coreTexture == textureNames[i]);
+                                if (ImGui::Selectable(textureNames[i].c_str(), is_selected)) {
+                                    explosionConfig_.coreTexture = textureNames[i];
+                                    changed = true;
+                                }
+                                if (is_selected) ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+                    }
+
+                    ImGui::Separator();
+                    ImGui::Text("--- Explosion Wave Settings ---");
+                    int currentWaveShape = static_cast<int>(explosionConfig_.waveShape);
+                    if (ImGui::Combo("Wave Shape", &currentWaveShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
+                        explosionConfig_.waveShape = static_cast<PrimitiveType>(currentWaveShape);
+                        changed = true;
+                    }
+                    
+                    if (auto* tm = engine_->GetTextureManager()) {
+                        auto textureNames = tm->GetTextureNamesForDebug();
+                        if (ImGui::BeginCombo("Wave Texture", explosionConfig_.waveTexture.c_str())) {
+                            for (size_t i = 0; i < textureNames.size(); i++) {
+                                bool is_selected = (explosionConfig_.waveTexture == textureNames[i]);
+                                if (ImGui::Selectable(textureNames[i].c_str(), is_selected)) {
+                                    explosionConfig_.waveTexture = textureNames[i];
+                                    changed = true;
+                                }
+                                if (is_selected) ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+                    }
+
+                    ImGui::Separator();
+                    ImGui::Text("--- Explosion Parameters ---");
+                    if (ImGui::ColorEdit4("Color", &explosionConfig_.color.x)) changed = true;
+                    if (ImGui::DragFloat3("Core Start Scale", &explosionConfig_.coreStartScale.x, 0.05f)) changed = true;
+                    if (ImGui::DragFloat3("Core End Scale", &explosionConfig_.coreEndScale.x, 0.05f)) changed = true;
+                    if (ImGui::DragFloat3("Wave Start Scale", &explosionConfig_.waveStartScale.x, 0.05f)) changed = true;
+                    if (ImGui::DragFloat3("Wave End Scale", &explosionConfig_.waveEndScale.x, 0.05f)) changed = true;
+                    if (ImGui::DragFloat("Life Time", &explosionConfig_.lifeTime, 0.01f, 0.05f, 5.0f)) changed = true;
+                    if (ImGui::DragFloat2("UV Scroll Speed (Core)", &explosionConfig_.uvScrollSpeed.x, 0.05f)) changed = true;
+
+                    if (changed) {
+                        Initialize(EffectType::kExplosion);
+                    }
+                    
+                    ImGui::EndTabItem();
+                }
             }
             ImGui::EndTabBar();
         }
@@ -413,6 +869,14 @@ void Effect::Debug(const char* name) {
 }
 
 void Effect::Play(const Vector3& position) {
+    Play(position, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f });
+}
+
+void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector3& scale) {
+    basePosition_ = position;
+    baseRotation_ = rotation;
+    baseScale_ = scale;
+
     switch (type_) {
     case EffectType::kHit:
         if (!particleSystems_.empty()) {
@@ -438,7 +902,39 @@ void Effect::Play(const Vector3& position) {
     case EffectType::kAura:
         if (auraObject_) {
             auraObject_->SetPosition(position);
-            auraObject_->SetScale(auraConfig_.scale);
+            auraObject_->SetScale({ auraConfig_.scale.x * scale.x, auraConfig_.scale.y * scale.y, auraConfig_.scale.z * scale.z });
+            auraObject_->SetRotate(rotation);
+        }
+        break;
+    case EffectType::kSwing:
+        if (swingObject_) {
+            isActive_ = true;
+            lifeTimer_ = swingConfig_.lifeTime;
+            currentUVOffset_ = { 0.0f, 0.0f };
+            swingObject_->SetPosition(position);
+            swingObject_->SetRotate(rotation);
+            swingObject_->SetScale({ swingConfig_.startScale.x * scale.x, swingConfig_.startScale.y * scale.y, swingConfig_.startScale.z * scale.z });
+            swingObject_->GetMaterial().color = swingConfig_.color;
+        }
+        break;
+    case EffectType::kExplosion:
+        isActive_ = true;
+        lifeTimer_ = explosionConfig_.lifeTime;
+        currentUVOffset_ = { 0.0f, 0.0f };
+        if (explosionObject_) {
+            explosionObject_->SetPosition(position);
+            explosionObject_->SetScale({ explosionConfig_.coreStartScale.x * scale.x, explosionConfig_.coreStartScale.y * scale.y, explosionConfig_.coreStartScale.z * scale.z });
+            explosionObject_->GetMaterial().color = explosionConfig_.color;
+        }
+        if (explosionWaveObject_) {
+            explosionWaveObject_->SetPosition(position);
+            explosionWaveObject_->SetScale({ explosionConfig_.waveStartScale.x * scale.x, explosionConfig_.waveStartScale.y * scale.y, explosionConfig_.waveStartScale.z * scale.z });
+            explosionWaveObject_->GetMaterial().color = explosionConfig_.color;
+        }
+        if (explosionSparkSystem_) {
+            // スケールに応じて火花の発生数を動的に最適化（マシンガン等は8個、ミサイル等は30個）
+            int sparkCount = (scale.x < 0.5f) ? 8 : 30;
+            explosionSparkSystem_->PlayHitEffect(position, sparkCount);
         }
         break;
     }

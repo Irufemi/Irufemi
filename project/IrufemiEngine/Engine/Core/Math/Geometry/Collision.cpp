@@ -1219,9 +1219,101 @@ namespace Collision {
         return IsCollision(a, b);
     }
 
-    // OBBとAABBの衝突判定
+    // OBBとAABB stumbling 判定
     bool IsOBBAABBCollision(const OBB& obb, const AABB& aabb) {
         return IsCollision(obb, aabb);
+    }
+
+    Vector3 GetOBBSphereClosestPoint(const OBB& obb, const Sphere& sphere, float offset) {
+        // 1. 球の中心点をOBBのローカル空間に変換する
+        Vector3 worldRelPos = Math::Subtract(sphere.center, obb.center);
+        Vector3 localPos = {
+            Math::Dot(worldRelPos, obb.orientations[0]),
+            Math::Dot(worldRelPos, obb.orientations[1]),
+            Math::Dot(worldRelPos, obb.orientations[2])
+        };
+
+        // 2. ローカル空間での最近接点を求める (AABBと同じ Clamp)
+        Vector3 localClosest = {
+            Math::Clamp(localPos.x, -obb.size.x, obb.size.x),
+            Math::Clamp(localPos.y, -obb.size.y, obb.size.y),
+            Math::Clamp(localPos.z, -obb.size.z, obb.size.z)
+        };
+
+        // 3. ローカル最近接点をワールド空間に戻す
+        Vector3 worldClosest = obb.center;
+        worldClosest = Math::Add(worldClosest, Math::Multiply(localClosest.x, obb.orientations[0]));
+        worldClosest = Math::Add(worldClosest, Math::Multiply(localClosest.y, obb.orientations[1]));
+        worldClosest = Math::Add(worldClosest, Math::Multiply(localClosest.z, obb.orientations[2]));
+
+        // 4. OBB表面から弾丸の中心（外側）へ向かう法線ベクトル方向にオフセット押し出し
+        if (offset > 0.0f) {
+            Vector3 pushDir = Math::Subtract(sphere.center, worldClosest);
+            float len = Math::Length(pushDir);
+            if (len > 0.001f) {
+                pushDir = Math::Normalize(pushDir);
+                worldClosest = Math::Add(worldClosest, Math::Multiply(offset, pushDir));
+            } else {
+                // 万が一中心が完全に一致していた場合は、OBBのY軸正方向（上空側）に逃がす
+                worldClosest = Math::Add(worldClosest, Math::Multiply(offset, obb.orientations[1]));
+            }
+        }
+
+        return worldClosest;
+    }
+
+    bool GetOBBSegmentIntersection(const OBB& obb, const Segment& segment, Vector3& outIntersection) {
+        // 1. 線分をOBBのローカル空間に変換する
+        Vector3 worldOriginRel = Math::Subtract(segment.origin, obb.center);
+        Vector3 localOrigin = {
+            Math::Dot(worldOriginRel, obb.orientations[0]),
+            Math::Dot(worldOriginRel, obb.orientations[1]),
+            Math::Dot(worldOriginRel, obb.orientations[2])
+        };
+        Vector3 localDiff = {
+            Math::Dot(segment.diff, obb.orientations[0]),
+            Math::Dot(segment.diff, obb.orientations[1]),
+            Math::Dot(segment.diff, obb.orientations[2])
+        };
+
+        float tMin = 0.0f;
+        float tMax = 1.0f;
+
+        const float* originArr = &localOrigin.x;
+        const float* diffArr = &localDiff.x;
+        const float* sizeArr = &obb.size.x;
+
+        for (int i = 0; i < 3; ++i) {
+            if (std::abs(diffArr[i]) < 1e-6f) {
+                if (std::abs(originArr[i]) > sizeArr[i]) return false;
+            } else {
+                float t1 = (-sizeArr[i] - originArr[i]) / diffArr[i];
+                float t2 = (sizeArr[i] - originArr[i]) / diffArr[i];
+
+                float tNear = (std::min)(t1, t2);
+                float tFar = (std::max)(t1, t2);
+
+                tMin = (std::max)(tMin, tNear);
+                tMax = (std::min)(tMax, tFar);
+            }
+        }
+
+        // 交差しているか判定
+        if (tMin <= tMax && tMin >= 0.0f && tMin <= 1.0f) {
+            // ローカル空間での交点を求める
+            Vector3 localIntersection = Math::Add(localOrigin, Math::Multiply(tMin, localDiff));
+            
+            // ワールド空間に戻す
+            Vector3 worldIntersection = obb.center;
+            worldIntersection = Math::Add(worldIntersection, Math::Multiply(localIntersection.x, obb.orientations[0]));
+            worldIntersection = Math::Add(worldIntersection, Math::Multiply(localIntersection.y, obb.orientations[1]));
+            worldIntersection = Math::Add(worldIntersection, Math::Multiply(localIntersection.z, obb.orientations[2]));
+
+            outIntersection = worldIntersection;
+            return true;
+        }
+
+        return false;
     }
 
 } // namespace Collision

@@ -102,6 +102,10 @@ private: // メンバ変数(ゲーム)
     Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsResource_ = nullptr;
     LightningParams* lightningParamsData_ = nullptr;
 
+    // --- エネルギーコアデモ ---
+    bool isActiveEnergyCore_ = false;
+    std::unique_ptr<PrimitiveObjects3DClass> energyCore_ = nullptr;
+
 private: // メンバ変数(システム)
 
 #ifdef USE_IMGUI

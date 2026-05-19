@@ -11,6 +11,7 @@ void Phase2_Idle::Enter(Enemy* enemy) {
     globalTimer_ = 0.0f;
     wantsToBite_ = false;
     wantsToBeam_ = false;
+    wantsToBomb_ = false;
 
     orbitSpeed_ = 0.2f + (float)headIndex_ * 0.05f;
     springStrength_ = 0.015f + (float)headIndex_ * 0.005f;
@@ -85,10 +86,12 @@ void Phase2_Idle::Update(Enemy* enemy, Player* player, float deltaTime) {
     // クールダウン中は攻撃遷移しない
     if (timer_ > currentAttackCooldown_) {
         float randVal = (float)std::rand() / RAND_MAX;
-        if (randVal < kBiteProbability) {
+        if (randVal < 0.4f) {
             wantsToBite_ = true;
-        } else {
+        } else if (randVal < 0.7f) {
             wantsToBeam_ = true;
+        } else {
+            wantsToBomb_ = true;
         }
     }
 }
@@ -96,4 +99,5 @@ void Phase2_Idle::Update(Enemy* enemy, Player* player, float deltaTime) {
 void Phase2_Idle::Exit(Enemy* enemy) {
     wantsToBite_ = false;
     wantsToBeam_ = false;
+    wantsToBomb_ = false;
 }
