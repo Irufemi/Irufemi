@@ -22,8 +22,8 @@
         "min_height_comment": "ビルの最小高さスケール",
         "min_scale_xz": 8.0,
         "min_scale_xz_comment": "ビルの最小幅スケール(XZ)",
-        "spawn_duration": 2.0,
-        "spawn_duration_comment": "地面から揺れながら生えてくる演出の時間(秒)",
+        "spawn_speed": 10.0,
+        "spawn_speed_comment": "ビルが地面からせり上がる速度(秒速)",
         "spawn_interval": 5.0,
         "spawn_interval_comment": "ビルが自動生成される時間間隔(秒)"
     }
