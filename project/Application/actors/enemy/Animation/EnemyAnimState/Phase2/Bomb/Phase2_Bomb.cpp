@@ -35,7 +35,7 @@ void Phase2_Bomb::Update(Enemy* enemy, Player* player, float deltaTime) {
 
     if (!headT) return;
 
-    // プレイヤーの方向を向く
+    // プレイヤーの方向を向く！
     Vector3 toPlayer = Math::Subtract(playerPos, headT->translate);
     headT->rotate.y = std::atan2(toPlayer.x, toPlayer.z);
 
