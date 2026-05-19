@@ -424,6 +424,7 @@
     <ClCompile Include="Engine\Graphics\DirectX\ShaderManager.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Effect\WeaponTrail.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Manager\DrawManager.h">
@@ -879,6 +880,7 @@
     <ClInclude Include="Engine\Graphics\DirectX\ShaderManager.h">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Effect\WeaponTrail.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\RandomGenerator.hlsli">

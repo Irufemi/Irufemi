@@ -108,6 +108,50 @@ void Effect::Initialize(EffectType type) {
         auraObject_->SetScale(auraConfig_.scale); // 初期スケールの適用
         break;
     }
+    case EffectType::kSwing:
+    {
+        isBillboard_ = false;
+        swingObject_ = std::make_unique<PrimitiveObjects3DClass>();
+        swingObject_->Initialize(PrimitiveType::Ring, swingConfig_.texture);
+
+        // 風切りスイングに特化したカスタム形状パラメータ（端が尖った半円）
+        RingParams ringParams;
+        ringParams.innerRadius = swingConfig_.innerRadius;
+        ringParams.startOuterRadius = 1.0f;
+        ringParams.endOuterRadius = 1.0f;
+        ringParams.startAngle = swingConfig_.startAngle;
+        ringParams.endAngle = swingConfig_.endAngle;
+        ringParams.segments = 32;
+        ringParams.fadeRangeAngle = swingConfig_.fadeRangeAngle;
+        ringParams.verticalUV = false;
+        ringParams.innerColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        ringParams.outerColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        ringParams.startAlpha = 0.0f;
+        ringParams.endAlpha = 0.0f;
+
+        PrimitiveData ringData = PrimitiveManager::CreateRing(ringParams);
+        
+        // 頂点座標を XZ平面に寝かせる（ハンマーの軌道に沿ったレールにする）
+        for (auto& vertex : ringData.vertices) {
+            float tempY = vertex.position.y;
+            vertex.position.y = 0.0f;               // Y軸を潰してXZ平面に寝かせる
+            vertex.position.z = tempY;              // 元のY(上下)をZ(前後)に変換
+            
+            float tempNy = vertex.normal.y;
+            vertex.normal.y = 0.0f;
+            vertex.normal.z = tempNy;
+        }
+
+        swingObject_->ReinitializeMesh(ringData);
+        
+        swingObject_->SetCastShadows(false); // エフェクトなので影は不要
+        swingObject_->GetMaterial().enableLighting = false; // ライティング不要
+        swingObject_->GetMaterial().color = swingConfig_.color;
+        swingObject_->GetMaterial().useClampSampler = swingConfig_.useClamp ? 3 : 0; // 3 = U:Wrap, V:Clamp
+        swingObject_->SetScale(swingConfig_.startScale);
+        isActive_ = false;
+        break;
+    }
     }
 }
 
@@ -144,6 +188,93 @@ void Effect::Update() {
         }
         
         auraObject_->Update();
+    } else if (type_ == EffectType::kSwing && swingObject_ && isActive_) {
+        lifeTimer_ -= dt;
+        if (lifeTimer_ <= 0.0f) {
+            isActive_ = false;
+        } else {
+            // 生存割合の計算 (0.0f -> 1.0f)
+            float t = 1.0f - (lifeTimer_ / swingConfig_.lifeTime);
+            
+            // スケールを startScale から endScale へ線形補間
+            Vector3 currentScale;
+            currentScale.x = Lerp(swingConfig_.startScale.x, swingConfig_.endScale.x, t) * baseScale_.x;
+            currentScale.y = Lerp(swingConfig_.startScale.y, swingConfig_.endScale.y, t) * baseScale_.y;
+            currentScale.z = Lerp(swingConfig_.startScale.z, swingConfig_.endScale.z, t) * baseScale_.z;
+            swingObject_->SetScale(currentScale);
+            
+            // アルファ値（透明度）をフェードアウト
+            Vector4 currentColor = swingConfig_.color;
+            currentColor.w = Lerp(swingConfig_.color.w, 0.0f, t);
+            swingObject_->GetMaterial().color = currentColor;
+            
+            // 動的にメッシュを再生成し「武器の先端から弧が伸びていく」かつ「残像が消えていく」アニメーションを実装
+            RingParams ringParams;
+            ringParams.innerRadius = swingConfig_.innerRadius;
+            ringParams.startOuterRadius = 1.0f;
+            ringParams.endOuterRadius = 1.0f;
+            
+            // tの進行に合わせて弧を伸ばす。先端が武器を追い越さないよう、進行度tと完全に等速(1.0倍)にする
+            float currentEndAngle = Lerp(0.1f, swingConfig_.endAngle, t);
+            float currentStartAngle = 0.0f;
+            
+            // スイング後半から根本が消えていく。t=1.0の時点でも少し軌跡が残るように0.8倍で止める
+            if (t > 0.5f) {
+                float fadeT = std::clamp((t - 0.5f) * 2.0f, 0.0f, 1.0f);
+                currentStartAngle = Lerp(0.0f, swingConfig_.endAngle * 0.8f, fadeT);
+            }
+            
+            // 先端と根本が逆転しないように最低限の幅を確保
+            if (currentEndAngle <= currentStartAngle + 1.0f) {
+                currentEndAngle = currentStartAngle + 1.0f;
+            }
+            
+            ringParams.startAngle = currentStartAngle;
+            ringParams.endAngle = currentEndAngle;
+            
+            ringParams.segments = 32;
+            ringParams.fadeRangeAngle = swingConfig_.fadeRangeAngle;
+            ringParams.verticalUV = false;
+            ringParams.innerColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+            ringParams.outerColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+            ringParams.startAlpha = 0.0f;
+            ringParams.endAlpha = 0.0f;
+
+            PrimitiveData ringData = PrimitiveManager::CreateRing(ringParams);
+            
+            // 頂点座標を XZ平面に寝かせる
+            for (auto& vertex : ringData.vertices) {
+                float tempY = vertex.position.y;
+                vertex.position.y = 0.0f;
+                vertex.position.z = tempY;
+                float tempNy = vertex.normal.y;
+                vertex.normal.y = 0.0f;
+                vertex.normal.z = tempNy;
+            }
+            swingObject_->ReinitializeMesh(ringData);
+
+            // UVスクロールの更新
+            currentUVOffset_.x += swingConfig_.uvScrollSpeed.x * dt;
+            currentUVOffset_.y += swingConfig_.uvScrollSpeed.y * dt;
+            
+            Vector3 uvScale = { swingConfig_.uvScale.x, swingConfig_.uvScale.y, 1.0f };
+            Vector3 uvRot = { 0.0f, 0.0f, 0.0f };
+            Vector3 uvTrans = { currentUVOffset_.x, currentUVOffset_.y, 0.0f };
+            swingObject_->GetMaterial().uvTransform = Math::MakeAffineMatrix(uvScale, uvRot, uvTrans);
+            swingObject_->GetMaterial().useClampSampler = swingConfig_.useClamp ? 3 : 0;
+            
+            if (swingObject_->GetMaterial().texturePath != swingConfig_.texture) {
+                swingObject_->SetTexture(swingConfig_.texture);
+            }
+            
+            // 最新の位置と回転を反映
+            Vector3 currentRotation = baseRotation_;
+            currentRotation.y -= swingConfig_.swingRotationAngle * t;
+            
+            swingObject_->SetPosition(basePosition_);
+            swingObject_->SetRotate(currentRotation);
+            swingObject_->Update();
+        }
     }
 
     for (auto& sys : particleSystems_) {
@@ -157,6 +288,9 @@ void Effect::SyncBeforeDraw() {
     }
     if (type_ == EffectType::kAura && auraObject_) {
         auraObject_->SyncBeforeDraw();
+    }
+    if (type_ == EffectType::kSwing && swingObject_ && isActive_) {
+        swingObject_->SyncBeforeDraw();
     }
 }
 
@@ -185,6 +319,52 @@ void Effect::Draw() {
         engine->SetDepthWrite(prevDepth);
         engine->SetCull(prevCull);
     }
+    if (type_ == EffectType::kSwing && swingObject_ && isActive_) {
+        auto* engine = GPUParticleSystem::GetEngine();
+        
+        // 現在のステートを退避
+        BlendMode prevBlend = engine->currentBlend_;
+        PSOManager::DepthWrite prevDepth = engine->currentDepth_;
+        PSOManager::CullMode prevCull = engine->currentCull_;
+
+        // エフェクト用のステートを設定
+        engine->SetBlend(blendMode_);
+        engine->SetDepthWrite(depthWrite_);
+        engine->SetCull(cullMode_);
+
+        // 平面メッシュに「縦軸の厚み」を持たせるため、Y座標を少しずつズラして3枚（ミルフィーユ状）描画する
+        Vector3 originalPos = basePosition_;
+        
+        // 1枚目（上端）
+        Vector3 topPos = originalPos;
+        topPos.y += 0.6f;
+        swingObject_->SetPosition(topPos);
+        swingObject_->Update();
+        swingObject_->SyncBeforeDraw();
+        swingObject_->Draw();
+
+        // 2枚目（中央）
+        swingObject_->SetPosition(originalPos);
+        swingObject_->Update();
+        swingObject_->SyncBeforeDraw();
+        swingObject_->Draw();
+
+        // 3枚目（下端）
+        Vector3 bottomPos = originalPos;
+        bottomPos.y -= 0.6f;
+        swingObject_->SetPosition(bottomPos);
+        swingObject_->Update();
+        swingObject_->SyncBeforeDraw();
+        swingObject_->Draw();
+        
+        // 位置を元に戻しておく
+        swingObject_->SetPosition(originalPos);
+
+        // ステートを元に戻す
+        engine->SetBlend(prevBlend);
+        engine->SetDepthWrite(prevDepth);
+        engine->SetCull(prevCull);
+    }
 }
 
 void Effect::Debug(const char* name) {
@@ -194,7 +374,7 @@ void Effect::Debug(const char* name) {
             
             // --- 共通設定タブ ---
             if (ImGui::BeginTabItem("Common Settings")) {
-                const char* typeNames[] = { "Hit", "Impact", "Aura" };
+                const char* typeNames[] = { "Hit", "Impact", "Aura", "Swing" };
                 int currentType = static_cast<int>(type_);
                 if (ImGui::Combo("Effect Type", &currentType, typeNames, IM_ARRAYSIZE(typeNames))) {
                     if (engine_) {
@@ -399,6 +579,55 @@ void Effect::Debug(const char* name) {
                     
                     ImGui::EndTabItem();
                 }
+            } else if (type_ == EffectType::kSwing) {
+                if (ImGui::BeginTabItem("Swing Specific Config")) {
+                    bool changed = false;
+                    
+                    const char* primitiveShapeNames[] = { "Triangle", "Plane", "Cube", "Cylinder", "Sphere", "Tetra", "Circle", "Ring", "Skybox" };
+                    int currentShape = static_cast<int>(swingConfig_.shape);
+                    if (ImGui::Combo("Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
+                        swingConfig_.shape = static_cast<PrimitiveType>(currentShape);
+                        changed = true;
+                    }
+                    
+                    if (auto* tm = GPUParticleSystem::GetTextureManager()) {
+                        auto textureNames = tm->GetTextureNamesForDebug();
+                        if (ImGui::BeginCombo("Texture", swingConfig_.texture.c_str())) {
+                            for (size_t i = 0; i < textureNames.size(); i++) {
+                                bool is_selected = (swingConfig_.texture == textureNames[i]);
+                                if (ImGui::Selectable(textureNames[i].c_str(), is_selected)) {
+                                    swingConfig_.texture = textureNames[i];
+                                    changed = true;
+                                }
+                                if (is_selected) ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+                    }
+                    
+                    if (ImGui::ColorEdit4("Color", &swingConfig_.color.x)) changed = true;
+                    if (ImGui::DragFloat3("Start Scale", &swingConfig_.startScale.x, 0.1f)) changed = true;
+                    if (ImGui::DragFloat3("End Scale", &swingConfig_.endScale.x, 0.1f)) changed = true;
+                    if (ImGui::DragFloat2("UV Scroll Speed", &swingConfig_.uvScrollSpeed.x, 0.1f)) changed = true;
+                    if (ImGui::DragFloat2("UV Scale", &swingConfig_.uvScale.x, 0.1f)) changed = true;
+                    if (ImGui::DragFloat("Life Time", &swingConfig_.lifeTime, 0.01f, 0.01f, 5.0f)) changed = true;
+                    if (ImGui::Checkbox("Use Clamp", &swingConfig_.useClamp)) changed = true;
+                    
+                    // 新規追加したカスタムパラメータのUI
+                    ImGui::Separator();
+                    ImGui::Text("Ring Shape Settings");
+                    if (ImGui::DragFloat("Inner Radius", &swingConfig_.innerRadius, 0.01f, 0.0f, 1.0f)) changed = true;
+                    if (ImGui::DragFloat("Start Angle", &swingConfig_.startAngle, 1.0f, 0.0f, 360.0f)) changed = true;
+                    if (ImGui::DragFloat("End Angle", &swingConfig_.endAngle, 1.0f, 0.0f, 360.0f)) changed = true;
+                    if (ImGui::DragFloat("Fade Range Angle", &swingConfig_.fadeRangeAngle, 1.0f, 0.0f, 180.0f)) changed = true;
+                    if (ImGui::DragFloat("Swing Rotation Angle (Rad)", &swingConfig_.swingRotationAngle, 0.01f, 0.0f, 6.28f)) changed = true;
+                    
+                    if (changed && swingObject_) {
+                        Initialize(EffectType::kSwing);
+                    }
+                    
+                    ImGui::EndTabItem();
+                }
             }
             ImGui::EndTabBar();
         }
@@ -413,6 +642,14 @@ void Effect::Debug(const char* name) {
 }
 
 void Effect::Play(const Vector3& position) {
+    Play(position, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f });
+}
+
+void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector3& scale) {
+    basePosition_ = position;
+    baseRotation_ = rotation;
+    baseScale_ = scale;
+
     switch (type_) {
     case EffectType::kHit:
         if (!particleSystems_.empty()) {
@@ -438,7 +675,19 @@ void Effect::Play(const Vector3& position) {
     case EffectType::kAura:
         if (auraObject_) {
             auraObject_->SetPosition(position);
-            auraObject_->SetScale(auraConfig_.scale);
+            auraObject_->SetScale({ auraConfig_.scale.x * scale.x, auraConfig_.scale.y * scale.y, auraConfig_.scale.z * scale.z });
+            auraObject_->SetRotate(rotation);
+        }
+        break;
+    case EffectType::kSwing:
+        if (swingObject_) {
+            isActive_ = true;
+            lifeTimer_ = swingConfig_.lifeTime;
+            currentUVOffset_ = { 0.0f, 0.0f };
+            swingObject_->SetPosition(position);
+            swingObject_->SetRotate(rotation);
+            swingObject_->SetScale({ swingConfig_.startScale.x * scale.x, swingConfig_.startScale.y * scale.y, swingConfig_.startScale.z * scale.z });
+            swingObject_->GetMaterial().color = swingConfig_.color;
         }
         break;
     }

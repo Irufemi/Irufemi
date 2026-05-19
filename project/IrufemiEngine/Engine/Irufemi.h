@@ -59,6 +59,8 @@
 #include "Renderer/Region/PrimitiveRegion.h"
 // Skybox
 #include "Renderer/Skybox/Skybox.h"
+// Effect
+#include "Renderer/Effect/Effect.h"
 
 // 音関連
 #include "Resource/Audio/Bgm.h"

@@ -59,7 +59,7 @@ public:
         int maxCount = 20;
         float avoidPlayerRadius = 15.0f;
         float avoidBossRadius = 30.0f;
-        float spawnDuration = 2.0f;
+        float spawnSpeed = 10.0f;
     };
 
     Building();

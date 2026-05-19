@@ -14,6 +14,7 @@ class Line3DRegion;
 class Enemy;
 class Sprite;
 class PlayerHPBar;
+class WeaponTrail;
 
 struct AttackCollision {
     Vector3 center;
@@ -23,6 +24,7 @@ struct AttackCollision {
 
 class Player {
 public:
+    Player();
     ~Player();
 
     void Initialize(InputManager* input, IrufemiEngine* engine);
@@ -100,6 +102,7 @@ private:
     std::unique_ptr<ObjClass> targetMarkerObj_ = nullptr;
     std::unique_ptr<Sprite> maskSprite_ = nullptr;
     std::unique_ptr<PlayerHPBar> hpBar_ = nullptr;
+    std::unique_ptr<WeaponTrail> weaponTrail_ = nullptr;
 
     Vector3 targetPos_ = { 0.0f, 0.0f, 0.0f };
     Vector3 aimPos_ = { 0.0f, 0.0f, 0.0f };

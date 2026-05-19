@@ -9,11 +9,13 @@
 #include "Renderer/Object2D/Sprite/Sprite.h"
 #include "../enemy/Enemy.h" 
 #include "contents/ui/PlayerHPBar.h"
-
+#include "Renderer/Effect/WeaponTrail.h"
 
 #ifdef USE_IMGUI
 #include <imgui.h> 
 #endif
+
+Player::Player() = default;
 
 Player::~Player() {
 }
@@ -32,7 +34,7 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
     attackObj_ = std::make_unique<ObjClass>();
-    attackObj_->Initialize("enemy/body.obj");
+    attackObj_->Initialize("player/playerMelee.obj");
     attackObj_->SetPosition(translate_);
     attackObj_->Update();
 
@@ -89,6 +91,9 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
 
     hpBar_ = std::make_unique<PlayerHPBar>();
     hpBar_->Initialize(engine);
+
+    weaponTrail_ = std::make_unique<WeaponTrail>();
+    weaponTrail_->Initialize(engine, "resources/gradationLine.png", {1.0f, 0.6f, 0.1f, 1.0f});
 
     // ★追加: からくりチャージゲージの初期化
     karakuriGaugeBg_ = std::make_unique<Sprite>();
@@ -392,7 +397,11 @@ void Player::Update() {
         hpBar_->Update(this, cameraController_.IsFirstPerson());
     }
 
-    // ★からくりチャージゲージの更新
+    if (weaponTrail_) {
+        weaponTrail_->Update();
+    }
+
+    // ★追加: からくりチャージゲージの更新
     if (karakuriGaugeBg_ && karakuriGaugeFill_) {
         if (isKarakuriCharged_) {
             // チャージ成功後: 残り時間に応じてゲージを減らす（オレンジ色）
@@ -582,6 +591,11 @@ void Player::Draw() {
         attackObj_->Draw();
     }
 
+    if (weaponTrail_) {
+        weaponTrail_->SyncBeforeDraw();
+        weaponTrail_->Draw();
+    }
+
     if (isTargetingEnemy_ && targetMarkerObj_ && !status_.IsDead()) {
         // targetMarkerObj_->Draw();
     }
@@ -659,6 +673,33 @@ void Player::HandleAttack() {
         if (input_->IsMouseButtonPressed(Mouse::Button::Left)) {
             attackState_ = AttackState::kCharging;
             chargeTimer_ = 0;
+
+            /**
+             * @brief 攻撃開始時のモデル座標・回転の初期化
+             * 
+             * @details
+             * 攻撃開始フレームで attackObj_ の座標を直ちにプレイヤー位置へ更新する。
+             * これを行わない場合、次の Draw() 呼び出し時に1フレームだけ
+             * 「前回攻撃が終了した座標」にモデルが描画される（残像が残る）現象が発生する。
+             */
+            float currentAngle = rotate_.y + kHammerAngleOffset;
+            float sinA = std::sin(currentAngle);
+            float cosA = std::cos(currentAngle);
+
+            Vector3 hammerPos;
+            hammerPos.x = translate_.x + sinA * kSwingBaseRadius;
+            hammerPos.y = translate_.y + kHammerBaseHeight;
+            hammerPos.z = translate_.z + cosA * kSwingBaseRadius;
+
+            if (attackObj_) {
+                attackObj_->SetPosition(hammerPos + weapon_.GetMissileVibration());
+                Vector3 swingRot = rotate_;
+                swingRot.y = currentAngle;
+                swingRot.x = kHammerRotX;
+                attackObj_->SetRotate(swingRot);
+                attackObj_->SetScale({ 1.0f, 1.0f, 1.0f });
+                attackObj_->Update();
+            }
         }
         break;
 
@@ -685,8 +726,8 @@ void Player::HandleAttack() {
                 swingRot.y = currentAngle;
                 swingRot.x = kHammerRotX;
                 attackObj_->SetRotate(swingRot);
-                float hammerSize = hammerBaseSize_ + (chargeRate * hammerSizeChargeBonus_);
-                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
+                float baseScale = 1.0f + (chargeRate * hammerSizeChargeBonus_);
+                Vector3 hammerScale = { baseScale, baseScale, baseScale };
                 attackObj_->SetScale(hammerScale);
                 attackObj_->Update();
             }
@@ -697,9 +738,10 @@ void Player::HandleAttack() {
             currentChargeRate_ = static_cast<float>(chargeTimer_) / kMaxChargeTime;
             if (currentChargeRate_ > 1.0f) currentChargeRate_ = 1.0f;
 
-            float hammerSize = hammerBaseSize_ + (currentChargeRate_ * hammerSizeChargeBonus_);
-            Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
-            attackCollision_.radius = hammerScale.y * 0.8f; // モデルより少し大きくする
+            float baseScale = 1.0f + (currentChargeRate_ * hammerSizeChargeBonus_);
+            Vector3 hammerScale = { baseScale, baseScale, baseScale };
+            attackCollision_.radius = baseScale * 1.5f; // モデル(直径約3m)に合わせて半径1.5m
+
         }
         break;
 
@@ -724,16 +766,29 @@ void Player::HandleAttack() {
                 swingRot.y = currentAngle;
                 swingRot.x = kHammerRotX;
                 attackObj_->SetRotate(swingRot);
-                float hammerSize = hammerBaseSize_ + (currentChargeRate_ * hammerSizeChargeBonus_);
-                Vector3 hammerScale = { scale_.x * hammerSize, scale_.y * hammerScaleYMultiplier_ * hammerSize, scale_.z * hammerSize };
+                float baseScale = 1.0f + (currentChargeRate_ * hammerSizeChargeBonus_);
+                Vector3 hammerScale = { baseScale, baseScale, baseScale };
                 attackObj_->SetScale(hammerScale);
                 attackObj_->Update();
+            }
+
+            if (weaponTrail_) {
+                Vector3 tipPos = attackCollision_.center + weapon_.GetMissileVibration();
+                // プレイヤーの中心からtipPosへのベクトルを計算し、軌跡を扇形ではなく「帯（リボン）」にする
+                // 根本（basePos）をハンマーの中心とプレイヤーの中心の間に設定（例えば60%の位置）
+                Vector3 basePos;
+                basePos.x = Lerp(translate_.x, tipPos.x, 0.6f);
+                basePos.y = Lerp(translate_.y + kHammerBaseHeight, tipPos.y, 0.6f);
+                basePos.z = Lerp(translate_.z, tipPos.z, 0.6f);
+
+                weaponTrail_->AddPoint(basePos, tipPos);
             }
 
             attackActiveTimer_--;
             if (attackActiveTimer_ <= 0) {
                 attackCollision_.isActive = false;
                 attackState_ = AttackState::kNone;
+                if (weaponTrail_) weaponTrail_->StopTrail();
             }
         }
         break;

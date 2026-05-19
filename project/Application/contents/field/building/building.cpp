@@ -259,7 +259,7 @@ void Building::DrawImGui() {
         changed |= ImGui::SliderInt("Max Count", &params_.maxCount, 1, 100);
         changed |= ImGui::DragFloat("Avoid Player Radius", &params_.avoidPlayerRadius, 0.5f, 0.0f, 100.0f);
         changed |= ImGui::DragFloat("Avoid Boss Radius", &params_.avoidBossRadius, 0.5f, 0.0f, 100.0f);
-        changed |= ImGui::DragFloat("Spawn Duration", &params_.spawnDuration, 0.1f, 0.1f, 10.0f);
+        changed |= ImGui::DragFloat("Spawn Speed", &params_.spawnSpeed, 0.1f, 0.1f, 100.0f);
 
         // 最小値と最大値の整合性を保つ
         if (params_.minHeight > params_.maxHeight) {
@@ -318,7 +318,7 @@ void Building::LoadJson() {
         if (b.contains("max_count")) params_.maxCount = b["max_count"];
         if (b.contains("avoid_player_radius")) params_.avoidPlayerRadius = b["avoid_player_radius"];
         if (b.contains("avoid_boss_radius")) params_.avoidBossRadius = b["avoid_boss_radius"];
-        if (b.contains("spawn_duration")) params_.spawnDuration = b["spawn_duration"];
+        if (b.contains("spawn_speed")) params_.spawnSpeed = b["spawn_speed"];
         OutputDebugStringA("Building: Parameters loaded from JSON.\n");
     }
 }
@@ -350,8 +350,8 @@ void Building::SaveJson() {
         {"avoid_player_radius_comment", "プレイヤーの現在座標を避ける半径"},
         {"avoid_boss_radius", params_.avoidBossRadius},
         {"avoid_boss_radius_comment", "ボスが移動/攻撃対象にしている座標を避ける半径"},
-        {"spawn_duration", params_.spawnDuration},
-        {"spawn_duration_comment", "地面から揺れながら生えてくる演出の時間(秒)"}
+        {"spawn_speed", params_.spawnSpeed},
+        {"spawn_speed_comment", "ビルが地面からせり上がる速度(秒速)"}
     };
 
     std::ofstream file(kJsonFilePath);
@@ -722,7 +722,13 @@ void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3&
     // 出現演出初期化
     inst.isSpawning = true;
     inst.spawnTimer = 0.0f;
-    inst.spawnDuration = params_.spawnDuration;
+    
+    // 出現にかかる時間 ＝ 高さ ／ 秒速
+    if (params_.spawnSpeed > 0.0f) {
+        inst.spawnDuration = scaleY / params_.spawnSpeed;
+    } else {
+        inst.spawnDuration = 2.0f; // ゼロ除算防止フォールバック
+    }
     inst.targetPosition = pos;
     inst.initialY = pos.y - scaleY; // 完全に地中に埋まる高さ
     inst.position = { pos.x, inst.initialY, pos.z };

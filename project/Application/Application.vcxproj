@@ -177,11 +177,13 @@ exit 0</Command>
     <ClCompile Include="contents\field\building\building.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimation.cpp" />
     <ClCompile Include="actors\enemy\Beam\EnemyBeam.cpp" />
+    <ClCompile Include="actors\enemy\Bomb\EnemyBomb.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Idle\Phase1_Idle.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Beam\Phase1_Beam.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Stomp\Phase1_Stomp.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Tackle\Phase2_Tackle.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.cpp" />
+    <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Bomb\Phase2_Bomb.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Idle\Phase2_Idle.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.cpp" />
     <ClCompile Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.cpp" />
@@ -220,6 +222,7 @@ exit 0</Command>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Stomp\Phase1_Stomp.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Tackle\Phase2_Tackle.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Beam\Phase2_Beam.h" />
+    <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Bomb\Phase2_Bomb.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Idle\Phase2_Idle.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase2\Phase2.h" />
     <ClInclude Include="actors\enemy\Animation\EnemyAnimState\Phase1\Phase1.h" />
@@ -240,6 +243,7 @@ exit 0</Command>
     <ClInclude Include="actors\enemy\Animation\EnemyAnimation.h" />
     <ClInclude Include="actors\enemy\Beam\EnemyBeam.h" />
     <ClInclude Include="contents\light\DynamicArenaLight.h" />
+    <ClInclude Include="actors\enemy\Bomb\EnemyBomb.h" />
     <ClInclude Include="contents\skydome\Skydome.h" />
     <ClInclude Include="actors\enemy\StompEffects\EnemyStompEffects.h" />
     <ClInclude Include="contents\ui\EnemyHPBar.h" />
