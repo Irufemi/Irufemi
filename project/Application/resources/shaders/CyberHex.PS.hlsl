@@ -7,25 +7,26 @@
  * Original ShaderToy: "Hexagons - distance" by Inigo Quilez (https://www.shadertoy.com/view/Xd2CGt)
  * 
  * 【ShaderToyからの主な変更点（IrufemiEngine向け最適化）】
+ * 
  * 1. 座標系のワールド空間化 (Triplanar Mappingの導入)
- *    - 元の `fragCoord.xy / iResolution.y` (画面座標) ではなく、`input.worldPosition` を使用。
+ *    - 元の `fragCoord.xy / iResolution.y` (スクリーン座標) ではなく、`input.worldPosition` を使用。
  *    - `input.normal` を元にXY, XZ, ZY平面を自動判定し、PlaneのScaleに依存せず常に均一な密度で六角形を描画するように変更。
  * 
- * 2. C++側からのパラメータ制御 (`gMaterial.uvTransform` のハック)
- *    - `gMaterial.uvTransform[0][0]` をヘキサゴンの「密度（スケール）」パラメータとして利用。
- *    - `gMaterial.uvTransform[1][1]` をアニメーションの「進行速度」パラメータとして利用。
+ * 2. マジックナンバーの排除と専用定数バッファ (CyberHexParams) によるパラメータ化
+ *    - 元コードで固定値だった `0.10`（縁の太さ）や `0.15`（明るさ）、ハードコードされた発光色をすべて排除。
+ *    - 汎用 Material を汚染せず、専用定数バッファ `gCyberHex` (register b6) を経由して、色、太さ、密度、歪みなどを C++ (ImGui) からリアルタイムで柔軟に変更可能に設計。
  * 
- * 3. プロシージャルノイズへの置換
- *    - 元コードのテクスチャ(`iChannel0`)に依存するノイズを、自作の `hash12_safe` および `noise` (3D Value Noise) に置き換え。
+ * 3. 「アニメーション（浮き沈み）」と「UVスクロール」の完全な分離
+ *    - 元のコードでは `hexagon(8.0*pos + 0.5*iTime)` のように座標に時間を足していたため、明滅させようとするとグリッド全体が斜めに移動してしまっていた。
+ *    - 座標計算から時間項を外し、時間(`animTime`)はノイズ(`noise`)や明滅(`sin`)の計算にのみ影響するように数式を分解。
+ *    - 代わりに全体の移動は `pos += uvScroll` で独立させ、模様の浮き沈み(`animationSpeed`)と全体の移動(`uvScrollX, Y`)を完全に別々で制御できるように再構築。
  * 
- * 4. 視覚効果の調整（フリッカー防止・色調調整）
- *    - 発光色の切り替わり境界を `smoothstep(0.45, 0.451)` から `smoothstep(0.3, 0.6)` へ広げ、激しい点滅（フリッカー）を防止。
- *    - 発光色をハードコードから `gMaterial.color` へ変更し、C++から動的に色（属性）を変更可能に。
- *    - 全体的な明るさが強すぎたため、ベースの `intensity` 計算とトーンマッピングを落ち着いた値に調整。
+ * 4. プロシージャルノイズへの置換
+ *    - 元コードのテクスチャ(`iChannel0`)に依存するノイズを、自作の `rand` および `noise` (3D Value Noise) に置き換え。
  * 
- * 5. エンジン標準の影（ShadowMap）の統合
- *    - 自発光だけでなく周囲の環境と馴染ませるため、`Lighting.hlsli` をインクルード。
- *    - `CalculateShadow` を使用して他のオブジェクトから落ちる影を受け取り、影の部分は暗くなるよう乗算処理を追加。
+ * 5. 視覚効果の調整（フリッカー防止・影の統合）
+ *    - 激しい点滅（フリッカー）を防ぐため、明滅計算（`intensity`）に独自の振幅（`flickerAmplitude`）調整を導入。
+ *    - エンジン標準の `Lighting.hlsli` をインクルードし、`CalculateShadow` を用いて他のオブジェクトから落ちる影を受け取る処理を追加。
  * ==============================================================================
  */
 
@@ -39,6 +40,21 @@ ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
 SamplerComparisonState gShadowSampler : register(s2);
 Texture2D<float32_t> gShadowMap : register(t5);
+
+// 専用のパラメータバッファ (RootSlot::Special -> b6)
+struct CyberHexParams {
+    float4 edgeColor;
+    float edgeThickness;
+    float baseBrightness;
+    float flickerAmplitude;
+    float distortion;
+
+    float density;
+    float animationSpeed;
+    float uvScrollX;
+    float uvScrollY;
+};
+ConstantBuffer<CyberHexParams> gCyberHex : register(b6);
 
 #include "Noise.hlsli"
 
@@ -76,12 +92,8 @@ PixelShaderOutput main(VertexShaderOutput input)
 {
     PixelShaderOutput output;
     
-    // C++側から渡される gMaterial.uvTransform[1][1] をアニメーション速度として利用
-    float speed = gMaterial.uvTransform[1][1];
-    if (speed == 1.0) {
-        speed = 0.2; // 未設定の場合はデフォルト速度
-    }
-    float time = gPerFrame.time * speed;
+    // 浮き沈み・明滅アニメーションの進行速度
+    float animTime = gPerFrame.time * gCyberHex.animationSpeed;
     
     // PlaneのScaleに依存せず、床や壁で同じ密度になるようワールド座標ベースでマッピングする
     float3 absN = abs(input.normal);
@@ -96,55 +108,51 @@ PixelShaderOutput main(VertexShaderOutput input)
         pos = input.worldPosition.xy; // Z軸方向の壁
     }
     
-    // C++側から渡される gMaterial.uvTransform[0][0] をヘキサゴンの密度パラメータとして利用する
-    // ※値が大きいほどヘキサゴンが小さく（密に）なります
-    float density = gMaterial.uvTransform[0][0];
-    if (density == 1.0) {
-        density = 0.05; // 未設定の場合はデフォルト値
-    }
-    
-    pos *= density;
+    // 密度パラメータ
+    pos *= gCyberHex.density;
+
+    // UVスクロールの適用
+    pos += float2(gPerFrame.time * gCyberHex.uvScrollX, gPerFrame.time * gCyberHex.uvScrollY);
 
     // 空間を軽く歪ませてサイバーな空間の奥行き・レンズ効果を演出
-    pos *= 1.2 + 0.05 * length(pos);
+    pos *= 1.2 + gCyberHex.distortion * length(pos);
 
     // ==========================================
     // 1. ベースとなるグレーのヘックス（奥の層）
     // ==========================================
-    float4 h = hexagon(8.0 * pos + 0.5 * time);
-    float n = noise(float3(0.3 * h.xy + time * 0.1, time));
-    float3 col = 0.15 + 0.15 * rand(h.xy + 1.2) * float3(1.0, 1.0, 1.0);
-    col *= smoothstep(0.10, 0.11, h.z); // 枠線
-    col *= smoothstep(0.10, 0.11, h.w); // 中心
+    float4 h = hexagon(8.0 * pos);
+    float n = noise(float3(0.3 * h.xy + animTime * 0.1, animTime));
+    float3 col = gCyberHex.baseBrightness + 0.15 * rand(h.xy + 1.2) * float3(1.0, 1.0, 1.0);
+    col *= smoothstep(gCyberHex.edgeThickness, gCyberHex.edgeThickness + 0.01, h.z); // 枠線
+    col *= smoothstep(gCyberHex.edgeThickness, gCyberHex.edgeThickness + 0.01, h.w); // 中心
     col *= 1.0 + 0.15 * sin(40.0 * h.z);
     col *= 0.75 + 0.5 * h.z * n;
 
     // ==========================================
     // 2. シャドウ（影の層）
     // ==========================================
-    h = hexagon(6.0 * (pos + 0.1 * float2(-1.3, 1.0)) + 0.6 * time);
-    col *= 1.0 - 0.8 * smoothstep(0.45, 0.451, noise(float3(0.3 * h.xy + time * 0.1, 0.5 * time)));
+    h = hexagon(6.0 * (pos + 0.1 * float2(-1.3, 1.0)));
+    col *= 1.0 - 0.8 * smoothstep(0.45, 0.451, noise(float3(0.3 * h.xy + animTime * 0.1, 0.5 * animTime)));
 
     // ==========================================
     // 3. 発光するカラーヘックス（手前の層）
     // ==========================================
-    h = hexagon(6.0 * pos + 0.6 * time);
-    n = noise(float3(0.3 * h.xy + time * 0.1, 0.5 * time));
+    h = hexagon(6.0 * pos);
+    n = noise(float3(0.3 * h.xy + animTime * 0.1, 0.5 * animTime));
     
-    // マテリアルカラーを基準に発光色を決定
-    float3 baseColor = gMaterial.color.rgb; 
-    // 明滅の強さを抑える（0.9+0.8 から 0.6+0.4 へ）
-    float intensity = 0.6 + 0.4 * sin(rand(h.xy) * 1.5 + 2.0); 
+    // 発光色
+    float3 baseColor = gCyberHex.edgeColor.rgb; 
+    // 明滅の強さ (セルごとに位相をずらしつつanimTimeで明滅させる)
+    float intensity = (1.0 - gCyberHex.flickerAmplitude) + gCyberHex.flickerAmplitude * sin(rand(h.xy) * 1.5 + animTime * 2.0); 
     float3 colb = baseColor * intensity;
     
-    colb *= smoothstep(0.10, 0.11, h.z); // 枠線
+    colb *= smoothstep(gCyberHex.edgeThickness, gCyberHex.edgeThickness + 0.01, h.z); // 枠線
     colb *= 1.0 + 0.15 * sin(40.0 * h.z);
 
     // ==========================================
     // 4. ブレンドとポスト処理
     // ==========================================
     // ノイズ値を使ってベース（奥）とカラー（手前）をブレンド
-    // 境界を滑らかにしてチカチカするフリッカーを抑える（0.45, 0.451 -> 0.3, 0.6）
     col = lerp(col, colb, smoothstep(0.3, 0.6, n));
     
     // トーンマッピング（全体的な明るさを抑える）
