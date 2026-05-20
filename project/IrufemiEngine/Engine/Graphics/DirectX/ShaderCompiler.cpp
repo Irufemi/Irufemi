@@ -90,8 +90,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
         std::string errStr = shaderError->GetStringPointer();
         
         // どのファイルか分かるようにする
-        std::wstring ws(filePath);
-        std::string fileStr(ws.begin(), ws.end());
+        std::string fileStr = ConvertString(filePath);
         std::string fullErr = "Shader Compile Error in " + fileStr + ":\n" + errStr;
         
         OutputDebugStringA(fullErr.c_str());
