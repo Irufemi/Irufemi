@@ -14,7 +14,7 @@ Field::~Field() {
 void Field::Initialize() {
 	// CyberHexParamsの初期設定
 	cyberHexParams_.edgeColor = { 0.0f, 0.8f, 1.0f, 1.0f }; // サイバーブルー
-	cyberHexParams_.edgeThickness = 0.10f; // 元の 0.10 に合わせる
+	cyberHexParams_.edgeThickness = 0.05f; // 縁の太さを元の 1/2 にする
 	cyberHexParams_.baseBrightness = 0.15f;
 	cyberHexParams_.flickerAmplitude = 0.4f;
 	cyberHexParams_.distortion = 0.05f;
