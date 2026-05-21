@@ -157,10 +157,11 @@ PixelShaderOutput main(VertexShaderOutput input)
     float time = gPerFrame.time;
     
     // カメラのView行列を使って、ワールド法線をビュー空間（カメラから見た空間）の法線に変換する
-    float3 viewNormal = normalize(mul(normalize(input.normal), (float3x3)gPerFrame.view));
+    // float3 viewNormal = normalize(mul(normalize(input.normal), (float3x3)gPerFrame.view));
 
-    // ビュー空間の法線のXY成分は、真正面(0,0)から輪郭(半径1の円)に広がる2D座標になる。
-    float2 xy = viewNormal.xy * 1.2;
+    // ビルボード（平面）化に伴い、法線ではなくテクスチャ座標(UV)から2D座標(xy)を計算する
+    // texcoord は (0,0) ～ (1,1)。これを中心 (0,0) で (-1.2 ~ 1.2) の範囲に変換
+    float2 xy = (input.texcoord - 0.5) * 2.4;
     float d = length(xy) - 0.85;
 
     float c = 0.0;
@@ -201,8 +202,9 @@ PixelShaderOutput main(VertexShaderOutput input)
     float3 finalColor = (magmaCol * magmaAlpha) + glowColor;
     float finalAlpha = magmaAlpha;
 
-    // 3Dモデルのメッシュ境界（球の外枠）で不自然に切れないように、メッシュエッジで全体をフェードアウト
-    float edgeFade = 1.0 - smoothstep(0.85, 0.98, length(viewNormal.xy));
+    // 2D平面（ビルボード）なので、球のようなエッジフェードは不要。
+    // その代わり、円の外側を完全に切り取る（ビルボードの四角形の角を消す）
+    float edgeFade = 1.0 - smoothstep(0.85, 0.98, length(xy / 1.2));
     finalColor *= edgeFade;
     finalAlpha *= edgeFade;
 
