@@ -220,6 +220,7 @@ void DirectXCommon::CreatePSOs() {
     auto vsRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.VS.hlsl", options);
     auto psRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.PS.hlsl", options);
     auto psCyberHex = shaderManager_->GetOrCompile(L"resources/shaders/CyberHex.PS.hlsl", options);
+    auto psBombCore = shaderManager_->GetOrCompile(L"resources/shaders/BombCore.PS.hlsl", options);
 
     auto csSkin = shaderManager_->GetOrCompile(L"resources/shaders/Skinning.CS.hlsl", options);
     auto csGpuInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeParticle.CS.hlsl", options);
@@ -287,6 +288,7 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("EnergyCore", { { vs3d, psEnergyCore } });
     psoManager_->RegisterShader("RocketFlame", { { vsRocket, psRocket } });
     psoManager_->RegisterShader("CyberHex", { { vs3d, psCyberHex } });
+    psoManager_->RegisterShader("BombCore", { { vs3d, psBombCore } });
 
     // バックバッファ書き込み用のスプライト設定
     PSOManager::PipelineStateDesc spriteBBDesc{};
@@ -716,6 +718,10 @@ void DirectXCommon::PreWarmJITCompile() {
             auto energyCorePSO = psoManager_->GetPSO("EnergyCore", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
             if (energyCorePSO) {
                 uploadCommandList->SetPipelineState(energyCorePSO);
+            }
+            auto bombCorePSO = psoManager_->GetPSO("BombCore", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+            if (bombCorePSO) {
+                uploadCommandList->SetPipelineState(bombCorePSO);
             }
         }
     });

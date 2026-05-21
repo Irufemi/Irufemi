@@ -7,6 +7,7 @@
 #include <wrl.h>
 #include "IrufemiEngine/Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "IrufemiEngine/Engine/Graphics/Data/ExplosionParams.h"
+#include "IrufemiEngine/Engine/Graphics/Data/BombCoreParams.h"
 #include "IrufemiEngine/Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "IrufemiEngine/Renderer/Object3D/Primitive/SphereClass.h"
 
@@ -45,7 +46,7 @@ private:
     State state_ = State::Idle;
 
     // 爆弾本体（飛行中）
-    std::unique_ptr<SphereClass> bombSphere_ = nullptr;
+    std::shared_ptr<PrimitiveObjects3DClass> bombSphere_ = nullptr;
     Transform bombTransform_;
     
     // 飛行用パラメータ
@@ -56,10 +57,8 @@ private:
     float throwHeight_ = 10.0f;   // 放物線の高さ
 
     // 十字爆発の予告用（X軸・Z軸に沿った2つのボックス）
-    std::unique_ptr<ObjClass> telegraphObjX_ = nullptr;
-    std::unique_ptr<ObjClass> telegraphObjZ_ = nullptr;
-    Transform telegraphTransformX_;
-    Transform telegraphTransformZ_;
+    std::shared_ptr<PrimitiveObjects3DClass> telegraphObjX_ = nullptr;
+    std::shared_ptr<PrimitiveObjects3DClass> telegraphObjZ_ = nullptr;
     // 十字爆発の攻撃用
     std::shared_ptr<PrimitiveObjects3DClass> attackCylinderX_ = nullptr;
     std::shared_ptr<PrimitiveObjects3DClass> attackCylinderZ_ = nullptr;
@@ -77,6 +76,8 @@ private:
     // エフェクト用
     Microsoft::WRL::ComPtr<ID3D12Resource> explosionParamsResource_;
     ExplosionParams* explosionParamsData_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> bombCoreParamsResource_;
+    BombCoreParams* bombCoreParamsData_ = nullptr;
     std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
 
     bool isExpired_ = false;

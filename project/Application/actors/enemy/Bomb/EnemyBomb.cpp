@@ -9,25 +9,28 @@ EnemyBomb::~EnemyBomb() {
     if (explosionParamsResource_ && engine_ && engine_->GetDirectXCommon()) {
         engine_->GetDirectXCommon()->ReleaseAfterFence(explosionParamsResource_);
     }
+    if (bombCoreParamsResource_ && engine_ && engine_->GetDirectXCommon()) {
+        engine_->GetDirectXCommon()->ReleaseAfterFence(bombCoreParamsResource_);
+    }
 }
 
 void EnemyBomb::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 
     // 爆弾本体の見た目
-    bombSphere_ = std::make_unique<SphereClass>();
-    bombSphere_->Initialize();
-    bombSphere_->SetColor({ 1.0f, 0.2f, 0.2f, 1.0f });
+    bombSphere_ = std::make_shared<PrimitiveObjects3DClass>();
+    bombSphere_->Initialize(PrimitiveType::Sphere);
+    bombSphere_->SetCastShadows(false);
 
     // 予告線X軸
-    telegraphObjX_ = std::make_unique<ObjClass>();
-    telegraphObjX_->Initialize("sample/block.obj");
+    telegraphObjX_ = std::make_shared<PrimitiveObjects3DClass>();
+    telegraphObjX_->Initialize(PrimitiveType::Cube, "resources/whiteTexture.png");
     telegraphObjX_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     telegraphObjX_->SetCastShadows(false);
 
     // 予告線Z軸
-    telegraphObjZ_ = std::make_unique<ObjClass>();
-    telegraphObjZ_->Initialize("sample/block.obj");
+    telegraphObjZ_ = std::make_shared<PrimitiveObjects3DClass>();
+    telegraphObjZ_->Initialize(PrimitiveType::Cube, "resources/whiteTexture.png");
     telegraphObjZ_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     telegraphObjZ_->SetCastShadows(false);
 
@@ -55,6 +58,19 @@ void EnemyBomb::Initialize(IrufemiEngine* engine) {
             explosionParamsData_->intensity = 4.0f;
             explosionParamsData_->noiseScale = 3.0f;
             explosionParamsData_->erosion = 0.0f;
+        }
+
+        bombCoreParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(BombCoreParams));
+        bombCoreParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&bombCoreParamsData_));
+        if (bombCoreParamsData_) {
+            *bombCoreParamsData_ = BombCoreParams();
+            bombCoreParamsData_->edgeColor = { 1.0f, 0.1f, 0.0f, 1.0f };
+            bombCoreParamsData_->coreColor = { 1.0f, 0.8f, 0.3f, 1.0f };
+            bombCoreParamsData_->crackColor = { 1.0f, 0.2f, 0.1f, 1.0f };
+            bombCoreParamsData_->noiseScale = 2.0f;
+            bombCoreParamsData_->distortion = 0.2f;
+            bombCoreParamsData_->pulseSpeed = 10.0f;
+            bombCoreParamsData_->intensity = 2.0f;
         }
 
         gpuParticle_ = std::make_unique<GPUParticleSystem>();
@@ -101,9 +117,13 @@ void EnemyBomb::Update() {
         float parabola = std::sin(t * Math::PI);
         currentPos.y += throwHeight_ * parabola;
 
-        bombSphere_->SetCenter(currentPos);
-        bombSphere_->SetRadius(1.5f);
+        bombSphere_->SetPosition(currentPos);
+        bombSphere_->SetScale({ 1.5f, 1.5f, 1.5f });
         bombSphere_->Update();
+
+        if (bombCoreParamsData_) {
+            bombCoreParamsData_->pulseSpeed = 10.0f; // 飛翔中は比較的穏やかな明滅
+        }
 
         if (t >= 1.0f) {
             state_ = State::Telegraphing;
@@ -113,26 +133,25 @@ void EnemyBomb::Update() {
     case State::Telegraphing: {
         telegraphTimer_ += deltaTime;
 
-        // 爆弾自体は点滅等の処理を入れる
-        float blink = std::abs(std::sin(telegraphTimer_ * 15.0f));
-        bombSphere_->SetColor({ 1.0f, 0.2f + 0.8f * blink, 0.2f + 0.8f * blink, 1.0f });
+        // 爆弾自体はシェーダーパラメータでパルスを激しくする
+        if (bombCoreParamsData_) {
+            bombCoreParamsData_->pulseSpeed = 40.0f; // 爆発寸前は激しく明滅
+        }
         bombSphere_->Update();
 
         // 予告線の太さをだんだん太くする
         float thickness = 0.5f + (telegraphTimer_ / telegraphDuration_) * 1.5f;
 
         // X軸方向の予告線
-        telegraphTransformX_.scale = { explosionLength_, thickness, thickness };
-        telegraphTransformX_.translate = targetPos_;
-        telegraphTransformX_.rotate = { 0, 0, 0 };
-        telegraphObjX_->SetTransform(telegraphTransformX_);
+        telegraphObjX_->SetScale({ explosionLength_, thickness, thickness });
+        telegraphObjX_->SetPosition(targetPos_);
+        telegraphObjX_->SetRotate({ 0, 0, 0 });
         telegraphObjX_->Update();
 
         // Z軸方向の予告線
-        telegraphTransformZ_.scale = { thickness, thickness, explosionLength_ };
-        telegraphTransformZ_.translate = targetPos_;
-        telegraphTransformZ_.rotate = { 0, 0, 0 };
-        telegraphObjZ_->SetTransform(telegraphTransformZ_);
+        telegraphObjZ_->SetScale({ thickness, thickness, explosionLength_ });
+        telegraphObjZ_->SetPosition(targetPos_);
+        telegraphObjZ_->SetRotate({ 0, 0, 0 });
         telegraphObjZ_->Update();
 
         if (telegraphTimer_ >= telegraphDuration_) {
@@ -208,12 +227,24 @@ void EnemyBomb::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
     if (state_ == State::Flying || state_ == State::Telegraphing) {
-        if (bombSphere_) bombSphere_->Draw();
+        if (bombSphere_) {
+            bombSphere_->SetCustomPSO(engine->GetPSOManager()->GetPSO("BombCore", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back));
+            if (bombCoreParamsResource_) {
+                bombSphere_->SetCustomCBVAddress(bombCoreParamsResource_->GetGPUVirtualAddress());
+            }
+            bombSphere_->Draw();
+        }
     }
 
     if (state_ == State::Telegraphing) {
+        engine->SetBlend(BlendMode::kBlendModeAdd);
+        engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        
         if (telegraphObjX_) telegraphObjX_->Draw();
         if (telegraphObjZ_) telegraphObjZ_->Draw();
+
+        engine->SetBlend(BlendMode::kBlendModeNormal);
+        engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
     }
 
     if (state_ == State::Exploding) {
