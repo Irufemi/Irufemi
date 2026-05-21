@@ -176,7 +176,7 @@ void Effect::Initialize(EffectType type) {
 
         // 3. CPUパーティクル（火花用）
         auto sparkSystem = std::make_unique<ParticleSystem>();
-        sparkSystem->Initialize("resources/circle2.png", ParticleType::kExplosion, PrimitiveType::Plane);
+        sparkSystem->Initialize("resources/circle2.png", ParticleType::kSpark, PrimitiveType::Plane);
         sparkSystem->SetBlend(BlendMode::kBlendModeAdd);
         sparkSystem->SetDepthWrite(PSOManager::DepthWrite::Disable);
         sparkSystem->SetCull(PSOManager::CullMode::None);
@@ -932,8 +932,8 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
             explosionWaveObject_->GetMaterial().color = explosionConfig_.color;
         }
         if (explosionSparkSystem_) {
-            // スケールに応じて火花の発生数を動的に最適化（マシンガン等は8個、ミサイル等は30個）
-            int sparkCount = (scale.x < 0.5f) ? 8 : 30;
+            // スケールに応じて火花の発生数を動的に最適化（マシンガン等は15個、ミサイル等は60個）
+            int sparkCount = (scale.x < 0.5f) ? 15 : 60;
             explosionSparkSystem_->PlayHitEffect(position, sparkCount);
         }
         break;
