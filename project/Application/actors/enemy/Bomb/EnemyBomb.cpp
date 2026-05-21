@@ -6,8 +6,8 @@
 #include <algorithm>
 
 EnemyBomb::~EnemyBomb() {
-    if (lightningParamsResource_ && engine_ && engine_->GetDirectXCommon()) {
-        engine_->GetDirectXCommon()->ReleaseAfterFence(lightningParamsResource_);
+    if (explosionParamsResource_ && engine_ && engine_->GetDirectXCommon()) {
+        engine_->GetDirectXCommon()->ReleaseAfterFence(explosionParamsResource_);
     }
 }
 
@@ -32,30 +32,29 @@ void EnemyBomb::Initialize(IrufemiEngine* engine) {
     telegraphObjZ_->SetCastShadows(false);
 
     // 攻撃判定X軸
-    attackCylinderX_ = std::make_shared<CylinderClass>();
-    attackCylinderX_->Initialize(false, false);
+    attackCylinderX_ = std::make_shared<PrimitiveObjects3DClass>();
+    attackCylinderX_->Initialize(PrimitiveType::Cylinder);
     attackCylinderX_->SetColor({ 1.0f, 0.0f, 0.0f, 0.8f });
     attackCylinderX_->SetCastShadows(false);
 
     // 攻撃判定Z軸
-    attackCylinderZ_ = std::make_shared<CylinderClass>();
-    attackCylinderZ_->Initialize(false, false);
+    attackCylinderZ_ = std::make_shared<PrimitiveObjects3DClass>();
+    attackCylinderZ_->Initialize(PrimitiveType::Cylinder);
     attackCylinderZ_->SetColor({ 1.0f, 0.0f, 0.0f, 0.8f });
     attackCylinderZ_->SetCastShadows(false);
 
     if (engine) {
-        lightningParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(LightningParams));
-        lightningParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightningParamsData_));
-        if (lightningParamsData_) {
-            *lightningParamsData_ = LightningParams();
-            lightningParamsData_->color = { 1.0f, 0.3f, 0.1f, 1.0f };
-            lightningParamsData_->coreColor = { 1.0f, 0.9f, 0.3f, 1.0f };
-            lightningParamsData_->intensity = 5.0f;
-            lightningParamsData_->noiseThreshold = 0.2f;
-            lightningParamsData_->coreIntensity = 4.0f;
-            lightningParamsData_->coreScale = 1.5f;
-            lightningParamsData_->speed = 5.0f;
-            lightningParamsData_->noiseScale = 4.0f;
+        explosionParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(ExplosionParams));
+        explosionParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&explosionParamsData_));
+        if (explosionParamsData_) {
+            *explosionParamsData_ = ExplosionParams();
+            explosionParamsData_->edgeColor = { 1.0f, 0.2f, 0.0f, 1.0f };
+            explosionParamsData_->midColor = { 1.0f, 0.5f, 0.0f, 1.0f };
+            explosionParamsData_->coreColor = { 1.0f, 1.0f, 0.8f, 1.0f };
+            explosionParamsData_->speed = 5.0f;
+            explosionParamsData_->intensity = 4.0f;
+            explosionParamsData_->noiseScale = 3.0f;
+            explosionParamsData_->erosion = 0.0f;
         }
 
         gpuParticle_ = std::make_unique<GPUParticleSystem>();
@@ -143,22 +142,35 @@ void EnemyBomb::Update() {
     }
     case State::Exploding: {
         explodeTimer_ += deltaTime;
+        float explodeRatio = explodeTimer_ / explodeDuration_;
+        if (explosionParamsData_) {
+            explosionParamsData_->erosion = explodeRatio; // 爆発の終わりに向けて浸食を進める
+            explosionParamsData_->intensity = 4.0f * (1.0f - explodeRatio); // 強度を落として消えるようにする
+        }
         
         // Cylinderは長さ=height、太さ=radiusなので、X軸とZ軸に沿わせるために回転させる
+        // 炎が上に高く立ち昇るように、ローカルのスケールを操作して楕円柱（壁）にする
+        float heightScale = 5.0f; // 炎の高さの倍率
+        float currentRadius = explosionThickness_ * 0.5f;
+
         // X軸方向の攻撃
-        attackCylinderX_->SetCenter(targetPos_);
-        // CylinderClassはデフォルトでY軸向きなので、X軸向きにするにはZ軸で-90度回転
+        Vector3 posX = targetPos_;
+        posX.y += (currentRadius * heightScale) * 0.5f; // 地面にめり込まないよう上にずらす（高さの半分だけ上げる）
+        attackCylinderX_->SetPosition(posX);
+        // CylinderはデフォルトでY軸向きなので、X軸向きにするにはZ軸で-90度回転
         attackCylinderX_->SetRotate({ 0, 0, -Math::PI / 2.0f }); 
-        attackCylinderX_->SetRadius(explosionThickness_ * 0.5f);
-        attackCylinderX_->SetHeight(explosionLength_);
+        // ローカルX軸 = ワールドY軸(高さ), ローカルY軸 = ワールドX軸(長さ), ローカルZ軸 = ワールドZ軸(厚み)
+        attackCylinderX_->SetScale({ currentRadius * heightScale, explosionLength_, currentRadius });
         attackCylinderX_->Update();
 
         // Z軸方向の攻撃
-        attackCylinderZ_->SetCenter(targetPos_);
+        Vector3 posZ = targetPos_;
+        posZ.y += (currentRadius * heightScale) * 0.5f; // こちらも高さの半分だけ上げる
+        attackCylinderZ_->SetPosition(posZ);
         // Z軸向きにするにはX軸で90度回転
         attackCylinderZ_->SetRotate({ Math::PI / 2.0f, 0, 0 });
-        attackCylinderZ_->SetRadius(explosionThickness_ * 0.5f);
-        attackCylinderZ_->SetHeight(explosionLength_);
+        // ローカルX軸 = ワールドX軸(厚み), ローカルY軸 = ワールドZ軸(長さ), ローカルZ軸 = ワールド-Y軸(高さ)
+        attackCylinderZ_->SetScale({ currentRadius, explosionLength_, currentRadius * heightScale });
         attackCylinderZ_->Update();
 
         // パーティクル放出
@@ -169,8 +181,9 @@ void EnemyBomb::Update() {
                 { 0.1f, 0.1f, 0.1f }, { 0.5f, 0.5f, 0.5f }
             );
 
-            // 十字方向に放射状に出す
-            gpuParticle_->SetSphereEmitter(targetPos_, explosionLength_ * 0.1f, 200, 0.01f);
+            // 十字ではなく「下から上へ」昇る表現を強調するため、
+            // 球状に散らすのではなく、上方向(Y軸)へ向かうビームエミッターを使用する
+            gpuParticle_->SetBeamEmitter(targetPos_, { 0.0f, 1.0f, 0.0f }, explosionLength_ * 0.2f, 15.0f, 0.5f, 200, 0.01f);
             gpuParticle_->SetEmit(true);
             gpuParticle_->Update();
         }
@@ -205,12 +218,12 @@ void EnemyBomb::Draw(IrufemiEngine* engine) {
 
     if (state_ == State::Exploding) {
         // カスタムシェーダーで描画
-        attackCylinderX_->SetCustomPSO(engine->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
-        attackCylinderZ_->SetCustomPSO(engine->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+        attackCylinderX_->SetCustomPSO(engine->GetPSOManager()->GetPSO("ExplosionFlame", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+        attackCylinderZ_->SetCustomPSO(engine->GetPSOManager()->GetPSO("ExplosionFlame", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
         
-        if (lightningParamsResource_) {
-            attackCylinderX_->SetCustomCBVAddress(lightningParamsResource_->GetGPUVirtualAddress());
-            attackCylinderZ_->SetCustomCBVAddress(lightningParamsResource_->GetGPUVirtualAddress());
+        if (explosionParamsResource_) {
+            attackCylinderX_->SetCustomCBVAddress(explosionParamsResource_->GetGPUVirtualAddress());
+            attackCylinderZ_->SetCustomCBVAddress(explosionParamsResource_->GetGPUVirtualAddress());
         }
 
         engine->SetBlend(BlendMode::kBlendModeAdd);

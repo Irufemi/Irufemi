@@ -128,9 +128,16 @@ public:
 
     // --- 各コンポーネントへのアクセサ ---
     TransformComponent& GetTransform() { return transform_; }
+    const TransformComponent& GetTransform() const { return transform_; }
     MeshComponent& GetMesh() { return mesh_; }
     MaterialComponent& GetMaterial() { return material_; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+
+    // --- 補助メソッド ---
+    Vector3 GetCenter() const { return transform_.transform.translate; }
+    Vector3 GetRight() const;
+    Vector3 GetUp() const;
+    Vector3 GetDirection() const;
 
     // --- ヘルパーSetter ---
     void SetPosition(const Vector3& pos) { transform_.transform.translate = pos; transform_.isDirty = true; }

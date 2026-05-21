@@ -265,3 +265,18 @@ void PrimitiveObjects3DClass::SyncBeforeDraw() {
         mesh_.resource->SyncBeforeDraw();
     }
 }
+
+Vector3 PrimitiveObjects3DClass::GetRight() const {
+    Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
+    return { mat.m[0][0], mat.m[0][1], mat.m[0][2] };
+}
+
+Vector3 PrimitiveObjects3DClass::GetUp() const {
+    Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
+    return { mat.m[1][0], mat.m[1][1], mat.m[1][2] };
+}
+
+Vector3 PrimitiveObjects3DClass::GetDirection() const {
+    Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
+    return { mat.m[2][0], mat.m[2][1], mat.m[2][2] };
+}

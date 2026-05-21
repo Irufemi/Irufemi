@@ -6,8 +6,8 @@
 #include <vector>
 #include <wrl.h>
 #include "IrufemiEngine/Renderer/ParticleGPU/GPUParticleSystem.h"
-#include "IrufemiEngine/Engine/Graphics/Data/LightningParams.h"
-#include "IrufemiEngine/Renderer/Object3D/Primitive/CylinderClass.h"
+#include "IrufemiEngine/Engine/Graphics/Data/ExplosionParams.h"
+#include "IrufemiEngine/Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "IrufemiEngine/Renderer/Object3D/Primitive/SphereClass.h"
 
 class Camera;
@@ -60,10 +60,9 @@ private:
     std::unique_ptr<ObjClass> telegraphObjZ_ = nullptr;
     Transform telegraphTransformX_;
     Transform telegraphTransformZ_;
-
     // 十字爆発の攻撃用
-    std::shared_ptr<CylinderClass> attackCylinderX_ = nullptr;
-    std::shared_ptr<CylinderClass> attackCylinderZ_ = nullptr;
+    std::shared_ptr<PrimitiveObjects3DClass> attackCylinderX_ = nullptr;
+    std::shared_ptr<PrimitiveObjects3DClass> attackCylinderZ_ = nullptr;
     Transform attackTransformX_;
     Transform attackTransformZ_;
 
@@ -76,8 +75,8 @@ private:
     float explosionThickness_ = 3.0f; // 爆発の太さ
 
     // エフェクト用
-    Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsResource_;
-    LightningParams* lightningParamsData_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> explosionParamsResource_;
+    ExplosionParams* explosionParamsData_ = nullptr;
     std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
 
     bool isExpired_ = false;
