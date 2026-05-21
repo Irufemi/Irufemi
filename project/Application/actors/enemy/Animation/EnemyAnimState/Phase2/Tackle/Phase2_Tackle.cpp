@@ -61,6 +61,10 @@ void Phase2_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
             // 突進方向をここで計算・保持して直線のみにする！
             rushDir_ = Math::Normalize(toTarget);
 
+            if (auto effects = enemy->GetTackleEffects()) {
+                effects->StartTelegraph(headT->translate, headT->rotate.y, 300.0f, 6.0f);
+            }
+
             isTargetLocked_ = true;
         }
 
@@ -72,8 +76,16 @@ void Phase2_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
         float targetRotX = -std::atan2(toTarget.y, distXZ) - 0.5f; // 上を向く
         
         headT->rotate.x += (targetRotX - headT->rotate.x) * 0.15f;
+
+        if (auto effects = enemy->GetTackleEffects()) {
+            float warningRatio = (timer_ - kOrbitTime) / kStopTime;
+            effects->UpdateTelegraph(headT->translate, headT->rotate.y, warningRatio);
+        }
     }
     else if (timer_ < kOrbitTime + kStopTime + kRushTime) {
+        if (auto effects = enemy->GetTackleEffects()) {
+            effects->StopTelegraph();
+        }
         // 突進：溜めた顔を勢いよく下に振り下ろしながら目標方向への完全な直進を行う
         Vector3 toTarget = Math::Subtract(attackTarget_, headT->translate);
         // 顔の向きだけ下に向ける（振り下ろす）
@@ -88,5 +100,9 @@ void Phase2_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
 }
 
 void Phase2_Tackle::Exit(Enemy* enemy) {
-    // 特になし
+    if (enemy) {
+        if (auto effects = enemy->GetTackleEffects()) {
+            effects->StopTelegraph();
+        }
+    }
 }

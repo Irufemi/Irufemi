@@ -140,6 +140,7 @@ public:
     Vector3 GetDirection() const;
 
     // --- ヘルパーSetter ---
+    void SetTransform(const Transform& t) { transform_.transform = t; transform_.isDirty = true; }
     void SetPosition(const Vector3& pos) { transform_.transform.translate = pos; transform_.isDirty = true; }
     void SetRotate(const Vector3& rot) { transform_.transform.rotate = rot; transform_.isDirty = true; }
     void SetScale(const Vector3& scale) { transform_.transform.scale = scale; transform_.isDirty = true; }
