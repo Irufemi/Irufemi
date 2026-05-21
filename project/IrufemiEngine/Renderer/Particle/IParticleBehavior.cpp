@@ -175,10 +175,13 @@ void SparkBehavior::Update(Particle &particle, float deltaTime) {
 void SparkBehavior::MakeNewParticle(Particle &particle,
                                         std::mt19937 &randomEngine,
                                         const Emitter &emitter) {
+  // Effect.cppから渡されたスケール値を用いて初速やサイズを動的に調整
+  float scaleMultiplier = emitter.startScale.x; 
+
   std::uniform_real_distribution<float> distTheta(0.0f, 2.0f * std::numbers::pi_v<float>); // 水平角
   std::uniform_real_distribution<float> distPhi(0.0f, std::numbers::pi_v<float>); // 垂直角
-  std::uniform_real_distribution<float> distSpeed(15.0f, 40.0f); // 爆発的な初速
-  std::uniform_real_distribution<float> distLength(0.8f, 2.0f); // 長さ
+  std::uniform_real_distribution<float> distSpeed(15.0f * scaleMultiplier, 40.0f * scaleMultiplier); // 爆発的な初速
+  std::uniform_real_distribution<float> distLength(0.8f * scaleMultiplier, 2.0f * scaleMultiplier); // 長さ
   std::uniform_real_distribution<float> distTime(0.2f, 0.6f); // 一瞬で消える
 
   // 放射状の速度ベクトルを計算（球面座標系）

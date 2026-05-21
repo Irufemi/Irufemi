@@ -169,9 +169,9 @@ struct ExplosionConfig {
 
     Vector4 color = { 1.0f, 0.4f, 0.05f, 1.0f };                 //!< 燃え上がる高輝度オレンジ
     Vector3 coreStartScale = { 0.1f, 0.1f, 0.1f };               //!< 爆風の開始サイズ
-    Vector3 coreEndScale = { 5.0f, 5.0f, 5.0f };                 //!< 爆風の終了サイズ（大きく膨張）
+    Vector3 coreEndScale = { 2.5f, 2.5f, 2.5f };                 //!< 爆風の終了サイズ（小さく高密度に修正）
     Vector3 waveStartScale = { 0.5f, 0.5f, 0.5f };               //!< 衝撃波の開始サイズ
-    Vector3 waveEndScale = { 10.0f, 10.0f, 10.0f };              //!< 衝撃波の終了サイズ
+    Vector3 waveEndScale = { 7.0f, 7.0f, 7.0f };                 //!< 衝撃波の終了サイズ（スパークの飛散範囲に合わせて調整）
 
     float lifeTime = 0.4f;                                       //!< 爆発の生存時間（秒）
     Vector2 uvScrollSpeed = { 0.5f, -0.3f };                     //!< コアのうねり用UVスクロール速度

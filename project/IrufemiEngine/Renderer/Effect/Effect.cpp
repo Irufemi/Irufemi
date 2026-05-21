@@ -934,6 +934,7 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
         if (explosionSparkSystem_) {
             // スケールに応じて火花の発生数を動的に最適化（マシンガン等は15個、ミサイル等は60個）
             int sparkCount = (scale.x < 0.5f) ? 15 : 60;
+            explosionSparkSystem_->SetParticleScale(scale, scale);
             explosionSparkSystem_->PlayHitEffect(position, sparkCount);
         }
         break;
