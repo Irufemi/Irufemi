@@ -15,6 +15,8 @@ class Enemy;
 class Sprite;
 class PlayerHPBar;
 class WeaponTrail;
+class GPUParticleSystem;
+class Effect;
 
 struct AttackCollision {
     Vector3 center;
@@ -62,6 +64,9 @@ public:
     void SetIsTargetingEnemy(bool isTargeting) { isTargetingEnemy_ = isTargeting; }
     bool GetIsTargetingEnemy() const { return isTargetingEnemy_; }
     bool IsFirstPerson() const { return cameraController_.IsFirstPerson(); }
+
+    void SetCinematicMode(bool isCinematic) { isCinematicMode_ = isCinematic; }
+    bool IsCinematicMode() const { return isCinematicMode_; }
 
     bool IsKarakuriCharged() const { return isKarakuriCharged_; }
     int GetKarakuriActiveTimer() const { return karakuriActiveTimer_; }
@@ -116,6 +121,7 @@ private:
 
     std::unique_ptr<Sprite> aimingSprite_ = nullptr;
     bool isTargetingEnemy_ = false;
+    bool isCinematicMode_ = false;
 
     int skillDurationTimer_ = 0;
     int skillCooldownTimer_ = 0;
@@ -192,12 +198,25 @@ private:
     static constexpr int kDeathWaitTime = 90; // 死亡演出開始まで1.5秒待機（60fps x 1.5）
     int deathWaitTimer_ = 0; // 死亡待機タイマー
 
+    // --- シネマティック演出用定数 ---
+    static constexpr float kCinematicRotateSpeed = 0.1f; ///< 死亡演出中にプレイヤーがボスを自動凝視する際のスムーズな旋回補間速度
+
     Vector3 deathCameraPos_ = { 0.0f, 0.0f, 0.0f };
 
     // ★追加: キラン☆演出用の星モデル (plane.obj)
     std::unique_ptr<ObjClass> starObj_ = nullptr;
     Vector3 starScale_ = { 0.0f, 0.0f, 0.0f };
     float starRotationZ_ = 0.0f;
+
+    // ★追加: からくりチャージ用のエフェクト
+    std::unique_ptr<GPUParticleSystem> karakuriChargeParticle_ = nullptr; // チャージ中・完了時の上昇パーティクル
+    std::unique_ptr<GPUParticleSystem> karakuriRingParticle_ = nullptr; // チャージしきったときの足元リングエフェクト
+    std::unique_ptr<GPUParticleSystem> deathGlowParticle_ = nullptr; // 死亡待機中の全身から吹き出す自爆前光線
+
+    // 一人称視点時のミニフィギュア設定
+    Vector3 firstPersonMiniPos_ = { -0.58f, -0.21f, 1.4f };
+    Vector3 firstPersonMiniScale_ = { 0.05f, 0.05f, 0.05f };
+    float firstPersonMiniRotY_ = 0.5f;
 
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;

@@ -31,6 +31,7 @@ public:
 
     bool IsExpired() const { return isExpired_; }
     bool IsExploding() const { return state_ == State::Exploding; }
+    void Cancel();
 
     std::vector<OBB> GetOBBs() const;
 
@@ -50,8 +51,8 @@ private:
     Transform bombTransform_;
     
     // 飛行用パラメータ
-    Vector3 startPos_;
-    Vector3 targetPos_;
+    Vector3 startPos_ = {};
+    Vector3 targetPos_ = {};
     float flightTimer_ = 0.0f;
     float flightDuration_ = 1.0f; // 飛行にかかる時間
     float throwHeight_ = 10.0f;   // 放物線の高さ
@@ -71,7 +72,7 @@ private:
     float explodeTimer_ = 0.0f;
     float explodeDuration_ = 0.5f;   // 爆発の持続時間
     float explosionLength_ = 200.0f;  // 爆発の長さ
-    float explosionThickness_ = 9.0f; // 爆発の太さ
+    float explosionThickness_ = 30.0f; // 爆発の太さ
 
     // エフェクト用
     Microsoft::WRL::ComPtr<ID3D12Resource> explosionParamsResource_;

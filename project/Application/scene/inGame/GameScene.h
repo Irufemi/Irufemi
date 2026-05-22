@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Framework/BaseScene.h"
+#include "Irufemi.h"
 #include <memory>
 #include <vector>
 
@@ -75,6 +76,7 @@ private:
     static constexpr float kMeleeScatterSpeedMultiplier = 1.0f;  ///< 近接攻撃の部位吹き飛び初速倍率
     static constexpr float kCollisionScatterMultiplier = -0.5f; ///< 衝突時の反発係数
     static constexpr float kMathEpsilon = 0.001f;               ///< ゼロ除算防止用微小値
+    static constexpr float kBlowCollisionDelay = 0.2f;          ///< 吹き飛んだ部位が即時自爆衝突するのを防ぐクールタイム（秒）
 
     // --- デバッグUI定数 ---
     
@@ -85,6 +87,21 @@ private:
     // --------------------------------
 
     bool isFirstDebug_ = true;
+    bool isDebugCameraMode_ = false; // 仮で追加（元々無かったら）
+
+    // 死亡演出カメラ用
+    bool isDeathCameraMode_ = false;
+    float deathCameraLerpTimer_ = 0.0f;
+    Vector3 initialCameraPos_ = {};
+    Vector3 initialCameraTarget_ = {};
+
+    // --- 死亡演出カメラ・自動後退調整用定数（メンバー変数） ---
+    static constexpr float kCameraBehindDistance = 18.0f;       ///< 死亡演出時にプレイヤーの背後へカメラを引く距離
+    static constexpr float kCameraHeightOffset = 4.5f;           ///< プレイヤー座標からのカメラの高さオフセット
+    static constexpr float kGroundClampMinY = 1.5f;             ///< カメラが地面を突き抜けるのを防ぐ最小Y座標
+    static constexpr float kBossLookAtHeightOffset = 6.0f;      ///< 死亡演出中のボスの注視点高さオフセット（胴体・頭部中間）
+    static constexpr float kTargetPlayerBossDistance = 38.0f;   ///< 理想の対比レイアウト（肩越しアングル）を作るためのプレイヤーとボスの基準距離
+    static constexpr float kPlayerBackoffSpeed = 15.0f;          ///< 近すぎるプレイヤーを理想距離へ滑らかに後退させる秒速速度
 
     // ゲームオブジェクト
     std::unique_ptr<Player> player_ = nullptr;

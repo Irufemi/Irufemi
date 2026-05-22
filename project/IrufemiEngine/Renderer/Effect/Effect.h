@@ -1,17 +1,19 @@
-#include "../Core/IRenderable.h"
 #pragma once
 
 #include <memory>
 #include <string>
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Type/PrimitiveType.h"
-#include "Engine/Core/Type/BlendMode.h"
-#include "Engine/Graphics/Pipeline/PSOManager.h"
 #include <vector>
-#include <memory>
+#include "../Core/IRenderable.h"
+#include "../../Engine/Core/Math/Vector3.h"
+#include "../../Engine/Core/Math/Vector4.h"
+#include "../../Engine/Core/Math/Vector2.h"
+#include "../../Engine/Core/Math/Matrix4x4.h"
+#include "../../Engine/Core/Type/PrimitiveType.h"
+#include "../../Engine/Core/Type/BlendMode.h"
+#include "../../Engine/Graphics/Pipeline/PSOManager.h"
+#include "../../Engine/Manager/PrimitiveManager.h"
+
+
 
 class GPUParticleSystem;
 class ParticleSystem;
@@ -138,6 +140,9 @@ struct AuraConfig {
     std::string texture = "resources/gradationLine.png";
 };
 
+    /** @brief オーラ設定を外部から取得・変更するためのゲッター */
+    AuraConfig& GetAuraConfig() { return auraConfig_; }
+
 struct SwingConfig {
     PrimitiveType shape = PrimitiveType::Ring;                  //!< 使用するプリミティブ形状（デフォルト: Ring）
     std::string texture = "resources/gradationLine.png";        //!< 使用するテクスチャパス
@@ -193,6 +198,8 @@ private:
     SwingConfig swingConfig_;                                   //!< スイング設定パラメータ
     ExplosionConfig explosionConfig_;                           //!< ★追加: 3D爆破設定
     Vector2 currentUVOffset_ = { 0.0f, 0.0f };
+    PrimitiveResource customAuraResource_;                       //!< カスタム炎型オーラのリソース
+
     
     // スイング・爆破用生存・制御用変数
     bool isActive_ = false;                                     //!< アクティブ状態フラグ

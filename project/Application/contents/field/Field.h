@@ -19,6 +19,7 @@ public:
 	void Draw();
 
 	Building* GetBuilding() const { return building_.get(); }
+	void SetDrawBuildings(bool draw) { drawBuildings_ = draw; }
 
 private:
 	// 外部依存
@@ -35,6 +36,7 @@ private:
 	std::unique_ptr<ObjClass> floor_ = nullptr;
 
 	std::unique_ptr<Building> building_ = nullptr;
+	bool drawBuildings_ = true;
 
 	// CyberHex専用パラメータ
 	CyberHexParams cyberHexParams_{};

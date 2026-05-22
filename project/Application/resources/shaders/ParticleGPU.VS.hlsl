@@ -36,7 +36,7 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
 	
     float4x4 worldMatrix;
     
-    if (gEmitter.isBillboard != 0)
+    if (gEmitter.isBillboard == 1)
     {
         // Z軸回転の行列を作成
         float c = cos(particle.rotation.z);
@@ -58,6 +58,59 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
 
         // スケール -> Z軸回転 -> ビルボード（カメラ向き）の順に行列を合成
         worldMatrix = mul(mul(scaleMatrix, rotZ), gPerView.billboardMatrix);
+    }
+    else if (gEmitter.isBillboard == 2)
+    {
+        // 速度方向ビルボード (Velocity Billboard)
+        float3 dir = particle.velocity;
+        float len = length(dir);
+        if (len < 0.0001f)
+        {
+            dir = float3(0.0f, 1.0f, 0.0f);
+        }
+        else
+        {
+            dir /= len;
+        }
+
+        // カメラからパーティクルへの方向ベクトル
+        float3 viewDir = normalize(particle.translate - gPerView.worldPosition);
+
+        // パーティクルの右方向（進行方向と視線ベクトルの外積）
+        float3 right = cross(dir, viewDir);
+        float lenR = length(right);
+        if (lenR < 0.0001f)
+        {
+            // 進行方向と視線が平行な場合は、任意の右方向を定義
+            float3 upVec = abs(dir.y) < 0.999f ? float3(0,1,0) : float3(1,0,0);
+            right = normalize(cross(dir, upVec));
+        }
+        else
+        {
+            right /= lenR;
+        }
+
+        // パーティクルの手前（法線）方向
+        float3 normal = cross(right, dir);
+
+        // スケール行列
+        float4x4 scaleMatrix = {
+            particle.scale.x, 0, 0, 0,
+            0, particle.scale.y, 0, 0,
+            0, 0, particle.scale.z, 0,
+            0, 0, 0, 1
+        };
+
+        // 速度方向ビルボード回転行列
+        // Y軸が進行方向 (dir) に整列し、X軸が右 (right) に整列し、Z軸が手前 (normal) に整列する
+        float4x4 rotMatrix = {
+            right.x,  right.y,  right.z,  0,
+            dir.x,    dir.y,    dir.z,    0,
+            normal.x, normal.y, normal.z, 0,
+            0,        0,        0,        1
+        };
+
+        worldMatrix = mul(scaleMatrix, rotMatrix);
     }
     else
     {
