@@ -128,11 +128,19 @@ public:
 
     // --- 各コンポーネントへのアクセサ ---
     TransformComponent& GetTransform() { return transform_; }
+    const TransformComponent& GetTransform() const { return transform_; }
     MeshComponent& GetMesh() { return mesh_; }
     MaterialComponent& GetMaterial() { return material_; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
 
+    // --- 補助メソッド ---
+    Vector3 GetCenter() const { return transform_.transform.translate; }
+    Vector3 GetRight() const;
+    Vector3 GetUp() const;
+    Vector3 GetDirection() const;
+
     // --- ヘルパーSetter ---
+    void SetTransform(const Transform& t) { transform_.transform = t; transform_.isDirty = true; }
     void SetPosition(const Vector3& pos) { transform_.transform.translate = pos; transform_.isDirty = true; }
     void SetRotate(const Vector3& rot) { transform_.transform.rotate = rot; transform_.isDirty = true; }
     void SetScale(const Vector3& scale) { transform_.transform.scale = scale; transform_.isDirty = true; }

@@ -23,12 +23,12 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
     attackCylinder_->SetCastShadows(false);
 
     chargeSphere_ = std::make_unique<PrimitiveObjects3DClass>();
-    chargeSphere_->Initialize(PrimitiveType::Sphere);
+    chargeSphere_->Initialize(PrimitiveType::Plane);
     chargeSphere_->SetColor({ 1.0f, 0.3f, 0.0f, 1.0f }); // レッドドラゴン風の赤オレンジコア
     chargeSphere_->SetCullingEnabled(false);
     if (engine) {
         chargeSphere_->SetCustomPSO(
-            engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back)
+            engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None)
         );
     }
 
@@ -104,14 +104,30 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
     if (isChargeSphereActive_ && chargeSphere_) {
         Transform t;
         t.scale = { chargeSphereScale_, chargeSphereScale_, chargeSphereScale_ };
-        t.rotate = rotate;
         
         // startPosは頭の表面（中心から前方へ originOffset_ ずらした位置）
-        // そのまま startPos に球の中心を置くと、球の後ろ半分が頭に埋まってしまうため、
-        // 球の半径（スケールの半分）だけさらに前方へ中心をずらす。
-        // ※完全に離れすぎないよう 0.4f（半径より少し内側）を掛けて少しだけめり込ませる
         float sphereForwardOffset = chargeSphereScale_ * 0.4f;
         t.translate = Math::Add(startPos, Math::Multiply(sphereForwardOffset, direction));
+
+        // ビルボード回転（常にカメラを向く）
+        Vector3 cameraPos = playerPos;
+        if (engine_ && engine_->GetCameraManager() && engine_->GetCameraManager()->GetActiveCamera()) {
+            cameraPos = engine_->GetCameraManager()->GetActiveCamera()->GetTranslate();
+        }
+        
+        Vector3 toCamera = Math::Subtract(cameraPos, t.translate);
+        Vector3 toCameraDir = Math::Normalize(toCamera);
+        
+        // 球（立体）から平面になったため、中心座標のままだと頭のモデルに埋まってしまいます。
+        // 球の表面が手前に張り出していた分（スケールの約半分）、カメラ方向に少し引き寄せて埋まりを防ぎます。
+        t.translate = Math::Add(t.translate, Math::Multiply(chargeSphereScale_ * 0.5f, toCameraDir));
+        
+        // 引き寄せた後の位置で再計算
+        toCamera = Math::Subtract(cameraPos, t.translate);
+        t.rotate.y = std::atan2(-toCamera.x, -toCamera.z);
+        float distXZ = std::sqrt(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
+        t.rotate.x = std::atan2(toCamera.y, distXZ);
+        t.rotate.z = 0.0f;
 
         chargeSphere_->GetTransform().transform = t;
         chargeSphere_->GetTransform().isDirty = true;
@@ -193,12 +209,12 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
 void EnemyBeam::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
-    if (isTelegraphActive_ && telegraphObj_) {
-        telegraphObj_->Draw();
-    }
-
     if (isChargeSphereActive_ && chargeSphere_) {
         chargeSphere_->Draw();
+    }
+
+    if (isTelegraphActive_ && telegraphObj_) {
+        telegraphObj_->Draw();
     }
 
     if (isAttackActive_ && attackCylinder_) {

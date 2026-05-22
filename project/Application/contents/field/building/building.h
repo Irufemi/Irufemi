@@ -21,6 +21,7 @@ struct BuildingInstance {
     Vector3 scale     = {};
     Vector3 rotate    = {};
     int hp            = 0;
+    int floorCount    = 1;  // 階層数
 
     // 吹き飛び・消滅
     bool isBlownAway       = false;
@@ -46,8 +47,9 @@ public:
     // パラメータ
     struct Parameters {
         int count = 10;
-        float minHeight = 10.0f;
-        float maxHeight = 50.0f;
+        int minFloors = 5;      // ビルの最小階層数
+        int maxFloors = 20;     // ビルの最大階層数
+        float floorHeightRatio = 0.5f; // 1階層の高さ = scaleXZ * この比率
         float minScaleXZ = 5.0f;
         float maxScaleXZ = 15.0f;
         float fieldRange = 90.0f;

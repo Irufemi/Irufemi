@@ -27,7 +27,7 @@ void Building::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 
     buildingRegion_ = std::make_unique<ModelRegion>();
-    buildingRegion_->Initialize("building/block.obj");
+    buildingRegion_->Initialize("building/building.obj");
 
     LoadJson();
     Generate();
@@ -95,7 +95,8 @@ void Building::Update() {
 
             // 壁反射
             const float bound = BuildingInstance::kFieldBound;
-            const float r = inst.scale.x * 0.5f;
+            // building.objはXZ: -1.0~1.0 なので half-extent = scale.x * 1.0
+            const float r = inst.scale.x;
             if (inst.position.x - r < -bound) {
                 inst.position.x = -bound + r;
                 inst.blowVelocity.x *= -1.0f;
@@ -194,6 +195,11 @@ void Building::Draw(IrufemiEngine* engine) {
     }
 
     for (auto& inst : instances_) {
+        // scale.yをfloorCount*floorHeightで常に同期（ImGui変更に追従）
+        // floorHeightはscaleXZに比例
+        float floorHeight = inst.scale.x * params_.floorHeightRatio;
+        inst.scale.y = inst.floorCount * floorHeight;
+
         // 完全消滅済みでもボクセルパーティクルがあれば描画
         if (inst.isDestroyed) {
             if (inst.voxelSystem && inst.voxelSystem->IsActive()) {
@@ -205,12 +211,31 @@ void Building::Draw(IrufemiEngine* engine) {
         // モデル描画（消滅タイマー前のみ）
         bool modelGone = inst.isBlownAway && inst.disappearTimer >= BuildingInstance::kDisappearTime;
         if (!modelGone) {
-            Transform tf;
-            tf.translate = inst.position;
-            tf.rotate = inst.rotate;
-            tf.scale = inst.scale;
-            if (buildingRegion_) {
-                buildingRegion_->AddInstance(tf, {1.0f, 1.0f, 1.0f, 1.0f});
+            // ビル全体の高さ
+            float fh = inst.scale.x * params_.floorHeightRatio;
+            float totalHeight = inst.floorCount * fh;
+            // 回転行列（全階層共通）
+            Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(inst.rotate);
+
+            for (int floor = 0; floor < inst.floorCount; ++floor) {
+                // ローカル空間での各階層の中心Y座標（ビル中心を原点とする）
+                float localY = -totalHeight / 2.0f + fh * floor + fh / 2.0f;
+
+                // ローカルオフセットを回転行列で変換
+                Vector3 localOffset = { 0.0f, localY, 0.0f };
+                Vector3 rotatedOffset = {
+                    rotMat.m[0][0] * localOffset.x + rotMat.m[0][1] * localOffset.y + rotMat.m[0][2] * localOffset.z,
+                    rotMat.m[1][0] * localOffset.x + rotMat.m[1][1] * localOffset.y + rotMat.m[1][2] * localOffset.z,
+                    rotMat.m[2][0] * localOffset.x + rotMat.m[2][1] * localOffset.y + rotMat.m[2][2] * localOffset.z
+                };
+
+                Transform tf;
+                tf.translate = Math::Add(inst.position, rotatedOffset);
+                tf.rotate = inst.rotate;
+                tf.scale = { inst.scale.x, fh, inst.scale.z };
+                if (buildingRegion_) {
+                    buildingRegion_->AddInstance(tf, {1.0f, 1.0f, 1.0f, 1.0f});
+                }
             }
         }
 
@@ -241,29 +266,30 @@ void Building::Draw(IrufemiEngine* engine) {
 
 void Building::DrawImGui() {
 #ifdef USE_IMGUI
-    if (ImGui::Begin("Building Settings")) {
+    if (ImGui::Begin("ビル設定")) {
         bool changed = false;
 
-        changed |= ImGui::SliderInt("Count", &params_.count, 1, 100);
-        changed |= ImGui::DragFloat("Field Range", &params_.fieldRange, 1.0f, 10.0f, 200.0f);
-        changed |= ImGui::DragFloat("Min Height", &params_.minHeight, 0.1f, 0.1f, 100.0f);
-        changed |= ImGui::DragFloat("Max Height", &params_.maxHeight, 0.1f, 0.1f, 100.0f);
-        changed |= ImGui::DragFloat("Min Scale XZ", &params_.minScaleXZ, 0.1f, 0.1f, 50.0f);
-        changed |= ImGui::DragFloat("Max Scale XZ", &params_.maxScaleXZ, 0.1f, 0.1f, 50.0f);
-        changed |= ImGui::DragFloat("Min Distance", &params_.minDistance, 0.1f, 0.0f, 100.0f);
-        changed |= ImGui::DragInt("Building HP", &params_.buildingHp, 1, 1, 10000);
+        changed |= ImGui::SliderInt("初期配置されるビルの個数", &params_.count, 1, 100);
+        changed |= ImGui::DragFloat("ビルが生成されるフィールドのXZ範囲(中心からの距離)", &params_.fieldRange, 1.0f, 10.0f, 200.0f);
+        changed |= ImGui::DragInt("ビルの最小階層数", &params_.minFloors, 1, 1, 100);
+        changed |= ImGui::DragInt("ビルの最大階層数", &params_.maxFloors, 1, 1, 100);
+        changed |= ImGui::DragFloat("Floor Height Ratio", &params_.floorHeightRatio, 0.01f, 0.1f, 2.0f);
+        changed |= ImGui::DragFloat("ビルの最小幅スケール(XZ)", &params_.minScaleXZ, 0.1f, 0.1f, 50.0f);
+        changed |= ImGui::DragFloat("ビルの最大幅スケール(XZ)", &params_.maxScaleXZ, 0.1f, 0.1f, 50.0f);
+        changed |= ImGui::DragFloat("ビル同士が生成時に最低限離れるべき距離", &params_.minDistance, 0.1f, 0.0f, 100.0f);
+        changed |= ImGui::DragInt("ビルの初期体力値", &params_.buildingHp, 1, 1, 10000);
 
         ImGui::Separator();
-        ImGui::Text("Auto Spawn Settings");
-        changed |= ImGui::DragFloat("Spawn Interval", &params_.spawnInterval, 0.1f, 0.1f, 60.0f);
-        changed |= ImGui::SliderInt("Max Count", &params_.maxCount, 1, 100);
-        changed |= ImGui::DragFloat("Avoid Player Radius", &params_.avoidPlayerRadius, 0.5f, 0.0f, 100.0f);
-        changed |= ImGui::DragFloat("Avoid Boss Radius", &params_.avoidBossRadius, 0.5f, 0.0f, 100.0f);
-        changed |= ImGui::DragFloat("Spawn Speed", &params_.spawnSpeed, 0.1f, 0.1f, 100.0f);
+        ImGui::Text("自動スポーン設定");
+        changed |= ImGui::DragFloat("ビルが自動生成される時間間隔(秒)", &params_.spawnInterval, 0.1f, 0.1f, 60.0f);
+        changed |= ImGui::SliderInt("時間経過で自動生成されるビルの最大上限数", &params_.maxCount, 1, 100);
+        changed |= ImGui::DragFloat("プレイヤーの現在座標を避ける半径", &params_.avoidPlayerRadius, 0.5f, 0.0f, 100.0f);
+        changed |= ImGui::DragFloat("ボスが移動/攻撃対象にしている座標を避ける半径", &params_.avoidBossRadius, 0.5f, 0.0f, 100.0f);
+        changed |= ImGui::DragFloat("ビルが地面からせり上がる速度(秒速)", &params_.spawnSpeed, 0.1f, 0.1f, 100.0f);
 
         // 最小値と最大値の整合性を保つ
-        if (params_.minHeight > params_.maxHeight) {
-            params_.maxHeight = params_.minHeight;
+        if (params_.minFloors > params_.maxFloors) {
+            params_.maxFloors = params_.minFloors;
         }
         if (params_.minScaleXZ > params_.maxScaleXZ) {
             params_.maxScaleXZ = params_.minScaleXZ;
@@ -307,8 +333,9 @@ void Building::LoadJson() {
     if (j.contains("building")) {
         const auto& b = j["building"];
         if (b.contains("count")) params_.count = b["count"];
-        if (b.contains("min_height")) params_.minHeight = b["min_height"];
-        if (b.contains("max_height")) params_.maxHeight = b["max_height"];
+        if (b.contains("min_floors")) params_.minFloors = b["min_floors"];
+        if (b.contains("max_floors")) params_.maxFloors = b["max_floors"];
+        if (b.contains("floor_height_ratio")) params_.floorHeightRatio = b["floor_height_ratio"];
         if (b.contains("min_scale_xz")) params_.minScaleXZ = b["min_scale_xz"];
         if (b.contains("max_scale_xz")) params_.maxScaleXZ = b["max_scale_xz"];
         if (b.contains("field_range")) params_.fieldRange = b["field_range"];
@@ -328,10 +355,12 @@ void Building::SaveJson() {
     j["building"] = {
         {"count", params_.count},
         {"count_comment", "初期配置されるビルの個数"},
-        {"min_height", params_.minHeight},
-        {"min_height_comment", "ビルの最小高さスケール"},
-        {"max_height", params_.maxHeight},
-        {"max_height_comment", "ビルの最大高さスケール"},
+        {"min_floors", params_.minFloors},
+        {"min_floors_comment", "ビルの最小階層数"},
+        {"max_floors", params_.maxFloors},
+        {"max_floors_comment", "ビルの最大階層数"},
+        {"floor_height_ratio", params_.floorHeightRatio},
+        {"floor_height_ratio_comment", "1階層の高さ比率 (実際の高さ = scaleXZ * この値)"},
         {"min_scale_xz", params_.minScaleXZ},
         {"min_scale_xz_comment", "ビルの最小幅スケール(XZ)"},
         {"max_scale_xz", params_.maxScaleXZ},
@@ -363,12 +392,24 @@ void Building::SaveJson() {
 
 void Building::Generate() {
     OutputDebugStringA("Building: Regenerating buildings...\n");
+
+    // VoxelParticleSystemのUpdate()で登録されたcomputeTasksの中に
+    // 破棄予定のインスタンスへのポインタが残っているため、先にクリアする
+    if (engine_ && engine_->GetDrawManager()) {
+        engine_->GetDrawManager()->ClearAllQueues();
+    }
+
     instances_.clear();
+
+    // パラメータのバリデーション
+    int minF = (std::max)(1, params_.minFloors);
+    int maxF = (std::max)(minF, params_.maxFloors);
+    float floorHRatio = (std::max)(0.1f, params_.floorHeightRatio);
 
     std::random_device seed_gen;
     std::mt19937 engine(seed_gen());
     std::uniform_real_distribution<float> distPos(-params_.fieldRange, params_.fieldRange);
-    std::uniform_real_distribution<float> distHeight(params_.minHeight, params_.maxHeight);
+    std::uniform_int_distribution<int> distFloors(minF, maxF);
     std::uniform_real_distribution<float> distScaleXZ(params_.minScaleXZ, params_.maxScaleXZ);
     std::uniform_real_distribution<float> distRot(-3.14159265f, 3.14159265f);
 
@@ -377,11 +418,13 @@ void Building::Generate() {
         Vector3 pos;
         Vector3 scale;
         float rotY;
+        int floorCount;
     };
     std::vector<PlacementData> placements;
 
     for (int i = 0; i < params_.count; ++i) {
         float scaleXZ = 0.0f;
+        int floorCount = 0;
         float scaleY = 0.0f;
         Vector3 pos = { 0.0f, 0.0f, 0.0f };
         bool isValidPos = false;
@@ -389,14 +432,17 @@ void Building::Generate() {
 
         for (int attempt = 0; attempt < maxAttempts; ++attempt) {
             scaleXZ = distScaleXZ(engine);
-            scaleY = distHeight(engine);
+            floorCount = distFloors(engine);
+            float floorH = scaleXZ * floorHRatio;
+            scaleY = floorCount * floorH;
             pos = { distPos(engine), scaleY / 2.0f, distPos(engine) };
 
             isValidPos = true;
-            float radiusA = scaleXZ * 0.7071f;
+            // building.objはXZ: -1.0~1.0 なので実際の半径 = scaleXZ * √2
+            float radiusA = scaleXZ * 1.4142f;
 
             for (const auto& p : placements) {
-                float radiusB = p.scale.x * 0.7071f;
+                float radiusB = p.scale.x * 1.4142f;
                 float dx = pos.x - p.pos.x;
                 float dz = pos.z - p.pos.z;
                 float distanceSq = dx * dx + dz * dz;
@@ -415,7 +461,7 @@ void Building::Generate() {
             continue;
         }
 
-        placements.push_back({ pos, { scaleXZ, scaleY, scaleXZ }, distRot(engine) });
+        placements.push_back({ pos, { scaleXZ, scaleY, scaleXZ }, distRot(engine), floorCount });
     }
 
     // 実際にインスタンスを生成
@@ -424,6 +470,7 @@ void Building::Generate() {
         inst.position = pd.pos;
         inst.scale = pd.scale;
         inst.rotate = { 0.0f, pd.rotY, 0.0f };
+        inst.floorCount = pd.floorCount;
         inst.hp = params_.buildingHp;
         inst.isBlownAway = false;
         inst.isDestroyed = false;
@@ -448,8 +495,11 @@ void Building::Generate() {
 void Building::ClearAndAddSingleBuilding(const Vector3& position) {
     instances_.clear();
     BuildingInstance inst;
-    inst.position = position;
-    inst.scale = { 3.0f, 10.0f, 3.0f }; // 小さめのビル
+    int floorCount = 5; // チュートリアル用の小さめのビル
+    float scaleY = floorCount * (3.0f * params_.floorHeightRatio);
+    inst.position = { position.x, scaleY / 2.0f, position.z };
+    inst.scale = { 3.0f, scaleY, 3.0f };
+    inst.floorCount = floorCount;
     inst.rotate = { 0.0f, 0.0f, 0.0f };
     inst.hp = params_.buildingHp; 
     inst.isBlownAway = false;
@@ -494,7 +544,10 @@ OBB Building::GetBuildingOBB(int index) const {
     obb.orientations[2] = { rotMat.m[2][0], rotMat.m[2][1], rotMat.m[2][2] };
 
     // OBBのsizeは中心から面までの距離（half-extent）
-    obb.size = { inst.scale.x * 0.5f, inst.scale.y * 0.5f, inst.scale.z * 0.5f };
+    // building.objはXZ: -1.0~1.0（幅2.0）, Y: -0.5~0.5（高さ1.0）
+    // XZ half-extent = scale * 1.0, Y half-extent = totalHeight * 0.5
+    float totalHeight = inst.floorCount * (inst.scale.x * params_.floorHeightRatio);
+    obb.size = { inst.scale.x, totalHeight * 0.5f, inst.scale.z };
 
     return obb;
 }
@@ -639,14 +692,20 @@ int Building::GetAliveBuildingCount() const {
 void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3& avoidBossPos) {
     OutputDebugStringA("Building: Spawning a new building dynamically...\n");
 
+    // パラメータのバリデーション
+    int minF = (std::max)(1, params_.minFloors);
+    int maxF = (std::max)(minF, params_.maxFloors);
+    float floorHRatio = (std::max)(0.1f, params_.floorHeightRatio);
+
     std::random_device seed_gen;
     std::mt19937 engine(seed_gen());
     std::uniform_real_distribution<float> distPos(-params_.fieldRange, params_.fieldRange);
-    std::uniform_real_distribution<float> distHeight(params_.minHeight, params_.maxHeight);
+    std::uniform_int_distribution<int> distFloors(minF, maxF);
     std::uniform_real_distribution<float> distScaleXZ(params_.minScaleXZ, params_.maxScaleXZ);
     std::uniform_real_distribution<float> distRot(-3.14159265f, 3.14159265f);
 
     float scaleXZ = 0.0f;
+    int floorCount = 0;
     float scaleY = 0.0f;
     Vector3 pos = { 0.0f, 0.0f, 0.0f };
     bool isValidPos = false;
@@ -654,17 +713,20 @@ void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3&
 
     for (int attempt = 0; attempt < maxAttempts; ++attempt) {
         scaleXZ = distScaleXZ(engine);
-        scaleY = distHeight(engine);
+        floorCount = distFloors(engine);
+        float floorH = scaleXZ * floorHRatio;
+        scaleY = floorCount * floorH;
         pos = { distPos(engine), scaleY / 2.0f, distPos(engine) };
 
         isValidPos = true;
-        float radiusA = scaleXZ * 0.7071f;
+        // building.objはXZ: -1.0~1.0 なので実際の半径 = scaleXZ * √2
+        float radiusA = scaleXZ * 1.4142f;
 
         // 既存の建物との当たり判定
         for (const auto& inst : instances_) {
             if (inst.isDestroyed) continue;
 
-            float radiusB = inst.scale.x * 0.7071f;
+            float radiusB = inst.scale.x * 1.4142f;
             float dx = pos.x - inst.position.x;
             float dz = pos.z - inst.position.z;
             float distanceSq = dx * dx + dz * dz;
@@ -711,6 +773,7 @@ void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3&
 
     BuildingInstance inst;
     inst.scale = { scaleXZ, scaleY, scaleXZ };
+    inst.floorCount = floorCount;
     inst.rotate = { 0.0f, distRot(engine), 0.0f };
     inst.hp = params_.buildingHp;
     inst.isBlownAway = false;

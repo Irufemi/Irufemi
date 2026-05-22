@@ -6,8 +6,9 @@
 #include <vector>
 #include <wrl.h>
 #include "IrufemiEngine/Renderer/ParticleGPU/GPUParticleSystem.h"
-#include "IrufemiEngine/Engine/Graphics/Data/LightningParams.h"
-#include "IrufemiEngine/Renderer/Object3D/Primitive/CylinderClass.h"
+#include "IrufemiEngine/Engine/Graphics/Data/ExplosionParams.h"
+#include "IrufemiEngine/Engine/Graphics/Data/BombCoreParams.h"
+#include "IrufemiEngine/Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "IrufemiEngine/Renderer/Object3D/Primitive/SphereClass.h"
 
 class Camera;
@@ -45,7 +46,7 @@ private:
     State state_ = State::Idle;
 
     // 爆弾本体（飛行中）
-    std::unique_ptr<SphereClass> bombSphere_ = nullptr;
+    std::shared_ptr<PrimitiveObjects3DClass> bombSphere_ = nullptr;
     Transform bombTransform_;
     
     // 飛行用パラメータ
@@ -56,28 +57,27 @@ private:
     float throwHeight_ = 10.0f;   // 放物線の高さ
 
     // 十字爆発の予告用（X軸・Z軸に沿った2つのボックス）
-    std::unique_ptr<ObjClass> telegraphObjX_ = nullptr;
-    std::unique_ptr<ObjClass> telegraphObjZ_ = nullptr;
-    Transform telegraphTransformX_;
-    Transform telegraphTransformZ_;
-
+    std::shared_ptr<PrimitiveObjects3DClass> telegraphObjX_ = nullptr;
+    std::shared_ptr<PrimitiveObjects3DClass> telegraphObjZ_ = nullptr;
     // 十字爆発の攻撃用
-    std::shared_ptr<CylinderClass> attackCylinderX_ = nullptr;
-    std::shared_ptr<CylinderClass> attackCylinderZ_ = nullptr;
+    std::shared_ptr<PrimitiveObjects3DClass> attackCylinderX_ = nullptr;
+    std::shared_ptr<PrimitiveObjects3DClass> attackCylinderZ_ = nullptr;
     Transform attackTransformX_;
     Transform attackTransformZ_;
 
     // 爆発用パラメータ
     float telegraphTimer_ = 0.0f;
-    float telegraphDuration_ = 1.5f; // 予告時間
+    float telegraphDuration_ = 2.0f; // 予告時間
     float explodeTimer_ = 0.0f;
     float explodeDuration_ = 0.5f;   // 爆発の持続時間
-    float explosionLength_ = 60.0f;  // 爆発の長さ（片側30m）
-    float explosionThickness_ = 3.0f; // 爆発の太さ
+    float explosionLength_ = 200.0f;  // 爆発の長さ
+    float explosionThickness_ = 9.0f; // 爆発の太さ
 
     // エフェクト用
-    Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsResource_;
-    LightningParams* lightningParamsData_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> explosionParamsResource_;
+    ExplosionParams* explosionParamsData_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> bombCoreParamsResource_;
+    BombCoreParams* bombCoreParamsData_ = nullptr;
     std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
 
     bool isExpired_ = false;

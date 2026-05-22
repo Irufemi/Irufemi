@@ -45,6 +45,7 @@ enum class ParticleType {
 	kAccelerationField,
 	kHitEffect,
 	kExplosion,
+	kSpark,
 	kMuzzleSmoke, // 排莢口の煙
 	kMuzzleFlash, // 銃口の火花
 	kMissileFire, // ミサイルの炎

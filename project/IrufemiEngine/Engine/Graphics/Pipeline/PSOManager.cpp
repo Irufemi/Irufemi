@@ -204,7 +204,9 @@ void PSOManager::PreWarmCommonPSOs() {
         GetPSO("VoxelParticle", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("Sprite", blend, DepthWrite::Off, CullMode::None);
         GetPSO("LightningCrawl", blend, DepthWrite::Disable, CullMode::None);
+        GetPSO("ExplosionFlame", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("EnergyCore", blend, DepthWrite::Disable, CullMode::None);
+        GetPSO("BombCore", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("Line", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("LineInstanced", blend, DepthWrite::Disable, CullMode::None);
     }

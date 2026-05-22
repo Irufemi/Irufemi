@@ -3,6 +3,8 @@
 #include "Renderer/Particle/ParticleSystem.h"
 #include <numbers>
 
+#include "Engine/Core/Utility/Ease.h"
+
 // NormalBehavior
 void NormalBehavior::Initialize(Emitter *emitter) {
   // デフォルト値にリセット
@@ -125,6 +127,94 @@ void ExplosionBehavior::MakeNewParticle(Particle &particle,
   particle.lifeTime = distTime(randomEngine);
 }
 void ExplosionBehavior::Debug([[maybe_unused]] Emitter *emitter, DebugUI *ui,
+                              ParticleSystem *particleSystem) {
+#ifdef USE_IMGUI
+  ImGui::DragFloat3("Acceleration", &field_.acceleration.x, 0.1f);
+  ImGui::DragFloat3("Area Min", &field_.area.min.x, 0.1f);
+  ImGui::DragFloat3("Area Max", &field_.area.max.x, 0.1f);
+
+  if (particleSystem && particleSystem->IsShowFieldAABB()) {
+    particleSystem->DrawAABB(field_.area, {1.0f, 0.0f, 0.0f, 1.0f});
+  }
+#endif // USE_IMGUI
+}
+
+// SparkBehavior
+void SparkBehavior::Initialize(Emitter *emitter) {
+  emitter->count = 20;
+  emitter->area = {0.0f, 0.0f, 0.0f};
+  emitter->velocityMin = {-5.0f, -5.0f, -5.0f};
+  emitter->velocityMax = {5.0f, 5.0f, 5.0f};
+  field_.acceleration = {0.0f, -9.8f, 0.0f};     // 重力
+  field_.area.min = {-100.0f, -100.0f, -100.0f}; // 広範囲に適用
+  field_.area.max = {100.0f, 100.0f, 100.0f};
+  emitter->colorMode = ParticleColorMode::kNone; // ランダムカラーを無効化
+}
+void SparkBehavior::Update(Particle &particle, float deltaTime) {
+  // 空気抵抗による急激な減衰
+  particle.velocity *= 0.85f;
+
+  field_.Apply(particle, deltaTime);
+
+  // 進行度に基づくカラーフェード
+  float progress = particle.currentTime / particle.lifeTime;
+  if (progress < 0.2f) {
+      // 0.0 ~ 0.2: 爆発中心の超高熱（白・黄色）から基準色へ
+      float t = progress / 0.2f;
+      particle.color = Lerp(Vector4{1.0f, 1.0f, 0.8f, 1.0f}, particle.startColor, t);
+  } else if (progress < 0.6f) {
+      // 0.2 ~ 0.6: 基準色から赤へ
+      float t = (progress - 0.2f) / 0.4f;
+      particle.color = Lerp(particle.startColor, Vector4{1.0f, 0.1f, 0.0f, 1.0f}, t);
+  } else {
+      // 0.6 ~ 1.0: 赤から透明へフェードアウト
+      float t = (progress - 0.6f) / 0.4f;
+      particle.color = Lerp(Vector4{1.0f, 0.1f, 0.0f, 1.0f}, Vector4{1.0f, 0.0f, 0.0f, 0.0f}, t);
+  }
+}
+void SparkBehavior::MakeNewParticle(Particle &particle,
+                                        std::mt19937 &randomEngine,
+                                        const Emitter &emitter) {
+  // Effect.cppから渡されたスケール値を用いて初速やサイズを動的に調整
+  float scaleMultiplier = emitter.startScale.x; 
+
+  std::uniform_real_distribution<float> distTheta(0.0f, 2.0f * std::numbers::pi_v<float>); // 水平角
+  std::uniform_real_distribution<float> distPhi(0.0f, std::numbers::pi_v<float>); // 垂直角
+  std::uniform_real_distribution<float> distSpeed(15.0f * scaleMultiplier, 40.0f * scaleMultiplier); // 爆発的な初速
+  std::uniform_real_distribution<float> distLength(0.8f * scaleMultiplier, 2.0f * scaleMultiplier); // 長さ
+  std::uniform_real_distribution<float> distTime(0.2f, 0.6f); // 一瞬で消える
+
+  // 放射状の速度ベクトルを計算（球面座標系）
+  float theta = distTheta(randomEngine);
+  float phi = distPhi(randomEngine);
+  float speed = distSpeed(randomEngine);
+
+  Vector3 dir = {
+      std::sin(phi) * std::cos(theta),
+      std::cos(phi),
+      std::sin(phi) * std::sin(theta)
+  };
+  
+  particle.velocity = dir * speed;
+
+  // 線状に引き伸ばすスケール（進行方向に沿って長くする）
+  // XY平面（画面）での進行方向に向けてZ軸回転させる近似
+  float angle = std::atan2(particle.velocity.y, particle.velocity.x);
+  particle.transform.rotate = {0.0f, 0.0f, angle};
+
+  // 進行方向(X)を長く、幅(Y)を細くする
+  float length = distLength(randomEngine);
+  float width = 0.05f; 
+  particle.startScale = {length, width, 1.0f};
+  particle.endScale = {length * 0.1f, width * 0.1f, 1.0f};
+
+  // 初期カラーはEffect.cpp側から渡された色を維持（ただしUpdateで上書きされる）
+  particle.startColor = emitter.startColor;
+  particle.endColor = emitter.endColor;
+
+  particle.lifeTime = distTime(randomEngine);
+}
+void SparkBehavior::Debug([[maybe_unused]] Emitter *emitter, DebugUI *ui,
                               ParticleSystem *particleSystem) {
 #ifdef USE_IMGUI
   ImGui::DragFloat3("Acceleration", &field_.acceleration.x, 0.1f);
@@ -405,6 +495,8 @@ std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
     return std::make_unique<HitEffectBehavior>();
   case ParticleType::kExplosion:
     return std::make_unique<ExplosionBehavior>();
+  case ParticleType::kSpark:
+    return std::make_unique<SparkBehavior>();
   case ParticleType::kMuzzleSmoke:
     return std::make_unique<MuzzleSmokeBehavior>();
   case ParticleType::kMuzzleFlash:

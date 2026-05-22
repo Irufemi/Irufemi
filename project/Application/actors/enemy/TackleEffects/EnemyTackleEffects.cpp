@@ -8,6 +8,65 @@
 void EnemyTackleEffects::Initialize() {
     waveObj_ = std::make_unique<ObjClass>();
     waveObj_->Initialize("sample/block.obj");
+
+    // 予告線（AOE）用
+    telegraphObj_ = std::make_shared<PrimitiveObjects3DClass>();
+    telegraphObj_->Initialize(PrimitiveType::Cube, "resources/whiteTexture.png");
+    telegraphObj_->GetMaterial().enableLighting = false; // ライティング無効
+    telegraphObj_->SetCastShadows(false);                // 影を落とさない
+}
+
+void EnemyTackleEffects::StartTelegraph(const Vector3& position, float rotateY, float length, float width) {
+    isTelegraphActive_ = true;
+    telegraphTransform_.scale = { width, 0.1f, length };
+    // 長さの半分だけ前にずらすことで、ボスの足元から前方に伸びるようにする
+    float halfLength = length * 0.5f;
+    Vector3 forward = { std::sin(rotateY), 0.0f, std::cos(rotateY) };
+    telegraphTransform_.translate = { 
+        position.x + forward.x * halfLength, 
+        position.y - 2.4f, // 足元（地面）に這わせる
+        position.z + forward.z * halfLength 
+    };
+    telegraphTransform_.rotate = { 0.0f, rotateY, 0.0f };
+    telegraphObj_->SetTransform(telegraphTransform_);
+    telegraphObj_->SetColor({ 1.0f, 0.0f, 0.0f, 0.0f }); // 最初は透明
+    telegraphObj_->Update();
+}
+
+void EnemyTackleEffects::UpdateTelegraph(const Vector3& position, float rotateY, float warningRatio) {
+    if (!isTelegraphActive_ || !telegraphObj_) return;
+    
+    // 位置の追従（Aim中など位置・角度が変わる場合に対応）
+    float length = telegraphTransform_.scale.z;
+    float halfLength = length * 0.5f;
+    Vector3 forward = { std::sin(rotateY), 0.0f, std::cos(rotateY) };
+    telegraphTransform_.translate = { 
+        position.x + forward.x * halfLength, 
+        position.y - 2.4f, // 足元（地面）に這わせる
+        position.z + forward.z * halfLength 
+    };
+    telegraphTransform_.rotate = { 0.0f, rotateY, 0.0f };
+
+    // warningRatio(0.0〜1.0) に応じて点滅速度とアルファ値を変化
+    // 徐々に赤くなり、最後は激しく明滅する
+    float blinkSpeed = Lerp(5.0f, 30.0f, warningRatio); 
+    float blink = (std::sin(warningRatio * blinkSpeed) + 1.0f) * 0.5f; // 0.0 ~ 1.0
+    float baseAlpha = Lerp(0.2f, 0.8f, warningRatio);
+    
+    // 赤＋少し黄色を混ぜて危険色を強調
+    telegraphObj_->SetColor({ 1.0f, Lerp(0.2f, 0.5f, blink), 0.0f, baseAlpha * blink });
+    telegraphObj_->SetTransform(telegraphTransform_);
+    telegraphObj_->Update();
+}
+
+void EnemyTackleEffects::StopTelegraph() {
+    isTelegraphActive_ = false;
+}
+
+void EnemyTackleEffects::DrawTelegraph(IrufemiEngine* engine) {
+    if (isTelegraphActive_ && telegraphObj_ && engine) {
+        telegraphObj_->Draw();
+    }
 }
 
 void EnemyTackleEffects::FireRushWave(const Vector3& position) {
@@ -82,6 +141,8 @@ void EnemyTackleEffects::Draw(IrufemiEngine* engine) {
         waveObj_->Update();
         waveObj_->Draw();
     }
+    
+    DrawTelegraph(engine);
 }
 
 OBB EnemyTackleEffects::TackleWave::GetOBB() const {

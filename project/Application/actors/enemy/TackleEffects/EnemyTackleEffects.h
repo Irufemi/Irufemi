@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <list>
+#include "IrufemiEngine/Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 
 class Camera;
 class ObjClass;
@@ -26,6 +27,12 @@ public:
     void Update(float deltaTime);
     void Draw(class IrufemiEngine* engine);
 
+    // 突進予告線（AOE）用関数
+    void StartTelegraph(const Vector3& position, float rotateY, float length, float width);
+    void UpdateTelegraph(const Vector3& position, float rotateY, float warningRatio);
+    void StopTelegraph();
+    void DrawTelegraph(class IrufemiEngine* engine);
+
     // 突進中に連続して呼ばれるエフェクト発生処理（背後や両脇に砂煙を残す）
     void FireRushWave(const Vector3& position);
 
@@ -42,6 +49,11 @@ private:
     
     // エフェクト描画用モデル（ひとまず既存の円環モデルを流用するためObjClassで平たく潰してリングにする）
     std::unique_ptr<ObjClass> waveObj_ = nullptr;
+
+    // 予告線用
+    std::shared_ptr<PrimitiveObjects3DClass> telegraphObj_ = nullptr;
+    Transform telegraphTransform_;
+    bool isTelegraphActive_ = false;
 
     std::list<TackleWave> waves_;
 

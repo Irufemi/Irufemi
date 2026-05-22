@@ -61,7 +61,19 @@ void Phase2_Bomb::Update(Enemy* enemy, Player* player, float deltaTime) {
 
         if (!hasThrown_) {
             // 爆弾を発射
-            enemy->FireBomb(headIndex_, playerPos);
+            Vector3 targetPos = playerPos;
+            
+            // 3つの首が重ならないように投擲位置をずらす
+            if (headIndex_ == 0) { // 左の首
+                targetPos.x -= 30.0f;
+                targetPos.z += 30.0f;
+            } else if (headIndex_ == 2) { // 右の首
+                targetPos.x += 30.0f;
+                targetPos.z -= 30.0f;
+            }
+            // 中央(1)はプレイヤー直撃
+            
+            enemy->FireBomb(headIndex_, targetPos);
             hasThrown_ = true;
         }
     } else {

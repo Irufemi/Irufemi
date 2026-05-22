@@ -47,6 +47,9 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
             for (int i = 0; i < 3; ++i) {
                 enemy->GetBodyOffset(i) = { 0,0,0 };
             }
+            if (auto effects = enemy->GetTackleEffects()) {
+                effects->StartTelegraph(globalT.translate, globalT.rotate.y, 300.0f, 10.0f);
+            }
         }
         break;
     }
@@ -57,6 +60,10 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
 
         rushDirection_ = { std::sin(globalT.rotate.y), 0.0f, std::cos(globalT.rotate.y) };
 
+        if (auto effects = enemy->GetTackleEffects()) {
+            effects->UpdateTelegraph(globalT.translate, globalT.rotate.y, 0.0f);
+        }
+
         if (stateTimer_ >= kAimTime) {
             currentPhase_ = Phase::Wait;
             stateTimer_ = 0.0f;
@@ -65,11 +72,18 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
     }
 
     case Phase::Wait: {
+        if (auto effects = enemy->GetTackleEffects()) {
+            effects->UpdateTelegraph(globalT.translate, globalT.rotate.y, stateTimer_ / kWaitTime);
+        }
+
         // ロックオン完了後、追尾を止めてタメを作る（回避猶予）
         if (stateTimer_ >= kWaitTime) {
             currentPhase_ = Phase::Rush;
             stateTimer_ = 0.0f;
             rushCount_++;
+            if (auto effects = enemy->GetTackleEffects()) {
+                effects->StopTelegraph();
+            }
         }
         break;
     }
@@ -108,6 +122,9 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
              if (rushCount_ < kMaxRushCount) {
                  currentPhase_ = Phase::Aim;
                  stateTimer_ = 0.0f;
+                 if (auto effects = enemy->GetTackleEffects()) {
+                     effects->StartTelegraph(globalT.translate, globalT.rotate.y, 300.0f, 10.0f);
+                 }
              }
         }
         break;
@@ -156,6 +173,9 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
 
 void Phase1_Tackle::Exit(Enemy* enemy) {
     if (!enemy) return;
+    if (auto effects = enemy->GetTackleEffects()) {
+        effects->StopTelegraph();
+    }
     Transform& globalT = enemy->GetGlobalTransform();
     globalT.scale.y = kNormalScale;
     globalT.rotate.x = 0.0f;
