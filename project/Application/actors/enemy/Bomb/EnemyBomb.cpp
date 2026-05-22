@@ -137,6 +137,11 @@ void EnemyBomb::Update() {
         if (bombCoreParamsData_) {
             bombCoreParamsData_->pulseSpeed = 40.0f; // 爆発寸前は激しく明滅
         }
+        
+        // 予告線の拡大に合わせて、爆弾のコア（球体）も膨張させる（1.5f から 3.5f へ拡大）
+        float sphereScale = 1.5f + (telegraphTimer_ / telegraphDuration_) * 2.0f;
+        bombSphere_->SetScale({ sphereScale, sphereScale, sphereScale });
+
         bombSphere_->Update();
 
         // 予告線の太さをだんだん太くする
