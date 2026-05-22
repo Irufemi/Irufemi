@@ -79,6 +79,9 @@ void Phase1_Stomp::Update(Enemy* enemy, Player* player, float deltaTime) {
         }
         float shake = std::sin(attackTimer_ * 120.0f) * 0.3f;
         enemy->GetGlobalTransform().translate.x += shake;
+
+        // 警告演出をアクティブにする
+        enemy->SetWarningActive(true);
     }
     // --- 5. 落下 ---
     else if (!hasHitGround_) {
@@ -86,12 +89,18 @@ void Phase1_Stomp::Update(Enemy* enemy, Player* player, float deltaTime) {
         pos.y -= dropSpeed_;
         enemy->GetGlobalTransform().scale.y = initialScaleY_ * 1.2f;
 
+        // 落下中も警告演出を継続
+        enemy->SetWarningActive(true);
+
         if (pos.y <= groundY_) {
             pos.y = groundY_;
             hasHitGround_ = true;
             enemy->GetGlobalTransform().scale.y = initialScaleY_ * landSquatScale_;
             enemy->FireStomp(pos); 
             attackTimer_ = endHover; 
+
+            // 着地（激突）したため、警告を終了する
+            enemy->SetWarningActive(false);
         }
     }
     // --- 6. 着地硬直 ---
@@ -127,4 +136,5 @@ void Phase1_Stomp::Exit(Enemy* enemy) {
     enemy->GetHeadLeftOffset() = { 0,0,0 };
     enemy->GetHeadRightOffset() = { 0,0,0 };
     enemy->GetGlobalTransform().scale.y = initialScaleY_;
+    enemy->SetWarningActive(false); // 安全対策として警告を確実に終了
 }

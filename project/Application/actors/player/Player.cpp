@@ -10,6 +10,8 @@
 #include "../enemy/Enemy.h" 
 #include "contents/ui/PlayerHPBar.h"
 #include "Renderer/Effect/WeaponTrail.h"
+#include "Renderer/Effect/Effect.h"
+#include "Renderer/ParticleGPU/GPUParticleSystem.h"
 
 #ifdef USE_IMGUI
 #include <imgui.h> 
@@ -116,6 +118,15 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
         effect->Initialize(EffectType::kExplosion);
         explosionEffects_.push_back(std::move(effect));
     }
+
+
+    // ★追加: チャージ中・完了時の上昇パーティクル
+    karakuriChargeParticle_ = std::make_unique<GPUParticleSystem>();
+    karakuriChargeParticle_->Initialize("resources/gradationLine.png");
+
+    // ★追加: チャージしきったときの足元リングエフェクト
+    karakuriRingParticle_ = std::make_unique<GPUParticleSystem>();
+    karakuriRingParticle_->Initialize("resources/circle2.png");
 }
 
 void Player::Update() {
@@ -454,6 +465,113 @@ void Player::Update() {
         }
     }
 
+    // === パーティクル（すっきり立ち上る黄金色シリンダー）の設定・更新 ===
+    if (!status_.IsDead()) {
+        if (karakuriChargeParticle_) {
+            bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
+            if (isCharging && karakuriChargeTimer_ > 0) {
+                // === 1. チャージ中の黄金色シリンダー粒子 ===
+                float ratio = static_cast<float>(karakuriChargeTimer_) / kKarakuriChargeTime;
+                if (ratio > 1.0f) ratio = 1.0f;
+                
+                // 開始色：すっきりした美しい黄金色から明るい黄色
+                Vector4 startColMin = { 1.0f, 0.75f, 0.0f, 1.0f }; // 美しいゴールド
+                Vector4 startColMax = { 1.0f, 0.95f, 0.3f, 1.0f }; // 高輝度の明るいイエロー
+                // 終了色：上空でスッと消えていくフェードアウト
+                Vector4 endColMin = { 1.0f, 0.65f, 0.0f, 0.0f };
+                Vector4 endColMax = { 1.0f, 0.85f, 0.1f, 0.0f };
+                
+                karakuriChargeParticle_->SetStartColor(startColMin, startColMax);
+                karakuriChargeParticle_->SetEndColor(endColMin, endColMax);
+                karakuriChargeParticle_->SetParticleLife(0.4f, 0.75f); // 寿命
+                
+                // gradationLine.png に適した、縦長に引き伸ばされた極細の光の縦筋
+                Vector3 startScaleMin = { 0.04f, 1.2f, 0.04f };
+                Vector3 startScaleMax = { 0.10f, 2.4f, 0.10f };
+                Vector3 endScaleMin = { 0.005f, 0.2f, 0.005f };
+                Vector3 endScaleMax = { 0.02f, 0.5f, 0.02f };
+                karakuriChargeParticle_->SetParticleScale(startScaleMin, startScaleMax, endScaleMin, endScaleMax);
+                
+                // チャージが溜まるにつれて、しきい値を徐々に高くして光の筋を細くシャープにする
+                float alphaRef = 0.05f + ratio * 0.75f;
+                karakuriChargeParticle_->SetAlphaReference(alphaRef);
+                
+                // 適度な上昇力と少なめの空気抵抗
+                karakuriChargeParticle_->SetGravity(-15.0f - ratio * 10.0f);
+                karakuriChargeParticle_->SetDamping(0.02f);
+                
+                // すっきりまっすぐ立ち上らせるためにジッターを極めて小さく
+                karakuriChargeParticle_->SetJitter(0.08f);
+                karakuriChargeParticle_->SetEnableRandomRotation(false); // 縦筋の方向を保つため回転をオフ
+                
+                // 円柱エミッターをプレイヤーの周囲に配置
+                Vector3 emitPos = translate_;
+                emitPos.y += 0.0f; // 足元から
+                
+                uint32_t count = 15 + static_cast<uint32_t>(ratio * 25.0f); // 溜まるほど高密度に
+                float freq = 0.03f - ratio * 0.015f;
+                
+                karakuriChargeParticle_->SetCylinderEmitter(emitPos, { 0.0f, 1.0f, 0.0f }, 1.3f, 2.0f, count, freq);
+                karakuriChargeParticle_->SetEmit(true);
+                karakuriChargeParticle_->Update();
+            } else if (isKarakuriCharged_) {
+                // === 2. チャージ完了時（スーパーサイヤ人状態）の常時黄金色シリンダー粒子 ===
+                Vector4 startColMin = { 1.0f, 0.80f, 0.05f, 1.0f }; // まばゆいゴールド
+                Vector4 startColMax = { 1.0f, 0.98f, 0.4f, 1.0f }; // 鮮やかなイエロー
+                Vector4 endColMin = { 1.0f, 0.70f, 0.0f, 0.0f };
+                Vector4 endColMax = { 1.0f, 0.90f, 0.1f, 0.0f };
+                
+                karakuriChargeParticle_->SetStartColor(startColMin, startColMax);
+                karakuriChargeParticle_->SetEndColor(endColMin, endColMax);
+                karakuriChargeParticle_->SetParticleLife(0.35f, 0.7f);
+                
+                // 縦長に引き伸ばされた極細の光の縦筋
+                Vector3 startScaleMin = { 0.03f, 1.0f, 0.03f };
+                Vector3 startScaleMax = { 0.08f, 2.0f, 0.08f };
+                Vector3 endScaleMin = { 0.005f, 0.15f, 0.005f };
+                Vector3 endScaleMax = { 0.015f, 0.4f, 0.015f };
+                karakuriChargeParticle_->SetParticleScale(startScaleMin, startScaleMax, endScaleMin, endScaleMax);
+                
+                // 完了状態では高いしきい値で非常にシャープでシャキッとした光の筋を維持
+                karakuriChargeParticle_->SetAlphaReference(0.7f);
+                
+                karakuriChargeParticle_->SetGravity(-18.0f);
+                karakuriChargeParticle_->SetDamping(0.02f);
+                
+                karakuriChargeParticle_->SetJitter(0.08f);
+                karakuriChargeParticle_->SetEnableRandomRotation(false);
+                
+                Vector3 emitPos = translate_;
+                emitPos.y += 0.0f;
+                
+                uint32_t count = 30; // 高密度
+                float freq = 0.02f;
+                
+                karakuriChargeParticle_->SetCylinderEmitter(emitPos, { 0.0f, 1.0f, 0.0f }, 1.3f, 2.0f, count, freq);
+                karakuriChargeParticle_->SetEmit(true);
+                karakuriChargeParticle_->Update();
+            } else {
+                // チャージもされておらず、チャージキーも押していない場合はエミッターを停止
+                karakuriChargeParticle_->SetAlphaReference(0.0f);
+                karakuriChargeParticle_->SetEmit(false);
+                karakuriChargeParticle_->Update();
+            }
+        }
+    } else {
+        if (karakuriChargeParticle_) {
+            karakuriChargeParticle_->SetAlphaReference(0.0f);
+            karakuriChargeParticle_->SetEmit(false);
+            karakuriChargeParticle_->Update();
+        }
+    }
+
+    // リングパーティクルの更新（毎フレーム実行し、放出済みの粒子をアニメーションさせる）
+    if (karakuriRingParticle_) {
+        // エミッター自動放出は常にオフ
+        karakuriRingParticle_->SetEmit(false);
+        karakuriRingParticle_->Update();
+    }
+
 
 #ifdef USE_IMGUI
     if (input_->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
@@ -545,7 +663,12 @@ void Player::Draw2DUI(Enemy* enemy) {
 
             // ボスのHPバー（2D）は1人称視点のみ表示
             if (enemy) {
-                enemy->Draw2DUI(engine_);
+                enemy->Draw2DUI(engine_, true);
+            }
+        } else {
+            // 三人称視点時：ボスのHPバーは表示せず、警告演出スプライト（注意マークと矢印）のみ表示する
+            if (enemy) {
+                enemy->Draw2DUI(engine_, false);
             }
         }
     }
@@ -622,6 +745,25 @@ void Player::Draw() {
         if (effect->IsActive()) {
             effect->SyncBeforeDraw();
             effect->Draw();
+        }
+    }
+
+    // ★追加: からくりチャージエフェクトの描画
+    if (!status_.IsDead()) {
+        bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
+        
+        if (isKarakuriCharged_ || (isCharging && karakuriChargeTimer_ > 0)) {
+            // チャージ中および完了時（スーパーサイヤ人状態）の黄金色シリンダーパーティクル描画
+            if (karakuriChargeParticle_) {
+                karakuriChargeParticle_->SyncBeforeDraw();
+                karakuriChargeParticle_->Draw();
+            }
+        }
+
+        // チャージしきったときの足元リングエフェクト（衝撃波）の描画
+        if (karakuriRingParticle_) {
+            karakuriRingParticle_->SyncBeforeDraw();
+            karakuriRingParticle_->Draw();
         }
     }
 
@@ -848,6 +990,44 @@ void Player::HandleSkill() {
                 isKarakuriCharged_ = true;
                 karakuriChargeTimer_ = 0;
                 karakuriActiveTimer_ = kKarakuriActiveTime;
+
+                // ★追加: チャージしきったときの足元リングエフェクト（衝撃波）バースト放出
+                if (karakuriRingParticle_) {
+                    // 足元からXZ平面上にフワッと広げる
+                    Vector3 emitPos = translate_;
+                    emitPos.y += 0.1f; // 地面から少しだけ浮いた高さ
+
+                    // リングエミッターの設定 (放出位置, 半径, 厚み, 放出数, 放出頻度)
+                    // 放出頻度を0.0fに設定して自動毎フレーム放出を防ぎ、Emit()によるバーストのみにする
+                    karakuriRingParticle_->SetRingEmitter(emitPos, 0.4f, 0.1f, 180, 0.0f);
+                    
+                    // 速度の方向ベクトルを {0,0,0} にリセットすることで
+                    // 半径方向（水平方向）に均等に綺麗に広がるようにする
+                    karakuriRingParticle_->SetDirection({ 0.0f, 0.0f, 0.0f });
+                    karakuriRingParticle_->SetVelocity(16.0f); // 広がる初速
+                    karakuriRingParticle_->SetJitter(0.0f);
+                    karakuriRingParticle_->SetGravity(0.0f);
+                    karakuriRingParticle_->SetDamping(0.05f); // 摩擦で滑らかに減速する
+                    karakuriRingParticle_->SetParticleLife(0.55f, 0.75f); // 寿命
+
+                    // 粒子のスケール：最初は小さい点、広がりながら極小になって消えていく
+                    Vector3 ringStartScaleMin = { 0.12f, 0.12f, 0.12f };
+                    Vector3 ringStartScaleMax = { 0.28f, 0.28f, 0.28f };
+                    Vector3 ringEndScaleMin = { 0.0f, 0.0f, 0.0f };
+                    Vector3 ringEndScaleMax = { 0.0f, 0.0f, 0.0f };
+                    karakuriRingParticle_->SetParticleScale(ringStartScaleMin, ringStartScaleMax, ringEndScaleMin, ringEndScaleMax);
+
+                    // 黄金色の衝撃波カラー（ゴールドからイエロー）
+                    Vector4 ringStartColMin = { 1.0f, 0.75f, 0.0f, 1.0f };
+                    Vector4 ringStartColMax = { 1.0f, 0.95f, 0.2f, 1.0f };
+                    Vector4 ringEndColMin = { 1.0f, 0.65f, 0.0f, 0.0f };
+                    Vector4 ringEndColMax = { 1.0f, 0.85f, 0.0f, 0.0f };
+                    karakuriRingParticle_->SetStartColor(ringStartColMin, ringStartColMax);
+                    karakuriRingParticle_->SetEndColor(ringEndColMin, ringEndColMax);
+
+                    // 180個の粒子を瞬間バースト放出！
+                    karakuriRingParticle_->Emit(180);
+                }
             }
         }
     } else {

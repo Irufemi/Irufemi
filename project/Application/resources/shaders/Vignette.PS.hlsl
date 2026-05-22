@@ -1,8 +1,10 @@
 #include "Fullscreen.hlsli"
 
 struct VignetteParams {
+    float4 color;
     float scale;
     float power;
+    float2 pad;
 };
 
 ConstantBuffer<VignetteParams> gVignette : register(b0);
@@ -23,8 +25,8 @@ PixelShaderOutput main(VertexShaderOutput input) {
     float vignette = correct.x * correct.y * gVignette.scale;
     // べき乗で調整
     vignette = saturate(pow(vignette, gVignette.power));
-    // 係数として乗算
-    output.color.rgb *= vignette;
+    // 係数として補間
+    output.color.rgb = lerp(gVignette.color.rgb, output.color.rgb, vignette);
 
     return output;
 }

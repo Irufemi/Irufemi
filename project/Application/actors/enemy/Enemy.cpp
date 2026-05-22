@@ -13,6 +13,7 @@
 #include "contents/ui/EnemyHPBar.h"
 #include "contents/ui/EnemyPartHPBar.h"
 #include "Renderer/Effect/WeaponTrail.h"
+#include "Renderer/Object2D/Sprite/Sprite.h"
 
 Enemy::Enemy() = default;
 Enemy::~Enemy() {}
@@ -98,6 +99,29 @@ void Enemy::Initialize(IrufemiEngine *engine) {
 
   isActive_ = true;
   isDead_ = false;
+
+  // 警告用注意マークの初期化
+  warningSprite_ = std::make_unique<Sprite>();
+  warningSprite_->Initialize("resources/texture/player/tyui.png");
+  warningSprite_->SetSize(180.0f, 180.0f);
+  if (engine_) {
+      warningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f, 200.0f);
+  } else {
+      warningSprite_->SetPositionCenter(640.0f, 200.0f);
+  }
+
+  // 警告用矢印スプライト（左右2個ずつ）の初期化
+  auto initArrow = [&](std::unique_ptr<Sprite>& arrow) {
+      arrow = std::make_unique<Sprite>();
+      arrow->Initialize("resources/texture/player/yazirusi.png");
+      arrow->SetSize(80.0f, 80.0f);
+      arrow->SetRotation(-1.570796f); // 上向きに回転 (-π/2ラジアン)
+  };
+
+  initArrow(warningArrowLeft1_);
+  initArrow(warningArrowLeft2_);
+  initArrow(warningArrowRight1_);
+  initArrow(warningArrowRight2_);
 }
 
 void Enemy::Update(Player *player) {
@@ -296,6 +320,100 @@ void Enemy::Update(Player *player) {
   updatePartBar(3, GetHeadLeft(), p->GetHeadLeftHP());
   updatePartBar(4, GetHeadMid(), p->GetHeadMidHP());
   updatePartBar(5, GetHeadRight(), p->GetHeadRightHP());
+
+  // --- 警告（スタンプ攻撃予兆）演出の更新 ---
+  {
+      if (isWarningActive_) {
+          warningTimer_ += engine_ ? engine_->GetDeltaTime() : 1.0f / 60.0f;
+      } else {
+          warningTimer_ = 0.0f;
+      }
+
+      float pulse = std::sin(warningTimer_ * 10.0f); // 激しい脈動 (注意マーク用)
+      float slowPulse = std::sin(warningTimer_ * 4.0f); // ゆっくりめの脈動 (矢印点滅用)
+      float centerX = engine_ ? (static_cast<float>(engine_->GetClientWidth()) / 2.0f) : 640.0f;
+
+      if (isWarningActive_) {
+          // 1. 注意マークの脈動
+          if (warningSprite_) {
+              float baseScale = 180.0f;
+              float currentScale = baseScale * (1.0f + 0.15f * pulse);
+              warningSprite_->SetSize(currentScale, currentScale);
+
+              float alpha = 1.0f; 
+              warningSprite_->SetColor(Vector4{ 1.0f, 1.0f, 1.0f, alpha });
+              warningSprite_->SetPositionCenter(centerX, 200.0f);
+              warningSprite_->Update();
+          }
+
+          // 2. 矢印スプライト（左右2個ずつ）の更新
+          auto updateArrow = [&](std::unique_ptr<Sprite>& arrow, float offsetX, float phaseOffset) {
+              if (!arrow) return;
+
+              // ゆっくりめの明滅アルファ (0.6 ~ 1.0)
+              float arrowAlpha = 0.6f + 0.4f * (slowPulse * 0.5f + 0.5f);
+
+              // 下から上へのスライド移動アニメーション
+              float slideSpeed = 1.5f;
+              float slideFactor = std::fmod(warningTimer_ * slideSpeed + phaseOffset, 1.0f);
+              
+              float startY = 140.0f;
+              float endY = 40.0f;
+              float arrowY = startY + (endY - startY) * slideFactor;
+
+              // スライドの開始・終了時になめらかにフェードイン・フェードアウト
+              float slideFade = 1.0f;
+              if (slideFactor < 0.2f) {
+                  slideFade = slideFactor / 0.2f;
+              } else if (slideFactor > 0.8f) {
+                  slideFade = (1.0f - slideFactor) / 0.2f;
+              }
+
+              float finalArrowAlpha = arrowAlpha * slideFade;
+
+              arrow->SetColor(Vector4{ 1.0f, 0.2f, 0.2f, finalArrowAlpha });
+              arrow->SetPositionCenter(centerX + offsetX, arrowY);
+              arrow->Update();
+          };
+
+          // 左右に2個ずつの矢印を更新
+          // 内側の矢印 (Xオフセット: ±130.0f, 位相差なし)
+          updateArrow(warningArrowLeft1_, -130.0f, 0.0f);
+          updateArrow(warningArrowRight1_, 130.0f, 0.0f);
+          // 外側の矢印 (Xオフセット: ±250.0f, 位相差0.5fで交互に動く)
+          updateArrow(warningArrowLeft2_, -250.0f, 0.5f);
+          updateArrow(warningArrowRight2_, 250.0f, 0.5f);
+
+          // 赤いビネットの設定
+          if (engine_) {
+              auto* pp = engine_->GetPostProcessManager();
+              if (pp) {
+                  if (!pp->HasActiveMode(PostProcessMode::Vignette)) {
+                      pp->AddActiveMode(PostProcessMode::Vignette);
+                  }
+                  auto& vignette = pp->GetVignetteParams();
+                  vignette.color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 赤警告色
+                  vignette.scale = vignetteBaseScale_ + vignetteScalePulseWidth_ * pulse;
+                  vignette.power = vignetteBasePower_ + vignettePowerPulseWidth_ * pulse;
+              }
+          }
+      } else {
+          // 警告非アクティブ時の後処理 (ビネットの解除)
+          if (engine_) {
+              auto* pp = engine_->GetPostProcessManager();
+              if (pp) {
+                  if (pp->HasActiveMode(PostProcessMode::Vignette)) {
+                      pp->RemoveActiveMode(PostProcessMode::Vignette);
+                      // デフォルトパラメータに復元
+                      auto& vignette = pp->GetVignetteParams();
+                      vignette.color = { 0.0f, 0.0f, 0.0f, 0.0f };
+                      vignette.scale = 16.0f;
+                      vignette.power = 0.8f;
+                  }
+              }
+          }
+      }
+  }
 }
 
 void Enemy::Draw(IrufemiEngine* engine) {
@@ -404,10 +522,28 @@ void Enemy::Draw3DUI(IrufemiEngine* engine, bool isUI) {
     drawIfAlive(5, GetHeadRight());
 }
 
-void Enemy::Draw2DUI(IrufemiEngine* engine) {
+void Enemy::Draw2DUI(IrufemiEngine* engine, bool isFirstPerson) {
     if (!isActive_ || isDead_) return;
-    if (hpBar_) {
+    if (isFirstPerson && hpBar_) {
         hpBar_->Draw();
+    }
+    // 警告演出がアクティブな場合のみ描画する
+    if (isWarningActive_) {
+        if (warningSprite_) {
+            warningSprite_->Draw();
+        }
+        if (warningArrowLeft1_) {
+            warningArrowLeft1_->Draw();
+        }
+        if (warningArrowLeft2_) {
+            warningArrowLeft2_->Draw();
+        }
+        if (warningArrowRight1_) {
+            warningArrowRight1_->Draw();
+        }
+        if (warningArrowRight2_) {
+            warningArrowRight2_->Draw();
+        }
     }
 }
 
@@ -606,6 +742,13 @@ void Enemy::UpdateDebugUI() {
   if (ImGui::SliderFloat3("Head OBB Size", &headObb.x, 0.1f, 30.0f)) {
     EnemyParameters::GetInstance()->SetHeadOBBSize(headObb);
   }
+
+  ImGui::Separator();
+  ImGui::Text("Vignette Settings (Stomp Warning)");
+  ImGui::SliderFloat("Vignette Base Scale", &vignetteBaseScale_, 5.0f, 100.0f, "%.1f");
+  ImGui::SliderFloat("Vignette Scale Pulse", &vignetteScalePulseWidth_, 0.0f, 10.0f, "%.1f");
+  ImGui::SliderFloat("Vignette Base Power", &vignetteBasePower_, 0.05f, 2.0f, "%.2f");
+  ImGui::SliderFloat("Vignette Power Pulse", &vignettePowerPulseWidth_, 0.0f, 1.0f, "%.2f");
 
   ImGui::End();
 

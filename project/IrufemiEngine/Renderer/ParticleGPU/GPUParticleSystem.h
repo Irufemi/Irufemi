@@ -200,6 +200,8 @@ public:
 
     /** @brief 放出速度を設定する */
     void SetVelocity(float velocity) { if (emitter_) emitter_->velocity = velocity; }
+    /** @brief 放出方向を設定する */
+    void SetDirection(const Vector3& dir) { if (emitter_) emitter_->direction = dir; }
     /** @brief 座標のゆらぎ（Jitter）を設定する */
     void SetJitter(float jitter) { if (emitter_) emitter_->jitter = jitter; }
     void SetEnableRandomRotation(bool enable) { if (emitter_) emitter_->enableRandomRotation = enable ? 1 : 0; }
@@ -255,6 +257,33 @@ public:
      */
     void SetBoxEmitter(const Vector3& pos, const Vector3& size, uint32_t count, float frequency);
     ///@}
+
+    /** @brief 開始色を設定する */
+    void SetStartColor(const Vector4& minColor, const Vector4& maxColor) {
+        if (emitter_) {
+            emitter_->startColorMin = minColor;
+            emitter_->startColorMax = maxColor;
+        }
+    }
+    /** @brief 終了色を設定する */
+    void SetEndColor(const Vector4& minColor, const Vector4& maxColor) {
+        if (emitter_) {
+            emitter_->endColorMin = minColor;
+            emitter_->endColorMax = maxColor;
+        }
+    }
+    /** @brief 重力を設定する */
+    void SetGravity(float gravity) {
+        if (emitter_) {
+            emitter_->gravity = gravity;
+        }
+    }
+    /** @brief 空気抵抗（ダンピング）を設定する */
+    void SetDamping(float damping) {
+        if (emitter_) {
+            emitter_->damping = damping;
+        }
+    }
 
     /** @name 静的マネージャ設定 */
     ///@{

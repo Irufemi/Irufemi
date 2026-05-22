@@ -15,6 +15,8 @@ class Enemy;
 class Sprite;
 class PlayerHPBar;
 class WeaponTrail;
+class GPUParticleSystem;
+class Effect;
 
 struct AttackCollision {
     Vector3 center;
@@ -198,6 +200,10 @@ private:
     std::unique_ptr<ObjClass> starObj_ = nullptr;
     Vector3 starScale_ = { 0.0f, 0.0f, 0.0f };
     float starRotationZ_ = 0.0f;
+
+    // ★追加: からくりチャージ用のエフェクト
+    std::unique_ptr<GPUParticleSystem> karakuriChargeParticle_ = nullptr; // チャージ中・完了時の上昇パーティクル
+    std::unique_ptr<GPUParticleSystem> karakuriRingParticle_ = nullptr; // チャージしきったときの足元リングエフェクト
 
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;

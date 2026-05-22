@@ -82,7 +82,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
             else if (gEmitter.type == 3) // Cylinder
             {
                 float angle = rng.Generate1d() * 2.0f * 3.141592f;
-                float r = rng.Generate1d() * gEmitter.radius;
+                // 円周上（半径のフチ 90%〜100% の範囲）にのみ粒子を生成し、中空にする
+                float r = gEmitter.radius - (rng.Generate1d() * 0.1f * gEmitter.radius);
                 float h = (rng.Generate1d() * 2.0f - 1.0f) * (gEmitter.velocity * 0.5f); // velocityを高さとして流用
                 
                 float3 L = normalize(gEmitter.direction);

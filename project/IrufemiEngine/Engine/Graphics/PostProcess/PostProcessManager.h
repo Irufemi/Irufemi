@@ -85,8 +85,10 @@ public:
      * @brief ビネットエフェクト用パラメータ
      */
     struct VignetteParams {
+        Vector4 color = { 0.0f, 0.0f, 0.0f, 0.0f }; ///< ビネットの色 (RGB)
         float scale = 16.0f;    ///< ビネットの範囲
         float power = 0.8f;     ///< 減衰の強さ
+        float pad[2];           // 16バイトアライメント用パディング
     };
 
     /**
@@ -203,8 +205,10 @@ public:
         int32_t effects[16];
 
         // Vignette
+        Vector4 vignetteColor;
         float vignetteScale;
         float vignettePower;
+        float pad1[2];
 
         // Noise
         float noiseIntensity;

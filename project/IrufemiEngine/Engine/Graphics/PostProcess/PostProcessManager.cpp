@@ -49,6 +49,7 @@ void PostProcessManager::Update(float totalTime) {
   if (mappedGlitch_) *mappedGlitch_ = glitchParams_;
 
   // 統合パラメータの同期
+  combinedParams_.vignetteColor = vignetteParams_.color;
   combinedParams_.vignetteScale = vignetteParams_.scale;
   combinedParams_.vignettePower = vignetteParams_.power;
   combinedParams_.noiseIntensity = noiseParams_.intensity;

@@ -22,6 +22,7 @@ class Line3DRegion;
 class EnemyHPBar;
 class EnemyPartHPBar;
 class WeaponTrail;
+class Sprite;
 
 class Enemy {
 public:
@@ -33,7 +34,7 @@ public:
     
     // UI関連手続き
     void Draw3DUI(IrufemiEngine* engine, bool isUI = false);
-    void Draw2DUI(IrufemiEngine* engine);
+    void Draw2DUI(IrufemiEngine* engine, bool isFirstPerson = true);
 
     // --- ビーム制御用 ---
     void FireBeam(); // ビームを生成する関数
@@ -82,6 +83,10 @@ public:
     // サンドバッグモード設定（AI無効化、死亡・フェーズ2移行の防止）
     void SetIsSandbagMode(bool isSandbag) { isSandbagMode_ = isSandbag; }
     bool GetIsSandbagMode() const { return isSandbagMode_; }
+
+    // 警告演出アクセス用
+    void SetWarningActive(bool active) { isWarningActive_ = active; }
+    bool IsWarningActive() const { return isWarningActive_; }
 
     // アニメーションクラスへのアクセス用
     EnemyAnimation* GetAnimation() const { return animation_.get(); }
@@ -160,4 +165,19 @@ private:
     std::vector<std::unique_ptr<EnemyPartHPBar>> partHPBars_;
 
     bool isSandbagMode_ = false;
+
+    // 警告演出用
+    std::unique_ptr<Sprite> warningSprite_ = nullptr;
+    std::unique_ptr<Sprite> warningArrowLeft1_ = nullptr;
+    std::unique_ptr<Sprite> warningArrowLeft2_ = nullptr;
+    std::unique_ptr<Sprite> warningArrowRight1_ = nullptr;
+    std::unique_ptr<Sprite> warningArrowRight2_ = nullptr;
+    bool isWarningActive_ = false;
+    float warningTimer_ = 0.0f;
+
+    // ビネット調整用パラメータ (ImGuiでリアルタイム調整可能)
+    float vignetteBaseScale_ = 40.0f;      // 基準クリア領域 (大きいほど赤が薄くなる)
+    float vignetteScalePulseWidth_ = 2.0f; // 脈動の振幅
+    float vignetteBasePower_ = 0.15f;       // 基準にじみ具合 (小さいほど赤が薄くなる)
+    float vignettePowerPulseWidth_ = 0.05f; // 脈動の振幅
 };
