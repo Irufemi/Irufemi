@@ -49,7 +49,7 @@ public:
         int count = 10;
         int minFloors = 5;      // ビルの最小階層数
         int maxFloors = 20;     // ビルの最大階層数
-        float floorHeight = 2.0f; // 1階層の高さ
+        float floorHeightRatio = 0.5f; // 1階層の高さ = scaleXZ * この比率
         float minScaleXZ = 5.0f;
         float maxScaleXZ = 15.0f;
         float fieldRange = 90.0f;

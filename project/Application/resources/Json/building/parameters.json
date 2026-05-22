@@ -10,11 +10,11 @@
         "count_comment": "初期配置されるビルの個数",
         "field_range": 90.0,
         "field_range_comment": "ビルが生成されるフィールドのXZ範囲(中心からの距離)",
-        "floor_height": 4.0,
-        "floor_height_comment": "1階層の高さ",
+        "floor_height_ratio": 0.5,
+        "floor_height_ratio_comment": "1階層の高さ比率 (実際の高さ = scaleXZ * この値)",
         "max_count": 20,
         "max_count_comment": "時間経過で自動生成されるビルの最大上限数",
-        "max_floors": 20,
+        "max_floors": 10,
         "max_floors_comment": "ビルの最大階層数",
         "max_scale_xz": 15.0,
         "max_scale_xz_comment": "ビルの最大幅スケール(XZ)",
@@ -24,9 +24,9 @@
         "min_floors_comment": "ビルの最小階層数",
         "min_scale_xz": 8.0,
         "min_scale_xz_comment": "ビルの最小幅スケール(XZ)",
-        "spawn_speed": 10.0,
-        "spawn_speed_comment": "ビルが地面からせり上がる速度(秒速)",
         "spawn_interval": 5.0,
-        "spawn_interval_comment": "ビルが自動生成される時間間隔(秒)"
+        "spawn_interval_comment": "ビルが自動生成される時間間隔(秒)",
+        "spawn_speed": 10.0,
+        "spawn_speed_comment": "ビルが地面からせり上がる速度(秒速)"
     }
 }
