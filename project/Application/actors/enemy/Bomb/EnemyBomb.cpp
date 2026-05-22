@@ -254,8 +254,9 @@ void EnemyBomb::Draw(IrufemiEngine* engine) {
         engine->SetBlend(BlendMode::kBlendModeAdd);
         engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
         
-        if (telegraphObjX_) telegraphObjX_->Draw();
-        if (telegraphObjZ_) telegraphObjZ_->Draw();
+        // ビルなどの不透明オブジェクト描画後に描画するためUIキュー（Draw(true)）を使用
+        if (telegraphObjX_) telegraphObjX_->Draw(true);
+        if (telegraphObjZ_) telegraphObjZ_->Draw(true);
 
         engine->SetBlend(BlendMode::kBlendModeNormal);
         engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
@@ -275,8 +276,9 @@ void EnemyBomb::Draw(IrufemiEngine* engine) {
         engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
         engine->SetCull(PSOManager::CullMode::None);
 
-        if (attackCylinderX_) attackCylinderX_->Draw();
-        if (attackCylinderZ_) attackCylinderZ_->Draw();
+        // ビルなどの不透明オブジェクト描画後に描画するためUIキュー（Draw(true)）を使用
+        if (attackCylinderX_) attackCylinderX_->Draw(true);
+        if (attackCylinderZ_) attackCylinderZ_->Draw(true);
 
         engine->SetBlend(BlendMode::kBlendModeNormal);
         engine->SetDepthWrite(PSOManager::DepthWrite::Enable);

@@ -17,9 +17,9 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
     telegraphObj_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
     telegraphObj_->SetCastShadows(false);
     if (engine) {
-        // 予兆線は「壁越しでも見える（透視できる）」ようにするため、DepthWrite::Offを指定。
-        // また、重なった時に綺麗に光るように kBlendModeAdd に変更
-        telegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
+        // 予兆線を不透明オブジェクト（ビルなど）の後にUIキューとして描画し、
+        // 深度テストを有効にする（DepthWrite::Disable）ことで、ビルの裏側は隠れ、表側は表示されるようになります。
+        telegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
     }
 
     attackCylinder_ = std::make_shared<CylinderClass>();
@@ -224,14 +224,14 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
 
     if (isAttackActive_ && attackCylinder_) {
         // 新しいカスタムPSOインジェクション基盤を使用して、専用のシェーダーと定数バッファをセットする
-        attackCylinder_->SetCustomPSO(engine->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
+        attackCylinder_->SetCustomPSO(engine->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
         if (lightningParamsResource_) {
             attackCylinder_->SetCustomCBVAddress(lightningParamsResource_->GetGPUVirtualAddress());
         }
 
         // パケット（キュー）に積まれる描画ステートを設定
         engine->SetBlend(BlendMode::kBlendModeAdd);
-        engine->SetDepthWrite(PSOManager::DepthWrite::Off);
+        engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
         engine->SetCull(PSOManager::CullMode::None);
 
         // 通常通りDrawを呼ぶだけで、DrawManager内で適切なパスと順序（カスタムPSO付き）で描画される
