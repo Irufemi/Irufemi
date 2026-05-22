@@ -129,6 +129,13 @@
                     "XYSpeed": 15.0
                 },
                 "type": "RailShooterPlayerComponent"
+            },
+            {
+                "data": {
+                    "Max Orbit Count": 10,
+                    "Pull Radius": 50.0
+                },
+                "type": "GravityPlayerComponent"
             }
         ],
         "isActive": true,
@@ -339,5 +346,36 @@
         ],
         "isActive": true,
         "name": "DebrisManager"
+    },
+    {
+        "children": [],
+        "components": [
+            {
+                "data": {
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "type": "TransformComponent"
+            },
+            {
+                "data": {},
+                "type": "DebugEnemySpawnerComponent"
+            }
+        ],
+        "isActive": true,
+        "name": "EnemySpawner"
     }
 ]

@@ -29,6 +29,7 @@ public:
 
     void SetTarget(GameObject* target) { targetObject_ = target; }
     void SetOrbitParams(float angle, float radius) { orbitAngle_ = angle; orbitRadius_ = radius; }
+    void SetThrowDirection(const Vector3& dir) { throwDirection_ = dir; }
 
 private:
     DebrisState state_ = DebrisState::Idle;
@@ -44,6 +45,7 @@ private:
     // 各種移動用のパラメータ
     float pullSpeed_ = 10.0f;
     float throwSpeed_ = 50.0f;
+    Vector3 throwDirection_ = {0.0f, 0.0f, 1.0f};
     
     // Idle時のフワフワアニメーション用
     float idleTimeY_ = 0.0f;

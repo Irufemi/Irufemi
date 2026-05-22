@@ -15,6 +15,9 @@ public:
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "RailShooterEnemyComponent"; }
 
+    bool IsAlive() const { return hp_ > 0 && isActive_; }
+    void TakeDamage(int damage);
+
 private:
     float spawnProgress_ = 0.5f; ///< プレイヤーがどの進行度に達したらアクティブになるか (0.0 ~ 1.0)
     bool isActive_ = false;      ///< 現在活動中かどうか

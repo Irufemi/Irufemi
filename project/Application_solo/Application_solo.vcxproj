@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -237,6 +237,8 @@ exit 0</Command>
     <ClCompile Include="components\CameraFollowPlayerComponent.cpp" />
     <ClCompile Include="components\DebrisComponent.cpp" />
     <ClCompile Include="components\DebrisManagerComponent.cpp" />
+    <ClCompile Include="components\GravityPlayerComponent.cpp" />
+    <ClCompile Include="components\DebugEnemySpawnerComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -253,6 +255,8 @@ exit 0</Command>
     <ClInclude Include="components\CameraFollowPlayerComponent.h" />
     <ClInclude Include="components\DebrisComponent.h" />
     <ClInclude Include="components\DebrisManagerComponent.h" />
+    <ClInclude Include="components\GravityPlayerComponent.h" />
+    <ClInclude Include="components\DebugEnemySpawnerComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

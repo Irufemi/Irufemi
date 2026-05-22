@@ -15,6 +15,8 @@
 #include "components/CameraFollowPlayerComponent.h"
 #include "components/DebrisComponent.h"
 #include "components/DebrisManagerComponent.h"
+#include "components/GravityPlayerComponent.h"
+#include "components/DebugEnemySpawnerComponent.h"
 
 // シーンのインクルード
 #include "scene/title/TitleScene.h"
@@ -72,6 +74,8 @@ void GameApplication::Run() {
     ComponentFactory::Register("CameraFollowPlayerComponent", []() { return std::make_shared<CameraFollowPlayerComponent>(); });
     ComponentFactory::Register("DebrisComponent", []() { return std::make_shared<DebrisComponent>(); });
     ComponentFactory::Register("DebrisManagerComponent", []() { return std::make_shared<DebrisManagerComponent>(); });
+    ComponentFactory::Register("GravityPlayerComponent", []() { return std::make_shared<GravityPlayerComponent>(); });
+    ComponentFactory::Register("DebugEnemySpawnerComponent", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
 
     // シーンの登録
     engine->SetSceneRegistrar(RegisterScenes);

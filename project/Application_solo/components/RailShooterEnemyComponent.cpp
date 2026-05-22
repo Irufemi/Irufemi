@@ -51,3 +51,16 @@ void RailShooterEnemyComponent::Update() {
         isActive_ = true;
     }
 }
+
+void RailShooterEnemyComponent::TakeDamage(int damage) {
+    if (!IsAlive()) return;
+
+    hp_ -= damage;
+    if (hp_ <= 0) {
+        hp_ = 0;
+        isActive_ = false;
+        if (gameObject_) {
+            gameObject_->SetIsActive(false); // 死亡して非アクティブ化
+        }
+    }
+}

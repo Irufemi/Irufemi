@@ -4,6 +4,7 @@
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Renderer/Object3D/BaseModel/BaseModel.h"
+#include "RailShooterEnemyComponent.h"
 #include <cmath>
 
 void DebrisComponent::OnRegisterProperties() {
@@ -81,7 +82,7 @@ void DebrisComponent::Update() {
             break;
         }
         case DebrisState::Thrown: {
-            if (targetObject_) {
+            if (targetObject_ && targetObject_->GetIsActive()) {
                 auto targetTransform = targetObject_->GetComponent<TransformComponent>();
                 if (targetTransform) {
                     // 敵に向かって高速ホーミング移動
@@ -93,19 +94,26 @@ void DebrisComponent::Update() {
                     // 正規化して一定速度で飛ばす
                     float len = std::sqrt(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
                     if (len > 0.001f) {
-                        transform->position_.x += (diff.x / len) * throwSpeed_ * deltaTime;
-                        transform->position_.y += (diff.y / len) * throwSpeed_ * deltaTime;
-                        transform->position_.z += (diff.z / len) * throwSpeed_ * deltaTime;
+                        throwDirection_ = { diff.x / len, diff.y / len, diff.z / len };
                     }
-
+                    
                     // 簡易ヒット判定
                     if (len < 1.0f) {
-                        // TODO: 敵にダメージを与える処理
-                        // 本格的には DebrisManager で ReleaseDebris を呼ぶ
+                        auto enemyComp = targetObject_->GetComponent<RailShooterEnemyComponent>();
+                        if (enemyComp) {
+                            enemyComp->TakeDamage(100);
+                        }
                         gameObject_->SetIsActive(false); 
                     }
                 }
             }
+            
+            // ターゲットがない（または既に死んだ）場合でも、計算された(または初期設定された)方向に飛び続ける
+            transform->position_.x += throwDirection_.x * throwSpeed_ * deltaTime;
+            transform->position_.y += throwDirection_.y * throwSpeed_ * deltaTime;
+            transform->position_.z += throwDirection_.z * throwSpeed_ * deltaTime;
+            
+            // TODO: 一定距離/時間で消滅させる等の処理が必要
             break;
         }
     }

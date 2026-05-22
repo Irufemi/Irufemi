@@ -72,7 +72,8 @@ void BaseScene::Update() {
 #endif
 
     // GameObject の更新
-    for (auto& obj : gameObjects_) {
+    for (size_t i = 0; i < gameObjects_.size(); ++i) {
+        auto obj = gameObjects_[i];
         if (obj && !obj->GetParent() && !obj->IsDestroyed()) {
             obj->Update(isPlayMode);
         }
@@ -94,7 +95,8 @@ void BaseScene::Update() {
 
 void BaseScene::Draw() {
     // GameObject の描画
-    for (auto& obj : gameObjects_) {
+    for (size_t i = 0; i < gameObjects_.size(); ++i) {
+        auto obj = gameObjects_[i];
         if (obj && !obj->GetParent()) obj->Draw();
     }
     
