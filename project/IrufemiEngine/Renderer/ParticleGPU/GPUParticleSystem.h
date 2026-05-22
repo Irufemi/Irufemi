@@ -421,6 +421,7 @@ private:
     bool isCullingEnabled_ = true;
     bool isCulled_ = false;
     bool isInitializedCS_ = false;
+    bool isSortResourceInitialized_ = false;
     bool needsUpdateCS_ = false;
     
 

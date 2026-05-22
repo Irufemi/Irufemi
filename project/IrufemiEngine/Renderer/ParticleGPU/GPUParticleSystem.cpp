@@ -620,6 +620,15 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
     });
     
     // --- Bitonic Sort Phase ---
+    // 前フレームの最後にNON_PIXEL_SHADER_RESOURCEにしたため、ここでUAVに再度遷移させる
+    if (isSortResourceInitialized_) {
+        DirectXUtils::TransitionBarrier(commandList, sortResource_.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    } else {
+        // 初回はCOMMONからUAVへ遷移させる
+        DirectXUtils::TransitionBarrier(commandList, sortResource_.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        isSortResourceInitialized_ = true;
+    }
+
     // 1. Init Sort List
     commandList->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleInitSort"));
     // Descriptor table mapping for InitParticleSort.CS.hlsl:

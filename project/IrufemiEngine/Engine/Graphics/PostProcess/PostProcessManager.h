@@ -213,6 +213,7 @@ public:
         // Noise
         float noiseIntensity;
         float noiseTime;
+        float pad_noise[2]; // HLSLの float4(dissolveEdgeColor) 用に16バイト境界までパディング
 
         // Dissolve
         Vector4 dissolveEdgeColor;
