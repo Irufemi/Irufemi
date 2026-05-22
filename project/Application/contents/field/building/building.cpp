@@ -27,7 +27,7 @@ void Building::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 
     buildingRegion_ = std::make_unique<ModelRegion>();
-    buildingRegion_->Initialize("building/block.obj");
+    buildingRegion_->Initialize("building/building.obj");
 
     LoadJson();
     Generate();
@@ -205,12 +205,30 @@ void Building::Draw(IrufemiEngine* engine) {
         // モデル描画（消滅タイマー前のみ）
         bool modelGone = inst.isBlownAway && inst.disappearTimer >= BuildingInstance::kDisappearTime;
         if (!modelGone) {
-            Transform tf;
-            tf.translate = inst.position;
-            tf.rotate = inst.rotate;
-            tf.scale = inst.scale;
-            if (buildingRegion_) {
-                buildingRegion_->AddInstance(tf, {1.0f, 1.0f, 1.0f, 1.0f});
+            // ビル全体の高さ
+            float totalHeight = inst.floorCount * params_.floorHeight;
+            // 回転行列（全階層共通）
+            Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(inst.rotate);
+
+            for (int floor = 0; floor < inst.floorCount; ++floor) {
+                // ローカル空間での各階層の中心Y座標（ビル中心を原点とする）
+                float localY = -totalHeight / 2.0f + params_.floorHeight * floor + params_.floorHeight / 2.0f;
+
+                // ローカルオフセットを回転行列で変換
+                Vector3 localOffset = { 0.0f, localY, 0.0f };
+                Vector3 rotatedOffset = {
+                    rotMat.m[0][0] * localOffset.x + rotMat.m[0][1] * localOffset.y + rotMat.m[0][2] * localOffset.z,
+                    rotMat.m[1][0] * localOffset.x + rotMat.m[1][1] * localOffset.y + rotMat.m[1][2] * localOffset.z,
+                    rotMat.m[2][0] * localOffset.x + rotMat.m[2][1] * localOffset.y + rotMat.m[2][2] * localOffset.z
+                };
+
+                Transform tf;
+                tf.translate = Math::Add(inst.position, rotatedOffset);
+                tf.rotate = inst.rotate;
+                tf.scale = { inst.scale.x, params_.floorHeight, inst.scale.z };
+                if (buildingRegion_) {
+                    buildingRegion_->AddInstance(tf, {1.0f, 1.0f, 1.0f, 1.0f});
+                }
             }
         }
 
@@ -246,8 +264,9 @@ void Building::DrawImGui() {
 
         changed |= ImGui::SliderInt("Count", &params_.count, 1, 100);
         changed |= ImGui::DragFloat("Field Range", &params_.fieldRange, 1.0f, 10.0f, 200.0f);
-        changed |= ImGui::DragFloat("Min Height", &params_.minHeight, 0.1f, 0.1f, 100.0f);
-        changed |= ImGui::DragFloat("Max Height", &params_.maxHeight, 0.1f, 0.1f, 100.0f);
+        changed |= ImGui::DragInt("Min Floors", &params_.minFloors, 1, 1, 100);
+        changed |= ImGui::DragInt("Max Floors", &params_.maxFloors, 1, 1, 100);
+        changed |= ImGui::DragFloat("Floor Height", &params_.floorHeight, 0.1f, 0.1f, 10.0f);
         changed |= ImGui::DragFloat("Min Scale XZ", &params_.minScaleXZ, 0.1f, 0.1f, 50.0f);
         changed |= ImGui::DragFloat("Max Scale XZ", &params_.maxScaleXZ, 0.1f, 0.1f, 50.0f);
         changed |= ImGui::DragFloat("Min Distance", &params_.minDistance, 0.1f, 0.0f, 100.0f);
@@ -262,8 +281,8 @@ void Building::DrawImGui() {
         changed |= ImGui::DragFloat("Spawn Speed", &params_.spawnSpeed, 0.1f, 0.1f, 100.0f);
 
         // 最小値と最大値の整合性を保つ
-        if (params_.minHeight > params_.maxHeight) {
-            params_.maxHeight = params_.minHeight;
+        if (params_.minFloors > params_.maxFloors) {
+            params_.maxFloors = params_.minFloors;
         }
         if (params_.minScaleXZ > params_.maxScaleXZ) {
             params_.maxScaleXZ = params_.minScaleXZ;
@@ -307,8 +326,9 @@ void Building::LoadJson() {
     if (j.contains("building")) {
         const auto& b = j["building"];
         if (b.contains("count")) params_.count = b["count"];
-        if (b.contains("min_height")) params_.minHeight = b["min_height"];
-        if (b.contains("max_height")) params_.maxHeight = b["max_height"];
+        if (b.contains("min_floors")) params_.minFloors = b["min_floors"];
+        if (b.contains("max_floors")) params_.maxFloors = b["max_floors"];
+        if (b.contains("floor_height")) params_.floorHeight = b["floor_height"];
         if (b.contains("min_scale_xz")) params_.minScaleXZ = b["min_scale_xz"];
         if (b.contains("max_scale_xz")) params_.maxScaleXZ = b["max_scale_xz"];
         if (b.contains("field_range")) params_.fieldRange = b["field_range"];
@@ -328,10 +348,12 @@ void Building::SaveJson() {
     j["building"] = {
         {"count", params_.count},
         {"count_comment", "初期配置されるビルの個数"},
-        {"min_height", params_.minHeight},
-        {"min_height_comment", "ビルの最小高さスケール"},
-        {"max_height", params_.maxHeight},
-        {"max_height_comment", "ビルの最大高さスケール"},
+        {"min_floors", params_.minFloors},
+        {"min_floors_comment", "ビルの最小階層数"},
+        {"max_floors", params_.maxFloors},
+        {"max_floors_comment", "ビルの最大階層数"},
+        {"floor_height", params_.floorHeight},
+        {"floor_height_comment", "1階層の高さ"},
         {"min_scale_xz", params_.minScaleXZ},
         {"min_scale_xz_comment", "ビルの最小幅スケール(XZ)"},
         {"max_scale_xz", params_.maxScaleXZ},
@@ -368,7 +390,7 @@ void Building::Generate() {
     std::random_device seed_gen;
     std::mt19937 engine(seed_gen());
     std::uniform_real_distribution<float> distPos(-params_.fieldRange, params_.fieldRange);
-    std::uniform_real_distribution<float> distHeight(params_.minHeight, params_.maxHeight);
+    std::uniform_int_distribution<int> distFloors(params_.minFloors, params_.maxFloors);
     std::uniform_real_distribution<float> distScaleXZ(params_.minScaleXZ, params_.maxScaleXZ);
     std::uniform_real_distribution<float> distRot(-3.14159265f, 3.14159265f);
 
@@ -377,11 +399,13 @@ void Building::Generate() {
         Vector3 pos;
         Vector3 scale;
         float rotY;
+        int floorCount;
     };
     std::vector<PlacementData> placements;
 
     for (int i = 0; i < params_.count; ++i) {
         float scaleXZ = 0.0f;
+        int floorCount = 0;
         float scaleY = 0.0f;
         Vector3 pos = { 0.0f, 0.0f, 0.0f };
         bool isValidPos = false;
@@ -389,7 +413,8 @@ void Building::Generate() {
 
         for (int attempt = 0; attempt < maxAttempts; ++attempt) {
             scaleXZ = distScaleXZ(engine);
-            scaleY = distHeight(engine);
+            floorCount = distFloors(engine);
+            scaleY = floorCount * params_.floorHeight;
             pos = { distPos(engine), scaleY / 2.0f, distPos(engine) };
 
             isValidPos = true;
@@ -415,7 +440,7 @@ void Building::Generate() {
             continue;
         }
 
-        placements.push_back({ pos, { scaleXZ, scaleY, scaleXZ }, distRot(engine) });
+        placements.push_back({ pos, { scaleXZ, scaleY, scaleXZ }, distRot(engine), floorCount });
     }
 
     // 実際にインスタンスを生成
@@ -424,6 +449,7 @@ void Building::Generate() {
         inst.position = pd.pos;
         inst.scale = pd.scale;
         inst.rotate = { 0.0f, pd.rotY, 0.0f };
+        inst.floorCount = pd.floorCount;
         inst.hp = params_.buildingHp;
         inst.isBlownAway = false;
         inst.isDestroyed = false;
@@ -448,8 +474,11 @@ void Building::Generate() {
 void Building::ClearAndAddSingleBuilding(const Vector3& position) {
     instances_.clear();
     BuildingInstance inst;
-    inst.position = position;
-    inst.scale = { 3.0f, 10.0f, 3.0f }; // 小さめのビル
+    int floorCount = 5; // チュートリアル用の小さめのビル
+    float scaleY = floorCount * params_.floorHeight;
+    inst.position = { position.x, scaleY / 2.0f, position.z };
+    inst.scale = { 3.0f, scaleY, 3.0f };
+    inst.floorCount = floorCount;
     inst.rotate = { 0.0f, 0.0f, 0.0f };
     inst.hp = params_.buildingHp; 
     inst.isBlownAway = false;
@@ -642,11 +671,12 @@ void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3&
     std::random_device seed_gen;
     std::mt19937 engine(seed_gen());
     std::uniform_real_distribution<float> distPos(-params_.fieldRange, params_.fieldRange);
-    std::uniform_real_distribution<float> distHeight(params_.minHeight, params_.maxHeight);
+    std::uniform_int_distribution<int> distFloors(params_.minFloors, params_.maxFloors);
     std::uniform_real_distribution<float> distScaleXZ(params_.minScaleXZ, params_.maxScaleXZ);
     std::uniform_real_distribution<float> distRot(-3.14159265f, 3.14159265f);
 
     float scaleXZ = 0.0f;
+    int floorCount = 0;
     float scaleY = 0.0f;
     Vector3 pos = { 0.0f, 0.0f, 0.0f };
     bool isValidPos = false;
@@ -654,7 +684,8 @@ void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3&
 
     for (int attempt = 0; attempt < maxAttempts; ++attempt) {
         scaleXZ = distScaleXZ(engine);
-        scaleY = distHeight(engine);
+        floorCount = distFloors(engine);
+        scaleY = floorCount * params_.floorHeight;
         pos = { distPos(engine), scaleY / 2.0f, distPos(engine) };
 
         isValidPos = true;
@@ -711,6 +742,7 @@ void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3&
 
     BuildingInstance inst;
     inst.scale = { scaleXZ, scaleY, scaleXZ };
+    inst.floorCount = floorCount;
     inst.rotate = { 0.0f, distRot(engine), 0.0f };
     inst.hp = params_.buildingHp;
     inst.isBlownAway = false;
