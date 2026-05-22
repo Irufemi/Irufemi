@@ -266,6 +266,11 @@ void SceneViewPanel::HandleDragAndDrop() {
 }
 
 void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos, ImVec2 size) {
+    // プレイモード中（ゲーム進行中）はインゲームのクリック操作（射撃など）と競合するためピッキングを無効にする
+    if (editorManager_->IsPlayMode()) {
+        return;
+    }
+
     bool isGizmoUsing = ImGuizmo::IsUsing() || ImGuizmo::IsOver();
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !isGizmoUsing) {
         auto* engine = editorManager_->GetEngine();
