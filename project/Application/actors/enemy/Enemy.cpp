@@ -109,7 +109,6 @@ void Enemy::Initialize(IrufemiEngine *engine) {
   initialHeadLeftLocalTransform_ = headLeftLocalTransform_;
   initialHeadMidLocalTransform_ = headMidLocalTransform_;
   initialHeadRightLocalTransform_ = headRightLocalTransform_;
-}
 
   // 警告用注意マークの初期化
   warningSprite_ = std::make_unique<Sprite>();
