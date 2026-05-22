@@ -113,12 +113,14 @@ public:
      */
     void SyncBeforeDraw() override;
     void Draw() override;
+    void Draw(bool isUI);
 
     /**
      * @brief 描画処理（カメラを外部から指定する場合）
      * @param[in] camera 描画に使用するカメラ
      */
     void Draw(const Camera& camera);
+    void Draw(const Camera& camera, bool isUI);
 
     /**
      * @brief ImGuiによるデバッグ・編集用UIを表示する

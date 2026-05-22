@@ -47,18 +47,24 @@ void PlayerHPBar::Initialize(IrufemiEngine* engine) {
     barFrame_->Initialize("resources/whiteTexture.png");
     barFrame_->SetScale({barMaxWidth3D_ + kFramePadding3D * 2.0f, barHeight3D_ + kFramePadding3D * 2.0f, 1.0f});
     barFrame_->SetColor(Vector4{kFrameR, kFrameG, kFrameB, kFrameA});
+    barFrame_->SetCullingEnabled(false);
+    if (engine) barFrame_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
     if (auto* mat = barFrame_->GetD3D12Resource()->GetMaterialData()) { mat->enableLighting = 0; mat->lightingMode = 0; }
 
     barBg_ = std::make_unique<PlaneClass>();
     barBg_->Initialize("resources/whiteTexture.png");
     barBg_->SetScale({barMaxWidth3D_, barHeight3D_, 1.0f});
     barBg_->SetColor(Vector4{kBgR, kBgG, kBgB, kBgA});
+    barBg_->SetCullingEnabled(false);
+    if (engine) barBg_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
     if (auto* mat = barBg_->GetD3D12Resource()->GetMaterialData()) { mat->enableLighting = 0; mat->lightingMode = 0; }
 
     barFill_ = std::make_unique<PlaneClass>();
     barFill_->Initialize("resources/whiteTexture.png");
     barFill_->SetScale({barMaxWidth3D_, barHeight3D_, 1.0f});
     barFill_->SetColor(Vector4{kColorHighR, kColorHighG, kColorHighB, kBarAlpha});
+    barFill_->SetCullingEnabled(false);
+    if (engine) barFill_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
     if (auto* mat = barFill_->GetD3D12Resource()->GetMaterialData()) { mat->enableLighting = 0; mat->lightingMode = 0; }
 
     // --- 2D ---
@@ -116,6 +122,15 @@ void PlayerHPBar::Update(const Player *player, bool isFirstPerson) {
         if (player) {
             basePos = player->GetTranslate();
             basePos.y += 1.5f;
+        }
+
+        // プレイヤー自身のモデル（耳など）へのめり込みを防ぐため、カメラ方向へ引き寄せる
+        Vector3 toCamera = Math::Subtract(camera->GetTranslate(), basePos);
+        float dist = Math::Length(toCamera);
+        if (dist > 0.001f) {
+            Vector3 dir = {toCamera.x / dist, toCamera.y / dist, toCamera.z / dist};
+            float pullAmt = (std::min)(1.5f, dist * 0.5f);
+            basePos = Math::Add(basePos, Math::Multiply(pullAmt, dir));
         }
         
         Matrix4x4 billboardMat = Math::MakeAffineMatrix({1.0f, 1.0f, 1.0f}, camera->GetRotate(), basePos);

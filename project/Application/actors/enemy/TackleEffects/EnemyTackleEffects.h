@@ -23,7 +23,7 @@ public:
         OBB GetOBB() const;
     };
 
-    void Initialize();
+    void Initialize(class IrufemiEngine* engine);
     void Update(float deltaTime);
     void Draw(class IrufemiEngine* engine);
 

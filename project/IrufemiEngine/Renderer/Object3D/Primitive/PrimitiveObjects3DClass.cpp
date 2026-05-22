@@ -163,11 +163,22 @@ void PrimitiveObjects3DClass::Update() {
 void PrimitiveObjects3DClass::Draw() {
     if (!engine_) return;
     if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
-        Draw(*activeCam);
+        Draw(*activeCam, false);
+    }
+}
+
+void PrimitiveObjects3DClass::Draw(bool isUI) {
+    if (!engine_) return;
+    if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+        Draw(*activeCam, isUI);
     }
 }
 
 void PrimitiveObjects3DClass::Draw(const Camera& camera) {
+    Draw(camera, false);
+}
+
+void PrimitiveObjects3DClass::Draw(const Camera& camera, bool isUI) {
     if (!mesh_.resource || !drawManager_) return;
 
     // 視錐台カリング
@@ -201,7 +212,11 @@ void PrimitiveObjects3DClass::Draw(const Camera& camera) {
     mesh_.resource->SyncBeforeDraw();
 
     // 描画実行
-    drawManager_->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
+    if (isUI) {
+        drawManager_->SubmitUI3D(mesh_.resource.get(), nullptr);
+    } else {
+        drawManager_->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
+    }
 }
 
 void PrimitiveObjects3DClass::Debug(const char* label) {

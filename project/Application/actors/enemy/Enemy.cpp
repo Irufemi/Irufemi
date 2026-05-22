@@ -77,7 +77,7 @@ void Enemy::Initialize(IrufemiEngine *engine) {
   stompEffects_->Initialize();
 
   tackleEffects_ = std::make_unique<EnemyTackleEffects>();
-  tackleEffects_->Initialize();
+  tackleEffects_->Initialize(engine_);
 
   neckTrail_ = std::make_unique<WeaponTrail>();
   neckTrail_->Initialize(engine_, "resources/gradationLine.png", {1.0f, 0.2f, 0.2f, 1.0f}); // エネミーの首振り用の赤いトレイル

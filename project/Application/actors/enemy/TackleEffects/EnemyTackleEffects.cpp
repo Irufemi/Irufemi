@@ -5,15 +5,21 @@
 #include <cmath>
 #include <algorithm>
 
-void EnemyTackleEffects::Initialize() {
+void EnemyTackleEffects::Initialize(IrufemiEngine* engine) {
     waveObj_ = std::make_unique<ObjClass>();
     waveObj_->Initialize("sample/block.obj");
+    if (engine) {
+        waveObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+    }
 
     // 予告線（AOE）用
     telegraphObj_ = std::make_shared<PrimitiveObjects3DClass>();
     telegraphObj_->Initialize(PrimitiveType::Cube, "resources/whiteTexture.png");
     telegraphObj_->GetMaterial().enableLighting = false; // ライティング無効
     telegraphObj_->SetCastShadows(false);                // 影を落とさない
+    if (engine) {
+        telegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+    }
 }
 
 void EnemyTackleEffects::StartTelegraph(const Vector3& position, float rotateY, float length, float width) {
