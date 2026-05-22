@@ -223,6 +223,15 @@ void EnemyBomb::Update() {
     }
 }
 
+void EnemyBomb::Cancel() {
+    state_ = State::Done;
+    isExpired_ = true;
+    if (gpuParticle_) {
+        gpuParticle_->SetEmit(false);
+        gpuParticle_->Update();
+    }
+}
+
 void EnemyBomb::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 

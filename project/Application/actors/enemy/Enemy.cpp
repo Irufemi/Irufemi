@@ -99,6 +99,17 @@ void Enemy::Initialize(IrufemiEngine *engine) {
 
   isActive_ = true;
   isDead_ = false;
+  deathPhase_ = DeathPhase::None;
+  deathTimer_ = 0.0f;
+
+  // death phase 用の初期位置保存
+  for (int i = 0; i < 3; ++i) {
+      initialBodyLocalTransforms_[i] = bodyLocalTransforms_[i];
+  }
+  initialHeadLeftLocalTransform_ = headLeftLocalTransform_;
+  initialHeadMidLocalTransform_ = headMidLocalTransform_;
+  initialHeadRightLocalTransform_ = headRightLocalTransform_;
+}
 
   // 警告用注意マークの初期化
   warningSprite_ = std::make_unique<Sprite>();
@@ -276,7 +287,56 @@ void Enemy::Update(Player *player) {
     if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
         headRight_->GetHP() <= 0) {
       isDead_ = true;
+
+      // 死亡が確定した瞬間に攻撃をキャンセルし、引き戻しフェーズへ移行
+      for (int i = 0; i < 3; ++i) {
+          if (beams_[i]) {
+              beams_[i]->SetAttackActive(false);
+              beams_[i]->SetTelegraphActive(false);
+              beams_[i]->SetChargeSphereActive(false);
+          }
+          if (bombs_[i]) {
+              bombs_[i]->Cancel();
+          }
+      }
+      // 各部位の吹き飛びをリセット
+      Matrix4x4 globalMat = Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate, globalTransform_.translate);
+      Matrix4x4 invGlobalMat = Math::Inverse(globalMat);
+
+      for (int i = 0; i < 3; ++i) {
+          if (bodies_[i]) bodies_[i]->ResetBlow();
+          startBodyLocalTransforms_[i] = bodyLocalTransforms_[i];
+      }
+      if (headLeft_) {
+          headLeft_->ResetBlow();
+          startHeadLeftLocalTransform_ = headLeftLocalTransform_;
+          startHeadLeftLocalTransform_.translate = Math::Transform(headLeftLocalTransform_.translate, invGlobalMat);
+      }
+      if (headMid_) {
+          headMid_->ResetBlow();
+          startHeadMidLocalTransform_ = headMidLocalTransform_;
+          startHeadMidLocalTransform_.translate = Math::Transform(headMidLocalTransform_.translate, invGlobalMat);
+      }
+      if (headRight_) {
+          headRight_->ResetBlow();
+          startHeadRightLocalTransform_ = headRightLocalTransform_;
+          startHeadRightLocalTransform_.translate = Math::Transform(headRightLocalTransform_.translate, invGlobalMat);
+      }
+
+      // フェーズ2を解除して親子関係ベースの描画に復帰
+      isPhase2_ = false;
+
+      // 死亡開始時の全体位置を保存
+      startGlobalTranslate_ = globalTransform_.translate;
+
+      deathPhase_ = DeathPhase::Reassembling;
+      deathTimer_ = 0.0f;
     }
+  }
+
+  // 死亡中なら死亡フェーズを更新
+  if (isDead_) {
+      UpdateDeathPhase(engine_->GetDeltaTime());
   }
 
   // 3. 演出完了判定（全ての部位がボクセル含めて消滅したか）
@@ -811,3 +871,142 @@ void Enemy::UpdateDebugUI() {
   }
 }
 #endif
+
+void Enemy::UpdateDeathPhase(float deltaTime) {
+    if (deathPhase_ == DeathPhase::Reassembling) {
+        deathTimer_ += deltaTime;
+        float t = deathTimer_ / kReassembleDuration; // 合体設定時間を基準にする
+        if (t > 1.0f) t = 1.0f;
+
+        // Smoothstepでイージング
+        float easedT = t * t * (3.0f - 2.0f * t);
+
+        auto lerpTransform = [](const Transform& current, const Transform& target, float factor) -> Transform {
+            Transform result = current;
+            result.translate = Math::Add(current.translate, Math::Multiply(factor, Math::Subtract(target.translate, current.translate)));
+            // 回転は単純Lerp
+            result.rotate = Math::Add(current.rotate, Math::Multiply(factor, Math::Subtract(target.rotate, current.rotate)));
+            return result;
+        };
+
+        for (int i = 0; i < 3; ++i) {
+            bodyLocalTransforms_[i] = lerpTransform(startBodyLocalTransforms_[i], initialBodyLocalTransforms_[i], easedT);
+        }
+        headLeftLocalTransform_ = lerpTransform(startHeadLeftLocalTransform_, initialHeadLeftLocalTransform_, easedT);
+        headMidLocalTransform_ = lerpTransform(startHeadMidLocalTransform_, initialHeadMidLocalTransform_, easedT);
+        headRightLocalTransform_ = lerpTransform(startHeadRightLocalTransform_, initialHeadRightLocalTransform_, easedT);
+
+        // ボス全体のグローバル座標も、マップ中央 (0.0f, 3.0f, 0.0f) へイージング移動させる
+        Vector3 centerPos = { 0.0f, 3.0f, 0.0f };
+        globalTransform_.translate = Math::Add(startGlobalTranslate_, Math::Multiply(easedT, Math::Subtract(centerPos, startGlobalTranslate_)));
+
+        if (t >= 1.0f) {
+            deathPhase_ = DeathPhase::Gathered;
+            deathTimer_ = 0.0f; // タメ用のタイマーリセット
+        }
+    } else if (deathPhase_ == DeathPhase::Gathered) {
+        deathTimer_ += deltaTime;
+
+
+        // 完全合体した状態（Phase 1の初期ローカル位置）を維持
+        for (int i = 0; i < 3; ++i) {
+            bodyLocalTransforms_[i] = initialBodyLocalTransforms_[i];
+        }
+        headLeftLocalTransform_ = initialHeadLeftLocalTransform_;
+        headMidLocalTransform_ = initialHeadMidLocalTransform_;
+        headRightLocalTransform_ = initialHeadRightLocalTransform_;
+
+        // 苦しんで暴れている（のたうち回る）表現をサイン波で実装
+        // 1. 全体のダイナミックな傾き（暴れ）
+        globalTransform_.rotate.x = std::sin(deathTimer_ * kAgonyPitchFreq) * kAgonyPitchAmp;
+        globalTransform_.rotate.z = std::cos(deathTimer_ * kAgonyRollFreq) * kAgonyRollAmp;
+
+        // 2. 小刻みな高速振動（ブルブル感）と上下ののたうち（暴れ）
+        float shakeOffset = std::sin(deathTimer_ * kShakeFreq) * kShakeAmp;
+        float verticalOffset = std::sin(deathTimer_ * kVerticalFreq) * kVerticalAmp;
+
+        const Vector3 kCenterPos = { 0.0f, 3.0f, 0.0f };
+        globalTransform_.translate = { 
+            kCenterPos.x + shakeOffset, 
+            kCenterPos.y + verticalOffset, 
+            kCenterPos.z + shakeOffset * 0.5f 
+        };
+
+        // 3. ３つの頭部がそれぞれ苦しそうに反り返ったり、うねる動き
+        float headWiggle = std::sin(deathTimer_ * kHeadWiggleFreq) * kHeadWiggleAmp;
+        
+        headLeftLocalTransform_.translate.x -= std::abs(headWiggle) * 0.2f;
+        headLeftLocalTransform_.translate.y += headWiggle * 0.3f;
+        headLeftLocalTransform_.rotate.z = -headWiggle * 0.1f;
+
+        headRightLocalTransform_.translate.x += std::abs(headWiggle) * 0.2f;
+        headRightLocalTransform_.translate.y -= headWiggle * 0.3f;
+        headRightLocalTransform_.rotate.z = -headWiggle * 0.1f;
+
+        headMidLocalTransform_.translate.y += std::sin(deathTimer_ * kHeadWiggleFreq * 1.2f) * kHeadWiggleAmp * 0.4f;
+        headMidLocalTransform_.rotate.x = std::cos(deathTimer_ * kHeadWiggleFreq) * 0.15f;
+
+        if (deathTimer_ >= kHoldDuration) {
+            globalTransform_.translate = kCenterPos; // 正確な中央位置に戻す
+            globalTransform_.rotate = { 0.0f, 0.0f, 0.0f }; // 回転もリセット
+            deathPhase_ = DeathPhase::Exploding;    // 大爆発へ移行
+        }
+    } else if (deathPhase_ == DeathPhase::Exploding) {
+        // マップ中央（ボスの親グローバル位置）
+        Vector3 bossCenter = globalTransform_.translate;
+
+        // 各パーツをマップ中央から放射状（斜め上空外側）へ勢いよくはじけ飛ばす
+        auto explodePartRadial = [&](auto* part, const Transform& localT) {
+            if (part) {
+                // パーツのワールド位置を計算
+                Matrix4x4 globalMat = Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate, globalTransform_.translate);
+                Vector3 partWorldPos = Math::Transform(localT.translate, globalMat);
+
+                // マップ中央からパーツへの水平方向ベクトルを算出
+                Vector3 dir = Math::Subtract(partWorldPos, bossCenter);
+                dir.y = 0.0f; // 水平方向
+                float len = Math::Length(dir);
+                if (len < 0.1f) {
+                    // 中心にほぼ位置するパーツ（真ん中の首など）は適宜前方方向などへ散らす
+                    dir = {0.0f, 0.0f, 1.0f};
+                } else {
+                    dir = Math::Normalize(dir);
+                }
+
+                // 斜め上空へはじけ飛ぶようにY軸方向（上向き）の吹き飛び成分をブレンド
+                dir.y = 0.8f;
+                dir = Math::Normalize(dir);
+
+                // パーツ自体の吹き飛び移動を開始（即時ボクセル化フラグをtrueに指定）
+                part->OnDestroyed(dir, kExplosionBlowSpeed, true);
+                
+                // ボクセル粒子たちも吹き飛ぶ方向へ勢いよくScatter（飛散）させる
+                OBB impactOBB;
+                impactOBB.center = partWorldPos;
+                impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+                impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+                impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+                impactOBB.size = {3.0f, 3.0f, 3.0f}; 
+                
+                // ボクセルの初速ベクトルを合成
+                Vector3 scatterVel = Math::Multiply(kExplosionBlowSpeed * 0.8f, dir);
+                part->ScatterAt(scatterVel, impactOBB);
+            }
+        };
+
+        for (int i = 0; i < 3; ++i) explodePartRadial(bodies_[i].get(), bodyLocalTransforms_[i]);
+        explodePartRadial(headLeft_.get(), headLeftLocalTransform_);
+        explodePartRadial(headMid_.get(), headMidLocalTransform_);
+        explodePartRadial(headRight_.get(), headRightLocalTransform_);
+
+        deathPhase_ = DeathPhase::Aftermath; // 余韻フェーズへ移行
+        deathTimer_ = 0.0f;                  // 余韻用タイマーリセット
+    } else if (deathPhase_ == DeathPhase::Aftermath) {
+        deathTimer_ += deltaTime;
+
+        if (deathTimer_ >= kAftermathDuration) {
+            deathPhase_ = DeathPhase::None; // もう実行しない
+            isActive_ = false;              // ここでボスを非アクティブ化し、クリア画面へ遷移開始！
+        }
+    }
+}

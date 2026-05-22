@@ -413,9 +413,33 @@ void Player::Update() {
         targetMarkerObj_->Update();
     }
 
-    HandleMovement();
-    HandleAttack();
-    HandleSkill();
+    if (!isCinematicMode_) {
+        HandleMovement();
+        HandleAttack();
+        HandleSkill();
+    } else {
+        // シネマティック中は攻撃ステートをリセットして振っているハンマー等を消す
+        attackState_ = AttackState::kNone;
+        attackCollision_.isActive = false;
+        attackActiveTimer_ = 0;
+
+        // ボスの座標が設定されていれば、その方向へ自動的に向き直る
+        Vector3 toTarget = Math::Subtract(aimPos_, translate_);
+        toTarget.y = 0.0f;
+        float len = Math::Length(toTarget);
+        if (len > 0.1f) {
+            float targetYaw = std::atan2(toTarget.x, toTarget.z);
+            float diff = targetYaw - rotate_.y;
+            
+            // 角度の差分を [-PI, PI] の範囲に正規化して最短で回転する
+            const float kPi = 3.14159265f;
+            const float kTwoPi = 6.2831853f;
+            while (diff < -kPi) diff += kTwoPi;
+            while (diff > kPi) diff -= kTwoPi;
+
+            rotate_.y += diff * kCinematicRotateSpeed;
+        }
+    }
 
     weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, scale_, isKarakuriCharged_);
     cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);

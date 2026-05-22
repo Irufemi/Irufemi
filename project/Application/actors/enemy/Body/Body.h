@@ -28,13 +28,14 @@ public:
   const Transform& GetTransform() const { return transform_; }
   const Vector3& GetDrawPosition() const { return drawPosition_; }
 
-  void OnDestroyed(const Vector3& attackDir, float blowSpeed);
+  void OnDestroyed(const Vector3& attackDir, float blowSpeed, bool immediateVoxel = false);
   bool IsCompletelyDead() const;
   bool IsBlownAway() const { return isBlownAway_; }
   float GetBlowTimer() const { return blowTimer_; }
 
   const Vector3& GetBlowVelocity() const { return blowVelocity_; }
   void SetBlowVelocity(const Vector3& v) { blowVelocity_ = v; }
+  void ResetBlow();
 
   OBB GetOBB() const;
 

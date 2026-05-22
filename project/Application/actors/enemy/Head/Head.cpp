@@ -245,14 +245,23 @@ void Head::SetTransform(const Transform& transform, const Vector3* drawWorldPos)
   }
 }
 
-void Head::OnDestroyed(const Vector3& attackDir, float blowSpeed) {
+void Head::OnDestroyed(const Vector3& attackDir, float blowSpeed, bool immediateVoxel) {
     if (isBlownAway_) return;
     
     isBlownAway_ = true;
-    disappearTimer_ = 0.0f;
+    disappearTimer_ = immediateVoxel ? EnemyParameters::GetInstance()->GetDisappearTime() : 0.0f;
     blowTimer_ = 0.0f;
     blowVelocity_ = Math::Multiply(blowSpeed, attackDir);
-    blowVelocity_.y = 0.0f; // Y軸方向への吹き飛びを完全に無くす
+    if (!immediateVoxel) {
+        blowVelocity_.y = 0.0f; // Y軸方向への吹き飛びを完全に無くす
+    }
+}
+
+void Head::ResetBlow() {
+    isBlownAway_ = false;
+    disappearTimer_ = 0.0f;
+    blowTimer_ = 0.0f;
+    blowVelocity_ = {0.0f, 0.0f, 0.0f};
 }
 
 bool Head::IsCompletelyDead() const {

@@ -160,6 +160,47 @@ private:
   bool isActive_ = false;
   bool isDead_ = false;
 
+  enum class DeathPhase { None, Reassembling, Gathered, Exploding, Aftermath };
+  DeathPhase deathPhase_ = DeathPhase::None;
+  float deathTimer_ = 0.0f;
+
+  // --- 死亡演出用調整定数（メンバー変数） ---
+  static constexpr float kReassembleDuration = 2.0f;  ///< バラバラになった部位が中央で合体するまでの時間（秒）
+  static constexpr float kHoldDuration = 3.5f;        ///< 合体してからボクセル爆散するまでの激しくのたうち悶えるタメ時間（秒）
+  static constexpr float kAftermathDuration = 1.5f;   ///< 爆散後の美しいボクセル飛散をカメラに収める余韻待機時間（秒）
+
+  // 悶えのたうち（Agony）全体のサイン波パラメータ
+  static constexpr float kAgonyPitchFreq = 12.0f;     ///< のたうち全体のPitch（X軸回転）振動周波数
+  static constexpr float kAgonyPitchAmp = 0.18f;      ///< のたうち全体のPitch（X軸回転）最大振幅
+  static constexpr float kAgonyRollFreq = 15.0f;      ///< のたうち全体のRoll（Z軸回転）振動周波数
+  static constexpr float kAgonyRollAmp = 0.22f;       ///< のたうち全体のRoll（Z軸回転）最大振幅
+
+  // 小刻みな高速振動（ブルブル感）と上下の激しいのたうちパラメータ
+  static constexpr float kShakeFreq = 70.0f;          ///< タメ中の小刻みなブルブル高速振動周波数
+  static constexpr float kShakeAmp = 0.12f;           ///< タメ中の小刻みなブルブル高速振動の幅
+  static constexpr float kVerticalFreq = 18.0f;       ///< タメ中のダイナミックな上下のたうち周波数
+  static constexpr float kVerticalAmp = 0.6f;         ///< タメ中のダイナミックな上下のたうち振幅
+
+  // 頭部（首）のうねる動きパラメータ
+  static constexpr float kHeadWiggleFreq = 20.0f;     ///< 3頭部が悶えてうねる振動周波数
+  static constexpr float kHeadWiggleAmp = 1.5f;       ///< 3頭部が悶えてうねる最大振幅
+
+  // 爆散はじけ飛びパラメータ
+  static constexpr float kExplosionBlowSpeed = 2.2f;  ///< 爆散時に各パーツが放射状にはじけ飛ぶ初速
+
+  std::array<Transform, 3> initialBodyLocalTransforms_;
+  Transform initialHeadLeftLocalTransform_ = {};
+  Transform initialHeadMidLocalTransform_ = {};
+  Transform initialHeadRightLocalTransform_ = {};
+
+  Transform startBodyLocalTransforms_[3] = {};
+  Transform startHeadLeftLocalTransform_ = {};
+  Transform startHeadMidLocalTransform_ = {};
+  Transform startHeadRightLocalTransform_ = {};
+  Vector3 startGlobalTranslate_ = {};
+
+  void UpdateDeathPhase(float deltaTime);
+
     // UI
     std::unique_ptr<EnemyHPBar> hpBar_ = nullptr;
     std::vector<std::unique_ptr<EnemyPartHPBar>> partHPBars_;

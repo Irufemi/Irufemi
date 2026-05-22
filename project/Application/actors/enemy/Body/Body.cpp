@@ -144,14 +144,27 @@ const Vector3& Body::GetPosition() const {
   return basePosition_;
 }
 
-void Body::OnDestroyed(const Vector3& attackDir, float blowSpeed) {
+void Body::OnDestroyed(const Vector3& attackDir, float blowSpeed, bool immediateVoxel) {
     if (isBlownAway_) return;
     
     isBlownAway_ = true;
-    disappearTimer_ = 0.0f;
+    disappearTimer_ = immediateVoxel ? EnemyParameters::GetInstance()->GetDisappearTime() : 0.0f;
     blowTimer_ = 0.0f;
     blowVelocity_ = Math::Multiply(blowSpeed, attackDir);
-    blowVelocity_.y = 0.0f; // Y軸方向への吹き飛びを完全に無くす
+    if (!immediateVoxel) {
+        blowVelocity_.y = 0.0f; // Y軸方向への吹き飛びを完全に無くす
+    }
+}
+
+void Body::ResetBlow() {
+    isBlownAway_ = false;
+    disappearTimer_ = 0.0f;
+    blowTimer_ = 0.0f;
+    blowVelocity_ = {0.0f, 0.0f, 0.0f};
+    
+    // voxelSystem_ ももし発火してしまっていたらリセットできるようにする
+    // 現在のVoxelParticleSystemにはリセットがない可能性があるため、描画抑制か新たに作り直す等が必要だが
+    // 今回は2.0秒後のExplodingで新たにScatterAtを呼ぶため、気にしなくてよい
 }
 
 bool Body::IsCompletelyDead() const {

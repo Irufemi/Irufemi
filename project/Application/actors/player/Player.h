@@ -65,6 +65,9 @@ public:
     bool GetIsTargetingEnemy() const { return isTargetingEnemy_; }
     bool IsFirstPerson() const { return cameraController_.IsFirstPerson(); }
 
+    void SetCinematicMode(bool isCinematic) { isCinematicMode_ = isCinematic; }
+    bool IsCinematicMode() const { return isCinematicMode_; }
+
     bool IsKarakuriCharged() const { return isKarakuriCharged_; }
     int GetKarakuriActiveTimer() const { return karakuriActiveTimer_; }
 
@@ -118,6 +121,7 @@ private:
 
     std::unique_ptr<Sprite> aimingSprite_ = nullptr;
     bool isTargetingEnemy_ = false;
+    bool isCinematicMode_ = false;
 
     int skillDurationTimer_ = 0;
     int skillCooldownTimer_ = 0;
@@ -193,6 +197,9 @@ private:
     static constexpr int kDeathAnimationDuration = 180;
     static constexpr int kDeathWaitTime = 90; // 死亡演出開始まで1.5秒待機（60fps x 1.5）
     int deathWaitTimer_ = 0; // 死亡待機タイマー
+
+    // --- シネマティック演出用定数 ---
+    static constexpr float kCinematicRotateSpeed = 0.1f; ///< 死亡演出中にプレイヤーがボスを自動凝視する際のスムーズな旋回補間速度
 
     Vector3 deathCameraPos_ = { 0.0f, 0.0f, 0.0f };
 

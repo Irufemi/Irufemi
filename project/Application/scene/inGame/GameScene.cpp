@@ -166,6 +166,92 @@ void GameScene::Update() {
 
   if (boss_) {
     boss_->Update(player_.get());
+
+    if (boss_->IsDead() && !isDeathCameraMode_) {
+        // 死亡した瞬間にプレイヤーの操作を停止し、カメラ演出を開始
+        if (player_) player_->SetCinematicMode(true);
+        isDeathCameraMode_ = true;
+        deathCameraLerpTimer_ = 0.0f;
+        
+        // 死亡演出開始時にビルの描画を非表示にする
+        if (field_) {
+            field_->SetDrawBuildings(false);
+        }
+        
+        Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
+        if (activeCamera) {
+            initialCameraPos_ = activeCamera->GetTranslate();
+            Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(activeCamera->GetRotate());
+            Vector3 forward = {rotMat.m[2][0], rotMat.m[2][1], rotMat.m[2][2]};
+            initialCameraTarget_ = Math::Add(initialCameraPos_, Math::Multiply(50.0f, forward));
+        }
+    }
+  }
+
+  // ボス死亡中のカメラ演出更新
+  if (isDeathCameraMode_ && !isDebugCameraMode_) {
+      deathCameraLerpTimer_ += engine_->GetDeltaTime();
+      float t = deathCameraLerpTimer_ / 4.0f; // 約4.0秒かけてズームイン
+      if (t > 1.0f) t = 1.0f;
+      float easedT = t * t * (3.0f - 2.0f * t);
+
+      Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
+      if (activeCamera && boss_ && player_) {
+          Vector3 bossTarget = boss_->GetTargetPosition();
+          Vector3 playerPos = player_->GetTranslate();
+
+          // プレイヤーからボスへの水平ベクトルを算出
+          Vector3 playerToBoss = Math::Subtract(bossTarget, playerPos);
+          playerToBoss.y = 0.0f;
+          float dist = Math::Length(playerToBoss);
+          if (dist < 0.1f) playerToBoss = {0.0f, 0.0f, 1.0f};
+          else playerToBoss = Math::Normalize(playerToBoss);
+
+          if (dist < kTargetPlayerBossDistance) {
+              float pullAmount = kTargetPlayerBossDistance - dist;
+              float moveStep = kPlayerBackoffSpeed * engine_->GetDeltaTime();
+              if (moveStep > pullAmount) {
+                  moveStep = pullAmount;
+              }
+              // playerToBoss の逆方向（後退方向）へ移動
+              Vector3 backPos = Math::Subtract(playerPos, Math::Multiply(moveStep, playerToBoss));
+              player_->SetTranslate(backPos);
+
+              // 以降のカメラ計算用に位置と向きベクトルを再計算
+              playerPos = backPos;
+              playerToBoss = Math::Subtract(bossTarget, playerPos);
+              playerToBoss.y = 0.0f;
+              dist = Math::Length(playerToBoss);
+              if (dist < 0.1f) playerToBoss = {0.0f, 0.0f, 1.0f};
+              else playerToBoss = Math::Normalize(playerToBoss);
+          }
+
+          // カメラ目標位置を「プレイヤーの背後」かつ「少し見上げる高さ」に配置
+          Vector3 targetCamPos = Math::Subtract(playerPos, Math::Multiply(kCameraBehindDistance, playerToBoss));
+          targetCamPos.y = playerPos.y + kCameraHeightOffset;
+          if (targetCamPos.y < kGroundClampMinY) {
+              targetCamPos.y = kGroundClampMinY;
+          }
+
+          // 注視点はボスの胴体と頭部の中間付近（高さ+6.0f）に設定
+          Vector3 lookAtTarget = bossTarget;
+          lookAtTarget.y += kBossLookAtHeightOffset;
+
+          Vector3 currentPos = Math::Add(initialCameraPos_, Math::Multiply(easedT, Math::Subtract(targetCamPos, initialCameraPos_)));
+          Vector3 currentTarget = Math::Add(initialCameraTarget_, Math::Multiply(easedT, Math::Subtract(lookAtTarget, initialCameraTarget_)));
+          
+          activeCamera->SetTranslate(currentPos);
+          
+          Vector3 forward = Math::Subtract(currentTarget, currentPos);
+          float forwardDist = Math::Length(forward);
+          if (forwardDist > 0.001f) {
+              forward = {forward.x / forwardDist, forward.y / forwardDist, forward.z / forwardDist};
+              float pitch = -std::asin(forward.y);
+              float yaw = std::atan2(forward.x, forward.z);
+              activeCamera->SetRotate({pitch, yaw, 0.0f});
+          }
+          activeCamera->UpdateMatrix();
+      }
   }
 
 #if defined(_DEBUG) || defined(DEVELOPMENT)
@@ -565,7 +651,6 @@ void GameScene::CheckFlyingPartsCollisions() {
       return;
 
     // 吹き飛び直後の即時衝突（自爆）を防ぐためのクールタイム
-    const float kBlowCollisionDelay = 0.2f;
     if (projectile->GetBlowTimer() < kBlowCollisionDelay)
       return;
 

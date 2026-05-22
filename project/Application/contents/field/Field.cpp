@@ -122,7 +122,7 @@ void Field::Draw() {
 	pPXWall_->Draw();
 	pMXWall_->Draw();
 
-	if (building_) {
+	if (building_ && drawBuildings_) {
 		building_->Draw(engine_);
 	}
 }
