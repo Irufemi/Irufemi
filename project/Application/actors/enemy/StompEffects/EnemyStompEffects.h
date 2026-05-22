@@ -91,7 +91,7 @@ private:
     Phase currentPhase_ = Phase::Expanding;
     float globalTimer_ = 0.0f; // 最初の爆発用
     float phaseTimer_ = 0.0f;  // リング・再爆発フェーズ用
-    Vector3 basePosition_;
+    Vector3 basePosition_ = {};
 
     Parameters params_;
     OBB finalExplosionOBB_;

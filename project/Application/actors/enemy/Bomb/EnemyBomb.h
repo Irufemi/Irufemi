@@ -51,8 +51,8 @@ private:
     Transform bombTransform_;
     
     // 飛行用パラメータ
-    Vector3 startPos_;
-    Vector3 targetPos_;
+    Vector3 startPos_ = {};
+    Vector3 targetPos_ = {};
     float flightTimer_ = 0.0f;
     float flightDuration_ = 1.0f; // 飛行にかかる時間
     float throwHeight_ = 10.0f;   // 放物線の高さ
