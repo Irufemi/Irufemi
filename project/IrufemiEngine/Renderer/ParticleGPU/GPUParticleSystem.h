@@ -205,6 +205,10 @@ public:
     /** @brief 座標のゆらぎ（Jitter）を設定する */
     void SetJitter(float jitter) { if (emitter_) emitter_->jitter = jitter; }
     void SetEnableRandomRotation(bool enable) { if (emitter_) emitter_->enableRandomRotation = enable ? 1 : 0; }
+    /** @brief ビルボードモードの設定 (0: なし, 1: 通常ビルボード, 2: 速度方向ビルボード) */
+    void SetBillboardMode(uint32_t mode) { if (emitter_) emitter_->isBillboard = mode; }
+    /** @brief 粒子の拡散力（Sphere等の放射方向の広がり/強度）を設定 */
+    void SetSpread(float spread) { if (emitter_) emitter_->spread = spread; }
 
     /** @name 描画設定（パイプライン） */
     ///@{

@@ -204,6 +204,12 @@ private:
     // ★追加: からくりチャージ用のエフェクト
     std::unique_ptr<GPUParticleSystem> karakuriChargeParticle_ = nullptr; // チャージ中・完了時の上昇パーティクル
     std::unique_ptr<GPUParticleSystem> karakuriRingParticle_ = nullptr; // チャージしきったときの足元リングエフェクト
+    std::unique_ptr<GPUParticleSystem> deathGlowParticle_ = nullptr; // 死亡待機中の全身から吹き出す自爆前光線
+
+    // 一人称視点時のミニフィギュア設定
+    Vector3 firstPersonMiniPos_ = { -0.58f, -0.21f, 1.4f };
+    Vector3 firstPersonMiniScale_ = { 0.05f, 0.05f, 0.05f };
+    float firstPersonMiniRotY_ = 0.5f;
 
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;

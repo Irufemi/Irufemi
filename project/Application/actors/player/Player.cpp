@@ -127,6 +127,10 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     // ★追加: チャージしきったときの足元リングエフェクト
     karakuriRingParticle_ = std::make_unique<GPUParticleSystem>();
     karakuriRingParticle_->Initialize("resources/circle2.png");
+
+    // ★追加: 死亡待機中の自爆前光線
+    deathGlowParticle_ = std::make_unique<GPUParticleSystem>();
+    deathGlowParticle_->Initialize("resources/gradationLine.png");
 }
 
 void Player::Update() {
@@ -135,6 +139,57 @@ void Player::Update() {
         // HPが0になってから3秒間（180フレーム）は演出を待機する
         if (deathWaitTimer_ < kDeathWaitTime) {
             deathWaitTimer_++;
+
+            // ★追加: 死亡待機中（自爆前）の全身から激しく突き抜ける光線エフェクト
+            if (deathGlowParticle_) {
+                float deathRatio = static_cast<float>(deathWaitTimer_) / kDeathWaitTime;
+                if (deathRatio > 1.0f) deathRatio = 1.0f;
+                // 後半にかけて急激に激しくなるカーブ（2乗）
+                float curveRatio = std::pow(deathRatio, 2.0f);
+
+                Vector3 emitPos = translate_;
+                emitPos.y += 1.0f; // プレイヤーの胸・胴体付近から放出
+
+                // 球状エミッターから全方向に放出
+                // 進行度に応じて、放出数と頻度を劇的に増やす
+                uint32_t count = 3 + static_cast<uint32_t>(curveRatio * 80.0f);
+                float freq = 0.05f - curveRatio * 0.046f;
+                deathGlowParticle_->SetSphereEmitter(emitPos, 0.3f, count, freq);
+
+                // 全方向に高速で突き抜ける光の筋
+                deathGlowParticle_->SetDirection({ 0.0f, 0.0f, 0.0f });
+                deathGlowParticle_->SetVelocity(12.0f + curveRatio * 28.0f);
+                deathGlowParticle_->SetSpread(1.0f); // 放射速度をフルパワーに
+                deathGlowParticle_->SetBillboardMode(2); // 進行方向ビルボード (Velocity Billboard) を適用！
+                deathGlowParticle_->SetJitter(0.0f);
+                deathGlowParticle_->SetGravity(0.0f);
+                deathGlowParticle_->SetDamping(0.02f); // 滑らかに伸びる
+
+                // 極細で超縦長に引き伸ばされた眩いレーザーライン
+                // 進行度（時間）が経つほど光の筋が長く伸びる
+                Vector3 startScaleMin = { 0.02f, 1.2f + curveRatio * 2.5f, 0.02f };
+                Vector3 startScaleMax = { 0.06f, 2.5f + curveRatio * 3.5f, 0.06f };
+                Vector3 endScaleMin = { 0.005f, 0.15f, 0.005f };
+                Vector3 endScaleMax = { 0.015f, 0.4f, 0.015f };
+                deathGlowParticle_->SetParticleScale(startScaleMin, startScaleMax, endScaleMin, endScaleMax);
+
+                // チャージ完了に近づくほどしきい値を上げ、非常にシャープでシャキッとしたレーザーに見せる
+                deathGlowParticle_->SetAlphaReference(0.4f + curveRatio * 0.35f);
+                deathGlowParticle_->SetEnableRandomRotation(false); // 進行方向に光の筋を向かせるため回転オフ
+
+                // 超高輝度な黄金の輝き（ブルームによる強い発光）
+                Vector4 startColMin = { 5.0f, 4.0f, 0.5f, 1.0f };
+                Vector4 startColMax = { 12.0f, 10.0f, 2.0f, 1.0f }; // 超発光
+                Vector4 endColMin = { 2.0f, 1.0f, 0.0f, 0.0f };
+                Vector4 endColMax = { 5.0f, 2.5f, 0.0f, 0.0f };
+                deathGlowParticle_->SetStartColor(startColMin, startColMax);
+                deathGlowParticle_->SetEndColor(endColMin, endColMax);
+                deathGlowParticle_->SetParticleLife(0.08f, 0.22f); // ごく短い寿命で鋭く明滅する
+
+                deathGlowParticle_->SetEmit(true);
+                deathGlowParticle_->Update();
+            }
+
             // 待機中はカメラとパーティクルのみ更新（プレイヤーはその場に留まる）
             weapon_.UpdateParticlesOnly();
             cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
@@ -224,6 +279,11 @@ void Player::Update() {
         // カメラ更新後にパーティクルのみ更新し、WVP行列を最新化する
         weapon_.UpdateParticlesOnly();
 
+        if (deathGlowParticle_) {
+            deathGlowParticle_->SetEmit(false);
+            deathGlowParticle_->Update();
+        }
+
         // ★星モデルの座標と回転（ビルボード）を更新
         if (starObj_ && deathTimer_ >= flashTime) {
             // カメラから星へのベクトルを計算して、カメラの方を向かせる（LookAt）
@@ -276,6 +336,12 @@ void Player::Update() {
             ImGui::SliderFloat("Mouse Sensitivity", cameraController_.GetMouseSensitivityPtr(), 0.0f, 100.0f);
             ImGui::DragFloat("Sensitivity Multiplier", cameraController_.GetMouseSensitivityMultiplierPtr(), 0.01f, 0.0f, 1.0f, "%.4f");
             ImGui::Checkbox("Camera Control Enabled", cameraController_.GetCameraControlEnabledPtr());
+
+            ImGui::Separator();
+            ImGui::Text("First Person Mini Figure Settings");
+            ImGui::DragFloat3("Mini Pos Offset", &firstPersonMiniPos_.x, 0.01f, -5.0f, 5.0f);
+            ImGui::DragFloat3("Mini Scale", &firstPersonMiniScale_.x, 0.001f, 0.001f, 1.0f);
+            ImGui::DragFloat("Mini Rot Y Offset", &firstPersonMiniRotY_, 0.01f, -3.14f, 3.14f);
 
             if (skillDurationTimer_ > 0) {
                 ImGui::Text("Skill ACTIVE (Firing): %d", skillDurationTimer_);
@@ -572,6 +638,12 @@ void Player::Update() {
         karakuriRingParticle_->Update();
     }
 
+    // 死亡光線パーティクルの更新（生存中は放出せず、残存粒子をアニメーション更新）
+    if (deathGlowParticle_) {
+        deathGlowParticle_->SetEmit(false);
+        deathGlowParticle_->Update();
+    }
+
 
 #ifdef USE_IMGUI
     if (input_->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
@@ -648,14 +720,7 @@ void Player::Draw3DUI(Enemy* enemy, bool isUI, bool isPaused) {
 
 void Player::Draw2DUI(Enemy* enemy) {
     if (!status_.IsDead()) {
-        // 視点に関わらずからくりチャージゲージを描画
-        // チャージ中 or チャージ成功後（効果時間中）はゲージを表示する
-        bool showKarakuriGauge = isKarakuriCharged_ || karakuriChargeTimer_ > 0;
-        if (showKarakuriGauge && karakuriGaugeBg_ && karakuriGaugeFill_) {
-            karakuriGaugeBg_->Draw();
-            karakuriGaugeFill_->Draw();
-        }
-
+        // 1. 各視点別のUIを描画
         if (cameraController_.IsFirstPerson()) {
             if (maskSprite_) maskSprite_->Draw();
             if (aimingSprite_) aimingSprite_->Draw();
@@ -670,6 +735,14 @@ void Player::Draw2DUI(Enemy* enemy) {
             if (enemy) {
                 enemy->Draw2DUI(engine_, false);
             }
+        }
+
+        // 2. 最も手前に描画されるべき「からくりチャージゲージ」を最後に描画
+        // チャージ中 or チャージ成功後（効果時間中）はゲージを表示する
+        bool showKarakuriGauge = isKarakuriCharged_ || karakuriChargeTimer_ > 0;
+        if (showKarakuriGauge && karakuriGaugeBg_ && karakuriGaugeFill_) {
+            karakuriGaugeBg_->Draw();
+            karakuriGaugeFill_->Draw();
         }
     }
 }
@@ -711,7 +784,40 @@ void Player::Draw() {
             if (deathTimer_ < flashTime) {
                 obj_->Draw();
             }
-        } else if (!cameraController_.IsFirstPerson() && !isBlinking) {
+        } else if (cameraController_.IsFirstPerson()) {
+            // 一人称視点時はHPゲージの上に小さなプレイヤーモデルをフィギュア風に描画
+            if (!isBlinking) {
+                Camera* camera = engine_ ? engine_->GetCameraManager()->GetActiveCamera() : nullptr;
+                if (camera) {
+                    // 元のパラメータを退避
+                    Vector3 origPos = obj_->GetPosition();
+                    Vector3 origRot = obj_->GetRotate();
+                    Vector3 origScale = obj_->GetScale();
+
+                    // カメラのローカル空間での左下前方の位置（HPゲージのすぐ上）
+                    Vector3 localOffset = firstPersonMiniPos_; 
+                    Matrix4x4 camWorld = camera->GetWorldMatrix();
+                    Vector3 drawPos = Math::Transform(localOffset, camWorld);
+
+                    // 少し斜めを向かせる回転（カメラ向き + Y軸回転補正）
+                    Vector3 drawRot = camera->GetRotate();
+                    drawRot.y += firstPersonMiniRotY_; // 少し斜めを向かせて立体感を持たせる
+
+                    obj_->SetPosition(drawPos);
+                    obj_->SetRotate(drawRot);
+                    obj_->SetScale(firstPersonMiniScale_); // ミニチュアサイズ
+                    obj_->Update();
+
+                    obj_->Draw();
+
+                    // パラメータを元に戻す
+                    obj_->SetPosition(origPos);
+                    obj_->SetRotate(origRot);
+                    obj_->SetScale(origScale);
+                    obj_->Update();
+                }
+            }
+        } else if (!isBlinking) {
             obj_->Draw();
         }
     }
@@ -765,6 +871,12 @@ void Player::Draw() {
             karakuriRingParticle_->SyncBeforeDraw();
             karakuriRingParticle_->Draw();
         }
+    }
+
+    // 死亡待機中の自爆前光線エフェクトの描画
+    if (deathGlowParticle_) {
+        deathGlowParticle_->SyncBeforeDraw();
+        deathGlowParticle_->Draw();
     }
 
 
