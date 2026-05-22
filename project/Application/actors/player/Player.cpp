@@ -736,7 +736,7 @@ void Player::Draw3DUI(Enemy* enemy, bool isUI, bool isPaused) {
         } else {
             // ボスや部位のHPバー（3D）は1人称視点のみ表示
             if (enemy) {
-                enemy->Draw3DUI(engine_, isUI);
+                enemy->Draw3DUI(engine_, false); // Zバッファを使った遮蔽計算を行うため Standard3DQueue (false) に送る
             }
         }
     }

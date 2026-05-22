@@ -48,8 +48,12 @@ void VoxelParticleSystem::Initialize(const std::string &modelName,
   auto asyncData = std::make_shared<AsyncLoadData>();
   asyncData_ = asyncData;
 
+  // スレッドプールのデッドロック（ワーカー枯渇）を防ぐため、ボクセル化タスクを積む前に
+  // 元となるモデルデータを同期ロード（またはキャッシュから取得）しておく
+  auto managedModel = modelManager->GetModel(modelName);
+
   // 非同期でボクセル化（またはキャッシュから取得）を開始
-  initializeFuture_ = modelManager->EnqueueTask([asyncData, modelName, resolution, modelManager]() {
+  initializeFuture_ = modelManager->EnqueueTask([asyncData, modelName, resolution, modelManager, managedModel]() {
     // ModelManager側でキャッシュ済みのものがあればそれを返し、無ければ新規計算する
     auto vModel = modelManager->GetVoxelizedModel(modelName, resolution);
 

@@ -364,12 +364,18 @@ void Enemy::Update(Player *player) {
       if (part && part->GetHP() > 0) {
           float ratio = (maxHp > 0) ? static_cast<float>(part->GetHP()) / maxHp : 0.0f;
           Vector3 hpPos = part->GetDrawPosition();
-          float scaleY = part->GetTransform().scale.y;
-          float offsetY = (index >= 3) ? (5.5f * scaleY) : (1.5f * scaleY);
-          hpPos.y += offsetY;
-          partHPBars_[index]->Update(ratio, hpPos);
+          
+          // モデルの実際の寸法（OBB）から逆算して配置と引き寄せ距離を計算
+          auto obb = part->GetOBB();
+          float partRadius = std::sqrt(obb.size.x * obb.size.x + obb.size.y * obb.size.y + obb.size.z * obb.size.z);
+          
+          // 部位の高さ(size.y)を基準に、少し上に表示する
+          hpPos.y += obb.size.y * 1.5f;
+          
+          // 計算した寸法に基づく半径を引き寄せ距離として渡す
+          partHPBars_[index]->Update(ratio, hpPos, partRadius);
       } else {
-          partHPBars_[index]->Update(0.0f, { 0,0,0 });
+          partHPBars_[index]->Update(0.0f, { 0,0,0 }, 0.0f);
       }
   };
   auto* p = EnemyParameters::GetInstance();

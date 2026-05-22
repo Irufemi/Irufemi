@@ -26,9 +26,9 @@ public:
      * @brief 毎フレーム更新（HP割合と色を更新し、指定された位置に追従する）
      * @param hpRatio 現在のHP割合 (0.0〜1.0)
      * @param targetWorldPos 追従する対象のワールド座標（この上にオフセットをかけて表示する）
-     * @param camera 追従するカメラのポインタ
+     * @param pullRadius モデルへの埋まりを回避するためにカメラ側に引き寄せる半径
      */
-    void Update(float hpRatio, const Vector3& targetWorldPos);
+    void Update(float hpRatio, const Vector3& targetWorldPos, float pullRadius = 0.0f);
 
     /**
      * @brief 3Dポリゴン描画
