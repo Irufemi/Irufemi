@@ -5,6 +5,14 @@
 
 class GameObject;
 
+struct VirtualDebris {
+    int id;
+    Vector3 position;
+    bool isSpawned;
+    bool isDestroyed;
+    std::shared_ptr<GameObject> instance;
+};
+
 /**
  * @class DebrisManagerComponent
  * @brief ガレキの生成・プール管理・検索を行うコンポーネント
@@ -23,8 +31,16 @@ public:
     std::shared_ptr<GameObject> AcquireDebris();
     void ReleaseDebris(std::shared_ptr<GameObject> debris);
 
+    // ストリーミング管理
+    void UpdateStreaming();
+    void NotifyDestroyed(int id);
+
 private:
     std::unique_ptr<ObjectPool<GameObject>> pool_;
-    int poolSize_ = 100;
+    int poolSize_ = 500;
     bool isPoolInitialized_ = false;
+
+    // 仮想データリスト
+    std::vector<VirtualDebris> virtualDebrisList_;
+    int nextVirtualId_ = 0;
 };

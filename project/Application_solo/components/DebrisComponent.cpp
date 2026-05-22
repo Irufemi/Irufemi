@@ -5,6 +5,7 @@
 #include "Engine/Platform/Input/InputManager.h"
 #include "Renderer/Object3D/BaseModel/BaseModel.h"
 #include "RailShooterEnemyComponent.h"
+#include "DebrisManagerComponent.h"
 #include <cmath>
 
 void DebrisComponent::OnRegisterProperties() {
@@ -104,6 +105,9 @@ void DebrisComponent::Update() {
                             enemyComp->TakeDamage(100);
                         }
                         gameObject_->SetIsActive(false); 
+                        if (manager_) {
+                            manager_->NotifyDestroyed(virtualId_);
+                        }
                     }
                 }
             }

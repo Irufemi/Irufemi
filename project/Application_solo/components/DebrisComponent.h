@@ -2,6 +2,8 @@
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 
+class DebrisManagerComponent;
+
 enum class DebrisState {
     Idle,       ///< 漂流中（自然な浮遊）
     Pulled,     ///< プレイヤーに引き寄せられている
@@ -31,8 +33,14 @@ public:
     void SetOrbitParams(float angle, float radius) { orbitAngle_ = angle; orbitRadius_ = radius; }
     void SetThrowDirection(const Vector3& dir) { throwDirection_ = dir; }
 
+    void SetVirtualId(int id) { virtualId_ = id; }
+    void SetManager(DebrisManagerComponent* manager) { manager_ = manager; }
+
 private:
     DebrisState state_ = DebrisState::Idle;
+    
+    int virtualId_ = -1;
+    DebrisManagerComponent* manager_ = nullptr;
     
     // 追従・目標用の対象
     GameObject* targetObject_ = nullptr;

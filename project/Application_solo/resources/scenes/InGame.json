@@ -339,7 +339,7 @@
             },
             {
                 "data": {
-                    "Pool Size": 100
+                    "Pool Size": 500
                 },
                 "type": "DebrisManagerComponent"
             }
