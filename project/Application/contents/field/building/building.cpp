@@ -30,6 +30,19 @@ void Building::Initialize(IrufemiEngine* engine) {
     buildingRegion_->Initialize("building/building.obj");
 
     LoadJson();
+
+    // ボクセルパーティクルシステムのオブジェクトプールを事前確保
+    int poolSize = params_.maxCount + 10;
+    voxelPool_.reserve(poolSize);
+    voxelPoolUsed_.resize(poolSize, false);
+    for (int i = 0; i < poolSize; ++i) {
+        auto voxel = std::make_unique<VoxelParticleSystem>();
+        voxel->Initialize("building/block.obj", {32, 32, 32});
+        voxel->SetParticleType(VoxelParticleSystem::ParticleType::Building);
+        voxel->SetGravity(40.0f);
+        voxelPool_.push_back(std::move(voxel));
+    }
+
     Generate();
 
 #ifdef USE_IMGUI
@@ -40,14 +53,53 @@ void Building::Initialize(IrufemiEngine* engine) {
 #endif
 }
 
+VoxelParticleSystem* Building::AllocateVoxelSystem() {
+    for (size_t i = 0; i < voxelPool_.size(); ++i) {
+        if (!voxelPoolUsed_[i]) {
+            voxelPoolUsed_[i] = true;
+            return voxelPool_[i].get();
+        }
+    }
+    // プールが枯渇した場合は動的に追加（基本は発生しないようにpoolSizeを余裕を持って設定する）
+    OutputDebugStringA("Building: VoxelPool exhausted! Allocating dynamically.\n");
+    auto voxel = std::make_unique<VoxelParticleSystem>();
+    voxel->Initialize("building/block.obj", {32, 32, 32});
+    voxel->SetParticleType(VoxelParticleSystem::ParticleType::Building);
+    voxel->SetGravity(40.0f);
+    voxelPool_.push_back(std::move(voxel));
+    voxelPoolUsed_.push_back(true);
+    return voxelPool_.back().get();
+}
+
+void Building::FreeVoxelSystem(VoxelParticleSystem* system) {
+    for (size_t i = 0; i < voxelPool_.size(); ++i) {
+        if (voxelPool_[i].get() == system) {
+            voxelPoolUsed_[i] = false;
+            // パーティクルが再生中なら停止させるなどのリセット処理があれば呼ぶ
+            // system->Reset(); などの機能がもしあればここに追加
+            break;
+        }
+    }
+}
+
 void Building::Update() {
-    for (auto& inst : instances_) {
+    for (auto it = instances_.begin(); it != instances_.end(); ) {
+        auto& inst = *it;
+
         // 完全消滅済みかつボクセルも終了しているならスキップ
         if (inst.isDestroyed) {
             // ボクセルパーティクルがまだアクティブなら更新を続ける
             if (inst.voxelSystem && inst.voxelSystem->IsActive()) {
                 inst.voxelSystem->Update(1.0f / 60.0f);
+                ++it;
+                continue;
             }
+            // 完全に終了していればプールに返却してリストから除外
+            if (inst.voxelSystem) {
+                FreeVoxelSystem(inst.voxelSystem);
+                inst.voxelSystem = nullptr;
+            }
+            it = instances_.erase(it);
             continue;
         }
 
@@ -65,11 +117,8 @@ void Building::Update() {
                 float currentY = inst.initialY + (inst.targetPosition.y - inst.initialY) * easeT;
 
                 // 地響きのような減衰する左右の揺れ
-                // ビルの太さに比例した揺れの幅
                 float shakeAmp = inst.scale.x * 0.08f;
-                float shakeFactor = 1.0f - t; // 終盤に近づくにつれて減衰
-                
-                // 揺れ成分をサイン・コサイン波で計算
+                float shakeFactor = 1.0f - t; 
                 float shakeX = std::sin(inst.spawnTimer * 45.0f) * shakeAmp * shakeFactor;
                 float shakeZ = std::cos(inst.spawnTimer * 53.0f) * shakeAmp * shakeFactor;
 
@@ -83,6 +132,7 @@ void Building::Update() {
             if (inst.voxelSystem) {
                 inst.voxelSystem->Update(1.0f / 60.0f);
             }
+            ++it;
             continue;
         }
 
@@ -95,7 +145,6 @@ void Building::Update() {
 
             // 壁反射
             const float bound = BuildingInstance::kFieldBound;
-            // building.objはXZ: -1.0~1.0 なので half-extent = scale.x * 1.0
             const float r = inst.scale.x;
             if (inst.position.x - r < -bound) {
                 inst.position.x = -bound + r;
@@ -116,7 +165,7 @@ void Building::Update() {
             float prevTimer = inst.disappearTimer;
             inst.disappearTimer += 1.0f / 60.0f;
 
-            // ボクセル爆散トリガー（消滅タイマーが閾値を超えた瞬間）
+            // ボクセル爆散トリガー
             if (!inst.hasExploded && prevTimer < BuildingInstance::kDisappearTime &&
                 inst.disappearTimer >= BuildingInstance::kDisappearTime) {
                 if (inst.voxelSystem) {
@@ -130,8 +179,14 @@ void Building::Update() {
             if (inst.disappearTimer >= BuildingInstance::kDisappearTime) {
                 bool voxelActive = inst.voxelSystem && inst.voxelSystem->IsActive();
                 if (!voxelActive) {
-                    inst.isDestroyed = true;
+                    if (inst.voxelSystem) {
+                        FreeVoxelSystem(inst.voxelSystem);
+                        inst.voxelSystem = nullptr;
+                    }
+                    it = instances_.erase(it);
                     continue;
+                } else {
+                    inst.isDestroyed = true;
                 }
             }
         }
@@ -140,6 +195,8 @@ void Building::Update() {
         if (inst.voxelSystem) {
             inst.voxelSystem->Update(1.0f / 60.0f);
         }
+
+        ++it;
     }
 
 #ifdef USE_IMGUI
@@ -399,6 +456,11 @@ void Building::Generate() {
         engine_->GetDrawManager()->ClearAllQueues();
     }
 
+    for (auto& inst : instances_) {
+        if (inst.voxelSystem) {
+            FreeVoxelSystem(inst.voxelSystem);
+        }
+    }
     instances_.clear();
 
     // パラメータのバリデーション
@@ -481,18 +543,20 @@ void Building::Generate() {
         instances_.push_back(std::move(inst));
     }
 
-    // VoxelParticleSystemの初期化（GPUリソース作成はメインスレッドで行う必要がある）
+    // プールからVoxelParticleSystemを割り当て
     for (auto& inst : instances_) {
-        inst.voxelSystem = std::make_unique<VoxelParticleSystem>();
-        inst.voxelSystem->Initialize("building/block.obj", {32, 32, 32});
-        inst.voxelSystem->SetParticleType(VoxelParticleSystem::ParticleType::Building);
-        inst.voxelSystem->SetGravity(40.0f); // 落下感を強くするため重力を上げる
+        inst.voxelSystem = AllocateVoxelSystem();
     }
 
     OutputDebugStringA(std::format("Building: {} buildings generated.\n", (int)instances_.size()).c_str());
 }
 
 void Building::ClearAndAddSingleBuilding(const Vector3& position) {
+    for (auto& i : instances_) {
+        if (i.voxelSystem) {
+            FreeVoxelSystem(i.voxelSystem);
+        }
+    }
     instances_.clear();
     BuildingInstance inst;
     int floorCount = 5; // チュートリアル用の小さめのビル
@@ -508,15 +572,17 @@ void Building::ClearAndAddSingleBuilding(const Vector3& position) {
     inst.blowVelocity = {0.0f, 0.0f, 0.0f};
     inst.angularVelocity = {0.0f, 0.0f, 0.0f};
 
-    inst.voxelSystem = std::make_unique<VoxelParticleSystem>();
-    inst.voxelSystem->Initialize("building/block.obj", {32, 32, 32});
-    inst.voxelSystem->SetParticleType(VoxelParticleSystem::ParticleType::Building);
-    inst.voxelSystem->SetGravity(40.0f);
+    inst.voxelSystem = AllocateVoxelSystem();
 
     instances_.push_back(std::move(inst));
 }
 
 void Building::ClearAllBuildings() {
+    for (auto& inst : instances_) {
+        if (inst.voxelSystem) {
+            FreeVoxelSystem(inst.voxelSystem);
+        }
+    }
     instances_.clear();
 }
 
@@ -796,10 +862,7 @@ void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3&
     inst.initialY = pos.y - scaleY; // 完全に地中に埋まる高さ
     inst.position = { pos.x, inst.initialY, pos.z };
 
-    inst.voxelSystem = std::make_unique<VoxelParticleSystem>();
-    inst.voxelSystem->Initialize("building/block.obj", {32, 32, 32});
-    inst.voxelSystem->SetParticleType(VoxelParticleSystem::ParticleType::Building);
-    inst.voxelSystem->SetGravity(40.0f);
+    inst.voxelSystem = AllocateVoxelSystem();
 
     instances_.push_back(std::move(inst));
     OutputDebugStringA("Building: Spawned a new building dynamically with spawning animation.\n");
