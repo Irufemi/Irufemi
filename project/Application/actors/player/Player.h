@@ -12,6 +12,7 @@
 class Camera;
 class Line3DRegion;
 class Enemy;
+class EnemyBeam;
 class Sprite;
 class PlayerHPBar;
 class WeaponTrail;
@@ -217,6 +218,13 @@ private:
     Vector3 firstPersonMiniPos_ = { -0.58f, -0.21f, 1.4f };
     Vector3 firstPersonMiniScale_ = { 0.05f, 0.05f, 0.05f };
     float firstPersonMiniRotY_ = 0.5f;
+
+    // ★追加: 死亡演出前の自爆ビームエフェクト
+    static constexpr int kDeathBeamCount = 4;
+    std::vector<std::unique_ptr<EnemyBeam>> deathBeams_;
+    std::vector<Vector3> deathBeamDirs_;
+    std::vector<int> deathBeamDelays_; // 各ビームの出現開始フレーム遅延
+    std::vector<Vector3> deathBeamOffsets_; // 各ビームの全身噴出ローカルオフセット
 
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;

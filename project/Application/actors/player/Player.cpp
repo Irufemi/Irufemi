@@ -12,6 +12,7 @@
 #include "Renderer/Effect/WeaponTrail.h"
 #include "Renderer/Effect/Effect.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "actors/enemy/Beam/EnemyBeam.h"
 
 #ifdef USE_IMGUI
 #include <imgui.h> 
@@ -140,6 +141,102 @@ void Player::Update() {
         if (deathWaitTimer_ < kDeathWaitTime) {
             deathWaitTimer_++;
 
+            // === 死亡開始の最初のフレームでビームを生成 ===
+            if (deathWaitTimer_ == 1) {
+                deathBeams_.clear();
+                deathBeamDirs_.clear();
+                deathBeamDelays_.clear();
+                deathBeamOffsets_.clear();
+                
+                // 15フレーム（0.25秒）刻みで順番に出現させる遅延テーブル
+                deathBeamDelays_ = { 1, 16, 31, 46 };
+
+                // ★実際の縮小モデルサイズ（高さ約1.0f, 幅約0.3f）に適合させたオフセット定義
+                deathBeamOffsets_ = {
+                    { 0.0f, 0.9f, 0.0f },     // ビーム0: 頭付近
+                    { 0.12f, 0.65f, 0.03f },  // ビーム1: 右肩/右胸付近
+                    { -0.12f, 0.4f, -0.03f }, // ビーム2: 左脇腹/左腰付近
+                    { 0.08f, 0.15f, -0.02f }  // ビーム3: 右太もも/下半身付近
+                };
+
+                for (int i = 0; i < kDeathBeamCount; ++i) {
+                    auto beam = std::make_unique<EnemyBeam>();
+                    beam->Initialize(engine_);
+                    beam->SetOriginOffset(0.0f);
+                    
+                    // 初期状態では非アクティブ。出現タイミングが来たらONにする
+                    beam->SetAttackActive(false);
+                    beam->SetChargeSphereActive(false); // コア球体は非表示
+                    
+                    // ★超発光HDRカラーに設定（1.0を超える強度で眩しく輝かせます）
+                    beam->SetAttackColor({ 3.5f, 3.0f, 0.3f, 1.0f }); 
+                    
+                    // 3D球面上に均等・ランダムな方向を生成
+                    float theta = (std::rand() % 1000) / 1000.0f * 3.14159f * 2.0f;
+                    float phi = std::acos(2.0f * (std::rand() % 1000) / 1000.0f - 1.0f);
+                    Vector3 dir = {
+                        std::sin(phi) * std::cos(theta),
+                        std::sin(phi) * std::sin(theta),
+                        std::cos(phi)
+                    };
+                    
+                    // 下半身から出るビームが地面に埋まりすぎないよう、Y方向を少し上向きに反転補正
+                    if (deathBeamOffsets_[i].y < 0.5f && dir.y < 0.0f) {
+                        dir.y = -dir.y * 0.5f; // 上向きにする
+                        dir = Math::Normalize(dir);
+                    }
+                    
+                    deathBeams_.push_back(std::move(beam));
+                    deathBeamDirs_.push_back(dir);
+                }
+            }
+
+            // === 毎フレームのビーム更新 ===
+            if (!deathBeams_.empty()) {
+                // ★モデル描画Yオフセット(kModelOffsetY = 0.4f)を足して、モデルと完全に同期させる！
+                Vector3 basePos = translate_;
+                basePos.y += kModelOffsetY;
+
+                float sinY = std::sin(rotate_.y);
+                float cosY = std::cos(rotate_.y);
+
+                for (size_t i = 0; i < deathBeams_.size(); ++i) {
+                    int delay = deathBeamDelays_[i];
+                    if (deathWaitTimer_ >= delay) {
+                        // 出現タイミングに達した場合のみ更新・表示
+                        if (!deathBeams_[i]->IsAttackActive()) {
+                            deathBeams_[i]->SetAttackActive(true);
+                        }
+
+                        // 出現してから終了までの固有の進行度を計算
+                        int activeFrames = deathWaitTimer_ - delay;
+                        int totalFrames = kDeathWaitTime - delay;
+                        float beamRatio = static_cast<float>(activeFrames) / totalFrames;
+                        if (beamRatio > 1.0f) beamRatio = 1.0f;
+
+                        // 後半にかけて急激に太くする（出現時は 0.04f から最大 0.25f）
+                        float curveRatio = std::pow(beamRatio, 2.0f);
+                        float thickness = 0.04f + curveRatio * 0.21f;
+                        deathBeams_[i]->SetAttackThickness(thickness);
+                        
+                        // ★プレイヤーの回転を考慮して、射出部位のオフセット座標を回転
+                        Vector3 localOffset = deathBeamOffsets_[i];
+                        Vector3 rotatedOffset = {
+                            localOffset.x * cosY + localOffset.z * sinY,
+                            localOffset.y,
+                            -localOffset.x * sinY + localOffset.z * cosY
+                        };
+                        Vector3 startPos = basePos + rotatedOffset;
+                        Vector3 endPos = startPos + deathBeamDirs_[i] * 300.0f;
+                        
+                        deathBeams_[i]->Update(startPos, endPos);
+                    } else {
+                        // まだ出現タイミングに達していないビームは更新しない
+                        deathBeams_[i]->SetAttackActive(false);
+                    }
+                }
+            }
+
             // ★追加: 死亡待機中（自爆前）の全身から激しく突き抜ける光線エフェクト
             if (deathGlowParticle_) {
                 float deathRatio = static_cast<float>(deathWaitTimer_) / kDeathWaitTime;
@@ -198,6 +295,11 @@ void Player::Update() {
 
         // 3秒経過後、死亡演出を開始
         if (deathTimer_ == 0) {
+            deathBeams_.clear();
+            deathBeamDirs_.clear();
+            deathBeamDelays_.clear();
+            deathBeamOffsets_.clear();
+
             deathYaw_ = rotate_.y;
 
             // 敵と密着していてもめり込まないように、
@@ -512,6 +614,20 @@ void Player::Update() {
 
     // ★追加: からくりチャージゲージの更新
     if (karakuriGaugeBg_ && karakuriGaugeFill_) {
+        // 現在の視点に応じて位置を動的に計算
+        float targetX = 440.0f;
+        float targetY = 580.0f; // 三人称視点のデフォルト（中央下部）
+
+        if (cameraController_.IsFirstPerson()) {
+            // 一人称視点時はHPゲージ（X: 40.0f, Y: ClientHeight - 90.0f）の上に配置
+            float clientHeight = engine_ ? static_cast<float>(engine_->GetClientHeight()) : 720.0f;
+            targetX = 40.0f;
+            targetY = clientHeight - 90.0f - 24.0f; // HPバーの24ピクセル上（余白を含めて綺麗に揃います）
+        }
+
+        karakuriGaugeBg_->SetPositionTopLeft(targetX, targetY);
+        karakuriGaugeFill_->SetPositionTopLeft(targetX, targetY);
+
         if (isKarakuriCharged_) {
             // チャージ成功後: 残り時間に応じてゲージを減らす（オレンジ色）
             float ratio = static_cast<float>(karakuriActiveTimer_) / static_cast<float>(kKarakuriActiveTime);
@@ -901,6 +1017,15 @@ void Player::Draw() {
     if (deathGlowParticle_) {
         deathGlowParticle_->SyncBeforeDraw();
         deathGlowParticle_->Draw();
+    }
+
+    // ★追加: 死亡演出前の自爆電撃ビームの描画
+    if (status_.IsDead() && deathWaitTimer_ < kDeathWaitTime) {
+        for (size_t i = 0; i < deathBeams_.size(); ++i) {
+            if (deathBeams_[i]->IsAttackActive()) {
+                deathBeams_[i]->Draw(engine_);
+            }
+        }
     }
 
 
