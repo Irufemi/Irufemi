@@ -13,6 +13,7 @@ class Camera;
 class IrufemiEngine;
 class ModelRegion;
 class VoxelParticleSystem;
+class ParticleSystem;
 
 /// @brief 個別建物のインスタンスデータ
 struct BuildingInstance {
@@ -148,6 +149,9 @@ private:
     // VoxelParticleSystem オブジェクトプール
     std::vector<std::unique_ptr<VoxelParticleSystem>> voxelPool_;
     std::vector<bool> voxelPoolUsed_;
+
+    // 砂煙エフェクト用 (ビル共通で1つだけ保持し、各ビルの位置から発生させる)
+    std::unique_ptr<ParticleSystem> spawnDustSystem_;
 
     /// @brief プールから未使用のVoxelParticleSystemを取得する
     VoxelParticleSystem* AllocateVoxelSystem();

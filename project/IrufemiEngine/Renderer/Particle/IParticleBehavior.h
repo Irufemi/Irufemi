@@ -177,5 +177,16 @@ private:
 	float groundHeight_ = 0.0f; // 滞留させる地面の高さ
 };
 
+/// <summary>
+/// ビル出現時の専用砂埃エフェクトの振る舞い
+/// </summary>
+class BuildingSpawnDustBehavior : public IParticleBehavior {
+public:
+	void Initialize(Emitter* emitter) override;
+	void Update(Particle& particle, float deltaTime) override;
+	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
+};
+
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type);

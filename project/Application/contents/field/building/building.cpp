@@ -8,8 +8,12 @@
 
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
-#include "Engine/Core/Shape/Sphere.h"
+#include "Renderer/LineInstanced/LineClass.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
+#include "Renderer/Particle/ParticleSystem.h"
+#include "Engine/Core/Math/Math.h"
+#include "Engine/Manager/DebugUI.h"
+#include "Engine/Core/Shape/Sphere.h"
 #include "Renderer/Region/ModelRegion.h"
 #include "Engine/IrufemiEngine.h"
 
@@ -42,6 +46,12 @@ void Building::Initialize(IrufemiEngine* engine) {
         voxel->SetGravity(40.0f);
         voxelPool_.push_back(std::move(voxel));
     }
+
+    // 砂煙エフェクトの初期化
+    spawnDustSystem_ = std::make_unique<ParticleSystem>();
+    // PrimitiveType::Plane を指定
+    spawnDustSystem_->Initialize("resources/circle.png", ParticleType::kBuildingSpawnDust, PrimitiveType::Plane);
+    spawnDustSystem_->SetCullingEnabled(false); // 複数箇所で共有するためカリングは無効化
 
     Generate();
 
@@ -107,6 +117,14 @@ void Building::Update() {
         if (inst.isSpawning) {
             inst.spawnTimer += 1.0f / 60.0f;
             float t = inst.spawnTimer / inst.spawnDuration;
+
+            // 砂煙エフェクトの発生（上昇中のみ）
+            if (spawnDustSystem_ && t < 1.0f) {
+                // inst.scale.x * 2.0f が実際のビルの幅
+                spawnDustSystem_->SetEmitterArea({inst.scale.x * 2.0f, 0.0f, inst.scale.z * 2.0f});
+                spawnDustSystem_->PlayHitEffect({inst.position.x, 0.0f, inst.position.z}, 30); // 毎フレーム大量の細かい粒子を放出
+            }
+
             if (t >= 1.0f) {
                 t = 1.0f;
                 inst.isSpawning = false;
@@ -246,6 +264,11 @@ void Building::Update() {
         debugLines_->Update();
     }
 #endif
+
+    // 全てのビルから集まった砂煙パーティクルを一括更新
+    if (spawnDustSystem_) {
+        spawnDustSystem_->Update();
+    }
 }
 
 void Building::Draw(IrufemiEngine* engine) {
@@ -309,6 +332,11 @@ void Building::Draw(IrufemiEngine* engine) {
 
     if (buildingRegion_) {
         buildingRegion_->Draw();
+    }
+
+    // 砂煙エフェクトの一括描画
+    if (spawnDustSystem_) {
+        spawnDustSystem_->Draw();
     }
 
     // ループ後に標準PSOを復元（後続の描画に影響しないように）

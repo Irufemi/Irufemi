@@ -486,6 +486,72 @@ void GroundSmokeBehavior::Debug(
     [[maybe_unused]] Emitter *emitter, [[maybe_unused]] DebugUI *ui,
     [[maybe_unused]] ParticleSystem *particleSystem) {}
 
+// BuildingSpawnDustBehavior
+void BuildingSpawnDustBehavior::Initialize(Emitter *emitter) {
+  emitter->count = 15; // 外部で上書きされるがデフォルト値
+  emitter->area = {20.0f, 0.0f, 20.0f}; 
+  emitter->velocityMin = {0.0f, 0.0f, 0.0f};
+  emitter->velocityMax = {0.0f, 0.0f, 0.0f};
+  emitter->startScale = {0.8f, 0.8f, 0.8f}; // 細かい粒子を大量に出す
+  emitter->endScale = {3.5f, 3.5f, 3.5f};   // 膨張して煙を形成
+  emitter->startColor = {0.65f, 0.55f, 0.45f, 0.8f}; 
+  emitter->endColor = {0.6f, 0.5f, 0.4f, 0.0f};
+  emitter->colorMode = ParticleColorMode::kNone;
+}
+void BuildingSpawnDustBehavior::Update(Particle &particle, float deltaTime) {
+  // 空気抵抗で水平方向の速度を減衰
+  particle.velocity.x *= 0.95f;
+  particle.velocity.z *= 0.95f;
+  // わずかに浮力を持たせる（熱や土埃の舞い上がり）
+  particle.velocity.y += 1.0f * deltaTime;
+  
+  // 色とスケールは Particle::Update で currentTime / lifeTime に応じて自動Lerpされるためここでは設定不要
+}
+void BuildingSpawnDustBehavior::MakeNewParticle(Particle &particle,
+                                          std::mt19937 &randomEngine,
+                                          const Emitter &emitter) {
+  std::uniform_real_distribution<float> distTime(1.5f, 2.5f); // 滞留時間を長めに
+  std::uniform_real_distribution<float> distTheta(0.0f, 2.0f * std::numbers::pi_v<float>); // 水平360度
+  std::uniform_real_distribution<float> distSpeed(2.0f, 8.0f); // 押し退ける初速
+  std::uniform_real_distribution<float> distScale(0.8f, 1.5f);
+  std::uniform_real_distribution<float> distRotate(-std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+
+  float theta = distTheta(randomEngine);
+  float speed = distSpeed(randomEngine);
+
+  // emitter.area.x をビルの幅（直径）として扱う
+  // 外周（リング状）に配置するため、半径 = area.x * 0.5f 付近に生成する
+  // わずかな揺らぎを加える
+  std::uniform_real_distribution<float> distRadiusBias(0.8f, 1.2f);
+  float radiusX = (emitter.area.x * 0.5f) * distRadiusBias(randomEngine);
+  float radiusZ = (emitter.area.z * 0.5f) * distRadiusBias(randomEngine);
+
+  // オフセット位置（ビルの外周）
+  Vector3 offset = {
+      std::cos(theta) * radiusX,
+      0.0f, // 根元から発生
+      std::sin(theta) * radiusZ
+  };
+  
+  particle.transform.translate = emitter.transform.translate + offset;
+  
+  // 外側に向かって土を押し退ける速度ベクトル
+  Vector3 outwardDir = {std::cos(theta), 0.0f, std::sin(theta)};
+  particle.velocity = outwardDir * speed;
+  particle.velocity.y = speed * 0.2f; // 少しだけ上方向にも勢いをつける
+
+  particle.startScale = emitter.startScale * distScale(randomEngine);
+  particle.endScale = emitter.endScale * distScale(randomEngine);
+  particle.transform.rotate = {0.0f, 0.0f, distRotate(randomEngine)};
+  
+  particle.startColor = emitter.startColor;
+  particle.endColor = emitter.endColor;
+  particle.lifeTime = distTime(randomEngine);
+}
+void BuildingSpawnDustBehavior::Debug(
+    [[maybe_unused]] Emitter *emitter, [[maybe_unused]] DebugUI *ui,
+    [[maybe_unused]] ParticleSystem *particleSystem) {}
+
 // ファクトリ関数
 std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
   switch (type) {
@@ -511,6 +577,8 @@ std::unique_ptr<IParticleBehavior> CreateParticleBehavior(ParticleType type) {
     return std::make_unique<EjectionMistBehavior>();
   case ParticleType::kGroundSmoke:
     return std::make_unique<GroundSmokeBehavior>();
+  case ParticleType::kBuildingSpawnDust:
+    return std::make_unique<BuildingSpawnDustBehavior>();
   case ParticleType::Normal:
   default:
     return std::make_unique<NormalBehavior>();

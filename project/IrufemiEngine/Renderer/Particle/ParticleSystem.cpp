@@ -149,7 +149,8 @@ void ParticleSystem::Update() {
         particleType_ != ParticleType::kMuzzleSmoke && particleType_ != ParticleType::kMuzzleFlash &&
         particleType_ != ParticleType::kMissileFire && particleType_ != ParticleType::kMissileSmoke &&
         particleType_ != ParticleType::kBulletTrail && particleType_ != ParticleType::kEjectionMist &&
-        particleType_ != ParticleType::kGroundSmoke && particleType_ != ParticleType::kSpark) {
+        particleType_ != ParticleType::kGroundSmoke && particleType_ != ParticleType::kSpark &&
+        particleType_ != ParticleType::kBuildingSpawnDust) {
         emitter_.frequencyTime += kDeltatime_; // 時刻を進める
         if (emitter_.frequency <= emitter_.frequencyTime) { // 頻度より大きいなら発生
             particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
@@ -455,7 +456,8 @@ void ParticleSystem::PlayHitEffect(const Vector3& position) {
         particleType_ == ParticleType::kBulletTrail ||
         particleType_ == ParticleType::kEjectionMist ||
         particleType_ == ParticleType::kGroundSmoke ||
-        particleType_ == ParticleType::kSpark) {
+        particleType_ == ParticleType::kSpark ||
+        particleType_ == ParticleType::kBuildingSpawnDust) {
         emitter_.transform.translate = position;
         particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
     }
@@ -470,7 +472,8 @@ void ParticleSystem::PlayHitEffect(const Vector3& position, uint32_t count) {
         particleType_ == ParticleType::kBulletTrail ||
         particleType_ == ParticleType::kEjectionMist ||
         particleType_ == ParticleType::kGroundSmoke ||
-        particleType_ == ParticleType::kSpark) {
+        particleType_ == ParticleType::kSpark ||
+        particleType_ == ParticleType::kBuildingSpawnDust) {
         Emitter customEmitter = emitter_;
         customEmitter.transform.translate = position;
         customEmitter.count = count;
@@ -550,7 +553,7 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 const char* particleTypeNames[] = {
                     "Normal", "AccelerationField", "HitEffect", "Explosion", "Spark",
                     "MuzzleSmoke", "MuzzleFlash", "MissileFire", "MissileSmoke",
-                    "BulletTrail", "EjectionMist", "GroundSmoke"
+                    "BulletTrail", "EjectionMist", "GroundSmoke", "BuildingSpawnDust"
                 };
                 int currentType = static_cast<int>(particleType_);
                 if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
