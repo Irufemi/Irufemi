@@ -169,8 +169,10 @@ void Building::Update() {
             if (!inst.hasExploded && prevTimer < BuildingInstance::kDisappearTime &&
                 inst.disappearTimer >= BuildingInstance::kDisappearTime) {
                 if (inst.voxelSystem) {
+                    // building.obj と block.obj のXZサイズの差異を補正するため、XZスケールを2倍にして爆破する
+                    Vector3 explodeScale = { inst.scale.x * 2.0f, inst.scale.y, inst.scale.z * 2.0f };
                     inst.voxelSystem->Explode(inst.position, inst.blowVelocity,
-                                             inst.rotate, inst.scale);
+                                             inst.rotate, explodeScale);
                     inst.hasExploded = true;
                 }
             }
@@ -701,8 +703,31 @@ void Building::ScatterAt(int index, const Vector3& velocity, const OBB& collisio
     // 完全に破壊済み、またはVoxelシステムがない場合は処理しない
     if (inst.isDestroyed || !inst.voxelSystem) return;
     
+    // ビル全体の高さと各階の高さを計算
+    float floorHeight = inst.scale.x * params_.floorHeightRatio;
+    float totalHeight = inst.floorCount * floorHeight;
+
+    // 攻撃が当たったY座標から、どの階層が殴られたかを特定する
+    float hitY = collisionArea.center.y;
+    float bottomY = inst.position.y - totalHeight / 2.0f; // ビルの底面Y
+    float localHitY = hitY - bottomY;
+    
+    int hitFloor = static_cast<int>(localHitY / floorHeight);
+    if (hitFloor < 0) hitFloor = 0;
+    if (hitFloor >= inst.floorCount) hitFloor = inst.floorCount - 1;
+
+    // 殴られた階層の中心Y座標を計算
+    float floorCenterY = bottomY + hitFloor * floorHeight + floorHeight / 2.0f;
+    Vector3 floorPos = inst.position;
+    floorPos.y = floorCenterY;
+
+    // スケールはビル全体ではなく「1階層分のスケール」を使用し、ボクセルの密度を本来のモデル密度に戻す
+    // 【重要】building.objはXZが[-1.0, 1.0]の幅2.0のモデルだが、
+    // block.objはXZが[-0.5, 0.5]の幅1.0のモデルであるため、ボクセル側はXZスケールを2倍にする必要がある
+    Vector3 floorScale = { inst.scale.x * 2.0f, floorHeight, inst.scale.z * 2.0f };
+
     inst.voxelSystem->SetParameters(VoxelParticleSystem::VoxelEmitterParams::FineScatter());
-    inst.voxelSystem->CollisionScatter(inst.position, velocity, inst.rotate, inst.scale, collisionArea);
+    inst.voxelSystem->CollisionScatter(floorPos, velocity, inst.rotate, floorScale, collisionArea);
 }
 
 bool Building::IsBuildingBlownAway(int index) const {

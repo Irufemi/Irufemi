@@ -143,7 +143,9 @@ void VoxelParticleSystem::Update(float deltaTime) {
 void VoxelParticleSystem::SyncConstantBuffers() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     
-    if (lastUpdateFrame_ == frameIndex) return;
+    // lastUpdateFrame_ による早期リターンを削除
+    // 理由：Update()の後にScatterAt()が呼ばれるとパラメータが変わるが、
+    // ここで弾かれると同フレーム内で変更がGPUへ反映されず、古いパラメータでComputeShaderが走ってしまうため。
     emitterBuffer_.Update(emitterData_, frameIndex);
     perFrameBuffer_.Update(perFrameData_, frameIndex);
     lastUpdateFrame_ = frameIndex;
@@ -231,7 +233,9 @@ void VoxelParticleSystem::Emit(const Vector3 &position) {
   emitterData_.time = 0.0f;
   emitterData_.useCollision = 0; // 衝突判定無効
   isEmitting_ = true;
+  emitterData_.emit = 1;
   hasExploded_ = true;
+  SyncConstantBuffers();
 }
 
 void VoxelParticleSystem::Explode(const Vector3 &position,
@@ -245,7 +249,9 @@ void VoxelParticleSystem::Explode(const Vector3 &position,
   emitterData_.time = 0.0f;
   emitterData_.useCollision = 0; // 衝突判定無効
   isEmitting_ = true;
+  emitterData_.emit = 1;
   hasExploded_ = true;
+  SyncConstantBuffers();
 }
 
 void VoxelParticleSystem::CollisionScatter(const Vector3 &position,
@@ -293,7 +299,9 @@ void VoxelParticleSystem::CollisionScatter(const Vector3 &position,
   }
 
   isEmitting_ = true;
+  emitterData_.emit = 1;
   hasExploded_ = true;
+  SyncConstantBuffers();
 }
 
 void VoxelParticleSystem::CreateCubeMesh(float sizeX, float sizeY,

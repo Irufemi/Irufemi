@@ -828,7 +828,11 @@ void GameScene::CheckPlayerBuildingCollisions() {
       impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
       impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
       impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
-      impactOBB.size = {attackSphere.radius, attackSphere.radius, attackSphere.radius};
+      
+      // ビルのボクセルはY軸方向に大きく引き伸ばされており（最大130mなどを16分割）、
+      // 剣の判定（半径1.5m）だとボクセルとボクセルの隙間をすり抜けてしまうため、
+      // 確実に火花が飛ぶように判定を縦に大きく広げる（X,Zも少し広げる）
+      impactOBB.size = {attackSphere.radius * 2.0f, attackSphere.radius * 8.0f, attackSphere.radius * 2.0f};
       building->ScatterAt(i, Math::Multiply(3.0f, attackDir), impactOBB);
     }
 

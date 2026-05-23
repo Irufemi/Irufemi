@@ -64,9 +64,16 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 
 		if (!inside)
 		{
-			gParticles[voxelIndex].isActive = 0;
+			// 既に飛散中の他のボクセルを消さないように、ここでは単にスキップするだけにする
 			return;
 		}
+	}
+
+	// 既にアクティブな場合、無理に再配置すると「飛んでいる途中で元の位置にワープ」して不自然になるためスキップ
+	// ただし、使い回すために寿命が尽きている（または尽きかけている）場合は再エミットを許可する
+	if (gEmitter.useCollision != 0 && gParticles[voxelIndex].isActive == 1 && gParticles[voxelIndex].life > 0.2f)
+	{
+		return;
 	}
     
     // 4. 初期速度: ボクセルの法線を回転させ、衝突時は中心から外側へ向かうベクトルを加味する
@@ -76,7 +83,7 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 	float3 randomVec = (generator.Generate3d() * 2.0f - 1.0f) * 0.5f; // -0.5 ~ 0.5
 	float3 moveDir = normalize(lerp(rotatedNormal, burstDir, 0.7f) + randomVec);
 	
-	gParticles[voxelIndex].velocity = gEmitter.baseVelocity + moveDir * gEmitter.dispersion;
+	float3 finalVelocity = gEmitter.baseVelocity + moveDir * gEmitter.dispersion;
 
 	gParticles[voxelIndex].color = voxel.color;
 	
@@ -89,12 +96,22 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 	}
 	else if (gEmitter.particleType == 3) // FineScatter (被弾時)
 	{
+		// 攻撃方向（baseVelocity）やburstDirが物体内部（法線と逆）に向かっている場合、
+		// 巨大なモデルだと内部にめり込んで見えなくなるため、外側に反射（バウンス）させる
+		if (dot(finalVelocity, rotatedNormal) < 0.0f)
+		{
+			finalVelocity = reflect(finalVelocity, rotatedNormal);
+			// 確実に外へ飛び出すように少し押し出す
+			finalVelocity += rotatedNormal * (gEmitter.dispersion * 0.5f);
+		}
+
 		// 元の色をベースにしつつ、衝撃の熱で強烈に発光させる (HDR)
 		float hitNoise = generator.Generate1d();
 		float3 sparkColor = lerp(float3(8.0f, 4.0f, 1.0f), float3(20.0f, 15.0f, 5.0f), hitNoise);
 		gParticles[voxelIndex].color.rgb = voxel.color.rgb * sparkColor;
 	}
 	
+	gParticles[voxelIndex].velocity = finalVelocity;
 	gParticles[voxelIndex].life = 1.0f + delay; // 寿命を満タンにする＋ディレイを加算
 	gParticles[voxelIndex].size = 1.0f; // サイズ
 	gParticles[voxelIndex].isActive = 1; // アクティブ化
