@@ -2,12 +2,18 @@
 #include "core/math/Transform.h"
 #include "core/math/Vector4.h"
 #include "core/math/geometry/OBB.h"
+#include "Engine/Core/Shape/Sphere.h"
 #include <memory>
 #include <algorithm>
+#include <wrl.h>
+#include <d3d12.h>
+#include "IrufemiEngine/Engine/Graphics/Data/ExplosionParams.h"
+#include "Renderer/ParticleGPU/GPUParticleSystem.h"
 
 // 前方宣言
 class Camera;
 class ObjClass;
+class PrimitiveObjects3DClass;
 
 class EnemyStompEffects {
 public:
@@ -46,7 +52,7 @@ public:
         int finalExplosionDamage = 50;
     };
 
-    void Initialize();
+    void Initialize(class IrufemiEngine* engine);
     void Update(float deltaTime);
     void Draw(class IrufemiEngine* engine);
     void Fire(const Vector3& position);
@@ -65,7 +71,7 @@ public:
     int GetExplosionDamage() const { return params_.explosionDamage; }
     
     bool IsFinalExplosionActive() const { return currentPhase_ == Phase::FinalExplosion; }
-    const OBB& GetFinalExplosionOBB() const { return finalExplosionOBB_; }
+    const Sphere& GetFinalExplosionSphere() const { return finalExplosionSphere_; }
     int GetFinalExplosionDamage() const { return params_.finalExplosionDamage; }
 
     bool HasDealtExplosionDamage() const { return hasDealtExplosionDamage_; }
@@ -76,12 +82,16 @@ public:
 
 private:
     // 判定用ヘルパー
-    void UpdateFinalExplosionOBB();
+    void UpdateFinalExplosionSphere();
 
     Camera* camera_ = nullptr;
-    std::unique_ptr<ObjClass> explosionObj_ = nullptr;
-    std::unique_ptr<ObjClass> ringObj_ = nullptr;
-    std::unique_ptr<ObjClass> finalExplosionObj_ = nullptr; // 噴き上がり用モデル
+    std::unique_ptr<PrimitiveObjects3DClass> explosionObj_ = nullptr;
+    std::unique_ptr<PrimitiveObjects3DClass> ringObj_ = nullptr;
+    std::unique_ptr<PrimitiveObjects3DClass> finalExplosionObj_ = nullptr; // 噴き上がり用モデル
+    std::unique_ptr<GPUParticleSystem> gpuParticleSystem_ = nullptr; // 大爆発の火の粉用
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> explosionParamsResource_ = nullptr;
+    ExplosionParams* explosionParamsData_ = nullptr;
 
     Transform explosionTransform_;
     Transform ringTransform_;
@@ -94,7 +104,7 @@ private:
     Vector3 basePosition_ = {};
 
     Parameters params_;
-    OBB finalExplosionOBB_;
+    Sphere finalExplosionSphere_;
 
     bool hasDealtExplosionDamage_ = false;
     bool hasDealtRingDamage_ = false;

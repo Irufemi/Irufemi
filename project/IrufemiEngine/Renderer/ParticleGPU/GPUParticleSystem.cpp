@@ -414,6 +414,15 @@ void GPUParticleSystem::SetSphereEmitter(const Vector3& pos, float radius, uint3
     emitter_->frequency = frequency;
 }
 
+void GPUParticleSystem::SetHemisphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency) {
+    if (!emitter_) return;
+    emitter_->type = 5;
+    emitter_->translate = pos;
+    emitter_->radius = radius;
+    emitter_->count = (int32_t)count;
+    emitter_->frequency = frequency;
+}
+
 void GPUParticleSystem::SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, uint32_t count, float frequency) {
     if (!emitter_) return;
     emitter_->type = 1;
@@ -686,7 +695,7 @@ void GPUParticleSystem::DebugEmitterSettings() {
 #if defined(USE_IMGUI)
     if (!emitter_) return;
 
-    const char* typeNames[] = { "Sphere", "Beam", "Ring", "Cylinder", "Box" };
+    const char* typeNames[] = { "Sphere", "Beam", "Ring", "Cylinder", "Box", "Hemisphere" };
     int type = (int)emitter_->type;
     if (ImGui::Combo("Type", &type, typeNames, IM_ARRAYSIZE(typeNames))) {
         emitter_->type = (uint32_t)type;
@@ -697,7 +706,7 @@ void GPUParticleSystem::DebugEmitterSettings() {
 
     ImGui::DragFloat3("Translate", &emitter_->translate.x, 0.1f);
     
-    if (emitter_->type == 0 || emitter_->type == 2 || emitter_->type == 3) {
+    if (emitter_->type == 0 || emitter_->type == 2 || emitter_->type == 3 || emitter_->type == 5) {
         ImGui::DragFloat("Radius", &emitter_->radius, 0.1f, 0.0f, 100.0f);
     }
     if (emitter_->type == 4) {

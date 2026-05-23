@@ -61,7 +61,7 @@ struct ParticleCS {
  */
 struct GPUParticleEmitter {
     // float4 x 1
-    uint32_t type = 0;          ///< 0: Sphere, 1: Beam, 2: Ring, 3: Cylinder
+    uint32_t type = 0;          ///< 0: Sphere, 1: Beam, 2: Ring, 3: Cylinder, 4: Box, 5: Hemisphere
     Vector3 translate = {0,0,0}; ///< 放出中心位置
 
     // float4 x 2
@@ -221,6 +221,7 @@ public:
     /** @name タイプ別エミッター設定 */
     ///@{
     void SetSphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency);
+    void SetHemisphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency);
     void SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, uint32_t count, float frequency);
 
     /** @name アトラス・物理挙動設定 */

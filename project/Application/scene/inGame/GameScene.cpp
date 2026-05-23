@@ -461,8 +461,8 @@ void GameScene::CheckEnemyToPlayerCollisions() {
       }
     }
     if (stomp->IsFinalExplosionActive() && !stomp->HasDealtFinalDamage()) {
-      if (Collision::IsOBBSphereCollision(stomp->GetFinalExplosionOBB(),
-                                          playerColliderSphere)) {
+      if (Collision::IsCollision(stomp->GetFinalExplosionSphere(),
+                                       playerColliderSphere)) {
         if (player_->ApplyDamage(stomp->GetFinalExplosionDamage())) {
           stomp->SetDealtFinalDamage(true);
         }
@@ -907,7 +907,7 @@ void GameScene::CheckEnemyBuildingCollisions() {
         }
       }
       if (stomp->IsFinalExplosionActive()) {
-        if (Collision::IsOBBCollision(stomp->GetFinalExplosionOBB(), bOBB)) {
+        if (Collision::IsCollision(bOBB, stomp->GetFinalExplosionSphere())) {
           building->MarkDestroyed(i);
           continue;
         }

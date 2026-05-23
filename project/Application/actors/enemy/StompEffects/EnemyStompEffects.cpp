@@ -1,21 +1,64 @@
 #include "EnemyStompEffects.h"
 #include "Renderer/LineInstanced/LineClass.h"
+#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "IrufemiEngine/Engine/IrufemiEngine.h"
 #include "Irufemi.h" 
 #include "Core/Math/Math.h"
 #include <cmath>
 #include <algorithm>
 
-#include "Renderer/LineInstanced/LineClass.h"
+void EnemyStompEffects::Initialize(IrufemiEngine* engine) {
+    explosionObj_ = std::make_unique<PrimitiveObjects3DClass>();
+    explosionObj_->Initialize(PrimitiveType::Sphere, "resources/whiteTexture.png");
+    explosionObj_->SetColor({1.0f, 0.5f, 0.2f, 1.0f});
 
-void EnemyStompEffects::Initialize() {
-    explosionObj_ = std::make_unique<ObjClass>();
-    explosionObj_->Initialize("sample/block.obj");
+    ringObj_ = std::make_unique<PrimitiveObjects3DClass>();
+    ringObj_->Initialize(PrimitiveType::Cylinder, "resources/whiteTexture.png");
+    ringObj_->SetColor({1.0f, 0.2f, 0.0f, 0.5f});
+    ringObj_->SetCastShadows(false);
 
-    ringObj_ = std::make_unique<ObjClass>();
-    ringObj_->Initialize("sample/block.obj");
+    finalExplosionObj_ = std::make_unique<PrimitiveObjects3DClass>();
+    finalExplosionObj_->Initialize(PrimitiveType::Sphere, "resources/uvChecker.png");
 
-    finalExplosionObj_ = std::make_unique<ObjClass>();
-    finalExplosionObj_->Initialize("sample/block.obj");
+    if (engine) {
+        explosionParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(ExplosionParams));
+        explosionParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&explosionParamsData_));
+        if (explosionParamsData_) {
+            *explosionParamsData_ = ExplosionParams();
+            explosionParamsData_->edgeColor = { 1.0f, 0.2f, 0.0f, 1.0f };
+            explosionParamsData_->midColor = { 1.0f, 0.5f, 0.0f, 1.0f };
+            explosionParamsData_->coreColor = { 1.0f, 1.0f, 0.8f, 1.0f };
+            explosionParamsData_->speed = 5.0f;
+            explosionParamsData_->intensity = 5.0f;
+            explosionParamsData_->noiseScale = 2.0f;
+            explosionParamsData_->erosion = 0.0f;
+        }
+
+        auto* pso = engine->GetPSOManager()->GetPSO("StompExplosion", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+        finalExplosionObj_->SetCustomPSO(pso);
+        finalExplosionObj_->SetCustomCBVAddress(explosionParamsResource_->GetGPUVirtualAddress());
+    }
+
+    // GPUParticleSystemの初期化
+    gpuParticleSystem_ = std::make_unique<GPUParticleSystem>();
+    gpuParticleSystem_->Initialize("resources/circle.png");
+    gpuParticleSystem_->SetBlend(BlendMode::kBlendModeAdd);
+    gpuParticleSystem_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    gpuParticleSystem_->SetCull(PSOManager::CullMode::None);
+    gpuParticleSystem_->SetEmit(false);
+    
+    // パーティクルの基本設定 (爆発らしくするための調整)
+    gpuParticleSystem_->SetParticleLife(1.0f, 2.5f); // 少し長めに残して余韻を作る
+    // サイズ: 小さく発生して、煙/炎として大きく膨張していくようにする
+    gpuParticleSystem_->SetParticleScale({ 2.0f, 2.0f, 2.0f }, { 4.0f, 4.0f, 4.0f }, { 8.0f, 8.0f, 8.0f }, { 16.0f, 16.0f, 16.0f });
+    // 物理挙動: 急激に減速し、熱気で上に舞い上がるようにする
+    gpuParticleSystem_->SetDamping(0.06f);  // 高い空気抵抗（初速は早いがすぐ減速する）
+    gpuParticleSystem_->SetGravity(-10.0f); // マイナス重力で上に昇る
+    
+    // 色は炎っぽく設定
+    gpuParticleSystem_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+    gpuParticleSystem_->SetStartColor({ 1.0f, 0.8f, 0.2f, 1.0f }, { 1.0f, 0.5f, 0.0f, 1.0f });
+    gpuParticleSystem_->SetEndColor({ 1.0f, 0.1f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f });
 
     isActive_ = false;
 }
@@ -48,26 +91,43 @@ void EnemyStompEffects::Fire(const Vector3& position) {
     explosionTransform_.scale = { 1.0f, 1.0f, 1.0f };
     ringTransform_.scale = { 1.0f, params_.ringHeight, 1.0f };
     finalExplosionTransform_.scale = { params_.ringMaxRadius, 0.01f, params_.ringMaxRadius };
-    UpdateFinalExplosionOBB();
+    UpdateFinalExplosionSphere();
 }
 
 void EnemyStompEffects::Update(float deltaTime) {
     if (!isActive_) return;
 
+    if (gpuParticleSystem_) {
+        gpuParticleSystem_->Update();
+    }
+
     globalTimer_ += deltaTime;
     phaseTimer_ += deltaTime;
 
-    // --- 1. 最初の足元爆発演出 ---
-    if (globalTimer_ < params_.explosionDuration) {
-        float t = (std::min)(1.0f, globalTimer_ / params_.explosionDuration);
-        float easeOut = 1.0f - static_cast<float>(std::pow(1.0f - t, 2));
-        float currentScale = Lerp(1.0f, params_.explosionMaxRadius, easeOut);
-
+    if (currentPhase_ == Phase::Expanding || currentPhase_ == Phase::KeepAndWarning) {
+        float totalWarningTime = params_.ringExpandDuration + params_.ringKeepDuration;
+        float t = (std::min)(1.0f, globalTimer_ / totalWarningTime);
+        
+        float easeIn = EaseInQuad(t);
+        float currentScale = Lerp(1.0f, params_.ringMaxRadius, easeIn);
+        
         explosionTransform_.scale = { currentScale, currentScale, currentScale };
-        explosionObj_->SetColor({ 1.0f, 0.4f, 0.0f, Lerp(params_.explosionInitialAlpha, 0.0f, t) });
+        explosionTransform_.translate.y = basePosition_.y + params_.ringGroundOffset;
+        
+        Vector4 colorBase = { 1.0f, 0.4f, 0.0f, 0.2f }; 
+        Vector4 colorWarning = { 1.0f, 0.0f, 0.0f, 0.6f };
+        Vector4 currentColor;
+        currentColor.x = Lerp(colorBase.x, colorWarning.x, t);
+        currentColor.y = Lerp(colorBase.y, colorWarning.y, t);
+        currentColor.z = Lerp(colorBase.z, colorWarning.z, t);
+        currentColor.w = Lerp(colorBase.w, colorWarning.w, t);
+        
+        float pulse = (std::sin(globalTimer_ * 15.0f * t) * 0.5f + 0.5f);
+        currentColor.w += pulse * 0.2f * t; 
+
+        explosionObj_->SetColor(currentColor);
     }
 
-    // --- 2. リングと噴き上がり爆発のフェーズ管理 ---
     switch (currentPhase_) {
     case Phase::Expanding:
     {
@@ -88,10 +148,8 @@ void EnemyStompEffects::Update(float deltaTime) {
     {
         float t = (std::min)(1.0f, phaseTimer_ / params_.ringKeepDuration);
 
-        // 最大サイズで維持
         ringTransform_.scale = { params_.ringMaxRadius, params_.ringHeight, params_.ringMaxRadius };
 
-        // 徐々に赤らむ予兆演出
         Vector4 c;
         c.x = Lerp(params_.ringColorNormal.x, params_.ringColorWarning.x, t);
         c.y = Lerp(params_.ringColorNormal.y, params_.ringColorWarning.y, t);
@@ -102,14 +160,33 @@ void EnemyStompEffects::Update(float deltaTime) {
         if (t >= 1.0f) {
             currentPhase_ = Phase::FinalExplosion;
             phaseTimer_ = 0.0f;
-
-            // フェーズ遷移したフレームで即座に初期状態でOBBを更新する
-            // これを行わないと、前回の攻撃の最大サイズ（170f等）が1フレームだけ判定されてしまう
+            hasDealtFinalDamage_ = false;
+            
+            if (gpuParticleSystem_) {
+                float burstRadius = 5.0f; // より中心から密度高く発生させる
+                gpuParticleSystem_->SetHemisphereEmitter(
+                    Vector3{ basePosition_.x, basePosition_.y + params_.ringGroundOffset + 2.0f, basePosition_.z },
+                    burstRadius,
+                    0, 
+                    1.0f 
+                );
+                // Dampingが強いので、初速はさらにドカンと速くする
+                gpuParticleSystem_->SetVelocity(250.0f); 
+                gpuParticleSystem_->SetSpread(1.0f); 
+                // 少し時間差で2回に分けて放出するなどを想定して、多めに出す
+                gpuParticleSystem_->Emit(4000);
+            }
+            
+            UpdateFinalExplosionSphere();
             float initR = params_.ringMaxRadius;
             float initH = 0.01f;
-            finalExplosionTransform_.scale = { initR, initH, initR };
-            finalExplosionTransform_.translate.y = (basePosition_.y + params_.ringGroundOffset) + (initH * 0.5f);
-            UpdateFinalExplosionOBB();
+            finalExplosionObj_->SetScale(Vector3{ initR, initH, initR });
+            finalExplosionObj_->SetPosition(Vector3{
+                basePosition_.x,
+                basePosition_.y + params_.ringGroundOffset,
+                basePosition_.z
+            });
+            UpdateFinalExplosionSphere();
         }
     }
     break;
@@ -118,20 +195,36 @@ void EnemyStompEffects::Update(float deltaTime) {
     {
         float t = (std::min)(1.0f, phaseTimer_ / params_.finalExplosionDuration);
 
-        // 下から上へ噴き出すアニメーション
-        float easeOutH = 1.0f - static_cast<float>(std::pow(1.0f - t, 3));
+        float easeOutH = EaseOutCubic(t);
         float currentH = Lerp(0.01f, params_.finalExplosionMaxHeight, easeOutH);
-        float currentR = Lerp(params_.ringMaxRadius, params_.finalExplosionMaxRadius, t);
+        float easeOutR = EaseOutCubic(t);
+        float currentR = Lerp(params_.ringMaxRadius, params_.finalExplosionMaxRadius, easeOutR);
 
-        finalExplosionTransform_.scale = { currentR, currentH, currentR };
+        finalExplosionObj_->SetScale(Vector3{ currentR, currentR, currentR });
+        
+        finalExplosionObj_->SetPosition(Vector3{
+            basePosition_.x,
+            basePosition_.y + params_.ringGroundOffset,
+            basePosition_.z
+        });
 
-        // ※ピボットがモデルの中心にある場合、座標を上にずらす
-        finalExplosionTransform_.translate.y = (basePosition_.y + params_.ringGroundOffset) + (currentH * 0.5f);
+        if (explosionParamsData_) {
+            float flashT = 1.0f - easeOutR; 
+            explosionParamsData_->intensity = Lerp(0.0f, 8.0f, flashT); 
+            explosionParamsData_->speed = Lerp(1.0f, 5.0f, flashT);
+            explosionParamsData_->noiseScale = Lerp(1.2f, 0.6f, t);
+            explosionParamsData_->edgeColor = Vector4{ 1.0f, 0.05f, 0.0f, 1.0f }; 
+            explosionParamsData_->midColor  = Vector4{ 1.0f, 0.4f, 0.0f, 1.0f };  
+            explosionParamsData_->coreColor = Vector4{ 1.0f, 0.8f, 0.1f, 1.0f };  
+            float erosionT = (t < 0.4f) ? 0.0f : (t - 0.4f) / 0.6f;
+            explosionParamsData_->erosion = Lerp(0.0f, 2.0f, erosionT); 
+            
+            // Raymarching用の球体情報
+            explosionParamsData_->sphereCenter = finalExplosionObj_->GetCenter();
+            explosionParamsData_->sphereRadius = currentR * 0.5f; // currentRは直径(スケール)として扱っているので半分が半径
+        }
 
-        finalExplosionObj_->SetColor({ 1.0f, 0.5f, 0.2f, Lerp(1.0f, 0.0f, t) });
-
-        // OBB更新
-        UpdateFinalExplosionOBB();
+        UpdateFinalExplosionSphere();
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::Finished;
@@ -141,7 +234,6 @@ void EnemyStompEffects::Update(float deltaTime) {
     break;
     }
 
-    // 行列更新
     if (explosionObj_) {
         explosionObj_->SetTransform(explosionTransform_);
         explosionObj_->Update();
@@ -151,24 +243,14 @@ void EnemyStompEffects::Update(float deltaTime) {
         ringObj_->Update();
     }
     if (finalExplosionObj_) {
-        finalExplosionObj_->SetTransform(finalExplosionTransform_);
         finalExplosionObj_->Update();
     }
 }
 
-void EnemyStompEffects::UpdateFinalExplosionOBB() {
-    // 噴き上がっているモデルのTransformからOBBを計算
-    finalExplosionOBB_.center = finalExplosionTransform_.translate;
-
-    // 方向（回転がないので基本軸）
-    finalExplosionOBB_.orientations[0] = { 1.0f, 0.0f, 0.0f };
-    finalExplosionOBB_.orientations[1] = { 0.0f, 1.0f, 0.0f };
-    finalExplosionOBB_.orientations[2] = { 0.0f, 0.0f, 1.0f };
-
-    // ハーフサイズをスケールから取得
-    finalExplosionOBB_.size.x = finalExplosionTransform_.scale.x * 0.5f;
-    finalExplosionOBB_.size.y = finalExplosionTransform_.scale.y * 0.5f;
-    finalExplosionOBB_.size.z = finalExplosionTransform_.scale.z * 0.5f;
+void EnemyStompEffects::UpdateFinalExplosionSphere() {
+    finalExplosionSphere_.center = finalExplosionObj_->GetCenter();
+    Vector3 scale = finalExplosionObj_->GetTransform().transform.scale;
+    finalExplosionSphere_.radius = scale.x * 0.5f;
 }
 
 bool EnemyStompEffects::IsExplosionDamageActive() const {
@@ -179,20 +261,17 @@ bool EnemyStompEffects::IsExplosionDamageActive() const {
 
 float EnemyStompEffects::GetExplosionRadius() const {
     float t = (std::min)(1.0f, globalTimer_ / params_.explosionDuration);
-    float easeOut = 1.0f - static_cast<float>(std::pow(1.0f - t, 2));
+    float easeOut = EaseOutQuad(t);
     return Lerp(1.0f, params_.explosionMaxRadius, easeOut);
 }
 
 void EnemyStompEffects::DrawDebug(Line3DRegion* lineRegion) {
     if (!lineRegion || !isActive_) return;
 
-    // --- 爆発の当たり判定描画（球状） ---
     if (globalTimer_ < params_.explosionDuration) {
         float t = globalTimer_ / params_.explosionDuration;
-        float easeOut = 1.0f - static_cast<float>(std::pow(1.0f - t, 2));
+        float easeOut = EaseOutQuad(t);
         float currentRadius = Lerp(1.0f, params_.explosionMaxRadius, easeOut);
-
-        // ダメージ判定中なら赤、それ以外はオレンジ
         Vector4 color = (t < params_.explosionDamageActiveTime) ? Vector4{ 1.0f, 0.0f, 0.0f, 1.0f } : Vector4{ 1.0f, 0.5f, 0.0f, 1.0f };
 
         const int segments = 16;
@@ -201,67 +280,51 @@ void EnemyStompEffects::DrawDebug(Line3DRegion* lineRegion) {
         for (int i = 0; i < segments; ++i) {
             float theta1 = i * step;
             float theta2 = (i + 1) * step;
-
-            // XZ平面
             Vector3 p1 = { basePosition_.x + currentRadius * std::cos(theta1), basePosition_.y, basePosition_.z + currentRadius * std::sin(theta1) };
             Vector3 p2 = { basePosition_.x + currentRadius * std::cos(theta2), basePosition_.y, basePosition_.z + currentRadius * std::sin(theta2) };
             lineRegion->AddInstance(p1, p2, color);
-
-            // XY平面
             Vector3 p3 = { basePosition_.x + currentRadius * std::cos(theta1), basePosition_.y + currentRadius * std::sin(theta1), basePosition_.z };
             Vector3 p4 = { basePosition_.x + currentRadius * std::cos(theta2), basePosition_.y + currentRadius * std::sin(theta2), basePosition_.z };
             lineRegion->AddInstance(p3, p4, color);
-
-            // YZ平面
             Vector3 p5 = { basePosition_.x, basePosition_.y + currentRadius * std::cos(theta1), basePosition_.z + currentRadius * std::sin(theta1) };
             Vector3 p6 = { basePosition_.x, basePosition_.y + currentRadius * std::cos(theta2), basePosition_.z + currentRadius * std::sin(theta2) };
             lineRegion->AddInstance(p5, p6, color);
         }
     }
 
-    // --- 噴き上がり爆発の当たり判定描画 (OBB) ---
     if (currentPhase_ == Phase::FinalExplosion) {
-        Vector4 color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 赤色で判定を描画
+        Vector4 color = { 1.0f, 0.0f, 0.0f, 1.0f }; 
 
-        // 8つの頂点を計算
-        Vector3 v[8];
-        const Vector3& c = finalExplosionOBB_.center;
-        const Vector3* axis = finalExplosionOBB_.orientations;
-        const Vector3& s = finalExplosionOBB_.size;
+        const int segments = 16;
+        float radius = finalExplosionSphere_.radius;
+        const Vector3& center = finalExplosionSphere_.center;
 
-        for (int i = 0; i < 8; ++i) {
-            v[i] = c;
-            Vector3 offset = { 0,0,0 };
-            // 各軸の寄与を加算 (iの各ビットで符号を決定)
-            offset = Math::Add(offset, Math::Multiply((i & 1) ? s.x : -s.x, axis[0]));
-            offset = Math::Add(offset, Math::Multiply((i & 2) ? s.y : -s.y, axis[1]));
-            offset = Math::Add(offset, Math::Multiply((i & 4) ? s.z : -s.z, axis[2]));
-            v[i] = Math::Add(v[i], offset);
+        for (int i = 0; i < segments; ++i) {
+            float theta1 = (2.0f * 3.14159265f * i) / segments;
+            float theta2 = (2.0f * 3.14159265f * (i + 1)) / segments;
+            Vector3 p1 = { center.x + radius * std::cos(theta1), center.y + radius * std::sin(theta1), center.z };
+            Vector3 p2 = { center.x + radius * std::cos(theta2), center.y + radius * std::sin(theta2), center.z };
+            lineRegion->AddInstance(p1, p2, color);
+            Vector3 p3 = { center.x + radius * std::cos(theta1), center.y, center.z + radius * std::sin(theta1) };
+            Vector3 p4 = { center.x + radius * std::cos(theta2), center.y, center.z + radius * std::sin(theta2) };
+            lineRegion->AddInstance(p3, p4, color);
+            Vector3 p5 = { center.x, center.y + radius * std::cos(theta1), center.z + radius * std::sin(theta1) };
+            Vector3 p6 = { center.x, center.y + radius * std::cos(theta2), center.z + radius * std::sin(theta2) };
+            lineRegion->AddInstance(p5, p6, color);
         }
-
-        // 12辺を描画
-        // X
-        lineRegion->AddInstance(v[0], v[1], color);
-        lineRegion->AddInstance(v[2], v[3], color);
-        lineRegion->AddInstance(v[4], v[5], color);
-        lineRegion->AddInstance(v[6], v[7], color);
-        // Y
-        lineRegion->AddInstance(v[0], v[2], color);
-        lineRegion->AddInstance(v[1], v[3], color);
-        lineRegion->AddInstance(v[4], v[6], color);
-        lineRegion->AddInstance(v[5], v[7], color);
-        // Z
-        lineRegion->AddInstance(v[0], v[4], color);
-        lineRegion->AddInstance(v[1], v[5], color);
-        lineRegion->AddInstance(v[2], v[6], color);
-        lineRegion->AddInstance(v[3], v[7], color);
     }
 }
 
 void EnemyStompEffects::Draw(IrufemiEngine* engine) {
     if (!isActive_ || !engine) return;
-    if (globalTimer_ < params_.explosionDuration) explosionObj_->Draw();
+    if (currentPhase_ == Phase::Expanding || currentPhase_ == Phase::KeepAndWarning) explosionObj_->Draw();
     if (currentPhase_ != Phase::Finished) ringObj_->Draw();
-    if (currentPhase_ == Phase::FinalExplosion) finalExplosionObj_->Draw();
+    if (currentPhase_ == Phase::FinalExplosion && finalExplosionObj_) {
+        finalExplosionObj_->Draw();
+    }
+    
+    if (gpuParticleSystem_) {
+        gpuParticleSystem_->SyncBeforeDraw();
+        gpuParticleSystem_->Draw();
+    }
 }
-
