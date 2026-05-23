@@ -34,8 +34,17 @@ void EnemyStompEffects::Initialize(IrufemiEngine* engine) {
             explosionParamsData_->erosion = 0.0f;
         }
 
-        auto* pso = engine->GetPSOManager()->GetPSO("StompExplosion", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
-        finalExplosionObj_->SetCustomPSO(pso);
+        finalExplosionObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO(
+            "StompExplosion", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+
+        bodyTelegraphObj_ = std::make_unique<PrimitiveObjects3DClass>();
+        bodyTelegraphObj_->Initialize(PrimitiveType::Plane, "resources/whiteTexture.png");
+        bodyTelegraphObj_->GetMaterial().enableLighting = false; // ライティング無効
+        bodyTelegraphObj_->SetCastShadows(false); // 影を落とさない
+        // AOEWarningシェーダー（加算・半透明など）を適用
+        bodyTelegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO(
+            "AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+        
         finalExplosionObj_->SetCustomCBVAddress(explosionParamsResource_->GetGPUVirtualAddress());
     }
 
@@ -265,8 +274,59 @@ float EnemyStompEffects::GetExplosionRadius() const {
     return Lerp(1.0f, params_.explosionMaxRadius, easeOut);
 }
 
+void EnemyStompEffects::StartBodyTelegraph(const Vector3& pos, float radius) {
+    isBodyTelegraphActive_ = true;
+    bodyTelegraphTransform_.scale = { radius, radius, 1.0f }; // PlaneはXY平面なのでXとYをスケーリング
+    bodyTelegraphTransform_.rotate = { std::numbers::pi_v<float> / 2.0f, 0.0f, 0.0f }; // X軸で90度寝かせる
+    bodyTelegraphTransform_.translate = pos; // 呼び出し元で指定された高さ（Y）をそのまま使う
+    
+    // UV Transformを利用してシェーダーにパラメータを渡す
+    // _11: shapeType (0 = 円形)
+    // _12: warningRatio (0.0 から開始)
+    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][0] = 0.0f; 
+    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][1] = 0.0f;
+    
+    // 赤色（少しオレンジを混ぜておく）、アルファはシェーダー内で調整される
+    bodyTelegraphObj_->SetColor({ 1.0f, 0.1f, 0.0f, 0.8f });
+    bodyTelegraphObj_->SetTransform(bodyTelegraphTransform_);
+    bodyTelegraphObj_->Update();
+}
+
+void EnemyStompEffects::UpdateBodyTelegraph(const Vector3& pos, float warningRatio) {
+    if (!isBodyTelegraphActive_ || !bodyTelegraphObj_) return;
+    
+    bodyTelegraphTransform_.translate = pos;
+    bodyTelegraphObj_->SetTransform(bodyTelegraphTransform_);
+    
+    // パラメータ更新
+    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][0] = 0.0f; // 円形
+    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][1] = warningRatio;
+    
+    bodyTelegraphObj_->Update();
+}
+
+void EnemyStompEffects::StopBodyTelegraph() {
+    isBodyTelegraphActive_ = false;
+}
+
+void EnemyStompEffects::DrawBodyTelegraph(IrufemiEngine* engine) {
+    if (isBodyTelegraphActive_ && bodyTelegraphObj_ && engine) {
+        bodyTelegraphObj_->Draw();
+    }
+}
+
 void EnemyStompEffects::DrawDebug(Line3DRegion* lineRegion) {
-    if (!lineRegion || !isActive_) return;
+    if (!lineRegion) return;
+
+    if (isBodyTelegraphActive_) {
+        // デバッグ用に黄色の線を引いて位置を確認
+        Vector3 pos = bodyTelegraphTransform_.translate;
+        Vector3 p1 = { pos.x - 3.0f, pos.y + 0.1f, pos.z - 3.0f };
+        Vector3 p2 = { pos.x + 3.0f, pos.y + 0.1f, pos.z + 3.0f };
+        lineRegion->AddInstance(p1, p2, { 1.0f, 1.0f, 0.0f, 1.0f });
+    }
+
+    if (!isActive_) return;
 
     if (globalTimer_ < params_.explosionDuration) {
         float t = globalTimer_ / params_.explosionDuration;
@@ -316,10 +376,18 @@ void EnemyStompEffects::DrawDebug(Line3DRegion* lineRegion) {
 }
 
 void EnemyStompEffects::Draw(IrufemiEngine* engine) {
-    if (!isActive_ || !engine) return;
-    if (currentPhase_ == Phase::Expanding || currentPhase_ == Phase::KeepAndWarning) explosionObj_->Draw();
-    if (currentPhase_ != Phase::Finished) ringObj_->Draw();
-    if (currentPhase_ == Phase::FinalExplosion && finalExplosionObj_) {
+    if (!engine) return;
+    
+    // 予兆は本体の爆発エフェクトがアクティブでなくても描画する
+    DrawBodyTelegraph(engine);
+
+    if (!isActive_) return;
+    
+    if (currentPhase_ == Phase::Expanding || currentPhase_ == Phase::KeepAndWarning) {
+        explosionObj_->Draw();
+        ringObj_->Draw();
+    }
+    if (currentPhase_ == Phase::FinalExplosion) {
         finalExplosionObj_->Draw();
     }
     

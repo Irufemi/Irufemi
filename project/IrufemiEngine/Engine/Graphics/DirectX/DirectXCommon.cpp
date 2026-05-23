@@ -222,6 +222,7 @@ void DirectXCommon::CreatePSOs() {
     auto psCyberHex = shaderManager_->GetOrCompile(L"resources/shaders/CyberHex.PS.hlsl", options);
     auto psBombCore = shaderManager_->GetOrCompile(L"resources/shaders/BombCore.PS.hlsl", options);
     auto psStompExplosion = shaderManager_->GetOrCompile(L"resources/shaders/StompExplosion.PS.hlsl", options);
+    auto psAOEWarning = shaderManager_->GetOrCompile(L"resources/shaders/AOEWarning.PS.hlsl", options);
 
     auto csSkin = shaderManager_->GetOrCompile(L"resources/shaders/Skinning.CS.hlsl", options);
     auto csGpuInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeParticle.CS.hlsl", options);
@@ -291,6 +292,7 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("CyberHex", { { vs3d, psCyberHex } });
     psoManager_->RegisterShader("BombCore", { { vs3d, psBombCore } });
     psoManager_->RegisterShader("StompExplosion", { { vs3d, psStompExplosion } });
+    psoManager_->RegisterShader("AOEWarning", { { vs3d, psAOEWarning } });
 
     // バックバッファ書き込み用のスプライト設定
     PSOManager::PipelineStateDesc spriteBBDesc{};

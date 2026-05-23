@@ -61,8 +61,14 @@ public:
     /// @brief デバッグ描画（当たり判定等の可視化用）
     void DrawDebug(class Line3DRegion* lineRegion);
 
-    /// @brief パラメータを外部から設定する
+    void SetCamera(Camera* camera) { camera_ = camera; }
     void SetParameters(const Parameters& params) { params_ = params; }
+
+    // --- 本体落下予兆（AOE） ---
+    void StartBodyTelegraph(const Vector3& pos, float radius);
+    void UpdateBodyTelegraph(const Vector3& pos, float warningRatio);
+    void StopBodyTelegraph();
+    void DrawBodyTelegraph(class IrufemiEngine* engine);
 
     // --- 当たり判定用ゲッター ---
     bool IsExplosionDamageActive() const;
@@ -88,6 +94,7 @@ private:
     std::unique_ptr<PrimitiveObjects3DClass> explosionObj_ = nullptr;
     std::unique_ptr<PrimitiveObjects3DClass> ringObj_ = nullptr;
     std::unique_ptr<PrimitiveObjects3DClass> finalExplosionObj_ = nullptr; // 噴き上がり用モデル
+    std::unique_ptr<PrimitiveObjects3DClass> bodyTelegraphObj_ = nullptr; // 落下地点予兆用AOE
     std::unique_ptr<GPUParticleSystem> gpuParticleSystem_ = nullptr; // 大爆発の火の粉用
 
     Microsoft::WRL::ComPtr<ID3D12Resource> explosionParamsResource_ = nullptr;
@@ -96,8 +103,10 @@ private:
     Transform explosionTransform_;
     Transform ringTransform_;
     Transform finalExplosionTransform_;
+    Transform bodyTelegraphTransform_;
 
     bool isActive_ = false;
+    bool isBodyTelegraphActive_ = false;
     Phase currentPhase_ = Phase::Expanding;
     float globalTimer_ = 0.0f; // 最初の爆発用
     float phaseTimer_ = 0.0f;  // リング・再爆発フェーズ用

@@ -1,0 +1,4 @@
+resources/shaders/AOEWarning.PS.hlsl: resources/shaders/AOEWarning.PS.hlsl:10:16: error: use of undeclared identifier 'Material'
+ConstantBuffer<Material> gMaterial : register(b0);
+               ^
+
