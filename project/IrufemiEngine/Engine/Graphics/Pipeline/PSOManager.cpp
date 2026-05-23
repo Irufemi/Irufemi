@@ -207,6 +207,8 @@ void PSOManager::PreWarmCommonPSOs() {
         GetPSO("ExplosionFlame", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("EnergyCore", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("BombCore", blend, DepthWrite::Disable, CullMode::None);
+        GetPSO("StompExplosion", blend, DepthWrite::Disable, CullMode::None);
+        GetPSO("AOEWarning", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("Line", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("LineInstanced", blend, DepthWrite::Disable, CullMode::None);
     }

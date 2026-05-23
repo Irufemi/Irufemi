@@ -14,17 +14,17 @@ void EnemyTackleEffects::Initialize(IrufemiEngine* engine) {
 
     // 予告線（AOE）用
     telegraphObj_ = std::make_shared<PrimitiveObjects3DClass>();
-    telegraphObj_->Initialize(PrimitiveType::Cube, "resources/whiteTexture.png");
+    telegraphObj_->Initialize(PrimitiveType::Plane, "resources/whiteTexture.png");
     telegraphObj_->GetMaterial().enableLighting = false; // ライティング無効
     telegraphObj_->SetCastShadows(false);                // 影を落とさない
     if (engine) {
-        telegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+        telegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
     }
 }
 
 void EnemyTackleEffects::StartTelegraph(const Vector3& position, float rotateY, float length, float width) {
     isTelegraphActive_ = true;
-    telegraphTransform_.scale = { width, 0.1f, length };
+    telegraphTransform_.scale = { width, length, 1.0f }; // PlaneはXY平面なのでYに奥行きを持たせる
     // 長さの半分だけ前にずらすことで、ボスの足元から前方に伸びるようにする
     float halfLength = length * 0.5f;
     Vector3 forward = { std::sin(rotateY), 0.0f, std::cos(rotateY) };
@@ -33,9 +33,14 @@ void EnemyTackleEffects::StartTelegraph(const Vector3& position, float rotateY, 
         position.y - 2.4f, // 足元（地面）に這わせる
         position.z + forward.z * halfLength 
     };
-    telegraphTransform_.rotate = { 0.0f, rotateY, 0.0f };
+    telegraphTransform_.rotate = { std::numbers::pi_v<float> / 2.0f, rotateY, 0.0f }; // Xで寝かせてYで回す
     telegraphObj_->SetTransform(telegraphTransform_);
-    telegraphObj_->SetColor({ 1.0f, 0.0f, 0.0f, 0.0f }); // 最初は透明
+    
+    // Shader用パラメータ (1 = Linear)
+    telegraphObj_->GetMaterial().uvTransform.m[0][0] = 1.0f;
+    telegraphObj_->GetMaterial().uvTransform.m[0][1] = 0.0f; // warningRatio
+
+    telegraphObj_->SetColor({ 1.0f, 0.2f, 0.0f, 1.0f }); // アルファはシェーダー制御
     telegraphObj_->Update();
 }
 
@@ -43,7 +48,7 @@ void EnemyTackleEffects::UpdateTelegraph(const Vector3& position, float rotateY,
     if (!isTelegraphActive_ || !telegraphObj_) return;
     
     // 位置の追従（Aim中など位置・角度が変わる場合に対応）
-    float length = telegraphTransform_.scale.z;
+    float length = telegraphTransform_.scale.y; // scale.yが長さ
     float halfLength = length * 0.5f;
     Vector3 forward = { std::sin(rotateY), 0.0f, std::cos(rotateY) };
     telegraphTransform_.translate = { 
@@ -51,16 +56,18 @@ void EnemyTackleEffects::UpdateTelegraph(const Vector3& position, float rotateY,
         position.y - 2.4f, // 足元（地面）に這わせる
         position.z + forward.z * halfLength 
     };
-    telegraphTransform_.rotate = { 0.0f, rotateY, 0.0f };
+    telegraphTransform_.rotate = { std::numbers::pi_v<float> / 2.0f, rotateY, 0.0f };
 
-    // warningRatio(0.0〜1.0) に応じて点滅速度とアルファ値を変化
-    // 徐々に赤くなり、最後は激しく明滅する
+    // 徐々に激しくなる点滅（ベースのカラー用）
     float blinkSpeed = Lerp(5.0f, 30.0f, warningRatio); 
-    float blink = (std::sin(warningRatio * blinkSpeed) + 1.0f) * 0.5f; // 0.0 ~ 1.0
-    float baseAlpha = Lerp(0.2f, 0.8f, warningRatio);
+    float blink = (std::sin(warningRatio * blinkSpeed) + 1.0f) * 0.5f; 
     
+    // Shader用パラメータ
+    telegraphObj_->GetMaterial().uvTransform.m[0][0] = 1.0f; // Linear
+    telegraphObj_->GetMaterial().uvTransform.m[0][1] = warningRatio;
+
     // 赤＋少し黄色を混ぜて危険色を強調
-    telegraphObj_->SetColor({ 1.0f, Lerp(0.2f, 0.5f, blink), 0.0f, baseAlpha * blink });
+    telegraphObj_->SetColor({ 1.0f, Lerp(0.2f, 0.5f, blink), 0.0f, 1.0f });
     telegraphObj_->SetTransform(telegraphTransform_);
     telegraphObj_->Update();
 }

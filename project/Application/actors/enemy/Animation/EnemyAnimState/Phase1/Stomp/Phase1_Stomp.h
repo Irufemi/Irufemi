@@ -20,6 +20,7 @@ private:
     bool hasHitGround_ = false;
     float initialScaleY_ = 1.0f;
     float rotationInterpolationSpeed_ = 5.0f; 
+    Vector3 targetPos_ = {}; // ストンプの目標落下地点 
 
     // --- 演出パラメータ ---
     float squatTime_ = 0.6f;        

@@ -72,25 +72,42 @@ void Phase1_Stomp::Update(Enemy* enemy, Player* player, float deltaTime) {
     // --- 4. プレイヤー頭上待機 ---
     else if (attackTimer_ < endHover) {
         if (!hasTeleported_) {
-            Vector3 pPos = player->GetTranslate();
-            enemy->GetGlobalTransform().translate = { pPos.x, pPos.y + stompHeight_, pPos.z };
+            targetPos_ = player->GetTranslate(); // 目標座標を固定する
+            enemy->GetGlobalTransform().translate = { targetPos_.x, targetPos_.y + stompHeight_, targetPos_.z };
             enemy->GetGlobalTransform().scale.y = initialScaleY_;
             hasTeleported_ = true;
+            
+            // テレポート直後（頭上待機開始時）に本体落下AOEの表示を開始
+            // 敵のOBBサイズ(半幅) × 2 で直径を求め、スケールをかける
+            float radius = enemy->GetOBB().size.x * 2.0f * enemy->GetGlobalTransform().scale.x;
+            // bossの中心(groundY_)から2.6f下がった位置が実際の足元(地面)
+            Vector3 dropPos = { targetPos_.x, groundY_ - 2.5f, targetPos_.z };
+            enemy->GetStompEffects()->StartBodyTelegraph(dropPos, radius);
         }
         float shake = std::sin(attackTimer_ * 120.0f) * 0.3f;
-        enemy->GetGlobalTransform().translate.x += shake;
+        enemy->GetGlobalTransform().translate.x = targetPos_.x + shake; // 目標座標を基準にシェイク
+        enemy->GetGlobalTransform().translate.z = targetPos_.z; 
 
         // 警告演出をアクティブにする
         enemy->SetWarningActive(true);
+        
+        float warningRatio = (attackTimer_ - endJump) / hoverTime_;
+        Vector3 dropPos = { targetPos_.x, groundY_ - 2.5f, targetPos_.z }; // 予兆は目標座標に完全固定
+        enemy->GetStompEffects()->UpdateBodyTelegraph(dropPos, warningRatio);
     }
     // --- 5. 落下 ---
     else if (!hasHitGround_) {
         Vector3& pos = enemy->GetGlobalTransform().translate;
+        pos.x = targetPos_.x; // 落下時はシェイクをなくし、目標座標へ真っ直ぐ落とす
+        pos.z = targetPos_.z;
         pos.y -= dropSpeed_;
         enemy->GetGlobalTransform().scale.y = initialScaleY_ * 1.2f;
 
         // 落下中も警告演出を継続
         enemy->SetWarningActive(true);
+        // 落下中は警告度合いをMAX(1.0)にしておく
+        Vector3 dropPos = { targetPos_.x, groundY_ - 2.5f, targetPos_.z };
+        enemy->GetStompEffects()->UpdateBodyTelegraph(dropPos, 1.0f);
 
         if (pos.y <= groundY_) {
             pos.y = groundY_;
@@ -98,6 +115,8 @@ void Phase1_Stomp::Update(Enemy* enemy, Player* player, float deltaTime) {
             enemy->GetGlobalTransform().scale.y = initialScaleY_ * landSquatScale_;
             enemy->FireStomp(pos); 
             attackTimer_ = endHover; 
+            
+            enemy->GetStompEffects()->StopBodyTelegraph();
 
             // 着地（激突）したため、警告を終了する
             enemy->SetWarningActive(false);
@@ -137,4 +156,5 @@ void Phase1_Stomp::Exit(Enemy* enemy) {
     enemy->GetHeadRightOffset() = { 0,0,0 };
     enemy->GetGlobalTransform().scale.y = initialScaleY_;
     enemy->SetWarningActive(false); // 安全対策として警告を確実に終了
+    enemy->GetStompEffects()->StopBodyTelegraph(); // 確実に消す
 }

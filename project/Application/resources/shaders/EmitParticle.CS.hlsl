@@ -102,6 +102,25 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
                 gParticles[particleIndex].velocity = (gEmitter.direction + radialDir * gEmitter.spread) * gEmitter.velocity;
             }
+            else if (gEmitter.type == 5) // Hemisphere (Burst)
+            {
+                // r_pos.x: 方位角 (0~2pi), r_pos.y: 仰角 (0~pi/2で上半分のみ)
+                float phi = r_pos.x * 2.0f * 3.141592f;
+                float theta = r_pos.y * (3.141592f * 0.5f); // 90度（上半分）までに制限
+                
+                // radiusにr_pos.zをかけて中身を埋めるか、表面だけにするか
+                // ここではバースト用に球体内部からも放出（r_pos.z）
+                float r = pow(r_pos.z, 1.0f/3.0f) * gEmitter.radius; 
+                
+                float3 offset = float3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi)) * r;
+                gParticles[particleIndex].translate = gEmitter.translate + offset;
+                
+                // 放射状に広がる速度
+                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                // 上方向にも少しバイアスをかける (spreadを利用)
+                float3 biasDir = float3(0.0f, 0.5f, 0.0f);
+                gParticles[particleIndex].velocity = normalize(radialDir + biasDir) * gEmitter.velocity * (0.5f + r_vel * 0.5f);
+            }
 
             // スケール初期化
             gParticles[particleIndex].startScale = lerp(gEmitter.startScaleMin, gEmitter.startScaleMax, r_scale);

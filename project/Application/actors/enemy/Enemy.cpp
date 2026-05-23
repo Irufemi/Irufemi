@@ -75,7 +75,7 @@ void Enemy::Initialize(IrufemiEngine *engine) {
       bombs_[i]->Initialize(engine_);
   }
   stompEffects_ = std::make_unique<EnemyStompEffects>();
-  stompEffects_->Initialize();
+  stompEffects_->Initialize(engine_);
 
   tackleEffects_ = std::make_unique<EnemyTackleEffects>();
   tackleEffects_->Initialize(engine_);
@@ -814,6 +814,17 @@ void Enemy::UpdateDebugUI() {
   ImGui::SliderFloat("Vignette Scale Pulse", &vignetteScalePulseWidth_, 0.0f, 10.0f, "%.1f");
   ImGui::SliderFloat("Vignette Base Power", &vignetteBasePower_, 0.05f, 2.0f, "%.2f");
   ImGui::SliderFloat("Vignette Power Pulse", &vignettePowerPulseWidth_, 0.0f, 1.0f, "%.2f");
+
+  ImGui::Separator();
+  ImGui::Text("Debug Enemy State");
+  const char* stateNames[] = {
+      "Idle", "Attack_Beam", "Attack_Stomp", "Attack_Bite",
+      "Attack_Neck", "Attack_Tackle", "Damaged", "Phase1", "Phase2"
+  };
+  int currentStateIdx = static_cast<int>(state_);
+  if (ImGui::Combo("Force State", &currentStateIdx, stateNames, IM_ARRAYSIZE(stateNames))) {
+      SetState(static_cast<EnemyState>(currentStateIdx));
+  }
 
   ImGui::End();
 
