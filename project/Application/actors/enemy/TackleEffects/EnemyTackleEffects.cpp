@@ -100,18 +100,20 @@ void EnemyTackleEffects::FireRushWave(const Vector3& position) {
 void EnemyTackleEffects::FireCrashWave(const Vector3& position) {
     TackleWave wave;
     wave.transform.translate = position;
-    wave.transform.translate.y = position.y - 2.5f; 
-    
-    // 縦に広がるようにすることもできるが、まずは巨大なリングベースにする
+    wave.transform.translate.y += 0.1f;
     wave.transform.rotate = { 0, 0, 0 };
-    wave.transform.scale = { kCrashWaveStartScale, 1.0f, kCrashWaveStartScale }; // 少し厚みを持たせる
-    
+    wave.transform.scale = { kCrashWaveStartScale, 0.01f, kCrashWaveStartScale };
     wave.timer = 0.0f;
     wave.maxLife = kCrashWaveLife;
     wave.isCrash = true;
     wave.color = { 1.0f, 0.4f, 0.1f, kCrashWaveStartAlpha }; // 激しい爆発の色（オレンジ）
 
     waves_.push_back(wave);
+}
+
+void EnemyTackleEffects::Cancel() {
+    StopTelegraph();
+    waves_.clear();
 }
 
 void EnemyTackleEffects::Update(float deltaTime) {

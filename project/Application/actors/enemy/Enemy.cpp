@@ -139,8 +139,11 @@ void Enemy::Update(Player *player) {
     return;
 
   if (!isDead_) {
-    if (ai_ && !isSandbagMode_)
+    // プレイヤーが死んだらAIの思考を止める（死体蹴り防止）
+    bool shouldUpdateAI = (player && !player->IsDead());
+    if (ai_ && !isSandbagMode_ && shouldUpdateAI)
       ai_->Update(player, engine_->GetDeltaTime());
+    
     if (animation_)
       animation_->Update(player, 1.0f / 60.0f);
   }
@@ -270,6 +273,20 @@ void Enemy::Update(Player *player) {
       if (headLeft_) headLeft_->SetPhase2(true);
       if (headMid_) headMid_->SetPhase2(true);
       if (headRight_) headRight_->SetPhase2(true);
+
+      // フェーズ移行時に進行中の攻撃をすべてキャンセル
+      for (int i = 0; i < 3; ++i) {
+          if (beams_[i]) {
+              beams_[i]->SetAttackActive(false);
+              beams_[i]->SetTelegraphActive(false);
+              beams_[i]->SetChargeSphereActive(false);
+          }
+          if (bombs_[i]) {
+              bombs_[i]->Cancel();
+          }
+      }
+      if (stompEffects_) stompEffects_->Cancel();
+      if (tackleEffects_) tackleEffects_->Cancel();
     }
   }
 
@@ -298,6 +315,9 @@ void Enemy::Update(Player *player) {
               bombs_[i]->Cancel();
           }
       }
+      if (stompEffects_) stompEffects_->Cancel();
+      if (tackleEffects_) tackleEffects_->Cancel();
+      
       // 各部位の吹き飛びをリセット
       Matrix4x4 globalMat = Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate, globalTransform_.translate);
       Matrix4x4 invGlobalMat = Math::Inverse(globalMat);
@@ -482,7 +502,6 @@ void Enemy::Update(Player *player) {
 }
 
 void Enemy::Draw(IrufemiEngine* engine) {
-  if (!isActive_) return;
   for (auto &body : bodies_) {
     if (body && !body->IsCompletelyDead()) {
       body->Draw(engine);

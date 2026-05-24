@@ -56,6 +56,7 @@ public:
     void Update(float deltaTime);
     void Draw(class IrufemiEngine* engine);
     void Fire(const Vector3& position);
+    void Cancel(); // 強制キャンセル用
     bool IsActive() const { return isActive_; }
 
     /// @brief デバッグ描画（当たり判定等の可視化用）

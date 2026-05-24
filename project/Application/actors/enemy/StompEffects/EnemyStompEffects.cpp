@@ -73,34 +73,29 @@ void EnemyStompEffects::Initialize(IrufemiEngine* engine) {
 }
 
 void EnemyStompEffects::Fire(const Vector3& position) {
-    basePosition_ = position;
+    if (isActive_) return;
+
     isActive_ = true;
+    currentPhase_ = Phase::Expanding;
+    basePosition_ = position;
     globalTimer_ = 0.0f;
     phaseTimer_ = 0.0f;
-    currentPhase_ = Phase::Expanding;
-
     hasDealtExplosionDamage_ = false;
     hasDealtRingDamage_ = false;
     hasDealtFinalDamage_ = false;
 
-    // 初期位置設定
-    explosionTransform_.translate = position;
-    ringTransform_.translate = position;
-    ringTransform_.translate.y = basePosition_.y + params_.ringGroundOffset;
-
-    finalExplosionTransform_.translate = position;
-    finalExplosionTransform_.translate.y = basePosition_.y + params_.ringGroundOffset;
-
-    // 回転リセット
-    explosionTransform_.rotate = { 0,0,0 };
-    ringTransform_.rotate = { 0,0,0 };
-    finalExplosionTransform_.rotate = { 0,0,0 };
 
     // スケール初期化（前回の攻撃の残りをクリア）
     explosionTransform_.scale = { 1.0f, 1.0f, 1.0f };
     ringTransform_.scale = { 1.0f, params_.ringHeight, 1.0f };
     finalExplosionTransform_.scale = { params_.ringMaxRadius, 0.01f, params_.ringMaxRadius };
     UpdateFinalExplosionSphere();
+}
+
+void EnemyStompEffects::Cancel() {
+    isActive_ = false;
+    isBodyTelegraphActive_ = false;
+    currentPhase_ = Phase::Finished;
 }
 
 void EnemyStompEffects::Update(float deltaTime) {

@@ -429,6 +429,8 @@ void GameScene::CheckAllCollisions() {
 }
 
 void GameScene::CheckEnemyToPlayerCollisions() {
+  if (player_->IsDead() || boss_->IsDead()) return;
+
   Sphere playerColliderSphere;
   playerColliderSphere.center = player_->GetCollider().center;
   playerColliderSphere.radius = player_->GetCollider().radius;

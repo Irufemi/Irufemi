@@ -39,6 +39,8 @@ public:
     // 壁激突時に1度だけ呼ばれる大爆発エフェクト
     void FireCrashWave(const Vector3& position);
 
+    void Cancel(); // 強制キャンセル用
+
     // 当たり判定用に波のリストを取得
     std::list<TackleWave>& GetWaves() { return waves_; }
 
