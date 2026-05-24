@@ -513,7 +513,8 @@ void GameScene::CheckEnemyToPlayerCollisions() {
 
       // 押し出し処理
       Vector3 diff = Math::Subtract(player_->GetTranslate(), partOBB.center);
-      float bestPushDist = 1e10f;
+      float bestPushEval = 1e10f;
+      float bestActualPushDist = 0.0f;
       Vector3 bestPushDir = {0.0f, 0.0f, 0.0f};
 
       for (int axis = 0; axis < 3; ++axis) {
@@ -521,19 +522,50 @@ void GameScene::CheckEnemyToPlayerCollisions() {
         
         float proj = Math::Dot(diff, partOBB.orientations[axis]);
         float halfSize = (axis == 0) ? partOBB.size.x : partOBB.size.z;
-        float penetration = (halfSize + playerColliderSphere.radius) - std::abs(proj);
         
-        if (penetration > 0.0f && penetration < bestPushDist) {
-            bestPushDist = penetration;
+        float actualPenetration = 0.0f;
+        float evalPenetration = 0.0f;
+        Vector3 pushDir = {0.0f, 0.0f, 0.0f};
+
+        if (axis == 0) {
+            // X軸（左右）: 常にボス全体の中心から見て「外側」へ逃がす
+            Vector3 bossPos = boss_->GetTargetPosition();
+            Vector3 diffFromBoss = Math::Subtract(player_->GetTranslate(), bossPos);
+            float signX = (Math::Dot(diffFromBoss, partOBB.orientations[0]) >= 0.0f) ? 1.0f : -1.0f;
+            
+            if (signX > 0.0f) {
+                actualPenetration = (halfSize + playerColliderSphere.radius) - proj;
+                pushDir = partOBB.orientations[0];
+            } else {
+                actualPenetration = (halfSize + playerColliderSphere.radius) + proj;
+                pushDir = Math::Multiply(-1.0f, partOBB.orientations[0]);
+            }
+            
+            // 押し出しを強くする（完全にボスの判定外へ弾き出すためのボーナス）
+            actualPenetration += 3.0f;
+            
+            evalPenetration = actualPenetration;
+        } else {
+            // Z軸（前後）
+            actualPenetration = (halfSize + playerColliderSphere.radius) - std::abs(proj);
             float sign = (proj >= 0.0f) ? 1.0f : -1.0f;
-            bestPushDir = Math::Multiply(sign, partOBB.orientations[axis]);
+            pushDir = Math::Multiply(sign, partOBB.orientations[axis]);
+            // Z軸へは絶対に押し出されないよう超特大の評価値にして避ける
+            evalPenetration = actualPenetration * 1000.0f;
+        }
+
+        if (actualPenetration > 0.0f && evalPenetration < bestPushEval) {
+            bestPushEval = evalPenetration;
+            bestActualPushDist = actualPenetration;
+            bestPushDir = pushDir;
         }
       }
-      if (bestPushDist < 1e10f) {
+      
+      if (bestActualPushDist > 0.0f && bestPushEval < 1e9f) {
           bestPushDir.y = 0.0f;
           if (Math::Length(bestPushDir) > 0.001f) {
               bestPushDir = Math::Normalize(bestPushDir);
-              Vector3 newPos = Math::Add(player_->GetTranslate(), Math::Multiply(bestPushDist, bestPushDir));
+              Vector3 newPos = Math::Add(player_->GetTranslate(), Math::Multiply(bestActualPushDist, bestPushDir));
               player_->SetTranslate(newPos);
               playerColliderSphere.center = player_->GetCollider().center; // 更新
           }

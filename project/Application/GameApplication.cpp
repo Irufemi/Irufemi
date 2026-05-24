@@ -29,7 +29,7 @@ const std::wstring kTitle = L"3122_七転び八転び";
 const Vector4 kClearColor = {0.1f, 0.25f, 0.5f, 1.0f};
 const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-    = "Tutorial"; // デバッグ時はチュートリアルから開始
+    = "InGame"; // デバッグ時はチュートリアルから開始
 #else
     = "Title";
 #endif
