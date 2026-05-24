@@ -10,6 +10,7 @@
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "Resource/Audio/AudioManager.h"
+#include "Engine/Manager/PrimitiveManager.h"
 
 // デストラクタ
 TitleScene::~TitleScene() {
@@ -27,14 +28,27 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 
     BaseScene::Initialize(engine);
 
+    // タイトルシーンでは背景色を極めて暗いブルーにして、真っ暗すぎない奥深さを出す
+    engine_->SetClearColor(0.0f, 0.02f, 0.06f, 1.0f);
+
     // ポストプロセスの有効化（スタイリッシュな演出）
     if (auto* pp = engine_->GetPostProcessManager()) {
         pp->AddActiveMode(PostProcessMode::Vignette);
+        // タイトル画面をより華やかにするためBloomとHSVも有効化
         pp->AddActiveMode(PostProcessMode::Bloom);
+        pp->AddActiveMode(PostProcessMode::HSV);
         pp->AddActiveMode(PostProcessMode::ToneMapping);
         
         // ビネットで四隅を少し落とし、中央のタイトルに視線誘導
         pp->GetVignetteParams().scale = 10.0f;
+        
+        // Bloomパラメータ（光を溢れさせて暗さをカバーしつつリッチにする）
+        pp->GetBloomParams().intensity = 1.2f;
+        pp->GetBloomParams().threshold = 0.5f;
+
+        // HSVパラメータ（少し彩度を高めてサイバーブルーを鮮やかに）
+        pp->GetHSVParams().saturation = 0.2f; // デフォルト0.0から少し上げる
+
         // トーンマッピングでコントラストをパキッとさせる
         pp->GetToneMappingParams().exposure = 1.2f;
     }
@@ -106,6 +120,55 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     ambientParticles_->SetSpread(1.0f);
     
     ambientParticles_->SetEmit(true);
+
+    // --- サイバー空間トンネルの初期化 ---
+    tunnelObj_ = std::make_unique<PrimitiveObjects3DClass>();
+    tunnelObj_->Initialize(PrimitiveType::Cylinder);
+    
+    // 蓋（トップ・ボトム）なしのシリンダーデータを生成して再初期化
+    PrimitiveData noCapCylinder = PrimitiveManager::CreateCylinder(1.0f, 1.0f, 32, false, false);
+    tunnelObj_->ReinitializeMesh(noCapCylinder);
+
+    tunnelObj_->GetMaterial().enableLighting = false; // ライティング無効
+    tunnelObj_->SetCastShadows(false);
+
+    // CullMode::None にして内側からも見えるようにする（ユーザーの指摘通り）
+    if (engine) {
+        tunnelObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("CyberHex", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable, PSOManager::CullMode::None));
+    }
+    
+    // Z軸に沿って寝かせる。長さを大幅に伸ばし、穴が見えないようにする
+    Transform t;
+    t.scale = { 50.0f, 1500.0f, 50.0f }; // 長さを1500に拡張
+    t.rotate = { Math::PI / 2.0f, 0.0f, 0.0f }; // X軸で90度倒す
+    t.translate = { 0.0f, 0.0f, 600.0f }; // 手前から奥までカバーするようにZ方向へずらす
+    tunnelObj_->SetTransform(t);
+    tunnelObj_->Update();
+
+    // CyberHexParamsの初期化（GameSceneベースによりサイバー感強め）
+    // コントラストをつけるため色を落ち着かせて、背景を極端に暗くする
+    cyberHexParams_.edgeColor = { 0.0f, 0.4f, 0.7f, 1.0f }; // さらに渋めの青
+    cyberHexParams_.edgeThickness = 0.08f;
+    cyberHexParams_.baseBrightness = 0.02f; // 真っ黒すぎないように少しだけ明るく戻す
+    cyberHexParams_.flickerAmplitude = 0.4f;
+    cyberHexParams_.distortion = 0.05f;
+    cyberHexParams_.density = 0.02f;        
+    cyberHexParams_.animationSpeed = 0.2f;  
+    cyberHexParams_.uvScrollX = 0.0f;
+    cyberHexParams_.uvScrollY = -0.5f; // 手前から奥へゆっくり流れるようにYスクロール
+    cyberHexParams_.mappingMode = 1.0f; // 円柱（トンネル）マッピングモードを有効化
+
+    if (engine) {
+        cyberHexCB_ = std::make_unique<DynamicConstantBuffer<CyberHexParams>>();
+        cyberHexCB_->Initialize(engine->GetDirectXCommon(), 1);
+        cyberHexCBIndex_ = cyberHexCB_->Allocate();
+    }
+}
+
+void TitleScene::Finalize() {
+    // 他のシーンに影響を与えないよう、クリアカラーをデフォルト（青みがかった色）に戻す
+    engine_->SetClearColor(0.1f, 0.25f, 0.5f, 1.0f);
+    BaseScene::Finalize();
 }
 
 // 更新
@@ -116,6 +179,20 @@ void TitleScene::Update() {
     // =====
     // ↓ゲームの更新
     // =====
+
+    globalTimer_ += 1.0f / 60.0f;
+
+    if (cyberHexCB_) {
+        // ダイブ中（開始時）はスクロール速度をグッと上げる
+        if (isStarting_) {
+            cyberHexParams_.uvScrollY -= 5.0f * (1.0f / 60.0f); 
+        }
+        uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
+        cyberHexCB_->Update(cyberHexCBIndex_, cyberHexParams_, frameIndex);
+        if (tunnelObj_) {
+            tunnelObj_->SetCustomCBVAddress(cyberHexCB_->GetGPUVirtualAddress(cyberHexCBIndex_, frameIndex));
+        }
+    }
 
     // 3D文字のアニメーション（ふわふわ浮遊）
     titleTextAnimator_.Update(1.0f / 60.0f);
@@ -200,21 +277,60 @@ void TitleScene::Update() {
 
 void TitleScene::Draw() {
 
+    // --- トンネル背景の描画 ---
+    if (tunnelObj_) {
+        tunnelObj_->Draw();
+    }
+
     // --- 3Dタイトル文字描画 ---
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
 
-    if (titleTextNana_) titleTextNana_->Draw();
-    if (titleTextKoro1_) titleTextKoro1_->Draw();
-    if (titleTextBi1_) titleTextBi1_->Draw();
-    if (titleTextHati_) titleTextHati_->Draw();
-    if (titleTextKoro2_) titleTextKoro2_->Draw();
-    if (titleTextBi2_) titleTextBi2_->Draw();
-    
+    auto drawWithShadow = [](ObjClass* obj) {
+        if (!obj) return;
+        
+        Vector3 pos = obj->GetPosition();
+        Vector4 origColor = obj->GetColor();
+        
+        // 1. 黒い影を少し奥＆右下にずらして描画
+        obj->SetPosition({ pos.x + 0.1f, pos.y - 0.1f, pos.z + 0.3f });
+        obj->SetColor({ 0.0f, 0.0f, 0.0f, 0.8f });
+        obj->SetEnableLightingOverride(0); // 影なので黒ベタ塗り
+        obj->Draw();
+        
+        // 2. 本体の描画
+        obj->SetPosition(pos);
+        obj->SetColor(origColor);
+        obj->SetEnableLightingOverride(-1);
+        obj->Draw();
+    };
+
+    drawWithShadow(titleTextNana_.get());
+    drawWithShadow(titleTextKoro1_.get());
+    drawWithShadow(titleTextBi1_.get());
+    drawWithShadow(titleTextHati_.get());
+    drawWithShadow(titleTextKoro2_.get());
+    drawWithShadow(titleTextBi2_.get());
+
     // パーティクルの描画 (Zバッファ無効・加算合成など)
     if (ambientParticles_) ambientParticles_->Draw();
     
+    // PushToSpace も同様にコントローラ経由でなく直接影付きで描画...したいが
+    // promptController_ が内部で Draw を呼ぶので、その前に影だけ描画する
+    if (titleTextPushToSpace_) {
+        Vector3 pos = titleTextPushToSpace_->GetPosition();
+        Vector4 origColor = titleTextPushToSpace_->GetColor();
+        
+        titleTextPushToSpace_->SetPosition({ pos.x + 0.1f, pos.y - 0.1f, pos.z + 0.3f });
+        titleTextPushToSpace_->SetColor({ 0.0f, 0.0f, 0.0f, 0.8f * origColor.w }); // アルファは元の明滅に合わせる
+        titleTextPushToSpace_->SetEnableLightingOverride(0);
+        titleTextPushToSpace_->Draw();
+        
+        titleTextPushToSpace_->SetPosition(pos);
+        titleTextPushToSpace_->SetColor(origColor);
+        titleTextPushToSpace_->SetEnableLightingOverride(-1);
+    }
     promptController_.Draw();
 
 }

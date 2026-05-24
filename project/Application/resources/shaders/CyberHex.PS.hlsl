@@ -8,25 +8,27 @@
  * 
  * 【ShaderToyからの主な変更点（IrufemiEngine向け最適化）】
  * 
- * 1. 座標系のワールド空間化 (Triplanar Mappingの導入)
+ * 1. 座標系のワールド空間化 (Triplanar Mapping / Cylindrical Mapping)
  *    - 元の `fragCoord.xy / iResolution.y` (スクリーン座標) ではなく、`input.worldPosition` を使用。
- *    - `input.normal` を元にXY, XZ, ZY平面を自動判定し、PlaneのScaleに依存せず常に均一な密度で六角形を描画するように変更。
+ *    - Triplanar: `input.normal` を元にXY, XZ, ZY平面を自動判定し、PlaneのScaleに依存せず常に均一な密度で六角形を描画。
+ *    - Cylindrical: トンネル用にZ軸方向の円柱マッピングを実装。ワールド座標から角度(atan2)と半径を算出し、360度継ぎ目のないマッピングを実現（UVの継ぎ目は画面下部の見えない位置に隠蔽）。
  * 
  * 2. マジックナンバーの排除と専用定数バッファ (CyberHexParams) によるパラメータ化
  *    - 元コードで固定値だった `0.10`（縁の太さ）や `0.15`（明るさ）、ハードコードされた発光色をすべて排除。
- *    - 汎用 Material を汚染せず、専用定数バッファ `gCyberHex` (register b6) を経由して、色、太さ、密度、歪みなどを C++ (ImGui) からリアルタイムで柔軟に変更可能に設計。
+ *    - 汎用 Material を汚染せず、専用定数バッファ `gCyberHex` を経由して、色、太さ、密度、歪みなどを C++ (ImGui) からリアルタイムで柔軟に変更可能に設計。
+ *    - ベースの暗さ（`baseBrightness`）を比例倍率として計算に組み込み、漆黒の背景表現に対応。
  * 
  * 3. 「アニメーション（浮き沈み）」と「UVスクロール」の完全な分離
- *    - 元のコードでは `hexagon(8.0*pos + 0.5*iTime)` のように座標に時間を足していたため、明滅させようとするとグリッド全体が斜めに移動してしまっていた。
  *    - 座標計算から時間項を外し、時間(`animTime`)はノイズ(`noise`)や明滅(`sin`)の計算にのみ影響するように数式を分解。
- *    - 代わりに全体の移動は `pos += uvScroll` で独立させ、模様の浮き沈み(`animationSpeed`)と全体の移動(`uvScrollX, Y`)を完全に別々で制御できるように再構築。
+ *    - 全体の移動は `pos += uvScroll` で独立させ、模様の浮き沈みと全体の移動を別々で制御できるように再構築。
  * 
  * 4. プロシージャルノイズへの置換
- *    - 元コードのテクスチャ(`iChannel0`)に依存するノイズを、自作の `rand` および `noise` (3D Value Noise) に置き換え。
+ *    - 元コードのテクスチャ依存を、自作の `rand` および `noise` (3D Value Noise) に置き換え。
  * 
- * 5. 視覚効果の調整（フリッカー防止・影の統合）
- *    - 激しい点滅（フリッカー）を防ぐため、明滅計算（`intensity`）に独自の振幅（`flickerAmplitude`）調整を導入。
- *    - エンジン標準の `Lighting.hlsli` をインクルードし、`CalculateShadow` を用いて他のオブジェクトから落ちる影を受け取る処理を追加。
+ * 5. 視覚効果の調整（距離フェード・フリッカー防止・影の統合）
+ *    - トンネルモード専用に、カメラから遠ざかるほど暗闇に沈む「距離フェード（フェードアウト）」処理を追加。
+ *    - 激しい点滅を防ぐため、明滅計算に独自の振幅（`flickerAmplitude`）調整を導入。
+ *    - `Lighting.hlsli` を用いて他のオブジェクトから落ちる影を受け取る処理を追加。
  * ==============================================================================
  */
 
@@ -53,6 +55,9 @@ struct CyberHexParams {
     float animationSpeed;
     float uvScrollX;
     float uvScrollY;
+    
+    float mappingMode;
+    float3 padding;
 };
 ConstantBuffer<CyberHexParams> gCyberHex : register(b6);
 
@@ -99,13 +104,21 @@ PixelShaderOutput main(VertexShaderOutput input)
     float3 absN = abs(input.normal);
     float2 pos = float2(0.0, 0.0);
     
-    // 面の向き（法線）に応じて投影する軸を決定
-    if (absN.y > absN.x && absN.y > absN.z) {
-        pos = input.worldPosition.xz; // 床・天井
-    } else if (absN.x > absN.y && absN.x > absN.z) {
-        pos = input.worldPosition.zy; // X軸方向の壁
+    if (gCyberHex.mappingMode > 0.5) {
+        // 円柱座標系 (Cylindrical Mapping - Z軸方向の円柱)
+        // XとYの順序を逆にして、継ぎ目（-PIとPIの境界）が下（Y軸のマイナス方向）に来るようにする
+        float angle = atan2(input.worldPosition.x, input.worldPosition.y); // -PI to PI
+        float radius = length(input.worldPosition.xy);
+        pos = float2(radius * angle, input.worldPosition.z);
     } else {
-        pos = input.worldPosition.xy; // Z軸方向の壁
+        // 面の向き（法線）に応じて投影する軸を決定 (Triplanar Mapping)
+        if (absN.y > absN.x && absN.y > absN.z) {
+            pos = input.worldPosition.xz; // 床・天井
+        } else if (absN.x > absN.y && absN.x > absN.z) {
+            pos = input.worldPosition.zy; // X軸方向の壁
+        } else {
+            pos = input.worldPosition.xy; // Z軸方向の壁
+        }
     }
     
     // 密度パラメータ
@@ -122,7 +135,9 @@ PixelShaderOutput main(VertexShaderOutput input)
     // ==========================================
     float4 h = hexagon(8.0 * pos);
     float n = noise(float3(0.3 * h.xy + animTime * 0.1, animTime));
-    float3 col = gCyberHex.baseBrightness + 0.15 * rand(h.xy + 1.2) * float3(1.0, 1.0, 1.0);
+    // 元々は0.15などの固定の加算があったが、トンネルの明暗をコントロールしやすくするため
+    // gCyberHex.baseBrightness に比例するように修正
+    float3 col = gCyberHex.baseBrightness * (1.0 + 3.0 * rand(h.xy + 1.2));
     col *= smoothstep(gCyberHex.edgeThickness, gCyberHex.edgeThickness + 0.01, h.z); // 枠線
     col *= smoothstep(gCyberHex.edgeThickness, gCyberHex.edgeThickness + 0.01, h.w); // 中心
     col *= 1.0 + 0.15 * sin(40.0 * h.z);
@@ -162,6 +177,14 @@ PixelShaderOutput main(VertexShaderOutput input)
     float shadowFactor = CalculateShadow(input.shadowPos, gShadowMap, gShadowSampler, normalize(input.normal), gLightCommon.directionalLight.direction);
     // 影の領域は明るさを30%に落とす
     col *= lerp(0.3, 1.0, shadowFactor);
+
+    // トンネルモードの場合、奥に行くほど暗くフェードアウトさせ、中央に文字が際立つようにする
+    if (gCyberHex.mappingMode > 0.5) {
+        float dist = length(input.worldPosition.xyz - gPerFrame.cameraWorldPosition);
+        float fade = saturate(1.0 - (dist / 800.0));
+        fade = pow(fade, 1.5); // フェードカーブを調整して手前は明るく、奥はスッと暗くする
+        col *= fade;
+    }
 
     // ビネット効果（四隅を暗くする）
     float2 uv = input.texcoord;

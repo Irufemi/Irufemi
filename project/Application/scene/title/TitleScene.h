@@ -6,6 +6,9 @@
 
 #include <memory>
 #include <vector>
+#include "contents/field/CyberHexParams.h"
+#include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
+#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 
 class IrufemiEngine;
 class Sprite;
@@ -29,6 +32,11 @@ public: // メンバ関数(システム)
      * @param engine IrufemiEngineのポインタ
      */
     void Initialize(IrufemiEngine* engine) override;
+
+    /**
+     * @brief 終了処理
+     */
+    void Finalize() override;
 
     /**
      * @brief 毎フレームの更新処理
@@ -59,6 +67,13 @@ private: // メンバ変数(ゲーム)
 
     // カメラ演出用
     float cameraAngle_ = 0.0f;
+
+    // サイバー空間トンネル（CyberHex背景）
+    std::unique_ptr<PrimitiveObjects3DClass> tunnelObj_ = nullptr;
+    CyberHexParams cyberHexParams_{};
+    std::unique_ptr<DynamicConstantBuffer<CyberHexParams>> cyberHexCB_ = nullptr;
+    uint32_t cyberHexCBIndex_ = 0;
+    float globalTimer_ = 0.0f;
 
     // 遷移演出用
     bool isStarting_ = false;

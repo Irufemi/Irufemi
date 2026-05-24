@@ -19,5 +19,8 @@ struct CyberHexParams {
     float animationSpeed;     // 浮き沈みアニメーション速度 (4 bytes) (元 uvTransform.m[1][1])
     float uvScrollX;          // UVスクロール速度 X (4 bytes)
     float uvScrollY;          // UVスクロール速度 Y (4 bytes)
-    // 合計 48 bytes (16 bytes * 3)
+    
+    float mappingMode;        // マッピングモード (0.0=Triplanar, 1.0=Cylindrical Z軸) (4 bytes)
+    float padding[3];         // 16バイトアライメント用パディング (12 bytes)
+    // 合計 64 bytes (16 bytes * 4)
 };
