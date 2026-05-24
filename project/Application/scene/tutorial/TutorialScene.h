@@ -52,7 +52,6 @@ private:
 
     // チュートリアル状態の更新と描画
     void UpdateTutorialState();
-    void DrawTutorialUI();
 
 private:
     bool isFirstDebug_ = true;
@@ -80,6 +79,11 @@ private:
     bool hasHitMissile_ = false;
     bool hasBuildingHitEnemy_ = false;
 
-    // チュートリアル用のメッセージ
-    const char* currentInstruction_ = "";
+    std::unique_ptr<Sprite> tutorialUISprites_[9];
+    
+    // WASDキーUI用
+    std::unique_ptr<Sprite> keyWSprite_;
+    std::unique_ptr<Sprite> keyASprite_;
+    std::unique_ptr<Sprite> keySSprite_;
+    std::unique_ptr<Sprite> keyDSprite_;
 };

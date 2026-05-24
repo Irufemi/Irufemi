@@ -23,6 +23,8 @@
 #include "contents/ui/EnemyPartHPBar.h"
 #include "contents/ui/PlayerHPBar.h"
 
+#include "Renderer/Object2D/Sprite/Sprite.h"
+
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Graphics/Pipeline/PSOManager.h"
 #include "Engine/IrufemiEngine.h"
@@ -66,6 +68,36 @@ void TutorialScene::Initialize(IrufemiEngine* engine) {
 
     dynamicArenaLight_ = std::make_unique<DynamicArenaLight>();
     dynamicArenaLight_->Initialize(engine_, areaLights_);
+
+    for (int i = 0; i < 9; ++i) {
+        tutorialUISprites_[i] = std::make_unique<Sprite>();
+        std::string path = "resources/UI/tutorial_" + std::to_string(i + 1) + ".png";
+        tutorialUISprites_[i]->Initialize(path);
+        tutorialUISprites_[i]->SetAnchor(0.5f, 0.0f); // 上部中央
+        tutorialUISprites_[i]->SetPosition(1280.0f / 2.0f, 15.0f); // もう少し上に配置
+        
+        // 元の画像サイズから0.7倍に縮小
+        auto size = tutorialUISprites_[i]->GetSize();
+        tutorialUISprites_[i]->SetSize(size.x * 0.7f, size.y * 0.7f);
+    }
+
+    // WASDキーの初期化
+    auto initKey = [](std::unique_ptr<Sprite>& sprite, const std::string& keyName, float x, float y) {
+        sprite = std::make_unique<Sprite>();
+        sprite->Initialize("resources/UI/key_" + keyName + ".png");
+        sprite->SetAnchor(0.5f, 0.5f);
+        sprite->SetPosition(x, y);
+        sprite->SetSize(80.0f * 0.8f, 80.0f * 0.8f); // 少し小さめに
+        // デフォルトはグレー
+        sprite->SetColor({0.3f, 0.3f, 0.3f, 1.0f});
+    };
+    
+    float centerX = 1280.0f / 2.0f;
+    float baseY = 190.0f; // 説明UIの下
+    initKey(keyWSprite_, "W", centerX, baseY);
+    initKey(keyASprite_, "A", centerX - 70.0f, baseY + 70.0f);
+    initKey(keySSprite_, "S", centerX, baseY + 70.0f);
+    initKey(keyDSprite_, "D", centerX + 70.0f, baseY + 70.0f);
 
     currentPhase_ = TutorialPhase::MoveWASD;
 }
@@ -122,7 +154,20 @@ void TutorialScene::Update() {
     BaseScene::Update();
     engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
 
-    DrawTutorialUI();
+    int phaseIndex = static_cast<int>(currentPhase_);
+    if (phaseIndex >= 0 && phaseIndex < 9) {
+        if (tutorialUISprites_[phaseIndex]) {
+            tutorialUISprites_[phaseIndex]->Update();
+        }
+    }
+
+    // WASDキーの更新
+    if (currentPhase_ == TutorialPhase::MoveWASD) {
+        if (keyWSprite_) keyWSprite_->Update();
+        if (keyASprite_) keyASprite_->Update();
+        if (keySSprite_) keySSprite_->Update();
+        if (keyDSprite_) keyDSprite_->Update();
+    }
 }
 
 void TutorialScene::Draw() {
@@ -136,6 +181,21 @@ void TutorialScene::Draw() {
         player_->Draw2DUI(boss_.get());
         bool isPaused = (engine_->GetSceneManager()->GetCurrent() == "Pause");
         player_->Draw3DUI(boss_.get(), true, isPaused);
+    }
+
+    int phaseIndex = static_cast<int>(currentPhase_);
+    if (phaseIndex >= 0 && phaseIndex < 9) {
+        if (tutorialUISprites_[phaseIndex]) {
+            tutorialUISprites_[phaseIndex]->Draw();
+        }
+    }
+
+    // WASDキーの描画
+    if (currentPhase_ == TutorialPhase::MoveWASD) {
+        if (keyWSprite_) keyWSprite_->Draw();
+        if (keyASprite_) keyASprite_->Draw();
+        if (keySSprite_) keySSprite_->Draw();
+        if (keyDSprite_) keyDSprite_->Draw();
     }
 }
 
@@ -165,53 +225,53 @@ void TutorialScene::UpdateTutorialState() {
 
     switch (currentPhase_) {
     case TutorialPhase::MoveWASD:
-        currentInstruction_ = (const char*)u8"WASDで移動することができます";
         if (input->IsKeyPressedDIK(DIK_W)) hasPressedW_ = true;
         if (input->IsKeyPressedDIK(DIK_A)) hasPressedA_ = true;
         if (input->IsKeyPressedDIK(DIK_S)) hasPressedS_ = true;
         if (input->IsKeyPressedDIK(DIK_D)) hasPressedD_ = true;
+
+        // 押されたら水色（点灯）、押されていなければグレー
+        if (keyWSprite_) keyWSprite_->SetColor(hasPressedW_ ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.4f, 0.4f, 0.4f, 1.0f});
+        if (keyASprite_) keyASprite_->SetColor(hasPressedA_ ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.4f, 0.4f, 0.4f, 1.0f});
+        if (keySSprite_) keySSprite_->SetColor(hasPressedS_ ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.4f, 0.4f, 0.4f, 1.0f});
+        if (keyDSprite_) keyDSprite_->SetColor(hasPressedD_ ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.4f, 0.4f, 0.4f, 1.0f});
+
         if (hasPressedW_ && hasPressedA_ && hasPressedS_ && hasPressedD_) {
             currentPhase_ = TutorialPhase::Dodge;
         }
         break;
 
     case TutorialPhase::Dodge:
-        currentInstruction_ = (const char*)u8"Spaceキーで回避することができます";
         if (input->IsKeyPressedDIK(DIK_SPACE)) { // Space key
             currentPhase_ = TutorialPhase::MeleeAttack;
         }
         break;
 
     case TutorialPhase::MeleeAttack:
-        currentInstruction_ = (const char*)u8"左クリックで近接攻撃をすることができます(敵に当ててみましょう)";
         if (hasHitMelee_) {
             currentPhase_ = TutorialPhase::GunAttack;
         }
         break;
 
     case TutorialPhase::GunAttack:
-        currentInstruction_ = (const char*)u8"右クリックで銃攻撃をすることができます(敵に当ててみましょう)";
         if (hasHitGun_) {
             currentPhase_ = TutorialPhase::KarakuriCharge;
         }
         break;
 
     case TutorialPhase::KarakuriCharge:
-        currentInstruction_ = (const char*)u8"Eキーを長押しでからくりチャージを行い自身を強化することができます";
         if (player_->IsKarakuriCharged()) {
             currentPhase_ = TutorialPhase::EnhancedDodge;
         }
         break;
 
     case TutorialPhase::EnhancedDodge:
-        currentInstruction_ = (const char*)u8"からくりチャージ中は回避が強化されます。\nSpaceキーで回避を行ってみましょう。";
         if (input->IsKeyPressedDIK(DIK_SPACE)) {
             currentPhase_ = TutorialPhase::MissileAttack;
         }
         break;
 
     case TutorialPhase::MissileAttack:
-        currentInstruction_ = (const char*)u8"からくりチャージ中は右クリックがミサイルに変化します。\nミサイルを敵に当ててみましょう。";
         if (hasHitMissile_) {
             currentPhase_ = TutorialPhase::BuildingAttack;
             if (field_ && field_->GetBuilding()) {
@@ -225,7 +285,6 @@ void TutorialScene::UpdateTutorialState() {
         break;
 
     case TutorialPhase::BuildingAttack:
-        currentInstruction_ = (const char*)u8"マップ上の建物を攻撃して壊すと、建物を飛ばすことができます\n飛ばした建物を敵に当てて攻撃してみましょう";
         if (hasBuildingHitEnemy_) {
             currentPhase_ = TutorialPhase::PartsExplanation;
         } else if (field_ && field_->GetBuilding()) {
@@ -241,7 +300,6 @@ void TutorialScene::UpdateTutorialState() {
         break;
 
     case TutorialPhase::PartsExplanation:
-        currentInstruction_ = (const char*)u8"敵の部位を攻撃し続けると、部位が壊れて飛びます。\n飛んだ部位は武器として利用可能です。（実践なし）\nSpaceキーでゲームを開始します。";
         if (input->IsKeyPressedDIK(DIK_SPACE)) {
             currentPhase_ = TutorialPhase::Done;
         }
@@ -253,18 +311,6 @@ void TutorialScene::UpdateTutorialState() {
         }
         break;
     }
-}
-
-void TutorialScene::DrawTutorialUI() {
-#ifdef USE_IMGUI
-    ImGui::SetNextWindowPos(ImVec2(1280.0f / 2.0f, 100.0f), ImGuiCond_Always, ImVec2(0.5f, 0.0f));
-    ImGui::SetNextWindowSize(ImVec2(800.0f, 150.0f), ImGuiCond_Always);
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-    ImGui::Begin("Tutorial UI", nullptr, window_flags);
-    ImGui::SetWindowFontScale(1.5f);
-    ImGui::TextWrapped("%s", currentInstruction_);
-    ImGui::End();
-#endif
 }
 
 void TutorialScene::CheckAllCollisions() {
