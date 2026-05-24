@@ -234,6 +234,7 @@ void EnemyBomb::Cancel() {
     if (gpuParticle_) {
         gpuParticle_->SetEmit(false);
         gpuParticle_->Update();
+        gpuParticle_->Clear();
     }
 }
 

@@ -96,6 +96,9 @@ void EnemyStompEffects::Cancel() {
     isActive_ = false;
     isBodyTelegraphActive_ = false;
     currentPhase_ = Phase::Finished;
+    if (gpuParticleSystem_) {
+        gpuParticleSystem_->Clear();
+    }
 }
 
 void EnemyStompEffects::Update(float deltaTime) {
