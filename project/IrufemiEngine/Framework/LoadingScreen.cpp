@@ -26,6 +26,15 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
     float screenW = static_cast<float>(engine->GetClientWidth());
     float screenH = static_cast<float>(engine->GetClientHeight());
     
+    // 背景を真っ黒に塗りつぶすスプライト
+    bgSprite_ = std::make_unique<Sprite>();
+    bgSprite_->Initialize("resources/whiteTexture.png");
+    bgSprite_->SetColor({0.0f, 0.0f, 0.0f, 1.0f});
+    bgSprite_->SetSize(screenW, screenH);
+    bgSprite_->SetAnchor(0.0f, 0.0f); // 左上
+    bgSprite_->SetPosition(0.0f, 0.0f);
+    bgSprite_->SetTopMost(true);
+    
     // スプライトのサイズと位置を右下に合わせる
     // 画像は正方形(1:1)なので、縮尺がおかしくならないよう同サイズにする
     nowLoadingText_->SetSize(256.0f, 256.0f);
@@ -66,6 +75,9 @@ void LoadingScreen::Update(float deltaTime) {
     }
 
     camera_->Update();
+    if (bgSprite_) {
+        bgSprite_->Update();
+    }
     if (nowLoadingText_) {
         nowLoadingText_->Update();
     }
@@ -77,6 +89,10 @@ void LoadingScreen::Update(float deltaTime) {
 void LoadingScreen::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
+    if (bgSprite_) {
+        bgSprite_->Draw();
+    }
+    
     if (nowLoadingText_) {
         nowLoadingText_->Draw();
     }

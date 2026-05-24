@@ -23,6 +23,7 @@ public:
 
 private:
     std::unique_ptr<Camera> camera_;
+    std::unique_ptr<Sprite> bgSprite_;
     std::unique_ptr<Sprite> nowLoadingText_;
     std::vector<std::unique_ptr<Circle2D>> dots_;
     
