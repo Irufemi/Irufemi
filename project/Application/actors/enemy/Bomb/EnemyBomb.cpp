@@ -174,27 +174,26 @@ void EnemyBomb::Update() {
         
         // Cylinderは長さ=height、太さ=radiusなので、X軸とZ軸に沿わせるために回転させる
         // 炎が上に高く立ち昇るように、ローカルのスケールを操作して楕円柱（壁）にする
-        float heightScale = 5.0f; // 炎の高さの倍率
-        float currentRadius = explosionThickness_ * 0.5f;
+        float flameHeight = explosionThickness_ * 2.5f; // 炎の高さ
 
         // X軸方向の攻撃
         Vector3 posX = targetPos_;
-        posX.y += (currentRadius * heightScale) * 0.5f; // 地面にめり込まないよう上にずらす（高さの半分だけ上げる）
+        posX.y += flameHeight * 0.5f; // 地面にめり込まないよう上にずらす（高さの半分だけ上げる）
         attackCylinderX_->SetPosition(posX);
         // CylinderはデフォルトでY軸向きなので、X軸向きにするにはZ軸で-90度回転
         attackCylinderX_->SetRotate({ 0, 0, -Math::PI / 2.0f }); 
         // ローカルX軸 = ワールドY軸(高さ), ローカルY軸 = ワールドX軸(長さ), ローカルZ軸 = ワールドZ軸(厚み)
-        attackCylinderX_->SetScale({ currentRadius * heightScale, explosionLength_, currentRadius });
+        attackCylinderX_->SetScale({ flameHeight, explosionLength_, explosionThickness_ });
         attackCylinderX_->Update();
 
         // Z軸方向の攻撃
         Vector3 posZ = targetPos_;
-        posZ.y += (currentRadius * heightScale) * 0.5f; // こちらも高さの半分だけ上げる
+        posZ.y += flameHeight * 0.5f; // こちらも高さの半分だけ上げる
         attackCylinderZ_->SetPosition(posZ);
         // Z軸向きにするにはX軸で90度回転
         attackCylinderZ_->SetRotate({ Math::PI / 2.0f, 0, 0 });
         // ローカルX軸 = ワールドX軸(厚み), ローカルY軸 = ワールドZ軸(長さ), ローカルZ軸 = ワールド-Y軸(高さ)
-        attackCylinderZ_->SetScale({ currentRadius, explosionLength_, currentRadius * heightScale });
+        attackCylinderZ_->SetScale({ explosionThickness_, explosionLength_, flameHeight });
         attackCylinderZ_->Update();
 
         // パーティクル放出
@@ -297,21 +296,26 @@ std::vector<OBB> EnemyBomb::GetOBBs() const {
         return obbs;
     }
 
+    // 見た目のシリンダーの回転状態に関わらず、地面に沿った正確な当たり判定（ボックス）を生成する
+    
     // X軸方向のOBB
     OBB obbX;
-    obbX.center = attackCylinderX_->GetCenter();
-    obbX.orientations[0] = attackCylinderX_->GetRight();
-    obbX.orientations[1] = attackCylinderX_->GetDirection();
-    obbX.orientations[2] = attackCylinderX_->GetUp();
-    obbX.size = { explosionThickness_ * 0.5f, explosionThickness_ * 0.5f, explosionLength_ * 0.5f };
+    obbX.center = targetPos_;
+    obbX.center.y += explosionThickness_ * 0.5f; // OBBを地面から厚みの半分だけ浮かせる（プレイヤーに当たる高さ）
+    obbX.orientations[0] = {1.0f, 0.0f, 0.0f}; // ローカルX (ワールドX)
+    obbX.orientations[1] = {0.0f, 1.0f, 0.0f}; // ローカルY (ワールドY)
+    obbX.orientations[2] = {0.0f, 0.0f, 1.0f}; // ローカルZ (ワールドZ)
+    // sizeは各軸の「半径（半分）」
+    obbX.size = { explosionLength_ * 0.5f, explosionThickness_ * 0.5f, explosionThickness_ * 0.5f };
     obbs.push_back(obbX);
 
     // Z軸方向のOBB
     OBB obbZ;
-    obbZ.center = attackCylinderZ_->GetCenter();
-    obbZ.orientations[0] = attackCylinderZ_->GetRight();
-    obbZ.orientations[1] = attackCylinderZ_->GetDirection();
-    obbZ.orientations[2] = attackCylinderZ_->GetUp();
+    obbZ.center = targetPos_;
+    obbZ.center.y += explosionThickness_ * 0.5f;
+    obbZ.orientations[0] = {1.0f, 0.0f, 0.0f};
+    obbZ.orientations[1] = {0.0f, 1.0f, 0.0f};
+    obbZ.orientations[2] = {0.0f, 0.0f, 1.0f};
     obbZ.size = { explosionThickness_ * 0.5f, explosionThickness_ * 0.5f, explosionLength_ * 0.5f };
     obbs.push_back(obbZ);
 
