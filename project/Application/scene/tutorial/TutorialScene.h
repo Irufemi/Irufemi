@@ -25,6 +25,7 @@ enum class TutorialPhase {
     MissileAttack,
     BuildingAttack,
     PartsExplanation,
+    ViewSwitch,
     Done
 };
 
@@ -37,18 +38,13 @@ public:
     void Update() override;
     void Draw() override;
     bool IsCursorVisible() const override { return false; }
-    void DrawDebugTab() override;
 
 private:
     void CheckAllCollisions();
     void CheckPlayerToEnemyCollisions();
     void CheckEnemyToPlayerCollisions();
-    void CheckFlyingPartsCollisions();
     void CheckPlayerBuildingCollisions();
-    void CheckEnemyBuildingCollisions();
-    void CheckFlyingPartsBuildingCollisions();
     void CheckFlyingBuildingsVsEnemyCollisions();
-    void CheckFlyingBuildingsVsBuildingsCollisions();
 
     // チュートリアル状態の更新と描画
     void UpdateTutorialState();
@@ -79,11 +75,14 @@ private:
     bool hasHitMissile_ = false;
     bool hasBuildingHitEnemy_ = false;
 
-    std::unique_ptr<Sprite> tutorialUISprites_[9];
+    std::unique_ptr<Sprite> tutorialUISprites_[10];
     
     // WASDキーUI用
     std::unique_ptr<Sprite> keyWSprite_;
     std::unique_ptr<Sprite> keyASprite_;
     std::unique_ptr<Sprite> keySSprite_;
     std::unique_ptr<Sprite> keyDSprite_;
+
+    // SPACEキーUI用
+    std::unique_ptr<Sprite> keySpaceSprite_;
 };

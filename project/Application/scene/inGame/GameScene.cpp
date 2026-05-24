@@ -490,11 +490,12 @@ void GameScene::CheckEnemyToPlayerCollisions() {
   auto checkHit = [&](auto *part) {
     if (!part || part->IsCompletelyDead())
       return;
-    if (Collision::IsOBBSphereCollision(part->GetOBB(), playerColliderSphere)) {
+    OBB partOBB = part->GetOBB();
+    if (Collision::IsOBBSphereCollision(partOBB, playerColliderSphere)) {
       if (player_->ApplyDamage(kDamagePartToPlayer)) {
         // 吹き飛んでいる状態のとき、めり込んで連続ダメージになるのを防ぐため部位を反射（バウンド）させる
         if (part->IsBlownAway()) {
-          Vector3 toPlayer = Math::Subtract(playerColliderSphere.center, part->GetOBB().center);
+          Vector3 toPlayer = Math::Subtract(playerColliderSphere.center, partOBB.center);
           toPlayer.y = 0.0f;
           Vector3 normal = Math::Normalize(toPlayer);
           if (Math::Length(normal) < kMathEpsilon) normal = {0.0f, 0.0f, 1.0f};
@@ -508,6 +509,34 @@ void GameScene::CheckEnemyToPlayerCollisions() {
             part->SetBlowVelocity(Math::Multiply(-2.0f, normal));
           }
         }
+      }
+
+      // 押し出し処理
+      Vector3 diff = Math::Subtract(player_->GetTranslate(), partOBB.center);
+      float bestPushDist = 1e10f;
+      Vector3 bestPushDir = {0.0f, 0.0f, 0.0f};
+
+      for (int axis = 0; axis < 3; ++axis) {
+        if (axis == 1) continue; // Y軸除外
+        
+        float proj = Math::Dot(diff, partOBB.orientations[axis]);
+        float halfSize = (axis == 0) ? partOBB.size.x : partOBB.size.z;
+        float penetration = (halfSize + playerColliderSphere.radius) - std::abs(proj);
+        
+        if (penetration > 0.0f && penetration < bestPushDist) {
+            bestPushDist = penetration;
+            float sign = (proj >= 0.0f) ? 1.0f : -1.0f;
+            bestPushDir = Math::Multiply(sign, partOBB.orientations[axis]);
+        }
+      }
+      if (bestPushDist < 1e10f) {
+          bestPushDir.y = 0.0f;
+          if (Math::Length(bestPushDir) > 0.001f) {
+              bestPushDir = Math::Normalize(bestPushDir);
+              Vector3 newPos = Math::Add(player_->GetTranslate(), Math::Multiply(bestPushDist, bestPushDir));
+              player_->SetTranslate(newPos);
+              playerColliderSphere.center = player_->GetCollider().center; // 更新
+          }
       }
     }
   };
