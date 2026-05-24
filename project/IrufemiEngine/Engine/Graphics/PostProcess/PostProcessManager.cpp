@@ -27,6 +27,8 @@ void PostProcessManager::Initialize(DirectXCommon* dxCommon,
 
 
 void PostProcessManager::Update(float totalTime) {
+  CommitPendingModes();
+
   noiseParams_.time = totalTime;
   if (mappedNoise_) {
     *mappedNoise_ = noiseParams_;
@@ -126,6 +128,9 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         
         commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
+        float clearColor[] = { 0, 0, 0, 1 };
+        commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
+
         commandList->SetPipelineState(isLastBatch ? finalCombinedPSO_.Get() : bloomCombinePSO_.Get());
         commandList->SetGraphicsRootSignature(rootSig_);
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -196,7 +201,8 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
       }
     }
   } else {
-    DrawSinglePass(commandList, Mode::None, srcTexture, rtvHandle, true);
+    Mode singleMode = activeModes_.empty() ? Mode::None : activeModes_[0];
+    DrawSinglePass(commandList, singleMode, srcTexture, rtvHandle, true);
   }
 }
 

@@ -7,9 +7,22 @@
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include "Engine/Graphics/PostProcess/PostProcessManager.h"
+#include "Renderer/ParticleGPU/GPUParticleSystem.h"
 
 GameOverScene::~GameOverScene() {
+    // シーン破棄時に自身のポストプロセスのみを取り除く
+    if (engine_ && engine_->GetPostProcessManager()) {
+        auto* pp = engine_->GetPostProcessManager();
+        pp->RemoveActiveMode(PostProcessMode::Grayscale);
+        pp->RemoveActiveMode(PostProcessMode::Vignette);
+        pp->RemoveActiveMode(PostProcessMode::Bloom);
+    }
 
+    // 画面のクリアカラーをデフォルト（Cornflower blue）に戻す
+    if (engine_) {
+        engine_->SetClearColor(0.1f, 0.25f, 0.5f, 1.0f);
+    }
 }
 
 void GameOverScene::Initialize(IrufemiEngine* engine) {
@@ -18,6 +31,9 @@ void GameOverScene::Initialize(IrufemiEngine* engine) {
     // シーン固有のカメラ位置に調整
     engine_->GetCameraManager()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
     engine_->GetCameraManager()->GetActiveCamera()->UpdateMatrix();
+
+    // 画面のクリアカラーを真っ黒に変更（トランジション時の背景色フラッシュ対策）
+    engine_->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     // 「GameOver...」文字の初期化
     goTextG_ = std::make_unique<ObjClass>();
@@ -49,6 +65,39 @@ void GameOverScene::Initialize(IrufemiEngine* engine) {
 
     // プロンプトコントローラーに登録
     promptController_.SetTarget(textPushToSpace_.get());
+
+    // ポストプロセスの有効化（絶望感の演出）
+    if (auto* pp = engine_->GetPostProcessManager()) {
+        // ※ここではClearActiveModesを呼ばない。SceneTransitionのエフェクトを消さないため。
+        pp->AddActiveMode(PostProcessMode::Grayscale);
+        pp->AddActiveMode(PostProcessMode::Vignette);
+        pp->AddActiveMode(PostProcessMode::Bloom);
+        pp->GetVignetteParams().scale = 12.0f;
+        pp->GetVignetteParams().power = 1.0f;
+        pp->GetBloomParams().threshold = 0.5f;
+        pp->GetBloomParams().intensity = 2.0f;
+    }
+
+    // 灰パーティクルの初期化
+    embersParticles_ = std::make_unique<GPUParticleSystem>();
+    embersParticles_->Initialize("resources/circle.png");
+    embersParticles_->SetBlend(BlendMode::kBlendModeAdd);
+    embersParticles_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    embersParticles_->SetCull(PSOManager::CullMode::None);
+    embersParticles_->SetParticleLife(3.0f, 6.0f);
+    embersParticles_->SetParticleScale({0.1f, 0.1f, 0.1f}, {0.3f, 0.3f, 0.3f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f});
+    embersParticles_->SetColor({1.0f, 0.2f, 0.1f, 0.8f});
+    embersParticles_->SetStartColor({1.0f, 0.4f, 0.1f, 1.0f}, {1.0f, 0.1f, 0.0f, 1.0f});
+    embersParticles_->SetEndColor({0.2f, 0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f, 0.0f});
+    embersParticles_->SetGravity(-0.02f); // 上にゆっくり昇る (HLSLではマイナスが上への加速)
+    embersParticles_->SetDamping(0.01f);
+    
+    // デフォルトで奥（Z方向）へ爆速で飛んでいくのを防ぎ、ふわふわ舞い上がるようにする
+    embersParticles_->SetDirection({0.0f, 1.0f, 0.0f});
+    embersParticles_->SetVelocity(0.02f); 
+    embersParticles_->SetSpread(1.0f);
+    
+    embersParticles_->SetEmit(true);
 }
 
 void GameOverScene::Update() {
@@ -74,6 +123,16 @@ void GameOverScene::Update() {
         goTextDot_.get()
     };
 
+    // カメラのゆっくりとした引き（次第に遅くなり、-15.0 付近で止まる）
+    cameraZ_ += (-15.0f - cameraZ_) * 0.2f * (1.0f / 60.0f);
+    engine_->GetCameraManager()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, cameraZ_ });
+    engine_->GetCameraManager()->GetActiveCamera()->UpdateMatrix();
+
+    // フェードインのタイマー
+    introTimer_ += 1.0f / 60.0f;
+    float alpha = std::clamp(introTimer_ * 0.3f, 0.0f, 1.0f); // 約3.3秒かけてフェードイン
+    Vector4 textColor = { 1.0f, 0.1f, 0.1f, alpha }; // 発光する赤
+
     for (int i = 0; i < 9; ++i) {
         if (!goTexts[i]) continue;
         
@@ -84,7 +143,14 @@ void GameOverScene::Update() {
         goTexts[i]->SetPosition({ goPositionsX[i], goBaseY + offsetY, 0.0f });
         goTexts[i]->SetRotate({ 0.0f, 0.0f, 0.0f });
         goTexts[i]->SetScale({ 1.2f, 1.2f, 1.2f });
+        goTexts[i]->SetColor(textColor);
     }
+
+    // 灰パーティクルの更新
+    auto cam = engine_->GetCameraManager()->GetActiveCamera();
+    Vector3 camPos = cam->GetTranslate();
+    embersParticles_->SetBoxEmitter(camPos + Vector3{0.0f, -5.0f, 10.0f}, {15.0f, 2.0f, 5.0f}, 1, 0.05f);
+    embersParticles_->Update();
 
     // プロンプトコントローラーの更新
     promptController_.Update(engine_->GetInputManager());
@@ -114,6 +180,8 @@ void GameOverScene::Draw() {
     if (goTextE2_) goTextE2_->Draw();
     if (goTextR_) goTextR_->Draw();
     if (goTextDot_) goTextDot_->Draw();
+
+    if (embersParticles_) embersParticles_->Draw();
 
     promptController_.Draw();
 }

@@ -11,6 +11,8 @@ class IrufemiEngine;
 class Sprite;
 class ObjClass;
 
+class GPUParticleSystem;
+
 /**
  * @class TitleScene
  * @brief タイトル画面を管理するクラス
@@ -51,6 +53,16 @@ private: // メンバ変数(ゲーム)
 
     // 「Push to Space」文字
     std::unique_ptr<ObjClass> titleTextPushToSpace_ = nullptr;
+
+    // 環境パーティクル
+    std::unique_ptr<GPUParticleSystem> ambientParticles_ = nullptr;
+
+    // カメラ演出用
+    float cameraAngle_ = 0.0f;
+
+    // 遷移演出用
+    bool isStarting_ = false;
+    float startTimer_ = 0.0f;
 
 private: // メンバ変数(システム)
     PromptController promptController_;

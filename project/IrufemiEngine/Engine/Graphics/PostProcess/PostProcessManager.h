@@ -15,6 +15,7 @@ typedef struct IInspectable IInspectable;
 #include <array>
 #include <cstdint>
 #include <algorithm>
+#include <mutex>
 
 /**
  * @enum PostProcessMode
@@ -287,22 +288,38 @@ public:
 
     // --- Getters & Setters ---
 
+    /** @brief 描画フェーズに備えて保留中の状態を同期する */
+    void CommitPendingModes() {
+        std::lock_guard<std::mutex> lock(modesMutex_);
+        activeModes_ = pendingActiveModes_;
+    }
+
     /** @brief 現在アクティブなエフェクトスタックを取得 */
     const std::vector<Mode>& GetActiveModes() const { return activeModes_; }
 
     /** @brief エフェクトをスタックに追加 */
-    void AddActiveMode(Mode mode) { activeModes_.push_back(mode); }
+    void AddActiveMode(Mode mode) {
+        std::lock_guard<std::mutex> lock(modesMutex_);
+        pendingActiveModes_.push_back(mode);
+    }
 
     /** @brief 指定したエフェクトをスタックから削除 */
     void RemoveActiveMode(Mode mode) {
-        activeModes_.erase(std::remove(activeModes_.begin(), activeModes_.end(), mode), activeModes_.end());
+        std::lock_guard<std::mutex> lock(modesMutex_);
+        pendingActiveModes_.erase(std::remove(pendingActiveModes_.begin(), pendingActiveModes_.end(), mode), pendingActiveModes_.end());
     }
 
     /** @brief 全てのエフェクトを解除（クリア） */
-    void ClearActiveModes() { activeModes_.clear(); }
+    void ClearActiveModes() {
+        std::lock_guard<std::mutex> lock(modesMutex_);
+        pendingActiveModes_.clear();
+    }
 
     /** @brief エフェクトスタックを一括設定 */
-    void SetActiveModes(const std::vector<Mode>& modes) { activeModes_ = modes; }
+    void SetActiveModes(const std::vector<Mode>& modes) {
+        std::lock_guard<std::mutex> lock(modesMutex_);
+        pendingActiveModes_ = modes;
+    }
 
     /** @brief 指定したエフェクトが現在有効かチェック */
     bool HasActiveMode(Mode mode) const {
@@ -311,8 +328,9 @@ public:
     
     /** @brief 互換性のための単一セット (既存リストをクリアして1つ追加) */
     void SetMode(Mode mode) { 
-        activeModes_.clear(); 
-        if (mode != Mode::None) activeModes_.push_back(mode); 
+        std::lock_guard<std::mutex> lock(modesMutex_);
+        pendingActiveModes_.clear(); 
+        if (mode != Mode::None) pendingActiveModes_.push_back(mode); 
     }
 
     /** @brief 互換性のための取得 (リストが空でなければ先頭を返す) */
@@ -352,7 +370,10 @@ private:
     DXGI_FORMAT rtvFormat_ = DXGI_FORMAT_UNKNOWN;
 
     Mode mode_ = Mode::None; // 互換性用（内部では不使用にする）
+    
+    std::mutex modesMutex_;
     std::vector<Mode> activeModes_;
+    std::vector<Mode> pendingActiveModes_;
 
     // PSOs
     struct PipelineSet {

@@ -10,6 +10,8 @@
 class IrufemiEngine;
 class ObjClass;
 
+class GPUParticleSystem;
+
 /**
  * @class GameOverScene
  * @brief ゲームの結果（クリア/ゲームオーバー）を表示するクラス
@@ -24,6 +26,7 @@ public: // メンバ関数(システム)
      * @param engine IrufemiEngineのポインタ
      */
     void Initialize(IrufemiEngine* engine) override;
+
     /**
      * @brief 毎フレームの更新処理
      */
@@ -34,10 +37,7 @@ public: // メンバ関数(システム)
     void Draw() override;
     void DrawDebugTab() override;
 
-private: // メンバ関数(内部ヘルパ)
-
-    // 「Push to Space」文字
-    std::unique_ptr<ObjClass> textPushToSpace_ = nullptr;
+private: // メンバ変数(ゲーム)
 
     // 「GameOver...」文字
     std::unique_ptr<ObjClass> goTextG_ = nullptr;
@@ -49,6 +49,16 @@ private: // メンバ関数(内部ヘルパ)
     std::unique_ptr<ObjClass> goTextE2_ = nullptr;
     std::unique_ptr<ObjClass> goTextR_ = nullptr;
     std::unique_ptr<ObjClass> goTextDot_ = nullptr;
+
+    // 「Push to Space」文字
+    std::unique_ptr<ObjClass> textPushToSpace_ = nullptr;
+
+    // 灰パーティクル
+    std::unique_ptr<GPUParticleSystem> embersParticles_ = nullptr;
+
+    // 演出用
+    float introTimer_ = 0.0f;
+    float cameraZ_ = -10.0f;
 
 private: // メンバ変数(システム)
 

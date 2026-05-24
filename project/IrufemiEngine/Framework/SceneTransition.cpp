@@ -14,22 +14,31 @@ void SceneTransition::Start(Type type, float duration, bool isOut) {
     timer_ = 0.0f;
     isActive_ = true;
 
-    // 演出開始時に既存のポストプロセスをリセットし、必要なモードを追加
-    ppManager_->ClearActiveModes();
+    // 前回のトランジション演出で使ったエフェクトだけを確実に取り除く
+    for (auto mode : activeTransitionModes_) {
+        ppManager_->RemoveActiveMode(mode);
+    }
+    activeTransitionModes_.clear();
+
     switch (currentType_) {
     case Type::Fade:
         ppManager_->AddActiveMode(PostProcessMode::Fade);
+        activeTransitionModes_.push_back(PostProcessMode::Fade);
         break;
     case Type::Dissolve:
         ppManager_->AddActiveMode(PostProcessMode::Dissolve);
+        activeTransitionModes_.push_back(PostProcessMode::Dissolve);
         break;
     case Type::Slide:
         ppManager_->AddActiveMode(PostProcessMode::Slide);
+        activeTransitionModes_.push_back(PostProcessMode::Slide);
         break;
     case Type::RadialBlur:
-        // 放射状ブラーとフェードを併用して、暗くなりつつボケる演出にする
+        // 放射状ブラーとフェードを併用
         ppManager_->AddActiveMode(PostProcessMode::RadialBlur);
         ppManager_->AddActiveMode(PostProcessMode::Fade);
+        activeTransitionModes_.push_back(PostProcessMode::RadialBlur);
+        activeTransitionModes_.push_back(PostProcessMode::Fade);
         break;
     }
 }
@@ -44,9 +53,12 @@ void SceneTransition::Update(float deltaTime) {
         timer_ = totalDuration;
         isActive_ = false;
         
-        // フェードイン（画面が表示される方）が完了した場合はポストプロセスをクリア
+        // フェードイン（画面が表示される方）が完了した場合はトランジションエフェクトのみをクリア
         if (!isOut_) {
-            ppManager_->ClearActiveModes();
+            for (auto mode : activeTransitionModes_) {
+                ppManager_->RemoveActiveMode(mode);
+            }
+            activeTransitionModes_.clear();
         }
     }
 

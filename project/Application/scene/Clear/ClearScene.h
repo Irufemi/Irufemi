@@ -9,6 +9,7 @@
 
 class IrufemiEngine;
 class ObjClass;
+class GPUParticleSystem;
 
 /**
  * @class ResultScene
@@ -46,6 +47,15 @@ private: // メンバ変数(ゲーム)
 
     // 「Push to Space」文字
     std::unique_ptr<ObjClass> textPushToSpace_ = nullptr;
+
+    // 祝祭パーティクル
+    std::unique_ptr<GPUParticleSystem> confettiParticles_ = nullptr;
+
+    // 演出状態管理
+    float introTimer_ = 0.0f;
+    int currentSlamIndex_ = -1; // 落とした文字の数
+    bool isSlamming_ = true;
+    bool isRainingConfetti_ = false; // 降らせる演出に移行したか
 
 private: // メンバ変数(システム)
 

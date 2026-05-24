@@ -89,6 +89,13 @@ void EnemyStompEffects::Fire(const Vector3& position) {
     explosionTransform_.scale = { 1.0f, 1.0f, 1.0f };
     ringTransform_.scale = { 1.0f, params_.ringHeight, 1.0f };
     finalExplosionTransform_.scale = { params_.ringMaxRadius, 0.01f, params_.ringMaxRadius };
+    
+    // 座標の初期化（X, Y, Z すべてに basePosition_ を適用）
+    Vector3 spawnPos = { basePosition_.x, basePosition_.y + params_.ringGroundOffset, basePosition_.z };
+    explosionTransform_.translate = spawnPos;
+    ringTransform_.translate = spawnPos;
+    finalExplosionTransform_.translate = spawnPos;
+
     UpdateFinalExplosionSphere();
 }
 
@@ -119,7 +126,7 @@ void EnemyStompEffects::Update(float deltaTime) {
         float currentScale = Lerp(1.0f, params_.ringMaxRadius, easeIn);
         
         explosionTransform_.scale = { currentScale, currentScale, currentScale };
-        explosionTransform_.translate.y = basePosition_.y + params_.ringGroundOffset;
+        explosionTransform_.translate = { basePosition_.x, basePosition_.y + params_.ringGroundOffset, basePosition_.z };
         
         Vector4 colorBase = { 1.0f, 0.4f, 0.0f, 0.2f }; 
         Vector4 colorWarning = { 1.0f, 0.0f, 0.0f, 0.6f };

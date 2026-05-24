@@ -61,5 +61,8 @@ private:
     bool isOut_ = true;
     bool isActive_ = false;
 
+    // トランジションが現在適用しているポストプロセスモードの追跡用
+    std::vector<PostProcessMode> activeTransitionModes_;
+
     // 前回のポストプロセスモードを復元するための保存用（必要に応じて）
 };

@@ -8,14 +8,36 @@
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include "Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "Resource/Audio/AudioManager.h"
 
 // デストラクタ
-TitleScene::~TitleScene() = default;
+TitleScene::~TitleScene() {
+    // シーン破棄時に自身のポストプロセスのみを取り除く
+    if (engine_ && engine_->GetPostProcessManager()) {
+        auto* pp = engine_->GetPostProcessManager();
+        pp->RemoveActiveMode(PostProcessMode::Vignette);
+        pp->RemoveActiveMode(PostProcessMode::Bloom);
+        pp->RemoveActiveMode(PostProcessMode::ToneMapping);
+    }
+}
 
 // 初期化
 void TitleScene::Initialize(IrufemiEngine* engine) {
 
     BaseScene::Initialize(engine);
+
+    // ポストプロセスの有効化（スタイリッシュな演出）
+    if (auto* pp = engine_->GetPostProcessManager()) {
+        pp->AddActiveMode(PostProcessMode::Vignette);
+        pp->AddActiveMode(PostProcessMode::Bloom);
+        pp->AddActiveMode(PostProcessMode::ToneMapping);
+        
+        // ビネットで四隅を少し落とし、中央のタイトルに視線誘導
+        pp->GetVignetteParams().scale = 10.0f;
+        // トーンマッピングでコントラストをパキッとさせる
+        pp->GetToneMappingParams().exposure = 1.2f;
+    }
 
     // シーン固有のカメラ位置に調整
     engine_->GetCameraManager()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
@@ -63,6 +85,27 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     // プロンプトコントローラーに登録
     promptController_.SetTarget(titleTextPushToSpace_.get());
     
+    // --- 環境パーティクル（光の塵）の初期化 ---
+    ambientParticles_ = std::make_unique<GPUParticleSystem>();
+    ambientParticles_->Initialize("resources/circle.png");
+    ambientParticles_->SetBlend(BlendMode::kBlendModeAdd);
+    ambientParticles_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    ambientParticles_->SetCull(PSOManager::CullMode::None);
+    // ランダムに画面全体に漂う設定
+    ambientParticles_->SetParticleLife(2.0f, 4.0f);
+    ambientParticles_->SetParticleScale({0.2f, 0.2f, 0.2f}, {0.3f, 0.3f, 0.3f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f});
+    ambientParticles_->SetColor({1.0f, 1.0f, 1.0f, 0.5f});
+    ambientParticles_->SetStartColor({1.0f, 1.0f, 0.8f, 0.8f}, {1.0f, 0.9f, 0.6f, 1.0f});
+    ambientParticles_->SetEndColor({1.0f, 1.0f, 0.8f, 0.0f}, {1.0f, 0.9f, 0.6f, 0.0f});
+    ambientParticles_->SetGravity(-0.02f); // マイナス重力で上にゆっくり浮上 (HLSLでは Y -= gravity*dt となるため、マイナスだと上へ加速)
+    ambientParticles_->SetDamping(0.01f);
+    
+    // SetBoxEmitterのデフォルトでZ奥に飛んでいく（1.0f/フレーム = 秒速60）のを防ぐため、初速をほぼ0にする
+    ambientParticles_->SetDirection({0.0f, 1.0f, 0.0f});
+    ambientParticles_->SetVelocity(0.01f); 
+    ambientParticles_->SetSpread(1.0f);
+    
+    ambientParticles_->SetEmit(true);
 }
 
 // 更新
@@ -100,8 +143,50 @@ void TitleScene::Update() {
         texts[i]->SetRotate({ 0.0f, 0.0f, 0.0f });
     }
 
+    // パーティクルの発生位置をカメラの前に設定してランダムに散らす
+    auto cam = engine_->GetCameraManager()->GetActiveCamera();
+    Vector3 camPos = cam->GetTranslate();
+    ambientParticles_->SetBoxEmitter(camPos + Vector3{0.0f, 0.0f, 5.0f}, {15.0f, 10.0f, 5.0f}, 1, 0.1f);
+    ambientParticles_->Update();
+
     // プロンプトコントローラーの更新（明滅、フラッシュ、キー入力待機）
     promptController_.Update(engine_->GetInputManager());
+
+    // ゲーム開始演出（Juice）
+    if (promptController_.IsDecided()) {
+        if (!isStarting_) {
+            isStarting_ = true;
+        }
+
+        startTimer_ += 1.0f / 60.0f;
+        
+        // カメラの高速ズームイン
+        Vector3 pos = cam->GetTranslate();
+        pos.z += 15.0f * (1.0f / 60.0f); // 毎フレーム手前に進む
+        cam->SetTranslate(pos);
+
+        // 文字の白フラッシュ演出
+        float flash = (std::max)(0.0f, 1.0f - startTimer_ * 3.0f); // 急速に減衰
+        Vector4 flashColor = { 1.0f + flash, 1.0f + flash, 1.0f + flash, 1.0f };
+        for (int i = 0; i < 6; ++i) {
+            if (texts[i]) texts[i]->SetColor(flashColor);
+        }
+
+    } else {
+        // --- 待機中のカメラの揺らぎ（Sway） ---
+        // ずっと同じ方向に回転すると文字が画面外に消えてしまうため、左右の揺れに変更
+        cameraAngle_ += 0.5f * (1.0f / 60.0f);
+        cam->SetTranslate({ 
+            std::sin(cameraAngle_) * 1.0f, 
+            std::cos(cameraAngle_ * 0.8f) * 0.5f, 
+            -10.0f 
+        });
+        // 常に中央（文字）の方向をふんわり向くように
+        cam->SetRotate({ 0.0f, std::sin(cameraAngle_) * 0.05f, 0.0f });
+    }
+    
+    // 行列更新
+    cam->UpdateMatrix();
 
     if (promptController_.ShouldTransition()) {
         engine_->GetSceneManager()->TransitionTo("InGame", SceneTransition::Type::Slide, 1.0f);
@@ -126,6 +211,10 @@ void TitleScene::Draw() {
     if (titleTextHati_) titleTextHati_->Draw();
     if (titleTextKoro2_) titleTextKoro2_->Draw();
     if (titleTextBi2_) titleTextBi2_->Draw();
+    
+    // パーティクルの描画 (Zバッファ無効・加算合成など)
+    if (ambientParticles_) ambientParticles_->Draw();
+    
     promptController_.Draw();
 
 }
