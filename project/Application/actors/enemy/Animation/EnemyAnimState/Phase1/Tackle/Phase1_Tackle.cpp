@@ -48,7 +48,7 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
                 enemy->GetBodyOffset(i) = { 0,0,0 };
             }
             if (auto effects = enemy->GetTackleEffects()) {
-                effects->StartTelegraph(globalT.translate, globalT.rotate.y, 300.0f, 10.0f);
+                effects->StartTelegraph(globalT.translate, globalT.rotate.y, 300.0f, 20.0f);
             }
         }
         break;
@@ -123,7 +123,7 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
                  currentPhase_ = Phase::Aim;
                  stateTimer_ = 0.0f;
                  if (auto effects = enemy->GetTackleEffects()) {
-                     effects->StartTelegraph(globalT.translate, globalT.rotate.y, 300.0f, 10.0f);
+                     effects->StartTelegraph(globalT.translate, globalT.rotate.y, 300.0f, 20.0f);
                  }
              }
         }

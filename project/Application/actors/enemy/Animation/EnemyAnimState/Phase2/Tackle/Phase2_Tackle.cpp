@@ -62,7 +62,7 @@ void Phase2_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
             rushDir_ = Math::Normalize(toTarget);
 
             if (auto effects = enemy->GetTackleEffects()) {
-                effects->StartTelegraph(headT->translate, headT->rotate.y, 300.0f, 6.0f);
+                effects->StartTelegraph(headT->translate, headT->rotate.y, 300.0f, 20.0f);
             }
 
             isTargetLocked_ = true;
