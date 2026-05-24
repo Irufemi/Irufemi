@@ -588,19 +588,44 @@ void Building::ClearAndAddSingleBuilding(const Vector3& position) {
         }
     }
     instances_.clear();
+
+    int minF = (std::max)(1, params_.minFloors);
+    int maxF = (std::max)(minF, params_.maxFloors);
+    float floorHRatio = (std::max)(0.1f, params_.floorHeightRatio);
+
+    std::random_device seed_gen;
+    std::mt19937 engine(seed_gen());
+    std::uniform_int_distribution<int> distFloors(minF, maxF);
+    std::uniform_real_distribution<float> distScaleXZ(params_.minScaleXZ, params_.maxScaleXZ);
+    std::uniform_real_distribution<float> distRot(-3.14159265f, 3.14159265f);
+
+    float scaleXZ = distScaleXZ(engine);
+    int floorCount = distFloors(engine);
+    float floorH = scaleXZ * floorHRatio;
+    float scaleY = floorCount * floorH;
+
     BuildingInstance inst;
-    int floorCount = 5; // チュートリアル用の小さめのビル
-    float scaleY = floorCount * (3.0f * params_.floorHeightRatio);
-    inst.position = { position.x, scaleY / 2.0f, position.z };
-    inst.scale = { 3.0f, scaleY, 3.0f };
+    inst.scale = { scaleXZ, scaleY, scaleXZ };
     inst.floorCount = floorCount;
-    inst.rotate = { 0.0f, 0.0f, 0.0f };
+    inst.rotate = { 0.0f, distRot(engine), 0.0f };
     inst.hp = params_.buildingHp; 
     inst.isBlownAway = false;
     inst.isDestroyed = false;
     inst.disappearTimer = 0.0f;
     inst.blowVelocity = {0.0f, 0.0f, 0.0f};
     inst.angularVelocity = {0.0f, 0.0f, 0.0f};
+
+    // InGameと同様の出現演出
+    inst.isSpawning = true;
+    inst.spawnTimer = 0.0f;
+    if (params_.spawnSpeed > 0.0f) {
+        inst.spawnDuration = scaleY / params_.spawnSpeed;
+    } else {
+        inst.spawnDuration = 2.0f;
+    }
+    inst.targetPosition = { position.x, scaleY / 2.0f, position.z };
+    inst.initialY = inst.targetPosition.y - scaleY;
+    inst.position = { position.x, inst.initialY, position.z };
 
     inst.voxelSystem = AllocateVoxelSystem();
 
