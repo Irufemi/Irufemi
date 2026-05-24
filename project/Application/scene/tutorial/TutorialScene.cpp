@@ -357,6 +357,8 @@ void TutorialScene::CheckEnemyToPlayerCollisions() {
         if (!part || part->IsCompletelyDead()) return;
         OBB partOBB = part->GetOBB();
         if (Collision::IsOBBSphereCollision(partOBB, playerColliderSphere)) {
+            bool isTackle = (boss_->GetState() == EnemyState::Attack_Tackle);
+
             // 押し出し処理
             Vector3 diff = Math::Subtract(player_->GetTranslate(), partOBB.center);
             float bestPushEval = 1e10f;
@@ -373,8 +375,8 @@ void TutorialScene::CheckEnemyToPlayerCollisions() {
                 float evalPenetration = 0.0f;
                 Vector3 pushDir = {0.0f, 0.0f, 0.0f};
 
-                if (axis == 0) {
-                    // X軸（左右）: 常にボス全体の中心から見て「外側」へ逃がす
+                if (isTackle && axis == 0) {
+                    // --- 突進中専用：X軸（左右）へ強制的に逃がす ---
                     Vector3 bossPos = boss_->GetTargetPosition();
                     Vector3 diffFromBoss = Math::Subtract(player_->GetTranslate(), bossPos);
                     float signX = (Math::Dot(diffFromBoss, partOBB.orientations[0]) >= 0.0f) ? 1.0f : -1.0f;
@@ -387,17 +389,21 @@ void TutorialScene::CheckEnemyToPlayerCollisions() {
                         pushDir = Math::Multiply(-1.0f, partOBB.orientations[0]);
                     }
                     
-                    // 押し出しを強くする（完全にボスの判定外へ弾き出すためのボーナス）
-                    actualPenetration += 3.0f;
-                    
+                    actualPenetration += 3.0f; // 外側へ弾き出すボーナス
                     evalPenetration = actualPenetration;
                 } else {
-                    // Z軸（前後）
+                    // --- 通常時の押し出し（突進中のZ軸も含む） ---
                     actualPenetration = (halfSize + playerColliderSphere.radius) - std::abs(proj);
                     float sign = (proj >= 0.0f) ? 1.0f : -1.0f;
                     pushDir = Math::Multiply(sign, partOBB.orientations[axis]);
-                    // Z軸へは絶対に押し出されないよう超特大の評価値にして避ける
-                    evalPenetration = actualPenetration * 1000.0f;
+                    
+                    if (isTackle && axis == 2) {
+                        // 突進中はZ軸へ絶対に押し出されないようペナルティ
+                        evalPenetration = actualPenetration * 1000.0f;
+                    } else {
+                        // 通常はそのままの距離で評価
+                        evalPenetration = actualPenetration;
+                    }
                 }
 
                 if (actualPenetration > 0.0f && evalPenetration < bestPushEval) {
@@ -438,6 +444,7 @@ void TutorialScene::CheckPlayerToEnemyCollisions() {
             int damage = player_->GetDamageMelee();
             if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMeleeChargeMultiplier());
             if (part->ApplyDamage(damage)) {
+                player_->OnMeleeHit();
                 hasHitMelee_ = true;
                 if (part->GetHP() <= 0) {
                     part->SetHP(100); // チュートリアル中は部位が壊れないようにHPを回復
