@@ -132,6 +132,22 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     // ★追加: 死亡待機中の自爆前光線
     deathGlowParticle_ = std::make_unique<GPUParticleSystem>();
     deathGlowParticle_->Initialize("resources/gradationLine.png");
+
+    // SEの初期化
+    seHammer_ = std::make_unique<Se>();
+    seHammer_->Initialize("resources/SE/player/hammer.mp3", "Player_Hammer", 0.2f);
+
+    seHammerHit_ = std::make_unique<Se>();
+    seHammerHit_->Initialize("resources/SE/player/hammer_hit.mp3", "Player_HammerHit", 0.2f);
+
+    seMissileHit_ = std::make_unique<Se>();
+    seMissileHit_->Initialize("resources/SE/player/missile.wav", "Player_MissileHit", 0.2f);
+
+    seKarakuri_ = std::make_unique<Se>();
+    seKarakuri_->Initialize("resources/SE/player/karakuri.wav", "Player_Karakuri", 0.2f, true);
+
+    seCooldown_ = std::make_unique<Se>();
+    seCooldown_->Initialize("resources/SE/player/cooldown.mp3", "Player_Cooldown", 0.2f);
 }
 
 void Player::Update() {
@@ -1159,6 +1175,8 @@ void Player::HandleAttack() {
             }
         } else {
             attackState_ = AttackState::kAttacking;
+            if (seHammer_) seHammer_->Play();
+            hasPlayedHammerHitThisAttack_ = false;
             attackActiveTimer_ = kAttackDuration;
             attackCollision_.isActive = true;
             currentChargeRate_ = static_cast<float>(chargeTimer_) / kMaxChargeTime;
@@ -1246,9 +1264,13 @@ void Player::HandleSkill() {
 
     if (input_->IsKeyDown('E')) {
         if (!isKarakuriCharged_) {
+            if (karakuriChargeTimer_ == 0 && seKarakuri_) {
+                seKarakuri_->Play(true);
+            }
             karakuriChargeTimer_++;
             if (karakuriChargeTimer_ >= kKarakuriChargeTime) {
                 isKarakuriCharged_ = true;
+                if (seKarakuri_) seKarakuri_->Stop();
                 karakuriChargeTimer_ = 0;
                 karakuriActiveTimer_ = kKarakuriActiveTime;
 
@@ -1292,7 +1314,12 @@ void Player::HandleSkill() {
             }
         }
     } else {
-        if (!isKarakuriCharged_) karakuriChargeTimer_ = 0;
+        if (!isKarakuriCharged_) {
+            if (karakuriChargeTimer_ > 0 && seKarakuri_) {
+                seKarakuri_->Stop();
+            }
+            karakuriChargeTimer_ = 0;
+        }
     }
 
 #ifdef USE_IMGUI
@@ -1327,6 +1354,7 @@ void Player::HandleSkill() {
                 isMachineGunSkillActive_ = false;
             } else if (skillDurationTimer_ <= 0 && skillCooldownTimer_ > 0) {
                 cooldownWarningTimer_ = 60;
+                if (seCooldown_) seCooldown_->Play();
             }
         }
     }
@@ -1336,10 +1364,19 @@ void Player::HitAndKnockback(Enemy* enemy) {
     status_.HitAndKnockback(enemy, translate_);
 }
 
+void Player::OnMeleeHit() {
+    if (!hasPlayedHammerHitThisAttack_) {
+        if (seHammer_) seHammer_->Stop();
+        if (seHammerHit_) seHammerHit_->Play();
+        hasPlayedHammerHitThisAttack_ = true;
+    }
+}
+
 void Player::PlayExplosion(const Vector3& position, float scale) {
     for (auto& effect : explosionEffects_) {
         if (!effect->IsActive()) {
             effect->Play(position, { 0.0f, 0.0f, 0.0f }, { scale, scale, scale });
+            if (seMissileHit_) seMissileHit_->Play();
             break; // 同時に1つの着弾で1つのみ再生
         }
     }

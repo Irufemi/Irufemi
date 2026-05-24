@@ -7,6 +7,7 @@
 #include "PlayerStatus.h" 
 #include <memory>
 #include <vector>
+#include "Resource/Audio/Se.h"
 
 // 前方宣言
 class Camera;
@@ -84,6 +85,8 @@ public:
 
     void HitAndKnockback(Enemy* enemy);
 
+    void OnMeleeHit();
+
     int GetDamageMelee() const { return damageMelee_; }
     float GetDamageMeleeChargeMultiplier() const { return damageMeleeChargeMultiplier_; }
     int GetDamageMachineGun() const { return damageMachineGun_; }
@@ -140,6 +143,12 @@ private:
     int karakuriActiveTimer_ = 0;
     const int kKarakuriActiveTime = 1200;
 
+    std::unique_ptr<Se> seHammer_;
+    std::unique_ptr<Se> seHammerHit_;
+    std::unique_ptr<Se> seMissileHit_;
+    std::unique_ptr<Se> seKarakuri_;
+    std::unique_ptr<Se> seCooldown_;
+
     Vector3 scale_ = { 0.3f, 0.5f, 0.3f };
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
     Vector3 translate_ = { 0.0f, 0.0f, -50.0f };
@@ -188,6 +197,7 @@ private:
     static constexpr int kMinAmmoToRestart = 5; // 再発射に必要な最低残弾数
 
     bool isMachineGunSkillActive_ = false; // 現在のスキルが機関銃かミサイルか
+    bool hasPlayedHammerHitThisAttack_ = false;
 
     // --- 死亡時の演出用変数 ---
     int deathTimer_ = 0;

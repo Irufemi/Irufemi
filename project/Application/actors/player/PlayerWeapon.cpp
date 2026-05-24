@@ -52,6 +52,12 @@ void PlayerWeapon::Initialize() {
     missileFire_->SetCullingEnabled(false);
     missileFire_->SetBlend(BlendMode::kBlendModeAdd);
 
+    seShooting_ = std::make_unique<Se>();
+    seShooting_->Initialize("resources/SE/player/shooting.wav", "Player_Shooting", 0.1f, true);
+
+    seMissileShot_ = std::make_unique<Se>();
+    seMissileShot_->Initialize("resources/SE/player/missile_shot.mp3", "Player_MissileShot", 0.2f);
+
     missileSmoke_ = std::make_unique<ParticleSystem>();
     missileSmoke_->Initialize("resources/circle.png", ParticleType::kMissileSmoke);
     missileSmoke_->SetCullingEnabled(false);
@@ -456,9 +462,15 @@ void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector
     if (machineGunActiveTimer_ > 0) {
         // 残弾が尽きたら強制停止
         if (machineGunAmmo_ <= 0) {
+            if (machineGunActiveTimer_ > 0 && seShooting_) {
+                seShooting_->Stop();
+            }
             machineGunActiveTimer_ = 0;
         } else {
             machineGunActiveTimer_--;
+            if (machineGunActiveTimer_ <= 0 && seShooting_) {
+                seShooting_->Stop();
+            }
             machineGunFireTimer_--;
 
             if (machineGunFireTimer_ <= 0) {
@@ -719,13 +731,16 @@ void PlayerWeapon::EjectCartridge(const Vector3& startPos, bool isRight, const V
 void PlayerWeapon::StartMachineGunSkill() {
     machineGunActiveTimer_ = 180;
     machineGunVibrationScale_ = 0.1f;
+    if (seShooting_) seShooting_->Play(true);
 }
 
 void PlayerWeapon::StopMachineGunSkill() {
     machineGunActiveTimer_ = 0;
+    if (seShooting_) seShooting_->Stop();
 }
 
 void PlayerWeapon::FireMissileSkill(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& targetPos) {
+    if (seMissileShot_) seMissileShot_->Play();
     missileVibrationTimer_ = kMissileVibrationDuration;
 
     float sinY = std::sin(playerRotate.y);

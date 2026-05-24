@@ -490,11 +490,12 @@ void GameScene::CheckEnemyToPlayerCollisions() {
   auto checkHit = [&](auto *part) {
     if (!part || part->IsCompletelyDead())
       return;
-    if (Collision::IsOBBSphereCollision(part->GetOBB(), playerColliderSphere)) {
+    OBB partOBB = part->GetOBB();
+    if (Collision::IsOBBSphereCollision(partOBB, playerColliderSphere)) {
       if (player_->ApplyDamage(kDamagePartToPlayer)) {
         // 吹き飛んでいる状態のとき、めり込んで連続ダメージになるのを防ぐため部位を反射（バウンド）させる
         if (part->IsBlownAway()) {
-          Vector3 toPlayer = Math::Subtract(playerColliderSphere.center, part->GetOBB().center);
+          Vector3 toPlayer = Math::Subtract(playerColliderSphere.center, partOBB.center);
           toPlayer.y = 0.0f;
           Vector3 normal = Math::Normalize(toPlayer);
           if (Math::Length(normal) < kMathEpsilon) normal = {0.0f, 0.0f, 1.0f};
@@ -508,6 +509,71 @@ void GameScene::CheckEnemyToPlayerCollisions() {
             part->SetBlowVelocity(Math::Multiply(-2.0f, normal));
           }
         }
+      }
+      bool isTackle = (boss_->GetState() == EnemyState::Attack_Tackle);
+
+      // 押し出し処理
+      Vector3 diff = Math::Subtract(player_->GetTranslate(), partOBB.center);
+      float bestPushEval = 1e10f;
+      float bestActualPushDist = 0.0f;
+      Vector3 bestPushDir = {0.0f, 0.0f, 0.0f};
+
+      for (int axis = 0; axis < 3; ++axis) {
+        if (axis == 1) continue; // Y軸除外
+        
+        float proj = Math::Dot(diff, partOBB.orientations[axis]);
+        float halfSize = (axis == 0) ? partOBB.size.x : partOBB.size.z;
+        
+        float actualPenetration = 0.0f;
+        float evalPenetration = 0.0f;
+        Vector3 pushDir = {0.0f, 0.0f, 0.0f};
+
+        if (isTackle && axis == 0) {
+            // --- 突進中専用：X軸（左右）へ強制的に逃がす ---
+            Vector3 bossPos = boss_->GetTargetPosition();
+            Vector3 diffFromBoss = Math::Subtract(player_->GetTranslate(), bossPos);
+            float signX = (Math::Dot(diffFromBoss, partOBB.orientations[0]) >= 0.0f) ? 1.0f : -1.0f;
+            
+            if (signX > 0.0f) {
+                actualPenetration = (halfSize + playerColliderSphere.radius) - proj;
+                pushDir = partOBB.orientations[0];
+            } else {
+                actualPenetration = (halfSize + playerColliderSphere.radius) + proj;
+                pushDir = Math::Multiply(-1.0f, partOBB.orientations[0]);
+            }
+            
+            actualPenetration += 3.0f; // 外側へ弾き出すボーナス
+            evalPenetration = actualPenetration;
+        } else {
+            // --- 通常時の押し出し（突進中のZ軸も含む） ---
+            actualPenetration = (halfSize + playerColliderSphere.radius) - std::abs(proj);
+            float sign = (proj >= 0.0f) ? 1.0f : -1.0f;
+            pushDir = Math::Multiply(sign, partOBB.orientations[axis]);
+            
+            if (isTackle && axis == 2) {
+                // 突進中はZ軸へ絶対に押し出されないようペナルティ
+                evalPenetration = actualPenetration * 1000.0f;
+            } else {
+                // 通常はそのままの距離で評価
+                evalPenetration = actualPenetration;
+            }
+        }
+
+        if (actualPenetration > 0.0f && evalPenetration < bestPushEval) {
+            bestPushEval = evalPenetration;
+            bestActualPushDist = actualPenetration;
+            bestPushDir = pushDir;
+        }
+      }
+      
+      if (bestActualPushDist > 0.0f && bestPushEval < 1e9f) {
+          bestPushDir.y = 0.0f;
+          if (Math::Length(bestPushDir) > 0.001f) {
+              bestPushDir = Math::Normalize(bestPushDir);
+              Vector3 newPos = Math::Add(player_->GetTranslate(), Math::Multiply(bestActualPushDist, bestPushDir));
+              player_->SetTranslate(newPos);
+              playerColliderSphere.center = player_->GetCollider().center; // 更新
+          }
       }
     }
   };
@@ -536,6 +602,7 @@ void GameScene::CheckPlayerToEnemyCollisions() {
       if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMeleeChargeMultiplier());
 
       if (part->ApplyDamage(damage)) {
+        player_->OnMeleeHit();
         if (part->GetHP() <= 0) {
           Vector3 attackDir = Math::Normalize(
               Math::Subtract(part->GetTransform().translate, playerPos));

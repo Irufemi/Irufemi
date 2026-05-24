@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Irufemi.h"
+#include "Resource/Audio/Se.h"
 #include <memory>
 #include <vector>
 #include <cstdlib>
@@ -134,6 +135,9 @@ private:
 
     int machineGunActiveTimer_ = 0;
     int machineGunFireTimer_ = 0;
+
+    std::unique_ptr<Se> seShooting_;
+    std::unique_ptr<Se> seMissileShot_;
 
     // --- 機関銃 弾薬（アモ）システム ---
     static const int kMaxMachineGunAmmo = 60; // 最大弾薬数（60連射分）
