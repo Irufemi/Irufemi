@@ -100,7 +100,7 @@ void EnemyTackleEffects::FireRushWave(const Vector3& position) {
 void EnemyTackleEffects::FireCrashWave(const Vector3& position) {
     TackleWave wave;
     wave.transform.translate = position;
-    wave.transform.translate.y += 0.1f;
+    wave.transform.translate.y = position.y - 2.4f; // 足元（地面）に配置する
     wave.transform.rotate = { 0, 0, 0 };
     wave.transform.scale = { kCrashWaveStartScale, 0.01f, kCrashWaveStartScale };
     wave.timer = 0.0f;
