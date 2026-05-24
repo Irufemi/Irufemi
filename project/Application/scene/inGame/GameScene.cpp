@@ -305,10 +305,37 @@ void GameScene::Update() {
   float screenH = static_cast<float>(engine_->GetClientHeight());
   float uiScale = screenH / 720.0f;
 
-  if (operationNormalSprite_) { operationNormalSprite_->SetUIScale(uiScale); operationNormalSprite_->Update(); }
-  if (operationChargedSprite_) { operationChargedSprite_->SetUIScale(uiScale); operationChargedSprite_->Update(); }
-  if (operationNormalSprite1st_) { operationNormalSprite1st_->SetUIScale(uiScale); operationNormalSprite1st_->Update(); }
-  if (operationChargedSprite1st_) { operationChargedSprite1st_->SetUIScale(uiScale); operationChargedSprite1st_->Update(); }
+  if (operationNormalSprite_) { 
+      operationNormalSprite_->SetUIScale(uiScale);
+      operationNormalSprite_->SetPositionTopLeft(10.0f * uiScale, screenH - 280.0f * uiScale);
+      operationNormalSprite_->Update(); 
+  }
+  if (operationChargedSprite_) { 
+      operationChargedSprite_->SetUIScale(uiScale);
+      operationChargedSprite_->SetPositionTopLeft(10.0f * uiScale, screenH - 280.0f * uiScale);
+      operationChargedSprite_->Update(); 
+  }
+  if (operationNormalSprite1st_) { 
+      operationNormalSprite1st_->SetUIScale(uiScale);
+      operationNormalSprite1st_->SetPositionTopLeft(460.0f * uiScale, screenH - 160.0f * uiScale);
+      operationNormalSprite1st_->Update(); 
+  }
+  if (operationChargedSprite1st_) { 
+      operationChargedSprite1st_->SetUIScale(uiScale);
+      operationChargedSprite1st_->SetPositionTopLeft(460.0f * uiScale, screenH - 160.0f * uiScale);
+      operationChargedSprite1st_->Update(); 
+  }
+
+  if (numberSpriteTens_) {
+      numberSpriteTens_->SetUIScale(uiScale);
+      // 元々 X=340, Y=screenH - 280
+      numberSpriteTens_->SetPositionTopLeft(340.0f * uiScale, screenH - 280.0f * uiScale);
+  }
+  if (numberSpriteOnes_) {
+      numberSpriteOnes_->SetUIScale(uiScale);
+      // 元々 X=365, Y=screenH - 280
+      numberSpriteOnes_->SetPositionTopLeft(365.0f * uiScale, screenH - 280.0f * uiScale);
+  }
 
   if (numberSpriteTens1st_) {
       numberSpriteTens1st_->SetUIScale(uiScale);

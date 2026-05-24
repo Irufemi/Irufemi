@@ -108,7 +108,7 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
     float baseX = screenW - 65.0f * uiScale; 
     float baseY = screenH - 45.0f * uiScale; 
     for (int i = 0; i < dots_.size(); ++i) {
-        dots_[i]->SetRadius(16.0f * uiScale);
+        dots_[i]->SetRadius(4.0f * uiScale);
         dots_[i]->SetCenter({baseX + i * 20.0f * uiScale, baseY, 0.0f});
     }
 
