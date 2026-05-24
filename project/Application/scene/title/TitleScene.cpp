@@ -20,6 +20,13 @@ TitleScene::~TitleScene() {
         pp->RemoveActiveMode(PostProcessMode::Vignette);
         pp->RemoveActiveMode(PostProcessMode::Bloom);
         pp->RemoveActiveMode(PostProcessMode::ToneMapping);
+        pp->RemoveActiveMode(PostProcessMode::HSV);
+        
+        // GameScene等に影響が出ないよう、変更したパラメータをデフォルトに戻す
+        pp->GetHSVParams().saturation = 0.0f;
+        pp->GetBloomParams().intensity = 1.0f;
+        pp->GetBloomParams().threshold = 0.8f;
+        pp->GetVignetteParams().scale = 16.0f;
     }
 }
 

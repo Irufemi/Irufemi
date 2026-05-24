@@ -17,6 +17,12 @@ GameOverScene::~GameOverScene() {
         pp->RemoveActiveMode(PostProcessMode::Grayscale);
         pp->RemoveActiveMode(PostProcessMode::Vignette);
         pp->RemoveActiveMode(PostProcessMode::Bloom);
+
+        // 他のシーンに影響が出ないよう、変更したパラメータをデフォルトに戻す
+        pp->GetVignetteParams().scale = 16.0f;
+        pp->GetVignetteParams().power = 0.8f;
+        pp->GetBloomParams().threshold = 0.8f;
+        pp->GetBloomParams().intensity = 1.0f;
     }
 
     // 画面のクリアカラーをデフォルト（Cornflower blue）に戻す
@@ -32,14 +38,14 @@ void GameOverScene::Initialize(IrufemiEngine* engine) {
     engine_->GetCameraManager()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
     engine_->GetCameraManager()->GetActiveCamera()->UpdateMatrix();
 
-    // 画面のクリアカラーを真っ黒に変更（トランジション時の背景色フラッシュ対策）
-    engine_->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    // 画面のクリアカラーを真っ暗な深紅に変更（絶望感・血のイメージ）
+    engine_->SetClearColor(0.05f, 0.0f, 0.0f, 1.0f);
 
     // 「GameOver...」文字の初期化
     goTextG_ = std::make_unique<ObjClass>();
     goTextG_->Initialize("gameOver/text_G.obj");
     goTextA_ = std::make_unique<ObjClass>();
-    goTextA_->Initialize("gameOver/text_q.obj"); // ※ファイル名text_q.objはaとして使用
+    goTextA_->Initialize("gameOver/text_a.obj"); 
     goTextM_ = std::make_unique<ObjClass>();
     goTextM_->Initialize("gameOver/text_m.obj");
     goTextE1_ = std::make_unique<ObjClass>();
@@ -68,8 +74,7 @@ void GameOverScene::Initialize(IrufemiEngine* engine) {
 
     // ポストプロセスの有効化（絶望感の演出）
     if (auto* pp = engine_->GetPostProcessManager()) {
-        // ※ここではClearActiveModesを呼ばない。SceneTransitionのエフェクトを消さないため。
-        pp->AddActiveMode(PostProcessMode::Grayscale);
+        // ※Grayscaleは火の粉（Embers）の赤みを消してしまうため削除
         pp->AddActiveMode(PostProcessMode::Vignette);
         pp->AddActiveMode(PostProcessMode::Bloom);
         pp->GetVignetteParams().scale = 12.0f;

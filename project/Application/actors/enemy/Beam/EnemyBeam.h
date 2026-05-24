@@ -43,7 +43,12 @@ public:
     void SetTelegraphColor(const Vector4& color) { if (telegraphObj_) telegraphObj_->SetColor(color); }
 
     /** @brief 攻撃ビームの表示設定 */
-    void SetAttackActive(bool active) { isAttackActive_ = active; }
+    void SetAttackActive(bool active) { 
+        isAttackActive_ = active; 
+        if (!active && gpuParticle_) {
+            gpuParticle_->SetEmit(false);
+        }
+    }
     /** @brief 攻撃ビームがアクティブか */
     bool IsAttackActive() const { return isAttackActive_; }
     /** @brief 攻撃ビームの太さ（直径）設定 */

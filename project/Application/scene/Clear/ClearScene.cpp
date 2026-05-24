@@ -16,6 +16,10 @@ ClearScene::~ClearScene() {
         auto* pp = engine_->GetPostProcessManager();
         pp->RemoveActiveMode(PostProcessMode::Bloom);
         pp->RemoveActiveMode(PostProcessMode::HSV);
+        
+        // 他のシーンに影響が出ないよう、変更したパラメータをデフォルトに戻す
+        pp->GetHSVParams().saturation = 0.0f;
+        pp->GetHSVParams().value = 0.0f;
     }
 }
 

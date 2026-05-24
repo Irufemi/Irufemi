@@ -375,6 +375,21 @@ void Enemy::Update(Player *player) {
     }
   }
 
+  // --- 死んだ部位の攻撃強制キャンセル ---
+  // アニメーションステートの進行にかかわらず、死んだ頭部の攻撃は毎フレーム強制的に無効化する
+  for (int i = 0; i < 3; ++i) {
+      if (IsHeadDead(i)) {
+          if (beams_[i]) {
+              beams_[i]->SetAttackActive(false);
+              beams_[i]->SetTelegraphActive(false);
+              beams_[i]->SetChargeSphereActive(false);
+          }
+          if (bombs_[i]) {
+              bombs_[i]->Cancel();
+          }
+      }
+  }
+
   // --- UI 更新 ---
   if (hpBar_) {
       hpBar_->Update(this);
