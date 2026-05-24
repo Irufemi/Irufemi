@@ -89,14 +89,26 @@ void LoadingScreen::Update(float deltaTime) {
 void LoadingScreen::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
+    // ウィンドウのリサイズに対応するため、描画時に画面サイズに合わせて位置とサイズを動的に更新する
+    float screenW = static_cast<float>(engine->GetClientWidth());
+    float screenH = static_cast<float>(engine->GetClientHeight());
+
     if (bgSprite_) {
+        bgSprite_->SetSize(screenW, screenH);
         bgSprite_->Draw();
     }
     
     if (nowLoadingText_) {
+        nowLoadingText_->SetPosition(screenW - 80.0f, screenH - 45.0f);
         nowLoadingText_->Draw();
     }
     
+    float baseX = screenW - 65.0f; 
+    float baseY = screenH - 45.0f; 
+    for (int i = 0; i < dots_.size(); ++i) {
+        dots_[i]->SetCenter({baseX + i * 20.0f, baseY, 0.0f});
+    }
+
     for (int i = 0; i < dotCount_; ++i) {
         if (i < dots_.size()) {
             dots_[i]->Draw();
