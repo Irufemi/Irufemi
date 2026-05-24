@@ -26,7 +26,7 @@ public:
      * @brief 毎フレーム更新（HP割合に基づいてバーの幅と色を更新）
      * @param enemy 敵のポインタ
      */
-    void Update(const Enemy* enemy);
+    void Update(const Enemy* enemy, int screenWidth, int screenHeight);
 
     /**
      * @brief スプライト描画（ApplySpritePSO の後に呼ぶこと）

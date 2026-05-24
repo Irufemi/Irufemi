@@ -114,6 +114,11 @@ public: //メンバ関数
     void SetSize(const float& width, const float& height);
 
     /**
+     * @brief UIスケールを設定（解像度対応用）
+     */
+    void SetUIScale(float scale) { uiScale_ = scale; isDirty_ = true; }
+
+    /**
      * @brief アンカーポイント（原点位置）を設定
      * @param[in] ax X座標 (0:左, 0.5:中央, 1:右)
      * @param[in] ay Y座標 (0:上, 0.5:中央, 1:下)
@@ -186,6 +191,7 @@ private:
     // 行列更新の最適化用
     bool isDirty_ = true;
     bool isTopMost_ = false; // 最前面UIフラグ
+    float uiScale_ = 1.0f;   // UIスケール
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
 };

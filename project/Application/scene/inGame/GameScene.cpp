@@ -301,11 +301,29 @@ void GameScene::Update() {
   BaseScene::Update();
   engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
 
-  if (operationNormalSprite_) operationNormalSprite_->Update();
-  if (operationChargedSprite_) operationChargedSprite_->Update();
-  if (operationNormalSprite1st_) operationNormalSprite1st_->Update();
-  if (operationChargedSprite1st_) operationChargedSprite1st_->Update();
-  if (cooldownWarningSprite_) cooldownWarningSprite_->Update();
+  float screenW = static_cast<float>(engine_->GetClientWidth());
+  float screenH = static_cast<float>(engine_->GetClientHeight());
+  float uiScale = screenH / 720.0f;
+
+  if (operationNormalSprite_) { operationNormalSprite_->SetUIScale(uiScale); operationNormalSprite_->Update(); }
+  if (operationChargedSprite_) { operationChargedSprite_->SetUIScale(uiScale); operationChargedSprite_->Update(); }
+  if (operationNormalSprite1st_) { operationNormalSprite1st_->SetUIScale(uiScale); operationNormalSprite1st_->Update(); }
+  if (operationChargedSprite1st_) { operationChargedSprite1st_->SetUIScale(uiScale); operationChargedSprite1st_->Update(); }
+
+  if (numberSpriteTens1st_) {
+      numberSpriteTens1st_->SetUIScale(uiScale);
+      numberSpriteTens1st_->SetPositionTopLeft(screenW - 85.0f * uiScale, screenH - 56.0f * uiScale);
+  }
+  if (numberSpriteOnes1st_) {
+      numberSpriteOnes1st_->SetUIScale(uiScale);
+      numberSpriteOnes1st_->SetPositionTopLeft(screenW - 70.0f * uiScale, screenH - 56.0f * uiScale);
+  }
+
+  if (cooldownWarningSprite_) {
+      cooldownWarningSprite_->SetUIScale(uiScale);
+      cooldownWarningSprite_->SetPositionCenter(screenW / 2.0f + 15.0f * uiScale, screenH / 2.0f + 80.0f * uiScale);
+      cooldownWarningSprite_->Update();
+  }
 
   if (numberSpriteTens_ && numberSpriteOnes_ && numberSpriteTens1st_ && numberSpriteOnes1st_) {
       int remainingSeconds = 0;

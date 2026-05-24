@@ -641,6 +641,11 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
     postProcessManager_->SetDepthSrvHandle(
         dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_));
   }
+  
+  // 4. カメラの解像度更新 (3D空間の歪み防止)
+  if (cameraManager_) {
+      cameraManager_->OnResize(width, height);
+  }
 }
 
 void IrufemiEngine::SetCursorLocked(bool lock) {

@@ -392,7 +392,9 @@ void Enemy::Update(Player *player) {
 
   // --- UI 更新 ---
   if (hpBar_) {
-      hpBar_->Update(this);
+      int screenW = engine_ ? engine_->GetClientWidth() : 1280;
+      int screenH = engine_ ? engine_->GetClientHeight() : 720;
+      hpBar_->Update(this, screenW, screenH);
   }
 
   auto updatePartBar = [&](int index, auto* part, int maxHp) {
@@ -431,6 +433,9 @@ void Enemy::Update(Player *player) {
 
       float pulse = std::sin(warningTimer_ * 10.0f); // 激しい脈動 (注意マーク用)
       float slowPulse = std::sin(warningTimer_ * 4.0f); // ゆっくりめの脈動 (矢印点滅用)
+      
+      float screenH = engine_ ? static_cast<float>(engine_->GetClientHeight()) : 720.0f;
+      float uiScale = screenH / 720.0f;
       float centerX = engine_ ? (static_cast<float>(engine_->GetClientWidth()) / 2.0f) : 640.0f;
 
       if (isWarningActive_) {
@@ -439,10 +444,11 @@ void Enemy::Update(Player *player) {
               float baseScale = 180.0f;
               float currentScale = baseScale * (1.0f + 0.15f * pulse);
               warningSprite_->SetSize(currentScale, currentScale);
+              warningSprite_->SetUIScale(uiScale);
 
               float alpha = 1.0f; 
               warningSprite_->SetColor(Vector4{ 1.0f, 1.0f, 1.0f, alpha });
-              warningSprite_->SetPositionCenter(centerX, 200.0f);
+              warningSprite_->SetPositionCenter(centerX, 200.0f * uiScale);
               warningSprite_->Update();
           }
 
@@ -457,8 +463,8 @@ void Enemy::Update(Player *player) {
               float slideSpeed = 1.5f;
               float slideFactor = std::fmod(warningTimer_ * slideSpeed + phaseOffset, 1.0f);
               
-              float startY = 140.0f;
-              float endY = 40.0f;
+              float startY = 140.0f * uiScale;
+              float endY = 40.0f * uiScale;
               float arrowY = startY + (endY - startY) * slideFactor;
 
               // スライドの開始・終了時になめらかにフェードイン・フェードアウト
@@ -471,8 +477,9 @@ void Enemy::Update(Player *player) {
 
               float finalArrowAlpha = arrowAlpha * slideFade;
 
+              arrow->SetUIScale(uiScale);
               arrow->SetColor(Vector4{ 1.0f, 0.2f, 0.2f, finalArrowAlpha });
-              arrow->SetPositionCenter(centerX + offsetX, arrowY);
+              arrow->SetPositionCenter(centerX + offsetX * uiScale, arrowY);
               arrow->Update();
           };
 

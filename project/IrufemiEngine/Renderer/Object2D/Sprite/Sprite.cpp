@@ -124,7 +124,8 @@ void Sprite::Update() {
     // アンカーの変更を頂点へ反映
     ApplyAnchorToVertices();
 
-    // 基本的な行列更新
+    // 基本的な行列更新の前にスケールを適用
+    resource_->transform_.scale = { size_.x * uiScale_, size_.y * uiScale_, 1.0f };
     resource_->UpdateTransform(*activeCam);
 
     // UV 変換(flip → crop → userUV)
@@ -187,9 +188,9 @@ void Sprite::Draw() {
 void Sprite::SetSize(const float& width, const float& height) {
     size_.x = width;
     size_.y = height;
-    // 実サイズはscaleで表現
+    // 実サイズはscaleとuiScale_で表現
     if (resource_) {
-        resource_->transform_.scale = { size_.x, size_.y, 1.0f };
+        resource_->transform_.scale = { size_.x * uiScale_, size_.y * uiScale_, 1.0f };
     }
     isDirty_ = true;
 }

@@ -41,6 +41,26 @@ void PauseScene::Initialize(IrufemiEngine* engine) {
 
 void PauseScene::Update() {
     // 自身でのライトやカメラの更新は行わない（下のシーンのものをそのまま使う）
+    
+    // ウィンドウリサイズに対応するためのUI動的配置
+    float screenW = static_cast<float>(engine_->GetClientWidth());
+    float screenH = static_cast<float>(engine_->GetClientHeight());
+    float uiScale = screenH / 720.0f;
+    
+    if (pauseBgDimmerSprite_) pauseBgDimmerSprite_->SetSize(screenW, screenH);
+    if (pauseTitleSprite_) {
+        pauseTitleSprite_->SetUIScale(uiScale);
+        pauseTitleSprite_->SetPositionCenter(screenW / 2.0f, screenH * 0.3f);
+    }
+    if (pauseBackGameSprite_) {
+        pauseBackGameSprite_->SetUIScale(uiScale);
+        pauseBackGameSprite_->SetPositionCenter(screenW / 2.0f, screenH * 0.5f);
+    }
+    if (pauseBackTitleSprite_) {
+        pauseBackTitleSprite_->SetUIScale(uiScale);
+        pauseBackTitleSprite_->SetPositionCenter(screenW / 2.0f, screenH * 0.65f);
+    }
+
     // UISelectionGroup の更新
     pauseMenuSelection_.Update(engine_->GetInputManager());
 

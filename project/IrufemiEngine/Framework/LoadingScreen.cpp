@@ -92,6 +92,7 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
     // ウィンドウのリサイズに対応するため、描画時に画面サイズに合わせて位置とサイズを動的に更新する
     float screenW = static_cast<float>(engine->GetClientWidth());
     float screenH = static_cast<float>(engine->GetClientHeight());
+    float uiScale = screenH / 720.0f;
 
     if (bgSprite_) {
         bgSprite_->SetSize(screenW, screenH);
@@ -99,14 +100,16 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
     }
     
     if (nowLoadingText_) {
-        nowLoadingText_->SetPosition(screenW - 80.0f, screenH - 45.0f);
+        nowLoadingText_->SetUIScale(uiScale);
+        nowLoadingText_->SetPosition(screenW - 80.0f * uiScale, screenH - 45.0f * uiScale);
         nowLoadingText_->Draw();
     }
     
-    float baseX = screenW - 65.0f; 
-    float baseY = screenH - 45.0f; 
+    float baseX = screenW - 65.0f * uiScale; 
+    float baseY = screenH - 45.0f * uiScale; 
     for (int i = 0; i < dots_.size(); ++i) {
-        dots_[i]->SetCenter({baseX + i * 20.0f, baseY, 0.0f});
+        dots_[i]->SetRadius(16.0f * uiScale);
+        dots_[i]->SetCenter({baseX + i * 20.0f * uiScale, baseY, 0.0f});
     }
 
     for (int i = 0; i < dotCount_; ++i) {

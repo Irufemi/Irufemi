@@ -51,6 +51,11 @@ public:
      */
     void Update();
 
+    /**
+     * @brief ウィンドウリサイズ時に全てのカメラの解像度を更新します
+     */
+    void OnResize(int width, int height);
+
 private:
     std::unordered_map<std::string, std::shared_ptr<Camera>> cameras_;
     std::string activeCameraName_;
