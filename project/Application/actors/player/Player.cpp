@@ -52,6 +52,7 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     // ★追加: キラン☆演出用 plane.obj の初期化
     starObj_ = std::make_unique<ObjClass>();
     starObj_->Initialize("plane.obj"); // ユーザー指定の plane.obj
+    starObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
     starObj_->SetColor({ 5.0f, 5.0f, 1.0f, 1.0f }); // 光る黄色に設定
     starScale_ = { 0.0f, 0.0f, 0.0f };
     starRotationZ_ = 0.0f;
