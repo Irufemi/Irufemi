@@ -393,12 +393,20 @@ void GameScene::Update() {
 void GameScene::Draw() {
   if (skydome_)
     skydome_->Draw();
-  if (field_)
+
+  // プレイヤーが星になって吹っ飛んでいる最中は、巨大な敵やビル・地形がカメラを塞がないよう
+  // 意図的に描画をスキップし、空（Skydome）だけを背景に美しく演出を見せる
+  bool hideObstacles = (player_ && player_->IsBlowingAway());
+
+  if (field_ && !hideObstacles)
     field_->Draw();
+    
   if (player_)
     player_->Draw();
-  if (boss_)
+    
+  if (boss_ && !hideObstacles)
     boss_->Draw(engine_);
+    
   if (player_)
     player_->DrawParticles();
 
@@ -408,7 +416,7 @@ void GameScene::Draw() {
   }
 
   // --- 3DオブジェクトとしてのUI描画（HPバー） ---
-  if (player_) {
+  if (player_ && !hideObstacles) {
     bool isPaused = (engine_->GetSceneManager()->GetCurrent() == "Pause");
     player_->Draw3DUI(boss_.get(), true, isPaused);
   }

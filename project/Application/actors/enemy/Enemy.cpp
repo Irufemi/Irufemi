@@ -141,11 +141,35 @@ void Enemy::Update(Player *player) {
   if (!isDead_) {
     // プレイヤーが死んだらAIの思考を止める（死体蹴り防止）
     bool shouldUpdateAI = (player && !player->IsDead());
-    if (ai_ && !isSandbagMode_ && shouldUpdateAI)
+    if (ai_ && !isSandbagMode_ && shouldUpdateAI) {
       ai_->Update(player, engine_->GetDeltaTime());
+    }
+
+    // --- 追加：自機死亡時に攻撃を即座に中断して待機状態に戻す ---
+    if (player && player->IsDead() && !wasPlayerDeathHandled_) {
+        wasPlayerDeathHandled_ = true;
+        // 現在の形態に応じた待機状態へ強制移行
+        SetState(isPhase2_ ? EnemyState::Phase2 : EnemyState::Idle);
+
+        // 進行中の攻撃やエフェクトを全てキャンセルする
+        for (int i = 0; i < 3; ++i) {
+            if (beams_[i]) {
+                beams_[i]->SetAttackActive(false);
+                beams_[i]->SetTelegraphActive(false);
+                beams_[i]->SetChargeSphereActive(false);
+            }
+            if (bombs_[i]) bombs_[i]->Cancel();
+        }
+        if (stompEffects_) stompEffects_->Cancel();
+        if (tackleEffects_) tackleEffects_->Cancel();
+    }
     
-    if (animation_)
-      animation_->Update(player, 1.0f / 60.0f);
+    if (animation_) {
+        // プレイヤーが死んでいる場合は nullptr を渡す。
+        // これにより、画面奥へと吹き飛んでいく自機の死体を目で追って変な方向を向くのを防ぎ、
+        // アリーナ中央（0,0,0）を堂々と見据える「勝利ポーズ」のような挙動にする。
+        animation_->Update(shouldUpdateAI ? player : nullptr, 1.0f / 60.0f);
+    }
   }
 
 #ifdef USE_IMGUI

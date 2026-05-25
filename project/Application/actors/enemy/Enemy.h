@@ -216,6 +216,9 @@ private:
     bool isWarningActive_ = false;
     float warningTimer_ = 0.0f;
 
+    // 自機死亡時の強制キャンセル制御用フラグ
+    bool wasPlayerDeathHandled_ = false;
+
     // ビネット調整用パラメータ (ImGuiでリアルタイム調整可能)
     float vignetteBaseScale_ = 40.0f;      // 基準クリア領域 (大きいほど赤が薄くなる)
     float vignetteScalePulseWidth_ = 2.0f; // 脈動の振幅

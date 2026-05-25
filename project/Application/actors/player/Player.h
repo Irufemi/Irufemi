@@ -59,6 +59,7 @@ public:
     bool IsDead() const { return status_.IsDead(); }
 
     bool IsDeathAnimationFinished() const { return isDeathAnimationFinished_; }
+    bool IsBlowingAway() const { return deathTimer_ > 0; }
 
     bool ApplyDamage(int damage);
 

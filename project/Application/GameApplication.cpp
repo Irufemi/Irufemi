@@ -31,7 +31,7 @@ const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
     = "InGame"; // デバッグ時はチュートリアルから開始
 #else
-    = "Clear";
+    = "Title";
 #endif
 
 // --- シーン登録処理 ---

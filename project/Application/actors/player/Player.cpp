@@ -323,9 +323,10 @@ void Player::Update() {
             // 「死亡した瞬間のプレイヤーから見て前方40、高さ20」にカメラを固定
             float sY = std::sin(deathYaw_);
             float cY = std::cos(deathYaw_);
+            
             deathCameraPos_ = {
                 translate_.x + sY * 40.0f,
-                translate_.y + 20.0f,
+                translate_.y + 20.0f,          
                 translate_.z + cY * 40.0f
             };
 
