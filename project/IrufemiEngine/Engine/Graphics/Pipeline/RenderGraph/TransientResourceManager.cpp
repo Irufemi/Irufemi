@@ -24,24 +24,40 @@ void TransientResourceManager::Initialize(DirectXCommon* dxCommon, uint64_t heap
 }
 
 void TransientResourceManager::Finalize() {
-    activeResources_.clear();
+    resourcePool_.clear();
     heap_.Reset();
 }
 
 void TransientResourceManager::ResetForFrame() {
-    // 前フレームで作成した PlacedResource はコマンド完了後に安全に破棄されるよう、
-    // ここで dxCommon_->ReleaseAfterFence() のような仕組みを使うか、あるいは単にComPtrを手放す。
-    // RenderGraph はフレームごとに再構築されるため、ひとまずクリアで参照カウントを減らす。
-    // ※実運用では GPUが使用中かどうか Fence で待つか、ReleaseAfterFence キューに入れるのが安全。
-    for (auto& res : activeResources_) {
-        dxCommon_->ReleaseAfterFence(res);
+    // キャッシュしたリソースを使用可能状態にリセットする
+    for (auto& res : resourcePool_) {
+        res.inUse = false;
     }
-    activeResources_.clear();
 }
 
 ID3D12Resource* TransientResourceManager::AcquirePlacedResource(const D3D12_RESOURCE_DESC& desc, uint64_t offset, D3D12_RESOURCE_STATES initialState, const D3D12_CLEAR_VALUE* clearValue) {
     if (!heap_) return nullptr;
 
+    // 1. キャッシュから検索
+    for (auto& res : resourcePool_) {
+        bool clearValueMatch = false;
+        if (!clearValue && !res.hasClearValue) clearValueMatch = true;
+        else if (clearValue && res.hasClearValue && res.clearValue.Format == clearValue->Format) clearValueMatch = true; // 色の完全一致までは今回は省略可能
+
+        if (!res.inUse && res.offset == offset &&
+            res.desc.Width == desc.Width &&
+            res.desc.Height == desc.Height &&
+            res.desc.Format == desc.Format &&
+            res.desc.Flags == desc.Flags &&
+            res.desc.DepthOrArraySize == desc.DepthOrArraySize &&
+            clearValueMatch) {
+            
+            res.inUse = true;
+            return res.resource.Get();
+        }
+    }
+
+    // 2. 見つからなければ新規作成
     Microsoft::WRL::ComPtr<ID3D12Resource> resource;
     HRESULT hr = dxCommon_->GetDevice()->CreatePlacedResource(
         heap_.Get(),
@@ -53,8 +69,19 @@ ID3D12Resource* TransientResourceManager::AcquirePlacedResource(const D3D12_RESO
     );
 
     if (SUCCEEDED(hr)) {
-        activeResources_.push_back(resource);
+        CachedResource cache;
+        cache.desc = desc;
+        cache.offset = offset;
+        cache.resource = resource;
+        cache.inUse = true;
+        resourcePool_.push_back(cache);
         return resource.Get();
     }
+    
+    // エラー時はログを出力
+    char logMsg[256];
+    sprintf_s(logMsg, "TransientResourceManager: CreatePlacedResource failed! Offset: %llu, HeapSize: %llu\n", offset, heapSize_);
+    OutputDebugStringA(logMsg);
+    
     return nullptr;
 }
