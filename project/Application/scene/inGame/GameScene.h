@@ -52,6 +52,7 @@ private:
     static constexpr int kDamagePartToPlayer = 10;           ///< 敵部位接触
     static constexpr int kDamageTackleWaveToPlayer = 10;     ///< 突進の砂煙接触
     static constexpr int kDamageCrashWaveToPlayer = 30;      ///< 壁激突の大爆発接触
+    static constexpr int kDamageBombToPlayer = 10;           ///< ボム爆発接触
 
     // 敵被ダメージ
     static constexpr int kDamageMeleeToEnemy = 20;           ///< 近接攻撃

@@ -133,29 +133,60 @@ void EnemyBomb::Update() {
     case State::Telegraphing: {
         telegraphTimer_ += deltaTime;
 
-        // 爆弾自体はシェーダーパラメータでパルスを激しくする
-        if (bombCoreParamsData_) {
-            bombCoreParamsData_->pulseSpeed = 40.0f; // 爆発寸前は激しく明滅
+        float progress = telegraphTimer_ / telegraphDuration_;
+        if (progress < 0.0f) progress = 0.0f;
+        if (progress > 1.0f) progress = 1.0f;
+
+        // 予告線と爆弾コアの動的カラー計算
+        Vector4 telegraphColor;
+        if (progress < telegraphBlinkThreshold_) {
+            // 黄色 (1.0, 1.0, 0.0, 0.5) から 赤色 (1.0, 0.0, 0.0, 0.5) への変化
+            float k = progress / telegraphBlinkThreshold_;
+            telegraphColor = { 1.0f, 1.0f - k, 0.0f, 0.5f };
+
+            if (bombCoreParamsData_) {
+                // コアも徐々に赤みを帯び、パルスも少しずつ早くなる
+                bombCoreParamsData_->coreColor = { 1.0f, 0.8f - k * 0.6f, 0.3f - k * 0.3f, 1.0f };
+                bombCoreParamsData_->pulseSpeed = 10.0f + k * 30.0f;
+            }
+        } else {
+            // 赤色 (1.0, 0.0, 0.0, 0.5) と 白色 (1.0, 1.0, 1.0, 0.8) の高速点滅
+            float blinkTime = telegraphTimer_ - (telegraphDuration_ * telegraphBlinkThreshold_);
+            float blink = std::sin(blinkTime * telegraphBlinkFrequency_) * 0.5f + 0.5f;
+            telegraphColor = { 1.0f, blink, blink, 0.5f + blink * 0.3f };
+
+            if (bombCoreParamsData_) {
+                // コアもシンクロして点滅させ、パルススピードを最大にする
+                bombCoreParamsData_->coreColor = { 1.0f, 0.2f + blink * 0.8f, blink, 1.0f };
+                bombCoreParamsData_->pulseSpeed = 60.0f;
+            }
         }
-        
+
+        telegraphObjX_->SetColor(telegraphColor);
+        telegraphObjZ_->SetColor(telegraphColor);
+
         // 予告線の拡大に合わせて、爆弾のコア（球体）も膨張させる（1.5f から 3.5f へ拡大）
-        float sphereScale = 1.5f + (telegraphTimer_ / telegraphDuration_) * 2.0f;
+        float sphereScale = 1.5f + progress * 2.0f;
         bombSphere_->SetScale({ sphereScale, sphereScale, sphereScale });
 
         bombSphere_->Update();
 
-        // 予告線の太さをだんだん太くする
-        float thickness = 0.5f + (telegraphTimer_ / telegraphDuration_) * 1.5f;
+        // 予告線の太さをだんだん太くして、最終的に実際の爆発の太さ（explosionThickness_）に合わせる
+        float thickness = 2.0f + progress * (explosionThickness_ - 2.0f);
 
         // X軸方向の予告線
-        telegraphObjX_->SetScale({ explosionLength_, thickness, thickness });
-        telegraphObjX_->SetPosition(targetPos_);
+        telegraphObjX_->SetScale({ explosionLength_, telegraphHeight_, thickness });
+        Vector3 posX = targetPos_;
+        posX.y += telegraphHeight_ * 0.5f; // 地面に埋まらないように高さの半分だけ浮かせる
+        telegraphObjX_->SetPosition(posX);
         telegraphObjX_->SetRotate({ 0, 0, 0 });
         telegraphObjX_->Update();
 
         // Z軸方向の予告線
-        telegraphObjZ_->SetScale({ thickness, thickness, explosionLength_ });
-        telegraphObjZ_->SetPosition(targetPos_);
+        telegraphObjZ_->SetScale({ thickness, telegraphHeight_, explosionLength_ });
+        Vector3 posZ = targetPos_;
+        posZ.y += telegraphHeight_ * 0.5f; // こちらも半分だけ浮かせる
+        telegraphObjZ_->SetPosition(posZ);
         telegraphObjZ_->SetRotate({ 0, 0, 0 });
         telegraphObjZ_->Update();
 

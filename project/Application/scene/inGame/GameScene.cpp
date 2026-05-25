@@ -494,6 +494,23 @@ void GameScene::CheckEnemyToPlayerCollisions() {
     }
   }
 
+  // EnemyBomb の判定
+  for (int bi = 0; bi < 3; ++bi) {
+    if (boss_->GetBomb(bi) && boss_->GetBomb(bi)->IsExploding()) {
+      std::vector<OBB> bombOBBs = boss_->GetBomb(bi)->GetOBBs();
+      for (const auto& obb : bombOBBs) {
+        if (Collision::IsOBBSphereCollision(obb, playerColliderSphere)) {
+          if (player_->ApplyDamage(kDamageBombToPlayer)) {
+            OutputDebugStringA(
+                std::format("Player Hit by Bomb: {} damage\n", kDamageBombToPlayer)
+                    .c_str());
+          }
+          break; // 多重ヒットを防ぐために1回の爆破で1ダメージに制限
+        }
+      }
+    }
+  }
+
   // EnemyStompEffects の判定
   if (boss_->GetStompEffects() && boss_->GetStompEffects()->IsActive()) {
     EnemyStompEffects *stomp = boss_->GetStompEffects();
@@ -1011,6 +1028,23 @@ void GameScene::CheckEnemyBuildingCollisions() {
       }
     }
     if (buildingDestroyedByBeam) continue;
+
+    // ボム → 建物（その場で爆散）
+    bool buildingDestroyedByBomb = false;
+    for (int bi = 0; bi < 3; ++bi) {
+      if (boss_->GetBomb(bi) && boss_->GetBomb(bi)->IsExploding()) {
+        std::vector<OBB> bombOBBs = boss_->GetBomb(bi)->GetOBBs();
+        for (const auto& obb : bombOBBs) {
+          if (Collision::IsOBBCollision(obb, bOBB)) {
+            building->MarkDestroyed(i);
+            buildingDestroyedByBomb = true;
+            break;
+          }
+        }
+        if (buildingDestroyedByBomb) break;
+      }
+    }
+    if (buildingDestroyedByBomb) continue;
 
     // スタンプ → 建物（その場で爆散）
     if (boss_->GetStompEffects() && boss_->GetStompEffects()->IsActive()) {

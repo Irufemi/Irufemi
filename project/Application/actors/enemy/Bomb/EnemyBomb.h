@@ -68,11 +68,14 @@ private:
 
     // 爆発用パラメータ
     float telegraphTimer_ = 0.0f;
-    float telegraphDuration_ = 2.0f; // 予告時間
+    float telegraphDuration_ = 5.0f; // 予告時間
+    float telegraphBlinkThreshold_ = 0.7f; // 点滅開始タイミング
+    float telegraphBlinkFrequency_ = 30.0f; // 高速点滅周波数
     float explodeTimer_ = 0.0f;
     float explodeDuration_ = 0.5f;   // 爆発の持続時間
     float explosionLength_ = 200.0f;  // 爆発の長さ
-    float explosionThickness_ = 30.0f; // 爆発の太さ
+    float explosionThickness_ = 50.0f; // 爆発の太さ
+    float telegraphHeight_ = 0.5f;    // 予告線の高さ
 
     // エフェクト用
     Microsoft::WRL::ComPtr<ID3D12Resource> explosionParamsResource_;
