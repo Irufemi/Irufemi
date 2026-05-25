@@ -155,11 +155,26 @@ void Building::Update() {
         }
 
         if (inst.isBlownAway) {
+            // 重力を適用して放物線を描くようにする
+            inst.blowVelocity.y -= params_.blowGravity;
+
             // 吹き飛び中の移動
             inst.position = Math::Add(inst.position, inst.blowVelocity);
             inst.rotate.x += inst.angularVelocity.x;
             inst.rotate.y += inst.angularVelocity.y;
             inst.rotate.z += inst.angularVelocity.z;
+
+            // 地面バウンド処理
+            float floorY = inst.scale.x * params_.floorHeightRatio * inst.floorCount * 0.5f;
+            if (inst.position.y < floorY) {
+                inst.position.y = floorY;
+                inst.blowVelocity.y *= params_.blowBounceY; // 反発係数
+                inst.blowVelocity.x *= params_.blowFrictionXZ;  // 摩擦（弱め）
+                inst.blowVelocity.z *= params_.blowFrictionXZ;
+                inst.angularVelocity.x *= params_.blowAngularFriction;
+                inst.angularVelocity.y *= params_.blowAngularFriction;
+                inst.angularVelocity.z *= params_.blowAngularFriction;
+            }
 
             // 壁反射
             const float bound = BuildingInstance::kFieldBound;
@@ -374,6 +389,19 @@ void Building::DrawImGui() {
         changed |= ImGui::DragFloat("ボスが移動/攻撃対象にしている座標を避ける半径", &params_.avoidBossRadius, 0.5f, 0.0f, 100.0f);
         changed |= ImGui::DragFloat("ビルが地面からせり上がる速度(秒速)", &params_.spawnSpeed, 0.1f, 0.1f, 100.0f);
 
+        ImGui::Separator();
+        ImGui::Text("吹き飛び物理設定");
+        changed |= ImGui::DragFloat("重力(Blow Gravity)", &params_.blowGravity, 0.001f, 0.0f, 1.0f);
+        changed |= ImGui::DragFloat("バウンド係数(Blow Bounce Y)", &params_.blowBounceY, 0.01f, -1.0f, 0.0f);
+        changed |= ImGui::DragFloat("摩擦(Blow Friction XZ)", &params_.blowFrictionXZ, 0.01f, 0.0f, 1.0f);
+        changed |= ImGui::DragFloat("回転摩擦(Blow Angular Friction)", &params_.blowAngularFriction, 0.01f, 0.0f, 1.0f);
+        changed |= ImGui::DragFloat("拡散力(Scatter Spread)", &params_.scatterSpread, 0.01f, 0.0f, 5.0f);
+        changed |= ImGui::DragFloat("上方向力ベース(Up Force Base)", &params_.scatterUpForceBase, 0.01f, 0.0f, 5.0f);
+        changed |= ImGui::DragFloat("上方向力ランダム(Up Force Rand)", &params_.scatterUpForceRand, 0.01f, 0.0f, 5.0f);
+        changed |= ImGui::DragFloat("速度ベース(Speed Base)", &params_.scatterSpeedBase, 0.01f, 0.0f, 5.0f);
+        changed |= ImGui::DragFloat("速度ランダム(Speed Rand)", &params_.scatterSpeedRand, 0.01f, 0.0f, 5.0f);
+        changed |= ImGui::DragFloat("回転速度(Angular Velocity)", &params_.scatterAngularVelocity, 0.01f, 0.0f, 5.0f);
+
         // 最小値と最大値の整合性を保つ
         if (params_.minFloors > params_.maxFloors) {
             params_.maxFloors = params_.minFloors;
@@ -433,6 +461,16 @@ void Building::LoadJson() {
         if (b.contains("avoid_player_radius")) params_.avoidPlayerRadius = b["avoid_player_radius"];
         if (b.contains("avoid_boss_radius")) params_.avoidBossRadius = b["avoid_boss_radius"];
         if (b.contains("spawn_speed")) params_.spawnSpeed = b["spawn_speed"];
+        if (b.contains("blow_gravity")) params_.blowGravity = b["blow_gravity"];
+        if (b.contains("blow_bounce_y")) params_.blowBounceY = b["blow_bounce_y"];
+        if (b.contains("blow_friction_xz")) params_.blowFrictionXZ = b["blow_friction_xz"];
+        if (b.contains("blow_angular_friction")) params_.blowAngularFriction = b["blow_angular_friction"];
+        if (b.contains("scatter_spread")) params_.scatterSpread = b["scatter_spread"];
+        if (b.contains("scatter_up_force_base")) params_.scatterUpForceBase = b["scatter_up_force_base"];
+        if (b.contains("scatter_up_force_rand")) params_.scatterUpForceRand = b["scatter_up_force_rand"];
+        if (b.contains("scatter_speed_base")) params_.scatterSpeedBase = b["scatter_speed_base"];
+        if (b.contains("scatter_speed_rand")) params_.scatterSpeedRand = b["scatter_speed_rand"];
+        if (b.contains("scatter_angular_velocity")) params_.scatterAngularVelocity = b["scatter_angular_velocity"];
         OutputDebugStringA("Building: Parameters loaded from JSON.\n");
     }
 }
@@ -467,7 +505,27 @@ void Building::SaveJson() {
         {"avoid_boss_radius", params_.avoidBossRadius},
         {"avoid_boss_radius_comment", "ボスが移動/攻撃対象にしている座標を避ける半径"},
         {"spawn_speed", params_.spawnSpeed},
-        {"spawn_speed_comment", "ビルが地面からせり上がる速度(秒速)"}
+        {"spawn_speed_comment", "ビルが地面からせり上がる速度(秒速)"},
+        {"blow_gravity", params_.blowGravity},
+        {"blow_gravity_comment", "吹き飛び時の重力"},
+        {"blow_bounce_y", params_.blowBounceY},
+        {"blow_bounce_y_comment", "地面でのバウンド反発係数（負の値）"},
+        {"blow_friction_xz", params_.blowFrictionXZ},
+        {"blow_friction_xz_comment", "地面での摩擦係数"},
+        {"blow_angular_friction", params_.blowAngularFriction},
+        {"blow_angular_friction_comment", "地面での回転摩擦係数"},
+        {"scatter_spread", params_.scatterSpread},
+        {"scatter_spread_comment", "散弾のように飛び散る際のブレ幅"},
+        {"scatter_up_force_base", params_.scatterUpForceBase},
+        {"scatter_up_force_base_comment", "散弾飛び散り時の上方向への基本力"},
+        {"scatter_up_force_rand", params_.scatterUpForceRand},
+        {"scatter_up_force_rand_comment", "散弾飛び散り時の上方向への追加ランダム力"},
+        {"scatter_speed_base", params_.scatterSpeedBase},
+        {"scatter_speed_base_comment", "散弾飛び散り時の基本速度倍率"},
+        {"scatter_speed_rand", params_.scatterSpeedRand},
+        {"scatter_speed_rand_comment", "散弾飛び散り時の追加ランダム速度倍率"},
+        {"scatter_angular_velocity", params_.scatterAngularVelocity},
+        {"scatter_angular_velocity_comment", "散弾飛び散り時の基本回転速度"}
     };
 
     std::ofstream file(kJsonFilePath);
@@ -720,16 +778,7 @@ void Building::ApplyDamage(int index, int damage, const Vector3& attackDir, floa
 
     inst.hp -= damage;
     if (inst.hp <= 0) {
-        inst.hp = 0;
-        inst.isBlownAway = true;
-        inst.disappearTimer = 0.0f;
-
-        Vector3 dir = Math::Normalize(attackDir);
-        inst.blowVelocity = Math::Multiply(blowSpeed, dir);
-        inst.blowVelocity.y = 0.0f;
-
-        // 回転を加える
-        inst.angularVelocity = { 0.05f, 0.1f, 0.03f };
+        ScatterBuildingFloors(index, attackDir, blowSpeed);
     }
 }
 
@@ -738,15 +787,72 @@ void Building::DestroyAt(int index, const Vector3& attackDir, float blowSpeed) {
     auto& inst = instances_[index];
     if (inst.isDestroyed || inst.isBlownAway) return;
 
-    inst.hp = 0;
-    inst.isBlownAway = true;
-    inst.disappearTimer = 0.0f;
+    ScatterBuildingFloors(index, attackDir, blowSpeed);
+}
 
-    Vector3 dir = Math::Normalize(attackDir);
-    inst.blowVelocity = Math::Multiply(blowSpeed, dir);
-    inst.blowVelocity.y = 0.0f;
+void Building::ScatterBuildingFloors(int index, const Vector3& attackDir, float blowSpeed) {
+    if (index < 0 || index >= static_cast<int>(instances_.size())) return;
+    
+    BuildingInstance baseInst = instances_[index];
+    
+    float fh = baseInst.scale.x * params_.floorHeightRatio;
+    float totalHeight = baseInst.floorCount * fh;
+    Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(baseInst.rotate);
 
-    inst.angularVelocity = { 0.08f, 0.15f, 0.05f };
+    int initialCount = baseInst.floorCount;
+    
+    // 元のインスタンスは1階層分（一番下）として扱う
+    instances_[index].floorCount = 1;
+    instances_[index].hp = 0;
+    instances_[index].isBlownAway = true;
+    instances_[index].disappearTimer = 0.0f;
+
+    for (int floor = 0; floor < initialCount; ++floor) {
+        float localY = -totalHeight / 2.0f + fh * floor + fh / 2.0f;
+        Vector3 localOffset = { 0.0f, localY, 0.0f };
+        Vector3 rotatedOffset = {
+            rotMat.m[0][0] * localOffset.x + rotMat.m[0][1] * localOffset.y + rotMat.m[0][2] * localOffset.z,
+            rotMat.m[1][0] * localOffset.x + rotMat.m[1][1] * localOffset.y + rotMat.m[1][2] * localOffset.z,
+            rotMat.m[2][0] * localOffset.x + rotMat.m[2][1] * localOffset.y + rotMat.m[2][2] * localOffset.z
+        };
+        Vector3 worldPos = Math::Add(baseInst.position, rotatedOffset);
+
+        BuildingInstance* targetInst = nullptr;
+        if (floor == 0) {
+            targetInst = &instances_[index];
+        } else {
+            // 新しい階層を生成
+            instances_.push_back(baseInst);
+            targetInst = &instances_.back();
+            targetInst->voxelSystem = AllocateVoxelSystem();
+            targetInst->floorCount = 1;
+            targetInst->hp = 0;
+            targetInst->isBlownAway = true;
+            targetInst->disappearTimer = 0.0f;
+        }
+
+        targetInst->position = worldPos;
+
+        // 散弾銃のような広がりと上向きの力（各階層ごとにランダム）
+        Vector3 dir = Math::Normalize(attackDir);
+        float spread = params_.scatterSpread; // 破片が散らばるように強めの広がり
+        dir.x += ((std::rand() % 100) / 100.0f - 0.5f) * spread;
+        dir.z += ((std::rand() % 100) / 100.0f - 0.5f) * spread;
+        dir.y += params_.scatterUpForceBase + ((std::rand() % 100) / 100.0f) * params_.scatterUpForceRand; // 上向きは控えめに
+        dir = Math::Normalize(dir);
+
+        // スピードも階層ごとに変える
+        float randomSpeed = blowSpeed * (params_.scatterSpeedBase + ((std::rand() % 100) / 100.0f) * params_.scatterSpeedRand);
+        targetInst->blowVelocity = Math::Multiply(randomSpeed, dir);
+
+        // 激しい回転
+        float angVel = params_.scatterAngularVelocity;
+        targetInst->angularVelocity = { 
+            ((std::rand() % 100) / 100.0f - 0.5f) * angVel, 
+            ((std::rand() % 100) / 100.0f - 0.5f) * angVel, 
+            ((std::rand() % 100) / 100.0f - 0.5f) * angVel 
+        };
+    }
 }
 
 void Building::ScatterAt(int index, const Vector3& velocity, const OBB& collisionArea) {

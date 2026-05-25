@@ -273,7 +273,7 @@ void TitleScene::Update() {
     cam->UpdateMatrix();
 
     if (promptController_.ShouldTransition()) {
-        engine_->GetSceneManager()->TransitionTo("InGame", SceneTransition::Type::Slide, 1.0f);
+        engine_->GetSceneManager()->TransitionTo("Tutorial", SceneTransition::Type::Slide, 1.0f);
     }
 
 

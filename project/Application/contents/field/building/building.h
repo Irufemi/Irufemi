@@ -63,6 +63,18 @@ public:
         float avoidPlayerRadius = 15.0f;
         float avoidBossRadius = 30.0f;
         float spawnSpeed = 10.0f;
+
+        // 吹き飛び（散弾）物理パラメータ
+        float blowGravity = 0.03f;
+        float blowBounceY = -0.4f;
+        float blowFrictionXZ = 0.9f;
+        float blowAngularFriction = 0.8f;
+        float scatterSpread = 0.8f;
+        float scatterUpForceBase = 0.1f;
+        float scatterUpForceRand = 0.3f;
+        float scatterSpeedBase = 1.2f;
+        float scatterSpeedRand = 1.5f;
+        float scatterAngularVelocity = 0.6f;
     };
 
     Building();
@@ -135,6 +147,8 @@ public:
     void MarkDestroyed(int index);
 
 private:
+    void ScatterBuildingFloors(int index, const Vector3& attackDir, float blowSpeed);
+
     void LoadJson();
     void SaveJson();
     void Generate();

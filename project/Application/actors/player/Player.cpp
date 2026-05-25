@@ -33,7 +33,7 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     status_.Initialize();
 
     obj_ = std::make_unique<ObjClass>();
-    obj_->Initialize("enemy/body.obj");
+    obj_->Initialize("player/playerBody.obj");
     obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 
     attackObj_ = std::make_unique<ObjClass>();
@@ -42,7 +42,7 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     attackObj_->Update();
 
     targetMarkerObj_ = std::make_unique<ObjClass>();
-    targetMarkerObj_->Initialize("enemy/body.obj");
+    targetMarkerObj_->Initialize("player/playerBody.obj");
     targetMarkerObj_->SetColor({ 0.0f, 1.0f, 0.0f, 0.5f });
     targetMarkerObj_->SetScale({ 0.5f, 0.5f, 0.5f });
 
