@@ -27,6 +27,26 @@
         "spawn_interval": 5.0,
         "spawn_interval_comment": "ビルが自動生成される時間間隔(秒)",
         "spawn_speed": 10.0,
-        "spawn_speed_comment": "ビルが地面からせり上がる速度(秒速)"
+        "spawn_speed_comment": "ビルが地面からせり上がる速度(秒速)",
+        "blow_gravity": 0.03,
+        "blow_gravity_comment": "吹き飛び時の重力",
+        "blow_bounce_y": -0.4,
+        "blow_bounce_y_comment": "地面でのバウンド反発係数（負の値）",
+        "blow_friction_xz": 0.9,
+        "blow_friction_xz_comment": "地面での摩擦係数",
+        "blow_angular_friction": 0.8,
+        "blow_angular_friction_comment": "地面での回転摩擦係数",
+        "scatter_spread": 0.8,
+        "scatter_spread_comment": "散弾のように飛び散る際のブレ幅",
+        "scatter_up_force_base": 0.1,
+        "scatter_up_force_base_comment": "散弾飛び散り時の上方向への基本力",
+        "scatter_up_force_rand": 0.3,
+        "scatter_up_force_rand_comment": "散弾飛び散り時の上方向への追加ランダム力",
+        "scatter_speed_base": 1.2,
+        "scatter_speed_base_comment": "散弾飛び散り時の基本速度倍率",
+        "scatter_speed_rand": 1.5,
+        "scatter_speed_rand_comment": "散弾飛び散り時の追加ランダム速度倍率",
+        "scatter_angular_velocity": 0.6,
+        "scatter_angular_velocity_comment": "散弾飛び散り時の基本回転速度"
     }
 }
