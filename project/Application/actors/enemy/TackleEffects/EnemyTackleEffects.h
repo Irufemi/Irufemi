@@ -50,7 +50,7 @@ private:
     Camera* camera_ = nullptr;
     
     // エフェクト描画用モデル（ひとまず既存の円環モデルを流用するためObjClassで平たく潰してリングにする）
-    std::unique_ptr<ObjClass> waveObj_ = nullptr;
+    std::unique_ptr<PrimitiveObjects3DClass> waveObj_ = nullptr;
 
     // 予告線用
     std::shared_ptr<PrimitiveObjects3DClass> telegraphObj_ = nullptr;

@@ -9,10 +9,10 @@ void PlayerWeapon::Initialize() {
 
     // --- 機関銃モデルの初期化 ---
     machineGunObjLeft_ = std::make_unique<ObjClass>();
-    machineGunObjLeft_->Initialize("enemy/body.obj");
+    machineGunObjLeft_->Initialize("player/playerTurret.obj");
 
     machineGunObjRight_ = std::make_unique<ObjClass>();
-    machineGunObjRight_->Initialize("enemy/body.obj");
+    machineGunObjRight_->Initialize("player/playerTurret.obj");
 
     // --- 機関銃の弾モデルの初期化 ---
     bulletRegion_ = std::make_unique<ModelRegion>();
@@ -86,7 +86,7 @@ void PlayerWeapon::Initialize() {
 
     // --- ミサイルモデルとデータの初期化 ---
     missileRegion_ = std::make_unique<ModelRegion>();
-    missileRegion_->Initialize("enemy/body.obj");
+    missileRegion_->Initialize("player/playerMissile.obj");
     missileRegion_->SetCastShadows(false);
 
     for (int i = 0; i < kMaxMissiles; ++i) {

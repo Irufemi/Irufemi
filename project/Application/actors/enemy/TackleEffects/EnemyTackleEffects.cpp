@@ -6,8 +6,8 @@
 #include <algorithm>
 
 void EnemyTackleEffects::Initialize(IrufemiEngine* engine) {
-    waveObj_ = std::make_unique<ObjClass>();
-    waveObj_->Initialize("sample/block.obj");
+    waveObj_ = std::make_unique<PrimitiveObjects3DClass>();
+    waveObj_->Initialize(PrimitiveType::Cube, "resources/whiteTexture.png");
     if (engine) {
         waveObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
     }
