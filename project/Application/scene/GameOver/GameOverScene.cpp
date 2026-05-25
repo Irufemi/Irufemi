@@ -63,14 +63,23 @@ void GameOverScene::Initialize(IrufemiEngine* engine) {
     goTextDot_ = std::make_unique<ObjClass>();
     goTextDot_->Initialize("gameOver/text_dot.obj");
 
-    // 「Push to Space」文字の初期化
-    textPushToSpace_ = std::make_unique<ObjClass>();
-    textPushToSpace_->Initialize("text_pushtospace/text_pushtospace.obj");
-    textPushToSpace_->SetPosition({ 0.0f, -2.5f, 0.0f });
-    textPushToSpace_->SetScale({ 1.0f, 1.0f, 1.0f });
+    // 選択肢（やりなおし、タイトルへ戻る）の初期化
+    objRetry_ = std::make_unique<ObjClass>();
+    objRetry_->Initialize("text_retry/text_retry.obj");
+    objRetry_->SetPosition({ -3.0f, -2.5f, 0.0f });
+    objRetry_->SetScale({ 1.0f, 1.0f, 1.0f });
 
-    // プロンプトコントローラーに登録
-    promptController_.SetTarget(textPushToSpace_.get());
+    objBackToTitle_ = std::make_unique<ObjClass>();
+    objBackToTitle_->Initialize("text_backToTitle/text_backToTitle.obj");
+    objBackToTitle_->SetPosition({ 3.0f, -2.5f, 0.0f });
+    objBackToTitle_->SetScale({ 1.0f, 1.0f, 1.0f });
+
+    // UISelectionGroupの設定
+    gameOverSelection_.SetHorizontalMode(true);
+    gameOverSelection_.AddItem(objRetry_.get());
+    gameOverSelection_.AddItem(objBackToTitle_.get());
+    gameOverSelection_.SetActiveBaseColor({ 1.0f, 0.1f, 0.1f, 1.0f }); // 発光する赤
+    gameOverSelection_.SetInactiveColor({ 0.3f, 0.0f, 0.0f, 0.8f });
 
     // ポストプロセスの有効化（絶望感の演出）
     if (auto* pp = engine_->GetPostProcessManager()) {
@@ -157,11 +166,22 @@ void GameOverScene::Update() {
     embersParticles_->SetBoxEmitter(camPos + Vector3{0.0f, -5.0f, 10.0f}, {15.0f, 2.0f, 5.0f}, 1, 0.05f);
     embersParticles_->Update();
 
-    // プロンプトコントローラーの更新
-    promptController_.Update(engine_->GetInputManager());
+    // 選択肢コントローラーの表示・更新（文字が出揃ってから）
+    if (introTimer_ >= 3.5f) {
+        // 1秒かけてフェードイン
+        float uiAlpha = std::clamp((introTimer_ - 3.5f) * 1.0f, 0.0f, 1.0f);
+        gameOverSelection_.SetActiveBaseColor({ 1.0f, 0.1f, 0.1f, 1.0f * uiAlpha });
+        gameOverSelection_.SetInactiveColor({ 0.3f, 0.0f, 0.0f, 0.8f * uiAlpha });
 
-    if (promptController_.ShouldTransition()) {
-        engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
+        gameOverSelection_.Update(engine_->GetInputManager());
+
+        if (gameOverSelection_.ShouldTransition()) {
+            if (gameOverSelection_.GetSelectedIndex() == 0) {
+                engine_->GetSceneManager()->TransitionTo("InGame", SceneTransition::Type::Fade, 1.0f);
+            } else {
+                engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
+            }
+        }
     }
 
     // =====
@@ -188,7 +208,9 @@ void GameOverScene::Draw() {
 
     if (embersParticles_) embersParticles_->Draw();
 
-    promptController_.Draw();
+    if (introTimer_ >= 3.5f) {
+        gameOverSelection_.Draw();
+    }
 }
 
 void GameOverScene::DrawDebugTab() {

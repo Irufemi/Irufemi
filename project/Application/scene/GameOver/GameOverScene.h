@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Framework/BaseScene.h"
-#include "Framework/PromptController.h"
+#include "Framework/UISelectionGroup.h"
 #include "Framework/UIAnimator.h"
 #include "Renderer/Object2D/Sprite/Sprite.h"
 #include <memory>
@@ -50,8 +50,9 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<ObjClass> goTextR_ = nullptr;
     std::unique_ptr<ObjClass> goTextDot_ = nullptr;
 
-    // 「Push to Space」文字
-    std::unique_ptr<ObjClass> textPushToSpace_ = nullptr;
+    // 選択肢文字
+    std::unique_ptr<ObjClass> objRetry_ = nullptr;
+    std::unique_ptr<ObjClass> objBackToTitle_ = nullptr;
 
     // 灰パーティクル
     std::unique_ptr<GPUParticleSystem> embersParticles_ = nullptr;
@@ -62,6 +63,6 @@ private: // メンバ変数(ゲーム)
 
 private: // メンバ変数(システム)
 
-    PromptController promptController_;
+    UISelectionGroup gameOverSelection_;
     UIAnimator goTextAnimator_;
 };

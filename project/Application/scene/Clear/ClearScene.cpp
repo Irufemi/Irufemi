@@ -61,14 +61,23 @@ void ClearScene::Initialize(IrufemiEngine* engine) {
     clearTextR_->SetScale({ 1.5f, 1.5f, 1.5f });
     clearTextEx_->SetScale({ 1.5f, 1.5f, 1.5f });
 
-    // 「Push to Space」文字の初期化
-    textPushToSpace_ = std::make_unique<ObjClass>();
-    textPushToSpace_->Initialize("text_pushtospace/text_pushtospace.obj");
-    textPushToSpace_->SetPosition({ 0.0f, -2.5f, 0.0f });
-    textPushToSpace_->SetScale({ 1.0f, 1.0f, 1.0f });
+    // 選択肢（やりなおし、タイトルへ戻る）の初期化
+    objRetry_ = std::make_unique<ObjClass>();
+    objRetry_->Initialize("text_retry/text_retry.obj");
+    objRetry_->SetPosition({ -3.0f, -2.5f, 0.0f });
+    objRetry_->SetScale({ 1.0f, 1.0f, 1.0f });
 
-    // プロンプトコントローラーに登録
-    promptController_.SetTarget(textPushToSpace_.get());
+    objBackToTitle_ = std::make_unique<ObjClass>();
+    objBackToTitle_->Initialize("text_backToTitle/text_backToTitle.obj");
+    objBackToTitle_->SetPosition({ 3.0f, -2.5f, 0.0f });
+    objBackToTitle_->SetScale({ 1.0f, 1.0f, 1.0f });
+
+    // UISelectionGroupの設定
+    clearSelection_.SetHorizontalMode(true);
+    clearSelection_.AddItem(objRetry_.get());
+    clearSelection_.AddItem(objBackToTitle_.get());
+    clearSelection_.SetActiveBaseColor({ 1.0f, 0.8f, 0.2f, 1.0f }); // ゴールドっぽい色
+    clearSelection_.SetInactiveColor({ 0.3f, 0.2f, 0.0f, 0.8f });
 
     // 祝祭パーティクルの初期化
     confettiParticles_ = std::make_unique<GPUParticleSystem>();
@@ -192,11 +201,22 @@ void ClearScene::Update() {
 
     if (confettiParticles_) confettiParticles_->Update();
 
-    // プロンプトコントローラーの更新
-    promptController_.Update(engine_->GetInputManager());
+    // 選択肢コントローラーの表示・更新（文字が落ちきってから少し後）
+    if (!isSlamming_ && clearTextAnimator_.GetTime() > 1.0f) {
+        // 1秒かけてフェードイン
+        float uiAlpha = std::clamp((clearTextAnimator_.GetTime() - 1.0f) * 1.0f, 0.0f, 1.0f);
+        clearSelection_.SetActiveBaseColor({ 1.0f, 0.8f, 0.2f, 1.0f * uiAlpha });
+        clearSelection_.SetInactiveColor({ 0.3f, 0.2f, 0.0f, 0.8f * uiAlpha });
 
-    if (promptController_.ShouldTransition()) {
-        engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
+        clearSelection_.Update(engine_->GetInputManager());
+
+        if (clearSelection_.ShouldTransition()) {
+            if (clearSelection_.GetSelectedIndex() == 0) {
+                engine_->GetSceneManager()->TransitionTo("InGame", SceneTransition::Type::Fade, 1.0f);
+            } else {
+                engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Fade, 1.0f);
+            }
+        }
     }
 
     // =====
@@ -219,7 +239,9 @@ void ClearScene::Draw() {
 
     if (confettiParticles_) confettiParticles_->Draw();
 
-    promptController_.Draw();
+    if (!isSlamming_ && clearTextAnimator_.GetTime() > 1.0f) {
+        clearSelection_.Draw();
+    }
 }
 
 void ClearScene::DrawDebugTab() {

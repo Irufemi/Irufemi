@@ -1,15 +1,17 @@
 #pragma once
 #include <vector>
+#include <variant>
 #include "UIAnimator.h"
 #include "Engine/Core/Math/Vector4.h"
 
 class Sprite;
+class ObjClass;
 class InputManager;
 
 /**
  * @class UISelectionGroup
- * @brief 縦並びのメニュー項目など、複数のSpriteから一つを選択するためのコントローラー
- * @details 上下キーでのインデックス切り替え、選択中の項目の明滅（色変更）、決定入力の管理を全自動で行います。
+ * @brief 縦並び・横並びのメニュー項目など、複数のSpriteやObjClassから一つを選択するためのコントローラー
+ * @details 方向キーでのインデックス切り替え、選択中の項目の明滅（色変更）、決定入力と決定後のフラッシュ演出を自動で行います。
  */
 class UISelectionGroup {
 public:
@@ -21,6 +23,12 @@ public:
      * @param sprite 管理対象のスプライト
      */
     void AddItem(Sprite* sprite);
+
+    /**
+     * @brief 選択項目となる3Dモデル(ObjClass)をリストの末尾に追加する
+     * @param obj 管理対象のObjClass
+     */
+    void AddItem(ObjClass* obj);
 
     /**
      * @brief 選択中項目の基本色を設定する
@@ -46,7 +54,8 @@ public:
     void Update(InputManager* input);
 
     /**
-     * @brief 描画処理（選択状態に応じた色を自動適用して描画する）
+     * @brief 描画処理（標準の描画を行う場合に使用）
+     * @details 特殊な描画（影付きなど）を行いたい場合はこの関数を呼ばず、Update() 後に外部で手動で描画してください。
      */
     void Draw();
 
@@ -60,8 +69,18 @@ public:
      */
     bool IsDecided() const { return isDecided_; }
 
+    /**
+     * @brief 決定後、遷移遅延（フラッシュ演出など）が終わって次のシーンへ遷移すべきかを返す
+     */
+    bool ShouldTransition() const;
+
+    /**
+     * @brief UIを横並び（左右キー）で操作するかどうかを設定する
+     */
+    void SetHorizontalMode(bool horizontal) { isHorizontal_ = horizontal; }
+
 private:
-    std::vector<Sprite*> items_;
+    std::vector<std::variant<Sprite*, ObjClass*>> items_;
     int selectedIndex_ = 0;
     
     UIAnimator animator_;
@@ -70,4 +89,9 @@ private:
     Vector4 inactiveColor_ = {0.3f, 0.3f, 0.3f, 0.9f};
     
     bool isDecided_ = false;
+    bool isHorizontal_ = false; // 横並び操作モード
+    bool isVisible_ = true; // 決定後のフラッシュ用
+    float transitionDelayTimer_ = 0.0f;
+
+    static constexpr float kTransitionDelayLimit = 0.8f;
 };

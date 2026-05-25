@@ -1,0 +1,4 @@
+resources/shaders/Shockwave.PS.hlsl: resources/shaders/Shockwave.PS.hlsl:5:16: error: use of undeclared identifier 'Material'
+ConstantBuffer<Material> gMaterial : register(b0);
+               ^
+
