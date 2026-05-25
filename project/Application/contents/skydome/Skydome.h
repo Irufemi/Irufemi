@@ -39,4 +39,13 @@ public: // メンバ関数
 	 */
 	void Draw();
 
+	/**
+	 * @brief 天球の色（明るさ）を設定
+	 */
+	void SetColor(const Vector4& color);
+
+	/**
+	 * @brief 天球をY軸回転させる
+	 */
+	void AddRotateY(float rotY);
 };

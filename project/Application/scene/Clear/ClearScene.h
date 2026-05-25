@@ -10,6 +10,7 @@
 class IrufemiEngine;
 class ObjClass;
 class GPUParticleSystem;
+#include "contents/skydome/Skydome.h"
 
 /**
  * @class ResultScene
@@ -49,14 +50,20 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<ObjClass> objRetry_ = nullptr;
     std::unique_ptr<ObjClass> objBackToTitle_ = nullptr;
 
-    // 祝祭パーティクル
+    // 祝祭パーティクル（紙吹雪と花火）
     std::unique_ptr<GPUParticleSystem> confettiParticles_ = nullptr;
+    std::unique_ptr<GPUParticleSystem> fireworksParticles_ = nullptr;
+
+    // 背景
+    std::unique_ptr<Skydome> skydome_ = nullptr;
 
     // 演出状態管理
     float introTimer_ = 0.0f;
     int currentSlamIndex_ = -1; // 落とした文字の数
     bool isSlamming_ = true;
     bool isRainingConfetti_ = false; // 降らせる演出に移行したか
+    float cameraAngle_ = 0.0f;
+    float fireworksTimer_ = 0.0f;
 
 private: // メンバ変数(システム)
 

@@ -35,3 +35,13 @@ void Skydome::Draw() {
 	// 3Dモデル描画
 	model_->Draw();
 }
+
+void Skydome::SetColor(const Vector4& color) {
+	if (model_) {
+		model_->SetColor(color);
+	}
+}
+
+void Skydome::AddRotateY(float rotY) {
+	worldTransform_.rotate.y += rotY;
+}
