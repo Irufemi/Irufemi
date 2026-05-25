@@ -28,6 +28,9 @@ public:
      */
     void UpdateDeathCamera(const Vector3& cameraPos, const Vector3& playerTranslate, IrufemiEngine* engine);
 
+    // ★追加: 視点を三人称に強制する
+    void ForceThirdPerson() { viewMode_ = ViewMode::kThirdPerson; }
+
     // --- ゲッター ---
     float GetCameraPitch() const { return cameraPitch_; }
     ViewMode GetViewMode() const { return viewMode_; }

@@ -154,6 +154,9 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
 void Player::Update() {
     // ====== 死亡時の待機 + 演出 ======
     if (status_.IsDead()) {
+        // ★追加: 死亡時は強制的に三人称視点に戻し、UIなどの表示を切り替える
+        cameraController_.ForceThirdPerson();
+
         // HPが0になってから3秒間（180フレーム）は演出を待機する
         if (deathWaitTimer_ < kDeathWaitTime) {
             deathWaitTimer_++;
