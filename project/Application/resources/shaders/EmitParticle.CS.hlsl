@@ -113,13 +113,18 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 float r = pow(r_pos.z, 1.0f/3.0f) * gEmitter.radius; 
                 
                 float3 offset = float3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi)) * r;
+                // Y軸方向の高さを少し潰して、横に広いドーム状にする
+                offset.y *= 0.5f;
                 gParticles[particleIndex].translate = gEmitter.translate + offset;
                 
                 // 放射状に広がる速度
                 float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
-                // 上方向にも少しバイアスをかける (spreadを利用)
-                float3 biasDir = float3(0.0f, 0.5f, 0.0f);
-                gParticles[particleIndex].velocity = normalize(radialDir + biasDir) * gEmitter.velocity * (0.5f + r_vel * 0.5f);
+                // spreadパラメータを横方向への押し出し係数として利用する
+                radialDir.xz *= (1.0f + gEmitter.spread);
+                radialDir = normalize(radialDir);
+
+                // 上方向固定バイアスを無くし、純粋な放射状（横に広がる）速度にする
+                gParticles[particleIndex].velocity = radialDir * gEmitter.velocity * (0.5f + r_vel * 0.5f);
             }
 
             // スケール初期化

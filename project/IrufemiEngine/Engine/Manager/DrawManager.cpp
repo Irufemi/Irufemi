@@ -663,36 +663,9 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
 }
 
 
-void DrawManager::SubmitGPUParticle(
-    const D3D12_VERTEX_BUFFER_VIEW& vbv,
-    const D3D12_INDEX_BUFFER_VIEW& ibv,
-    uint32_t indexCount,
-    D3D12_GPU_VIRTUAL_ADDRESS materialAddress,
-    D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
-    D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
-    D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle,
-    uint32_t instanceCount,
-    ID3D12Resource* particleResource
-    ) {
-    if (instanceCount == 0) return;
-    GPUParticlePacket p{};
-    p.vbv = vbv;
-    p.ibv = ibv;
-    p.indexCount = indexCount;
-    p.materialAddress = materialAddress;
-    p.perViewAddress = perViewAddress;
-    p.emitterAddress = emitterAddress;
-    p.particleSrvHandle = particleSrvHandle;
-    p.sortListSrvHandle = sortListSrvHandle;
-    p.textureHandle = textureHandle;
-    p.instanceCount = instanceCount;
-    p.particleResource = particleResource;
-    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
-    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
-    p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    gpuParticleQueue_.push_back(p);
+void DrawManager::SubmitGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
+    if (packet.instanceCount == 0) return;
+    gpuParticleQueue_.push_back(packet);
 }
 
 void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet) {

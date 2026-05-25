@@ -210,6 +210,7 @@ void DirectXCommon::CreatePSOs() {
     auto psSkybox = shaderManager_->GetOrCompile(L"resources/shaders/Skybox.PS.hlsl", options);
     auto vsGpuParticle = shaderManager_->GetOrCompile(L"resources/shaders/ParticleGPU.VS.hlsl", options);
     auto psGpuParticle = shaderManager_->GetOrCompile(L"resources/shaders/ParticleGPU.PS.hlsl", options);
+    auto psStompExplosionParticle = shaderManager_->GetOrCompile(L"resources/shaders/StompExplosionParticle.PS.hlsl", options);
     auto vsVoxel = shaderManager_->GetOrCompile(L"resources/shaders/VoxelParticle.VS.hlsl", options);
     auto psVoxel = shaderManager_->GetOrCompile(L"resources/shaders/VoxelParticle.PS.hlsl", options);
     auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
@@ -271,6 +272,7 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("Skinning", { { vsSkin, ps3d } });
     psoManager_->RegisterShader("Skybox", { { vsSkybox, psSkybox } });
     psoManager_->RegisterShader("GpuParticle", { { vsGpuParticle, psGpuParticle } });
+    psoManager_->RegisterShader("StompExplosionParticle", { { vsGpuParticle, psStompExplosionParticle } });
     psoManager_->RegisterShader("VoxelParticle", { { vsVoxel, psVoxel } });
     
     // シャドウマップ(通常) - 深度のみ

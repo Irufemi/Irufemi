@@ -144,7 +144,8 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
         float2 frameSize = 1.0f / float2(gEmitter.atlasCols, gEmitter.atlasRows);
         uv = (uv + float2(col, row)) * frameSize;
     }
-    output.texcoord = uv;
+    output.texcoord = float4(uv, particle.translate.xy);
+    output.timeRatio = saturate(particle.currentTime / max(particle.lifeTime, 0.0001f));
 	output.color = input.color * particle.color;
 	return output;
 }

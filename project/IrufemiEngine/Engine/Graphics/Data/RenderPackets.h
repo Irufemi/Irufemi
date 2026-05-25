@@ -77,6 +77,8 @@ namespace RenderPackets {
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct VoxelParticlePacket {

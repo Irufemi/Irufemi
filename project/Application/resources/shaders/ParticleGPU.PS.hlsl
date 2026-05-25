@@ -32,7 +32,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	///Materialを拡張する
 	
-	float4 transformedUV = mul(float32_t4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
+	float4 transformedUV = mul(float32_t4(input.texcoord.xy, 0.0f, 1.0f), gMaterial.uvTransform);
 	float32_t4 textureColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	if (gMaterial.useClampSampler == 3)

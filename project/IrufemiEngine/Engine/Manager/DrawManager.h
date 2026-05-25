@@ -344,7 +344,7 @@ public:
     /**
      * @brief GPUパーティクルのインスタンス描画 (GPUParticle.hlsl)
      */
-    void SubmitGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, const D3D12_INDEX_BUFFER_VIEW& ibv, uint32_t indexCount, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS perViewAddress, D3D12_GPU_VIRTUAL_ADDRESS emitterAddress, D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, uint32_t instanceCount, ID3D12Resource* particleResource);
+    void SubmitGPUParticle(const RenderPackets::GPUParticlePacket& packet);
     void DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet);
     
     // VoxelParticle 用の描画 (VoxelParticle.hlsl)

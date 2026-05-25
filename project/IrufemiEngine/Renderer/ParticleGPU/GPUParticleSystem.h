@@ -215,6 +215,7 @@ public:
     void SetBlend(BlendMode blend) { selectedBlend_ = blend; }
     void SetDepthWrite(PSOManager::DepthWrite depth) { selectedDepth_ = depth; }
     void SetCull(PSOManager::CullMode cull) { selectedCull_ = cull; }
+    void SetCustomPSO(const std::string& psoName) { customPSOName_ = psoName; }
     ///@}
     ///@}
 
@@ -433,6 +434,7 @@ private:
     BlendMode selectedBlend_ = BlendMode::kBlendModeAdd;
     PSOManager::DepthWrite selectedDepth_ = PSOManager::DepthWrite::Disable;
     PSOManager::CullMode selectedCull_ = PSOManager::CullMode::None;
+    std::string customPSOName_ = "";
 
     std::unique_ptr<Line3DRegion> debugLineRegion_;
     bool showEmitterArea_ = true;

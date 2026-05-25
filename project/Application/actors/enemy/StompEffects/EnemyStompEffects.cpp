@@ -17,26 +17,7 @@ void EnemyStompEffects::Initialize(IrufemiEngine* engine) {
     ringObj_->SetColor({1.0f, 0.2f, 0.0f, 0.5f});
     ringObj_->SetCastShadows(false);
 
-    finalExplosionObj_ = std::make_unique<PrimitiveObjects3DClass>();
-    finalExplosionObj_->Initialize(PrimitiveType::Sphere, "resources/uvChecker.png");
-
     if (engine) {
-        explosionParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(ExplosionParams));
-        explosionParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&explosionParamsData_));
-        if (explosionParamsData_) {
-            *explosionParamsData_ = ExplosionParams();
-            explosionParamsData_->edgeColor = { 1.0f, 0.2f, 0.0f, 1.0f };
-            explosionParamsData_->midColor = { 1.0f, 0.5f, 0.0f, 1.0f };
-            explosionParamsData_->coreColor = { 1.0f, 1.0f, 0.8f, 1.0f };
-            explosionParamsData_->speed = 5.0f;
-            explosionParamsData_->intensity = 5.0f;
-            explosionParamsData_->noiseScale = 2.0f;
-            explosionParamsData_->erosion = 0.0f;
-        }
-
-        finalExplosionObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO(
-            "StompExplosion", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
-
         bodyTelegraphObj_ = std::make_unique<PrimitiveObjects3DClass>();
         bodyTelegraphObj_->Initialize(PrimitiveType::Plane, "resources/whiteTexture.png");
         bodyTelegraphObj_->GetMaterial().enableLighting = false; // ライティング無効
@@ -44,8 +25,6 @@ void EnemyStompEffects::Initialize(IrufemiEngine* engine) {
         // AOEWarningシェーダー（加算・半透明など）を適用
         bodyTelegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO(
             "AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
-        
-        finalExplosionObj_->SetCustomCBVAddress(explosionParamsResource_->GetGPUVirtualAddress());
     }
 
     // GPUParticleSystemの初期化
@@ -54,15 +33,16 @@ void EnemyStompEffects::Initialize(IrufemiEngine* engine) {
     gpuParticleSystem_->SetBlend(BlendMode::kBlendModeAdd);
     gpuParticleSystem_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     gpuParticleSystem_->SetCull(PSOManager::CullMode::None);
+    gpuParticleSystem_->SetCustomPSO("StompExplosionParticle"); // 新規カスタムPSOを適用
     gpuParticleSystem_->SetEmit(false);
     
     // パーティクルの基本設定 (爆発らしくするための調整)
     gpuParticleSystem_->SetParticleLife(1.0f, 2.5f); // 少し長めに残して余韻を作る
-    // サイズ: 小さく発生して、煙/炎として大きく膨張していくようにする
-    gpuParticleSystem_->SetParticleScale({ 2.0f, 2.0f, 2.0f }, { 4.0f, 4.0f, 4.0f }, { 8.0f, 8.0f, 8.0f }, { 16.0f, 16.0f, 16.0f });
+    // サイズ: 小さく細かく発生させ、高密度感を出す
+    gpuParticleSystem_->SetParticleScale({ 0.5f, 0.5f, 0.5f }, { 1.5f, 1.5f, 1.5f }, { 2.5f, 2.5f, 2.5f }, { 5.0f, 5.0f, 5.0f });
     // 物理挙動: 急激に減速し、熱気で上に舞い上がるようにする
     gpuParticleSystem_->SetDamping(0.06f);  // 高い空気抵抗（初速は早いがすぐ減速する）
-    gpuParticleSystem_->SetGravity(-10.0f); // マイナス重力で上に昇る
+    gpuParticleSystem_->SetGravity(-0.2f); // 煙としてゆっくり上に昇るようにマイナス重力を弱める
     
     // 色は炎っぽく設定
     gpuParticleSystem_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
@@ -88,13 +68,11 @@ void EnemyStompEffects::Fire(const Vector3& position) {
     // スケール初期化（前回の攻撃の残りをクリア）
     explosionTransform_.scale = { 1.0f, 1.0f, 1.0f };
     ringTransform_.scale = { 1.0f, params_.ringHeight, 1.0f };
-    finalExplosionTransform_.scale = { params_.ringMaxRadius, 0.01f, params_.ringMaxRadius };
     
     // 座標の初期化（X, Y, Z すべてに basePosition_ を適用）
     Vector3 spawnPos = { basePosition_.x, basePosition_.y + params_.ringGroundOffset, basePosition_.z };
     explosionTransform_.translate = spawnPos;
     ringTransform_.translate = spawnPos;
-    finalExplosionTransform_.translate = spawnPos;
 
     UpdateFinalExplosionSphere();
 }
@@ -111,9 +89,6 @@ void EnemyStompEffects::Cancel() {
 void EnemyStompEffects::Update(float deltaTime) {
     if (!isActive_) return;
 
-    if (gpuParticleSystem_) {
-        gpuParticleSystem_->Update();
-    }
 
     globalTimer_ += deltaTime;
     phaseTimer_ += deltaTime;
@@ -177,30 +152,20 @@ void EnemyStompEffects::Update(float deltaTime) {
             hasDealtFinalDamage_ = false;
             
             if (gpuParticleSystem_) {
-                float burstRadius = 5.0f; // より中心から密度高く発生させる
+                float burstRadius = 15.0f; // より広範囲から発生させる
                 gpuParticleSystem_->SetHemisphereEmitter(
-                    Vector3{ basePosition_.x, basePosition_.y + params_.ringGroundOffset + 2.0f, basePosition_.z },
+                    Vector3{ basePosition_.x, basePosition_.y + params_.ringGroundOffset + 1.0f, basePosition_.z },
                     burstRadius,
                     0, 
                     1.0f 
                 );
-                // Dampingが強いので、初速はさらにドカンと速くする
-                gpuParticleSystem_->SetVelocity(250.0f); 
-                gpuParticleSystem_->SetSpread(1.0f); 
-                // 少し時間差で2回に分けて放出するなどを想定して、多めに出す
-                gpuParticleSystem_->Emit(4000);
+                // Dampingが強いので、初速はドカンと速くする (フレーム単位の移動量なので5.0f程度)
+                gpuParticleSystem_->SetVelocity(5.0f); 
+                // XZ平面（横方向）への押し出しを強くする
+                gpuParticleSystem_->SetSpread(3.0f); 
+                // 密度を上げるため、一気に1万発出す（Max 32768 まで許容）
+                gpuParticleSystem_->Emit(10000);
             }
-            
-            UpdateFinalExplosionSphere();
-            float initR = params_.ringMaxRadius;
-            float initH = 0.01f;
-            finalExplosionObj_->SetScale(Vector3{ initR, initH, initR });
-            finalExplosionObj_->SetPosition(Vector3{
-                basePosition_.x,
-                basePosition_.y + params_.ringGroundOffset,
-                basePosition_.z
-            });
-            UpdateFinalExplosionSphere();
         }
     }
     break;
@@ -209,36 +174,11 @@ void EnemyStompEffects::Update(float deltaTime) {
     {
         float t = (std::min)(1.0f, phaseTimer_ / params_.finalExplosionDuration);
 
-        float easeOutH = EaseOutCubic(t);
-        float currentH = Lerp(0.01f, params_.finalExplosionMaxHeight, easeOutH);
         float easeOutR = EaseOutCubic(t);
         float currentR = Lerp(params_.ringMaxRadius, params_.finalExplosionMaxRadius, easeOutR);
 
-        finalExplosionObj_->SetScale(Vector3{ currentR, currentR, currentR });
-        
-        finalExplosionObj_->SetPosition(Vector3{
-            basePosition_.x,
-            basePosition_.y + params_.ringGroundOffset,
-            basePosition_.z
-        });
-
-        if (explosionParamsData_) {
-            float flashT = 1.0f - easeOutR; 
-            explosionParamsData_->intensity = Lerp(0.0f, 8.0f, flashT); 
-            explosionParamsData_->speed = Lerp(1.0f, 5.0f, flashT);
-            explosionParamsData_->noiseScale = Lerp(1.2f, 0.6f, t);
-            explosionParamsData_->edgeColor = Vector4{ 1.0f, 0.05f, 0.0f, 1.0f }; 
-            explosionParamsData_->midColor  = Vector4{ 1.0f, 0.4f, 0.0f, 1.0f };  
-            explosionParamsData_->coreColor = Vector4{ 1.0f, 0.8f, 0.1f, 1.0f };  
-            float erosionT = (t < 0.4f) ? 0.0f : (t - 0.4f) / 0.6f;
-            explosionParamsData_->erosion = Lerp(0.0f, 2.0f, erosionT); 
-            
-            // Raymarching用の球体情報
-            explosionParamsData_->sphereCenter = finalExplosionObj_->GetCenter();
-            explosionParamsData_->sphereRadius = currentR * 0.5f; // currentRは直径(スケール)として扱っているので半分が半径
-        }
-
-        UpdateFinalExplosionSphere();
+        finalExplosionSphere_.center = Vector3{ basePosition_.x, basePosition_.y + params_.ringGroundOffset, basePosition_.z };
+        finalExplosionSphere_.radius = currentR * 0.5f;
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::Finished;
@@ -256,15 +196,15 @@ void EnemyStompEffects::Update(float deltaTime) {
         ringObj_->SetTransform(ringTransform_);
         ringObj_->Update();
     }
-    if (finalExplosionObj_) {
-        finalExplosionObj_->Update();
+
+    if (gpuParticleSystem_) {
+        gpuParticleSystem_->Update();
     }
 }
 
 void EnemyStompEffects::UpdateFinalExplosionSphere() {
-    finalExplosionSphere_.center = finalExplosionObj_->GetCenter();
-    Vector3 scale = finalExplosionObj_->GetTransform().transform.scale;
-    finalExplosionSphere_.radius = scale.x * 0.5f;
+    finalExplosionSphere_.center = Vector3{ basePosition_.x, basePosition_.y + params_.ringGroundOffset, basePosition_.z };
+    finalExplosionSphere_.radius = params_.ringMaxRadius * 0.5f;
 }
 
 bool EnemyStompEffects::IsExplosionDamageActive() const {
@@ -391,9 +331,6 @@ void EnemyStompEffects::Draw(IrufemiEngine* engine) {
     if (currentPhase_ == Phase::Expanding || currentPhase_ == Phase::KeepAndWarning) {
         explosionObj_->Draw();
         ringObj_->Draw();
-    }
-    if (currentPhase_ == Phase::FinalExplosion) {
-        finalExplosionObj_->Draw();
     }
     
     if (gpuParticleSystem_) {

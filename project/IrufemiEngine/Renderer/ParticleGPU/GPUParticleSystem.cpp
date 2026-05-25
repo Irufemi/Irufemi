@@ -311,19 +311,27 @@ void GPUParticleSystem::Draw() {
     engine_->SetDepthWrite(selectedDepth_);
     engine_->SetCull(selectedCull_);
       
-    drawManager_->SubmitGPUParticle(
-        vertexBufferView_,
-        indexBufferView_,
-        indexCount_,
-        materialBuffer_.GetGPUVirtualAddress(frameIndex),
-        perViewBuffer_.GetGPUVirtualAddress(frameIndex),
-        emitterBuffer_.GetGPUVirtualAddress(frameIndex),
-        particleSrvHandleGPU_,
-        sortSrvHandleGPU_,
-        textureHandle_,
-        kMaxParticles,
-        particleResource_.Get()
-    );
+    RenderPackets::GPUParticlePacket packet{};
+    packet.vbv = vertexBufferView_;
+    packet.ibv = indexBufferView_;
+    packet.indexCount = indexCount_;
+    packet.materialAddress = materialBuffer_.GetGPUVirtualAddress(frameIndex);
+    packet.perViewAddress = perViewBuffer_.GetGPUVirtualAddress(frameIndex);
+    packet.emitterAddress = emitterBuffer_.GetGPUVirtualAddress(frameIndex);
+    packet.particleSrvHandle = particleSrvHandleGPU_;
+    packet.sortListSrvHandle = sortSrvHandleGPU_;
+    packet.textureHandle = textureHandle_;
+    packet.instanceCount = kMaxParticles;
+    packet.particleResource = particleResource_.Get();
+    packet.blendMode = selectedBlend_;
+    packet.depthWrite = selectedDepth_;
+    packet.cullMode = selectedCull_;
+
+    if (!customPSOName_.empty()) {
+        packet.customPSO = dxCommon_->GetPSOManager()->GetPSO(customPSOName_, selectedBlend_, selectedDepth_, selectedCull_);
+    }
+
+    drawManager_->SubmitGPUParticle(packet);
 
 #if USE_IMGUI
     if (debugLineRegion_) {

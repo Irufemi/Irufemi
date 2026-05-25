@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <wrl.h>
 #include <d3d12.h>
-#include "IrufemiEngine/Engine/Graphics/Data/ExplosionParams.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 
 // 前方宣言
@@ -94,16 +93,11 @@ private:
     Camera* camera_ = nullptr;
     std::unique_ptr<PrimitiveObjects3DClass> explosionObj_ = nullptr;
     std::unique_ptr<PrimitiveObjects3DClass> ringObj_ = nullptr;
-    std::unique_ptr<PrimitiveObjects3DClass> finalExplosionObj_ = nullptr; // 噴き上がり用モデル
     std::unique_ptr<PrimitiveObjects3DClass> bodyTelegraphObj_ = nullptr; // 落下地点予兆用AOE
     std::unique_ptr<GPUParticleSystem> gpuParticleSystem_ = nullptr; // 大爆発の火の粉用
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> explosionParamsResource_ = nullptr;
-    ExplosionParams* explosionParamsData_ = nullptr;
-
     Transform explosionTransform_;
     Transform ringTransform_;
-    Transform finalExplosionTransform_;
     Transform bodyTelegraphTransform_;
 
     bool isActive_ = false;
