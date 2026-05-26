@@ -375,6 +375,9 @@
     <ClCompile Include="Renderer\Object3D\BaseModel\BaseModel.cpp">
       <Filter>Renderer\Object3D\BaseModel</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\VoxelParticle\VoxelParticleManager.cpp">
+      <Filter>Renderer\VoxelParticle</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer\VoxelParticle\VoxelParticleSystem.cpp">
       <Filter>Renderer\VoxelParticle</Filter>
     </ClCompile>
@@ -795,6 +798,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Core\Math\Vector3Int.h">
       <Filter>Engine\Core\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VoxelParticle\VoxelParticleManager.h">
+      <Filter>Renderer\VoxelParticle</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\VoxelParticle\VoxelParticleSystem.h">
       <Filter>Renderer\VoxelParticle</Filter>

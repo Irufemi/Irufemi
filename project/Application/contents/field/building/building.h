@@ -17,7 +17,6 @@ class ParticleSystem;
 
 /// @brief 個別建物のインスタンスデータ
 struct BuildingInstance {
-    VoxelParticleSystem* voxelSystem = nullptr;
     Vector3 position  = {};
     Vector3 scale     = {};
     Vector3 rotate    = {};
@@ -160,18 +159,8 @@ private:
     std::vector<BuildingInstance> instances_;
     std::unique_ptr<ModelRegion> buildingRegion_ = nullptr;
 
-    // VoxelParticleSystem オブジェクトプール
-    std::vector<std::unique_ptr<VoxelParticleSystem>> voxelPool_;
-    std::vector<bool> voxelPoolUsed_;
-
     // 砂煙エフェクト用 (ビル共通で1つだけ保持し、各ビルの位置から発生させる)
     std::unique_ptr<ParticleSystem> spawnDustSystem_;
-
-    /// @brief プールから未使用のVoxelParticleSystemを取得する
-    VoxelParticleSystem* AllocateVoxelSystem();
-    
-    /// @brief 使用済みのVoxelParticleSystemをプールに返却する
-    void FreeVoxelSystem(VoxelParticleSystem* system);
 
     // パラメータ
     Parameters params_;

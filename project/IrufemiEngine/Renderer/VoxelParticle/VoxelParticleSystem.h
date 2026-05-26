@@ -128,6 +128,9 @@ public:
   bool IsLoaded() const { return status_.load() == LoadingStatus::Loaded; }
   LoadingStatus GetStatus() const { return status_.load(); }
 
+  // 視錐台（Frustum）カリング用
+  bool IsInFrustum() const;
+
 private:
   void CreateResources();
   void CreatePSO();

@@ -10,6 +10,7 @@
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
+#include "Renderer/VoxelParticle/VoxelParticleManager.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Manager/DebugUI.h"
@@ -35,17 +36,9 @@ void Building::Initialize(IrufemiEngine* engine) {
 
     LoadJson();
 
-    // ボクセルパーティクルシステムのオブジェクトプールを事前確保
+    // VoxelParticleManager にプールの事前確保を依頼
     int poolSize = params_.maxCount + 10;
-    voxelPool_.reserve(poolSize);
-    voxelPoolUsed_.resize(poolSize, false);
-    for (int i = 0; i < poolSize; ++i) {
-        auto voxel = std::make_unique<VoxelParticleSystem>();
-        voxel->Initialize("building/block.obj", {32, 32, 32});
-        voxel->SetParticleType(VoxelParticleSystem::ParticleType::Building);
-        voxel->SetGravity(40.0f);
-        voxelPool_.push_back(std::move(voxel));
-    }
+    engine_->GetVoxelParticleManager()->ReservePool("building/block.obj", {32, 32, 32}, poolSize);
 
     // 砂煙エフェクトの初期化
     spawnDustSystem_ = std::make_unique<ParticleSystem>();
@@ -63,52 +56,14 @@ void Building::Initialize(IrufemiEngine* engine) {
 #endif
 }
 
-VoxelParticleSystem* Building::AllocateVoxelSystem() {
-    for (size_t i = 0; i < voxelPool_.size(); ++i) {
-        if (!voxelPoolUsed_[i]) {
-            voxelPoolUsed_[i] = true;
-            return voxelPool_[i].get();
-        }
-    }
-    // プールが枯渇した場合は動的に追加（基本は発生しないようにpoolSizeを余裕を持って設定する）
-    OutputDebugStringA("Building: VoxelPool exhausted! Allocating dynamically.\n");
-    auto voxel = std::make_unique<VoxelParticleSystem>();
-    voxel->Initialize("building/block.obj", {32, 32, 32});
-    voxel->SetParticleType(VoxelParticleSystem::ParticleType::Building);
-    voxel->SetGravity(40.0f);
-    voxelPool_.push_back(std::move(voxel));
-    voxelPoolUsed_.push_back(true);
-    return voxelPool_.back().get();
-}
 
-void Building::FreeVoxelSystem(VoxelParticleSystem* system) {
-    for (size_t i = 0; i < voxelPool_.size(); ++i) {
-        if (voxelPool_[i].get() == system) {
-            voxelPoolUsed_[i] = false;
-            // パーティクルが再生中なら停止させるなどのリセット処理があれば呼ぶ
-            // system->Reset(); などの機能がもしあればここに追加
-            break;
-        }
-    }
-}
 
 void Building::Update() {
     for (auto it = instances_.begin(); it != instances_.end(); ) {
         auto& inst = *it;
 
-        // 完全消滅済みかつボクセルも終了しているならスキップ
+        // 完全消滅済みならスキップ
         if (inst.isDestroyed) {
-            // ボクセルパーティクルがまだアクティブなら更新を続ける
-            if (inst.voxelSystem && inst.voxelSystem->IsActive()) {
-                inst.voxelSystem->Update(1.0f / 60.0f);
-                ++it;
-                continue;
-            }
-            // 完全に終了していればプールに返却してリストから除外
-            if (inst.voxelSystem) {
-                FreeVoxelSystem(inst.voxelSystem);
-                inst.voxelSystem = nullptr;
-            }
             it = instances_.erase(it);
             continue;
         }
@@ -147,9 +102,7 @@ void Building::Update() {
                 };
             }
 
-            if (inst.voxelSystem) {
-                inst.voxelSystem->Update(1.0f / 60.0f);
-            }
+
             ++it;
             continue;
         }
@@ -198,38 +151,29 @@ void Building::Update() {
             float prevTimer = inst.disappearTimer;
             inst.disappearTimer += 1.0f / 60.0f;
 
+            // 停止判定: 速度と角速度が一定値以下なら即爆発
+            float speedSq = inst.blowVelocity.x * inst.blowVelocity.x + inst.blowVelocity.y * inst.blowVelocity.y + inst.blowVelocity.z * inst.blowVelocity.z;
+            float angSq = inst.angularVelocity.x * inst.angularVelocity.x + inst.angularVelocity.y * inst.angularVelocity.y + inst.angularVelocity.z * inst.angularVelocity.z;
+            if (!inst.hasExploded && speedSq < 0.01f && angSq < 0.001f) {
+                inst.disappearTimer = BuildingInstance::kDisappearTime;
+            }
+
             // ボクセル爆散トリガー
             if (!inst.hasExploded && prevTimer < BuildingInstance::kDisappearTime &&
                 inst.disappearTimer >= BuildingInstance::kDisappearTime) {
-                if (inst.voxelSystem) {
-                    // building.obj と block.obj のXZサイズの差異を補正するため、XZスケールを2倍にして爆破する
-                    Vector3 explodeScale = { inst.scale.x * 2.0f, inst.scale.y, inst.scale.z * 2.0f };
-                    inst.voxelSystem->Explode(inst.position, inst.blowVelocity,
-                                             inst.rotate, explodeScale);
-                    inst.hasExploded = true;
-                }
+                // building.obj と block.obj のXZサイズの差異を補正するため、XZスケールを2倍にして爆破する
+                Vector3 explodeScale = { inst.scale.x * 2.0f, inst.scale.y, inst.scale.z * 2.0f };
+                engine_->GetVoxelParticleManager()->PlayExplosion("building/block.obj", inst.position, inst.blowVelocity, inst.rotate, explodeScale, VoxelParticleSystem::ParticleType::Building);
+                inst.hasExploded = true;
             }
 
-            // 完全消滅判定（モデル消滅 + ボクセルパーティクル終了）
+            // モデル消滅判定
             if (inst.disappearTimer >= BuildingInstance::kDisappearTime) {
-                bool voxelActive = inst.voxelSystem && inst.voxelSystem->IsActive();
-                if (!voxelActive) {
-                    if (inst.voxelSystem) {
-                        FreeVoxelSystem(inst.voxelSystem);
-                        inst.voxelSystem = nullptr;
-                    }
-                    it = instances_.erase(it);
-                    continue;
-                } else {
-                    inst.isDestroyed = true;
-                }
+                inst.isDestroyed = true;
             }
         }
 
-        // VoxelParticleSystemの更新
-        if (inst.voxelSystem) {
-            inst.voxelSystem->Update(1.0f / 60.0f);
-        }
+
 
         ++it;
     }
@@ -297,11 +241,8 @@ void Building::Draw(IrufemiEngine* engine) {
         float floorHeight = inst.scale.x * params_.floorHeightRatio;
         inst.scale.y = inst.floorCount * floorHeight;
 
-        // 完全消滅済みでもボクセルパーティクルがあれば描画
+        // 完全消滅済みなら描画しない
         if (inst.isDestroyed) {
-            if (inst.voxelSystem && inst.voxelSystem->IsActive()) {
-                inst.voxelSystem->Draw();
-            }
             continue;
         }
 
@@ -336,13 +277,7 @@ void Building::Draw(IrufemiEngine* engine) {
             }
         }
 
-        // VoxelParticleSystemの描画
-        if (inst.voxelSystem) {
-            engine->SetBlend(BlendMode::kBlendModeNormal);
-            engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
-            engine->SetCull(PSOManager::CullMode::Back);
-            inst.voxelSystem->Draw();
-        }
+
     }
 
     if (buildingRegion_) {
@@ -544,11 +479,7 @@ void Building::Generate() {
         engine_->GetDrawManager()->ClearAllQueues();
     }
 
-    for (auto& inst : instances_) {
-        if (inst.voxelSystem) {
-            FreeVoxelSystem(inst.voxelSystem);
-        }
-    }
+
     instances_.clear();
 
     // パラメータのバリデーション
@@ -631,20 +562,13 @@ void Building::Generate() {
         instances_.push_back(std::move(inst));
     }
 
-    // プールからVoxelParticleSystemを割り当て
-    for (auto& inst : instances_) {
-        inst.voxelSystem = AllocateVoxelSystem();
-    }
+
 
     OutputDebugStringA(std::format("Building: {} buildings generated.\n", (int)instances_.size()).c_str());
 }
 
 void Building::ClearAndAddSingleBuilding(const Vector3& position) {
-    for (auto& i : instances_) {
-        if (i.voxelSystem) {
-            FreeVoxelSystem(i.voxelSystem);
-        }
-    }
+
     instances_.clear();
 
     int minF = (std::max)(1, params_.minFloors);
@@ -685,17 +609,13 @@ void Building::ClearAndAddSingleBuilding(const Vector3& position) {
     inst.initialY = inst.targetPosition.y - scaleY;
     inst.position = { position.x, inst.initialY, position.z };
 
-    inst.voxelSystem = AllocateVoxelSystem();
+
 
     instances_.push_back(std::move(inst));
 }
 
 void Building::ClearAllBuildings() {
-    for (auto& inst : instances_) {
-        if (inst.voxelSystem) {
-            FreeVoxelSystem(inst.voxelSystem);
-        }
-    }
+
     instances_.clear();
 }
 
@@ -824,7 +744,7 @@ void Building::ScatterBuildingFloors(int index, const Vector3& attackDir, float 
             // 新しい階層を生成
             instances_.push_back(baseInst);
             targetInst = &instances_.back();
-            targetInst->voxelSystem = AllocateVoxelSystem();
+
             targetInst->floorCount = 1;
             targetInst->hp = 0;
             targetInst->isBlownAway = true;
@@ -859,8 +779,8 @@ void Building::ScatterAt(int index, const Vector3& velocity, const OBB& collisio
     if (index < 0 || index >= static_cast<int>(instances_.size())) return;
     auto& inst = instances_[index];
     
-    // 完全に破壊済み、またはVoxelシステムがない場合は処理しない
-    if (inst.isDestroyed || !inst.voxelSystem) return;
+    // 完全に破壊済みの場合は処理しない
+    if (inst.isDestroyed) return;
     
     // ビル全体の高さと各階の高さを計算
     float floorHeight = inst.scale.x * params_.floorHeightRatio;
@@ -885,8 +805,7 @@ void Building::ScatterAt(int index, const Vector3& velocity, const OBB& collisio
     // block.objはXZが[-0.5, 0.5]の幅1.0のモデルであるため、ボクセル側はXZスケールを2倍にする必要がある
     Vector3 floorScale = { inst.scale.x * 2.0f, floorHeight, inst.scale.z * 2.0f };
 
-    inst.voxelSystem->SetParameters(VoxelParticleSystem::VoxelEmitterParams::FineScatter());
-    inst.voxelSystem->CollisionScatter(floorPos, velocity, inst.rotate, floorScale, collisionArea);
+    engine_->GetVoxelParticleManager()->PlayCollisionScatter("building/block.obj", floorPos, velocity, inst.rotate, floorScale, collisionArea, VoxelParticleSystem::ParticleType::FineScatter);
 }
 
 bool Building::IsBuildingBlownAway(int index) const {
@@ -920,9 +839,9 @@ void Building::MarkDestroyed(int index) {
     if (inst.isDestroyed) return; // 既に破壊済み
 
     // 即爆散パーティクルを出す（まだ爆散していない場合）
-    if (!inst.hasExploded && inst.voxelSystem) {
+    if (!inst.hasExploded) {
         Vector3 upDir = {0.0f, 1.0f, 0.0f}; // 上方向に爆散
-        inst.voxelSystem->Explode(inst.position, upDir, inst.rotate, inst.scale);
+        engine_->GetVoxelParticleManager()->PlayExplosion("building/block.obj", inst.position, upDir, inst.rotate, inst.scale, VoxelParticleSystem::ParticleType::Building);
         inst.hasExploded = true;
     }
 
@@ -1046,7 +965,7 @@ void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3&
     inst.initialY = pos.y - scaleY; // 完全に地中に埋まる高さ
     inst.position = { pos.x, inst.initialY, pos.z };
 
-    inst.voxelSystem = AllocateVoxelSystem();
+
 
     instances_.push_back(std::move(inst));
     OutputDebugStringA("Building: Spawned a new building dynamically with spawning animation.\n");
