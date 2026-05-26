@@ -35,6 +35,10 @@ struct VoxelParticle {
   Vector4 color;
   Vector3 normal;
   uint32_t isActive; // 0:非アクティブ, 1:アクティブ
+  Vector3 rotation; // 各軸の回転角(ラジアン)
+  float pad1; // アライメント用
+  Vector3 angularVelocity; // 回転速度
+  float pad2; // アライメント用
 };
 
 // HLSL側のVoxelEmitter構造体と一致させる（16バイトアライメント対応 = 80バイト）

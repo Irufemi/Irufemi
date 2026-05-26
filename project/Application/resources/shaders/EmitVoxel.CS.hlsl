@@ -139,4 +139,15 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 	gParticles[voxelIndex].size = 1.0f; // サイズ
 	gParticles[voxelIndex].isActive = 1; // アクティブ化
 	gParticles[voxelIndex].normal = rotatedNormal; // 回転後の法線をコピー
+
+    // 5. 初期回転と角速度の付与
+    // Voxel自身の現在の回転を初期値とする
+    gParticles[voxelIndex].rotation = gEmitter.rotate; 
+    
+    // 角速度（スピン）をランダムに設定
+    float3 randomSpin = (generator.Generate3d() * 2.0f - 1.0f) * 15.0f; // -15.0 ~ 15.0 rad/s (かなり高速に回転させる)
+    if (gEmitter.particleType == 3) { // FineScatterの場合はさらに速く
+        randomSpin *= 1.5f;
+    }
+    gParticles[voxelIndex].angularVelocity = randomSpin;
 }

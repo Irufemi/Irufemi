@@ -76,6 +76,12 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 
 				// 位置更新
 				gParticles[particleIndex].position += gParticles[particleIndex].velocity * gPerFrame.deltaTime;
+				
+				// 回転更新
+				gParticles[particleIndex].rotation += gParticles[particleIndex].angularVelocity * gPerFrame.deltaTime;
+				
+				// 空気抵抗による回転の減衰（スピンが徐々にゆっくりになる）
+				gParticles[particleIndex].angularVelocity *= (1.0f - 0.5f * gPerFrame.deltaTime);
 
 				// ▼ 追加：Buildingタイプ(1)の場合は床(Y=0)で停止させる
 				if (gEmitter.particleType == 1) {
