@@ -95,7 +95,7 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   cooldownWarningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f + 15.0f, static_cast<float>(engine_->GetClientHeight()) / 2.0f + 80.0f);
 
   keyEscSprite_ = std::make_unique<Sprite>();
-  keyEscSprite_->Initialize("resources/UI/key_ESC.png");
+  keyEscSprite_->Initialize("resources/texture/inGame/key_ESC.png");
   keyEscSprite_->SetAnchor(0.0f, 0.0f);
   keyEscSprite_->SetPosition(20.0f, 20.0f);
   keyEscSprite_->SetSize(64.0f, 64.0f);

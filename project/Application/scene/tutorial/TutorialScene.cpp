@@ -71,7 +71,7 @@ void TutorialScene::Initialize(IrufemiEngine* engine) {
 
     for (int i = 0; i < 10; ++i) {
         tutorialUISprites_[i] = std::make_unique<Sprite>();
-        std::string path = "resources/UI/tutorial_" + std::to_string(i + 1) + ".png";
+        std::string path = "resources/texture/inGame/tutorial_" + std::to_string(i + 1) + ".png";
         tutorialUISprites_[i]->Initialize(path);
         tutorialUISprites_[i]->SetAnchor(0.5f, 0.0f); // 上部中央
         tutorialUISprites_[i]->SetPosition(1280.0f / 2.0f, 15.0f); // もう少し上に配置
@@ -84,7 +84,7 @@ void TutorialScene::Initialize(IrufemiEngine* engine) {
     // WASDキーの初期化
     auto initKey = [](std::unique_ptr<Sprite>& sprite, const std::string& keyName, float x, float y) {
         sprite = std::make_unique<Sprite>();
-        sprite->Initialize("resources/UI/key_" + keyName + ".png");
+        sprite->Initialize("resources/texture/inGame/key_" + keyName + ".png");
         sprite->SetAnchor(0.5f, 0.5f);
         sprite->SetPosition(x, y);
         sprite->SetSize(80.0f * 0.8f, 80.0f * 0.8f); // 少し小さめに
@@ -102,7 +102,7 @@ void TutorialScene::Initialize(IrufemiEngine* engine) {
     // SPACEキーの初期化 (少し下に配置)
     auto initSpaceKey = [](std::unique_ptr<Sprite>& sprite, float x, float y) {
         sprite = std::make_unique<Sprite>();
-        sprite->Initialize("resources/UI/key_SPACE.png");
+        sprite->Initialize("resources/texture/inGame/key_SPACE.png");
         sprite->SetAnchor(0.5f, 0.5f);
         sprite->SetPosition(x, y);
         sprite->SetSize(260.0f * 0.7f, 80.0f * 0.7f); // 少し小さめに
@@ -113,7 +113,7 @@ void TutorialScene::Initialize(IrufemiEngine* engine) {
 
     // ESCキーの初期化
     keyEscSprite_ = std::make_unique<Sprite>();
-    keyEscSprite_->Initialize("resources/UI/key_ESC.png");
+    keyEscSprite_->Initialize("resources/texture/inGame/key_ESC.png");
     keyEscSprite_->SetAnchor(0.0f, 0.0f);
     keyEscSprite_->SetPosition(20.0f, 20.0f);
     keyEscSprite_->SetSize(64.0f, 64.0f);
