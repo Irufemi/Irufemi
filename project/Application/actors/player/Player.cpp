@@ -115,6 +115,19 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     karakuriGaugeFill_->SetSize(0.0f, 16.0f); // 初期幅0
     karakuriGaugeFill_->SetPositionTopLeft(440.0f, 580.0f);
 
+    // ★追加: 機関銃残弾ゲージの初期化
+    machineGunGaugeFrame_ = std::make_unique<Sprite>();
+    machineGunGaugeFrame_->Initialize("resources/whiteTexture.png");
+    machineGunGaugeFrame_->SetColor({ 0.75f, 0.75f, 0.75f, 0.45f });
+
+    machineGunGaugeBg_ = std::make_unique<Sprite>();
+    machineGunGaugeBg_->Initialize("resources/whiteTexture.png");
+    machineGunGaugeBg_->SetColor({ 0.08f, 0.08f, 0.08f, 0.35f });
+
+    machineGunGaugeFill_ = std::make_unique<Sprite>();
+    machineGunGaugeFill_->Initialize("resources/whiteTexture.png");
+    machineGunGaugeFill_->SetColor({ 0.2f, 0.8f, 0.2f, 0.8f }); // 緑色に変更
+
     // ★追加: 3D爆発エフェクトプールの事前生成
     explosionEffects_.clear();
     for (int i = 0; i < kMaxExplosionEffects; ++i) {
@@ -671,6 +684,50 @@ void Player::Update() {
         }
     }
 
+    // ★追加: 機関銃残弾ゲージの更新
+    if (machineGunGaugeFrame_ && machineGunGaugeBg_ && machineGunGaugeFill_) {
+        if (!cameraController_.IsFirstPerson()) {
+            float clientWidth = engine_ ? static_cast<float>(engine_->GetClientWidth()) : 1280.0f;
+            float clientHeight = engine_ ? static_cast<float>(engine_->GetClientHeight()) : 720.0f;
+
+            float barWidth = 24.0f;
+            float barHeight = 250.0f;
+            float padding = 4.0f;
+            
+            float targetX = clientWidth - barWidth - 80.0f;
+            float targetY = clientHeight - barHeight - 80.0f;
+
+            machineGunGaugeFrame_->SetSize(barWidth + padding * 2.0f, barHeight + padding * 2.0f);
+            machineGunGaugeFrame_->SetPositionTopLeft(targetX - padding, targetY - padding);
+
+            machineGunGaugeBg_->SetSize(barWidth, barHeight);
+            machineGunGaugeBg_->SetPositionTopLeft(targetX, targetY);
+
+            int currentAmmo = weapon_.GetMachineGunAmmo();
+            int maxAmmo = weapon_.GetMaxMachineGunAmmo();
+            float ratio = (maxAmmo > 0) ? (static_cast<float>(currentAmmo) / maxAmmo) : 0.0f;
+            if (ratio < 0.0f) ratio = 0.0f;
+            if (ratio > 1.0f) ratio = 1.0f;
+
+            float fillHeight = barHeight * ratio;
+            if (fillHeight < 0.001f && ratio > 0.0f) fillHeight = 0.001f;
+            
+            machineGunGaugeFill_->SetSize(barWidth, fillHeight);
+            // 下から上へ伸びるようにY座標を調整
+            machineGunGaugeFill_->SetPositionTopLeft(targetX, targetY + (barHeight - fillHeight));
+
+            if (ratio > 0.3f) {
+                machineGunGaugeFill_->SetColor({ 0.2f, 0.8f, 0.2f, 0.8f }); // 緑色
+            } else {
+                machineGunGaugeFill_->SetColor({ 1.0f, 0.2f, 0.2f, 0.8f }); // 赤色
+            }
+
+            machineGunGaugeFrame_->Update();
+            machineGunGaugeBg_->Update();
+            machineGunGaugeFill_->Update();
+        }
+    }
+
     // ジャスト回避の星エフェクト更新
     if (!status_.IsDead() && starScale_.x > 0.01f) {
         starRotationZ_ += 0.5f; // くるくる回す速度
@@ -994,6 +1051,9 @@ void Player::Draw2DUI(Enemy* enemy) {
             if (enemy) {
                 enemy->Draw2DUI(engine_, false);
             }
+            if (machineGunGaugeFrame_) machineGunGaugeFrame_->Draw();
+            if (machineGunGaugeBg_) machineGunGaugeBg_->Draw();
+            if (machineGunGaugeFill_) machineGunGaugeFill_->Draw();
         }
 
         // 2. 最も手前に描画されるべき「からくりチャージゲージ」を最後に描画
