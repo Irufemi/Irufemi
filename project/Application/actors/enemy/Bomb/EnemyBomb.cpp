@@ -209,17 +209,17 @@ void EnemyBomb::Update() {
 
         // X軸方向の攻撃
         Vector3 posX = targetPos_;
-        posX.y += flameHeight * 0.5f; // 地面にめり込まないよう上にずらす（高さの半分だけ上げる）
+        // 地面と交差する幅を実際の太さ（explosionThickness_）に一致させるため、中心Y座標は浮かさずtargetPos_.yに揃える
         attackCylinderX_->SetPosition(posX);
         // CylinderはデフォルトでY軸向きなので、X軸向きにするにはZ軸で-90度回転
         attackCylinderX_->SetRotate({ 0, 0, -Math::PI / 2.0f }); 
         // ローカルX軸 = ワールドY軸(高さ), ローカルY軸 = ワールドX軸(長さ), ローカルZ軸 = ワールドZ軸(厚み)
         attackCylinderX_->SetScale({ flameHeight, explosionLength_, explosionThickness_ });
         attackCylinderX_->Update();
-
+ 
         // Z軸方向の攻撃
         Vector3 posZ = targetPos_;
-        posZ.y += flameHeight * 0.5f; // こちらも高さの半分だけ上げる
+        // こちらも同様に中心Y座標は浮かさずtargetPos_.yに揃える
         attackCylinderZ_->SetPosition(posZ);
         // Z軸向きにするにはX軸で90度回転
         attackCylinderZ_->SetRotate({ Math::PI / 2.0f, 0, 0 });

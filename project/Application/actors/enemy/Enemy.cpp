@@ -347,23 +347,26 @@ void Enemy::Update(Player *player) {
       Matrix4x4 invGlobalMat = Math::Inverse(globalMat);
 
       for (int i = 0; i < 3; ++i) {
-          if (bodies_[i]) bodies_[i]->ResetBlow();
-          startBodyLocalTransforms_[i] = bodyLocalTransforms_[i];
+          if (bodies_[i]) {
+              startBodyLocalTransforms_[i] = bodyLocalTransforms_[i];
+              startBodyLocalTransforms_[i].translate = Math::Transform(bodies_[i]->GetTransform().translate, invGlobalMat);
+              bodies_[i]->ResetBlow();
+          }
       }
       if (headLeft_) {
-          headLeft_->ResetBlow();
           startHeadLeftLocalTransform_ = headLeftLocalTransform_;
-          startHeadLeftLocalTransform_.translate = Math::Transform(headLeftLocalTransform_.translate, invGlobalMat);
+          startHeadLeftLocalTransform_.translate = Math::Transform(headLeft_->GetTransform().translate, invGlobalMat);
+          headLeft_->ResetBlow();
       }
       if (headMid_) {
-          headMid_->ResetBlow();
           startHeadMidLocalTransform_ = headMidLocalTransform_;
-          startHeadMidLocalTransform_.translate = Math::Transform(headMidLocalTransform_.translate, invGlobalMat);
+          startHeadMidLocalTransform_.translate = Math::Transform(headMid_->GetTransform().translate, invGlobalMat);
+          headMid_->ResetBlow();
       }
       if (headRight_) {
-          headRight_->ResetBlow();
           startHeadRightLocalTransform_ = headRightLocalTransform_;
-          startHeadRightLocalTransform_.translate = Math::Transform(headRightLocalTransform_.translate, invGlobalMat);
+          startHeadRightLocalTransform_.translate = Math::Transform(headRight_->GetTransform().translate, invGlobalMat);
+          headRight_->ResetBlow();
       }
 
       // フェーズ2を解除して親子関係ベースの描画に復帰
@@ -379,7 +382,7 @@ void Enemy::Update(Player *player) {
 
   // 死亡中なら死亡フェーズを更新
   if (isDead_) {
-      UpdateDeathPhase(engine_->GetDeltaTime());
+      UpdateDeathPhase(engine_->GetDeltaTime(), player);
   }
 
   // 3. 演出完了判定（全ての部位がボクセル含めて消滅したか）
@@ -953,7 +956,7 @@ void Enemy::UpdateDebugUI() {
 }
 #endif
 
-void Enemy::UpdateDeathPhase(float deltaTime) {
+void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
     if (deathPhase_ == DeathPhase::Reassembling) {
         deathTimer_ += deltaTime;
         float t = deathTimer_ / kReassembleDuration; // 合体設定時間を基準にする
@@ -988,6 +991,26 @@ void Enemy::UpdateDeathPhase(float deltaTime) {
     } else if (deathPhase_ == DeathPhase::Gathered) {
         deathTimer_ += deltaTime;
 
+        // 合体完了後、のたうち回りながらプレイヤーの方向へ滑らかに向き直る（見据える）
+        if (player) {
+            Vector3 playerPos = player->GetTranslate();
+            Vector3 enemyPos = globalTransform_.translate;
+            Vector3 diff = Math::Subtract(playerPos, enemyPos);
+            diff.y = 0.0f;
+            float dist = Math::Length(diff);
+            if (dist > 0.001f) {
+                Vector3 dir = Math::Normalize(diff);
+                float targetYaw = std::atan2(dir.x, dir.z);
+                float currentYaw = globalTransform_.rotate.y;
+                float diffYaw = targetYaw - currentYaw;
+                while (diffYaw > 3.14159f) diffYaw -= 2.0f * 3.14159f;
+                while (diffYaw < -3.14159f) diffYaw += 2.0f * 3.14159f;
+
+                // 2.0秒のタメ時間の間にプレイヤーを睨みつけるようにゆっくり回転
+                const float kTrackRotSpeed = 4.0f;
+                globalTransform_.rotate.y += diffYaw * kTrackRotSpeed * deltaTime;
+            }
+        }
 
         // 完全合体した状態（Phase 1の初期ローカル位置）を維持
         for (int i = 0; i < 3; ++i) {

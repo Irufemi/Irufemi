@@ -74,7 +74,7 @@ private:
     float explodeTimer_ = 0.0f;
     float explodeDuration_ = 0.5f;   // 爆発の持続時間
     float explosionLength_ = 200.0f;  // 爆発の長さ
-    float explosionThickness_ = 50.0f; // 爆発の太さ
+    float explosionThickness_ = 10.0f; // 爆発の太さ
     float telegraphHeight_ = 0.5f;    // 予告線の高さ
 
     // エフェクト用

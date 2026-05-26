@@ -165,8 +165,8 @@ private:
   float deathTimer_ = 0.0f;
 
   // --- 死亡演出用調整定数（メンバー変数） ---
-  static constexpr float kReassembleDuration = 2.0f;  ///< バラバラになった部位が中央で合体するまでの時間（秒）
-  static constexpr float kHoldDuration = 3.5f;        ///< 合体してからボクセル爆散するまでの激しくのたうち悶えるタメ時間（秒）
+  static constexpr float kReassembleDuration = 4.5f;  ///< バラバラになった部位が中央で合体するまでの時間（秒）
+  static constexpr float kHoldDuration = 2.0f;        ///< 合体してからボクセル爆散するまでの激しくのたうち悶えるタメ時間（秒）
   static constexpr float kAftermathDuration = 1.5f;   ///< 爆散後の美しいボクセル飛散をカメラに収める余韻待機時間（秒）
 
   // 悶えのたうち（Agony）全体のサイン波パラメータ
@@ -199,7 +199,7 @@ private:
   Transform startHeadRightLocalTransform_ = {};
   Vector3 startGlobalTranslate_ = {};
 
-  void UpdateDeathPhase(float deltaTime);
+  void UpdateDeathPhase(float deltaTime, Player* player = nullptr);
 
     // UI
     std::unique_ptr<EnemyHPBar> hpBar_ = nullptr;
