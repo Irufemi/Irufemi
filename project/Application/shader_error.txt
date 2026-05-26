@@ -1,4 +1,7 @@
-resources/shaders/Shockwave.PS.hlsl: resources/shaders/Shockwave.PS.hlsl:5:16: error: use of undeclared identifier 'Material'
-ConstantBuffer<Material> gMaterial : register(b0);
-               ^
+resources/shaders/EmitVoxel.CS.hlsl: resources/shaders/EmitVoxel.CS.hlsl:123:4: error: too many elements in vector initialization (expected 3 elements, have 9)
+                        (generator.Generate3d() * 2.0f - 1.0f) * 0.2f, 
+                        ^
+resources/shaders/EmitVoxel.CS.hlsl:131:4: error: too many elements in vector initialization (expected 3 elements, have 9)
+                        generator.Generate3d() * 2.0f - 1.0f,
+                        ^
 

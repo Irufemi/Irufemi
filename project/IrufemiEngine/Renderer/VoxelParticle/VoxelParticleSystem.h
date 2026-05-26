@@ -79,7 +79,11 @@ public:
     Default = 0,
     Building = 1,
     EnemyBurnout = 2,
-    FineScatter = 3
+    FineScatter = 3,
+    /// @brief エネミーによって破壊されたビルの崩壊（黒焦げになり自重で落ちる）
+    BuildingByEnemy = 4,   
+    /// @brief プレイヤーによって吹き飛ばされたビルの寿命消滅（青白くフラッシュし空中四散）
+    BuildingByPlayer = 5
   };
 
   struct VoxelEmitterParams {
