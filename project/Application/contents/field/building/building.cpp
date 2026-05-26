@@ -77,7 +77,14 @@ void Building::Update() {
             if (spawnDustSystem_ && t < 1.0f) {
                 // inst.scale.x * 2.0f が実際のビルの幅
                 spawnDustSystem_->SetEmitterArea({inst.scale.x * 2.0f, 0.0f, inst.scale.z * 2.0f});
-                spawnDustSystem_->PlayHitEffect({inst.position.x, 0.0f, inst.position.z}, 30); // 毎フレーム大量の細かい粒子を放出
+                
+                // 【最適化】毎フレーム30個生成すると、ビル複数出現時にCPU負荷が跳ね上がりフレーム落ちの原因になるため、
+                // 0.05秒に1回、5個のパーティクルを放出するようにして負荷を劇的に下げる
+                int prevFrame = static_cast<int>((inst.spawnTimer - 1.0f / 60.0f) / 0.05f);
+                int currFrame = static_cast<int>(inst.spawnTimer / 0.05f);
+                if (prevFrame != currFrame) {
+                    spawnDustSystem_->PlayHitEffect({inst.position.x, 0.0f, inst.position.z}, 5);
+                }
             }
 
             if (t >= 1.0f) {
