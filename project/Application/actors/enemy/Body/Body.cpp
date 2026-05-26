@@ -15,6 +15,7 @@ void Body::Initialize(const Vector3& initialPos) {
   basePosition_ = initialPos;
   obj_->SetPosition(basePosition_);
   obj_->SetColor(baseColor_);
+  maxDisappearTime_ = EnemyParameters::GetInstance()->GetDisappearTime();
 
   voxelSystem_ = std::make_unique<VoxelParticleSystem>();
   voxelSystem_->Initialize("enemy/body.obj", {32, 32, 32});
@@ -56,8 +57,8 @@ void Body::Update() {
     disappearTimer_ += 1.0f / 60.0f; // 60FPS想定
     blowTimer_ += 1.0f / 60.0f;
 
-    if (prevTimer < EnemyParameters::GetInstance()->GetDisappearTime() &&
-        disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime()) {
+    if (prevTimer < maxDisappearTime_ &&
+        disappearTimer_ >= maxDisappearTime_) {
         // 爆散！
         if (voxelSystem_) {
             // 端から崩れる燃え尽きエフェクトを指定
@@ -99,7 +100,7 @@ void Body::Update() {
 }
 
 void Body::Draw(IrufemiEngine* engine) {
-  bool modelGone = disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime();
+  bool modelGone = disappearTimer_ >= maxDisappearTime_;
   if (obj_ && !modelGone) {
       engine->SetBlend(BlendMode::kBlendModeNormal);
       engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
@@ -144,11 +145,16 @@ const Vector3& Body::GetPosition() const {
   return basePosition_;
 }
 
-void Body::OnDestroyed(const Vector3& attackDir, float blowSpeed, bool immediateVoxel) {
+void Body::OnDestroyed(const Vector3& attackDir, float blowSpeed, bool immediateVoxel, float disappearDuration) {
     if (isBlownAway_) return;
     
     isBlownAway_ = true;
-    disappearTimer_ = immediateVoxel ? EnemyParameters::GetInstance()->GetDisappearTime() : 0.0f;
+    if (disappearDuration >= 0.0f) {
+        maxDisappearTime_ = disappearDuration;
+    } else {
+        maxDisappearTime_ = EnemyParameters::GetInstance()->GetDisappearTime();
+    }
+    disappearTimer_ = immediateVoxel ? maxDisappearTime_ : 0.0f;
     blowTimer_ = 0.0f;
     blowVelocity_ = Math::Multiply(blowSpeed, attackDir);
     if (!immediateVoxel) {
@@ -159,6 +165,7 @@ void Body::OnDestroyed(const Vector3& attackDir, float blowSpeed, bool immediate
 void Body::ResetBlow() {
     isBlownAway_ = false;
     disappearTimer_ = 0.0f;
+    maxDisappearTime_ = EnemyParameters::GetInstance()->GetDisappearTime();
     blowTimer_ = 0.0f;
     blowVelocity_ = {0.0f, 0.0f, 0.0f};
     
@@ -170,13 +177,13 @@ void Body::ResetBlow() {
 bool Body::IsCompletelyDead() const {
     if (!isBlownAway_) return false;
     // モデルが消滅し、かつ VoxelParticle も終了していれば完全に死んだとみなす
-    bool modelGone = disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime();
+    bool modelGone = disappearTimer_ >= maxDisappearTime_;
     bool voxelActive = voxelSystem_ && voxelSystem_->IsActive();
     return modelGone && !voxelActive;
 }
 
 OBB Body::GetOBB() const {
-    if (isBlownAway_ && disappearTimer_ >= EnemyParameters::GetInstance()->GetDisappearTime()) {
+    if (isBlownAway_ && disappearTimer_ >= maxDisappearTime_) {
         return OBB{}; // モデル消滅後は判定を消す
     }
 

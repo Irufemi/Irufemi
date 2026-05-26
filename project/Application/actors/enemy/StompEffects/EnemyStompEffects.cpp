@@ -338,3 +338,40 @@ void EnemyStompEffects::Draw(IrufemiEngine* engine) {
         gpuParticleSystem_->Draw();
     }
 }
+
+void EnemyStompEffects::FireDeathExplosion(const Vector3& position) {
+    isActive_ = true;
+    currentPhase_ = Phase::FinalExplosion;
+    basePosition_ = position;
+    globalTimer_ = 100.0f; // 予兆フェーズへの逆流を防ぐために大きな値を設定
+    phaseTimer_ = 0.0f;
+    hasDealtFinalDamage_ = true; // プレイヤーへの死亡演出中ダメージは無効化
+
+    // スケールを最小にして余計な Cube や Cylinder が画面に表示されるのを防止
+    explosionTransform_.scale = { 0.01f, 0.01f, 0.01f };
+    ringTransform_.scale = { 0.01f, 0.01f, 0.01f };
+
+    Vector3 spawnPos = { basePosition_.x, basePosition_.y + params_.ringGroundOffset, basePosition_.z };
+    explosionTransform_.translate = spawnPos;
+    ringTransform_.translate = spawnPos;
+
+    if (gpuParticleSystem_) {
+        // マジックナンバーを回避して、ローカル変数としてパラメータを保持
+        const float kBurstRadius = 20.0f; 
+        const float kVelocity = 6.5f;
+        const float kSpread = 3.5f;
+        const int kEmitCount = 15000;
+
+        gpuParticleSystem_->SetHemisphereEmitter(
+            Vector3{ basePosition_.x, basePosition_.y + params_.ringGroundOffset + 1.0f, basePosition_.z },
+            kBurstRadius,
+            0,
+            1.0f
+        );
+        
+        gpuParticleSystem_->SetVelocity(kVelocity);
+        gpuParticleSystem_->SetSpread(kSpread);
+        gpuParticleSystem_->Emit(kEmitCount);
+    }
+}
+

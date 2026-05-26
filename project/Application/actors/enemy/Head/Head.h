@@ -34,7 +34,7 @@ public:
   const Transform& GetTransform() const { return transform_; }
   const Vector3& GetDrawPosition() const { return drawPosition_; }
 
-  void OnDestroyed(const Vector3& attackDir, float blowSpeed, bool immediateVoxel = false);
+  OBB GetOBB() const;
   bool IsCompletelyDead() const;
   bool IsBlownAway() const { return isBlownAway_; }
   float GetBlowTimer() const { return blowTimer_; }
@@ -42,8 +42,7 @@ public:
   const Vector3& GetBlowVelocity() const { return blowVelocity_; }
   void SetBlowVelocity(const Vector3& v) { blowVelocity_ = v; }
   void ResetBlow();
-
-  OBB GetOBB() const;
+  void OnDestroyed(const Vector3& attackDir, float blowSpeed, bool immediateVoxel = false, float disappearDuration = -1.0f);
 
   // 指定した位置でパーティクルをはじけさせる
   void ScatterAt(const Vector3& velocity, const OBB& collisionArea);
@@ -66,6 +65,7 @@ private:
   float blowTimer_ = 0.0f;
   Vector3 blowVelocity_ = {};
   float disappearTimer_ = 0.0f;
+  float maxDisappearTime_ = 0.0f; // 爆散までの最大時間
 
   std::unique_ptr<VoxelParticleSystem> voxelSystem_ = nullptr;
   std::shared_ptr<CylinderClass> thrusterFlame_ = nullptr;

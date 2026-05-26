@@ -965,6 +965,26 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
         // Smoothstepでイージング
         float easedT = t * t * (3.0f - 2.0f * t);
 
+        // 合体中（部位引き戻し中）もプレイヤーの方向へ滑らかに向き直る（睨みつける）
+        if (player) {
+            Vector3 playerPos = player->GetTranslate();
+            Vector3 enemyPos = globalTransform_.translate;
+            Vector3 diff = Math::Subtract(playerPos, enemyPos);
+            diff.y = 0.0f;
+            float dist = Math::Length(diff);
+            if (dist > 0.001f) {
+                Vector3 dir = Math::Normalize(diff);
+                float targetYaw = std::atan2(dir.x, dir.z);
+                float currentYaw = globalTransform_.rotate.y;
+                float diffYaw = targetYaw - currentYaw;
+                while (diffYaw > 3.14159f) diffYaw -= 2.0f * 3.14159f;
+                while (diffYaw < -3.14159f) diffYaw += 2.0f * 3.14159f;
+
+                const float kTrackRotSpeed = 4.0f;
+                globalTransform_.rotate.y += diffYaw * kTrackRotSpeed * deltaTime;
+            }
+        }
+
         auto lerpTransform = [](const Transform& current, const Transform& target, float factor) -> Transform {
             Transform result = current;
             result.translate = Math::Add(current.translate, Math::Multiply(factor, Math::Subtract(target.translate, current.translate)));
@@ -973,6 +993,7 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
             return result;
         };
 
+        // 合体位置へのイージング補間
         for (int i = 0; i < 3; ++i) {
             bodyLocalTransforms_[i] = lerpTransform(startBodyLocalTransforms_[i], initialBodyLocalTransforms_[i], easedT);
         }
@@ -980,13 +1001,47 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
         headMidLocalTransform_ = lerpTransform(startHeadMidLocalTransform_, initialHeadMidLocalTransform_, easedT);
         headRightLocalTransform_ = lerpTransform(startHeadRightLocalTransform_, initialHeadRightLocalTransform_, easedT);
 
-        // ボス全体のグローバル座標も、マップ中央 (0.0f, 3.0f, 0.0f) へイージング移動させる
+        // 合体中も徐々に悶え（グラグラ・ブルブル高速振動、上下揺れ）を加えて苦しそうな表現を合成
+        globalTransform_.rotate.x = std::sin(deathTimer_ * kAgonyPitchFreq) * kAgonyPitchAmp * t;
+        globalTransform_.rotate.z = std::cos(deathTimer_ * kAgonyRollFreq) * kAgonyRollAmp * t;
+
+        float shakeOffset = std::sin(deathTimer_ * kShakeFreq) * kShakeAmp * t;
+        float verticalOffset = std::sin(deathTimer_ * kVerticalFreq) * kVerticalAmp * t;
+
+        // ボス全体のグローバル座標（中央 0.0f, 3.0f, 0.0f への補間 ＋ 高速振動揺れをブレンド）
         Vector3 centerPos = { 0.0f, 3.0f, 0.0f };
-        globalTransform_.translate = Math::Add(startGlobalTranslate_, Math::Multiply(easedT, Math::Subtract(centerPos, startGlobalTranslate_)));
+        Vector3 baseTranslate = Math::Add(startGlobalTranslate_, Math::Multiply(easedT, Math::Subtract(centerPos, startGlobalTranslate_)));
+        globalTransform_.translate = {
+            baseTranslate.x + shakeOffset,
+            baseTranslate.y + verticalOffset,
+            baseTranslate.z + shakeOffset * 0.5f
+        };
+
+        // ３つの頭部も合体中から悶えて少しうねる動きを追加
+        float headWiggle = std::sin(deathTimer_ * kHeadWiggleFreq) * kHeadWiggleAmp * t;
+        headLeftLocalTransform_.translate.x -= std::abs(headWiggle) * 0.2f;
+        headLeftLocalTransform_.translate.y += headWiggle * 0.3f;
+        headLeftLocalTransform_.rotate.z = -headWiggle * 0.1f;
+
+        headRightLocalTransform_.translate.x += std::abs(headWiggle) * 0.2f;
+        headRightLocalTransform_.translate.y -= headWiggle * 0.3f;
+        headRightLocalTransform_.rotate.z = -headWiggle * 0.1f;
+
+        headMidLocalTransform_.translate.y += std::sin(deathTimer_ * kHeadWiggleFreq * 1.2f) * kHeadWiggleAmp * 0.4f * t;
+        headMidLocalTransform_.rotate.x = std::cos(deathTimer_ * kHeadWiggleFreq) * 0.15f * t;
 
         if (t >= 1.0f) {
             deathPhase_ = DeathPhase::Gathered;
             deathTimer_ = 0.0f; // タメ用のタイマーリセット
+
+            // くっついたまさにその瞬間に、でかいカメラシェイクをトリガー！
+            if (engine_) {
+                if (auto* cam = engine_->GetCameraManager()->GetActiveCamera()) {
+                    const float kAssembleShakeIntensity = 18.0f;
+                    const int kAssembleShakeFrames = 35;
+                    cam->Shake(kAssembleShakeIntensity, kAssembleShakeFrames);
+                }
+            }
         }
     } else if (deathPhase_ == DeathPhase::Gathered) {
         deathTimer_ += deltaTime;
@@ -1059,49 +1114,53 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
         // マップ中央（ボスの親グローバル位置）
         Vector3 bossCenter = globalTransform_.translate;
 
-        // 各パーツをマップ中央から放射状（斜め上空外側）へ勢いよくはじけ飛ばす
-        auto explodePartRadial = [&](auto* part, const Transform& localT) {
+        // はじけ飛ぶのと同時に、スタンプのGPUParticleSystemを呼び出して超高密度大爆発を発生させる！
+        if (stompEffects_) {
+            stompEffects_->FireDeathExplosion(bossCenter);
+        }
+
+        // 1. 胴体3つを均等な3方向（120度間隔）へ勢いよく飛ばす（0.5秒後に飛行先で爆散）
+        for (int i = 0; i < 3; ++i) {
+            if (bodies_[i]) {
+                // ボスの現在の rotate.y を基準に120度ずつ綺麗にずらした水平吹き飛び方向を算出
+                float angle = globalTransform_.rotate.y + static_cast<float>(i) * (2.0f * 3.14159265f / 3.0f);
+                Vector3 dir = { std::sin(angle), 0.8f, std::cos(angle) };
+                dir = Math::Normalize(dir);
+                
+                // 消滅時間を 0.5 秒に指定して吹き飛ばし開始
+                bodies_[i]->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.5f);
+            }
+        }
+
+        // 2. 首（頭部3つ）を元の配置（左・中央・右）に応じてそれぞればらばらの方向へ飛ばす（0.5秒後に飛行先で爆散）
+        auto explodeHeadRadial = [&](auto* part, const Transform& localT) {
             if (part) {
                 // パーツのワールド位置を計算
                 Matrix4x4 globalMat = Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate, globalTransform_.translate);
                 Vector3 partWorldPos = Math::Transform(localT.translate, globalMat);
 
-                // マップ中央からパーツへの水平方向ベクトルを算出
+                // マップ中央から首への水平方向ベクトルを算出
                 Vector3 dir = Math::Subtract(partWorldPos, bossCenter);
                 dir.y = 0.0f; // 水平方向
                 float len = Math::Length(dir);
                 if (len < 0.1f) {
-                    // 中心にほぼ位置するパーツ（真ん中の首など）は適宜前方方向などへ散らす
                     dir = {0.0f, 0.0f, 1.0f};
                 } else {
                     dir = Math::Normalize(dir);
                 }
 
-                // 斜め上空へはじけ飛ぶようにY軸方向（上向き）の吹き飛び成分をブレンド
+                // 斜め上空へはじけ飛ぶように上向き成分をブレンド
                 dir.y = 0.8f;
                 dir = Math::Normalize(dir);
 
-                // パーツ自体の吹き飛び移動を開始（即時ボクセル化フラグをtrueに指定）
-                part->OnDestroyed(dir, kExplosionBlowSpeed, true);
-                
-                // ボクセル粒子たちも吹き飛ぶ方向へ勢いよくScatter（飛散）させる
-                OBB impactOBB;
-                impactOBB.center = partWorldPos;
-                impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
-                impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
-                impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
-                impactOBB.size = {3.0f, 3.0f, 3.0f}; 
-                
-                // ボクセルの初速ベクトルを合成
-                Vector3 scatterVel = Math::Multiply(kExplosionBlowSpeed * 0.8f, dir);
-                part->ScatterAt(scatterVel, impactOBB);
+                // 消滅時間を 0.5 秒に指定して吹き飛ばし開始
+                part->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.5f);
             }
         };
 
-        for (int i = 0; i < 3; ++i) explodePartRadial(bodies_[i].get(), bodyLocalTransforms_[i]);
-        explodePartRadial(headLeft_.get(), headLeftLocalTransform_);
-        explodePartRadial(headMid_.get(), headMidLocalTransform_);
-        explodePartRadial(headRight_.get(), headRightLocalTransform_);
+        explodeHeadRadial(headLeft_.get(), headLeftLocalTransform_);
+        explodeHeadRadial(headMid_.get(), headMidLocalTransform_);
+        explodeHeadRadial(headRight_.get(), headRightLocalTransform_);
 
         deathPhase_ = DeathPhase::Aftermath; // 余韻フェーズへ移行
         deathTimer_ = 0.0f;                  // 余韻用タイマーリセット

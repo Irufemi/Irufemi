@@ -28,7 +28,7 @@ public:
   const Transform& GetTransform() const { return transform_; }
   const Vector3& GetDrawPosition() const { return drawPosition_; }
 
-  void OnDestroyed(const Vector3& attackDir, float blowSpeed, bool immediateVoxel = false);
+  void OnDestroyed(const Vector3& attackDir, float blowSpeed, bool immediateVoxel = false, float disappearDuration = -1.0f);
   bool IsCompletelyDead() const;
   bool IsBlownAway() const { return isBlownAway_; }
   float GetBlowTimer() const { return blowTimer_; }
@@ -58,6 +58,7 @@ private:
   float blowTimer_ = 0.0f;
   Vector3 blowVelocity_ = {};
   float disappearTimer_ = 0.0f;
+  float maxDisappearTime_ = 0.0f; // 爆散までの最大時間
 
   std::unique_ptr<VoxelParticleSystem> voxelSystem_ = nullptr;
 };

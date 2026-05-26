@@ -97,11 +97,11 @@ private:
     Vector3 initialCameraTarget_ = {};
 
     // --- 死亡演出カメラ・自動後退調整用定数（メンバー変数） ---
-    static constexpr float kCameraBehindDistance = 18.0f;       ///< 死亡演出時にプレイヤーの背後へカメラを引く距離
-    static constexpr float kCameraHeightOffset = 4.5f;           ///< プレイヤー座標からのカメラの高さオフセット
-    static constexpr float kGroundClampMinY = 1.5f;             ///< カメラが地面を突き抜けるのを防ぐ最小Y座標
-    static constexpr float kBossLookAtHeightOffset = 6.0f;      ///< 死亡演出中のボスの注視点高さオフセット（胴体・頭部中間）
-    static constexpr float kTargetPlayerBossDistance = 38.0f;   ///< 理想の対比レイアウト（肩越しアングル）を作るためのプレイヤーとボスの基準距離
+    static constexpr float kCameraBehindDistance = 32.0f;       ///< 死亡演出時にプレイヤーの背後へカメラを引く距離 (大幅引きに変更)
+    static constexpr float kCameraHeightOffset = 2.0f;           ///< プレイヤー座標からのカメラの高さオフセット (低くして見上げアングルに変更)
+    static constexpr float kGroundClampMinY = 1.2f;             ///< カメラが地面を突き抜けるのを防ぐ最小Y座標 (カメラを下げたのに対応)
+    static constexpr float kBossLookAtHeightOffset = 9.0f;      ///< 死亡演出中のボスの注視点高さオフセット（注視点を上げて見上げ感を強調）
+    static constexpr float kTargetPlayerBossDistance = 48.0f;   ///< 理想の対比レイアウトを作るためのプレイヤーとボスの基準距離 (引き対応)
     static constexpr float kPlayerBackoffSpeed = 15.0f;          ///< 近すぎるプレイヤーを理想距離へ滑らかに後退させる秒速速度
 
     // ゲームオブジェクト

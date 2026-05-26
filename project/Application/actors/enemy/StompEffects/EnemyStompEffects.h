@@ -58,6 +58,9 @@ public:
     void Cancel(); // 強制キャンセル用
     bool IsActive() const { return isActive_; }
 
+    // 死亡演出専用：即座にド派手な大爆発（炎パーティクル15,000発）を発生させる
+    void FireDeathExplosion(const Vector3& position);
+
     /// @brief デバッグ描画（当たり判定等の可視化用）
     void DrawDebug(class Line3DRegion* lineRegion);
 

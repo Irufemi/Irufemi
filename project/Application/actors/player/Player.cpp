@@ -538,7 +538,8 @@ void Player::Update() {
 
     cameraController_.UpdateInput(input_, rotate_);
 
-    if (!isTargetingEnemy_) {
+    // シネマティック中（死亡演出中）は常にボスの現在位置を注視するように変更
+    if (!isTargetingEnemy_ && !isCinematicMode_) {
         float sinY = std::sin(rotate_.y);
         float cosY = std::cos(rotate_.y);
         aimPos_ = { translate_.x + sinY * kAimDistance, translate_.y, translate_.z + cosY * kAimDistance };

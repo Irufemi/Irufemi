@@ -213,8 +213,29 @@ void GameScene::Update() {
               else playerToBoss = Math::Normalize(playerToBoss);
           }
 
+          // カメラの引き距離を死亡演出タイマーの経過時間に応じて動的に変化させる！
+          // 合体完了（4.5秒経過）した瞬間に、32.0f から 12.0f まで超高速ズームインし、その後爆散前に引きへスッと戻る
+          float currentBehindDist = kCameraBehindDistance; // 通常引き 32.0f
+          
+          if (deathCameraLerpTimer_ > 4.5f) {
+              float afterGatherTime = deathCameraLerpTimer_ - 4.5f; // 合体完了からの経過時間 (0.0s 〜 2.0s)
+              
+              if (afterGatherTime < 0.7f) {
+                  // 合体後0.0s〜0.7s: カメラを 32.0f から 12.0f へ急接近（高速クローズアップ）！
+                  float zoomT = afterGatherTime / 0.7f;
+                  float easedZoomT = zoomT * zoomT * (3.0f - 2.0f * zoomT);
+                  currentBehindDist = kCameraBehindDistance + (12.0f - kCameraBehindDistance) * easedZoomT;
+              } else {
+                  // 合体後0.7s〜2.0s: カメラを 12.0f から 32.0f の元の引きへ戻す（ズームバック）！
+                  float zoomBackT = (afterGatherTime - 0.7f) / 1.3f;
+                  if (zoomBackT > 1.0f) zoomBackT = 1.0f;
+                  float easedZoomBackT = zoomBackT * zoomBackT * (3.0f - 2.0f * zoomBackT);
+                  currentBehindDist = 12.0f + (kCameraBehindDistance - 12.0f) * easedZoomBackT;
+              }
+          }
+
           // カメラ目標位置を「プレイヤーの背後」かつ「少し見上げる高さ」に配置
-          Vector3 targetCamPos = Math::Subtract(playerPos, Math::Multiply(kCameraBehindDistance, playerToBoss));
+          Vector3 targetCamPos = Math::Subtract(playerPos, Math::Multiply(currentBehindDist, playerToBoss));
           targetCamPos.y = playerPos.y + kCameraHeightOffset;
           if (targetCamPos.y < kGroundClampMinY) {
               targetCamPos.y = kGroundClampMinY;
