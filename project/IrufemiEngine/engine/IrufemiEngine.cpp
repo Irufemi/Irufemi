@@ -45,6 +45,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Skybox/Skybox.h"
 #include "Graphics/Data/VertexData.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
+#include "Renderer/VoxelParticle/VoxelParticleManager.h"
 
 #include "Framework/IScene.h"
 
@@ -246,6 +247,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   GPUParticleSystem::SetDXCommon(dxCommon_.get());
   VoxelParticleSystem::SetEngine(this);
 
+  voxelParticleManager_ = std::make_unique<VoxelParticleManager>();
+  voxelParticleManager_->Initialize(this);
+
   Circle2D::SetEngine(this);
   Line3DRegion::SetEngine(this);
   CubeClass::SetEngine(this);
@@ -442,6 +446,9 @@ void IrufemiEngine::Finalize() {
   Skybox::SetEngine(nullptr);
   GPUParticleSystem::SetDXCommon(nullptr);
   VoxelParticleSystem::SetEngine(nullptr);
+  if (voxelParticleManager_) {
+    voxelParticleManager_.reset();
+  }
   Circle2D::SetEngine(nullptr);
   Line3DRegion::SetEngine(nullptr);
   CubeClass::SetEngine(nullptr);
@@ -536,6 +543,10 @@ void IrufemiEngine::Execute() {
     postProcessManager_->Update(totalTime_);
     sceneTransition_->Update(deltaTime_);
 
+    if (voxelParticleManager_) {
+        voxelParticleManager_->Update(deltaTime_);
+    }
+
     // インプットを更新
     inputManager_->Update();
 
@@ -544,6 +555,10 @@ void IrufemiEngine::Execute() {
 
     // 描画
     sceneManager_->Draw();
+
+    if (voxelParticleManager_) {
+        voxelParticleManager_->Draw();
+    }
 
     // ここで溜まった描画パケットを一斉に処理する
     drawManager_->ExecuteRenderQueues(this);

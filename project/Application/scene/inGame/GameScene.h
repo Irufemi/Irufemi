@@ -114,16 +114,15 @@ private:
     // バトル用動的エリアライト
     std::unique_ptr<DynamicArenaLight> dynamicArenaLight_ = nullptr;
     
-    // 操作説明スプライト
-    std::unique_ptr<Sprite> operationNormalSprite_ = nullptr;
-    std::unique_ptr<Sprite> operationChargedSprite_ = nullptr;
-    std::unique_ptr<Sprite> operationNormalSprite1st_ = nullptr;
-    std::unique_ptr<Sprite> operationChargedSprite1st_ = nullptr;
-    std::unique_ptr<Sprite> numberSpriteTens_ = nullptr;
-    std::unique_ptr<Sprite> numberSpriteOnes_ = nullptr;
-    std::unique_ptr<Sprite> numberSpriteTens1st_ = nullptr;
-    std::unique_ptr<Sprite> numberSpriteOnes1st_ = nullptr;
+    std::unique_ptr<Sprite> uiLClickNormal_ = nullptr;
+    std::unique_ptr<Sprite> uiLClickCharged_ = nullptr;
+    std::unique_ptr<Sprite> uiRClickNormal_ = nullptr;
+    std::unique_ptr<Sprite> uiRClickCharged_ = nullptr;
+    std::unique_ptr<Sprite> uiE_ = nullptr;
+    std::unique_ptr<Sprite> uiV_ = nullptr;
+    std::unique_ptr<Sprite> uiSpace_ = nullptr;
     std::unique_ptr<Sprite> cooldownWarningSprite_ = nullptr;
+    std::unique_ptr<Sprite> keyEscSprite_ = nullptr;
 
     // 当たり判定の有効化フラグ
     bool isCollisionEnabled_ = true;

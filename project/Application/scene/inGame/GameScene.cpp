@@ -4,6 +4,7 @@
 
 #include "Framework/SceneManager.h"
 #include "Irufemi.h"
+#include <dinput.h>
 
 #include "Graphics/Data/AreaLight.h"
 #include "Graphics/Data/CameraForGPU.h"
@@ -68,51 +69,37 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   dynamicArenaLight_ = std::make_unique<DynamicArenaLight>();
   dynamicArenaLight_->Initialize(engine_, areaLights_);
 
-  // 操作説明スプライトの初期化
-  operationNormalSprite_ = std::make_unique<Sprite>();
-  operationNormalSprite_->Initialize("resources/texture/inGame/operation_normal_3.png");
-  operationNormalSprite_->SetSize(600.0f, 300.0f);
-  operationNormalSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
+  // 操作説明スプライトの初期化 (1人称視点用)
+  float screenW = static_cast<float>(engine_->GetClientWidth());
+  float screenH = static_cast<float>(engine_->GetClientHeight());
+  auto initKeyUI = [&](std::unique_ptr<Sprite>& sprite, const std::string& path, float x, float y) {
+      sprite = std::make_unique<Sprite>();
+      sprite->Initialize(path);
+      sprite->SetSize(300.0f, 50.0f);
+      sprite->SetPositionTopLeft(x, y);
+      sprite->SetColor({0.8f, 0.8f, 0.8f, 1.0f});
+  };
 
-  operationChargedSprite_ = std::make_unique<Sprite>();
-  operationChargedSprite_->Initialize("resources/texture/inGame/operation_charged_3.png");
-  operationChargedSprite_->SetSize(600.0f, 300.0f);
-  operationChargedSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
-
-  operationNormalSprite1st_ = std::make_unique<Sprite>();
-  operationNormalSprite1st_->Initialize("resources/texture/inGame/operation_normal_1.png");
-  operationNormalSprite1st_->SetSize(800.0f, 150.0f);
-  operationNormalSprite1st_->SetPositionTopLeft(460.0f, static_cast<float>(engine_->GetClientHeight()) - 160.0f);
-
-  operationChargedSprite1st_ = std::make_unique<Sprite>();
-  operationChargedSprite1st_->Initialize("resources/texture/inGame/operation_charged_1.png");
-  operationChargedSprite1st_->SetSize(800.0f, 150.0f);
-  operationChargedSprite1st_->SetPositionTopLeft(460.0f, static_cast<float>(engine_->GetClientHeight()) - 160.0f);
-
-  numberSpriteTens_ = std::make_unique<Sprite>();
-  numberSpriteTens_->Initialize("resources/texture/inGame/numbers.png");
-  numberSpriteTens_->SetSize(40.0f, 40.0f);
-  numberSpriteTens_->SetPositionTopLeft(340.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
-
-  numberSpriteOnes_ = std::make_unique<Sprite>();
-  numberSpriteOnes_->Initialize("resources/texture/inGame/numbers.png");
-  numberSpriteOnes_->SetSize(40.0f, 40.0f);
-  numberSpriteOnes_->SetPositionTopLeft(365.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
-
-  numberSpriteTens1st_ = std::make_unique<Sprite>();
-  numberSpriteTens1st_->Initialize("resources/texture/inGame/numbers_white.png");
-  numberSpriteTens1st_->SetSize(24.0f, 24.0f);
-  numberSpriteTens1st_->SetPositionTopLeft(static_cast<float>(engine_->GetClientWidth()) - 85.0f, static_cast<float>(engine_->GetClientHeight()) - 56.0f);
-
-  numberSpriteOnes1st_ = std::make_unique<Sprite>();
-  numberSpriteOnes1st_->Initialize("resources/texture/inGame/numbers_white.png");
-  numberSpriteOnes1st_->SetSize(24.0f, 24.0f);
-  numberSpriteOnes1st_->SetPositionTopLeft(static_cast<float>(engine_->GetClientWidth()) - 70.0f, static_cast<float>(engine_->GetClientHeight()) - 56.0f);
+  float uiBaseX = 20.0f;
+  initKeyUI(uiLClickNormal_, "resources/texture/inGame/ui_lclick_normal.png", uiBaseX, screenH - 320.0f);
+  initKeyUI(uiLClickCharged_, "resources/texture/inGame/ui_lclick_charged.png", uiBaseX, screenH - 320.0f);
+  initKeyUI(uiRClickNormal_, "resources/texture/inGame/ui_rclick_normal.png", uiBaseX, screenH - 260.0f);
+  initKeyUI(uiRClickCharged_, "resources/texture/inGame/ui_rclick_charged.png", uiBaseX, screenH - 260.0f);
+  initKeyUI(uiE_, "resources/texture/inGame/ui_e.png", uiBaseX, screenH - 200.0f);
+  initKeyUI(uiV_, "resources/texture/inGame/ui_v.png", uiBaseX, screenH - 140.0f);
+  initKeyUI(uiSpace_, "resources/texture/inGame/ui_space.png", uiBaseX, screenH - 80.0f);
 
   cooldownWarningSprite_ = std::make_unique<Sprite>();
   cooldownWarningSprite_->Initialize("resources/texture/inGame/cooldown_warning.png");
   cooldownWarningSprite_->SetSize(400.0f, 100.0f);
   cooldownWarningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f + 15.0f, static_cast<float>(engine_->GetClientHeight()) / 2.0f + 80.0f);
+
+  keyEscSprite_ = std::make_unique<Sprite>();
+  keyEscSprite_->Initialize("resources/texture/inGame/key_ESC.png");
+  keyEscSprite_->SetAnchor(0.0f, 0.0f);
+  keyEscSprite_->SetPosition(20.0f, 20.0f);
+  keyEscSprite_->SetSize(64.0f, 64.0f);
+  keyEscSprite_->SetColor({0.8f, 0.8f, 0.8f, 1.0f});
 }
 
 void GameScene::Update() {
@@ -305,45 +292,80 @@ void GameScene::Update() {
   float screenH = static_cast<float>(engine_->GetClientHeight());
   float uiScale = screenH / 720.0f;
 
-  if (operationNormalSprite_) { 
-      operationNormalSprite_->SetUIScale(uiScale);
-      operationNormalSprite_->SetPositionTopLeft(10.0f * uiScale, screenH - 280.0f * uiScale);
-      operationNormalSprite_->Update(); 
-  }
-  if (operationChargedSprite_) { 
-      operationChargedSprite_->SetUIScale(uiScale);
-      operationChargedSprite_->SetPositionTopLeft(10.0f * uiScale, screenH - 280.0f * uiScale);
-      operationChargedSprite_->Update(); 
-  }
-  if (operationNormalSprite1st_) { 
-      operationNormalSprite1st_->SetUIScale(uiScale);
-      operationNormalSprite1st_->SetPositionTopLeft(460.0f * uiScale, screenH - 160.0f * uiScale);
-      operationNormalSprite1st_->Update(); 
-  }
-  if (operationChargedSprite1st_) { 
-      operationChargedSprite1st_->SetUIScale(uiScale);
-      operationChargedSprite1st_->SetPositionTopLeft(460.0f * uiScale, screenH - 160.0f * uiScale);
-      operationChargedSprite1st_->Update(); 
-  }
+  // 個別キーUIの更新 (1人称視点専用)
+  if (player_ && player_->IsFirstPerson()) {
+      InputManager* input = engine_->GetInputManager();
+      bool lClick = input->IsMouseButtonDown(Mouse::Button::Left);
+      bool rClick = input->IsMouseButtonDown(Mouse::Button::Right);
+      bool eDown = input->IsKeyDownDIK(DIK_E);
+      bool vDown = input->IsKeyDownDIK(DIK_V);
+      bool spaceDown = input->IsKeyDownDIK(DIK_SPACE);
 
-  if (numberSpriteTens_) {
-      numberSpriteTens_->SetUIScale(uiScale);
-      // 元々 X=340, Y=screenH - 280
-      numberSpriteTens_->SetPositionTopLeft(340.0f * uiScale, screenH - 280.0f * uiScale);
-  }
-  if (numberSpriteOnes_) {
-      numberSpriteOnes_->SetUIScale(uiScale);
-      // 元々 X=365, Y=screenH - 280
-      numberSpriteOnes_->SetPositionTopLeft(365.0f * uiScale, screenH - 280.0f * uiScale);
-  }
+      Vector4 colorDown = {0.0f, 1.0f, 1.0f, 1.0f};
+      Vector4 colorUp = {0.8f, 0.8f, 0.8f, 1.0f};
 
-  if (numberSpriteTens1st_) {
-      numberSpriteTens1st_->SetUIScale(uiScale);
-      numberSpriteTens1st_->SetPositionTopLeft(screenW - 85.0f * uiScale, screenH - 56.0f * uiScale);
-  }
-  if (numberSpriteOnes1st_) {
-      numberSpriteOnes1st_->SetUIScale(uiScale);
-      numberSpriteOnes1st_->SetPositionTopLeft(screenW - 70.0f * uiScale, screenH - 56.0f * uiScale);
+      float baseX = 460.0f;
+      float baseY = screenH - 80.0f;
+      float rowSpacing = -60.0f; // 上段なのでマイナス方向(Yを減らす)
+      float colSpacing = 260.0f;
+
+      // --- 上段 ---
+      if (uiE_) {
+          uiE_->SetUIScale(uiScale);
+          uiE_->SetPositionTopLeft((baseX) * uiScale, (baseY + rowSpacing) * uiScale);
+          uiE_->SetColor(eDown ? colorDown : colorUp);
+          uiE_->Update();
+      }
+      if (uiV_) {
+          uiV_->SetUIScale(uiScale);
+          uiV_->SetPositionTopLeft((baseX + colSpacing) * uiScale, (baseY + rowSpacing) * uiScale);
+          uiV_->SetColor(vDown ? colorDown : colorUp);
+          uiV_->Update();
+      }
+
+      // --- 下段 ---
+      if (uiLClickNormal_) {
+          uiLClickNormal_->SetUIScale(uiScale);
+          uiLClickNormal_->SetPositionTopLeft((baseX) * uiScale, (baseY) * uiScale);
+          uiLClickNormal_->SetColor(lClick ? colorDown : colorUp);
+          uiLClickNormal_->Update();
+      }
+      if (uiLClickCharged_) {
+          uiLClickCharged_->SetUIScale(uiScale);
+          uiLClickCharged_->SetPositionTopLeft((baseX) * uiScale, (baseY) * uiScale);
+          uiLClickCharged_->SetColor(lClick ? colorDown : colorUp);
+          uiLClickCharged_->Update();
+      }
+      if (uiRClickNormal_) {
+          uiRClickNormal_->SetUIScale(uiScale);
+          uiRClickNormal_->SetPositionTopLeft((baseX + colSpacing) * uiScale, (baseY) * uiScale);
+          uiRClickNormal_->SetColor(rClick ? colorDown : colorUp);
+          uiRClickNormal_->Update();
+      }
+      if (uiRClickCharged_) {
+          uiRClickCharged_->SetUIScale(uiScale);
+          uiRClickCharged_->SetPositionTopLeft((baseX + colSpacing) * uiScale, (baseY) * uiScale);
+          uiRClickCharged_->SetColor(rClick ? colorDown : colorUp);
+          uiRClickCharged_->Update();
+      }
+      if (uiSpace_) {
+          uiSpace_->SetUIScale(uiScale);
+          uiSpace_->SetPositionTopLeft((baseX + colSpacing * 2) * uiScale, (baseY) * uiScale);
+          uiSpace_->SetColor(spaceDown ? colorDown : colorUp);
+          uiSpace_->Update();
+      }
+  } else if (player_ && !player_->IsFirstPerson()) {
+      InputManager* input = engine_->GetInputManager();
+      bool vDown = input->IsKeyDownDIK(DIK_V);
+      Vector4 colorDown = {0.0f, 1.0f, 1.0f, 1.0f};
+      Vector4 colorUp = {0.8f, 0.8f, 0.8f, 1.0f};
+
+      if (uiV_) {
+          uiV_->SetUIScale(uiScale);
+          uiV_->SetPositionTopLeft(20.0f * uiScale, screenH - 80.0f * uiScale);
+          uiV_->SetColor(vDown ? colorDown : colorUp);
+          uiV_->Update();
+      }
   }
 
   if (cooldownWarningSprite_) {
@@ -352,25 +374,10 @@ void GameScene::Update() {
       cooldownWarningSprite_->Update();
   }
 
-  if (numberSpriteTens_ && numberSpriteOnes_ && numberSpriteTens1st_ && numberSpriteOnes1st_) {
-      int remainingSeconds = 0;
-      if (player_ && player_->IsKarakuriCharged()) {
-          remainingSeconds = player_->GetKarakuriActiveTimer() / 60;
-      }
-      int tens = remainingSeconds / 10;
-      int ones = remainingSeconds % 10;
 
-      if (player_ && player_->IsFirstPerson()) {
-          numberSpriteTens1st_->SetTextureRectPixels(tens * 40, 0, 40, 40, false);
-          numberSpriteTens1st_->Update();
-          numberSpriteOnes1st_->SetTextureRectPixels(ones * 40, 0, 40, 40, false);
-          numberSpriteOnes1st_->Update();
-      } else {
-          numberSpriteTens_->SetTextureRectPixels(tens * 40, 0, 40, 40, false);
-          numberSpriteTens_->Update();
-          numberSpriteOnes_->SetTextureRectPixels(ones * 40, 0, 40, 40, false);
-          numberSpriteOnes_->Update();
-      }
+
+  if (keyEscSprite_) {
+      keyEscSprite_->Update();
   }
 
   // シーン遷移
@@ -421,15 +428,10 @@ void GameScene::Draw() {
     player_->Draw3DUI(boss_.get(), true, isPaused);
   }
 
-  // --- 操作説明および警告スプライト描画（3人称視点のみ） ---
+  // --- 操作説明および警告スプライト描画 ---
   if (player_ && !player_->IsFirstPerson()) {
-      if (player_->IsKarakuriCharged()) {
-          if (operationChargedSprite_) operationChargedSprite_->Draw();
-          if (numberSpriteTens_) numberSpriteTens_->Draw();
-          if (numberSpriteOnes_) numberSpriteOnes_->Draw();
-      } else {
-          if (operationNormalSprite_) operationNormalSprite_->Draw();
-      }
+      if (uiV_) uiV_->Draw();
+
 
       // --- クールダウン警告スプライト描画 ---
       if (player_->GetCooldownWarningTimer() > 0) {
@@ -440,13 +442,22 @@ void GameScene::Draw() {
   } else if (player_ && player_->IsFirstPerson()) {
       // --- 1人称視点専用UI描画 ---
       if (!player_->IsKarakuriCharged()) {
-          if (operationNormalSprite1st_) operationNormalSprite1st_->Draw();
+          if (uiLClickNormal_) uiLClickNormal_->Draw();
+          if (uiRClickNormal_) uiRClickNormal_->Draw();
       } else {
-          if (operationChargedSprite1st_) operationChargedSprite1st_->Draw();
-          if (numberSpriteTens1st_) numberSpriteTens1st_->Draw();
-          if (numberSpriteOnes1st_) numberSpriteOnes1st_->Draw();
+          if (uiLClickCharged_) uiLClickCharged_->Draw();
+          if (uiRClickCharged_) uiRClickCharged_->Draw();
       }
+      
+      // 共通キーUI
+      if (uiE_) uiE_->Draw();
+      if (uiV_) uiV_->Draw();
+      if (uiSpace_) uiSpace_->Draw();
   } 
+
+  if (keyEscSprite_) {
+      keyEscSprite_->Draw();
+  }
 }
 
 
@@ -562,7 +573,10 @@ void GameScene::CheckEnemyToPlayerCollisions() {
       return;
     OBB partOBB = part->GetOBB();
     if (Collision::IsOBBSphereCollision(partOBB, playerColliderSphere)) {
-      if (player_->ApplyDamage(kDamagePartToPlayer)) {
+      bool isIdle = (boss_->GetState() == EnemyState::Idle);
+      bool shouldDealDamage = (!isIdle || part->IsBlownAway());
+
+      if (shouldDealDamage && player_->ApplyDamage(kDamagePartToPlayer)) {
         // 吹き飛んでいる状態のとき、めり込んで連続ダメージになるのを防ぐため部位を反射（バウンド）させる
         if (part->IsBlownAway()) {
           Vector3 toPlayer = Math::Subtract(playerColliderSphere.center, partOBB.center);
@@ -583,67 +597,38 @@ void GameScene::CheckEnemyToPlayerCollisions() {
       bool isTackle = (boss_->GetState() == EnemyState::Attack_Tackle);
 
       // 押し出し処理
-      Vector3 diff = Math::Subtract(player_->GetTranslate(), partOBB.center);
-      float bestPushEval = 1e10f;
-      float bestActualPushDist = 0.0f;
-      Vector3 bestPushDir = {0.0f, 0.0f, 0.0f};
+      if (!isTackle) {
+        Vector3 diff = Math::Subtract(player_->GetTranslate(), partOBB.center);
+        float bestPushEval = 1e10f;
+        float bestActualPushDist = 0.0f;
+        Vector3 bestPushDir = {0.0f, 0.0f, 0.0f};
 
-      for (int axis = 0; axis < 3; ++axis) {
-        if (axis == 1) continue; // Y軸除外
-        
-        float proj = Math::Dot(diff, partOBB.orientations[axis]);
-        float halfSize = (axis == 0) ? partOBB.size.x : partOBB.size.z;
-        
-        float actualPenetration = 0.0f;
-        float evalPenetration = 0.0f;
-        Vector3 pushDir = {0.0f, 0.0f, 0.0f};
-
-        if (isTackle && axis == 0) {
-            // --- 突進中専用：X軸（左右）へ強制的に逃がす ---
-            Vector3 bossPos = boss_->GetTargetPosition();
-            Vector3 diffFromBoss = Math::Subtract(player_->GetTranslate(), bossPos);
-            float signX = (Math::Dot(diffFromBoss, partOBB.orientations[0]) >= 0.0f) ? 1.0f : -1.0f;
-            
-            if (signX > 0.0f) {
-                actualPenetration = (halfSize + playerColliderSphere.radius) - proj;
-                pushDir = partOBB.orientations[0];
-            } else {
-                actualPenetration = (halfSize + playerColliderSphere.radius) + proj;
-                pushDir = Math::Multiply(-1.0f, partOBB.orientations[0]);
-            }
-            
-            actualPenetration += 3.0f; // 外側へ弾き出すボーナス
-            evalPenetration = actualPenetration;
-        } else {
-            // --- 通常時の押し出し（突進中のZ軸も含む） ---
-            actualPenetration = (halfSize + playerColliderSphere.radius) - std::abs(proj);
-            float sign = (proj >= 0.0f) ? 1.0f : -1.0f;
-            pushDir = Math::Multiply(sign, partOBB.orientations[axis]);
-            
-            if (isTackle && axis == 2) {
-                // 突進中はZ軸へ絶対に押し出されないようペナルティ
-                evalPenetration = actualPenetration * 1000.0f;
-            } else {
-                // 通常はそのままの距離で評価
-                evalPenetration = actualPenetration;
-            }
-        }
-
-        if (actualPenetration > 0.0f && evalPenetration < bestPushEval) {
-            bestPushEval = evalPenetration;
-            bestActualPushDist = actualPenetration;
-            bestPushDir = pushDir;
-        }
-      }
-      
-      if (bestActualPushDist > 0.0f && bestPushEval < 1e9f) {
-          bestPushDir.y = 0.0f;
-          if (Math::Length(bestPushDir) > 0.001f) {
-              bestPushDir = Math::Normalize(bestPushDir);
-              Vector3 newPos = Math::Add(player_->GetTranslate(), Math::Multiply(bestActualPushDist, bestPushDir));
-              player_->SetTranslate(newPos);
-              playerColliderSphere.center = player_->GetCollider().center; // 更新
+        for (int axis = 0; axis < 3; ++axis) {
+          if (axis == 1) continue; // Y軸除外
+          
+          float proj = Math::Dot(diff, partOBB.orientations[axis]);
+          float halfSize = (axis == 0) ? partOBB.size.x : partOBB.size.z;
+          
+          float actualPenetration = (halfSize + playerColliderSphere.radius) - std::abs(proj);
+          float sign = (proj >= 0.0f) ? 1.0f : -1.0f;
+          Vector3 pushDir = Math::Multiply(sign, partOBB.orientations[axis]);
+          
+          if (actualPenetration > 0.0f && actualPenetration < bestPushEval) {
+              bestPushEval = actualPenetration;
+              bestActualPushDist = actualPenetration;
+              bestPushDir = pushDir;
           }
+        }
+        
+        if (bestActualPushDist > 0.0f && bestPushEval < 1e9f) {
+            bestPushDir.y = 0.0f;
+            if (Math::Length(bestPushDir) > 0.001f) {
+                bestPushDir = Math::Normalize(bestPushDir);
+                Vector3 newPos = Math::Add(player_->GetTranslate(), Math::Multiply(bestActualPushDist, bestPushDir));
+                player_->SetTranslate(newPos);
+                playerColliderSphere.center = player_->GetCollider().center; // 更新
+            }
+        }
       }
     }
   };
@@ -860,10 +845,16 @@ void GameScene::CheckFlyingPartsCollisions() {
               target->SetPosition(Math::Subtract(tPos, Math::Multiply(pushOut, normal)));
           }
 
-          projectile->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b1),
-                                projectile->GetOBB());
-          target->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b2),
-                            target->GetOBB());
+          /// @brief 衝突範囲の中間点に局所的な破片飛散用OBBを生成する
+          OBB impactOBB;
+          impactOBB.center = Math::Multiply(0.5f, Math::Add(projectileOBB.center, target->GetOBB().center));
+          impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+          impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+          impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+          impactOBB.size = {3.0f, 3.0f, 3.0f};
+
+          projectile->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b1), impactOBB);
+          target->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b2), impactOBB);
         }
       }
     };
@@ -970,8 +961,8 @@ void GameScene::CheckPlayerBuildingCollisions() {
       
       // ビルのボクセルはY軸方向に大きく引き伸ばされており（最大130mなどを16分割）、
       // 剣の判定（半径1.5m）だとボクセルとボクセルの隙間をすり抜けてしまうため、
-      // 確実に火花が飛ぶように判定を縦に大きく広げる（X,Zも少し広げる）
-      impactOBB.size = {attackSphere.radius * 2.0f, attackSphere.radius * 8.0f, attackSphere.radius * 2.0f};
+      // 確実に火花が飛ぶように判定を縦に少し広げる。全体が爆散しないよう8倍から3倍へ縮小
+      impactOBB.size = {attackSphere.radius * 2.0f, attackSphere.radius * 3.0f, attackSphere.radius * 2.0f};
       building->ScatterAt(i, Math::Multiply(3.0f, attackDir), impactOBB);
     }
 
@@ -1114,7 +1105,16 @@ void GameScene::CheckFlyingPartsBuildingCollisions() {
         Vector3 vel = part->GetBlowVelocity();
         Vector3 dir = Math::Normalize(vel);
         building->ApplyDamage(i, kDamagePartToBuilding, dir, 0.6f);
-        building->ScatterAt(i, Math::Multiply(kCollisionScatterMultiplier, vel), partOBB);
+        
+        /// @brief 衝突範囲の中間点に局所的な破片飛散用OBBを生成する
+        OBB impactOBB;
+        impactOBB.center = Math::Multiply(0.5f, Math::Add(partOBB.center, bOBB.center));
+        impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+        impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+        impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+        impactOBB.size = {3.0f, 3.0f, 3.0f};
+        
+        building->ScatterAt(i, Math::Multiply(kCollisionScatterMultiplier, vel), impactOBB);
 
         // 部位の反射
         Vector3 diff = Math::Subtract(partOBB.center, bOBB.center);
@@ -1162,12 +1162,29 @@ void GameScene::CheckFlyingBuildingsVsEnemyCollisions() {
         }
         // 部位にパーティクル散らし
         Vector3 vel = building->GetBlowVelocity(buildingIdx);
-        part->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, vel),
-                        partOBB);
+        
+        /// @brief 衝突範囲の中間点に局所的な破片飛散用OBBを生成する
+        OBB impactOBB;
+        impactOBB.center = Math::Multiply(0.5f, Math::Add(partOBB.center, bOBB.center));
+        impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+        impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+        impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+        impactOBB.size = {3.0f, 3.0f, 3.0f};
+        
+        part->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, vel), impactOBB);
       }
       // 飛んだ建物は部位に当たったので削れる
       Vector3 velForScatter = building->GetBlowVelocity(buildingIdx);
-      building->ScatterAt(buildingIdx, Math::Multiply(kCollisionScatterMultiplier, velForScatter), partOBB);
+      
+      /// @brief 衝突範囲の中間点に局所的な破片飛散用OBBを生成する
+      OBB impactOBB2;
+      impactOBB2.center = Math::Multiply(0.5f, Math::Add(partOBB.center, bOBB.center));
+      impactOBB2.orientations[0] = {1.0f, 0.0f, 0.0f};
+      impactOBB2.orientations[1] = {0.0f, 1.0f, 0.0f};
+      impactOBB2.orientations[2] = {0.0f, 0.0f, 1.0f};
+      impactOBB2.size = {3.0f, 3.0f, 3.0f};
+      
+      building->ScatterAt(buildingIdx, Math::Multiply(kCollisionScatterMultiplier, velForScatter), impactOBB2);
       
       // 飛んだ建物は爆散（即消滅）
       building->MarkDestroyed(buildingIdx);
@@ -1221,8 +1238,16 @@ void GameScene::CheckFlyingBuildingsVsBuildingsCollisions() {
         building->ApplyDamage(ti, kDamageFlyingBuildingToBuilding, dir, 0.4f);
 
         // 各ビルにパーティクル散らし
-        building->ScatterAt(ti, Math::Multiply(kCollisionScatterMultiplier, flyingVel), flyingOBB);
-        building->ScatterAt(fi, Math::Multiply(kCollisionScatterMultiplier, Math::Multiply(-1.0f, flyingVel)), targetOBB);
+        /// @brief 衝突範囲の中間点に局所的な破片飛散用OBBを生成する
+        OBB impactOBB;
+        impactOBB.center = Math::Multiply(0.5f, Math::Add(flyingOBB.center, targetOBB.center));
+        impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+        impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+        impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+        impactOBB.size = {3.0f, 3.0f, 3.0f};
+        
+        building->ScatterAt(ti, Math::Multiply(kCollisionScatterMultiplier, flyingVel), impactOBB);
+        building->ScatterAt(fi, Math::Multiply(kCollisionScatterMultiplier, Math::Multiply(-1.0f, flyingVel)), impactOBB);
 
         // 飛んだ建物は反射
         Vector3 diff = Math::Subtract(flyingOBB.center, targetOBB.center);

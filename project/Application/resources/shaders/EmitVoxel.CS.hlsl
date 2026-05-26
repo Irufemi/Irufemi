@@ -81,9 +81,32 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 	float3 burstDir = (gEmitter.useCollision != 0) ? normalize(worldPos - gEmitter.collisionCenter) : rotatedNormal;
 	
 	float3 randomVec = (generator.Generate3d() * 2.0f - 1.0f) * 0.5f; // -0.5 ~ 0.5
-	float3 moveDir = normalize(lerp(rotatedNormal, burstDir, 0.7f) + randomVec);
-	
-	float3 finalVelocity = gEmitter.baseVelocity + moveDir * gEmitter.dispersion;
+    float3 finalVelocity = float3(0,0,0);
+
+    if (gEmitter.particleType == 1 && gEmitter.useCollision != 0)
+    {
+        // ビル近接攻撃などの衝突飛散時：均一に吹き飛ぶ不自然さを解消
+        float speedVariance = generator.Generate1d() * 0.6f + 0.4f; // 0.4 ~ 1.0 の速度ブレ
+        
+        float hitSpeed = length(gEmitter.baseVelocity);
+        float3 hitDir = (hitSpeed > 0.001f) ? normalize(gEmitter.baseVelocity) : float3(0, 1, 0);
+        
+        // 打撃の進行方向(hitDir) と 衝突中心から外への方向(burstDir) をブレンドし、ランダム成分を足す
+        float3 scatterDir = normalize(lerp(burstDir, hitDir, 0.4f) + randomVec);
+        
+        // 上に向かって破片が散るように Y 成分を少し底上げ
+        scatterDir.y += abs(randomVec.y) * 0.8f + 0.2f;
+        scatterDir = normalize(scatterDir);
+        
+        // 打撃の強さ(hitSpeed)を一部利用しつつ、バラつき(speedVariance)を与えることで塊で飛ぶのを防ぐ
+        finalVelocity = scatterDir * (hitSpeed * 0.5f + gEmitter.dispersion) * speedVariance;
+    }
+    else
+    {
+        // 既存ロジック
+	    float3 moveDir = normalize(lerp(rotatedNormal, burstDir, 0.7f) + randomVec);
+	    finalVelocity = gEmitter.baseVelocity + moveDir * gEmitter.dispersion;
+    }
 
 	gParticles[voxelIndex].color = voxel.color;
 	

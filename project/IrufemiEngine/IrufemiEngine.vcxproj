@@ -233,6 +233,7 @@
     <ClCompile Include="Resource\Audio\Sound.cpp" />
     <ClCompile Include="Resource\Texture\Texture.cpp" />
     <ClCompile Include="Engine\Core\Utility\StringUtility.cpp" />
+    <ClCompile Include="Renderer\VoxelParticle\VoxelParticleManager.cpp" />
     <ClCompile Include="Renderer\VoxelParticle\VoxelParticleSystem.cpp" />
     <ClCompile Include="Framework\UIAnimator.cpp" />
     <ClCompile Include="Framework\PromptController.cpp" />
@@ -268,6 +269,7 @@
     <ClInclude Include="Renderer\Core\IRenderable.h" />
     <ClInclude Include="Renderer\Effect\WeaponTrail.h" />
     <ClInclude Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.h" />
+    <ClInclude Include="Renderer\VoxelParticle\VoxelParticleManager.h" />
     <ClInclude Include="Renderer\VoxelParticle\VoxelParticleSystem.h" />
     <ClInclude Include="Resource\Model\Data\VoxelizedModel.h" />
     <ClInclude Include="Engine\Irufemi.h" />

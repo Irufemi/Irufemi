@@ -35,6 +35,7 @@
 
 class SceneManager;
 class DebugUI;
+class VoxelParticleManager;
 #include "Graphics/Camera/CameraManager.h"
 
 /**
@@ -183,6 +184,7 @@ public: // ゲッター
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
     CameraManager* GetCameraManager() { return cameraManager_.get(); }
+    VoxelParticleManager* GetVoxelParticleManager() { return voxelParticleManager_.get(); }
     /** 
      * @brief ポストプロセス管理者を取得
      * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
@@ -318,6 +320,9 @@ private: // メンバ変数
 
     // CameraManager
     std::unique_ptr<CameraManager> cameraManager_ = nullptr;
+
+    // VoxelParticleManager
+    std::unique_ptr<VoxelParticleManager> voxelParticleManager_ = nullptr;
 
     // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };

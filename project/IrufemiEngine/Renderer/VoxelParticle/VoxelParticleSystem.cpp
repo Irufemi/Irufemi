@@ -15,6 +15,8 @@
 #include <cassert>
 #include <cstdio>
 #include "Engine/Core/Math/Geometry/OBB.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Shape/Sphere.h"
 #include <Windows.h>
 #include <algorithm>
 
@@ -151,9 +153,27 @@ void VoxelParticleSystem::SyncConstantBuffers() {
     lastUpdateFrame_ = frameIndex;
 }
 
+
+bool VoxelParticleSystem::IsInFrustum() const {
+    if (!engine_ || !hasExploded_) return false;
+    auto* camManager = engine_->GetCameraManager();
+    if (!camManager) return true;
+    Camera* activeCam = camManager->GetActiveCamera();
+    if (!activeCam) return true;
+
+    Sphere sphere;
+    sphere.center = emitterData_.emitPosition;
+    // 拡散するパーティクルの最大範囲を見積もる
+    sphere.radius = 80.0f; 
+    
+    return Collision::IsCollision(activeCam->GetFrustum(), sphere);
+}
+
 void VoxelParticleSystem::DispatchCompute() {
   if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_)
     return;
+
+  if (!IsInFrustum()) return;
 
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
@@ -212,6 +232,8 @@ void VoxelParticleSystem::Draw() {
   // 2. Graphics Draw
   if (!hasExploded_)
     return;
+
+  if (!IsInFrustum()) return;
 
   engine_->GetDrawManager()->SubmitVoxelParticle(
       voxelCount_,
