@@ -13,6 +13,8 @@
 #include "Renderer/Effect/Effect.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "actors/enemy/Beam/EnemyBeam.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Shape/LinePrimitive.h"
 
 #ifdef USE_IMGUI
 #include <imgui.h> 
@@ -695,9 +697,8 @@ void Player::Update() {
     // === パーティクル（すっきり立ち上る黄金色シリンダー）の設定・更新 ===
     if (!status_.IsDead()) {
         if (karakuriChargeParticle_) {
-            bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
-            if (isCharging && karakuriChargeTimer_ > 0) {
-                // === 1. チャージ中の黄金色シリンダー粒子 ===
+            bool isCharging = input_->IsKeyDown('E');
+            if (isCharging && karakuriChargeTimer_ > 0 && !isKarakuriCharged_) {
                 float ratio = static_cast<float>(karakuriChargeTimer_) / kKarakuriChargeTime;
                 if (ratio > 1.0f) ratio = 1.0f;
                 
@@ -884,7 +885,104 @@ void Player::Draw2DUI(Enemy* enemy) {
         // 1. 各視点別のUIを描画
         if (cameraController_.IsFirstPerson()) {
             if (maskSprite_) maskSprite_->Draw();
-            if (aimingSprite_) aimingSprite_->Draw();
+
+            // 敵への照準当たり判定
+            bool isCrosshairOnEnemy = false;
+            if (enemy && !enemy->IsDead()) {
+                // エイムアシストを含めた中心的な射撃方向を計算
+                float pitch = cameraController_.GetCameraPitch();
+                float cosP = std::cos(pitch);
+                float sinP = std::sin(pitch);
+                float sinY = std::sin(rotate_.y);
+                float cosY = std::cos(rotate_.y);
+
+                Vector3 playerForward = { sinY * cosP, -sinP, cosY * cosP };
+                Vector3 blendedForward = playerForward;
+
+                if (isTargetingEnemy_) {
+                    Vector3 playerCenter = { translate_.x, translate_.y + 1.0f, translate_.z };
+                    Vector3 aimPos = { targetPos_.x, targetPos_.y + 1.0f, targetPos_.z };
+                    Vector3 toTarget = { aimPos.x - playerCenter.x, aimPos.y - playerCenter.y, aimPos.z - playerCenter.z };
+                    float dist = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y + toTarget.z * toTarget.z);
+
+                    if (dist > 0.001f) {
+                        Vector3 toTargetNorm = { toTarget.x / dist, toTarget.y / dist, toTarget.z / dist };
+                        float dot = Math::Dot(playerForward, toTargetNorm);
+
+                        // エイムアシストの判定（PlayerWeaponと同様のロジック）
+                        float assistThreshold = 0.8f;
+                        if (dot > assistThreshold) {
+                            float assistRatio = std::pow((dot - assistThreshold) / (1.0f - assistThreshold), 1.5f);
+                            blendedForward = playerForward * (1.0f - assistRatio) + toTargetNorm * assistRatio;
+                            blendedForward = Math::Normalize(blendedForward);
+                        }
+                    }
+                }
+
+                // カメラ位置の取得
+                Vector3 camPos = engine_->GetCameraManager()->GetActiveCamera()->GetTranslate();
+
+                // レイキャスト用の Segment を作成 (判定距離を 500.0f に拡張して遠くの敵も捕捉可能にする)
+                float checkDistance = 500.0f;
+                Segment segment;
+                segment.origin = camPos;
+                segment.diff = {
+                    blendedForward.x * checkDistance,
+                    blendedForward.y * checkDistance,
+                    blendedForward.z * checkDistance
+                };
+
+                // 生存している敵の各部位の OBB との交差判定を行う
+                // 1. 胴体パーツ (bodies_[0~2])
+                for (int i = 0; i < 3; ++i) {
+                    Body* body = enemy->GetBody(i);
+                    if (body && body->GetHP() > 0 && !body->IsBlownAway()) {
+                        if (Collision::IsOBBSegmentCollision(body->GetOBB(), segment)) {
+                            isCrosshairOnEnemy = true;
+                            break;
+                        }
+                    }
+                }
+
+                // 2. 左頭部パーツ
+                if (!isCrosshairOnEnemy) {
+                    HeadLeft* headLeft = enemy->GetHeadLeft();
+                    if (headLeft && headLeft->GetHP() > 0 && !headLeft->IsBlownAway()) {
+                        if (Collision::IsOBBSegmentCollision(headLeft->GetOBB(), segment)) {
+                            isCrosshairOnEnemy = true;
+                        }
+                    }
+                }
+
+                // 3. 中央頭部パーツ
+                if (!isCrosshairOnEnemy) {
+                    HeadMid* headMid = enemy->GetHeadMid();
+                    if (headMid && headMid->GetHP() > 0 && !headMid->IsBlownAway()) {
+                        if (Collision::IsOBBSegmentCollision(headMid->GetOBB(), segment)) {
+                            isCrosshairOnEnemy = true;
+                        }
+                    }
+                }
+
+                // 4. 右頭部パーツ
+                if (!isCrosshairOnEnemy) {
+                    HeadRight* headRight = enemy->GetHeadRight();
+                    if (headRight && headRight->GetHP() > 0 && !headRight->IsBlownAway()) {
+                        if (Collision::IsOBBSegmentCollision(headRight->GetOBB(), segment)) {
+                            isCrosshairOnEnemy = true;
+                        }
+                    }
+                }
+            }
+
+            if (aimingSprite_) {
+                if (isCrosshairOnEnemy) {
+                    aimingSprite_->SetColor({ 0.3f, 1.0f, 0.0f, 1.0f }); // 敵を捉えているときは黄緑（ライムグリーン）
+                } else {
+                    aimingSprite_->SetColor({ 0.0f, 0.0f, 0.0f, 1.0f }); // 敵を捉えていないときは黒
+                }
+                aimingSprite_->Draw();
+            }
             if (hpBar_) hpBar_->Draw2D();
 
             // ボスのHPバー（2D）は1人称視点のみ表示
@@ -1259,16 +1357,22 @@ void Player::HandleSkill() {
         cooldownWarningTimer_--;
     }
 
+    // 強化状態（Kaioken）の残り時間タイマーの処理
     if (isKarakuriCharged_) {
         karakuriActiveTimer_--;
         if (karakuriActiveTimer_ <= 0) {
             isKarakuriCharged_ = false;
             OutputDebugStringA("Karakuri Charge Ended.\n");
         }
-    }
-
-    if (input_->IsKeyDown('E')) {
-        if (!isKarakuriCharged_) {
+        
+        // 強化中なのでチャージSEやチャージタイマーはリセット・停止
+        if (seKarakuri_ && seKarakuri_->IsPlaying()) {
+            seKarakuri_->Stop();
+        }
+        karakuriChargeTimer_ = 0;
+    } else {
+        // 通常時（非強化状態）：Eキー長押しでチャージを溜める
+        if (input_->IsKeyDown('E')) {
             if (karakuriChargeTimer_ == 0 && seKarakuri_) {
                 seKarakuri_->Play(true);
             }
@@ -1281,31 +1385,23 @@ void Player::HandleSkill() {
 
                 // ★追加: チャージしきったときの足元リングエフェクト（衝撃波）バースト放出
                 if (karakuriRingParticle_) {
-                    // 足元からXZ平面上にフワッと広げる
                     Vector3 emitPos = translate_;
                     emitPos.y += 0.1f; // 地面から少しだけ浮いた高さ
 
-                    // リングエミッターの設定 (放出位置, 半径, 厚み, 放出数, 放出頻度)
-                    // 放出頻度を0.0fに設定して自動毎フレーム放出を防ぎ、Emit()によるバーストのみにする
                     karakuriRingParticle_->SetRingEmitter(emitPos, 0.4f, 0.1f, 180, 0.0f);
-                    
-                    // 速度の方向ベクトルを {0,0,0} にリセットすることで
-                    // 半径方向（水平方向）に均等に綺麗に広がるようにする
                     karakuriRingParticle_->SetDirection({ 0.0f, 0.0f, 0.0f });
-                    karakuriRingParticle_->SetVelocity(16.0f); // 広がる初速
+                    karakuriRingParticle_->SetVelocity(16.0f);
                     karakuriRingParticle_->SetJitter(0.0f);
                     karakuriRingParticle_->SetGravity(0.0f);
-                    karakuriRingParticle_->SetDamping(0.05f); // 摩擦で滑らかに減速する
-                    karakuriRingParticle_->SetParticleLife(0.55f, 0.75f); // 寿命
+                    karakuriRingParticle_->SetDamping(0.05f);
+                    karakuriRingParticle_->SetParticleLife(0.55f, 0.75f);
 
-                    // 粒子のスケール：最初は小さい点、広がりながら極小になって消えていく
                     Vector3 ringStartScaleMin = { 0.12f, 0.12f, 0.12f };
                     Vector3 ringStartScaleMax = { 0.28f, 0.28f, 0.28f };
                     Vector3 ringEndScaleMin = { 0.0f, 0.0f, 0.0f };
                     Vector3 ringEndScaleMax = { 0.0f, 0.0f, 0.0f };
                     karakuriRingParticle_->SetParticleScale(ringStartScaleMin, ringStartScaleMax, ringEndScaleMin, ringEndScaleMax);
 
-                    // 黄金色の衝撃波カラー（ゴールドからイエロー）
                     Vector4 ringStartColMin = { 1.0f, 0.75f, 0.0f, 1.0f };
                     Vector4 ringStartColMax = { 1.0f, 0.95f, 0.2f, 1.0f };
                     Vector4 ringEndColMin = { 1.0f, 0.65f, 0.0f, 0.0f };
@@ -1313,13 +1409,11 @@ void Player::HandleSkill() {
                     karakuriRingParticle_->SetStartColor(ringStartColMin, ringStartColMax);
                     karakuriRingParticle_->SetEndColor(ringEndColMin, ringEndColMax);
 
-                    // 180個の粒子を瞬間バースト放出！
                     karakuriRingParticle_->Emit(180);
                 }
             }
-        }
-    } else {
-        if (!isKarakuriCharged_) {
+        } else {
+            // Eキーを離したとき：通常チャージタイマーを0にリセットする
             if (karakuriChargeTimer_ > 0 && seKarakuri_) {
                 seKarakuri_->Stop();
             }

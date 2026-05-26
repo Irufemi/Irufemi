@@ -35,6 +35,7 @@ public:
 
     void SetVolume(float volume);
     float GetVolume() const { return volume_; }
+    bool IsPlaying() const { return !voice_.expired(); }
 
     // グローバルに AudioManager をセットする
     static void SetAudioManager(AudioManager* mgr) { audioManager_ = mgr; }

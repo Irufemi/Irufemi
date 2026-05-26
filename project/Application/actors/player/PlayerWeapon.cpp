@@ -24,6 +24,7 @@ void PlayerWeapon::Initialize() {
     }
     machineGunActiveTimer_ = 0;
     machineGunFireTimer_ = 0;
+    machineGunRecoveryCooldown_ = 0;
 
     // --- 銃口の煙パーティクルの初期化 ---
     muzzleSmokeLeft_ = std::make_unique<ParticleSystem>();
@@ -460,6 +461,7 @@ void PlayerWeapon::UpdateMissile(const Vector3& targetPos, const Vector3& player
 
 void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos) {
     if (machineGunActiveTimer_ > 0) {
+        machineGunRecoveryCooldown_ = 45; // クールタイムを45フレーム（0.75秒）に設定
         // 残弾が尽きたら強制停止
         if (machineGunAmmo_ <= 0) {
             if (machineGunActiveTimer_ > 0 && seShooting_) {
@@ -558,13 +560,17 @@ void PlayerWeapon::UpdateMachineGun(const Vector3& playerTranslate, const Vector
             }
         }
     } else {
-        // 停止中: 残弾を自動回復
-        if (machineGunAmmo_ < kMaxMachineGunAmmo) {
-            machineGunAmmoRecoveryTimer_++;
-            if (machineGunAmmoRecoveryTimer_ >= kAmmoRecoveryInterval) {
-                machineGunAmmoRecoveryTimer_ = 0;
-                machineGunAmmo_++;
-                if (machineGunAmmo_ > kMaxMachineGunAmmo) machineGunAmmo_ = kMaxMachineGunAmmo;
+        // 停止中: クールタイムが終了していれば残弾を自動回復
+        if (machineGunRecoveryCooldown_ > 0) {
+            machineGunRecoveryCooldown_--;
+        } else {
+            if (machineGunAmmo_ < kMaxMachineGunAmmo) {
+                machineGunAmmoRecoveryTimer_++;
+                if (machineGunAmmoRecoveryTimer_ >= kAmmoRecoveryInterval) {
+                    machineGunAmmoRecoveryTimer_ = 0;
+                    machineGunAmmo_++;
+                    if (machineGunAmmo_ > kMaxMachineGunAmmo) machineGunAmmo_ = kMaxMachineGunAmmo;
+                }
             }
         }
     }

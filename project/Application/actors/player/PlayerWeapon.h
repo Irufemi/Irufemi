@@ -143,6 +143,7 @@ private:
     static const int kMaxMachineGunAmmo = 60; // 最大弾薬数（60連射分）
     int machineGunAmmo_ = kMaxMachineGunAmmo;  // 現在の残弾
     int machineGunAmmoRecoveryTimer_ = 0;      // 回復間隔タイマー
+    int machineGunRecoveryCooldown_ = 0;       // 自動回復開始までのクールタイム
     static const int kAmmoRecoveryInterval = 3; // 何フレームに1発回復するか
 
     // --- 薬莢（Cartridge）用オブジェクトとデータ ---
