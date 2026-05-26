@@ -128,6 +128,22 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     machineGunGaugeFill_->Initialize("resources/whiteTexture.png");
     machineGunGaugeFill_->SetColor({ 0.2f, 0.8f, 0.2f, 0.8f }); // 緑色に変更
 
+    for (int i = 0; i < 3; ++i) {
+        machineGunAmmoCurrentSprites_[i] = std::make_unique<Sprite>();
+        machineGunAmmoCurrentSprites_[i]->Initialize("resources/texture/inGame/numbers.png");
+        machineGunAmmoCurrentSprites_[i]->SetSize(18.0f, 18.0f);
+
+        machineGunAmmoMaxSprites_[i] = std::make_unique<Sprite>();
+        machineGunAmmoMaxSprites_[i]->Initialize("resources/texture/inGame/numbers.png");
+        machineGunAmmoMaxSprites_[i]->SetSize(14.0f, 14.0f);
+    }
+    
+    machineGunAmmoSlashSprite_ = std::make_unique<Sprite>();
+    machineGunAmmoSlashSprite_->Initialize("resources/whiteTexture.png");
+    machineGunAmmoSlashSprite_->SetSize(2.0f, 18.0f);
+    machineGunAmmoSlashSprite_->SetRotation(0.3f); // 少し斜めに
+
+
     // ★追加: 3D爆発エフェクトプールの事前生成
     explosionEffects_.clear();
     for (int i = 0; i < kMaxExplosionEffects; ++i) {
@@ -687,8 +703,7 @@ void Player::Update() {
 
     // ★追加: 機関銃残弾ゲージの更新
     if (machineGunGaugeFrame_ && machineGunGaugeBg_ && machineGunGaugeFill_) {
-        if (!cameraController_.IsFirstPerson()) {
-            float clientWidth = engine_ ? static_cast<float>(engine_->GetClientWidth()) : 1280.0f;
+        float clientWidth = engine_ ? static_cast<float>(engine_->GetClientWidth()) : 1280.0f;
             float clientHeight = engine_ ? static_cast<float>(engine_->GetClientHeight()) : 720.0f;
 
             float barWidth = 24.0f;
@@ -697,6 +712,12 @@ void Player::Update() {
             
             float targetX = clientWidth - barWidth - 80.0f;
             float targetY = clientHeight - barHeight - 80.0f;
+
+            // 1人称視点のときはゲージ全体をもっと左上に配置する
+            if (cameraController_.IsFirstPerson()) {
+                targetX -= 80.0f; // 左へ
+                targetY -= 120.0f; // 上へ
+            }
 
             machineGunGaugeFrame_->SetSize(barWidth + padding * 2.0f, barHeight + padding * 2.0f);
             machineGunGaugeFrame_->SetPositionTopLeft(targetX - padding, targetY - padding);
@@ -726,7 +747,46 @@ void Player::Update() {
             machineGunGaugeFrame_->Update();
             machineGunGaugeBg_->Update();
             machineGunGaugeFill_->Update();
-        }
+
+            // --- 残弾数数字の更新（1人称視点のみ） ---
+            if (cameraController_.IsFirstPerson()) {
+                auto setDigit = [](Sprite* sprite, int num, float x, float y, float size) {
+                    if (!sprite) return;
+                    int digit = num % 10;
+                    sprite->SetTextureRectPixels(digit * 40, 0, 40, 40, false);
+                    sprite->SetSize(size, size);
+                    sprite->SetPositionTopLeft(x, y);
+                    sprite->Update();
+                };
+
+                float numSize = 32.0f; // 大きさを統一
+                
+                // ゲージ（幅24.0f）の中央にスラッシュを配置するための計算
+                float gaugeCenterX = targetX + 12.0f;
+                float slashX = gaugeCenterX - 2.0f; // スラッシュ幅4.0fの半分
+                float textY = targetY - 45.0f; // ゲージの真上（少し上）
+
+                // 現在の弾数（分子）の開始位置。スラッシュから左へ (3桁幅 + 余白10.0f)
+                float currentAmmoX = slashX - 10.0f - (numSize * 3.0f);
+
+                int cur = currentAmmo;
+                setDigit(machineGunAmmoCurrentSprites_[0].get(), cur / 100, currentAmmoX, textY, numSize);
+                setDigit(machineGunAmmoCurrentSprites_[1].get(), (cur / 10) % 10, currentAmmoX + numSize, textY, numSize);
+                setDigit(machineGunAmmoCurrentSprites_[2].get(), cur % 10, currentAmmoX + numSize * 2.0f, textY, numSize);
+
+                if (machineGunAmmoSlashSprite_) {
+                    machineGunAmmoSlashSprite_->SetSize(4.0f, numSize);
+                    machineGunAmmoSlashSprite_->SetPositionTopLeft(slashX, textY);
+                    machineGunAmmoSlashSprite_->Update();
+                }
+                
+                // 最大弾数（分母）の開始位置。スラッシュから右へ (スラッシュ幅4.0f + 余白10.0f)
+                float maxAmmoX = slashX + 4.0f + 10.0f;
+                int maxA = maxAmmo;
+                setDigit(machineGunAmmoMaxSprites_[0].get(), maxA / 100, maxAmmoX, textY, numSize);
+                setDigit(machineGunAmmoMaxSprites_[1].get(), (maxA / 10) % 10, maxAmmoX + numSize, textY, numSize);
+                setDigit(machineGunAmmoMaxSprites_[2].get(), maxA % 10, maxAmmoX + numSize * 2.0f, textY, numSize);
+            }
     }
 
     // ジャスト回避の星エフェクト更新
@@ -1052,10 +1112,22 @@ void Player::Draw2DUI(Enemy* enemy) {
             if (enemy) {
                 enemy->Draw2DUI(engine_, false);
             }
-            if (machineGunGaugeFrame_) machineGunGaugeFrame_->Draw();
-            if (machineGunGaugeBg_) machineGunGaugeBg_->Draw();
-            if (machineGunGaugeFill_) machineGunGaugeFill_->Draw();
         }
+
+        // 共通（一人称・三人称ともに表示）
+        if (machineGunGaugeFrame_) machineGunGaugeFrame_->Draw();
+        if (machineGunGaugeBg_) machineGunGaugeBg_->Draw();
+        if (machineGunGaugeFill_) machineGunGaugeFill_->Draw();
+
+        // 数字表記は1人称視点のみ表示する
+        if (cameraController_.IsFirstPerson()) {
+            for (int i = 0; i < 3; ++i) {
+                if (machineGunAmmoCurrentSprites_[i]) machineGunAmmoCurrentSprites_[i]->Draw();
+                if (machineGunAmmoMaxSprites_[i]) machineGunAmmoMaxSprites_[i]->Draw();
+            }
+            if (machineGunAmmoSlashSprite_) machineGunAmmoSlashSprite_->Draw();
+        }
+
 
         // 2. 最も手前に描画されるべき「からくりチャージゲージ」を最後に描画
         // チャージ中 or チャージ成功後（効果時間中）はゲージを表示する

@@ -146,6 +146,11 @@ private:
     std::unique_ptr<Sprite> machineGunGaugeBg_ = nullptr;
     std::unique_ptr<Sprite> machineGunGaugeFill_ = nullptr;
 
+    // ★追加: 機関銃残弾数の数値スプライト
+    std::unique_ptr<Sprite> machineGunAmmoCurrentSprites_[3];
+    std::unique_ptr<Sprite> machineGunAmmoMaxSprites_[3];
+    std::unique_ptr<Sprite> machineGunAmmoSlashSprite_;
+
     int karakuriActiveTimer_ = 0;
     const int kKarakuriActiveTime = 1200;
 
