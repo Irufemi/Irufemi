@@ -573,7 +573,10 @@ void GameScene::CheckEnemyToPlayerCollisions() {
       return;
     OBB partOBB = part->GetOBB();
     if (Collision::IsOBBSphereCollision(partOBB, playerColliderSphere)) {
-      if (player_->ApplyDamage(kDamagePartToPlayer)) {
+      bool isIdle = (boss_->GetState() == EnemyState::Idle);
+      bool shouldDealDamage = (!isIdle || part->IsBlownAway());
+
+      if (shouldDealDamage && player_->ApplyDamage(kDamagePartToPlayer)) {
         // 吹き飛んでいる状態のとき、めり込んで連続ダメージになるのを防ぐため部位を反射（バウンド）させる
         if (part->IsBlownAway()) {
           Vector3 toPlayer = Math::Subtract(playerColliderSphere.center, partOBB.center);
