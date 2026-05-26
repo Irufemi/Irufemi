@@ -4,6 +4,7 @@
 
 #include "Framework/SceneManager.h"
 #include "Irufemi.h"
+#include <dinput.h>
 
 #include "Graphics/Data/AreaLight.h"
 #include "Graphics/Data/CameraForGPU.h"
@@ -68,51 +69,37 @@ void GameScene::Initialize(IrufemiEngine *engine) {
   dynamicArenaLight_ = std::make_unique<DynamicArenaLight>();
   dynamicArenaLight_->Initialize(engine_, areaLights_);
 
-  // 操作説明スプライトの初期化
-  operationNormalSprite_ = std::make_unique<Sprite>();
-  operationNormalSprite_->Initialize("resources/texture/inGame/operation_normal_3.png");
-  operationNormalSprite_->SetSize(600.0f, 300.0f);
-  operationNormalSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
+  // 操作説明スプライトの初期化 (1人称視点用)
+  float screenW = static_cast<float>(engine_->GetClientWidth());
+  float screenH = static_cast<float>(engine_->GetClientHeight());
+  auto initKeyUI = [&](std::unique_ptr<Sprite>& sprite, const std::string& path, float x, float y) {
+      sprite = std::make_unique<Sprite>();
+      sprite->Initialize(path);
+      sprite->SetSize(300.0f, 50.0f);
+      sprite->SetPositionTopLeft(x, y);
+      sprite->SetColor({0.8f, 0.8f, 0.8f, 1.0f});
+  };
 
-  operationChargedSprite_ = std::make_unique<Sprite>();
-  operationChargedSprite_->Initialize("resources/texture/inGame/operation_charged_3.png");
-  operationChargedSprite_->SetSize(600.0f, 300.0f);
-  operationChargedSprite_->SetPositionTopLeft(10.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
-
-  operationNormalSprite1st_ = std::make_unique<Sprite>();
-  operationNormalSprite1st_->Initialize("resources/texture/inGame/operation_normal_1.png");
-  operationNormalSprite1st_->SetSize(800.0f, 150.0f);
-  operationNormalSprite1st_->SetPositionTopLeft(460.0f, static_cast<float>(engine_->GetClientHeight()) - 160.0f);
-
-  operationChargedSprite1st_ = std::make_unique<Sprite>();
-  operationChargedSprite1st_->Initialize("resources/texture/inGame/operation_charged_1.png");
-  operationChargedSprite1st_->SetSize(800.0f, 150.0f);
-  operationChargedSprite1st_->SetPositionTopLeft(460.0f, static_cast<float>(engine_->GetClientHeight()) - 160.0f);
-
-  numberSpriteTens_ = std::make_unique<Sprite>();
-  numberSpriteTens_->Initialize("resources/texture/inGame/numbers.png");
-  numberSpriteTens_->SetSize(40.0f, 40.0f);
-  numberSpriteTens_->SetPositionTopLeft(340.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
-
-  numberSpriteOnes_ = std::make_unique<Sprite>();
-  numberSpriteOnes_->Initialize("resources/texture/inGame/numbers.png");
-  numberSpriteOnes_->SetSize(40.0f, 40.0f);
-  numberSpriteOnes_->SetPositionTopLeft(365.0f, static_cast<float>(engine_->GetClientHeight()) - 280.0f);
-
-  numberSpriteTens1st_ = std::make_unique<Sprite>();
-  numberSpriteTens1st_->Initialize("resources/texture/inGame/numbers_white.png");
-  numberSpriteTens1st_->SetSize(24.0f, 24.0f);
-  numberSpriteTens1st_->SetPositionTopLeft(static_cast<float>(engine_->GetClientWidth()) - 85.0f, static_cast<float>(engine_->GetClientHeight()) - 56.0f);
-
-  numberSpriteOnes1st_ = std::make_unique<Sprite>();
-  numberSpriteOnes1st_->Initialize("resources/texture/inGame/numbers_white.png");
-  numberSpriteOnes1st_->SetSize(24.0f, 24.0f);
-  numberSpriteOnes1st_->SetPositionTopLeft(static_cast<float>(engine_->GetClientWidth()) - 70.0f, static_cast<float>(engine_->GetClientHeight()) - 56.0f);
+  float uiBaseX = 20.0f;
+  initKeyUI(uiLClickNormal_, "resources/texture/inGame/ui_lclick_normal.png", uiBaseX, screenH - 320.0f);
+  initKeyUI(uiLClickCharged_, "resources/texture/inGame/ui_lclick_charged.png", uiBaseX, screenH - 320.0f);
+  initKeyUI(uiRClickNormal_, "resources/texture/inGame/ui_rclick_normal.png", uiBaseX, screenH - 260.0f);
+  initKeyUI(uiRClickCharged_, "resources/texture/inGame/ui_rclick_charged.png", uiBaseX, screenH - 260.0f);
+  initKeyUI(uiE_, "resources/texture/inGame/ui_e.png", uiBaseX, screenH - 200.0f);
+  initKeyUI(uiV_, "resources/texture/inGame/ui_v.png", uiBaseX, screenH - 140.0f);
+  initKeyUI(uiSpace_, "resources/texture/inGame/ui_space.png", uiBaseX, screenH - 80.0f);
 
   cooldownWarningSprite_ = std::make_unique<Sprite>();
   cooldownWarningSprite_->Initialize("resources/texture/inGame/cooldown_warning.png");
   cooldownWarningSprite_->SetSize(400.0f, 100.0f);
   cooldownWarningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f + 15.0f, static_cast<float>(engine_->GetClientHeight()) / 2.0f + 80.0f);
+
+  keyEscSprite_ = std::make_unique<Sprite>();
+  keyEscSprite_->Initialize("resources/UI/key_ESC.png");
+  keyEscSprite_->SetAnchor(0.0f, 0.0f);
+  keyEscSprite_->SetPosition(20.0f, 20.0f);
+  keyEscSprite_->SetSize(64.0f, 64.0f);
+  keyEscSprite_->SetColor({0.8f, 0.8f, 0.8f, 1.0f});
 }
 
 void GameScene::Update() {
@@ -305,45 +292,80 @@ void GameScene::Update() {
   float screenH = static_cast<float>(engine_->GetClientHeight());
   float uiScale = screenH / 720.0f;
 
-  if (operationNormalSprite_) { 
-      operationNormalSprite_->SetUIScale(uiScale);
-      operationNormalSprite_->SetPositionTopLeft(10.0f * uiScale, screenH - 280.0f * uiScale);
-      operationNormalSprite_->Update(); 
-  }
-  if (operationChargedSprite_) { 
-      operationChargedSprite_->SetUIScale(uiScale);
-      operationChargedSprite_->SetPositionTopLeft(10.0f * uiScale, screenH - 280.0f * uiScale);
-      operationChargedSprite_->Update(); 
-  }
-  if (operationNormalSprite1st_) { 
-      operationNormalSprite1st_->SetUIScale(uiScale);
-      operationNormalSprite1st_->SetPositionTopLeft(460.0f * uiScale, screenH - 160.0f * uiScale);
-      operationNormalSprite1st_->Update(); 
-  }
-  if (operationChargedSprite1st_) { 
-      operationChargedSprite1st_->SetUIScale(uiScale);
-      operationChargedSprite1st_->SetPositionTopLeft(460.0f * uiScale, screenH - 160.0f * uiScale);
-      operationChargedSprite1st_->Update(); 
-  }
+  // 個別キーUIの更新 (1人称視点専用)
+  if (player_ && player_->IsFirstPerson()) {
+      InputManager* input = engine_->GetInputManager();
+      bool lClick = input->IsMouseButtonDown(Mouse::Button::Left);
+      bool rClick = input->IsMouseButtonDown(Mouse::Button::Right);
+      bool eDown = input->IsKeyDownDIK(DIK_E);
+      bool vDown = input->IsKeyDownDIK(DIK_V);
+      bool spaceDown = input->IsKeyDownDIK(DIK_SPACE);
 
-  if (numberSpriteTens_) {
-      numberSpriteTens_->SetUIScale(uiScale);
-      // 元々 X=340, Y=screenH - 280
-      numberSpriteTens_->SetPositionTopLeft(340.0f * uiScale, screenH - 280.0f * uiScale);
-  }
-  if (numberSpriteOnes_) {
-      numberSpriteOnes_->SetUIScale(uiScale);
-      // 元々 X=365, Y=screenH - 280
-      numberSpriteOnes_->SetPositionTopLeft(365.0f * uiScale, screenH - 280.0f * uiScale);
-  }
+      Vector4 colorDown = {0.0f, 1.0f, 1.0f, 1.0f};
+      Vector4 colorUp = {0.8f, 0.8f, 0.8f, 1.0f};
 
-  if (numberSpriteTens1st_) {
-      numberSpriteTens1st_->SetUIScale(uiScale);
-      numberSpriteTens1st_->SetPositionTopLeft(screenW - 85.0f * uiScale, screenH - 56.0f * uiScale);
-  }
-  if (numberSpriteOnes1st_) {
-      numberSpriteOnes1st_->SetUIScale(uiScale);
-      numberSpriteOnes1st_->SetPositionTopLeft(screenW - 70.0f * uiScale, screenH - 56.0f * uiScale);
+      float baseX = 460.0f;
+      float baseY = screenH - 80.0f;
+      float rowSpacing = -60.0f; // 上段なのでマイナス方向(Yを減らす)
+      float colSpacing = 260.0f;
+
+      // --- 上段 ---
+      if (uiE_) {
+          uiE_->SetUIScale(uiScale);
+          uiE_->SetPositionTopLeft((baseX) * uiScale, (baseY + rowSpacing) * uiScale);
+          uiE_->SetColor(eDown ? colorDown : colorUp);
+          uiE_->Update();
+      }
+      if (uiV_) {
+          uiV_->SetUIScale(uiScale);
+          uiV_->SetPositionTopLeft((baseX + colSpacing) * uiScale, (baseY + rowSpacing) * uiScale);
+          uiV_->SetColor(vDown ? colorDown : colorUp);
+          uiV_->Update();
+      }
+
+      // --- 下段 ---
+      if (uiLClickNormal_) {
+          uiLClickNormal_->SetUIScale(uiScale);
+          uiLClickNormal_->SetPositionTopLeft((baseX) * uiScale, (baseY) * uiScale);
+          uiLClickNormal_->SetColor(lClick ? colorDown : colorUp);
+          uiLClickNormal_->Update();
+      }
+      if (uiLClickCharged_) {
+          uiLClickCharged_->SetUIScale(uiScale);
+          uiLClickCharged_->SetPositionTopLeft((baseX) * uiScale, (baseY) * uiScale);
+          uiLClickCharged_->SetColor(lClick ? colorDown : colorUp);
+          uiLClickCharged_->Update();
+      }
+      if (uiRClickNormal_) {
+          uiRClickNormal_->SetUIScale(uiScale);
+          uiRClickNormal_->SetPositionTopLeft((baseX + colSpacing) * uiScale, (baseY) * uiScale);
+          uiRClickNormal_->SetColor(rClick ? colorDown : colorUp);
+          uiRClickNormal_->Update();
+      }
+      if (uiRClickCharged_) {
+          uiRClickCharged_->SetUIScale(uiScale);
+          uiRClickCharged_->SetPositionTopLeft((baseX + colSpacing) * uiScale, (baseY) * uiScale);
+          uiRClickCharged_->SetColor(rClick ? colorDown : colorUp);
+          uiRClickCharged_->Update();
+      }
+      if (uiSpace_) {
+          uiSpace_->SetUIScale(uiScale);
+          uiSpace_->SetPositionTopLeft((baseX + colSpacing * 2) * uiScale, (baseY) * uiScale);
+          uiSpace_->SetColor(spaceDown ? colorDown : colorUp);
+          uiSpace_->Update();
+      }
+  } else if (player_ && !player_->IsFirstPerson()) {
+      InputManager* input = engine_->GetInputManager();
+      bool vDown = input->IsKeyDownDIK(DIK_V);
+      Vector4 colorDown = {0.0f, 1.0f, 1.0f, 1.0f};
+      Vector4 colorUp = {0.8f, 0.8f, 0.8f, 1.0f};
+
+      if (uiV_) {
+          uiV_->SetUIScale(uiScale);
+          uiV_->SetPositionTopLeft(20.0f * uiScale, screenH - 80.0f * uiScale);
+          uiV_->SetColor(vDown ? colorDown : colorUp);
+          uiV_->Update();
+      }
   }
 
   if (cooldownWarningSprite_) {
@@ -352,25 +374,10 @@ void GameScene::Update() {
       cooldownWarningSprite_->Update();
   }
 
-  if (numberSpriteTens_ && numberSpriteOnes_ && numberSpriteTens1st_ && numberSpriteOnes1st_) {
-      int remainingSeconds = 0;
-      if (player_ && player_->IsKarakuriCharged()) {
-          remainingSeconds = player_->GetKarakuriActiveTimer() / 60;
-      }
-      int tens = remainingSeconds / 10;
-      int ones = remainingSeconds % 10;
 
-      if (player_ && player_->IsFirstPerson()) {
-          numberSpriteTens1st_->SetTextureRectPixels(tens * 40, 0, 40, 40, false);
-          numberSpriteTens1st_->Update();
-          numberSpriteOnes1st_->SetTextureRectPixels(ones * 40, 0, 40, 40, false);
-          numberSpriteOnes1st_->Update();
-      } else {
-          numberSpriteTens_->SetTextureRectPixels(tens * 40, 0, 40, 40, false);
-          numberSpriteTens_->Update();
-          numberSpriteOnes_->SetTextureRectPixels(ones * 40, 0, 40, 40, false);
-          numberSpriteOnes_->Update();
-      }
+
+  if (keyEscSprite_) {
+      keyEscSprite_->Update();
   }
 
   // シーン遷移
@@ -421,15 +428,10 @@ void GameScene::Draw() {
     player_->Draw3DUI(boss_.get(), true, isPaused);
   }
 
-  // --- 操作説明および警告スプライト描画（3人称視点のみ） ---
+  // --- 操作説明および警告スプライト描画 ---
   if (player_ && !player_->IsFirstPerson()) {
-      if (player_->IsKarakuriCharged()) {
-          if (operationChargedSprite_) operationChargedSprite_->Draw();
-          if (numberSpriteTens_) numberSpriteTens_->Draw();
-          if (numberSpriteOnes_) numberSpriteOnes_->Draw();
-      } else {
-          if (operationNormalSprite_) operationNormalSprite_->Draw();
-      }
+      if (uiV_) uiV_->Draw();
+
 
       // --- クールダウン警告スプライト描画 ---
       if (player_->GetCooldownWarningTimer() > 0) {
@@ -440,13 +442,22 @@ void GameScene::Draw() {
   } else if (player_ && player_->IsFirstPerson()) {
       // --- 1人称視点専用UI描画 ---
       if (!player_->IsKarakuriCharged()) {
-          if (operationNormalSprite1st_) operationNormalSprite1st_->Draw();
+          if (uiLClickNormal_) uiLClickNormal_->Draw();
+          if (uiRClickNormal_) uiRClickNormal_->Draw();
       } else {
-          if (operationChargedSprite1st_) operationChargedSprite1st_->Draw();
-          if (numberSpriteTens1st_) numberSpriteTens1st_->Draw();
-          if (numberSpriteOnes1st_) numberSpriteOnes1st_->Draw();
+          if (uiLClickCharged_) uiLClickCharged_->Draw();
+          if (uiRClickCharged_) uiRClickCharged_->Draw();
       }
+      
+      // 共通キーUI
+      if (uiE_) uiE_->Draw();
+      if (uiV_) uiV_->Draw();
+      if (uiSpace_) uiSpace_->Draw();
   } 
+
+  if (keyEscSprite_) {
+      keyEscSprite_->Draw();
+  }
 }
 
 

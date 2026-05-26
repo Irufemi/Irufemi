@@ -111,6 +111,14 @@ void TutorialScene::Initialize(IrufemiEngine* engine) {
     };
     initSpaceKey(keySpaceSprite_, centerX, baseY);
 
+    // ESCキーの初期化
+    keyEscSprite_ = std::make_unique<Sprite>();
+    keyEscSprite_->Initialize("resources/UI/key_ESC.png");
+    keyEscSprite_->SetAnchor(0.0f, 0.0f);
+    keyEscSprite_->SetPosition(20.0f, 20.0f);
+    keyEscSprite_->SetSize(64.0f, 64.0f);
+    keyEscSprite_->SetColor({0.8f, 0.8f, 0.8f, 1.0f});
+
     currentPhase_ = TutorialPhase::MoveWASD;
 }
 
@@ -185,6 +193,10 @@ void TutorialScene::Update() {
     if (currentPhase_ == TutorialPhase::PartsExplanation || currentPhase_ == TutorialPhase::ViewSwitch) {
         if (keySpaceSprite_) keySpaceSprite_->Update();
     }
+
+    if (keyEscSprite_) {
+        keyEscSprite_->Update();
+    }
 }
 
 void TutorialScene::Draw() {
@@ -219,6 +231,8 @@ void TutorialScene::Draw() {
     if (currentPhase_ == TutorialPhase::PartsExplanation || currentPhase_ == TutorialPhase::ViewSwitch) {
         if (keySpaceSprite_) keySpaceSprite_->Draw();
     }
+
+    if (keyEscSprite_) keyEscSprite_->Draw();
 }
 
 

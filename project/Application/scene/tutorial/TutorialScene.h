@@ -83,6 +83,8 @@ private:
     std::unique_ptr<Sprite> keySSprite_;
     std::unique_ptr<Sprite> keyDSprite_;
 
-    // SPACEキーUI用
     std::unique_ptr<Sprite> keySpaceSprite_;
+    
+    // ESCキーUI用
+    std::unique_ptr<Sprite> keyEscSprite_;
 };
