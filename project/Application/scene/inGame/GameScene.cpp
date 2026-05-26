@@ -842,10 +842,16 @@ void GameScene::CheckFlyingPartsCollisions() {
               target->SetPosition(Math::Subtract(tPos, Math::Multiply(pushOut, normal)));
           }
 
-          projectile->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b1),
-                                projectile->GetOBB());
-          target->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b2),
-                            target->GetOBB());
+          /// @brief 衝突範囲の中間点に局所的な破片飛散用OBBを生成する
+          OBB impactOBB;
+          impactOBB.center = Math::Multiply(0.5f, Math::Add(projectileOBB.center, target->GetOBB().center));
+          impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+          impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+          impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+          impactOBB.size = {3.0f, 3.0f, 3.0f};
+
+          projectile->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b1), impactOBB);
+          target->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, b2), impactOBB);
         }
       }
     };
@@ -952,8 +958,8 @@ void GameScene::CheckPlayerBuildingCollisions() {
       
       // ビルのボクセルはY軸方向に大きく引き伸ばされており（最大130mなどを16分割）、
       // 剣の判定（半径1.5m）だとボクセルとボクセルの隙間をすり抜けてしまうため、
-      // 確実に火花が飛ぶように判定を縦に大きく広げる（X,Zも少し広げる）
-      impactOBB.size = {attackSphere.radius * 2.0f, attackSphere.radius * 8.0f, attackSphere.radius * 2.0f};
+      // 確実に火花が飛ぶように判定を縦に少し広げる。全体が爆散しないよう8倍から3倍へ縮小
+      impactOBB.size = {attackSphere.radius * 2.0f, attackSphere.radius * 3.0f, attackSphere.radius * 2.0f};
       building->ScatterAt(i, Math::Multiply(3.0f, attackDir), impactOBB);
     }
 
@@ -1096,7 +1102,16 @@ void GameScene::CheckFlyingPartsBuildingCollisions() {
         Vector3 vel = part->GetBlowVelocity();
         Vector3 dir = Math::Normalize(vel);
         building->ApplyDamage(i, kDamagePartToBuilding, dir, 0.6f);
-        building->ScatterAt(i, Math::Multiply(kCollisionScatterMultiplier, vel), partOBB);
+        
+        /// @brief 衝突範囲の中間点に局所的な破片飛散用OBBを生成する
+        OBB impactOBB;
+        impactOBB.center = Math::Multiply(0.5f, Math::Add(partOBB.center, bOBB.center));
+        impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+        impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+        impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+        impactOBB.size = {3.0f, 3.0f, 3.0f};
+        
+        building->ScatterAt(i, Math::Multiply(kCollisionScatterMultiplier, vel), impactOBB);
 
         // 部位の反射
         Vector3 diff = Math::Subtract(partOBB.center, bOBB.center);
@@ -1144,12 +1159,29 @@ void GameScene::CheckFlyingBuildingsVsEnemyCollisions() {
         }
         // 部位にパーティクル散らし
         Vector3 vel = building->GetBlowVelocity(buildingIdx);
-        part->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, vel),
-                        partOBB);
+        
+        /// @brief 衝突範囲の中間点に局所的な破片飛散用OBBを生成する
+        OBB impactOBB;
+        impactOBB.center = Math::Multiply(0.5f, Math::Add(partOBB.center, bOBB.center));
+        impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+        impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+        impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+        impactOBB.size = {3.0f, 3.0f, 3.0f};
+        
+        part->ScatterAt(Math::Multiply(kCollisionScatterMultiplier, vel), impactOBB);
       }
       // 飛んだ建物は部位に当たったので削れる
       Vector3 velForScatter = building->GetBlowVelocity(buildingIdx);
-      building->ScatterAt(buildingIdx, Math::Multiply(kCollisionScatterMultiplier, velForScatter), partOBB);
+      
+      /// @brief 衝突範囲の中間点に局所的な破片飛散用OBBを生成する
+      OBB impactOBB2;
+      impactOBB2.center = Math::Multiply(0.5f, Math::Add(partOBB.center, bOBB.center));
+      impactOBB2.orientations[0] = {1.0f, 0.0f, 0.0f};
+      impactOBB2.orientations[1] = {0.0f, 1.0f, 0.0f};
+      impactOBB2.orientations[2] = {0.0f, 0.0f, 1.0f};
+      impactOBB2.size = {3.0f, 3.0f, 3.0f};
+      
+      building->ScatterAt(buildingIdx, Math::Multiply(kCollisionScatterMultiplier, velForScatter), impactOBB2);
       
       // 飛んだ建物は爆散（即消滅）
       building->MarkDestroyed(buildingIdx);
@@ -1203,8 +1235,16 @@ void GameScene::CheckFlyingBuildingsVsBuildingsCollisions() {
         building->ApplyDamage(ti, kDamageFlyingBuildingToBuilding, dir, 0.4f);
 
         // 各ビルにパーティクル散らし
-        building->ScatterAt(ti, Math::Multiply(kCollisionScatterMultiplier, flyingVel), flyingOBB);
-        building->ScatterAt(fi, Math::Multiply(kCollisionScatterMultiplier, Math::Multiply(-1.0f, flyingVel)), targetOBB);
+        /// @brief 衝突範囲の中間点に局所的な破片飛散用OBBを生成する
+        OBB impactOBB;
+        impactOBB.center = Math::Multiply(0.5f, Math::Add(flyingOBB.center, targetOBB.center));
+        impactOBB.orientations[0] = {1.0f, 0.0f, 0.0f};
+        impactOBB.orientations[1] = {0.0f, 1.0f, 0.0f};
+        impactOBB.orientations[2] = {0.0f, 0.0f, 1.0f};
+        impactOBB.size = {3.0f, 3.0f, 3.0f};
+        
+        building->ScatterAt(ti, Math::Multiply(kCollisionScatterMultiplier, flyingVel), impactOBB);
+        building->ScatterAt(fi, Math::Multiply(kCollisionScatterMultiplier, Math::Multiply(-1.0f, flyingVel)), impactOBB);
 
         // 飛んだ建物は反射
         Vector3 diff = Math::Subtract(flyingOBB.center, targetOBB.center);
