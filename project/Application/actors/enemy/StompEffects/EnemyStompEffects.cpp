@@ -182,6 +182,14 @@ void EnemyStompEffects::Update(float deltaTime) {
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::Finished;
+        }
+    }
+    break;
+
+    case Phase::Finished:
+    {
+        // パーティクルの寿命(最大2.5秒)が終わるまで描画を待機し、完全に消滅したら非アクティブ化する
+        if (phaseTimer_ > params_.finalExplosionDuration + 3.0f) {
             isActive_ = false;
         }
     }
