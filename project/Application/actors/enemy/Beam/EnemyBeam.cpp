@@ -181,8 +181,13 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
         // 2. 地面AOEサークルの更新
         if (direction.y < -0.001f) {
             float distToFloor = (0.0f - startPos.y) / direction.y;
-            if (distToFloor > 0.0f && distToFloor < beamLength_) {
-                Vector3 floorPos = Math::Add(startPos, Math::Multiply(distToFloor, direction));
+            if (distToFloor > 0.0f) {
+                // 距離が遠すぎる場合でも消えないように、最大距離でクランプする
+                float renderDist = (std::min)(distToFloor, beamLength_);
+                Vector3 floorPos = Math::Add(startPos, Math::Multiply(renderDist, direction));
+                // クランプした場合、Yが浮く可能性があるためY=0に固定
+                floorPos.y = 0.0f;
+
                 Transform t;
                 t.translate = floorPos;
                 // 地面に水平に貼り付けるため X軸に90度回転
