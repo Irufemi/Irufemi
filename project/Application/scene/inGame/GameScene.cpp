@@ -419,6 +419,12 @@ void GameScene::Update() {
 }
 
 void GameScene::Draw() {
+  if (engine_) {
+      engine_->SetBlend(BlendMode::kBlendModeNormal);
+      engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+      engine_->SetCull(PSOManager::CullMode::Back);
+  }
+
   if (skydome_)
     skydome_->Draw();
 

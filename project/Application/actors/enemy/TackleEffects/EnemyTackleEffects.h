@@ -48,6 +48,9 @@ public:
     std::list<TackleWave>& GetWaves() { return waves_; }
 
     void DrawDebug(class Line3DRegion* lineRegion);
+    
+    // 最大の突進波（砂煙）の幅を取得
+    float GetMaxRushWaveWidth() const { return kRushWaveEndScale; }
 
 private:
     Camera* camera_ = nullptr;

@@ -89,7 +89,8 @@ void Phase1_Stomp::Update(Enemy* enemy, Player* player, float deltaTime) {
             hasTeleported_ = true;
             
             // テレポート直後（頭上待機開始時）に本体落下AOEの表示を開始
-            float radius = enemy->GetOBB().size.x * 2.0f * enemy->GetGlobalTransform().scale.x;
+            // ★修正：落下予兆の半径は「着地時に発生する第一爆発（ダメージ判定）」の半径と同期させる
+            float radius = enemy->GetStompEffects()->GetParameters().explosionMaxRadius;
             Vector3 dropPos = { targetPos_.x + visualOffset.x, groundY_ - 2.5f, targetPos_.z + visualOffset.z };
             enemy->GetStompEffects()->StartBodyTelegraph(dropPos, radius);
         }

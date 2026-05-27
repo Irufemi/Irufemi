@@ -67,6 +67,7 @@ public:
 
     void SetCamera(Camera* camera) { camera_ = camera; }
     void SetParameters(const Parameters& params) { params_ = params; }
+    const Parameters& GetParameters() const { return params_; }
 
     // --- 本体落下予兆（AOE） ---
     void StartBodyTelegraph(const Vector3& pos, float radius);

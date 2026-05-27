@@ -1140,15 +1140,24 @@ void Player::Draw2DUI(Enemy* enemy) {
 }
 
 void Player::Draw() {
+    if (engine_) {
+        engine_->SetBlend(BlendMode::kBlendModeNormal);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+        engine_->SetCull(PSOManager::CullMode::Back);
+    }
+
     bool isBlinking = (status_.GetInvincibleTimer() > 0 && (status_.GetInvincibleTimer() % 4) < 2);
 
     if (obj_) {
         if (isKarakuriCharged_) {
             obj_->SetColor({ 1.0f, 0.8f, 0.0f, 1.0f });
+            obj_->SetCastShadows(true);
         } else if (status_.IsDead()) {
-            obj_->SetColor({ 0.15f, 0.15f, 0.15f, 1.0f }); // 飛んでいる間はシルエット
+            obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f }); // 暗い色だとシャドウアクネが目立つため通常色に戻す
+            obj_->SetCastShadows(false); // 死亡時は影を落とさなくする（ジャギジャギ防止）
         } else {
             obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
+            obj_->SetCastShadows(true);
         }
 
         Vector3 drawPos = translate_;

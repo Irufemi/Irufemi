@@ -18,6 +18,7 @@ private:
     float timer_ = 0.0f;
     float globalTimer_ = 0.0f;
     bool isFinished_ = false;
+    bool isLockedOn_ = false;
     int headIndex_ = 1;         // 管理する首のインデックス
 
     // タイマー・座標系

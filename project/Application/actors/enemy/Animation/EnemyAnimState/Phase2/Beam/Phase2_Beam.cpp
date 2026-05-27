@@ -10,6 +10,7 @@ void Phase2_Beam::Enter(Enemy* enemy) {
     timer_ = 0.0f;
     globalTimer_ = 0.0f;
     isFinished_ = false;
+    isLockedOn_ = false;
     attackTarget_ = { 0, 0, 0 };
 }
 
@@ -73,8 +74,9 @@ void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
     } else if (timer_ < kBeamWaitTime) {
         // 停止・ロックオン（シェイクを止めて定位置に戻す）
         headT->translate = basePos_;
-        if (timer_ - deltaTime < kBeamChargeTime) {
+        if (!isLockedOn_) {
             attackTarget_ = playerPos; 
+            isLockedOn_ = true;
         }
         beam->SetTelegraphActive(true);
         beam->SetTelegraphThickness(telegraphThicknessWait_);
