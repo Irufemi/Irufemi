@@ -35,7 +35,16 @@ public:
     void Draw(class IrufemiEngine* engine);
 
     /** @brief 予兆ビームの表示設定 */
-    void SetTelegraphActive(bool active) { isTelegraphActive_ = active; }
+    void SetTelegraphActive(bool active) { 
+        isTelegraphActive_ = active; 
+        if (!active) {
+            telegraphProgress_ = 0.0f;
+            if (telegraphGroundAOE_) {
+                telegraphGroundAOE_->GetTransform().transform.scale = { 0,0,0 };
+                telegraphGroundAOE_->GetTransform().isDirty = true;
+            }
+        }
+    }
     /** @brief 予兆ビームがアクティブか */
     bool IsTelegraphActive() const { return isTelegraphActive_; }
     /** @brief 予兆ビームの太さ（直径）設定 */
@@ -49,8 +58,11 @@ public:
     /** @brief 攻撃ビームの表示設定 */
     void SetAttackActive(bool active) { 
         isAttackActive_ = active; 
-        if (!active && gpuParticle_) {
-            gpuParticle_->SetEmit(false);
+        if (!active) {
+            attackTimer_ = 0.0f;
+            if (gpuParticle_) {
+                gpuParticle_->SetEmit(false);
+            }
         }
     }
     /** @brief 攻撃ビームがアクティブか */
@@ -72,7 +84,12 @@ public:
     void SetOriginOffset(float offset) { originOffset_ = offset; }
 
     /** @brief チャージ球の表示設定 */
-    void SetChargeSphereActive(bool active) { isChargeSphereActive_ = active; }
+    void SetChargeSphereActive(bool active) { 
+        isChargeSphereActive_ = active; 
+        if (!active) {
+            chargeSphereScale_ = 0.0f;
+        }
+    }
     /** @brief チャージ球のスケール設定 */
     void SetChargeSphereScale(float scale) { chargeSphereScale_ = scale; }
 

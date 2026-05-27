@@ -185,16 +185,21 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
                 // 距離が遠すぎる場合でも消えないように、最大距離でクランプする
                 float renderDist = (std::min)(distToFloor, beamLength_);
                 Vector3 floorPos = Math::Add(startPos, Math::Multiply(renderDist, direction));
-                // クランプした場合、Yが浮く可能性があるためY=0に固定
-                floorPos.y = 0.0f;
+                // クランプした場合、Yが浮く可能性があるためY=0.05fに固定（Zファイティング防止）
+                floorPos.y = 0.05f;
 
                 Transform t;
                 t.translate = floorPos;
-                // 地面に水平に貼り付けるため X軸に90度回転
-                t.rotate = { Math::PI / 2.0f, 0.0f, 0.0f };
+                
+                // direction（ビーム方向）のXZ平面での角度（Yaw）を計算
+                float yaw = std::atan2(direction.x, direction.z);
+                
+                // Planeを地面に寝かせるためX軸で90度回転(Rx=90)。
+                // その後、ワールドのY軸を中心に回転させることで、地面に這わせたままビームの方向へ向きを変える(Ry=yaw)。
+                t.rotate = { Math::PI / 2.0f, yaw, 0.0f };
                 
                 // ビームが斜めに刺さる場合、断面は楕円になるためスケールを調整
-                // Plane は 1.0 のスケールで 1x1 (直径1m) なので、telegraphThickness_ (直径) をそのまま使う
+                // PlaneのローカルY軸がビームの進行方向を向くため、Yスケールを伸ばす
                 float cosTheta = std::abs(direction.y);
                 float scaleZ = telegraphThickness_ / (std::max)(cosTheta, 0.01f);
                 t.scale = { telegraphThickness_, scaleZ, 1.0f };

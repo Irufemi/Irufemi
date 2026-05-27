@@ -22,9 +22,9 @@ void EnemyStompEffects::Initialize(IrufemiEngine* engine) {
         bodyTelegraphObj_->Initialize(PrimitiveType::Plane, "resources/whiteTexture.png");
         bodyTelegraphObj_->GetMaterial().enableLighting = false; // ライティング無効
         bodyTelegraphObj_->SetCastShadows(false); // 影を落とさない
-        // AOEWarningシェーダー（加算・半透明など）を適用
+        // AOEWarningシェーダー（加算、半透明など）を適用、地形による見切れを防ぐため深度テストOff
         bodyTelegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO(
-            "AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+            "AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
         
         aoeParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(AOEParams));
         aoeParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&aoeParamsData_));
@@ -89,6 +89,12 @@ void EnemyStompEffects::Cancel() {
     isActive_ = false;
     isBodyTelegraphActive_ = false;
     currentPhase_ = Phase::Finished;
+    
+    // スケールを0にして確実に画面から消す
+    explosionTransform_.scale = { 0.0f, 0.0f, 0.0f };
+    ringTransform_.scale = { 0.0f, 0.0f, 0.0f };
+    bodyTelegraphTransform_.scale = { 0.0f, 0.0f, 0.0f };
+
     if (gpuParticleSystem_) {
         gpuParticleSystem_->Clear();
     }
@@ -245,7 +251,8 @@ bool EnemyStompEffects::IsExplosionDamageActive() const {
 float EnemyStompEffects::GetExplosionRadius() const {
     float t = (std::min)(1.0f, globalTimer_ / params_.explosionDuration);
     float easeOut = EaseOutQuad(t);
-    return Lerp(1.0f, params_.explosionMaxRadius, easeOut);
+    // params_.explosionMaxRadius は見た目の「直径」として設定されているため、当たり判定の「半径」にするために 0.5f を掛ける
+    return Lerp(1.0f, params_.explosionMaxRadius * 0.5f, easeOut);
 }
 
 void EnemyStompEffects::StartBodyTelegraph(const Vector3& pos, float radius) {
@@ -281,6 +288,7 @@ void EnemyStompEffects::UpdateBodyTelegraph(const Vector3& pos, float warningRat
 
 void EnemyStompEffects::StopBodyTelegraph() {
     isBodyTelegraphActive_ = false;
+    bodyTelegraphTransform_.scale = { 0.0f, 0.0f, 0.0f };
 }
 
 void EnemyStompEffects::DrawBodyTelegraph(IrufemiEngine* engine) {

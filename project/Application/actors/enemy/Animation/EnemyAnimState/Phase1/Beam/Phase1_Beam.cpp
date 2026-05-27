@@ -8,6 +8,7 @@
 
 void Phase1_Beam::Enter(Enemy* enemy) {
     attackTimer_ = 0.0f;
+    totalTimer_ = 0.0f;
     isLockedOn_ = false;
     isFiring_ = false;
     hasFinishedAttack_ = false;

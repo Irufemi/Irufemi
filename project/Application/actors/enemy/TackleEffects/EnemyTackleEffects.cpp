@@ -18,7 +18,7 @@ void EnemyTackleEffects::Initialize(IrufemiEngine* engine) {
     telegraphObj_->GetMaterial().enableLighting = false; // ライティング無効
     telegraphObj_->SetCastShadows(false);                // 影を落とさない
     if (engine) {
-        telegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+        telegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
         
         aoeParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(AOEParams));
         aoeParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&aoeParamsData_));
@@ -84,6 +84,10 @@ void EnemyTackleEffects::UpdateTelegraph(const Vector3& position, float rotateY,
 
 void EnemyTackleEffects::StopTelegraph() {
     isTelegraphActive_ = false;
+    telegraphTransform_.scale = { 0.0f, 0.0f, 0.0f };
+    if (telegraphObj_) {
+        telegraphObj_->SetTransform(telegraphTransform_);
+    }
 }
 
 void EnemyTackleEffects::DrawTelegraph(IrufemiEngine* engine) {
