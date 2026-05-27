@@ -101,29 +101,48 @@ void EnemyStompEffects::Update(float deltaTime) {
     globalTimer_ += deltaTime;
     phaseTimer_ += deltaTime;
 
+    // 球（explosionObj_）の現在のスケールを計算（全体を通して使用）
+    float totalWarningTime = params_.ringExpandDuration + params_.ringKeepDuration;
+    float globalT = (std::min)(1.0f, globalTimer_ / totalWarningTime);
+    float easeIn = EaseInQuad(globalT);
+    float currentSphereScale = Lerp(1.0f, params_.ringMaxRadius, easeIn);
+
     if (currentPhase_ == Phase::Expanding || currentPhase_ == Phase::KeepAndWarning) {
-        float totalWarningTime = params_.ringExpandDuration + params_.ringKeepDuration;
-        float t = (std::min)(1.0f, globalTimer_ / totalWarningTime);
-        
-        float easeIn = EaseInQuad(t);
-        float currentScale = Lerp(1.0f, params_.ringMaxRadius, easeIn);
-        
-        explosionTransform_.scale = { currentScale, currentScale, currentScale };
+        explosionTransform_.scale = { currentSphereScale, currentSphereScale, currentSphereScale };
         explosionTransform_.translate = { basePosition_.x, basePosition_.y + params_.ringGroundOffset, basePosition_.z };
         
         Vector4 colorBase = { 1.0f, 0.4f, 0.0f, 0.2f }; 
         Vector4 colorWarning = { 1.0f, 0.0f, 0.0f, 0.6f };
         Vector4 currentColor;
-        currentColor.x = Lerp(colorBase.x, colorWarning.x, t);
-        currentColor.y = Lerp(colorBase.y, colorWarning.y, t);
-        currentColor.z = Lerp(colorBase.z, colorWarning.z, t);
-        currentColor.w = Lerp(colorBase.w, colorWarning.w, t);
+        currentColor.x = Lerp(colorBase.x, colorWarning.x, globalT);
+        currentColor.y = Lerp(colorBase.y, colorWarning.y, globalT);
+        currentColor.z = Lerp(colorBase.z, colorWarning.z, globalT);
+        currentColor.w = Lerp(colorBase.w, colorWarning.w, globalT);
         
-        float pulse = (std::sin(globalTimer_ * 15.0f * t) * 0.5f + 0.5f);
-        currentColor.w += pulse * 0.2f * t; 
+        float pulse = (std::sin(globalTimer_ * 15.0f * globalT) * 0.5f + 0.5f);
+        currentColor.w += pulse * 0.2f * globalT; 
 
         explosionObj_->SetColor(currentColor);
     }
+
+    // 球の広がりに合わせたリングの色比率 (0.0 ~ 1.0)
+    float colorRatio = 0.0f;
+    if (params_.ringMaxRadius > 1.0f) {
+        // 球のスケール値から現在どこまで広がっているかを逆算して適用する
+        float rawRatio = (currentSphereScale - 1.0f) / (params_.ringMaxRadius - 1.0f);
+        rawRatio = (std::min)(1.0f, (std::max)(0.0f, rawRatio));
+        
+        // 色が変わる（黄色になる）タイミングが早く感じないよう、
+        // EaseInQuart(4乗カーブ)を使って、最後の最後に一気に黄色になりきるようにする
+        colorRatio = EaseInQuart(rawRatio);
+    }
+    colorRatio = (std::min)(1.0f, (std::max)(0.0f, colorRatio));
+
+    Vector4 ringCurrentColor;
+    ringCurrentColor.x = Lerp(params_.ringColorNormal.x, params_.ringColorWarning.x, colorRatio);
+    ringCurrentColor.y = Lerp(params_.ringColorNormal.y, params_.ringColorWarning.y, colorRatio);
+    ringCurrentColor.z = Lerp(params_.ringColorNormal.z, params_.ringColorWarning.z, colorRatio);
+    ringCurrentColor.w = Lerp(params_.ringColorNormal.w, params_.ringColorWarning.w, colorRatio);
 
     switch (currentPhase_) {
     case Phase::Expanding:
@@ -132,7 +151,7 @@ void EnemyStompEffects::Update(float deltaTime) {
         float currentRadius = Lerp(1.0f, params_.ringMaxRadius, t);
 
         ringTransform_.scale = { currentRadius, params_.ringHeight, currentRadius };
-        ringObj_->SetColor(params_.ringColorNormal);
+        ringObj_->SetColor(ringCurrentColor);
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::KeepAndWarning;
@@ -146,13 +165,7 @@ void EnemyStompEffects::Update(float deltaTime) {
         float t = (std::min)(1.0f, phaseTimer_ / params_.ringKeepDuration);
 
         ringTransform_.scale = { params_.ringMaxRadius, params_.ringHeight, params_.ringMaxRadius };
-
-        Vector4 c;
-        c.x = Lerp(params_.ringColorNormal.x, params_.ringColorWarning.x, t);
-        c.y = Lerp(params_.ringColorNormal.y, params_.ringColorWarning.y, t);
-        c.z = Lerp(params_.ringColorNormal.z, params_.ringColorWarning.z, t);
-        c.w = Lerp(params_.ringColorNormal.w, params_.ringColorWarning.w, t);
-        ringObj_->SetColor(c);
+        ringObj_->SetColor(ringCurrentColor);
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::FinalExplosion;
