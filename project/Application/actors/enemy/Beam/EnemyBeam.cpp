@@ -192,15 +192,15 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
         // 内側（コア）の更新：外側より少し細めにする
         attackCylinder_->SetCenter(attackTransform_.translate);
         attackCylinder_->SetRotate(attackTransform_.rotate);
-        attackCylinder_->SetRadius(attackThickness_ * 0.45f); // 内側コアは細く
+        attackCylinder_->SetRadius(attackThickness_ * 0.3f); // ★コアを細くする
         attackCylinder_->SetHeight(currentLength);
         attackCylinder_->Update();
 
-        // 外側（電撃オーラ）的の更新：内側より太く覆う
+        // 外側（電撃オーラ）的の更新：当たり判定(OBB = 0.5f)の太さにぴったり合わせる
         if (attackCylinderOuter_) {
             attackCylinderOuter_->SetCenter(attackTransform_.translate);
             attackCylinderOuter_->SetRotate(attackTransform_.rotate);
-            attackCylinderOuter_->SetRadius(attackThickness_ * 0.85f); // 外側の電撃は太く
+            attackCylinderOuter_->SetRadius(attackThickness_ * 0.5f); // ★当たり判定に合わせる
             attackCylinderOuter_->SetHeight(currentLength);
             attackCylinderOuter_->Update();
         }
@@ -232,6 +232,7 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
             );
 
             // 放出設定：物量と勢いを大幅に強化してレッドドラゴンのブレス感を演出
+            // ★発生半径(radius)も、当たり判定と外側オーラに合わせた 0.5f に戻す
             gpuParticle_->SetBeamEmitter(startPos, direction, attackThickness_ * 0.5f, emitVelocity, emitSpread, emitCount, 0.01f);
             gpuParticle_->SetEmit(true);
 
