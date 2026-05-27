@@ -67,12 +67,19 @@ PixelShaderOutput main(VertexShaderOutput input)
         // time をプラスすることで、uv.y が小さい方（+Z/前方）へ波が向かう
         float wave = frac(uv.y * 2.5 + time * 1.5);
         
-        // エッジフェード (smoothstepのmin < maxを守る)
+        // エッジフェード (中の波用)
         float edgeU = smoothstep(0.0, 0.1, uv.x) * (1.0 - smoothstep(0.9, 1.0, uv.x));
         float edgeV = smoothstep(0.0, 0.1, uv.y) * (1.0 - smoothstep(0.9, 1.0, uv.y));
         
-        float baseAlpha = lerp(0.3, 1.0, warningRatio);
-        alphaMult = wave * edgeU * edgeV * baseAlpha;
+        // 矩形の外枠（ボーダーライン）を作成
+        float borderU = step(uv.x, 0.02) + step(0.98, uv.x);
+        float borderV = step(uv.y, 0.02) + step(0.98, uv.y);
+        float border = saturate(borderU + borderV);
+        
+        float baseAlpha = lerp(0.3, 0.8, warningRatio);
+        
+        // 波のフェードと枠線を合成
+        alphaMult = (wave * edgeU * edgeV * baseAlpha) + (border * 0.8);
 
     } else if (shapeType == 2) {
         // --- 円柱 (Cylinder用) ---
