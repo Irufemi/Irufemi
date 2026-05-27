@@ -87,8 +87,10 @@ private:
     float telegraphForwardOffset_ = 0.0f;
     bool isTelegraphActive_ = false;
 
-    // 攻撃用
+    // 攻撃用 (内側のレーザーコア)
     std::shared_ptr<CylinderClass> attackCylinder_ = nullptr;
+    // 攻撃用 (外側の電撃オーラ)
+    std::shared_ptr<CylinderClass> attackCylinderOuter_ = nullptr;
     Transform attackTransform_;
     float attackThickness_ = 0.5f;
     float attackForwardOffset_ = 0.0f;
@@ -98,9 +100,13 @@ private:
     float attackTimer_ = 0.0f;
     float attackExpandTime_ = 0.15f; // ビームが最大まで伸びる時間(秒)
 
-    // 電撃エフェクト用（プラズマ表現）
+    // 電撃エフェクト用（内側レーザー用パラメータ）
     Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsResource_;
     LightningParams* lightningParamsData_ = nullptr;
+
+    // 電撃エフェクト用（外側オーラ用パラメータ）
+    Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsOuterResource_;
+    LightningParams* lightningParamsOuterData_ = nullptr;
 
     // 放出エフェクト用（パーティクル表現）
     std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;

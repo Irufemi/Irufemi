@@ -24,7 +24,12 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
 
     attackCylinder_ = std::make_shared<CylinderClass>();
     attackCylinder_->Initialize(false, false);
-    attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
+    attackCylinder_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+
+    // 攻撃用 (外側の電撃オーラ)
+    attackCylinderOuter_ = std::make_shared<CylinderClass>();
+    attackCylinderOuter_->Initialize(false, false);
+    attackCylinderOuter_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
     attackCylinder_->SetCastShadows(false);
 
     chargeSphere_ = std::make_unique<PrimitiveObjects3DClass>();
@@ -55,15 +60,36 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
         lightningParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightningParamsData_));
         if (lightningParamsData_) {
             *lightningParamsData_ = LightningParams();
-            // レッドドラゴンのブレス風（赤＋黄色コア）のプラズマ表現
-            lightningParamsData_->color = { 1.0f, 0.15f, 0.05f, 1.0f };
-            lightningParamsData_->coreColor = { 1.0f, 0.8f, 0.2f, 1.0f };
-            lightningParamsData_->intensity = 6.0f;
+            // --- 内側（コア）: EnergyBeam用の超高輝度レーザーパラメータ ---
+            lightningParamsData_->color = { 1.0f, 0.4f, 0.1f, 1.0f }; // 外周オーラ（微か）
+            lightningParamsData_->coreColor = { 1.0f, 1.0f, 0.8f, 1.0f }; // コア（白〜微黄色）
+            lightningParamsData_->intensity = 5.0f; // オーラの輝度（外側があるので控えめ）
             lightningParamsData_->noiseThreshold = 0.3f;
-            lightningParamsData_->coreIntensity = 5.0f;
+            lightningParamsData_->coreIntensity = 40.0f; // コアの輝度（HDR白飛び）
+            lightningParamsData_->coreThreshold = 0.8f; // コアの太さ（極太）
             lightningParamsData_->coreScale = 2.0f;
-            lightningParamsData_->speed = 1.0f;      // DebugSceneと同じ速度に調整
-            lightningParamsData_->noiseScale = 1.0f; // DebugSceneと同じ模様密度に調整
+            lightningParamsData_->speed = 3.0f;      // 奔流の速度（かなり速く）
+            lightningParamsData_->noiseScale = 1.0f; // ノイズの密度
+            lightningParamsData_->spinSpeed = 5.0f;  // コアも少しだけ回転させる
+            lightningParamsData_->twistScale = 3.0f; // 僅かにねじれるように
+        }
+
+        // 電撃用のパラメータリソースを作成 (外側オーラ・LightningCrawl用)
+        lightningParamsOuterResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(LightningParams));
+        lightningParamsOuterResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightningParamsOuterData_));
+        if (lightningParamsOuterData_) {
+            *lightningParamsOuterData_ = LightningParams();
+            // --- 外側（オーラ）: LightningCrawl用の激しいバチバチ電撃パラメータ ---
+            lightningParamsOuterData_->color = { 1.0f, 0.1f, 0.05f, 1.0f }; // 赤オレンジ
+            lightningParamsOuterData_->coreColor = { 1.0f, 0.6f, 0.2f, 1.0f }; // 黄色コア
+            lightningParamsOuterData_->intensity = 15.0f; // オーラの輝度（高め）
+            lightningParamsOuterData_->noiseThreshold = 0.45f;
+            lightningParamsOuterData_->coreIntensity = 10.0f;
+            lightningParamsOuterData_->coreScale = 2.0f;
+            lightningParamsOuterData_->speed = 0.5f;      // 前進は遅めにして横回転を強調
+            lightningParamsOuterData_->noiseScale = 0.8f; // ★ノイズ密度を下げる（細かいとちぎれやすいため）
+            lightningParamsOuterData_->spinSpeed = 10.0f; // 横回転（少し緩やかに）
+            lightningParamsOuterData_->twistScale = 5.0f; // ★ねじれを大幅に下げる（強すぎるとエイリアスで線が切れる）
         }
 
         gpuParticle_ = std::make_unique<GPUParticleSystem>();
@@ -146,29 +172,38 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
         // イーズアウト等で伸ばす(t * (2.0f - t))
         float easeT = t * (2.0f - t);
         // プレイヤーまでの距離ではなく、突き抜けるように beamLength_ を使用
-        float currentDistance = beamLength_ * easeT;
+        float currentLength = beamLength_ * easeT;
 
         // 地面(y=0.0f)との交差判定（ビームを床で止める）
         // 断面が浮いて見えないように、床よりもさらに長め（+20.0f）に突き抜けさせる
         if (direction.y < 0.0f) {
             float distanceToFloor = (0.0f - startPos.y) / direction.y;
             if (distanceToFloor > 0.0f) {
-                currentDistance = (std::min)(currentDistance, distanceToFloor + 20.0f);
+                currentLength = (std::min)(currentLength, distanceToFloor + 20.0f);
             }
         }
 
         // ビームの中心は伸びた距離の半分
-        Vector3 currentCenter = Math::Add(startPos, Math::Multiply(currentDistance * 0.5f, direction));
+        Vector3 currentCenter = Math::Add(startPos, Math::Multiply(currentLength * 0.5f, direction));
 
         attackTransform_.translate = currentCenter;
-        attackTransform_.rotate = rotate;
+        attackTransform_.rotate = { rotate.x - Math::PI / 2.0f, rotate.y, rotate.z };
         
-        attackCylinder_->SetCenter(currentCenter);
-        // Cylinder用回転補正
-        attackCylinder_->SetRotate({ rotate.x - Math::PI / 2.0f, rotate.y, rotate.z });
-        attackCylinder_->SetRadius(attackThickness_ * 0.5f);
-        attackCylinder_->SetHeight(currentDistance);
+        // 内側（コア）の更新：外側より少し細めにする
+        attackCylinder_->SetCenter(attackTransform_.translate);
+        attackCylinder_->SetRotate(attackTransform_.rotate);
+        attackCylinder_->SetRadius(attackThickness_ * 0.45f); // 内側コアは細く
+        attackCylinder_->SetHeight(currentLength);
         attackCylinder_->Update();
+
+        // 外側（電撃オーラ）的の更新：内側より太く覆う
+        if (attackCylinderOuter_) {
+            attackCylinderOuter_->SetCenter(attackTransform_.translate);
+            attackCylinderOuter_->SetRotate(attackTransform_.rotate);
+            attackCylinderOuter_->SetRadius(attackThickness_ * 0.85f); // 外側の電撃は太く
+            attackCylinderOuter_->SetHeight(currentLength);
+            attackCylinderOuter_->Update();
+        }
 
         if (gpuParticle_) {
             // 基準となる太さ(第2形態相当の 4.0f)に対する今回の太さの倍率を計算
@@ -177,10 +212,10 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
             // スケール乗数に合わせて放出量や拡散を変動
             int emitCount = std::clamp(static_cast<int>(50.0f * thicknessRatio), 50, 400);
 
-            // 平均寿命(例: 0.6秒)で到達点(currentDistance)まで届くように速度を算出
+            // 平均寿命(例: 0.6秒)で到達点(currentLength)まで届くように速度を算出
             // ※HLSL側で velocity が「1フレームの移動量(dt不使用)」として加算されているため、60fps換算で割る
             float avgLife = 0.6f;
-            float emitVelocity = (currentDistance / avgLife) * (1.0f / 60.0f);
+            float emitVelocity = (currentLength / avgLife) * (1.0f / 60.0f);
             float emitSpread = 0.12f * std::sqrt(thicknessRatio); // 太いほど拡散させる
 
             // 目標地点でパーティクルが消えるように寿命を設定
@@ -222,20 +257,27 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
         telegraphObj_->Draw(true); // ビルなどの遮蔽物に上書きされないようUIキュー（最前面）で描画
     }
 
-    if (isAttackActive_ && attackCylinder_) {
-        // 新しいカスタムPSOインジェクション基盤を使用して、専用のシェーダーと定数バッファをセットする
-        attackCylinder_->SetCustomPSO(engine->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
-        if (lightningParamsResource_) {
-            attackCylinder_->SetCustomCBVAddress(lightningParamsResource_->GetGPUVirtualAddress());
+    if (isAttackActive_) {
+        // 1. 外側のバチバチ電撃（LightningCrawl）を先に描画
+        if (attackCylinderOuter_ && lightningParamsOuterResource_) {
+            attackCylinderOuter_->SetCustomPSO(engine->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+            attackCylinderOuter_->SetCustomCBVAddress(lightningParamsOuterResource_->GetGPUVirtualAddress());
+            
+            // パケット（キュー）に積まれる描画ステートを設定
+            engine->SetBlend(BlendMode::kBlendModeAdd);
+            engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
+            engine->SetCull(PSOManager::CullMode::None);
+            
+            attackCylinderOuter_->Draw(true); // UIキューで描画
         }
 
-        // パケット（キュー）に積まれる描画ステートを設定
-        engine->SetBlend(BlendMode::kBlendModeAdd);
-        engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
-        engine->SetCull(PSOManager::CullMode::None);
-
-        // 通常通りDrawを呼ぶだけで、DrawManager内で適切なパスと順序（カスタムPSO付き）で描画される
-        attackCylinder_->Draw(true); // こちらも同様にUIキューで描画し最前面に強制
+        // 2. 内側の極太レーザーコア（EnergyBeam）を描画
+        if (attackCylinder_ && lightningParamsResource_) {
+            attackCylinder_->SetCustomPSO(engine->GetPSOManager()->GetPSO("EnergyBeam", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+            attackCylinder_->SetCustomCBVAddress(lightningParamsResource_->GetGPUVirtualAddress());
+            
+            attackCylinder_->Draw(true); // UIキューで描画
+        }
 
         // 状態を元に戻す
         engine->SetBlend(BlendMode::kBlendModeNormal);
