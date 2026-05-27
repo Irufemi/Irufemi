@@ -5,7 +5,10 @@
 #include <memory>
 #include <vector>
 #include <list>
+#include <wrl.h>
+#include <d3d12.h>
 #include "IrufemiEngine/Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "IrufemiEngine/Engine/Graphics/Data/AOEParams.h"
 
 class Camera;
 class ObjClass;
@@ -56,6 +59,10 @@ private:
     std::shared_ptr<PrimitiveObjects3DClass> telegraphObj_ = nullptr;
     Transform telegraphTransform_;
     bool isTelegraphActive_ = false;
+
+    // AOE専用パラメータ
+    Microsoft::WRL::ComPtr<ID3D12Resource> aoeParamsResource_;
+    AOEParams* aoeParamsData_ = nullptr;
 
     std::list<TackleWave> waves_;
 

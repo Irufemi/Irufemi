@@ -8,6 +8,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "IrufemiEngine/Engine/Graphics/Data/AOEParams.h"
 
 // 前方宣言
 class Camera;
@@ -98,6 +99,10 @@ private:
     std::unique_ptr<PrimitiveObjects3DClass> ringObj_ = nullptr;
     std::unique_ptr<PrimitiveObjects3DClass> bodyTelegraphObj_ = nullptr; // 落下地点予兆用AOE
     std::unique_ptr<GPUParticleSystem> gpuParticleSystem_ = nullptr; // 大爆発の火の粉用
+
+    // AOE専用パラメータ
+    Microsoft::WRL::ComPtr<ID3D12Resource> aoeParamsResource_;
+    AOEParams* aoeParamsData_ = nullptr;
 
     Transform explosionTransform_;
     Transform ringTransform_;

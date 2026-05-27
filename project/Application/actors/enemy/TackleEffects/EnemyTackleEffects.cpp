@@ -19,6 +19,14 @@ void EnemyTackleEffects::Initialize(IrufemiEngine* engine) {
     telegraphObj_->SetCastShadows(false);                // 影を落とさない
     if (engine) {
         telegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+        
+        aoeParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(AOEParams));
+        aoeParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&aoeParamsData_));
+        if (aoeParamsData_) {
+            *aoeParamsData_ = AOEParams();
+            aoeParamsData_->shapeType = 1; // Linear
+        }
+        telegraphObj_->SetCustomCBVAddress(aoeParamsResource_->GetGPUVirtualAddress());
     }
 }
 
@@ -36,9 +44,10 @@ void EnemyTackleEffects::StartTelegraph(const Vector3& position, float rotateY, 
     telegraphTransform_.rotate = { std::numbers::pi_v<float> / 2.0f, rotateY, 0.0f }; // Xで寝かせてYで回す
     telegraphObj_->SetTransform(telegraphTransform_);
     
-    // Shader用パラメータ (1 = Linear)
-    telegraphObj_->GetMaterial().uvTransform.m[0][0] = 1.0f;
-    telegraphObj_->GetMaterial().uvTransform.m[0][1] = 0.0f; // warningRatio
+    // Shader用パラメータ
+    if (aoeParamsData_) {
+        aoeParamsData_->warningRatio = 0.0f;
+    }
 
     telegraphObj_->SetColor({ 1.0f, 0.2f, 0.0f, 1.0f }); // アルファはシェーダー制御
     telegraphObj_->Update();
@@ -63,8 +72,9 @@ void EnemyTackleEffects::UpdateTelegraph(const Vector3& position, float rotateY,
     float blink = (std::sin(warningRatio * blinkSpeed) + 1.0f) * 0.5f; 
     
     // Shader用パラメータ
-    telegraphObj_->GetMaterial().uvTransform.m[0][0] = 1.0f; // Linear
-    telegraphObj_->GetMaterial().uvTransform.m[0][1] = warningRatio;
+    if (aoeParamsData_) {
+        aoeParamsData_->warningRatio = warningRatio;
+    }
 
     // 赤＋少し黄色を混ぜて危険色を強調
     telegraphObj_->SetColor({ 1.0f, Lerp(0.2f, 0.5f, blink), 0.0f, 1.0f });

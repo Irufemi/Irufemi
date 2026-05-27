@@ -9,17 +9,52 @@ EnemyBeam::~EnemyBeam() {
     if (lightningParamsResource_ && engine_ && engine_->GetDirectXCommon()) {
         engine_->GetDirectXCommon()->ReleaseAfterFence(lightningParamsResource_);
     }
+    if (lightningParamsOuterResource_) {
+        lightningParamsOuterResource_->Unmap(0, nullptr);
+        engine_->GetDirectXCommon()->ReleaseAfterFence(lightningParamsOuterResource_);
+    }
+    if (aoeParamsResourceCylinder_) {
+        aoeParamsResourceCylinder_->Unmap(0, nullptr);
+        engine_->GetDirectXCommon()->ReleaseAfterFence(aoeParamsResourceCylinder_);
+    }
+    if (aoeParamsResourceGround_) {
+        aoeParamsResourceGround_->Unmap(0, nullptr);
+        engine_->GetDirectXCommon()->ReleaseAfterFence(aoeParamsResourceGround_);
+    }
 }
 
 void EnemyBeam::Initialize(IrufemiEngine* engine) {
-    telegraphObj_ = std::make_unique<PrimitiveObjects3DClass>();
-    telegraphObj_->Initialize(PrimitiveType::Cube, "resources/whiteTexture.png");
-    telegraphObj_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
-    telegraphObj_->SetCastShadows(false);
+    telegraphCylinder_ = std::make_shared<CylinderClass>();
+    telegraphCylinder_->Initialize(false, false);
+    telegraphCylinder_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
+    telegraphCylinder_->SetCastShadows(false);
+    telegraphCylinder_->SetCullingEnabled(false);
+
+    telegraphGroundAOE_ = std::make_unique<PrimitiveObjects3DClass>();
+    telegraphGroundAOE_->Initialize(PrimitiveType::Plane);
+    telegraphGroundAOE_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
+    telegraphGroundAOE_->SetCullingEnabled(false);
+
     if (engine) {
-        // 予兆線を不透明オブジェクト（ビルなど）の後にUIキューとして描画し、
-        // 深度テストを有効にする（DepthWrite::Disable）ことで、ビルの裏側は隠れ、表側は表示されるようになります。
-        telegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+        auto aoePSO = engine->GetPSOManager()->GetPSO("AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+        telegraphCylinder_->SetCustomPSO(aoePSO);
+        telegraphGroundAOE_->SetCustomPSO(aoePSO);
+
+        aoeParamsResourceCylinder_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(AOEParams));
+        aoeParamsResourceCylinder_->Map(0, nullptr, reinterpret_cast<void**>(&aoeParamsDataCylinder_));
+        if (aoeParamsDataCylinder_) {
+            *aoeParamsDataCylinder_ = AOEParams();
+            aoeParamsDataCylinder_->shapeType = 2; // Cylinder専用
+        }
+        telegraphCylinder_->SetCustomCBVAddress(aoeParamsResourceCylinder_->GetGPUVirtualAddress());
+
+        aoeParamsResourceGround_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(AOEParams));
+        aoeParamsResourceGround_->Map(0, nullptr, reinterpret_cast<void**>(&aoeParamsDataGround_));
+        if (aoeParamsDataGround_) {
+            *aoeParamsDataGround_ = AOEParams();
+            aoeParamsDataGround_->shapeType = 0; // Radial
+        }
+        telegraphGroundAOE_->SetCustomCBVAddress(aoeParamsResourceGround_->GetGPUVirtualAddress());
     }
 
     attackCylinder_ = std::make_shared<CylinderClass>();
@@ -119,17 +154,66 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
     rotate.y = std::atan2(direction.x, direction.z);
     float distXZ = std::sqrt(direction.x * direction.x + direction.z * direction.z);
     rotate.x = std::atan2(-direction.y, distXZ);
+    // CylinderはY軸方向に伸びているため、Z軸方向に倒すために90度(PI/2)足す
+    rotate.x += Math::PI / 2.0f;
 
     Vector3 startPos = Math::Add(headPos, Math::Multiply(originOffset_, direction));
 
     if (isTelegraphActive_) {
-        telegraphTransform_.scale = { telegraphThickness_, telegraphThickness_, beamLength_ };
-        Vector3 telegraphCenter = Math::Add(startPos, Math::Multiply(beamLength_ * 0.5f, direction));
-        telegraphTransform_.translate = telegraphCenter;
-        telegraphTransform_.rotate = rotate;
-        telegraphObj_->GetTransform().transform = telegraphTransform_;
-        telegraphObj_->GetTransform().isDirty = true;
-        telegraphObj_->Update();
+        // 進行度の更新 (固定フレーム想定。発射までの時間に合わせる)
+        telegraphProgress_ += 1.0f / 60.0f;
+        // 警告が進むにつれて ratio が 0.0 -> 1.0 に近づく (徐々に赤くなる)
+        float ratio = (std::min)(telegraphProgress_ * 0.7f, 1.0f);
+
+        // 1. 軌道シリンダーの更新
+        telegraphCylinder_->SetCenter(Math::Add(startPos, Math::Multiply(beamLength_ * 0.5f, direction)));
+        telegraphCylinder_->SetRotate(rotate);
+        // 予兆円柱の太さは画面の占有を防ぐため実際の1/4の太さに縮小
+        telegraphCylinder_->SetRadius(telegraphThickness_ * 0.125f);
+        telegraphCylinder_->SetHeight(beamLength_);
+        telegraphCylinder_->Update();
+        
+        // 専用のAOEParamsを更新
+        if (aoeParamsDataCylinder_) {
+            aoeParamsDataCylinder_->warningRatio = ratio;
+        }
+
+        // 2. 地面AOEサークルの更新
+        if (direction.y < -0.001f) {
+            float distToFloor = (0.0f - startPos.y) / direction.y;
+            if (distToFloor > 0.0f && distToFloor < beamLength_) {
+                Vector3 floorPos = Math::Add(startPos, Math::Multiply(distToFloor, direction));
+                Transform t;
+                t.translate = floorPos;
+                // 地面に水平に貼り付けるため X軸に90度回転
+                t.rotate = { Math::PI / 2.0f, 0.0f, 0.0f };
+                
+                // ビームが斜めに刺さる場合、断面は楕円になるためスケールを調整
+                // Plane は 1.0 のスケールで 1x1 (直径1m) なので、telegraphThickness_ (直径) をそのまま使う
+                float cosTheta = std::abs(direction.y);
+                float scaleZ = telegraphThickness_ / (std::max)(cosTheta, 0.01f);
+                t.scale = { telegraphThickness_, scaleZ, 1.0f };
+                
+                telegraphGroundAOE_->GetTransform().transform = t;
+                telegraphGroundAOE_->GetTransform().isDirty = true;
+                telegraphGroundAOE_->Update();
+
+                // 専用のAOEParamsを更新
+                if (aoeParamsDataGround_) {
+                    aoeParamsDataGround_->warningRatio = ratio;
+                }
+            } else {
+                telegraphGroundAOE_->GetTransform().transform.scale = { 0,0,0 };
+                telegraphGroundAOE_->GetTransform().isDirty = true;
+                telegraphGroundAOE_->Update();
+            }
+        } else {
+            telegraphGroundAOE_->GetTransform().transform.scale = { 0,0,0 };
+            telegraphGroundAOE_->GetTransform().isDirty = true;
+            telegraphGroundAOE_->Update();
+        }
+    } else {
+        telegraphProgress_ = 0.0f;
     }
 
     if (isChargeSphereActive_ && chargeSphere_) {
@@ -187,7 +271,7 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
         Vector3 currentCenter = Math::Add(startPos, Math::Multiply(currentLength * 0.5f, direction));
 
         attackTransform_.translate = currentCenter;
-        attackTransform_.rotate = { rotate.x - Math::PI / 2.0f, rotate.y, rotate.z };
+        attackTransform_.rotate = rotate;
         
         // 内側（コア）の更新：外側より少し細めにする
         attackCylinder_->SetCenter(attackTransform_.translate);
@@ -254,8 +338,11 @@ void EnemyBeam::Draw(IrufemiEngine* engine) {
         chargeSphere_->Draw();
     }
 
-    if (isTelegraphActive_ && telegraphObj_) {
-        telegraphObj_->Draw(true); // ビルなどの遮蔽物に上書きされないようUIキュー（最前面）で描画
+    if (isTelegraphActive_) {
+        if (telegraphCylinder_) telegraphCylinder_->Draw(true); // UIキュー（最前面）で描画
+        if (telegraphGroundAOE_ && telegraphGroundAOE_->GetTransform().transform.scale.x > 0.0f) {
+            telegraphGroundAOE_->Draw(true);
+        }
     }
 
     if (isAttackActive_) {

@@ -25,6 +25,14 @@ void EnemyStompEffects::Initialize(IrufemiEngine* engine) {
         // AOEWarningシェーダー（加算・半透明など）を適用
         bodyTelegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO(
             "AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+        
+        aoeParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(AOEParams));
+        aoeParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&aoeParamsData_));
+        if (aoeParamsData_) {
+            *aoeParamsData_ = AOEParams();
+            aoeParamsData_->shapeType = 0; // Radial
+        }
+        bodyTelegraphObj_->SetCustomCBVAddress(aoeParamsResource_->GetGPUVirtualAddress());
     }
 
     // GPUParticleSystemの初期化
@@ -233,11 +241,10 @@ void EnemyStompEffects::StartBodyTelegraph(const Vector3& pos, float radius) {
     bodyTelegraphTransform_.rotate = { std::numbers::pi_v<float> / 2.0f, 0.0f, 0.0f }; // X軸で90度寝かせる
     bodyTelegraphTransform_.translate = pos; // 呼び出し元で指定された高さ（Y）をそのまま使う
     
-    // UV Transformを利用してシェーダーにパラメータを渡す
-    // _11: shapeType (0 = 円形)
-    // _12: warningRatio (0.0 から開始)
-    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][0] = 0.0f; 
-    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][1] = 0.0f;
+    // Shader用パラメータ (Radial)
+    if (aoeParamsData_) {
+        aoeParamsData_->warningRatio = 0.0f;
+    }
     
     // 赤色（少しオレンジを混ぜておく）、アルファはシェーダー内で調整される
     bodyTelegraphObj_->SetColor({ 1.0f, 0.1f, 0.0f, 0.8f });
@@ -251,9 +258,10 @@ void EnemyStompEffects::UpdateBodyTelegraph(const Vector3& pos, float warningRat
     bodyTelegraphTransform_.translate = pos;
     bodyTelegraphObj_->SetTransform(bodyTelegraphTransform_);
     
-    // パラメータ更新
-    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][0] = 0.0f; // 円形
-    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][1] = warningRatio;
+    // Shader用パラメータ (Radial)
+    if (aoeParamsData_) {
+        aoeParamsData_->warningRatio = warningRatio;
+    };
     
     bodyTelegraphObj_->Update();
 }

@@ -653,6 +653,11 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
+    // customCBVAddress が設定されていれば Special (b6) にバインドする
+    if (packet.customCBVAddress != 0) {
+        commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, packet.customCBVAddress);
+    }
+
     // 描画
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 

@@ -11,6 +11,13 @@
 ConstantBuffer<Material> gMaterial : register(b0);
 ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
+struct AOEParams {
+    int shapeType;
+    float warningRatio;
+    float2 pad;
+};
+ConstantBuffer<AOEParams> gAOEParams : register(b6);
+
 struct PixelShaderOutput
 {
     float32_t4 color : SV_TARGET0;
@@ -23,11 +30,9 @@ PixelShaderOutput main(VertexShaderOutput input)
     // UV座標 (0.0 ~ 1.0)
     float2 uv = input.texcoord;
     
-    // MaterialのuvTransformにパラメータを仕込んでいる想定
-    // _11 = 形状タイプ (0: 円形/Radial, 1: 直線/Linear)
-    // _12 = 警告の進行度合 (0.0 ~ 1.0)
-    int shapeType = (int)gMaterial.uvTransform[0][0];
-    float warningRatio = gMaterial.uvTransform[0][1];
+    // 専用の定数バッファ (b6) からAOEパラメータを受け取る
+    int shapeType = gAOEParams.shapeType;
+    float warningRatio = gAOEParams.warningRatio;
 
     float alphaMult = 1.0;
     float time = gPerFrame.time;
@@ -56,7 +61,7 @@ PixelShaderOutput main(VertexShaderOutput input)
             alphaMult = 1.0;
         }
 
-    } else { // shapeType == 1 (Linear)
+    } else if (shapeType == 1) { // shapeType == 1 (Linear / 平面直線用)
         // --- 直線 (Linear) ---
         // V軸(y方向)に向かって流れるラインを表現
         // time をプラスすることで、uv.y が小さい方（+Z/前方）へ波が向かう
@@ -68,6 +73,16 @@ PixelShaderOutput main(VertexShaderOutput input)
         
         float baseAlpha = lerp(0.3, 1.0, warningRatio);
         alphaMult = wave * edgeU * edgeV * baseAlpha;
+
+    } else if (shapeType == 2) {
+        // --- 円柱 (Cylinder用) ---
+        float wave = frac(uv.y * 2.5 + time * 1.5);
+        
+        // 円柱はU方向(円周)がループしているため edgeU は不要。V方向の手前のみフェード
+        float edgeV = smoothstep(0.0, 0.05, uv.y);
+        
+        float baseAlpha = lerp(0.3, 1.0, warningRatio);
+        alphaMult = wave * edgeV * baseAlpha;
     }
 
     // 最終カラー計算
