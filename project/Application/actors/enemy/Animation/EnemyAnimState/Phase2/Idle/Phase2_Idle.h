@@ -56,8 +56,12 @@ private:
     const float kWanderArrivalDist = 8.0f; 
 
     // 攻撃開始基準
-    float attackIntervalBase_ = 5.0f;       // 攻撃間隔の基準
-    float attackIntervalVariance_ = 2.0f;   // 攻撃間隔のブレ幅（±この値で 3.0～7.0）
-    float currentAttackCooldown_ = 5.0f;    // 今回の攻撃間隔
-    const float kBiteProbability = 0.7f;     // タックル(Bite)の確率
+    float attackIntervalBase_ = 3.0f;       // 攻撃間隔の基準
+    float attackIntervalVariance_ = 2.0f;   // 攻撃間隔のブレ幅（±この値で 1.0～5.0）
+    float currentAttackCooldown_ = 3.0f;    // 今回の攻撃間隔
+
+    // 各攻撃の発生確率（合計 1.0f (100%) になるように設定）
+    static constexpr float kBombProbability = 0.5f; // ボムの確率 (50%)
+    static constexpr float kBeamProbability = 0.3f; // ビームの確率 (30%)
+    static constexpr float kBiteProbability = 0.2f; // 噛みつき(Bite)の確率 (20%)
 };
