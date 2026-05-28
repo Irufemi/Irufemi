@@ -22,7 +22,14 @@ VoxelParticleSystem* VoxelParticleManager::AllocateSystem(const std::string& mod
             return entry.system.get();
         }
     }
+    
     // プールが空の場合はフォールバックとして一つ生成（カクつく原因になるので基本は避ける）
+    // セーフガード: 無限にプールが肥大化しDescriptorPoolを枯渇させるのを防ぐ
+    constexpr size_t kMaxPoolLimit = 256;
+    if (pool_.size() >= kMaxPoolLimit) {
+        return nullptr;
+    }
+
     auto voxel = std::make_unique<VoxelParticleSystem>();
     voxel->Initialize(modelName, {32, 32, 32}); 
     pool_.push_back({ modelName, std::move(voxel) });
