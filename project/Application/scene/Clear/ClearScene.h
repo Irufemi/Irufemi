@@ -69,4 +69,14 @@ private: // メンバ変数(システム)
 
     UISelectionGroup clearSelection_;
     UIAnimator clearTextAnimator_;
+
+    // タイム表示用UI
+    std::unique_ptr<Sprite> timeMinutes10_ = nullptr;
+    std::unique_ptr<Sprite> timeMinutes1_ = nullptr;
+    std::unique_ptr<Sprite> timeColon_ = nullptr;
+    std::unique_ptr<Sprite> timeSeconds10_ = nullptr;
+    std::unique_ptr<Sprite> timeSeconds1_ = nullptr;
+
+    // タイム表示初期化完了フラグ
+    bool isTimeSpritesInitialized_ = false;
 };

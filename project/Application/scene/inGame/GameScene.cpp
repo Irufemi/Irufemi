@@ -42,12 +42,16 @@ const Vector3 kDefaultLightDir = {0.0f, -1.0f, 1.0f};
 const Vector3 kDefaultNormalZ = {0.0f, 0.0f, 1.0f};
 } // namespace
 
+float GameScene::clearTime_ = 0.0f;
+
 GameScene::GameScene() {}
 
 GameScene::~GameScene() {}
 
 void GameScene::Initialize(IrufemiEngine *engine) {
   BaseScene::Initialize(engine);
+
+  clearTime_ = 0.0f;
 
   Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
   activeCamera->SetTranslate(kDefaultCameraPos);
@@ -152,6 +156,9 @@ void GameScene::Update() {
   }
 
   if (boss_) {
+    if (!boss_->IsDead()) {
+      clearTime_ += engine_->GetDeltaTime();
+    }
     boss_->Update(player_.get());
 
     if (boss_->IsDead() && !isDeathCameraMode_) {

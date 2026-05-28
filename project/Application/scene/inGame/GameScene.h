@@ -36,6 +36,8 @@ public:
     bool IsCursorVisible() const override { return false; }
     void DrawDebugTab() override;
 
+    static float GetClearTime() { return clearTime_; }
+
 private:
 
     // --- システム・構成定数 ---
@@ -129,6 +131,9 @@ private:
 
     // ビルの自動生成タイマー
     float buildingSpawnTimer_ = 0.0f;
+
+    // クリアタイム
+    static float clearTime_;
 
     // --- 内部整理用メソッド ---
 

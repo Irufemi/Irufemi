@@ -11,6 +11,7 @@
 #include "Resource/Audio/AudioManager.h"
 #include "contents/skydome/Skydome.h"
 #include "Engine/Graphics/PostProcess/PostProcessManager.h"
+#include "scene/inGame/GameScene.h"
 
 ClearScene::~ClearScene() {
     // シーン破棄時に自身のポストプロセスのみを取り除く
@@ -130,6 +131,30 @@ void ClearScene::Initialize(IrufemiEngine* engine) {
             clearTexts[i]->SetPosition({ clearPositionsX[i], 15.0f, 0.0f });
             clearTexts[i]->SetEnableLightingToAllMeshes(false); // ★ ライティングを切って自ら発光（Bloom）させる
         }
+    }
+
+    // タイム表示スプライトの生成（遅延初期化用）
+    timeMinutes10_ = std::make_unique<Sprite>();
+    timeMinutes10_->SetAnchor(0.0f, 0.0f);
+
+    timeMinutes1_ = std::make_unique<Sprite>();
+    timeMinutes1_->SetAnchor(0.0f, 0.0f);
+
+    timeColon_ = std::make_unique<Sprite>();
+    timeColon_->SetAnchor(0.0f, 0.0f);
+
+    timeSeconds10_ = std::make_unique<Sprite>();
+    timeSeconds10_->SetAnchor(0.0f, 0.0f);
+
+    timeSeconds1_ = std::make_unique<Sprite>();
+    timeSeconds1_->SetAnchor(0.0f, 0.0f);
+
+    isTimeSpritesInitialized_ = false;
+
+    // タイム表示テクスチャの非同期ロード（登録）を開始しておく
+    if (engine_ && engine_->GetTextureManager()) {
+        engine_->GetTextureManager()->GetTextureHandle("resources/texture/inGame/numbers.png");
+        engine_->GetTextureManager()->GetTextureHandle("resources/texture/inGame/colon.png");
     }
 }
 
@@ -283,6 +308,81 @@ void ClearScene::Update() {
         clearSelection_.SetActiveBaseColor({ 1.0f, 0.8f, 0.2f, 1.0f * uiAlpha });
         clearSelection_.SetInactiveColor({ 0.3f, 0.2f, 0.0f, 0.8f * uiAlpha });
 
+        // タイム表示スプライトの遅延初期化（サイズが確定するのを待つ）
+        if (!isTimeSpritesInitialized_ && engine_ && engine_->GetTextureManager()) {
+            uint32_t tw = 0, th = 0;
+            uint32_t cw = 0, ch = 0;
+            if (engine_->GetTextureManager()->GetTextureSize("resources/texture/inGame/numbers.png", tw, th) && tw > 0 &&
+                engine_->GetTextureManager()->GetTextureSize("resources/texture/inGame/colon.png", cw, ch) && cw > 0) {
+                
+                timeMinutes10_->Initialize("resources/texture/inGame/numbers.png");
+                timeMinutes1_->Initialize("resources/texture/inGame/numbers.png");
+                timeColon_->Initialize("resources/texture/inGame/colon.png");
+                timeSeconds10_->Initialize("resources/texture/inGame/numbers.png");
+                timeSeconds1_->Initialize("resources/texture/inGame/numbers.png");
+                isTimeSpritesInitialized_ = true;
+            }
+        }
+
+        // --- クリアタイム表示の更新 ---
+        if (isTimeSpritesInitialized_) {
+            float clearTime = GameScene::GetClearTime();
+            int minutes = static_cast<int>(clearTime) / 60;
+            int seconds = static_cast<int>(clearTime) % 60;
+
+            if (minutes > 99) {
+                minutes = 99;
+                seconds = 59;
+            }
+
+            int m10 = minutes / 10;
+            int m1 = minutes % 10;
+            int s10 = seconds / 10;
+            int s1 = seconds % 10;
+
+            auto setDigitRect = [](Sprite* sprite, int digit) {
+                if (sprite) {
+                    sprite->SetTextureRectPixels(digit * 40, 0, 40, 40, false);
+                }
+            };
+
+            setDigitRect(timeMinutes10_.get(), m10);
+            setDigitRect(timeMinutes1_.get(), m1);
+            setDigitRect(timeSeconds10_.get(), s10);
+            setDigitRect(timeSeconds1_.get(), s1);
+
+            float screenW = static_cast<float>(engine_->GetClientWidth());
+            float screenH = static_cast<float>(engine_->GetClientHeight());
+            float uiScale = screenH / 720.0f;
+
+            float charSize = 48.0f * uiScale;
+            float spacing = 4.0f * uiScale;
+            float stepX = charSize + spacing;
+            float totalW = stepX * 4.0f + charSize;
+
+            float startX = (screenW - totalW) / 2.0f;
+            float startY = 400.0f * uiScale; // 画面中央やや下に配置
+
+            // ゴールド発光色（Bloomに引っかかるように1.0を超える輝度、uiAlphaをアルファに掛ける）
+            float intensity = 0.8f + std::sin(clearTextAnimator_.GetTime() * 5.0f) * 0.2f;
+            Vector4 goldColor = { 1.5f * intensity, 1.2f * intensity, 0.3f * intensity, uiAlpha };
+
+            auto updateSprite = [&](Sprite* sprite, float x, float y, float size) {
+                if (sprite) {
+                    sprite->SetSize(size, size);
+                    sprite->SetPositionTopLeft(x, y);
+                    sprite->SetColor(goldColor);
+                    sprite->Update();
+                }
+            };
+
+            updateSprite(timeMinutes10_.get(), startX, startY, charSize);
+            updateSprite(timeMinutes1_.get(), startX + stepX, startY, charSize);
+            updateSprite(timeColon_.get(), startX + stepX * 2.0f, startY, charSize);
+            updateSprite(timeSeconds10_.get(), startX + stepX * 3.0f, startY, charSize);
+            updateSprite(timeSeconds1_.get(), startX + stepX * 4.0f, startY, charSize);
+        }
+
         clearSelection_.Update(engine_->GetInputManager());
 
         if (clearSelection_.ShouldTransition()) {
@@ -344,6 +444,15 @@ void ClearScene::Draw() {
 
     if (!isSlamming_ && clearTextAnimator_.GetTime() > 1.0f) {
         clearSelection_.Draw();
+
+        // タイム表示スプライトの描画
+        if (isTimeSpritesInitialized_) {
+            if (timeMinutes10_) timeMinutes10_->Draw();
+            if (timeMinutes1_) timeMinutes1_->Draw();
+            if (timeColon_) timeColon_->Draw();
+            if (timeSeconds10_) timeSeconds10_->Draw();
+            if (timeSeconds1_) timeSeconds1_->Draw();
+        }
     }
 }
 
