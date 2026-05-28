@@ -8,6 +8,7 @@
 
 void Phase1_Beam::Enter(Enemy* enemy) {
     attackTimer_ = 0.0f;
+    totalTimer_ = 0.0f;
     isLockedOn_ = false;
     isFiring_ = false;
     hasFinishedAttack_ = false;
@@ -51,7 +52,7 @@ void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
         enemy->FireBeam();
         if (beam) {
             beam->SetTelegraphActive(true);
-            beam->SetTelegraphThickness(0.2f);
+            beam->SetTelegraphThickness(beamThicknessFire_);
             
             beam->SetChargeSphereActive(true);
             float progress = attackTimer_ / chargeTime_;

@@ -5,7 +5,10 @@
 #include <memory>
 #include <vector>
 #include <list>
+#include <wrl.h>
+#include <d3d12.h>
 #include "IrufemiEngine/Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "IrufemiEngine/Engine/Graphics/Data/AOEParams.h"
 
 class Camera;
 class ObjClass;
@@ -45,6 +48,9 @@ public:
     std::list<TackleWave>& GetWaves() { return waves_; }
 
     void DrawDebug(class Line3DRegion* lineRegion);
+    
+    // 最大の突進波（砂煙）の幅を取得
+    float GetMaxRushWaveWidth() const { return kRushWaveEndScale; }
 
 private:
     Camera* camera_ = nullptr;
@@ -56,6 +62,10 @@ private:
     std::shared_ptr<PrimitiveObjects3DClass> telegraphObj_ = nullptr;
     Transform telegraphTransform_;
     bool isTelegraphActive_ = false;
+
+    // AOE専用パラメータ
+    Microsoft::WRL::ComPtr<ID3D12Resource> aoeParamsResource_;
+    AOEParams* aoeParamsData_ = nullptr;
 
     std::list<TackleWave> waves_;
 

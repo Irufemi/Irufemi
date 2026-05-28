@@ -60,6 +60,7 @@ private:
     // 十字爆発の予告用（X軸・Z軸に沿った2つのボックス）
     std::shared_ptr<PrimitiveObjects3DClass> telegraphObjX_ = nullptr;
     std::shared_ptr<PrimitiveObjects3DClass> telegraphObjZ_ = nullptr;
+
     // 十字爆発の攻撃用
     std::shared_ptr<PrimitiveObjects3DClass> attackCylinderX_ = nullptr;
     std::shared_ptr<PrimitiveObjects3DClass> attackCylinderZ_ = nullptr;

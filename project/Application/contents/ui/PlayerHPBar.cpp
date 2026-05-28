@@ -47,7 +47,6 @@ void PlayerHPBar::Initialize(IrufemiEngine* engine) {
     barFrame_->Initialize("resources/whiteTexture.png");
     barFrame_->SetScale({barMaxWidth3D_ + kFramePadding3D * 2.0f, barHeight3D_ + kFramePadding3D * 2.0f, 1.0f});
     barFrame_->SetColor(Vector4{kFrameR, kFrameG, kFrameB, kFrameA});
-    barFrame_->SetCullingEnabled(false);
     if (engine) barFrame_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
     if (auto* mat = barFrame_->GetD3D12Resource()->GetMaterialData()) { mat->enableLighting = 0; mat->lightingMode = 0; }
 
@@ -55,7 +54,6 @@ void PlayerHPBar::Initialize(IrufemiEngine* engine) {
     barBg_->Initialize("resources/whiteTexture.png");
     barBg_->SetScale({barMaxWidth3D_, barHeight3D_, 1.0f});
     barBg_->SetColor(Vector4{kBgR, kBgG, kBgB, kBgA});
-    barBg_->SetCullingEnabled(false);
     if (engine) barBg_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
     if (auto* mat = barBg_->GetD3D12Resource()->GetMaterialData()) { mat->enableLighting = 0; mat->lightingMode = 0; }
 
@@ -63,7 +61,6 @@ void PlayerHPBar::Initialize(IrufemiEngine* engine) {
     barFill_->Initialize("resources/whiteTexture.png");
     barFill_->SetScale({barMaxWidth3D_, barHeight3D_, 1.0f});
     barFill_->SetColor(Vector4{kColorHighR, kColorHighG, kColorHighB, kBarAlpha});
-    barFill_->SetCullingEnabled(false);
     if (engine) barFill_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
     if (auto* mat = barFill_->GetD3D12Resource()->GetMaterialData()) { mat->enableLighting = 0; mat->lightingMode = 0; }
 

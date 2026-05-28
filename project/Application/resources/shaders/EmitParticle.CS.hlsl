@@ -61,12 +61,19 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 float3 upVec = cross(L, side);
 
                 float angle = r_pos.x * 2.0f * 3.141592f;
-                float dist = sqrt(r_pos.y) * gEmitter.radius;
+                // 表面付近(0.9~1.0)に完全に集中させる
+                float dist = (0.9f + r_pos.y * 0.1f) * gEmitter.radius;
                 float3 offset = (side * cos(angle) + upVec * sin(angle)) * dist;
 
                 gParticles[particleIndex].translate = gEmitter.translate + offset;
-                float3 spreadDir = (side * (r_pos.x * 2 - 1) + upVec * (r_pos.y * 2 - 1)) * gEmitter.spread;
-                gParticles[particleIndex].velocity = (L + spreadDir) * (gEmitter.velocity * (0.8f + r_vel * 0.4f));
+                
+                // パーティクルが外側へ広がらないよう、接線方向への初速を削除。
+                // 完全にビームの進行方向(L)に沿って直進させることで、太さを一定に保つ。
+                // 僅かな揺らぎ(ノイズ)として、極めて微小なランダム方向のみを加算。
+                float3 randomDir = normalize(side * (r_pos.x * 2 - 1) + upVec * (r_pos.y * 2 - 1));
+                float3 straightDir = normalize(L + randomDir * (gEmitter.spread * 0.1f));
+                
+                gParticles[particleIndex].velocity = straightDir * (gEmitter.velocity * (0.8f + r_vel * 0.4f));
             }
             else if (gEmitter.type == 2) // Ring
             {

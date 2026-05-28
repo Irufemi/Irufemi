@@ -22,9 +22,17 @@ void EnemyStompEffects::Initialize(IrufemiEngine* engine) {
         bodyTelegraphObj_->Initialize(PrimitiveType::Plane, "resources/whiteTexture.png");
         bodyTelegraphObj_->GetMaterial().enableLighting = false; // ライティング無効
         bodyTelegraphObj_->SetCastShadows(false); // 影を落とさない
-        // AOEWarningシェーダー（加算・半透明など）を適用
+        // AOEWarningシェーダー（加算、半透明など）を適用、地形による見切れを防ぐため深度テストOff
         bodyTelegraphObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO(
-            "AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+            "AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Off, PSOManager::CullMode::None));
+        
+        aoeParamsResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(AOEParams));
+        aoeParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&aoeParamsData_));
+        if (aoeParamsData_) {
+            *aoeParamsData_ = AOEParams();
+            aoeParamsData_->shapeType = 0; // Radial
+        }
+        bodyTelegraphObj_->SetCustomCBVAddress(aoeParamsResource_->GetGPUVirtualAddress());
     }
 
     // GPUParticleSystemの初期化
@@ -81,6 +89,12 @@ void EnemyStompEffects::Cancel() {
     isActive_ = false;
     isBodyTelegraphActive_ = false;
     currentPhase_ = Phase::Finished;
+    
+    // スケールを0にして確実に画面から消す
+    explosionTransform_.scale = { 0.0f, 0.0f, 0.0f };
+    ringTransform_.scale = { 0.0f, 0.0f, 0.0f };
+    bodyTelegraphTransform_.scale = { 0.0f, 0.0f, 0.0f };
+
     if (gpuParticleSystem_) {
         gpuParticleSystem_->Clear();
     }
@@ -93,29 +107,48 @@ void EnemyStompEffects::Update(float deltaTime) {
     globalTimer_ += deltaTime;
     phaseTimer_ += deltaTime;
 
+    // 球（explosionObj_）の現在のスケールを計算（全体を通して使用）
+    float totalWarningTime = params_.ringExpandDuration + params_.ringKeepDuration;
+    float globalT = (std::min)(1.0f, globalTimer_ / totalWarningTime);
+    float easeIn = EaseInQuad(globalT);
+    float currentSphereScale = Lerp(1.0f, params_.ringMaxRadius, easeIn);
+
     if (currentPhase_ == Phase::Expanding || currentPhase_ == Phase::KeepAndWarning) {
-        float totalWarningTime = params_.ringExpandDuration + params_.ringKeepDuration;
-        float t = (std::min)(1.0f, globalTimer_ / totalWarningTime);
-        
-        float easeIn = EaseInQuad(t);
-        float currentScale = Lerp(1.0f, params_.ringMaxRadius, easeIn);
-        
-        explosionTransform_.scale = { currentScale, currentScale, currentScale };
+        explosionTransform_.scale = { currentSphereScale, currentSphereScale, currentSphereScale };
         explosionTransform_.translate = { basePosition_.x, basePosition_.y + params_.ringGroundOffset, basePosition_.z };
         
         Vector4 colorBase = { 1.0f, 0.4f, 0.0f, 0.2f }; 
         Vector4 colorWarning = { 1.0f, 0.0f, 0.0f, 0.6f };
         Vector4 currentColor;
-        currentColor.x = Lerp(colorBase.x, colorWarning.x, t);
-        currentColor.y = Lerp(colorBase.y, colorWarning.y, t);
-        currentColor.z = Lerp(colorBase.z, colorWarning.z, t);
-        currentColor.w = Lerp(colorBase.w, colorWarning.w, t);
+        currentColor.x = Lerp(colorBase.x, colorWarning.x, globalT);
+        currentColor.y = Lerp(colorBase.y, colorWarning.y, globalT);
+        currentColor.z = Lerp(colorBase.z, colorWarning.z, globalT);
+        currentColor.w = Lerp(colorBase.w, colorWarning.w, globalT);
         
-        float pulse = (std::sin(globalTimer_ * 15.0f * t) * 0.5f + 0.5f);
-        currentColor.w += pulse * 0.2f * t; 
+        float pulse = (std::sin(globalTimer_ * 15.0f * globalT) * 0.5f + 0.5f);
+        currentColor.w += pulse * 0.2f * globalT; 
 
         explosionObj_->SetColor(currentColor);
     }
+
+    // 球の広がりに合わせたリングの色比率 (0.0 ~ 1.0)
+    float colorRatio = 0.0f;
+    if (params_.ringMaxRadius > 1.0f) {
+        // 球のスケール値から現在どこまで広がっているかを逆算して適用する
+        float rawRatio = (currentSphereScale - 1.0f) / (params_.ringMaxRadius - 1.0f);
+        rawRatio = (std::min)(1.0f, (std::max)(0.0f, rawRatio));
+        
+        // 色が変わる（黄色になる）タイミングが早く感じないよう、
+        // EaseInQuart(4乗カーブ)を使って、最後の最後に一気に黄色になりきるようにする
+        colorRatio = EaseInQuart(rawRatio);
+    }
+    colorRatio = (std::min)(1.0f, (std::max)(0.0f, colorRatio));
+
+    Vector4 ringCurrentColor;
+    ringCurrentColor.x = Lerp(params_.ringColorNormal.x, params_.ringColorWarning.x, colorRatio);
+    ringCurrentColor.y = Lerp(params_.ringColorNormal.y, params_.ringColorWarning.y, colorRatio);
+    ringCurrentColor.z = Lerp(params_.ringColorNormal.z, params_.ringColorWarning.z, colorRatio);
+    ringCurrentColor.w = Lerp(params_.ringColorNormal.w, params_.ringColorWarning.w, colorRatio);
 
     switch (currentPhase_) {
     case Phase::Expanding:
@@ -124,7 +157,7 @@ void EnemyStompEffects::Update(float deltaTime) {
         float currentRadius = Lerp(1.0f, params_.ringMaxRadius, t);
 
         ringTransform_.scale = { currentRadius, params_.ringHeight, currentRadius };
-        ringObj_->SetColor(params_.ringColorNormal);
+        ringObj_->SetColor(ringCurrentColor);
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::KeepAndWarning;
@@ -138,13 +171,7 @@ void EnemyStompEffects::Update(float deltaTime) {
         float t = (std::min)(1.0f, phaseTimer_ / params_.ringKeepDuration);
 
         ringTransform_.scale = { params_.ringMaxRadius, params_.ringHeight, params_.ringMaxRadius };
-
-        Vector4 c;
-        c.x = Lerp(params_.ringColorNormal.x, params_.ringColorWarning.x, t);
-        c.y = Lerp(params_.ringColorNormal.y, params_.ringColorWarning.y, t);
-        c.z = Lerp(params_.ringColorNormal.z, params_.ringColorWarning.z, t);
-        c.w = Lerp(params_.ringColorNormal.w, params_.ringColorWarning.w, t);
-        ringObj_->SetColor(c);
+        ringObj_->SetColor(ringCurrentColor);
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::FinalExplosion;
@@ -182,6 +209,14 @@ void EnemyStompEffects::Update(float deltaTime) {
 
         if (t >= 1.0f) {
             currentPhase_ = Phase::Finished;
+        }
+    }
+    break;
+
+    case Phase::Finished:
+    {
+        // パーティクルの寿命(最大2.5秒)が終わるまで描画を待機し、完全に消滅したら非アクティブ化する
+        if (phaseTimer_ > params_.finalExplosionDuration + 3.0f) {
             isActive_ = false;
         }
     }
@@ -216,7 +251,8 @@ bool EnemyStompEffects::IsExplosionDamageActive() const {
 float EnemyStompEffects::GetExplosionRadius() const {
     float t = (std::min)(1.0f, globalTimer_ / params_.explosionDuration);
     float easeOut = EaseOutQuad(t);
-    return Lerp(1.0f, params_.explosionMaxRadius, easeOut);
+    // params_.explosionMaxRadius は見た目の「直径」として設定されているため、当たり判定の「半径」にするために 0.5f を掛ける
+    return Lerp(1.0f, params_.explosionMaxRadius * 0.5f, easeOut);
 }
 
 void EnemyStompEffects::StartBodyTelegraph(const Vector3& pos, float radius) {
@@ -225,11 +261,10 @@ void EnemyStompEffects::StartBodyTelegraph(const Vector3& pos, float radius) {
     bodyTelegraphTransform_.rotate = { std::numbers::pi_v<float> / 2.0f, 0.0f, 0.0f }; // X軸で90度寝かせる
     bodyTelegraphTransform_.translate = pos; // 呼び出し元で指定された高さ（Y）をそのまま使う
     
-    // UV Transformを利用してシェーダーにパラメータを渡す
-    // _11: shapeType (0 = 円形)
-    // _12: warningRatio (0.0 から開始)
-    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][0] = 0.0f; 
-    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][1] = 0.0f;
+    // Shader用パラメータ (Radial)
+    if (aoeParamsData_) {
+        aoeParamsData_->warningRatio = 0.0f;
+    }
     
     // 赤色（少しオレンジを混ぜておく）、アルファはシェーダー内で調整される
     bodyTelegraphObj_->SetColor({ 1.0f, 0.1f, 0.0f, 0.8f });
@@ -243,15 +278,17 @@ void EnemyStompEffects::UpdateBodyTelegraph(const Vector3& pos, float warningRat
     bodyTelegraphTransform_.translate = pos;
     bodyTelegraphObj_->SetTransform(bodyTelegraphTransform_);
     
-    // パラメータ更新
-    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][0] = 0.0f; // 円形
-    bodyTelegraphObj_->GetMaterial().uvTransform.m[0][1] = warningRatio;
+    // Shader用パラメータ (Radial)
+    if (aoeParamsData_) {
+        aoeParamsData_->warningRatio = warningRatio;
+    };
     
     bodyTelegraphObj_->Update();
 }
 
 void EnemyStompEffects::StopBodyTelegraph() {
     isBodyTelegraphActive_ = false;
+    bodyTelegraphTransform_.scale = { 0.0f, 0.0f, 0.0f };
 }
 
 void EnemyStompEffects::DrawBodyTelegraph(IrufemiEngine* engine) {

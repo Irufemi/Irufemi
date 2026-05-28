@@ -8,6 +8,7 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "IrufemiEngine/Engine/Graphics/Data/AOEParams.h"
 
 // 前方宣言
 class Camera;
@@ -66,6 +67,7 @@ public:
 
     void SetCamera(Camera* camera) { camera_ = camera; }
     void SetParameters(const Parameters& params) { params_ = params; }
+    const Parameters& GetParameters() const { return params_; }
 
     // --- 本体落下予兆（AOE） ---
     void StartBodyTelegraph(const Vector3& pos, float radius);
@@ -98,6 +100,10 @@ private:
     std::unique_ptr<PrimitiveObjects3DClass> ringObj_ = nullptr;
     std::unique_ptr<PrimitiveObjects3DClass> bodyTelegraphObj_ = nullptr; // 落下地点予兆用AOE
     std::unique_ptr<GPUParticleSystem> gpuParticleSystem_ = nullptr; // 大爆発の火の粉用
+
+    // AOE専用パラメータ
+    Microsoft::WRL::ComPtr<ID3D12Resource> aoeParamsResource_;
+    AOEParams* aoeParamsData_ = nullptr;
 
     Transform explosionTransform_;
     Transform ringTransform_;

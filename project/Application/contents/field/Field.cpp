@@ -93,18 +93,18 @@ void Field::Update() {
 	}
 
 #if defined USE_IMGUI
-	if (ImGui::Begin("CyberHex Settings")) {
-		ImGui::ColorEdit3("Edge Color", &cyberHexParams_.edgeColor.x);
-		ImGui::SliderFloat("Edge Thickness", &cyberHexParams_.edgeThickness, 0.01f, 0.5f);
-		ImGui::SliderFloat("Base Brightness", &cyberHexParams_.baseBrightness, 0.0f, 1.0f);
-		ImGui::SliderFloat("Flicker Amplitude", &cyberHexParams_.flickerAmplitude, 0.0f, 1.0f);
-		ImGui::SliderFloat("Distortion", &cyberHexParams_.distortion, 0.0f, 0.2f);
-		ImGui::SliderFloat("Density", &cyberHexParams_.density, 0.001f, 0.1f, "%.4f");
-		ImGui::SliderFloat("Animation Speed", &cyberHexParams_.animationSpeed, 0.0f, 2.0f);
-		ImGui::SliderFloat("UV Scroll X", &cyberHexParams_.uvScrollX, -0.5f, 0.5f);
-		ImGui::SliderFloat("UV Scroll Y", &cyberHexParams_.uvScrollY, -0.5f, 0.5f);
-	}
-	ImGui::End();
+	// if (ImGui::Begin("CyberHex Settings")) {
+	// 	ImGui::ColorEdit3("Edge Color", &cyberHexParams_.edgeColor.x);
+	// 	ImGui::SliderFloat("Edge Thickness", &cyberHexParams_.edgeThickness, 0.01f, 0.5f);
+	// 	ImGui::SliderFloat("Base Brightness", &cyberHexParams_.baseBrightness, 0.0f, 1.0f);
+	// 	ImGui::SliderFloat("Flicker Amplitude", &cyberHexParams_.flickerAmplitude, 0.0f, 1.0f);
+	// 	ImGui::SliderFloat("Distortion", &cyberHexParams_.distortion, 0.0f, 0.2f);
+	// 	ImGui::SliderFloat("Density", &cyberHexParams_.density, 0.001f, 0.1f, "%.4f");
+	// 	ImGui::SliderFloat("Animation Speed", &cyberHexParams_.animationSpeed, 0.0f, 2.0f);
+	// 	ImGui::SliderFloat("UV Scroll X", &cyberHexParams_.uvScrollX, -0.5f, 0.5f);
+	// 	ImGui::SliderFloat("UV Scroll Y", &cyberHexParams_.uvScrollY, -0.5f, 0.5f);
+	// }
+	// ImGui::End();
 
 
 

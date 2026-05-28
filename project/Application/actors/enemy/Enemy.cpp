@@ -1165,7 +1165,23 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
         deathPhase_ = DeathPhase::Aftermath; // 余韻フェーズへ移行
         deathTimer_ = 0.0f;                  // 余韻用タイマーリセット
     } else if (deathPhase_ == DeathPhase::Aftermath) {
+        float prevTimer = deathTimer_;
         deathTimer_ += deltaTime;
+
+        // パーツが空中で爆散するタイミング(0.5秒後)に合わせて、中心位置からGPUParticleの大爆発を追い討ちで発生させる
+        const float kSecondaryExplosionTime = 0.5f;
+        if (prevTimer < kSecondaryExplosionTime && deathTimer_ >= kSecondaryExplosionTime) {
+            if (stompEffects_) {
+                stompEffects_->FireDeathExplosion(globalTransform_.translate);
+                
+                // より迫力を出すためのカメラシェイク
+                if (engine_) {
+                    if (auto* cam = engine_->GetCameraManager()->GetActiveCamera()) {
+                        cam->Shake(15.0f, 20);
+                    }
+                }
+            }
+        }
 
         if (deathTimer_ >= kAftermathDuration) {
             deathPhase_ = DeathPhase::None; // もう実行しない

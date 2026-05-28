@@ -216,6 +216,7 @@ void DirectXCommon::CreatePSOs() {
     auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
     auto vsShadowSkin = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", options);
     auto psLightning = shaderManager_->GetOrCompile(L"resources/shaders/LightningCrawl.PS.hlsl", options);
+    auto psEnergyBeam = shaderManager_->GetOrCompile(L"resources/shaders/EnergyBeam.PS.hlsl", options);
     auto psExplosionFlame = shaderManager_->GetOrCompile(L"resources/shaders/ExplosionFlame.PS.hlsl", options);
     auto psEnergyCore = shaderManager_->GetOrCompile(L"resources/shaders/EnergyCore.PS.hlsl", options);
     auto vsRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.VS.hlsl", options);
@@ -295,6 +296,7 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("BombCore", { { vs3d, psBombCore } });
     psoManager_->RegisterShader("StompExplosion", { { vs3d, psStompExplosion } });
     psoManager_->RegisterShader("AOEWarning", { { vs3d, psAOEWarning } });
+    psoManager_->RegisterShader("EnergyBeam", { { vs3d, psEnergyBeam } });
 
     // バックバッファ書き込み用のスプライト設定
     PSOManager::PipelineStateDesc spriteBBDesc{};
@@ -728,6 +730,10 @@ void DirectXCommon::PreWarmJITCompile() {
             auto bombCorePSO = psoManager_->GetPSO("BombCore", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
             if (bombCorePSO) {
                 uploadCommandList->SetPipelineState(bombCorePSO);
+            }
+            auto energyBeamPSO = psoManager_->GetPSO("EnergyBeam", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+            if (energyBeamPSO) {
+                uploadCommandList->SetPipelineState(energyBeamPSO);
             }
         }
     });

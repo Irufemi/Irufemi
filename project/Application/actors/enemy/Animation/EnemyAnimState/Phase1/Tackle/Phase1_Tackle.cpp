@@ -3,6 +3,7 @@
 #include "actors/player/Player.h"
 #include "Core/Math/Math.h"
 #include "Engine/Graphics/Camera/Camera.h"
+#include "actors/enemy/EnemyParameters.h"
 #include <cmath>
 #include <algorithm>
 
@@ -48,7 +49,11 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
                 enemy->GetBodyOffset(i) = { 0,0,0 };
             }
             if (auto effects = enemy->GetTackleEffects()) {
-                effects->StartTelegraph(globalT.translate, globalT.rotate.y, 300.0f, 20.0f);
+                // 予兆AOEの幅を、ボス本体の横幅と砂煙（RushWave）の幅のうち大きい方に合わせる
+                float bodyWidth = EnemyParameters::GetInstance()->GetBodyOBBSize().x * 2.0f; // 両側なので *2.0f
+                float waveWidth = effects->GetMaxRushWaveWidth();
+                float maxWidth = (std::max)(bodyWidth, waveWidth);
+                effects->StartTelegraph(globalT.translate, globalT.rotate.y, 300.0f, maxWidth);
             }
         }
         break;
@@ -123,7 +128,10 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
                  currentPhase_ = Phase::Aim;
                  stateTimer_ = 0.0f;
                  if (auto effects = enemy->GetTackleEffects()) {
-                     effects->StartTelegraph(globalT.translate, globalT.rotate.y, 300.0f, 20.0f);
+                     float bodyWidth = EnemyParameters::GetInstance()->GetBodyOBBSize().x * 2.0f;
+                     float waveWidth = effects->GetMaxRushWaveWidth();
+                     float maxWidth = (std::max)(bodyWidth, waveWidth);
+                     effects->StartTelegraph(globalT.translate, globalT.rotate.y, 300.0f, maxWidth);
                  }
              }
         }

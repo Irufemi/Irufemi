@@ -36,7 +36,7 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
 
     obj_ = std::make_unique<ObjClass>();
     obj_->Initialize("player/playerBody.obj");
-    obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
+    obj_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f }); // テクスチャを正常表示するため白色に初期化
 
     attackObj_ = std::make_unique<ObjClass>();
     attackObj_->Initialize("player/playerMelee.obj");
@@ -1260,15 +1260,24 @@ void Player::Draw2DUI(Enemy* enemy) {
 }
 
 void Player::Draw() {
+    if (engine_) {
+        engine_->SetBlend(BlendMode::kBlendModeNormal);
+        engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+        engine_->SetCull(PSOManager::CullMode::Back);
+    }
+
     bool isBlinking = (status_.GetInvincibleTimer() > 0 && (status_.GetInvincibleTimer() % 4) < 2);
 
     if (obj_) {
         if (isKarakuriCharged_) {
-            obj_->SetColor({ 1.0f, 0.8f, 0.0f, 1.0f });
+            obj_->SetColor({ 1.0f, 0.95f, 0.7f, 1.0f }); // テクスチャを活かしつつ少し黄金色に輝かせる
+            obj_->SetCastShadows(true);
         } else if (status_.IsDead()) {
-            obj_->SetColor({ 0.15f, 0.15f, 0.15f, 1.0f }); // 飛んでいる間はシルエット
+            obj_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f }); // 死亡時も元のカラーを維持
+            obj_->SetCastShadows(false); // 死亡時は影を落とさなくする（ジャギジャギ防止）
         } else {
-            obj_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+            obj_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f }); // 通常時は元のテクスチャが表示されるよう白色に設定
+            obj_->SetCastShadows(true);
         }
 
         Vector3 drawPos = translate_;

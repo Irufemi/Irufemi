@@ -6,6 +6,7 @@
 #include <wrl.h>
 #include "IrufemiEngine/Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "IrufemiEngine/Engine/Graphics/Data/LightningParams.h"
+#include "IrufemiEngine/Engine/Graphics/Data/AOEParams.h"
 #include "IrufemiEngine/Renderer/Object3D/Primitive/CylinderClass.h"
 #include "IrufemiEngine/Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 class Camera;
@@ -34,19 +35,34 @@ public:
     void Draw(class IrufemiEngine* engine);
 
     /** @brief 予兆ビームの表示設定 */
-    void SetTelegraphActive(bool active) { isTelegraphActive_ = active; }
+    void SetTelegraphActive(bool active) { 
+        isTelegraphActive_ = active; 
+        if (!active) {
+            telegraphProgress_ = 0.0f;
+            if (telegraphGroundAOE_) {
+                telegraphGroundAOE_->GetTransform().transform.scale = { 0,0,0 };
+                telegraphGroundAOE_->GetTransform().isDirty = true;
+            }
+        }
+    }
     /** @brief 予兆ビームがアクティブか */
     bool IsTelegraphActive() const { return isTelegraphActive_; }
     /** @brief 予兆ビームの太さ（直径）設定 */
     void SetTelegraphThickness(float thickness) { telegraphThickness_ = thickness; }
     /** @brief 予兆ビームの色設定 */
-    void SetTelegraphColor(const Vector4& color) { if (telegraphObj_) telegraphObj_->SetColor(color); }
+    void SetTelegraphColor(const Vector4& color) { 
+        if (telegraphCylinder_) telegraphCylinder_->SetColor(color); 
+        if (telegraphGroundAOE_) telegraphGroundAOE_->SetColor(color);
+    }
 
     /** @brief 攻撃ビームの表示設定 */
     void SetAttackActive(bool active) { 
         isAttackActive_ = active; 
-        if (!active && gpuParticle_) {
-            gpuParticle_->SetEmit(false);
+        if (!active) {
+            attackTimer_ = 0.0f;
+            if (gpuParticle_) {
+                gpuParticle_->SetEmit(false);
+            }
         }
     }
     /** @brief 攻撃ビームがアクティブか */
@@ -68,7 +84,12 @@ public:
     void SetOriginOffset(float offset) { originOffset_ = offset; }
 
     /** @brief チャージ球の表示設定 */
-    void SetChargeSphereActive(bool active) { isChargeSphereActive_ = active; }
+    void SetChargeSphereActive(bool active) { 
+        isChargeSphereActive_ = active; 
+        if (!active) {
+            chargeSphereScale_ = 0.0f;
+        }
+    }
     /** @brief チャージ球のスケール設定 */
     void SetChargeSphereScale(float scale) { chargeSphereScale_ = scale; }
 
@@ -81,14 +102,25 @@ private:
     bool isChargeSphereActive_ = false;
 
     // 予兆用
-    std::unique_ptr<PrimitiveObjects3DClass> telegraphObj_ = nullptr;
+    std::shared_ptr<CylinderClass> telegraphCylinder_ = nullptr; // 軌道のシリンダー
+    std::unique_ptr<PrimitiveObjects3DClass> telegraphGroundAOE_ = nullptr; // 地面のサークル
+    
+    // 予兆AOE専用パラメータ
+    Microsoft::WRL::ComPtr<ID3D12Resource> aoeParamsResourceCylinder_;
+    AOEParams* aoeParamsDataCylinder_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> aoeParamsResourceGround_;
+    AOEParams* aoeParamsDataGround_ = nullptr;
+
     Transform telegraphTransform_;
-    float telegraphThickness_ = 0.2f;
+    float telegraphThickness_ = 4.0f; // ビームの太さ（attackThickness_）と同等にする
     float telegraphForwardOffset_ = 0.0f;
     bool isTelegraphActive_ = false;
+    float telegraphProgress_ = 0.0f; // 予兆の進行度 (0.0 ~ 1.0)
 
-    // 攻撃用
+    // 攻撃用 (内側のレーザーコア)
     std::shared_ptr<CylinderClass> attackCylinder_ = nullptr;
+    // 攻撃用 (外側の電撃オーラ)
+    std::shared_ptr<CylinderClass> attackCylinderOuter_ = nullptr;
     Transform attackTransform_;
     float attackThickness_ = 0.5f;
     float attackForwardOffset_ = 0.0f;
@@ -98,9 +130,13 @@ private:
     float attackTimer_ = 0.0f;
     float attackExpandTime_ = 0.15f; // ビームが最大まで伸びる時間(秒)
 
-    // 電撃エフェクト用（プラズマ表現）
+    // 電撃エフェクト用（内側レーザー用パラメータ）
     Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsResource_;
     LightningParams* lightningParamsData_ = nullptr;
+
+    // 電撃エフェクト用（外側オーラ用パラメータ）
+    Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsOuterResource_;
+    LightningParams* lightningParamsOuterData_ = nullptr;
 
     // 放出エフェクト用（パーティクル表現）
     std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;

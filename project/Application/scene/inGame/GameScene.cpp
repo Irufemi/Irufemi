@@ -419,8 +419,18 @@ void GameScene::Update() {
 }
 
 void GameScene::Draw() {
+  if (engine_) {
+      engine_->SetBlend(BlendMode::kBlendModeNormal);
+      engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+      engine_->SetCull(PSOManager::CullMode::Back);
+  }
+
   if (skydome_)
     skydome_->Draw();
+
+  if (engine_) {
+      engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+  }
 
   // プレイヤーが星になって吹っ飛んでいる最中は、巨大な敵やビル・地形がカメラを塞がないよう
   // 意図的に描画をスキップし、空（Skydome）だけを背景に美しく演出を見せる
@@ -438,46 +448,50 @@ void GameScene::Draw() {
   if (player_)
     player_->DrawParticles();
 
+  // ★撃破演出中（ボス死亡時）はUIをすべて非表示にする
+  bool isUIHidden = (boss_ && boss_->IsDead());
+
   // --- HPバーUI描画（スプライト：マスクやエイム） ---
-  if (player_) {
+  if (player_ && !isUIHidden) {
     player_->Draw2DUI(boss_.get());
   }
 
   // --- 3DオブジェクトとしてのUI描画（HPバー） ---
-  if (player_ && !hideObstacles) {
+  if (player_ && !hideObstacles && !isUIHidden) {
     bool isPaused = (engine_->GetSceneManager()->GetCurrent() == "Pause");
     player_->Draw3DUI(boss_.get(), true, isPaused);
   }
 
   // --- 操作説明および警告スプライト描画 ---
-  if (player_ && !player_->IsFirstPerson()) {
-      if (uiV_) uiV_->Draw();
+  if (!isUIHidden) {
+      if (player_ && !player_->IsFirstPerson()) {
+          if (uiV_) uiV_->Draw();
 
-
-      // --- クールダウン警告スプライト描画 ---
-      if (player_->GetCooldownWarningTimer() > 0) {
-          if ((player_->GetCooldownWarningTimer() / 10) % 2 == 0) {
-              if (cooldownWarningSprite_) cooldownWarningSprite_->Draw();
+          // --- クールダウン警告スプライト描画 ---
+          if (player_->GetCooldownWarningTimer() > 0) {
+              if ((player_->GetCooldownWarningTimer() / 10) % 2 == 0) {
+                  if (cooldownWarningSprite_) cooldownWarningSprite_->Draw();
+              }
           }
-      }
-  } else if (player_ && player_->IsFirstPerson()) {
-      // --- 1人称視点専用UI描画 ---
-      if (!player_->IsKarakuriCharged()) {
-          if (uiLClickNormal_) uiLClickNormal_->Draw();
-          if (uiRClickNormal_) uiRClickNormal_->Draw();
-      } else {
-          if (uiLClickCharged_) uiLClickCharged_->Draw();
-          if (uiRClickCharged_) uiRClickCharged_->Draw();
-      }
-      
-      // 共通キーUI
-      if (uiE_) uiE_->Draw();
-      if (uiV_) uiV_->Draw();
-      if (uiSpace_) uiSpace_->Draw();
-  } 
+      } else if (player_ && player_->IsFirstPerson()) {
+          // --- 1人称視点専用UI描画 ---
+          if (!player_->IsKarakuriCharged()) {
+              if (uiLClickNormal_) uiLClickNormal_->Draw();
+              if (uiRClickNormal_) uiRClickNormal_->Draw();
+          } else {
+              if (uiLClickCharged_) uiLClickCharged_->Draw();
+              if (uiRClickCharged_) uiRClickCharged_->Draw();
+          }
+          
+          // 共通キーUI
+          if (uiE_) uiE_->Draw();
+          if (uiV_) uiV_->Draw();
+          if (uiSpace_) uiSpace_->Draw();
+      } 
 
-  if (keyEscSprite_) {
-      keyEscSprite_->Draw();
+      if (keyEscSprite_) {
+          keyEscSprite_->Draw();
+      }
   }
 }
 
