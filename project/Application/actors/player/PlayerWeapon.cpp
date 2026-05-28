@@ -7,12 +7,23 @@
 
 void PlayerWeapon::Initialize() {
 
-    // --- 機関銃モデルの初期化 ---
-    machineGunObjLeft_ = std::make_unique<ObjClass>();
-    machineGunObjLeft_->Initialize("player/playerTurret.obj");
+    // --- 左肩大砲モデルの初期化 ---
+    cannonObj_ = std::make_unique<ObjClass>();
+    cannonObj_->Initialize("player/playerCannon.obj");
 
-    machineGunObjRight_ = std::make_unique<ObjClass>();
-    machineGunObjRight_->Initialize("player/playerTurret.obj");
+    // --- 右肩大砲モデルの初期化 ---
+    cannonObjRight_ = std::make_unique<ObjClass>();
+    cannonObjRight_->Initialize("player/playerCannon.obj");
+
+    // --- 左肩ロケットランチャーモデルの初期化 ---
+    rocketLauncherObj_ = std::make_unique<ObjClass>();
+    rocketLauncherObj_->Initialize("player/playerRocketLauncher.obj");
+
+    // --- 右肩ロケットランチャーモデルの初期化 ---
+    rocketLauncherObjRight_ = std::make_unique<ObjClass>();
+    rocketLauncherObjRight_->Initialize("player/playerRocketLauncher.obj");
+
+    isKarakuriCharged_ = false;
 
     // --- 機関銃の弾モデルの初期化 ---
     bulletRegion_ = std::make_unique<ModelRegion>();
@@ -97,9 +108,13 @@ void PlayerWeapon::Initialize() {
     machineGunVibration_ = { 0.0f, 0.0f, 0.0f };
     missileVibration_ = { 0.0f, 0.0f, 0.0f };
     missileVibrationTimer_ = 0;
+    rocketLauncherChargedScaleMultiplier_ = 1.4f;
+    rocketLauncherYOffset_ = 0.2f;
 }
 
 void PlayerWeapon::Update(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, const Vector3& playerScale, bool isKarakuriCharged) {
+    isKarakuriCharged_ = isKarakuriCharged;
+
     // 振動（シェイク）の更新
     if (machineGunActiveTimer_ <= 0) {
         machineGunVibration_.x *= 0.8f;
@@ -220,7 +235,7 @@ void PlayerWeapon::UpdateParticlesOnly() {
 }
 
 void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRotate, float cameraPitch, const Vector3& targetPos, int viewMode, bool isBlinking, bool isDead) {
-    if (machineGunObjLeft_ && machineGunObjRight_ && !isDead) {
+    if (cannonObj_ && cannonObjRight_ && rocketLauncherObj_ && rocketLauncherObjRight_ && !isDead) {
         float sinY = std::sin(playerRotate.y);
         float cosY = std::cos(playerRotate.y);
         float rightX = cosY;
@@ -268,21 +283,47 @@ void PlayerWeapon::Draw(const Vector3& playerTranslate, const Vector3& playerRot
         float xzLen = std::sqrt(blendedForward.x * blendedForward.x + blendedForward.z * blendedForward.z);
         rot.x = std::atan2(-blendedForward.y, xzLen);
 
-        // 機関銃モデルの位置に機関銃振動を反映
-        machineGunObjLeft_->SetPosition(leftShoulder + machineGunVibration_);
-        machineGunObjLeft_->SetRotate(rot);
-        machineGunObjLeft_->SetScale(kMachineGunScale);
-        machineGunObjLeft_->Update();
+        if (isKarakuriCharged_) {
+            // --- からくりチャージ強化状態：ロケットランチャーを描画 ---
+            Vector3 finalScale = { 
+                kRocketLauncherScale.x * rocketLauncherChargedScaleMultiplier_, 
+                kRocketLauncherScale.y * rocketLauncherChargedScaleMultiplier_, 
+                kRocketLauncherScale.z * rocketLauncherChargedScaleMultiplier_ 
+            };
 
-        machineGunObjRight_->SetPosition(rightShoulder + machineGunVibration_);
-        machineGunObjRight_->SetRotate(rot);
-        machineGunObjRight_->SetScale(kMachineGunScale);
-        machineGunObjRight_->Update();
+            Vector3 leftPos = { leftShoulder.x, leftShoulder.y + rocketLauncherYOffset_, leftShoulder.z };
+            Vector3 rightPos = { rightShoulder.x, rightShoulder.y + rocketLauncherYOffset_, rightShoulder.z };
 
-        // viewMode == 0 が kFirstPerson の想定
-        if (viewMode != 0 && !isBlinking) {
-            machineGunObjLeft_->Draw();
-            machineGunObjRight_->Draw();
+            rocketLauncherObj_->SetPosition(leftPos + machineGunVibration_);
+            rocketLauncherObj_->SetRotate(rot);
+            rocketLauncherObj_->SetScale(finalScale);
+            rocketLauncherObj_->Update();
+
+            rocketLauncherObjRight_->SetPosition(rightPos + machineGunVibration_);
+            rocketLauncherObjRight_->SetRotate(rot);
+            rocketLauncherObjRight_->SetScale(finalScale);
+            rocketLauncherObjRight_->Update();
+
+            if (viewMode != 0 && !isBlinking) {
+                rocketLauncherObj_->Draw();
+                rocketLauncherObjRight_->Draw();
+            }
+        } else {
+            // --- 通常状態：大砲を描画 ---
+            cannonObj_->SetPosition(leftShoulder + machineGunVibration_);
+            cannonObj_->SetRotate(rot);
+            cannonObj_->SetScale(kCannonScale);
+            cannonObj_->Update();
+
+            cannonObjRight_->SetPosition(rightShoulder + machineGunVibration_);
+            cannonObjRight_->SetRotate(rot);
+            cannonObjRight_->SetScale(kCannonScale);
+            cannonObjRight_->Update();
+
+            if (viewMode != 0 && !isBlinking) {
+                cannonObj_->Draw();
+                cannonObjRight_->Draw();
+            }
         }
 
         float muzzleOffsetSize = (kMachineGunModelSize.z * 0.5f) * kMachineGunScale.z;
@@ -760,24 +801,31 @@ void PlayerWeapon::FireMissileSkill(const Vector3& playerTranslate, const Vector
             missiles_[i].timer = 120;
             missiles_[i].target = { targetPos.x, targetPos.y + 1.0f, targetPos.z };
 
-            // 発射位置をプレイヤーの周囲に分散させる
-            float offsetR = ((std::rand() % 100) / 100.0f) * 3.0f + 2.0f; // 半径 2.0 ～ 5.0 (より外側に)
-            float offsetTheta = ((std::rand() % 360) * 3.14159f / 180.0f);
-            float offsetX = std::cos(offsetTheta) * offsetR;
-            float offsetY = ((std::rand() % 100) / 100.0f) * 3.0f; // 高さ 0.0 ～ 3.0
-            float offsetZ = std::sin(offsetTheta) * offsetR;
+            // 発射位置をプレイヤーの前方に分散させる
+            Vector3 forward = { sinY, 0.0f, cosY };
+            Vector3 right = { cosY, 0.0f, -sinY };
+
+            float distForward = ((std::rand() % 100) / 100.0f) * 3.0f + 2.0f; // 前方2.0〜5.0m
+            float distRight = ((std::rand() % 100) / 100.0f - 0.5f) * 4.0f;   // 左右に-2.0〜2.0m
+            float offsetY = 0.5f + ((std::rand() % 100) / 100.0f) * 2.0f;     // 高さ0.5〜2.5m
+
+            float offsetX = forward.x * distForward + right.x * distRight;
+            float offsetZ = forward.z * distForward + right.z * distRight;
 
             missiles_[i].position = { playerTranslate.x + offsetX, playerTranslate.y + offsetY, playerTranslate.z + offsetZ };
 
-            // 初速度を大きく広がる方向に設定
-            float spreadMagnitude = missileSpreadMagnitudeBase_ + ((std::rand() % 100) / 100.0f) * missileSpreadMagnitudeRand_; // 外側に飛ぶ力を強くする
-            Vector3 spreadDir = { offsetX, offsetY + 1.5f, offsetZ }; // 外側かつ上向きに膨らませる
+            // 出現位置が前方に偏っているため、前方成分を抑え、左右(distRight)と上方向への広がりを強調して扇状に射出する
+            Vector3 spreadDir = {
+                forward.x * (distForward * 0.3f) + right.x * (distRight * 2.2f),
+                offsetY + 2.5f, // 上空に吹き上がらせる
+                forward.z * (distForward * 0.3f) + right.z * (distRight * 2.2f)
+            };
             float len = std::sqrt(spreadDir.x * spreadDir.x + spreadDir.y * spreadDir.y + spreadDir.z * spreadDir.z);
             if (len > 0.001f) {
                 spreadDir.x /= len; spreadDir.y /= len; spreadDir.z /= len;
             }
 
-            missiles_[i].velocity = { spreadDir.x * spreadMagnitude, spreadDir.y * spreadMagnitude, spreadDir.z * spreadMagnitude };
+            missiles_[i].velocity = { spreadDir.x * kMissileSpeed, spreadDir.y * kMissileSpeed, spreadDir.z * kMissileSpeed };
 
             firedCount++;
             // 1回のスキル呼び出しにつき4発発射（合計で8または16発になるように調整）

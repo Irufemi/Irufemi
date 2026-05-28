@@ -59,6 +59,15 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     starScale_ = { 0.0f, 0.0f, 0.0f };
     starRotationZ_ = 0.0f;
 
+    // ★追加: ぜんまいモデルの初期化
+    zenmaiObj_ = std::make_unique<ObjClass>();
+    zenmaiObj_->Initialize("player/PlayerZenmai.obj");
+    zenmaiRotZ_ = 0.0f;
+    zenmaiLocalOffset_ = { 0.0f, 0.35f, -0.85f };
+    zenmaiScaleMultiplier_ = 0.5f;
+    zenmaiRotationAxis_ = 1;
+    zenmaiRotateOffset_ = { -1.57079f, 0.0f, 0.0f };
+
     skillDurationTimer_ = 0;
     skillCooldownTimer_ = 0;
     karakuriChargeTimer_ = 0;
@@ -74,7 +83,7 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     attackCollision_.isActive = false;
     attackCollision_.radius = 0.0f;
 
-    scale_ = { 0.3f, 0.5f, 0.3f };
+    scale_ = { 0.45f, 0.75f, 0.45f };
 
     // 死亡演出用変数の初期化
     deathTimer_ = 0;
@@ -164,6 +173,12 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
     // ★追加: 死亡待機中の自爆前光線
     deathGlowParticle_ = std::make_unique<GPUParticleSystem>();
     deathGlowParticle_->Initialize("resources/gradationLine.png");
+
+    // ★追加: 4隅 of ジェットノズル用噴射パーティクル配列
+    for (int i = 0; i < 4; ++i) {
+        jetParticles_[i] = std::make_unique<GPUParticleSystem>();
+        jetParticles_[i]->Initialize("resources/gradationLine.png");
+    }
 
     // SEの初期化
     seHammer_ = std::make_unique<Se>();
@@ -461,6 +476,26 @@ void Player::Update() {
     }
     // ==========================================
 
+    // ★追加: ぜんまいモデルの回転更新
+    if (zenmaiRewinding_) {
+        // 逆回転して巻き戻す
+        zenmaiRotZ_ -= 0.35f;
+        if (zenmaiRotZ_ <= 0.0f) {
+            zenmaiRotZ_ = 0.0f;
+            zenmaiRewinding_ = false;
+        }
+    } else if (karakuriChargeTimer_ > 0 && !isKarakuriCharged_) {
+        // チャージ中：チャージ量に応じて加速（角度は丸めずに累積させる）
+        float ratio = static_cast<float>(karakuriChargeTimer_) / kKarakuriChargeTime;
+        zenmaiRotZ_ += 0.05f + 0.25f * ratio;
+    } else if (isKarakuriCharged_) {
+        // チャージ完了（効果中）：高速回転（こちらは常に回り続けるため2*PIで丸める）
+        zenmaiRotZ_ += 0.30f;
+        if (zenmaiRotZ_ > 6.2831853f) {
+            zenmaiRotZ_ -= 6.2831853f;
+        }
+    }
+
     status_.Update();
     movement_.UpdateTimers();
 
@@ -496,6 +531,19 @@ void Player::Update() {
             ImGui::DragFloat3("Mini Pos Offset", &firstPersonMiniPos_.x, 0.01f, -5.0f, 5.0f);
             ImGui::DragFloat3("Mini Scale", &firstPersonMiniScale_.x, 0.001f, 0.001f, 1.0f);
             ImGui::DragFloat("Mini Rot Y Offset", &firstPersonMiniRotY_, 0.01f, -3.14f, 3.14f);
+
+            ImGui::Separator();
+            ImGui::Text("Zenmai Back Attachment Settings");
+            ImGui::DragFloat3("Zenmai Local Offset", &zenmaiLocalOffset_.x, 0.01f, -5.0f, 5.0f);
+            ImGui::DragFloat("Zenmai Scale Multiplier", &zenmaiScaleMultiplier_, 0.01f, 0.05f, 2.0f);
+            const char* axisNames[] = { "X-Axis (Pitch)", "Y-Axis (Yaw)", "Z-Axis (Roll)" };
+            ImGui::Combo("Zenmai Rotation Axis", &zenmaiRotationAxis_, axisNames, 3);
+            ImGui::DragFloat3("Zenmai Rotate Offset", &zenmaiRotateOffset_.x, 0.01f, -6.28f, 6.28f);
+
+            ImGui::Separator();
+            ImGui::Text("Karakuri Charged Weapon Settings");
+            ImGui::DragFloat("Charged Missile Launcher Scale", weapon_.GetRocketLauncherChargedScaleMultiplierPtr(), 0.01f, 0.5f, 3.0f);
+            ImGui::DragFloat("Charged Missile Launcher Y Offset", weapon_.GetRocketLauncherYOffsetPtr(), 0.01f, -2.0f, 2.0f);
 
             if (skillDurationTimer_ > 0) {
                 ImGui::Text("Skill ACTIVE (Firing): %d", skillDurationTimer_);
@@ -924,6 +972,78 @@ void Player::Update() {
         deathGlowParticle_->Update();
     }
 
+    // === ジェット噴射パーティクルの設定・更新 ===
+    if (!status_.IsDead()) {
+        // プレイヤーの向き（Y軸回転）に基づいた回転行列を作成
+        Matrix4x4 rotMat = Math::MakeRotateXYZMatrix({ 0.0f, rotate_.y, 0.0f });
+
+        // 4隅のノズルのローカルオフセット
+        // 大型化したサイズ scale_ { 0.45f, 0.75f, 0.45f } に合わせて適正配置
+        Vector3 localOffsets[4] = {
+            { -0.22f, -0.7f, -0.22f }, // 後左
+            {  0.22f, -0.7f, -0.22f }, // 後右
+            { -0.22f, -0.7f,  0.22f }, // 前左
+            {  0.22f, -0.7f,  0.22f }  // 前右
+        };
+
+        for (int i = 0; i < 4; ++i) {
+            if (jetParticles_[i]) {
+                // シアンブルーと白のブレンド（ネイビー＆シアン配色と同期）
+                Vector4 startColMin = { 0.0f, 0.75f, 1.0f, 1.0f }; // 水色
+                Vector4 startColMax = { 0.5f, 0.95f, 1.0f, 1.0f }; // 薄いシアン〜白
+                Vector4 endColMin = { 0.0f, 0.2f, 0.8f, 0.0f };    // 青
+                Vector4 endColMax = { 0.0f, 0.5f, 1.0f, 0.0f };
+
+                jetParticles_[i]->SetStartColor(startColMin, startColMax);
+                jetParticles_[i]->SetEndColor(endColMin, endColMax);
+                jetParticles_[i]->SetParticleLife(0.15f, 0.35f); // 寿命をわずかに延ばして炎を長く
+
+                // 2倍以上太く、2倍以上長く伸びるようにスケールを超強化！
+                Vector3 startScaleMin = { 0.15f, 1.2f, 0.15f };
+                Vector3 startScaleMax = { 0.25f, 2.2f, 0.25f };
+                Vector3 endScaleMin = { 0.01f, 0.1f, 0.01f };
+                Vector3 endScaleMax = { 0.05f, 0.3f, 0.05f };
+                jetParticles_[i]->SetParticleScale(startScaleMin, startScaleMax, endScaleMin, endScaleMax);
+
+                jetParticles_[i]->SetAlphaReference(0.02f); // しきい値を下げてより濃く描画
+                jetParticles_[i]->SetVelocity(22.0f);   // 噴射速度を強化して勢いを出す
+                jetParticles_[i]->SetSpread(0.12f);     // 少し細く絞って直線的な光線に
+                jetParticles_[i]->SetGravity(0.0f);
+                jetParticles_[i]->SetDamping(0.04f);
+                jetParticles_[i]->SetJitter(0.04f);
+                jetParticles_[i]->SetEnableRandomRotation(false);
+                jetParticles_[i]->SetBillboardMode(2);  // 速度方向ビルボード
+
+                // ローカルオフセットを回転行列でワールドベクトルへ変換
+                Vector3 rotatedOffset = {
+                    rotMat.m[0][0] * localOffsets[i].x + rotMat.m[0][1] * localOffsets[i].y + rotMat.m[0][2] * localOffsets[i].z,
+                    rotMat.m[1][0] * localOffsets[i].x + rotMat.m[1][1] * localOffsets[i].y + rotMat.m[1][2] * localOffsets[i].z,
+                    rotMat.m[2][0] * localOffsets[i].x + rotMat.m[2][1] * localOffsets[i].y + rotMat.m[2][2] * localOffsets[i].z
+                };
+
+                // 発生位置：プレイヤーの下部（ジェットノズル）のワールド座標
+                Vector3 emitPos = translate_;
+                emitPos.y += kModelOffsetY;
+                emitPos = Math::Add(emitPos, rotatedOffset);
+
+                // 1フレームあたりの放出量と頻度を強化して「濃く」
+                uint32_t count = 18;
+                float freq = 0.015f;
+
+                jetParticles_[i]->SetCylinderEmitter(emitPos, { 0.0f, -1.0f, 0.0f }, 0.22f, 0.1f, count, freq);
+                jetParticles_[i]->SetEmit(true);
+                jetParticles_[i]->Update();
+            }
+        }
+    } else {
+        for (int i = 0; i < 4; ++i) {
+            if (jetParticles_[i]) {
+                jetParticles_[i]->SetEmit(false);
+                jetParticles_[i]->Update();
+            }
+        }
+    }
+
 
 #ifdef USE_IMGUI
     if (input_->IsKeyPressedDIK(0x3B /*DIK_F1*/)) {
@@ -1148,7 +1268,7 @@ void Player::Draw() {
         } else if (status_.IsDead()) {
             obj_->SetColor({ 0.15f, 0.15f, 0.15f, 1.0f }); // 飛んでいる間はシルエット
         } else {
-            obj_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
+            obj_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
         }
 
         Vector3 drawPos = translate_;
@@ -1214,6 +1334,73 @@ void Player::Draw() {
         }
     }
 
+    // ★追加: ぜんまいモデルの描画
+    if (zenmaiObj_ && !status_.IsDead() && !cameraController_.IsFirstPerson()) {
+        Vector3 drawPos = translate_;
+        drawPos += weapon_.GetMissileVibration();
+
+        // からくりチャージ中（Eキー長押し中）のシェイク演出をぜんまいにも適用
+        if (karakuriChargeTimer_ > 0 && !isKarakuriCharged_) {
+            float shakeScale = static_cast<float>(karakuriChargeTimer_) / kKarakuriChargeTime;
+            drawPos.x += ((std::rand() % 100) / 100.0f - 0.5f) * 0.2f * shakeScale;
+            drawPos.y += ((std::rand() % 100) / 100.0f - 0.5f) * 0.2f * shakeScale;
+            drawPos.z += ((std::rand() % 100) / 100.0f - 0.5f) * 0.2f * shakeScale;
+        }
+        drawPos.y += kModelOffsetY;
+
+        // プレイヤーの背中位置へのオフセット
+        Matrix4x4 rotMat = Math::MakeRotateXYZMatrix({ 0.0f, rotate_.y, 0.0f });
+        Vector3 rotatedOffset = Math::Transform(zenmaiLocalOffset_, rotMat);
+        Vector3 zenmaiPos = Math::Add(drawPos, rotatedOffset);
+
+        zenmaiObj_->SetPosition(zenmaiPos);
+        
+        // 初期回転オフセット行列を作成
+        Matrix4x4 offsetRotMat = Math::MakeRotateXYZMatrix(zenmaiRotateOffset_);
+
+        // ぜんまいのローカル回転行列を作成
+        Matrix4x4 localRotMat;
+        if (zenmaiRotationAxis_ == 0) {
+            localRotMat = Math::MakeRotateXMatrix(zenmaiRotZ_);
+        } else if (zenmaiRotationAxis_ == 1) {
+            localRotMat = Math::MakeRotateYMatrix(zenmaiRotZ_);
+        } else {
+            localRotMat = Math::MakeRotateZMatrix(zenmaiRotZ_);
+        }
+
+        // ローカル回転と初期オフセット回転を合成 (ローカル回転 -> オフセット)
+        // これにより、モデルのローカルな縦軸（Y軸）周りの横回転が、初期向きオフセット（横向きなど）を適用した後も正しく維持されます。
+        Matrix4x4 combinedLocalRotMat = Math::Multiply(localRotMat, offsetRotMat);
+
+        // プレイヤーの基本回転行列
+        Matrix4x4 baseRotMat = Math::MakeRotateXYZMatrix(rotate_);
+
+        // 行列を合成 (合成ローカル回転 -> プレイヤー回転)
+        Matrix4x4 finalRotMat = Math::Multiply(combinedLocalRotMat, baseRotMat);
+
+        // 合成行列からオイラー角を抽出して設定
+        Vector3 finalRotate = Math::ExtractEulerFromMatrix(finalRotMat);
+        zenmaiObj_->SetRotate(finalRotate);
+
+        // スケールを適用 (プレイヤー本体のスケールに対してぜんまいのスケール倍率を適用)
+        Vector3 finalScale = { scale_.x * zenmaiScaleMultiplier_, scale_.y * zenmaiScaleMultiplier_, scale_.z * zenmaiScaleMultiplier_ };
+        zenmaiObj_->SetScale(finalScale);
+
+        // からくり状態中（黄金）ならぜんまいも黄金色に
+        if (isKarakuriCharged_) {
+            zenmaiObj_->SetColor({ 1.0f, 0.8f, 0.0f, 1.0f });
+        } else {
+            zenmaiObj_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+        }
+
+        zenmaiObj_->Update();
+
+        // 無敵時間中の点滅を反映
+        if (!isBlinking) {
+            zenmaiObj_->Draw();
+        }
+    }
+
     // ★追加: 星（plane.obj）の描画
     if (starObj_ && starScale_.x > 0.01f) {
         if (status_.IsDead() && deathTimer_ >= kDeathAnimationDuration - 40) {
@@ -1269,6 +1456,16 @@ void Player::Draw() {
     if (deathGlowParticle_) {
         deathGlowParticle_->SyncBeforeDraw();
         deathGlowParticle_->Draw();
+    }
+
+    // ジェット噴射エフェクトの描画
+    if (!status_.IsDead()) {
+        for (int i = 0; i < 4; ++i) {
+            if (jetParticles_[i]) {
+                jetParticles_[i]->SyncBeforeDraw();
+                jetParticles_[i]->Draw();
+            }
+        }
     }
 
     // ★追加: 死亡演出前の自爆電撃ビームの描画
@@ -1495,6 +1692,8 @@ void Player::HandleSkill() {
         karakuriActiveTimer_--;
         if (karakuriActiveTimer_ <= 0) {
             isKarakuriCharged_ = false;
+            zenmaiRotZ_ = 0.0f; // チャージ効果終了時はエネルギーを使い切ったため瞬時にリセット
+            zenmaiRewinding_ = false;
             OutputDebugStringA("Karakuri Charge Ended.\n");
         }
         
@@ -1506,8 +1705,9 @@ void Player::HandleSkill() {
     } else {
         // 通常時（非強化状態）：Eキー長押しでチャージを溜める
         if (input_->IsKeyDown('E')) {
-            if (karakuriChargeTimer_ == 0 && seKarakuri_) {
-                seKarakuri_->Play(true);
+            if (karakuriChargeTimer_ == 0) {
+                if (seKarakuri_) seKarakuri_->Play(true);
+                zenmaiRewinding_ = false; // チャージ再開時は巻き戻しフラグを解除
             }
             karakuriChargeTimer_++;
             if (karakuriChargeTimer_ >= kKarakuriChargeTime) {
@@ -1551,6 +1751,7 @@ void Player::HandleSkill() {
                 seKarakuri_->Stop();
             }
             karakuriChargeTimer_ = 0;
+            zenmaiRewinding_ = true; // チャージキャンセル時にぜんまいを逆回転で巻き戻す
         }
     }
 

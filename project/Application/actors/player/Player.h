@@ -160,7 +160,7 @@ private:
     std::unique_ptr<Se> seKarakuri_;
     std::unique_ptr<Se> seCooldown_;
 
-    Vector3 scale_ = { 0.3f, 0.5f, 0.3f };
+    Vector3 scale_ = { 0.45f, 0.75f, 0.45f };
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
     Vector3 translate_ = { 0.0f, 0.0f, -50.0f };
 
@@ -201,7 +201,7 @@ private:
     int damageMissile_ = 50;
     float damageMissileChargeMultiplier_ = 2.0f;
 
-    static constexpr float kModelOffsetY = 0.4f;
+    static constexpr float kModelOffsetY = 0.22f;
     static constexpr float kAimDistance = 100.0f;
     static constexpr int kMissileSkillDuration = 120;
     static constexpr int kMachineGunSkillDuration = 180;
@@ -230,10 +230,20 @@ private:
     Vector3 starScale_ = { 0.0f, 0.0f, 0.0f };
     float starRotationZ_ = 0.0f;
 
+    // ★追加: プレイヤー背中のぜんまいモデル
+    std::unique_ptr<ObjClass> zenmaiObj_ = nullptr;
+    float zenmaiRotZ_ = 0.0f; // ぜんまいの回転角度
+    bool zenmaiRewinding_ = false; // チャージキャンセル時の逆回転フラグ
+    Vector3 zenmaiLocalOffset_ = { 0.0f, 0.35f, -0.85f }; // 背中・おしりのアタッチオフセット位置（めり込み防止のため後ろへ調整）
+    float zenmaiScaleMultiplier_ = 0.5f; // ぜんまいのスケール倍率（プレイヤー本体に対する比率）
+    int zenmaiRotationAxis_ = 1; // 回転軸（0: X軸, 1: Y軸, 2: Z軸。デフォルトを1:Y軸の縦軸横回転へ変更）
+    Vector3 zenmaiRotateOffset_ = { -1.57079f, 0.0f, 0.0f }; // ぜんまいの初期回転オフセット（向きが逆のため-90度をデフォルトに）
+
     // ★追加: からくりチャージ用のエフェクト
     std::unique_ptr<GPUParticleSystem> karakuriChargeParticle_ = nullptr; // チャージ中・完了時の上昇パーティクル
     std::unique_ptr<GPUParticleSystem> karakuriRingParticle_ = nullptr; // チャージしきったときの足元リングエフェクト
     std::unique_ptr<GPUParticleSystem> deathGlowParticle_ = nullptr; // 死亡待機中の全身から吹き出す自爆前光線
+    std::unique_ptr<GPUParticleSystem> jetParticles_[4]; // 4隅のジェットノズル用噴射パーティクル配列
 
     // 一人称視点時のミニフィギュア設定
     Vector3 firstPersonMiniPos_ = { -0.58f, -0.21f, 1.4f };

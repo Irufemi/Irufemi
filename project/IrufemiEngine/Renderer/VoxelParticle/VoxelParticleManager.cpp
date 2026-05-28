@@ -16,17 +16,43 @@ void VoxelParticleManager::ReservePool(const std::string& modelName, const Vecto
 }
 
 VoxelParticleSystem* VoxelParticleManager::AllocateSystem(const std::string& modelName) {
+    // 1. 最優先：ロード完了しており、かつ非アクティブな（暇な）システムを探す
     for (auto& entry : pool_) {
-        // 同じモデル名で、かつ現在アクティブでないものを使用
-        if (entry.modelName == modelName && !entry.system->IsActive()) {
+        if (entry.modelName == modelName && 
+            entry.system->GetStatus() == VoxelParticleSystem::LoadingStatus::Loaded && 
+            !entry.system->IsActive()) {
             return entry.system.get();
         }
     }
-    // プールが空の場合はフォールバックとして一つ生成（カクつく原因になるので基本は避ける）
-    auto voxel = std::make_unique<VoxelParticleSystem>();
-    voxel->Initialize(modelName, {32, 32, 32}); 
-    pool_.push_back({ modelName, std::move(voxel) });
-    return pool_.back().system.get();
+
+    // 2. 準優先（すべて使用中の場合）：ロード完了しているアクティブなシステムの中から、
+    // 最も長く再生されている（残り寿命が短い = GetEmitterTime() が最も大きい）ものを上書き再利用する
+    VoxelParticleSystem* oldestSystem = nullptr;
+    float maxTime = -1.0f;
+    for (auto& entry : pool_) {
+        if (entry.modelName == modelName && 
+            entry.system->GetStatus() == VoxelParticleSystem::LoadingStatus::Loaded) {
+            float t = entry.system->GetEmitterTime();
+            if (t > maxTime) {
+                maxTime = t;
+                oldestSystem = entry.system.get();
+            }
+        }
+    }
+    if (oldestSystem) {
+        return oldestSystem;
+    }
+
+    // 3. フォールバック：ロード完了しているものが1つも存在しない場合のみ、安全上限（総数60）を越えない範囲で新規生成を許可
+    if (pool_.size() < 60) {
+        auto voxel = std::make_unique<VoxelParticleSystem>();
+        voxel->Initialize(modelName, {32, 32, 32}); 
+        pool_.push_back({ modelName, std::move(voxel) });
+        return pool_.back().system.get();
+    }
+
+    // 安全上限に達しており、かつロード完了したものがない場合は、nullptr を返して発生を諦める（安全対策）
+    return nullptr;
 }
 
 void VoxelParticleManager::Update(float deltaTime) {

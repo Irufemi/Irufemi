@@ -129,6 +129,8 @@ public:
     return emitterData_.time < (emitterData_.lifeTime + 2.0f);
   }
 
+  float GetEmitterTime() const { return emitterData_.time; }
+
   void SetParticleType(ParticleType type) { emitterData_.particleType = static_cast<uint32_t>(type); }
   void SetGravity(float gravity) { emitterData_.gravity = gravity; }
   void SetParameters(const VoxelEmitterParams& params);

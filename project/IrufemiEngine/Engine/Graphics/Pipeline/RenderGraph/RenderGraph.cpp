@@ -12,7 +12,7 @@ void RenderGraph::AddPass(std::unique_ptr<IRenderPass> pass) {
 
 void RenderGraph::InitializeTransientResourceManager(DirectXCommon* dxCommon) {
     transientResourceManager_ = std::make_unique<TransientResourceManager>();
-    transientResourceManager_->Initialize(dxCommon, 256 * 1024 * 1024); // 256MB
+    transientResourceManager_->Initialize(dxCommon, 512 * 1024 * 1024); // 512MBへ拡大してOOMを防止
 }
 
 void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
