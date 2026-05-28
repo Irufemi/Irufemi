@@ -20,7 +20,7 @@ void Head::Initialize(const Vector3& initialPos) {
   obj_->Initialize("enemy/head.obj");
   basePosition_ = initialPos;
   obj_->SetPosition(basePosition_);
-  obj_->SetColor(baseColor_);
+  //obj_->SetColor(baseColor_);
   maxDisappearTime_ = EnemyParameters::GetInstance()->GetDisappearTime();
 
   voxelSystem_ = std::make_unique<VoxelParticleSystem>();
