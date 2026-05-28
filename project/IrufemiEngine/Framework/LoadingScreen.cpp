@@ -95,10 +95,14 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
     float uiScale = screenH / 720.0f;
 
     if (bgSprite_) {
+        // 背景は必ず加算ではなく通常のブレンド（不透明）で上書き描画する
+        engine->SetBlend(BlendMode::kBlendModeNormal);
         bgSprite_->SetSize(screenW, screenH);
         bgSprite_->Draw();
     }
     
+    // 文字とドットは加算合成（黒背景を透過）
+    engine->SetBlend(BlendMode::kBlendModeAdd);
     if (nowLoadingText_) {
         nowLoadingText_->SetUIScale(uiScale);
         nowLoadingText_->SetPosition(screenW - 80.0f * uiScale, screenH - 45.0f * uiScale);
@@ -117,4 +121,7 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
             dots_[i]->Draw();
         }
     }
+    
+    // 描画後、安全のために元の通常ブレンドに戻す
+    engine->SetBlend(BlendMode::kBlendModeNormal);
 }

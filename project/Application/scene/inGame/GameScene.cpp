@@ -1301,3 +1301,7 @@ void GameScene::CheckFlyingBuildingsVsBuildingsCollisions() {
     }
   }
 }
+
+bool GameScene::IsWhiteoutContext() const {
+    return boss_ && boss_->IsDead();
+}

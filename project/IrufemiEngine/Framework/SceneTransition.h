@@ -51,6 +51,9 @@ public:
   /** @brief 演出が実行中か */
   bool IsActive() const { return isActive_; }
 
+  /** @brief 現在実行中（または最後に実行された）演出タイプを取得 */
+  Type GetCurrentType() const { return currentType_; }
+
   /** @brief フェードアウト（画面が完全に隠れきった状態）が完了したか */
   bool IsOutFinished() const { return !isActive_ && isOut_; }
 

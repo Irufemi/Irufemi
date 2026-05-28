@@ -20,6 +20,9 @@ void SceneTransition::Start(Type type, float duration, bool isOut) {
     }
     activeTransitionModes_.clear();
 
+    // 基本は黒フェードにリセットしておく（白フェード等で上書きされた色が残るのを防ぐため）
+    ppManager_->GetFadeParams().color = {0.0f, 0.0f, 0.0f, 1.0f};
+
     switch (currentType_) {
     case Type::Fade:
         ppManager_->AddActiveMode(PostProcessMode::Fade);
