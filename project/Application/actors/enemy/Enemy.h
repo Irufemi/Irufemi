@@ -121,6 +121,9 @@ private:
     std::unique_ptr<EnemyStompEffects> stompEffects_;
     std::unique_ptr<EnemyTackleEffects> tackleEffects_;
 
+    // 撃破演出用の特大爆発エフェクト
+    std::unique_ptr<GPUParticleSystem> deathExplosionParticle_;
+
     // 斬撃トレイル
     std::unique_ptr<WeaponTrail> neckTrail_ = nullptr;
 

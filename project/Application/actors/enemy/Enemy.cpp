@@ -110,6 +110,27 @@ void Enemy::Initialize(IrufemiEngine *engine) {
   initialHeadMidLocalTransform_ = headMidLocalTransform_;
   initialHeadRightLocalTransform_ = headRightLocalTransform_;
 
+  // 撃破時特大爆発エフェクトの初期化
+  deathExplosionParticle_ = std::make_unique<GPUParticleSystem>();
+  deathExplosionParticle_->Initialize("resources/circle.png");
+  deathExplosionParticle_->SetBlend(BlendMode::kBlendModeAdd);
+  deathExplosionParticle_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  deathExplosionParticle_->SetCull(PSOManager::CullMode::None);
+  deathExplosionParticle_->SetCustomPSO("StompExplosionParticle");
+  deathExplosionParticle_->SetEmit(false);
+  
+  // 爆発の余韻（2.5秒）
+  deathExplosionParticle_->SetParticleLife(1.0f, 2.5f);
+  // 高密度で大きく広がるサイズ
+  deathExplosionParticle_->SetParticleScale({ 0.5f, 0.5f, 0.5f }, { 1.5f, 1.5f, 1.5f }, { 2.5f, 2.5f, 2.5f }, { 5.0f, 5.0f, 5.0f });
+  // 高い空気抵抗と上に昇る弱い重力
+  deathExplosionParticle_->SetDamping(0.06f);
+  deathExplosionParticle_->SetGravity(-0.2f);
+  // 炎のような色
+  deathExplosionParticle_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+  deathExplosionParticle_->SetStartColor({ 1.0f, 0.8f, 0.2f, 1.0f }, { 1.0f, 0.5f, 0.0f, 1.0f });
+  deathExplosionParticle_->SetEndColor({ 1.0f, 0.1f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f });
+
   // 警告用注意マークの初期化
   warningSprite_ = std::make_unique<Sprite>();
   warningSprite_->Initialize("resources/texture/player/tyui.png");
@@ -184,6 +205,9 @@ void Enemy::Update(Player *player) {
   }
   if (neckTrail_) {
       neckTrail_->Update();
+  }
+  if (deathExplosionParticle_) {
+      deathExplosionParticle_->Update();
   }
   for (int i = 0; i < 3; ++i) {
       if (bombs_[i] && !bombs_[i]->IsExpired()) {
@@ -586,6 +610,10 @@ void Enemy::Draw(IrufemiEngine* engine) {
     if (neckTrail_) {
         neckTrail_->SyncBeforeDraw();
         neckTrail_->Draw();
+    }
+    if (deathExplosionParticle_) {
+        deathExplosionParticle_->SyncBeforeDraw();
+        deathExplosionParticle_->Draw();
     }
 
 #ifdef USE_IMGUI
@@ -1114,12 +1142,33 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
         // マップ中央（ボスの親グローバル位置）
         Vector3 bossCenter = globalTransform_.translate;
 
-        // はじけ飛ぶのと同時に、スタンプのGPUParticleSystemを呼び出して超高密度大爆発を発生させる！
-        if (stompEffects_) {
-            stompEffects_->FireDeathExplosion(bossCenter);
+        // はじけ飛ぶのと同時に、専用のエフェクトで超高密度大爆発を発生させる！
+        // （これが「くっつくのに失敗して大爆発した」という演出のメイン爆発）
+        if (deathExplosionParticle_) {
+            const float kBurstRadius = 20.0f; 
+            const float kVelocity = 6.5f;
+            const float kSpread = 3.5f;
+            const int kEmitCount = 15000;
+
+            deathExplosionParticle_->SetHemisphereEmitter(
+                Vector3{ bossCenter.x, bossCenter.y + 1.0f, bossCenter.z },
+                kBurstRadius,
+                0,
+                1.0f
+            );
+            deathExplosionParticle_->SetVelocity(kVelocity);
+            deathExplosionParticle_->SetSpread(kSpread);
+            deathExplosionParticle_->Emit(kEmitCount);
+            
+            // 爆発の迫力を出すためのカメラシェイク
+            if (engine_) {
+                if (auto* cam = engine_->GetCameraManager()->GetActiveCamera()) {
+                    cam->Shake(15.0f, 20);
+                }
+            }
         }
 
-        // 1. 胴体3つを均等な3方向（120度間隔）へ勢いよく飛ばす（0.5秒後に飛行先で爆散）
+        // 1. 胴体3つを均等な3方向（120度間隔）へ勢いよく飛ばす（波及を表現するため0.6秒後に爆散）
         for (int i = 0; i < 3; ++i) {
             if (bodies_[i]) {
                 // ボスの現在の rotate.y を基準に120度ずつ綺麗にずらした水平吹き飛び方向を算出
@@ -1127,12 +1176,12 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
                 Vector3 dir = { std::sin(angle), 0.8f, std::cos(angle) };
                 dir = Math::Normalize(dir);
                 
-                // 消滅時間を 0.5 秒に指定して吹き飛ばし開始
-                bodies_[i]->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.5f);
+                // 消滅時間を 0.6 秒に指定して吹き飛ばし開始
+                bodies_[i]->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.6f);
             }
         }
 
-        // 2. 首（頭部3つ）を元の配置（左・中央・右）に応じてそれぞればらばらの方向へ飛ばす（0.5秒後に飛行先で爆散）
+        // 2. 首（頭部3つ）を元の配置（左・中央・右）に応じてそれぞればらばらの方向へ飛ばす（波及を表現するため0.6秒後に爆散）
         auto explodeHeadRadial = [&](auto* part, const Transform& localT) {
             if (part) {
                 // パーツのワールド位置を計算
@@ -1153,8 +1202,8 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
                 dir.y = 0.8f;
                 dir = Math::Normalize(dir);
 
-                // 消滅時間を 0.5 秒に指定して吹き飛ばし開始
-                part->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.5f);
+                // 消滅時間を 0.6 秒に指定して吹き飛ばし開始
+                part->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.6f);
             }
         };
 
@@ -1165,23 +1214,7 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
         deathPhase_ = DeathPhase::Aftermath; // 余韻フェーズへ移行
         deathTimer_ = 0.0f;                  // 余韻用タイマーリセット
     } else if (deathPhase_ == DeathPhase::Aftermath) {
-        float prevTimer = deathTimer_;
         deathTimer_ += deltaTime;
-
-        // パーツが空中で爆散するタイミング(0.5秒後)に合わせて、中心位置からGPUParticleの大爆発を追い討ちで発生させる
-        const float kSecondaryExplosionTime = 0.5f;
-        if (prevTimer < kSecondaryExplosionTime && deathTimer_ >= kSecondaryExplosionTime) {
-            if (stompEffects_) {
-                stompEffects_->FireDeathExplosion(globalTransform_.translate);
-                
-                // より迫力を出すためのカメラシェイク
-                if (engine_) {
-                    if (auto* cam = engine_->GetCameraManager()->GetActiveCamera()) {
-                        cam->Shake(15.0f, 20);
-                    }
-                }
-            }
-        }
 
         if (deathTimer_ >= kAftermathDuration) {
             deathPhase_ = DeathPhase::None; // もう実行しない
