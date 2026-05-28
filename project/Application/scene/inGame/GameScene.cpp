@@ -421,12 +421,16 @@ void GameScene::Update() {
 void GameScene::Draw() {
   if (engine_) {
       engine_->SetBlend(BlendMode::kBlendModeNormal);
-      engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+      engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
       engine_->SetCull(PSOManager::CullMode::Back);
   }
 
   if (skydome_)
     skydome_->Draw();
+
+  if (engine_) {
+      engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+  }
 
   // プレイヤーが星になって吹っ飛んでいる最中は、巨大な敵やビル・地形がカメラを塞がないよう
   // 意図的に描画をスキップし、空（Skydome）だけを背景に美しく演出を見せる

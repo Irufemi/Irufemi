@@ -284,6 +284,7 @@ void EnemyBomb::Draw(IrufemiEngine* engine) {
     if (state_ == State::Telegraphing) {
         engine->SetBlend(BlendMode::kBlendModeAdd);
         engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
+        engine->SetCull(PSOManager::CullMode::None); // カリング無効化
         
         // ビルなどの不透明オブジェクト描画後に描画するためUIキュー（Draw(true)）を使用
         if (telegraphObjX_) telegraphObjX_->Draw(true);
@@ -291,6 +292,7 @@ void EnemyBomb::Draw(IrufemiEngine* engine) {
 
         engine->SetBlend(BlendMode::kBlendModeNormal);
         engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
+        engine->SetCull(PSOManager::CullMode::Back); // カリング有効化
     }
 
     if (state_ == State::Exploding) {
@@ -303,17 +305,9 @@ void EnemyBomb::Draw(IrufemiEngine* engine) {
             attackCylinderZ_->SetCustomCBVAddress(explosionParamsResource_->GetGPUVirtualAddress());
         }
 
-        engine->SetBlend(BlendMode::kBlendModeAdd);
-        engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
-        engine->SetCull(PSOManager::CullMode::None);
-
         // ビルなどの不透明オブジェクト描画後に描画するためUIキュー（Draw(true)）を使用
         if (attackCylinderX_) attackCylinderX_->Draw(true);
         if (attackCylinderZ_) attackCylinderZ_->Draw(true);
-
-        engine->SetBlend(BlendMode::kBlendModeNormal);
-        engine->SetDepthWrite(PSOManager::DepthWrite::Enable);
-        engine->SetCull(PSOManager::CullMode::Back);
 
         if (gpuParticle_) {
             gpuParticle_->Draw();
