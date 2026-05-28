@@ -14,6 +14,10 @@ void PauseScene::Initialize(IrufemiEngine* engine) {
     // 上書きされてしまい、フラスタムカリングによりプレイヤーが消えてしまうため、ポインタの代入のみ行う。
     engine_ = engine;
 
+    // PauseSceneのInitialize時点では、まだ自身がスタックにPushされていないため
+    // GetCurrent() を呼ぶと呼び出し元のシーン名（Tutorial等）が取得できます。
+    isTutorial_ = (engine_->GetSceneManager()->GetCurrent() == "Tutorial");
+
     // --- ポーズメニューの初期化 ---
     pauseBgDimmerSprite_ = std::make_unique<Sprite>();
     pauseBgDimmerSprite_->Initialize("resources/whiteTexture.png");
@@ -26,14 +30,22 @@ void PauseScene::Initialize(IrufemiEngine* engine) {
 
     pauseBackGameSprite_ = std::make_unique<Sprite>();
     pauseBackGameSprite_->Initialize("resources/texture/pause/text_backgame.png");
-    pauseBackGameSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.5f);
+    pauseBackGameSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, isTutorial_ ? engine_->GetClientHeight() * 0.45f : engine_->GetClientHeight() * 0.5f);
 
     pauseBackTitleSprite_ = std::make_unique<Sprite>();
     pauseBackTitleSprite_->Initialize("resources/texture/pause/text_backtitle.png");
-    pauseBackTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.65f);
+    pauseBackTitleSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, isTutorial_ ? engine_->GetClientHeight() * 0.75f : engine_->GetClientHeight() * 0.65f);
 
     // UISelectionGroup にメニュー項目を登録
     pauseMenuSelection_.AddItem(pauseBackGameSprite_.get());
+    
+    if (isTutorial_) {
+        pauseTutorialSkipSprite_ = std::make_unique<Sprite>();
+        pauseTutorialSkipSprite_->Initialize("resources/texture/pause/text_tutorialSkip.png");
+        pauseTutorialSkipSprite_->SetPositionCenter(engine_->GetClientWidth() / 2.0f, engine_->GetClientHeight() * 0.60f);
+        pauseMenuSelection_.AddItem(pauseTutorialSkipSprite_.get());
+    }
+    
     pauseMenuSelection_.AddItem(pauseBackTitleSprite_.get());
     pauseMenuSelection_.SetActiveBaseColor({1.0f, 1.0f, 1.0f, 1.0f});
     pauseMenuSelection_.SetInactiveColor({0.3f, 0.3f, 0.3f, 0.9f});
@@ -54,11 +66,15 @@ void PauseScene::Update() {
     }
     if (pauseBackGameSprite_) {
         pauseBackGameSprite_->SetUIScale(uiScale);
-        pauseBackGameSprite_->SetPositionCenter(screenW / 2.0f, screenH * 0.5f);
+        pauseBackGameSprite_->SetPositionCenter(screenW / 2.0f, isTutorial_ ? screenH * 0.45f : screenH * 0.5f);
+    }
+    if (pauseTutorialSkipSprite_) {
+        pauseTutorialSkipSprite_->SetUIScale(uiScale);
+        pauseTutorialSkipSprite_->SetPositionCenter(screenW / 2.0f, screenH * 0.60f);
     }
     if (pauseBackTitleSprite_) {
         pauseBackTitleSprite_->SetUIScale(uiScale);
-        pauseBackTitleSprite_->SetPositionCenter(screenW / 2.0f, screenH * 0.65f);
+        pauseBackTitleSprite_->SetPositionCenter(screenW / 2.0f, isTutorial_ ? screenH * 0.75f : screenH * 0.65f);
     }
 
     // UISelectionGroup の更新
@@ -66,11 +82,18 @@ void PauseScene::Update() {
 
     // 決定キーが押された場合の処理
     if (pauseMenuSelection_.IsDecided()) {
-        if (pauseMenuSelection_.GetSelectedIndex() == 0) {
+        int selectedIndex = pauseMenuSelection_.GetSelectedIndex();
+        if (selectedIndex == 0) {
             // ゲームに戻る
             engine_->GetSceneManager()->PopScene();
             return;
-        } else if (pauseMenuSelection_.GetSelectedIndex() == 1) {
+        } else if (isTutorial_ && selectedIndex == 1) {
+            // チュートリアルをスキップしてゲームへ（InGameへ遷移）
+            auto* sceneManager = engine_->GetSceneManager();
+            sceneManager->PopScene();
+            sceneManager->TransitionTo("InGame", SceneTransition::Type::RadialBlur, 1.5f);
+            return;
+        } else if ((!isTutorial_ && selectedIndex == 1) || (isTutorial_ && selectedIndex == 2)) {
             // タイトルに戻る (ポーズを解除してから遷移)
             // ※ PopSceneを呼ぶと自身(this)が破棄されるため、事前にポインタを退避しておく
             auto* sceneManager = engine_->GetSceneManager();
@@ -91,6 +114,7 @@ void PauseScene::Update() {
     if (pauseBgDimmerSprite_) pauseBgDimmerSprite_->Update();
     if (pauseTitleSprite_) pauseTitleSprite_->Update();
     if (pauseBackGameSprite_) pauseBackGameSprite_->Update();
+    if (pauseTutorialSkipSprite_) pauseTutorialSkipSprite_->Update();
     if (pauseBackTitleSprite_) pauseBackTitleSprite_->Update();
 }
 

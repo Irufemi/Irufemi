@@ -29,7 +29,10 @@ private:
     std::unique_ptr<Sprite> pauseBgDimmerSprite_ = nullptr; ///< 背景暗転（グレー）用
     std::unique_ptr<Sprite> pauseTitleSprite_ = nullptr;
     std::unique_ptr<Sprite> pauseBackGameSprite_ = nullptr;
+    std::unique_ptr<Sprite> pauseTutorialSkipSprite_ = nullptr; ///< チュートリアルスキップ用
     std::unique_ptr<Sprite> pauseBackTitleSprite_ = nullptr;
+
+    bool isTutorial_ = false; ///< 現在の裏のシーンがチュートリアルかどうか
 
     /// @brief ポーズメニューの選択コントローラー
     UISelectionGroup pauseMenuSelection_;
