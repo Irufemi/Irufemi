@@ -103,6 +103,8 @@ public:
   bool GetIsActive() const { return isActive_; }
   bool IsDead() const { return isDead_; }
   bool IsHeadDead(int index) const;
+  
+  bool IsReadyForClearTransition() const;
 
 private:
     // 各パーツ
@@ -166,11 +168,12 @@ private:
   enum class DeathPhase { None, Reassembling, Gathered, Exploding, Aftermath };
   DeathPhase deathPhase_ = DeathPhase::None;
   float deathTimer_ = 0.0f;
+  float aftermathExplosionTimer_ = 0.0f;
 
   // --- 死亡演出用調整定数（メンバー変数） ---
   static constexpr float kReassembleDuration = 4.5f;  ///< バラバラになった部位が中央で合体するまでの時間（秒）
   static constexpr float kHoldDuration = 2.0f;        ///< 合体してからボクセル爆散するまでの激しくのたうち悶えるタメ時間（秒）
-  static constexpr float kAftermathDuration = 3.5f;   ///< 爆散後の美しいボクセル飛散をカメラに収める余韻待機時間（秒） (余韻時間を延長)
+  static constexpr float kAftermathDuration = 10.0f;   ///< ホワイトアウト中も爆発し続けるための十分な長さ
 
   // 悶えのたうち（Agony）全体のサイン波パラメータ
   static constexpr float kAgonyPitchFreq = 12.0f;     ///< のたうち全体のPitch（X軸回転）振動周波数

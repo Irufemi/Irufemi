@@ -915,11 +915,21 @@ void Enemy::UpdateDebugUI() {
   ImGui::Text("Debug Enemy State");
   const char* stateNames[] = {
       "Idle", "Attack_Beam", "Attack_Stomp", "Attack_Bite",
-      "Attack_Neck", "Attack_Tackle", "Damaged", "Phase1", "Phase2"
+      "Attack_Neck", "Attack_Tackle", "Damaged", "Phase1", "Phase2", "Kill (HP=0)"
   };
   int currentStateIdx = static_cast<int>(state_);
   if (ImGui::Combo("Force State", &currentStateIdx, stateNames, IM_ARRAYSIZE(stateNames))) {
-      SetState(static_cast<EnemyState>(currentStateIdx));
+      if (currentStateIdx == 9) {
+          // 強制キル：全部位のHPを0にする
+          for (int i = 0; i < 3; ++i) {
+              if (bodies_[i]) bodies_[i]->SetHP(0);
+          }
+          if (headLeft_) headLeft_->SetHP(0);
+          if (headMid_) headMid_->SetHP(0);
+          if (headRight_) headRight_->SetHP(0);
+      } else {
+          SetState(static_cast<EnemyState>(currentStateIdx));
+      }
   }
 
   ImGui::End();
@@ -1215,10 +1225,38 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
         deathTimer_ = 0.0f;                  // 余韻用タイマーリセット
     } else if (deathPhase_ == DeathPhase::Aftermath) {
         deathTimer_ += deltaTime;
+        aftermathExplosionTimer_ += deltaTime;
+
+        // 0.15秒間隔でランダムな場所に中規模爆発を発生させる
+        if (aftermathExplosionTimer_ >= 0.15f) {
+            aftermathExplosionTimer_ = 0.0f;
+            
+            // ボスの初期位置周辺にランダムなオフセットを計算
+            float randX = (static_cast<float>(rand()) / RAND_MAX) * 40.0f - 20.0f;
+            float randY = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
+            float randZ = (static_cast<float>(rand()) / RAND_MAX) * 40.0f - 20.0f;
+            
+            Vector3 bossCenter = globalTransform_.translate;
+            Vector3 expPos = { bossCenter.x + randX, bossCenter.y + randY, bossCenter.z + randZ };
+
+            if (deathExplosionParticle_) {
+                deathExplosionParticle_->SetHemisphereEmitter(expPos, 8.0f, 0, 1.0f);
+                deathExplosionParticle_->SetVelocity(4.0f);
+                deathExplosionParticle_->SetSpread(3.0f);
+                deathExplosionParticle_->Emit(800); // メイン爆発より少なめ
+            }
+        }
 
         if (deathTimer_ >= kAftermathDuration) {
             deathPhase_ = DeathPhase::None; // もう実行しない
             isActive_ = false;              // ここでボスを非アクティブ化し、クリア画面へ遷移開始！
         }
     }
+}
+
+bool Enemy::IsReadyForClearTransition() const {
+    // 死亡演出の「Aftermath（余韻）」フェーズに入ってから一定時間経過したら
+    // （爆発を継続させたまま）ホワイトアウトなどのシーン遷移を開始する
+    // ※Voxelが爆散する（0.6秒）のち、十分に破片が飛び散るのを見せてから遷移させるため 2.5秒 に設定
+    return isDead_ && deathPhase_ == DeathPhase::Aftermath && deathTimer_ >= 2.5f;
 }
