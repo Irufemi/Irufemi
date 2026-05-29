@@ -409,12 +409,11 @@ void GameScene::Update() {
   }
 
   // シーン遷移
-  // 爆散演出を見定めてクリアにするため、「論理的に死亡（isDead_）」かつ
-  // 「演出終了して非アクティブ化（!GetIsActive()）」したときに遷移を開始する
-  if (boss_ && boss_->IsDead() && !boss_->GetIsActive()) {
+  // 爆発を続けながらホワイトアウトさせるため、専用の判定関数を使用
+  if (boss_ && boss_->IsReadyForClearTransition()) {
     if (engine_ && engine_->GetSceneManager()) {
       engine_->GetSceneManager()->TransitionTo(
-          "Clear", SceneTransition::Type::RadialBlur, 1.5f);
+          "Clear", SceneTransition::Type::RadialBlurWhite, 2.5f);
     }
   }
   if (player_ && player_->IsDeathAnimationFinished()) {
@@ -1308,4 +1307,8 @@ void GameScene::CheckFlyingBuildingsVsBuildingsCollisions() {
       }
     }
   }
+}
+
+bool GameScene::IsWhiteoutContext() const {
+    return boss_ && boss_->IsDead();
 }

@@ -36,6 +36,9 @@ public:
     bool IsCursorVisible() const override { return false; }
     void DrawDebugTab() override;
 
+    // 現在のシーンがホワイトアウト（爆散による白飛び等）の文脈にあるかを判定
+    bool IsWhiteoutContext() const;
+
     static float GetClearTime() { return clearTime_; }
 
 private:

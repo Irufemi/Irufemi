@@ -116,6 +116,14 @@ public:
         return "";
     }
 
+    /** @brief 一つ下のシーン（スタックの末尾から2番目）のポインタを取得 */
+    IScene* GetPreviousScene() const {
+        if (sceneStack_.size() >= 2) {
+            return sceneStack_[sceneStack_.size() - 2].scene.get();
+        }
+        return nullptr;
+    }
+
     /** @brief 登録済みの全シーン名を取得（登録順） */
     std::vector<Key> GetRegisteredKeys() const;
     ///@}

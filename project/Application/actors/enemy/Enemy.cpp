@@ -110,6 +110,27 @@ void Enemy::Initialize(IrufemiEngine *engine) {
   initialHeadMidLocalTransform_ = headMidLocalTransform_;
   initialHeadRightLocalTransform_ = headRightLocalTransform_;
 
+  // 撃破時特大爆発エフェクトの初期化
+  deathExplosionParticle_ = std::make_unique<GPUParticleSystem>();
+  deathExplosionParticle_->Initialize("resources/circle.png");
+  deathExplosionParticle_->SetBlend(BlendMode::kBlendModeAdd);
+  deathExplosionParticle_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  deathExplosionParticle_->SetCull(PSOManager::CullMode::None);
+  deathExplosionParticle_->SetCustomPSO("StompExplosionParticle");
+  deathExplosionParticle_->SetEmit(false);
+  
+  // 爆発の余韻（2.5秒）
+  deathExplosionParticle_->SetParticleLife(1.0f, 2.5f);
+  // 高密度で大きく広がるサイズ
+  deathExplosionParticle_->SetParticleScale({ 0.5f, 0.5f, 0.5f }, { 1.5f, 1.5f, 1.5f }, { 2.5f, 2.5f, 2.5f }, { 5.0f, 5.0f, 5.0f });
+  // 高い空気抵抗と上に昇る弱い重力
+  deathExplosionParticle_->SetDamping(0.06f);
+  deathExplosionParticle_->SetGravity(-0.2f);
+  // 炎のような色
+  deathExplosionParticle_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+  deathExplosionParticle_->SetStartColor({ 1.0f, 0.8f, 0.2f, 1.0f }, { 1.0f, 0.5f, 0.0f, 1.0f });
+  deathExplosionParticle_->SetEndColor({ 1.0f, 0.1f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f });
+
   // 警告用注意マークの初期化
   warningSprite_ = std::make_unique<Sprite>();
   warningSprite_->Initialize("resources/texture/player/tyui.png");
@@ -184,6 +205,9 @@ void Enemy::Update(Player *player) {
   }
   if (neckTrail_) {
       neckTrail_->Update();
+  }
+  if (deathExplosionParticle_) {
+      deathExplosionParticle_->Update();
   }
   for (int i = 0; i < 3; ++i) {
       if (bombs_[i] && !bombs_[i]->IsExpired()) {
@@ -587,6 +611,10 @@ void Enemy::Draw(IrufemiEngine* engine) {
         neckTrail_->SyncBeforeDraw();
         neckTrail_->Draw();
     }
+    if (deathExplosionParticle_) {
+        deathExplosionParticle_->SyncBeforeDraw();
+        deathExplosionParticle_->Draw();
+    }
 
 #ifdef USE_IMGUI
   if (lineOBB_ && isDebugDrawOBB_ && engine_) {
@@ -887,11 +915,21 @@ void Enemy::UpdateDebugUI() {
   ImGui::Text("Debug Enemy State");
   const char* stateNames[] = {
       "Idle", "Attack_Beam", "Attack_Stomp", "Attack_Bite",
-      "Attack_Neck", "Attack_Tackle", "Damaged", "Phase1", "Phase2"
+      "Attack_Neck", "Attack_Tackle", "Damaged", "Phase1", "Phase2", "Kill (HP=0)"
   };
   int currentStateIdx = static_cast<int>(state_);
   if (ImGui::Combo("Force State", &currentStateIdx, stateNames, IM_ARRAYSIZE(stateNames))) {
-      SetState(static_cast<EnemyState>(currentStateIdx));
+      if (currentStateIdx == 9) {
+          // 強制キル：全部位のHPを0にする
+          for (int i = 0; i < 3; ++i) {
+              if (bodies_[i]) bodies_[i]->SetHP(0);
+          }
+          if (headLeft_) headLeft_->SetHP(0);
+          if (headMid_) headMid_->SetHP(0);
+          if (headRight_) headRight_->SetHP(0);
+      } else {
+          SetState(static_cast<EnemyState>(currentStateIdx));
+      }
   }
 
   ImGui::End();
@@ -1114,12 +1152,33 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
         // マップ中央（ボスの親グローバル位置）
         Vector3 bossCenter = globalTransform_.translate;
 
-        // はじけ飛ぶのと同時に、スタンプのGPUParticleSystemを呼び出して超高密度大爆発を発生させる！
-        if (stompEffects_) {
-            stompEffects_->FireDeathExplosion(bossCenter);
+        // はじけ飛ぶのと同時に、専用のエフェクトで超高密度大爆発を発生させる！
+        // （これが「くっつくのに失敗して大爆発した」という演出のメイン爆発）
+        if (deathExplosionParticle_) {
+            const float kBurstRadius = 20.0f; 
+            const float kVelocity = 6.5f;
+            const float kSpread = 3.5f;
+            const int kEmitCount = 15000;
+
+            deathExplosionParticle_->SetHemisphereEmitter(
+                Vector3{ bossCenter.x, bossCenter.y + 1.0f, bossCenter.z },
+                kBurstRadius,
+                0,
+                1.0f
+            );
+            deathExplosionParticle_->SetVelocity(kVelocity);
+            deathExplosionParticle_->SetSpread(kSpread);
+            deathExplosionParticle_->Emit(kEmitCount);
+            
+            // 爆発の迫力を出すためのカメラシェイク
+            if (engine_) {
+                if (auto* cam = engine_->GetCameraManager()->GetActiveCamera()) {
+                    cam->Shake(15.0f, 20);
+                }
+            }
         }
 
-        // 1. 胴体3つを均等な3方向（120度間隔）へ勢いよく飛ばす（0.5秒後に飛行先で爆散）
+        // 1. 胴体3つを均等な3方向（120度間隔）へ勢いよく飛ばす（波及を表現するため0.6秒後に爆散）
         for (int i = 0; i < 3; ++i) {
             if (bodies_[i]) {
                 // ボスの現在の rotate.y を基準に120度ずつ綺麗にずらした水平吹き飛び方向を算出
@@ -1127,12 +1186,12 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
                 Vector3 dir = { std::sin(angle), 0.8f, std::cos(angle) };
                 dir = Math::Normalize(dir);
                 
-                // 消滅時間を 0.5 秒に指定して吹き飛ばし開始
-                bodies_[i]->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.5f);
+                // 消滅時間を 0.6 秒に指定して吹き飛ばし開始
+                bodies_[i]->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.6f);
             }
         }
 
-        // 2. 首（頭部3つ）を元の配置（左・中央・右）に応じてそれぞればらばらの方向へ飛ばす（0.5秒後に飛行先で爆散）
+        // 2. 首（頭部3つ）を元の配置（左・中央・右）に応じてそれぞればらばらの方向へ飛ばす（波及を表現するため0.6秒後に爆散）
         auto explodeHeadRadial = [&](auto* part, const Transform& localT) {
             if (part) {
                 // パーツのワールド位置を計算
@@ -1153,8 +1212,8 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
                 dir.y = 0.8f;
                 dir = Math::Normalize(dir);
 
-                // 消滅時間を 0.5 秒に指定して吹き飛ばし開始
-                part->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.5f);
+                // 消滅時間を 0.6 秒に指定して吹き飛ばし開始
+                part->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.6f);
             }
         };
 
@@ -1165,21 +1224,26 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
         deathPhase_ = DeathPhase::Aftermath; // 余韻フェーズへ移行
         deathTimer_ = 0.0f;                  // 余韻用タイマーリセット
     } else if (deathPhase_ == DeathPhase::Aftermath) {
-        float prevTimer = deathTimer_;
         deathTimer_ += deltaTime;
+        aftermathExplosionTimer_ += deltaTime;
 
-        // パーツが空中で爆散するタイミング(0.5秒後)に合わせて、中心位置からGPUParticleの大爆発を追い討ちで発生させる
-        const float kSecondaryExplosionTime = 0.5f;
-        if (prevTimer < kSecondaryExplosionTime && deathTimer_ >= kSecondaryExplosionTime) {
-            if (stompEffects_) {
-                stompEffects_->FireDeathExplosion(globalTransform_.translate);
-                
-                // より迫力を出すためのカメラシェイク
-                if (engine_) {
-                    if (auto* cam = engine_->GetCameraManager()->GetActiveCamera()) {
-                        cam->Shake(15.0f, 20);
-                    }
-                }
+        // 0.15秒間隔でランダムな場所に中規模爆発を発生させる
+        if (aftermathExplosionTimer_ >= 0.15f) {
+            aftermathExplosionTimer_ = 0.0f;
+            
+            // ボスの初期位置周辺にランダムなオフセットを計算
+            float randX = (static_cast<float>(rand()) / RAND_MAX) * 40.0f - 20.0f;
+            float randY = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
+            float randZ = (static_cast<float>(rand()) / RAND_MAX) * 40.0f - 20.0f;
+            
+            Vector3 bossCenter = globalTransform_.translate;
+            Vector3 expPos = { bossCenter.x + randX, bossCenter.y + randY, bossCenter.z + randZ };
+
+            if (deathExplosionParticle_) {
+                deathExplosionParticle_->SetHemisphereEmitter(expPos, 8.0f, 0, 1.0f);
+                deathExplosionParticle_->SetVelocity(4.0f);
+                deathExplosionParticle_->SetSpread(3.0f);
+                deathExplosionParticle_->Emit(800); // メイン爆発より少なめ
             }
         }
 
@@ -1188,4 +1252,11 @@ void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
             isActive_ = false;              // ここでボスを非アクティブ化し、クリア画面へ遷移開始！
         }
     }
+}
+
+bool Enemy::IsReadyForClearTransition() const {
+    // 死亡演出の「Aftermath（余韻）」フェーズに入ってから一定時間経過したら
+    // （爆発を継続させたまま）ホワイトアウトなどのシーン遷移を開始する
+    // ※Voxelが爆散する（0.6秒）のち、十分に破片が飛び散るのを見せてから遷移させるため 2.5秒 に設定
+    return isDead_ && deathPhase_ == DeathPhase::Aftermath && deathTimer_ >= 2.5f;
 }

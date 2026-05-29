@@ -20,6 +20,9 @@ void SceneTransition::Start(Type type, float duration, bool isOut) {
     }
     activeTransitionModes_.clear();
 
+    // 基本は黒フェードにリセットしておく（白フェード等で上書きされた色が残るのを防ぐため）
+    ppManager_->GetFadeParams().color = {0.0f, 0.0f, 0.0f, 1.0f};
+
     switch (currentType_) {
     case Type::Fade:
         ppManager_->AddActiveMode(PostProcessMode::Fade);
@@ -39,6 +42,15 @@ void SceneTransition::Start(Type type, float duration, bool isOut) {
         ppManager_->AddActiveMode(PostProcessMode::Fade);
         activeTransitionModes_.push_back(PostProcessMode::RadialBlur);
         activeTransitionModes_.push_back(PostProcessMode::Fade);
+        ppManager_->GetFadeParams().color = {0.0f, 0.0f, 0.0f, 1.0f}; // 黒
+        break;
+    case Type::RadialBlurWhite:
+        // 放射状ブラーとフェード(白)を併用
+        ppManager_->AddActiveMode(PostProcessMode::RadialBlur);
+        ppManager_->AddActiveMode(PostProcessMode::Fade);
+        activeTransitionModes_.push_back(PostProcessMode::RadialBlur);
+        activeTransitionModes_.push_back(PostProcessMode::Fade);
+        ppManager_->GetFadeParams().color = {1.0f, 1.0f, 1.0f, 1.0f}; // 白
         break;
     }
 }
@@ -83,6 +95,7 @@ void SceneTransition::Update(float deltaTime) {
         ppManager_->GetSlideParams().threshold = factor * 1.05f;
         break;
     case Type::RadialBlur:
+    case Type::RadialBlurWhite:
         ppManager_->GetRadialBlurParams().blurWidth = factor * 0.05f;
         ppManager_->GetFadeParams().intensity = factor;
         break;
