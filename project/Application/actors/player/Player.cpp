@@ -1560,7 +1560,7 @@ void Player::HandleAttack() {
 
     switch (attackState_) {
     case AttackState::kNone:
-        if (input_->IsMouseButtonPressed(Mouse::Button::Left)) {
+        if (allowMelee_ && input_->IsMouseButtonPressed(Mouse::Button::Left)) {
             attackState_ = AttackState::kCharging;
             chargeTimer_ = 0;
 
@@ -1719,7 +1719,7 @@ void Player::HandleSkill() {
         karakuriChargeTimer_ = 0;
     } else {
         // 通常時（非強化状態）：Eキー長押しでチャージを溜める
-        if (input_->IsKeyDown('E')) {
+      if (allowKarakuriCharge_ && input_->IsKeyDown('E')) {
             if (karakuriChargeTimer_ == 0) {
                 if (seKarakuri_) seKarakuri_->Play(true);
                 zenmaiRewinding_ = false; // チャージ再開時は巻き戻しフラグを解除
@@ -1776,7 +1776,7 @@ void Player::HandleSkill() {
 
     if (!cameraController_.IsCameraControlEnabled()) return;
 
-    if (input_->IsMouseButtonPressed(Mouse::Button::Right)) {
+    if (allowGunOrMissile_ && input_->IsMouseButtonPressed(Mouse::Button::Right)) {
         if (!isKarakuriCharged_) {
             // ========== 機関銃スキル（クールダウンなし・弾薬ベース） ==========
             if (weapon_.IsMachineGunFiring()) {

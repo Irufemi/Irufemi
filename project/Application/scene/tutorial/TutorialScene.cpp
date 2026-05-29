@@ -45,13 +45,14 @@ namespace {
             case TutorialPhase::KarakuriCharge: return 4;
             case TutorialPhase::EnhancedDodge:  return 5;
             case TutorialPhase::MissileAttack:  return 6;
+            case TutorialPhase::MissileFiredPause: return 6;
             case TutorialPhase::MissileHitFocus: return 6;
-            case TutorialPhase::BuildingSpawnFocus: return 7; // tutorial_8.png
+            case TutorialPhase::BuildingSpawnFocus: return 7;
             case TutorialPhase::BuildingReadyFocus: return 7;
             case TutorialPhase::BuildingAttack: return 7;
-            case TutorialPhase::BuildingHitFocus: return 7; // tutorial_8.png
-            case TutorialPhase::PartsExplanation: return 8; // tutorial_9.png
-            case TutorialPhase::ViewSwitch: return 9;       // tutorial_10.png
+            case TutorialPhase::BuildingHitFocus: return 7;
+            case TutorialPhase::PartsExplanation: return 8;
+            case TutorialPhase::ViewSwitch: return 9;
             default: return -1;
         }
     }
@@ -152,6 +153,26 @@ void TutorialScene::Update() {
 
     UpdateTutorialState();
 
+    // フェーズに応じてプレイヤーの操作を制限する
+    if (player_) {
+        bool allowDodge       = currentPhase_ >= TutorialPhase::Dodge;
+        bool allowMelee       = currentPhase_ >= TutorialPhase::MeleeAttack;
+        // 右クリック（銃/ミサイル）: GunAttackで解禁 → KarakuriCharge/EnhancedDodgeで再封印 → MissileAttackで再解禁
+        bool allowGunOrMissile = (currentPhase_ == TutorialPhase::GunAttack) ||
+                                 (currentPhase_ >= TutorialPhase::MissileAttack);
+        bool allowKarakuri    = currentPhase_ >= TutorialPhase::KarakuriCharge;
+        bool allowViewSwitch  = currentPhase_ >= TutorialPhase::ViewSwitch;
+
+        player_->SetAllowDodge(allowDodge);
+        player_->SetAllowMelee(allowMelee);
+        player_->SetAllowGunOrMissile(allowGunOrMissile);
+        player_->SetAllowKarakuriCharge(allowKarakuri);
+        player_->SetAllowViewSwitch(allowViewSwitch);
+    }
+
+    // MissileFiredPause: 0.0s~0.5s=通常（発射を見せる）、0.5s~0.8s=凍結（カメラ切替）、1.0s~=再開
+    bool freezeGameplay = (currentPhase_ == TutorialPhase::MissileFiredPause && cinematicTimer_ >= 0.5f && cinematicTimer_ < 0.7f);
+
     if (player_) {
         if (boss_) {
             Vector3 bossPos = boss_->GetTargetPosition();
@@ -173,14 +194,18 @@ void TutorialScene::Update() {
             }
             player_->SetIsTargetingEnemy(inScreen);
         }
-        player_->Update();
+        if (!freezeGameplay) {
+            player_->Update();
+        }
     }
 
-    if (boss_) {
+    if (boss_ && !freezeGameplay) {
         boss_->Update(player_.get());
     }
 
-    CheckAllCollisions();
+    if (!freezeGameplay) {
+        CheckAllCollisions();
+    }
 
     if (field_) {
         field_->Update();
@@ -194,7 +219,7 @@ void TutorialScene::Update() {
     // カメラの演出（BaseScene::Updateの前に更新する）
     Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
     if (activeCamera) {
-        if (currentPhase_ == TutorialPhase::MissileHitFocus) {
+        if ((currentPhase_ == TutorialPhase::MissileFiredPause && cinematicTimer_ >= 0.5f) || currentPhase_ == TutorialPhase::MissileHitFocus) {
             if (boss_) {
                 // ボスからかなり離れて見下ろすめっちゃ引きのカメラ
                 Vector3 bossPos = boss_->GetTargetPosition();
@@ -337,7 +362,10 @@ void TutorialScene::Draw() {
     if (boss_) boss_->Draw(engine_);
     if (player_) player_->DrawParticles();
 
-    if (player_) {
+    bool hidePlayerUI = (player_ && player_->IsCinematicMode()) ||
+                        currentPhase_ == TutorialPhase::MissileFiredPause ||
+                        currentPhase_ == TutorialPhase::MissileHitFocus;
+    if (player_ && !hidePlayerUI) {
         player_->Draw2DUI(boss_.get());
         bool isPaused = (engine_->GetSceneManager()->GetCurrent() == "Pause");
         player_->Draw3DUI(boss_.get(), true, isPaused);
@@ -435,10 +463,34 @@ void TutorialScene::UpdateTutorialState() {
         break;
 
     case TutorialPhase::MissileAttack:
+        // ミサイルが発射されたか検出する
+        if (player_) {
+            MissileData* missiles = player_->GetMissiles();
+            bool hasMissileActive = false;
+            for (int i = 0; i < Player::GetMaxMissiles(); ++i) {
+                if (missiles[i].isActive) {
+                    hasMissileActive = true;
+                    break;
+                }
+            }
+            if (hasMissileActive) {
+                currentPhase_ = TutorialPhase::MissileFiredPause;
+                cinematicTimer_ = 0.0f;
+                // 最初の0.5秒は発射シーンを見せるのでcinematicModeはまだ設定しない
+            }
+        }
+        break;
+
+    case TutorialPhase::MissileFiredPause:
+        cinematicTimer_ += engine_->GetDeltaTime();
+        // 0.5秒経過でシネマティックモード（カメラ切替＋操作停止）
+        if (cinematicTimer_ >= 0.5f && player_ && !player_->IsCinematicMode()) {
+            player_->SetCinematicMode(true);
+        }
+        // 着弾したら次のフェーズへ
         if (hasHitMissile_) {
             currentPhase_ = TutorialPhase::MissileHitFocus;
             cinematicTimer_ = 0.0f;
-            if (player_) player_->SetCinematicMode(true);
         }
         break;
 

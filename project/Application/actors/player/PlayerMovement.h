@@ -44,7 +44,11 @@ public:
 
     void ResetDodgeCooldown() { dodgeCooldownTimer_ = 0; }
 
+    // チュートリアル用：回避の許可フラグ
+    void SetAllowDodge(bool allow) { allowDodge_ = allow; }
+
 private:
+    bool allowDodge_ = true;
     // --- 移動・ジャンプ関連変数 ---
     Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
     bool isGrounded_ = true;

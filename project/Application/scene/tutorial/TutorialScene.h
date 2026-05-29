@@ -24,6 +24,7 @@ enum class TutorialPhase {
     KarakuriCharge,
     EnhancedDodge,
     MissileAttack,
+    MissileFiredPause,    // ミサイル発射後の一時停止＋カメラ切り替え
     MissileHitFocus,      // ミサイル着弾後の引きカメラ
     BuildingSpawnFocus,
     BuildingReadyFocus,   // ビル生成完了後の少し引きカメラ（SPACE待ち）

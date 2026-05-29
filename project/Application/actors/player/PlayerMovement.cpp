@@ -69,7 +69,7 @@ void PlayerMovement::Update(InputManager* input, bool isCharging, bool isKarakur
 
     if (isGrounded_) {
         // Spaceキーの処理を、からくりチャージ中かどうかに関わらず回避にする
-        if (!isCharging && input->IsKeyPressed(VK_SPACE)) {
+        if (!isCharging && allowDodge_ && input->IsKeyPressed(VK_SPACE)) {
             // 回避アクション
             if (dodgeCooldownTimer_ <= 0) {
                 if (seAvoidance_) seAvoidance_->Play();
