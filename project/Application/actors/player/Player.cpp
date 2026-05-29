@@ -202,6 +202,7 @@ void Player::Update() {
     if (status_.IsDead()) {
         // ★追加: 死亡時は強制的に三人称視点に戻し、UIなどの表示を切り替える
         cameraController_.ForceThirdPerson();
+        cooldownWarningTimer_ = 0; // クールタイム警告を即座に非表示にする
 
         // HPが0になってから3秒間（180フレーム）は演出を待機する
         if (deathWaitTimer_ < kDeathWaitTime) {
@@ -1524,7 +1525,11 @@ bool Player::ApplyDamage(int damage) {
         finalDamage *= 2;
     }
 
-    return status_.ApplyDamage(finalDamage, false, engine_);
+    bool result = status_.ApplyDamage(finalDamage, false, engine_);
+    if (status_.IsDead()) {
+        cooldownWarningTimer_ = 0; // 死亡決定の瞬間にリセット
+    }
+    return result;
 }
 
 void Player::HandleMovement() {

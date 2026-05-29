@@ -455,8 +455,8 @@ void GameScene::Draw() {
   if (player_)
     player_->DrawParticles();
 
-  // ★撃破演出中（ボス死亡時）はUIをすべて非表示にする
-  bool isUIHidden = (boss_ && boss_->IsDead());
+  // ★撃破演出中（ボス死亡時）またはプレイヤー死亡演出中はUIをすべて非表示にする
+  bool isUIHidden = (boss_ && boss_->IsDead()) || (player_ && player_->IsDead());
 
   // --- HPバーUI描画（スプライト：マスクやエイム） ---
   if (player_ && !isUIHidden) {
