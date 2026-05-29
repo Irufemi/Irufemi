@@ -42,7 +42,12 @@ public:
     float* GetMouseSensitivityMultiplierPtr() { return &mouseSensitivityMultiplier_; }
     bool* GetCameraControlEnabledPtr() { return &isCameraControlEnabled_; }
 
+    // チュートリアル用：視点切り替えの許可フラグ
+    void SetAllowViewSwitch(bool allow) { allowViewSwitch_ = allow; }
+
 private:
+
+    bool allowViewSwitch_ = true;
 
 
     float mouseSensitivity_ = 5.0f;

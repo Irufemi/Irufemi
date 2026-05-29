@@ -72,9 +72,9 @@ void Texture::Initialize(const std::string& filePath) {
             srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
         }
 
-        // SRV上書き (コンストラクタで確保済みの textureSrvHandleCPU_ を使用)
+        // SRV上書き (データ競合を防ぐため、メインスレッドの安全なタイミングで更新するようキューに積む)
         if (textureSrvHandleCPU_.ptr != 0) {
-            dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
+            dxCommon_->EnqueueSRVUpdate(textureResource_, srvDesc, textureSrvHandleCPU_);
         }
 
         status_.store(LoadingStatus::Loaded);
@@ -114,7 +114,7 @@ void Texture::InitializeFromMemory(const std::string& name, const uint32_t* pixe
 
         // SRV上書き
         if (textureSrvHandleCPU_.ptr != 0) {
-            dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
+            dxCommon_->EnqueueSRVUpdate(textureResource_, srvDesc, textureSrvHandleCPU_);
         }
 
         status_.store(LoadingStatus::Loaded);
@@ -158,7 +158,7 @@ void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* 
 
         // SRV上書き
         if (textureSrvHandleCPU_.ptr != 0) {
-            dxCommon_->GetDevice()->CreateShaderResourceView(textureResource_.Get(), &srvDesc, textureSrvHandleCPU_);
+            dxCommon_->EnqueueSRVUpdate(textureResource_, srvDesc, textureSrvHandleCPU_);
         }
 
         isCubemap_ = true;

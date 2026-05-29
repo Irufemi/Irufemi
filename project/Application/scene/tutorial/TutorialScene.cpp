@@ -35,6 +35,27 @@
 
 namespace {
     const Vector3 kDefaultCameraPos = {0.0f, 0.0f, -10.0f};
+
+    int GetTutorialUIIndex(TutorialPhase phase) {
+        switch (phase) {
+            case TutorialPhase::MoveWASD:       return 0;
+            case TutorialPhase::Dodge:          return 1;
+            case TutorialPhase::MeleeAttack:    return 2;
+            case TutorialPhase::GunAttack:      return 3;
+            case TutorialPhase::KarakuriCharge: return 4;
+            case TutorialPhase::EnhancedDodge:  return 5;
+            case TutorialPhase::MissileAttack:  return 6;
+            case TutorialPhase::MissileFiredPause: return 6;
+            case TutorialPhase::MissileHitFocus: return 6;
+            case TutorialPhase::BuildingSpawnFocus: return 7;
+            case TutorialPhase::BuildingReadyFocus: return 7;
+            case TutorialPhase::BuildingAttack: return 7;
+            case TutorialPhase::BuildingHitFocus: return 7;
+            case TutorialPhase::PartsExplanation: return 8;
+            case TutorialPhase::ViewSwitch: return 9;
+            default: return -1;
+        }
+    }
 }
 
 TutorialScene::TutorialScene() {}
@@ -99,7 +120,7 @@ void TutorialScene::Initialize(IrufemiEngine* engine) {
     initKey(keySSprite_, "S", centerX, baseY + 70.0f);
     initKey(keyDSprite_, "D", centerX + 70.0f, baseY + 70.0f);
 
-    // SPACEキーの初期化 (少し下に配置)
+    // SPACEキーの初期化 (元に戻す)
     auto initSpaceKey = [](std::unique_ptr<Sprite>& sprite, float x, float y) {
         sprite = std::make_unique<Sprite>();
         sprite->Initialize("resources/texture/inGame/key_SPACE.png");
@@ -132,6 +153,26 @@ void TutorialScene::Update() {
 
     UpdateTutorialState();
 
+    // フェーズに応じてプレイヤーの操作を制限する
+    if (player_) {
+        bool allowDodge       = currentPhase_ >= TutorialPhase::Dodge;
+        bool allowMelee       = currentPhase_ >= TutorialPhase::MeleeAttack;
+        // 右クリック（銃/ミサイル）: GunAttackで解禁 → KarakuriCharge/EnhancedDodgeで再封印 → MissileAttackで再解禁
+        bool allowGunOrMissile = (currentPhase_ == TutorialPhase::GunAttack) ||
+                                 (currentPhase_ >= TutorialPhase::MissileAttack);
+        bool allowKarakuri    = currentPhase_ >= TutorialPhase::KarakuriCharge;
+        bool allowViewSwitch  = currentPhase_ >= TutorialPhase::ViewSwitch;
+
+        player_->SetAllowDodge(allowDodge);
+        player_->SetAllowMelee(allowMelee);
+        player_->SetAllowGunOrMissile(allowGunOrMissile);
+        player_->SetAllowKarakuriCharge(allowKarakuri);
+        player_->SetAllowViewSwitch(allowViewSwitch);
+    }
+
+    // MissileFiredPause: 0.0s~0.5s=通常（発射を見せる）、0.5s~0.8s=凍結（カメラ切替）、1.0s~=再開
+    bool freezeGameplay = (currentPhase_ == TutorialPhase::MissileFiredPause && cinematicTimer_ >= 0.5f && cinematicTimer_ < 0.7f);
+
     if (player_) {
         if (boss_) {
             Vector3 bossPos = boss_->GetTargetPosition();
@@ -153,14 +194,18 @@ void TutorialScene::Update() {
             }
             player_->SetIsTargetingEnemy(inScreen);
         }
-        player_->Update();
+        if (!freezeGameplay) {
+            player_->Update();
+        }
     }
 
-    if (boss_) {
+    if (boss_ && !freezeGameplay) {
         boss_->Update(player_.get());
     }
 
-    CheckAllCollisions();
+    if (!freezeGameplay) {
+        CheckAllCollisions();
+    }
 
     if (field_) {
         field_->Update();
@@ -171,13 +216,124 @@ void TutorialScene::Update() {
         dynamicArenaLight_->Update(player_->GetTranslate(), boss_->GetTargetPosition());
     }
 
+    // カメラの演出（BaseScene::Updateの前に更新する）
+    Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
+    if (activeCamera) {
+        if ((currentPhase_ == TutorialPhase::MissileFiredPause && cinematicTimer_ >= 0.5f) || currentPhase_ == TutorialPhase::MissileHitFocus) {
+            if (boss_) {
+                // ボスからかなり離れて見下ろすめっちゃ引きのカメラ
+                Vector3 bossPos = boss_->GetTargetPosition();
+                Vector3 camPos = bossPos;
+                camPos.y += 30.0f;
+                camPos.z -= 80.0f; // 手前に引く
+                
+                activeCamera->SetTranslate(camPos);
+                
+                Vector3 diff = {
+                    bossPos.x - camPos.x,
+                    bossPos.y - camPos.y,
+                    bossPos.z - camPos.z
+                };
+                float xzLen = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+                float pitch = -std::atan2(diff.y, xzLen);
+                float yaw = std::atan2(diff.x, diff.z);
+                
+                activeCamera->SetRotate({ pitch, yaw, 0.0f });
+                activeCamera->UpdateMatrix();
+            }
+        }
+        else if (currentPhase_ == TutorialPhase::BuildingSpawnFocus) {
+            if (field_ && field_->GetBuilding()) {
+                Vector3 actualBuildingPos = field_->GetBuilding()->GetBuildingPosition(0);
+                
+                // ビルの根本近くにカメラを置く
+                Vector3 camPos = spawnedBuildingPos_;
+                camPos.y += 5.0f;  // 地上少し上
+                camPos.z -= 25.0f; // ビルの手前
+                camPos.x += 15.0f; // 少し横から
+                
+                activeCamera->SetTranslate(camPos);
+                
+                // ビルの中心付近を見上げる
+                Vector3 targetPos = actualBuildingPos;
+                targetPos.y += 15.0f;
+                
+                Vector3 diff = {
+                    targetPos.x - camPos.x,
+                    targetPos.y - camPos.y,
+                    targetPos.z - camPos.z
+                };
+                
+                float xzLen = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+                float pitch = -std::atan2(diff.y, xzLen);
+                float yaw = std::atan2(diff.x, diff.z);
+                
+                activeCamera->SetRotate({ pitch, yaw, 0.0f });
+                activeCamera->UpdateMatrix();
+            }
+        }
+        else if (currentPhase_ == TutorialPhase::BuildingReadyFocus) {
+            if (boss_) {
+                // ビルとボスが映る少し引きのカメラ
+                Vector3 bossPos = boss_->GetTargetPosition();
+                Vector3 camPos = spawnedBuildingPos_; // ビルの位置を基準に引く
+                camPos.y += 20.0f;
+                camPos.z -= 60.0f;
+                camPos.x -= 40.0f; // もっと左側に（-10.0fから-40.0fへ変更）
+                
+                activeCamera->SetTranslate(camPos);
+                
+                // ボスとビルの真ん中あたりを見る
+                Vector3 targetPos = bossPos;
+                targetPos.y += 10.0f;
+                
+                Vector3 diff = {
+                    targetPos.x - camPos.x,
+                    targetPos.y - camPos.y,
+                    targetPos.z - camPos.z
+                };
+                float xzLen = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+                float pitch = -std::atan2(diff.y, xzLen);
+                float yaw = std::atan2(diff.x, diff.z);
+                
+                activeCamera->SetRotate({ pitch, yaw, 0.0f });
+                activeCamera->UpdateMatrix();
+            }
+        }
+        else if (currentPhase_ == TutorialPhase::BuildingHitFocus) {
+            if (boss_) {
+                // ビルがボスに当たる様子を映す引きカメラ
+                Vector3 bossPos = boss_->GetTargetPosition();
+                Vector3 camPos = bossPos;
+                camPos.y += 25.0f;
+                camPos.z -= 70.0f;
+                camPos.x += 10.0f;
+                
+                activeCamera->SetTranslate(camPos);
+                
+                Vector3 diff = {
+                    bossPos.x - camPos.x,
+                    bossPos.y - camPos.y,
+                    bossPos.z - camPos.z
+                };
+                float xzLen = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+                float pitch = -std::atan2(diff.y, xzLen);
+                float yaw = std::atan2(diff.x, diff.z);
+                
+                activeCamera->SetRotate({ pitch, yaw, 0.0f });
+                activeCamera->UpdateMatrix();
+            }
+        }
+    }
+
     BaseScene::Update();
     engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
 
-    int phaseIndex = static_cast<int>(currentPhase_);
-    if (phaseIndex >= 0 && phaseIndex < 10) {
-        if (tutorialUISprites_[phaseIndex]) {
-            tutorialUISprites_[phaseIndex]->Update();
+    int uiIndex = GetTutorialUIIndex(currentPhase_);
+
+    if (uiIndex >= 0 && uiIndex < 10) {
+        if (tutorialUISprites_[uiIndex]) {
+            tutorialUISprites_[uiIndex]->Update();
         }
     }
 
@@ -190,7 +346,7 @@ void TutorialScene::Update() {
     }
 
     // SPACEキーの更新
-    if (currentPhase_ == TutorialPhase::PartsExplanation || currentPhase_ == TutorialPhase::ViewSwitch) {
+    if (currentPhase_ == TutorialPhase::BuildingReadyFocus || currentPhase_ == TutorialPhase::PartsExplanation || currentPhase_ == TutorialPhase::ViewSwitch) {
         if (keySpaceSprite_) keySpaceSprite_->Update();
     }
 
@@ -206,16 +362,19 @@ void TutorialScene::Draw() {
     if (boss_) boss_->Draw(engine_);
     if (player_) player_->DrawParticles();
 
-    if (player_) {
+    bool hidePlayerUI = (player_ && player_->IsCinematicMode()) ||
+                        currentPhase_ == TutorialPhase::MissileFiredPause ||
+                        currentPhase_ == TutorialPhase::MissileHitFocus;
+    if (player_ && !hidePlayerUI) {
         player_->Draw2DUI(boss_.get());
         bool isPaused = (engine_->GetSceneManager()->GetCurrent() == "Pause");
         player_->Draw3DUI(boss_.get(), true, isPaused);
     }
 
-    int phaseIndex = static_cast<int>(currentPhase_);
-    if (phaseIndex >= 0 && phaseIndex < 10) {
-        if (tutorialUISprites_[phaseIndex]) {
-            tutorialUISprites_[phaseIndex]->Draw();
+    int uiIndex = GetTutorialUIIndex(currentPhase_);
+    if (uiIndex >= 0 && uiIndex < 10) {
+        if (tutorialUISprites_[uiIndex]) {
+            tutorialUISprites_[uiIndex]->Draw();
         }
     }
 
@@ -228,7 +387,7 @@ void TutorialScene::Draw() {
     }
 
     // SPACEキーの描画
-    if (currentPhase_ == TutorialPhase::PartsExplanation || currentPhase_ == TutorialPhase::ViewSwitch) {
+    if (currentPhase_ == TutorialPhase::BuildingReadyFocus || currentPhase_ == TutorialPhase::PartsExplanation || currentPhase_ == TutorialPhase::ViewSwitch) {
         if (keySpaceSprite_) keySpaceSprite_->Draw();
     }
 
@@ -304,21 +463,78 @@ void TutorialScene::UpdateTutorialState() {
         break;
 
     case TutorialPhase::MissileAttack:
+        // ミサイルが発射されたか検出する
+        if (player_) {
+            MissileData* missiles = player_->GetMissiles();
+            bool hasMissileActive = false;
+            for (int i = 0; i < Player::GetMaxMissiles(); ++i) {
+                if (missiles[i].isActive) {
+                    hasMissileActive = true;
+                    break;
+                }
+            }
+            if (hasMissileActive) {
+                currentPhase_ = TutorialPhase::MissileFiredPause;
+                cinematicTimer_ = 0.0f;
+                // 最初の0.5秒は発射シーンを見せるのでcinematicModeはまだ設定しない
+            }
+        }
+        break;
+
+    case TutorialPhase::MissileFiredPause:
+        cinematicTimer_ += engine_->GetDeltaTime();
+        // 0.5秒経過でシネマティックモード（カメラ切替＋操作停止）
+        if (cinematicTimer_ >= 0.5f && player_ && !player_->IsCinematicMode()) {
+            player_->SetCinematicMode(true);
+        }
+        // 着弾したら次のフェーズへ
         if (hasHitMissile_) {
-            currentPhase_ = TutorialPhase::BuildingAttack;
+            currentPhase_ = TutorialPhase::MissileHitFocus;
+            cinematicTimer_ = 0.0f;
+        }
+        break;
+
+    case TutorialPhase::MissileHitFocus:
+        cinematicTimer_ += engine_->GetDeltaTime();
+        if (cinematicTimer_ > 3.0f) {
+            currentPhase_ = TutorialPhase::BuildingSpawnFocus;
             if (field_ && field_->GetBuilding()) {
                 // 建物を一つだけボスの少し遠くに配置する
                 Vector3 bossPos = boss_->GetTargetPosition();
                 bossPos.z -= 60.0f; // ボスから大きく離す（手前に）
                 bossPos.x += 20.0f; // 横にずらす
                 field_->GetBuilding()->ClearAndAddSingleBuilding(bossPos);
+                spawnedBuildingPos_ = bossPos;
             }
+        }
+        break;
+
+    case TutorialPhase::BuildingSpawnFocus:
+        if (field_ && field_->GetBuilding()) {
+            if (!field_->GetBuilding()->IsBuildingSpawning(0)) {
+                currentPhase_ = TutorialPhase::BuildingReadyFocus;
+                cinematicTimer_ = 0.0f;
+            } else {
+                if (player_) player_->SetCinematicMode(true);
+            }
+        } else {
+            currentPhase_ = TutorialPhase::BuildingReadyFocus;
+        }
+        break;
+
+    case TutorialPhase::BuildingReadyFocus:
+        if (keySpaceSprite_) keySpaceSprite_->SetColor(input->IsKeyDownDIK(DIK_SPACE) ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.3f, 0.3f, 0.3f, 1.0f});
+        if (input->IsKeyReleasedDIK(DIK_SPACE)) {
+            currentPhase_ = TutorialPhase::BuildingAttack;
+            if (player_) player_->SetCinematicMode(false);
         }
         break;
 
     case TutorialPhase::BuildingAttack:
         if (hasBuildingHitEnemy_) {
-            currentPhase_ = TutorialPhase::PartsExplanation;
+            currentPhase_ = TutorialPhase::BuildingHitFocus;
+            cinematicTimer_ = 0.0f;
+            if (player_) player_->SetCinematicMode(true);
         } else if (field_ && field_->GetBuilding()) {
             // 建物が消滅してしまって敵に当たっていない場合は再生成する
             if (field_->GetBuilding()->GetBuildingCount() > 0 && 
@@ -328,6 +544,14 @@ void TutorialScene::UpdateTutorialState() {
                 bossPos.x += 20.0f;
                 field_->GetBuilding()->ClearAndAddSingleBuilding(bossPos);
             }
+        }
+        break;
+
+    case TutorialPhase::BuildingHitFocus:
+        cinematicTimer_ += engine_->GetDeltaTime();
+        if (cinematicTimer_ > 3.0f) {
+            currentPhase_ = TutorialPhase::PartsExplanation;
+            if (player_) player_->SetCinematicMode(false);
         }
         break;
 

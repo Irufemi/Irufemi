@@ -85,6 +85,13 @@ public:
     }
     void ResetDodgeCooldown() { movement_.ResetDodgeCooldown(); }
 
+    // チュートリアル用アクション制限
+    void SetAllowDodge(bool allow) { movement_.SetAllowDodge(allow); }
+    void SetAllowMelee(bool allow) { allowMelee_ = allow; }
+    void SetAllowGunOrMissile(bool allow) { allowGunOrMissile_ = allow; }
+    void SetAllowKarakuriCharge(bool allow) { allowKarakuriCharge_ = allow; }
+    void SetAllowViewSwitch(bool allow) { cameraController_.SetAllowViewSwitch(allow); }
+
     void HitAndKnockback(Enemy* enemy);
 
     void OnMeleeHit();
@@ -128,6 +135,11 @@ private:
     std::unique_ptr<Sprite> aimingSprite_ = nullptr;
     bool isTargetingEnemy_ = false;
     bool isCinematicMode_ = false;
+
+    // チュートリアル用アクション制限フラグ
+    bool allowMelee_ = true;
+    bool allowGunOrMissile_ = true;
+    bool allowKarakuriCharge_ = true;
 
     int skillDurationTimer_ = 0;
     int skillCooldownTimer_ = 0;

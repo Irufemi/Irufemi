@@ -601,7 +601,9 @@ void Player::Update() {
     ImGui::End();
 #endif
 
-    cameraController_.UpdateInput(input_, rotate_);
+    if (!isCinematicMode_) {
+        cameraController_.UpdateInput(input_, rotate_);
+    }
 
     // シネマティック中（死亡演出中）は常にボスの現在位置を注視するように変更
     if (!isTargetingEnemy_ && !isCinematicMode_) {
@@ -646,7 +648,11 @@ void Player::Update() {
     }
 
     weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, scale_, isKarakuriCharged_);
-    cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
+    
+    // シネマティック中（演出中）はプレイヤー追従カメラの更新を止め、シーン側でのカメラ制御に完全に委ねる
+    if (!isCinematicMode_) {
+        cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
+    }
     status_.UpdateKnockback();
 
     if (cameraController_.IsFirstPerson()) {
@@ -1559,7 +1565,7 @@ void Player::HandleAttack() {
 
     switch (attackState_) {
     case AttackState::kNone:
-        if (input_->IsMouseButtonPressed(Mouse::Button::Left)) {
+        if (allowMelee_ && input_->IsMouseButtonPressed(Mouse::Button::Left)) {
             attackState_ = AttackState::kCharging;
             chargeTimer_ = 0;
 
@@ -1718,7 +1724,7 @@ void Player::HandleSkill() {
         karakuriChargeTimer_ = 0;
     } else {
         // 通常時（非強化状態）：Eキー長押しでチャージを溜める
-        if (input_->IsKeyDown('E')) {
+      if (allowKarakuriCharge_ && input_->IsKeyDown('E')) {
             if (karakuriChargeTimer_ == 0) {
                 if (seKarakuri_) seKarakuri_->Play(true);
                 zenmaiRewinding_ = false; // チャージ再開時は巻き戻しフラグを解除
@@ -1775,7 +1781,7 @@ void Player::HandleSkill() {
 
     if (!cameraController_.IsCameraControlEnabled()) return;
 
-    if (input_->IsMouseButtonPressed(Mouse::Button::Right)) {
+    if (allowGunOrMissile_ && input_->IsMouseButtonPressed(Mouse::Button::Right)) {
         if (!isKarakuriCharged_) {
             // ========== 機関銃スキル（クールダウンなし・弾薬ベース） ==========
             if (weapon_.IsMachineGunFiring()) {
