@@ -9,6 +9,7 @@
 #include <d3d12.h>
 #include "IrufemiEngine/Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
 #include "IrufemiEngine/Engine/Graphics/Data/AOEParams.h"
+#include "IrufemiEngine/Renderer/ParticleGPU/GPUParticleSystem.h"
 
 class Camera;
 class ObjClass;
@@ -55,8 +56,10 @@ public:
 private:
     Camera* camera_ = nullptr;
     
-    // エフェクト描画用モデル（ひとまず既存の円環モデルを流用するためObjClassで平たく潰してリングにする）
-    std::unique_ptr<PrimitiveObjects3DClass> waveObj_ = nullptr;
+    // パーティクルシステム
+    std::unique_ptr<GPUParticleSystem> rushParticleSystem_ = nullptr;
+    std::unique_ptr<GPUParticleSystem> rushCoreParticleSystem_ = nullptr; // 砂煙の濃い芯（地面付近）
+    std::unique_ptr<GPUParticleSystem> crashParticleSystem_ = nullptr;
 
     // 予告線用
     std::shared_ptr<PrimitiveObjects3DClass> telegraphObj_ = nullptr;

@@ -584,6 +584,11 @@ void IrufemiEngine::StartFrame() {
 
 // フレーム途中処理
 void IrufemiEngine::ProcessFrame() {
+  // 非同期スレッドで遅延されていたSRVの更新をメインスレッドで一括適用する（データ競合の防止）
+  if (dxCommon_) {
+    dxCommon_->FlushPendingSRVUpdates();
+  }
+
   // 描画処理に入る前にImGui_::Renderを積む
   ui_->QueueDrawCommands();
 

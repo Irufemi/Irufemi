@@ -847,3 +847,16 @@ void DirectXCommon::ClearPendingResources() {
 	// デスクリプタの回収をマネージャに委譲
 	swapChainManager_->FlushPendingDescriptors(completed);
 }
+
+void DirectXCommon::EnqueueSRVUpdate(const Microsoft::WRL::ComPtr<ID3D12Resource>& textureResource, const D3D12_SHADER_RESOURCE_VIEW_DESC& srvDesc, D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU) {
+	std::lock_guard<std::mutex> lock(pendingSRVMutex_);
+	pendingSRVUpdates_.push_back({ textureResource, srvDesc, textureSrvHandleCPU });
+}
+
+void DirectXCommon::FlushPendingSRVUpdates() {
+	std::lock_guard<std::mutex> lock(pendingSRVMutex_);
+	for (const auto& update : pendingSRVUpdates_) {
+		device_->CreateShaderResourceView(update.textureResource.Get(), &update.srvDesc, update.textureSrvHandleCPU);
+	}
+	pendingSRVUpdates_.clear();
+}

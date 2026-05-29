@@ -6,11 +6,56 @@
 #include <algorithm>
 
 void EnemyTackleEffects::Initialize(IrufemiEngine* engine) {
-    waveObj_ = std::make_unique<PrimitiveObjects3DClass>();
-    waveObj_->Initialize(PrimitiveType::Cube, "resources/whiteTexture.png");
-    if (engine) {
-        waveObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
-    }
+    // 砂煙の芯（地面を這う濃い部分）パーティクルの初期化
+    rushCoreParticleSystem_ = std::make_unique<GPUParticleSystem>();
+    rushCoreParticleSystem_->Initialize("resources/circle.png");
+    rushCoreParticleSystem_->SetBlend(BlendMode::kBlendModeAdd);
+    rushCoreParticleSystem_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    rushCoreParticleSystem_->SetCull(PSOManager::CullMode::None);
+    rushCoreParticleSystem_->SetEmit(false);
+    
+    rushCoreParticleSystem_->SetParticleLife(0.2f, 0.4f); // 少し寿命を縮める
+    rushCoreParticleSystem_->SetParticleScale({1.0f, 1.0f, 1.0f}, {1.5f, 1.5f, 1.5f}, {1.5f, 1.5f, 1.5f}, {2.0f, 2.0f, 2.0f}); // 広がりすぎないようにスケールを抑える
+    rushCoreParticleSystem_->SetGravity(0.02f); // 地面に張り付くように少し下へ（重力）
+    rushCoreParticleSystem_->SetDamping(0.2f); // 強い空気抵抗ですぐにその場に留まる
+    rushCoreParticleSystem_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+    // かなり濃い不透明度（芯の厚み）
+    rushCoreParticleSystem_->SetStartColor({0.8f, 0.75f, 0.65f, 0.9f}, {0.7f, 0.65f, 0.55f, 0.8f}); 
+    rushCoreParticleSystem_->SetEndColor({0.7f, 0.65f, 0.55f, 0.0f}, {0.6f, 0.55f, 0.45f, 0.0f});
+
+    // 砂煙の外縁（上に巻き上がる薄い部分）パーティクルの初期化
+    rushParticleSystem_ = std::make_unique<GPUParticleSystem>();
+    rushParticleSystem_->Initialize("resources/circle.png");
+    rushParticleSystem_->SetBlend(BlendMode::kBlendModeAdd); // テクスチャの黒背景を透過するため加算描画に変更
+    rushParticleSystem_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    rushParticleSystem_->SetCull(PSOManager::CullMode::None);
+    rushParticleSystem_->SetEmit(false);
+    
+    rushParticleSystem_->SetParticleLife(0.5f, 1.0f); // 少し寿命を縮める
+    rushParticleSystem_->SetParticleScale({1.5f, 1.5f, 1.5f}, {2.0f, 2.0f, 2.0f}, {3.0f, 3.0f, 3.0f}, {4.5f, 4.5f, 4.5f}); // 大げさに広がりすぎないように最大スケールを半減
+    rushParticleSystem_->SetGravity(-0.03f); // 上に巻き上がる
+    rushParticleSystem_->SetDamping(0.05f); // ふわっと漂う
+    rushParticleSystem_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+    // 最初から薄く、上のほうで消える
+    rushParticleSystem_->SetStartColor({0.8f, 0.75f, 0.65f, 0.3f}, {0.7f, 0.65f, 0.55f, 0.2f}); 
+    rushParticleSystem_->SetEndColor({0.7f, 0.65f, 0.55f, 0.0f}, {0.6f, 0.55f, 0.45f, 0.0f});
+
+    // 大爆発（壁激突時）パーティクルの初期化
+    crashParticleSystem_ = std::make_unique<GPUParticleSystem>();
+    crashParticleSystem_->Initialize("resources/circle.png");
+    crashParticleSystem_->SetBlend(BlendMode::kBlendModeAdd);
+    crashParticleSystem_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+    crashParticleSystem_->SetCull(PSOManager::CullMode::None);
+    crashParticleSystem_->SetCustomPSO("StompExplosionParticle"); // 形状などは流用
+    crashParticleSystem_->SetEmit(false);
+
+    crashParticleSystem_->SetParticleLife(0.6f, 1.5f);
+    crashParticleSystem_->SetParticleScale({0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {2.0f, 2.0f, 2.0f}, {3.5f, 3.5f, 3.5f});
+    crashParticleSystem_->SetGravity(-0.1f);
+    crashParticleSystem_->SetDamping(0.08f);
+    crashParticleSystem_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+    crashParticleSystem_->SetStartColor({1.0f, 0.9f, 0.6f, 1.0f}, {1.0f, 0.8f, 0.4f, 1.0f}); // 軽めの色味に変更
+    crashParticleSystem_->SetEndColor({1.0f, 0.6f, 0.2f, 0.0f}, {0.9f, 0.4f, 0.1f, 0.0f}); // 軽めの色味に変更
 
     // 予告線（AOE）用
     telegraphObj_ = std::make_shared<PrimitiveObjects3DClass>();
@@ -109,6 +154,21 @@ void EnemyTackleEffects::FireRushWave(const Vector3& position) {
     wave.color = { 0.8f, 0.7f, 0.5f, kRushWaveStartAlpha }; // 砂煙っぽい色
 
     waves_.push_back(wave);
+
+    if (rushParticleSystem_) {
+        // 巻き上がる薄い煙（上方向メインで横への広がりを抑える）
+        rushParticleSystem_->SetHemisphereEmitter(wave.transform.translate, 1.0f, 0, 1.0f); // 発生源を少し狭める
+        rushParticleSystem_->SetVelocity(1.0f); // 横の勢いを抑える
+        rushParticleSystem_->SetSpread(0.5f);   // 広がりを抑える
+        rushParticleSystem_->Emit(20);
+    }
+    
+    if (rushCoreParticleSystem_) {
+        // 地面を這う濃い煙（横へ広がりすぎないように初速を抑える）
+        rushCoreParticleSystem_->SetRingEmitter(wave.transform.translate, 0.5f, 1.0f, 0, 1.0f); // 厚みを減らす
+        rushCoreParticleSystem_->SetVelocity(1.5f); // 横方向への初速を大幅に落とす（4.0f -> 1.5f）
+        rushCoreParticleSystem_->Emit(40); // 密度は維持しつつ少し減らす
+    }
 }
 
 void EnemyTackleEffects::FireCrashWave(const Vector3& position) {
@@ -123,11 +183,22 @@ void EnemyTackleEffects::FireCrashWave(const Vector3& position) {
     wave.color = { 1.0f, 0.4f, 0.1f, kCrashWaveStartAlpha }; // 激しい爆発の色（オレンジ）
 
     waves_.push_back(wave);
+
+    if (crashParticleSystem_) {
+        // 中心部分の初期爆発
+        crashParticleSystem_->SetHemisphereEmitter(position, 1.5f, 0, 1.0f); // 範囲を少し狭める
+        crashParticleSystem_->SetVelocity(6.0f); // 縦方向に広げるため初速を上げる (5.0f -> 6.0f)
+        crashParticleSystem_->SetSpread(1.0f); // 横への広がりを少し抑える (2.0f -> 1.0f)
+        crashParticleSystem_->Emit(120); // 範囲が狭くなった分、少し減らして密度を保つ
+    }
 }
 
 void EnemyTackleEffects::Cancel() {
     StopTelegraph();
     waves_.clear();
+    if (rushParticleSystem_) rushParticleSystem_->Clear();
+    if (rushCoreParticleSystem_) rushCoreParticleSystem_->Clear();
+    if (crashParticleSystem_) crashParticleSystem_->Clear();
 }
 
 void EnemyTackleEffects::Update(float deltaTime) {
@@ -144,6 +215,15 @@ void EnemyTackleEffects::Update(float deltaTime) {
             it->transform.scale.y = Lerp(1.0f, 0.01f, t); // 高さを徐々に潰していく
             
             it->color.w = Lerp(kCrashWaveStartAlpha, 0.0f, t * t);
+
+            // 当たり判定のスケール（Planeの広がり）に合わせて爆発パーティクルを発生させる
+            if (crashParticleSystem_) {
+                // currentScaleは全幅なので、半径はその半分。
+                // RingではなくHemisphere（半球）エミッターを使うことで、横だけでなく縦（ドーム状）にも爆発を広げる
+                crashParticleSystem_->SetHemisphereEmitter(it->transform.translate, currentScale * 0.5f, 0, 1.0f);
+                crashParticleSystem_->SetVelocity(2.5f); // 縦方向に広げるため少し上げる (1.5f -> 2.5f)
+                crashParticleSystem_->Emit(30);          // スケールに応じた放出数に調整
+            }
         } else {
             float easeOut = 1.0f - static_cast<float>(std::pow(1.0f - t, 2));
             float currentScale = Lerp(kRushWaveStartScale, kRushWaveEndScale, easeOut);
@@ -159,16 +239,26 @@ void EnemyTackleEffects::Update(float deltaTime) {
             ++it;
         }
     }
+
+    if (rushParticleSystem_) rushParticleSystem_->Update();
+    if (rushCoreParticleSystem_) rushCoreParticleSystem_->Update();
+    if (crashParticleSystem_) crashParticleSystem_->Update();
 }
 
 void EnemyTackleEffects::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
-    for (auto& wave : waves_) {
-        waveObj_->SetTransform(wave.transform);
-        waveObj_->SetColor(wave.color);
-        waveObj_->Update();
-        waveObj_->Draw();
+    if (rushCoreParticleSystem_) {
+        rushCoreParticleSystem_->SyncBeforeDraw();
+        rushCoreParticleSystem_->Draw();
+    }
+    if (rushParticleSystem_) {
+        rushParticleSystem_->SyncBeforeDraw();
+        rushParticleSystem_->Draw();
+    }
+    if (crashParticleSystem_) {
+        crashParticleSystem_->SyncBeforeDraw();
+        crashParticleSystem_->Draw();
     }
     
     DrawTelegraph(engine);

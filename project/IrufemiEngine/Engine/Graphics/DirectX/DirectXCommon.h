@@ -168,6 +168,16 @@ public: // メンバ関数
 	void FreeDSVIndex(uint32_t index);
 
 	/**
+	 * @brief SRV更新リクエストをキューに積む（スレッドセーフ）
+	 */
+	void EnqueueSRVUpdate(const Microsoft::WRL::ComPtr<ID3D12Resource>& textureResource, const D3D12_SHADER_RESOURCE_VIEW_DESC& srvDesc, D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU);
+
+	/**
+	 * @brief 保留中のSRV更新をメインスレッドで一括適用する
+	 */
+	void FlushPendingSRVUpdates();
+
+	/**
 	 * @brief エンジン本体へのポインタを設定
 	 */
 	void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
@@ -346,6 +356,14 @@ private: // メンバ変数
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 	};
 	std::vector<PendingResource> pendingResources_;
+
+	struct PendingSRVUpdate {
+		Microsoft::WRL::ComPtr<ID3D12Resource> textureResource;
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+		D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU;
+	};
+	std::vector<PendingSRVUpdate> pendingSRVUpdates_;
+	std::mutex pendingSRVMutex_;
 
 	// --- スレッド安全用 ---
 	std::mutex pendingMutex_;
