@@ -822,6 +822,11 @@ bool Building::IsBuildingBlownAway(int index) const {
     return instances_[index].isBlownAway && !instances_[index].isDestroyed;
 }
 
+bool Building::IsBuildingSpawning(int index) const {
+    if (index < 0 || index >= static_cast<int>(instances_.size())) return false;
+    return instances_[index].isSpawning;
+}
+
 bool Building::IsBuildingDestroyed(int index) const {
     if (index < 0 || index >= static_cast<int>(instances_.size())) return false;
     return instances_[index].isDestroyed;

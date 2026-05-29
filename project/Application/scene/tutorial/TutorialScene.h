@@ -3,6 +3,7 @@
 #include "Framework/BaseScene.h"
 #include <memory>
 #include <vector>
+#include "Engine/Core/Math/Vector3.h"
 
 class IrufemiEngine;
 class InputManager;
@@ -23,7 +24,11 @@ enum class TutorialPhase {
     KarakuriCharge,
     EnhancedDodge,
     MissileAttack,
+    MissileHitFocus,      // ミサイル着弾後の引きカメラ
+    BuildingSpawnFocus,
+    BuildingReadyFocus,   // ビル生成完了後の少し引きカメラ（SPACE待ち）
     BuildingAttack,
+    BuildingHitFocus,     // ビル激突後の引きカメラ
     PartsExplanation,
     ViewSwitch,
     Done
@@ -62,6 +67,8 @@ private:
     bool isCollisionEnabled_ = true;
 
     TutorialPhase currentPhase_ = TutorialPhase::MoveWASD;
+    Vector3 spawnedBuildingPos_ = {};
+    float cinematicTimer_ = 0.0f; // 演出タイマー
 
     // 入力監視フラグ
     bool hasPressedW_ = false;

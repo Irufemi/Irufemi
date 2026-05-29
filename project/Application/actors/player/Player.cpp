@@ -600,7 +600,9 @@ void Player::Update() {
     ImGui::End();
 #endif
 
-    cameraController_.UpdateInput(input_, rotate_);
+    if (!isCinematicMode_) {
+        cameraController_.UpdateInput(input_, rotate_);
+    }
 
     // シネマティック中（死亡演出中）は常にボスの現在位置を注視するように変更
     if (!isTargetingEnemy_ && !isCinematicMode_) {
@@ -645,7 +647,11 @@ void Player::Update() {
     }
 
     weapon_.Update(translate_, rotate_, cameraController_.GetCameraPitch(), aimPos_, scale_, isKarakuriCharged_);
-    cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
+    
+    // シネマティック中（演出中）はプレイヤー追従カメラの更新を止め、シーン側でのカメラ制御に完全に委ねる
+    if (!isCinematicMode_) {
+        cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
+    }
     status_.UpdateKnockback();
 
     if (cameraController_.IsFirstPerson()) {

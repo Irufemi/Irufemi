@@ -130,6 +130,9 @@ public:
     /// @brief 建物が吹き飛び中か
     bool IsBuildingBlownAway(int index) const;
 
+    /// @brief 建物が出現中か
+    bool IsBuildingSpawning(int index) const;
+
     /// @brief 建物が完全に消滅済みか
     bool IsBuildingDestroyed(int index) const;
 
