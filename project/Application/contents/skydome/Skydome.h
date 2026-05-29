@@ -21,6 +21,15 @@ private: // メンバ変数
 
 	// カメラ
 
+	// --- 回転・ゆらぎ演出用パラメータ ---
+	float timer_ = 0.0f;               ///< 内部タイマー
+	float baseRotY_ = 0.0f;            ///< 累積のY軸回転量
+	
+	Vector3 baseTilt_ = { 0.2f, 0.0f, 0.1f };  ///< 地軸のような初期の傾き（ラジアン）
+	float rotationSpeedY_ = 0.0005f;           ///< ゆったりとした基本のY軸回転速度
+	float wobbleSpeed_ = 0.1f;                 ///< ゆらぎの波の速さ
+	float wobbleAmplitude_ = 0.015f;           ///< ゆらぎの振幅
+
 
 public: // メンバ関数
 	/**

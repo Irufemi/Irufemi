@@ -1,6 +1,7 @@
 #include "Skydome.h"
 
 #include <cassert>
+#include <cmath>
 
 #include "Engine/Graphics/Camera/Camera.h"
 
@@ -19,6 +20,21 @@ void Skydome::Initialize() {
 }
 
 void Skydome::Update() {
+
+	// タイマーを進める（固定フレームレート想定）
+	timer_ += 1.0f / 60.0f;
+    
+	// 1. Y軸の回転を蓄積
+	baseRotY_ += rotationSpeedY_;
+    
+	// 2. X/Z軸にサイン波で微小なゆらぎを計算（周期を少しずらして自然に）
+	float wobbleX = std::sin(timer_ * wobbleSpeed_) * wobbleAmplitude_;
+	float wobbleZ = std::cos(timer_ * wobbleSpeed_ * 0.8f) * wobbleAmplitude_;
+    
+	// 3. トランスフォームに適用
+	worldTransform_.rotate.x = baseTilt_.x + wobbleX;
+	worldTransform_.rotate.z = baseTilt_.z + wobbleZ;
+	worldTransform_.rotate.y = baseRotY_;
 
 #ifdef USE_IMGUI
 
