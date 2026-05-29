@@ -658,7 +658,8 @@ void Player::Update() {
     
     // シネマティック中（演出中）はプレイヤー追従カメラの更新を止め、シーン側でのカメラ制御に完全に委ねる
     if (!isCinematicMode_) {
-        cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
+        // ★修正: 回避演出制御のための第5引数（dodgeDurationTimer）を追加
+        cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_, movement_.GetDodgeDurationTimer());
         UpdateSpeedLines();
     }
     status_.UpdateKnockback();
@@ -1852,6 +1853,234 @@ void Player::PlayExplosion(const Vector3& position, float scale) {
             effect->Play(position, { 0.0f, 0.0f, 0.0f }, { scale, scale, scale });
             if (seMissileHit_) seMissileHit_->Play();
             break; // 同時に1つの着弾で1つのみ再生
+        }
+    }
+}
+
+// === 回避（ダッシュ）時のスピードライン演出群の実装 ===
+
+void Player::TriggerDodgeSpeedLines() {
+    float centerX = engine_ ? static_cast<float>(engine_->GetClientWidth()) / 2.0f : 640.0f;
+    float centerY = engine_ ? static_cast<float>(engine_->GetClientHeight()) / 2.0f : 360.0f;
+
+    // 前方向（内から外）の定数
+    static constexpr float kStartMinDistance = 260.0f;
+    static constexpr float kStartMaxDistance = 450.0f;
+    static constexpr float kStartDistanceRange = kStartMaxDistance - kStartMinDistance;
+
+    // 後ろ方向（外から内）の定数
+    static constexpr float kBackwardStartMinDistance = 500.0f;
+    static constexpr float kBackwardStartMaxDistance = 750.0f;
+    static constexpr float kBackwardStartDistanceRange = kBackwardStartMaxDistance - kBackwardStartMinDistance;
+
+    // 横方向（平行線）の定数
+    static constexpr float kSidewaysCenterClearHeight = 180.0f; // 中央を空ける高さ（上下に避ける）
+    static constexpr float kSidewaysStartMinOffset = 400.0f;     // 開始位置の画面端オフセット最小
+    static constexpr float kSidewaysStartMaxOffset = 700.0f;     // 開始位置の画面端オフセット最大
+    static constexpr float kSidewaysStartOffsetRange = kSidewaysStartMaxOffset - kSidewaysStartMinOffset;
+
+    for (int i = 0; i < kMaxSpeedLines; ++i) {
+        float angle = static_cast<float>(std::rand()) / RAND_MAX * 2.0f * 3.14159265f;
+        
+        switch (dodgeDirectionMode_) {
+        case DodgeDirectionMode::kForward: {
+            // 内側（安全円外側）のランダムな距離
+            float distance = kStartMinDistance + (static_cast<float>(std::rand()) / RAND_MAX * kStartDistanceRange);
+            speedLines_[i].startPos = {
+                centerX + std::cos(angle) * distance,
+                centerY + std::sin(angle) * distance
+            };
+            speedLines_[i].direction = { std::cos(angle), std::sin(angle) }; // 外向き
+            speedLines_[i].speed = 25.0f + (static_cast<float>(std::rand()) / RAND_MAX * 25.0f); // 25〜50px/frame
+            speedLines_[i].length = 150.0f + (static_cast<float>(std::rand()) / RAND_MAX * 200.0f); // 150〜350px
+            speedLines_[i].width = 1.0f + (static_cast<float>(std::rand()) / RAND_MAX * 2.0f); // 1〜3px
+            break;
+        }
+        case DodgeDirectionMode::kBackward: {
+            // 画面外側のランダムな距離
+            float distance = kBackwardStartMinDistance + (static_cast<float>(std::rand()) / RAND_MAX * kBackwardStartDistanceRange);
+            speedLines_[i].startPos = {
+                centerX + std::cos(angle) * distance,
+                centerY + std::sin(angle) * distance
+            };
+            speedLines_[i].direction = { -std::cos(angle), -std::sin(angle) }; // 内向き（中心方向）
+            speedLines_[i].speed = 25.0f + (static_cast<float>(std::rand()) / RAND_MAX * 25.0f);
+            speedLines_[i].length = 150.0f + (static_cast<float>(std::rand()) / RAND_MAX * 200.0f);
+            speedLines_[i].width = 1.0f + (static_cast<float>(std::rand()) / RAND_MAX * 2.0f);
+            break;
+        }
+        case DodgeDirectionMode::kSideways: {
+            // 横回避：平行横並び線
+            // Aキーなら左から右、Dキーなら右から左。もし両方なければ左から右とする。
+            bool moveLeftToRight = true;
+            if (input_->IsKeyDown('D')) {
+                moveLeftToRight = false; // 右回避のときは右から左へ流す（自分が右に動くので、線は左へ流れる）
+            }
+
+            float offset = kSidewaysStartMinOffset + (static_cast<float>(std::rand()) / RAND_MAX * kSidewaysStartOffsetRange);
+            float startX = 0.0f;
+            if (moveLeftToRight) {
+                startX = centerX - offset; // 画面左端から発生して右へ
+                speedLines_[i].direction = { 1.0f, 0.0f };
+            } else {
+                startX = centerX + offset; // 画面右端から発生して左へ
+                speedLines_[i].direction = { -1.0f, 0.0f };
+            }
+
+            // 高さ Y は中央の安全領域（centerY ± kSidewaysCenterClearHeight）を完全に避ける
+            float startY = 0.0f;
+            float clientHeight = engine_ ? static_cast<float>(engine_->GetClientHeight()) : 720.0f;
+            
+            // 画面の上下半分ずつの領域（中央のクリア領域を除く）でランダム決定
+            if (std::rand() % 2 == 0) {
+                // 画面上部 (0 〜 centerY - kSidewaysCenterClearHeight)
+                float maxY = centerY - kSidewaysCenterClearHeight;
+                startY = static_cast<float>(std::rand()) / RAND_MAX * maxY;
+            } else {
+                // 画面下部 (centerY + kSidewaysCenterClearHeight 〜 clientHeight)
+                float minY = centerY + kSidewaysCenterClearHeight;
+                float heightRange = clientHeight - minY;
+                startY = minY + (static_cast<float>(std::rand()) / RAND_MAX * heightRange);
+            }
+
+            speedLines_[i].startPos = { startX, startY };
+            speedLines_[i].speed = 30.0f + (static_cast<float>(std::rand()) / RAND_MAX * 25.0f); // 横は少し速めに（30〜55px/frame）
+            speedLines_[i].length = 200.0f + (static_cast<float>(std::rand()) / RAND_MAX * 250.0f); // 横は少し長めに（200〜450px）
+            speedLines_[i].width = 1.5f + (static_cast<float>(std::rand()) / RAND_MAX * 2.0f); // 横は少し太め（1.5〜3.5px）
+            break;
+        }
+        }
+
+        speedLines_[i].currentPos = speedLines_[i].startPos;
+        speedLines_[i].alpha = 0.8f;
+        speedLines_[i].isActive = true;
+    }
+}
+
+void Player::UpdateSpeedLines() {
+    int dodgeTimer = movement_.GetDodgeDurationTimer();
+    float clientWidth = engine_ ? static_cast<float>(engine_->GetClientWidth()) : 1280.0f;
+    float clientHeight = engine_ ? static_cast<float>(engine_->GetClientHeight()) : 720.0f;
+    float uiScale = clientHeight / 720.0f;
+
+    if (dodgeTimer > 0) {
+        float progress = static_cast<float>(dodgeTimer) / 30.0f; // 1.0f -> 0.0f
+        float currentAlpha = progress * progress * 0.8f; // 後半に向けて滑らかにフェードアウト
+
+        float centerX = clientWidth / 2.0f;
+        float centerY = clientHeight / 2.0f;
+
+        // 前・横方向の外周消滅・フェード用定数
+        static constexpr float kOuterClearRadius = 750.0f;
+        static constexpr float kOuterFadeStartRadius = 550.0f;
+        float outerClearRadius = kOuterClearRadius * uiScale;
+        float outerFadeStartRadius = kOuterFadeStartRadius * uiScale;
+        float outerFadeWidth = outerClearRadius - outerFadeStartRadius;
+
+        // 後ろ方向（外から内）の内側消滅・フェード用定数
+        static constexpr float kCenterClearRadius = 240.0f;
+        static constexpr float kCenterFadeStartRadius = 380.0f;
+        float centerClearRadius = kCenterClearRadius * uiScale;
+        float centerFadeStartRadius = kCenterFadeStartRadius * uiScale;
+        float centerFadeWidth = centerFadeStartRadius - centerClearRadius;
+
+        for (int i = 0; i < kMaxSpeedLines; ++i) {
+            if (speedLines_[i].isActive) {
+                // 移動更新
+                speedLines_[i].currentPos.x += speedLines_[i].direction.x * speedLines_[i].speed * uiScale;
+                speedLines_[i].currentPos.y += speedLines_[i].direction.y * speedLines_[i].speed * uiScale;
+
+                float lineAlpha = currentAlpha;
+
+                // モード別の消滅・フェードアウト・回転の適用
+                switch (dodgeDirectionMode_) {
+                case DodgeDirectionMode::kForward: {
+                    // 内から外
+                    float dx = speedLines_[i].currentPos.x - centerX;
+                    float dy = speedLines_[i].currentPos.y - centerY;
+                    float dist = std::sqrt(dx * dx + dy * dy);
+
+                    if (dist >= outerClearRadius) {
+                        speedLines_[i].isActive = false;
+                        continue;
+                    }
+
+                    if (dist > outerFadeStartRadius && outerFadeWidth > 0.001f) {
+                        float t = (outerClearRadius - dist) / outerFadeWidth;
+                        if (t < 0.0f) t = 0.0f;
+                        if (t > 1.0f) t = 1.0f;
+                        lineAlpha *= t;
+                    }
+
+                    float angle = std::atan2(speedLines_[i].direction.y, speedLines_[i].direction.x);
+                    speedLines_[i].sprite->SetRotation(angle);
+                    break;
+                }
+                case DodgeDirectionMode::kBackward: {
+                    // 外から内
+                    float dx = speedLines_[i].currentPos.x - centerX;
+                    float dy = speedLines_[i].currentPos.y - centerY;
+                    float dist = std::sqrt(dx * dx + dy * dy);
+
+                    if (dist <= centerClearRadius) {
+                        speedLines_[i].isActive = false;
+                        continue;
+                    }
+
+                    if (dist < centerFadeStartRadius && centerFadeWidth > 0.001f) {
+                        float t = (dist - centerClearRadius) / centerFadeWidth;
+                        if (t < 0.0f) t = 0.0f;
+                        if (t > 1.0f) t = 1.0f;
+                        lineAlpha *= t;
+                    }
+
+                    float angle = std::atan2(speedLines_[i].direction.y, speedLines_[i].direction.x);
+                    speedLines_[i].sprite->SetRotation(angle);
+                    break;
+                }
+                case DodgeDirectionMode::kSideways: {
+                    // 横方向平行線
+                    // 画面中央からの水平距離を基準にフェード・消去を行う
+                    float dx = std::abs(speedLines_[i].currentPos.x - centerX);
+
+                    if (dx >= outerClearRadius) {
+                        speedLines_[i].isActive = false;
+                        continue;
+                    }
+
+                    if (dx > outerFadeStartRadius && outerFadeWidth > 0.001f) {
+                        float t = (outerClearRadius - dx) / outerFadeWidth;
+                        if (t < 0.0f) t = 0.0f;
+                        if (t > 1.0f) t = 1.0f;
+                        lineAlpha *= t;
+                    }
+
+                    // 横方向は完全に水平（角度 0.0f）
+                    speedLines_[i].sprite->SetRotation(0.0f);
+                    break;
+                }
+                }
+
+                speedLines_[i].sprite->SetSize(speedLines_[i].length * uiScale, speedLines_[i].width * uiScale);
+                speedLines_[i].sprite->SetColor({ 1.0f, 1.0f, 1.0f, lineAlpha });
+                speedLines_[i].sprite->SetPositionCenter(speedLines_[i].currentPos.x, speedLines_[i].currentPos.y);
+                speedLines_[i].sprite->Update();
+            }
+        }
+    } else {
+        // 回避中でなければ全スロットを非アクティブ化してクリア
+        for (int i = 0; i < kMaxSpeedLines; ++i) {
+            speedLines_[i].isActive = false;
+        }
+    }
+}
+
+void Player::DrawSpeedLines() {
+    if (movement_.GetDodgeDurationTimer() > 0) {
+        for (int i = 0; i < kMaxSpeedLines; ++i) {
+            if (speedLines_[i].isActive && speedLines_[i].sprite) {
+                speedLines_[i].sprite->Draw();
+            }
         }
     }
 }
