@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include "Engine/Core/Math/Vector3.h"
+#include "Resource/Audio/Bgm.h"
 
 class IrufemiEngine;
 class InputManager;
@@ -57,6 +58,9 @@ private:
 
 private:
     bool isFirstDebug_ = true;
+
+    // BGM
+    std::unique_ptr<Bgm> bgm_ = nullptr;
 
     // ゲームオブジェクト
     std::unique_ptr<Player> player_ = nullptr;

@@ -9,6 +9,7 @@
 #include "contents/field/CyberHexParams.h"
 #include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "Resource/Audio/Bgm.h"
 
 class IrufemiEngine;
 class Sprite;
@@ -78,6 +79,9 @@ private: // メンバ変数(ゲーム)
     // 遷移演出用
     bool isStarting_ = false;
     float startTimer_ = 0.0f;
+
+    // BGM
+    std::unique_ptr<Bgm> bgm_ = nullptr;
 
 private: // メンバ変数(システム)
     PromptController promptController_;
