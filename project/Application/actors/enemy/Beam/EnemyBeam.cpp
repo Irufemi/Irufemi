@@ -140,14 +140,29 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
 }
 
 void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
-    Vector3 diff = Math::Subtract(playerPos, headPos);
+    // 1. まず、元の頭の位置からターゲットへの方向（大まかな顔の向き）を計算し、発生位置を決定する
+    Vector3 initialDiff = Math::Subtract(playerPos, headPos);
+    Vector3 initialDir = Math::Normalize(initialDiff);
+
+    // オフセット計算時に、Y軸（上下方向）へのズレを抑える
+    Vector3 offsetDir = initialDir;
+    offsetDir.y *= 0.2f; // 下方向への沈み込みを軽減
+    offsetDir = Math::Normalize(offsetDir);
+
+    Vector3 startPos = Math::Add(headPos, Math::Multiply(originOffset_, offsetDir));
+    
+    // 口元に合わせる高さ微調整（マイナスで下げる）
+    startPos.y += -3.0f;
+
+    // 2. 決定した新しい起点(startPos)から、改めて自機(playerPos)を正確に狙う方向を再計算する
+    Vector3 diff = Math::Subtract(playerPos, startPos);
     float distance = Math::Length(diff);
     Vector3 direction = Math::Normalize(diff);
 
     Vector3 center = {
-        (headPos.x + playerPos.x) * 0.5f,
-        (headPos.y + playerPos.y) * 0.5f,
-        (headPos.z + playerPos.z) * 0.5f
+        (startPos.x + playerPos.x) * 0.5f,
+        (startPos.y + playerPos.y) * 0.5f,
+        (startPos.z + playerPos.z) * 0.5f
     };
 
     Vector3 rotate = { 0.0f, 0.0f, 0.0f };
@@ -156,8 +171,6 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
     rotate.x = std::atan2(-direction.y, distXZ);
     // CylinderはY軸方向に伸びているため、Z軸方向に倒すために90度(PI/2)足す
     rotate.x += Math::PI / 2.0f;
-
-    Vector3 startPos = Math::Add(headPos, Math::Multiply(originOffset_, direction));
 
     if (isTelegraphActive_) {
         // 進行度の更新 (固定フレーム想定。発射までの時間に合わせる)
