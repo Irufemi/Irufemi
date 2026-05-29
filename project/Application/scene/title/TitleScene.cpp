@@ -38,6 +38,10 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     // タイトルシーンでは背景色を極めて暗いブルーにして、真っ暗すぎない奥深さを出す
     engine_->SetClearColor(0.0f, 0.02f, 0.06f, 1.0f);
 
+    // BGMの再生
+    bgm_ = std::make_unique<Bgm>();
+    bgm_->Initialize("resources/BGM/Title.mp3", "TitleBGM", true, true);
+
     // ポストプロセスの有効化（スタイリッシュな演出）
     if (auto* pp = engine_->GetPostProcessManager()) {
         pp->AddActiveMode(PostProcessMode::Vignette);

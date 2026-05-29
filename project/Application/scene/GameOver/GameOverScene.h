@@ -6,6 +6,7 @@
 #include "Renderer/Object2D/Sprite/Sprite.h"
 #include <memory>
 #include <vector>
+#include "Resource/Audio/Bgm.h"
 
 class IrufemiEngine;
 class ObjClass;
@@ -38,6 +39,9 @@ public: // メンバ関数(システム)
     void DrawDebugTab() override;
 
 private: // メンバ変数(ゲーム)
+
+    // BGM
+    std::unique_ptr<Bgm> bgm_ = nullptr;
 
     // 「GameOver...」文字
     std::unique_ptr<ObjClass> goTextG_ = nullptr;

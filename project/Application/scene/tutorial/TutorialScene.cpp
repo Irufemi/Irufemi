@@ -64,6 +64,9 @@ TutorialScene::~TutorialScene() {}
 void TutorialScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
+    bgm_ = std::make_unique<Bgm>();
+    bgm_->Initialize("resources/BGM/InGame.mp3", "InGameBGM", true, true);
+
     Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
     activeCamera->SetTranslate(kDefaultCameraPos);
     activeCamera->UpdateMatrix();

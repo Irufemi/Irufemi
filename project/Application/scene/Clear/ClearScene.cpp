@@ -29,6 +29,9 @@ ClearScene::~ClearScene() {
 void ClearScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
+    bgm_ = std::make_unique<Bgm>();
+    bgm_->Initialize("resources/BGM/Clear.mp3", "ClearBGM", true, true);
+
     // ポストプロセスの有効化（華やか・祝祭感の演出）
     if (auto* pp = engine_->GetPostProcessManager()) {
         pp->AddActiveMode(PostProcessMode::Bloom);

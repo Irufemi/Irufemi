@@ -4,6 +4,7 @@
 #include "Irufemi.h"
 #include <memory>
 #include <vector>
+#include "Resource/Audio/Bgm.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -137,6 +138,9 @@ private:
 
     // クリアタイム
     static float clearTime_;
+
+    // BGM
+    std::unique_ptr<Bgm> bgm_ = nullptr;
 
     // --- 内部整理用メソッド ---
 

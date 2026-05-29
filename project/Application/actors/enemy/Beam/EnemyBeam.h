@@ -94,7 +94,7 @@ public:
     void SetChargeSphereScale(float scale) { chargeSphereScale_ = scale; }
 
 private:
-    float originOffset_ = 4.0f; //!< ビームの発生起点を前方にずらす距離
+    float originOffset_ = 15.0f; //!< ビームの発生起点を前方にずらす距離
 
     // チャージ球体用
     std::unique_ptr<PrimitiveObjects3DClass> chargeSphere_ = nullptr;
