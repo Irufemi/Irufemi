@@ -99,27 +99,6 @@ void Sprite::Update() {
     Camera* activeCam = cameraManager_->GetActiveCamera();
     if (!activeCam) return;
 
-    // DebugUI でのテクスチャ選択変更に追随してサイズを更新
-    if (textureManager_) {
-        auto names = textureManager_->GetTextureNamesForDebug();
-        if (!names.empty()) {
-            selectedTextureIndex_ = std::clamp(selectedTextureIndex_, 0, static_cast<int>(names.size()) - 1);
-            uint32_t tw = 0, th = 0;
-            if (textureManager_->GetTextureSize(names[selectedTextureIndex_], tw, th) && tw > 0 && th > 0) {
-                textureSize_ = { static_cast<float>(tw), static_cast<float>(th) };
-
-                // 範囲指定中なら新サイズに合わせて再クランプ
-                if (useTexRect_) {
-                    SetTextureRectPixels(
-                        static_cast<int>(texRectLeftTop_.x),
-                        static_cast<int>(texRectLeftTop_.y),
-                        static_cast<int>(texRectSize_.x),
-                        static_cast<int>(texRectSize_.y),
-                        /*autoResize=*/false);
-                }
-            }
-        }
-    }
 
     // アンカーの変更を頂点へ反映
     ApplyAnchorToVertices();
