@@ -32,7 +32,7 @@ class Line3DRegion;
  */
 struct ParticleCS {
     Vector3 translate; ///< 位置
-    float pad0;
+    uint32_t type;     ///< 0: 親, 1: Trail, 2: Death
     Vector3 scale;     ///< スケール
     float lifeTime;    ///< 寿命（秒）
     Vector3 velocity;  ///< 速度
@@ -41,7 +41,7 @@ struct ParticleCS {
 
     // 拡張パラメータ
     Vector3 rotation;     ///< 回転角
-    float pad1;
+    float trailTimer;     ///< Trail放出タイマー
     Vector3 rotateSpeed;  ///< 回転速度
     float pad2;
     Vector3 startScale;   ///< 開始スケール
@@ -62,7 +62,7 @@ struct ParticleCS {
 struct GPUParticleEmitter {
     // float4 x 1
     uint32_t type = 0;          ///< 0: Sphere, 1: Beam, 2: Ring, 3: Cylinder, 4: Box, 5: Hemisphere
-    Vector3 translate = {0,0,0}; ///< 放出中心位置
+    float translateX = 0, translateY = 0, translateZ = 0; ///< 放出中心位置
 
     // float4 x 2
     int32_t count = 0;          ///< 1回の放出数
@@ -72,7 +72,7 @@ struct GPUParticleEmitter {
 
     // float4 x 3
     float radius = 1.0f;        ///< Sphere/Ring/Cylinder用: 半径
-    Vector3 direction = {0,0,1}; ///< Beam用: 方向
+    float directionX = 0, directionY = 0, directionZ = 1; ///< Beam用: 方向
 
     // float4 x 4
     float spread = 0.1f;        ///< Beam用: 広がり
@@ -81,32 +81,32 @@ struct GPUParticleEmitter {
     float maxLife = 1.0f;       ///< 最大寿命
 
     // float4 x 5
-    Vector3 startScaleMin = {1.0f, 1.0f, 1.0f}; ///< 開始スケール最小
-    float pad0;
+    float startScaleMinX = 1, startScaleMinY = 1, startScaleMinZ = 1; ///< 開始スケール最小
+    float pad0 = 0;
     // float4 x 6
-    Vector3 startScaleMax = {1.0f, 1.0f, 1.0f}; ///< 開始スケール最大
-    float pad1;
+    float startScaleMaxX = 1, startScaleMaxY = 1, startScaleMaxZ = 1; ///< 開始スケール最大
+    float pad1 = 0;
     // float4 x 7
-    Vector3 endScaleMin = {1.0f, 1.0f, 1.0f};   ///< 終了スケール最小
-    float pad2;
+    float endScaleMinX = 1, endScaleMinY = 1, endScaleMinZ = 1;   ///< 終了スケール最小
+    float pad2 = 0;
     // float4 x 8
-    Vector3 endScaleMax = {1.0f, 1.0f, 1.0f};   ///< 終了スケール最大
-    float pad3;
+    float endScaleMaxX = 1, endScaleMaxY = 1, endScaleMaxZ = 1;   ///< 終了スケール最大
+    float pad3 = 0;
 
     // float4 x 9
-    Vector4 startColorMin = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 開始色最小
+    float startColorMinR = 1, startColorMinG = 1, startColorMinB = 1, startColorMinA = 1; ///< 開始色最小
     // float4 x 10
-    Vector4 startColorMax = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 開始色最大
+    float startColorMaxR = 1, startColorMaxG = 1, startColorMaxB = 1, startColorMaxA = 1; ///< 開始色最大
     // float4 x 11
-    Vector4 endColorMin = {1.0f, 1.0f, 1.0f, 1.0f};   ///< 終了色最小
+    float endColorMinR = 1, endColorMinG = 1, endColorMinB = 1, endColorMinA = 1;   ///< 終了色最小
     // float4 x 12
-    Vector4 endColorMax = {1.0f, 1.0f, 1.0f, 1.0f};   ///< 終了色最大
+    float endColorMaxR = 1, endColorMaxG = 1, endColorMaxB = 1, endColorMaxA = 1;   ///< 終了色最大
 
     // float4 x 13
     uint32_t colorMode = 0;     ///< カラーモード
     float gravity = 0.0f;       ///< 重力
     float damping = 0.0f;       ///< 空気抵抗
-    uint32_t isBillboard = 1;   ///< ビルボードフラグ
+    uint32_t billboardMode = 1;
 
     // float4 x 14
     uint32_t burstCount = 0;
@@ -118,15 +118,21 @@ struct GPUParticleEmitter {
     float groundHeight = -100.0f;
     float bounce = 0.5f;
     float attractorStrength = 0.0f;
-    uint32_t randomSeed = 0; // 各エミッターごとの乱数シード
+    uint32_t randomSeed = 0;
 
     // float4 x 16
-    Vector3 attractorPos = {0,0,0};
-    uint32_t enableRandomRotation = 1; // 1: ランダム回転あり, 0: なし
+    float attractorPosX = 0, attractorPosY = 0, attractorPosZ = 0;
+    uint32_t enableRandomRotation = 0;
 
     // float4 x 17
-    Vector3 areaSize = {10,10,10};
-    uint32_t pad6 = 0;
+    float areaSizeX = 10, areaSizeY = 10, areaSizeZ = 10;
+    uint32_t enableTrail = 0;
+
+    // float4 x 18
+    uint32_t enableDeathEmit = 0;
+    float trailFrequency = 0.05f;
+    float pad7 = 0.0f;
+    float pad8 = 0.0f;
 };
 
 /**
@@ -159,6 +165,7 @@ public:
 
     void SetLoop(bool loop) { isLooping_ = loop; }
     void SetDuration(float duration) { duration_ = duration; }
+    void SetCullingEnabled(bool enable) { isCullingEnabled_ = enable; }
     void Emit(uint32_t count);
     ///@}
 
@@ -172,6 +179,11 @@ public:
     void SetPrimitive(PrimitiveType type);
     /** @brief ビルボードのON/OFF */
     void SetBillboard(bool isBillboard);
+    
+    /**
+     * @brief 速度方向に引き伸ばすビルボード設定
+     */
+    void SetVelocityAligned(bool isAligned);
     /** @brief 使用するテクスチャを切り替える */
     void SetTexture(const std::string& textureFilePath);
 
@@ -201,14 +213,26 @@ public:
     /** @brief 放出速度を設定する */
     void SetVelocity(float velocity) { if (emitter_) emitter_->velocity = velocity; }
     /** @brief 放出方向を設定する */
-    void SetDirection(const Vector3& dir) { if (emitter_) emitter_->direction = dir; }
+    void SetDirection(const Vector3& dir) { if (emitter_) { emitter_->directionX = dir.x; emitter_->directionY = dir.y; emitter_->directionZ = dir.z; } }
     /** @brief 座標のゆらぎ（Jitter）を設定する */
     void SetJitter(float jitter) { if (emitter_) emitter_->jitter = jitter; }
     void SetEnableRandomRotation(bool enable) { if (emitter_) emitter_->enableRandomRotation = enable ? 1 : 0; }
     /** @brief ビルボードモードの設定 (0: なし, 1: 通常ビルボード, 2: 速度方向ビルボード) */
-    void SetBillboardMode(uint32_t mode) { if (emitter_) emitter_->isBillboard = mode; }
+    void SetBillboardMode(uint32_t mode) { if (emitter_) emitter_->billboardMode = mode; }
     /** @brief 粒子の拡散力（Sphere等の放射方向の広がり/強度）を設定 */
     void SetSpread(float spread) { if (emitter_) emitter_->spread = spread; }
+
+    /** @brief Trail（軌跡）機能の有効化 */
+    void SetEnableTrail(bool enable, float frequency = 0.05f) { 
+        if (emitter_) {
+            emitter_->enableTrail = enable ? 1 : 0;
+            emitter_->trailFrequency = frequency;
+        }
+    }
+    /** @brief 消滅時連鎖（Death Emit）機能の有効化 */
+    void SetEnableDeathEmit(bool enable) { 
+        if (emitter_) emitter_->enableDeathEmit = enable ? 1 : 0;
+    }
 
     /** @name 描画設定（パイプライン） */
     ///@{
@@ -267,15 +291,16 @@ public:
     /** @brief 開始色を設定する */
     void SetStartColor(const Vector4& minColor, const Vector4& maxColor) {
         if (emitter_) {
-            emitter_->startColorMin = minColor;
-            emitter_->startColorMax = maxColor;
+            emitter_->startColorMinR = minColor.x; emitter_->startColorMinG = minColor.y; emitter_->startColorMinB = minColor.z; emitter_->startColorMinA = minColor.w;
+            emitter_->startColorMaxR = maxColor.x; emitter_->startColorMaxG = maxColor.y; emitter_->startColorMaxB = maxColor.z; emitter_->startColorMaxA = maxColor.w;
         }
     }
+
     /** @brief 終了色を設定する */
     void SetEndColor(const Vector4& minColor, const Vector4& maxColor) {
         if (emitter_) {
-            emitter_->endColorMin = minColor;
-            emitter_->endColorMax = maxColor;
+            emitter_->endColorMinR = minColor.x; emitter_->endColorMinG = minColor.y; emitter_->endColorMinB = minColor.z; emitter_->endColorMinA = minColor.w;
+            emitter_->endColorMaxR = maxColor.x; emitter_->endColorMaxG = maxColor.y; emitter_->endColorMaxB = maxColor.z; emitter_->endColorMaxA = maxColor.w;
         }
     }
     /** @brief 重力を設定する */

@@ -36,7 +36,7 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
 	
     float4x4 worldMatrix;
     
-    if (gEmitter.isBillboard == 1)
+    if (gEmitter.billboardMode == 1)
     {
         // Z軸回転の行列を作成
         float c = cos(particle.rotation.z);
@@ -59,7 +59,7 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
         // スケール -> Z軸回転 -> ビルボード（カメラ向き）の順に行列を合成
         worldMatrix = mul(mul(scaleMatrix, rotZ), gPerView.billboardMatrix);
     }
-    else if (gEmitter.isBillboard == 2)
+    else if (gEmitter.billboardMode == 2)
     {
         // 速度方向ビルボード (Velocity Billboard)
         float3 dir = particle.velocity;

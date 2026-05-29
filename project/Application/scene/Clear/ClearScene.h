@@ -12,6 +12,9 @@ class IrufemiEngine;
 class ObjClass;
 class GPUParticleSystem;
 #include "contents/skydome/Skydome.h"
+#include "contents/skydome/Skydome.h"
+#include "contents/effect/FireworkEffect.h"
+#include <array>
 
 /**
  * @class ResultScene
@@ -56,7 +59,7 @@ private: // メンバ変数(ゲーム)
 
     // 祝祭パーティクル（紙吹雪と花火）
     std::unique_ptr<GPUParticleSystem> confettiParticles_ = nullptr;
-    std::unique_ptr<GPUParticleSystem> fireworksParticles_ = nullptr;
+    std::array<std::unique_ptr<FireworkEffect>, 10> fireworksPool_;
 
     // 背景
     std::unique_ptr<Skydome> skydome_ = nullptr;

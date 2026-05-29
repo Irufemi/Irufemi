@@ -109,20 +109,11 @@ void ClearScene::Initialize(IrufemiEngine* engine) {
     confettiParticles_->SetDamping(0.01f); // 空気抵抗
     confettiParticles_->SetEmit(false);
 
-    // 花火パーティクルの初期化
-    fireworksParticles_ = std::make_unique<GPUParticleSystem>();
-    fireworksParticles_->Initialize("resources/circle.png");
-    fireworksParticles_->SetBlend(BlendMode::kBlendModeAdd);
-    fireworksParticles_->SetDepthWrite(PSOManager::DepthWrite::Disable);
-    fireworksParticles_->SetCull(PSOManager::CullMode::None);
-    fireworksParticles_->SetParticleLife(1.0f, 2.0f);
-    fireworksParticles_->SetParticleScale({0.2f, 0.2f, 0.2f}, {0.4f, 0.4f, 0.4f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f});
-    fireworksParticles_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
-    fireworksParticles_->SetStartColor({1.5f, 1.0f, 0.5f, 1.0f}, {0.5f, 1.5f, 1.5f, 1.0f});
-    fireworksParticles_->SetEndColor({1.0f, 0.2f, 0.5f, 0.0f}, {0.5f, 1.0f, 0.2f, 0.0f});
-    fireworksParticles_->SetGravity(-0.02f); // バースト後に少し下に落ちる（重力）
-    fireworksParticles_->SetDamping(0.15f); // 空気抵抗で急激に減速させて「弾ける」感を出す
-    fireworksParticles_->SetEmit(false);
+    // 花火パーティクルの初期化（新システムへ移行・プール事前生成）
+    for (int i = 0; i < 10; ++i) {
+        fireworksPool_[i] = std::make_unique<FireworkEffect>();
+        fireworksPool_[i]->Initialize(engine); // engine は Initialize の引数
+    }
 
     // 文字の初期配置（上空）
     const float clearPositionsX[6] = { -3.5f, -2.1f, -0.7f, 0.7f, 2.1f, 3.5f };
@@ -299,25 +290,36 @@ void ClearScene::Update() {
             }
         }
 
-        // 花火の打ち上げ
+        // 花火の打ち上げ（新システム）
         if (isRainingConfetti_) {
             fireworksTimer_ += 1.0f / 60.0f;
             if (fireworksTimer_ >= 0.5f) { // 0.5秒おきに
                 fireworksTimer_ = 0.0f;
-                // 画面のランダムな位置（X: -15 ~ 15, Y: 0 ~ 10, Z: 5）
-                float randX = (rand() % 300 - 150) * 0.1f;
-                float randY = (rand() % 150) * 0.1f; // 少し高めまで
                 
-                // バーストごとのランダムカラー生成（明るめ）
-                Vector4 c1 = { (rand() % 100) * 0.01f + 0.5f, (rand() % 100) * 0.01f + 0.5f, (rand() % 100) * 0.01f + 0.5f, 1.0f };
-                Vector4 c2 = { (rand() % 100) * 0.01f + 0.5f, (rand() % 100) * 0.01f + 0.5f, (rand() % 100) * 0.01f + 0.5f, 1.0f };
-                fireworksParticles_->SetStartColor(c1, c2);
-
-                // 爆発の勢い（Velocity）と拡散（Spread）を設定して本当に弾けるようにする
-                fireworksParticles_->SetSphereEmitter({randX, randY, 8.0f}, 0.2f, 80, 0.0f); // 小さな点から80個
-                fireworksParticles_->SetSpread(1.0f); // 放射状に100%広がる
-                fireworksParticles_->SetVelocity(0.3f + (rand() % 100) * 0.002f); // 0.3〜0.5の強い初速（※HLSLでは1フレームの移動量）
-                fireworksParticles_->Emit(80); // バースト
+                // 待機中または終了済みの花火を探して打ち上げる
+                for (auto& firework : fireworksPool_) {
+                    if (firework && (firework->IsWaiting() || firework->IsFinished())) {
+                        // 打ち上げ位置は画面下部（文字のX幅に合わせた範囲）、目標は上空ランダム
+                        float startX = (rand() % 160 - 80) * 0.1f; // -8.0 〜 8.0
+                        float startY = -5.0f; // 画面外下
+                        float targetY = (rand() % 30) * 0.1f + 2.0f; // 2.0〜5.0 (さらに低く)
+                        float targetX = startX + (rand() % 40 - 20) * 0.1f; // 少し左右にブレる
+                        
+                        // 文字の少し奥(Z=8.0)で打ち上げる
+                        firework->Fire({startX, startY, 8.0f}, {targetX, targetY, 8.0f}); 
+                        break;
+                    }
+                }
+            }
+            
+            // 花火の更新と終了判定
+            for (auto& firework : fireworksPool_) {
+                if (firework && !firework->IsWaiting()) {
+                    firework->Update(1.0f / 60.0f);
+                    if (firework->IsFinished()) {
+                        firework->Reset();
+                    }
+                }
             }
         }
 
@@ -345,7 +347,6 @@ void ClearScene::Update() {
     }
 
     if (confettiParticles_) confettiParticles_->Update();
-    if (fireworksParticles_) fireworksParticles_->Update();
 
     // 選択肢コントローラーの表示・更新（文字が落ちきってから少し後）
     if (!isSlamming_ && clearTextAnimator_.GetTime() > 1.0f) {
@@ -539,7 +540,11 @@ void ClearScene::Draw() {
     }
 
     if (confettiParticles_) confettiParticles_->Draw();
-    if (fireworksParticles_) fireworksParticles_->Draw();
+    for (auto& firework : fireworksPool_) {
+        if (firework && !firework->IsWaiting()) {
+            firework->Draw();
+        }
+    }
 
     if (!isSlamming_ && clearTextAnimator_.GetTime() > 1.0f) {
         clearSelection_.Draw();

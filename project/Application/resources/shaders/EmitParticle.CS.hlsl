@@ -42,6 +42,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
             gParticles[particleIndex].currentTime = 0.0f;
             gParticles[particleIndex].lifeTime = max(lerp(gEmitter.minLife, gEmitter.maxLife, r_life), 0.0001f);
+            gParticles[particleIndex].type = 0; // 親として初期化
+            gParticles[particleIndex].trailTimer = 0.0f;
 
             // 放出形状別の初期位置・速度設定
             if (gEmitter.type == 0) // Sphere

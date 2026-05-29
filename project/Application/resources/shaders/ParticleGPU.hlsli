@@ -1,7 +1,7 @@
 struct Particle
 {
 	float3 translate;
-	float pad0;
+	uint type; // 0: 親, 1: Trail, 2: Death
 	float3 scale;
 	float lifeTime;
 	float3 velocity;
@@ -10,7 +10,7 @@ struct Particle
 
 	// 拡張パラメータ
 	float3 rotation;
-	float pad1;
+	float trailTimer; // Trail用タイマー
 	float3 rotateSpeed;
 	float pad2;
 	float3 startScale;
@@ -91,7 +91,12 @@ struct GPUParticleEmitter
 	uint colorMode;       // カラーモード
 	float gravity;        // 重力
 	float damping;        // 空気抵抗
-	uint isBillboard;     // ビルボードフラグ
+	
+	// --- ビルボード（カメラ向け板ポリゴン）の描画モード ---
+	// 0: None             (ビルボード無効。通常の3D回転を適用)
+	// 1: CameraBillboard  (常にカメラの正面を向く。光の玉や煙などに使用)
+	// 2: VelocityBillboard(進行方向に沿って板が向き、伸びる。火の粉の軌跡や雨粒などに使用)
+	uint billboardMode;
 
 	// float4 x 14
 	uint burstCount;      // そのフレームの追加放出数
@@ -111,5 +116,11 @@ struct GPUParticleEmitter
 
 	// float4 x 17
 	float3 areaSize;
-	uint pad6;
+	uint enableTrail;
+
+	// float4 x 18
+	uint enableDeathEmit;
+	float trailFrequency;
+	float pad7;
+	float pad8;
 };
