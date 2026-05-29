@@ -12,6 +12,7 @@
 #include "contents/skydome/Skydome.h"
 #include "Engine/Graphics/PostProcess/PostProcessManager.h"
 #include "scene/inGame/GameScene.h"
+#include <fstream>
 
 ClearScene::~ClearScene() {
     // シーン破棄時に自身のポストプロセスのみを取り除く
@@ -149,12 +150,54 @@ void ClearScene::Initialize(IrufemiEngine* engine) {
     timeSeconds1_ = std::make_unique<Sprite>();
     timeSeconds1_->SetAnchor(0.0f, 0.0f);
 
+    // 最高記録表示スプライトの生成
+    bestMinutes10_ = std::make_unique<Sprite>();
+    bestMinutes10_->SetAnchor(0.0f, 0.0f);
+
+    bestMinutes1_ = std::make_unique<Sprite>();
+    bestMinutes1_->SetAnchor(0.0f, 0.0f);
+
+    bestColon_ = std::make_unique<Sprite>();
+    bestColon_->SetAnchor(0.0f, 0.0f);
+
+    bestSeconds10_ = std::make_unique<Sprite>();
+    bestSeconds10_->SetAnchor(0.0f, 0.0f);
+
+    bestSeconds1_ = std::make_unique<Sprite>();
+    bestSeconds1_->SetAnchor(0.0f, 0.0f);
+
+    // タイトルスプライトの生成
+    thisRecordTitleSprite_ = std::make_unique<Sprite>();
+    thisRecordTitleSprite_->SetAnchor(0.5f, 0.5f);
+
+    bestRecordTitleSprite_ = std::make_unique<Sprite>();
+    bestRecordTitleSprite_->SetAnchor(0.5f, 0.5f);
+
     isTimeSpritesInitialized_ = false;
+
+    // --- 最高記録の読み込みと更新 ---
+    bestTime_ = 999999.0f;
+    {
+        std::ifstream ifs("best_time.txt");
+        if (ifs) {
+            ifs >> bestTime_;
+        }
+    }
+    float clearTime = GameScene::GetClearTime();
+    if (clearTime < bestTime_) {
+        bestTime_ = clearTime;
+        std::ofstream ofs("best_time.txt");
+        if (ofs) {
+            ofs << bestTime_;
+        }
+    }
 
     // タイム表示テクスチャの非同期ロード（登録）を開始しておく
     if (engine_ && engine_->GetTextureManager()) {
         engine_->GetTextureManager()->GetTextureHandle("resources/texture/inGame/numbers.png");
         engine_->GetTextureManager()->GetTextureHandle("resources/texture/inGame/colon.png");
+        engine_->GetTextureManager()->GetTextureHandle("resources/texture/inGame/This record.png");
+        engine_->GetTextureManager()->GetTextureHandle("resources/texture/inGame/best record.png");
     }
 }
 
@@ -312,14 +355,28 @@ void ClearScene::Update() {
         if (!isTimeSpritesInitialized_ && engine_ && engine_->GetTextureManager()) {
             uint32_t tw = 0, th = 0;
             uint32_t cw = 0, ch = 0;
+            uint32_t t1w = 0, t1h = 0;
+            uint32_t t2w = 0, t2h = 0;
             if (engine_->GetTextureManager()->GetTextureSize("resources/texture/inGame/numbers.png", tw, th) && tw > 0 &&
-                engine_->GetTextureManager()->GetTextureSize("resources/texture/inGame/colon.png", cw, ch) && cw > 0) {
+                engine_->GetTextureManager()->GetTextureSize("resources/texture/inGame/colon.png", cw, ch) && cw > 0 &&
+                engine_->GetTextureManager()->GetTextureSize("resources/texture/inGame/This record.png", t1w, t1h) && t1w > 0 &&
+                engine_->GetTextureManager()->GetTextureSize("resources/texture/inGame/best record.png", t2w, t2h) && t2w > 0) {
                 
                 timeMinutes10_->Initialize("resources/texture/inGame/numbers.png");
                 timeMinutes1_->Initialize("resources/texture/inGame/numbers.png");
                 timeColon_->Initialize("resources/texture/inGame/colon.png");
                 timeSeconds10_->Initialize("resources/texture/inGame/numbers.png");
                 timeSeconds1_->Initialize("resources/texture/inGame/numbers.png");
+
+                bestMinutes10_->Initialize("resources/texture/inGame/numbers.png");
+                bestMinutes1_->Initialize("resources/texture/inGame/numbers.png");
+                bestColon_->Initialize("resources/texture/inGame/colon.png");
+                bestSeconds10_->Initialize("resources/texture/inGame/numbers.png");
+                bestSeconds1_->Initialize("resources/texture/inGame/numbers.png");
+
+                thisRecordTitleSprite_->Initialize("resources/texture/inGame/This record.png");
+                bestRecordTitleSprite_->Initialize("resources/texture/inGame/best record.png");
+
                 isTimeSpritesInitialized_ = true;
             }
         }
@@ -327,18 +384,25 @@ void ClearScene::Update() {
         // --- クリアタイム表示の更新 ---
         if (isTimeSpritesInitialized_) {
             float clearTime = GameScene::GetClearTime();
-            int minutes = static_cast<int>(clearTime) / 60;
-            int seconds = static_cast<int>(clearTime) % 60;
+            
+            auto getDigits = [](float timeVal, int& m10, int& m1, int& s10, int& s1) {
+                int minutes = static_cast<int>(timeVal) / 60;
+                int seconds = static_cast<int>(timeVal) % 60;
+                if (minutes > 99) {
+                    minutes = 99;
+                    seconds = 59;
+                }
+                m10 = minutes / 10;
+                m1 = minutes % 10;
+                s10 = seconds / 10;
+                s1 = seconds % 10;
+            };
 
-            if (minutes > 99) {
-                minutes = 99;
-                seconds = 59;
-            }
+            int thisM10, thisM1, thisS10, thisS1;
+            getDigits(clearTime, thisM10, thisM1, thisS10, thisS1);
 
-            int m10 = minutes / 10;
-            int m1 = minutes % 10;
-            int s10 = seconds / 10;
-            int s1 = seconds % 10;
+            int bestM10, bestM1, bestS10, bestS1;
+            getDigits(bestTime_, bestM10, bestM1, bestS10, bestS1);
 
             auto setDigitRect = [](Sprite* sprite, int digit) {
                 if (sprite) {
@@ -346,10 +410,15 @@ void ClearScene::Update() {
                 }
             };
 
-            setDigitRect(timeMinutes10_.get(), m10);
-            setDigitRect(timeMinutes1_.get(), m1);
-            setDigitRect(timeSeconds10_.get(), s10);
-            setDigitRect(timeSeconds1_.get(), s1);
+            setDigitRect(timeMinutes10_.get(), thisM10);
+            setDigitRect(timeMinutes1_.get(), thisM1);
+            setDigitRect(timeSeconds10_.get(), thisS10);
+            setDigitRect(timeSeconds1_.get(), thisS1);
+
+            setDigitRect(bestMinutes10_.get(), bestM10);
+            setDigitRect(bestMinutes1_.get(), bestM1);
+            setDigitRect(bestSeconds10_.get(), bestS10);
+            setDigitRect(bestSeconds1_.get(), bestS1);
 
             float screenW = static_cast<float>(engine_->GetClientWidth());
             float screenH = static_cast<float>(engine_->GetClientHeight());
@@ -360,27 +429,54 @@ void ClearScene::Update() {
             float stepX = charSize + spacing;
             float totalW = stepX * 4.0f + charSize;
 
-            float startX = (screenW - totalW) / 2.0f;
-            float startY = 400.0f * uiScale; // 画面中央やや下に配置
+            float centerX = screenW / 2.0f;
+            float startY = 410.0f * uiScale; // ボタンと被らないように少し位置を調整
+
+            // 左右の間隔
+            float gap = 80.0f * uiScale;
+
+            float startX_this = centerX - totalW - gap;
+            float startX_best = centerX + gap;
 
             // ゴールド発光色（Bloomに引っかかるように1.0を超える輝度、uiAlphaをアルファに掛ける）
             float intensity = 0.8f + std::sin(clearTextAnimator_.GetTime() * 5.0f) * 0.2f;
             Vector4 goldColor = { 1.5f * intensity, 1.2f * intensity, 0.3f * intensity, uiAlpha };
 
-            auto updateSprite = [&](Sprite* sprite, float x, float y, float size) {
+            auto updateTimeSprites = [&](Sprite* m10, Sprite* m1, Sprite* colon, Sprite* s10, Sprite* s1, float startX) {
+                auto updateSprite = [&](Sprite* sprite, float x, float y, float size) {
+                    if (sprite) {
+                        sprite->SetSize(size, size);
+                        sprite->SetPositionTopLeft(x, y);
+                        sprite->SetColor(goldColor);
+                        sprite->Update();
+                    }
+                };
+                updateSprite(m10, startX, startY, charSize);
+                updateSprite(m1, startX + stepX, startY, charSize);
+                updateSprite(colon, startX + stepX * 2.0f, startY, charSize);
+                updateSprite(s10, startX + stepX * 3.0f, startY, charSize);
+                updateSprite(s1, startX + stepX * 4.0f, startY, charSize);
+            };
+
+            updateTimeSprites(timeMinutes10_.get(), timeMinutes1_.get(), timeColon_.get(), timeSeconds10_.get(), timeSeconds1_.get(), startX_this);
+            updateTimeSprites(bestMinutes10_.get(), bestMinutes1_.get(), bestColon_.get(), bestSeconds10_.get(), bestSeconds1_.get(), startX_best);
+
+            // タイトル画像の更新
+            auto updateTitleSprite = [&](Sprite* sprite, float targetStartX) {
                 if (sprite) {
-                    sprite->SetSize(size, size);
-                    sprite->SetPositionTopLeft(x, y);
+                    float tW = 200.0f * uiScale;
+                    float tH = 50.0f * uiScale;
+                    float cX = targetStartX + totalW / 2.0f;
+                    float cY = startY - 40.0f * uiScale; // タイム表示の上
+                    sprite->SetSize(tW, tH);
+                    sprite->SetPositionCenter(cX, cY);
                     sprite->SetColor(goldColor);
                     sprite->Update();
                 }
             };
 
-            updateSprite(timeMinutes10_.get(), startX, startY, charSize);
-            updateSprite(timeMinutes1_.get(), startX + stepX, startY, charSize);
-            updateSprite(timeColon_.get(), startX + stepX * 2.0f, startY, charSize);
-            updateSprite(timeSeconds10_.get(), startX + stepX * 3.0f, startY, charSize);
-            updateSprite(timeSeconds1_.get(), startX + stepX * 4.0f, startY, charSize);
+            updateTitleSprite(thisRecordTitleSprite_.get(), startX_this);
+            updateTitleSprite(bestRecordTitleSprite_.get(), startX_best);
         }
 
         clearSelection_.Update(engine_->GetInputManager());
@@ -452,6 +548,15 @@ void ClearScene::Draw() {
             if (timeColon_) timeColon_->Draw();
             if (timeSeconds10_) timeSeconds10_->Draw();
             if (timeSeconds1_) timeSeconds1_->Draw();
+
+            if (bestMinutes10_) bestMinutes10_->Draw();
+            if (bestMinutes1_) bestMinutes1_->Draw();
+            if (bestColon_) bestColon_->Draw();
+            if (bestSeconds10_) bestSeconds10_->Draw();
+            if (bestSeconds1_) bestSeconds1_->Draw();
+
+            if (thisRecordTitleSprite_) thisRecordTitleSprite_->Draw();
+            if (bestRecordTitleSprite_) bestRecordTitleSprite_->Draw();
         }
     }
 }

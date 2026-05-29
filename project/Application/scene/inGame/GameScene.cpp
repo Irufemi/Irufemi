@@ -184,6 +184,7 @@ void GameScene::Update() {
 
   // ボス死亡中のカメラ演出更新
   if (isDeathCameraMode_ && !isDebugCameraMode_) {
+      if (player_) player_->ClearMissiles();
       deathCameraLerpTimer_ += engine_->GetDeltaTime();
       float t = deathCameraLerpTimer_ / 4.0f; // 約4.0秒かけてズームイン
       if (t > 1.0f) t = 1.0f;

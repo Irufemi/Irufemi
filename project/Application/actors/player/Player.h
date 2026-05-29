@@ -57,6 +57,7 @@ public:
     int GetHp() const { return status_.GetHp(); }
     int GetMaxHp() const { return status_.GetMaxHp(); }
     bool IsDead() const { return status_.IsDead(); }
+    void ClearMissiles() { weapon_.ClearMissiles(); }
 
     bool IsDeathAnimationFinished() const { return isDeathAnimationFinished_; }
     bool IsBlowingAway() const { return deathTimer_ > 0; }

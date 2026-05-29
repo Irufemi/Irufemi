@@ -70,6 +70,7 @@ public:
     void FireMissileSkill(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& targetPos);
     void StartMachineGunSkill();
     void StopMachineGunSkill();
+    void ClearMissiles();
 
     // 機関銃の残弾ゲッター（UIなどで使用）
     int GetMachineGunAmmo() const { return machineGunAmmo_; }

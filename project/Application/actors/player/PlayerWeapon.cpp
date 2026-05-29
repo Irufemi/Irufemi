@@ -835,3 +835,9 @@ void PlayerWeapon::FireMissileSkill(const Vector3& playerTranslate, const Vector
         }
     }
 }
+
+void PlayerWeapon::ClearMissiles() {
+    for (int i = 0; i < kMaxMissiles; ++i) {
+        missiles_[i].isActive = false;
+    }
+}

@@ -77,6 +77,20 @@ private: // メンバ変数(システム)
     std::unique_ptr<Sprite> timeSeconds10_ = nullptr;
     std::unique_ptr<Sprite> timeSeconds1_ = nullptr;
 
+    // 最高記録表示用UI
+    std::unique_ptr<Sprite> bestMinutes10_ = nullptr;
+    std::unique_ptr<Sprite> bestMinutes1_ = nullptr;
+    std::unique_ptr<Sprite> bestColon_ = nullptr;
+    std::unique_ptr<Sprite> bestSeconds10_ = nullptr;
+    std::unique_ptr<Sprite> bestSeconds1_ = nullptr;
+
+    // タイトル表示用UI
+    std::unique_ptr<Sprite> thisRecordTitleSprite_ = nullptr;
+    std::unique_ptr<Sprite> bestRecordTitleSprite_ = nullptr;
+
+    // 最高記録保持用
+    float bestTime_ = 0.0f;
+
     // タイム表示初期化完了フラグ
     bool isTimeSpritesInitialized_ = false;
 };
