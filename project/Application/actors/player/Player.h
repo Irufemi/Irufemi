@@ -7,6 +7,7 @@
 #include "PlayerStatus.h" 
 #include <memory>
 #include <vector>
+#include <array>
 #include "Resource/Audio/Se.h"
 
 // 前方宣言
@@ -274,4 +275,31 @@ private:
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
     bool isDebugDrawOBB_ = false;
 #endif
+
+private:
+    void TriggerDodgeSpeedLines();
+    void UpdateSpeedLines();
+    void DrawSpeedLines();
+
+    // ★追加: 回避方向別の演出用モード定義
+    enum class DodgeDirectionMode {
+        kForward,  // 前方向（内から外へ）
+        kBackward, // 後ろ方向（外から内へ）
+        kSideways  // 横方向（水平平行線）
+    };
+    DodgeDirectionMode dodgeDirectionMode_ = DodgeDirectionMode::kForward;
+
+    static constexpr int kMaxSpeedLines = 48;
+    struct SpeedLine {
+        std::unique_ptr<Sprite> sprite;
+        Vector2 startPos;
+        Vector2 currentPos;
+        Vector2 direction;
+        float speed;
+        float length;
+        float width;
+        float alpha;
+        bool isActive;
+    };
+    std::array<SpeedLine, kMaxSpeedLines> speedLines_;
 };

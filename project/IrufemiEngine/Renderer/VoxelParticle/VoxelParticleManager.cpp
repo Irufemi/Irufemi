@@ -7,7 +7,17 @@ void VoxelParticleManager::Initialize(IrufemiEngine* engine) {
 }
 
 void VoxelParticleManager::ReservePool(const std::string& modelName, const Vector3Int& resolution, int poolSize) {
-    for (int i = 0; i < poolSize; ++i) {
+    // 現在プール内に存在する同一モデルの数をカウント
+    int currentCount = 0;
+    for (const auto& entry : pool_) {
+        if (entry.modelName == modelName) {
+            currentCount++;
+        }
+    }
+
+    // 不足している分だけを新規に生成して追加
+    int addCount = poolSize - currentCount;
+    for (int i = 0; i < addCount; ++i) {
         auto voxel = std::make_unique<VoxelParticleSystem>();
         voxel->Initialize(modelName, resolution);
         // バックグラウンドロードを行いつつプールに追加
@@ -57,8 +67,12 @@ VoxelParticleSystem* VoxelParticleManager::AllocateSystem(const std::string& mod
 
 void VoxelParticleManager::Update(float deltaTime) {
     for (auto& entry : pool_) {
-        // 描画準備完了状態か、実行中の場合のみUpdateを呼んで状態を更新する
-        if (entry.system->IsActive() || entry.system->GetStatus() == VoxelParticleSystem::LoadingStatus::ReadyToCreateResources) {
+        // ロード未完了のもの（Pending, Loading）、描画準備完了状態、または実行中の場合にUpdateを呼ぶ
+        auto status = entry.system->GetStatus();
+        if (entry.system->IsActive() || 
+            status == VoxelParticleSystem::LoadingStatus::Pending ||
+            status == VoxelParticleSystem::LoadingStatus::Loading ||
+            status == VoxelParticleSystem::LoadingStatus::ReadyToCreateResources) {
             entry.system->Update(deltaTime);
         }
     }

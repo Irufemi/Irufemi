@@ -18,7 +18,7 @@ public:
 
     void Initialize();
     void UpdateInput(InputManager* input, Vector3& playerRotate);
-    void Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration, IrufemiEngine* engine);
+    void Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration, IrufemiEngine* engine, int dodgeDurationTimer);
 
     /**
      * @brief 死亡時（吹き飛び時）のドラマチックなカメラワーク
