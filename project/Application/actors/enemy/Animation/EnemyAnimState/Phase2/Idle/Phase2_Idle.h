@@ -61,7 +61,7 @@ private:
     float currentAttackCooldown_ = 3.0f;    // 今回の攻撃間隔
 
     // 各攻撃の発生確率（合計 1.0f (100%) になるように設定）
-    static constexpr float kBombProbability = 0.5f; // ボムの確率 (50%)
+    static constexpr float kBombProbability = 0.65f; // ボムの確率 (65%)
     static constexpr float kBeamProbability = 0.3f; // ビームの確率 (30%)
-    static constexpr float kBiteProbability = 0.2f; // 噛みつき(Bite)の確率 (20%)
+    static constexpr float kBiteProbability = 0.05f; // 噛みつき(Bite)の確率 (5%)
 };

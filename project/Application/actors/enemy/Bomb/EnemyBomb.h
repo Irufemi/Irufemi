@@ -23,8 +23,9 @@ public:
      * @brief 爆弾を投げる
      * @param startPos 投擲開始位置
      * @param targetPos 目標位置（着弾点）
+     * @param headIndex 投擲元頭部インデックス
      */
-    void Throw(const Vector3& startPos, const Vector3& targetPos);
+    void Throw(const Vector3& startPos, const Vector3& targetPos, int headIndex);
 
     void Update();
     void Draw(IrufemiEngine* engine);
@@ -32,6 +33,7 @@ public:
     bool IsExpired() const { return isExpired_; }
     bool IsExploding() const { return state_ == State::Exploding; }
     void Cancel();
+    int GetHeadIndex() const { return headIndex_; }
 
     std::vector<OBB> GetOBBs() const;
 
@@ -87,4 +89,5 @@ private:
 
     bool isExpired_ = false;
     IrufemiEngine* engine_ = nullptr;
+    int headIndex_ = -1;
 };

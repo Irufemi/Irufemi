@@ -70,7 +70,8 @@ void Enemy::Initialize(IrufemiEngine *engine) {
   for (int i = 0; i < 3; ++i) {
       beams_[i] = std::make_unique<EnemyBeam>();
       beams_[i]->Initialize(engine_);
-      
+  }
+  for (int i = 0; i < kMaxBombs; ++i) {
       bombs_[i] = std::make_unique<EnemyBomb>();
       bombs_[i]->Initialize(engine_);
   }
@@ -179,6 +180,8 @@ void Enemy::Update(Player *player) {
                 beams_[i]->SetTelegraphActive(false);
                 beams_[i]->SetChargeSphereActive(false);
             }
+        }
+        for (int i = 0; i < kMaxBombs; ++i) {
             if (bombs_[i]) bombs_[i]->Cancel();
         }
         if (stompEffects_) stompEffects_->Cancel();
@@ -209,7 +212,7 @@ void Enemy::Update(Player *player) {
   if (deathExplosionParticle_) {
       deathExplosionParticle_->Update();
   }
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < kMaxBombs; ++i) {
       if (bombs_[i] && !bombs_[i]->IsExpired()) {
           bombs_[i]->Update();
       }
@@ -329,6 +332,8 @@ void Enemy::Update(Player *player) {
               beams_[i]->SetTelegraphActive(false);
               beams_[i]->SetChargeSphereActive(false);
           }
+      }
+      for (int i = 0; i < kMaxBombs; ++i) {
           if (bombs_[i]) {
               bombs_[i]->Cancel();
           }
@@ -359,6 +364,8 @@ void Enemy::Update(Player *player) {
               beams_[i]->SetTelegraphActive(false);
               beams_[i]->SetChargeSphereActive(false);
           }
+      }
+      for (int i = 0; i < kMaxBombs; ++i) {
           if (bombs_[i]) {
               bombs_[i]->Cancel();
           }
@@ -435,7 +442,12 @@ void Enemy::Update(Player *player) {
               beams_[i]->SetTelegraphActive(false);
               beams_[i]->SetChargeSphereActive(false);
           }
-          if (bombs_[i]) {
+      }
+  }
+  for (int i = 0; i < kMaxBombs; ++i) {
+      if (bombs_[i] && !bombs_[i]->IsExpired()) {
+          int headIdx = bombs_[i]->GetHeadIndex();
+          if (headIdx >= 0 && headIdx < 3 && IsHeadDead(headIdx)) {
               bombs_[i]->Cancel();
           }
       }
@@ -595,7 +607,7 @@ void Enemy::Draw(IrufemiEngine* engine) {
   }
 
   // 爆弾を描画
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < kMaxBombs; ++i) {
       if (bombs_[i] && !bombs_[i]->IsExpired()) {
           bombs_[i]->Draw(engine);
       }
@@ -630,16 +642,21 @@ void Enemy::FireBeam() {
 
 // 爆弾の発射命令
 void Enemy::FireBomb(int index, const Vector3& targetPos) {
-    if (index >= 0 && index < 3 && bombs_[index]) {
-        Transform* headT = nullptr;
-        if (index == 0) headT = &headLeftLocalTransform_;
-        else if (index == 1) headT = &headMidLocalTransform_;
-        else if (index == 2) headT = &headRightLocalTransform_;
+    Transform* headT = nullptr;
+    if (index == 0) headT = &headLeftLocalTransform_;
+    else if (index == 1) headT = &headMidLocalTransform_;
+    else if (index == 2) headT = &headRightLocalTransform_;
 
-        if (headT) {
-            Vector3 startPos = headT->translate;
-            // フェーズ2では translate がワールド座標になっているためそのまま使用
-            bombs_[index]->Throw(startPos, targetPos);
+    if (headT) {
+        Vector3 startPos = headT->translate;
+        // フェーズ2では translate がワールド座標になっているためそのまま使用
+        
+        // 空いている爆弾（Expiredなもの）を探して投擲する
+        for (int i = 0; i < kMaxBombs; ++i) {
+            if (bombs_[i] && bombs_[i]->IsExpired()) {
+                bombs_[i]->Throw(startPos, targetPos, index);
+                break;
+            }
         }
     }
 }
@@ -979,6 +996,8 @@ void Enemy::UpdateDebugUI() {
         addObbLines(headRight_->GetOBB());
       for (int i = 0; i < 3; ++i) {
           if (beams_[i]) addObbLines(beams_[i]->GetOBB());
+      }
+      for (int i = 0; i < kMaxBombs; ++i) {
           if (bombs_[i] && !bombs_[i]->IsExpired()) {
               auto obbs = bombs_[i]->GetOBBs();
               for (const auto& obb : obbs) addObbLines(obb);
