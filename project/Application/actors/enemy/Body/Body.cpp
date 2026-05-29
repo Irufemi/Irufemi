@@ -50,6 +50,7 @@ void Body::Update() {
     transform_.translate = basePosition_;
     if (obj_) {
       obj_->SetTransform(transform_);
+      obj_->SetLightingModeOverride(9);
     }
     
     // 消滅タイマーを進める
@@ -81,19 +82,30 @@ void Body::Update() {
 
   if (obj_ && !IsCompletelyDead()) {
     Vector4 color = baseColor_;
-    float duration = EnemyParameters::GetInstance()->GetDamageFlashDuration();
-    if (damageFlashTimer_ > 0.0f && duration > 0.0f) {
-      const Vector4 damageColor = EnemyParameters::GetInstance()->GetDamageFlashColor();
-      float t = damageFlashTimer_ / duration;
-      if (t < 0.0f) {
-        t = 0.0f;
-      } else if (t > 1.0f) {
-        t = 1.0f;
+    if (isBlownAway_) {
+      // 壊れた部位は白っぽくし、かつ透明度を下げる
+      static constexpr float kDestroyedWhiteBlend = 0.9f;
+      static constexpr float kDestroyedAlpha = 0.8f;
+
+      color.x = color.x + (1.0f - color.x) * kDestroyedWhiteBlend;
+      color.y = color.y + (1.0f - color.y) * kDestroyedWhiteBlend;
+      color.z = color.z + (1.0f - color.z) * kDestroyedWhiteBlend;
+      color.w = kDestroyedAlpha;
+    } else {
+      float duration = EnemyParameters::GetInstance()->GetDamageFlashDuration();
+      if (damageFlashTimer_ > 0.0f && duration > 0.0f) {
+        const Vector4 damageColor = EnemyParameters::GetInstance()->GetDamageFlashColor();
+        float t = damageFlashTimer_ / duration;
+        if (t < 0.0f) {
+          t = 0.0f;
+        } else if (t > 1.0f) {
+          t = 1.0f;
+        }
+        color.x = baseColor_.x + (damageColor.x - baseColor_.x) * t;
+        color.y = baseColor_.y + (damageColor.y - baseColor_.y) * t;
+        color.z = baseColor_.z + (damageColor.z - baseColor_.z) * t;
+        color.w = baseColor_.w + (damageColor.w - baseColor_.w) * t;
       }
-      color.x = baseColor_.x + (damageColor.x - baseColor_.x) * t;
-      color.y = baseColor_.y + (damageColor.y - baseColor_.y) * t;
-      color.z = baseColor_.z + (damageColor.z - baseColor_.z) * t;
-      color.w = baseColor_.w + (damageColor.w - baseColor_.w) * t;
     }
     obj_->SetColor(color);
   }
@@ -168,6 +180,9 @@ void Body::ResetBlow() {
     maxDisappearTime_ = EnemyParameters::GetInstance()->GetDisappearTime();
     blowTimer_ = 0.0f;
     blowVelocity_ = {0.0f, 0.0f, 0.0f};
+    if (obj_) {
+        obj_->SetLightingModeOverride(-1);
+    }
     
     // voxelSystem_ ももし発火してしまっていたらリセットできるようにする
     // 現在のVoxelParticleSystemにはリセットがない可能性があるため、描画抑制か新たに作り直す等が必要だが

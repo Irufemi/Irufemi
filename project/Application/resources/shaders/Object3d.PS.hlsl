@@ -91,6 +91,12 @@ PixelShaderOutput main(VertexShaderOutput input)
 		context.toEye = normalize(gPerFrame.cameraWorldPosition - input.worldPosition);
 
 		float3 albedo = gMaterial.color.rgb * textureColor.rgb * input.color.rgb;
+		if (gMaterial.lightingMode == 9)
+		{
+			float luminance = dot(albedo, float3(0.2125f, 0.7154f, 0.0721f));
+			float3 gray = float3(luminance, luminance, luminance);
+			albedo = lerp(gray, float3(1.0f, 1.0f, 1.0f), 0.5f);
+		}
 		float3 totalDiffuse = 0;
 		float3 totalSpecular = 0;
 
@@ -167,6 +173,12 @@ PixelShaderOutput main(VertexShaderOutput input)
 	else
 	{
 		output.color = gMaterial.color * textureColor * input.color;
+		if (gMaterial.lightingMode == 9)
+		{
+			float luminance = dot(output.color.rgb, float3(0.2125f, 0.7154f, 0.0721f));
+			float3 gray = float3(luminance, luminance, luminance);
+			output.color.rgb = lerp(gray, float3(1.0f, 1.0f, 1.0f), 0.5f);
+		}
 	}
 	
     // Linear -> sRGB はハードウェア RTV (_SRGB形式) に任せるため削除
