@@ -116,8 +116,11 @@ private:
     // ビームのインスタンス管理
     std::array<std::unique_ptr<EnemyBeam>, 3> beams_;
 
+    // 爆弾の最大同時存在数
+    static constexpr int kMaxBombs = 10;
+
     // 爆弾のインスタンス管理
-    std::array<std::unique_ptr<EnemyBomb>, 3> bombs_;
+    std::array<std::unique_ptr<EnemyBomb>, kMaxBombs> bombs_;
 
     // スタンプのインスタンス管理
     std::unique_ptr<EnemyStompEffects> stompEffects_;

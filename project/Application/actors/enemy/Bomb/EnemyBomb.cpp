@@ -80,12 +80,14 @@ void EnemyBomb::Initialize(IrufemiEngine* engine) {
     }
 
     state_ = State::Idle;
-    isExpired_ = false;
+    isExpired_ = true;
+    headIndex_ = -1;
 }
 
-void EnemyBomb::Throw(const Vector3& startPos, const Vector3& targetPos) {
+void EnemyBomb::Throw(const Vector3& startPos, const Vector3& targetPos, int headIndex) {
     startPos_ = startPos;
     targetPos_ = targetPos;
+    headIndex_ = headIndex;
     flightTimer_ = 0.0f;
     telegraphTimer_ = 0.0f;
     explodeTimer_ = 0.0f;
