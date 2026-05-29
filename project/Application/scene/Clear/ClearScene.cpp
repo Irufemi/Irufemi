@@ -293,8 +293,21 @@ void ClearScene::Update() {
         // 花火の打ち上げ（新システム）
         if (isRainingConfetti_) {
             fireworksTimer_ += 1.0f / 60.0f;
-            if (fireworksTimer_ >= 0.5f) { // 0.5秒おきに
+            if (fireworksTimer_ >= nextFireworkInterval_) { 
                 fireworksTimer_ = 0.0f;
+                
+                // 次の花火までの間隔をランダムに決定して「情緒（タメと連発）」を演出
+                int randVal = rand() % 100;
+                if (randVal < 20) {
+                    // 20%の確率で「スターマイン（連発）」: 0.1秒〜0.3秒間隔
+                    nextFireworkInterval_ = 0.1f + (rand() % 21) * 0.01f;
+                } else if (randVal < 35) {
+                    // 15%の確率で「タメ」: 1.0秒〜1.8秒の静寂
+                    nextFireworkInterval_ = 1.0f + (rand() % 81) * 0.01f;
+                } else {
+                    // 65%の確率で「通常」: 0.4秒〜0.7秒間隔
+                    nextFireworkInterval_ = 0.4f + (rand() % 31) * 0.01f;
+                }
                 
                 // 待機中または終了済みの花火を探して打ち上げる
                 for (auto& firework : fireworksPool_) {

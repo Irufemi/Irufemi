@@ -71,6 +71,7 @@ private: // メンバ変数(ゲーム)
     bool isRainingConfetti_ = false; // 降らせる演出に移行したか
     float cameraAngle_ = 0.0f;
     float fireworksTimer_ = 0.0f;
+    float nextFireworkInterval_ = 0.5f; // 次の花火打ち上げまでの間隔
 
 private: // メンバ変数(システム)
 
