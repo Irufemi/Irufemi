@@ -195,6 +195,14 @@ void Player::Initialize(InputManager* input, IrufemiEngine* engine) {
 
     seCooldown_ = std::make_unique<Se>();
     seCooldown_->Initialize("resources/SE/player/cooldown.mp3", "Player_Cooldown", 0.2f);
+
+    // ★追加: スピードラインの初期化
+    for (int i = 0; i < kMaxSpeedLines; ++i) {
+        speedLines_[i].sprite = std::make_unique<Sprite>();
+        speedLines_[i].sprite->Initialize("resources/whiteTexture.png");
+        speedLines_[i].sprite->SetSize(0.0f, 0.0f);
+        speedLines_[i].isActive = false;
+    }
 }
 
 void Player::Update() {
@@ -355,7 +363,7 @@ void Player::Update() {
 
             // 待機中はカメラとパーティクルのみ更新（プレイヤーはその場に留まる）
             weapon_.UpdateParticlesOnly();
-            cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
+            cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_, movement_.GetDodgeDurationTimer());
             return;
         }
 
@@ -651,6 +659,7 @@ void Player::Update() {
     // シネマティック中（演出中）はプレイヤー追従カメラの更新を止め、シーン側でのカメラ制御に完全に委ねる
     if (!isCinematicMode_) {
         cameraController_.Update(translate_, rotate_, weapon_.GetMissileVibration(), engine_);
+        UpdateSpeedLines();
     }
     status_.UpdateKnockback();
 
@@ -1262,6 +1271,9 @@ void Player::Draw2DUI(Enemy* enemy) {
             karakuriGaugeBg_->Draw();
             karakuriGaugeFill_->Draw();
         }
+
+        // ★追加: 回避時のスピードラインを描画
+        DrawSpeedLines();
     }
 }
 
@@ -1536,11 +1548,25 @@ bool Player::ApplyDamage(int damage) {
 void Player::HandleMovement() {
     bool isCharging = input_->IsKeyDown('E') && !isKarakuriCharged_;
 
+    int prevDodgeTimer = movement_.GetDodgeDurationTimer();
     int currentInvincible = status_.GetInvincibleTimer();
     movement_.Update(input_, isCharging, isKarakuriCharged_, translate_, rotate_, currentInvincible);
 
     if (currentInvincible > status_.GetInvincibleTimer()) {
         status_.SetInvincibleTimer(currentInvincible);
+    }
+
+    // 回避開始の瞬間（クールダウンに入り、回避タイマーが最大値30に設定されたフレーム）にスピードラインをトリガー
+    if (prevDodgeTimer == 0 && movement_.GetDodgeDurationTimer() > 0) {
+        // ★追加: キー入力状態から回避の方向モードを判定して保存（マジックナンバーの排除）
+        if (input_->IsKeyDown('S')) {
+            dodgeDirectionMode_ = DodgeDirectionMode::kBackward;
+        } else if (input_->IsKeyDown('A') || input_->IsKeyDown('D')) {
+            dodgeDirectionMode_ = DodgeDirectionMode::kSideways;
+        } else {
+            dodgeDirectionMode_ = DodgeDirectionMode::kForward;
+        }
+        TriggerDodgeSpeedLines();
     }
 }
 

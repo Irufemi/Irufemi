@@ -42,7 +42,7 @@ void PlayerCamera::UpdateInput(InputManager* input, Vector3& playerRotate) {
     }
 }
 
-void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration, IrufemiEngine* engine) {
+void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration, IrufemiEngine* engine, int dodgeDurationTimer) {
     Vector3 cameraPos = { 0.0f, 0.0f, 0.0f };
     Vector3 lookAtTarget = {
         playerTranslate.x,
@@ -52,6 +52,10 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
 
     if (viewMode_ == ViewMode::kThirdPerson) {
         float distance = kCameraDistanceThirdPerson;
+        if (dodgeDurationTimer > 0) {
+            float progress = static_cast<float>(dodgeDurationTimer) / 30.0f; // 1.0f -> 0.0f
+            distance += progress * progress * 3.0f; // 最大で 3.0f 引く
+        }
         float cosPitch = std::cos(cameraPitch_);
         float sinPitch = std::sin(cameraPitch_);
         float cosYaw = std::cos(playerRotate.y);
@@ -79,6 +83,16 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         if (auto* cam = engine->GetCameraManager()->GetActiveCamera()) {
             cam->SetTranslate(cameraPos);
             cam->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });
+            
+            // 回避中の視野角 (FOV) の動的イージング (三人称視点時のみ適用)
+            float baseFov = 45.0f * 3.141592654f / 180.0f;
+            if (dodgeDurationTimer > 0) {
+                float progress = static_cast<float>(dodgeDurationTimer) / 30.0f;
+                float fovOffset = progress * progress * (10.0f * 3.141592654f / 180.0f); // 最大10度広げる
+                cam->SetFovY(baseFov + fovOffset);
+            } else {
+                cam->SetFovY(baseFov);
+            }
         }
     } else {
         cameraPos.x = playerTranslate.x;
@@ -103,6 +117,9 @@ void PlayerCamera::Update(const Vector3& playerTranslate, const Vector3& playerR
         if (auto* cam = engine->GetCameraManager()->GetActiveCamera()) {
             cam->SetTranslate(cameraPos);
             cam->SetRotate({ cameraPitch_, playerRotate.y, 0.0f });
+            // 一人称視点時は3D酔いを防ぐためFOV変更を行わないが、ベースFovに明示的に戻しておく
+            float baseFov = 45.0f * 3.141592654f / 180.0f;
+            cam->SetFovY(baseFov);
         }
     }
 }
