@@ -70,7 +70,12 @@ public:
     bool GetIsTargetingEnemy() const { return isTargetingEnemy_; }
     bool IsFirstPerson() const { return cameraController_.IsFirstPerson(); }
 
-    void SetCinematicMode(bool isCinematic) { isCinematicMode_ = isCinematic; }
+    void SetCinematicMode(bool isCinematic) {
+        isCinematicMode_ = isCinematic;
+        if (isCinematic) {
+            cameraController_.ForceThirdPerson();
+        }
+    }
     bool IsCinematicMode() const { return isCinematicMode_; }
 
     bool IsKarakuriCharged() const { return isKarakuriCharged_; }
