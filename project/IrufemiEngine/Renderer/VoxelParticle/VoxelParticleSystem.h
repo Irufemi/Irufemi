@@ -78,12 +78,12 @@ public:
   enum class ParticleType : uint32_t {
     Default = 0,
     Building = 1,
-    EnemyBurnout = 2,
+    AshDisintegration = 2,
     FineScatter = 3,
-    /// @brief エネミーによって破壊されたビルの崩壊（黒焦げになり自重で落ちる）
-    BuildingByEnemy = 4,   
-    /// @brief プレイヤーによって吹き飛ばされたビルの寿命消滅（青白くフラッシュし空中四散）
-    BuildingByPlayer = 5
+    /// @brief 重力に従って落ちる黒焦げの大きな破片
+    DebrisLargeGravity = 4,   
+    /// @brief 四散して青白く光る爆発的な破片
+    DebrisExplosive = 5
   };
 
   struct VoxelEmitterParams {

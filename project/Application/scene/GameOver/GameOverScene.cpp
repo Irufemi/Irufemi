@@ -17,12 +17,6 @@ GameOverScene::~GameOverScene() {
         pp->RemoveActiveMode(PostProcessMode::Grayscale);
         pp->RemoveActiveMode(PostProcessMode::Vignette);
         pp->RemoveActiveMode(PostProcessMode::Bloom);
-
-        // 他のシーンに影響が出ないよう、変更したパラメータをデフォルトに戻す
-        pp->GetVignetteParams().scale = 16.0f;
-        pp->GetVignetteParams().power = 0.8f;
-        pp->GetBloomParams().threshold = 0.8f;
-        pp->GetBloomParams().intensity = 1.0f;
     }
 
     // 画面のクリアカラーをデフォルト（Cornflower blue）に戻す

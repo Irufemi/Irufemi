@@ -72,16 +72,8 @@ void Field::Initialize() {
 }
 
 void Field::Update() {
-	if (cyberHexCB_) {
-		uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
-		cyberHexCB_->Update(cyberHexCBIndex_, cyberHexParams_, frameIndex);
-		D3D12_GPU_VIRTUAL_ADDRESS addr = cyberHexCB_->GetGPUVirtualAddress(cyberHexCBIndex_, frameIndex);
-		if (pFloor_) pFloor_->SetCustomCBVAddress(addr);
-		if (pPZWall_) pPZWall_->SetCustomCBVAddress(addr);
-		if (pMZWall_) pMZWall_->SetCustomCBVAddress(addr);
-		if (pPXWall_) pPXWall_->SetCustomCBVAddress(addr);
-		if (pMXWall_) pMXWall_->SetCustomCBVAddress(addr);
-	}
+	// Field の Update ではパラメータ等の更新のみ行う
+	// 定数バッファへの書き込みは Draw で行う
 	if (pFloor_) pFloor_->Update();
 	if (pPZWall_) pPZWall_->Update();
 	if (pMZWall_) pMZWall_->Update();
@@ -116,6 +108,16 @@ void Field::Update() {
 }
 
 void Field::Draw() {
+	if (cyberHexCB_) {
+		uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
+		cyberHexCB_->Update(cyberHexCBIndex_, cyberHexParams_, frameIndex);
+		D3D12_GPU_VIRTUAL_ADDRESS addr = cyberHexCB_->GetGPUVirtualAddress(cyberHexCBIndex_, frameIndex);
+		if (pFloor_) pFloor_->SetCustomCBVAddress(addr);
+		if (pPZWall_) pPZWall_->SetCustomCBVAddress(addr);
+		if (pMZWall_) pMZWall_->SetCustomCBVAddress(addr);
+		if (pPXWall_) pPXWall_->SetCustomCBVAddress(addr);
+		if (pMXWall_) pMXWall_->SetCustomCBVAddress(addr);
+	}
 	pFloor_->Draw();
 	pPZWall_->Draw();
 	pMZWall_->Draw();

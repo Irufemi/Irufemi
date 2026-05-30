@@ -20,9 +20,6 @@ ClearScene::~ClearScene() {
         auto* pp = engine_->GetPostProcessManager();
         pp->RemoveActiveMode(PostProcessMode::Bloom);
         pp->RemoveActiveMode(PostProcessMode::RadialBlur);
-        
-        // 他のシーンに影響が出ないよう、変更したパラメータをデフォルトに戻す
-        pp->GetRadialBlurParams().blurWidth = 0.0f;
     }
 }
 

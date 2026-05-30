@@ -210,11 +210,6 @@ void TitleScene::Update() {
         if (isStarting_) {
             cyberHexParams_.uvScrollY -= 5.0f * (1.0f / 60.0f); 
         }
-        uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
-        cyberHexCB_->Update(cyberHexCBIndex_, cyberHexParams_, frameIndex);
-        if (tunnelObj_) {
-            tunnelObj_->SetCustomCBVAddress(cyberHexCB_->GetGPUVirtualAddress(cyberHexCBIndex_, frameIndex));
-        }
     }
 
     // 3D文字のアニメーション（ふわふわ浮遊）
@@ -302,6 +297,12 @@ void TitleScene::Draw() {
 
     // --- トンネル背景の描画 ---
     if (tunnelObj_) {
+        // フェードイン中など Update() が呼ばれないフレームでも現在の frameIndex 用の CBV が必要になるため、描画直前に更新・バインドする
+        if (cyberHexCB_) {
+            uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
+            cyberHexCB_->Update(cyberHexCBIndex_, cyberHexParams_, frameIndex);
+            tunnelObj_->SetCustomCBVAddress(cyberHexCB_->GetGPUVirtualAddress(cyberHexCBIndex_, frameIndex));
+        }
         tunnelObj_->Draw();
     }
 

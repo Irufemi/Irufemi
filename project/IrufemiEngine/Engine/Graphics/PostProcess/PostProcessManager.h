@@ -321,6 +321,9 @@ public:
         pendingActiveModes_ = modes;
     }
 
+    /** @brief 全てのパラメータをデフォルト状態にリセットする */
+    void ResetAllParams();
+
     /** @brief 指定したエフェクトが現在有効かチェック */
     bool HasActiveMode(Mode mode) const {
         return std::find(activeModes_.begin(), activeModes_.end(), mode) != activeModes_.end();

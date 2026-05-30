@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include "../Engine/Platform/Input/InputManager.h"
 #include "../Engine/Platform/Input/Mouse.h"
+#include "../Resource/Audio/AudioManager.h"
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {
 }
@@ -45,6 +46,11 @@ bool SceneManager::ChangeTo(const Key& next) {
     item.scene->Initialize(engine_);
     isInitializing_ = false;
 
+    // シーン切り替え時にポストプロセスのパラメータを自動リセット
+    if (engine_->GetPostProcessManager()) {
+        engine_->GetPostProcessManager()->ResetAllParams();
+    }
+
     item.scene->OnEnter(); // シーン開始
 
     sceneStack_.push_back(std::move(item));
@@ -64,6 +70,8 @@ void SceneManager::PushScene(const Key& name) {
     if (!sceneStack_.empty()) {
         // 現在の最前面シーンをサスペンド状態にする（バックグラウンドへ）
         sceneStack_.back().scene->OnSuspend();
+        // ★全てのSE（効果音）とBGMをポーズする
+        engine_->GetAudioManager()->PauseAll();
     }
 
     SceneStackItem item;
@@ -91,6 +99,8 @@ void SceneManager::PopScene() {
     if (!sceneStack_.empty()) {
         // 次のシーンが最前面に復帰するためレジューム処理を行う
         sceneStack_.back().scene->OnResume();
+        // ★全てのSE（効果音）とBGMを再開する
+        engine_->GetAudioManager()->ResumeAll();
         engine_->SetCursorLocked(!sceneStack_.back().scene->IsCursorVisible());
     } else {
         engine_->SetCursorLocked(false);
@@ -308,6 +318,11 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
         it->scene->Finalize();
     }
     sceneStack_.clear();
+
+    // シーン切り替え時にポストプロセスのパラメータを自動リセット
+    if (engine_->GetPostProcessManager()) {
+        engine_->GetPostProcessManager()->ResetAllParams();
+    }
     
     initFuture_ = std::async(std::launch::async, [this, factory]() {
         // 新しいシーンを生成して初期化（裏ロード）

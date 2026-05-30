@@ -171,8 +171,8 @@ void Building::Update() {
                 // building.obj と block.obj のXZサイズの差異を補正するため、XZスケールを2倍にして爆破する
                 Vector3 explodeScale = { inst.scale.x * 2.0f, inst.scale.x * params_.floorHeightRatio * inst.floorCount, inst.scale.z * 2.0f };
                 
-                /// プレイヤー攻撃後の寿命崩壊は、青白く四散する BuildingByPlayer を指定
-                engine_->GetVoxelParticleManager()->PlayExplosion("building/block.obj", inst.position, inst.blowVelocity, inst.rotate, explodeScale, VoxelParticleSystem::ParticleType::BuildingByPlayer);
+                /// プレイヤー攻撃後の寿命崩壊は、青白く四散する DebrisExplosive を指定
+                engine_->GetVoxelParticleManager()->PlayExplosion("building/block.obj", inst.position, inst.blowVelocity, inst.rotate, explodeScale, VoxelParticleSystem::ParticleType::DebrisExplosive);
                 inst.hasExploded = true;
             }
 
@@ -855,8 +855,8 @@ void Building::MarkDestroyed(int index) {
     // 即爆散パーティクルを出す（まだ爆散していない場合）
     if (!inst.hasExploded) {
         Vector3 upDir = {0.0f, 1.0f, 0.0f}; // 上方向に爆散
-        /// エネミーによる破壊は、重く黒焦げになる BuildingByEnemy を指定
-        engine_->GetVoxelParticleManager()->PlayExplosion("building/block.obj", inst.position, upDir, inst.rotate, inst.scale, VoxelParticleSystem::ParticleType::BuildingByEnemy);
+        /// エネミーによる破壊は、重く黒焦げになる DebrisLargeGravity を指定
+        engine_->GetVoxelParticleManager()->PlayExplosion("building/block.obj", inst.position, upDir, inst.rotate, inst.scale, VoxelParticleSystem::ParticleType::DebrisLargeGravity);
         inst.hasExploded = true;
     }
 

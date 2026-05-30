@@ -111,18 +111,18 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 	gParticles[voxelIndex].color = voxel.color;
 	
 	float delay = 0.0f;
-	if (gEmitter.particleType == 2) // EnemyBurnout
+	if (gEmitter.particleType == 2) // AshDisintegration
 	{
 		// 下から崩れるように、ローカルのY座標に応じたディレイを計算
 		float noise = (generator.Generate1d() * 2.0f - 1.0f) * 0.2f;
 		delay = max(0.0f, localPos.y * 0.05f + noise);
 	}
-	else if (gEmitter.particleType == 4) { // BuildingByEnemy
+	else if (gEmitter.particleType == 4) { // DebrisLargeGravity
 		// エネミー破壊：真下に重く落ちる（横への広がりを抑え、下向きベクトルを付与）
 		float3 randVec = generator.Generate3d() * 2.0f - 1.0f;
 		finalVelocity = float3(randVec.x * 0.2f, -1.0f - randVec.y, randVec.z * 0.2f) * length(gEmitter.baseVelocity);
 	}
-	else if (gEmitter.particleType == 5) { // BuildingByPlayer
+	else if (gEmitter.particleType == 5) { // DebrisExplosive
 		// プレイヤー寿命：空中で放射状に鋭く四散しつつ、元の吹き飛び方向（baseVelocity）の勢いも引き継ぐ
 		float3 randDir = normalize(generator.Generate3d() * 2.0f - 1.0f);
 		// baseVelocity（吹き飛びの速度）をベースにしつつ、全方向への散らばりを加える

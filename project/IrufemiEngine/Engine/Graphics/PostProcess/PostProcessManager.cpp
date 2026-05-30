@@ -24,6 +24,22 @@ void PostProcessManager::Initialize(DirectXCommon* dxCommon,
   CreatePSOs();
 }
 
+void PostProcessManager::ResetAllParams() {
+    noiseParams_ = NoiseParams();
+    vignetteParams_ = VignetteParams();
+    smoothingParams_ = SmoothingParams();
+    gaussianParams_ = GaussianParams();
+    radialBlurParams_ = RadialBlurParams();
+    outlineParams_ = OutlineParams();
+    dissolveParams_ = DissolveParams();
+    hsvParams_ = HSVParams();
+    toneMappingParams_ = ToneMappingParams();
+    fadeParams_ = FadeParams();
+    slideParams_ = SlideParams();
+    bloomParams_ = BloomParams();
+    glitchParams_ = GlitchParams();
+}
+
 
 
 void PostProcessManager::Update(float totalTime) {

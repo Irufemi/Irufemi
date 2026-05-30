@@ -90,7 +90,7 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 						gParticles[particleIndex].velocity = float3(0, 0, 0); // 停止
 					}
 				}
-				else if (gEmitter.particleType == 4) { // BuildingByEnemy
+				else if (gEmitter.particleType == 4) { // DebrisLargeGravity
 					// エネミー破壊：床で停止
 					if (gParticles[particleIndex].position.y < 0.0f) {
 						gParticles[particleIndex].position.y = 0.0f;
@@ -107,7 +107,7 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 						gParticles[particleIndex].color.rgb *= 0.9f;
 					}
 				}
-				else if (gEmitter.particleType == 5) { // BuildingByPlayer
+				else if (gEmitter.particleType == 5) { // DebrisExplosive
 					// プレイヤー寿命：床に落ちず、空中で急ブレーキ（空気抵抗）＆縮小して消滅
 					gParticles[particleIndex].velocity *= 0.92f; 
 					gParticles[particleIndex].size *= 0.95f; 

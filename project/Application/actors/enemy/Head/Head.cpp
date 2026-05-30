@@ -83,7 +83,7 @@ void Head::Update() {
         // 爆散！
         if (voxelSystem_) {
             // 端から崩れる燃え尽きエフェクトを指定
-            voxelSystem_->SetParticleType(VoxelParticleSystem::ParticleType::EnemyBurnout);
+            voxelSystem_->SetParticleType(VoxelParticleSystem::ParticleType::AshDisintegration);
             voxelSystem_->Explode(basePosition_, blowVelocity_, transform_.rotate, transform_.scale);
         }
     }
