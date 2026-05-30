@@ -544,7 +544,11 @@ void IrufemiEngine::Execute() {
     sceneTransition_->Update(deltaTime_);
 
     if (voxelParticleManager_) {
-        voxelParticleManager_->Update(deltaTime_);
+        // ポーズ中は VoxelParticle の更新をスキップする
+        bool isPaused = (sceneManager_ && sceneManager_->GetCurrent() == "Pause");
+        if (!isPaused) {
+            voxelParticleManager_->Update(deltaTime_);
+        }
     }
 
     // インプットを更新
