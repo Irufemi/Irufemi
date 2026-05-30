@@ -93,6 +93,7 @@ void EnemyBomb::Throw(const Vector3& startPos, const Vector3& targetPos, int hea
     explodeTimer_ = 0.0f;
     state_ = State::Flying;
     isExpired_ = false;
+    explosionTriggered_ = false;
 
     // 着弾位置の高さを少し上にする（地面にめり込まないように）
     targetPos_.y = targetPos_.y > 0.1f ? targetPos_.y : 0.1f;
@@ -194,6 +195,7 @@ void EnemyBomb::Update() {
 
         if (telegraphTimer_ >= telegraphDuration_) {
             state_ = State::Exploding;
+            explosionTriggered_ = true;
         }
         break;
     }

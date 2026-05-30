@@ -5,6 +5,7 @@
 #include "Beam/EnemyBeam.h"
 #include "StompEffects/EnemyStompEffects.h"
 #include "TackleEffects/EnemyTackleEffects.h"
+#include "Resource/Audio/Se.h"
 #include "Bomb/EnemyBomb.h"
 #include "Body/Body.h"
 #include "Head/Left/HeadLeft.h"
@@ -58,6 +59,16 @@ public:
     // --- トレイルエフェクト用 ---
     WeaponTrail* GetNeckTrail() const { return neckTrail_.get(); }
 
+    // --- SE用 ---
+    void PlaySeBeamCharge() { if (seBeamCharge_) seBeamCharge_->Play(false); }
+    void PlaySeBeam() { if (seBeam_) seBeam_->Play(false); }
+    void PlaySeRush() { if (seRush_) seRush_->Play(false); }
+    void PlaySeStompWarp() { if (seStompWarp_) seStompWarp_->Play(false); }
+    void PlaySeStompLanding() { if (seStompLanding_) seStompLanding_->Play(false); }
+    void PlaySeStompExplosion() { if (seStompExplosion_) seStompExplosion_->Play(false); }
+    void PlaySeBombThrow() { if (seBombThrow_) seBombThrow_->Play(false); }
+    void PlaySeBombExplosion() { if (seBombExplosion_) seBombExplosion_->Play(false); }
+
     // --- アクセサ（AIやAnimationから操作用） ---
     Transform& GetGlobalTransform() { return globalTransform_; }
     Transform& GetBodyLocalTransform(int index) {
@@ -103,8 +114,11 @@ public:
   bool GetIsActive() const { return isActive_; }
   bool IsDead() const { return isDead_; }
   bool IsHeadDead(int index) const;
-  
-  bool IsReadyForClearTransition() const;
+    bool IsReadyForClearTransition() const;
+
+    // SEの一時停止・再開
+    void PauseAllSe();
+    void ResumeAllSe();
 
 private:
     // 各パーツ
@@ -131,6 +145,17 @@ private:
 
     // 斬撃トレイル
     std::unique_ptr<WeaponTrail> neckTrail_ = nullptr;
+
+    // --- SE ---
+    std::unique_ptr<Se> seBeamCharge_;
+    std::unique_ptr<Se> seBeam_;
+    std::unique_ptr<Se> seRush_;
+    std::unique_ptr<Se> seStompWarp_;
+    std::unique_ptr<Se> seStompLanding_;
+    std::unique_ptr<Se> seStompExplosion_;
+    std::unique_ptr<Se> seBombThrow_;
+    std::unique_ptr<Se> seBombExplosion_;
+    std::unique_ptr<Se> seBlownAway_;
 
     // トランスフォーム
     Transform globalTransform_;

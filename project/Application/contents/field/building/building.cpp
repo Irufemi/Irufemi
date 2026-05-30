@@ -46,6 +46,9 @@ void Building::Initialize(IrufemiEngine* engine) {
     spawnDustSystem_->Initialize("resources/circle.png", ParticleType::kBuildingSpawnDust, PrimitiveType::Plane);
     spawnDustSystem_->SetCullingEnabled(false); // 複数箇所で共有するためカリングは無効化
 
+    seCollapse_ = std::make_unique<Se>();
+    seCollapse_->Initialize("resources/SE/buillding/collapse.mp3", "Building_Collapse", 0.15f);
+
     Generate();
 
 #ifdef USE_IMGUI
@@ -722,6 +725,10 @@ void Building::DestroyAt(int index, const Vector3& attackDir, float blowSpeed) {
 void Building::ScatterBuildingFloors(int index, const Vector3& attackDir, float blowSpeed) {
     if (index < 0 || index >= static_cast<int>(instances_.size())) return;
     
+    if (seCollapse_) {
+        seCollapse_->Play(false);
+    }
+
     BuildingInstance baseInst = instances_[index];
     
     float fh = baseInst.scale.x * params_.floorHeightRatio;
@@ -984,5 +991,13 @@ void Building::SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3&
 
     instances_.push_back(std::move(inst));
     OutputDebugStringA("Building: Spawned a new building dynamically with spawning animation.\n");
+}
+
+void Building::PauseSe() {
+    if (seCollapse_) seCollapse_->Pause();
+}
+
+void Building::ResumeSe() {
+    if (seCollapse_) seCollapse_->Resume();
 }
 

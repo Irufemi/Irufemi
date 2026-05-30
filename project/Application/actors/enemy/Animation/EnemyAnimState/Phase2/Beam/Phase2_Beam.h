@@ -19,6 +19,7 @@ private:
     float globalTimer_ = 0.0f;
     bool isFinished_ = false;
     bool isLockedOn_ = false;
+    bool hasPlayedBeamSe_ = false;
     int headIndex_ = 1;         // 管理する首のインデックス
 
     // タイマー・座標系

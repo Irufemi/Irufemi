@@ -89,6 +89,9 @@ void Phase1_Tackle::Update(Enemy* enemy, Player* player, float deltaTime) {
             if (auto effects = enemy->GetTackleEffects()) {
                 effects->StopTelegraph();
             }
+            if (enemy) {
+                enemy->PlaySeRush();
+            }
         }
         break;
     }

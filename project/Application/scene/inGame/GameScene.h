@@ -147,6 +147,8 @@ private:
     // BGM
     std::unique_ptr<Bgm> bgm_ = nullptr;
 
+    bool wasPaused_ = false;
+
     // --- 内部整理用メソッド ---
 
     /**

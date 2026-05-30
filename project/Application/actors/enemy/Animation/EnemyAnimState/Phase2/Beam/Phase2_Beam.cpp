@@ -11,7 +11,12 @@ void Phase2_Beam::Enter(Enemy* enemy) {
     globalTimer_ = 0.0f;
     isFinished_ = false;
     isLockedOn_ = false;
+    hasPlayedBeamSe_ = false;
     attackTarget_ = { 0, 0, 0 };
+
+    if (enemy) {
+        enemy->PlaySeBeamCharge();
+    }
 }
 
 void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
@@ -87,6 +92,11 @@ void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
         beam->Update(headWorldPos, attackTarget_);
     } else if (timer_ < kBeamFireTime) {
         // 本射
+        if (!hasPlayedBeamSe_ && enemy) {
+            enemy->PlaySeBeam();
+            hasPlayedBeamSe_ = true;
+        }
+
         float fireProgress = (timer_ - kBeamWaitTime) / (kBeamFireTime - kBeamWaitTime);
         float thickness = attackThickness_;
         if (fireProgress > fadeOutStartThreshold_) {

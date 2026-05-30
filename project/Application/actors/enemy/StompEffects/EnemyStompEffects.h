@@ -88,6 +88,14 @@ public:
     bool HasDealtFinalDamage() const { return hasDealtFinalDamage_; }
     void SetDealtFinalDamage(bool dealt) { hasDealtFinalDamage_ = dealt; }
 
+    bool CheckAndResetExplosionTrigger() {
+        if (explosionTriggered_) {
+            explosionTriggered_ = false;
+            return true;
+        }
+        return false;
+    }
+
 private:
     // 判定用ヘルパー
     void UpdateFinalExplosionSphere();
@@ -119,6 +127,7 @@ private:
     bool hasDealtExplosionDamage_ = false;
     bool hasDealtRingDamage_ = false;
     bool hasDealtFinalDamage_ = false;
+    bool explosionTriggered_ = false;
 
     float Lerp(float start, float end, float t) const { return start + (end - start) * t; }
 };
