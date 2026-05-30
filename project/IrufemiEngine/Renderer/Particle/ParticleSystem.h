@@ -157,7 +157,7 @@ private:
 	/** @brief 新しい粒子を 1 つ生成する */
 	Particle MakeNewParticle(std::mt19937& randomEngine, const Emitter& emitter);
 	/** @brief エミッターから粒子を複数生成（放出）する */
-	std::list<Particle> Emit(const Emitter& emitter, std::mt19937& randomEngine);
+	std::vector<Particle> Emit(const Emitter& emitter, std::mt19937& randomEngine);
 
 private:
 	static constexpr uint32_t kNumMaxInstance_ = ParticleResource::kNumMaxInstance;
@@ -175,7 +175,7 @@ private:
 	bool isUpdate_ = true;
 	uint32_t lastUpdateFrameIndex_ = static_cast<uint32_t>(-1);
 
-	std::list<Particle> particles_; ///< 生存しているパーティクルのリスト
+	std::vector<Particle> particles_; ///< 生存しているパーティクルの配列
 	Emitter emitter_; ///< パーティクル放出器の設定
 	std::unique_ptr<IParticleBehavior> behavior_ = nullptr; ///< 挙動ロジック（Strategyパターン）
 	ParticleType particleType_ = ParticleType::Normal; ///< 現在の挙動タイプ
