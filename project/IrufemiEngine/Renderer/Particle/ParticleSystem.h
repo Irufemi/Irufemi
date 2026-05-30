@@ -161,7 +161,6 @@ private:
 
 private:
 	static constexpr uint32_t kNumMaxInstance_ = ParticleResource::kNumMaxInstance;
-	static constexpr float kDeltatime_ = 1.0f / 60.0f;
 
 	std::unique_ptr<ParticleResource> resource_ = nullptr;
 	uint32_t numInstance_ = 0;

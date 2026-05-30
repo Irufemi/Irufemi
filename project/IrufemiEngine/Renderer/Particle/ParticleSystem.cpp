@@ -144,6 +144,7 @@ void ParticleSystem::Initialize(const std::string& textureName, ParticleType typ
 }
 
 void ParticleSystem::Update() {
+    float dt = s_engine_ ? s_engine_->GetDeltaTime() : (1.0f / 60.0f);
 
     if (isUpdate_ && particleType_ != ParticleType::kHitEffect && 
         particleType_ != ParticleType::kMuzzleSmoke && particleType_ != ParticleType::kMuzzleFlash &&
@@ -151,7 +152,7 @@ void ParticleSystem::Update() {
         particleType_ != ParticleType::kBulletTrail && particleType_ != ParticleType::kEjectionMist &&
         particleType_ != ParticleType::kGroundSmoke && particleType_ != ParticleType::kSpark &&
         particleType_ != ParticleType::kBuildingSpawnDust) {
-        emitter_.frequencyTime += kDeltatime_; // 時刻を進める
+        emitter_.frequencyTime += dt; // 時刻を進める
         if (emitter_.frequency <= emitter_.frequencyTime) { // 頻度より大きいなら発生
             particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
             emitter_.frequencyTime -= emitter_.frequency; // 余計に過ぎた時間も加味して頻度計算する
@@ -180,9 +181,9 @@ void ParticleSystem::Update() {
         if (numInstance_ < kNumMaxInstance_) {
             if (isUpdate_) {
                 // パーティクル自身の更新
-                particleIterator->Update(kDeltatime_);
+                particleIterator->Update(dt);
                 // 振る舞い固有の更新
-                behavior_->Update(*particleIterator, kDeltatime_);
+                behavior_->Update(*particleIterator, dt);
             }
 
             Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particleIterator->transform.scale);
@@ -217,7 +218,7 @@ void ParticleSystem::Update() {
     }
     resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
     
-    resource_->SyncBeforeDraw();
+    SyncBeforeDraw();
     lastUpdateFrameIndex_ = BaseResource::GetDirectXCommon()->GetFrameIndex();
 
 #if USE_IMGUI

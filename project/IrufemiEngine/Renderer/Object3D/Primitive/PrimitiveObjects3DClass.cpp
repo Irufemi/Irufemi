@@ -208,8 +208,8 @@ void PrimitiveObjects3DClass::Draw(const Camera& camera, bool isUI) {
         }
     }
 
-    // 描画実行直前のバッファ同期
-    mesh_.resource->SyncBeforeDraw();
+    // 描画実行直前のバッファ同期（コールバックを発動させるため自身の SyncBeforeDraw を呼ぶ）
+    SyncBeforeDraw();
 
     // 描画実行
     if (isUI) {
@@ -276,6 +276,10 @@ void PrimitiveObjects3DClass::Debug(const char* label) {
 }
 
 void PrimitiveObjects3DClass::SyncBeforeDraw() {
+    if (customSyncCallback_ && engine_) {
+        uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
+        customSyncCallback_(frameIndex);
+    }
     if (mesh_.resource) {
         mesh_.resource->SyncBeforeDraw();
     }

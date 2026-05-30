@@ -67,6 +67,28 @@ void Field::Initialize() {
 	pMXWall_->SetColor({ 0.0f, 0.8f, 1.0f, 1.0f });
 	pMXWall_->SetCustomPSO(engine_->GetPSOManager()->GetPSO("CyberHex", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back));
 
+	auto cyberHexSyncCallback = [this](uint32_t frameIndex) {
+		if (cyberHexCB_) {
+			cyberHexCB_->Update(cyberHexCBIndex_, cyberHexParams_, frameIndex);
+			D3D12_GPU_VIRTUAL_ADDRESS addr = cyberHexCB_->GetGPUVirtualAddress(cyberHexCBIndex_, frameIndex);
+			if (pFloor_) pFloor_->SetCustomCBVAddress(addr);
+			if (pPZWall_) pPZWall_->SetCustomCBVAddress(addr);
+			if (pMZWall_) pMZWall_->SetCustomCBVAddress(addr);
+			if (pPXWall_) pPXWall_->SetCustomCBVAddress(addr);
+			if (pMXWall_) pMXWall_->SetCustomCBVAddress(addr);
+		}
+	};
+
+	// 視錐台カリング等で一部のオブジェクトが描画スキップされた場合でも、
+	// 確実に定数バッファの同期とアドレス設定が行われるように、
+	// CyberHexを使用するすべてのオブジェクトにコールバックを登録する。
+	if (pFloor_) pFloor_->SetCustomSyncCallback(cyberHexSyncCallback);
+	if (pPZWall_) pPZWall_->SetCustomSyncCallback(cyberHexSyncCallback);
+	if (pMZWall_) pMZWall_->SetCustomSyncCallback(cyberHexSyncCallback);
+	if (pPXWall_) pPXWall_->SetCustomSyncCallback(cyberHexSyncCallback);
+	if (pMXWall_) pMXWall_->SetCustomSyncCallback(cyberHexSyncCallback);
+
+
 	building_ = std::make_unique<Building>();
 	building_->Initialize(engine_);
 }
@@ -108,16 +130,6 @@ void Field::Update() {
 }
 
 void Field::Draw() {
-	if (cyberHexCB_) {
-		uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
-		cyberHexCB_->Update(cyberHexCBIndex_, cyberHexParams_, frameIndex);
-		D3D12_GPU_VIRTUAL_ADDRESS addr = cyberHexCB_->GetGPUVirtualAddress(cyberHexCBIndex_, frameIndex);
-		if (pFloor_) pFloor_->SetCustomCBVAddress(addr);
-		if (pPZWall_) pPZWall_->SetCustomCBVAddress(addr);
-		if (pMZWall_) pMZWall_->SetCustomCBVAddress(addr);
-		if (pPXWall_) pPXWall_->SetCustomCBVAddress(addr);
-		if (pMXWall_) pMXWall_->SetCustomCBVAddress(addr);
-	}
 	pFloor_->Draw();
 	pPZWall_->Draw();
 	pMZWall_->Draw();

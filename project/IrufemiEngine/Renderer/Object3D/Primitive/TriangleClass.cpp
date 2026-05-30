@@ -114,7 +114,7 @@ void TriangleClass::Draw() {
     }
     
     // --- 【追加】描画直前のバッファ同期 ---
-    resource_->SyncBeforeDraw();
+    SyncBeforeDraw();
 
     // 共有リソースを使用して描画
     drawManager_->SubmitStandard3D(resource_.get(), nullptr, castShadows_);

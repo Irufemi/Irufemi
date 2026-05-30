@@ -143,9 +143,16 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     tunnelObj_->GetMaterial().enableLighting = false; // ライティング無効
     tunnelObj_->SetCastShadows(false);
 
-    // CullMode::None にして内側からも見えるようにする（ユーザーの指摘通り）
     if (engine) {
         tunnelObj_->SetCustomPSO(engine->GetPSOManager()->GetPSO("CyberHex", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable, PSOManager::CullMode::None));
+        
+        // --- カスタム定数バッファの自動同期コールバックを登録 ---
+        tunnelObj_->SetCustomSyncCallback([this](uint32_t frameIndex) {
+            if (cyberHexCB_) {
+                cyberHexCB_->Update(cyberHexCBIndex_, cyberHexParams_, frameIndex);
+                tunnelObj_->SetCustomCBVAddress(cyberHexCB_->GetGPUVirtualAddress(cyberHexCBIndex_, frameIndex));
+            }
+        });
     }
     
     // Z軸に沿って寝かせる。長さを大幅に伸ばし、穴が見えないようにする
@@ -203,17 +210,18 @@ void TitleScene::Update() {
     // ↓ゲームの更新
     // =====
 
-    globalTimer_ += 1.0f / 60.0f;
+    float dt = engine_->GetDeltaTime();
+    globalTimer_ += dt;
 
     if (cyberHexCB_) {
         // ダイブ中（開始時）はスクロール速度をグッと上げる
         if (isStarting_) {
-            cyberHexParams_.uvScrollY -= 5.0f * (1.0f / 60.0f); 
+            cyberHexParams_.uvScrollY -= 5.0f * dt; 
         }
     }
 
     // 3D文字のアニメーション（ふわふわ浮遊）
-    titleTextAnimator_.Update(1.0f / 60.0f);
+    titleTextAnimator_.Update(dt);
     const float baseYTop = 2.0f;
     const float baseYBottom = 0.0f;
     const float basePositionsX[6] = { -3.5f, -0.5f, 2.5f, -2.5f, 0.5f, 3.5f };
@@ -297,12 +305,7 @@ void TitleScene::Draw() {
 
     // --- トンネル背景の描画 ---
     if (tunnelObj_) {
-        // フェードイン中など Update() が呼ばれないフレームでも現在の frameIndex 用の CBV が必要になるため、描画直前に更新・バインドする
-        if (cyberHexCB_) {
-            uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
-            cyberHexCB_->Update(cyberHexCBIndex_, cyberHexParams_, frameIndex);
-            tunnelObj_->SetCustomCBVAddress(cyberHexCB_->GetGPUVirtualAddress(cyberHexCBIndex_, frameIndex));
-        }
+        // PrimitiveObjects3DClass 内の SyncBeforeDraw でコールバックが呼ばれ自動更新される
         tunnelObj_->Draw();
     }
 

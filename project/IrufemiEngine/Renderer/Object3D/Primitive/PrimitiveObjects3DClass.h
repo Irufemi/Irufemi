@@ -162,6 +162,14 @@ public:
     void SetCastShadows(bool cast) { castShadows_ = cast; }
     bool GetCastShadows() const { return castShadows_; }
 
+    // --- コールバック ---
+    using CustomSyncCallback = std::function<void(uint32_t frameIndex)>;
+    /**
+     * @brief 描画前のバッファ同期時に呼び出されるコールバックを設定する
+     * @param[in] callback 現在のフレームインデックスを受け取る関数
+     */
+    void SetCustomSyncCallback(CustomSyncCallback callback) { customSyncCallback_ = std::move(callback); }
+
     // --- 静的各種マネージャの設定 ---
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
@@ -174,6 +182,7 @@ private:
     MaterialComponent material_;   //!< マテリアルコンポーネント
     bool isCullingEnabled_ = true; //!< 視錐台カリングの有効フラグ
     bool castShadows_ = true;      //!< 影を落とすフラグ
+    CustomSyncCallback customSyncCallback_; //!< カスタムの同期処理用コールバック
 
     // 静的ポインタ（既存の設計パターンを継承）
     static TextureManager* textureManager_;

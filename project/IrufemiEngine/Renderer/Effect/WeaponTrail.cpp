@@ -204,7 +204,7 @@ void WeaponTrail::SyncBeforeDraw() {
     if (resource_ && points_.size() >= 2) {
         // Transformがダミーでも、World行列計算のため必要
         resource_->UpdateTransform(*engine_->GetCameraManager()->GetActiveCamera());
-        resource_->SyncBeforeDraw();
+        SyncBeforeDraw();
     }
 }
 
