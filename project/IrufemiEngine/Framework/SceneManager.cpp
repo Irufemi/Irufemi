@@ -156,7 +156,7 @@ void SceneManager::ProcessTransitionPhase(bool& isLoading) {
                 SceneStackItem item;
                 item.name = pendingTransition_;
                 item.scene = std::move(nextScene_);
-                item.scene->OnEnter(); // 非同期ロード完了後に新しいシーン開始
+                // ここではまだ呼ばない（ロード完了後に呼ぶ）
                 sceneStack_.push_back(std::move(item));
             }
             
@@ -184,6 +184,7 @@ void SceneManager::ProcessTransitionPhase(bool& isLoading) {
             // 全オブジェクトの初回更新（UpdateAll等）とカメラ設定を済ませる。
             // ---------------------------------------------------------
             if (!sceneStack_.empty()) {
+                sceneStack_.back().scene->OnEnter(); // ロード完了直後にBGM再生等を開始
                 sceneStack_.back().scene->Update();
             }
 

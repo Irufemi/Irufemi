@@ -25,14 +25,14 @@ public:
 
     // 初期化: ファイル指定で音源をセット(AudioManager に未登録ならロードしてキャッシュ)
     // audioManager は事前に Bgm::SetAudioManager(...) でセットしておいてください
-    void Initialize(const std::string& filePath, const std::string& key = "", bool loop = true, bool autoPlay = true);
+    void Initialize(const std::string& filePath, const std::string& key = "", bool loop = true);
 
     // ランタイムで音源を差し替える
     // ファイルから(未登録ならロード)差し替え
-    bool SetSourceByFile(const std::string& filePath, const std::string& key = "", bool loop = true, bool autoPlay = false);
+    bool SetSourceByFile(const std::string& filePath, const std::string& key = "", bool loop = true);
 
     // 登録済みのキーから差し替え
-    bool SetSourceByKey(const std::string& key, bool loop = true, bool autoPlay = false);
+    bool SetSourceByKey(const std::string& key, bool loop = true);
 
     // 現在の音源をクリア(再生停止)
     void ClearSource();
@@ -46,6 +46,8 @@ public:
     void Play(const std::string& category, const std::string& track, bool loop = true);
     void PlayFirstTrack(); // 最初のカテゴリと最初のトラックで再生
     void Stop();
+    void Pause();
+    void Resume();
 
     // 固定トラック(currentSound_)を再生
     void PlayFixed();

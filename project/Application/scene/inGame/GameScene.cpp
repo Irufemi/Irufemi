@@ -48,13 +48,25 @@ GameScene::GameScene() {}
 
 GameScene::~GameScene() {}
 
+void GameScene::OnEnter() {
+    if (bgm_) bgm_->PlayFixed();
+}
+
+void GameScene::OnSuspend() {
+    if (bgm_) bgm_->Pause();
+}
+
+void GameScene::OnResume() {
+    if (bgm_) bgm_->Resume();
+}
+
 void GameScene::Initialize(IrufemiEngine *engine) {
   BaseScene::Initialize(engine);
 
   clearTime_ = 0.0f;
 
   bgm_ = std::make_unique<Bgm>();
-  bgm_->Initialize("resources/BGM/InGame.mp3", "InGameBGM", true, true);
+  bgm_->Initialize("resources/BGM/InGame.mp3", "InGameBGM", true);
 
   Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
   activeCamera->SetTranslate(kDefaultCameraPos);

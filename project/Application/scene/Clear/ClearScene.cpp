@@ -26,11 +26,23 @@ ClearScene::~ClearScene() {
     }
 }
 
+void ClearScene::OnEnter() {
+    if (bgm_) bgm_->PlayFixed();
+}
+
+void ClearScene::OnSuspend() {
+    if (bgm_) bgm_->Pause();
+}
+
+void ClearScene::OnResume() {
+    if (bgm_) bgm_->Resume();
+}
+
 void ClearScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
     bgm_ = std::make_unique<Bgm>();
-    bgm_->Initialize("resources/BGM/Clear.mp3", "ClearBGM", true, true);
+    bgm_->Initialize("resources/BGM/Clear.mp3", "ClearBGM", true);
 
     // ポストプロセスの有効化（華やか・祝祭感の演出）
     if (auto* pp = engine_->GetPostProcessManager()) {

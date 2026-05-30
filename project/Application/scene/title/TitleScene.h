@@ -44,6 +44,10 @@ public: // メンバ関数(システム)
      */
     void Update() override;
 
+    void OnEnter() override;
+    void OnSuspend() override;
+    void OnResume() override;
+
     /**
      * @brief 描画処理
      */

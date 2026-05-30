@@ -38,9 +38,9 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
     // タイトルシーンでは背景色を極めて暗いブルーにして、真っ暗すぎない奥深さを出す
     engine_->SetClearColor(0.0f, 0.02f, 0.06f, 1.0f);
 
-    // BGMの再生
+    // BGMの準備(再生はOnEnterで行う)
     bgm_ = std::make_unique<Bgm>();
-    bgm_->Initialize("resources/BGM/Title.mp3", "TitleBGM", true, true);
+    bgm_->Initialize("resources/BGM/Title.mp3", "TitleBGM", true);
 
     // ポストプロセスの有効化（スタイリッシュな演出）
     if (auto* pp = engine_->GetPostProcessManager()) {
@@ -180,6 +180,18 @@ void TitleScene::Finalize() {
     // 他のシーンに影響を与えないよう、クリアカラーをデフォルト（青みがかった色）に戻す
     engine_->SetClearColor(0.1f, 0.25f, 0.5f, 1.0f);
     BaseScene::Finalize();
+}
+
+void TitleScene::OnEnter() {
+    if (bgm_) bgm_->PlayFixed();
+}
+
+void TitleScene::OnSuspend() {
+    if (bgm_) bgm_->Pause();
+}
+
+void TitleScene::OnResume() {
+    if (bgm_) bgm_->Resume();
 }
 
 // 更新

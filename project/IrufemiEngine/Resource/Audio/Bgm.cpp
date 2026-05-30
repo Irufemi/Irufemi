@@ -10,7 +10,7 @@ Bgm::~Bgm() {
     currentSound_.reset();
 }
 
-void Bgm::Initialize(const std::string& filePath, const std::string& key, bool loop, bool autoPlay) {
+void Bgm::Initialize(const std::string& filePath, const std::string& key, bool loop) {
     // 以前の音源をクリアしてからセット
     Stop();
     currentSound_.reset();
@@ -29,13 +29,9 @@ void Bgm::Initialize(const std::string& filePath, const std::string& key, bool l
     currentSound_ = sound;
     soundKey_ = key.empty() ? filePath : key;
     fixedLoop_ = loop;
-
-    if (autoPlay) {
-        PlayFixed();
-    }
 }
 
-bool Bgm::SetSourceByFile(const std::string& filePath, const std::string& key, bool loop, bool autoPlay) {
+bool Bgm::SetSourceByFile(const std::string& filePath, const std::string& key, bool loop) {
     if (!audioManager_) return false;
     auto sound = audioManager_->GetOrLoadSoundByFile(filePath, key);
     if (!sound) return false;
@@ -45,11 +41,10 @@ bool Bgm::SetSourceByFile(const std::string& filePath, const std::string& key, b
     soundKey_ = key.empty() ? filePath : key;
     fixedLoop_ = loop;
 
-    if (autoPlay) PlayFixed();
     return true;
 }
 
-bool Bgm::SetSourceByKey(const std::string& key, bool loop, bool autoPlay) {
+bool Bgm::SetSourceByKey(const std::string& key, bool loop) {
     if (!audioManager_) return false;
     auto sound = audioManager_->GetSoundData(key);
     if (!sound) return false;
@@ -59,7 +54,6 @@ bool Bgm::SetSourceByKey(const std::string& key, bool loop, bool autoPlay) {
     soundKey_ = key;
     fixedLoop_ = loop;
 
-    if (autoPlay) PlayFixed();
     return true;
 }
 
@@ -102,6 +96,18 @@ void Bgm::PlayFirstTrack() {
 void Bgm::Stop() {
     if (audioManager_) {
         audioManager_->Stop(voice_);
+    }
+}
+
+void Bgm::Pause() {
+    if (auto v = voice_.lock()) {
+        v->Pause();
+    }
+}
+
+void Bgm::Resume() {
+    if (auto v = voice_.lock()) {
+        v->Resume();
     }
 }
 

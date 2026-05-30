@@ -29,6 +29,18 @@ public:
         }
     }
 
+    void Pause() {
+        if (voice_) {
+            voice_->Stop(0);
+        }
+    }
+
+    void Resume() {
+        if (voice_) {
+            voice_->Start(0);
+        }
+    }
+
     IXAudio2SourceVoice* GetVoice() const { return voice_; }
     VoiceCallback* GetCallback() const { return callback_.get(); }
 

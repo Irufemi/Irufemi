@@ -61,11 +61,23 @@ namespace {
 TutorialScene::TutorialScene() {}
 TutorialScene::~TutorialScene() {}
 
+void TutorialScene::OnEnter() {
+    if (bgm_) bgm_->PlayFixed();
+}
+
+void TutorialScene::OnSuspend() {
+    if (bgm_) bgm_->Pause();
+}
+
+void TutorialScene::OnResume() {
+    if (bgm_) bgm_->Resume();
+}
+
 void TutorialScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
     bgm_ = std::make_unique<Bgm>();
-    bgm_->Initialize("resources/BGM/InGame.mp3", "InGameBGM", true, true);
+    bgm_->Initialize("resources/BGM/InGame.mp3", "InGameBGM", true);
 
     Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
     activeCamera->SetTranslate(kDefaultCameraPos);

@@ -31,11 +31,23 @@ GameOverScene::~GameOverScene() {
     }
 }
 
+void GameOverScene::OnEnter() {
+    if (bgm_) bgm_->PlayFixed();
+}
+
+void GameOverScene::OnSuspend() {
+    if (bgm_) bgm_->Pause();
+}
+
+void GameOverScene::OnResume() {
+    if (bgm_) bgm_->Resume();
+}
+
 void GameOverScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
     bgm_ = std::make_unique<Bgm>();
-    bgm_->Initialize("resources/BGM/GameOver.mp3", "GameOverBGM", true, true);
+    bgm_->Initialize("resources/BGM/GameOver.mp3", "GameOverBGM", true);
 
     // シーン固有のカメラ位置に調整
     engine_->GetCameraManager()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });

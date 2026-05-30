@@ -34,6 +34,10 @@ public: // メンバ関数(システム)
      * @brief 毎フレームの更新処理
      */
     void Update() override;
+
+    void OnEnter() override;
+    void OnSuspend() override;
+    void OnResume() override;
     /**
      * @brief 描画処理
      */

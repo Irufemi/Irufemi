@@ -44,6 +44,10 @@ public:
     void Initialize(IrufemiEngine* engine) override;
     void Update() override;
     void Draw() override;
+    
+    void OnEnter() override;
+    void OnSuspend() override;
+    void OnResume() override;
     bool IsCursorVisible() const override { return false; }
 
 private:
