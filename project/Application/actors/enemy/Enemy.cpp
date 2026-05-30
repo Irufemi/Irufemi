@@ -84,6 +84,34 @@ void Enemy::Initialize(IrufemiEngine *engine) {
   neckTrail_ = std::make_unique<WeaponTrail>();
   neckTrail_->Initialize(engine_, "resources/gradationLine.png", {1.0f, 0.2f, 0.2f, 1.0f}); // エネミーの首振り用の赤いトレイル
 
+  // --- SE 初期化 ---
+  seBeamCharge_ = std::make_unique<Se>();
+  seBeamCharge_->Initialize("resources/SE/Enemy/beam_charge.mp3", "Enemy_BeamCharge", 0.5f);
+
+  seBeam_ = std::make_unique<Se>();
+  seBeam_->Initialize("resources/SE/Enemy/beam.mp3", "Enemy_Beam", 0.5f);
+
+  seRush_ = std::make_unique<Se>();
+  seRush_->Initialize("resources/SE/Enemy/rush.mp3", "Enemy_Rush", 0.5f);
+
+  seStompWarp_ = std::make_unique<Se>();
+  seStompWarp_->Initialize("resources/SE/Enemy/stomp_warp.mp3", "Enemy_StompWarp", 0.5f);
+
+  seStompLanding_ = std::make_unique<Se>();
+  seStompLanding_->Initialize("resources/SE/Enemy/stomp_landing.mp3", "Enemy_StompLanding", 0.6f);
+
+  seStompExplosion_ = std::make_unique<Se>();
+  seStompExplosion_->Initialize("resources/SE/Enemy/stomp_explosion.mp3", "Enemy_StompExplosion", 1.0f);
+
+  seBombThrow_ = std::make_unique<Se>();
+  seBombThrow_->Initialize("resources/SE/Enemy/bomb_throw.mp3", "Enemy_BombThrow", 0.5f);
+
+  seBombExplosion_ = std::make_unique<Se>();
+  seBombExplosion_->Initialize("resources/SE/Enemy/bomb_explosion.mp3", "Enemy_BombExplosion", 0.5f);
+
+  seBlownAway_ = std::make_unique<Se>();
+  seBlownAway_->Initialize("resources/SE/Enemy/blown_away.mp3", "Enemy_BlownAway", 0.5f);
+
   // --- UI 初期化 ---
   hpBar_ = std::make_unique<EnemyHPBar>();
   if (engine_) {
@@ -202,6 +230,9 @@ void Enemy::Update(Player *player) {
 
   if (stompEffects_) {
       stompEffects_->Update(1.0f / 60.0f);
+      if (stompEffects_->CheckAndResetExplosionTrigger()) {
+          PlaySeStompExplosion();
+      }
   }
   if (tackleEffects_) {
       tackleEffects_->Update(1.0f / 60.0f);
@@ -215,6 +246,9 @@ void Enemy::Update(Player *player) {
   for (int i = 0; i < kMaxBombs; ++i) {
       if (bombs_[i] && !bombs_[i]->IsExpired()) {
           bombs_[i]->Update();
+          if (bombs_[i]->CheckAndResetExplosionTrigger()) {
+              PlaySeBombExplosion();
+          }
       }
   }
 
@@ -305,6 +339,32 @@ void Enemy::Update(Player *player) {
   updateHead(headLeft_, headLeftLocalTransform_, headLeftOffset_);
   updateHead(headMid_, headMidLocalTransform_, headMidOffset_);
   updateHead(headRight_, headRightLocalTransform_, headRightOffset_);
+
+  // 吹き飛び中のSEループ制御
+  bool anyPartBlowing = false;
+  for (int i = 0; i < 3; ++i) {
+      if (bodies_[i] && bodies_[i]->IsBlownAway() && !bodies_[i]->IsCompletelyDead()) {
+          anyPartBlowing = true;
+          break;
+      }
+  }
+  if (!anyPartBlowing) {
+      if (headLeft_ && headLeft_->IsBlownAway() && !headLeft_->IsCompletelyDead()) anyPartBlowing = true;
+      else if (headMid_ && headMid_->IsBlownAway() && !headMid_->IsCompletelyDead()) anyPartBlowing = true;
+      else if (headRight_ && headRight_->IsBlownAway() && !headRight_->IsCompletelyDead()) anyPartBlowing = true;
+  }
+
+  if (seBlownAway_) {
+      if (anyPartBlowing) {
+          if (!seBlownAway_->IsPlaying()) {
+              seBlownAway_->Play(true);
+          }
+      } else {
+          if (seBlownAway_->IsPlaying()) {
+              seBlownAway_->Stop();
+          }
+      }
+  }
 
 
 
@@ -655,6 +715,7 @@ void Enemy::FireBomb(int index, const Vector3& targetPos) {
         for (int i = 0; i < kMaxBombs; ++i) {
             if (bombs_[i] && bombs_[i]->IsExpired()) {
                 bombs_[i]->Throw(startPos, targetPos, index);
+                PlaySeBombThrow();
                 break;
             }
         }
@@ -1278,4 +1339,28 @@ bool Enemy::IsReadyForClearTransition() const {
     // （爆発を継続させたまま）ホワイトアウトなどのシーン遷移を開始する
     // ※Voxelが爆散する（0.6秒）のち、十分に破片が飛び散るのを見せてから遷移させるため 2.5秒 に設定
     return isDead_ && deathPhase_ == DeathPhase::Aftermath && deathTimer_ >= 2.5f;
+}
+
+void Enemy::PauseAllSe() {
+    if (seBeamCharge_) seBeamCharge_->Pause();
+    if (seBeam_) seBeam_->Pause();
+    if (seRush_) seRush_->Pause();
+    if (seStompWarp_) seStompWarp_->Pause();
+    if (seStompLanding_) seStompLanding_->Pause();
+    if (seStompExplosion_) seStompExplosion_->Pause();
+    if (seBombThrow_) seBombThrow_->Pause();
+    if (seBombExplosion_) seBombExplosion_->Pause();
+    if (seBlownAway_) seBlownAway_->Pause();
+}
+
+void Enemy::ResumeAllSe() {
+    if (seBeamCharge_) seBeamCharge_->Resume();
+    if (seBeam_) seBeam_->Resume();
+    if (seRush_) seRush_->Resume();
+    if (seStompWarp_) seStompWarp_->Resume();
+    if (seStompLanding_) seStompLanding_->Resume();
+    if (seStompExplosion_) seStompExplosion_->Resume();
+    if (seBombThrow_) seBombThrow_->Resume();
+    if (seBombExplosion_) seBombExplosion_->Resume();
+    if (seBlownAway_) seBlownAway_->Resume();
 }

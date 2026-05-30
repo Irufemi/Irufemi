@@ -132,9 +132,18 @@ void GameScene::Update() {
   }
 #endif
 
+  if (wasPaused_) {
+      wasPaused_ = false;
+      if (boss_) boss_->ResumeAllSe();
+      if (field_ && field_->GetBuilding()) field_->GetBuilding()->ResumeSe();
+  }
+
   // ポーズ画面呼び出し
   InputManager* input = engine_->GetInputManager();
   if (input && (input->IsKeyPressed(VK_ESCAPE) || input->StartPressed())) {
+      wasPaused_ = true;
+      if (boss_) boss_->PauseAllSe();
+      if (field_ && field_->GetBuilding()) field_->GetBuilding()->PauseSe();
       engine_->GetSceneManager()->PushScene("Pause");
       return;
   }

@@ -8,6 +8,7 @@
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Geometry/OBB.h"
+#include "Resource/Audio/Se.h"
 
 class Camera;
 class IrufemiEngine;
@@ -101,6 +102,10 @@ public:
     /// @brief 生存している建物の数を取得
     int GetAliveBuildingCount() const;
 
+    // SEの一時停止・再開
+    void PauseSe();
+    void ResumeSe();
+
     /// @brief ランダムな位置に新しい建物を1つ生成する（プレイヤーやボスの位置を避ける）
     void SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3& avoidBossPos);
 
@@ -164,6 +169,8 @@ private:
 
     // 砂煙エフェクト用 (ビル共通で1つだけ保持し、各ビルの位置から発生させる)
     std::unique_ptr<ParticleSystem> spawnDustSystem_;
+
+    std::unique_ptr<Se> seCollapse_;
 
     // パラメータ
     Parameters params_;

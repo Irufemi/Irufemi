@@ -71,6 +71,7 @@ void EnemyStompEffects::Fire(const Vector3& position) {
     hasDealtExplosionDamage_ = false;
     hasDealtRingDamage_ = false;
     hasDealtFinalDamage_ = false;
+    explosionTriggered_ = false;
 
 
     // スケール初期化（前回の攻撃の残りをクリア）
@@ -177,6 +178,7 @@ void EnemyStompEffects::Update(float deltaTime) {
             currentPhase_ = Phase::FinalExplosion;
             phaseTimer_ = 0.0f;
             hasDealtFinalDamage_ = false;
+            explosionTriggered_ = true;
             
             if (gpuParticleSystem_) {
                 float burstRadius = 15.0f; // より広範囲から発生させる

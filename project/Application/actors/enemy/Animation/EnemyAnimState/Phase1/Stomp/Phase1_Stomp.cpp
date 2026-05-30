@@ -9,6 +9,7 @@ void Phase1_Stomp::Enter(Enemy* enemy) {
     hasFinishedAttack_ = false;
     hasTeleported_ = false;
     hasHitGround_ = false;
+    hasPlayedWarpSe_ = false;
     initialScaleY_ = enemy->GetGlobalTransform().scale.y;
 }
 
@@ -61,6 +62,10 @@ void Phase1_Stomp::Update(Enemy* enemy, Player* player, float deltaTime) {
     }
     // --- 3. ジャンプ ---
     else if (attackTimer_ < endJump) {
+        if (!hasPlayedWarpSe_ && enemy) {
+            enemy->PlaySeStompWarp();
+            hasPlayedWarpSe_ = true;
+        }
         float t = (attackTimer_ - endHold) / jumpTime_;
         enemy->GetGlobalTransform().scale.y = initialScaleY_ * (maxSquatScale_ + t * (jumpStretchScale_ - maxSquatScale_));
         enemy->GetGlobalTransform().translate.y += jumpUpSpeed_;
@@ -135,6 +140,11 @@ void Phase1_Stomp::Update(Enemy* enemy, Player* player, float deltaTime) {
             // 爆発エフェクトもボスの見た目上の中心に発生させる
             Vector3 visualPos = { pos.x + visualOffset.x, pos.y, pos.z + visualOffset.z };
             enemy->FireStomp(visualPos); 
+
+            if (enemy) {
+                enemy->PlaySeStompLanding();
+            }
+
             attackTimer_ = endHover; 
             
             enemy->GetStompEffects()->StopBodyTelegraph();

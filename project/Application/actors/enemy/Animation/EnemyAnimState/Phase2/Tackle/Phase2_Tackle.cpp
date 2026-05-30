@@ -10,6 +10,7 @@
   timer_ = 0.0f;
   isFinished_ = false;
   isTargetLocked_ = false;
+  hasPlayedRushSe_ = false;
   attackTarget_ = {0, 0, 0};
   rushDir_ = {0, 0, 0};
 }
@@ -95,6 +96,10 @@ void Phase2_Tackle::Update(Enemy *enemy, Player *player, float deltaTime) {
   } else if (timer_ < kOrbitTime + kStopTime + kRushTime) {
     if (auto effects = enemy->GetTackleEffects()) {
       effects->StopTelegraph();
+    }
+    if (!hasPlayedRushSe_ && enemy) {
+        enemy->PlaySeRush();
+        hasPlayedRushSe_ = true;
     }
     // 突進：溜めた顔を勢いよく下に振り下ろしながら目標方向への完全な直進を行う
     Vector3 toTarget = Math::Subtract(attackTarget_, headT->translate);

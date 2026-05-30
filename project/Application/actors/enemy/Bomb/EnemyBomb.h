@@ -35,6 +35,14 @@ public:
     void Cancel();
     int GetHeadIndex() const { return headIndex_; }
 
+    bool CheckAndResetExplosionTrigger() {
+        if (explosionTriggered_) {
+            explosionTriggered_ = false;
+            return true;
+        }
+        return false;
+    }
+
     std::vector<OBB> GetOBBs() const;
 
 private:
@@ -88,6 +96,7 @@ private:
     std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
 
     bool isExpired_ = false;
+    bool explosionTriggered_ = false;
     IrufemiEngine* engine_ = nullptr;
     int headIndex_ = -1;
 };

@@ -18,6 +18,7 @@ private:
     bool hasFinishedAttack_ = false;
     bool hasTeleported_ = false;
     bool hasHitGround_ = false;
+    bool hasPlayedWarpSe_ = false;
     float initialScaleY_ = 1.0f;
     float rotationInterpolationSpeed_ = 5.0f; 
     Vector3 targetPos_ = {}; // ストンプの目標落下地点 

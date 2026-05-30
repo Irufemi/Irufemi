@@ -12,6 +12,10 @@ void Phase1_Beam::Enter(Enemy* enemy) {
     isLockedOn_ = false;
     isFiring_ = false;
     hasFinishedAttack_ = false;
+
+    if (enemy) {
+        enemy->PlaySeBeamCharge();
+    }
 }
 
 void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
@@ -82,6 +86,9 @@ void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
     }
     // 3. 本射
     else if (attackTimer_ < endFire) {
+        if (!isFiring_ && enemy) {
+            enemy->PlaySeBeam();
+        }
         isFiring_ = true;
         float fireProgress = (attackTimer_ - endAnticipation) / fireTime_;
         float sp = shakeBaseSpeed_ * 1.3f;
