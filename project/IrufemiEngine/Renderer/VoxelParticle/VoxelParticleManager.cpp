@@ -7,84 +7,92 @@ void VoxelParticleManager::Initialize(IrufemiEngine* engine) {
 }
 
 void VoxelParticleManager::ReservePool(const std::string& modelName, const Vector3Int& resolution, int poolSize) {
-    // 現在プール内に存在する同一モデルの数をカウント
-    int currentCount = 0;
-    for (const auto& entry : pool_) {
-        if (entry.modelName == modelName) {
-            currentCount++;
-        }
-    }
-
-    // 不足している分だけを新規に生成して追加
+    auto& poolData = pools_[modelName];
+    int currentCount = static_cast<int>(poolData.systems.size());
     int addCount = poolSize - currentCount;
+
     for (int i = 0; i < addCount; ++i) {
         auto voxel = std::make_unique<VoxelParticleSystem>();
         voxel->Initialize(modelName, resolution);
         // バックグラウンドロードを行いつつプールに追加
-        pool_.push_back({ modelName, std::move(voxel) });
+        poolData.systems.push_back(std::move(voxel));
+        totalSystemCount_++;
     }
 }
 
 VoxelParticleSystem* VoxelParticleManager::AllocateSystem(const std::string& modelName) {
-    // 1. 最優先：ロード完了しており、かつ非アクティブな（暇な）システムを探す
-    for (auto& entry : pool_) {
-        if (entry.modelName == modelName && 
-            entry.system->GetStatus() == VoxelParticleSystem::LoadingStatus::Loaded && 
-            !entry.system->IsActive()) {
-            return entry.system.get();
-        }
-    }
+    auto& poolData = pools_[modelName];
+    size_t size = poolData.systems.size();
 
-    // 2. 準優先（すべて使用中の場合）：ロード完了しているアクティブなシステムの中から、
-    // 最も長く再生されている（残り寿命が短い = GetEmitterTime() が最も大きい）ものを上書き再利用する
-    VoxelParticleSystem* oldestSystem = nullptr;
-    float maxTime = -1.0f;
-    for (auto& entry : pool_) {
-        if (entry.modelName == modelName && 
-            entry.system->GetStatus() == VoxelParticleSystem::LoadingStatus::Loaded) {
-            float t = entry.system->GetEmitterTime();
-            if (t > maxTime) {
-                maxTime = t;
-                oldestSystem = entry.system.get();
+    if (size > 0) {
+        // 1. 最優先：ラウンドロビン方式でロード完了かつ非アクティブなシステムを探す
+        size_t startIdx = poolData.nextSearchIndex;
+        for (size_t i = 0; i < size; ++i) {
+            size_t idx = (startIdx + i) % size;
+            auto& sys = poolData.systems[idx];
+            if (sys->GetStatus() == VoxelParticleSystem::LoadingStatus::Loaded && !sys->IsActive()) {
+                poolData.nextSearchIndex = (idx + 1) % size; // 次回はこの次のインデックスから探す
+                return sys.get();
             }
         }
-    }
-    if (oldestSystem) {
-        return oldestSystem;
+
+        // 2. 準優先：すべて使用中の場合、一番古いものを上書き再利用する
+        VoxelParticleSystem* oldestSystem = nullptr;
+        float maxTime = -1.0f;
+        size_t oldestIdx = 0;
+        for (size_t i = 0; i < size; ++i) {
+            auto& sys = poolData.systems[i];
+            if (sys->GetStatus() == VoxelParticleSystem::LoadingStatus::Loaded) {
+                float t = sys->GetEmitterTime();
+                if (t > maxTime) {
+                    maxTime = t;
+                    oldestSystem = sys.get();
+                    oldestIdx = i;
+                }
+            }
+        }
+        if (oldestSystem) {
+            poolData.nextSearchIndex = (oldestIdx + 1) % size;
+            return oldestSystem;
+        }
     }
 
-    // 3. フォールバック：ロード完了しているものが1つも存在しない場合のみ、安全上限（総数60）を越えない範囲で新規生成を許可
-    if (pool_.size() < 60) {
+    // 3. フォールバック：ロード完了しているものが1つも存在しない場合のみ、安全上限（60）を越えない範囲で新規生成を許可
+    if (totalSystemCount_ < 60) {
         auto voxel = std::make_unique<VoxelParticleSystem>();
         voxel->Initialize(modelName, {32, 32, 32}); 
-        pool_.push_back({ modelName, std::move(voxel) });
-        return pool_.back().system.get();
+        poolData.systems.push_back(std::move(voxel));
+        totalSystemCount_++;
+        return poolData.systems.back().get();
     }
     
-    // 安全上限に達しており、かつロード完了したものがない場合は、nullptr を返して発生を諦める（安全対策）
+    // 安全上限に達しており、かつロード完了したものがない場合は nullptr を返して発生を諦める
     return nullptr;
 }
 
 void VoxelParticleManager::Update(float deltaTime) {
-    for (auto& entry : pool_) {
-        // ロード未完了のもの（Pending, Loading）、描画準備完了状態、または実行中の場合にUpdateを呼ぶ
-        auto status = entry.system->GetStatus();
-        if (entry.system->IsActive() || 
-            status == VoxelParticleSystem::LoadingStatus::Pending ||
-            status == VoxelParticleSystem::LoadingStatus::Loading ||
-            status == VoxelParticleSystem::LoadingStatus::ReadyToCreateResources) {
-            entry.system->Update(deltaTime);
+    for (auto& pair : pools_) {
+        for (auto& sys : pair.second.systems) {
+            auto status = sys->GetStatus();
+            if (sys->IsActive() || 
+                status == VoxelParticleSystem::LoadingStatus::Pending ||
+                status == VoxelParticleSystem::LoadingStatus::Loading ||
+                status == VoxelParticleSystem::LoadingStatus::ReadyToCreateResources) {
+                sys->Update(deltaTime);
+            }
         }
     }
 }
 
 void VoxelParticleManager::Draw() {
-    for (auto& entry : pool_) {
-        if (entry.system->IsActive()) {
-            engine_->SetBlend(BlendMode::kBlendModeNormal);
-            engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-            engine_->SetCull(PSOManager::CullMode::Back);
-            entry.system->Draw();
+    for (auto& pair : pools_) {
+        for (auto& sys : pair.second.systems) {
+            if (sys->IsActive()) {
+                engine_->SetBlend(BlendMode::kBlendModeNormal);
+                engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+                engine_->SetCull(PSOManager::CullMode::Back);
+                sys->Draw();
+            }
         }
     }
 }

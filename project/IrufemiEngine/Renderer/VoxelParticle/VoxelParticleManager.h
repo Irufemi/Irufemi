@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 class IrufemiEngine;
 
@@ -37,11 +38,12 @@ public:
                               VoxelParticleSystem::ParticleType type = VoxelParticleSystem::ParticleType::Default);
 
 private:
-    struct PoolEntry {
-        std::string modelName;
-        std::unique_ptr<VoxelParticleSystem> system;
+    struct PoolData {
+        std::vector<std::unique_ptr<VoxelParticleSystem>> systems;
+        size_t nextSearchIndex = 0;
     };
-    std::vector<PoolEntry> pool_;
+    std::unordered_map<std::string, PoolData> pools_;
+    size_t totalSystemCount_ = 0;
     IrufemiEngine* engine_ = nullptr;
 
     VoxelParticleSystem* AllocateSystem(const std::string& modelName);
