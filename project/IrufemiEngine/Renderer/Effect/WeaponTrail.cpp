@@ -204,12 +204,15 @@ void WeaponTrail::SyncBeforeDraw() {
     if (resource_ && points_.size() >= 2) {
         // Transformがダミーでも、World行列計算のため必要
         resource_->UpdateTransform(*engine_->GetCameraManager()->GetActiveCamera());
-        SyncBeforeDraw();
+        resource_->SyncBeforeDraw();
     }
 }
 
 void WeaponTrail::Draw() {
     if (resource_ && points_.size() >= 2 && engine_) {
+        // 描画実行直前のバッファ同期
+        SyncBeforeDraw();
+
         // ステートを保存
         BlendMode prevBlend = engine_->currentBlend_;
         PSOManager::DepthWrite prevDepth = engine_->currentDepth_;

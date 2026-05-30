@@ -218,7 +218,7 @@ void ParticleSystem::Update() {
     }
     resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
     
-    SyncBeforeDraw();
+    resource_->SyncBeforeDraw();
     lastUpdateFrameIndex_ = BaseResource::GetDirectXCommon()->GetFrameIndex();
 
 #if USE_IMGUI
