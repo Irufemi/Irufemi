@@ -112,19 +112,19 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         RenderTexture* blurV = workspace.bloomExtract;
 
         DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        DrawSinglePass(commandList, Mode::None, currentSource, bloomExtract->GetRtvHandle(), false, bloomExtractPSO_.Get());
+        DrawSinglePass(commandList, Mode::Bloom, currentSource, bloomExtract->GetRtvHandle(), false, bloomExtractPSO_.Get());
         DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         
         bloomParams_.direction = { 1.0f, 0.0f };
         if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
         DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        DrawSinglePass(commandList, Mode::None, bloomExtract, blurH->GetRtvHandle(), false, bloomBlurHPSO_.Get());
+        DrawSinglePass(commandList, Mode::Bloom, bloomExtract, blurH->GetRtvHandle(), false, bloomBlurHPSO_.Get());
         DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         
         bloomParams_.direction = { 0.0f, 1.0f };
         if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
         DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        DrawSinglePass(commandList, Mode::None, blurH, blurV->GetRtvHandle(), false, bloomBlurVPSO_.Get());
+        DrawSinglePass(commandList, Mode::Bloom, blurH, blurV->GetRtvHandle(), false, bloomBlurVPSO_.Get());
         DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         
         commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
