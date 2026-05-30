@@ -264,10 +264,6 @@ private:
     std::unique_ptr<GPUParticleSystem> deathGlowParticle_ = nullptr; // 死亡待機中の全身から吹き出す自爆前光線
     std::unique_ptr<GPUParticleSystem> jetParticles_[4]; // 4隅のジェットノズル用噴射パーティクル配列
 
-    // 一人称視点時のミニフィギュア設定
-    Vector3 firstPersonMiniPos_ = { -0.58f, -0.21f, 1.4f };
-    Vector3 firstPersonMiniScale_ = { 0.05f, 0.05f, 0.05f };
-    float firstPersonMiniRotY_ = 0.5f;
 
     // ★追加: 死亡演出前の自爆ビームエフェクト
     static constexpr int kDeathBeamCount = 4;

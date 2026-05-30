@@ -535,11 +535,6 @@ void Player::Update() {
             ImGui::DragFloat("Sensitivity Multiplier", cameraController_.GetMouseSensitivityMultiplierPtr(), 0.01f, 0.0f, 1.0f, "%.4f");
             ImGui::Checkbox("Camera Control Enabled", cameraController_.GetCameraControlEnabledPtr());
 
-            ImGui::Separator();
-            ImGui::Text("First Person Mini Figure Settings");
-            ImGui::DragFloat3("Mini Pos Offset", &firstPersonMiniPos_.x, 0.01f, -5.0f, 5.0f);
-            ImGui::DragFloat3("Mini Scale", &firstPersonMiniScale_.x, 0.001f, 0.001f, 1.0f);
-            ImGui::DragFloat("Mini Rot Y Offset", &firstPersonMiniRotY_, 0.01f, -3.14f, 3.14f);
 
             ImGui::Separator();
             ImGui::Text("Zenmai Back Attachment Settings");
@@ -1325,40 +1320,7 @@ void Player::Draw() {
             if (deathTimer_ < flashTime) {
                 obj_->Draw();
             }
-        } else if (cameraController_.IsFirstPerson()) {
-            // 一人称視点時はHPゲージの上に小さなプレイヤーモデルをフィギュア風に描画
-            if (!isBlinking) {
-                Camera* camera = engine_ ? engine_->GetCameraManager()->GetActiveCamera() : nullptr;
-                if (camera) {
-                    // 元のパラメータを退避
-                    Vector3 origPos = obj_->GetPosition();
-                    Vector3 origRot = obj_->GetRotate();
-                    Vector3 origScale = obj_->GetScale();
-
-                    // カメラのローカル空間での左下前方の位置（HPゲージのすぐ上）
-                    Vector3 localOffset = firstPersonMiniPos_; 
-                    Matrix4x4 camWorld = camera->GetWorldMatrix();
-                    Vector3 drawPos = Math::Transform(localOffset, camWorld);
-
-                    // 少し斜めを向かせる回転（カメラ向き + Y軸回転補正）
-                    Vector3 drawRot = camera->GetRotate();
-                    drawRot.y += firstPersonMiniRotY_; // 少し斜めを向かせて立体感を持たせる
-
-                    obj_->SetPosition(drawPos);
-                    obj_->SetRotate(drawRot);
-                    obj_->SetScale(firstPersonMiniScale_); // ミニチュアサイズ
-                    obj_->Update();
-
-                    obj_->Draw();
-
-                    // パラメータを元に戻す
-                    obj_->SetPosition(origPos);
-                    obj_->SetRotate(origRot);
-                    obj_->SetScale(origScale);
-                    obj_->Update();
-                }
-            }
-        } else if (!isBlinking) {
+        } else if (!cameraController_.IsFirstPerson() && !isBlinking) {
             obj_->Draw();
         }
     }
