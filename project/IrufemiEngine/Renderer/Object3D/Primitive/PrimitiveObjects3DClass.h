@@ -113,6 +113,7 @@ public:
      */
     void SyncBeforeDraw() override;
     void Draw() override;
+    void Draw(bool isUI);
     void DrawOutlineMask() override;
 
     /**

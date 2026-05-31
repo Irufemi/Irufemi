@@ -42,6 +42,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
             gParticles[particleIndex].currentTime = 0.0f;
             gParticles[particleIndex].lifeTime = max(lerp(gEmitter.minLife, gEmitter.maxLife, r_life), 0.0001f);
+            gParticles[particleIndex].type = 0; // 親として初期化
+            gParticles[particleIndex].trailTimer = 0.0f;
 
             // 放出形状別の初期位置・速度設定
             if (gEmitter.type == 0) // Sphere
@@ -61,12 +63,19 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 float3 upVec = cross(L, side);
 
                 float angle = r_pos.x * 2.0f * 3.141592f;
-                float dist = sqrt(r_pos.y) * gEmitter.radius;
+                // 表面付近(0.9~1.0)に完全に集中させる
+                float dist = (0.9f + r_pos.y * 0.1f) * gEmitter.radius;
                 float3 offset = (side * cos(angle) + upVec * sin(angle)) * dist;
 
                 gParticles[particleIndex].translate = gEmitter.translate + offset;
-                float3 spreadDir = (side * (r_pos.x * 2 - 1) + upVec * (r_pos.y * 2 - 1)) * gEmitter.spread;
-                gParticles[particleIndex].velocity = (L + spreadDir) * (gEmitter.velocity * (0.8f + r_vel * 0.4f));
+                
+                // パーティクルが外側へ広がらないよう、接線方向への初速を削除。
+                // 完全にビームの進行方向(L)に沿って直進させることで、太さを一定に保つ。
+                // 僅かな揺らぎ(ノイズ)として、極めて微小なランダム方向のみを加算。
+                float3 randomDir = normalize(side * (r_pos.x * 2 - 1) + upVec * (r_pos.y * 2 - 1));
+                float3 straightDir = normalize(L + randomDir * (gEmitter.spread * 0.1f));
+                
+                gParticles[particleIndex].velocity = straightDir * (gEmitter.velocity * (0.8f + r_vel * 0.4f));
             }
             else if (gEmitter.type == 2) // Ring
             {
@@ -82,7 +91,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
             else if (gEmitter.type == 3) // Cylinder
             {
                 float angle = rng.Generate1d() * 2.0f * 3.141592f;
-                float r = rng.Generate1d() * gEmitter.radius;
+                // 円周上（半径のフチ 90%〜100% の範囲）にのみ粒子を生成し、中空にする
+                float r = gEmitter.radius - (rng.Generate1d() * 0.1f * gEmitter.radius);
                 float h = (rng.Generate1d() * 2.0f - 1.0f) * (gEmitter.velocity * 0.5f); // velocityを高さとして流用
                 
                 float3 L = normalize(gEmitter.direction);
@@ -100,6 +110,30 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 gParticles[particleIndex].translate = gEmitter.translate + offset;
                 float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
                 gParticles[particleIndex].velocity = (gEmitter.direction + radialDir * gEmitter.spread) * gEmitter.velocity;
+            }
+            else if (gEmitter.type == 5) // Hemisphere (Burst)
+            {
+                // r_pos.x: 方位角 (0~2pi), r_pos.y: 仰角 (0~pi/2で上半分のみ)
+                float phi = r_pos.x * 2.0f * 3.141592f;
+                float theta = r_pos.y * (3.141592f * 0.5f); // 90度（上半分）までに制限
+                
+                // radiusにr_pos.zをかけて中身を埋めるか、表面だけにするか
+                // ここではバースト用に球体内部からも放出（r_pos.z）
+                float r = pow(r_pos.z, 1.0f/3.0f) * gEmitter.radius; 
+                
+                float3 offset = float3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi)) * r;
+                // Y軸方向の高さを少し潰して、横に広いドーム状にする
+                offset.y *= 0.5f;
+                gParticles[particleIndex].translate = gEmitter.translate + offset;
+                
+                // 放射状に広がる速度
+                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                // spreadパラメータを横方向への押し出し係数として利用する
+                radialDir.xz *= (1.0f + gEmitter.spread);
+                radialDir = normalize(radialDir);
+
+                // 上方向固定バイアスを無くし、純粋な放射状（横に広がる）速度にする
+                gParticles[particleIndex].velocity = radialDir * gEmitter.velocity * (0.5f + r_vel * 0.5f);
             }
 
             // スケール初期化

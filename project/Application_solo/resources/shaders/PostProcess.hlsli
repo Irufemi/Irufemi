@@ -99,10 +99,10 @@ float32_t3 ApplySepia(float32_t3 color) {
 }
 
 // 3. Vignette
-float32_t3 ApplyVignette(float32_t3 color, float32_t2 uv, float32_t scale, float32_t power) {
+float32_t3 ApplyVignette(float32_t3 color, float32_t2 uv, float32_t scale, float32_t power, float32_t3 vignetteColor) {
     float2 correct = uv * (1.0f - uv.yx);
     float vignette = saturate(pow(correct.x * correct.y * scale, power));
-    return color * vignette;
+    return lerp(vignetteColor, color, vignette);
 }
 
 // 4. Noise

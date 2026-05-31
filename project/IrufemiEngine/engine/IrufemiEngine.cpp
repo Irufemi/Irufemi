@@ -46,6 +46,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Skybox/Skybox.h"
 #include "Graphics/Data/VertexData.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
+#include "Renderer/VoxelParticle/VoxelParticleManager.h"
 #include "Framework/IScene.h"
 #include "Framework/Component/ComponentFactory.h"
 
@@ -646,6 +647,11 @@ void IrufemiEngine::ProcessFrame() {
   if (dxCommon_) {
     dxCommon_->FlushPendingSRVUpdates();
   }
+
+  // ステートのリセット（前フレームの描画ステートを引き継がないようにする）
+  currentBlend_ = BlendMode::kBlendModeNormal;
+  currentDepth_ = PSOManager::DepthWrite::Enable;
+  currentCull_ = PSOManager::CullMode::Back;
 
   // 描画処理に入る前にImGui_::Renderを積む
   ui_->QueueDrawCommands();
