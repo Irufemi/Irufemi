@@ -2,7 +2,9 @@
 
 #include "Engine/Core/Math/Math.h"
 #include "Irufemi.h"
+#include "Resource/Audio/Se.h"
 #include <cmath>
+#include <memory>
 
 class InputManager;
 
@@ -42,7 +44,11 @@ public:
 
     void ResetDodgeCooldown() { dodgeCooldownTimer_ = 0; }
 
+    // チュートリアル用：回避の許可フラグ
+    void SetAllowDodge(bool allow) { allowDodge_ = allow; }
+
 private:
+    bool allowDodge_ = true;
     // --- 移動・ジャンプ関連変数 ---
     Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
     bool isGrounded_ = true;
@@ -56,6 +62,8 @@ private:
     Vector3 dodgeDirection_ = { 0.0f, 0.0f, 0.0f }; // 回避する方向
     float dodgeSpeed_ = 1.2f;            // 回避の移動速度
     float dodgeSpeedNormalMultiplier_ = 0.4f; // 通常時の回避速度倍率
+
+    std::unique_ptr<Se> seAvoidance_;
 
     // --- パラメータ ---
     const float kMoveSpeed = 0.2f;

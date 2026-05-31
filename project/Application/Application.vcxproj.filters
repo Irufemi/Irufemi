@@ -181,6 +181,9 @@
     <ClCompile Include="contents\effect\Effect.cpp">
       <Filter>Contents\Effect</Filter>
     </ClCompile>
+    <ClCompile Include="contents\effect\FireworkEffect.cpp">
+      <Filter>Contents\Effect</Filter>
+    </ClCompile>
     <ClCompile Include="actors\enemy\Body\Body.cpp">
       <Filter>Actors\Enemy\Body</Filter>
     </ClCompile>
@@ -317,6 +320,9 @@
       <Filter>Actors\Player</Filter>
     </ClInclude>
     <ClInclude Include="contents\effect\Effect.h">
+      <Filter>Contents\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="contents\effect\FireworkEffect.h">
       <Filter>Contents\Effect</Filter>
     </ClInclude>
     <ClInclude Include="actors\enemy\Body\Body.h">

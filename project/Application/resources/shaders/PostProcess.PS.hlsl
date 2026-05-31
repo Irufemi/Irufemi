@@ -7,8 +7,10 @@ struct PostProcessParams {
     int4 effects[4];      // C++側の int32_t[16] と完全に一致させるため int4[4] に変更
     
     // Vignette
+    float32_t4 vignetteColor;
     float32_t vignetteScale;
     float32_t vignettePower;
+    float32_t2 pad1;
     
     // Noise
     float32_t noiseIntensity;
@@ -85,7 +87,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 break;
             
             case kPostProcessMode_Vignette:
-                color.rgb = ApplyVignette(color.rgb, uv, gParams.vignetteScale, gParams.vignettePower);
+                color.rgb = ApplyVignette(color.rgb, uv, gParams.vignetteScale, gParams.vignettePower, gParams.vignetteColor.rgb);
                 break;
 
             case kPostProcessMode_Noise:

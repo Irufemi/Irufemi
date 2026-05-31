@@ -213,7 +213,27 @@ void AudioManager::Stop(std::weak_ptr<VoiceInstance>& instance) {
 }
 
 void AudioManager::StopAll() {
-    activeVoices_.clear();
+    for (auto& voice : activeVoices_) {
+        if (voice) {
+            voice->Stop();
+        }
+    }
+}
+
+void AudioManager::PauseAll() {
+    for (auto& voice : activeVoices_) {
+        if (voice) {
+            voice->Pause();
+        }
+    }
+}
+
+void AudioManager::ResumeAll() {
+    for (auto& voice : activeVoices_) {
+        if (voice) {
+            voice->Resume();
+        }
+    }
 }
 
 bool AudioManager::HasSound(const std::string& key) const {

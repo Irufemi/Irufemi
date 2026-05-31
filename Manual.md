@@ -601,6 +601,31 @@ if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
 }
 ```
 
+### 2.6 カスタムパラメータの渡し方 (Custom Constant Buffer)
+エンジン標準の `Material` には含まれない独自のパラメータ（演出用の色やアニメーションフラグなど）をシェーダーに渡したい場合、エンジンの `Material` を汚染するのではなく、専用の定数バッファ枠 (`RootSlot::Special` / レジスタ `b6`) を利用します。
+
+```cpp
+// 1. 専用の構造体と定数バッファを定義 (16バイトアライメントを意識)
+struct MyCustomParams {
+    Vector4 customColor;
+    float param1;
+    float padding[3];
+};
+
+std::unique_ptr<DynamicConstantBuffer<MyCustomParams>> myCb_;
+MyCustomParams params_{};
+
+// 2. 初期化時にバッファを生成し、描画オブジェクトにGPUアドレスをセット
+myCb_ = std::make_unique<DynamicConstantBuffer<MyCustomParams>>();
+myCb_->Initialize(engine_->GetDXCommon(), 1);
+myCb_->Update(params_);
+
+model_->GetResource()->SetCustomCBVAddress(myCb_->GetGPUVirtualAddress());
+
+// 3. HLSL (シェーダー) 側で受け取る
+// ConstantBuffer<MyCustomParams> gMyParams : register(b6);
+```
+
 ---
 
 ## 3. リソース管理 (Resource Management)

@@ -29,6 +29,7 @@ namespace RenderPackets {
         bool castShadows;
         ID3D12PipelineState* customPSO = nullptr;
         D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
+        ID3D12Resource* vertexBufferResourceOverride = nullptr;
     };
 
     struct SpritePacket {
@@ -76,6 +77,8 @@ namespace RenderPackets {
         BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
     struct VoxelParticlePacket {

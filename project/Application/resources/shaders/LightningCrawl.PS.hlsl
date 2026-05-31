@@ -17,7 +17,9 @@ struct LightningParams {
     float32_t coreIntensity;    //!< 芯の輝度
     float32_t coreThreshold;    //!< 芯の太さ
     float32_t coreScale;        //!< 芯の密度
-    float32_t pad;
+    float32_t spinSpeed;        //!< 横回転(螺旋)の速度
+    float32_t twistScale;       //!< 螺旋のねじれの強さ
+    float32_t pad[3];
 };
 ConstantBuffer<LightningParams> gLightning : register(b6);
 
@@ -38,14 +40,16 @@ PixelShaderOutput main(VertexShaderOutput input) {
 
     // --- 1. Surface Crawl (表面を這う電撃) ---
     // UVを3次元の円筒座標に変換してサンプリングすることで、シームレス化を実現
-    float angle = uv.x * TAU;
+    // spinSpeed(時間経過の横回転) と twistScale(y軸進行によるねじれ) を加算して螺旋（ドリル）の動きを作る
+    float angle = uv.x * TAU + (gPerFrame.time * gLightning.spinSpeed) + (uv.y * gLightning.twistScale);
+    
     // v方向(uv.y)に時間を引くことで、プラズマが前方に流れるアニメーションを付ける
     float3 pSurf = float3(cos(angle), sin(angle), uv.y - time * 2.0);
     float3 pTime = float3(time * 0.2, time * 0.1, time * 0.3);
     
     float32_t nSurf = fBm(pSurf * gLightning.noiseScale + pTime);
-    // しきい値の判定を少し広めにとり、かつ急峻に立ち上げることで「繋がり」を維持
-    float32_t surfaceBolt = 1.0 - saturate(abs(nSurf - gLightning.noiseThreshold) / 0.15);
+    // しきい値の判定幅を広げる（0.15 -> 0.25）ことで線が細くなりすぎて途切れるのを防ぐ
+    float32_t surfaceBolt = 1.0 - saturate(abs(nSurf - gLightning.noiseThreshold) / 0.25);
     surfaceBolt = pow(surfaceBolt, 2.0); // 芯を強調
     
     // 表面に微細なノイズを乗せる
@@ -58,14 +62,16 @@ PixelShaderOutput main(VertexShaderOutput input) {
     float32_t3 N = normalize(input.normal);
     float32_t fresnel = saturate(dot(N, V));
     
-    // 芯用のノイズもシームレスに前方へ流す
-    float3 pCore = float3(cos(angle), sin(angle), uv.y * 0.5 - time * 3.0);
+    // 芯用のノイズもシームレスに前方へ流す（内側は少し螺旋の回転方向や速度をずらして複雑にする）
+    float angleCore = uv.x * TAU + (gPerFrame.time * gLightning.spinSpeed * 1.5) + (uv.y * gLightning.twistScale * 0.5);
+    float3 pCore = float3(cos(angleCore), sin(angleCore), uv.y * 0.5 - time * 3.0);
     float3 pTimeCore = float3(time * 1.0, -time * 0.5, time * 0.8);
     float32_t nCore = fBm(pCore * gLightning.coreScale + pTimeCore);
 
     // 芯は Fresnel が強い中心部に限定し、急激に減衰させる
     float32_t coreEffect = pow(fresnel, 8.0); // 中心を鋭く
-    float32_t coreBolt = 1.0 - saturate(abs(nCore - gLightning.coreThreshold) / 0.08);
+    // こちらも線の幅を少し広げて途切れにくくする（0.08 -> 0.15）
+    float32_t coreBolt = 1.0 - saturate(abs(nCore - gLightning.coreThreshold) / 0.15);
     coreBolt *= coreEffect;
 
     // --- 3. 合成 ---

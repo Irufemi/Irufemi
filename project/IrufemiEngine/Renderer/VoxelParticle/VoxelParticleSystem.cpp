@@ -15,6 +15,8 @@
 #include <cassert>
 #include <cstdio>
 #include "Engine/Core/Math/Geometry/OBB.h"
+#include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/Core/Shape/Sphere.h"
 #include <Windows.h>
 #include <algorithm>
 
@@ -48,8 +50,12 @@ void VoxelParticleSystem::Initialize(const std::string &modelName,
   auto asyncData = std::make_shared<AsyncLoadData>();
   asyncData_ = asyncData;
 
+  // スレッドプールのデッドロック（ワーカー枯渇）を防ぐため、ボクセル化タスクを積む前に
+  // 元となるモデルデータを同期ロード（またはキャッシュから取得）しておく
+  auto managedModel = modelManager->GetModel(modelName);
+
   // 非同期でボクセル化（またはキャッシュから取得）を開始
-  initializeFuture_ = modelManager->EnqueueTask([asyncData, modelName, resolution, modelManager]() {
+  initializeFuture_ = modelManager->EnqueueTask([asyncData, modelName, resolution, modelManager, managedModel]() {
     // ModelManager側でキャッシュ済みのものがあればそれを返し、無ければ新規計算する
     auto vModel = modelManager->GetVoxelizedModel(modelName, resolution);
 
@@ -139,15 +145,35 @@ void VoxelParticleSystem::Update(float deltaTime) {
 void VoxelParticleSystem::SyncConstantBuffers() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     
-    if (lastUpdateFrame_ == frameIndex) return;
+    // lastUpdateFrame_ による早期リターンを削除
+    // 理由：Update()の後にScatterAt()が呼ばれるとパラメータが変わるが、
+    // ここで弾かれると同フレーム内で変更がGPUへ反映されず、古いパラメータでComputeShaderが走ってしまうため。
     emitterBuffer_.Update(emitterData_, frameIndex);
     perFrameBuffer_.Update(perFrameData_, frameIndex);
     lastUpdateFrame_ = frameIndex;
 }
 
+
+bool VoxelParticleSystem::IsInFrustum() const {
+    if (!engine_ || !hasExploded_) return false;
+    auto* camManager = engine_->GetCameraManager();
+    if (!camManager) return true;
+    Camera* activeCam = camManager->GetActiveCamera();
+    if (!activeCam) return true;
+
+    Sphere sphere;
+    sphere.center = emitterData_.emitPosition;
+    // 拡散するパーティクルの最大範囲を見積もる
+    sphere.radius = 80.0f; 
+    
+    return Collision::IsCollision(activeCam->GetFrustum(), sphere);
+}
+
 void VoxelParticleSystem::DispatchCompute() {
   if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_)
     return;
+
+  if (!IsInFrustum()) return;
 
   ID3D12GraphicsCommandList *commandList = engine_->GetCommandList();
   auto *dxCommon = engine_->GetDirectXCommon();
@@ -207,6 +233,8 @@ void VoxelParticleSystem::Draw() {
   if (!hasExploded_)
     return;
 
+  if (!IsInFrustum()) return;
+
   engine_->GetDrawManager()->SubmitVoxelParticle(
       voxelCount_,
       cubeVertexBufferView_,
@@ -227,7 +255,9 @@ void VoxelParticleSystem::Emit(const Vector3 &position) {
   emitterData_.time = 0.0f;
   emitterData_.useCollision = 0; // 衝突判定無効
   isEmitting_ = true;
+  emitterData_.emit = 1;
   hasExploded_ = true;
+  SyncConstantBuffers();
 }
 
 void VoxelParticleSystem::Explode(const Vector3 &position,
@@ -241,7 +271,9 @@ void VoxelParticleSystem::Explode(const Vector3 &position,
   emitterData_.time = 0.0f;
   emitterData_.useCollision = 0; // 衝突判定無効
   isEmitting_ = true;
+  emitterData_.emit = 1;
   hasExploded_ = true;
+  SyncConstantBuffers();
 }
 
 void VoxelParticleSystem::CollisionScatter(const Vector3 &position,
@@ -289,7 +321,9 @@ void VoxelParticleSystem::CollisionScatter(const Vector3 &position,
   }
 
   isEmitting_ = true;
+  emitterData_.emit = 1;
   hasExploded_ = true;
+  SyncConstantBuffers();
 }
 
 void VoxelParticleSystem::CreateCubeMesh(float sizeX, float sizeY,

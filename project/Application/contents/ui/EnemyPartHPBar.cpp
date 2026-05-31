@@ -9,7 +9,7 @@ namespace {
 // --- 3D空間でのレイアウト定数 ---
 constexpr float kPartBarMaxWidth = 8.0f;   ///< 部位用バーの最大幅（大幅に拡大）
 constexpr float kPartBarHeight = 1.0f;     ///< 部位用バーの高さ
-constexpr float kPartBarPullIn = 5.0f;     ///< モデルへの埋まりを回避するため、カメラ方向に引き寄せる距離
+constexpr float kPartBarPullIn = 4.0f;     ///< モデルへの埋まりを完全に回避するため、カメラ方向に引き寄せる距離
 
 constexpr float kFramePadding = 0.15f; ///< 枠線の余白
 
@@ -36,6 +36,8 @@ void EnemyPartHPBar::Initialize(IrufemiEngine* engine) {
     barFrame_->Initialize("resources/whiteTexture.png");
     barFrame_->SetScale({barMaxWidth_ + kFramePadding * 2.0f, barHeight_ + kFramePadding * 2.0f, 1.0f});
     barFrame_->SetColor(Vector4{kFrameR, kFrameG, kFrameB, kFrameA});
+    barFrame_->SetCastShadows(false);
+    if (engine) barFrame_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
     if (auto* mat = barFrame_->GetD3D12Resource()->GetMaterialData()) {
         mat->enableLighting = 0;
         mat->lightingMode = 0;
@@ -46,6 +48,8 @@ void EnemyPartHPBar::Initialize(IrufemiEngine* engine) {
     barBg_->Initialize("resources/whiteTexture.png");
     barBg_->SetScale({barMaxWidth_, barHeight_, 1.0f});
     barBg_->SetColor(Vector4{kBgR, kBgG, kBgB, kBgA});
+    barBg_->SetCastShadows(false);
+    if (engine) barBg_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
     if (auto* mat = barBg_->GetD3D12Resource()->GetMaterialData()) {
         mat->enableLighting = 0;
         mat->lightingMode = 0;
@@ -56,6 +60,8 @@ void EnemyPartHPBar::Initialize(IrufemiEngine* engine) {
     barFill_->Initialize("resources/whiteTexture.png");
     barFill_->SetScale({barMaxWidth_, barHeight_, 1.0f});
     barFill_->SetColor(Vector4{kColorGreenR, kColorGreenG, kColorGreenB, 1.0f});
+    barFill_->SetCastShadows(false);
+    if (engine) barFill_->SetCustomPSO(engine->GetPSOManager()->GetPSO("Object3D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
     if (auto* mat = barFill_->GetD3D12Resource()->GetMaterialData()) {
         mat->enableLighting = 0;
         mat->lightingMode = 0;
@@ -64,7 +70,7 @@ void EnemyPartHPBar::Initialize(IrufemiEngine* engine) {
     displayRatio_ = 1.0f;
 }
 
-void EnemyPartHPBar::Update(float hpRatio, const Vector3& targetWorldPos) {
+void EnemyPartHPBar::Update(float hpRatio, const Vector3& targetWorldPos, float pullRadius) {
     Camera* camera = engine_ ? engine_->GetCameraManager()->GetActiveCamera() : nullptr;
     if (!camera) return;
 
@@ -87,18 +93,19 @@ void EnemyPartHPBar::Update(float hpRatio, const Vector3& targetWorldPos) {
     // 基準位置（部位の上、GameScene側ですでに高さオフセットが計算されて渡される想定）
     Vector3 basePos = targetWorldPos;
 
-    // モデルへのめり込みを防ぐため、カメラ方向に向かって少し手前に引き寄せる
-    Vector3 toCamera = Math::Subtract(camera->GetTranslate(), basePos);
-    float dist = Math::Length(toCamera);
-    if (dist > 0.001f) {
-        Vector3 dir = {toCamera.x / dist, toCamera.y / dist, toCamera.z / dist};
-        // 引き寄せすぎないように制限（最大でも半分まで）
-        float pullAmt = (std::min)(kPartBarPullIn, dist * 0.5f);
-        basePos = Math::Add(basePos, Math::Multiply(pullAmt, dir));
+    // 敵モデル自身への埋まりを防ぐため、カメラ方向に一定距離引き寄せる
+    float actualPullIn = (pullRadius > 0.0f) ? pullRadius * 1.1f : kPartBarPullIn;
+    Vector3 toCam = { camera->GetTranslate().x - basePos.x, camera->GetTranslate().y - basePos.y, camera->GetTranslate().z - basePos.z };
+    float distToCam = std::sqrt(toCam.x * toCam.x + toCam.y * toCam.y + toCam.z * toCam.z);
+    if (distToCam > 0.001f) {
+        Vector3 toCamNorm = { toCam.x / distToCam, toCam.y / distToCam, toCam.z / distToCam };
+        float pullDist = (std::min)(actualPullIn, distToCam * 0.8f); // カメラを通り越さないように制限
+        basePos.x += toCamNorm.x * pullDist;
+        basePos.y += toCamNorm.y * pullDist;
+        basePos.z += toCamNorm.z * pullDist;
     }
 
     // 常にカメラの方を向かせるための行列作成
-    // カメラのY回転とX回転を引き継ぎ、位置はbasePosとする
     Matrix4x4 billboardMat = Math::MakeAffineMatrix({1.0f, 1.0f, 1.0f}, camera->GetRotate(), basePos);
 
     // --- 枠線の配置 (一番奥 Z + 0.02) ---
@@ -108,7 +115,7 @@ void EnemyPartHPBar::Update(float hpRatio, const Vector3& targetWorldPos) {
     barFrame_->SetRotate(camera->GetRotate());
     barFrame_->Update();
 
-    // --- 背景の配置 (真ん中 Z + 0.01) ---
+    // --- 背景の配置 (中 Z + 0.01) ---
     barBg_->SetScale({barMaxWidth_, barHeight_, 1.0f});
     Vector3 bgLocal = {0.0f, 0.0f, 0.01f};
     barBg_->SetTranslate(Math::Transform(bgLocal, billboardMat));

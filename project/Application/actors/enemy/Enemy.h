@@ -5,6 +5,7 @@
 #include "Beam/EnemyBeam.h"
 #include "StompEffects/EnemyStompEffects.h"
 #include "TackleEffects/EnemyTackleEffects.h"
+#include "Resource/Audio/Se.h"
 #include "Bomb/EnemyBomb.h"
 #include "Body/Body.h"
 #include "Head/Left/HeadLeft.h"
@@ -22,6 +23,7 @@ class Line3DRegion;
 class EnemyHPBar;
 class EnemyPartHPBar;
 class WeaponTrail;
+class Sprite;
 
 class Enemy {
 public:
@@ -33,7 +35,7 @@ public:
     
     // UI関連手続き
     void Draw3DUI(IrufemiEngine* engine, bool isUI = false);
-    void Draw2DUI(IrufemiEngine* engine);
+    void Draw2DUI(IrufemiEngine* engine, bool isFirstPerson = true);
 
     // --- ビーム制御用 ---
     void FireBeam(); // ビームを生成する関数
@@ -56,6 +58,16 @@ public:
 
     // --- トレイルエフェクト用 ---
     WeaponTrail* GetNeckTrail() const { return neckTrail_.get(); }
+
+    // --- SE用 ---
+    void PlaySeBeamCharge() { if (seBeamCharge_) seBeamCharge_->Play(false); }
+    void PlaySeBeam() { if (seBeam_) seBeam_->Play(false); }
+    void PlaySeRush() { if (seRush_) seRush_->Play(false); }
+    void PlaySeStompWarp() { if (seStompWarp_) seStompWarp_->Play(false); }
+    void PlaySeStompLanding() { if (seStompLanding_) seStompLanding_->Play(false); }
+    void PlaySeStompExplosion() { if (seStompExplosion_) seStompExplosion_->Play(false); }
+    void PlaySeBombThrow() { if (seBombThrow_) seBombThrow_->Play(false); }
+    void PlaySeBombExplosion() { if (seBombExplosion_) seBombExplosion_->Play(false); }
 
     // --- アクセサ（AIやAnimationから操作用） ---
     Transform& GetGlobalTransform() { return globalTransform_; }
@@ -83,6 +95,10 @@ public:
     void SetIsSandbagMode(bool isSandbag) { isSandbagMode_ = isSandbag; }
     bool GetIsSandbagMode() const { return isSandbagMode_; }
 
+    // 警告演出アクセス用
+    void SetWarningActive(bool active) { isWarningActive_ = active; }
+    bool IsWarningActive() const { return isWarningActive_; }
+
     // アニメーションクラスへのアクセス用
     EnemyAnimation* GetAnimation() const { return animation_.get(); }
 
@@ -98,6 +114,11 @@ public:
   bool GetIsActive() const { return isActive_; }
   bool IsDead() const { return isDead_; }
   bool IsHeadDead(int index) const;
+    bool IsReadyForClearTransition() const;
+
+    // SEの一時停止・再開
+    void PauseAllSe();
+    void ResumeAllSe();
 
 private:
     // 各パーツ
@@ -109,15 +130,32 @@ private:
     // ビームのインスタンス管理
     std::array<std::unique_ptr<EnemyBeam>, 3> beams_;
 
+    // 爆弾の最大同時存在数
+    static constexpr int kMaxBombs = 10;
+
     // 爆弾のインスタンス管理
-    std::array<std::unique_ptr<EnemyBomb>, 3> bombs_;
+    std::array<std::unique_ptr<EnemyBomb>, kMaxBombs> bombs_;
 
     // スタンプのインスタンス管理
     std::unique_ptr<EnemyStompEffects> stompEffects_;
     std::unique_ptr<EnemyTackleEffects> tackleEffects_;
 
+    // 撃破演出用の特大爆発エフェクト
+    std::unique_ptr<GPUParticleSystem> deathExplosionParticle_;
+
     // 斬撃トレイル
     std::unique_ptr<WeaponTrail> neckTrail_ = nullptr;
+
+    // --- SE ---
+    std::unique_ptr<Se> seBeamCharge_;
+    std::unique_ptr<Se> seBeam_;
+    std::unique_ptr<Se> seRush_;
+    std::unique_ptr<Se> seStompWarp_;
+    std::unique_ptr<Se> seStompLanding_;
+    std::unique_ptr<Se> seStompExplosion_;
+    std::unique_ptr<Se> seBombThrow_;
+    std::unique_ptr<Se> seBombExplosion_;
+    std::unique_ptr<Se> seBlownAway_;
 
     // トランスフォーム
     Transform globalTransform_;
@@ -155,9 +193,69 @@ private:
   bool isActive_ = false;
   bool isDead_ = false;
 
+  enum class DeathPhase { None, Reassembling, Gathered, Exploding, Aftermath };
+  DeathPhase deathPhase_ = DeathPhase::None;
+  float deathTimer_ = 0.0f;
+  float aftermathExplosionTimer_ = 0.0f;
+
+  // --- 死亡演出用調整定数（メンバー変数） ---
+  static constexpr float kReassembleDuration = 4.5f;  ///< バラバラになった部位が中央で合体するまでの時間（秒）
+  static constexpr float kHoldDuration = 2.0f;        ///< 合体してからボクセル爆散するまでの激しくのたうち悶えるタメ時間（秒）
+  static constexpr float kAftermathDuration = 10.0f;   ///< ホワイトアウト中も爆発し続けるための十分な長さ
+
+  // 悶えのたうち（Agony）全体のサイン波パラメータ
+  static constexpr float kAgonyPitchFreq = 12.0f;     ///< のたうち全体のPitch（X軸回転）振動周波数
+  static constexpr float kAgonyPitchAmp = 0.18f;      ///< のたうち全体のPitch（X軸回転）最大振幅
+  static constexpr float kAgonyRollFreq = 15.0f;      ///< のたうち全体のRoll（Z軸回転）振動周波数
+  static constexpr float kAgonyRollAmp = 0.22f;       ///< のたうち全体のRoll（Z軸回転）最大振幅
+
+  // 小刻みな高速振動（ブルブル感）と上下の激しいのたうちパラメータ
+  static constexpr float kShakeFreq = 70.0f;          ///< タメ中の小刻みなブルブル高速振動周波数
+  static constexpr float kShakeAmp = 0.12f;           ///< タメ中の小刻みなブルブル高速振動の幅
+  static constexpr float kVerticalFreq = 18.0f;       ///< タメ中のダイナミックな上下のたうち周波数
+  static constexpr float kVerticalAmp = 0.6f;         ///< タメ中のダイナミックな上下のたうち振幅
+
+  // 頭部（首）のうねる動きパラメータ
+  static constexpr float kHeadWiggleFreq = 20.0f;     ///< 3頭部が悶えてうねる振動周波数
+  static constexpr float kHeadWiggleAmp = 1.5f;       ///< 3頭部が悶えてうねる最大振幅
+
+  // 爆散はじけ飛びパラメータ
+  static constexpr float kExplosionBlowSpeed = 2.2f;  ///< 爆散時に各パーツが放射状にはじけ飛ぶ初速
+
+  std::array<Transform, 3> initialBodyLocalTransforms_;
+  Transform initialHeadLeftLocalTransform_ = {};
+  Transform initialHeadMidLocalTransform_ = {};
+  Transform initialHeadRightLocalTransform_ = {};
+
+  Transform startBodyLocalTransforms_[3] = {};
+  Transform startHeadLeftLocalTransform_ = {};
+  Transform startHeadMidLocalTransform_ = {};
+  Transform startHeadRightLocalTransform_ = {};
+  Vector3 startGlobalTranslate_ = {};
+
+  void UpdateDeathPhase(float deltaTime, Player* player = nullptr);
+
     // UI
     std::unique_ptr<EnemyHPBar> hpBar_ = nullptr;
     std::vector<std::unique_ptr<EnemyPartHPBar>> partHPBars_;
 
     bool isSandbagMode_ = false;
+
+    // 警告演出用
+    std::unique_ptr<Sprite> warningSprite_ = nullptr;
+    std::unique_ptr<Sprite> warningArrowLeft1_ = nullptr;
+    std::unique_ptr<Sprite> warningArrowLeft2_ = nullptr;
+    std::unique_ptr<Sprite> warningArrowRight1_ = nullptr;
+    std::unique_ptr<Sprite> warningArrowRight2_ = nullptr;
+    bool isWarningActive_ = false;
+    float warningTimer_ = 0.0f;
+
+    // 自機死亡時の強制キャンセル制御用フラグ
+    bool wasPlayerDeathHandled_ = false;
+
+    // ビネット調整用パラメータ (ImGuiでリアルタイム調整可能)
+    float vignetteBaseScale_ = 40.0f;      // 基準クリア領域 (大きいほど赤が薄くなる)
+    float vignetteScalePulseWidth_ = 2.0f; // 脈動の振幅
+    float vignetteBasePower_ = 0.15f;       // 基準にじみ具合 (小さいほど赤が薄くなる)
+    float vignettePowerPulseWidth_ = 0.05f; // 脈動の振幅
 };

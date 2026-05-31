@@ -86,12 +86,12 @@ void Phase2_Idle::Update(Enemy* enemy, Player* player, float deltaTime) {
     // クールダウン中は攻撃遷移しない
     if (timer_ > currentAttackCooldown_) {
         float randVal = (float)std::rand() / RAND_MAX;
-        if (randVal < 0.4f) {
-            wantsToBite_ = true;
-        } else if (randVal < 0.7f) {
+        if (randVal < kBombProbability) {
+            wantsToBomb_ = true;
+        } else if (randVal < (kBombProbability + kBeamProbability)) {
             wantsToBeam_ = true;
         } else {
-            wantsToBomb_ = true;
+            wantsToBite_ = true;
         }
     }
 }

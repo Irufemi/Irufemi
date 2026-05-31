@@ -96,6 +96,8 @@ void SceneManager::PushScene(const Key& name) {
     if (!sceneStack_.empty()) {
         // 現在の最前面シーンをサスペンド状態にする（バックグラウンドへ）
         sceneStack_.back().scene->OnSuspend();
+        // ★全てのSE（効果音）とBGMをポーズする
+        engine_->GetAudioManager()->PauseAll();
     }
 
     SceneStackItem item;
@@ -134,6 +136,8 @@ void SceneManager::PopScene() {
     if (!sceneStack_.empty()) {
         // 次のシーンが最前面に復帰するためレジューム処理を行う
         sceneStack_.back().scene->OnResume();
+        // ★全てのSE（効果音）とBGMを再開する
+        engine_->GetAudioManager()->ResumeAll();
         engine_->SetCursorLocked(!sceneStack_.back().scene->IsCursorVisible());
     } else {
         engine_->SetCursorLocked(false);
@@ -212,7 +216,7 @@ void SceneManager::ProcessTransitionPhase(bool& isLoading) {
                 SceneStackItem item;
                 item.name = pendingTransition_;
                 item.scene = std::move(nextScene_);
-                item.scene->OnEnter(); // 非同期ロード完了後に新しいシーン開始
+                // ここではまだ呼ばない（ロード完了後に呼ぶ）
                 sceneStack_.push_back(std::move(item));
             }
             
@@ -240,6 +244,7 @@ void SceneManager::ProcessTransitionPhase(bool& isLoading) {
             // 全オブジェクトの初回更新（UpdateAll等）とカメラ設定を済ませる。
             // ---------------------------------------------------------
             if (!sceneStack_.empty()) {
+                sceneStack_.back().scene->OnEnter(); // ロード完了直後にBGM再生等を開始
                 sceneStack_.back().scene->Update();
             }
 
@@ -363,6 +368,11 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
         it->scene->Finalize();
     }
     sceneStack_.clear();
+
+    // シーン切り替え時にポストプロセスのパラメータを自動リセット
+    if (engine_->GetPostProcessManager()) {
+        engine_->GetPostProcessManager()->ResetAllParams();
+    }
     
     initFuture_ = std::async(std::launch::async, [this, factory, next]() {
         // 新しいシーンを生成

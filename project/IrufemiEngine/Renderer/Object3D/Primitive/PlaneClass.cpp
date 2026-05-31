@@ -135,7 +135,7 @@ void PlaneClass::Draw(bool isUI) {
     }
     
     // --- 【追加】描画直前のバッファ同期 ---
-    resource_->SyncBeforeDraw();
+    SyncBeforeDraw();
 
     if (isUI) {
         drawManager_->SubmitUI3D(resource_.get());

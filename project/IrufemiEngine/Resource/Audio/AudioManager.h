@@ -125,6 +125,16 @@ public:
     void StopAll();
 
     /**
+     * @brief すべての再生中サウンドを一時停止する
+     */
+    void PauseAll();
+
+    /**
+     * @brief すべての一時停止中のサウンドを再開する
+     */
+    void ResumeAll();
+
+    /**
      * @brief 重複を避けてファイルからロードまたは取得する
      * @param[in] filePath ファイルパス
      * @param[in] key 識別キー（省略時はファイルパスをキーにする）

@@ -19,6 +19,10 @@ struct VoxelParticle
 	float4 color;
 	float3 normal;
 	uint isActive;
+	float3 rotation;
+	float pad1;
+	float3 angularVelocity;
+	float pad2;
 };
 
 // C++側のVoxelEmitter構造体と一致させる（合計48バイト）

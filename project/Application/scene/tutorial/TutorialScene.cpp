@@ -23,6 +23,8 @@
 #include "contents/ui/EnemyPartHPBar.h"
 #include "contents/ui/PlayerHPBar.h"
 
+#include "Renderer/Object2D/Sprite/Sprite.h"
+
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Graphics/Pipeline/PSOManager.h"
 #include "Engine/IrufemiEngine.h"
@@ -33,13 +35,49 @@
 
 namespace {
     const Vector3 kDefaultCameraPos = {0.0f, 0.0f, -10.0f};
+
+    int GetTutorialUIIndex(TutorialPhase phase) {
+        switch (phase) {
+            case TutorialPhase::MoveWASD:       return 0;
+            case TutorialPhase::Dodge:          return 1;
+            case TutorialPhase::MeleeAttack:    return 2;
+            case TutorialPhase::GunAttack:      return 3;
+            case TutorialPhase::KarakuriCharge: return 4;
+            case TutorialPhase::EnhancedDodge:  return 5;
+            case TutorialPhase::MissileAttack:  return 6;
+            case TutorialPhase::MissileFiredPause: return 6;
+            case TutorialPhase::MissileHitFocus: return 6;
+            case TutorialPhase::BuildingSpawnFocus: return 7;
+            case TutorialPhase::BuildingReadyFocus: return 7;
+            case TutorialPhase::BuildingAttack: return 7;
+            case TutorialPhase::BuildingHitFocus: return 7;
+            case TutorialPhase::PartsExplanation: return 8;
+            case TutorialPhase::ViewSwitch: return 9;
+            default: return -1;
+        }
+    }
 }
 
 TutorialScene::TutorialScene() {}
 TutorialScene::~TutorialScene() {}
 
+void TutorialScene::OnEnter() {
+    if (bgm_) bgm_->PlayFixed();
+}
+
+void TutorialScene::OnSuspend() {
+    if (bgm_) bgm_->Pause();
+}
+
+void TutorialScene::OnResume() {
+    if (bgm_) bgm_->Resume();
+}
+
 void TutorialScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
+
+    bgm_ = std::make_unique<Bgm>();
+    bgm_->Initialize("resources/BGM/InGame.mp3", "InGameBGM", true);
 
     Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
     activeCamera->SetTranslate(kDefaultCameraPos);
@@ -67,6 +105,56 @@ void TutorialScene::Initialize(IrufemiEngine* engine) {
     dynamicArenaLight_ = std::make_unique<DynamicArenaLight>();
     dynamicArenaLight_->Initialize(engine_, areaLights_);
 
+    for (int i = 0; i < 10; ++i) {
+        tutorialUISprites_[i] = std::make_unique<Sprite>();
+        std::string path = "resources/texture/inGame/tutorial_" + std::to_string(i + 1) + ".png";
+        tutorialUISprites_[i]->Initialize(path);
+        tutorialUISprites_[i]->SetAnchor(0.5f, 0.0f); // 上部中央
+        tutorialUISprites_[i]->SetPosition(1280.0f / 2.0f, 15.0f); // もう少し上に配置
+        
+        // 元の画像サイズから0.7倍に縮小
+        auto size = tutorialUISprites_[i]->GetSize();
+        tutorialUISprites_[i]->SetSize(size.x * 0.7f, size.y * 0.7f);
+    }
+
+    // WASDキーの初期化
+    auto initKey = [](std::unique_ptr<Sprite>& sprite, const std::string& keyName, float x, float y) {
+        sprite = std::make_unique<Sprite>();
+        sprite->Initialize("resources/texture/inGame/key_" + keyName + ".png");
+        sprite->SetAnchor(0.5f, 0.5f);
+        sprite->SetPosition(x, y);
+        sprite->SetSize(80.0f * 0.8f, 80.0f * 0.8f); // 少し小さめに
+        // デフォルトはグレー
+        sprite->SetColor({0.3f, 0.3f, 0.3f, 1.0f});
+    };
+    
+    float centerX = 1280.0f / 2.0f;
+    float baseY = 190.0f; // 説明UIの下
+    initKey(keyWSprite_, "W", centerX, baseY);
+    initKey(keyASprite_, "A", centerX - 70.0f, baseY + 70.0f);
+    initKey(keySSprite_, "S", centerX, baseY + 70.0f);
+    initKey(keyDSprite_, "D", centerX + 70.0f, baseY + 70.0f);
+
+    // SPACEキーの初期化 (元に戻す)
+    auto initSpaceKey = [](std::unique_ptr<Sprite>& sprite, float x, float y) {
+        sprite = std::make_unique<Sprite>();
+        sprite->Initialize("resources/texture/inGame/key_SPACE.png");
+        sprite->SetAnchor(0.5f, 0.5f);
+        sprite->SetPosition(x, y);
+        sprite->SetSize(260.0f * 0.7f, 80.0f * 0.7f); // 少し小さめに
+        // デフォルトはグレー
+        sprite->SetColor({0.3f, 0.3f, 0.3f, 1.0f});
+    };
+    initSpaceKey(keySpaceSprite_, centerX, baseY);
+
+    // ESCキーの初期化
+    keyEscSprite_ = std::make_unique<Sprite>();
+    keyEscSprite_->Initialize("resources/texture/inGame/key_ESC.png");
+    keyEscSprite_->SetAnchor(0.0f, 0.0f);
+    keyEscSprite_->SetPosition(20.0f, 20.0f);
+    keyEscSprite_->SetSize(64.0f, 64.0f);
+    keyEscSprite_->SetColor({0.8f, 0.8f, 0.8f, 1.0f});
+
     currentPhase_ = TutorialPhase::MoveWASD;
 }
 
@@ -79,6 +167,26 @@ void TutorialScene::Update() {
     }
 
     UpdateTutorialState();
+
+    // フェーズに応じてプレイヤーの操作を制限する
+    if (player_) {
+        bool allowDodge       = currentPhase_ >= TutorialPhase::Dodge;
+        bool allowMelee       = currentPhase_ >= TutorialPhase::MeleeAttack;
+        // 右クリック（銃/ミサイル）: GunAttackで解禁 → KarakuriCharge/EnhancedDodgeで再封印 → MissileAttackで再解禁
+        bool allowGunOrMissile = (currentPhase_ == TutorialPhase::GunAttack) ||
+                                 (currentPhase_ >= TutorialPhase::MissileAttack);
+        bool allowKarakuri    = currentPhase_ >= TutorialPhase::KarakuriCharge;
+        bool allowViewSwitch  = currentPhase_ >= TutorialPhase::ViewSwitch;
+
+        player_->SetAllowDodge(allowDodge);
+        player_->SetAllowMelee(allowMelee);
+        player_->SetAllowGunOrMissile(allowGunOrMissile);
+        player_->SetAllowKarakuriCharge(allowKarakuri);
+        player_->SetAllowViewSwitch(allowViewSwitch);
+    }
+
+    // MissileFiredPause: 0.0s~0.5s=通常（発射を見せる）、0.5s~0.8s=凍結（カメラ切替）、1.0s~=再開
+    bool freezeGameplay = (currentPhase_ == TutorialPhase::MissileFiredPause && cinematicTimer_ >= 0.5f && cinematicTimer_ < 0.7f);
 
     if (player_) {
         if (boss_) {
@@ -101,14 +209,18 @@ void TutorialScene::Update() {
             }
             player_->SetIsTargetingEnemy(inScreen);
         }
-        player_->Update();
+        if (!freezeGameplay) {
+            player_->Update();
+        }
     }
 
-    if (boss_) {
+    if (boss_ && !freezeGameplay) {
         boss_->Update(player_.get());
     }
 
-    CheckAllCollisions();
+    if (!freezeGameplay) {
+        CheckAllCollisions();
+    }
 
     if (field_) {
         field_->Update();
@@ -119,10 +231,143 @@ void TutorialScene::Update() {
         dynamicArenaLight_->Update(player_->GetTranslate(), boss_->GetTargetPosition());
     }
 
+    // カメラの演出（BaseScene::Updateの前に更新する）
+    Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
+    if (activeCamera) {
+        if ((currentPhase_ == TutorialPhase::MissileFiredPause && cinematicTimer_ >= 0.5f) || currentPhase_ == TutorialPhase::MissileHitFocus) {
+            if (boss_) {
+                // ボスからかなり離れて見下ろすめっちゃ引きのカメラ
+                Vector3 bossPos = boss_->GetTargetPosition();
+                Vector3 camPos = bossPos;
+                camPos.y += 30.0f;
+                camPos.z -= 80.0f; // 手前に引く
+                
+                activeCamera->SetTranslate(camPos);
+                
+                Vector3 diff = {
+                    bossPos.x - camPos.x,
+                    bossPos.y - camPos.y,
+                    bossPos.z - camPos.z
+                };
+                float xzLen = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+                float pitch = -std::atan2(diff.y, xzLen);
+                float yaw = std::atan2(diff.x, diff.z);
+                
+                activeCamera->SetRotate({ pitch, yaw, 0.0f });
+                activeCamera->UpdateMatrix();
+            }
+        }
+        else if (currentPhase_ == TutorialPhase::BuildingSpawnFocus) {
+            if (field_ && field_->GetBuilding()) {
+                Vector3 actualBuildingPos = field_->GetBuilding()->GetBuildingPosition(0);
+                
+                // ビルの根本近くにカメラを置く
+                Vector3 camPos = spawnedBuildingPos_;
+                camPos.y += 5.0f;  // 地上少し上
+                camPos.z -= 25.0f; // ビルの手前
+                camPos.x += 15.0f; // 少し横から
+                
+                activeCamera->SetTranslate(camPos);
+                
+                // ビルの中心付近を見上げる
+                Vector3 targetPos = actualBuildingPos;
+                targetPos.y += 15.0f;
+                
+                Vector3 diff = {
+                    targetPos.x - camPos.x,
+                    targetPos.y - camPos.y,
+                    targetPos.z - camPos.z
+                };
+                
+                float xzLen = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+                float pitch = -std::atan2(diff.y, xzLen);
+                float yaw = std::atan2(diff.x, diff.z);
+                
+                activeCamera->SetRotate({ pitch, yaw, 0.0f });
+                activeCamera->UpdateMatrix();
+            }
+        }
+        else if (currentPhase_ == TutorialPhase::BuildingReadyFocus) {
+            if (boss_) {
+                // ビルとボスが映る少し引きのカメラ
+                Vector3 bossPos = boss_->GetTargetPosition();
+                Vector3 camPos = spawnedBuildingPos_; // ビルの位置を基準に引く
+                camPos.y += 20.0f;
+                camPos.z -= 60.0f;
+                camPos.x -= 40.0f; // もっと左側に（-10.0fから-40.0fへ変更）
+                
+                activeCamera->SetTranslate(camPos);
+                
+                // ボスとビルの真ん中あたりを見る
+                Vector3 targetPos = bossPos;
+                targetPos.y += 10.0f;
+                
+                Vector3 diff = {
+                    targetPos.x - camPos.x,
+                    targetPos.y - camPos.y,
+                    targetPos.z - camPos.z
+                };
+                float xzLen = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+                float pitch = -std::atan2(diff.y, xzLen);
+                float yaw = std::atan2(diff.x, diff.z);
+                
+                activeCamera->SetRotate({ pitch, yaw, 0.0f });
+                activeCamera->UpdateMatrix();
+            }
+        }
+        else if (currentPhase_ == TutorialPhase::BuildingHitFocus) {
+            if (boss_) {
+                // ビルがボスに当たる様子を映す引きカメラ
+                Vector3 bossPos = boss_->GetTargetPosition();
+                Vector3 camPos = bossPos;
+                camPos.y += 25.0f;
+                camPos.z -= 70.0f;
+                camPos.x += 10.0f;
+                
+                activeCamera->SetTranslate(camPos);
+                
+                Vector3 diff = {
+                    bossPos.x - camPos.x,
+                    bossPos.y - camPos.y,
+                    bossPos.z - camPos.z
+                };
+                float xzLen = std::sqrt(diff.x * diff.x + diff.z * diff.z);
+                float pitch = -std::atan2(diff.y, xzLen);
+                float yaw = std::atan2(diff.x, diff.z);
+                
+                activeCamera->SetRotate({ pitch, yaw, 0.0f });
+                activeCamera->UpdateMatrix();
+            }
+        }
+    }
+
     BaseScene::Update();
     engine_->GetDrawManager()->SetEnvironmentMap(engine_->GetTextureManager()->GetWhiteCubeMapHandle());
 
-    DrawTutorialUI();
+    int uiIndex = GetTutorialUIIndex(currentPhase_);
+
+    if (uiIndex >= 0 && uiIndex < 10) {
+        if (tutorialUISprites_[uiIndex]) {
+            tutorialUISprites_[uiIndex]->Update();
+        }
+    }
+
+    // WASDキーの更新
+    if (currentPhase_ == TutorialPhase::MoveWASD) {
+        if (keyWSprite_) keyWSprite_->Update();
+        if (keyASprite_) keyASprite_->Update();
+        if (keySSprite_) keySSprite_->Update();
+        if (keyDSprite_) keyDSprite_->Update();
+    }
+
+    // SPACEキーの更新
+    if (currentPhase_ == TutorialPhase::BuildingReadyFocus || currentPhase_ == TutorialPhase::PartsExplanation || currentPhase_ == TutorialPhase::ViewSwitch) {
+        if (keySpaceSprite_) keySpaceSprite_->Update();
+    }
+
+    if (keyEscSprite_) {
+        keyEscSprite_->Update();
+    }
 }
 
 void TutorialScene::Draw() {
@@ -132,18 +377,39 @@ void TutorialScene::Draw() {
     if (boss_) boss_->Draw(engine_);
     if (player_) player_->DrawParticles();
 
-    if (player_) {
+    bool hidePlayerUI = (player_ && player_->IsCinematicMode()) ||
+                        currentPhase_ == TutorialPhase::MissileFiredPause ||
+                        currentPhase_ == TutorialPhase::MissileHitFocus;
+    if (player_ && !hidePlayerUI) {
         player_->Draw2DUI(boss_.get());
         bool isPaused = (engine_->GetSceneManager()->GetCurrent() == "Pause");
         player_->Draw3DUI(boss_.get(), true, isPaused);
     }
+
+    int uiIndex = GetTutorialUIIndex(currentPhase_);
+    if (uiIndex >= 0 && uiIndex < 10) {
+        if (tutorialUISprites_[uiIndex]) {
+            tutorialUISprites_[uiIndex]->Draw();
+        }
+    }
+
+    // WASDキーの描画
+    if (currentPhase_ == TutorialPhase::MoveWASD) {
+        if (keyWSprite_) keyWSprite_->Draw();
+        if (keyASprite_) keyASprite_->Draw();
+        if (keySSprite_) keySSprite_->Draw();
+        if (keyDSprite_) keyDSprite_->Draw();
+    }
+
+    // SPACEキーの描画
+    if (currentPhase_ == TutorialPhase::BuildingReadyFocus || currentPhase_ == TutorialPhase::PartsExplanation || currentPhase_ == TutorialPhase::ViewSwitch) {
+        if (keySpaceSprite_) keySpaceSprite_->Draw();
+    }
+
+    if (keyEscSprite_) keyEscSprite_->Draw();
 }
 
-void TutorialScene::DrawDebugTab() {
-#ifdef USE_IMGUI
-    BaseScene::DrawDebugTab();
-#endif
-}
+
 
 void TutorialScene::UpdateTutorialState() {
     InputManager* input = engine_->GetInputManager();
@@ -165,84 +431,155 @@ void TutorialScene::UpdateTutorialState() {
 
     switch (currentPhase_) {
     case TutorialPhase::MoveWASD:
-        currentInstruction_ = (const char*)u8"WASDで移動することができます";
         if (input->IsKeyPressedDIK(DIK_W)) hasPressedW_ = true;
         if (input->IsKeyPressedDIK(DIK_A)) hasPressedA_ = true;
         if (input->IsKeyPressedDIK(DIK_S)) hasPressedS_ = true;
         if (input->IsKeyPressedDIK(DIK_D)) hasPressedD_ = true;
+
+        // 押されたら水色（点灯）、押されていなければグレー
+        if (keyWSprite_) keyWSprite_->SetColor(input->IsKeyDownDIK(DIK_W) || hasPressedW_ ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.3f, 0.3f, 0.3f, 1.0f});
+        if (keyASprite_) keyASprite_->SetColor(input->IsKeyDownDIK(DIK_A) || hasPressedA_ ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.3f, 0.3f, 0.3f, 1.0f});
+        if (keySSprite_) keySSprite_->SetColor(input->IsKeyDownDIK(DIK_S) || hasPressedS_ ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.3f, 0.3f, 0.3f, 1.0f});
+        if (keyDSprite_) keyDSprite_->SetColor(input->IsKeyDownDIK(DIK_D) || hasPressedD_ ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.3f, 0.3f, 0.3f, 1.0f});
+
         if (hasPressedW_ && hasPressedA_ && hasPressedS_ && hasPressedD_) {
             currentPhase_ = TutorialPhase::Dodge;
         }
         break;
 
     case TutorialPhase::Dodge:
-        currentInstruction_ = (const char*)u8"Spaceキーで回避することができます";
         if (input->IsKeyPressedDIK(DIK_SPACE)) { // Space key
             currentPhase_ = TutorialPhase::MeleeAttack;
         }
         break;
 
     case TutorialPhase::MeleeAttack:
-        currentInstruction_ = (const char*)u8"左クリックで近接攻撃をすることができます(敵に当ててみましょう)";
         if (hasHitMelee_) {
             currentPhase_ = TutorialPhase::GunAttack;
         }
         break;
 
     case TutorialPhase::GunAttack:
-        currentInstruction_ = (const char*)u8"右クリックで銃攻撃をすることができます(敵に当ててみましょう)";
         if (hasHitGun_) {
             currentPhase_ = TutorialPhase::KarakuriCharge;
         }
         break;
 
     case TutorialPhase::KarakuriCharge:
-        currentInstruction_ = (const char*)u8"Eキーを長押しでからくりチャージを行い自身を強化することができます";
         if (player_->IsKarakuriCharged()) {
             currentPhase_ = TutorialPhase::EnhancedDodge;
         }
         break;
 
     case TutorialPhase::EnhancedDodge:
-        currentInstruction_ = (const char*)u8"からくりチャージ中は回避が強化されます。\nSpaceキーで回避を行ってみましょう。";
         if (input->IsKeyPressedDIK(DIK_SPACE)) {
             currentPhase_ = TutorialPhase::MissileAttack;
         }
         break;
 
     case TutorialPhase::MissileAttack:
-        currentInstruction_ = (const char*)u8"からくりチャージ中は右クリックがミサイルに変化します。\nミサイルを敵に当ててみましょう。";
-        if (hasHitMissile_) {
-            currentPhase_ = TutorialPhase::BuildingAttack;
-            if (field_ && field_->GetBuilding()) {
-                // 建物を一つだけボスの少し遠くに配置する
-                Vector3 bossPos = boss_->GetTargetPosition();
-                bossPos.z -= 30.0f; // 少し手前に配置
-                bossPos.x += 15.0f; // 横にずらす
-                field_->GetBuilding()->ClearAndAddSingleBuilding(bossPos);
+        // ミサイルが発射されたか検出する
+        if (player_) {
+            MissileData* missiles = player_->GetMissiles();
+            bool hasMissileActive = false;
+            for (int i = 0; i < Player::GetMaxMissiles(); ++i) {
+                if (missiles[i].isActive) {
+                    hasMissileActive = true;
+                    break;
+                }
+            }
+            if (hasMissileActive) {
+                currentPhase_ = TutorialPhase::MissileFiredPause;
+                cinematicTimer_ = 0.0f;
+                // 最初の0.5秒は発射シーンを見せるのでcinematicModeはまだ設定しない
             }
         }
         break;
 
+    case TutorialPhase::MissileFiredPause:
+        cinematicTimer_ += engine_->GetDeltaTime();
+        // 0.5秒経過でシネマティックモード（カメラ切替＋操作停止）
+        if (cinematicTimer_ >= 0.5f && player_ && !player_->IsCinematicMode()) {
+            player_->SetCinematicMode(true);
+        }
+        // 着弾したら次のフェーズへ
+        if (hasHitMissile_) {
+            currentPhase_ = TutorialPhase::MissileHitFocus;
+            cinematicTimer_ = 0.0f;
+        }
+        break;
+
+    case TutorialPhase::MissileHitFocus:
+        cinematicTimer_ += engine_->GetDeltaTime();
+        if (cinematicTimer_ > 3.0f) {
+            currentPhase_ = TutorialPhase::BuildingSpawnFocus;
+            if (field_ && field_->GetBuilding()) {
+                // 建物を一つだけボスの少し遠くに配置する
+                Vector3 bossPos = boss_->GetTargetPosition();
+                bossPos.z -= 60.0f; // ボスから大きく離す（手前に）
+                bossPos.x += 20.0f; // 横にずらす
+                field_->GetBuilding()->ClearAndAddSingleBuilding(bossPos);
+                spawnedBuildingPos_ = bossPos;
+            }
+        }
+        break;
+
+    case TutorialPhase::BuildingSpawnFocus:
+        if (field_ && field_->GetBuilding()) {
+            if (!field_->GetBuilding()->IsBuildingSpawning(0)) {
+                currentPhase_ = TutorialPhase::BuildingReadyFocus;
+                cinematicTimer_ = 0.0f;
+            } else {
+                if (player_) player_->SetCinematicMode(true);
+            }
+        } else {
+            currentPhase_ = TutorialPhase::BuildingReadyFocus;
+        }
+        break;
+
+    case TutorialPhase::BuildingReadyFocus:
+        if (keySpaceSprite_) keySpaceSprite_->SetColor(input->IsKeyDownDIK(DIK_SPACE) ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.3f, 0.3f, 0.3f, 1.0f});
+        if (input->IsKeyReleasedDIK(DIK_SPACE)) {
+            currentPhase_ = TutorialPhase::BuildingAttack;
+            if (player_) player_->SetCinematicMode(false);
+        }
+        break;
+
     case TutorialPhase::BuildingAttack:
-        currentInstruction_ = (const char*)u8"マップ上の建物を攻撃して壊すと、建物を飛ばすことができます\n飛ばした建物を敵に当てて攻撃してみましょう";
         if (hasBuildingHitEnemy_) {
-            currentPhase_ = TutorialPhase::PartsExplanation;
+            currentPhase_ = TutorialPhase::BuildingHitFocus;
+            cinematicTimer_ = 0.0f;
+            if (player_) player_->SetCinematicMode(true);
         } else if (field_ && field_->GetBuilding()) {
             // 建物が消滅してしまって敵に当たっていない場合は再生成する
             if (field_->GetBuilding()->GetBuildingCount() > 0 && 
                 field_->GetBuilding()->IsBuildingDestroyed(0)) {
                 Vector3 bossPos = boss_->GetTargetPosition();
-                bossPos.z -= 30.0f;
-                bossPos.x += 15.0f;
+                bossPos.z -= 60.0f;
+                bossPos.x += 20.0f;
                 field_->GetBuilding()->ClearAndAddSingleBuilding(bossPos);
             }
         }
         break;
 
+    case TutorialPhase::BuildingHitFocus:
+        cinematicTimer_ += engine_->GetDeltaTime();
+        if (cinematicTimer_ > 3.0f) {
+            currentPhase_ = TutorialPhase::PartsExplanation;
+            if (player_) player_->SetCinematicMode(false);
+        }
+        break;
+
     case TutorialPhase::PartsExplanation:
-        currentInstruction_ = (const char*)u8"敵の部位を攻撃し続けると、部位が壊れて飛びます。\n飛んだ部位は武器として利用可能です。（実践なし）\nSpaceキーでゲームを開始します。";
-        if (input->IsKeyPressedDIK(DIK_SPACE)) {
+        if (keySpaceSprite_) keySpaceSprite_->SetColor(input->IsKeyDownDIK(DIK_SPACE) ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.3f, 0.3f, 0.3f, 1.0f});
+        if (input->IsKeyReleasedDIK(DIK_SPACE)) {
+            currentPhase_ = TutorialPhase::ViewSwitch;
+        }
+        break;
+
+    case TutorialPhase::ViewSwitch:
+        if (keySpaceSprite_) keySpaceSprite_->SetColor(input->IsKeyDownDIK(DIK_SPACE) ? Vector4{0.0f, 1.0f, 1.0f, 1.0f} : Vector4{0.3f, 0.3f, 0.3f, 1.0f});
+        if (input->IsKeyReleasedDIK(DIK_SPACE)) {
             currentPhase_ = TutorialPhase::Done;
         }
         break;
@@ -255,54 +592,86 @@ void TutorialScene::UpdateTutorialState() {
     }
 }
 
-void TutorialScene::DrawTutorialUI() {
-#ifdef USE_IMGUI
-    ImGui::SetNextWindowPos(ImVec2(1280.0f / 2.0f, 100.0f), ImGuiCond_Always, ImVec2(0.5f, 0.0f));
-    ImGui::SetNextWindowSize(ImVec2(800.0f, 150.0f), ImGuiCond_Always);
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-    ImGui::Begin("Tutorial UI", nullptr, window_flags);
-    ImGui::SetWindowFontScale(1.5f);
-    ImGui::TextWrapped("%s", currentInstruction_);
-    ImGui::End();
-#endif
-}
-
 void TutorialScene::CheckAllCollisions() {
     if (!player_ || !boss_ || !isCollisionEnabled_) return;
     CheckEnemyToPlayerCollisions();
     CheckPlayerToEnemyCollisions();
-    CheckFlyingPartsCollisions();
     CheckPlayerBuildingCollisions();
-    CheckEnemyBuildingCollisions();
-    CheckFlyingPartsBuildingCollisions();
     CheckFlyingBuildingsVsEnemyCollisions();
-    CheckFlyingBuildingsVsBuildingsCollisions();
 }
 
 void TutorialScene::CheckEnemyToPlayerCollisions() {
-    // チュートリアルでは敵は攻撃しないため、部位接触による押し出し・ダメージのみ
+    // チュートリアルでは敵は攻撃しないため、部位接触による押し出しのみ（ダメージなし）
     Sphere playerColliderSphere;
     playerColliderSphere.center = player_->GetCollider().center;
     playerColliderSphere.radius = player_->GetCollider().radius;
 
     auto checkHit = [&](auto *part) {
         if (!part || part->IsCompletelyDead()) return;
-        if (Collision::IsOBBSphereCollision(part->GetOBB(), playerColliderSphere)) {
-            if (player_->ApplyDamage(10)) { // ダメージは10に固定
-                if (part->IsBlownAway()) {
-                    Vector3 toPlayer = Math::Subtract(playerColliderSphere.center, part->GetOBB().center);
-                    toPlayer.y = 0.0f;
-                    Vector3 normal = Math::Normalize(toPlayer);
-                    if (Math::Length(normal) < 0.001f) normal = {0.0f, 0.0f, 1.0f};
+        OBB partOBB = part->GetOBB();
+        if (Collision::IsOBBSphereCollision(partOBB, playerColliderSphere)) {
+            bool isTackle = (boss_->GetState() == EnemyState::Attack_Tackle);
 
-                    Vector3 vel = part->GetBlowVelocity();
-                    float dot = Math::Dot(vel, normal);
-                    if (dot > 0.0f) {
-                        Vector3 reflect = Math::Subtract(vel, Math::Multiply(2.0f * dot, normal));
-                        part->SetBlowVelocity(reflect);
-                    } else if (Math::Length(vel) < 0.001f) {
-                        part->SetBlowVelocity(Math::Multiply(-2.0f, normal));
+            // 押し出し処理
+            Vector3 diff = Math::Subtract(player_->GetTranslate(), partOBB.center);
+            float bestPushEval = 1e10f;
+            float bestActualPushDist = 0.0f;
+            Vector3 bestPushDir = {0.0f, 0.0f, 0.0f};
+
+            for (int axis = 0; axis < 3; ++axis) {
+                if (axis == 1) continue; // Y軸は無視
+
+                float proj = Math::Dot(diff, partOBB.orientations[axis]);
+                float halfSize = (axis == 0) ? partOBB.size.x : partOBB.size.z;
+                
+                float actualPenetration = 0.0f;
+                float evalPenetration = 0.0f;
+                Vector3 pushDir = {0.0f, 0.0f, 0.0f};
+
+                if (isTackle && axis == 0) {
+                    // --- 突進中専用：X軸（左右）へ強制的に逃がす ---
+                    Vector3 bossPos = boss_->GetTargetPosition();
+                    Vector3 diffFromBoss = Math::Subtract(player_->GetTranslate(), bossPos);
+                    float signX = (Math::Dot(diffFromBoss, partOBB.orientations[0]) >= 0.0f) ? 1.0f : -1.0f;
+                    
+                    if (signX > 0.0f) {
+                        actualPenetration = (halfSize + playerColliderSphere.radius) - proj;
+                        pushDir = partOBB.orientations[0];
+                    } else {
+                        actualPenetration = (halfSize + playerColliderSphere.radius) + proj;
+                        pushDir = Math::Multiply(-1.0f, partOBB.orientations[0]);
                     }
+                    
+                    actualPenetration += 3.0f; // 外側へ弾き出すボーナス
+                    evalPenetration = actualPenetration;
+                } else {
+                    // --- 通常時の押し出し（突進中のZ軸も含む） ---
+                    actualPenetration = (halfSize + playerColliderSphere.radius) - std::abs(proj);
+                    float sign = (proj >= 0.0f) ? 1.0f : -1.0f;
+                    pushDir = Math::Multiply(sign, partOBB.orientations[axis]);
+                    
+                    if (isTackle && axis == 2) {
+                        // 突進中はZ軸へ絶対に押し出されないようペナルティ
+                        evalPenetration = actualPenetration * 1000.0f;
+                    } else {
+                        // 通常はそのままの距離で評価
+                        evalPenetration = actualPenetration;
+                    }
+                }
+
+                if (actualPenetration > 0.0f && evalPenetration < bestPushEval) {
+                    bestPushEval = evalPenetration;
+                    bestActualPushDist = actualPenetration;
+                    bestPushDir = pushDir;
+                }
+            }
+            if (bestActualPushDist > 0.0f && bestPushEval < 1e9f) {
+                bestPushDir.y = 0.0f;
+                if (Math::Length(bestPushDir) > 0.001f) {
+                    bestPushDir = Math::Normalize(bestPushDir);
+                    Vector3 newPos = Math::Add(player_->GetTranslate(), Math::Multiply(bestActualPushDist, bestPushDir));
+                    player_->SetTranslate(newPos);
+                    playerColliderSphere.center = player_->GetCollider().center; // 更新
                 }
             }
         }
@@ -328,6 +697,7 @@ void TutorialScene::CheckPlayerToEnemyCollisions() {
             int damage = player_->GetDamageMelee();
             if (player_->IsKarakuriCharged()) damage = static_cast<int>(damage * player_->GetDamageMeleeChargeMultiplier());
             if (part->ApplyDamage(damage)) {
+                player_->OnMeleeHit();
                 hasHitMelee_ = true;
                 if (part->GetHP() <= 0) {
                     part->SetHP(100); // チュートリアル中は部位が壊れないようにHPを回復
@@ -426,46 +796,6 @@ void TutorialScene::CheckPlayerToEnemyCollisions() {
     checkAndDamage(boss_->GetHeadRight());
 }
 
-void TutorialScene::CheckFlyingPartsCollisions() {
-    // チュートリアルなので簡易的に部位同士の衝突を実装
-    auto checkProjectile = [&](auto *projectile) {
-        if (!projectile || !projectile->IsBlownAway() || projectile->IsCompletelyDead()) return;
-        if (projectile->GetBlowTimer() < 0.2f) return;
-        OBB projectileOBB = projectile->GetOBB();
-
-        auto checkTarget = [&](auto *target) {
-            if (!target || target->GetHP() <= 0 || target->IsBlownAway()) return;
-            if (Collision::IsOBBCollision(projectileOBB, target->GetOBB())) {
-                Vector3 vel = projectile->GetBlowVelocity();
-                Vector3 diff = Math::Subtract(projectile->GetTransform().translate, target->GetTransform().translate);
-                Vector3 normal = Math::Normalize(Vector3{diff.x, 0.0f, diff.z});
-                if (Math::Length(normal) < 0.001f) normal = {0.0f, 0.0f, 1.0f};
-
-                float dot = Math::Dot(vel, normal);
-                if (dot < 0.0f) {
-                    target->ApplyDamage(250);
-                    Vector3 reflect = Math::Subtract(vel, Math::Multiply(2.0f * dot, normal));
-                    reflect.y = 0.0f;
-                    projectile->SetBlowVelocity(reflect);
-                    if (target->GetHP() <= 0) target->OnDestroyed(Math::Normalize(vel), 0.5f);
-                    target->ScatterAt(Math::Multiply(-0.5f, vel), target->GetOBB());
-                    projectile->ScatterAt(Math::Multiply(-0.5f, reflect), projectile->GetOBB());
-                }
-            }
-        };
-
-        for (int i = 0; i < 3; ++i) checkTarget(boss_->GetBody(i));
-        checkTarget(boss_->GetHeadLeft());
-        checkTarget(boss_->GetHeadMid());
-        checkTarget(boss_->GetHeadRight());
-    };
-
-    for (int i = 0; i < 3; ++i) checkProjectile(boss_->GetBody(i));
-    checkProjectile(boss_->GetHeadLeft());
-    checkProjectile(boss_->GetHeadMid());
-    checkProjectile(boss_->GetHeadRight());
-}
-
 void TutorialScene::CheckPlayerBuildingCollisions() {
     Building *building = field_ ? field_->GetBuilding() : nullptr;
     if (!building || !player_) return;
@@ -542,62 +872,6 @@ void TutorialScene::CheckPlayerBuildingCollisions() {
     }
 }
 
-void TutorialScene::CheckEnemyBuildingCollisions() {
-    // チュートリアルなので敵から建物への攻撃判定は省略可能
-}
-
-void TutorialScene::CheckFlyingPartsBuildingCollisions() {
-    Building *building = field_ ? field_->GetBuilding() : nullptr;
-    if (!building || !boss_) return;
-
-    auto checkProjectile = [&](auto *projectile) {
-        if (!projectile || !projectile->IsBlownAway() || projectile->IsCompletelyDead()) return;
-        if (projectile->GetBlowTimer() < 0.2f) return;
-        OBB pOBB = projectile->GetOBB();
-
-        for (int i = 0; i < building->GetBuildingCount(); ++i) {
-            if (!building->IsBuildingAlive(i)) continue;
-            OBB bOBB = building->GetBuildingOBB(i);
-
-            if (Collision::IsOBBCollision(pOBB, bOBB)) {
-                Vector3 vel = projectile->GetBlowVelocity();
-                Vector3 diff = Math::Subtract(projectile->GetTransform().translate, bOBB.center);
-                
-                float bestPushDist = 1e10f;
-                Vector3 bestPushDir = {0.0f, 0.0f, 0.0f};
-                for (int axis = 0; axis < 3; ++axis) {
-                    if (axis == 1) continue;
-                    float proj = Math::Dot(diff, bOBB.orientations[axis]);
-                    float halfSize = (axis == 0) ? bOBB.size.x : bOBB.size.z;
-                    float penetration = halfSize - std::abs(proj);
-                    if (penetration > 0.0f && penetration < bestPushDist) {
-                        bestPushDist = penetration;
-                        float sign = (proj >= 0.0f) ? 1.0f : -1.0f;
-                        bestPushDir = Math::Multiply(sign, bOBB.orientations[axis]);
-                    }
-                }
-                
-                if (bestPushDist < 1e10f) {
-                    float dot = Math::Dot(vel, bestPushDir);
-                    if (dot < 0.0f) {
-                        Vector3 reflect = Math::Subtract(vel, Math::Multiply(2.0f * dot, bestPushDir));
-                        reflect.y = 0.0f;
-                        projectile->SetBlowVelocity(reflect);
-                        building->ApplyDamage(i, 50, Math::Normalize(vel), 0.5f);
-                        building->ScatterAt(i, Math::Multiply(0.5f, vel), pOBB);
-                        projectile->ScatterAt(Math::Multiply(-0.5f, vel), projectile->GetOBB());
-                    }
-                }
-            }
-        }
-    };
-
-    for (int i = 0; i < 3; ++i) checkProjectile(boss_->GetBody(i));
-    checkProjectile(boss_->GetHeadLeft());
-    checkProjectile(boss_->GetHeadMid());
-    checkProjectile(boss_->GetHeadRight());
-}
-
 void TutorialScene::CheckFlyingBuildingsVsEnemyCollisions() {
     Building *building = field_ ? field_->GetBuilding() : nullptr;
     if (!building || !boss_) return;
@@ -627,6 +901,3 @@ void TutorialScene::CheckFlyingBuildingsVsEnemyCollisions() {
     }
 }
 
-void TutorialScene::CheckFlyingBuildingsVsBuildingsCollisions() {
-    // チュートリアルでは建物は1つなので省略可能
-}

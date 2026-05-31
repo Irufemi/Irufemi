@@ -49,7 +49,12 @@ private:
   float blowSpeed_ = 0.5f;
   float disappearTime_ = 3.0f;
 
-  Vector3 bodyOBBSize_ = { 1.5f, 1.0f, 1.5f };
+  /**
+   * @brief Body部位のOBB（当たり判定）のハーフサイズ
+   * @details 円柱形状（半径2.85、高さ2.0）を近似するため、
+   * X, Z には半径の 2.85 を、Y には高さの半分の 1.0 を設定。
+   */
+  Vector3 bodyOBBSize_ = { 2.85f, 1.0f, 2.85f };
   Vector3 headOBBSize_ = { 1.5f, 1.0f, 1.5f };
 
   float damageFlashDuration_ = 0.2f;

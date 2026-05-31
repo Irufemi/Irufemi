@@ -24,9 +24,27 @@ void PostProcessManager::Initialize(DirectXCommon* dxCommon,
   CreatePSOs();
 }
 
+void PostProcessManager::ResetAllParams() {
+    noiseParams_ = NoiseParams();
+    vignetteParams_ = VignetteParams();
+    smoothingParams_ = SmoothingParams();
+    gaussianParams_ = GaussianParams();
+    radialBlurParams_ = RadialBlurParams();
+    outlineParams_ = OutlineParams();
+    dissolveParams_ = DissolveParams();
+    hsvParams_ = HSVParams();
+    toneMappingParams_ = ToneMappingParams();
+    fadeParams_ = FadeParams();
+    slideParams_ = SlideParams();
+    bloomParams_ = BloomParams();
+    glitchParams_ = GlitchParams();
+}
+
 
 
 void PostProcessManager::Update(float totalTime) {
+  CommitPendingModes();
+
   noiseParams_.time = totalTime;
   if (mappedNoise_) {
     *mappedNoise_ = noiseParams_;
@@ -49,6 +67,7 @@ void PostProcessManager::Update(float totalTime) {
   if (mappedGlitch_) *mappedGlitch_ = glitchParams_;
 
   // 統合パラメータの同期
+  combinedParams_.vignetteColor = vignetteParams_.color;
   combinedParams_.vignetteScale = vignetteParams_.scale;
   combinedParams_.vignettePower = vignetteParams_.power;
   combinedParams_.noiseIntensity = noiseParams_.intensity;
@@ -109,19 +128,19 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         RenderTexture* blurV = workspace.bloomExtract;
 
         DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        DrawSinglePass(commandList, Mode::None, currentSource, bloomExtract->GetRtvHandle(), false, bloomExtractPSO_.Get());
+        DrawSinglePass(commandList, Mode::Bloom, currentSource, bloomExtract->GetRtvHandle(), false, bloomExtractPSO_.Get());
         DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         
         bloomParams_.direction = { 1.0f, 0.0f };
         if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
         DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        DrawSinglePass(commandList, Mode::None, bloomExtract, blurH->GetRtvHandle(), false, bloomBlurHPSO_.Get());
+        DrawSinglePass(commandList, Mode::Bloom, bloomExtract, blurH->GetRtvHandle(), false, bloomBlurHPSO_.Get());
         DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         
         bloomParams_.direction = { 0.0f, 1.0f };
         if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
         DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        DrawSinglePass(commandList, Mode::None, blurH, blurV->GetRtvHandle(), false, bloomBlurVPSO_.Get());
+        DrawSinglePass(commandList, Mode::Bloom, blurH, blurV->GetRtvHandle(), false, bloomBlurVPSO_.Get());
         DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         
         commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
@@ -195,7 +214,8 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
       }
     }
   } else {
-    DrawSinglePass(commandList, Mode::None, srcTexture, rtvHandle, true);
+    Mode singleMode = activeModes_.empty() ? Mode::None : activeModes_[0];
+    DrawSinglePass(commandList, singleMode, srcTexture, rtvHandle, true);
   }
 }
 

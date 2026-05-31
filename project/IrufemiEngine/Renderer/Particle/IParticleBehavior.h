@@ -73,9 +73,22 @@ public:
 };
 
 /// <summary>
-/// 爆発四散の振る舞い
+/// 爆発四散の振る舞い（旧互換・全体用）
 /// </summary>
 class ExplosionBehavior : public IParticleBehavior {
+public:
+	void Initialize(Emitter* emitter) override;
+	void Update(Particle& particle, float deltaTime) override;
+	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
+private:
+	AccelerationField field_;
+};
+
+/// <summary>
+/// 爆発四散の火花の振る舞い
+/// </summary>
+class SparkBehavior : public IParticleBehavior {
 public:
 	void Initialize(Emitter* emitter) override;
 	void Update(Particle& particle, float deltaTime) override;
@@ -162,6 +175,17 @@ public:
 	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
 private:
 	float groundHeight_ = 0.0f; // 滞留させる地面の高さ
+};
+
+/// <summary>
+/// ビル出現時の専用砂埃エフェクトの振る舞い
+/// </summary>
+class BuildingSpawnDustBehavior : public IParticleBehavior {
+public:
+	void Initialize(Emitter* emitter) override;
+	void Update(Particle& particle, float deltaTime) override;
+	void MakeNewParticle(Particle& particle, std::mt19937& randomEngine, const Emitter& emitter) override;
+	void Debug(Emitter* emitter, DebugUI* ui, ParticleSystem* particleSystem) override;
 };
 
 // ファクトリ関数

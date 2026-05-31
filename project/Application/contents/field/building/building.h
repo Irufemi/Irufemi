@@ -8,19 +8,21 @@
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Geometry/OBB.h"
+#include "Resource/Audio/Se.h"
 
 class Camera;
 class IrufemiEngine;
 class ModelRegion;
 class VoxelParticleSystem;
+class ParticleSystem;
 
 /// @brief 個別建物のインスタンスデータ
 struct BuildingInstance {
-    std::unique_ptr<VoxelParticleSystem> voxelSystem;
     Vector3 position  = {};
     Vector3 scale     = {};
     Vector3 rotate    = {};
     int hp            = 0;
+    int floorCount    = 1;  // 階層数
 
     // 吹き飛び・消滅
     bool isBlownAway       = false;
@@ -46,8 +48,9 @@ public:
     // パラメータ
     struct Parameters {
         int count = 10;
-        float minHeight = 10.0f;
-        float maxHeight = 50.0f;
+        int minFloors = 5;      // ビルの最小階層数
+        int maxFloors = 20;     // ビルの最大階層数
+        float floorHeightRatio = 0.5f; // 1階層の高さ = scaleXZ * この比率
         float minScaleXZ = 5.0f;
         float maxScaleXZ = 15.0f;
         float fieldRange = 90.0f;
@@ -60,6 +63,18 @@ public:
         float avoidPlayerRadius = 15.0f;
         float avoidBossRadius = 30.0f;
         float spawnSpeed = 10.0f;
+
+        // 吹き飛び（散弾）物理パラメータ
+        float blowGravity = 0.03f;
+        float blowBounceY = -0.4f;
+        float blowFrictionXZ = 0.9f;
+        float blowAngularFriction = 0.8f;
+        float scatterSpread = 0.8f;
+        float scatterUpForceBase = 0.1f;
+        float scatterUpForceRand = 0.3f;
+        float scatterSpeedBase = 1.2f;
+        float scatterSpeedRand = 1.5f;
+        float scatterAngularVelocity = 0.6f;
     };
 
     Building();
@@ -86,6 +101,10 @@ public:
 
     /// @brief 生存している建物の数を取得
     int GetAliveBuildingCount() const;
+
+    // SEの一時停止・再開
+    void PauseSe();
+    void ResumeSe();
 
     /// @brief ランダムな位置に新しい建物を1つ生成する（プレイヤーやボスの位置を避ける）
     void SpawnRandomBuilding(const Vector3& avoidPlayerPos, const Vector3& avoidBossPos);
@@ -116,6 +135,9 @@ public:
     /// @brief 建物が吹き飛び中か
     bool IsBuildingBlownAway(int index) const;
 
+    /// @brief 建物が出現中か
+    bool IsBuildingSpawning(int index) const;
+
     /// @brief 建物が完全に消滅済みか
     bool IsBuildingDestroyed(int index) const;
 
@@ -132,6 +154,8 @@ public:
     void MarkDestroyed(int index);
 
 private:
+    void ScatterBuildingFloors(int index, const Vector3& attackDir, float blowSpeed);
+
     void LoadJson();
     void SaveJson();
     void Generate();
@@ -142,6 +166,11 @@ private:
 
     std::vector<BuildingInstance> instances_;
     std::unique_ptr<ModelRegion> buildingRegion_ = nullptr;
+
+    // 砂煙エフェクト用 (ビル共通で1つだけ保持し、各ビルの位置から発生させる)
+    std::unique_ptr<ParticleSystem> spawnDustSystem_;
+
+    std::unique_ptr<Se> seCollapse_;
 
     // パラメータ
     Parameters params_;

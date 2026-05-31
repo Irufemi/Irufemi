@@ -62,6 +62,18 @@ void Se::Stop() {
     }
 }
 
+void Se::Pause() {
+    if (auto v = voice_.lock()) {
+        v->Pause();
+    }
+}
+
+void Se::Resume() {
+    if (auto v = voice_.lock()) {
+        v->Resume();
+    }
+}
+
 void Se::SetVolume(float volume) {
     volume_ = volume;
     if (auto v = voice_.lock()) {

@@ -144,15 +144,18 @@ void ParticleSystem::Initialize(const std::string& textureName, ParticleType typ
 }
 
 void ParticleSystem::Update() {
+    float dt = s_engine_ ? s_engine_->GetDeltaTime() : (1.0f / 60.0f);
 
     if (isUpdate_ && particleType_ != ParticleType::kHitEffect && 
         particleType_ != ParticleType::kMuzzleSmoke && particleType_ != ParticleType::kMuzzleFlash &&
         particleType_ != ParticleType::kMissileFire && particleType_ != ParticleType::kMissileSmoke &&
         particleType_ != ParticleType::kBulletTrail && particleType_ != ParticleType::kEjectionMist &&
-        particleType_ != ParticleType::kGroundSmoke) {
-        emitter_.frequencyTime += kDeltatime_; // 時刻を進める
+        particleType_ != ParticleType::kGroundSmoke && particleType_ != ParticleType::kSpark &&
+        particleType_ != ParticleType::kBuildingSpawnDust) {
+        emitter_.frequencyTime += dt; // 時刻を進める
         if (emitter_.frequency <= emitter_.frequencyTime) { // 頻度より大きいなら発生
-            particles_.splice(particles_.end(), Emit(emitter_, randomEngine_)); // 発生処理
+            auto newParticles = Emit(emitter_, randomEngine_);
+            particles_.insert(particles_.end(), newParticles.begin(), newParticles.end()); // 発生処理
             emitter_.frequencyTime -= emitter_.frequency; // 余計に過ぎた時間も加味して頻度計算する
         }
     }
@@ -169,30 +172,31 @@ void ParticleSystem::Update() {
 
     numInstance_ = 0; // 描画すべきインスタンス数
 
-    for (std::list<Particle>::iterator particleIterator = particles_.begin(); particleIterator != particles_.end();) {
+    for (size_t i = 0; i < particles_.size(); ) {
 
-        if ((*particleIterator).lifeTime <= (*particleIterator).currentTime) { // 生存時間を過ぎていたら更新せず描画対象にしない
-            particleIterator = particles_.erase(particleIterator); // 生存時間が過ぎたParticleはlistから消す。戻り値が次のイテレーターとなる
+        if (particles_[i].lifeTime <= particles_[i].currentTime) { // 生存時間を過ぎていたら更新せず描画対象にしない
+            particles_[i] = particles_.back();
+            particles_.pop_back();
             continue;
         }
 
         if (numInstance_ < kNumMaxInstance_) {
             if (isUpdate_) {
                 // パーティクル自身の更新
-                particleIterator->Update(kDeltatime_);
+                particles_[i].Update(dt);
                 // 振る舞い固有の更新
-                behavior_->Update(*particleIterator, kDeltatime_);
+                behavior_->Update(particles_[i], dt);
             }
 
-            Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particleIterator->transform.scale);
-            Matrix4x4 translateMatrix = Math::MakeTranslateMatrix(particleIterator->transform.translate);
-            Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(particleIterator->transform.rotate.x, particleIterator->transform.rotate.y, particleIterator->transform.rotate.z);
+            Matrix4x4 scaleMatrix = Math::MakeScaleMatrix(particles_[i].transform.scale);
+            Matrix4x4 translateMatrix = Math::MakeTranslateMatrix(particles_[i].transform.translate);
+            Matrix4x4 rotateMatrix = Math::MakeRotateXYZMatrix(particles_[i].transform.rotate.x, particles_[i].transform.rotate.y, particles_[i].transform.rotate.z);
             
             Matrix4x4 worldMatrix = Math::MakeIdentity4x4();
             if (useBillboard_) {
                 // ビルボードの場合、スケール -> 個別回転(Z) -> ビルボード -> 平行移動 の順で適用
                 // 面がカメラを向いた状態で個別に回転させる
-                Matrix4x4 rotateZMatrix = Math::MakeRotateZMatrix(particleIterator->transform.rotate.z);
+                Matrix4x4 rotateZMatrix = Math::MakeRotateZMatrix(particles_[i].transform.rotate.z);
                 worldMatrix = Math::Multiply(scaleMatrix, rotateZMatrix);
                 worldMatrix = Math::Multiply(worldMatrix, billboardMatrix_);
                 worldMatrix = Math::Multiply(worldMatrix, translateMatrix);
@@ -205,14 +209,14 @@ void ParticleSystem::Update() {
                 resource_->instancingData_[frameIndex][numInstance_].world = worldMatrix;
                 // WVPはシェーダー側で計算するため省略
                 resource_->instancingData_[frameIndex][numInstance_].WVP = Math::MakeIdentity4x4();
-                resource_->instancingData_[frameIndex][numInstance_].color = particleIterator->color;
+                resource_->instancingData_[frameIndex][numInstance_].color = particles_[i].color;
             }
 
             numInstance_++; // 生きているParticleの数を1つカウントする
 
         }
 
-        ++particleIterator; // 次のイテレーターに進める
+        ++i; // 次の要素に進める
     }
     resource_->GetMaterialData()->uvTransform = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
     
@@ -438,8 +442,9 @@ Particle ParticleSystem::MakeNewParticle(std::mt19937& randomEngine, const Emitt
     return particle;
 }
 
-std::list<Particle> ParticleSystem::Emit(const Emitter& emitter, std::mt19937& randomEngine) {
-    std::list<Particle> particles;
+std::vector<Particle> ParticleSystem::Emit(const Emitter& emitter, std::mt19937& randomEngine) {
+    std::vector<Particle> particles;
+    particles.reserve(emitter.count);
     for (uint32_t count = 0; count < emitter.count; ++count) {
         particles.push_back(MakeNewParticle(randomEngine, emitter));
     }
@@ -454,9 +459,12 @@ void ParticleSystem::PlayHitEffect(const Vector3& position) {
         particleType_ == ParticleType::kMissileSmoke ||
         particleType_ == ParticleType::kBulletTrail ||
         particleType_ == ParticleType::kEjectionMist ||
-        particleType_ == ParticleType::kGroundSmoke) {
+        particleType_ == ParticleType::kGroundSmoke ||
+        particleType_ == ParticleType::kSpark ||
+        particleType_ == ParticleType::kBuildingSpawnDust) {
         emitter_.transform.translate = position;
-        particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+        auto newParticles = Emit(emitter_, randomEngine_);
+        particles_.insert(particles_.end(), newParticles.begin(), newParticles.end());
     }
 }
 
@@ -468,11 +476,14 @@ void ParticleSystem::PlayHitEffect(const Vector3& position, uint32_t count) {
         particleType_ == ParticleType::kMissileSmoke ||
         particleType_ == ParticleType::kBulletTrail ||
         particleType_ == ParticleType::kEjectionMist ||
-        particleType_ == ParticleType::kGroundSmoke) {
+        particleType_ == ParticleType::kGroundSmoke ||
+        particleType_ == ParticleType::kSpark ||
+        particleType_ == ParticleType::kBuildingSpawnDust) {
         Emitter customEmitter = emitter_;
         customEmitter.transform.translate = position;
         customEmitter.count = count;
-        particles_.splice(particles_.end(), Emit(customEmitter, randomEngine_));
+        auto newParticles = Emit(customEmitter, randomEngine_);
+        particles_.insert(particles_.end(), newParticles.begin(), newParticles.end());
     }
 }
 
@@ -516,7 +527,10 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                         PlayHitEffect(emitter_.transform.translate);
                         break;
                     default:
-                        particles_.splice(particles_.end(), Emit(emitter_, randomEngine_));
+                        {
+                            auto newParticles = Emit(emitter_, randomEngine_);
+                            particles_.insert(particles_.end(), newParticles.begin(), newParticles.end());
+                        }
                         break;
                     }
                 }
@@ -545,7 +559,11 @@ void ParticleSystem::Debug([[maybe_unused]] const char* particleName) {
                 }
 
                 // ParticleTypeの選択UI
-                const char* particleTypeNames[] = { "Normal", "AccelerationField", "HitEffect", "Explosion" };
+                const char* particleTypeNames[] = {
+                    "Normal", "AccelerationField", "HitEffect", "Explosion", "Spark",
+                    "MuzzleSmoke", "MuzzleFlash", "MissileFire", "MissileSmoke",
+                    "BulletTrail", "EjectionMist", "GroundSmoke", "BuildingSpawnDust"
+                };
                 int currentType = static_cast<int>(particleType_);
                 if (ImGui::Combo("Particle Type", &currentType, particleTypeNames, IM_ARRAYSIZE(particleTypeNames))) {
                     ChangeBehavior(static_cast<ParticleType>(currentType));

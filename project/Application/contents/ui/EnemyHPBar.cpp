@@ -73,7 +73,15 @@ void EnemyHPBar::Initialize(int screenWidth, int screenHeight) {
     displayRatio_ = 1.0f;
 }
 
-void EnemyHPBar::Update(const Enemy *enemy) {
+void EnemyHPBar::Update(const Enemy *enemy, int screenWidth, int screenHeight) {
+    // リサイズ対応のため毎フレーム再計算
+    float uiScale = static_cast<float>(screenHeight) / 720.0f;
+    barMaxWidth_ = static_cast<float>(screenWidth) * kBarWidthRatio;
+    barHeight_ = kBarHeight * uiScale;
+    barX_ = (static_cast<float>(screenWidth) - barMaxWidth_) * 0.5f; // 中央揃え
+    barY_ = kBarMarginTop * uiScale;
+    float padding = kFramePadding * uiScale;
+
     if (!enemy) {
         currentRatio_ = 0.0f;
     } else {
@@ -122,6 +130,12 @@ void EnemyHPBar::Update(const Enemy *enemy) {
 
     barFill_->SetSize(fillWidth, barHeight_);
     barFill_->SetPosition(barX_, barY_);
+
+    barBg_->SetSize(barMaxWidth_, barHeight_);
+    barBg_->SetPosition(barX_, barY_);
+
+    barFrame_->SetSize(barMaxWidth_ + padding * 2.0f, barHeight_ + padding * 2.0f);
+    barFrame_->SetPosition(barX_ - padding, barY_ - padding);
 
     // 色の更新
     UpdateBarColor(displayRatio_);

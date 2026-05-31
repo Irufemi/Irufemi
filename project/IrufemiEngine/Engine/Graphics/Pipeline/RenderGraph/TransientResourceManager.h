@@ -46,6 +46,14 @@ private:
     DirectXCommon* dxCommon_ = nullptr;
     uint64_t heapSize_ = 0;
 
-    // フレーム内で作成した PlacedResource の保持（フレーム終了時に破棄）
-    std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> activeResources_;
+    // フレーム内で作成した PlacedResource の保持（キャッシュとして再利用）
+    struct CachedResource {
+        D3D12_RESOURCE_DESC desc;
+        uint64_t offset;
+        D3D12_CLEAR_VALUE clearValue;
+        bool hasClearValue;
+        Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+        bool inUse;
+    };
+    std::vector<CachedResource> resourcePool_;
 };

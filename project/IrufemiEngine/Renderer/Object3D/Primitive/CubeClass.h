@@ -51,11 +51,18 @@ public:
     // Getters / Setters
     Object3DResource* GetD3D12Resource() { return resource_.get(); }
     void SetPosition(const Vector3& c) { center_ = c; isDirty_ = true; }
+    Vector3 GetPosition() const { return center_; }
     void SetRotate(const Vector3& rot) { if (resource_) resource_->transform_.rotate = rot; isDirty_ = true; }
+    Vector3 GetRotate() const { return resource_ ? resource_->transform_.rotate : Vector3{}; }
     void SetScale(const Vector3& scale) { if (resource_) resource_->transform_.scale = scale; isDirty_ = true; }
+    Vector3 GetScale() const { return resource_ ? resource_->transform_.scale : Vector3{}; }
+    Transform GetTransform() const { return resource_ ? resource_->transform_ : Transform{}; }
     void SetColor(const Vector4& color) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->color = color; }
     void SetAlphaReference(float alphaRef) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->alphaReference = alphaRef; }
     void SetUseClampSampler(int32_t useClamp) { if (resource_ && resource_->GetMaterialData()) resource_->GetMaterialData()->useClampSampler = useClamp; }
+
+    void SetCustomPSO(ID3D12PipelineState* pso) { if (resource_) resource_->SetCustomPSO(pso); }
+    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) { if (resource_) resource_->SetCustomCBVAddress(addr); }
 
     // SetSize: 互換性維持用と depth を受け取るオーバーロード
     void SetSize(float width, float height) { SetSize(width, height, width); }

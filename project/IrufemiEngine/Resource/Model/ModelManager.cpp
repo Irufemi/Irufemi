@@ -150,6 +150,10 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
             if (!cpuMesh.vertices.empty()) {
                 const size_t vbSize = sizeof(VertexData) * cpuMesh.vertices.size();
                 gpuMesh->vertexResource = dxCommon_->CreateBufferResource(vbSize);
+                if (!gpuMesh->vertexResource) {
+                    OutputDebugStringA("[ModelManager] Failed to create vertex buffer resource!\n");
+                    continue; // Skip this mesh if resource creation failed
+                }
                 gpuMesh->vertexCount = static_cast<UINT>(cpuMesh.vertices.size());
                 gpuMesh->vertexBufferView.BufferLocation = gpuMesh->vertexResource->GetGPUVirtualAddress();
                 gpuMesh->vertexBufferView.SizeInBytes = static_cast<UINT>(vbSize);
@@ -176,14 +180,18 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
             if (!cpuMesh.indices.empty()) {
                 const size_t ibSize = sizeof(uint32_t) * cpuMesh.indices.size();
                 gpuMesh->indexResource = dxCommon_->CreateBufferResource(ibSize);
-                gpuMesh->indexCount = static_cast<UINT>(cpuMesh.indices.size());
-                gpuMesh->indexBufferView.BufferLocation = gpuMesh->indexResource->GetGPUVirtualAddress();
-                gpuMesh->indexBufferView.SizeInBytes = static_cast<UINT>(ibSize);
-                gpuMesh->indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-                uint32_t* ibData = nullptr;
-                gpuMesh->indexResource->Map(0, nullptr, reinterpret_cast<void**>(&ibData));
-                std::memcpy(ibData, cpuMesh.indices.data(), ibSize);
-                gpuMesh->indexResource->Unmap(0, nullptr);
+                if (gpuMesh->indexResource) {
+                    gpuMesh->indexCount = static_cast<UINT>(cpuMesh.indices.size());
+                    gpuMesh->indexBufferView.BufferLocation = gpuMesh->indexResource->GetGPUVirtualAddress();
+                    gpuMesh->indexBufferView.SizeInBytes = static_cast<UINT>(ibSize);
+                    gpuMesh->indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+                    uint32_t* ibData = nullptr;
+                    gpuMesh->indexResource->Map(0, nullptr, reinterpret_cast<void**>(&ibData));
+                    std::memcpy(ibData, cpuMesh.indices.data(), ibSize);
+                    gpuMesh->indexResource->Unmap(0, nullptr);
+                } else {
+                    OutputDebugStringA("[ModelManager] Failed to create index buffer resource!\n");
+                }
             }
             managedModel->gpuMeshes.push_back(std::move(gpuMesh));
 

@@ -105,6 +105,10 @@ void CylinderClass::Update() {
 }
 
 void CylinderClass::Draw() {
+    Draw(false);
+}
+
+void CylinderClass::Draw(bool isUI) {
     if (!resource_ || !drawManager_ || !engine_) return;
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;
@@ -135,9 +139,13 @@ void CylinderClass::Draw() {
         Update();
     }
     // --- 【追加】描画直前のバッファ同期 ---
-    resource_->SyncBeforeDraw();
+    SyncBeforeDraw();
 
-    drawManager_->SubmitStandard3D(resource_.get(), nullptr, castShadows_);
+    if (isUI) {
+        drawManager_->SubmitUI3D(resource_.get(), nullptr);
+    } else {
+        drawManager_->SubmitStandard3D(resource_.get(), nullptr, castShadows_);
+    }
 }
 
 void CylinderClass::Debug([[maybe_unused]] const char* cylinderName) {

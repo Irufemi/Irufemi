@@ -14,22 +14,43 @@ void SceneTransition::Start(Type type, float duration, bool isOut) {
     timer_ = 0.0f;
     isActive_ = true;
 
-    // 演出開始時に既存のポストプロセスをリセットし、必要なモードを追加
-    ppManager_->ClearActiveModes();
+    // 前回のトランジション演出で使ったエフェクトだけを確実に取り除く
+    for (auto mode : activeTransitionModes_) {
+        ppManager_->RemoveActiveMode(mode);
+    }
+    activeTransitionModes_.clear();
+
+    // 基本は黒フェードにリセットしておく（白フェード等で上書きされた色が残るのを防ぐため）
+    ppManager_->GetFadeParams().color = {0.0f, 0.0f, 0.0f, 1.0f};
+
     switch (currentType_) {
     case Type::Fade:
         ppManager_->AddActiveMode(PostProcessMode::Fade);
+        activeTransitionModes_.push_back(PostProcessMode::Fade);
         break;
     case Type::Dissolve:
         ppManager_->AddActiveMode(PostProcessMode::Dissolve);
+        activeTransitionModes_.push_back(PostProcessMode::Dissolve);
         break;
     case Type::Slide:
         ppManager_->AddActiveMode(PostProcessMode::Slide);
+        activeTransitionModes_.push_back(PostProcessMode::Slide);
         break;
     case Type::RadialBlur:
-        // 放射状ブラーとフェードを併用して、暗くなりつつボケる演出にする
+        // 放射状ブラーとフェードを併用
         ppManager_->AddActiveMode(PostProcessMode::RadialBlur);
         ppManager_->AddActiveMode(PostProcessMode::Fade);
+        activeTransitionModes_.push_back(PostProcessMode::RadialBlur);
+        activeTransitionModes_.push_back(PostProcessMode::Fade);
+        ppManager_->GetFadeParams().color = {0.0f, 0.0f, 0.0f, 1.0f}; // 黒
+        break;
+    case Type::RadialBlurWhite:
+        // 放射状ブラーとフェード(白)を併用
+        ppManager_->AddActiveMode(PostProcessMode::RadialBlur);
+        ppManager_->AddActiveMode(PostProcessMode::Fade);
+        activeTransitionModes_.push_back(PostProcessMode::RadialBlur);
+        activeTransitionModes_.push_back(PostProcessMode::Fade);
+        ppManager_->GetFadeParams().color = {1.0f, 1.0f, 1.0f, 1.0f}; // 白
         break;
     }
 }
@@ -44,9 +65,12 @@ void SceneTransition::Update(float deltaTime) {
         timer_ = totalDuration;
         isActive_ = false;
         
-        // フェードイン（画面が表示される方）が完了した場合はポストプロセスをクリア
+        // フェードイン（画面が表示される方）が完了した場合はトランジションエフェクトのみをクリア
         if (!isOut_) {
-            ppManager_->ClearActiveModes();
+            for (auto mode : activeTransitionModes_) {
+                ppManager_->RemoveActiveMode(mode);
+            }
+            activeTransitionModes_.clear();
         }
     }
 
@@ -71,6 +95,7 @@ void SceneTransition::Update(float deltaTime) {
         ppManager_->GetSlideParams().threshold = factor * 1.05f;
         break;
     case Type::RadialBlur:
+    case Type::RadialBlurWhite:
         ppManager_->GetRadialBlurParams().blurWidth = factor * 0.05f;
         ppManager_->GetFadeParams().intensity = factor;
         break;

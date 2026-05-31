@@ -5,6 +5,11 @@
 #include <memory>
 #include <vector>
 #include <list>
+#include <wrl.h>
+#include <d3d12.h>
+#include "IrufemiEngine/Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "IrufemiEngine/Engine/Graphics/Data/AOEParams.h"
+#include "IrufemiEngine/Renderer/ParticleGPU/GPUParticleSystem.h"
 
 class Camera;
 class ObjClass;
@@ -22,9 +27,15 @@ public:
         OBB GetOBB() const;
     };
 
-    void Initialize();
+    void Initialize(class IrufemiEngine* engine);
     void Update(float deltaTime);
     void Draw(class IrufemiEngine* engine);
+
+    // 突進予告線（AOE）用関数
+    void StartTelegraph(const Vector3& position, float rotateY, float length, float width);
+    void UpdateTelegraph(const Vector3& position, float rotateY, float warningRatio);
+    void StopTelegraph();
+    void DrawTelegraph(class IrufemiEngine* engine);
 
     // 突進中に連続して呼ばれるエフェクト発生処理（背後や両脇に砂煙を残す）
     void FireRushWave(const Vector3& position);
@@ -32,16 +43,32 @@ public:
     // 壁激突時に1度だけ呼ばれる大爆発エフェクト
     void FireCrashWave(const Vector3& position);
 
+    void Cancel(); // 強制キャンセル用
+
     // 当たり判定用に波のリストを取得
     std::list<TackleWave>& GetWaves() { return waves_; }
 
     void DrawDebug(class Line3DRegion* lineRegion);
+    
+    // 最大の突進波（砂煙）の幅を取得
+    float GetMaxRushWaveWidth() const { return kRushWaveEndScale; }
 
 private:
     Camera* camera_ = nullptr;
     
-    // エフェクト描画用モデル（ひとまず既存の円環モデルを流用するためObjClassで平たく潰してリングにする）
-    std::unique_ptr<ObjClass> waveObj_ = nullptr;
+    // パーティクルシステム
+    std::unique_ptr<GPUParticleSystem> rushParticleSystem_ = nullptr;
+    std::unique_ptr<GPUParticleSystem> rushCoreParticleSystem_ = nullptr; // 砂煙の濃い芯（地面付近）
+    std::unique_ptr<GPUParticleSystem> crashParticleSystem_ = nullptr;
+
+    // 予告線用
+    std::shared_ptr<PrimitiveObjects3DClass> telegraphObj_ = nullptr;
+    Transform telegraphTransform_;
+    bool isTelegraphActive_ = false;
+
+    // AOE専用パラメータ
+    Microsoft::WRL::ComPtr<ID3D12Resource> aoeParamsResource_;
+    AOEParams* aoeParamsData_ = nullptr;
 
     std::list<TackleWave> waves_;
 

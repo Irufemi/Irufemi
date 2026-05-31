@@ -33,8 +33,13 @@ public:
     // 停止・解放
     void Stop();
 
+    // 一時停止・再開
+    void Pause();
+    void Resume();
+
     void SetVolume(float volume);
     float GetVolume() const { return volume_; }
+    bool IsPlaying() const { return !voice_.expired(); }
 
     // グローバルに AudioManager をセットする
     static void SetAudioManager(AudioManager* mgr) { audioManager_ = mgr; }

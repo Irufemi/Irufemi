@@ -3,6 +3,8 @@
 #include "Framework/BaseScene.h"
 #include <memory>
 #include <vector>
+#include "Engine/Core/Math/Vector3.h"
+#include "Resource/Audio/Bgm.h"
 
 class IrufemiEngine;
 class InputManager;
@@ -23,8 +25,14 @@ enum class TutorialPhase {
     KarakuriCharge,
     EnhancedDodge,
     MissileAttack,
+    MissileFiredPause,    // ミサイル発射後の一時停止＋カメラ切り替え
+    MissileHitFocus,      // ミサイル着弾後の引きカメラ
+    BuildingSpawnFocus,
+    BuildingReadyFocus,   // ビル生成完了後の少し引きカメラ（SPACE待ち）
     BuildingAttack,
+    BuildingHitFocus,     // ビル激突後の引きカメラ
     PartsExplanation,
+    ViewSwitch,
     Done
 };
 
@@ -36,26 +44,27 @@ public:
     void Initialize(IrufemiEngine* engine) override;
     void Update() override;
     void Draw() override;
+    
+    void OnEnter() override;
+    void OnSuspend() override;
+    void OnResume() override;
     bool IsCursorVisible() const override { return false; }
-    void DrawDebugTab() override;
 
 private:
     void CheckAllCollisions();
     void CheckPlayerToEnemyCollisions();
     void CheckEnemyToPlayerCollisions();
-    void CheckFlyingPartsCollisions();
     void CheckPlayerBuildingCollisions();
-    void CheckEnemyBuildingCollisions();
-    void CheckFlyingPartsBuildingCollisions();
     void CheckFlyingBuildingsVsEnemyCollisions();
-    void CheckFlyingBuildingsVsBuildingsCollisions();
 
     // チュートリアル状態の更新と描画
     void UpdateTutorialState();
-    void DrawTutorialUI();
 
 private:
     bool isFirstDebug_ = true;
+
+    // BGM
+    std::unique_ptr<Bgm> bgm_ = nullptr;
 
     // ゲームオブジェクト
     std::unique_ptr<Player> player_ = nullptr;
@@ -67,6 +76,8 @@ private:
     bool isCollisionEnabled_ = true;
 
     TutorialPhase currentPhase_ = TutorialPhase::MoveWASD;
+    Vector3 spawnedBuildingPos_ = {};
+    float cinematicTimer_ = 0.0f; // 演出タイマー
 
     // 入力監視フラグ
     bool hasPressedW_ = false;
@@ -80,6 +91,16 @@ private:
     bool hasHitMissile_ = false;
     bool hasBuildingHitEnemy_ = false;
 
-    // チュートリアル用のメッセージ
-    const char* currentInstruction_ = "";
+    std::unique_ptr<Sprite> tutorialUISprites_[10];
+    
+    // WASDキーUI用
+    std::unique_ptr<Sprite> keyWSprite_;
+    std::unique_ptr<Sprite> keyASprite_;
+    std::unique_ptr<Sprite> keySSprite_;
+    std::unique_ptr<Sprite> keyDSprite_;
+
+    std::unique_ptr<Sprite> keySpaceSprite_;
+    
+    // ESCキーUI用
+    std::unique_ptr<Sprite> keyEscSprite_;
 };

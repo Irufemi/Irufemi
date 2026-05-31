@@ -168,11 +168,22 @@ void PrimitiveObjects3DClass::Update() {
 void PrimitiveObjects3DClass::Draw() {
     if (!engine_) return;
     if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
-        Draw(*activeCam);
+        Draw(*activeCam, false);
+    }
+}
+
+void PrimitiveObjects3DClass::Draw(bool isUI) {
+    if (!engine_) return;
+    if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+        Draw(*activeCam, isUI);
     }
 }
 
 void PrimitiveObjects3DClass::Draw(const Camera& camera) {
+    Draw(camera, false);
+}
+
+void PrimitiveObjects3DClass::Draw(const Camera& camera, bool isUI) {
     if (!mesh_.resource || !drawManager_) return;
 
     // 視錐台カリング
@@ -202,11 +213,15 @@ void PrimitiveObjects3DClass::Draw(const Camera& camera) {
         }
     }
 
-    // 描画実行直前のバッファ同期
-    mesh_.resource->SyncBeforeDraw();
+    // 描画実行直前のバッファ同期（コールバックを発動させるため自身の SyncBeforeDraw を呼ぶ）
+    SyncBeforeDraw();
 
     // 描画実行
-    drawManager_->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
+    if (isUI) {
+        drawManager_->SubmitUI3D(mesh_.resource.get(), nullptr);
+    } else {
+        drawManager_->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
+    }
 }
 
 void PrimitiveObjects3DClass::DrawOutlineMask() {
@@ -271,7 +286,26 @@ void PrimitiveObjects3DClass::Debug(const char* label) {
 }
 
 void PrimitiveObjects3DClass::SyncBeforeDraw() {
+    if (customSyncCallback_ && engine_) {
+        uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
+        customSyncCallback_(frameIndex);
+    }
     if (mesh_.resource) {
         mesh_.resource->SyncBeforeDraw();
     }
+}
+
+Vector3 PrimitiveObjects3DClass::GetRight() const {
+    Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
+    return { mat.m[0][0], mat.m[0][1], mat.m[0][2] };
+}
+
+Vector3 PrimitiveObjects3DClass::GetUp() const {
+    Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
+    return { mat.m[1][0], mat.m[1][1], mat.m[1][2] };
+}
+
+Vector3 PrimitiveObjects3DClass::GetDirection() const {
+    Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
+    return { mat.m[2][0], mat.m[2][1], mat.m[2][2] };
 }

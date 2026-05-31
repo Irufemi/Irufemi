@@ -28,6 +28,7 @@ private:
     Vector3 attackTarget_ = { 0, 0, 0 };
     Vector3 rushDir_ = { 0, 0, 0 };
     bool isTargetLocked_ = false;
+    bool hasPlayedRushSe_ = false;
 
     // 調整用パラメータ
     const float kOrbitTime = 6.0f;       // 旋回時間

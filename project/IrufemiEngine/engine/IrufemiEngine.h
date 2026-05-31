@@ -38,6 +38,7 @@
 
 class SceneManager;
 class DebugUI;
+class VoxelParticleManager;
 #include "Graphics/Camera/CameraManager.h"
 
 /**
@@ -333,6 +334,9 @@ private: // メンバ変数
 
     // CameraManager
     std::unique_ptr<CameraManager> cameraManager_ = nullptr;
+
+    // VoxelParticleManager
+    std::unique_ptr<VoxelParticleManager> voxelParticleManager_ = nullptr;
 
     // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };

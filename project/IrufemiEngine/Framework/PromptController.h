@@ -51,6 +51,11 @@ public:
      */
     bool ShouldTransition() const;
 
+    /**
+     * @brief 決定入力がされたかどうかを返す
+     */
+    bool IsDecided() const { return isDecided_; }
+
 private:
     ObjClass* targetObj_ = nullptr;
     Sprite* targetSprite_ = nullptr;

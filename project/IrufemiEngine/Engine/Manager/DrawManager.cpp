@@ -287,14 +287,16 @@ void DrawManager::PostDraw() {
     hr = dxCommon_->GetSwapChain()->Present(1, 0);
     // デバイスが削除されたかどうかのチェック
     if (FAILED(hr)) {
-        if (hr == DXGI_ERROR_DEVICE_REMOVED) {
+        if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
             HRESULT removedReason = dxCommon_->GetDevice()->GetDeviceRemovedReason();
             char str[256];
-            sprintf_s(str, "Device Removed, reason code: 0x%08X\n", removedReason);
+            sprintf_s(str, "Device Removed or Reset, reason code: 0x%08X", removedReason);
             OutputDebugStringA(str);
+            OutputDebugStringA("\n");
+            throw std::runtime_error(str);
+        } else {
+            throw std::runtime_error("Present failed with an unknown error.");
         }
-        // 他のエラーコードも必要に応じて処理
-        assert(SUCCEEDED(hr));
     }
 
 
@@ -353,11 +355,12 @@ void DrawManager::SyncCachedFrameData() {
         if (!res || lightVec.empty()) return;
         using LightType = std::remove_pointer_t<typename std::decay_t<decltype(lightVec)>::value_type>;
         LightType* mapped = nullptr;
-        res->Map(0, nullptr, reinterpret_cast<void**>(&mapped));
-        for (size_t i = 0; i < lightVec.size(); ++i) {
-            mapped[i] = lightVec[i];
+        if (SUCCEEDED(res->Map(0, nullptr, reinterpret_cast<void**>(&mapped))) && mapped) {
+            for (size_t i = 0; i < lightVec.size(); ++i) {
+                mapped[i] = lightVec[i];
+            }
+            res->Unmap(0, nullptr);
         }
-        res->Unmap(0, nullptr);
     };
 
     copyLights(fr.pointLightResource.Get(), cachedPointLights_);
@@ -636,7 +639,7 @@ void DrawManager::DrawSkybox(const RenderPackets::SkyboxPacket& packet) {
     commandList_->DrawIndexedInstanced(packet.indexCount, 1, 0, 0, 0);
 }
 
-void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows) {
+void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows, ID3D12Resource* vertexBufferResourceOverride) {
     if (!resource) return;
     Standard3DPacket p{};
     p.resource = resource;
@@ -647,6 +650,7 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12
     p.castShadows = castShadows;
     p.customPSO = resource->GetCustomPSO();
     p.customCBVAddress = resource->GetCustomCBVAddress();
+    p.vertexBufferResourceOverride = vertexBufferResourceOverride;
     standard3DQueue_.push_back(p);
 }
 
@@ -692,6 +696,11 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
     const Object3DResource* resource = packet.resource;
     if (!resource || !commandList_) return;
     
+    // --- 描画前: UAV -> VBV ---
+    if (packet.vertexBufferResourceOverride) {
+        DirectXUtils::TransitionBarrier(commandList_, packet.vertexBufferResourceOverride, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+    }
+
     // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -708,41 +717,24 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
 
+    // customCBVAddress が設定されていれば Special (b6) にバインドする
+    if (packet.customCBVAddress != 0) {
+        commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, packet.customCBVAddress);
+    }
+
     // 描画
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
+
+    // --- 描画後: VBV -> UAV に戻す (次フレームのCompute用) ---
+    if (packet.vertexBufferResourceOverride) {
+        DirectXUtils::TransitionBarrier(commandList_, packet.vertexBufferResourceOverride, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    }
 }
 
 
-void DrawManager::SubmitGPUParticle(
-    const D3D12_VERTEX_BUFFER_VIEW& vbv,
-    const D3D12_INDEX_BUFFER_VIEW& ibv,
-    uint32_t indexCount,
-    D3D12_GPU_VIRTUAL_ADDRESS materialAddress,
-    D3D12_GPU_VIRTUAL_ADDRESS perViewAddress,
-    D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
-    D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle,
-    uint32_t instanceCount,
-    ID3D12Resource* particleResource
-    ) {
-    if (instanceCount == 0) return;
-    GPUParticlePacket p{};
-    p.vbv = vbv;
-    p.ibv = ibv;
-    p.indexCount = indexCount;
-    p.materialAddress = materialAddress;
-    p.perViewAddress = perViewAddress;
-    p.emitterAddress = emitterAddress;
-    p.particleSrvHandle = particleSrvHandle;
-    p.sortListSrvHandle = sortListSrvHandle;
-    p.textureHandle = textureHandle;
-    p.instanceCount = instanceCount;
-    p.particleResource = particleResource;
-    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
-    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
-    p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    gpuParticleQueue_.push_back(p);
+void DrawManager::SubmitGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
+    if (packet.instanceCount == 0) return;
+    gpuParticleQueue_.push_back(packet);
 }
 
 void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet) {

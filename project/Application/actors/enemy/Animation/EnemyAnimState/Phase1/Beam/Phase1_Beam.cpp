@@ -8,9 +8,14 @@
 
 void Phase1_Beam::Enter(Enemy* enemy) {
     attackTimer_ = 0.0f;
+    totalTimer_ = 0.0f;
     isLockedOn_ = false;
     isFiring_ = false;
     hasFinishedAttack_ = false;
+
+    if (enemy) {
+        enemy->PlaySeBeamCharge();
+    }
 }
 
 void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
@@ -51,7 +56,7 @@ void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
         enemy->FireBeam();
         if (beam) {
             beam->SetTelegraphActive(true);
-            beam->SetTelegraphThickness(0.2f);
+            beam->SetTelegraphThickness(beamThicknessFire_);
             
             beam->SetChargeSphereActive(true);
             float progress = attackTimer_ / chargeTime_;
@@ -81,6 +86,9 @@ void Phase1_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
     }
     // 3. 本射
     else if (attackTimer_ < endFire) {
+        if (!isFiring_ && enemy) {
+            enemy->PlaySeBeam();
+        }
         isFiring_ = true;
         float fireProgress = (attackTimer_ - endAnticipation) / fireTime_;
         float sp = shakeBaseSpeed_ * 1.3f;

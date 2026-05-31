@@ -54,3 +54,11 @@ void CameraManager::Update() {
         }
     }
 }
+
+void CameraManager::OnResize(int width, int height) {
+    for (auto& pair : cameras_) {
+        if (pair.second) {
+            pair.second->Initialize(width, height);
+        }
+    }
+}

@@ -266,6 +266,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   GPUParticleSystem::SetDXCommon(dxCommon_.get());
   VoxelParticleSystem::SetEngine(this);
 
+  voxelParticleManager_ = std::make_unique<VoxelParticleManager>();
+  voxelParticleManager_->Initialize(this);
+
   Circle2D::SetEngine(this);
   Line3DRegion::SetEngine(this);
   CubeClass::SetEngine(this);
@@ -487,6 +490,9 @@ void IrufemiEngine::Finalize() {
   Skybox::SetEngine(nullptr);
   GPUParticleSystem::SetDXCommon(nullptr);
   VoxelParticleSystem::SetEngine(nullptr);
+  if (voxelParticleManager_) {
+    voxelParticleManager_.reset();
+  }
   Circle2D::SetEngine(nullptr);
   Line3DRegion::SetEngine(nullptr);
   CubeClass::SetEngine(nullptr);
@@ -591,6 +597,14 @@ void IrufemiEngine::Execute() {
     postProcessManager_->Update(totalTime_);
     sceneTransition_->Update(deltaTime_);
 
+    if (voxelParticleManager_) {
+        // ポーズ中は VoxelParticle の更新をスキップする
+        bool isPaused = (sceneManager_ && sceneManager_->GetCurrent() == "Pause");
+        if (!isPaused) {
+            voxelParticleManager_->Update(deltaTime_);
+        }
+    }
+
     // インプットを更新
     inputManager_->Update();
 
@@ -599,6 +613,10 @@ void IrufemiEngine::Execute() {
 
     // 描画
     sceneManager_->Draw();
+
+    if (voxelParticleManager_) {
+        voxelParticleManager_->Draw();
+    }
 
     // ここで溜まった描画パケットを一斉に処理する
     drawManager_->ExecuteRenderQueues(this);
@@ -624,6 +642,11 @@ void IrufemiEngine::StartFrame() {
 
 // フレーム途中処理
 void IrufemiEngine::ProcessFrame() {
+  // 非同期スレッドで遅延されていたSRVの更新をメインスレッドで一括適用する（データ競合の防止）
+  if (dxCommon_) {
+    dxCommon_->FlushPendingSRVUpdates();
+  }
+
   // 描画処理に入る前にImGui_::Renderを積む
   ui_->QueueDrawCommands();
 
@@ -695,6 +718,11 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
     // ポストプロセスマネージャーに新しいSRVハンドルを設定
     postProcessManager_->SetDepthSrvHandle(
         dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_));
+  }
+  
+  // 4. カメラの解像度更新 (3D空間の歪み防止)
+  if (cameraManager_) {
+      cameraManager_->OnResize(width, height);
   }
 }
 
