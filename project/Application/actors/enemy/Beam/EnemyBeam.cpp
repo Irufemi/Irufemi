@@ -9,26 +9,71 @@ EnemyBeam::~EnemyBeam() {
     if (lightningParamsResource_ && engine_ && engine_->GetDirectXCommon()) {
         engine_->GetDirectXCommon()->ReleaseAfterFence(lightningParamsResource_);
     }
+    if (lightningParamsOuterResource_) {
+        lightningParamsOuterResource_->Unmap(0, nullptr);
+        engine_->GetDirectXCommon()->ReleaseAfterFence(lightningParamsOuterResource_);
+    }
+    if (aoeParamsResourceCylinder_) {
+        aoeParamsResourceCylinder_->Unmap(0, nullptr);
+        engine_->GetDirectXCommon()->ReleaseAfterFence(aoeParamsResourceCylinder_);
+    }
+    if (aoeParamsResourceGround_) {
+        aoeParamsResourceGround_->Unmap(0, nullptr);
+        engine_->GetDirectXCommon()->ReleaseAfterFence(aoeParamsResourceGround_);
+    }
 }
 
 void EnemyBeam::Initialize(IrufemiEngine* engine) {
-    telegraphObj_ = std::make_unique<PrimitiveObjects3DClass>();
-    telegraphObj_->Initialize(PrimitiveType::Cube, "resources/whiteTexture.png");
-    telegraphObj_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
-    telegraphObj_->SetCastShadows(false);
+    telegraphCylinder_ = std::make_shared<CylinderClass>();
+    telegraphCylinder_->Initialize(false, false);
+    telegraphCylinder_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
+    telegraphCylinder_->SetCastShadows(false);
+    telegraphCylinder_->SetCullingEnabled(false);
+
+    telegraphGroundAOE_ = std::make_unique<PrimitiveObjects3DClass>();
+    telegraphGroundAOE_->Initialize(PrimitiveType::Plane);
+    telegraphGroundAOE_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
+    telegraphGroundAOE_->SetCullingEnabled(false);
+
+    if (engine) {
+        auto aoePSO = engine->GetPSOManager()->GetPSO("AOEWarning", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+        telegraphCylinder_->SetCustomPSO(aoePSO);
+        telegraphGroundAOE_->SetCustomPSO(aoePSO);
+
+        aoeParamsResourceCylinder_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(AOEParams));
+        aoeParamsResourceCylinder_->Map(0, nullptr, reinterpret_cast<void**>(&aoeParamsDataCylinder_));
+        if (aoeParamsDataCylinder_) {
+            *aoeParamsDataCylinder_ = AOEParams();
+            aoeParamsDataCylinder_->shapeType = 2; // Cylinder専用
+        }
+        telegraphCylinder_->SetCustomCBVAddress(aoeParamsResourceCylinder_->GetGPUVirtualAddress());
+
+        aoeParamsResourceGround_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(AOEParams));
+        aoeParamsResourceGround_->Map(0, nullptr, reinterpret_cast<void**>(&aoeParamsDataGround_));
+        if (aoeParamsDataGround_) {
+            *aoeParamsDataGround_ = AOEParams();
+            aoeParamsDataGround_->shapeType = 0; // Radial
+        }
+        telegraphGroundAOE_->SetCustomCBVAddress(aoeParamsResourceGround_->GetGPUVirtualAddress());
+    }
 
     attackCylinder_ = std::make_shared<CylinderClass>();
     attackCylinder_->Initialize(false, false);
-    attackCylinder_->SetColor({ 1.0f, 1.0f, 0.0f, 0.5f });
+    attackCylinder_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+
+    // 攻撃用 (外側の電撃オーラ)
+    attackCylinderOuter_ = std::make_shared<CylinderClass>();
+    attackCylinderOuter_->Initialize(false, false);
+    attackCylinderOuter_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
     attackCylinder_->SetCastShadows(false);
 
     chargeSphere_ = std::make_unique<PrimitiveObjects3DClass>();
-    chargeSphere_->Initialize(PrimitiveType::Sphere);
+    chargeSphere_->Initialize(PrimitiveType::Plane);
     chargeSphere_->SetColor({ 1.0f, 0.3f, 0.0f, 1.0f }); // レッドドラゴン風の赤オレンジコア
     chargeSphere_->SetCullingEnabled(false);
     if (engine) {
         chargeSphere_->SetCustomPSO(
-            engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back)
+            engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None)
         );
     }
 
@@ -50,15 +95,36 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
         lightningParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightningParamsData_));
         if (lightningParamsData_) {
             *lightningParamsData_ = LightningParams();
-            // レッドドラゴンのブレス風（赤＋黄色コア）のプラズマ表現
-            lightningParamsData_->color = { 1.0f, 0.15f, 0.05f, 1.0f };
-            lightningParamsData_->coreColor = { 1.0f, 0.8f, 0.2f, 1.0f };
-            lightningParamsData_->intensity = 6.0f;
+            // --- 内側（コア）: EnergyBeam用の超高輝度レーザーパラメータ ---
+            lightningParamsData_->color = { 1.0f, 0.4f, 0.1f, 1.0f }; // 外周オーラ（微か）
+            lightningParamsData_->coreColor = { 1.0f, 1.0f, 0.8f, 1.0f }; // コア（白〜微黄色）
+            lightningParamsData_->intensity = 5.0f; // オーラの輝度（外側があるので控えめ）
             lightningParamsData_->noiseThreshold = 0.3f;
-            lightningParamsData_->coreIntensity = 5.0f;
+            lightningParamsData_->coreIntensity = 40.0f; // コアの輝度（HDR白飛び）
+            lightningParamsData_->coreThreshold = 0.8f; // コアの太さ（極太）
             lightningParamsData_->coreScale = 2.0f;
-            lightningParamsData_->speed = 1.0f;      // DebugSceneと同じ速度に調整
-            lightningParamsData_->noiseScale = 1.0f; // DebugSceneと同じ模様密度に調整
+            lightningParamsData_->speed = 3.0f;      // 奔流の速度（かなり速く）
+            lightningParamsData_->noiseScale = 1.0f; // ノイズの密度
+            lightningParamsData_->spinSpeed = 5.0f;  // コアも少しだけ回転させる
+            lightningParamsData_->twistScale = 3.0f; // 僅かにねじれるように
+        }
+
+        // 電撃用のパラメータリソースを作成 (外側オーラ・LightningCrawl用)
+        lightningParamsOuterResource_ = engine->GetDirectXCommon()->CreateBufferResource(sizeof(LightningParams));
+        lightningParamsOuterResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightningParamsOuterData_));
+        if (lightningParamsOuterData_) {
+            *lightningParamsOuterData_ = LightningParams();
+            // --- 外側（オーラ）: LightningCrawl用の激しいバチバチ電撃パラメータ ---
+            lightningParamsOuterData_->color = { 1.0f, 0.1f, 0.05f, 1.0f }; // 赤オレンジ
+            lightningParamsOuterData_->coreColor = { 1.0f, 0.6f, 0.2f, 1.0f }; // 黄色コア
+            lightningParamsOuterData_->intensity = 15.0f; // オーラの輝度（高め）
+            lightningParamsOuterData_->noiseThreshold = 0.45f;
+            lightningParamsOuterData_->coreIntensity = 10.0f;
+            lightningParamsOuterData_->coreScale = 2.0f;
+            lightningParamsOuterData_->speed = 0.5f;      // 前進は遅めにして横回転を強調
+            lightningParamsOuterData_->noiseScale = 0.8f; // ★ノイズ密度を下げる（細かいとちぎれやすいため）
+            lightningParamsOuterData_->spinSpeed = 10.0f; // 横回転（少し緩やかに）
+            lightningParamsOuterData_->twistScale = 5.0f; // ★ねじれを大幅に下げる（強すぎるとエイリアスで線が切れる）
         }
 
         gpuParticle_ = std::make_unique<GPUParticleSystem>();
@@ -74,44 +140,132 @@ void EnemyBeam::Initialize(IrufemiEngine* engine) {
 }
 
 void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
-    Vector3 diff = Math::Subtract(playerPos, headPos);
+    // 1. まず、元の頭の位置からターゲットへの方向（大まかな顔の向き）を計算し、発生位置を決定する
+    Vector3 initialDiff = Math::Subtract(playerPos, headPos);
+    Vector3 initialDir = Math::Normalize(initialDiff);
+
+    // オフセット計算時に、Y軸（上下方向）へのズレを抑える
+    Vector3 offsetDir = initialDir;
+    offsetDir.y *= 0.2f; // 下方向への沈み込みを軽減
+    offsetDir = Math::Normalize(offsetDir);
+
+    Vector3 startPos = Math::Add(headPos, Math::Multiply(originOffset_, offsetDir));
+    
+    // 口元に合わせる高さ微調整（マイナスで下げる）
+    startPos.y += -3.0f;
+
+    // 2. 決定した新しい起点(startPos)から、改めて自機(playerPos)を正確に狙う方向を再計算する
+    Vector3 diff = Math::Subtract(playerPos, startPos);
     float distance = Math::Length(diff);
     Vector3 direction = Math::Normalize(diff);
 
     Vector3 center = {
-        (headPos.x + playerPos.x) * 0.5f,
-        (headPos.y + playerPos.y) * 0.5f,
-        (headPos.z + playerPos.z) * 0.5f
+        (startPos.x + playerPos.x) * 0.5f,
+        (startPos.y + playerPos.y) * 0.5f,
+        (startPos.z + playerPos.z) * 0.5f
     };
 
     Vector3 rotate = { 0.0f, 0.0f, 0.0f };
     rotate.y = std::atan2(direction.x, direction.z);
     float distXZ = std::sqrt(direction.x * direction.x + direction.z * direction.z);
     rotate.x = std::atan2(-direction.y, distXZ);
-
-    Vector3 startPos = Math::Add(headPos, Math::Multiply(originOffset_, direction));
+    // CylinderはY軸方向に伸びているため、Z軸方向に倒すために90度(PI/2)足す
+    rotate.x += Math::PI / 2.0f;
 
     if (isTelegraphActive_) {
-        telegraphTransform_.scale = { telegraphThickness_, telegraphThickness_, beamLength_ };
-        Vector3 telegraphCenter = Math::Add(startPos, Math::Multiply(beamLength_ * 0.5f, direction));
-        telegraphTransform_.translate = telegraphCenter;
-        telegraphTransform_.rotate = rotate;
-        telegraphObj_->GetTransform().transform = telegraphTransform_;
-        telegraphObj_->GetTransform().isDirty = true;
-        telegraphObj_->Update();
+        // 進行度の更新 (固定フレーム想定。発射までの時間に合わせる)
+        telegraphProgress_ += 1.0f / 60.0f;
+        // 警告が進むにつれて ratio が 0.0 -> 1.0 に近づく (徐々に赤くなる)
+        float ratio = (std::min)(telegraphProgress_ * 0.7f, 1.0f);
+
+        // 1. 軌道シリンダーの更新
+        telegraphCylinder_->SetCenter(Math::Add(startPos, Math::Multiply(beamLength_ * 0.5f, direction)));
+        telegraphCylinder_->SetRotate(rotate);
+        // 予兆円柱の太さは画面の占有を防ぐため実際の1/4の太さに縮小
+        telegraphCylinder_->SetRadius(telegraphThickness_ * 0.125f);
+        telegraphCylinder_->SetHeight(beamLength_);
+        telegraphCylinder_->Update();
+        
+        // 専用のAOEParamsを更新
+        if (aoeParamsDataCylinder_) {
+            aoeParamsDataCylinder_->warningRatio = ratio;
+        }
+
+        // 2. 地面AOEサークルの更新
+        if (direction.y < -0.001f) {
+            float distToFloor = (0.0f - startPos.y) / direction.y;
+            if (distToFloor > 0.0f) {
+                // 距離が遠すぎる場合でも消えないように、最大距離でクランプする
+                float renderDist = (std::min)(distToFloor, beamLength_);
+                Vector3 floorPos = Math::Add(startPos, Math::Multiply(renderDist, direction));
+                // クランプした場合、Yが浮く可能性があるためY=0.05fに固定（Zファイティング防止）
+                floorPos.y = 0.05f;
+
+                Transform t;
+                t.translate = floorPos;
+                
+                // direction（ビーム方向）のXZ平面での角度（Yaw）を計算
+                float yaw = std::atan2(direction.x, direction.z);
+                
+                // Planeを地面に寝かせるためX軸で90度回転(Rx=90)。
+                // その後、ワールドのY軸を中心に回転させることで、地面に這わせたままビームの方向へ向きを変える(Ry=yaw)。
+                t.rotate = { Math::PI / 2.0f, yaw, 0.0f };
+                
+                // ビームが斜めに刺さる場合、断面は楕円になるためスケールを調整
+                // PlaneのローカルY軸がビームの進行方向を向くため、Yスケールを伸ばす
+                float cosTheta = std::abs(direction.y);
+                float scaleZ = telegraphThickness_ / (std::max)(cosTheta, 0.01f);
+                t.scale = { telegraphThickness_, scaleZ, 1.0f };
+                
+                telegraphGroundAOE_->GetTransform().transform = t;
+                telegraphGroundAOE_->GetTransform().isDirty = true;
+                telegraphGroundAOE_->Update();
+
+                // 専用のAOEParamsを更新
+                if (aoeParamsDataGround_) {
+                    aoeParamsDataGround_->warningRatio = ratio;
+                }
+            } else {
+                telegraphGroundAOE_->GetTransform().transform.scale = { 0,0,0 };
+                telegraphGroundAOE_->GetTransform().isDirty = true;
+                telegraphGroundAOE_->Update();
+            }
+        } else {
+            telegraphGroundAOE_->GetTransform().transform.scale = { 0,0,0 };
+            telegraphGroundAOE_->GetTransform().isDirty = true;
+            telegraphGroundAOE_->Update();
+        }
+    } else {
+        telegraphProgress_ = 0.0f;
     }
 
     if (isChargeSphereActive_ && chargeSphere_) {
         Transform t;
         t.scale = { chargeSphereScale_, chargeSphereScale_, chargeSphereScale_ };
-        t.rotate = rotate;
         
         // startPosは頭の表面（中心から前方へ originOffset_ ずらした位置）
-        // そのまま startPos に球の中心を置くと、球の後ろ半分が頭に埋まってしまうため、
-        // 球の半径（スケールの半分）だけさらに前方へ中心をずらす。
-        // ※完全に離れすぎないよう 0.4f（半径より少し内側）を掛けて少しだけめり込ませる
         float sphereForwardOffset = chargeSphereScale_ * 0.4f;
         t.translate = Math::Add(startPos, Math::Multiply(sphereForwardOffset, direction));
+
+        // ビルボード回転（常にカメラを向く）
+        Vector3 cameraPos = playerPos;
+        if (engine_ && engine_->GetCameraManager() && engine_->GetCameraManager()->GetActiveCamera()) {
+            cameraPos = engine_->GetCameraManager()->GetActiveCamera()->GetTranslate();
+        }
+        
+        Vector3 toCamera = Math::Subtract(cameraPos, t.translate);
+        Vector3 toCameraDir = Math::Normalize(toCamera);
+        
+        // 球（立体）から平面になったため、中心座標のままだと頭のモデルに埋まってしまいます。
+        // 球の表面が手前に張り出していた分（スケールの約半分）、カメラ方向に少し引き寄せて埋まりを防ぎます。
+        t.translate = Math::Add(t.translate, Math::Multiply(chargeSphereScale_ * 0.5f, toCameraDir));
+        
+        // 引き寄せた後の位置で再計算
+        toCamera = Math::Subtract(cameraPos, t.translate);
+        t.rotate.y = std::atan2(-toCamera.x, -toCamera.z);
+        float distXZ = std::sqrt(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
+        t.rotate.x = std::atan2(toCamera.y, distXZ);
+        t.rotate.z = 0.0f;
 
         chargeSphere_->GetTransform().transform = t;
         chargeSphere_->GetTransform().isDirty = true;
@@ -125,29 +279,38 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
         // イーズアウト等で伸ばす(t * (2.0f - t))
         float easeT = t * (2.0f - t);
         // プレイヤーまでの距離ではなく、突き抜けるように beamLength_ を使用
-        float currentDistance = beamLength_ * easeT;
+        float currentLength = beamLength_ * easeT;
 
         // 地面(y=0.0f)との交差判定（ビームを床で止める）
         // 断面が浮いて見えないように、床よりもさらに長め（+20.0f）に突き抜けさせる
         if (direction.y < 0.0f) {
             float distanceToFloor = (0.0f - startPos.y) / direction.y;
             if (distanceToFloor > 0.0f) {
-                currentDistance = (std::min)(currentDistance, distanceToFloor + 20.0f);
+                currentLength = (std::min)(currentLength, distanceToFloor + 20.0f);
             }
         }
 
         // ビームの中心は伸びた距離の半分
-        Vector3 currentCenter = Math::Add(startPos, Math::Multiply(currentDistance * 0.5f, direction));
+        Vector3 currentCenter = Math::Add(startPos, Math::Multiply(currentLength * 0.5f, direction));
 
         attackTransform_.translate = currentCenter;
         attackTransform_.rotate = rotate;
         
-        attackCylinder_->SetCenter(currentCenter);
-        // Cylinder用回転補正
-        attackCylinder_->SetRotate({ rotate.x - Math::PI / 2.0f, rotate.y, rotate.z });
-        attackCylinder_->SetRadius(attackThickness_ * 0.5f);
-        attackCylinder_->SetHeight(currentDistance);
+        // 内側（コア）の更新：外側より少し細めにする
+        attackCylinder_->SetCenter(attackTransform_.translate);
+        attackCylinder_->SetRotate(attackTransform_.rotate);
+        attackCylinder_->SetRadius(attackThickness_ * 0.3f); // ★コアを細くする
+        attackCylinder_->SetHeight(currentLength);
         attackCylinder_->Update();
+
+        // 外側（電撃オーラ）的の更新：当たり判定(OBB = 0.5f)の太さにぴったり合わせる
+        if (attackCylinderOuter_) {
+            attackCylinderOuter_->SetCenter(attackTransform_.translate);
+            attackCylinderOuter_->SetRotate(attackTransform_.rotate);
+            attackCylinderOuter_->SetRadius(attackThickness_ * 0.5f); // ★当たり判定に合わせる
+            attackCylinderOuter_->SetHeight(currentLength);
+            attackCylinderOuter_->Update();
+        }
 
         if (gpuParticle_) {
             // 基準となる太さ(第2形態相当の 4.0f)に対する今回の太さの倍率を計算
@@ -156,10 +319,10 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
             // スケール乗数に合わせて放出量や拡散を変動
             int emitCount = std::clamp(static_cast<int>(50.0f * thicknessRatio), 50, 400);
 
-            // 平均寿命(例: 0.6秒)で到達点(currentDistance)まで届くように速度を算出
+            // 平均寿命(例: 0.6秒)で到達点(currentLength)まで届くように速度を算出
             // ※HLSL側で velocity が「1フレームの移動量(dt不使用)」として加算されているため、60fps換算で割る
             float avgLife = 0.6f;
-            float emitVelocity = (currentDistance / avgLife) * (1.0f / 60.0f);
+            float emitVelocity = (currentLength / avgLife) * (1.0f / 60.0f);
             float emitSpread = 0.12f * std::sqrt(thicknessRatio); // 太いほど拡散させる
 
             // 目標地点でパーティクルが消えるように寿命を設定
@@ -176,6 +339,7 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
             );
 
             // 放出設定：物量と勢いを大幅に強化してレッドドラゴンのブレス感を演出
+            // ★発生半径(radius)も、当たり判定と外側オーラに合わせた 0.5f に戻す
             gpuParticle_->SetBeamEmitter(startPos, direction, attackThickness_ * 0.5f, emitVelocity, emitSpread, emitCount, 0.01f);
             gpuParticle_->SetEmit(true);
 
@@ -193,28 +357,38 @@ void EnemyBeam::Update(const Vector3& headPos, const Vector3& playerPos) {
 void EnemyBeam::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
-    if (isTelegraphActive_ && telegraphObj_) {
-        telegraphObj_->Draw();
-    }
-
     if (isChargeSphereActive_ && chargeSphere_) {
         chargeSphere_->Draw();
     }
 
-    if (isAttackActive_ && attackCylinder_) {
-        // 新しいカスタムPSOインジェクション基盤を使用して、専用のシェーダーと定数バッファをセットする
-        attackCylinder_->SetCustomPSO(engine->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
-        if (lightningParamsResource_) {
-            attackCylinder_->SetCustomCBVAddress(lightningParamsResource_->GetGPUVirtualAddress());
+    if (isTelegraphActive_) {
+        if (telegraphCylinder_) telegraphCylinder_->Draw(true); // UIキュー（最前面）で描画
+        if (telegraphGroundAOE_ && telegraphGroundAOE_->GetTransform().transform.scale.x > 0.0f) {
+            telegraphGroundAOE_->Draw(true);
+        }
+    }
+
+    if (isAttackActive_) {
+        // 1. 外側のバチバチ電撃（LightningCrawl）を先に描画
+        if (attackCylinderOuter_ && lightningParamsOuterResource_) {
+            attackCylinderOuter_->SetCustomPSO(engine->GetPSOManager()->GetPSO("LightningCrawl", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+            attackCylinderOuter_->SetCustomCBVAddress(lightningParamsOuterResource_->GetGPUVirtualAddress());
+            
+            // パケット（キュー）に積まれる描画ステートを設定
+            engine->SetBlend(BlendMode::kBlendModeAdd);
+            engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
+            engine->SetCull(PSOManager::CullMode::None);
+            
+            attackCylinderOuter_->Draw(true); // UIキューで描画
         }
 
-        // パケット（キュー）に積まれる描画ステートを設定
-        engine->SetBlend(BlendMode::kBlendModeAdd);
-        engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
-        engine->SetCull(PSOManager::CullMode::None);
-
-        // 通常通りDrawを呼ぶだけで、DrawManager内で適切なパスと順序（カスタムPSO付き）で描画される
-        attackCylinder_->Draw();
+        // 2. 内側の極太レーザーコア（EnergyBeam）を描画
+        if (attackCylinder_ && lightningParamsResource_) {
+            attackCylinder_->SetCustomPSO(engine->GetPSOManager()->GetPSO("EnergyBeam", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+            attackCylinder_->SetCustomCBVAddress(lightningParamsResource_->GetGPUVirtualAddress());
+            
+            attackCylinder_->Draw(true); // UIキューで描画
+        }
 
         // 状態を元に戻す
         engine->SetBlend(BlendMode::kBlendModeNormal);

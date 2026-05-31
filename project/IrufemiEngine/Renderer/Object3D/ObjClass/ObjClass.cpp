@@ -192,7 +192,7 @@ void ObjClass::Draw() {
     // モデル内の全メッシュを描画
     for (auto& res : meshResources_) {
         if (managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
-            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_], castShadows_);
+            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_], castShadows_, skinCluster_.skinnedVertexResource[lastSkinnedFrameIndex_].Get());
         } else {
             engine_->GetDrawManager()->SubmitStandard3D(res.get(), nullptr, castShadows_);
         }

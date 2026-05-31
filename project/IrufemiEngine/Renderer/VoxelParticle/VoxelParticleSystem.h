@@ -35,6 +35,10 @@ struct VoxelParticle {
   Vector4 color;
   Vector3 normal;
   uint32_t isActive; // 0:非アクティブ, 1:アクティブ
+  Vector3 rotation; // 各軸の回転角(ラジアン)
+  float pad1; // アライメント用
+  Vector3 angularVelocity; // 回転速度
+  float pad2; // アライメント用
 };
 
 // HLSL側のVoxelEmitter構造体と一致させる（16バイトアライメント対応 = 80バイト）
@@ -74,8 +78,12 @@ public:
   enum class ParticleType : uint32_t {
     Default = 0,
     Building = 1,
-    EnemyBurnout = 2,
-    FineScatter = 3
+    AshDisintegration = 2,
+    FineScatter = 3,
+    /// @brief 重力に従って落ちる黒焦げの大きな破片
+    DebrisLargeGravity = 4,   
+    /// @brief 四散して青白く光る爆発的な破片
+    DebrisExplosive = 5
   };
 
   struct VoxelEmitterParams {
@@ -121,12 +129,17 @@ public:
     return emitterData_.time < (emitterData_.lifeTime + 2.0f);
   }
 
+  float GetEmitterTime() const { return emitterData_.time; }
+
   void SetParticleType(ParticleType type) { emitterData_.particleType = static_cast<uint32_t>(type); }
   void SetGravity(float gravity) { emitterData_.gravity = gravity; }
   void SetParameters(const VoxelEmitterParams& params);
 
   bool IsLoaded() const { return status_.load() == LoadingStatus::Loaded; }
   LoadingStatus GetStatus() const { return status_.load(); }
+
+  // 視錐台（Frustum）カリング用
+  bool IsInFrustum() const;
 
 private:
   void CreateResources();

@@ -16,5 +16,7 @@ struct LightningParams {
     float coreIntensity = 2.0f;                     //!< 芯の輝度
     float coreThreshold = 0.7f;                     //!< 芯の太さ
     float coreScale = 2.0f;                         //!< 芯のノイズ密度
-    float pad;                                      //!< Padding
+    float spinSpeed = 0.0f;                         //!< 横回転（螺旋）の速度
+    float twistScale = 0.0f;                        //!< 螺旋のねじれの強さ
+    float pad[3] = {0,0,0};                         //!< 16バイトアライメント用パディング
 };

@@ -1,0 +1,23 @@
+# playerCannon.mtl
+
+newmtl Mtl_DarkMetal
+Ns 60.0
+Ka 0.900000 0.900000 0.900000
+Kd 0.050000 0.120000 0.360000
+Ks 0.400000 0.400000 0.400000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 3
+map_Kd ../../texture/player/playerCannon.png
+
+newmtl Mtl_LightMetal
+Ns 80.0
+Ka 0.900000 0.900000 0.900000
+Kd 0.000000 0.750000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 3
+map_Kd ../../texture/player/playerCannon.png

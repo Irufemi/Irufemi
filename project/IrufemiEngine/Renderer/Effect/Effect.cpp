@@ -95,12 +95,15 @@ void Effect::Initialize(EffectType type) {
         auraObject_ = std::make_unique<PrimitiveObjects3DClass>();
         auraObject_->Initialize(PrimitiveType::Cylinder, auraConfig_.texture);
         
-        // 蓋なしのCylinderリソースを取得して差し替える
-        const auto& noCapCylinder = PrimitiveManager::GetInstance()->GetCylinderResource(false, false);
+        // 炎のように立ち上る形状（底面半径0.6f, 上面半径0.05f, 高さ2.5f, 底面原点）を動的生成して適用
+        // 上面をほぼ尖らせることで炎の先端のシルエットを表現。セグメント24で滑らかに。
+        PrimitiveData customAuraData = PrimitiveManager::CreateCylinder(0.6f, 0.05f, 2.5f, 24, false, false, false);
+        PrimitiveManager::GetInstance()->CreateGPUResource(customAuraData, customAuraResource_);
+
         if (auraObject_->GetMesh().resource) {
-            auraObject_->GetMesh().resource->vertexBufferView_ = noCapCylinder.vertexBufferView;
-            auraObject_->GetMesh().resource->indexBufferView_ = noCapCylinder.indexBufferView;
-            auraObject_->GetMesh().resource->indexCount_ = noCapCylinder.indexCount;
+            auraObject_->GetMesh().resource->vertexBufferView_ = customAuraResource_.vertexBufferView;
+            auraObject_->GetMesh().resource->indexBufferView_ = customAuraResource_.indexBufferView;
+            auraObject_->GetMesh().resource->indexCount_ = customAuraResource_.indexCount;
         }
 
         auraObject_->SetCastShadows(false); // エフェクトなので影は不要
@@ -176,7 +179,7 @@ void Effect::Initialize(EffectType type) {
 
         // 3. CPUパーティクル（火花用）
         auto sparkSystem = std::make_unique<ParticleSystem>();
-        sparkSystem->Initialize("resources/circle2.png", ParticleType::kExplosion, PrimitiveType::Plane);
+        sparkSystem->Initialize("resources/circle2.png", ParticleType::kSpark, PrimitiveType::Plane);
         sparkSystem->SetBlend(BlendMode::kBlendModeAdd);
         sparkSystem->SetDepthWrite(PSOManager::DepthWrite::Disable);
         sparkSystem->SetCull(PSOManager::CullMode::None);
@@ -932,8 +935,9 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
             explosionWaveObject_->GetMaterial().color = explosionConfig_.color;
         }
         if (explosionSparkSystem_) {
-            // スケールに応じて火花の発生数を動的に最適化（マシンガン等は8個、ミサイル等は30個）
-            int sparkCount = (scale.x < 0.5f) ? 8 : 30;
+            // スケールに応じて火花の発生数を動的に最適化（マシンガン等は15個、ミサイル等は60個）
+            int sparkCount = (scale.x < 0.5f) ? 15 : 60;
+            explosionSparkSystem_->SetParticleScale(scale, scale);
             explosionSparkSystem_->PlayHitEffect(position, sparkCount);
         }
         break;

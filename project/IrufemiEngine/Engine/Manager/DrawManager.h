@@ -323,7 +323,7 @@ public:
      * @brief 標準的な3Dオブジェクトの描画 (Object3d.hlsl)
      * @param vertexBufferViewOverride スキニング等でVBVを差し替えたい場合に指定
      */
-    void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = true);
+    void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = true, ID3D12Resource* vertexBufferResourceOverride = nullptr);
     void SubmitUI3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
     void DrawStandard3D(const RenderPackets::Standard3DPacket& packet);
 
@@ -344,7 +344,7 @@ public:
     /**
      * @brief GPUパーティクルのインスタンス描画 (GPUParticle.hlsl)
      */
-    void SubmitGPUParticle(const D3D12_VERTEX_BUFFER_VIEW& vbv, const D3D12_INDEX_BUFFER_VIEW& ibv, uint32_t indexCount, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS perViewAddress, D3D12_GPU_VIRTUAL_ADDRESS emitterAddress, D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, uint32_t instanceCount, ID3D12Resource* particleResource);
+    void SubmitGPUParticle(const RenderPackets::GPUParticlePacket& packet);
     void DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet);
     
     // VoxelParticle 用の描画 (VoxelParticle.hlsl)

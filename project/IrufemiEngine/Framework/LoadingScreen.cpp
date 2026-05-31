@@ -26,6 +26,15 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
     float screenW = static_cast<float>(engine->GetClientWidth());
     float screenH = static_cast<float>(engine->GetClientHeight());
     
+    // 背景を真っ黒に塗りつぶすスプライト
+    bgSprite_ = std::make_unique<Sprite>();
+    bgSprite_->Initialize("resources/whiteTexture.png");
+    bgSprite_->SetColor({0.0f, 0.0f, 0.0f, 1.0f});
+    bgSprite_->SetSize(screenW, screenH);
+    bgSprite_->SetAnchor(0.0f, 0.0f); // 左上
+    bgSprite_->SetPosition(0.0f, 0.0f);
+    bgSprite_->SetTopMost(true);
+    
     // スプライトのサイズと位置を右下に合わせる
     // 画像は正方形(1:1)なので、縮尺がおかしくならないよう同サイズにする
     nowLoadingText_->SetSize(256.0f, 256.0f);
@@ -66,6 +75,9 @@ void LoadingScreen::Update(float deltaTime) {
     }
 
     camera_->Update();
+    if (bgSprite_) {
+        bgSprite_->Update();
+    }
     if (nowLoadingText_) {
         nowLoadingText_->Update();
     }
@@ -77,13 +89,39 @@ void LoadingScreen::Update(float deltaTime) {
 void LoadingScreen::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
+    // ウィンドウのリサイズに対応するため、描画時に画面サイズに合わせて位置とサイズを動的に更新する
+    float screenW = static_cast<float>(engine->GetClientWidth());
+    float screenH = static_cast<float>(engine->GetClientHeight());
+    float uiScale = screenH / 720.0f;
+
+    if (bgSprite_) {
+        // 背景は必ず加算ではなく通常のブレンド（不透明）で上書き描画する
+        engine->SetBlend(BlendMode::kBlendModeNormal);
+        bgSprite_->SetSize(screenW, screenH);
+        bgSprite_->Draw();
+    }
+    
+    // 文字とドットは加算合成（黒背景を透過）
+    engine->SetBlend(BlendMode::kBlendModeAdd);
     if (nowLoadingText_) {
+        nowLoadingText_->SetUIScale(uiScale);
+        nowLoadingText_->SetPosition(screenW - 80.0f * uiScale, screenH - 45.0f * uiScale);
         nowLoadingText_->Draw();
     }
     
+    float baseX = screenW - 65.0f * uiScale; 
+    float baseY = screenH - 45.0f * uiScale; 
+    for (int i = 0; i < dots_.size(); ++i) {
+        dots_[i]->SetRadius(4.0f * uiScale);
+        dots_[i]->SetCenter({baseX + i * 20.0f * uiScale, baseY, 0.0f});
+    }
+
     for (int i = 0; i < dotCount_; ++i) {
         if (i < dots_.size()) {
             dots_[i]->Draw();
         }
     }
+    
+    // 描画後、安全のために元の通常ブレンドに戻す
+    engine->SetBlend(BlendMode::kBlendModeNormal);
 }

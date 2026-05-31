@@ -104,6 +104,25 @@ public:
     /** @brief 現在一番上のシーンインスタンスを取得 */
     IScene* GetCurrentScene() const;
 
+    /**
+     * @brief 一つ下のシーン名（スタックの末尾から2番目）を取得
+     * @details PauseSceneなどの上に重なるシーンから、呼び出し元のシーンを判定するために使用します。
+     * @return std::string シーンの識別名。スタックが2つ未満の場合は空文字を返します。
+     */
+    std::string GetPreviousSceneName() const {
+        if (sceneStack_.size() >= 2) {
+            return sceneStack_[sceneStack_.size() - 2].name;
+        }
+        return "";
+    }
+
+    /** @brief 一つ下のシーン（スタックの末尾から2番目）のポインタを取得 */
+    IScene* GetPreviousScene() const {
+        if (sceneStack_.size() >= 2) {
+            return sceneStack_[sceneStack_.size() - 2].scene.get();
+        }
+        return nullptr;
+    }
 
     /** @brief 登録済みの全シーン名を取得（登録順） */
     std::vector<Key> GetRegisteredKeys() const;

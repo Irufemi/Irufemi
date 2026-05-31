@@ -91,7 +91,12 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
         OutputDebugStringA(errStr.c_str());
         
         // ログファイルにも出力
-        // Log::OutPutLog は std::ostream を取るが、グローバルなログストリームへの出力が必要な場合は検討
+        FILE* f;
+        fopen_s(&f, "shader_error.txt", "w");
+        if (f) {
+            fprintf(f, "%ws: %s\n", filePath.c_str(), errStr.c_str());
+            fclose(f);
+        }
         
         assert(false && "Shader Compile Error");
     }

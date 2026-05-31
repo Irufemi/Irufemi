@@ -10,7 +10,13 @@ void Phase2_Beam::Enter(Enemy* enemy) {
     timer_ = 0.0f;
     globalTimer_ = 0.0f;
     isFinished_ = false;
+    isLockedOn_ = false;
+    hasPlayedBeamSe_ = false;
     attackTarget_ = { 0, 0, 0 };
+
+    if (enemy) {
+        enemy->PlaySeBeamCharge();
+    }
 }
 
 void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
@@ -73,8 +79,9 @@ void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
     } else if (timer_ < kBeamWaitTime) {
         // 停止・ロックオン（シェイクを止めて定位置に戻す）
         headT->translate = basePos_;
-        if (timer_ - deltaTime < kBeamChargeTime) {
+        if (!isLockedOn_) {
             attackTarget_ = playerPos; 
+            isLockedOn_ = true;
         }
         beam->SetTelegraphActive(true);
         beam->SetTelegraphThickness(telegraphThicknessWait_);
@@ -85,6 +92,11 @@ void Phase2_Beam::Update(Enemy* enemy, Player* player, float deltaTime) {
         beam->Update(headWorldPos, attackTarget_);
     } else if (timer_ < kBeamFireTime) {
         // 本射
+        if (!hasPlayedBeamSe_ && enemy) {
+            enemy->PlaySeBeam();
+            hasPlayedBeamSe_ = true;
+        }
+
         float fireProgress = (timer_ - kBeamWaitTime) / (kBeamFireTime - kBeamWaitTime);
         float thickness = attackThickness_;
         if (fireProgress > fadeOutStartThreshold_) {

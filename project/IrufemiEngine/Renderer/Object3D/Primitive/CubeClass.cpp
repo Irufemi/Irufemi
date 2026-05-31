@@ -150,7 +150,7 @@ void CubeClass::Draw() {
     }
     
     // --- 【追加】描画直前のバッファ同期 ---
-    resource_->SyncBeforeDraw();
+    SyncBeforeDraw();
 
     drawManager_->SubmitStandard3D(resource_.get(), nullptr, castShadows_);
 }

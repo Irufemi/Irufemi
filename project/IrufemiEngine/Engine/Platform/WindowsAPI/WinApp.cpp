@@ -237,6 +237,16 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
 #endif
         return 0;
+    case WM_SYSKEYDOWN:
+    case WM_SYSKEYUP:
+        // Altキー押下時のWindowsデフォルト動作（警告音など）を無効化
+        return 0;
+    case WM_SYSCOMMAND:
+        // Altキー押下によるメニューバーへのフォーカス（画面フリーズの原因）を無効化
+        if ((wParam & 0xfff0) == SC_KEYMENU) {
+            return 0;
+        }
+        return DefWindowProcW(hWnd, msg, wParam, lParam);
     case WM_MOUSEWHEEL:
         if (inputManager_) {
             if (auto* mouse = inputManager_->GetMouse()) {

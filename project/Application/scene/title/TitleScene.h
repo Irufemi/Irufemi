@@ -6,10 +6,16 @@
 
 #include <memory>
 #include <vector>
+#include "contents/field/CyberHexParams.h"
+#include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
+#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "Resource/Audio/Bgm.h"
 
 class IrufemiEngine;
 class Sprite;
 class ObjClass;
+
+class GPUParticleSystem;
 
 /**
  * @class TitleScene
@@ -29,9 +35,18 @@ public: // メンバ関数(システム)
     void Initialize(IrufemiEngine* engine) override;
 
     /**
+     * @brief 終了処理
+     */
+    void Finalize() override;
+
+    /**
      * @brief 毎フレームの更新処理
      */
     void Update() override;
+
+    void OnEnter() override;
+    void OnSuspend() override;
+    void OnResume() override;
 
     /**
      * @brief 描画処理
@@ -51,6 +66,26 @@ private: // メンバ変数(ゲーム)
 
     // 「Push to Space」文字
     std::unique_ptr<ObjClass> titleTextPushToSpace_ = nullptr;
+
+    // 環境パーティクル
+    std::unique_ptr<GPUParticleSystem> ambientParticles_ = nullptr;
+
+    // カメラ演出用
+    float cameraAngle_ = 0.0f;
+
+    // サイバー空間トンネル（CyberHex背景）
+    std::unique_ptr<PrimitiveObjects3DClass> tunnelObj_ = nullptr;
+    CyberHexParams cyberHexParams_{};
+    std::unique_ptr<DynamicConstantBuffer<CyberHexParams>> cyberHexCB_ = nullptr;
+    uint32_t cyberHexCBIndex_ = 0;
+    float globalTimer_ = 0.0f;
+
+    // 遷移演出用
+    bool isStarting_ = false;
+    float startTimer_ = 0.0f;
+
+    // BGM
+    std::unique_ptr<Bgm> bgm_ = nullptr;
 
 private: // メンバ変数(システム)
     PromptController promptController_;

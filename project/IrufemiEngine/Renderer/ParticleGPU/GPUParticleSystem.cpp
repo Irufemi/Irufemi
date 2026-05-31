@@ -78,19 +78,19 @@ void GPUParticleSystem::Initialize(const std::string& textureName) {
     // Milestone 1: 初期調整 (レガシー演出の復元)
     emitter_->minLife = 0.4f;
     emitter_->maxLife = 0.8f;
-    emitter_->startScaleMin = { 0.2f, 0.2f, 0.2f };
-    emitter_->startScaleMax = { 0.5f, 0.5f, 0.5f };
-    emitter_->endScaleMin = { 0.01f, 0.01f, 0.01f };
-    emitter_->endScaleMax = { 0.1f, 0.1f, 0.1f };
-    emitter_->startColorMin = { 1.0f, 1.0f, 0.3f, 1.0f }; // 黄色
-    emitter_->startColorMax = { 1.0f, 1.0f, 0.4f, 1.0f };
-    emitter_->endColorMin = { 1.0f, 0.1f, 0.0f, 0.0f };   // 赤（フェードアウト）
-    emitter_->endColorMax = { 1.0f, 0.5f, 0.1f, 0.0f };   // オレンジ（フェードアウト）
+    emitter_->startScaleMinX = 0.2f; emitter_->startScaleMinY = 0.2f; emitter_->startScaleMinZ = 0.2f;
+    emitter_->startScaleMaxX = 0.5f; emitter_->startScaleMaxY = 0.5f; emitter_->startScaleMaxZ = 0.5f;
+    emitter_->endScaleMinX = 0.01f; emitter_->endScaleMinY = 0.01f; emitter_->endScaleMinZ = 0.01f;
+    emitter_->endScaleMaxX = 0.1f; emitter_->endScaleMaxY = 0.1f; emitter_->endScaleMaxZ = 0.1f;
+    emitter_->startColorMinR = 1.0f; emitter_->startColorMinG = 1.0f; emitter_->startColorMinB = 0.3f; emitter_->startColorMinA = 1.0f;
+    emitter_->startColorMaxR = 1.0f; emitter_->startColorMaxG = 1.0f; emitter_->startColorMaxB = 0.4f; emitter_->startColorMaxA = 1.0f;
+    emitter_->endColorMinR = 1.0f; emitter_->endColorMinG = 0.1f; emitter_->endColorMinB = 0.0f; emitter_->endColorMinA = 0.0f;
+    emitter_->endColorMaxR = 1.0f; emitter_->endColorMaxG = 0.5f; emitter_->endColorMaxB = 0.1f; emitter_->endColorMaxA = 0.0f;
     emitter_->colorMode = 0;
     emitter_->gravity = 0.0f;
     emitter_->damping = 0.0f;
     emitter_->jitter = 0.01f; // 座標のゆらぎ
-    emitter_->isBillboard = 1;
+    emitter_->billboardMode = 1; // デフォルトはカメラビルボード
     emitter_->burstCount = 0;
 
     // Milestone 3: 初期設定
@@ -99,7 +99,7 @@ void GPUParticleSystem::Initialize(const std::string& textureName) {
     emitter_->groundHeight = -100.0f;
     emitter_->bounce = 0.5f;
     emitter_->attractorStrength = 0.0f;
-    emitter_->attractorPos = { 0, 0, 0 };
+    emitter_->attractorPosX = 0.0f; emitter_->attractorPosY = 0.0f; emitter_->attractorPosZ = 0.0f;
 
     SetEmit(true);
 
@@ -179,7 +179,7 @@ void GPUParticleSystem::Update() {
     isCulled_ = false;
     if (isCullingEnabled_) {
         Sphere boundingSphere;
-        boundingSphere.center = emitter_->translate;
+        boundingSphere.center = {emitter_->translateX, emitter_->translateY, emitter_->translateZ};
         // Boundingを計算。Sphereなら半径*3、Beamなら広めに設定
         if (emitter_->type == 0) {
             boundingSphere.radius = emitter_->radius * 3.0f;
@@ -218,9 +218,13 @@ void GPUParticleSystem::Update() {
         debugLineRegion_->Update();
     }
 
-    // パーティクルが生存している可能性がある場合のみCSの更新フラグを立てる
-    if (isPlaying_ || timeSinceStop_ <= emitter_->maxLife + 0.1f) {
+    // パーティクルが生存している可能性がある、または単発放出（バースト）が要求された場合のみCSの更新フラグを立てる
+    if (isPlaying_ || timeSinceStop_ <= emitter_->maxLife + 0.1f || emitter_->burstCount > 0) {
         needsUpdateCS_ = true;
+        // バーストが要求された場合は、休眠から復帰するため停止タイマーをリセット
+        if (emitter_->burstCount > 0) {
+            timeSinceStop_ = 0.0f;
+        }
     } else {
         needsUpdateCS_ = false; // 完全に休眠
     }
@@ -311,19 +315,27 @@ void GPUParticleSystem::Draw() {
     engine_->SetDepthWrite(selectedDepth_);
     engine_->SetCull(selectedCull_);
       
-    drawManager_->SubmitGPUParticle(
-        vertexBufferView_,
-        indexBufferView_,
-        indexCount_,
-        materialBuffer_.GetGPUVirtualAddress(frameIndex),
-        perViewBuffer_.GetGPUVirtualAddress(frameIndex),
-        emitterBuffer_.GetGPUVirtualAddress(frameIndex),
-        particleSrvHandleGPU_,
-        sortSrvHandleGPU_,
-        textureHandle_,
-        kMaxParticles,
-        particleResource_.Get()
-    );
+    RenderPackets::GPUParticlePacket packet{};
+    packet.vbv = vertexBufferView_;
+    packet.ibv = indexBufferView_;
+    packet.indexCount = indexCount_;
+    packet.materialAddress = materialBuffer_.GetGPUVirtualAddress(frameIndex);
+    packet.perViewAddress = perViewBuffer_.GetGPUVirtualAddress(frameIndex);
+    packet.emitterAddress = emitterBuffer_.GetGPUVirtualAddress(frameIndex);
+    packet.particleSrvHandle = particleSrvHandleGPU_;
+    packet.sortListSrvHandle = sortSrvHandleGPU_;
+    packet.textureHandle = textureHandle_;
+    packet.instanceCount = kMaxParticles;
+    packet.particleResource = particleResource_.Get();
+    packet.blendMode = selectedBlend_;
+    packet.depthWrite = selectedDepth_;
+    packet.cullMode = selectedCull_;
+
+    if (!customPSOName_.empty()) {
+        packet.customPSO = dxCommon_->GetPSOManager()->GetPSO(customPSOName_, selectedBlend_, selectedDepth_, selectedCull_);
+    }
+
+    drawManager_->SubmitGPUParticle(packet);
 
 #if USE_IMGUI
     if (debugLineRegion_) {
@@ -347,23 +359,27 @@ void GPUParticleSystem::Debug() {
 
     if (showEmitterArea_ && emitter_) {
         Vector4 color = { 0.0f, 1.0f, 0.0f, 1.0f };
+        Vector3 translate = {emitter_->translateX, emitter_->translateY, emitter_->translateZ};
+        Vector3 direction = {emitter_->directionX, emitter_->directionY, emitter_->directionZ};
+        Vector3 areaSize = {emitter_->areaSizeX, emitter_->areaSizeY, emitter_->areaSizeZ};
+
         if (emitter_->type == 0) {
-            DrawSphereWireframe(emitter_->translate, emitter_->radius, color);
+            DrawSphereWireframe(translate, emitter_->radius, color);
         } else if (emitter_->type == 1) {
             // Beamの簡易描画
-            Vector3 top = emitter_->translate + Math::Normalize(emitter_->direction) * 50.0f; // 50mまで描画
-            DrawCylinderWireframe(emitter_->translate, emitter_->direction, emitter_->radius, 50.0f, color);
+            Vector3 top = translate + Math::Normalize(direction) * 50.0f; // 50mまで描画
+            DrawCylinderWireframe(translate, direction, emitter_->radius, 50.0f, color);
         } else if (emitter_->type == 2) {
             // Ring (内側・外側の円、厚み（スプレッド）の表現は簡易化)
-            DrawCircle(emitter_->translate, emitter_->radius, {0,1,0}, color);
-            DrawCircle(emitter_->translate, emitter_->radius - emitter_->spread, {0,1,0}, color);
+            DrawCircle(translate, emitter_->radius, {0,1,0}, color);
+            DrawCircle(translate, emitter_->radius - emitter_->spread, {0,1,0}, color);
         } else if (emitter_->type == 3) {
             // Cylinder (velocity を height として使っている)
-            DrawCylinderWireframe(emitter_->translate, emitter_->direction, emitter_->radius, emitter_->velocity, color);
+            DrawCylinderWireframe(translate, direction, emitter_->radius, emitter_->velocity, color);
         } else if (emitter_->type == 4) {
             // Box
-            Vector3 minP = emitter_->translate - emitter_->areaSize * 0.5f;
-            Vector3 maxP = emitter_->translate + emitter_->areaSize * 0.5f;
+            Vector3 minP = translate - areaSize * 0.5f;
+            Vector3 maxP = translate + areaSize * 0.5f;
             DrawAABB(minP, maxP, color);
         }
     }
@@ -408,7 +424,16 @@ void GPUParticleSystem::Emit(uint32_t count) {
 void GPUParticleSystem::SetSphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency) {
     if (!emitter_) return;
     emitter_->type = 0;
-    emitter_->translate = pos;
+    emitter_->translateX = pos.x; emitter_->translateY = pos.y; emitter_->translateZ = pos.z;
+    emitter_->radius = radius;
+    emitter_->count = (int32_t)count;
+    emitter_->frequency = frequency;
+}
+
+void GPUParticleSystem::SetHemisphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency) {
+    if (!emitter_) return;
+    emitter_->type = 5;
+    emitter_->translateX = pos.x; emitter_->translateY = pos.y; emitter_->translateZ = pos.z;
     emitter_->radius = radius;
     emitter_->count = (int32_t)count;
     emitter_->frequency = frequency;
@@ -417,8 +442,8 @@ void GPUParticleSystem::SetSphereEmitter(const Vector3& pos, float radius, uint3
 void GPUParticleSystem::SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, uint32_t count, float frequency) {
     if (!emitter_) return;
     emitter_->type = 1;
-    emitter_->translate = pos;
-    emitter_->direction = direction;
+    emitter_->translateX = pos.x; emitter_->translateY = pos.y; emitter_->translateZ = pos.z;
+    emitter_->directionX = direction.x; emitter_->directionY = direction.y; emitter_->directionZ = direction.z;
     emitter_->radius = radius;
     emitter_->velocity = velocity;
     emitter_->spread = spread;
@@ -432,10 +457,10 @@ void GPUParticleSystem::SetEmit(bool emit) {
 
 void GPUParticleSystem::SetParticleScale(const Vector3& startMin, const Vector3& startMax, const Vector3& endMin, const Vector3& endMax) {
     if (emitter_) {
-        emitter_->startScaleMin = startMin;
-        emitter_->startScaleMax = startMax;
-        emitter_->endScaleMin = endMin;
-        emitter_->endScaleMax = endMax;
+        emitter_->startScaleMinX = startMin.x; emitter_->startScaleMinY = startMin.y; emitter_->startScaleMinZ = startMin.z;
+        emitter_->startScaleMaxX = startMax.x; emitter_->startScaleMaxY = startMax.y; emitter_->startScaleMaxZ = startMax.z;
+        emitter_->endScaleMinX = endMin.x; emitter_->endScaleMinY = endMin.y; emitter_->endScaleMinZ = endMin.z;
+        emitter_->endScaleMaxX = endMax.x; emitter_->endScaleMaxY = endMax.y; emitter_->endScaleMaxZ = endMax.z;
     }
 }
 
@@ -455,7 +480,11 @@ void GPUParticleSystem::SetPrimitive(PrimitiveType type) {
 }
 
 void GPUParticleSystem::SetBillboard(bool isBillboard) {
-    if (emitter_) emitter_->isBillboard = isBillboard ? 1 : 0;
+    if (emitter_) emitter_->billboardMode = isBillboard ? 1 : 0;
+}
+
+void GPUParticleSystem::SetVelocityAligned(bool isAligned) {
+    if (emitter_) emitter_->billboardMode = isAligned ? 2 : 1;
 }
 
 void GPUParticleSystem::SetTexture(const std::string& textureFilePath) {
@@ -475,7 +504,7 @@ void GPUParticleSystem::SetTexture(const std::string& textureFilePath) {
 void GPUParticleSystem::SetRingEmitter(const Vector3& pos, float radius, float thickness, uint32_t count, float frequency) {
     if (!emitter_) return;
     emitter_->type = 2;
-    emitter_->translate = pos;
+    emitter_->translateX = pos.x; emitter_->translateY = pos.y; emitter_->translateZ = pos.z;
     emitter_->radius = radius;
     emitter_->spread = thickness; // spreadをthicknessとして流用
     emitter_->count = (int32_t)count;
@@ -485,8 +514,8 @@ void GPUParticleSystem::SetRingEmitter(const Vector3& pos, float radius, float t
 void GPUParticleSystem::SetCylinderEmitter(const Vector3& pos, const Vector3& direction, float radius, float height, uint32_t count, float frequency) {
     if (!emitter_) return;
     emitter_->type = 3;
-    emitter_->translate = pos;
-    emitter_->direction = direction;
+    emitter_->translateX = pos.x; emitter_->translateY = pos.y; emitter_->translateZ = pos.z;
+    emitter_->directionX = direction.x; emitter_->directionY = direction.y; emitter_->directionZ = direction.z;
     emitter_->radius = radius;
     emitter_->velocity = height; // velocityをheightとして流用
     emitter_->count = (int32_t)count;
@@ -496,8 +525,8 @@ void GPUParticleSystem::SetCylinderEmitter(const Vector3& pos, const Vector3& di
 void GPUParticleSystem::SetBoxEmitter(const Vector3& pos, const Vector3& size, uint32_t count, float frequency) {
     if (!emitter_) return;
     emitter_->type = 4;
-    emitter_->translate = pos;
-    emitter_->areaSize = size;
+    emitter_->translateX = pos.x; emitter_->translateY = pos.y; emitter_->translateZ = pos.z;
+    emitter_->areaSizeX = size.x; emitter_->areaSizeY = size.y; emitter_->areaSizeZ = size.z;
     emitter_->count = (int32_t)count;
     emitter_->frequency = frequency;
 }
@@ -518,7 +547,7 @@ void GPUParticleSystem::SetGroundCollision(float height, float bounce) {
 
 void GPUParticleSystem::SetAttractor(const Vector3& pos, float strength) {
     if (emitter_) {
-        emitter_->attractorPos = pos;
+        emitter_->attractorPosX = pos.x; emitter_->attractorPosY = pos.y; emitter_->attractorPosZ = pos.z;
         emitter_->attractorStrength = strength;
     }
 }
@@ -620,6 +649,15 @@ void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* comman
     });
     
     // --- Bitonic Sort Phase ---
+    // 前フレームの最後にNON_PIXEL_SHADER_RESOURCEにしたため、ここでUAVに再度遷移させる
+    if (isSortResourceInitialized_) {
+        DirectXUtils::TransitionBarrier(commandList, sortResource_.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    } else {
+        // 初回はCOMMONからUAVへ遷移させる
+        DirectXUtils::TransitionBarrier(commandList, sortResource_.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        isSortResourceInitialized_ = true;
+    }
+
     // 1. Init Sort List
     commandList->SetPipelineState(dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleInitSort"));
     // Descriptor table mapping for InitParticleSort.CS.hlsl:
@@ -670,6 +708,18 @@ void GPUParticleSystem::DebugGeneralSettings() {
 
     ImGui::Separator();
     DebugUI::DebugPsoSettings(&selectedBlend_, &selectedDepth_, &selectedCull_, "##GPUPso");
+
+    ImGui::Text("Scale settings");
+    ImGui::DragFloat3("Start Scale Min", &emitter_->startScaleMinX, 0.01f);
+    ImGui::DragFloat3("Start Scale Max", &emitter_->startScaleMaxX, 0.01f);
+    ImGui::DragFloat3("End Scale Min", &emitter_->endScaleMinX, 0.01f);
+    ImGui::DragFloat3("End Scale Max", &emitter_->endScaleMaxX, 0.01f);
+
+    ImGui::Text("Color settings");
+    ImGui::ColorEdit4("Start Color Min", &emitter_->startColorMinR);
+    ImGui::ColorEdit4("Start Color Max", &emitter_->startColorMaxR);
+    ImGui::ColorEdit4("End Color Min", &emitter_->endColorMinR);
+    ImGui::ColorEdit4("End Color Max", &emitter_->endColorMaxR);
 #endif
 }
 
@@ -677,31 +727,31 @@ void GPUParticleSystem::DebugEmitterSettings() {
 #if defined(USE_IMGUI)
     if (!emitter_) return;
 
-    const char* typeNames[] = { "Sphere", "Beam", "Ring", "Cylinder", "Box" };
+    const char* typeNames[] = { "Sphere", "Beam", "Ring", "Cylinder", "Box", "Hemisphere" };
     int type = (int)emitter_->type;
     if (ImGui::Combo("Type", &type, typeNames, IM_ARRAYSIZE(typeNames))) {
         emitter_->type = (uint32_t)type;
-        if (type == 4 && emitter_->areaSize.x == 0 && emitter_->areaSize.y == 0 && emitter_->areaSize.z == 0) {
-            emitter_->areaSize = { 10.0f, 10.0f, 10.0f };
-        }
     }
 
-    ImGui::DragFloat3("Translate", &emitter_->translate.x, 0.1f);
-    
-    if (emitter_->type == 0 || emitter_->type == 2 || emitter_->type == 3) {
+    if (emitter_->type == 4) { // Box
+        ImGui::DragFloat3("Area Size", &emitter_->areaSizeX, 0.1f);
+    }
+
+    if (emitter_->type == 0 || emitter_->type == 1 || emitter_->type == 2 || emitter_->type == 3 || emitter_->type == 5) {
+        ImGui::DragFloat3("Translate", &emitter_->translateX, 0.1f);
         ImGui::DragFloat("Radius", &emitter_->radius, 0.1f, 0.0f, 100.0f);
     }
-    if (emitter_->type == 4) {
-        ImGui::DragFloat3("Area Size", &emitter_->areaSize.x, 0.1f, 0.0f, 100.0f);
+
+    if (emitter_->type == 1 || emitter_->type == 2 || emitter_->type == 3 || emitter_->type == 5) {
+        ImGui::DragFloat("Spread (Angle/Thickness)", &emitter_->spread, 0.01f, 0.0f, 10.0f);
+    }
+
+    if (emitter_->type == 1 || emitter_->type == 3) {
+        ImGui::DragFloat3("Direction", &emitter_->directionX, 0.01f);
     }
     
     ImGui::Separator();
-    ImGui::Text("Velocity & Direction");
-    ImGui::DragFloat3("Direction", &emitter_->direction.x, 0.01f);
     ImGui::DragFloat("Velocity", &emitter_->velocity, 0.01f);
-    ImGui::DragFloat("Spread (Radial)", &emitter_->spread, 0.01f, 0.0f, 5.0f);
-
-    ImGui::Separator();
     ImGui::DragInt("Count", (int*)&emitter_->count, 1, 0, 100);
     ImGui::DragFloat("Frequency", &emitter_->frequency, 0.01f, 0.001f, 10.0f);
     
@@ -713,15 +763,6 @@ void GPUParticleSystem::DebugEmitterSettings() {
     ImGui::Separator();
     ImGui::Text("Particle Randomization");
     ImGui::DragFloat2("Life Range", &emitter_->minLife, 0.01f, 0.0f, 10.0f);
-    ImGui::DragFloat3("Start Scale Min", &emitter_->startScaleMin.x, 0.01f);
-    ImGui::DragFloat3("Start Scale Max", &emitter_->startScaleMax.x, 0.01f);
-    ImGui::DragFloat3("End Scale Min", &emitter_->endScaleMin.x, 0.01f);
-    ImGui::DragFloat3("End Scale Max", &emitter_->endScaleMax.x, 0.01f);
-
-    ImGui::ColorEdit4("Start Color Min", &emitter_->startColorMin.x);
-    ImGui::ColorEdit4("Start Color Max", &emitter_->startColorMax.x);
-    ImGui::ColorEdit4("End Color Min", &emitter_->endColorMin.x);
-    ImGui::ColorEdit4("End Color Max", &emitter_->endColorMax.x);
 
     if (ImGui::Button("Burst (10)")) Emit(10);
 #endif
@@ -732,7 +773,7 @@ void GPUParticleSystem::DebugShapeSettings() {
     if (!emitter_) return;
 
     ImGui::Text("Mesh Shape & Render");
-    bool billboard = emitter_->isBillboard != 0;
+    bool billboard = emitter_->billboardMode != 0;
     if (ImGui::Checkbox("Billboard", &billboard)) {
         SetBillboard(billboard);
     }
@@ -775,8 +816,10 @@ void GPUParticleSystem::DebugPhysicsSettings() {
     ImGui::DragFloat("Ground Height", &emitter_->groundHeight, 0.1f, -100.0f, 100.0f);
     ImGui::DragFloat("Bounce", &emitter_->bounce, 0.01f, 0.0f, 1.0f);
     
-    ImGui::DragFloat3("Attractor Pos", &emitter_->attractorPos.x, 0.1f);
-    ImGui::DragFloat("Attractor Strength", &emitter_->attractorStrength, 0.1f, -100.0f, 100.0f);
+    if (ImGui::CollapsingHeader("Attractor", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::DragFloat("Attractor Strength", &emitter_->attractorStrength, 0.1f);
+        ImGui::DragFloat3("Attractor Pos", &emitter_->attractorPosX, 0.1f);
+    }
 #endif
 }
 

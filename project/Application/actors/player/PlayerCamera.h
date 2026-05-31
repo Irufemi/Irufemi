@@ -18,7 +18,7 @@ public:
 
     void Initialize();
     void UpdateInput(InputManager* input, Vector3& playerRotate);
-    void Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration, IrufemiEngine* engine);
+    void Update(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& missileVibration, IrufemiEngine* engine, int dodgeDurationTimer);
 
     /**
      * @brief 死亡時（吹き飛び時）のドラマチックなカメラワーク
@@ -27,6 +27,9 @@ public:
      * @param engine エンジンへのポインタ
      */
     void UpdateDeathCamera(const Vector3& cameraPos, const Vector3& playerTranslate, IrufemiEngine* engine);
+
+    // ★追加: 視点を三人称に強制する
+    void ForceThirdPerson() { viewMode_ = ViewMode::kThirdPerson; }
 
     // --- ゲッター ---
     float GetCameraPitch() const { return cameraPitch_; }
@@ -39,7 +42,12 @@ public:
     float* GetMouseSensitivityMultiplierPtr() { return &mouseSensitivityMultiplier_; }
     bool* GetCameraControlEnabledPtr() { return &isCameraControlEnabled_; }
 
+    // チュートリアル用：視点切り替えの許可フラグ
+    void SetAllowViewSwitch(bool allow) { allowViewSwitch_ = allow; }
+
 private:
+
+    bool allowViewSwitch_ = true;
 
 
     float mouseSensitivity_ = 5.0f;

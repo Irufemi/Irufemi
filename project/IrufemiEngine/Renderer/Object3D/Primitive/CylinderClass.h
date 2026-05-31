@@ -64,6 +64,7 @@ public: // メンバ関数
     // 描画
     void SyncBeforeDraw() override;
     void Draw() override;
+    void Draw(bool isUI);
 
     // デバッグ
     void Debug(const char* cylinderName = " ");

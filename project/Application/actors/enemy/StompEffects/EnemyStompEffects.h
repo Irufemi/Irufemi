@@ -2,12 +2,18 @@
 #include "core/math/Transform.h"
 #include "core/math/Vector4.h"
 #include "core/math/geometry/OBB.h"
+#include "Engine/Core/Shape/Sphere.h"
 #include <memory>
 #include <algorithm>
+#include <wrl.h>
+#include <d3d12.h>
+#include "Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "IrufemiEngine/Engine/Graphics/Data/AOEParams.h"
 
 // 前方宣言
 class Camera;
 class ObjClass;
+class PrimitiveObjects3DClass;
 
 class EnemyStompEffects {
 public:
@@ -46,17 +52,25 @@ public:
         int finalExplosionDamage = 50;
     };
 
-    void Initialize();
+    void Initialize(class IrufemiEngine* engine);
     void Update(float deltaTime);
     void Draw(class IrufemiEngine* engine);
     void Fire(const Vector3& position);
+    void Cancel(); // 強制キャンセル用
     bool IsActive() const { return isActive_; }
 
     /// @brief デバッグ描画（当たり判定等の可視化用）
     void DrawDebug(class Line3DRegion* lineRegion);
 
-    /// @brief パラメータを外部から設定する
+    void SetCamera(Camera* camera) { camera_ = camera; }
     void SetParameters(const Parameters& params) { params_ = params; }
+    const Parameters& GetParameters() const { return params_; }
+
+    // --- 本体落下予兆（AOE） ---
+    void StartBodyTelegraph(const Vector3& pos, float radius);
+    void UpdateBodyTelegraph(const Vector3& pos, float warningRatio);
+    void StopBodyTelegraph();
+    void DrawBodyTelegraph(class IrufemiEngine* engine);
 
     // --- 当たり判定用ゲッター ---
     bool IsExplosionDamageActive() const;
@@ -65,7 +79,7 @@ public:
     int GetExplosionDamage() const { return params_.explosionDamage; }
     
     bool IsFinalExplosionActive() const { return currentPhase_ == Phase::FinalExplosion; }
-    const OBB& GetFinalExplosionOBB() const { return finalExplosionOBB_; }
+    const Sphere& GetFinalExplosionSphere() const { return finalExplosionSphere_; }
     int GetFinalExplosionDamage() const { return params_.finalExplosionDamage; }
 
     bool HasDealtExplosionDamage() const { return hasDealtExplosionDamage_; }
@@ -74,31 +88,46 @@ public:
     bool HasDealtFinalDamage() const { return hasDealtFinalDamage_; }
     void SetDealtFinalDamage(bool dealt) { hasDealtFinalDamage_ = dealt; }
 
+    bool CheckAndResetExplosionTrigger() {
+        if (explosionTriggered_) {
+            explosionTriggered_ = false;
+            return true;
+        }
+        return false;
+    }
+
 private:
     // 判定用ヘルパー
-    void UpdateFinalExplosionOBB();
+    void UpdateFinalExplosionSphere();
 
     Camera* camera_ = nullptr;
-    std::unique_ptr<ObjClass> explosionObj_ = nullptr;
-    std::unique_ptr<ObjClass> ringObj_ = nullptr;
-    std::unique_ptr<ObjClass> finalExplosionObj_ = nullptr; // 噴き上がり用モデル
+    std::unique_ptr<PrimitiveObjects3DClass> explosionObj_ = nullptr;
+    std::unique_ptr<PrimitiveObjects3DClass> ringObj_ = nullptr;
+    std::unique_ptr<PrimitiveObjects3DClass> bodyTelegraphObj_ = nullptr; // 落下地点予兆用AOE
+    std::unique_ptr<GPUParticleSystem> gpuParticleSystem_ = nullptr; // 大爆発の火の粉用
+
+    // AOE専用パラメータ
+    Microsoft::WRL::ComPtr<ID3D12Resource> aoeParamsResource_;
+    AOEParams* aoeParamsData_ = nullptr;
 
     Transform explosionTransform_;
     Transform ringTransform_;
-    Transform finalExplosionTransform_;
+    Transform bodyTelegraphTransform_;
 
     bool isActive_ = false;
+    bool isBodyTelegraphActive_ = false;
     Phase currentPhase_ = Phase::Expanding;
     float globalTimer_ = 0.0f; // 最初の爆発用
     float phaseTimer_ = 0.0f;  // リング・再爆発フェーズ用
-    Vector3 basePosition_;
+    Vector3 basePosition_ = {};
 
     Parameters params_;
-    OBB finalExplosionOBB_;
+    Sphere finalExplosionSphere_;
 
     bool hasDealtExplosionDamage_ = false;
     bool hasDealtRingDamage_ = false;
     bool hasDealtFinalDamage_ = false;
+    bool explosionTriggered_ = false;
 
     float Lerp(float start, float end, float t) const { return start + (end - start) * t; }
 };

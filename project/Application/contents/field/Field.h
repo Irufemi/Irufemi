@@ -1,6 +1,8 @@
 #pragma once
 #include "Irufemi.h"
 #include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "CyberHexParams.h"
+#include "Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 
 class Camera;
 class InputManager;
@@ -17,6 +19,7 @@ public:
 	void Draw();
 
 	Building* GetBuilding() const { return building_.get(); }
+	void SetDrawBuildings(bool draw) { drawBuildings_ = draw; }
 
 private:
 	// 外部依存
@@ -33,5 +36,11 @@ private:
 	std::unique_ptr<ObjClass> floor_ = nullptr;
 
 	std::unique_ptr<Building> building_ = nullptr;
+	bool drawBuildings_ = true;
+
+	// CyberHex専用パラメータ
+	CyberHexParams cyberHexParams_{};
+	std::unique_ptr<DynamicConstantBuffer<CyberHexParams>> cyberHexCB_ = nullptr;
+	uint32_t cyberHexCBIndex_ = 0;
 };
 

@@ -210,15 +210,21 @@ void DirectXCommon::CreatePSOs() {
     auto psSkybox = shaderManager_->GetOrCompile(L"resources/shaders/Skybox.PS.hlsl", options);
     auto vsGpuParticle = shaderManager_->GetOrCompile(L"resources/shaders/ParticleGPU.VS.hlsl", options);
     auto psGpuParticle = shaderManager_->GetOrCompile(L"resources/shaders/ParticleGPU.PS.hlsl", options);
+    auto psStompExplosionParticle = shaderManager_->GetOrCompile(L"resources/shaders/StompExplosionParticle.PS.hlsl", options);
     auto vsVoxel = shaderManager_->GetOrCompile(L"resources/shaders/VoxelParticle.VS.hlsl", options);
     auto psVoxel = shaderManager_->GetOrCompile(L"resources/shaders/VoxelParticle.PS.hlsl", options);
     auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
     auto vsShadowSkin = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", options);
     auto psLightning = shaderManager_->GetOrCompile(L"resources/shaders/LightningCrawl.PS.hlsl", options);
+    auto psEnergyBeam = shaderManager_->GetOrCompile(L"resources/shaders/EnergyBeam.PS.hlsl", options);
+    auto psExplosionFlame = shaderManager_->GetOrCompile(L"resources/shaders/ExplosionFlame.PS.hlsl", options);
     auto psEnergyCore = shaderManager_->GetOrCompile(L"resources/shaders/EnergyCore.PS.hlsl", options);
     auto vsRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.VS.hlsl", options);
     auto psRocket = shaderManager_->GetOrCompile(L"resources/shaders/RocketFlame.PS.hlsl", options);
     auto psCyberHex = shaderManager_->GetOrCompile(L"resources/shaders/CyberHex.PS.hlsl", options);
+    auto psBombCore = shaderManager_->GetOrCompile(L"resources/shaders/BombCore.PS.hlsl", options);
+    auto psStompExplosion = shaderManager_->GetOrCompile(L"resources/shaders/StompExplosion.PS.hlsl", options);
+    auto psAOEWarning = shaderManager_->GetOrCompile(L"resources/shaders/AOEWarning.PS.hlsl", options);
 
     auto csSkin = shaderManager_->GetOrCompile(L"resources/shaders/Skinning.CS.hlsl", options);
     auto csGpuInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeParticle.CS.hlsl", options);
@@ -267,6 +273,7 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("Skinning", { { vsSkin, ps3d } });
     psoManager_->RegisterShader("Skybox", { { vsSkybox, psSkybox } });
     psoManager_->RegisterShader("GpuParticle", { { vsGpuParticle, psGpuParticle } });
+    psoManager_->RegisterShader("StompExplosionParticle", { { vsGpuParticle, psStompExplosionParticle } });
     psoManager_->RegisterShader("VoxelParticle", { { vsVoxel, psVoxel } });
     
     // シャドウマップ(通常) - 深度のみ
@@ -282,9 +289,14 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("ShadowSkinning", shadowSkinDesc);
 
     psoManager_->RegisterShader("LightningCrawl", { { vs3d, psLightning } });
+    psoManager_->RegisterShader("ExplosionFlame", { { vs3d, psExplosionFlame } });
     psoManager_->RegisterShader("EnergyCore", { { vs3d, psEnergyCore } });
     psoManager_->RegisterShader("RocketFlame", { { vsRocket, psRocket } });
     psoManager_->RegisterShader("CyberHex", { { vs3d, psCyberHex } });
+    psoManager_->RegisterShader("BombCore", { { vs3d, psBombCore } });
+    psoManager_->RegisterShader("StompExplosion", { { vs3d, psStompExplosion } });
+    psoManager_->RegisterShader("AOEWarning", { { vs3d, psAOEWarning } });
+    psoManager_->RegisterShader("EnergyBeam", { { vs3d, psEnergyBeam } });
 
     // バックバッファ書き込み用のスプライト設定
     PSOManager::PipelineStateDesc spriteBBDesc{};
@@ -707,9 +719,21 @@ void DirectXCommon::PreWarmJITCompile() {
             if (lightningPSO) {
                 uploadCommandList->SetPipelineState(lightningPSO);
             }
+            auto explosionPSO = psoManager_->GetPSO("ExplosionFlame", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+            if (explosionPSO) {
+                uploadCommandList->SetPipelineState(explosionPSO);
+            }
             auto energyCorePSO = psoManager_->GetPSO("EnergyCore", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
             if (energyCorePSO) {
                 uploadCommandList->SetPipelineState(energyCorePSO);
+            }
+            auto bombCorePSO = psoManager_->GetPSO("BombCore", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+            if (bombCorePSO) {
+                uploadCommandList->SetPipelineState(bombCorePSO);
+            }
+            auto energyBeamPSO = psoManager_->GetPSO("EnergyBeam", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+            if (energyBeamPSO) {
+                uploadCommandList->SetPipelineState(energyBeamPSO);
             }
         }
     });
@@ -822,4 +846,17 @@ void DirectXCommon::ClearPendingResources() {
 
 	// デスクリプタの回収をマネージャに委譲
 	swapChainManager_->FlushPendingDescriptors(completed);
+}
+
+void DirectXCommon::EnqueueSRVUpdate(const Microsoft::WRL::ComPtr<ID3D12Resource>& textureResource, const D3D12_SHADER_RESOURCE_VIEW_DESC& srvDesc, D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU) {
+	std::lock_guard<std::mutex> lock(pendingSRVMutex_);
+	pendingSRVUpdates_.push_back({ textureResource, srvDesc, textureSrvHandleCPU });
+}
+
+void DirectXCommon::FlushPendingSRVUpdates() {
+	std::lock_guard<std::mutex> lock(pendingSRVMutex_);
+	for (const auto& update : pendingSRVUpdates_) {
+		device_->CreateShaderResourceView(update.textureResource.Get(), &update.srvDesc, update.textureSrvHandleCPU);
+	}
+	pendingSRVUpdates_.clear();
 }

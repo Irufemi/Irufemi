@@ -7,14 +7,19 @@
 #include "PlayerStatus.h" 
 #include <memory>
 #include <vector>
+#include <array>
+#include "Resource/Audio/Se.h"
 
 // 前方宣言
 class Camera;
 class Line3DRegion;
 class Enemy;
+class EnemyBeam;
 class Sprite;
 class PlayerHPBar;
 class WeaponTrail;
+class GPUParticleSystem;
+class Effect;
 
 struct AttackCollision {
     Vector3 center;
@@ -53,8 +58,10 @@ public:
     int GetHp() const { return status_.GetHp(); }
     int GetMaxHp() const { return status_.GetMaxHp(); }
     bool IsDead() const { return status_.IsDead(); }
+    void ClearMissiles() { weapon_.ClearMissiles(); }
 
     bool IsDeathAnimationFinished() const { return isDeathAnimationFinished_; }
+    bool IsBlowingAway() const { return deathTimer_ > 0; }
 
     bool ApplyDamage(int damage);
 
@@ -62,6 +69,14 @@ public:
     void SetIsTargetingEnemy(bool isTargeting) { isTargetingEnemy_ = isTargeting; }
     bool GetIsTargetingEnemy() const { return isTargetingEnemy_; }
     bool IsFirstPerson() const { return cameraController_.IsFirstPerson(); }
+
+    void SetCinematicMode(bool isCinematic) {
+        isCinematicMode_ = isCinematic;
+        if (isCinematic) {
+            cameraController_.ForceThirdPerson();
+        }
+    }
+    bool IsCinematicMode() const { return isCinematicMode_; }
 
     bool IsKarakuriCharged() const { return isKarakuriCharged_; }
     int GetKarakuriActiveTimer() const { return karakuriActiveTimer_; }
@@ -76,7 +91,16 @@ public:
     }
     void ResetDodgeCooldown() { movement_.ResetDodgeCooldown(); }
 
+    // チュートリアル用アクション制限
+    void SetAllowDodge(bool allow) { movement_.SetAllowDodge(allow); }
+    void SetAllowMelee(bool allow) { allowMelee_ = allow; }
+    void SetAllowGunOrMissile(bool allow) { allowGunOrMissile_ = allow; }
+    void SetAllowKarakuriCharge(bool allow) { allowKarakuriCharge_ = allow; }
+    void SetAllowViewSwitch(bool allow) { cameraController_.SetAllowViewSwitch(allow); }
+
     void HitAndKnockback(Enemy* enemy);
+
+    void OnMeleeHit();
 
     int GetDamageMelee() const { return damageMelee_; }
     float GetDamageMeleeChargeMultiplier() const { return damageMeleeChargeMultiplier_; }
@@ -116,6 +140,12 @@ private:
 
     std::unique_ptr<Sprite> aimingSprite_ = nullptr;
     bool isTargetingEnemy_ = false;
+    bool isCinematicMode_ = false;
+
+    // チュートリアル用アクション制限フラグ
+    bool allowMelee_ = true;
+    bool allowGunOrMissile_ = true;
+    bool allowKarakuriCharge_ = true;
 
     int skillDurationTimer_ = 0;
     int skillCooldownTimer_ = 0;
@@ -130,10 +160,26 @@ private:
     std::unique_ptr<Sprite> karakuriGaugeBg_ = nullptr;
     std::unique_ptr<Sprite> karakuriGaugeFill_ = nullptr;
 
+    // ★追加: 機関銃の残弾ゲージUI
+    std::unique_ptr<Sprite> machineGunGaugeFrame_ = nullptr;
+    std::unique_ptr<Sprite> machineGunGaugeBg_ = nullptr;
+    std::unique_ptr<Sprite> machineGunGaugeFill_ = nullptr;
+
+    // ★追加: 機関銃残弾数の数値スプライト
+    std::unique_ptr<Sprite> machineGunAmmoCurrentSprites_[3];
+    std::unique_ptr<Sprite> machineGunAmmoMaxSprites_[3];
+    std::unique_ptr<Sprite> machineGunAmmoSlashSprite_;
+
     int karakuriActiveTimer_ = 0;
     const int kKarakuriActiveTime = 1200;
 
-    Vector3 scale_ = { 0.3f, 0.5f, 0.3f };
+    std::unique_ptr<Se> seHammer_;
+    std::unique_ptr<Se> seHammerHit_;
+    std::unique_ptr<Se> seMissileHit_;
+    std::unique_ptr<Se> seKarakuri_;
+    std::unique_ptr<Se> seCooldown_;
+
+    Vector3 scale_ = { 0.45f, 0.75f, 0.45f };
     Vector3 rotate_ = { 0.0f, 0.0f, 0.0f };
     Vector3 translate_ = { 0.0f, 0.0f, -50.0f };
 
@@ -174,13 +220,14 @@ private:
     int damageMissile_ = 50;
     float damageMissileChargeMultiplier_ = 2.0f;
 
-    static constexpr float kModelOffsetY = 0.4f;
+    static constexpr float kModelOffsetY = 0.22f;
     static constexpr float kAimDistance = 100.0f;
     static constexpr int kMissileSkillDuration = 120;
     static constexpr int kMachineGunSkillDuration = 180;
     static constexpr int kMinAmmoToRestart = 5; // 再発射に必要な最低残弾数
 
     bool isMachineGunSkillActive_ = false; // 現在のスキルが機関銃かミサイルか
+    bool hasPlayedHammerHitThisAttack_ = false;
 
     // --- 死亡時の演出用変数 ---
     int deathTimer_ = 0;
@@ -192,6 +239,9 @@ private:
     static constexpr int kDeathWaitTime = 90; // 死亡演出開始まで1.5秒待機（60fps x 1.5）
     int deathWaitTimer_ = 0; // 死亡待機タイマー
 
+    // --- シネマティック演出用定数 ---
+    static constexpr float kCinematicRotateSpeed = 0.1f; ///< 死亡演出中にプレイヤーがボスを自動凝視する際のスムーズな旋回補間速度
+
     Vector3 deathCameraPos_ = { 0.0f, 0.0f, 0.0f };
 
     // ★追加: キラン☆演出用の星モデル (plane.obj)
@@ -199,8 +249,58 @@ private:
     Vector3 starScale_ = { 0.0f, 0.0f, 0.0f };
     float starRotationZ_ = 0.0f;
 
+    // ★追加: プレイヤー背中のぜんまいモデル
+    std::unique_ptr<ObjClass> zenmaiObj_ = nullptr;
+    float zenmaiRotZ_ = 0.0f; // ぜんまいの回転角度
+    bool zenmaiRewinding_ = false; // チャージキャンセル時の逆回転フラグ
+    Vector3 zenmaiLocalOffset_ = { 0.0f, 0.35f, -0.85f }; // 背中・おしりのアタッチオフセット位置（めり込み防止のため後ろへ調整）
+    float zenmaiScaleMultiplier_ = 0.5f; // ぜんまいのスケール倍率（プレイヤー本体に対する比率）
+    int zenmaiRotationAxis_ = 1; // 回転軸（0: X軸, 1: Y軸, 2: Z軸。デフォルトを1:Y軸の縦軸横回転へ変更）
+    Vector3 zenmaiRotateOffset_ = { -1.57079f, 0.0f, 0.0f }; // ぜんまいの初期回転オフセット（向きが逆のため-90度をデフォルトに）
+
+    // ★追加: からくりチャージ用のエフェクト
+    std::unique_ptr<GPUParticleSystem> karakuriChargeParticle_ = nullptr; // チャージ中・完了時の上昇パーティクル
+    std::unique_ptr<GPUParticleSystem> karakuriRingParticle_ = nullptr; // チャージしきったときの足元リングエフェクト
+    std::unique_ptr<GPUParticleSystem> deathGlowParticle_ = nullptr; // 死亡待機中の全身から吹き出す自爆前光線
+    std::unique_ptr<GPUParticleSystem> jetParticles_[4]; // 4隅のジェットノズル用噴射パーティクル配列
+
+
+    // ★追加: 死亡演出前の自爆ビームエフェクト
+    static constexpr int kDeathBeamCount = 4;
+    std::vector<std::unique_ptr<EnemyBeam>> deathBeams_;
+    std::vector<Vector3> deathBeamDirs_;
+    std::vector<int> deathBeamDelays_; // 各ビームの出現開始フレーム遅延
+    std::vector<Vector3> deathBeamOffsets_; // 各ビームの全身噴出ローカルオフセット
+
 #ifdef USE_IMGUI
     std::unique_ptr<Line3DRegion> lineOBB_ = nullptr;
     bool isDebugDrawOBB_ = false;
 #endif
+
+private:
+    void TriggerDodgeSpeedLines();
+    void UpdateSpeedLines();
+    void DrawSpeedLines();
+
+    // ★追加: 回避方向別の演出用モード定義
+    enum class DodgeDirectionMode {
+        kForward,  // 前方向（内から外へ）
+        kBackward, // 後ろ方向（外から内へ）
+        kSideways  // 横方向（水平平行線）
+    };
+    DodgeDirectionMode dodgeDirectionMode_ = DodgeDirectionMode::kForward;
+
+    static constexpr int kMaxSpeedLines = 48;
+    struct SpeedLine {
+        std::unique_ptr<Sprite> sprite;
+        Vector2 startPos;
+        Vector2 currentPos;
+        Vector2 direction;
+        float speed;
+        float length;
+        float width;
+        float alpha;
+        bool isActive;
+    };
+    std::array<SpeedLine, kMaxSpeedLines> speedLines_;
 };

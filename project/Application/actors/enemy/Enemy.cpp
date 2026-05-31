@@ -13,6 +13,7 @@
 #include "contents/ui/EnemyHPBar.h"
 #include "contents/ui/EnemyPartHPBar.h"
 #include "Renderer/Effect/WeaponTrail.h"
+#include "Renderer/Object2D/Sprite/Sprite.h"
 
 Enemy::Enemy() = default;
 Enemy::~Enemy() {}
@@ -69,18 +70,47 @@ void Enemy::Initialize(IrufemiEngine *engine) {
   for (int i = 0; i < 3; ++i) {
       beams_[i] = std::make_unique<EnemyBeam>();
       beams_[i]->Initialize(engine_);
-      
+  }
+  for (int i = 0; i < kMaxBombs; ++i) {
       bombs_[i] = std::make_unique<EnemyBomb>();
       bombs_[i]->Initialize(engine_);
   }
   stompEffects_ = std::make_unique<EnemyStompEffects>();
-  stompEffects_->Initialize();
+  stompEffects_->Initialize(engine_);
 
   tackleEffects_ = std::make_unique<EnemyTackleEffects>();
-  tackleEffects_->Initialize();
+  tackleEffects_->Initialize(engine_);
 
   neckTrail_ = std::make_unique<WeaponTrail>();
   neckTrail_->Initialize(engine_, "resources/gradationLine.png", {1.0f, 0.2f, 0.2f, 1.0f}); // エネミーの首振り用の赤いトレイル
+
+  // --- SE 初期化 ---
+  seBeamCharge_ = std::make_unique<Se>();
+  seBeamCharge_->Initialize("resources/SE/Enemy/beam_charge.mp3", "Enemy_BeamCharge", 0.5f);
+
+  seBeam_ = std::make_unique<Se>();
+  seBeam_->Initialize("resources/SE/Enemy/beam.mp3", "Enemy_Beam", 0.5f);
+
+  seRush_ = std::make_unique<Se>();
+  seRush_->Initialize("resources/SE/Enemy/rush.mp3", "Enemy_Rush", 0.5f);
+
+  seStompWarp_ = std::make_unique<Se>();
+  seStompWarp_->Initialize("resources/SE/Enemy/stomp_warp.mp3", "Enemy_StompWarp", 0.5f);
+
+  seStompLanding_ = std::make_unique<Se>();
+  seStompLanding_->Initialize("resources/SE/Enemy/stomp_landing.mp3", "Enemy_StompLanding", 0.6f);
+
+  seStompExplosion_ = std::make_unique<Se>();
+  seStompExplosion_->Initialize("resources/SE/Enemy/stomp_explosion.mp3", "Enemy_StompExplosion", 1.0f);
+
+  seBombThrow_ = std::make_unique<Se>();
+  seBombThrow_->Initialize("resources/SE/Enemy/bomb_throw.mp3", "Enemy_BombThrow", 0.5f);
+
+  seBombExplosion_ = std::make_unique<Se>();
+  seBombExplosion_->Initialize("resources/SE/Enemy/bomb_explosion.mp3", "Enemy_BombExplosion", 0.5f);
+
+  seBlownAway_ = std::make_unique<Se>();
+  seBlownAway_->Initialize("resources/SE/Enemy/blown_away.mp3", "Enemy_BlownAway", 0.5f);
 
   // --- UI 初期化 ---
   hpBar_ = std::make_unique<EnemyHPBar>();
@@ -98,6 +128,60 @@ void Enemy::Initialize(IrufemiEngine *engine) {
 
   isActive_ = true;
   isDead_ = false;
+  deathPhase_ = DeathPhase::None;
+  deathTimer_ = 0.0f;
+
+  // death phase 用の初期位置保存
+  for (int i = 0; i < 3; ++i) {
+      initialBodyLocalTransforms_[i] = bodyLocalTransforms_[i];
+  }
+  initialHeadLeftLocalTransform_ = headLeftLocalTransform_;
+  initialHeadMidLocalTransform_ = headMidLocalTransform_;
+  initialHeadRightLocalTransform_ = headRightLocalTransform_;
+
+  // 撃破時特大爆発エフェクトの初期化
+  deathExplosionParticle_ = std::make_unique<GPUParticleSystem>();
+  deathExplosionParticle_->Initialize("resources/circle.png");
+  deathExplosionParticle_->SetBlend(BlendMode::kBlendModeAdd);
+  deathExplosionParticle_->SetDepthWrite(PSOManager::DepthWrite::Disable);
+  deathExplosionParticle_->SetCull(PSOManager::CullMode::None);
+  deathExplosionParticle_->SetCustomPSO("StompExplosionParticle");
+  deathExplosionParticle_->SetEmit(false);
+  
+  // 爆発の余韻（2.5秒）
+  deathExplosionParticle_->SetParticleLife(1.0f, 2.5f);
+  // 高密度で大きく広がるサイズ
+  deathExplosionParticle_->SetParticleScale({ 0.5f, 0.5f, 0.5f }, { 1.5f, 1.5f, 1.5f }, { 2.5f, 2.5f, 2.5f }, { 5.0f, 5.0f, 5.0f });
+  // 高い空気抵抗と上に昇る弱い重力
+  deathExplosionParticle_->SetDamping(0.06f);
+  deathExplosionParticle_->SetGravity(-0.2f);
+  // 炎のような色
+  deathExplosionParticle_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+  deathExplosionParticle_->SetStartColor({ 1.0f, 0.8f, 0.2f, 1.0f }, { 1.0f, 0.5f, 0.0f, 1.0f });
+  deathExplosionParticle_->SetEndColor({ 1.0f, 0.1f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f });
+
+  // 警告用注意マークの初期化
+  warningSprite_ = std::make_unique<Sprite>();
+  warningSprite_->Initialize("resources/texture/player/tyui.png");
+  warningSprite_->SetSize(180.0f, 180.0f);
+  if (engine_) {
+      warningSprite_->SetPositionCenter(static_cast<float>(engine_->GetClientWidth()) / 2.0f, 200.0f);
+  } else {
+      warningSprite_->SetPositionCenter(640.0f, 200.0f);
+  }
+
+  // 警告用矢印スプライト（左右2個ずつ）の初期化
+  auto initArrow = [&](std::unique_ptr<Sprite>& arrow) {
+      arrow = std::make_unique<Sprite>();
+      arrow->Initialize("resources/texture/player/yazirusi.png");
+      arrow->SetSize(80.0f, 80.0f);
+      arrow->SetRotation(-1.570796f); // 上向きに回転 (-π/2ラジアン)
+  };
+
+  initArrow(warningArrowLeft1_);
+  initArrow(warningArrowLeft2_);
+  initArrow(warningArrowRight1_);
+  initArrow(warningArrowRight2_);
 }
 
 void Enemy::Update(Player *player) {
@@ -105,10 +189,39 @@ void Enemy::Update(Player *player) {
     return;
 
   if (!isDead_) {
-    if (ai_ && !isSandbagMode_)
+    // プレイヤーが死んだらAIの思考を止める（死体蹴り防止）
+    bool shouldUpdateAI = (player && !player->IsDead());
+    if (ai_ && !isSandbagMode_ && shouldUpdateAI) {
       ai_->Update(player, engine_->GetDeltaTime());
-    if (animation_)
-      animation_->Update(player, 1.0f / 60.0f);
+    }
+
+    // --- 追加：自機死亡時に攻撃を即座に中断して待機状態に戻す ---
+    if (player && player->IsDead() && !wasPlayerDeathHandled_) {
+        wasPlayerDeathHandled_ = true;
+        // 現在の形態に応じた待機状態へ強制移行
+        SetState(isPhase2_ ? EnemyState::Phase2 : EnemyState::Idle);
+
+        // 進行中の攻撃やエフェクトを全てキャンセルする
+        for (int i = 0; i < 3; ++i) {
+            if (beams_[i]) {
+                beams_[i]->SetAttackActive(false);
+                beams_[i]->SetTelegraphActive(false);
+                beams_[i]->SetChargeSphereActive(false);
+            }
+        }
+        for (int i = 0; i < kMaxBombs; ++i) {
+            if (bombs_[i]) bombs_[i]->Cancel();
+        }
+        if (stompEffects_) stompEffects_->Cancel();
+        if (tackleEffects_) tackleEffects_->Cancel();
+    }
+    
+    if (animation_) {
+        // プレイヤーが死んでいる場合は nullptr を渡す。
+        // これにより、画面奥へと吹き飛んでいく自機の死体を目で追って変な方向を向くのを防ぎ、
+        // アリーナ中央（0,0,0）を堂々と見据える「勝利ポーズ」のような挙動にする。
+        animation_->Update(shouldUpdateAI ? player : nullptr, 1.0f / 60.0f);
+    }
   }
 
 #ifdef USE_IMGUI
@@ -117,6 +230,9 @@ void Enemy::Update(Player *player) {
 
   if (stompEffects_) {
       stompEffects_->Update(1.0f / 60.0f);
+      if (stompEffects_->CheckAndResetExplosionTrigger()) {
+          PlaySeStompExplosion();
+      }
   }
   if (tackleEffects_) {
       tackleEffects_->Update(1.0f / 60.0f);
@@ -124,9 +240,15 @@ void Enemy::Update(Player *player) {
   if (neckTrail_) {
       neckTrail_->Update();
   }
-  for (int i = 0; i < 3; ++i) {
+  if (deathExplosionParticle_) {
+      deathExplosionParticle_->Update();
+  }
+  for (int i = 0; i < kMaxBombs; ++i) {
       if (bombs_[i] && !bombs_[i]->IsExpired()) {
           bombs_[i]->Update();
+          if (bombs_[i]->CheckAndResetExplosionTrigger()) {
+              PlaySeBombExplosion();
+          }
       }
   }
 
@@ -218,6 +340,32 @@ void Enemy::Update(Player *player) {
   updateHead(headMid_, headMidLocalTransform_, headMidOffset_);
   updateHead(headRight_, headRightLocalTransform_, headRightOffset_);
 
+  // 吹き飛び中のSEループ制御
+  bool anyPartBlowing = false;
+  for (int i = 0; i < 3; ++i) {
+      if (bodies_[i] && bodies_[i]->IsBlownAway() && !bodies_[i]->IsCompletelyDead()) {
+          anyPartBlowing = true;
+          break;
+      }
+  }
+  if (!anyPartBlowing) {
+      if (headLeft_ && headLeft_->IsBlownAway() && !headLeft_->IsCompletelyDead()) anyPartBlowing = true;
+      else if (headMid_ && headMid_->IsBlownAway() && !headMid_->IsCompletelyDead()) anyPartBlowing = true;
+      else if (headRight_ && headRight_->IsBlownAway() && !headRight_->IsCompletelyDead()) anyPartBlowing = true;
+  }
+
+  if (seBlownAway_) {
+      if (anyPartBlowing) {
+          if (!seBlownAway_->IsPlaying()) {
+              seBlownAway_->Play(true);
+          }
+      } else {
+          if (seBlownAway_->IsPlaying()) {
+              seBlownAway_->Stop();
+          }
+      }
+  }
+
 
 
   // 1. フェーズ2移行判定：ボディが全損した瞬間に移行する
@@ -236,6 +384,22 @@ void Enemy::Update(Player *player) {
       if (headLeft_) headLeft_->SetPhase2(true);
       if (headMid_) headMid_->SetPhase2(true);
       if (headRight_) headRight_->SetPhase2(true);
+
+      // フェーズ移行時に進行中の攻撃をすべてキャンセル
+      for (int i = 0; i < 3; ++i) {
+          if (beams_[i]) {
+              beams_[i]->SetAttackActive(false);
+              beams_[i]->SetTelegraphActive(false);
+              beams_[i]->SetChargeSphereActive(false);
+          }
+      }
+      for (int i = 0; i < kMaxBombs; ++i) {
+          if (bombs_[i]) {
+              bombs_[i]->Cancel();
+          }
+      }
+      if (stompEffects_) stompEffects_->Cancel();
+      if (tackleEffects_) tackleEffects_->Cancel();
     }
   }
 
@@ -252,7 +416,64 @@ void Enemy::Update(Player *player) {
     if (allHpZero && headMid_->GetHP() <= 0 && headLeft_->GetHP() <= 0 &&
         headRight_->GetHP() <= 0) {
       isDead_ = true;
+
+      // 死亡が確定した瞬間に攻撃をキャンセルし、引き戻しフェーズへ移行
+      for (int i = 0; i < 3; ++i) {
+          if (beams_[i]) {
+              beams_[i]->SetAttackActive(false);
+              beams_[i]->SetTelegraphActive(false);
+              beams_[i]->SetChargeSphereActive(false);
+          }
+      }
+      for (int i = 0; i < kMaxBombs; ++i) {
+          if (bombs_[i]) {
+              bombs_[i]->Cancel();
+          }
+      }
+      if (stompEffects_) stompEffects_->Cancel();
+      if (tackleEffects_) tackleEffects_->Cancel();
+      
+      // 各部位の吹き飛びをリセット
+      Matrix4x4 globalMat = Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate, globalTransform_.translate);
+      Matrix4x4 invGlobalMat = Math::Inverse(globalMat);
+
+      for (int i = 0; i < 3; ++i) {
+          if (bodies_[i]) {
+              startBodyLocalTransforms_[i] = bodyLocalTransforms_[i];
+              startBodyLocalTransforms_[i].translate = Math::Transform(bodies_[i]->GetTransform().translate, invGlobalMat);
+              bodies_[i]->ResetBlow();
+          }
+      }
+      if (headLeft_) {
+          startHeadLeftLocalTransform_ = headLeftLocalTransform_;
+          startHeadLeftLocalTransform_.translate = Math::Transform(headLeft_->GetTransform().translate, invGlobalMat);
+          headLeft_->ResetBlow();
+      }
+      if (headMid_) {
+          startHeadMidLocalTransform_ = headMidLocalTransform_;
+          startHeadMidLocalTransform_.translate = Math::Transform(headMid_->GetTransform().translate, invGlobalMat);
+          headMid_->ResetBlow();
+      }
+      if (headRight_) {
+          startHeadRightLocalTransform_ = headRightLocalTransform_;
+          startHeadRightLocalTransform_.translate = Math::Transform(headRight_->GetTransform().translate, invGlobalMat);
+          headRight_->ResetBlow();
+      }
+
+      // フェーズ2を解除して親子関係ベースの描画に復帰
+      isPhase2_ = false;
+
+      // 死亡開始時の全体位置を保存
+      startGlobalTranslate_ = globalTransform_.translate;
+
+      deathPhase_ = DeathPhase::Reassembling;
+      deathTimer_ = 0.0f;
     }
+  }
+
+  // 死亡中なら死亡フェーズを更新
+  if (isDead_) {
+      UpdateDeathPhase(engine_->GetDeltaTime(), player);
   }
 
   // 3. 演出完了判定（全ての部位がボクセル含めて消滅したか）
@@ -272,21 +493,49 @@ void Enemy::Update(Player *player) {
     }
   }
 
+  // --- 死んだ部位の攻撃強制キャンセル ---
+  // アニメーションステートの進行にかかわらず、死んだ頭部の攻撃は毎フレーム強制的に無効化する
+  for (int i = 0; i < 3; ++i) {
+      if (IsHeadDead(i)) {
+          if (beams_[i]) {
+              beams_[i]->SetAttackActive(false);
+              beams_[i]->SetTelegraphActive(false);
+              beams_[i]->SetChargeSphereActive(false);
+          }
+      }
+  }
+  for (int i = 0; i < kMaxBombs; ++i) {
+      if (bombs_[i] && !bombs_[i]->IsExpired()) {
+          int headIdx = bombs_[i]->GetHeadIndex();
+          if (headIdx >= 0 && headIdx < 3 && IsHeadDead(headIdx)) {
+              bombs_[i]->Cancel();
+          }
+      }
+  }
+
   // --- UI 更新 ---
   if (hpBar_) {
-      hpBar_->Update(this);
+      int screenW = engine_ ? engine_->GetClientWidth() : 1280;
+      int screenH = engine_ ? engine_->GetClientHeight() : 720;
+      hpBar_->Update(this, screenW, screenH);
   }
 
   auto updatePartBar = [&](int index, auto* part, int maxHp) {
       if (part && part->GetHP() > 0) {
           float ratio = (maxHp > 0) ? static_cast<float>(part->GetHP()) / maxHp : 0.0f;
           Vector3 hpPos = part->GetDrawPosition();
-          float scaleY = part->GetTransform().scale.y;
-          float offsetY = (index >= 3) ? (5.5f * scaleY) : (1.5f * scaleY);
-          hpPos.y += offsetY;
-          partHPBars_[index]->Update(ratio, hpPos);
+          
+          // モデルの実際の寸法（OBB）から逆算して配置と引き寄せ距離を計算
+          auto obb = part->GetOBB();
+          float partRadius = std::sqrt(obb.size.x * obb.size.x + obb.size.y * obb.size.y + obb.size.z * obb.size.z);
+          
+          // 部位の高さ(size.y)を基準に、少し上に表示する
+          hpPos.y += obb.size.y * 1.5f;
+          
+          // 計算した寸法に基づく半径を引き寄せ距離として渡す
+          partHPBars_[index]->Update(ratio, hpPos, partRadius);
       } else {
-          partHPBars_[index]->Update(0.0f, { 0,0,0 });
+          partHPBars_[index]->Update(0.0f, { 0,0,0 }, 0.0f);
       }
   };
   auto* p = EnemyParameters::GetInstance();
@@ -296,10 +545,108 @@ void Enemy::Update(Player *player) {
   updatePartBar(3, GetHeadLeft(), p->GetHeadLeftHP());
   updatePartBar(4, GetHeadMid(), p->GetHeadMidHP());
   updatePartBar(5, GetHeadRight(), p->GetHeadRightHP());
+
+  // --- 警告（スタンプ攻撃予兆）演出の更新 ---
+  {
+      if (isWarningActive_) {
+          warningTimer_ += engine_ ? engine_->GetDeltaTime() : 1.0f / 60.0f;
+      } else {
+          warningTimer_ = 0.0f;
+      }
+
+      float pulse = std::sin(warningTimer_ * 10.0f); // 激しい脈動 (注意マーク用)
+      float slowPulse = std::sin(warningTimer_ * 4.0f); // ゆっくりめの脈動 (矢印点滅用)
+      
+      float screenH = engine_ ? static_cast<float>(engine_->GetClientHeight()) : 720.0f;
+      float uiScale = screenH / 720.0f;
+      float centerX = engine_ ? (static_cast<float>(engine_->GetClientWidth()) / 2.0f) : 640.0f;
+
+      if (isWarningActive_) {
+          // 1. 注意マークの脈動
+          if (warningSprite_) {
+              float baseScale = 180.0f;
+              float currentScale = baseScale * (1.0f + 0.15f * pulse);
+              warningSprite_->SetSize(currentScale, currentScale);
+              warningSprite_->SetUIScale(uiScale);
+
+              float alpha = 1.0f; 
+              warningSprite_->SetColor(Vector4{ 1.0f, 1.0f, 1.0f, alpha });
+              warningSprite_->SetPositionCenter(centerX, 200.0f * uiScale);
+              warningSprite_->Update();
+          }
+
+          // 2. 矢印スプライト（左右2個ずつ）の更新
+          auto updateArrow = [&](std::unique_ptr<Sprite>& arrow, float offsetX, float phaseOffset) {
+              if (!arrow) return;
+
+              // ゆっくりめの明滅アルファ (0.6 ~ 1.0)
+              float arrowAlpha = 0.6f + 0.4f * (slowPulse * 0.5f + 0.5f);
+
+              // 下から上へのスライド移動アニメーション
+              float slideSpeed = 1.5f;
+              float slideFactor = std::fmod(warningTimer_ * slideSpeed + phaseOffset, 1.0f);
+              
+              float startY = 140.0f * uiScale;
+              float endY = 40.0f * uiScale;
+              float arrowY = startY + (endY - startY) * slideFactor;
+
+              // スライドの開始・終了時になめらかにフェードイン・フェードアウト
+              float slideFade = 1.0f;
+              if (slideFactor < 0.2f) {
+                  slideFade = slideFactor / 0.2f;
+              } else if (slideFactor > 0.8f) {
+                  slideFade = (1.0f - slideFactor) / 0.2f;
+              }
+
+              float finalArrowAlpha = arrowAlpha * slideFade;
+
+              arrow->SetUIScale(uiScale);
+              arrow->SetColor(Vector4{ 1.0f, 0.2f, 0.2f, finalArrowAlpha });
+              arrow->SetPositionCenter(centerX + offsetX * uiScale, arrowY);
+              arrow->Update();
+          };
+
+          // 左右に2個ずつの矢印を更新
+          // 内側の矢印 (Xオフセット: ±130.0f, 位相差なし)
+          updateArrow(warningArrowLeft1_, -130.0f, 0.0f);
+          updateArrow(warningArrowRight1_, 130.0f, 0.0f);
+          // 外側の矢印 (Xオフセット: ±250.0f, 位相差0.5fで交互に動く)
+          updateArrow(warningArrowLeft2_, -250.0f, 0.5f);
+          updateArrow(warningArrowRight2_, 250.0f, 0.5f);
+
+          // 赤いビネットの設定
+          if (engine_) {
+              auto* pp = engine_->GetPostProcessManager();
+              if (pp) {
+                  if (!pp->HasActiveMode(PostProcessMode::Vignette)) {
+                      pp->AddActiveMode(PostProcessMode::Vignette);
+                  }
+                  auto& vignette = pp->GetVignetteParams();
+                  vignette.color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 赤警告色
+                  vignette.scale = vignetteBaseScale_ + vignetteScalePulseWidth_ * pulse;
+                  vignette.power = vignetteBasePower_ + vignettePowerPulseWidth_ * pulse;
+              }
+          }
+      } else {
+          // 警告非アクティブ時の後処理 (ビネットの解除)
+          if (engine_) {
+              auto* pp = engine_->GetPostProcessManager();
+              if (pp) {
+                  if (pp->HasActiveMode(PostProcessMode::Vignette)) {
+                      pp->RemoveActiveMode(PostProcessMode::Vignette);
+                      // デフォルトパラメータに復元
+                      auto& vignette = pp->GetVignetteParams();
+                      vignette.color = { 0.0f, 0.0f, 0.0f, 0.0f };
+                      vignette.scale = 16.0f;
+                      vignette.power = 0.8f;
+                  }
+              }
+          }
+      }
+  }
 }
 
 void Enemy::Draw(IrufemiEngine* engine) {
-  if (!isActive_) return;
   for (auto &body : bodies_) {
     if (body && !body->IsCompletelyDead()) {
       body->Draw(engine);
@@ -320,7 +667,7 @@ void Enemy::Draw(IrufemiEngine* engine) {
   }
 
   // 爆弾を描画
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < kMaxBombs; ++i) {
       if (bombs_[i] && !bombs_[i]->IsExpired()) {
           bombs_[i]->Draw(engine);
       }
@@ -335,6 +682,10 @@ void Enemy::Draw(IrufemiEngine* engine) {
     if (neckTrail_) {
         neckTrail_->SyncBeforeDraw();
         neckTrail_->Draw();
+    }
+    if (deathExplosionParticle_) {
+        deathExplosionParticle_->SyncBeforeDraw();
+        deathExplosionParticle_->Draw();
     }
 
 #ifdef USE_IMGUI
@@ -351,16 +702,22 @@ void Enemy::FireBeam() {
 
 // 爆弾の発射命令
 void Enemy::FireBomb(int index, const Vector3& targetPos) {
-    if (index >= 0 && index < 3 && bombs_[index]) {
-        Transform* headT = nullptr;
-        if (index == 0) headT = &headLeftLocalTransform_;
-        else if (index == 1) headT = &headMidLocalTransform_;
-        else if (index == 2) headT = &headRightLocalTransform_;
+    Transform* headT = nullptr;
+    if (index == 0) headT = &headLeftLocalTransform_;
+    else if (index == 1) headT = &headMidLocalTransform_;
+    else if (index == 2) headT = &headRightLocalTransform_;
 
-        if (headT) {
-            Vector3 startPos = headT->translate;
-            // フェーズ2では translate がワールド座標になっているためそのまま使用
-            bombs_[index]->Throw(startPos, targetPos);
+    if (headT) {
+        Vector3 startPos = headT->translate;
+        // フェーズ2では translate がワールド座標になっているためそのまま使用
+        
+        // 空いている爆弾（Expiredなもの）を探して投擲する
+        for (int i = 0; i < kMaxBombs; ++i) {
+            if (bombs_[i] && bombs_[i]->IsExpired()) {
+                bombs_[i]->Throw(startPos, targetPos, index);
+                PlaySeBombThrow();
+                break;
+            }
         }
     }
 }
@@ -404,10 +761,28 @@ void Enemy::Draw3DUI(IrufemiEngine* engine, bool isUI) {
     drawIfAlive(5, GetHeadRight());
 }
 
-void Enemy::Draw2DUI(IrufemiEngine* engine) {
+void Enemy::Draw2DUI(IrufemiEngine* engine, bool isFirstPerson) {
     if (!isActive_ || isDead_) return;
-    if (hpBar_) {
+    if (isFirstPerson && hpBar_) {
         hpBar_->Draw();
+    }
+    // 警告演出がアクティブな場合のみ描画する
+    if (isWarningActive_) {
+        if (warningSprite_) {
+            warningSprite_->Draw();
+        }
+        if (warningArrowLeft1_) {
+            warningArrowLeft1_->Draw();
+        }
+        if (warningArrowLeft2_) {
+            warningArrowLeft2_->Draw();
+        }
+        if (warningArrowRight1_) {
+            warningArrowRight1_->Draw();
+        }
+        if (warningArrowRight2_) {
+            warningArrowRight2_->Draw();
+        }
     }
 }
 
@@ -607,6 +982,34 @@ void Enemy::UpdateDebugUI() {
     EnemyParameters::GetInstance()->SetHeadOBBSize(headObb);
   }
 
+  ImGui::Separator();
+  ImGui::Text("Vignette Settings (Stomp Warning)");
+  ImGui::SliderFloat("Vignette Base Scale", &vignetteBaseScale_, 5.0f, 100.0f, "%.1f");
+  ImGui::SliderFloat("Vignette Scale Pulse", &vignetteScalePulseWidth_, 0.0f, 10.0f, "%.1f");
+  ImGui::SliderFloat("Vignette Base Power", &vignetteBasePower_, 0.05f, 2.0f, "%.2f");
+  ImGui::SliderFloat("Vignette Power Pulse", &vignettePowerPulseWidth_, 0.0f, 1.0f, "%.2f");
+
+  ImGui::Separator();
+  ImGui::Text("Debug Enemy State");
+  const char* stateNames[] = {
+      "Idle", "Attack_Beam", "Attack_Stomp", "Attack_Bite",
+      "Attack_Neck", "Attack_Tackle", "Damaged", "Phase1", "Phase2", "Kill (HP=0)"
+  };
+  int currentStateIdx = static_cast<int>(state_);
+  if (ImGui::Combo("Force State", &currentStateIdx, stateNames, IM_ARRAYSIZE(stateNames))) {
+      if (currentStateIdx == 9) {
+          // 強制キル：全部位のHPを0にする
+          for (int i = 0; i < 3; ++i) {
+              if (bodies_[i]) bodies_[i]->SetHP(0);
+          }
+          if (headLeft_) headLeft_->SetHP(0);
+          if (headMid_) headMid_->SetHP(0);
+          if (headRight_) headRight_->SetHP(0);
+      } else {
+          SetState(static_cast<EnemyState>(currentStateIdx));
+      }
+  }
+
   ImGui::End();
 
   if (lineOBB_) {
@@ -654,6 +1057,8 @@ void Enemy::UpdateDebugUI() {
         addObbLines(headRight_->GetOBB());
       for (int i = 0; i < 3; ++i) {
           if (beams_[i]) addObbLines(beams_[i]->GetOBB());
+      }
+      for (int i = 0; i < kMaxBombs; ++i) {
           if (bombs_[i] && !bombs_[i]->IsExpired()) {
               auto obbs = bombs_[i]->GetOBBs();
               for (const auto& obb : obbs) addObbLines(obb);
@@ -668,3 +1073,294 @@ void Enemy::UpdateDebugUI() {
   }
 }
 #endif
+
+void Enemy::UpdateDeathPhase(float deltaTime, Player* player) {
+    if (deathPhase_ == DeathPhase::Reassembling) {
+        deathTimer_ += deltaTime;
+        float t = deathTimer_ / kReassembleDuration; // 合体設定時間を基準にする
+        if (t > 1.0f) t = 1.0f;
+
+        // Smoothstepでイージング
+        float easedT = t * t * (3.0f - 2.0f * t);
+
+        // 合体中（部位引き戻し中）もプレイヤーの方向へ滑らかに向き直る（睨みつける）
+        if (player) {
+            Vector3 playerPos = player->GetTranslate();
+            Vector3 enemyPos = globalTransform_.translate;
+            Vector3 diff = Math::Subtract(playerPos, enemyPos);
+            diff.y = 0.0f;
+            float dist = Math::Length(diff);
+            if (dist > 0.001f) {
+                Vector3 dir = Math::Normalize(diff);
+                float targetYaw = std::atan2(dir.x, dir.z);
+                float currentYaw = globalTransform_.rotate.y;
+                float diffYaw = targetYaw - currentYaw;
+                while (diffYaw > 3.14159f) diffYaw -= 2.0f * 3.14159f;
+                while (diffYaw < -3.14159f) diffYaw += 2.0f * 3.14159f;
+
+                const float kTrackRotSpeed = 4.0f;
+                globalTransform_.rotate.y += diffYaw * kTrackRotSpeed * deltaTime;
+            }
+        }
+
+        auto lerpTransform = [](const Transform& current, const Transform& target, float factor) -> Transform {
+            Transform result = current;
+            result.translate = Math::Add(current.translate, Math::Multiply(factor, Math::Subtract(target.translate, current.translate)));
+            // 回転は単純Lerp
+            result.rotate = Math::Add(current.rotate, Math::Multiply(factor, Math::Subtract(target.rotate, current.rotate)));
+            return result;
+        };
+
+        // 合体位置へのイージング補間
+        for (int i = 0; i < 3; ++i) {
+            bodyLocalTransforms_[i] = lerpTransform(startBodyLocalTransforms_[i], initialBodyLocalTransforms_[i], easedT);
+        }
+        headLeftLocalTransform_ = lerpTransform(startHeadLeftLocalTransform_, initialHeadLeftLocalTransform_, easedT);
+        headMidLocalTransform_ = lerpTransform(startHeadMidLocalTransform_, initialHeadMidLocalTransform_, easedT);
+        headRightLocalTransform_ = lerpTransform(startHeadRightLocalTransform_, initialHeadRightLocalTransform_, easedT);
+
+        // 合体中も徐々に悶え（グラグラ・ブルブル高速振動、上下揺れ）を加えて苦しそうな表現を合成
+        globalTransform_.rotate.x = std::sin(deathTimer_ * kAgonyPitchFreq) * kAgonyPitchAmp * t;
+        globalTransform_.rotate.z = std::cos(deathTimer_ * kAgonyRollFreq) * kAgonyRollAmp * t;
+
+        float shakeOffset = std::sin(deathTimer_ * kShakeFreq) * kShakeAmp * t;
+        float verticalOffset = std::sin(deathTimer_ * kVerticalFreq) * kVerticalAmp * t;
+
+        // ボス全体のグローバル座標（中央 0.0f, 3.0f, 0.0f への補間 ＋ 高速振動揺れをブレンド）
+        Vector3 centerPos = { 0.0f, 3.0f, 0.0f };
+        Vector3 baseTranslate = Math::Add(startGlobalTranslate_, Math::Multiply(easedT, Math::Subtract(centerPos, startGlobalTranslate_)));
+        globalTransform_.translate = {
+            baseTranslate.x + shakeOffset,
+            baseTranslate.y + verticalOffset,
+            baseTranslate.z + shakeOffset * 0.5f
+        };
+
+        // ３つの頭部も合体中から悶えて少しうねる動きを追加
+        float headWiggle = std::sin(deathTimer_ * kHeadWiggleFreq) * kHeadWiggleAmp * t;
+        headLeftLocalTransform_.translate.x -= std::abs(headWiggle) * 0.2f;
+        headLeftLocalTransform_.translate.y += headWiggle * 0.3f;
+        headLeftLocalTransform_.rotate.z = -headWiggle * 0.1f;
+
+        headRightLocalTransform_.translate.x += std::abs(headWiggle) * 0.2f;
+        headRightLocalTransform_.translate.y -= headWiggle * 0.3f;
+        headRightLocalTransform_.rotate.z = -headWiggle * 0.1f;
+
+        headMidLocalTransform_.translate.y += std::sin(deathTimer_ * kHeadWiggleFreq * 1.2f) * kHeadWiggleAmp * 0.4f * t;
+        headMidLocalTransform_.rotate.x = std::cos(deathTimer_ * kHeadWiggleFreq) * 0.15f * t;
+
+        if (t >= 1.0f) {
+            deathPhase_ = DeathPhase::Gathered;
+            deathTimer_ = 0.0f; // タメ用のタイマーリセット
+
+            // くっついたまさにその瞬間に、でかいカメラシェイクをトリガー！
+            if (engine_) {
+                if (auto* cam = engine_->GetCameraManager()->GetActiveCamera()) {
+                    const float kAssembleShakeIntensity = 18.0f;
+                    const int kAssembleShakeFrames = 35;
+                    cam->Shake(kAssembleShakeIntensity, kAssembleShakeFrames);
+                }
+            }
+        }
+    } else if (deathPhase_ == DeathPhase::Gathered) {
+        deathTimer_ += deltaTime;
+
+        // 合体完了後、のたうち回りながらプレイヤーの方向へ滑らかに向き直る（見据える）
+        if (player) {
+            Vector3 playerPos = player->GetTranslate();
+            Vector3 enemyPos = globalTransform_.translate;
+            Vector3 diff = Math::Subtract(playerPos, enemyPos);
+            diff.y = 0.0f;
+            float dist = Math::Length(diff);
+            if (dist > 0.001f) {
+                Vector3 dir = Math::Normalize(diff);
+                float targetYaw = std::atan2(dir.x, dir.z);
+                float currentYaw = globalTransform_.rotate.y;
+                float diffYaw = targetYaw - currentYaw;
+                while (diffYaw > 3.14159f) diffYaw -= 2.0f * 3.14159f;
+                while (diffYaw < -3.14159f) diffYaw += 2.0f * 3.14159f;
+
+                // 2.0秒のタメ時間の間にプレイヤーを睨みつけるようにゆっくり回転
+                const float kTrackRotSpeed = 4.0f;
+                globalTransform_.rotate.y += diffYaw * kTrackRotSpeed * deltaTime;
+            }
+        }
+
+        // 完全合体した状態（Phase 1の初期ローカル位置）を維持
+        for (int i = 0; i < 3; ++i) {
+            bodyLocalTransforms_[i] = initialBodyLocalTransforms_[i];
+        }
+        headLeftLocalTransform_ = initialHeadLeftLocalTransform_;
+        headMidLocalTransform_ = initialHeadMidLocalTransform_;
+        headRightLocalTransform_ = initialHeadRightLocalTransform_;
+
+        // 苦しんで暴れている（のたうち回る）表現をサイン波で実装
+        // 1. 全体のダイナミックな傾き（暴れ）
+        globalTransform_.rotate.x = std::sin(deathTimer_ * kAgonyPitchFreq) * kAgonyPitchAmp;
+        globalTransform_.rotate.z = std::cos(deathTimer_ * kAgonyRollFreq) * kAgonyRollAmp;
+
+        // 2. 小刻みな高速振動（ブルブル感）と上下ののたうち（暴れ）
+        float shakeOffset = std::sin(deathTimer_ * kShakeFreq) * kShakeAmp;
+        float verticalOffset = std::sin(deathTimer_ * kVerticalFreq) * kVerticalAmp;
+
+        const Vector3 kCenterPos = { 0.0f, 3.0f, 0.0f };
+        globalTransform_.translate = { 
+            kCenterPos.x + shakeOffset, 
+            kCenterPos.y + verticalOffset, 
+            kCenterPos.z + shakeOffset * 0.5f 
+        };
+
+        // 3. ３つの頭部がそれぞれ苦しそうに反り返ったり、うねる動き
+        float headWiggle = std::sin(deathTimer_ * kHeadWiggleFreq) * kHeadWiggleAmp;
+        
+        headLeftLocalTransform_.translate.x -= std::abs(headWiggle) * 0.2f;
+        headLeftLocalTransform_.translate.y += headWiggle * 0.3f;
+        headLeftLocalTransform_.rotate.z = -headWiggle * 0.1f;
+
+        headRightLocalTransform_.translate.x += std::abs(headWiggle) * 0.2f;
+        headRightLocalTransform_.translate.y -= headWiggle * 0.3f;
+        headRightLocalTransform_.rotate.z = -headWiggle * 0.1f;
+
+        headMidLocalTransform_.translate.y += std::sin(deathTimer_ * kHeadWiggleFreq * 1.2f) * kHeadWiggleAmp * 0.4f;
+        headMidLocalTransform_.rotate.x = std::cos(deathTimer_ * kHeadWiggleFreq) * 0.15f;
+
+        if (deathTimer_ >= kHoldDuration) {
+            globalTransform_.translate = kCenterPos; // 正確な中央位置に戻す
+            globalTransform_.rotate = { 0.0f, 0.0f, 0.0f }; // 回転もリセット
+            deathPhase_ = DeathPhase::Exploding;    // 大爆発へ移行
+        }
+    } else if (deathPhase_ == DeathPhase::Exploding) {
+        // マップ中央（ボスの親グローバル位置）
+        Vector3 bossCenter = globalTransform_.translate;
+
+        // はじけ飛ぶのと同時に、専用のエフェクトで超高密度大爆発を発生させる！
+        // （これが「くっつくのに失敗して大爆発した」という演出のメイン爆発）
+        if (deathExplosionParticle_) {
+            const float kBurstRadius = 20.0f; 
+            const float kVelocity = 6.5f;
+            const float kSpread = 3.5f;
+            const int kEmitCount = 15000;
+
+            deathExplosionParticle_->SetHemisphereEmitter(
+                Vector3{ bossCenter.x, bossCenter.y + 1.0f, bossCenter.z },
+                kBurstRadius,
+                0,
+                1.0f
+            );
+            deathExplosionParticle_->SetVelocity(kVelocity);
+            deathExplosionParticle_->SetSpread(kSpread);
+            deathExplosionParticle_->Emit(kEmitCount);
+            
+            // 爆発の迫力を出すためのカメラシェイク
+            if (engine_) {
+                if (auto* cam = engine_->GetCameraManager()->GetActiveCamera()) {
+                    cam->Shake(15.0f, 20);
+                }
+            }
+        }
+
+        // 1. 胴体3つを均等な3方向（120度間隔）へ勢いよく飛ばす（波及を表現するため0.6秒後に爆散）
+        for (int i = 0; i < 3; ++i) {
+            if (bodies_[i]) {
+                // ボスの現在の rotate.y を基準に120度ずつ綺麗にずらした水平吹き飛び方向を算出
+                float angle = globalTransform_.rotate.y + static_cast<float>(i) * (2.0f * 3.14159265f / 3.0f);
+                Vector3 dir = { std::sin(angle), 0.8f, std::cos(angle) };
+                dir = Math::Normalize(dir);
+                
+                // 消滅時間を 0.6 秒に指定して吹き飛ばし開始
+                bodies_[i]->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.6f);
+            }
+        }
+
+        // 2. 首（頭部3つ）を元の配置（左・中央・右）に応じてそれぞればらばらの方向へ飛ばす（波及を表現するため0.6秒後に爆散）
+        auto explodeHeadRadial = [&](auto* part, const Transform& localT) {
+            if (part) {
+                // パーツのワールド位置を計算
+                Matrix4x4 globalMat = Math::MakeAffineMatrix(globalTransform_.scale, globalTransform_.rotate, globalTransform_.translate);
+                Vector3 partWorldPos = Math::Transform(localT.translate, globalMat);
+
+                // マップ中央から首への水平方向ベクトルを算出
+                Vector3 dir = Math::Subtract(partWorldPos, bossCenter);
+                dir.y = 0.0f; // 水平方向
+                float len = Math::Length(dir);
+                if (len < 0.1f) {
+                    dir = {0.0f, 0.0f, 1.0f};
+                } else {
+                    dir = Math::Normalize(dir);
+                }
+
+                // 斜め上空へはじけ飛ぶように上向き成分をブレンド
+                dir.y = 0.8f;
+                dir = Math::Normalize(dir);
+
+                // 消滅時間を 0.6 秒に指定して吹き飛ばし開始
+                part->OnDestroyed(dir, kExplosionBlowSpeed, false, 0.6f);
+            }
+        };
+
+        explodeHeadRadial(headLeft_.get(), headLeftLocalTransform_);
+        explodeHeadRadial(headMid_.get(), headMidLocalTransform_);
+        explodeHeadRadial(headRight_.get(), headRightLocalTransform_);
+
+        deathPhase_ = DeathPhase::Aftermath; // 余韻フェーズへ移行
+        deathTimer_ = 0.0f;                  // 余韻用タイマーリセット
+    } else if (deathPhase_ == DeathPhase::Aftermath) {
+        deathTimer_ += deltaTime;
+        aftermathExplosionTimer_ += deltaTime;
+
+        // 0.15秒間隔でランダムな場所に中規模爆発を発生させる
+        if (aftermathExplosionTimer_ >= 0.15f) {
+            aftermathExplosionTimer_ = 0.0f;
+            
+            // ボスの初期位置周辺にランダムなオフセットを計算
+            float randX = (static_cast<float>(rand()) / RAND_MAX) * 40.0f - 20.0f;
+            float randY = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
+            float randZ = (static_cast<float>(rand()) / RAND_MAX) * 40.0f - 20.0f;
+            
+            Vector3 bossCenter = globalTransform_.translate;
+            Vector3 expPos = { bossCenter.x + randX, bossCenter.y + randY, bossCenter.z + randZ };
+
+            if (deathExplosionParticle_) {
+                deathExplosionParticle_->SetHemisphereEmitter(expPos, 8.0f, 0, 1.0f);
+                deathExplosionParticle_->SetVelocity(4.0f);
+                deathExplosionParticle_->SetSpread(3.0f);
+                deathExplosionParticle_->Emit(800); // メイン爆発より少なめ
+            }
+        }
+
+        if (deathTimer_ >= kAftermathDuration) {
+            deathPhase_ = DeathPhase::None; // もう実行しない
+            isActive_ = false;              // ここでボスを非アクティブ化し、クリア画面へ遷移開始！
+        }
+    }
+}
+
+bool Enemy::IsReadyForClearTransition() const {
+    // 死亡演出の「Aftermath（余韻）」フェーズに入ってから一定時間経過したら
+    // （爆発を継続させたまま）ホワイトアウトなどのシーン遷移を開始する
+    // ※Voxelが爆散する（0.6秒）のち、十分に破片が飛び散るのを見せてから遷移させるため 2.5秒 に設定
+    return isDead_ && deathPhase_ == DeathPhase::Aftermath && deathTimer_ >= 2.5f;
+}
+
+void Enemy::PauseAllSe() {
+    if (seBeamCharge_) seBeamCharge_->Pause();
+    if (seBeam_) seBeam_->Pause();
+    if (seRush_) seRush_->Pause();
+    if (seStompWarp_) seStompWarp_->Pause();
+    if (seStompLanding_) seStompLanding_->Pause();
+    if (seStompExplosion_) seStompExplosion_->Pause();
+    if (seBombThrow_) seBombThrow_->Pause();
+    if (seBombExplosion_) seBombExplosion_->Pause();
+    if (seBlownAway_) seBlownAway_->Pause();
+}
+
+void Enemy::ResumeAllSe() {
+    if (seBeamCharge_) seBeamCharge_->Resume();
+    if (seBeam_) seBeam_->Resume();
+    if (seRush_) seRush_->Resume();
+    if (seStompWarp_) seStompWarp_->Resume();
+    if (seStompLanding_) seStompLanding_->Resume();
+    if (seStompExplosion_) seStompExplosion_->Resume();
+    if (seBombThrow_) seBombThrow_->Resume();
+    if (seBombExplosion_) seBombExplosion_->Resume();
+    if (seBlownAway_) seBlownAway_->Resume();
+}

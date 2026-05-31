@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Irufemi.h"
+#include "Resource/Audio/Se.h"
 #include <memory>
 #include <vector>
 #include <cstdlib>
@@ -69,6 +70,7 @@ public:
     void FireMissileSkill(const Vector3& playerTranslate, const Vector3& playerRotate, const Vector3& targetPos);
     void StartMachineGunSkill();
     void StopMachineGunSkill();
+    void ClearMissiles();
 
     // 機関銃の残弾ゲッター（UIなどで使用）
     int GetMachineGunAmmo() const { return machineGunAmmo_; }
@@ -112,6 +114,10 @@ private:
     // --- 機関銃・弾用オブジェクトとデータ ---
     inline static const Vector3 kMachineGunModelSize = { 6.0f, 1.6f, 6.0f };
     inline static const Vector3 kMachineGunScale = { 0.1f, 0.1f, 0.3f };
+    // --- 大砲スケール（均一スケールで大きく表示） ---
+    inline static const Vector3 kCannonScale = { 0.22f, 0.22f, 0.22f };
+    // --- ロケットランチャースケール ---
+    inline static const Vector3 kRocketLauncherScale = { 0.22f, 0.22f, 0.22f };
 
     std::unique_ptr<ParticleSystem> muzzleSmokeLeft_ = nullptr;
     std::unique_ptr<ParticleSystem> muzzleSmokeRight_ = nullptr;
@@ -125,8 +131,13 @@ private:
     std::unique_ptr<ParticleSystem> ejectionMistLeft_ = nullptr;
     std::unique_ptr<ParticleSystem> ejectionMistRight_ = nullptr;
 
-    std::unique_ptr<ObjClass> machineGunObjLeft_ = nullptr;
-    std::unique_ptr<ObjClass> machineGunObjRight_ = nullptr;
+    std::unique_ptr<ObjClass> cannonObj_ = nullptr;
+    std::unique_ptr<ObjClass> cannonObjRight_ = nullptr;
+
+    std::unique_ptr<ObjClass> rocketLauncherObj_ = nullptr;
+    std::unique_ptr<ObjClass> rocketLauncherObjRight_ = nullptr;
+
+    bool isKarakuriCharged_ = false;
 
     static const int kMaxBullets = 100;
     std::unique_ptr<ModelRegion> bulletRegion_;
@@ -135,11 +146,15 @@ private:
     int machineGunActiveTimer_ = 0;
     int machineGunFireTimer_ = 0;
 
+    std::unique_ptr<Se> seShooting_;
+    std::unique_ptr<Se> seMissileShot_;
+
     // --- 機関銃 弾薬（アモ）システム ---
     static const int kMaxMachineGunAmmo = 60; // 最大弾薬数（60連射分）
     int machineGunAmmo_ = kMaxMachineGunAmmo;  // 現在の残弾
     int machineGunAmmoRecoveryTimer_ = 0;      // 回復間隔タイマー
-    static const int kAmmoRecoveryInterval = 3; // 何フレームに1発回復するか
+    int machineGunRecoveryCooldown_ = 0;       // 自動回復開始までのクールタイム
+    static const int kAmmoRecoveryInterval = 30; // 何フレームに1発回復するか
 
     // --- 薬莢（Cartridge）用オブジェクトとデータ ---
     static const int kMaxCartridges = 100;
@@ -164,5 +179,11 @@ public:
     float* GetMissileTurnSpeedChargedPtr() { return &missileTurnSpeedCharged_; }
     float* GetMissileSpreadMagnitudeBasePtr() { return &missileSpreadMagnitudeBase_; }
     float* GetMissileSpreadMagnitudeRandPtr() { return &missileSpreadMagnitudeRand_; }
+    float* GetRocketLauncherChargedScaleMultiplierPtr() { return &rocketLauncherChargedScaleMultiplier_; }
+    float* GetRocketLauncherYOffsetPtr() { return &rocketLauncherYOffset_; }
+
+private:
+    float rocketLauncherChargedScaleMultiplier_ = 1.4f; // チャージ強化時のミサイルランチャースケール倍率
+    float rocketLauncherYOffset_ = 0.2f; // チャージ強化時のミサイルランチャーのY軸オフセット
 
 };

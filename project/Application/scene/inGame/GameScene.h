@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Framework/BaseScene.h"
+#include "Irufemi.h"
 #include <memory>
 #include <vector>
+#include "Resource/Audio/Bgm.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -32,8 +34,18 @@ public:
     void Initialize(IrufemiEngine* engine) override;
     void Update() override;
     void Draw() override;
+    
+    void OnEnter() override;
+    void OnSuspend() override;
+    void OnResume() override;
+
     bool IsCursorVisible() const override { return false; }
     void DrawDebugTab() override;
+
+    // 現在のシーンがホワイトアウト（爆散による白飛び等）の文脈にあるかを判定
+    bool IsWhiteoutContext() const;
+
+    static float GetClearTime() { return clearTime_; }
 
 private:
 
@@ -51,6 +63,7 @@ private:
     static constexpr int kDamagePartToPlayer = 10;           ///< 敵部位接触
     static constexpr int kDamageTackleWaveToPlayer = 10;     ///< 突進の砂煙接触
     static constexpr int kDamageCrashWaveToPlayer = 30;      ///< 壁激突の大爆発接触
+    static constexpr int kDamageBombToPlayer = 10;           ///< ボム爆発接触
 
     // 敵被ダメージ
     static constexpr int kDamageMeleeToEnemy = 20;           ///< 近接攻撃
@@ -75,6 +88,7 @@ private:
     static constexpr float kMeleeScatterSpeedMultiplier = 1.0f;  ///< 近接攻撃の部位吹き飛び初速倍率
     static constexpr float kCollisionScatterMultiplier = -0.5f; ///< 衝突時の反発係数
     static constexpr float kMathEpsilon = 0.001f;               ///< ゼロ除算防止用微小値
+    static constexpr float kBlowCollisionDelay = 0.2f;          ///< 吹き飛んだ部位が即時自爆衝突するのを防ぐクールタイム（秒）
 
     // --- デバッグUI定数 ---
     
@@ -85,6 +99,21 @@ private:
     // --------------------------------
 
     bool isFirstDebug_ = true;
+    bool isDebugCameraMode_ = false; // 仮で追加（元々無かったら）
+
+    // 死亡演出カメラ用
+    bool isDeathCameraMode_ = false;
+    float deathCameraLerpTimer_ = 0.0f;
+    Vector3 initialCameraPos_ = {};
+    Vector3 initialCameraTarget_ = {};
+
+    // --- 死亡演出カメラ・自動後退調整用定数（メンバー変数） ---
+    static constexpr float kCameraBehindDistance = 32.0f;       ///< 死亡演出時にプレイヤーの背後へカメラを引く距離 (大幅引きに変更)
+    static constexpr float kCameraHeightOffset = 2.0f;           ///< プレイヤー座標からのカメラの高さオフセット (低くして見上げアングルに変更)
+    static constexpr float kGroundClampMinY = 1.2f;             ///< カメラが地面を突き抜けるのを防ぐ最小Y座標 (カメラを下げたのに対応)
+    static constexpr float kBossLookAtHeightOffset = 9.0f;      ///< 死亡演出中のボスの注視点高さオフセット（注視点を上げて見上げ感を強調）
+    static constexpr float kTargetPlayerBossDistance = 48.0f;   ///< 理想の対比レイアウトを作るためのプレイヤーとボスの基準距離 (引き対応)
+    static constexpr float kPlayerBackoffSpeed = 15.0f;          ///< 近すぎるプレイヤーを理想距離へ滑らかに後退させる秒速速度
 
     // ゲームオブジェクト
     std::unique_ptr<Player> player_ = nullptr;
@@ -96,22 +125,29 @@ private:
     // バトル用動的エリアライト
     std::unique_ptr<DynamicArenaLight> dynamicArenaLight_ = nullptr;
     
-    // 操作説明スプライト
-    std::unique_ptr<Sprite> operationNormalSprite_ = nullptr;
-    std::unique_ptr<Sprite> operationChargedSprite_ = nullptr;
-    std::unique_ptr<Sprite> operationNormalSprite1st_ = nullptr;
-    std::unique_ptr<Sprite> operationChargedSprite1st_ = nullptr;
-    std::unique_ptr<Sprite> numberSpriteTens_ = nullptr;
-    std::unique_ptr<Sprite> numberSpriteOnes_ = nullptr;
-    std::unique_ptr<Sprite> numberSpriteTens1st_ = nullptr;
-    std::unique_ptr<Sprite> numberSpriteOnes1st_ = nullptr;
+    std::unique_ptr<Sprite> uiLClickNormal_ = nullptr;
+    std::unique_ptr<Sprite> uiLClickCharged_ = nullptr;
+    std::unique_ptr<Sprite> uiRClickNormal_ = nullptr;
+    std::unique_ptr<Sprite> uiRClickCharged_ = nullptr;
+    std::unique_ptr<Sprite> uiE_ = nullptr;
+    std::unique_ptr<Sprite> uiV_ = nullptr;
+    std::unique_ptr<Sprite> uiSpace_ = nullptr;
     std::unique_ptr<Sprite> cooldownWarningSprite_ = nullptr;
+    std::unique_ptr<Sprite> keyEscSprite_ = nullptr;
 
     // 当たり判定の有効化フラグ
     bool isCollisionEnabled_ = true;
 
     // ビルの自動生成タイマー
     float buildingSpawnTimer_ = 0.0f;
+
+    // クリアタイム
+    static float clearTime_;
+
+    // BGM
+    std::unique_ptr<Bgm> bgm_ = nullptr;
+
+    bool wasPaused_ = false;
 
     // --- 内部整理用メソッド ---
 

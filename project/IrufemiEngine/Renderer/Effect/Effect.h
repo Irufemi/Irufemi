@@ -1,17 +1,19 @@
-#include "../Core/IRenderable.h"
 #pragma once
 
 #include <memory>
 #include <string>
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Type/PrimitiveType.h"
-#include "Engine/Core/Type/BlendMode.h"
-#include "Engine/Graphics/Pipeline/PSOManager.h"
 #include <vector>
-#include <memory>
+#include "../Core/IRenderable.h"
+#include "../../Engine/Core/Math/Vector3.h"
+#include "../../Engine/Core/Math/Vector4.h"
+#include "../../Engine/Core/Math/Vector2.h"
+#include "../../Engine/Core/Math/Matrix4x4.h"
+#include "../../Engine/Core/Type/PrimitiveType.h"
+#include "../../Engine/Core/Type/BlendMode.h"
+#include "../../Engine/Graphics/Pipeline/PSOManager.h"
+#include "../../Engine/Manager/PrimitiveManager.h"
+
+
 
 class GPUParticleSystem;
 class ParticleSystem;
@@ -138,6 +140,9 @@ struct AuraConfig {
     std::string texture = "resources/gradationLine.png";
 };
 
+    /** @brief オーラ設定を外部から取得・変更するためのゲッター */
+    AuraConfig& GetAuraConfig() { return auraConfig_; }
+
 struct SwingConfig {
     PrimitiveType shape = PrimitiveType::Ring;                  //!< 使用するプリミティブ形状（デフォルト: Ring）
     std::string texture = "resources/gradationLine.png";        //!< 使用するテクスチャパス
@@ -169,9 +174,9 @@ struct ExplosionConfig {
 
     Vector4 color = { 1.0f, 0.4f, 0.05f, 1.0f };                 //!< 燃え上がる高輝度オレンジ
     Vector3 coreStartScale = { 0.1f, 0.1f, 0.1f };               //!< 爆風の開始サイズ
-    Vector3 coreEndScale = { 5.0f, 5.0f, 5.0f };                 //!< 爆風の終了サイズ（大きく膨張）
+    Vector3 coreEndScale = { 2.5f, 2.5f, 2.5f };                 //!< 爆風の終了サイズ（小さく高密度に修正）
     Vector3 waveStartScale = { 0.5f, 0.5f, 0.5f };               //!< 衝撃波の開始サイズ
-    Vector3 waveEndScale = { 10.0f, 10.0f, 10.0f };              //!< 衝撃波の終了サイズ
+    Vector3 waveEndScale = { 7.0f, 7.0f, 7.0f };                 //!< 衝撃波の終了サイズ（スパークの飛散範囲に合わせて調整）
 
     float lifeTime = 0.4f;                                       //!< 爆発の生存時間（秒）
     Vector2 uvScrollSpeed = { 0.5f, -0.3f };                     //!< コアのうねり用UVスクロール速度
@@ -193,6 +198,8 @@ private:
     SwingConfig swingConfig_;                                   //!< スイング設定パラメータ
     ExplosionConfig explosionConfig_;                           //!< ★追加: 3D爆破設定
     Vector2 currentUVOffset_ = { 0.0f, 0.0f };
+    PrimitiveResource customAuraResource_;                       //!< カスタム炎型オーラのリソース
+
     
     // スイング・爆破用生存・制御用変数
     bool isActive_ = false;                                     //!< アクティブ状態フラグ

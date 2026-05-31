@@ -54,6 +54,10 @@ void Mouse::Update() {
             POINT center = { (rc.right - rc.left) / 2, (rc.bottom - rc.top) / 2 };
             ClientToScreen(hwnd_, &center);
             SetCursorPos(center.x, center.y);
+
+            // Alt+Tabからの復帰時など、カーソルが同じ座標に固定され続けるとWM_SETCURSORが発生せず
+            // 画面中央にカーソルが可視化されたまま残ってしまう不具合を防止するため、明示的に非表示にする
+            SetCursor(nullptr);
         }
     } else {
         // 通常時の挙動: スクリーン座標をクライアント座標に変換して position_ を更新
