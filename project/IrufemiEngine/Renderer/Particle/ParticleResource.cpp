@@ -92,12 +92,12 @@ D3D12_GPU_VIRTUAL_ADDRESS ParticleResource::GetMaterialVAddress() const {
 
 void ParticleResource::SyncBeforeDraw() {
     uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-    if (isDirtyBuffer_[frameIndex]) {
+    if (CheckAndClearDirty(frameIndex)) {
         if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
             if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
             }
         }
-        isDirtyBuffer_[frameIndex] = false;
+
     }
 }

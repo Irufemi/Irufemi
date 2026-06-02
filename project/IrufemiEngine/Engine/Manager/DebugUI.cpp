@@ -61,7 +61,12 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     ImGuiIO& io = ImGui::GetIO();
     
     // 1. ベースフォント（英数字用）として FiraMono を読み込む
-    io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/Fira_Mono/FiraMono-Regular.ttf", 16.0f);
+    ImFont* baseFont = io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/Fira_Mono/FiraMono-Regular.ttf", 16.0f);
+    
+    // フォントファイルが見つからなかった場合（exe単体起動時など）、デフォルトフォントを追加してクラッシュを防ぐ
+    if (baseFont == nullptr) {
+        io.Fonts->AddFontDefault();
+    }
 
     // 2. 日本語フォントを MergeMode (結合モード) で読み込み、FiraMono にない文字を補完する
     ImFontConfig config;
@@ -74,7 +79,9 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     icons_config.PixelSnapH = true;
     icons_config.GlyphMinAdvanceX = 16.0f; // アイコンの等幅調整
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
-    io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/FontAwesome/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
+    if (baseFont != nullptr) { // FontAwesome はパスが相対なので、もしFiraMonoが見つからない環境なら読み込みをスキップしてもよい
+        io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/FontAwesome/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
+    }
 
 #ifdef EditorMode
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Dockingを有効にする

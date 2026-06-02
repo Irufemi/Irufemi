@@ -88,6 +88,7 @@ void Skybox::Update() {
     transformationMatrix_.World = worldMatrix;
     // フラグ更新
     isDirty_ = false;
+    MarkAsDirty();
     if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
         lastViewMatrix_ = activeCam->GetViewMatrix();
         lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
@@ -96,7 +97,9 @@ void Skybox::Update() {
 
 void Skybox::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    transformationBuffer_.Update(transformationMatrix_, frameIndex);
+    if (CheckAndClearDirty(frameIndex)) {
+        transformationBuffer_.Update(transformationMatrix_, frameIndex);
+    }
 }
 
 void Skybox::Draw() {
@@ -112,8 +115,6 @@ void Skybox::Draw() {
         Update();
     }
     
-    SyncBeforeDraw();
-
     SyncBeforeDraw();
 
     DrawManager* drawManager = engine_->GetDrawManager();

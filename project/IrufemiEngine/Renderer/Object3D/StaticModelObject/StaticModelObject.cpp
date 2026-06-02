@@ -142,14 +142,14 @@ void StaticModelObject::Update() {
 void StaticModelObject::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     
-    if (isDirtyBuffer_[frameIndex]) {
+    if (CheckAndClearDirty(frameIndex)) {
         // 変換行列の更新 (全メッシュで共有のバッファ)
         if (engine_) {
             if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine_->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
             }
         }
-        isDirtyBuffer_[frameIndex] = false;
+
     }
     
     // 各メッシュのマテリアル等の更新

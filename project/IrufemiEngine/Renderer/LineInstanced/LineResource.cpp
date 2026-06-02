@@ -94,7 +94,7 @@ D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetTransformVAddress() const {
 
 void LineResource::SyncBeforeDraw() {
     uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-    if (isDirtyBuffer_[frameIndex]) {
+    if (CheckAndClearDirty(frameIndex)) {
         if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
             if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
@@ -103,6 +103,6 @@ void LineResource::SyncBeforeDraw() {
                 engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
             }
         }
-        isDirtyBuffer_[frameIndex] = false;
+
     }
 }

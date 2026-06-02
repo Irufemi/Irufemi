@@ -51,11 +51,7 @@ public:
         return instancingResource_[BaseResource::GetDirectXCommon()->GetFrameIndex()]->GetGPUVirtualAddress();
     }
     
-    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
-    
-    void MarkAsDirty() {
-        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
-    }
+
     
     void SyncBeforeDraw();
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;

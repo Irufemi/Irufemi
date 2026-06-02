@@ -633,6 +633,36 @@ model_->GetResource()->SetCustomCBVAddress(myCb_->GetGPUVirtualAddress());
 // ConstantBuffer<MyCustomParams> gMyParams : register(b6);
 ```
 
+### 2.7 マルチバッファ同期と基底クラス (`MultiBufferSyncState`)
+DirectX 12 でフレーム間のマルチバッファリング（`kMaxFramesInFlight`）を行う際、CPUからGPUへの定数バッファの更新タイミングを管理するために `MultiBufferSyncState` 基底クラスを利用します。
+`BaseResource` や `BaseModel` などの描画リソースクラスは、すでにこのクラスを継承しています。
+
+#### 使い方ルール
+1. **CPU側でのデータ変更時 (`Update` 等)**
+   描画オブジェクトのパラメータ（座標、色、カスタムマテリアル等）を変更した際は、必ず `MarkAsDirty()` を呼び出します。これにより、全フレームバッファ（最大3フレーム分）に「更新が必要」というフラグが立ちます。
+   ```cpp
+   void Skybox::Update() {
+       // 行列や色の計算...
+       transformationMatrix_.World = worldMatrix;
+       
+       // データが変更されたので全フレームバッファのDirtyフラグを立てる
+       MarkAsDirty();
+   }
+   ```
+2. **GPUバッファへの同期時 (`SyncBeforeDraw` 等)**
+   GPUにデータを書き込む直前（描画の直前）で `CheckAndClearDirty(frameIndex)` を呼び出します。この関数は、対象フレームの更新フラグが立っている場合のみ `true` を返し、同時にフラグをクリアします。
+   ```cpp
+   void Skybox::SyncBeforeDraw() {
+       uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+       
+       // 対象フレームのバッファが古い場合のみ、GPUへ転送する
+       if (CheckAndClearDirty(frameIndex)) {
+           transformationBuffer_.Update(transformationMatrix_, frameIndex);
+       }
+   }
+   ```
+   ※従来の手動配列管理（`isDirtyBuffer_[frameIndex] = true` 等）は非推奨です。
+
 ---
 
 ## 3. リソース管理 (Resource Management)
@@ -957,3 +987,4 @@ if (ImGui::Checkbox("TopMost", &isTopMost)) {
 > - 2026/05: 3D爆発エフェクト (Effect::kExplosion) 仕様とスニペットの追加
 > - 2026/06: カスタムエディタUI構築時の Undo/Redo (Ctrl+Z) 対応用ヘルパー関数の解説を追記
 > - 2026/06: プリミティブ描画の `Primitive3DObject` への統合、および `MeshDesc` / `MaterialDesc` へのデータ構造リファクタリングを反映
+> - 2026/06: 描画リソースのマルチバッファ同期処理を `MultiBufferSyncState` 基底クラスへ集約し、`Manual.md` に使い方を追加

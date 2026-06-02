@@ -5,7 +5,9 @@
 #include <wrl.h>
 #include <cstdint>
 #include <string>
+#include "Engine/Graphics/Data/Material.h"
 #include "../../Engine/Graphics/Data/VertexData.h"
+#include "../Core/MultiBufferSyncState.h"
 #include "Engine/Core/Math/Transform.h"
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Math/Vector4.h"
@@ -24,7 +26,7 @@ class IrufemiEngine;
  * @class Skybox
  * @brief スカイボックスの描画を管理するクラス
  */
-class Skybox : public IRenderable
+class Skybox : public IRenderable, public MultiBufferSyncState
 {
 public:
     // デフォルトのテクスチャパス
@@ -110,13 +112,9 @@ private: // メンバ変数(resource)
 
     // 行列更新の最適化用
     bool isDirty_ = true;
-    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
     Matrix4x4 lastViewMatrix_ = {};
     Matrix4x4 lastProjectionMatrix_ = {};
-    
-    void MarkAsDirty() {
-        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
-    }
+
 };
 
 

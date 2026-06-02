@@ -1,5 +1,6 @@
 #pragma once
 #include "../../Core/IRenderable.h"
+#include "../../Core/MultiBufferSyncState.h"
 
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Math/Transform.h"
@@ -27,7 +28,7 @@ struct ObjMaterial;
  * @details Transform管理、マテリアルオーバーライド、フラストゥムカリング、
  * および基本リソース管理を提供します。
  */
-class BaseModel : public IRenderable {
+class BaseModel : public IRenderable, public MultiBufferSyncState {
 public: // メンバ関数
 
     virtual ~BaseModel();
@@ -88,8 +89,8 @@ public: // ゲッター・セッター
     
     void SetEnableLightingToAllMeshes(bool enable) { enableLightingOverride_ = enable ? 1 : 0; MarkAsDirty(); }
 
-    void MarkAsDirty() {
-        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
+    void MarkAsDirty() override {
+        MultiBufferSyncState::MarkAsDirty();
         for(auto& res : meshResources_) {
             if (res) res->MarkAsDirty();
         }
@@ -138,7 +139,7 @@ protected: // メンバ変数
 
     // 行列更新の最適化用
     bool isDirty_ = true;
-    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
+
     bool isCullingEnabled_ = true;
     bool castShadows_ = true;
     Matrix4x4 lastViewMatrix_ = {};
