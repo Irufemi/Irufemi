@@ -5,7 +5,8 @@
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
 
-class GPUParticleSystem;
+#include "Renderer/ParticleGPU/GPUParticleManager.h"
+
 class TransformComponent;
 
 /**
@@ -21,7 +22,7 @@ public:
     void Update() override;
     void Draw() override;
     
-    IRenderable* GetRenderable() override;
+    IRenderable* GetRenderable() override { return nullptr; }
 
     std::string GetComponentName() const override { return "ParticleEmitterComponent"; }
     void OnRegisterProperties() override;
@@ -48,6 +49,7 @@ private:
     Vector3 endScale_ = { 0.0f, 0.0f, 0.0f };
     Vector3 direction_ = { 0.0f, 0.0f, 1.0f };
 
-    std::unique_ptr<GPUParticleSystem> particleSystem_;
+    GPUParticleManager::EmitterHandle emitterHandle_;
+    bool isPlaying_ = false;
     TransformComponent* transform_ = nullptr;
 };

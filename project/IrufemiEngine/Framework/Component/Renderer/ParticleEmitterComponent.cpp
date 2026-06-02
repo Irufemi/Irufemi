@@ -5,7 +5,9 @@
 
 ParticleEmitterComponent::ParticleEmitterComponent() {}
 
-ParticleEmitterComponent::~ParticleEmitterComponent() {}
+ParticleEmitterComponent::~ParticleEmitterComponent() {
+    GPUParticleManager::GetInstance()->UnregisterEmitter(emitterHandle_);
+}
 
 void ParticleEmitterComponent::OnRegisterProperties() {
     RegisterProperty("Texture Path", &texturePath_);
@@ -27,14 +29,11 @@ void ParticleEmitterComponent::OnRegisterProperties() {
 }
 
 void ParticleEmitterComponent::Initialize() {
-    particleSystem_ = std::make_unique<GPUParticleSystem>();
-    
-    // "resources/" を考慮する
     std::string fullPath = "resources/" + texturePath_;
     if (texturePath_.find("resources/") == 0) {
         fullPath = texturePath_;
     }
-    particleSystem_->Initialize(fullPath);
+    emitterHandle_ = GPUParticleManager::GetInstance()->RegisterEmitter(fullPath);
 
     if (gameObject_) {
         transform_ = gameObject_->GetComponent<TransformComponent>();
@@ -48,52 +47,56 @@ void ParticleEmitterComponent::Initialize() {
 }
 
 void ParticleEmitterComponent::Update() {
-    if (!particleSystem_) return;
+    if (!emitterHandle_.IsValid()) return;
 
     Vector3 pos = transform_ ? transform_->worldPosition_ : Vector3{0, 0, 0};
 
-    // 毎フレームパラメータを反映させる（エディタで動的調整できるように）
-    particleSystem_->SetColor(color_);
-    particleSystem_->SetParticleLife(lifeTimeMin_, lifeTimeMax_);
-    particleSystem_->SetParticleScale(startScale_, startScale_, endScale_, endScale_);
-
-    // エミッターの形状とパラメータを設定
-    switch (emitType_) {
-    case 0: // Sphere
-        particleSystem_->SetSphereEmitter(pos, radius_, emitCountPerFrame_, emitFrequency_);
-        break;
-    case 1: // Beam
-        particleSystem_->SetBeamEmitter(pos, direction_, radius_, velocity_, spread_, emitCountPerFrame_, emitFrequency_);
-        break;
-    case 2: // Box (10.0f は仮のサイズ)
-        particleSystem_->SetBoxEmitter(pos, {radius_, radius_, radius_}, emitCountPerFrame_, emitFrequency_);
-        break;
-    case 3: // Cylinder (height は仮)
-        particleSystem_->SetCylinderEmitter(pos, direction_, radius_, radius_ * 2.0f, emitCountPerFrame_, emitFrequency_);
-        break;
+    GPUParticleEmitter data;
+    // Set basic params
+    data.type = emitType_;
+    data.translateX = pos.x; data.translateY = pos.y; data.translateZ = pos.z;
+    data.directionX = direction_.x; data.directionY = direction_.y; data.directionZ = direction_.z;
+    data.radius = radius_;
+    data.velocity = velocity_;
+    data.spread = spread_;
+    data.count = emitCountPerFrame_;
+    data.frequency = emitFrequency_;
+    
+    // Default shape specific hacks (like Box areaSize, Cylinder height mapping)
+    if (emitType_ == 2) { // Box
+        data.areaSizeX = radius_; data.areaSizeY = radius_; data.areaSizeZ = radius_;
+    } else if (emitType_ == 3) { // Cylinder
+        data.velocity = radius_ * 2.0f; // height as velocity in current impl
     }
-
-    particleSystem_->Update();
+    
+    // Scaling
+    data.startScaleMinX = startScale_.x; data.startScaleMinY = startScale_.y; data.startScaleMinZ = startScale_.z;
+    data.startScaleMaxX = startScale_.x; data.startScaleMaxY = startScale_.y; data.startScaleMaxZ = startScale_.z;
+    data.endScaleMinX = endScale_.x; data.endScaleMinY = endScale_.y; data.endScaleMinZ = endScale_.z;
+    data.endScaleMaxX = endScale_.x; data.endScaleMaxY = endScale_.y; data.endScaleMaxZ = endScale_.z;
+    
+    // Life
+    data.minLife = lifeTimeMin_;
+    data.maxLife = lifeTimeMax_;
+    
+    // Colors
+    data.startColorMinR = color_.x; data.startColorMinG = color_.y; data.startColorMinB = color_.z; data.startColorMinA = color_.w;
+    data.startColorMaxR = color_.x; data.startColorMaxG = color_.y; data.startColorMaxB = color_.z; data.startColorMaxA = color_.w;
+    data.endColorMinR = color_.x; data.endColorMinG = color_.y; data.endColorMinB = color_.z; data.endColorMinA = 0.0f;
+    data.endColorMaxR = color_.x; data.endColorMaxG = color_.y; data.endColorMaxB = color_.z; data.endColorMaxA = 0.0f;
+    
+    data.emit = isPlaying_ ? 1 : 0;
+    
+    GPUParticleManager::GetInstance()->UpdateEmitterData(emitterHandle_, data);
 }
 
 void ParticleEmitterComponent::Draw() {
-    if (particleSystem_) {
-        particleSystem_->Draw();
-    }
-}
-
-IRenderable* ParticleEmitterComponent::GetRenderable() {
-    return reinterpret_cast<IRenderable*>(particleSystem_.get());
 }
 
 void ParticleEmitterComponent::Play() {
-    if (particleSystem_) {
-        particleSystem_->SetEmit(true);
-    }
+    isPlaying_ = true;
 }
 
 void ParticleEmitterComponent::Stop() {
-    if (particleSystem_) {
-        particleSystem_->SetEmit(false);
-    }
+    isPlaying_ = false;
 }

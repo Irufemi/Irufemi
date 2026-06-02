@@ -4,7 +4,6 @@
 StructuredBuffer<Particle> gParticles : register(t0);
 StructuredBuffer<ParticleSortData> gSortList : register(t1);
 ConstantBuffer<PerView> gPerView : register(b0);
-ConstantBuffer<GPUParticleEmitter> gEmitter : register(b6); // Special Slot
 
 // struct VertexShaderInput は VertexData.hlsli で定義
 
@@ -36,7 +35,7 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
 	
     float4x4 worldMatrix;
     
-    if (gEmitter.billboardMode == 1)
+    if (particle.billboardMode == 1)
     {
         // Z軸回転の行列を作成
         float c = cos(particle.rotation.z);
@@ -59,7 +58,7 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
         // スケール -> Z軸回転 -> ビルボード（カメラ向き）の順に行列を合成
         worldMatrix = mul(mul(scaleMatrix, rotZ), gPerView.billboardMatrix);
     }
-    else if (gEmitter.billboardMode == 2)
+    else if (particle.billboardMode == 2)
     {
         // 速度方向ビルボード (Velocity Billboard)
         float3 dir = particle.velocity;
@@ -131,17 +130,19 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
 	
     // UV アニメーション (テクスチャアトラス)
     float2 uv = input.texcoord;
-    uint totalFrames = gEmitter.atlasRows * gEmitter.atlasCols;
+    uint atlasRows = (particle.atlasSize >> 16) & 0xFFFF;
+    uint atlasCols = particle.atlasSize & 0xFFFF;
+    uint totalFrames = max(1, atlasRows * atlasCols);
     if (totalFrames > 1)
     {
         float t = saturate(particle.currentTime / particle.lifeTime);
         uint frameIndex = (uint)(t * (float)totalFrames);
         frameIndex = min(frameIndex, totalFrames - 1);
         
-        uint row = frameIndex / gEmitter.atlasCols;
-        uint col = frameIndex % gEmitter.atlasCols;
+        uint row = frameIndex / max(1, atlasCols);
+        uint col = frameIndex % max(1, atlasCols);
         
-        float2 frameSize = 1.0f / float2(gEmitter.atlasCols, gEmitter.atlasRows);
+        float2 frameSize = 1.0f / float2(max(1, atlasCols), max(1, atlasRows));
         uv = (uv + float2(col, row)) * frameSize;
     }
     output.texcoord = float4(uv, particle.translate.xy);

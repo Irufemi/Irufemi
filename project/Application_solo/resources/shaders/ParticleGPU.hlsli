@@ -12,11 +12,11 @@ struct Particle
 	float3 rotation;
 	float trailTimer; // Trail用タイマー
 	float3 rotateSpeed;
-	float pad2;
+	uint emitterIndex;
 	float3 startScale;
-	float pad3;
+	uint billboardMode;
 	float3 endScale;
-	float pad4;
+	uint atlasSize;
 	float4 startColor;
 	float4 endColor;
 };

@@ -1,4 +1,4 @@
-﻿#include "IrufemiEngine.h"
+#include "IrufemiEngine.h"
 
 IrufemiEngine::IrufemiEngine() = default;
 
@@ -41,6 +41,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Graphics/Data/VertexData.h"
 #include "Renderer/VoxelParticle/VoxelParticleSystem.h"
 #include "Renderer/VoxelParticle/VoxelParticleManager.h"
+#include "Renderer/ParticleGPU/GPUParticleManager.h"
 #include "Framework/IScene.h"
 #include "Framework/Component/ComponentFactory.h"
 
@@ -300,6 +301,8 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   if (dxCommon_) {
     dxCommon_->PreWarmJITCompile();
   }
+
+  GPUParticleManager::GetInstance()->Initialize();
 }
 
 // クリアカラーを float 指定できる 初期化
@@ -445,6 +448,7 @@ void IrufemiEngine::Finalize() {
   if (voxelParticleManager_) {
     voxelParticleManager_.reset();
   }
+  GPUParticleManager::GetInstance()->Finalize();
   Circle2D::SetEngine(nullptr);
   Line3DRegion::SetEngine(nullptr);
   Primitive3DObject::SetEngine(nullptr);
@@ -548,6 +552,8 @@ void IrufemiEngine::Execute() {
     totalTime_ += deltaTime_;
     postProcessManager_->Update(totalTime_);
     sceneTransition_->Update(deltaTime_);
+    
+    GPUParticleManager::GetInstance()->Update();
 
     if (voxelParticleManager_) {
         // ポーズ中は VoxelParticle の更新をスキップする
@@ -569,6 +575,8 @@ void IrufemiEngine::Execute() {
     if (voxelParticleManager_) {
         voxelParticleManager_->Draw();
     }
+
+    GPUParticleManager::GetInstance()->Draw();
 
     // ここで溜まった描画パケットを一斉に処理する
     drawManager_->ExecuteRenderQueues(this);
