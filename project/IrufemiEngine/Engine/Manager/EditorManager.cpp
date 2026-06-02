@@ -159,18 +159,31 @@ void EditorManager::DrawEditorUI() {
                     }
                 }
             }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Save Layout as Default Preset")) {
-                ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
-                const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
-                if (std::filesystem::exists("imgui.ini")) {
-                    std::error_code ec;
-                    std::filesystem::copy_file("imgui.ini", presetPath, std::filesystem::copy_options::overwrite_existing, ec);
-                }
-            }
+
             if (ImGui::MenuItem("Exit")) {
                 // 終了処理（PostQuitMessage）
                 PostQuitMessage(0);
+            }
+            ImGui::EndMenu();
+        }
+        
+        if (ImGui::BeginMenu("Window")) {
+            if (ImGui::BeginMenu("Layout")) {
+                if (ImGui::MenuItem("Load Default Layout")) {
+                    const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
+                    if (std::filesystem::exists(presetPath)) {
+                        ImGui::LoadIniSettingsFromDisk(presetPath);
+                    }
+                }
+                if (ImGui::MenuItem("Save Current as Default")) {
+                    ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+                    const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
+                    if (std::filesystem::exists("imgui.ini")) {
+                        std::error_code ec;
+                        std::filesystem::copy_file("imgui.ini", presetPath, std::filesystem::copy_options::overwrite_existing, ec);
+                    }
+                }
+                ImGui::EndMenu();
             }
             ImGui::EndMenu();
         }
