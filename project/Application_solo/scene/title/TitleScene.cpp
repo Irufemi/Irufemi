@@ -5,11 +5,21 @@
 #include "Irufemi.h"
 
 // デストラクタ
-TitleScene::~TitleScene() = default;
+TitleScene::~TitleScene() {
+    if (engine_) {
+        engine_->SetPostProcessMode(IrufemiEngine::PostProcessMode::None);
+    }
+}
 
 // 初期化
 void TitleScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
+
+    // 学校の資料に基づくポストエフェクト（ガウシアンフィルター）の適用
+    engine_->SetPostProcessMode(IrufemiEngine::PostProcessMode::GaussianFilter);
+    auto& gaussianParams = engine_->GetGaussianParams();
+    gaussianParams.sigma = 5.0f;       // ぼかしの強さ（標準偏差）
+    gaussianParams.kernelSize = 9;     // カーネルサイズ（サンプリング範囲）
 
     // JSONからのロードは SceneManager が自動で行うため、ここでは手動で呼ばない
     
