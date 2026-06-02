@@ -17,13 +17,8 @@ float4 main(PixelInput input) : SV_TARGET {
     float right  = tex.Sample(smp, input.uv + float2( offset.x, 0)).r;
     
     // エッジを検出 (周囲が白で中心が黒、またはその逆)
-    float edge = saturate((up + down + left + right) - center * 4.0f);
+    float edge = abs((up + down + left + right) - center * 4.0f);
     
-    if (edge > 0.1f) {
-        // オレンジ色の輪郭
-        return float4(1.0f, 0.5f, 0.0f, 1.0f);
-    }
-    
-    // 輪郭でない部分は透明
-    return float4(0.0f, 0.0f, 0.0f, 0.0f);
+    // エッジの強さに応じてオレンジ色 (1.0, 0.5, 0.0) を出力する（背景は edge=0 で透明になる）
+    return float4(1.0f * edge, 0.5f * edge, 0.0f, edge);
 }
