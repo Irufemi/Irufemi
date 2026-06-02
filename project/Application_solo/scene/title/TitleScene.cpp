@@ -15,13 +15,10 @@ TitleScene::~TitleScene() {
 void TitleScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
-    // 学校の資料に基づくポストエフェクト（ディゾルブ）の適用
-    engine_->SetPostProcessMode(IrufemiEngine::PostProcessMode::Dissolve);
-    auto& dissolveParams = engine_->GetDissolveParams();
-    dissolveParams.threshold = 0.5f;                              // 消失しきい値 (0.0:完全に表示 〜 1.0:完全に消失)
-    dissolveParams.edgeColor = { 0.0f, 1.0f, 1.0f, 1.0f };        // 境界線の発光色 (RGBA)
-    dissolveParams.edgeRange = 0.05f;                             // 境界線の幅
-    dissolveParams.noiseType = 0;                                 // 使用するノイズテクスチャの種類
+    // 学校の資料に基づくポストエフェクト（ノイズ / ランダム）の適用
+    engine_->SetPostProcessMode(IrufemiEngine::PostProcessMode::Noise);
+    auto& noiseParams = engine_->GetNoiseParams();
+    noiseParams.intensity = 0.5f; // ノイズの強度 (0.0: なし 〜 1.0: 最大)
 
     // JSONからのロードは SceneManager が自動で行うため、ここでは手動で呼ばない
     
