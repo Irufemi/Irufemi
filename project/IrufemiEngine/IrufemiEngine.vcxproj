@@ -266,7 +266,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleManager.cpp" />
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp" />
     <ClCompile Include="Renderer\Effect\Effect.cpp" />
-    <ClCompile Include="Renderer\Particle\ParticleSystem.cpp" />
+
     <ClCompile Include="Renderer\Core\BaseResource.cpp" />
     <ClCompile Include="Renderer\Object2D\Object2DResource.cpp" />
     <ClCompile Include="Renderer\Object3D\Object3DResource.cpp" />
@@ -283,13 +283,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
 
     <ClCompile Include="Engine\Graphics\DirectX\DescriptorAllocator.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DescriptorPool.cpp" />
-    <ClCompile Include="Renderer\Particle\ParticleResource.cpp" />
+
     <ClCompile Include="Renderer\LineInstanced\LineResource.cpp" />
     <ClCompile Include="Renderer\LineInstanced\LineClass.cpp" />
     <ClCompile Include="Engine\Core\Math\Matrix4x4.cpp" />
     <ClCompile Include="Engine\Core\Math\Quaternion.cpp" />
-    <ClCompile Include="Renderer\Particle\Data\Particle.cpp" />
-    <ClCompile Include="Renderer\Particle\IParticleBehavior.cpp" />
+
     <ClCompile Include="Engine\Core\Math\Vector2.cpp" />
     <ClCompile Include="Resource\Audio\Se.cpp" />
     <ClCompile Include="Resource\Model\ModelManager.cpp" />
@@ -447,7 +446,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleManager.h" />
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h" />
     <ClInclude Include="Renderer\Effect\Effect.h" />
-    <ClInclude Include="Renderer\Particle\ParticleSystem.h" />
+
     <ClInclude Include="Renderer\Core\BaseResource.h" />
     <ClInclude Include="Renderer\Core\MultiBufferSyncState.h" />
     <ClInclude Include="Renderer\Object2D\Object2DResource.h" />
@@ -481,9 +480,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Math\MathFunction.h" />
     <ClInclude Include="Engine\Platform\Input\GamePad.h" />
     <ClInclude Include="Engine\Platform\Input\Keyboard.h" />
-    <ClInclude Include="Renderer\Particle\ParticleResource.h" />
     <ClInclude Include="Renderer\LineInstanced\LineResource.h" />
-    <ClInclude Include="Renderer\Particle\IParticleBehavior.h" />
     <ClInclude Include="Engine\Manager\PrimitiveManager.h" />
     <ClInclude Include="Resource\Model\Data\AnimationTransform.h" />
     <ClInclude Include="Resource\Audio\AudioManager.h" />
@@ -528,7 +525,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Data\CameraForGPU.h" />
     <ClInclude Include="Resource\Audio\Data\ChunkHeader.h" />
     <ClInclude Include="Engine\Graphics\Data\DirectionalLight.h" />
-    <ClInclude Include="Renderer\Particle\Data\Emitter.h" />
+
     <ClInclude Include="Resource\Audio\Data\FormatChunk.h" />
     <ClInclude Include="Resource\Model\Data\Joint.h" />
     <ClInclude Include="Resource\Model\Data\JointWeightData.h" />
@@ -540,7 +537,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Model\Data\ModelData.h" />
     <ClInclude Include="Resource\Model\Data\NodeAnimation.h" />
     <ClInclude Include="Resource\Model\Data\ObjModel.h" />
-    <ClInclude Include="Renderer\Particle\Data\ParticleMaterial.h" />
+
     <ClInclude Include="Engine\Graphics\Data\PointLight.h" />
     <ClInclude Include="Engine\Core\Type\PrimitiveType.h" />
     <ClInclude Include="Engine\Core\Math\Quaternion.h" />
@@ -550,7 +547,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Shape\Ball.h" />
     <ClInclude Include="Engine\Core\Shape\LinePrimitive.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\OBB.h" />
-    <ClInclude Include="Renderer\Particle\Data\Particle.h" />
+
     <ClInclude Include="Engine\Core\Shape\Plane.h" />
     <ClInclude Include="Engine\Core\Shape\Sphere.h" />
     <ClInclude Include="Engine\Graphics\Data\Spring.h" />

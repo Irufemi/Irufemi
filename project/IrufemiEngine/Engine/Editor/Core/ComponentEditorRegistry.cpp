@@ -1,4 +1,4 @@
-﻿#include "ComponentEditorRegistry.h"
+#include "ComponentEditorRegistry.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>
@@ -207,6 +207,15 @@ static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager*
     if (ImGui::CollapsingHeader(component->GetComponentName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
         for (const auto& prop : props) {
             switch (prop.type) {
+                case ComponentPropertyType::Header: {
+                    ImGui::Separator();
+                    ImGui::TextColored(ImVec4(0.8f, 0.8f, 1.0f, 1.0f), "%s", prop.name.c_str());
+                    break;
+                }
+                case ComponentPropertyType::Separator: {
+                    ImGui::Separator();
+                    break;
+                }
                 case ComponentPropertyType::Float: {
                     float* ptr = static_cast<float*>(prop.data);
                     ImGui::DragFloat(prop.name.c_str(), ptr, 0.1f);
@@ -215,8 +224,22 @@ static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager*
                 }
                 case ComponentPropertyType::Int: {
                     int* ptr = static_cast<int*>(prop.data);
-                    ImGui::DragInt(prop.name.c_str(), ptr, 1);
-                    CheckUndoRedoDrag(actionManager, ptr);
+                    if (prop.name.find("Particle Type") != std::string::npos) {
+                        const char* items[] = { "0: Custom", "1: Explosion", "2: Spark", "3: Smoke" };
+                        int oldVal = *ptr;
+                        if (ImGui::Combo("Particle Type", ptr, items, IM_ARRAYSIZE(items))) {
+                            PushInstantUndo(actionManager, oldVal, *ptr, ptr);
+                        }
+                    } else if (prop.name.find("Emit Type") != std::string::npos) {
+                        const char* items[] = { "0: Sphere", "1: Beam", "2: Box", "3: Cylinder" };
+                        int oldVal = *ptr;
+                        if (ImGui::Combo("Emit Type", ptr, items, IM_ARRAYSIZE(items))) {
+                            PushInstantUndo(actionManager, oldVal, *ptr, ptr);
+                        }
+                    } else {
+                        ImGui::DragInt(prop.name.c_str(), ptr, 1);
+                        CheckUndoRedoDrag(actionManager, ptr);
+                    }
                     break;
                 }
                 case ComponentPropertyType::Bool: {

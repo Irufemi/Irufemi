@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 // --- Core (数学・便利ツール) ---
 
@@ -44,8 +44,7 @@
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Object3D/Primitive/Primitive3DObject.h"
-// Particle
-#include "Renderer/Particle/ParticleSystem.h"
+
 // ParticleGPU
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 // VoxelParticle

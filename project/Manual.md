@@ -47,3 +47,23 @@ GPUParticleManager::GetInstance()->UpdateEmitterData(handle, data);
 // 4. 使用が終わったら登録解除（自動的に空きスロットとして再利用されます）
 // GPUParticleManager::GetInstance()->UnregisterEmitter(handle);
 ```
+
+### 【NEW】ゲーム中での一時的なエフェクト再生 (爆発など)
+シーン内の特定座標に単発（ワンショット）の爆発エフェクトなどを出したい場合は、新しく追加された `Effect` クラスを使用するのが最も簡単です。
+
+```cpp
+#include "Framework/Component/Renderer/Effect.h"
+
+// 座標とパーティクルのテクスチャパスを指定してエフェクトを発生
+Effect::PlayEffect(
+    Vector3(10.0f, 0.0f, 5.0f),       // 発生座標
+    "resources/texture/explosion.png",// テクスチャ
+    ParticleType::Sphere,             // パーティクルの形状 (爆発なら Sphere や Hemisphere)
+    500                               // 発生させるパーティクルの数 (Burst量)
+);
+```
+
+### インスペクターからの ParticleType の設定
+`ParticleEmitterComponent` を GameObject にアタッチした場合、エディターの **Inspector パネル** から以下の項目を操作できるようになりました。
+- **Particle Type**: `Sphere`, `Beam`, `Ring`, `Cylinder`, `Box`, `Hemisphere` などをコンボボックスから直感的に選べます。
+- その他、発生量、スケール、色、重力などの細かいパラメータもここで一元管理可能です。

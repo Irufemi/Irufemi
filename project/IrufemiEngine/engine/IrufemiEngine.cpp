@@ -20,6 +20,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Manager/DebugUI.h"
 #include "Manager/PrimitiveManager.h"
 #include "Renderer/Core/BaseResource.h"
+#include "Renderer/ParticleGPU/GPUParticleManager.h"
 #include "Renderer/Effect/Effect.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Renderer/LineInstanced/LineResource.h"
@@ -32,8 +33,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Renderer/Object3D/Primitive/Primitive3DObject.h"
-#include "Renderer/Particle/ParticleResource.h"
-#include "Renderer/Particle/ParticleSystem.h"
+
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "Renderer/Region/ModelRegion.h"
 #include "Renderer/Region/PrimitiveRegion.h"
@@ -120,7 +120,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
     // 注入
     Texture::SetDescriptorPool(srvPool);
     BaseRegion::SetSrvAllocator(srvPool);
-    ParticleSystem::SetSrvPool(srvPool);
+
     Line3DRegion::SetSrvAllocator(srvPool);
   }
 
@@ -206,7 +206,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Circle2D::SetDebugUI(ui_.get());
 
   Primitive3DObject::SetDebugUI(ui_.get());
-  ParticleSystem::SetDebugUI(ui_.get());
+
 
   // 描画
   drawManager_ = std::make_unique<DrawManager>();
@@ -216,10 +216,10 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Circle2D::SetDrawManager(drawManager_.get());
 
   BaseRegion::SetDrawManager(drawManager_.get());
-  ParticleSystem::SetDrawManager(drawManager_.get());
+
   GPUParticleSystem::SetDrawManager(drawManager_.get());
   Primitive3DObject::SetDrawManager(drawManager_.get());
-  ParticleSystem::SetEngine(this);
+
   GPUParticleSystem::SetEngine(this);
   Line3DRegion::SetDrawManager(drawManager_.get());
 
@@ -230,7 +230,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Circle2D::SetTextureManager(textureManager_.get());
 
   BaseRegion::SetTextureManager(textureManager_.get());
-  ParticleSystem::SetTextureManager(textureManager_.get());
+
   GPUParticleSystem::SetTextureManager(textureManager_.get());
   Primitive3DObject::SetTextureManager(textureManager_.get());
 
@@ -413,19 +413,19 @@ void IrufemiEngine::Finalize() {
   GpuMesh::sDxCommon = nullptr;
 
   BaseRegion::SetSrvAllocator(nullptr);
-  ParticleSystem::SetSrvPool(nullptr);
+
   Line3DRegion::SetSrvAllocator(nullptr);
 
   // DebugUI, DrawManager, TextureManager 等の各クラスへの静的セットもクリア
   Sprite::SetDebugUI(nullptr);
   Circle2D::SetDebugUI(nullptr);
   Primitive3DObject::SetDebugUI(nullptr);
-  ParticleSystem::SetDebugUI(nullptr);
+
 
   Sprite::SetDrawManager(nullptr);
   Circle2D::SetDrawManager(nullptr);
   BaseRegion::SetDrawManager(nullptr);
-  ParticleSystem::SetDrawManager(nullptr);
+
   GPUParticleSystem::SetDrawManager(nullptr);
   Primitive3DObject::SetDrawManager(nullptr);
   Line3DRegion::SetDrawManager(nullptr);
@@ -433,13 +433,13 @@ void IrufemiEngine::Finalize() {
   Sprite::SetTextureManager(nullptr);
   Circle2D::SetTextureManager(nullptr);
   BaseRegion::SetTextureManager(nullptr);
-  ParticleSystem::SetTextureManager(nullptr);
+
   GPUParticleSystem::SetTextureManager(nullptr);
   Primitive3DObject::SetTextureManager(nullptr);
 
   Sprite::SetCameraManager(nullptr);
   ModelRegion::SetModelManager(nullptr);
-  ParticleSystem::SetEngine(nullptr);
+
   GPUParticleSystem::SetEngine(nullptr);
   BaseModel::SetIrufemiEngine(nullptr);
   Skybox::SetEngine(nullptr);
@@ -537,6 +537,7 @@ void IrufemiEngine::Execute() {
     ui_->BeginEngineDebugWindow();
     ui_->SceneSelectorTab(sceneManager_.get());
     ui_->PostProcessTab(this);
+    GPUParticleManager::GetInstance()->Debug();
     if (auto *scene = sceneManager_->GetCurrentScene()) {
       scene->DrawDebugTab();
     }

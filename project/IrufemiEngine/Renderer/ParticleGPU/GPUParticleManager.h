@@ -13,6 +13,7 @@ public:
     void Update();
     void Draw();
     void Finalize();
+    void Debug();
 
     struct EmitterHandle {
         GPUParticleSystem* system = nullptr;

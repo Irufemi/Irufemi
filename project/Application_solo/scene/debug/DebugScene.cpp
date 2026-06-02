@@ -1,4 +1,4 @@
-﻿#include "DebugScene.h" // Unified debug UI enabled
+#include "DebugScene.h" // Unified debug UI enabled
 
 #include "Framework/SceneManager.h"
 
@@ -41,15 +41,15 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveSuzanne_ = false;
     isActiveFence_ = false;
     isActiveTerrain_ = false;
-    isActiveParticle_ = false;
-    isActiveGPUParticle_ = true;
+
+
     isActiveVoxelParticle_ = false;
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
     isActiveSneakWalk_ = false;
     isActiveSkybox_ = false;
     isActivePrimitiveObj_ = false;
-    isActiveGPUParticle_ = false;
+
     isActiveLightningCrawl_ = false;
     isActiveImGuiDemo_ = false;
 
@@ -95,14 +95,8 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         terrain_ = std::make_unique <StaticModelObject>();
         terrain_->Initialize("sample/terrain.obj");
     }
-    if (isActiveParticle_) {
-        particle_ = std::make_unique<ParticleSystem>();
-        particle_->Initialize("resources/circle.png",ParticleType::kAccelerationField);
-    }
-    if (isActiveGPUParticle_) {
-        gpuParticle_ = std::make_unique<GPUParticleSystem>();
-        gpuParticle_->Initialize("resources/circle.png");
-    }
+
+
     if (isActiveVoxelParticle_) {
         voxelParticle_ = std::make_unique<VoxelParticleSystem>();
         voxelParticle_->Initialize("sample/terrain.obj", { 64,64,64 });
@@ -168,8 +162,8 @@ void DebugScene::Update() {
     ImGui::Checkbox("Suzanne", &isActiveSuzanne_);
     ImGui::Checkbox("Fence", &isActiveFence_);
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
-    ImGui::Checkbox("Particle", &isActiveParticle_);
-    ImGui::Checkbox("GPUParticle", &isActiveGPUParticle_);
+
+
     ImGui::Checkbox("VoxelParticle", &isActiveVoxelParticle_);
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
     ImGui::Checkbox("Walk", &isActiveWalk_);
@@ -251,21 +245,8 @@ void DebugScene::Update() {
         terrain_->Debug("Terrain");
         terrain_->Update();
     }
-    if (isActiveParticle_) {
-        if (!particle_) {
-            particle_ = std::make_unique <ParticleSystem>();
-            particle_->Initialize("resources/circle.png", ParticleType::kAccelerationField);
-        }
-        particle_->Debug("Particle");
-        particle_->Update();
-    }
-    if (isActiveGPUParticle_) {
-        if (!gpuParticle_) {
-            gpuParticle_ = std::make_unique <GPUParticleSystem>();
-            gpuParticle_->Initialize("resources/circle.png");
-        }
-        gpuParticle_->Update();
-    }
+
+
     if (isActiveVoxelParticle_) {
         if (!voxelParticle_) {
             voxelParticle_ = std::make_unique<VoxelParticleSystem>();
@@ -435,13 +416,9 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyPSO("Particle");
 
-    if (isActiveParticle_) {
-        particle_->Draw();
-    }
 
-    if (isActiveGPUParticle_) {
-        gpuParticle_->Draw();
-    }
+
+
 
     if (isActiveVoxelParticle_) {
         voxelParticle_->Draw();
@@ -470,9 +447,7 @@ void DebugScene::DrawDebugTab() {
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
 
-    if (isActiveGPUParticle_ && gpuParticle_) {
-        gpuParticle_->Debug();
-    }
+
 
     if (isActiveLightningCrawl_ && lightningCylinder_) {
         // オブジェクト標準のデバッグUI（形状やマテリアル）を表示

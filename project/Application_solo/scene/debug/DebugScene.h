@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Framework/BaseScene.h"
 
@@ -56,11 +56,6 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<StaticModelObject> terrain_ = nullptr;
     bool isActiveTerrain_ = false;
 
-    std::unique_ptr<ParticleSystem> particle_ = nullptr;
-    bool isActiveParticle_ = false;
-
-    std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
-    bool isActiveGPUParticle_ = false;
 
     std::unique_ptr<VoxelParticleSystem> voxelParticle_ = nullptr;
     bool isActiveVoxelParticle_ = false;

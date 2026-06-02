@@ -84,3 +84,24 @@ void GPUParticleManager::UpdateEmitterData(const EmitterHandle& handle, const GP
         handle.system->emittersData_[handle.emitterIndex].frequencyTime = freqTime;
     }
 }
+
+#include <imgui.h>
+void GPUParticleManager::Debug() {
+#if defined(USE_IMGUI)
+    if (ImGui::BeginTabItem("GPUParticle")) {
+        ImGui::Text("Active Particle Systems: %d", (int)systems_.size());
+        
+        for (auto& pair : systems_) {
+            const std::string& textureName = pair.first;
+            auto& context = pair.second;
+            
+            if (ImGui::TreeNode(textureName.c_str())) {
+                ImGui::Text("Active Emitters: %d / %d", (int)(GPUParticleSystem::kMaxEmitters - context.freeIndices.size()), GPUParticleSystem::kMaxEmitters);
+                context.system->Debug();
+                ImGui::TreePop();
+            }
+        }
+        ImGui::EndTabItem();
+    }
+#endif
+}

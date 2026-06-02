@@ -50,6 +50,9 @@ struct ParticleCS {
     uint32_t atlasSize;
     Vector4 startColor;   ///< 開始色
     Vector4 endColor;     ///< 終了色
+    Vector4 midColor;     ///< 中間色
+    Vector3 midScale;     ///< 中間スケール
+    float midPoint;       ///< 中間タイミング (0.0~1.0)
 };
 
 #include "Engine/Graphics/Data/Material.h"
@@ -133,6 +136,17 @@ struct GPUParticleEmitter {
     float trailFrequency = 0.05f;
     float pad7 = 0.0f;
     float pad8 = 0.0f;
+
+    // float4 x 19
+    float midColorMinR = 1, midColorMinG = 1, midColorMinB = 1, midColorMinA = 1;
+    // float4 x 20
+    float midColorMaxR = 1, midColorMaxG = 1, midColorMaxB = 1, midColorMaxA = 1;
+    // float4 x 21
+    float midScaleMinX = 1, midScaleMinY = 1, midScaleMinZ = 1;
+    float pad9 = 0;
+    // float4 x 22
+    float midScaleMaxX = 1, midScaleMaxY = 1, midScaleMaxZ = 1;
+    float midPoint = 0.0f;
 };
 
 /**
@@ -205,6 +219,21 @@ public:
      * @param endMax 終了時の最大スケール
      */
     void SetParticleScale(const Vector3& startMin, const Vector3& startMax, const Vector3& endMin, const Vector3& endMax, uint32_t emitterIndex = 0);
+    
+    /**
+     * @brief パーティクルの中間スケール（3段階変化用）を設定する
+     * @param midMin 中間時の最小スケール
+     * @param midMax 中間時の最大スケール
+     * @param midPoint 中間到達タイミング (0.0~1.0)
+     */
+    void SetMidScale(const Vector3& midMin, const Vector3& midMax, float midPoint, uint32_t emitterIndex = 0);
+
+    /**
+     * @brief パーティクルの色（開始時と終了時、オプションで中間色）を動的に設定する
+     */
+    void SetParticleColor(const Vector4& startMin, const Vector4& startMax, const Vector4& endMin, const Vector4& endMax, uint32_t emitterIndex = 0);
+    
+    void SetMidColor(const Vector4& midMin, const Vector4& midMax, float midPoint, uint32_t emitterIndex = 0);
 
     /**
      * @brief パーティクルの寿命（最小・最大）を設定する
@@ -349,10 +378,7 @@ private:
 
     /** @name ImGuiデバッグ用描画分割 */
     ///@{
-    void DebugGeneralSettings();
-    void DebugEmitterSettings();
-    void DebugShapeSettings();
-    void DebugPhysicsSettings();
+    
     ///@}
 
     static DirectXCommon* dxCommon_;

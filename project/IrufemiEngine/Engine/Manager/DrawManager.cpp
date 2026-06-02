@@ -1,4 +1,4 @@
-﻿#include "DrawManager.h"
+#include "DrawManager.h"
 using namespace RenderPackets;
 
 #include<Windows.h>
@@ -9,8 +9,7 @@ using namespace RenderPackets;
 #include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Region/ModelRegion.h"
 #include "Renderer/Region/PrimitiveRegion.h"
-#include "Renderer/Particle/ParticleSystem.h"
-#include "Renderer/Particle/ParticleResource.h"
+
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Renderer/Skybox//Skybox.h"
 #include "Renderer/Object3D/Object3DResource.h"
@@ -445,44 +444,6 @@ void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
-void DrawManager::SubmitParticle(const ParticleResource* resource, uint32_t instanceCount) {
-    if (!resource || instanceCount == 0) return;
-    ParticlePacket p{};
-    p.resource = resource;
-    p.instanceCount = instanceCount;
-    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
-    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
-    p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    particleQueue_.push_back(p);
-}
-
-void DrawManager::DrawParticle(const RenderPackets::ParticlePacket& packet) {
-    const ParticleResource* resource = packet.resource;
-    if (!resource || !commandList_ || packet.instanceCount == 0) return;
-
-    // IA 設定: VB/IB/Topology
-    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
-    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
-    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    // --- CBV のバインド ---
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
-
-    // インスタンス用 SRV (VS 側で参照するインスタンス配列)
-    uint32_t frameIndex = dxCommon_->GetFrameIndex();
-    assert(resource->instancingSrvHandleGPU_[frameIndex].ptr != 0 && "Instancing SRV handle is null or invalid");
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, resource->instancingSrvHandleGPU_[frameIndex]);
-
-    // テクスチャ (PS t0)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
-
-    // 描画コール: インデックス数 × インスタンス数
-    commandList_->DrawIndexedInstanced(
-        resource->indexCount_,
-        packet.instanceCount,
-        0, 0, 0
-    );
-}
 
 void DrawManager::SubmitModelRegion(const ModelRegionPacket& packet) {
     modelRegionQueue_.push_back(packet);
@@ -748,10 +709,12 @@ void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet
     // --- CBV のバインド ---
     // (rootParameters[(UINT)RootSlot::Material] に対応、PixelShader 側の b0 想定)
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);
-    // (rootParameters[(UINT)RootSlot::Transform] に対応、VertexShader 側の b0 想定)
+    // (rootParameters[(UINT)RootSlot::Transform] に対応、VertexShader の b0 配置)
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.perViewAddress);
     // エミッター設定 (RootSlot::Special -> register b6)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, packet.emitterAddress);
+    if (packet.emitterAddress != 0) {
+        commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, packet.emitterAddress);
+    }
 
     // --- SRVのバインド ---
     // テクスチャ (PS t0)
@@ -1056,7 +1019,7 @@ void DrawManager::ClearRenderQueues() {
     selectionMaskQueue_.clear();
     selectionMaskQueue2D_.clear();
     spriteQueue_.clear();
-    particleQueue_.clear();
+
     lineQueue_.clear();
     gpuParticleQueue_.clear();
     voxelParticleQueue_.clear();

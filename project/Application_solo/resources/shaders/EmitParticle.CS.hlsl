@@ -147,13 +147,17 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
             // スケール初期化
             gParticles[particleIndex].startScale = lerp(emitter.startScaleMin, emitter.startScaleMax, r_scale);
+            gParticles[particleIndex].midScale = lerp(emitter.midScaleMin, emitter.midScaleMax, r_scale);
             gParticles[particleIndex].endScale = lerp(emitter.endScaleMin, emitter.endScaleMax, r_scale);
             gParticles[particleIndex].scale = gParticles[particleIndex].startScale;
 
             // カラー初期化
             gParticles[particleIndex].startColor = lerp(emitter.startColorMin, emitter.startColorMax, r_color);
+            gParticles[particleIndex].midColor = lerp(emitter.midColorMin, emitter.midColorMax, r_color);
             gParticles[particleIndex].endColor = lerp(emitter.endColorMin, emitter.endColorMax, r_color);
             gParticles[particleIndex].color = gParticles[particleIndex].startColor;
+
+            gParticles[particleIndex].midPoint = emitter.midPoint;
 
             // 回転初期化
             if (emitter.enableRandomRotation != 0) {

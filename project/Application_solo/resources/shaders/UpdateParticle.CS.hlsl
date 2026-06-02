@@ -117,10 +117,22 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 gParticles[particleIndex].velocity.xz *= 0.8f;
             }
 
-            // カラー・スケール更新: Start -> End Lerp (type == 0 以外は初期設定をそのままLerp)
+            // カラー・スケール更新: Start -> Mid -> End Lerp (type == 0 以外は初期設定をそのままLerp)
             if (gParticles[particleIndex].type == 0) {
-                gParticles[particleIndex].color = lerp(gParticles[particleIndex].startColor, gParticles[particleIndex].endColor, t);
-                gParticles[particleIndex].scale = lerp(gParticles[particleIndex].startScale, gParticles[particleIndex].endScale, t);
+                if (gParticles[particleIndex].midPoint > 0.0f) {
+                    if (t < gParticles[particleIndex].midPoint) {
+                        float progress = t / gParticles[particleIndex].midPoint;
+                        gParticles[particleIndex].color = lerp(gParticles[particleIndex].startColor, gParticles[particleIndex].midColor, progress);
+                        gParticles[particleIndex].scale = lerp(gParticles[particleIndex].startScale, gParticles[particleIndex].midScale, progress);
+                    } else {
+                        float progress = (t - gParticles[particleIndex].midPoint) / (1.0f - gParticles[particleIndex].midPoint);
+                        gParticles[particleIndex].color = lerp(gParticles[particleIndex].midColor, gParticles[particleIndex].endColor, progress);
+                        gParticles[particleIndex].scale = lerp(gParticles[particleIndex].midScale, gParticles[particleIndex].endScale, progress);
+                    }
+                } else {
+                    gParticles[particleIndex].color = lerp(gParticles[particleIndex].startColor, gParticles[particleIndex].endColor, t);
+                    gParticles[particleIndex].scale = lerp(gParticles[particleIndex].startScale, gParticles[particleIndex].endScale, t);
+                }
             } else {
                 gParticles[particleIndex].color = lerp(gParticles[particleIndex].startColor, gParticles[particleIndex].endColor, t);
                 gParticles[particleIndex].scale = lerp(gParticles[particleIndex].startScale, gParticles[particleIndex].endScale, t);

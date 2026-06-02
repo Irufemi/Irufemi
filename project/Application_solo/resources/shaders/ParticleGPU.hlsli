@@ -19,6 +19,9 @@ struct Particle
 	uint atlasSize;
 	float4 startColor;
 	float4 endColor;
+	float4 midColor;
+	float3 midScale;
+	float midPoint;
 };
 
 struct PerView
@@ -123,4 +126,15 @@ struct GPUParticleEmitter
 	float trailFrequency;
 	float pad7;
 	float pad8;
+
+	// float4 x 19
+	float4 midColorMin;
+	// float4 x 20
+	float4 midColorMax;
+	// float4 x 21
+	float3 midScaleMin;
+	float pad9;
+	// float4 x 22
+	float3 midScaleMax;
+	float midPoint;
 };

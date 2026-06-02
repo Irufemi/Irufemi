@@ -38,7 +38,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Renderer/LineInstanced/LineResource.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Renderer/Object2D/Object2DResource.h"
-#include "Renderer/Particle/ParticleResource.h"
+
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Graphics/Data/LightningParams.h"
 
@@ -665,27 +665,6 @@ void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_
 #endif
 }
 
-void DebugUI::DebugTexture([[maybe_unused]] ParticleResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
-#ifdef USE_IMGUI
-    if (textureManager_ && resource) {
-        auto textureNames = textureManager_->GetTextureNamesForDebug();
-        
-        if (!textureNames.empty()) {
-            const char* preview = textureNames[selectedTextureIndex].c_str();
-            if (ImGui::BeginCombo("Texture", preview)) {
-                for (int i = 0; i < static_cast<int>(textureNames.size()); ++i) {
-                    bool isSelected = (i == selectedTextureIndex);
-                    if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
-                        selectedTextureIndex = i;
-                        resource->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]);
-                    }
-                }
-                ImGui::EndCombo();
-            }
-        }
-    }
-#endif
-}
 
 // DirectionalLight
 void DebugUI::DebugDirectionalLight([[maybe_unused]] DirectionalLight* directionalLightData) {

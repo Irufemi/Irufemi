@@ -1,5 +1,5 @@
 #include "Effect.h"
-#include "Renderer/Particle/ParticleSystem.h"
+// #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Texture/TextureManager.h"
@@ -177,14 +177,38 @@ void Effect::Initialize(EffectType type) {
         explosionWaveObject_->GetMaterial().color = explosionConfig_.color;
         explosionWaveObject_->SetScale(explosionConfig_.waveStartScale);
 
-        // 3. CPUパーティクル（火花用）
-        auto sparkSystem = std::make_unique<ParticleSystem>();
-        sparkSystem->Initialize("resources/circle2.png", ParticleType::kSpark, PrimitiveType::Plane);
+        // 3. GPUパーティクル（火花用）
+        auto sparkSystem = std::make_unique<GPUParticleSystem>();
+        sparkSystem->Initialize("resources/circle2.png");
+        sparkSystem->SetPrimitive(PrimitiveType::Plane);
         sparkSystem->SetBlend(BlendMode::kBlendModeAdd);
         sparkSystem->SetDepthWrite(PSOManager::DepthWrite::Disable);
         sparkSystem->SetCull(PSOManager::CullMode::None);
-        sparkSystem->SetParticleColor(explosionConfig_.color, { explosionConfig_.color.x, explosionConfig_.color.y, explosionConfig_.color.z, 0.0f });
-        sparkSystem->SetParticleScale({ 0.05f, 0.05f, 0.05f }, { 0.0f, 0.0f, 0.0f });
+        sparkSystem->SetBillboardMode(1); // CameraBillboard
+        
+        // 元の SparkBehavior（白 -> 赤 -> 透明）をシミュレート
+        // 0.0 ~ 0.2: 白(1,1,0.8) -> オレンジ(1,0.6,0)
+        // 0.2 ~ 1.0: オレンジ(1,0.6,0) -> 赤・透明(1,0,0,0)
+        sparkSystem->SetParticleColor(
+            { 1.0f, 1.0f, 0.8f, 1.0f }, { 1.0f, 1.0f, 0.8f, 1.0f }, 
+            { 1.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }
+        );
+        sparkSystem->SetMidColor(
+            { 1.0f, 0.6f, 0.0f, 1.0f }, { 1.0f, 0.6f, 0.0f, 1.0f }, 
+            0.2f // 寿命の20%時点で中間色に
+        );
+        
+        sparkSystem->SetParticleScale(
+            { 0.05f, 0.05f, 0.05f }, { 0.08f, 0.08f, 0.08f }, 
+            { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }
+        );
+        
+        sparkSystem->SetParticleLife(0.3f, 0.6f);
+        sparkSystem->SetGravity(0.8f);
+        sparkSystem->SetDamping(0.05f); // 空気抵抗
+        sparkSystem->SetVelocity(0.0f); // 爆風とは別でPlay時に設定する
+        sparkSystem->SetEmit(false);
+        sparkSystem->SetLoop(false);
         explosionSparkSystem_ = std::move(sparkSystem);
 
         isActive_ = false;
@@ -937,8 +961,18 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
         if (explosionSparkSystem_) {
             // スケールに応じて火花の発生数を動的に最適化（マシンガン等は15個、ミサイル等は60個）
             int sparkCount = (scale.x < 0.5f) ? 15 : 60;
-            explosionSparkSystem_->SetParticleScale(scale, scale);
-            explosionSparkSystem_->PlayHitEffect(position, sparkCount);
+            
+            // スケール反映
+            Vector3 startScale = { 0.05f * scale.x, 0.05f * scale.y, 0.05f * scale.z };
+            Vector3 midScale = { 0.08f * scale.x, 0.08f * scale.y, 0.08f * scale.z };
+            explosionSparkSystem_->SetParticleScale(startScale, startScale, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
+            explosionSparkSystem_->SetMidScale(midScale, midScale, 0.2f);
+            
+            explosionSparkSystem_->SetSphereEmitter(position, 0.1f, sparkCount, 0.0f);
+            explosionSparkSystem_->SetVelocity(8.0f); // GPU側の火花の弾け速度
+            explosionSparkSystem_->SetSpread(1.0f);
+            explosionSparkSystem_->SetEnableRandomRotation(true);
+            explosionSparkSystem_->Emit(sparkCount);
         }
         break;
     }

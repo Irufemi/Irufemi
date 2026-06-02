@@ -10,19 +10,33 @@ ParticleEmitterComponent::~ParticleEmitterComponent() {
 }
 
 void ParticleEmitterComponent::OnRegisterProperties() {
+    RegisterHeader("General");
     RegisterProperty("Texture Path", &texturePath_);
     RegisterProperty("Emit On Awake", &emitOnAwake_);
     
-    // 0: Sphere, 1: Beam, 2: Box, 3: Cylinder
+    RegisterSeparator();
+    RegisterHeader("Presets & Type");
+    RegisterProperty("Particle Type (0:Cst,1:Exp,2:Spk,3:Smk)", &particleType_);
     RegisterProperty("Emit Type (0-3)", &emitType_);
+    
+    RegisterSeparator();
+    RegisterHeader("Emission Parameters");
     RegisterProperty("Emit Count", &emitCountPerFrame_);
     RegisterProperty("Frequency", &emitFrequency_);
-    RegisterProperty("Life Min", &lifeTimeMin_);
-    RegisterProperty("Life Max", &lifeTimeMax_);
     RegisterProperty("Velocity", &velocity_);
     RegisterProperty("Radius", &radius_);
     RegisterProperty("Spread", &spread_);
     RegisterProperty("Direction", &direction_);
+    
+    RegisterSeparator();
+    RegisterHeader("Physics");
+    RegisterProperty("Gravity", &gravity_);
+    RegisterProperty("Damping", &damping_);
+    
+    RegisterSeparator();
+    RegisterHeader("Lifetime & Visuals");
+    RegisterProperty("Life Min", &lifeTimeMin_);
+    RegisterProperty("Life Max", &lifeTimeMax_);
     RegisterProperty("Color", &color_);
     RegisterProperty("Start Scale", &startScale_);
     RegisterProperty("End Scale", &endScale_);
@@ -51,6 +65,30 @@ void ParticleEmitterComponent::Update() {
 
     Vector3 pos = transform_ ? transform_->worldPosition_ : Vector3{0, 0, 0};
 
+    // プリセットによるパラメータの上書き
+    if (particleType_ == 1) { // Explosion
+        emitType_ = 0; // Sphere
+        gravity_ = 0.0f;
+        damping_ = 0.05f;
+        velocity_ = 8.0f;
+        lifeTimeMin_ = 0.5f;
+        lifeTimeMax_ = 1.0f;
+    } else if (particleType_ == 2) { // Spark
+        emitType_ = 0; // Sphere
+        gravity_ = -9.8f;
+        damping_ = 0.02f;
+        velocity_ = 5.0f;
+        lifeTimeMin_ = 1.0f;
+        lifeTimeMax_ = 2.0f;
+    } else if (particleType_ == 3) { // Smoke
+        emitType_ = 0; // Sphere
+        gravity_ = 2.0f; // 上へ
+        damping_ = 0.1f;
+        velocity_ = 1.0f;
+        lifeTimeMin_ = 2.0f;
+        lifeTimeMax_ = 3.0f;
+    }
+
     GPUParticleEmitter data;
     // Set basic params
     data.type = emitType_;
@@ -61,6 +99,10 @@ void ParticleEmitterComponent::Update() {
     data.spread = spread_;
     data.count = emitCountPerFrame_;
     data.frequency = emitFrequency_;
+    
+    // Physics
+    data.gravity = gravity_;
+    data.damping = damping_;
     
     // Default shape specific hacks (like Box areaSize, Cylinder height mapping)
     if (emitType_ == 2) { // Box
@@ -87,6 +129,10 @@ void ParticleEmitterComponent::Update() {
     
     data.emit = isPlaying_ ? 1 : 0;
     
+    // Burst
+    data.burstCount = burstCountPending_;
+    burstCountPending_ = 0; // 送信後はリセット
+    
     GPUParticleManager::GetInstance()->UpdateEmitterData(emitterHandle_, data);
 }
 
@@ -99,4 +145,8 @@ void ParticleEmitterComponent::Play() {
 
 void ParticleEmitterComponent::Stop() {
     isPlaying_ = false;
+}
+
+void ParticleEmitterComponent::EmitBurst(int count) {
+    burstCountPending_ = count;
 }

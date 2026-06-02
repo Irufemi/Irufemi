@@ -17,7 +17,6 @@ class IrufemiEngine;
 class DirectXCommon;
 class Object3DResource;
 class Object2DResource;
-class ParticleResource;
 struct Material;
 struct ObjMaterial;
 struct Transform;
@@ -162,7 +161,7 @@ public: // メンバ関数
      */
     void DebugTexture(Object3DResource* resource, int& selectedTextureIndex);
     void DebugTexture(Object2DResource* resource, int& selectedTextureIndex);
-    void DebugTexture(ParticleResource* resource, int& selectedTextureIndex);
+
 
     static void DebugDirectionalLight(DirectionalLight* directionalLightData);
 
