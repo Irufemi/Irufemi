@@ -63,7 +63,19 @@ Effect::PlayEffect(
 );
 ```
 
-### インスペクターからの ParticleType の設定
-`ParticleEmitterComponent` を GameObject にアタッチした場合、エディターの **Inspector パネル** から以下の項目を操作できるようになりました。
-- **Particle Type**: `Sphere`, `Beam`, `Ring`, `Cylinder`, `Box`, `Hemisphere` などをコンボボックスから直感的に選べます。
-- その他、発生量、スケール、色、重力などの細かいパラメータもここで一元管理可能です。
+### インスペクターからの ParticleType などの設定
+`ParticleEmitterComponent` を GameObject にアタッチした場合、エディターの **Inspector パネル** から以下の新機能を直感的に操作できます。
+
+- **Particle Mesh & Shape (形状と発生範囲)**
+  - `Sphere`, `Beam`, `Ring`, `Cylinder`, `Box` などの発生形状を選択可能です。
+  - `Box` を選択した場合のみ、専用の `Area Size (X,Y,Z)` を指定して箱状の範囲内に発生させることができます。
+  - **Billboard Mode**: パーティクルのカメラに対する向きを `None` (固定), `Billboard` (常にカメラを向く), `Y-Axis` (Y軸固定でカメラを向く・魔法陣などに最適) から選べます。
+
+- **Animation & Visuals (アニメーションと見た目)**
+  - **Atlas Rows / Cols**: 連番テクスチャ（スプライトシート）の分割数を指定するだけで、自動的にアニメーション再生されます。
+  - **Start / Mid / End Color & Scale**: これまでの開始/終了だけでなく、「中間色・中間スケール」と「それがどのタイミング(Mid Point)で切り替わるか」を設定でき、爆発（白→オレンジ→黒煙）などの複雑な表現が可能になりました。
+
+- **Physics (物理挙動)**
+  - 重力やバウンドに加えて、**Jitter (ジッター)** によって不規則なブレ（ノイズ）を与え、魔法の粉や舞い散る火の粉のようなランダムな動きを表現できます。
+
+これらのパラメータはすべて Inspector のGUIからリアルタイムに変更・確認できます。

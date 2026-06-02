@@ -44,6 +44,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
 
 
     isActiveVoxelParticle_ = false;
+    isActiveGPUParticle_ = false;
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
     isActiveSneakWalk_ = false;
@@ -97,6 +98,15 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
 
 
+    if (isActiveGPUParticle_) {
+        particleObj_ = std::make_unique<ParticleObject>();
+        particleObj_->texturePath_ = "resources/circle.png";
+        particleObj_->particleType_ = 1; // Explosion
+        particleObj_->radius_ = 5.0f;
+        particleObj_->color_ = {1.0f, 0.5f, 0.0f, 1.0f};
+        particleObj_->Initialize();
+    }
+    
     if (isActiveVoxelParticle_) {
         voxelParticle_ = std::make_unique<VoxelParticleSystem>();
         voxelParticle_->Initialize("sample/terrain.obj", { 64,64,64 });
@@ -164,6 +174,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
 
 
+    ImGui::Checkbox("GPU Particle (Code)", &isActiveGPUParticle_);
     ImGui::Checkbox("VoxelParticle", &isActiveVoxelParticle_);
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
     ImGui::Checkbox("Walk", &isActiveWalk_);
@@ -247,6 +258,30 @@ void DebugScene::Update() {
     }
 
 
+    if (isActiveGPUParticle_) {
+        if (!particleObj_) {
+            particleObj_ = std::make_unique<ParticleObject>();
+            particleObj_->texturePath_ = "resources/circle.png";
+            particleObj_->particleType_ = 1; // Explosion
+            particleObj_->radius_ = 5.0f;
+            particleObj_->color_ = {1.0f, 0.5f, 0.0f, 1.0f};
+            particleObj_->midColor_ = {1.0f, 0.0f, 0.0f, 1.0f};
+            particleObj_->Initialize();
+        }
+        
+        ImGui::Begin("Hardcoded Particle Test");
+        particleObj_->DebugUI("Hardcoded Particle Test");
+        ImGui::End();
+
+        particleObj_->Update();
+        
+        // システム全体の線描画は GPUParticleSystem::Update() 内で自動で行われるように変更しました
+    } else {
+        if (particleObj_) {
+            particleObj_.reset();
+        }
+    }
+    
     if (isActiveVoxelParticle_) {
         if (!voxelParticle_) {
             voxelParticle_ = std::make_unique<VoxelParticleSystem>();

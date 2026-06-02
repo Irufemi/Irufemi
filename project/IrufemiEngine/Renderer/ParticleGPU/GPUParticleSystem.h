@@ -365,6 +365,8 @@ private:
     void DrawSphereWireframe(const Vector3& center, float radius, const Vector4& color);
     void DrawCylinderWireframe(const Vector3& center, const Vector3& direction, float radius, float height, const Vector4& color);
 
+    void UpdateDebugLines();
+
     /**
      * @brief DirectX12の各種リソースとディスクリプタ（SRV/UAV）の生成を行う
      */

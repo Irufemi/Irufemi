@@ -23,6 +23,9 @@
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Collider/RaycastComponent.h"
+#include "Framework/Component/Renderer/ParticleEmitterComponent.h"
+#include "Renderer/ParticleGPU/ParticleObject.h"
+#include "Resource/Texture/TextureManager.h"
 #include "Framework/Component/Script/RotatorComponent.h"
 #include "Engine/Core/Utility/StringUtility.h"
 
@@ -755,6 +758,18 @@ public:
     }
 };
 
+class ParticleEmitterComponentEditor : public IComponentEditor {
+public:
+    void Draw(Component* component, EditorActionManager* actionManager) override {
+        auto* compWrapper = static_cast<ParticleEmitterComponent*>(component);
+        auto* comp = compWrapper->GetParticleObject();
+        
+        ImGui::PushID(compWrapper);
+        comp->DebugUI("Particle Emitter");
+        ImGui::PopID();
+    }
+};
+
 class RaycastComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
@@ -823,6 +838,7 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<OBBColliderComponent, OBBColliderComponentEditor>();
     RegisterEditor<SphereColliderComponent, SphereColliderComponentEditor>();
     RegisterEditor<RaycastComponent, RaycastComponentEditor>();
+    RegisterEditor<ParticleEmitterComponent, ParticleEmitterComponentEditor>();
 }
 
 void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {

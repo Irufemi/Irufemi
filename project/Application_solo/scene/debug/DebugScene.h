@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <vector>
+#include "Renderer/ParticleGPU/ParticleObject.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -59,6 +60,10 @@ private: // メンバ変数(ゲーム)
 
     std::unique_ptr<VoxelParticleSystem> voxelParticle_ = nullptr;
     bool isActiveVoxelParticle_ = false;
+
+    // ハードコーディングされたGPUパーティクルのテスト用
+    std::unique_ptr<ParticleObject> particleObj_ = nullptr;
+    bool isActiveGPUParticle_ = false;
 
     std::unique_ptr<AnimationModel> animatedCube_ = nullptr;
     bool isActiveAnimatedCube_ = false;

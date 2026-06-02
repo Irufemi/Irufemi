@@ -264,6 +264,7 @@ void GPUParticleSystem::Update() {
     maxLifeOverall = (std::max)(maxLifeOverall, em.maxLife);
   }
 
+  UpdateDebugLines();
   if (debugLineRegion_) {
     debugLineRegion_->Update();
   }
@@ -417,47 +418,42 @@ void GPUParticleSystem::Draw() {
 }
 
 // デバッグ
-void GPUParticleSystem::Debug() {
+void GPUParticleSystem::UpdateDebugLines() {
 #if defined(USE_IMGUI)
-
   if (debugLineRegion_) {
     debugLineRegion_->ClearInstances();
   }
 
-  auto *emitter_ = emittersData_.empty() ? nullptr : &emittersData_[0];
-  if (showEmitterArea_ && emitter_) {
-    Vector4 color = {0.0f, 1.0f, 0.0f, 1.0f};
-    Vector3 translate = {emitter_->translateX, emitter_->translateY,
-                         emitter_->translateZ};
-    Vector3 direction = {emitter_->directionX, emitter_->directionY,
-                         emitter_->directionZ};
-    Vector3 areaSize = {emitter_->areaSizeX, emitter_->areaSizeY,
-                        emitter_->areaSizeZ};
+  if (showEmitterArea_) {
+    for (const auto& em : emittersData_) {
+      if (em.emit == 0 && em.burstCount == 0) continue;
+      Vector4 color = {0.0f, 1.0f, 0.0f, 1.0f};
+      Vector3 translate = {em.translateX, em.translateY, em.translateZ};
+      Vector3 direction = {em.directionX, em.directionY, em.directionZ};
+      Vector3 areaSize = {em.areaSizeX, em.areaSizeY, em.areaSizeZ};
 
-    if (emitter_->type == 0) {
-      DrawSphereWireframe(translate, emitter_->radius, color);
-    } else if (emitter_->type == 1) {
-      // Beamの簡易描画
-      Vector3 top =
-          translate + Math::Normalize(direction) * 50.0f; // 50mまで描画
-      DrawCylinderWireframe(translate, direction, emitter_->radius, 50.0f,
-                            color);
-    } else if (emitter_->type == 2) {
-      // Ring (内側・外側の円、厚み（スプレッド）の表現は簡易化)
-      DrawCircle(translate, emitter_->radius, {0, 1, 0}, color);
-      DrawCircle(translate, emitter_->radius - emitter_->spread, {0, 1, 0},
-                 color);
-    } else if (emitter_->type == 3) {
-      // Cylinder (velocity を height として使っている)
-      DrawCylinderWireframe(translate, direction, emitter_->radius,
-                            emitter_->velocity, color);
-    } else if (emitter_->type == 4) {
-      // Box
-      Vector3 minP = translate - areaSize * 0.5f;
-      Vector3 maxP = translate + areaSize * 0.5f;
-      DrawAABB(minP, maxP, color);
+      if (em.type == 0) {
+        DrawSphereWireframe(translate, em.radius, color);
+      } else if (em.type == 1) {
+        DrawCylinderWireframe(translate, direction, em.radius, 50.0f, color);
+      } else if (em.type == 2) {
+        DrawCircle(translate, em.radius, {0, 1, 0}, color);
+        DrawCircle(translate, em.radius - em.spread, {0, 1, 0}, color);
+      } else if (em.type == 3) {
+        DrawCylinderWireframe(translate, direction, em.radius, em.velocity, color);
+      } else if (em.type == 4) {
+        Vector3 minP = translate - areaSize * 0.5f;
+        Vector3 maxP = translate + areaSize * 0.5f;
+        DrawAABB(minP, maxP, color);
+      }
     }
   }
+#endif
+}
+
+void GPUParticleSystem::Debug() {
+#if defined(USE_IMGUI)
+  ImGui::Checkbox("Show Emitter Area", &showEmitterArea_);
 
   ImGui::Text("System Settings (Global)");
   ImGui::Separator();

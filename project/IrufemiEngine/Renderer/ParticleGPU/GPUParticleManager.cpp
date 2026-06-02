@@ -88,15 +88,28 @@ void GPUParticleManager::UpdateEmitterData(const EmitterHandle& handle, const GP
 #include <imgui.h>
 void GPUParticleManager::Debug() {
 #if defined(USE_IMGUI)
-    if (ImGui::BeginTabItem("GPUParticle")) {
-        ImGui::Text("Active Particle Systems: %d", (int)systems_.size());
+    if (ImGui::BeginTabItem("GPU Particle Manager")) {
+        ImGui::Text("System Statistics");
+        ImGui::Separator();
+        ImGui::Text("Active Particle Systems (Textures): %d", (int)systems_.size());
         
+        int totalEmitters = 0;
+        int maxEmitters = systems_.size() * GPUParticleSystem::kMaxEmitters;
+        for (const auto& pair : systems_) {
+            totalEmitters += (int)(GPUParticleSystem::kMaxEmitters - pair.second.freeIndices.size());
+        }
+        
+        ImGui::Text("Total Emitters Used: %d / %d", totalEmitters, maxEmitters);
+        ImGui::Separator();
+        
+        ImGui::Spacing();
+        ImGui::Text("System Details per Texture");
         for (auto& pair : systems_) {
             const std::string& textureName = pair.first;
             auto& context = pair.second;
             
             if (ImGui::TreeNode(textureName.c_str())) {
-                ImGui::Text("Active Emitters: %d / %d", (int)(GPUParticleSystem::kMaxEmitters - context.freeIndices.size()), GPUParticleSystem::kMaxEmitters);
+                ImGui::Text("Emitters: %d / %d", (int)(GPUParticleSystem::kMaxEmitters - context.freeIndices.size()), GPUParticleSystem::kMaxEmitters);
                 context.system->Debug();
                 ImGui::TreePop();
             }
