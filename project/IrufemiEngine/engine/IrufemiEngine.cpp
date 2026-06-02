@@ -1,4 +1,4 @@
-#include "IrufemiEngine.h"
+﻿#include "IrufemiEngine.h"
 
 IrufemiEngine::IrufemiEngine() = default;
 
@@ -29,7 +29,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object2D/Text/Text.h"
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Renderer/Object3D/BaseModel/BaseModel.h"
-#include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Renderer/Object3D/Primitive/Primitive3DObject.h"
 #include "Renderer/Particle/ParticleResource.h"

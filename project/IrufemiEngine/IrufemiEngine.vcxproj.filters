@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Framework">
@@ -145,7 +145,7 @@
     <Filter Include="Engine\Compute">
       <UniqueIdentifier>{1542982a-dc2c-4782-a8b3-e712e003e678}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\Object3D\ObjClass">
+    <Filter Include="Renderer\Object3D\StaticModelObject">
       <UniqueIdentifier>{679e9638-af18-4026-8501-9e4d5620bba7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\Object3D\BaseModel">
@@ -413,8 +413,8 @@
     <ClCompile Include="Renderer\Object3D\AnimationModel\AnimationModel.cpp">
       <Filter>Renderer\Object3D\AnimationModel</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object3D\ObjClass\ObjClass.cpp">
-      <Filter>Renderer\Object3D\ObjClass</Filter>
+    <ClCompile Include="Renderer\Object3D\StaticModelObject\StaticModelObject.cpp">
+      <Filter>Renderer\Object3D\StaticModelObject</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Object3D\BaseModel\BaseModel.cpp">
       <Filter>Renderer\Object3D\BaseModel</Filter>
@@ -987,8 +987,8 @@
     <ClInclude Include="Renderer\LineInstanced\LineClass.h">
       <Filter>Renderer\LineInstanced</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object3D\ObjClass\ObjClass.h">
-      <Filter>Renderer\Object3D\ObjClass</Filter>
+    <ClInclude Include="Renderer\Object3D\StaticModelObject\StaticModelObject.h">
+      <Filter>Renderer\Object3D\StaticModelObject</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Object3D\BaseModel\BaseModel.h">
       <Filter>Renderer\Object3D\BaseModel</Filter>

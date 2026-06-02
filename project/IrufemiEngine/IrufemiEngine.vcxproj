@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -259,7 +259,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Renderer\Object3D\ObjClass\ObjClass.cpp" />
+    <ClCompile Include="Renderer\Object3D\StaticModelObject\StaticModelObject.cpp" />
     <ClCompile Include="Renderer\Object3D\BaseModel\BaseModel.cpp" />
     <ClCompile Include="Renderer\Object3D\Primitive\Primitive3DObject.cpp" />
     <ClCompile Include="Renderer\Data\RenderData.cpp" />
@@ -441,7 +441,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object2D\Sprite\Sprite.h" />
 
     <ClInclude Include="Renderer\LineInstanced\LineClass.h" />
-    <ClInclude Include="Renderer\Object3D\ObjClass\ObjClass.h" />
+    <ClInclude Include="Renderer\Object3D\StaticModelObject\StaticModelObject.h" />
     <ClInclude Include="Renderer\Object3D\BaseModel\BaseModel.h" />
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h" />
     <ClInclude Include="Renderer\Effect\Effect.h" />

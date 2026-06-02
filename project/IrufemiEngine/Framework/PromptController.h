@@ -1,16 +1,16 @@
-#pragma once
+﻿#pragma once
 #include <cstdint>
 #include "UIAnimator.h"
 
 // 前方宣言
-class ObjClass;
+class StaticModelObject;
 class Sprite;
 class InputManager;
 
 /**
  * @class PromptController
  * @brief 「Push to Space」などの単一キー入力待ちUIを管理するコントローラー
- * @details 指定された ObjClass または Sprite のアルファ値と描画を代行し、
+ * @details 指定された StaticModelObject または Sprite のアルファ値と描画を代行し、
  *          決定入力後のフラッシュ演出と遷移遅延を管理します。
  */
 class PromptController {
@@ -19,9 +19,9 @@ public:
     ~PromptController() = default;
 
     /**
-     * @brief 対象とする ObjClass を設定する
+     * @brief 対象とする StaticModelObject を設定する
      */
-    void SetTarget(ObjClass* targetObj);
+    void SetTarget(StaticModelObject* targetObj);
 
     /**
      * @brief 対象とする Sprite を設定する
@@ -57,7 +57,7 @@ public:
     bool IsDecided() const { return isDecided_; }
 
 private:
-    ObjClass* targetObj_ = nullptr;
+    StaticModelObject* targetObj_ = nullptr;
     Sprite* targetSprite_ = nullptr;
 
     UIAnimator animator_;

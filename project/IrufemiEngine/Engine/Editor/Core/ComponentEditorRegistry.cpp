@@ -1,4 +1,4 @@
-#include "ComponentEditorRegistry.h"
+﻿#include "ComponentEditorRegistry.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>
@@ -10,7 +10,7 @@
 #include "Engine/Manager/EditorManager.h"
 #include "Engine/Manager/CollisionManager.h"
 #include "Engine/IrufemiEngine.h"
-#include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Framework/Component/TransformComponent.h"

@@ -71,7 +71,7 @@ public:
     
     void SyncBeforeDraw();
     
-    // --- 外部リソースの借用 (ObjClass/AnimationModel等で共有するため) ---
+    // --- 外部リソースの借用 (StaticModelObject/AnimationModel等で共有するため) ---
     void SetExternalTransformCbIndex(uint32_t* externalCbIndex) {
         externalTransformCbIndex_ = externalCbIndex;
     }

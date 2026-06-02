@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Framework/BaseScene.h"
 
@@ -32,28 +32,28 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<Primitive3DObject> primitiveObj_ = nullptr;
     bool isActivePrimitiveObj_ = false;
 
-    std::unique_ptr<ObjClass> obj_ = nullptr;
+    std::unique_ptr<StaticModelObject> obj_ = nullptr;
     bool isActiveObj_ = false;
 
-    std::unique_ptr<ObjClass> utashTeapot_ = nullptr;
+    std::unique_ptr<StaticModelObject> utashTeapot_ = nullptr;
     bool isActiveUtashTeapot_ = false;
 
-    std::unique_ptr<ObjClass> stanfordBunny_ = nullptr;
+    std::unique_ptr<StaticModelObject> stanfordBunny_ = nullptr;
     bool isActiveStanfordBunny_ = false;
 
-    std::unique_ptr<ObjClass> multiMesh_ = nullptr;
+    std::unique_ptr<StaticModelObject> multiMesh_ = nullptr;
     bool isActiveMultiMesh_ = false;
 
-    std::unique_ptr<ObjClass> multiMaterial_ = nullptr;
+    std::unique_ptr<StaticModelObject> multiMaterial_ = nullptr;
     bool isActiveMultiMaterial_ = false;
 
-    std::unique_ptr<ObjClass> suzanne_ = nullptr;
+    std::unique_ptr<StaticModelObject> suzanne_ = nullptr;
     bool isActiveSuzanne_ = false;
 
-    std::unique_ptr<ObjClass> fence_ = nullptr;
+    std::unique_ptr<StaticModelObject> fence_ = nullptr;
     bool isActiveFence_ = false;
 
-    std::unique_ptr<ObjClass> terrain_ = nullptr;
+    std::unique_ptr<StaticModelObject> terrain_ = nullptr;
     bool isActiveTerrain_ = false;
 
     std::unique_ptr<ParticleSystem> particle_ = nullptr;

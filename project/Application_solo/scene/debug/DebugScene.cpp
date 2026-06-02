@@ -1,4 +1,4 @@
-#include "DebugScene.h" // Unified debug UI enabled
+﻿#include "DebugScene.h" // Unified debug UI enabled
 
 #include "Framework/SceneManager.h"
 
@@ -64,35 +64,35 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
 
     if (isActiveObj_) {
-        obj_ = std::make_unique<ObjClass>();
+        obj_ = std::make_unique<StaticModelObject>();
         obj_->Initialize("sample/plane.gltf");
     }
     if (isActiveStanfordBunny_) {
-        stanfordBunny_ = std::make_unique <ObjClass>();
+        stanfordBunny_ = std::make_unique <StaticModelObject>();
         stanfordBunny_->Initialize("sample/bunny.obj");
     }
     if (isActiveUtashTeapot_) {
-        utashTeapot_ = std::make_unique <ObjClass>();
+        utashTeapot_ = std::make_unique <StaticModelObject>();
         utashTeapot_->Initialize("sample/teapot.obj");
     }
     if (isActiveMultiMesh_) {
-        multiMesh_ = std::make_unique <ObjClass>();
+        multiMesh_ = std::make_unique <StaticModelObject>();
         multiMesh_->Initialize("sample/multiMesh.obj");
     }
     if (isActiveMultiMaterial_) {
-        multiMaterial_ = std::make_unique <ObjClass>();
+        multiMaterial_ = std::make_unique <StaticModelObject>();
         multiMaterial_->Initialize("sample/multiMaterial.obj");
     }
     if (isActiveSuzanne_) {
-        suzanne_ = std::make_unique <ObjClass>();
+        suzanne_ = std::make_unique <StaticModelObject>();
         suzanne_->Initialize("sample/suzanne.obj");
     }
     if (isActiveFence_) {
-        fence_ = std::make_unique <ObjClass>();
+        fence_ = std::make_unique <StaticModelObject>();
         fence_->Initialize("sample/fence.obj");
     }
     if (isActiveTerrain_) {
-        terrain_ = std::make_unique <ObjClass>();
+        terrain_ = std::make_unique <StaticModelObject>();
         terrain_->Initialize("sample/terrain.obj");
     }
     if (isActiveParticle_) {
@@ -191,14 +191,14 @@ void DebugScene::Update() {
 
     if (isActiveObj_) {
         if (!obj_) {
-            obj_ = std::make_unique<ObjClass>();
+            obj_ = std::make_unique<StaticModelObject>();
             obj_->Initialize("sample/plane.gltf");
         }
         obj_->Update();
     }
     if (isActiveUtashTeapot_) {
         if (!utashTeapot_) {
-            utashTeapot_ = std::make_unique<ObjClass>();
+            utashTeapot_ = std::make_unique<StaticModelObject>();
             utashTeapot_->Initialize("sample/teapot.obj");
         }
         utashTeapot_->Debug("Utash Teapot");
@@ -206,7 +206,7 @@ void DebugScene::Update() {
     }
     if (isActiveStanfordBunny_) {
         if (!stanfordBunny_) {
-            stanfordBunny_ = std::make_unique<ObjClass>();
+            stanfordBunny_ = std::make_unique<StaticModelObject>();
             stanfordBunny_->Initialize("sample/bunny.obj");
         }
         stanfordBunny_->Debug("Stanford Bunny");
@@ -214,7 +214,7 @@ void DebugScene::Update() {
     }
     if (isActiveMultiMesh_) {
         if (!multiMesh_) {
-            multiMesh_ = std::make_unique<ObjClass>();
+            multiMesh_ = std::make_unique<StaticModelObject>();
             multiMesh_->Initialize("sample/multiMesh.obj");
         }
         multiMesh_->Debug("MultiMesh");
@@ -222,7 +222,7 @@ void DebugScene::Update() {
     }
     if (isActiveMultiMaterial_) {
         if (!multiMaterial_) {
-            multiMaterial_ = std::make_unique<ObjClass>();
+            multiMaterial_ = std::make_unique<StaticModelObject>();
             multiMaterial_->Initialize("sample/multiMaterial.obj");
         }
         multiMaterial_->Debug("MultiMaterial");
@@ -230,14 +230,14 @@ void DebugScene::Update() {
     }
     if (isActiveSuzanne_) {
         if (!suzanne_) {
-            suzanne_ = std::make_unique<ObjClass>();
+            suzanne_ = std::make_unique<StaticModelObject>();
             suzanne_->Initialize("sample/suzanne.obj");
         }
         suzanne_->Update();
     }
     if (isActiveFence_) {
         if (!fence_) {
-            fence_ = std::make_unique<ObjClass>();
+            fence_ = std::make_unique<StaticModelObject>();
             fence_->Initialize("sample/fence.obj");
         }
         fence_->Debug("Fence");
@@ -245,7 +245,7 @@ void DebugScene::Update() {
     }
     if (isActiveTerrain_) {
         if (!terrain_) {
-            terrain_ = std::make_unique<ObjClass>();
+            terrain_ = std::make_unique<StaticModelObject>();
             terrain_->Initialize("sample/terrain.obj");
         }
         terrain_->Debug("Terrain");

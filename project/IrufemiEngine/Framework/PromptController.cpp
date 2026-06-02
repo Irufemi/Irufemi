@@ -1,13 +1,13 @@
-#include "PromptController.h"
+﻿#include "PromptController.h"
 #include "Engine/Platform/Input/InputManager.h"
-#include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Object2D/Sprite/Sprite.h"
 
 PromptController::PromptController() {
     animator_.Reset();
 }
 
-void PromptController::SetTarget(ObjClass* targetObj) {
+void PromptController::SetTarget(StaticModelObject* targetObj) {
     targetObj_ = targetObj;
 }
 

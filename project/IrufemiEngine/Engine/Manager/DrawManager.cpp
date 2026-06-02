@@ -1,4 +1,4 @@
-#include "DrawManager.h"
+﻿#include "DrawManager.h"
 using namespace RenderPackets;
 
 #include<Windows.h>
@@ -6,7 +6,7 @@ using namespace RenderPackets;
 
 #include <dxgidebug.h>
 #include "Renderer/Object2D/Sprite/Sprite.h"
-#include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Region/ModelRegion.h"
 #include "Renderer/Region/PrimitiveRegion.h"
 #include "Renderer/Particle/ParticleSystem.h"

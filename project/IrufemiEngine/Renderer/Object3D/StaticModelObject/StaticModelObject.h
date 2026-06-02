@@ -32,12 +32,12 @@ class ModelManager;
 //==========================
 
 /**
- * @class ObjClass
+ * @class StaticModelObject
  * @brief 3Dモデル（OBJ/GLTF等）のインスタンスを描画・管理するクラス
  * @details ModelManager から取得した共有モデルデータを参照し、個別の位置・回転・拡縮やマテリアル設定を保持します。
  * スキン付きモデルの場合は、バインドポーズによる静的スキニングコンピュートタスクを実行します。
  */
-class ObjClass : public BaseModel, public IComputeTask {
+class StaticModelObject : public BaseModel, public IComputeTask {
 
 
 
@@ -53,7 +53,7 @@ public: //メンバ関数
     /**
      * @brief デストラクタ
      */
-    ~ObjClass() override;
+    ~StaticModelObject() override;
 
     /**
      * @brief 初期化
@@ -95,7 +95,4 @@ private:
     uint32_t lastSkinnedFrameIndex_ = 0;
 
 };
-
-
-
 
