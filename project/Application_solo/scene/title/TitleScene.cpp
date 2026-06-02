@@ -6,19 +6,11 @@
 
 // デストラクタ
 TitleScene::~TitleScene() {
-    if (engine_) {
-        engine_->SetPostProcessMode(IrufemiEngine::PostProcessMode::None);
-    }
 }
 
 // 初期化
 void TitleScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
-
-    // 学校の資料に基づくポストエフェクト（ノイズ / ランダム）の適用
-    engine_->SetPostProcessMode(IrufemiEngine::PostProcessMode::Noise);
-    auto& noiseParams = engine_->GetNoiseParams();
-    noiseParams.intensity = 0.5f; // ノイズの強度 (0.0: なし 〜 1.0: 最大)
 
     // JSONからのロードは SceneManager が自動で行うため、ここでは手動で呼ばない
     
