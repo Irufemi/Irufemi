@@ -15,11 +15,9 @@ TitleScene::~TitleScene() {
 void TitleScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
-    // 学校の資料に基づくポストエフェクト（ガウシアンフィルター）の適用
-    engine_->SetPostProcessMode(IrufemiEngine::PostProcessMode::GaussianFilter);
-    auto& gaussianParams = engine_->GetGaussianParams();
-    gaussianParams.sigma = 5.0f;       // ぼかしの強さ（標準偏差）
-    gaussianParams.kernelSize = 9;     // カーネルサイズ（サンプリング範囲）
+    // 学校の資料に基づくポストエフェクト（DepthBasedOutline / Prewitt Filter）の適用
+    engine_->SetPostProcessMode(IrufemiEngine::PostProcessMode::DepthBasedOutline);
+    // ※DepthBasedOutlineに必要なパラメータ（逆投影行列など）はエンジン内部で自動設定されます
 
     // JSONからのロードは SceneManager が自動で行うため、ここでは手動で呼ばない
     
