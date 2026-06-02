@@ -15,12 +15,13 @@ TitleScene::~TitleScene() {
 void TitleScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
-    // 学校の資料に基づくポストエフェクト（ラジアルブラー）の適用
-    engine_->SetPostProcessMode(IrufemiEngine::PostProcessMode::RadialBlur);
-    auto& radialBlurParams = engine_->GetRadialBlurParams();
-    radialBlurParams.center = { 0.5f, 0.5f }; // 放射状の基準となる中心点 (UV空間: 0.5で画面中央)
-    radialBlurParams.blurWidth = 0.02f;       // ぼかしの強さ・幅
-    radialBlurParams.numSamples = 10;         // サンプリング回数 (多いほど滑らかだが重くなる)
+    // 学校の資料に基づくポストエフェクト（ディゾルブ）の適用
+    engine_->SetPostProcessMode(IrufemiEngine::PostProcessMode::Dissolve);
+    auto& dissolveParams = engine_->GetDissolveParams();
+    dissolveParams.threshold = 0.5f;                              // 消失しきい値 (0.0:完全に表示 〜 1.0:完全に消失)
+    dissolveParams.edgeColor = { 0.0f, 1.0f, 1.0f, 1.0f };        // 境界線の発光色 (RGBA)
+    dissolveParams.edgeRange = 0.05f;                             // 境界線の幅
+    dissolveParams.noiseType = 0;                                 // 使用するノイズテクスチャの種類
 
     // JSONからのロードは SceneManager が自動で行うため、ここでは手動で呼ばない
     
