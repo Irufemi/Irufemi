@@ -18,6 +18,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+#include <filesystem>
 #include <numeric> 
 #include "Resource/Texture/TextureManager.h"
 #include "Framework/SceneManager.h"
@@ -48,6 +49,16 @@ std::unique_ptr<AreaLight> DebugUI::templateAreaLight_;
 
 void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCommon* dxCommon) {
 #ifdef USE_IMGUI
+    /*開発UIをだそう*/
+    // 初回起動時（imgui.iniが無い場合）に、リポジトリにコミットされているプリセットをコピーする
+    if (!std::filesystem::exists("imgui.ini")) {
+        // カレントディレクトリ（プロジェクト直下 または exe直下）から見てエンジンリソースを探す
+        const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
+        if (std::filesystem::exists(presetPath)) {
+            std::error_code ec;
+            std::filesystem::copy_file(presetPath, "imgui.ini", ec);
+        }
+    }
 
     dxCommon_ = dxCommon;
 
@@ -1291,7 +1302,7 @@ void DebugUI::BeginEngineDebugWindow() {
 #ifdef USE_IMGUI
     ImGui::Begin("Engine");
 
-    // 項目の上部分にチェックボックスを配置
+    // 画面の上部にチェックボックスを配置
     ImGui::Checkbox("Performance Info", &showPerformance_);
     ImGui::Separator();
 

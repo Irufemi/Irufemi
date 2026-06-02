@@ -114,6 +114,7 @@
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
 copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
 xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
+if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -144,6 +145,7 @@ exit 0</Command>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
 copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
 xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
+if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -177,6 +179,7 @@ exit 0</Command>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
 copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
 xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
+if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -211,6 +214,7 @@ exit 0</Command>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
 copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
 xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
+if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
