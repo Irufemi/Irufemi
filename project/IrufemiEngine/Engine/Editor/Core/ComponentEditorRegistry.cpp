@@ -31,8 +31,47 @@
 #include "EditorCommands.h"
 #include "EditorActionManager.h"
 
+// --- Undo/Redo Helpers ---
+template <typename T>
+static void CheckUndoRedoDrag(EditorActionManager* actionManager, T* valuePtr) {
+    static T startValue;
+    if (ImGui::IsItemActivated()) {
+        startValue = *valuePtr;
+    }
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+        T endValue = *valuePtr;
+        actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<T>>(
+            startValue, endValue, [valuePtr](const T& v) { *valuePtr = v; }));
+    }
+}
+
+template <typename T>
+static void CheckUndoRedoDrag(EditorActionManager* actionManager, T* valuePtr, std::function<void(const T&)> setter) {
+    static T startValue;
+    if (ImGui::IsItemActivated()) {
+        startValue = *valuePtr;
+    }
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+        T endValue = *valuePtr;
+        actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<T>>(
+            startValue, endValue, setter));
+    }
+}
+
+template <typename T>
+static void PushInstantUndo(EditorActionManager* actionManager, const T& oldVal, const T& newVal, T* valuePtr) {
+    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<T>>(
+        oldVal, newVal, [valuePtr](const T& v) { *valuePtr = v; }));
+}
+
+template <typename T>
+static void PushInstantUndo(EditorActionManager* actionManager, const T& oldVal, const T& newVal, std::function<void(const T&)> setter) {
+    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<T>>(
+        oldVal, newVal, setter));
+}
+
 // --- Helper Functions ---
-static void DrawCollisionLayerGUI(uint32_t& layer, uint32_t& mask) {
+static void DrawCollisionLayerGUI(EditorActionManager* actionManager, uint32_t& layer, uint32_t& mask) {
     ImGui::Separator();
     ImGui::Text("Collision Settings");
 
@@ -53,7 +92,8 @@ static void DrawCollisionLayerGUI(uint32_t& layer, uint32_t& mask) {
         for (int i = 0; i < layerNames.size(); ++i) {
             bool isSelected = (currentLayerIndex == i);
             if (ImGui::Selectable(layerNames[i].c_str(), isSelected)) {
-                layer = (1u << i);
+                uint32_t newLayer = (1u << i);
+                PushInstantUndo(actionManager, layer, newLayer, &layer);
             }
             if (isSelected) ImGui::SetItemDefaultFocus();
         }
@@ -61,15 +101,21 @@ static void DrawCollisionLayerGUI(uint32_t& layer, uint32_t& mask) {
     }
 
     if (ImGui::TreeNode("Collision Mask")) {
-        if (ImGui::Button("All")) mask = 0xFFFFFFFF;
+        if (ImGui::Button("All")) {
+            PushInstantUndo(actionManager, mask, 0xFFFFFFFF, &mask);
+        }
         ImGui::SameLine();
-        if (ImGui::Button("None")) mask = 0;
+        if (ImGui::Button("None")) {
+            PushInstantUndo(actionManager, mask, 0u, &mask);
+        }
 
         for (int i = 0; i < layerNames.size(); ++i) {
             bool isMasked = (mask & (1u << i)) != 0;
             if (ImGui::Checkbox(layerNames[i].c_str(), &isMasked)) {
-                if (isMasked) mask |= (1u << i);
-                else          mask &= ~(1u << i);
+                uint32_t newMask = mask;
+                if (isMasked) newMask |= (1u << i);
+                else          newMask &= ~(1u << i);
+                PushInstantUndo(actionManager, mask, newMask, &mask);
             }
         }
         ImGui::TreePop();
@@ -125,26 +171,32 @@ static void DrawCollisionLayerGUI(uint32_t& layer, uint32_t& mask) {
 }
 
 template<typename T>
-static void DrawColliderCommonProperties(T* comp) {
+static void DrawColliderCommonProperties(T* comp, EditorActionManager* actionManager) {
     Vector3 offset = comp->GetLocalOffset();
     if (ImGui::DragFloat3("Offset", &offset.x, 0.1f)) {
         comp->SetLocalOffset(offset);
     }
+    CheckUndoRedoDrag(actionManager, &offset, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetLocalOffset(v); }));
     
     if constexpr (std::is_same_v<T, SphereColliderComponent>) {
         float radius = comp->GetLocalRadius();
         if (ImGui::DragFloat("Radius", &radius, 0.1f, 0.0f, 1000.0f)) {
             comp->SetLocalRadius(radius);
         }
+        CheckUndoRedoDrag(actionManager, &radius, std::function<void(const float&)>([comp](const float& v){ comp->SetLocalRadius(v); }));
     } else {
         Vector3 size = comp->GetLocalSize();
         if (ImGui::DragFloat3("Size (Extents)", &size.x, 0.1f, 0.0f, 1000.0f)) {
             comp->SetLocalSize(size);
         }
+        CheckUndoRedoDrag(actionManager, &size, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetLocalSize(v); }));
     }
     
-    ImGui::Checkbox("Is Trigger", &comp->isTrigger_);
-    DrawCollisionLayerGUI(comp->layer_, comp->mask_);
+    bool isTrigger = comp->isTrigger_;
+    if (ImGui::Checkbox("Is Trigger", &isTrigger)) {
+        PushInstantUndo(actionManager, comp->isTrigger_, isTrigger, &comp->isTrigger_);
+    }
+    DrawCollisionLayerGUI(actionManager, comp->layer_, comp->mask_);
 }
 
 static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager* actionManager) {
@@ -155,34 +207,64 @@ static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager*
     if (ImGui::CollapsingHeader(component->GetComponentName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
         for (const auto& prop : props) {
             switch (prop.type) {
-                case ComponentPropertyType::Float:
-                    ImGui::DragFloat(prop.name.c_str(), static_cast<float*>(prop.data), 0.1f);
+                case ComponentPropertyType::Float: {
+                    float* ptr = static_cast<float*>(prop.data);
+                    ImGui::DragFloat(prop.name.c_str(), ptr, 0.1f);
+                    CheckUndoRedoDrag(actionManager, ptr);
                     break;
-                case ComponentPropertyType::Int:
-                    ImGui::DragInt(prop.name.c_str(), static_cast<int*>(prop.data), 1);
+                }
+                case ComponentPropertyType::Int: {
+                    int* ptr = static_cast<int*>(prop.data);
+                    ImGui::DragInt(prop.name.c_str(), ptr, 1);
+                    CheckUndoRedoDrag(actionManager, ptr);
                     break;
-                case ComponentPropertyType::Bool:
-                    ImGui::Checkbox(prop.name.c_str(), static_cast<bool*>(prop.data));
-                    break;
-                case ComponentPropertyType::Float2:
-                    ImGui::DragFloat2(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
-                    break;
-                case ComponentPropertyType::Float3:
-                    ImGui::DragFloat3(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
-                    break;
-                case ComponentPropertyType::Float4:
-                    if (prop.name.find("Color") != std::string::npos || prop.name.find("color") != std::string::npos) {
-                        ImGui::ColorEdit4(prop.name.c_str(), reinterpret_cast<float*>(prop.data));
-                    } else {
-                        ImGui::DragFloat4(prop.name.c_str(), reinterpret_cast<float*>(prop.data), 0.1f);
+                }
+                case ComponentPropertyType::Bool: {
+                    bool* ptr = static_cast<bool*>(prop.data);
+                    bool oldVal = *ptr;
+                    if (ImGui::Checkbox(prop.name.c_str(), ptr)) {
+                        PushInstantUndo(actionManager, oldVal, *ptr, ptr);
                     }
                     break;
+                }
+                case ComponentPropertyType::Float2: {
+                    Vector2* ptr = reinterpret_cast<Vector2*>(prop.data);
+                    ImGui::DragFloat2(prop.name.c_str(), &ptr->x, 0.1f);
+                    CheckUndoRedoDrag(actionManager, ptr);
+                    break;
+                }
+                case ComponentPropertyType::Float3: {
+                    Vector3* ptr = reinterpret_cast<Vector3*>(prop.data);
+                    ImGui::DragFloat3(prop.name.c_str(), &ptr->x, 0.1f);
+                    CheckUndoRedoDrag(actionManager, ptr);
+                    break;
+                }
+                case ComponentPropertyType::Float4: {
+                    Vector4* ptr = reinterpret_cast<Vector4*>(prop.data);
+                    if (prop.name.find("Color") != std::string::npos || prop.name.find("color") != std::string::npos) {
+                        ImGui::ColorEdit4(prop.name.c_str(), &ptr->x);
+                    } else {
+                        ImGui::DragFloat4(prop.name.c_str(), &ptr->x, 0.1f);
+                    }
+                    CheckUndoRedoDrag(actionManager, ptr);
+                    break;
+                }
                 case ComponentPropertyType::String: {
                     auto* str = static_cast<std::string*>(prop.data);
                     char buffer[256];
                     strncpy_s(buffer, sizeof(buffer), str->c_str(), _TRUNCATE);
+                    
+                    static std::string startStr;
                     if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
                         *str = buffer;
+                    }
+                    if (ImGui::IsItemActivated()) {
+                        startStr = *str;
+                    }
+                    if (ImGui::IsItemDeactivatedAfterEdit()) {
+                        std::string endStr = *str;
+                        actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                            startStr, endStr, [str](const std::string& v) { *str = v; }));
                     }
                     break;
                 }
@@ -190,19 +272,33 @@ static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager*
                     auto* arr = static_cast<std::vector<Vector3>*>(prop.data);
                     if (ImGui::TreeNode(prop.name.c_str())) {
                         int size = static_cast<int>(arr->size());
+                        int oldSize = size;
                         if (ImGui::InputInt("Size", &size)) {
-                            if (size >= 0) arr->resize(size);
+                            if (size >= 0) {
+                                std::vector<Vector3> oldArr = *arr;
+                                arr->resize(size);
+                                std::vector<Vector3> newArr = *arr;
+                                PushInstantUndo(actionManager, oldArr, newArr, arr);
+                            }
                         }
                         ImGui::SameLine();
                         if (ImGui::Button("+")) {
+                            std::vector<Vector3> oldArr = *arr;
                             arr->push_back(Vector3{0, 0, 0});
+                            std::vector<Vector3> newArr = *arr;
+                            PushInstantUndo(actionManager, oldArr, newArr, arr);
                         }
                         for (size_t i = 0; i < arr->size(); ++i) {
                             ImGui::PushID(static_cast<int>(i));
                             ImGui::DragFloat3("##Element", &(*arr)[i].x, 0.1f);
+                            CheckUndoRedoDrag(actionManager, &(*arr)[i]);
+                            
                             ImGui::SameLine();
                             if (ImGui::Button("-")) {
+                                std::vector<Vector3> oldArr = *arr;
                                 arr->erase(arr->begin() + i);
+                                std::vector<Vector3> newArr = *arr;
+                                PushInstantUndo(actionManager, oldArr, newArr, arr);
                                 ImGui::PopID();
                                 break; // ループを抜けて次フレームで再描画
                             }
@@ -304,7 +400,9 @@ public:
                     for (const auto& key : availableModels) {
                         bool isSelected = (comp->modelName_ == key);
                         if (ImGui::Selectable(key.c_str(), isSelected)) {
-                            comp->LoadModel(key);
+                            std::string oldModel = comp->modelName_;
+                            std::string newModel = key;
+                            PushInstantUndo(actionManager, oldModel, newModel, std::function<void(const std::string&)>([comp](const std::string& v){ comp->LoadModel(v); }));
                         }
                         if (isSelected) ImGui::SetItemDefaultFocus();
                     }
@@ -329,7 +427,8 @@ public:
                         if (lowerPath.find("resources/model/") == 0) {
                             newModelName = newModelName.substr(16);
                         }
-                        comp->LoadModel(newModelName);
+                        std::string oldModel = comp->modelName_;
+                        PushInstantUndo(actionManager, oldModel, newModelName, std::function<void(const std::string&)>([comp](const std::string& v){ comp->LoadModel(v); }));
                     }
                 }
                 ImGui::EndDragDropTarget();
@@ -353,10 +452,9 @@ public:
             
             bool needRebuild = false;
             int typeIndex = comp->currentTypeIndex_;
-
+            int oldTypeIndex = typeIndex;
             if (ImGui::Combo("Shape Type", &typeIndex, typeNames, IM_ARRAYSIZE(typeNames))) {
-                comp->SetShape(static_cast<PrimitiveType>(typeIndex));
-                needRebuild = true;
+                PushInstantUndo(actionManager, oldTypeIndex, typeIndex, std::function<void(const int&)>([comp](const int& v) { comp->SetShape(static_cast<PrimitiveType>(v)); comp->RebuildMesh(); }));
             }
 
             PrimitiveType type = static_cast<PrimitiveType>(comp->currentTypeIndex_);
@@ -364,32 +462,50 @@ public:
                 case PrimitiveType::Sphere:
                 case PrimitiveType::IcoSphere:
                 case PrimitiveType::Circle:
-                    if (ImGui::DragFloat("Radius", &comp->radius_, 0.1f, 0.1f, 100.0f)) needRebuild = true;
-                    if (ImGui::SliderInt("Subdivisions", &comp->subdivisions_, 3, 64)) needRebuild = true;
+                    if (ImGui::DragFloat("Radius", &comp->radius_, 0.1f, 0.1f, 100.0f)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->radius_, std::function<void(const float&)>([comp](const float& v){ comp->radius_ = v; comp->RebuildMesh(); }));
+                    if (ImGui::SliderInt("Subdivisions", &comp->subdivisions_, 3, 64)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->subdivisions_, std::function<void(const int&)>([comp](const int& v){ comp->subdivisions_ = v; comp->RebuildMesh(); }));
                     break;
                 case PrimitiveType::Cylinder:
-                    if (ImGui::DragFloat("Top Radius", &comp->topRadius_, 0.1f, 0.0f, 100.0f)) needRebuild = true;
-                    if (ImGui::DragFloat("Bottom Radius", &comp->bottomRadius_, 0.1f, 0.0f, 100.0f)) needRebuild = true;
-                    if (ImGui::DragFloat("Height", &comp->height_, 0.1f, 0.1f, 100.0f)) needRebuild = true;
-                    if (ImGui::SliderInt("Segments", &comp->subdivisions_, 3, 64)) needRebuild = true;
-                    if (ImGui::Checkbox("Has Top", &comp->hasTop_)) needRebuild = true;
-                    if (ImGui::Checkbox("Has Bottom", &comp->hasBottom_)) needRebuild = true;
+                    if (ImGui::DragFloat("Top Radius", &comp->topRadius_, 0.1f, 0.0f, 100.0f)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->topRadius_, std::function<void(const float&)>([comp](const float& v){ comp->topRadius_ = v; comp->RebuildMesh(); }));
+                    if (ImGui::DragFloat("Bottom Radius", &comp->bottomRadius_, 0.1f, 0.0f, 100.0f)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->bottomRadius_, std::function<void(const float&)>([comp](const float& v){ comp->bottomRadius_ = v; comp->RebuildMesh(); }));
+                    if (ImGui::DragFloat("Height", &comp->height_, 0.1f, 0.1f, 100.0f)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->height_, std::function<void(const float&)>([comp](const float& v){ comp->height_ = v; comp->RebuildMesh(); }));
+                    if (ImGui::SliderInt("Segments", &comp->subdivisions_, 3, 64)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->subdivisions_, std::function<void(const int&)>([comp](const int& v){ comp->subdivisions_ = v; comp->RebuildMesh(); }));
+                    
+                    {
+                        bool hasTop = comp->hasTop_;
+                        if (ImGui::Checkbox("Has Top", &hasTop)) {
+                            PushInstantUndo(actionManager, comp->hasTop_, hasTop, std::function<void(const bool&)>([comp](const bool& v){ comp->hasTop_ = v; comp->RebuildMesh(); }));
+                        }
+                        bool hasBottom = comp->hasBottom_;
+                        if (ImGui::Checkbox("Has Bottom", &hasBottom)) {
+                            PushInstantUndo(actionManager, comp->hasBottom_, hasBottom, std::function<void(const bool&)>([comp](const bool& v){ comp->hasBottom_ = v; comp->RebuildMesh(); }));
+                        }
+                    }
                     break;
                 case PrimitiveType::Cone:
-                    if (ImGui::DragFloat("Radius", &comp->radius_, 0.1f, 0.1f, 100.0f)) needRebuild = true;
-                    if (ImGui::DragFloat("Height", &comp->height_, 0.1f, 0.1f, 100.0f)) needRebuild = true;
-                    if (ImGui::SliderInt("Segments", &comp->subdivisions_, 3, 64)) needRebuild = true;
+                    if (ImGui::DragFloat("Radius", &comp->radius_, 0.1f, 0.1f, 100.0f)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->radius_, std::function<void(const float&)>([comp](const float& v){ comp->radius_ = v; comp->RebuildMesh(); }));
+                    if (ImGui::DragFloat("Height", &comp->height_, 0.1f, 0.1f, 100.0f)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->height_, std::function<void(const float&)>([comp](const float& v){ comp->height_ = v; comp->RebuildMesh(); }));
+                    if (ImGui::SliderInt("Segments", &comp->subdivisions_, 3, 64)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->subdivisions_, std::function<void(const int&)>([comp](const int& v){ comp->subdivisions_ = v; comp->RebuildMesh(); }));
                     break;
                 case PrimitiveType::Torus:
-                    if (ImGui::DragFloat("Major Radius", &comp->torusMajorRadius_, 0.1f, 0.1f, 100.0f)) needRebuild = true;
-                    if (ImGui::DragFloat("Minor Radius", &comp->torusMinorRadius_, 0.05f, 0.01f, 100.0f)) needRebuild = true;
-                    if (ImGui::SliderInt("Major Segments", &comp->torusMajorSegments_, 3, 64)) needRebuild = true;
-                    if (ImGui::SliderInt("Minor Segments", &comp->torusMinorSegments_, 3, 64)) needRebuild = true;
+                    if (ImGui::DragFloat("Major Radius", &comp->torusMajorRadius_, 0.1f, 0.1f, 100.0f)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->torusMajorRadius_, std::function<void(const float&)>([comp](const float& v){ comp->torusMajorRadius_ = v; comp->RebuildMesh(); }));
+                    if (ImGui::DragFloat("Minor Radius", &comp->torusMinorRadius_, 0.05f, 0.01f, 100.0f)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->torusMinorRadius_, std::function<void(const float&)>([comp](const float& v){ comp->torusMinorRadius_ = v; comp->RebuildMesh(); }));
+                    if (ImGui::SliderInt("Major Segments", &comp->torusMajorSegments_, 3, 64)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->torusMajorSegments_, std::function<void(const int&)>([comp](const int& v){ comp->torusMajorSegments_ = v; comp->RebuildMesh(); }));
+                    if (ImGui::SliderInt("Minor Segments", &comp->torusMinorSegments_, 3, 64)) comp->RebuildMesh();
+                    CheckUndoRedoDrag(actionManager, &comp->torusMinorSegments_, std::function<void(const int&)>([comp](const int& v){ comp->torusMinorSegments_ = v; comp->RebuildMesh(); }));
                     break;
-            }
-
-            if (needRebuild) {
-                comp->RebuildMesh();
             }
             ImGui::TreePop();
         }
@@ -417,7 +533,9 @@ public:
                     for (int i = 0; i < names.size(); ++i) {
                         bool isSelected = (currentIndex == i);
                         if (ImGui::Selectable(names[i].c_str(), isSelected)) {
-                            comp->SetTexture(names[i]);
+                            std::string oldTex = comp->texturePath_;
+                            std::string newTex = names[i];
+                            PushInstantUndo(actionManager, oldTex, newTex, std::function<void(const std::string&)>([comp](const std::string& v){ comp->SetTexture(v); }));
                         }
                         if (isSelected) ImGui::SetItemDefaultFocus();
                     }
@@ -426,30 +544,52 @@ public:
             } else {
                 char buffer[256];
                 strncpy_s(buffer, sizeof(buffer), comp->texturePath_.c_str(), _TRUNCATE);
+                static std::string startTex;
                 if (ImGui::InputText("TexturePath", buffer, sizeof(buffer))) {
                     comp->SetTexture(buffer);
                 }
+                if (ImGui::IsItemActivated()) startTex = comp->texturePath_;
+                if (ImGui::IsItemDeactivatedAfterEdit()) {
+                    std::string endTex = buffer;
+                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                        startTex, endTex, [comp](const std::string& v){ comp->SetTexture(v); }));
+                }
             }
             
-            if (ImGui::Checkbox("TopMost (Draw over 3D)", &comp->isTopMost_)) {
-                if (comp->GetSprite()) comp->GetSprite()->SetTopMost(comp->isTopMost_);
+            bool isTopMost = comp->isTopMost_;
+            if (ImGui::Checkbox("TopMost (Draw over 3D)", &isTopMost)) {
+                PushInstantUndo(actionManager, comp->isTopMost_, isTopMost, std::function<void(const bool&)>([comp](const bool& v){ comp->isTopMost_ = v; if (comp->GetSprite()) comp->GetSprite()->SetTopMost(v); }));
             }
-            if (ImGui::Checkbox("Flip X", &comp->isFlipX_)) needUpdate = true;
+            bool isFlipX = comp->isFlipX_;
+            if (ImGui::Checkbox("Flip X", &isFlipX)) {
+                PushInstantUndo(actionManager, comp->isFlipX_, isFlipX, std::function<void(const bool&)>([comp](const bool& v){ comp->isFlipX_ = v; if (comp->GetSprite()) comp->GetSprite()->SetFlip(comp->isFlipX_, comp->isFlipY_); }));
+            }
             ImGui::SameLine();
-            if (ImGui::Checkbox("Flip Y", &comp->isFlipY_)) needUpdate = true;
-            
-            if (needUpdate) {
-                if (comp->GetSprite()) comp->GetSprite()->SetFlip(comp->isFlipX_, comp->isFlipY_);
+            bool isFlipY = comp->isFlipY_;
+            if (ImGui::Checkbox("Flip Y", &isFlipY)) {
+                PushInstantUndo(actionManager, comp->isFlipY_, isFlipY, std::function<void(const bool&)>([comp](const bool& v){ comp->isFlipY_ = v; if (comp->GetSprite()) comp->GetSprite()->SetFlip(comp->isFlipX_, comp->isFlipY_); }));
             }
 
             if (ImGui::SliderFloat2("Anchor", comp->anchor_, 0.0f, 1.0f)) {
                 if (comp->GetSprite()) comp->GetSprite()->SetAnchor(comp->anchor_[0], comp->anchor_[1]);
             }
+            CheckUndoRedoDrag(actionManager, reinterpret_cast<Vector2*>(comp->anchor_), std::function<void(const Vector2&)>([comp](const Vector2& v){ 
+                comp->anchor_[0] = v.x; comp->anchor_[1] = v.y; 
+                if (comp->GetSprite()) comp->GetSprite()->SetAnchor(v.x, v.y); 
+            }));
+            
             ImGui::DragFloat2("Base Size", comp->size_, 1.0f, 1.0f, 8192.0f);
+            CheckUndoRedoDrag(actionManager, reinterpret_cast<Vector2*>(comp->size_), std::function<void(const Vector2&)>([comp](const Vector2& v){
+                comp->size_[0] = v.x; comp->size_[1] = v.y;
+            }));
             
             if (ImGui::ColorEdit4("Color", &comp->color_.x)) {
                 if (comp->GetSprite()) comp->GetSprite()->SetColor(comp->color_);
             }
+            CheckUndoRedoDrag(actionManager, &comp->color_, std::function<void(const Vector4&)>([comp](const Vector4& v){
+                comp->color_ = v;
+                if (comp->GetSprite()) comp->GetSprite()->SetColor(v);
+            }));
             ImGui::TreePop();
         }
     }
@@ -464,8 +604,15 @@ public:
             std::string utf8Text = ConvertString(comp->GetText());
             char textBuffer[256];
             strncpy_s(textBuffer, sizeof(textBuffer), utf8Text.c_str(), _TRUNCATE);
+            static std::string startText;
             if (ImGui::InputText("Text", textBuffer, sizeof(textBuffer))) {
                 comp->SetText(ConvertString(std::string(textBuffer)));
+            }
+            if (ImGui::IsItemActivated()) startText = utf8Text;
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                std::string endText = textBuffer;
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                    startText, endText, [comp](const std::string& v){ comp->SetText(ConvertString(v)); }));
             }
 
             // Font ID
@@ -485,7 +632,9 @@ public:
                     for (int i = 0; i < fontIds.size(); ++i) {
                         bool isSelected = (currentIndex == i);
                         if (ImGui::Selectable(fontIds[i].c_str(), isSelected)) {
-                            comp->SetFontId(fontIds[i]);
+                            std::string oldFontId = comp->GetFontId();
+                            std::string newFontId = fontIds[i];
+                            PushInstantUndo(actionManager, oldFontId, newFontId, std::function<void(const std::string&)>([comp](const std::string& v){ comp->SetFontId(v); }));
                         }
                         if (isSelected) ImGui::SetItemDefaultFocus();
                     }
@@ -494,8 +643,15 @@ public:
             } else {
                 char fontBuffer[128];
                 strncpy_s(fontBuffer, sizeof(fontBuffer), fontId.c_str(), _TRUNCATE);
+                static std::string startFont;
                 if (ImGui::InputText("Font ID", fontBuffer, sizeof(fontBuffer))) {
                     comp->SetFontId(fontBuffer);
+                }
+                if (ImGui::IsItemActivated()) startFont = fontId;
+                if (ImGui::IsItemDeactivatedAfterEdit()) {
+                    std::string endFont = fontBuffer;
+                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                        startFont, endFont, [comp](const std::string& v){ comp->SetFontId(v); }));
                 }
             }
             
@@ -506,7 +662,9 @@ public:
                 for (int i = 0; i < 3; ++i) {
                     bool isSelected = (static_cast<int>(align) == i);
                     if (ImGui::Selectable(alignments[i], isSelected)) {
-                        comp->SetAlignment(static_cast<TextAlignment>(i));
+                        TextAlignment oldAlign = comp->GetAlignment();
+                        TextAlignment newAlign = static_cast<TextAlignment>(i);
+                        PushInstantUndo(actionManager, oldAlign, newAlign, std::function<void(const TextAlignment&)>([comp](const TextAlignment& v){ comp->SetAlignment(v); }));
                     }
                     if (isSelected) ImGui::SetItemDefaultFocus();
                 }
@@ -518,17 +676,19 @@ public:
             if (ImGui::DragFloat("Base Scale", &scale, 0.1f, 0.1f, 1000.0f)) {
                 comp->SetBaseScale(scale);
             }
+            CheckUndoRedoDrag(actionManager, &scale, std::function<void(const float&)>([comp](const float& v){ comp->SetBaseScale(v); }));
 
             // Color
             Vector4 color = comp->GetColor();
             if (ImGui::ColorEdit4("Color", &color.x)) {
                 comp->SetColor(color);
             }
+            CheckUndoRedoDrag(actionManager, &color, std::function<void(const Vector4&)>([comp](const Vector4& v){ comp->SetColor(v); }));
 
             // TopMost
             bool isTopMost = comp->IsTopMost();
             if (ImGui::Checkbox("TopMost", &isTopMost)) {
-                comp->SetTopMost(isTopMost);
+                PushInstantUndo(actionManager, comp->IsTopMost(), isTopMost, std::function<void(const bool&)>([comp](const bool& v){ comp->SetTopMost(v); }));
             }
 
             ImGui::TreePop();
@@ -542,7 +702,7 @@ public:
         auto* comp = static_cast<AABBColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("AABB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawColliderCommonProperties(comp);
+            DrawColliderCommonProperties(comp, actionManager);
         }
         ImGui::PopID();
     }
@@ -554,7 +714,7 @@ public:
         auto* comp = static_cast<OBBColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("OBB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawColliderCommonProperties(comp);
+            DrawColliderCommonProperties(comp, actionManager);
         }
         ImGui::PopID();
     }
@@ -566,7 +726,7 @@ public:
         auto* comp = static_cast<SphereColliderComponent*>(component);
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
-            DrawColliderCommonProperties(comp);
+            DrawColliderCommonProperties(comp, actionManager);
         }
         ImGui::PopID();
     }
@@ -579,21 +739,30 @@ public:
         ImGui::PushID(comp);
         if (ImGui::CollapsingHeader("Raycast", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::DragFloat3("Origin", &comp->localOffset_.x, 0.1f);
+            CheckUndoRedoDrag(actionManager, &comp->localOffset_);
             ImGui::DragFloat3("Local Direction", &comp->localDirection_.x, 0.1f);
+            CheckUndoRedoDrag(actionManager, &comp->localDirection_);
             ImGui::DragFloat("Max Distance", &comp->maxDistance_, 0.1f, 0.0f, 10000.0f);
+            CheckUndoRedoDrag(actionManager, &comp->maxDistance_);
             
             // RaycastはLayerの描画なし（Maskのみ指定）
             if (ImGui::TreeNode("Collision Mask")) {
-                if (ImGui::Button("All")) comp->mask_ = 0xFFFFFFFF;
+                if (ImGui::Button("All")) {
+                    PushInstantUndo(actionManager, comp->mask_, 0xFFFFFFFF, &comp->mask_);
+                }
                 ImGui::SameLine();
-                if (ImGui::Button("None")) comp->mask_ = 0;
+                if (ImGui::Button("None")) {
+                    PushInstantUndo(actionManager, comp->mask_, 0u, &comp->mask_);
+                }
 
                 const auto& layerNames = CollisionManager::GetInstance().GetLayerNames();
                 for (int i = 0; i < layerNames.size(); ++i) {
                     bool isMasked = (comp->mask_ & (1u << i)) != 0;
                     if (ImGui::Checkbox(layerNames[i].c_str(), &isMasked)) {
-                        if (isMasked) comp->mask_ |= (1u << i);
-                        else          comp->mask_ &= ~(1u << i);
+                        uint32_t newMask = comp->mask_;
+                        if (isMasked) newMask |= (1u << i);
+                        else          newMask &= ~(1u << i);
+                        PushInstantUndo(actionManager, comp->mask_, newMask, &comp->mask_);
                     }
                 }
                 ImGui::TreePop();
