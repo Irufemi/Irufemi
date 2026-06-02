@@ -31,13 +31,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object3D/BaseModel/BaseModel.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
 #include "Renderer/Object3D/Object3DResource.h"
-#include "Renderer/Object3D/Primitive/CubeClass.h"
-#include "Renderer/Object3D/Primitive/CylinderClass.h"
-#include "Renderer/Object3D/Primitive/PlaneClass.h"
-#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
-#include "Renderer/Object3D/Primitive/RingClass.h"
-#include "Renderer/Object3D/Primitive/SphereClass.h"
-#include "Renderer/Object3D/Primitive/TriangleClass.h"
+#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
 #include "Renderer/Particle/ParticleResource.h"
 #include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
@@ -210,13 +204,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Text::SetDebugUI(ui_.get());
   Circle2D::SetDebugUI(ui_.get());
 
-  SphereClass::SetDebugUI(ui_.get());
-  TriangleClass::SetDebugUI(ui_.get());
-  CubeClass::SetDebugUI(ui_.get());
-  PlaneClass::SetDebugUI(ui_.get());
-  CylinderClass::SetDebugUI(ui_.get());
-  RingClass::SetDebugUI(ui_.get());
-  PrimitiveObjects3DClass::SetDebugUI(ui_.get());
+  Primitive3DObject::SetDebugUI(ui_.get());
   ParticleSystem::SetDebugUI(ui_.get());
 
   // 描画
@@ -226,16 +214,10 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Text::SetDrawManager(drawManager_.get());
   Circle2D::SetDrawManager(drawManager_.get());
 
-  SphereClass::SetDrawManager(drawManager_.get());
-  TriangleClass::SetDrawManager(drawManager_.get());
-  CubeClass::SetDrawManager(drawManager_.get());
-  PlaneClass::SetDrawManager(drawManager_.get());
-  CylinderClass::SetDrawManager(drawManager_.get());
-  RingClass::SetDrawManager(drawManager_.get());
   BaseRegion::SetDrawManager(drawManager_.get());
   ParticleSystem::SetDrawManager(drawManager_.get());
   GPUParticleSystem::SetDrawManager(drawManager_.get());
-  PrimitiveObjects3DClass::SetDrawManager(drawManager_.get());
+  Primitive3DObject::SetDrawManager(drawManager_.get());
   ParticleSystem::SetEngine(this);
   GPUParticleSystem::SetEngine(this);
   Line3DRegion::SetDrawManager(drawManager_.get());
@@ -246,16 +228,10 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Sprite::SetTextureManager(textureManager_.get());
   Circle2D::SetTextureManager(textureManager_.get());
 
-  SphereClass::SetTextureManager(textureManager_.get());
-  TriangleClass::SetTextureManager(textureManager_.get());
-  CubeClass::SetTextureManager(textureManager_.get());
-  PlaneClass::SetTextureManager(textureManager_.get());
-  CylinderClass::SetTextureManager(textureManager_.get());
-  RingClass::SetTextureManager(textureManager_.get());
   BaseRegion::SetTextureManager(textureManager_.get());
   ParticleSystem::SetTextureManager(textureManager_.get());
   GPUParticleSystem::SetTextureManager(textureManager_.get());
-  PrimitiveObjects3DClass::SetTextureManager(textureManager_.get());
+  Primitive3DObject::SetTextureManager(textureManager_.get());
 
   animationManager_ = std::make_unique<AnimationManager>();
   animationManager_->Initialize(dxCommon_.get());
@@ -272,14 +248,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 
   Circle2D::SetEngine(this);
   Line3DRegion::SetEngine(this);
-  CubeClass::SetEngine(this);
-  Effect::SetEngine(this);
-  SphereClass::SetEngine(this);
-  TriangleClass::SetEngine(this);
-  PlaneClass::SetEngine(this);
-  CylinderClass::SetEngine(this);
-  RingClass::SetEngine(this);
-  PrimitiveObjects3DClass::SetEngine(this);
+  Primitive3DObject::SetEngine(this);
 
   // --- 全画面用 RenderTexture の初期化 ---
   mainRenderTexture_ = std::make_unique<RenderTexture>();
@@ -447,41 +416,23 @@ void IrufemiEngine::Finalize() {
   // DebugUI, DrawManager, TextureManager 等の各クラスへの静的セットもクリア
   Sprite::SetDebugUI(nullptr);
   Circle2D::SetDebugUI(nullptr);
-  SphereClass::SetDebugUI(nullptr);
-  TriangleClass::SetDebugUI(nullptr);
-  CubeClass::SetDebugUI(nullptr);
-  PlaneClass::SetDebugUI(nullptr);
-  CylinderClass::SetDebugUI(nullptr);
-  RingClass::SetDebugUI(nullptr);
-  PrimitiveObjects3DClass::SetDebugUI(nullptr);
+  Primitive3DObject::SetDebugUI(nullptr);
   ParticleSystem::SetDebugUI(nullptr);
 
   Sprite::SetDrawManager(nullptr);
   Circle2D::SetDrawManager(nullptr);
-  SphereClass::SetDrawManager(nullptr);
-  TriangleClass::SetDrawManager(nullptr);
-  CubeClass::SetDrawManager(nullptr);
-  PlaneClass::SetDrawManager(nullptr);
-  CylinderClass::SetDrawManager(nullptr);
-  RingClass::SetDrawManager(nullptr);
   BaseRegion::SetDrawManager(nullptr);
   ParticleSystem::SetDrawManager(nullptr);
   GPUParticleSystem::SetDrawManager(nullptr);
-  PrimitiveObjects3DClass::SetDrawManager(nullptr);
+  Primitive3DObject::SetDrawManager(nullptr);
   Line3DRegion::SetDrawManager(nullptr);
 
   Sprite::SetTextureManager(nullptr);
   Circle2D::SetTextureManager(nullptr);
-  SphereClass::SetTextureManager(nullptr);
-  TriangleClass::SetTextureManager(nullptr);
-  CubeClass::SetTextureManager(nullptr);
-  PlaneClass::SetTextureManager(nullptr);
-  CylinderClass::SetTextureManager(nullptr);
-  RingClass::SetTextureManager(nullptr);
   BaseRegion::SetTextureManager(nullptr);
   ParticleSystem::SetTextureManager(nullptr);
   GPUParticleSystem::SetTextureManager(nullptr);
-  PrimitiveObjects3DClass::SetTextureManager(nullptr);
+  Primitive3DObject::SetTextureManager(nullptr);
 
   Sprite::SetCameraManager(nullptr);
   ModelRegion::SetModelManager(nullptr);
@@ -496,7 +447,7 @@ void IrufemiEngine::Finalize() {
   }
   Circle2D::SetEngine(nullptr);
   Line3DRegion::SetEngine(nullptr);
-  CubeClass::SetEngine(nullptr);
+  Primitive3DObject::SetEngine(nullptr);
   Effect::SetEngine(nullptr);
   Bgm::SetAudioManager(nullptr);
   Se::SetAudioManager(nullptr);

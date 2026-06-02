@@ -7,10 +7,6 @@ using namespace RenderPackets;
 #include <dxgidebug.h>
 #include "Renderer/Object2D/Sprite/Sprite.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
-#include "Renderer/Object3D/Primitive/SphereClass.h"
-#include "Renderer/Object3D/Primitive/TriangleClass.h"
-#include "Renderer/Object3D/Primitive/CylinderClass.h"
-#include "Renderer/Object3D/Primitive/CubeClass.h"
 #include "Renderer/Region/ModelRegion.h"
 #include "Renderer/Region/PrimitiveRegion.h"
 #include "Renderer/Particle/ParticleSystem.h"

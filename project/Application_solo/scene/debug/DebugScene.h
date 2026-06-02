@@ -3,7 +3,7 @@
 #include "Framework/BaseScene.h"
 
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
-#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
 #include "Irufemi.h"
 #include "Graphics/Data/LightningParams.h"
 
@@ -28,19 +28,20 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<Sprite> sprite_ = nullptr;
     bool isActiveSprite_ = false;
 
-    std::unique_ptr<TriangleClass> triangle_ = nullptr;
+    // 基本形状
+    std::unique_ptr<Primitive3DObject> triangle_ = nullptr;
     bool isActiveTriangle_ = false;
 
-    std::unique_ptr<CubeClass> cube_ = nullptr;
+    std::unique_ptr<Primitive3DObject> cube_ = nullptr;
     bool isActiveCube_ = false;
 
-    std::unique_ptr<PlaneClass> plane_ = nullptr;
+    std::unique_ptr<Primitive3DObject> plane_ = nullptr;
     bool isActivePlane_ = true;
 
-    std::unique_ptr<SphereClass> sphere_ = nullptr;
+    std::unique_ptr<Primitive3DObject> sphere_ = nullptr;
     bool isActiveSphere_ = true;
 
-    std::unique_ptr<CylinderClass> cylinder_ = nullptr;
+    std::unique_ptr<Primitive3DObject> cylinder_ = nullptr;
     bool isActiveCylinder_ = true;
 
     std::unique_ptr<ObjClass> obj_ = nullptr;
@@ -90,7 +91,7 @@ private: // メンバ変数(ゲーム)
     // --- ライト ---
     bool isActiveSkybox_ = false;
 
-    std::unique_ptr<PrimitiveObjects3DClass> primitiveObj_ = nullptr;
+    std::unique_ptr<Primitive3DObject> primitiveObj_ = nullptr;
     bool isActivePrimitiveObj_ = false;
 
     // --- ImGuiデモ ---
@@ -98,7 +99,7 @@ private: // メンバ変数(ゲーム)
 
     // --- 電撃エフェクトデモ ---
     bool isActiveLightningCrawl_ = false;
-    std::unique_ptr<CylinderClass> lightningCylinder_ = nullptr;
+    std::unique_ptr<Primitive3DObject> lightningCylinder_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsResource_ = nullptr;
     LightningParams* lightningParamsData_ = nullptr;
 

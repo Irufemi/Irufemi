@@ -261,26 +261,25 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ClCompile>
     <ClCompile Include="Renderer\Object3D\ObjClass\ObjClass.cpp" />
     <ClCompile Include="Renderer\Object3D\BaseModel\BaseModel.cpp" />
-    <ClCompile Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.cpp" />
+    <ClCompile Include="Renderer\Object3D\Primitive\Primitive3DObject.cpp" />
+    <ClCompile Include="Renderer\Data\RenderData.cpp" />
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp" />
     <ClCompile Include="Renderer\Effect\Effect.cpp" />
     <ClCompile Include="Renderer\Particle\ParticleSystem.cpp" />
     <ClCompile Include="Renderer\Core\BaseResource.cpp" />
     <ClCompile Include="Renderer\Object2D\Object2DResource.cpp" />
     <ClCompile Include="Renderer\Object3D\Object3DResource.cpp" />
-    <ClCompile Include="Renderer\Object3D\Primitive\SphereClass.cpp" />
-    <ClCompile Include="Renderer\Object3D\Primitive\TriangleClass.cpp" />
+
     <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp" />
     <ClCompile Include="Engine\Core\Math\Random\Random.cpp" />
     <ClCompile Include="Resource\Model\AnimationManager.cpp" />
     <ClCompile Include="Resource\Audio\Bgm.cpp" />
-    <ClCompile Include="Renderer\Object3D\Primitive\CylinderClass.cpp" />
+
     <ClCompile Include="Renderer\Region\BaseRegion.cpp" />
     <ClCompile Include="Renderer\Region\ModelRegion.cpp" />
     <ClCompile Include="Renderer\Region\PrimitiveRegion.cpp" />
     <ClCompile Include="Renderer\Object2D\Primitive\Circle2D.cpp" />
-    <ClCompile Include="Renderer\Object3D\Primitive\CubeClass.cpp" />
-    <ClCompile Include="Renderer\Object3D\Primitive\RingClass.cpp" />
+
     <ClCompile Include="Engine\Graphics\DirectX\DescriptorAllocator.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DescriptorPool.cpp" />
     <ClCompile Include="Renderer\Particle\ParticleResource.cpp" />
@@ -293,7 +292,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Core\Math\Vector2.cpp" />
     <ClCompile Include="Resource\Audio\Se.cpp" />
     <ClCompile Include="Resource\Model\ModelManager.cpp" />
-    <ClCompile Include="Renderer\Object3D\Primitive\PlaneClass.cpp" />
+
     <ClCompile Include="Engine\Platform\Input\Mouse.cpp" />
     <ClCompile Include="Engine\Core\Math\Vector4.cpp" />
     <ClCompile Include="Renderer\Skybox\Skybox.cpp" />
@@ -433,14 +432,14 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Core\IRenderable.h" />
     <ClInclude Include="Renderer\Object2D\Text\Text.h" />
     <ClInclude Include="Renderer\Effect\WeaponTrail.h" />
-    <ClInclude Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.h" />
+    <ClInclude Include="Renderer\Object3D\Primitive\Primitive3DObject.h" />
+    <ClInclude Include="Renderer\Data\RenderData.h" />
     <ClInclude Include="Renderer\VoxelParticle\VoxelParticleManager.h" />
     <ClInclude Include="Renderer\VoxelParticle\VoxelParticleSystem.h" />
     <ClInclude Include="Resource\Model\Data\VoxelizedModel.h" />
     <ClInclude Include="Engine\Irufemi.h" />
     <ClInclude Include="Renderer\Object2D\Sprite\Sprite.h" />
-    <ClInclude Include="Renderer\Object3D\Primitive\CubeClass.h" />
-    <ClInclude Include="Renderer\Object3D\Primitive\RingClass.h" />
+
     <ClInclude Include="Renderer\LineInstanced\LineClass.h" />
     <ClInclude Include="Renderer\Object3D\ObjClass\ObjClass.h" />
     <ClInclude Include="Renderer\Object3D\BaseModel\BaseModel.h" />
@@ -450,8 +449,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Core\BaseResource.h" />
     <ClInclude Include="Renderer\Object2D\Object2DResource.h" />
     <ClInclude Include="Renderer\Object3D\Object3DResource.h" />
-    <ClInclude Include="Renderer\Object3D\Primitive\SphereClass.h" />
-    <ClInclude Include="Renderer\Object3D\Primitive\TriangleClass.h" />
+
     <ClInclude Include="Engine\Core\Math\Geometry\Collision.h" />
     <ClInclude Include="Engine\Core\Math\Random\Random.h" />
     <ClInclude Include="Resource\Model\AnimationManager.h" />
@@ -462,7 +460,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Resource\Audio\Bgm.h" />
-    <ClInclude Include="Renderer\Object3D\Primitive\CylinderClass.h" />
+
     <ClInclude Include="Renderer\Object2D\Primitive\Circle2D.h" />
     <ClInclude Include="Engine\Graphics\DirectX\DescriptorAllocator.h" />
     <ClInclude Include="Engine\Graphics\DirectX\DescriptorPool.h" />
@@ -567,7 +565,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Pipeline\PSOManager.h" />
     <ClInclude Include="Resource\Model\Data\Node.h" />
     <ClInclude Include="Resource\Model\ModelManager.h" />
-    <ClInclude Include="Renderer\Object3D\Primitive\PlaneClass.h" />
+
     <ClInclude Include="Engine\Platform\Input\Mouse.h" />
     <ClInclude Include="Resource\Model\Data\VertexInfluence.h" />
     <ClInclude Include="Resource\Model\Data\WellForGPU.h" />

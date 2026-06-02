@@ -5,7 +5,7 @@
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Irufemi.h"
-#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
 #include "Engine/Manager/PrimitiveManager.h"
 
 IrufemiEngine* Effect::engine_ = nullptr;
@@ -92,7 +92,7 @@ void Effect::Initialize(EffectType type) {
     case EffectType::kAura:
     {
         isBillboard_ = false;
-        auraObject_ = std::make_unique<PrimitiveObjects3DClass>();
+        auraObject_ = std::make_unique<Primitive3DObject>();
         auraObject_->Initialize(PrimitiveType::Cylinder, auraConfig_.texture);
         
         // 炎のように立ち上る形状（底面半径0.6f, 上面半径0.05f, 高さ2.5f, 底面原点）を動的生成して適用
@@ -116,7 +116,7 @@ void Effect::Initialize(EffectType type) {
     case EffectType::kSwing:
     {
         isBillboard_ = false;
-        swingObject_ = std::make_unique<PrimitiveObjects3DClass>();
+        swingObject_ = std::make_unique<Primitive3DObject>();
         swingObject_->Initialize(PrimitiveType::Ring, swingConfig_.texture);
 
         // 風切りスイングに特化したカスタム形状パラメータ（端が尖った半円）
@@ -162,7 +162,7 @@ void Effect::Initialize(EffectType type) {
         isBillboard_ = false;
         
         // 1. 3D球体コア
-        explosionObject_ = std::make_unique<PrimitiveObjects3DClass>();
+        explosionObject_ = std::make_unique<Primitive3DObject>();
         explosionObject_->Initialize(explosionConfig_.coreShape, explosionConfig_.coreTexture);
         explosionObject_->SetCastShadows(false);
         explosionObject_->GetMaterial().enableLighting = false;
@@ -170,7 +170,7 @@ void Effect::Initialize(EffectType type) {
         explosionObject_->SetScale(explosionConfig_.coreStartScale);
 
         // 2. 3軸衝撃波リング
-        explosionWaveObject_ = std::make_unique<PrimitiveObjects3DClass>();
+        explosionWaveObject_ = std::make_unique<Primitive3DObject>();
         explosionWaveObject_->Initialize(explosionConfig_.waveShape, explosionConfig_.waveTexture);
         explosionWaveObject_->SetCastShadows(false);
         explosionWaveObject_->GetMaterial().enableLighting = false;

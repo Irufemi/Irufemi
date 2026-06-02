@@ -25,7 +25,7 @@
 #include "scene/Clear/ClearScene.h"
 #include "scene/GameOver/GameOverScene.h"
 #include "scene/Pause/PauseScene.h"
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
 #include "scene/debug/DebugScene.h"
 #endif
 
@@ -50,7 +50,7 @@ namespace {
         sm.Register("Clear", [] { return std::make_unique<ClearScene>(); });
         sm.Register("GameOver", [] { return std::make_unique<GameOverScene>(); });
         sm.Register("Pause", [] { return std::make_unique<PauseScene>(); });
-#if defined(_DEBUG) || defined(DEVELOPMENT)
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
 

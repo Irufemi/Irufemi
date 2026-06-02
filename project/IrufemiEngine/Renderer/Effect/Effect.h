@@ -17,7 +17,7 @@
 
 class GPUParticleSystem;
 class ParticleSystem;
-class PrimitiveObjects3DClass;
+class Primitive3DObject;
 
 /**
  * @enum EffectType
@@ -186,10 +186,10 @@ private:
     static class IrufemiEngine* engine_;
     std::vector<std::unique_ptr<GPUParticleSystem>> particleSystems_;
     std::unique_ptr<ParticleSystem> explosionSparkSystem_; //!< ★今回の実装のみCPUパーティクルを適用
-    std::unique_ptr<PrimitiveObjects3DClass> auraObject_;
-    std::unique_ptr<PrimitiveObjects3DClass> swingObject_;      //!< スイング用プリミティブオブジェクト
-    std::unique_ptr<PrimitiveObjects3DClass> explosionObject_;  //!< ★追加: 3D爆風コア用
-    std::unique_ptr<PrimitiveObjects3DClass> explosionWaveObject_; //!< ★追加: 衝撃波用
+    std::unique_ptr<Primitive3DObject> auraObject_;
+    std::unique_ptr<Primitive3DObject> swingObject_;      //!< スイング用プリミティブオブジェクト
+    std::unique_ptr<Primitive3DObject> explosionObject_;  //!< ★追加: 3D爆風コア用
+    std::unique_ptr<Primitive3DObject> explosionWaveObject_; //!< ★追加: 衝撃波用
     EffectType type_;
 
     HitEffectConfig hitConfig_;

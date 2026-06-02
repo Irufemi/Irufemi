@@ -43,11 +43,7 @@
 // Object3D
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
 #include "Renderer/Object3D/ObjClass/ObjClass.h"
-#include "Renderer/Object3D/Primitive/CubeClass.h"
-#include "Renderer/Object3D/Primitive/CylinderClass.h"
-#include "Renderer/Object3D/Primitive/PlaneClass.h"
-#include "Renderer/Object3D/Primitive/SphereClass.h"
-#include "Renderer/Object3D/Primitive/TriangleClass.h"
+#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
 // Particle
 #include "Renderer/Particle/ParticleSystem.h"
 // ParticleGPU

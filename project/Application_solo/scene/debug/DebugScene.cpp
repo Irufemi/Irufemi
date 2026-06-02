@@ -67,24 +67,24 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         sprite_->Initialize();
     }
     if (isActiveTriangle_) {
-        triangle_ = std::make_unique <TriangleClass>();
-        triangle_->Initialize();
+        triangle_ = std::make_unique<Primitive3DObject>();
+        triangle_->Initialize(PrimitiveType::Triangle);
     }
     if (isActiveCube_) {
-        cube_ = std::make_unique <CubeClass>();
-        cube_->Initialize();
+        cube_ = std::make_unique<Primitive3DObject>();
+        cube_->Initialize(PrimitiveType::Cube);
     }
     if (isActivePlane_) {
-        plane_ = std::make_unique<PlaneClass>();
-        plane_->Initialize();
+        plane_ = std::make_unique<Primitive3DObject>();
+        plane_->Initialize(PrimitiveType::Plane);
     }
     if (isActiveSphere_) {
-        sphere_ = std::make_unique<SphereClass>();
-        sphere_->Initialize();
+        sphere_ = std::make_unique<Primitive3DObject>();
+        sphere_->Initialize(PrimitiveType::Sphere);
     }
     if (isActiveCylinder_) {
-        cylinder_ = std::make_unique<CylinderClass>();
-        cylinder_->Initialize();
+        cylinder_ = std::make_unique<Primitive3DObject>();
+        cylinder_->Initialize(PrimitiveType::Cylinder);
     }
     if (isActiveObj_) {
         obj_ = std::make_unique<ObjClass>();
@@ -148,17 +148,16 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
 
     if (isActivePrimitiveObj_) {
-        primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
+        primitiveObj_ = std::make_unique<Primitive3DObject>();
         primitiveObj_->Initialize(PrimitiveType::Cube);
         primitiveObj_->SetPosition({ 0.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
     }
 
     // 電撃エフェクトの初期化
-    lightningCylinder_ = std::make_unique<CylinderClass>();
-    lightningCylinder_->Initialize();
-    lightningCylinder_->SetRadius(0.2f); // ビームっぽく細長く
-    lightningCylinder_->SetHeight(10.0f);
-    lightningCylinder_->SetCenter({ -2.0f, 0.0f, 0.0f });
+    lightningCylinder_ = std::make_unique<Primitive3DObject>();
+    lightningCylinder_->Initialize(PrimitiveType::Cylinder);
+    lightningCylinder_->SetScale({ 0.2f, 10.0f, 0.2f }); // ビームっぽく細長く
+    lightningCylinder_->SetPosition({ -2.0f, 0.0f, 0.0f });
 
     lightningParamsResource_ = engine_->GetDirectXCommon()->CreateBufferResource(sizeof(LightningParams));
     lightningParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightningParamsData_));
@@ -217,15 +216,15 @@ void DebugScene::Update() {
 
     if (isActiveTriangle_) {
         if (!triangle_) {
-            triangle_ = std::make_unique<TriangleClass>();
-            triangle_->Initialize();
+            triangle_ = std::make_unique<Primitive3DObject>();
+            triangle_->Initialize(PrimitiveType::Triangle);
         }
         triangle_->Update();
     }
     if (isActiveCube_) {
         if (!cube_) {
-            cube_ = std::make_unique<CubeClass>();
-            cube_->Initialize();
+            cube_ = std::make_unique<Primitive3DObject>();
+            cube_->Initialize(PrimitiveType::Cube);
         }
 
 #ifdef USE_IMGUI
@@ -237,7 +236,7 @@ void DebugScene::Update() {
         Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
         Matrix4x4 view = activeCamera->GetViewMatrix();
         Matrix4x4 projection = activeCamera->GetPerspectiveFovMatrix();
-        auto& transform = cube_->GetD3D12Resource()->transform_;
+        auto& transform = cube_->GetTransform().transform;
         Matrix4x4 world = Math::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 
         if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], gizmoOperation_, gizmoMode_, &world.m[0][0])) {
@@ -267,22 +266,22 @@ void DebugScene::Update() {
     }
     if (isActivePlane_) {
         if (!plane_) {
-            plane_ = std::make_unique<PlaneClass>();
-            plane_->Initialize();
+            plane_ = std::make_unique<Primitive3DObject>();
+            plane_->Initialize(PrimitiveType::Plane);
         }
         plane_->Update();
     }
     if (isActiveSphere_) {
         if (!sphere_) {
-            sphere_ = std::make_unique<SphereClass>();
-            sphere_->Initialize();
+            sphere_ = std::make_unique<Primitive3DObject>();
+            sphere_->Initialize(PrimitiveType::Sphere);
         }
         sphere_->Update();
     }
     if (isActiveCylinder_) {
         if (!cylinder_) {
-            cylinder_ = std::make_unique<CylinderClass>();
-            cylinder_->Initialize();
+            cylinder_ = std::make_unique<Primitive3DObject>();
+            cylinder_->Initialize(PrimitiveType::Cylinder);
         }
         cylinder_->Update();
     }
@@ -404,7 +403,7 @@ void DebugScene::Update() {
     }
     if (isActivePrimitiveObj_) {
         if (!primitiveObj_) {
-            primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
+            primitiveObj_ = std::make_unique<Primitive3DObject>();
             primitiveObj_->Initialize(PrimitiveType::Cube);
         }
         primitiveObj_->Update();
@@ -524,7 +523,7 @@ void DebugScene::Draw() {
             engine_->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
 
             RenderPackets::Standard3DPacket packet{};
-            packet.resource = lightningCylinder_->GetD3D12Resource();
+            packet.resource = lightningCylinder_->GetMesh().resource.get();
             packet.blendMode = BlendMode::kBlendModeAdd;
             packet.depthWrite = PSOManager::DepthWrite::Disable;
             packet.cullMode = PSOManager::CullMode::None;
@@ -601,6 +600,5 @@ void DebugScene::DrawDebugTab() {
         ImGui::End();
     }
 
-    DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 #endif
 }

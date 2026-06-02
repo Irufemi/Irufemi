@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Framework">
@@ -405,21 +405,11 @@
     <ClCompile Include="Renderer\Object3D\Primitive\TriangleClass.cpp">
       <Filter>Renderer\3D</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\CubeClass.cpp">
-      <Filter>Renderer\Object3D\Primitive</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\RingClass.cpp">
-      <Filter>Renderer\Object3D\Primitive</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\CylinderClass.cpp">
-      <Filter>Renderer\Object3D\Primitive</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\PlaneClass.cpp">
-      <Filter>Renderer\Object3D\Primitive</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\SphereClass.cpp">
-      <Filter>Renderer\Object3D\Primitive</Filter>
-    </ClCompile>
+
+
+
+
+
     <ClCompile Include="Renderer\Object3D\AnimationModel\AnimationModel.cpp">
       <Filter>Renderer\Object3D\AnimationModel</Filter>
     </ClCompile>
@@ -451,8 +441,11 @@
     <ClCompile Include="Engine\Graphics\DirectX\FrameRateController.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.cpp">
+    <ClCompile Include="Renderer\Object3D\Primitive\Primitive3DObject.cpp">
       <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Data\RenderData.cpp">
+      <Filter>Renderer\Data</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Graphics\DirectX\ShadowMap.cpp">
       <Filter>Engine\Graphics\DirectX</Filter>
@@ -980,21 +973,11 @@
     <ClInclude Include="Renderer\Object3D\Primitive\TriangleClass.h">
       <Filter>Renderer\3D</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Primitive\CubeClass.h">
-      <Filter>Renderer\Object3D\Primitive</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Primitive\RingClass.h">
-      <Filter>Renderer\Object3D\Primitive</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Primitive\CylinderClass.h">
-      <Filter>Renderer\Object3D\Primitive</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Primitive\PlaneClass.h">
-      <Filter>Renderer\Object3D\Primitive</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Object3D\Primitive\SphereClass.h">
-      <Filter>Renderer\Object3D\Primitive</Filter>
-    </ClInclude>
+
+
+
+
+
     <ClInclude Include="Renderer\Object3D\AnimationModel\AnimationModel.h">
       <Filter>Renderer\Object3D\AnimationModel</Filter>
     </ClInclude>
@@ -1058,8 +1041,11 @@
     <ClInclude Include="Engine\Graphics\Data\Material.h" />
     <ClInclude Include="Engine\Graphics\Data\SceneGPUStructs.h" />
     <ClInclude Include="Engine\Graphics\Data\LightCommonData.h" />
-    <ClInclude Include="Renderer\Object3D\Primitive\PrimitiveObjects3DClass.h">
+    <ClInclude Include="Renderer\Object3D\Primitive\Primitive3DObject.h">
       <Filter>Renderer\Object3D\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Data\RenderData.h">
+      <Filter>Renderer\Data</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\DirectX\ShadowMap.h">
       <Filter>Engine\Graphics\DirectX</Filter>
