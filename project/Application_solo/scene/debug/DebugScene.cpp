@@ -33,11 +33,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
 
     isActiveObj_ = false;
     isActiveSprite_ = false;
-    isActiveTriangle_ = false;
-    isActiveCube_ = false;
-    isActivePlane_ = false;
-    isActiveSphere_ = false; 
-    isActiveCylinder_ = false;
+
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
     isActiveMultiMesh_ = false;
@@ -66,26 +62,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         sprite_ = std::make_unique <Sprite>();
         sprite_->Initialize();
     }
-    if (isActiveTriangle_) {
-        triangle_ = std::make_unique<Primitive3DObject>();
-        triangle_->Initialize(PrimitiveType::Triangle);
-    }
-    if (isActiveCube_) {
-        cube_ = std::make_unique<Primitive3DObject>();
-        cube_->Initialize(PrimitiveType::Cube);
-    }
-    if (isActivePlane_) {
-        plane_ = std::make_unique<Primitive3DObject>();
-        plane_->Initialize(PrimitiveType::Plane);
-    }
-    if (isActiveSphere_) {
-        sphere_ = std::make_unique<Primitive3DObject>();
-        sphere_->Initialize(PrimitiveType::Sphere);
-    }
-    if (isActiveCylinder_) {
-        cylinder_ = std::make_unique<Primitive3DObject>();
-        cylinder_->Initialize(PrimitiveType::Cylinder);
-    }
+
     if (isActiveObj_) {
         obj_ = std::make_unique<ObjClass>();
         obj_->Initialize("sample/plane.gltf");
@@ -181,11 +158,8 @@ void DebugScene::Update() {
 #ifdef USE_IMGUI
     ImGui::Begin("Activation");
     ImGui::Checkbox("Sprite", &isActiveSprite_);
-    ImGui::Checkbox("Triangle", &isActiveTriangle_);
-    ImGui::Checkbox("Cube", &isActiveCube_);
-    ImGui::Checkbox("Plane", &isActivePlane_);
-    ImGui::Checkbox("Sphere", &isActiveSphere_);
-    ImGui::Checkbox("Cylinder", &isActiveCylinder_);
+    ImGui::Checkbox("Primitive Test", &isActivePrimitiveObj_);
+
     ImGui::Checkbox("Obj", &isActiveObj_);
     ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot_);
     ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny_);
@@ -214,77 +188,7 @@ void DebugScene::Update() {
 
     // 3D
 
-    if (isActiveTriangle_) {
-        if (!triangle_) {
-            triangle_ = std::make_unique<Primitive3DObject>();
-            triangle_->Initialize(PrimitiveType::Triangle);
-        }
-        triangle_->Update();
-    }
-    if (isActiveCube_) {
-        if (!cube_) {
-            cube_ = std::make_unique<Primitive3DObject>();
-            cube_->Initialize(PrimitiveType::Cube);
-        }
 
-#ifdef USE_IMGUI
-        // ImGuizmo の操作
-        ImGuizmo::BeginFrame();
-        ImGuiIO& io = ImGui::GetIO();
-        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-
-        Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
-        Matrix4x4 view = activeCamera->GetViewMatrix();
-        Matrix4x4 projection = activeCamera->GetPerspectiveFovMatrix();
-        auto& transform = cube_->GetTransform().transform;
-        Matrix4x4 world = Math::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-
-        if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], gizmoOperation_, gizmoMode_, &world.m[0][0])) {
-            float pos[3], rot[3], scale[3];
-            ImGuizmo::DecomposeMatrixToComponents(&world.m[0][0], pos, rot, scale);
-
-            cube_->SetPosition({ pos[0], pos[1], pos[2] });
-            cube_->SetRotate({ rot[0] * Math::PI / 180.0f, rot[1] * Math::PI / 180.0f, rot[2] * Math::PI / 180.0f });
-            cube_->SetScale({ scale[0], scale[1], scale[2] });
-        }
-
-        // ギズモ設定UI
-        ImGui::Begin("Gizmo Settings");
-        if (ImGui::RadioButton("Translate", gizmoOperation_ == ImGuizmo::TRANSLATE)) gizmoOperation_ = ImGuizmo::TRANSLATE;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("Rotate", gizmoOperation_ == ImGuizmo::ROTATE)) gizmoOperation_ = ImGuizmo::ROTATE;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("Scale", gizmoOperation_ == ImGuizmo::SCALE)) gizmoOperation_ = ImGuizmo::SCALE;
-
-        if (ImGui::RadioButton("Local", gizmoMode_ == ImGuizmo::LOCAL)) gizmoMode_ = ImGuizmo::LOCAL;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("World", gizmoMode_ == ImGuizmo::WORLD)) gizmoMode_ = ImGuizmo::WORLD;
-        ImGui::End();
-#endif
-
-        cube_->Update();
-    }
-    if (isActivePlane_) {
-        if (!plane_) {
-            plane_ = std::make_unique<Primitive3DObject>();
-            plane_->Initialize(PrimitiveType::Plane);
-        }
-        plane_->Update();
-    }
-    if (isActiveSphere_) {
-        if (!sphere_) {
-            sphere_ = std::make_unique<Primitive3DObject>();
-            sphere_->Initialize(PrimitiveType::Sphere);
-        }
-        sphere_->Update();
-    }
-    if (isActiveCylinder_) {
-        if (!cylinder_) {
-            cylinder_ = std::make_unique<Primitive3DObject>();
-            cylinder_->Initialize(PrimitiveType::Cylinder);
-        }
-        cylinder_->Update();
-    }
     if (isActiveObj_) {
         if (!obj_) {
             obj_ = std::make_unique<ObjClass>();
@@ -452,21 +356,7 @@ void DebugScene::Draw() {
 
     engine_->ApplyPSO("Object3D");
 
-    if (isActiveTriangle_) {
-        triangle_->Draw();
-    }
-    if (isActivePlane_) {
-        plane_->Draw();
-    }
-    if (isActiveCube_) {
-        cube_->Draw();
-    }
-    if (isActiveSphere_) {
-        sphere_->Draw();
-    }
-    if (isActiveCylinder_) {
-        cylinder_->Draw();
-    }
+
     if (isActiveObj_) {
         obj_->Draw();
     }
@@ -576,10 +466,7 @@ void DebugScene::DrawDebugTab() {
         skybox_->Debug();
     }
 
-    if (isActiveCube_ && cube_) cube_->Debug("Cube");
-    if (isActivePlane_ && plane_) plane_->Debug("Plane");
-    if (isActiveSphere_ && sphere_) sphere_ ->Debug("Sphere");
-    if (isActiveCylinder_ && cylinder_) cylinder_->Debug("Cylinder");
+
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
 

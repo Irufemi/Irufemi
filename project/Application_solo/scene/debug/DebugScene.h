@@ -28,21 +28,9 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<Sprite> sprite_ = nullptr;
     bool isActiveSprite_ = false;
 
-    // 基本形状
-    std::unique_ptr<Primitive3DObject> triangle_ = nullptr;
-    bool isActiveTriangle_ = false;
-
-    std::unique_ptr<Primitive3DObject> cube_ = nullptr;
-    bool isActiveCube_ = false;
-
-    std::unique_ptr<Primitive3DObject> plane_ = nullptr;
-    bool isActivePlane_ = true;
-
-    std::unique_ptr<Primitive3DObject> sphere_ = nullptr;
-    bool isActiveSphere_ = true;
-
-    std::unique_ptr<Primitive3DObject> cylinder_ = nullptr;
-    bool isActiveCylinder_ = true;
+    // --- プリミティブ形状のテスト用（汎用クラスに統合済み） ---
+    std::unique_ptr<Primitive3DObject> primitiveObj_ = nullptr;
+    bool isActivePrimitiveObj_ = false;
 
     std::unique_ptr<ObjClass> obj_ = nullptr;
     bool isActiveObj_ = false;
@@ -91,8 +79,6 @@ private: // メンバ変数(ゲーム)
     // --- ライト ---
     bool isActiveSkybox_ = false;
 
-    std::unique_ptr<Primitive3DObject> primitiveObj_ = nullptr;
-    bool isActivePrimitiveObj_ = false;
 
     // --- ImGuiデモ ---
     bool isActiveImGuiDemo_ = false;
