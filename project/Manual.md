@@ -18,49 +18,77 @@
 スクリプトやコンポーネントから以下の手順でエミッターを追加・操作することができます。
 
 ### コンポーネントからの利用
-GameObject に `ParticleEmitterComponent` をアタッチするだけで、自動的に `GPUParticleManager` に登録され、描画が行われます。
-設定可能なパラメータはインスペクター上、またはコードから `emitCountPerFrame_` や `lifeTimeMin_` などを変更してください。
+GameObject に `ParticleEmitterComponent` をアタッチするだけで、自動的にエディタ上で操作・プレビューが可能です。
+エディタ（ImGui）上で設定したパラメータは、JSONファイルとして自動的にシリアライズされ、再実行時にも完全に復元されます。
 
-### プログラムからの直接利用 (例)
-特定の場所でワンショットのパーティクルを発生させたい場合など。
+### プログラムからの直接利用 (ParticleObject)
+ゲーム内でコードから動的にパーティクルを生成・制御したい場合は `ParticleObject` クラスを使用します。
+JSONファイルから設定をロードすることで、エディタで作成した複雑なエフェクトをそのまま呼び出すことができます。
+
+```cpp
+#include "Renderer/ParticleGPU/ParticleObject.h"
+
+// 1. ParticleObject の生成とJSONの読み込み
+ParticleObject myParticle;
+myParticle.LoadFromJson("resources/particles/explosion.json");
+
+// 2. 座標や必要に応じたパラメータの上書き
+myParticle.position_ = Vector3(10.0f, 5.0f, 0.0f);
+myParticle.emissionRate_ = 100.0f; // 1秒間に100個発生
+
+// （パラメータをコードから変更した場合は MarkDirty() を呼ぶか、Update内で自動反映されます）
+myParticle.MarkDirty();
+
+// 3. 毎フレーム Update を呼ぶ
+myParticle.Update();
+
+// 4. 一度に大量に発生（バースト）させたい場合
+myParticle.EmitBurst(50);
+```
+
+### 【上級者向け】GPUParticleManager の直接利用
+直接マネージャーに通信して描画リクエストを送ることも可能です（独自の最適化を行いたい場合など）。
+※現在のマネージャーは「テクスチャ + ブレンドモード + タイムスケール」の複合キーで管理されています。
 
 ```cpp
 #include "Renderer/ParticleGPU/GPUParticleManager.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 
-// 1. マネージャーにエミッターを登録（テクスチャパスを指定）
-auto handle = GPUParticleManager::GetInstance()->RegisterEmitter("effect/particle_tex.png");
+// 1. マネージャーにエミッターを登録（テクスチャ、ブレンドモード、ポーズ中動作フラグ）
+auto handle = GPUParticleManager::GetInstance()->RegisterEmitter(
+    "effect/particle_tex.png", 
+    BlendMode::kBlendModeAdd, 
+    false // trueにするとポーズ中(UnscaledTime)でも動作する
+);
 
 // 2. パラメータを設定してマネージャーに更新を通知
 GPUParticleEmitter data;
 data.emit = 1;
 data.type = 0; // 0: Sphere, 1: Beam, 2: Ring, 3: Cylinder, 4: Box
 data.translateX = 10.0f;
-data.translateY = 5.0f;
-data.translateZ = 0.0f;
-data.count = 50;         // 放出量
-data.frequency = 0.1f;   // 放出間隔
+data.emissionRate = 50.0f; // 1秒あたりの連続放出数
 
 // 3. データの適用
 GPUParticleManager::GetInstance()->UpdateEmitterData(handle, data);
-
-// 4. 使用が終わったら登録解除（自動的に空きスロットとして再利用されます）
-// GPUParticleManager::GetInstance()->UnregisterEmitter(handle);
 ```
 
 ### 【NEW】ゲーム中での一時的なエフェクト再生 (爆発など)
 シーン内の特定座標に単発（ワンショット）の爆発エフェクトなどを出したい場合は、新しく追加された `Effect` クラスを使用するのが最も簡単です。
 
 ```cpp
-#include "Framework/Component/Renderer/Effect.h"
+#include "Renderer/Effect/Effect.h"
 
-// 座標とパーティクルのテクスチャパスを指定してエフェクトを発生
-Effect::PlayEffect(
-    Vector3(10.0f, 0.0f, 5.0f),       // 発生座標
-    "resources/texture/explosion.png",// テクスチャ
-    ParticleType::Sphere,             // パーティクルの形状 (爆発なら Sphere や Hemisphere)
-    500                               // 発生させるパーティクルの数 (Burst量)
-);
+// 1. エフェクトインスタンスの作成と初期化（例：爆発）
+Effect myEffect;
+myEffect.Initialize(EffectType::kExplosion);
+
+// 2. 指定した座標でエフェクトを発生させる
+myEffect.Play(Vector3(10.0f, 0.0f, 5.0f));
+
+// 3. 毎フレーム Update と Draw を呼ぶ
+myEffect.Update();
+myEffect.SyncBeforeDraw();
+myEffect.Draw();
 ```
 
 ### インスペクターからの ParticleType などの設定

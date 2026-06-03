@@ -68,10 +68,10 @@ struct GPUParticleEmitter {
     float translateX = 0, translateY = 0, translateZ = 0; ///< 放出中心位置
 
     // float4 x 2
-    int32_t count = 0;          ///< 1回の放出数
-    float frequency = 0.1f;     ///< 放出間隔
-    float frequencyTime = 0.0f; ///< 放出タイマー
-    int32_t emit = 0;           ///< 1: 放出許可, 0: 停止
+    float emissionRate = 0.0f;     ///< 1秒あたりの連続放出数
+    float emissionResidue = 0.0f;  ///< 端数繰り越し用
+    float padFreqTime = 0.0f;      ///< 未使用/アライメント用
+    int32_t emit = 0;              ///< 1: 放出許可, 0: 停止
 
     // float4 x 3
     float radius = 1.0f;        ///< Sphere/Ring/Cylinder用: 半径
@@ -268,7 +268,8 @@ public:
 
     /** @name 描画設定（パイプライン） */
     ///@{
-    void SetBlend(BlendMode blend) { selectedBlend_ = blend; }
+    void SetBlendMode(BlendMode blend) { selectedBlend_ = blend; }
+    void SetUnscaledTime(bool isUnscaled) { isUnscaledTime_ = isUnscaled; }
     void SetDepthWrite(PSOManager::DepthWrite depth) { selectedDepth_ = depth; }
     void SetCull(PSOManager::CullMode cull) { selectedCull_ = cull; }
     void SetCustomPSO(const std::string& psoName) { customPSOName_ = psoName; }
@@ -277,9 +278,9 @@ public:
 
     /** @name タイプ別エミッター設定 */
     ///@{
-    void SetSphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency, uint32_t emitterIndex = 0);
-    void SetHemisphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency, uint32_t emitterIndex = 0);
-    void SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, uint32_t count, float frequency, uint32_t emitterIndex = 0);
+    void SetSphereEmitter(const Vector3& pos, float radius, float emissionRate, uint32_t emitterIndex = 0);
+    void SetHemisphereEmitter(const Vector3& pos, float radius, float emissionRate, uint32_t emitterIndex = 0);
+    void SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, float emissionRate, uint32_t emitterIndex = 0);
 
     /** @name アトラス・物理挙動設定 */
     /** @brief テクスチャアトラス（Flipbook）設定 */
@@ -294,10 +295,9 @@ public:
      * @param pos 中心位置
      * @param radius 半径
      * @param thickness 厚み
-     * @param count 一度の放出数
-     * @param frequency 放出頻度（秒）
+     * @param emissionRate 1秒あたりの連続放出数
      */
-    void SetRingEmitter(const Vector3& pos, float radius, float thickness, uint32_t count, float frequency, uint32_t emitterIndex = 0);
+    void SetRingEmitter(const Vector3& pos, float radius, float thickness, float emissionRate, uint32_t emitterIndex = 0);
 
     /**
      * @brief 円柱エミッターの設定
@@ -305,19 +305,17 @@ public:
      * @param direction 円柱の方向
      * @param radius 半径
      * @param height 高さ
-     * @param count 一度の放出数
-     * @param frequency 放出頻度（秒）
+     * @param emissionRate 1秒あたりの連続放出数
      */
-    void SetCylinderEmitter(const Vector3& pos, const Vector3& direction, float radius, float height, uint32_t count, float frequency, uint32_t emitterIndex = 0);
+    void SetCylinderEmitter(const Vector3& pos, const Vector3& direction, float radius, float height, float emissionRate, uint32_t emitterIndex = 0);
 
     /**
      * @brief ボックス（直方体）エミッターの設定
      * @param pos 中心位置
      * @param size ボックスの各軸のサイズ（幅、高さ、奥行き）
-     * @param count 一度の放出数
-     * @param frequency 放出頻度（秒）
+     * @param emissionRate 1秒あたりの連続放出数
      */
-    void SetBoxEmitter(const Vector3& pos, const Vector3& size, uint32_t count, float frequency, uint32_t emitterIndex = 0);
+    void SetBoxEmitter(const Vector3& pos, const Vector3& size, float emissionRate, uint32_t emitterIndex = 0);
     ///@}
 
     /** @brief 開始色を設定する */
@@ -482,6 +480,7 @@ private:
     bool isInitializedCS_ = false;
     bool isSortResourceInitialized_ = false;
     bool needsUpdateCS_ = false;
+    bool isUnscaledTime_ = false;
     
 
     // --- State tracking for multiple pass rendering ---

@@ -27,11 +27,16 @@ void GPUParticleManager::Finalize() {
     systems_.clear();
 }
 
-GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath) {
-    auto& ctx = systems_[texturePath];
+GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, BlendMode blendMode, bool isUnscaledTime) {
+    SystemKey key{ texturePath, blendMode, isUnscaledTime };
+    auto& ctx = systems_[key];
+
+    // 新規テクスチャの場合はシステムを初期化
     if (!ctx.system) {
         ctx.system = std::make_unique<GPUParticleSystem>();
         ctx.system->Initialize(texturePath);
+        ctx.system->SetBlendMode(blendMode);         // TODO: GPUParticleSystem に SetBlendMode を追加予定
+        ctx.system->SetUnscaledTime(isUnscaledTime); // TODO: GPUParticleSystem に SetUnscaledTime を追加予定
     }
     
     uint32_t assignedIndex = 0;
@@ -76,12 +81,10 @@ void GPUParticleManager::UpdateEmitterData(const EmitterHandle& handle, const GP
         // burstCount is additive in our system, so we accumulate it from the incoming data and clear the incoming data's burstCount?
         // Actually, ParticleEmitterComponent might send burstCount. We add it and reset component's.
         uint32_t burst = handle.system->emittersData_[handle.emitterIndex].burstCount + data.burstCount;
-        float freqTime = handle.system->emittersData_[handle.emitterIndex].frequencyTime; // preserve internal state
         
         handle.system->emittersData_[handle.emitterIndex] = data;
         
         handle.system->emittersData_[handle.emitterIndex].burstCount = burst;
-        handle.system->emittersData_[handle.emitterIndex].frequencyTime = freqTime;
     }
 }
 
@@ -94,7 +97,7 @@ void GPUParticleManager::Debug() {
         ImGui::Text("Active Particle Systems (Textures): %d", (int)systems_.size());
         
         int totalEmitters = 0;
-        int maxEmitters = systems_.size() * GPUParticleSystem::kMaxEmitters;
+        int maxEmitters = static_cast<int>(systems_.size()) * GPUParticleSystem::kMaxEmitters;
         for (const auto& pair : systems_) {
             totalEmitters += (int)(GPUParticleSystem::kMaxEmitters - pair.second.freeIndices.size());
         }
@@ -105,7 +108,7 @@ void GPUParticleManager::Debug() {
         ImGui::Spacing();
         ImGui::Text("System Details per Texture");
         for (auto& pair : systems_) {
-            const std::string& textureName = pair.first;
+            const std::string& textureName = pair.first.texturePath;
             auto& context = pair.second;
             
             if (ImGui::TreeNode(textureName.c_str())) {

@@ -24,6 +24,9 @@ public:
     std::string GetComponentName() const override { return "ParticleEmitterComponent"; }
     void OnRegisterProperties() override;
 
+    nlohmann::json Serialize() override;
+    void Deserialize(const nlohmann::json& j) override;
+
     void Play();
     void Stop();
     

@@ -53,10 +53,10 @@ struct GPUParticleEmitter
 	float3 translate;   // 位置
 
 	// float4 x 2
-	int count;          // 放出数
-	float frequency;    // 頻度
-	float frequencyTime;// タイマー
-	int emit;           // 放出フラグ
+	float emissionRate;     // 1秒あたりの連続放出数
+	float emissionResidue;  // 端数繰り越し用
+	float padFreqTime;      // タイマー(パディング)
+	int emit;               // 放出フラグ
 
 	// float4 x 3
 	float radius;       // Sphere/Ring/Cylinder用: 半径

@@ -39,3 +39,20 @@ void ParticleEmitterComponent::Stop() {
 void ParticleEmitterComponent::EmitBurst(int count) {
     particleObj_->EmitBurst(count);
 }
+
+nlohmann::json ParticleEmitterComponent::Serialize() {
+    nlohmann::json j = Component::Serialize();
+    if (particleObj_) {
+        nlohmann::json particleJson;
+        particleObj_->Serialize(particleJson);
+        j["ParticleData"] = particleJson;
+    }
+    return j;
+}
+
+void ParticleEmitterComponent::Deserialize(const nlohmann::json& j) {
+    Component::Deserialize(j);
+    if (j.contains("ParticleData") && particleObj_) {
+        particleObj_->Deserialize(j["ParticleData"]);
+    }
+}

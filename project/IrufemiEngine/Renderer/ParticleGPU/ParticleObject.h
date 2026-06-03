@@ -4,6 +4,9 @@
 #include "Engine/Core/Math/Vector4.h"
 #include "Renderer/ParticleGPU/GPUParticleManager.h"
 
+#include "Engine/Core/Type/BlendMode.h"
+#include <nlohmann/json.hpp>
+
 class TextureManager;
 
 /**
@@ -22,20 +25,22 @@ public:
     void Update();
     void DebugUI(const char* name = "Particle Object");
 
+    void Serialize(nlohmann::json& j) const;
+    void Deserialize(const nlohmann::json& j);
+    bool LoadFromJson(const std::string& filepath);
+
     // トランスフォーム
     Vector3 position_ = { 0.0f, 0.0f, 0.0f };
     Vector3 rotation_ = { 0.0f, 0.0f, 0.0f }; // 現在は主に方向として使用
 
     std::string texturePath_ = "resources/circle.png";
+    BlendMode blendMode_ = BlendMode::kBlendModeAdd;
+    bool isUnscaledTime_ = false;
     bool emitOnAwake_ = true;
-    
-    // 挙動プリセット (0: Custom, 1: Explosion, 2: Spark, 3: Smoke, 4: Magic)
-    int particleType_ = 0;
     
     // エミッターの基本パラメータ
     int emitType_ = 0; // 0: Sphere, 1: Beam, 2: Box, 3: Cylinder
-    int emitCountPerFrame_ = 10;
-    float emitFrequency_ = 0.1f;
+    float emissionRate_ = 50.0f; // 1秒あたりの発生数
     float lifeTimeMin_ = 0.5f;
     float lifeTimeMax_ = 1.0f;
     float velocity_ = 1.0f;
@@ -70,9 +75,14 @@ public:
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static TextureManager* GetTextureManager() { return textureManager_; }
 
+    void MarkDirty() { isDirty_ = true; }
+
 private:
+    void UpdateSystem();
+
     static TextureManager* textureManager_;
     GPUParticleManager::EmitterHandle emitterHandle_;
     bool isPlaying_ = false;
     int burstCountPending_ = 0;
+    bool isDirty_ = true; // パラメータ変更検知フラグ
 };

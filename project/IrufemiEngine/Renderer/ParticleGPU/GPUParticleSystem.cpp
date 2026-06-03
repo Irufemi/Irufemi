@@ -182,7 +182,6 @@ void GPUParticleSystem::Initialize(const std::string &textureName) {
 void GPUParticleSystem::Update() {
   if (emittersData_.empty() || !engine_)
     return;
-  auto *emitter_ = &emittersData_[0];
   Camera *activeCam = engine_->GetCameraManager()->GetActiveCamera();
   if (!activeCam)
     return;
@@ -193,7 +192,9 @@ void GPUParticleSystem::Update() {
       anyEmitting = true;
   }
 
-  float dt = engine_->GetDeltaTime();
+  // タイムスケールに応じた時間取得
+  float dt = isUnscaledTime_ ? engine_->GetDeltaTime() : engine_->GetGameDeltaTime();
+  float currentTime = isUnscaledTime_ ? engine_->GetTotalTime() : engine_->GetGameTime();
 
   // 持続時間制御
   if (anyEmitting && duration_ > 0.0f) {
@@ -237,28 +238,26 @@ void GPUParticleSystem::Update() {
   /*Particleを発生させる*/
 
   if (anyEmitting) {
-    for (auto &em : emittersData_) {
-      if (em.emit)
-        em.frequencyTime += dt;
-    }
     timeSinceStop_ = 0.0f; // 停止タイマーをリセット
   } else {
     timeSinceStop_ += dt; // 停止してからの時間を計測
   }
 
-  perFrameData_->time = engine_->GetGameTime();
-  perFrameData_->deltaTime = engine_->GetGameDeltaTime();
+  perFrameData_->time = currentTime;
+  perFrameData_->deltaTime = dt;
 
   uint32_t totalBurstCount = 0;
   float maxLifeOverall = 0.0f;
   for (auto &em : emittersData_) {
     if (em.emit) {
-      while (em.frequency <= em.frequencyTime && em.frequency > 0.0f) {
-        em.burstCount += (uint32_t)em.count;
-        em.frequencyTime -= em.frequency;
+      if (em.emissionRate > 0.0f) {
+        em.emissionResidue += em.emissionRate * dt;
+        uint32_t spawnCount = static_cast<uint32_t>(em.emissionResidue);
+        em.burstCount += spawnCount;
+        em.emissionResidue -= spawnCount;
       }
     } else {
-      em.frequencyTime = 0.0f; // Emit停止中ならタイマーリセット
+      em.emissionResidue = 0.0f; // Emit停止中なら端数リセット
     }
     totalBurstCount += em.burstCount;
     maxLifeOverall = (std::max)(maxLifeOverall, em.maxLife);
@@ -459,11 +458,10 @@ void GPUParticleSystem::Debug() {
   ImGui::Separator();
 
   // Blend Mode
-  const char *blendNames[] = {"Opaque",   "Alpha", "Add", "Sub",
-                              "Multiply", "Max",   "Min"};
+  const char* blendNames[] = { "None", "Normal", "Add", "Subtract", "Multiply", "Screen", "Premultiplied" };
   int currentBlend = (int)selectedBlend_;
   if (ImGui::Combo("Blend Mode", &currentBlend, blendNames, 7)) {
-    SetBlend((BlendMode)currentBlend);
+    SetBlendMode((BlendMode)currentBlend);
   }
 
   // Primitive
@@ -508,7 +506,7 @@ void GPUParticleSystem::Emit(uint32_t count, uint32_t emitterIndex) {
 }
 
 void GPUParticleSystem::SetSphereEmitter(const Vector3 &pos, float radius,
-                                         uint32_t count, float frequency,
+                                         float emissionRate,
                                          uint32_t emitterIndex) {
   if (emitterIndex >= emittersData_.size())
     return;
@@ -518,12 +516,11 @@ void GPUParticleSystem::SetSphereEmitter(const Vector3 &pos, float radius,
   emitter_->translateY = pos.y;
   emitter_->translateZ = pos.z;
   emitter_->radius = radius;
-  emitter_->count = (int32_t)count;
-  emitter_->frequency = frequency;
+  emitter_->emissionRate = emissionRate;
 }
 
 void GPUParticleSystem::SetHemisphereEmitter(const Vector3 &pos, float radius,
-                                             uint32_t count, float frequency,
+                                             float emissionRate,
                                              uint32_t emitterIndex) {
   if (emitterIndex >= emittersData_.size())
     return;
@@ -533,14 +530,13 @@ void GPUParticleSystem::SetHemisphereEmitter(const Vector3 &pos, float radius,
   emitter_->translateY = pos.y;
   emitter_->translateZ = pos.z;
   emitter_->radius = radius;
-  emitter_->count = (int32_t)count;
-  emitter_->frequency = frequency;
+  emitter_->emissionRate = emissionRate;
 }
 
 void GPUParticleSystem::SetBeamEmitter(const Vector3 &pos,
                                        const Vector3 &direction, float radius,
                                        float velocity, float spread,
-                                       uint32_t count, float frequency,
+                                       float emissionRate,
                                        uint32_t emitterIndex) {
   if (emitterIndex >= emittersData_.size())
     return;
@@ -555,8 +551,7 @@ void GPUParticleSystem::SetBeamEmitter(const Vector3 &pos,
   emitter_->radius = radius;
   emitter_->velocity = velocity;
   emitter_->spread = spread;
-  emitter_->count = (int32_t)count;
-  emitter_->frequency = frequency;
+  emitter_->emissionRate = emissionRate;
 }
 
 void GPUParticleSystem::SetEmit(bool emit, uint32_t emitterIndex) {
@@ -690,8 +685,8 @@ void GPUParticleSystem::SetTexture(const std::string &textureFilePath) {
 }
 
 void GPUParticleSystem::SetRingEmitter(const Vector3 &pos, float radius,
-                                       float thickness, uint32_t count,
-                                       float frequency, uint32_t emitterIndex) {
+                                       float thickness, float emissionRate,
+                                       uint32_t emitterIndex) {
   if (emitterIndex >= emittersData_.size())
     return;
   auto *emitter_ = &emittersData_[emitterIndex];
@@ -701,14 +696,13 @@ void GPUParticleSystem::SetRingEmitter(const Vector3 &pos, float radius,
   emitter_->translateZ = pos.z;
   emitter_->radius = radius;
   emitter_->spread = thickness; // spreadをthicknessとして流用
-  emitter_->count = (int32_t)count;
-  emitter_->frequency = frequency;
+  emitter_->emissionRate = emissionRate;
 }
 
 void GPUParticleSystem::SetCylinderEmitter(const Vector3 &pos,
                                            const Vector3 &direction,
                                            float radius, float height,
-                                           uint32_t count, float frequency,
+                                           float emissionRate,
                                            uint32_t emitterIndex) {
   if (emitterIndex >= emittersData_.size())
     return;
@@ -722,12 +716,11 @@ void GPUParticleSystem::SetCylinderEmitter(const Vector3 &pos,
   emitter_->directionZ = direction.z;
   emitter_->radius = radius;
   emitter_->velocity = height; // velocityをheightとして流用
-  emitter_->count = (int32_t)count;
-  emitter_->frequency = frequency;
+  emitter_->emissionRate = emissionRate;
 }
 
 void GPUParticleSystem::SetBoxEmitter(const Vector3 &pos, const Vector3 &size,
-                                      uint32_t count, float frequency,
+                                      float emissionRate,
                                       uint32_t emitterIndex) {
   if (emitterIndex >= emittersData_.size())
     return;
@@ -739,8 +732,7 @@ void GPUParticleSystem::SetBoxEmitter(const Vector3 &pos, const Vector3 &size,
   emitter_->areaSizeX = size.x;
   emitter_->areaSizeY = size.y;
   emitter_->areaSizeZ = size.z;
-  emitter_->count = (int32_t)count;
-  emitter_->frequency = frequency;
+  emitter_->emissionRate = emissionRate;
 }
 
 void GPUParticleSystem::SetTextureAtlas(uint32_t rows, uint32_t cols,

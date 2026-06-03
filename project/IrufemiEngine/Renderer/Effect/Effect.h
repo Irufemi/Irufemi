@@ -15,7 +15,7 @@
 
 
 
-class GPUParticleSystem;
+class ParticleObject;
 class Primitive3DObject;
 
 /**
@@ -183,8 +183,10 @@ struct ExplosionConfig {
 
 private:
     static class IrufemiEngine* engine_;
-    std::vector<std::unique_ptr<GPUParticleSystem>> particleSystems_;
-    std::unique_ptr<GPUParticleSystem> explosionSparkSystem_; //!< CPU版からGPU版に変更
+    std::unique_ptr<ParticleObject> hitParticle_;
+    std::unique_ptr<ParticleObject> impactPlaneParticle_;
+    std::unique_ptr<Primitive3DObject> impactRingObject_;
+    std::unique_ptr<ParticleObject> explosionSparkParticle_;
     std::unique_ptr<Primitive3DObject> auraObject_;
     std::unique_ptr<Primitive3DObject> swingObject_;      //!< スイング用プリミティブオブジェクト
     std::unique_ptr<Primitive3DObject> explosionObject_;  //!< ★追加: 3D爆風コア用

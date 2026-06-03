@@ -101,7 +101,12 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     if (isActiveGPUParticle_) {
         particleObj_ = std::make_unique<ParticleObject>();
         particleObj_->texturePath_ = "resources/circle.png";
-        particleObj_->particleType_ = 1; // Explosion
+        particleObj_->emitType_ = 0;
+        particleObj_->velocity_ = 5.0f;
+        particleObj_->gravity_ = 0.0f;
+        particleObj_->damping_ = 0.05f;
+        particleObj_->lifeTimeMin_ = 0.3f;
+        particleObj_->lifeTimeMax_ = 0.6f;
         particleObj_->radius_ = 5.0f;
         particleObj_->color_ = {1.0f, 0.5f, 0.0f, 1.0f};
         particleObj_->Initialize();
@@ -262,7 +267,12 @@ void DebugScene::Update() {
         if (!particleObj_) {
             particleObj_ = std::make_unique<ParticleObject>();
             particleObj_->texturePath_ = "resources/circle.png";
-            particleObj_->particleType_ = 1; // Explosion
+            particleObj_->emitType_ = 0;
+            particleObj_->velocity_ = 5.0f;
+            particleObj_->gravity_ = 0.0f;
+            particleObj_->damping_ = 0.05f;
+            particleObj_->lifeTimeMin_ = 0.3f;
+            particleObj_->lifeTimeMax_ = 0.6f;
             particleObj_->radius_ = 5.0f;
             particleObj_->color_ = {1.0f, 0.5f, 0.0f, 1.0f};
             particleObj_->midColor_ = {1.0f, 0.0f, 0.0f, 1.0f};

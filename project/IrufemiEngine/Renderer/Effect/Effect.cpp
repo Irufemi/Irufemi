@@ -1,5 +1,5 @@
 #include "Effect.h"
-// #include "Renderer/Particle/ParticleSystem.h"
+#include "Renderer/ParticleGPU/ParticleObject.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Resource/Texture/TextureManager.h"
@@ -15,78 +15,53 @@ Effect::~Effect() = default;
 
 void Effect::Initialize(EffectType type) {
     type_ = type;
-    particleSystems_.clear();
-    explosionSparkSystem_ = nullptr;
     
     switch (type_) {
     case EffectType::kHit:
     {
         isBillboard_ = true;
         
-        auto system = std::make_unique<GPUParticleSystem>();
-        system->Initialize(currentTextureName_);
-        system->SetPrimitive(currentShape_);
-        system->SetBlend(blendMode_);
-        system->SetDepthWrite(depthWrite_);
-        system->SetCull(cullMode_);
-        system->SetBillboard(isBillboard_);
-        system->SetColor(hitConfig_.color);
-        system->SetParticleLife(hitConfig_.lifeMin, hitConfig_.lifeMax);
-        system->SetParticleScale(
-            hitConfig_.startScaleMin, hitConfig_.startScaleMax,
-            hitConfig_.endScaleMin,   hitConfig_.endScaleMax
-        );
-        system->SetJitter(hitConfig_.jitter);
-        system->SetEmit(false);
-        system->SetLoop(false);
-        particleSystems_.push_back(std::move(system));
+        hitParticle_ = std::make_unique<ParticleObject>();
+        hitParticle_->texturePath_ = currentTextureName_;
+        hitParticle_->blendMode_ = blendMode_;
+        hitParticle_->billboardMode_ = 1; // Billboard
+        hitParticle_->color_ = hitConfig_.color;
+        hitParticle_->lifeTimeMin_ = hitConfig_.lifeMin;
+        hitParticle_->lifeTimeMax_ = hitConfig_.lifeMax;
+        hitParticle_->startScale_ = hitConfig_.startScaleMax;
+        hitParticle_->endScale_ = hitConfig_.endScaleMax;
+        hitParticle_->jitter_ = hitConfig_.jitter;
+        hitParticle_->emitOnAwake_ = false;
+        hitParticle_->Initialize();
         break;
     }
     case EffectType::kImpact:
     {
         isBillboard_ = false;
         
-        // Planeエミッター
-        auto planeSystem = std::make_unique<GPUParticleSystem>();
-        planeSystem->Initialize(impactConfig_.planeTexture);
-        planeSystem->SetPrimitive(impactConfig_.planeShape);
-        planeSystem->SetBillboard(isBillboard_);
-        planeSystem->SetBlend(blendMode_);
-        planeSystem->SetDepthWrite(depthWrite_);
-        planeSystem->SetCull(cullMode_);
-        planeSystem->SetColor(impactConfig_.color);
-        planeSystem->SetParticleLife(impactConfig_.lifeMin, impactConfig_.lifeMax);
-        planeSystem->SetParticleScale(
-            impactConfig_.planeStartScaleMin, impactConfig_.planeStartScaleMax,
-            impactConfig_.planeEndScaleMin, impactConfig_.planeEndScaleMax
-        );
-        planeSystem->SetJitter(impactConfig_.jitter);
-        planeSystem->SetEnableRandomRotation(impactConfig_.planeEnableRandomRotation);
-        planeSystem->SetEmit(false);
-        planeSystem->SetLoop(false);
+        // Planeエミッター (破片) -> ParticleObject
+        impactPlaneParticle_ = std::make_unique<ParticleObject>();
+        impactPlaneParticle_->texturePath_ = impactConfig_.planeTexture;
+        impactPlaneParticle_->blendMode_ = blendMode_;
+        impactPlaneParticle_->billboardMode_ = 0; // None
+        impactPlaneParticle_->color_ = impactConfig_.color;
+        impactPlaneParticle_->lifeTimeMin_ = impactConfig_.lifeMin;
+        impactPlaneParticle_->lifeTimeMax_ = impactConfig_.lifeMax;
+        impactPlaneParticle_->startScale_ = impactConfig_.planeStartScaleMax;
+        impactPlaneParticle_->endScale_ = impactConfig_.planeEndScaleMax;
+        impactPlaneParticle_->jitter_ = impactConfig_.jitter;
+        impactPlaneParticle_->emitOnAwake_ = false;
+        impactPlaneParticle_->Initialize();
         
-        // Ringエミッター
-        auto ringSystem = std::make_unique<GPUParticleSystem>();
-        ringSystem->Initialize(impactConfig_.ringTexture);
-        ringSystem->SetPrimitive(impactConfig_.ringShape);
-        ringSystem->SetBillboard(isBillboard_);
-        ringSystem->SetBlend(blendMode_);
-        ringSystem->SetDepthWrite(depthWrite_);
-        ringSystem->SetCull(cullMode_);
-        ringSystem->SetColor(impactConfig_.color);
-        ringSystem->SetParticleLife(impactConfig_.lifeMin, impactConfig_.lifeMax);
-        ringSystem->SetParticleScale(
-            impactConfig_.ringStartScaleMin, impactConfig_.ringStartScaleMax,
-            impactConfig_.ringEndScaleMin, impactConfig_.ringEndScaleMax
-        );
-        ringSystem->SetJitter(impactConfig_.jitter);
-        ringSystem->SetEnableRandomRotation(impactConfig_.ringEnableRandomRotation);
-        ringSystem->SetUseClampSampler(impactConfig_.useClamp);
-        ringSystem->SetEmit(false);
-        ringSystem->SetLoop(false);
-        
-        particleSystems_.push_back(std::move(planeSystem));
-        particleSystems_.push_back(std::move(ringSystem));
+        // Ringエミッター -> Primitive3DObject
+        impactRingObject_ = std::make_unique<Primitive3DObject>();
+        impactRingObject_->Initialize(impactConfig_.ringShape, impactConfig_.ringTexture);
+        impactRingObject_->SetCastShadows(false);
+        impactRingObject_->GetMaterial().enableLighting = false;
+        impactRingObject_->GetMaterial().color = impactConfig_.color;
+        impactRingObject_->GetMaterial().useClampSampler = impactConfig_.useClamp ? 3 : 0;
+        impactRingObject_->SetScale(impactConfig_.ringStartScaleMax);
+        isActive_ = false;
         break;
     }
     case EffectType::kAura:
@@ -178,38 +153,27 @@ void Effect::Initialize(EffectType type) {
         explosionWaveObject_->SetScale(explosionConfig_.waveStartScale);
 
         // 3. GPUパーティクル（火花用）
-        auto sparkSystem = std::make_unique<GPUParticleSystem>();
-        sparkSystem->Initialize("resources/circle2.png");
-        sparkSystem->SetPrimitive(PrimitiveType::Plane);
-        sparkSystem->SetBlend(BlendMode::kBlendModeAdd);
-        sparkSystem->SetDepthWrite(PSOManager::DepthWrite::Disable);
-        sparkSystem->SetCull(PSOManager::CullMode::None);
-        sparkSystem->SetBillboardMode(1); // CameraBillboard
+        explosionSparkParticle_ = std::make_unique<ParticleObject>();
+        explosionSparkParticle_->texturePath_ = "resources/circle2.png";
+        explosionSparkParticle_->blendMode_ = BlendMode::kBlendModeAdd;
+        explosionSparkParticle_->billboardMode_ = 1; // CameraBillboard
         
         // 元の SparkBehavior（白 -> 赤 -> 透明）をシミュレート
-        // 0.0 ~ 0.2: 白(1,1,0.8) -> オレンジ(1,0.6,0)
-        // 0.2 ~ 1.0: オレンジ(1,0.6,0) -> 赤・透明(1,0,0,0)
-        sparkSystem->SetParticleColor(
-            { 1.0f, 1.0f, 0.8f, 1.0f }, { 1.0f, 1.0f, 0.8f, 1.0f }, 
-            { 1.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }
-        );
-        sparkSystem->SetMidColor(
-            { 1.0f, 0.6f, 0.0f, 1.0f }, { 1.0f, 0.6f, 0.0f, 1.0f }, 
-            0.2f // 寿命の20%時点で中間色に
-        );
+        explosionSparkParticle_->color_ = { 1.0f, 1.0f, 0.8f, 1.0f };
+        explosionSparkParticle_->midColor_ = { 1.0f, 0.6f, 0.0f, 1.0f };
+        explosionSparkParticle_->midPoint_ = 0.2f;
         
-        sparkSystem->SetParticleScale(
-            { 0.05f, 0.05f, 0.05f }, { 0.08f, 0.08f, 0.08f }, 
-            { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }
-        );
+        explosionSparkParticle_->startScale_ = { 0.08f, 0.08f, 0.08f };
+        explosionSparkParticle_->midScale_ = { 0.08f, 0.08f, 0.08f };
+        explosionSparkParticle_->endScale_ = { 0.0f, 0.0f, 0.0f };
         
-        sparkSystem->SetParticleLife(0.3f, 0.6f);
-        sparkSystem->SetGravity(0.8f);
-        sparkSystem->SetDamping(0.05f); // 空気抵抗
-        sparkSystem->SetVelocity(0.0f); // 爆風とは別でPlay時に設定する
-        sparkSystem->SetEmit(false);
-        sparkSystem->SetLoop(false);
-        explosionSparkSystem_ = std::move(sparkSystem);
+        explosionSparkParticle_->lifeTimeMin_ = 0.3f;
+        explosionSparkParticle_->lifeTimeMax_ = 0.6f;
+        explosionSparkParticle_->gravity_ = 0.8f;
+        explosionSparkParticle_->damping_ = 0.05f;
+        explosionSparkParticle_->velocity_ = 0.0f; // 爆風とは別でPlay時に設定する
+        explosionSparkParticle_->emitOnAwake_ = false;
+        explosionSparkParticle_->Initialize();
 
         isActive_ = false;
         break;
@@ -219,15 +183,35 @@ void Effect::Initialize(EffectType type) {
 
 void Effect::Update() {
     float dt = engine_->GetDeltaTime();
-    if (type_ == EffectType::kImpact && particleSystems_.size() == 2) {
-        currentUVOffset_.x += impactConfig_.uvScrollSpeed.x * dt;
-        currentUVOffset_.y += impactConfig_.uvScrollSpeed.y * dt;
-        
-        Vector3 scale = { impactConfig_.uvScale.x, impactConfig_.uvScale.y, 1.0f };
-        Vector3 rot = { 0.0f, 0.0f, 0.0f };
-        Vector3 trans = { currentUVOffset_.x, currentUVOffset_.y, 0.0f };
-        Matrix4x4 transform = Math::MakeAffineMatrix(scale, rot, trans);
-        particleSystems_[1]->SetUVTransform(transform);
+    
+    if (type_ == EffectType::kImpact && impactRingObject_ && isActive_) {
+        lifeTimer_ -= dt;
+        if (lifeTimer_ <= 0.0f) {
+            isActive_ = false;
+        } else {
+            float t = 1.0f - (lifeTimer_ / impactConfig_.lifeMax);
+            
+            Vector3 ringScale;
+            ringScale.x = Lerp(impactConfig_.ringStartScaleMax.x, impactConfig_.ringEndScaleMax.x, t) * baseScale_.x;
+            ringScale.y = Lerp(impactConfig_.ringStartScaleMax.y, impactConfig_.ringEndScaleMax.y, t) * baseScale_.y;
+            ringScale.z = Lerp(impactConfig_.ringStartScaleMax.z, impactConfig_.ringEndScaleMax.z, t) * baseScale_.z;
+            impactRingObject_->SetScale(ringScale);
+            
+            Vector4 ringColor = impactConfig_.color;
+            ringColor.w = Lerp(impactConfig_.color.w, 0.0f, t);
+            impactRingObject_->GetMaterial().color = ringColor;
+            
+            currentUVOffset_.x += impactConfig_.uvScrollSpeed.x * dt;
+            currentUVOffset_.y += impactConfig_.uvScrollSpeed.y * dt;
+            
+            Vector3 uvScale = { impactConfig_.uvScale.x, impactConfig_.uvScale.y, 1.0f };
+            Vector3 uvRot = { 0.0f, 0.0f, 0.0f };
+            Vector3 uvTrans = { currentUVOffset_.x, currentUVOffset_.y, 0.0f };
+            impactRingObject_->GetMaterial().uvTransform = Math::MakeAffineMatrix(uvScale, uvRot, uvTrans);
+            
+            // Z-fightingを避けるためにPlay時にずらした座標を維持
+            impactRingObject_->Update();
+        }
     } else if (type_ == EffectType::kAura && auraObject_) {
         // スクロール量の加算
         currentUVOffset_.x += auraConfig_.uvScrollSpeed.x * dt;
@@ -393,20 +377,14 @@ void Effect::Update() {
         }
     }
 
-    for (auto& sys : particleSystems_) {
-        sys->Update();
-    }
-    if (explosionSparkSystem_) {
-        explosionSparkSystem_->Update();
-    }
+    if (hitParticle_) hitParticle_->Update();
+    if (impactPlaneParticle_) impactPlaneParticle_->Update();
+    if (explosionSparkParticle_) explosionSparkParticle_->Update();
 }
 
 void Effect::SyncBeforeDraw() {
-    for (auto& sys : particleSystems_) {
-        sys->SyncBeforeDraw();
-    }
-    if (explosionSparkSystem_) {
-        explosionSparkSystem_->SyncBeforeDraw();
+    if (type_ == EffectType::kImpact && impactRingObject_ && isActive_) {
+        impactRingObject_->SyncBeforeDraw();
     }
     if (type_ == EffectType::kAura && auraObject_) {
         auraObject_->SyncBeforeDraw();
@@ -429,11 +407,21 @@ void Effect::SyncBeforeDraw() {
 }
 
 void Effect::Draw() {
-    for (auto& sys : particleSystems_) {
-        sys->Draw();
-    }
-    if (explosionSparkSystem_) {
-        explosionSparkSystem_->Draw();
+    if (type_ == EffectType::kImpact && impactRingObject_ && isActive_) {
+        auto* engine = GPUParticleSystem::GetEngine();
+        BlendMode prevBlend = engine->currentBlend_;
+        PSOManager::DepthWrite prevDepth = engine->currentDepth_;
+        PSOManager::CullMode prevCull = engine->currentCull_;
+
+        engine->SetBlend(blendMode_);
+        engine->SetDepthWrite(depthWrite_);
+        engine->SetCull(cullMode_);
+
+        impactRingObject_->Draw();
+
+        engine->SetBlend(prevBlend);
+        engine->SetDepthWrite(prevDepth);
+        engine->SetCull(prevCull);
     }
     if (type_ == EffectType::kAura && auraObject_) {
         auto* engine = GPUParticleSystem::GetEngine();
@@ -571,15 +559,21 @@ void Effect::Debug(const char* name) {
                 }
                 
                 ImGui::Separator();
-                ImGui::Text("Pipeline Settings");
+                bool pipelineChanged = false;
+                BlendMode prevBlend = blendMode_;
+                PSOManager::DepthWrite prevDepth = depthWrite_;
+                PSOManager::CullMode prevCull = cullMode_;
                 DebugUI::DebugPsoSettings(&blendMode_, &depthWrite_, &cullMode_, "##EffectPso");
-                ImGui::Checkbox("Use Billboard", &isBillboard_);
+                if (prevBlend != blendMode_ || prevDepth != depthWrite_ || prevCull != cullMode_) {
+                    pipelineChanged = true;
+                }
+                
+                if (ImGui::Checkbox("Use Billboard", &isBillboard_)) {
+                    pipelineChanged = true;
+                }
 
-                for (auto& sys : particleSystems_) {
-                    sys->SetBlend(blendMode_);
-                    sys->SetDepthWrite(depthWrite_);
-                    sys->SetCull(cullMode_);
-                    sys->SetBillboard(isBillboard_);
+                if (pipelineChanged && engine_) {
+                    Initialize(type_);
                 }
                 
                 ImGui::EndTabItem();
@@ -588,12 +582,12 @@ void Effect::Debug(const char* name) {
             // --- 固有設定タブ ---
             if (type_ == EffectType::kHit) {
                 if (ImGui::BeginTabItem("Hit Specific Config")) {
-                    ImGui::Text("--- Hit Emitter Shape & Texture ---");
+                    bool changed = false;
                     const char* primitiveShapeNames[] = { "Triangle", "Plane", "Cube", "Cylinder", "Sphere", "Tetra", "Circle", "Ring", "Skybox" };
                     int currentShape = static_cast<int>(currentShape_);
                     if (ImGui::Combo("Primitive Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
                         currentShape_ = static_cast<PrimitiveType>(currentShape);
-                        if (!particleSystems_.empty()) particleSystems_[0]->SetPrimitive(currentShape_);
+                        changed = true;
                     }
 
                     if (auto* tm = engine_->GetTextureManager()) {
@@ -603,7 +597,7 @@ void Effect::Debug(const char* name) {
                                 bool is_selected = (currentTextureName_ == textureNames[i]);
                                 if (ImGui::Selectable(textureNames[i].c_str(), is_selected)) {
                                     currentTextureName_ = textureNames[i];
-                                    if (!particleSystems_.empty()) particleSystems_[0]->SetTexture(currentTextureName_);
+                                    changed = true;
                                 }
                                 if (is_selected) ImGui::SetItemDefaultFocus();
                             }
@@ -613,7 +607,6 @@ void Effect::Debug(const char* name) {
                     
                     ImGui::Separator();
                     ImGui::Text("--- Hit Emitter Parameters ---");
-                    bool changed = false;
                     if (ImGui::ColorEdit4("Color", &hitConfig_.color.x)) changed = true;
                     if (ImGui::DragFloat2("Life (Min/Max)", &hitConfig_.lifeMin, 0.01f, 0.01f, 10.0f)) changed = true;
                     if (ImGui::DragFloat("Jitter", &hitConfig_.jitter, 0.001f, 0.0f, 1.0f)) changed = true;
@@ -626,14 +619,8 @@ void Effect::Debug(const char* name) {
                     if (ImGui::DragFloat3("End Scale Min", &hitConfig_.endScaleMin.x, 0.01f)) changed = true;
                     if (ImGui::DragFloat3("End Scale Max", &hitConfig_.endScaleMax.x, 0.01f)) changed = true;
 
-                    if (changed && !particleSystems_.empty()) {
-                        particleSystems_[0]->SetColor(hitConfig_.color);
-                        particleSystems_[0]->SetParticleLife(hitConfig_.lifeMin, hitConfig_.lifeMax);
-                        particleSystems_[0]->SetJitter(hitConfig_.jitter);
-                        particleSystems_[0]->SetParticleScale(
-                            hitConfig_.startScaleMin, hitConfig_.startScaleMax,
-                            hitConfig_.endScaleMin, hitConfig_.endScaleMax
-                        );
+                    if (changed && engine_) {
+                        Initialize(EffectType::kHit);
                     }
                     ImGui::EndTabItem();
                 }
@@ -647,7 +634,7 @@ void Effect::Debug(const char* name) {
                     int currentPlaneShape = static_cast<int>(impactConfig_.planeShape);
                     if (ImGui::Combo("Plane Shape", &currentPlaneShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
                         impactConfig_.planeShape = static_cast<PrimitiveType>(currentPlaneShape);
-                        if (particleSystems_.size() >= 1) particleSystems_[0]->SetPrimitive(impactConfig_.planeShape);
+                        changed = true;
                     }
                     if (auto* tm = engine_->GetTextureManager()) {
                         auto textureNames = tm->GetTextureNamesForDebug();
@@ -656,7 +643,7 @@ void Effect::Debug(const char* name) {
                                 bool is_selected = (impactConfig_.planeTexture == textureNames[i]);
                                 if (ImGui::Selectable(textureNames[i].c_str(), is_selected)) {
                                     impactConfig_.planeTexture = textureNames[i];
-                                    if (particleSystems_.size() >= 1) particleSystems_[0]->SetTexture(impactConfig_.planeTexture);
+                                    changed = true;
                                 }
                                 if (is_selected) ImGui::SetItemDefaultFocus();
                             }
@@ -664,10 +651,7 @@ void Effect::Debug(const char* name) {
                         }
                     }
                     
-                    if (ImGui::Checkbox("Enable Random 3D Rotation##Plane", &impactConfig_.planeEnableRandomRotation)) {
-                        changed = true;
-                        if (particleSystems_.size() >= 1) particleSystems_[0]->SetEnableRandomRotation(impactConfig_.planeEnableRandomRotation);
-                    }
+                    if (ImGui::Checkbox("Enable Random 3D Rotation##Plane", &impactConfig_.planeEnableRandomRotation)) changed = true;
                     if (ImGui::DragInt("Emit Count##Plane", &impactConfig_.planeEmitCount, 1, 1, 50)) changed = true;
                     
                     ImGui::Separator();
@@ -675,7 +659,7 @@ void Effect::Debug(const char* name) {
                     int currentRingShape = static_cast<int>(impactConfig_.ringShape);
                     if (ImGui::Combo("Ring Shape", &currentRingShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
                         impactConfig_.ringShape = static_cast<PrimitiveType>(currentRingShape);
-                        if (particleSystems_.size() >= 2) particleSystems_[1]->SetPrimitive(impactConfig_.ringShape);
+                        changed = true;
                     }
                     if (auto* tm = engine_->GetTextureManager()) {
                         auto textureNames = tm->GetTextureNamesForDebug();
@@ -684,27 +668,20 @@ void Effect::Debug(const char* name) {
                                 bool is_selected = (impactConfig_.ringTexture == textureNames[i]);
                                 if (ImGui::Selectable(textureNames[i].c_str(), is_selected)) {
                                     impactConfig_.ringTexture = textureNames[i];
-                                    if (particleSystems_.size() >= 2) particleSystems_[1]->SetTexture(impactConfig_.ringTexture);
+                                    changed = true;
                                 }
                                 if (is_selected) ImGui::SetItemDefaultFocus();
                             }
                             ImGui::EndCombo();
                         }
                     }
-                    if (ImGui::Checkbox("Enable Random 3D Rotation##Ring", &impactConfig_.ringEnableRandomRotation)) {
-                        changed = true;
-                        if (particleSystems_.size() >= 2) particleSystems_[1]->SetEnableRandomRotation(impactConfig_.ringEnableRandomRotation);
-                    }
+                    if (ImGui::Checkbox("Enable Random 3D Rotation##Ring", &impactConfig_.ringEnableRandomRotation)) changed = true;
                     if (ImGui::DragInt("Emit Count##Ring", &impactConfig_.ringEmitCount, 1, 1, 50)) changed = true;
                     
                     ImGui::Separator();
                     
                     ImGui::Text("--- Transform / Physics ---");
-                    if (ImGui::DragFloat("Jitter (Random Walk)", &impactConfig_.jitter, 0.001f, 0.0f, 1.0f)) {
-                        changed = true;
-                        if (particleSystems_.size() >= 1) particleSystems_[0]->SetJitter(impactConfig_.jitter);
-                        if (particleSystems_.size() >= 2) particleSystems_[1]->SetJitter(impactConfig_.jitter);
-                    }
+                    if (ImGui::DragFloat("Jitter (Random Walk)", &impactConfig_.jitter, 0.001f, 0.0f, 1.0f)) changed = true;
 
                     if (ImGui::DragFloat2("UV Scale (Ring)", &impactConfig_.uvScale.x, 0.1f)) changed = true;
                     if (ImGui::DragFloat2("UV Scroll Speed (Ring)", &impactConfig_.uvScrollSpeed.x, 0.1f)) changed = true;
@@ -720,19 +697,8 @@ void Effect::Debug(const char* name) {
                     if (ImGui::DragFloat3("Ring End Scale Min", &impactConfig_.ringEndScaleMin.x, 0.01f)) changed = true;
                     if (ImGui::DragFloat3("Ring End Scale Max", &impactConfig_.ringEndScaleMax.x, 0.01f)) changed = true;
 
-                    if (changed && particleSystems_.size() == 2) {
-                        particleSystems_[0]->SetColor(impactConfig_.color);
-                        particleSystems_[0]->SetParticleLife(impactConfig_.lifeMin, impactConfig_.lifeMax);
-                        particleSystems_[0]->SetParticleScale(
-                            impactConfig_.planeStartScaleMin, impactConfig_.planeStartScaleMax,
-                            impactConfig_.planeEndScaleMin, impactConfig_.planeEndScaleMax
-                        );
-                        particleSystems_[1]->SetColor(impactConfig_.color);
-                        particleSystems_[1]->SetParticleLife(impactConfig_.lifeMin, impactConfig_.lifeMax);
-                        particleSystems_[1]->SetParticleScale(
-                            impactConfig_.ringStartScaleMin, impactConfig_.ringStartScaleMax,
-                            impactConfig_.ringEndScaleMin, impactConfig_.ringEndScaleMax
-                        );
+                    if (changed && engine_) {
+                        Initialize(EffectType::kImpact);
                     }
                     ImGui::EndTabItem();
                 }
@@ -906,24 +872,30 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
 
     switch (type_) {
     case EffectType::kHit:
-        if (!particleSystems_.empty()) {
-            particleSystems_[0]->SetSphereEmitter(position, 0.0f, hitConfig_.emitCount, 0.0f);
-            particleSystems_[0]->SetVelocity(0.0f); // 完全にとどまる
-            particleSystems_[0]->Emit(hitConfig_.emitCount);
+        if (hitParticle_) {
+            hitParticle_->position_ = position;
+            hitParticle_->velocity_ = 0.0f;
+            hitParticle_->radius_ = 0.0f;
+            hitParticle_->MarkDirty();
+            hitParticle_->EmitBurst(hitConfig_.emitCount);
         }
         break;
     case EffectType::kImpact:
-        if (particleSystems_.size() == 2) {
-            particleSystems_[0]->SetSphereEmitter(position, 0.0f, impactConfig_.planeEmitCount, 0.0f);
-            particleSystems_[0]->SetVelocity(0.0f);
-            particleSystems_[0]->Emit(impactConfig_.planeEmitCount);
-            
-            // Zファイティングを防ぐため、Ringをほんの少し上にずらす
+        if (impactPlaneParticle_) {
+            impactPlaneParticle_->position_ = position;
+            impactPlaneParticle_->velocity_ = 0.0f;
+            impactPlaneParticle_->radius_ = 0.0f;
+            impactPlaneParticle_->MarkDirty();
+            impactPlaneParticle_->EmitBurst(impactConfig_.planeEmitCount);
+        }
+        if (impactRingObject_) {
+            isActive_ = true;
+            lifeTimer_ = impactConfig_.lifeMax;
+            currentUVOffset_ = { 0.0f, 0.0f };
             Vector3 ringPos = position;
             ringPos.y += 0.001f;
-            particleSystems_[1]->SetSphereEmitter(ringPos, 0.0f, impactConfig_.ringEmitCount, 0.0f);
-            particleSystems_[1]->SetVelocity(0.0f);
-            particleSystems_[1]->Emit(impactConfig_.ringEmitCount);
+            impactRingObject_->SetPosition(ringPos);
+            impactRingObject_->SetScale(impactConfig_.ringStartScaleMax);
         }
         break;
     case EffectType::kAura:
@@ -958,21 +930,23 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
             explosionWaveObject_->SetScale({ explosionConfig_.waveStartScale.x * scale.x, explosionConfig_.waveStartScale.y * scale.y, explosionConfig_.waveStartScale.z * scale.z });
             explosionWaveObject_->GetMaterial().color = explosionConfig_.color;
         }
-        if (explosionSparkSystem_) {
-            // スケールに応じて火花の発生数を動的に最適化（マシンガン等は15個、ミサイル等は60個）
+        if (explosionSparkParticle_) {
             int sparkCount = (scale.x < 0.5f) ? 15 : 60;
             
-            // スケール反映
             Vector3 startScale = { 0.05f * scale.x, 0.05f * scale.y, 0.05f * scale.z };
             Vector3 midScale = { 0.08f * scale.x, 0.08f * scale.y, 0.08f * scale.z };
-            explosionSparkSystem_->SetParticleScale(startScale, startScale, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
-            explosionSparkSystem_->SetMidScale(midScale, midScale, 0.2f);
             
-            explosionSparkSystem_->SetSphereEmitter(position, 0.1f, sparkCount, 0.0f);
-            explosionSparkSystem_->SetVelocity(8.0f); // GPU側の火花の弾け速度
-            explosionSparkSystem_->SetSpread(1.0f);
-            explosionSparkSystem_->SetEnableRandomRotation(true);
-            explosionSparkSystem_->Emit(sparkCount);
+            explosionSparkParticle_->startScale_ = startScale;
+            explosionSparkParticle_->midScale_ = midScale;
+            explosionSparkParticle_->endScale_ = { 0.0f, 0.0f, 0.0f };
+            
+            explosionSparkParticle_->position_ = position;
+            explosionSparkParticle_->radius_ = 0.1f;
+            explosionSparkParticle_->velocity_ = 8.0f;
+            explosionSparkParticle_->spread_ = 1.0f;
+            
+            explosionSparkParticle_->MarkDirty();
+            explosionSparkParticle_->EmitBurst(sparkCount);
         }
         break;
     }
