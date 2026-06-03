@@ -78,7 +78,7 @@ float32_t3 ACESFilm(float32_t3 x) {
 
 // 2次元ガウス関数
 float32_t gauss(float32_t x, float32_t y, float32_t sigma) {
-    static const float32_t PI = 3.14159265f;
+    static const float32_t PI = 3.1415926535f;
     float32_t exponent = -(x * x + y * y) * rcp(2.0f * sigma * sigma);
     float32_t denominator = 2.0f * PI * sigma * sigma;
     return exp(exponent) * rcp(denominator);
@@ -227,7 +227,7 @@ float32_t3 ApplyGaussian1D(Texture2D<float32_t4> tex, SamplerState smp, float32_
 // 1次元ガウス関数（オーバーロード）
 float32_t gauss1D(float32_t x, float32_t sigma) {
     if (sigma <= 0.0f) return 1.0f;
-    static const float32_t PI = 3.14159265f;
+    static const float32_t PI = 3.1415926535f;
     float32_t exponent = -(x * x) * rcp(2.0f * sigma * sigma);
     float32_t denominator = sqrt(2.0f * PI) * sigma;
     return exp(exponent) * rcp(denominator);
