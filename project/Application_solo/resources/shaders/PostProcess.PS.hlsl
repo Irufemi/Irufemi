@@ -41,10 +41,8 @@ struct PostProcessParams {
     // Outline
     float32_t4x4 projectionInverse;
     
-    // Smoothing / Gaussian
-    float32_t gaussianSigma;
-    int32_t gaussianKernelSize;
-    int32_t smoothingKernelSize;
+    // Smoothing / Gaussian (※Separable Filter化のため削除、パディングのみ調整)
+    int4 pad5;
     
     // RadialBlur
     float32_t2 radialBlurCenter;
@@ -120,65 +118,11 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 break;
 
             case kPostProcessMode_DepthBasedOutline:
-                {
-                    // Prewitt カーネルによるエッジ抽出 (簡易実装)
-                    float32_t2 difference = 0;
-                    for (int x = -1; x <= 1; ++x) {
-                        for (int y = -1; y <= 1; ++y) {
-                            float32_t depth = gExtraTexture.Sample(gSamplerPoint, uv + float32_t2(x, y) * uvStepSize);
-                            float32_t4 viewSpace = mul(float32_t4(0, 0, depth, 1), gParams.projectionInverse);
-                            float32_t vz = viewSpace.z / viewSpace.w;
-                            
-                            // 簡易的な Prewitt 重み
-                            float32_t wx = (x == 0) ? 0 : (x < 0 ? -1.0/6.0 : 1.0/6.0);
-                            float32_t wy = (y == 0) ? 0 : (y < 0 ? -1.0/6.0 : 1.0/6.0);
-                            difference.x += vz * wx;
-                            difference.y += vz * wy;
-                        }
-                    }
-                    float32_t weight = saturate(length(difference) * 6.0f);
-                    color.rgb *= (1.0f - weight);
-                }
-                break;
-
-            case kPostProcessMode_Smoothing:
-                {
-                    float32_t3 accum = 0;
-                    int32_t radius = (gParams.smoothingKernelSize - 1) / 2;
-                    for (int32_t x = -radius; x <= radius; ++x) {
-                        for (int32_t y = -radius; y <= radius; ++y) {
-                            accum += gTexture.Sample(gSampler, uv + float32_t2(x, y) * uvStepSize).rgb;
-                        }
-                    }
-                    color.rgb = accum / (float32_t(gParams.smoothingKernelSize * gParams.smoothingKernelSize));
-                }
-                break;
-
-            case kPostProcessMode_GaussianFilter:
-                {
-                    float32_t3 sum = 0;
-                    float32_t totalW = 0;
-                    int32_t half = gParams.gaussianKernelSize / 2;
-                    for (int32_t x = -half; x <= half; ++x) {
-                        for (int32_t y = -half; y <= half; ++y) {
-                            float32_t w = gauss(float32_t(x), float32_t(y), gParams.gaussianSigma);
-                            sum += gTexture.Sample(gSampler, uv + float32_t2(x, y) * uvStepSize).rgb * w;
-                            totalW += w;
-                        }
-                    }
-                    color.rgb = sum / totalW;
-                }
+                color.rgb = ApplyDepthBasedOutline(color.rgb, uv, uvStepSize, gParams.projectionInverse, gExtraTexture, gSamplerPoint);
                 break;
 
             case kPostProcessMode_RadialBlur:
-                {
-                    float32_t2 dir = uv - gParams.radialBlurCenter;
-                    float32_t3 sum = 0;
-                    for (int32_t j = 0; j < gParams.radialBlurSamples; ++j) {
-                        sum += gTexture.Sample(gSampler, uv + dir * gParams.radialBlurWidth * float32_t(j)).rgb;
-                    }
-                    color.rgb = sum / float32_t(gParams.radialBlurSamples);
-                }
+                color.rgb = ApplyRadialBlur(color.rgb, uv, gParams.radialBlurCenter, gParams.radialBlurWidth, gParams.radialBlurSamples, gTexture, gSampler);
                 break;
 
             case kPostProcessMode_Glitch:

@@ -33,9 +33,11 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
     if (!activeModes.empty()) {
         bool hasOutline = false;
         bool hasBloom = false;
+        bool hasSeparableBlur = false;
         for (auto mode : activeModes) {
             if (mode == PostProcessMode::Bloom) hasBloom = true;
             if (mode == PostProcessMode::DepthBasedOutline) hasOutline = true;
+            if (mode == PostProcessMode::Smoothing || mode == PostProcessMode::GaussianFilter) hasSeparableBlur = true;
         }
 
         if (hasOutline) {
@@ -49,9 +51,10 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         workTextureHandles_.push_back(builder.CreateTransientResource("PP_Work0", workDesc));
         workTextureHandles_.push_back(builder.CreateTransientResource("PP_Work1", workDesc));
 
-
         if (hasBloom) {
             bloomExtractHandle_ = builder.CreateTransientResource("BloomExtract", workDesc);
+        }
+        if (hasBloom || hasSeparableBlur) {
             bloomBlurHandle_ = builder.CreateTransientResource("BloomBlur", workDesc);
         }
 
@@ -61,6 +64,8 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         }
         if (hasBloom) {
             builder.RequireTransientState(bloomExtractHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+        if (hasBloom || hasSeparableBlur) {
             builder.RequireTransientState(bloomBlurHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
     }

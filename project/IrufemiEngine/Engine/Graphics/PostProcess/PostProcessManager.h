@@ -104,7 +104,9 @@ public:
      * @brief 平滑化エフェクト用パラメータ
      */
     struct SmoothingParams {
+        Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
         int32_t kernelSize = 3; ///< カーネルサイズ (奇数推奨)
+        float pad;
     };
 
     /**
@@ -112,6 +114,7 @@ public:
      * @brief ガウスぼかし用パラメータ
      */
     struct GaussianParams {
+        Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
         float sigma = 2.0f;     ///< 標準偏差（ぼけ具合）
         int32_t kernelSize = 3; ///< カーネルサイズ (奇数推奨)
     };
@@ -251,11 +254,8 @@ public:
         // Outline
         Matrix4x4 projectionInverse;
 
-        // Smoothing / Gaussian
-        float gaussianSigma;
-        int32_t gaussianKernelSize;
-        int32_t smoothingKernelSize;
-        float pad5; // HLSLの float2(radialBlurCenter) が境界を跨がないようにパディング
+        // Smoothing / Gaussian (※Separable Filter化のため削除、パディングのみ調整)
+        int32_t pad5[4]; // HLSLの float4 境界に合わせるためのパディング
 
         // RadialBlur
         Vector2 radialBlurCenter;
@@ -404,6 +404,12 @@ private:
     // 統合ポストプロセス用 PSO
     Microsoft::WRL::ComPtr<ID3D12PipelineState> combinedPSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> finalCombinedPSO_;
+
+    // 分離可能フィルタ用 PSO
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> smoothingBlurPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> finalSmoothingBlurPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> gaussianBlurPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> finalGaussianBlurPSO_;
 
     // Constant Buffers
     Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;
