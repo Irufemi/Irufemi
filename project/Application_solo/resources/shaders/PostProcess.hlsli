@@ -195,11 +195,16 @@ float32_t3 ApplyDepthBasedOutline(float32_t3 color, float32_t2 uv, float32_t2 uv
 // 12. RadialBlur
 float32_t3 ApplyRadialBlur(float32_t3 color, float32_t2 uv, float32_t2 center, float32_t blurWidth, int32_t samples, Texture2D<float32_t4> tex, SamplerState smp) {
     float32_t2 dir = uv - center;
+    float32_t dist = length(dir);
+    
+    // 中心点からの距離に応じてサンプリング数を最適化 (距離0なら1回、距離0.5以上なら最大回数)
+    int32_t actualSamples = max(1, int32_t(float32_t(samples) * saturate(dist * 2.0f)));
+    
     float32_t3 sum = 0;
-    for (int32_t j = 0; j < samples; ++j) {
+    for (int32_t j = 0; j < actualSamples; ++j) {
         sum += tex.SampleLevel(smp, uv + dir * blurWidth * float32_t(j), 0).rgb;
     }
-    return sum / float32_t(samples);
+    return sum / float32_t(actualSamples);
 }
 
 // 13. Separable Gaussian Blur (1D)
