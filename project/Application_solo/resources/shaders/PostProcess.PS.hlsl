@@ -40,9 +40,8 @@ struct PostProcessParams {
     
     // Outline
     float32_t4x4 projectionInverse;
-    
-    // Smoothing / Gaussian (※Separable Filter化のため削除、パディングのみ調整)
-    int4 pad5;
+    float32_t outlineIntensity;
+    float32_t3 pad_outline;
     
     // RadialBlur
     float32_t2 radialBlurCenter;
@@ -118,7 +117,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 break;
 
             case kPostProcessMode_DepthBasedOutline:
-                color.rgb = ApplyDepthBasedOutline(color.rgb, uv, uvStepSize, gParams.projectionInverse, gExtraTexture, gSamplerPoint);
+                color.rgb = ApplyDepthBasedOutline(color.rgb, uv, uvStepSize, gParams.projectionInverse, gParams.outlineIntensity, gExtraTexture, gSamplerPoint);
                 break;
 
             case kPostProcessMode_RadialBlur:

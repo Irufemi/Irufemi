@@ -85,6 +85,7 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.slideColor = slideParams_.color;
   combinedParams_.slideThreshold = slideParams_.threshold;
   combinedParams_.projectionInverse = outlineParams_.projectionInverse;
+  combinedParams_.outlineIntensity = outlineParams_.intensity;
   combinedParams_.radialBlurCenter = radialBlurParams_.center;
   combinedParams_.radialBlurWidth = radialBlurParams_.blurWidth;
   combinedParams_.radialBlurSamples = radialBlurParams_.numSamples;

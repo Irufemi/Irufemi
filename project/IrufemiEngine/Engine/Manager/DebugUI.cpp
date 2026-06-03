@@ -1244,7 +1244,8 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                         }
                     }
                 } else if (mode == PostProcessMode::DepthBasedOutline) {
-                    ImGui::Text("Mode: Depth Based Outline (Prewitt Filter)");
+                    auto& params = ppManager->GetOutlineParams();
+                    ImGui::DragFloat("Outline Intensity", &params.intensity, 0.1f, 0.0f, 20.0f);
                 } else if (mode == PostProcessMode::RadialBlur) {
                     auto& params = ppManager->GetRadialBlurParams();
                     ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);

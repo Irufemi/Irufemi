@@ -5,6 +5,7 @@
 #include "../../DirectX/DirectXCommon.h"
 #include "../../DirectX/DirectXUtils.h"
 #include "RenderGraph.h"
+#include <cstring>
 void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
     auto ppMgr = engine->GetPostProcessManager();
     const auto& activeModes = ppMgr->GetActiveModes();

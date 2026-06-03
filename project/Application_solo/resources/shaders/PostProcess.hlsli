@@ -174,7 +174,7 @@ float32_t3 ApplyGlitch(float32_t3 color, float32_t2 uv, float32_t time, float32_
 }
 
 // 11. Outline
-float32_t3 ApplyDepthBasedOutline(float32_t3 color, float32_t2 uv, float32_t2 uvStepSize, float32_t4x4 projectionInverse, Texture2D<float32_t> depthTex, SamplerState smp) {
+float32_t3 ApplyDepthBasedOutline(float32_t3 color, float32_t2 uv, float32_t2 uvStepSize, float32_t4x4 projectionInverse, float32_t intensity, Texture2D<float32_t> depthTex, SamplerState smp) {
     float32_t2 difference = 0;
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
@@ -188,7 +188,7 @@ float32_t3 ApplyDepthBasedOutline(float32_t3 color, float32_t2 uv, float32_t2 uv
             difference.y += vz * wy;
         }
     }
-    float32_t weight = saturate(length(difference) * 6.0f);
+    float32_t weight = saturate(length(difference) * intensity);
     return color * (1.0f - weight);
 }
 

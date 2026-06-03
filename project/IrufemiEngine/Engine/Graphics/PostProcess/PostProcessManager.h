@@ -134,6 +134,8 @@ public:
      * @brief アウトラインエフェクト用パラメータ
      */
     struct OutlineParams {
+        float intensity = 6.0f;         ///< アウトラインの強度
+        float pad[3];
         Matrix4x4 projectionInverse;    ///< 逆投影行列 (自動でセットされる)
     };
 
@@ -253,9 +255,8 @@ public:
 
         // Outline
         Matrix4x4 projectionInverse;
-
-        // Smoothing / Gaussian (※Separable Filter化のため削除、パディングのみ調整)
-        int32_t pad5[4]; // HLSLの float4 境界に合わせるためのパディング
+        float outlineIntensity;
+        float pad_outline[3]; // HLSLの float4境界に合わせるためのパディング
 
         // RadialBlur
         Vector2 radialBlurCenter;
