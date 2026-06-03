@@ -44,6 +44,19 @@ public:
     void ResetStates();
 
     /**
+     * @brief リサイズ時に一時リソースキャッシュとステートをクリアする
+     */
+    void OnResize();
+
+#ifdef USE_IMGUI
+    /**
+     * @brief デバッグUIの描画
+     */
+    void DebugUI();
+#endif
+
+
+    /**
      * @brief 描画実行時に一時リソースの実際のポインタを取得する
      */
     ID3D12Resource* GetTransientResource(TransientResourceHandle handle) {

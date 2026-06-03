@@ -174,8 +174,28 @@ void DrawManager::Finalize() {
         shadowMaps_[i].reset();
     }
 
-    dxCommon_ = nullptr;
-    commandList_ = nullptr;
+    shadowMaps_[0].reset();
+    shadowMaps_[1].reset();
+}
+
+void DrawManager::OnResize(int32_t width, int32_t height) {
+    if (renderGraph_) {
+        renderGraph_->OnResize();
+
+        // 永続リソースであるシャドウマップのステートも再登録する
+        for (int i = 0; i < kMaxFramesInFlight; ++i) {
+            if (shadowMaps_[i]) {
+                // フレーム完了時点ではSRV状態になっているため、その状態を登録
+                renderGraph_->RegisterResourceState(shadowMaps_[i]->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            }
+        }
+    }
+}
+
+void DrawManager::RegisterResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state) {
+    if (renderGraph_) {
+        renderGraph_->RegisterResourceState(resource, state);
+    }
 }
 
 void DrawManager::BindPSO(ID3D12PipelineState* pso) {

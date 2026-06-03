@@ -149,6 +149,12 @@ public: //メンバ関数
 
     void Initialize(DirectXCommon* dx);
     void Finalize();
+    void OnResize(int32_t width, int32_t height);
+    
+    /**
+     * @brief RenderGraphにリソースの初期ステートを登録する（リサイズ時用）
+     */
+    void RegisterResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
     ///@}
 
     /** @name パイプライン・描画フロー制御 */

@@ -15,6 +15,8 @@
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Engine/Manager/CollisionManager.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Graphics/Pipeline/RenderGraph/RenderGraph.h"
 
 // 分離したエディタパネル群
 #include "Engine/Editor/IEditorPanel.h"
@@ -207,6 +209,10 @@ void EditorManager::DrawEditorUI() {
     for (auto& panel : panels_) {
         panel->Draw();
     }
+
+#ifdef USE_IMGUI
+    // 描画呼び出しをDebugUI.cppに移動しました
+#endif // USE_IMGUI
 
     ImGui::End(); // Editor DockSpace
 }

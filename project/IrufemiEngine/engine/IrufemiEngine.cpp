@@ -20,7 +20,6 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Manager/DebugUI.h"
 #include "Manager/PrimitiveManager.h"
 #include "Renderer/Core/BaseResource.h"
-#include "Renderer/ParticleGPU/GPUParticleManager.h"
 #include "Renderer/Effect/Effect.h"
 #include "Renderer/LineInstanced/LineClass.h"
 #include "Renderer/LineInstanced/LineResource.h"
@@ -33,9 +32,9 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Renderer/Object3D/Primitive/Primitive3DObject.h"
-
+#include "Renderer/Particle/ParticleResource.h"
+#include "Renderer/Particle/ParticleSystem.h"
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
-#include "Renderer/ParticleGPU/ParticleObject.h"
 #include "Renderer/Region/ModelRegion.h"
 #include "Renderer/Region/PrimitiveRegion.h"
 #include "Renderer/Skybox/Skybox.h"
@@ -51,24 +50,24 @@ IrufemiEngine::IrufemiEngine() = default;
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxcompiler.lib")
 
-// 繝・せ繝医Λ繧ｯ繧ｿ
+// デストラクタ
 IrufemiEngine::~IrufemiEngine() { Finalize(); }
 
-// 蛻晄悄蛹・
+// 初期化
 void IrufemiEngine::Initialize(const std::wstring &title,
                                const int32_t &clientWidth,
                                const int32_t &clientHeight) {
   /*CrashHandler*/
   SetUnhandledExceptionFilter(WinApp::ExportDump);
 
-  // 繧ｳ繝ｳ繝昴・繝阪Φ繝医・繝輔ぃ繧ｯ繝医Μ逋ｻ骭ｲ
+  // コンポーネントのファクトリ登録
   ComponentFactory::RegisterAllCoreComponents();
 
-  // 譎る俣險域ｸｬ縺ｮ髢句ｧ・
+  // 時間計測の開始
   startTime_ = std::chrono::steady_clock::now();
   lastFrameTime_ = startTime_;
 
-  // WinApp 繧偵お繝ｳ繧ｸ繝ｳ蜀・〒逕滓・繝ｻ蛻晄悄蛹・COM 蛻晄悄蛹悶ｂ縺薙％縺ｧ螳滓命縺輔ｌ繧・
+  // WinApp をエンジン内で生成・初期化(COM 初期化もここで実施される)
   winApp_ = std::make_unique<WinApp>();
   if (!winApp_->Initialize(GetModuleHandle(nullptr), clientWidth, clientHeight,
                            title.c_str())) {
@@ -76,24 +75,24 @@ void IrufemiEngine::Initialize(const std::wstring &title,
     return;
   }
 
-  // 繝ｭ繧ｰ繧貞・縺帙ｋ繧医≧縺ｫ縺吶ｋ
+  // ログを出せるようにする
   log_ = std::make_unique<Log>();
   log_->Initialize();
 
-  // 荵ｱ謨ｰ繧ｨ繝ｳ繧ｸ繝ｳ縺ｮ繧ｷ繝ｼ繝峨ｒ險ｭ螳・
+  // 乱数エンジンのシードを設定
   Random::SeedEngine();
 
-  // AudioManager縺ｮ逕滓・繝ｻMedia Foundation縺ｮ蛻晄悄蛹・
+  // AudioManagerの生成・Media Foundationの初期化
   audioManager_ = std::make_unique<AudioManager>();
   audioManager_->StartUp();
-  // AudioManager縺ｮ蛻晄悄蛹・
+  // AudioManagerの初期化
   audioManager_->Initialize();
-  // "resources"繝輔か繝ｫ繝縺九ｉ髻ｳ螢ｰ繝輔ぃ繧､繝ｫ繧偵☆縺ｹ縺ｦ繝ｭ繝ｼ繝・
+  // "resources"フォルダから音声ファイルをすべてロード
   audioManager_->LoadAllSoundsFromFolder("resources/");
   Bgm::SetAudioManager(audioManager_.get());
   Se::SetAudioManager(audioManager_.get());
 
-  // DirectX 蝓ｺ逶､
+  // DirectX 基盤
   dxCommon_ = std::make_unique<DirectXCommon>();
   dxCommon_->SetLog(log_.get());
   dxCommon_->SetEngine(this);
@@ -104,52 +103,52 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   BaseRegion::SetDirectXCommon(dxCommon_.get());
   Line3DRegion::SetDirectXCommon(dxCommon_.get());
 
-  // --- Dynamic Constant Buffer 縺ｮ蛻晄悄蛹・---
+  // --- Dynamic Constant Buffer の初期化 ---
   materialBufferManager_ = std::make_unique<DynamicConstantBuffer<Material>>();
   materialBufferManager_->Initialize(dxCommon_.get(),
-                                     65536); // 譛螟ｧ6荳・が繝悶ず繧ｧ繧ｯ繝・
+                                     65536); // 最大6万オブジェクト
 
   transformBufferManager_ =
       std::make_unique<DynamicConstantBuffer<TransformationMatrix>>();
   transformBufferManager_->Initialize(dxCommon_.get(),
-                                      65536); // 譛螟ｧ6荳・が繝悶ず繧ｧ繧ｯ繝・
+                                      65536); // 最大6万オブジェクト
 
-  // SRV 繝・せ繧ｯ繝ｪ繝励ち繝励・繝ｫ
+  // SRV デスクリプタプール
   {
     DescriptorPool *srvPool = dxCommon_->GetSrvPool();
 
-    // 豕ｨ蜈･
+    // 注入
     Texture::SetDescriptorPool(srvPool);
     BaseRegion::SetSrvAllocator(srvPool);
-
+    ParticleSystem::SetSrvPool(srvPool);
     Line3DRegion::SetSrvAllocator(srvPool);
   }
 
-  // 繝・け繧ｹ繝√Ε邂｡逅・
+  // テクスチャ管理
   textureManager_ = std::make_unique<TextureManager>();
   textureManager_->Initialize(dxCommon_.get());
 
   textureManager_->LoadAllFromFolder("resources/");
 
-  // 繝輔か繝ｳ繝育ｮ｡逅・
+  // フォント管理
   fontManager_ = std::make_unique<FontManager>();
   fontManager_->Initialize(this);
   Text::SetFontManager(fontManager_.get());
 
-  // resources/fonts/ 莉･荳九・繝輔か繝ｳ繝医ｒ縺吶∋縺ｦ閾ｪ蜍輔Ο繝ｼ繝・
+  // resources/fonts/ 以下のフォントをすべて自動ロード
   fontManager_->LoadAllFromFolder("resources/fonts/");
 
-  // 繝｢繝・Ν邂｡逅・
+  // モデル管理
   modelManager_ = std::make_unique<ModelManager>();
   modelManager_->Initialize(dxCommon_.get(),
-                            textureManager_.get()); // dxCommon 繧呈ｸ｡縺・
+                            textureManager_.get()); // dxCommon を渡す
 
-  ModelRegion::SetModelManager(modelManager_.get()); // Region縺ｫ繧りｨｭ螳・
+  ModelRegion::SetModelManager(modelManager_.get()); // Regionにも設定
 
-  // 繝励Μ繝溘ユ繧｣繝也ｮ｡逅・ｼ医す繝ｳ繧ｰ繝ｫ繝医Φ縺ｮ蛻晄悄蛹厄ｼ・
+  // プリミティブ管理（シングルトンの初期化）
   PrimitiveManager::Initialize();
 
-  // 譌｢蟄牢RV縺ｮ襍ｰ譟ｻ縺ｧ free-list 蜀肴ｧ狗ｯ・
+  // 既存SRVの走査で free-list 再構築
   {
     DescriptorPool *srvPool = dxCommon_->GetSrvPool();
     ID3D12DescriptorHeap *srvHeap = srvPool->GetHeap();
@@ -165,17 +164,17 @@ void IrufemiEngine::Initialize(const std::wstring &title,
     };
 
     std::vector<uint32_t> used;
-    // 逋ｽ繝・け繧ｹ繝√Ε
+    // 白テクスチャ
     if (auto white = textureManager_->GetWhiteTextureHandle(); white.ptr != 0) {
       if (auto idx = toIndex(white); idx != DescriptorPool::kInvalid)
         used.push_back(idx);
     }
-    // 繝輔か繝ｳ繝医い繝医Λ繧ｹ
+    // フォントアトラス
     if (fontManager_) {
       if (auto idx = toIndex(fontManager_->GetAtlasSRV()); idx != DescriptorPool::kInvalid)
         used.push_back(idx);
     }
-    // 繝・け繧ｹ繝√Ε繧ｭ繝｣繝・す繝･
+    // テクスチャキャッシュ
     for (const std::string &name : textureManager_->GetTextureNames()) {
       auto h = textureManager_->GetTextureHandle(name);
       if (auto idx = toIndex(h); idx != DescriptorPool::kInvalid)
@@ -190,7 +189,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
     srvPool->RebuildFreeListExcept(used);
   }
 
-  // 蜈･蜉・
+  // 入力
   inputManager_ = std::make_unique<InputManager>();
   inputManager_->Initialize(winApp_->GetHwnd());
   winApp_->SetInputManager(inputManager_.get());
@@ -207,9 +206,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Circle2D::SetDebugUI(ui_.get());
 
   Primitive3DObject::SetDebugUI(ui_.get());
+  ParticleSystem::SetDebugUI(ui_.get());
 
-
-  // 謠冗判
+  // 描画
   drawManager_ = std::make_unique<DrawManager>();
   drawManager_->Initialize(dxCommon_.get());
   Sprite::SetDrawManager(drawManager_.get());
@@ -217,23 +216,22 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Circle2D::SetDrawManager(drawManager_.get());
 
   BaseRegion::SetDrawManager(drawManager_.get());
-
+  ParticleSystem::SetDrawManager(drawManager_.get());
   GPUParticleSystem::SetDrawManager(drawManager_.get());
   Primitive3DObject::SetDrawManager(drawManager_.get());
-
+  ParticleSystem::SetEngine(this);
   GPUParticleSystem::SetEngine(this);
   Line3DRegion::SetDrawManager(drawManager_.get());
 
-  // 繝・け繧ｹ繝√Ε險ｭ螳壹・豕ｨ蜈･
+  // テクスチャ設定の注入
   ui_->SetTextureManager(textureManager_.get());
   drawManager_->SetTextureManager(textureManager_.get());
   Sprite::SetTextureManager(textureManager_.get());
   Circle2D::SetTextureManager(textureManager_.get());
 
   BaseRegion::SetTextureManager(textureManager_.get());
-
+  ParticleSystem::SetTextureManager(textureManager_.get());
   GPUParticleSystem::SetTextureManager(textureManager_.get());
-    ParticleObject::SetTextureManager(textureManager_.get());
   Primitive3DObject::SetTextureManager(textureManager_.get());
 
   animationManager_ = std::make_unique<AnimationManager>();
@@ -253,24 +251,24 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Line3DRegion::SetEngine(this);
   Primitive3DObject::SetEngine(this);
 
-  // --- 蜈ｨ逕ｻ髱｢逕ｨ RenderTexture 縺ｮ蛻晄悄蛹・---
+  // --- 全画面用 RenderTexture の初期化 ---
   mainRenderTexture_ = std::make_unique<RenderTexture>();
   mainRenderTexture_->Initialize(
       dxCommon_.get(), GetClientWidth(), GetClientHeight(),
       DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
       {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
 
-  // --- PostProcessManager 縺ｮ蛻晄悄蛹・---
+  // --- PostProcessManager の初期化 ---
   postProcessManager_ = std::make_unique<PostProcessManager>();
   postProcessManager_->Initialize(dxCommon_.get(), DXGI_FORMAT_R8G8B8A8_UNORM);
 
-  // 繝弱う繧ｺ繝・け繧ｹ繝√Ε縺ｮ繝ｭ繝ｼ繝峨→繝上Φ繝峨Ν險ｭ螳・
+  // ノイズテクスチャのロードとハンドル設定
   postProcessManager_->SetDissolveNoiseHandle(
       0, textureManager_->GetTextureHandle("resources/noise0.png"));
   postProcessManager_->SetDissolveNoiseHandle(
       1, textureManager_->GetTextureHandle("resources/noise1.png"));
 
-  // --- 豺ｱ蠎ｦ繝舌ャ繝輔ぃ縺ｮ SRV 菴懈・縺ｨ繝槭ロ繝ｼ繧ｸ繝｣繝ｼ縺ｸ縺ｮ險ｭ螳・---
+  // --- 深度バッファの SRV 作成とマネージャーへの設定 ---
   depthSrvIndex_ = dxCommon_->GetSrvPool()->Allocate();
   D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandleGPU =
       dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_);
@@ -287,19 +285,19 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 
   postProcessManager_->SetDepthSrvHandle(depthSrvHandleGPU);
 
-  // --- SceneTransition 縺ｮ蛻晄悄蛹・---
+  // --- SceneTransition の初期化 ---
   sceneTransition_ = std::make_unique<SceneTransition>();
   sceneTransition_->Initialize(postProcessManager_.get());
 
-  // WinApp縺ｫ閾ｪ霄ｫ(Engine)縺ｮ繝昴う繝ｳ繧ｿ繧定ｨｭ螳・
+  // WinAppに自身(Engine)のポインタを設定
   winApp_->SetEngine(this);
 
-  // PSO・医ヱ繧､繝励Λ繧､繝ｳ繧ｹ繝・・繝茨ｼ峨・莠句燕繧ｳ繝ｳ繝代う繝ｫ繧貞ｮ溯｡後＠縲∝ｮ溯｡御ｸｭ縺ｮ繝偵ャ繝・ｼ医き繧ｯ縺､縺搾ｼ峨ｒ髦ｲ豁｢
+  // PSO（パイプラインステート）の事前コンパイルを実行し、実行中のヒッチ（カクつき）を防止
   if (GetPSOManager()) {
     GetPSOManager()->PreWarmCommonPSOs();
   }
 
-  // 蛻晏屓謠冗判譎ゅ・驕・ｻｶ繝上・繝峨え繧ｧ繧｢繧ｳ繝ｳ繝代う繝ｫ・・IT・峨ｒ髦ｲ豁｢縺吶ｋ縺溘ａ縺ｮ繝繝溘・螳溯｡・
+  // 初回描画時の遅延ハードウェアコンパイル（JIT）を防止するためのダミー実行
   if (dxCommon_) {
     dxCommon_->PreWarmJITCompile();
   }
@@ -307,27 +305,27 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   GPUParticleManager::GetInstance()->Initialize();
 }
 
-// 繧ｯ繝ｪ繧｢繧ｫ繝ｩ繝ｼ繧・float 謖・ｮ壹〒縺阪ｋ 蛻晄悄蛹・
+// クリアカラーを float 指定できる 初期化
 void IrufemiEngine::Initialize(const std::wstring &title,
                                const int32_t &clientWidth,
                                const int32_t &clientHeight, float r, float g,
                                float b, float a) {
   clearColor_ = {r, g, b, a};
-  // 譌｢蟄倥・ Initialize 繧貞他縺ｶ(莠呈鋤諤ｧ邯ｭ謖・
+  // 既存の Initialize を呼ぶ(互換性維持)
   Initialize(title, clientWidth, clientHeight);
 }
 
-// 繧ｯ繝ｪ繧｢繧ｫ繝ｩ繝ｼ繧・std::array 謖・ｮ壹〒縺阪ｋ 蛻晄悄蛹・
+// クリアカラーを std::array 指定できる 初期化
 void IrufemiEngine::Initialize(const std::wstring &title,
                                const int32_t &clientWidth,
                                const int32_t &clientHeight,
                                const std::array<float, 4> &clearColor) {
   clearColor_ = clearColor;
-  // 譌｢蟄倥・ Initialize 繧貞他縺ｶ(莠呈鋤諤ｧ邯ｭ謖・
+  // 既存の Initialize を呼ぶ(互換性維持)
   Initialize(title, clientWidth, clientHeight);
 }
 
-// 霑ｽ蜉: Vector4 迚・Initialize
+// 追加: Vector4 版 Initialize
 void IrufemiEngine::Initialize(const std::wstring &title,
                                const int32_t &clientWidth,
                                const int32_t &clientHeight,
@@ -339,7 +337,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 void IrufemiEngine::Finalize() {
   if (isFinalized_) return;
 
-  // 0. 繧ｷ繝ｼ繝ｳ縺ｨ逕ｻ髱｢驕ｷ遘ｻ繝ｻ繝ｭ繝ｼ繝・ぅ繝ｳ繧ｰ・医％繧後ｉ縺後Μ繧ｽ繝ｼ繧ｹ縺ｮ shared_ptr 繧剃ｿ晄戟縺励※縺・ｋ縺溘ａ譛蜆ｪ蜈茨ｼ・
+  // 0. シーンと画面遷移・ローディング（これらがリソースの shared_ptr を保持しているため最優先）
   if (sceneManager_) {
     sceneManager_.reset();
   }
@@ -353,12 +351,12 @@ void IrufemiEngine::Finalize() {
     cameraManager_.reset();
   }
 
-  // 繧｢繝励Μ繧ｱ繝ｼ繧ｷ繝ｧ繝ｳ邨ゆｺ・凾縲√す繝ｼ繝ｳ遐ｴ譽・燕縺ｫGPU蜃ｦ逅・・螳御ｺ・ｒ蠕・ｩ溘☆繧・
+  // アプリケーション終了時、シーン破棄前にGPU処理の完了を待機する
   if (dxCommon_) {
     dxCommon_->WaitForGPU();
   }
 
-  // 1. 繧ｨ繝・ぅ繧ｿ縺ｨUI (謠冗判繝槭ロ繝ｼ繧ｸ繝｣遲峨↓萓晏ｭ・
+  // 1. エディタとUI (描画マネージャ等に依存)
   if (ui_) {
     ui_->Shutdown();
     ui_.reset();
@@ -369,7 +367,7 @@ void IrufemiEngine::Finalize() {
   }
 #endif
 
-  // 2. 謠冗判繝ｻ繝昴せ繝医・繝ｭ繧ｻ繧ｹ邉ｻ (DirectX蝓ｺ逶､縺ｫ萓晏ｭ・
+  // 2. 描画・ポストプロセス系 (DirectX基盤に依存)
   if (drawManager_) {
     drawManager_->Finalize();
     drawManager_.reset();
@@ -381,7 +379,7 @@ void IrufemiEngine::Finalize() {
     mainRenderTexture_.reset();
   }
 
-  // 3. 繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ繝ｻ繝｢繝・Ν繝ｻ繝・け繧ｹ繝√Ε (繝ｪ繧ｽ繝ｼ繧ｹ縺ｮ螳滉ｽ薙ｒ菫晄戟)
+  // 3. アニメーション・モデル・テクスチャ (リソースの実体を保持)
   if (animationManager_) {
     animationManager_.reset();
   }
@@ -396,7 +394,7 @@ void IrufemiEngine::Finalize() {
     fontManager_.reset();
   }
 
-  // 4. 螳壽焚繝舌ャ繝輔ぃ繝槭ロ繝ｼ繧ｸ繝｣繝ｼ (DirectX蝓ｺ逶､縺ｮ繝ｪ繧ｽ繝ｼ繧ｹ繧堤峩謗･菫晄戟縺吶ｋ縺溘ａ蜈医↓遐ｴ譽・
+  // 4. 定数バッファマネージャー (DirectX基盤のリソースを直接保持するため先に破棄)
   if (materialBufferManager_) {
     materialBufferManager_.reset();
   }
@@ -404,7 +402,7 @@ void IrufemiEngine::Finalize() {
     transformBufferManager_.reset();
   }
 
-  // --- 髱咏噪繝昴う繝ｳ繧ｿ縺ｮ繧ｯ繝ｪ繧｢・医ョ繧ｹ繝医Λ繧ｯ繧ｿ縺ｧ縺ｮ荳肴ｭ｣繧｢繧ｯ繧ｻ繧ｹ髦ｲ豁｢・・---
+  // --- 静的ポインタのクリア（デストラクタでの不正アクセス防止） ---
   BaseResource::SetDirectXCommon(nullptr);
   BaseRegion::SetDirectXCommon(nullptr);
   Line3DRegion::SetDirectXCommon(nullptr);
@@ -415,19 +413,19 @@ void IrufemiEngine::Finalize() {
   GpuMesh::sDxCommon = nullptr;
 
   BaseRegion::SetSrvAllocator(nullptr);
-
+  ParticleSystem::SetSrvPool(nullptr);
   Line3DRegion::SetSrvAllocator(nullptr);
 
-  // DebugUI, DrawManager, TextureManager 遲峨・蜷・け繝ｩ繧ｹ縺ｸ縺ｮ髱咏噪繧ｻ繝・ヨ繧ゅけ繝ｪ繧｢
+  // DebugUI, DrawManager, TextureManager 等の各クラスへの静的セットもクリア
   Sprite::SetDebugUI(nullptr);
   Circle2D::SetDebugUI(nullptr);
   Primitive3DObject::SetDebugUI(nullptr);
-
+  ParticleSystem::SetDebugUI(nullptr);
 
   Sprite::SetDrawManager(nullptr);
   Circle2D::SetDrawManager(nullptr);
   BaseRegion::SetDrawManager(nullptr);
-
+  ParticleSystem::SetDrawManager(nullptr);
   GPUParticleSystem::SetDrawManager(nullptr);
   Primitive3DObject::SetDrawManager(nullptr);
   Line3DRegion::SetDrawManager(nullptr);
@@ -435,14 +433,13 @@ void IrufemiEngine::Finalize() {
   Sprite::SetTextureManager(nullptr);
   Circle2D::SetTextureManager(nullptr);
   BaseRegion::SetTextureManager(nullptr);
-
+  ParticleSystem::SetTextureManager(nullptr);
   GPUParticleSystem::SetTextureManager(nullptr);
-    ParticleObject::SetTextureManager(nullptr);
   Primitive3DObject::SetTextureManager(nullptr);
 
   Sprite::SetCameraManager(nullptr);
   ModelRegion::SetModelManager(nullptr);
-
+  ParticleSystem::SetEngine(nullptr);
   GPUParticleSystem::SetEngine(nullptr);
   BaseModel::SetIrufemiEngine(nullptr);
   Skybox::SetEngine(nullptr);
@@ -459,10 +456,10 @@ void IrufemiEngine::Finalize() {
   Bgm::SetAudioManager(nullptr);
   Se::SetAudioManager(nullptr);
 
-  // 5. 繧ｷ繝ｳ繧ｰ繝ｫ繝医Φ縺ｮ遐ｴ譽・(GPU繝ｪ繧ｽ繝ｼ繧ｹ繧剃ｿ晄戟縺励※縺・ｋ蜿ｯ閭ｽ諤ｧ縺後≠繧九◆繧・dxCommon 遐ｴ譽・燕縺ｫ蜻ｼ縺ｶ)
+  // 5. シングルトンの破棄 (GPUリソースを保持している可能性があるため dxCommon 破棄前に呼ぶ)
   PrimitiveManager::Finalize();
 
-  // 6. 蝓ｺ逶､繧ｷ繧ｹ繝・Β (繧ｵ繧ｦ繝ｳ繝峨・蜈･蜉・
+  // 6. 基盤システム (サウンド・入力)
   if (audioManager_) {
     audioManager_->Finalize();
     audioManager_.reset();
@@ -472,7 +469,7 @@ void IrufemiEngine::Finalize() {
   }
 
   // 5.5 Dynamic Constant Buffers
-  // (DirectX蝓ｺ逶､縺ｫ萓晏ｭ倥☆繧九◆繧√‥xCommon_繧医ｊ蜈医↓遐ｴ譽・
+  // (DirectX基盤に依存するため、dxCommon_より先に破棄)
   if (materialBufferManager_) {
     materialBufferManager_.reset();
   }
@@ -480,7 +477,7 @@ void IrufemiEngine::Finalize() {
     transformBufferManager_.reset();
   }
 
-  // 6. DirectX蝓ｺ逶､
+  // 6. DirectX基盤
   if (dxCommon_) {
     if (dxCommon_->GetSrvPool() && depthSrvIndex_ != 0xFFFFFFFF) {
       dxCommon_->GetSrvPool()->FreeAfterFence(depthSrvIndex_,
@@ -491,7 +488,7 @@ void IrufemiEngine::Finalize() {
     dxCommon_.reset();
   }
 
-  // 7. OS繝ｻ繧ｦ繧｣繝ｳ繝峨え
+  // 7. OS・ウィンドウ
   if (winApp_) {
     winApp_.reset();
   }
@@ -500,30 +497,31 @@ void IrufemiEngine::Finalize() {
 }
 
 void IrufemiEngine::Execute() {
-  // CameraManager險ｭ螳・
+  // CameraManager設定
   cameraManager_ = std::make_unique<CameraManager>();
   Sprite::SetCameraManager(cameraManager_.get());
   Text::SetCameraManager(cameraManager_.get());
   
-  // SceneManager 讒狗ｯ・繧ｨ繝ｳ繧ｸ繝ｳ縺ｯ謇譛峨・縺ｿ)
+  // SceneManager 構築(エンジンは所有のみ)
   sceneManager_ = std::make_unique<SceneManager>(this);
 
-  // 繝ｭ繝ｼ繝・ぅ繝ｳ繧ｰ逕ｻ髱｢縺ｮ讒狗ｯ・
+  // ローディング画面の構築
   loadingScreen_ = std::make_unique<LoadingScreen>();
   loadingScreen_->Initialize(this);
 
-  // Application 縺九ｉ縺ｮ逋ｻ骭ｲ繧貞渚譏
+  // Application からの登録を反映
   if (sceneRegistrar_) {
     sceneRegistrar_(*sceneManager_);
   }
 
-  // 蛻晄悄繧ｷ繝ｼ繝ｳ縺梧欠螳壹＆繧後※縺・ｌ縺ｰ驕ｷ遘ｻ
+  // 初期シーンが指定されていれば遷移
   if (!initialSceneName_.empty()) {
     sceneManager_->ChangeTo(initialSceneName_);
   }
 
   while (winApp_->ProcessMessages()) {
-    // 繝輔Ξ繝ｼ繝髢句ｧ区凾縺ｮ譎る俣譖ｴ譁ｰ
+    // フレーム開始時の時間更新
+    GPUParticleManager::GetInstance()->Debug();
     StartFrame();
 
     // ImGui_
@@ -540,14 +538,13 @@ void IrufemiEngine::Execute() {
     ui_->BeginEngineDebugWindow();
     ui_->SceneSelectorTab(sceneManager_.get());
     ui_->PostProcessTab(this);
-    GPUParticleManager::GetInstance()->Debug();
     if (auto *scene = sceneManager_->GetCurrentScene()) {
       scene->DrawDebugTab();
     }
     ui_->EndEngineDebugWindow();
 #endif // USE_IMGUI
 
-    // 譖ｴ譁ｰ
+    // 更新
     audioManager_->Update();
     sceneManager_->Update();
     if (sceneManager_->IsLoading() && loadingScreen_) {
@@ -560,20 +557,20 @@ void IrufemiEngine::Execute() {
     GPUParticleManager::GetInstance()->Update();
 
     if (voxelParticleManager_) {
-        // 繝昴・繧ｺ荳ｭ縺ｯ VoxelParticle 縺ｮ譖ｴ譁ｰ繧偵せ繧ｭ繝・・縺吶ｋ
+        // ポーズ中は VoxelParticle の更新をスキップする
         bool isPaused = (sceneManager_ && sceneManager_->GetCurrent() == "Pause");
         if (!isPaused) {
             voxelParticleManager_->Update(deltaTime_);
         }
     }
 
-    // 繧､繝ｳ繝励ャ繝医ｒ譖ｴ譁ｰ
+    // インプットを更新
     inputManager_->Update();
 
-    // 繝輔Ξ繝ｼ繝騾比ｸｭ蜃ｦ逅・
+    // フレーム途中処理
     ProcessFrame();
 
-    // 謠冗判
+    // 描画
     sceneManager_->Draw();
 
     if (voxelParticleManager_) {
@@ -582,81 +579,81 @@ void IrufemiEngine::Execute() {
 
     GPUParticleManager::GetInstance()->Draw();
 
-    // 縺薙％縺ｧ貅懊∪縺｣縺滓緒逕ｻ繝代こ繝・ヨ繧剃ｸ譁峨↓蜃ｦ逅・☆繧・
+    // ここで溜まった描画パケットを一斉に処理する
     drawManager_->ExecuteRenderQueues(this);
 
-    // 邨ゆｺ・・逅・
+    // 終了処理
     EndFrame();
   }
 }
 
-// 繝輔Ξ繝ｼ繝髢句ｧ句・逅・
+// フレーム開始処理
 void IrufemiEngine::StartFrame() {
-  // 譎る俣縺ｮ譖ｴ譁ｰ
+  // 時間の更新
   auto now = std::chrono::steady_clock::now();
   deltaTime_ = std::chrono::duration<float>(now - lastFrameTime_).count();
   totalTime_ = std::chrono::duration<float>(now - startTime_).count();
 
-  // 繧ｲ繝ｼ繝蜀・凾髢薙・譖ｴ譁ｰ・医ち繧､繝繧ｹ繧ｱ繝ｼ繝ｫ繧帝←逕ｨ・・
+  // ゲーム内時間の更新（タイムスケールを適用）
   gameDeltaTime_ = deltaTime_ * timeScale_;
   gameTime_ += gameDeltaTime_;
 
   lastFrameTime_ = now;
 }
 
-// 繝輔Ξ繝ｼ繝騾比ｸｭ蜃ｦ逅・
+// フレーム途中処理
 void IrufemiEngine::ProcessFrame() {
-  // 髱槫酔譛溘せ繝ｬ繝・ラ縺ｧ驕・ｻｶ縺輔ｌ縺ｦ縺・◆SRV縺ｮ譖ｴ譁ｰ繧偵Γ繧､繝ｳ繧ｹ繝ｬ繝・ラ縺ｧ荳諡ｬ驕ｩ逕ｨ縺吶ｋ・医ョ繝ｼ繧ｿ遶ｶ蜷医・髦ｲ豁｢・・
+  // 非同期スレッドで遅延されていたSRVの更新をメインスレッドで一括適用する（データ競合の防止）
   if (dxCommon_) {
     dxCommon_->FlushPendingSRVUpdates();
   }
 
-  // 繧ｹ繝・・繝医・繝ｪ繧ｻ繝・ヨ・亥燕繝輔Ξ繝ｼ繝縺ｮ謠冗判繧ｹ繝・・繝医ｒ蠑輔″邯吶′縺ｪ縺・ｈ縺・↓縺吶ｋ・・
+  // ステートのリセット（前フレームの描画ステートを引き継がないようにする）
   currentBlend_ = BlendMode::kBlendModeNormal;
   currentDepth_ = PSOManager::DepthWrite::Enable;
   currentCull_ = PSOManager::CullMode::Back;
 
-  // 謠冗判蜃ｦ逅・↓蜈･繧句燕縺ｫImGui_::Render繧堤ｩ阪・
+  // 描画処理に入る前にImGui_::Renderを積む
   ui_->QueueDrawCommands();
 
-  // 1. 繝舌ャ繧ｯ繝舌ャ繝輔ぃ繧偵け繝ｪ繧｢ (蠢ｵ縺ｮ縺溘ａ)
+  // 1. バックバッファをクリア (念のため)
   drawManager_->PreDraw(clearColor_, 1.0f, 0);
 
-  // (Compute Shader縺ｮ荳諡ｬ螳溯｡後・縲ヽenderGraph蜀・・ComputePass縺ｫ遘ｻ陦後＠縺ｾ縺励◆)
+  // (Compute Shaderの一括実行は、RenderGraph内のComputePassに移行しました)
 
-  // 2. 繝｡繧､繝ｳ縺ｮ謠冗判蜈医ｒ RenderTexture 縺ｫ蛻・ｊ譖ｿ縺医∵欠螳壹・繧ｯ繝ｪ繧｢繧ｫ繝ｩ繝ｼ縺ｧ繧ｯ繝ｪ繧｢
+  // 2. メインの描画先を RenderTexture に切り替え、指定のクリアカラーでクリア
   drawManager_->BeginRenderTexture(
       mainRenderTexture_.get(),
       Vector4{clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
 }
 
-// 繝輔Ξ繝ｼ繝邨ゆｺ・・逅・
+// フレーム終了処理
 void IrufemiEngine::EndFrame() {
-  // (RenderTexture 縺ｮ SRV 蛹悶ｄ繝舌ャ繧ｯ繝舌ャ繝輔ぃ縺ｸ縺ｮ霆｢騾√・
-  // 繝昴せ繝医・繝ｭ繧ｻ繧ｹ蜃ｦ逅・・縺吶∋縺ｦ RenderGraph 蜀・〒陦後ｏ繧後∪縺・
+  // (RenderTexture の SRV 化やバックバッファへの転送、
+  // ポストプロセス処理はすべて RenderGraph 内で行われます)
 
-  // 謠冗判蜈医′繝舌ャ繧ｯ繝舌ャ繝輔ぃ縺ｫ縺ｪ繧翫√・繧ｹ繝医・繝ｭ繧ｻ繧ｹ・域囓霆｢縺ｪ縺ｩ・峨′謗帙°縺｣縺滉ｸ翫°繧・
-  // 蠖ｱ髻ｿ繧貞女縺代↑縺・怙蜑埼擇UI縺ｨ縺励※繝ｭ繝ｼ繝臥判髱｢繧呈緒逕ｻ縺吶ｋ
+  // 描画先がバックバッファになり、ポストプロセス（暗転など）が掛かった上から
+  // 影響を受けない最前面UIとしてロード画面を描画する
   if (sceneManager_ && sceneManager_->IsLoading()) {
     if (loadingScreen_) {
       loadingScreen_->Draw(this);
     }
   }
 
-  // --- 霑ｽ蜉: 譛蜑埼擇UI繧ｭ繝･繝ｼ縺ｮ豸亥喧 ---
+  // --- 追加: 最前面UIキューの消化 ---
   drawManager_->ExecuteTopMostQueues(this);
 
-  // 謠冗判蠕悟・逅・
+  // 描画後処理
   ui_->QueuePostDrawCommands();
   drawManager_->PostDraw();
 
-  // 5) 繝輔Ξ繝ｼ繝邨らｫｯ縺ｧ驕・ｻｶ隗｣謾ｾ縺ｮ蝗槫庶(繝輔ぉ繝ｳ繧ｹ螳御ｺ・､繧呈ｸ｡縺・
+  // 5) フレーム終端で遅延解放の回収(フェンス完了値を渡す)
   if (auto *srvPool = dxCommon_->GetSrvPool()) {
     const uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
     srvPool->GarbageCollect(completed);
   }
 
-  // --- 霑ｽ蜉: 荳ｭ髢薙Μ繧ｽ繝ｼ繧ｹ縺ｮ驕・ｻｶ隗｣謾ｾ繧貞ｮ溯｡・---
+  // --- 追加: 中間リソースの遅延解放を実行 ---
   dxCommon_->ClearPendingResources();
 }
 
@@ -664,15 +661,15 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
   if (width <= 0 || height <= 0)
     return;
 
-  // 1. 繧ｹ繝ｯ繝・・繝√ぉ繝ｼ繝ｳ縲∵ｷｱ蠎ｦ繝舌ャ繝輔ぃ縺ｮ繝ｪ繧ｵ繧､繧ｺ
+  // 1. スワップチェーン、深度バッファのリサイズ
   dxCommon_->ResizeSwapChain(width, height);
 
-  // 2. 繝｡繧､繝ｳ繝ｬ繝ｳ繝繝ｼ繝・け繧ｹ繝√Ε縺ｮ蜀咲函謌・
+  // 2. メインレンダーテクスチャの再生成
   mainRenderTexture_->Initialize(
       dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
       {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
 
-  // 3. 豺ｱ蠎ｦ繝舌ャ繝輔ぃ縺ｮ SRV 蜀堺ｽ懈・ (譌｢蟄倥・繧､繝ｳ繝・ャ繧ｯ繧ｹ繧貞・蛻ｩ逕ｨ)
+  // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)
   if (depthSrvIndex_ != 0xFFFFFFFF) {
     D3D12_SHADER_RESOURCE_VIEW_DESC depthSrvDesc{};
     depthSrvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
@@ -684,14 +681,27 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
         dxCommon_->GetDepthStencilResource(), &depthSrvDesc,
         dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
 
-    // 繝昴せ繝医・繝ｭ繧ｻ繧ｹ繝槭ロ繝ｼ繧ｸ繝｣繝ｼ縺ｫ譁ｰ縺励＞SRV繝上Φ繝峨Ν繧定ｨｭ螳・
+    // ポストプロセスマネージャーに新しいSRVハンドルを設定
     postProcessManager_->SetDepthSrvHandle(
         dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_));
   }
   
-  // 4. 繧ｫ繝｡繝ｩ縺ｮ隗｣蜒丞ｺｦ譖ｴ譁ｰ (3D遨ｺ髢薙・豁ｪ縺ｿ髦ｲ豁｢)
+  // 4. カメラの解像度更新 (3D空間の歪み防止)
   if (cameraManager_) {
       cameraManager_->OnResize(width, height);
+  }
+
+  // 5. 描画マネージャーへの通知 (RenderGraph等のキャッシュクリア)
+  if (drawManager_) {
+      drawManager_->OnResize(width, height);
+      
+      // 再構築された永続リソースの初期ステートをRenderGraphへ再登録する
+      if (mainRenderTexture_ && mainRenderTexture_->GetResource()) {
+          drawManager_->RegisterResourceState(mainRenderTexture_->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+      }
+      if (dxCommon_ && dxCommon_->GetDepthStencilResource()) {
+          drawManager_->RegisterResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+      }
   }
 }
 
@@ -709,7 +719,7 @@ bool IrufemiEngine::IsCursorLocked() const {
 }
 
 void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
-  // Shadow繝代せ縺ｮ蝣ｴ蜷医・閾ｪ蜍慕噪縺ｫ繧ｷ繝｣繝峨え逕ｨ繧ｷ繧ｧ繝ｼ繝縺ｫ蛻・ｊ譖ｿ縺医ｋ(蜈・・繧ｳ繝ｼ繝峨・莉墓ｧ倡ｶｭ謖・
+  // Shadowパスの場合は自動的にシャドウ用シェーダに切り替える(元のコードの仕様維持)
   if (drawManager_->IsShadowPass()) {
       if (shaderName == "Object3D") {
           auto* pso = GetPSOManager()->GetPSO("Shadow", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
@@ -721,11 +731,11 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
           if (pso) drawManager_->BindPSO(pso);
           return;
       }
-      // 縺昴ｌ莉･螟悶・繧ｷ繝｣繝峨え繝代せ縺ｧ縺ｯ謠冗判縺励↑縺・辟｡隕・
+      // それ以外はシャドウパスでは描画しない(無視)
       return;
   }
   
-  // Skybox逕ｨ縺ｮ迚ｹ谿雁ｯｾ蠢・(蜈・・繧ｳ繝ｼ繝峨〒縺ｯ CullMode::Front 豎ｺ繧∵遠縺｡縺ｧ繝悶Ξ繝ｳ繝峨→豺ｱ蠎ｦ縺ｯ荳崎ｦ√□縺｣縺・
+  // Skybox用の特殊対応 (元のコードでは CullMode::Front 決め打ちでブレンドと深度は不要だった)
   if (shaderName == "Skybox") {
       auto* pso = GetPSOManager()->GetPSO("Skybox", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Front);
       if (pso) drawManager_->BindPSO(pso);
@@ -752,4 +762,3 @@ bool IrufemiEngine::IsAssetLoading() const {
   bool fontsLoaded = !fontManager_ || fontManager_->IsAllLoaded();
   return !modelsLoaded || !texturesLoaded || !fontsLoaded;
 }
-

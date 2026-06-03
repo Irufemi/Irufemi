@@ -130,8 +130,10 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
                 b.Aliasing.pResourceAfter = lifetimes[i].physicalResource;
                 barriers.push_back(b);
 
-                // ステート追跡の初期化
-                resourceStates_[lifetimes[i].physicalResource] = D3D12_RESOURCE_STATE_COMMON;
+                // ステート追跡の初期化（未登録の新規リソースの場合のみ COMMON とする）
+                if (resourceStates_.find(lifetimes[i].physicalResource) == resourceStates_.end()) {
+                    resourceStates_[lifetimes[i].physicalResource] = D3D12_RESOURCE_STATE_COMMON;
+                }
             }
         }
 
@@ -194,8 +196,23 @@ void RenderGraph::ResetStates() {
     resourceStates_.clear();
 }
 
+void RenderGraph::OnResize() {
+    ResetStates();
+    if (transientResourceManager_) {
+        transientResourceManager_->ClearCache();
+    }
+}
+
 void RenderGraph::RegisterResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state) {
     if (resource) {
         resourceStates_[resource] = state;
     }
 }
+
+#ifdef USE_IMGUI
+void RenderGraph::DebugUI() {
+    if (transientResourceManager_) {
+        transientResourceManager_->DebugUI();
+    }
+}
+#endif

@@ -41,6 +41,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Graphics/Data/LightningParams.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Graphics/Pipeline/RenderGraph/RenderGraph.h"
 
 // 静的宣言
 std::unique_ptr<PointLight> DebugUI::templatePointLight_;
@@ -737,8 +739,15 @@ void DebugUI::FPSDebug() {
     if (!showPerformance_) return;
 
     ImGuiIO& io = ImGui::GetIO();
-    const float fpsNow = io.Framerate;
-    const float frameMsNow = (fpsNow > 0.0f) ? (1000.0f * io.DeltaTime) : 0.0f;
+    
+    // エンジン側の PerFrame 時間管理 (DeltaTime) を使用して計算する
+    float dt = io.DeltaTime;
+    if (dxCommon_ && dxCommon_->GetEngine()) {
+        dt = dxCommon_->GetEngine()->GetDeltaTime();
+    }
+    
+    const float frameMsNow = dt * 1000.0f;
+    const float fpsNow = (dt > 0.0001f) ? (1.0f / dt) : 0.0f;
 
     UpdatePerfStats_(frameMsNow);
     cachedFps_ = fpsNow;
@@ -1045,6 +1054,11 @@ void DebugUI::FPSDebug() {
                 }
             }
             ImGui::EndChild();
+        }
+        
+        ImGui::Separator();
+        if (dxCommon_ && dxCommon_->GetEngine() && dxCommon_->GetEngine()->GetDrawManager() && dxCommon_->GetEngine()->GetDrawManager()->GetRenderGraph()) {
+            dxCommon_->GetEngine()->GetDrawManager()->GetRenderGraph()->DebugUI();
         }
     }
     ImGui::End();
