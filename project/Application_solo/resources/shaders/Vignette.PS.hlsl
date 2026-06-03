@@ -2,8 +2,8 @@
 
 struct VignetteParams {
     float4 color;
-    float scale;
-    float power;
+    float radius;
+    float softness;
     float2 pad;
 };
 
@@ -19,12 +19,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
     PixelShaderOutput output;
     output.color = gTexture.Sample(gSampler, input.texcoord);
 
-    // 周囲を0に、中心になるほど明るくなるように計算で調整
-    float2 correct = input.texcoord * (1.0f - input.texcoord.yx);
-    // Scaleで調整
-    float vignette = correct.x * correct.y * gVignette.scale;
-    // べき乗で調整
-    vignette = saturate(pow(vignette, gVignette.power));
+    // 中心からの距離で計算
+    float dist = distance(input.texcoord, float2(0.5f, 0.5f));
+    // smoothstepによる自然な減衰
+    float vignette = smoothstep(gVignette.radius, gVignette.radius - gVignette.softness, dist);
     // 係数として補間
     output.color.rgb = lerp(gVignette.color.rgb, output.color.rgb, vignette);
 

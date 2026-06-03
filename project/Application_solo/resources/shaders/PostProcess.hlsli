@@ -99,9 +99,9 @@ float32_t3 ApplySepia(float32_t3 color) {
 }
 
 // 3. Vignette
-float32_t3 ApplyVignette(float32_t3 color, float32_t2 uv, float32_t scale, float32_t power, float32_t3 vignetteColor) {
-    float2 correct = uv * (1.0f - uv.yx);
-    float vignette = saturate(pow(correct.x * correct.y * scale, power));
+float32_t3 ApplyVignette(float32_t3 color, float32_t2 uv, float32_t radius, float32_t softness, float32_t3 vignetteColor) {
+    float dist = distance(uv, float2(0.5f, 0.5f));
+    float vignette = smoothstep(radius, radius - softness, dist);
     return lerp(vignetteColor, color, vignette);
 }
 

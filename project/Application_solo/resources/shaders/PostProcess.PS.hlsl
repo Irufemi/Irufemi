@@ -8,8 +8,8 @@ struct PostProcessParams {
     
     // Vignette
     float32_t4 vignetteColor;
-    float32_t vignetteScale;
-    float32_t vignettePower;
+    float32_t vignetteRadius;
+    float32_t vignetteSoftness;
     float32_t2 pad1;
     
     // Noise
@@ -87,7 +87,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 break;
             
             case kPostProcessMode_Vignette:
-                color.rgb = ApplyVignette(color.rgb, uv, gParams.vignetteScale, gParams.vignettePower, gParams.vignetteColor.rgb);
+                color.rgb = ApplyVignette(color.rgb, uv, gParams.vignetteRadius, gParams.vignetteSoftness, gParams.vignetteColor.rgb);
                 break;
 
             case kPostProcessMode_Noise:

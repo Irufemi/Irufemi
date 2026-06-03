@@ -68,8 +68,8 @@ void PostProcessManager::Update(float totalTime) {
 
   // 統合パラメータの同期
   combinedParams_.vignetteColor = vignetteParams_.color;
-  combinedParams_.vignetteScale = vignetteParams_.scale;
-  combinedParams_.vignettePower = vignetteParams_.power;
+  combinedParams_.vignetteRadius = vignetteParams_.radius;
+  combinedParams_.vignetteSoftness = vignetteParams_.softness;
   combinedParams_.noiseIntensity = noiseParams_.intensity;
   combinedParams_.noiseTime = noiseParams_.time;
   combinedParams_.dissolveEdgeColor = dissolveParams_.edgeColor;
