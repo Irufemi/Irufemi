@@ -2,7 +2,7 @@
 #include "../Engine/Graphics/PostProcess/PostProcessManager.h"
 #include <memory>
 #include <string>
-
+#include "../Engine/Core/Utility/Ease.h"
 
 /**
  * @class SceneTransition
@@ -32,10 +32,10 @@ public:
    * @brief 演出を開始する
    * @param type 演出の種類
    * @param duration 演出にかける時間（秒）
-   * @param isOut true:画面を隠す（フェードアウト）,
-   * false:画面を表示する（フェードイン）
+   * @param isOut true:画面を隠す（フェードアウト）, false:画面を表示する（フェードイン）
+   * @param easeType 演出のイージングタイプ（デフォルトは線形）
    */
-  void Start(Type type, float duration, bool isOut);
+  void Start(Type type, float duration, bool isOut, EaseType easeType = EaseType::Linear);
 
   /**
    * @brief 毎フレームの更新処理
@@ -64,6 +64,7 @@ private:
   PostProcessManager *ppManager_ = nullptr;
 
   Type currentType_ = Type::Fade;
+  EaseType easeType_ = EaseType::Linear; // イージングタイプを保持
   float timer_ = 0.0f;
   float duration_ = 1.0f;
   bool isOut_ = true;

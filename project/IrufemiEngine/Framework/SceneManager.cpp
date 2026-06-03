@@ -144,18 +144,19 @@ void SceneManager::PopScene() {
     }
 }
 
-void SceneManager::TransitionTo(const Key& next, SceneTransition::Type type, float duration) {
+void SceneManager::TransitionTo(const Key& next, SceneTransition::Type type, float duration, EaseType easeType) {
     if (transitionPhase_ != TransitionPhase::None) return; // 二重遷移防止
 
     pendingTransition_ = next;
     pendingType_ = type;
     pendingDuration_ = duration;
+    pendingEaseType_ = easeType;
     transitionPhase_ = TransitionPhase::Closing;
 
-    engine_->GetSceneTransition()->Start(type, duration, true);
+    engine_->GetSceneTransition()->Start(type, duration, true, easeType);
 }
 
-void SceneManager::LoadScene(const std::string& sceneJsonName, SceneTransition::Type type, float duration) {
+void SceneManager::LoadScene(const std::string& sceneJsonName, SceneTransition::Type type, float duration, EaseType easeType) {
     // 未登録の場合、DataDrivenScene を生成するファクトリを自動登録
     if (factories_.find(sceneJsonName) == factories_.end()) {
         Register(sceneJsonName, [sceneJsonName]() {
@@ -164,7 +165,7 @@ void SceneManager::LoadScene(const std::string& sceneJsonName, SceneTransition::
     }
     
     // 通常の遷移処理に回す
-    TransitionTo(sceneJsonName, type, duration);
+    TransitionTo(sceneJsonName, type, duration, easeType);
 }
 
 
@@ -249,7 +250,7 @@ void SceneManager::ProcessTransitionPhase(bool& isLoading) {
             }
 
             // ロードが完了した瞬間に、フェードインを開始する
-            engine_->GetSceneTransition()->Start(pendingType_, pendingDuration_, false);
+            engine_->GetSceneTransition()->Start(pendingType_, pendingDuration_, false, pendingEaseType_);
         }
     }
     else if (transitionPhase_ == TransitionPhase::Opening) {

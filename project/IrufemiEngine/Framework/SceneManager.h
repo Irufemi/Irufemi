@@ -68,14 +68,15 @@ public:
      * @param[in] next 次のシーン名
      * @param[in] type 演出タイプ
      * @param[in] duration 演出時間（秒）
+     * @param[in] easeType 演出のイージングタイプ（デフォルトは線形）
      */
-    void TransitionTo(const Key& next, SceneTransition::Type type, float duration);
+    void TransitionTo(const Key& next, SceneTransition::Type type, float duration, EaseType easeType = EaseType::Linear);
 
     /**
      * @brief データ駆動シーン(JSON)への遷移を開始する
      * @param[in] sceneJsonName 読み込むJSON名 (拡張子なし)
      */
-    void LoadScene(const std::string& sceneJsonName, SceneTransition::Type type = SceneTransition::Type::Fade, float duration = 1.0f);
+    void LoadScene(const std::string& sceneJsonName, SceneTransition::Type type = SceneTransition::Type::Fade, float duration = 1.0f, EaseType easeType = EaseType::Linear);
 
     /**
      * @brief 現在のシーンの上に新しいシーンを重ねる（同期）
@@ -162,6 +163,7 @@ private:
     Key pendingTransition_{};
     SceneTransition::Type pendingType_ = SceneTransition::Type::Fade;
     float pendingDuration_ = 1.0f;
+    EaseType pendingEaseType_ = EaseType::Linear;
 
     bool wasLoading_ = false; ///< 前フレームがロード中だったか
 

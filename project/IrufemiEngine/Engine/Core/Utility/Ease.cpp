@@ -154,3 +154,25 @@ float EaseInQuint(float num) { return num * num * num * num * num; }
 float EaseOutQuint(float num) { return 1.0f - std::powf(1.0f - num, 5.0f); }
 
 float EaseInOutQuint(float num) { return num < 0.5f ? 16.0f * num * num * num * num * num : 1.0f - std::powf(-2.0f * num + 2.0f, 5.0f) / 2; }
+
+float EvaluateEase(EaseType type, float t) {
+    switch (type) {
+        case EaseType::Linear:        return t;
+        case EaseType::EaseInSine:    return EaseInSine(t);
+        case EaseType::EaseOutSine:   return EaseOutSine(t);
+        case EaseType::EaseInOutSine: return EaseInOutSine(t);
+        case EaseType::EaseInQuad:    return EaseInQuad(t);
+        case EaseType::EaseOutQuad:   return EaseOutQuad(t);
+        case EaseType::EaseInOutQuad: return EaseInOutQuad(t);
+        case EaseType::EaseInCubic:   return EaseInCubic(t);
+        case EaseType::EaseOutCubic:  return EaseOutCubic(t);
+        case EaseType::EaseInOutCubic:return EaseInOutCubic(t);
+        case EaseType::EaseInQuart:   return EaseInQuart(t);
+        case EaseType::EaseOutQuart:  return EaseOutQuart(t);
+        case EaseType::EaseInOutQuart:return EaseInOutQuart(t);
+        case EaseType::EaseInQuint:   return EaseInQuint(t);
+        case EaseType::EaseOutQuint:  return EaseOutQuint(t);
+        case EaseType::EaseInOutQuint:return EaseInOutQuint(t);
+        default:                      return t;
+    }
+}
