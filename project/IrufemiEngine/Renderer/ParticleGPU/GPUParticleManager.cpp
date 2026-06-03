@@ -88,7 +88,9 @@ void GPUParticleManager::UpdateEmitterData(const EmitterHandle& handle, const GP
     }
 }
 
+#if defined(USE_IMGUI)
 #include <imgui.h>
+#endif
 void GPUParticleManager::Debug() {
 #if defined(USE_IMGUI)
     if (ImGui::BeginTabItem("GPU Particle Manager")) {

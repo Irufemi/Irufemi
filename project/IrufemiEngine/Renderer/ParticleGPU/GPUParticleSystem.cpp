@@ -75,7 +75,7 @@ void GPUParticleSystem::Initialize(const std::string &textureName) {
   textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
   // デフォルトでスフィアエミッターを設定
-  SetSphereEmitter(Vector3(0, 0, 0), 2.0f, 30, 0.1f);
+  SetSphereEmitter(Vector3(0, 0, 0), 2.0f, 30.0f);
 
   // Milestone 1: 初期調整 (レガシー演出の復元)
   auto &em = emittersData_[0];

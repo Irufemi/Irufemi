@@ -279,9 +279,11 @@ void DebugScene::Update() {
             particleObj_->Initialize();
         }
         
+#ifdef USE_IMGUI
         ImGui::Begin("Hardcoded Particle Test");
         particleObj_->DebugUI("Hardcoded Particle Test");
         ImGui::End();
+#endif
 
         particleObj_->Update();
         
