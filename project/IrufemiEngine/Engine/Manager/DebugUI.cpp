@@ -1224,8 +1224,8 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
             if (ImGui::TreeNode(modeNames[static_cast<int>(mode)])) {
                 if (mode == PostProcessMode::Vignette) {
                     auto& params = ppManager->GetVignetteParams();
-                    ImGui::DragFloat("Vignette Scale", &params.scale, 0.1f, 0.0f, 100.0f);
-                    ImGui::DragFloat("Vignette Power", &params.power, 0.01f, 0.0f, 10.0f);
+                    ImGui::DragFloat("Vignette Radius", &params.radius, 0.01f, 0.0f, 2.0f);
+                    ImGui::DragFloat("Vignette Softness", &params.softness, 0.01f, 0.0f, 2.0f);
                 } else if (mode == PostProcessMode::Smoothing) {
                     auto& params = ppManager->GetSmoothingParams();
                     if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
