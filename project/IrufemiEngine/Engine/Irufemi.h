@@ -36,26 +36,26 @@
 
 // --- Graphics / Renderer (描画オブジェクト) ---
 // LineInstanced
-#include "Renderer/LineInstanced/LineClass.h"
+#include "Renderer/Object/Line/LineClass.h"
 // Object2D
-#include "Renderer/Object2D/Sprite/Sprite.h"
-#include "Renderer/Object2D/Primitive/Circle2D.h"
+#include "Renderer/Object/2D/Sprite/Sprite.h"
+#include "Renderer/Object/2D/Primitive/Circle2D.h"
 // Object3D
-#include "Renderer/Object3D/AnimationModel/AnimationModel.h"
-#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
-#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
+#include "Renderer/Object/3D/AnimationModel/AnimationModel.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 
 // ParticleGPU
-#include "Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
 // VoxelParticle
-#include "Renderer/VoxelParticle/VoxelParticleSystem.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleSystem.h"
 // Region
-#include "Renderer/Region/ModelRegion.h"
-#include "Renderer/Region/PrimitiveRegion.h"
+#include "Renderer/Object/Region/ModelRegion.h"
+#include "Renderer/Object/Region/PrimitiveRegion.h"
 // Skybox
-#include "Renderer/Skybox/Skybox.h"
+#include "Renderer/Object/Skybox/Skybox.h"
 // Effect
-#include "Renderer/Effect/Effect.h"
+#include "Renderer/Object/Effect/Effect.h"
 
 // 音関連
 #include "Resource/Audio/Bgm.h"

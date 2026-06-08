@@ -1,5 +1,5 @@
 #include "GPUParticleSystem.h"
-#include "../../Engine/Graphics/Data/VertexData.h"
+#include "../../../Engine/Graphics/Data/VertexData.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Math/Geometry/Frustum.h"
 #include "Engine/Core/Math/Math.h"
@@ -11,7 +11,7 @@
 #include "Engine/Manager/DebugUI.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Manager/PrimitiveManager.h"
-#include "Renderer/LineInstanced/LineClass.h"
+#include "Renderer/Object/Line/LineClass.h"
 #include "Resource/Texture/TextureManager.h"
 #include <algorithm>
 #include <cassert>

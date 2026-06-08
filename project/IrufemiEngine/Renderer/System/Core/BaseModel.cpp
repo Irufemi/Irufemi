@@ -1,7 +1,7 @@
 #include "BaseModel.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Renderer/Core/BaseResource.h"
+#include "Renderer/System/Core/BaseResource.h"
 #include "Resource/Model/ModelManager.h"
 
 IrufemiEngine* BaseModel::engine_ = nullptr;

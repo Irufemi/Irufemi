@@ -5,17 +5,17 @@ using namespace RenderPackets;
 #include <cassert>
 
 #include <dxgidebug.h>
-#include "Renderer/Object2D/Sprite/Sprite.h"
-#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
-#include "Renderer/Region/ModelRegion.h"
-#include "Renderer/Region/PrimitiveRegion.h"
+#include "Renderer/Object/2D/Sprite/Sprite.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Renderer/Object/Region/ModelRegion.h"
+#include "Renderer/Object/Region/PrimitiveRegion.h"
 
-#include "Renderer/LineInstanced/LineClass.h"
-#include "Renderer/Skybox//Skybox.h"
-#include "Renderer/Object3D/Object3DResource.h"
-#include "Renderer/Object2D/Object2DResource.h"
+#include "Renderer/Object/Line/LineClass.h"
+#include "Renderer/Object/Skybox//Skybox.h"
+#include "Renderer/System/Core/Object3DResource.h"
+#include "Renderer/System/Core/Object2DResource.h"
 
-#include "Renderer/LineInstanced/LineResource.h"
+#include "Renderer/System/Core/LineResource.h"
 #include "../Graphics/DirectX/DirectXCommon.h"
 #include "../Graphics/DirectX/DirectXUtils.h"
 #include "../Graphics/Pipeline/RenderGraph/RenderGraph.h"

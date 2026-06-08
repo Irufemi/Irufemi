@@ -3,7 +3,7 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Platform/Input/InputManager.h"
-#include "Renderer/Object3D/BaseModel/BaseModel.h"
+#include "Renderer/System/Core/BaseModel.h"
 #include "RailShooterEnemyComponent.h"
 #include "DebrisManagerComponent.h"
 #include <cmath>

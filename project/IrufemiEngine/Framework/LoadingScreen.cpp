@@ -1,7 +1,7 @@
 #include "LoadingScreen.h"
 #include "../Engine/IrufemiEngine.h"
-#include "../Renderer/Object2D/Sprite/Sprite.h"
-#include "../Renderer/Object2D/Primitive/Circle2D.h"
+#include "../Renderer/Object/2D/Sprite/Sprite.h"
+#include "../Renderer/Object/2D/Primitive/Circle2D.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "../Engine/Graphics/Pipeline/PSOManager.h"
 

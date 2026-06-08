@@ -3,15 +3,15 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "../Core/IRenderable.h"
-#include "../../Engine/Core/Math/Vector3.h"
-#include "../../Engine/Core/Math/Vector4.h"
-#include "../../Engine/Core/Math/Vector2.h"
-#include "../../Engine/Core/Math/Matrix4x4.h"
-#include "../../Engine/Core/Type/PrimitiveType.h"
-#include "../../Engine/Core/Type/BlendMode.h"
-#include "../../Engine/Graphics/Pipeline/PSOManager.h"
-#include "../../Engine/Manager/PrimitiveManager.h"
+#include "../../System/Core/IRenderable.h"
+#include "../../../Engine/Core/Math/Vector3.h"
+#include "../../../Engine/Core/Math/Vector4.h"
+#include "../../../Engine/Core/Math/Vector2.h"
+#include "../../../Engine/Core/Math/Matrix4x4.h"
+#include "../../../Engine/Core/Type/PrimitiveType.h"
+#include "../../../Engine/Core/Type/BlendMode.h"
+#include "../../../Engine/Graphics/Pipeline/PSOManager.h"
+#include "../../../Engine/Manager/PrimitiveManager.h"
 
 
 

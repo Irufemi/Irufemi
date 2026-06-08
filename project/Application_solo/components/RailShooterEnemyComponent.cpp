@@ -3,7 +3,7 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h" // 描画オンオフ用
 #include "Engine/IrufemiEngine.h"
-#include "Renderer/Object3D/BaseModel/BaseModel.h"
+#include "Renderer/System/Core/BaseModel.h"
 
 void RailShooterEnemyComponent::OnRegisterProperties() {
     RegisterProperty("SpawnProgress", &spawnProgress_);

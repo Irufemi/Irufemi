@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 #include <nlohmann/json.hpp>
-#include "Renderer/LineInstanced/LineClass.h"
+#include "Renderer/Object/Line/LineClass.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Shape/LinePrimitive.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Core/IRenderable.h"
+#include "Renderer/System/Core/IRenderable.h"
 #include <vector>
 #include <memory>
 #include <string>

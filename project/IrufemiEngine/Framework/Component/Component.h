@@ -3,7 +3,7 @@
 #include <string>
 
 class GameObject;
-#include "Renderer/Core/IRenderable.h"
+#include "Renderer/System/Core/IRenderable.h"
 #include "Engine/Core/Math/Vector2.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"

@@ -5,7 +5,7 @@
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Platform/Input/InputManager.h"
-#include "Renderer/Object3D/BaseModel/BaseModel.h"
+#include "Renderer/System/Core/BaseModel.h"
 #include "RailShooterEnemyComponent.h"
 #include "Engine/Core/Math/Random/Random.h"
 

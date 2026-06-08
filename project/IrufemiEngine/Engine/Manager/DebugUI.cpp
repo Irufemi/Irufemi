@@ -35,9 +35,9 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Engine/Graphics/Data/Material.h"
 #include "Resource/Model/Data/ObjModel.h"
 #include "Resource/Model/Data/Animation.h"
-#include "Renderer/LineInstanced/LineResource.h"
-#include "Renderer/Object3D/Object3DResource.h"
-#include "Renderer/Object2D/Object2DResource.h"
+#include "Renderer/System/Core/LineResource.h"
+#include "Renderer/System/Core/Object3DResource.h"
+#include "Renderer/System/Core/Object2DResource.h"
 
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Graphics/Data/LightningParams.h"

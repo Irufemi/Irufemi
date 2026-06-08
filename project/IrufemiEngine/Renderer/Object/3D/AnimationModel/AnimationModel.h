@@ -1,13 +1,13 @@
 #pragma once
-#include "../../Core/IRenderable.h"
+#include "../../../System/Core/IRenderable.h"
 
-#include "../BaseModel/BaseModel.h"
+#include "../../../System/Core/BaseModel.h"
 #include "Resource/Model/Data/Animation.h"
 #include "Resource/Model/Data/NodeAnimation.h"
 #include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
 
-#include "../../../Engine/Graphics/Compute/IComputeTask.h"
+#include "../../../../Engine/Graphics/Compute/IComputeTask.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>

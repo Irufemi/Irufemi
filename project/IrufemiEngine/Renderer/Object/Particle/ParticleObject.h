@@ -2,7 +2,7 @@
 #include <string>
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
-#include "Renderer/ParticleGPU/GPUParticleManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 
 #include "Engine/Core/Type/BlendMode.h"
 #include <nlohmann/json.hpp>

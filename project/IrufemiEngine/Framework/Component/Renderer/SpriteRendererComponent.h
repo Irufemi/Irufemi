@@ -1,6 +1,6 @@
 #pragma once
 #include "../Component.h"
-#include "Renderer/Object2D/Sprite/Sprite.h"
+#include "Renderer/Object/2D/Sprite/Sprite.h"
 #include <memory>
 #include <string>
 #include "Engine/Core/Math/Vector4.h"

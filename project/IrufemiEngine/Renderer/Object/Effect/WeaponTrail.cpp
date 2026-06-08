@@ -1,5 +1,5 @@
 #include "WeaponTrail.h"
-#include "Renderer/Object3D/Object3DResource.h"
+#include "Renderer/System/Core/Object3DResource.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/IrufemiEngine.h"

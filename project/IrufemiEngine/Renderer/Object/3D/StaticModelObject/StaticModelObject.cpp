@@ -163,8 +163,8 @@ void StaticModelObject::SyncBeforeDraw() {
     }
 }
 
-#include "../../../Engine/Core/Math/Geometry/Collision.h"
-#include "../../../Engine/Core/Shape/Sphere.h"
+#include "../../../../Engine/Core/Math/Geometry/Collision.h"
+#include "../../../../Engine/Core/Shape/Sphere.h"
 
 void StaticModelObject::Draw() {
     if (!managedModel_ || !engine_ || !engine_->GetDrawManager()) {

@@ -1,11 +1,11 @@
-#include "../../Core/IRenderable.h"
+#include "../../../System/Core/IRenderable.h"
 #pragma once
 
 #include <cstdint>
 #include <memory>
 #include <string>
 #include "Engine/Graphics/Camera/Camera.h"
-#include "Renderer/Object2D/Object2DResource.h"
+#include "Renderer/System/Core/Object2DResource.h"
 
 // 前方宣言
 class TextureManager;

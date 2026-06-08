@@ -9,7 +9,7 @@
 #ifdef USE_IMGUI
 #include "imgui/imgui.h"
 #endif
-#include "../../Engine/Manager/PrimitiveManager.h"
+#include "../../../Engine/Manager/PrimitiveManager.h"
 
 IrufemiEngine* Skybox::engine_ = nullptr;
 

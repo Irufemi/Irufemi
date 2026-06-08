@@ -2,7 +2,7 @@
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/IrufemiEngine.h"
-#include "Renderer/Object3D/BaseModel/BaseModel.h"
+#include "Renderer/System/Core/BaseModel.h"
 
 CameraComponent::CameraComponent() = default;
 CameraComponent::~CameraComponent() = default;

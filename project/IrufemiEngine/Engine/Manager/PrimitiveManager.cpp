@@ -1,5 +1,5 @@
 #include "PrimitiveManager.h"
-#include "Renderer/Core/BaseResource.h"
+#include "Renderer/System/Core/BaseResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector2.h"

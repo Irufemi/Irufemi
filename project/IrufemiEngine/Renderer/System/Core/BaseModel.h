@@ -1,6 +1,6 @@
 #pragma once
-#include "../../Core/IRenderable.h"
-#include "../../Core/MultiBufferSyncState.h"
+#include "IRenderable.h"
+#include "MultiBufferSyncState.h"
 
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Math/Transform.h"
@@ -8,7 +8,7 @@
 #include "Engine/Core/Math/Vector4.h"
 #include "../../../Engine/Graphics/Data/TransformationMatrix.h"
 #include "Resource/Model/Data/ObjModel.h"
-#include "Renderer/Object3D/Object3DResource.h"
+#include "Renderer/System/Core/Object3DResource.h"
 #include "Engine/Graphics/Data/Material.h"
 #include <d3d12.h>
 #include <string>

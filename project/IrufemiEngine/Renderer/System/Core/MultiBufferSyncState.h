@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "../../Engine/Graphics/DirectX/DirectXCommon.h" // kMaxFramesInFlight
+#include "../../../Engine/Graphics/DirectX/DirectXCommon.h" // kMaxFramesInFlight
 
 /**
  * @class MultiBufferSyncState

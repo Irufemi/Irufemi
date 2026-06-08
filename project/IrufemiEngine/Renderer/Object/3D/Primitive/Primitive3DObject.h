@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../../Core/IRenderable.h"
+#include "../../../System/Core/IRenderable.h"
 #include <memory>
 #include <string>
 #include <vector>
 #include <functional>
 
 #include "Engine/Core/Type/PrimitiveType.h"
-#include "Renderer/Data/RenderData.h"
+#include "Renderer/System/Data/RenderData.h"
 
 // 前方宣言
 class Camera;

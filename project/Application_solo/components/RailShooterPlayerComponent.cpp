@@ -5,7 +5,7 @@
 #include "Framework/BaseScene.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Platform/Input/InputManager.h"
-#include "Renderer/Object3D/BaseModel/BaseModel.h"
+#include "Renderer/System/Core/BaseModel.h"
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #include <algorithm>

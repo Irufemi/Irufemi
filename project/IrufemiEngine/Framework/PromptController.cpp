@@ -1,7 +1,7 @@
-﻿#include "PromptController.h"
+#include "PromptController.h"
 #include "Engine/Platform/Input/InputManager.h"
-#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
-#include "Renderer/Object2D/Sprite/Sprite.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Renderer/Object/2D/Sprite/Sprite.h"
 
 PromptController::PromptController() {
     animator_.Reset();

@@ -4,7 +4,7 @@
 #include <string>
 #include "Engine/Core/Type/PrimitiveType.h"
 #include "Engine/Core/Math/Transform.h"
-#include "Renderer/Object3D/Object3DResource.h"
+#include "Renderer/System/Core/Object3DResource.h"
 #include "Engine/Core/Math/Math.h"
 
 class Camera;

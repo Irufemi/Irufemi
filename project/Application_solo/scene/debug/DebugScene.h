@@ -2,14 +2,14 @@
 
 #include "Framework/BaseScene.h"
 
-#include "Renderer/Object3D/AnimationModel/AnimationModel.h"
-#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
+#include "Renderer/Object/3D/AnimationModel/AnimationModel.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include "Irufemi.h"
 #include "Graphics/Data/LightningParams.h"
 
 #include <memory>
 #include <vector>
-#include "Renderer/ParticleGPU/ParticleObject.h"
+#include "Renderer/Object/Particle/ParticleObject.h"
 
 // 前方宣言
 class IrufemiEngine;

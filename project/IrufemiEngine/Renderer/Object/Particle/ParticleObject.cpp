@@ -1,5 +1,5 @@
 #include "ParticleObject.h"
-#include "Renderer/ParticleGPU/GPUParticleManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include <fstream>
 #include <iostream>
 

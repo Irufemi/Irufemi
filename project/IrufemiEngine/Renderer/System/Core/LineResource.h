@@ -3,11 +3,11 @@
 #include <vector>
 #include <wrl.h>
 #include <d3d12.h>
-#include "../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
-#include "../../Engine/Graphics/Data/VertexData.h"
-#include "../../Engine/Graphics/Data/Material.h"
-#include "../../Engine/Graphics/Data/TransformationMatrix.h"
-#include "../../Engine/Core/Math/Transform.h"
+#include "../../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
+#include "../../../Engine/Graphics/Data/VertexData.h"
+#include "../../../Engine/Graphics/Data/Material.h"
+#include "../../../Engine/Graphics/Data/TransformationMatrix.h"
+#include "../../../Engine/Core/Math/Transform.h"
 
 class Camera;
 

@@ -1,12 +1,12 @@
 #include "../Core/IRenderable.h"
 #pragma once
-#include "../../Engine/Core/Math/Matrix4x4.h"
-#include "../../Engine/Core/Math/Vector3.h"
-#include "../../Engine/Core/Math/Vector3Int.h"
-#include "../../Engine/Core/Math/Vector4.h"
-#include "../../Resource/Model/Data/VoxelizedModel.h"
-#include "../../Engine/Core/Type/PerView.h"
-#include "../../Engine/Graphics/Compute/IComputeTask.h"
+#include "../../../Engine/Core/Math/Matrix4x4.h"
+#include "../../../Engine/Core/Math/Vector3.h"
+#include "../../../Engine/Core/Math/Vector3Int.h"
+#include "../../../Engine/Core/Math/Vector4.h"
+#include "../../../Resource/Model/Data/VoxelizedModel.h"
+#include "../../../Engine/Core/Type/PerView.h"
+#include "../../../Engine/Graphics/Compute/IComputeTask.h"
 #include <d3d12.h>
 #include <memory>
 #include <string>
@@ -15,8 +15,8 @@
 #include <mutex>
 #include <future>
 #include <array>
-#include "../../Engine/Graphics/DirectX/DirectXCommon.h"
-#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "../../../Engine/Graphics/DirectX/DirectXCommon.h"
+#include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
 
 // 前方宣言

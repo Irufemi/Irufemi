@@ -6,21 +6,21 @@
 #include <cstdint>
 #include <string>
 #include "Engine/Graphics/Data/Material.h"
-#include "../../Engine/Graphics/Data/VertexData.h"
-#include "../Core/MultiBufferSyncState.h"
+#include "../../../Engine/Graphics/Data/VertexData.h"
+#include "../../System/Core/MultiBufferSyncState.h"
 #include "Engine/Core/Math/Transform.h"
 #include "Engine/Core/Math/Matrix4x4.h"
 #include "Engine/Core/Math/Vector4.h"
 #include <vector>
 #include <array>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
 
 // 前方宣言
 class Camera;
 class IrufemiEngine;
 
-#include "../Core/IRenderable.h"
+#include "../../System/Core/IRenderable.h"
 
 /**
  * @class Skybox

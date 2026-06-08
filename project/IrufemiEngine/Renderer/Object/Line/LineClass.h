@@ -1,4 +1,4 @@
-#include "../Core/IRenderable.h"
+#include "../../System/Core/IRenderable.h"
 #pragma once
 
 #include <d3d12.h>
@@ -11,8 +11,8 @@
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
 #include "Engine/Core/Math/Transform.h"
-#include "../../Engine/Graphics/Data/TransformationMatrix.h"
-#include "Renderer/LineInstanced/LineResource.h"
+#include "../../../Engine/Graphics/Data/TransformationMatrix.h"
+#include "Renderer/System/Core/LineResource.h"
 
 // 前方宣言
 class Camera;

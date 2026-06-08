@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "../../Engine/Core/Type/BlendMode.h"
+#include "../../../Engine/Core/Type/BlendMode.h"
 
 class GPUParticleManager {
 public:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseRegion.h"
+#include "../../System/Core/BaseRegion.h"
 #include "Resource/Model/Data/ObjModel.h"
 
 struct ManagedModel;

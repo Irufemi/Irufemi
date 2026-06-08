@@ -11,8 +11,8 @@
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Model/AnimationManager.h"
 #include "Resource/Model/Data/ObjModel.h"
-#include "Renderer/Region/PrimitiveRegion.h"
-#include "Renderer/LineInstanced/LineClass.h"
+#include "Renderer/Object/Region/PrimitiveRegion.h"
+#include "Renderer/Object/Line/LineClass.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include <cmath>
