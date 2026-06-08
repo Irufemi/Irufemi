@@ -52,13 +52,18 @@ std::unique_ptr<AreaLight> DebugUI::templateAreaLight_;
 void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCommon* dxCommon) {
 #ifdef USE_IMGUI
     /*開発UIをだそう*/
-    // 初回起動時（imgui.iniが無い場合）に、リポジトリにコミットされているプリセットをコピーする
-    if (!std::filesystem::exists("imgui.ini")) {
+    const char* iniFileName = "imgui.ini";
+#ifdef EditorMode
+    iniFileName = "imgui_editor.ini";
+#endif
+
+    // 初回起動時（iniが無い場合）に、リポジトリにコミットされているプリセットをコピーする
+    if (!std::filesystem::exists(iniFileName)) {
         // カレントディレクトリ（プロジェクト直下 または exe直下）から見てエンジンリソースを探す
         const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
         if (std::filesystem::exists(presetPath)) {
             std::error_code ec;
-            std::filesystem::copy_file(presetPath, "imgui.ini", ec);
+            std::filesystem::copy_file(presetPath, iniFileName, ec);
         }
     }
 
@@ -100,6 +105,7 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Dockingを有効にする
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // マルチビューポートを有効にする
 #endif // EditorMode
+    io.IniFilename = iniFileName;
 
     ImGui_ImplWin32_Init(hwnd);
 

@@ -189,16 +189,35 @@ void EditorManager::OnDrawUI() {
             if (ImGui::BeginMenu("Layout")) {
                 if (ImGui::MenuItem("Load Default Layout")) {
                     const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
-                    if (std::filesystem::exists(presetPath)) {
-                        ImGui::LoadIniSettingsFromDisk(presetPath);
+                    const char* currentIni = ImGui::GetIO().IniFilename;
+                    if (currentIni && std::filesystem::exists(presetPath)) {
+                        std::error_code ec;
+                        std::filesystem::copy_file(presetPath, currentIni, std::filesystem::copy_options::overwrite_existing, ec);
+                        if (ec) {
+                            MessageBoxA(nullptr, ("Failed to load preset: " + ec.message()).c_str(), "Error", MB_OK | MB_ICONERROR);
+                        } else {
+                            // アプリ終了時にImGuiが現在の状態をファイルへ自動保存（上書き）してしまうのを防ぐ
+                            ImGui::GetIO().IniFilename = nullptr;
+                            
+                            MessageBoxA(nullptr, "Default layout has been loaded.\nThe application will now close to apply the clean layout. Please restart the app.", "Restart Required", MB_OK | MB_ICONINFORMATION);
+                            PostQuitMessage(0);
+                        }
                     }
                 }
                 if (ImGui::MenuItem("Save Current as Default")) {
-                    ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
-                    const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
-                    if (std::filesystem::exists("imgui.ini")) {
-                        std::error_code ec;
-                        std::filesystem::copy_file("imgui.ini", presetPath, std::filesystem::copy_options::overwrite_existing, ec);
+                    const char* currentIni = ImGui::GetIO().IniFilename;
+                    if (currentIni) {
+                        ImGui::SaveIniSettingsToDisk(currentIni);
+                        const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
+                        if (std::filesystem::exists(currentIni)) {
+                            std::error_code ec;
+                            std::filesystem::copy_file(currentIni, presetPath, std::filesystem::copy_options::overwrite_existing, ec);
+                            if (ec) {
+                                MessageBoxA(nullptr, ("Failed to save preset: " + ec.message()).c_str(), "Error", MB_OK | MB_ICONERROR);
+                            } else {
+                                MessageBoxA(nullptr, "Default layout preset saved successfully!", "Success", MB_OK | MB_ICONINFORMATION);
+                            }
+                        }
                     }
                 }
                 ImGui::EndMenu();

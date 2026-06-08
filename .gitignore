@@ -67,11 +67,13 @@ DirectXGame/imgui.ini
 /project/IrufemiEngine/logs/
 /project/Application/logs/
 /project/Application/imgui.ini
+/project/Application/imgui_editor.ini
 
 # Application_solo specific
 /project/Application_solo/asset_src/
 /project/Application_solo/logs/
 /project/Application_solo/imgui.ini
+/project/Application_solo/imgui_editor.ini
 /project/Application_solo/Dumps/
 
 # ====================================================================
