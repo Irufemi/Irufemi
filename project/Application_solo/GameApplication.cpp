@@ -90,7 +90,9 @@ void GameApplication::Run() {
     ComponentFactory::Register("DebugEnemySpawnerComponent", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
 
     // UIの登録
-    engine->SetLoadingScreen(std::make_shared<LoadingScreen>());
+    auto loadingScreen = std::make_shared<LoadingScreen>();
+    loadingScreen->Initialize(engine.get());
+    engine->SetLoadingScreen(loadingScreen);
 
     // シーンの登録
     engine->SetSceneRegistrar(RegisterScenes);

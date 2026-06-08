@@ -153,10 +153,8 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   fontManager_->Initialize(this);
   Text::SetFontManager(fontManager_.get());
 
-#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
   // resources/fonts/ 以下のフォントをすべて自動ロード
   fontManager_->LoadAllFromFolder("resources/fonts/");
-#endif
 
   // モデル管理
   modelManager_ = std::make_unique<ModelManager>();
@@ -323,6 +321,14 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   }
 
   GPUParticleManager::GetInstance()->Initialize();
+
+  // CameraManager設定
+  cameraManager_ = std::make_unique<CameraManager>();
+  Sprite::SetCameraManager(cameraManager_.get());
+  Text::SetCameraManager(cameraManager_.get());
+  
+  // SceneManager 構築(エンジンは所有のみ)
+  sceneManager_ = std::make_unique<SceneManager>(this);
 }
 
   // クリアカラーをfloat配列で持つ初期化
@@ -517,13 +523,6 @@ void IrufemiEngine::Finalize() {
 }
 
 void IrufemiEngine::Execute() {
-  // CameraManager設定
-  cameraManager_ = std::make_unique<CameraManager>();
-  Sprite::SetCameraManager(cameraManager_.get());
-  Text::SetCameraManager(cameraManager_.get());
-  
-  // SceneManager 構築(エンジンは所有のみ)
-  sceneManager_ = std::make_unique<SceneManager>(this);
 
   // ローディング画面は Application から SetLoadingScreen 経由で注入されるため、ここでの構築は不要です
 
@@ -656,7 +655,7 @@ void IrufemiEngine::EndFrame() {
 
   // 描画先がバックバッファになり、ポストプロセス（暗転など）が掛かった上から
   // 影響を受けない最前面UIとしてロード画面を描画する
-  if (sceneManager_ && sceneManager_->IsLoading()) {
+  if (sceneManager_ && sceneManager_->ShouldDrawLoadingScreen()) {
     if (loadingScreen_) {
       loadingScreen_->OnDrawLoadingScreen(this, deltaTime_);
     }
