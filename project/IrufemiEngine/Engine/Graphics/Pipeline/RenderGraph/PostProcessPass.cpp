@@ -1,10 +1,11 @@
-﻿#include "PostProcessPass.h"
+#include "PostProcessPass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
 #include "../../PostProcess/PostProcessManager.h"
 #include "../../DirectX/DirectXCommon.h"
 #include "../../DirectX/DirectXUtils.h"
 #include "RenderGraph.h"
+#include <cstring>
 void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
     auto ppMgr = engine->GetPostProcessManager();
     const auto& activeModes = ppMgr->GetActiveModes();
@@ -33,9 +34,11 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
     if (!activeModes.empty()) {
         bool hasOutline = false;
         bool hasBloom = false;
+        bool hasSeparableBlur = false;
         for (auto mode : activeModes) {
             if (mode == PostProcessMode::Bloom) hasBloom = true;
             if (mode == PostProcessMode::DepthBasedOutline) hasOutline = true;
+            if (mode == PostProcessMode::Smoothing || mode == PostProcessMode::GaussianFilter) hasSeparableBlur = true;
         }
 
         if (hasOutline) {
@@ -49,9 +52,10 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         workTextureHandles_.push_back(builder.CreateTransientResource("PP_Work0", workDesc));
         workTextureHandles_.push_back(builder.CreateTransientResource("PP_Work1", workDesc));
 
-
         if (hasBloom) {
             bloomExtractHandle_ = builder.CreateTransientResource("BloomExtract", workDesc);
+        }
+        if (hasBloom || hasSeparableBlur) {
             bloomBlurHandle_ = builder.CreateTransientResource("BloomBlur", workDesc);
         }
 
@@ -61,6 +65,8 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         }
         if (hasBloom) {
             builder.RequireTransientState(bloomExtractHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+        if (hasBloom || hasSeparableBlur) {
             builder.RequireTransientState(bloomBlurHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
     }
@@ -107,7 +113,10 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // バリア遷移
     DirectXUtils::TransitionBarrier(cmdList, editorSrcTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    renderGraph->RegisterResourceState(editorSrcTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    
     DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    // mainRenderTexture は最終出力先として RENDER_TARGET に戻るので、RenderGraphの認識と一致する
 
     // EditorMode の場合、最終出力先は mainRenderTexture になる
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
@@ -128,5 +137,6 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
             cmdList, drawManager->GetDxCommon()->GetDepthStencilResource(),
             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
         );
+        renderGraph->RegisterResourceState(drawManager->GetDxCommon()->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
     }
 }

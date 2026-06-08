@@ -98,7 +98,7 @@ D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetMaterialVAddress() const {
 
 void Object2DResource::SyncBeforeDraw() {
     uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
-    if (isDirtyBuffer_[frameIndex]) {
+    if (CheckAndClearDirty(frameIndex)) {
         if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
             if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
@@ -113,6 +113,6 @@ void Object2DResource::SyncBeforeDraw() {
             std::memcpy(vertexData_, vertexDataList_.data(), sizeof(VertexData) * vertexDataList_.size());
         }
 
-        isDirtyBuffer_[frameIndex] = false;
+
     }
 }

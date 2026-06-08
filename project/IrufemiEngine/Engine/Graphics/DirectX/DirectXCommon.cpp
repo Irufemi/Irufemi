@@ -226,9 +226,6 @@ void DirectXCommon::CreatePSOs() {
     auto vsText = shaderManager_->GetOrCompile(L"resources/shaders/Text.VS.hlsl", options);
     auto psText = shaderManager_->GetOrCompile(L"resources/shaders/Text.PS.hlsl", options);
     auto vsRegion = shaderManager_->GetOrCompile(L"resources/shaders/Region.VS.hlsl", options);
-    auto vsGeo = shaderManager_->GetOrCompile(L"resources/shaders/ByGeometryShader.VS.hlsl", options);
-    auto psGeo = shaderManager_->GetOrCompile(L"resources/shaders/ByGeometryShader.PS.hlsl", options);
-    auto gsGeo = shaderManager_->GetOrCompile(L"resources/shaders/ByGeometryShader.GS.hlsl", options);
     auto vsLine = shaderManager_->GetOrCompile(L"resources/shaders/Line.VS.hlsl", options);
     auto psLine = shaderManager_->GetOrCompile(L"resources/shaders/Line.PS.hlsl", options);
     auto vsLineInst = shaderManager_->GetOrCompile(L"resources/shaders/LineInstanced.VS.hlsl", options);
@@ -290,9 +287,6 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("Sprite", { { vsSprite, psSprite } });
     psoManager_->RegisterShader("Text", { { vsText, psText } });
     psoManager_->RegisterShader("Region", { { vsRegion, ps3d } });
-    
-    // ByGeometryShaderはPOINTトポロジ
-    psoManager_->RegisterShader("ByGeometryShader", { { vsGeo, psGeo, gsGeo }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT });
     
     // LineとLineInstancedはLINEトポロジ
     psoManager_->RegisterShader("Line", { { vsLine, psLine }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });

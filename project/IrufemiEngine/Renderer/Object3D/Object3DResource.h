@@ -62,16 +62,9 @@ public:
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
     
-    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
-    
-    void MarkAsDirty() {
-        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
-    }
-
-    
     void SyncBeforeDraw();
     
-    // --- 外部リソースの借用 (ObjClass/AnimationModel等で共有するため) ---
+    // --- 外部リソースの借用 (StaticModelObject/AnimationModel等で共有するため) ---
     void SetExternalTransformCbIndex(uint32_t* externalCbIndex) {
         externalTransformCbIndex_ = externalCbIndex;
     }

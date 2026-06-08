@@ -29,7 +29,12 @@ public:
     void Finalize();
 
     /**
-     * @brief フレームの先頭で呼び出し、確保済みリソースをクリアする
+     * @brief キャッシュされているリソースを全て破棄する（リサイズ時などに呼ぶ）
+     */
+    void ClearCache();
+
+    /**
+     * @brief フレームの先頭で呼び出し、確保済みリソースを使用可能な状態にリセットする
      */
     void ResetForFrame();
 
@@ -40,6 +45,14 @@ public:
     ID3D12Resource* AcquirePlacedResource(const D3D12_RESOURCE_DESC& desc, uint64_t offset, D3D12_RESOURCE_STATES initialState, const D3D12_CLEAR_VALUE* clearValue);
 
     uint64_t GetHeapSize() const { return heapSize_; }
+    
+#ifdef USE_IMGUI
+    /**
+     * @brief デバッグUIの描画（エイリアシングのメモリ配置を可視化）
+     */
+    void DebugUI();
+#endif
+
 
 private:
     Microsoft::WRL::ComPtr<ID3D12Heap> heap_;
@@ -54,6 +67,7 @@ private:
         bool hasClearValue;
         Microsoft::WRL::ComPtr<ID3D12Resource> resource;
         bool inUse;
+        uint64_t allocationSize;
     };
     std::vector<CachedResource> resourcePool_;
 };

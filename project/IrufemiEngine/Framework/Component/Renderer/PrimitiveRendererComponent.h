@@ -6,7 +6,7 @@
 #include "Engine/Core/Shape/Sphere.h"
 
 // 前方宣言
-class PrimitiveObjects3DClass;
+class Primitive3DObject;
 class TransformComponent;
 
 class PrimitiveRendererComponent : public Component {
@@ -43,7 +43,7 @@ private:
     void RebuildMesh();
 
 private:
-    std::unique_ptr<PrimitiveObjects3DClass> primitive_;
+    std::unique_ptr<Primitive3DObject> primitive_;
     TransformComponent* transform_ = nullptr;
     int currentTypeIndex_ = 2; // デフォルトは Cube (2)
 

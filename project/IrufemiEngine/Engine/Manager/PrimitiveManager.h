@@ -2,7 +2,7 @@
 
 #include "../Graphics/Data/VertexData.h"
 #include "../Core/Type/PrimitiveType.h"
-#include "../../Renderer/Particle/Data/Particle.h"
+
 #include "../Core/Pattern/Singleton.h"
 #include <cstdint>
 #include <vector>

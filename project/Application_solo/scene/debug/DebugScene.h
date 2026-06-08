@@ -3,12 +3,13 @@
 #include "Framework/BaseScene.h"
 
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
-#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
 #include "Irufemi.h"
 #include "Graphics/Data/LightningParams.h"
 
 #include <memory>
 #include <vector>
+#include "Renderer/ParticleGPU/ParticleObject.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -28,53 +29,41 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<Sprite> sprite_ = nullptr;
     bool isActiveSprite_ = false;
 
-    std::unique_ptr<TriangleClass> triangle_ = nullptr;
-    bool isActiveTriangle_ = false;
+    // --- プリミティブ形状のテスト用（汎用クラスに統合済み） ---
+    std::unique_ptr<Primitive3DObject> primitiveObj_ = nullptr;
+    bool isActivePrimitiveObj_ = false;
 
-    std::unique_ptr<CubeClass> cube_ = nullptr;
-    bool isActiveCube_ = false;
-
-    std::unique_ptr<PlaneClass> plane_ = nullptr;
-    bool isActivePlane_ = true;
-
-    std::unique_ptr<SphereClass> sphere_ = nullptr;
-    bool isActiveSphere_ = true;
-
-    std::unique_ptr<CylinderClass> cylinder_ = nullptr;
-    bool isActiveCylinder_ = true;
-
-    std::unique_ptr<ObjClass> obj_ = nullptr;
+    std::unique_ptr<StaticModelObject> obj_ = nullptr;
     bool isActiveObj_ = false;
 
-    std::unique_ptr<ObjClass> utashTeapot_ = nullptr;
+    std::unique_ptr<StaticModelObject> utashTeapot_ = nullptr;
     bool isActiveUtashTeapot_ = false;
 
-    std::unique_ptr<ObjClass> stanfordBunny_ = nullptr;
+    std::unique_ptr<StaticModelObject> stanfordBunny_ = nullptr;
     bool isActiveStanfordBunny_ = false;
 
-    std::unique_ptr<ObjClass> multiMesh_ = nullptr;
+    std::unique_ptr<StaticModelObject> multiMesh_ = nullptr;
     bool isActiveMultiMesh_ = false;
 
-    std::unique_ptr<ObjClass> multiMaterial_ = nullptr;
+    std::unique_ptr<StaticModelObject> multiMaterial_ = nullptr;
     bool isActiveMultiMaterial_ = false;
 
-    std::unique_ptr<ObjClass> suzanne_ = nullptr;
+    std::unique_ptr<StaticModelObject> suzanne_ = nullptr;
     bool isActiveSuzanne_ = false;
 
-    std::unique_ptr<ObjClass> fence_ = nullptr;
+    std::unique_ptr<StaticModelObject> fence_ = nullptr;
     bool isActiveFence_ = false;
 
-    std::unique_ptr<ObjClass> terrain_ = nullptr;
+    std::unique_ptr<StaticModelObject> terrain_ = nullptr;
     bool isActiveTerrain_ = false;
 
-    std::unique_ptr<ParticleSystem> particle_ = nullptr;
-    bool isActiveParticle_ = false;
-
-    std::unique_ptr<GPUParticleSystem> gpuParticle_ = nullptr;
-    bool isActiveGPUParticle_ = false;
 
     std::unique_ptr<VoxelParticleSystem> voxelParticle_ = nullptr;
     bool isActiveVoxelParticle_ = false;
+
+    // ハードコーディングされたGPUパーティクルのテスト用
+    std::unique_ptr<ParticleObject> particleObj_ = nullptr;
+    bool isActiveGPUParticle_ = false;
 
     std::unique_ptr<AnimationModel> animatedCube_ = nullptr;
     bool isActiveAnimatedCube_ = false;
@@ -90,15 +79,13 @@ private: // メンバ変数(ゲーム)
     // --- ライト ---
     bool isActiveSkybox_ = false;
 
-    std::unique_ptr<PrimitiveObjects3DClass> primitiveObj_ = nullptr;
-    bool isActivePrimitiveObj_ = false;
 
     // --- ImGuiデモ ---
     bool isActiveImGuiDemo_ = false;
 
     // --- 電撃エフェクトデモ ---
     bool isActiveLightningCrawl_ = false;
-    std::unique_ptr<CylinderClass> lightningCylinder_ = nullptr;
+    std::unique_ptr<Primitive3DObject> lightningCylinder_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> lightningParamsResource_ = nullptr;
     LightningParams* lightningParamsData_ = nullptr;
 

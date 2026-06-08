@@ -1,7 +1,7 @@
-#include "UISelectionGroup.h"
+﻿#include "UISelectionGroup.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Renderer/Object2D/Sprite/Sprite.h"
-#include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
 
 UISelectionGroup::UISelectionGroup() {
     animator_.Reset();
@@ -13,7 +13,7 @@ void UISelectionGroup::AddItem(Sprite* sprite) {
     }
 }
 
-void UISelectionGroup::AddItem(ObjClass* obj) {
+void UISelectionGroup::AddItem(StaticModelObject* obj) {
     if (obj) {
         items_.push_back(obj);
     }
@@ -100,9 +100,9 @@ void UISelectionGroup::Update(InputManager* input) {
                 if (auto* sprite = std::get<Sprite*>(items_[i])) {
                     sprite->SetColor(applyColor);
                 }
-            } else if (std::holds_alternative<ObjClass*>(items_[i])) {
-                if (auto* obj = std::get<ObjClass*>(items_[i])) {
-                    // ObjClass には SetColor があるが、Alphaだけを別枠で設定するなら SetAlpha 等を呼ぶ
+            } else if (std::holds_alternative<StaticModelObject*>(items_[i])) {
+                if (auto* obj = std::get<StaticModelObject*>(items_[i])) {
+                    // StaticModelObject には SetColor があるが、Alphaだけを別枠で設定するなら SetAlpha 等を呼ぶ
                     obj->SetColor(applyColor);
                 }
             }
@@ -122,9 +122,9 @@ void UISelectionGroup::Update(InputManager* input) {
                 
                 if (std::holds_alternative<Sprite*>(items_[i])) {
                     if (auto* sprite = std::get<Sprite*>(items_[i])) sprite->SetColor(applyColor);
-                } else if (std::holds_alternative<ObjClass*>(items_[i])) {
-                    if (auto* obj = std::get<ObjClass*>(items_[i])) {
-                        // isVisible_ でDraw()自体を弾く方式もあるが、ObjClassに透明度を入れて見えなくする
+                } else if (std::holds_alternative<StaticModelObject*>(items_[i])) {
+                    if (auto* obj = std::get<StaticModelObject*>(items_[i])) {
+                        // isVisible_ でDraw()自体を弾く方式もあるが、StaticModelObjectに透明度を入れて見えなくする
                         obj->SetColor(applyColor);
                     }
                 }
@@ -134,8 +134,8 @@ void UISelectionGroup::Update(InputManager* input) {
                 invisibleColor.w = 0.0f;
                 if (std::holds_alternative<Sprite*>(items_[i])) {
                     if (auto* sprite = std::get<Sprite*>(items_[i])) sprite->SetColor(invisibleColor);
-                } else if (std::holds_alternative<ObjClass*>(items_[i])) {
-                    if (auto* obj = std::get<ObjClass*>(items_[i])) obj->SetColor(invisibleColor);
+                } else if (std::holds_alternative<StaticModelObject*>(items_[i])) {
+                    if (auto* obj = std::get<StaticModelObject*>(items_[i])) obj->SetColor(invisibleColor);
                 }
             }
         }
@@ -153,8 +153,8 @@ void UISelectionGroup::Draw() {
                     sprite->Draw();
                 }
             }
-        } else if (std::holds_alternative<ObjClass*>(item)) {
-            if (auto* obj = std::get<ObjClass*>(item)) {
+        } else if (std::holds_alternative<StaticModelObject*>(item)) {
+            if (auto* obj = std::get<StaticModelObject*>(item)) {
                 if (obj->GetColor().w > 0.0f) {
                     obj->Draw();
                 }

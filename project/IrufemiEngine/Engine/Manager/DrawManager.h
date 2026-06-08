@@ -26,21 +26,15 @@ class ShadowMap;
 // 前方宣言
 class TextureManager;
 class DirectXCommon;
-class Sprite;
-class TriangleClass;
-class SphereClass;
-class ObjClass;
-class ParticleSystem;
-class CylinderClass;
-class ModelRegion;
+class BaseParticle;
+class BaseGPU_Particle;
+class Primitive3DObject;
 class PrimitiveRegion;
-class SpriteRegion;
 struct GpuMesh;
 struct ManagedModel;
 class Line2DClass;
 class Line3DClass;
 class Line3DRegion;
-class CubeClass;
 class Skybox;
 struct SkinCluster;
 struct GpuMaterial;
@@ -66,7 +60,7 @@ private:
     std::vector<RenderPackets::Standard3DPacket> selectionMaskQueue_;
     std::vector<RenderPackets::SpritePacket> selectionMaskQueue2D_;
     std::vector<RenderPackets::SpritePacket> spriteQueue_;
-    std::vector<RenderPackets::ParticlePacket> particleQueue_;
+
     std::vector<RenderPackets::LinePacket> lineQueue_;
     std::vector<RenderPackets::GPUParticlePacket> gpuParticleQueue_;
     std::vector<RenderPackets::VoxelParticlePacket> voxelParticleQueue_;
@@ -90,7 +84,7 @@ public:
     const std::vector<RenderPackets::Standard3DPacket>& GetSelectionMaskQueue() const { return selectionMaskQueue_; }
     const std::vector<RenderPackets::SpritePacket>& GetSelectionMaskQueue2D() const { return selectionMaskQueue2D_; }
     const std::vector<RenderPackets::SpritePacket>& GetSpriteQueue() const { return spriteQueue_; }
-    const std::vector<RenderPackets::ParticlePacket>& GetParticleQueue() const { return particleQueue_; }
+
     const std::vector<RenderPackets::LinePacket>& GetLineQueue() const { return lineQueue_; }
     const std::vector<RenderPackets::GPUParticlePacket>& GetGPUParticleQueue() const { return gpuParticleQueue_; }
     const std::vector<RenderPackets::VoxelParticlePacket>& GetVoxelParticleQueue() const { return voxelParticleQueue_; }
@@ -155,6 +149,12 @@ public: //メンバ関数
 
     void Initialize(DirectXCommon* dx);
     void Finalize();
+    void OnResize(int32_t width, int32_t height);
+    
+    /**
+     * @brief RenderGraphにリソースの初期ステートを登録する（リサイズ時用）
+     */
+    void RegisterResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
     ///@}
 
     /** @name パイプライン・描画フロー制御 */
@@ -305,11 +305,6 @@ public:
 
     /** @name 各種オブジェクト描画メソッド */
     ///@{
-    /**
-     * @brief パーティクルの描画（インスタンシング）
-     */
-    void SubmitParticle(const class ParticleResource* resource, uint32_t instanceCount);
-    void DrawParticle(const RenderPackets::ParticlePacket& packet);
 
     /**
      * @brief 矩形領域（Region）の描画

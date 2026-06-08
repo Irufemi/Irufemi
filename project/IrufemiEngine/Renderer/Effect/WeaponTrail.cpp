@@ -41,9 +41,7 @@ void WeaponTrail::Initialize(IrufemiEngine* engine, const std::string& texturePa
     resource_->transform_.scale = {1,1,1};
     resource_->transform_.rotate = {0,0,0};
     resource_->transform_.translate = {0,0,0};
-    resource_->isDirtyBuffer_[0] = true;
-    resource_->isDirtyBuffer_[1] = true;
-    resource_->isDirtyBuffer_[2] = true;
+    resource_->MarkAsDirty();
 
     resource_->Map();
 }

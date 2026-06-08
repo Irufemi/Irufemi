@@ -2,7 +2,7 @@
 
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
-#include "Renderer/Object3D/Primitive/PrimitiveObjects3DClass.h"
+#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
 #include "Engine/Manager/PrimitiveManager.h"
 #include "Engine/Core/Type/PrimitiveType.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
@@ -13,7 +13,7 @@ PrimitiveRendererComponent::PrimitiveRendererComponent() {}
 PrimitiveRendererComponent::~PrimitiveRendererComponent() {}
 
 void PrimitiveRendererComponent::Initialize() {
-    primitive_ = std::make_unique<PrimitiveObjects3DClass>();
+    primitive_ = std::make_unique<Primitive3DObject>();
     // 設定された形状（デフォルトはCube）で初期化
     primitive_->Initialize(static_cast<PrimitiveType>(currentTypeIndex_));
 

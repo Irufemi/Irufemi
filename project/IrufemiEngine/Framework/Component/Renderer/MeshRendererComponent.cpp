@@ -1,8 +1,8 @@
-#include "MeshRendererComponent.h"
+﻿#include "MeshRendererComponent.h"
 
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
-#include "Renderer/Object3D/ObjClass/ObjClass.h"
+#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Math/Geometry/OBB.h"
 #include <cmath>
@@ -18,7 +18,7 @@ void MeshRendererComponent::LoadModel(const std::string& filename) {
 }
 
 void MeshRendererComponent::Initialize() {
-    obj_ = std::make_unique<ObjClass>();
+    obj_ = std::make_unique<StaticModelObject>();
     obj_->Initialize(modelName_);
 
     // 親の GameObject から TransformComponent を探して保持しておく
@@ -28,14 +28,14 @@ void MeshRendererComponent::Initialize() {
 }
 
 void MeshRendererComponent::Update() {
-    // TransformComponent があれば、その座標を ObjClass に渡す（同期）
+    // TransformComponent があれば、その座標を StaticModelObject に渡す（同期）
     if (transform_ && obj_) {
         obj_->SetTranslate(transform_->worldPosition_);
         obj_->SetRotate(transform_->worldRotation_);
         obj_->SetScale(transform_->worldScale_);
     }
 
-    // ObjClass の行列計算などを実行
+    // StaticModelObject の行列計算などを実行
     if (obj_) {
         obj_->Update();
     }
@@ -52,7 +52,7 @@ Sphere MeshRendererComponent::GetWorldSphere() const {
     Sphere result = { Vector3{0,0,0}, 1.0f }; // default
     if (transform_) {
         result.center = transform_->worldPosition_;
-        // ObjClass の cpuModel があれば正確な半径を取得
+        // StaticModelObject の cpuModel があれば正確な半径を取得
         // ここでは便宜上スケールの最大値を半径として扱う（もしくは定数）
         float maxScale = std::fmax(transform_->worldScale_.x, std::fmax(transform_->worldScale_.y, transform_->worldScale_.z));
         result.radius = maxScale;

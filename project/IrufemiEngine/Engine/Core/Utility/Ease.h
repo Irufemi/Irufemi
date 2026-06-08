@@ -5,6 +5,29 @@
 #include "../Math/Vector4.h"
 #include "../Math/Quaternion.h"
 
+// イージングの種類
+enum class EaseType {
+    Linear,
+    EaseInSine,
+    EaseOutSine,
+    EaseInOutSine,
+    EaseInQuad,
+    EaseOutQuad,
+    EaseInOutQuad,
+    EaseInCubic,
+    EaseOutCubic,
+    EaseInOutCubic,
+    EaseInQuart,
+    EaseOutQuart,
+    EaseInOutQuart,
+    EaseInQuint,
+    EaseOutQuint,
+    EaseInOutQuint
+};
+
+// 指定したイージングタイプで進行度 t を評価する
+float EvaluateEase(EaseType type, float t);
+
 // 線形補間
 float Lerp(float pos1, float pos2, float t);
 

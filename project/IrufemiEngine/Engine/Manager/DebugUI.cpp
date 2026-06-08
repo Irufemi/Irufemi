@@ -18,6 +18,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+#include <filesystem>
 #include <numeric> 
 #include "Resource/Texture/TextureManager.h"
 #include "Framework/SceneManager.h"
@@ -37,9 +38,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Renderer/LineInstanced/LineResource.h"
 #include "Renderer/Object3D/Object3DResource.h"
 #include "Renderer/Object2D/Object2DResource.h"
-#include "Renderer/Particle/ParticleResource.h"
+
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Graphics/Data/LightningParams.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Graphics/Pipeline/RenderGraph/RenderGraph.h"
 
 // 静的宣言
 std::unique_ptr<PointLight> DebugUI::templatePointLight_;
@@ -48,6 +51,16 @@ std::unique_ptr<AreaLight> DebugUI::templateAreaLight_;
 
 void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCommon* dxCommon) {
 #ifdef USE_IMGUI
+    /*開発UIをだそう*/
+    // 初回起動時（imgui.iniが無い場合）に、リポジトリにコミットされているプリセットをコピーする
+    if (!std::filesystem::exists("imgui.ini")) {
+        // カレントディレクトリ（プロジェクト直下 または exe直下）から見てエンジンリソースを探す
+        const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
+        if (std::filesystem::exists(presetPath)) {
+            std::error_code ec;
+            std::filesystem::copy_file(presetPath, "imgui.ini", ec);
+        }
+    }
 
     dxCommon_ = dxCommon;
 
@@ -61,7 +74,12 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     ImGuiIO& io = ImGui::GetIO();
     
     // 1. ベースフォント（英数字用）として FiraMono を読み込む
-    io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/Fira_Mono/FiraMono-Regular.ttf", 16.0f);
+    ImFont* baseFont = io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/Fira_Mono/FiraMono-Regular.ttf", 16.0f);
+    
+    // フォントファイルが見つからなかった場合（exe単体起動時など）、デフォルトフォントを追加してクラッシュを防ぐ
+    if (baseFont == nullptr) {
+        io.Fonts->AddFontDefault();
+    }
 
     // 2. 日本語フォントを MergeMode (結合モード) で読み込み、FiraMono にない文字を補完する
     ImFontConfig config;
@@ -74,7 +92,9 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     icons_config.PixelSnapH = true;
     icons_config.GlyphMinAdvanceX = 16.0f; // アイコンの等幅調整
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
-    io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/FontAwesome/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
+    if (baseFont != nullptr) { // FontAwesome はパスが相対なので、もしFiraMonoが見つからない環境なら読み込みをスキップしてもよい
+        io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/FontAwesome/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
+    }
 
 #ifdef EditorMode
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Dockingを有効にする
@@ -647,27 +667,6 @@ void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_
 #endif
 }
 
-void DebugUI::DebugTexture([[maybe_unused]] ParticleResource* resource, [[maybe_unused]] int& selectedTextureIndex) {
-#ifdef USE_IMGUI
-    if (textureManager_ && resource) {
-        auto textureNames = textureManager_->GetTextureNamesForDebug();
-        
-        if (!textureNames.empty()) {
-            const char* preview = textureNames[selectedTextureIndex].c_str();
-            if (ImGui::BeginCombo("Texture", preview)) {
-                for (int i = 0; i < static_cast<int>(textureNames.size()); ++i) {
-                    bool isSelected = (i == selectedTextureIndex);
-                    if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
-                        selectedTextureIndex = i;
-                        resource->textureHandle_ = textureManager_->GetTextureHandle(textureNames[i]);
-                    }
-                }
-                ImGui::EndCombo();
-            }
-        }
-    }
-#endif
-}
 
 // DirectionalLight
 void DebugUI::DebugDirectionalLight([[maybe_unused]] DirectionalLight* directionalLightData) {
@@ -740,8 +739,15 @@ void DebugUI::FPSDebug() {
     if (!showPerformance_) return;
 
     ImGuiIO& io = ImGui::GetIO();
-    const float fpsNow = io.Framerate;
-    const float frameMsNow = (fpsNow > 0.0f) ? (1000.0f * io.DeltaTime) : 0.0f;
+    
+    // エンジン側の PerFrame 時間管理 (DeltaTime) を使用して計算する
+    float dt = io.DeltaTime;
+    if (dxCommon_ && dxCommon_->GetEngine()) {
+        dt = dxCommon_->GetEngine()->GetDeltaTime();
+    }
+    
+    const float frameMsNow = dt * 1000.0f;
+    const float fpsNow = (dt > 0.0001f) ? (1.0f / dt) : 0.0f;
 
     UpdatePerfStats_(frameMsNow);
     cachedFps_ = fpsNow;
@@ -1049,6 +1055,11 @@ void DebugUI::FPSDebug() {
             }
             ImGui::EndChild();
         }
+        
+        ImGui::Separator();
+        if (dxCommon_ && dxCommon_->GetEngine() && dxCommon_->GetEngine()->GetDrawManager() && dxCommon_->GetEngine()->GetDrawManager()->GetRenderGraph()) {
+            dxCommon_->GetEngine()->GetDrawManager()->GetRenderGraph()->DebugUI();
+        }
     }
     ImGui::End();
 #endif // USE_IMGUI
@@ -1213,8 +1224,8 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
             if (ImGui::TreeNode(modeNames[static_cast<int>(mode)])) {
                 if (mode == PostProcessMode::Vignette) {
                     auto& params = ppManager->GetVignetteParams();
-                    ImGui::DragFloat("Vignette Scale", &params.scale, 0.1f, 0.0f, 100.0f);
-                    ImGui::DragFloat("Vignette Power", &params.power, 0.01f, 0.0f, 10.0f);
+                    ImGui::DragFloat("Vignette Radius", &params.radius, 0.01f, 0.0f, 2.0f);
+                    ImGui::DragFloat("Vignette Softness", &params.softness, 0.01f, 0.0f, 2.0f);
                 } else if (mode == PostProcessMode::Smoothing) {
                     auto& params = ppManager->GetSmoothingParams();
                     if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
@@ -1233,7 +1244,8 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                         }
                     }
                 } else if (mode == PostProcessMode::DepthBasedOutline) {
-                    ImGui::Text("Mode: Depth Based Outline (Prewitt Filter)");
+                    auto& params = ppManager->GetOutlineParams();
+                    ImGui::DragFloat("Outline Intensity", &params.intensity, 0.1f, 0.0f, 20.0f);
                 } else if (mode == PostProcessMode::RadialBlur) {
                     auto& params = ppManager->GetRadialBlurParams();
                     ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
@@ -1284,7 +1296,7 @@ void DebugUI::BeginEngineDebugWindow() {
 #ifdef USE_IMGUI
     ImGui::Begin("Engine");
 
-    // 項目の上部分にチェックボックスを配置
+    // 画面の上部にチェックボックスを配置
     ImGui::Checkbox("Performance Info", &showPerformance_);
     ImGui::Separator();
 

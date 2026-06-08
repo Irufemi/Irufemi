@@ -1,6 +1,8 @@
 #include "Fullscreen.hlsli"
 
 struct OutlineParams {
+    float32_t intensity;
+    float32_t3 pad;
     float32_t4x4 projectionInverse;
 };
 
@@ -54,7 +56,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
 
     // 変化の長さをウェイトとして合成
     float32_t weight = length(difference);
-    weight = saturate(weight * 6.0f); // 適宜調整。資料に合わせて6倍
+    weight = saturate(weight * gOutline.intensity);
 
     PixelShaderOutput output;
     // エッジ部分を黒く表示するように合成

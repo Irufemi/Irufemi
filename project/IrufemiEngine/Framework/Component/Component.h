@@ -9,7 +9,7 @@ class GameObject;
 #include "Engine/Core/Math/Vector4.h"
 struct Ray;
 
-enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array };
+enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array, Header, Separator };
 
 struct ComponentProperty {
     std::string name;
@@ -114,6 +114,8 @@ public:
     void RegisterProperty(const std::string& name, Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr}); }
     void RegisterProperty(const std::string& name, Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr}); }
     void RegisterProperty(const std::string& name, std::vector<Vector3>* ptr) { properties_.push_back({name, ComponentPropertyType::Float3Array, ptr}); }
+    void RegisterHeader(const std::string& name) { properties_.push_back({name, ComponentPropertyType::Header, nullptr}); }
+    void RegisterSeparator() { properties_.push_back({"", ComponentPropertyType::Separator, nullptr}); }
 
     /**
      * @brief コンポーネントの状態をJSONにシリアライズする
@@ -150,6 +152,9 @@ public:
                     j[prop.name] = jArray;
                     break;
                 }
+                case ComponentPropertyType::Header:
+                case ComponentPropertyType::Separator:
+                    break;
             }
         }
         return j; 
@@ -203,6 +208,9 @@ public:
                     }
                     break;
                 }
+                case ComponentPropertyType::Header:
+                case ComponentPropertyType::Separator:
+                    break;
             }
         }
     }

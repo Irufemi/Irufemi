@@ -1,4 +1,4 @@
-#include "PrimitiveObjects3DClass.h"
+#include "Primitive3DObject.h"
 
 #include <algorithm>
 
@@ -11,117 +11,22 @@
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Math/Geometry/Frustum.h"
 #include "Engine/Core/Shape/Sphere.h"
-#include "Engine/Core/Shape/Sphere.h"
 
 #ifdef USE_IMGUI
 #include "imgui/imgui.h"
 #endif
 
 // 静的メンバの初期化
-TextureManager* PrimitiveObjects3DClass::textureManager_ = nullptr;
-DrawManager* PrimitiveObjects3DClass::drawManager_ = nullptr;
-DebugUI* PrimitiveObjects3DClass::ui_ = nullptr;
-IrufemiEngine* PrimitiveObjects3DClass::engine_ = nullptr;
+TextureManager* Primitive3DObject::textureManager_ = nullptr;
+DrawManager* Primitive3DObject::drawManager_ = nullptr;
+DebugUI* Primitive3DObject::ui_ = nullptr;
+IrufemiEngine* Primitive3DObject::engine_ = nullptr;
 
 #include "Engine/IrufemiEngine.h"
 
-// --- TransformComponent ---
+// --- Primitive3DObject ---
 
-void PrimitiveObjects3DClass::TransformComponent::UpdateTransform(Object3DResource* resource, const Camera& camera) {
-    if (!resource) return;
-
-    // 行列の更新
-    // 既存の Object3DResource::UpdateTransform は内部で world 行列を再計算するため、
-    // ここでは Transform の値を resource に同期させるだけで済む
-    resource->transform_ = transform;
-    resource->UpdateTransform(camera);
-
-    isDirty = false;
-}
-
-// --- MeshComponent ---
-
-void PrimitiveObjects3DClass::MeshComponent::ChangeMesh(PrimitiveType newType) {
-    type = newType;
-
-    // PrimitiveManager から標準リソースを取得
-    const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(type);
-
-    bool isNewResource = false;
-    if (!resource) {
-        resource = std::make_unique<Object3DResource>();
-        isNewResource = true;
-    }
-
-    // リソースの共有設定
-    resource->vertexBufferView_ = primitiveResource.vertexBufferView;
-    resource->indexBufferView_ = primitiveResource.indexBufferView;
-    resource->indexCount_ = primitiveResource.indexCount;
-
-    // 定数バッファ等の生成は最初だけ行う
-    if (isNewResource) {
-        resource->CreateResource();
-        resource->Map();
-    }
-}
-
-void PrimitiveObjects3DClass::MeshComponent::ChangeMesh(const PrimitiveData& data) {
-    if (!resource) {
-        resource = std::make_unique<Object3DResource>();
-        resource->CreateResource();
-        resource->Map();
-    }
-
-    // 動的にリソースを生成し、自身で所有権を持つ
-    PrimitiveResource customResource;
-    PrimitiveManager::GetInstance()->CreateGPUResource(data, customResource);
-
-    resource->vertexResource_ = customResource.vertexResource;
-    resource->indexResource_ = customResource.indexResource;
-    resource->vertexBufferView_ = customResource.vertexBufferView;
-    resource->indexBufferView_ = customResource.indexBufferView;
-    resource->indexCount_ = customResource.indexCount;
-}
-
-// --- MaterialComponent ---
-
-void PrimitiveObjects3DClass::MaterialComponent::UpdateMaterial(Object3DResource* resource, TextureManager* textureManager) {
-    if (!resource || !resource->GetMaterialData()) return;
-
-    // マテリアルパラメータの反映
-    resource->GetMaterialData()->color = color;
-    resource->GetMaterialData()->enableLighting = enableLighting;
-    resource->GetMaterialData()->lightingMode = lightingMode;
-    resource->GetMaterialData()->metallic = metallic;
-    resource->GetMaterialData()->roughness = roughness;
-    resource->GetMaterialData()->hasTexture = !texturePath.empty();
-    resource->GetMaterialData()->uvTransform = uvTransform;
-    resource->GetMaterialData()->alphaReference = alphaReference;
-    resource->GetMaterialData()->useClampSampler = useClampSampler;
-
-    // テクスチャハンドルの更新
-    if (textureManager && !texturePath.empty()) {
-        resource->textureHandle_ = textureManager->GetTextureHandle(texturePath);
-        
-        // ハンドルが取得できなかった場合はテクスチャ無効にする
-        if (resource->textureHandle_.ptr == 0) {
-            resource->GetMaterialData()->hasTexture = false;
-        }
-    } else {
-        resource->GetMaterialData()->hasTexture = false;
-    }
-
-    // テクスチャハンドルが無効（0）の場合は、強制的に白テクスチャを割り当てることでGPUバリデーションエラーを防ぐ
-    if (resource->textureHandle_.ptr == 0 && textureManager) {
-        resource->textureHandle_ = textureManager->GetTextureHandle("white");
-    }
-    
-    resource->MarkAsDirty();
-}
-
-// --- PrimitiveObjects3DClass ---
-
-void PrimitiveObjects3DClass::Initialize(PrimitiveType type, const std::string& texturePath) {
+void Primitive3DObject::Initialize(PrimitiveType type, const std::string& texturePath) {
     
     // 形状の初期化
     mesh_.ChangeMesh(type);
@@ -143,12 +48,12 @@ void PrimitiveObjects3DClass::Initialize(PrimitiveType type, const std::string& 
     Update();
 }
 
-void PrimitiveObjects3DClass::ReinitializeMesh(const PrimitiveData& data) {
+void Primitive3DObject::ReinitializeMesh(const PrimitiveData& data) {
     mesh_.ChangeMesh(data);
     transform_.isDirty = true;
 }
 
-void PrimitiveObjects3DClass::Update() {
+void Primitive3DObject::Update() {
     if (!mesh_.resource || !engine_) return;
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;
@@ -165,25 +70,25 @@ void PrimitiveObjects3DClass::Update() {
     material_.UpdateMaterial(mesh_.resource.get(), textureManager_);
 }
 
-void PrimitiveObjects3DClass::Draw() {
+void Primitive3DObject::Draw() {
     if (!engine_) return;
     if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
         Draw(*activeCam, false);
     }
 }
 
-void PrimitiveObjects3DClass::Draw(bool isUI) {
+void Primitive3DObject::Draw(bool isUI) {
     if (!engine_) return;
     if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
         Draw(*activeCam, isUI);
     }
 }
 
-void PrimitiveObjects3DClass::Draw(const Camera& camera) {
+void Primitive3DObject::Draw(const Camera& camera) {
     Draw(camera, false);
 }
 
-void PrimitiveObjects3DClass::Draw(const Camera& camera, bool isUI) {
+void Primitive3DObject::Draw(const Camera& camera, bool isUI) {
     if (!mesh_.resource || !drawManager_) return;
 
     // 視錐台カリング
@@ -224,12 +129,12 @@ void PrimitiveObjects3DClass::Draw(const Camera& camera, bool isUI) {
     }
 }
 
-void PrimitiveObjects3DClass::DrawOutlineMask() {
+void Primitive3DObject::DrawOutlineMask() {
     if (!mesh_.resource || !drawManager_) return;
     drawManager_->SubmitOutlineMask(mesh_.resource.get(), nullptr);
 }
 
-void PrimitiveObjects3DClass::Debug(const char* label) {
+void Primitive3DObject::Debug(const char* label) {
 #ifdef USE_IMGUI
     if (!ui_) return;
 
@@ -285,7 +190,7 @@ void PrimitiveObjects3DClass::Debug(const char* label) {
 #endif
 }
 
-void PrimitiveObjects3DClass::SyncBeforeDraw() {
+void Primitive3DObject::SyncBeforeDraw() {
     if (customSyncCallback_ && engine_) {
         uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
         customSyncCallback_(frameIndex);
@@ -295,17 +200,17 @@ void PrimitiveObjects3DClass::SyncBeforeDraw() {
     }
 }
 
-Vector3 PrimitiveObjects3DClass::GetRight() const {
+Vector3 Primitive3DObject::GetRight() const {
     Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
     return { mat.m[0][0], mat.m[0][1], mat.m[0][2] };
 }
 
-Vector3 PrimitiveObjects3DClass::GetUp() const {
+Vector3 Primitive3DObject::GetUp() const {
     Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
     return { mat.m[1][0], mat.m[1][1], mat.m[1][2] };
 }
 
-Vector3 PrimitiveObjects3DClass::GetDirection() const {
+Vector3 Primitive3DObject::GetDirection() const {
     Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
     return { mat.m[2][0], mat.m[2][1], mat.m[2][2] };
 }

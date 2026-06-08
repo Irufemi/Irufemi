@@ -48,6 +48,13 @@ class DirectXCommon;
  * 
  * マルチパスレンダリングに対応しており、複数のエフェクトをスタックに追加して重ね掛けできます。
  * 
+ * @par 推奨される適用順序:
+ * プロの現場でも、以下のような順序で適用することで意図した映像表現になります。
+ * 1. 色調補正系 (ToneMapping, Grayscale, Sepia, HSV 等)
+ * 2. 空間・ぼかし系 (Smoothing, GaussianFilter, RadialBlur 等)
+ * 3. 画面演出系 (Vignette, Noise, Glitch, Dissolve 等)
+ * 4. 画面遷移系 (Fade, Slide)
+ * 
  * @par シーンでの使用例:
  * @code
  * // 1. マネージャーの取得
@@ -86,9 +93,9 @@ public:
      * @brief ビネットエフェクト用パラメータ
      */
     struct VignetteParams {
-        Vector4 color = { 0.0f, 0.0f, 0.0f, 0.0f }; ///< ビネットの色 (RGB)
-        float scale = 16.0f;    ///< ビネットの範囲
-        float power = 0.8f;     ///< 減衰の強さ
+        Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< ビネットの色 (RGB)
+        float radius = 0.8f;    ///< 減衰の開始半径 (0.0~1.5)
+        float softness = 0.5f;  ///< 減衰の柔らかさ (0.0~1.0)
         float pad[2];           // 16バイトアライメント用パディング
     };
 
@@ -97,7 +104,9 @@ public:
      * @brief 平滑化エフェクト用パラメータ
      */
     struct SmoothingParams {
+        Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
         int32_t kernelSize = 3; ///< カーネルサイズ (奇数推奨)
+        float pad;
     };
 
     /**
@@ -105,6 +114,7 @@ public:
      * @brief ガウスぼかし用パラメータ
      */
     struct GaussianParams {
+        Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
         float sigma = 2.0f;     ///< 標準偏差（ぼけ具合）
         int32_t kernelSize = 3; ///< カーネルサイズ (奇数推奨)
     };
@@ -124,6 +134,8 @@ public:
      * @brief アウトラインエフェクト用パラメータ
      */
     struct OutlineParams {
+        float intensity = 6.0f;         ///< アウトラインの強度
+        float pad[3];
         Matrix4x4 projectionInverse;    ///< 逆投影行列 (自動でセットされる)
     };
 
@@ -207,8 +219,8 @@ public:
 
         // Vignette
         Vector4 vignetteColor;
-        float vignetteScale;
-        float vignettePower;
+        float vignetteRadius;
+        float vignetteSoftness;
         float pad1[2];
 
         // Noise
@@ -243,12 +255,8 @@ public:
 
         // Outline
         Matrix4x4 projectionInverse;
-
-        // Smoothing / Gaussian
-        float gaussianSigma;
-        int32_t gaussianKernelSize;
-        int32_t smoothingKernelSize;
-        float pad5; // HLSLの float2(radialBlurCenter) が境界を跨がないようにパディング
+        float outlineIntensity;
+        float pad_outline[3]; // HLSLの float4境界に合わせるためのパディング
 
         // RadialBlur
         Vector2 radialBlurCenter;
@@ -397,6 +405,12 @@ private:
     // 統合ポストプロセス用 PSO
     Microsoft::WRL::ComPtr<ID3D12PipelineState> combinedPSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> finalCombinedPSO_;
+
+    // 分離可能フィルタ用 PSO
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> smoothingBlurPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> finalSmoothingBlurPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> gaussianBlurPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> finalGaussianBlurPSO_;
 
     // Constant Buffers
     Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;

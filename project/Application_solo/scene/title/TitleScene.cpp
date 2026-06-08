@@ -5,7 +5,8 @@
 #include "Irufemi.h"
 
 // デストラクタ
-TitleScene::~TitleScene() = default;
+TitleScene::~TitleScene() {
+}
 
 // 初期化
 void TitleScene::Initialize(IrufemiEngine* engine) {

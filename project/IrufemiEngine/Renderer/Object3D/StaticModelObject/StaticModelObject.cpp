@@ -1,4 +1,4 @@
-#include "ObjClass.h"
+#include "StaticModelObject.h" // リネーム済み
 #include <filesystem>
 #include <algorithm>
 #include <Windows.h>
@@ -16,17 +16,17 @@
 // 静的メンバ定義
 
 
-ObjClass::~ObjClass() {}
+StaticModelObject::~StaticModelObject() {}
 
-void ObjClass::Initialize(const std::string& filename) {
+void StaticModelObject::Initialize(const std::string& filename) {
 
-    assert(engine_ && "ObjClass::Initialize: Engine is not set.");
+    assert(engine_ && "StaticModelObject::Initialize: Engine is not set.");
     // 描画中のリソース破棄（Use-After-Free）を防ぐため、次フレームのUpdateで切り替えるフラグと変数を設定
     nextManagedModel_ = engine_->GetObjModelManager()->GetModelAsync(filename);
     isModelChanged_ = true;
 }
 
-void ObjClass::InitializeResources() {
+void StaticModelObject::InitializeResources() {
     if (!managedModel_ || !managedModel_->cpuModel) {
         return;
     }
@@ -76,7 +76,7 @@ void ObjClass::InitializeResources() {
     Update();
 }
 
-void ObjClass::Update() {
+void StaticModelObject::Update() {
     // 描画キューにポインタが積まれた後にリソースが破棄されないよう、Updateのタイミングでモデルを切り替える
     if (isModelChanged_) {
         if (nextManagedModel_) {
@@ -139,17 +139,17 @@ void ObjClass::Update() {
     }
 }
 
-void ObjClass::SyncBeforeDraw() {
+void StaticModelObject::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     
-    if (isDirtyBuffer_[frameIndex]) {
+    if (CheckAndClearDirty(frameIndex)) {
         // 変換行列の更新 (全メッシュで共有のバッファ)
         if (engine_) {
             if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine_->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
             }
         }
-        isDirtyBuffer_[frameIndex] = false;
+
     }
     
     // 各メッシュのマテリアル等の更新
@@ -166,7 +166,7 @@ void ObjClass::SyncBeforeDraw() {
 #include "../../../Engine/Core/Math/Geometry/Collision.h"
 #include "../../../Engine/Core/Shape/Sphere.h"
 
-void ObjClass::Draw() {
+void StaticModelObject::Draw() {
     if (!managedModel_ || !engine_ || !engine_->GetDrawManager()) {
         return;
     }
@@ -212,13 +212,13 @@ void ObjClass::Draw() {
     }
 }
 
-void ObjClass::DrawOutlineMask() {
+void StaticModelObject::DrawOutlineMask() {
     if (!managedModel_ || !engine_ || !engine_->GetDrawManager() || meshResources_.empty()) return;
     for (auto& res : meshResources_) {
         engine_->GetDrawManager()->SubmitOutlineMask(res.get(), nullptr);
     }
 }
-void ObjClass::DispatchCompute() {
+void StaticModelObject::DispatchCompute() {
     if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->skinClusterData.empty() || !engine_) return;
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;
@@ -237,7 +237,7 @@ void ObjClass::DispatchCompute() {
     lastSkinnedFrameIndex_ = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
 }
 
-void ObjClass::Debug([[maybe_unused]] const char* objName) {
+void StaticModelObject::Debug([[maybe_unused]] const char* objName) {
 #if defined USE_IMGUI
     std::string name = std::string("Obj: ") + objName;
     ImGui::Begin(name.c_str());
@@ -246,7 +246,7 @@ void ObjClass::Debug([[maybe_unused]] const char* objName) {
 #endif
 }
 
-void ObjClass::DebugTab() {
+void StaticModelObject::DebugTab() {
 #if defined USE_IMGUI
     if (engine_) {
         auto ui_ = engine_->GetDebugUI();
@@ -267,7 +267,7 @@ void ObjClass::DebugTab() {
                         ui_->DebugObjMaterial(mat, unique_id.c_str());
 
                         // テクスチャ選択
-                        // 注意：この部分はObjClassがテクスチャのインデックスを保持する仕組みがないと完全には機能しません。
+                        // 注意：この部分はStaticModelObjectがテクスチャのインデックスを保持する仕組みがないと完全には機能しません。
                         // 今はUIのみ表示します。
                         int tempIndex = 0; // ダミー
                         // ui_->DebugTexture(...)

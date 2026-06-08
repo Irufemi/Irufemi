@@ -1,16 +1,16 @@
-#pragma once
+﻿#pragma once
 #include <vector>
 #include <variant>
 #include "UIAnimator.h"
 #include "Engine/Core/Math/Vector4.h"
 
 class Sprite;
-class ObjClass;
+class StaticModelObject;
 class InputManager;
 
 /**
  * @class UISelectionGroup
- * @brief 縦並び・横並びのメニュー項目など、複数のSpriteやObjClassから一つを選択するためのコントローラー
+ * @brief 縦並び・横並びのメニュー項目など、複数のSpriteやStaticModelObjectから一つを選択するためのコントローラー
  * @details 方向キーでのインデックス切り替え、選択中の項目の明滅（色変更）、決定入力と決定後のフラッシュ演出を自動で行います。
  */
 class UISelectionGroup {
@@ -25,10 +25,10 @@ public:
     void AddItem(Sprite* sprite);
 
     /**
-     * @brief 選択項目となる3Dモデル(ObjClass)をリストの末尾に追加する
-     * @param obj 管理対象のObjClass
+     * @brief 選択項目となる3Dモデル(StaticModelObject)をリストの末尾に追加する
+     * @param obj 管理対象のStaticModelObject
      */
-    void AddItem(ObjClass* obj);
+    void AddItem(StaticModelObject* obj);
 
     /**
      * @brief 選択中項目の基本色を設定する
@@ -80,7 +80,7 @@ public:
     void SetHorizontalMode(bool horizontal) { isHorizontal_ = horizontal; }
 
 private:
-    std::vector<std::variant<Sprite*, ObjClass*>> items_;
+    std::vector<std::variant<Sprite*, StaticModelObject*>> items_;
     int selectedIndex_ = 0;
     
     UIAnimator animator_;

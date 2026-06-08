@@ -3,9 +3,11 @@
 #include <d3d12.h>
 #include <memory>
 
+#include "MultiBufferSyncState.h"
+
 class DirectXCommon;
 
-class BaseResource {
+class BaseResource : public MultiBufferSyncState {
 public:
     virtual ~BaseResource() = default;
 

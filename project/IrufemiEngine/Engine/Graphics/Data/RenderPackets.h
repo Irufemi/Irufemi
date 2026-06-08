@@ -14,7 +14,6 @@
 // 前方宣言
 class Object3DResource;
 class Object2DResource;
-class ParticleResource;
 class LineResource;
 struct GpuMesh;
 
@@ -41,15 +40,7 @@ namespace RenderPackets {
         D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
-    struct ParticlePacket {
-        const class ParticleResource* resource;
-        uint32_t instanceCount;
-        BlendMode blendMode;
-        PSOManager::DepthWrite depthWrite;
-        PSOManager::CullMode cullMode;
-        ID3D12PipelineState* customPSO = nullptr;
-        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
-    };
+
 
     struct LinePacket {
         const class LineResource* resource;

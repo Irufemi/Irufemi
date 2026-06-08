@@ -33,11 +33,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
 
     isActiveObj_ = false;
     isActiveSprite_ = false;
-    isActiveTriangle_ = false;
-    isActiveCube_ = false;
-    isActivePlane_ = false;
-    isActiveSphere_ = false; 
-    isActiveCylinder_ = false;
+
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
     isActiveMultiMesh_ = false;
@@ -45,15 +41,16 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveSuzanne_ = false;
     isActiveFence_ = false;
     isActiveTerrain_ = false;
-    isActiveParticle_ = false;
-    isActiveGPUParticle_ = true;
+
+
     isActiveVoxelParticle_ = false;
+    isActiveGPUParticle_ = false;
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
     isActiveSneakWalk_ = false;
     isActiveSkybox_ = false;
     isActivePrimitiveObj_ = false;
-    isActiveGPUParticle_ = false;
+
     isActiveLightningCrawl_ = false;
     isActiveImGuiDemo_ = false;
 
@@ -66,66 +63,55 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         sprite_ = std::make_unique <Sprite>();
         sprite_->Initialize();
     }
-    if (isActiveTriangle_) {
-        triangle_ = std::make_unique <TriangleClass>();
-        triangle_->Initialize();
-    }
-    if (isActiveCube_) {
-        cube_ = std::make_unique <CubeClass>();
-        cube_->Initialize();
-    }
-    if (isActivePlane_) {
-        plane_ = std::make_unique<PlaneClass>();
-        plane_->Initialize();
-    }
-    if (isActiveSphere_) {
-        sphere_ = std::make_unique<SphereClass>();
-        sphere_->Initialize();
-    }
-    if (isActiveCylinder_) {
-        cylinder_ = std::make_unique<CylinderClass>();
-        cylinder_->Initialize();
-    }
+
     if (isActiveObj_) {
-        obj_ = std::make_unique<ObjClass>();
+        obj_ = std::make_unique<StaticModelObject>();
         obj_->Initialize("sample/plane.gltf");
     }
     if (isActiveStanfordBunny_) {
-        stanfordBunny_ = std::make_unique <ObjClass>();
+        stanfordBunny_ = std::make_unique <StaticModelObject>();
         stanfordBunny_->Initialize("sample/bunny.obj");
     }
     if (isActiveUtashTeapot_) {
-        utashTeapot_ = std::make_unique <ObjClass>();
+        utashTeapot_ = std::make_unique <StaticModelObject>();
         utashTeapot_->Initialize("sample/teapot.obj");
     }
     if (isActiveMultiMesh_) {
-        multiMesh_ = std::make_unique <ObjClass>();
+        multiMesh_ = std::make_unique <StaticModelObject>();
         multiMesh_->Initialize("sample/multiMesh.obj");
     }
     if (isActiveMultiMaterial_) {
-        multiMaterial_ = std::make_unique <ObjClass>();
+        multiMaterial_ = std::make_unique <StaticModelObject>();
         multiMaterial_->Initialize("sample/multiMaterial.obj");
     }
     if (isActiveSuzanne_) {
-        suzanne_ = std::make_unique <ObjClass>();
+        suzanne_ = std::make_unique <StaticModelObject>();
         suzanne_->Initialize("sample/suzanne.obj");
     }
     if (isActiveFence_) {
-        fence_ = std::make_unique <ObjClass>();
+        fence_ = std::make_unique <StaticModelObject>();
         fence_->Initialize("sample/fence.obj");
     }
     if (isActiveTerrain_) {
-        terrain_ = std::make_unique <ObjClass>();
+        terrain_ = std::make_unique <StaticModelObject>();
         terrain_->Initialize("sample/terrain.obj");
     }
-    if (isActiveParticle_) {
-        particle_ = std::make_unique<ParticleSystem>();
-        particle_->Initialize("resources/circle.png",ParticleType::kAccelerationField);
-    }
+
+
     if (isActiveGPUParticle_) {
-        gpuParticle_ = std::make_unique<GPUParticleSystem>();
-        gpuParticle_->Initialize("resources/circle.png");
+        particleObj_ = std::make_unique<ParticleObject>();
+        particleObj_->texturePath_ = "resources/circle.png";
+        particleObj_->emitType_ = 0;
+        particleObj_->velocity_ = 5.0f;
+        particleObj_->gravity_ = 0.0f;
+        particleObj_->damping_ = 0.05f;
+        particleObj_->lifeTimeMin_ = 0.3f;
+        particleObj_->lifeTimeMax_ = 0.6f;
+        particleObj_->radius_ = 5.0f;
+        particleObj_->color_ = {1.0f, 0.5f, 0.0f, 1.0f};
+        particleObj_->Initialize();
     }
+    
     if (isActiveVoxelParticle_) {
         voxelParticle_ = std::make_unique<VoxelParticleSystem>();
         voxelParticle_->Initialize("sample/terrain.obj", { 64,64,64 });
@@ -148,17 +134,16 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
 
     if (isActivePrimitiveObj_) {
-        primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
+        primitiveObj_ = std::make_unique<Primitive3DObject>();
         primitiveObj_->Initialize(PrimitiveType::Cube);
         primitiveObj_->SetPosition({ 0.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
     }
 
     // 電撃エフェクトの初期化
-    lightningCylinder_ = std::make_unique<CylinderClass>();
-    lightningCylinder_->Initialize();
-    lightningCylinder_->SetRadius(0.2f); // ビームっぽく細長く
-    lightningCylinder_->SetHeight(10.0f);
-    lightningCylinder_->SetCenter({ -2.0f, 0.0f, 0.0f });
+    lightningCylinder_ = std::make_unique<Primitive3DObject>();
+    lightningCylinder_->Initialize(PrimitiveType::Cylinder);
+    lightningCylinder_->SetScale({ 0.2f, 10.0f, 0.2f }); // ビームっぽく細長く
+    lightningCylinder_->SetPosition({ -2.0f, 0.0f, 0.0f });
 
     lightningParamsResource_ = engine_->GetDirectXCommon()->CreateBufferResource(sizeof(LightningParams));
     lightningParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightningParamsData_));
@@ -182,11 +167,8 @@ void DebugScene::Update() {
 #ifdef USE_IMGUI
     ImGui::Begin("Activation");
     ImGui::Checkbox("Sprite", &isActiveSprite_);
-    ImGui::Checkbox("Triangle", &isActiveTriangle_);
-    ImGui::Checkbox("Cube", &isActiveCube_);
-    ImGui::Checkbox("Plane", &isActivePlane_);
-    ImGui::Checkbox("Sphere", &isActiveSphere_);
-    ImGui::Checkbox("Cylinder", &isActiveCylinder_);
+    ImGui::Checkbox("Primitive Test", &isActivePrimitiveObj_);
+
     ImGui::Checkbox("Obj", &isActiveObj_);
     ImGui::Checkbox("Utash Teapot", &isActiveUtashTeapot_);
     ImGui::Checkbox("Stanford Bunny", &isActiveStanfordBunny_);
@@ -195,8 +177,9 @@ void DebugScene::Update() {
     ImGui::Checkbox("Suzanne", &isActiveSuzanne_);
     ImGui::Checkbox("Fence", &isActiveFence_);
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
-    ImGui::Checkbox("Particle", &isActiveParticle_);
-    ImGui::Checkbox("GPUParticle", &isActiveGPUParticle_);
+
+
+    ImGui::Checkbox("GPU Particle (Code)", &isActiveGPUParticle_);
     ImGui::Checkbox("VoxelParticle", &isActiveVoxelParticle_);
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
     ImGui::Checkbox("Walk", &isActiveWalk_);
@@ -215,87 +198,17 @@ void DebugScene::Update() {
 
     // 3D
 
-    if (isActiveTriangle_) {
-        if (!triangle_) {
-            triangle_ = std::make_unique<TriangleClass>();
-            triangle_->Initialize();
-        }
-        triangle_->Update();
-    }
-    if (isActiveCube_) {
-        if (!cube_) {
-            cube_ = std::make_unique<CubeClass>();
-            cube_->Initialize();
-        }
 
-#ifdef USE_IMGUI
-        // ImGuizmo の操作
-        ImGuizmo::BeginFrame();
-        ImGuiIO& io = ImGui::GetIO();
-        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-
-        Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
-        Matrix4x4 view = activeCamera->GetViewMatrix();
-        Matrix4x4 projection = activeCamera->GetPerspectiveFovMatrix();
-        auto& transform = cube_->GetD3D12Resource()->transform_;
-        Matrix4x4 world = Math::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-
-        if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], gizmoOperation_, gizmoMode_, &world.m[0][0])) {
-            float pos[3], rot[3], scale[3];
-            ImGuizmo::DecomposeMatrixToComponents(&world.m[0][0], pos, rot, scale);
-
-            cube_->SetPosition({ pos[0], pos[1], pos[2] });
-            cube_->SetRotate({ rot[0] * Math::PI / 180.0f, rot[1] * Math::PI / 180.0f, rot[2] * Math::PI / 180.0f });
-            cube_->SetScale({ scale[0], scale[1], scale[2] });
-        }
-
-        // ギズモ設定UI
-        ImGui::Begin("Gizmo Settings");
-        if (ImGui::RadioButton("Translate", gizmoOperation_ == ImGuizmo::TRANSLATE)) gizmoOperation_ = ImGuizmo::TRANSLATE;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("Rotate", gizmoOperation_ == ImGuizmo::ROTATE)) gizmoOperation_ = ImGuizmo::ROTATE;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("Scale", gizmoOperation_ == ImGuizmo::SCALE)) gizmoOperation_ = ImGuizmo::SCALE;
-
-        if (ImGui::RadioButton("Local", gizmoMode_ == ImGuizmo::LOCAL)) gizmoMode_ = ImGuizmo::LOCAL;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("World", gizmoMode_ == ImGuizmo::WORLD)) gizmoMode_ = ImGuizmo::WORLD;
-        ImGui::End();
-#endif
-
-        cube_->Update();
-    }
-    if (isActivePlane_) {
-        if (!plane_) {
-            plane_ = std::make_unique<PlaneClass>();
-            plane_->Initialize();
-        }
-        plane_->Update();
-    }
-    if (isActiveSphere_) {
-        if (!sphere_) {
-            sphere_ = std::make_unique<SphereClass>();
-            sphere_->Initialize();
-        }
-        sphere_->Update();
-    }
-    if (isActiveCylinder_) {
-        if (!cylinder_) {
-            cylinder_ = std::make_unique<CylinderClass>();
-            cylinder_->Initialize();
-        }
-        cylinder_->Update();
-    }
     if (isActiveObj_) {
         if (!obj_) {
-            obj_ = std::make_unique<ObjClass>();
+            obj_ = std::make_unique<StaticModelObject>();
             obj_->Initialize("sample/plane.gltf");
         }
         obj_->Update();
     }
     if (isActiveUtashTeapot_) {
         if (!utashTeapot_) {
-            utashTeapot_ = std::make_unique<ObjClass>();
+            utashTeapot_ = std::make_unique<StaticModelObject>();
             utashTeapot_->Initialize("sample/teapot.obj");
         }
         utashTeapot_->Debug("Utash Teapot");
@@ -303,7 +216,7 @@ void DebugScene::Update() {
     }
     if (isActiveStanfordBunny_) {
         if (!stanfordBunny_) {
-            stanfordBunny_ = std::make_unique<ObjClass>();
+            stanfordBunny_ = std::make_unique<StaticModelObject>();
             stanfordBunny_->Initialize("sample/bunny.obj");
         }
         stanfordBunny_->Debug("Stanford Bunny");
@@ -311,7 +224,7 @@ void DebugScene::Update() {
     }
     if (isActiveMultiMesh_) {
         if (!multiMesh_) {
-            multiMesh_ = std::make_unique<ObjClass>();
+            multiMesh_ = std::make_unique<StaticModelObject>();
             multiMesh_->Initialize("sample/multiMesh.obj");
         }
         multiMesh_->Debug("MultiMesh");
@@ -319,7 +232,7 @@ void DebugScene::Update() {
     }
     if (isActiveMultiMaterial_) {
         if (!multiMaterial_) {
-            multiMaterial_ = std::make_unique<ObjClass>();
+            multiMaterial_ = std::make_unique<StaticModelObject>();
             multiMaterial_->Initialize("sample/multiMaterial.obj");
         }
         multiMaterial_->Debug("MultiMaterial");
@@ -327,14 +240,14 @@ void DebugScene::Update() {
     }
     if (isActiveSuzanne_) {
         if (!suzanne_) {
-            suzanne_ = std::make_unique<ObjClass>();
+            suzanne_ = std::make_unique<StaticModelObject>();
             suzanne_->Initialize("sample/suzanne.obj");
         }
         suzanne_->Update();
     }
     if (isActiveFence_) {
         if (!fence_) {
-            fence_ = std::make_unique<ObjClass>();
+            fence_ = std::make_unique<StaticModelObject>();
             fence_->Initialize("sample/fence.obj");
         }
         fence_->Debug("Fence");
@@ -342,27 +255,45 @@ void DebugScene::Update() {
     }
     if (isActiveTerrain_) {
         if (!terrain_) {
-            terrain_ = std::make_unique<ObjClass>();
+            terrain_ = std::make_unique<StaticModelObject>();
             terrain_->Initialize("sample/terrain.obj");
         }
         terrain_->Debug("Terrain");
         terrain_->Update();
     }
-    if (isActiveParticle_) {
-        if (!particle_) {
-            particle_ = std::make_unique <ParticleSystem>();
-            particle_->Initialize("resources/circle.png", ParticleType::kAccelerationField);
-        }
-        particle_->Debug("Particle");
-        particle_->Update();
-    }
+
+
     if (isActiveGPUParticle_) {
-        if (!gpuParticle_) {
-            gpuParticle_ = std::make_unique <GPUParticleSystem>();
-            gpuParticle_->Initialize("resources/circle.png");
+        if (!particleObj_) {
+            particleObj_ = std::make_unique<ParticleObject>();
+            particleObj_->texturePath_ = "resources/circle.png";
+            particleObj_->emitType_ = 0;
+            particleObj_->velocity_ = 5.0f;
+            particleObj_->gravity_ = 0.0f;
+            particleObj_->damping_ = 0.05f;
+            particleObj_->lifeTimeMin_ = 0.3f;
+            particleObj_->lifeTimeMax_ = 0.6f;
+            particleObj_->radius_ = 5.0f;
+            particleObj_->color_ = {1.0f, 0.5f, 0.0f, 1.0f};
+            particleObj_->midColor_ = {1.0f, 0.0f, 0.0f, 1.0f};
+            particleObj_->Initialize();
         }
-        gpuParticle_->Update();
+        
+#ifdef USE_IMGUI
+        ImGui::Begin("Hardcoded Particle Test");
+        particleObj_->DebugUI("Hardcoded Particle Test");
+        ImGui::End();
+#endif
+
+        particleObj_->Update();
+        
+        // システム全体の線描画は GPUParticleSystem::Update() 内で自動で行われるように変更しました
+    } else {
+        if (particleObj_) {
+            particleObj_.reset();
+        }
     }
+    
     if (isActiveVoxelParticle_) {
         if (!voxelParticle_) {
             voxelParticle_ = std::make_unique<VoxelParticleSystem>();
@@ -404,7 +335,7 @@ void DebugScene::Update() {
     }
     if (isActivePrimitiveObj_) {
         if (!primitiveObj_) {
-            primitiveObj_ = std::make_unique<PrimitiveObjects3DClass>();
+            primitiveObj_ = std::make_unique<Primitive3DObject>();
             primitiveObj_->Initialize(PrimitiveType::Cube);
         }
         primitiveObj_->Update();
@@ -453,21 +384,7 @@ void DebugScene::Draw() {
 
     engine_->ApplyPSO("Object3D");
 
-    if (isActiveTriangle_) {
-        triangle_->Draw();
-    }
-    if (isActivePlane_) {
-        plane_->Draw();
-    }
-    if (isActiveCube_) {
-        cube_->Draw();
-    }
-    if (isActiveSphere_) {
-        sphere_->Draw();
-    }
-    if (isActiveCylinder_) {
-        cylinder_->Draw();
-    }
+
     if (isActiveObj_) {
         obj_->Draw();
     }
@@ -524,7 +441,7 @@ void DebugScene::Draw() {
             engine_->BindLightningParams(lightningParamsResource_->GetGPUVirtualAddress());
 
             RenderPackets::Standard3DPacket packet{};
-            packet.resource = lightningCylinder_->GetD3D12Resource();
+            packet.resource = lightningCylinder_->GetMesh().resource.get();
             packet.blendMode = BlendMode::kBlendModeAdd;
             packet.depthWrite = PSOManager::DepthWrite::Disable;
             packet.cullMode = PSOManager::CullMode::None;
@@ -546,13 +463,9 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyPSO("Particle");
 
-    if (isActiveParticle_) {
-        particle_->Draw();
-    }
 
-    if (isActiveGPUParticle_) {
-        gpuParticle_->Draw();
-    }
+
+
 
     if (isActiveVoxelParticle_) {
         voxelParticle_->Draw();
@@ -577,16 +490,11 @@ void DebugScene::DrawDebugTab() {
         skybox_->Debug();
     }
 
-    if (isActiveCube_ && cube_) cube_->Debug("Cube");
-    if (isActivePlane_ && plane_) plane_->Debug("Plane");
-    if (isActiveSphere_ && sphere_) sphere_ ->Debug("Sphere");
-    if (isActiveCylinder_ && cylinder_) cylinder_->Debug("Cylinder");
+
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
 
-    if (isActiveGPUParticle_ && gpuParticle_) {
-        gpuParticle_->Debug();
-    }
+
 
     if (isActiveLightningCrawl_ && lightningCylinder_) {
         // オブジェクト標準のデバッグUI（形状やマテリアル）を表示
@@ -601,6 +509,5 @@ void DebugScene::DrawDebugTab() {
         ImGui::End();
     }
 
-    DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 #endif
 }

@@ -1,22 +1,18 @@
-struct VertexInput {
-    float4 pos : POSITION;
-    float3 normal : NORMAL;
-    float2 uv : TEXCOORD;
-};
+#include "VertexData.hlsli"
+#include "Object3d.hlsli"
+#include "PerFrame.hlsli"
 
 struct PixelInput {
     float4 pos : SV_POSITION;
 };
 
-// 変換行列 (b1)
-cbuffer TransformMatrix : register(b1) {
-    matrix WVP;
-    matrix World;
-    matrix WorldInverseTranspose;
-};
+ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
+ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
 PixelInput main(VertexInput input) {
     PixelInput output;
-    output.pos = mul(input.pos, WVP);
+    float4 worldPos = mul(input.position, gTransformationMatrix.World);
+    float4 viewPos = mul(worldPos, gPerFrame.view);
+    output.pos = mul(viewPos, gPerFrame.projection);
     return output;
 }

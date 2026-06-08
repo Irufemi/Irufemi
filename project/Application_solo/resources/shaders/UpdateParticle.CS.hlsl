@@ -7,7 +7,7 @@ static const uint kMaxParticles = 32768;
 RWStructuredBuffer<Particle> gParticles : register(u0);
 RWStructuredBuffer<int> gFreeListIndex : register(u1);
 RWStructuredBuffer<int> gFreeList : register(u2);
-ConstantBuffer<GPUParticleEmitter> gEmitter : register(b0);
+StructuredBuffer<GPUParticleEmitter> gEmitters : register(t0);
 ConstantBuffer<PerFrame> gPerFrame : register(b1);
 
 [numthreads(1024, 1, 1)]
@@ -18,14 +18,15 @@ void main(uint3 DTid : SV_DispatchThreadID)
     {
         if (gParticles[particleIndex].currentTime < gParticles[particleIndex].lifeTime)
         {
+            GPUParticleEmitter emitter = gEmitters[gParticles[particleIndex].emitterIndex];
             float dt = gPerFrame.deltaTime;
             
             // 座標のゆらぎ (Jitter)
-            if (gEmitter.jitter > 0.0f) {
+            if (emitter.jitter > 0.0f) {
                 RandomGenerator rng;
                 rng.seed = uint3(particleIndex, (uint)gPerFrame.time, (uint)gPerFrame.time + 100);
                 float3 randomVal = rng.Generate3d() * 2.0f - 1.0f;
-                gParticles[particleIndex].translate += randomVal * gEmitter.jitter;
+                gParticles[particleIndex].translate += randomVal * emitter.jitter;
             }
 
             // 進捗 (0.0: 生まれたて, 1.0: 寿命)
@@ -34,22 +35,22 @@ void main(uint3 DTid : SV_DispatchThreadID)
             // === 親パーティクルの更新と子生成 ===
             if (gParticles[particleIndex].type == 0) {
                 // アトラクター (引力)
-                if (abs(gEmitter.attractorStrength) > 0.0001f) {
-                    float3 dir = gEmitter.attractorPos - gParticles[particleIndex].translate;
+                if (abs(emitter.attractorStrength) > 0.0001f) {
+                    float3 dir = emitter.attractorPos - gParticles[particleIndex].translate;
                     float distSq = max(dot(dir, dir), 0.01f);
-                    float3 force = normalize(dir) * (gEmitter.attractorStrength / distSq);
+                    float3 force = normalize(dir) * (emitter.attractorStrength / distSq);
                     gParticles[particleIndex].velocity += force * dt;
                 }
 
                 // 物理更新: 重力と空気抵抗
-                gParticles[particleIndex].velocity.y -= gEmitter.gravity * dt;
-                gParticles[particleIndex].velocity *= pow(saturate(1.0f - gEmitter.damping), dt * 60.0f);
+                gParticles[particleIndex].velocity.y -= emitter.gravity * dt;
+                gParticles[particleIndex].velocity *= pow(saturate(1.0f - emitter.damping), dt * 60.0f);
 
                 // Trail放出判定
-                if (gEmitter.enableTrail != 0) {
+                if (emitter.enableTrail != 0) {
                     gParticles[particleIndex].trailTimer += dt;
-                    if (gParticles[particleIndex].trailTimer > gEmitter.trailFrequency) {
-                        gParticles[particleIndex].trailTimer -= gEmitter.trailFrequency;
+                    if (gParticles[particleIndex].trailTimer > emitter.trailFrequency) {
+                        gParticles[particleIndex].trailTimer -= emitter.trailFrequency;
                         
                         // 子（Trail / Flame）をEmit
                         int freeListIndex;
@@ -59,6 +60,9 @@ void main(uint3 DTid : SV_DispatchThreadID)
                             
                             gParticles[childIndex].type = 1; // Trail
                             gParticles[childIndex].translate = gParticles[particleIndex].translate;
+                            gParticles[childIndex].emitterIndex = gParticles[particleIndex].emitterIndex;
+                            gParticles[childIndex].billboardMode = gParticles[particleIndex].billboardMode;
+                            gParticles[childIndex].atlasSize = gParticles[particleIndex].atlasSize;
                             
                             RandomGenerator rng;
                             rng.seed = uint3(particleIndex, childIndex, (uint)gPerFrame.time);
@@ -89,14 +93,14 @@ void main(uint3 DTid : SV_DispatchThreadID)
             // === Trail(Flame) の更新 ===
             else if (gParticles[particleIndex].type == 1) {
                 // 親の重力の半分程度で落ちる
-                gParticles[particleIndex].velocity.y -= (gEmitter.gravity * 0.5f) * dt;
+                gParticles[particleIndex].velocity.y -= (emitter.gravity * 0.5f) * dt;
                 // 空気抵抗でフワッとさせる
                 gParticles[particleIndex].velocity *= pow(saturate(1.0f - 0.1f), dt * 60.0f);
             }
             // === Death(Sparkle) の更新 ===
             else if (gParticles[particleIndex].type == 2) {
                 // 少しだけ重力の影響を受ける
-                gParticles[particleIndex].velocity.y -= (gEmitter.gravity * 0.2f) * dt;
+                gParticles[particleIndex].velocity.y -= (emitter.gravity * 0.2f) * dt;
                 // 小さく弾けてすぐ減速
                 gParticles[particleIndex].velocity *= pow(saturate(1.0f - 0.2f), dt * 60.0f);
             }
@@ -107,16 +111,28 @@ void main(uint3 DTid : SV_DispatchThreadID)
             gParticles[particleIndex].rotation += gParticles[particleIndex].rotateSpeed * dt;
             
             // 床衝突判定 (共通)
-            if (gParticles[particleIndex].translate.y < gEmitter.groundHeight) {
-                gParticles[particleIndex].translate.y = gEmitter.groundHeight;
-                gParticles[particleIndex].velocity.y *= -gEmitter.bounce;
+            if (gParticles[particleIndex].translate.y < emitter.groundHeight) {
+                gParticles[particleIndex].translate.y = emitter.groundHeight;
+                gParticles[particleIndex].velocity.y *= -emitter.bounce;
                 gParticles[particleIndex].velocity.xz *= 0.8f;
             }
 
-            // カラー・スケール更新: Start -> End Lerp (type == 0 以外は初期設定をそのままLerp)
+            // カラー・スケール更新: Start -> Mid -> End Lerp (type == 0 以外は初期設定をそのままLerp)
             if (gParticles[particleIndex].type == 0) {
-                gParticles[particleIndex].color = lerp(gParticles[particleIndex].startColor, gParticles[particleIndex].endColor, t);
-                gParticles[particleIndex].scale = lerp(gParticles[particleIndex].startScale, gParticles[particleIndex].endScale, t);
+                if (gParticles[particleIndex].midPoint > 0.0f) {
+                    if (t < gParticles[particleIndex].midPoint) {
+                        float progress = t / gParticles[particleIndex].midPoint;
+                        gParticles[particleIndex].color = lerp(gParticles[particleIndex].startColor, gParticles[particleIndex].midColor, progress);
+                        gParticles[particleIndex].scale = lerp(gParticles[particleIndex].startScale, gParticles[particleIndex].midScale, progress);
+                    } else {
+                        float progress = (t - gParticles[particleIndex].midPoint) / (1.0f - gParticles[particleIndex].midPoint);
+                        gParticles[particleIndex].color = lerp(gParticles[particleIndex].midColor, gParticles[particleIndex].endColor, progress);
+                        gParticles[particleIndex].scale = lerp(gParticles[particleIndex].midScale, gParticles[particleIndex].endScale, progress);
+                    }
+                } else {
+                    gParticles[particleIndex].color = lerp(gParticles[particleIndex].startColor, gParticles[particleIndex].endColor, t);
+                    gParticles[particleIndex].scale = lerp(gParticles[particleIndex].startScale, gParticles[particleIndex].endScale, t);
+                }
             } else {
                 gParticles[particleIndex].color = lerp(gParticles[particleIndex].startColor, gParticles[particleIndex].endColor, t);
                 gParticles[particleIndex].scale = lerp(gParticles[particleIndex].startScale, gParticles[particleIndex].endScale, t);
@@ -126,7 +142,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
             if (gParticles[particleIndex].currentTime >= gParticles[particleIndex].lifeTime)
             {
                 // Death Emit 判定 (親パーティクルの場合のみ)
-                if (gParticles[particleIndex].type == 0 && gEmitter.enableDeathEmit != 0) {
+                if (gParticles[particleIndex].type == 0 && emitter.enableDeathEmit != 0) {
                     RandomGenerator rng;
                     rng.seed = uint3(particleIndex, (uint)gPerFrame.time, 777);
                     
@@ -140,6 +156,9 @@ void main(uint3 DTid : SV_DispatchThreadID)
                             
                             gParticles[childIndex].type = 2; // Sparkle
                             gParticles[childIndex].translate = gParticles[particleIndex].translate;
+                            gParticles[childIndex].emitterIndex = gParticles[particleIndex].emitterIndex;
+                            gParticles[childIndex].billboardMode = gParticles[particleIndex].billboardMode;
+                            gParticles[childIndex].atlasSize = gParticles[particleIndex].atlasSize;
                             
                             float3 rDir = rng.Generate3d() * 2.0f - 1.0f;
                             gParticles[childIndex].velocity = normalize(rDir) * (0.2f + rng.Generate1d() * 0.1f); // パチッと弾ける初速

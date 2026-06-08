@@ -43,13 +43,16 @@ struct ParticleCS {
     Vector3 rotation;     ///< 回転角
     float trailTimer;     ///< Trail放出タイマー
     Vector3 rotateSpeed;  ///< 回転速度
-    float pad2;
+    uint32_t emitterIndex;
     Vector3 startScale;   ///< 開始スケール
-    float pad3;
+    uint32_t billboardMode;
     Vector3 endScale;     ///< 終了スケール
-    float pad4;
+    uint32_t atlasSize;
     Vector4 startColor;   ///< 開始色
     Vector4 endColor;     ///< 終了色
+    Vector4 midColor;     ///< 中間色
+    Vector3 midScale;     ///< 中間スケール
+    float midPoint;       ///< 中間タイミング (0.0~1.0)
 };
 
 #include "Engine/Graphics/Data/Material.h"
@@ -65,10 +68,10 @@ struct GPUParticleEmitter {
     float translateX = 0, translateY = 0, translateZ = 0; ///< 放出中心位置
 
     // float4 x 2
-    int32_t count = 0;          ///< 1回の放出数
-    float frequency = 0.1f;     ///< 放出間隔
-    float frequencyTime = 0.0f; ///< 放出タイマー
-    int32_t emit = 0;           ///< 1: 放出許可, 0: 停止
+    float emissionRate = 0.0f;     ///< 1秒あたりの連続放出数
+    float emissionResidue = 0.0f;  ///< 端数繰り越し用
+    float padFreqTime = 0.0f;      ///< 未使用/アライメント用
+    int32_t emit = 0;              ///< 1: 放出許可, 0: 停止
 
     // float4 x 3
     float radius = 1.0f;        ///< Sphere/Ring/Cylinder用: 半径
@@ -133,6 +136,17 @@ struct GPUParticleEmitter {
     float trailFrequency = 0.05f;
     float pad7 = 0.0f;
     float pad8 = 0.0f;
+
+    // float4 x 19
+    float midColorMinR = 1, midColorMinG = 1, midColorMinB = 1, midColorMinA = 1;
+    // float4 x 20
+    float midColorMaxR = 1, midColorMaxG = 1, midColorMaxB = 1, midColorMaxA = 1;
+    // float4 x 21
+    float midScaleMinX = 1, midScaleMinY = 1, midScaleMinZ = 1;
+    float pad9 = 0;
+    // float4 x 22
+    float midScaleMaxX = 1, midScaleMaxY = 1, midScaleMaxZ = 1;
+    float midPoint = 0.0f;
 };
 
 /**
@@ -142,6 +156,9 @@ struct GPUParticleEmitter {
 class GPUParticleSystem : public IComputeTask
 , public IRenderable {
 public:
+    friend class GPUParticleManager;
+    static const uint32_t kMaxEmitters = 256;
+
     GPUParticleSystem();
     ~GPUParticleSystem();
 
@@ -157,8 +174,8 @@ public:
 
     /** @name 再生制御 */
     ///@{
-    void Play() { isPlaying_ = true; if (emitter_) emitter_->emit = 1; totalTime_ = 0.0f; }
-    void Stop() { isPlaying_ = false; if (emitter_) emitter_->emit = 0; }
+    void Play(uint32_t emitterIndex = 0) { isPlaying_ = true; if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].emit = 1; totalTime_ = 0.0f; }
+    void Stop(uint32_t emitterIndex = 0) { isPlaying_ = false; if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].emit = 0; }
     void Pause() { isPlaying_ = false; }
     void Resume() { isPlaying_ = true; }
     void Clear();
@@ -166,24 +183,24 @@ public:
     void SetLoop(bool loop) { isLooping_ = loop; }
     void SetDuration(float duration) { duration_ = duration; }
     void SetCullingEnabled(bool enable) { isCullingEnabled_ = enable; }
-    void Emit(uint32_t count);
+    void Emit(uint32_t count, uint32_t emitterIndex = 0);
     ///@}
 
     /** @name 汎用エミッター設定 */
     ///@{
     /** @brief 粒子の発生ON/OFF */
-    void SetEmit(bool emit);
+    void SetEmit(bool emit, uint32_t emitterIndex = 0);
     /** @brief パーティクルの基本色を設定 */
     void SetColor(const Vector4& color) { cpuMaterialData_.color = color; }
     /** @brief 3Dメッシュ形状を設定 */
     void SetPrimitive(PrimitiveType type);
     /** @brief ビルボードのON/OFF */
-    void SetBillboard(bool isBillboard);
+    void SetBillboard(bool isBillboard, uint32_t emitterIndex = 0);
     
     /**
      * @brief 速度方向に引き伸ばすビルボード設定
      */
-    void SetVelocityAligned(bool isAligned);
+    void SetVelocityAligned(bool isAligned, uint32_t emitterIndex = 0);
     /** @brief 使用するテクスチャを切り替える */
     void SetTexture(const std::string& textureFilePath);
 
@@ -201,42 +218,58 @@ public:
      * @param endMin 終了時の最小スケール
      * @param endMax 終了時の最大スケール
      */
-    void SetParticleScale(const Vector3& startMin, const Vector3& startMax, const Vector3& endMin, const Vector3& endMax);
+    void SetParticleScale(const Vector3& startMin, const Vector3& startMax, const Vector3& endMin, const Vector3& endMax, uint32_t emitterIndex = 0);
+    
+    /**
+     * @brief パーティクルの中間スケール（3段階変化用）を設定する
+     * @param midMin 中間時の最小スケール
+     * @param midMax 中間時の最大スケール
+     * @param midPoint 中間到達タイミング (0.0~1.0)
+     */
+    void SetMidScale(const Vector3& midMin, const Vector3& midMax, float midPoint, uint32_t emitterIndex = 0);
+
+    /**
+     * @brief パーティクルの色（開始時と終了時、オプションで中間色）を動的に設定する
+     */
+    void SetParticleColor(const Vector4& startMin, const Vector4& startMax, const Vector4& endMin, const Vector4& endMax, uint32_t emitterIndex = 0);
+    
+    void SetMidColor(const Vector4& midMin, const Vector4& midMax, float midPoint, uint32_t emitterIndex = 0);
 
     /**
      * @brief パーティクルの寿命（最小・最大）を設定する
      * @param minLife 最小寿命（秒）
      * @param maxLife 最大寿命（秒）
      */
-    void SetParticleLife(float minLife, float maxLife);
+    void SetParticleLife(float minLife, float maxLife, uint32_t emitterIndex = 0);
 
     /** @brief 放出速度を設定する */
-    void SetVelocity(float velocity) { if (emitter_) emitter_->velocity = velocity; }
+    void SetVelocity(float velocity, uint32_t emitterIndex = 0) { if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].velocity = velocity; }
     /** @brief 放出方向を設定する */
-    void SetDirection(const Vector3& dir) { if (emitter_) { emitter_->directionX = dir.x; emitter_->directionY = dir.y; emitter_->directionZ = dir.z; } }
+    void SetDirection(const Vector3& dir, uint32_t emitterIndex = 0) { if (emitterIndex < emittersData_.size()) { emittersData_[emitterIndex].directionX = dir.x; emittersData_[emitterIndex].directionY = dir.y; emittersData_[emitterIndex].directionZ = dir.z; } }
     /** @brief 座標のゆらぎ（Jitter）を設定する */
-    void SetJitter(float jitter) { if (emitter_) emitter_->jitter = jitter; }
-    void SetEnableRandomRotation(bool enable) { if (emitter_) emitter_->enableRandomRotation = enable ? 1 : 0; }
+    void SetJitter(float jitter, uint32_t emitterIndex = 0) { if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].jitter = jitter; }
+    void SetEnableRandomRotation(bool enable, uint32_t emitterIndex = 0) { if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].enableRandomRotation = enable ? 1 : 0; }
     /** @brief ビルボードモードの設定 (0: なし, 1: 通常ビルボード, 2: 速度方向ビルボード) */
-    void SetBillboardMode(uint32_t mode) { if (emitter_) emitter_->billboardMode = mode; }
+    void SetBillboardMode(uint32_t mode, uint32_t emitterIndex = 0) { if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].billboardMode = mode; }
     /** @brief 粒子の拡散力（Sphere等の放射方向の広がり/強度）を設定 */
-    void SetSpread(float spread) { if (emitter_) emitter_->spread = spread; }
+    void SetSpread(float spread, uint32_t emitterIndex = 0) { if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].spread = spread; }
 
     /** @brief Trail（軌跡）機能の有効化 */
-    void SetEnableTrail(bool enable, float frequency = 0.05f) { 
-        if (emitter_) {
-            emitter_->enableTrail = enable ? 1 : 0;
-            emitter_->trailFrequency = frequency;
+    void SetEnableTrail(bool enable, float frequency = 0.05f, uint32_t emitterIndex = 0) { 
+        if (emitterIndex < emittersData_.size()) {
+            emittersData_[emitterIndex].enableTrail = enable ? 1 : 0;
+            emittersData_[emitterIndex].trailFrequency = frequency;
         }
     }
     /** @brief 消滅時連鎖（Death Emit）機能の有効化 */
-    void SetEnableDeathEmit(bool enable) { 
-        if (emitter_) emitter_->enableDeathEmit = enable ? 1 : 0;
+    void SetEnableDeathEmit(bool enable, uint32_t emitterIndex = 0) { 
+        if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].enableDeathEmit = enable ? 1 : 0;
     }
 
     /** @name 描画設定（パイプライン） */
     ///@{
-    void SetBlend(BlendMode blend) { selectedBlend_ = blend; }
+    void SetBlendMode(BlendMode blend) { selectedBlend_ = blend; }
+    void SetUnscaledTime(bool isUnscaled) { isUnscaledTime_ = isUnscaled; }
     void SetDepthWrite(PSOManager::DepthWrite depth) { selectedDepth_ = depth; }
     void SetCull(PSOManager::CullMode cull) { selectedCull_ = cull; }
     void SetCustomPSO(const std::string& psoName) { customPSOName_ = psoName; }
@@ -245,27 +278,26 @@ public:
 
     /** @name タイプ別エミッター設定 */
     ///@{
-    void SetSphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency);
-    void SetHemisphereEmitter(const Vector3& pos, float radius, uint32_t count, float frequency);
-    void SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, uint32_t count, float frequency);
+    void SetSphereEmitter(const Vector3& pos, float radius, float emissionRate, uint32_t emitterIndex = 0);
+    void SetHemisphereEmitter(const Vector3& pos, float radius, float emissionRate, uint32_t emitterIndex = 0);
+    void SetBeamEmitter(const Vector3& pos, const Vector3& direction, float radius, float velocity, float spread, float emissionRate, uint32_t emitterIndex = 0);
 
     /** @name アトラス・物理挙動設定 */
     /** @brief テクスチャアトラス（Flipbook）設定 */
-    void SetTextureAtlas(uint32_t rows, uint32_t cols);
+    void SetTextureAtlas(uint32_t rows, uint32_t cols, uint32_t emitterIndex = 0);
     /** @brief 床衝突設定 */
-    void SetGroundCollision(float height, float bounce);
+    void SetGroundCollision(float height, float bounce, uint32_t emitterIndex = 0);
     /** @brief アトラクター（引力源）設定 */
-    void SetAttractor(const Vector3& pos, float strength);
+    void SetAttractor(const Vector3& pos, float strength, uint32_t emitterIndex = 0);
 
     /**
      * @brief リングエミッターの設定
      * @param pos 中心位置
      * @param radius 半径
      * @param thickness 厚み
-     * @param count 一度の放出数
-     * @param frequency 放出頻度（秒）
+     * @param emissionRate 1秒あたりの連続放出数
      */
-    void SetRingEmitter(const Vector3& pos, float radius, float thickness, uint32_t count, float frequency);
+    void SetRingEmitter(const Vector3& pos, float radius, float thickness, float emissionRate, uint32_t emitterIndex = 0);
 
     /**
      * @brief 円柱エミッターの設定
@@ -273,46 +305,44 @@ public:
      * @param direction 円柱の方向
      * @param radius 半径
      * @param height 高さ
-     * @param count 一度の放出数
-     * @param frequency 放出頻度（秒）
+     * @param emissionRate 1秒あたりの連続放出数
      */
-    void SetCylinderEmitter(const Vector3& pos, const Vector3& direction, float radius, float height, uint32_t count, float frequency);
+    void SetCylinderEmitter(const Vector3& pos, const Vector3& direction, float radius, float height, float emissionRate, uint32_t emitterIndex = 0);
 
     /**
      * @brief ボックス（直方体）エミッターの設定
      * @param pos 中心位置
      * @param size ボックスの各軸のサイズ（幅、高さ、奥行き）
-     * @param count 一度の放出数
-     * @param frequency 放出頻度（秒）
+     * @param emissionRate 1秒あたりの連続放出数
      */
-    void SetBoxEmitter(const Vector3& pos, const Vector3& size, uint32_t count, float frequency);
+    void SetBoxEmitter(const Vector3& pos, const Vector3& size, float emissionRate, uint32_t emitterIndex = 0);
     ///@}
 
     /** @brief 開始色を設定する */
-    void SetStartColor(const Vector4& minColor, const Vector4& maxColor) {
-        if (emitter_) {
-            emitter_->startColorMinR = minColor.x; emitter_->startColorMinG = minColor.y; emitter_->startColorMinB = minColor.z; emitter_->startColorMinA = minColor.w;
-            emitter_->startColorMaxR = maxColor.x; emitter_->startColorMaxG = maxColor.y; emitter_->startColorMaxB = maxColor.z; emitter_->startColorMaxA = maxColor.w;
+    void SetStartColor(const Vector4& minColor, const Vector4& maxColor, uint32_t emitterIndex = 0) {
+        if (emitterIndex < emittersData_.size()) {
+            emittersData_[emitterIndex].startColorMinR = minColor.x; emittersData_[emitterIndex].startColorMinG = minColor.y; emittersData_[emitterIndex].startColorMinB = minColor.z; emittersData_[emitterIndex].startColorMinA = minColor.w;
+            emittersData_[emitterIndex].startColorMaxR = maxColor.x; emittersData_[emitterIndex].startColorMaxG = maxColor.y; emittersData_[emitterIndex].startColorMaxB = maxColor.z; emittersData_[emitterIndex].startColorMaxA = maxColor.w;
         }
     }
 
     /** @brief 終了色を設定する */
-    void SetEndColor(const Vector4& minColor, const Vector4& maxColor) {
-        if (emitter_) {
-            emitter_->endColorMinR = minColor.x; emitter_->endColorMinG = minColor.y; emitter_->endColorMinB = minColor.z; emitter_->endColorMinA = minColor.w;
-            emitter_->endColorMaxR = maxColor.x; emitter_->endColorMaxG = maxColor.y; emitter_->endColorMaxB = maxColor.z; emitter_->endColorMaxA = maxColor.w;
+    void SetEndColor(const Vector4& minColor, const Vector4& maxColor, uint32_t emitterIndex = 0) {
+        if (emitterIndex < emittersData_.size()) {
+            emittersData_[emitterIndex].endColorMinR = minColor.x; emittersData_[emitterIndex].endColorMinG = minColor.y; emittersData_[emitterIndex].endColorMinB = minColor.z; emittersData_[emitterIndex].endColorMinA = minColor.w;
+            emittersData_[emitterIndex].endColorMaxR = maxColor.x; emittersData_[emitterIndex].endColorMaxG = maxColor.y; emittersData_[emitterIndex].endColorMaxB = maxColor.z; emittersData_[emitterIndex].endColorMaxA = maxColor.w;
         }
     }
     /** @brief 重力を設定する */
-    void SetGravity(float gravity) {
-        if (emitter_) {
-            emitter_->gravity = gravity;
+    void SetGravity(float gravity, uint32_t emitterIndex = 0) {
+        if (emitterIndex < emittersData_.size()) {
+            emittersData_[emitterIndex].gravity = gravity;
         }
     }
     /** @brief 空気抵抗（ダンピング）を設定する */
-    void SetDamping(float damping) {
-        if (emitter_) {
-            emitter_->damping = damping;
+    void SetDamping(float damping, uint32_t emitterIndex = 0) {
+        if (emitterIndex < emittersData_.size()) {
+            emittersData_[emitterIndex].damping = damping;
         }
     }
 
@@ -333,6 +363,8 @@ private:
     void DrawSphereWireframe(const Vector3& center, float radius, const Vector4& color);
     void DrawCylinderWireframe(const Vector3& center, const Vector3& direction, float radius, float height, const Vector4& color);
 
+    void UpdateDebugLines();
+
     /**
      * @brief DirectX12の各種リソースとディスクリプタ（SRV/UAV）の生成を行う
      */
@@ -346,10 +378,7 @@ private:
 
     /** @name ImGuiデバッグ用描画分割 */
     ///@{
-    void DebugGeneralSettings();
-    void DebugEmitterSettings();
-    void DebugShapeSettings();
-    void DebugPhysicsSettings();
+    
     ///@}
 
     static DirectXCommon* dxCommon_;
@@ -368,11 +397,13 @@ private:
 
     /** @name エミッターリソース */
     ///@{
-    GPUParticleEmitter emitterData_{};
-    GPUParticleEmitter* emitter_ = &emitterData_; // CPU側のマスターへのポインタ
-    ConstantBuffer<GPUParticleEmitter> emitterBuffer_;
-    D3D12_CPU_DESCRIPTOR_HANDLE emitterSrvHandleCPU_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE emitterSrvHandleGPU_{};
+    std::vector<GPUParticleEmitter> emittersData_;
+    
+    // CPU-GPU共有用バッファ（kMaxFramesInFlight個）
+    Microsoft::WRL::ComPtr<ID3D12Resource> emittersResource_[3]; // 3 = kMaxFramesInFlight
+    GPUParticleEmitter* emittersMappedData_[3] = {nullptr, nullptr, nullptr};
+    uint32_t emittersSrvIndex_[3] = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+    D3D12_GPU_DESCRIPTOR_HANDLE emittersSrvHandleGPU_[3]{};
     ///@}
 
     /** @name 各種リソース */
@@ -437,7 +468,6 @@ private:
     int selectedTextureIndex_ = 0;
 
 
-    uint32_t emitterSrvIndex_ = 0xFFFFFFFF;
     uint32_t perFrameSrvIndex_ = 0xFFFFFFFF;
     uint32_t particleUavIndex_ = 0xFFFFFFFF;
     uint32_t particleSrvIndex_ = 0xFFFFFFFF;
@@ -445,11 +475,12 @@ private:
     uint32_t freeListUavIndex_ = 0xFFFFFFFF;
     ///@}
 
-    bool isCullingEnabled_ = true;
+    bool isCullingEnabled_ = false;
     bool isCulled_ = false;
     bool isInitializedCS_ = false;
     bool isSortResourceInitialized_ = false;
     bool needsUpdateCS_ = false;
+    bool isUnscaledTime_ = false;
     
 
     // --- State tracking for multiple pass rendering ---

@@ -78,7 +78,7 @@ float32_t3 ACESFilm(float32_t3 x) {
 
 // 2次元ガウス関数
 float32_t gauss(float32_t x, float32_t y, float32_t sigma) {
-    static const float32_t PI = 3.14159265f;
+    static const float32_t PI = 3.1415926535f;
     float32_t exponent = -(x * x + y * y) * rcp(2.0f * sigma * sigma);
     float32_t denominator = 2.0f * PI * sigma * sigma;
     return exp(exponent) * rcp(denominator);
@@ -99,9 +99,9 @@ float32_t3 ApplySepia(float32_t3 color) {
 }
 
 // 3. Vignette
-float32_t3 ApplyVignette(float32_t3 color, float32_t2 uv, float32_t scale, float32_t power, float32_t3 vignetteColor) {
-    float2 correct = uv * (1.0f - uv.yx);
-    float vignette = saturate(pow(correct.x * correct.y * scale, power));
+float32_t3 ApplyVignette(float32_t3 color, float32_t2 uv, float32_t radius, float32_t softness, float32_t3 vignetteColor) {
+    float dist = distance(uv, float2(0.5f, 0.5f));
+    float vignette = smoothstep(radius, radius - softness, dist);
     return lerp(vignetteColor, color, vignette);
 }
 
@@ -173,5 +173,105 @@ float32_t3 ApplyGlitch(float32_t3 color, float32_t2 uv, float32_t time, float32_
     return saturate(float32_t3(r, g, b) + scanline);
 }
 
-// 11. Outline (注: 複数サンプリングが必要なため、テクスチャとサンプラーを直接参照するか、呼び出し側でループする)
-// ここでは関数化が難しいため、PS側で直接実装するか、ヘルパーを呼ぶ形にする。
+// 11. Outline
+float32_t3 ApplyDepthBasedOutline(float32_t3 color, float32_t2 uv, float32_t2 uvStepSize, float32_t4x4 projectionInverse, float32_t intensity, Texture2D<float32_t> depthTex, SamplerState smp) {
+    float32_t2 difference = 0;
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float32_t depth = depthTex.Sample(smp, uv + float32_t2(x, y) * uvStepSize);
+            float32_t4 viewSpace = mul(float32_t4(0, 0, depth, 1), projectionInverse);
+            float32_t vz = viewSpace.z / viewSpace.w;
+            
+            float32_t wx = (x == 0) ? 0 : (x < 0 ? -1.0/6.0 : 1.0/6.0);
+            float32_t wy = (y == 0) ? 0 : (y < 0 ? -1.0/6.0 : 1.0/6.0);
+            difference.x += vz * wx;
+            difference.y += vz * wy;
+        }
+    }
+    float32_t weight = saturate(length(difference) * intensity);
+    return color * (1.0f - weight);
+}
+
+// 12. RadialBlur
+float32_t3 ApplyRadialBlur(float32_t3 color, float32_t2 uv, float32_t2 center, float32_t blurWidth, int32_t samples, Texture2D<float32_t4> tex, SamplerState smp) {
+    float32_t2 dir = uv - center;
+    float32_t dist = length(dir);
+    
+    // 中心点からの距離に応じてサンプリング数を最適化 (距離0なら1回、距離0.5以上なら最大回数)
+    int32_t actualSamples = max(1, int32_t(float32_t(samples) * saturate(dist * 2.0f)));
+    
+    float32_t3 sum = 0;
+    for (int32_t j = 0; j < actualSamples; ++j) {
+        sum += tex.SampleLevel(smp, uv + dir * blurWidth * float32_t(j), 0).rgb;
+    }
+    return sum / float32_t(actualSamples);
+}
+
+// 13. Separable Gaussian Blur (1D)
+float32_t3 ApplyGaussian1D(Texture2D<float32_t4> tex, SamplerState smp, float32_t2 uv, float32_t2 direction, float32_t sigma, int32_t halfSize) {
+    uint32_t width, height;
+    tex.GetDimensions(width, height);
+    float32_t2 texelSize = rcp(float32_t2(width, height));
+    
+    float32_t3 sum = 0.0f;
+    float32_t weightTotal = 0.0f;
+    
+    for (int32_t i = -halfSize; i <= halfSize; ++i) {
+        float32_t w = gauss(float32_t(i), 0.0f, sigma); // gauss関数のシグネチャ(2D)に合わせるためy=0.0fを渡すか、1D用関数を使う。※この下に1D版も定義します
+        float32_t2 offset = direction * float32_t(i) * texelSize;
+        sum += tex.SampleLevel(smp, uv + offset, 0).rgb * w;
+        weightTotal += w;
+    }
+    
+    if (weightTotal > 0.0f) {
+        return sum * rcp(weightTotal);
+    }
+    return tex.SampleLevel(smp, uv, 0).rgb;
+}
+
+// 1次元ガウス関数（オーバーロード）
+float32_t gauss1D(float32_t x, float32_t sigma) {
+    if (sigma <= 0.0f) return 1.0f;
+    static const float32_t PI = 3.1415926535f;
+    float32_t exponent = -(x * x) * rcp(2.0f * sigma * sigma);
+    float32_t denominator = sqrt(2.0f * PI) * sigma;
+    return exp(exponent) * rcp(denominator);
+}
+
+// 13. Separable Gaussian Blur (1D) 改良版
+float32_t3 ApplyGaussian1D_Optimized(Texture2D<float32_t4> tex, SamplerState smp, float32_t2 uv, float32_t2 direction, float32_t sigma, int32_t halfSize) {
+    uint32_t width, height;
+    tex.GetDimensions(width, height);
+    float32_t2 texelSize = rcp(float32_t2(width, height));
+    
+    float32_t3 sum = 0.0f;
+    float32_t weightTotal = 0.0f;
+    
+    for (int32_t i = -halfSize; i <= halfSize; ++i) {
+        float32_t w = gauss1D(float32_t(i), sigma);
+        float32_t2 offset = direction * float32_t(i) * texelSize;
+        sum += tex.SampleLevel(smp, uv + offset, 0).rgb * w;
+        weightTotal += w;
+    }
+    
+    if (weightTotal > 0.0f) {
+        return sum * rcp(weightTotal);
+    }
+    return tex.SampleLevel(smp, uv, 0).rgb;
+}
+
+// 14. Separable Box Blur (1D)
+float32_t3 ApplyBoxBlur1D(Texture2D<float32_t4> tex, SamplerState smp, float32_t2 uv, float32_t2 direction, int32_t halfSize) {
+    uint32_t width, height;
+    tex.GetDimensions(width, height);
+    float32_t2 texelSize = rcp(float32_t2(width, height));
+    
+    float32_t3 sum = 0.0f;
+    for (int32_t i = -halfSize; i <= halfSize; ++i) {
+        float32_t2 offset = direction * float32_t(i) * texelSize;
+        sum += tex.SampleLevel(smp, uv + offset, 0).rgb;
+    }
+    
+    int32_t sampleCount = (halfSize * 2) + 1;
+    return sum / float32_t(sampleCount);
+}

@@ -68,8 +68,8 @@ void PostProcessManager::Update(float totalTime) {
 
   // 統合パラメータの同期
   combinedParams_.vignetteColor = vignetteParams_.color;
-  combinedParams_.vignetteScale = vignetteParams_.scale;
-  combinedParams_.vignettePower = vignetteParams_.power;
+  combinedParams_.vignetteRadius = vignetteParams_.radius;
+  combinedParams_.vignetteSoftness = vignetteParams_.softness;
   combinedParams_.noiseIntensity = noiseParams_.intensity;
   combinedParams_.noiseTime = noiseParams_.time;
   combinedParams_.dissolveEdgeColor = dissolveParams_.edgeColor;
@@ -85,9 +85,7 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.slideColor = slideParams_.color;
   combinedParams_.slideThreshold = slideParams_.threshold;
   combinedParams_.projectionInverse = outlineParams_.projectionInverse;
-  combinedParams_.gaussianSigma = gaussianParams_.sigma;
-  combinedParams_.gaussianKernelSize = gaussianParams_.kernelSize;
-  combinedParams_.smoothingKernelSize = smoothingParams_.kernelSize;
+  combinedParams_.outlineIntensity = outlineParams_.intensity;
   combinedParams_.radialBlurCenter = radialBlurParams_.center;
   combinedParams_.radialBlurWidth = radialBlurParams_.blurWidth;
   combinedParams_.radialBlurSamples = radialBlurParams_.numSamples;
@@ -144,6 +142,8 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         
         commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
+        float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
         commandList->SetPipelineState(isLastBatch ? finalBloomCombinePSO_.Get() : bloomCombinePSO_.Get());
         commandList->SetGraphicsRootSignature(rootSig_);
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -159,11 +159,71 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         currentSource = nextTarget;
         modeIdx++;
       }
+      // 1-B) 分離可能フィルタ (Smoothing / GaussianFilter) の処理
+      else if (mode == Mode::Smoothing || mode == Mode::GaussianFilter) {
+        isLastBatch = (modeIdx == activeModes_.size() - 1);
+        RenderTexture* nextTarget = isLastBatch ? nullptr : workspace.workTextures[pingPongIdx % 2];
+        D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = isLastBatch ? rtvHandle : nextTarget->GetRtvHandle();
+
+        // 横方向パス用の中間バッファ（BloomのBlurバッファを一時的に借用）
+        RenderTexture* blurH = workspace.bloomBlur;
+        
+        DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+        ID3D12PipelineState* psoH = (mode == Mode::Smoothing) ? smoothingBlurPSO_.Get() : gaussianBlurPSO_.Get();
+        ID3D12PipelineState* psoV = nullptr;
+        if (mode == Mode::Smoothing) {
+            psoV = isLastBatch ? finalSmoothingBlurPSO_.Get() : smoothingBlurPSO_.Get();
+        } else {
+            psoV = isLastBatch ? finalGaussianBlurPSO_.Get() : gaussianBlurPSO_.Get();
+        }
+
+        // H Pass
+        if (mode == Mode::Smoothing) {
+            smoothingParams_.direction = { 1.0f, 0.0f };
+            if (mappedSmoothing_) { *mappedSmoothing_ = smoothingParams_; }
+        } else {
+            gaussianParams_.direction = { 1.0f, 0.0f };
+            if (mappedGaussian_) { *mappedGaussian_ = gaussianParams_; }
+        }
+        DrawSinglePass(commandList, mode, currentSource, blurH->GetRtvHandle(), false, psoH);
+        
+        DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+        // V Pass
+        if (!isLastBatch) {
+            DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+
+        if (mode == Mode::Smoothing) {
+            smoothingParams_.direction = { 0.0f, 1.0f };
+            if (mappedSmoothing_) { *mappedSmoothing_ = smoothingParams_; }
+        } else {
+            gaussianParams_.direction = { 0.0f, 1.0f };
+            if (mappedGaussian_) { *mappedGaussian_ = gaussianParams_; }
+        }
+        
+        commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
+        float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
+        DrawSinglePass(commandList, mode, blurH, targetHandle, isLastBatch, psoV);
+
+        if (!isLastBatch) {
+          DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          pingPongIdx++;
+        }
+        currentSource = nextTarget;
+        modeIdx++;
+      }
       // 2) 統合バッチ
       else {
         std::vector<Mode> batch;
         size_t lookAhead = modeIdx;
-        while (lookAhead < activeModes_.size() && activeModes_[lookAhead] != Mode::Bloom && batch.size() < 16) {
+        while (lookAhead < activeModes_.size() && 
+               activeModes_[lookAhead] != Mode::Bloom && 
+               activeModes_[lookAhead] != Mode::Smoothing && 
+               activeModes_[lookAhead] != Mode::GaussianFilter && 
+               batch.size() < 16) {
           batch.push_back(activeModes_[lookAhead]);
           lookAhead++;
         }
@@ -428,6 +488,23 @@ void PostProcessManager::CreatePSOs() {
     // 最終パス用
     combinedDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
     device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&finalCombinedPSO_));
+
+    // --- 分離可能フィルタ用 PSO ---
+    auto boxBlurPS = shaderManager->GetOrCompile(L"resources/shaders/BoxBlur.PS.hlsl", options);
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC sepDesc = bloomDesc;
+    sepDesc.RTVFormats[0] = rtvFormat_;
+    
+    sepDesc.PS = {boxBlurPS->GetBufferPointer(), boxBlurPS->GetBufferSize()};
+    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&smoothingBlurPSO_));
+    sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalSmoothingBlurPSO_));
+
+    sepDesc.RTVFormats[0] = rtvFormat_;
+    auto gaussianPS = shaderManager->GetOrCompile(L"resources/shaders/GaussianFilter.PS.hlsl", options);
+    sepDesc.PS = {gaussianPS->GetBufferPointer(), gaussianPS->GetBufferSize()};
+    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&gaussianBlurPSO_));
+    sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalGaussianBlurPSO_));
 }
 
 void PostProcessManager::CreateConstantBuffers() {

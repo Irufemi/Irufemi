@@ -1,6 +1,7 @@
 #include "EditorManager.h"
 
 #ifdef EditorMode
+#include <filesystem>
 #include "imgui/imgui.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/RenderTexture.h"
@@ -14,6 +15,8 @@
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Engine/Manager/CollisionManager.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Engine/Graphics/Pipeline/RenderGraph/RenderGraph.h"
 
 // 分離したエディタパネル群
 #include "Engine/Editor/IEditorPanel.h"
@@ -158,10 +161,31 @@ void EditorManager::DrawEditorUI() {
                     }
                 }
             }
-            ImGui::Separator();
+
             if (ImGui::MenuItem("Exit")) {
                 // 終了処理（PostQuitMessage）
                 PostQuitMessage(0);
+            }
+            ImGui::EndMenu();
+        }
+        
+        if (ImGui::BeginMenu("Window")) {
+            if (ImGui::BeginMenu("Layout")) {
+                if (ImGui::MenuItem("Load Default Layout")) {
+                    const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
+                    if (std::filesystem::exists(presetPath)) {
+                        ImGui::LoadIniSettingsFromDisk(presetPath);
+                    }
+                }
+                if (ImGui::MenuItem("Save Current as Default")) {
+                    ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
+                    const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
+                    if (std::filesystem::exists("imgui.ini")) {
+                        std::error_code ec;
+                        std::filesystem::copy_file("imgui.ini", presetPath, std::filesystem::copy_options::overwrite_existing, ec);
+                    }
+                }
+                ImGui::EndMenu();
             }
             ImGui::EndMenu();
         }
@@ -185,6 +209,10 @@ void EditorManager::DrawEditorUI() {
     for (auto& panel : panels_) {
         panel->Draw();
     }
+
+#ifdef USE_IMGUI
+    // 描画呼び出しをDebugUI.cppに移動しました
+#endif // USE_IMGUI
 
     ImGui::End(); // Editor DockSpace
 }

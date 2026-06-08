@@ -45,11 +45,7 @@ public:
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
 
-    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
-    
-    void MarkAsDirty() {
-        for(int i=0; i<kMaxFramesInFlight; ++i) isDirtyBuffer_[i] = true;
-    }
+
 
     void SyncBeforeDraw();
 };

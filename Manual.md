@@ -1,4 +1,4 @@
-﻿# IrufemiEngine 取扱説明書 (Manual)
+# IrufemiEngine 取扱説明書 (Manual)
 
 このドキュメントは、IrufemiEngineを利用してゲームを開発するチームメンバーのための総合マニュアルです。
 各機能の役割と、すぐに使えるコードスニペット（コピペ用コード）をまとめています。
@@ -348,32 +348,39 @@ sprite_->Draw(); // 通常のUIパスで描画される
 // sprite_->Draw(true); 
 ```
 
-### 2.3 プリミティブ形状 (`CubeClass`, `SphereClass`, `CylinderClass`, `LineClass`)
-当たり判定のデバッグ表示や、プロトタイプの作成に便利な組み込み図形です。モデルファイルなしで使えます。
+### 2.3 プリミティブ形状 (`Primitive3DObject`, `LineClass`)
+当たり判定のデバッグ表示や、プロトタイプの作成に便利な組み込み図形です。
+以前は `CubeClass` や `SphereClass` などの専用クラスに分かれていましたが、現在は `Primitive3DObject` に統合されており、１つのクラスで複数の形状（Cube, Sphere, Cylinder, Plane, Torus 等）を自由に切り替えて表示できます。
 
 ```cpp
 // 1. 宣言 (ヘッダー)
-std::unique_ptr<CubeClass> cube_;
+std::unique_ptr<Primitive3DObject> primitive_;
 std::unique_ptr<LineClass> line_;
 
 // 2. 初期化 (Initialize)
-cube_ = std::make_unique<CubeClass>();
-cube_->Initialize();
-cube_->SetColor({ 1.0f, 0.0f, 0.0f, 0.5f }); // 赤色で半透明
+primitive_ = std::make_unique<Primitive3DObject>();
+// (PrimitiveType::Cube などを指定して初期化)
+primitive_->Initialize(PrimitiveType::Cube);
+// 形状固有のパラメータ変更 (例：Cubeの場合は不要だがSphereならRadiusを変える等)
+primitive_->SetColor({ 1.0f, 0.0f, 0.0f, 0.5f }); // 赤色で半透明
 
 line_ = std::make_unique<LineClass>();
 line_->Initialize();
 line_->SetColor({ 0.0f, 1.0f, 0.0f, 1.0f }); // 緑色の線
 
 // 3. 更新と描画 (Update & Draw)
-cube_->SetPosition(playerPos);
-cube_->Update();
-cube_->Draw();
+// TransformComponentのように直接 transform 情報を更新する（簡易版）
+primitive_->transform_.translate = playerPos;
+primitive_->Update();
+primitive_->Draw();
 
 line_->SetStartAndEnd(startPos, endPos);
 line_->Update();
 line_->Draw(); // ライン専用のキューに登録される
 ```
+
+※ **内部データ構造の変更について**：
+これまで使われていた `MeshModule` や `MaterialModule` は、それぞれ `MeshDesc` と `MaterialDesc` に名称変更され、`Renderer/Data/RenderData.h` に統合されています。描画パイプラインのコードを独自にカスタマイズする際はこの変更にご注意ください。
 
 ### 2.4 パーティクル (`GPUParticleSystem`)
 コンピュートシェーダを利用して数万個のパーティクルを高速に描画するシステムです。
@@ -625,6 +632,36 @@ model_->GetResource()->SetCustomCBVAddress(myCb_->GetGPUVirtualAddress());
 // 3. HLSL (シェーダー) 側で受け取る
 // ConstantBuffer<MyCustomParams> gMyParams : register(b6);
 ```
+
+### 2.7 マルチバッファ同期と基底クラス (`MultiBufferSyncState`)
+DirectX 12 でフレーム間のマルチバッファリング（`kMaxFramesInFlight`）を行う際、CPUからGPUへの定数バッファの更新タイミングを管理するために `MultiBufferSyncState` 基底クラスを利用します。
+`BaseResource` や `BaseModel` などの描画リソースクラスは、すでにこのクラスを継承しています。
+
+#### 使い方ルール
+1. **CPU側でのデータ変更時 (`Update` 等)**
+   描画オブジェクトのパラメータ（座標、色、カスタムマテリアル等）を変更した際は、必ず `MarkAsDirty()` を呼び出します。これにより、全フレームバッファ（最大3フレーム分）に「更新が必要」というフラグが立ちます。
+   ```cpp
+   void Skybox::Update() {
+       // 行列や色の計算...
+       transformationMatrix_.World = worldMatrix;
+       
+       // データが変更されたので全フレームバッファのDirtyフラグを立てる
+       MarkAsDirty();
+   }
+   ```
+2. **GPUバッファへの同期時 (`SyncBeforeDraw` 等)**
+   GPUにデータを書き込む直前（描画の直前）で `CheckAndClearDirty(frameIndex)` を呼び出します。この関数は、対象フレームの更新フラグが立っている場合のみ `true` を返し、同時にフラグをクリアします。
+   ```cpp
+   void Skybox::SyncBeforeDraw() {
+       uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+       
+       // 対象フレームのバッファが古い場合のみ、GPUへ転送する
+       if (CheckAndClearDirty(frameIndex)) {
+           transformationBuffer_.Update(transformationMatrix_, frameIndex);
+       }
+   }
+   ```
+   ※従来の手動配列管理（`isDirtyBuffer_[frameIndex] = true` 等）は非推奨です。
 
 ---
 
@@ -893,6 +930,37 @@ Unityライクな「オブジェクトのテンプレート化」をサポート
    }
    ```
 
+### 6.3 カスタムエディタUI構築と Undo/Redo (Ctrl+Z) 対応
+エンジン標準の `GetProperties()` （簡易リフレクション）を使わずに、複雑なカスタムUIを構築したい場合は、`IComponentEditor` を継承したクラスを作成します（実装は `ComponentEditorRegistry.cpp` に記述）。
+この際、インスペクターでの値の変更を Undo/Redo (Ctrl+Z) に対応させるため、以下の専用のヘルパー関数を使用してください。
+
+**1. ドラッグ操作など連続する値の変更 (`CheckUndoRedoDrag`)**
+`ImGui::DragFloat` や `ImGui::ColorEdit` など、ドラッグ中に値が連続的に変わるUIでは、操作の「開始」と「終了」のタイミングを自動判定してコマンドを発行する `CheckUndoRedoDrag` を呼び出します。
+
+```cpp
+// UI描画と値の更新
+if (ImGui::DragFloat("Base Scale", &scale, 0.1f, 0.1f, 1000.0f)) {
+    comp->SetBaseScale(scale); // ドラッグ中のリアルタイム反映
+}
+// ドラッグ終了時に自動でUndo/Redoコマンドを発行
+CheckUndoRedoDrag(actionManager, &scale, [comp](const float& v) { 
+    comp->SetBaseScale(v); 
+});
+```
+
+**2. チェックボックスやコンボボックスなど即時確定する変更 (`PushInstantUndo`)**
+`ImGui::Checkbox` や `ImGui::BeginCombo` など、クリックした瞬間に値が確定するUIでは、変更前後の値を使って `PushInstantUndo` を呼び出します。
+
+```cpp
+bool isTopMost = comp->IsTopMost();
+if (ImGui::Checkbox("TopMost", &isTopMost)) {
+    // 変更前の値、変更後の値、値をもとに戻すためのセッター関数（ラムダ）を渡す
+    PushInstantUndo(actionManager, comp->IsTopMost(), isTopMost, [comp](const bool& v) { 
+        comp->SetTopMost(v); 
+    });
+}
+```
+
 ---
 ## 7. トラブルシューティング (Troubleshooting)
 
@@ -916,5 +984,7 @@ Unityライクな「オブジェクトのテンプレート化」をサポート
 > - 2026/05: コンポーネントシステム（GameObject/Component）の導入と、UIロジックの分離（Registry方式）を追記
 > - 2026/05: 高品質テキスト描画システム (`TextRendererComponent` / `FontManager`) と、Play時の自動保存機能を追記
 > - 2026/05: 終了時のリソースリーク（LIVE_DEVICE）対策とトラブルシューティングを追記
-
-> - 2026/05: RenderGraph / パケット分離対応を反映、Phase 1~3 および 便利機能（カメラ、ディレクトリ構造、UISelectionGroup）を追記、3D爆発エフェクト (Effect::kExplosion) 仕様とスニペットの追加
+> - 2026/05: 3D爆発エフェクト (Effect::kExplosion) 仕様とスニペットの追加
+> - 2026/06: カスタムエディタUI構築時の Undo/Redo (Ctrl+Z) 対応用ヘルパー関数の解説を追記
+> - 2026/06: プリミティブ描画の `Primitive3DObject` への統合、および `MeshDesc` / `MaterialDesc` へのデータ構造リファクタリングを反映
+> - 2026/06: 描画リソースのマルチバッファ同期処理を `MultiBufferSyncState` 基底クラスへ集約し、`Manual.md` に使い方を追加

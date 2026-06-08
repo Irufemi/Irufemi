@@ -42,14 +42,9 @@
 #include "Renderer/Object2D/Primitive/Circle2D.h"
 // Object3D
 #include "Renderer/Object3D/AnimationModel/AnimationModel.h"
-#include "Renderer/Object3D/ObjClass/ObjClass.h"
-#include "Renderer/Object3D/Primitive/CubeClass.h"
-#include "Renderer/Object3D/Primitive/CylinderClass.h"
-#include "Renderer/Object3D/Primitive/PlaneClass.h"
-#include "Renderer/Object3D/Primitive/SphereClass.h"
-#include "Renderer/Object3D/Primitive/TriangleClass.h"
-// Particle
-#include "Renderer/Particle/ParticleSystem.h"
+#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
+#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
+
 // ParticleGPU
 #include "Renderer/ParticleGPU/GPUParticleSystem.h"
 // VoxelParticle

@@ -12,13 +12,16 @@ struct Particle
 	float3 rotation;
 	float trailTimer; // Trail用タイマー
 	float3 rotateSpeed;
-	float pad2;
+	uint emitterIndex;
 	float3 startScale;
-	float pad3;
+	uint billboardMode;
 	float3 endScale;
-	float pad4;
+	uint atlasSize;
 	float4 startColor;
 	float4 endColor;
+	float4 midColor;
+	float3 midScale;
+	float midPoint;
 };
 
 struct PerView
@@ -50,10 +53,10 @@ struct GPUParticleEmitter
 	float3 translate;   // 位置
 
 	// float4 x 2
-	int count;          // 放出数
-	float frequency;    // 頻度
-	float frequencyTime;// タイマー
-	int emit;           // 放出フラグ
+	float emissionRate;     // 1秒あたりの連続放出数
+	float emissionResidue;  // 端数繰り越し用
+	float padFreqTime;      // タイマー(パディング)
+	int emit;               // 放出フラグ
 
 	// float4 x 3
 	float radius;       // Sphere/Ring/Cylinder用: 半径
@@ -123,4 +126,15 @@ struct GPUParticleEmitter
 	float trailFrequency;
 	float pad7;
 	float pad8;
+
+	// float4 x 19
+	float4 midColorMin;
+	// float4 x 20
+	float4 midColorMax;
+	// float4 x 21
+	float3 midScaleMin;
+	float pad9;
+	// float4 x 22
+	float3 midScaleMax;
+	float midPoint;
 };

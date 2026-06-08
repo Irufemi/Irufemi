@@ -5,10 +5,11 @@ void SceneTransition::Initialize(PostProcessManager* ppManager) {
     ppManager_ = ppManager;
 }
 
-void SceneTransition::Start(Type type, float duration, bool isOut) {
+void SceneTransition::Start(Type type, float duration, bool isOut, EaseType easeType) {
     if (!ppManager_) return;
 
     currentType_ = type;
+    easeType_ = easeType;
     duration_ = (std::max)(0.001f, duration); // 0除算防止
     isOut_ = isOut;
     timer_ = 0.0f;
@@ -78,8 +79,11 @@ void SceneTransition::Update(float deltaTime) {
     // 溜め時間 (kDwellTime) 中は 1.0 固定にする
     float progress = (std::min)(1.0f, timer_ / duration_);
     
+    // イージング関数の適用
+    float easedProgress = EvaluateEase(easeType_, progress);
+    
     // 実際にエフェクトに適用する係数
-    float factor = isOut_ ? progress : (1.0f - progress);
+    float factor = isOut_ ? easedProgress : (1.0f - easedProgress);
 
     // 各モードのパラメータに反映
     switch (currentType_) {
