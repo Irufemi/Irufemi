@@ -2,9 +2,10 @@
 
 #ifdef EditorMode
 #include "imgui/imgui.h"
-#include "Engine/Manager/EditorManager.h"
+#include "EditorManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/RenderTexture.h"
+#include "Editor/Utils/EditorCameraController.h"
 #include "Engine/Manager/CollisionManager.h"
 #include "../Core/EditorActionManager.h"
 #include "../Core/EditorDragDrop.h"

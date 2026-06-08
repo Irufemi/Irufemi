@@ -4,13 +4,13 @@
 #include "ICommand.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
-#include "Engine/Manager/EditorManager.h"
+#include "EditorManager.h"
 #include <functional>
 #include <memory>
 
 /**
  * @class ChangeValueCommand
- * @brief 値の変更を記録し、Undo/Redo を行う汎用コマンド
+ * @brief 蛟､縺ｮ螟画峩繧定ｨ倬鹸縺励ゞndo/Redo 繧定｡後≧豎守畑繧ｳ繝槭Φ繝・
  */
 template<typename T>
 class ChangeValueCommand : public ICommand {
@@ -29,7 +29,7 @@ private:
 
 /**
  * @class CreateObjectCommand
- * @brief オブジェクトの生成を記録するコマンド
+ * @brief 繧ｪ繝悶ず繧ｧ繧ｯ繝医・逕滓・繧定ｨ倬鹸縺吶ｋ繧ｳ繝槭Φ繝・
  */
 class CreateObjectCommand : public ICommand {
 public:
@@ -60,7 +60,7 @@ private:
 
 /**
  * @class DeleteObjectCommand
- * @brief オブジェクトの削除を記録するコマンド
+ * @brief 繧ｪ繝悶ず繧ｧ繧ｯ繝医・蜑企勁繧定ｨ倬鹸縺吶ｋ繧ｳ繝槭Φ繝・
  */
 class DeleteObjectCommand : public ICommand {
 public:
@@ -96,7 +96,7 @@ private:
 
 /**
  * @class AddComponentCommand
- * @brief コンポーネントの追加を記録するコマンド
+ * @brief 繧ｳ繝ｳ繝昴・繝阪Φ繝医・霑ｽ蜉繧定ｨ倬鹸縺吶ｋ繧ｳ繝槭Φ繝・
  */
 class AddComponentCommand : public ICommand {
 public:
@@ -118,7 +118,7 @@ private:
 
 /**
  * @class RemoveComponentCommand
- * @brief コンポーネントの削除を記録するコマンド
+ * @brief 繧ｳ繝ｳ繝昴・繝阪Φ繝医・蜑企勁繧定ｨ倬鹸縺吶ｋ繧ｳ繝槭Φ繝・
  */
 class RemoveComponentCommand : public ICommand {
 public:

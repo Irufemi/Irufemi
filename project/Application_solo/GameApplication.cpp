@@ -29,6 +29,10 @@
 #include "scene/debug/DebugScene.h"
 #endif
 
+#ifdef EditorMode
+#include "EditorManager.h"
+#endif
+
 namespace {
     // --- ゲーム固有の定数 ---
     const int32_t kClientWidth = 1280;
@@ -63,6 +67,11 @@ GameApplication::~GameApplication() = default;
 void GameApplication::Run() {
     // エンジンのインスタンスを生成
     auto engine = std::make_unique<IrufemiEngine>();
+
+#ifdef EditorMode
+    // エディタマネージャを拡張として事前登録（Initialize時に初期化される）
+    engine->AddExtension(std::make_shared<EditorManager>());
+#endif
 
     // エンジンの初期化
     engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);

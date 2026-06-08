@@ -2,7 +2,7 @@
 
 #ifdef EditorMode
 #include <imgui/imgui.h>
-#include "Engine/Manager/EditorManager.h"
+#include "EditorManager.h"
 #include "EditorActionManager.h"
 
 EditorShortcutManager::EditorShortcutManager(EditorManager* editor, EditorActionManager* actionManager)

@@ -6,7 +6,7 @@
 #include "Platform/WindowsAPI/WinApp.h"
 #include "Manager/DrawManager.h"
 #include "Manager/DebugUI.h"
-#include "Manager/EditorManager.h"
+#include "Core/System/IEngineExtension.h"
 #include "../Resource/Texture/TextureManager.h"
 #include "../Resource/Audio/AudioManager.h"
 #include "../Resource/Model/ModelManager.h"
@@ -39,6 +39,7 @@
 class SceneManager;
 class DebugUI;
 class VoxelParticleManager;
+class GameObject;
 #include "Graphics/Camera/CameraManager.h"
 
 /**
@@ -131,6 +132,15 @@ public: // メンバ関数
      */
     void SetInitialSceneName(std::string name) { initialSceneName_ = std::move(name); }
 
+    /**
+     * @brief エンジンの拡張機能（エディタなど）を追加する
+     */
+    void AddExtension(std::shared_ptr<IEngineExtension> extension) {
+        if (extension) {
+            extensions_.push_back(std::move(extension));
+        }
+    }
+
  private: // メンバ関数(内部処理)
 
     /**
@@ -188,9 +198,6 @@ public: // ゲッター
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
     CameraManager* GetCameraManager() { return cameraManager_.get(); }
-#ifdef EditorMode
-    EditorManager* GetEditorManager() { return editorManager_.get(); }
-#endif
     /** 
      * @brief ポストプロセス管理者を取得
      * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
@@ -231,6 +238,13 @@ public: // ゲッター
     
     // 追加: アセットがロード中かどうかを判定する
     bool IsAssetLoading() const;
+
+    // --- エディタ・プレイスタイル関連の状態 ---
+    bool IsPlayMode() const { return isPlayMode_; }
+    void SetPlayMode(bool play);
+
+    std::shared_ptr<GameObject> GetSelectedObject() const { return selectedObject_.lock(); }
+    void SetSelectedObject(std::shared_ptr<GameObject> obj) { selectedObject_ = obj; }
 
 public: // セッター
     void AddFenceValue(uint32_t index) { dxCommon_->GetFenceValue() += index; }
@@ -306,10 +320,8 @@ private: // メンバ変数
     // DebugUI
     std::unique_ptr<DebugUI> ui_ = nullptr;
     
-#ifdef EditorMode
-    // EditorManager
-    std::unique_ptr<EditorManager> editorManager_ = nullptr;
-#endif
+    // Extensions
+    std::vector<std::shared_ptr<IEngineExtension>> extensions_;
     
     // TextureManager
     std::unique_ptr<TextureManager> textureManager_ = nullptr;
@@ -369,4 +381,8 @@ private: // メンバ変数
     std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
     bool isFinalized_ = false; // 終了処理済みフラグ
+
+    bool isPlayMode_ = true;
+    std::weak_ptr<GameObject> selectedObject_;
+    bool sceneRequestedCursorLock_ = false;
 };

@@ -3,10 +3,10 @@
 #ifdef EditorMode
 #include "imgui/imgui.h"
 #include "Engine/IrufemiEngine.h"
-#include "Engine/Manager/EditorManager.h"
-#include "../../../EngineResources/FontAwesome/IconsFontAwesome6.h"
+#include "EditorManager.h"
+#include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 #include "../Core/EditorDragDrop.h"
-#include "../../Core/System/DirectoryWatcher.h"
+#include "Engine/Core/System/DirectoryWatcher.h"
 #include <algorithm>
 
 ProjectBrowserPanel::ProjectBrowserPanel() {

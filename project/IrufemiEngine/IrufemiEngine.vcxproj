@@ -55,10 +55,8 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings"></ImportGroup>
+  <ImportGroup Label="Shared"></ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -181,8 +179,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <LinkTimeCodeGeneration>
-      </LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration></LinkTimeCodeGeneration>
       <AdditionalLibraryDirectories>$(SolutionDir)externals\assimp\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -267,33 +264,26 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp" />
     <ClCompile Include="Renderer\ParticleGPU\ParticleObject.cpp" />
     <ClCompile Include="Renderer\Effect\Effect.cpp" />
-
     <ClCompile Include="Renderer\Core\BaseResource.cpp" />
     <ClCompile Include="Renderer\Object2D\Object2DResource.cpp" />
     <ClCompile Include="Renderer\Object3D\Object3DResource.cpp" />
-
     <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp" />
     <ClCompile Include="Engine\Core\Math\Random\Random.cpp" />
     <ClCompile Include="Resource\Model\AnimationManager.cpp" />
     <ClCompile Include="Resource\Audio\Bgm.cpp" />
-
     <ClCompile Include="Renderer\Region\BaseRegion.cpp" />
     <ClCompile Include="Renderer\Region\ModelRegion.cpp" />
     <ClCompile Include="Renderer\Region\PrimitiveRegion.cpp" />
     <ClCompile Include="Renderer\Object2D\Primitive\Circle2D.cpp" />
-
     <ClCompile Include="Engine\Graphics\DirectX\DescriptorAllocator.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DescriptorPool.cpp" />
-
     <ClCompile Include="Renderer\LineInstanced\LineResource.cpp" />
     <ClCompile Include="Renderer\LineInstanced\LineClass.cpp" />
     <ClCompile Include="Engine\Core\Math\Matrix4x4.cpp" />
     <ClCompile Include="Engine\Core\Math\Quaternion.cpp" />
-
     <ClCompile Include="Engine\Core\Math\Vector2.cpp" />
     <ClCompile Include="Resource\Audio\Se.cpp" />
     <ClCompile Include="Resource\Model\ModelManager.cpp" />
-
     <ClCompile Include="Engine\Platform\Input\Mouse.cpp" />
     <ClCompile Include="Engine\Core\Math\Vector4.cpp" />
     <ClCompile Include="Renderer\Skybox\Skybox.cpp" />
@@ -311,16 +301,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Platform\Input\Keyboard.cpp" />
     <ClCompile Include="Resource\Audio\AudioManager.cpp" />
     <ClCompile Include="Engine\Manager\DrawManager.cpp" />
-    <ClCompile Include="Engine\Manager\EditorManager.cpp" />
-    <ClCompile Include="Engine\Editor\Utils\EditorCameraController.cpp" />
-    <ClCompile Include="Engine\Editor\Panel\SceneViewPanel.cpp" />
-    <ClCompile Include="Engine\Editor\Panel\HierarchyPanel.cpp" />
-    <ClCompile Include="Engine\Editor\Panel\InspectorPanel.cpp" />
-    <ClCompile Include="Engine\Editor\Panel\ProjectBrowserPanel.cpp" />
-    <ClCompile Include="Engine\Editor\Core\EditorTheme.cpp" />
-    <ClCompile Include="Engine\Editor\Core\ComponentEditorRegistry.cpp" />
-    <ClCompile Include="Engine\Editor\Core\EditorActionManager.cpp" />
-    <ClCompile Include="Engine\Editor\Core\EditorShortcutManager.cpp" />
     <ClCompile Include="Engine\Manager\DebugUI.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.cpp" />
@@ -383,6 +363,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h" />
     <ClInclude Include="Engine\Core\Math\NumericalSequence.h" />
     <ClInclude Include="Engine\Core\Math\Vector3Int.h" />
+    <ClInclude Include="Engine\Core\System\IEngineExtension.h" />
     <ClInclude Include="Engine\Core\System\TaskGroup.h" />
     <ClInclude Include="Engine\Core\System\ThreadPool.h" />
     <ClInclude Include="Engine\Core\System\DirectoryWatcher.h" />
@@ -440,7 +421,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Model\Data\VoxelizedModel.h" />
     <ClInclude Include="Engine\Irufemi.h" />
     <ClInclude Include="Renderer\Object2D\Sprite\Sprite.h" />
-
     <ClInclude Include="Renderer\LineInstanced\LineClass.h" />
     <ClInclude Include="Renderer\Object3D\StaticModelObject\StaticModelObject.h" />
     <ClInclude Include="Renderer\Object3D\BaseModel\BaseModel.h" />
@@ -448,12 +428,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h" />
     <ClInclude Include="Renderer\ParticleGPU\ParticleObject.h" />
     <ClInclude Include="Renderer\Effect\Effect.h" />
-
     <ClInclude Include="Renderer\Core\BaseResource.h" />
     <ClInclude Include="Renderer\Core\MultiBufferSyncState.h" />
     <ClInclude Include="Renderer\Object2D\Object2DResource.h" />
     <ClInclude Include="Renderer\Object3D\Object3DResource.h" />
-
     <ClInclude Include="Engine\Core\Math\Geometry\Collision.h" />
     <ClInclude Include="Engine\Core\Math\Random\Random.h" />
     <ClInclude Include="Resource\Model\AnimationManager.h" />
@@ -464,7 +442,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Resource\Audio\Bgm.h" />
-
     <ClInclude Include="Renderer\Object2D\Primitive\Circle2D.h" />
     <ClInclude Include="Engine\Graphics\DirectX\DescriptorAllocator.h" />
     <ClInclude Include="Engine\Graphics\DirectX\DescriptorPool.h" />
@@ -488,21 +465,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Audio\AudioManager.h" />
     <ClInclude Include="Engine\Manager\DebugUI.h" />
     <ClInclude Include="Engine\Manager\DrawManager.h" />
-    <ClInclude Include="Engine\Manager\EditorManager.h" />
-    <ClInclude Include="Engine\Editor\Utils\EditorCameraController.h" />
-    <ClInclude Include="Engine\Editor\IEditorPanel.h" />
-    <ClInclude Include="Engine\Editor\Panel\SceneViewPanel.h" />
-    <ClInclude Include="Engine\Editor\Panel\HierarchyPanel.h" />
-    <ClInclude Include="Engine\Editor\Panel\InspectorPanel.h" />
-    <ClInclude Include="Engine\Editor\Panel\ProjectBrowserPanel.h" />
-    <ClInclude Include="Engine\Editor\Core\EditorTheme.h" />
-    <ClInclude Include="Engine\Editor\Core\EditorDragDrop.h" />
-    <ClInclude Include="Engine\Editor\Core\IComponentEditor.h" />
-    <ClInclude Include="Engine\Editor\Core\EditorActionManager.h" />
-    <ClInclude Include="Engine\Editor\Core\EditorShortcutManager.h" />
-    <ClInclude Include="Engine\Editor\Core\ICommand.h" />
-    <ClInclude Include="Engine\Editor\Core\EditorCommands.h" />
-    <ClInclude Include="Engine\Editor\Core\ComponentEditorRegistry.h" />
     <ClInclude Include="Engine\Graphics\Data\RenderPackets.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h" />
@@ -527,7 +489,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Data\CameraForGPU.h" />
     <ClInclude Include="Resource\Audio\Data\ChunkHeader.h" />
     <ClInclude Include="Engine\Graphics\Data\DirectionalLight.h" />
-
     <ClInclude Include="Resource\Audio\Data\FormatChunk.h" />
     <ClInclude Include="Resource\Model\Data\Joint.h" />
     <ClInclude Include="Resource\Model\Data\JointWeightData.h" />
@@ -539,7 +500,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Model\Data\ModelData.h" />
     <ClInclude Include="Resource\Model\Data\NodeAnimation.h" />
     <ClInclude Include="Resource\Model\Data\ObjModel.h" />
-
     <ClInclude Include="Engine\Graphics\Data\PointLight.h" />
     <ClInclude Include="Engine\Core\Type\PrimitiveType.h" />
     <ClInclude Include="Engine\Core\Math\Quaternion.h" />
@@ -549,7 +509,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Shape\Ball.h" />
     <ClInclude Include="Engine\Core\Shape\LinePrimitive.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\OBB.h" />
-
     <ClInclude Include="Engine\Core\Shape\Plane.h" />
     <ClInclude Include="Engine\Core\Shape\Sphere.h" />
     <ClInclude Include="Engine\Graphics\Data\Spring.h" />
@@ -567,7 +526,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Pipeline\PSOManager.h" />
     <ClInclude Include="Resource\Model\Data\Node.h" />
     <ClInclude Include="Resource\Model\ModelManager.h" />
-
     <ClInclude Include="Engine\Platform\Input\Mouse.h" />
     <ClInclude Include="Resource\Model\Data\VertexInfluence.h" />
     <ClInclude Include="Resource\Model\Data\WellForGPU.h" />
@@ -998,6 +956,5 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets"></ImportGroup>
 </Project>

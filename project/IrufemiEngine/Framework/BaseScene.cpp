@@ -11,7 +11,6 @@
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "GameObject.h"
 #include "Engine/Manager/CollisionManager.h"
-#include "Engine/Manager/EditorManager.h"
 
 #include "SceneSerializer.h"
 #include "Component/TransformComponent.h"
@@ -66,8 +65,8 @@ void BaseScene::Update() {
 
     bool isPlayMode = true;
 #ifdef EditorMode
-    if (engine_ && engine_->GetEditorManager()) {
-        isPlayMode = engine_->GetEditorManager()->IsPlayMode();
+    if (engine_) {
+        isPlayMode = engine_->IsPlayMode();
     }
 #endif
 
@@ -102,8 +101,8 @@ void BaseScene::Draw() {
     
 #ifdef EditorMode
     GameObject* selectedObj = nullptr;
-    if (engine_ && engine_->GetEditorManager()) {
-        auto sel = engine_->GetEditorManager()->GetSelectedObject();
+    if (engine_) {
+        auto sel = engine_->GetSelectedObject();
         if (sel) {
             selectedObj = sel.get();
         }

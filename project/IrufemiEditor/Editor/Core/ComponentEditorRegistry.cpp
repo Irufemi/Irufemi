@@ -7,7 +7,7 @@
 #include <string>
 
 // Engine/Framework
-#include "Engine/Manager/EditorManager.h"
+#include "EditorManager.h"
 #include "Engine/Manager/CollisionManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"

@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include "Engine/Core/System/IEngineExtension.h"
 
 class IrufemiEngine;
 class GameObject;
@@ -26,14 +27,14 @@ enum class EditorModeState {
  * @class EditorManager
  * @brief エディタのUIレイアウト（DockSpace、SceneViewなど）を統括するマネージャ
  */
-class EditorManager {
+class EditorManager : public IEngineExtension {
 public:
     EditorManager();
-    ~EditorManager();
+    ~EditorManager() override;
 
-    void Initialize(IrufemiEngine* engine);
-    void Update();
-    void DrawEditorUI();
+    void OnInitialize(IrufemiEngine* engine) override;
+    void OnUpdate(float deltaTime) override;
+    void OnDrawUI() override;
 
     /** @name 各パネルからアクセスするための状態管理 Getter/Setter */
     ///@{
@@ -43,9 +44,9 @@ public:
     EditorShortcutManager* GetShortcutManager() const { return shortcutManager_.get(); }
     ComponentEditorRegistry* GetComponentEditorRegistry() const { return componentEditorRegistry_.get(); }
     
-    std::shared_ptr<GameObject> GetSelectedObject() const { return selectedObject_.lock(); }
-    void SetSelectedObject(std::shared_ptr<GameObject> obj) { selectedObject_ = obj; }
-    void ClearSelectedObject() { selectedObject_.reset(); }
+    std::shared_ptr<GameObject> GetSelectedObject() const;
+    void SetSelectedObject(std::shared_ptr<GameObject> obj);
+    void ClearSelectedObject();
     
     EditorModeState GetCurrentMode() const { return currentMode_; }
     bool IsPlayMode() const { return currentMode_ == EditorModeState::Play; }
@@ -64,7 +65,7 @@ public:
 private:
 
     IrufemiEngine* engine_ = nullptr;
-    std::weak_ptr<GameObject> selectedObject_;
+
     EditorModeState currentMode_ = EditorModeState::Edit;
     std::string playModeStartSceneName_ = "";
 

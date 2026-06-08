@@ -9,6 +9,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Application_solo", "Applica
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IrufemiEngine", "IrufemiEngine\IrufemiEngine.vcxproj", "{E7D83BAB-90F9-4841-B6EB-516D3E28214F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IrufemiEditor", "IrufemiEditor\IrufemiEditor.vcxproj", "{6B9B6722-45B6-429C-A66D-5ADD2171AD79}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E7D83BAB-90F9-4841-B6EB-516D3E28214F} = {E7D83BAB-90F9-4841-B6EB-516D3E28214F}
+		{665A39E3-3BBB-4705-ABBE-36F254FBDAB2} = {665A39E3-3BBB-4705-ABBE-36F254FBDAB2}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj", "{371B9FA9-4C90-4AC6-A123-ACED756D6C77}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "externals\imgui\imgui.vcxproj", "{665A39E3-3BBB-4705-ABBE-36F254FBDAB2}"
@@ -37,6 +43,14 @@ Global
 		{E7D83BAB-90F9-4841-B6EB-516D3E28214F}.Editor|x64.Build.0 = Editor|x64
 		{E7D83BAB-90F9-4841-B6EB-516D3E28214F}.Release|x64.ActiveCfg = Release|x64
 		{E7D83BAB-90F9-4841-B6EB-516D3E28214F}.Release|x64.Build.0 = Release|x64
+		{6B9B6722-45B6-429C-A66D-5ADD2171AD79}.Debug|x64.ActiveCfg = Debug|x64
+		{6B9B6722-45B6-429C-A66D-5ADD2171AD79}.Debug|x64.Build.0 = Debug|x64
+		{6B9B6722-45B6-429C-A66D-5ADD2171AD79}.Development|x64.ActiveCfg = Development|x64
+		{6B9B6722-45B6-429C-A66D-5ADD2171AD79}.Development|x64.Build.0 = Development|x64
+		{6B9B6722-45B6-429C-A66D-5ADD2171AD79}.Editor|x64.ActiveCfg = Editor|x64
+		{6B9B6722-45B6-429C-A66D-5ADD2171AD79}.Editor|x64.Build.0 = Editor|x64
+		{6B9B6722-45B6-429C-A66D-5ADD2171AD79}.Release|x64.ActiveCfg = Release|x64
+		{6B9B6722-45B6-429C-A66D-5ADD2171AD79}.Release|x64.Build.0 = Release|x64
 		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Debug|x64.ActiveCfg = Debug|x64
 		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Debug|x64.Build.0 = Debug|x64
 		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Development|x64.ActiveCfg = Development|x64

@@ -19,25 +19,26 @@
 #include "Engine/Graphics/Pipeline/RenderGraph/RenderGraph.h"
 
 // 分離したエディタパネル群
-#include "Engine/Editor/IEditorPanel.h"
-#include "Engine/Editor/Panel/SceneViewPanel.h"
-#include "Engine/Editor/Panel/HierarchyPanel.h"
-#include "Engine/Editor/Panel/InspectorPanel.h"
-#include "Engine/Editor/Panel/ProjectBrowserPanel.h"
+#include "Editor/IEditorPanel.h"
+#include "Editor/Panel/SceneViewPanel.h"
+#include "Editor/Panel/HierarchyPanel.h"
+#include "Editor/Panel/InspectorPanel.h"
+#include "Editor/Panel/ProjectBrowserPanel.h"
 
 // Editor Core
-#include "Engine/Editor/Core/EditorActionManager.h"
-#include "Engine/Editor/Core/EditorShortcutManager.h"
-#include "Engine/Editor/Core/ComponentEditorRegistry.h"
+#include "Editor/Core/EditorActionManager.h"
+#include "Editor/Core/EditorShortcutManager.h"
+#include "Editor/Core/ComponentEditorRegistry.h"
 
 // FontAwesome 用のヘッダーを含める
-#include "../../EngineResources/FontAwesome/IconsFontAwesome6.h"
+#include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 
 EditorManager::EditorManager() = default;
 EditorManager::~EditorManager() = default;
 
-void EditorManager::Initialize(IrufemiEngine* engine) {
+void EditorManager::OnInitialize(IrufemiEngine* engine) {
     engine_ = engine;
+    engine_->SetPlayMode(false); // 初期はEditモード
 
     actionManager_ = std::make_unique<EditorActionManager>(this);
     shortcutManager_ = std::make_unique<EditorShortcutManager>(this, actionManager_.get());
@@ -56,7 +57,19 @@ void EditorManager::Initialize(IrufemiEngine* engine) {
     }
 }
 
-void EditorManager::Update() {
+std::shared_ptr<GameObject> EditorManager::GetSelectedObject() const {
+    return engine_ ? engine_->GetSelectedObject() : nullptr;
+}
+
+void EditorManager::SetSelectedObject(std::shared_ptr<GameObject> obj) {
+    if (engine_) engine_->SetSelectedObject(obj);
+}
+
+void EditorManager::ClearSelectedObject() {
+    if (engine_) engine_->SetSelectedObject(nullptr);
+}
+
+void EditorManager::OnUpdate(float deltaTime) {
     if (shortcutManager_) {
         shortcutManager_->Update();
     }
@@ -78,6 +91,7 @@ void EditorManager::EnterPlayMode() {
     SceneSerializer::Save(scene, ".temp_playmode");
     playModeStartSceneName_ = currentSceneName; // 開始時のシーンを記憶
     currentMode_ = EditorModeState::Play;
+    engine_->SetPlayMode(true);
 }
 
 void EditorManager::ExitPlayMode() {
@@ -91,6 +105,7 @@ void EditorManager::ExitPlayMode() {
         // 非同期でシーンが切り替わるため、この時点での復元は一旦諦めるか、SceneManagerのコールバックで処理する必要がある
         // 今回はとりあえず元のシーンのファイルをロードし直すことで「保存された状態」に戻るようにする
         currentMode_ = EditorModeState::Edit;
+        engine_->SetPlayMode(false);
         return;
     }
 
@@ -107,12 +122,13 @@ void EditorManager::ExitPlayMode() {
     // バックアップから復元
     SceneSerializer::Load(scene, ".temp_playmode");
     currentMode_ = EditorModeState::Edit;
+    engine_->SetPlayMode(false);
 }
 
-void EditorManager::DrawEditorUI() {
+void EditorManager::OnDrawUI() {
     if (!engine_ || !engine_->GetMainRenderTexture()) return;
 
-    Update(); // ここでショートカット処理を呼ぶ
+    OnUpdate(engine_->GetDeltaTime()); // ここでショートカット処理を呼ぶ
 
     // 1. 全画面を覆う DockSpace の背景ウィンドウを作成
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -157,7 +173,7 @@ void EditorManager::DrawEditorUI() {
                     if (scene) {
                         // 既存のオブジェクトを消してからロードしたい場合はここで処理が必要
                         SceneSerializer::Load(scene, currentSceneName);
-                        selectedObject_.reset(); // ロードしたら選択を解除
+                        ClearSelectedObject(); // ロードしたら選択を解除
                     }
                 }
             }

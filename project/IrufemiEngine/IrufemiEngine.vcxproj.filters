@@ -198,36 +198,6 @@
     <ClCompile Include="Engine\Manager\DrawManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Manager\EditorManager.cpp">
-      <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Editor\Utils\EditorCameraController.cpp">
-      <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Editor\Panel\SceneViewPanel.cpp">
-      <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Editor\Panel\HierarchyPanel.cpp">
-      <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Editor\Panel\InspectorPanel.cpp">
-      <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Editor\Panel\ProjectBrowserPanel.cpp">
-      <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Editor\Core\EditorTheme.cpp">
-      <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Editor\Core\ComponentEditorRegistry.cpp">
-      <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Editor\Core\EditorActionManager.cpp">
-      <Filter>Engine\Manager</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Editor\Core\EditorShortcutManager.cpp">
-      <Filter>Engine\Manager</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Manager\DebugUI.cpp">
       <Filter>Engine\DebugUI</Filter>
     </ClCompile>
@@ -312,7 +282,6 @@
     <ClCompile Include="Engine\Manager\PrimitiveManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
-
     <ClCompile Include="Renderer\LineInstanced\LineClass.cpp">
       <Filter>Renderer\LineInstanced</Filter>
     </ClCompile>
@@ -323,10 +292,10 @@
       <Filter>Renderer\ParticleGPU</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\ParticleGPU\GPUParticleSystem.cpp">
-      <Filter>ソース ファイル\Renderer\ParticleGPU</Filter>
+      <Filter>繧ｽ繝ｼ繧ｹ 繝輔ぃ繧､繝ｫ\Renderer\ParticleGPU</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\ParticleGPU\ParticleObject.cpp">
-      <Filter>ソース ファイル\Renderer\ParticleGPU</Filter>
+      <Filter>繧ｽ繝ｼ繧ｹ 繝輔ぃ繧､繝ｫ\Renderer\ParticleGPU</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Effect\Effect.cpp">
       <Filter>Renderer\Effect</Filter>
@@ -385,7 +354,6 @@
     <ClCompile Include="Engine\Core\Utility\StringUtility.cpp">
       <Filter>Engine\Core\Utility</Filter>
     </ClCompile>
-
     <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp">
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClCompile>
@@ -404,11 +372,6 @@
     <ClCompile Include="Renderer\Object3D\Primitive\TriangleClass.cpp">
       <Filter>Renderer\3D</Filter>
     </ClCompile>
-
-
-
-
-
     <ClCompile Include="Renderer\Object3D\AnimationModel\AnimationModel.cpp">
       <Filter>Renderer\Object3D\AnimationModel</Filter>
     </ClCompile>
@@ -620,30 +583,6 @@
     <ClInclude Include="Engine\Manager\DrawManager.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Manager\EditorManager.h">
-      <Filter>Engine\Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Utils\EditorCameraController.h">
-      <Filter>Engine\Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\IEditorPanel.h">
-      <Filter>Engine\Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Panel\SceneViewPanel.h">
-      <Filter>Engine\Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Panel\HierarchyPanel.h">
-      <Filter>Engine\Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Panel\InspectorPanel.h">
-      <Filter>Engine\Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Panel\ProjectBrowserPanel.h">
-      <Filter>Engine\Manager</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Editor\Core\EditorTheme.h">
-      <Filter>Engine\Manager</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Manager\DebugUI.h">
       <Filter>Engine\Manager</Filter>
     </ClInclude>
@@ -747,10 +686,10 @@
       <Filter>Renderer\ParticleGPU</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\ParticleGPU\GPUParticleSystem.h">
-      <Filter>ヘッダー ファイル\Renderer\ParticleGPU</Filter>
+      <Filter>繝倥ャ繝繝ｼ 繝輔ぃ繧､繝ｫ\Renderer\ParticleGPU</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\ParticleGPU\ParticleObject.h">
-      <Filter>ヘッダー ファイル\Renderer\ParticleGPU</Filter>
+      <Filter>繝倥ャ繝繝ｼ 繝輔ぃ繧､繝ｫ\Renderer\ParticleGPU</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Effect\Effect.h">
       <Filter>Renderer\Effect</Filter>
@@ -962,11 +901,6 @@
     <ClInclude Include="Renderer\Object3D\Primitive\TriangleClass.h">
       <Filter>Renderer\3D</Filter>
     </ClInclude>
-
-
-
-
-
     <ClInclude Include="Renderer\Object3D\AnimationModel\AnimationModel.h">
       <Filter>Renderer\Object3D\AnimationModel</Filter>
     </ClInclude>
@@ -1124,13 +1058,6 @@
     <ClInclude Include="Framework\Component\ComponentFactory.h" />
     <ClInclude Include="Framework\Component\Camera\CameraComponent.h" />
     <ClInclude Include="Framework\Component\Script\RotatorComponent.h" />
-    <ClInclude Include="Engine\Editor\Core\EditorDragDrop.h" />
-    <ClInclude Include="Engine\Editor\Core\IComponentEditor.h" />
-    <ClInclude Include="Engine\Editor\Core\EditorActionManager.h" />
-    <ClInclude Include="Engine\Editor\Core\EditorShortcutManager.h" />
-    <ClInclude Include="Engine\Editor\Core\ICommand.h" />
-    <ClInclude Include="Engine\Editor\Core\EditorCommands.h" />
-    <ClInclude Include="Engine\Editor\Core\ComponentEditorRegistry.h" />
     <ClInclude Include="Framework\Component\AudioSourceComponent.h">
       <Filter>Framework\Component</Filter>
     </ClInclude>

@@ -198,10 +198,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // UI
   ui_ = std::make_unique<DebugUI>();
   ui_->Initialize(winApp_->GetHwnd(), dxCommon_.get());
-#ifdef EditorMode
-  editorManager_ = std::make_unique<EditorManager>();
-  editorManager_->Initialize(this);
-#endif
+  for (auto& ext : extensions_) {
+    ext->OnInitialize(this);
+  }
   Sprite::SetDebugUI(ui_.get());
   Text::SetDebugUI(ui_.get());
   Circle2D::SetDebugUI(ui_.get());
@@ -363,11 +362,10 @@ void IrufemiEngine::Finalize() {
     ui_->Shutdown();
     ui_.reset();
   }
-#ifdef EditorMode
-  if (editorManager_) {
-    editorManager_.reset();
+  for (auto& ext : extensions_) {
+    ext->OnFinalize();
   }
-#endif
+  extensions_.clear();
 
   // 2. 描画・ポストプロセス系 (DirectX基盤に依存)
   if (drawManager_) {
@@ -529,11 +527,9 @@ void IrufemiEngine::Execute() {
     // ImGui_
     ui_->FrameStart();
 
-#ifdef EditorMode
-    if (editorManager_) {
-        editorManager_->DrawEditorUI();
+    for (auto& ext : extensions_) {
+        ext->OnDrawUI();
     }
-#endif
 
 #ifdef USE_IMGUI
     ui_->FPSDebug();
@@ -559,6 +555,10 @@ void IrufemiEngine::Execute() {
     
     GPUParticleManager::GetInstance()->Update();
 
+    for (auto& ext : extensions_) {
+        ext->OnUpdate(deltaTime_);
+    }
+
     if (voxelParticleManager_) {
         // ポーズ中は VoxelParticle の更新をスキップする
         bool isPaused = (sceneManager_ && sceneManager_->GetCurrent() == "Pause");
@@ -581,6 +581,10 @@ void IrufemiEngine::Execute() {
     }
 
     GPUParticleManager::GetInstance()->Draw();
+
+    for (auto& ext : extensions_) {
+        ext->OnDraw();
+    }
 
   // ここで溜まった描画パケットを一斉に処理する
     drawManager_->ExecuteRenderQueues(this);
@@ -709,9 +713,21 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
 }
 
 void IrufemiEngine::SetCursorLocked(bool lock) {
+  sceneRequestedCursorLock_ = lock;
   if (winApp_) {
+#ifdef EditorMode
+      if (!isPlayMode_) {
+          winApp_->SetCursorLocked(false);
+          return;
+      }
+#endif
     winApp_->SetCursorLocked(lock);
   }
+}
+
+void IrufemiEngine::SetPlayMode(bool play) {
+    isPlayMode_ = play;
+    SetCursorLocked(sceneRequestedCursorLock_);
 }
 
 bool IrufemiEngine::IsCursorLocked() const {

@@ -2,7 +2,7 @@
 
 #ifdef EditorMode
 #include "imgui/imgui.h"
-#include "Engine/Manager/EditorManager.h"
+#include "EditorManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Framework/SceneManager.h"
 #include "Framework/BaseScene.h"
