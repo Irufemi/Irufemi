@@ -43,6 +43,8 @@ class DebugUI;
 class VoxelParticleManager;
 class GameObject;
 class CameraManager;
+class CollisionManager;
+class GPUParticleManager;
 
 /**
  * @class IrufemiEngine
@@ -208,6 +210,8 @@ public: // ゲッター
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
     CameraManager* GetCameraManager() { return cameraManager_.get(); }
+    CollisionManager* GetCollisionManager() { return collisionManager_.get(); }
+    GPUParticleManager* GetGPUParticleManager() { return gpuParticleManager_.get(); }
     /** 
      * @brief ポストプロセス管理者を取得
      * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
@@ -245,6 +249,10 @@ public: // ゲッター
     
     // SceneManager参照
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
+    
+    // Sceneディレクトリ設定
+    const std::string& GetSceneDirectory() const { return sceneDirectory_; }
+    void SetSceneDirectory(const std::string& dir) { sceneDirectory_ = dir; }
     
     // 追加: アセットがロード中かどうかを判定する
     bool IsAssetLoading() const;
@@ -360,10 +368,16 @@ private: // メンバ変数
     // VoxelParticleManager
     std::unique_ptr<VoxelParticleManager> voxelParticleManager_ = nullptr;
 
+    // CollisionManager
+    std::unique_ptr<CollisionManager> collisionManager_ = nullptr;
+
+    // GPUParticleManager
+    std::unique_ptr<GPUParticleManager> gpuParticleManager_ = nullptr;
+
     // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };
-
-    // バックバッファのインデックス
+    float timeScale_ = 1.0f;
+    std::string sceneDirectory_ = "resources/scenes/";
     UINT backBufferIndex_{};
     
     // Application から注入
@@ -379,7 +393,6 @@ private: // メンバ変数
     // 追加: ポーズ対応のゲーム内時間管理
     float gameTime_ = 0.0f;
     float gameDeltaTime_ = 0.0f;
-    float timeScale_ = 1.0f;
 
     // --- Dynamic Constant Buffer ---
     std::unique_ptr<DynamicConstantBuffer<Material>> materialBufferManager_ = nullptr;

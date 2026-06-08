@@ -23,6 +23,12 @@ public:
     void Stop();
     void EmitBurst(int count);
     void Update();
+
+    static void SetGPUParticleManager(GPUParticleManager* manager) { gpuParticleManager_ = manager; }
+    
+private:
+    inline static GPUParticleManager* gpuParticleManager_ = nullptr;
+public:
     void DebugUI(const char* name = "Particle Object");
 
     void Serialize(nlohmann::json& j) const;

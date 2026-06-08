@@ -42,10 +42,10 @@ void BaseScene::Initialize(IrufemiEngine* engine) {
     directionalLight_ = std::make_unique<DirectionalLight>();
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
     directionalLight_->direction = { 0.5f, -0.7f, 1.0f };
-    directionalLight_->intensity = 1.0f;
-    
-    CollisionManager::GetInstance().Initialize();
-    CollisionManager::GetInstance().Clear();
+    if (engine_) {
+        engine_->GetCollisionManager()->Initialize();
+        engine_->GetCollisionManager()->Clear();
+    }
 }
 
 void BaseScene::Update() {
@@ -80,8 +80,8 @@ void BaseScene::Update() {
     }
     
     // PlayMode 時のみ衝突判定（イベント発火など）を行う
-    if (isPlayMode) {
-        CollisionManager::GetInstance().CheckAllCollisions();
+    if (isPlayMode && engine_) {
+        engine_->GetCollisionManager()->CheckAllCollisions();
     }
 
     // 破棄フラグが立ったオブジェクトを一括削除 (GC)
@@ -114,9 +114,9 @@ void BaseScene::Draw() {
         selectedObj->DrawOutlineMask();
     }
     
-    CollisionManager::GetInstance().DrawDebug(selectedObj);
+    if (engine_) engine_->GetCollisionManager()->DrawDebug(selectedObj);
 #else
-    CollisionManager::GetInstance().DrawDebug();
+    engine_->GetCollisionManager()->DrawDebug();
 #endif
 }
 

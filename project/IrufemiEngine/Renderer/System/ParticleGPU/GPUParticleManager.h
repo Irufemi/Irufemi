@@ -8,7 +8,8 @@
 
 class GPUParticleManager {
 public:
-    static GPUParticleManager* GetInstance();
+    GPUParticleManager() = default;
+    ~GPUParticleManager() = default;
 
     void Initialize();
     void Update();
@@ -38,8 +39,6 @@ public:
     void UpdateEmitterData(const EmitterHandle& handle, const GPUParticleEmitter& data);
 
 private:
-    GPUParticleManager() = default;
-    ~GPUParticleManager() = default;
     GPUParticleManager(const GPUParticleManager&) = delete;
     GPUParticleManager& operator=(const GPUParticleManager&) = delete;
 

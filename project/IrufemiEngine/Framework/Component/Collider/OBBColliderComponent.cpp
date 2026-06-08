@@ -8,14 +8,15 @@
 OBBColliderComponent::OBBColliderComponent() {}
 
 OBBColliderComponent::~OBBColliderComponent() {
-    CollisionManager::GetInstance().UnregisterCollider(this);
+    if (collisionManager_) collisionManager_->UnregisterCollider(this);
 }
 
 void OBBColliderComponent::Initialize() {
     if (gameObject_) {
         transform_ = gameObject_->GetComponent<TransformComponent>();
     }
-    CollisionManager::GetInstance().RegisterCollider(this);
+    // 初期化時にCollisionManagerに自身を登録する
+    if (collisionManager_) collisionManager_->RegisterCollider(this);
 }
 
 void OBBColliderComponent::Update() {

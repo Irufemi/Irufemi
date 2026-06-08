@@ -26,15 +26,13 @@ struct RaycastHit {
  */
 class CollisionManager {
 public:
-    static CollisionManager& GetInstance() {
-        static CollisionManager instance;
-        return instance;
-    }
+    CollisionManager() = default;
+    ~CollisionManager();
 
     /// @brief 初期化
     void Initialize();
 
-    /// @brief 登録されたコライダーを全てクリアする（シーン切り替え時などに呼ぶ）
+    /// @brief 登録されたコライダーをすべてクリアする（シーン切り替え時などに呼ぶ）
     void Clear();
     
     /// @brief コライダーを登録する
@@ -74,8 +72,6 @@ public:
     void DrawDebugRay(const Ray& ray, float distance, const Vector4& color = {1,0,0,1});
 
 private:
-    CollisionManager() = default;
-    ~CollisionManager();
     CollisionManager(const CollisionManager&) = delete;
     CollisionManager& operator=(const CollisionManager&) = delete;
 

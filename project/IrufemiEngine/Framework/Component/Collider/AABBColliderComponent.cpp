@@ -7,7 +7,7 @@
 AABBColliderComponent::AABBColliderComponent() {}
 
 AABBColliderComponent::~AABBColliderComponent() {
-    CollisionManager::GetInstance().UnregisterCollider(this);
+    if (collisionManager_) collisionManager_->UnregisterCollider(this);
 }
 
 void AABBColliderComponent::Initialize() {
@@ -15,7 +15,7 @@ void AABBColliderComponent::Initialize() {
         transform_ = gameObject_->GetComponent<TransformComponent>();
     }
     // 初期化時にCollisionManagerに自身を登録する
-    CollisionManager::GetInstance().RegisterCollider(this);
+    if (collisionManager_) collisionManager_->RegisterCollider(this);
 }
 
 void AABBColliderComponent::Update() {

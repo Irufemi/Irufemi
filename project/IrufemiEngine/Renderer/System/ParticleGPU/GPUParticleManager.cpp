@@ -2,10 +2,7 @@
 #include "../../../Engine/Manager/DrawManager.h"
 #include "../../../Engine/IrufemiEngine.h"
 
-GPUParticleManager* GPUParticleManager::GetInstance() {
-    static GPUParticleManager instance;
-    return &instance;
-}
+
 
 void GPUParticleManager::Initialize() {
     systems_.clear();

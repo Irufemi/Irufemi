@@ -30,7 +30,7 @@ void RaycastComponent::Update() {
         currentRay_.diff = worldDir; // diffを方向として扱う
 
         // 判定実行（自分自身が持つ他のコライダーには当たらないようにgameObject_を渡す）
-        CollisionManager::GetInstance().Raycast(currentRay_, hitInfo_, maxDistance_, mask_, gameObject_);
+        collisionManager_->Raycast(currentRay_, hitInfo_, maxDistance_, mask_, gameObject_);
 
         if (hitInfo_.isHit && onHit_) {
             onHit_(hitInfo_);
@@ -45,7 +45,7 @@ void RaycastComponent::DrawDebug() {
     if (showDebugLine_) {
         Vector4 color = hitInfo_.isHit ? Vector4{ 1.0f, 0.0f, 0.0f, 1.0f } : Vector4{ 0.0f, 1.0f, 0.0f, 1.0f };
         float drawDist = hitInfo_.isHit ? hitInfo_.distance : maxDistance_;
-        CollisionManager::GetInstance().DrawDebugRay(currentRay_, drawDist, color);
+        if (collisionManager_) collisionManager_->DrawDebugRay(currentRay_, drawDist, color);
     }
 }
 

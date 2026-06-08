@@ -8,8 +8,8 @@ TextureManager* ParticleObject::textureManager_ = nullptr;
 ParticleObject::ParticleObject() {}
 
 ParticleObject::~ParticleObject() {
-    if (emitterHandle_.IsValid()) {
-        GPUParticleManager::GetInstance()->UnregisterEmitter(emitterHandle_);
+    if (emitterHandle_.IsValid() && gpuParticleManager_) {
+        gpuParticleManager_->UnregisterEmitter(emitterHandle_);
     }
 }
 
@@ -42,8 +42,8 @@ void ParticleObject::Update() {
 }
 
 void ParticleObject::UpdateSystem() {
-    if (!emitterHandle_.IsValid()) {
-        emitterHandle_ = GPUParticleManager::GetInstance()->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+    if (!emitterHandle_.IsValid() && gpuParticleManager_) {
+        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
     }
 
     GPUParticleEmitter data;
@@ -107,7 +107,7 @@ void ParticleObject::UpdateSystem() {
         data.burstCount = burstCountPending_;
         burstCountPending_ = 0;
     }
-    GPUParticleManager::GetInstance()->UpdateEmitterData(emitterHandle_, data);
+    if (gpuParticleManager_) gpuParticleManager_->UpdateEmitterData(emitterHandle_, data);
 }
 
 void ParticleObject::Serialize(nlohmann::json& j) const {
@@ -247,9 +247,9 @@ void ParticleObject::DebugUI(const char* name) {
                 if (ImGui::Combo("Texture", &currentIndex, namesCStr.data(), (int)namesCStr.size())) {
                     if (texturePath_ != textureNames[currentIndex]) {
                         texturePath_ = textureNames[currentIndex];
-                        if (emitterHandle_.IsValid()) {
-                            GPUParticleManager::GetInstance()->UnregisterEmitter(emitterHandle_);
-                            emitterHandle_ = GPUParticleManager::GetInstance()->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+                        if (emitterHandle_.IsValid() && gpuParticleManager_) {
+                            gpuParticleManager_->UnregisterEmitter(emitterHandle_);
+                            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
                         }
                         changed = true;
                     }
@@ -260,17 +260,17 @@ void ParticleObject::DebugUI(const char* name) {
             int currentBlend = static_cast<int>(blendMode_);
             if (ImGui::Combo("Blend Mode", &currentBlend, blendNames, 7)) {
                 blendMode_ = static_cast<BlendMode>(currentBlend);
-                if (emitterHandle_.IsValid()) {
-                    GPUParticleManager::GetInstance()->UnregisterEmitter(emitterHandle_);
-                    emitterHandle_ = GPUParticleManager::GetInstance()->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+                if (emitterHandle_.IsValid() && gpuParticleManager_) {
+                    gpuParticleManager_->UnregisterEmitter(emitterHandle_);
+                    emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
                 }
                 changed = true;
             }
             
             if (ImGui::Checkbox("Unscaled Time", &isUnscaledTime_)) {
-                if (emitterHandle_.IsValid()) {
-                    GPUParticleManager::GetInstance()->UnregisterEmitter(emitterHandle_);
-                    emitterHandle_ = GPUParticleManager::GetInstance()->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+                if (emitterHandle_.IsValid() && gpuParticleManager_) {
+                    gpuParticleManager_->UnregisterEmitter(emitterHandle_);
+                    emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
                 }
                 changed = true;
             }

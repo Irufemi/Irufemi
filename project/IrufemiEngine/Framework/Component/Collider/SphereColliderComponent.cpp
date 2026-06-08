@@ -9,14 +9,14 @@
 SphereColliderComponent::SphereColliderComponent() {}
 
 SphereColliderComponent::~SphereColliderComponent() {
-    CollisionManager::GetInstance().UnregisterCollider(this);
+    if (collisionManager_) collisionManager_->UnregisterCollider(this);
 }
 
 void SphereColliderComponent::Initialize() {
     if (gameObject_) {
         transform_ = gameObject_->GetComponent<TransformComponent>();
     }
-    CollisionManager::GetInstance().RegisterCollider(this);
+    if (collisionManager_) collisionManager_->RegisterCollider(this);
 }
 
 void SphereColliderComponent::Update() {

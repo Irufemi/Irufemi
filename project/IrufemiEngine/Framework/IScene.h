@@ -41,6 +41,11 @@ public:
         return empty; 
     }
 
+    /**
+     * @brief エンジンのポインタを取得する
+     */
+    virtual IrufemiEngine* GetEngine() const { return nullptr; }
+
     // --- ライフサイクル管理機能 ---
 
     /**

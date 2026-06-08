@@ -79,8 +79,10 @@ static void DrawCollisionLayerGUI(EditorActionManager* actionManager, uint32_t& 
     ImGui::Separator();
     ImGui::Text("Collision Settings");
 
-    auto& cm = CollisionManager::GetInstance();
-    const auto& layerNames = cm.GetLayerNames();
+    auto* cm = comp->GetGameObject() ? comp->GetGameObject()->GetScene()->GetEngine()->GetCollisionManager() : nullptr;
+    if (!cm) return;
+
+    const auto& layerNames = cm->GetLayerNames();
 
     if (layerNames.empty()) return;
 
@@ -354,7 +356,7 @@ public:
             // Position
             static Vector3 startPos;
             if (ImGui::DragFloat3("Position", &comp->position_.x, 0.1f)) {
-                // ドラッグ中も値は更新されるがコマンドは積まない
+                // ドラチE��中も値は更新されるがコマンド�E積まなぁE
             }
             if (ImGui::IsItemActivated()) startPos = comp->position_;
             if (ImGui::IsItemDeactivatedAfterEdit()) {
@@ -784,7 +786,7 @@ public:
             ImGui::DragFloat("Max Distance", &comp->maxDistance_, 0.1f, 0.0f, 10000.0f);
             CheckUndoRedoDrag(actionManager, &comp->maxDistance_);
             
-            // RaycastはLayerの描画なし（Maskのみ指定）
+            // RaycastはLayerの描画なし！Easkのみ持E��！E
             if (ImGui::TreeNode("Collision Mask")) {
                 if (ImGui::Button("All")) {
                     PushInstantUndo(actionManager, comp->mask_, 0xFFFFFFFF, &comp->mask_);
@@ -794,7 +796,7 @@ public:
                     PushInstantUndo(actionManager, comp->mask_, 0u, &comp->mask_);
                 }
 
-                const auto& layerNames = CollisionManager::GetInstance().GetLayerNames();
+                
                 for (int i = 0; i < layerNames.size(); ++i) {
                     bool isMasked = (comp->mask_ & (1u << i)) != 0;
                     if (ImGui::Checkbox(layerNames[i].c_str(), &isMasked)) {
@@ -807,7 +809,7 @@ public:
                 ImGui::TreePop();
             }
             
-            // デバッグ情報
+            // チE��チE��惁E��
             ImGui::Separator();
             if (comp->hitInfo_.isHit) {
                 ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Hit: %s", 
@@ -853,3 +855,4 @@ void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionMa
 }
 
 #endif // EditorMode
+

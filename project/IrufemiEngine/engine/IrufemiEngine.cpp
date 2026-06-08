@@ -8,6 +8,10 @@
 #include "../Resource/Audio/AudioManager.h"
 #include "../Resource/Model/ModelManager.h"
 #include "../Resource/Model/AnimationManager.h"
+#include "Manager/CollisionManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Framework/Component/Collider/ColliderComponent.h"
+#include "Renderer/Object/Particle/ParticleObject.h"
 #include "Core/Utility/Log.h"
 #include "../Framework/SceneManager.h"
 #include "../Framework/SceneTransition.h"
@@ -225,6 +229,16 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Primitive3DObject::SetDebugUI(ui_.get());
 
 
+  // コリジョン管理
+  collisionManager_ = std::make_unique<CollisionManager>();
+  collisionManager_->Initialize();
+  ColliderComponent::SetCollisionManager(collisionManager_.get());
+
+  // GPUパーティクル管理
+  gpuParticleManager_ = std::make_unique<GPUParticleManager>();
+  gpuParticleManager_->Initialize();
+  ParticleObject::SetGPUParticleManager(gpuParticleManager_.get());
+
   // 描画
   drawManager_ = std::make_unique<DrawManager>();
   drawManager_->Initialize(dxCommon_.get());
@@ -319,8 +333,6 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   if (dxCommon_) {
     dxCommon_->PreWarmJITCompile();
   }
-
-  GPUParticleManager::GetInstance()->Initialize();
 
   // CameraManager設定
   cameraManager_ = std::make_unique<CameraManager>();
@@ -469,12 +481,20 @@ void IrufemiEngine::Finalize() {
   GPUParticleSystem::SetEngine(nullptr);
   BaseModel::SetIrufemiEngine(nullptr);
   Skybox::SetEngine(nullptr);
-  GPUParticleSystem::SetDXCommon(nullptr);
+  GPUParticleSystem::SetDXCommon(dxCommon_.get());
   VoxelParticleSystem::SetEngine(nullptr);
+  if (gpuParticleManager_) {
+    gpuParticleManager_->Finalize();
+    gpuParticleManager_.reset();
+  }
+
+  if (collisionManager_) {
+    collisionManager_.reset();
+  }
+
   if (voxelParticleManager_) {
     voxelParticleManager_.reset();
   }
-  GPUParticleManager::GetInstance()->Finalize();
   Circle2D::SetEngine(nullptr);
   Line3DRegion::SetEngine(nullptr);
   Primitive3DObject::SetEngine(nullptr);
@@ -552,7 +572,10 @@ void IrufemiEngine::Execute() {
     ui_->BeginEngineDebugWindow();
     ui_->SceneSelectorTab(sceneManager_.get());
     ui_->PostProcessTab(this);
-    GPUParticleManager::GetInstance()->Debug();
+  // デバッグ機能の追加
+  if (gpuParticleManager_) {
+    gpuParticleManager_->Debug();
+  }
     if (auto *scene = sceneManager_->GetCurrentScene()) {
       scene->DrawDebugTab();
     }
@@ -567,7 +590,10 @@ void IrufemiEngine::Execute() {
     postProcessManager_->Update(totalTime_);
     sceneTransition_->Update(deltaTime_);
     
-    GPUParticleManager::GetInstance()->Update();
+   // 4) ParticleのUpdate (GPU)
+  if (gpuParticleManager_) {
+    gpuParticleManager_->Update();
+  }
 
     for (auto& ext : extensions_) {
         ext->OnUpdate(deltaTime_);
@@ -594,7 +620,10 @@ void IrufemiEngine::Execute() {
         voxelParticleManager_->Draw();
     }
 
-    GPUParticleManager::GetInstance()->Draw();
+   // ParticleGPU
+  if (gpuParticleManager_) {
+    gpuParticleManager_->Draw();
+  }
 
     for (auto& ext : extensions_) {
         ext->OnDraw();
