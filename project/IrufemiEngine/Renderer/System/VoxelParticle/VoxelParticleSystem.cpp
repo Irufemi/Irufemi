@@ -1,4 +1,5 @@
 #define NOMINMAX
+#include "Engine/Graphics/Camera/CameraManager.h"
 #include "VoxelParticleSystem.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Math.h"

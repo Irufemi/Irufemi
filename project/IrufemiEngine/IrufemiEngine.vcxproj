@@ -652,8 +652,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\BaseScene.cpp" />
     <ClCompile Include="Framework\GameObject.cpp" />
     <ClCompile Include="Framework\IScene.cpp" />
-    <ClCompile Include="Framework\LoadingScreen.cpp" />
-    <ClCompile Include="Framework\PromptController.cpp" />
+
     <ClCompile Include="Framework\SceneManager.cpp" />
     <ClCompile Include="Framework\SceneSerializer.cpp" />
     <ClCompile Include="Framework\SceneTransition.cpp" />
@@ -842,8 +841,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\BaseScene.h" />
     <ClInclude Include="Framework\GameObject.h" />
     <ClInclude Include="Framework\IScene.h" />
-    <ClInclude Include="Framework\LoadingScreen.h" />
-    <ClInclude Include="Framework\PromptController.h" />
+    <ClInclude Include="Engine\Core\System\ILoadingScreen.h" />
     <ClInclude Include="Framework\SceneManager.h" />
     <ClInclude Include="Framework\SceneSerializer.h" />
     <ClInclude Include="Framework\SceneTransition.h" />

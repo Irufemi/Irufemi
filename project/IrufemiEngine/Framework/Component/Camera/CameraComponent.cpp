@@ -1,4 +1,5 @@
 #include "CameraComponent.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/IrufemiEngine.h"

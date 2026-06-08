@@ -222,12 +222,7 @@
     <ClCompile Include="Framework\IScene.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
-    <ClCompile Include="Framework\LoadingScreen.cpp">
-      <Filter>Framework</Filter>
-    </ClCompile>
-    <ClCompile Include="Framework\PromptController.cpp">
-      <Filter>Framework</Filter>
-    </ClCompile>
+
     <ClCompile Include="Framework\SceneManager.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
@@ -788,11 +783,8 @@
     <ClInclude Include="Framework\IScene.h">
       <Filter>Framework</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\LoadingScreen.h">
-      <Filter>Framework</Filter>
-    </ClInclude>
-    <ClInclude Include="Framework\PromptController.h">
-      <Filter>Framework</Filter>
+    <ClInclude Include="Engine\Core\System\ILoadingScreen.h">
+      <Filter>Engine\Core\System</Filter>
     </ClInclude>
     <ClInclude Include="Framework\SceneManager.h">
       <Filter>Framework</Filter>

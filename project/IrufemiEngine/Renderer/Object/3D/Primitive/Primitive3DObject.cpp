@@ -1,4 +1,5 @@
 #include "Primitive3DObject.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
 
 #include <algorithm>
 

@@ -235,6 +235,8 @@ exit 0</Command>
     <ClCompile Include="scene\Clear\ClearScene.cpp" />
     <ClCompile Include="scene\StageSelect\SelectScene.cpp" />
     <ClCompile Include="scene\Title\TitleScene.cpp" />
+    <ClCompile Include="UI\LoadingScreen.cpp" />
+    <ClCompile Include="UI\PromptController.cpp" />
     <ClCompile Include="components\RailPathComponent.cpp" />
     <ClCompile Include="components\RailShooterPlayerComponent.cpp" />
     <ClCompile Include="components\RailShooterEnemyComponent.cpp" />
@@ -253,6 +255,8 @@ exit 0</Command>
     <ClInclude Include="scene\Clear\ClearScene.h" />
     <ClInclude Include="scene\StageSelect\SelectScene.h" />
     <ClInclude Include="scene\Title\TitleScene.h" />
+    <ClInclude Include="UI\LoadingScreen.h" />
+    <ClInclude Include="UI\PromptController.h" />
     <ClInclude Include="components\RailPathComponent.h" />
     <ClInclude Include="components\RailShooterPlayerComponent.h" />
     <ClInclude Include="components\RailShooterEnemyComponent.h" />

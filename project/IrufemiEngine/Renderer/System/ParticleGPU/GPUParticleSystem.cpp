@@ -1,4 +1,6 @@
 #include "GPUParticleSystem.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Engine/Core/Shape/Sphere.h"
 #include "../../../Engine/Graphics/Data/VertexData.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Math/Geometry/Frustum.h"

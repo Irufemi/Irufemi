@@ -1,5 +1,18 @@
 #include "IrufemiEngine.h"
 
+#include "Platform/Input/InputManager.h"
+#include "Platform/WindowsAPI/WinApp.h"
+#include "Manager/DrawManager.h"
+#include "Core/System/IEngineExtension.h"
+#include "../Resource/Texture/TextureManager.h"
+#include "../Resource/Audio/AudioManager.h"
+#include "../Resource/Model/ModelManager.h"
+#include "../Resource/Model/AnimationManager.h"
+#include "Core/Utility/Log.h"
+#include "../Framework/SceneManager.h"
+#include "../Framework/SceneTransition.h"
+#include "Graphics/Font/FontManager.h"
+
 IrufemiEngine::IrufemiEngine() = default;
 
 #include "Core/Math/Math.h"
@@ -88,8 +101,10 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   audioManager_->StartUp();
   // AudioManagerの初期化
   audioManager_->Initialize();
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
   // "resources"フォルダから音声ファイルをすべてロード
   audioManager_->LoadAllSoundsFromFolder("resources/");
+#endif
   Bgm::SetAudioManager(audioManager_.get());
   Se::SetAudioManager(audioManager_.get());
 
@@ -129,15 +144,19 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   textureManager_ = std::make_unique<TextureManager>();
   textureManager_->Initialize(dxCommon_.get());
 
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
   textureManager_->LoadAllFromFolder("resources/");
+#endif
 
   // フォント管理
   fontManager_ = std::make_unique<FontManager>();
   fontManager_->Initialize(this);
   Text::SetFontManager(fontManager_.get());
 
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
   // resources/fonts/ 以下のフォントをすべて自動ロード
   fontManager_->LoadAllFromFolder("resources/fonts/");
+#endif
 
   // モデル管理
   modelManager_ = std::make_unique<ModelManager>();
@@ -506,9 +525,7 @@ void IrufemiEngine::Execute() {
   // SceneManager 構築(エンジンは所有のみ)
   sceneManager_ = std::make_unique<SceneManager>(this);
 
-  // ローディング画面の構築
-  loadingScreen_ = std::make_unique<LoadingScreen>();
-  loadingScreen_->Initialize(this);
+  // ローディング画面は Application から SetLoadingScreen 経由で注入されるため、ここでの構築は不要です
 
   // Application からの登録を反映
   if (sceneRegistrar_) {
@@ -546,9 +563,7 @@ void IrufemiEngine::Execute() {
     // 更新
     audioManager_->Update();
     sceneManager_->Update();
-    if (sceneManager_->IsLoading() && loadingScreen_) {
-      loadingScreen_->Update(deltaTime_);
-    }
+    // ローディング画面のアニメーション進行（Update相当）は描画時にまとめて行います
     totalTime_ += deltaTime_;
     postProcessManager_->Update(totalTime_);
     sceneTransition_->Update(deltaTime_);
@@ -643,7 +658,7 @@ void IrufemiEngine::EndFrame() {
   // 影響を受けない最前面UIとしてロード画面を描画する
   if (sceneManager_ && sceneManager_->IsLoading()) {
     if (loadingScreen_) {
-      loadingScreen_->Draw(this);
+      loadingScreen_->OnDrawLoadingScreen(this, deltaTime_);
     }
   }
 

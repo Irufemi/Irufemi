@@ -2,26 +2,28 @@
 
 #include "Graphics/DirectX/DirectXCommon.h"
 #include "Graphics/DirectX/D3DResourceLeakChecker.h"
-#include "Platform/Input/InputManager.h"
-#include "Platform/WindowsAPI/WinApp.h"
-#include "Manager/DrawManager.h"
-#include "Manager/DebugUI.h"
-#include "Core/System/IEngineExtension.h"
-#include "../Resource/Texture/TextureManager.h"
-#include "../Resource/Audio/AudioManager.h"
-#include "../Resource/Model/ModelManager.h"
-#include "../Resource/Model/AnimationManager.h"
+class InputManager;
+class WinApp;
+class DrawManager;
+class DebugUI;
+class IEngineExtension;
+class TextureManager;
+class AudioManager;
+class ModelManager;
+class AnimationManager;
 #include "Core/Type/BlendMode.h"
-#include "Core/Utility/Log.h"
-#include "../Framework/SceneManager.h"
-#include "../Framework/SceneTransition.h"
-#include "../Framework/LoadingScreen.h"
+class Log;
+class SceneManager;
+class SceneTransition;
+#include "Core/System/ILoadingScreen.h"
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Graphics/DirectX/RenderTexture.h"
 #include "Graphics/PostProcess/PostProcessManager.h"
 #include "Graphics/DirectX/DynamicConstantBuffer.h"
+#include "Graphics/Data/Material.h"
+#include "Graphics/Data/TransformationMatrix.h"
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
@@ -34,13 +36,13 @@
 #include <chrono>
 #include <algorithm>
 
-#include "Graphics/Font/FontManager.h"
+class FontManager;
 
 class SceneManager;
 class DebugUI;
 class VoxelParticleManager;
 class GameObject;
-#include "Graphics/Camera/CameraManager.h"
+class CameraManager;
 
 /**
  * @class IrufemiEngine
@@ -139,6 +141,14 @@ public: // メンバ関数
         if (extension) {
             extensions_.push_back(std::move(extension));
         }
+    }
+
+    /**
+     * @brief ローディング画面の描画インターフェースを設定する
+     * @param loadingScreen アプリケーション側で実装したローディング画面
+     */
+    void SetLoadingScreen(std::shared_ptr<ILoadingScreen> loadingScreen) {
+        loadingScreen_ = std::move(loadingScreen);
     }
 
  private: // メンバ関数(内部処理)
@@ -332,8 +342,8 @@ private: // メンバ変数
     // SceneManager
     std::unique_ptr<SceneManager> sceneManager_ = nullptr;
     
-    // LoadingScreen (SceneManagerから移管)
-    std::unique_ptr<LoadingScreen> loadingScreen_ = nullptr;
+    // LoadingScreen (Application側から注入)
+    std::shared_ptr<ILoadingScreen> loadingScreen_ = nullptr;
     
     // FontManager
     std::unique_ptr<FontManager> fontManager_ = nullptr;

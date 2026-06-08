@@ -2,6 +2,7 @@
 #include <memory>
 #include <vector>
 
+#include "../../IrufemiEngine/Engine/Core/System/ILoadingScreen.h"
 class IrufemiEngine;
 class Sprite;
 class Circle2D;
@@ -12,7 +13,7 @@ class Camera;
  * @brief すべてのScene共通で使用されるローディング画面クラス
  * @details SceneManagerによって保持され、モデルやテクスチャのロード中（非同期読み込み待ち）の間だけ更新・描画されます。
  */
-class LoadingScreen {
+class LoadingScreen : public ILoadingScreen {
 public:
     LoadingScreen();
     ~LoadingScreen();
@@ -20,6 +21,12 @@ public:
     void Initialize(IrufemiEngine* engine);
     void Update(float deltaTime);
     void Draw(IrufemiEngine* engine);
+
+    // ILoadingScreen の実装
+    void OnDrawLoadingScreen(IrufemiEngine* engine, float deltaTime) override {
+        Update(deltaTime);
+        Draw(engine);
+    }
 
 private:
     std::unique_ptr<Camera> camera_;

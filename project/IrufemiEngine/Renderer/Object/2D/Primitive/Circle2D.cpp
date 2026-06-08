@@ -1,4 +1,5 @@
 #define NOMINMAX
+#include "Engine/Graphics/Camera/CameraManager.h"
 #include "Circle2D.h"
 
 #include "Resource/Texture/TextureManager.h"

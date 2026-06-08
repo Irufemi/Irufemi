@@ -29,16 +29,13 @@ class IrufemiEngine;
 class Skybox : public IRenderable, public MultiBufferSyncState
 {
 public:
-    // デフォルトのテクスチャパス
-    static inline const std::string kDefaultTexturePath = "resources/rostock_laage_airport_4k.dds";
-
 public: // メンバ関数
     // コンストラクタ
     Skybox();
     // デストラクタ
     ~Skybox();
     // 初期化
-    void Initialize(const std::string& textureName = kDefaultTexturePath);
+    void Initialize(const std::string& textureName = "resources/rostock_laage_airport_4k.dds");
     // 更新
     void Update();
     void SyncBeforeDraw() override;

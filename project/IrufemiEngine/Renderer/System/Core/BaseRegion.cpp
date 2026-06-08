@@ -1,4 +1,6 @@
 #include "../../System/Core/BaseRegion.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Engine/Core/Shape/Sphere.h"
 #include <cassert>
 #include <cstring>
 #include "Engine/IrufemiEngine.h"

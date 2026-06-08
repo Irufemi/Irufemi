@@ -1,4 +1,6 @@
 #include "SceneViewPanel.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Framework/SceneManager.h"
 
 #ifdef EditorMode
 #include "imgui/imgui.h"

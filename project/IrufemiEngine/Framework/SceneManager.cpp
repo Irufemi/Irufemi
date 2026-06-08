@@ -1,4 +1,6 @@
 #include "SceneManager.h"
+#include "Resource/Audio/AudioManager.h"
+#include "Engine/Manager/DrawManager.h"
 #include "IScene.h"
 #include "BaseScene.h"
 #include "../Engine/IrufemiEngine.h"

@@ -25,8 +25,11 @@
     <Filter Include="Scene\GameOver">
       <UniqueIdentifier>{1419eb2e-43b5-45d8-acdb-9b3b00918d5f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Scene\StatgeSelect">
-      <UniqueIdentifier>{ff03cd2d-af96-44ae-b342-c150a81581c8}</UniqueIdentifier>
+    <Filter Include="Scene\StageSelect">
+      <UniqueIdentifier>{60c1d2e5-fb42-4752-bbb8-9ee296a24eb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{d0d1d2e5-fb42-4752-bbb8-9ee296a24eb8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Scene\Title">
       <UniqueIdentifier>{52b04192-3ea4-4077-b32c-a2d4e50999b5}</UniqueIdentifier>
@@ -44,6 +47,12 @@
     </ClCompile>
     <ClCompile Include="scene\Title\TitleScene.cpp">
       <Filter>Scene\Title</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\LoadingScreen.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\PromptController.cpp">
+      <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="scene\Clear\ClearScene.cpp">
       <Filter>Scene\Clear</Filter>
@@ -97,6 +106,12 @@
     </ClInclude>
     <ClInclude Include="scene\Title\TitleScene.h">
       <Filter>Scene\Title</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\LoadingScreen.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\PromptController.h">
+      <Filter>UI</Filter>
     </ClInclude>
     <ClInclude Include="scene\Clear\ClearScene.h">
       <Filter>Scene\Clear</Filter>

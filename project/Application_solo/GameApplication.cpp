@@ -18,6 +18,9 @@
 #include "components/GravityPlayerComponent.h"
 #include "components/DebugEnemySpawnerComponent.h"
 
+// UI
+#include "UI/LoadingScreen.h"
+
 // シーンのインクルード
 #include "scene/title/TitleScene.h"
 #include "scene/stageSelect/SelectScene.h"
@@ -85,6 +88,9 @@ void GameApplication::Run() {
     ComponentFactory::Register("DebrisManagerComponent", []() { return std::make_shared<DebrisManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", []() { return std::make_shared<GravityPlayerComponent>(); });
     ComponentFactory::Register("DebugEnemySpawnerComponent", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
+
+    // UIの登録
+    engine->SetLoadingScreen(std::make_shared<LoadingScreen>());
 
     // シーンの登録
     engine->SetSceneRegistrar(RegisterScenes);

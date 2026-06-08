@@ -1,4 +1,6 @@
 #include "ProjectBrowserPanel.h"
+#include "Resource/Model/ModelManager.h"
+#include "Resource/Texture/TextureManager.h"
 
 #ifdef EditorMode
 #include "imgui/imgui.h"

@@ -1,4 +1,5 @@
 #include "Skybox.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
 
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Core/Math/Math.h"

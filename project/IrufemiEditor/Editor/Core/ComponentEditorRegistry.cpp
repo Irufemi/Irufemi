@@ -1,4 +1,5 @@
 #include "ComponentEditorRegistry.h"
+#include "Engine/Graphics/Font/FontManager.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>
