@@ -1,4 +1,4 @@
-#include "ComponentEditorRegistry.h"
+﻿#include "ComponentEditorRegistry.h"
 #include "Engine/Graphics/Font/FontManager.h"
 
 #ifdef EditorMode
@@ -75,7 +75,8 @@ static void PushInstantUndo(EditorActionManager* actionManager, const T& oldVal,
 }
 
 // --- Helper Functions ---
-static void DrawCollisionLayerGUI(EditorActionManager* actionManager, uint32_t& layer, uint32_t& mask) {
+template <typename T>
+static void DrawCollisionLayerGUI(T* comp, EditorActionManager* actionManager, uint32_t& layer, uint32_t& mask) {
     ImGui::Separator();
     ImGui::Text("Collision Settings");
 
@@ -148,11 +149,11 @@ static void DrawCollisionLayerGUI(EditorActionManager* actionManager, uint32_t& 
                 
                 ImGui::SetNextItemWidth(150);
                 if (ImGui::InputText("##Name", nameBuffer, sizeof(nameBuffer))) {
-                    cm.RenameLayer(i, nameBuffer);
+                    cm->RenameLayer(i, nameBuffer);
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("X")) {
-                    cm.RemoveLayer(i);
+                    cm->RemoveLayer(i);
                     ImGui::PopID();
                     break; 
                 }
@@ -162,7 +163,7 @@ static void DrawCollisionLayerGUI(EditorActionManager* actionManager, uint32_t& 
 
         if (layerNames.size() < 32) {
             if (ImGui::Button("+ Add New Layer")) {
-                cm.AddLayer("New Layer");
+                cm->AddLayer("New Layer");
             }
         } else {
             ImGui::TextDisabled("Max layers reached (32).");
@@ -202,7 +203,7 @@ static void DrawColliderCommonProperties(T* comp, EditorActionManager* actionMan
     if (ImGui::Checkbox("Is Trigger", &isTrigger)) {
         PushInstantUndo(actionManager, comp->isTrigger_, isTrigger, &comp->isTrigger_);
     }
-    DrawCollisionLayerGUI(actionManager, comp->layer_, comp->mask_);
+    DrawCollisionLayerGUI(comp, actionManager, comp->layer_, comp->mask_);
 }
 
 static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager* actionManager) {
@@ -329,7 +330,7 @@ static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager*
                                 std::vector<Vector3> newArr = *arr;
                                 PushInstantUndo(actionManager, oldArr, newArr, arr);
                                 ImGui::PopID();
-                                break; // ループを抜けて次フレームで再描画
+                                break; // 繝ｫ繝ｼ繝励ｒ謚懊￠縺ｦ谺｡繝輔Ξ繝ｼ繝縺ｧ蜀肴緒逕ｻ
                             }
                             ImGui::PopID();
                         }
@@ -356,7 +357,7 @@ public:
             // Position
             static Vector3 startPos;
             if (ImGui::DragFloat3("Position", &comp->position_.x, 0.1f)) {
-                // ドラチE��中も値は更新されるがコマンド�E積まなぁE
+                // 繝峨Λ繝・げ荳ｭ繧ょ､縺ｯ譖ｴ譁ｰ縺輔ｌ繧九′繧ｳ繝槭Φ繝峨・遨阪∪縺ｪ縺・
             }
             if (ImGui::IsItemActivated()) startPos = comp->position_;
             if (ImGui::IsItemDeactivatedAfterEdit()) {
@@ -629,7 +630,7 @@ public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<TextRendererComponent*>(component);
         if (ImGui::TreeNodeEx("TextRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
-            // Text (UTF-8 変換)
+            // Text (UTF-8 螟画鋤)
             std::string utf8Text = ConvertString(comp->GetText());
             char textBuffer[256];
             strncpy_s(textBuffer, sizeof(textBuffer), utf8Text.c_str(), _TRUNCATE);
@@ -786,7 +787,7 @@ public:
             ImGui::DragFloat("Max Distance", &comp->maxDistance_, 0.1f, 0.0f, 10000.0f);
             CheckUndoRedoDrag(actionManager, &comp->maxDistance_);
             
-            // RaycastはLayerの描画なし！Easkのみ持E��！E
+            // Raycast縺ｯLayer縺ｮ謠冗判縺ｪ縺暦ｼ・ask縺ｮ縺ｿ謖・ｮ夲ｼ・
             if (ImGui::TreeNode("Collision Mask")) {
                 if (ImGui::Button("All")) {
                     PushInstantUndo(actionManager, comp->mask_, 0xFFFFFFFF, &comp->mask_);
@@ -797,6 +798,8 @@ public:
                 }
 
                 
+                auto* cm = comp->GetGameObject() ? comp->GetGameObject()->GetScene()->GetEngine()->GetCollisionManager() : nullptr;
+                const auto& layerNames = cm ? cm->GetLayerNames() : std::vector<std::string>();
                 for (int i = 0; i < layerNames.size(); ++i) {
                     bool isMasked = (comp->mask_ & (1u << i)) != 0;
                     if (ImGui::Checkbox(layerNames[i].c_str(), &isMasked)) {
@@ -809,7 +812,7 @@ public:
                 ImGui::TreePop();
             }
             
-            // チE��チE��惁E��
+            // 繝・ヰ繝・げ諠・ｱ
             ImGui::Separator();
             if (comp->hitInfo_.isHit) {
                 ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "Hit: %s", 

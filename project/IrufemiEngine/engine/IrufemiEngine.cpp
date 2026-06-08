@@ -55,6 +55,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Renderer/Object/Region/ModelRegion.h"
 #include "Renderer/Object/Region/PrimitiveRegion.h"
+#include "Renderer/System/Data/RenderData.h"
 #include "Renderer/Object/Skybox/Skybox.h"
 #include "Graphics/Data/VertexData.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleSystem.h"
@@ -168,7 +169,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   ModelRegion::SetModelManager(modelManager_.get()); // Regionにも設定
 
   // プリミティブ管理(シングルトン)の初期化
-  PrimitiveManager::Initialize();
+  primitiveManager_ = std::make_unique<PrimitiveManager>();
+  PrimitiveRegion::SetPrimitiveManager(primitiveManager_.get());
+  MeshDesc::SetPrimitiveManager(primitiveManager_.get());
 
   // 既存SRVの走査で free-list 再構築
   {
@@ -475,6 +478,9 @@ void IrufemiEngine::Finalize() {
     ParticleObject::SetTextureManager(nullptr);
   Primitive3DObject::SetTextureManager(nullptr);
 
+  PrimitiveRegion::SetPrimitiveManager(nullptr);
+  MeshDesc::SetPrimitiveManager(nullptr);
+
   Sprite::SetCameraManager(nullptr);
   ModelRegion::SetModelManager(nullptr);
 
@@ -502,8 +508,8 @@ void IrufemiEngine::Finalize() {
   Bgm::SetAudioManager(nullptr);
   Se::SetAudioManager(nullptr);
 
-  // 5. シングルトンの破棄(GPUリソースを保持している可能性があるためdxCommon破棄前に呼ぶ)
-  PrimitiveManager::Finalize();
+  // プリミティブ管理解放
+  primitiveManager_.reset();
 
   // 6. 基盤システム (サウンド・入力)
   if (audioManager_) {

@@ -17,7 +17,7 @@ void PrimitiveRegion::InitializeRing(const RingParams& params, const std::string
     isCustomPrimitive_ = true;
 
     PrimitiveData ringData = PrimitiveManager::CreateRing(params);
-    PrimitiveManager::GetInstance()->CreateGPUResource(ringData, customPrimitiveResource_);
+    primitiveManager_->CreateGPUResource(ringData, customPrimitiveResource_);
 
     EnsureMaterialResources();
     EnsureSharedTexture(textureName);
@@ -69,7 +69,7 @@ void PrimitiveRegion::Draw() {
     if (isCustomPrimitive_) {
         res = &customPrimitiveResource_;
     } else {
-        res = &PrimitiveManager::GetInstance()->GetStandardResource(type_);
+        res = &primitiveManager_->GetStandardResource(type_);
     }
 
     if (!res || !res->vertexResource) return;

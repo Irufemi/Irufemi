@@ -8,6 +8,7 @@
 #include "Engine/Core/Math/Math.h"
 
 class Camera;
+class PrimitiveManager;
 class TextureManager;
 struct PrimitiveData;
 
@@ -46,6 +47,11 @@ struct MeshDesc {
      * @param[in] data 再生成に使用する頂点・インデックスデータ
      */
     void ChangeMesh(const PrimitiveData& data);
+
+    static void SetPrimitiveManager(PrimitiveManager* pm) { primitiveManager_ = pm; }
+
+private:
+    inline static PrimitiveManager* primitiveManager_ = nullptr;
 };
 
 /**

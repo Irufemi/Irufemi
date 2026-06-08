@@ -652,7 +652,7 @@ void GPUParticleSystem::SetParticleLife(float minLife, float maxLife,
 
 void GPUParticleSystem::SetPrimitive(PrimitiveType type) {
   primitiveType_ = type;
-  const auto &res = PrimitiveManager::GetInstance()->GetStandardResource(type);
+  const auto &res = engine_->GetPrimitiveManager()->GetStandardResource(type);
   vertexBufferView_ = res.vertexBufferView;
   indexBufferView_ = res.indexBufferView;
   indexCount_ = res.indexCount;

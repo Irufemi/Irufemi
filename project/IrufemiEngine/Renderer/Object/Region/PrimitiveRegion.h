@@ -24,9 +24,12 @@ public:
      */
     void InitializeRing(const RingParams& params, const std::string& textureName = "resources/uvChecker.png");
 
+    static void SetPrimitiveManager(PrimitiveManager* manager) { primitiveManager_ = manager; }
+
     void Draw() override;
 
 protected:
+    inline static PrimitiveManager* primitiveManager_ = nullptr;
     float GetBoundingSphereRadius() const override;
 
 private:

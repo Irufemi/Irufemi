@@ -1,4 +1,4 @@
-#include "SceneViewPanel.h"
+﻿#include "SceneViewPanel.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Framework/SceneManager.h"
 
@@ -37,8 +37,8 @@ void SceneViewPanel::Draw() {
 
     ImGui::Begin("Scene");
 
-    // デバッグ線の描画ON/OFF
-    bool* drawCollider = CollisionManager::GetInstance().GetIsDrawDebugLinePtr();
+    // 繝・ヰ繝・げ邱壹・謠冗判ON/OFF
+    bool* drawCollider = editorManager_->GetEngine()->GetCollisionManager()->GetIsDrawDebugLinePtr();
     if (drawCollider) {
         ImGui::Checkbox("Draw Colliders", drawCollider);
     }
@@ -64,7 +64,7 @@ void SceneViewPanel::Draw() {
     if (engine && engine->GetMainRenderTexture()) {
         auto mainTexture = engine->GetMainRenderTexture();
         
-        // パネルの大きさを取得して画像をフィットさせる（16:9を維持する）
+        // 繝代ロ繝ｫ縺ｮ螟ｧ縺阪＆繧貞叙蠕励＠縺ｦ逕ｻ蜒上ｒ繝輔ぅ繝・ヨ縺輔○繧具ｼ・6:9繧堤ｶｭ謖√☆繧具ｼ・
         ImVec2 avail = ImGui::GetContentRegionAvail();
         float aspect = 1280.0f / 720.0f;
         ImVec2 size;
@@ -76,7 +76,7 @@ void SceneViewPanel::Draw() {
             size.y = size.x / aspect;
         }
 
-        // 中央揃えにするためのカーソル位置調整
+        // 荳ｭ螟ｮ謠・∴縺ｫ縺吶ｋ縺溘ａ縺ｮ繧ｫ繝ｼ繧ｽ繝ｫ菴咲ｽｮ隱ｿ謨ｴ
         ImVec2 cursor = ImGui::GetCursorPos();
         cursor.x += (avail.x - size.x) * 0.5f;
         cursor.y += (avail.y - size.y) * 0.5f;
@@ -84,10 +84,10 @@ void SceneViewPanel::Draw() {
 
         ImGui::Image((ImTextureID)mainTexture->GetSrvHandleGPU().ptr, size);
         
-        ImVec2 minPos = ImGui::GetItemRectMin(); // ImGui::Image() の左上
-        ImVec2 maxPos = ImGui::GetItemRectMax(); // ImGui::Image() の右下
+        ImVec2 minPos = ImGui::GetItemRectMin(); // ImGui::Image() 縺ｮ蟾ｦ荳・
+        ImVec2 maxPos = ImGui::GetItemRectMax(); // ImGui::Image() 縺ｮ蜿ｳ荳・
 
-        // --- 選択中のSpriteに対するアウトライン（強調枠）描画 ---
+        // --- 驕ｸ謚樔ｸｭ縺ｮSprite縺ｫ蟇ｾ縺吶ｋ繧｢繧ｦ繝医Λ繧､繝ｳ・亥ｼｷ隱ｿ譫・画緒逕ｻ ---
         if (auto selectedObj = editorManager_->GetSelectedObject()) {
             if (auto spriteComp = selectedObj->GetComponent<SpriteRendererComponent>()) {
                 if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
@@ -136,9 +136,9 @@ void SceneViewPanel::Draw() {
         DrawImGuizmo(minPos, size);
         HandleDragAndDrop();
 
-        // --- UI用の仮想マウス座標更新 & クリックによる3Dピッキング ---
+        // --- UI逕ｨ縺ｮ莉ｮ諠ｳ繝槭え繧ｹ蠎ｧ讓呎峩譁ｰ & 繧ｯ繝ｪ繝・け縺ｫ繧医ｋ3D繝斐ャ繧ｭ繝ｳ繧ｰ ---
         if (ImGui::IsWindowHovered()) {
-            ImVec2 mousePos = ImGui::GetMousePos(); // 画面全体の座標
+            ImVec2 mousePos = ImGui::GetMousePos(); // 逕ｻ髱｢蜈ｨ菴薙・蠎ｧ讓・
 
             if (mousePos.x >= minPos.x && mousePos.x <= maxPos.x &&
                 mousePos.y >= minPos.y && mousePos.y <= maxPos.y) {
@@ -183,7 +183,7 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
                 bool manipulated = false;
                 
                 if (currentGizmoOperation_ == ImGuizmo::BOUNDS) {
-                    // コライダーのリサイズ操作
+                    // 繧ｳ繝ｩ繧､繝繝ｼ縺ｮ繝ｪ繧ｵ繧､繧ｺ謫堺ｽ・
                     if (auto aabbCol = selectedObj->GetComponent<AABBColliderComponent>()) {
                         Vector3 offset = aabbCol->GetLocalOffset();
                         Vector3 csize = aabbCol->GetLocalSize();
@@ -269,7 +269,7 @@ void SceneViewPanel::HandleDragAndDrop() {
 }
 
 void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos, ImVec2 size) {
-    // プレイモード中（ゲーム進行中）はインゲームのクリック操作（射撃など）と競合するためピッキングを無効にする
+    // 繝励Ξ繧､繝｢繝ｼ繝我ｸｭ・医ご繝ｼ繝騾ｲ陦御ｸｭ・峨・繧､繝ｳ繧ｲ繝ｼ繝縺ｮ繧ｯ繝ｪ繝・け謫堺ｽ懶ｼ亥ｰ・茶縺ｪ縺ｩ・峨→遶ｶ蜷医☆繧九◆繧√ヴ繝・く繝ｳ繧ｰ繧堤┌蜉ｹ縺ｫ縺吶ｋ
     if (editorManager_->IsPlayMode()) {
         return;
     }
@@ -286,7 +286,7 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
         float scaleY = 720.0f / size.y;
         Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
 
-        // --- 1. まず 2D (Sprite) のピッキング判定を行う ---
+        // --- 1. 縺ｾ縺・2D (Sprite) 縺ｮ繝斐ャ繧ｭ繝ｳ繧ｰ蛻､螳壹ｒ陦後≧ ---
         if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
             auto gameObjects = scene->GetGameObjects();
             for (auto it = gameObjects.rbegin(); it != gameObjects.rend(); ++it) {
@@ -340,7 +340,7 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
             }
         }
 
-        // --- 2. Sprite に当たらなかった場合のみ 3D のピッキングを行う ---
+        // --- 2. Sprite 縺ｫ蠖薙◆繧峨↑縺九▲縺溷ｴ蜷医・縺ｿ 3D 縺ｮ繝斐ャ繧ｭ繝ｳ繧ｰ繧定｡後≧ ---
         if (!isHit) {
             if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
                 Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
@@ -348,7 +348,7 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
                 Ray ray = Math::ScreenPointToRay(localMousePos, size.x, size.y, viewProjInverse);
 
                 RaycastHit hit;
-                if (CollisionManager::GetInstance().Raycast(ray, hit, 1000.0f)) {
+                if (engine && engine->GetCollisionManager()->Raycast(ray, hit, 1000.0f)) {
                     closestDist = hit.distance;
                     closestObj = hit.hitObject;
                     isHit = true;

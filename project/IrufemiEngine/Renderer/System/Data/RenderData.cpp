@@ -23,7 +23,7 @@ void MeshDesc::ChangeMesh(PrimitiveType newType) {
     type = newType;
 
     // PrimitiveManager から標準リソースを取得
-    const auto& primitiveResource = PrimitiveManager::GetInstance()->GetStandardResource(type);
+    const auto& primitiveResource = primitiveManager_->GetStandardResource(type);
 
     bool isNewResource = false;
     if (!resource) {
@@ -52,7 +52,7 @@ void MeshDesc::ChangeMesh(const PrimitiveData& data) {
 
     // 動的にリソースを生成し、自身で所有権を持つ
     PrimitiveResource customResource;
-    PrimitiveManager::GetInstance()->CreateGPUResource(data, customResource);
+    primitiveManager_->CreateGPUResource(data, customResource);
 
     resource->vertexResource_ = customResource.vertexResource;
     resource->indexResource_ = customResource.indexResource;

@@ -45,6 +45,7 @@ class GameObject;
 class CameraManager;
 class CollisionManager;
 class GPUParticleManager;
+class PrimitiveManager;
 
 /**
  * @class IrufemiEngine
@@ -212,6 +213,7 @@ public: // ゲッター
     CameraManager* GetCameraManager() { return cameraManager_.get(); }
     CollisionManager* GetCollisionManager() { return collisionManager_.get(); }
     GPUParticleManager* GetGPUParticleManager() { return gpuParticleManager_.get(); }
+    PrimitiveManager* GetPrimitiveManager() { return primitiveManager_.get(); }
     /** 
      * @brief ポストプロセス管理者を取得
      * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
@@ -373,6 +375,9 @@ private: // メンバ変数
 
     // GPUParticleManager
     std::unique_ptr<GPUParticleManager> gpuParticleManager_ = nullptr;
+
+    // PrimitiveManager
+    std::unique_ptr<PrimitiveManager> primitiveManager_ = nullptr;
 
     // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };

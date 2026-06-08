@@ -73,7 +73,7 @@ void Effect::Initialize(EffectType type) {
         // 炎のように立ち上る形状（底面半径0.6f, 上面半径0.05f, 高さ2.5f, 底面原点）を動的生成して適用
         // 上面をほぼ尖らせることで炎の先端のシルエットを表現。セグメント24で滑らかに。
         PrimitiveData customAuraData = PrimitiveManager::CreateCylinder(0.6f, 0.05f, 2.5f, 24, false, false, false);
-        PrimitiveManager::GetInstance()->CreateGPUResource(customAuraData, customAuraResource_);
+        engine_->GetPrimitiveManager()->CreateGPUResource(customAuraData, customAuraResource_);
 
         if (auraObject_->GetMesh().resource) {
             auraObject_->GetMesh().resource->vertexBufferView_ = customAuraResource_.vertexBufferView;
@@ -109,7 +109,7 @@ void Effect::Initialize(EffectType type) {
         ringParams.startAlpha = 0.0f;
         ringParams.endAlpha = 0.0f;
 
-        PrimitiveData ringData = PrimitiveManager::CreateRing(ringParams);
+        PrimitiveData ringData = engine_->GetPrimitiveManager()->CreateRing(ringParams);
         
         // 頂点座標を XZ平面に寝かせる（ハンマーの軌道に沿ったレールにする）
         for (auto& vertex : ringData.vertices) {

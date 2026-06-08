@@ -25,7 +25,7 @@ Skybox::~Skybox() {
 void Skybox::Initialize(const std::string& textureName) {
 
     // PrimitiveManager からスカイボックス用の形状（Cube）を取得
-    PrimitiveManager* primitiveManager = PrimitiveManager::GetInstance();
+    PrimitiveManager* primitiveManager = engine_->GetPrimitiveManager();
     const PrimitiveData& primitiveData = primitiveManager->GetPrimitiveData(PrimitiveType::Skybox);
 
     vertexDataList_ = primitiveData.vertices;
