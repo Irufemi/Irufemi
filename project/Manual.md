@@ -129,3 +129,48 @@ Vignetteエフェクトがより自然な減衰（Smooth Falloff）になるよ�
 - **`softness` (旧: power)**: 減衰の柔らかさ (デフォルト 0.5)
 
 これにより、画面端が完全に黒く潰れるのを防ぎ、滑らかなグラデーション表現が可能になっています。シーン初期化時などでパラメータを調整する際はご留意ください。
+
+---
+
+## Audio システム (AudioPlayer / AudioSourceComponent) の利用方法
+
+本エンジンのAudioシステムは、コンポーネントからの利用とプログラムからの直接利用の2通りの方法をサポートしています。
+これまでの `Bgm` や `Se` クラスは廃止され、統合された `AudioPlayer` クラスによって一元管理されます。リソースリークを防ぐ安全な設計（ComPtrやRAIIの活用）が内部で行われているため、プログラマは生成・破棄のタイミングを気にせず利用できます。
+
+### コンポーネントからの利用
+GameObject に `AudioSourceComponent` をアタッチすることで、インスペクタ（エディタ）上からサウンドの設定が可能です。
+- **Audio Type**: `BGM` か `SE` かを選択します。BGMはデフォルトでループ再生されます。
+- **File Path**: 再生するオーディオファイルのパス（例: `resources/audio/bgm/field.wav`）を指定します。
+- **Volume**: 音量を 0.0 ～ 1.0 の間で調整します。
+- **Loop**: ループ再生のON/OFFを任意に切り替えます。
+
+スクリプトから再生・停止を行う場合は、コンポーネントを取得して以下のように呼び出します。
+```cpp
+auto audioSource = GetComponent<AudioSourceComponent>();
+if (audioSource) {
+    audioSource->Play(); // 再生（インスペクタの設定が反映されます）
+    // audioSource->Stop(); // 停止したい場合
+}
+```
+
+### プログラムからの直接利用 (AudioPlayer)
+UIの操作音や、特定のコンポーネント（GameObject）に紐付かない効果音を再生する場合は、直接 `AudioPlayer` クラスのインスタンスを生成して使用するのが便利です。
+
+```cpp
+#include "Resource/Audio/AudioPlayer.h"
+#include "Resource/Audio/AudioType.h"
+
+// 1. エンジンから AudioManager を取得して、AudioPlayer を生成
+auto audioManager = engine->GetAudioManager();
+AudioPlayer clickSe(audioManager, AudioType::SE);
+
+// 2. 音声ファイルのパスを指定して初期化
+clickSe.Initialize("resources/audio/se/click.wav");
+
+// 3. 再生（オプションで音量設定などが可能）
+clickSe.SetVolume(0.8f);
+clickSe.Play(); // 1回再生
+
+// 再生中のサウンドを明示的に止めたい場合は Stop() を呼びます
+// clickSe.Stop();
+```
