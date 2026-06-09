@@ -699,8 +699,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\System\VoxelParticle\VoxelParticleManager.cpp" />
     <ClCompile Include="Renderer\System\VoxelParticle\VoxelParticleSystem.cpp" />
     <ClCompile Include="Resource\Audio\AudioManager.cpp" />
-    <ClCompile Include="Resource\Audio\Bgm.cpp" />
-    <ClCompile Include="Resource\Audio\Se.cpp" />
+    <ClCompile Include="Resource\Audio\AudioPlayer.cpp" />
     <ClCompile Include="Resource\Audio\Sound.cpp" />
     <ClCompile Include="Resource\Model\AnimationManager.cpp" />
     <ClCompile Include="Resource\Model\ModelManager.cpp" />
@@ -893,8 +892,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\System\VoxelParticle\VoxelParticleManager.h" />
     <ClInclude Include="Renderer\System\VoxelParticle\VoxelParticleSystem.h" />
     <ClInclude Include="Resource\Audio\AudioManager.h" />
-    <ClInclude Include="Resource\Audio\Bgm.h" />
-    <ClInclude Include="Resource\Audio\Se.h" />
+    <ClInclude Include="Resource\Audio\AudioPlayer.h" />
+    <ClInclude Include="Resource\Audio\AudioType.h" />
     <ClInclude Include="Resource\Audio\Sound.h" />
     <ClInclude Include="Resource\Audio\VoiceCallback.h" />
     <ClInclude Include="Resource\Audio\VoiceInstance.h" />

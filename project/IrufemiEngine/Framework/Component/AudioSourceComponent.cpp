@@ -4,11 +4,15 @@
 #include "Engine/IrufemiEngine.h"
 #include "Resource/Audio/AudioManager.h"
 
+AudioSourceComponent::AudioSourceComponent() {
+}
+
 AudioSourceComponent::~AudioSourceComponent() {
     Stop();
 }
 
 void AudioSourceComponent::OnRegisterProperties() {
+    RegisterProperty("Audio Type (0:BGM, 1:SE)", &audioType_);
     RegisterProperty("Audio Path", &audioPath_);
     RegisterProperty("Play On Awake", &playOnAwake_);
     RegisterProperty("Loop", &loop_);
@@ -16,16 +20,6 @@ void AudioSourceComponent::OnRegisterProperties() {
 }
 
 void AudioSourceComponent::Initialize() {
-    if (playOnAwake_) {
-        Play();
-    }
-}
-
-void AudioSourceComponent::Update() {
-    // 毎フレームの処理（必要に応じて音量の動的追従などを追加）
-}
-
-void AudioSourceComponent::Play() {
     if (!gameObject_) return;
     auto scene = gameObject_->GetScene();
     if (!scene) return;
@@ -33,39 +27,66 @@ void AudioSourceComponent::Play() {
     if (!engine) return;
 
     auto audioManager = engine->GetAudioManager();
-    
-    // "resources/" プレフィックスを付けるか、そのまま使うか
-    // IrufemiEngine の慣習に合わせて、ユーザーが "audio/..." と入力したものをそのまま使用可能にするため、
-    // "resources/" に含まれていなければ付与するなどの工夫も考えられますが、一旦そのまま "resources/" 基準でロードします。
-    std::string fullPath = "resources/" + audioPath_;
-    if (audioPath_.find("resources/") == 0) {
-        fullPath = audioPath_;
+    if (audioManager) {
+        player_ = std::make_unique<AudioPlayer>(audioManager, static_cast<AudioType>(audioType_));
+        
+        std::string fullPath = "resources/" + audioPath_;
+        if (audioPath_.find("resources/") == 0) {
+            fullPath = audioPath_;
+        }
+        player_->Initialize(fullPath);
+        player_->SetVolume(volume_);
     }
 
-    auto soundData = audioManager->GetOrLoadSoundByFile(fullPath);
-    if (soundData) {
-        voice_ = audioManager->Play(soundData, loop_, volume_);
+    if (playOnAwake_) {
+        Play();
+    }
+}
+
+void AudioSourceComponent::Update() {
+    // インスペクターからの動的変更を反映（EditorMode等での調整を想定）
+    if (player_) {
+        player_->SetVolume(volume_);
+    }
+}
+
+void AudioSourceComponent::Play() {
+    if (player_) {
+        player_->Play(loop_);
     }
 }
 
 void AudioSourceComponent::Stop() {
-    if (voice_.expired() || !gameObject_) return;
-    auto scene = gameObject_->GetScene();
-    if (!scene) return;
-    auto engine = scene->GetEngine();
-    if (!engine) return;
-
-    engine->GetAudioManager()->Stop(voice_);
+    if (player_) {
+        player_->Stop();
+    }
 }
 
 void AudioSourceComponent::SetAudioPath(const std::string& path) {
     audioPath_ = path;
+    if (player_) {
+        std::string fullPath = "resources/" + audioPath_;
+        if (audioPath_.find("resources/") == 0) {
+            fullPath = audioPath_;
+        }
+        player_->Initialize(fullPath);
+    }
 }
 
 void AudioSourceComponent::SetVolume(float volume) {
     volume_ = volume;
+    if (player_) {
+        player_->SetVolume(volume);
+    }
 }
 
 void AudioSourceComponent::SetLoop(bool loop) {
     loop_ = loop;
+}
+
+void AudioSourceComponent::SetAudioType(AudioType type) {
+    audioType_ = static_cast<int>(type);
+    if (player_) {
+        player_->SetAudioType(type);
+    }
 }

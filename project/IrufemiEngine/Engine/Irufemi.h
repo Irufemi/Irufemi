@@ -58,8 +58,9 @@
 #include "Renderer/Object/Effect/Effect.h"
 
 // 音関連
-#include "Resource/Audio/Bgm.h"
-#include "Resource/Audio/Se.h"
+#include "Resource/Audio/AudioManager.h"
+#include "Resource/Audio/AudioPlayer.h"
+#include "Resource/Audio/Sound.h"
 
 // --- Resource (素材管理) ---
 #include "Resource/Texture/TextureManager.h"

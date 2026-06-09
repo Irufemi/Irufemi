@@ -2,9 +2,9 @@
 #include <cassert>
 
 Sound::~Sound() {
-    if (pWaveFormat) {
-        CoTaskMemFree(pWaveFormat);
-        pWaveFormat = nullptr;
+    if (pWaveFormat_) {
+        CoTaskMemFree(pWaveFormat_);
+        pWaveFormat_ = nullptr;
     }
 }
 
@@ -12,53 +12,63 @@ bool Sound::Load(const std::wstring& filePath) {
     HRESULT hr;
 
     // ソースリーダーの作成
-    IMFSourceReader* pMFSourceReader{ nullptr };
+    Microsoft::WRL::ComPtr<IMFSourceReader> pMFSourceReader;
     hr = MFCreateSourceReaderFromURL(filePath.c_str(), NULL, &pMFSourceReader);
     if (FAILED(hr)) return false;
 
     // メディアタイプをPCMに設定
-    IMFMediaType* pMFMediaType{ nullptr };
-    MFCreateMediaType(&pMFMediaType);
-    pMFMediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
-    pMFMediaType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
-    pMFSourceReader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, pMFMediaType);
+    Microsoft::WRL::ComPtr<IMFMediaType> pMFMediaType;
+    hr = MFCreateMediaType(&pMFMediaType);
+    if (FAILED(hr)) return false;
+    
+    hr = pMFMediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
+    if (FAILED(hr)) return false;
+    
+    hr = pMFMediaType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
+    if (FAILED(hr)) return false;
+    
+    hr = pMFSourceReader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, pMFMediaType.Get());
+    if (FAILED(hr)) return false;
 
-    pMFMediaType->Release();
-    pMFMediaType = nullptr;
-    pMFSourceReader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, &pMFMediaType);
+    pMFMediaType.Reset();
+    hr = pMFSourceReader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, &pMFMediaType);
+    if (FAILED(hr)) return false;
 
     // オーディオデータ形式の取得
-    MFCreateWaveFormatExFromMFMediaType(pMFMediaType, &pWaveFormat, nullptr);
-    pMFMediaType->Release();
+    hr = MFCreateWaveFormatExFromMFMediaType(pMFMediaType.Get(), &pWaveFormat_, nullptr);
+    if (FAILED(hr)) return false;
+
+    pMFMediaType.Reset();
 
     // データの読み込み
-    mediaData.clear();
+    mediaData_.clear();
     while (true) {
-        IMFSample* pMFSample{ nullptr };
+        Microsoft::WRL::ComPtr<IMFSample> pMFSample;
         DWORD dwStreamFlags{ 0 };
-        pMFSourceReader->ReadSample(MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, nullptr, &dwStreamFlags, nullptr, &pMFSample);
+        hr = pMFSourceReader->ReadSample(MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, nullptr, &dwStreamFlags, nullptr, &pMFSample);
+        if (FAILED(hr)) return false;
 
         if (dwStreamFlags & MF_SOURCE_READERF_ENDOFSTREAM) {
-            if (pMFSample) pMFSample->Release();
             break;
         }
 
-        IMFMediaBuffer* pMFMediaBuffer{ nullptr };
-        pMFSample->ConvertToContiguousBuffer(&pMFMediaBuffer);
+        if (!pMFSample) continue;
+
+        Microsoft::WRL::ComPtr<IMFMediaBuffer> pMFMediaBuffer;
+        hr = pMFSample->ConvertToContiguousBuffer(&pMFMediaBuffer);
+        if (FAILED(hr)) return false;
 
         BYTE* pBuffer{ nullptr };
         DWORD cbCurrentLength{ 0 };
-        pMFMediaBuffer->Lock(&pBuffer, nullptr, &cbCurrentLength);
+        hr = pMFMediaBuffer->Lock(&pBuffer, nullptr, &cbCurrentLength);
+        if (FAILED(hr)) return false;
 
-        size_t currentSize = mediaData.size();
-        mediaData.resize(currentSize + cbCurrentLength);
-        memcpy(mediaData.data() + currentSize, pBuffer, cbCurrentLength);
+        size_t currentSize = mediaData_.size();
+        mediaData_.resize(currentSize + cbCurrentLength);
+        memcpy(mediaData_.data() + currentSize, pBuffer, cbCurrentLength);
 
         pMFMediaBuffer->Unlock();
-        pMFMediaBuffer->Release();
-        pMFSample->Release();
     }
 
-    pMFSourceReader->Release();
     return true;
 }

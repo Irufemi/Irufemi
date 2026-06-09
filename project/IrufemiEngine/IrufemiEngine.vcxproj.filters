@@ -361,10 +361,7 @@
     <ClCompile Include="Resource\Audio\AudioManager.cpp">
       <Filter>Resource\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="Resource\Audio\Bgm.cpp">
-      <Filter>Resource\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Resource\Audio\Se.cpp">
+    <ClCompile Include="Resource\Audio\AudioPlayer.cpp">
       <Filter>Resource\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Resource\Audio\Sound.cpp">
@@ -939,10 +936,10 @@
     <ClInclude Include="Resource\Audio\AudioManager.h">
       <Filter>Resource\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Resource\Audio\Bgm.h">
+    <ClInclude Include="Resource\Audio\AudioPlayer.h">
       <Filter>Resource\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="Resource\Audio\Se.h">
+    <ClInclude Include="Resource\Audio\AudioType.h">
       <Filter>Resource\Audio</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Audio\Sound.h">

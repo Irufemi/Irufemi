@@ -65,10 +65,10 @@ void AudioManager::Finalize() {
         pMasteringVoice_->DestroyVoice();
         pMasteringVoice_ = nullptr;
     }
-    if (pXAudio2_) {
-        pXAudio2_->Release();
-        pXAudio2_ = nullptr;
-    }
+    
+    // ComPtrが自動で解放するが、明示的にリセット
+    pXAudio2_.Reset();
+    
     HRESULT hr = MFShutdown();
     assert(SUCCEEDED(hr));
 }

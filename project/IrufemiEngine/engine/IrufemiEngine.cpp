@@ -27,11 +27,9 @@ IrufemiEngine::IrufemiEngine() = default;
 #include <cassert>
 #include <cstdint>
 #include <format>
-#include <string>
-
-#include "../Resource/Audio/Bgm.h"
-#include "../Resource/Audio/Se.h"
-#include "../Resource/Texture/Texture.h"
+#include "../Resource/Audio/AudioManager.h"
+#include "../Resource/Audio/AudioPlayer.h"
+#include "../Framework/Component/AudioSourceComponent.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Graphics/DirectX/DirectXUtils.h"
 #include "Manager/DebugUI.h"
@@ -103,15 +101,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 
   // AudioManagerの生成・Media Foundationの初期化
   audioManager_ = std::make_unique<AudioManager>();
-  audioManager_->StartUp();
-  // AudioManagerの初期化
   audioManager_->Initialize();
-#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
-  // "resources"フォルダから音声ファイルをすべてロード
-  audioManager_->LoadAllSoundsFromFolder("resources/");
-#endif
-  Bgm::SetAudioManager(audioManager_.get());
-  Se::SetAudioManager(audioManager_.get());
+  audioManager_->StartUp();
+  audioManager_->LoadAllSoundsFromFolder("resources/audio");
 
   // DirectX 基盤
   dxCommon_ = std::make_unique<DirectXCommon>();
@@ -505,8 +497,6 @@ void IrufemiEngine::Finalize() {
   Line3DRegion::SetEngine(nullptr);
   Primitive3DObject::SetEngine(nullptr);
   Effect::SetEngine(nullptr);
-  Bgm::SetAudioManager(nullptr);
-  Se::SetAudioManager(nullptr);
 
   // プリミティブ管理解放
   primitiveManager_.reset();
