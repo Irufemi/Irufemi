@@ -99,10 +99,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // 乱数エンジンのシードを設定
   Random::SeedEngine();
 
-  // AudioManagerの生成・Media Foundationの初期化
+  // AudioManagerの生成と初期化(Media Foundation含む)
   audioManager_ = std::make_unique<AudioManager>();
   audioManager_->Initialize();
-  audioManager_->StartUp();
   audioManager_->LoadAllSoundsFromFolder("resources/audio");
 
   // DirectX 基盤

@@ -67,10 +67,6 @@ public:
      */
     void Finalize();
 
-    /**
-     * @brief Media Foundation の開始処理
-     */
-    void StartUp();
 
     /**
      * @brief 指定フォルダから対応する音声ファイルをすべてロードする

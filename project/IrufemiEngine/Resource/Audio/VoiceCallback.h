@@ -1,5 +1,6 @@
 #pragma once
 #include <xaudio2.h>
+#include <atomic>
 
 // SourceVoiceの再生が完了したことを受け取り、自身を破棄するためのコールバック
 class VoiceCallback : public IXAudio2VoiceCallback {
@@ -18,5 +19,5 @@ public:
     bool IsFinished() const { return finished_; }
 
 private:
-    bool finished_ = false;
+    std::atomic<bool> finished_{ false };
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <memory>
 #include <xaudio2.h>
 #include <mfapi.h>
 #include <mfidl.h>
@@ -12,6 +13,15 @@
 #pragma comment(lib, "mfuuid.lib")
 
 /**
+ * @brief CoTaskMemFree を用いてメモリを解放するカスタムデリータ
+ */
+struct CoTaskMemDeleter {
+    void operator()(void* p) const {
+        if (p) CoTaskMemFree(p);
+    }
+};
+
+/**
  * @class Sound
  * @brief メモリ上にロードされたオーディオデータ（PCM）を管理するクラス
  * @details Media Foundation を用いて音声ファイルからPCMデータを読み込み、保持します。
@@ -19,7 +29,7 @@
 class Sound {
 public:
     Sound() = default;
-    ~Sound();
+    ~Sound() = default;
 
     /**
      * @brief ファイルから音声データを読み込む
@@ -32,7 +42,7 @@ public:
      * @brief WAVEFORMATEX構造体へのポインタを取得する
      * @return WAVEFORMATEX* 読み込んだ音声のフォーマット情報
      */
-    const WAVEFORMATEX* GetFormat() const { return pWaveFormat_; }
+    const WAVEFORMATEX* GetFormat() const { return pWaveFormat_.get(); }
 
     /**
      * @brief オーディオデータの先頭ポインタを取得する
@@ -47,6 +57,6 @@ public:
     UINT32 GetSize() const { return static_cast<UINT32>(mediaData_.size()); }
 
 private:
-    WAVEFORMATEX* pWaveFormat_{ nullptr }; ///< 波形フォーマット情報。CoTaskMemFreeで解放が必要
+    std::unique_ptr<WAVEFORMATEX, CoTaskMemDeleter> pWaveFormat_; ///< 波形フォーマット情報。RAIIで自動解放
     std::vector<BYTE> mediaData_;          ///< 読み込まれたオーディオデータ本体
 };

@@ -1,12 +1,7 @@
 #include "Sound.h"
 #include <cassert>
 
-Sound::~Sound() {
-    if (pWaveFormat_) {
-        CoTaskMemFree(pWaveFormat_);
-        pWaveFormat_ = nullptr;
-    }
-}
+// ~Sound() は default のため、ここの定義は不要です
 
 bool Sound::Load(const std::wstring& filePath) {
     HRESULT hr;
@@ -35,8 +30,11 @@ bool Sound::Load(const std::wstring& filePath) {
     if (FAILED(hr)) return false;
 
     // オーディオデータ形式の取得
-    hr = MFCreateWaveFormatExFromMFMediaType(pMFMediaType.Get(), &pWaveFormat_, nullptr);
+    WAVEFORMATEX* rawWaveFormat = nullptr;
+    hr = MFCreateWaveFormatExFromMFMediaType(pMFMediaType.Get(), &rawWaveFormat, nullptr);
     if (FAILED(hr)) return false;
+
+    pWaveFormat_.reset(rawWaveFormat);
 
     pMFMediaType.Reset();
 

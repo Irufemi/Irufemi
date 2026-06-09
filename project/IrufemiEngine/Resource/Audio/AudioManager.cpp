@@ -34,25 +34,18 @@ AudioManager::~AudioManager() {
 void AudioManager::Initialize() {
     // 再初期化に備えて
     finalized_ = false;
+
+    // Media Foundationの初期化
+    HRESULT hr = MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
+    assert(SUCCEEDED(hr));
+
     // XAudio2エンジンの生成
-    HRESULT hr = XAudio2Create(&pXAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
+    hr = XAudio2Create(&pXAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
     assert(SUCCEEDED(hr));
 
     // マスターボイスの生成
     hr = pXAudio2_->CreateMasteringVoice(&pMasteringVoice_);
     assert(SUCCEEDED(hr));
-}
-
-//Media Foundationの初期化
-void AudioManager::StartUp() {
-
-
-    /*サウンド再生*/
-
-    ///Microsoft Media Foundation
-
-    //Media Foundationの初期化
-    MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
 }
 
 void AudioManager::Finalize() {
