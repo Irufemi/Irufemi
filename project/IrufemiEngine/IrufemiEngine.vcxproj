@@ -645,6 +645,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Manager\DrawManager.cpp" />
     <ClCompile Include="Engine\Manager\PrimitiveManager.cpp" />
     <ClCompile Include="Engine\Platform\Input\GamePad.cpp" />
+    <ClCompile Include="Engine\Platform\Input\InputMappingContext.cpp" />
     <ClCompile Include="Engine\Platform\Input\InputManager.cpp" />
     <ClCompile Include="Engine\Platform\Input\Keyboard.cpp" />
     <ClCompile Include="Engine\Platform\Input\Mouse.cpp" />
@@ -832,6 +833,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Manager\IComputeTask.h" />
     <ClInclude Include="Engine\Manager\PrimitiveManager.h" />
     <ClInclude Include="Engine\Platform\Input\GamePad.h" />
+    <ClInclude Include="Engine\Platform\Input\InputAction.h" />
+    <ClInclude Include="Engine\Platform\Input\InputMappingContext.h" />
     <ClInclude Include="Engine\Platform\Input\InputManager.h" />
     <ClInclude Include="Engine\Platform\Input\Keyboard.h" />
     <ClInclude Include="Engine\Platform\Input\Mouse.h" />

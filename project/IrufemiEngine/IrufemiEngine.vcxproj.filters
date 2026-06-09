@@ -201,6 +201,9 @@
     <ClCompile Include="Engine\Platform\Input\GamePad.cpp">
       <Filter>Engine\Platform\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Platform\Input\InputMappingContext.cpp">
+      <Filter>Engine\Platform\Input</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Platform\Input\InputManager.cpp">
       <Filter>Engine\Platform\Input</Filter>
     </ClCompile>
@@ -754,6 +757,12 @@
       <Filter>Engine\Manager</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Platform\Input\GamePad.h">
+      <Filter>Engine\Platform\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Platform\Input\InputAction.h">
+      <Filter>Engine\Platform\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Platform\Input\InputMappingContext.h">
       <Filter>Engine\Platform\Input</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Platform\Input\InputManager.h">

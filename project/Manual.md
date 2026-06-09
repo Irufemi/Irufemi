@@ -174,3 +174,47 @@ clickSe.Play(); // 1回再生
 // 再生中のサウンドを明示的に止めたい場合は Stop() を呼びます
 // clickSe.Stop();
 ```
+
+---
+
+## アクションベース入力システム (Input Action System) の利用方法
+
+現在の入力システムは、キーボードやゲームパッドのボタンを直接監視するのではなく、物理入力と「論理アクション（例：Jump、Move）」を紐付けて管理する「アクションベース」へ移行しています。これにより、ユーザーのキーコンフィグの変更や複数デバイスの同時対応が容易になります。
+
+### 使い方（初期化時）
+ゲームの初期化処理（Sceneの `Initialize` など）で、`InputManager` に対してアクションと物理デバイス（キーやボタン）の対応付け（バインディング）を行います。
+
+```cpp
+InputManager* input = engine_->GetInputManager();
+
+// "Jump" アクションに Spaceキー と ゲームパッドのAボタン を割り当て
+input->BindAction("Jump", InputId::Keyboard_Space);
+input->BindAction("Jump", InputId::GamePad_A);
+
+// "MoveX" アクション（アナログ/1D軸入力）の割り当て
+// スケール値（第3引数）を使って、物理入力を最終的なアクション値に変換します。
+// 例: Dキー(1.0)は右方向(+1.0)に、Aキー(1.0)はマイナスを掛けて左方向(-1.0)にする
+input->BindAction("MoveX", InputId::Keyboard_D, 1.0f);
+input->BindAction("MoveX", InputId::Keyboard_A, -1.0f);
+// パッドのスティックはそのままの値(-1.0～1.0)を使う、あるいは 0.5f 等を掛けて感度調整も可能
+input->BindAction("MoveX", InputId::GamePad_LeftStickX, 1.0f);
+```
+
+### 使い方（更新時）
+毎フレームの更新処理（Sceneの `Update` など）では、バインドしたアクション名を指定して状態を取得します。
+
+```cpp
+InputManager* input = engine_->GetInputManager();
+
+// デジタル入力（ボタンが押された瞬間）の判定
+if (input->IsActionTriggered("Jump")) {
+    // ジャンプ処理を実行
+}
+
+// アナログ入力（移動量など）の取得
+float moveInputX = input->GetActionValue("MoveX").x;
+// プレイヤーの移動処理へ
+```
+
+※ 互換性維持のため、従来の `IsKeyDown(VK_SPACE)` などのAPIも引き続き使用可能ですが、新しくコードを書く際はアクションシステム (`BindAction`, `GetActionValue` 等) を積極的に利用することが推奨されます。
+

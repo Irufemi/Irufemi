@@ -4,6 +4,9 @@
 #include "GamePad.h"
 #include "Mouse.h"
 #include "../../Core/Math/Vector2.h"
+#include "InputMappingContext.h"
+#include <string>
+#include <unordered_map>
 
 // 役割：具体実装(Keyboard/GamePad/Mouse)を保持し、旧APIをフォワードして互換を維持するファサード
 /**
@@ -29,6 +32,30 @@ public:
      * @brief 毎フレームの更新処理
      */
     void Update();
+    ///@}
+
+    /** @name アクションベース入力（推奨API） */
+    ///@{
+    /**
+     * @brief アクションに物理入力をバインドする
+     * @param[in] actionName アクション名（例: "Jump", "MoveX"）
+     * @param[in] inputId 割り当てる物理入力（InputId::Keyboard_Space など）
+     * @param[in] scale 物理入力値を最終値に変換する際の係数（1.0f=そのまま, -1.0f=反転, 0.5f=感度半減 など）
+     */
+    void BindAction(const std::string& actionName, InputId inputId, float scale = 1.0f);
+
+    /** @brief 指定アクションのアナログ値（1D/2D）を取得する */
+    InputActionValue GetActionValue(const std::string& actionName) const;
+
+    /** @brief 指定アクションが押されているか（Down） */
+    bool IsActionDown(const std::string& actionName) const;
+    /** @brief 指定アクションが押された瞬間か（Triggered/Pressed） */
+    bool IsActionTriggered(const std::string& actionName) const;
+    /** @brief 指定アクションが離された瞬間か（Released） */
+    bool IsActionReleased(const std::string& actionName) const;
+
+    /** @brief 全てのアクションバインディングを解除する */
+    void ClearActionBindings();
     ///@}
 
     /** @name デバイス取得（推奨API） */
@@ -108,8 +135,17 @@ public:
     ///@}
 
 private:
+    /** @brief 物理入力デバイスから現在の状態（アナログ値または0/1）を取得する内部関数 */
+    float GetPhysicalInputValue(InputId id) const;
+
     std::unique_ptr<Keyboard> keyboard_{};
     std::unique_ptr<GamePad>  gamepad_{};
     std::unique_ptr<Mouse>    mouse_{};
     HWND hwnd_ = nullptr;
+
+    InputMappingContext mappingContext_{};
+    
+    // 前フレームと現在のフレームのアクション値を保持（Triggered等の判定用）
+    std::unordered_map<std::string, InputActionValue> currentActionValues_{};
+    std::unordered_map<std::string, InputActionValue> previousActionValues_{};
 };
