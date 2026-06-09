@@ -21,12 +21,12 @@ class DirectXCommon;
 class DescriptorPool;
 
 // 3Dラインのインスタンス描画用クラス
-class Line3DRegion : public IRenderable {
+class Line3DBatch : public IRenderable {
 public:
-    Line3DRegion() {
+    Line3DBatch() {
         instancingSrvIndex_.fill(UINT32_MAX);
     }
-    ~Line3DRegion();
+    ~Line3DBatch();
 
     void Initialize();
     void Update();

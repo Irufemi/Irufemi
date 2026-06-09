@@ -29,12 +29,12 @@ class DirectXCommon;
 class BaseParticle;
 class BaseGPU_Particle;
 class Primitive3DObject;
-class PrimitiveRegion;
+class PrimitiveBatch;
 struct GpuMesh;
 struct ManagedModel;
 class Line2DClass;
 class Line3DClass;
-class Line3DRegion;
+class Line3DBatch;
 class Skybox;
 struct SkinCluster;
 struct GpuMaterial;
@@ -60,17 +60,19 @@ private:
     std::vector<RenderPackets::Standard3DPacket> selectionMaskQueue_;
     std::vector<RenderPackets::SpritePacket> selectionMaskQueue2D_;
     std::vector<RenderPackets::SpritePacket> spriteQueue_;
+    std::vector<RenderPackets::SpriteBatchPacket> spriteBatchQueue_;
 
     std::vector<RenderPackets::LinePacket> lineQueue_;
     std::vector<RenderPackets::GPUParticlePacket> gpuParticleQueue_;
     std::vector<RenderPackets::VoxelParticlePacket> voxelParticleQueue_;
     std::vector<RenderPackets::SkyboxPacket> skyboxQueue_;
-    std::vector<RenderPackets::PrimitiveRegionPacket> primitiveRegionQueue_;
-    std::vector<RenderPackets::ModelRegionPacket> modelRegionQueue_;
+    std::vector<RenderPackets::PrimitiveBatchPacket> primitiveBatchQueue_;
+    std::vector<RenderPackets::ModelBatchPacket> modelBatchQueue_;
     std::vector<std::function<void()>> postRenderQueue_;
     
     // 最前面UI描画用キュー (PostProcess適用後のバックバッファに直接描画)
     std::vector<RenderPackets::SpritePacket> topMostSpriteQueue_;
+    std::vector<RenderPackets::SpriteBatchPacket> topMostSpriteBatchQueue_;
     std::vector<RenderPackets::SpritePacket> textQueue_;
     std::vector<RenderPackets::SpritePacket> topMostTextQueue_;
 
@@ -84,15 +86,17 @@ public:
     const std::vector<RenderPackets::Standard3DPacket>& GetSelectionMaskQueue() const { return selectionMaskQueue_; }
     const std::vector<RenderPackets::SpritePacket>& GetSelectionMaskQueue2D() const { return selectionMaskQueue2D_; }
     const std::vector<RenderPackets::SpritePacket>& GetSpriteQueue() const { return spriteQueue_; }
+    const std::vector<RenderPackets::SpriteBatchPacket>& GetSpriteBatchQueue() const { return spriteBatchQueue_; }
 
     const std::vector<RenderPackets::LinePacket>& GetLineQueue() const { return lineQueue_; }
     const std::vector<RenderPackets::GPUParticlePacket>& GetGPUParticleQueue() const { return gpuParticleQueue_; }
     const std::vector<RenderPackets::VoxelParticlePacket>& GetVoxelParticleQueue() const { return voxelParticleQueue_; }
     const std::vector<RenderPackets::SkyboxPacket>& GetSkyboxQueue() const { return skyboxQueue_; }
-    const std::vector<RenderPackets::PrimitiveRegionPacket>& GetPrimitiveRegionQueue() const { return primitiveRegionQueue_; }
-    const std::vector<RenderPackets::ModelRegionPacket>& GetModelRegionQueue() const { return modelRegionQueue_; }
+    const std::vector<RenderPackets::PrimitiveBatchPacket>& GetPrimitiveBatchQueue() const { return primitiveBatchQueue_; }
+    const std::vector<RenderPackets::ModelBatchPacket>& GetModelBatchQueue() const { return modelBatchQueue_; }
     const std::vector<std::function<void()>>& GetPostRenderQueue() const { return postRenderQueue_; }
     const std::vector<RenderPackets::SpritePacket>& GetTopMostSpriteQueue() const { return topMostSpriteQueue_; }
+    const std::vector<RenderPackets::SpriteBatchPacket>& GetTopMostSpriteBatchQueue() const { return topMostSpriteBatchQueue_; }
     
     // --- Text Queues ---
     const std::vector<RenderPackets::SpritePacket>& GetTextQueue() const { return textQueue_; }
@@ -309,14 +313,14 @@ public:
     /**
      * @brief 矩形領域（Region）の描画
      */
-    void SubmitModelRegion(const RenderPackets::ModelRegionPacket& packet);
-    void DrawModelRegion(const RenderPackets::ModelRegionPacket& packet);
+    void SubmitModelBatch(const RenderPackets::ModelBatchPacket& packet);
+    void DrawModelBatch(const RenderPackets::ModelBatchPacket& packet);
 
     /**
      * @brief 汎用的な領域描画（頂点バッファ・インデックスバッファ直接指定）
      */
-    void SubmitPrimitiveRegion(const RenderPackets::PrimitiveRegionPacket& packet);
-    void DrawPrimitiveRegion(const RenderPackets::PrimitiveRegionPacket& packet);
+    void SubmitPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet);
+    void DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet);
 
     /**
      * @brief インスタンス化された線の描画
@@ -338,8 +342,15 @@ public:
      * @brief 2Dオブジェクト（スプライト等）の標準描画 (Sprite.hlsl)
      */
     void SubmitSprite(const class Object2DResource* resource);
-    void SubmitTopMostSprite(const class Object2DResource* resource); // 最前面UI描画用
     void DrawSprite(const RenderPackets::SpritePacket& packet);
+
+    void SubmitSpriteBatch(const RenderPackets::SpriteBatchPacket& packet);
+    void DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet);
+
+    void SubmitTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket& packet);
+    void DrawTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket& packet);
+
+    void SubmitTopMostSprite(const class Object2DResource* resource);
 
     // --- Text ---
     void SubmitText(const class Object2DResource* resource);

@@ -18,7 +18,7 @@
 
 void CollisionManager::Initialize() {
     if (!debugLine_) {
-        debugLine_ = std::make_unique<Line3DRegion>();
+        debugLine_ = std::make_unique<Line3DBatch>();
         debugLine_->Initialize();
     }
     

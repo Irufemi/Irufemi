@@ -37,6 +37,9 @@
     <Filter Include="Renderer\Object" />
     <Filter Include="Renderer\Object\2D" />
     <Filter Include="Renderer\Object\2D\Primitive" />
+    <Filter Include="Renderer\Object\2D\SpriteBatch">
+      <UniqueIdentifier>{2276cb04-bda5-4424-8141-8600d14b8a2e}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Renderer\Object\2D\Sprite" />
     <Filter Include="Renderer\Object\2D\Text" />
     <Filter Include="Renderer\Object\3D" />
@@ -47,7 +50,7 @@
     <Filter Include="Renderer\Object\Line" />
     <Filter Include="Renderer\Object\Line\Data" />
     <Filter Include="Renderer\Object\Particle" />
-    <Filter Include="Renderer\Object\Region" />
+    <Filter Include="Renderer\Object\Batch" />
     <Filter Include="Renderer\Object\Skybox" />
     <Filter Include="Renderer\System" />
     <Filter Include="Renderer\System\Core" />
@@ -292,6 +295,9 @@
     <ClCompile Include="Renderer\Object\2D\Primitive\Circle2D.cpp">
       <Filter>Renderer\Object\2D\Primitive</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.cpp">
+      <Filter>Renderer\Object\2D\SpriteBatch</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer\Object\2D\Sprite\Sprite.cpp">
       <Filter>Renderer\Object\2D\Sprite</Filter>
     </ClCompile>
@@ -319,11 +325,11 @@
     <ClCompile Include="Renderer\Object\Particle\ParticleObject.cpp">
       <Filter>Renderer\Object\Particle</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object\Region\ModelRegion.cpp">
-      <Filter>Renderer\Object\Region</Filter>
+    <ClCompile Include="Renderer\Object\Batch\ModelBatch.cpp">
+      <Filter>Renderer\Object\Batch</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object\Region\PrimitiveRegion.cpp">
-      <Filter>Renderer\Object\Region</Filter>
+    <ClCompile Include="Renderer\Object\Batch\PrimitiveBatch.cpp">
+      <Filter>Renderer\Object\Batch</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Object\Skybox\Skybox.cpp">
       <Filter>Renderer\Object\Skybox</Filter>
@@ -331,7 +337,7 @@
     <ClCompile Include="Renderer\System\Core\BaseModel.cpp">
       <Filter>Renderer\System\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\System\Core\BaseRegion.cpp">
+    <ClCompile Include="Renderer\System\Core\BaseBatch.cpp">
       <Filter>Renderer\System\Core</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\System\Core\BaseResource.cpp">
@@ -864,6 +870,9 @@
     <ClInclude Include="Renderer\Object\2D\Primitive\Circle2D.h">
       <Filter>Renderer\Object\2D\Primitive</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.h">
+      <Filter>Renderer\Object\2D\SpriteBatch</Filter>
+    </ClInclude>
     <ClInclude Include="Renderer\Object\2D\Sprite\Sprite.h">
       <Filter>Renderer\Object\2D\Sprite</Filter>
     </ClInclude>
@@ -894,11 +903,11 @@
     <ClInclude Include="Renderer\Object\Particle\ParticleObject.h">
       <Filter>Renderer\Object\Particle</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object\Region\ModelRegion.h">
-      <Filter>Renderer\Object\Region</Filter>
+    <ClInclude Include="Renderer\Object\Batch\ModelBatch.h">
+      <Filter>Renderer\Object\Batch</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object\Region\PrimitiveRegion.h">
-      <Filter>Renderer\Object\Region</Filter>
+    <ClInclude Include="Renderer\Object\Batch\PrimitiveBatch.h">
+      <Filter>Renderer\Object\Batch</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Object\Skybox\Skybox.h">
       <Filter>Renderer\Object\Skybox</Filter>
@@ -906,7 +915,7 @@
     <ClInclude Include="Renderer\System\Core\BaseModel.h">
       <Filter>Renderer\System\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\System\Core\BaseRegion.h">
+    <ClInclude Include="Renderer\System\Core\BaseBatch.h">
       <Filter>Renderer\System\Core</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\System\Core\BaseResource.h">

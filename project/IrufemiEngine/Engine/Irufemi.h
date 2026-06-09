@@ -49,9 +49,9 @@
 #include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
 // VoxelParticle
 #include "Renderer/System/VoxelParticle/VoxelParticleSystem.h"
-// Region
-#include "Renderer/Object/Region/ModelRegion.h"
-#include "Renderer/Object/Region/PrimitiveRegion.h"
+// Batch
+#include "Renderer/Object/Batch/ModelBatch.h"
+#include "Renderer/Object/Batch/PrimitiveBatch.h"
 // Skybox
 #include "Renderer/Object/Skybox/Skybox.h"
 // Effect

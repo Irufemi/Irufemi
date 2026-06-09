@@ -1,16 +1,16 @@
 #pragma once
 
-#include "../../System/Core/BaseRegion.h"
+#include "../../System/Core/BaseBatch.h"
 #include "Engine/Manager/PrimitiveManager.h"
 
 /**
- * @class PrimitiveRegion
+ * @class PrimitiveBatch
  * @brief PrimitiveManager を利用した基本形状を描画する領域クラス
  */
-class PrimitiveRegion : public BaseRegion {
+class PrimitiveBatch : public BaseBatch {
 public:
-    PrimitiveRegion() = default;
-    ~PrimitiveRegion() override = default;
+    PrimitiveBatch() = default;
+    ~PrimitiveBatch() override = default;
 
     /**
      * @brief プリミティブ形状の領域を初期化する

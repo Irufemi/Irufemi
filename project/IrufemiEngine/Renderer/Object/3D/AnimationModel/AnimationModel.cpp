@@ -11,7 +11,7 @@
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Model/AnimationManager.h"
 #include "Resource/Model/Data/ObjModel.h"
-#include "Renderer/Object/Region/PrimitiveRegion.h"
+#include "Renderer/Object/Batch/PrimitiveBatch.h"
 #include "Renderer/Object/Line/LineClass.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
@@ -84,7 +84,7 @@ void AnimationModel::InitializeResources() {
             skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *managedModel_->cpuModel);
         }
 
-        jointSpheres_ = std::make_unique<PrimitiveRegion>();
+        jointSpheres_ = std::make_unique<PrimitiveBatch>();
         jointSpheres_->Initialize(PrimitiveType::Sphere, "resources/whiteTexture.png");
 
         for (size_t i = 0; i < skeleton_.joints.size(); ++i) {
@@ -93,7 +93,7 @@ void AnimationModel::InitializeResources() {
             jointSpheres_->AddInstance(tf);
         }
 
-        boneLines_ = std::make_unique<Line3DRegion>();
+        boneLines_ = std::make_unique<Line3DBatch>();
         boneLines_->Initialize();
     }
 
@@ -146,7 +146,7 @@ void AnimationModel::Update() {
     }
 
 
-    // 各Jointの位置をSphereRegionに反映
+    // 各Jointの位置をSphereBatchに反映
     boneLines_->ClearInstances();
     for (size_t i = 0; i < skeleton_.joints.size(); ++i) {
         // JointのSkeleton空間での行列を取得
@@ -162,7 +162,7 @@ void AnimationModel::Update() {
             jointWorldMat.m[3][2]
         };
 
-        // SphereRegionのi番目のインスタンスの位置を更新
+        // SphereBatchのi番目のインスタンスの位置を更新
         Transform tf;
         tf.scale = { 0.02f, 0.02f, 0.02f };
         tf.rotate = { 0.0f, 0.0f, 0.0f }; // 球体なので回転は無視でOK

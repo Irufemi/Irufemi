@@ -21,7 +21,7 @@ class DrawManager;
 class TextureManager;
 class Camera;
 class IrufemiEngine;
-class Line3DRegion;
+class Line3DBatch;
 
 #include "../../../Engine/Graphics/DirectX/DirectXCommon.h"
 
@@ -492,7 +492,7 @@ private:
     PSOManager::CullMode selectedCull_ = PSOManager::CullMode::None;
     std::string customPSOName_ = "";
 
-    std::unique_ptr<Line3DRegion> debugLineRegion_;
+    std::unique_ptr<Line3DBatch> debugLineRegion_;
     bool showEmitterArea_ = true;
 };
 

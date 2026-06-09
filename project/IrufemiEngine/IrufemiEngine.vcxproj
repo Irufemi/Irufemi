@@ -443,7 +443,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Region.VS.hlsl">
+    <FxCompile Include="..\Application\resources\shaders\Batch.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -676,6 +676,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\UI\ButtonComponent.cpp" />
     <ClCompile Include="Framework\Component\UI\CanvasComponent.cpp" />
     <ClCompile Include="Renderer\Object\2D\Primitive\Circle2D.cpp" />
+    <ClCompile Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.cpp" />
     <ClCompile Include="Renderer\Object\2D\Sprite\Sprite.cpp" />
     <ClCompile Include="Renderer\Object\2D\Text\Text.cpp" />
     <ClCompile Include="Renderer\Object\3D\AnimationModel\AnimationModel.cpp" />
@@ -685,11 +686,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object\Effect\WeaponTrail.cpp" />
     <ClCompile Include="Renderer\Object\Line\LineClass.cpp" />
     <ClCompile Include="Renderer\Object\Particle\ParticleObject.cpp" />
-    <ClCompile Include="Renderer\Object\Region\ModelRegion.cpp" />
-    <ClCompile Include="Renderer\Object\Region\PrimitiveRegion.cpp" />
+    <ClCompile Include="Renderer\Object\Batch\ModelBatch.cpp" />
+    <ClCompile Include="Renderer\Object\Batch\PrimitiveBatch.cpp" />
     <ClCompile Include="Renderer\Object\Skybox\Skybox.cpp" />
     <ClCompile Include="Renderer\System\Core\BaseModel.cpp" />
-    <ClCompile Include="Renderer\System\Core\BaseRegion.cpp" />
+    <ClCompile Include="Renderer\System\Core\BaseBatch.cpp" />
     <ClCompile Include="Renderer\System\Core\BaseResource.cpp" />
     <ClCompile Include="Renderer\System\Core\LineResource.cpp" />
     <ClCompile Include="Renderer\System\Core\Object2DResource.cpp" />
@@ -868,6 +869,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />
     <ClInclude Include="Renderer\Object\2D\Primitive\Circle2D.h" />
+    <ClInclude Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.h" />
     <ClInclude Include="Renderer\Object\2D\Sprite\Sprite.h" />
     <ClInclude Include="Renderer\Object\2D\Text\Text.h" />
     <ClInclude Include="Renderer\Object\3D\AnimationModel\AnimationModel.h" />
@@ -878,11 +880,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object\Line\LineClass.h" />
     <ClInclude Include="Renderer\Object\Line\Data\LineVertexData.h" />
     <ClInclude Include="Renderer\Object\Particle\ParticleObject.h" />
-    <ClInclude Include="Renderer\Object\Region\ModelRegion.h" />
-    <ClInclude Include="Renderer\Object\Region\PrimitiveRegion.h" />
+    <ClInclude Include="Renderer\Object\Batch\ModelBatch.h" />
+    <ClInclude Include="Renderer\Object\Batch\PrimitiveBatch.h" />
     <ClInclude Include="Renderer\Object\Skybox\Skybox.h" />
     <ClInclude Include="Renderer\System\Core\BaseModel.h" />
-    <ClInclude Include="Renderer\System\Core\BaseRegion.h" />
+    <ClInclude Include="Renderer\System\Core\BaseBatch.h" />
     <ClInclude Include="Renderer\System\Core\BaseResource.h" />
     <ClInclude Include="Renderer\System\Core\IRenderable.h" />
     <ClInclude Include="Renderer\System\Core\LineResource.h" />

@@ -19,8 +19,8 @@
 // 前方宣言
 class Camera;
 class IrufemiEngine;
-class PrimitiveRegion;
-class Line3DRegion;
+class PrimitiveBatch;
+class Line3DBatch;
 struct ManagedModel;
 struct ObjMaterial; 
 struct Material;
@@ -68,8 +68,8 @@ private: // メンバ変数
     float animationTime_ = 0.0f;
 
     // --- 追加：関節表示用のインスタンス描画機構 ---
-    std::unique_ptr<PrimitiveRegion> jointSpheres_;
-    std::unique_ptr<Line3DRegion> boneLines_;
+    std::unique_ptr<PrimitiveBatch> jointSpheres_;
+    std::unique_ptr<Line3DBatch> boneLines_;
 
     uint32_t lastUpdateFrame_ = static_cast<uint32_t>(-1);
     uint32_t lastSkinnedFrameIndex_ = 0; // スキニングが最後に実行されたフレームインデックス（ポーズ中の不整合対策）

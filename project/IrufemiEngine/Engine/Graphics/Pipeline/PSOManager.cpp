@@ -203,6 +203,7 @@ void PSOManager::PreWarmCommonPSOs() {
         GetPSO("GpuParticle", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("VoxelParticle", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("Sprite", blend, DepthWrite::Off, CullMode::None);
+        GetPSO("SpriteBatch", blend, DepthWrite::Off, CullMode::None);
         GetPSO("Text", blend, DepthWrite::Off, CullMode::None);
         GetPSO("LightningCrawl", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("ExplosionFlame", blend, DepthWrite::Disable, CullMode::None);
@@ -224,7 +225,7 @@ void PSOManager::PreWarmCommonPSOs() {
     GetPSO("Skybox", BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::Front);
 
     // 5. デバッグ及びその他
-    GetPSO("Region", BlendMode::kBlendModeNormal, DepthWrite::Disable, CullMode::None);
+    GetPSO("Batch", BlendMode::kBlendModeNormal, DepthWrite::Disable, CullMode::None);
     GetCopyImage();
     
     // 6. エディタ専用パス

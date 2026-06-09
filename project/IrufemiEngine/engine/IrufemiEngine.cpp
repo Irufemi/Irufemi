@@ -42,6 +42,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/System/Core/Object2DResource.h"
 #include "Renderer/Object/2D/Primitive/Circle2D.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
+#include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
 #include "Renderer/Object/2D/Text/Text.h"
 #include "Renderer/Object/3D/AnimationModel/AnimationModel.h"
 #include "Renderer/System/Core/BaseModel.h"
@@ -51,8 +52,8 @@ IrufemiEngine::IrufemiEngine() = default;
 
 #include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
-#include "Renderer/Object/Region/ModelRegion.h"
-#include "Renderer/Object/Region/PrimitiveRegion.h"
+#include "Renderer/Object/Batch/ModelBatch.h"
+#include "Renderer/Object/Batch/PrimitiveBatch.h"
 #include "Renderer/System/Data/RenderData.h"
 #include "Renderer/Object/Skybox/Skybox.h"
 #include "Graphics/Data/VertexData.h"
@@ -112,8 +113,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
                         winApp_->GetClientHeight());
 
   BaseResource::SetDirectXCommon(dxCommon_.get());
-  BaseRegion::SetDirectXCommon(dxCommon_.get());
-  Line3DRegion::SetDirectXCommon(dxCommon_.get());
+  BaseBatch::SetDirectXCommon(dxCommon_.get());
+  Line3DBatch::SetDirectXCommon(dxCommon_.get());
+  SpriteBatch::SetDirectXCommon(dxCommon_.get());
 
   // --- Dynamic Constant Buffer の初期化 ---
   materialBufferManager_ = std::make_unique<DynamicConstantBuffer<Material>>();
@@ -131,9 +133,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 
     // 注入
     Texture::SetDescriptorPool(srvPool);
-    BaseRegion::SetSrvAllocator(srvPool);
-
-    Line3DRegion::SetSrvAllocator(srvPool);
+    BaseBatch::SetSrvAllocator(srvPool);
+    SpriteBatch::SetSrvAllocator(srvPool);
+    Line3DBatch::SetSrvAllocator(srvPool);
   }
 
   // テクスチャ管理
@@ -157,11 +159,11 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   modelManager_->Initialize(dxCommon_.get(),
                             textureManager_.get()); // dxCommon を渡す
 
-  ModelRegion::SetModelManager(modelManager_.get()); // Regionにも設定
+  ModelBatch::SetModelManager(modelManager_.get());
 
   // プリミティブ管理(シングルトン)の初期化
   primitiveManager_ = std::make_unique<PrimitiveManager>();
-  PrimitiveRegion::SetPrimitiveManager(primitiveManager_.get());
+  PrimitiveBatch::SetPrimitiveManager(primitiveManager_.get());
   MeshDesc::SetPrimitiveManager(primitiveManager_.get());
 
   // 既存SRVの走査で free-list 再構築
@@ -240,13 +242,15 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Text::SetDrawManager(drawManager_.get());
   Circle2D::SetDrawManager(drawManager_.get());
 
-  BaseRegion::SetDrawManager(drawManager_.get());
+  BaseBatch::SetDrawManager(drawManager_.get());
+  Line3DBatch::SetDrawManager(drawManager_.get());
+  SpriteBatch::SetDrawManager(drawManager_.get());
 
   GPUParticleSystem::SetDrawManager(drawManager_.get());
   Primitive3DObject::SetDrawManager(drawManager_.get());
 
   GPUParticleSystem::SetEngine(this);
-  Line3DRegion::SetDrawManager(drawManager_.get());
+  Line3DBatch::SetDrawManager(drawManager_.get());
 
   // テクスチャ設定の注入
   ui_->SetTextureManager(textureManager_.get());
@@ -254,7 +258,8 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Sprite::SetTextureManager(textureManager_.get());
   Circle2D::SetTextureManager(textureManager_.get());
 
-  BaseRegion::SetTextureManager(textureManager_.get());
+  BaseBatch::SetTextureManager(textureManager_.get());
+  SpriteBatch::SetTextureManager(textureManager_.get());
 
   GPUParticleSystem::SetTextureManager(textureManager_.get());
     ParticleObject::SetTextureManager(textureManager_.get());
@@ -274,7 +279,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   voxelParticleManager_->Initialize(this);
 
   Circle2D::SetEngine(this);
-  Line3DRegion::SetEngine(this);
+  Line3DBatch::SetEngine(this);
   Primitive3DObject::SetEngine(this);
 
   // --- 全画面用 RenderTexture の初期化 ---
@@ -331,6 +336,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // CameraManager設定
   cameraManager_ = std::make_unique<CameraManager>();
   Sprite::SetCameraManager(cameraManager_.get());
+  SpriteBatch::SetCameraManager(cameraManager_.get());
   Text::SetCameraManager(cameraManager_.get());
   
   // SceneManager 構築(エンジンは所有のみ)
@@ -435,17 +441,17 @@ void IrufemiEngine::Finalize() {
 
   // --- 静的ポインタのクリア（デストラクタでの不正アクセス防止） ---
   BaseResource::SetDirectXCommon(nullptr);
-  BaseRegion::SetDirectXCommon(nullptr);
-  Line3DRegion::SetDirectXCommon(nullptr);
+  BaseBatch::SetDirectXCommon(nullptr);
+  Line3DBatch::SetDirectXCommon(nullptr);
 
   Texture::SetDescriptorPool(nullptr);
   Texture::SetDirectXCommon(nullptr);
   Texture::SetWhiteTextureResource(nullptr);
   GpuMesh::sDxCommon = nullptr;
 
-  BaseRegion::SetSrvAllocator(nullptr);
-
-  Line3DRegion::SetSrvAllocator(nullptr);
+  BaseBatch::SetSrvAllocator(nullptr);
+  SpriteBatch::SetSrvAllocator(nullptr);
+  Line3DBatch::SetSrvAllocator(nullptr);
 
   // DebugUI, DrawManager, TextureManager 等のクラスへの静的セットもクリア
   Sprite::SetDebugUI(nullptr);
@@ -455,25 +461,28 @@ void IrufemiEngine::Finalize() {
 
   Sprite::SetDrawManager(nullptr);
   Circle2D::SetDrawManager(nullptr);
-  BaseRegion::SetDrawManager(nullptr);
+  BaseBatch::SetDrawManager(nullptr);
+  SpriteBatch::SetDrawManager(nullptr);
 
   GPUParticleSystem::SetDrawManager(nullptr);
   Primitive3DObject::SetDrawManager(nullptr);
-  Line3DRegion::SetDrawManager(nullptr);
+  Line3DBatch::SetDrawManager(nullptr);
 
   Sprite::SetTextureManager(nullptr);
   Circle2D::SetTextureManager(nullptr);
-  BaseRegion::SetTextureManager(nullptr);
+  BaseBatch::SetTextureManager(nullptr);
+  SpriteBatch::SetTextureManager(nullptr);
 
   GPUParticleSystem::SetTextureManager(nullptr);
     ParticleObject::SetTextureManager(nullptr);
   Primitive3DObject::SetTextureManager(nullptr);
 
-  PrimitiveRegion::SetPrimitiveManager(nullptr);
+  PrimitiveBatch::SetPrimitiveManager(nullptr);
   MeshDesc::SetPrimitiveManager(nullptr);
 
   Sprite::SetCameraManager(nullptr);
-  ModelRegion::SetModelManager(nullptr);
+  SpriteBatch::SetCameraManager(nullptr);
+  ModelBatch::SetModelManager(nullptr);
 
   GPUParticleSystem::SetEngine(nullptr);
   BaseModel::SetIrufemiEngine(nullptr);
@@ -493,7 +502,7 @@ void IrufemiEngine::Finalize() {
     voxelParticleManager_.reset();
   }
   Circle2D::SetEngine(nullptr);
-  Line3DRegion::SetEngine(nullptr);
+  Line3DBatch::SetEngine(nullptr);
   Primitive3DObject::SetEngine(nullptr);
   Effect::SetEngine(nullptr);
 

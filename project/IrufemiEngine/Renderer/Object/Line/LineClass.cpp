@@ -8,12 +8,12 @@
 #include "Engine/Core/Math/Math.h"
 #include "Engine/IrufemiEngine.h"
 
-DirectXCommon* Line3DRegion::dx_ = nullptr;
-DrawManager* Line3DRegion::drawManager_ = nullptr;
-DescriptorPool* Line3DRegion::s_srvAllocator_ = nullptr;
-IrufemiEngine* Line3DRegion::engine_ = nullptr;
+DirectXCommon* Line3DBatch::dx_ = nullptr;
+DrawManager* Line3DBatch::drawManager_ = nullptr;
+DescriptorPool* Line3DBatch::s_srvAllocator_ = nullptr;
+IrufemiEngine* Line3DBatch::engine_ = nullptr;
 
-Line3DRegion::~Line3DRegion() {
+Line3DBatch::~Line3DBatch() {
     if (s_srvAllocator_ && dx_) {
         for (uint32_t& idx : instancingSrvIndex_) {
             if (idx != UINT32_MAX) {
@@ -24,7 +24,7 @@ Line3DRegion::~Line3DRegion() {
     }
 }
 
-void Line3DRegion::Initialize() {
+void Line3DBatch::Initialize() {
     instances_.resize(maxInstances_);
 
     baseLineResource_ = std::make_unique<LineResource>();
@@ -40,7 +40,7 @@ void Line3DRegion::Initialize() {
     baseLineResource_->indexData_[1] = 1;
 }
 
-void Line3DRegion::Update() {
+void Line3DBatch::Update() {
     activeCount_ = 0;
     for (size_t i = 0; i < instances_.size(); ++i) {
         if (instances_[i].active) {
@@ -52,7 +52,7 @@ void Line3DRegion::Update() {
     }
 }
 
-void Line3DRegion::AddInstance(const Vector3& start, const Vector3& end, const Vector4& color, float life) {
+void Line3DBatch::AddInstance(const Vector3& start, const Vector3& end, const Vector4& color, float life) {
     if (activeCount_ < maxInstances_) {
         auto& instance = instances_[activeCount_];
         instance.start = start;
@@ -65,14 +65,14 @@ void Line3DRegion::AddInstance(const Vector3& start, const Vector3& end, const V
     }
 }
 
-void Line3DRegion::ClearInstances() {
+void Line3DBatch::ClearInstances() {
     for (size_t i = 0; i < activeCount_; ++i) {
         instances_[i].active = false;
     }
     activeCount_ = 0;
 }
 
-void Line3DRegion::BuildInstanceBuffer(bool force) {
+void Line3DBatch::BuildInstanceBuffer(bool force) {
     if (activeCount_ == 0 && !force) return;
 
     CreateOrResizeInstanceBuffer(static_cast<uint32_t>(activeCount_));
@@ -109,20 +109,20 @@ void Line3DRegion::BuildInstanceBuffer(bool force) {
     }
 }
 
-void Line3DRegion::SyncBeforeDraw() {
+void Line3DBatch::SyncBeforeDraw() {
     if (isDirty_) {
         BuildInstanceBuffer();
     }
 }
 
-void Line3DRegion::Draw() {
+void Line3DBatch::Draw() {
     if (activeCount_ == 0) return;
     BuildInstanceBuffer();
     baseLineResource_->SyncBeforeDraw();
     drawManager_->SubmitLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32());
 }
 
-void Line3DRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
+void Line3DBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     if (instanceCount == 0) return;
     uint32_t frameIndex = dx_->GetFrameIndex();
     
@@ -160,7 +160,7 @@ void Line3DRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     }
 }
 
-void Line3DRegion::EnsureInstancingSRV() {
+void Line3DBatch::EnsureInstancingSRV() {
     uint32_t frameIndex = dx_->GetFrameIndex();
     lastUpdateFrameIndex_ = frameIndex;
     if (!instanceBuffer_[frameIndex]) return;

@@ -85,6 +85,9 @@ void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {
     soundRegistry_.clear();
     categoryMap_.clear();
     namespace fs = std::filesystem;
+    if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
+        return;
+    }
     for (const auto& entry : fs::directory_iterator(folderPath)) {
         if (entry.is_directory()) {
             std::string category = entry.path().filename().string();
@@ -96,6 +99,10 @@ void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {
 // サブフォルダ単位でロードするオーバーロード版
 void AudioManager::LoadSoundsFromFolder(const std::string& folderPath, const std::string& category) {
     namespace fs = std::filesystem;
+
+    if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
+        return;
+    }
 
     for (const auto& entry : fs::directory_iterator(folderPath)) {
         if (!entry.is_regular_file()) continue;

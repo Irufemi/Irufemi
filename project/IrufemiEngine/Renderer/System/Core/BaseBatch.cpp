@@ -1,16 +1,16 @@
-#include "../../System/Core/BaseRegion.h"
+#include "../../System/Core/BaseBatch.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Core/Shape/Sphere.h"
 #include <cassert>
 #include <cstring>
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
-DirectXCommon* BaseRegion::dx_ = nullptr;
-TextureManager* BaseRegion::textureManager_ = nullptr;
-DrawManager* BaseRegion::drawManager_ = nullptr;
-DescriptorPool* BaseRegion::srvPool_ = nullptr;
+DirectXCommon* BaseBatch::dx_ = nullptr;
+TextureManager* BaseBatch::textureManager_ = nullptr;
+DrawManager* BaseBatch::drawManager_ = nullptr;
+DescriptorPool* BaseBatch::srvPool_ = nullptr;
 
-BaseRegion::~BaseRegion() {
+BaseBatch::~BaseBatch() {
     if (srvPool_ && dx_) {
         for (auto& idx : instancingSrvIndex_) {
             if (idx != UINT32_MAX) {
@@ -26,7 +26,7 @@ BaseRegion::~BaseRegion() {
     }
 }
 
-void BaseRegion::SetColor(const Vector4& color) {
+void BaseBatch::SetColor(const Vector4& color) {
     cpuMaterialData_.color = color;
     if (auto engine = dx_->GetEngine()) {
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -35,7 +35,7 @@ void BaseRegion::SetColor(const Vector4& color) {
     }
 }
 
-void BaseRegion::SetEnvironmentCoefficient(float coefficient) {
+void BaseBatch::SetEnvironmentCoefficient(float coefficient) {
     cpuMaterialData_.environmentCoefficient = coefficient;
     if (auto engine = dx_->GetEngine()) {
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -44,16 +44,16 @@ void BaseRegion::SetEnvironmentCoefficient(float coefficient) {
     }
 }
 
-void BaseRegion::SetInstanceColor(uint32_t index, const Vector4& color) {
+void BaseBatch::SetInstanceColor(uint32_t index, const Vector4& color) {
     if (index < instanceColors_.size()) {
         instanceColors_[index] = color;
         instanceDirty_ = true;
     } else {
-        assert(false && "BaseRegion::SetInstanceColor: index out of range");
+        assert(false && "BaseBatch::SetInstanceColor: index out of range");
     }
 }
 
-void BaseRegion::SetAllInstanceColor(const Vector4& color) {
+void BaseBatch::SetAllInstanceColor(const Vector4& color) {
     for (auto& c : instanceColors_) {
         c = color;
     }
@@ -63,19 +63,19 @@ void BaseRegion::SetAllInstanceColor(const Vector4& color) {
     instanceDirty_ = true;
 }
 
-void BaseRegion::AddInstance(const Transform& t) {
+void BaseBatch::AddInstance(const Transform& t) {
     instances_.push_back(t);
     instanceColors_.push_back({1.0f, 1.0f, 1.0f, 1.0f});
     instanceDirty_ = true;
 }
 
-void BaseRegion::AddInstance(const Transform& t, const Vector4& color) {
+void BaseBatch::AddInstance(const Transform& t, const Vector4& color) {
     instances_.push_back(t);
     instanceColors_.push_back(color);
     instanceDirty_ = true;
 }
 
-void BaseRegion::AddInstance(const Vector3& center, float scale, const Vector3& rotate) {
+void BaseBatch::AddInstance(const Vector3& center, float scale, const Vector3& rotate) {
     Transform t;
     t.translate = center;
     t.scale = {scale, scale, scale};
@@ -85,7 +85,7 @@ void BaseRegion::AddInstance(const Vector3& center, float scale, const Vector3& 
     instanceDirty_ = true;
 }
 
-void BaseRegion::AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color) {
+void BaseBatch::AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color) {
     Transform t;
     t.translate = center;
     t.scale = {scale, scale, scale};
@@ -95,22 +95,22 @@ void BaseRegion::AddInstance(const Vector3& center, float scale, const Vector3& 
     instanceDirty_ = true;
 }
 
-void BaseRegion::AddInstanceWorld(const Matrix4x4& world, const Vector4& color) {
+void BaseBatch::AddInstanceWorld(const Matrix4x4& world, const Vector4& color) {
     instanceWorlds_.push_back(world);
     instanceWorldColors_.push_back(color);
     instanceDirty_ = true;
 }
 
-void BaseRegion::UpdateInstance(uint32_t index, const Transform& t) {
+void BaseBatch::UpdateInstance(uint32_t index, const Transform& t) {
     if (index < instances_.size()) {
         instances_[index] = t;
         instanceDirty_ = true;
     } else {
-        assert(false && "BaseRegion::UpdateInstance: index out of range");
+        assert(false && "BaseBatch::UpdateInstance: index out of range");
     }
 }
 
-void BaseRegion::ClearInstances() {
+void BaseBatch::ClearInstances() {
     instances_.clear();
     instanceColors_.clear();
     instanceWorlds_.clear();
@@ -118,7 +118,7 @@ void BaseRegion::ClearInstances() {
     instanceDirty_ = true;
 }
 
-void BaseRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
+void BaseBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     const UINT stride = sizeof(InstanceData);
     const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride);
     uint32_t frameIndex = dx_->GetFrameIndex();
@@ -129,7 +129,7 @@ void BaseRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
         if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {
             assert(srvPool_);
             uint32_t idx = srvPool_->Allocate();
-            if (idx == DescriptorPool::kInvalid) { OutputDebugStringA("BaseRegion SRV allocate failed\n"); return; }
+            if (idx == DescriptorPool::kInvalid) { OutputDebugStringA("BaseBatch SRV allocate failed\n"); return; }
             instancingSrvIndex_[frameIndex] = idx;
             instancingSrvCPU_[frameIndex] = srvPool_->GetCPUHandle(idx);
             instancingSrvGPU_[frameIndex] = srvPool_->GetGPUHandle(idx);
@@ -148,7 +148,7 @@ void BaseRegion::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     }
 }
 
-void BaseRegion::BuildInstanceBuffer(bool force) {
+void BaseBatch::BuildInstanceBuffer(bool force) {
     if (instances_.empty() && instanceWorlds_.empty()) { 
         visibleInstanceCount_ = 0;
         return; 
@@ -245,13 +245,13 @@ void BaseRegion::BuildInstanceBuffer(bool force) {
     instanceDirty_ = false;
 }
 
-void BaseRegion::SyncBeforeDraw() {
+void BaseBatch::SyncBeforeDraw() {
     if (instanceDirty_) {
         BuildInstanceBuffer(false);
     }
 }
 
-D3D12_GPU_VIRTUAL_ADDRESS BaseRegion::GetMaterialVAddress() const {
+D3D12_GPU_VIRTUAL_ADDRESS BaseBatch::GetMaterialVAddress() const {
     if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
     return dx_->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, dx_->GetFrameIndex());
 }

@@ -1,14 +1,14 @@
-#include "ModelRegion.h"
+#include "ModelBatch.h"
 #include <cassert>
 #include "Engine/IrufemiEngine.h"
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
 
-ModelManager* ModelRegion::modelManager_ = nullptr;
+ModelManager* ModelBatch::modelManager_ = nullptr;
 
-void ModelRegion::Initialize(const std::string& objFilename) {
-    assert(modelManager_ && "ModelRegion::Initialize: ModelManager is not set.");
+void ModelBatch::Initialize(const std::string& objFilename) {
+    assert(modelManager_ && "ModelBatch::Initialize: ModelManager is not set.");
     managedModel_ = modelManager_->GetModelAsync(objFilename);
     isResourcesInitialized_ = false;
 
@@ -18,7 +18,7 @@ void ModelRegion::Initialize(const std::string& objFilename) {
     }
 }
 
-void ModelRegion::InitializeResources() {
+void ModelBatch::InitializeResources() {
     if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->meshes.empty()) {
         return;
     }
@@ -30,14 +30,14 @@ void ModelRegion::InitializeResources() {
     isResourcesInitialized_ = true;
 }
 
-const GpuMesh* ModelRegion::GetGpuMesh() const {
+const GpuMesh* ModelBatch::GetGpuMesh() const {
     if (managedModel_ && !managedModel_->gpuMeshes.empty()) {
         return managedModel_->gpuMeshes.front().get();
     }
     return nullptr;
 }
 
-void ModelRegion::CreateMaterialResources(const ObjMesh& mesh) {
+void ModelBatch::CreateMaterialResources(const ObjMesh& mesh) {
     if (auto engine = dx_->GetEngine()) {
         if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
             materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
@@ -60,7 +60,7 @@ void ModelRegion::CreateMaterialResources(const ObjMesh& mesh) {
     }
 }
 
-void ModelRegion::EnsureSharedTexture(const ObjMesh& mesh) {
+void ModelBatch::EnsureSharedTexture(const ObjMesh& mesh) {
     if (!mesh.material.textureFilePath.empty()) {
         textureHandle_ = textureManager_->GetTextureHandle(mesh.material.textureFilePath);
     } else {
@@ -69,11 +69,11 @@ void ModelRegion::EnsureSharedTexture(const ObjMesh& mesh) {
     assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
 }
 
-float ModelRegion::GetBoundingSphereRadius() const {
+float ModelBatch::GetBoundingSphereRadius() const {
     return managedModel_ && managedModel_->cpuModel ? managedModel_->cpuModel->boundingSphere.radius : 0.0f;
 }
 
-void ModelRegion::Draw() {
+void ModelBatch::Draw() {
     // If not initialized, attempt to init
     if (!isResourcesInitialized_) {
         if (managedModel_ && managedModel_->status.load() == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
@@ -87,7 +87,7 @@ void ModelRegion::Draw() {
 
     SyncBeforeDraw();
 
-    RenderPackets::ModelRegionPacket p{};
+    RenderPackets::ModelBatchPacket p{};
     p.gpuMesh = GetGpuMesh();
     p.materialAddress = GetMaterialVAddress();
     p.textureHandle = GetTextureHandle();
@@ -100,10 +100,10 @@ void ModelRegion::Draw() {
     p.customPSO = GetCustomPSO();
     p.customCBVAddress = GetCustomCBVAddress();
 
-    drawManager_->SubmitModelRegion(p);
+    drawManager_->SubmitModelBatch(p);
 }
 
-void ModelRegion::Draw(bool /*isUI*/) {
+void ModelBatch::Draw(bool /*isUI*/) {
     // Overloaded draw for UI, if necessary
     Draw();
 }

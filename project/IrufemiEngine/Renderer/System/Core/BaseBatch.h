@@ -20,12 +20,12 @@ class TextureManager;
 class DrawManager;
 class DescriptorPool;
 
-class BaseRegion : public IRenderable {
+class BaseBatch : public IRenderable {
 public:
-    BaseRegion() {
+    BaseBatch() {
         instancingSrvIndex_.fill(UINT32_MAX);
     }
-    virtual ~BaseRegion();
+    virtual ~BaseBatch();
 
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }

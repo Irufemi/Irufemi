@@ -133,7 +133,7 @@ void GPUParticleSystem::Initialize(const std::string &textureName) {
   perFrameData_->deltaTime = engine_->GetDeltaTime();
 
 #if defined(USE_IMGUI)
-  debugLineRegion_ = std::make_unique<Line3DRegion>();
+  debugLineRegion_ = std::make_unique<Line3DBatch>();
   debugLineRegion_->Initialize();
 #endif
 

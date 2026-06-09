@@ -1,10 +1,10 @@
-#include "PrimitiveRegion.h"
+#include "PrimitiveBatch.h"
 #include <cassert>
 #include "Engine/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
 
-void PrimitiveRegion::Initialize(PrimitiveType type, const std::string& textureName) {
+void PrimitiveBatch::Initialize(PrimitiveType type, const std::string& textureName) {
     type_ = type;
     isCustomPrimitive_ = false;
 
@@ -12,7 +12,7 @@ void PrimitiveRegion::Initialize(PrimitiveType type, const std::string& textureN
     EnsureSharedTexture(textureName);
 }
 
-void PrimitiveRegion::InitializeRing(const RingParams& params, const std::string& textureName) {
+void PrimitiveBatch::InitializeRing(const RingParams& params, const std::string& textureName) {
     type_ = PrimitiveType::Ring;
     isCustomPrimitive_ = true;
 
@@ -23,7 +23,7 @@ void PrimitiveRegion::InitializeRing(const RingParams& params, const std::string
     EnsureSharedTexture(textureName);
 }
 
-void PrimitiveRegion::EnsureMaterialResources() {
+void PrimitiveBatch::EnsureMaterialResources() {
     if (auto engine = dx_->GetEngine()) {
         if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
             materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
@@ -45,22 +45,22 @@ void PrimitiveRegion::EnsureMaterialResources() {
     }
 }
 
-void PrimitiveRegion::EnsureSharedTexture(const std::string& textureName) {
+void PrimitiveBatch::EnsureSharedTexture(const std::string& textureName) {
     if (!textureName.empty()) {
         textureHandle_ = textureManager_->GetTextureHandle(textureName);
     } else {
         textureHandle_ = textureManager_->GetWhiteTextureHandle();
     }
-    assert(textureHandle_.ptr != 0 && "PrimitiveRegion Texture SRV handle is invalid");
+    assert(textureHandle_.ptr != 0 && "PrimitiveBatch Texture SRV handle is invalid");
 }
 
-float PrimitiveRegion::GetBoundingSphereRadius() const {
+float PrimitiveBatch::GetBoundingSphereRadius() const {
     // プリミティブマネージャが生成する基本形状のサイズは基本的に半径/サイズ1.0近辺なので1.0fを返す。
     // 必要なら PrimitiveManager からバウンディングスフィア情報を取得できるようにする
     return 1.0f;
 }
 
-void PrimitiveRegion::Draw() {
+void PrimitiveBatch::Draw() {
     if (instances_.empty() && instanceWorlds_.empty()) { return; }
 
     SyncBeforeDraw();
@@ -74,8 +74,8 @@ void PrimitiveRegion::Draw() {
 
     if (!res || !res->vertexResource) return;
 
-    RenderPackets::PrimitiveRegionPacket p{};
-    // We need to make sure DrawManager understands PrimitiveRegionPacket
+    RenderPackets::PrimitiveBatchPacket p{};
+    // We need to make sure DrawManager understands PrimitiveBatchPacket
     p.vertexBufferView = res->vertexBufferView;
     p.indexBufferView = res->indexBufferView;
     p.indexCount = res->indexCount;
@@ -92,5 +92,5 @@ void PrimitiveRegion::Draw() {
     p.customPSO = GetCustomPSO();
     p.customCBVAddress = GetCustomCBVAddress();
 
-    drawManager_->SubmitPrimitiveRegion(p);
+    drawManager_->SubmitPrimitiveBatch(p);
 }

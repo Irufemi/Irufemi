@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../System/Core/BaseRegion.h"
+#include "../../System/Core/BaseBatch.h"
 #include "Resource/Model/Data/ObjModel.h"
 
 struct ManagedModel;
@@ -8,13 +8,13 @@ struct GpuMesh;
 class ModelManager;
 
 /**
- * @class ModelRegion
+ * @class ModelBatch
  * @brief 外部モデルデータ（.obj, .gltf）を描画するための領域クラス
  */
-class ModelRegion : public BaseRegion {
+class ModelBatch : public BaseBatch {
 public:
-    ModelRegion() = default;
-    ~ModelRegion() override = default;
+    ModelBatch() = default;
+    ~ModelBatch() override = default;
 
     static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
 

@@ -76,7 +76,7 @@ private:
     CollisionManager& operator=(const CollisionManager&) = delete;
 
     std::vector<ColliderComponent*> colliders_;
-    std::unique_ptr<Line3DRegion> debugLine_;
+    std::unique_ptr<Line3DBatch> debugLine_;
     
     // レイヤー名（最大32個）
     std::vector<std::string> layerNames_;
