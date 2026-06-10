@@ -131,10 +131,10 @@ void RailShooterPlayerComponent::Update() {
     Vector3 moveDir = {0.0f, 0.0f, 0.0f};
 
     // WASD または 矢印キーで移動方向を入力
-    if (input->IsKeyPressed(DIK_W) || input->IsKeyPressed(DIK_UP)) moveDir.y += 1.0f;
-    if (input->IsKeyPressed(DIK_S) || input->IsKeyPressed(DIK_DOWN)) moveDir.y -= 1.0f;
-    if (input->IsKeyPressed(DIK_A) || input->IsKeyPressed(DIK_LEFT)) moveDir.x -= 1.0f;
-    if (input->IsKeyPressed(DIK_D) || input->IsKeyPressed(DIK_RIGHT)) moveDir.x += 1.0f;
+    if (input->IsKeyPressedDIK(DIK_W) || input->IsKeyPressedDIK(DIK_UP)) moveDir.y += 1.0f;
+    if (input->IsKeyPressedDIK(DIK_S) || input->IsKeyPressedDIK(DIK_DOWN)) moveDir.y -= 1.0f;
+    if (input->IsKeyPressedDIK(DIK_A) || input->IsKeyPressedDIK(DIK_LEFT)) moveDir.x -= 1.0f;
+    if (input->IsKeyPressedDIK(DIK_D) || input->IsKeyPressedDIK(DIK_RIGHT)) moveDir.x += 1.0f;
 
     // 斜め移動したときに移動速度が速くならないように、ベクトルの長さを1に抑える
     if (moveDir.x != 0.0f || moveDir.y != 0.0f) {
