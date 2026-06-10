@@ -33,7 +33,7 @@ public:
      * @param[in] type 初期形状タイプ
      * @param[in] texturePath 使用するテクスチャのパス
      */
-    void Initialize(PrimitiveType type, const std::string& texturePath = "resources/uvChecker.png");
+    void Initialize(PrimitiveType type, const std::string& textureName = "resources/uvChecker.png");
 
     /**
      * @brief 更新処理

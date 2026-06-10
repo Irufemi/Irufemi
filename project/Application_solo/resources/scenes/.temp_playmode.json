@@ -339,7 +339,6 @@
             },
             {
                 "data": {
-                    "Debris Model Path": "resources/model/sample/block.obj",
                     "Pool Size": 500
                 },
                 "type": "DebrisManagerComponent"

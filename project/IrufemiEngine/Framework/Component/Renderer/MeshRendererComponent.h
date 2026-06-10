@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "../Component.h"
 #include <memory>
 #include <string>
@@ -39,5 +39,6 @@ public:
 private:
     std::unique_ptr<StaticModelObject> obj_;                 ///< 実際の描画を担う既存クラス
     TransformComponent* transform_ = nullptr;       ///< 親のTransform情報（キャッシュ）
-    std::string modelName_ = "plane.obj";           ///< 読み込むモデル名
+    std::string modelName_ = "";           ///< 読み込むモデル名
+    bool castShadows_ = true;
 };

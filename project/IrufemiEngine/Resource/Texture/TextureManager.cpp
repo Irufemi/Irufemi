@@ -66,6 +66,10 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
 
 // 取得(未ロードなら非同期ロード開始)
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetTextureHandle(const std::string& name) const {
+    if (name.empty()) {
+        return whiteTextureHandle_;
+    }
+
     // 既存キー検索
     {
         std::lock_guard<std::mutex> lock(mutex_);
