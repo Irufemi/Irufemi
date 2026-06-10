@@ -17,7 +17,7 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/Renderer/ModelBatchComponent.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Framework/Component/Renderer/TextRendererComponent.h"
@@ -297,6 +297,32 @@ static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager*
                         actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
                             startStr, endStr, [str](const std::string& v) { *str = v; }));
                     }
+
+                    // --- Drag & Drop Support for Asset References ---
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+                            const char* path = (const char*)payload->Data;
+                            std::string droppedPathStr = path;
+                            std::replace(droppedPathStr.begin(), droppedPathStr.end(), '\\', '/');
+                            
+                            std::string lowerPath = droppedPathStr;
+                            std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+                            
+                            // assets/resources ディレクトリからの相対パスにする簡易処理
+                            size_t resPos = lowerPath.find("resources/");
+                            if (resPos != std::string::npos) {
+                                droppedPathStr = droppedPathStr.substr(resPos);
+                            }
+                            
+                            std::string oldVal = *str;
+                            *str = droppedPathStr;
+                            actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                                oldVal, droppedPathStr, [str](const std::string& v) { *str = v; }));
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                    // ------------------------------------------------
+
                     break;
                 }
                 case ComponentPropertyType::Float3Array: {
@@ -832,11 +858,11 @@ public:
 // Custom Editors
 // =======================================================================
 
-class ModelBatchComponentEditor : public IComponentEditor {
+class ModelBatchRendererComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
-        auto* comp = static_cast<ModelBatchComponent*>(component);
-        if (ImGui::TreeNodeEx("ModelBatch", ImGuiTreeNodeFlags_DefaultOpen)) {
+        auto* comp = static_cast<ModelBatchRendererComponent*>(component);
+        if (ImGui::TreeNodeEx("ModelBatchRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
             IrufemiEngine* engine = BaseModel::GetIrufemiEngine();
             if (engine && engine->GetObjModelManager()) {
                 ModelManager* modelManager = engine->GetObjModelManager();
@@ -910,7 +936,7 @@ ComponentEditorRegistry::~ComponentEditorRegistry() {}
 void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<TransformComponent, TransformComponentEditor>();
     RegisterEditor<MeshRendererComponent, MeshRendererComponentEditor>();
-    RegisterEditor<ModelBatchComponent, ModelBatchComponentEditor>();
+    RegisterEditor<ModelBatchRendererComponent, ModelBatchRendererComponentEditor>();
     RegisterEditor<PrimitiveRendererComponent, PrimitiveRendererComponentEditor>();
     RegisterEditor<SpriteRendererComponent, SpriteRendererComponentEditor>();
     RegisterEditor<TextRendererComponent, TextRendererComponentEditor>();

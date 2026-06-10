@@ -4,7 +4,7 @@
 #include <memory>
 
 class GameObject;
-class ModelBatchComponent;
+class ModelBatchRendererComponent;
 
 struct VirtualDebris {
     int id;
@@ -40,10 +40,13 @@ private:
     std::unique_ptr<ObjectPool<GameObject>> pool_;
     int poolSize_ = 500;
     bool isPoolInitialized_ = false;
+    
+    std::string debrisModelPath_ = "resources/model/sample/block.obj";
+    std::string prevModelPath_ = "";
 
     // 仮想データリスト
     std::vector<VirtualDebris> virtualDebrisList_;
     int nextVirtualId_ = 0;
 
-    ModelBatchComponent* batchComponent_ = nullptr;
+    ModelBatchRendererComponent* batchComponent_ = nullptr;
 };

@@ -1,4 +1,4 @@
-#include "ModelBatchComponent.h"
+#include "ModelBatchRendererComponent.h"
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Renderer/Object/Batch/ModelBatch.h"
@@ -6,17 +6,17 @@
 #include "Engine/Core/Math/Geometry/OBB.h"
 #include <cmath>
 
-ModelBatchComponent::ModelBatchComponent() {}
-ModelBatchComponent::~ModelBatchComponent() {}
+ModelBatchRendererComponent::ModelBatchRendererComponent() {}
+ModelBatchRendererComponent::~ModelBatchRendererComponent() {}
 
-void ModelBatchComponent::LoadModel(const std::string& filename) {
+void ModelBatchRendererComponent::LoadModel(const std::string& filename) {
     modelName_ = filename;
     if (batch_ && !modelName_.empty()) {
         batch_->Initialize(modelName_);
     }
 }
 
-void ModelBatchComponent::Initialize() {
+void ModelBatchRendererComponent::Initialize() {
     batch_ = std::make_unique<ModelBatch>();
     if (!modelName_.empty()) {
         batch_->Initialize(modelName_);
@@ -27,23 +27,23 @@ void ModelBatchComponent::Initialize() {
     }
 }
 
-void ModelBatchComponent::Update() {
+void ModelBatchRendererComponent::Update() {
     // ModelBatchは個別ではなく、複数描画を管理するため
     // Transform更新はここでは行わない、または親の座標自体も一つのInstanceとして扱うかになります。
     // 基本的には外部から AddInstance() を呼ばれることを想定するため、ここでは何もしません。
 }
 
-void ModelBatchComponent::Draw() {
+void ModelBatchRendererComponent::Draw() {
     if (batch_) {
         batch_->Draw();
     }
 }
 
-IRenderable* ModelBatchComponent::GetRenderable() {
+IRenderable* ModelBatchRendererComponent::GetRenderable() {
     return reinterpret_cast<IRenderable*>(batch_.get());
 }
 
-Sphere ModelBatchComponent::GetWorldSphere() const {
+Sphere ModelBatchRendererComponent::GetWorldSphere() const {
     Sphere result = { Vector3{0,0,0}, 1.0f }; // default
     if (transform_) {
         result.center = transform_->worldPosition_;
@@ -53,7 +53,7 @@ Sphere ModelBatchComponent::GetWorldSphere() const {
     return result;
 }
 
-bool ModelBatchComponent::Raycast(const Ray& ray, float& outDistance) const {
+bool ModelBatchRendererComponent::Raycast(const Ray& ray, float& outDistance) const {
     if (!batch_ || !transform_) return false;
 
     // バッチ全体のAABBや個々のインスタンスとのRaycastは重いため、
@@ -88,32 +88,32 @@ bool ModelBatchComponent::Raycast(const Ray& ray, float& outDistance) const {
     return Collision::IsCollision(ray, obb, outDistance);
 }
 
-nlohmann::json ModelBatchComponent::Serialize() {
+nlohmann::json ModelBatchRendererComponent::Serialize() {
     nlohmann::json j;
     j["modelName"] = modelName_;
     return j;
 }
 
-void ModelBatchComponent::Deserialize(const nlohmann::json& j) {
+void ModelBatchRendererComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("modelName")) {
         std::string modelName = j["modelName"];
         LoadModel(modelName);
     }
 }
 
-void ModelBatchComponent::AddInstance(const Transform& t) {
+void ModelBatchRendererComponent::AddInstance(const Transform& t) {
     if (batch_) {
         batch_->AddInstance(t);
     }
 }
 
-void ModelBatchComponent::AddInstanceWorld(const Matrix4x4& world) {
+void ModelBatchRendererComponent::AddInstanceWorld(const Matrix4x4& world) {
     if (batch_) {
         batch_->AddInstanceWorld(world);
     }
 }
 
-void ModelBatchComponent::ClearInstances() {
+void ModelBatchRendererComponent::ClearInstances() {
     if (batch_) {
         batch_->ClearInstances();
     }

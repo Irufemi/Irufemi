@@ -11,14 +11,14 @@ class ModelBatch;
 class TransformComponent;
 
 /**
- * @class ModelBatchComponent
+ * @class ModelBatchRendererComponent
  * @brief インスタンシング（バッチ）描画を行うためのコンポーネント。
  *        毎フレーム外部から AddInstance() を呼び出してインスタンスを登録して使用します。
  */
-class ModelBatchComponent : public Component {
+class ModelBatchRendererComponent : public Component {
 public:
-    ModelBatchComponent();
-    ~ModelBatchComponent() override;
+    ModelBatchRendererComponent();
+    ~ModelBatchRendererComponent() override;
 
     /**
      * @brief 初期化時にモデルファイル名を指定します
@@ -38,7 +38,7 @@ public:
     Sphere GetWorldSphere() const;
     bool Raycast(const Ray& ray, float& outDistance) const override;
 
-    std::string GetComponentName() const override { return "ModelBatchComponent"; }
+    std::string GetComponentName() const override { return "ModelBatchRendererComponent"; }
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;
 
@@ -60,7 +60,7 @@ public:
     void ClearInstances();
 
 #ifdef EditorMode
-    friend class ModelBatchComponentEditor;
+    friend class ModelBatchRendererComponentEditor;
 #endif
 
 private:

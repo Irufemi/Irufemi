@@ -1,7 +1,7 @@
 #include "DebrisManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/Renderer/ModelBatchComponent.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Framework/SceneSerializer.h"
 #include "Framework/BaseScene.h"
 #include "DebrisComponent.h"
@@ -13,12 +13,22 @@
 #include "Engine/Graphics/Camera/Camera.h"
 
 void DebrisManagerComponent::OnRegisterProperties() {
+    Component::OnRegisterProperties();
     RegisterProperty("Pool Size", &poolSize_);
+    RegisterProperty("Debris Model Path", &debrisModelPath_);
 }
 
 void DebrisManagerComponent::Initialize() {
     // Sceneへの追加を確実に行うため、プールの生成は最初のUpdateで行う
     isPoolInitialized_ = false;
+
+    // エディタやシーンロード時にも Renderer の存在を確実にするため、ここで取得・追加する
+    batchComponent_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
+    if (!batchComponent_) {
+        batchComponent_ = gameObject_->AddComponent<ModelBatchRendererComponent>().get();
+        batchComponent_->LoadModel(debrisModelPath_);
+        prevModelPath_ = debrisModelPath_;
+    }
 }
 
 void DebrisManagerComponent::Update() {
@@ -43,15 +53,14 @@ void DebrisManagerComponent::Update() {
             return obj;
         };
 
+        // プールを初期化
         pool_ = std::make_unique<ObjectPool<GameObject>>(poolSize_, debrisFactory);
         isPoolInitialized_ = true;
+    }
 
-        // ModelBatchComponentの初期化
-        batchComponent_ = gameObject_->GetComponent<ModelBatchComponent>();
-        if (!batchComponent_) {
-            batchComponent_ = gameObject_->AddComponent<ModelBatchComponent>().get();
-            batchComponent_->LoadModel("resources/model/sample/block.obj");
-        }
+    if (batchComponent_ && debrisModelPath_ != prevModelPath_) {
+        batchComponent_->LoadModel(debrisModelPath_);
+        prevModelPath_ = debrisModelPath_;
     }
 
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
