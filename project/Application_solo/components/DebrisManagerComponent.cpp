@@ -15,7 +15,6 @@
 void DebrisManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
     RegisterProperty("Pool Size", &poolSize_);
-    RegisterProperty("Debris Model Path", &debrisModelPath_);
 }
 
 void DebrisManagerComponent::Initialize() {
@@ -26,8 +25,6 @@ void DebrisManagerComponent::Initialize() {
     batchComponent_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
     if (!batchComponent_) {
         batchComponent_ = gameObject_->AddComponent<ModelBatchRendererComponent>().get();
-        batchComponent_->LoadModel(debrisModelPath_);
-        prevModelPath_ = debrisModelPath_;
     }
 }
 
@@ -58,10 +55,7 @@ void DebrisManagerComponent::Update() {
         isPoolInitialized_ = true;
     }
 
-    if (batchComponent_ && debrisModelPath_ != prevModelPath_) {
-        batchComponent_->LoadModel(debrisModelPath_);
-        prevModelPath_ = debrisModelPath_;
-    }
+    UpdateStreaming();
 
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
     // デバッグ用: 1キーを押したら10個ランダムな場所にスポーンさせる

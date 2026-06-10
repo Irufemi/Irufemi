@@ -40,9 +40,6 @@ private:
     std::unique_ptr<ObjectPool<GameObject>> pool_;
     int poolSize_ = 500;
     bool isPoolInitialized_ = false;
-    
-    std::string debrisModelPath_ = "";
-    std::string prevModelPath_ = "";
 
     // 仮想データリスト
     std::vector<VirtualDebris> virtualDebrisList_;

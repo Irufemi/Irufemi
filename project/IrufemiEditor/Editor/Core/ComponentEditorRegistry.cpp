@@ -282,20 +282,58 @@ static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager*
                 }
                 case ComponentPropertyType::String: {
                     auto* str = static_cast<std::string*>(prop.data);
-                    char buffer[256];
-                    strncpy_s(buffer, sizeof(buffer), str->c_str(), _TRUNCATE);
                     
-                    static std::string startStr;
-                    if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
-                        *str = buffer;
+                    std::string lowerName = prop.name;
+                    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+                    
+                    bool isModel = (lowerName.find("model") != std::string::npos || lowerName.find("mesh") != std::string::npos);
+                    bool isTexture = (lowerName.find("texture") != std::string::npos || lowerName.find("image") != std::string::npos);
+                    
+                    std::vector<std::string> comboItems;
+                    IrufemiEngine* engine = BaseModel::GetIrufemiEngine();
+                    
+                    if (engine && isModel && engine->GetObjModelManager()) {
+                        auto* mgr = engine->GetObjModelManager();
+#ifndef NDEBUG
+                        mgr->RefreshAvailableModels();
+#endif
+                        comboItems = mgr->GetAvailableModels();
+                    } else if (engine && isTexture && engine->GetTextureManager()) {
+                        comboItems = engine->GetTextureManager()->GetTextureNamesForDebug();
                     }
-                    if (ImGui::IsItemActivated()) {
-                        startStr = *str;
-                    }
-                    if (ImGui::IsItemDeactivatedAfterEdit()) {
-                        std::string endStr = *str;
-                        actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
-                            startStr, endStr, [str](const std::string& v) { *str = v; }));
+
+                    if (!comboItems.empty()) {
+                        if (ImGui::BeginCombo(prop.name.c_str(), str->c_str())) {
+                            for (const auto& item : comboItems) {
+                                bool isSelected = (*str == item);
+                                if (ImGui::Selectable(item.c_str(), isSelected)) {
+                                    std::string oldVal = *str;
+                                    *str = item;
+                                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                                        oldVal, *str, [str](const std::string& v) { *str = v; }));
+                                }
+                                if (isSelected) {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
+                    } else {
+                        char buffer[256];
+                        strncpy_s(buffer, sizeof(buffer), str->c_str(), _TRUNCATE);
+                        
+                        static std::string startStr;
+                        if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
+                            *str = buffer;
+                        }
+                        if (ImGui::IsItemActivated()) {
+                            startStr = *str;
+                        }
+                        if (ImGui::IsItemDeactivatedAfterEdit()) {
+                            std::string endStr = *str;
+                            actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                                startStr, endStr, [str](const std::string& v) { *str = v; }));
+                        }
                     }
 
                     // --- Drag & Drop Support for Asset References ---
@@ -949,12 +987,14 @@ void ComponentEditorRegistry::RegisterAllEditors() {
 
 void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {
     if (!component) return;
+    ImGui::PushID(component);
     auto it = editors_.find(typeid(*component));
     if (it != editors_.end()) {
         it->second->Draw(component, actionManager);
     } else {
         DrawFallbackPropertiesGUI(component, actionManager);
     }
+    ImGui::PopID();
 }
 
 #endif // EditorMode

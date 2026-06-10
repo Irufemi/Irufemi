@@ -176,6 +176,7 @@ void GameObject::Deserialize(const nlohmann::json& j) {
     if (j.contains("isActive")) isActive_ = j["isActive"];
     
     if (j.contains("components")) {
+        std::vector<std::shared_ptr<Component>> loadedComps;
         for (const auto& cj : j["components"]) {
             std::string type = cj["type"];
             std::shared_ptr<Component> newComp = ComponentFactory::Create(type);
@@ -192,9 +193,14 @@ void GameObject::Deserialize(const nlohmann::json& j) {
                     newComp->Deserialize(cj["data"]);
                 }
                 
-                // 復元されたデータを使って初期化
-                newComp->Initialize();
+                loadedComps.push_back(newComp);
             }
+        }
+        
+        // 全てのコンポーネントがリストに登録されてから一斉にInitializeを呼ぶ
+        // これにより、Initialize内でGetComponentした際に他のコンポーネントが見つかるようになる
+        for (auto& comp : loadedComps) {
+            comp->Initialize();
         }
     }
     
