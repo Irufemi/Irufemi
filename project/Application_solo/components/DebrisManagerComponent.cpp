@@ -1,7 +1,7 @@
 #include "DebrisManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/Component/Renderer/ModelBatchComponent.h"
 #include "Framework/SceneSerializer.h"
 #include "Framework/BaseScene.h"
 #include "DebrisComponent.h"
@@ -28,9 +28,6 @@ void DebrisManagerComponent::Update() {
             auto obj = std::make_shared<GameObject>("Debris");
             obj->AddComponent<TransformComponent>();
             
-            // とりあえず目視できるようにキューブをアタッチ
-            auto renderer = obj->AddComponent<PrimitiveRendererComponent>();
-            renderer->SetShape(PrimitiveType::Cube);
             // 少し小さめに設定
             obj->GetComponent<TransformComponent>()->scale_ = { 0.5f, 0.5f, 0.5f };
             
@@ -48,6 +45,13 @@ void DebrisManagerComponent::Update() {
 
         pool_ = std::make_unique<ObjectPool<GameObject>>(poolSize_, debrisFactory);
         isPoolInitialized_ = true;
+
+        // ModelBatchComponentの初期化
+        batchComponent_ = gameObject_->GetComponent<ModelBatchComponent>();
+        if (!batchComponent_) {
+            batchComponent_ = gameObject_->AddComponent<ModelBatchComponent>().get();
+            batchComponent_->LoadModel("resources/model/sample/block.obj");
+        }
     }
 
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
@@ -105,6 +109,20 @@ void DebrisManagerComponent::Update() {
     }
 
     UpdateStreaming();
+
+    if (batchComponent_) {
+        batchComponent_->ClearInstances();
+        for (const auto& vd : virtualDebrisList_) {
+            if (vd.isDestroyed) continue;
+            
+            if (vd.isSpawned && vd.instance) {
+                auto t = vd.instance->GetComponent<TransformComponent>();
+                if (t) {
+                    batchComponent_->AddInstanceWorld(t->GetWorldMatrix());
+                }
+            }
+        }
+    }
 }
 
 std::shared_ptr<GameObject> DebrisManagerComponent::AcquireDebris() {

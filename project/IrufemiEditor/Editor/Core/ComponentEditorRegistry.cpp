@@ -1,4 +1,4 @@
-﻿#include "ComponentEditorRegistry.h"
+#include "ComponentEditorRegistry.h"
 #include "Engine/Graphics/Font/FontManager.h"
 
 #ifdef EditorMode
@@ -17,6 +17,7 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/ModelBatchComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Framework/Component/Renderer/TextRendererComponent.h"
@@ -828,6 +829,78 @@ public:
 };
 
 // =======================================================================
+// Custom Editors
+// =======================================================================
+
+class ModelBatchComponentEditor : public IComponentEditor {
+public:
+    void Draw(Component* component, EditorActionManager* actionManager) override {
+        auto* comp = static_cast<ModelBatchComponent*>(component);
+        if (ImGui::TreeNodeEx("ModelBatch", ImGuiTreeNodeFlags_DefaultOpen)) {
+            IrufemiEngine* engine = BaseModel::GetIrufemiEngine();
+            if (engine && engine->GetObjModelManager()) {
+                ModelManager* modelManager = engine->GetObjModelManager();
+                std::vector<std::string> availableModels = modelManager->GetAvailableModels();
+                
+                if (std::find(availableModels.begin(), availableModels.end(), comp->modelName_) == availableModels.end()) {
+                    availableModels.push_back(comp->modelName_);
+                }
+                
+                ImGui::Text("Model");
+                ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 60.0f);
+                if (ImGui::Button("Refresh")) {
+                    modelManager->RefreshAvailableModels();
+                    availableModels = modelManager->GetAvailableModels();
+                    if (std::find(availableModels.begin(), availableModels.end(), comp->modelName_) == availableModels.end()) {
+                        availableModels.push_back(comp->modelName_);
+                    }
+                }
+
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+                if (ImGui::BeginCombo("##ModelCombo", comp->modelName_.c_str())) {
+                    for (const auto& key : availableModels) {
+                        bool isSelected = (comp->modelName_ == key);
+                        if (ImGui::Selectable(key.c_str(), isSelected)) {
+                            std::string oldModel = comp->modelName_;
+                            std::string newModel = key;
+                            PushInstantUndo(actionManager, oldModel, newModel, std::function<void(const std::string&)>([comp](const std::string& v){ comp->LoadModel(v); }));
+                        }
+                        if (isSelected) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+            } else {
+                ImGui::Text("Model: %s", comp->modelName_.c_str());
+            }
+
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ASSET_PATH")) {
+                    std::string droppedPathStr = static_cast<const char*>(payload->Data);
+                    std::filesystem::path droppedPath(reinterpret_cast<const char8_t*>(droppedPathStr.c_str()));
+                    std::string ext = droppedPath.extension().string();
+                    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+                    
+                    if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
+                        std::string newModelName = droppedPathStr;
+                        std::replace(newModelName.begin(), newModelName.end(), '\\', '/');
+                        std::string lowerPath = newModelName;
+                        std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+                        if (lowerPath.find("resources/model/") == 0) {
+                            newModelName = newModelName.substr(16);
+                        }
+                        std::string oldModel = comp->modelName_;
+                        PushInstantUndo(actionManager, oldModel, newModelName, std::function<void(const std::string&)>([comp](const std::string& v){ comp->LoadModel(v); }));
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+            ImGui::TextDisabled("(?) Drag & Drop model file from Project Browser");
+            ImGui::TreePop();
+        }
+    }
+};
+
+// =======================================================================
 // ComponentEditorRegistry
 // =======================================================================
 
@@ -837,6 +910,7 @@ ComponentEditorRegistry::~ComponentEditorRegistry() {}
 void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<TransformComponent, TransformComponentEditor>();
     RegisterEditor<MeshRendererComponent, MeshRendererComponentEditor>();
+    RegisterEditor<ModelBatchComponent, ModelBatchComponentEditor>();
     RegisterEditor<PrimitiveRendererComponent, PrimitiveRendererComponentEditor>();
     RegisterEditor<SpriteRendererComponent, SpriteRendererComponentEditor>();
     RegisterEditor<TextRendererComponent, TextRendererComponentEditor>();

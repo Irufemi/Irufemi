@@ -668,6 +668,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\Collider\RaycastComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\SphereColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp" />
+    <ClCompile Include="Framework\Component\Renderer\ModelBatchComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\ParticleEmitterComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp" />
@@ -861,6 +862,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Collider\RaycastComponent.h" />
     <ClInclude Include="Framework\Component\Collider\SphereColliderComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h" />
+    <ClInclude Include="Framework\Component\Renderer\ModelBatchComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\ParticleEmitterComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\PrimitiveRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
