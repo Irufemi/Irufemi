@@ -41,7 +41,7 @@ private:
     int poolSize_ = 500;
     bool isPoolInitialized_ = false;
     
-    std::string debrisModelPath_ = "resources/model/sample/block.obj";
+    std::string debrisModelPath_ = "";
     std::string prevModelPath_ = "";
 
     // 仮想データリスト
