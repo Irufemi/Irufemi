@@ -33,8 +33,8 @@ void ShadowPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     };
 
     DrawShadowsWithPSO(drawManager->GetStandard3DQueue(), [&](const auto& p) { drawManager->DrawStandard3D(p); });
-    DrawShadowsWithPSO(drawManager->GetPrimitiveRegionQueue(), [&](const auto& p) { drawManager->DrawPrimitiveRegion(p); });
-    DrawShadowsWithPSO(drawManager->GetModelRegionQueue(), [&](const auto& p) { drawManager->DrawModelRegion(p); });
+    DrawShadowsWithPSO(drawManager->GetPrimitiveBatchQueue(), [&](const auto& p) { drawManager->DrawPrimitiveBatch(p); });
+    DrawShadowsWithPSO(drawManager->GetModelBatchQueue(), [&](const auto& p) { drawManager->DrawModelBatch(p); });
 
     drawManager->EndShadowPass();
 }

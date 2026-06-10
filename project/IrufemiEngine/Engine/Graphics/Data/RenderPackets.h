@@ -92,7 +92,7 @@ namespace RenderPackets {
         UINT indexCount;
     };
 
-    struct PrimitiveRegionPacket {
+    struct PrimitiveBatchPacket {
         D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
         D3D12_INDEX_BUFFER_VIEW indexBufferView;
         D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
@@ -108,7 +108,7 @@ namespace RenderPackets {
         D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
-    struct ModelRegionPacket {
+    struct ModelBatchPacket {
         const struct GpuMesh* gpuMesh;
         D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
         D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
@@ -118,6 +118,17 @@ namespace RenderPackets {
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         bool castShadows;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
+    };
+
+    struct SpriteBatchPacket {
+        const class Object2DResource* resource;
+        D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
+        UINT instanceCount;
+        BlendMode blendMode;
+        PSOManager::DepthWrite depthWrite;
+        PSOManager::CullMode cullMode;
         ID3D12PipelineState* customPSO = nullptr;
         D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };

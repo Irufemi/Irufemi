@@ -1,5 +1,22 @@
 #include "IrufemiEngine.h"
 
+#include "Platform/Input/InputManager.h"
+#include "Platform/WindowsAPI/WinApp.h"
+#include "Manager/DrawManager.h"
+#include "Core/System/IEngineExtension.h"
+#include "../Resource/Texture/TextureManager.h"
+#include "../Resource/Audio/AudioManager.h"
+#include "../Resource/Model/ModelManager.h"
+#include "../Resource/Model/AnimationManager.h"
+#include "Manager/CollisionManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Framework/Component/Collider/ColliderComponent.h"
+#include "Renderer/Object/Particle/ParticleObject.h"
+#include "Core/Utility/Log.h"
+#include "../Framework/SceneManager.h"
+#include "../Framework/SceneTransition.h"
+#include "Graphics/Font/FontManager.h"
+
 IrufemiEngine::IrufemiEngine() = default;
 
 #include "Core/Math/Math.h"
@@ -10,39 +27,39 @@ IrufemiEngine::IrufemiEngine() = default;
 #include <cassert>
 #include <cstdint>
 #include <format>
-#include <string>
-
-#include "../Resource/Audio/Bgm.h"
-#include "../Resource/Audio/Se.h"
-#include "../Resource/Texture/Texture.h"
+#include "../Resource/Audio/AudioManager.h"
+#include "../Resource/Audio/AudioPlayer.h"
+#include "../Framework/Component/AudioSourceComponent.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Graphics/DirectX/DirectXUtils.h"
 #include "Manager/DebugUI.h"
 #include "Manager/PrimitiveManager.h"
-#include "Renderer/Core/BaseResource.h"
-#include "Renderer/ParticleGPU/GPUParticleManager.h"
-#include "Renderer/Effect/Effect.h"
-#include "Renderer/LineInstanced/LineClass.h"
-#include "Renderer/LineInstanced/LineResource.h"
-#include "Renderer/Object2D/Object2DResource.h"
-#include "Renderer/Object2D/Primitive/Circle2D.h"
-#include "Renderer/Object2D/Sprite/Sprite.h"
-#include "Renderer/Object2D/Text/Text.h"
-#include "Renderer/Object3D/AnimationModel/AnimationModel.h"
-#include "Renderer/Object3D/BaseModel/BaseModel.h"
-#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
-#include "Renderer/Object3D/Object3DResource.h"
-#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
+#include "Renderer/System/Core/BaseResource.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Renderer/Object/Effect/Effect.h"
+#include "Renderer/Object/Line/LineClass.h"
+#include "Renderer/System/Core/LineResource.h"
+#include "Renderer/System/Core/Object2DResource.h"
+#include "Renderer/Object/2D/Primitive/Circle2D.h"
+#include "Renderer/Object/2D/Sprite/Sprite.h"
+#include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
+#include "Renderer/Object/2D/Text/Text.h"
+#include "Renderer/Object/3D/AnimationModel/AnimationModel.h"
+#include "Renderer/System/Core/BaseModel.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Renderer/System/Core/Object3DResource.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 
-#include "Renderer/ParticleGPU/GPUParticleSystem.h"
-#include "Renderer/ParticleGPU/ParticleObject.h"
-#include "Renderer/Region/ModelRegion.h"
-#include "Renderer/Region/PrimitiveRegion.h"
-#include "Renderer/Skybox/Skybox.h"
+#include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
+#include "Renderer/Object/Particle/ParticleObject.h"
+#include "Renderer/Object/Batch/ModelBatch.h"
+#include "Renderer/Object/Batch/PrimitiveBatch.h"
+#include "Renderer/System/Data/RenderData.h"
+#include "Renderer/Object/Skybox/Skybox.h"
 #include "Graphics/Data/VertexData.h"
-#include "Renderer/VoxelParticle/VoxelParticleSystem.h"
-#include "Renderer/VoxelParticle/VoxelParticleManager.h"
-#include "Renderer/ParticleGPU/GPUParticleManager.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleSystem.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Framework/IScene.h"
 #include "Framework/Component/ComponentFactory.h"
 
@@ -83,15 +100,10 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // 乱数エンジンのシードを設定
   Random::SeedEngine();
 
-  // AudioManagerの生成・Media Foundationの初期化
+  // AudioManagerの生成と初期化(Media Foundation含む)
   audioManager_ = std::make_unique<AudioManager>();
-  audioManager_->StartUp();
-  // AudioManagerの初期化
   audioManager_->Initialize();
-  // "resources"フォルダから音声ファイルをすべてロード
-  audioManager_->LoadAllSoundsFromFolder("resources/");
-  Bgm::SetAudioManager(audioManager_.get());
-  Se::SetAudioManager(audioManager_.get());
+  audioManager_->LoadAllSoundsFromFolder("resources/audio");
 
   // DirectX 基盤
   dxCommon_ = std::make_unique<DirectXCommon>();
@@ -101,8 +113,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
                         winApp_->GetClientHeight());
 
   BaseResource::SetDirectXCommon(dxCommon_.get());
-  BaseRegion::SetDirectXCommon(dxCommon_.get());
-  Line3DRegion::SetDirectXCommon(dxCommon_.get());
+  BaseBatch::SetDirectXCommon(dxCommon_.get());
+  Line3DBatch::SetDirectXCommon(dxCommon_.get());
+  SpriteBatch::SetDirectXCommon(dxCommon_.get());
 
   // --- Dynamic Constant Buffer の初期化 ---
   materialBufferManager_ = std::make_unique<DynamicConstantBuffer<Material>>();
@@ -120,16 +133,18 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 
     // 注入
     Texture::SetDescriptorPool(srvPool);
-    BaseRegion::SetSrvAllocator(srvPool);
-
-    Line3DRegion::SetSrvAllocator(srvPool);
+    BaseBatch::SetSrvAllocator(srvPool);
+    SpriteBatch::SetSrvAllocator(srvPool);
+    Line3DBatch::SetSrvAllocator(srvPool);
   }
 
   // テクスチャ管理
   textureManager_ = std::make_unique<TextureManager>();
   textureManager_->Initialize(dxCommon_.get());
 
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
   textureManager_->LoadAllFromFolder("resources/");
+#endif
 
   // フォント管理
   fontManager_ = std::make_unique<FontManager>();
@@ -144,10 +159,12 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   modelManager_->Initialize(dxCommon_.get(),
                             textureManager_.get()); // dxCommon を渡す
 
-  ModelRegion::SetModelManager(modelManager_.get()); // Regionにも設定
+  ModelBatch::SetModelManager(modelManager_.get());
 
   // プリミティブ管理(シングルトン)の初期化
-  PrimitiveManager::Initialize();
+  primitiveManager_ = std::make_unique<PrimitiveManager>();
+  PrimitiveBatch::SetPrimitiveManager(primitiveManager_.get());
+  MeshDesc::SetPrimitiveManager(primitiveManager_.get());
 
   // 既存SRVの走査で free-list 再構築
   {
@@ -198,16 +215,25 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // UI
   ui_ = std::make_unique<DebugUI>();
   ui_->Initialize(winApp_->GetHwnd(), dxCommon_.get());
-#ifdef EditorMode
-  editorManager_ = std::make_unique<EditorManager>();
-  editorManager_->Initialize(this);
-#endif
+  for (auto& ext : extensions_) {
+    ext->OnInitialize(this);
+  }
   Sprite::SetDebugUI(ui_.get());
   Text::SetDebugUI(ui_.get());
   Circle2D::SetDebugUI(ui_.get());
 
   Primitive3DObject::SetDebugUI(ui_.get());
 
+
+  // コリジョン管理
+  collisionManager_ = std::make_unique<CollisionManager>();
+  collisionManager_->Initialize();
+  ColliderComponent::SetCollisionManager(collisionManager_.get());
+
+  // GPUパーティクル管理
+  gpuParticleManager_ = std::make_unique<GPUParticleManager>();
+  gpuParticleManager_->Initialize();
+  ParticleObject::SetGPUParticleManager(gpuParticleManager_.get());
 
   // 描画
   drawManager_ = std::make_unique<DrawManager>();
@@ -216,13 +242,15 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Text::SetDrawManager(drawManager_.get());
   Circle2D::SetDrawManager(drawManager_.get());
 
-  BaseRegion::SetDrawManager(drawManager_.get());
+  BaseBatch::SetDrawManager(drawManager_.get());
+  Line3DBatch::SetDrawManager(drawManager_.get());
+  SpriteBatch::SetDrawManager(drawManager_.get());
 
   GPUParticleSystem::SetDrawManager(drawManager_.get());
   Primitive3DObject::SetDrawManager(drawManager_.get());
 
   GPUParticleSystem::SetEngine(this);
-  Line3DRegion::SetDrawManager(drawManager_.get());
+  Line3DBatch::SetDrawManager(drawManager_.get());
 
   // テクスチャ設定の注入
   ui_->SetTextureManager(textureManager_.get());
@@ -230,7 +258,8 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Sprite::SetTextureManager(textureManager_.get());
   Circle2D::SetTextureManager(textureManager_.get());
 
-  BaseRegion::SetTextureManager(textureManager_.get());
+  BaseBatch::SetTextureManager(textureManager_.get());
+  SpriteBatch::SetTextureManager(textureManager_.get());
 
   GPUParticleSystem::SetTextureManager(textureManager_.get());
     ParticleObject::SetTextureManager(textureManager_.get());
@@ -250,7 +279,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   voxelParticleManager_->Initialize(this);
 
   Circle2D::SetEngine(this);
-  Line3DRegion::SetEngine(this);
+  Line3DBatch::SetEngine(this);
   Primitive3DObject::SetEngine(this);
 
   // --- 全画面用 RenderTexture の初期化 ---
@@ -304,7 +333,14 @@ void IrufemiEngine::Initialize(const std::wstring &title,
     dxCommon_->PreWarmJITCompile();
   }
 
-  GPUParticleManager::GetInstance()->Initialize();
+  // CameraManager設定
+  cameraManager_ = std::make_unique<CameraManager>();
+  Sprite::SetCameraManager(cameraManager_.get());
+  SpriteBatch::SetCameraManager(cameraManager_.get());
+  Text::SetCameraManager(cameraManager_.get());
+  
+  // SceneManager 構築(エンジンは所有のみ)
+  sceneManager_ = std::make_unique<SceneManager>(this);
 }
 
   // クリアカラーをfloat配列で持つ初期化
@@ -363,11 +399,10 @@ void IrufemiEngine::Finalize() {
     ui_->Shutdown();
     ui_.reset();
   }
-#ifdef EditorMode
-  if (editorManager_) {
-    editorManager_.reset();
+  for (auto& ext : extensions_) {
+    ext->OnFinalize();
   }
-#endif
+  extensions_.clear();
 
   // 2. 描画・ポストプロセス系 (DirectX基盤に依存)
   if (drawManager_) {
@@ -406,17 +441,17 @@ void IrufemiEngine::Finalize() {
 
   // --- 静的ポインタのクリア（デストラクタでの不正アクセス防止） ---
   BaseResource::SetDirectXCommon(nullptr);
-  BaseRegion::SetDirectXCommon(nullptr);
-  Line3DRegion::SetDirectXCommon(nullptr);
+  BaseBatch::SetDirectXCommon(nullptr);
+  Line3DBatch::SetDirectXCommon(nullptr);
 
   Texture::SetDescriptorPool(nullptr);
   Texture::SetDirectXCommon(nullptr);
   Texture::SetWhiteTextureResource(nullptr);
   GpuMesh::sDxCommon = nullptr;
 
-  BaseRegion::SetSrvAllocator(nullptr);
-
-  Line3DRegion::SetSrvAllocator(nullptr);
+  BaseBatch::SetSrvAllocator(nullptr);
+  SpriteBatch::SetSrvAllocator(nullptr);
+  Line3DBatch::SetSrvAllocator(nullptr);
 
   // DebugUI, DrawManager, TextureManager 等のクラスへの静的セットもクリア
   Sprite::SetDebugUI(nullptr);
@@ -426,41 +461,53 @@ void IrufemiEngine::Finalize() {
 
   Sprite::SetDrawManager(nullptr);
   Circle2D::SetDrawManager(nullptr);
-  BaseRegion::SetDrawManager(nullptr);
+  BaseBatch::SetDrawManager(nullptr);
+  SpriteBatch::SetDrawManager(nullptr);
 
   GPUParticleSystem::SetDrawManager(nullptr);
   Primitive3DObject::SetDrawManager(nullptr);
-  Line3DRegion::SetDrawManager(nullptr);
+  Line3DBatch::SetDrawManager(nullptr);
 
   Sprite::SetTextureManager(nullptr);
   Circle2D::SetTextureManager(nullptr);
-  BaseRegion::SetTextureManager(nullptr);
+  BaseBatch::SetTextureManager(nullptr);
+  SpriteBatch::SetTextureManager(nullptr);
 
   GPUParticleSystem::SetTextureManager(nullptr);
     ParticleObject::SetTextureManager(nullptr);
   Primitive3DObject::SetTextureManager(nullptr);
 
+  PrimitiveBatch::SetPrimitiveManager(nullptr);
+  MeshDesc::SetPrimitiveManager(nullptr);
+
   Sprite::SetCameraManager(nullptr);
-  ModelRegion::SetModelManager(nullptr);
+  SpriteBatch::SetCameraManager(nullptr);
+  ModelBatch::SetModelManager(nullptr);
 
   GPUParticleSystem::SetEngine(nullptr);
   BaseModel::SetIrufemiEngine(nullptr);
   Skybox::SetEngine(nullptr);
-  GPUParticleSystem::SetDXCommon(nullptr);
+  GPUParticleSystem::SetDXCommon(dxCommon_.get());
   VoxelParticleSystem::SetEngine(nullptr);
+  if (gpuParticleManager_) {
+    gpuParticleManager_->Finalize();
+    gpuParticleManager_.reset();
+  }
+
+  if (collisionManager_) {
+    collisionManager_.reset();
+  }
+
   if (voxelParticleManager_) {
     voxelParticleManager_.reset();
   }
-  GPUParticleManager::GetInstance()->Finalize();
   Circle2D::SetEngine(nullptr);
-  Line3DRegion::SetEngine(nullptr);
+  Line3DBatch::SetEngine(nullptr);
   Primitive3DObject::SetEngine(nullptr);
   Effect::SetEngine(nullptr);
-  Bgm::SetAudioManager(nullptr);
-  Se::SetAudioManager(nullptr);
 
-  // 5. シングルトンの破棄(GPUリソースを保持している可能性があるためdxCommon破棄前に呼ぶ)
-  PrimitiveManager::Finalize();
+  // プリミティブ管理解放
+  primitiveManager_.reset();
 
   // 6. 基盤システム (サウンド・入力)
   if (audioManager_) {
@@ -500,17 +547,8 @@ void IrufemiEngine::Finalize() {
 }
 
 void IrufemiEngine::Execute() {
-  // CameraManager設定
-  cameraManager_ = std::make_unique<CameraManager>();
-  Sprite::SetCameraManager(cameraManager_.get());
-  Text::SetCameraManager(cameraManager_.get());
-  
-  // SceneManager 構築(エンジンは所有のみ)
-  sceneManager_ = std::make_unique<SceneManager>(this);
 
-  // ローディング画面の構築
-  loadingScreen_ = std::make_unique<LoadingScreen>();
-  loadingScreen_->Initialize(this);
+  // ローディング画面は Application から SetLoadingScreen 経由で注入されるため、ここでの構築は不要です
 
   // Application からの登録を反映
   if (sceneRegistrar_) {
@@ -529,18 +567,19 @@ void IrufemiEngine::Execute() {
     // ImGui_
     ui_->FrameStart();
 
-#ifdef EditorMode
-    if (editorManager_) {
-        editorManager_->DrawEditorUI();
+    for (auto& ext : extensions_) {
+        ext->OnDrawUI();
     }
-#endif
 
 #ifdef USE_IMGUI
     ui_->FPSDebug();
     ui_->BeginEngineDebugWindow();
     ui_->SceneSelectorTab(sceneManager_.get());
     ui_->PostProcessTab(this);
-    GPUParticleManager::GetInstance()->Debug();
+  // デバッグ機能の追加
+  if (gpuParticleManager_) {
+    gpuParticleManager_->Debug();
+  }
     if (auto *scene = sceneManager_->GetCurrentScene()) {
       scene->DrawDebugTab();
     }
@@ -550,14 +589,19 @@ void IrufemiEngine::Execute() {
     // 更新
     audioManager_->Update();
     sceneManager_->Update();
-    if (sceneManager_->IsLoading() && loadingScreen_) {
-      loadingScreen_->Update(deltaTime_);
-    }
+    // ローディング画面のアニメーション進行（Update相当）は描画時にまとめて行います
     totalTime_ += deltaTime_;
     postProcessManager_->Update(totalTime_);
     sceneTransition_->Update(deltaTime_);
     
-    GPUParticleManager::GetInstance()->Update();
+   // 4) ParticleのUpdate (GPU)
+  if (gpuParticleManager_) {
+    gpuParticleManager_->Update();
+  }
+
+    for (auto& ext : extensions_) {
+        ext->OnUpdate(deltaTime_);
+    }
 
     if (voxelParticleManager_) {
         // ポーズ中は VoxelParticle の更新をスキップする
@@ -580,7 +624,14 @@ void IrufemiEngine::Execute() {
         voxelParticleManager_->Draw();
     }
 
-    GPUParticleManager::GetInstance()->Draw();
+   // ParticleGPU
+  if (gpuParticleManager_) {
+    gpuParticleManager_->Draw();
+  }
+
+    for (auto& ext : extensions_) {
+        ext->OnDraw();
+    }
 
   // ここで溜まった描画パケットを一斉に処理する
     drawManager_->ExecuteRenderQueues(this);
@@ -637,9 +688,9 @@ void IrufemiEngine::EndFrame() {
 
   // 描画先がバックバッファになり、ポストプロセス（暗転など）が掛かった上から
   // 影響を受けない最前面UIとしてロード画面を描画する
-  if (sceneManager_ && sceneManager_->IsLoading()) {
+  if (sceneManager_ && sceneManager_->ShouldDrawLoadingScreen()) {
     if (loadingScreen_) {
-      loadingScreen_->Draw(this);
+      loadingScreen_->OnDrawLoadingScreen(this, deltaTime_);
     }
   }
 
@@ -709,9 +760,21 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
 }
 
 void IrufemiEngine::SetCursorLocked(bool lock) {
+  sceneRequestedCursorLock_ = lock;
   if (winApp_) {
+#ifdef EditorMode
+      if (!isPlayMode_) {
+          winApp_->SetCursorLocked(false);
+          return;
+      }
+#endif
     winApp_->SetCursorLocked(lock);
   }
+}
+
+void IrufemiEngine::SetPlayMode(bool play) {
+    isPlayMode_ = play;
+    SetCursorLocked(sceneRequestedCursorLock_);
 }
 
 bool IrufemiEngine::IsCursorLocked() const {

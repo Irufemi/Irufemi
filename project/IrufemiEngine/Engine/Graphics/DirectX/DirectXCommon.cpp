@@ -222,10 +222,11 @@ void DirectXCommon::CreatePSOs() {
     auto vsParticle = shaderManager_->GetOrCompile(L"resources/shaders/Particle.VS.hlsl", options);
     auto psParticle = shaderManager_->GetOrCompile(L"resources/shaders/Particle.PS.hlsl", options);
     auto vsSprite = shaderManager_->GetOrCompile(L"resources/shaders/Object2D.VS.hlsl", options);
+    auto vsSpriteBatch = shaderManager_->GetOrCompile(L"resources/shaders/SpriteBatch.VS.hlsl", options);
     auto psSprite = shaderManager_->GetOrCompile(L"resources/shaders/Object2D.PS.hlsl", options);
     auto vsText = shaderManager_->GetOrCompile(L"resources/shaders/Text.VS.hlsl", options);
     auto psText = shaderManager_->GetOrCompile(L"resources/shaders/Text.PS.hlsl", options);
-    auto vsRegion = shaderManager_->GetOrCompile(L"resources/shaders/Region.VS.hlsl", options);
+    auto vsBatch = shaderManager_->GetOrCompile(L"resources/shaders/Batch.VS.hlsl", options);
     auto vsLine = shaderManager_->GetOrCompile(L"resources/shaders/Line.VS.hlsl", options);
     auto psLine = shaderManager_->GetOrCompile(L"resources/shaders/Line.PS.hlsl", options);
     auto vsLineInst = shaderManager_->GetOrCompile(L"resources/shaders/LineInstanced.VS.hlsl", options);
@@ -285,8 +286,9 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });
     psoManager_->RegisterShader("Particle", { { vsParticle, psParticle } });
     psoManager_->RegisterShader("Sprite", { { vsSprite, psSprite } });
+    psoManager_->RegisterShader("SpriteBatch", { { vsSpriteBatch, psSprite } });
     psoManager_->RegisterShader("Text", { { vsText, psText } });
-    psoManager_->RegisterShader("Region", { { vsRegion, ps3d } });
+    psoManager_->RegisterShader("Batch", { { vsBatch, ps3d } });
     
     // LineとLineInstancedはLINEトポロジ
     psoManager_->RegisterShader("Line", { { vsLine, psLine }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });

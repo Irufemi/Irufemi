@@ -140,6 +140,9 @@ public:
 
     /** @brief ロード画面を表示すべきロード中（または遷移中）かどうかを取得 */
     bool IsLoading() const;
+
+    /** @brief チラつき防止（アンチフリッカー）機能付きで、ローディング画面を描画すべきかを取得 */
+    bool ShouldDrawLoadingScreen() const;
     ///@}
 
 private:
@@ -158,7 +161,7 @@ private:
 
     bool isInitializing_ = false; ///< シーンの初期化（Initialize）実行中フラグ
 
-    // --- 遷移管理用 ---
+    // --- 遷移管理 ---
     TransitionPhase transitionPhase_ = TransitionPhase::None;
     Key pendingTransition_{};
     SceneTransition::Type pendingType_ = SceneTransition::Type::Fade;
@@ -166,6 +169,7 @@ private:
     EaseType pendingEaseType_ = EaseType::Linear;
 
     bool wasLoading_ = false; ///< 前フレームがロード中だったか
+    float loadingTimer_ = 0.0f; ///< ロード状態の継続時間を計測するタイマー
 
     // --- 非同期読み込み用 ---
     std::future<void> initFuture_;

@@ -6,7 +6,7 @@
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Renderer/LineInstanced/LineClass.h"
+#include "Renderer/Object/Line/LineClass.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -18,7 +18,7 @@
 
 void CollisionManager::Initialize() {
     if (!debugLine_) {
-        debugLine_ = std::make_unique<Line3DRegion>();
+        debugLine_ = std::make_unique<Line3DBatch>();
         debugLine_->Initialize();
     }
     

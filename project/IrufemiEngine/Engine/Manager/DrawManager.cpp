@@ -5,17 +5,17 @@ using namespace RenderPackets;
 #include <cassert>
 
 #include <dxgidebug.h>
-#include "Renderer/Object2D/Sprite/Sprite.h"
-#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
-#include "Renderer/Region/ModelRegion.h"
-#include "Renderer/Region/PrimitiveRegion.h"
+#include "Renderer/Object/2D/Sprite/Sprite.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Renderer/Object/Batch/ModelBatch.h"
+#include "Renderer/Object/Batch/PrimitiveBatch.h"
 
-#include "Renderer/LineInstanced/LineClass.h"
-#include "Renderer/Skybox//Skybox.h"
-#include "Renderer/Object3D/Object3DResource.h"
-#include "Renderer/Object2D/Object2DResource.h"
+#include "Renderer/Object/Line/LineClass.h"
+#include "Renderer/Object/Skybox//Skybox.h"
+#include "Renderer/System/Core/Object3DResource.h"
+#include "Renderer/System/Core/Object2DResource.h"
 
-#include "Renderer/LineInstanced/LineResource.h"
+#include "Renderer/System/Core/LineResource.h"
 #include "../Graphics/DirectX/DirectXCommon.h"
 #include "../Graphics/DirectX/DirectXUtils.h"
 #include "../Graphics/Pipeline/RenderGraph/RenderGraph.h"
@@ -427,6 +427,32 @@ void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
+void DrawManager::SubmitSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
+    spriteBatchQueue_.push_back(packet);
+}
+
+void DrawManager::DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
+    if (packet.instanceCount == 0 || !packet.resource) return;
+
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    commandList_->IASetVertexBuffers(0, 1, &packet.resource->vertexBufferView_);
+    commandList_->IASetIndexBuffer(&packet.resource->indexBufferView_);
+
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.resource->GetMaterialVAddress());
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.resource->textureHandle_);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU); // VS t0
+
+    commandList_->DrawIndexedInstanced(packet.resource->indexCount_, packet.instanceCount, 0, 0, 0);
+}
+
+void DrawManager::SubmitTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
+    topMostSpriteBatchQueue_.push_back(packet);
+}
+
+void DrawManager::DrawTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
+    DrawSpriteBatch(packet);
+}
+
 void DrawManager::SubmitText(const Object2DResource* resource) {
     if (!resource) return;
     SpritePacket p{};
@@ -465,11 +491,11 @@ void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
 }
 
 
-void DrawManager::SubmitModelRegion(const ModelRegionPacket& packet) {
-    modelRegionQueue_.push_back(packet);
+void DrawManager::SubmitModelBatch(const ModelBatchPacket& packet) {
+    modelBatchQueue_.push_back(packet);
 }
 
-void DrawManager::DrawModelRegion(const RenderPackets::ModelRegionPacket& packet) {
+void DrawManager::DrawModelBatch(const RenderPackets::ModelBatchPacket& packet) {
     const GpuMesh* gpuMesh = packet.gpuMesh;
     if (!gpuMesh || gpuMesh->vertexCount == 0 || packet.instanceCount == 0) { return; }
 
@@ -497,11 +523,11 @@ void DrawManager::DrawModelRegion(const RenderPackets::ModelRegionPacket& packet
     }
 }
 
-void DrawManager::SubmitPrimitiveRegion(const RenderPackets::PrimitiveRegionPacket& packet) {
-    primitiveRegionQueue_.push_back(packet);
+void DrawManager::SubmitPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet) {
+    primitiveBatchQueue_.push_back(packet);
 }
 
-void DrawManager::DrawPrimitiveRegion(const RenderPackets::PrimitiveRegionPacket& packet) {
+void DrawManager::DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet) {
     if (packet.indexCount == 0 || packet.instanceCount == 0) { return; }
 
     // IA
@@ -1016,6 +1042,22 @@ void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
     }
 
     first = true;
+    for (const auto& p : topMostSpriteBatchQueue_) {
+        if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
+            engine->SetBlend(p.blendMode);
+            engine->SetDepthWrite(p.depthWrite);
+            engine->SetCull(p.cullMode);
+            engine->ApplyPSO("SpriteBatch");
+            
+            currentBlend = p.blendMode;
+            currentDepth = p.depthWrite;
+            currentCull = p.cullMode;
+            first = false;
+        }
+        DrawTopMostSpriteBatch(p);
+    }
+
+    first = true;
     for (const auto& p : topMostTextQueue_) {
         if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
             engine->SetBlend(p.blendMode);
@@ -1039,15 +1081,17 @@ void DrawManager::ClearRenderQueues() {
     selectionMaskQueue_.clear();
     selectionMaskQueue2D_.clear();
     spriteQueue_.clear();
+    spriteBatchQueue_.clear();
 
     lineQueue_.clear();
     gpuParticleQueue_.clear();
     voxelParticleQueue_.clear();
     skyboxQueue_.clear();
-    primitiveRegionQueue_.clear();
-    modelRegionQueue_.clear();
+    primitiveBatchQueue_.clear();
+    modelBatchQueue_.clear();
     postRenderQueue_.clear();
     topMostSpriteQueue_.clear();
+    topMostSpriteBatchQueue_.clear();
     textQueue_.clear();
     topMostTextQueue_.clear();
 }

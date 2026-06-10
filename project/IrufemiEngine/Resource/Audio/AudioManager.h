@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <wrl/client.h> // ComPtr用
 
 // IXAudio2SourceVoice構造体を前方宣言
 struct IXAudio2SourceVoice;
@@ -22,8 +23,8 @@ private:
     AudioManager& operator=(const AudioManager&) = delete;
 
     // XAudio2のコアインターフェース
-    IXAudio2* pXAudio2_{ nullptr };
-    IXAudio2MasteringVoice* pMasteringVoice_{ nullptr };
+    Microsoft::WRL::ComPtr<IXAudio2> pXAudio2_;
+    IXAudio2MasteringVoice* pMasteringVoice_{ nullptr }; ///< IUnknownを継承しないため生ポインタ管理
 
     // ロードした音声データをファイル名をキーにして保持するマップ
     std::map<std::string, std::shared_ptr<Sound>> soundRegistry_;
@@ -39,6 +40,8 @@ private:
 
     /**
      * @brief 管理対象のボイスかどうか判定する
+     * @param[in] instance 判定対象のVoiceInstance
+     * @return 管理対象であればtrue
      */
     bool IsManagedVoice(std::shared_ptr<VoiceInstance> instance) const;
 
@@ -64,10 +67,6 @@ public:
      */
     void Finalize();
 
-    /**
-     * @brief Media Foundation の開始処理
-     */
-    void StartUp();
 
     /**
      * @brief 指定フォルダから対応する音声ファイルをすべてロードする
@@ -84,16 +83,21 @@ public:
 
     /**
      * @brief カテゴリ内のサウンド名一覧を取得（ソート済み）
+     * @param[in] category カテゴリ名
+     * @return サウンド名のリスト
      */
     std::vector<std::string> GetSoundNames(const std::string& category) const;
 
     /**
      * @brief ロード済みのサウンドデータを取得
+     * @param[in] name サウンドキー名
+     * @return サウンドデータへのポインタ
      */
     std::shared_ptr<Sound> GetSoundData(const std::string& name) const;
 
     /**
      * @brief 利用可能なサウンドカテゴリ一覧を取得
+     * @return カテゴリ名のリスト
      */
     std::vector<std::string> GetCategories() const;
 
@@ -144,6 +148,8 @@ public:
 
     /**
      * @brief 指定キーのサウンドがロード済みか確認する
+     * @param[in] key サウンドキー
+     * @return ロード済みならtrue
      */
     bool HasSound(const std::string& key) const;
 };

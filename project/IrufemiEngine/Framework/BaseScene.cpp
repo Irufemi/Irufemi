@@ -1,4 +1,5 @@
 #include "BaseScene.h"
+#include "Engine/Manager/DrawManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
@@ -11,7 +12,6 @@
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "GameObject.h"
 #include "Engine/Manager/CollisionManager.h"
-#include "Engine/Manager/EditorManager.h"
 
 #include "SceneSerializer.h"
 #include "Component/TransformComponent.h"
@@ -42,10 +42,10 @@ void BaseScene::Initialize(IrufemiEngine* engine) {
     directionalLight_ = std::make_unique<DirectionalLight>();
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
     directionalLight_->direction = { 0.5f, -0.7f, 1.0f };
-    directionalLight_->intensity = 1.0f;
-    
-    CollisionManager::GetInstance().Initialize();
-    CollisionManager::GetInstance().Clear();
+    if (engine_) {
+        engine_->GetCollisionManager()->Initialize();
+        engine_->GetCollisionManager()->Clear();
+    }
 }
 
 void BaseScene::Update() {
@@ -66,8 +66,8 @@ void BaseScene::Update() {
 
     bool isPlayMode = true;
 #ifdef EditorMode
-    if (engine_ && engine_->GetEditorManager()) {
-        isPlayMode = engine_->GetEditorManager()->IsPlayMode();
+    if (engine_) {
+        isPlayMode = engine_->IsPlayMode();
     }
 #endif
 
@@ -80,8 +80,8 @@ void BaseScene::Update() {
     }
     
     // PlayMode 時のみ衝突判定（イベント発火など）を行う
-    if (isPlayMode) {
-        CollisionManager::GetInstance().CheckAllCollisions();
+    if (isPlayMode && engine_) {
+        engine_->GetCollisionManager()->CheckAllCollisions();
     }
 
     // 破棄フラグが立ったオブジェクトを一括削除 (GC)
@@ -102,8 +102,8 @@ void BaseScene::Draw() {
     
 #ifdef EditorMode
     GameObject* selectedObj = nullptr;
-    if (engine_ && engine_->GetEditorManager()) {
-        auto sel = engine_->GetEditorManager()->GetSelectedObject();
+    if (engine_) {
+        auto sel = engine_->GetSelectedObject();
         if (sel) {
             selectedObj = sel.get();
         }
@@ -114,9 +114,9 @@ void BaseScene::Draw() {
         selectedObj->DrawOutlineMask();
     }
     
-    CollisionManager::GetInstance().DrawDebug(selectedObj);
+    if (engine_) engine_->GetCollisionManager()->DrawDebug(selectedObj);
 #else
-    CollisionManager::GetInstance().DrawDebug();
+    engine_->GetCollisionManager()->DrawDebug();
 #endif
 }
 

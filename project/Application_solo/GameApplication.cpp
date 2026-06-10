@@ -18,6 +18,9 @@
 #include "components/GravityPlayerComponent.h"
 #include "components/DebugEnemySpawnerComponent.h"
 
+// UI
+#include "UI/LoadingScreen.h"
+
 // シーンのインクルード
 #include "scene/title/TitleScene.h"
 #include "scene/stageSelect/SelectScene.h"
@@ -27,6 +30,10 @@
 #include "scene/Pause/PauseScene.h"
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
 #include "scene/debug/DebugScene.h"
+#endif
+
+#ifdef EditorMode
+#include "EditorManager.h"
 #endif
 
 namespace {
@@ -64,6 +71,11 @@ void GameApplication::Run() {
     // エンジンのインスタンスを生成
     auto engine = std::make_unique<IrufemiEngine>();
 
+#ifdef EditorMode
+    // エディタマネージャを拡張として事前登録（Initialize時に初期化される）
+    engine->AddExtension(std::make_shared<EditorManager>());
+#endif
+
     // エンジンの初期化
     engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);
 
@@ -76,6 +88,11 @@ void GameApplication::Run() {
     ComponentFactory::Register("DebrisManagerComponent", []() { return std::make_shared<DebrisManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", []() { return std::make_shared<GravityPlayerComponent>(); });
     ComponentFactory::Register("DebugEnemySpawnerComponent", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
+
+    // UIの登録
+    auto loadingScreen = std::make_shared<LoadingScreen>();
+    loadingScreen->Initialize(engine.get());
+    engine->SetLoadingScreen(loadingScreen);
 
     // シーンの登録
     engine->SetSceneRegistrar(RegisterScenes);

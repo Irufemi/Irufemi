@@ -2,6 +2,8 @@
 #include "../Component.h"
 #include <functional>
 
+class CollisionManager;
+
 /**
  * @class ColliderComponent
  * @brief すべての当たり判定コンポーネントの基底クラス
@@ -29,6 +31,12 @@ public:
     /// @brief デバッグ用の当たり判定の枠線を描画する
     virtual void DrawDebug() = 0;
 
+    static void SetCollisionManager(CollisionManager* manager) { collisionManager_ = manager; }
+
+protected:
+    inline static CollisionManager* collisionManager_ = nullptr;
+
+public:
     /// @brief 自身の当たり判定の種類を返す
     virtual ColliderType GetColliderType() const = 0;
 

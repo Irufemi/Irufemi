@@ -342,6 +342,12 @@
                     "Pool Size": 500
                 },
                 "type": "DebrisManagerComponent"
+            },
+            {
+                "data": {
+                    "modelName": "resources/model/sample/block.obj"
+                },
+                "type": "ModelBatchRendererComponent"
             }
         ],
         "isActive": true,

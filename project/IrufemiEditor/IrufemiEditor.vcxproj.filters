@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="EditorManager.cpp" />
+    <ClCompile Include="Editor\Core\ComponentEditorRegistry.cpp" />
+    <ClCompile Include="Editor\Core\EditorActionManager.cpp" />
+    <ClCompile Include="Editor\Core\EditorShortcutManager.cpp" />
+    <ClCompile Include="Editor\Core\EditorTheme.cpp" />
+    <ClCompile Include="Editor\Panel\HierarchyPanel.cpp" />
+    <ClCompile Include="Editor\Panel\InspectorPanel.cpp" />
+    <ClCompile Include="Editor\Panel\ProjectBrowserPanel.cpp" />
+    <ClCompile Include="Editor\Panel\SceneViewPanel.cpp" />
+    <ClCompile Include="Editor\Utils\EditorCameraController.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="EditorManager.h" />
+    <ClInclude Include="Editor\Core\ComponentEditorRegistry.h" />
+    <ClInclude Include="Editor\Core\EditorActionManager.h" />
+    <ClInclude Include="Editor\Core\EditorCommands.h" />
+    <ClInclude Include="Editor\Core\EditorDragDrop.h" />
+    <ClInclude Include="Editor\Core\EditorShortcutManager.h" />
+    <ClInclude Include="Editor\Core\EditorTheme.h" />
+    <ClInclude Include="Editor\Core\ICommand.h" />
+    <ClInclude Include="Editor\Core\IComponentEditor.h" />
+    <ClInclude Include="Editor\IEditorPanel.h" />
+    <ClInclude Include="Editor\Panel\HierarchyPanel.h" />
+    <ClInclude Include="Editor\Panel\InspectorPanel.h" />
+    <ClInclude Include="Editor\Panel\ProjectBrowserPanel.h" />
+    <ClInclude Include="Editor\Panel\SceneViewPanel.h" />
+    <ClInclude Include="Editor\Utils\EditorCameraController.h" />
+  </ItemGroup>
+</Project>

@@ -1,6 +1,6 @@
 #pragma once
 #include "../Component.h"
-#include "Renderer/Object2D/Sprite/Sprite.h"
+#include "Renderer/Object/2D/Sprite/Sprite.h"
 #include <memory>
 #include <string>
 #include "Engine/Core/Math/Vector4.h"
@@ -38,7 +38,7 @@ private:
     std::unique_ptr<Sprite> sprite_;
     TransformComponent* transform_ = nullptr;
     
-    std::string texturePath_ = "resources/uvChecker.png";
+    std::string texturePath_ = "";
     bool isTopMost_ = false;
     bool isFlipX_ = false;
     bool isFlipY_ = false;

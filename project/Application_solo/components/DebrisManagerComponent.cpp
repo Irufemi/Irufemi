@@ -1,24 +1,31 @@
 #include "DebrisManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Framework/SceneSerializer.h"
 #include "Framework/BaseScene.h"
 #include "DebrisComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Platform/Input/InputManager.h"
-#include "Renderer/Object3D/BaseModel/BaseModel.h"
+#include "Renderer/System/Core/BaseModel.h"
 #include "Engine/Core/Math/Random/Random.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 
 void DebrisManagerComponent::OnRegisterProperties() {
+    Component::OnRegisterProperties();
     RegisterProperty("Pool Size", &poolSize_);
 }
 
 void DebrisManagerComponent::Initialize() {
     // Sceneへの追加を確実に行うため、プールの生成は最初のUpdateで行う
     isPoolInitialized_ = false;
+
+    // エディタやシーンロード時にも Renderer の存在を確実にするため、ここで取得・追加する
+    batchComponent_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
+    if (!batchComponent_) {
+        batchComponent_ = gameObject_->AddComponent<ModelBatchRendererComponent>().get();
+    }
 }
 
 void DebrisManagerComponent::Update() {
@@ -28,9 +35,6 @@ void DebrisManagerComponent::Update() {
             auto obj = std::make_shared<GameObject>("Debris");
             obj->AddComponent<TransformComponent>();
             
-            // とりあえず目視できるようにキューブをアタッチ
-            auto renderer = obj->AddComponent<PrimitiveRendererComponent>();
-            renderer->SetShape(PrimitiveType::Cube);
             // 少し小さめに設定
             obj->GetComponent<TransformComponent>()->scale_ = { 0.5f, 0.5f, 0.5f };
             
@@ -46,9 +50,12 @@ void DebrisManagerComponent::Update() {
             return obj;
         };
 
+        // プールを初期化
         pool_ = std::make_unique<ObjectPool<GameObject>>(poolSize_, debrisFactory);
         isPoolInitialized_ = true;
     }
+
+    UpdateStreaming();
 
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
     // デバッグ用: 1キーを押したら10個ランダムな場所にスポーンさせる
@@ -105,6 +112,20 @@ void DebrisManagerComponent::Update() {
     }
 
     UpdateStreaming();
+
+    if (batchComponent_) {
+        batchComponent_->ClearInstances();
+        for (const auto& vd : virtualDebrisList_) {
+            if (vd.isDestroyed) continue;
+            
+            if (vd.isSpawned && vd.instance) {
+                auto t = vd.instance->GetComponent<TransformComponent>();
+                if (t) {
+                    batchComponent_->AddInstanceWorld(t->GetWorldMatrix());
+                }
+            }
+        }
+    }
 }
 
 std::shared_ptr<GameObject> DebrisManagerComponent::AcquireDebris() {

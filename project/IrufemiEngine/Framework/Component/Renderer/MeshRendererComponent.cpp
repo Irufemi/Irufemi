@@ -1,8 +1,8 @@
-﻿#include "MeshRendererComponent.h"
+#include "MeshRendererComponent.h"
 
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
-#include "Renderer/Object3D/StaticModelObject/StaticModelObject.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Math/Geometry/OBB.h"
 #include <cmath>

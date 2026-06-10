@@ -2,7 +2,7 @@
 
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
-#include "Renderer/Object3D/Primitive/Primitive3DObject.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include "Engine/Manager/PrimitiveManager.h"
 #include "Engine/Core/Type/PrimitiveType.h"
 #include "Engine/Core/Math/Geometry/Collision.h"

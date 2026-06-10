@@ -34,25 +34,18 @@ AudioManager::~AudioManager() {
 void AudioManager::Initialize() {
     // 再初期化に備えて
     finalized_ = false;
+
+    // Media Foundationの初期化
+    HRESULT hr = MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
+    assert(SUCCEEDED(hr));
+
     // XAudio2エンジンの生成
-    HRESULT hr = XAudio2Create(&pXAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
+    hr = XAudio2Create(&pXAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
     assert(SUCCEEDED(hr));
 
     // マスターボイスの生成
     hr = pXAudio2_->CreateMasteringVoice(&pMasteringVoice_);
     assert(SUCCEEDED(hr));
-}
-
-//Media Foundationの初期化
-void AudioManager::StartUp() {
-
-
-    /*サウンド再生*/
-
-    ///Microsoft Media Foundation
-
-    //Media Foundationの初期化
-    MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
 }
 
 void AudioManager::Finalize() {
@@ -65,10 +58,10 @@ void AudioManager::Finalize() {
         pMasteringVoice_->DestroyVoice();
         pMasteringVoice_ = nullptr;
     }
-    if (pXAudio2_) {
-        pXAudio2_->Release();
-        pXAudio2_ = nullptr;
-    }
+    
+    // ComPtrが自動で解放するが、明示的にリセット
+    pXAudio2_.Reset();
+    
     HRESULT hr = MFShutdown();
     assert(SUCCEEDED(hr));
 }
@@ -92,6 +85,9 @@ void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {
     soundRegistry_.clear();
     categoryMap_.clear();
     namespace fs = std::filesystem;
+    if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
+        return;
+    }
     for (const auto& entry : fs::directory_iterator(folderPath)) {
         if (entry.is_directory()) {
             std::string category = entry.path().filename().string();
@@ -103,6 +99,10 @@ void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {
 // サブフォルダ単位でロードするオーバーロード版
 void AudioManager::LoadSoundsFromFolder(const std::string& folderPath, const std::string& category) {
     namespace fs = std::filesystem;
+
+    if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
+        return;
+    }
 
     for (const auto& entry : fs::directory_iterator(folderPath)) {
         if (!entry.is_regular_file()) continue;

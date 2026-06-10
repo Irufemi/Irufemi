@@ -1,6 +1,7 @@
 #include "SceneSerializer.h"
 #include "IScene.h"
 #include "BaseScene.h"
+#include "Engine/IrufemiEngine.h"
 #include "GameObject.h"
 #include <fstream>
 #include <filesystem>
@@ -21,9 +22,10 @@ bool SceneSerializer::Save(IScene* scene, const std::string& sceneName) {
         }
     }
 
-    std::string path = GetSceneFilePath(sceneName);
-    
-    // ディレクトリ作成
+    // TODO: Use the scene's engine scene directory
+    std::string path = GetSceneFilePath(scene, sceneName);
+
+    // ディレクトリが存在しない場合は作成する
     fs::path dir = fs::path(path).parent_path();
     if (!fs::exists(dir)) {
         fs::create_directories(dir);
@@ -42,7 +44,7 @@ bool SceneSerializer::Save(IScene* scene, const std::string& sceneName) {
 bool SceneSerializer::Load(IScene* scene, const std::string& sceneName) {
     if (!scene) return false;
 
-    std::string path = GetSceneFilePath(sceneName);
+    std::string path = GetSceneFilePath(scene, sceneName);
     if (!fs::exists(path)) return false;
 
     std::ifstream file(path);
@@ -75,8 +77,8 @@ bool SceneSerializer::Load(IScene* scene, const std::string& sceneName) {
     return false;
 }
 
-bool SceneSerializer::Exists(const std::string& sceneName) {
-    return fs::exists(GetSceneFilePath(sceneName));
+bool SceneSerializer::Exists(IScene* scene, const std::string& sceneName) {
+    return fs::exists(GetSceneFilePath(scene, sceneName));
 }
 
 bool SceneSerializer::SavePrefab(std::shared_ptr<GameObject> obj, const std::string& filepath) {
@@ -121,6 +123,11 @@ std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filep
     return obj;
 }
 
-std::string SceneSerializer::GetSceneFilePath(const std::string& sceneName) {
+std::string SceneSerializer::GetSceneFilePath(IScene* scene, const std::string& sceneName) {
+    if (scene && scene->GetEngine()) {
+        std::string dir = scene->GetEngine()->GetSceneDirectory();
+        return dir + sceneName + ".json";
+    }
+    // フォールバック
     return "resources/scenes/" + sceneName + ".json";
 }

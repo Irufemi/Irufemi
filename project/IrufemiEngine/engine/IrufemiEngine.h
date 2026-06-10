@@ -2,26 +2,28 @@
 
 #include "Graphics/DirectX/DirectXCommon.h"
 #include "Graphics/DirectX/D3DResourceLeakChecker.h"
-#include "Platform/Input/InputManager.h"
-#include "Platform/WindowsAPI/WinApp.h"
-#include "Manager/DrawManager.h"
-#include "Manager/DebugUI.h"
-#include "Manager/EditorManager.h"
-#include "../Resource/Texture/TextureManager.h"
-#include "../Resource/Audio/AudioManager.h"
-#include "../Resource/Model/ModelManager.h"
-#include "../Resource/Model/AnimationManager.h"
+class InputManager;
+class WinApp;
+class DrawManager;
+class DebugUI;
+class IEngineExtension;
+class TextureManager;
+class AudioManager;
+class ModelManager;
+class AnimationManager;
 #include "Core/Type/BlendMode.h"
-#include "Core/Utility/Log.h"
-#include "../Framework/SceneManager.h"
-#include "../Framework/SceneTransition.h"
-#include "../Framework/LoadingScreen.h"
+class Log;
+class SceneManager;
+class SceneTransition;
+#include "Core/System/ILoadingScreen.h"
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Graphics/DirectX/RenderTexture.h"
 #include "Graphics/PostProcess/PostProcessManager.h"
 #include "Graphics/DirectX/DynamicConstantBuffer.h"
+#include "Graphics/Data/Material.h"
+#include "Graphics/Data/TransformationMatrix.h"
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
@@ -34,12 +36,16 @@
 #include <chrono>
 #include <algorithm>
 
-#include "Graphics/Font/FontManager.h"
+class FontManager;
 
 class SceneManager;
 class DebugUI;
 class VoxelParticleManager;
-#include "Graphics/Camera/CameraManager.h"
+class GameObject;
+class CameraManager;
+class CollisionManager;
+class GPUParticleManager;
+class PrimitiveManager;
 
 /**
  * @class IrufemiEngine
@@ -131,6 +137,23 @@ public: // メンバ関数
      */
     void SetInitialSceneName(std::string name) { initialSceneName_ = std::move(name); }
 
+    /**
+     * @brief エンジンの拡張機能（エディタなど）を追加する
+     */
+    void AddExtension(std::shared_ptr<IEngineExtension> extension) {
+        if (extension) {
+            extensions_.push_back(std::move(extension));
+        }
+    }
+
+    /**
+     * @brief ローディング画面の描画インターフェースを設定する
+     * @param loadingScreen アプリケーション側で実装したローディング画面
+     */
+    void SetLoadingScreen(std::shared_ptr<ILoadingScreen> loadingScreen) {
+        loadingScreen_ = std::move(loadingScreen);
+    }
+
  private: // メンバ関数(内部処理)
 
     /**
@@ -188,9 +211,9 @@ public: // ゲッター
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
     CameraManager* GetCameraManager() { return cameraManager_.get(); }
-#ifdef EditorMode
-    EditorManager* GetEditorManager() { return editorManager_.get(); }
-#endif
+    CollisionManager* GetCollisionManager() { return collisionManager_.get(); }
+    GPUParticleManager* GetGPUParticleManager() { return gpuParticleManager_.get(); }
+    PrimitiveManager* GetPrimitiveManager() { return primitiveManager_.get(); }
     /** 
      * @brief ポストプロセス管理者を取得
      * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
@@ -229,8 +252,19 @@ public: // ゲッター
     // SceneManager参照
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
     
+    // Sceneディレクトリ設定
+    const std::string& GetSceneDirectory() const { return sceneDirectory_; }
+    void SetSceneDirectory(const std::string& dir) { sceneDirectory_ = dir; }
+    
     // 追加: アセットがロード中かどうかを判定する
     bool IsAssetLoading() const;
+
+    // --- エディタ・プレイスタイル関連の状態 ---
+    bool IsPlayMode() const { return isPlayMode_; }
+    void SetPlayMode(bool play);
+
+    std::shared_ptr<GameObject> GetSelectedObject() const { return selectedObject_.lock(); }
+    void SetSelectedObject(std::shared_ptr<GameObject> obj) { selectedObject_ = obj; }
 
 public: // セッター
     void AddFenceValue(uint32_t index) { dxCommon_->GetFenceValue() += index; }
@@ -306,10 +340,8 @@ private: // メンバ変数
     // DebugUI
     std::unique_ptr<DebugUI> ui_ = nullptr;
     
-#ifdef EditorMode
-    // EditorManager
-    std::unique_ptr<EditorManager> editorManager_ = nullptr;
-#endif
+    // Extensions
+    std::vector<std::shared_ptr<IEngineExtension>> extensions_;
     
     // TextureManager
     std::unique_ptr<TextureManager> textureManager_ = nullptr;
@@ -320,8 +352,8 @@ private: // メンバ変数
     // SceneManager
     std::unique_ptr<SceneManager> sceneManager_ = nullptr;
     
-    // LoadingScreen (SceneManagerから移管)
-    std::unique_ptr<LoadingScreen> loadingScreen_ = nullptr;
+    // LoadingScreen (Application側から注入)
+    std::shared_ptr<ILoadingScreen> loadingScreen_ = nullptr;
     
     // FontManager
     std::unique_ptr<FontManager> fontManager_ = nullptr;
@@ -338,10 +370,19 @@ private: // メンバ変数
     // VoxelParticleManager
     std::unique_ptr<VoxelParticleManager> voxelParticleManager_ = nullptr;
 
+    // CollisionManager
+    std::unique_ptr<CollisionManager> collisionManager_ = nullptr;
+
+    // GPUParticleManager
+    std::unique_ptr<GPUParticleManager> gpuParticleManager_ = nullptr;
+
+    // PrimitiveManager
+    std::unique_ptr<PrimitiveManager> primitiveManager_ = nullptr;
+
     // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };
-
-    // バックバッファのインデックス
+    float timeScale_ = 1.0f;
+    std::string sceneDirectory_ = "resources/scenes/";
     UINT backBufferIndex_{};
     
     // Application から注入
@@ -357,7 +398,6 @@ private: // メンバ変数
     // 追加: ポーズ対応のゲーム内時間管理
     float gameTime_ = 0.0f;
     float gameDeltaTime_ = 0.0f;
-    float timeScale_ = 1.0f;
 
     // --- Dynamic Constant Buffer ---
     std::unique_ptr<DynamicConstantBuffer<Material>> materialBufferManager_ = nullptr;
@@ -369,4 +409,8 @@ private: // メンバ変数
     std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
     bool isFinalized_ = false; // 終了処理済みフラグ
+
+    bool isPlayMode_ = true;
+    std::weak_ptr<GameObject> selectedObject_;
+    bool sceneRequestedCursorLock_ = false;
 };

@@ -129,3 +129,92 @@ Vignetteエフェクトがより自然な減衰（Smooth Falloff）になるよ�
 - **`softness` (旧: power)**: 減衰の柔らかさ (デフォルト 0.5)
 
 これにより、画面端が完全に黒く潰れるのを防ぎ、滑らかなグラデーション表現が可能になっています。シーン初期化時などでパラメータを調整する際はご留意ください。
+
+---
+
+## Audio システム (AudioPlayer / AudioSourceComponent) の利用方法
+
+本エンジンのAudioシステムは、コンポーネントからの利用とプログラムからの直接利用の2通りの方法をサポートしています。
+これまでの `Bgm` や `Se` クラスは廃止され、統合された `AudioPlayer` クラスによって一元管理されます。リソースリークを防ぐ安全な設計（ComPtrやRAIIの活用）が内部で行われているため、プログラマは生成・破棄のタイミングを気にせず利用できます。
+
+### コンポーネントからの利用
+GameObject に `AudioSourceComponent` をアタッチすることで、インスペクタ（エディタ）上からサウンドの設定が可能です。
+- **Audio Type**: `BGM` か `SE` かを選択します。BGMはデフォルトでループ再生されます。
+- **File Path**: 再生するオーディオファイルのパス（例: `resources/audio/bgm/field.wav`）を指定します。
+- **Volume**: 音量を 0.0 ～ 1.0 の間で調整します。
+- **Loop**: ループ再生のON/OFFを任意に切り替えます。
+
+スクリプトから再生・停止を行う場合は、コンポーネントを取得して以下のように呼び出します。
+```cpp
+auto audioSource = GetComponent<AudioSourceComponent>();
+if (audioSource) {
+    audioSource->Play(); // 再生（インスペクタの設定が反映されます）
+    // audioSource->Stop(); // 停止したい場合
+}
+```
+
+### プログラムからの直接利用 (AudioPlayer)
+UIの操作音や、特定のコンポーネント（GameObject）に紐付かない効果音を再生する場合は、直接 `AudioPlayer` クラスのインスタンスを生成して使用するのが便利です。
+
+```cpp
+#include "Resource/Audio/AudioPlayer.h"
+#include "Resource/Audio/AudioType.h"
+
+// 1. エンジンから AudioManager を取得して、AudioPlayer を生成
+auto audioManager = engine->GetAudioManager();
+AudioPlayer clickSe(audioManager, AudioType::SE);
+
+// 2. 音声ファイルのパスを指定して初期化
+clickSe.Initialize("resources/audio/se/click.wav");
+
+// 3. 再生（オプションで音量設定などが可能）
+clickSe.SetVolume(0.8f);
+clickSe.Play(); // 1回再生
+
+// 再生中のサウンドを明示的に止めたい場合は Stop() を呼びます
+// clickSe.Stop();
+```
+
+---
+
+## アクションベース入力システム (Input Action System) の利用方法
+
+現在の入力システムは、キーボードやゲームパッドのボタンを直接監視するのではなく、物理入力と「論理アクション（例：Jump、Move）」を紐付けて管理する「アクションベース」へ移行しています。これにより、ユーザーのキーコンフィグの変更や複数デバイスの同時対応が容易になります。
+
+### 使い方（初期化時）
+ゲームの初期化処理（Sceneの `Initialize` など）で、`InputManager` に対してアクションと物理デバイス（キーやボタン）の対応付け（バインディング）を行います。
+
+```cpp
+InputManager* input = engine_->GetInputManager();
+
+// "Jump" アクションに Spaceキー と ゲームパッドのAボタン を割り当て
+input->BindAction("Jump", InputId::Keyboard_Space);
+input->BindAction("Jump", InputId::GamePad_A);
+
+// "MoveX" アクション（アナログ/1D軸入力）の割り当て
+// スケール値（第3引数）を使って、物理入力を最終的なアクション値に変換します。
+// 例: Dキー(1.0)は右方向(+1.0)に、Aキー(1.0)はマイナスを掛けて左方向(-1.0)にする
+input->BindAction("MoveX", InputId::Keyboard_D, 1.0f);
+input->BindAction("MoveX", InputId::Keyboard_A, -1.0f);
+// パッドのスティックはそのままの値(-1.0～1.0)を使う、あるいは 0.5f 等を掛けて感度調整も可能
+input->BindAction("MoveX", InputId::GamePad_LeftStickX, 1.0f);
+```
+
+### 使い方（更新時）
+毎フレームの更新処理（Sceneの `Update` など）では、バインドしたアクション名を指定して状態を取得します。
+
+```cpp
+InputManager* input = engine_->GetInputManager();
+
+// デジタル入力（ボタンが押された瞬間）の判定
+if (input->IsActionTriggered("Jump")) {
+    // ジャンプ処理を実行
+}
+
+// アナログ入力（移動量など）の取得
+float moveInputX = input->GetActionValue("MoveX").x;
+// プレイヤーの移動処理へ
+```
+
+※ 互換性維持のため、従来の `IsKeyDown(VK_SPACE)` などのAPIも引き続き使用可能ですが、新しくコードを書く際はアクションシステム (`BindAction`, `GetActionValue` 等) を積極的に利用することが推奨されます。
+

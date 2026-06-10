@@ -18,6 +18,12 @@ public:
     void Initialize() override;
     void Update() override;
     void DrawDebug(); // ComponentにはDrawDebugがないためoverrideを外す
+    
+    static void SetCollisionManager(CollisionManager* manager) { collisionManager_ = manager; }
+    
+protected:
+    inline static CollisionManager* collisionManager_ = nullptr;
+
 #ifdef EditorMode
     friend class RaycastComponentEditor;
 #endif

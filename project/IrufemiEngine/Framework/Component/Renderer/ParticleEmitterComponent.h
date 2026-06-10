@@ -2,7 +2,7 @@
 #include "../Component.h"
 #include <string>
 #include <memory>
-#include "Renderer/ParticleGPU/ParticleObject.h"
+#include "Renderer/Object/Particle/ParticleObject.h"
 
 class TransformComponent;
 

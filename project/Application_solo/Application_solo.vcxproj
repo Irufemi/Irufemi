@@ -197,7 +197,7 @@ exit 0</Command>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)IrufemiEngine;$(SolutionDir)externals;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals\curl\include;$(SolutionDir)packages\freetype2.2.6.0.1\build\native\include;$(SolutionDir)externals\imgui;$(SolutionDir)externals\nlohmann\include;$(SolutionDir)IrufemiEngine\Engine</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)IrufemiEngine;$(SolutionDir)IrufemiEditor;$(SolutionDir)externals;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals\curl\include;$(SolutionDir)packages\freetype2.2.6.0.1\build\native\include;$(SolutionDir)externals\imgui;$(SolutionDir)externals\nlohmann\include;$(SolutionDir)IrufemiEngine\Engine</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -225,7 +225,7 @@ exit 0</Command>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">MaxSpeed</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
-      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">true</WholeProgramOptimization>
+      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">false</WholeProgramOptimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</WholeProgramOptimization>
     </ClCompile>
@@ -235,6 +235,8 @@ exit 0</Command>
     <ClCompile Include="scene\Clear\ClearScene.cpp" />
     <ClCompile Include="scene\StageSelect\SelectScene.cpp" />
     <ClCompile Include="scene\Title\TitleScene.cpp" />
+    <ClCompile Include="UI\LoadingScreen.cpp" />
+    <ClCompile Include="UI\PromptController.cpp" />
     <ClCompile Include="components\RailPathComponent.cpp" />
     <ClCompile Include="components\RailShooterPlayerComponent.cpp" />
     <ClCompile Include="components\RailShooterEnemyComponent.cpp" />
@@ -253,6 +255,8 @@ exit 0</Command>
     <ClInclude Include="scene\Clear\ClearScene.h" />
     <ClInclude Include="scene\StageSelect\SelectScene.h" />
     <ClInclude Include="scene\Title\TitleScene.h" />
+    <ClInclude Include="UI\LoadingScreen.h" />
+    <ClInclude Include="UI\PromptController.h" />
     <ClInclude Include="components\RailPathComponent.h" />
     <ClInclude Include="components\RailShooterPlayerComponent.h" />
     <ClInclude Include="components\RailShooterEnemyComponent.h" />
@@ -265,6 +269,9 @@ exit 0</Command>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">
       <Project>{e7d83bab-90f9-4841-b6eb-516d3e28214f}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\IrufemiEditor\IrufemiEditor.vcxproj">
+      <Project>{6B9B6722-45B6-429C-A66D-5ADD2171AD79}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

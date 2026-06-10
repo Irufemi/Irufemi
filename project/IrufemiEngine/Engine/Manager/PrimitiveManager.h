@@ -2,8 +2,6 @@
 
 #include "../Graphics/Data/VertexData.h"
 #include "../Core/Type/PrimitiveType.h"
-
-#include "../Core/Pattern/Singleton.h"
 #include <cstdint>
 #include <vector>
 #include <map>
@@ -50,9 +48,8 @@ struct RingParams {
  * @details 頻繁に使用される標準的な形状の CPU データおよび GPU リソース（頂点/インデックスバッファ）をキャッシュし、
  *          効率的な再利用を可能にします。
  */
-class PrimitiveManager : public Singleton<PrimitiveManager>
+class PrimitiveManager
 {
-    friend class Singleton<PrimitiveManager>;
 
 public:
     /** @name キャッシュデータの取得 */
@@ -103,7 +100,7 @@ public:
     static PrimitiveData CreateCircle(float radius, uint32_t segments);
     ///@}
 
-private:
+public:
     PrimitiveManager() = default;
     ~PrimitiveManager() = default;
     PrimitiveManager(const PrimitiveManager&) = delete;

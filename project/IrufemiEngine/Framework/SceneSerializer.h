@@ -30,7 +30,7 @@ public:
     /**
      * @brief 指定したシーン名の JSON ファイルが存在するか確認する
      */
-    static bool Exists(const std::string& sceneName);
+    static bool Exists(IScene* scene, const std::string& sceneName);
 
     /**
      * @brief 特定の GameObject をプレハブとして保存する
@@ -48,7 +48,7 @@ public:
 
 private:
     /**
-     * @brief シーン名からファイルパスを生成する (resources/scenes/[Name].json)
+     * @brief シーン名からファイルパスを生成する(設定されたパス/[Name].json)
      */
-    static std::string GetSceneFilePath(const std::string& sceneName);
+    static std::string GetSceneFilePath(IScene* scene, const std::string& sceneName);
 };

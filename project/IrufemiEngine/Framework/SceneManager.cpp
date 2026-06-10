@@ -1,4 +1,6 @@
 #include "SceneManager.h"
+#include "Resource/Audio/AudioManager.h"
+#include "Engine/Manager/DrawManager.h"
 #include "IScene.h"
 #include "BaseScene.h"
 #include "../Engine/IrufemiEngine.h"
@@ -172,6 +174,12 @@ void SceneManager::LoadScene(const std::string& sceneJsonName, SceneTransition::
 bool SceneManager::UpdateLoadStatus() {
     bool isLoading = IsLoading();
 
+    if (isLoading) {
+        loadingTimer_ += engine_->GetDeltaTime();
+    } else {
+        loadingTimer_ = 0.0f;
+    }
+
     if (isLoading != wasLoading_) {
         if (isLoading) {
             // ロード中はマウスカーソルを表示させる
@@ -344,6 +352,12 @@ std::vector<SceneManager::Key> SceneManager::GetRegisteredKeys() const { return 
 
 bool SceneManager::IsLoading() const {
     return (transitionPhase_ == TransitionPhase::Initializing) || engine_->IsAssetLoading();
+}
+
+bool SceneManager::ShouldDrawLoadingScreen() const {
+    // チラつき防止：ロード状態になってから0.1秒以上経過した場合のみ描画する
+    // (初期化フェーズなどの場合は即座に表示してもよいが、ここでは一律でタイマー判定する)
+    return IsLoading() && (loadingTimer_ >= 0.1f);
 }
 
 void SceneManager::StartAsyncInitialize(const Key& next) {

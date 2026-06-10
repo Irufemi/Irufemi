@@ -4,6 +4,7 @@
 #include <memory>
 
 class GameObject;
+class ModelBatchRendererComponent;
 
 struct VirtualDebris {
     int id;
@@ -43,4 +44,6 @@ private:
     // 仮想データリスト
     std::vector<VirtualDebris> virtualDebrisList_;
     int nextVirtualId_ = 0;
+
+    ModelBatchRendererComponent* batchComponent_ = nullptr;
 };
