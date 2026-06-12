@@ -412,5 +412,8 @@ private: // メンバ変数
 
     bool isPlayMode_ = true;
     std::weak_ptr<GameObject> selectedObject_;
-    bool sceneRequestedCursorLock_ = false;
+#if defined(_DEBUG) || defined(EditorMode)
+    std::unique_ptr<class DirectoryWatcher> shaderWatcher_ = nullptr;
+    std::atomic<bool> shouldReloadShaders_{false};
+#endif
 };

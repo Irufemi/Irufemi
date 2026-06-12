@@ -15,6 +15,7 @@
 #include "Core/Utility/Log.h"
 #include "../Framework/SceneManager.h"
 #include "../Framework/SceneTransition.h"
+#include "Core/System/DirectoryWatcher.h"
 #include "Graphics/Font/FontManager.h"
 
 IrufemiEngine::IrufemiEngine() = default;
@@ -341,6 +342,13 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   
   // SceneManager 構築(エンジンは所有のみ)
   sceneManager_ = std::make_unique<SceneManager>(this);
+
+#if defined(_DEBUG) || defined(EditorMode)
+  // シェーダーのホットリロード監視（別スレッドで動作）
+  shaderWatcher_ = std::make_unique<DirectoryWatcher>("resources/shaders", [this]() {
+      shouldReloadShaders_ = true;
+  });
+#endif
 }
 
   // クリアカラーをfloat配列で持つ初期化
@@ -653,6 +661,26 @@ void IrufemiEngine::StartFrame() {
   gameTime_ += gameDeltaTime_;
 
   lastFrameTime_ = now;
+
+#if defined(_DEBUG) || defined(EditorMode)
+  // ホットリロードの発火チェック
+  if (shouldReloadShaders_.exchange(false)) {
+      if (log_) log_->Output("[Shader Hot Reload] Changes detected. Recompiling shaders...\n");
+      if (dxCommon_ && dxCommon_->GetPSOManager() && dxCommon_->GetShaderManager()) {
+          // 安全のためにGPU処理を待機（使用中のシェーダーを破棄しないようにする）
+          dxCommon_->WaitForGPU();
+
+          // キャッシュの破棄
+          dxCommon_->GetPSOManager()->ClearCache();
+          dxCommon_->GetShaderManager()->ClearCache();
+
+          // 再コンパイル
+          dxCommon_->GetPSOManager()->PreWarmCommonPSOs();
+
+          if (log_) log_->Output("[Shader Hot Reload] Compilation finished.\n");
+      }
+  }
+#endif
 }
 
   // フレーム途中処理

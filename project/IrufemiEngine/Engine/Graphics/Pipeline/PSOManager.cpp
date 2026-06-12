@@ -255,6 +255,17 @@ ID3D12PipelineState* PSOManager::GetComputePSO(const std::string& name) {
 void PSOManager::ClearCache() { 
     cache_.clear(); 
     computeCache_.clear();
+
+    // ホットリロード等で強制クリアされた場合、古いディスクキャッシュも破棄する
+    std::filesystem::path cacheDir = "resources/cache/pso/";
+    if (std::filesystem::exists(cacheDir)) {
+        for (const auto& entry : std::filesystem::directory_iterator(cacheDir)) {
+            if (entry.path().extension() == ".pso") {
+                std::error_code ec;
+                std::filesystem::remove(entry.path(), ec);
+            }
+        }
+    }
 }
 
 void PSOManager::PreWarmCommonPSOs() {
