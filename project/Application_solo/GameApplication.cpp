@@ -17,6 +17,7 @@
 #include "components/DebrisManagerComponent.h"
 #include "components/GravityPlayerComponent.h"
 #include "components/DebugEnemySpawnerComponent.h"
+#include "components/BossComponent.h"
 
 // UI
 #include "UI/LoadingScreen.h"
@@ -88,7 +89,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("DebrisManagerComponent", []() { return std::make_shared<DebrisManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", []() { return std::make_shared<GravityPlayerComponent>(); });
     ComponentFactory::Register("DebugEnemySpawnerComponent", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
-
+    ComponentFactory::Register("BossComponent", []() { return std::make_shared<BossComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

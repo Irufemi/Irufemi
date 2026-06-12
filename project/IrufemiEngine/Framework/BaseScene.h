@@ -90,6 +90,11 @@ public:
         return nullptr;
     }
 
+    /**
+     * @brief オブジェクトの名前から該当する shared_ptr の GameObject を探して返す
+     */
+    std::shared_ptr<GameObject> FindGameObject(const std::string& name);
+
     // --- ライフサイクル関数 ---
     
     /**

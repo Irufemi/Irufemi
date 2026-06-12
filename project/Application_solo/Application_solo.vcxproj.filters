@@ -87,6 +87,9 @@
     <ClCompile Include="components\DebrisComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\BossComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClCompile Include="components\DebrisManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
@@ -141,6 +144,9 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\DebrisComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\BossComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\DebrisManagerComponent.h">

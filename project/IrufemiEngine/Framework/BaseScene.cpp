@@ -25,6 +25,13 @@
 BaseScene::BaseScene() = default;
 BaseScene::~BaseScene() = default;
 
+std::shared_ptr<GameObject> BaseScene::FindGameObject(const std::string& name) {
+    for (auto& obj : gameObjects_) {
+        if (obj && obj->GetName() == name) return obj;
+    }
+    return nullptr;
+}
+
 void BaseScene::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 

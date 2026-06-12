@@ -39,7 +39,6 @@ public:
 private:
     std::unique_ptr<ObjectPool<GameObject>> pool_;
     int poolSize_ = 500;
-    bool isPoolInitialized_ = false;
 
     // 仮想データリスト
     std::vector<VirtualDebris> virtualDebrisList_;

@@ -18,42 +18,37 @@ void DebrisManagerComponent::OnRegisterProperties() {
 }
 
 void DebrisManagerComponent::Initialize() {
-    // Sceneへの追加を確実に行うため、プールの生成は最初のUpdateで行う
-    isPoolInitialized_ = false;
-
     // エディタやシーンロード時にも Renderer の存在を確実にするため、ここで取得・追加する
     batchComponent_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
     if (!batchComponent_) {
         batchComponent_ = gameObject_->AddComponent<ModelBatchRendererComponent>().get();
     }
+
+    // ガレキのプレハブを生成するファクトリ関数
+    auto debrisFactory = [this]() -> std::shared_ptr<GameObject> {
+        auto obj = std::make_shared<GameObject>("Debris");
+        obj->AddComponent<TransformComponent>();
+        
+        // 少し小さめに設定
+        obj->GetComponent<TransformComponent>()->scale_ = { 0.5f, 0.5f, 0.5f };
+        
+        obj->AddComponent<DebrisComponent>();
+        
+        // プール内にある間は非アクティブにしておく
+        obj->SetIsActive(false);
+        
+        // シーンの Update 中の配列破壊を防ぐため、Manager の子オブジェクトとして登録する
+        if (gameObject_) {
+            gameObject_->AddChild(obj);
+        }
+        return obj;
+    };
+
+    // プールを初期化
+    pool_ = std::make_unique<ObjectPool<GameObject>>(poolSize_, debrisFactory);
 }
 
 void DebrisManagerComponent::Update() {
-    if (!isPoolInitialized_) {
-        // ガレキのプレハブを生成するファクトリ関数
-        auto debrisFactory = [this]() -> std::shared_ptr<GameObject> {
-            auto obj = std::make_shared<GameObject>("Debris");
-            obj->AddComponent<TransformComponent>();
-            
-            // 少し小さめに設定
-            obj->GetComponent<TransformComponent>()->scale_ = { 0.5f, 0.5f, 0.5f };
-            
-            obj->AddComponent<DebrisComponent>();
-            
-            // プール内にある間は非アクティブにしておく
-            obj->SetIsActive(false);
-            
-            // シーンの Update 中の配列破壊を防ぐため、Manager の子オブジェクトとして登録する
-            if (gameObject_) {
-                gameObject_->AddChild(obj);
-            }
-            return obj;
-        };
-
-        // プールを初期化
-        pool_ = std::make_unique<ObjectPool<GameObject>>(poolSize_, debrisFactory);
-        isPoolInitialized_ = true;
-    }
 
     UpdateStreaming();
 
@@ -115,11 +110,10 @@ void DebrisManagerComponent::Update() {
 
     if (batchComponent_) {
         batchComponent_->ClearInstances();
-        for (const auto& vd : virtualDebrisList_) {
-            if (vd.isDestroyed) continue;
-            
-            if (vd.isSpawned && vd.instance) {
-                auto t = vd.instance->GetComponent<TransformComponent>();
+        // プールの実体（DebrisManagerの子オブジェクト）のうち、現在アクティブになっているもの全てを描画バッチに登録する
+        for (const auto& child : gameObject_->GetChildren()) {
+            if (child && child->GetIsActive() && !child->IsDestroyed()) {
+                auto t = child->GetComponent<TransformComponent>();
                 if (t) {
                     batchComponent_->AddInstanceWorld(t->GetWorldMatrix());
                 }
@@ -133,6 +127,11 @@ std::shared_ptr<GameObject> DebrisManagerComponent::AcquireDebris() {
     auto obj = pool_->Acquire();
     if (obj) {
         obj->SetIsActive(true);
+        auto comp = obj->GetComponent<DebrisComponent>();
+        if (comp) {
+            comp->SetManager(this);
+            comp->SetVirtualId(-1); // ボス取得時など仮想IDが不要な場合のための初期化
+        }
     }
     return obj;
 }

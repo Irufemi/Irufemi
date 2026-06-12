@@ -242,6 +242,7 @@ exit 0</Command>
     <ClCompile Include="components\RailShooterEnemyComponent.cpp" />
     <ClCompile Include="components\CameraFollowPlayerComponent.cpp" />
     <ClCompile Include="components\DebrisComponent.cpp" />
+    <ClCompile Include="components\BossComponent.cpp" />
     <ClCompile Include="components\DebrisManagerComponent.cpp" />
     <ClCompile Include="components\GravityPlayerComponent.cpp" />
     <ClCompile Include="components\DebugEnemySpawnerComponent.cpp" />
@@ -262,6 +263,7 @@ exit 0</Command>
     <ClInclude Include="components\RailShooterEnemyComponent.h" />
     <ClInclude Include="components\CameraFollowPlayerComponent.h" />
     <ClInclude Include="components\DebrisComponent.h" />
+    <ClInclude Include="components\BossComponent.h" />
     <ClInclude Include="components\DebrisManagerComponent.h" />
     <ClInclude Include="components\GravityPlayerComponent.h" />
     <ClInclude Include="components\DebugEnemySpawnerComponent.h" />

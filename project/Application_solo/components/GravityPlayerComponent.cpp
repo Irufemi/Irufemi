@@ -12,6 +12,7 @@
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "RailShooterEnemyComponent.h"
+#include "BossComponent.h"
 #include <algorithm>
 
 void GravityPlayerComponent::OnRegisterProperties() {
@@ -57,6 +58,27 @@ void GravityPlayerComponent::HandlePullInput() {
 
         auto transform = gameObject_->GetComponent<TransformComponent>();
         if (!transform) return;
+
+        // 1. ロックオン対象がBossなら、Bossからガレキを奪う
+        if (lockedTarget_) {
+            auto bossComp = lockedTarget_->GetComponent<BossComponent>();
+            if (bossComp && bossComp->GetState() == BossState::Idle) {
+                auto debrisObj = bossComp->ExtractDebris();
+                if (debrisObj) {
+                    auto debrisComp = debrisObj->GetComponent<DebrisComponent>();
+                    if (debrisComp) {
+                        debrisComp->SetTarget(gameObject_);
+                        debrisComp->SetState(DebrisState::Pulled);
+                        debrisComp->SetOrbitParams(
+                            Random::GeneratorFloat(0.0f, 6.28f),
+                            Random::GeneratorFloat(2.0f, 4.0f)
+                        );
+                        orbitingDebris_.push_back(debrisObj);
+                        return; // Bossから奪った場合は野良ガレキ探索はスキップ
+                    }
+                }
+            }
+        }
 
         // 一番親である DebrisManager オブジェクト（子としてガレキを保持している）を探す
         std::shared_ptr<GameObject> debrisManager = nullptr;
