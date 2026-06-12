@@ -110,3 +110,4 @@ debuglog.txt
 /project/Dumps
 /logs/
 /project/Application/Dumps
+.env
