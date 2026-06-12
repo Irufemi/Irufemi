@@ -9,12 +9,12 @@
 ```hlsl
 struct VertexShaderOutput {
     float4 position : SV_POSITION;
-    float2 texcoord : TEXCOORD0;
-    float3 normal : NORMAL0;
-    float4 color : COLOR0;
+    float2 texcoord : TEXCOORD;
 };
 ```
-- メイン関数は必ず `float4 main(VertexShaderOutput input) : SV_TARGET0` としてください。
+- 【超重要】上記の `VertexShaderOutput` 構造体は、1行も省略せず、要素も変更せずに全く同じ内容を必ずソースコード内に記述してください。セマンティクス（例：`TEXCOORD`）が欠けると、コンパイルは通ってもアプリがクラッシュします。
+- 【絶対条件】メイン関数（エントリーポイント）の名前は絶対に `main` にしてください。 `ps_main` や `PixelShader` 等はコンパイルエラーになります。
+  例: `float4 main(VertexShaderOutput input) : SV_TARGET0`
 
 2. 定数バッファとリソース（RootSlot仕様）
 エンジンの `RootSignatureConfig` に従い、以下のレジスタのみを使用できます。

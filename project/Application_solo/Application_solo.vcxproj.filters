@@ -66,6 +66,9 @@
     <ClCompile Include="scene\TL1\TL1Scene.cpp">
       <Filter>Scene\TL1</Filter>
     </ClCompile>
+    <ClCompile Include="scene\TL1\MagicBrushClient.cpp">
+      <Filter>Scene\TL1</Filter>
+    </ClCompile>
     <ClCompile Include="scene\StageSelect\SelectScene.cpp">
       <Filter>Scene\StatgeSelect</Filter>
     </ClCompile>
@@ -126,6 +129,9 @@
       <Filter>Scene\Debug</Filter>
     </ClInclude>
     <ClInclude Include="scene\TL1\TL1Scene.h">
+      <Filter>Scene\TL1</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\TL1\MagicBrushClient.h">
       <Filter>Scene\TL1</Filter>
     </ClInclude>
     <ClInclude Include="scene\StageSelect\SelectScene.h">

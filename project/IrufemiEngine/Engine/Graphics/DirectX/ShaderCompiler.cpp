@@ -27,7 +27,8 @@ void ShaderCompiler::Initialize() {
 Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     const std::wstring& filePath,
     const wchar_t* profile,
-    const ShaderCompileOptions& options
+    const ShaderCompileOptions& options,
+    std::string* outErrorLog
 ) {
     // 1. HLSLファイルの読み込み
     Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
@@ -103,7 +104,12 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
             fclose(f);
         }
         
-        assert(false && "Shader Compile Error");
+        if (outErrorLog) {
+            *outErrorLog = errStr;
+            return nullptr;
+        } else {
+            assert(false && "Shader Compile Error");
+        }
     }
 
     // 5. コンパイル済みバイナリの取得

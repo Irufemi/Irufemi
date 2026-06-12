@@ -2,6 +2,11 @@
 
 #include "Framework/BaseScene.h"
 #include <string>
+#include <memory>
+#include <windows.h>
+#include <dxcapi.h>
+#include <wrl.h>
+#include "MagicBrushClient.h"
 
 class IrufemiEngine;
 
@@ -11,7 +16,7 @@ class IrufemiEngine;
 class TL1Scene : public BaseScene {
 public: // メンバ関数
     TL1Scene() = default;
-    ~TL1Scene() override = default;
+    ~TL1Scene() override;
 
     void Initialize(IrufemiEngine* engine) override;
     void Update() override;
@@ -21,4 +26,8 @@ public: // メンバ関数
 private: // メンバ変数
     std::string promptText_ = "";
     std::string imagePath_ = "";
+    std::unique_ptr<MagicBrushClient> magicBrushClient_;
+
+    Microsoft::WRL::ComPtr<IDxcBlob> vsBlob_ = nullptr;
+    bool isShaderRegistered_ = false;
 };
