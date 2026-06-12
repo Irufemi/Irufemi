@@ -7,6 +7,8 @@
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Platform/WindowsAPI/WinApp.h"
 #include <commdlg.h>
+#include <shlobj.h>
+#include <shobjidl.h>
 #include <iomanip>
 #include <sstream>
 #include <ctime>
@@ -86,6 +88,7 @@ void TL1Scene::DrawDebugTab() {
         static char promptBuffer[512] = "";
         static char refImagePathBuffer[MAX_PATH] = "";
         static char shaderNameBuffer[128] = "";
+        static char outDirBuffer[MAX_PATH] = "resources/shaders/generated/";
         
         // 簡易通知メッセージ用の静的変数
         static std::string notificationMsg = "";
@@ -165,6 +168,44 @@ void TL1Scene::DrawDebugTab() {
 
         ImGui::Separator();
         ImGui::Text("Shader Settings");
+        
+        // Output Directory (出力先フォルダ)
+        ImGui::InputText("Output Directory", outDirBuffer, sizeof(outDirBuffer));
+        ImGui::SameLine();
+        if (ImGui::Button("Browse Dir...")) {
+            IFileOpenDialog* pfd = nullptr;
+            if (SUCCEEDED(CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd)))) {
+                DWORD dwOptions;
+                if (SUCCEEDED(pfd->GetOptions(&dwOptions))) {
+                    pfd->SetOptions(dwOptions | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+                }
+                
+                HWND hwnd = engine_->GetWinApp() ? engine_->GetWinApp()->GetHwnd() : nullptr;
+                if (SUCCEEDED(pfd->Show(hwnd))) {
+                    IShellItem* psi = nullptr;
+                    if (SUCCEEDED(pfd->GetResult(&psi))) {
+                        PWSTR pszFilePath = nullptr;
+                        if (SUCCEEDED(psi->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath))) {
+                            // WideChar -> UTF-8 マルチバイト変換
+                            int size = WideCharToMultiByte(CP_UTF8, 0, pszFilePath, -1, nullptr, 0, nullptr, nullptr);
+                            if (size > 0 && size <= MAX_PATH) {
+                                WideCharToMultiByte(CP_UTF8, 0, pszFilePath, -1, outDirBuffer, size, nullptr, nullptr);
+                                
+                                // パスの末尾が '/' または '\' でない場合は補完
+                                size_t len = strlen(outDirBuffer);
+                                if (len > 0 && outDirBuffer[len - 1] != '/' && outDirBuffer[len - 1] != '\\') {
+                                    strncat_s(outDirBuffer, "/", _TRUNCATE);
+                                }
+                            }
+                            CoTaskMemFree(pszFilePath);
+                        }
+                        psi->Release();
+                    }
+                }
+                pfd->Release();
+            }
+        }
+        
         ImGui::InputText("Shader Name", shaderNameBuffer, sizeof(shaderNameBuffer));
         ImGui::TextDisabled("(Leave empty to auto-generate name)");
 
@@ -188,10 +229,11 @@ void TL1Scene::DrawDebugTab() {
             } else {
                 shaderName_ = inputName;
             }
+            outputDirectory_ = outDirBuffer;
 
             if (magicBrushClient_) {
                 isShaderRegistered_ = false; // 再登録できるようにフラグをリセット
-                magicBrushClient_->StartGeneration(promptText_, referenceImagePath_, shaderName_);
+                magicBrushClient_->StartGeneration(promptText_, referenceImagePath_, shaderName_, outputDirectory_);
             }
         }
         if (!isRunning) {

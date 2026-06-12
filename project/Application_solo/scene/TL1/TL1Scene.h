@@ -29,6 +29,7 @@ private: // メンバ変数
     std::string textureImagePath_ = "";   // C++入力テクスチャ用
     
     std::string shaderName_ = "MagicBrushPS"; // 保存・登録用のシェーダー名
+    std::string outputDirectory_ = "resources/shaders/generated/"; // 出力先フォルダ
     
     std::unique_ptr<MagicBrushClient> magicBrushClient_;
 
