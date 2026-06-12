@@ -15,23 +15,19 @@ MagicBrushClient::~MagicBrushClient() {
     StopPythonServer();
 }
 
-void MagicBrushClient::StartGeneration(const std::string& prompt, const std::string& imagePath) {
-    if (state_ != State::Idle && state_ != State::Error && state_ != State::Success) {
-        return; // すでに実行中
+void MagicBrushClient::StartGeneration(const std::string& prompt, const std::string& referenceImagePath) {
+    if (state_ == State::Generating || state_ == State::Compiling || state_ == State::Fixing) {
+        return; // 既に実行中
     }
-    
     state_ = State::Generating;
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        errorMessage_.clear();
-        resultBlob_.Reset();
-    }
-    
+    errorMessage_ = "";
+    resultBlob_ = nullptr;
+
     if (workerThread_.joinable()) {
         workerThread_.join();
     }
-    
-    workerThread_ = std::thread(&MagicBrushClient::ProcessThread, this, prompt, imagePath);
+
+    workerThread_ = std::thread(&MagicBrushClient::ProcessThread, this, prompt, referenceImagePath);
 }
 
 std::string MagicBrushClient::GetErrorMessage() const {
@@ -164,9 +160,11 @@ std::string MagicBrushClient::SendPostRequest(const std::string& endpoint, const
     return result;
 }
 
-void MagicBrushClient::ProcessThread(std::string prompt, std::string imagePath) {
+void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceImagePath) {
+    std::string currentHlsl = "";
+    
     // 1. 初回リクエストの作成
-    std::string jsonReq = "{ \"prompt\": \"" + EscapeJSON(prompt) + "\", \"image_path\": \"" + EscapeJSON(imagePath) + "\" }";
+    std::string jsonReq = "{ \"prompt\": \"" + EscapeJSON(prompt) + "\", \"image_path\": \"" + EscapeJSON(referenceImagePath) + "\" }";
     
     std::string hlslCode = SendPostRequest("/generate", jsonReq);
     

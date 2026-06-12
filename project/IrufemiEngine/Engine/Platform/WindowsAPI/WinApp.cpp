@@ -12,6 +12,7 @@
 #include <Windows.h>
 #include <DbgHelp.h>
 #include <strsafe.h>
+#include <shellapi.h>
 
 #define ENABLE_ESCAPE_EXIT 0 // 1: 有効, 0: 無効
 
@@ -104,6 +105,9 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::w
     rid[0].dwFlags = 0;        // ウィンドウがアクティブな時のみ受け取る
     rid[0].hwndTarget = hwnd_;
     RegisterRawInputDevices(rid, 1, sizeof(rid[0]));
+
+    // ドラッグ＆ドロップを受け付ける
+    DragAcceptFiles(hwnd_, TRUE);
 
     return true;
 }
@@ -274,6 +278,23 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     case WM_CLOSE:
         DestroyWindow(hWnd);
         return 0;
+    case WM_DROPFILES: {
+        HDROP hDrop = reinterpret_cast<HDROP>(wParam);
+        UINT fileCount = DragQueryFileW(hDrop, 0xFFFFFFFF, nullptr, 0);
+        if (fileCount > 0) {
+            // 最初のファイルだけ取得
+            wchar_t filePathW[MAX_PATH];
+            DragQueryFileW(hDrop, 0, filePathW, MAX_PATH);
+            
+            // ワイド文字からマルチバイト文字(UTF-8想定、またはShiftJIS)に変換
+            char filePathA[MAX_PATH];
+            WideCharToMultiByte(CP_UTF8, 0, filePathW, -1, filePathA, MAX_PATH, nullptr, nullptr);
+            
+            droppedFilePath_ = filePathA;
+        }
+        DragFinish(hDrop);
+        return 0;
+    }
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;

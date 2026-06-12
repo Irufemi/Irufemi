@@ -27,10 +27,14 @@ async def generate_shader(request: GenerateRequest):
     Geminiに送信してHLSLを生成するためのエンドポイント
     """
     try:
-        if not os.path.exists(request.image_path):
-            raise Exception(f"Image not found at path: {request.image_path}")
-            
-        pil_image = Image.open(request.image_path)
+        contents_list = []
+        
+        # 画像が指定されている場合のみ画像を開いてリストに追加
+        if request.image_path and request.image_path.strip():
+            if not os.path.exists(request.image_path):
+                raise Exception(f"Image not found at path: {request.image_path}")
+            pil_image = Image.open(request.image_path)
+            contents_list.append(pil_image)
         
         # システムプロンプトの読み込み
         system_instruction_text = ""
@@ -45,17 +49,40 @@ async def generate_shader(request: GenerateRequest):
             raise Exception("GEMINI_API_KEY is not set in .env file or environment variables.")
         client = genai.Client(api_key=api_key)
         
+        # プロンプトが空の場合はデフォルトテキストを設定
+        user_prompt = request.prompt.strip()
+        if not user_prompt:
+            if not contents_list:
+                raise Exception("Prompt and Image Path cannot both be empty.")
+            user_prompt = "この画像のビジュアルや色合いの雰囲気を、HLSLシェーダー（PostProcess / Shadertoy的アプローチ）で再現してください。"
+
         # APIキャッシュ回避だけでなく、AIに「違うものを出せ」と強烈に指示する
-        unique_prompt = f"ユーザーからのリクエスト: {request.prompt}\n\n【AIへの追加指示】\n同じリクエストであっても、絶対に前回とは異なるアプローチ（使用する数学関数、色の組み合わせ、空間の歪ませ方など）を採用してください。\nランダムシード [ {time.time()}_{random.randint(0, 10000)} ] を基準にして、今回はどのような斬新なビジュアルにするか全く新しい構成でHLSLコードを記述してください。\nマンネリ化した同じパターンの出力は避けてください。"
+        unique_prompt = f"ユーザーからのリクエスト: {user_prompt}\n\n【AIへの追加指示】\n同じリクエストであっても、絶対に前回とは異なるアプローチ（使用する数学関数、色の組み合わせ、空間の歪ませ方など）を採用してください。\nランダムシード [ {time.time()}_{random.randint(0, 10000)} ] を基準にして、今回はどのような斬新なビジュアルにするか全く新しい構成でHLSLコードを記述してください。\nマンネリ化した同じパターンの出力は避けてください。"
+        contents_list.append(unique_prompt)
         
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=[pil_image, unique_prompt],
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction_text,
-                temperature=0.8
-            )
-        )
+        # 自動リトライロジック (最大3回)
+        max_retries = 3
+        retry_delay = 3
+        response = None
+        
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=contents_list,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction_text,
+                        temperature=0.8
+                    )
+                )
+                break # 成功したらループを抜ける
+            except Exception as e:
+                error_str = str(e)
+                if "503" in error_str or "429" in error_str or "UNAVAILABLE" in error_str:
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                        continue
+                raise e # リトライ対象外、または最大試行回数に達した場合はエラーを投げる
         
         hlsl_code = response.text
         if "```hlsl" in hlsl_code:
@@ -103,14 +130,29 @@ async def fix_error(request: FixRequest):
 {request.code}
 ```
 """
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=[fix_prompt],
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction_text,
-                temperature=0.8
-            )
-        )
+        # 自動リトライロジック (最大3回)
+        max_retries = 3
+        retry_delay = 3
+        response = None
+        
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=[fix_prompt],
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction_text,
+                        temperature=0.8
+                    )
+                )
+                break
+            except Exception as e:
+                error_str = str(e)
+                if "503" in error_str or "429" in error_str or "UNAVAILABLE" in error_str:
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                        continue
+                raise e
         
         hlsl_code = response.text
         if "```hlsl" in hlsl_code:

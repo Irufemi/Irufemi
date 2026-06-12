@@ -251,6 +251,7 @@ public: // ゲッター
     
     // SceneManager参照
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
+    WinApp* GetWinApp() const { return winApp_.get(); }
     
     // Sceneディレクトリ設定
     const std::string& GetSceneDirectory() const { return sceneDirectory_; }

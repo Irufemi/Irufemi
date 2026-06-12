@@ -59,6 +59,21 @@ public:
     int GetClientWidth() const { return clientWidth_; }
     int GetClientHeight() const { return clientHeight_; }
     bool IsCursorLocked() const { return cursorLocked_; }
+
+    /**
+     * @brief D&Dでドロップされたファイルパスを取得する
+     */
+    std::string GetDroppedFilePath() const { return droppedFilePath_; }
+
+    /**
+     * @brief ドロップされたファイルパスをクリアする
+     */
+    void ClearDroppedFilePath() { droppedFilePath_.clear(); }
+
+    /**
+     * @brief ドロップされたファイルパスを設定する（内部用）
+     */
+    void SetDroppedFilePath(const std::string& path) { droppedFilePath_ = path; }
     ///@}
 
     /**
@@ -110,4 +125,5 @@ private:
     InputManager* inputManager_ = nullptr; // InputManagerへのポインタ
     IrufemiEngine* engine_ = nullptr;      // IrufemiEngineへのポインタ
     bool cursorLocked_ = true; // カーソル固定状態デフォルト真
+    std::string droppedFilePath_ = ""; // ドロップされたファイルパス
 };

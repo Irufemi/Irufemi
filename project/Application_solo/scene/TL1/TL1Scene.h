@@ -25,7 +25,8 @@ public: // メンバ関数
 
 private: // メンバ変数
     std::string promptText_ = "";
-    std::string imagePath_ = "";
+    std::string referenceImagePath_ = ""; // AI参考画像用
+    std::string textureImagePath_ = "";   // C++入力テクスチャ用
     std::unique_ptr<MagicBrushClient> magicBrushClient_;
 
     Microsoft::WRL::ComPtr<IDxcBlob> vsBlob_ = nullptr;
