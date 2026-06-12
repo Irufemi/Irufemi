@@ -1,7 +1,11 @@
 #include "PSOManager.h"
 #include <cstring>
 #include <cassert>
+#include <filesystem>
+#include <fstream>
+#include <vector>
 
+static const std::string kCacheDirectory = "resources/cache/pso/";
 
 // 軽量ハッシュ(キャッシュキー用)
 static uint64_t FNV1a(const void* p, size_t n, uint64_t h = 1469598103934665603ull) {
@@ -119,10 +123,33 @@ ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, BlendMode blend
     desc.SampleDesc.Count = 1;
     desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
+    std::string cacheFileName = std::to_string(key.hash) + ".pso";
+    std::vector<uint8_t> cachedData = LoadCachedBlob(cacheFileName);
+    if (!cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = cachedData.data();
+        desc.CachedPSO.CachedBlobSizeInBytes = cachedData.size();
+    } else {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+    }
+
     Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    
+    // キャッシュが古くて生成に失敗した場合は、キャッシュ無しで再試行
+    if (FAILED(hr) && !cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+        hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    }
+
     assert(SUCCEEDED(hr));
     if (FAILED(hr)) return nullptr;
+
+    // 新規コンパイルした場合はキャッシュを保存
+    if (cachedData.empty()) {
+        SaveCachedBlob(cacheFileName, pso.Get());
+    }
 
     cache_[key] = pso;
     return pso.Get();
@@ -156,11 +183,29 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
     desc.SampleDesc.Count = 1;
     desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
+    std::string cacheFileName = std::to_string(key.hash) + "_copy.pso";
+    std::vector<uint8_t> cachedData = LoadCachedBlob(cacheFileName);
+    if (!cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = cachedData.data();
+        desc.CachedPSO.CachedBlobSizeInBytes = cachedData.size();
+    } else {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+    }
+
     Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    
+    if (FAILED(hr) && !cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+        hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+    }
+    
     assert(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for CopyImage");
     
     if (SUCCEEDED(hr)) {
+        if (cachedData.empty()) SaveCachedBlob(cacheFileName, pso.Get());
         cache_[key] = pso;
         return pso.Get();
     }
@@ -172,10 +217,32 @@ void PSOManager::RegisterComputeShader(const std::string& name, const Microsoft:
     D3D12_COMPUTE_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = computeRootSig;
     desc.CS = { csBlob->GetBufferPointer(), csBlob->GetBufferSize() };
+
+    uint64_t hash = FNV1a(name.c_str(), name.length(), 0);
+    std::string cacheFileName = std::to_string(hash) + "_cs.pso";
+    std::vector<uint8_t> cachedData = LoadCachedBlob(cacheFileName);
+    if (!cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = cachedData.data();
+        desc.CachedPSO.CachedBlobSizeInBytes = cachedData.size();
+    } else {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+    }
+
     ComPtr pso;
     HRESULT hr = device_->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso.GetAddressOf()));
+    
+    if (FAILED(hr) && !cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+        hr = device_->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso.GetAddressOf()));
+    }
+
     assert(SUCCEEDED(hr));
     if (SUCCEEDED(hr)) {
+        if (cachedData.empty()) {
+            SaveCachedBlob(cacheFileName, pso.Get());
+        }
         computeCache_[name] = pso;
     }
 }
@@ -343,5 +410,37 @@ uint64_t PSOManager::Hash(const std::string& name, BlendMode b, DepthWrite d, Cu
     h = FNV1a(&d, sizeof(d), h);
     h = FNV1a(&c, sizeof(c), h);
     return h;
+}
+
+std::vector<uint8_t> PSOManager::LoadCachedBlob(const std::string& cacheFileName) const {
+    std::string path = kCacheDirectory + cacheFileName;
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) return {};
+
+    size_t size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    std::vector<uint8_t> buffer(size);
+    if (file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+        return buffer;
+    }
+    return {};
+}
+
+void PSOManager::SaveCachedBlob(const std::string& cacheFileName, ID3D12PipelineState* pso) const {
+    if (!pso) return;
+
+    Microsoft::WRL::ComPtr<ID3DBlob> blob;
+    if (FAILED(pso->GetCachedBlob(&blob)) || !blob) {
+        return;
+    }
+
+    std::error_code ec;
+    std::filesystem::create_directories(kCacheDirectory, ec);
+
+    std::string path = kCacheDirectory + cacheFileName;
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    if (file.is_open()) {
+        file.write(reinterpret_cast<const char*>(blob->GetBufferPointer()), blob->GetBufferSize());
+    }
 }
 
