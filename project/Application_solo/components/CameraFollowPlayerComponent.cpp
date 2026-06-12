@@ -25,14 +25,12 @@ void CameraFollowPlayerComponent::Update() {
     }
 
     // ターゲットが未キャッシュの場合はシーン内から "Player" を探索
-    if (!targetTransform_ && gameObject_->GetScene()) {
-        const auto& objs = gameObject_->GetScene()->GetGameObjects();
-        for (const auto& obj : objs) {
-            if (obj->GetName() == "Player") {
-                if (auto transform = obj->GetComponent<TransformComponent>()) {
-                    targetTransform_ = transform;
-                    break;
-                }
+    if (!targetTransform_) {
+        auto scene = gameObject_->GetScene();
+        if (scene) {
+            auto playerObj = scene->FindGameObject("Player");
+            if (playerObj) {
+                targetTransform_ = playerObj->GetComponent<TransformComponent>();
             }
         }
     }

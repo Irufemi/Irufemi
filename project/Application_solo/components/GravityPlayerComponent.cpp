@@ -81,13 +81,7 @@ void GravityPlayerComponent::HandlePullInput() {
         }
 
         // 一番親である DebrisManager オブジェクト（子としてガレキを保持している）を探す
-        std::shared_ptr<GameObject> debrisManager = nullptr;
-        for (auto& obj : scene->GetGameObjects()) {
-            if (obj && obj->GetName() == "DebrisManager") {
-                debrisManager = obj;
-                break;
-            }
-        }
+        auto debrisManager = scene->FindGameObject("DebrisManager");
 
         if (!debrisManager) return;
 

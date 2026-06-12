@@ -275,6 +275,25 @@ if (isClear) {
 // engine_->GetSceneManager()->PopScene();
 ```
 
+#### 特定の GameObject を名前で探す方法
+シーン内に存在する特定の GameObject（Player や 各種 Manager など）を取得したい場合、`GetGameObjects()` でループを回す必要はありません。
+`BaseScene` に用意されている `FindGameObject` を使用して1行で取得できます。
+
+**コード例:**
+```cpp
+// 自身の所属するシーンを取得
+auto scene = gameObject_->GetScene();
+if (scene) {
+    // "Player" という名前のオブジェクトを検索
+    auto playerObj = scene->FindGameObject("Player");
+    if (playerObj) {
+        auto transform = playerObj->GetComponent<TransformComponent>();
+        // ...
+    }
+}
+```
+※注意：同名のオブジェクトが複数存在する場合は、最初に見つかったものが返されます。
+
 ### 1.3 RenderGraph と DrawManager (描画パイプライン)
 本エンジンの描画は **RenderGraph（レンダーグラフ）** という仕組みで自動管理されています。
 ユーザーが `Draw()` を呼ぶと、すぐに画面に描画されるわけではなく、**DrawManagerのキュー（予約リスト）に登録（Submit）** されます。その後、エンジン側が適切な順序（Opaque → Transparent → UIなど）でまとめてGPUへ描画命令を出します。

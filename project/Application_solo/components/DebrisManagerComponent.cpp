@@ -61,15 +61,13 @@ void DebrisManagerComponent::Update() {
         
         auto scene = gameObject_->GetScene();
         if (scene) {
-            for (auto& obj : scene->GetGameObjects()) {
-                if (obj && obj->GetName() == "Player") {
-                    if (auto t = obj->GetComponent<TransformComponent>()) {
-                        spawnBase = t->position_;
-                        float yaw = t->rotation_.y;
-                        forward = { std::sin(yaw), 0.0f, std::cos(yaw) };
-                        right = { std::cos(yaw), 0.0f, -std::sin(yaw) };
-                    }
-                    break;
+            auto playerObj = scene->FindGameObject("Player");
+            if (playerObj) {
+                if (auto t = playerObj->GetComponent<TransformComponent>()) {
+                    spawnBase = t->position_;
+                    float yaw = t->rotation_.y;
+                    forward = { std::sin(yaw), 0.0f, std::cos(yaw) };
+                    right = { std::cos(yaw), 0.0f, -std::sin(yaw) };
                 }
             }
         }
