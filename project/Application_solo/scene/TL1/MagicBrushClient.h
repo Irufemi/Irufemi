@@ -30,7 +30,7 @@ public:
     /**
      * @brief シェーダー生成リクエストを非同期で開始する
      */
-    void StartGeneration(const std::string& prompt, const std::string& referenceImagePath);
+    void StartGeneration(const std::string& prompt, const std::string& referenceImagePath, const std::string& shaderName);
     
     // サーバープロセス管理
     bool StartPythonServer();
@@ -54,7 +54,7 @@ public:
     Microsoft::WRL::ComPtr<IDxcBlob> GetResultBlob();
 
 private:
-    void ProcessThread(std::string prompt, std::string referenceImagePath);
+    void ProcessThread(std::string prompt, std::string referenceImagePath, std::string shaderName);
     
     // HTTPリクエスト（curl.exe をプロセスとして呼び出す簡易実装）
     std::string SendPostRequest(const std::string& endpoint, const std::string& jsonPayload);

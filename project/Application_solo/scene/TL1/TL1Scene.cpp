@@ -7,6 +7,9 @@
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Platform/WindowsAPI/WinApp.h"
 #include <commdlg.h>
+#include <iomanip>
+#include <sstream>
+#include <ctime>
 
 #ifdef USE_IMGUI
 #include "imgui.h"
@@ -42,7 +45,7 @@ void TL1Scene::Update() {
         if (magicBrushClient_->GetState() == MagicBrushClient::State::Success) {
             auto psBlob = magicBrushClient_->GetResultBlob();
             if (psBlob) {
-                engine_->GetPSOManager()->RegisterShader("MagicBrushPS", { { vsBlob_, psBlob, nullptr } });
+                engine_->GetPSOManager()->RegisterShader(shaderName_, { { vsBlob_, psBlob, nullptr } });
                 isShaderRegistered_ = true;
             }
         }
@@ -55,7 +58,7 @@ void TL1Scene::Update() {
 void TL1Scene::Draw() {
     // プレビュー描画
     if (isShaderRegistered_) {
-        engine_->ApplyPSO("MagicBrushPS");
+        engine_->ApplyPSO(shaderName_);
         auto cmd = engine_->GetCommandList();
         
         // 入力されたテクスチャパス(名)があればそれをテクスチャとしてロードしてセット、無ければダミー(白)をセットする
@@ -82,6 +85,7 @@ void TL1Scene::DrawDebugTab() {
         // 文字列入力用のバッファ（静的変数にして入力を保持）
         static char promptBuffer[512] = "";
         static char refImagePathBuffer[MAX_PATH] = "";
+        static char shaderNameBuffer[128] = "";
         
         // 簡易通知メッセージ用の静的変数
         static std::string notificationMsg = "";
@@ -159,6 +163,11 @@ void TL1Scene::DrawDebugTab() {
             }
         }
 
+        ImGui::Separator();
+        ImGui::Text("Shader Settings");
+        ImGui::InputText("Shader Name", shaderNameBuffer, sizeof(shaderNameBuffer));
+        ImGui::TextDisabled("(Leave empty to auto-generate name)");
+
         // サーバーが動いていない時はボタンを無効化する
         if (!isRunning) {
             ImGui::BeginDisabled();
@@ -167,9 +176,22 @@ void TL1Scene::DrawDebugTab() {
             promptText_ = promptBuffer;
             referenceImagePath_ = refImagePathBuffer;
 
+            // シェーダー名の決定
+            std::string inputName = shaderNameBuffer;
+            if (inputName.empty()) {
+                std::time_t t = std::time(nullptr);
+                std::tm tm_info;
+                localtime_s(&tm_info, &t);
+                std::ostringstream oss;
+                oss << "GenShader_" << std::put_time(&tm_info, "%m%d_%H%M%S");
+                shaderName_ = oss.str();
+            } else {
+                shaderName_ = inputName;
+            }
+
             if (magicBrushClient_) {
                 isShaderRegistered_ = false; // 再登録できるようにフラグをリセット
-                magicBrushClient_->StartGeneration(promptText_, referenceImagePath_);
+                magicBrushClient_->StartGeneration(promptText_, referenceImagePath_, shaderName_);
             }
         }
         if (!isRunning) {

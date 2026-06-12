@@ -15,7 +15,7 @@ MagicBrushClient::~MagicBrushClient() {
     StopPythonServer();
 }
 
-void MagicBrushClient::StartGeneration(const std::string& prompt, const std::string& referenceImagePath) {
+void MagicBrushClient::StartGeneration(const std::string& prompt, const std::string& referenceImagePath, const std::string& shaderName) {
     if (state_ == State::Generating || state_ == State::Compiling || state_ == State::Fixing) {
         return; // 既に実行中
     }
@@ -27,7 +27,7 @@ void MagicBrushClient::StartGeneration(const std::string& prompt, const std::str
         workerThread_.join();
     }
 
-    workerThread_ = std::thread(&MagicBrushClient::ProcessThread, this, prompt, referenceImagePath);
+    workerThread_ = std::thread(&MagicBrushClient::ProcessThread, this, prompt, referenceImagePath, shaderName);
 }
 
 std::string MagicBrushClient::GetErrorMessage() const {
@@ -160,7 +160,7 @@ std::string MagicBrushClient::SendPostRequest(const std::string& endpoint, const
     return result;
 }
 
-void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceImagePath) {
+void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceImagePath, std::string shaderName) {
     std::string currentHlsl = "";
     
     // 1. 初回リクエストの作成
@@ -184,9 +184,12 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
         state_ = State::Compiling;
         
         // 取得したHLSLを一時ファイルに保存（コンパイル用）
-        std::wstring tempHlslPath = L"temp_generated_shader.hlsl";
+        std::string filename = shaderName + ".hlsl";
+        // wstringへの変換 (Shift-JIS環境等でも動作する簡易変換)
+        std::wstring tempHlslPath(filename.begin(), filename.end());
+        
         {
-            std::ofstream hlslFile("temp_generated_shader.hlsl");
+            std::ofstream hlslFile(filename);
             hlslFile << hlslCode;
         }
 

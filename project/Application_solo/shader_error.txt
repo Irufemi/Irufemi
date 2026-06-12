@@ -1,6 +1,4 @@
-temp_generated_shader.hlsl: temp_generated_shader.hlsl:41:46: error: no matching member function for call to 'GetDimensions'
-    float2 texelSize = 1.0 / float2(gTexture.GetDimensions().xy);
-                                    ~~~~~~~~~^~~~~~~~~~~~~
-temp_generated_shader.hlsl:41:46: note: candidate function template not viable: requires 2 arguments, but 0 were provided
-temp_generated_shader.hlsl:41:46: note: candidate function template not viable: requires 4 arguments, but 0 were provided
+GenShader_0612_033151.hlsl: GenShader_0612_033151.hlsl:52:11: warning: implicit truncation of vector type [-Wconversion]
+    float block_scan_y = mod_glsl(uv.y * 10.0 - time * 0.8, 1.0);
+          ^
 
