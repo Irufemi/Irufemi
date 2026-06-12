@@ -1,4 +1,0 @@
-GenShader_0612_033151.hlsl: GenShader_0612_033151.hlsl:52:11: warning: implicit truncation of vector type [-Wconversion]
-    float block_scan_y = mod_glsl(uv.y * 10.0 - time * 0.8, 1.0);
-          ^
-
