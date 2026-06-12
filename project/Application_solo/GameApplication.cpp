@@ -31,6 +31,7 @@
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
 #include "scene/debug/DebugScene.h"
 #endif
+#include "scene/TL1/TL1Scene.h"
 
 #ifdef EditorMode
 #include "EditorManager.h"
@@ -44,7 +45,7 @@ namespace {
     const Vector4 kClearColor = { 0.1f, 0.25f, 0.5f, 1.0f };
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-        = "Debug";
+        = "TL1";
 #else
         = "Title";
 #endif
@@ -60,7 +61,7 @@ namespace {
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
-
+        sm.Register("TL1", [] { return std::make_unique<TL1Scene>(); });
     }
 }
 

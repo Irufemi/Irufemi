@@ -22,6 +22,9 @@
     <Filter Include="Scene\Debug">
       <UniqueIdentifier>{0a6ed38f-12d1-4188-b3fa-fb3877f9047d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scene\TL1">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Scene\GameOver">
       <UniqueIdentifier>{1419eb2e-43b5-45d8-acdb-9b3b00918d5f}</UniqueIdentifier>
     </Filter>
@@ -59,6 +62,9 @@
     </ClCompile>
     <ClCompile Include="scene\Debug\DebugScene.cpp">
       <Filter>Scene\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\TL1\TL1Scene.cpp">
+      <Filter>Scene\TL1</Filter>
     </ClCompile>
     <ClCompile Include="scene\StageSelect\SelectScene.cpp">
       <Filter>Scene\StatgeSelect</Filter>
@@ -118,6 +124,9 @@
     </ClInclude>
     <ClInclude Include="scene\Debug\DebugScene.h">
       <Filter>Scene\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\TL1\TL1Scene.h">
+      <Filter>Scene\TL1</Filter>
     </ClInclude>
     <ClInclude Include="scene\StageSelect\SelectScene.h">
       <Filter>Scene\StatgeSelect</Filter>

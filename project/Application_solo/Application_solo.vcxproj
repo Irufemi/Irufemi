@@ -221,6 +221,7 @@ exit 0</Command>
   <ItemGroup>
     <ClCompile Include="GameApplication.cpp" />
     <ClCompile Include="scene\Debug\DebugScene.cpp" />
+    <ClCompile Include="scene\TL1\TL1Scene.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">MaxSpeed</Optimization>
@@ -249,6 +250,7 @@ exit 0</Command>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\Debug\DebugScene.h" />
+    <ClInclude Include="scene\TL1\TL1Scene.h" />
     <ClInclude Include="scene\GameOver\GameOverScene.h" />
     <ClInclude Include="scene\InGame\GameScene.h" />
     <ClInclude Include="scene\Pause\PauseScene.h" />
