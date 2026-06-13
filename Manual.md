@@ -1032,3 +1032,45 @@ Releaseビルドでは、`dxcompiler.dll` などのコンパイラを一切ロ�
 > - 2026/06: プリミティブ描画の `Primitive3DObject` への統合、および `MeshDesc` / `MaterialDesc` へのデータ構造リファクタリングを反映
 > - 2026/06: 描画リソースのマルチバッファ同期処理を `MultiBufferSyncState` 基底クラスへ集約し、`Manual.md` に使い方を追加
 > - 2026/06: シェーダーのハイブリッドコンパイル（Releaseの完全CSO化）およびEditor/Debug向けのホットリロード機能の解説を追加
+> - 2026/06: マルチスレッド化による GameObject::Update の並列処理と、ダングリングポインタ対策としての `std::weak_ptr` の利用ルールを追記
+
+---
+
+## 9. マルチスレッド化とコンポーネント設計 (Multithreading & Components)
+
+本エンジンの `BaseScene` では、パフォーマンス向上のため **すべての `GameObject` の `Update` および `Draw` が `ThreadPool` を用いて並列実行（マルチスレッド処理）** されます。
+そのため、コンポーネントを設計・実装する際は、スレッドセーフ（競合が起きない安全なコード）を意識する必要があります。
+
+### 9.1 他の GameObject への参照とダングリングポインタ対策
+マルチスレッド環境下では、参照していた他の `GameObject`（例：敵がプレイヤーを追いかける際のプレイヤー情報）が、別のスレッドで同時に破壊（GCによってメモリ解放）される可能性があります。
+**生ポインタ (`GameObject*`) をメンバ変数として長期間保持することは厳禁です（Use-After-Free の原因になります）。**
+
+必ず `std::weak_ptr<GameObject>` を使用し、アクセスする瞬間だけ `lock()` を取得して生存確認を行ってください。
+
+```cpp
+// ❌ 悪い例（生ポインタ保持はクラッシュの原因）
+// GameObject* targetObject_ = nullptr; 
+
+// ⭕ 良い例（weak_ptr で保持）
+std::weak_ptr<GameObject> targetObject_;
+
+// --- 使い方 ---
+// 1. 他のオブジェクトを設定する時 (shared_from_this() を渡す)
+debrisComp->SetTarget(playerObj->shared_from_this());
+
+// 2. 毎フレーム Update でアクセスする時
+if (auto target = targetObject_.lock()) { // lock()で生存確認
+    if (target->GetIsActive()) {
+        auto transform = target->GetComponent<TransformComponent>();
+        // targetの座標へ移動する処理など...
+    }
+} else {
+    // ターゲットは既に破壊された場合の処理
+}
+```
+
+### 9.2 コンポーネント実行中の構造変更 (AddChild / AddComponent) について
+`GameObject::Update` は並列実行されていますが、「自分自身」の子リスト（`children_`）やコンポーネントリストを変更するような操作（例えば、Update 中に自身へ `AddComponent` したり `AddChild` すること）は、内部配列の再確保（Reallocation）を引き起こす可能性があるため、十分に注意してください。
+
+- **新規オブジェクトの生成**: 新しいオブジェクトをシーンにスポーンさせる場合、`scene->AddGameObject(obj)` は内部でスレッドセーフなキュー(`pendingAdds_`)に積まれるため、Update 中に呼んでも安全です。
+- **オブジェクトの破棄**: `gameObject_->Destroy()` も破棄フラグ (`isDestroyed_`) を立てるだけなので、Update 中に呼んでも安全です（次フレームの開始前に一括削除されます）。

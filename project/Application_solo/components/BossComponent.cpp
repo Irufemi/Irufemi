@@ -32,7 +32,7 @@ void BossComponent::Update() {
                     auto setupDebris = [this](std::shared_ptr<GameObject> debrisObj) {
                         auto debrisComp = debrisObj->GetComponent<DebrisComponent>();
                         if (debrisComp) {
-                            debrisComp->SetTarget(gameObject_);
+                            debrisComp->SetTarget(gameObject_->shared_from_this());
                             debrisComp->SetState(DebrisState::BossOrbiting); 
                         }
                         shields_.push_back(debrisObj);
@@ -75,7 +75,7 @@ std::shared_ptr<GameObject> BossComponent::ExtractDebris() {
         auto debrisComp = debris->GetComponent<DebrisComponent>();
         if (debrisComp) {
             debrisComp->SetState(DebrisState::Idle);
-            debrisComp->SetTarget(nullptr);
+            debrisComp->SetTarget(std::weak_ptr<GameObject>());
         }
     }
     

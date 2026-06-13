@@ -78,12 +78,36 @@ void BaseScene::Update() {
     }
 #endif
 
-    // GameObject の更新
+    // --- 遅延キューの処理 ---
+    {
+        std::lock_guard<std::mutex> lock(sceneMutex_);
+        for (auto& obj : pendingAdds_) {
+            gameObjects_.push_back(obj);
+        }
+        pendingAdds_.clear();
+
+        for (auto& obj : pendingRemoves_) {
+            auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
+            if (it != gameObjects_.end()) {
+                gameObjects_.erase(it);
+            }
+        }
+        pendingRemoves_.clear();
+    }
+
+    // --- GameObject の更新 (マルチスレッド化) ---
+    std::vector<std::future<void>> updateFutures;
     for (size_t i = 0; i < gameObjects_.size(); ++i) {
         auto obj = gameObjects_[i];
         if (obj && !obj->GetParent() && !obj->IsDestroyed()) {
-            obj->Update(isPlayMode);
+            updateFutures.push_back(engine_->GetThreadPool()->Enqueue([obj, isPlayMode]() {
+                obj->Update(isPlayMode);
+            }));
         }
+    }
+    // 全てのスレッドの完了を待機
+    for (auto& future : updateFutures) {
+        future.wait();
     }
     
     // PlayMode 時のみ衝突判定（イベント発火など）を行う
@@ -101,10 +125,19 @@ void BaseScene::Update() {
 }
 
 void BaseScene::Draw() {
-    // GameObject の描画
+    // --- GameObject の描画 (マルチスレッド化) ---
+    std::vector<std::future<void>> drawFutures;
     for (size_t i = 0; i < gameObjects_.size(); ++i) {
         auto obj = gameObjects_[i];
-        if (obj && !obj->GetParent()) obj->Draw();
+        if (obj && !obj->GetParent()) {
+            drawFutures.push_back(engine_->GetThreadPool()->Enqueue([obj]() {
+                obj->Draw();
+            }));
+        }
+    }
+    // 全てのスレッドの完了を待機
+    for (auto& future : drawFutures) {
+        future.wait();
     }
     
 #ifdef EditorMode
@@ -129,13 +162,17 @@ void BaseScene::Draw() {
 
 void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
     if (obj) {
+        std::lock_guard<std::mutex> lock(sceneMutex_);
         obj->SetScene(this);
-        gameObjects_.push_back(obj);
+        pendingAdds_.push_back(obj);
     }
 }
 
 void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) {
+    // Insert は直接 gameObjects_ を操作するため、今回はそのまま mutex で保護し直接追加（または仕様に合わせて変更）。
+    // 基本的に実行時の並行 Insert は想定しないが、安全のためロック。
     if (!obj) return;
+    std::lock_guard<std::mutex> lock(sceneMutex_);
     obj->SetScene(this);
     if (index >= gameObjects_.size()) {
         gameObjects_.push_back(obj);
@@ -145,14 +182,16 @@ void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) 
 }
 
 void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
-    auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
-    if (it != gameObjects_.end()) {
-        gameObjects_.erase(it);
-    }
+    if (!obj) return;
+    std::lock_guard<std::mutex> lock(sceneMutex_);
+    pendingRemoves_.push_back(obj);
 }
 
 void BaseScene::ClearGameObjects() {
+    std::lock_guard<std::mutex> lock(sceneMutex_);
     gameObjects_.clear();
+    pendingAdds_.clear();
+    pendingRemoves_.clear();
 }
 
 size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {

@@ -46,6 +46,7 @@ class CameraManager;
 class CollisionManager;
 class GPUParticleManager;
 class PrimitiveManager;
+#include "Core/System/ThreadPool.h"
 
 /**
  * @class IrufemiEngine
@@ -210,8 +211,10 @@ public: // ゲッター
     TextureManager* GetTextureManager() { return this->textureManager_.get(); }
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
-    CameraManager* GetCameraManager() { return cameraManager_.get(); }
-    CollisionManager* GetCollisionManager() { return collisionManager_.get(); }
+    CameraManager* GetCameraManager() const { return cameraManager_.get(); }
+    CollisionManager* GetCollisionManager() const { return collisionManager_.get(); }
+    VoxelParticleManager* GetVoxelParticleManager() const { return voxelParticleManager_.get(); }
+    ThreadPool* GetThreadPool() const { return threadPool_.get(); }
     GPUParticleManager* GetGPUParticleManager() { return gpuParticleManager_.get(); }
     PrimitiveManager* GetPrimitiveManager() { return primitiveManager_.get(); }
     /** 
@@ -379,6 +382,9 @@ private: // メンバ変数
     // PrimitiveManager
     std::unique_ptr<PrimitiveManager> primitiveManager_ = nullptr;
 
+    // ThreadPool
+    std::unique_ptr<ThreadPool> threadPool_ = nullptr;
+
     // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };
     float timeScale_ = 1.0f;
@@ -410,6 +416,7 @@ private: // メンバ変数
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
     bool isFinalized_ = false; // 終了処理済みフラグ
 
+    bool sceneRequestedCursorLock_ = false;
     bool isPlayMode_ = true;
     std::weak_ptr<GameObject> selectedObject_;
 #if defined(_DEBUG) || defined(EditorMode)

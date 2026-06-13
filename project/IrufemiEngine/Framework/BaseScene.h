@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <mutex>
 #include "Engine/Core/Math/Vector3.h"
 
 // 前方宣言
@@ -138,7 +139,10 @@ protected:
     IrufemiEngine* engine_ = nullptr;
 
     // --- オブジェクト管理 ---
+    std::mutex sceneMutex_;
     std::vector<std::shared_ptr<GameObject>> gameObjects_;
+    std::vector<std::shared_ptr<GameObject>> pendingAdds_;
+    std::vector<std::shared_ptr<GameObject>> pendingRemoves_;
 
     // --- コア機能 ---
     std::unique_ptr<DebugCamera> debugCamera_;

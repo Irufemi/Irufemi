@@ -30,7 +30,7 @@ public:
     void SetState(DebrisState newState);
     DebrisState GetState() const { return state_; }
 
-    void SetTarget(GameObject* target) { targetObject_ = target; }
+    void SetTarget(std::weak_ptr<GameObject> target) { targetObject_ = target; }
     void SetOrbitParams(float angle, float radius) { orbitAngle_ = angle; orbitRadius_ = radius; }
     void SetThrowDirection(const Vector3& dir) { throwDirection_ = dir; }
 
@@ -44,7 +44,7 @@ private:
     DebrisManagerComponent* manager_ = nullptr;
     
     // 追従・目標用の対象
-    GameObject* targetObject_ = nullptr;
+    std::weak_ptr<GameObject> targetObject_;
     
     // パラメータ
     float pullSpeed_ = 10.0f;

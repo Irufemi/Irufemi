@@ -19,7 +19,7 @@ void DebrisComponent::OnRegisterProperties() {
 
 void DebrisComponent::Initialize() {
     state_ = DebrisState::Idle;
-    targetObject_ = nullptr;
+    targetObject_.reset();
     idleTimeY_ = static_cast<float>(rand() % 100); // ランダムな位相で開始
     
     if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
@@ -56,8 +56,8 @@ void DebrisComponent::Update() {
             break;
         }
         case DebrisState::Pulled: {
-            if (targetObject_) {
-                auto targetTransform = targetObject_->GetComponent<TransformComponent>();
+            if (auto target = targetObject_.lock()) {
+                auto targetTransform = target->GetComponent<TransformComponent>();
                 if (targetTransform) {
                     // ターゲット(プレイヤー)に向かってLerpで移動
                     Vector3 diff = {
@@ -79,8 +79,8 @@ void DebrisComponent::Update() {
             break;
         }
         case DebrisState::Orbiting: {
-            if (targetObject_) {
-                auto targetTransform = targetObject_->GetComponent<TransformComponent>();
+            if (auto target = targetObject_.lock()) {
+                auto targetTransform = target->GetComponent<TransformComponent>();
                 if (targetTransform) {
                     orbitAngle_ += orbitSpeed_ * deltaTime;
                     
@@ -99,8 +99,8 @@ void DebrisComponent::Update() {
             break;
         }
         case DebrisState::BossOrbiting: {
-            if (targetObject_) {
-                auto targetTransform = targetObject_->GetComponent<TransformComponent>();
+            if (auto target = targetObject_.lock()) {
+                auto targetTransform = target->GetComponent<TransformComponent>();
                 if (targetTransform) {
                     float shieldRotationSpeed = 1.0f; // ボス側のパラメータを取得してもよいがとりあえず固定値
                     bossOrbitAngleX_ += bossOrbitSpeedX_ * shieldRotationSpeed;
@@ -123,8 +123,8 @@ void DebrisComponent::Update() {
             break;
         }
         case DebrisState::Thrown: {
-            if (targetObject_ && targetObject_->GetIsActive()) {
-                auto targetTransform = targetObject_->GetComponent<TransformComponent>();
+            if (auto target = targetObject_.lock(); target && target->GetIsActive()) {
+                auto targetTransform = target->GetComponent<TransformComponent>();
                 if (targetTransform) {
                     // 敵に向かって高速ホーミング移動
                     Vector3 diff = {
@@ -140,12 +140,12 @@ void DebrisComponent::Update() {
                     
                     // 簡易ヒット判定
                     if (len < 1.0f) {
-                        auto enemyComp = targetObject_->GetComponent<RailShooterEnemyComponent>();
+                        auto enemyComp = target->GetComponent<RailShooterEnemyComponent>();
                         if (enemyComp) {
                             enemyComp->TakeDamage(100);
                         }
 
-                        auto bossComp = targetObject_->GetComponent<BossComponent>();
+                        auto bossComp = target->GetComponent<BossComponent>();
                         if (bossComp) {
                             bossComp->TakeDamage(10.0f);
                         }

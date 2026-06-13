@@ -98,6 +98,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   log_ = std::make_unique<Log>();
   log_->Initialize();
 
+  // スレッドプールの初期化
+  threadPool_ = std::make_unique<ThreadPool>(std::thread::hardware_concurrency());
+
   // 乱数エンジンのシードを設定
   Random::SeedEngine();
 
@@ -665,7 +668,7 @@ void IrufemiEngine::StartFrame() {
 #if defined(_DEBUG) || defined(EditorMode)
   // ホットリロードの発火チェック
   if (shouldReloadShaders_.exchange(false)) {
-      if (log_) log_->Output("[Shader Hot Reload] Changes detected. Recompiling shaders...\n");
+      if (log_) Log::OutPutLog(log_->GetLogStream(), "[Shader Hot Reload] Changes detected. Recompiling shaders...\n");
       if (dxCommon_ && dxCommon_->GetPSOManager() && dxCommon_->GetShaderManager()) {
           // 安全のためにGPU処理を待機（使用中のシェーダーを破棄しないようにする）
           dxCommon_->WaitForGPU();
@@ -677,7 +680,7 @@ void IrufemiEngine::StartFrame() {
           // 再コンパイル
           dxCommon_->GetPSOManager()->PreWarmCommonPSOs();
 
-          if (log_) log_->Output("[Shader Hot Reload] Compilation finished.\n");
+          if (log_) Log::OutPutLog(log_->GetLogStream(), "[Shader Hot Reload] Compilation finished.\n");
       }
   }
 #endif
