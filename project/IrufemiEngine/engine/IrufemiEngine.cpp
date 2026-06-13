@@ -98,8 +98,19 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   log_ = std::make_unique<Log>();
   log_->Initialize();
 
-  // スレッドプールの初期化
-  threadPool_ = std::make_unique<ThreadPool>(std::thread::hardware_concurrency());
+  // スレッドプールの初期化（ワーカースレッド数の決定）
+  // -------------------------------------------------------------------------
+  // PCの限界である「全論理コア数」をゲームのワーカースレッドに割り当ててしまうと、
+  // 肝心のメインスレッド（ゲームループや描画命令）やOSのバックグラウンド処理（Discord等）
+  // が圧迫され、結果的にフレーム落ちや配信カクつきの原因になります。
+  // そのため、「全コアから2コアを引いた数（メイン/OS用）」にしつつ、
+  // スレッド管理のオーバーヘッドを避けるため最大でも16スレッドまでに制限します。
+  // -------------------------------------------------------------------------
+  size_t hwThreads = std::thread::hardware_concurrency();
+  size_t workerThreads = (hwThreads > 2) ? (hwThreads - 2) : 1; // 最低1スレッドは確保
+  workerThreads = (std::min)(workerThreads, static_cast<size_t>(16));
+  
+  threadPool_ = std::make_unique<ThreadPool>(workerThreads);
 
   // 乱数エンジンのシードを設定
   Random::SeedEngine();
@@ -587,6 +598,7 @@ void IrufemiEngine::Execute() {
     ui_->BeginEngineDebugWindow();
     ui_->SceneSelectorTab(sceneManager_.get());
     ui_->PostProcessTab(this);
+    ui_->ThreadPoolTab(threadPool_.get());
   // デバッグ機能の追加
   if (gpuParticleManager_) {
     gpuParticleManager_->Debug();
