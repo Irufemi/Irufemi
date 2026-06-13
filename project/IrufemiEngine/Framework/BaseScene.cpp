@@ -95,6 +95,9 @@ void BaseScene::Update() {
         pendingRemoves_.clear();
     }
 
+    // --- Transform の DOD一括更新 (GameObject本体の更新前に行う) ---
+    TransformComponent::UpdateAll();
+
     // --- GameObject の更新 (マルチスレッド化) ---
     std::vector<std::future<void>> updateFutures;
     for (size_t i = 0; i < gameObjects_.size(); ++i) {

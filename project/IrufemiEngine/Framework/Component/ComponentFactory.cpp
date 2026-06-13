@@ -15,6 +15,7 @@
 #include "UI/ButtonComponent.h"
 #include "UI/CanvasComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Engine/Core/System/ComponentPool.h"
 
 std::map<std::string, ComponentFactory::CreatorFunc>& ComponentFactory::GetMap() {
     static std::map<std::string, CreatorFunc> factoryMap;
@@ -38,7 +39,13 @@ const std::map<std::string, ComponentFactory::CreatorFunc>& ComponentFactory::Ge
 }
 
 void ComponentFactory::RegisterAllCoreComponents() {
-    Register("TransformComponent", []() { return std::make_shared<TransformComponent>(); });
+    Register("TransformComponent", []() { 
+        if constexpr (IsPooledComponent<TransformComponent>::value) {
+            return std::static_pointer_cast<Component>(ComponentPool<TransformComponent>::GetInstance().Create());
+        } else {
+            return std::static_pointer_cast<Component>(std::make_shared<TransformComponent>());
+        }
+    });
     Register("MeshRendererComponent", []() { return std::make_shared<MeshRendererComponent>(); });
     Register("PrimitiveRendererComponent", []() { return std::make_shared<PrimitiveRendererComponent>(); });
     Register("ModelBatchRendererComponent", []() { return std::make_shared<ModelBatchRendererComponent>(); });

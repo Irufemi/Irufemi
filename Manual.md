@@ -551,7 +551,7 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - `Normal/Hover/Click Color`: マウスの操作状態に合わせて、アタッチされているSpriteの色を自動的に変化させます。
 - **`CanvasComponent`**: UI要素をグループ化し、アルファ値（透明度）などを一括管理します。
   - `Group Alpha`: このコンポーネントを持つGameObject自身と、そのすべての子要素にある `SpriteRendererComponent` のアルファ値を一括で制御します。フェードイン・フェードアウトの演出に便利です。
-### 2.5 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
+### 2.6 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
 
 敵や障害物に弾丸・ミサイルが着弾した際に使用する、リッチな3D爆発エフェクト機能です。3D球体の急速膨張による炎コア、3軸クロス展開される衝撃波リング、全方位に飛び散るGPU火花パーティクルが統合されています。
 
@@ -627,7 +627,46 @@ if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
 }
 ```
 
-### 2.6 カスタムパラメータの渡し方 (Custom Constant Buffer)
+### 2.7 Data-Oriented Design (DOD) と ComponentPool
+
+コンポーネントシステムにおいて、同じ種類のコンポーネントを連続したメモリ空間（プール）に配置し、CPUキャッシュヒット率を劇的に向上させるための最適化の仕組みです。
+何万個もの弾やパーティクル、多数の敵を同時に処理する場合に、標準の `std::make_shared` によるメモリの断片化を防ぎます。
+
+#### プール対応コンポーネントの作り方
+特定のコンポーネントを `ComponentPool` の管理下に置くには、対象のコンポーネントクラスの宣言の下で `IsPooledComponent` のテンプレート特化を行います。
+
+**例: `TransformComponent.h` の場合**
+```cpp
+#pragma once
+#include "Component.h"
+#include "Engine/Core/System/ComponentPool.h"
+
+class TransformComponent : public Component {
+    // ... 通常のコンポーネント実装 ...
+};
+
+// ComponentPool 対応を宣言（ファイルの末尾に記述）
+template<> struct IsPooledComponent<TransformComponent> : std::true_type {};
+```
+
+この一行を追加するだけで、`GameObject::AddComponent<TransformComponent>()` や、エディタ・JSONからの自動ロード（`ComponentFactory`）が**すべて自動的にプール経由での生成**に切り替わります。
+
+#### DODの恩恵を最大限に受ける一括更新処理
+プール化されたコンポーネントは、`ComponentPool::ForEach` を使って全インスタンスを一気に処理（バッチ処理）することができます。
+現在、`TransformComponent` の座標行列計算はこの機能を用いて `BaseScene::Update` 内で毎フレーム最初に一括で計算 (`TransformComponent::UpdateAll()`) されています。
+これにより、何万ものオブジェクトの Transform 行列計算がキャッシュミスなしで爆速で行われるようになっています。
+
+```cpp
+void TransformComponent::UpdateAll() {
+    currentFrame_++;
+    ComponentPool<TransformComponent>::GetInstance().ForEach([](TransformComponent& transform) {
+        transform.ComputeMatrix();
+    });
+}
+```
+※注意: プール対応にしたコンポーネントは、ゲーム終了時にプールから安全にメモリ解放されます。ユーザー側で特別なメモリ管理コード（`delete`など）を書く必要はありません。
+
+### 2.8 カスタムパラメータの渡し方 (Custom Constant Buffer)
 エンジン標準の `Material` には含まれない独自のパラメータ（演出用の色やアニメーションフラグなど）をシェーダーに渡したい場合、エンジンの `Material` を汚染するのではなく、専用の定数バッファ枠 (`RootSlot::Special` / レジスタ `b6`) を利用します。
 
 ```cpp

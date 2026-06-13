@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <nlohmann/json.hpp>
 #include "Component/Component.h"
+#include "Engine/Core/System/ComponentPool.h"
 
 class BaseScene;
 
@@ -38,7 +39,13 @@ public:
      */
     template<typename T, typename... Args>
     std::shared_ptr<T> AddComponent(Args&&... args) {
-        auto component = std::make_shared<T>(std::forward<Args>(args)...);
+        std::shared_ptr<T> component;
+        if constexpr (IsPooledComponent<T>::value) {
+            component = ComponentPool<T>::GetInstance().Create(std::forward<Args>(args)...);
+        } else {
+            component = std::make_shared<T>(std::forward<Args>(args)...);
+        }
+        
         component->SetGameObject(this);
         
         components_.push_back(component);
