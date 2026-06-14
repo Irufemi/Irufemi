@@ -23,6 +23,7 @@ project/logs/
 *.ilk
 *.aps
 *.ncb
+*.cso
 *.opendb
 *.opensdf
 *.sdf

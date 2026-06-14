@@ -81,7 +81,8 @@
             }
         ],
         "isActive": true,
-        "name": "StartButton"
+        "name": "StartButton",
+        "tag": "Untagged"
     },
     {
         "children": [],
@@ -124,6 +125,7 @@
             }
         ],
         "isActive": true,
-        "name": "TitleText"
+        "name": "TitleText",
+        "tag": "Untagged"
     }
 ]

@@ -18,6 +18,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <algorithm>
+#include <regex>
 
 #ifdef USE_IMGUI
 #include "Engine/Manager/DebugUI.h"
@@ -67,6 +68,63 @@ std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjects(const std::s
         }
     }
     return result;
+}
+
+std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjectsWithTag(const std::string& tag) {
+    std::vector<std::shared_ptr<GameObject>> result;
+    std::lock_guard<std::mutex> lock(sceneMutex_);
+    for (auto& obj : gameObjects_) {
+        if (obj && !obj->IsDestroyed() && obj->GetTag() == tag) {
+            result.push_back(obj);
+        }
+    }
+    for (auto& obj : pendingAdds_) {
+        if (obj && !obj->IsDestroyed() && obj->GetTag() == tag) {
+            result.push_back(obj);
+        }
+    }
+    return result;
+}
+
+std::string BaseScene::GetUniqueObjectName(const std::string& baseName) {
+    std::lock_guard<std::mutex> lock(sceneMutex_);
+    
+    auto NameExists = [&](const std::string& name) {
+        auto it = nameIndex_.find(name);
+        if (it != nameIndex_.end()) {
+            for (auto& weakObj : it->second) {
+                if (auto obj = weakObj.lock()) {
+                    if (!obj->IsDestroyed()) return true;
+                }
+            }
+        }
+        for (const auto& obj : pendingAdds_) {
+            if (obj && !obj->IsDestroyed() && obj->GetName() == name) return true;
+        }
+        return false;
+    };
+
+    if (!NameExists(baseName)) {
+        return baseName;
+    }
+
+    std::string prefix = baseName;
+    int nextIndex = 1;
+    
+    std::regex re("^(.*) \\((\\d+)\\)$");
+    std::smatch match;
+    if (std::regex_match(baseName, match, re)) {
+        prefix = match[1].str();
+        nextIndex = std::stoi(match[2].str()) + 1;
+    }
+
+    std::string candidate;
+    do {
+        candidate = prefix + " (" + std::to_string(nextIndex) + ")";
+        nextIndex++;
+    } while (NameExists(candidate));
+
+    return candidate;
 }
 
 void BaseScene::OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName, const std::string& newName) {

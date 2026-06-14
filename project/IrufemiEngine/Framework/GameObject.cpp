@@ -12,6 +12,16 @@
 #include "Component/Collider/OBBColliderComponent.h"
 #include "Component/Collider/RaycastComponent.h"
 #include "Component/Script/RotatorComponent.h"
+#include <atomic>
+
+static std::atomic<uint64_t> s_nextInstanceId{ 1 };
+
+GameObject::GameObject() : instanceId_(s_nextInstanceId++) {
+}
+
+GameObject::GameObject(const std::string& name) : instanceId_(s_nextInstanceId++), name_(name) {
+}
+
 void GameObject::Initialize() {
     for (auto& comp : components_) {
         comp->Initialize();
@@ -160,6 +170,7 @@ void GameObject::RemoveComponent(Component* component) {
 nlohmann::json GameObject::Serialize() const {
     nlohmann::json j;
     j["name"] = name_;
+    j["tag"] = tag_;
     j["isActive"] = isActive_;
     
     nlohmann::json comps = nlohmann::json::array();
@@ -182,6 +193,7 @@ nlohmann::json GameObject::Serialize() const {
 
 void GameObject::Deserialize(const nlohmann::json& j) {
     if (j.contains("name")) name_ = j["name"];
+    if (j.contains("tag")) tag_ = j["tag"];
     if (j.contains("isActive")) isActive_ = j["isActive"];
     
     if (j.contains("components")) {
@@ -225,8 +237,13 @@ void GameObject::Deserialize(const nlohmann::json& j) {
 std::shared_ptr<GameObject> GameObject::Clone() {
     auto clone = std::make_shared<GameObject>();
     clone->Deserialize(this->Serialize());
-    // クローン時は必要に応じて "(Clone)" などを付与
-    clone->SetName(this->GetName() + " (Clone)");
+    
+    if (scene_) {
+        clone->SetName(scene_->GetUniqueObjectName(this->GetName()));
+    } else {
+        clone->SetName(this->GetName() + " (Clone)");
+    }
+    
     return clone;
 }
 

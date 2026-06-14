@@ -119,6 +119,10 @@ exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PreBuildEvent>
+      <Command>call "$(SolutionDir)CompileShaders.bat" "$(ProjectDir)resources\shaders"</Command>
+      <Message>Compiling Shaders for Release...</Message>
+    </PreBuildEvent>
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>

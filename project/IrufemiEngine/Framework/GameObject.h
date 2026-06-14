@@ -16,9 +16,13 @@ class BaseScene;
  */
 class GameObject : public std::enable_shared_from_this<GameObject> {
 public:
-    GameObject() = default;
-    GameObject(const std::string& name) : name_(name) {}
+    GameObject();
+    GameObject(const std::string& name);
     ~GameObject() = default;
+
+    uint64_t GetInstanceID() const { return instanceId_; }
+    const std::string& GetTag() const { return tag_; }
+    void SetTag(const std::string& tag) { tag_ = tag; }
 
     void Initialize();
     void Update(bool isPlayMode = true);
@@ -120,6 +124,8 @@ public:
     std::shared_ptr<GameObject> Instantiate(const std::string& prefabPath, const Vector3& position = {0,0,0});
 
 private:
+    uint64_t instanceId_ = 0;
+    std::string tag_ = "Untagged";
     std::string name_ = "GameObject";
     bool isActive_ = true;
     bool isDestroyed_ = false;

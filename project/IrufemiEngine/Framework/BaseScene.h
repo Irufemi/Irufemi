@@ -103,6 +103,16 @@ public:
     std::vector<std::shared_ptr<GameObject>> FindGameObjects(const std::string& name);
 
     /**
+     * @brief 指定したタグを持つ全てのGameObjectを取得する
+     */
+    std::vector<std::shared_ptr<GameObject>> FindGameObjectsWithTag(const std::string& tag);
+
+    /**
+     * @brief シーン内で一意となるGameObject名を生成する (エディタ・複製用)
+     */
+    std::string GetUniqueObjectName(const std::string& baseName);
+
+    /**
      * @brief GameObjectの名前が変更された際にインデックスを更新するためのコールバック
      */
     void OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName, const std::string& newName);
