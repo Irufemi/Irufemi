@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DXRootSignatureManager.h"
 #include "../../Core/Utility/Log.h"
 #include <cassert>
@@ -172,7 +173,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
             assert(false);
         }
         hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(graphicsRootSignature_.GetAddressOf()));
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
     }
 
     // --- Compute Shader用 RootSignature ---
@@ -251,7 +252,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
             assert(false);
         }
         hr = device->CreateRootSignature(0, computeSignatureBlob->GetBufferPointer(), computeSignatureBlob->GetBufferSize(), IID_PPV_ARGS(computeRootSignature_.GetAddressOf()));
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
     }
 }
 

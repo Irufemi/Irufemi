@@ -832,7 +832,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResourc
 		pClearValue, // Clear最適値。指定がなければnullptr
 		IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
 	);
-	assert(SUCCEEDED(hr));
+	ASSERT_IF_FAILED(hr);
 	return resource;
 }
 

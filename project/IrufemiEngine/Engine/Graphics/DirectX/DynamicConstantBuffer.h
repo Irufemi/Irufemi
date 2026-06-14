@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include <d3d12.h>
 #include <wrl.h>
 #include <array>
@@ -43,7 +44,7 @@ public:
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
             resources_[i] = dxCommon_->CreateBufferResource(elementAlignedSize_ * capacity_);
             HRESULT hr = resources_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedRawData_[i]));
-            assert(SUCCEEDED(hr));
+            ASSERT_IF_FAILED(hr);
         }
     }
 

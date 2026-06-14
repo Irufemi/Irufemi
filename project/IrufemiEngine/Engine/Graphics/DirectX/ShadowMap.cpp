@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "ShadowMap.h"
 #include "DirectXCommon.h"
 #include "DirectXUtils.h"
@@ -57,7 +58,7 @@ void ShadowMap::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t hei
         &clearVal,
         IID_PPV_ARGS(resource_.GetAddressOf())
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // 2. DSV 作成
     dsvIndex_ = dxCommon_->AllocateDSVIndex();

@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "PSOManager.h"
 #include <cstring>
 #include <cassert>
@@ -143,7 +144,7 @@ ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, BlendMode blend
         hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
     }
 
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     if (FAILED(hr)) return nullptr;
 
     // 新規コンパイルした場合はキャッシュを保存
@@ -238,7 +239,7 @@ void PSOManager::RegisterComputeShader(const std::string& name, const Microsoft:
         hr = device_->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso.GetAddressOf()));
     }
 
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     if (SUCCEEDED(hr)) {
         if (cachedData.empty()) {
             SaveCachedBlob(cacheFileName, pso.Get());

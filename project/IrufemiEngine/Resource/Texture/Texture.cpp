@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Texture.h"
 #include "../../../externals/DirectXTex/DirectXTex.h"
 #include "../../../externals/DirectXTex/d3dx12.h"
@@ -94,7 +95,7 @@ void Texture::InitializeFromMemory(const std::string& name, const uint32_t* pixe
     try {
         // sRGB フォーマットで初期化
         HRESULT hr = mipImages_.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, width, height, 1, 1);
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
 
         // ピクセルデータのコピー
         memcpy(mipImages_.GetImage(0, 0, 0)->pixels, pixels, width * height * sizeof(uint32_t));
@@ -133,7 +134,7 @@ void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* 
     try {
         // CubeMap として初期化
         HRESULT hr = mipImages_.InitializeCube(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, width, height, 1, 1);
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
 
         // 6面分のピクセルデータのコピー
         for (size_t i = 0; i < 6; ++i) {

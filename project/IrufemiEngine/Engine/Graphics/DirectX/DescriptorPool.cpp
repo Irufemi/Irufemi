@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DescriptorPool.h"
 #include <cassert>
 
@@ -10,7 +11,7 @@ void DescriptorPool::Initialize(ID3D12Device* device) {
     desc.NumDescriptors = kMaxSRVCount;
     desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     HRESULT hr = device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&heap_));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     descriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     baseIndex_ = 0;

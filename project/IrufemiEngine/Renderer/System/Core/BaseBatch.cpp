@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "../../System/Core/BaseBatch.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Core/Shape/Sphere.h"
@@ -238,7 +239,7 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
     lastUpdateFrameIndex_ = frameIndex;
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&dst));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     std::memcpy(dst, temp.data(), sizeof(InstanceData) * visibleInstanceCount_);
     instanceBuffer_[frameIndex]->Unmap(0, nullptr);
 

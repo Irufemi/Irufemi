@@ -24,8 +24,24 @@ public:
      * @brief メッセージボックスでエラーを通知する
      */
     static void ShowErrorBox(const std::string& title, const std::string& message);
+
+    /**
+     * @brief 致命的なエラーアサーション
+     */
+    static void Assert(bool condition, const std::string& msg, const char* file, int line);
+
+    /**
+     * @brief 非致命的な警告アサーション
+     */
+    static void Warning(bool condition, const std::string& msg, const char* file, int line);
 };
 
-// マクロを使用することで、ファイル名と行番号を自動で付与する
+// HRESULTエラーハンドリング
 #define ASSERT_IF_FAILED(hr) ErrorUtility::ThrowIfFailed(hr, "", __FILE__, __LINE__)
 #define ASSERT_IF_FAILED_MSG(hr, msg) ErrorUtility::ThrowIfFailed(hr, msg, __FILE__, __LINE__)
+
+// エンジン独自の標準アサーション
+#define IRUFEMI_ASSERT(condition) ErrorUtility::Assert(!!(condition), #condition, __FILE__, __LINE__)
+#define IRUFEMI_ASSERT_MSG(condition, msg) ErrorUtility::Assert(!!(condition), msg, __FILE__, __LINE__)
+#define IRUFEMI_WARNING(condition, msg) ErrorUtility::Warning(!!(condition), msg, __FILE__, __LINE__)
+

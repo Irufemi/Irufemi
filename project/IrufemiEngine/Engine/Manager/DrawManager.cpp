@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DrawManager.h"
 using namespace RenderPackets;
 
@@ -217,9 +218,9 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     // 2. コマンドリストとアロケータのリセット (現在のフレーム用)
     ID3D12CommandAllocator* allocator = dxCommon_->GetCommandAllocator();
     HRESULT hr = allocator->Reset();
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     hr = commandList_->Reset(allocator, nullptr);
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // フレーム開始時に、ポーズ中でSetFrameDataが呼ばれなくてもバッファが常に同期待ちにならないようキャッシュを現在のバッファへコピーする
     SyncCachedFrameData();
@@ -291,7 +292,7 @@ void DrawManager::PostDraw() {
 
     //コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
     HRESULT hr = commandList_->Close();
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     ///コマンドをキックする
 
