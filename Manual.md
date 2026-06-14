@@ -275,24 +275,39 @@ if (isClear) {
 // engine_->GetSceneManager()->PopScene();
 ```
 
-#### 特定の GameObject を名前で探す方法
-シーン内に存在する特定の GameObject（Player や 各種 Manager など）を取得したい場合、`GetGameObjects()` でループを回す必要はありません。
-`BaseScene` に用意されている `FindGameObject` を使用して1行で取得できます。
+#### GameObject の検索（名前、タグ、ID）
+シーン内に存在する GameObject を取得したい場合、用途に合わせて以下の3つの検索機能を利用できます。
 
-**コード例:**
+**1. 名前で検索 (`FindGameObject`)**
+特定の名前を持つオブジェクトを1つ探す場合に使用します。
 ```cpp
-// 自身の所属するシーンを取得
-auto scene = gameObject_->GetScene();
-if (scene) {
-    // "Player" という名前のオブジェクトを検索
-    auto playerObj = scene->FindGameObject("Player");
-    if (playerObj) {
-        auto transform = playerObj->GetComponent<TransformComponent>();
-        // ...
-    }
+auto playerObj = scene->FindGameObject("Player");
+```
+※同名のオブジェクトが複数存在する場合は、最初に見つかったものが返されます。
+
+**2. タグで一括検索 (`FindGameObjectsWithTag`)**
+「Enemy」や「Obstacle」など、特定の役割を持つオブジェクトをまとめて取得したい場合に使用します。タグは `GameObject::SetTag("Enemy")` やエディタから設定できます。
+```cpp
+// "Enemy" タグを持つすべてのオブジェクトを取得
+std::vector<std::shared_ptr<GameObject>> enemies = scene->FindGameObjectsWithTag("Enemy");
+for (auto& enemy : enemies) {
+    // 敵全体に対する処理
 }
 ```
-※注意：同名のオブジェクトが複数存在する場合は、最初に見つかったものが返されます。
+
+**3. インスタンスIDで検索 (`FindGameObjectByID`)**
+オブジェクトの生成時に自動で割り当てられる一意のID（`uint64_t`）を利用して、確実に特定のインスタンスを取得します。
+```cpp
+uint64_t targetId = targetObj->GetInstanceID();
+// ... 後でIDを使って再取得する
+auto obj = scene->FindGameObjectByID(targetId);
+```
+
+#### 動的生成 (Clone) 時の自動命名ルール
+`GameObject::Clone()` を使用してオブジェクトを複製すると、エディタ上の識別や名前検索の競合を防ぐため、名前に自動でサフィックス（`(1)` など）が付きます。
+* 例: `"Enemy"` を Clone → `"Enemy(1)"`
+* さらに Clone → `"Enemy(2)"`
+これにより、プレハブから動的生成した敵などもインスペクター上で個別に識別しやすくなっています。
 
 ### 1.3 RenderGraph と DrawManager (描画パイプライン)
 本エンジンの描画は **RenderGraph（レンダーグラフ）** という仕組みで自動管理されています。
@@ -388,8 +403,8 @@ line_->Initialize();
 line_->SetColor({ 0.0f, 1.0f, 0.0f, 1.0f }); // 緑色の線
 
 // 3. 更新と描画 (Update & Draw)
-// TransformComponentのように直接 transform 情報を更新する（簡易版）
-primitive_->transform_.translate = playerPos;
+// 位置を更新（内部で自動的に isDirty = true がセットされます）
+primitive_->SetPosition(playerPos);
 primitive_->Update();
 primitive_->Draw();
 
@@ -436,7 +451,7 @@ auto* transform = object->AddComponent<TransformComponent>();
 auto* renderer = object->AddComponent<MeshRendererComponent>();
 
 // 3. パラメータ設定
-transform->SetPosition({0, 10, 0});
+transform->position_ = {0, 10, 0};
 renderer->LoadModel("enemy/boss.obj");
 
 // 4. シーンへの登録（SceneManager経由で管理する場合）

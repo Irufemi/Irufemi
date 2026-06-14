@@ -103,6 +103,11 @@ public:
     std::vector<std::shared_ptr<GameObject>> FindGameObjects(const std::string& name);
 
     /**
+     * @brief インスタンスIDから該当する GameObject を探して返す
+     */
+    std::shared_ptr<GameObject> FindGameObjectByID(uint64_t instanceId);
+
+    /**
      * @brief 指定したタグを持つ全てのGameObjectを取得する
      */
     std::vector<std::shared_ptr<GameObject>> FindGameObjectsWithTag(const std::string& tag);

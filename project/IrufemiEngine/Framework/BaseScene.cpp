@@ -70,6 +70,16 @@ std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjects(const std::s
     return result;
 }
 
+std::shared_ptr<GameObject> BaseScene::FindGameObjectByID(uint64_t instanceId) {
+    std::lock_guard<std::mutex> lock(sceneMutex_);
+    for (const auto& obj : gameObjects_) {
+        if (obj->GetInstanceID() == instanceId) {
+            return obj;
+        }
+    }
+    return nullptr;
+}
+
 std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjectsWithTag(const std::string& tag) {
     std::vector<std::shared_ptr<GameObject>> result;
     std::lock_guard<std::mutex> lock(sceneMutex_);
