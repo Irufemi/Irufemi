@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/Utility/ErrorUtility.h"
 
 #include <cassert>
 
@@ -26,7 +27,7 @@ public:
      * @details メインループ開始前（DirectX初期化後など）に手動で呼び出します。
      */
     static void Initialize() {
-        assert(!instance_ && "Singleton is already initialized.");
+        IRUFEMI_ASSERT(!instance_ && "Singleton is already initialized.");
         instance_ = new T();
     }
 
@@ -46,7 +47,7 @@ public:
      * @return シングルトンインスタンスのポインタ
      */
     static T* GetInstance() {
-        assert(instance_ && "Singleton is not initialized. Call Initialize() first.");
+        IRUFEMI_ASSERT(instance_ && "Singleton is not initialized. Call Initialize() first.");
         return instance_;
     }
 

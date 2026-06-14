@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Quaternion.h"
 #include <stdexcept>
 #include <cassert>
@@ -47,7 +48,10 @@ Quaternion& Quaternion::operator*=(float s) {
 }
 
 Quaternion& Quaternion::operator/=(float s) {
-	assert(s != 0.0f && "Division by zero");
+	if (s == 0.0f) {
+		IRUFEMI_WARNING(false, "Quaternion: Division by zero");
+		return *this;
+	}
 	const float inv = 1.0f / s;
 	x *= inv;
 	y *= inv;
@@ -81,7 +85,10 @@ Quaternion operator*(float s, Quaternion q) {
 }
 
 Quaternion operator/(Quaternion q, float s) {
-	assert(s != 0.0f && "Division by zero");
+	if (s == 0.0f) {
+		IRUFEMI_WARNING(false, "Quaternion: Division by zero");
+		return q;
+	}
 	const float inv = 1.0f / s;
 	return { q.x * inv, q.y * inv, q.z * inv, q.w * inv };
 }

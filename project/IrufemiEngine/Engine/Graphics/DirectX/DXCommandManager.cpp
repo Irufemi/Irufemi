@@ -4,7 +4,7 @@
 #include <cassert>
 
 void DXCommandManager::Initialize(ID3D12Device* device) {
-    assert(device != nullptr);
+    IRUFEMI_ASSERT(device != nullptr);
     device_ = device;
 
     // --- コマンドキューの生成 ---
@@ -31,7 +31,7 @@ void DXCommandManager::Initialize(ID3D12Device* device) {
     ASSERT_IF_FAILED(hr);
 
     fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
-    assert(fenceEvent_ != nullptr);
+    IRUFEMI_ASSERT(fenceEvent_ != nullptr);
 
     // --- 転送専用(Upload)コマンド系の生成 ---
     hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(uploadCommandAllocator_.GetAddressOf()));

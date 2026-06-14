@@ -26,7 +26,7 @@ public:
 
     // バッファを生成しマッピングする（kMaxFramesInFlight分）
     void Initialize(DirectXCommon* dxCommon) {
-        assert(dxCommon != nullptr);
+        IRUFEMI_ASSERT(dxCommon != nullptr);
         dxCommon_ = dxCommon;
         // 定数バッファの制約：サイズは256バイトの倍数
         size_t alignedSize = (sizeof(T) + 255) & ~255;

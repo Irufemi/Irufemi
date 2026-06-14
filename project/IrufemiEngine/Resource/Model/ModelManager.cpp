@@ -165,7 +165,7 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
                 gpuMesh->vertexResource->Unmap(0, nullptr);
 
                 gpuMesh->srvIndex = dxCommon_->GetSrvPool()->Allocate();
-                assert(gpuMesh->srvIndex != DescriptorPool::kInvalid);
+                IRUFEMI_ASSERT(gpuMesh->srvIndex != DescriptorPool::kInvalid);
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
                 srvDesc.Format = DXGI_FORMAT_UNKNOWN;
                 srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -776,8 +776,8 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
 
     for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
         aiMesh* mesh = scene->mMeshes[meshIndex];
-        assert(mesh->HasNormals()); // 法線がないMeshは今回は非対応
-        assert(mesh->HasTextureCoords(0)); // TexcoordがないMeshは今回は非対応
+        IRUFEMI_ASSERT(mesh->HasNormals()); // 法線がないMeshは今回は非対応
+        IRUFEMI_ASSERT(mesh->HasTextureCoords(0)); // TexcoordがないMeshは今回は非対応
         // ここからMeshの中身(Face)の解析を行っていく
 
         /// vertexを解析する
@@ -797,7 +797,7 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
         /// Indexを解析する
         for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
             aiFace& face = mesh->mFaces[faceIndex];
-            assert(face.mNumIndices == 3); // 三角形のみサポート
+            IRUFEMI_ASSERT(face.mNumIndices == 3); // 三角形のみサポート
 
             for (uint32_t element = 0; element < face.mNumIndices; ++element) {
                 uint32_t vertexIndex = face.mIndices[element];
@@ -1017,7 +1017,7 @@ ObjModel ModelManager::LoadModelFromFile(const std::string& directoryPath, const
         // インデックスデータの読み込み
         for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
             const aiFace& face = mesh->mFaces[faceIndex];
-            assert(face.mNumIndices == 3);
+            IRUFEMI_ASSERT(face.mNumIndices == 3);
             outMesh.indices.push_back(face.mIndices[0]);
             outMesh.indices.push_back(face.mIndices[1]);
             outMesh.indices.push_back(face.mIndices[2]);

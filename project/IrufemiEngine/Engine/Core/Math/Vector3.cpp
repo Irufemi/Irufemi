@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Vector3.h"
 #include <stdexcept>
 #include <cassert>
@@ -42,7 +43,10 @@ Vector3& Vector3::operator*=(float s) {
 }
 
 Vector3& Vector3::operator/=(float s) {
-    assert(s != 0.0f && "Division by zero");
+    if (s == 0.0f) {
+        IRUFEMI_WARNING(false, "Vector3: Division by zero");
+        return *this;
+    }
     const float inv = 1.0f / s;
     x *= inv;
     y *= inv;
@@ -75,7 +79,10 @@ Vector3 operator*(float s, Vector3 v) {
 }
 
 Vector3 operator/(Vector3 v, float s) {
-    assert(s != 0.0f && "Division by zero");
+    if (s == 0.0f) {
+        IRUFEMI_WARNING(false, "Vector3: Division by zero");
+        return v;
+    }
     const float inv = 1.0f / s;
     return { v.x * inv, v.y * inv, v.z * inv };
 }

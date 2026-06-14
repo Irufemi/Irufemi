@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #define NOMINMAX
 #include "DebugUI.h"
 #include <Windows.h>
@@ -115,7 +116,7 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
 
     // ImGui用にディスクリプタを1つ確保
     srvIndex_ = srvPool->Allocate();
-    assert(srvIndex_ != DescriptorPool::kInvalid);
+    IRUFEMI_ASSERT(srvIndex_ != DescriptorPool::kInvalid);
 
     ImGui_ImplDX12_Init(
         dxCommon->GetDevice(),

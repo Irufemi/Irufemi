@@ -203,7 +203,7 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
         hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
     }
     
-    assert(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for CopyImage");
+    IRUFEMI_ASSERT(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for CopyImage");
     
     if (SUCCEEDED(hr)) {
         if (cachedData.empty()) SaveCachedBlob(cacheFileName, pso.Get());

@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include <d3d12.h>
 #include <string>
 #include <cassert>
@@ -17,7 +18,7 @@ namespace Irufemi {
             errorMsg += hrStr;
 
             OutputDebugStringA(errorMsg.c_str());
-            assert(false && "DirectX API call failed. Check the log for details.");
+            IRUFEMI_ASSERT(false && "DirectX API call failed. Check the log for details.");
             throw std::runtime_error(errorMsg);
         }
     }

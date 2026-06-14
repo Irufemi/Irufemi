@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #define NOMINMAX
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "VoxelParticleSystem.h"
@@ -42,7 +43,7 @@ VoxelParticleSystem::~VoxelParticleSystem() {
 
 void VoxelParticleSystem::Initialize(const std::string &modelName,
                                      const Vector3Int &resolution) {
-  assert(engine_);
+  IRUFEMI_ASSERT(engine_);
 
   status_.store(LoadingStatus::Loading);
 
@@ -486,13 +487,13 @@ void VoxelParticleSystem::CreatePSO() {
   initializePSO_ = psoManager->GetComputePSO("VoxelParticleInitialize");
   emitPSO_ = psoManager->GetComputePSO("VoxelParticleEmit");
   updatePSO_ = psoManager->GetComputePSO("VoxelParticleUpdate");
-  assert(initializePSO_ && emitPSO_ && updatePSO_);
+  IRUFEMI_ASSERT(initializePSO_ && emitPSO_ && updatePSO_);
 
   // --- Graphics PSO ---
   drawPSO_ = psoManager->GetPSO("VoxelParticle", BlendMode::kBlendModeNormal,
                                           PSOManager::DepthWrite::Enable,
                                           PSOManager::CullMode::Back);
-  assert(drawPSO_);
+  IRUFEMI_ASSERT(drawPSO_);
 }
 
 void VoxelParticleSystem::Debug([[maybe_unused]] const char *name) {

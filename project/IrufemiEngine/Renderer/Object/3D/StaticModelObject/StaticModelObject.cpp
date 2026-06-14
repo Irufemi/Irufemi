@@ -1,4 +1,5 @@
 #include "StaticModelObject.h" // リネーム済み
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include <filesystem>
 #include <algorithm>
 #include <Windows.h>
@@ -20,7 +21,7 @@ StaticModelObject::~StaticModelObject() {}
 
 void StaticModelObject::Initialize(const std::string& filename) {
 
-    assert(engine_ && "StaticModelObject::Initialize: Engine is not set.");
+    IRUFEMI_ASSERT(engine_ && "StaticModelObject::Initialize: Engine is not set.");
     // 描画中のリソース破棄（Use-After-Free）を防ぐため、次フレームのUpdateで切り替えるフラグと変数を設定
     nextManagedModel_ = engine_->GetObjModelManager()->GetModelAsync(filename);
     isModelChanged_ = true;

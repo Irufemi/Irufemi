@@ -28,7 +28,7 @@ ShadowMap::~ShadowMap() {
 }
 
 void ShadowMap::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height) {
-    assert(dxCommon);
+    IRUFEMI_ASSERT(dxCommon);
     dxCommon_ = dxCommon;
     ID3D12Device* device = dxCommon_->GetDevice();
 

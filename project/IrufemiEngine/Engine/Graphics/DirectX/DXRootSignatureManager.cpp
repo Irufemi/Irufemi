@@ -170,7 +170,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         HRESULT hr = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, signatureBlob.GetAddressOf(), errorBlob.GetAddressOf());
         if (FAILED(hr)) {
             Log::OutPutLog(log->GetLogStream(), reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
-            assert(false);
+            IRUFEMI_ASSERT(false);
         }
         hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(graphicsRootSignature_.GetAddressOf()));
         ASSERT_IF_FAILED(hr);
@@ -249,7 +249,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         HRESULT hr = D3D12SerializeRootSignature(&computeRSDesc, D3D_ROOT_SIGNATURE_VERSION_1, computeSignatureBlob.GetAddressOf(), computeErrorBlob.GetAddressOf());
         if (FAILED(hr)) {
             Log::OutPutLog(log->GetLogStream(), reinterpret_cast<char*>(computeErrorBlob->GetBufferPointer()));
-            assert(false);
+            IRUFEMI_ASSERT(false);
         }
         hr = device->CreateRootSignature(0, computeSignatureBlob->GetBufferPointer(), computeSignatureBlob->GetBufferSize(), IID_PPV_ARGS(computeRootSignature_.GetAddressOf()));
         ASSERT_IF_FAILED(hr);

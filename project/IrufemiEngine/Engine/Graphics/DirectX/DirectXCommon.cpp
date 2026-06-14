@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DirectXCommon.h"
 
 #include "Resource/Texture/TextureUtility.h"
@@ -161,7 +162,7 @@ void DirectXCommon::CreateDevice() {
         }
         useAdapter = nullptr;
     }
-    assert(useAdapter != nullptr);
+    IRUFEMI_ASSERT(useAdapter != nullptr);
 
     ///D3D12Deviceの生成
     D3D_FEATURE_LEVEL featureLevels[] = {
@@ -175,7 +176,7 @@ void DirectXCommon::CreateDevice() {
             break;
         }
     }
-    assert(device_ != nullptr);
+    IRUFEMI_ASSERT(device_ != nullptr);
     Log::OutPutLog(log_->GetLogStream(), "Complete create D3D12Device!!!\n");
 
     if (useAdapter) { useAdapter.Reset(); }
@@ -739,7 +740,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureR
 }
 
 UINT DirectXCommon::GetBackBufferIndex(const Microsoft::WRL::ComPtr<IDXGISwapChain4>& swapChain) {
-    assert(swapChain != nullptr);
+    IRUFEMI_ASSERT(swapChain != nullptr);
     return swapChain->GetCurrentBackBufferIndex();
 }
 

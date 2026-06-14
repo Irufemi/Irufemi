@@ -34,7 +34,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
     HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
     if (FAILED(hr)) {
-        assert(false && "Failed to load shader file.");
+        IRUFEMI_ASSERT(false && "Failed to load shader file.");
         return nullptr;
     }
 
@@ -104,7 +104,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
             fclose(f);
         }
         
-        assert(false && "Shader Compile Error");
+        IRUFEMI_ASSERT(false && "Shader Compile Error");
     }
 
     // 5. コンパイル済みバイナリの取得

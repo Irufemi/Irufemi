@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "IrufemiEngine.h"
 
 #include "Platform/Input/InputManager.h"
@@ -90,7 +91,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   winApp_ = std::make_unique<WinApp>();
   if (!winApp_->Initialize(GetModuleHandle(nullptr), clientWidth, clientHeight,
                            title.c_str())) {
-    assert(false && "WinApp::Initialize failed");
+    IRUFEMI_ASSERT(false && "WinApp::Initialize failed");
     return;
   }
 
@@ -852,7 +853,7 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
   }
 
   auto* pso = GetPSOManager()->GetPSO(shaderName, currentBlend_, currentDepth_, currentCull_);
-  assert(pso && ("PSO is null for " + shaderName).c_str());
+  IRUFEMI_ASSERT(pso && ("PSO is null for " + shaderName).c_str());
   if (pso) {
     drawManager_->BindPSO(pso);
   }

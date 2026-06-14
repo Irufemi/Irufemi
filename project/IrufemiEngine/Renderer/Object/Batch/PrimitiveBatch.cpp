@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "PrimitiveBatch.h"
 #include <cassert>
 #include "Engine/IrufemiEngine.h"
@@ -51,7 +52,7 @@ void PrimitiveBatch::EnsureSharedTexture(const std::string& textureName) {
     } else {
         textureHandle_ = textureManager_->GetWhiteTextureHandle();
     }
-    assert(textureHandle_.ptr != 0 && "PrimitiveBatch Texture SRV handle is invalid");
+    IRUFEMI_ASSERT(textureHandle_.ptr != 0 && "PrimitiveBatch Texture SRV handle is invalid");
 }
 
 float PrimitiveBatch::GetBoundingSphereRadius() const {

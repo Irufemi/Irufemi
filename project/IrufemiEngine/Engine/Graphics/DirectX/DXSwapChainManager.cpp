@@ -195,7 +195,7 @@ uint32_t DXSwapChainManager::AllocateRTVIndex() {
         freeRtvIndices_.pop_back();
         return index;
     }
-    assert(nextRtvIndex_ < 128);
+    IRUFEMI_ASSERT(nextRtvIndex_ < 128);
     return nextRtvIndex_++;
 }
 
@@ -212,7 +212,7 @@ uint32_t DXSwapChainManager::AllocateDSVIndex() {
         freeDsvIndices_.pop_back();
         return index;
     }
-    assert(nextDsvIndex_ < 16);
+    IRUFEMI_ASSERT(nextDsvIndex_ < 16);
     return nextDsvIndex_++;
 }
 

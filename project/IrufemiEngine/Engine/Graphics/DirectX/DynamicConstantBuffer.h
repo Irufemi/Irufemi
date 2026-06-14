@@ -35,7 +35,7 @@ public:
      * @param capacity 確保する最大要素数（例: 65536）
      */
     void Initialize(DirectXCommon* dxCommon, uint32_t capacity) {
-        assert(dxCommon != nullptr);
+        IRUFEMI_ASSERT(dxCommon != nullptr);
         dxCommon_ = dxCommon;
         capacity_ = capacity;
         // 定数バッファは256バイトアライメント必須
@@ -58,7 +58,7 @@ public:
             freeIndices_.pop_back();
             return index;
         }
-        assert(nextIndex_ < capacity_ && "DynamicConstantBuffer capacity exceeded!");
+        IRUFEMI_ASSERT(nextIndex_ < capacity_ && "DynamicConstantBuffer capacity exceeded!");
         return nextIndex_++;
     }
 
