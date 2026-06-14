@@ -5,8 +5,8 @@
 #include <cassert>
 #include <vector>
 #include <comdef.h>
-
 #include "../../Core/Utility/Log.h"
+#include "../../Core/Utility/ErrorUtility.h"
 #include "../../Core/Utility/StringUtility.h"
 #include "../../../../externals/DirectXTex/d3dx12.h"
 #include <algorithm>
@@ -143,7 +143,7 @@ void DirectXCommon::EnableDebugLayer() {
 void DirectXCommon::InitializeDXGI() {
     //DXGIFactoryの生成
     HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 }
 
 void DirectXCommon::CreateDevice() {
@@ -152,7 +152,7 @@ void DirectXCommon::CreateDevice() {
     for (UINT i = 0; dxgiFactory_->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(useAdapter.GetAddressOf())) != DXGI_ERROR_NOT_FOUND; i++) {
         DXGI_ADAPTER_DESC3 adapterDesc{};
         HRESULT hr = useAdapter->GetDesc3(&adapterDesc);
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
         if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
             // std::format が環境によって不安定な可能性があるため、wstringstream等で代用するか、ワイド文字版が正しく動作することを確認
             std::wstring adapterName = adapterDesc.Description;
@@ -380,7 +380,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
     descriptorHeapDesc.NumDescriptors = numDescriptors;
     descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     HRESULT hr = device_->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(descriptorHeap.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     return descriptorHeap;
 
 }
@@ -450,7 +450,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_
     //実際に頂点リソースを作る
     Microsoft::WRL::ComPtr<ID3D12Resource> bufferResource = nullptr;
     HRESULT hr = device_->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(bufferResource.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return bufferResource;
 
@@ -478,7 +478,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateUAVBufferResource(si
         D3D12_RESOURCE_STATE_COMMON,
         nullptr,
         IID_PPV_ARGS(bufferResource.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return bufferResource;
 }
@@ -576,7 +576,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(cons
         nullptr, //Clear最適値。使わないのでnullptr
         IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     return resource;
 }
 
@@ -594,7 +594,15 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
     if (GetFileAttributesW(filePathW.c_str()) == INVALID_FILE_ATTRIBUTES) {
         std::wstring msg = L"[LoadTexture] File not found: " + filePathW + L"\n";
         OutputDebugStringW(msg.c_str());
-        assert(false && "Texture file not found");
+        
+        // フォールバック: 1x1のマゼンタ色テクスチャを返す
+        ScratchImage fallbackImage;
+        fallbackImage.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, 1);
+        uint8_t* pixels = fallbackImage.GetPixels();
+        if (pixels) {
+            pixels[0] = 255; pixels[1] = 0; pixels[2] = 255; pixels[3] = 255;
+        }
+        return fallbackImage;
     }
 
     // --- sRGB 判定ロジック ---
@@ -641,7 +649,15 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
 #endif
         msg += L"\n";
         OutputDebugStringW(msg.c_str());
-        assert(false && "LoadTexture failed");
+        
+        // フォールバック: 1x1のマゼンタ色テクスチャを返す
+        ScratchImage fallbackImage;
+        fallbackImage.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, 1);
+        uint8_t* pixels = fallbackImage.GetPixels();
+        if (pixels) {
+            pixels[0] = 255; pixels[1] = 0; pixels[2] = 255; pixels[3] = 255;
+        }
+        return fallbackImage;
     }
 
     ScratchImage mipImages{};
@@ -656,7 +672,8 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
             _com_error err(hr);
             std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(static_cast<unsigned long>(hr)) + L")\n";
             OutputDebugStringW(msg.c_str());
-            assert(false && "GenerateMipMaps failed");
+            // ミップマップ生成に失敗した場合は、元の画像をそのまま返す
+            return image;
         }
     }
 
@@ -716,7 +733,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureR
         &depthClearValue, //Clear最適値
         IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return resource;
 }
@@ -772,7 +789,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
     descriptorHeapDesc.NumDescriptors = numDescriptors;
     descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(descriptorHeap.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     return descriptorHeap;
 
 }

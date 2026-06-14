@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <mutex>
+#include <unordered_map>
 #include "Engine/Core/Math/Vector3.h"
 
 // 前方宣言
@@ -92,9 +93,19 @@ public:
     }
 
     /**
-     * @brief オブジェクトの名前から該当する shared_ptr の GameObject を探して返す
+     * @brief オブジェクトの名前から該当する shared_ptr の GameObject を探して返す（O(1)検索・最初に見つかったものを返す）
      */
     std::shared_ptr<GameObject> FindGameObject(const std::string& name);
+
+    /**
+     * @brief 指定した名前を持つすべての GameObject を返す
+     */
+    std::vector<std::shared_ptr<GameObject>> FindGameObjects(const std::string& name);
+
+    /**
+     * @brief GameObjectの名前が変更された際にインデックスを更新するためのコールバック
+     */
+    void OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName, const std::string& newName);
 
     // --- ライフサイクル関数 ---
     
@@ -143,6 +154,9 @@ protected:
     std::vector<std::shared_ptr<GameObject>> gameObjects_;
     std::vector<std::shared_ptr<GameObject>> pendingAdds_;
     std::vector<std::shared_ptr<GameObject>> pendingRemoves_;
+    
+    // 高速検索(O(1))用インデックス (同名複数登録対応)
+    std::unordered_map<std::string, std::vector<std::weak_ptr<GameObject>>> nameIndex_;
 
     // --- コア機能 ---
     std::unique_ptr<DebugCamera> debugCamera_;

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -616,6 +616,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Core\Math\Random\Random.cpp" />
     <ClCompile Include="Engine\Core\System\DirectoryWatcher.cpp" />
     <ClCompile Include="Engine\Core\Utility\Ease.cpp" />
+    <ClCompile Include="Engine\Core\Utility\ErrorUtility.cpp" />
     <ClCompile Include="Engine\Core\Utility\Log.cpp" />
     <ClCompile Include="Engine\Core\Utility\StringUtility.cpp" />
     <ClCompile Include="Engine\Graphics\Camera\Camera.cpp" />
@@ -780,6 +781,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Utility\DXUtility.h" />
     <ClInclude Include="Engine\Core\Utility\Ease.h" />
     <ClInclude Include="Engine\Core\Utility\Log.h" />
+    <ClInclude Include="Engine\Core\Utility\ErrorUtility.h" />
     <ClInclude Include="Engine\Core\Utility\ObjectPool.h" />
     <ClInclude Include="Engine\Core\Utility\StringUtility.h" />
     <ClInclude Include="Engine\Graphics\Camera\Camera.h" />

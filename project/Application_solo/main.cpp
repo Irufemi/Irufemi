@@ -10,11 +10,19 @@
  * @return int 終了コード
  * @details この関数からGameApplicationを生成し、ゲームループを開始します。
  */
+#include <stdexcept>
+#include <string>
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-
-    // ゲームアプリケーションの生成と実行
-    auto game = std::make_unique<GameApplication>();
-    game->Run();
-
+    try {
+        // ゲームアプリケーションの生成と実行
+        auto game = std::make_unique<GameApplication>();
+        game->Run();
+    } catch (const std::exception& e) {
+        // 予期せぬ例外が発生した場合はメッセージボックスで通知
+        MessageBoxA(nullptr, e.what(), "Irufemi Engine - Fatal Error", MB_OK | MB_ICONERROR);
+    } catch (...) {
+        MessageBoxA(nullptr, "Unknown Error Occurred.", "Irufemi Engine - Fatal Error", MB_OK | MB_ICONERROR);
+    }
     return 0;
 }

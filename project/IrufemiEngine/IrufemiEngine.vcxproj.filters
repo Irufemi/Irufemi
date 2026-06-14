@@ -108,6 +108,9 @@
     <ClCompile Include="Engine\Core\Utility\Log.cpp">
       <Filter>Engine\Core\Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Core\Utility\ErrorUtility.cpp">
+      <Filter>Engine\Core\Utility</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Core\Utility\StringUtility.cpp">
       <Filter>Engine\Core\Utility</Filter>
     </ClCompile>
@@ -595,6 +598,9 @@
       <Filter>Engine\Core\Utility</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Utility\ObjectPool.h">
+      <Filter>Engine\Core\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Utility\ErrorUtility.h">
       <Filter>Engine\Core\Utility</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Utility\StringUtility.h">

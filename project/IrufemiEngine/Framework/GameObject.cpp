@@ -21,6 +21,15 @@ void GameObject::Initialize() {
     }
 }
 
+void GameObject::SetName(const std::string& name) {
+    if (name_ == name) return;
+    std::string oldName = name_;
+    name_ = name;
+    if (scene_) {
+        scene_->OnGameObjectNameChanged(shared_from_this(), oldName, name);
+    }
+}
+
 void GameObject::SetScene(BaseScene* scene) {
     scene_ = scene;
     for (auto& child : children_) {
