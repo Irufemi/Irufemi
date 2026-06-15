@@ -11,6 +11,7 @@
 #include "Engine/Manager/CollisionManager.h"
 #include "../Core/EditorActionManager.h"
 #include "../Core/EditorDragDrop.h"
+#include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Framework/GameObject.h"
 #include "Framework/IScene.h"
@@ -36,29 +37,6 @@ void SceneViewPanel::Draw() {
     if (!editorManager_) return;
 
     ImGui::Begin("Scene");
-
-    // 繝・ヰ繝・げ邱壹・謠冗判ON/OFF
-    bool* drawCollider = editorManager_->GetEngine()->GetCollisionManager()->GetIsDrawDebugLinePtr();
-    if (drawCollider) {
-        ImGui::Checkbox("Draw Colliders", drawCollider);
-    }
-    
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Translate", currentGizmoOperation_ == ImGuizmo::TRANSLATE)) currentGizmoOperation_ = ImGuizmo::TRANSLATE;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Rotate", currentGizmoOperation_ == ImGuizmo::ROTATE)) currentGizmoOperation_ = ImGuizmo::ROTATE;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Scale", currentGizmoOperation_ == ImGuizmo::SCALE)) currentGizmoOperation_ = ImGuizmo::SCALE;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Bounds", currentGizmoOperation_ == ImGuizmo::BOUNDS)) currentGizmoOperation_ = ImGuizmo::BOUNDS;
-    
-    ImGui::SameLine();
-    ImGui::Text("|");
-    ImGui::SameLine();
-    
-    if (ImGui::RadioButton("Local", currentGizmoMode_ == ImGuizmo::LOCAL)) currentGizmoMode_ = ImGuizmo::LOCAL;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("World", currentGizmoMode_ == ImGuizmo::WORLD)) currentGizmoMode_ = ImGuizmo::WORLD;
 
     auto* engine = editorManager_->GetEngine();
     if (engine && engine->GetMainRenderTexture()) {
@@ -163,6 +141,40 @@ void SceneViewPanel::Draw() {
                 engine->GetInputManager()->SetVirtualMousePosition({0.0f, 0.0f}, false);
             }
         }
+
+        // --- オーバーレイUI（SceneViewの右上） ---
+        ImVec2 overlayPos = ImVec2(maxPos.x - 300.0f, minPos.y + 10.0f);
+        ImGui::SetCursorScreenPos(overlayPos);
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.8f)); // 半透明背景
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+        if (ImGui::BeginChild("SceneOverlay", ImVec2(290.0f, 65.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+            bool* drawCollider = engine->GetCollisionManager()->GetIsDrawDebugLinePtr();
+            if (drawCollider) {
+                ImGui::Checkbox("Draw Colliders", drawCollider);
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Local", currentGizmoMode_ == ImGuizmo::LOCAL)) currentGizmoMode_ = ImGuizmo::LOCAL;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("World", currentGizmoMode_ == ImGuizmo::WORLD)) currentGizmoMode_ = ImGuizmo::WORLD;
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
+            if (ImGui::RadioButton(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT "##T", currentGizmoOperation_ == ImGuizmo::TRANSLATE)) currentGizmoOperation_ = ImGuizmo::TRANSLATE;
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Translate");
+            ImGui::SameLine();
+            if (ImGui::RadioButton(ICON_FA_ROTATE "##R", currentGizmoOperation_ == ImGuizmo::ROTATE)) currentGizmoOperation_ = ImGuizmo::ROTATE;
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Rotate");
+            ImGui::SameLine();
+            if (ImGui::RadioButton(ICON_FA_EXPAND "##S", currentGizmoOperation_ == ImGuizmo::SCALE)) currentGizmoOperation_ = ImGuizmo::SCALE;
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Scale");
+            ImGui::SameLine();
+            if (ImGui::RadioButton(ICON_FA_VECTOR_SQUARE "##B", currentGizmoOperation_ == ImGuizmo::BOUNDS)) currentGizmoOperation_ = ImGuizmo::BOUNDS;
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bounds");
+            ImGui::PopStyleVar();
+
+            ImGui::EndChild();
+        }
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
     }
 
     ImGui::End();

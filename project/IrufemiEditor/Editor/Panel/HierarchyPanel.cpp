@@ -73,11 +73,37 @@ void HierarchyPanel::Draw() {
                 // 識別用にポインタアドレスを使う
                 std::string icon = obj->GetIsFolder() ? ICON_FA_FOLDER : ICON_FA_CUBE;
                 std::string displayName = icon + " " + obj->GetName();
-                bool isOpen = ImGui::TreeNodeEx((void*)obj.get(), flags, "%s", displayName.c_str());
+
+                static GameObject* renamingObject = nullptr;
+                static char renameBuffer[256] = "";
+                bool isRenaming = (renamingObject == obj.get());
+
+                bool isOpen = ImGui::TreeNodeEx((void*)obj.get(), flags, "%s", isRenaming ? (icon + " ").c_str() : displayName.c_str());
 
                 // クリックで選択 (TreeNodeExがクリックされたかを判定)
                 if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
                     editorManager_->SetSelectedObject(obj);
+                }
+
+                // ダブルクリックでリネームモードへ
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                    renamingObject = obj.get();
+                    strncpy_s(renameBuffer, obj->GetName().c_str(), sizeof(renameBuffer) - 1);
+                }
+
+                if (isRenaming) {
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+                    ImGui::SetKeyboardFocusHere();
+                    if (ImGui::InputText("##Rename", renameBuffer, sizeof(renameBuffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+                        obj->SetName(renameBuffer);
+                        renamingObject = nullptr;
+                    } else if (ImGui::IsItemDeactivated()) {
+                        obj->SetName(renameBuffer);
+                        renamingObject = nullptr;
+                    }
+                    ImGui::PopStyleVar();
                 }
 
                 // 右端にActive切り替えとロック状態のトグルを配置
@@ -94,10 +120,15 @@ void HierarchyPanel::Draw() {
                 ImGui::PopStyleColor(2);
                 ImGui::SameLine();
 
+                // 目（可視）ボタン
                 bool isActive = obj->GetIsActive();
-                if (ImGui::Checkbox("##Active", &isActive)) {
-                    obj->SetIsActive(isActive);
+                std::string eyeIcon = isActive ? ICON_FA_EYE : ICON_FA_EYE_SLASH;
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0)); // 背景透明
+                ImGui::PushStyleColor(ImGuiCol_Text, isActive ? ImGui::GetStyle().Colors[ImGuiCol_Text] : ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+                if (ImGui::Button((eyeIcon + "##Active").c_str())) {
+                    obj->SetIsActive(!isActive);
                 }
+                ImGui::PopStyleColor(2);
                 
                 ImGui::PopID();
 

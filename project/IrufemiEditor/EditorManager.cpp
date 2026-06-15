@@ -153,6 +153,9 @@ void EditorManager::OnDrawUI() {
     ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
     ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 
+    // パフォーマンスパネルの表示状態
+    static bool showPerformancePanel = false;
+
     // メニューバー
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
@@ -184,8 +187,28 @@ void EditorManager::OnDrawUI() {
             }
             ImGui::EndMenu();
         }
+
+        if (ImGui::BeginMenu("GameObject")) {
+            if (ImGui::MenuItem("Create Empty")) actionManager_->CreatePrimitiveObject("Empty");
+            if (ImGui::BeginMenu("3D Object")) {
+                if (ImGui::MenuItem("Cube")) actionManager_->CreatePrimitiveObject("Cube");
+                if (ImGui::MenuItem("Sphere")) actionManager_->CreatePrimitiveObject("Sphere");
+                if (ImGui::MenuItem("Cylinder")) actionManager_->CreatePrimitiveObject("Cylinder");
+                if (ImGui::MenuItem("Plane")) actionManager_->CreatePrimitiveObject("Plane");
+                ImGui::Separator();
+                if (ImGui::MenuItem("Model (MeshRenderer)")) actionManager_->CreatePrimitiveObject("Model");
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("2D Object")) {
+                if (ImGui::MenuItem("Sprite")) actionManager_->CreatePrimitiveObject("Sprite");
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
         
         if (ImGui::BeginMenu("Window")) {
+            ImGui::MenuItem("Performance", nullptr, &showPerformancePanel);
+            ImGui::Separator();
             if (ImGui::BeginMenu("Layout")) {
                 if (ImGui::MenuItem("Load Default Layout")) {
                     const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
@@ -243,6 +266,16 @@ void EditorManager::OnDrawUI() {
     // 2. 各種エディタパネルの描画
     for (auto& panel : panels_) {
         panel->Draw();
+    }
+
+    // 3. パフォーマンスパネルの描画
+    if (showPerformancePanel) {
+        ImGui::Begin("Performance", &showPerformancePanel, ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        if (engine_) {
+            ImGui::Text("Delta Time: %f", engine_->GetDeltaTime());
+        }
+        ImGui::End();
     }
 
 #ifdef USE_IMGUI
