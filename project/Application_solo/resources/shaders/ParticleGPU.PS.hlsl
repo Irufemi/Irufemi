@@ -1,6 +1,7 @@
 /*テクスチャを貼ろう*/
 
 #include "ParticleGPU.hlsli"
+#include "DepthFade.hlsli"
 
 /*三角形の色を変えよう*/
 
@@ -64,24 +65,8 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	/*ソフトパーティクル計算*/
 	
-	// 1. 画面上のピクセル座標を取得
-	int3 screenPos = int3(input.position.xy, 0);
-	
-	// 2. 深度バッファから背景のZ値 (0.0 ～ 1.0) をサンプリング
-	float backgroundDepthNDC = gDepthTexture.Load(screenPos).r;
-	
-	// 3. Z値を線形(ワールド空間の距離)に変換
-	// LinearZ = (Near * Far) / (Far - Z * (Far - Near))
-	float farMinusNear = input.cameraFar - input.cameraNear;
-	float nearTimesFar = input.cameraNear * input.cameraFar;
-	
-	float backgroundDepthLinear = nearTimesFar / (input.cameraFar - backgroundDepthNDC * farMinusNear);
-	float particleDepthLinear = nearTimesFar / (input.cameraFar - input.position.z * farMinusNear);
-	
-	// 4. 背景との距離差を計算し、フェードさせる (1.0f は SoftnessScale 調整用)
-	float depthDiff = backgroundDepthLinear - particleDepthLinear;
 	float softScale = 1.0f; // TODO: 必要ならマテリアルやエミッターパラメータに出す
-	float fade = saturate(depthDiff * softScale);
+	float fade = CalculateDepthFade(gDepthTexture, input.position, input.cameraNear, input.cameraFar, softScale);
 	
 	// αにフェードを適用
 	output.color.a *= fade;
