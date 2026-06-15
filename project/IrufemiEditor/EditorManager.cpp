@@ -5,6 +5,7 @@
 #include "imgui/imgui.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/RenderTexture.h"
+#include "imgui/imgui_internal.h"
 #include "Framework/SceneManager.h"
 #include "Framework/IScene.h"
 #include "Framework/GameObject.h"
@@ -29,6 +30,7 @@
 #include "Editor/Core/EditorActionManager.h"
 #include "Editor/Core/EditorShortcutManager.h"
 #include "Editor/Core/ComponentEditorRegistry.h"
+#include "Editor/Core/EditorTheme.h"
 
 // FontAwesome 用のヘッダーを含める
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
@@ -45,6 +47,9 @@ void EditorManager::OnInitialize(IrufemiEngine* engine) {
 
     componentEditorRegistry_ = std::make_unique<ComponentEditorRegistry>();
     componentEditorRegistry_->RegisterAllEditors();
+
+    // テーマの適用
+    EditorTheme::ApplyDarkTheme();
 
     // 各パネルの生成と初期化
     panels_.push_back(std::make_unique<SceneViewPanel>());
@@ -90,8 +95,9 @@ void EditorManager::EnterPlayMode() {
     // 現在のシーン状態をバックアップ
     SceneSerializer::Save(scene, ".temp_playmode");
     playModeStartSceneName_ = currentSceneName; // 開始時のシーンを記憶
-    currentMode_ = EditorModeState::Play;
+    currentMode_ = EditorModeState::Playing;
     engine_->SetPlayMode(true);
+    engine_->SetTimeScale(1.0f); // 再生時は等倍
 }
 
 void EditorManager::ExitPlayMode() {
@@ -102,10 +108,9 @@ void EditorManager::ExitPlayMode() {
     // プレイモード中にシーンが変わっていた場合は元のシーンに戻す
     if (!playModeStartSceneName_.empty() && currentSceneName != playModeStartSceneName_) {
         engine_->GetSceneManager()->TransitionTo(playModeStartSceneName_, SceneTransition::Type::Fade, 0.0f);
-        // 非同期でシーンが切り替わるため、この時点での復元は一旦諦めるか、SceneManagerのコールバックで処理する必要がある
-        // 今回はとりあえず元のシーンのファイルをロードし直すことで「保存された状態」に戻るようにする
         currentMode_ = EditorModeState::Edit;
         engine_->SetPlayMode(false);
+        engine_->SetTimeScale(1.0f);
         return;
     }
 
@@ -123,6 +128,17 @@ void EditorManager::ExitPlayMode() {
     SceneSerializer::Load(scene, ".temp_playmode");
     currentMode_ = EditorModeState::Edit;
     engine_->SetPlayMode(false);
+    engine_->SetTimeScale(1.0f);
+}
+
+void EditorManager::TogglePauseMode() {
+    if (currentMode_ == EditorModeState::Playing) {
+        currentMode_ = EditorModeState::Paused;
+        if (engine_) engine_->SetTimeScale(0.0f); // 時を止める
+    } else if (currentMode_ == EditorModeState::Paused) {
+        currentMode_ = EditorModeState::Playing;
+        if (engine_) engine_->SetTimeScale(1.0f); // 時を動かす
+    }
 }
 
 void EditorManager::OnDrawUI() {
@@ -151,6 +167,35 @@ void EditorManager::OnDrawUI() {
 
     // DockSpace 機能の起動
     ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
+
+    // --- レイアウトの初期化 (Reset Layout) ---
+    static bool firstLayout = true;
+    if (firstLayout) {
+        firstLayout = false;
+        if (ImGui::DockBuilderGetNode(dockspaceId) == nullptr) {
+            resetLayout_ = true;
+        }
+    }
+
+    if (resetLayout_) {
+        resetLayout_ = false;
+        ImGui::DockBuilderRemoveNode(dockspaceId);
+        ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(dockspaceId, viewport->Size);
+
+        ImGuiID dock_main_id = dockspaceId;
+        ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.20f, nullptr, &dock_main_id);
+        ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
+        ImGuiID dock_id_bottom = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.30f, nullptr, &dock_main_id);
+
+        ImGui::DockBuilderDockWindow("SceneView", dock_main_id);
+        ImGui::DockBuilderDockWindow("Hierarchy", dock_id_left);
+        ImGui::DockBuilderDockWindow("Inspector", dock_id_right);
+        ImGui::DockBuilderDockWindow("ProjectBrowser", dock_id_bottom);
+        
+        ImGui::DockBuilderFinish(dockspaceId);
+    }
+
     ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 
     // パフォーマンスパネルの表示状態
@@ -210,6 +255,10 @@ void EditorManager::OnDrawUI() {
             ImGui::MenuItem("Performance", nullptr, &showPerformancePanel);
             ImGui::Separator();
             if (ImGui::BeginMenu("Layout")) {
+                if (ImGui::MenuItem("Reset Layout")) {
+                    resetLayout_ = true;
+                }
+                ImGui::Separator();
                 if (ImGui::MenuItem("Load Default Layout")) {
                     const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
                     const char* currentIni = ImGui::GetIO().IniFilename;
@@ -245,23 +294,57 @@ void EditorManager::OnDrawUI() {
                 }
                 ImGui::EndMenu();
             }
-            ImGui::EndMenu();
+        ImGui::EndMenu();
         }
+
+        // --- 中央への Play / Pause / Stop コントロール配置 ---
+        float playButtonWidth = 45.0f;
+        float playButtonHeight = 20.0f;
+        float playButtonsTotalWidth = playButtonWidth * 3.0f + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+        ImGui::SameLine((ImGui::GetWindowWidth() - playButtonsTotalWidth) * 0.5f);
+
+        // 少し下にオフセットを追加して、メニューバー内で上下の余白（パディング）を作る
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+
+        // Play ボタン
+        if (currentMode_ == EditorModeState::Playing) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
+        }
+        if (ImGui::Button(ICON_FA_PLAY, ImVec2(playButtonWidth, playButtonHeight))) {
+            if (currentMode_ == EditorModeState::Edit) EnterPlayMode();
+            else if (currentMode_ == EditorModeState::Paused) TogglePauseMode();
+        }
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f); // 同行でも念のため再度オフセット
+
+        // Pause ボタン
+        if (currentMode_ == EditorModeState::Paused) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.6f, 0.2f, 1.0f));
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
+        }
+        if (ImGui::Button(ICON_FA_PAUSE, ImVec2(playButtonWidth, playButtonHeight))) {
+            if (currentMode_ != EditorModeState::Edit) TogglePauseMode();
+        }
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+
+        // Stop ボタン
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
+        if (ImGui::Button(ICON_FA_STOP, ImVec2(playButtonWidth, playButtonHeight))) {
+            if (currentMode_ != EditorModeState::Edit) ExitPlayMode();
+        }
+        ImGui::PopStyleColor(2);
+
         ImGui::EndMenuBar();
     }
-
-    // ツールバー (Play / Stop)
-    ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
-    if (currentMode_ == EditorModeState::Edit) {
-        if (ImGui::Button(ICON_FA_PLAY " Play")) {
-            EnterPlayMode();
-        }
-    } else {
-        if (ImGui::Button(ICON_FA_STOP " Stop")) {
-            ExitPlayMode();
-        }
-    }
-    ImGui::End();
 
     // 2. 各種エディタパネルの描画
     for (auto& panel : panels_) {
@@ -273,7 +356,8 @@ void EditorManager::OnDrawUI() {
         ImGui::Begin("Performance", &showPerformancePanel, ImGuiWindowFlags_AlwaysAutoResize);
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         if (engine_) {
-            ImGui::Text("Delta Time: %f", engine_->GetDeltaTime());
+            ImGui::Text("Real Delta Time: %f", engine_->GetRealDeltaTime());
+            ImGui::Text("Game Delta Time: %f (Scale: %.2f)", engine_->GetDeltaTime(), engine_->GetTimeScale());
         }
         ImGui::End();
     }

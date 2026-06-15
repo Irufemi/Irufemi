@@ -20,7 +20,8 @@ class ComponentEditorRegistry;
  */
 enum class EditorModeState {
     Edit,
-    Play
+    Playing,
+    Paused
 };
 
 /**
@@ -49,7 +50,7 @@ public:
     void ClearSelectedObject();
     
     EditorModeState GetCurrentMode() const { return currentMode_; }
-    bool IsPlayMode() const { return currentMode_ == EditorModeState::Play; }
+    bool IsPlayMode() const { return currentMode_ != EditorModeState::Edit; }
     ///@}
 
     /**
@@ -62,12 +63,20 @@ public:
      */
     void ExitPlayMode();
 
+    /**
+     * @brief プレイ中に一時停止/再開を切り替える
+     */
+    void TogglePauseMode();
+
 private:
 
     IrufemiEngine* engine_ = nullptr;
 
     EditorModeState currentMode_ = EditorModeState::Edit;
     std::string playModeStartSceneName_ = "";
+    
+    // レイアウトのリセット用フラグ
+    bool resetLayout_ = false;
 
     std::unique_ptr<EditorActionManager> actionManager_;
     std::unique_ptr<EditorShortcutManager> shortcutManager_;

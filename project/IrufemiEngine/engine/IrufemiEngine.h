@@ -237,7 +237,8 @@ public: // ゲッター
     ///@}
 
     // 時間関連のゲッター
-    float GetDeltaTime() const { return deltaTime_; }
+    float GetDeltaTime() const { return gameDeltaTime_; } // タイムスケール適用済みの時間を返す
+    float GetRealDeltaTime() const { return deltaTime_; } // 実時間を返す
     float GetTotalTime() const { return totalTime_; }
     
     // 追加: ポーズ対応のゲーム内時間関連
