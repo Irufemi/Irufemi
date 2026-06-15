@@ -305,6 +305,8 @@ void GPUParticleSystem::SyncBeforeDraw() {
       billboardMatrix_.m[3][2] = 0.0f;
       perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
       perViewBuffer_[frameIndex]->worldPosition = activeCam->GetTranslate();
+      perViewBuffer_[frameIndex]->cameraNear = activeCam->GetNearZ();
+      perViewBuffer_[frameIndex]->cameraFar = activeCam->GetFarZ();
     }
   }
 
@@ -370,6 +372,8 @@ void GPUParticleSystem::Draw() {
       billboardMatrix_.m[3][2] = 0.0f;
       perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
       perViewBuffer_[frameIndex]->worldPosition = activeCam->GetTranslate();
+      perViewBuffer_[frameIndex]->cameraNear = activeCam->GetNearZ();
+      perViewBuffer_[frameIndex]->cameraFar = activeCam->GetFarZ();
     }
   }
 

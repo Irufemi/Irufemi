@@ -3,6 +3,7 @@
 #include "../../../IrufemiEngine.h"
 #include "../../DirectX/ShadowMap.h"
 #include "RenderGraphBuilder.h"
+#include "../../DirectX/RootSignatureConfig.h"
 
 void MainTransparentPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
     if (auto shadowMap = drawManager->GetShadowMap()) {
@@ -11,6 +12,9 @@ void MainTransparentPass::Setup(RenderGraphBuilder& builder, DrawManager* drawMa
 }
 
 void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
+    auto cmdList = engine->GetCommandList();
+    cmdList->SetGraphicsRootDescriptorTable(static_cast<UINT>(RootSlot::DepthMap), engine->GetDirectXCommon()->GetDepthSRVGPUHandle());
+
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false) {
         if (queue.empty()) return;
         

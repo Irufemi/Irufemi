@@ -46,8 +46,15 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rangeShadow[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         rangeShadow[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+        // メイン深度マップ (t6)
+        D3D12_DESCRIPTOR_RANGE rangeMainDepth[1] = {};
+        rangeMainDepth[0].BaseShaderRegister = 6; // t6
+        rangeMainDepth[0].NumDescriptors = 1;
+        rangeMainDepth[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeMainDepth[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
         // --- ルートパラメータの定義 ---
-        D3D12_ROOT_PARAMETER rootParameters[11] = {};
+        D3D12_ROOT_PARAMETER rootParameters[12] = {};
 
         // Slot 0: Material (b0, PS)
         rootParameters[(UINT)RootSlot::Material].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -109,6 +116,12 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::ShadowMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.pDescriptorRanges = rangeShadow;
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.NumDescriptorRanges = 1;
+
+        // Slot 11: DepthMap (t6, PS)
+        rootParameters[(UINT)RootSlot::DepthMap].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::DepthMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::DepthMap].DescriptorTable.pDescriptorRanges = rangeMainDepth;
+        rootParameters[(UINT)RootSlot::DepthMap].DescriptorTable.NumDescriptorRanges = 1;
 
         D3D12_STATIC_SAMPLER_DESC staticSamplers[5] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;

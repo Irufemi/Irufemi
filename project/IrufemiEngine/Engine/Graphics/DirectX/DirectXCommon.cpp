@@ -128,6 +128,15 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootSignatureManager_ = std::make_unique<DXRootSignatureManager>();
     rootSignatureManager_->Initialize(device_.Get(), log_);
     CreatePSOs();
+
+    CreateDepthSRV();
+}
+
+void DirectXCommon::CreateDepthSRV() {
+    if (depthSRVIndex_ == DescriptorPool::kInvalid) {
+        depthSRVIndex_ = srvPool_->Allocate();
+    }
+    srvPool_->CreateSRVForTexture2D(depthSRVIndex_, swapChainManager_->GetDepthStencilResource(), DXGI_FORMAT_R24_UNORM_X8_TYPELESS, 1);
 }
 
 void DirectXCommon::EnableDebugLayer() {
@@ -854,6 +863,7 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
 
     // DXSwapChainManager 側でバッファ再構築
     swapChainManager_->ResizeSwapChain(device_.Get(), width, height);
+    CreateDepthSRV(); // 追加: リサイズ後にSRVを作り直す
 
     // ビューポートとシザーレクトの更新
     viewport_.Width = static_cast<float>(width);

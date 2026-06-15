@@ -29,7 +29,9 @@ struct PerView
 	float4x4 viewProjection;
 	float4x4 billboardMatrix;
 	float3 worldPosition;
-	float pad;
+	float cameraNear;
+	float cameraFar;
+	float3 pad;
 };
 
 struct ParticleSortData
@@ -44,6 +46,8 @@ struct VertexShaderOutput
 	float4 texcoord : TEXCOORD0;
 	float4 color : COLOR0;
 	float timeRatio : TEXCOORD1;
+	float cameraNear : TEXCOORD2;
+	float cameraFar : TEXCOORD3;
 };
 
 struct GPUParticleEmitter

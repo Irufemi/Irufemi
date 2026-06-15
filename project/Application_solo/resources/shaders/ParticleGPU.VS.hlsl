@@ -148,5 +148,7 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
     output.texcoord = float4(uv, particle.translate.xy);
     output.timeRatio = saturate(particle.currentTime / max(particle.lifeTime, 0.0001f));
 	output.color = input.color * particle.color;
+	output.cameraNear = gPerView.cameraNear;
+	output.cameraFar = gPerView.cameraFar;
 	return output;
 }
