@@ -211,6 +211,32 @@ void DirectXCommon::SetInfoQueue() {
 
 
 void DirectXCommon::CreatePSOs() {
+    // --- 入力レイアウト定義 ---
+    D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "WEIGHT",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "INDEX",    0, DXGI_FORMAT_R32G32B32A32_SINT,  1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+    };
+
+    // --- PSOManagerの初期化 ---
+    psoManager_ = std::make_unique<PSOManager>();
+    psoManager_->Initialize(
+        device_.Get(),
+        GetRootSignature(),
+        { inputElementDescs, _countof(inputElementDescs) },
+        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+        DXGI_FORMAT_D24_UNORM_S8_UINT,
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
+    );
+
+    // --- シェーダコンパイルと登録 ---
+    RegisterAllShaders();
+}
+
+void DirectXCommon::RegisterAllShaders() {
     // --- シェーダコンパイル設定 ---
     ShaderCompileOptions options;
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
@@ -243,7 +269,6 @@ void DirectXCommon::CreatePSOs() {
     auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
     auto vsShadowSkin = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", options);
 
-
 #ifdef EditorMode
     auto vsSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.VS.hlsl", options);
     auto psSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.PS.hlsl", options);
@@ -261,27 +286,6 @@ void DirectXCommon::CreatePSOs() {
     auto csVoxelInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeVoxel.CS.hlsl", options);
     auto csVoxelEmit = shaderManager_->GetOrCompile(L"resources/shaders/EmitVoxel.CS.hlsl", options);
     auto csVoxelUpdate = shaderManager_->GetOrCompile(L"resources/shaders/UpdateVoxel.CS.hlsl", options);
-
-    // --- 入力レイアウト定義 ---
-    D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "WEIGHT",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "INDEX",    0, DXGI_FORMAT_R32G32B32A32_SINT,  1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-    };
-
-    // --- PSOManagerの初期化 ---
-    psoManager_ = std::make_unique<PSOManager>();
-    psoManager_->Initialize(
-        device_.Get(),
-        GetRootSignature(),
-        { inputElementDescs, _countof(inputElementDescs) },
-        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-        DXGI_FORMAT_D24_UNORM_S8_UINT,
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
-    );
 
     // --- 各種シェーダの登録 ---
     psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });

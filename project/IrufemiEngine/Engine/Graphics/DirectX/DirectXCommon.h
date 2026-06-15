@@ -74,6 +74,11 @@ public: // メンバ関数
 	void ResizeSwapChain(int32_t width, int32_t height);
 
 	/**
+	 * @brief シェーダーをすべて再コンパイル・再登録する（ホットリロード用）
+	 */
+	void RegisterAllShaders();
+
+	/**
 	 * @brief ロガーの設定
 	 */
 	void SetLog(Log* log) { log_ = log; }

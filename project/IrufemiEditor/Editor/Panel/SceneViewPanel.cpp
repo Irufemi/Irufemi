@@ -67,6 +67,9 @@ void SceneViewPanel::Draw() {
 
         // --- 驕ｸ謚樔ｸｭ縺ｮSprite縺ｫ蟇ｾ縺吶ｋ繧｢繧ｦ繝医Λ繧､繝ｳ・亥ｼｷ隱ｿ譫・画緒逕ｻ ---
         if (auto selectedObj = editorManager_->GetSelectedObject()) {
+            // ビューポート領域でクリッピングを行い、アウトラインが画面外（他のパネル等）にはみ出さないようにする
+            ImGui::GetWindowDrawList()->PushClipRect(minPos, maxPos, true);
+
             if (auto spriteComp = selectedObj->GetComponent<SpriteRendererComponent>()) {
                 if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
                     auto sprite = spriteComp->GetSprite();
@@ -109,6 +112,8 @@ void SceneViewPanel::Draw() {
                     ImGui::GetWindowDrawList()->AddRect(pMin, pMax, IM_COL32(0, 255, 255, 255), 0.0f, 0, 2.0f);
                 }
             }
+
+            ImGui::GetWindowDrawList()->PopClipRect();
         }
 
         DrawImGuizmo(minPos, size);

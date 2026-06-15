@@ -9,6 +9,12 @@ struct PixelInput {
 float4 main(PixelInput input) : SV_TARGET {
     float2 offset = 1.0f / float2(1280.0f, 720.0f); // TODO: 解像度を動的に
     
+    // 画面端のピクセルでは強制的にエッジを無視する（画面ふちに線が出るのを防ぐ）
+    if (input.uv.x <= offset.x || input.uv.x >= 1.0f - offset.x ||
+        input.uv.y <= offset.y || input.uv.y >= 1.0f - offset.y) {
+        return float4(0.0f, 0.0f, 0.0f, 0.0f);
+    }
+
     // 単純な十字サンプリングによる膨張（ブラー・エッジ検出）
     float center = tex.Sample(smp, input.uv).r;
     float up     = tex.Sample(smp, input.uv + float2(0, -offset.y)).r;

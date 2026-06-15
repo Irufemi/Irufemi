@@ -691,6 +691,7 @@ void IrufemiEngine::StartFrame() {
           dxCommon_->GetShaderManager()->ClearCache();
 
           // 再コンパイル
+          dxCommon_->RegisterAllShaders();
           dxCommon_->GetPSOManager()->PreWarmCommonPSOs();
 
           if (log_) Log::OutPutLog(log_->GetLogStream(), "[Shader Hot Reload] Compilation finished.\n");
