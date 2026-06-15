@@ -1,4 +1,4 @@
-﻿#include "SceneViewPanel.h"
+#include "SceneViewPanel.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Framework/SceneManager.h"
 
@@ -174,6 +174,9 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
 
     auto* engine = editorManager_->GetEngine();
     if (auto selectedObj = editorManager_->GetSelectedObject()) {
+        // ロックされている、またはフォルダの場合はギズモを非表示・操作不可にする
+        if (selectedObj->GetIsLocked() || selectedObj->GetIsFolder()) return;
+
         if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
             Matrix4x4 view = camera->GetViewMatrix();
             Matrix4x4 proj = camera->GetPerspectiveFovMatrix();

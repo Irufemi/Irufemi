@@ -37,6 +37,15 @@
 #include "EditorActionManager.h"
 
 // --- Undo/Redo Helpers ---
+
+static std::shared_ptr<Component> GetSharedComponent(GameObject* go, Component* comp) {
+    if (!go || !comp) return nullptr;
+    for (auto& c : go->GetComponents()) {
+        if (c.get() == comp) return c;
+    }
+    return nullptr;
+}
+
 template <typename T>
 static void CheckUndoRedoDrag(EditorActionManager* actionManager, T* valuePtr) {
     static T startValue;
@@ -212,7 +221,18 @@ static void DrawFallbackPropertiesGUI(Component* component, EditorActionManager*
     if (props.empty()) return;
     
     ImGui::PushID(component);
-    if (ImGui::CollapsingHeader(component->GetComponentName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+    bool headerOpen = ImGui::CollapsingHeader(component->GetComponentName().c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+    
+    bool pendingRemove = false;
+    if (ImGui::BeginPopupContextItem()) {
+        if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+        ImGui::EndPopup();
+    }
+    if (pendingRemove) {
+        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(component->GetGameObject()->shared_from_this(), GetSharedComponent(component->GetGameObject(), component)));
+    }
+
+    if (headerOpen) {
         for (const auto& prop : props) {
             switch (prop.type) {
                 case ComponentPropertyType::Header: {
@@ -417,7 +437,33 @@ class TransformComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<TransformComponent*>(component);
-        if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool headerOpen = ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen);
+        
+        bool pendingRemove = false;
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+            ImGui::EndPopup();
+        }
+        if (pendingRemove) {
+            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), GetSharedComponent(comp->GetGameObject(), comp)));
+        }
+
+        if (headerOpen) {
+            
+            // --- Reset Button ---
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x - 40.0f);
+            if (ImGui::Button("Reset##TR")) {
+                Vector3 oldPos = comp->position_;  Vector3 newPos = {0,0,0};
+                Vector3 oldRot = comp->rotation_;  Vector3 newRot = {0,0,0};
+                Vector3 oldScale = comp->scale_;   Vector3 newScale = {1,1,1};
+                
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
+                    oldPos, newPos, [comp](const Vector3& v) { comp->position_ = v; }));
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
+                    oldRot, newRot, [comp](const Vector3& v) { comp->rotation_ = v; }));
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
+                    oldScale, newScale, [comp](const Vector3& v) { comp->scale_ = v; }));
+            }
             
             // Position
             static Vector3 startPos;
@@ -470,7 +516,18 @@ class MeshRendererComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<MeshRendererComponent*>(component);
-        if (ImGui::TreeNodeEx("MeshRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool headerOpen = ImGui::TreeNodeEx("MeshRenderer", ImGuiTreeNodeFlags_DefaultOpen);
+
+        bool pendingRemove = false;
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+            ImGui::EndPopup();
+        }
+        if (pendingRemove) {
+            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), GetSharedComponent(comp->GetGameObject(), comp)));
+        }
+
+        if (headerOpen) {
             IrufemiEngine* engine = BaseModel::GetIrufemiEngine();
             if (engine && engine->GetObjModelManager()) {
                 ModelManager* modelManager = engine->GetObjModelManager();
@@ -538,7 +595,18 @@ class PrimitiveRendererComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<PrimitiveRendererComponent*>(component);
-        if (ImGui::TreeNodeEx("PrimitiveRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool headerOpen = ImGui::TreeNodeEx("PrimitiveRenderer", ImGuiTreeNodeFlags_DefaultOpen);
+
+        bool pendingRemove = false;
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+            ImGui::EndPopup();
+        }
+        if (pendingRemove) {
+            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), GetSharedComponent(comp->GetGameObject(), comp)));
+        }
+
+        if (headerOpen) {
             const char* typeNames[] = {
                 "Triangle", "Plane", "Cube", "Cylinder", "Sphere", 
                 "Tetra", "Circle", "Ring", "Skybox", "Cone", 
@@ -611,7 +679,18 @@ class SpriteRendererComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<SpriteRendererComponent*>(component);
-        if (ImGui::TreeNodeEx("SpriteRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool headerOpen = ImGui::TreeNodeEx("SpriteRenderer", ImGuiTreeNodeFlags_DefaultOpen);
+
+        bool pendingRemove = false;
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+            ImGui::EndPopup();
+        }
+        if (pendingRemove) {
+            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), GetSharedComponent(comp->GetGameObject(), comp)));
+        }
+
+        if (headerOpen) {
             bool needUpdate = false;
             TextureManager* tm = Sprite::GetTextureManager();
             if (tm) {
@@ -649,6 +728,30 @@ public:
                     actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
                         startTex, endTex, [comp](const std::string& v){ comp->SetTexture(v); }));
                 }
+            }
+            
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ASSET_PATH")) {
+                    std::string droppedPathStr = static_cast<const char*>(payload->Data);
+                    std::filesystem::path droppedPath(reinterpret_cast<const char8_t*>(droppedPathStr.c_str()));
+                    std::string ext = droppedPath.extension().string();
+                    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+                    
+                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".dds" || ext == ".tga") {
+                        std::string newTexName = droppedPathStr;
+                        std::replace(newTexName.begin(), newTexName.end(), '\\', '/');
+                        std::string lowerPath = newTexName;
+                        std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+                        if (lowerPath.find("resources/texture/") == 0) {
+                            newTexName = newTexName.substr(18); // length of "resources/texture/"
+                        } else if (lowerPath.find("resources/") == 0) {
+                            newTexName = newTexName.substr(10);
+                        }
+                        std::string oldTex = comp->texturePath_;
+                        PushInstantUndo(actionManager, oldTex, newTexName, std::function<void(const std::string&)>([comp](const std::string& v){ comp->SetTexture(v); }));
+                    }
+                }
+                ImGui::EndDragDropTarget();
             }
             
             bool isTopMost = comp->isTopMost_;
@@ -694,7 +797,18 @@ class TextRendererComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<TextRendererComponent*>(component);
-        if (ImGui::TreeNodeEx("TextRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool headerOpen = ImGui::TreeNodeEx("TextRenderer", ImGuiTreeNodeFlags_DefaultOpen);
+
+        bool pendingRemove = false;
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+            ImGui::EndPopup();
+        }
+        if (pendingRemove) {
+            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), GetSharedComponent(comp->GetGameObject(), comp)));
+        }
+
+        if (headerOpen) {
             // Text (UTF-8 螟画鋤)
             std::string utf8Text = ConvertString(comp->GetText());
             char textBuffer[256];
@@ -796,7 +910,18 @@ public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<AABBColliderComponent*>(component);
         ImGui::PushID(comp);
-        if (ImGui::CollapsingHeader("AABB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool headerOpen = ImGui::CollapsingHeader("AABB Collider", ImGuiTreeNodeFlags_DefaultOpen);
+
+        bool pendingRemove = false;
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+            ImGui::EndPopup();
+        }
+        if (pendingRemove) {
+            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), GetSharedComponent(comp->GetGameObject(), comp)));
+        }
+
+        if (headerOpen) {
             DrawColliderCommonProperties(comp, actionManager);
         }
         ImGui::PopID();
@@ -808,7 +933,18 @@ public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<OBBColliderComponent*>(component);
         ImGui::PushID(comp);
-        if (ImGui::CollapsingHeader("OBB Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool headerOpen = ImGui::CollapsingHeader("OBB Collider", ImGuiTreeNodeFlags_DefaultOpen);
+
+        bool pendingRemove = false;
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+            ImGui::EndPopup();
+        }
+        if (pendingRemove) {
+            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), GetSharedComponent(comp->GetGameObject(), comp)));
+        }
+
+        if (headerOpen) {
             DrawColliderCommonProperties(comp, actionManager);
         }
         ImGui::PopID();
@@ -820,7 +956,18 @@ public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<SphereColliderComponent*>(component);
         ImGui::PushID(comp);
-        if (ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool headerOpen = ImGui::CollapsingHeader("Sphere Collider", ImGuiTreeNodeFlags_DefaultOpen);
+
+        bool pendingRemove = false;
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+            ImGui::EndPopup();
+        }
+        if (pendingRemove) {
+            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), GetSharedComponent(comp->GetGameObject(), comp)));
+        }
+
+        if (headerOpen) {
             DrawColliderCommonProperties(comp, actionManager);
         }
         ImGui::PopID();
@@ -844,7 +991,18 @@ public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<RaycastComponent*>(component);
         ImGui::PushID(comp);
-        if (ImGui::CollapsingHeader("Raycast", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool headerOpen = ImGui::CollapsingHeader("Raycast", ImGuiTreeNodeFlags_DefaultOpen);
+
+        bool pendingRemove = false;
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+            ImGui::EndPopup();
+        }
+        if (pendingRemove) {
+            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), GetSharedComponent(comp->GetGameObject(), comp)));
+        }
+
+        if (headerOpen) {
             ImGui::DragFloat3("Origin", &comp->localOffset_.x, 0.1f);
             CheckUndoRedoDrag(actionManager, &comp->localOffset_);
             ImGui::DragFloat3("Local Direction", &comp->localDirection_.x, 0.1f);
@@ -900,7 +1058,18 @@ class ModelBatchRendererComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override {
         auto* comp = static_cast<ModelBatchRendererComponent*>(component);
-        if (ImGui::TreeNodeEx("ModelBatchRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool headerOpen = ImGui::TreeNodeEx("ModelBatchRenderer", ImGuiTreeNodeFlags_DefaultOpen);
+
+        bool pendingRemove = false;
+        if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+            ImGui::EndPopup();
+        }
+        if (pendingRemove) {
+            actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), GetSharedComponent(comp->GetGameObject(), comp)));
+        }
+
+        if (headerOpen) {
             IrufemiEngine* engine = BaseModel::GetIrufemiEngine();
             if (engine && engine->GetObjModelManager()) {
                 ModelManager* modelManager = engine->GetObjModelManager();

@@ -26,6 +26,11 @@ void InspectorPanel::Draw() {
     ImGui::Begin("Inspector");
 
     if (auto selected = editorManager_->GetSelectedObject()) {
+        bool isLocked = selected->GetIsLocked();
+        if (isLocked) {
+            ImGui::BeginDisabled();
+        }
+
         char nameBuffer[256];
         strncpy_s(nameBuffer, selected->GetName().c_str(), sizeof(nameBuffer) - 1);
         
@@ -173,6 +178,10 @@ void InspectorPanel::Draw() {
                 
                 ImGui::EndPopup();
             }
+        }
+        
+        if (isLocked) {
+            ImGui::EndDisabled();
         }
     } else {
         ImGui::Text("No object selected.");

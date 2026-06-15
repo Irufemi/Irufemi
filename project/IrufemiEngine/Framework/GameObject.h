@@ -123,13 +123,22 @@ public:
      */
     std::shared_ptr<GameObject> Instantiate(const std::string& prefabPath, const Vector3& position = {0,0,0});
 
+    // --- エディタ用フラグ ---
+    void SetIsFolder(bool isFolder) { isFolder_ = isFolder; }
+    bool GetIsFolder() const { return isFolder_; }
+    void SetIsLocked(bool isLocked) { isLocked_ = isLocked; }
+    bool GetIsLocked() const { return isLocked_; }
+
 private:
     uint64_t instanceId_ = 0;
     std::string tag_ = "Untagged";
     std::string name_ = "GameObject";
     bool isActive_ = true;
     bool isDestroyed_ = false;
+    bool isFolder_ = false;
+    bool isLocked_ = false;
     BaseScene* scene_ = nullptr;
+
     
     std::weak_ptr<GameObject> parent_;
     std::vector<std::shared_ptr<GameObject>> children_;

@@ -10,6 +10,7 @@
 #include "../Core/EditorActionManager.h"
 #include "../Core/EditorDragDrop.h"
 #include "Framework/SceneSerializer.h"
+#include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 
 #include <functional>
 #include <algorithm>
@@ -70,15 +71,29 @@ void HierarchyPanel::Draw() {
                 ImGui::PushID(obj.get());
 
                 // 識別用にポインタアドレスを使う
-                bool isOpen = ImGui::TreeNodeEx((void*)obj.get(), flags, "%s", obj->GetName().c_str());
+                std::string icon = obj->GetIsFolder() ? ICON_FA_FOLDER : ICON_FA_CUBE;
+                std::string displayName = icon + " " + obj->GetName();
+                bool isOpen = ImGui::TreeNodeEx((void*)obj.get(), flags, "%s", displayName.c_str());
 
                 // クリックで選択 (TreeNodeExがクリックされたかを判定)
                 if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
                     editorManager_->SetSelectedObject(obj);
                 }
 
-                // 右端にActive切り替えのチェックボックスを配置
-                ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 30.0f);
+                // 右端にActive切り替えとロック状態のトグルを配置
+                ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - 60.0f);
+                
+                // ロックボタン
+                bool isLocked = obj->GetIsLocked();
+                std::string lockIcon = isLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK;
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0)); // 背景透明
+                ImGui::PushStyleColor(ImGuiCol_Text, isLocked ? ImVec4(1.0f, 0.4f, 0.4f, 1.0f) : ImGui::GetStyle().Colors[ImGuiCol_Text]);
+                if (ImGui::Button((lockIcon + "##Lock").c_str())) {
+                    obj->SetIsLocked(!isLocked);
+                }
+                ImGui::PopStyleColor(2);
+                ImGui::SameLine();
+
                 bool isActive = obj->GetIsActive();
                 if (ImGui::Checkbox("##Active", &isActive)) {
                     obj->SetIsActive(isActive);
@@ -87,7 +102,7 @@ void HierarchyPanel::Draw() {
                 ImGui::PopID();
 
                 // --- Drag and Drop Source ---
-                if (ImGui::BeginDragDropSource()) {
+                if (!obj->GetIsLocked() && ImGui::BeginDragDropSource()) {
                     GameObject* ptr = obj.get();
                     ImGui::SetDragDropPayload(EditorDragDrop::PayloadGameObject, &ptr, sizeof(GameObject*));
                     ImGui::Text("Move %s", obj->GetName().c_str());
@@ -100,8 +115,9 @@ void HierarchyPanel::Draw() {
                         GameObject* payload_ptr = *(GameObject**)payload->Data;
                         
                         // 自分自身にはDropできない
+                        // ドロップ先がロックされていないか
                         // また、ドロップされるオブジェクトが「今の自分の親（先祖）」であってはならない（循環参照の防止）
-                        if (payload_ptr != obj.get() && !IsDescendant(obj, payload_ptr)) {
+                        if (!obj->GetIsLocked() && payload_ptr != obj.get() && !IsDescendant(obj, payload_ptr)) {
                             if (auto dropObj = baseScene->FindGameObject(payload_ptr)) {
                                 dropObj->SetParent(obj);
                             }
@@ -173,6 +189,13 @@ void HierarchyPanel::Draw() {
             if (ImGui::BeginPopupContextItem("HierarchyContextMenu", ImGuiPopupFlags_MouseButtonRight)) {
                 if (auto am = editorManager_->GetActionManager()) {
                     if (ImGui::Selectable("Create Empty")) am->CreatePrimitiveObject("Empty");
+                    if (ImGui::Selectable("Create Folder")) {
+                        am->CreatePrimitiveObject("Empty");
+                        if (auto newObj = editorManager_->GetSelectedObject()) {
+                            newObj->SetName("New Folder");
+                            newObj->SetIsFolder(true);
+                        }
+                    }
                     
                     if (ImGui::BeginMenu("3D Object")) {
                         if (ImGui::Selectable("Cube")) am->CreatePrimitiveObject("Cube");

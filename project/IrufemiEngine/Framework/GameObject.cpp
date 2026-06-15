@@ -172,6 +172,8 @@ nlohmann::json GameObject::Serialize() const {
     j["name"] = name_;
     j["tag"] = tag_;
     j["isActive"] = isActive_;
+    j["isFolder"] = isFolder_;
+    j["isLocked"] = isLocked_;
     
     nlohmann::json comps = nlohmann::json::array();
     for (const auto& comp : components_) {
@@ -195,6 +197,8 @@ void GameObject::Deserialize(const nlohmann::json& j) {
     if (j.contains("name")) name_ = j["name"];
     if (j.contains("tag")) tag_ = j["tag"];
     if (j.contains("isActive")) isActive_ = j["isActive"];
+    if (j.contains("isFolder")) isFolder_ = j["isFolder"];
+    if (j.contains("isLocked")) isLocked_ = j["isLocked"];
     
     if (j.contains("components")) {
         std::vector<std::shared_ptr<Component>> loadedComps;
