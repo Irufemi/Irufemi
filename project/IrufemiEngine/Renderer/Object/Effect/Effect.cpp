@@ -22,16 +22,16 @@ void Effect::Initialize(EffectType type) {
         isBillboard_ = true;
         
         hitParticle_ = std::make_unique<ParticleObject>();
-        hitParticle_->texturePath_ = currentTextureName_;
-        hitParticle_->blendMode_ = blendMode_;
-        hitParticle_->billboardMode_ = 1; // Billboard
-        hitParticle_->color_ = hitConfig_.color;
-        hitParticle_->lifeTimeMin_ = hitConfig_.lifeMin;
-        hitParticle_->lifeTimeMax_ = hitConfig_.lifeMax;
-        hitParticle_->startScale_ = hitConfig_.startScaleMax;
-        hitParticle_->endScale_ = hitConfig_.endScaleMax;
-        hitParticle_->jitter_ = hitConfig_.jitter;
-        hitParticle_->emitOnAwake_ = false;
+        hitParticle_->SetTexturePath(currentTextureName_);
+        hitParticle_->SetBlendMode(blendMode_);
+        hitParticle_->SetBillboardMode(1); // Billboard
+        hitParticle_->SetColor(hitConfig_.color);
+        hitParticle_->SetLifeTimeMin(hitConfig_.lifeMin);
+        hitParticle_->SetLifeTimeMax(hitConfig_.lifeMax);
+        hitParticle_->SetStartScale(hitConfig_.startScaleMax);
+        hitParticle_->SetEndScale(hitConfig_.endScaleMax);
+        hitParticle_->SetJitter(hitConfig_.jitter);
+        hitParticle_->SetEmitOnAwake(false);
         hitParticle_->Initialize();
         break;
     }
@@ -41,16 +41,16 @@ void Effect::Initialize(EffectType type) {
         
         // Planeエミッター (破片) -> ParticleObject
         impactPlaneParticle_ = std::make_unique<ParticleObject>();
-        impactPlaneParticle_->texturePath_ = impactConfig_.planeTexture;
-        impactPlaneParticle_->blendMode_ = blendMode_;
-        impactPlaneParticle_->billboardMode_ = 0; // None
-        impactPlaneParticle_->color_ = impactConfig_.color;
-        impactPlaneParticle_->lifeTimeMin_ = impactConfig_.lifeMin;
-        impactPlaneParticle_->lifeTimeMax_ = impactConfig_.lifeMax;
-        impactPlaneParticle_->startScale_ = impactConfig_.planeStartScaleMax;
-        impactPlaneParticle_->endScale_ = impactConfig_.planeEndScaleMax;
-        impactPlaneParticle_->jitter_ = impactConfig_.jitter;
-        impactPlaneParticle_->emitOnAwake_ = false;
+        impactPlaneParticle_->SetTexturePath(impactConfig_.planeTexture);
+        impactPlaneParticle_->SetBlendMode(blendMode_);
+        impactPlaneParticle_->SetBillboardMode(0); // None
+        impactPlaneParticle_->SetColor(impactConfig_.color);
+        impactPlaneParticle_->SetLifeTimeMin(impactConfig_.lifeMin);
+        impactPlaneParticle_->SetLifeTimeMax(impactConfig_.lifeMax);
+        impactPlaneParticle_->SetStartScale(impactConfig_.planeStartScaleMax);
+        impactPlaneParticle_->SetEndScale(impactConfig_.planeEndScaleMax);
+        impactPlaneParticle_->SetJitter(impactConfig_.jitter);
+        impactPlaneParticle_->SetEmitOnAwake(false);
         impactPlaneParticle_->Initialize();
         
         // Ringエミッター -> Primitive3DObject
@@ -154,25 +154,25 @@ void Effect::Initialize(EffectType type) {
 
         // 3. GPUパーティクル（火花用）
         explosionSparkParticle_ = std::make_unique<ParticleObject>();
-        explosionSparkParticle_->texturePath_ = "resources/circle2.png";
-        explosionSparkParticle_->blendMode_ = BlendMode::kBlendModeAdd;
-        explosionSparkParticle_->billboardMode_ = 1; // CameraBillboard
+        explosionSparkParticle_->SetTexturePath("resources/circle2.png");
+        explosionSparkParticle_->SetBlendMode(BlendMode::kBlendModeAdd);
+        explosionSparkParticle_->SetBillboardMode(1); // CameraBillboard
         
         // 元の SparkBehavior（白 -> 赤 -> 透明）をシミュレート
-        explosionSparkParticle_->color_ = { 1.0f, 1.0f, 0.8f, 1.0f };
-        explosionSparkParticle_->midColor_ = { 1.0f, 0.6f, 0.0f, 1.0f };
-        explosionSparkParticle_->midPoint_ = 0.2f;
+        explosionSparkParticle_->SetColor({ 1.0f, 1.0f, 0.8f, 1.0f });
+        explosionSparkParticle_->SetMidColor({ 1.0f, 0.6f, 0.0f, 1.0f });
+        explosionSparkParticle_->SetMidPoint(0.2f);
         
-        explosionSparkParticle_->startScale_ = { 0.08f, 0.08f, 0.08f };
-        explosionSparkParticle_->midScale_ = { 0.08f, 0.08f, 0.08f };
-        explosionSparkParticle_->endScale_ = { 0.0f, 0.0f, 0.0f };
+        explosionSparkParticle_->SetStartScale({ 0.08f, 0.08f, 0.08f });
+        explosionSparkParticle_->SetMidScale({ 0.08f, 0.08f, 0.08f });
+        explosionSparkParticle_->SetEndScale({ 0.0f, 0.0f, 0.0f });
         
-        explosionSparkParticle_->lifeTimeMin_ = 0.3f;
-        explosionSparkParticle_->lifeTimeMax_ = 0.6f;
-        explosionSparkParticle_->gravity_ = 0.8f;
-        explosionSparkParticle_->damping_ = 0.05f;
-        explosionSparkParticle_->velocity_ = 0.0f; // 爆風とは別でPlay時に設定する
-        explosionSparkParticle_->emitOnAwake_ = false;
+        explosionSparkParticle_->SetLifeTimeMin(0.3f);
+        explosionSparkParticle_->SetLifeTimeMax(0.6f);
+        explosionSparkParticle_->SetGravity(0.8f);
+        explosionSparkParticle_->SetDamping(0.05f);
+        explosionSparkParticle_->SetVelocity(0.0f); // 爆風とは別でPlay時に設定する
+        explosionSparkParticle_->SetEmitOnAwake(false);
         explosionSparkParticle_->Initialize();
 
         isActive_ = false;
@@ -873,18 +873,18 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
     switch (type_) {
     case EffectType::kHit:
         if (hitParticle_) {
-            hitParticle_->position_ = position;
-            hitParticle_->velocity_ = 0.0f;
-            hitParticle_->radius_ = 0.0f;
+            hitParticle_->SetPosition(position);
+            hitParticle_->SetVelocity(0.0f);
+            hitParticle_->SetRadius(0.0f);
             hitParticle_->MarkDirty();
             hitParticle_->EmitBurst(hitConfig_.emitCount);
         }
         break;
     case EffectType::kImpact:
         if (impactPlaneParticle_) {
-            impactPlaneParticle_->position_ = position;
-            impactPlaneParticle_->velocity_ = 0.0f;
-            impactPlaneParticle_->radius_ = 0.0f;
+            impactPlaneParticle_->SetPosition(position);
+            impactPlaneParticle_->SetVelocity(0.0f);
+            impactPlaneParticle_->SetRadius(0.0f);
             impactPlaneParticle_->MarkDirty();
             impactPlaneParticle_->EmitBurst(impactConfig_.planeEmitCount);
         }
@@ -936,14 +936,14 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
             Vector3 startScale = { 0.05f * scale.x, 0.05f * scale.y, 0.05f * scale.z };
             Vector3 midScale = { 0.08f * scale.x, 0.08f * scale.y, 0.08f * scale.z };
             
-            explosionSparkParticle_->startScale_ = startScale;
-            explosionSparkParticle_->midScale_ = midScale;
-            explosionSparkParticle_->endScale_ = { 0.0f, 0.0f, 0.0f };
+            explosionSparkParticle_->SetStartScale(startScale);
+            explosionSparkParticle_->SetMidScale(midScale);
+            explosionSparkParticle_->SetEndScale({ 0.0f, 0.0f, 0.0f });
             
-            explosionSparkParticle_->position_ = position;
-            explosionSparkParticle_->radius_ = 0.1f;
-            explosionSparkParticle_->velocity_ = 8.0f;
-            explosionSparkParticle_->spread_ = 1.0f;
+            explosionSparkParticle_->SetPosition(position);
+            explosionSparkParticle_->SetRadius(0.1f);
+            explosionSparkParticle_->SetVelocity(8.0f);
+            explosionSparkParticle_->SetSpread(1.0f);
             
             explosionSparkParticle_->MarkDirty();
             explosionSparkParticle_->EmitBurst(sparkCount);

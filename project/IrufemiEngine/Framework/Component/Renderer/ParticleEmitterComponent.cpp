@@ -19,7 +19,7 @@ void ParticleEmitterComponent::Initialize() {
 
 void ParticleEmitterComponent::Update() {
     if (transform_) {
-        particleObj_->position_ = transform_->worldPosition_;
+        particleObj_->SetPosition(transform_->worldPosition_);
     }
     
     particleObj_->Update();
