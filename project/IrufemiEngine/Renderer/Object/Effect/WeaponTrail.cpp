@@ -19,7 +19,7 @@ void WeaponTrail::Initialize(IrufemiEngine* engine, const std::string& texturePa
 
     resource_ = std::make_unique<Object3DResource>();
     
-    int numLayers = 3; // カメラ追従型のビルボード厚み（中央、左、右）
+    int numLayers = 3; // カメラ追従型のビルボード厚み（中央、左、右） 
     int maxVertices = kMaxPoints * 2 * numLayers;
     int maxIndices = (kMaxPoints - 1) * 12 * numLayers; // 両面描画のためインデックスは12個
 

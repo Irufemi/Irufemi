@@ -23,7 +23,7 @@ class Primitive3DObject;
  * @brief エフェクトの種類を管理する列挙型
  */
 enum class EffectType {
-    kHit,       // ヒットエフェクト（星型に広がる斬撃など）
+    kHit,       // ヒットエフェクト（星型に広がる斬撃など） 
     kImpact,    // スライドの表現（PlaneとRingの複合ヒットエフェクト）
     kAura,      // オーラエフェクト
     kSwing,     // スイングエフェクト（風切りエフェクト）

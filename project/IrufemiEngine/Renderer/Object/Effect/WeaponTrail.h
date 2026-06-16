@@ -36,7 +36,7 @@ private:
     Vector4 baseColor_;
     std::string texturePath_;
     bool isStopped_ = true;
-    float thickness_ = 0.6f; // デフォルトの厚み
+    float thickness_ = 0.6f; // デフォルトの厚み 
 
     IrufemiEngine* engine_ = nullptr;
 

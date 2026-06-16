@@ -24,7 +24,7 @@ void Effect::Initialize(EffectType type) {
         hitParticle_ = std::make_unique<ParticleObject>();
         hitParticle_->SetTexturePath(currentTextureName_);
         hitParticle_->SetBlendMode(blendMode_);
-        hitParticle_->SetBillboardMode(1); // Billboard
+        hitParticle_->SetBillboardMode(1); // Billboard mode
         hitParticle_->SetColor(hitConfig_.color);
         hitParticle_->SetLifeTimeMin(hitConfig_.lifeMin);
         hitParticle_->SetLifeTimeMax(hitConfig_.lifeMax);
