@@ -6,7 +6,9 @@
 #include "../Renderer/ModelBatchRendererComponent.h"
 #include "../../../Engine/IrufemiEngine.h"
 #include "../../../Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#ifdef USE_IMGUI
 #include <imgui.h>
+#endif
 #include <iostream>
 
 VoxelParticleComponent::VoxelParticleComponent() {
@@ -117,7 +119,7 @@ void VoxelParticleComponent::Deserialize(const nlohmann::json& j) {
 }
 
 void VoxelParticleComponent::OnRegisterProperties() {
-#ifdef EditorMode
+#ifdef USE_IMGUI
     if (ImGui::CollapsingHeader("VoxelParticle Component", ImGuiTreeNodeFlags_DefaultOpen)) {
         
         char buf[256];
