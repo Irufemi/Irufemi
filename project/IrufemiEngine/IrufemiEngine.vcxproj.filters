@@ -323,9 +323,7 @@
     <ClCompile Include="Renderer\Object\Effect\Effect.cpp">
       <Filter>Renderer\Object\Effect</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object\Effect\WeaponTrail.cpp">
-      <Filter>Renderer\Object\Effect</Filter>
-    </ClCompile>
+
     <ClCompile Include="Renderer\Object\Line\LineClass.cpp">
       <Filter>Renderer\Object\Line</Filter>
     </ClCompile>
@@ -905,9 +903,7 @@
     <ClInclude Include="Renderer\Object\Effect\Effect.h">
       <Filter>Renderer\Object\Effect</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object\Effect\WeaponTrail.h">
-      <Filter>Renderer\Object\Effect</Filter>
-    </ClInclude>
+
     <ClInclude Include="Renderer\Object\Line\LineClass.h">
       <Filter>Renderer\Object\Line</Filter>
     </ClInclude>

@@ -689,7 +689,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object\3D\Primitive\Primitive3DObject.cpp" />
     <ClCompile Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.cpp" />
     <ClCompile Include="Renderer\Object\Effect\Effect.cpp" />
-    <ClCompile Include="Renderer\Object\Effect\WeaponTrail.cpp" />
+
     <ClCompile Include="Renderer\Object\Line\LineClass.cpp" />
     <ClCompile Include="Renderer\Object\Particle\ParticleObject.cpp" />
     <ClCompile Include="Renderer\Object\Batch\ModelBatch.cpp" />
@@ -885,7 +885,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object\3D\Primitive\Primitive3DObject.h" />
     <ClInclude Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.h" />
     <ClInclude Include="Renderer\Object\Effect\Effect.h" />
-    <ClInclude Include="Renderer\Object\Effect\WeaponTrail.h" />
+
     <ClInclude Include="Renderer\Object\Line\LineClass.h" />
     <ClInclude Include="Renderer\Object\Line\Data\LineVertexData.h" />
     <ClInclude Include="Renderer\Object\Particle\ParticleObject.h" />

@@ -145,19 +145,19 @@ struct AuraConfig {
 struct SwingConfig {
     PrimitiveType shape = PrimitiveType::Ring;                  //!< 使用するプリミティブ形状（デフォルト: Ring）
     std::string texture = "resources/gradationLine.png";        //!< 使用するテクスチャパス
-    Vector4 color = { 1.0f, 0.65f, 0.1f, 1.0f };                //!< 鈍器の重みを感じさせる力強いオレンジイエロー
-    Vector3 startScale = { 1.0f, 1.0f, 1.0f };                  //!< 開始スケール（半径はPlayer側で直接指定）
+    Vector4 color = { 1.0f, 0.65f, 0.1f, 1.0f };                //!< スイングエフェクトのデフォルトカラー
+    Vector3 startScale = { 1.0f, 1.0f, 1.0f };                  //!< 開始スケール（半径は呼び出し元で直接指定）
     Vector3 endScale = { 1.0f, 1.0f, 1.0f };                    //!< 終了スケール
     Vector2 uvScrollSpeed = { 0.0f, 0.0f };                     //!< 動的メッシュ生成で軌跡が伸びるためスクロールは不要
     Vector2 uvScale = { 1.0f, 1.0f };                           //!< UVタイリングスケール
     float lifeTime = 0.33f;                                     //!< エフェクトの生存時間（約20フレーム = 0.33秒）
     bool useClamp = true;                                       //!< 白丸回避用クランプサンプラー使用フラグ
     
-    // 風切り形状調整用のパラメータ（鈍器感・重厚感を強調）
-    float innerRadius = 0.2f;                                   //!< リングの内径 (0.2にして柄から先端まで覆う極太の風圧の壁に)
+    // リング形状調整用のパラメータ
+    float innerRadius = 0.2f;                                   //!< リングの内径
     float startAngle = 0.0f;                                    //!< 開始角度
-    float endAngle = 140.0f;                                    //!< 終了角度（長すぎない一塊の重い軌跡）
-    float fadeRangeAngle = 5.0f;                                //!< 刃のように尖らせず、ハンマーの面で空気を叩く「ぶつ切り」感を出すため5.0fに
+    float endAngle = 140.0f;                                    //!< 終了角度
+    float fadeRangeAngle = 5.0f;                                //!< 軌跡のフェード角度
     float swingRotationAngle = 0.0f;                            //!< エフェクト自体の回転は行わず、レールとして固定
 };
 
