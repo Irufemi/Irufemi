@@ -231,6 +231,7 @@ public: // ゲッター
 	D3D12_GPU_DESCRIPTOR_HANDLE GetRTVGPUDescriptorHandle(uint32_t index);
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDSVGPUDescriptorHandle(uint32_t index);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetReadOnlyDSVCPUDescriptorHandle();
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDepthSRVGPUHandle() const { return srvPool_->GetGPUHandle(depthSRVIndex_); }
 	///@}
 

@@ -1,6 +1,6 @@
 #include "AudioSourceComponent.h"
-#include "../GameObject.h"
-#include "../BaseScene.h"
+#include "../../GameObject.h"
+#include "../../BaseScene.h"
 #include "Engine/IrufemiEngine.h"
 #include "Resource/Audio/AudioManager.h"
 

@@ -424,6 +424,10 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t in
     return swapChainManager_->GetDSVGPUDescriptorHandle(index);
 }
 
+D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetReadOnlyDSVCPUDescriptorHandle() {
+    return swapChainManager_->GetDSVCPUDescriptorHandle(1);
+}
+
 uint32_t DirectXCommon::AllocateRTVIndex() {
     return swapChainManager_->AllocateRTVIndex();
 }

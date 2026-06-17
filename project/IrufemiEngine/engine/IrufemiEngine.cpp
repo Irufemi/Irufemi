@@ -31,7 +31,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include <format>
 #include "../Resource/Audio/AudioManager.h"
 #include "../Resource/Audio/AudioPlayer.h"
-#include "../Framework/Component/AudioSourceComponent.h"
+#include "../Framework/Component/Audio/AudioSourceComponent.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Graphics/DirectX/DirectXUtils.h"
 #include "Manager/DebugUI.h"

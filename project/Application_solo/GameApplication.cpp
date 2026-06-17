@@ -81,15 +81,15 @@ void GameApplication::Run() {
     engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);
 
     // 独自コンポーネントの登録
-    ComponentFactory::Register("RailPathComponent", []() { return std::make_shared<RailPathComponent>(); });
-    ComponentFactory::Register("RailShooterPlayerComponent", []() { return std::make_shared<RailShooterPlayerComponent>(); });
-    ComponentFactory::Register("RailShooterEnemyComponent", []() { return std::make_shared<RailShooterEnemyComponent>(); });
-    ComponentFactory::Register("CameraFollowPlayerComponent", []() { return std::make_shared<CameraFollowPlayerComponent>(); });
-    ComponentFactory::Register("DebrisComponent", []() { return std::make_shared<DebrisComponent>(); });
-    ComponentFactory::Register("DebrisManagerComponent", []() { return std::make_shared<DebrisManagerComponent>(); });
-    ComponentFactory::Register("GravityPlayerComponent", []() { return std::make_shared<GravityPlayerComponent>(); });
-    ComponentFactory::Register("DebugEnemySpawnerComponent", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
-    ComponentFactory::Register("BossComponent", []() { return std::make_shared<BossComponent>(); });
+    ComponentFactory::Register("RailPathComponent", "Game", []() { return std::make_shared<RailPathComponent>(); });
+    ComponentFactory::Register("RailShooterPlayerComponent", "Game", []() { return std::make_shared<RailShooterPlayerComponent>(); });
+    ComponentFactory::Register("RailShooterEnemyComponent", "Game", []() { return std::make_shared<RailShooterEnemyComponent>(); });
+    ComponentFactory::Register("CameraFollowPlayerComponent", "Game", []() { return std::make_shared<CameraFollowPlayerComponent>(); });
+    ComponentFactory::Register("DebrisComponent", "Game", []() { return std::make_shared<DebrisComponent>(); });
+    ComponentFactory::Register("DebrisManagerComponent", "Game", []() { return std::make_shared<DebrisManagerComponent>(); });
+    ComponentFactory::Register("GravityPlayerComponent", "Game", []() { return std::make_shared<GravityPlayerComponent>(); });
+    ComponentFactory::Register("DebugEnemySpawnerComponent", "Game", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
+    ComponentFactory::Register("BossComponent", "Game", []() { return std::make_shared<BossComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

@@ -25,7 +25,7 @@
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Collider/RaycastComponent.h"
-#include "Framework/Component/Renderer/ParticleEmitterComponent.h"
+#include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Framework/Component/Script/RotatorComponent.h"

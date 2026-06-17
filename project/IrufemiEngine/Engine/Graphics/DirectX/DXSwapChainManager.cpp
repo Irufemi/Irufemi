@@ -65,7 +65,7 @@ void DXSwapChainManager::CreateDescriptorHeaps(ID3D12Device* device) {
     ASSERT_IF_FAILED(hr);
 
     nextRtvIndex_ = 4; // 0, 1 は SwapChain 用、2, 3 は ImGui 用に予約
-    nextDsvIndex_ = 1; // 0 はメインの深度バッファ
+    nextDsvIndex_ = 2; // 0 はメインの深度バッファ(Write), 1 はメインの深度バッファ(ReadOnly)
 }
 
 void DXSwapChainManager::InitializeRenderTargets(ID3D12Device* device) {
@@ -126,6 +126,12 @@ void DXSwapChainManager::CreateDepthStencil(ID3D12Device* device, int32_t width,
     dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+
+    // Read-Only DSV
+    dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+    D3D12_CPU_DESCRIPTOR_HANDLE readOnlyHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+    readOnlyHandle.ptr += descriptorSizeDSV_;
+    device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, readOnlyHandle);
 }
 
 void DXSwapChainManager::ReleaseSwapChainResources() {
@@ -162,6 +168,12 @@ void DXSwapChainManager::ResizeSwapChain(ID3D12Device* device, int32_t width, in
     dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+
+    // Read-Only DSV
+    dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+    D3D12_CPU_DESCRIPTOR_HANDLE readOnlyHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+    readOnlyHandle.ptr += descriptorSizeDSV_;
+    device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, readOnlyHandle);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DXSwapChainManager::GetRTVCPUDescriptorHandle(uint32_t index) const {

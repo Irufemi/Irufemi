@@ -663,7 +663,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\SceneTransition.cpp" />
     <ClCompile Include="Framework\UIAnimator.cpp" />
     <ClCompile Include="Framework\UISelectionGroup.cpp" />
-    <ClCompile Include="Framework\Component\AudioSourceComponent.cpp" />
+    <ClCompile Include="Framework\Component\Audio\AudioSourceComponent.cpp" />
     <ClCompile Include="Framework\Component\ComponentFactory.cpp" />
     <ClCompile Include="Framework\Component\TransformComponent.cpp" />
     <ClCompile Include="Framework\Component\Camera\CameraComponent.cpp" />
@@ -673,11 +673,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\Collider\SphereColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\ModelBatchRendererComponent.cpp" />
-    <ClCompile Include="Framework\Component\Renderer\ParticleEmitterComponent.cpp" />
+    <ClCompile Include="Framework\Component\Effect\ParticleEmitterComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\TextRendererComponent.cpp" />
-    <ClCompile Include="Framework\Component\Renderer\VoxelParticleComponent.cpp" />
+    <ClCompile Include="Framework\Component\Effect\VoxelParticleComponent.cpp" />
     <ClCompile Include="Framework\Component\Script\RotatorComponent.cpp" />
     <ClCompile Include="Framework\Component\UI\ButtonComponent.cpp" />
     <ClCompile Include="Framework\Component\UI\CanvasComponent.cpp" />
@@ -857,7 +857,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\SceneTransition.h" />
     <ClInclude Include="Framework\UIAnimator.h" />
     <ClInclude Include="Framework\UISelectionGroup.h" />
-    <ClInclude Include="Framework\Component\AudioSourceComponent.h" />
+    <ClInclude Include="Framework\Component\Audio\AudioSourceComponent.h" />
     <ClInclude Include="Framework\Component\Component.h" />
     <ClInclude Include="Framework\Component\ComponentFactory.h" />
     <ClInclude Include="Framework\Component\TransformComponent.h" />
@@ -869,11 +869,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Collider\SphereColliderComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\ModelBatchRendererComponent.h" />
-    <ClInclude Include="Framework\Component\Renderer\ParticleEmitterComponent.h" />
+    <ClInclude Include="Framework\Component\Effect\ParticleEmitterComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\PrimitiveRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h" />
-    <ClInclude Include="Framework\Component\Renderer\VoxelParticleComponent.h" />
+    <ClInclude Include="Framework\Component\Effect\VoxelParticleComponent.h" />
     <ClInclude Include="Framework\Component\Script\RotatorComponent.h" />
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />

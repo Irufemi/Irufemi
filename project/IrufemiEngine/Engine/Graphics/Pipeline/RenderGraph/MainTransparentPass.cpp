@@ -4,6 +4,7 @@
 #include "../../DirectX/ShadowMap.h"
 #include "RenderGraphBuilder.h"
 #include "../../DirectX/RootSignatureConfig.h"
+#include "../../DirectX/DirectXUtils.h"
 
 void MainTransparentPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
     if (auto shadowMap = drawManager->GetShadowMap()) {
@@ -13,7 +14,22 @@ void MainTransparentPass::Setup(RenderGraphBuilder& builder, DrawManager* drawMa
 
 void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     auto cmdList = engine->GetCommandList();
-    cmdList->SetGraphicsRootDescriptorTable(static_cast<UINT>(RootSlot::DepthMap), engine->GetDirectXCommon()->GetDepthSRVGPUHandle());
+    auto dxCommon = engine->GetDirectXCommon();
+    auto depthResource = dxCommon->GetDepthStencilResource();
+
+    // 1. バリア: DEPTH_WRITE -> DEPTH_READ | PIXEL_SHADER_RESOURCE
+    if (depthResource) {
+        DirectXUtils::TransitionBarrier(cmdList, depthResource, 
+            D3D12_RESOURCE_STATE_DEPTH_WRITE, 
+            D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
+
+    // 2. ReadOnly DSV をセット
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
+    D3D12_CPU_DESCRIPTOR_HANDLE readOnlyDsvHandle = dxCommon->GetReadOnlyDSVCPUDescriptorHandle();
+    cmdList->OMSetRenderTargets(1, &rtvHandle, false, &readOnlyDsvHandle);
+
+    cmdList->SetGraphicsRootDescriptorTable(static_cast<UINT>(RootSlot::DepthMap), dxCommon->GetDepthSRVGPUHandle());
 
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false) {
         if (queue.empty()) return;
@@ -106,4 +122,15 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
             drawManager->DrawVoxelParticle(p);
         }
     }
+
+    // 4. バリアを元に戻す: DEPTH_READ | PIXEL_SHADER_RESOURCE -> DEPTH_WRITE
+    if (depthResource) {
+        DirectXUtils::TransitionBarrier(cmdList, depthResource, 
+            D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 
+            D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    }
+
+    // 5. Writable DSV に戻す (以降のパスで必要になる場合のため)
+    D3D12_CPU_DESCRIPTOR_HANDLE writableDsvHandle = dxCommon->GetDSVCPUDescriptorHandle(0);
+    cmdList->OMSetRenderTargets(1, &rtvHandle, false, &writableDsvHandle);
 }

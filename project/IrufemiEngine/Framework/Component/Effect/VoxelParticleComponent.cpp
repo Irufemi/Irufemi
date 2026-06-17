@@ -2,8 +2,8 @@
 #include "../../GameObject.h"
 #include "../../BaseScene.h"
 #include "../TransformComponent.h"
-#include "MeshRendererComponent.h"
-#include "ModelBatchRendererComponent.h"
+#include "../Renderer/MeshRendererComponent.h"
+#include "../Renderer/ModelBatchRendererComponent.h"
 #include "../../../Engine/IrufemiEngine.h"
 #include "../../../Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include <imgui.h>
