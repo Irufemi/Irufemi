@@ -21,7 +21,17 @@ public:
     std::string GetComponentName() const override { return "VoxelParticleComponent"; }
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;
-    void OnRegisterProperties() override;
+
+    const std::string& GetOverrideModelName() const { return overrideModelName_; }
+    void SetOverrideModelName(const std::string& name) { overrideModelName_ = name; }
+
+    Vector3Int GetResolution() const { return resolution_; }
+    void SetResolution(const Vector3Int& res) { resolution_ = res; }
+
+    int GetPreAllocateCount() const { return preAllocateCount_; }
+    void SetPreAllocateCount(int count) { preAllocateCount_ = count; }
+
+    VoxelParticleSystem::VoxelEmitterParams& GetEmitterParams() { return emitterParams_; }
 
     /**
      * @brief その場にパーティクルを放出します（実装保留・拡張用）

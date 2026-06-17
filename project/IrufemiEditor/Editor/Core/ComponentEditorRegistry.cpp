@@ -17,6 +17,7 @@
 #include "../ComponentEditors/ColliderComponentEditors.h"
 #include "../ComponentEditors/ParticleEmitterComponentEditor.h"
 #include "../ComponentEditors/RaycastComponentEditor.h"
+#include "../ComponentEditors/VoxelParticleComponentEditor.h"
 
 // Engine Components
 #include "Framework/Component/TransformComponent.h"
@@ -30,6 +31,7 @@
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Collider/RaycastComponent.h"
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
+#include "Framework/Component/Effect/VoxelParticleComponent.h"
 
 // =======================================================================
 // ComponentEditorRegistry
@@ -50,6 +52,7 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<SphereColliderComponent, SphereColliderComponentEditor>();
     RegisterEditor<RaycastComponent, RaycastComponentEditor>();
     RegisterEditor<ParticleEmitterComponent, ParticleEmitterComponentEditor>();
+    RegisterEditor<VoxelParticleComponent, VoxelParticleComponentEditor>();
 }
 
 void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {

@@ -76,7 +76,10 @@
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\RailShooterPlayerComponent.cpp">
-      <Filter>components</Filter>
+      <Filter>ソース ファイル\components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\SceneTransitionButtonComponent.cpp">
+      <Filter>ソース ファイル\components</Filter>
     </ClCompile>
     <ClCompile Include="components\RailShooterEnemyComponent.cpp">
       <Filter>components</Filter>
@@ -135,7 +138,10 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\RailShooterPlayerComponent.h">
-      <Filter>components</Filter>
+      <Filter>ヘッダー ファイル\components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\SceneTransitionButtonComponent.h">
+      <Filter>ヘッダー ファイル\components</Filter>
     </ClInclude>
     <ClInclude Include="components\RailShooterEnemyComponent.h">
       <Filter>components</Filter>

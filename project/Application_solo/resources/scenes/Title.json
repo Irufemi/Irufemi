@@ -47,7 +47,6 @@
             },
             {
                 "data": {
-                    "Click Anim Duration": 0.20000000298023224,
                     "Click Color": [
                         0.20000000298023224,
                         0.5,
@@ -66,21 +65,29 @@
                         1.0,
                         1.0
                     ],
-                    "Load Scene Name": "InGame",
                     "Normal Color": [
                         1.0,
                         1.0,
                         1.0,
                         1.0
-                    ],
+                    ]
+                },
+                "type": "ButtonComponent"
+            },
+            {
+                "data": {
+                    "Click Anim Duration": 0.20000000298023224,
+                    "Load Scene Name": "InGame",
                     "Transition Delay": 0.20000000298023224,
                     "Transition Duration": 1.0,
                     "Transition Type(0-3)": 2
                 },
-                "type": "ButtonComponent"
+                "type": "SceneTransitionButtonComponent"
             }
         ],
         "isActive": true,
+        "isFolder": false,
+        "isLocked": false,
         "name": "StartButton",
         "tag": "Untagged"
     },
@@ -125,6 +132,8 @@
             }
         ],
         "isActive": true,
+        "isFolder": false,
+        "isLocked": false,
         "name": "TitleText",
         "tag": "Untagged"
     }

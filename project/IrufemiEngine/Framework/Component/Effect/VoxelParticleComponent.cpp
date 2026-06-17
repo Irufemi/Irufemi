@@ -6,9 +6,7 @@
 #include "../Renderer/ModelBatchRendererComponent.h"
 #include "../../../Engine/IrufemiEngine.h"
 #include "../../../Renderer/System/VoxelParticle/VoxelParticleManager.h"
-#ifdef USE_IMGUI
-#include <imgui.h>
-#endif
+
 #include <iostream>
 
 VoxelParticleComponent::VoxelParticleComponent() {
@@ -116,42 +114,4 @@ void VoxelParticleComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("gravity")) emitterParams_.gravity = j["gravity"];
     if (j.contains("dispersion")) emitterParams_.dispersion = j["dispersion"];
     if (j.contains("convergence")) emitterParams_.convergence = j["convergence"];
-}
-
-void VoxelParticleComponent::OnRegisterProperties() {
-#ifdef USE_IMGUI
-    if (ImGui::CollapsingHeader("VoxelParticle Component", ImGuiTreeNodeFlags_DefaultOpen)) {
-        
-        char buf[256];
-        strncpy_s(buf, sizeof(buf), overrideModelName_.c_str(), _TRUNCATE);
-        if (ImGui::InputText("Override Model", buf, sizeof(buf))) {
-            overrideModelName_ = buf;
-        }
-        
-        int res[3] = {resolution_.x, resolution_.y, resolution_.z};
-        if (ImGui::InputInt3("Resolution", res)) {
-            resolution_ = {res[0], res[1], res[2]};
-        }
-        
-        ImGui::InputInt("PreAllocate Count", &preAllocateCount_);
-
-        ImGui::Separator();
-        ImGui::Text("Emitter Params");
-
-        const char* particleTypes[] = { "Default", "Building", "AshDisintegration", "FineScatter", "DebrisLargeGravity", "DebrisExplosive" };
-        int currentType = static_cast<int>(emitterParams_.particleType);
-        if (ImGui::Combo("Particle Type", &currentType, particleTypes, IM_ARRAYSIZE(particleTypes))) {
-            emitterParams_.particleType = static_cast<VoxelParticleSystem::ParticleType>(currentType);
-        }
-
-        ImGui::DragFloat("LifeTime", &emitterParams_.lifeTime, 0.1f, 0.1f, 10.0f);
-        ImGui::DragFloat("Gravity", &emitterParams_.gravity, 0.1f, -20.0f, 100.0f);
-        ImGui::DragFloat("Dispersion", &emitterParams_.dispersion, 0.1f, 0.0f, 100.0f);
-        ImGui::DragFloat("Convergence", &emitterParams_.convergence, 0.01f, 0.0f, 1.0f);
-        
-        if (ImGui::Button("Test Explode")) {
-            Explode();
-        }
-    }
-#endif
 }

@@ -27,10 +27,6 @@ public:
 
 private:
     bool CheckBounds(const struct Vector2& mousePos);
-
-    std::string onClickLoadScene_ = ""; // クリック時に自動で遷移するシーン名
-    int transitionType_ = 0;            // 0:Fade, 1:Dissolve, 2:Slide, 3:RadialBlur
-    float transitionDuration_ = 1.0f;   // トランジションにかける時間
     
     Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
     Vector4 hoverColor_  = {0.8f, 0.8f, 0.8f, 1.0f};
@@ -42,18 +38,12 @@ private:
     // 当たり判定のスケール調整（画像自体の余白などを省くため）
     Vector2 hitboxScale_{ 1.0f, 1.0f };
 
-    float clickAnimDuration_ = 0.8f;    // クリックアニメーションの長さ（フラッシュなど）
-    float transitionDelay_ = 0.8f;      // シーン遷移開始までの待機時間（デフォルトはアニメと同じ）
-
     // --- 内部状態 ---
     UIAnimator animator_;
 
     bool isHovered_ = false;
-    bool isClicked_ = false;
-    bool isPressedOnButton_ = false;
-    bool isTransitionPending_ = false;
-    float transitionTimer_ = 0.0f;
-    Vector3 originalScale_ = {1.0f, 1.0f, 1.0f};
+    bool isClicked_ = false; // クリックされた瞬間
+    bool isPressedOnButton_ = false; // ボタン上で押下中かどうか
 
     TransformComponent* transform_ = nullptr;
     SpriteRendererComponent* sprite_ = nullptr;

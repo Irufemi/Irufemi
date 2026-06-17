@@ -250,6 +250,7 @@ exit 0</Command>
     <ClCompile Include="components\DebrisManagerComponent.cpp" />
     <ClCompile Include="components\GravityPlayerComponent.cpp" />
     <ClCompile Include="components\DebugEnemySpawnerComponent.cpp" />
+    <ClCompile Include="components\SceneTransitionButtonComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -271,6 +272,7 @@ exit 0</Command>
     <ClInclude Include="components\DebrisManagerComponent.h" />
     <ClInclude Include="components\GravityPlayerComponent.h" />
     <ClInclude Include="components\DebugEnemySpawnerComponent.h" />
+    <ClInclude Include="components\SceneTransitionButtonComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

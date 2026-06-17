@@ -20,6 +20,7 @@
     <ClCompile Include="Editor\ComponentEditors\ColliderComponentEditors.cpp" />
     <ClCompile Include="Editor\ComponentEditors\ParticleEmitterComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\RaycastComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\VoxelParticleComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\ModelBatchRendererComponentEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +48,7 @@
     <ClInclude Include="Editor\ComponentEditors\ColliderComponentEditors.h" />
     <ClInclude Include="Editor\ComponentEditors\ParticleEmitterComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\RaycastComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\VoxelParticleComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\ModelBatchRendererComponentEditor.h" />
   </ItemGroup>
 </Project>
