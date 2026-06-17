@@ -289,6 +289,9 @@
     <ClCompile Include="Framework\Component\Renderer\TextRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\Renderer\VoxelParticleComponent.cpp">
+      <Filter>Framework\Component\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\Component\Script\RotatorComponent.cpp">
       <Filter>Framework\Component\Script</Filter>
     </ClCompile>
@@ -868,6 +871,9 @@
       <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h">
+      <Filter>Framework\Component\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Renderer\VoxelParticleComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Script\RotatorComponent.h">
