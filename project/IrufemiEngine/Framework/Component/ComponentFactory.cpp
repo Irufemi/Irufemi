@@ -10,7 +10,6 @@
 #include "Collider/SphereColliderComponent.h"
 #include "Collider/OBBColliderComponent.h"
 #include "Collider/RaycastComponent.h"
-#include "Script/RotatorComponent.h"
 #include "Audio/AudioSourceComponent.h"
 #include "Effect/ParticleEmitterComponent.h"
 #include "UI/ButtonComponent.h"
@@ -57,7 +56,6 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("SphereColliderComponent", "Collider", []() { return std::make_shared<SphereColliderComponent>(); });
     Register("OBBColliderComponent", "Collider", []() { return std::make_shared<OBBColliderComponent>(); });
     Register("RaycastComponent", "Collider", []() { return std::make_shared<RaycastComponent>(); });
-    Register("RotatorComponent", "Scripts", []() { return std::make_shared<RotatorComponent>(); });
     Register("AudioSourceComponent", "Audio", []() { return std::make_shared<AudioSourceComponent>(); });
     Register("ParticleEmitterComponent", "Effect", []() { return std::make_shared<ParticleEmitterComponent>(); });
     Register("ButtonComponent", "UI", []() { return std::make_shared<ButtonComponent>(); });

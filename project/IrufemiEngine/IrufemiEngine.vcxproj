@@ -678,7 +678,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\TextRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Effect\VoxelParticleComponent.cpp" />
-    <ClCompile Include="Framework\Component\Script\RotatorComponent.cpp" />
+
     <ClCompile Include="Framework\Component\UI\ButtonComponent.cpp" />
     <ClCompile Include="Framework\Component\UI\CanvasComponent.cpp" />
     <ClCompile Include="Renderer\Object\2D\Primitive\Circle2D.cpp" />
@@ -874,7 +874,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h" />
     <ClInclude Include="Framework\Component\Effect\VoxelParticleComponent.h" />
-    <ClInclude Include="Framework\Component\Script\RotatorComponent.h" />
+
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />
     <ClInclude Include="Renderer\Object\2D\Primitive\Circle2D.h" />

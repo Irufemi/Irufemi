@@ -292,9 +292,7 @@
     <ClCompile Include="Framework\Component\Effect\VoxelParticleComponent.cpp">
       <Filter>Framework\Component\Effect</Filter>
     </ClCompile>
-    <ClCompile Include="Framework\Component\Script\RotatorComponent.cpp">
-      <Filter>Framework\Component\Script</Filter>
-    </ClCompile>
+
     <ClCompile Include="Framework\Component\UI\ButtonComponent.cpp">
       <Filter>Framework\Component\UI</Filter>
     </ClCompile>
@@ -876,9 +874,7 @@
     <ClInclude Include="Framework\Component\Effect\VoxelParticleComponent.h">
       <Filter>Framework\Component\Effect</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\Component\Script\RotatorComponent.h">
-      <Filter>Framework\Component\Script</Filter>
-    </ClInclude>
+
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h">
       <Filter>Framework\Component\UI</Filter>
     </ClInclude>

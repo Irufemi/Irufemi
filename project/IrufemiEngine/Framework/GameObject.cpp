@@ -11,7 +11,6 @@
 #include "Component/Collider/SphereColliderComponent.h"
 #include "Component/Collider/OBBColliderComponent.h"
 #include "Component/Collider/RaycastComponent.h"
-#include "Component/Script/RotatorComponent.h"
 #include <atomic>
 
 static std::atomic<uint64_t> s_nextInstanceId{ 1 };
