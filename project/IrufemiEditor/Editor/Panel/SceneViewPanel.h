@@ -26,7 +26,7 @@ private:
 
     // --- 蜀・Κ繝倥Ν繝代・繝｡繧ｽ繝・ラ ---
     void DrawImGuizmo(ImVec2 minPos, ImVec2 size);
-    void HandleDragAndDrop();
+    void HandleDragAndDrop(ImVec2 minPos, ImVec2 size);
     void HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos, ImVec2 size);
 };
 

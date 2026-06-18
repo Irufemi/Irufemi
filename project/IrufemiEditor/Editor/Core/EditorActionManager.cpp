@@ -67,7 +67,7 @@ void EditorActionManager::ClearHistory() {
     redoStack_.clear();
 }
 
-void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath) {
+void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, const Vector3& position) {
     if (!editorManager_) return;
     auto* engine = editorManager_->GetEngine();
     if (!engine || !engine->GetSceneManager()) return;
@@ -84,13 +84,15 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath) {
 
     if (ext == ".png" || ext == ".jpg" || ext == ".dds" || ext == ".bmp") {
         newObj = std::make_shared<GameObject>("Sprite_" + stemString);
-        newObj->AddComponent<TransformComponent>();
+        auto transform = newObj->AddComponent<TransformComponent>();
+        transform->position_ = position;
         auto spriteRenderer = newObj->AddComponent<SpriteRendererComponent>();
         spriteRenderer->SetTexture(assetPath); 
         newObj->Initialize();
     } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
         newObj = std::make_shared<GameObject>("Model_" + stemString);
-        newObj->AddComponent<TransformComponent>();
+        auto transform = newObj->AddComponent<TransformComponent>();
+        transform->position_ = position;
         auto meshRenderer = newObj->AddComponent<MeshRendererComponent>();
         
         // 同名ファイルに対応するため、ファイル名だけでなく相対パスを渡す
@@ -105,6 +107,11 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath) {
         newObj->Initialize();
     } else if (ext == ".json" || ext == ".prefab") {
         newObj = SceneSerializer::LoadPrefab(assetPath);
+        if (newObj) {
+            if (auto transform = newObj->GetComponent<TransformComponent>()) {
+                transform->position_ = position;
+            }
+        }
     }
 
     if (newObj) {

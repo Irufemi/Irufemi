@@ -8,6 +8,7 @@
 #include "Framework/GameObject.h"
 #include "../Core/EditorActionManager.h"
 #include "../Core/EditorCommands.h"
+#include "../Core/EditorDragDrop.h"
 #include "Engine/IrufemiEngine.h"
 #include "Resource/Model/ModelManager.h"
 
@@ -66,7 +67,7 @@ void MeshRendererComponentEditor::Draw(Component* component, EditorActionManager
         }
 
         if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ASSET_PATH")) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadAssetPath)) {
                 std::string droppedPathStr = static_cast<const char*>(payload->Data);
                 std::filesystem::path droppedPath(reinterpret_cast<const char8_t*>(droppedPathStr.c_str()));
                 std::string ext = droppedPath.extension().string();

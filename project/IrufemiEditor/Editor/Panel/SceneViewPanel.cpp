@@ -117,7 +117,7 @@ void SceneViewPanel::Draw() {
         }
 
         DrawImGuizmo(minPos, size);
-        HandleDragAndDrop();
+        HandleDragAndDrop(minPos, size);
 
         // --- UI逕ｨ縺ｮ莉ｮ諠ｳ繝槭え繧ｹ蠎ｧ讓呎峩譁ｰ & 繧ｯ繝ｪ繝・け縺ｫ繧医ｋ3D繝斐ャ繧ｭ繝ｳ繧ｰ ---
         if (ImGui::IsWindowHovered()) {
@@ -276,12 +276,40 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
     }
 }
 
-void SceneViewPanel::HandleDragAndDrop() {
+void SceneViewPanel::HandleDragAndDrop(ImVec2 minPos, ImVec2 size) {
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadAssetPath)) {
             std::string droppedPathStr = static_cast<const char*>(payload->Data);
+            
+            Vector3 dropPos = {0.0f, 0.0f, 0.0f};
+            auto* engine = editorManager_->GetEngine();
+            if (engine) {
+                if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+                    ImVec2 mousePos = ImGui::GetMousePos();
+                    Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
+                    float scaleX = 1280.0f / size.x;
+                    float scaleY = 720.0f / size.y;
+                    Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
+                    
+                    Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
+                    Matrix4x4 invViewProj = Math::Inverse(viewProj);
+                    Ray ray = Math::ScreenPointToRay(scaledVirtualPos, 1280.0f, 720.0f, invViewProj);
+                    
+                    if (std::abs(ray.diff.y) > 0.001f) {
+                        float t = -ray.origin.y / ray.diff.y;
+                        if (t > 0.0f) {
+                            dropPos = ray.origin + ray.diff * t;
+                        } else {
+                            dropPos = ray.origin + ray.diff * 10.0f;
+                        }
+                    } else {
+                        dropPos = ray.origin + ray.diff * 10.0f;
+                    }
+                }
+            }
+
             if (auto am = editorManager_->GetActionManager()) {
-                am->CreateObjectFromAsset(droppedPathStr);
+                am->CreateObjectFromAsset(droppedPathStr, dropPos);
             }
         }
         ImGui::EndDragDropTarget();
