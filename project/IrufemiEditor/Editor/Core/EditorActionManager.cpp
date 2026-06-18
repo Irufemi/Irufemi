@@ -115,6 +115,7 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, co
     }
 
     if (newObj) {
+        newObj->SetIsSerializable(true); // エディタから生成されたものは保存対象
         PushAndExecute(std::make_unique<CreateObjectCommand>(baseScene, newObj));
         editorManager_->SetSelectedObject(newObj);
     }
@@ -157,6 +158,7 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
     }
 
     if (obj) {
+        obj->SetIsSerializable(true); // エディタから生成されたものは保存対象
         PushAndExecute(std::make_unique<CreateObjectCommand>(baseScene, obj));
         editorManager_->SetSelectedObject(obj);
     }

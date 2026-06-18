@@ -139,7 +139,7 @@ private:
     bool isDestroyed_ = false;
     bool isFolder_ = false;
     bool isLocked_ = false;
-    bool isSerializable_ = true;
+    bool isSerializable_ = false; // デフォルトはfalse（動的生成とみなす）
     BaseScene* scene_ = nullptr;
 
     

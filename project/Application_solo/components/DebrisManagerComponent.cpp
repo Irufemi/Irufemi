@@ -27,7 +27,6 @@ void DebrisManagerComponent::Initialize() {
     // ガレキのプレハブを生成するファクトリ関数
     auto debrisFactory = [this]() -> std::shared_ptr<GameObject> {
         auto obj = std::make_shared<GameObject>("Debris");
-        obj->SetIsSerializable(false); // ★ 動的生成なので保存対象から除外
 
         auto transform = obj->AddComponent<TransformComponent>();
         transform->scale_ = { 0.5f, 0.5f, 0.5f }; // 少し小さめに

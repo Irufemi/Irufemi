@@ -43,7 +43,6 @@ void DebugEnemySpawnerComponent::SpawnEnemy(const Vector3& position) {
     if (!scene) return;
 
     auto enemy = std::make_shared<GameObject>("DebugEnemy");
-    enemy->SetIsSerializable(false); // ★ デバッグ用の動的生成オブジェクトなので保存対象から除外
     scene->AddGameObject(enemy);
     
     auto transform = enemy->AddComponent<TransformComponent>();

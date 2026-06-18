@@ -224,7 +224,11 @@ nlohmann::json GameObject::Serialize() const {
 }
 
 void GameObject::Deserialize(const nlohmann::json& j) {
+    // シリアライズから復元された＝シーンに保存されている静的オブジェクトである
+    SetIsSerializable(true);
+
     if (j.contains("name")) name_ = j["name"];
+    if (j.contains("instanceId")) instanceId_ = j["instanceId"];
     if (j.contains("tag")) tag_ = j["tag"];
     if (j.contains("isActive")) isActive_ = j["isActive"];
     if (j.contains("isFolder")) isFolder_ = j["isFolder"];
@@ -272,6 +276,10 @@ std::shared_ptr<GameObject> GameObject::Clone() {
     auto clone = std::make_shared<GameObject>();
     clone->Deserialize(this->Serialize());
     
+    // クローン元のシリアライズフラグを引き継ぐ
+    clone->SetIsSerializable(this->IsSerializable());
+
+    // --- コンポーネントにアタッチされた GameObject の参照をクローン側に差し替える ---
     if (scene_) {
         clone->SetName(scene_->GetUniqueObjectName(this->GetName()));
     } else {
