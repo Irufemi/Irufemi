@@ -432,3 +432,70 @@ bool BaseScene::ReleasedDIK(uint8_t dik) const { return engine_->GetInputManager
 
 bool BaseScene::IsButtonDown(unsigned short button) const { return engine_->GetInputManager()->IsButtonDown(button); }
 bool BaseScene::IsButtonPressed(unsigned short button) const { return engine_->GetInputManager()->IsButtonPressed(button); }
+
+nlohmann::json BaseScene::Serialize() const {
+    nlohmann::json j;
+    j["version"] = 1;
+    
+    nlohmann::json settings = nlohmann::json::object();
+    if (directionalLight_) {
+        nlohmann::json dl;
+        dl["color"] = { directionalLight_->color.x, directionalLight_->color.y, directionalLight_->color.z, directionalLight_->color.w };
+        dl["direction"] = { directionalLight_->direction.x, directionalLight_->direction.y, directionalLight_->direction.z };
+        dl["intensity"] = directionalLight_->intensity;
+        settings["directionalLight"] = dl;
+    }
+    // settings が空でなければ追加（今回は DirectionalLight が必ずある前提）
+    if (!settings.empty()) {
+        j["settings"] = settings;
+    }
+
+    nlohmann::json goArray = nlohmann::json::array();
+    for (const auto& obj : gameObjects_) {
+        // 親がいない（ルートの）オブジェクトのみをシリアライズ（子は再帰的に処理される）
+        if (obj && !obj->GetParent() && !obj->IsDestroyed()) {
+            goArray.push_back(obj->Serialize());
+        }
+    }
+    j["gameObjects"] = goArray;
+
+    return j;
+}
+
+void BaseScene::Deserialize(const nlohmann::json& j) {
+    if (j.contains("settings")) {
+        const auto& settings = j["settings"];
+        if (settings.contains("directionalLight")) {
+            const auto& dl = settings["directionalLight"];
+            if (!directionalLight_) {
+                directionalLight_ = std::make_unique<DirectionalLight>();
+            }
+            if (dl.contains("color") && dl["color"].size() == 4) {
+                directionalLight_->color = { dl["color"][0], dl["color"][1], dl["color"][2], dl["color"][3] };
+            }
+            if (dl.contains("direction") && dl["direction"].size() == 3) {
+                directionalLight_->direction = { dl["direction"][0], dl["direction"][1], dl["direction"][2] };
+            }
+            if (dl.contains("intensity")) {
+                directionalLight_->intensity = dl["intensity"];
+            }
+        }
+    }
+
+    // 古い形式（ルートが配列）への後方互換性対応
+    const nlohmann::json* goArray = nullptr;
+    if (j.is_array()) {
+        goArray = &j;
+    } else if (j.contains("gameObjects") && j["gameObjects"].is_array()) {
+        goArray = &j["gameObjects"];
+    }
+
+    if (goArray) {
+        for (const auto& objJson : *goArray) {
+            auto obj = std::make_shared<GameObject>();
+            obj->Deserialize(objJson);
+            obj->Initialize();
+            AddGameObject(obj);
+        }
+    }
+}

@@ -183,26 +183,40 @@ void GameObject::RemoveComponent(Component* component) {
 
 nlohmann::json GameObject::Serialize() const {
     nlohmann::json j;
-    j["name"] = name_;
-    j["tag"] = tag_;
-    j["isActive"] = isActive_;
-    j["isFolder"] = isFolder_;
-    j["isLocked"] = isLocked_;
     
-    nlohmann::json comps = nlohmann::json::array();
-    for (const auto& comp : components_) {
-        nlohmann::json cj;
-        cj["type"] = comp->GetComponentName();
-        cj["data"] = comp->Serialize();
-        comps.push_back(cj);
-    }
-    j["components"] = comps;
+    // デフォルト値と異なる場合のみ出力
+    if (!name_.empty()) j["name"] = name_;
+    if (!tag_.empty()) j["tag"] = tag_;
+    if (!isActive_) j["isActive"] = isActive_; // default is true
+    if (isFolder_) j["isFolder"] = isFolder_;   // default is false
+    if (isLocked_) j["isLocked"] = isLocked_;   // default is false
     
-    nlohmann::json childrenJson = nlohmann::json::array();
-    for (const auto& child : children_) {
-        childrenJson.push_back(child->Serialize());
+    if (!components_.empty()) {
+        nlohmann::json comps = nlohmann::json::array();
+        for (const auto& comp : components_) {
+            nlohmann::json cj;
+            cj["type"] = comp->GetComponentName();
+            nlohmann::json cdata = comp->Serialize();
+            // コンポーネントのデータが空でなければ出力
+            if (!cdata.empty() && !cdata.is_null()) {
+                cj["data"] = cdata;
+            }
+            comps.push_back(cj);
+        }
+        if (!comps.empty()) {
+            j["components"] = comps;
+        }
     }
-    j["children"] = childrenJson;
+    
+    if (!children_.empty()) {
+        nlohmann::json childrenJson = nlohmann::json::array();
+        for (const auto& child : children_) {
+            childrenJson.push_back(child->Serialize());
+        }
+        if (!childrenJson.empty()) {
+            j["children"] = childrenJson;
+        }
+    }
     
     return j;
 }

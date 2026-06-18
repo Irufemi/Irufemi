@@ -7,6 +7,7 @@ class IrufemiEngine;
 class GameObject;
 #include <memory>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 /// <summary>
 /// Scene系クラスに継承する基底クラス
@@ -45,6 +46,18 @@ public:
      * @brief エンジンのポインタを取得する
      */
     virtual IrufemiEngine* GetEngine() const { return nullptr; }
+
+    // --- シリアライズ機能 ---
+
+    /**
+     * @brief シーンの情報をJSONとしてシリアライズする
+     */
+    virtual nlohmann::json Serialize() const { return nlohmann::json::object(); }
+
+    /**
+     * @brief JSONからシーンの情報をデシリアライズする
+     */
+    virtual void Deserialize(const nlohmann::json& j) {}
 
     // --- ライフサイクル管理機能 ---
 

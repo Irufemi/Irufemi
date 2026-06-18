@@ -144,40 +144,40 @@ void ParticleObject::UpdateSystem() {
 }
 
 void ParticleObject::Serialize(nlohmann::json& j) const {
-    j["texturePath"] = texturePath_;
-    j["blendMode"] = static_cast<int>(blendMode_);
-    j["isUnscaledTime"] = isUnscaledTime_;
-    j["emitOnAwake"] = emitOnAwake_;
+    if (texturePath_ != "resources/circle.png") j["texturePath"] = texturePath_;
+    if (blendMode_ != BlendMode::kBlendModeAdd) j["blendMode"] = static_cast<int>(blendMode_);
+    if (isUnscaledTime_ != false) j["isUnscaledTime"] = isUnscaledTime_;
+    if (emitOnAwake_ != true) j["emitOnAwake"] = emitOnAwake_;
     
-    j["emitType"] = emitType_;
-    j["emissionRate"] = emissionRate_;
-    j["lifeTimeMin"] = lifeTimeMin_;
-    j["lifeTimeMax"] = lifeTimeMax_;
-    j["velocity"] = velocity_;
-    j["radius"] = radius_;
-    j["spread"] = spread_;
+    if (emitType_ != 0) j["emitType"] = emitType_;
+    if (emissionRate_ != 50.0f) j["emissionRate"] = emissionRate_;
+    if (lifeTimeMin_ != 0.5f) j["lifeTimeMin"] = lifeTimeMin_;
+    if (lifeTimeMax_ != 1.0f) j["lifeTimeMax"] = lifeTimeMax_;
+    if (velocity_ != 1.0f) j["velocity"] = velocity_;
+    if (radius_ != 1.0f) j["radius"] = radius_;
+    if (spread_ != 0.1f) j["spread"] = spread_;
     
-    j["atlasRows"] = atlasRows_;
-    j["atlasCols"] = atlasCols_;
+    if (atlasRows_ != 1) j["atlasRows"] = atlasRows_;
+    if (atlasCols_ != 1) j["atlasCols"] = atlasCols_;
     
-    j["gravity"] = gravity_;
-    j["damping"] = damping_;
-    j["bounce"] = bounce_;
-    j["groundHeight"] = groundHeight_;
-    j["attractorStrength"] = attractorStrength_;
-    j["attractorPos"] = { attractorPos_.x, attractorPos_.y, attractorPos_.z };
-    j["jitter"] = jitter_;
+    if (gravity_ != 0.0f) j["gravity"] = gravity_;
+    if (damping_ != 0.0f) j["damping"] = damping_;
+    if (bounce_ != 0.0f) j["bounce"] = bounce_;
+    if (groundHeight_ != -100.0f) j["groundHeight"] = groundHeight_;
+    if (attractorStrength_ != 0.0f) j["attractorStrength"] = attractorStrength_;
+    if (attractorPos_.x != 0.0f || attractorPos_.y != 0.0f || attractorPos_.z != 0.0f) j["attractorPos"] = { attractorPos_.x, attractorPos_.y, attractorPos_.z };
+    if (jitter_ != 0.0f) j["jitter"] = jitter_;
     
-    j["billboardMode"] = billboardMode_;
-    j["color"] = { color_.x, color_.y, color_.z, color_.w };
-    j["midColor"] = { midColor_.x, midColor_.y, midColor_.z, midColor_.w };
-    j["startScale"] = { startScale_.x, startScale_.y, startScale_.z };
-    j["midScale"] = { midScale_.x, midScale_.y, midScale_.z };
-    j["endScale"] = { endScale_.x, endScale_.y, endScale_.z };
-    j["midPoint"] = midPoint_;
+    if (billboardMode_ != 1) j["billboardMode"] = billboardMode_;
+    if (color_.x != 1.0f || color_.y != 1.0f || color_.z != 1.0f || color_.w != 1.0f) j["color"] = { color_.x, color_.y, color_.z, color_.w };
+    if (midColor_.x != 1.0f || midColor_.y != 1.0f || midColor_.z != 1.0f || midColor_.w != 1.0f) j["midColor"] = { midColor_.x, midColor_.y, midColor_.z, midColor_.w };
+    if (startScale_.x != 1.0f || startScale_.y != 1.0f || startScale_.z != 1.0f) j["startScale"] = { startScale_.x, startScale_.y, startScale_.z };
+    if (midScale_.x != 1.0f || midScale_.y != 1.0f || midScale_.z != 1.0f) j["midScale"] = { midScale_.x, midScale_.y, midScale_.z };
+    if (endScale_.x != 0.0f || endScale_.y != 0.0f || endScale_.z != 0.0f) j["endScale"] = { endScale_.x, endScale_.y, endScale_.z };
+    if (midPoint_ != 0.5f) j["midPoint"] = midPoint_;
     
-    j["direction"] = { direction_.x, direction_.y, direction_.z };
-    j["areaSize"] = { areaSize_.x, areaSize_.y, areaSize_.z };
+    if (direction_.x != 0.0f || direction_.y != 0.0f || direction_.z != 1.0f) j["direction"] = { direction_.x, direction_.y, direction_.z };
+    if (areaSize_.x != 10.0f || areaSize_.y != 10.0f || areaSize_.z != 10.0f) j["areaSize"] = { areaSize_.x, areaSize_.y, areaSize_.z };
 }
 
 void ParticleObject::Deserialize(const nlohmann::json& j) {
