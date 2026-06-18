@@ -1,4 +1,5 @@
 #include "VoxelParticleComponentEditor.h"
+#ifdef EditorMode
 #include <imgui.h>
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
 #include <string>
@@ -48,3 +49,4 @@ void VoxelParticleComponentEditor::Draw(Component* component, EditorActionManage
         }
     }
 }
+#endif // EditorMode
