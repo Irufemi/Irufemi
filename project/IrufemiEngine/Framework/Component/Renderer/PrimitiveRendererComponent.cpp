@@ -100,30 +100,40 @@ void PrimitiveRendererComponent::RebuildMesh() {
 nlohmann::json PrimitiveRendererComponent::Serialize() {
     nlohmann::json j;
     j["currentTypeIndex"] = currentTypeIndex_;
-    j["radius"] = radius_;
-    j["subdivisions"] = subdivisions_;
-    j["height"] = height_;
-    j["topRadius"] = topRadius_;
-    j["bottomRadius"] = bottomRadius_;
-    j["hasTop"] = hasTop_;
-    j["hasBottom"] = hasBottom_;
-    j["torusMajorRadius"] = torusMajorRadius_;
-    j["torusMinorRadius"] = torusMinorRadius_;
-    j["torusMajorSegments"] = torusMajorSegments_;
-    j["torusMinorSegments"] = torusMinorSegments_;
+    
+    // それぞれのデフォルト値と異なる場合のみ出力
+    if (radius_ != 1.0f) j["radius"] = radius_;
+    if (subdivisions_ != 16) j["subdivisions"] = subdivisions_;
+    if (height_ != 1.0f) j["height"] = height_;
+    if (topRadius_ != 1.0f) j["topRadius"] = topRadius_;
+    if (bottomRadius_ != 1.0f) j["bottomRadius"] = bottomRadius_;
+    if (hasTop_ != true) j["hasTop"] = hasTop_;
+    if (hasBottom_ != true) j["hasBottom"] = hasBottom_;
+    if (torusMajorRadius_ != 1.0f) j["torusMajorRadius"] = torusMajorRadius_;
+    if (torusMinorRadius_ != 0.3f) j["torusMinorRadius"] = torusMinorRadius_;
+    if (torusMajorSegments_ != 32) j["torusMajorSegments"] = torusMajorSegments_;
+    if (torusMinorSegments_ != 16) j["torusMinorSegments"] = torusMinorSegments_;
     
     if (primitive_) {
         const auto& mat = primitive_->GetMaterial();
         nlohmann::json matJson;
-        matJson["texturePath"] = mat.texturePath;
-        matJson["color"] = { mat.color.x, mat.color.y, mat.color.z, mat.color.w };
-        matJson["enableLighting"] = mat.enableLighting;
-        matJson["lightingMode"] = mat.lightingMode;
-        matJson["metallic"] = mat.metallic;
-        matJson["roughness"] = mat.roughness;
-        matJson["alphaReference"] = mat.alphaReference;
-        matJson["useClampSampler"] = mat.useClampSampler;
-        j["material"] = matJson;
+        
+        // テクスチャはデフォルトの uvChecker.png なら省略
+        if (mat.texturePath != "resources/uvChecker.png") matJson["texturePath"] = mat.texturePath;
+        
+        if (mat.color.x != 1.0f || mat.color.y != 1.0f || mat.color.z != 1.0f || mat.color.w != 1.0f) {
+            matJson["color"] = { mat.color.x, mat.color.y, mat.color.z, mat.color.w };
+        }
+        if (mat.enableLighting != true) matJson["enableLighting"] = mat.enableLighting;
+        if (mat.lightingMode != 3) matJson["lightingMode"] = mat.lightingMode;
+        if (mat.metallic != 0.0f) matJson["metallic"] = mat.metallic;
+        if (mat.roughness != 0.5f) matJson["roughness"] = mat.roughness;
+        if (mat.alphaReference != 0.0f) matJson["alphaReference"] = mat.alphaReference;
+        if (mat.useClampSampler != 0) matJson["useClampSampler"] = mat.useClampSampler;
+        
+        if (!matJson.empty()) {
+            j["material"] = matJson;
+        }
     }
     
     return j;

@@ -417,6 +417,9 @@ bool BaseScene::ReleasedVK(uint8_t vk) const { return engine_->GetInputManager()
 std::shared_ptr<GameObject> BaseScene::InstantiatePrefab(const std::string& prefabPath, const Vector3& position) {
     auto obj = SceneSerializer::LoadPrefab(prefabPath);
     if (obj) {
+        // プレハブから動的生成されたオブジェクトはシーンファイルに保存しない
+        obj->SetIsSerializable(false);
+
         if (auto transform = obj->GetComponent<TransformComponent>()) {
             transform->position_ = position;
         }
@@ -453,7 +456,7 @@ nlohmann::json BaseScene::Serialize() const {
     nlohmann::json goArray = nlohmann::json::array();
     for (const auto& obj : gameObjects_) {
         // 親がいない（ルートの）オブジェクトのみをシリアライズ（子は再帰的に処理される）
-        if (obj && !obj->GetParent() && !obj->IsDestroyed()) {
+        if (obj && !obj->GetParent() && !obj->IsDestroyed() && obj->IsSerializable()) {
             goArray.push_back(obj->Serialize());
         }
     }

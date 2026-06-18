@@ -211,7 +211,9 @@ nlohmann::json GameObject::Serialize() const {
     if (!children_.empty()) {
         nlohmann::json childrenJson = nlohmann::json::array();
         for (const auto& child : children_) {
-            childrenJson.push_back(child->Serialize());
+            if (child && child->IsSerializable()) {
+                childrenJson.push_back(child->Serialize());
+            }
         }
         if (!childrenJson.empty()) {
             j["children"] = childrenJson;
