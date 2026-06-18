@@ -1,5 +1,6 @@
 #include "ParticleObject.h"
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Framework/Component/Component.h"
 #include <fstream>
 #include <iostream>
 
@@ -266,11 +267,63 @@ bool ParticleObject::LoadFromJson(const std::string& filepath) {
     try {
         file >> j;
         Deserialize(j);
+        return true;
     } catch (const nlohmann::json::exception& e) {
         std::cerr << "JSON parse error in " << filepath << ": " << e.what() << std::endl;
         return false;
     }
-    return true;
+}
+
+void ParticleObject::RegisterProperties(Component* comp) {
+    if (!comp) return;
+
+    comp->RegisterHeader("Emitter Basics");
+    comp->RegisterProperty("Emit On Awake", &emitOnAwake_);
+    comp->RegisterProperty("Burst Count On Awake", &burstCountOnAwake_);
+    comp->RegisterEnum("Emit Type", &emitType_, {"0: Sphere", "1: Beam", "2: Box", "3: Cylinder"});
+    comp->RegisterPropertyRange("Emission Rate", &emissionRate_, 0.0f, 1000.0f);
+    comp->RegisterPropertyRange("Life Time Min", &lifeTimeMin_, 0.01f, 10.0f);
+    comp->RegisterPropertyRange("Life Time Max", &lifeTimeMax_, 0.01f, 10.0f);
+    comp->RegisterPropertyRange("Velocity", &velocity_, 0.0f, 100.0f);
+    comp->RegisterPropertyRange("Radius", &radius_, 0.0f, 100.0f);
+    comp->RegisterPropertyRange("Spread", &spread_, 0.0f, 1.0f);
+    comp->RegisterProperty("Direction", &direction_);
+    comp->RegisterProperty("Area Size", &areaSize_);
+
+    comp->RegisterHeader("Physics & Movement");
+    comp->RegisterPropertyRange("Gravity", &gravity_, -100.0f, 100.0f).SetTooltip("重力（マイナスで上方向へ移動）");
+    comp->RegisterPropertyRange("Damping", &damping_, 0.0f, 1.0f).SetTooltip("空気抵抗（1.0に近いほど減速しやすい）");
+    comp->RegisterPropertyRange("Bounce", &bounce_, 0.0f, 1.0f).SetTooltip("地面への反発係数（Ground Heightでバウンドします）");
+    comp->RegisterProperty("Ground Height", &groundHeight_);
+    comp->RegisterPropertyRange("Jitter", &jitter_, 0.0f, 10.0f).SetTooltip("発生位置のランダムな揺らぎ（ノイズ）の強さ");
+    comp->RegisterPropertyRange("Attractor Strength", &attractorStrength_, -100.0f, 100.0f);
+    comp->RegisterProperty("Attractor Pos", &attractorPos_);
+
+    comp->RegisterHeader("Visuals");
+    comp->RegisterProperty("Texture Path", &texturePath_);
+    comp->RegisterEnum("Billboard Mode", &billboardMode_, {"0: None", "1: Billboard", "2: Velocity Billboard"});
+    comp->RegisterEnum("Blend Mode", reinterpret_cast<int*>(&blendMode_), {
+        "0: None", 
+        "1: Normal (Alpha)", 
+        "2: Add", 
+        "3: Subtract", 
+        "4: Multiply", 
+        "5: Screen", 
+        "6: Premultiplied"
+    }); // BlendMode enum
+
+    comp->RegisterProperty("Color", &color_);
+    comp->RegisterProperty("Mid Color", &midColor_);
+    comp->RegisterProperty("Start Scale", &startScale_);
+    comp->RegisterProperty("Mid Scale", &midScale_);
+    comp->RegisterProperty("End Scale", &endScale_);
+    comp->RegisterPropertyRange("Mid Point", &midPoint_, 0.0f, 1.0f).SetTooltip("寿命の中で中間スケール・カラーに到達するタイミング（0.0～1.0）");
+
+    comp->RegisterHeader("Special Features");
+    comp->RegisterProperty("Enable Trail", &enableTrail_).SetTooltip("パーティクルの軌跡を描画するか");
+    comp->RegisterPropertyRange("Trail Frequency", &trailFrequency_, 0.01f, 1.0f).SetTooltip("軌跡（トレイル）を生成する間隔の頻度");
+    comp->RegisterProperty("Enable Death Emit", &enableDeathEmit_).SetTooltip("消滅時に別のパーティクルを発生させるか");
+    comp->RegisterProperty("Enable Random Rotation", &enableRandomRotation_).SetTooltip("発生時にランダムな回転角を与えるか");
 }
 #ifdef USE_IMGUI
 #include <imgui.h>

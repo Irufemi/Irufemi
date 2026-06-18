@@ -9,12 +9,22 @@ class GameObject;
 #include "Engine/Core/Math/Vector4.h"
 struct Ray;
 
-enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array, Header, Separator };
+enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array, Header, Separator, Enum };
 
 struct ComponentProperty {
     std::string name;
     ComponentPropertyType type;
     void* data;
+    float minVal = 0.0f;
+    float maxVal = 0.0f;
+    std::vector<std::string> enumNames;
+    std::string tooltip = "";
+    nlohmann::json defaultValue;
+
+    ComponentProperty& SetTooltip(const std::string& text) {
+        tooltip = text;
+        return *this;
+    }
 };
 
 /**
@@ -112,16 +122,24 @@ public:
     /**
      * @brief プロパティの登録ヘルパー
      */
-    void RegisterProperty(const std::string& name, float* ptr) { properties_.push_back({name, ComponentPropertyType::Float, ptr}); }
-    void RegisterProperty(const std::string& name, int* ptr) { properties_.push_back({name, ComponentPropertyType::Int, ptr}); }
-    void RegisterProperty(const std::string& name, bool* ptr) { properties_.push_back({name, ComponentPropertyType::Bool, ptr}); }
-    void RegisterProperty(const std::string& name, std::string* ptr) { properties_.push_back({name, ComponentPropertyType::String, ptr}); }
-    void RegisterProperty(const std::string& name, Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr}); }
-    void RegisterProperty(const std::string& name, Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr}); }
-    void RegisterProperty(const std::string& name, Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr}); }
-    void RegisterProperty(const std::string& name, std::vector<Vector3>* ptr) { properties_.push_back({name, ComponentPropertyType::Float3Array, ptr}); }
-    void RegisterHeader(const std::string& name) { properties_.push_back({name, ComponentPropertyType::Header, nullptr}); }
-    void RegisterSeparator() { properties_.push_back({"", ComponentPropertyType::Separator, nullptr}); }
+    ComponentProperty& RegisterProperty(const std::string& name, float* ptr) { properties_.push_back({name, ComponentPropertyType::Float, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    ComponentProperty& RegisterPropertyRange(const std::string& name, float* ptr, float min, float max) { properties_.push_back({name, ComponentPropertyType::Float, ptr, min, max, {}, "", *ptr}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, int* ptr) { properties_.push_back({name, ComponentPropertyType::Int, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    ComponentProperty& RegisterPropertyRange(const std::string& name, int* ptr, int min, int max) { properties_.push_back({name, ComponentPropertyType::Int, ptr, static_cast<float>(min), static_cast<float>(max), {}, "", *ptr}); return properties_.back(); }
+    ComponentProperty& RegisterEnum(const std::string& name, int* ptr, const std::vector<std::string>& enumNames) { properties_.push_back({name, ComponentPropertyType::Enum, ptr, 0.0f, 0.0f, enumNames, "", *ptr}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, bool* ptr) { properties_.push_back({name, ComponentPropertyType::Bool, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, std::string* ptr) { properties_.push_back({name, ComponentPropertyType::String, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y}}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z}}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z, ptr->w}}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, std::vector<Vector3>* ptr) { 
+        nlohmann::json jArray = nlohmann::json::array();
+        for (const auto& v : *ptr) jArray.push_back({ v.x, v.y, v.z });
+        properties_.push_back({name, ComponentPropertyType::Float3Array, ptr, 0.0f, 0.0f, {}, "", jArray}); 
+        return properties_.back(); 
+    }
+    ComponentProperty& RegisterHeader(const std::string& name) { properties_.push_back({name, ComponentPropertyType::Header, nullptr, 0.0f, 0.0f, {}, "", nullptr}); return properties_.back(); }
+    ComponentProperty& RegisterSeparator() { properties_.push_back({"", ComponentPropertyType::Separator, nullptr, 0.0f, 0.0f, {}, "", nullptr}); return properties_.back(); }
 
     /**
      * @brief コンポーネントの状態をJSONにシリアライズする
@@ -131,6 +149,7 @@ public:
         for (const auto& prop : properties_) {
             switch (prop.type) {
                 case ComponentPropertyType::Float: j[prop.name] = *static_cast<float*>(prop.data); break;
+                case ComponentPropertyType::Enum:
                 case ComponentPropertyType::Int: j[prop.name] = *static_cast<int*>(prop.data); break;
                 case ComponentPropertyType::Bool: j[prop.name] = *static_cast<bool*>(prop.data); break;
                 case ComponentPropertyType::String: j[prop.name] = *static_cast<std::string*>(prop.data); break;
@@ -174,6 +193,7 @@ public:
             if (!j.contains(prop.name)) continue;
             switch (prop.type) {
                 case ComponentPropertyType::Float: *static_cast<float*>(prop.data) = j[prop.name].get<float>(); break;
+                case ComponentPropertyType::Enum:
                 case ComponentPropertyType::Int: *static_cast<int*>(prop.data) = j[prop.name].get<int>(); break;
                 case ComponentPropertyType::Bool: *static_cast<bool*>(prop.data) = j[prop.name].get<bool>(); break;
                 case ComponentPropertyType::String: *static_cast<std::string*>(prop.data) = j[prop.name].get<std::string>(); break;

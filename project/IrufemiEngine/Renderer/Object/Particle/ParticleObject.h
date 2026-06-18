@@ -149,6 +149,8 @@ public:
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static TextureManager* GetTextureManager() { return textureManager_; }
 
+    void RegisterProperties(class Component* comp);
+
     void MarkDirty() { isDirty_ = true; }
 
 private:
