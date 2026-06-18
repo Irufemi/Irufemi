@@ -41,8 +41,15 @@ void Log::Initialize() {
 
 /*ログを出そう*/
 
+std::vector<std::string> Log::logHistory_;
+
 //出力ウィンドウに文字を出す
 void Log::OutPutLog(std::ostream& os, const std::string& message) {
     os << message << std::endl;
     OutputDebugStringA(message.c_str());
+
+    logHistory_.push_back(message);
+    if (logHistory_.size() > MAX_LOG_LINES) {
+        logHistory_.erase(logHistory_.begin());
+    }
 }

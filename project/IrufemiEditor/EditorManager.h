@@ -74,6 +74,7 @@ private:
 
     EditorModeState currentMode_ = EditorModeState::Edit;
     std::string playModeStartSceneName_ = "";
+    bool isStepRequested_ = false; // コマ送りの予約フラグ
     
     // レイアウトのリセット用フラグ
     bool resetLayout_ = false;

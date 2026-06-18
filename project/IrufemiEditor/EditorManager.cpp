@@ -25,6 +25,7 @@
 #include "Editor/Panel/HierarchyPanel.h"
 #include "Editor/Panel/InspectorPanel.h"
 #include "Editor/Panel/ProjectBrowserPanel.h"
+#include "Editor/Panel/ConsolePanel.h"
 
 // Editor Core
 #include "Editor/Core/EditorActionManager.h"
@@ -56,6 +57,7 @@ void EditorManager::OnInitialize(IrufemiEngine* engine) {
     panels_.push_back(std::make_unique<HierarchyPanel>());
     panels_.push_back(std::make_unique<InspectorPanel>());
     panels_.push_back(std::make_unique<ProjectBrowserPanel>());
+    panels_.push_back(std::make_unique<ConsolePanel>());
 
     for (auto& panel : panels_) {
         panel->Initialize(this);
@@ -75,6 +77,12 @@ void EditorManager::ClearSelectedObject() {
 }
 
 void EditorManager::OnUpdate(float deltaTime) {
+    if (isStepRequested_) {
+        // 次のフレームで再び停止
+        if (engine_) engine_->SetTimeScale(0.0f);
+        isStepRequested_ = false;
+    }
+
     if (shortcutManager_) {
         shortcutManager_->Update();
     }
@@ -192,6 +200,7 @@ void EditorManager::OnDrawUI() {
         ImGui::DockBuilderDockWindow("Hierarchy", dock_id_left);
         ImGui::DockBuilderDockWindow("Inspector", dock_id_right);
         ImGui::DockBuilderDockWindow("ProjectBrowser", dock_id_bottom);
+        ImGui::DockBuilderDockWindow("Console", dock_id_bottom);
         
         ImGui::DockBuilderFinish(dockspaceId);
     }
@@ -297,10 +306,10 @@ void EditorManager::OnDrawUI() {
         ImGui::EndMenu();
         }
 
-        // --- 中央への Play / Pause / Stop コントロール配置 ---
+        // --- 中央への Play / Pause / Step / Stop コントロール配置 ---
         float playButtonWidth = 45.0f;
         float playButtonHeight = 20.0f;
-        float playButtonsTotalWidth = playButtonWidth * 3.0f + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+        float playButtonsTotalWidth = playButtonWidth * 4.0f + ImGui::GetStyle().ItemSpacing.x * 3.0f;
         ImGui::SameLine((ImGui::GetWindowWidth() - playButtonsTotalWidth) * 0.5f);
 
         // 少し下にオフセットを追加して、メニューバー内で上下の余白（パディング）を作る
@@ -329,6 +338,19 @@ void EditorManager::OnDrawUI() {
         }
         if (ImGui::Button(ICON_FA_PAUSE, ImVec2(playButtonWidth, playButtonHeight))) {
             if (currentMode_ != EditorModeState::Edit) TogglePauseMode();
+        }
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+
+        // Step ボタン
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+        if (ImGui::Button(ICON_FA_FORWARD_STEP, ImVec2(playButtonWidth, playButtonHeight))) {
+            if (currentMode_ == EditorModeState::Paused) {
+                isStepRequested_ = true;
+                if (engine_) engine_->SetTimeScale(1.0f); // 時を1フレームだけ動かす
+            }
         }
         ImGui::PopStyleColor();
 

@@ -512,6 +512,29 @@ public:
 };
 ```
 
+#### ポーズ（一時停止）時の動作制御
+エディタのデバッグ機能としてのPauseボタン押下時（`TimeScale == 0.0f`時）は、すべてのコンポーネントの `Update()` 呼び出しが**フレームワーク側で自動的にスキップ**されます。そのため、各コンポーネント内で `deltaTime <= 0.0f` をチェックして手動で停止させる処理を書く必要はありません。
+
+もし「UIのアニメーション」や「エフェクト」など、**ポーズ中であっても更新し続けたい**特殊なコンポーネントを作成する場合は、`CanUpdateWhenPaused()` 仮想関数をオーバーライドして `true` を返すようにしてください。
+
+```cpp
+class AlwaysMovingComponent : public Component {
+public:
+    std::string GetComponentName() const override { return "AlwaysMovingComponent"; }
+
+    // ポーズ中（TimeScale == 0.0f）でもUpdateを実行するかどうか
+    bool CanUpdateWhenPaused() const override { 
+        return true; 
+    }
+
+    void Update() override {
+        // ポーズ中も呼ばれる。
+        // ※この中で GetGameDeltaTime() を使うと 0 になるため、
+        //   ポーズ中も動かしたい場合は GetRealDeltaTime() など実時間を使う必要があります。
+    }
+};
+```
+
 #### 動的生成 (Instantiate)
 弾を撃つ、敵を出現させるといった「ゲームプレイ中にオブジェクトを生み出す」処理は、あらかじめ作成したプレハブ（JSON）を指定して呼び出します。
 

@@ -31,7 +31,7 @@ void RailShooterPlayerComponent::Update() {
     float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     if (deltaTime <= 0.0f) {
         deltaTime = 1.0f / 60.0f; // 安全策として仮のフレーム時間を設定
-    } 
+    }
 
     // シーン内からレール（軌道）のデータを持っているオブジェクトを自動で探し出す
     if (!cachedPath_ && gameObject_->GetScene()) {

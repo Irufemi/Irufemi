@@ -10,6 +10,7 @@
     <ClCompile Include="Editor\Panel\InspectorPanel.cpp" />
     <ClCompile Include="Editor\Panel\ProjectBrowserPanel.cpp" />
     <ClCompile Include="Editor\Panel\SceneViewPanel.cpp" />
+    <ClCompile Include="Editor\Panel\ConsolePanel.cpp" />
     <ClCompile Include="Editor\Utils\EditorCameraController.cpp" />
     <ClCompile Include="Editor\Core\ComponentUIHelpers.cpp" />
     <ClCompile Include="Editor\ComponentEditors\TransformComponentEditor.cpp" />
@@ -38,6 +39,7 @@
     <ClInclude Include="Editor\Panel\InspectorPanel.h" />
     <ClInclude Include="Editor\Panel\ProjectBrowserPanel.h" />
     <ClInclude Include="Editor\Panel\SceneViewPanel.h" />
+    <ClInclude Include="Editor\Panel\ConsolePanel.h" />
     <ClInclude Include="Editor\Utils\EditorCameraController.h" />
     <ClInclude Include="Editor\Core\ComponentUIHelpers.h" />
     <ClInclude Include="Editor\ComponentEditors\TransformComponentEditor.h" />

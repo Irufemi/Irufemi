@@ -138,6 +138,17 @@ void SceneViewPanel::Draw() {
                 }
 
                 HandlePicking(mousePos, minPos, maxPos, size);
+                
+                // Fキーによるフォーカス機能
+                if (ImGui::IsKeyPressed(ImGuiKey_F)) {
+                    if (auto selectedObj = editorManager_->GetSelectedObject()) {
+                        if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
+                            if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+                                cameraController_.Focus(camera, transform->worldPosition_);
+                            }
+                        }
+                    }
+                }
             } else {
                 engine->GetInputManager()->SetVirtualMousePosition({0.0f, 0.0f}, false);
             }

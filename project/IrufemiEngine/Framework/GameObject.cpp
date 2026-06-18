@@ -11,6 +11,7 @@
 #include "Component/Collider/SphereColliderComponent.h"
 #include "Component/Collider/OBBColliderComponent.h"
 #include "Component/Collider/RaycastComponent.h"
+#include "Engine/IrufemiEngine.h"
 #include <atomic>
 
 static std::atomic<uint64_t> s_nextInstanceId{ 1 };
@@ -50,11 +51,25 @@ void GameObject::SetScene(BaseScene* scene) {
 
 void GameObject::Update(bool isPlayMode) {
     if (!isActive_) return;
+
+    bool isPaused = false;
+    if (scene_) {
+        if (auto engine = scene_->GetEngine()) {
+            isPaused = (engine->GetTimeScale() == 0.0f);
+        }
+    }
+
     for (auto& comp : components_) {
         // PlayModeでない場合は、エディタで更新可能なコンポーネントのみ更新する
         if (!isPlayMode && !comp->CanUpdateInEditMode()) {
             continue;
         }
+
+        // ポーズ中（TimeScale == 0.0f）かつ、ポーズ中も動作する設定になっていない場合はスキップ
+        if (isPlayMode && isPaused && !comp->CanUpdateWhenPaused()) {
+            continue;
+        }
+
         comp->Update();
     }
     for (auto& child : children_) {
