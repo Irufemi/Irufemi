@@ -82,6 +82,21 @@ if (isClear) {
 // engine_->GetSceneManager()->PopScene();
 ```
 
+#### シーンのロード状態と一つ前のシーンの取得
+ロード画面の描画や、ポーズ画面から元のシーンへ戻る際の判定に便利なAPIが用意されています。
+```cpp
+// チラつき防止機能付きで、現在ローディング画面を描画すべきか判定
+if (engine_->GetSceneManager()->ShouldDrawLoadingScreen()) {
+    // ローディング画面の描画処理
+}
+
+// PauseScene などの上に重なるシーンから、呼び出し元のシーン名を取得する
+std::string prevScene = engine_->GetSceneManager()->GetPreviousSceneName();
+if (prevScene == "GameScene") {
+    // GameScene から呼ばれた場合の特別な処理
+}
+```
+
 #### GameObject の検索（名前、タグ、ID）
 シーン内に存在する GameObject を取得したい場合、用途に合わせて以下の3つの検索機能を利用できます。
 
@@ -434,7 +449,14 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - `Group Alpha`: このコンポーネントを持つGameObject自身と、そのすべての子要素にある `SpriteRendererComponent` のアルファ値を一括で制御します。フェードイン・フェードアウトの演出に便利です。
 ### 2.6 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
 
-敵や障害物に弾丸・ミサイルが着弾した際に使用する、リッチな3D爆発エフェクト機能です。3D球体の急速膨張による炎コア、3軸クロス展開される衝撃波リング、全方位に飛び散るGPU火花パーティクルが統合されています。
+敵や障害物に弾丸・ミサイルが着弾した際に使用するリッチなエフェクト機能です。`Effect` クラスは `EffectType` 列挙型により複数の表現をサポートしています。
+
+#### サポートされているエフェクトの種類 (`EffectType`)
+- **`kHit`**: ヒットエフェクト（星型に広がる斬撃など）
+- **`kImpact`**: 衝撃エフェクト（PlaneとRingの複合ヒット表現）
+- **`kAura`**: キャラクターを包むオーラエフェクト
+- **`kSwing`**: 武器を振った際の軌跡（風切り）エフェクト
+- **`kExplosion`**: 3D爆発エフェクト（球体膨張＋火花＋衝撃波）
 
 #### プレイヤーでの事前生成とプール管理の例
 
@@ -836,6 +858,13 @@ pp->GetVignetteParams().power = 0.8f;
 // ※ シーン遷移時のフェードなどもこれを利用して実装できます
 ```
 
+#### サポートされているポストプロセスモード
+`PostProcessMode` 列挙型には、以下の多彩なエフェクトが用意されています。複数のモードを `AddActiveMode()` でスタックすることが可能です。
+- **色調補正系**: `ToneMapping` (ACES露出補正), `Grayscale`, `Sepia`, `HSV`
+- **空間・ぼかし系**: `Smoothing`, `GaussianFilter`, `RadialBlur` (放射状ぼかし)
+- **画面演出系**: `Bloom` (発光), `Vignette` (暗転), `DepthBasedOutline` (アウトライン抽出), `Dissolve` (消失演出), `Noise`, `Glitch` (画面の乱れ)
+- **画面遷移系**: `Fade`, `Slide`
+
 ### 5.2 デバッグ機能 (DebugUI / ImGui)
 パラメータの調整や変数の確認を行うために、ImGuiを利用してデバッグウィンドウを表示できます。
 `BaseScene` を継承したクラスでは、`DrawDebugTab()` をオーバーライドするだけで自動的にタブが追加されます。
@@ -949,7 +978,18 @@ if (ImGui::Checkbox("TopMost", &isTopMost)) {
 }
 ```
 
-```
+### 6.3.5 エディタのショートカットキー
+エディタ上では、操作を快適にするために以下のショートカットキーがサポートされています。
+- **`Ctrl + Z`**: 元に戻す (Undo)
+- **`Ctrl + Y`**: やり直し (Redo)
+- **`Ctrl + D`**: 選択中の GameObject を複製 (Duplicate)
+- **`Delete`**: 選択中の GameObject を削除
+- **`F2`**: 選択中の GameObject の名前変更 (Rename)
+- **`W / E / R`**: ギズモの操作モード切り替え (Translate / Rotate / Scale)
+
+### 6.3.6 コンソールパネル (Console)
+エンジンからのログ出力（エラー、警告、情報）は、エディタ下部の **Console** パネルに表示されます。
+コード内で `Log::Info()`, `Log::Warning()`, `Log::Error()` を呼び出すとリアルタイムに反映され、パネル上の「Clear」ボタンでログを消去できます。
 
 ### 6.4 インスペクター (Inspector) の便利な操作機能
 インスペクター上で作業を効率化するための便利な機能が備わっています。これらはすべて **Undo/Redo (Ctrl+Z / Ctrl+Y)** に対応しています。
