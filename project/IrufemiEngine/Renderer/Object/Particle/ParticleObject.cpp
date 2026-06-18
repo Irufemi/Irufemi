@@ -1,5 +1,6 @@
 #include "ParticleObject.h"
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Framework/Component/Component.h"
 #include <fstream>
 #include <iostream>
 
@@ -16,6 +17,9 @@ ParticleObject::~ParticleObject() {
 void ParticleObject::Initialize() {
     if (emitOnAwake_) {
         Play();
+    }
+    if (burstCountOnAwake_ > 0) {
+        EmitBurst(burstCountOnAwake_);
     }
 }
 
@@ -135,6 +139,11 @@ void ParticleObject::UpdateSystem() {
     data.atlasCols = atlasCols_;
     data.billboardMode = billboardMode_;
     data.jitter = jitter_;
+    
+    data.enableTrail = enableTrail_ ? 1 : 0;
+    data.trailFrequency = trailFrequency_;
+    data.enableDeathEmit = enableDeathEmit_ ? 1 : 0;
+    data.enableRandomRotation = enableRandomRotation_ ? 1 : 0;
 
     if (burstCountPending_ > 0) {
         data.burstCount = burstCountPending_;
@@ -144,40 +153,46 @@ void ParticleObject::UpdateSystem() {
 }
 
 void ParticleObject::Serialize(nlohmann::json& j) const {
-    j["texturePath"] = texturePath_;
-    j["blendMode"] = static_cast<int>(blendMode_);
-    j["isUnscaledTime"] = isUnscaledTime_;
-    j["emitOnAwake"] = emitOnAwake_;
+    if (texturePath_ != "resources/circle.png") j["texturePath"] = texturePath_;
+    if (blendMode_ != BlendMode::kBlendModeAdd) j["blendMode"] = static_cast<int>(blendMode_);
+    if (isUnscaledTime_ != false) j["isUnscaledTime"] = isUnscaledTime_;
+    if (emitOnAwake_ != true) j["emitOnAwake"] = emitOnAwake_;
     
-    j["emitType"] = emitType_;
-    j["emissionRate"] = emissionRate_;
-    j["lifeTimeMin"] = lifeTimeMin_;
-    j["lifeTimeMax"] = lifeTimeMax_;
-    j["velocity"] = velocity_;
-    j["radius"] = radius_;
-    j["spread"] = spread_;
+    if (emitType_ != 0) j["emitType"] = emitType_;
+    if (emissionRate_ != 50.0f) j["emissionRate"] = emissionRate_;
+    if (lifeTimeMin_ != 0.5f) j["lifeTimeMin"] = lifeTimeMin_;
+    if (lifeTimeMax_ != 1.0f) j["lifeTimeMax"] = lifeTimeMax_;
+    if (velocity_ != 1.0f) j["velocity"] = velocity_;
+    if (radius_ != 1.0f) j["radius"] = radius_;
+    if (spread_ != 0.1f) j["spread"] = spread_;
     
-    j["atlasRows"] = atlasRows_;
-    j["atlasCols"] = atlasCols_;
+    if (atlasRows_ != 1) j["atlasRows"] = atlasRows_;
+    if (atlasCols_ != 1) j["atlasCols"] = atlasCols_;
     
-    j["gravity"] = gravity_;
-    j["damping"] = damping_;
-    j["bounce"] = bounce_;
-    j["groundHeight"] = groundHeight_;
-    j["attractorStrength"] = attractorStrength_;
-    j["attractorPos"] = { attractorPos_.x, attractorPos_.y, attractorPos_.z };
-    j["jitter"] = jitter_;
+    if (gravity_ != 0.0f) j["gravity"] = gravity_;
+    if (damping_ != 0.0f) j["damping"] = damping_;
+    if (bounce_ != 0.0f) j["bounce"] = bounce_;
+    if (groundHeight_ != -100.0f) j["groundHeight"] = groundHeight_;
+    if (attractorStrength_ != 0.0f) j["attractorStrength"] = attractorStrength_;
+    if (attractorPos_.x != 0.0f || attractorPos_.y != 0.0f || attractorPos_.z != 0.0f) j["attractorPos"] = { attractorPos_.x, attractorPos_.y, attractorPos_.z };
+    if (jitter_ != 0.0f) j["jitter"] = jitter_;
     
-    j["billboardMode"] = billboardMode_;
-    j["color"] = { color_.x, color_.y, color_.z, color_.w };
-    j["midColor"] = { midColor_.x, midColor_.y, midColor_.z, midColor_.w };
-    j["startScale"] = { startScale_.x, startScale_.y, startScale_.z };
-    j["midScale"] = { midScale_.x, midScale_.y, midScale_.z };
-    j["endScale"] = { endScale_.x, endScale_.y, endScale_.z };
-    j["midPoint"] = midPoint_;
+    if (enableTrail_) j["enableTrail"] = enableTrail_;
+    if (trailFrequency_ != 0.05f) j["trailFrequency"] = trailFrequency_;
+    if (enableDeathEmit_) j["enableDeathEmit"] = enableDeathEmit_;
+    if (enableRandomRotation_) j["enableRandomRotation"] = enableRandomRotation_;
     
-    j["direction"] = { direction_.x, direction_.y, direction_.z };
-    j["areaSize"] = { areaSize_.x, areaSize_.y, areaSize_.z };
+    if (billboardMode_ != 1) j["billboardMode"] = billboardMode_;
+    if (burstCountOnAwake_ != 0) j["burstCountOnAwake"] = burstCountOnAwake_;
+    if (color_.x != 1.0f || color_.y != 1.0f || color_.z != 1.0f || color_.w != 1.0f) j["color"] = { color_.x, color_.y, color_.z, color_.w };
+    if (midColor_.x != 1.0f || midColor_.y != 1.0f || midColor_.z != 1.0f || midColor_.w != 1.0f) j["midColor"] = { midColor_.x, midColor_.y, midColor_.z, midColor_.w };
+    if (startScale_.x != 1.0f || startScale_.y != 1.0f || startScale_.z != 1.0f) j["startScale"] = { startScale_.x, startScale_.y, startScale_.z };
+    if (midScale_.x != 1.0f || midScale_.y != 1.0f || midScale_.z != 1.0f) j["midScale"] = { midScale_.x, midScale_.y, midScale_.z };
+    if (endScale_.x != 0.0f || endScale_.y != 0.0f || endScale_.z != 0.0f) j["endScale"] = { endScale_.x, endScale_.y, endScale_.z };
+    if (midPoint_ != 0.5f) j["midPoint"] = midPoint_;
+    
+    if (direction_.x != 0.0f || direction_.y != 0.0f || direction_.z != 1.0f) j["direction"] = { direction_.x, direction_.y, direction_.z };
+    if (areaSize_.x != 10.0f || areaSize_.y != 10.0f || areaSize_.z != 10.0f) j["areaSize"] = { areaSize_.x, areaSize_.y, areaSize_.z };
 }
 
 void ParticleObject::Deserialize(const nlohmann::json& j) {
@@ -207,7 +222,13 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
     }
     if (j.contains("jitter")) jitter_ = j["jitter"].get<float>();
     
+    if (j.contains("enableTrail")) enableTrail_ = j["enableTrail"].get<bool>();
+    if (j.contains("trailFrequency")) trailFrequency_ = j["trailFrequency"].get<float>();
+    if (j.contains("enableDeathEmit")) enableDeathEmit_ = j["enableDeathEmit"].get<bool>();
+    if (j.contains("enableRandomRotation")) enableRandomRotation_ = j["enableRandomRotation"].get<bool>();
+    
     if (j.contains("billboardMode")) billboardMode_ = j["billboardMode"].get<int>();
+    if (j.contains("burstCountOnAwake")) burstCountOnAwake_ = j["burstCountOnAwake"].get<int>();
     if (j.contains("color") && j["color"].size() == 4) {
         color_ = { j["color"][0], j["color"][1], j["color"][2], j["color"][3] };
     }
@@ -246,11 +267,63 @@ bool ParticleObject::LoadFromJson(const std::string& filepath) {
     try {
         file >> j;
         Deserialize(j);
+        return true;
     } catch (const nlohmann::json::exception& e) {
         std::cerr << "JSON parse error in " << filepath << ": " << e.what() << std::endl;
         return false;
     }
-    return true;
+}
+
+void ParticleObject::RegisterProperties(Component* comp) {
+    if (!comp) return;
+
+    comp->RegisterHeader("Emitter Basics");
+    comp->RegisterProperty("Emit On Awake", &emitOnAwake_);
+    comp->RegisterProperty("Burst Count On Awake", &burstCountOnAwake_);
+    comp->RegisterEnum("Emit Type", &emitType_, {"0: Sphere", "1: Beam", "2: Box", "3: Cylinder"});
+    comp->RegisterPropertyRange("Emission Rate", &emissionRate_, 0.0f, 1000.0f);
+    comp->RegisterPropertyRange("Life Time Min", &lifeTimeMin_, 0.01f, 10.0f);
+    comp->RegisterPropertyRange("Life Time Max", &lifeTimeMax_, 0.01f, 10.0f);
+    comp->RegisterPropertyRange("Velocity", &velocity_, 0.0f, 100.0f);
+    comp->RegisterPropertyRange("Radius", &radius_, 0.0f, 100.0f);
+    comp->RegisterPropertyRange("Spread", &spread_, 0.0f, 1.0f);
+    comp->RegisterProperty("Direction", &direction_);
+    comp->RegisterProperty("Area Size", &areaSize_);
+
+    comp->RegisterHeader("Physics & Movement");
+    comp->RegisterPropertyRange("Gravity", &gravity_, -100.0f, 100.0f).SetTooltip("重力（マイナスで上方向へ移動）");
+    comp->RegisterPropertyRange("Damping", &damping_, 0.0f, 1.0f).SetTooltip("空気抵抗（1.0に近いほど減速しやすい）");
+    comp->RegisterPropertyRange("Bounce", &bounce_, 0.0f, 1.0f).SetTooltip("地面への反発係数（Ground Heightでバウンドします）");
+    comp->RegisterProperty("Ground Height", &groundHeight_);
+    comp->RegisterPropertyRange("Jitter", &jitter_, 0.0f, 10.0f).SetTooltip("発生位置のランダムな揺らぎ（ノイズ）の強さ");
+    comp->RegisterPropertyRange("Attractor Strength", &attractorStrength_, -100.0f, 100.0f);
+    comp->RegisterProperty("Attractor Pos", &attractorPos_);
+
+    comp->RegisterHeader("Visuals");
+    comp->RegisterProperty("Texture Path", &texturePath_);
+    comp->RegisterEnum("Billboard Mode", &billboardMode_, {"0: None", "1: Billboard", "2: Velocity Billboard"});
+    comp->RegisterEnum("Blend Mode", reinterpret_cast<int*>(&blendMode_), {
+        "0: None", 
+        "1: Normal (Alpha)", 
+        "2: Add", 
+        "3: Subtract", 
+        "4: Multiply", 
+        "5: Screen", 
+        "6: Premultiplied"
+    }); // BlendMode enum
+
+    comp->RegisterProperty("Color", &color_);
+    comp->RegisterProperty("Mid Color", &midColor_);
+    comp->RegisterProperty("Start Scale", &startScale_);
+    comp->RegisterProperty("Mid Scale", &midScale_);
+    comp->RegisterProperty("End Scale", &endScale_);
+    comp->RegisterPropertyRange("Mid Point", &midPoint_, 0.0f, 1.0f).SetTooltip("寿命の中で中間スケール・カラーに到達するタイミング（0.0～1.0）");
+
+    comp->RegisterHeader("Special Features");
+    comp->RegisterProperty("Enable Trail", &enableTrail_).SetTooltip("パーティクルの軌跡を描画するか");
+    comp->RegisterPropertyRange("Trail Frequency", &trailFrequency_, 0.01f, 1.0f).SetTooltip("軌跡（トレイル）を生成する間隔の頻度");
+    comp->RegisterProperty("Enable Death Emit", &enableDeathEmit_).SetTooltip("消滅時に別のパーティクルを発生させるか");
+    comp->RegisterProperty("Enable Random Rotation", &enableRandomRotation_).SetTooltip("発生時にランダムな回転角を与えるか");
 }
 #ifdef USE_IMGUI
 #include <imgui.h>
@@ -364,6 +437,12 @@ void ParticleObject::DebugUI(const char* name) {
 
             ImGui::Separator();
             changed |= ImGui::DragFloat("Jitter", &jitter_, 0.01f, 0.0f, 10.0f);
+
+            ImGui::Separator();
+            changed |= ImGui::Checkbox("Enable Trail (Sparks)", &enableTrail_);
+            if (enableTrail_) changed |= ImGui::DragFloat("Trail Frequency", &trailFrequency_, 0.01f, 0.01f, 1.0f);
+            changed |= ImGui::Checkbox("Enable Death Emit", &enableDeathEmit_);
+            changed |= ImGui::Checkbox("Enable Random Rotation", &enableRandomRotation_);
 
             ImGui::TreePop();
         }

@@ -2,7 +2,7 @@
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 
-class RailPathComponent;
+class SplineComponent;
 
 /**
  * @class RailShooterPlayerComponent
@@ -28,7 +28,7 @@ private:
     Vector3 moveLimitMin_ = {-10.0f, -10.0f, 0.0f}; ///< 移動できる限界の左下座標
     Vector3 moveLimitMax_ = { 10.0f,  10.0f, 0.0f}; ///< 移動できる限界の右上座標
 
-    RailPathComponent* cachedPath_ = nullptr; ///< シーン内に置かれているルート情報の仮置き場
+    SplineComponent* cachedPath_ = nullptr; ///< シーン内に置かれているルート情報の仮置き場
 
     // 軌道ポイントが引かれていないとき用の直進用データ
     Vector3 dummyBasePos_ = {0.0f, 0.0f, 0.0f};   ///< パスが無いときにまっすぐ進むための基準位置

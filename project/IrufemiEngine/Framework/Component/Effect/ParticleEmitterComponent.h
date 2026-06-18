@@ -21,6 +21,8 @@ public:
     
     IRenderable* GetRenderable() override { return nullptr; }
 
+    bool CanUpdateInEditMode() const override { return true; } // エディタでのプレビュー更新を許可
+
     std::string GetComponentName() const override { return "ParticleEmitterComponent"; }
     void OnRegisterProperties() override;
 

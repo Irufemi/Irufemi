@@ -183,32 +183,52 @@ void GameObject::RemoveComponent(Component* component) {
 
 nlohmann::json GameObject::Serialize() const {
     nlohmann::json j;
-    j["name"] = name_;
-    j["tag"] = tag_;
-    j["isActive"] = isActive_;
-    j["isFolder"] = isFolder_;
-    j["isLocked"] = isLocked_;
     
-    nlohmann::json comps = nlohmann::json::array();
-    for (const auto& comp : components_) {
-        nlohmann::json cj;
-        cj["type"] = comp->GetComponentName();
-        cj["data"] = comp->Serialize();
-        comps.push_back(cj);
-    }
-    j["components"] = comps;
+    // デフォルト値と異なる場合のみ出力
+    if (!name_.empty()) j["name"] = name_;
+    if (!tag_.empty()) j["tag"] = tag_;
+    if (!isActive_) j["isActive"] = isActive_; // default is true
+    if (isFolder_) j["isFolder"] = isFolder_;   // default is false
+    if (isLocked_) j["isLocked"] = isLocked_;   // default is false
     
-    nlohmann::json childrenJson = nlohmann::json::array();
-    for (const auto& child : children_) {
-        childrenJson.push_back(child->Serialize());
+    if (!components_.empty()) {
+        nlohmann::json comps = nlohmann::json::array();
+        for (const auto& comp : components_) {
+            nlohmann::json cj;
+            cj["type"] = comp->GetComponentName();
+            nlohmann::json cdata = comp->Serialize();
+            // コンポーネントのデータが空でなければ出力
+            if (!cdata.empty() && !cdata.is_null()) {
+                cj["data"] = cdata;
+            }
+            comps.push_back(cj);
+        }
+        if (!comps.empty()) {
+            j["components"] = comps;
+        }
     }
-    j["children"] = childrenJson;
+    
+    if (!children_.empty()) {
+        nlohmann::json childrenJson = nlohmann::json::array();
+        for (const auto& child : children_) {
+            if (child && child->IsSerializable()) {
+                childrenJson.push_back(child->Serialize());
+            }
+        }
+        if (!childrenJson.empty()) {
+            j["children"] = childrenJson;
+        }
+    }
     
     return j;
 }
 
 void GameObject::Deserialize(const nlohmann::json& j) {
+    // シリアライズから復元された＝シーンに保存されている静的オブジェクトである
+    SetIsSerializable(true);
+
     if (j.contains("name")) name_ = j["name"];
+    if (j.contains("instanceId")) instanceId_ = j["instanceId"];
     if (j.contains("tag")) tag_ = j["tag"];
     if (j.contains("isActive")) isActive_ = j["isActive"];
     if (j.contains("isFolder")) isFolder_ = j["isFolder"];
@@ -256,6 +276,10 @@ std::shared_ptr<GameObject> GameObject::Clone() {
     auto clone = std::make_shared<GameObject>();
     clone->Deserialize(this->Serialize());
     
+    // クローン元のシリアライズフラグを引き継ぐ
+    clone->SetIsSerializable(this->IsSerializable());
+
+    // --- コンポーネントにアタッチされた GameObject の参照をクローン側に差し替える ---
     if (scene_) {
         clone->SetName(scene_->GetUniqueObjectName(this->GetName()));
     } else {

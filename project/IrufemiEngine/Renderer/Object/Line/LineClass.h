@@ -77,7 +77,7 @@ private:
 
     std::vector<LineInstance> instances_;
     size_t activeCount_ = 0;
-    size_t maxInstances_ = 8192;
+    size_t maxInstances_ = 65535;
 
     // インスタンシング用 StructuredBuffer と SRV
     std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> instanceBuffer_;

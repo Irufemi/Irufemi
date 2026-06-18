@@ -1,5 +1,5 @@
 #include "RailShooterPlayerComponent.h"
-#include "RailPathComponent.h"
+#include "Framework/Component/Utility/SplineComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/BaseScene.h"
@@ -34,11 +34,11 @@ void RailShooterPlayerComponent::Update() {
     }
 
     // シーン内からレール（軌道）のデータを持っているオブジェクトを自動で探し出す
-    if (!cachedPath_ && gameObject_->GetScene()) {
-        const auto& objs = gameObject_->GetScene()->GetGameObjects();
-        for (const auto& obj : objs) {
-            if (auto path = obj->GetComponent<RailPathComponent>()) {
-                cachedPath_ = path; // 見つけたら後で使い回すために保存
+    auto* scene = gameObject_->GetScene();
+    if (!cachedPath_ && scene) {
+        for (auto obj : scene->GetGameObjects()) {
+            if (auto path = obj->GetComponent<SplineComponent>()) {
+                cachedPath_ = path;
                 break;
             }
         }

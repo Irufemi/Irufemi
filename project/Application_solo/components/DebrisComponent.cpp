@@ -9,6 +9,7 @@
 #include "DebrisManagerComponent.h"
 #include "Engine/Core/Math/Random/Random.h"
 #include "Engine/Core/Math/MathFunction.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
 #include <cmath>
 
 void DebrisComponent::OnRegisterProperties() {
@@ -24,6 +25,38 @@ void DebrisComponent::Initialize() {
     
     if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
         baseIdleY_ = transform->position_.y;
+    }
+
+    if (auto collider = gameObject_->GetComponent<SphereColliderComponent>()) {
+        collider->onCollisionEnter_ = [this](ColliderComponent* other) {
+            if (state_ != DebrisState::Thrown) return;
+            
+            auto otherObj = other->GetGameObject();
+            if (!otherObj) return;
+
+            bool hit = false;
+            if (auto enemyComp = otherObj->GetComponent<RailShooterEnemyComponent>()) {
+                enemyComp->TakeDamage(100);
+                hit = true;
+            } else if (auto bossComp = otherObj->GetComponent<BossComponent>()) {
+                bossComp->TakeDamage(10.0f);
+                hit = true;
+            }
+
+            if (hit) {
+                if (auto t = gameObject_->GetComponent<TransformComponent>()) {
+                    gameObject_->Instantiate("resources/prefabs/hit_effect.json", t->worldPosition_);
+                }
+                if (manager_) {
+                    manager_->ReleaseDebris(gameObject_->shared_from_this());
+                    if (virtualId_ >= 0) {
+                        manager_->NotifyDestroyed(virtualId_);
+                    }
+                } else {
+                    gameObject_->SetIsActive(false); 
+                }
+            }
+        };
     }
 }
 
@@ -136,31 +169,6 @@ void DebrisComponent::Update() {
                     float len = std::sqrt(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
                     if (len > 0.001f) {
                         throwDirection_ = { diff.x / len, diff.y / len, diff.z / len };
-                    }
-                    
-                    // 簡易ヒット判定
-                    if (len < 1.0f) {
-                        auto enemyComp = target->GetComponent<RailShooterEnemyComponent>();
-                        if (enemyComp) {
-                            enemyComp->TakeDamage(100);
-                        }
-
-                        auto bossComp = target->GetComponent<BossComponent>();
-                        if (bossComp) {
-                            bossComp->TakeDamage(10.0f);
-                        }
-
-                        // マネージャーが存在すればプールに正しく返却する
-                        if (manager_) {
-                            manager_->ReleaseDebris(gameObject_->shared_from_this());
-                            // 仮想IDが割り当てられている場合は仮想データも破壊フラグを立てる
-                            if (virtualId_ >= 0) {
-                                manager_->NotifyDestroyed(virtualId_);
-                            }
-                        } else {
-                            // フォールバック（通常は発生しない）
-                            gameObject_->SetIsActive(false); 
-                        }
                     }
                 }
             }

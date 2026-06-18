@@ -32,7 +32,6 @@
 #pragma once
 #include "Framework/BaseScene.h"
 #include <memory>
-class ObjClass;
 
 class ExampleScene : public BaseScene {
 public:
@@ -54,199 +53,7 @@ public:
     // void OnResume() override;  // 上のシーンがPopされ最前面に戻った時
 
 private:
-    std::unique_ptr<ObjClass> playerObj_;
-};
-```
-
-#### シーン遷移と重ね合わせ（Push / Pop）
-シーンを完全に移動するには `TransitionTo` を使いますが、ポーズ画面のように**現在のシーンを残したまま一時的な画面を重ねる**場合は `PushScene` を使います。
-```cpp
-// 完全に別のシーンへ移動する場合
-if (isClear) {
-    // "ClearScene" に遷移する。トランジション効果は Fade で 1.0秒かける
-    engine_->GetSceneManager()->TransitionTo("ClearScene", SceneTransition::Type::Fade, 1.0f);
-}
-
-// 現在のシーンの上に一時的なシーン（ポーズ画面など）を重ねる場合
-// engine_->GetSceneManager()->PushScene("PauseScene");
-
-// 重ねたシーンを終了し、元のシーンに戻る場合（PauseScene側で呼ぶ）
-// engine_->GetSceneManager()->PopScene();
-```
-
-### 1.3 RenderGraph と DrawManager (描画パイプライン)
-本エンジンの描画は **RenderGraph（レンダーグラフ）** という仕組みで自動管理されています。
-ユーザーが `Draw()` を呼ぶと、すぐに画面に描画されるわけではなく、**DrawManagerのキュー（予約リスト）に登録（Submit）** されます。その後、エンジン側が適切な順序（Opaque → Transparent → UIなど）でまとめてGPUへ描画命令を出します。
-
-### 1.4 カメラの操作 (CameraManager / Camera)
-3D空間を描画するための「視点」を管理します。
-
-```cpp
-auto* cameraManager = engine_->GetCameraManager();
-auto* camera = cameraManager->GetActiveCamera();
-
-// カメラの位置と注視点を設定
-camera->SetTranslate({ 0.0f, 5.0f, -10.0f });
-camera->SetTarget({ 0.0f, 0.0f, 0.0f });
-
-// 行列を更新（位置を変更したら必ず呼ぶ）
-camera->UpdateMatrix();
-
-// ※デバッグカメラへの切り替えについて
-// 以前は CameraManager で切り替えていましたが、現在は BaseScene に統合されています。
-// ImGuiのデバッグタブ「Camera & Lights」から "Debug Camera Mode" のチェックを入れるか、
-// コード内で `isDebugCameraMode_ = true;` とすることでデバッグカメラが有効になります。
-```
-
----
-
-## 2. 描画・オブジェクトシステム (Rendering System)
-
-画面にモノを表示するための主要なクラス群です。
-
-### 2.1 3Dモデル描画 (`ObjClass` / `AnimationModel`)
-静的な3Dモデルを表示するには `ObjClass` を使います。モデルデータは `ModelManager` を経由して自動的にキャッシュされます。
-
-```cpp
-// 1. 宣言 (ヘッダー)
-std::unique_ptr<ObjClass> model_;
-
-// 2. 初期化 (Initialize)
-model_ = std::make_unique<ObjClass>();
-model_->Initialize("enemy/enemy.obj"); // resources/model/ 以下のパスを指定
-model_->SetPosition({ 0.0f, 0.0f, 10.0f });
-model_->SetScale({ 2.0f, 2.0f, 2.0f });
-
-// 3. 更新 (Update)
-model_->Update(); // ※毎フレーム必ず呼ぶこと（ワールド行列が更新されます）
-
-// 4. 描画 (Draw)
-model_->Draw();   // DrawManagerの標準3D描画キューに登録される
-
-// ※特殊なエフェクト（カスタムPSO）をモデル表面に適用する場合の例
-// model_->GetResource()->SetCustomPSO(engine_->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModeNormal, DepthWrite::Enable, CullMode::Back));
-```
-
-### 2.2 2Dスプライト描画 (`Sprite`)
-画面にUIなどの2D画像を表示するためのクラスです。
-
-```cpp
-// 1. 宣言 (ヘッダー)
-std::unique_ptr<Sprite> sprite_;
-
-// 2. 初期化 (Initialize)
-sprite_ = std::make_unique<Sprite>();
-sprite_->Initialize("ui/title_logo.png"); // resources/ 以下のパスを指定
-sprite_->SetPosition({ 640.0f, 360.0f }); // 画面中央 (1280x720の場合)
-sprite_->SetAnchorPoint({ 0.5f, 0.5f });  // 画像の中心を基準にする
-
-// 3. 更新 (Update)
-sprite_->Update();
-
-// 4. 描画 (Draw)
-sprite_->Draw(); // 通常のUIパスで描画される
-
-// ※ポストプロセス（ブルーム等）の影響を受けない最前面UIとして描画したい場合
-// sprite_->Draw(true); 
-```
-
-### 2.3 プリミティブ形状 (`CubeClass`, `SphereClass`, `CylinderClass`, `LineClass`)
-当たり判定のデバッグ表示や、プロトタイプの作成に便利な組み込み図形です。モデルファイルなしで使えます。
-
-```cpp
-// 1. 宣言 (ヘッダー)
-std::unique_ptr<CubeClass> cube_;
-std::unique_ptr<LineClass> line_;
-
-// 2. 初期化 (Initialize)
-cube_ = std::make_unique<CubeClass>();
-cube_->Initialize();
-cube_->SetColor({ 1.0f, 0.0f, 0.0f, 0.5f }); // 赤色で半透明
-
-line_ = std::make_unique<LineClass>();
-line_->Initialize();
-line_->SetColor({ 0.0f, 1.0f, 0.0f, 1.0f }); // 緑色の線
-
-// 3. 更新と描画 (Update & Draw)
-cube_->SetPosition(playerPos);
-cube_->Update();
-cube_->Draw();
-
-line_->SetStartAndEnd(startPos, endPos);
-line_->Update();
-line_->Draw(); // ライン専用のキューに登録される
-```
-
-### 2.4 パーティクル (`GPUParticleSystem`)
-コンピュートシェーダを利用して数万個のパーティクルを高速に描画するシステムです。
-
-```cpp
-// 1. 宣言 (ヘッダー)
-std::unique_ptr<GPUParticleSystem> gpuParticle_;
-
-// 2. 初期化 (Initialize)
-gpuParticle_ = std::make_unique<GPUParticleSystem>();
-gpuParticle_->Initialize("effect/particle_tex.png");
-gpuParticle_->SetColor({ 1.0f, 0.5f, 0.1f, 1.0f });
-gpuParticle_->SetParticleLife(0.5f, 1.0f); // 寿命(最小, 最大)
-
-# IrufemiEngine 取扱説明書 (Manual)
-
-このドキュメントは、IrufemiEngineを利用してゲームを開発するチームメンバーのための総合マニュアルです。
-各機能の役割と、すぐに使えるコードスニペット（コピペ用コード）をまとめています。
-
----
-
-## 0. プロジェクト構造とコーディングルール (Project Structure)
-
-新しくコードを書いたり、リソースを追加する際は以下の配置ルールに必ず従ってください。
-
-- **`IrufemiEngine/` (エンジンコア)**
-  - 描画パイプラインや汎用的なマネージャーが置かれます。**ゲーム特有のロジックやアクターは絶対にここに書かないでください。**
-- **`Application/` (ゲームロジック)**
-  - プレイヤーの動き、敵のAI、各種シーン（Title, InGame等）の処理はすべてここに作成します。
-- **`resources/` (リソースデータ)**
-  - 3Dモデル（`.obj`, `.gltf`）やテクスチャ（`.png`）、音声（`.wav`）は必ずこのフォルダ以下の適切なディレクトリ（`model/`, `ui/`, `audio/` 等）に配置してください。
-
----
-
-## 1. エンジンの基本アーキテクチャ (Core Architecture)
-
-### 1.1 IrufemiEngine クラス
-エンジン全体を統括するコアクラスです。`WinApp`（ウィンドウ管理）や `DirectXCommon`（DirectX12初期化）を保持し、メインループ（`Update` と `Draw`）を回します。ゲームアプリケーション全体で1つのインスタンスのみが存在します。
-
-### 1.2 SceneManager と IScene (シーン管理)
-ゲームの画面（タイトル、インゲーム、リザルトなど）を切り替えるための仕組みです。
-新しいシーンを追加する場合は `IScene` または `BaseScene` を継承したクラスを作成します。
-
-#### シーンの作り方
-```cpp
-#pragma once
-#include "Framework/BaseScene.h"
-#include <memory>
-class ObjClass;
-
-class ExampleScene : public BaseScene {
-public:
-    ~ExampleScene() override = default;
-    
-    // シーン遷移時に一度だけ呼ばれる（リソース読み込みなど）
-    void Initialize(IrufemiEngine* engine) override;
-    
-    // 毎フレーム呼ばれる（ロジックの更新）
-    void Update() override;
-    
-    // 毎フレーム呼ばれる（描画リクエストの送信）
-    void Draw() override;
-
-    // --- ライフサイクル関数（必要に応じてオーバーライド） ---
-    // void OnEnter() override;   // アクティブになった時
-    // void OnExit() override;    // 非アクティブ・破棄される直前
-    // void OnSuspend() override; // 上に別のシーンがPushされた時
-    // void OnResume() override;  // 上のシーンがPopされ最前面に戻った時
-
-private:
-    std::unique_ptr<ObjClass> playerObj_;
+    // コンポーネント指向を利用するため、特定のオブジェクトは SceneManager (GameObject) 経由で管理します
 };
 ```
 
@@ -273,6 +80,21 @@ if (isClear) {
 
 // 重ねたシーンを終了し、元のシーンに戻る場合（PauseScene側で呼ぶ）
 // engine_->GetSceneManager()->PopScene();
+```
+
+#### シーンのロード状態と一つ前のシーンの取得
+ロード画面の描画や、ポーズ画面から元のシーンへ戻る際の判定に便利なAPIが用意されています。
+```cpp
+// チラつき防止機能付きで、現在ローディング画面を描画すべきか判定
+if (engine_->GetSceneManager()->ShouldDrawLoadingScreen()) {
+    // ローディング画面の描画処理
+}
+
+// PauseScene などの上に重なるシーンから、呼び出し元のシーン名を取得する
+std::string prevScene = engine_->GetSceneManager()->GetPreviousSceneName();
+if (prevScene == "GameScene") {
+    // GameScene から呼ばれた場合の特別な処理
+}
 ```
 
 #### GameObject の検索（名前、タグ、ID）
@@ -339,50 +161,82 @@ camera->UpdateMatrix();
 
 画面にモノを表示するための主要なクラス群です。
 
-### 2.1 3Dモデル描画 (`ObjClass` / `AnimationModel`)
-静的な3Dモデルを表示するには `ObjClass` を使います。モデルデータは `ModelManager` を経由して自動的にキャッシュされます。
+### 2.1 描画コンポーネント (Renderer Components)
+画面にオブジェクトを表示するためには、`GameObject` に適切なレンダラーコンポーネントをアタッチします。
 
+#### MeshRendererComponent (3Dモデル)
+`.obj` や静的な `.gltf` 形式の3Dモデルを描画します。
+*(※ボーンアニメーションを持つモデルを描画する場合は、現状はコンポーネントではなく手動生成の `AnimationModel` クラスを使用してください。コンポーネント版は将来追加予定です。)*
 ```cpp
-// 1. 宣言 (ヘッダー)
-std::unique_ptr<ObjClass> model_;
-
-// 2. 初期化 (Initialize)
-model_ = std::make_unique<ObjClass>();
-model_->Initialize("enemy/enemy.obj"); // resources/model/ 以下のパスを指定
-model_->SetPosition({ 0.0f, 0.0f, 10.0f });
-model_->SetScale({ 2.0f, 2.0f, 2.0f });
-
-// 3. 更新 (Update)
-model_->Update(); // ※毎フレーム必ず呼ぶこと（ワールド行列が更新されます）
-
-// 4. 描画 (Draw)
-model_->Draw();   // DrawManagerの標準3D描画キューに登録される
+auto obj = std::make_shared<GameObject>("Enemy");
+auto* renderer = obj->AddComponent<MeshRendererComponent>();
+renderer->LoadModel("enemy/enemy.obj"); // resources/model/ 以下のパス
+// scene->AddGameObject(obj);
 ```
 
-### 2.2 2Dスプライト描画 (`Sprite`)
-画面にUIなどの2D画像を表示するためのクラスです。
-
+#### ModelBatchRendererComponent (大量の同一モデル)
+草や破片など、同じモデルを大量に描画する際に使用します。インスタンシング描画によりGPU負荷を激減させます。
 ```cpp
-// 1. 宣言 (ヘッダー)
-std::unique_ptr<Sprite> sprite_;
+auto obj = std::make_shared<GameObject>("GrassBatch");
+auto* batchRenderer = obj->AddComponent<ModelBatchRendererComponent>();
+batchRenderer->LoadModel("env/grass.obj"); // resources/model/ 以下のパス
+// 描画するインスタンスの追加・更新処理等は Component 内で行います
+```
 
-// 2. 初期化 (Initialize)
-sprite_ = std::make_unique<Sprite>();
-sprite_->Initialize("ui/title_logo.png"); // resources/ 以下のパスを指定
-sprite_->SetPosition({ 640.0f, 360.0f }); // 画面中央 (1280x720の場合)
-sprite_->SetAnchorPoint({ 0.5f, 0.5f });  // 画像の中心を基準にする
+#### PrimitiveRendererComponent (基本図形)
+モデルデータなしでキューブ、球体、円柱などのプリミティブ形状を描画します。当たり判定のデバッグ表示等に便利です。
+```cpp
+auto primitiveObj = std::make_shared<GameObject>("Cube");
+auto* primitive = primitiveObj->AddComponent<PrimitiveRendererComponent>();
+primitive->SetPrimitiveType(PrimitiveType::Cube);
+primitive->SetColor({ 1.0f, 0.0f, 0.0f, 0.5f });
+```
 
-// 3. 更新 (Update)
-sprite_->Update();
-
-// 4. 描画 (Draw)
-sprite_->Draw(); // 通常のUIパスで描画される
-
+#### SpriteRendererComponent (2Dスプライト)
+画面にUIなどの2D画像を表示します。
+```cpp
+auto spriteObj = std::make_shared<GameObject>("TitleLogo");
+auto* sprite = spriteObj->AddComponent<SpriteRendererComponent>();
+sprite->LoadTexture("ui/title_logo.png"); // resources/ 以下のパス
+sprite->SetAnchorPoint({ 0.5f, 0.5f });
 // ※ポストプロセス（ブルーム等）の影響を受けない最前面UIとして描画したい場合
-// sprite_->Draw(true); 
+sprite->SetTopMost(true);
 ```
 
-### 2.3 プリミティブ形状 (`Primitive3DObject`, `LineClass`)
+### 2.2 カメラとライト (Camera & Lights)
+シーンの視点や照明は以下の方法で管理されます。
+- **`CameraComponent`**: 視点と投影行列を管理します。GameObjectにアタッチして使用します。
+- **ライト管理 (Directional/Point/Spot/Area)**: ライトはコンポーネントとしてではなく、`BaseScene` が直接管理します。デバッグや調整を行う場合は、エディタのデバッグタブ「Camera & Lights」から各パラメータを直接編集できます。
+
+### 2.3 物理・当たり判定 (Colliders & Raycast)
+3D空間での衝突判定には、以下のコライダーコンポーネントを使用します。
+- **`AABBColliderComponent` / `OBBColliderComponent`**: ボックス形状での当たり判定（軸平行 または 有向境界箱）。
+- **`SphereColliderComponent`**: 球体形状での当たり判定。
+- **`RaycastComponent`**: 指定した方向へレイ（光線）を飛ばし、オブジェクトとの交差判定を行います。
+
+```cpp
+auto obj = std::make_shared<GameObject>("PlayerCollider");
+auto* collider = obj->AddComponent<OBBColliderComponent>();
+collider->SetSize({ 1.0f, 2.0f, 1.0f });
+```
+*(※衝突時に処理を行いたい場合は、後述の `OnCollisionEnter` コールバックを利用します)*
+
+### 2.4 手動生成の描画クラス (Manual Rendering Classes)
+※ 以下のクラス群は現在も使用可能ですが、基本的にはコンポーネント版（PrimitiveRendererComponent等）の使用が推奨されています。
+
+#### 背景描画 (`Skybox`)
+3D空間の全天球背景（空など）を描画します。
+```cpp
+std::unique_ptr<Skybox> skybox_ = std::make_unique<Skybox>();
+// resources/ 以下のテクスチャ（.dds等のキューブマップ形式が推奨）を指定して初期化
+skybox_->Initialize("skybox/sky.dds"); 
+
+// 毎フレームの更新と描画
+skybox_->Update();
+skybox_->Draw();
+```
+
+#### プリミティブ形状 (`Primitive3DObject`, `LineClass`)
 当たり判定のデバッグ表示や、プロトタイプの作成に便利な組み込み図形です。
 以前は `CubeClass` や `SphereClass` などの専用クラスに分かれていましたが、現在は `Primitive3DObject` に統合されており、１つのクラスで複数の形状（Cube, Sphere, Cylinder, Plane, Torus 等）を自由に切り替えて表示できます。
 
@@ -416,7 +270,7 @@ line_->Draw(); // ライン専用のキューに登録される
 ※ **内部データ構造の変更について**：
 これまで使われていた `MeshModule` や `MaterialModule` は、それぞれ `MeshDesc` と `MaterialDesc` に名称変更され、`Renderer/Data/RenderData.h` に統合されています。描画パイプラインのコードを独自にカスタマイズする際はこの変更にご注意ください。
 
-### 2.4 パーティクル (`GPUParticleSystem`)
+#### パーティクル (`GPUParticleSystem`)
 コンピュートシェーダを利用して数万個のパーティクルを高速に描画するシステムです。
 
 ```cpp
@@ -559,8 +413,8 @@ public:
 };
 ```
 
-#### 演出コンポーネント (AudioSource / ParticleEmitter)
-BGMやSEを鳴らしたり、エフェクトを発生させるには、インスペクターからプロパティを設定するだけで動く以下のコンポーネントが便利です。C++でコードを書く必要すらありません。
+#### 演出・エフェクトコンポーネント (AudioSource / ParticleEmitter / VoxelParticle)
+BGMやSEを鳴らしたり、エフェクトを発生させるには、インスペクターからプロパティを設定するだけで動く以下のコンポーネントが便利です。
 
 - **`AudioSourceComponent`**: アタッチしたオブジェクトから音を鳴らします。
   - `Audio Path`: 再生したい音声ファイルのパス（例: `audio/se/boom.wav`）。
@@ -570,6 +424,11 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - `Texture Path`: パーティクルに使う画像パス。
   - `Emit Type`: 0(球体), 1(ビーム), 2(ボックス), 3(円柱) などの放出形状。
   - `Color`, `Velocity`, `Emit Count` などで自由にエフェクトを構築できます。
+- **`VoxelParticleComponent`**: 指定した3Dモデルをボクセル化し、大量のパーティクルとして爆発（四散）させる高度なエフェクトコンポーネントです。
+  - `Override Model Name`: ベースとなるモデルのファイル名を指定します。空欄の場合はアタッチされているRendererのモデルを使用します。
+  - `Pre Allocate Count`: シーンロード時に事前計算・プールしておく数を指定し、再生時の処理落ちを防ぎます。
+  - `Resolution`: ボクセルの分割数（例：32x32x32）。
+  - C++コードから `GetComponent<VoxelParticleComponent>()->Explode();` を呼ぶことで破砕エフェクトが起動します。
 
 #### UIコンポーネント (Canvas / Button / Text)
 ゲーム内の2D UIを構築するための専用コンポーネントです。
@@ -582,16 +441,22 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - `Top Most`: ブルームなどのポストプロセスの影響を受けない、最前面レイヤーに描画するかどうか。
   - `Alignment`: テキストのアライメント（`0=Left`, `1=Center`, `2=Right`）。複数行の場合は行ごとに適用されます。
 
-- **`ButtonComponent`**: マウスカーソルのホバーやクリックを検知し、色を変えたりシーンを遷移させる機能を提供します。
-  - `Load Scene Name`: クリック時に遷移させたいシーン名（例: `InGame`）。空欄の場合は何もしません。
-  - `Transition Type(0-3)`: `0=Fade`, `1=Dissolve`, `2=Slide`, `3=RadialBlur` のいずれかを指定し、遷移時の演出（ポストプロセス）を選択できます。
-  - `Transition Duration`: 遷移演出にかける時間（秒）。
+- **`ButtonComponent`**: マウスカーソルのホバーやクリックを検知し、色を自動的に変えたり、明滅（Pulse）アニメーションを行うUI機能を提供します。
   - `Normal/Hover/Click Color`: マウスの操作状態に合わせて、アタッチされているSpriteの色を自動的に変化させます。
+  - `Enable Hover Pulse / Idle Pulse`: ホバー時や待機時の明滅アニメーションを有効化します。
+  - *(※ボタン押下によるシーン遷移機能はエンジン側の責務ではなく、`Application/` 側の `SceneTransitionButtonComponent` などで個別に実装してアタッチしてください)*
 - **`CanvasComponent`**: UI要素をグループ化し、アルファ値（透明度）などを一括管理します。
   - `Group Alpha`: このコンポーネントを持つGameObject自身と、そのすべての子要素にある `SpriteRendererComponent` のアルファ値を一括で制御します。フェードイン・フェードアウトの演出に便利です。
 ### 2.6 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
 
-敵や障害物に弾丸・ミサイルが着弾した際に使用する、リッチな3D爆発エフェクト機能です。3D球体の急速膨張による炎コア、3軸クロス展開される衝撃波リング、全方位に飛び散るGPU火花パーティクルが統合されています。
+敵や障害物に弾丸・ミサイルが着弾した際に使用するリッチなエフェクト機能です。`Effect` クラスは `EffectType` 列挙型により複数の表現をサポートしています。
+
+#### サポートされているエフェクトの種類 (`EffectType`)
+- **`kHit`**: ヒットエフェクト（星型に広がる斬撃など）
+- **`kImpact`**: 衝撃エフェクト（PlaneとRingの複合ヒット表現）
+- **`kAura`**: キャラクターを包むオーラエフェクト
+- **`kSwing`**: 武器を振った際の軌跡（風切り）エフェクト
+- **`kExplosion`**: 3D爆発エフェクト（球体膨張＋火花＋衝撃波）
 
 #### プレイヤーでの事前生成とプール管理の例
 
@@ -729,7 +594,7 @@ model_->GetResource()->SetCustomCBVAddress(myCb_->GetGPUVirtualAddress());
 // ConstantBuffer<MyCustomParams> gMyParams : register(b6);
 ```
 
-### 2.7 マルチバッファ同期と基底クラス (`MultiBufferSyncState`)
+### 2.9 マルチバッファ同期と基底クラス (`MultiBufferSyncState`)
 DirectX 12 でフレーム間のマルチバッファリング（`kMaxFramesInFlight`）を行う際、CPUからGPUへの定数バッファの更新タイミングを管理するために `MultiBufferSyncState` 基底クラスを利用します。
 `BaseResource` や `BaseModel` などの描画リソースクラスは、すでにこのクラスを継承しています。
 
@@ -828,8 +693,30 @@ engine_->GetFontManager()->PrecacheText("my_font", L"このシーンで使う予
 
 プレイヤーの操作を受け取ったり、ゲームに必要な計算を行うクラス群です。
 
-### 4.1 InputManager と BaseScene の入力ヘルパー (入力の取得)
-キーボード、マウス、ゲームパッド（XInput互換）の操作を取得できます。
+### 4.1 入力システム (InputManager / InputMappingContext)
+プレイヤーからの入力を取得する方法は、従来からの「直接キー・ボタンを指定する方法」と、より柔軟な「アクションバインディング」を利用する方法の2つがあります。
+
+#### 1. 新しいアクションバインディング (推奨)
+キーボードやゲームパッドの入力を「Jump」や「Attack」などの論理的なアクションにマッピングするシステムです。
+複数の入力デバイスを一元管理したり、キーコンフィグの変更に対応しやすくなります。
+
+```cpp
+// 1. InputManager に直接アクションと物理入力をバインドする (初期化時など)
+// 引数: アクション名, デバイスに対応したInputId (Keyboard_Space, Gamepad_A 等)
+engine_->GetInputManager()->BindAction("Jump", InputId::Keyboard_Space);
+
+// 2. アクションの状態を取得 (毎フレームのUpdate内など)
+if (engine_->GetInputManager()->IsActionTriggered("Jump")) {
+    // ジャンプ処理
+}
+
+// アナログ値の取得（スティック移動など）
+auto moveVal = engine_->GetInputManager()->GetActionValue("Move");
+float moveX = moveVal.Get<float>();
+```
+
+#### 2. 直接キー・ボタンを取得する方法
+キーボード、マウス、ゲームパッド（XInput互換）の操作を直接取得します。
 `BaseScene` を継承したクラスでは、直接 `PressedVK()` や `IsButtonPressed()` などのヘルパー関数を呼び出すのが最も簡単です。
 
 ```cpp
@@ -918,6 +805,33 @@ if (uiGroup_.IsTriggered()) {
 // ※描画時は uiGroup_.GetSelectedIndex() に応じて、選ばれている項目の色やスプライトを変えます。
 ```
 
+### 4.5 UIのアニメーション演出 (`UIAnimator`)
+UIの「明滅」や「浮遊」といった数学的なアニメーション（サイン波ベース）を簡単に計算してくれる便利なユーティリティクラスです。自分で時間を管理して計算式を書く必要がなくなります。
+
+```cpp
+#include "Framework/UIAnimator.h"
+
+// 1. 宣言
+UIAnimator uiAnimator_;
+
+// 2. 毎フレームの更新 (Update内)
+uiAnimator_.Update(engine_->GetGameDeltaTime());
+
+// 3. 値の取得と適用
+// ダークソウル風のゆっくりとした明滅アルファ値 (基本値0.6, 振幅0.4, 速度3.0)
+float alpha = uiAnimator_.GetPulseAlpha(0.6f, 0.4f, 3.0f);
+sprite_->SetColor({1.0f, 1.0f, 1.0f, alpha});
+
+// 浮遊する上下のオフセット値
+float offsetY = uiAnimator_.GetFloatOffset(10.0f, 2.0f);
+sprite_->SetPosition({ 640.0f, 360.0f + offsetY });
+
+// 警告やダメージ時の高速点滅 (true/false)
+if (uiAnimator_.GetFlashVisibility(40.0f)) {
+    // 描画する
+}
+```
+
 ---
 
 ## 5. 高度な機能と拡張 (Advanced Features)
@@ -943,6 +857,13 @@ pp->GetVignetteParams().power = 0.8f;
 
 // ※ シーン遷移時のフェードなどもこれを利用して実装できます
 ```
+
+#### サポートされているポストプロセスモード
+`PostProcessMode` 列挙型には、以下の多彩なエフェクトが用意されています。複数のモードを `AddActiveMode()` でスタックすることが可能です。
+- **色調補正系**: `ToneMapping` (ACES露出補正), `Grayscale`, `Sepia`, `HSV`
+- **空間・ぼかし系**: `Smoothing`, `GaussianFilter`, `RadialBlur` (放射状ぼかし)
+- **画面演出系**: `Bloom` (発光), `Vignette` (暗転), `DepthBasedOutline` (アウトライン抽出), `Dissolve` (消失演出), `Noise`, `Glitch` (画面の乱れ)
+- **画面遷移系**: `Fade`, `Slide`
 
 ### 5.2 デバッグ機能 (DebugUI / ImGui)
 パラメータの調整や変数の確認を行うために、ImGuiを利用してデバッグウィンドウを表示できます。
@@ -1057,7 +978,18 @@ if (ImGui::Checkbox("TopMost", &isTopMost)) {
 }
 ```
 
-```
+### 6.3.5 エディタのショートカットキー
+エディタ上では、操作を快適にするために以下のショートカットキーがサポートされています。
+- **`Ctrl + Z`**: 元に戻す (Undo)
+- **`Ctrl + Y`**: やり直し (Redo)
+- **`Ctrl + D`**: 選択中の GameObject を複製 (Duplicate)
+- **`Delete`**: 選択中の GameObject を削除
+- **`F2`**: 選択中の GameObject の名前変更 (Rename)
+- **`W / E / R`**: ギズモの操作モード切り替え (Translate / Rotate / Scale)
+
+### 6.3.6 コンソールパネル (Console)
+エンジンからのログ出力（エラー、警告、情報）は、エディタ下部の **Console** パネルに表示されます。
+コード内で `Log::Info()`, `Log::Warning()`, `Log::Error()` を呼び出すとリアルタイムに反映され、パネル上の「Clear」ボタンでログを消去できます。
 
 ### 6.4 インスペクター (Inspector) の便利な操作機能
 インスペクター上で作業を効率化するための便利な機能が備わっています。これらはすべて **Undo/Redo (Ctrl+Z / Ctrl+Y)** に対応しています。

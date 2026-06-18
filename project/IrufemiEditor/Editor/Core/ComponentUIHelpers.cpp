@@ -135,6 +135,80 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
 
     if (headerOpen) {
         for (const auto& prop : props) {
+            auto showTooltipAndReset = [&]() {
+                if (!prop.tooltip.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                    ImGui::SetTooltip("%s", prop.tooltip.c_str());
+                }
+                
+                bool isModified = false;
+                if (!prop.defaultValue.is_null()) {
+                    switch (prop.type) {
+                        case ComponentPropertyType::Float: isModified = (*static_cast<float*>(prop.data) != prop.defaultValue.get<float>()); break;
+                        case ComponentPropertyType::Enum:
+                        case ComponentPropertyType::Int: isModified = (*static_cast<int*>(prop.data) != prop.defaultValue.get<int>()); break;
+                        case ComponentPropertyType::Bool: isModified = (*static_cast<bool*>(prop.data) != prop.defaultValue.get<bool>()); break;
+                        case ComponentPropertyType::String: isModified = (*static_cast<std::string*>(prop.data) != prop.defaultValue.get<std::string>()); break;
+                        case ComponentPropertyType::Float2: {
+                            auto* v = static_cast<Vector2*>(prop.data);
+                            auto arr = prop.defaultValue;
+                            if (arr.is_array() && arr.size() >= 2) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
+                            break;
+                        }
+                        case ComponentPropertyType::Float3: {
+                            auto* v = static_cast<Vector3*>(prop.data);
+                            auto arr = prop.defaultValue;
+                            if (arr.is_array() && arr.size() >= 3) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() || v->z != arr[2].get<float>());
+                            break;
+                        }
+                        case ComponentPropertyType::Float4: {
+                            auto* v = static_cast<Vector4*>(prop.data);
+                            auto arr = prop.defaultValue;
+                            if (arr.is_array() && arr.size() >= 4) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() || v->z != arr[2].get<float>() || v->w != arr[3].get<float>());
+                            break;
+                        }
+                        default: break;
+                    }
+                }
+
+                if (isModified) {
+                    ImGui::SameLine();
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f)); // Yellow
+                    if (ImGui::Button(("↺##" + prop.name).c_str())) {
+                        switch (prop.type) {
+                            case ComponentPropertyType::Float: *static_cast<float*>(prop.data) = prop.defaultValue.get<float>(); break;
+                            case ComponentPropertyType::Enum:
+                            case ComponentPropertyType::Int: *static_cast<int*>(prop.data) = prop.defaultValue.get<int>(); break;
+                            case ComponentPropertyType::Bool: *static_cast<bool*>(prop.data) = prop.defaultValue.get<bool>(); break;
+                            case ComponentPropertyType::String: *static_cast<std::string*>(prop.data) = prop.defaultValue.get<std::string>(); break;
+                            case ComponentPropertyType::Float2: {
+                                auto* v = static_cast<Vector2*>(prop.data);
+                                auto arr = prop.defaultValue;
+                                v->x = arr[0].get<float>(); v->y = arr[1].get<float>();
+                                break;
+                            }
+                            case ComponentPropertyType::Float3: {
+                                auto* v = static_cast<Vector3*>(prop.data);
+                                auto arr = prop.defaultValue;
+                                v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>();
+                                break;
+                            }
+                            case ComponentPropertyType::Float4: {
+                                auto* v = static_cast<Vector4*>(prop.data);
+                                auto arr = prop.defaultValue;
+                                v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>(); v->w = arr[3].get<float>();
+                                break;
+                            }
+                            default: break;
+                        }
+                    }
+                    ImGui::PopStyleColor();
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset to Default");
+                }
+            };
+
+            bool hasValue = (prop.type != ComponentPropertyType::Header && prop.type != ComponentPropertyType::Separator);
+            if (hasValue) ImGui::PushItemWidth(-30.0f);
+
             switch (prop.type) {
                 case ComponentPropertyType::Header: {
                     ImGui::Separator();
@@ -147,28 +221,34 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                 }
                 case ComponentPropertyType::Float: {
                     float* ptr = static_cast<float*>(prop.data);
-                    ImGui::DragFloat(prop.name.c_str(), ptr, 0.1f);
+                    if (prop.minVal != prop.maxVal) {
+                        ImGui::SliderFloat(prop.name.c_str(), ptr, prop.minVal, prop.maxVal);
+                    } else {
+                        ImGui::DragFloat(prop.name.c_str(), ptr, 0.1f);
+                    }
                     CheckUndoRedoDrag(actionManager, ptr);
+                    break;
+                }
+                case ComponentPropertyType::Enum: {
+                    int* ptr = static_cast<int*>(prop.data);
+                    if (!prop.enumNames.empty()) {
+                        std::vector<const char*> cStrs;
+                        for (const auto& s : prop.enumNames) cStrs.push_back(s.c_str());
+                        int oldVal = *ptr;
+                        if (ImGui::Combo(prop.name.c_str(), ptr, cStrs.data(), static_cast<int>(cStrs.size()))) {
+                            PushInstantUndo(actionManager, oldVal, *ptr, ptr);
+                        }
+                    }
                     break;
                 }
                 case ComponentPropertyType::Int: {
                     int* ptr = static_cast<int*>(prop.data);
-                    if (prop.name.find("Particle Type") != std::string::npos) {
-                        const char* items[] = { "0: Custom", "1: Explosion", "2: Spark", "3: Smoke" };
-                        int oldVal = *ptr;
-                        if (ImGui::Combo("Particle Type", ptr, items, IM_ARRAYSIZE(items))) {
-                            PushInstantUndo(actionManager, oldVal, *ptr, ptr);
-                        }
-                    } else if (prop.name.find("Emit Type") != std::string::npos) {
-                        const char* items[] = { "0: Sphere", "1: Beam", "2: Box", "3: Cylinder" };
-                        int oldVal = *ptr;
-                        if (ImGui::Combo("Emit Type", ptr, items, IM_ARRAYSIZE(items))) {
-                            PushInstantUndo(actionManager, oldVal, *ptr, ptr);
-                        }
+                    if (prop.minVal != prop.maxVal) {
+                        ImGui::SliderInt(prop.name.c_str(), ptr, static_cast<int>(prop.minVal), static_cast<int>(prop.maxVal));
                     } else {
                         ImGui::DragInt(prop.name.c_str(), ptr, 1);
-                        CheckUndoRedoDrag(actionManager, ptr);
                     }
+                    CheckUndoRedoDrag(actionManager, ptr);
                     break;
                 }
                 case ComponentPropertyType::Bool: {
@@ -324,6 +404,12 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     }
                     break;
                 }
+                default: break;
+            }
+            
+            if (hasValue) {
+                ImGui::PopItemWidth();
+                showTooltipAndReset();
             }
         }
     }

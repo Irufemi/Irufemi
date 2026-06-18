@@ -2,6 +2,7 @@
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h" // 描画オンオフ用
+#include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 
@@ -20,6 +21,15 @@ void RailShooterEnemyComponent::Initialize() {
             // (仮) 初期状態は非アクティブとして振る舞う
             // エンジン側に Enable/Disable の機能があればそれを使用する
             // ここでは簡易的にスケールを 0 にして見えないようにするか、Rendererを調整する
+        }
+
+        auto collider = gameObject_->GetComponent<SphereColliderComponent>();
+        if (!collider) {
+            collider = gameObject_->AddComponent<SphereColliderComponent>().get();
+        }
+        if (collider) {
+            collider->isTrigger_ = true;
+            collider->SetLocalRadius(1.5f);
         }
     }
 }

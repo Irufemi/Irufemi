@@ -1,0 +1,111 @@
+{
+  "name": "HitEffectRoot",
+  "isFolder": false,
+  "isActive": true,
+  "components": [
+    {
+      "type": "TransformComponent"
+    },
+    {
+      "type": "LifetimeComponent",
+      "data": {
+        "lifeTime": 2.0
+      }
+    }
+  ],
+  "children": [
+    {
+      "name": "CoreFlash",
+      "components": [
+        {
+          "type": "TransformComponent"
+        },
+        {
+          "type": "ParticleEmitterComponent",
+          "data": {
+            "ParticleData": {
+              "texturePath": "resources/circle.png",
+              "blendMode": 2,
+              "midPoint": 0.0,
+              "emitOnAwake": false,
+              "burstCountOnAwake": 1,
+              "emitType": 0,
+              "emissionRate": 0.0,
+              "lifeTimeMin": 0.1,
+              "lifeTimeMax": 0.2,
+              "startScale": [5.0, 5.0, 5.0],
+              "endScale": [0.0, 0.0, 0.0],
+              "color": [0.3, 0.8, 1.0, 1.0],
+              "velocity": 0.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sparks",
+      "components": [
+        {
+          "type": "TransformComponent"
+        },
+        {
+          "type": "ParticleEmitterComponent",
+          "data": {
+            "ParticleData": {
+              "texturePath": "resources/circle.png",
+              "blendMode": 2,
+              "midPoint": 0.0,
+              "emitOnAwake": false,
+              "burstCountOnAwake": 60,
+              "emitType": 0,
+              "emissionRate": 0.0,
+              "lifeTimeMin": 0.3,
+              "lifeTimeMax": 0.7,
+              "velocity": 25.0,
+              "spread": 1.0,
+              "gravity": 25.0,
+              "bounce": 0.4,
+              "groundHeight": -2.0,
+              "billboardMode": 2,
+              "startScale": [0.4, 2.5, 0.4],
+              "endScale": [0.0, 0.0, 0.0],
+              "color": [0.2, 0.6, 1.0, 1.0],
+              "enableTrail": true,
+              "trailFrequency": 0.03,
+              "enableDeathEmit": true,
+              "enableRandomRotation": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shockwave",
+      "components": [
+        {
+          "type": "TransformComponent"
+        },
+        {
+          "type": "ParticleEmitterComponent",
+          "data": {
+            "ParticleData": {
+              "texturePath": "resources/texture/ring.png",
+              "blendMode": 2,
+              "midPoint": 0.0,
+              "emitOnAwake": false,
+              "burstCountOnAwake": 1,
+              "emitType": 0,
+              "emissionRate": 0.0,
+              "lifeTimeMin": 0.3,
+              "lifeTimeMax": 0.4,
+              "startScale": [0.5, 0.5, 0.5],
+              "endScale": [15.0, 15.0, 15.0],
+              "color": [0.1, 0.5, 1.0, 0.8],
+              "billboardMode": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

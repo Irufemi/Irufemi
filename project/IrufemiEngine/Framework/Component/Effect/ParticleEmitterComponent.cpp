@@ -10,6 +10,9 @@ ParticleEmitterComponent::~ParticleEmitterComponent() {
 }
 
 void ParticleEmitterComponent::OnRegisterProperties() {
+    if (particleObj_) {
+        particleObj_->RegisterProperties(this);
+    }
 }
 
 void ParticleEmitterComponent::Initialize() {
@@ -21,6 +24,11 @@ void ParticleEmitterComponent::Update() {
     if (transform_) {
         particleObj_->SetPosition(transform_->worldPosition_);
     }
+
+#ifdef _DEBUG
+    // エディタからの値変更をリアルタイム反映させるため、常にDirtyフラグを立てる
+    particleObj_->MarkDirty();
+#endif
     
     particleObj_->Update();
 }

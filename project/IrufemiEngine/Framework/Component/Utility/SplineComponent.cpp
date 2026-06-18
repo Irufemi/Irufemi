@@ -1,13 +1,13 @@
-#include "RailPathComponent.h"
+#include "SplineComponent.h"
 #include <algorithm>
 #include <cmath>
 
-void RailPathComponent::OnRegisterProperties() {
+void SplineComponent::OnRegisterProperties() {
     // 拡張した Float3Array を使ってウェイポイントをプロパティに登録
     RegisterProperty("Waypoints", &waypoints_);
 }
 
-Vector3 RailPathComponent::GetPointAt(float t) const {
+Vector3 SplineComponent::GetPointAt(float t) const {
     if (waypoints_.empty()) return {0.0f, 0.0f, 0.0f};
     if (waypoints_.size() == 1) return waypoints_[0];
 
@@ -51,7 +51,7 @@ Vector3 RailPathComponent::GetPointAt(float t) const {
     return result;
 }
 
-Vector3 RailPathComponent::GetTangentAt(float t) const {
+Vector3 SplineComponent::GetTangentAt(float t) const {
     if (waypoints_.size() < 2) return {0.0f, 0.0f, 1.0f}; // デフォルトの進行方向
     
     // 少し先の点を計算して差分から接線を求める (簡易的な近似)

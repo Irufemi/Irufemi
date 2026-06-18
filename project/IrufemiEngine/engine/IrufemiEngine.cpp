@@ -208,6 +208,10 @@ void IrufemiEngine::Initialize(const std::wstring &title,
       if (auto idx = toIndex(fontManager_->GetAtlasSRV()); idx != DescriptorPool::kInvalid)
         used.push_back(idx);
     }
+    // 深度バッファ SRV
+    if (auto idx = toIndex(dxCommon_->GetDepthSRVGPUHandle()); idx != DescriptorPool::kInvalid) {
+        used.push_back(idx);
+    }
     // テクスチャキャッシュ
     for (const std::string &name : textureManager_->GetTextureNames()) {
       auto h = textureManager_->GetTextureHandle(name);

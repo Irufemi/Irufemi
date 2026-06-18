@@ -187,8 +187,14 @@ void GravityPlayerComponent::UpdateAim() {
     for (auto& obj : scene->GetGameObjects()) {
         if (!obj || !obj->GetIsActive()) continue;
 
-        auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>();
-        if (!enemyComp || !enemyComp->IsAlive()) continue;
+        bool isTargetable = false;
+        if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
+            if (enemyComp->IsAlive()) isTargetable = true;
+        } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
+            if (bossComp->GetState() != BossState::Destroyed) isTargetable = true;
+        }
+
+        if (!isTargetable) continue;
 
         auto transform = obj->GetComponent<TransformComponent>();
         if (!transform) continue;

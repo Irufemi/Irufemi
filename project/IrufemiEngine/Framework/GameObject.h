@@ -128,6 +128,8 @@ public:
     bool GetIsFolder() const { return isFolder_; }
     void SetIsLocked(bool isLocked) { isLocked_ = isLocked; }
     bool GetIsLocked() const { return isLocked_; }
+    void SetIsSerializable(bool isSerializable) { isSerializable_ = isSerializable; }
+    bool IsSerializable() const { return isSerializable_; }
 
 private:
     uint64_t instanceId_ = 0;
@@ -137,6 +139,7 @@ private:
     bool isDestroyed_ = false;
     bool isFolder_ = false;
     bool isLocked_ = false;
+    bool isSerializable_ = false; // デフォルトはfalse（動的生成とみなす）
     BaseScene* scene_ = nullptr;
 
     

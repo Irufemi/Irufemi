@@ -241,10 +241,8 @@ exit 0</Command>
     <ClCompile Include="scene\Title\TitleScene.cpp" />
     <ClCompile Include="UI\LoadingScreen.cpp" />
     <ClCompile Include="UI\PromptController.cpp" />
-    <ClCompile Include="components\RailPathComponent.cpp" />
     <ClCompile Include="components\RailShooterPlayerComponent.cpp" />
     <ClCompile Include="components\RailShooterEnemyComponent.cpp" />
-    <ClCompile Include="components\CameraFollowPlayerComponent.cpp" />
     <ClCompile Include="components\DebrisComponent.cpp" />
     <ClCompile Include="components\BossComponent.cpp" />
     <ClCompile Include="components\DebrisManagerComponent.cpp" />
@@ -263,10 +261,8 @@ exit 0</Command>
     <ClInclude Include="scene\Title\TitleScene.h" />
     <ClInclude Include="UI\LoadingScreen.h" />
     <ClInclude Include="UI\PromptController.h" />
-    <ClInclude Include="components\RailPathComponent.h" />
     <ClInclude Include="components\RailShooterPlayerComponent.h" />
     <ClInclude Include="components\RailShooterEnemyComponent.h" />
-    <ClInclude Include="components\CameraFollowPlayerComponent.h" />
     <ClInclude Include="components\DebrisComponent.h" />
     <ClInclude Include="components\BossComponent.h" />
     <ClInclude Include="components\DebrisManagerComponent.h" />

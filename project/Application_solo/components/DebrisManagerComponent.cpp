@@ -11,6 +11,7 @@
 #include "Engine/Core/Math/Random/Random.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
 
 void DebrisManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
@@ -27,20 +28,23 @@ void DebrisManagerComponent::Initialize() {
     // ガレキのプレハブを生成するファクトリ関数
     auto debrisFactory = [this]() -> std::shared_ptr<GameObject> {
         auto obj = std::make_shared<GameObject>("Debris");
-        obj->AddComponent<TransformComponent>();
-        
-        // 少し小さめに設定
-        obj->GetComponent<TransformComponent>()->scale_ = { 0.5f, 0.5f, 0.5f };
+
+        auto transform = obj->AddComponent<TransformComponent>();
+        transform->scale_ = { 0.5f, 0.5f, 0.5f }; // 少し小さめに
         
         obj->AddComponent<DebrisComponent>();
         
-        // プール内にある間は非アクティブにしておく
-        obj->SetIsActive(false);
+        auto collider = obj->AddComponent<SphereColliderComponent>();
+        collider->isTrigger_ = true;
+        collider->SetLocalRadius(0.5f);
         
-        // シーンの Update 中の配列破壊を防ぐため、Manager の子オブジェクトとして登録する
+        // 生成時点では非アクティブにしておく
+        obj->SetIsActive(false);
+
         if (gameObject_) {
             gameObject_->AddChild(obj);
         }
+        
         return obj;
     };
 

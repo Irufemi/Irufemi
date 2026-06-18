@@ -346,11 +346,12 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
         Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
 
         // --- 1. 縺ｾ縺・2D (Sprite) 縺ｮ繝斐ャ繧ｭ繝ｳ繧ｰ蛻､螳壹ｒ陦後≧ ---
+        // --- 1. Sprite や Text などの 2D UI 要素を先に判定 ---
         if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
             auto gameObjects = scene->GetGameObjects();
-            for (auto it = gameObjects.rbegin(); it != gameObjects.rend(); ++it) {
-                auto& obj = *it;
-                if (!obj || obj->IsDestroyed() || !obj->GetIsActive()) continue;
+            
+            std::function<void(const std::shared_ptr<GameObject>&)> PickUI = [&](const std::shared_ptr<GameObject>& obj) {
+                if (!obj || obj->IsDestroyed() || !obj->GetIsActive()) return;
                 
                 if (auto spriteComp = obj->GetComponent<SpriteRendererComponent>()) {
                     if (auto transform = obj->GetComponent<TransformComponent>()) {
@@ -369,7 +370,7 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
                                 scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
                                 closestObj = obj.get();
                                 isHit = true;
-                                break;
+                                return;
                             }
                         }
                     }
@@ -391,11 +392,21 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
                                 scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
                                 closestObj = obj.get();
                                 isHit = true;
-                                break;
+                                return;
                             }
                         }
                     }
                 }
+                
+                for (auto it = obj->GetChildren().rbegin(); it != obj->GetChildren().rend(); ++it) {
+                    PickUI(*it);
+                    if (isHit) return;
+                }
+            };
+            
+            for (auto it = gameObjects.rbegin(); it != gameObjects.rend(); ++it) {
+                PickUI(*it);
+                if (isHit) break;
             }
         }
 
@@ -414,8 +425,8 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
                 }
                 
                 if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
-                    for (auto& obj : scene->GetGameObjects()) {
-                        if (!obj || obj.get() == closestObj) continue;
+                    std::function<void(const std::shared_ptr<GameObject>&)> Pick3D = [&](const std::shared_ptr<GameObject>& obj) {
+                        if (!obj || obj.get() == closestObj) return;
                         
                         float dist = 0.0f;
                         for (auto& comp : obj->GetComponents()) {
@@ -427,6 +438,13 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
                                 }
                             }
                         }
+                        for (auto& child : obj->GetChildren()) {
+                            Pick3D(child);
+                        }
+                    };
+
+                    for (auto& obj : scene->GetGameObjects()) {
+                        Pick3D(obj);
                     }
                 }
             }

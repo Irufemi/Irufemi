@@ -38,17 +38,19 @@ PixelShaderOutput main(VertexShaderOutput input)
 	float4 transformedUV = mul(float32_t4(input.texcoord.xy, 0.0f, 1.0f), gMaterial.uvTransform);
 	float32_t4 textureColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
+	// パーティクルは基本的にラップではなくクランプを使用する
+	// (境界部分での1ピクセルの回り込みによる矩形ノイズを防ぐため)
 	if (gMaterial.useClampSampler == 3)
 	{
 		textureColor = gTexture.Sample(gSamplerWrapClamp, transformedUV.xy);
 	}
-	else if (gMaterial.useClampSampler != 0)
-	{
-		textureColor = gTexture.Sample(gSamplerClamp, transformedUV.xy);
-	}
-	else
+	else if (gMaterial.useClampSampler == 1) // 1: Wrap を明示的に指定した場合
 	{
 		textureColor = gTexture.Sample(gSamplerWrap, transformedUV.xy);
+	}
+	else // デフォルト(0) は Clamp
+	{
+		textureColor = gTexture.Sample(gSamplerClamp, transformedUV.xy);
 	}
 
 	output.color = gMaterial.color * textureColor * input.color;

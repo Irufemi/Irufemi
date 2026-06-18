@@ -106,7 +106,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
             }
 
             // 共通の移動と時間更新
-            gParticles[particleIndex].translate += gParticles[particleIndex].velocity;
+            gParticles[particleIndex].translate += gParticles[particleIndex].velocity * dt;
             gParticles[particleIndex].currentTime += dt;
             gParticles[particleIndex].rotation += gParticles[particleIndex].rotateSpeed * dt;
             

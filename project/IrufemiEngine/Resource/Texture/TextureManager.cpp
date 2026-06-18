@@ -198,8 +198,11 @@ void TextureManager::CreateWhiteDummyTexture() {
     
     // バックアップ用リソースとしても保持
     whiteTextureResource_ = dxCommon_->CreateTextureResource(tex->GetScratchImage()->GetMetadata());
-    dxCommon_->UploadTextureData(whiteTextureResource_, *tex->GetScratchImage());
-    dxCommon_->ReleaseAfterFence(whiteTextureResource_);
+    auto intermediate = dxCommon_->UploadTextureData(whiteTextureResource_, *tex->GetScratchImage());
+    dxCommon_->ReleaseAfterFence(intermediate);
+
+    // フォールバック用のテクスチャリソースをTextureクラスの静的メンバに設定する
+    Texture::SetWhiteTextureResource(whiteTextureResource_.Get());
 
     whiteTextureHandle_ = tex->GetTextureSrvHandleGPU();
     {
@@ -220,8 +223,8 @@ void TextureManager::CreateWhiteCubeMap() {
 
     // バックアップ用リソースとして保持
     whiteCubeMapResource_ = dxCommon_->CreateTextureResource(tex->GetScratchImage()->GetMetadata());
-    dxCommon_->UploadTextureData(whiteCubeMapResource_, *tex->GetScratchImage());
-    dxCommon_->ReleaseAfterFence(whiteCubeMapResource_);
+    auto intermediate = dxCommon_->UploadTextureData(whiteCubeMapResource_, *tex->GetScratchImage());
+    dxCommon_->ReleaseAfterFence(intermediate);
 
     whiteCubeMapHandle_ = tex->GetTextureSrvHandleGPU();
     {

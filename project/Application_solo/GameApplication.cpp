@@ -9,10 +9,8 @@
 // memoryでの未定義
 
 #include "Framework/Component/ComponentFactory.h"
-#include "components/RailPathComponent.h"
 #include "components/RailShooterPlayerComponent.h"
 #include "components/RailShooterEnemyComponent.h"
-#include "components/CameraFollowPlayerComponent.h"
 #include "components/DebrisComponent.h"
 #include "components/DebrisManagerComponent.h"
 #include "components/GravityPlayerComponent.h"
@@ -82,10 +80,8 @@ void GameApplication::Run() {
     engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);
 
     // 独自コンポーネントの登録
-    ComponentFactory::Register("RailPathComponent", "Game", []() { return std::make_shared<RailPathComponent>(); });
     ComponentFactory::Register("RailShooterPlayerComponent", "Game", []() { return std::make_shared<RailShooterPlayerComponent>(); });
     ComponentFactory::Register("RailShooterEnemyComponent", "Game", []() { return std::make_shared<RailShooterEnemyComponent>(); });
-    ComponentFactory::Register("CameraFollowPlayerComponent", "Game", []() { return std::make_shared<CameraFollowPlayerComponent>(); });
     ComponentFactory::Register("DebrisComponent", "Game", []() { return std::make_shared<DebrisComponent>(); });
     ComponentFactory::Register("DebrisManagerComponent", "Game", []() { return std::make_shared<DebrisManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", "Game", []() { return std::make_shared<GravityPlayerComponent>(); });

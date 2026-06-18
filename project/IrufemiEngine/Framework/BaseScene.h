@@ -161,6 +161,10 @@ public:
      */
     virtual void DrawDebugTab() override;
 
+    // --- シリアライズ機能 ---
+    virtual nlohmann::json Serialize() const override;
+    virtual void Deserialize(const nlohmann::json& j) override;
+
 protected:
     IrufemiEngine* engine_ = nullptr;
 
