@@ -1,4 +1,4 @@
-#include "CameraFollowPlayerComponent.h"
+#include "TargetFollowComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/BaseScene.h"
@@ -6,16 +6,17 @@
 #include "Renderer/System/Core/BaseModel.h"
 #include <cmath>
 
-void CameraFollowPlayerComponent::OnRegisterProperties() {
+void TargetFollowComponent::OnRegisterProperties() {
+    RegisterProperty("Target Name", &targetName_);
     RegisterProperty("Offset", &offset_);
     RegisterProperty("FollowDelay", &followDelay_);
 }
 
-void CameraFollowPlayerComponent::Initialize() {
+void TargetFollowComponent::Initialize() {
     targetTransform_ = nullptr;
 }
 
-void CameraFollowPlayerComponent::Update() {
+void TargetFollowComponent::Update() {
     if (!gameObject_) return;
 
     // 正確なデルタタイムの取得
@@ -24,11 +25,11 @@ void CameraFollowPlayerComponent::Update() {
         deltaTime = 1.0f / 60.0f;
     }
 
-    // ターゲットが未キャッシュの場合はシーン内から "Player" を探索
+    // ターゲットが未キャッシュの場合はシーン内から指定された名前で探索
     if (!targetTransform_) {
         auto scene = gameObject_->GetScene();
-        if (scene) {
-            auto playerObj = scene->FindGameObject("Player");
+        if (scene && !targetName_.empty()) {
+            auto playerObj = scene->FindGameObject(targetName_);
             if (playerObj) {
                 targetTransform_ = playerObj->GetComponent<TransformComponent>();
             }
@@ -80,7 +81,6 @@ void CameraFollowPlayerComponent::Update() {
     };
 
     // プレイヤー位置に、プレイヤーの向きに基づいたローカルオフセットを足す
-    // offset_.z は forward (プレイヤーの後方), offset.y は up (プレイヤーの頭上), offset.x は right (左右のズレ)
     Vector3 targetCamPos = {
         targetTransform_->position_.x + right.x * offset_.x + up.x * offset_.y + forward.x * offset_.z,
         targetTransform_->position_.y + right.y * offset_.x + up.y * offset_.y + forward.y * offset_.z,
@@ -97,4 +97,27 @@ void CameraFollowPlayerComponent::Update() {
     myTransform->rotation_.x += (targetTransform_->rotation_.x - myTransform->rotation_.x) * t;
     myTransform->rotation_.y += (targetTransform_->rotation_.y - myTransform->rotation_.y) * t;
     myTransform->rotation_.z += (targetTransform_->rotation_.z - myTransform->rotation_.z) * t;
+}
+
+nlohmann::json TargetFollowComponent::Serialize() {
+    nlohmann::json j = Component::Serialize();
+    j["targetName"] = targetName_;
+    j["offset"] = {offset_.x, offset_.y, offset_.z};
+    j["followDelay"] = followDelay_;
+    return j;
+}
+
+void TargetFollowComponent::Deserialize(const nlohmann::json& j) {
+    Component::Deserialize(j);
+    if (j.contains("targetName")) {
+        targetName_ = j["targetName"].get<std::string>();
+    }
+    if (j.contains("offset")) {
+        offset_.x = j["offset"][0].get<float>();
+        offset_.y = j["offset"][1].get<float>();
+        offset_.z = j["offset"][2].get<float>();
+    }
+    if (j.contains("followDelay")) {
+        followDelay_ = j["followDelay"].get<float>();
+    }
 }

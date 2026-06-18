@@ -257,6 +257,15 @@
       <Filter>Framework\Component</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\Camera\CameraComponent.cpp">
+    <ClCompile Include="Framework\Component\Camera\TargetFollowComponent.cpp">
+      <Filter>Framework\Component\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\Utility\LifetimeComponent.cpp">
+      <Filter>Framework\Component\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\Utility\SplineComponent.cpp">
+      <Filter>Framework\Component\Utility</Filter>
+    </ClCompile>
       <Filter>Framework\Component\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\Collider\AABBColliderComponent.cpp">
@@ -834,6 +843,15 @@
       <Filter>Framework\Component</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Camera\CameraComponent.h">
+    <ClInclude Include="Framework\Component\Camera\TargetFollowComponent.h">
+      <Filter>Framework\Component\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Utility\LifetimeComponent.h">
+      <Filter>Framework\Component\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Utility\SplineComponent.h">
+      <Filter>Framework\Component\Utility</Filter>
+    </ClInclude>
       <Filter>Framework\Component\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Collider\AABBColliderComponent.h">

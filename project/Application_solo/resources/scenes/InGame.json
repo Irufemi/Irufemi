@@ -21,38 +21,6 @@
             ]
           },
           "type": "TransformComponent"
-        },
-        {
-          "data": {
-            "Waypoints": [
-              [
-                0.0,
-                0.0,
-                0.0
-              ],
-              [
-                5.0,
-                2.0,
-                30.0
-              ],
-              [
-                -5.0,
-                -2.0,
-                60.0
-              ],
-              [
-                0.0,
-                4.0,
-                90.0
-              ],
-              [
-                0.0,
-                0.0,
-                120.0
-              ]
-            ]
-          },
-          "type": "RailPathComponent"
         }
       ],
       "name": "PathManager",
@@ -184,17 +152,6 @@
             "NearZ": 0.10000000149011612
           },
           "type": "CameraComponent"
-        },
-        {
-          "data": {
-            "FollowDelay": 0.009999999776482582,
-            "Offset": [
-              0.0,
-              4.0,
-              -18.0
-            ]
-          },
-          "type": "CameraFollowPlayerComponent"
         }
       ],
       "name": "MainCamera",

@@ -9,17 +9,14 @@
 // memoryでの未定義
 
 #include "Framework/Component/ComponentFactory.h"
-#include "components/RailPathComponent.h"
 #include "components/RailShooterPlayerComponent.h"
 #include "components/RailShooterEnemyComponent.h"
-#include "components/CameraFollowPlayerComponent.h"
 #include "components/DebrisComponent.h"
 #include "components/DebrisManagerComponent.h"
 #include "components/GravityPlayerComponent.h"
 #include "components/DebugEnemySpawnerComponent.h"
 #include "components/BossComponent.h"
 #include "components/SceneTransitionButtonComponent.h"
-#include "components/AutoDestroyComponent.h"
 
 // UI
 #include "UI/LoadingScreen.h"
@@ -83,17 +80,14 @@ void GameApplication::Run() {
     engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);
 
     // 独自コンポーネントの登録
-    ComponentFactory::Register("RailPathComponent", "Game", []() { return std::make_shared<RailPathComponent>(); });
     ComponentFactory::Register("RailShooterPlayerComponent", "Game", []() { return std::make_shared<RailShooterPlayerComponent>(); });
     ComponentFactory::Register("RailShooterEnemyComponent", "Game", []() { return std::make_shared<RailShooterEnemyComponent>(); });
-    ComponentFactory::Register("CameraFollowPlayerComponent", "Game", []() { return std::make_shared<CameraFollowPlayerComponent>(); });
     ComponentFactory::Register("DebrisComponent", "Game", []() { return std::make_shared<DebrisComponent>(); });
     ComponentFactory::Register("DebrisManagerComponent", "Game", []() { return std::make_shared<DebrisManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", "Game", []() { return std::make_shared<GravityPlayerComponent>(); });
     ComponentFactory::Register("DebugEnemySpawnerComponent", "Game", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
     ComponentFactory::Register("BossComponent", "Game", []() { return std::make_shared<BossComponent>(); });
     ComponentFactory::Register("SceneTransitionButtonComponent", "Game", []() { return std::make_shared<SceneTransitionButtonComponent>(); });
-    ComponentFactory::Register("AutoDestroyComponent", "Effect", []() { return std::make_shared<AutoDestroyComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

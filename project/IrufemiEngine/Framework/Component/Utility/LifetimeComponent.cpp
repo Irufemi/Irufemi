@@ -1,17 +1,17 @@
-#include "AutoDestroyComponent.h"
+#include "LifetimeComponent.h"
 #include "Framework/GameObject.h"
 #include "Engine/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 
-void AutoDestroyComponent::OnRegisterProperties() {
+void LifetimeComponent::OnRegisterProperties() {
     RegisterProperty("Life Time", &lifeTime_);
 }
 
-void AutoDestroyComponent::Initialize() {
+void LifetimeComponent::Initialize() {
     currentLifeTime_ = 0.0f;
 }
 
-void AutoDestroyComponent::Update() {
+void LifetimeComponent::Update() {
     float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     if (deltaTime <= 0.0f) deltaTime = 1.0f / 60.0f;
 
@@ -25,13 +25,13 @@ void AutoDestroyComponent::Update() {
     }
 }
 
-nlohmann::json AutoDestroyComponent::Serialize() {
+nlohmann::json LifetimeComponent::Serialize() {
     nlohmann::json j = Component::Serialize();
     j["lifeTime"] = lifeTime_;
     return j;
 }
 
-void AutoDestroyComponent::Deserialize(const nlohmann::json& j) {
+void LifetimeComponent::Deserialize(const nlohmann::json& j) {
     Component::Deserialize(j);
     if (j.contains("lifeTime")) {
         lifeTime_ = j["lifeTime"].get<float>();

@@ -72,7 +72,6 @@
     <ClCompile Include="scene\GameOver\GameOverScene.cpp">
       <Filter>Scene\GameOver</Filter>
     </ClCompile>
-    <ClCompile Include="components\RailPathComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\RailShooterPlayerComponent.cpp">
@@ -84,7 +83,6 @@
     <ClCompile Include="components\RailShooterEnemyComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
-    <ClCompile Include="components\CameraFollowPlayerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\DebrisComponent.cpp">
@@ -102,7 +100,6 @@
     <ClCompile Include="components\DebugEnemySpawnerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
-    <ClCompile Include="components\AutoDestroyComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
   </ItemGroup>
@@ -137,7 +134,6 @@
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>Scene\GameOver</Filter>
     </ClInclude>
-    <ClInclude Include="components\RailPathComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\RailShooterPlayerComponent.h">
@@ -149,7 +145,6 @@
     <ClInclude Include="components\RailShooterEnemyComponent.h">
       <Filter>components</Filter>
     </ClInclude>
-    <ClInclude Include="components\CameraFollowPlayerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\DebrisComponent.h">
@@ -167,7 +162,6 @@
     <ClInclude Include="components\DebugEnemySpawnerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
-    <ClInclude Include="components\AutoDestroyComponent.h">
       <Filter>components</Filter>
     </ClInclude>
   </ItemGroup>
