@@ -21,6 +21,38 @@
             ]
           },
           "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "Waypoints": [
+              [
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                5.0,
+                2.0,
+                30.0
+              ],
+              [
+                -5.0,
+                -2.0,
+                60.0
+              ],
+              [
+                0.0,
+                4.0,
+                90.0
+              ],
+              [
+                0.0,
+                0.0,
+                120.0
+              ]
+            ]
+          },
+          "type": "SplineComponent"
         }
       ],
       "name": "PathManager",
@@ -117,44 +149,22 @@
             "Speed": 5.0
           },
           "type": "RailShooterEnemyComponent"
-        }
-      ],
-      "name": "Enemy_Zako",
-      "tag": "Untagged"
-    },
-    {
-      "components": [
+        },
         {
           "data": {
-            "position": [
-              0.0,
-              4.0,
-              -15.0
-            ],
-            "rotation": [
+            "layer": 1,
+            "localOffset": [
               0.0,
               0.0,
               0.0
             ],
-            "scale": [
-              1.0,
-              1.0,
-              1.0
-            ]
+            "localRadius": 1.5,
+            "mask": 4294967295
           },
-          "type": "TransformComponent"
-        },
-        {
-          "data": {
-            "FOV": 0.785398006439209,
-            "FarZ": 1000.0,
-            "MakeActive": true,
-            "NearZ": 0.10000000149011612
-          },
-          "type": "CameraComponent"
+          "type": "SphereColliderComponent"
         }
       ],
-      "name": "MainCamera",
+      "name": "Enemy_Zako",
       "tag": "Untagged"
     },
     {
@@ -319,9 +329,76 @@
             "Shield Radius": 8.0
           },
           "type": "BossComponent"
+        },
+        {
+          "data": {
+            "layer": 1,
+            "localOffset": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localRadius": 5.0,
+            "mask": 4294967295
+          },
+          "type": "SphereColliderComponent"
         }
       ],
       "name": "Boss",
+      "tag": "Untagged"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "position": [
+              0.0,
+              4.0,
+              -15.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "FOV": 0.785398006439209,
+            "FarZ": 1000.0,
+            "MakeActive": true,
+            "NearZ": 0.10000000149011612
+          },
+          "type": "CameraComponent"
+        },
+        {
+          "data": {
+            "FollowDelay": 0.009999999776482582,
+            "Offset": [
+              0.0,
+              4.0,
+              -18.0
+            ],
+            "Target Name": "Player",
+            "followDelay": 0.009999999776482582,
+            "offset": [
+              0.0,
+              4.0,
+              -18.0
+            ],
+            "targetName": "Player"
+          },
+          "type": "TargetFollowComponent"
+        }
+      ],
+      "name": "MainCamera",
       "tag": "Untagged"
     }
   ],

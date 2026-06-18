@@ -11,6 +11,7 @@
 #include "Engine/Core/Math/Random/Random.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
 
 void DebrisManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
@@ -32,6 +33,10 @@ void DebrisManagerComponent::Initialize() {
         transform->scale_ = { 0.5f, 0.5f, 0.5f }; // 少し小さめに
         
         obj->AddComponent<DebrisComponent>();
+        
+        auto collider = obj->AddComponent<SphereColliderComponent>();
+        collider->isTrigger_ = true;
+        collider->SetLocalRadius(0.5f);
         
         // 生成時点では非アクティブにしておく
         obj->SetIsActive(false);

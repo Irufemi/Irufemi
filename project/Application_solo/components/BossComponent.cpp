@@ -6,6 +6,7 @@
 #include "DebrisComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
 #include <Windows.h>
 #include <string>
 
@@ -16,6 +17,15 @@ void BossComponent::Initialize() {
     hp_ = maxHp_;
     state_ = BossState::Idle;
     isShieldsInitialized_ = false;
+
+    if (gameObject_) {
+        auto collider = gameObject_->GetComponent<SphereColliderComponent>();
+        if (!collider) {
+            collider = gameObject_->AddComponent<SphereColliderComponent>().get();
+            collider->isTrigger_ = true;
+            collider->SetLocalRadius(5.0f);
+        }
+    }
 }
 
 void BossComponent::Update() {
