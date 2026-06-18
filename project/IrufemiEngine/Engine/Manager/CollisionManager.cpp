@@ -73,11 +73,12 @@ void CollisionManager::CheckAllCollisions() {
 
     if (colliders_.size() >= 2) {
         for (size_t i = 0; i < colliders_.size(); ++i) {
-            for (size_t j = i + 1; j < colliders_.size(); ++j) {
-                ColliderComponent* colA = colliders_[i];
-                ColliderComponent* colB = colliders_[j];
+            ColliderComponent* colA = colliders_[i];
+            if (!colA || !colA->GetGameObject() || !colA->GetGameObject()->GetIsActive()) continue;
 
-                if (!colA || !colB) continue;
+            for (size_t j = i + 1; j < colliders_.size(); ++j) {
+                ColliderComponent* colB = colliders_[j];
+                if (!colB || !colB->GetGameObject() || !colB->GetGameObject()->GetIsActive()) continue;
 
                 // フィルタリング
                 if ((colA->mask_ & colB->layer_) == 0 || (colB->mask_ & colA->layer_) == 0) {
@@ -212,11 +213,35 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
     debugLine_->ClearInstances();
     
     for (ColliderComponent* collider : colliders_) {
-        if (!collider) continue;
+        if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
         
-        bool isSelected = (selectedObject && collider->GetGameObject() == selectedObject);
+        bool isSelected = false;
+        if (selectedObject) {
+            GameObject* colObj = collider->GetGameObject();
+            GameObject* selObj = selectedObject;
+
+            // コライダーの持ち主が、選択されたオブジェクトの親（または同一）か？
+            while (selObj) {
+                if (colObj == selObj) {
+                    isSelected = true;
+                    break;
+                }
+                selObj = selObj->GetParent().get();
+            }
+            
+            // 逆に、コライダーの持ち主が、選択されたオブジェクトの子孫か？
+            if (!isSelected) {
+                while (colObj) {
+                    if (colObj == selectedObject) {
+                        isSelected = true;
+                        break;
+                    }
+                    colObj = colObj->GetParent().get();
+                }
+            }
+        }
         
-        // 全体表示OFFのときでも、選択中のオブジェクトのコライダーは表示する
+        // 全体表示OFFのときでも、選択中のオブジェクト（またはその親・子）のコライダーは表示する
         if (!isDrawDebugLine_ && !isSelected) continue;
 
         Vector4 color = isSelected ? Vector4{ 1.0f, 0.5f, 0.0f, 1.0f } : Vector4{ 0.0f, 1.0f, 0.0f, 1.0f };
@@ -390,7 +415,7 @@ bool CollisionManager::Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDis
     hitInfo.distance = maxDistance;
 
     for (ColliderComponent* collider : colliders_) {
-        if (!collider) continue;
+        if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
 
         // 除外オブジェクトならスキップ
         if (ignoreObject && collider->GetGameObject() == ignoreObject) continue;

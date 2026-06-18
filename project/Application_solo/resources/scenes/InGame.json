@@ -338,7 +338,7 @@
               0.0,
               0.0
             ],
-            "localRadius": 5.0,
+            "localRadius": 3.5999999046325684,
             "mask": 4294967295
           },
           "type": "SphereColliderComponent"

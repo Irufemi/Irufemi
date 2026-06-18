@@ -22,7 +22,7 @@ public:
         All     = 0xFFFFFFFF
     };
 
-    virtual ~ColliderComponent() = default;
+    virtual ~ColliderComponent();
 
     virtual void Initialize() override {}
     virtual void Update() override {}

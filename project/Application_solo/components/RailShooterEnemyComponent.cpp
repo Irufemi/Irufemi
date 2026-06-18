@@ -26,6 +26,8 @@ void RailShooterEnemyComponent::Initialize() {
         auto collider = gameObject_->GetComponent<SphereColliderComponent>();
         if (!collider) {
             collider = gameObject_->AddComponent<SphereColliderComponent>().get();
+        }
+        if (collider) {
             collider->isTrigger_ = true;
             collider->SetLocalRadius(1.5f);
         }
