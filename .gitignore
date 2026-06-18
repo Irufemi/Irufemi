@@ -117,3 +117,4 @@ debuglog.txt
 # Cache files (PSO etc)
 # ====================================================================
 **/resources/cache/
+*.temp_playmode.json
