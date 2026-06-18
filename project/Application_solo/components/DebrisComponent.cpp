@@ -44,6 +44,9 @@ void DebrisComponent::Initialize() {
             }
 
             if (hit) {
+                if (auto t = gameObject_->GetComponent<TransformComponent>()) {
+                    gameObject_->Instantiate("resources/prefabs/hit_effect.json", t->worldPosition_);
+                }
                 if (manager_) {
                     manager_->ReleaseDebris(gameObject_->shared_from_this());
                     if (virtualId_ >= 0) {

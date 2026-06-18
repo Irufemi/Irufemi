@@ -17,6 +17,9 @@ void ParticleObject::Initialize() {
     if (emitOnAwake_) {
         Play();
     }
+    if (burstCountOnAwake_ > 0) {
+        EmitBurst(burstCountOnAwake_);
+    }
 }
 
 void ParticleObject::Play() {
@@ -135,6 +138,11 @@ void ParticleObject::UpdateSystem() {
     data.atlasCols = atlasCols_;
     data.billboardMode = billboardMode_;
     data.jitter = jitter_;
+    
+    data.enableTrail = enableTrail_ ? 1 : 0;
+    data.trailFrequency = trailFrequency_;
+    data.enableDeathEmit = enableDeathEmit_ ? 1 : 0;
+    data.enableRandomRotation = enableRandomRotation_ ? 1 : 0;
 
     if (burstCountPending_ > 0) {
         data.burstCount = burstCountPending_;
@@ -168,7 +176,13 @@ void ParticleObject::Serialize(nlohmann::json& j) const {
     if (attractorPos_.x != 0.0f || attractorPos_.y != 0.0f || attractorPos_.z != 0.0f) j["attractorPos"] = { attractorPos_.x, attractorPos_.y, attractorPos_.z };
     if (jitter_ != 0.0f) j["jitter"] = jitter_;
     
+    if (enableTrail_) j["enableTrail"] = enableTrail_;
+    if (trailFrequency_ != 0.05f) j["trailFrequency"] = trailFrequency_;
+    if (enableDeathEmit_) j["enableDeathEmit"] = enableDeathEmit_;
+    if (enableRandomRotation_) j["enableRandomRotation"] = enableRandomRotation_;
+    
     if (billboardMode_ != 1) j["billboardMode"] = billboardMode_;
+    if (burstCountOnAwake_ != 0) j["burstCountOnAwake"] = burstCountOnAwake_;
     if (color_.x != 1.0f || color_.y != 1.0f || color_.z != 1.0f || color_.w != 1.0f) j["color"] = { color_.x, color_.y, color_.z, color_.w };
     if (midColor_.x != 1.0f || midColor_.y != 1.0f || midColor_.z != 1.0f || midColor_.w != 1.0f) j["midColor"] = { midColor_.x, midColor_.y, midColor_.z, midColor_.w };
     if (startScale_.x != 1.0f || startScale_.y != 1.0f || startScale_.z != 1.0f) j["startScale"] = { startScale_.x, startScale_.y, startScale_.z };
@@ -207,7 +221,13 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
     }
     if (j.contains("jitter")) jitter_ = j["jitter"].get<float>();
     
+    if (j.contains("enableTrail")) enableTrail_ = j["enableTrail"].get<bool>();
+    if (j.contains("trailFrequency")) trailFrequency_ = j["trailFrequency"].get<float>();
+    if (j.contains("enableDeathEmit")) enableDeathEmit_ = j["enableDeathEmit"].get<bool>();
+    if (j.contains("enableRandomRotation")) enableRandomRotation_ = j["enableRandomRotation"].get<bool>();
+    
     if (j.contains("billboardMode")) billboardMode_ = j["billboardMode"].get<int>();
+    if (j.contains("burstCountOnAwake")) burstCountOnAwake_ = j["burstCountOnAwake"].get<int>();
     if (j.contains("color") && j["color"].size() == 4) {
         color_ = { j["color"][0], j["color"][1], j["color"][2], j["color"][3] };
     }
@@ -364,6 +384,12 @@ void ParticleObject::DebugUI(const char* name) {
 
             ImGui::Separator();
             changed |= ImGui::DragFloat("Jitter", &jitter_, 0.01f, 0.0f, 10.0f);
+
+            ImGui::Separator();
+            changed |= ImGui::Checkbox("Enable Trail (Sparks)", &enableTrail_);
+            if (enableTrail_) changed |= ImGui::DragFloat("Trail Frequency", &trailFrequency_, 0.01f, 0.01f, 1.0f);
+            changed |= ImGui::Checkbox("Enable Death Emit", &enableDeathEmit_);
+            changed |= ImGui::Checkbox("Enable Random Rotation", &enableRandomRotation_);
 
             ImGui::TreePop();
         }

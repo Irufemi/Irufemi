@@ -134,6 +134,18 @@ public:
     void SetAreaSize(const Vector3& size) { if (areaSize_.x != size.x || areaSize_.y != size.y || areaSize_.z != size.z) { areaSize_ = size; MarkDirty(); } }
     Vector3 GetAreaSize() const { return areaSize_; }
 
+    void SetEnableTrail(bool enable) { if (enableTrail_ != enable) { enableTrail_ = enable; MarkDirty(); } }
+    bool GetEnableTrail() const { return enableTrail_; }
+
+    void SetTrailFrequency(float freq) { if (trailFrequency_ != freq) { trailFrequency_ = freq; MarkDirty(); } }
+    float GetTrailFrequency() const { return trailFrequency_; }
+
+    void SetEnableDeathEmit(bool enable) { if (enableDeathEmit_ != enable) { enableDeathEmit_ = enable; MarkDirty(); } }
+    bool GetEnableDeathEmit() const { return enableDeathEmit_; }
+
+    void SetEnableRandomRotation(bool enable) { if (enableRandomRotation_ != enable) { enableRandomRotation_ = enable; MarkDirty(); } }
+    bool GetEnableRandomRotation() const { return enableRandomRotation_; }
+
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static TextureManager* GetTextureManager() { return textureManager_; }
 
@@ -148,6 +160,7 @@ private:
     BlendMode blendMode_ = BlendMode::kBlendModeAdd;
     bool isUnscaledTime_ = false;
     bool emitOnAwake_ = true;
+    int burstCountOnAwake_ = 0;
     
     // エミッターの基本パラメータ
     int emitType_ = 0; // 0: Sphere, 1: Beam, 2: Box, 3: Cylinder
@@ -170,6 +183,10 @@ private:
     float attractorStrength_ = 0.0f; // 吸引力
     Vector3 attractorPos_ = {0.0f, 0.0f, 0.0f}; // 吸引位置
     float jitter_ = 0.0f;          // 不規則なブレ
+    bool enableTrail_ = false;
+    float trailFrequency_ = 0.05f;
+    bool enableDeathEmit_ = false;
+    bool enableRandomRotation_ = false;
 
     // ビジュアル・ライフタイム
     int billboardMode_ = 1; // 0: None, 1: Billboard, 2: Y-Axis
