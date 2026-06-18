@@ -161,6 +161,12 @@ renderer->LoadModel("enemy/enemy.obj"); // resources/model/ 以下のパス
 
 #### ModelBatchRendererComponent (大量の同一モデル)
 草や破片など、同じモデルを大量に描画する際に使用します。インスタンシング描画によりGPU負荷を激減させます。
+```cpp
+auto obj = std::make_shared<GameObject>("GrassBatch");
+auto* batchRenderer = obj->AddComponent<ModelBatchRendererComponent>();
+batchRenderer->LoadModel("env/grass.obj"); // resources/model/ 以下のパス
+// 描画するインスタンスの追加・更新処理等は Component 内で行います
+```
 
 #### PrimitiveRendererComponent (基本図形)
 モデルデータなしでキューブ、球体、円柱などのプリミティブ形状を描画します。当たり判定のデバッグ表示等に便利です。
@@ -182,10 +188,10 @@ sprite->SetAnchorPoint({ 0.5f, 0.5f });
 sprite->SetTopMost(true);
 ```
 
-### 2.2 カメラとライト (Camera & Light Components)
-シーンの視点や照明を管理するには、それぞれ専用のコンポーネントをアタッチします。
-- **`CameraComponent`**: 視点と投影行列を管理します。
-- **`LightComponent`**: ディレクショナルライトやポイントライトなどの光源を設定します。
+### 2.2 カメラとライト (Camera & Lights)
+シーンの視点や照明は以下の方法で管理されます。
+- **`CameraComponent`**: 視点と投影行列を管理します。GameObjectにアタッチして使用します。
+- **ライト管理 (Directional/Point/Spot/Area)**: ライトはコンポーネントとしてではなく、`BaseScene` が直接管理します。デバッグや調整を行う場合は、エディタのデバッグタブ「Camera & Lights」から各パラメータを直接編集できます。
 
 ### 2.3 物理・当たり判定 (Colliders & Raycast)
 3D空間での衝突判定には、以下のコライダーコンポーネントを使用します。
@@ -404,6 +410,7 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - `Emit Type`: 0(球体), 1(ビーム), 2(ボックス), 3(円柱) などの放出形状。
   - `Color`, `Velocity`, `Emit Count` などで自由にエフェクトを構築できます。
 - **`VoxelParticleComponent`**: 指定した3Dモデルをボクセル化し、大量のパーティクルとして爆発（四散）させる高度なエフェクトコンポーネントです。
+  - `Override Model Name`: ベースとなるモデルのファイル名を指定します。空欄の場合はアタッチされているRendererのモデルを使用します。
   - `Pre Allocate Count`: シーンロード時に事前計算・プールしておく数を指定し、再生時の処理落ちを防ぎます。
   - `Resolution`: ボクセルの分割数（例：32x32x32）。
   - C++コードから `GetComponent<VoxelParticleComponent>()->Explode();` を呼ぶことで破砕エフェクトが起動します。
@@ -419,11 +426,10 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - `Top Most`: ブルームなどのポストプロセスの影響を受けない、最前面レイヤーに描画するかどうか。
   - `Alignment`: テキストのアライメント（`0=Left`, `1=Center`, `2=Right`）。複数行の場合は行ごとに適用されます。
 
-- **`ButtonComponent`**: マウスカーソルのホバーやクリックを検知し、色を変えたりシーンを遷移させる機能を提供します。
-  - `Load Scene Name`: クリック時に遷移させたいシーン名（例: `InGame`）。空欄の場合は何もしません。
-  - `Transition Type(0-3)`: `0=Fade`, `1=Dissolve`, `2=Slide`, `3=RadialBlur` のいずれかを指定し、遷移時の演出（ポストプロセス）を選択できます。
-  - `Transition Duration`: 遷移演出にかける時間（秒）。
+- **`ButtonComponent`**: マウスカーソルのホバーやクリックを検知し、色を自動的に変えたり、明滅（Pulse）アニメーションを行うUI機能を提供します。
   - `Normal/Hover/Click Color`: マウスの操作状態に合わせて、アタッチされているSpriteの色を自動的に変化させます。
+  - `Enable Hover Pulse / Idle Pulse`: ホバー時や待機時の明滅アニメーションを有効化します。
+  - *(※ボタン押下によるシーン遷移機能はエンジン側の責務ではなく、`Application/` 側の `SceneTransitionButtonComponent` などで個別に実装してアタッチしてください)*
 - **`CanvasComponent`**: UI要素をグループ化し、アルファ値（透明度）などを一括管理します。
   - `Group Alpha`: このコンポーネントを持つGameObject自身と、そのすべての子要素にある `SpriteRendererComponent` のアルファ値を一括で制御します。フェードイン・フェードアウトの演出に便利です。
 ### 2.6 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
@@ -673,23 +679,18 @@ engine_->GetFontManager()->PrecacheText("my_font", L"このシーンで使う予
 複数の入力デバイスを一元管理したり、キーコンフィグの変更に対応しやすくなります。
 
 ```cpp
-#include "Engine/Platform/Input/InputMappingContext.h"
-#include "Engine/Platform/Input/InputAction.h"
+// 1. InputManager に直接アクションと物理入力をバインドする (初期化時など)
+// 引数: アクション名, デバイスに対応したInputId (Keyboard_Space, Gamepad_A 等)
+engine_->GetInputManager()->BindAction("Jump", InputId::Keyboard_Space);
 
-// 1. コンテキストを作成し、バインディングを追加
-InputMappingContext context;
-InputBinding jumpBinding;
-jumpBinding.type = InputType::Keyboard; // もしくは Gamepad等
-jumpBinding.code = DIK_SPACE;           // キーボードの場合はDIKを使用
-context.AddBinding("Jump", jumpBinding);
-
-// 2. InputManager に登録
-engine_->GetInputManager()->AddMappingContext("Default", context);
-
-// 3. アクションの状態を取得 (Update内など)
+// 2. アクションの状態を取得 (毎フレームのUpdate内など)
 if (engine_->GetInputManager()->IsActionTriggered("Jump")) {
     // ジャンプ処理
 }
+
+// アナログ値の取得（スティック移動など）
+auto moveVal = engine_->GetInputManager()->GetActionValue("Move");
+float moveX = moveVal.Get<float>();
 ```
 
 #### 2. 直接キー・ボタンを取得する方法
