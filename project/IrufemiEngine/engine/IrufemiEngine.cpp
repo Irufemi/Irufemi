@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "IrufemiEngine.h"
 
 #include "Platform/Input/InputManager.h"
@@ -15,6 +16,7 @@
 #include "Core/Utility/Log.h"
 #include "../Framework/SceneManager.h"
 #include "../Framework/SceneTransition.h"
+#include "Core/System/DirectoryWatcher.h"
 #include "Graphics/Font/FontManager.h"
 
 IrufemiEngine::IrufemiEngine() = default;
@@ -29,7 +31,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include <format>
 #include "../Resource/Audio/AudioManager.h"
 #include "../Resource/Audio/AudioPlayer.h"
-#include "../Framework/Component/AudioSourceComponent.h"
+#include "../Framework/Component/Audio/AudioSourceComponent.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Graphics/DirectX/DirectXUtils.h"
 #include "Manager/DebugUI.h"
@@ -89,13 +91,27 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   winApp_ = std::make_unique<WinApp>();
   if (!winApp_->Initialize(GetModuleHandle(nullptr), clientWidth, clientHeight,
                            title.c_str())) {
-    assert(false && "WinApp::Initialize failed");
+    IRUFEMI_ASSERT(false && "WinApp::Initialize failed");
     return;
   }
 
   // ログを出せるようにする
   log_ = std::make_unique<Log>();
   log_->Initialize();
+
+  // スレッドプールの初期化（ワーカースレッド数の決定）
+  // -------------------------------------------------------------------------
+  // PCの限界である「全論理コア数」をゲームのワーカースレッドに割り当ててしまうと、
+  // 肝心のメインスレッド（ゲームループや描画命令）やOSのバックグラウンド処理（Discord等）
+  // が圧迫され、結果的にフレーム落ちや配信カクつきの原因になります。
+  // そのため、「全コアから2コアを引いた数（メイン/OS用）」にしつつ、
+  // スレッド管理のオーバーヘッドを避けるため最大でも16スレッドまでに制限します。
+  // -------------------------------------------------------------------------
+  size_t hwThreads = std::thread::hardware_concurrency();
+  size_t workerThreads = (hwThreads > 2) ? (hwThreads - 2) : 1; // 最低1スレッドは確保
+  workerThreads = (std::min)(workerThreads, static_cast<size_t>(16));
+  
+  threadPool_ = std::make_unique<ThreadPool>(workerThreads);
 
   // 乱数エンジンのシードを設定
   Random::SeedEngine();
@@ -341,6 +357,13 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   
   // SceneManager 構築(エンジンは所有のみ)
   sceneManager_ = std::make_unique<SceneManager>(this);
+
+#if defined(_DEBUG) || defined(EditorMode)
+  // シェーダーのホットリロード監視（別スレッドで動作）
+  shaderWatcher_ = std::make_unique<DirectoryWatcher>("resources/shaders", [this]() {
+      shouldReloadShaders_ = true;
+  });
+#endif
 }
 
   // クリアカラーをfloat配列で持つ初期化
@@ -576,6 +599,7 @@ void IrufemiEngine::Execute() {
     ui_->BeginEngineDebugWindow();
     ui_->SceneSelectorTab(sceneManager_.get());
     ui_->PostProcessTab(this);
+    ui_->ThreadPoolTab(threadPool_.get());
   // デバッグ機能の追加
   if (gpuParticleManager_) {
     gpuParticleManager_->Debug();
@@ -653,6 +677,27 @@ void IrufemiEngine::StartFrame() {
   gameTime_ += gameDeltaTime_;
 
   lastFrameTime_ = now;
+
+#if defined(_DEBUG) || defined(EditorMode)
+  // ホットリロードの発火チェック
+  if (shouldReloadShaders_.exchange(false)) {
+      if (log_) Log::OutPutLog(log_->GetLogStream(), "[Shader Hot Reload] Changes detected. Recompiling shaders...\n");
+      if (dxCommon_ && dxCommon_->GetPSOManager() && dxCommon_->GetShaderManager()) {
+          // 安全のためにGPU処理を待機（使用中のシェーダーを破棄しないようにする）
+          dxCommon_->WaitForGPU();
+
+          // キャッシュの破棄
+          dxCommon_->GetPSOManager()->ClearCache();
+          dxCommon_->GetShaderManager()->ClearCache();
+
+          // 再コンパイル
+          dxCommon_->RegisterAllShaders();
+          dxCommon_->GetPSOManager()->PreWarmCommonPSOs();
+
+          if (log_) Log::OutPutLog(log_->GetLogStream(), "[Shader Hot Reload] Compilation finished.\n");
+      }
+  }
+#endif
 }
 
   // フレーム途中処理
@@ -809,7 +854,7 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
   }
 
   auto* pso = GetPSOManager()->GetPSO(shaderName, currentBlend_, currentDepth_, currentCull_);
-  assert(pso && ("PSO is null for " + shaderName).c_str());
+  IRUFEMI_ASSERT(pso && ("PSO is null for " + shaderName).c_str());
   if (pso) {
     drawManager_->BindPSO(pso);
   }

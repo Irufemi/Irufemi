@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "ModelBatch.h"
 #include <cassert>
 #include "Engine/IrufemiEngine.h"
@@ -8,7 +9,7 @@
 ModelManager* ModelBatch::modelManager_ = nullptr;
 
 void ModelBatch::Initialize(const std::string& objFilename) {
-    assert(modelManager_ && "ModelBatch::Initialize: ModelManager is not set.");
+    IRUFEMI_ASSERT(modelManager_ && "ModelBatch::Initialize: ModelManager is not set.");
     managedModel_ = modelManager_->GetModelAsync(objFilename);
     isResourcesInitialized_ = false;
 
@@ -66,7 +67,7 @@ void ModelBatch::EnsureSharedTexture(const ObjMesh& mesh) {
     } else {
         textureHandle_ = textureManager_->GetWhiteTextureHandle();
     }
-    assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
+    IRUFEMI_ASSERT(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
 }
 
 float ModelBatch::GetBoundingSphereRadius() const {

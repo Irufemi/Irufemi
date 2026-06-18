@@ -44,3 +44,21 @@
 - [ ] **ポストプロセス演出の拡充**
   - [ ] Color Grading による重厚な空気感の演出（ルックアップテーブル等の適用）
   - [ ] Bloomエフェクトの調整（青白いエネルギー発光表現の最適化）
+
+## 6. CG4 評価課題1（HitEffect / 演出王 Part3）の実装
+- [ ] **VoxelParticleComponent の作成（新規）**
+  - [ ] 既存の `VoxelParticleSystem` をGameObjectにアタッチできるようにコンポーネント化する。
+  - [ ] コンポーネント側で `modelName` を保持し、`Explode()` メソッドを呼び出せるようにする。
+- [ ] **HitEffectComponent（または管理クラス）の作成**
+  - [ ] コアフラッシュ（光の球）用と、スパーク（放射状の破片）用の複数の `ParticleEmitterComponent` をアタッチしたプレハブ（またはコンポーネント）を作成する。
+  - [ ] `PlayAt(Vector3 pos)` メソッドを実装し、指定座標への移動と全エミッターの `EmitBurst(count)` を同期させる。
+- [ ] **DebrisComponentへのフック処理**
+  - [ ] `DebrisState::Thrown` 時のヒット判定（`len < 1.0f`）箇所で、上記 HitEffect を呼び出す処理を追加する。
+  - [ ] 同時に、自身にアタッチされている `VoxelParticleComponent` の `Explode()` を呼び出し、元のガレキメッシュを非表示にしてボクセル粉砕演出を発動する。
+- [ ] **画面全体を派手にする演出 (Juiciness) の追加**
+  - [ ] **ヒットストップ**: 衝突時にエンジン側の `TimeScale` などを操作し、数フレームだけ極端に時間を遅くして打撃感を出す。
+  - [ ] **カメラシェイク**: ヒット時に `CameraManager` 経由で画面を激しく揺らす処理を追加する。
+- [ ] **動画撮影・提出パッケージの作成**
+  - [ ] マルチロックオンで複数敵に連続でガレキを当て、連続でHitEffectとボクセル粉砕が炸裂するような魅せプレイシーンを構築して録画する。
+  - [ ] `Application_solo/resources/CG4_Assignment/ReadMe.md` に、今回「演出」として加えた内容（光の明滅、ヒットストップ、ボクセル粉砕など）を記載する。
+  - [ ] リリースビルド後、指定の命名規則でZIP圧縮する。

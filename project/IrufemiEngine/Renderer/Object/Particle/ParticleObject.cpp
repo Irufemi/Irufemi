@@ -41,6 +41,39 @@ void ParticleObject::Update() {
     }
 }
 
+void ParticleObject::SetTexturePath(const std::string& path) {
+    if (texturePath_ != path) {
+        texturePath_ = path;
+        if (emitterHandle_.IsValid() && gpuParticleManager_) {
+            gpuParticleManager_->UnregisterEmitter(emitterHandle_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+        }
+        MarkDirty();
+    }
+}
+
+void ParticleObject::SetBlendMode(BlendMode mode) {
+    if (blendMode_ != mode) {
+        blendMode_ = mode;
+        if (emitterHandle_.IsValid() && gpuParticleManager_) {
+            gpuParticleManager_->UnregisterEmitter(emitterHandle_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+        }
+        MarkDirty();
+    }
+}
+
+void ParticleObject::SetUnscaledTime(bool val) {
+    if (isUnscaledTime_ != val) {
+        isUnscaledTime_ = val;
+        if (emitterHandle_.IsValid() && gpuParticleManager_) {
+            gpuParticleManager_->UnregisterEmitter(emitterHandle_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+        }
+        MarkDirty();
+    }
+}
+
 void ParticleObject::UpdateSystem() {
     if (!emitterHandle_.IsValid() && gpuParticleManager_) {
         emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);

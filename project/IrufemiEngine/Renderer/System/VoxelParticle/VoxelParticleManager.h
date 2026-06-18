@@ -26,7 +26,8 @@ public:
                        const Vector3& velocity, 
                        const Vector3& rotate, 
                        const Vector3& scale,
-                       VoxelParticleSystem::ParticleType type = VoxelParticleSystem::ParticleType::Default);
+                       const VoxelParticleSystem::VoxelEmitterParams& params = VoxelParticleSystem::VoxelEmitterParams::Default(),
+                       const Vector3Int& resolution = {32, 32, 32});
 
     // 衝突時の部分飛散
     void PlayCollisionScatter(const std::string& modelName, 
@@ -35,7 +36,8 @@ public:
                               const Vector3& rotate, 
                               const Vector3& scale, 
                               const struct OBB& collisionArea,
-                              VoxelParticleSystem::ParticleType type = VoxelParticleSystem::ParticleType::Default);
+                              const VoxelParticleSystem::VoxelEmitterParams& params = VoxelParticleSystem::VoxelEmitterParams::Default(),
+                              const Vector3Int& resolution = {32, 32, 32});
 
 private:
     struct PoolData {
@@ -46,5 +48,5 @@ private:
     size_t totalSystemCount_ = 0;
     IrufemiEngine* engine_ = nullptr;
 
-    VoxelParticleSystem* AllocateSystem(const std::string& modelName);
+    VoxelParticleSystem* AllocateSystem(const std::string& modelName, const Vector3Int& resolution);
 };

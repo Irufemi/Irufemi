@@ -74,6 +74,11 @@ public: // メンバ関数
 	void ResizeSwapChain(int32_t width, int32_t height);
 
 	/**
+	 * @brief シェーダーをすべて再コンパイル・再登録する（ホットリロード用）
+	 */
+	void RegisterAllShaders();
+
+	/**
 	 * @brief ロガーの設定
 	 */
 	void SetLog(Log* log) { log_ = log; }
@@ -226,6 +231,8 @@ public: // ゲッター
 	D3D12_GPU_DESCRIPTOR_HANDLE GetRTVGPUDescriptorHandle(uint32_t index);
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDSVGPUDescriptorHandle(uint32_t index);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetReadOnlyDSVCPUDescriptorHandle();
+	D3D12_GPU_DESCRIPTOR_HANDLE GetDepthSRVGPUHandle() const { return srvPool_->GetGPUHandle(depthSRVIndex_); }
 	///@}
 
 	/** @name ビューポート・矩形情報の取得 */
@@ -302,6 +309,7 @@ private: // 初期化用プライベートメソッド
 	void CreateDevice();
 	void SetInfoQueue();
 	void CreatePSOs();
+	void CreateDepthSRV();
 	///@}
 
 private: // メンバ変数
@@ -331,6 +339,8 @@ private: // メンバ変数
 	// --- SRV Descriptor Pool ---
 
 	std::unique_ptr<DescriptorPool> srvPool_ = nullptr;
+	uint32_t depthSRVIndex_ = DescriptorPool::kInvalid;
+
 	std::unique_ptr<DXRootSignatureManager> rootSignatureManager_ = nullptr;
 
 	// --- Synchronization --

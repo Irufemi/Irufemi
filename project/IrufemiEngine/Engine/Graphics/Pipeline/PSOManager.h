@@ -168,5 +168,11 @@ private:
 
     /** @brief 設定セット（シェーダ、ブレンド、デプス、カリング）からハッシュ値を計算 */
     static uint64_t Hash(const std::string& name, BlendMode b, DepthWrite d, CullMode c);
+
+    /** @name ディスクキャッシュ (PSO Blob) */
+    ///@{
+    std::vector<uint8_t> LoadCachedBlob(const std::string& cacheFileName) const;
+    void SaveCachedBlob(const std::string& cacheFileName, ID3D12PipelineState* pso) const;
+    ///@}
     ///@}
 };

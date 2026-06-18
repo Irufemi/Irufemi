@@ -1,16 +1,22 @@
 #include "TransformComponent.h"
 #include "../GameObject.h"
 #include "Engine/Core/Math/MathFunction.h"
-
-
+#include "Engine/Core/System/ComponentPool.h"
 
 void TransformComponent::Update() {
+    ComputeMatrix();
+}
+
+void TransformComponent::ComputeMatrix() {
+    if (lastUpdateFrame_ == currentFrame_) return;
+
     // ローカル行列の計算
     localMatrix_ = Math::MakeAffineMatrix(scale_, rotation_, position_);
 
     // 親のワールド行列を加味して自身のワールド行列を計算
     if (auto parent = gameObject_->GetParent()) {
         if (auto parentTransform = parent->GetComponent<TransformComponent>()) {
+            parentTransform->ComputeMatrix(); // キャッシュに乗っているうちに親を計算（DODのメモ化）
             worldMatrix_ = Math::Multiply(localMatrix_, parentTransform->GetWorldMatrix());
         } else {
             worldMatrix_ = localMatrix_;
@@ -28,6 +34,15 @@ void TransformComponent::Update() {
     
     worldScale_ = { Math::Length(xaxis), Math::Length(yaxis), Math::Length(zaxis) };
     worldRotation_ = Math::ExtractEulerFromMatrix(worldMatrix_);
+
+    lastUpdateFrame_ = currentFrame_;
+}
+
+void TransformComponent::UpdateAll() {
+    currentFrame_++;
+    ComponentPool<TransformComponent>::GetInstance().ForEach([](TransformComponent& transform) {
+        transform.ComputeMatrix();
+    });
 }
 
 nlohmann::json TransformComponent::Serialize() {

@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DXSwapChainManager.h"
 #include <cassert>
 #include <algorithm>
@@ -38,11 +39,11 @@ void DXSwapChainManager::CreateSwapChain(IDXGIFactory7* dxgiFactory, ID3D12Comma
         nullptr, 
         reinterpret_cast<IDXGISwapChain1**>(swapChain_.GetAddressOf())
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     for (uint32_t i = 0; i < 2; ++i) {
         hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(swapChainResources_[i].GetAddressOf()));
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
     }
 }
 
@@ -53,7 +54,7 @@ void DXSwapChainManager::CreateDescriptorHeaps(ID3D12Device* device) {
     rtvHeapDesc.NumDescriptors = 128;
     rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     HRESULT hr = device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(rtvDescriptorHeap_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // DSV用ヒープ作成
     D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
@@ -61,10 +62,10 @@ void DXSwapChainManager::CreateDescriptorHeaps(ID3D12Device* device) {
     dsvHeapDesc.NumDescriptors = 16;
     dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     hr = device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(dsvDescriptorHeap_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     nextRtvIndex_ = 4; // 0, 1 は SwapChain 用、2, 3 は ImGui 用に予約
-    nextDsvIndex_ = 1; // 0 はメインの深度バッファ
+    nextDsvIndex_ = 2; // 0 はメインの深度バッファ(Write), 1 はメインの深度バッファ(ReadOnly)
 }
 
 void DXSwapChainManager::InitializeRenderTargets(ID3D12Device* device) {
@@ -113,7 +114,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DXSwapChainManager::CreateDepthStencilTex
         &depthClearValue,
         IID_PPV_ARGS(resource.GetAddressOf())
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return resource;
 }
@@ -125,6 +126,12 @@ void DXSwapChainManager::CreateDepthStencil(ID3D12Device* device, int32_t width,
     dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+
+    // Read-Only DSV
+    dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+    D3D12_CPU_DESCRIPTOR_HANDLE readOnlyHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+    readOnlyHandle.ptr += descriptorSizeDSV_;
+    device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, readOnlyHandle);
 }
 
 void DXSwapChainManager::ReleaseSwapChainResources() {
@@ -142,11 +149,11 @@ void DXSwapChainManager::ResizeSwapChain(ID3D12Device* device, int32_t width, in
     DXGI_SWAP_CHAIN_DESC1 desc{};
     swapChain_->GetDesc1(&desc);
     HRESULT hr = swapChain_->ResizeBuffers(desc.BufferCount, width, height, desc.Format, desc.Flags);
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     for (uint32_t i = 0; i < desc.BufferCount; ++i) {
         hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(swapChainResources_[i].GetAddressOf()));
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
         
         device->CreateRenderTargetView(swapChainResources_[i].Get(), &rtvDesc_, rtvHandles_[i]);
 
@@ -161,6 +168,12 @@ void DXSwapChainManager::ResizeSwapChain(ID3D12Device* device, int32_t width, in
     dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+
+    // Read-Only DSV
+    dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+    D3D12_CPU_DESCRIPTOR_HANDLE readOnlyHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+    readOnlyHandle.ptr += descriptorSizeDSV_;
+    device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, readOnlyHandle);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DXSwapChainManager::GetRTVCPUDescriptorHandle(uint32_t index) const {
@@ -194,7 +207,7 @@ uint32_t DXSwapChainManager::AllocateRTVIndex() {
         freeRtvIndices_.pop_back();
         return index;
     }
-    assert(nextRtvIndex_ < 128);
+    IRUFEMI_ASSERT(nextRtvIndex_ < 128);
     return nextRtvIndex_++;
 }
 
@@ -211,7 +224,7 @@ uint32_t DXSwapChainManager::AllocateDSVIndex() {
         freeDsvIndices_.pop_back();
         return index;
     }
-    assert(nextDsvIndex_ < 16);
+    IRUFEMI_ASSERT(nextDsvIndex_ < 16);
     return nextDsvIndex_++;
 }
 

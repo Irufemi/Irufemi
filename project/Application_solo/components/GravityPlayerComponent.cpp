@@ -12,6 +12,7 @@
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "RailShooterEnemyComponent.h"
+#include "BossComponent.h"
 #include <algorithm>
 
 void GravityPlayerComponent::OnRegisterProperties() {
@@ -58,14 +59,28 @@ void GravityPlayerComponent::HandlePullInput() {
         auto transform = gameObject_->GetComponent<TransformComponent>();
         if (!transform) return;
 
-        // 一番親である DebrisManager オブジェクト（子としてガレキを保持している）を探す
-        std::shared_ptr<GameObject> debrisManager = nullptr;
-        for (auto& obj : scene->GetGameObjects()) {
-            if (obj && obj->GetName() == "DebrisManager") {
-                debrisManager = obj;
-                break;
+        // 1. ロックオン対象がBossなら、Bossからガレキを奪う
+        if (lockedTarget_) {
+            auto bossComp = lockedTarget_->GetComponent<BossComponent>();
+            if (bossComp && bossComp->GetState() == BossState::Idle) {
+                auto debrisObj = bossComp->ExtractDebris();
+                if (debrisObj) {
+                    if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
+                        debrisComp->SetState(DebrisState::Pulled);
+                        debrisComp->SetTarget(gameObject_->shared_from_this());
+                        debrisComp->SetOrbitParams(
+                            Random::GeneratorFloat(0.0f, 6.28f),
+                            Random::GeneratorFloat(2.0f, 4.0f)
+                        );
+                        orbitingDebris_.push_back(debrisObj);
+                        return; // Bossから奪った場合は野良ガレキ探索はスキップ
+                    }
+                }
             }
         }
+
+        // 一番親である DebrisManager オブジェクト（子としてガレキを保持している）を探す
+        auto debrisManager = scene->FindGameObject("DebrisManager");
 
         if (!debrisManager) return;
 
@@ -87,16 +102,15 @@ void GravityPlayerComponent::HandlePullInput() {
 
             if (distSq <= pullRadius_ * pullRadius_) {
                 // 引き寄せ対象にする
-                debrisComp->SetTarget(gameObject_);
-                debrisComp->SetState(DebrisState::Pulled);
-                
-                // 回転半径や初期角度をランダムに設定
-                debrisComp->SetOrbitParams(
-                    Random::GeneratorFloat(0.0f, 6.28f),
-                    Random::GeneratorFloat(2.0f, 4.0f)
-                );
-
-                orbitingDebris_.push_back(child);
+                if (auto debrisComp = child->GetComponent<DebrisComponent>()) {
+                    debrisComp->SetState(DebrisState::Pulled);
+                    debrisComp->SetTarget(gameObject_->shared_from_this());
+                    debrisComp->SetOrbitParams(
+                        Random::GeneratorFloat(0.0f, 6.28f),
+                        Random::GeneratorFloat(2.0f, 4.0f)
+                    );
+                    orbitingDebris_.push_back(child);
+                }
 
                 // 最大数に達したら終了
                 if (static_cast<int>(orbitingDebris_.size()) >= maxOrbitCount_) {
@@ -122,8 +136,8 @@ void GravityPlayerComponent::HandleThrowInput() {
         if (debris) {
             auto comp = debris->GetComponent<DebrisComponent>();
             if (comp) {
-                // ロックオン対象がいればターゲットに設定
-                comp->SetTarget(lockedTarget_.get());
+                comp->SetState(DebrisState::Thrown);
+                comp->SetTarget(lockedTarget_);
                 
                 // ターゲットがいない場合はカメラの前方へ飛ばす
                 if (!lockedTarget_) {

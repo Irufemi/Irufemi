@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DXRootSignatureManager.h"
 #include "../../Core/Utility/Log.h"
 #include <cassert>
@@ -45,8 +46,15 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rangeShadow[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         rangeShadow[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
+        // メイン深度マップ (t6)
+        D3D12_DESCRIPTOR_RANGE rangeMainDepth[1] = {};
+        rangeMainDepth[0].BaseShaderRegister = 6; // t6
+        rangeMainDepth[0].NumDescriptors = 1;
+        rangeMainDepth[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeMainDepth[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
         // --- ルートパラメータの定義 ---
-        D3D12_ROOT_PARAMETER rootParameters[11] = {};
+        D3D12_ROOT_PARAMETER rootParameters[12] = {};
 
         // Slot 0: Material (b0, PS)
         rootParameters[(UINT)RootSlot::Material].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -109,6 +117,12 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.pDescriptorRanges = rangeShadow;
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.NumDescriptorRanges = 1;
 
+        // Slot 11: DepthMap (t6, PS)
+        rootParameters[(UINT)RootSlot::DepthMap].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::DepthMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::DepthMap].DescriptorTable.pDescriptorRanges = rangeMainDepth;
+        rootParameters[(UINT)RootSlot::DepthMap].DescriptorTable.NumDescriptorRanges = 1;
+
         D3D12_STATIC_SAMPLER_DESC staticSamplers[5] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
         staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -169,10 +183,10 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         HRESULT hr = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, signatureBlob.GetAddressOf(), errorBlob.GetAddressOf());
         if (FAILED(hr)) {
             Log::OutPutLog(log->GetLogStream(), reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
-            assert(false);
+            IRUFEMI_ASSERT(false);
         }
         hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(graphicsRootSignature_.GetAddressOf()));
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
     }
 
     // --- Compute Shader用 RootSignature ---
@@ -248,10 +262,10 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         HRESULT hr = D3D12SerializeRootSignature(&computeRSDesc, D3D_ROOT_SIGNATURE_VERSION_1, computeSignatureBlob.GetAddressOf(), computeErrorBlob.GetAddressOf());
         if (FAILED(hr)) {
             Log::OutPutLog(log->GetLogStream(), reinterpret_cast<char*>(computeErrorBlob->GetBufferPointer()));
-            assert(false);
+            IRUFEMI_ASSERT(false);
         }
         hr = device->CreateRootSignature(0, computeSignatureBlob->GetBufferPointer(), computeSignatureBlob->GetBufferSize(), IID_PPV_ARGS(computeRootSignature_.GetAddressOf()));
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
     }
 }
 

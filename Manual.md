@@ -275,6 +275,40 @@ if (isClear) {
 // engine_->GetSceneManager()->PopScene();
 ```
 
+#### GameObject の検索（名前、タグ、ID）
+シーン内に存在する GameObject を取得したい場合、用途に合わせて以下の3つの検索機能を利用できます。
+
+**1. 名前で検索 (`FindGameObject`)**
+特定の名前を持つオブジェクトを1つ探す場合に使用します。
+```cpp
+auto playerObj = scene->FindGameObject("Player");
+```
+※同名のオブジェクトが複数存在する場合は、最初に見つかったものが返されます。
+
+**2. タグで一括検索 (`FindGameObjectsWithTag`)**
+「Enemy」や「Obstacle」など、特定の役割を持つオブジェクトをまとめて取得したい場合に使用します。タグは `GameObject::SetTag("Enemy")` やエディタから設定できます。
+```cpp
+// "Enemy" タグを持つすべてのオブジェクトを取得
+std::vector<std::shared_ptr<GameObject>> enemies = scene->FindGameObjectsWithTag("Enemy");
+for (auto& enemy : enemies) {
+    // 敵全体に対する処理
+}
+```
+
+**3. インスタンスIDで検索 (`FindGameObjectByID`)**
+オブジェクトの生成時に自動で割り当てられる一意のID（`uint64_t`）を利用して、確実に特定のインスタンスを取得します。
+```cpp
+uint64_t targetId = targetObj->GetInstanceID();
+// ... 後でIDを使って再取得する
+auto obj = scene->FindGameObjectByID(targetId);
+```
+
+#### 動的生成 (Clone) 時の自動命名ルール
+`GameObject::Clone()` を使用してオブジェクトを複製すると、エディタ上の識別や名前検索の競合を防ぐため、名前に自動でサフィックス（`(1)` など）が付きます。
+* 例: `"Enemy"` を Clone → `"Enemy(1)"`
+* さらに Clone → `"Enemy(2)"`
+これにより、プレハブから動的生成した敵などもインスペクター上で個別に識別しやすくなっています。
+
 ### 1.3 RenderGraph と DrawManager (描画パイプライン)
 本エンジンの描画は **RenderGraph（レンダーグラフ）** という仕組みで自動管理されています。
 ユーザーが `Draw()` を呼ぶと、すぐに画面に描画されるわけではなく、**DrawManagerのキュー（予約リスト）に登録（Submit）** されます。その後、エンジン側が適切な順序（Opaque → Transparent → UIなど）でまとめてGPUへ描画命令を出します。
@@ -369,8 +403,8 @@ line_->Initialize();
 line_->SetColor({ 0.0f, 1.0f, 0.0f, 1.0f }); // 緑色の線
 
 // 3. 更新と描画 (Update & Draw)
-// TransformComponentのように直接 transform 情報を更新する（簡易版）
-primitive_->transform_.translate = playerPos;
+// 位置を更新（内部で自動的に isDirty = true がセットされます）
+primitive_->SetPosition(playerPos);
 primitive_->Update();
 primitive_->Draw();
 
@@ -417,7 +451,7 @@ auto* transform = object->AddComponent<TransformComponent>();
 auto* renderer = object->AddComponent<MeshRendererComponent>();
 
 // 3. パラメータ設定
-transform->SetPosition({0, 10, 0});
+transform->position_ = {0, 10, 0};
 renderer->LoadModel("enemy/boss.obj");
 
 // 4. シーンへの登録（SceneManager経由で管理する場合）
@@ -478,6 +512,29 @@ public:
 };
 ```
 
+#### ポーズ（一時停止）時の動作制御
+エディタのデバッグ機能としてのPauseボタン押下時（`TimeScale == 0.0f`時）は、すべてのコンポーネントの `Update()` 呼び出しが**フレームワーク側で自動的にスキップ**されます。そのため、各コンポーネント内で `deltaTime <= 0.0f` をチェックして手動で停止させる処理を書く必要はありません。
+
+もし「UIのアニメーション」や「エフェクト」など、**ポーズ中であっても更新し続けたい**特殊なコンポーネントを作成する場合は、`CanUpdateWhenPaused()` 仮想関数をオーバーライドして `true` を返すようにしてください。
+
+```cpp
+class AlwaysMovingComponent : public Component {
+public:
+    std::string GetComponentName() const override { return "AlwaysMovingComponent"; }
+
+    // ポーズ中（TimeScale == 0.0f）でもUpdateを実行するかどうか
+    bool CanUpdateWhenPaused() const override { 
+        return true; 
+    }
+
+    void Update() override {
+        // ポーズ中も呼ばれる。
+        // ※この中で GetGameDeltaTime() を使うと 0 になるため、
+        //   ポーズ中も動かしたい場合は GetRealDeltaTime() など実時間を使う必要があります。
+    }
+};
+```
+
 #### 動的生成 (Instantiate)
 弾を撃つ、敵を出現させるといった「ゲームプレイ中にオブジェクトを生み出す」処理は、あらかじめ作成したプレハブ（JSON）を指定して呼び出します。
 
@@ -532,7 +589,7 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - `Normal/Hover/Click Color`: マウスの操作状態に合わせて、アタッチされているSpriteの色を自動的に変化させます。
 - **`CanvasComponent`**: UI要素をグループ化し、アルファ値（透明度）などを一括管理します。
   - `Group Alpha`: このコンポーネントを持つGameObject自身と、そのすべての子要素にある `SpriteRendererComponent` のアルファ値を一括で制御します。フェードイン・フェードアウトの演出に便利です。
-### 2.5 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
+### 2.6 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
 
 敵や障害物に弾丸・ミサイルが着弾した際に使用する、リッチな3D爆発エフェクト機能です。3D球体の急速膨張による炎コア、3軸クロス展開される衝撃波リング、全方位に飛び散るGPU火花パーティクルが統合されています。
 
@@ -608,7 +665,46 @@ if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
 }
 ```
 
-### 2.6 カスタムパラメータの渡し方 (Custom Constant Buffer)
+### 2.7 Data-Oriented Design (DOD) と ComponentPool
+
+コンポーネントシステムにおいて、同じ種類のコンポーネントを連続したメモリ空間（プール）に配置し、CPUキャッシュヒット率を劇的に向上させるための最適化の仕組みです。
+何万個もの弾やパーティクル、多数の敵を同時に処理する場合に、標準の `std::make_shared` によるメモリの断片化を防ぎます。
+
+#### プール対応コンポーネントの作り方
+特定のコンポーネントを `ComponentPool` の管理下に置くには、対象のコンポーネントクラスの宣言の下で `IsPooledComponent` のテンプレート特化を行います。
+
+**例: `TransformComponent.h` の場合**
+```cpp
+#pragma once
+#include "Component.h"
+#include "Engine/Core/System/ComponentPool.h"
+
+class TransformComponent : public Component {
+    // ... 通常のコンポーネント実装 ...
+};
+
+// ComponentPool 対応を宣言（ファイルの末尾に記述）
+template<> struct IsPooledComponent<TransformComponent> : std::true_type {};
+```
+
+この一行を追加するだけで、`GameObject::AddComponent<TransformComponent>()` や、エディタ・JSONからの自動ロード（`ComponentFactory`）が**すべて自動的にプール経由での生成**に切り替わります。
+
+#### DODの恩恵を最大限に受ける一括更新処理
+プール化されたコンポーネントは、`ComponentPool::ForEach` を使って全インスタンスを一気に処理（バッチ処理）することができます。
+現在、`TransformComponent` の座標行列計算はこの機能を用いて `BaseScene::Update` 内で毎フレーム最初に一括で計算 (`TransformComponent::UpdateAll()`) されています。
+これにより、何万ものオブジェクトの Transform 行列計算がキャッシュミスなしで爆速で行われるようになっています。
+
+```cpp
+void TransformComponent::UpdateAll() {
+    currentFrame_++;
+    ComponentPool<TransformComponent>::GetInstance().ForEach([](TransformComponent& transform) {
+        transform.ComputeMatrix();
+    });
+}
+```
+※注意: プール対応にしたコンポーネントは、ゲーム終了時にプールから安全にメモリ解放されます。ユーザー側で特別なメモリ管理コード（`delete`など）を書く必要はありません。
+
+### 2.8 カスタムパラメータの渡し方 (Custom Constant Buffer)
 エンジン標準の `Material` には含まれない独自のパラメータ（演出用の色やアニメーションフラグなど）をシェーダーに渡したい場合、エンジンの `Material` を汚染するのではなく、専用の定数バッファ枠 (`RootSlot::Special` / レジスタ `b6`) を利用します。
 
 ```cpp
@@ -961,6 +1057,57 @@ if (ImGui::Checkbox("TopMost", &isTopMost)) {
 }
 ```
 
+```
+
+### 6.4 インスペクター (Inspector) の便利な操作機能
+インスペクター上で作業を効率化するための便利な機能が備わっています。これらはすべて **Undo/Redo (Ctrl+Z / Ctrl+Y)** に対応しています。
+
+1. **コンポーネントの削除 (Remove Component)**
+   - インスペクターに追加されている各コンポーネントの「ヘッダー（名前が書かれた帯の部分）」を **右クリック** すると、コンテキストメニューが表示されます。
+   - そこから「**Remove Component**」を選択することで、不要なコンポーネントを安全に削除できます。
+2. **Transform の一括リセット**
+   - `TransformComponent` のヘッダーの右端にある「**Reset**」ボタンをクリックすると、Position (0, 0, 0)、Rotation (0, 0, 0)、Scale (1, 1, 1) へ一括で初期化されます。
+3. **テクスチャのドラッグ＆ドロップ割り当て**
+   - `SpriteRendererComponent` などのテクスチャ項目（コンボボックス等のUI）に対して、Project Browser から画像ファイル（`.png` や `.jpg` など）を直接 **ドラッグ＆ドロップ** することで、すぐにテクスチャを適用できます。
+
+### 6.5 Hierarchy と Scene View の便利な操作機能
+シーンが複雑になりオブジェクトが増えてきた場合、以下の機能を使って整理・保護や効率的な操作を行うことができます。
+
+1. **インライン・リネーム (Inline Rename)**
+   - Hierarchy 上でオブジェクトの名前部分を **ダブルクリック** すると、その場で名前を直接編集モード（テキスト入力）に入ることができます。Inspector を開かなくても素早い名前変更が可能です。
+2. **可視アイコンとロックアイコン (Eye & Lock)**
+   - **目のアイコン (可視性)**: Hierarchy の右端にある目のアイコン（👁/🚫）をクリックすると、オブジェクトの Active/Inactive を即座に切り替えられます。
+   - **南京錠アイコン (保護)**: 鍵アイコン（🔒/🔓）をクリックすると編集がロックされます。ロックされたオブジェクトは以下の操作が制限されます：
+     - Scene View 上でのギズモ操作の無効化（動かせなくなる）
+     - Inspector 上での全パラメータ編集、コンポーネントの追加・削除の無効化（Read-Onlyになる）
+     - ドラッグ＆ドロップによる階層移動の禁止（間違って他のオブジェクトの子にしてしまう事故を防ぐ）
+3. **フォルダ機能 (Folder)**
+   - Hierarchy 上の空白部分を **右クリック** し、「**Create Folder**」を選択すると、空のフォルダ（`isFolder_ = true` の GameObject）が作成されます。
+   - 専用のアイコン（📂）が付き、他のオブジェクトを見やすくグループ化できます。フォルダは Scene View 上でギズモが非表示になります。
+4. **Scene View のオーバーレイUI (Overlay UI)**
+   - Scene View の右上に、半透明のオーバーレイパネルが常駐しています。
+   - ここから、ギズモの操作モード（Local/World）、操作ツール（Translate, Rotate, Scale, Bounds）の切り替えや、コライダーのデバッグ表示のON/OFFが素早く行えます。
+
+### 6.6 メニューバーの便利機能
+画面最上部のメニューバーからも、様々なアクションにアクセスできます。
+
+- **GameObject メニュー**: 
+  - ここから即座にプリミティブオブジェクト（Cube, Sphere, 2D Spriteなど）や空のオブジェクトをシーンに追加できます。Hierarchyの右クリックメニューと同じ機能です。
+- **Window メニュー**:
+  - **Performance**: オンにすると、現在のフレームレート（FPS）やデルタタイム、フレームごとの処理時間（ms）を確認できる「Performance」ウィンドウが表示されます。ゲームの最適化時の確認に便利です。
+  - **Layout**: UIレイアウトを初期状態に戻したり、現在の配置をデフォルトとして保存できます。
+    - **Reset Layout**: パネルを誤って閉じてしまったり、配置がおかしくなった場合に、ドッキング状態を強制的に初期配置へ復元します。
+
+### 6.7 Play / Pause コントロールとゲーム時間の管理
+メニューバーの中央にあるコントロールから、エディタ上でのゲームの進行を制御できます。
+
+1. **Play / Stop (▶ / ■)**
+   - **Play**: Editモードからゲームを実行状態（Playモード）に移行します。移行した瞬間に現在のシーン状態が自動でバックアップされ、**Stop** を押すと変更が破棄されて Editモードの初期状態に完全にリセットされます。
+2. **Pause (⏸)**
+   - ゲーム実行中に時間を一時停止します。
+   - ポーズ中はゲーム内の `GetDeltaTime()` が常に `0.0f` を返すようになるため、キャラクターの移動や物理演算などの更新処理がすべて止まります。
+   - 一方、エディタのUIやカメラ操作などは実時間である `GetRealDeltaTime()` を使用しているため、ゲームが止まっている状態でもシーンを自由に観察したり、Inspectorからパラメータを調整することが可能です。
+
 ---
 ## 7. トラブルシューティング (Troubleshooting)
 
@@ -976,6 +1123,30 @@ if (ImGui::Checkbox("TopMost", &isTopMost)) {
 - `IrufemiEngine::Finalize()` 内で、`dxCommon_` が破棄される前に、すべてのマネージャーの `Finalize()` または `reset()` を呼ぶようにしてください。シングルトンの場合は `PrimitiveManager::Finalize()` のように明示的に呼び出します。
 - **フレーム遅延破棄の注意**: `dxCommon_->ReleaseAfterFence(resource)` で破棄を予約したリソースは、`DirectXCommon::pendingResources_` に保持されます。エンジン終了時には、必ずGPU同期待ち（`WaitForGPU()`）の直後に `pendingResources_.clear()` を呼び出して完全に破棄してください。
 - COMポインタ（`ComPtr`）を使用する場合は、不要になったら `Reset()` を呼ぶか、寿命を強制的に限定するためローカルスコープ `{}` 内で宣言するようにしてください。
+---
+
+## 8. シェーダーの追加・変更とコンパイル構成 (Shaders & Compilation)
+
+本エンジンでは、パフォーマンスと開発効率の両立のため、ビルド構成（Configuration）によってシェーダーのコンパイル方式が完全に切り替わる「ハイブリッド構成」を採用しています。
+
+### 8.1 開発時のホットリロード (Editor / Debug ビルド)
+Editor または Debug モードで起動している場合、ゲームを実行したまま（エディタを立ち上げたまま）、シェーダーファイル（`.hlsl` または `.hlsli`）を上書き保存するだけで、自動的に **ホットリロード** が行われます。
+- バックグラウンドでフォルダを監視しており、保存を検知すると安全に古いシェーダーとPSOキャッシュを破棄し、再コンパイルして即座に描画に反映します。
+- 一々ビルドし直す必要がないため、ライティングの微調整やエフェクト作成のイテレーションが非常に高速です。
+
+### 8.2 シェーダーの追加手順と命名規則
+新しいシェーダー（`.hlsl`）を追加する際は、必ずファイル名の中に「プロファイル名」を含めるようにしてください。ビルド時の自動コンパイルバッチ（`CompileShaders.bat`）がこのファイル名を見て適切なコンパイルを行います。
+
+- **頂点シェーダー**: `xxx.VS.hlsl`
+- **ピクセルシェーダー**: `xxx.PS.hlsl`
+- **コンピュートシェーダー**: `xxx.CS.hlsl`
+- **ジオメトリシェーダー**: `xxx.GS.hlsl`
+
+### 8.3 配布環境 (Release ビルド) と CSOファイル
+Releaseビルドでは、`dxcompiler.dll` などのコンパイラを一切ロードせず、最速で起動させる仕組みになっています。
+- Visual Studio で F5（またはビルド）を押した直後に、裏で自動的に `CompileShaders.bat` が走り、すべての `.hlsl` をコンパイルして `.cso`（コンパイル済みバイナリ）を生成します。
+- 実行時には `.hlsl` ではなく生成された `.cso` を直接メモリに読み込みます。
+- そのため、最終的にプレイヤーに配布（リリース）する際は、**「すべての `.hlsl` / `.hlsli` ファイルは削除して `.cso` だけを含める」** ことで、ソースコードの秘匿化と容量削減が可能です（Compute Shaderも含む）。
 
 ---
 > **ドキュメント更新履歴**
@@ -988,3 +1159,49 @@ if (ImGui::Checkbox("TopMost", &isTopMost)) {
 > - 2026/06: カスタムエディタUI構築時の Undo/Redo (Ctrl+Z) 対応用ヘルパー関数の解説を追記
 > - 2026/06: プリミティブ描画の `Primitive3DObject` への統合、および `MeshDesc` / `MaterialDesc` へのデータ構造リファクタリングを反映
 > - 2026/06: 描画リソースのマルチバッファ同期処理を `MultiBufferSyncState` 基底クラスへ集約し、`Manual.md` に使い方を追加
+> - 2026/06: シェーダーのハイブリッドコンパイル（Releaseの完全CSO化）およびEditor/Debug向けのホットリロード機能の解説を追加
+> - 2026/06: マルチスレッド化による GameObject::Update の並列処理と、ダングリングポインタ対策としての `std::weak_ptr` の利用ルールを追記
+> - 2026/06: エディタ操作性向上（インスペクターのRemove/Reset機能、D&D割り当て）の解説を追記
+> - 2026/06: Hierarchyでのオブジェクト管理機能（フォルダ化・ロック・保護機能）の解説を追加
+> - 2026/06: メニューバーの刷新（モダンダークテーマ化）、Play/Pause機能による時間管理（DeltaTime/RealDeltaTime）、およびレイアウト初期化（Reset Layout）の解説を追加
+
+---
+
+## 9. マルチスレッド化とコンポーネント設計 (Multithreading & Components)
+
+本エンジンの `BaseScene` では、パフォーマンス向上のため **すべての `GameObject` の `Update` および `Draw` が `ThreadPool` を用いて並列実行（マルチスレッド処理）** されます。
+そのため、コンポーネントを設計・実装する際は、スレッドセーフ（競合が起きない安全なコード）を意識する必要があります。
+
+### 9.1 他の GameObject への参照とダングリングポインタ対策
+マルチスレッド環境下では、参照していた他の `GameObject`（例：敵がプレイヤーを追いかける際のプレイヤー情報）が、別のスレッドで同時に破壊（GCによってメモリ解放）される可能性があります。
+**生ポインタ (`GameObject*`) をメンバ変数として長期間保持することは厳禁です（Use-After-Free の原因になります）。**
+
+必ず `std::weak_ptr<GameObject>` を使用し、アクセスする瞬間だけ `lock()` を取得して生存確認を行ってください。
+
+```cpp
+// ❌ 悪い例（生ポインタ保持はクラッシュの原因）
+// GameObject* targetObject_ = nullptr; 
+
+// ⭕ 良い例（weak_ptr で保持）
+std::weak_ptr<GameObject> targetObject_;
+
+// --- 使い方 ---
+// 1. 他のオブジェクトを設定する時 (shared_from_this() を渡す)
+debrisComp->SetTarget(playerObj->shared_from_this());
+
+// 2. 毎フレーム Update でアクセスする時
+if (auto target = targetObject_.lock()) { // lock()で生存確認
+    if (target->GetIsActive()) {
+        auto transform = target->GetComponent<TransformComponent>();
+        // targetの座標へ移動する処理など...
+    }
+} else {
+    // ターゲットは既に破壊された場合の処理
+}
+```
+
+### 9.2 コンポーネント実行中の構造変更 (AddChild / AddComponent) について
+`GameObject::Update` は並列実行されていますが、「自分自身」の子リスト（`children_`）やコンポーネントリストを変更するような操作（例えば、Update 中に自身へ `AddComponent` したり `AddChild` すること）は、内部配列の再確保（Reallocation）を引き起こす可能性があるため、十分に注意してください。
+
+- **新規オブジェクトの生成**: 新しいオブジェクトをシーンにスポーンさせる場合、`scene->AddGameObject(obj)` は内部でスレッドセーフなキュー(`pendingAdds_`)に積まれるため、Update 中に呼んでも安全です。
+- **オブジェクトの破棄**: `gameObject_->Destroy()` も破棄フラグ (`isDestroyed_`) を立てるだけなので、Update 中に呼んでも安全です（次フレームの開始前に一括削除されます）。

@@ -108,6 +108,9 @@
     <ClCompile Include="Engine\Core\Utility\Log.cpp">
       <Filter>Engine\Core\Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Core\Utility\ErrorUtility.cpp">
+      <Filter>Engine\Core\Utility</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Core\Utility\StringUtility.cpp">
       <Filter>Engine\Core\Utility</Filter>
     </ClCompile>
@@ -244,8 +247,8 @@
     <ClCompile Include="Framework\UISelectionGroup.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
-    <ClCompile Include="Framework\Component\AudioSourceComponent.cpp">
-      <Filter>Framework\Component</Filter>
+    <ClCompile Include="Framework\Component\Audio\AudioSourceComponent.cpp">
+      <Filter>Framework\Component\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\ComponentFactory.cpp">
       <Filter>Framework\Component</Filter>
@@ -274,8 +277,8 @@
     <ClCompile Include="Framework\Component\Renderer\ModelBatchRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Framework\Component\Renderer\ParticleEmitterComponent.cpp">
-      <Filter>Framework\Component\Renderer</Filter>
+    <ClCompile Include="Framework\Component\Effect\ParticleEmitterComponent.cpp">
+      <Filter>Framework\Component\Effect</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
@@ -286,9 +289,10 @@
     <ClCompile Include="Framework\Component\Renderer\TextRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Framework\Component\Script\RotatorComponent.cpp">
-      <Filter>Framework\Component\Script</Filter>
+    <ClCompile Include="Framework\Component\Effect\VoxelParticleComponent.cpp">
+      <Filter>Framework\Component\Effect</Filter>
     </ClCompile>
+
     <ClCompile Include="Framework\Component\UI\ButtonComponent.cpp">
       <Filter>Framework\Component\UI</Filter>
     </ClCompile>
@@ -319,9 +323,7 @@
     <ClCompile Include="Renderer\Object\Effect\Effect.cpp">
       <Filter>Renderer\Object\Effect</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object\Effect\WeaponTrail.cpp">
-      <Filter>Renderer\Object\Effect</Filter>
-    </ClCompile>
+
     <ClCompile Include="Renderer\Object\Line\LineClass.cpp">
       <Filter>Renderer\Object\Line</Filter>
     </ClCompile>
@@ -597,6 +599,9 @@
     <ClInclude Include="Engine\Core\Utility\ObjectPool.h">
       <Filter>Engine\Core\Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Core\Utility\ErrorUtility.h">
+      <Filter>Engine\Core\Utility</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Core\Utility\StringUtility.h">
       <Filter>Engine\Core\Utility</Filter>
     </ClInclude>
@@ -816,8 +821,8 @@
     <ClInclude Include="Framework\UISelectionGroup.h">
       <Filter>Framework</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\Component\AudioSourceComponent.h">
-      <Filter>Framework\Component</Filter>
+    <ClInclude Include="Framework\Component\Audio\AudioSourceComponent.h">
+      <Filter>Framework\Component\Audio</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Component.h">
       <Filter>Framework\Component</Filter>
@@ -852,8 +857,8 @@
     <ClInclude Include="Framework\Component\Renderer\ModelBatchRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\Component\Renderer\ParticleEmitterComponent.h">
-      <Filter>Framework\Component\Renderer</Filter>
+    <ClInclude Include="Framework\Component\Effect\ParticleEmitterComponent.h">
+      <Filter>Framework\Component\Effect</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Renderer\PrimitiveRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
@@ -864,9 +869,10 @@
     <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Framework\Component\Script\RotatorComponent.h">
-      <Filter>Framework\Component\Script</Filter>
+    <ClInclude Include="Framework\Component\Effect\VoxelParticleComponent.h">
+      <Filter>Framework\Component\Effect</Filter>
     </ClInclude>
+
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h">
       <Filter>Framework\Component\UI</Filter>
     </ClInclude>
@@ -897,9 +903,7 @@
     <ClInclude Include="Renderer\Object\Effect\Effect.h">
       <Filter>Renderer\Object\Effect</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object\Effect\WeaponTrail.h">
-      <Filter>Renderer\Object\Effect</Filter>
-    </ClInclude>
+
     <ClInclude Include="Renderer\Object\Line\LineClass.h">
       <Filter>Renderer\Object\Line</Filter>
     </ClInclude>

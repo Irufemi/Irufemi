@@ -60,7 +60,8 @@ void RailShooterEnemyComponent::TakeDamage(int damage) {
         hp_ = 0;
         isActive_ = false;
         if (gameObject_) {
-            gameObject_->SetIsActive(false); // 死亡して非アクティブ化
+            gameObject_->SetIsActive(false); // 表示・更新を停止
+            gameObject_->Destroy();          // シーンから完全に削除する
         }
     }
 }

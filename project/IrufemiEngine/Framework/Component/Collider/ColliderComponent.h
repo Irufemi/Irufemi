@@ -15,10 +15,10 @@ public:
     // レイヤーの定義（ビットマスク）
     enum CollisionLayer : uint32_t {
         Default = 1 << 0,
-        Player  = 1 << 1,
-        Enemy   = 1 << 2,
-        Bullet  = 1 << 3,
-        Wall    = 1 << 4,
+        Layer1  = 1 << 1,
+        Layer2  = 1 << 2,
+        Layer3  = 1 << 3,
+        Layer4  = 1 << 4,
         All     = 0xFFFFFFFF
     };
 

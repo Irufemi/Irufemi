@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "AudioManager.h"
 #include <cassert>
 #include <filesystem> // フォルダ内のファイルを探索するために使用
@@ -37,15 +38,15 @@ void AudioManager::Initialize() {
 
     // Media Foundationの初期化
     HRESULT hr = MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // XAudio2エンジンの生成
     hr = XAudio2Create(&pXAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // マスターボイスの生成
     hr = pXAudio2_->CreateMasteringVoice(&pMasteringVoice_);
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 }
 
 void AudioManager::Finalize() {
@@ -63,7 +64,7 @@ void AudioManager::Finalize() {
     pXAudio2_.Reset();
     
     HRESULT hr = MFShutdown();
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 }
 
 bool AudioManager::IsManagedVoice(std::shared_ptr<VoiceInstance> instance) const {
@@ -185,11 +186,11 @@ std::weak_ptr<VoiceInstance> AudioManager::Play(std::shared_ptr<Sound> soundData
 
     // バッファをソースボイスに送信
     hr = pSourceVoice->SubmitSourceBuffer(&buffer);
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // 再生開始
     hr = pSourceVoice->Start(0);
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // 管理インスタンスを生成してリストに追加
     auto instance = std::make_shared<VoiceInstance>(pSourceVoice, std::move(callback));

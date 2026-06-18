@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "AnimationModel.h"
 
 #include "Engine/IrufemiEngine.h"
@@ -28,7 +29,7 @@ AnimationModel::~AnimationModel() {
 void AnimationModel::Initialize(const std::string& filename) {
     filename_ = filename;
 
-    assert(engine_ && "AnimationModel::Initialize: ModelManager is not set.");
+    IRUFEMI_ASSERT(engine_ && "AnimationModel::Initialize: ModelManager is not set.");
     // 非同期で読み込みを開始し、メインスレッドをブロックしない
     managedModel_ = engine_->GetObjModelManager()->GetModelAsync(filename);
 
@@ -45,7 +46,7 @@ void AnimationModel::InitializeResources() {
     }
 
     // 4. 変換行列リソースの生成とマップ (全メッシュ共有用)
-    assert(engine_->GetDrawManager() && "DrawManager is not set.");
+    IRUFEMI_ASSERT(engine_->GetDrawManager() && "DrawManager is not set.");
     if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         transformCbIndex_ = engine_->GetTransformBufferManager()->Allocate();
     }
@@ -73,7 +74,7 @@ void AnimationModel::InitializeResources() {
         meshResources_.push_back(std::move(res));
     }
 
-    assert(engine_ && "AnimationModel::Initialize: AnimationManager is not set.");
+    IRUFEMI_ASSERT(engine_ && "AnimationModel::Initialize: AnimationManager is not set.");
     animation_ = engine_->GetAnimationManager()->LoadAnimationFile(filename_);
 
     // Skeletonの生成

@@ -11,13 +11,32 @@
 #include "Component/Collider/SphereColliderComponent.h"
 #include "Component/Collider/OBBColliderComponent.h"
 #include "Component/Collider/RaycastComponent.h"
-#include "Component/Script/RotatorComponent.h"
+#include "Engine/IrufemiEngine.h"
+#include <atomic>
+
+static std::atomic<uint64_t> s_nextInstanceId{ 1 };
+
+GameObject::GameObject() : instanceId_(s_nextInstanceId++) {
+}
+
+GameObject::GameObject(const std::string& name) : instanceId_(s_nextInstanceId++), name_(name) {
+}
+
 void GameObject::Initialize() {
     for (auto& comp : components_) {
         comp->Initialize();
     }
     for (auto& child : children_) {
         child->Initialize();
+    }
+}
+
+void GameObject::SetName(const std::string& name) {
+    if (name_ == name) return;
+    std::string oldName = name_;
+    name_ = name;
+    if (scene_) {
+        scene_->OnGameObjectNameChanged(shared_from_this(), oldName, name);
     }
 }
 
@@ -32,11 +51,25 @@ void GameObject::SetScene(BaseScene* scene) {
 
 void GameObject::Update(bool isPlayMode) {
     if (!isActive_) return;
+
+    bool isPaused = false;
+    if (scene_) {
+        if (auto engine = scene_->GetEngine()) {
+            isPaused = (engine->GetTimeScale() == 0.0f);
+        }
+    }
+
     for (auto& comp : components_) {
         // PlayModeでない場合は、エディタで更新可能なコンポーネントのみ更新する
         if (!isPlayMode && !comp->CanUpdateInEditMode()) {
             continue;
         }
+
+        // ポーズ中（TimeScale == 0.0f）かつ、ポーズ中も動作する設定になっていない場合はスキップ
+        if (isPlayMode && isPaused && !comp->CanUpdateWhenPaused()) {
+            continue;
+        }
+
         comp->Update();
     }
     for (auto& child : children_) {
@@ -151,7 +184,10 @@ void GameObject::RemoveComponent(Component* component) {
 nlohmann::json GameObject::Serialize() const {
     nlohmann::json j;
     j["name"] = name_;
+    j["tag"] = tag_;
     j["isActive"] = isActive_;
+    j["isFolder"] = isFolder_;
+    j["isLocked"] = isLocked_;
     
     nlohmann::json comps = nlohmann::json::array();
     for (const auto& comp : components_) {
@@ -173,7 +209,10 @@ nlohmann::json GameObject::Serialize() const {
 
 void GameObject::Deserialize(const nlohmann::json& j) {
     if (j.contains("name")) name_ = j["name"];
+    if (j.contains("tag")) tag_ = j["tag"];
     if (j.contains("isActive")) isActive_ = j["isActive"];
+    if (j.contains("isFolder")) isFolder_ = j["isFolder"];
+    if (j.contains("isLocked")) isLocked_ = j["isLocked"];
     
     if (j.contains("components")) {
         std::vector<std::shared_ptr<Component>> loadedComps;
@@ -216,8 +255,13 @@ void GameObject::Deserialize(const nlohmann::json& j) {
 std::shared_ptr<GameObject> GameObject::Clone() {
     auto clone = std::make_shared<GameObject>();
     clone->Deserialize(this->Serialize());
-    // クローン時は必要に応じて "(Clone)" などを付与
-    clone->SetName(this->GetName() + " (Clone)");
+    
+    if (scene_) {
+        clone->SetName(scene_->GetUniqueObjectName(this->GetName()));
+    } else {
+        clone->SetName(this->GetName() + " (Clone)");
+    }
+    
     return clone;
 }
 

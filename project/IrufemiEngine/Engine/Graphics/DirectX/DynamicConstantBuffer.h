@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include <d3d12.h>
 #include <wrl.h>
 #include <array>
@@ -34,7 +35,7 @@ public:
      * @param capacity 確保する最大要素数（例: 65536）
      */
     void Initialize(DirectXCommon* dxCommon, uint32_t capacity) {
-        assert(dxCommon != nullptr);
+        IRUFEMI_ASSERT(dxCommon != nullptr);
         dxCommon_ = dxCommon;
         capacity_ = capacity;
         // 定数バッファは256バイトアライメント必須
@@ -43,7 +44,7 @@ public:
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
             resources_[i] = dxCommon_->CreateBufferResource(elementAlignedSize_ * capacity_);
             HRESULT hr = resources_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedRawData_[i]));
-            assert(SUCCEEDED(hr));
+            ASSERT_IF_FAILED(hr);
         }
     }
 
@@ -57,7 +58,7 @@ public:
             freeIndices_.pop_back();
             return index;
         }
-        assert(nextIndex_ < capacity_ && "DynamicConstantBuffer capacity exceeded!");
+        IRUFEMI_ASSERT(nextIndex_ < capacity_ && "DynamicConstantBuffer capacity exceeded!");
         return nextIndex_++;
     }
 

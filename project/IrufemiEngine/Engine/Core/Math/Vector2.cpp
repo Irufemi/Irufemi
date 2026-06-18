@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Vector2.h"
 #include <stdexcept>
 #include <cassert>
@@ -37,7 +38,10 @@ Vector2& Vector2::operator*=(float s) {
 }
 
 Vector2& Vector2::operator/=(float s) {
-	assert(s != 0.0f && "Division by zero");
+	if (s == 0.0f) {
+		IRUFEMI_WARNING(false, "Vector2: Division by zero");
+		return *this;
+	}
 	const float inv = 1.0f / s;
 	x *= inv;
 	y *= inv;
@@ -69,7 +73,10 @@ Vector2 operator*(float s, Vector2 v) {
 }
 
 Vector2 operator/(Vector2 v, float s) {
-	assert(s != 0.0f && "Division by zero");
+	if (s == 0.0f) {
+		IRUFEMI_WARNING(false, "Vector2: Division by zero");
+		return v;
+	}
 	const float inv = 1.0f / s;
 	return { v.x * inv, v.y * inv };
 }

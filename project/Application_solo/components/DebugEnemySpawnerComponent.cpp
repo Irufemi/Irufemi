@@ -22,16 +22,14 @@ void DebugEnemySpawnerComponent::Update() {
 
         auto scene = gameObject_->GetScene();
         if (scene) {
-            for (auto& obj : scene->GetGameObjects()) {
-                if (obj && obj->GetName() == "Player") {
-                    if (auto transform = obj->GetComponent<TransformComponent>()) {
-                        // プレイヤーの現在位置から Z軸前方に 50m、XYはランダムに散らす
-                        spawnPos = transform->position_;
-                        spawnPos.z += 50.0f;
-                        spawnPos.x += Random::GeneratorFloat(-10.0f, 10.0f);
-                        spawnPos.y += Random::GeneratorFloat(-5.0f, 5.0f);
-                    }
-                    break;
+            auto playerObj = scene->FindGameObject("Player");
+            if (playerObj) {
+                if (auto transform = playerObj->GetComponent<TransformComponent>()) {
+                    // プレイヤーの現在位置から Z軸前方に 50m、XYはランダムに散らす
+                    spawnPos = transform->position_;
+                    spawnPos.z += 50.0f;
+                    spawnPos.x += Random::GeneratorFloat(-10.0f, 10.0f);
+                    spawnPos.y += Random::GeneratorFloat(-5.0f, 5.0f);
                 }
             }
         }

@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DrawManager.h"
 using namespace RenderPackets;
 
@@ -217,9 +218,9 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     // 2. コマンドリストとアロケータのリセット (現在のフレーム用)
     ID3D12CommandAllocator* allocator = dxCommon_->GetCommandAllocator();
     HRESULT hr = allocator->Reset();
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     hr = commandList_->Reset(allocator, nullptr);
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // フレーム開始時に、ポーズ中でSetFrameDataが呼ばれなくてもバッファが常に同期待ちにならないようキャッシュを現在のバッファへコピーする
     SyncCachedFrameData();
@@ -291,7 +292,7 @@ void DrawManager::PostDraw() {
 
     //コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
     HRESULT hr = commandList_->Close();
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     ///コマンドをキックする
 
@@ -390,6 +391,7 @@ void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
 
 
 void DrawManager::SubmitSprite(const Object2DResource* resource) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     SpritePacket p{};
     p.resource = resource;
@@ -400,6 +402,7 @@ void DrawManager::SubmitSprite(const Object2DResource* resource) {
 }
 
 void DrawManager::SubmitTopMostSprite(const Object2DResource* resource) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     SpritePacket p{};
     p.resource = resource;
@@ -428,6 +431,7 @@ void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
 }
 
 void DrawManager::SubmitSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     spriteBatchQueue_.push_back(packet);
 }
 
@@ -446,6 +450,7 @@ void DrawManager::DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet
 }
 
 void DrawManager::SubmitTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     topMostSpriteBatchQueue_.push_back(packet);
 }
 
@@ -454,6 +459,7 @@ void DrawManager::DrawTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket&
 }
 
 void DrawManager::SubmitText(const Object2DResource* resource) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     SpritePacket p{};
     p.resource = resource;
@@ -464,6 +470,7 @@ void DrawManager::SubmitText(const Object2DResource* resource) {
 }
 
 void DrawManager::SubmitTopMostText(const Object2DResource* resource) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     SpritePacket p{};
     p.resource = resource;
@@ -492,6 +499,7 @@ void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
 
 
 void DrawManager::SubmitModelBatch(const ModelBatchPacket& packet) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     modelBatchQueue_.push_back(packet);
 }
 
@@ -524,6 +532,7 @@ void DrawManager::DrawModelBatch(const RenderPackets::ModelBatchPacket& packet) 
 }
 
 void DrawManager::SubmitPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     primitiveBatchQueue_.push_back(packet);
 }
 
@@ -547,6 +556,7 @@ void DrawManager::DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& 
 }
 
 void DrawManager::SubmitLineInstanced(const LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource || instanceCount == 0) return;
     LinePacket p{};
     p.resource = resource;
@@ -607,6 +617,7 @@ void DrawManager::ExecuteUAVBarrier(ID3D12Resource* resource) {
 }
 
 void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     SkyboxPacket p{};
     p.vertexBufferView = vertexBufferView;
     p.indexBufferView = indexBufferView;
@@ -643,6 +654,7 @@ void DrawManager::DrawSkybox(const RenderPackets::SkyboxPacket& packet) {
 }
 
 void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows, ID3D12Resource* vertexBufferResourceOverride) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     Standard3DPacket p{};
     p.resource = resource;
@@ -658,6 +670,7 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12
 }
 
 void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     Standard3DPacket p{};
     p.resource = resource;
@@ -671,6 +684,7 @@ void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTE
 }
 
 void DrawManager::SubmitOutlineMask(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     Standard3DPacket p{};
     p.resource = resource;
@@ -684,6 +698,7 @@ void DrawManager::SubmitOutlineMask(const Object3DResource* resource, const D3D1
 }
 
 void DrawManager::SubmitTextOutlineMask(const Object2DResource* resource) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     SpritePacket p{};
     p.resource = resource;
@@ -736,6 +751,7 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
 
 
 void DrawManager::SubmitGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (packet.instanceCount == 0) return;
     gpuParticleQueue_.push_back(packet);
 }
@@ -795,6 +811,7 @@ void DrawManager::SubmitVoxelParticle(
     ID3D12Resource* particleResource,
     ID3D12PipelineState* drawPSO
 ) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     if (instanceCount == 0) return;
     VoxelParticlePacket p{};
     p.instanceCount = instanceCount;
@@ -1076,6 +1093,7 @@ void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
 }
 
 void DrawManager::ClearRenderQueues() {
+    std::lock_guard<std::mutex> lock(queueMutex_);
     standard3DQueue_.clear();
     ui3DQueue_.clear();
     selectionMaskQueue_.clear();

@@ -4,10 +4,15 @@
 #include <ostream>  
 #include <string>  
 
+#include <vector>
+
 class Log
 {
 private: // メンバ変数  
     std::ofstream logStream;
+    static std::vector<std::string> logHistory_; // ログの履歴バッファ
+    static const size_t MAX_LOG_LINES = 1000;    // メモリ保護のための最大行数
+
 public: // メンバ関数  
     /// <summary>  
     /// 初期化  
@@ -19,4 +24,14 @@ public: // メンバ関数
 
     // 出力ウィンドウに文字を出す  
     static void OutPutLog(std::ostream& os, const std::string& message);
+
+    /**
+     * @brief 現在のログ履歴を取得します（エディタのコンソールパネル用）
+     */
+    static const std::vector<std::string>& GetLogHistory() { return logHistory_; }
+
+    /**
+     * @brief ログ履歴をクリアします
+     */
+    static void ClearLogHistory() { logHistory_.clear(); }
 };

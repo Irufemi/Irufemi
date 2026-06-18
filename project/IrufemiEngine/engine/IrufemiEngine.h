@@ -46,6 +46,7 @@ class CameraManager;
 class CollisionManager;
 class GPUParticleManager;
 class PrimitiveManager;
+#include "Core/System/ThreadPool.h"
 
 /**
  * @class IrufemiEngine
@@ -210,8 +211,10 @@ public: // ゲッター
     TextureManager* GetTextureManager() { return this->textureManager_.get(); }
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
-    CameraManager* GetCameraManager() { return cameraManager_.get(); }
-    CollisionManager* GetCollisionManager() { return collisionManager_.get(); }
+    CameraManager* GetCameraManager() const { return cameraManager_.get(); }
+    CollisionManager* GetCollisionManager() const { return collisionManager_.get(); }
+    VoxelParticleManager* GetVoxelParticleManager() const { return voxelParticleManager_.get(); }
+    ThreadPool* GetThreadPool() const { return threadPool_.get(); }
     GPUParticleManager* GetGPUParticleManager() { return gpuParticleManager_.get(); }
     PrimitiveManager* GetPrimitiveManager() { return primitiveManager_.get(); }
     /** 
@@ -234,7 +237,8 @@ public: // ゲッター
     ///@}
 
     // 時間関連のゲッター
-    float GetDeltaTime() const { return deltaTime_; }
+    float GetDeltaTime() const { return gameDeltaTime_; } // タイムスケール適用済みの時間を返す
+    float GetRealDeltaTime() const { return deltaTime_; } // 実時間を返す
     float GetTotalTime() const { return totalTime_; }
     
     // 追加: ポーズ対応のゲーム内時間関連
@@ -379,6 +383,9 @@ private: // メンバ変数
     // PrimitiveManager
     std::unique_ptr<PrimitiveManager> primitiveManager_ = nullptr;
 
+    // ThreadPool
+    std::unique_ptr<ThreadPool> threadPool_ = nullptr;
+
     // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };
     float timeScale_ = 1.0f;
@@ -410,7 +417,11 @@ private: // メンバ変数
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
     bool isFinalized_ = false; // 終了処理済みフラグ
 
+    bool sceneRequestedCursorLock_ = false;
     bool isPlayMode_ = true;
     std::weak_ptr<GameObject> selectedObject_;
-    bool sceneRequestedCursorLock_ = false;
+#if defined(_DEBUG) || defined(EditorMode)
+    std::unique_ptr<class DirectoryWatcher> shaderWatcher_ = nullptr;
+    std::atomic<bool> shouldReloadShaders_{false};
+#endif
 };

@@ -15,6 +15,7 @@ class TextureManager;
 class SceneManager;
 class IrufemiEngine;
 class DirectXCommon;
+class ThreadPool;
 class Object3DResource;
 class Object2DResource;
 struct Material;
@@ -212,6 +213,11 @@ public: // メンバ関数
      * @brief ポストプロセス調整タブの表示
      */
     void PostProcessTab(IrufemiEngine* engine);
+
+    /**
+     * @brief ThreadPool の監視タブの表示
+     */
+    void ThreadPoolTab(ThreadPool* pool);
 
     /**
      * @brief 統合デバッグウィンドウの開始

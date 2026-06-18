@@ -213,6 +213,9 @@ public: // メンバ関数
 
     Matrix4x4 GetViewProjectionMatrix3D();
 
+    const float& GetNearZ() const { return nearZ_; }
+    const float& GetFarZ() const { return farZ_; }
+
 
     /**
      * @brief ワールド行列を再計算します

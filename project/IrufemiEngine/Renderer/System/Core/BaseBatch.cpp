@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "../../System/Core/BaseBatch.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Core/Shape/Sphere.h"
@@ -49,7 +50,7 @@ void BaseBatch::SetInstanceColor(uint32_t index, const Vector4& color) {
         instanceColors_[index] = color;
         instanceDirty_ = true;
     } else {
-        assert(false && "BaseBatch::SetInstanceColor: index out of range");
+        IRUFEMI_ASSERT(false && "BaseBatch::SetInstanceColor: index out of range");
     }
 }
 
@@ -106,7 +107,7 @@ void BaseBatch::UpdateInstance(uint32_t index, const Transform& t) {
         instances_[index] = t;
         instanceDirty_ = true;
     } else {
-        assert(false && "BaseBatch::UpdateInstance: index out of range");
+        IRUFEMI_ASSERT(false && "BaseBatch::UpdateInstance: index out of range");
     }
 }
 
@@ -127,7 +128,7 @@ void BaseBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
         instanceBuffer_[frameIndex] = dx_->CreateBufferResource(sizeInBytes);
 
         if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {
-            assert(srvPool_);
+            IRUFEMI_ASSERT(srvPool_);
             uint32_t idx = srvPool_->Allocate();
             if (idx == DescriptorPool::kInvalid) { OutputDebugStringA("BaseBatch SRV allocate failed\n"); return; }
             instancingSrvIndex_[frameIndex] = idx;
@@ -238,7 +239,7 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
     lastUpdateFrameIndex_ = frameIndex;
     uint8_t* dst = nullptr;
     HRESULT hr = instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&dst));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     std::memcpy(dst, temp.data(), sizeof(InstanceData) * visibleInstanceCount_);
     instanceBuffer_[frameIndex]->Unmap(0, nullptr);
 

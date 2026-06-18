@@ -1,12 +1,42 @@
 #include "ShaderManager.h"
 #include <cassert>
+#include <fstream>
+#include <vector>
+#include <filesystem>
+
+#ifndef RUNTIME_SHADER_COMPILE
+// IDxcBlob を自作して dxcompiler.dll への依存を無くす
+class CustomBlob : public IDxcBlob {
+    std::vector<uint8_t> data_;
+    ULONG refCount_ = 1;
+public:
+    CustomBlob(std::vector<uint8_t>&& data) : data_(std::move(data)) {}
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv) override {
+        if (!ppv) return E_POINTER;
+        if (riid == __uuidof(IUnknown) || riid == __uuidof(IDxcBlob)) {
+            *ppv = this; AddRef(); return S_OK;
+        }
+        *ppv = nullptr; return E_NOINTERFACE;
+    }
+    ULONG STDMETHODCALLTYPE AddRef() override { return ++refCount_; }
+    ULONG STDMETHODCALLTYPE Release() override {
+        ULONG r = --refCount_;
+        if (r == 0) delete this;
+        return r;
+    }
+    LPVOID STDMETHODCALLTYPE GetBufferPointer() override { return data_.data(); }
+    SIZE_T STDMETHODCALLTYPE GetBufferSize() override { return data_.size(); }
+};
+#endif
 
 /**
  * @brief 初期化
  */
 void ShaderManager::Initialize() {
+#ifdef RUNTIME_SHADER_COMPILE
     compiler_ = std::make_unique<ShaderCompiler>();
     compiler_->Initialize();
+#endif
 }
 
 /**
@@ -31,9 +61,25 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(
         return it->second;
     }
 
-    // 3. コンパイル
+    // 3. コンパイルまたはCSO読み込み
+    Microsoft::WRL::ComPtr<IDxcBlob> blob;
+#ifdef RUNTIME_SHADER_COMPILE
     std::wstring profile = profileOverride ? profileOverride : ShaderCompiler::GetInferredProfile(filePath);
-    auto blob = compiler_->Compile(filePath, profile.c_str(), options);
+    blob = compiler_->Compile(filePath, profile.c_str(), options);
+#else
+    // Releaseビルドでは .cso を読み込む
+    std::filesystem::path path(filePath);
+    path.replace_extension(L".cso");
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (file.is_open()) {
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+        std::vector<uint8_t> buffer(size);
+        if (file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+            blob = new CustomBlob(std::move(buffer));
+        }
+    }
+#endif
     
     // 4. キャッシュに登録
     if (blob) {
@@ -41,6 +87,27 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(
     }
 
     return blob;
+}
+
+/**
+ * @brief シェーダーを強制的に再コンパイル（または再読み込み）する
+ */
+Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::ReloadShader(
+    const std::wstring& filePath,
+    const ShaderCompileOptions& options,
+    const wchar_t* profileOverride
+) {
+    ShaderKey key;
+    key.filePath = filePath;
+    key.entryPoint = options.entryPoint;
+    key.macros = options.macros;
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        cache_.erase(key);
+    }
+
+    return GetOrCompile(filePath, options, profileOverride);
 }
 
 /**

@@ -9,7 +9,7 @@
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "../../Engine/Graphics/Data/VertexData.h"
 
-#include <cassert>
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include <filesystem>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -117,7 +117,7 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
 Vector3 AnimationManager::CalculateValue(const std::vector<KeyframeVector3>& keyframes, float time) {
 
     // まずは関数の先頭で特殊なケースを除外しておく
-    assert(!keyframes.empty()); // キーがないものは返す値がわからないのでダメ
+    IRUFEMI_ASSERT(!keyframes.empty()); // キーがないものは返す値がわからないのでダメ
     if (keyframes.size() == 1 || time <= keyframes[0].time) { // キーが1つか、時刻がキーフレーム前なら最初の値とする
         return keyframes[0].value;
     }
@@ -142,7 +142,7 @@ Vector3 AnimationManager::CalculateValue(const std::vector<KeyframeVector3>& key
 Quaternion AnimationManager::CalculateValue(const std::vector<KeyframeQuaternion>& keyframes, float time) {
 
     // まずは関数の先頭で特殊なケースを除外しておく
-    assert(!keyframes.empty()); // キーがないものは返す値がわからないのでダメ
+    IRUFEMI_ASSERT(!keyframes.empty()); // キーがないものは返す値がわからないのでダメ
     if (keyframes.size() == 1 || time <= keyframes[0].time) { // キーが1つか、時刻がキーフレーム前なら最初の値とする
         return keyframes[0].value;
     }
@@ -167,7 +167,7 @@ Quaternion AnimationManager::CalculateValue(const std::vector<KeyframeQuaternion
 Vector3 AnimationManager::CalculateValue(const AnimationCurve<Vector3>& keyframes, float time) {
 
     // まずは関数の先頭で特殊なケースを除外しておく
-    assert(!keyframes.keyframes.empty()); // キーがないものは返す値がわからないのでダメ
+    IRUFEMI_ASSERT(!keyframes.keyframes.empty()); // キーがないものは返す値がわからないのでダメ
     if (keyframes.keyframes.size() == 1 || time <= keyframes.keyframes[0].time) { // キーが1つか、時刻がキーフレーム前なら最初の値とする
         return keyframes.keyframes[0].value;
     }
@@ -192,7 +192,7 @@ Vector3 AnimationManager::CalculateValue(const AnimationCurve<Vector3>& keyframe
 Quaternion AnimationManager::CalculateValue(const AnimationCurve<Quaternion>& keyframes, float time) {
 
     // まずは関数の先頭で特殊なケースを除外しておく
-    assert(!keyframes.keyframes.empty()); // キーがないものは返す値がわからないのでダメ
+    IRUFEMI_ASSERT(!keyframes.keyframes.empty()); // キーがないものは返す値がわからないのでダメ
     if (keyframes.keyframes.size() == 1 || time <= keyframes.keyframes[0].time) { // キーが1つか、時刻がキーフレーム前なら最初の値とする
         return keyframes.keyframes[0].value;
     }
@@ -375,7 +375,7 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
 
         // SRV用のインデックスを確保
         uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
-        assert(paletteSrvIndex != DescriptorPool::kInvalid);
+        IRUFEMI_ASSERT(paletteSrvIndex != DescriptorPool::kInvalid);
         skinCluster.paletteSrvHandle[i].first = dxCommon_->GetSrvPool()->GetCPUHandle(paletteSrvIndex);
         skinCluster.paletteSrvHandle[i].second = dxCommon_->GetSrvPool()->GetGPUHandle(paletteSrvIndex);
 
@@ -453,7 +453,7 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
         skinCluster.mappedPalette[i] = { mappedPallete, skeleton.joints.size() };
 
         uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
-        assert(paletteSrvIndex != DescriptorPool::kInvalid);
+        IRUFEMI_ASSERT(paletteSrvIndex != DescriptorPool::kInvalid);
         skinCluster.paletteSrvHandle[i].first = dxCommon_->GetSrvPool()->GetCPUHandle(paletteSrvIndex);
         skinCluster.paletteSrvHandle[i].second = dxCommon_->GetSrvPool()->GetGPUHandle(paletteSrvIndex);
 
@@ -481,7 +481,7 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
 
     // influence用SRV
     uint32_t influenceSrvIndex = dxCommon_->GetSrvPool()->Allocate();
-    assert(influenceSrvIndex != DescriptorPool::kInvalid);
+    IRUFEMI_ASSERT(influenceSrvIndex != DescriptorPool::kInvalid);
     skinCluster.influenceSrvHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(influenceSrvIndex);
     skinCluster.influenceSrvHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(influenceSrvIndex);
 
@@ -523,7 +523,7 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
         skinCluster.skinnedVertexResource[i] = dxCommon_->CreateUAVBufferResource(sizeof(VertexData) * totalVertices);
         // UAV
         uint32_t skinnedVertexUavIndex = dxCommon_->GetSrvPool()->Allocate();
-        assert(skinnedVertexUavIndex != DescriptorPool::kInvalid);
+        IRUFEMI_ASSERT(skinnedVertexUavIndex != DescriptorPool::kInvalid);
         skinCluster.skinnedVertexUavHandle[i].first = dxCommon_->GetSrvPool()->GetCPUHandle(skinnedVertexUavIndex);
         skinCluster.skinnedVertexUavHandle[i].second = dxCommon_->GetSrvPool()->GetGPUHandle(skinnedVertexUavIndex);
 
@@ -537,7 +537,7 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
 
         // SRV
         uint32_t skinnedVertexSrvIndex = dxCommon_->GetSrvPool()->Allocate();
-        assert(skinnedVertexSrvIndex != DescriptorPool::kInvalid);
+        IRUFEMI_ASSERT(skinnedVertexSrvIndex != DescriptorPool::kInvalid);
         skinCluster.skinnedVertexSrvHandle[i].first = dxCommon_->GetSrvPool()->GetCPUHandle(skinnedVertexSrvIndex);
         skinCluster.skinnedVertexSrvHandle[i].second = dxCommon_->GetSrvPool()->GetGPUHandle(skinnedVertexSrvIndex);
 
@@ -568,7 +568,7 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
 // SkinClusterの更新
 void AnimationManager::SkinClusterUpdate(SkinCluster& skinCluster, const Skeleton& skeleton, uint32_t frameIndex) {
     for (size_t jointIndex = 0; jointIndex < skeleton.joints.size(); ++jointIndex) {
-        assert(jointIndex < skinCluster.inverseBindPoseMatrices.size());
+        IRUFEMI_ASSERT(jointIndex < skinCluster.inverseBindPoseMatrices.size());
         skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix = skinCluster.inverseBindPoseMatrices[jointIndex] * skeleton.joints[jointIndex].skeletonSpaceMatrix;
         skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceInverseTransposeMatrix = Math::Transpose(Math::Inverse(skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix));
     }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include <d3d12.h>
 #include <wrl.h>
 #include <array>
@@ -25,14 +26,14 @@ public:
 
     // バッファを生成しマッピングする（kMaxFramesInFlight分）
     void Initialize(DirectXCommon* dxCommon) {
-        assert(dxCommon != nullptr);
+        IRUFEMI_ASSERT(dxCommon != nullptr);
         dxCommon_ = dxCommon;
         // 定数バッファの制約：サイズは256バイトの倍数
         size_t alignedSize = (sizeof(T) + 255) & ~255;
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
             resources_[i] = dxCommon_->CreateBufferResource(alignedSize);
             HRESULT hr = resources_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedData_[i]));
-            assert(SUCCEEDED(hr));
+            ASSERT_IF_FAILED(hr);
         }
     }
 

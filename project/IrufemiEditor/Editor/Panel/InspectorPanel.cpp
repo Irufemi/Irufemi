@@ -26,6 +26,11 @@ void InspectorPanel::Draw() {
     ImGui::Begin("Inspector");
 
     if (auto selected = editorManager_->GetSelectedObject()) {
+        bool isLocked = selected->GetIsLocked();
+        if (isLocked) {
+            ImGui::BeginDisabled();
+        }
+
         char nameBuffer[256];
         strncpy_s(nameBuffer, selected->GetName().c_str(), sizeof(nameBuffer) - 1);
         
@@ -81,29 +86,17 @@ void InspectorPanel::Draw() {
                     existingComponents.insert(name);
                     
                     if (name == "TransformComponent") hasTransform = true;
-                    if (name.find("Renderer") != std::string::npos || name.find("Emitter") != std::string::npos) {
+                    if (name.find("Renderer") != std::string::npos) {
                         hasAnyRenderer = true;
                     }
                 }
 
                 // カテゴリ分類
                 std::map<std::string, std::vector<std::string>> categories;
-                for (const auto& [name, func] : ComponentFactory::GetFactoryMap()) {
+                for (const auto& [name, reg] : ComponentFactory::GetFactoryMap()) {
                     if (name == "TransformComponent") continue; // 個別処理
                     
-                    if (name.find("Renderer") != std::string::npos || name.find("Emitter") != std::string::npos) {
-                        categories["Renderer"].push_back(name);
-                    } else if (name.find("Collider") != std::string::npos || name.find("Raycast") != std::string::npos) {
-                        categories["Collider"].push_back(name);
-                    } else if (name.find("Audio") != std::string::npos) {
-                        categories["Audio"].push_back(name);
-                    } else if (name.find("Camera") != std::string::npos) {
-                        categories["Camera"].push_back(name);
-                    } else if (name.find("Button") != std::string::npos || name.find("Canvas") != std::string::npos || name.find("UI") != std::string::npos) {
-                        categories["UI"].push_back(name);
-                    } else {
-                        categories["Scripts / Other"].push_back(name);
-                    }
+                    categories[reg.category].push_back(name);
                 }
 
                 if (!hasTransform) {
@@ -173,6 +166,10 @@ void InspectorPanel::Draw() {
                 
                 ImGui::EndPopup();
             }
+        }
+        
+        if (isLocked) {
+            ImGui::EndDisabled();
         }
     } else {
         ImGui::Text("No object selected.");

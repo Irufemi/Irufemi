@@ -43,6 +43,12 @@ public:
     virtual bool CanUpdateInEditMode() const { return false; }
 
     /**
+     * @brief ポーズ時（TimeScale == 0.0f）にUpdateを実行するかどうか
+     * @details デフォルトはfalse（ポーズ中は実行しない）。UIやエフェクトなど、ポーズ中でもアニメーションさせたい場合はtrueを返す。
+     */
+    virtual bool CanUpdateWhenPaused() const { return false; }
+
+    /**
      * @brief 描画処理（レンダラー系コンポーネントでオーバーライド）
      */
     virtual void Draw() {}

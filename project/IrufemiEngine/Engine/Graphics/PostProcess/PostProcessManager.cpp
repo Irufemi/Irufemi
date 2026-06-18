@@ -444,67 +444,100 @@ void PostProcessManager::CreatePSOs() {
   }
 
   // --- ブルーム用個別 PSO ---
-  auto extractPS = shaderManager->GetOrCompile(L"resources/shaders/HighLuminanceExtract.PS.hlsl", options);
-  auto blurPS = shaderManager->GetOrCompile(L"resources/shaders/GaussianBlur.PS.hlsl", options);
-  auto combinePS = shaderManager->GetOrCompile(L"resources/shaders/BloomCombine.PS.hlsl", options);
+    auto extractPS = shaderManager->GetOrCompile(L"resources/shaders/HighLuminanceExtract.PS.hlsl", options);
+    auto blurPS = shaderManager->GetOrCompile(L"resources/shaders/GaussianBlur.PS.hlsl", options);
+    auto combinePS = shaderManager->GetOrCompile(L"resources/shaders/BloomCombine.PS.hlsl", options);
 
-  D3D12_GRAPHICS_PIPELINE_STATE_DESC bloomDesc{};
-  bloomDesc.pRootSignature = rootSig_;
-  bloomDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
-  bloomDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-  bloomDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-  bloomDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-  bloomDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-  bloomDesc.DepthStencilState.DepthEnable = FALSE;
-  bloomDesc.DepthStencilState.StencilEnable = FALSE;
-  bloomDesc.InputLayout = {nullptr, 0};
-  bloomDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-  bloomDesc.NumRenderTargets = 1;
-  bloomDesc.RTVFormats[0] = rtvFormat_;
-  bloomDesc.SampleDesc.Count = 1;
+    if (extractPS && blurPS && combinePS) {
+      D3D12_GRAPHICS_PIPELINE_STATE_DESC bloomDesc{};
+      bloomDesc.pRootSignature = rootSig_;
+      bloomDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+      bloomDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+      bloomDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+      bloomDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+      bloomDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+      bloomDesc.DepthStencilState.DepthEnable = FALSE;
+      bloomDesc.DepthStencilState.StencilEnable = FALSE;
+      bloomDesc.InputLayout = {nullptr, 0};
+      bloomDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+      bloomDesc.NumRenderTargets = 1;
+      bloomDesc.RTVFormats[0] = rtvFormat_;
+      bloomDesc.SampleDesc.Count = 1;
 
-  bloomDesc.PS = {extractPS->GetBufferPointer(), extractPS->GetBufferSize()};
-  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomExtractPSO_));
+      bloomDesc.PS = {extractPS->GetBufferPointer(), extractPS->GetBufferSize()};
+      device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomExtractPSO_));
 
-  bloomDesc.PS = {blurPS->GetBufferPointer(), blurPS->GetBufferSize()};
-  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurHPSO_));
-  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurVPSO_));
+      bloomDesc.PS = {blurPS->GetBufferPointer(), blurPS->GetBufferSize()};
+      device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurHPSO_));
+      device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurVPSO_));
 
-    bloomDesc.PS = {combinePS->GetBufferPointer(), combinePS->GetBufferSize()};
-    bloomDesc.RTVFormats[0] = rtvFormat_; // 中間パス用 (_UNORM)
-    device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomCombinePSO_));
+      bloomDesc.PS = {combinePS->GetBufferPointer(), combinePS->GetBufferSize()};
+      bloomDesc.RTVFormats[0] = rtvFormat_; // 中間パス用 (_UNORM)
+      device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomCombinePSO_));
 
-    bloomDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // 最終パス用 (_SRGB)
-    device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&finalBloomCombinePSO_));
+      bloomDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // 最終パス用 (_SRGB)
+      device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&finalBloomCombinePSO_));
+    }
 
     // --- 統合ポストプロセス用 PSO ---
     auto combinedPS = shaderManager->GetOrCompile(L"resources/shaders/PostProcess.PS.hlsl", options);
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC combinedDesc = bloomDesc; // ベースを流用
-    combinedDesc.PS = {combinedPS->GetBufferPointer(), combinedPS->GetBufferSize()};
-    
-    // 中間パス用
-    combinedDesc.RTVFormats[0] = rtvFormat_;
-    device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&combinedPSO_));
-    // 最終パス用
-    combinedDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&finalCombinedPSO_));
+    if (combinedPS) {
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC combinedDesc{}; // ベースを流用
+        combinedDesc.pRootSignature = rootSig_;
+        combinedDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+        combinedDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        combinedDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        combinedDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        combinedDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        combinedDesc.DepthStencilState.DepthEnable = FALSE;
+        combinedDesc.DepthStencilState.StencilEnable = FALSE;
+        combinedDesc.InputLayout = {nullptr, 0};
+        combinedDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        combinedDesc.NumRenderTargets = 1;
+        combinedDesc.SampleDesc.Count = 1;
+        combinedDesc.PS = {combinedPS->GetBufferPointer(), combinedPS->GetBufferSize()};
+        
+        // 中間パス用
+        combinedDesc.RTVFormats[0] = rtvFormat_;
+        device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&combinedPSO_));
+        // 最終パス用
+        combinedDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&finalCombinedPSO_));
+    }
 
     // --- 分離可能フィルタ用 PSO ---
     auto boxBlurPS = shaderManager->GetOrCompile(L"resources/shaders/BoxBlur.PS.hlsl", options);
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC sepDesc = bloomDesc;
-    sepDesc.RTVFormats[0] = rtvFormat_;
-    
-    sepDesc.PS = {boxBlurPS->GetBufferPointer(), boxBlurPS->GetBufferSize()};
-    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&smoothingBlurPSO_));
-    sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalSmoothingBlurPSO_));
-
-    sepDesc.RTVFormats[0] = rtvFormat_;
     auto gaussianPS = shaderManager->GetOrCompile(L"resources/shaders/GaussianFilter.PS.hlsl", options);
-    sepDesc.PS = {gaussianPS->GetBufferPointer(), gaussianPS->GetBufferSize()};
-    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&gaussianBlurPSO_));
-    sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalGaussianBlurPSO_));
+    
+    if (boxBlurPS && gaussianPS) {
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC sepDesc{};
+        sepDesc.pRootSignature = rootSig_;
+        sepDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+        sepDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        sepDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        sepDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        sepDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        sepDesc.DepthStencilState.DepthEnable = FALSE;
+        sepDesc.DepthStencilState.StencilEnable = FALSE;
+        sepDesc.InputLayout = {nullptr, 0};
+        sepDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        sepDesc.NumRenderTargets = 1;
+        sepDesc.SampleDesc.Count = 1;
+
+        // BoxBlur PSO
+        sepDesc.RTVFormats[0] = rtvFormat_;
+        sepDesc.PS = {boxBlurPS->GetBufferPointer(), boxBlurPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&smoothingBlurPSO_));
+        sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalSmoothingBlurPSO_));
+
+        // GaussianFilter PSO
+        sepDesc.RTVFormats[0] = rtvFormat_;
+        sepDesc.PS = {gaussianPS->GetBufferPointer(), gaussianPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&gaussianBlurPSO_));
+        sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalGaussianBlurPSO_));
+    }
 }
 
 void PostProcessManager::CreateConstantBuffers() {

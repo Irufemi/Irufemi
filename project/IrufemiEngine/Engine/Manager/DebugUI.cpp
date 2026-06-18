@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #define NOMINMAX
 #include "DebugUI.h"
 #include <Windows.h>
@@ -43,6 +44,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Engine/Graphics/Data/LightningParams.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Graphics/Pipeline/RenderGraph/RenderGraph.h"
+#include "Engine/Core/System/ThreadPool.h"
 
 // 静的宣言
 std::unique_ptr<PointLight> DebugUI::templatePointLight_;
@@ -114,7 +116,7 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
 
     // ImGui用にディスクリプタを1つ確保
     srvIndex_ = srvPool->Allocate();
-    assert(srvIndex_ != DescriptorPool::kInvalid);
+    IRUFEMI_ASSERT(srvIndex_ != DescriptorPool::kInvalid);
 
     ImGui_ImplDX12_Init(
         dxCommon->GetDevice(),
@@ -1338,6 +1340,45 @@ void DebugUI::DebugLightning([[maybe_unused]] LightningParams* params) {
         ImGui::DragFloat("Core Scale", &params->coreScale, 0.01f, 0.01f, 20.0f);
         
         ImGui::TreePop();
+    }
+#endif
+}
+
+void DebugUI::ThreadPoolTab(ThreadPool* pool) {
+#ifdef USE_IMGUI
+    if (!pool) return;
+
+    if (ImGui::BeginTabItem("ThreadPool")) {
+        size_t total = pool->GetTotalThreadCount();
+        size_t active = pool->GetActiveThreadCount();
+        size_t queued = pool->GetQueuedTaskCount();
+        size_t completed = pool->PopCompletedTaskCount();
+
+        ImGui::Text("Worker Threads: %zu", total);
+        ImGui::Text("Active Threads: %zu", active);
+        ImGui::Text("Queued Tasks: %zu", queued);
+        ImGui::Text("Completed Tasks / Frame: %zu", completed);
+
+        ImGui::Separator();
+
+        // 稼働率の可視化
+        float usage = total > 0 ? static_cast<float>(active) / static_cast<float>(total) : 0.0f;
+        char overlay[32];
+        snprintf(overlay, sizeof(overlay), "%zu / %zu (%.1f%%)", active, total, usage * 100.0f);
+        
+        // 色を変えてプログレスバーを描画
+        if (usage >= 1.0f) {
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.0f, 0.2f, 0.2f, 1.0f)); // Red (Busy)
+        } else if (usage > 0.0f) {
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.2f, 0.8f, 0.2f, 1.0f)); // Green (Working)
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.3f, 0.3f, 0.3f, 1.0f)); // Gray (Idle)
+        }
+        
+        ImGui::ProgressBar(usage, ImVec2(-1.0f, 24.0f), overlay);
+        ImGui::PopStyleColor();
+
+        ImGui::EndTabItem();
     }
 #endif
 }

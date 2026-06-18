@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "GPUParticleSystem.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Core/Shape/Sphere.h"
@@ -52,10 +53,10 @@ GPUParticleSystem::~GPUParticleSystem() {
 // 初期化
 void GPUParticleSystem::Initialize(const std::string &textureName) {
 
-  assert(dxCommon_);
-  assert(drawManager_);
-  assert(textureManager_);
-  assert(engine_);
+  IRUFEMI_ASSERT(dxCommon_);
+  IRUFEMI_ASSERT(drawManager_);
+  IRUFEMI_ASSERT(textureManager_);
+  IRUFEMI_ASSERT(engine_);
 
   CreateBuffersAndViews();
 
@@ -304,6 +305,8 @@ void GPUParticleSystem::SyncBeforeDraw() {
       billboardMatrix_.m[3][2] = 0.0f;
       perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
       perViewBuffer_[frameIndex]->worldPosition = activeCam->GetTranslate();
+      perViewBuffer_[frameIndex]->cameraNear = activeCam->GetNearZ();
+      perViewBuffer_[frameIndex]->cameraFar = activeCam->GetFarZ();
     }
   }
 
@@ -369,6 +372,8 @@ void GPUParticleSystem::Draw() {
       billboardMatrix_.m[3][2] = 0.0f;
       perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
       perViewBuffer_[frameIndex]->worldPosition = activeCam->GetTranslate();
+      perViewBuffer_[frameIndex]->cameraNear = activeCam->GetNearZ();
+      perViewBuffer_[frameIndex]->cameraFar = activeCam->GetFarZ();
     }
   }
 

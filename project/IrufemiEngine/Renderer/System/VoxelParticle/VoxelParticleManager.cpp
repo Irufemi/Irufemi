@@ -20,7 +20,7 @@ void VoxelParticleManager::ReservePool(const std::string& modelName, const Vecto
     }
 }
 
-VoxelParticleSystem* VoxelParticleManager::AllocateSystem(const std::string& modelName) {
+VoxelParticleSystem* VoxelParticleManager::AllocateSystem(const std::string& modelName, const Vector3Int& resolution) {
     auto& poolData = pools_[modelName];
     size_t size = poolData.systems.size();
 
@@ -60,7 +60,7 @@ VoxelParticleSystem* VoxelParticleManager::AllocateSystem(const std::string& mod
     // 3. フォールバック：ロード完了しているものが1つも存在しない場合のみ、安全上限（60）を越えない範囲で新規生成を許可
     if (totalSystemCount_ < 60) {
         auto voxel = std::make_unique<VoxelParticleSystem>();
-        voxel->Initialize(modelName, {32, 32, 32}); 
+        voxel->Initialize(modelName, resolution); 
         poolData.systems.push_back(std::move(voxel));
         totalSystemCount_++;
         return poolData.systems.back().get();
@@ -102,13 +102,11 @@ void VoxelParticleManager::PlayExplosion(const std::string& modelName,
                                          const Vector3& velocity, 
                                          const Vector3& rotate, 
                                          const Vector3& scale,
-                                         VoxelParticleSystem::ParticleType type) {
-    auto system = AllocateSystem(modelName);
+                                         const VoxelParticleSystem::VoxelEmitterParams& params,
+                                         const Vector3Int& resolution) {
+    auto system = AllocateSystem(modelName, resolution);
     if (system) {
-        system->SetParticleType(type);
-        if (type == VoxelParticleSystem::ParticleType::Building) {
-            system->SetGravity(40.0f);
-        }
+        system->SetParameters(params);
         system->Explode(position, velocity, rotate, scale);
     }
 }
@@ -119,13 +117,11 @@ void VoxelParticleManager::PlayCollisionScatter(const std::string& modelName,
                                                 const Vector3& rotate, 
                                                 const Vector3& scale, 
                                                 const struct OBB& collisionArea,
-                                                VoxelParticleSystem::ParticleType type) {
-    auto system = AllocateSystem(modelName);
+                                                const VoxelParticleSystem::VoxelEmitterParams& params,
+                                                const Vector3Int& resolution) {
+    auto system = AllocateSystem(modelName, resolution);
     if (system) {
-        system->SetParticleType(type);
-        if (type == VoxelParticleSystem::ParticleType::Building) {
-            system->SetGravity(40.0f);
-        }
+        system->SetParameters(params);
         system->CollisionScatter(position, velocity, rotate, scale, collisionArea);
     }
 }

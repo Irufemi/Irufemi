@@ -19,5 +19,6 @@ enum class RootSlot : UINT {
     Special = 7,          ///< 特殊用 (GSなど) (register b6) - ALL
     EnvMap = 8,           ///< 環境マップ/深度 (register t1) - PS
     LineInstancing = 9,   ///< ライン用インスタンシング (register t1) - VS
-    ShadowMap = 10,        ///< シャドウマップ (register t5) - PS
+    ShadowMap = 10,       ///< シャドウマップ (register t5) - PS
+    DepthMap = 11,        ///< メイン深度マップ (register t6) - PS
 };

@@ -1,4 +1,4 @@
-﻿#include "SceneViewPanel.h"
+#include "SceneViewPanel.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Framework/SceneManager.h"
 
@@ -11,6 +11,7 @@
 #include "Engine/Manager/CollisionManager.h"
 #include "../Core/EditorActionManager.h"
 #include "../Core/EditorDragDrop.h"
+#include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Framework/GameObject.h"
 #include "Framework/IScene.h"
@@ -36,29 +37,6 @@ void SceneViewPanel::Draw() {
     if (!editorManager_) return;
 
     ImGui::Begin("Scene");
-
-    // 繝・ヰ繝・げ邱壹・謠冗判ON/OFF
-    bool* drawCollider = editorManager_->GetEngine()->GetCollisionManager()->GetIsDrawDebugLinePtr();
-    if (drawCollider) {
-        ImGui::Checkbox("Draw Colliders", drawCollider);
-    }
-    
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Translate", currentGizmoOperation_ == ImGuizmo::TRANSLATE)) currentGizmoOperation_ = ImGuizmo::TRANSLATE;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Rotate", currentGizmoOperation_ == ImGuizmo::ROTATE)) currentGizmoOperation_ = ImGuizmo::ROTATE;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Scale", currentGizmoOperation_ == ImGuizmo::SCALE)) currentGizmoOperation_ = ImGuizmo::SCALE;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Bounds", currentGizmoOperation_ == ImGuizmo::BOUNDS)) currentGizmoOperation_ = ImGuizmo::BOUNDS;
-    
-    ImGui::SameLine();
-    ImGui::Text("|");
-    ImGui::SameLine();
-    
-    if (ImGui::RadioButton("Local", currentGizmoMode_ == ImGuizmo::LOCAL)) currentGizmoMode_ = ImGuizmo::LOCAL;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("World", currentGizmoMode_ == ImGuizmo::WORLD)) currentGizmoMode_ = ImGuizmo::WORLD;
 
     auto* engine = editorManager_->GetEngine();
     if (engine && engine->GetMainRenderTexture()) {
@@ -89,6 +67,9 @@ void SceneViewPanel::Draw() {
 
         // --- 驕ｸ謚樔ｸｭ縺ｮSprite縺ｫ蟇ｾ縺吶ｋ繧｢繧ｦ繝医Λ繧､繝ｳ・亥ｼｷ隱ｿ譫・画緒逕ｻ ---
         if (auto selectedObj = editorManager_->GetSelectedObject()) {
+            // ビューポート領域でクリッピングを行い、アウトラインが画面外（他のパネル等）にはみ出さないようにする
+            ImGui::GetWindowDrawList()->PushClipRect(minPos, maxPos, true);
+
             if (auto spriteComp = selectedObj->GetComponent<SpriteRendererComponent>()) {
                 if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
                     auto sprite = spriteComp->GetSprite();
@@ -131,10 +112,12 @@ void SceneViewPanel::Draw() {
                     ImGui::GetWindowDrawList()->AddRect(pMin, pMax, IM_COL32(0, 255, 255, 255), 0.0f, 0, 2.0f);
                 }
             }
+
+            ImGui::GetWindowDrawList()->PopClipRect();
         }
 
         DrawImGuizmo(minPos, size);
-        HandleDragAndDrop();
+        HandleDragAndDrop(minPos, size);
 
         // --- UI逕ｨ縺ｮ莉ｮ諠ｳ繝槭え繧ｹ蠎ｧ讓呎峩譁ｰ & 繧ｯ繝ｪ繝・け縺ｫ繧医ｋ3D繝斐ャ繧ｭ繝ｳ繧ｰ ---
         if (ImGui::IsWindowHovered()) {
@@ -155,6 +138,17 @@ void SceneViewPanel::Draw() {
                 }
 
                 HandlePicking(mousePos, minPos, maxPos, size);
+                
+                // Fキーによるフォーカス機能
+                if (ImGui::IsKeyPressed(ImGuiKey_F)) {
+                    if (auto selectedObj = editorManager_->GetSelectedObject()) {
+                        if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
+                            if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+                                cameraController_.Focus(camera, transform->worldPosition_);
+                            }
+                        }
+                    }
+                }
             } else {
                 engine->GetInputManager()->SetVirtualMousePosition({0.0f, 0.0f}, false);
             }
@@ -163,6 +157,40 @@ void SceneViewPanel::Draw() {
                 engine->GetInputManager()->SetVirtualMousePosition({0.0f, 0.0f}, false);
             }
         }
+
+        // --- オーバーレイUI（SceneViewの右上） ---
+        ImVec2 overlayPos = ImVec2(maxPos.x - 300.0f, minPos.y + 10.0f);
+        ImGui::SetCursorScreenPos(overlayPos);
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.8f)); // 半透明背景
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+        if (ImGui::BeginChild("SceneOverlay", ImVec2(290.0f, 65.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+            bool* drawCollider = engine->GetCollisionManager()->GetIsDrawDebugLinePtr();
+            if (drawCollider) {
+                ImGui::Checkbox("Draw Colliders", drawCollider);
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Local", currentGizmoMode_ == ImGuizmo::LOCAL)) currentGizmoMode_ = ImGuizmo::LOCAL;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("World", currentGizmoMode_ == ImGuizmo::WORLD)) currentGizmoMode_ = ImGuizmo::WORLD;
+
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
+            if (ImGui::RadioButton(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT "##T", currentGizmoOperation_ == ImGuizmo::TRANSLATE)) currentGizmoOperation_ = ImGuizmo::TRANSLATE;
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Translate");
+            ImGui::SameLine();
+            if (ImGui::RadioButton(ICON_FA_ROTATE "##R", currentGizmoOperation_ == ImGuizmo::ROTATE)) currentGizmoOperation_ = ImGuizmo::ROTATE;
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Rotate");
+            ImGui::SameLine();
+            if (ImGui::RadioButton(ICON_FA_EXPAND "##S", currentGizmoOperation_ == ImGuizmo::SCALE)) currentGizmoOperation_ = ImGuizmo::SCALE;
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Scale");
+            ImGui::SameLine();
+            if (ImGui::RadioButton(ICON_FA_VECTOR_SQUARE "##B", currentGizmoOperation_ == ImGuizmo::BOUNDS)) currentGizmoOperation_ = ImGuizmo::BOUNDS;
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bounds");
+            ImGui::PopStyleVar();
+
+            ImGui::EndChild();
+        }
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
     }
 
     ImGui::End();
@@ -174,6 +202,9 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
 
     auto* engine = editorManager_->GetEngine();
     if (auto selectedObj = editorManager_->GetSelectedObject()) {
+        // ロックされている、またはフォルダの場合はギズモを非表示・操作不可にする
+        if (selectedObj->GetIsLocked() || selectedObj->GetIsFolder()) return;
+
         if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
             Matrix4x4 view = camera->GetViewMatrix();
             Matrix4x4 proj = camera->GetPerspectiveFovMatrix();
@@ -256,12 +287,40 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
     }
 }
 
-void SceneViewPanel::HandleDragAndDrop() {
+void SceneViewPanel::HandleDragAndDrop(ImVec2 minPos, ImVec2 size) {
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadAssetPath)) {
             std::string droppedPathStr = static_cast<const char*>(payload->Data);
+            
+            Vector3 dropPos = {0.0f, 0.0f, 0.0f};
+            auto* engine = editorManager_->GetEngine();
+            if (engine) {
+                if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+                    ImVec2 mousePos = ImGui::GetMousePos();
+                    Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
+                    float scaleX = 1280.0f / size.x;
+                    float scaleY = 720.0f / size.y;
+                    Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
+                    
+                    Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
+                    Matrix4x4 invViewProj = Math::Inverse(viewProj);
+                    Ray ray = Math::ScreenPointToRay(scaledVirtualPos, 1280.0f, 720.0f, invViewProj);
+                    
+                    if (std::abs(ray.diff.y) > 0.001f) {
+                        float t = -ray.origin.y / ray.diff.y;
+                        if (t > 0.0f) {
+                            dropPos = ray.origin + ray.diff * t;
+                        } else {
+                            dropPos = ray.origin + ray.diff * 10.0f;
+                        }
+                    } else {
+                        dropPos = ray.origin + ray.diff * 10.0f;
+                    }
+                }
+            }
+
             if (auto am = editorManager_->GetActionManager()) {
-                am->CreateObjectFromAsset(droppedPathStr);
+                am->CreateObjectFromAsset(droppedPathStr, dropPos);
             }
         }
         ImGui::EndDragDropTarget();

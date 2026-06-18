@@ -43,6 +43,12 @@ public:
     void Deserialize(const nlohmann::json& j) override;
 
     /**
+     * @brief 現在読み込まれているモデル名を取得します。
+     * @return モデル名
+     */
+    const std::string& GetModelName() const { return modelName_; }
+
+    /**
      * @brief バッチ描画するインスタンスを追加します。
      * @param t インスタンスのローカルトランスフォーム（またはワールド）
      */

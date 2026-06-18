@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <nlohmann/json.hpp>
 #include "Component/Component.h"
+#include "Engine/Core/System/ComponentPool.h"
 
 class BaseScene;
 
@@ -15,9 +16,13 @@ class BaseScene;
  */
 class GameObject : public std::enable_shared_from_this<GameObject> {
 public:
-    GameObject() = default;
-    GameObject(const std::string& name) : name_(name) {}
+    GameObject();
+    GameObject(const std::string& name);
     ~GameObject() = default;
+
+    uint64_t GetInstanceID() const { return instanceId_; }
+    const std::string& GetTag() const { return tag_; }
+    void SetTag(const std::string& tag) { tag_ = tag; }
 
     void Initialize();
     void Update(bool isPlayMode = true);
@@ -38,7 +43,13 @@ public:
      */
     template<typename T, typename... Args>
     std::shared_ptr<T> AddComponent(Args&&... args) {
-        auto component = std::make_shared<T>(std::forward<Args>(args)...);
+        std::shared_ptr<T> component;
+        if constexpr (IsPooledComponent<T>::value) {
+            component = ComponentPool<T>::GetInstance().Create(std::forward<Args>(args)...);
+        } else {
+            component = std::make_shared<T>(std::forward<Args>(args)...);
+        }
+        
         component->SetGameObject(this);
         
         components_.push_back(component);
@@ -78,7 +89,7 @@ public:
 
     // --- アクセッサ ---
     const std::string& GetName() const { return name_; }
-    void SetName(const std::string& name) { name_ = name; }
+    void SetName(const std::string& name);
     void SetIsActive(bool isActive) { isActive_ = isActive; }
     bool GetIsActive() const { return isActive_; }
 
@@ -112,11 +123,22 @@ public:
      */
     std::shared_ptr<GameObject> Instantiate(const std::string& prefabPath, const Vector3& position = {0,0,0});
 
+    // --- エディタ用フラグ ---
+    void SetIsFolder(bool isFolder) { isFolder_ = isFolder; }
+    bool GetIsFolder() const { return isFolder_; }
+    void SetIsLocked(bool isLocked) { isLocked_ = isLocked; }
+    bool GetIsLocked() const { return isLocked_; }
+
 private:
+    uint64_t instanceId_ = 0;
+    std::string tag_ = "Untagged";
     std::string name_ = "GameObject";
     bool isActive_ = true;
     bool isDestroyed_ = false;
+    bool isFolder_ = false;
+    bool isLocked_ = false;
     BaseScene* scene_ = nullptr;
+
     
     std::weak_ptr<GameObject> parent_;
     std::vector<std::shared_ptr<GameObject>> children_;

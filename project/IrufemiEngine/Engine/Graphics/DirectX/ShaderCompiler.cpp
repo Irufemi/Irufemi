@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "ShaderCompiler.h"
 #include "../../Core/Utility/Log.h"
 #include "../../Core/Utility/StringUtility.h"
@@ -10,11 +11,11 @@
  */
 void ShaderCompiler::Initialize() {
     HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(dxcUtils_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(dxcCompiler_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     hr = dxcUtils_->CreateDefaultIncludeHandler(includeHandler_.GetAddressOf());
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 }
 
 /**
@@ -33,7 +34,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
     HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
     if (FAILED(hr)) {
-        assert(false && "Failed to load shader file.");
+        IRUFEMI_ASSERT(false && "Failed to load shader file.");
         return nullptr;
     }
 
@@ -80,7 +81,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
         includeHandler_.Get(),
         IID_PPV_ARGS(&shaderResult)
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // 4. エラー・警告の確認
     Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError;
@@ -103,13 +104,13 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
             fclose(f);
         }
         
-        assert(false && "Shader Compile Error");
+        IRUFEMI_ASSERT(false && "Shader Compile Error");
     }
 
     // 5. コンパイル済みバイナリの取得
     Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob;
     hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return shaderBlob;
 }

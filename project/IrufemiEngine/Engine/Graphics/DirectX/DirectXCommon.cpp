@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DirectXCommon.h"
 
 #include "Resource/Texture/TextureUtility.h"
@@ -5,8 +6,8 @@
 #include <cassert>
 #include <vector>
 #include <comdef.h>
-
 #include "../../Core/Utility/Log.h"
+#include "../../Core/Utility/ErrorUtility.h"
 #include "../../Core/Utility/StringUtility.h"
 #include "../../../../externals/DirectXTex/d3dx12.h"
 #include <algorithm>
@@ -127,6 +128,15 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootSignatureManager_ = std::make_unique<DXRootSignatureManager>();
     rootSignatureManager_->Initialize(device_.Get(), log_);
     CreatePSOs();
+
+    CreateDepthSRV();
+}
+
+void DirectXCommon::CreateDepthSRV() {
+    if (depthSRVIndex_ == DescriptorPool::kInvalid) {
+        depthSRVIndex_ = srvPool_->Allocate();
+    }
+    srvPool_->CreateSRVForTexture2D(depthSRVIndex_, swapChainManager_->GetDepthStencilResource(), DXGI_FORMAT_R24_UNORM_X8_TYPELESS, 1);
 }
 
 void DirectXCommon::EnableDebugLayer() {
@@ -143,7 +153,7 @@ void DirectXCommon::EnableDebugLayer() {
 void DirectXCommon::InitializeDXGI() {
     //DXGIFactoryの生成
     HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 }
 
 void DirectXCommon::CreateDevice() {
@@ -152,7 +162,7 @@ void DirectXCommon::CreateDevice() {
     for (UINT i = 0; dxgiFactory_->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(useAdapter.GetAddressOf())) != DXGI_ERROR_NOT_FOUND; i++) {
         DXGI_ADAPTER_DESC3 adapterDesc{};
         HRESULT hr = useAdapter->GetDesc3(&adapterDesc);
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
         if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
             // std::format が環境によって不安定な可能性があるため、wstringstream等で代用するか、ワイド文字版が正しく動作することを確認
             std::wstring adapterName = adapterDesc.Description;
@@ -161,7 +171,7 @@ void DirectXCommon::CreateDevice() {
         }
         useAdapter = nullptr;
     }
-    assert(useAdapter != nullptr);
+    IRUFEMI_ASSERT(useAdapter != nullptr);
 
     ///D3D12Deviceの生成
     D3D_FEATURE_LEVEL featureLevels[] = {
@@ -175,7 +185,7 @@ void DirectXCommon::CreateDevice() {
             break;
         }
     }
-    assert(device_ != nullptr);
+    IRUFEMI_ASSERT(device_ != nullptr);
     Log::OutPutLog(log_->GetLogStream(), "Complete create D3D12Device!!!\n");
 
     if (useAdapter) { useAdapter.Reset(); }
@@ -210,6 +220,32 @@ void DirectXCommon::SetInfoQueue() {
 
 
 void DirectXCommon::CreatePSOs() {
+    // --- 入力レイアウト定義 ---
+    D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "WEIGHT",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "INDEX",    0, DXGI_FORMAT_R32G32B32A32_SINT,  1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+    };
+
+    // --- PSOManagerの初期化 ---
+    psoManager_ = std::make_unique<PSOManager>();
+    psoManager_->Initialize(
+        device_.Get(),
+        GetRootSignature(),
+        { inputElementDescs, _countof(inputElementDescs) },
+        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+        DXGI_FORMAT_D24_UNORM_S8_UINT,
+        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
+    );
+
+    // --- シェーダコンパイルと登録 ---
+    RegisterAllShaders();
+}
+
+void DirectXCommon::RegisterAllShaders() {
     // --- シェーダコンパイル設定 ---
     ShaderCompileOptions options;
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
@@ -242,7 +278,6 @@ void DirectXCommon::CreatePSOs() {
     auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
     auto vsShadowSkin = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", options);
 
-
 #ifdef EditorMode
     auto vsSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.VS.hlsl", options);
     auto psSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.PS.hlsl", options);
@@ -260,27 +295,6 @@ void DirectXCommon::CreatePSOs() {
     auto csVoxelInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeVoxel.CS.hlsl", options);
     auto csVoxelEmit = shaderManager_->GetOrCompile(L"resources/shaders/EmitVoxel.CS.hlsl", options);
     auto csVoxelUpdate = shaderManager_->GetOrCompile(L"resources/shaders/UpdateVoxel.CS.hlsl", options);
-
-    // --- 入力レイアウト定義 ---
-    D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "WEIGHT",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "INDEX",    0, DXGI_FORMAT_R32G32B32A32_SINT,  1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-    };
-
-    // --- PSOManagerの初期化 ---
-    psoManager_ = std::make_unique<PSOManager>();
-    psoManager_->Initialize(
-        device_.Get(),
-        GetRootSignature(),
-        { inputElementDescs, _countof(inputElementDescs) },
-        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-        DXGI_FORMAT_D24_UNORM_S8_UINT,
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
-    );
 
     // --- 各種シェーダの登録 ---
     psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });
@@ -380,7 +394,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
     descriptorHeapDesc.NumDescriptors = numDescriptors;
     descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     HRESULT hr = device_->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(descriptorHeap.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     return descriptorHeap;
 
 }
@@ -408,6 +422,10 @@ D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVCPUDescriptorHandle(uint32_t in
 
 D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t index) {
     return swapChainManager_->GetDSVGPUDescriptorHandle(index);
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetReadOnlyDSVCPUDescriptorHandle() {
+    return swapChainManager_->GetDSVCPUDescriptorHandle(1);
 }
 
 uint32_t DirectXCommon::AllocateRTVIndex() {
@@ -450,7 +468,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_
     //実際に頂点リソースを作る
     Microsoft::WRL::ComPtr<ID3D12Resource> bufferResource = nullptr;
     HRESULT hr = device_->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(bufferResource.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return bufferResource;
 
@@ -478,7 +496,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateUAVBufferResource(si
         D3D12_RESOURCE_STATE_COMMON,
         nullptr,
         IID_PPV_ARGS(bufferResource.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return bufferResource;
 }
@@ -576,7 +594,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(cons
         nullptr, //Clear最適値。使わないのでnullptr
         IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     return resource;
 }
 
@@ -594,7 +612,15 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
     if (GetFileAttributesW(filePathW.c_str()) == INVALID_FILE_ATTRIBUTES) {
         std::wstring msg = L"[LoadTexture] File not found: " + filePathW + L"\n";
         OutputDebugStringW(msg.c_str());
-        assert(false && "Texture file not found");
+        
+        // フォールバック: 1x1のマゼンタ色テクスチャを返す
+        ScratchImage fallbackImage;
+        fallbackImage.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, 1);
+        uint8_t* pixels = fallbackImage.GetPixels();
+        if (pixels) {
+            pixels[0] = 255; pixels[1] = 0; pixels[2] = 255; pixels[3] = 255;
+        }
+        return fallbackImage;
     }
 
     // --- sRGB 判定ロジック ---
@@ -641,7 +667,15 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
 #endif
         msg += L"\n";
         OutputDebugStringW(msg.c_str());
-        assert(false && "LoadTexture failed");
+        
+        // フォールバック: 1x1のマゼンタ色テクスチャを返す
+        ScratchImage fallbackImage;
+        fallbackImage.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, 1);
+        uint8_t* pixels = fallbackImage.GetPixels();
+        if (pixels) {
+            pixels[0] = 255; pixels[1] = 0; pixels[2] = 255; pixels[3] = 255;
+        }
+        return fallbackImage;
     }
 
     ScratchImage mipImages{};
@@ -656,7 +690,8 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
             _com_error err(hr);
             std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(static_cast<unsigned long>(hr)) + L")\n";
             OutputDebugStringW(msg.c_str());
-            assert(false && "GenerateMipMaps failed");
+            // ミップマップ生成に失敗した場合は、元の画像をそのまま返す
+            return image;
         }
     }
 
@@ -716,13 +751,13 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureR
         &depthClearValue, //Clear最適値
         IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return resource;
 }
 
 UINT DirectXCommon::GetBackBufferIndex(const Microsoft::WRL::ComPtr<IDXGISwapChain4>& swapChain) {
-    assert(swapChain != nullptr);
+    IRUFEMI_ASSERT(swapChain != nullptr);
     return swapChain->GetCurrentBackBufferIndex();
 }
 
@@ -772,7 +807,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
     descriptorHeapDesc.NumDescriptors = numDescriptors;
     descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(descriptorHeap.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     return descriptorHeap;
 
 }
@@ -815,7 +850,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResourc
 		pClearValue, // Clear最適値。指定がなければnullptr
 		IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
 	);
-	assert(SUCCEEDED(hr));
+	ASSERT_IF_FAILED(hr);
 	return resource;
 }
 
@@ -832,6 +867,7 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
 
     // DXSwapChainManager 側でバッファ再構築
     swapChainManager_->ResizeSwapChain(device_.Get(), width, height);
+    CreateDepthSRV(); // 追加: リサイズ後にSRVを作り直す
 
     // ビューポートとシザーレクトの更新
     viewport_.Width = static_cast<float>(width);

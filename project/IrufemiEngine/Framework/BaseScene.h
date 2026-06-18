@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <mutex>
+#include <unordered_map>
 #include "Engine/Core/Math/Vector3.h"
 
 // 前方宣言
@@ -90,6 +92,36 @@ public:
         return nullptr;
     }
 
+    /**
+     * @brief オブジェクトの名前から該当する shared_ptr の GameObject を探して返す（O(1)検索・最初に見つかったものを返す）
+     */
+    std::shared_ptr<GameObject> FindGameObject(const std::string& name);
+
+    /**
+     * @brief 指定した名前を持つすべての GameObject を返す
+     */
+    std::vector<std::shared_ptr<GameObject>> FindGameObjects(const std::string& name);
+
+    /**
+     * @brief インスタンスIDから該当する GameObject を探して返す
+     */
+    std::shared_ptr<GameObject> FindGameObjectByID(uint64_t instanceId);
+
+    /**
+     * @brief 指定したタグを持つ全てのGameObjectを取得する
+     */
+    std::vector<std::shared_ptr<GameObject>> FindGameObjectsWithTag(const std::string& tag);
+
+    /**
+     * @brief シーン内で一意となるGameObject名を生成する (エディタ・複製用)
+     */
+    std::string GetUniqueObjectName(const std::string& baseName);
+
+    /**
+     * @brief GameObjectの名前が変更された際にインデックスを更新するためのコールバック
+     */
+    void OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName, const std::string& newName);
+
     // --- ライフサイクル関数 ---
     
     /**
@@ -133,7 +165,13 @@ protected:
     IrufemiEngine* engine_ = nullptr;
 
     // --- オブジェクト管理 ---
+    std::mutex sceneMutex_;
     std::vector<std::shared_ptr<GameObject>> gameObjects_;
+    std::vector<std::shared_ptr<GameObject>> pendingAdds_;
+    std::vector<std::shared_ptr<GameObject>> pendingRemoves_;
+    
+    // 高速検索(O(1))用インデックス (同名複数登録対応)
+    std::unordered_map<std::string, std::vector<std::weak_ptr<GameObject>>> nameIndex_;
 
     // --- コア機能 ---
     std::unique_ptr<DebugCamera> debugCamera_;

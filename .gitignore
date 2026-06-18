@@ -23,6 +23,7 @@ project/logs/
 *.ilk
 *.aps
 *.ncb
+*.cso
 *.opendb
 *.opensdf
 *.sdf
@@ -110,3 +111,9 @@ debuglog.txt
 /project/Dumps
 /logs/
 /project/Application/Dumps
+.env
+
+# ====================================================================
+# Cache files (PSO etc)
+# ====================================================================
+**/resources/cache/

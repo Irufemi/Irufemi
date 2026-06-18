@@ -1,6 +1,7 @@
 /*テクスチャを貼ろう*/
 
 #include "ParticleGPU.hlsli"
+#include "DepthFade.hlsli"
 
 /*三角形の色を変えよう*/
 
@@ -18,6 +19,8 @@ struct PixelShaderOutput
 ///Textureを使う
 
 Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
+Texture2D<float> gDepthTexture : register(t6); // ソフトパーティクル用深度テクスチャ
+
 SamplerState gSamplerWrap : register(s0); //Samplerのregisterはs
 SamplerState gSamplerClamp : register(s1);
 SamplerState gSamplerWrapClamp : register(s4); // U:Wrap, V:Clamp
@@ -59,6 +62,14 @@ PixelShaderOutput main(VertexShaderOutput input)
 	{
 		discard;
 	}
+	
+	/*ソフトパーティクル計算*/
+	
+	float softScale = 1.0f; // TODO: 必要ならマテリアルやエミッターパラメータに出す
+	float fade = CalculateDepthFade(gDepthTexture, input.position, input.cameraNear, input.cameraFar, softScale);
+	
+	// αにフェードを適用
+	output.color.a *= fade;
 	
 	
 	return output;

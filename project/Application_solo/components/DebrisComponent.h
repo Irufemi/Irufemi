@@ -8,6 +8,7 @@ enum class DebrisState {
     Idle,       ///< 漂流中（自然な浮遊）
     Pulled,     ///< プレイヤーに引き寄せられている
     Orbiting,   ///< プレイヤーの周囲を回転浮遊中
+    BossOrbiting, ///< ボスの周囲を回転浮遊中
     Thrown      ///< 敵へ向かってホーミング中
 };
 
@@ -26,10 +27,10 @@ public:
     std::string GetComponentName() const override { return "DebrisComponent"; }
 
     // 状態変更用のインターフェース
-    void SetState(DebrisState newState) { state_ = newState; }
+    void SetState(DebrisState newState);
     DebrisState GetState() const { return state_; }
 
-    void SetTarget(GameObject* target) { targetObject_ = target; }
+    void SetTarget(std::weak_ptr<GameObject> target) { targetObject_ = target; }
     void SetOrbitParams(float angle, float radius) { orbitAngle_ = angle; orbitRadius_ = radius; }
     void SetThrowDirection(const Vector3& dir) { throwDirection_ = dir; }
 
@@ -43,19 +44,26 @@ private:
     DebrisManagerComponent* manager_ = nullptr;
     
     // 追従・目標用の対象
-    GameObject* targetObject_ = nullptr;
+    std::weak_ptr<GameObject> targetObject_;
     
-    // Orbiting（疑似浮遊）用のパラメータ
-    float orbitAngle_ = 0.0f;
-    float orbitRadius_ = 2.0f;
-    float orbitSpeed_ = 2.0f;
-    
-    // 各種移動用のパラメータ
+    // パラメータ
     float pullSpeed_ = 10.0f;
     float throwSpeed_ = 50.0f;
-    Vector3 throwDirection_ = {0.0f, 0.0f, 1.0f};
-    
-    // Idle時のフワフワアニメーション用
-    float idleTimeY_ = 0.0f;
+    float orbitSpeed_ = 2.0f;
+    float orbitRadius_ = 2.0f;
+
+    // 内部状態
     float baseIdleY_ = 0.0f;
+    float idleTimeY_ = 0.0f;
+    float orbitAngle_ = 0.0f;
+    Vector3 throwDirection_ = {0,0,0};
+
+    // ボス用Orbitパラメータ
+    float bossOrbitAngleX_ = 0.0f;
+    float bossOrbitAngleY_ = 0.0f;
+    float bossOrbitAngleZ_ = 0.0f;
+    float bossOrbitSpeedX_ = 0.0f;
+    float bossOrbitSpeedY_ = 0.0f;
+    float bossOrbitSpeedZ_ = 0.0f;
+    float bossOrbitRadiusOffset_ = 0.0f;
 };

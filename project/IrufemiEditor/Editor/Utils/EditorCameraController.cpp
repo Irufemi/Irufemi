@@ -67,3 +67,20 @@ void EditorCameraController::UpdateCameraInput(Camera* camera, InputManager* inp
         camera->UpdateMatrix();
     }
 }
+
+void EditorCameraController::Focus(Camera* camera, const Vector3& targetPosition) {
+    if (!camera) return;
+    
+    target_ = targetPosition;
+    distance_ = 20.0f; // フォーカス時のデフォルト距離
+    
+    // 直ちにカメラ位置を更新
+    Vector3 rotate = camera->GetRotate();
+    Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(rotate);
+    Vector3 offset = { 0.0f, 0.0f, -distance_ };
+    offset = Math::TransformNormal(offset, rotMat);
+    camera->SetTranslate(Math::Add(target_, offset));
+    camera->UpdateMatrix();
+    
+    isInitialized_ = true;
+}

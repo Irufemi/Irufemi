@@ -32,11 +32,24 @@ public:
     );
 
     /**
+     * @brief シェーダーを強制的に再コンパイル（または再読み込み）する
+     */
+    Microsoft::WRL::ComPtr<IDxcBlob> ReloadShader(
+        const std::wstring& filePath,
+        const ShaderCompileOptions& options = {},
+        const wchar_t* profileOverride = nullptr
+    );
+
+    /**
      * @brief キャッシュをクリアする
      */
     void ClearCache();
 
 private:
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+#define RUNTIME_SHADER_COMPILE 1
+#endif
+
     /**
      * @struct ShaderKey
      * @brief キャッシュ用のキー構造体

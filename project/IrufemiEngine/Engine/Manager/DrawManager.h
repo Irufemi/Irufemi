@@ -18,6 +18,7 @@
 #include "../Core/Math/Vector4.h"
 #include <vector>
 #include <memory>
+#include <mutex>
 #include "../Graphics/Compute/IComputeTask.h"
 #include "../Graphics/Data/RenderPackets.h"
 
@@ -55,6 +56,7 @@ private:
 public:
 private:
     // --- Render Queues ---
+    std::mutex queueMutex_;
     std::vector<RenderPackets::Standard3DPacket> standard3DQueue_;
     std::vector<RenderPackets::Standard3DPacket> ui3DQueue_;
     std::vector<RenderPackets::Standard3DPacket> selectionMaskQueue_;

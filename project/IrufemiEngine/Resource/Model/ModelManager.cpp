@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "ModelManager.h"
 #include "Engine/Core/System/ThreadPool.h"
 #include <filesystem>
@@ -164,7 +165,7 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
                 gpuMesh->vertexResource->Unmap(0, nullptr);
 
                 gpuMesh->srvIndex = dxCommon_->GetSrvPool()->Allocate();
-                assert(gpuMesh->srvIndex != DescriptorPool::kInvalid);
+                IRUFEMI_ASSERT(gpuMesh->srvIndex != DescriptorPool::kInvalid);
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
                 srvDesc.Format = DXGI_FORMAT_UNKNOWN;
                 srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -431,13 +432,10 @@ MaterialData ModelManager::LoadMaterialTemplateFile(const std::string& directory
     MaterialData materialData;
     std::string line; //ファイルから読んだ1行を格納するもの
     std::ifstream file(directoryPath + "/" + filename); //ファイルを開く
-#ifdef EditorMode
     if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + directoryPath + "/" + filename);
+        IRUFEMI_WARNING(false, "Failed to open material file: " + directoryPath + "/" + filename);
+        return materialData;
     }
-#else
-    assert(file.is_open() && "[ModelManager] Failed to open file in LoadMaterialTemplateFile.");
-#endif
 
     ///3. ファイルを読み、MaterialDataを構築
 
@@ -472,13 +470,10 @@ ModelData ModelManager::LoadObjFile(const std::string& directoryPath, const std:
     std::string line; //ファイルから読んだ1行を格納するもの
 
     std::ifstream file(directoryPath + "/" + filename); //ファイルを開く
-#ifdef EditorMode
     if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + directoryPath + "/" + filename);
+        IRUFEMI_WARNING(false, "Failed to open obj file: " + directoryPath + "/" + filename);
+        return modelData;
     }
-#else
-    assert(file.is_open() && "[ModelManager] Failed to open file in LoadObjFile.");
-#endif
 
     ///3.ファイルを読み、ModelDataを構築
     while (std::getline(file, line)) {
@@ -601,13 +596,10 @@ ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std:
     std::map<std::string, ObjMaterial> materialMap;
 
     std::ifstream file(directoryPath + "/" + filename);
-#ifdef EditorMode
     if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + directoryPath + "/" + filename);
+        IRUFEMI_WARNING(false, "Failed to open obj file M: " + directoryPath + "/" + filename);
+        return objModel;
     }
-#else
-    assert(file.is_open() && "[ModelManager] Failed to open file in LoadObjFileM.");
-#endif
 
     std::string line;
     ObjMesh currentMesh;
@@ -670,13 +662,10 @@ ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std:
             std::string mtlFilename;
             s >> mtlFilename;
             std::ifstream mtlFile(directoryPath + "/" + mtlFilename);
-#ifdef EditorMode
             if (!mtlFile.is_open()) {
-                throw std::runtime_error("Failed to open mtl file: " + directoryPath + "/" + mtlFilename);
+                IRUFEMI_WARNING(false, "Failed to open mtl file: " + directoryPath + "/" + mtlFilename);
+                continue;
             }
-#else
-            assert(mtlFile.is_open() && "[ModelManager] Failed to open mtl file in LoadObjFileM.");
-#endif
 
             std::string mtlLine, currentName;
             while (std::getline(mtlFile, mtlLine)) {
@@ -787,8 +776,8 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
 
     for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
         aiMesh* mesh = scene->mMeshes[meshIndex];
-        assert(mesh->HasNormals()); // 法線がないMeshは今回は非対応
-        assert(mesh->HasTextureCoords(0)); // TexcoordがないMeshは今回は非対応
+        IRUFEMI_ASSERT(mesh->HasNormals()); // 法線がないMeshは今回は非対応
+        IRUFEMI_ASSERT(mesh->HasTextureCoords(0)); // TexcoordがないMeshは今回は非対応
         // ここからMeshの中身(Face)の解析を行っていく
 
         /// vertexを解析する
@@ -808,7 +797,7 @@ ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const st
         /// Indexを解析する
         for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
             aiFace& face = mesh->mFaces[faceIndex];
-            assert(face.mNumIndices == 3); // 三角形のみサポート
+            IRUFEMI_ASSERT(face.mNumIndices == 3); // 三角形のみサポート
 
             for (uint32_t element = 0; element < face.mNumIndices; ++element) {
                 uint32_t vertexIndex = face.mIndices[element];
@@ -915,13 +904,10 @@ ObjModel ModelManager::LoadModelFromFile(const std::string& directoryPath, const
         aiProcess_MakeLeftHanded; // このフラグを追加
 
     const aiScene* scene = importer.ReadFile(filePath.c_str(), flags);
-#ifdef EditorMode
     if (!scene || !scene->HasMeshes()) {
-        throw std::runtime_error("Assimp failed to load model or no meshes found: " + std::string(importer.GetErrorString()));
+        IRUFEMI_WARNING(false, "Assimp failed to load model or no meshes found: " + std::string(importer.GetErrorString()));
+        return ObjModel();
     }
-#else
-    assert(scene && scene->HasMeshes() && "[ModelManager] Assimp failed to load model or no meshes found in LoadModelFromFile.");
-#endif
 
     /// material(assimpのaiMaterial)をObjMaterialへ変換
 
@@ -1031,7 +1017,7 @@ ObjModel ModelManager::LoadModelFromFile(const std::string& directoryPath, const
         // インデックスデータの読み込み
         for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
             const aiFace& face = mesh->mFaces[faceIndex];
-            assert(face.mNumIndices == 3);
+            IRUFEMI_ASSERT(face.mNumIndices == 3);
             outMesh.indices.push_back(face.mIndices[0]);
             outMesh.indices.push_back(face.mIndices[1]);
             outMesh.indices.push_back(face.mIndices[2]);
