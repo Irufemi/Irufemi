@@ -7,6 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Application_solo", "Applica
 		{665A39E3-3BBB-4705-ABBE-36F254FBDAB2} = {665A39E3-3BBB-4705-ABBE-36F254FBDAB2}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Application_team", "Application_team\Application_team.vcxproj", "{B4625061-2145-449C-A473-66964BB0183A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{665A39E3-3BBB-4705-ABBE-36F254FBDAB2} = {665A39E3-3BBB-4705-ABBE-36F254FBDAB2}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IrufemiEngine", "IrufemiEngine\IrufemiEngine.vcxproj", "{E7D83BAB-90F9-4841-B6EB-516D3E28214F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IrufemiEditor", "IrufemiEditor\IrufemiEditor.vcxproj", "{6B9B6722-45B6-429C-A66D-5ADD2171AD79}"
@@ -35,6 +40,14 @@ Global
 		{B7A4C62A-5D11-40D9-98F4-0A1D6B8F42E0}.Editor|x64.Build.0 = Editor|x64
 		{B7A4C62A-5D11-40D9-98F4-0A1D6B8F42E0}.Release|x64.ActiveCfg = Release|x64
 		{B7A4C62A-5D11-40D9-98F4-0A1D6B8F42E0}.Release|x64.Build.0 = Release|x64
+		{B4625061-2145-449C-A473-66964BB0183A}.Debug|x64.ActiveCfg = Debug|x64
+		{B4625061-2145-449C-A473-66964BB0183A}.Debug|x64.Build.0 = Debug|x64
+		{B4625061-2145-449C-A473-66964BB0183A}.Development|x64.ActiveCfg = Development|x64
+		{B4625061-2145-449C-A473-66964BB0183A}.Development|x64.Build.0 = Development|x64
+		{B4625061-2145-449C-A473-66964BB0183A}.Editor|x64.ActiveCfg = Editor|x64
+		{B4625061-2145-449C-A473-66964BB0183A}.Editor|x64.Build.0 = Editor|x64
+		{B4625061-2145-449C-A473-66964BB0183A}.Release|x64.ActiveCfg = Release|x64
+		{B4625061-2145-449C-A473-66964BB0183A}.Release|x64.Build.0 = Release|x64
 		{E7D83BAB-90F9-4841-B6EB-516D3E28214F}.Debug|x64.ActiveCfg = Debug|x64
 		{E7D83BAB-90F9-4841-B6EB-516D3E28214F}.Debug|x64.Build.0 = Debug|x64
 		{E7D83BAB-90F9-4841-B6EB-516D3E28214F}.Development|x64.ActiveCfg = Development|x64

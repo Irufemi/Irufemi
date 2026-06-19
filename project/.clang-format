@@ -1,0 +1,13 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+ColumnLimit: 120
+PointerAlignment: Left
+SpaceBeforeParens: ControlStatements
+AlignAfterOpenBracket: Align
+BreakBeforeBraces: Attach
+Standard: c++20
