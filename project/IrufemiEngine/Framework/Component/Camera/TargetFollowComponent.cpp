@@ -42,8 +42,8 @@ void TargetFollowComponent::Update() {
     if (!myTransform) return;
 
     // プレイヤーの向き（回転角度）から進行方向をベースとしたローカル座標系を作成
-    float yaw = targetTransform_->rotation_.y;
-    float pitch = targetTransform_->rotation_.x;
+    float yaw = targetTransform_->GetRotation().y;
+    float pitch = targetTransform_->GetRotation().x;
 
     // プレイヤーを基準とした回転行列の方向成分を計算
     Vector3 forward = {
@@ -82,21 +82,25 @@ void TargetFollowComponent::Update() {
 
     // プレイヤー位置に、プレイヤーの向きに基づいたローカルオフセットを足す
     Vector3 targetCamPos = {
-        targetTransform_->position_.x + right.x * offset_.x + up.x * offset_.y + forward.x * offset_.z,
-        targetTransform_->position_.y + right.y * offset_.x + up.y * offset_.y + forward.y * offset_.z,
-        targetTransform_->position_.z + right.z * offset_.x + up.z * offset_.y + forward.z * offset_.z
+        targetTransform_->GetPosition().x + right.x * offset_.x + up.x * offset_.y + forward.x * offset_.z,
+        targetTransform_->GetPosition().y + right.y * offset_.x + up.y * offset_.y + forward.y * offset_.z,
+        targetTransform_->GetPosition().z + right.z * offset_.x + up.z * offset_.y + forward.z * offset_.z
     };
 
     // 滑らかな追従 (線形補間/Lerp) を行う (フレームレート非依存)
     float t = 1.0f - std::pow(followDelay_, deltaTime); 
-    myTransform->position_.x += (targetCamPos.x - myTransform->position_.x) * t;
-    myTransform->position_.y += (targetCamPos.y - myTransform->position_.y) * t;
-    myTransform->position_.z += (targetCamPos.z - myTransform->position_.z) * t;
+    Vector3 newPos = myTransform->GetPosition();
+    newPos.x += (targetCamPos.x - newPos.x) * t;
+    newPos.y += (targetCamPos.y - newPos.y) * t;
+    newPos.z += (targetCamPos.z - newPos.z) * t;
+    myTransform->SetPosition(newPos);
 
     // カメラの向き（角度）もプレイヤーの向きに追従させる（Lerpで滑らかに旋回）
-    myTransform->rotation_.x += (targetTransform_->rotation_.x - myTransform->rotation_.x) * t;
-    myTransform->rotation_.y += (targetTransform_->rotation_.y - myTransform->rotation_.y) * t;
-    myTransform->rotation_.z += (targetTransform_->rotation_.z - myTransform->rotation_.z) * t;
+    Vector3 newRot = myTransform->GetRotation();
+    newRot.x += (targetTransform_->GetRotation().x - newRot.x) * t;
+    newRot.y += (targetTransform_->GetRotation().y - newRot.y) * t;
+    newRot.z += (targetTransform_->GetRotation().z - newRot.z) * t;
+    myTransform->SetRotation(newRot);
 }
 
 nlohmann::json TargetFollowComponent::Serialize() {

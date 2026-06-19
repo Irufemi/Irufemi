@@ -179,14 +179,14 @@ void CollisionManager::CheckAllCollisions() {
                             Vector3 pushA = Math::Multiply(result.depth * 0.5f, result.normal);
                             Vector3 pushB = Math::Multiply(result.depth * 0.5f, Math::Multiply(-1.0f, result.normal));
                             
-                            transformA->position_ = Math::Add(transformA->position_, pushA);
-                            transformB->position_ = Math::Add(transformB->position_, pushB);
+                            transformA->SetPosition(Math::Add(transformA->GetPosition(), pushA));
+                            transformB->SetPosition(Math::Add(transformB->GetPosition(), pushB));
                         } else if (transformA) {
                             Vector3 pushA = Math::Multiply(result.depth, result.normal);
-                            transformA->position_ = Math::Add(transformA->position_, pushA);
+                            transformA->SetPosition(Math::Add(transformA->GetPosition(), pushA));
                         } else if (transformB) {
                             Vector3 pushB = Math::Multiply(result.depth, Math::Multiply(-1.0f, result.normal));
-                            transformB->position_ = Math::Add(transformB->position_, pushB);
+                            transformB->SetPosition(Math::Add(transformB->GetPosition(), pushB));
                         }
                     }
                 }

@@ -88,7 +88,7 @@ void GravityPlayerComponent::HandlePullInput() {
         if (!debrisManager) return;
 
         // 指定半径内で一番近いガレキを実体化して取得
-        auto debrisObj = debrisManager->ExtractNearestIdleDebris(transform->position_, pullRadius_);
+        auto debrisObj = debrisManager->ExtractNearestIdleDebris(transform->GetPosition(), pullRadius_);
         if (debrisObj) {
             if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
                 debrisComp->SetState(DebrisState::Pulled);
@@ -182,7 +182,7 @@ void GravityPlayerComponent::UpdateAim() {
         if (!transform) continue;
 
         // ワールド座標からNDC座標へ
-        Vector3 clipPos = Math::Transform(transform->position_, viewProj);
+        Vector3 clipPos = Math::Transform(transform->GetPosition(), viewProj);
         
         // Zが0～1の範囲外（カメラ後方など）なら除外
         if (clipPos.z < 0.0f || clipPos.z > 1.0f) continue;

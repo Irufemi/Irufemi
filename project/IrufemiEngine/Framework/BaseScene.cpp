@@ -420,7 +420,7 @@ std::shared_ptr<GameObject> BaseScene::InstantiatePrefab(const std::string& pref
         obj->SetIsSerializable(false);
 
         if (auto transform = obj->GetComponent<TransformComponent>()) {
-            transform->position_ = position;
+            transform->SetPosition(position);
         }
         AddGameObject(obj);
     }

@@ -70,13 +70,13 @@ void RailShooterPlayerComponent::Update() {
         // --- 2. ルート（レール）が無い場合の「そのまま真っ直ぐ」自動直進移動 ---
         if (!isDummyBasePosInitialized_) {
             // 直進を開始する時の現在地をスタート地点にする
-            dummyBasePos_ = transform->position_;
+            dummyBasePos_ = transform->GetPosition();
             isDummyBasePosInitialized_ = true;
         }
 
         // キャラクターの現在の回転角度から「正面を向くベクトル（向き）」を逆算する
-        float yaw = transform->rotation_.y;
-        float pitch = transform->rotation_.x;
+        float yaw = transform->GetRotation().y;
+        float pitch = transform->GetRotation().x;
         tangent = {
             std::sin(yaw) * std::cos(pitch),
             std::sin(-pitch),
@@ -160,13 +160,13 @@ void RailShooterPlayerComponent::Update() {
     };
 
     // プレイヤーのTransform座標に代入して実際に動かす
-    transform->position_ = finalPos;
+    transform->SetPosition(finalPos);
     
     // レール上を動いている時のみ、レールの進行方向に合わせてプレイヤーの向き（首振り）を自動調整する
     // (レールが無い時は、エディタ上で配置したプレイヤーの回転角を優先して直進させます)
     if (hasPath) {
         float yaw = std::atan2(tangent.x, tangent.z);
         float pitch = std::asin(-tangent.y); // Z前方の座標系を想定
-        transform->rotation_ = {pitch, yaw, 0.0f};
+        transform->SetRotation({pitch, yaw, 0.0f});
     }
 }

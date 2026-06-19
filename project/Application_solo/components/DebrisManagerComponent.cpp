@@ -30,7 +30,7 @@ void DebrisManagerComponent::Initialize() {
     auto debrisFactory = [this]() -> std::shared_ptr<GameObject> {
         auto obj = std::make_shared<GameObject>("Debris");
         auto transform = obj->AddComponent<TransformComponent>();
-        transform->scale_ = { 0.5f, 0.5f, 0.5f }; // 少し小さめに
+        transform->SetScale({ 0.5f, 0.5f, 0.5f }); // 少し小さめに
         
         obj->AddComponent<DebrisComponent>();
         
@@ -65,8 +65,8 @@ void DebrisManagerComponent::Update() {
             auto playerObj = scene->FindGameObject("Player");
             if (playerObj) {
                 if (auto t = playerObj->GetComponent<TransformComponent>()) {
-                    spawnBase = t->position_;
-                    float yaw = t->rotation_.y;
+                    spawnBase = t->GetPosition();
+                    float yaw = t->GetRotation().y;
                     forward = { std::sin(yaw), 0.0f, std::cos(yaw) };
                     right = { std::cos(yaw), 0.0f, -std::sin(yaw) };
                 }

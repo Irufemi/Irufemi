@@ -85,14 +85,14 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, co
     if (ext == ".png" || ext == ".jpg" || ext == ".dds" || ext == ".bmp") {
         newObj = std::make_shared<GameObject>("Sprite_" + stemString);
         auto transform = newObj->AddComponent<TransformComponent>();
-        transform->position_ = position;
+        transform->SetPosition(position);
         auto spriteRenderer = newObj->AddComponent<SpriteRendererComponent>();
         spriteRenderer->SetTexture(assetPath); 
         newObj->Initialize();
     } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
         newObj = std::make_shared<GameObject>("Model_" + stemString);
         auto transform = newObj->AddComponent<TransformComponent>();
-        transform->position_ = position;
+        transform->SetPosition(position);
         auto meshRenderer = newObj->AddComponent<MeshRendererComponent>();
         
         // 同名ファイルに対応するため、ファイル名だけでなく相対パスを渡す
@@ -109,7 +109,7 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, co
         newObj = SceneSerializer::LoadPrefab(assetPath);
         if (newObj) {
             if (auto transform = newObj->GetComponent<TransformComponent>()) {
-                transform->position_ = position;
+                transform->SetPosition(position);
             }
         }
     }
@@ -153,7 +153,7 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
         obj = std::make_shared<GameObject>("Sprite");
         obj->AddComponent<TransformComponent>();
         auto spriteRenderer = obj->AddComponent<SpriteRendererComponent>();
-        obj->GetComponent<TransformComponent>()->position_ = { 640.0f, 360.0f, 0.0f };
+        obj->GetComponent<TransformComponent>()->SetPosition({ 640.0f, 360.0f, 0.0f });
         obj->Initialize();
     }
 

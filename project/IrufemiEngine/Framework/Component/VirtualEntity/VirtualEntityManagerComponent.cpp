@@ -91,9 +91,9 @@ std::shared_ptr<GameObject> VirtualEntityManagerComponent::Promote(int id) {
             obj->SetIsActive(true);
             auto t = obj->GetComponent<TransformComponent>();
             if (t) {
-                t->position_ = vi.position_;
-                t->rotation_ = vi.rotation_;
-                t->scale_ = vi.scale_;
+                t->SetPosition(vi.position_);
+                t->SetRotation(vi.rotation_);
+                t->SetScale(vi.scale_);
             }
             vi.isPromoted_ = true;
             vi.promotedInstance_ = obj;
@@ -114,9 +114,9 @@ void VirtualEntityManagerComponent::Demote(int id) {
         // 現在のTransformをVirtualに書き戻す
         auto t = vi.promotedInstance_->GetComponent<TransformComponent>();
         if (t) {
-            vi.position_ = t->position_;
-            vi.rotation_ = t->rotation_;
-            vi.scale_ = t->scale_;
+            vi.position_ = t->GetPosition();
+            vi.rotation_ = t->GetRotation();
+            vi.scale_ = t->GetScale();
         }
         
         vi.promotedInstance_->SetIsActive(false);

@@ -27,8 +27,8 @@ void ButtonComponent::Initialize() {
 bool ButtonComponent::CheckBounds(const Vector2& mousePos) {
     if (!transform_ || !sprite_) return false;
     
-    Vector3 pos = transform_->worldPosition_;
-    Vector3 scale = transform_->worldScale_;
+    Vector3 pos = transform_->GetWorldPosition();
+    Vector3 scale = transform_->GetWorldScale();
     
     auto* s = sprite_->GetSprite();
     if (!s) return false;

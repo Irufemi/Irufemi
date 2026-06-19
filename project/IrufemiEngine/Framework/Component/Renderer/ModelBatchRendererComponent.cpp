@@ -49,8 +49,9 @@ IRenderable* ModelBatchRendererComponent::GetRenderable() {
 Sphere ModelBatchRendererComponent::GetWorldSphere() const {
     Sphere result = { Vector3{0,0,0}, 1.0f }; // default
     if (transform_) {
-        result.center = transform_->worldPosition_;
-        float maxScale = std::fmax(transform_->worldScale_.x, std::fmax(transform_->worldScale_.y, transform_->worldScale_.z));
+        result.center = transform_->GetWorldPosition();
+        Vector3 worldScale = transform_->GetWorldScale();
+        float maxScale = std::fmax(worldScale.x, std::fmax(worldScale.y, worldScale.z));
         result.radius = maxScale;
     }
     return result;
@@ -65,7 +66,7 @@ bool ModelBatchRendererComponent::Raycast(const Ray& ray, float& outDistance) co
 
     OBB obb;
     const Matrix4x4& wmat = transform_->GetWorldMatrix();
-    obb.center = transform_->worldPosition_;
+    obb.center = transform_->GetWorldPosition();
 
     Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
     Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };
