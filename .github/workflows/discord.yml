@@ -2,9 +2,9 @@ name: Discord Message Notify
 
 on:
   push:
-    branches: [ TD3_01 ]
+    branches: [ IBS ]
   pull_request:
-    branches: [ TD3_01 ]
+    branches: [ IBS ]
 
 jobs:
   build:

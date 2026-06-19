@@ -18,6 +18,7 @@ generated/
 # Exceptions for scene debug folders
 !project/Application/scene/debug/
 !project/Application_solo/scene/debug/
+!project/Application_team/scene/debug/
 project/logs/
 *.pdb
 *.ilk
@@ -76,6 +77,13 @@ DirectXGame/imgui.ini
 /project/Application_solo/imgui.ini
 /project/Application_solo/imgui_editor.ini
 /project/Application_solo/Dumps/
+
+# Application_team specific
+/project/Application_team/asset_src/
+/project/Application_team/logs/
+/project/Application_team/imgui.ini
+/project/Application_team/imgui_editor.ini
+/project/Application_team/Dumps/
 
 # ====================================================================
 # AntiGravity / AI tools
