@@ -3,7 +3,7 @@
 #include "Engine/Core/Math/Vector3.h"
 #include <memory>
 #include <vector>
-#include <unordered_map>
+#include <queue>
 
 class GameObject;
 class VirtualEntityManagerComponent;
@@ -41,10 +41,14 @@ public:
 
 private:
     int poolSize_ = 500;
+    int maxVirtualInstances_ = 20000; // 仮想インスタンスの最大予約数
 
     // エンジンの基盤システム（Virtual Entity）
     VirtualEntityManagerComponent* virtualManager_ = nullptr;
 
-    // がれき固有のアニメーションデータ
-    std::unordered_map<int, DebrisAnimData> animDataList_;
+    // がれき固有のアニメーションデータ（フラット配列によるキャッシュ最適化）
+    std::vector<DebrisAnimData> animDataList_;
+
+    // 生成順を追跡するためのキュー（最古のインスタンスをO(1)で特定するため）
+    std::queue<int> activeIds_;
 };

@@ -223,6 +223,7 @@
         },
         {
           "data": {
+            "Max Virtual Instances": 20000,
             "Pool Size": 500
           },
           "type": "DebrisManagerComponent"

@@ -13,10 +13,12 @@
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include <cmath>
+#include <imgui.h>
 
 void DebrisManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
     RegisterProperty("Pool Size", &poolSize_);
+    RegisterProperty("Max Virtual Instances", &maxVirtualInstances_);
 }
 
 void DebrisManagerComponent::Initialize() {
@@ -44,7 +46,10 @@ void DebrisManagerComponent::Initialize() {
         return obj;
     };
 
-    virtualManager_->Setup(poolSize_, debrisFactory);
+    virtualManager_->Setup(poolSize_, maxVirtualInstances_, debrisFactory);
+
+    animDataList_.resize(maxVirtualInstances_);
+    while (!activeIds_.empty()) activeIds_.pop();
 }
 
 void DebrisManagerComponent::Update() {
@@ -80,20 +85,21 @@ void DebrisManagerComponent::Update() {
             };
             
             int vid = virtualManager_->AddVirtualInstance(pos, {0,0,0}, {0.5f, 0.5f, 0.5f});
-            
-            DebrisAnimData anim;
-            anim.baseIdleY_ = pos.y;
-            anim.idleTimeY_ = Random::GeneratorFloat(0.0f, 100.0f);
-            animDataList_[vid] = anim;
+            if (vid >= 0) {
+                DebrisAnimData anim;
+                anim.baseIdleY_ = pos.y;
+                anim.idleTimeY_ = Random::GeneratorFloat(0.0f, 100.0f);
+                animDataList_[vid] = anim;
+                activeIds_.push(vid);
+            }
         }
         
         // プール上限の管理
-        auto& vInstances = virtualManager_->GetVirtualInstances();
-        while (vInstances.size() > static_cast<size_t>(poolSize_)) {
-            // 最も古いインスタンスを削除
-            int oldestId = vInstances.front().id_;
-            virtualManager_->PurgeOldestInstance();
-            animDataList_.erase(oldestId);
+        // 実体プール(poolSize_)ではなく、仮想インスタンスの上限で管理する
+        while (activeIds_.size() > static_cast<size_t>(maxVirtualInstances_ - 100)) {
+            int oldestId = activeIds_.front();
+            activeIds_.pop();
+            virtualManager_->RemoveVirtualInstance(oldestId);
         }
     }
 
@@ -101,19 +107,22 @@ void DebrisManagerComponent::Update() {
     float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     if (dt <= 0.0f) dt = 1.0f / 60.0f;
 
-    auto& virtualInstances = virtualManager_->GetVirtualInstances();
+    auto& virtualInstances = virtualManager_->GetDenseInstances();
     
-    // animDataList_ と virtualInstances は id をキーに紐づく
+    // animDataList_ は id を直接インデックスとして O(1) アクセスする
     for (auto& vi : virtualInstances) {
-        if (!vi.isDestroyed_ && !vi.isPromoted_) {
-            auto it = animDataList_.find(vi.id_);
-            if (it != animDataList_.end()) {
-                auto& anim = it->second;
-                anim.idleTimeY_ += dt * 2.0f;
-                vi.position_.y = anim.baseIdleY_ + std::sin(anim.idleTimeY_) * 0.5f;
-            }
+        if (!vi.isPromoted_) { // isDestroyed_ のチェックは Dense 配列には不要（削除済みのものは含まれないため）
+            auto& anim = animDataList_[vi.id_];
+            anim.idleTimeY_ += dt * 2.0f;
+            vi.position_.y = anim.baseIdleY_ + std::sin(anim.idleTimeY_) * 0.5f;
+            vi.isMatrixDirty_ = true; // 位置が変わったので行列更新フラグを立てる
         }
     }
+
+    ImGui::Begin("Debris Manager Debug");
+    ImGui::Text("Active IDs (Queue) Size: %d", static_cast<int>(activeIds_.size()));
+    ImGui::Text("Dense Array Size: %d", static_cast<int>(virtualInstances.size()));
+    ImGui::End();
 }
 
 std::shared_ptr<GameObject> DebrisManagerComponent::AcquireDebris() {
@@ -145,12 +154,12 @@ void DebrisManagerComponent::ReleaseDebris(std::shared_ptr<GameObject> debris) {
 }
 
 std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(const Vector3& pos, float radius) {
-    auto& virtualInstances = virtualManager_->GetVirtualInstances();
+    auto& virtualInstances = virtualManager_->GetDenseInstances();
     float bestDistSq = radius * radius;
     int bestId = -1;
 
     for (const auto& vi : virtualInstances) {
-        if (!vi.isDestroyed_ && !vi.isPromoted_) {
+        if (!vi.isPromoted_) {
             float dx = vi.position_.x - pos.x;
             float dy = vi.position_.y - pos.y;
             float dz = vi.position_.z - pos.z;
@@ -180,5 +189,5 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
 
 void DebrisManagerComponent::NotifyDestroyed(int virtualId) {
     virtualManager_->RemoveVirtualInstance(virtualId);
-    animDataList_.erase(virtualId);
+    // activeIds_ からの削除は不要（popされた時に既にRemove済みならEngine側で安全に無視されるため）
 }

@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <queue>
 
 class GameObject;
 class ModelBatchRendererComponent;
@@ -19,6 +20,8 @@ struct VirtualInstance {
     Vector3 position_;
     Vector3 rotation_; // Euler angles
     Vector3 scale_;
+    Matrix4x4 localMatrix_;
+    bool isMatrixDirty_;
     bool isPromoted_;
     bool isDestroyed_;
     std::shared_ptr<GameObject> promotedInstance_;
@@ -39,10 +42,11 @@ public:
 
     /**
      * @brief プールとファクトリの設定を行う
-     * @param poolSize プールの最大サイズ
+     * @param poolSize 実体化（GameObject）用プールの最大サイズ
+     * @param maxVirtualInstances 仮想インスタンスの最大予約数
      * @param factory GameObjectを生成するファクトリ関数
      */
-    void Setup(int poolSize, std::function<std::shared_ptr<GameObject>()> factory);
+    void Setup(int poolSize, int maxVirtualInstances, std::function<std::shared_ptr<GameObject>()> factory);
 
     /**
      * @brief 仮想インスタンスを追加する
@@ -67,14 +71,9 @@ public:
     void Demote(int id);
 
     /**
-     * @brief データ配列を取得（アプリケーション側で固有の計算をするため）
+     * @brief データ配列（密配列・連続メモリ）を取得
      */
-    std::vector<VirtualInstance>& GetVirtualInstances() { return virtualInstances_; }
-
-    /**
-     * @brief キャッシュされている最も古い仮想インスタンスを強制的に削除し、プールを空ける
-     */
-    void PurgeOldestInstance();
+    std::vector<VirtualInstance>& GetDenseInstances() { return dense_; }
 
     /**
      * @brief プールから取得した実体（仮想インスタンスに紐付いていない場合など）を直接プールに返却する
@@ -82,8 +81,11 @@ public:
     void ReleaseGameObject(std::shared_ptr<GameObject> obj);
 
 private:
-    std::vector<VirtualInstance> virtualInstances_;
-    int nextId_ = 0;
+    std::vector<VirtualInstance> dense_;
+    std::vector<int> sparse_;
+    std::queue<int> freeIds_;
+    int maxVirtualInstances_ = 0;
+    int nextId_ = 0; // Backup if freeIds is empty or we don't want strict pre-alloc
 
     std::unique_ptr<ObjectPool<GameObject>> pool_;
     int maxPoolSize_ = 0;
