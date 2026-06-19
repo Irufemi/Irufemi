@@ -78,4 +78,5 @@ private:
     std::unique_ptr<ModelBatch> batch_;           ///< 実際のバッチ描画を担うクラス
     TransformComponent* transform_ = nullptr;     ///< 親のTransform情報（キャッシュ）
     std::string modelName_ = "plane.obj";          ///< 読み込むモデル名
+    bool useGPUCulling_ = false;                   ///< GPUカリングの有効フラグ
 };

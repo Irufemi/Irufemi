@@ -1,18 +1,19 @@
 #pragma once
 #include "Framework/Component/Component.h"
-#include "Engine/Core/Utility/ObjectPool.h"
+#include "Engine/Core/Math/Vector3.h"
 #include <memory>
+#include <vector>
+#include <unordered_map>
 
 class GameObject;
-class ModelBatchRendererComponent;
+class VirtualEntityManagerComponent;
 
-struct VirtualDebris {
-    int id;
-    Vector3 position;
-    bool isSpawned;
-    bool isDestroyed;
-    std::shared_ptr<GameObject> instance;
+// がれきのアニメーション用並行データ（Data-Oriented Parallel Array）
+struct DebrisAnimData {
+    float baseIdleY_;
+    float idleTimeY_;
 };
+
 
 /**
  * @class DebrisManagerComponent
@@ -28,21 +29,22 @@ public:
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "DebrisManagerComponent"; }
 
-    // ガレキの取得と返却
+    // ガレキの実体取得と返却（Bossのシールド等、IDなしの取得用）
     std::shared_ptr<GameObject> AcquireDebris();
     void ReleaseDebris(std::shared_ptr<GameObject> debris);
 
-    // ストリーミング管理
-    void UpdateStreaming();
-    void NotifyDestroyed(int id);
+    // プレイヤーからの引き寄せ処理用：指定座標から一番近い未昇格のがれきを実体化して返す
+    std::shared_ptr<GameObject> ExtractNearestIdleDebris(const Vector3& pos, float radius);
+
+    // 破壊通知
+    void NotifyDestroyed(int virtualId);
 
 private:
-    std::unique_ptr<ObjectPool<GameObject>> pool_;
     int poolSize_ = 500;
 
-    // 仮想データリスト
-    std::vector<VirtualDebris> virtualDebrisList_;
-    int nextVirtualId_ = 0;
+    // エンジンの基盤システム（Virtual Entity）
+    VirtualEntityManagerComponent* virtualManager_ = nullptr;
 
-    ModelBatchRendererComponent* batchComponent_ = nullptr;
+    // がれき固有のアニメーションデータ
+    std::unordered_map<int, DebrisAnimData> animDataList_;
 };

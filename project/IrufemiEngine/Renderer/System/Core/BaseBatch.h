@@ -82,6 +82,7 @@ public:
     // --- GPU Culling Getters ---
     D3D12_GPU_DESCRIPTOR_HANDLE GetOutputInstancesSrvHandleGPU() const { return outputInstanceSrvGPU_[lastUpdateFrameIndex_]; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetOutputInstancesUavHandleGPU() const { return outputInstanceUavGPU_[lastUpdateFrameIndex_]; }
+    ID3D12Resource* GetOutputInstanceBuffer() const { return outputInstanceBuffer_[lastUpdateFrameIndex_].Get(); }
     ID3D12Resource* GetIndirectCommandBuffer() const { return indirectCommandBuffer_[lastUpdateFrameIndex_].Get(); }
     ID3D12Resource* GetIndirectCommandUploadBuffer() const { return indirectCommandUploadBuffer_[lastUpdateFrameIndex_].Get(); }
     D3D12_GPU_DESCRIPTOR_HANDLE GetIndirectCommandUavHandleGPU() const { return indirectCommandUavGPU_[lastUpdateFrameIndex_]; }

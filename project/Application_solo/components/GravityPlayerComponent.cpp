@@ -1,5 +1,6 @@
 #include "GravityPlayerComponent.h"
 #include "DebrisComponent.h"
+#include "DebrisManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
@@ -79,43 +80,24 @@ void GravityPlayerComponent::HandlePullInput() {
             }
         }
 
-        // 一番親である DebrisManager オブジェクト（子としてガレキを保持している）を探す
-        auto debrisManager = scene->FindGameObject("DebrisManager");
+        // 一番親である DebrisManager オブジェクトを探す
+        auto debrisManagerObj = scene->FindGameObject("DebrisManager");
+        if (!debrisManagerObj) return;
 
+        auto debrisManager = debrisManagerObj->GetComponent<DebrisManagerComponent>();
         if (!debrisManager) return;
 
-        // 子オブジェクト（ガレキ）を走査
-        for (auto& child : debrisManager->GetChildren()) {
-            if (!child || !child->GetIsActive()) continue;
-
-            auto debrisComp = child->GetComponent<DebrisComponent>();
-            if (!debrisComp || debrisComp->GetState() != DebrisState::Idle) continue;
-
-            auto childTransform = child->GetComponent<TransformComponent>();
-            if (!childTransform) continue;
-
-            // 距離判定
-            float dx = childTransform->position_.x - transform->position_.x;
-            float dy = childTransform->position_.y - transform->position_.y;
-            float dz = childTransform->position_.z - transform->position_.z;
-            float distSq = dx*dx + dy*dy + dz*dz;
-
-            if (distSq <= pullRadius_ * pullRadius_) {
-                // 引き寄せ対象にする
-                if (auto debrisComp = child->GetComponent<DebrisComponent>()) {
-                    debrisComp->SetState(DebrisState::Pulled);
-                    debrisComp->SetTarget(gameObject_->shared_from_this());
-                    debrisComp->SetOrbitParams(
-                        Random::GeneratorFloat(0.0f, 6.28f),
-                        Random::GeneratorFloat(2.0f, 4.0f)
-                    );
-                    orbitingDebris_.push_back(child);
-                }
-
-                // 最大数に達したら終了
-                if (static_cast<int>(orbitingDebris_.size()) >= maxOrbitCount_) {
-                    break;
-                }
+        // 指定半径内で一番近いガレキを実体化して取得
+        auto debrisObj = debrisManager->ExtractNearestIdleDebris(transform->position_, pullRadius_);
+        if (debrisObj) {
+            if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
+                debrisComp->SetState(DebrisState::Pulled);
+                debrisComp->SetTarget(gameObject_->shared_from_this());
+                debrisComp->SetOrbitParams(
+                    Random::GeneratorFloat(0.0f, 6.28f),
+                    Random::GeneratorFloat(2.0f, 4.0f)
+                );
+                orbitingDebris_.push_back(debrisObj);
             }
         }
     }

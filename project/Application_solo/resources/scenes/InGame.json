@@ -232,6 +232,9 @@
             "modelName": "resources/model/sample/block.obj"
           },
           "type": "ModelBatchRendererComponent"
+        },
+        {
+          "type": "VirtualEntityManagerComponent"
         }
       ],
       "name": "DebrisManager",

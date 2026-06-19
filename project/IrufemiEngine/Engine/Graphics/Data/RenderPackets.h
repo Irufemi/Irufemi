@@ -129,6 +129,7 @@ namespace RenderPackets {
         D3D12_GPU_VIRTUAL_ADDRESS cullingDataAddress = 0;
         D3D12_GPU_DESCRIPTOR_HANDLE inputInstancesSrv{};
         D3D12_GPU_DESCRIPTOR_HANDLE outputInstancesUav{};
+        ID3D12Resource* outputInstancesBuffer = nullptr;
         UINT maxInstanceCount = 0;
     };
 

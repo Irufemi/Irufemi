@@ -118,6 +118,9 @@
     <Filter Include="Framework\Component\Utility">
       <UniqueIdentifier>{C3A1FD3A-4A8E-5F4D-971D-3D13B5036535}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Framework\Component\VirtualEntity">
+      <UniqueIdentifier>{7DD32CF9-F07D-58B6-AC6C-18C525F28ADA}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Renderer">
       <UniqueIdentifier>{B725E2F7-96EC-547C-A023-E67513D78DB5}</UniqueIdentifier>
     </Filter>
@@ -840,6 +843,9 @@
     <ClCompile Include="Resource\Texture\TextureUtility.cpp">
       <Filter>Resource\Texture</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.cpp">
+      <Filter>Framework\Component\VirtualEntity</Filter>
+    </ClCompile>
     <ClInclude Include="Engine\Irufemi.h">
       <Filter>Engine</Filter>
     </ClInclude>
@@ -1529,6 +1535,9 @@
     </ClInclude>
     <ClInclude Include="..\externals\msdfgen\ext\save-png.h">
       <Filter>External\externals\msdfgen\ext</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.h">
+      <Filter>Framework\Component\VirtualEntity</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

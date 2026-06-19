@@ -1,7 +1,7 @@
 #include "DebrisManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Framework/SceneSerializer.h"
 #include "Framework/BaseScene.h"
 #include "DebrisComponent.h"
@@ -12,6 +12,7 @@
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
+#include <cmath>
 
 void DebrisManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
@@ -19,22 +20,13 @@ void DebrisManagerComponent::OnRegisterProperties() {
 }
 
 void DebrisManagerComponent::Initialize() {
-    // エディタやシーンロード時にも Renderer の存在を確実にするため、ここで取得・追加する
-    batchComponent_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
-    if (!batchComponent_) {
-        batchComponent_ = gameObject_->AddComponent<ModelBatchRendererComponent>().get();
-        batchComponent_->SetUseGPUCulling(true); // Debris uses GPU culling for optimization
-    } else {
-        batchComponent_->SetUseGPUCulling(true);
+    virtualManager_ = gameObject_->GetComponent<VirtualEntityManagerComponent>();
+    if (!virtualManager_) {
+        virtualManager_ = gameObject_->AddComponent<VirtualEntityManagerComponent>().get();
     }
-    
-    // ガレキの描画にGPUカリングを適用
-    batchComponent_->SetUseGPUCulling(true);
 
-    // ガレキのプレハブを生成するファクトリ関数
     auto debrisFactory = [this]() -> std::shared_ptr<GameObject> {
         auto obj = std::make_shared<GameObject>("Debris");
-
         auto transform = obj->AddComponent<TransformComponent>();
         transform->scale_ = { 0.5f, 0.5f, 0.5f }; // 少し小さめに
         
@@ -44,27 +36,21 @@ void DebrisManagerComponent::Initialize() {
         collider->isTrigger_ = true;
         collider->SetLocalRadius(0.5f);
         
-        // 生成時点では非アクティブにしておく
         obj->SetIsActive(false);
 
         if (gameObject_) {
             gameObject_->AddChild(obj);
         }
-        
         return obj;
     };
 
-    // プールを初期化
-    pool_ = std::make_unique<ObjectPool<GameObject>>(poolSize_, debrisFactory);
+    virtualManager_->Setup(poolSize_, debrisFactory);
 }
 
 void DebrisManagerComponent::Update() {
-
-    UpdateStreaming();
-
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
     // デバッグ用: 1キーを押したら10個ランダムな場所にスポーンさせる
-    if (input->IsKeyPressed('1')) {
+    if (input->IsKeyPressed('1') || input->IsKeyPressedDIK(0x02 /*DIK_1*/)) {
         Vector3 spawnBase = {0.0f, 0.0f, 0.0f};
         Vector3 forward = {0.0f, 0.0f, 1.0f};
         Vector3 right = {1.0f, 0.0f, 0.0f};
@@ -83,150 +69,116 @@ void DebrisManagerComponent::Update() {
         }
 
         for (int i = 0; i < 10; ++i) {
-            VirtualDebris vd;
-            vd.id = nextVirtualId_++;
-            
             float distFwd = Random::GeneratorFloat(30.0f, 80.0f);
             float distRight = Random::GeneratorFloat(-20.0f, 20.0f);
             float height = Random::GeneratorFloat(-5.0f, 15.0f);
             
-            vd.position = {
+            Vector3 pos = {
                 spawnBase.x + forward.x * distFwd + right.x * distRight,
                 spawnBase.y + height,
                 spawnBase.z + forward.z * distFwd + right.z * distRight
             };
-            vd.isSpawned = false;
-            vd.isDestroyed = false;
-            vd.instance = nullptr;
             
-            virtualDebrisList_.push_back(vd);
+            int vid = virtualManager_->AddVirtualInstance(pos, {0,0,0}, {0.5f, 0.5f, 0.5f});
+            
+            DebrisAnimData anim;
+            anim.baseIdleY_ = pos.y;
+            anim.idleTimeY_ = Random::GeneratorFloat(0.0f, 100.0f);
+            animDataList_[vid] = anim;
         }
         
-        // --- プール枯渇の完全防止（古いデータの強制パージ） ---
-        // 1キーを連打して仮想データがプール上限(poolSize_)を超えた場合、
-        // もっとも古い（リスト先頭の）データを強制的に消去して実体を空ける
-        while (virtualDebrisList_.size() > static_cast<size_t>(poolSize_)) {
-            auto& oldVd = virtualDebrisList_.front();
-            if (oldVd.isSpawned && oldVd.instance) {
-                ReleaseDebris(oldVd.instance);
-            }
-            virtualDebrisList_.erase(virtualDebrisList_.begin());
+        // プール上限の管理
+        auto& vInstances = virtualManager_->GetVirtualInstances();
+        while (vInstances.size() > static_cast<size_t>(poolSize_)) {
+            // 最も古いインスタンスを削除
+            int oldestId = vInstances.front().id_;
+            virtualManager_->PurgeOldestInstance();
+            animDataList_.erase(oldestId);
         }
     }
 
-    UpdateStreaming();
+    // --- Data-Oriented Update ---
+    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    if (dt <= 0.0f) dt = 1.0f / 60.0f;
 
-    if (batchComponent_) {
-        batchComponent_->ClearInstances();
-        // プールの実体（DebrisManagerの子オブジェクト）のうち、現在アクティブになっているもの全てを描画バッチに登録する
-        for (const auto& child : gameObject_->GetChildren()) {
-            if (child && child->GetIsActive() && !child->IsDestroyed()) {
-                auto t = child->GetComponent<TransformComponent>();
-                if (t) {
-                    batchComponent_->AddInstanceWorld(t->GetWorldMatrix());
-                }
+    auto& virtualInstances = virtualManager_->GetVirtualInstances();
+    
+    // animDataList_ と virtualInstances は id をキーに紐づく
+    for (auto& vi : virtualInstances) {
+        if (!vi.isDestroyed_ && !vi.isPromoted_) {
+            auto it = animDataList_.find(vi.id_);
+            if (it != animDataList_.end()) {
+                auto& anim = it->second;
+                anim.idleTimeY_ += dt * 2.0f;
+                vi.position_.y = anim.baseIdleY_ + std::sin(anim.idleTimeY_) * 0.5f;
             }
         }
     }
 }
 
 std::shared_ptr<GameObject> DebrisManagerComponent::AcquireDebris() {
-    if (!pool_) return nullptr;
-    auto obj = pool_->Acquire();
+    // Bossなどが要求した場合は一時的なVirtualInstanceを作って即時昇格して渡す
+    int id = virtualManager_->AddVirtualInstance({0,0,0}, {0,0,0}, {0.5f, 0.5f, 0.5f});
+    auto obj = virtualManager_->Promote(id);
     if (obj) {
-        obj->SetIsActive(true);
         auto comp = obj->GetComponent<DebrisComponent>();
         if (comp) {
             comp->SetManager(this);
-            comp->SetVirtualId(-1); // ボス取得時など仮想IDが不要な場合のための初期化
+            comp->SetVirtualId(-1); // 使い捨て
         }
     }
     return obj;
 }
 
 void DebrisManagerComponent::ReleaseDebris(std::shared_ptr<GameObject> debris) {
-    if (!pool_ || !debris) return;
-    debris->SetIsActive(false);
-    pool_->Release(debris);
-}
-
-void DebrisManagerComponent::UpdateStreaming() {
-    auto activeCam = BaseModel::GetIrufemiEngine()->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
-    
-    Vector3 camPos = activeCam->GetTranslate();
-    Matrix4x4 viewMat = activeCam->GetViewMatrix();
-    Vector3 camFwd = { viewMat.m[0][2], viewMat.m[1][2], viewMat.m[2][2] };
-    
-    float len = std::sqrt(camFwd.x*camFwd.x + camFwd.y*camFwd.y + camFwd.z*camFwd.z);
-    if (len > 0.001f) {
-        camFwd.x /= len; camFwd.y /= len; camFwd.z /= len;
-    } else {
-        camFwd = {0.0f, 0.0f, 1.0f};
-    }
-    
-    const float SpawnDistanceSq = 150.0f * 150.0f; // 150m以内なら表示
-    
-    for (auto& vd : virtualDebrisList_) {
-        if (vd.isDestroyed) continue;
-        
-        float dx = vd.position.x - camPos.x;
-        float dy = vd.position.y - camPos.y;
-        float dz = vd.position.z - camPos.z;
-        float distSq = dx*dx + dy*dy + dz*dz;
-        
-        // カメラの前方方向への距離（内積）
-        float dot = dx*camFwd.x + dy*camFwd.y + dz*camFwd.z;
-        
-        // 距離が150m以内で、かつカメラより後方60m以内に収まっている場合は表示
-        bool inRange = (distSq <= SpawnDistanceSq && dot > -60.0f);
-        
-        if (inRange) {
-            // 表示範囲内
-            if (!vd.isSpawned) {
-                vd.instance = AcquireDebris();
-                if (vd.instance) {
-                    vd.isSpawned = true;
-                    auto transform = vd.instance->GetComponent<TransformComponent>();
-                    if (transform) transform->position_ = vd.position;
-                    
-                    auto comp = vd.instance->GetComponent<DebrisComponent>();
-                    if (comp) {
-                        comp->Initialize();
-                        comp->SetVirtualId(vd.id);
-                        comp->SetManager(this);
-                        comp->SetState(DebrisState::Idle);
-                    }
-                }
-            }
+    if (!debris) return;
+    auto comp = debris->GetComponent<DebrisComponent>();
+    if (comp) {
+        int vid = comp->GetVirtualId();
+        if (vid >= 0) {
+            virtualManager_->Demote(vid);
         } else {
-            // 表示範囲外
-            if (vd.isSpawned) {
-                bool canRelease = true;
-                if (vd.instance) {
-                    auto comp = vd.instance->GetComponent<DebrisComponent>();
-                    if (comp && (comp->GetState() == DebrisState::Pulled || comp->GetState() == DebrisState::Orbiting || comp->GetState() == DebrisState::Thrown)) {
-                        canRelease = false; // プレイヤーに保持されている、または投げられたものは消さない
-                    }
-                }
-                
-                if (canRelease) {
-                    ReleaseDebris(vd.instance);
-                    vd.instance = nullptr;
-                    vd.isSpawned = false;
-                }
-            }
+            // Bossのシールドなどで生成されたものならそのまま無効化・プール返却
+            virtualManager_->ReleaseGameObject(debris);
         }
     }
 }
 
-void DebrisManagerComponent::NotifyDestroyed(int id) {
-    for (auto& vd : virtualDebrisList_) {
-        if (vd.id == id) {
-            vd.isDestroyed = true;
-            vd.instance = nullptr;
-            vd.isSpawned = false;
-            break;
+std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(const Vector3& pos, float radius) {
+    auto& virtualInstances = virtualManager_->GetVirtualInstances();
+    float bestDistSq = radius * radius;
+    int bestId = -1;
+
+    for (const auto& vi : virtualInstances) {
+        if (!vi.isDestroyed_ && !vi.isPromoted_) {
+            float dx = vi.position_.x - pos.x;
+            float dy = vi.position_.y - pos.y;
+            float dz = vi.position_.z - pos.z;
+            float distSq = dx*dx + dy*dy + dz*dz;
+            if (distSq <= bestDistSq) {
+                bestDistSq = distSq;
+                bestId = vi.id_;
+            }
         }
     }
+
+    if (bestId >= 0) {
+        auto obj = virtualManager_->Promote(bestId);
+        if (obj) {
+            auto comp = obj->GetComponent<DebrisComponent>();
+            if (comp) {
+                comp->Initialize();
+                comp->SetVirtualId(bestId);
+                comp->SetManager(this);
+                comp->SetState(DebrisState::Idle);
+            }
+            return obj;
+        }
+    }
+    return nullptr;
+}
+
+void DebrisManagerComponent::NotifyDestroyed(int virtualId) {
+    virtualManager_->RemoveVirtualInstance(virtualId);
+    animDataList_.erase(virtualId);
 }

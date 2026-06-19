@@ -270,3 +270,65 @@ myBatch.Draw();
 ### 注意点・制限事項
 - GPUカリングは、**1000個以上の大量のインスタンス**を描画する場合に効果を発揮します。少数のオブジェクトに対しては、逆にCompute Shaderのディスパッチオーバーヘッドが上回る可能性があります。
 - 描画対象のオブジェクトには、ローカル空間での正確な **バウンディングスフィア (BoundingSphere)** が設定されている必要があります（`GetBoundingSphereRadius` の値がカリングに使用されます）。
+
+---
+
+## 【NEW】大量オブジェクトの最適化 (VirtualEntityManagerComponent) の利用方法
+
+本エンジンでは、数万個レベルの大量のオブジェクト（がれき、草、弾幕など）を最適化して描画・管理するためのシステムとして、**`VirtualEntityManagerComponent`** (Instance Replacement / Promotion パターン) をサポートしました。
+
+このコンポーネントを使用すると、普段は `GameObject` を実体化せずに軽量な「行列データ（Virtual Transform）」としてのみ管理・GPU描画し、プレイヤーが干渉した瞬間など **本当に必要なときだけ本物のアクター（GameObject）に昇格（Promote）させる** ことができます。
+
+### 導入手順
+1. **マネージャーの準備**:
+   ゲーム側の管理クラス（例: `DebrisManagerComponent`）で、`VirtualEntityManagerComponent` をアタッチして初期化します。
+
+```cpp
+#include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
+
+// 1. コンポーネントの追加
+auto virtualManager = gameObject_->AddComponent<VirtualEntityManagerComponent>();
+
+// 2. プールサイズと生成ファクトリの登録
+auto factory = [this]() -> std::shared_ptr<GameObject> {
+    auto obj = std::make_shared<GameObject>("MyEntity");
+    obj->AddComponent<DebrisComponent>(); // 物理挙動などをアタッチ
+    obj->SetIsActive(false);
+    gameObject_->AddChild(obj);
+    return obj;
+};
+virtualManager->Setup(500, factory); // 最大500個までは同時に実体化可能
+```
+
+2. **データの追加（実体化しない）**:
+```cpp
+// 座標や回転だけを登録し、仮想インスタンスIDを受け取る
+int id = virtualManager->AddVirtualInstance(Vector3(10, 0, 0));
+```
+
+3. **データの更新 (Data-Oriented Update)**:
+   アニメーションなどを適用したい場合は、`GetVirtualInstances()` で配列を取得し、毎フレーム直接書き換えます。実体がないため超高速に処理されます。
+```cpp
+auto& instances = virtualManager->GetVirtualInstances();
+for (auto& vi : instances) {
+    if (!vi.isPromoted_ && !vi.isDestroyed_) {
+        // 例：Y座標をフワフワさせる
+        vi.position_.y += std::sin(time) * 0.1f;
+    }
+}
+```
+
+4. **昇格 (Promote) と 降格 (Demote)**:
+   プレイヤーが近づいた、攻撃を当てた等のタイミングで、IDを指定して本物の `GameObject` に昇格させます。
+```cpp
+// id を指定してGameObjectをプールから取得し、仮想インスタンスの座標を同期する
+auto realObj = virtualManager->Promote(id);
+if (realObj) {
+    // 物理演算を有効化したり、ターゲットを追従させたりする
+}
+
+// 用済みになったらデータに戻す
+virtualManager->Demote(id);
+```
+
+このシステムと前述の「GPU Culling」を組み合わせることで、数万個のオブジェクトがあっても 60FPS を余裕で維持できるパフォーマンスを実現できます。

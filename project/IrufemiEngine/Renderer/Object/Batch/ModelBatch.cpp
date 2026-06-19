@@ -84,7 +84,9 @@ void ModelBatch::Draw() {
         }
     }
 
-    if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || (instances_.empty() && instanceWorlds_.empty())) { return; }
+    if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || (instances_.empty() && instanceWorlds_.empty())) { 
+        return; 
+    }
 
     SyncBeforeDraw();
 
@@ -102,6 +104,7 @@ void ModelBatch::Draw() {
         p.cullingDataAddress = GetCullingDataAddress();
         p.inputInstancesSrv = GetInstancingSrvHandleGPU();
         p.outputInstancesUav = GetOutputInstancesUavHandleGPU();
+        p.outputInstancesBuffer = GetOutputInstanceBuffer();
         p.maxInstanceCount = GetMaxInstanceCount();
         p.instanceCount = GetMaxInstanceCount(); // CPU側での最大数をセットしておく(描画には使用されない)
 

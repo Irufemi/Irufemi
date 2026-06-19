@@ -83,9 +83,7 @@ void DebrisComponent::Update() {
 
     switch (state_) {
         case DebrisState::Idle: {
-            // フワフワと上下に漂う疑似アニメーション
-            idleTimeY_ += deltaTime * 2.0f;
-            transform->position_.y = baseIdleY_ + std::sin(idleTimeY_) * 0.5f;
+            // アニメーション計算は VirtualEntityManager(DebrisManager) 側で行うため、ここでは何もしない
             break;
         }
         case DebrisState::Pulled: {

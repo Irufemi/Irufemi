@@ -539,8 +539,11 @@ ModelData ModelManager::LoadObjFile(const std::string& directoryPath, const std:
             }
 
             //頂点を逆順で登録することで、回り順を逆にする
+            modelData.indices.push_back(static_cast<uint32_t>(modelData.vertices.size()));
             modelData.vertices.push_back(triangle[2]);
+            modelData.indices.push_back(static_cast<uint32_t>(modelData.vertices.size()));
             modelData.vertices.push_back(triangle[1]);
+            modelData.indices.push_back(static_cast<uint32_t>(modelData.vertices.size()));
             modelData.vertices.push_back(triangle[0]);
         }
 
@@ -643,8 +646,11 @@ ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std:
                 tri[i] = { position, texcoord, normal };
             }
             // 三角形の回り順は逆にしている(必要な場合のみ)
+            currentMesh.indices.push_back(static_cast<uint32_t>(currentMesh.vertices.size()));
             currentMesh.vertices.push_back(tri[2]);
+            currentMesh.indices.push_back(static_cast<uint32_t>(currentMesh.vertices.size()));
             currentMesh.vertices.push_back(tri[1]);
+            currentMesh.indices.push_back(static_cast<uint32_t>(currentMesh.vertices.size()));
             currentMesh.vertices.push_back(tri[0]);
         } else if (id == "usemtl") {
             if (!currentMesh.vertices.empty()) {

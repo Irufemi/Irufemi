@@ -549,9 +549,18 @@ void DrawManager::DrawModelBatch(const RenderPackets::ModelBatchPacket& packet) 
         // UAV(Compute) から IndirectArgument へのバリア (ComputePassでUAVBarrierはかかっているが、State遷移が必要)
         DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
         
+        // OutputInstancesBuffer も UAV から SRV (NON_PIXEL_SHADER_RESOURCE) への遷移が必要
+        if (packet.outputInstancesBuffer) {
+            DirectXUtils::TransitionBarrier(commandList_, packet.outputInstancesBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+
+
         commandList_->ExecuteIndirect(commandSignature_.Get(), 1, packet.indirectCommandBuffer, 0, nullptr, 0);
 
         // 状態を戻す
+        if (packet.outputInstancesBuffer) {
+            DirectXUtils::TransitionBarrier(commandList_, packet.outputInstancesBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        }
         DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     } else {
         if (gpuMesh->indexCount > 0) {

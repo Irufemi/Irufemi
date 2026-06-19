@@ -21,6 +21,9 @@ void ModelBatchRendererComponent::Initialize() {
     if (!modelName_.empty()) {
         batch_->Initialize(modelName_);
     }
+    
+    // キャッシュされたGPUカリング設定を反映
+    batch_->SetUseGPUCulling(useGPUCulling_);
 
     if (gameObject_) {
         transform_ = gameObject_->GetComponent<TransformComponent>();
@@ -120,6 +123,7 @@ void ModelBatchRendererComponent::ClearInstances() {
 }
 
 void ModelBatchRendererComponent::SetUseGPUCulling(bool use) {
+    useGPUCulling_ = use;
     if (batch_) {
         batch_->SetUseGPUCulling(use);
     }
