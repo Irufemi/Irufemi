@@ -17,7 +17,7 @@ void RaycastComponent::Update() {
 
     if (transform_) {
         // ワールド空間でのレイの起点と方向を計算
-        Vector3 worldPos = transform_->worldPosition_;
+        Vector3 worldPos = transform_->GetWorldPosition();
         Matrix4x4 worldMat = transform_->GetWorldMatrix();
         
         // オフセットの適用

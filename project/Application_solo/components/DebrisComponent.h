@@ -35,6 +35,7 @@ public:
     void SetThrowDirection(const Vector3& dir) { throwDirection_ = dir; }
 
     void SetVirtualId(int id) { virtualId_ = id; }
+    int GetVirtualId() const { return virtualId_; }
     void SetManager(DebrisManagerComponent* manager) { manager_ = manager; }
 
 private:

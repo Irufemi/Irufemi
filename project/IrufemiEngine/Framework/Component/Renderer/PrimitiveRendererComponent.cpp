@@ -24,9 +24,9 @@ void PrimitiveRendererComponent::Initialize() {
 
 void PrimitiveRendererComponent::Update() {
     if (transform_ && primitive_) {
-        primitive_->SetPosition(transform_->worldPosition_);
-        primitive_->SetRotate(transform_->worldRotation_);
-        primitive_->SetScale(transform_->worldScale_);
+        primitive_->SetPosition(transform_->GetWorldPosition());
+        primitive_->SetRotate(transform_->GetWorldRotation());
+        primitive_->SetScale(transform_->GetWorldScale());
     }
 
     if (primitive_) {
@@ -185,7 +185,7 @@ void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
 Sphere PrimitiveRendererComponent::GetWorldSphere() const {
     Sphere result = { Vector3{0,0,0}, 1.0f }; // default
     if (transform_) {
-        result.center = transform_->worldPosition_;
+        result.center = transform_->GetWorldPosition();
         
         // 形状に応じて大まかな半径を決定
         float baseRadius = radius_;
@@ -193,7 +193,8 @@ Sphere PrimitiveRendererComponent::GetWorldSphere() const {
             baseRadius = 1.0f; // Cubeは1x1x1なので対角線の半分は約0.866だが余裕を持つ
         }
         
-        float maxScale = std::fmax(transform_->worldScale_.x, std::fmax(transform_->worldScale_.y, transform_->worldScale_.z));
+        Vector3 worldScale = transform_->GetWorldScale();
+        float maxScale = std::fmax(worldScale.x, std::fmax(worldScale.y, worldScale.z));
         result.radius = baseRadius * maxScale * 2.0f; // 安全マージン
     }
     return result;
@@ -206,7 +207,7 @@ bool PrimitiveRendererComponent::Raycast(const Ray& ray, float& outDistance) con
     Vector3 localHalfSize = { 0.5f, 0.5f, 0.5f };
 
     OBB obb;
-    obb.center = transform_->worldPosition_;
+    obb.center = transform_->GetWorldPosition();
 
     const Matrix4x4& wmat = transform_->GetWorldMatrix();
     Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };

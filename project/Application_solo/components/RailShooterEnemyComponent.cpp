@@ -48,12 +48,14 @@ void RailShooterEnemyComponent::Update() {
         if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
             // 前方(Z軸正方向など)に進む
             // Transformの rotation_ を元に向きベクトルを計算して足す
-            float yaw = transform->rotation_.y;
+            float yaw = transform->GetRotation().y;
             Vector3 forward = { std::sin(yaw), 0.0f, std::cos(yaw) };
             
-            transform->position_.x += forward.x * speed_ * deltaTime;
-            transform->position_.y += forward.y * speed_ * deltaTime;
-            transform->position_.z += forward.z * speed_ * deltaTime;
+            Vector3 pos = transform->GetPosition();
+            pos.x += forward.x * speed_ * deltaTime;
+            pos.y += forward.y * speed_ * deltaTime;
+            pos.z += forward.z * speed_ * deltaTime;
+            transform->SetPosition(pos);
         }
     } else {
         // 条件を満たしたらアクティブ化

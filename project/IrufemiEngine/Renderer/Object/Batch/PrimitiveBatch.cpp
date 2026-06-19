@@ -82,7 +82,7 @@ void PrimitiveBatch::Draw() {
     p.indexCount = res->indexCount;
     
     p.materialAddress = GetMaterialVAddress();
-    p.textureHandle = GetTextureHandle();
+    p.textureHandle = textureHandle_;
     p.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
     p.instanceCount = GetInstanceCount();
     

@@ -24,7 +24,7 @@ void DebrisComponent::Initialize() {
     idleTimeY_ = static_cast<float>(rand() % 100); // ランダムな位相で開始
     
     if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
-        baseIdleY_ = transform->position_.y;
+        baseIdleY_ = transform->GetPosition().y;
     }
 
     if (auto collider = gameObject_->GetComponent<SphereColliderComponent>()) {
@@ -45,7 +45,7 @@ void DebrisComponent::Initialize() {
 
             if (hit) {
                 if (auto t = gameObject_->GetComponent<TransformComponent>()) {
-                    gameObject_->Instantiate("resources/prefabs/hit_effect.json", t->worldPosition_);
+                    gameObject_->Instantiate("resources/prefabs/hit_effect.json", t->GetWorldPosition());
                 }
                 if (manager_) {
                     manager_->ReleaseDebris(gameObject_->shared_from_this());
@@ -83,9 +83,7 @@ void DebrisComponent::Update() {
 
     switch (state_) {
         case DebrisState::Idle: {
-            // フワフワと上下に漂う疑似アニメーション
-            idleTimeY_ += deltaTime * 2.0f;
-            transform->position_.y = baseIdleY_ + std::sin(idleTimeY_) * 0.5f;
+            // アニメーション計算は VirtualEntityManager(DebrisManager) 側で行うため、ここでは何もしない
             break;
         }
         case DebrisState::Pulled: {
@@ -94,13 +92,15 @@ void DebrisComponent::Update() {
                 if (targetTransform) {
                     // ターゲット(プレイヤー)に向かってLerpで移動
                     Vector3 diff = {
-                        targetTransform->position_.x - transform->position_.x,
-                        targetTransform->position_.y + 2.0f - transform->position_.y, // 少し上に引き寄せる
-                        targetTransform->position_.z - transform->position_.z
+                        targetTransform->GetPosition().x - transform->GetPosition().x,
+                        targetTransform->GetPosition().y + 2.0f - transform->GetPosition().y, // 少し上に引き寄せる
+                        targetTransform->GetPosition().z - transform->GetPosition().z
                     };
-                    transform->position_.x += diff.x * pullSpeed_ * deltaTime;
-                    transform->position_.y += diff.y * pullSpeed_ * deltaTime;
-                    transform->position_.z += diff.z * pullSpeed_ * deltaTime;
+                    Vector3 pos = transform->GetPosition();
+                    pos.x += diff.x * pullSpeed_ * deltaTime;
+                    pos.y += diff.y * pullSpeed_ * deltaTime;
+                    pos.z += diff.z * pullSpeed_ * deltaTime;
+                    transform->SetPosition(pos);
 
                     // 一定距離に近づいたらOrbitingへ自動遷移
                     float distSq = diff.x*diff.x + diff.y*diff.y + diff.z*diff.z;
@@ -124,9 +124,11 @@ void DebrisComponent::Update() {
                         std::sin(orbitAngle_) * orbitRadius_
                     };
                     
-                    transform->position_.x = targetTransform->position_.x + offset.x;
-                    transform->position_.y = targetTransform->position_.y + offset.y;
-                    transform->position_.z = targetTransform->position_.z + offset.z;
+                    Vector3 pos = transform->GetPosition();
+                    pos.x = targetTransform->GetPosition().x + offset.x;
+                    pos.y = targetTransform->GetPosition().y + offset.y;
+                    pos.z = targetTransform->GetPosition().z + offset.z;
+                    transform->SetPosition(pos);
                 }
             }
             break;
@@ -145,12 +147,14 @@ void DebrisComponent::Update() {
                     Vector3 baseOffset = { 0, 0, bossShieldRadius + bossOrbitRadiusOffset_ };
                     Vector3 localPos = Math::TransformNormal(baseOffset, rotMatrix);
 
-                    transform->position_.x = targetTransform->position_.x + localPos.x;
-                    transform->position_.y = targetTransform->position_.y + localPos.y;
-                    transform->position_.z = targetTransform->position_.z + localPos.z;
+                    Vector3 pos = transform->GetPosition();
+                    pos.x = targetTransform->GetPosition().x + localPos.x;
+                    pos.y = targetTransform->GetPosition().y + localPos.y;
+                    pos.z = targetTransform->GetPosition().z + localPos.z;
+                    transform->SetPosition(pos);
 
                     // 自身の回転も反映（2倍の速度で自転）
-                    transform->rotation_ = { bossOrbitAngleX_ * 2.0f, bossOrbitAngleY_ * 2.0f, bossOrbitAngleZ_ * 2.0f };
+                    transform->SetRotation({ bossOrbitAngleX_ * 2.0f, bossOrbitAngleY_ * 2.0f, bossOrbitAngleZ_ * 2.0f });
                 }
             }
             break;
@@ -161,9 +165,9 @@ void DebrisComponent::Update() {
                 if (targetTransform) {
                     // 敵に向かって高速ホーミング移動
                     Vector3 diff = {
-                        targetTransform->position_.x - transform->position_.x,
-                        targetTransform->position_.y - transform->position_.y,
-                        targetTransform->position_.z - transform->position_.z
+                        targetTransform->GetPosition().x - transform->GetPosition().x,
+                        targetTransform->GetPosition().y - transform->GetPosition().y,
+                        targetTransform->GetPosition().z - transform->GetPosition().z
                     };
                     // 正規化して一定速度で飛ばす
                     float len = std::sqrt(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
@@ -174,9 +178,11 @@ void DebrisComponent::Update() {
             }
             
             // ターゲットがない（または既に死んだ）場合でも、計算された(または初期設定された)方向に飛び続ける
-            transform->position_.x += throwDirection_.x * throwSpeed_ * deltaTime;
-            transform->position_.y += throwDirection_.y * throwSpeed_ * deltaTime;
-            transform->position_.z += throwDirection_.z * throwSpeed_ * deltaTime;
+            Vector3 pos = transform->GetPosition();
+            pos.x += throwDirection_.x * throwSpeed_ * deltaTime;
+            pos.y += throwDirection_.y * throwSpeed_ * deltaTime;
+            pos.z += throwDirection_.z * throwSpeed_ * deltaTime;
+            transform->SetPosition(pos);
             
             // TODO: 一定距離/時間で消滅させる等の処理が必要
             break;
