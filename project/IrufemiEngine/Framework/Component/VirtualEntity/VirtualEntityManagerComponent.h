@@ -17,12 +17,10 @@ class ModelBatchRendererComponent;
  */
 struct VirtualInstance {
     int id_;
-    Vector3 position_;
-    Vector3 rotation_; // Euler angles
-    Vector3 scale_;
-    Matrix4x4 localMatrix_;
-    bool isMatrixDirty_;
-    bool isPromoted_;
+    Vector3 position_ = {0.0f, 0.0f, 0.0f};
+    Vector3 rotation_ = {0.0f, 0.0f, 0.0f};
+    Vector3 scale_ = {1.0f, 1.0f, 1.0f};
+    bool isPromoted_ = false;
     bool isDestroyed_;
     std::shared_ptr<GameObject> promotedInstance_;
 };

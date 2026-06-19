@@ -2,6 +2,15 @@
 // GPUCulling.CS.hlsl
 //=============================================================================
 
+#include "MathUtility.hlsli"
+
+struct TransformData {
+    float4 position;
+    float4 rotation;
+    float4 scale;
+    float4 color;
+};
+
 struct InstanceData {
     matrix WVP;
     matrix World;
@@ -14,21 +23,17 @@ cbuffer CullingData : register(b0) {
     float4 planes[6];        // カメラのFrustum 6平面 (xyz = normal, w = distance)
     uint  maxInstanceCount;  // バッファに存在する最大インスタンス数
     float localRadius;       // モデルのローカルBoundingSphereの半径
-    float2 padding;
+    float time;              // IrufemiEngineのTotalTime
+    float padding;
 };
 
-// 入力: CPUからアップロードされた全インスタンス
-StructuredBuffer<InstanceData> InputInstances : register(t0);
+// 入力: CPUからアップロードされた未計算のTransform
+StructuredBuffer<TransformData> InputInstances : register(t0);
 
-// 出力: カリングを生き残ったインスタンス
+// 出力: カリングを生き残ったインスタンス（行列化済み）
 RWStructuredBuffer<InstanceData> OutputInstances : register(u0);
 
 // 出力: ExecuteIndirect用の引数バッファ (uintの配列として扱う)
-// CommandBuffer[0] = IndexCountPerInstance
-// CommandBuffer[1] = InstanceCount
-// CommandBuffer[2] = StartIndexLocation
-// CommandBuffer[3] = BaseVertexLocation
-// CommandBuffer[4] = StartInstanceLocation
 RWStructuredBuffer<uint> CommandBuffer : register(u1);
 
 [numthreads(64, 1, 1)]
@@ -39,23 +44,30 @@ void main(uint3 DTid : SV_DispatchThreadID) {
         return;
     }
 
-    InstanceData inst = InputInstances[instanceID];
+    TransformData td = InputInstances[instanceID];
 
-    // World行列から中心座標を抽出
-    float3 center = float3(inst.World._41, inst.World._42, inst.World._43);
+    // --- GPU Animation Calculation ---
+    // CPU側の 2.0f 倍速のアニメーションに合わせる。instanceIDで位相を少しずらす。
+    float phaseOffset = (float)(instanceID % 100) * 0.1f;
+    float animTime = time * 2.0f + phaseOffset;
     
-    // World行列から各軸のスケールを抽出して最大スケールを求める
-    float scaleX = length(float3(inst.World._11, inst.World._12, inst.World._13));
-    float scaleY = length(float3(inst.World._21, inst.World._22, inst.World._23));
-    float scaleZ = length(float3(inst.World._31, inst.World._32, inst.World._33));
+    float3 pos = td.position.xyz;
+    pos.y += sin(animTime) * 0.5f;
     
-    float maxScale = max(scaleX, max(scaleY, scaleZ));
+    float3 rot = td.rotation.xyz;
+    float3 scale = td.scale.xyz;
+
+    // --- Matrix Construction ---
+    matrix world = MakeAffineMatrix(scale, rot, pos);
+    matrix worldInvTrans = MakeInverseTransposeMatrix(scale, rot);
+
+    float maxScale = max(scale.x, max(scale.y, scale.z));
     float worldRadius = localRadius * maxScale;
 
     // 球とFrustumの6平面での交差判定
     bool isVisible = true;
     for (int i = 0; i < 6; ++i) {
-        float dist = dot(center, planes[i].xyz) + planes[i].w;
+        float dist = dot(pos, planes[i].xyz) + planes[i].w;
         if (dist < -worldRadius) {
             isVisible = false;
             break;
@@ -66,6 +78,13 @@ void main(uint3 DTid : SV_DispatchThreadID) {
     if (isVisible) {
         uint visibleIndex = 0;
         InterlockedAdd(CommandBuffer[1], 1, visibleIndex);
-        OutputInstances[visibleIndex] = inst;
+        
+        InstanceData outInst;
+        outInst.WVP = matrix(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1);
+        outInst.World = world;
+        outInst.WorldInverseTranspose = worldInvTrans;
+        outInst.color = td.color;
+        
+        OutputInstances[visibleIndex] = outInst;
     }
 }

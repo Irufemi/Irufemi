@@ -97,11 +97,19 @@ protected:
         Vector4   color;
     };
 
+    struct TransformData {
+        Vector4 position; // w is padding
+        Vector4 rotation; // w is padding
+        Vector4 scale;    // w is padding
+        Vector4 color;
+    };
+
     struct CullingData {
         Vector4 planes[6];
         uint32_t maxInstanceCount;
         float localRadius;
-        float padding[2];
+        float time;
+        float padding;
     };
 
     void CreateOrResizeInstanceBuffer(uint32_t instanceCount);

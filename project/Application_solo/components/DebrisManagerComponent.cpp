@@ -13,7 +13,7 @@
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include <cmath>
-#include <imgui.h>
+
 
 void DebrisManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
@@ -108,21 +108,8 @@ void DebrisManagerComponent::Update() {
     if (dt <= 0.0f) dt = 1.0f / 60.0f;
 
     auto& virtualInstances = virtualManager_->GetDenseInstances();
-    
-    // animDataList_ は id を直接インデックスとして O(1) アクセスする
-    for (auto& vi : virtualInstances) {
-        if (!vi.isPromoted_) { // isDestroyed_ のチェックは Dense 配列には不要（削除済みのものは含まれないため）
-            auto& anim = animDataList_[vi.id_];
-            anim.idleTimeY_ += dt * 2.0f;
-            vi.position_.y = anim.baseIdleY_ + std::sin(anim.idleTimeY_) * 0.5f;
-            vi.isMatrixDirty_ = true; // 位置が変わったので行列更新フラグを立てる
-        }
-    }
 
-    ImGui::Begin("Debris Manager Debug");
-    ImGui::Text("Active IDs (Queue) Size: %d", static_cast<int>(activeIds_.size()));
-    ImGui::Text("Dense Array Size: %d", static_cast<int>(virtualInstances.size()));
-    ImGui::End();
+
 }
 
 std::shared_ptr<GameObject> DebrisManagerComponent::AcquireDebris() {

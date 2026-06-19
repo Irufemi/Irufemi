@@ -4,7 +4,7 @@
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include <algorithm>
-#include <imgui.h>
+
 
 void VirtualEntityManagerComponent::Initialize() {
     batchRenderer_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
@@ -41,8 +41,6 @@ int VirtualEntityManagerComponent::AddVirtualInstance(const Vector3& pos, const 
     vi.position_ = pos;
     vi.rotation_ = rot;
     vi.scale_ = scale;
-    vi.localMatrix_ = Math::MakeAffineMatrix(scale, rot, pos);
-    vi.isMatrixDirty_ = false;
     vi.isPromoted_ = false;
     vi.isDestroyed_ = false;
     vi.promotedInstance_ = nullptr;
@@ -119,7 +117,6 @@ void VirtualEntityManagerComponent::Demote(int id) {
             vi.position_ = t->position_;
             vi.rotation_ = t->rotation_;
             vi.scale_ = t->scale_;
-            vi.isMatrixDirty_ = true;
         }
         
         vi.promotedInstance_->SetIsActive(false);
@@ -142,14 +139,14 @@ void VirtualEntityManagerComponent::Update() {
     
     batchRenderer_->ClearInstances();
     
-    // 仮想インスタンス（未昇格）の描画（Dense Arrayなので隙間なく高速に走査可能）
+    // 仮想インスタンス（未昇格）の描画
     for (auto& vi : dense_) {
         if (!vi.isPromoted_) {
-            if (vi.isMatrixDirty_) {
-                vi.localMatrix_ = Math::MakeAffineMatrix(vi.scale_, vi.rotation_, vi.position_);
-                vi.isMatrixDirty_ = false;
-            }
-            batchRenderer_->AddInstanceWorld(vi.localMatrix_);
+            Transform t;
+            t.translate = vi.position_;
+            t.rotate = vi.rotation_;
+            t.scale = vi.scale_;
+            batchRenderer_->AddInstance(t);
         }
     }
     
@@ -164,16 +161,4 @@ void VirtualEntityManagerComponent::Update() {
         }
     }
 
-    // デバッグ情報の表示
-    ImGui::Begin("Virtual Entity Debug");
-    ImGui::Text("Max Capacity: %d", maxVirtualInstances_);
-    ImGui::Text("Active Dense Count: %d", static_cast<int>(dense_.size()));
-    ImGui::Text("Free IDs Count: %d", static_cast<int>(freeIds_.size()));
-    ImGui::Text("BatchRenderer Addr: %p", batchRenderer_);
-    if (!dense_.empty()) {
-        auto& first = dense_[0];
-        ImGui::Text("First Instance IsPromoted: %d", first.isPromoted_);
-        ImGui::Text("First Instance Pos: %.2f, %.2f, %.2f", first.position_.x, first.position_.y, first.position_.z);
-    }
-    ImGui::End();
 }
