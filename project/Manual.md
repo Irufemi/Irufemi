@@ -332,3 +332,40 @@ virtualManager->Demote(id);
 ```
 
 このシステムと前述の「GPU Culling」を組み合わせることで、数万個のオブジェクトがあっても 60FPS を余裕で維持できるパフォーマンスを実現できます。
+
+---
+
+## 【NEW】TransformComponent の使い方 (カプセル化と遅延評価)
+
+本エンジンでは、描画・物理・ゲームロジック間のキャッシュ効率および同期安全性を高めるため、**`TransformComponent` のアーキテクチャがカプセル化（Data-Oriented Design対応）されました。**
+
+従来のように `transform->position_` のようなパブリックメンバへの直接代入・参照は禁止されており、代わりに **Getter / Setter** を使用する必要があります。
+
+### 主なAPI
+```cpp
+auto transform = gameObject_->GetComponent<TransformComponent>();
+
+// --- 取得 (Getter) ---
+// ローカル座標系
+Vector3 localPos = transform->GetPosition();
+Vector3 localRot = transform->GetRotation(); // オイラー角(ラジアン)
+Vector3 localScl = transform->GetScale();
+
+// ワールド座標系（親のTransformを加味した最終結果）
+Vector3 worldPos = transform->GetWorldPosition();
+Vector3 worldRot = transform->GetWorldRotation();
+Vector3 worldScl = transform->GetWorldScale();
+
+// --- 更新 (Setter) ---
+// 値を更新すると、内部で Dirty フラグ (isLocalDirty_) が立ちます
+transform->SetPosition(Vector3(10, 5, 0));
+transform->SetRotation(Vector3(0, Math::ToRadian(90), 0));
+transform->SetScale(Vector3(2, 2, 2));
+```
+
+### 【重要】Dirty フラグと遅延評価 (Lazy Evaluation) の仕組み
+Setter を通じて座標を変更しても、**その瞬間にすべての行列計算が行われるわけではありません。**
+内部では「Dirty（変更あり）」というフラグだけが立ち、実際に `GetWorldMatrix()` や描画処理から行列が要求されたタイミングで、**1回だけ（キャッシュとして）再計算** される遅延評価の仕組みが導入されています。
+
+これにより、同じフレーム内で何度座標を変更しても、無駄な行列計算（sin/cosや行列乗算）が走らないため、非常に高速に動作します。
+※ 特別な理由がない限り、自分で `ComputeMatrix()` を呼び出す必要はありません。エンジン側の `BaseScene::Update()` の直後に一括で最新化されます。
