@@ -30,9 +30,9 @@ void MeshRendererComponent::Initialize() {
 void MeshRendererComponent::Update() {
     // TransformComponent があれば、その座標を StaticModelObject に渡す（同期）
     if (transform_ && obj_) {
-        obj_->SetTranslate(transform_->worldPosition_);
-        obj_->SetRotate(transform_->worldRotation_);
-        obj_->SetScale(transform_->worldScale_);
+        obj_->SetTranslate(transform_->GetWorldPosition());
+        obj_->SetRotate(transform_->GetWorldRotation());
+        obj_->SetScale(transform_->GetWorldScale());
     }
 
     // StaticModelObject の行列計算などを実行
@@ -51,10 +51,11 @@ void MeshRendererComponent::Draw() {
 Sphere MeshRendererComponent::GetWorldSphere() const {
     Sphere result = { Vector3{0,0,0}, 1.0f }; // default
     if (transform_) {
-        result.center = transform_->worldPosition_;
+        result.center = transform_->GetWorldPosition();
         // StaticModelObject の cpuModel があれば正確な半径を取得
         // ここでは便宜上スケールの最大値を半径として扱う（もしくは定数）
-        float maxScale = std::fmax(transform_->worldScale_.x, std::fmax(transform_->worldScale_.y, transform_->worldScale_.z));
+        Vector3 worldScale = transform_->GetWorldScale();
+        float maxScale = std::fmax(worldScale.x, std::fmax(worldScale.y, worldScale.z));
         result.radius = maxScale;
     }
     return result;

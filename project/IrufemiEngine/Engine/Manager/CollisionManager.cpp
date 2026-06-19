@@ -55,11 +55,17 @@ void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
             ColliderComponent* other = (iter->first == collider) ? iter->second : iter->first;
             
             // 削除される側からExitを呼ぶ（任意）
-            if (collider->onCollisionExit_) collider->onCollisionExit_(other);
-            if (other && other->onCollisionExit_) other->onCollisionExit_(collider);
+            // 既にデストラクタが走っているオブジェクトのメソッドを呼ぶとVTable参照エラー（純粋仮想関数呼び出し等）になるため、
+            // 削除対象(collider)が属するGameObjectへのExit通知は行わない。
+            // また、other側へExit通知を送る際も、colliderが破棄中であることに注意が必要。
+            // 可能であれば、other->GetGameObject()->SendCollisionExit(nullptr) のようにするか、通知自体をスキップする。
             
-            if (collider->GetGameObject()) collider->GetGameObject()->SendCollisionExit(other ? other->GetGameObject() : nullptr);
-            if (other && other->GetGameObject()) other->GetGameObject()->SendCollisionExit(collider ? collider->GetGameObject() : nullptr);
+            if (other && other->onCollisionExit_) {
+                other->onCollisionExit_(nullptr); // 破棄されるオブジェクトへのアクセスを防ぐためnullptrを渡す
+            }
+            if (other && other->GetGameObject()) {
+                other->GetGameObject()->SendCollisionExit(nullptr);
+            }
             
             iter = previousCollisions_.erase(iter);
         } else {
@@ -173,14 +179,14 @@ void CollisionManager::CheckAllCollisions() {
                             Vector3 pushA = Math::Multiply(result.depth * 0.5f, result.normal);
                             Vector3 pushB = Math::Multiply(result.depth * 0.5f, Math::Multiply(-1.0f, result.normal));
                             
-                            transformA->position_ = Math::Add(transformA->position_, pushA);
-                            transformB->position_ = Math::Add(transformB->position_, pushB);
+                            transformA->SetPosition(Math::Add(transformA->GetPosition(), pushA));
+                            transformB->SetPosition(Math::Add(transformB->GetPosition(), pushB));
                         } else if (transformA) {
                             Vector3 pushA = Math::Multiply(result.depth, result.normal);
-                            transformA->position_ = Math::Add(transformA->position_, pushA);
+                            transformA->SetPosition(Math::Add(transformA->GetPosition(), pushA));
                         } else if (transformB) {
                             Vector3 pushB = Math::Multiply(result.depth, Math::Multiply(-1.0f, result.normal));
-                            transformB->position_ = Math::Add(transformB->position_, pushB);
+                            transformB->SetPosition(Math::Add(transformB->GetPosition(), pushB));
                         }
                     }
                 }

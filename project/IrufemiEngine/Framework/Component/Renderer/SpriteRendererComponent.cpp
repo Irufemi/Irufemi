@@ -35,12 +35,12 @@ void SpriteRendererComponent::Initialize() {
 void SpriteRendererComponent::Update() {
     if (transform_ && sprite_) {
         // SpriteはZ位置も保持できるが基本は2D
-        sprite_->SetPosition(transform_->worldPosition_.x, transform_->worldPosition_.y, transform_->worldPosition_.z);
+        sprite_->SetPosition(transform_->GetWorldPosition().x, transform_->GetWorldPosition().y, transform_->GetWorldPosition().z);
         // Spriteの回転はZ軸のみ
-        sprite_->SetRotation(transform_->worldRotation_.z);
+        sprite_->SetRotation(transform_->GetWorldRotation().z);
         
         // TransformのScaleは、SpriteのBaseサイズに対するスケーリングとして扱う
-        sprite_->SetSize(size_[0] * transform_->worldScale_.x, size_[1] * transform_->worldScale_.y);
+        sprite_->SetSize(size_[0] * transform_->GetWorldScale().x, size_[1] * transform_->GetWorldScale().y);
     }
 
     if (sprite_) {

@@ -295,6 +295,7 @@ void DirectXCommon::RegisterAllShaders() {
     auto csVoxelInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeVoxel.CS.hlsl", options);
     auto csVoxelEmit = shaderManager_->GetOrCompile(L"resources/shaders/EmitVoxel.CS.hlsl", options);
     auto csVoxelUpdate = shaderManager_->GetOrCompile(L"resources/shaders/UpdateVoxel.CS.hlsl", options);
+    auto csGpuCulling = shaderManager_->GetOrCompile(L"resources/shaders/GPUCulling.CS.hlsl", options);
 
     // --- 各種シェーダの登録 ---
     psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });
@@ -368,6 +369,7 @@ void DirectXCommon::RegisterAllShaders() {
     psoManager_->RegisterComputeShader("VoxelParticleInitialize", csVoxelInit, computeRootSig);
     psoManager_->RegisterComputeShader("VoxelParticleEmit", csVoxelEmit, computeRootSig);
     psoManager_->RegisterComputeShader("VoxelParticleUpdate", csVoxelUpdate, computeRootSig);
+    psoManager_->RegisterComputeShader("GPUCulling", csGpuCulling, computeRootSig);
 
     // --- ビューポート・シザー矩形設定 ---
     viewport_.Width = static_cast<FLOAT>(clientWidth_);

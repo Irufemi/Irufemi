@@ -120,6 +120,17 @@ namespace RenderPackets {
         bool castShadows;
         ID3D12PipelineState* customPSO = nullptr;
         D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
+
+        // GPU Culling 拡張用
+        bool useGPUCulling = false;
+        ID3D12Resource* indirectCommandBuffer = nullptr;
+        ID3D12Resource* indirectCommandUploadBuffer = nullptr;
+        D3D12_GPU_DESCRIPTOR_HANDLE indirectCommandUav{};
+        D3D12_GPU_VIRTUAL_ADDRESS cullingDataAddress = 0;
+        D3D12_GPU_DESCRIPTOR_HANDLE inputInstancesSrv{};
+        D3D12_GPU_DESCRIPTOR_HANDLE outputInstancesUav{};
+        ID3D12Resource* outputInstancesBuffer = nullptr;
+        UINT maxInstanceCount = 0;
     };
 
     struct SpriteBatchPacket {

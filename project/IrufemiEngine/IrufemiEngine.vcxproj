@@ -745,7 +745,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Resource\Texture\Texture.cpp" />
     <ClCompile Include="Resource\Texture\TextureManager.cpp" />
     <ClCompile Include="Resource\Texture\TextureUtility.cpp" />
-    </ItemGroup>
+    <ClCompile Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.cpp" /></ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Irufemi.h" />
     <ClInclude Include="Engine\IrufemiEngine.h" />
@@ -979,5 +979,5 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="..\externals\msdfgen\ext\import-svg.h" />
     <ClInclude Include="..\externals\msdfgen\ext\resolve-shape-geometry.h" />
     <ClInclude Include="..\externals\msdfgen\ext\save-png.h" />
-  </ItemGroup>
+  <ClInclude Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.h" /></ItemGroup>
 </Project>

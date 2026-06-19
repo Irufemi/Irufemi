@@ -26,58 +26,63 @@ void TransformComponentEditor::Draw(Component* component, EditorActionManager* a
         // --- Reset Button ---
         ImGui::SameLine(ImGui::GetContentRegionAvail().x - 40.0f);
         if (ImGui::Button("Reset##TR")) {
-            Vector3 oldPos = comp->position_;  Vector3 newPos = {0,0,0};
-            Vector3 oldRot = comp->rotation_;  Vector3 newRot = {0,0,0};
-            Vector3 oldScale = comp->scale_;   Vector3 newScale = {1,1,1};
+            Vector3 oldPos = comp->GetPosition();  Vector3 newPos = {0,0,0};
+            Vector3 oldRot = comp->GetRotation();  Vector3 newRot = {0,0,0};
+            Vector3 oldScale = comp->GetScale();   Vector3 newScale = {1,1,1};
             
             actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
-                oldPos, newPos, [comp](const Vector3& v) { comp->position_ = v; }));
+                oldPos, newPos, [comp](const Vector3& v) { comp->SetPosition(v); }));
             actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
-                oldRot, newRot, [comp](const Vector3& v) { comp->rotation_ = v; }));
+                oldRot, newRot, [comp](const Vector3& v) { comp->SetRotation(v); }));
             actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
-                oldScale, newScale, [comp](const Vector3& v) { comp->scale_ = v; }));
+                oldScale, newScale, [comp](const Vector3& v) { comp->SetScale(v); }));
         }
         
         // Position
         static Vector3 startPos;
-        if (ImGui::DragFloat3("Position", &comp->position_.x, 0.1f)) {
-            // Dragging changes the value directly but doesn't push command yet
+        Vector3 pos = comp->GetPosition();
+        if (ImGui::DragFloat3("Position", &pos.x, 0.1f)) {
+            comp->SetPosition(pos);
         }
-        if (ImGui::IsItemActivated()) startPos = comp->position_;
+        if (ImGui::IsItemActivated()) startPos = comp->GetPosition();
         if (ImGui::IsItemDeactivatedAfterEdit()) {
-            Vector3 endPos = comp->position_;
+            Vector3 endPos = comp->GetPosition();
             actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
-                startPos, endPos, [comp](const Vector3& v) { comp->position_ = v; }));
+                startPos, endPos, [comp](const Vector3& v) { comp->SetPosition(v); }));
         }
         
         // Rotation
         static Vector3 startRot;
+        Vector3 rot = comp->GetRotation();
         Vector3 rotDegrees = {
-            comp->rotation_.x * (180.0f / 3.14159265f),
-            comp->rotation_.y * (180.0f / 3.14159265f),
-            comp->rotation_.z * (180.0f / 3.14159265f)
+            rot.x * (180.0f / 3.14159265f),
+            rot.y * (180.0f / 3.14159265f),
+            rot.z * (180.0f / 3.14159265f)
         };
         if (ImGui::DragFloat3("Rotation", &rotDegrees.x, 1.0f)) {
-            comp->rotation_.x = rotDegrees.x * (3.14159265f / 180.0f);
-            comp->rotation_.y = rotDegrees.y * (3.14159265f / 180.0f);
-            comp->rotation_.z = rotDegrees.z * (3.14159265f / 180.0f);
+            rot.x = rotDegrees.x * (3.14159265f / 180.0f);
+            rot.y = rotDegrees.y * (3.14159265f / 180.0f);
+            rot.z = rotDegrees.z * (3.14159265f / 180.0f);
+            comp->SetRotation(rot);
         }
-        if (ImGui::IsItemActivated()) startRot = comp->rotation_;
+        if (ImGui::IsItemActivated()) startRot = comp->GetRotation();
         if (ImGui::IsItemDeactivatedAfterEdit()) {
-            Vector3 endRot = comp->rotation_;
+            Vector3 endRot = comp->GetRotation();
             actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
-                startRot, endRot, [comp](const Vector3& v) { comp->rotation_ = v; }));
+                startRot, endRot, [comp](const Vector3& v) { comp->SetRotation(v); }));
         }
 
         // Scale
         static Vector3 startScale;
-        if (ImGui::DragFloat3("Scale", &comp->scale_.x, 0.1f)) {
+        Vector3 scale = comp->GetScale();
+        if (ImGui::DragFloat3("Scale", &scale.x, 0.1f)) {
+            comp->SetScale(scale);
         }
-        if (ImGui::IsItemActivated()) startScale = comp->scale_;
+        if (ImGui::IsItemActivated()) startScale = comp->GetScale();
         if (ImGui::IsItemDeactivatedAfterEdit()) {
-            Vector3 endScale = comp->scale_;
+            Vector3 endScale = comp->GetScale();
             actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
-                startScale, endScale, [comp](const Vector3& v) { comp->scale_ = v; }));
+                startScale, endScale, [comp](const Vector3& v) { comp->SetScale(v); }));
         }
 
         ImGui::TreePop();

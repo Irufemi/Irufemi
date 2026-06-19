@@ -76,7 +76,7 @@ void SceneViewPanel::Draw() {
                     if (sprite) {
                         Vector2 sizeScaled = sprite->GetSize();
                         Vector2 anchor = sprite->GetAnchor();
-                        Vector3 pos = transform->worldPosition_;
+                        Vector3 pos = transform->GetWorldPosition();
                         
                         float left = pos.x - sizeScaled.x * anchor.x;
                         float top = pos.y - sizeScaled.y * anchor.y;
@@ -94,14 +94,14 @@ void SceneViewPanel::Draw() {
                 }
             } else if (auto textComp = selectedObj->GetComponent<TextRendererComponent>()) {
                 if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
-                    Vector3 pos = transform->worldPosition_;
+                    Vector3 pos = transform->GetWorldPosition();
                     Vector2 minBounds = textComp->GetLocalBoundsMin();
                     Vector2 maxBounds = textComp->GetLocalBoundsMax();
                     
-                    float left = pos.x + minBounds.x * transform->worldScale_.x;
-                    float right = pos.x + maxBounds.x * transform->worldScale_.x;
-                    float top = pos.y + minBounds.y * transform->worldScale_.y;
-                    float bottom = pos.y + maxBounds.y * transform->worldScale_.y;
+                    float left = pos.x + minBounds.x * transform->GetWorldScale().x;
+                    float right = pos.x + maxBounds.x * transform->GetWorldScale().x;
+                    float top = pos.y + minBounds.y * transform->GetWorldScale().y;
+                    float bottom = pos.y + maxBounds.y * transform->GetWorldScale().y;
                     
                     float scaleX = size.x / 1280.0f;
                     float scaleY = size.y / 720.0f;
@@ -144,7 +144,7 @@ void SceneViewPanel::Draw() {
                     if (auto selectedObj = editorManager_->GetSelectedObject()) {
                         if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
                             if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
-                                cameraController_.Focus(camera, transform->worldPosition_);
+                                cameraController_.Focus(camera, transform->GetWorldPosition());
                             }
                         }
                     }
@@ -278,9 +278,9 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
                     rot.y = rot.y * Math::PI / 180.0f;
                     rot.z = rot.z * Math::PI / 180.0f;
                     
-                    transform->position_ = pos;
-                    transform->rotation_ = rot;
-                    transform->scale_ = mscale;
+                    transform->SetPosition(pos);
+                    transform->SetRotation(rot);
+                    transform->SetScale(mscale);
                 }
             }
         }
@@ -359,7 +359,7 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
                         if (sprite) {
                             Vector2 sizeScaled = sprite->GetSize();
                             Vector2 anchor = sprite->GetAnchor();
-                            Vector3 pos = transform->worldPosition_;
+                            Vector3 pos = transform->GetWorldPosition();
                             
                             float left = pos.x - sizeScaled.x * anchor.x;
                             float top = pos.y - sizeScaled.y * anchor.y;
@@ -379,14 +379,14 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
                 if (!isHit) {
                     if (auto textComp = obj->GetComponent<TextRendererComponent>()) {
                         if (auto transform = obj->GetComponent<TransformComponent>()) {
-                            Vector3 pos = transform->worldPosition_;
+                            Vector3 pos = transform->GetWorldPosition();
                             Vector2 minBounds = textComp->GetLocalBoundsMin();
                             Vector2 maxBounds = textComp->GetLocalBoundsMax();
                             
-                            float left = pos.x + minBounds.x * transform->worldScale_.x;
-                            float right = pos.x + maxBounds.x * transform->worldScale_.x;
-                            float top = pos.y + minBounds.y * transform->worldScale_.y;
-                            float bottom = pos.y + maxBounds.y * transform->worldScale_.y;
+                            float left = pos.x + minBounds.x * transform->GetWorldScale().x;
+                            float right = pos.x + maxBounds.x * transform->GetWorldScale().x;
+                            float top = pos.y + minBounds.y * transform->GetWorldScale().y;
+                            float bottom = pos.y + maxBounds.y * transform->GetWorldScale().y;
                             
                             if (scaledVirtualPos.x >= left && scaledVirtualPos.x <= right &&
                                 scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {

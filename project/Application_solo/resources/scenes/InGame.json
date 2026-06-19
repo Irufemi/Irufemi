@@ -223,6 +223,7 @@
         },
         {
           "data": {
+            "Max Virtual Instances": 20000,
             "Pool Size": 500
           },
           "type": "DebrisManagerComponent"
@@ -232,6 +233,9 @@
             "modelName": "resources/model/sample/block.obj"
           },
           "type": "ModelBatchRendererComponent"
+        },
+        {
+          "type": "VirtualEntityManagerComponent"
         }
       ],
       "name": "DebrisManager",

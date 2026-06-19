@@ -223,3 +223,149 @@ float moveInputX = input->GetActionValue("MoveX").x;
 
 ※ 互換性維持のため、従来の `IsKeyDown(VK_SPACE)` などのAPIも引き続き使用可能ですが、新しくコードを書く際はアクションシステム (`BindAction`, `GetActionValue` 等) を積極的に利用することが推奨されます。
 
+---
+
+## 【NEW】GPU カリング (GPU Culling & ExecuteIndirect) の利用方法
+
+本エンジンでは、大量の同一モデル（がれき、草、パーティクルなど）を描画する際のCPU負荷（フラスタムカリングやメモリ転送）を劇的に削減するため、**Compute Shader による GPU フラスタムカリング** をサポートしました。
+
+この機能を有効にすると、CPU側でのカリング判定がスキップされ、GPUが自身で「カメラに映っているオブジェクト」だけを判定し、`ExecuteIndirect` を通して一括描画するようになります。
+
+### 利用方法 (コンポーネントからの利用)
+最も簡単な方法は、`ModelBatchRendererComponent` （またはそれを内部で生成するマネージャークラス）に対して、初期化時にフラグを有効化することです。
+
+```cpp
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+
+// 1. バッチレンダラーコンポーネントの取得または追加
+auto batchRenderer = gameObject->AddComponent<ModelBatchRendererComponent>();
+
+// 2. GPUカリングを有効にする
+batchRenderer->SetUseGPUCulling(true);
+```
+
+### 利用方法 (プログラム/バッチからの直接利用)
+`ModelBatch` などのバッチクラスを直接生成して描画している場合も、同様に `SetUseGPUCulling(true)` を呼び出すだけです。
+
+```cpp
+#include "Renderer/Object/Batch/ModelBatch.h"
+
+// 1. バッチの生成
+ModelBatch myBatch;
+myBatch.Initialize("DebrisModel");
+
+// 2. GPUカリングを有効化
+myBatch.SetUseGPUCulling(true);
+
+// 3. インスタンスの追加 (CPU側でTransformを設定)
+for (int i = 0; i < 10000; ++i) {
+    myBatch.AddInstanceWorld(Matrix4x4::MakeTranslation(Vector3(i * 1.0f, 0, 0)));
+}
+
+// 4. 描画
+// 内部で自動的にGPUカリング用Compute Shaderが実行され、その後ExecuteIndirectで描画されます
+myBatch.Draw();
+```
+
+### 注意点・制限事項
+- GPUカリングは、**1000個以上の大量のインスタンス**を描画する場合に効果を発揮します。少数のオブジェクトに対しては、逆にCompute Shaderのディスパッチオーバーヘッドが上回る可能性があります。
+- 描画対象のオブジェクトには、ローカル空間での正確な **バウンディングスフィア (BoundingSphere)** が設定されている必要があります（`GetBoundingSphereRadius` の値がカリングに使用されます）。
+
+---
+
+## 【NEW】大量オブジェクトの最適化 (VirtualEntityManagerComponent) の利用方法
+
+本エンジンでは、数万個レベルの大量のオブジェクト（がれき、草、弾幕など）を最適化して描画・管理するためのシステムとして、**`VirtualEntityManagerComponent`** (Instance Replacement / Promotion パターン) をサポートしました。
+
+このコンポーネントを使用すると、普段は `GameObject` を実体化せずに軽量な「行列データ（Virtual Transform）」としてのみ管理・GPU描画し、プレイヤーが干渉した瞬間など **本当に必要なときだけ本物のアクター（GameObject）に昇格（Promote）させる** ことができます。
+
+### 導入手順
+1. **マネージャーの準備**:
+   ゲーム側の管理クラス（例: `DebrisManagerComponent`）で、`VirtualEntityManagerComponent` をアタッチして初期化します。
+
+```cpp
+#include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
+
+// 1. コンポーネントの追加
+auto virtualManager = gameObject_->AddComponent<VirtualEntityManagerComponent>();
+
+// 2. プールサイズと生成ファクトリの登録
+auto factory = [this]() -> std::shared_ptr<GameObject> {
+    auto obj = std::make_shared<GameObject>("MyEntity");
+    obj->AddComponent<DebrisComponent>(); // 物理挙動などをアタッチ
+    obj->SetIsActive(false);
+    gameObject_->AddChild(obj);
+    return obj;
+};
+virtualManager->Setup(500, factory); // 最大500個までは同時に実体化可能
+```
+
+2. **データの追加（実体化しない）**:
+```cpp
+// 座標や回転だけを登録し、仮想インスタンスIDを受け取る
+int id = virtualManager->AddVirtualInstance(Vector3(10, 0, 0));
+```
+
+3. **データの更新 (Data-Oriented Update)**:
+   アニメーションなどを適用したい場合は、`GetVirtualInstances()` で配列を取得し、毎フレーム直接書き換えます。実体がないため超高速に処理されます。
+```cpp
+auto& instances = virtualManager->GetVirtualInstances();
+for (auto& vi : instances) {
+    if (!vi.isPromoted_ && !vi.isDestroyed_) {
+        // 例：Y座標をフワフワさせる
+        vi.position_.y += std::sin(time) * 0.1f;
+    }
+}
+```
+
+4. **昇格 (Promote) と 降格 (Demote)**:
+   プレイヤーが近づいた、攻撃を当てた等のタイミングで、IDを指定して本物の `GameObject` に昇格させます。
+```cpp
+// id を指定してGameObjectをプールから取得し、仮想インスタンスの座標を同期する
+auto realObj = virtualManager->Promote(id);
+if (realObj) {
+    // 物理演算を有効化したり、ターゲットを追従させたりする
+}
+
+// 用済みになったらデータに戻す
+virtualManager->Demote(id);
+```
+
+このシステムと前述の「GPU Culling」を組み合わせることで、数万個のオブジェクトがあっても 60FPS を余裕で維持できるパフォーマンスを実現できます。
+
+---
+
+## 【NEW】TransformComponent の使い方 (カプセル化と遅延評価)
+
+本エンジンでは、描画・物理・ゲームロジック間のキャッシュ効率および同期安全性を高めるため、**`TransformComponent` のアーキテクチャがカプセル化（Data-Oriented Design対応）されました。**
+
+従来のように `transform->position_` のようなパブリックメンバへの直接代入・参照は禁止されており、代わりに **Getter / Setter** を使用する必要があります。
+
+### 主なAPI
+```cpp
+auto transform = gameObject_->GetComponent<TransformComponent>();
+
+// --- 取得 (Getter) ---
+// ローカル座標系
+Vector3 localPos = transform->GetPosition();
+Vector3 localRot = transform->GetRotation(); // オイラー角(ラジアン)
+Vector3 localScl = transform->GetScale();
+
+// ワールド座標系（親のTransformを加味した最終結果）
+Vector3 worldPos = transform->GetWorldPosition();
+Vector3 worldRot = transform->GetWorldRotation();
+Vector3 worldScl = transform->GetWorldScale();
+
+// --- 更新 (Setter) ---
+// 値を更新すると、内部で Dirty フラグ (isLocalDirty_) が立ちます
+transform->SetPosition(Vector3(10, 5, 0));
+transform->SetRotation(Vector3(0, Math::ToRadian(90), 0));
+transform->SetScale(Vector3(2, 2, 2));
+```
+
+### 【重要】Dirty フラグと遅延評価 (Lazy Evaluation) の仕組み
+Setter を通じて座標を変更しても、**その瞬間にすべての行列計算が行われるわけではありません。**
+内部では「Dirty（変更あり）」というフラグだけが立ち、実際に `GetWorldMatrix()` や描画処理から行列が要求されたタイミングで、**1回だけ（キャッシュとして）再計算** される遅延評価の仕組みが導入されています。
+
+これにより、同じフレーム内で何度座標を変更しても、無駄な行列計算（sin/cosや行列乗算）が走らないため、非常に高速に動作します。
+※ 特別な理由がない限り、自分で `ComputeMatrix()` を呼び出す必要はありません。エンジン側の `BaseScene::Update()` の直後に一括で最新化されます。

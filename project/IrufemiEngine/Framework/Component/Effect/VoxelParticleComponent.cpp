@@ -77,7 +77,7 @@ void VoxelParticleComponent::Explode(const Vector3& velocity, const Vector3& rot
             Vector3 worldPos = {0,0,0};
             if (auto* go = GetGameObject()) {
                 if (auto transform = go->GetComponent<TransformComponent>()) {
-                    worldPos = transform->worldPosition_;
+                    worldPos = transform->GetWorldPosition();
                 }
             }
             manager->PlayExplosion(cachedModelName_, worldPos, velocity, rotate, scale, emitterParams_, resolution_);
