@@ -65,6 +65,11 @@ public:
      */
     void ClearInstances();
 
+    /**
+     * @brief GPUフラスタムカリングを有効にするか設定します
+     */
+    void SetUseGPUCulling(bool use);
+
 #ifdef EditorMode
     friend class ModelBatchRendererComponentEditor;
 #endif

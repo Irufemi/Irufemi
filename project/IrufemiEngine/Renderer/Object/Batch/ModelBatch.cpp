@@ -91,9 +91,40 @@ void ModelBatch::Draw() {
     RenderPackets::ModelBatchPacket p{};
     p.gpuMesh = GetGpuMesh();
     p.materialAddress = GetMaterialVAddress();
-    p.textureHandle = GetTextureHandle();
-    p.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
-    p.instanceCount = GetInstanceCount();
+    p.textureHandle = textureHandle_;
+
+    if (useGPUCulling_) {
+        p.useGPUCulling = true;
+        p.instancingSrvHandleGPU = GetOutputInstancesSrvHandleGPU();
+        p.indirectCommandBuffer = GetIndirectCommandBuffer();
+        p.indirectCommandUploadBuffer = GetIndirectCommandUploadBuffer();
+        p.indirectCommandUav = GetIndirectCommandUavHandleGPU();
+        p.cullingDataAddress = GetCullingDataAddress();
+        p.inputInstancesSrv = GetInstancingSrvHandleGPU();
+        p.outputInstancesUav = GetOutputInstancesUavHandleGPU();
+        p.maxInstanceCount = GetMaxInstanceCount();
+        p.instanceCount = GetMaxInstanceCount(); // CPU側での最大数をセットしておく(描画には使用されない)
+
+        // UploadBufferへ描画引数の初期値を書き込む
+        if (ID3D12Resource* uploadBuffer = GetIndirectCommandUploadBuffer()) {
+            D3D12_DRAW_INDEXED_ARGUMENTS args{};
+            args.IndexCountPerInstance = GetGpuMesh()->indexCount > 0 ? GetGpuMesh()->indexCount : GetGpuMesh()->vertexCount;
+            args.InstanceCount = 0; // 初期値は0
+            args.StartIndexLocation = 0;
+            args.BaseVertexLocation = 0;
+            args.StartInstanceLocation = 0;
+
+            uint8_t* dst = nullptr;
+            if (SUCCEEDED(uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&dst)))) {
+                std::memcpy(dst, &args, sizeof(args));
+                uploadBuffer->Unmap(0, nullptr);
+            }
+        }
+    } else {
+        p.useGPUCulling = false;
+        p.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
+        p.instanceCount = GetInstanceCount();
+    }
     p.blendMode = GetBlendMode();
     p.depthWrite = GetDepthWrite();
     p.cullMode = GetCullMode();

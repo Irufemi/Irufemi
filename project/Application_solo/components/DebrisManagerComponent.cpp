@@ -23,7 +23,13 @@ void DebrisManagerComponent::Initialize() {
     batchComponent_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
     if (!batchComponent_) {
         batchComponent_ = gameObject_->AddComponent<ModelBatchRendererComponent>().get();
+        batchComponent_->SetUseGPUCulling(true); // Debris uses GPU culling for optimization
+    } else {
+        batchComponent_->SetUseGPUCulling(true);
     }
+    
+    // ガレキの描画にGPUカリングを適用
+    batchComponent_->SetUseGPUCulling(true);
 
     // ガレキのプレハブを生成するファクトリ関数
     auto debrisFactory = [this]() -> std::shared_ptr<GameObject> {

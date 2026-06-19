@@ -223,3 +223,50 @@ float moveInputX = input->GetActionValue("MoveX").x;
 
 ※ 互換性維持のため、従来の `IsKeyDown(VK_SPACE)` などのAPIも引き続き使用可能ですが、新しくコードを書く際はアクションシステム (`BindAction`, `GetActionValue` 等) を積極的に利用することが推奨されます。
 
+---
+
+## 【NEW】GPU カリング (GPU Culling & ExecuteIndirect) の利用方法
+
+本エンジンでは、大量の同一モデル（がれき、草、パーティクルなど）を描画する際のCPU負荷（フラスタムカリングやメモリ転送）を劇的に削減するため、**Compute Shader による GPU フラスタムカリング** をサポートしました。
+
+この機能を有効にすると、CPU側でのカリング判定がスキップされ、GPUが自身で「カメラに映っているオブジェクト」だけを判定し、`ExecuteIndirect` を通して一括描画するようになります。
+
+### 利用方法 (コンポーネントからの利用)
+最も簡単な方法は、`ModelBatchRendererComponent` （またはそれを内部で生成するマネージャークラス）に対して、初期化時にフラグを有効化することです。
+
+```cpp
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+
+// 1. バッチレンダラーコンポーネントの取得または追加
+auto batchRenderer = gameObject->AddComponent<ModelBatchRendererComponent>();
+
+// 2. GPUカリングを有効にする
+batchRenderer->SetUseGPUCulling(true);
+```
+
+### 利用方法 (プログラム/バッチからの直接利用)
+`ModelBatch` などのバッチクラスを直接生成して描画している場合も、同様に `SetUseGPUCulling(true)` を呼び出すだけです。
+
+```cpp
+#include "Renderer/Object/Batch/ModelBatch.h"
+
+// 1. バッチの生成
+ModelBatch myBatch;
+myBatch.Initialize("DebrisModel");
+
+// 2. GPUカリングを有効化
+myBatch.SetUseGPUCulling(true);
+
+// 3. インスタンスの追加 (CPU側でTransformを設定)
+for (int i = 0; i < 10000; ++i) {
+    myBatch.AddInstanceWorld(Matrix4x4::MakeTranslation(Vector3(i * 1.0f, 0, 0)));
+}
+
+// 4. 描画
+// 内部で自動的にGPUカリング用Compute Shaderが実行され、その後ExecuteIndirectで描画されます
+myBatch.Draw();
+```
+
+### 注意点・制限事項
+- GPUカリングは、**1000個以上の大量のインスタンス**を描画する場合に効果を発揮します。少数のオブジェクトに対しては、逆にCompute Shaderのディスパッチオーバーヘッドが上回る可能性があります。
+- 描画対象のオブジェクトには、ローカル空間での正確な **バウンディングスフィア (BoundingSphere)** が設定されている必要があります（`GetBoundingSphereRadius` の値がカリングに使用されます）。

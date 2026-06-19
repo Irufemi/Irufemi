@@ -11,14 +11,25 @@ TextureManager* BaseBatch::textureManager_ = nullptr;
 DrawManager* BaseBatch::drawManager_ = nullptr;
 DescriptorPool* BaseBatch::srvPool_ = nullptr;
 
+BaseBatch::BaseBatch() {
+    instancingSrvIndex_.fill(UINT32_MAX);
+    outputInstanceSrvIndex_.fill(UINT32_MAX);
+    outputInstanceUavIndex_.fill(UINT32_MAX);
+    indirectCommandUavIndex_.fill(UINT32_MAX);
+}
+
 BaseBatch::~BaseBatch() {
     if (srvPool_ && dx_) {
-        for (auto& idx : instancingSrvIndex_) {
+        auto freeIndex = [&](uint32_t& idx) {
             if (idx != UINT32_MAX) {
                 srvPool_->FreeAfterFence(idx, dx_->GetFenceValue());
                 idx = UINT32_MAX;
             }
-        }
+        };
+        for (auto& idx : instancingSrvIndex_) freeIndex(idx);
+        for (auto& idx : outputInstanceSrvIndex_) freeIndex(idx);
+        for (auto& idx : outputInstanceUavIndex_) freeIndex(idx);
+        for (auto& idx : indirectCommandUavIndex_) freeIndex(idx);
     }
     if (auto engine = dx_->GetEngine()) {
         if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
@@ -149,6 +160,90 @@ void BaseBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     }
 }
 
+void BaseBatch::CreateGPUCullingBuffers(uint32_t instanceCount) {
+    const UINT stride = sizeof(InstanceData);
+    const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride);
+    uint32_t frameIndex = dx_->GetFrameIndex();
+
+    // 1. Output Buffer (SRV + UAV)
+    if (!outputInstanceBuffer_[frameIndex] || outputInstanceBuffer_[frameIndex]->GetDesc().Width < sizeInBytes) {
+        outputInstanceBuffer_[frameIndex] = dx_->CreateUAVBufferResource(sizeInBytes);
+
+        IRUFEMI_ASSERT(srvPool_);
+        if (outputInstanceSrvIndex_[frameIndex] == UINT32_MAX) {
+            uint32_t idx = srvPool_->Allocate();
+            outputInstanceSrvIndex_[frameIndex] = idx;
+            outputInstanceSrvCPU_[frameIndex] = srvPool_->GetCPUHandle(idx);
+            outputInstanceSrvGPU_[frameIndex] = srvPool_->GetGPUHandle(idx);
+        }
+        if (outputInstanceUavIndex_[frameIndex] == UINT32_MAX) {
+            uint32_t idx = srvPool_->Allocate();
+            outputInstanceUavIndex_[frameIndex] = idx;
+            outputInstanceUavCPU_[frameIndex] = srvPool_->GetCPUHandle(idx);
+            outputInstanceUavGPU_[frameIndex] = srvPool_->GetGPUHandle(idx);
+        }
+
+        // SRV
+        D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
+        srv.Format = DXGI_FORMAT_UNKNOWN;
+        srv.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+        srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srv.Buffer.FirstElement = 0;
+        srv.Buffer.NumElements = instanceCount;
+        srv.Buffer.StructureByteStride = stride;
+        srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+        dx_->GetDevice()->CreateShaderResourceView(outputInstanceBuffer_[frameIndex].Get(), &srv, outputInstanceSrvCPU_[frameIndex]);
+
+        // UAV
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uav{};
+        uav.Format = DXGI_FORMAT_UNKNOWN;
+        uav.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+        uav.Buffer.FirstElement = 0;
+        uav.Buffer.NumElements = instanceCount;
+        uav.Buffer.StructureByteStride = stride;
+        uav.Buffer.CounterOffsetInBytes = 0;
+        uav.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+        dx_->GetDevice()->CreateUnorderedAccessView(outputInstanceBuffer_[frameIndex].Get(), nullptr, &uav, outputInstanceUavCPU_[frameIndex]);
+    }
+
+    // 2. Command Buffer (RWStructuredBuffer<uint> 5要素)
+    // ExecuteIndirect用: D3D12_DRAW_INDEXED_ARGUMENTS = 20 bytes
+    // ComputeShaderからUAVとして書き込むために D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS が必要
+    // また、byte address/structured buffer として扱うためにサイズに余裕を持たせてもよいが、5*4=20バイトで固定。
+    const UINT commandBufferSize = sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
+    if (!indirectCommandBuffer_[frameIndex]) {
+        // ComputeShaderでInterlockedAddや書き込みを行うためUAVバッファとして作成
+        indirectCommandBuffer_[frameIndex] = dx_->CreateUAVBufferResource(commandBufferSize);
+
+        if (indirectCommandUavIndex_[frameIndex] == UINT32_MAX) {
+            uint32_t idx = srvPool_->Allocate();
+            indirectCommandUavIndex_[frameIndex] = idx;
+            indirectCommandUavCPU_[frameIndex] = srvPool_->GetCPUHandle(idx);
+            indirectCommandUavGPU_[frameIndex] = srvPool_->GetGPUHandle(idx);
+        }
+
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uav{};
+        uav.Format = DXGI_FORMAT_UNKNOWN;
+        uav.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+        uav.Buffer.FirstElement = 0;
+        uav.Buffer.NumElements = commandBufferSize / 4; // uint array
+        uav.Buffer.StructureByteStride = 4;
+        uav.Buffer.CounterOffsetInBytes = 0;
+        uav.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+        dx_->GetDevice()->CreateUnorderedAccessView(indirectCommandBuffer_[frameIndex].Get(), nullptr, &uav, indirectCommandUavCPU_[frameIndex]);
+    }
+
+    if (!indirectCommandUploadBuffer_[frameIndex]) {
+        indirectCommandUploadBuffer_[frameIndex] = dx_->CreateBufferResource(commandBufferSize);
+    }
+
+    // 3. Culling Data (Constant Buffer)
+    const UINT cullingDataSize = (sizeof(CullingData) + 255) & ~255;
+    if (!cullingDataBuffer_[frameIndex]) {
+        cullingDataBuffer_[frameIndex] = dx_->CreateBufferResource(cullingDataSize);
+    }
+}
+
 void BaseBatch::BuildInstanceBuffer(bool force) {
     if (instances_.empty() && instanceWorlds_.empty()) { 
         visibleInstanceCount_ = 0;
@@ -180,7 +275,8 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
     for (size_t i = 0; i < instances_.size(); ++i) {
         const auto& inst = instances_[i];
         
-        if (isCullingEnabled_ && activeCamera && frustum) {
+        // CPUカリング (useGPUCulling_が有効ならスキップ)
+        if (!useGPUCulling_ && isCullingEnabled_ && activeCamera && frustum) {
             float maxScale = (std::max)({ inst.scale.x, inst.scale.y, inst.scale.z });
             Sphere boundingSphere;
             boundingSphere.center = inst.translate;
@@ -242,6 +338,33 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
     ASSERT_IF_FAILED(hr);
     std::memcpy(dst, temp.data(), sizeof(InstanceData) * visibleInstanceCount_);
     instanceBuffer_[frameIndex]->Unmap(0, nullptr);
+
+    if (useGPUCulling_) {
+        CreateGPUCullingBuffers(totalCount);
+
+        // Update CullingData Buffer
+        if (cullingDataBuffer_[frameIndex]) {
+            uint8_t* cullDst = nullptr;
+            hr = cullingDataBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&cullDst));
+            if (SUCCEEDED(hr)) {
+                CullingData cullData{};
+                cullData.maxInstanceCount = totalCount;
+                cullData.localRadius = modelRadius;
+
+                if (frustum) {
+                    for (int i = 0; i < 6; ++i) {
+                        cullData.planes[i] = { frustum->planes[i].normal.x, frustum->planes[i].normal.y, frustum->planes[i].normal.z, frustum->planes[i].distance };
+                    }
+                } else {
+                    // 全て見えるようにする
+                    for (int i = 0; i < 6; ++i) cullData.planes[i] = { 0,0,0, -10000.0f };
+                }
+
+                std::memcpy(cullDst, &cullData, sizeof(CullingData));
+                cullingDataBuffer_[frameIndex]->Unmap(0, nullptr);
+            }
+        }
+    }
 
     instanceDirty_ = false;
 }

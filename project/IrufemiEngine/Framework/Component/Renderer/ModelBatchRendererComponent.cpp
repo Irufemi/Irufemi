@@ -118,3 +118,9 @@ void ModelBatchRendererComponent::ClearInstances() {
         batch_->ClearInstances();
     }
 }
+
+void ModelBatchRendererComponent::SetUseGPUCulling(bool use) {
+    if (batch_) {
+        batch_->SetUseGPUCulling(use);
+    }
+}

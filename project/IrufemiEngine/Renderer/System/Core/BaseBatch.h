@@ -22,9 +22,7 @@ class DescriptorPool;
 
 class BaseBatch : public IRenderable {
 public:
-    BaseBatch() {
-        instancingSrvIndex_.fill(UINT32_MAX);
-    }
+    BaseBatch();
     virtual ~BaseBatch();
 
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
@@ -34,6 +32,9 @@ public:
 
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
     bool IsCullingEnabled() const { return isCullingEnabled_; }
+
+    void SetUseGPUCulling(bool use) { useGPUCulling_ = use; }
+    bool GetUseGPUCulling() const { return useGPUCulling_; }
 
     void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
     BlendMode GetBlendMode() const { return blendMode_; }
@@ -75,9 +76,17 @@ public:
     void SyncBeforeDraw() override;
 
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
-    D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT GetInstanceCount() const { return visibleInstanceCount_; }
+
+    // --- GPU Culling Getters ---
+    D3D12_GPU_DESCRIPTOR_HANDLE GetOutputInstancesSrvHandleGPU() const { return outputInstanceSrvGPU_[lastUpdateFrameIndex_]; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetOutputInstancesUavHandleGPU() const { return outputInstanceUavGPU_[lastUpdateFrameIndex_]; }
+    ID3D12Resource* GetIndirectCommandBuffer() const { return indirectCommandBuffer_[lastUpdateFrameIndex_].Get(); }
+    ID3D12Resource* GetIndirectCommandUploadBuffer() const { return indirectCommandUploadBuffer_[lastUpdateFrameIndex_].Get(); }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetIndirectCommandUavHandleGPU() const { return indirectCommandUavGPU_[lastUpdateFrameIndex_]; }
+    D3D12_GPU_VIRTUAL_ADDRESS GetCullingDataAddress() const { return cullingDataBuffer_[lastUpdateFrameIndex_] ? cullingDataBuffer_[lastUpdateFrameIndex_]->GetGPUVirtualAddress() : 0; }
+    UINT GetMaxInstanceCount() const { return static_cast<UINT>(instances_.size() + instanceWorlds_.size()); }
 
 protected:
     struct InstanceData {
@@ -87,7 +96,15 @@ protected:
         Vector4   color;
     };
 
+    struct CullingData {
+        Vector4 planes[6];
+        uint32_t maxInstanceCount;
+        float localRadius;
+        float padding[2];
+    };
+
     void CreateOrResizeInstanceBuffer(uint32_t instanceCount);
+    void CreateGPUCullingBuffers(uint32_t instanceCount);
 
     virtual float GetBoundingSphereRadius() const = 0; // for culling
 
@@ -113,7 +130,27 @@ protected:
 
     bool                   instanceDirty_ = false;
     bool                   isCullingEnabled_ = true;
+    bool                   useGPUCulling_ = false;
     uint32_t               visibleInstanceCount_ = 0;
+
+    // --- GPU Culling Resources ---
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> outputInstanceBuffer_{};
+    std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            outputInstanceSrvCPU_{};
+    std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            outputInstanceSrvGPU_{};
+    std::array<uint32_t, kMaxFramesInFlight>                               outputInstanceSrvIndex_{};
+
+    std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            outputInstanceUavCPU_{};
+    std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            outputInstanceUavGPU_{};
+    std::array<uint32_t, kMaxFramesInFlight>                               outputInstanceUavIndex_{};
+
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> indirectCommandBuffer_{};
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> indirectCommandUploadBuffer_{};
+    
+    std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            indirectCommandUavCPU_{};
+    std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            indirectCommandUavGPU_{};
+    std::array<uint32_t, kMaxFramesInFlight>                               indirectCommandUavIndex_{};
+
+    std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> cullingDataBuffer_{};
 
     uint32_t lastUpdateFrameIndex_ = 0;
     bool isDirty_ = true;

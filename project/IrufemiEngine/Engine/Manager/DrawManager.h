@@ -216,6 +216,11 @@ public: //メンバ関数
         postRenderQueue_.push_back(drawFunc);
     }
     ///@}
+
+    /** @name GPU Culling */
+    ///@{
+    void DispatchGPUCulling(const RenderPackets::ModelBatchPacket& packet);
+    ///@}
     ///@}
 
     /** @name レンダーターゲット・ポストプロセス操作 */
@@ -405,4 +410,7 @@ public:
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
     ShadowMap* GetShadowMap() const { return shadowMaps_[dxCommon_->GetFrameIndex()].get(); }
     ///@}
+
+private:
+    Microsoft::WRL::ComPtr<ID3D12CommandSignature> commandSignature_;
 };

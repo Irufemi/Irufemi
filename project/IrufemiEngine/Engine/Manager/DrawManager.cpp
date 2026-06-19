@@ -134,6 +134,18 @@ void DrawManager::Initialize(DirectXCommon* dx) {
         // RenderGraph にリソースの初期ステートを登録
         renderGraph_->RegisterResourceState(shadowMaps_[i]->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
+
+    // Command Signature for GPU Culling (ExecuteIndirect)
+    D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[1] = {};
+    argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+    
+    D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
+    commandSignatureDesc.pArgumentDescs = argumentDescs;
+    commandSignatureDesc.NumArgumentDescs = 1;
+    commandSignatureDesc.ByteStride = sizeof(D3D12_DRAW_INDEXED_ARGUMENTS); // 20 bytes
+
+    HRESULT hr = dxCommon_->GetDevice()->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&commandSignature_));
+    ASSERT_IF_FAILED(hr);
 }
 
 void DrawManager::ExecuteComputePasses() {
@@ -141,9 +153,18 @@ void DrawManager::ExecuteComputePasses() {
         task->DispatchCompute();
     }
     
+    // GPU Culling の実行
+    bool dispatchedGPUCulling = false;
+    for (const auto& packet : modelBatchQueue_) {
+        if (packet.useGPUCulling) {
+            DispatchGPUCulling(packet);
+            dispatchedGPUCulling = true;
+        }
+    }
+
     // パイプラインのボトルネック解消のため、各モデルごとではなく
     // 全てのコンピュートタスクのディスパッチ完了後に一括してグローバルUAVバリアを発行する
-    if (!computeTasks_.empty()) {
+    if (!computeTasks_.empty() || dispatchedGPUCulling) {
         ExecuteUAVBarrier(nullptr);
     }
     
@@ -524,11 +545,47 @@ void DrawManager::DrawModelBatch(const RenderPackets::ModelBatchPacket& packet) 
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU);
 
     // Draw
-    if (gpuMesh->indexCount > 0) {
-        commandList_->DrawIndexedInstanced(gpuMesh->indexCount, packet.instanceCount, 0, 0, 0);
+    if (packet.useGPUCulling && packet.indirectCommandBuffer) {
+        // UAV(Compute) から IndirectArgument へのバリア (ComputePassでUAVBarrierはかかっているが、State遷移が必要)
+        DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+        
+        commandList_->ExecuteIndirect(commandSignature_.Get(), 1, packet.indirectCommandBuffer, 0, nullptr, 0);
+
+        // 状態を戻す
+        DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     } else {
-        commandList_->DrawInstanced(gpuMesh->vertexCount, packet.instanceCount, 0, 0);
+        if (gpuMesh->indexCount > 0) {
+            commandList_->DrawIndexedInstanced(gpuMesh->indexCount, packet.instanceCount, 0, 0, 0);
+        } else {
+            commandList_->DrawInstanced(gpuMesh->vertexCount, packet.instanceCount, 0, 0);
+        }
     }
+}
+
+void DrawManager::DispatchGPUCulling(const RenderPackets::ModelBatchPacket& packet) {
+    if (!packet.inputInstancesSrv.ptr || !packet.outputInstancesUav.ptr || !packet.cullingDataAddress || !packet.indirectCommandBuffer || !packet.indirectCommandUploadBuffer) return;
+
+    // 1. IndirectCommandBufferの初期化 (UploadBuffer からコピー)
+    DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST);
+    commandList_->CopyBufferRegion(packet.indirectCommandBuffer, 0, packet.indirectCommandUploadBuffer, 0, sizeof(D3D12_DRAW_INDEXED_ARGUMENTS));
+    DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+    // 2. Compute Shader の実行
+    ID3D12PipelineState* pso = dxCommon_->GetPSOManager()->GetComputePSO("GPUCulling");
+    if (!pso) return;
+
+    commandList_->SetPipelineState(pso);
+    
+    // Compute Shader の RootSignature とパラメータバインド
+    // (現在は ComputeRootSignature が全体で1つという前提)
+    commandList_->SetComputeRootConstantBufferView(4, packet.cullingDataAddress); // b0 (Slot 4)
+    commandList_->SetComputeRootDescriptorTable(0, packet.inputInstancesSrv);     // t0 (Slot 0)
+    commandList_->SetComputeRootDescriptorTable(3, packet.outputInstancesUav);    // u0 (Slot 3)
+    commandList_->SetComputeRootDescriptorTable(6, packet.indirectCommandUav);    // u1 (Slot 6)
+
+    // スレッドグループ数を計算 (スレッド数は1グループあたり64に固定)
+    UINT dispatchX = (packet.maxInstanceCount + 63) / 64;
+    commandList_->Dispatch(dispatchX, 1, 1);
 }
 
 void DrawManager::SubmitPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet) {
