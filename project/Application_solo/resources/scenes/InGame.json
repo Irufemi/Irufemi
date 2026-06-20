@@ -293,28 +293,6 @@
             "mask": 4294967295
           },
           "type": "SphereColliderComponent"
-        },
-        {
-          "data": {
-            "Attach To Target": false,
-            "Base Rotation": [
-              0.0,
-              0.0,
-              0.0
-            ],
-            "Base Scale": [
-              1.0,
-              1.0,
-              1.0
-            ],
-            "Position Offset": [
-              0.0,
-              0.0,
-              0.0
-            ],
-            "Prefab Path": "resources/prefabs/hit_effect.json"
-          },
-          "type": "EffectSpawnerComponent"
         }
       ],
       "name": "Boss",
@@ -372,6 +350,38 @@
         }
       ],
       "name": "MainCamera",
+      "tag": "Untagged"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "Hit Effect Path": "resources/prefabs/hit_effect.json"
+          },
+          "type": "EffectManagerComponent"
+        }
+      ],
+      "name": "EffectManager",
       "tag": "Untagged"
     }
   ],

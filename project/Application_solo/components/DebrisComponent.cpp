@@ -7,7 +7,7 @@
 #include "RailShooterEnemyComponent.h"
 #include "BossComponent.h"
 #include "DebrisManagerComponent.h"
-#include "EffectSpawnerComponent.h"
+#include "EffectManagerComponent.h"
 #include "Engine/Core/Math/Random/Random.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
@@ -46,11 +46,8 @@ void DebrisComponent::Initialize() {
 
             if (hit) {
                 if (auto t = gameObject_->GetComponent<TransformComponent>()) {
-                    if (auto effectSpawner = otherObj->GetComponent<EffectSpawnerComponent>()) {
-                        effectSpawner->PlayEffect(t->GetWorldPosition());
-                    } else {
-                        // EffectSpawnerComponentがアタッチされていない場合のフォールバック（レガシー対応）
-                        gameObject_->Instantiate("resources/prefabs/hit_effect.json", t->GetWorldPosition());
+                    if (auto effectManager = EffectManagerComponent::GetInstance()) {
+                        effectManager->PlayEffect("Hit", t->GetWorldPosition());
                     }
                 }
                 if (manager_) {

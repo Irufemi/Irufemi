@@ -11,6 +11,14 @@
       "data": {
         "lifeTime": 2.0
       }
+    },
+    {
+      "type": "HitEffectComponent",
+      "data": {
+        "Core Flash Burst": 1,
+        "Sparks Burst": 60,
+        "Shockwave Burst": 1
+      }
     }
   ],
   "children": [
@@ -33,9 +41,22 @@
               "emissionRate": 0.0,
               "lifeTimeMin": 0.1,
               "lifeTimeMax": 0.2,
-              "startScale": [5.0, 5.0, 5.0],
-              "endScale": [0.0, 0.0, 0.0],
-              "color": [0.3, 0.8, 1.0, 1.0],
+              "startScale": [
+                5.0,
+                5.0,
+                5.0
+              ],
+              "endScale": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "color": [
+                0.3,
+                0.8,
+                1.0,
+                1.0
+              ],
               "velocity": 0.0
             }
           }
@@ -67,9 +88,22 @@
               "bounce": 0.4,
               "groundHeight": -2.0,
               "billboardMode": 2,
-              "startScale": [0.4, 2.5, 0.4],
-              "endScale": [0.0, 0.0, 0.0],
-              "color": [0.2, 0.6, 1.0, 1.0],
+              "startScale": [
+                0.4,
+                2.5,
+                0.4
+              ],
+              "endScale": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "color": [
+                0.2,
+                0.6,
+                1.0,
+                1.0
+              ],
               "enableTrail": true,
               "trailFrequency": 0.03,
               "enableDeathEmit": true,
@@ -98,9 +132,22 @@
               "emissionRate": 0.0,
               "lifeTimeMin": 0.3,
               "lifeTimeMax": 0.4,
-              "startScale": [0.5, 0.5, 0.5],
-              "endScale": [15.0, 15.0, 15.0],
-              "color": [0.1, 0.5, 1.0, 0.8],
+              "startScale": [
+                0.5,
+                0.5,
+                0.5
+              ],
+              "endScale": [
+                15.0,
+                15.0,
+                15.0
+              ],
+              "color": [
+                0.1,
+                0.5,
+                1.0,
+                0.8
+              ],
               "billboardMode": 1
             }
           }

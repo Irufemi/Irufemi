@@ -249,7 +249,8 @@ exit 0</Command>
     <ClCompile Include="components\GravityPlayerComponent.cpp" />
     <ClCompile Include="components\DebugEnemySpawnerComponent.cpp" />
     <ClCompile Include="components\SceneTransitionButtonComponent.cpp" />
-    <ClCompile Include="components\EffectSpawnerComponent.cpp" />
+    <ClCompile Include="components\EffectManagerComponent.cpp" />
+    <ClCompile Include="components\HitEffectComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -270,7 +271,8 @@ exit 0</Command>
     <ClInclude Include="components\GravityPlayerComponent.h" />
     <ClInclude Include="components\DebugEnemySpawnerComponent.h" />
     <ClInclude Include="components\SceneTransitionButtonComponent.h" />
-    <ClInclude Include="components\EffectSpawnerComponent.h" />
+    <ClInclude Include="components\EffectManagerComponent.h" />
+    <ClInclude Include="components\HitEffectComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">
