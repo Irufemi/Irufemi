@@ -17,6 +17,7 @@
 #include "components/DebugEnemySpawnerComponent.h"
 #include "components/BossComponent.h"
 #include "components/SceneTransitionButtonComponent.h"
+#include "components/EffectSpawnerComponent.h"
 
 // UI
 #include "UI/LoadingScreen.h"
@@ -88,6 +89,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("DebugEnemySpawnerComponent", "Game", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
     ComponentFactory::Register("BossComponent", "Game", []() { return std::make_shared<BossComponent>(); });
     ComponentFactory::Register("SceneTransitionButtonComponent", "Game", []() { return std::make_shared<SceneTransitionButtonComponent>(); });
+    ComponentFactory::Register("EffectSpawnerComponent", "Game", []() { return std::make_shared<EffectSpawnerComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

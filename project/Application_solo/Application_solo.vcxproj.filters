@@ -86,6 +86,9 @@
     <ClCompile Include="components\SceneTransitionButtonComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\EffectSpawnerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\Debug\DebugScene.h">
       <Filter>scene\Debug</Filter>
@@ -136,6 +139,9 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\SceneTransitionButtonComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\EffectSpawnerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <None Include="packages.config" />
