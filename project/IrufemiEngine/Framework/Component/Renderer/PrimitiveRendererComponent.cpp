@@ -13,9 +13,11 @@ PrimitiveRendererComponent::PrimitiveRendererComponent() {}
 PrimitiveRendererComponent::~PrimitiveRendererComponent() {}
 
 void PrimitiveRendererComponent::Initialize() {
-    primitive_ = std::make_unique<Primitive3DObject>();
-    // 設定された形状（デフォルトはCube）で初期化
-    primitive_->Initialize(static_cast<PrimitiveType>(currentTypeIndex_));
+    if (!primitive_) {
+        primitive_ = std::make_unique<Primitive3DObject>();
+        // 設定された形状（デフォルトはCube）で初期化
+        primitive_->Initialize(static_cast<PrimitiveType>(currentTypeIndex_));
+    }
 
     if (gameObject_) {
         transform_ = gameObject_->GetComponent<TransformComponent>();

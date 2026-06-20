@@ -12,6 +12,10 @@
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
+#include "Engine/Core/Type/PrimitiveType.h"
+#include "Engine/Graphics/Pipeline/PSOManager.h"
 #include <cmath>
 
 
@@ -38,6 +42,26 @@ void DebrisManagerComponent::Initialize() {
         collider->isTrigger_ = true;
         collider->SetLocalRadius(0.5f);
         
+        // --- Aura (EnergyCore) ---
+        auto aura = std::make_shared<GameObject>("DebrisAura");
+        auto auraTransform = aura->AddComponent<TransformComponent>();
+        auraTransform->SetScale({ 3.0f, 3.0f, 3.0f }); // 瓦礫をすっぽり覆う大きさに設定
+        
+        auto auraModel = aura->AddComponent<PrimitiveRendererComponent>();
+        auraModel->Initialize();
+        auraModel->SetShape(PrimitiveType::Sphere); // 軽量なプリミティブ球を使用
+        
+        if (auto primitive = static_cast<Primitive3DObject*>(auraModel->GetRenderable())) {
+            auto pso = BaseModel::GetIrufemiEngine()->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+            primitive->SetCustomPSO(pso);
+            // オーラの中の模様（マグマパターン）が見えるようにアルファ値を0.7に設定
+            primitive->SetColor({0.6f, 0.2f, 1.0f, 0.7f});
+        }
+        
+        aura->SetIsActive(false); // 通常時は非表示
+        obj->AddChild(aura);
+        // -------------------------
+
         obj->SetIsActive(false);
 
         if (gameObject_) {

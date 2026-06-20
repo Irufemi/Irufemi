@@ -376,7 +376,7 @@
         },
         {
           "data": {
-            "Hit Effect Path": "resources/prefabs/hit_effect.json"
+            "Hit Effect Path": "resources/prefabs/normal_attack_hit_effect.json"
           },
           "type": "EffectManagerComponent"
         }

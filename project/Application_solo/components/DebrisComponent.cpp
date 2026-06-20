@@ -11,6 +11,8 @@
 #include "Engine/Core/Math/Random/Random.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Engine/Graphics/Camera/Camera.h"
 #include <cmath>
 
 void DebrisComponent::OnRegisterProperties() {
@@ -45,6 +47,10 @@ void DebrisComponent::Initialize() {
             }
 
             if (hit) {
+                // 軽いカメラシェイクを追加
+                if (auto camera = BaseModel::GetIrufemiEngine()->GetCameraManager()->GetActiveCamera()) {
+                    camera->Shake(0.5f, 10);
+                }
                 if (auto t = gameObject_->GetComponent<TransformComponent>()) {
                     if (auto effectManager = EffectManagerComponent::GetInstance()) {
                         effectManager->PlayEffect("Hit", t->GetWorldPosition());
@@ -65,6 +71,20 @@ void DebrisComponent::Initialize() {
 
 void DebrisComponent::SetState(DebrisState newState) {
     state_ = newState;
+
+    // オーラ用子オブジェクトの表示切り替え
+    if (gameObject_) {
+        for (auto& child : gameObject_->GetChildren()) {
+            if (child && child->GetName() == "DebrisAura") {
+                if (state_ == DebrisState::Pulled || state_ == DebrisState::Orbiting || state_ == DebrisState::Thrown) {
+                    child->SetIsActive(true);
+                } else {
+                    child->SetIsActive(false);
+                }
+            }
+        }
+    }
+
     if (state_ == DebrisState::BossOrbiting) {
         bossOrbitAngleX_ = Random::GeneratorFloat(0.0f, Math::PI * 2.0f);
         bossOrbitAngleY_ = Random::GeneratorFloat(0.0f, Math::PI * 2.0f);

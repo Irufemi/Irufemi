@@ -19,6 +19,10 @@
 #include "components/SceneTransitionButtonComponent.h"
 #include "components/EffectManagerComponent.h"
 
+// エンジン機能
+#include "Engine/Graphics/DirectX/ShaderManager.h"
+#include "Engine/Graphics/Pipeline/PSOManager.h"
+
 // UI
 #include "UI/LoadingScreen.h"
 
@@ -79,6 +83,20 @@ void GameApplication::Run() {
 
     // エンジンの初期化
     engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);
+
+    // アプリ固有のシェーダー登録
+    {
+        ShaderCompileOptions options;
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+        options.isDebug = true;
+#endif
+        auto shaderManager = engine->GetDirectXCommon()->GetShaderManager();
+        auto psoManager = engine->GetPSOManager();
+        
+        auto vs3d = shaderManager->GetOrCompile(L"resources/shaders/Object3D.VS.hlsl", options);
+        auto psEnergyCore = shaderManager->GetOrCompile(L"resources/shaders/EnergyCore.PS.hlsl", options);
+        psoManager->RegisterShader("EnergyCore", { { vs3d, psEnergyCore } });
+    }
 
     // 独自コンポーネントの登録
     ComponentFactory::Register("RailShooterPlayerComponent", "Game", []() { return std::make_shared<RailShooterPlayerComponent>(); });

@@ -37,7 +37,7 @@ private:
     static EffectManagerComponent* instance_;
 
     // エディタから設定する、代表的なエフェクトのPrefabパス
-    std::string hitEffectPath_ = "resources/prefabs/hit_effect.json";
+    std::string hitEffectPath_ = "resources/prefabs/normal_attack_hit_effect.json";
 
     // 内部的にキーからパスを引くための辞書
     std::unordered_map<std::string, std::string> effectDictionary_;

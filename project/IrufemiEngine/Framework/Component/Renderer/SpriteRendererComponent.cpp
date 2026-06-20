@@ -9,14 +9,16 @@ SpriteRendererComponent::SpriteRendererComponent() {}
 SpriteRendererComponent::~SpriteRendererComponent() {}
 
 void SpriteRendererComponent::Initialize() {
-    sprite_ = std::make_unique<Sprite>();
-    sprite_->Initialize(texturePath_);
-    
-    // 初期設定
-    sprite_->SetAnchor(anchor_[0], anchor_[1]);
-    sprite_->SetFlip(isFlipX_, isFlipY_);
-    sprite_->SetTopMost(isTopMost_);
-    sprite_->SetColor(color_);
+    if (!sprite_) {
+        sprite_ = std::make_unique<Sprite>();
+        sprite_->Initialize(texturePath_);
+        
+        // 初期設定
+        sprite_->SetAnchor(anchor_[0], anchor_[1]);
+        sprite_->SetFlip(isFlipX_, isFlipY_);
+        sprite_->SetTopMost(isTopMost_);
+        sprite_->SetColor(color_);
+    }
     
     // テクスチャサイズを取得して初期サイズに設定（Deserializeで既にサイズが設定されていない場合のみ）
     if (size_[0] == 640.0f && size_[1] == 360.0f) { // デフォルト値の場合は上書き

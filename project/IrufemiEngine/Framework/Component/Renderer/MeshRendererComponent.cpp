@@ -18,8 +18,10 @@ void MeshRendererComponent::LoadModel(const std::string& filename) {
 }
 
 void MeshRendererComponent::Initialize() {
-    obj_ = std::make_unique<StaticModelObject>();
-    obj_->Initialize(modelName_);
+    if (!obj_) {
+        obj_ = std::make_unique<StaticModelObject>();
+        obj_->Initialize(modelName_);
+    }
 
     // 親の GameObject から TransformComponent を探して保持しておく
     if (gameObject_) {
