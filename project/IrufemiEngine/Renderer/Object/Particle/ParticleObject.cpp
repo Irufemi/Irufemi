@@ -142,6 +142,7 @@ void ParticleObject::UpdateSystem() {
     
     data.enableTrail = enableTrail_ ? 1 : 0;
     data.trailFrequency = trailFrequency_;
+    data.showDebugArea = showDebugArea_ ? 1 : 0;
     data.enableDeathEmit = enableDeathEmit_ ? 1 : 0;
     data.enableRandomRotation = enableRandomRotation_ ? 1 : 0;
 
@@ -179,6 +180,7 @@ void ParticleObject::Serialize(nlohmann::json& j) const {
     
     if (enableTrail_) j["enableTrail"] = enableTrail_;
     if (trailFrequency_ != 0.05f) j["trailFrequency"] = trailFrequency_;
+    if (!showDebugArea_) j["showDebugArea"] = showDebugArea_;
     if (enableDeathEmit_) j["enableDeathEmit"] = enableDeathEmit_;
     if (enableRandomRotation_) j["enableRandomRotation"] = enableRandomRotation_;
     
@@ -224,6 +226,7 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
     
     if (j.contains("enableTrail")) enableTrail_ = j["enableTrail"].get<bool>();
     if (j.contains("trailFrequency")) trailFrequency_ = j["trailFrequency"].get<float>();
+    if (j.contains("showDebugArea")) showDebugArea_ = j["showDebugArea"].get<bool>();
     if (j.contains("enableDeathEmit")) enableDeathEmit_ = j["enableDeathEmit"].get<bool>();
     if (j.contains("enableRandomRotation")) enableRandomRotation_ = j["enableRandomRotation"].get<bool>();
     
@@ -320,6 +323,7 @@ void ParticleObject::RegisterProperties(Component* comp) {
     comp->RegisterPropertyRange("Mid Point", &midPoint_, 0.0f, 1.0f).SetTooltip("寿命の中で中間スケール・カラーに到達するタイミング（0.0～1.0）");
 
     comp->RegisterHeader("Special Features");
+    comp->RegisterProperty("Show Debug Area", &showDebugArea_).SetTooltip("エディタ上でパーティクルの発生範囲をワイヤーフレーム表示するか");
     comp->RegisterProperty("Enable Trail", &enableTrail_).SetTooltip("パーティクルの軌跡を描画するか");
     comp->RegisterPropertyRange("Trail Frequency", &trailFrequency_, 0.01f, 1.0f).SetTooltip("軌跡（トレイル）を生成する間隔の頻度");
     comp->RegisterProperty("Enable Death Emit", &enableDeathEmit_).SetTooltip("消滅時に別のパーティクルを発生させるか");

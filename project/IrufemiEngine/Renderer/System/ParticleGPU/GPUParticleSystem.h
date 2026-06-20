@@ -134,7 +134,7 @@ struct GPUParticleEmitter {
     // float4 x 18
     uint32_t enableDeathEmit = 0;
     float trailFrequency = 0.05f;
-    float pad7 = 0.0f;
+    uint32_t showDebugArea = 1;
     float pad8 = 0.0f;
 
     // float4 x 19

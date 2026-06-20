@@ -432,6 +432,7 @@ void GPUParticleSystem::UpdateDebugLines() {
 
   if (showEmitterArea_) {
     for (const auto& em : emittersData_) {
+      if (em.showDebugArea == 0) continue;
       if (em.emit == 0 && em.burstCount == 0) continue;
       Vector4 color = {0.0f, 1.0f, 0.0f, 1.0f};
       Vector3 translate = {em.translateX, em.translateY, em.translateZ};

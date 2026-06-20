@@ -7,6 +7,11 @@ EffectManagerComponent* EffectManagerComponent::instance_ = nullptr;
 
 void EffectManagerComponent::OnRegisterProperties() {
     RegisterProperty("Hit Effect Path", &hitEffectPath_);
+    RegisterHeader("Hit Effect Override");
+    RegisterProperty("Show Debug Area", &showHitDebugArea_);
+    RegisterProperty("Core Flash Burst", &hitCoreFlashBurst_);
+    RegisterProperty("Sparks Burst", &hitSparksBurst_);
+    RegisterProperty("Shockwave Burst", &hitShockwaveBurst_);
 }
 
 void EffectManagerComponent::Initialize() {
@@ -28,6 +33,9 @@ void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Vect
     if (spawnedObj) {
         // HitEffectComponent がアタッチされていれば、PlayAt を呼び出して再生を初期化する
         if (auto hitEffect = spawnedObj->GetComponent<HitEffectComponent>()) {
+            if (effectKey == "Hit") {
+                hitEffect->SetParameters(hitCoreFlashBurst_, hitSparksBurst_, hitShockwaveBurst_, showHitDebugArea_);
+            }
             hitEffect->PlayAt(worldPosition);
         }
     }

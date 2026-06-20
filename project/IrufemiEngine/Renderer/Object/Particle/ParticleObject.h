@@ -146,6 +146,9 @@ public:
     void SetEnableRandomRotation(bool enable) { if (enableRandomRotation_ != enable) { enableRandomRotation_ = enable; MarkDirty(); } }
     bool GetEnableRandomRotation() const { return enableRandomRotation_; }
 
+    void SetShowDebugArea(bool show) { if (showDebugArea_ != show) { showDebugArea_ = show; MarkDirty(); } }
+    bool GetShowDebugArea() const { return showDebugArea_; }
+
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static TextureManager* GetTextureManager() { return textureManager_; }
 
@@ -189,6 +192,7 @@ private:
     float trailFrequency_ = 0.05f;
     bool enableDeathEmit_ = false;
     bool enableRandomRotation_ = false;
+    bool showDebugArea_ = true; // 追加：デバッグエリア表示フラグ
 
     // ビジュアル・ライフタイム
     int billboardMode_ = 1; // 0: None, 1: Billboard, 2: Y-Axis

@@ -19,8 +19,17 @@ public:
      */
     void PlayAt(const Vector3& pos);
 
+    void SetParameters(int coreFlash, int sparks, int shockwave, bool showDebug) {
+        coreFlashBurstCount_ = coreFlash;
+        sparksBurstCount_ = sparks;
+        shockwaveBurstCount_ = shockwave;
+        showDebugArea_ = showDebug;
+    }
+
 private:
-    int coreFlashBurstCount_ = 1;
+    int coreFlashBurstCount_ = 10;
     int sparksBurstCount_ = 60;
     int shockwaveBurstCount_ = 1;
+    
+    bool showDebugArea_ = true; // デバッグエリア表示の一括切り替えフラグ
 };

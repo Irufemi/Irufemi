@@ -7,6 +7,7 @@ void HitEffectComponent::OnRegisterProperties() {
     RegisterProperty("Core Flash Burst", &coreFlashBurstCount_);
     RegisterProperty("Sparks Burst", &sparksBurstCount_);
     RegisterProperty("Shockwave Burst", &shockwaveBurstCount_);
+    RegisterProperty("Show Debug Area", &showDebugArea_);
 }
 
 void HitEffectComponent::PlayAt(const Vector3& pos) {
@@ -31,6 +32,10 @@ void HitEffectComponent::PlayAt(const Vector3& pos) {
             } else {
                 // デフォルト（念のため）
                 emitter->EmitBurst(1);
+            }
+            // 親のフラグで子のデバッグ表示を一括制御
+            if (auto pObj = emitter->GetParticleObject()) {
+                pObj->SetShowDebugArea(showDebugArea_);
             }
         }
     }
