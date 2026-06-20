@@ -39,12 +39,6 @@ private:
     // エディタから設定する、代表的なエフェクトのPrefabパス
     std::string hitEffectPath_ = "resources/prefabs/hit_effect.json";
 
-    // HitEffect用オーバーライドパラメータ
-    int hitCoreFlashBurst_ = 10;
-    int hitSparksBurst_ = 60;
-    int hitShockwaveBurst_ = 1;
-    bool showHitDebugArea_ = true;
-
     // 内部的にキーからパスを引くための辞書
     std::unordered_map<std::string, std::string> effectDictionary_;
 };

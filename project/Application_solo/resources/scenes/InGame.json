@@ -376,11 +376,7 @@
         },
         {
           "data": {
-            "Core Flash Burst": 10,
-            "Hit Effect Path": "resources/prefabs/hit_effect.json",
-            "Shockwave Burst": 1,
-            "Show Debug Area": false,
-            "Sparks Burst": 60
+            "Hit Effect Path": "resources/prefabs/hit_effect.json"
           },
           "type": "EffectManagerComponent"
         }
