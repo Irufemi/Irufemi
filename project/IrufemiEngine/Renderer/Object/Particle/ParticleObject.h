@@ -173,7 +173,7 @@ private:
     float lifeTimeMin_ = 0.5f;
     float lifeTimeMax_ = 1.0f;
     float velocity_ = 1.0f;
-    float radius_ = 1.0f;
+    float radius_ = 0.0f;
     float spread_ = 0.1f;
     
     // アニメーション設定
@@ -203,7 +203,7 @@ private:
     Vector3 endScale_ = { 0.0f, 0.0f, 0.0f };
     float midPoint_ = 0.5f;                         // 中間点の位置(0.0~1.0)
     
-    Vector3 direction_ = { 0.0f, 0.0f, 1.0f };
+    Vector3 direction_ = { 0.0f, 0.0f, 0.0f };
     Vector3 areaSize_ = { 10.0f, 10.0f, 10.0f };    // Boxエミッター用サイズ
 
 private:

@@ -164,7 +164,7 @@ void ParticleObject::Serialize(nlohmann::json& j) const {
     if (lifeTimeMin_ != 0.5f) j["lifeTimeMin"] = lifeTimeMin_;
     if (lifeTimeMax_ != 1.0f) j["lifeTimeMax"] = lifeTimeMax_;
     if (velocity_ != 1.0f) j["velocity"] = velocity_;
-    if (radius_ != 1.0f) j["radius"] = radius_;
+    if (radius_ != 0.0f) j["radius"] = radius_;
     if (spread_ != 0.1f) j["spread"] = spread_;
     
     if (atlasRows_ != 1) j["atlasRows"] = atlasRows_;
@@ -193,7 +193,7 @@ void ParticleObject::Serialize(nlohmann::json& j) const {
     if (endScale_.x != 0.0f || endScale_.y != 0.0f || endScale_.z != 0.0f) j["endScale"] = { endScale_.x, endScale_.y, endScale_.z };
     if (midPoint_ != 0.5f) j["midPoint"] = midPoint_;
     
-    if (direction_.x != 0.0f || direction_.y != 0.0f || direction_.z != 1.0f) j["direction"] = { direction_.x, direction_.y, direction_.z };
+    if (direction_.x != 0.0f || direction_.y != 0.0f || direction_.z != 0.0f) j["direction"] = { direction_.x, direction_.y, direction_.z };
     if (areaSize_.x != 10.0f || areaSize_.y != 10.0f || areaSize_.z != 10.0f) j["areaSize"] = { areaSize_.x, areaSize_.y, areaSize_.z };
 }
 

@@ -15,7 +15,7 @@
   ],
   "children": [
     {
-      "name": "CoreFlash",
+      "name": "DarkCoreBurst",
       "components": [
         {
           "type": "TransformComponent"
@@ -26,29 +26,42 @@
             "ParticleData": {
               "texturePath": "resources/circle.png",
               "blendMode": 2,
-              "midPoint": 0.0,
+              "midPoint": 0.3,
               "emitOnAwake": true,
               "showDebugArea": false,
               "burstCountOnAwake": 1,
               "emitType": 0,
               "emissionRate": 0.0,
-              "lifeTimeMin": 0.1,
-              "lifeTimeMax": 0.2,
+              "radius": 0.01,
+              "direction": [ 0.0, 0.0, 0.0 ],
+              "lifeTimeMin": 0.3,
+              "lifeTimeMax": 0.4,
               "startScale": [
-                5.0,
-                5.0,
-                5.0
-              ],
-              "endScale": [
-                0.0,
-                0.0,
-                0.0
-              ],
-              "color": [
-                0.3,
-                0.8,
+                1.0,
                 1.0,
                 1.0
+              ],
+              "midScale": [
+                2.0,
+                2.0,
+                2.0
+              ],
+              "endScale": [
+                2.2,
+                2.2,
+                2.2
+              ],
+              "color": [
+                0.8,
+                0.1,
+                1.0,
+                1.0
+              ],
+              "midColor": [
+                0.3,
+                0.0,
+                0.6,
+                0.8
               ],
               "velocity": 0.0
             }
@@ -57,7 +70,7 @@
       ]
     },
     {
-      "name": "Sparks",
+      "name": "NeonFlash",
       "components": [
         {
           "type": "TransformComponent"
@@ -68,24 +81,25 @@
             "ParticleData": {
               "texturePath": "resources/circle.png",
               "blendMode": 2,
-              "midPoint": 0.0,
+              "midPoint": 0.2,
               "emitOnAwake": true,
               "showDebugArea": false,
-              "burstCountOnAwake": 60,
+              "burstCountOnAwake": 1,
               "emitType": 0,
               "emissionRate": 0.0,
-              "lifeTimeMin": 0.3,
-              "lifeTimeMax": 0.7,
-              "velocity": 25.0,
-              "spread": 1.0,
-              "gravity": 25.0,
-              "bounce": 0.4,
-              "groundHeight": -2.0,
-              "billboardMode": 2,
+              "radius": 0.0,
+              "direction": [ 0.0, 0.0, 0.0 ],
+              "lifeTimeMin": 0.2,
+              "lifeTimeMax": 0.25,
               "startScale": [
-                0.4,
                 2.5,
-                0.4
+                2.5,
+                2.5
+              ],
+              "midScale": [
+                1.0,
+                1.0,
+                1.0
               ],
               "endScale": [
                 0.0,
@@ -93,22 +107,25 @@
                 0.0
               ],
               "color": [
-                0.2,
-                0.6,
+                0.1,
+                1.0,
                 1.0,
                 1.0
               ],
-              "enableTrail": true,
-              "trailFrequency": 0.03,
-              "enableDeathEmit": true,
-              "enableRandomRotation": true
+              "midColor": [
+                0.0,
+                0.5,
+                1.0,
+                0.8
+              ],
+              "velocity": 0.0
             }
           }
         }
       ]
     },
     {
-      "name": "Shockwave",
+      "name": "DistortionRing",
       "components": [
         {
           "type": "TransformComponent"
@@ -125,6 +142,8 @@
               "burstCountOnAwake": 1,
               "emitType": 0,
               "emissionRate": 0.0,
+              "radius": 0.01,
+              "direction": [ 0.0, 0.0, 0.0 ],
               "lifeTimeMin": 0.3,
               "lifeTimeMax": 0.4,
               "startScale": [
@@ -133,17 +152,71 @@
                 0.5
               ],
               "endScale": [
-                15.0,
-                15.0,
-                15.0
+                5.0,
+                5.0,
+                5.0
               ],
               "color": [
                 0.1,
                 0.5,
                 1.0,
-                0.8
+                0.7
               ],
               "billboardMode": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "GravitySparks",
+      "components": [
+        {
+          "type": "TransformComponent"
+        },
+        {
+          "type": "ParticleEmitterComponent",
+          "data": {
+            "ParticleData": {
+              "texturePath": "resources/circle.png",
+              "blendMode": 2,
+              "midPoint": 0.0,
+              "emitOnAwake": true,
+              "showDebugArea": false,
+              "burstCountOnAwake": 80,
+              "emitType": 0,
+              "emissionRate": 0.0,
+              "radius": 0.01,
+              "direction": [ 0.0, 0.0, 0.0 ],
+              "lifeTimeMin": 0.2,
+              "lifeTimeMax": 0.4,
+              "velocity": 3.0,
+              "spread": 1.0,
+              "gravity": 5.0,
+              "bounce": 0.3,
+              "groundHeight": -2.0,
+              "billboardMode": 2,
+              "startScale": [
+                0.15,
+                0.5,
+                0.15
+              ],
+              "endScale": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "color": [
+                0.1,
+                0.8,
+                1.0,
+                1.0
+              ],
+              "enableTrail": true,
+              "trailFrequency": 0.02,
+              "jitter": 0.0,
+              "enableDeathEmit": true,
+              "enableRandomRotation": true
             }
           }
         }
