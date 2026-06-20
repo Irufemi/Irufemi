@@ -29,9 +29,10 @@
               "emitOnAwake": true,
               "burstCountOnAwake": 1,
               "emitType": 0,
+              "emissionRate": 0.0,
               "lifeTimeMin": 0.15,
               "lifeTimeMax": 0.15,
-              "startScale": [ 3.0, 3.0, 3.0 ],
+              "startScale": [ 5.0, 5.0, 5.0 ],
               "endScale": [ 0.0, 0.0, 0.0 ],
               "color": [ 0.5, 0.0, 1.0, 1.0 ],
               "endColor": [ 0.0, 0.0, 0.0, 0.0 ]
@@ -121,8 +122,8 @@
               "emissionRate": 0.0,
               "radius": 0.0,
               "direction": [ 0.0, 0.0, 0.0 ],
-              "lifeTimeMin": 0.1,
-              "lifeTimeMax": 0.15,
+              "lifeTimeMin": 0.05,
+              "lifeTimeMax": 0.1,
               "startScale": [
                 2.5,
                 2.5,
@@ -207,60 +208,6 @@
                 0.0
               ],
               "billboardMode": 1
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "GravitySparks",
-      "components": [
-        {
-          "type": "TransformComponent"
-        },
-        {
-          "type": "ParticleEmitterComponent",
-          "data": {
-            "ParticleData": {
-              "texturePath": "resources/circle.png",
-              "blendMode": 2,
-              "midPoint": 0.0,
-              "emitOnAwake": true,
-              "showDebugArea": false,
-              "burstCountOnAwake": 80,
-              "emitType": 0,
-              "emissionRate": 0.0,
-              "radius": 0.01,
-              "direction": [ 0.0, 0.0, 0.0 ],
-              "lifeTimeMin": 0.2,
-              "lifeTimeMax": 0.4,
-              "velocity": 3.0,
-              "spread": 1.0,
-              "gravity": 5.0,
-              "bounce": 0.3,
-              "groundHeight": -2.0,
-              "billboardMode": 2,
-              "startScale": [
-                0.15,
-                0.5,
-                0.15
-              ],
-              "endScale": [
-                0.0,
-                0.0,
-                0.0
-              ],
-              "color": [
-                0.1,
-                0.8,
-                1.0,
-                1.0
-              ],
-              "enableTrail": false,
-              "trailFrequency": 0.02,
-              "jitter": 0.0,
-              "enableDeathEmit": false,
-              "enableRandomRotation": true
             }
           }
         }
