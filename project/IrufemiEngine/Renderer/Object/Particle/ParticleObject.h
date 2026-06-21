@@ -19,6 +19,12 @@ public:
     ~ParticleObject();
 
     void Initialize();
+    
+    /**
+     * @brief GPUバッファの確保を事前に行い、実行中のラグを防ぐ（パラメータは送信しない安全なプレウォーム）
+     */
+    void PrewarmSystem();
+
     void Play();
     void Stop();
     void Restart();

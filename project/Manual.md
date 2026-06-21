@@ -85,7 +85,28 @@ if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
   }
   ```
 
-### 4. 命名規則・コードスタイル
+### 4. GPUリソースの事前確保（Pre-warming）によるラグ防止
+リアルタイム性が命のゲームにおいて、実行中のテクスチャ読み込みやシェーダー・VRAMバッファの構築（遅延評価）は**画面のカクつき（Hitch / Stutter）を生む最大の原因**となります。一線級のエンジンと同様に、ゲーム開始前の初期化フェーズ（ロード画面や `Start()` のタイミング）で重い処理を強制的に終わらせる**プレウォーム（事前確保）**を徹底してください。
+
+- **安全なプレウォームの実装方法**
+  初期化時にフルセットの更新処理を呼ぶと、プールの中で休眠中のエフェクトが勝手に発生・消費されてしまう（いざ使うときに出なくなる）バグの原因になります。これを防ぐため、**「発生パラメータは一切送らず、GPUマネージャーに対してハンドルの取得（VRAM領域の予約）だけを行う」専用のメソッド**を用意・使用してください。
+  ```cpp
+  // ParticleObject.cpp の例
+  void ParticleObject::Initialize() {
+      // ...
+      // 実行中のラグを防ぐため、安全なプレウォーム（枠だけの事前確保）を行う
+      PrewarmSystem();
+  }
+
+  void ParticleObject::PrewarmSystem() {
+      // パラメータは送信せず、マネージャーに「このテクスチャとブレンドモードを使う」と登録だけ行う
+      if (!emitterHandle_.IsValid() && gpuParticleManager_) {
+          emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+      }
+  }
+  ```
+
+### 5. 命名規則・コードスタイル
 - **メンバ変数の命名**: `m_` などの接頭辞は使用せず、**キャメルケースの末尾にアンダーバー**をつけるスタイル (`variableName_`) に統一してください。
 - **ヘッダーの注釈**: 関数やクラスのコメントは「Doxygen形式」で記述してください。
 - **インクルードガード**: `#pragma once` を使用してください。

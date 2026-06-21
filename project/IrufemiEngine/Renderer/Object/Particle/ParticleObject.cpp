@@ -21,6 +21,16 @@ void ParticleObject::Initialize() {
     if (burstCountOnAwake_ > 0) {
         EmitBurst(burstCountOnAwake_);
     }
+    
+    // 実行時のラグ（Hitch）を防ぐため、初期化時に強制的にGPUバッファをプレウォーム（事前確保）する
+    PrewarmSystem();
+}
+
+void ParticleObject::PrewarmSystem() {
+    // パラメータは送信せず、単にマネージャーにテクスチャ等の登録（GPUバッファの確保）だけを依頼する
+    if (!emitterHandle_.IsValid() && gpuParticleManager_) {
+        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+    }
 }
 
 void ParticleObject::Play() {
