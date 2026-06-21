@@ -102,7 +102,6 @@ public:
      * @param[in] callback 現在のフレームインデックスを受け取る関数
      */
     void SetCustomSyncCallback(CustomSyncCallback callback) { customSyncCallback_ = std::move(callback); }
-
     /**
      * @brief 半透明・エフェクトかどうかを設定する（trueにするとZソート付きで奥の不透明モデルの後に描画される）
      */
@@ -110,6 +109,7 @@ public:
 
     // --- 静的各種マネージャの設定 ---
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
+    static TextureManager* GetTextureManager() { return textureManager_; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
     static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }

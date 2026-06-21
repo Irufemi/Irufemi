@@ -61,6 +61,42 @@ void PrimitiveRendererComponent::SetTexture(const std::string& texturePath) {
     }
 }
 
+void PrimitiveRendererComponent::SetEnableLighting(bool enable) {
+    if (primitive_) {
+        primitive_->GetMaterial().enableLighting = enable;
+    }
+}
+
+void PrimitiveRendererComponent::SetLightingMode(int mode) {
+    if (primitive_) {
+        primitive_->GetMaterial().lightingMode = mode;
+    }
+}
+
+void PrimitiveRendererComponent::SetMetallic(float metallic) {
+    if (primitive_) {
+        primitive_->GetMaterial().metallic = metallic;
+    }
+}
+
+void PrimitiveRendererComponent::SetRoughness(float roughness) {
+    if (primitive_) {
+        primitive_->GetMaterial().roughness = roughness;
+    }
+}
+
+void PrimitiveRendererComponent::SetAlphaReference(float alphaRef) {
+    if (primitive_) {
+        primitive_->GetMaterial().alphaReference = alphaRef;
+    }
+}
+
+void PrimitiveRendererComponent::SetUseClampSampler(int32_t useClamp) {
+    if (primitive_) {
+        primitive_->GetMaterial().useClampSampler = useClamp;
+    }
+}
+
 void PrimitiveRendererComponent::RebuildMesh() {
     if (!primitive_) return;
     

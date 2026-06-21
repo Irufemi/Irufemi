@@ -138,7 +138,10 @@
         },
         {
           "data": {
-            "currentTypeIndex": 1
+            "currentTypeIndex": 1,
+            "material": {
+              "texturePath": "resources/cyberpunk_wasteland_ground.png"
+            }
           },
           "type": "PrimitiveRendererComponent"
         }
