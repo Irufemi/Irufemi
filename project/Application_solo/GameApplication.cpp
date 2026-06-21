@@ -49,7 +49,7 @@ namespace {
     const Vector4 kClearColor = { 0.08f, 0.03f, 0.02f, 1.0f }; // 退廃的な荒野（ダーク・ラスト）
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-        = "Debug";
+        = "InGame";
 #else
         = "Title";
 #endif
