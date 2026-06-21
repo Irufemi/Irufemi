@@ -36,7 +36,7 @@ void EnemyBeamComponent::Initialize() {
     chargeSphere_ = std::make_unique<Primitive3DObject>();
     chargeSphere_->Initialize(PrimitiveType::Sphere);
     // 警戒色と赤黒さを混ぜたベース色（アルファ値は中心コアの透明度として利用）
-    chargeSphere_->SetColor({ 1.0f, 0.3f, 0.0f, 1.0f }); 
+    chargeSphere_->SetColor({ 0.7f, 0.0f, 0.9f, 1.0f }); // ダークなマゼンタパープル
     chargeSphere_->SetCullingEnabled(false);
     chargeSphere_->SetCustomPSO(
         engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back)
@@ -66,17 +66,17 @@ void EnemyBeamComponent::Initialize() {
     beamParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&beamParamsData_));
     if (beamParamsData_) {
         *beamParamsData_ = LightningParams();
-        beamParamsData_->color = { 1.0f, 0.2f, 0.0f, 1.0f }; // 赤オレンジ系オーラ
-        beamParamsData_->coreColor = { 1.0f, 0.9f, 0.4f, 1.0f }; // 明るい黄色コア
-        beamParamsData_->intensity = 5.0f;
-        beamParamsData_->noiseThreshold = 0.3f;
-        beamParamsData_->coreIntensity = 30.0f;
-        beamParamsData_->coreThreshold = 0.8f;
-        beamParamsData_->coreScale = 2.0f;
-        beamParamsData_->speed = 4.0f;
-        beamParamsData_->noiseScale = 1.0f;
-        beamParamsData_->spinSpeed = 5.0f;
-        beamParamsData_->twistScale = 3.0f;
+        beamParamsData_->color = { 0.8f, 0.0f, 1.0f, 1.0f }; // ネオンパープルオーラ
+        beamParamsData_->coreColor = { 0.0f, 1.0f, 1.0f, 1.0f }; // 高エネルギーのシアンコア
+        beamParamsData_->intensity = 6.0f;
+        beamParamsData_->noiseThreshold = 0.35f;
+        beamParamsData_->coreIntensity = 40.0f;
+        beamParamsData_->coreThreshold = 0.85f;
+        beamParamsData_->coreScale = 2.5f;
+        beamParamsData_->speed = 3.0f;
+        beamParamsData_->noiseScale = 1.2f;
+        beamParamsData_->spinSpeed = 4.0f;
+        beamParamsData_->twistScale = 4.0f;
     }
 
     // 外側（バチバチ電撃・オーラ）用パラメータ
@@ -84,17 +84,17 @@ void EnemyBeamComponent::Initialize() {
     auraParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&auraParamsData_));
     if (auraParamsData_) {
         *auraParamsData_ = LightningParams();
-        auraParamsData_->color = { 0.4f, 0.0f, 0.0f, 1.0f }; // 禍々しい赤黒い色
-        auraParamsData_->coreColor = { 1.0f, 0.3f, 0.0f, 1.0f }; // コアは強烈なオレンジ
-        auraParamsData_->intensity = 10.0f;
-        auraParamsData_->noiseThreshold = 0.45f;
-        auraParamsData_->coreIntensity = 15.0f;
-        auraParamsData_->coreThreshold = 0.5f;
-        auraParamsData_->coreScale = 2.0f;
-        auraParamsData_->speed = 1.0f;
-        auraParamsData_->noiseScale = 0.8f;
-        auraParamsData_->spinSpeed = 10.0f;
-        auraParamsData_->twistScale = 5.0f;
+        auraParamsData_->color = { 0.1f, 0.0f, 0.2f, 1.0f }; // ダークパープル/黒っぽいオーラ
+        auraParamsData_->coreColor = { 0.8f, 0.0f, 1.0f, 1.0f }; // コアはネオンパープル
+        auraParamsData_->intensity = 12.0f;
+        auraParamsData_->noiseThreshold = 0.4f;
+        auraParamsData_->coreIntensity = 20.0f;
+        auraParamsData_->coreThreshold = 0.55f;
+        auraParamsData_->coreScale = 2.5f;
+        auraParamsData_->speed = 0.8f;
+        auraParamsData_->noiseScale = 1.0f;
+        auraParamsData_->spinSpeed = 8.0f;
+        auraParamsData_->twistScale = 6.0f;
     }
 
     state_ = State::IDLE;
@@ -126,8 +126,8 @@ void EnemyBeamComponent::Update() {
         // イーズイン (急激に収縮してエネルギーが凝縮される表現) + 明滅
         float easeT = t * t * t; 
         // 最終的には少し大きめに膨張する
-        float baseScale = std::lerp(0.1f, 3.5f, easeT);
-        float pulse = 1.0f + 0.2f * std::sin(t * 30.0f); // 激しい明滅
+        float baseScale = std::lerp(0.1f, 4.0f, easeT);
+        float pulse = 1.0f + 0.3f * std::sin(t * 50.0f); // より激しく不安定な明滅
         float currentScale = baseScale * pulse;
 
         if (chargeSphere_) {

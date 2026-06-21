@@ -13,6 +13,8 @@
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include <cmath>
 
 void DebrisComponent::OnRegisterProperties() {
@@ -72,14 +74,31 @@ void DebrisComponent::Initialize() {
 void DebrisComponent::SetState(DebrisState newState) {
     state_ = newState;
 
-    // オーラ用子オブジェクトの表示切り替え
+    // オーラ用子オブジェクトの表示切り替えと色の変更
     if (gameObject_) {
         for (auto& child : gameObject_->GetChildren()) {
             if (child && child->GetName() == "DebrisAura") {
+                bool isActive = false;
+                Vector4 auraColor = { 1.0f, 1.0f, 1.0f, 0.7f };
+
                 if (state_ == DebrisState::Pulled || state_ == DebrisState::Orbiting || state_ == DebrisState::Thrown) {
-                    child->SetIsActive(true);
-                } else {
-                    child->SetIsActive(false);
+                    isActive = true;
+                    // Player (Smart Energy): シアン
+                    auraColor = { 0.0f, 0.8f, 1.0f, 0.4f };
+                } else if (state_ == DebrisState::BossOrbiting) {
+                    isActive = true;
+                    // Boss (Dark Energy): マゼンタ / ダークパープル
+                    auraColor = { 0.8f, 0.0f, 0.6f, 0.4f };
+                }
+
+                child->SetIsActive(isActive);
+
+                if (isActive) {
+                    if (auto auraModel = child->GetComponent<PrimitiveRendererComponent>()) {
+                        if (auto primitive = static_cast<Primitive3DObject*>(auraModel->GetRenderable())) {
+                            primitive->SetColor(auraColor);
+                        }
+                    }
                 }
             }
         }
