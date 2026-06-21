@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include <memory>
+#include "Engine/Core/Utility/ObjectPool.h"
 
 class GameObject;
 
@@ -18,6 +19,8 @@ public:
     ~EffectManagerComponent() override = default;
 
     void Initialize() override;
+    void Start() override;
+    void Update() override;
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "EffectManagerComponent"; }
 
@@ -41,4 +44,14 @@ private:
 
     // 内部的にキーからパスを引くための辞書
     std::unordered_map<std::string, std::string> effectDictionary_;
+
+    int maxHitEffects_ = 20;
+    float effectDuration_ = 2.0f; // エフェクトの生存時間
+    std::unique_ptr<ObjectPool<GameObject>> hitEffectPool_;
+
+    struct ActiveEffect {
+        std::shared_ptr<GameObject> obj;
+        float timer;
+    };
+    std::vector<ActiveEffect> activeEffects_;
 };

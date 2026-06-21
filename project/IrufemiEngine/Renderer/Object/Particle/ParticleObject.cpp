@@ -28,6 +28,13 @@ void ParticleObject::Play() {
     MarkDirty();
 }
 
+void ParticleObject::Restart() {
+    Play();
+    if (burstCountOnAwake_ > 0) {
+        EmitBurst(burstCountOnAwake_);
+    }
+}
+
 void ParticleObject::Stop() {
     isPlaying_ = false;
     MarkDirty();

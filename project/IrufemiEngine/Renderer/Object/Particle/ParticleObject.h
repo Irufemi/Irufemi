@@ -21,6 +21,7 @@ public:
     void Initialize();
     void Play();
     void Stop();
+    void Restart();
     void EmitBurst(int count);
     void Update();
 

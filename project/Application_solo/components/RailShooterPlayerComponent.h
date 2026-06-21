@@ -14,6 +14,7 @@ public:
     ~RailShooterPlayerComponent() override = default;
 
     void Initialize() override;
+    void Start() override;
     void Update() override;
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "RailShooterPlayerComponent"; }

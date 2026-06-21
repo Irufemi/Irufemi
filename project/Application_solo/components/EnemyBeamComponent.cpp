@@ -28,6 +28,13 @@ EnemyBeamComponent::~EnemyBeamComponent() {
     }
 }
 
+void EnemyBeamComponent::OnRegisterProperties() {
+    RegisterProperty("Beam Length", &beamLength_);
+    RegisterProperty("Beam Max Radius", &beamMaxRadius_);
+    RegisterProperty("Charge Duration", &chargeDuration_);
+    RegisterProperty("Fire Duration", &fireDuration_);
+}
+
 void EnemyBeamComponent::Initialize() {
     auto engine = BaseModel::GetIrufemiEngine();
     if (!engine) return;

@@ -30,6 +30,7 @@ public:
     void Deserialize(const nlohmann::json& j) override;
 
     void Play();
+    void Restart();
     void Stop();
     
     void EmitBurst(int count);

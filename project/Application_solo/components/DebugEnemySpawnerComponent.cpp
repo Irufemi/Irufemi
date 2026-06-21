@@ -12,6 +12,25 @@
 void DebugEnemySpawnerComponent::Initialize() {
 }
 
+void DebugEnemySpawnerComponent::Start() {
+    auto scene = gameObject_->GetScene();
+    if (!scene) return;
+
+    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [scene]() {
+        auto enemy = std::make_shared<GameObject>("DebugEnemy");
+        scene->AddGameObject(enemy);
+        
+        auto transform = enemy->AddComponent<TransformComponent>();
+        transform->SetScale({1.2f, 1.2f, 1.2f});
+
+        enemy->AddComponent<PrimitiveRendererComponent>();
+        enemy->AddComponent<RailShooterEnemyComponent>();
+
+        enemy->SetIsActive(false);
+        return enemy;
+    });
+}
+
 void DebugEnemySpawnerComponent::Update() {
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
     if (!input) return;
@@ -39,21 +58,21 @@ void DebugEnemySpawnerComponent::Update() {
 }
 
 void DebugEnemySpawnerComponent::SpawnEnemy(const Vector3& position) {
-    auto scene = gameObject_->GetScene();
-    if (!scene) return;
+    if (!enemyPool_) return;
 
-    auto enemy = std::make_shared<GameObject>("DebugEnemy");
-    scene->AddGameObject(enemy);
-    
-    auto transform = enemy->AddComponent<TransformComponent>();
-    transform->SetPosition(position);
-    // プレイヤー側(Z負方向)を向くように回転
-    transform->SetRotation({0.0f, 3.14159f, 0.0f});
-    transform->SetScale({1.2f, 1.2f, 1.2f});
+    auto enemy = enemyPool_->Acquire();
+    if (enemy) {
+        if (auto transform = enemy->GetComponent<TransformComponent>()) {
+            transform->SetPosition(position);
+            // プレイヤー側(Z負方向)を向くように回転
+            transform->SetRotation({0.0f, 3.14159f, 0.0f});
+        }
+        
+        if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
+            // プールから復帰した際に必要な初期化（HPリセット等）を呼ぶ想定
+            enemyComp->Initialize(); 
+        }
 
-    auto renderer = enemy->AddComponent<PrimitiveRendererComponent>();
-    // PrimitiveRendererの設定はデフォルトで一旦OK（表示されれば良い）
-
-    auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
-    enemyComp->Initialize(); // isAliveなど初期化
+        enemy->SetIsActive(true);
+    }
 }

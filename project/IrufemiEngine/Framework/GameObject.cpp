@@ -31,6 +31,18 @@ void GameObject::Initialize() {
     }
 }
 
+void GameObject::Start() {
+    if (isStarted_) return;
+    isStarted_ = true;
+
+    for (auto& comp : components_) {
+        comp->Start();
+    }
+    for (auto& child : children_) {
+        child->Start();
+    }
+}
+
 void GameObject::SetName(const std::string& name) {
     if (name_ == name) return;
     std::string oldName = name_;

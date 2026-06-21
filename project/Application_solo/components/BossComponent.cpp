@@ -43,38 +43,37 @@ void BossComponent::Initialize() {
     beamTimer_ = 0.0f;
 }
 
-void BossComponent::Update() {
+void BossComponent::Start() {
     if (!gameObject_) return;
-    
-    // DebrisManagerから初回だけシールド用のガレキを取得する
-    if (!isShieldsInitialized_) {
-        auto scene = gameObject_->GetScene();
-        if (scene) {
-            auto managerObj = scene->FindGameObject("DebrisManager");
-            if (managerObj) {
-                debrisManager_ = managerObj->GetComponent<DebrisManagerComponent>();
-                if (debrisManager_) {
-                    auto setupDebris = [this](std::shared_ptr<GameObject> debrisObj) {
-                        auto debrisComp = debrisObj->GetComponent<DebrisComponent>();
-                        if (debrisComp) {
-                            debrisComp->SetTarget(gameObject_->shared_from_this());
-                            debrisComp->SetState(DebrisState::BossOrbiting); 
-                        }
-                        shields_.push_back(debrisObj);
-                    };
-
-                    // 残りを取得してセットアップ
-                    for (int i = 0; i < maxShieldCount_; ++i) {
-                        auto debrisObj = debrisManager_->AcquireDebris();
-                        if (debrisObj) {
-                            setupDebris(debrisObj);
-                        }
+    auto scene = gameObject_->GetScene();
+    if (scene) {
+        auto managerObj = scene->FindGameObject("DebrisManager");
+        if (managerObj) {
+            debrisManager_ = managerObj->GetComponent<DebrisManagerComponent>();
+            if (debrisManager_) {
+                auto setupDebris = [this](std::shared_ptr<GameObject> debrisObj) {
+                    auto debrisComp = debrisObj->GetComponent<DebrisComponent>();
+                    if (debrisComp) {
+                        debrisComp->SetTarget(gameObject_->shared_from_this());
+                        debrisComp->SetState(DebrisState::BossOrbiting); 
                     }
-                    isShieldsInitialized_ = true;
+                    shields_.push_back(debrisObj);
+                };
+
+                for (int i = 0; i < maxShieldCount_; ++i) {
+                    auto debrisObj = debrisManager_->AcquireDebris();
+                    if (debrisObj) {
+                        setupDebris(debrisObj);
+                    }
                 }
+                isShieldsInitialized_ = true;
             }
         }
     }
+}
+
+void BossComponent::Update() {
+    if (!gameObject_) return;
     
     // --- ビーム攻撃のタイマー処理 ---
     if (beamComponent_ && state_ != BossState::Destroyed) {
@@ -97,9 +96,9 @@ void BossComponent::Update() {
                     Vector3 forward = { -worldMat.m[2][0], -worldMat.m[2][1], -worldMat.m[2][2] };
                     forward = Math::Normalize(forward);
                     
-                    // ボスのモデルの中にコアが埋まらないように、前方に大きくオフセットする（25.0f）
-                    startPos = Math::Add(startPos, Math::Multiply(25.0f, forward)); 
-                    startPos.y -= 2.0f; // 高さを-2.0fに調整
+                    // ボスのモデルの中にコアが埋まらないようにオフセットを適用
+                    startPos = Math::Add(startPos, Math::Multiply(beamOffsetZ_, forward)); 
+                    startPos.y += beamOffsetY_;
                     
                     // ターゲットは距離に関係なくはるか正面
                     Vector3 targetPos = Math::Add(startPos, Math::Multiply(1000.0f, forward));
@@ -120,6 +119,9 @@ void BossComponent::OnRegisterProperties() {
     RegisterProperty("Max HP", &maxHp_);
     RegisterProperty("Max Shield Count", &maxShieldCount_);
     RegisterProperty("Shield Radius", &shieldRadius_);
+    RegisterProperty("Beam Interval", &beamInterval_);
+    RegisterProperty("Beam Offset Z", &beamOffsetZ_);
+    RegisterProperty("Beam Offset Y", &beamOffsetY_);
 }
 
 std::shared_ptr<GameObject> BossComponent::ExtractDebris() {

@@ -25,6 +25,7 @@ public:
     void SetTag(const std::string& tag) { tag_ = tag; }
 
     void Initialize();
+    void Start();
     void Update(bool isPlayMode = true);
     void Draw();
     void DrawOutlineMask();
@@ -111,6 +112,7 @@ public:
      */
     void Destroy() { isDestroyed_ = true; }
     bool IsDestroyed() const { return isDestroyed_; }
+    bool IsStarted() const { return isStarted_; }
 
     // --- イベント伝達 ---
     void SendCollisionEnter(GameObject* hitObject);
@@ -136,6 +138,7 @@ private:
     std::string tag_ = "Untagged";
     std::string name_ = "GameObject";
     bool isActive_ = true;
+    bool isStarted_ = false;
     bool isDestroyed_ = false;
     bool isFolder_ = false;
     bool isLocked_ = false;

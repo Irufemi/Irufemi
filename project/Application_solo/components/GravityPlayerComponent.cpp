@@ -19,11 +19,23 @@
 void GravityPlayerComponent::OnRegisterProperties() {
     RegisterProperty("Max Orbit Count", &maxOrbitCount_);
     RegisterProperty("Pull Radius", &pullRadius_);
+    RegisterProperty("Lockon Radius 2D", &lockonRadius2D_);
 }
 
 void GravityPlayerComponent::Initialize() {
     orbitingDebris_.clear();
     lockedTarget_ = nullptr;
+}
+
+void GravityPlayerComponent::Start() {
+    if (!gameObject_) return;
+    auto scene = gameObject_->GetScene();
+    if (scene) {
+        auto debrisManagerObj = scene->FindGameObject("DebrisManager");
+        if (debrisManagerObj) {
+            debrisManager_ = debrisManagerObj->GetComponent<DebrisManagerComponent>();
+        }
+    }
 }
 
 void GravityPlayerComponent::Update() {
@@ -80,15 +92,10 @@ void GravityPlayerComponent::HandlePullInput() {
             }
         }
 
-        // 一番親である DebrisManager オブジェクトを探す
-        auto debrisManagerObj = scene->FindGameObject("DebrisManager");
-        if (!debrisManagerObj) return;
-
-        auto debrisManager = debrisManagerObj->GetComponent<DebrisManagerComponent>();
-        if (!debrisManager) return;
+        if (!debrisManager_) return;
 
         // 指定半径内で一番近いガレキを実体化して取得
-        auto debrisObj = debrisManager->ExtractNearestIdleDebris(transform->GetPosition(), pullRadius_);
+        auto debrisObj = debrisManager_->ExtractNearestIdleDebris(transform->GetPosition(), pullRadius_);
         if (debrisObj) {
             if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
                 debrisComp->SetState(DebrisState::Pulled);

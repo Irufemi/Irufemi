@@ -40,6 +40,10 @@ void ParticleEmitterComponent::Play() {
     particleObj_->Play();
 }
 
+void ParticleEmitterComponent::Restart() {
+    particleObj_->Restart();
+}
+
 void ParticleEmitterComponent::Stop() {
     particleObj_->Stop();
 }

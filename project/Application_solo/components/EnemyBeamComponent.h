@@ -18,6 +18,7 @@ public:
     void Initialize() override;
     void Update() override;
     void Draw() override;
+    void OnRegisterProperties() override;
     
     std::string GetComponentName() const override { return "EnemyBeamComponent"; }
 

@@ -233,6 +233,13 @@ void BaseScene::Update() {
         pendingRemoves_.clear();
     }
 
+    // --- Start() フェーズ ---
+    for (auto& obj : gameObjects_) {
+        if (obj && !obj->GetParent() && !obj->IsDestroyed() && !obj->IsStarted()) {
+            obj->Start();
+        }
+    }
+
     // --- Transform の DOD一括更新 (GameObject本体の更新前に行う) ---
     TransformComponent::UpdateAll();
 
