@@ -293,6 +293,9 @@
             "mask": 4294967295
           },
           "type": "SphereColliderComponent"
+        },
+        {
+          "type": "EnemyBeamComponent"
         }
       ],
       "name": "Boss",

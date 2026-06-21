@@ -55,4 +55,9 @@ private:
     DebrisManagerComponent* debrisManager_ = nullptr;
     
     bool isShieldsInitialized_ = false;
+
+    // --- ビーム攻撃用 ---
+    class EnemyBeamComponent* beamComponent_ = nullptr;
+    float beamTimer_ = 0.0f;
+    float beamInterval_ = 10.0f; // 10秒おきに発射
 };

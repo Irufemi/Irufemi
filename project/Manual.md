@@ -391,3 +391,35 @@ Setter を通じて座標を変更しても、**その瞬間にすべての行�
 
 これにより、同じフレーム内で何度座標を変更しても、無駄な行列計算（sin/cosや行列乗算）が走らないため、非常に高速に動作します。
 ※ 特別な理由がない限り、自分で `ComputeMatrix()` を呼び出す必要はありません。エンジン側の `BaseScene::Update()` の直後に一括で最新化されます。
+
+---
+
+## 【NEW】半透明・エフェクトオブジェクトの描画とZソート
+
+本エンジンでは、地形やキャラクターなどの不透明オブジェクトの後に、オーラやレーザーなどの半透明エフェクトを正しい順番（奥から手前）で描画するための **独立した半透明描画パス (MainTransparentPass)** をサポートしました。
+
+これまで半透明オブジェクトを描画する際、Zバッファへの書き込み（DepthWrite）をDisableにすると、後から描画される不透明オブジェクトに上書きされて見えなくなる問題がありましたが、この機能を利用することで正しく描画されます。
+
+### 利用方法
+
+半透明や加算合成で描画したい Primitive3DObject （またはそれを保持するRendererComponent）に対して、初期化時に SetIsTransparent(true) を設定し、同時にPSO設定で DepthWrite::Disable を指定します。
+
+`cpp
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
+
+// 1. オブジェクトの初期化
+auto aura = std::make_shared<Primitive3DObject>();
+aura->Initialize(PrimitiveType::Sphere);
+
+// 2. カスタムPSOの適用 (DepthWrite を Disable にする)
+auto pso = engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
+aura->SetCustomPSO(pso);
+
+// 3. 半透明フラグを有効にする (重要！)
+// これにより、不透明オブジェクトをすべて描き終わった後に、カメラからの距離でソートされて描画されます。
+aura->SetIsTransparent(true);
+``n
+### 注意点
+- SetIsTransparent(true) を設定したオブジェクトは、自動的にカメラからの距離（distanceToCamera）を計算し、**Z値の降順（Back-to-Front）**でソートされて描画されます。
+- 不透明な通常のモデルに SetIsTransparent(true) を設定しないでください（Early-Zカリングなどの恩恵が受けられず、パフォーマンスが低下します）。
+

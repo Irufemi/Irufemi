@@ -96,6 +96,13 @@ void GameApplication::Run() {
         auto vs3d = shaderManager->GetOrCompile(L"resources/shaders/Object3D.VS.hlsl", options);
         auto psEnergyCore = shaderManager->GetOrCompile(L"resources/shaders/EnergyCore.PS.hlsl", options);
         psoManager->RegisterShader("EnergyCore", { { vs3d, psEnergyCore } });
+
+        // 追加: EnergyBeam と LightningCrawl の登録
+        auto psEnergyBeam = shaderManager->GetOrCompile(L"resources/shaders/EnergyBeam.PS.hlsl", options);
+        psoManager->RegisterShader("EnergyBeam", { { vs3d, psEnergyBeam } });
+
+        auto psLightningCrawl = shaderManager->GetOrCompile(L"resources/shaders/LightningCrawl.PS.hlsl", options);
+        psoManager->RegisterShader("LightningCrawl", { { vs3d, psLightningCrawl } });
     }
 
     // 独自コンポーネントの登録

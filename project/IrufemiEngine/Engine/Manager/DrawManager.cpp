@@ -29,6 +29,9 @@ using namespace RenderPackets;
 #include "../Graphics/Pipeline/RenderGraph/SelectionOutlinePass.h"
 #include "../../Resource/Model/ModelManager.h"
 #include "../../engine/IrufemiEngine.h"
+#include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "../Graphics/Camera/CameraManager.h"
+#include "../Graphics/Camera/Camera.h"
 #include "../Graphics/Data/CameraForGPU.h"
 #include "../Graphics/Data/DirectionalLight.h"
 #include "../Graphics/Data/PointLight.h"
@@ -732,7 +735,38 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12
     p.customPSO = resource->GetCustomPSO();
     p.customCBVAddress = resource->GetCustomCBVAddress();
     p.vertexBufferResourceOverride = vertexBufferResourceOverride;
+    p.castShadows = castShadows;
+    p.distanceToCamera = 0.0f; // Standardの場合は不要
     standard3DQueue_.push_back(p);
+}
+
+void DrawManager::SubmitTransparent3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows, ID3D12Resource* vertexBufferResourceOverride) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
+    if (!resource) return;
+    Standard3DPacket p{};
+    p.resource = resource;
+    p.vertexBufferViewOverride = vertexBufferViewOverride;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    p.customPSO = resource->GetCustomPSO();
+    p.customCBVAddress = resource->GetCustomCBVAddress();
+    p.vertexBufferResourceOverride = vertexBufferResourceOverride;
+    p.castShadows = castShadows;
+
+    // カメラからの距離を計算
+    p.distanceToCamera = 0.0f;
+    if (auto engine = dxCommon_->GetEngine()) {
+        if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+            Vector3 camPos = camera->GetTranslate();
+            Vector3 objPos = resource->transform_.translate;
+            float dx = camPos.x - objPos.x;
+            float dy = camPos.y - objPos.y;
+            float dz = camPos.z - objPos.z;
+            p.distanceToCamera = dx*dx + dy*dy + dz*dz; // 距離の2乗（比較用なら2乗のままで十分）
+        }
+    }
+    transparent3DQueue_.push_back(p);
 }
 
 void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
@@ -1161,6 +1195,7 @@ void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
 void DrawManager::ClearRenderQueues() {
     std::lock_guard<std::mutex> lock(queueMutex_);
     standard3DQueue_.clear();
+    transparent3DQueue_.clear();
     ui3DQueue_.clear();
     selectionMaskQueue_.clear();
     selectionMaskQueue2D_.clear();

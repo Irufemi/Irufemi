@@ -5,6 +5,7 @@
 #include "RenderGraphBuilder.h"
 #include "../../DirectX/RootSignatureConfig.h"
 #include "../../DirectX/DirectXUtils.h"
+#include <algorithm>
 
 void MainTransparentPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
     if (auto shadowMap = drawManager->GetShadowMap()) {
@@ -75,6 +76,15 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
             drawFunc(p);
         }
     };
+
+    // 3. Transparent 3D (エフェクト・半透明)
+    auto transparentQueue = drawManager->GetTransparent3DQueue(); // コピーしてソート
+    std::sort(transparentQueue.begin(), transparentQueue.end(),
+        [](const RenderPackets::Standard3DPacket& a, const RenderPackets::Standard3DPacket& b) {
+            return a.distanceToCamera > b.distanceToCamera; // 遠いものから描画 (Back-to-Front)
+        }
+    );
+    DrawWithPSO(transparentQueue, [&](const auto& p) { drawManager->DrawStandard3D(p); }, false, false);
 
     // 4. Line
     DrawWithPSO(drawManager->GetLineQueue(), [&](const auto& p) { drawManager->DrawLineInstanced(p); }, false, true);

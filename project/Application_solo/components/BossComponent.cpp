@@ -4,6 +4,8 @@
 #include "Framework/Component/TransformComponent.h"
 #include "DebrisManagerComponent.h"
 #include "DebrisComponent.h"
+#include "EnemyBeamComponent.h"
+#include "GravityPlayerComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
@@ -28,6 +30,17 @@ void BossComponent::Initialize() {
             collider->SetLocalRadius(10.0f); // モデルに隠れないよう少し大きめに設定
         }
     }
+
+    // ビームコンポーネントの追加・初期化
+    if (gameObject_) {
+        beamComponent_ = gameObject_->GetComponent<EnemyBeamComponent>();
+        if (!beamComponent_) {
+            auto comp = gameObject_->AddComponent<EnemyBeamComponent>();
+            beamComponent_ = comp.get();
+            beamComponent_->Initialize();
+        }
+    }
+    beamTimer_ = 0.0f;
 }
 
 void BossComponent::Update() {
@@ -58,6 +71,40 @@ void BossComponent::Update() {
                         }
                     }
                     isShieldsInitialized_ = true;
+                }
+            }
+        }
+    }
+    
+    // --- ビーム攻撃のタイマー処理 ---
+    if (beamComponent_ && state_ != BossState::Destroyed) {
+        float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+        if (deltaTime <= 0.0f) deltaTime = 1.0f / 60.0f;
+        
+        // すでに撃っている最中（CHARGING/FIRING）はタイマーを進めず、撃ち終わってから次に備える等の制御も可能だが
+        // 今回はシンプルに10秒ごとにFireを呼ぶ。
+        if (!beamComponent_->IsActive()) {
+            beamTimer_ += deltaTime;
+            if (beamTimer_ >= beamInterval_) {
+                beamTimer_ = 0.0f;
+                
+                if (auto myTrans = gameObject_->GetComponent<TransformComponent>()) {
+                    Vector3 startPos = myTrans->GetWorldPosition();
+                    
+                    // ボスの向いている方向を取得（Z軸が背中を向いているため反転する）
+                    Matrix4x4 worldMat = myTrans->GetWorldMatrix();
+                    // ボスの顔が手前（-Z方向）を向いていると仮定して、ローカルZ軸を反転させる
+                    Vector3 forward = { -worldMat.m[2][0], -worldMat.m[2][1], -worldMat.m[2][2] };
+                    forward = Math::Normalize(forward);
+                    
+                    // ボスのモデルの中にコアが埋まらないように、前方に大きくオフセットする（25.0f）
+                    startPos = Math::Add(startPos, Math::Multiply(25.0f, forward)); 
+                    startPos.y -= 2.0f; // 高さを-2.0fに調整
+                    
+                    // ターゲットは距離に関係なくはるか正面
+                    Vector3 targetPos = Math::Add(startPos, Math::Multiply(1000.0f, forward));
+                    
+                    beamComponent_->Fire(startPos, targetPos);
                 }
             }
         }

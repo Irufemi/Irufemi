@@ -52,8 +52,9 @@ void DebrisManagerComponent::Initialize() {
         auraModel->SetShape(PrimitiveType::Sphere); // 軽量なプリミティブ球を使用
         
         if (auto primitive = static_cast<Primitive3DObject*>(auraModel->GetRenderable())) {
-            auto pso = BaseModel::GetIrufemiEngine()->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+            auto pso = BaseModel::GetIrufemiEngine()->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
             primitive->SetCustomPSO(pso);
+            primitive->SetIsTransparent(true); // ★半透明パスでZソートして描画させる
             // オーラの中の模様（マグマパターン）が見えるようにアルファ値を0.7に設定
             primitive->SetColor({0.6f, 0.2f, 1.0f, 0.7f});
         }

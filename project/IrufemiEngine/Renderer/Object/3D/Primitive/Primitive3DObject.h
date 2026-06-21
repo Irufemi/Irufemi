@@ -103,6 +103,11 @@ public:
      */
     void SetCustomSyncCallback(CustomSyncCallback callback) { customSyncCallback_ = std::move(callback); }
 
+    /**
+     * @brief 半透明・エフェクトかどうかを設定する（trueにするとZソート付きで奥の不透明モデルの後に描画される）
+     */
+    void SetIsTransparent(bool isTransparent) { isTransparent_ = isTransparent; }
+
     // --- 静的各種マネージャの設定 ---
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
@@ -115,6 +120,7 @@ private:
     MaterialDesc material_;      // マテリアルデータコンポーネント
     bool isCullingEnabled_ = true; //!< 視錐台カリングの有効フラグ
     bool castShadows_ = true;      //!< 影を落とすフラグ
+    bool isTransparent_ = false;   //!< 半透明・エフェクト（遅延・Zソート描画）フラグ
     CustomSyncCallback customSyncCallback_; //!< カスタムの同期処理用コールバック
 
     // 静的ポインタ（既存の設計パターンを継承）

@@ -58,6 +58,7 @@ private:
     // --- Render Queues ---
     std::mutex queueMutex_;
     std::vector<RenderPackets::Standard3DPacket> standard3DQueue_;
+    std::vector<RenderPackets::Standard3DPacket> transparent3DQueue_; // 半透明・エフェクト用キュー
     std::vector<RenderPackets::Standard3DPacket> ui3DQueue_;
     std::vector<RenderPackets::Standard3DPacket> selectionMaskQueue_;
     std::vector<RenderPackets::SpritePacket> selectionMaskQueue2D_;
@@ -84,6 +85,7 @@ private:
 public:
     // --- Queue Getters for RenderPasses ---
     const std::vector<RenderPackets::Standard3DPacket>& GetStandard3DQueue() const { return standard3DQueue_; }
+    const std::vector<RenderPackets::Standard3DPacket>& GetTransparent3DQueue() const { return transparent3DQueue_; }
     const std::vector<RenderPackets::Standard3DPacket>& GetUI3DQueue() const { return ui3DQueue_; }
     const std::vector<RenderPackets::Standard3DPacket>& GetSelectionMaskQueue() const { return selectionMaskQueue_; }
     const std::vector<RenderPackets::SpritePacket>& GetSelectionMaskQueue2D() const { return selectionMaskQueue2D_; }
@@ -340,6 +342,10 @@ public:
      * @param vertexBufferViewOverride スキニング等でVBVを差し替えたい場合に指定
      */
     void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = true, ID3D12Resource* vertexBufferResourceOverride = nullptr);
+    /**
+     * @brief 半透明・エフェクト用の3D標準描画のキューに追加（距離ソート用）
+     */
+    void SubmitTransparent3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = false, ID3D12Resource* vertexBufferResourceOverride = nullptr);
     void SubmitUI3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
     void SubmitOutlineMask(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
     void SubmitTextOutlineMask(const class Object2DResource* resource);
