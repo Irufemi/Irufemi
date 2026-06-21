@@ -50,7 +50,8 @@ for /r %%f in (*.hlsl) do (
 
     if not "!PROFILE!"=="" (
         echo [DXC] Compiling !FILENAME! as !PROFILE!...
-        "%DXC_PATH%" /Zpr /O3 /T !PROFILE! /E main "%%f" /Fo "%%~dpnf.cso"
+        if not exist "compiled" mkdir "compiled"
+        "%DXC_PATH%" /Zpr /O3 /T !PROFILE! /E main "%%f" /Fo "compiled\%%~nf.cso"
         if errorlevel 1 (
             echo [Error] Failed to compile !FILENAME!
             popd
