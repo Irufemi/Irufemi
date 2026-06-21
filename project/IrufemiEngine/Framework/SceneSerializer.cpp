@@ -3,7 +3,9 @@
 #include "BaseScene.h"
 #include "Engine/IrufemiEngine.h"
 #include "GameObject.h"
+#include "Engine/Core/Utility/Log.h"
 #include <fstream>
+#include <iostream>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 
@@ -50,9 +52,7 @@ bool SceneSerializer::Load(IScene* scene, const std::string& sceneName) {
     try {
         file >> root;
     } catch (const nlohmann::json::parse_error& e) {
-        // パースエラーをロギングする
-        // TODO: エンジンのロガーに切り替える
-        printf("JSON Parse Error in %s: %s\n", pathStr.c_str(), e.what());
+        Log::OutPutLog(std::cerr, "JSON Parse Error in " + pathStr + ": " + std::string(e.what()) + "\n");
         return false;
     }
     file.close();
@@ -106,7 +106,7 @@ std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filep
         try {
             file >> root;
         } catch (const nlohmann::json::parse_error& e) {
-            printf("JSON Parse Error in Prefab %s: %s\n", filepath.c_str(), e.what());
+            Log::OutPutLog(std::cerr, "JSON Parse Error in Prefab " + filepath + ": " + std::string(e.what()) + "\n");
             return nullptr;
         }
         file.close();

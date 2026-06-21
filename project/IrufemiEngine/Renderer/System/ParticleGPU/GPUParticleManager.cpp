@@ -32,8 +32,8 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
     if (!ctx.system) {
         ctx.system = std::make_unique<GPUParticleSystem>();
         ctx.system->Initialize(texturePath);
-        ctx.system->SetBlendMode(blendMode);         // TODO: GPUParticleSystem に SetBlendMode を追加予定
-        ctx.system->SetUnscaledTime(isUnscaledTime); // TODO: GPUParticleSystem に SetUnscaledTime を追加予定
+        ctx.system->SetBlendMode(blendMode);
+        ctx.system->SetUnscaledTime(isUnscaledTime);
     }
     
     uint32_t assignedIndex = 0;

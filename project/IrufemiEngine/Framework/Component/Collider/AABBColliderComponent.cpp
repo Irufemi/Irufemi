@@ -25,9 +25,6 @@ void AABBColliderComponent::Update() {
 }
 
 void AABBColliderComponent::DrawDebug() {
-    // TODO: PrimitiveManagerやLineInstancedを使ってワイヤーフレームキューブを描画する
-    // 現在のAABBを取得
-    // AABB aabb = GetWorldAABB();
 }
 
 

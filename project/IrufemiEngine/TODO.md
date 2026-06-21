@@ -8,8 +8,8 @@
 
 ### ⚡ パフォーマンスと最適化 (Performance & Optimization)
 - [ ] **GPUParticleSystemのパフォーマンス最適化と共有化 (現在進行中)**
-    - [ ] `GPUParticleManager`（または類似の共有機構）の設計・実装。
-    - [ ] 各 `ParticleEmitterComponent` から放出命令（Emit）を一つの中央バッファに集約する（Instanced Emission）アーキテクチャへの改修。
+    - [x] `GPUParticleManager`（または類似の共有機構）の設計・実装。
+    - [x] 各 `ParticleEmitterComponent` から放出命令（Emit）を一つの中央バッファに集約する（Instanced Emission）アーキテクチャへの改修。
     - [ ] パフォーマンス測定と、安定性の確認。
     - [ ] 最適化完了後、旧 `ParticleSystem` (CPU) の完全削除とコードベース統合。
 - [ ] **メモリ使用量のプロファイリングと最適化**
