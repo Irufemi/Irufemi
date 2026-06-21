@@ -60,7 +60,7 @@ void SceneViewPanel::Draw() {
         cursor.y += (avail.y - size.y) * 0.5f;
         ImGui::SetCursorPos(cursor);
 
-        ImGui::Image((ImTextureID)mainTexture->GetSrvHandleGPU().ptr, size);
+        ImGui::Image((ImTextureID)mainTexture->GetImGuiSrvHandleGPU().ptr, size);
         
         ImVec2 minPos = ImGui::GetItemRectMin(); // ImGui::Image() 縺ｮ蟾ｦ荳・
         ImVec2 maxPos = ImGui::GetItemRectMax(); // ImGui::Image() 縺ｮ蜿ｳ荳・
