@@ -140,7 +140,7 @@
           "data": {
             "currentTypeIndex": 1,
             "material": {
-              "texturePath": "resources/cyberpunk_wasteland_ground.png"
+              "texturePath": "resources/realistic_wasteland_ground.png"
             }
           },
           "type": "PrimitiveRendererComponent"

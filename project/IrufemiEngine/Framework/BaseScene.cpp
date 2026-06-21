@@ -296,7 +296,7 @@ void BaseScene::Draw() {
     }
     
     if (engine_) engine_->GetCollisionManager()->DrawDebug(selectedObj);
-#else
+#elif defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     engine_->GetCollisionManager()->DrawDebug();
 #endif
 }

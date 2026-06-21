@@ -191,11 +191,19 @@ void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("torusMajorSegments")) torusMajorSegments_ = j["torusMajorSegments"];
     if (j.contains("torusMinorSegments")) torusMinorSegments_ = j["torusMinorSegments"];
     
+    if (!primitive_) {
+        primitive_ = std::make_unique<Primitive3DObject>();
+        primitive_->Initialize(static_cast<PrimitiveType>(currentTypeIndex_));
+    }
+
     // 形状を再構築
     PrimitiveType types[] = { PrimitiveType::Sphere, PrimitiveType::Plane, PrimitiveType::Cube, PrimitiveType::Cylinder, PrimitiveType::Cone, PrimitiveType::Torus };
     if (currentTypeIndex_ >= 0 && currentTypeIndex_ < 6) {
         SetShape(types[currentTypeIndex_]);
     }
+    
+    // カスタムパラメータでメッシュを生成し直す
+    RebuildMesh();
     
     // マテリアル情報の復元
     if (j.contains("material") && primitive_) {
