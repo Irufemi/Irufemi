@@ -33,28 +33,20 @@ void OBBColliderComponent::DrawDebug() {
 OBB OBBColliderComponent::GetWorldOBB() const {
     OBB obb;
     if (transform_) {
-        // ワールド行列の各軸ベクトルからスケールと回転を抽出
-        Vector3 right = { transform_->GetWorldMatrix().m[0][0], transform_->GetWorldMatrix().m[0][1], transform_->GetWorldMatrix().m[0][2] };
-        Vector3 up    = { transform_->GetWorldMatrix().m[1][0], transform_->GetWorldMatrix().m[1][1], transform_->GetWorldMatrix().m[1][2] };
-        Vector3 forward = { transform_->GetWorldMatrix().m[2][0], transform_->GetWorldMatrix().m[2][1], transform_->GetWorldMatrix().m[2][2] };
-        
-        float scaleX = Math::Length(right);
-        float scaleY = Math::Length(up);
-        float scaleZ = Math::Length(forward);
-        
-        obb.orientations[0] = Math::Normalize(right);
-        obb.orientations[1] = Math::Normalize(up);
-        obb.orientations[2] = Math::Normalize(forward);
-        
-        Vector3 worldPos = { transform_->GetWorldMatrix().m[3][0], transform_->GetWorldMatrix().m[3][1], transform_->GetWorldMatrix().m[3][2] };
+        Vector3 worldPos = transform_->GetWorldPosition();
+        Vector3 worldScale = transform_->GetWorldScale();
+
+        obb.orientations[0] = transform_->GetWorldRight();
+        obb.orientations[1] = transform_->GetWorldUp();
+        obb.orientations[2] = transform_->GetWorldForward();
         
         // Offsetも回転・スケールを考慮
         obb.center = worldPos 
-                   + obb.orientations[0] * (localOffset_.x * scaleX)
-                   + obb.orientations[1] * (localOffset_.y * scaleY)
-                   + obb.orientations[2] * (localOffset_.z * scaleZ);
+                   + obb.orientations[0] * (localOffset_.x * worldScale.x)
+                   + obb.orientations[1] * (localOffset_.y * worldScale.y)
+                   + obb.orientations[2] * (localOffset_.z * worldScale.z);
                    
-        obb.size = { localSize_.x * scaleX, localSize_.y * scaleY, localSize_.z * scaleZ };
+        obb.size = { localSize_.x * worldScale.x, localSize_.y * worldScale.y, localSize_.z * worldScale.z };
     } else {
         obb.center = localOffset_;
         obb.orientations[0] = {1.0f, 0.0f, 0.0f};

@@ -36,6 +36,11 @@ public:
     const Vector3& GetWorldRotation() const;
     const Vector3& GetWorldScale() const;
 
+    // ワールド方向ベクトルの抽出 (正規化済み)
+    Vector3 GetWorldRight() const;
+    Vector3 GetWorldUp() const;
+    Vector3 GetWorldForward() const;
+
     // --- Setters ---
     void SetPosition(const Vector3& position);
     void SetRotation(const Vector3& rotation);

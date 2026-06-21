@@ -33,12 +33,13 @@ void SphereColliderComponent::DrawDebug() {
 Sphere SphereColliderComponent::GetWorldSphere() const {
     Sphere sphere;
     if (transform_) {
-        Vector3 worldPos = { transform_->GetWorldMatrix().m[3][0], transform_->GetWorldMatrix().m[3][1], transform_->GetWorldMatrix().m[3][2] };
+        Vector3 worldPos = transform_->GetWorldPosition();
+        Vector3 worldScale = transform_->GetWorldScale();
         
         // スケールの最大成分を半径に掛ける
-        float scaleX = std::sqrt(std::pow(transform_->GetWorldMatrix().m[0][0], 2.0f) + std::pow(transform_->GetWorldMatrix().m[0][1], 2.0f) + std::pow(transform_->GetWorldMatrix().m[0][2], 2.0f));
-        float scaleY = std::sqrt(std::pow(transform_->GetWorldMatrix().m[1][0], 2.0f) + std::pow(transform_->GetWorldMatrix().m[1][1], 2.0f) + std::pow(transform_->GetWorldMatrix().m[1][2], 2.0f));
-        float scaleZ = std::sqrt(std::pow(transform_->GetWorldMatrix().m[2][0], 2.0f) + std::pow(transform_->GetWorldMatrix().m[2][1], 2.0f) + std::pow(transform_->GetWorldMatrix().m[2][2], 2.0f));
+        float scaleX = worldScale.x;
+        float scaleY = worldScale.y;
+        float scaleZ = worldScale.z;
         
         float maxXY = scaleX > scaleY ? scaleX : scaleY;
         float maxScale = maxXY > scaleZ ? maxXY : scaleZ;

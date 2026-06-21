@@ -464,6 +464,11 @@ Vector3 worldPos = transform->GetWorldPosition();
 Vector3 worldRot = transform->GetWorldRotation();
 Vector3 worldScl = transform->GetWorldScale();
 
+// ワールド空間の方向ベクトル（正規化済み）
+Vector3 right   = transform->GetWorldRight();
+Vector3 up      = transform->GetWorldUp();
+Vector3 forward = transform->GetWorldForward();
+
 // --- 更新 (Setter) ---
 // 値を更新すると、内部で Dirty フラグ (isLocalDirty_) が立ちます
 transform->SetPosition(Vector3(10, 5, 0));

@@ -32,14 +32,8 @@ void AABBColliderComponent::DrawDebug() {
 AABB AABBColliderComponent::GetWorldAABB() const {
     AABB aabb;
     if (transform_) {
-        // ワールド行列の平行移動成分を抽出
-        Vector3 worldPos = { transform_->GetWorldMatrix().m[3][0], transform_->GetWorldMatrix().m[3][1], transform_->GetWorldMatrix().m[3][2] };
-        // スケールを抽出（XYZ軸のベクトルの長さ）
-        Vector3 worldScale = {
-            sqrtf(powf(transform_->GetWorldMatrix().m[0][0], 2) + powf(transform_->GetWorldMatrix().m[0][1], 2) + powf(transform_->GetWorldMatrix().m[0][2], 2)),
-            sqrtf(powf(transform_->GetWorldMatrix().m[1][0], 2) + powf(transform_->GetWorldMatrix().m[1][1], 2) + powf(transform_->GetWorldMatrix().m[1][2], 2)),
-            sqrtf(powf(transform_->GetWorldMatrix().m[2][0], 2) + powf(transform_->GetWorldMatrix().m[2][1], 2) + powf(transform_->GetWorldMatrix().m[2][2], 2))
-        };
+        Vector3 worldPos = transform_->GetWorldPosition();
+        Vector3 worldScale = transform_->GetWorldScale();
         
         Vector3 center = { worldPos.x + localOffset_.x * worldScale.x, 
                            worldPos.y + localOffset_.y * worldScale.y, 
