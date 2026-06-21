@@ -301,6 +301,17 @@ void SceneManager::Update() {
     // 1. ロード状況の確認とカーソル制御
     bool isLoading = UpdateLoadStatus();
 
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+    // デバッグ用の即時リロード機能 (一線級エンジンのConsole Command / CheatManagerに相当)
+    if (engine_->GetInputManager()->IsKeyPressed('R')) {
+        const Key& currentScene = GetCurrent();
+        // ロード中や遷移中でなければリロード要求を発行
+        if (!currentScene.empty() && !isLoading && pending_.empty() && transitionPhase_ == TransitionPhase::None) {
+            Request(currentScene); 
+        }
+    }
+#endif
+
     // 2. 即時シーン切り替え要求の処理
     ProcessImmediateTransition();
 
