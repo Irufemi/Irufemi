@@ -79,6 +79,32 @@ public:
     }
 
     /**
+     * @brief 自身およびすべての子孫から、指定した型のコンポーネントを1つ探して取得する
+     */
+    template<typename T>
+    T* GetComponentInChildren() {
+        if (T* comp = GetComponent<T>()) {
+            return comp;
+        }
+        for (auto& child : children_) {
+            if (T* comp = child->GetComponentInChildren<T>()) {
+                return comp;
+            }
+        }
+        return nullptr;
+    }
+
+    /**
+     * @brief 自身およびすべての子孫から、指定した型のコンポーネントをすべて取得する
+     */
+    template<typename T>
+    std::vector<T*> GetComponentsInChildren() {
+        std::vector<T*> results;
+        GetComponentsInChildrenRecursive<T>(results);
+        return results;
+    }
+
+    /**
      * @brief コンポーネントを削除する
      */
     void RemoveComponent(Component* component);
@@ -151,4 +177,15 @@ private:
 
     std::vector<std::shared_ptr<Component>> components_;
     std::unordered_map<std::type_index, std::vector<Component*>> componentMap_;
+
+private:
+    template<typename T>
+    void GetComponentsInChildrenRecursive(std::vector<T*>& results) {
+        if (T* comp = GetComponent<T>()) {
+            results.push_back(comp);
+        }
+        for (auto& child : children_) {
+            child->GetComponentsInChildrenRecursive<T>(results);
+        }
+    }
 };

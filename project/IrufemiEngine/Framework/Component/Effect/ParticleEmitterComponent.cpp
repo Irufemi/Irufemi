@@ -40,8 +40,19 @@ void ParticleEmitterComponent::Play() {
     particleObj_->Play();
 }
 
-void ParticleEmitterComponent::Restart() {
-    particleObj_->Restart();
+void ParticleEmitterComponent::Restart(bool withChildren) {
+    if (particleObj_) {
+        particleObj_->Restart();
+    }
+    
+    if (withChildren && gameObject_) {
+        auto emitters = gameObject_->GetComponentsInChildren<ParticleEmitterComponent>();
+        for (auto childEmitter : emitters) {
+            if (childEmitter != this) {
+                childEmitter->Restart(false);
+            }
+        }
+    }
 }
 
 void ParticleEmitterComponent::Stop() {

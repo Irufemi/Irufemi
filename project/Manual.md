@@ -12,6 +12,88 @@
 
 ---
 
+## GameObject とコンポーネントの基本操作
+
+本エンジンは、Unityなどのモダンなエンジンと同様のコンポーネント指向で設計されています。シーン内のオブジェクト（`GameObject`）に対して、様々な機能（`Component`）をアタッチ・取得することでゲームロジックを構築します。
+
+### 基本的なコンポーネントの取得
+アタッチされているコンポーネントを取得するには、`GetComponent<T>()` を使用します。
+```cpp
+// 自身にアタッチされている TransformComponent を取得する
+if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
+    transform->SetPosition(Vector3(0, 10, 0));
+}
+```
+
+### GetComponentsInChildren を使った子孫の探索
+`GameObject` 自身およびすべての子孫階層から特定のコンポーネントを一括検索する強力な機能が備わっています。特定のオブジェクト（プレハブのルートなど）の下に連なっているパーティクルやコライダーを一斉に操作したい場合に非常に便利です。
+
+```cpp
+auto obj = gameObject_->GetScene()->FindGameObject("Player");
+
+// 1. ツリー全体から、指定した型のコンポーネントを「すべて（配列で）」取得する
+auto emitters = obj->GetComponentsInChildren<ParticleEmitterComponent>();
+for (auto pe : emitters) {
+    pe->Restart(false); // 全てのエミッターを一斉に再発火
+}
+
+// 2. ツリー全体から、指定した型のコンポーネントを「1つだけ」取得する
+if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
+    collider->SetIsActive(false);
+}
+```
+
+**【重要】**
+この探索機能は「自身（ルート）にアタッチされているコンポーネント」も検索対象に含まれます。そのため、ルートに目的のコンポーネントがあるかどうかを事前に気にする必要はなく、非常にシンプルで堅牢なコードを記述できます。
+
+---
+
+## チーム開発ルール・コーディング規約
+
+チームでの共同開発（`Application_team` など）を進めるにあたり、以下のアーキテクチャ・コーディング規約を遵守してください。
+
+### 1. アーキテクチャと関心の分離
+- **エンジンの独立性**: `IrufemiEngine/` フォルダ配下のコア機能には、特定のゲームやシーンに依存する処理・固有のデータ・アクターを**絶対に含めない**でください。
+- **ゲームロジックの配置**: ゲーム固有のロジックやキャラクター制御は、必ず `Application_team/` (または各ゲームの Application フォルダ) 内に記述し、エンジンとアプリケーションの境界を厳格に保ちます。
+
+### 2. メモリ管理と安全性 (C++ / DirectX)
+- **スマートポインタの利用**: メモリリークを防ぐため、生ポインタ(`Raw Pointer`)の新規使用は極力避け、用途に合わせて `std::unique_ptr` や `std::shared_ptr` を優先してください。
+- **COMオブジェクト管理**: DirectXのオブジェクトを扱う際は、必ず `Microsoft::WRL::ComPtr` を使用して安全にライフサイクルを管理してください。
+- **エラーチェック**: DirectXのAPI呼び出し時は `HRESULT` の戻り値を必ずチェックし、適切なエラーハンドリング（アサート等）を含めてください。
+
+### 3. オブジェクトのライフサイクル管理とプールの安全な運用
+シューティングゲームの敵やヒットエフェクトなど、頻繁に生成と消滅を繰り返すオブジェクト（プーリング対象）を実装する際は、メモリ破壊やプールの崩壊を防ぐために以下の**厳密なルール**に従う必要があります。
+
+- **プール運用オブジェクトでは絶対に `Destroy()` を呼ばない**
+  `Destroy()` を呼ぶと `GameObject` がシーンから完全に削除（メモリ解放）されてしまいます。プール運用しているオブジェクトが削除されると、プール側にダングリングポインタが残り、次回取り出した際にクラッシュします。
+  **プーリング対象のオブジェクトが死ぬときは、必ず「非アクティブ化 (SetIsActive(false))」してプールへ返却（Release）してください。**
+  ```cpp
+  enemyComp->SetOnDeathCallback([this](GameObject* deadObj) {
+      deadObj->SetIsActive(false);
+      if (enemyPool_) {
+          enemyPool_->Release(deadObj->shared_from_this());
+      }
+  });
+  ```
+
+- **LifetimeComponent の TimeoutAction を活用する**
+  一定時間で消滅するエフェクトなどに `LifetimeComponent` をアタッチする場合、インスペクタ上で **Timeout Action** を変更できます。単発生成なら `Destroy` (デフォルト)、プール運用なら `Disable` を設定してください。コードから生成する際は以下のように上書きすると安全です。
+  ```cpp
+  auto obj = gameObject_->Instantiate(effectPrefabPath);
+  if (auto lifetime = obj->GetComponent<LifetimeComponent>()) {
+      lifetime->SetTimeoutAction(TimeoutAction::Disable);
+  }
+  ```
+
+### 4. 命名規則・コードスタイル
+- **メンバ変数の命名**: `m_` などの接頭辞は使用せず、**キャメルケースの末尾にアンダーバー**をつけるスタイル (`variableName_`) に統一してください。
+- **ヘッダーの注釈**: 関数やクラスのコメントは「Doxygen形式」で記述してください。
+- **インクルードガード**: `#pragma once` を使用してください。
+- **既存への適応**: 新しくクラスや関数を追加する際は、必ず周囲の「既存のコードベースの命名規則」に合わせ、自己流のスタイルを混入させないでください。
+- **文字コードとフォーマット**: ファイルはすべて `UTF-8 (署名なし)` で保存し、`.clang-format` による自動整形を活用してください。
+
+---
+
 ## パーティクルシステム (GPUParticleSystem) の利用方法
 
 本エンジンのパーティクルシステムは、コンピュートシェーダー(CS)によってGPU上で高速に動作します。
@@ -225,28 +307,6 @@ float moveInputX = input->GetActionValue("MoveX").x;
 
 ---
 
-## チーム開発ルール・コーディング規約
-
-チームでの共同開発（`Application_team` など）を進めるにあたり、以下のアーキテクチャ・コーディング規約を遵守してください。
-
-### 1. アーキテクチャと関心の分離
-- **エンジンの独立性**: `IrufemiEngine/` フォルダ配下のコア機能には、特定のゲームやシーンに依存する処理・固有のデータ・アクターを**絶対に含めない**でください。
-- **ゲームロジックの配置**: ゲーム固有のロジックやキャラクター制御は、必ず `Application_team/` (または各ゲームの Application フォルダ) 内に記述し、エンジンとアプリケーションの境界を厳格に保ちます。
-
-### 2. メモリ管理と安全性 (C++ / DirectX)
-- **スマートポインタの利用**: メモリリークを防ぐため、生ポインタ(`Raw Pointer`)の新規使用は極力避け、用途に合わせて `std::unique_ptr` や `std::shared_ptr` を優先してください。
-- **COMオブジェクト管理**: DirectXのオブジェクトを扱う際は、必ず `Microsoft::WRL::ComPtr` を使用して安全にライフサイクルを管理してください。
-- **エラーチェック**: DirectXのAPI呼び出し時は `HRESULT` の戻り値を必ずチェックし、適切なエラーハンドリング（アサート等）を含めてください。
-
-### 3. 命名規則・コードスタイル
-- **メンバ変数の命名**: `m_` などの接頭辞は使用せず、**キャメルケースの末尾にアンダーバー**をつけるスタイル (`variableName_`) に統一してください。
-- **ヘッダーの注釈**: 関数やクラスのコメントは「Doxygen形式」で記述してください。
-- **インクルードガード**: `#pragma once` を使用してください。
-- **既存への適応**: 新しくクラスや関数を追加する際は、必ず周囲の「既存のコードベースの命名規則」に合わせ、自己流のスタイルを混入させないでください。
-- **文字コードとフォーマット**: ファイルはすべて `UTF-8 (署名なし)` で保存し、`.clang-format` による自動整形を活用してください。
-
----
-
 ## 【NEW】GPU カリング (GPU Culling & ExecuteIndirect) の利用方法
 
 本エンジンでは、大量の同一モデル（がれき、草、パーティクルなど）を描画する際のCPU負荷（フラスタムカリングやメモリ転送）を劇的に削減するため、**Compute Shader による GPU フラスタムカリング** をサポートしました。
@@ -404,7 +464,7 @@ Setter を通じて座標を変更しても、**その瞬間にすべての行�
 
 半透明や加算合成で描画したい Primitive3DObject （またはそれを保持するRendererComponent）に対して、初期化時に SetIsTransparent(true) を設定し、同時にPSO設定で DepthWrite::Disable を指定します。
 
-`cpp
+```cpp
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 
 // 1. オブジェクトの初期化
@@ -418,8 +478,8 @@ aura->SetCustomPSO(pso);
 // 3. 半透明フラグを有効にする (重要！)
 // これにより、不透明オブジェクトをすべて描き終わった後に、カメラからの距離でソートされて描画されます。
 aura->SetIsTransparent(true);
-``n
+```
+
 ### 注意点
 - SetIsTransparent(true) を設定したオブジェクトは、自動的にカメラからの距離（distanceToCamera）を計算し、**Z値の降順（Back-to-Front）**でソートされて描画されます。
 - 不透明な通常のモデルに SetIsTransparent(true) を設定しないでください（Early-Zカリングなどの恩恵が受けられず、パフォーマンスが低下します）。
-

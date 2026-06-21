@@ -16,7 +16,7 @@ void DebugEnemySpawnerComponent::Start() {
     auto scene = gameObject_->GetScene();
     if (!scene) return;
 
-    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [scene]() {
+    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, scene]() {
         auto enemy = std::make_shared<GameObject>("DebugEnemy");
         scene->AddGameObject(enemy);
         
@@ -24,7 +24,16 @@ void DebugEnemySpawnerComponent::Start() {
         transform->SetScale({1.2f, 1.2f, 1.2f});
 
         enemy->AddComponent<PrimitiveRendererComponent>();
-        enemy->AddComponent<RailShooterEnemyComponent>();
+        auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
+
+        // プール運用のため、エネミー死亡時は Destroy ではなくプールへ返却する
+        enemyComp->SetOnDeathCallback([this](GameObject* deadObj) {
+            deadObj->SetIsActive(false);
+            if (enemyPool_) {
+                // deadObjが保持するshared_ptrを取得（GameObjectはenable_shared_from_thisを継承している前提）
+                enemyPool_->Release(deadObj->shared_from_this());
+            }
+        });
 
         enemy->SetIsActive(false);
         return enemy;

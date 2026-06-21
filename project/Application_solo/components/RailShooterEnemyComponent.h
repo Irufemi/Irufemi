@@ -18,9 +18,14 @@ public:
     bool IsAlive() const { return hp_ > 0 && isActive_; }
     void TakeDamage(int damage);
 
+    // 死亡時に呼び出されるコールバック（プール用などに使用）
+    void SetOnDeathCallback(std::function<void(GameObject*)> callback) { onDeathCallback_ = std::move(callback); }
+
 private:
     float spawnProgress_ = 0.5f; ///< プレイヤーがどの進行度に達したらアクティブになるか (0.0 ~ 1.0)
     bool isActive_ = false;      ///< 現在活動中かどうか
     float speed_ = 5.0f;         ///< 敵の移動速度
     int hp_ = 100;               ///< 耐久力
+    
+    std::function<void(GameObject*)> onDeathCallback_;
 };

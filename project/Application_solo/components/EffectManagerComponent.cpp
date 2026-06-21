@@ -23,9 +23,9 @@ void EffectManagerComponent::Start() {
         if (obj) {
             obj->SetIsActive(false);
             
-            // プール運用の場合、自身をDestroyするLifetimeComponentがあるとシーンから除外されてしまうため削除する
+            // 寿命コンポーネントがあれば、プール運用のためDestroyではなくDisableに変更する
             if (auto lifetime = obj->GetComponent<LifetimeComponent>()) {
-                obj->RemoveComponent(lifetime);
+                lifetime->SetTimeoutAction(TimeoutAction::Disable);
             }
         }
         return obj;
@@ -33,11 +33,9 @@ void EffectManagerComponent::Start() {
 }
 
 void EffectManagerComponent::Update() {
-    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     for (auto it = activeEffects_.begin(); it != activeEffects_.end(); ) {
-        it->timer -= deltaTime;
-        if (it->timer <= 0.0f) {
-            it->obj->SetIsActive(false);
+        // オブジェクトが非アクティブになっていれば、寿命（または自律的終了）を迎えたとみなしてプールに返却
+        if (!it->obj->GetIsActive()) {
             if (hitEffectPool_) {
                 hitEffectPool_->Release(it->obj);
             }
@@ -60,21 +58,19 @@ void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Vect
             if (auto t = obj->GetComponent<TransformComponent>()) {
                 t->SetPosition(worldPosition);
             }
+            // アクティブ化して LifetimeComponent のタイマーをリセットする
             obj->SetIsActive(true);
+            if (auto lifetime = obj->GetComponent<LifetimeComponent>()) {
+                lifetime->Initialize();
+            }
             
-            // ルートおよびすべての子オブジェクトの ParticleEmitterComponent を再生する
-            auto playEmitters = [](auto& self, std::shared_ptr<GameObject> current) -> void {
-                if (!current) return;
-                if (auto pe = current->GetComponent<ParticleEmitterComponent>()) {
-                    pe->Restart();
-                }
-                for (auto& child : current->GetChildren()) {
-                    self(self, child);
-                }
-            };
-            playEmitters(playEmitters, obj);
+            // ツリー全体からすべての ParticleEmitterComponent を取得して再発火させる
+            auto emitters = obj->GetComponentsInChildren<ParticleEmitterComponent>();
+            for (auto pe : emitters) {
+                pe->Restart(false);
+            }
             
-            activeEffects_.push_back({obj, effectDuration_});
+            activeEffects_.push_back({obj, 0.0f}); // timerはもう使わないが構造体互換のため0をセット
         }
     }
 }
