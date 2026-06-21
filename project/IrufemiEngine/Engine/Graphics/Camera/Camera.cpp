@@ -18,10 +18,13 @@ void Camera::Initialize(const int& windowWidth,const int& windowHeight) {
     width_ = static_cast<float>(windowWidth);
     height_ = static_cast<float>(windowHeight);
 
-    // ウィンドウサイズに基づいてアスペクト比と正射影境界を更新
+    // ウィンドウサイズに基づいてアスペクト比を更新(3D用)
     aspectRatio_ = (height_ != 0.0f) ? (width_ / height_) : 1.0f;
-    right_ = width_;
-    bottom_ = height_;
+    
+    // 2D正射影境界は、ウィンドウサイズが変わってもUIレイアウトが自動拡縮されるよう
+    // 論理解像度(1280x720)に固定する
+    right_ = 1280.0f;
+    bottom_ = 720.0f;
 
     UpdateMatrix();
 }
