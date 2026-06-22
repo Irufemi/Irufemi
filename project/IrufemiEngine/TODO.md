@@ -7,13 +7,11 @@
 より「ツール」として使いやすく、商用水準のパフォーマンスを発揮するための拡張機能群です。
 
 ### ⚡ パフォーマンスと最適化 (Performance & Optimization)
-- [ ] **GPUParticleSystemのパフォーマンス最適化と共有化 (現在進行中)**
-    - [x] `GPUParticleManager`（または類似の共有機構）の設計・実装。
-    - [x] 各 `ParticleEmitterComponent` から放出命令（Emit）を一つの中央バッファに集約する（Instanced Emission）アーキテクチャへの改修。
-    - [ ] パフォーマンス測定と、安定性の確認。
-    - [ ] 最適化完了後、旧 `ParticleSystem` (CPU) の完全削除とコードベース統合。
-- [ ] **メモリ使用量のプロファイリングと最適化**
-    - `TextureManager` および `ModelManager` の未使用リソース自動開放（LRUキャッシュ等）の検討。
+- [ ] **【AAA基準】リソース管理システムの抜本的改革 (現在進行中)**
+    - [ ] `ResourceHandle` および `ResourceCachePool` の実装。
+    - [ ] `TextureManager` の `shared_ptr` 依存排除と Handle 化。
+    - [ ] `ModelManager` の Handle 化と VRAM メモリ予算パージ機構の導入。
+    - [ ] 各種コンポーネント（MeshRenderer 等）の対応。
 - [ ] **製品版（Releaseビルド）におけるエディタ完全削除の検証**
     - `EditorMode` マクロがオフの時に、1バイトも不要なコードが含まれないことの確認。
 
@@ -34,6 +32,13 @@
 
 <details>
 <summary>▶ 完了したアーキテクチャと機能一覧を開く</summary>
+
+### フェーズ7: アーキテクチャとパフォーマンスの最適化
+- [x] **GPUParticleSystemのパフォーマンス最適化と共有化**
+    - [x] `GPUParticleManager`（または類似の共有機構）の設計・実装。
+    - [x] 各 `ParticleEmitterComponent` から放出命令（Emit）を一つの中央バッファに集約する（Instanced Emission）アーキテクチャへの改修。
+    - [x] パフォーマンス測定と、安定性の確認。
+    - [x] 最適化完了後、旧 `ParticleSystem` (CPU) の完全削除とコードベース統合。
 
 ### フェーズ1: コンポーネント指向アーキテクチャの完成
 - [x] すべてのエンティティのベースとなる `GameObject` クラスの作成

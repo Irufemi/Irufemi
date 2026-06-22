@@ -14,6 +14,7 @@
 #include "Engine/Core/Math/Transform.h"
 #include "Engine/Graphics/Pipeline/PSOManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
+#include "Engine/Core/System/ResourceHandle.h"
 
 class Camera;
 class TextureManager;
@@ -125,7 +126,7 @@ protected:
 
     uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
     Material cpuMaterialData_{};
-    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
+    ResourceHandle textureHandle_{};
 
     std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> instanceBuffer_{};
     std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            instancingSrvCPU_{};

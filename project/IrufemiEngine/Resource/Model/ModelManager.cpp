@@ -36,6 +36,14 @@ GpuMesh::~GpuMesh() {
     }
 }
 
+TextureManager* GpuMaterial::sTextureManager = nullptr;
+
+GpuMaterial::~GpuMaterial() {
+    if (sTextureManager && textureHandle.IsValid()) {
+        sTextureManager->ReleaseTexture(textureHandle);
+    }
+}
+
 ModelManager::ModelManager() = default;
 ModelManager::~ModelManager() = default;
 
@@ -43,6 +51,7 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
     dxCommon_ = dxCommon;
     GpuMesh::sDxCommon = dxCommon;
     textureManager_ = textureManager; // 追加
+    GpuMaterial::sTextureManager = textureManager; // 追加
     if (rootDir_.empty()) {
         rootDir_ = "resources/model";
     }
@@ -213,9 +222,9 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
             if (materialData->color.w <= 0.0f) { materialData->color.w = 1.0f; }
 
             if (materialData->hasTexture) {
-                gpuMaterial->textureHandle = textureManager_->GetTextureHandle(cpuMesh.material.textureFilePath);
+                gpuMaterial->textureHandle = textureManager_->LoadTexture(cpuMesh.material.textureFilePath);
             } else {
-                gpuMaterial->textureHandle = textureManager_->GetWhiteTextureHandle();
+                gpuMaterial->textureHandle = ResourceHandle();
             }
             managedModel->gpuMaterials.push_back(std::move(gpuMaterial));
         }

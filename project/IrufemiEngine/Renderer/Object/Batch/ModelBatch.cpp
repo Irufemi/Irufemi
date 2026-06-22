@@ -62,12 +62,14 @@ void ModelBatch::CreateMaterialResources(const ObjMesh& mesh) {
 }
 
 void ModelBatch::EnsureSharedTexture(const ObjMesh& mesh) {
-    if (!mesh.material.textureFilePath.empty()) {
-        textureHandle_ = textureManager_->GetTextureHandle(mesh.material.textureFilePath);
-    } else {
-        textureHandle_ = textureManager_->GetWhiteTextureHandle();
+    if (textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle_);
     }
-    IRUFEMI_ASSERT(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
+    if (!mesh.material.textureFilePath.empty()) {
+        textureHandle_ = textureManager_->LoadTexture(mesh.material.textureFilePath);
+    } else {
+        textureHandle_ = ResourceHandle();
+    }
 }
 
 float ModelBatch::GetBoundingSphereRadius() const {
@@ -93,7 +95,7 @@ void ModelBatch::Draw() {
     RenderPackets::ModelBatchPacket p{};
     p.gpuMesh = GetGpuMesh();
     p.materialAddress = GetMaterialVAddress();
-    p.textureHandle = textureHandle_;
+    p.textureHandle = textureManager_->Resolve(textureHandle_);
 
     if (useGPUCulling_) {
         p.useGPUCulling = true;

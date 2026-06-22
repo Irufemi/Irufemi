@@ -4,8 +4,10 @@
 #include "Engine/Core/Shape/Sphere.h"
 #include <cassert>
 #include <cstring>
+#include "Engine/Core/Math/Math.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
+#include "Resource/Texture/TextureManager.h"
 DirectXCommon* BaseBatch::dx_ = nullptr;
 TextureManager* BaseBatch::textureManager_ = nullptr;
 DrawManager* BaseBatch::drawManager_ = nullptr;
@@ -35,6 +37,9 @@ BaseBatch::~BaseBatch() {
         if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
             engine->GetMaterialBufferManager()->Free(materialCbIndex_);
         }
+    }
+    if (textureManager_ && textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle_);
     }
 }
 

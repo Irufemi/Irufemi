@@ -642,6 +642,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Core\Math\Vector3.cpp" />
     <ClCompile Include="Engine\Core\Math\Vector4.cpp" />
     <ClCompile Include="Engine\Core\System\DirectoryWatcher.cpp" />
+    <ClCompile Include="Engine\Core\System\ResourceCachePool.cpp" />
     <ClCompile Include="Engine\Core\Utility\Ease.cpp" />
     <ClCompile Include="Engine\Core\Utility\ErrorUtility.cpp" />
     <ClCompile Include="Engine\Core\Utility\Log.cpp" />
@@ -773,6 +774,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Shape\Sphere.h" />
     <ClInclude Include="Engine\Core\Shape\Triangle.h" />
     <ClInclude Include="Engine\Core\System\DirectoryWatcher.h" />
+    <ClInclude Include="Engine\Core\System\ResourceCachePool.h" />
+    <ClInclude Include="Engine\Core\System\ResourceHandle.h" />
     <ClInclude Include="Engine\Core\System\IEngineExtension.h" />
     <ClInclude Include="Engine\Core\System\TaskGroup.h" />
     <ClInclude Include="Engine\Core\System\ThreadPool.h" />

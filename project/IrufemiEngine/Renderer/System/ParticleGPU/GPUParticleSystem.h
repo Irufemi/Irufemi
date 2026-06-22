@@ -15,6 +15,7 @@
 #include "../../../Engine/Graphics/Compute/IComputeTask.h"
 #include <random>
 #include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "Engine/Core/System/ResourceHandle.h"
 
 // 前方宣言
 class DrawManager;
@@ -464,7 +465,7 @@ private:
         0.0f // alphaReference
     };
 
-    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_{};
+    ResourceHandle textureHandle_;
     int selectedTextureIndex_ = 0;
 
 

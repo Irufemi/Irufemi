@@ -13,8 +13,8 @@
 #include <future>
 #include <type_traits>
 #include "../../Engine/Core/System/ThreadPool.h"
-#include "../../Engine/Core/System/TaskGroup.h"
 #include <d3d12.h>
+#include "../../Engine/Core/System/ResourceHandle.h"
 #include "Data/ObjModel.h"
 #include "Data/ModelData.h"
 #include "Data/MaterialData.h"
@@ -61,8 +61,12 @@ struct GpuMesh {
  * @brief GPU上で使用されるマテリアルリソースを保持する構造体
  */
 struct GpuMaterial {
+    GpuMaterial() = default;
+    ~GpuMaterial();
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
-    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle{};
+    ResourceHandle textureHandle;
+    
+    static TextureManager* sTextureManager;
 };
 
 /**

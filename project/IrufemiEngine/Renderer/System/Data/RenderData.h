@@ -6,6 +6,7 @@
 #include "Engine/Core/Math/Transform.h"
 #include "Renderer/System/Core/Object3DResource.h"
 #include "Engine/Core/Math/Math.h"
+#include "Engine/Core/System/ResourceHandle.h"
 
 class Camera;
 class PrimitiveManager;
@@ -60,6 +61,8 @@ private:
  */
 struct MaterialDesc {
     std::string texturePath;      //!< テクスチャパス
+    std::string loadedTexturePath; //!< 前回ロードしたパス（変更検知用）
+    ResourceHandle textureHandle; //!< AAA: キャッシュ用ハンドル
     int selectedTextureIndex = 0; //!< ImGui選択用インデックス
     Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; //!< ベースカラー
     bool enableLighting = true;   //!< ライティングの有無
@@ -82,4 +85,9 @@ struct MaterialDesc {
      * @param[in] textureManager テクスチャハンドル取得用
      */
     void UpdateMaterial(Object3DResource* resource, TextureManager* textureManager);
+
+    /**
+     * @brief 保持しているハンドルを解放する（破棄時に呼ぶ）
+     */
+    void Release(TextureManager* textureManager);
 };

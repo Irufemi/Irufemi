@@ -449,7 +449,14 @@ void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
 
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
+
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle{};
+    if (resource->useRawTextureHandle_) {
+        gpuHandle = resource->rawTextureHandle_;
+    } else {
+        gpuHandle = textureManager_->Resolve(resource->textureHandle_);
+    }
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, gpuHandle);
 
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
@@ -467,7 +474,7 @@ void DrawManager::DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet
     commandList_->IASetIndexBuffer(&packet.resource->indexBufferView_);
 
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.resource->GetMaterialVAddress());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.resource->textureHandle_);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureManager_->Resolve(packet.resource->textureHandle_));
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU); // VS t0
 
     commandList_->DrawIndexedInstanced(packet.resource->indexCount_, packet.instanceCount, 0, 0, 0);
@@ -517,7 +524,15 @@ void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
+    
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle{};
+    if (resource->useRawTextureHandle_) {
+        gpuHandle = resource->rawTextureHandle_;
+    } else {
+        gpuHandle = textureManager_->Resolve(resource->textureHandle_);
+    }
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, gpuHandle);
+    
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
 
@@ -833,7 +848,7 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
     // 各種リソースのバインド
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, resource->textureHandle_);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureManager_->Resolve(resource->textureHandle_));
 
     // customCBVAddress が設定されていれば Special (b6) にバインドする
     if (packet.customCBVAddress != 0) {

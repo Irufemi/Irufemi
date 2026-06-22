@@ -77,22 +77,33 @@ void MaterialDesc::UpdateMaterial(Object3DResource* resource, TextureManager* te
     resource->GetMaterialData()->alphaReference = alphaReference;
     resource->GetMaterialData()->useClampSampler = useClampSampler;
 
-    // テクスチャハンドルの更新
-    if (textureManager && !texturePath.empty()) {
-        resource->textureHandle_ = textureManager->GetTextureHandle(texturePath);
-        
-        // ハンドルが取得できなかった場合はテクスチャ無効にする
-        if (resource->textureHandle_.ptr == 0) {
-            resource->GetMaterialData()->hasTexture = false;
+    // テクスチャハンドルの更新（変更検知）
+    if (textureManager && texturePath != loadedTexturePath) {
+        if (textureHandle.IsValid()) {
+            textureManager->ReleaseTexture(textureHandle);
         }
+        if (!texturePath.empty()) {
+            textureHandle = textureManager->LoadTexture(texturePath);
+        } else {
+            textureHandle = ResourceHandle(); // 無効ハンドル
+        }
+        loadedTexturePath = texturePath;
+    }
+
+    if (textureManager) {
+        resource->textureHandle_ = textureHandle;
+        resource->GetMaterialData()->hasTexture = (textureManager->Resolve(textureHandle).ptr != textureManager->GetWhiteTextureHandle().ptr);
     } else {
         resource->GetMaterialData()->hasTexture = false;
     }
 
-    // テクスチャハンドルが無効（0）の場合は、強制的に白テクスチャを割り当てることでGPUバリデーションエラーを防ぐ
-    if (resource->textureHandle_.ptr == 0 && textureManager) {
-        resource->textureHandle_ = textureManager->GetTextureHandle("white");
-    }
-    
     resource->MarkAsDirty();
+}
+
+void MaterialDesc::Release(TextureManager* textureManager) {
+    if (textureManager && textureHandle.IsValid()) {
+        textureManager->ReleaseTexture(textureHandle);
+        textureHandle = ResourceHandle();
+        loadedTexturePath.clear();
+    }
 }

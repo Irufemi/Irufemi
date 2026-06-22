@@ -170,7 +170,8 @@ void Text::GenerateVertices() {
     }
 
     // SRVを設定
-    resource_->textureHandle_ = fontManager_->GetAtlasSRV();
+    resource_->rawTextureHandle_ = fontManager_->GetAtlasSRV();
+    resource_->useRawTextureHandle_ = true;
 
     // 頂点がなければ終了
     if (resource_->vertexDataList_.empty()) return;

@@ -537,6 +537,9 @@
     <ClCompile Include="Engine\Core\System\DirectoryWatcher.cpp">
       <Filter>Engine\Core\System</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Core\System\ResourceCachePool.cpp">
+      <Filter>Engine\Core\System</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Core\Utility\Ease.cpp">
       <Filter>Engine\Core\Utility</Filter>
     </ClCompile>
@@ -922,6 +925,12 @@
       <Filter>Engine\Core\Shape</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\System\DirectoryWatcher.h">
+      <Filter>Engine\Core\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\System\ResourceCachePool.h">
+      <Filter>Engine\Core\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\System\ResourceHandle.h">
       <Filter>Engine\Core\System</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\System\IEngineExtension.h">

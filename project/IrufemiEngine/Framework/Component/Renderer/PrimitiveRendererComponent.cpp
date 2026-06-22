@@ -10,7 +10,8 @@
 #include <cmath>
 
 PrimitiveRendererComponent::PrimitiveRendererComponent() {}
-PrimitiveRendererComponent::~PrimitiveRendererComponent() {}
+PrimitiveRendererComponent::~PrimitiveRendererComponent() {
+}
 
 void PrimitiveRendererComponent::Initialize() {
     if (!primitive_) {

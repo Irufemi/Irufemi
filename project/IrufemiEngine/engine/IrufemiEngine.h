@@ -24,6 +24,7 @@ class SceneTransition;
 #include "Graphics/DirectX/DynamicConstantBuffer.h"
 #include "Graphics/Data/Material.h"
 #include "Graphics/Data/TransformationMatrix.h"
+#include "Core/System/ResourceHandle.h"
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
@@ -416,6 +417,9 @@ private: // メンバ変数
     std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
     bool isFinalized_ = false; // 終了処理済みフラグ
+
+    ResourceHandle noise0Handle_;
+    ResourceHandle noise1Handle_;
 
     bool sceneRequestedCursorLock_ = false;
     bool isPlayMode_ = true;

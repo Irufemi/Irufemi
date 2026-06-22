@@ -3,6 +3,9 @@
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/IrufemiEngine.h"
+#include "Resource/Texture/TextureManager.h"
+
+TextureManager* Object3DResource::sTextureManager = nullptr;
 
 Object3DResource::~Object3DResource() {
     Unmap();
@@ -16,6 +19,9 @@ Object3DResource::~Object3DResource() {
                 engine->GetTransformBufferManager()->Free(transformCbIndex_);
             }
         }
+    }
+    if (sTextureManager && textureHandle_.IsValid()) {
+        sTextureManager->ReleaseTexture(textureHandle_);
     }
 }
 

@@ -203,6 +203,11 @@ void IrufemiEngine::Initialize(const std::wstring &title,
       if (auto idx = toIndex(white); idx != DescriptorPool::kInvalid)
         used.push_back(idx);
     }
+    // 白CubeMap
+    if (auto whiteCube = textureManager_->GetWhiteCubeMapHandle(); whiteCube.ptr != 0) {
+      if (auto idx = toIndex(whiteCube); idx != DescriptorPool::kInvalid)
+        used.push_back(idx);
+    }
     // フォントアトラス
     if (fontManager_) {
       if (auto idx = toIndex(fontManager_->GetAtlasSRV()); idx != DescriptorPool::kInvalid)
@@ -213,8 +218,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
         used.push_back(idx);
     }
     // テクスチャキャッシュ
-    for (const std::string &name : textureManager_->GetTextureNames()) {
-      auto h = textureManager_->GetTextureHandle(name);
+    for (auto h : textureManager_->GetAllAllocatedSrvHandles()) {
       if (auto idx = toIndex(h); idx != DescriptorPool::kInvalid)
         used.push_back(idx);
     }
@@ -234,7 +238,11 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 
   // UI
   ui_ = std::make_unique<DebugUI>();
-  ui_->Initialize(winApp_->GetHwnd(), dxCommon_.get());
+  ui_->Initialize(dxCommon_->GetHwnd(), dxCommon_.get());
+  
+  Object2DResource::sTextureManager = textureManager_.get();
+  Object3DResource::sTextureManager = textureManager_.get();
+
   for (auto& ext : extensions_) {
     ext->OnInitialize(this);
   }
@@ -314,10 +322,12 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   postProcessManager_->Initialize(dxCommon_.get(), DXGI_FORMAT_R8G8B8A8_UNORM);
 
   // ノイズテクスチャのロードとハンドル設定
+  noise0Handle_ = textureManager_->LoadTexture("resources/noise0.png");
+  noise1Handle_ = textureManager_->LoadTexture("resources/noise1.png");
   postProcessManager_->SetDissolveNoiseHandle(
-      0, textureManager_->GetTextureHandle("resources/noise0.png"));
+      0, textureManager_->Resolve(noise0Handle_));
   postProcessManager_->SetDissolveNoiseHandle(
-      1, textureManager_->GetTextureHandle("resources/noise1.png"));
+      1, textureManager_->Resolve(noise1Handle_));
 
   // --- 深度バッファの SRV 作成とマネージャーへの設定 ---
   depthSrvIndex_ = dxCommon_->GetSrvPool()->Allocate();
@@ -449,6 +459,12 @@ void IrufemiEngine::Finalize() {
   }
   if (modelManager_) {
     modelManager_.reset();
+  }
+  if (noise0Handle_.IsValid()) {
+      textureManager_->ReleaseTexture(noise0Handle_);
+  }
+  if (noise1Handle_.IsValid()) {
+      textureManager_->ReleaseTexture(noise1Handle_);
   }
   if (textureManager_) {
     textureManager_.reset();
@@ -598,6 +614,7 @@ void IrufemiEngine::Execute() {
         ext->OnDrawUI();
     }
 
+// ImGui
 #ifdef USE_IMGUI
     ui_->FPSDebug();
     ui_->BeginEngineDebugWindow();
